@@ -325,8 +325,8 @@
          {
 	   char result;
 	   __asm__ __volatile__("lock; cmpxchgl %2, %0; setz %1"
-	    	: "=m"(*(addr)), "=r"(result)
-		: "r" (new_val), "0"(*(addr)), "a"(old) : "memory");
+	    	: "+m"(*(addr)), "=r"(result)
+		: "r" (new_val), "a"(old) : "memory");
 	   return (GC_bool) result;
          }
 #      endif /* !GENERIC_COMPARE_AND_SWAP */

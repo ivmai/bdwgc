@@ -573,8 +573,11 @@ ptr_t cold_gc_frame;
 
      /* Mark thread local free lists, even if their mark 	*/
      /* descriptor excludes the link field.			*/
+     /* If the world is not stopped, this is unsafe.  It is	*/
+     /* also unnecessary, since we will do this again with the	*/
+     /* world stopped.						*/
 #      ifdef THREAD_LOCAL_ALLOC
-         GC_mark_thread_local_free_lists();
+         if (GC_world_stopped) GC_mark_thread_local_free_lists();
 #      endif
 
     /*

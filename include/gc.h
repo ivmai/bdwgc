@@ -344,14 +344,14 @@ GC_API void GC_add_roots GC_PROTO((char * low_address,
 /* Add a displacement to the set of those considered valid by the	*/
 /* collector.  GC_register_displacement(n) means that if p was returned */
 /* by GC_malloc, then (char *)p + n will be considered to be a valid	*/
-/* pointer to n.  N must be small and less than the size of p.		*/
+/* pointer to p.  N must be small and less than the size of p.		*/
 /* (All pointers to the interior of objects from the stack are		*/
 /* considered valid in any case.  This applies to heap objects and	*/
 /* static data.)							*/
 /* Preferably, this should be called before any other GC procedures.	*/
 /* Calling it later adds to the probability of excess memory		*/
 /* retention.								*/
-/* This is a no-op if the collector was compiled with recognition of	*/
+/* This is a no-op if the collector has recognition of			*/
 /* arbitrary interior pointers enabled, which is now the default.	*/
 GC_API void GC_register_displacement GC_PROTO((GC_word n));
 
@@ -883,7 +883,7 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
    * and does then use DllMain to keep track of thread creations.  But new code
    * should be built to call GC_CreateThread.
    */
-  HANDLE WINAPI GC_CreateThread(
+  GC_API HANDLE GC_CreateThread(
       LPSECURITY_ATTRIBUTES lpThreadAttributes,
       DWORD dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress,
       LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId );
@@ -917,7 +917,7 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
 #   define GC_INIT() { extern end, etext; \
 		       GC_noop(&end, &etext); }
 #else
-# if defined(__CYGWIN32__) && defined(GC_USE_DLL) || defined (_AIX)
+# if defined(__CYGWIN32__) && defined(GC_DLL) || defined (_AIX)
     /*
      * Similarly gnu-win32 DLLs need explicit initialization from
      * the main program, as does AIX.

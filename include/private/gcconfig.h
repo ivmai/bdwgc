@@ -26,6 +26,12 @@
 
 # define GCCONFIG_H
 
+# ifndef GC_PRIVATE_H
+    /* Fake ptr_t declaration, just to avoid compilation errors.	*/
+    /* This avoids many instances if "ifndef GC_PRIVATE_H" below.	*/
+    typedef struct GC_undefined_struct * ptr_t;
+# endif
+
 /* Machine dependent parameters.  Some tuning parameters can be found	*/
 /* near the top of gc_private.h.					*/
 
@@ -703,9 +709,6 @@
       /* executable on a 64 bit kernel.					*/
 #     define LINUX_STACKBOTTOM
 #     define DYNAMIC_LOADING
-#     undef STACK_GRAN
-#     define STACK_GRAN 0x10000000
-	/* Stack usually starts at 0x80000000 */
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
 #     define DATAEND (_end)
@@ -1884,7 +1887,7 @@
     /* platforms as well, though it should be avoided in win32.		*/
 # endif /* LINUX */
 
-# if defined(SEARCH_FOR_DATA_START) && defined(GC_PRIVATE_H)
+# if defined(SEARCH_FOR_DATA_START)
     extern ptr_t GC_data_start;
 #   define DATASTART GC_data_start
 # endif
@@ -2039,9 +2042,7 @@
 					      + GC_page_size-1)
 #     else
 #	ifdef MSWIN32
-#	  ifdef GC_PRIVATE_H
-		  extern ptr_t GC_win32_get_mem();
-#	  endif
+	  extern ptr_t GC_win32_get_mem();
 #         define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
 #	else
 #	  ifdef MACOS
@@ -2057,9 +2058,7 @@
 #	    endif
 #	  else
 #	    ifdef MSWINCE
-#	      ifdef GC_PRIVATE_H
-		extern ptr_t GC_wince_get_mem();
-#	      endif
+	      extern ptr_t GC_wince_get_mem();
 #	      define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
 #	    else
 #	      if defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
@@ -2068,9 +2067,7 @@
 			  GC_amiga_get_mem((size_t)bytes + GC_page_size) \
 			  + GC_page_size-1)
 #	      else
-#	        ifdef GC_PRIVATE_H
-		  extern ptr_t GC_unix_get_mem();
-#		endif
+		extern ptr_t GC_unix_get_mem();
 #               define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
 #	      endif
 #	    endif

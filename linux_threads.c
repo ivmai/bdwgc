@@ -724,6 +724,7 @@ void GC_suspend_handler(int sig)
 
 void GC_restart_handler(int sig)
 {
+    pthread_t my_thread = pthread_self();
     GC_thread me;
 
     if (sig != SIG_THR_RESTART) ABORT("Bad signal in suspend_handler");
@@ -733,7 +734,7 @@ void GC_restart_handler(int sig)
     /* of a thread which holds the allocation lock in order	*/
     /* to stop the world.  Thus concurrent modification of the	*/
     /* data structure is impossible.				*/
-    me = GC_lookup_thread(pthread_self());
+    me = GC_lookup_thread(my_thread);
     me->signal = SIG_THR_RESTART;
 
     /*
@@ -967,8 +968,9 @@ int GC_suspend_all()
 /* Caller holds allocation lock.	*/
 void GC_stop_world()
 {
-    register int i;
-    register int n_live_threads;
+    int i;
+    int n_live_threads;
+    int code;
 
     /* Make sure all free list construction has stopped before we start. */
     /* No new construction can start, since free list construction is	*/
@@ -1017,10 +1019,12 @@ void GC_stop_world()
     for (i = 0; i < n_live_threads; i++) {
 #	ifdef GC_MACOSX_THREADS
 	  if (KERN_SUCCESS != semaphore_wait(GC_suspend_ack_sem))
-	      ABORT("semaphore_wait in handler failed");
+	      ABORT("semaphore_wait for handler failed");
 #	else
-	  if (0 != sem_wait(&GC_suspend_ack_sem))
-	      ABORT("sem_wait in handler failed");
+	  if (0 != (code = sem_wait(&GC_suspend_ack_sem))) {
+	      GC_err_printf1("Sem_wait returned %ld\n", (unsigned long)code);
+	      ABORT("sem_wait for handler failed");
+	  }
 #	endif
     }
 #   ifdef PARALLEL_MARK
@@ -1174,11 +1178,9 @@ int GC_get_nprocs()
     /* appears to be buggy in many cases.				*/
     /* We look for lines "cpu<n>" in /proc/stat.			*/
 #   define STAT_BUF_SIZE 4096
-#   if defined(GC_USE_LD_WRAP)
-#	define STAT_READ __real_read
-#   else
-#	define STAT_READ read
-#   endif    
+#   define STAT_READ read
+	/* If read is wrapped, this may need to be redefined to call 	*/
+	/* the real one.						*/
     char stat_buf[STAT_BUF_SIZE];
     int f;
     char c;

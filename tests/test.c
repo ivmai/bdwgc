@@ -69,11 +69,6 @@
 # endif
 
 # ifdef GC_WIN32_THREADS
-#   ifndef MSWINCE
-      /* FIXME - Why is this here? */
-#     include <process.h>
-#     define GC_CreateThread(a,b,c,d,e,f) ((HANDLE) _beginthreadex(a,b,c,d,e,f))
-#   endif
     static CRITICAL_SECTION incr_cs;
 # endif
 
@@ -534,7 +529,7 @@ struct {
 #ifdef THREADS
 
 # if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)
-    unsigned __stdcall tiny_reverse_test(void * arg)
+    DWORD  __stdcall tiny_reverse_test(void * arg)
 # else
     void * tiny_reverse_test(void * arg)
 # endif
@@ -569,7 +564,7 @@ struct {
 # elif defined(GC_WIN32_THREADS)
     void fork_a_thread()
     {
-  	unsigned thread_id;
+  	DWORD thread_id;
 	HANDLE h;
     	h = GC_CreateThread(NULL, 0, tiny_reverse_test, 0, 0, &thread_id);
         if (h == (HANDLE)NULL) {
@@ -762,6 +757,7 @@ VOLATILE int dropped_something = 0;
      FAIL;
   }
   finalized_count++;
+  t -> level = -1;	/* detect duplicate finalization immediately */
 # ifdef PCR
     PCR_ThCrSec_ExitSys();
 # endif
@@ -1503,7 +1499,7 @@ void SetMinimumStack(long minSize)
 
 #if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)
 
-unsigned __stdcall thr_run_one_test(void *arg)
+DWORD __stdcall thr_run_one_test(void *arg)
 {
   run_one_test();
   return 0;
@@ -1535,7 +1531,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   return ret;
 }
 
-unsigned __stdcall thr_window(void *arg)
+DWORD __stdcall thr_window(void *arg)
 {
   WNDCLASS win_class = {
     CS_NOCLOSE,
@@ -1597,10 +1593,11 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
 # ifdef MSWINCE
     HANDLE win_thr_h;
 # endif
-  unsigned thread_id;
+  DWORD thread_id;
 # if 0
     GC_enable_incremental();
 # endif
+  GC_init();
   InitializeCriticalSection(&incr_cs);
   (void) GC_set_warn_proc(warn_proc);
 # ifdef MSWINCE

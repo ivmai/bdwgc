@@ -150,6 +150,155 @@
 # define OPT_PROT_EXEC 0
 #endif
 
+#if defined(LINUX) && \
+    (defined(USE_PROC_FOR_LIBRARIES) || defined(IA64) || !defined(SMALL_CONFIG))
+
+/* We need to parse /proc/self/maps, either to find dynamic libraries,	*/
+/* and/or to find the register backing store base (IA64).  Do it once	*/
+/* here.								*/
+
+#define READ read
+
+/* Repeatedly perform a read call until the buffer is filled or	*/
+/* we encounter EOF.						*/
+ssize_t GC_repeat_read(int fd, char *buf, size_t count)
+{
+    ssize_t num_read = 0;
+    ssize_t result;
+    
+    while (num_read < count) {
+	result = READ(fd, buf + num_read, count - num_read);
+	if (result < 0) return result;
+	if (result == 0) break;
+	num_read += result;
+    }
+    return num_read;
+}
+
+/*
+ * Apply fn to a buffer containing the contents of /proc/self/maps.
+ * Return the result of fn or, if we failed, 0.
+ */
+
+word GC_apply_to_maps(word (*fn)(char *))
+{
+    int f;
+    int result;
+    int maps_size;
+    char maps_temp[32768];
+    char *maps_buf;
+
+    /* Read /proc/self/maps	*/
+        /* Note that we may not allocate, and thus can't use stdio.	*/
+        f = open("/proc/self/maps", O_RDONLY);
+        if (-1 == f) return 0;
+	/* stat() doesn't work for /proc/self/maps, so we have to
+	   read it to find out how large it is... */
+	maps_size = 0;
+	do {
+	    result = GC_repeat_read(f, maps_temp, sizeof(maps_temp));
+	    if (result <= 0) return 0;
+	    maps_size += result;
+	} while (result == sizeof(maps_temp));
+
+	if (maps_size > sizeof(maps_temp)) {
+	    /* If larger than our buffer, close and re-read it. */
+	    close(f);
+	    f = open("/proc/self/maps", O_RDONLY);
+	    if (-1 == f) return 0;
+	    maps_buf = alloca(maps_size);
+	    if (NULL == maps_buf) return 0;
+	    result = GC_repeat_read(f, maps_buf, maps_size);
+	    if (result <= 0) return 0;
+	} else {
+	    /* Otherwise use the fixed size buffer */
+	    maps_buf = maps_temp;
+	}
+
+	close(f);
+        maps_buf[result] = '\0';
+	
+    /* Apply fn to result. */
+	return fn(maps_buf);
+}
+
+#endif /* Need GC_apply_to_maps */
+
+#if defined(LINUX) && (defined(USE_PROC_FOR_LIBRARIES) || defined(IA64))
+//
+//  GC_parse_map_entry parses an entry from /proc/self/maps so we can
+//  locate all writable data segments that belong to shared libraries.
+//  The format of one of these entries and the fields we care about
+//  is as follows:
+//  XXXXXXXX-XXXXXXXX r-xp 00000000 30:05 260537     name of mapping...\n
+//  ^^^^^^^^ ^^^^^^^^ ^^^^          ^^
+//  start    end      prot          maj_dev
+//  0        9        18            32
+//  
+//  For 64 bit ABIs:
+//  0	     17	      34	    56
+//
+//  The parser is called with a pointer to the entry and the return value
+//  is either NULL or is advanced to the next entry(the byte after the
+//  trailing '\n'.)
+//
+#if CPP_WORDSZ == 32
+# define OFFSET_MAP_START   0
+# define OFFSET_MAP_END     9
+# define OFFSET_MAP_PROT   18
+# define OFFSET_MAP_MAJDEV 32
+# define ADDR_WIDTH 	    8
+#endif
+
+#if CPP_WORDSZ == 64
+# define OFFSET_MAP_START   0
+# define OFFSET_MAP_END    17
+# define OFFSET_MAP_PROT   34
+# define OFFSET_MAP_MAJDEV 56
+# define ADDR_WIDTH 	   16
+#endif
+
+/*
+ * Assign various fields of the first line in buf_ptr to *start, *end,
+ * *prot_buf and *maj_dev.  Only *prot_buf may be set for unwritable maps.
+ */
+char *GC_parse_map_entry(char *buf_ptr, word *start, word *end,
+                                char *prot_buf, unsigned int *maj_dev)
+{
+    int i;
+    char *tok;
+
+    if (buf_ptr == NULL || *buf_ptr == '\0') {
+        return NULL;
+    }
+
+    memcpy(prot_buf, buf_ptr+OFFSET_MAP_PROT, 4); // do the protections first
+    prot_buf[4] = '\0';
+
+    if (prot_buf[1] == 'w') { // we can skip all of this if it's not writable
+
+        tok = buf_ptr;
+        buf_ptr[OFFSET_MAP_START+ADDR_WIDTH] = '\0';
+        *start = strtoul(tok, NULL, 16);
+
+        tok = buf_ptr+OFFSET_MAP_END;
+        buf_ptr[OFFSET_MAP_END+ADDR_WIDTH] = '\0';
+        *end = strtoul(tok, NULL, 16);
+
+        buf_ptr += OFFSET_MAP_MAJDEV;
+        tok = buf_ptr;
+        while (*buf_ptr != ':') buf_ptr++;
+        *buf_ptr++ = '\0';
+        *maj_dev = strtoul(tok, NULL, 16);
+    }
+
+    while (*buf_ptr && *buf_ptr++ != '\n');
+
+    return buf_ptr;
+}
+
+#endif /* Need to parse /proc/self/maps. */	
+
 #if defined(SEARCH_FOR_DATA_START)
   /* The I386 case can be handled without a search.  The Alpha case	*/
   /* used to be handled differently as well, but the rules changed	*/
@@ -679,6 +828,33 @@ ptr_t GC_get_stack_base()
   extern ptr_t __libc_stack_end;
 
 # ifdef IA64
+    /* Try to read the backing store base from /proc/self/maps.	*/
+    /* We look for the writable mapping with a 0 major device,  */
+    /* which is	as close to our frame as possible, but below it.*/
+    static word backing_store_base_from_maps(char *maps)
+    {
+      char prot_buf[5];
+      char *buf_ptr = maps;
+      word start, end;
+      unsigned int maj_dev;
+      word current_best = 0;
+      word dummy;
+  
+      for (;;) {
+        buf_ptr = GC_parse_map_entry(buf_ptr, &start, &end, prot_buf, &maj_dev);
+	if (buf_ptr == NULL) return current_best;
+	if (prot_buf[1] == 'w' && maj_dev == 0) {
+	    if (end < (word)(&dummy) && start > current_best) current_best = start;
+	}
+      }
+      return current_best;
+    }
+
+    static word backing_store_base_from_proc(void)
+    {
+        return GC_apply_to_maps(backing_store_base_from_maps);
+    }
+
 #   pragma weak __libc_ia64_register_backing_store_base
     extern ptr_t __libc_ia64_register_backing_store_base;
 
@@ -692,9 +868,15 @@ ptr_t GC_get_stack_base()
 	/* Hence we check for both nonzero address and value.		*/
 	return __libc_ia64_register_backing_store_base;
       } else {
-	word result = (word)GC_stackbottom - BACKING_STORE_DISPLACEMENT;
-	result += BACKING_STORE_ALIGNMENT - 1;
-	result &= ~(BACKING_STORE_ALIGNMENT - 1);
+	word result = backing_store_base_from_proc();
+	if (0 == result) {
+	  /* Use dumb heuristics.  Works only for default configuration. */
+	  result = (word)GC_stackbottom - BACKING_STORE_DISPLACEMENT;
+	  result += BACKING_STORE_ALIGNMENT - 1;
+	  result &= ~(BACKING_STORE_ALIGNMENT - 1);
+	  /* Verify that it's at least readable.  If not, we goofed. */
+	  GC_noop1(*(word *)result); 
+	}
 	return (ptr_t)result;
       }
     }
@@ -706,11 +888,8 @@ ptr_t GC_get_stack_base()
     /* using direct I/O system calls in order to avoid calling malloc   */
     /* in case REDIRECT_MALLOC is defined.				*/ 
 #   define STAT_BUF_SIZE 4096
-#   if defined(GC_USE_LD_WRAP)
-#	define STAT_READ __real_read
-#   else
-#	define STAT_READ read
-#   endif    
+#   define STAT_READ read
+	  /* Should probably call the real read, if read is wrapped.	*/
     char stat_buf[STAT_BUF_SIZE];
     int f;
     char c;
@@ -945,12 +1124,10 @@ void GC_register_data_segments()
   /* all real work is done by GC_register_dynamic_libraries.  Under	*/
   /* win32s, we cannot find the data segments associated with dll's.	*/
   /* We register the main data segment here.				*/
-#  ifdef __GCC__
-  GC_bool GC_no_win32_dlls = TRUE;
- 			 /* GCC can't do SEH, so we can't use VirtualQuery */
-#  else
   GC_bool GC_no_win32_dlls = FALSE;	 
-#  endif
+  	/* This used to be set for gcc, to avoid dealing with		*/
+  	/* the structured exception handling issues.  But we now have	*/
+  	/* assembly code to do that right.				*/
   
   void GC_init_win32()
   {
@@ -2583,7 +2760,10 @@ void GC_dirty_init()
       	sigaction(SIGSEGV, 0, &oldact);
       	sigaction(SIGSEGV, &act, 0);
 #     else
-      	sigaction(SIGSEGV, &act, &oldact);
+	{
+	  int res = sigaction(SIGSEGV, &act, &oldact);
+	  if (res != 0) ABORT("Sigaction failed");
+ 	}
 #     endif
 #     if defined(_sigargs) || defined(HURD) || !defined(SA_SIGINFO)
 	/* This is Irix 5.x, not 6.x.  Irix 5.x does not have	*/
@@ -2878,13 +3058,6 @@ struct hblk *h;
 word n;
 {
 }
-
-# else /* !MPROTECT_VDB */
-
-#   ifdef GC_USE_LD_WRAP
-      ssize_t __wrap_read(int fd, void *buf, size_t nbyte)
-      { return __real_read(fd, buf, nbyte); }
-#   endif
 
 # endif /* MPROTECT_VDB */
 
@@ -3465,7 +3638,7 @@ struct callinfo info[NFRAMES];
 		}
 		name = result_buf;
 		pclose(pipe);
-		out:
+		out:;
 	    }
 #	  endif /* LINUX */
 	  GC_err_printf1("\t\t%s\n", name);
@@ -3481,31 +3654,6 @@ struct callinfo info[NFRAMES];
 
 #endif /* NEED_CALLINFO */
 
-#if defined(LINUX) && defined(__ELF__) && \
-    (!defined(SMALL_CONFIG) || defined(USE_PROC_FOR_LIBRARIES))
-#ifdef GC_USE_LD_WRAP
-#   define READ __real_read
-#else
-#   define READ read
-#endif
-
-
-/* Repeatedly perform a read call until the buffer is filled or	*/
-/* we encounter EOF.						*/
-ssize_t GC_repeat_read(int fd, char *buf, size_t count)
-{
-    ssize_t num_read = 0;
-    ssize_t result;
-    
-    while (num_read < count) {
-	result = READ(fd, buf + num_read, count - num_read);
-	if (result < 0) return result;
-	if (result == 0) break;
-	num_read += result;
-    }
-    return num_read;
-}
-#endif /* LINUX && ... */
 
 
 #if defined(LINUX) && defined(__ELF__) && !defined(SMALL_CONFIG)
@@ -3513,20 +3661,16 @@ ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 /* Dump /proc/self/maps to GC_stderr, to enable looking up names for
    addresses in FIND_LEAK output. */
 
+static word dump_maps(char *maps)
+{
+    GC_err_write(maps, strlen(maps));
+    return 1;
+}
+
 void GC_print_address_map()
 {
-    int f;
-    int result;
-    char maps_temp[32768];
     GC_err_printf0("---------- Begin address map ----------\n");
-        f = open("/proc/self/maps", O_RDONLY);
-        if (-1 == f) ABORT("Couldn't open /proc/self/maps");
-	do {
-	    result = GC_repeat_read(f, maps_temp, sizeof(maps_temp));
-	    if (result <= 0) ABORT("Couldn't read /proc/self/maps");
- 	    GC_err_write(maps_temp, result);
-	} while (result == sizeof(maps_temp));
-	close(f);     
+    GC_apply_to_maps(dump_maps);
     GC_err_printf0("---------- End address map ----------\n");
 }
 

@@ -111,6 +111,7 @@ STRIP = @STRIP@
 THREADLIBS = @THREADLIBS@
 VERSION = @VERSION@
 addincludes = @addincludes@
+addlibs = @addlibs@
 addobjs = @addobjs@
 addtests = @addtests@
 am__include = @am__include@
@@ -161,7 +162,9 @@ cord/cordbscs.c cord/cordtest.c cord/de.c cord/de_win.c \
     cord/de_win.h cord/de_win.RC\
 libtool.m4
 
-lib_LTLIBRARIES = libgc.la
+lib_LTLIBRARIES = libgc.la @addlibs@
+
+EXTRA_LTLIBRARIES = libgccpp.la
 
 include_HEADERS = include/gc.h include/gc_local_alloc.h \
 include/gc_pthread_redirects.h include/gc_config_macros.h \
@@ -187,8 +190,12 @@ libgc_la_LDFLAGS = -version-info 1:2:0
 EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
     mips_sgi_mach_dep.S mips_ultrix_mach_dep.s powerpc_macosx_mach_dep.s \
     rs6000_mach_dep.s sparc_mach_dep.S sparc_netbsd_mach_dep.s \
-    sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s gc_cpp.cc
+    sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s
 
+
+libgccpp_la_SOURCES = gc_cpp.cc
+libgccpp_la_LIBADD = $(THREADLIBS)
+libgccpp_la_LDFLAGS = -version-info 1:2:0
 
 AM_CXXFLAGS = @GC_CFLAGS@
 AM_CFLAGS = @GC_CFLAGS@
@@ -200,8 +207,8 @@ EXTRA_PROGRAMS = test_cpp
 gctest_SOURCES = tests/test.c
 gctest_LDADD = ./libgc.la $(THREADLIBS) $(EXTRA_TEST_LIBS)
 test_cpp_SOURCES = tests/test_cpp.cc
-test_cpp_LDADD = ./libgc.la $(THREADLIBS) $(EXTRA_TEST_LIBS)
-TESTS_ENVIRONMENT = LD_LIBRARY_PATH=../../gcc
+test_cpp_LDADD = ./libgc.la ./libgccpp.la $(THREADLIBS) $(EXTRA_TEST_LIBS)
+
 TESTS = gctest @addtests@
 
 all_objs = @addobjs@ $(libgc_la_OBJECTS)
@@ -238,6 +245,9 @@ am_libgc_la_OBJECTS = allchblk.lo alloc.lo blacklst.lo checksums.lo \
 	reclaim.lo solaris_pthreads.lo solaris_threads.lo specific.lo \
 	stubborn.lo typd_mlc.lo backgraph.lo win32_threads.lo
 libgc_la_OBJECTS = $(am_libgc_la_OBJECTS)
+libgccpp_la_DEPENDENCIES =
+am_libgccpp_la_OBJECTS = gc_cpp.lo
+libgccpp_la_OBJECTS = $(am_libgccpp_la_OBJECTS)
 EXTRA_PROGRAMS = test_cpp$(EXEEXT)
 check_PROGRAMS = gctest$(EXEEXT) @addtests@
 am_gctest_OBJECTS = test.$(OBJEXT)
@@ -246,7 +256,7 @@ gctest_DEPENDENCIES = ./libgc.la
 gctest_LDFLAGS =
 am_test_cpp_OBJECTS = test_cpp.$(OBJEXT)
 test_cpp_OBJECTS = $(am_test_cpp_OBJECTS)
-test_cpp_DEPENDENCIES = ./libgc.la
+test_cpp_DEPENDENCIES = ./libgc.la ./libgccpp.la
 test_cpp_LDFLAGS =
 SCRIPTS = $(dist_noinst_SCRIPTS)
 
@@ -294,7 +304,7 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(libgc_la_SOURCES) $(EXTRA_libgc_la_SOURCES) \
-	$(gctest_SOURCES) $(test_cpp_SOURCES)
+	$(libgccpp_la_SOURCES) $(gctest_SOURCES) $(test_cpp_SOURCES)
 HEADERS = $(dist_noinst_HEADERS) $(include_HEADERS)
 
 
@@ -307,7 +317,7 @@ DIST_COMMON = $(dist_noinst_HEADERS) $(dist_noinst_SCRIPTS) \
 	aclocal.m4 config.guess config.sub configure configure.in \
 	depcomp install-sh ltconfig ltmain.sh missing mkinstalldirs
 DIST_SUBDIRS = $(SUBDIRS)
-SOURCES = $(libgc_la_SOURCES) $(EXTRA_libgc_la_SOURCES) $(gctest_SOURCES) $(test_cpp_SOURCES)
+SOURCES = $(libgc_la_SOURCES) $(EXTRA_libgc_la_SOURCES) $(libgccpp_la_SOURCES) $(gctest_SOURCES) $(test_cpp_SOURCES)
 
 all: all-recursive
 
@@ -358,7 +368,9 @@ clean-libLTLIBRARIES:
 	  rm -f "$${dir}/so_locations"; \
 	done
 libgc.la: $(libgc_la_OBJECTS) $(libgc_la_DEPENDENCIES) 
-	$(CXXLINK) -rpath $(libdir) $(libgc_la_LDFLAGS) $(libgc_la_OBJECTS) $(libgc_la_LIBADD) $(LIBS)
+	$(LINK) -rpath $(libdir) $(libgc_la_LDFLAGS) $(libgc_la_OBJECTS) $(libgc_la_LIBADD) $(LIBS)
+libgccpp.la: $(libgccpp_la_OBJECTS) $(libgccpp_la_DEPENDENCIES) 
+	$(CXXLINK)  $(libgccpp_la_LDFLAGS) $(libgccpp_la_OBJECTS) $(libgccpp_la_LIBADD) $(LIBS)
 
 clean-checkPROGRAMS:
 	@list='$(check_PROGRAMS)'; for p in $$list; do \
@@ -371,9 +383,6 @@ gctest$(EXEEXT): $(gctest_OBJECTS) $(gctest_DEPENDENCIES)
 	@rm -f gctest$(EXEEXT)
 	$(LINK) $(gctest_LDFLAGS) $(gctest_OBJECTS) $(gctest_LDADD) $(LIBS)
 test_cpp.$(OBJEXT): tests/test_cpp.cc
-test_cpp$(EXEEXT): $(test_cpp_OBJECTS) $(test_cpp_DEPENDENCIES) 
-	@rm -f test_cpp$(EXEEXT)
-	$(CXXLINK) $(test_cpp_LDFLAGS) $(test_cpp_OBJECTS) $(test_cpp_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -878,6 +887,10 @@ test.o:	$(srcdir)/tests/test.c
 # 	Using $< in the above seems to fail with the HP/UX on Itanium make.
 test_cpp.o:	$(srcdir)/tests/test_cpp.cc
 	$(COMPILE) -c $(srcdir)/tests/test_cpp.cc
+
+test_cpp$(EXEEXT): test_cpp.o
+	$(LIBTOOL) --mode=link $(CXX) $(AM_CFLAGS) $(MY_CFLAGS) \
+		test_cpp.o $(test_cpp_LDADD) $(LDFLAGS) -o $@
 $(all_objs) : include/private/gcconfig.h include/private/gc_priv.h \
 include/private/gc_hdrs.h include/gc.h include/gc_gcj.h \
 include/gc_pthread_redirects.h include/gc_config_macros.h \

@@ -905,7 +905,7 @@ struct _GC_arrays {
   		       /* OFFSET_TOO_BIG if the value j would be too 	*/
   		       /* large to fit in the entry.  (Note that the	*/
   		       /* size of these entries matters, both for 	*/
-  		       /* space consumption and for cache utilization.	*/
+  		       /* space consumption and for cache utilization.)	*/
 #   define OFFSET_TOO_BIG 0xfe
 #   define OBJ_INVALID 0xff
 #   define MAP_ENTRY(map, bytes) (map)[bytes]
@@ -1179,6 +1179,10 @@ extern long GC_large_alloc_warn_interval;
 
 extern long GC_large_alloc_warn_suppressed;
 	/* Number of warnings suppressed so far.	*/
+
+#ifdef THREADS
+  extern GC_bool GC_world_stopped;
+#endif
 
 /* Operations */
 # ifndef abs
@@ -1845,6 +1849,10 @@ void GC_err_puts GC_PROTO((GC_CONST char *s));
 # else 
 #	define GC_ASSERT(expr)
 # endif
+
+/* Check a compile time assertion at compile time.  The error	*/
+/* message for failure is a bit baroque, but ...		*/
+# define GC_STATIC_ASSERT(expr) sizeof(char[(expr)? 1 : -1])
 
 # if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
     /* We need additional synchronization facilities from the thread	*/
