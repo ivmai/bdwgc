@@ -108,7 +108,7 @@ CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
 SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     sparc_mach_dep.s gc.h gc_typed.h gc_hdrs.h gc_priv.h gc_private.h \
-    config.h gc_mark.h include/gc_inl.h include/gc_inline.h gc.man \
+    gcconfig.h gc_mark.h include/gc_inl.h include/gc_inline.h gc.man \
     threadlibs.c if_mach.c if_not_there.c gc_cpp.cc gc_cpp.h weakpointer.h \
     gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h gc_alloc.h \
     $(CORD_SRCS)
@@ -117,7 +117,7 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README test.c test_cpp.cc setjmp_t.c SMakefile.amiga \
            SCoptions.amiga README.amiga README.win32 cord/README \
            cord/gc.h include/gc.h include/gc_typed.h include/cord.h \
-           include/ec.h include/private/cord_pos.h include/private/config.h \
+           include/ec.h include/private/cord_pos.h include/private/gcconfig.h \
            include/private/gc_hdrs.h include/private/gc_priv.h \
 	   include/gc_cpp.h README.rs6000 \
            include/weakpointer.h README.QUICK callprocs pc_excludes \
@@ -149,12 +149,12 @@ SPECIALCFLAGS =
 
 all: gc.a gctest$(EXE_SUFFIX)
 
-pcr: PCR-Makefile gc_private.h gc_hdrs.h gc.h config.h mach_dep.o $(SRCS)
+pcr: PCR-Makefile gc_private.h gc_hdrs.h gc.h gcconfig.h mach_dep.o $(SRCS)
 	make -f PCR-Makefile depend
 	make -f PCR-Makefile
 
 $(OBJS) test.o dyn_load.o dyn_load_sunos53.o: $(srcdir)/gc_priv.h $(srcdir)/gc_hdrs.h $(srcdir)/gc.h \
-    $(srcdir)/config.h $(srcdir)/gc_typed.h Makefile
+    $(srcdir)/gcconfig.h $(srcdir)/gc_typed.h Makefile
 # The dependency on Makefile is needed.  Changing
 # options such as -DSILENT affects the size of GC_arrays,
 # invalidating all .o files that rely on gc_priv.h
@@ -249,11 +249,11 @@ cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES)
 	./if_not_there cord/de$(EXE_SUFFIX) \
 		$(MV) de$(EXE_SUFFIX) cord/de$(EXE_SUFFIX)
 
-if_mach$(EXE_SUFFIX): $(srcdir)/if_mach.c $(srcdir)/config.h
+if_mach$(EXE_SUFFIX): $(srcdir)/if_mach.c $(srcdir)/gcconfig.h
 	$(CC) $(CFLAGS) -o if_mach $(srcdir)/if_mach.c
 	-$(RM) if_mach
 
-threadlibs$(EXE_SUFFIX): $(srcdir)/threadlibs.c $(srcdir)/config.h Makefile
+threadlibs$(EXE_SUFFIX): $(srcdir)/threadlibs.c $(srcdir)/gcconfig.h Makefile
 	$(CC) $(CFLAGS) -o threadlibs $(srcdir)/threadlibs.c
 	-$(RM) threadlibs
 

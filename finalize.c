@@ -648,8 +648,9 @@ void GC_enqueue_all_finalizers()
  * which can make the runtime guarantee that all finalizers are run.
  * Unfortunately, the Java standard implies we have to keep running
  * finalizers until there are no more left, a potential infinite loop.
- * YUCK.  * This routine is externally callable, so is called without 
- * the allocation lock 
+ * YUCK.
+ * This routine is externally callable, so is called without 
+ * the allocation lock. 
  */
 void GC_finalize_all()
 {

@@ -42,7 +42,8 @@
 #          ifdef WIN32_THREADS
 	      GC_API CRITICAL_SECTION GC_allocate_ml;
 #          else
-#             if defined(IRIX_THREADS) || defined(LINUX_THREADS)
+#             if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
+		 || defined(IRIX_JDK_THREADS)
 #		ifdef UNDEFINED
 		    pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
 #		endif
@@ -417,20 +418,29 @@ void GC_init_inner()
     
     if (GC_is_initialized) return;
     GC_setpagesize();
-    GC_exclude_static_roots(beginGC_arrays, endGC_arrays);
+    GC_exclude_static_roots(beginGC_arrays, end_gc_area);
+#   ifdef PRINTSTATS
+	if ((ptr_t)endGC_arrays != (ptr_t)(&GC_obj_kinds)) {
+	    GC_printf0("Reordering linker, didn't exclude obj_kinds\n");
+	}
+#   endif
 #   ifdef MSWIN32
  	GC_init_win32();
 #   endif
 #   if defined(LINUX) && defined(POWERPC)
 	GC_init_linuxppc();
 #   endif
+#   if defined(LINUX) && defined(SPARC)
+	GC_init_linuxsparc();
+#   endif
 #   ifdef SOLARIS_THREADS
 	GC_thr_init();
 	/* We need dirty bits in order to find live stack sections.	*/
         GC_dirty_init();
 #   endif
-#   if defined(IRIX_THREADS) || defined(LINUX_THREADS)
-	GC_thr_init();
+#   if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
+       || defined(IRIX_JDK_THREADS)
+        GC_thr_init();
 #   endif
 #   if !defined(THREADS) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) \
        || defined(IRIX_THREADS) || defined(LINUX_THREADS)
@@ -548,9 +558,9 @@ void GC_init_inner()
 
 void GC_enable_incremental GC_PROTO(())
 {
+# if  !defined(FIND_LEAK) && !defined(SMALL_CONFIG)
     DCL_LOCK_STATE;
     
-# ifndef FIND_LEAK
     DISABLE_SIGNALS();
     LOCK();
     if (GC_incremental) goto out;

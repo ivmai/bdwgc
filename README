@@ -11,7 +11,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.13alpha2 of a conservative garbage collector for C and C++.
+This is version 4.13alpha3 of a conservative garbage collector for C and C++.
 
 You might find a more recent version of this at
 
@@ -256,7 +256,7 @@ or win16 is hard.
   For machines not already mentioned, or for nonstandard compilers, the
 following are likely to require change:
 
-1.  The parameters in config.h.
+1.  The parameters in gcconfig.h.
       The parameters that will usually require adjustment are
    STACKBOTTOM,  ALIGNMENT and DATASTART.  Setjmp_test
    prints its guesses of the first two.
@@ -273,7 +273,7 @@ following are likely to require change:
    On some machines, it is difficult to obtain such a value that is
    valid across a variety of MMUs, OS releases, etc.  A number of
    alternatives exist for using the collector in spite of this.  See the
-   discussion in config.h immediately preceding the various
+   discussion in gcconfig.h immediately preceding the various
    definitions of STACKBOTTOM.
    
 2.  mach_dep.c.
@@ -310,7 +310,7 @@ following are likely to require change:
     in gc_priv.h will need to be suitably redefined.
       The incremental collector requires page dirty information, which
     is acquired through routines defined in os_dep.c.  Unless directed
-    otherwise by config.h, these are implemented as stubs that simply
+    otherwise by gcconfig.h, these are implemented as stubs that simply
     treat all pages as dirty.  (This of course makes the incremental
     collector much less useful.)
 
@@ -322,7 +322,7 @@ following are likely to require change:
 
   For a different version of UN*X or different machines using the
 Motorola 68000, Vax, SPARC, 80386, NS 32000, PC/RT, or MIPS architecture,
-it should frequently suffice to change definitions in config.h.
+it should frequently suffice to change definitions in gcconfig.h.
 
 
 THE C INTERFACE TO THE ALLOCATOR
@@ -1368,9 +1368,36 @@ Since alpha1:
  - USE_MMAP had some serious bugs.  This caused the collector to fail
    consistently on Solaris with -DSMALL_CONFIG.
  - Added Linux threads support, thanks largely to Fergus Henderson.
+Since alpha2:
+ - Fixed more Linux threads problems.
+ - Changed default GC_free_space_divisor to 3 with new large block allocation.
+   (Thanks to Matthew Flatt for some measurements that suggest the old
+   value sometimes favors space too much over time.)
+ - More CYGWIN32 fixes.
+ - Integrated Tyson-Dowd's Linux-M68K port.
+ - Minor HP PA and DEC UNIX fixes from Fergus Henderson.
+ - Integrated Christoffe Raffali's Linux-SPARC changes.
+ - Allowed for one more GC fixup iteration after a full GC in incremental
+   mode.  Some quick measurements suggested that this significantly
+   reduces pause times even with smaller GC_RATE values.
+ - Moved some more GC data structures into GC_arrays.  This decreases
+   pause times and GC overhead, but makes debugging slightly less convenient.
+ - Fixed namespace pollution problem ("excl_table").
+ - Made GC_incremental a constant for -DSMALL_CONFIG, hopefully shrinking
+   that slightly.
+ - Added some win32 threads fixes.
+ - Integrated Ivan Demakov and David Stes' Watcom fixes.
+ - Various other minor fixes contributed by many people.
+ - Renamed config.h to gcconfig.h, since config.h tends to be used for
+   many other things.
+ - Integrated Matthew Flatt's support for 68K MacOS "far globals".
+ - Fixed up some of the dynamic library Makefile targets for consistency
+   across platforms.
+ - Fixed a USE_MMAP typo that caused out-of-memory handling to fail on Solaris.
+ - Added code to test.c to test thread creation a bit more.
+ - Integrated GC_win32_free_heap, as suggested by Ivan Demakov.
 
 To do:
- - I have a backlog of unintegrated contributed platform-specific changes.
  - Very large root set sizes (> 16 MB or so) could cause the collector
    to abort with an unexpected mark stack overflow.  (Thanks again to
    Peter Chubb.)  NOT YET FIXED.  Workaround is to increase the initial
@@ -1383,4 +1410,8 @@ To do:
    be possible to conditionally intercept mmap and use GC_exclude_static_roots.
    The real fix is to walk rld data structures, which looks possible.
  - Integrate MIT and DEC pthreads ports.
+ - Deal with very uneven black-listing distributions.  If all the black listed
+   blocks reside in the newly allocated heap section, the heuristic for
+   temporarily ignoring black-listing fails, and the heap grows too much.
+   (This was observed in only one case, and could be worked around, but ...)
  

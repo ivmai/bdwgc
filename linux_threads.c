@@ -28,9 +28,13 @@
  * there too.
  */
 
+/* #define DEBUG_THREADS 1 */
+
+/* ANSI C requires that a compilation unit contains something */
+# include "gc_priv.h"
+
 # if defined(LINUX_THREADS)
 
-# include "gc_priv.h"
 # include <pthread.h>
 # include <time.h>
 # include <errno.h>
@@ -419,6 +423,7 @@ void GC_thr_init()
     GC_thread t;
     struct sigaction act;
 
+    if (GC_thr_initialized) return;
     GC_thr_initialized = TRUE;
 
     if (sem_init(&GC_suspend_ack_sem, 0, 0) != 0)
@@ -441,7 +446,7 @@ void GC_thr_init()
 
     /* Add the initial thread, so we can stop it.	*/
       t = GC_new_thread(pthread_self());
-      t -> stack_ptr = (ptr_t)(&t);
+      t -> stack_ptr = 0;
       t -> flags = DETACHED | MAIN_THREAD;
 }
 
@@ -460,11 +465,16 @@ int GC_pthread_sigmask(int how, const sigset_t *set, sigset_t *oset)
 struct start_info {
     void *(*start_routine)(void *);
     void *arg;
+    word flags;
+    sem_t registered;   	/* 1 ==> in our thread table, but 	*/
+				/* parent hasn't yet noticed.		*/
 };
 
-void GC_thread_exit_proc(void *dummy)
+
+void GC_thread_exit_proc(void *arg)
 {
     GC_thread me;
+    struct start_info * si = arg;
 
     LOCK();
     me = GC_lookup_thread(pthread_self());
@@ -499,26 +509,37 @@ void * GC_start_routine(void * arg)
     struct start_info * si = arg;
     void * result;
     GC_thread me;
+    pthread_t my_pthread;
+    void *(*start)(void *);
+    void *start_arg;
 
+    my_pthread = pthread_self();
     LOCK();
-    me = GC_lookup_thread(pthread_self());
+    me = GC_new_thread(my_pthread);
+    me -> flags = si -> flags;
+    me -> stack_ptr = 0;
+    me -> stack_end = 0;
     UNLOCK();
-    pthread_cleanup_push(GC_thread_exit_proc, 0);
+    start = si -> start_routine;
+    start_arg = si -> arg;
+    sem_post(&(si -> registered));
+    pthread_cleanup_push(GC_thread_exit_proc, si);
 #   ifdef DEBUG_THREADS
-        GC_printf1("Starting thread 0x%x\n", pthread_self());
+        GC_printf1("Starting thread 0x%lx\n", pthread_self());
         GC_printf1("pid = %ld\n", (long) getpid());
         GC_printf1("sp = 0x%lx\n", (long) &arg);
+	GC_printf1("start_routine = 0x%lx\n", start);
 #   endif
-    result = (*(si -> start_routine))(si -> arg);
+    result = (*start)(start_arg);
 #if DEBUG_THREADS
         GC_printf1("Finishing thread 0x%x\n", pthread_self());
 #endif
     me -> status = result;
     me -> flags |= FINISHED;
     pthread_cleanup_pop(1);
-	/* This involves acquiring the lock, ensuring that we can't exit */
-	/* while a collection that thinks we're alive is trying to stop  */
-	/* us.								 */
+    /* Cleanup acquires lock, ensuring that we can't exit		*/
+    /* while a collection that thinks we're alive is trying to stop     */
+    /* us.								*/
     return(result);
 }
 
@@ -536,8 +557,11 @@ GC_pthread_create(pthread_t *new_thread,
     int detachstate;
     word my_flags = 0;
     struct start_info * si = GC_malloc(sizeof(struct start_info)); 
+	/* This is otherwise saved only in an area mmapped by the thread */
+	/* library, which isn't visible to the collector.		 */
 
     if (0 == si) return(ENOMEM);
+    sem_init(&(si -> registered), 0, 0);
     si -> start_routine = start_routine;
     si -> arg = arg;
     LOCK();
@@ -550,17 +574,16 @@ GC_pthread_create(pthread_t *new_thread,
     }
     pthread_attr_getdetachstate(&new_attr, &detachstate);
     if (PTHREAD_CREATE_DETACHED == detachstate) my_flags |= DETACHED;
-    result = pthread_create(&my_new_thread, &new_attr, GC_start_routine, si);
-    /* No GC can start until the thread is registered, since we hold	*/
-    /* the allocation lock.						*/
-    if (0 == result) {
-        t = GC_new_thread(my_new_thread);
-        t -> flags = my_flags;
-	t -> stack_ptr = 0;
-	t -> stack_end = 0;
-        if (0 != new_thread) *new_thread = my_new_thread;
-    }
-    UNLOCK();  
+    si -> flags = my_flags;
+    UNLOCK();
+    result = pthread_create(new_thread, &new_attr, GC_start_routine, si);
+    /* Wait until child has been added to the thread table.		*/
+    /* This also ensures that we hold onto si until the child is done	*/
+    /* with it.  Thus it doesn't matter whether it is otherwise		*/
+    /* visible to the collector.					*/
+        if (0 != sem_wait(&(si -> registered))) ABORT("sem_wait failed");
+        sem_destroy(&(si -> registered));
+    /* pthread_attr_destroy(&new_attr); */
     /* pthread_attr_destroy(&new_attr); */
     return(result);
 }

@@ -220,6 +220,9 @@ DCL_LOCK_STATE;
       /*
        * Thread initialisation can call malloc before
        * we're ready for it.
+       * It's not clear that this is enough to help matters.
+       * The thread implementation may well call malloc at other
+       * inopportune times.
        */
       if (!GC_is_initialized) return sbrk(lb);
 #   endif /* I386 && SOLARIS_THREADS */
@@ -375,6 +378,12 @@ int obj_kind;
     	/* Required by ANSI.  It's not my fault ...	*/
     h = HBLKPTR(p);
     hhdr = HDR(h);
+#   if defined(REDIRECT_MALLOC) && \
+	(defined(SOLARIS_THREADS) || defined(LINUX_THREADS))
+	/* We have to redirect malloc calls during initialization.	*/
+	/* Don't try to deallocate that memory.				*/
+	if (0 == hhdr) return;
+#   endif
     knd = hhdr -> hb_obj_kind;
     sz = hhdr -> hb_sz;
     ok = &GC_obj_kinds[knd];

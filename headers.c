@@ -90,7 +90,7 @@ register word bytes;
 	    bytes_to_get = bytes;
 #	    ifdef USE_MMAP
 		bytes_to_get += GC_page_size - 1;
-		bytes_to_get &= (GC_page_size - 1);
+		bytes_to_get &= ~(GC_page_size - 1);
 #	    endif
             return((ptr_t)GET_MEM(bytes_to_get));
         }

@@ -68,7 +68,7 @@
 #   define NEED_FIND_LIMIT
 # endif
 
-# if defined(LINUX) && defined(POWERPC)
+# if defined(LINUX) && (defined(POWERPC) || defined(SPARC))
 #   define NEED_FIND_LIMIT
 # endif
 
@@ -144,6 +144,19 @@
     extern char **_environ;
 	/* This may need to be environ, without the underscore, for	*/
 	/* some versions.						*/
+    GC_data_start = GC_find_limit((ptr_t)&_environ, FALSE);
+  }
+#endif
+
+#if defined(LINUX) && defined(SPARC)
+  ptr_t GC_data_start;
+
+  void GC_init_linuxsparc()
+  {
+    extern ptr_t GC_find_limit();
+    extern char **_environ;
+      /* This may need to be environ, without the underscore, for     */
+      /* some versions.                                               */
     GC_data_start = GC_find_limit((ptr_t)&_environ, FALSE);
   }
 #endif
@@ -938,9 +951,19 @@ void GC_register_data_segments()
 #     if defined(__MWERKS__)
 #       if !__POWERPC__
 	  extern void* GC_MacGetDataStart(void);
+	  /* MATTHEW: Function to handle Far Globals (CW Pro 3) */
+#         if __option(far_data)
+	  extern void* GC_MacGetDataEnd(void);
+#         endif
 	  /* globals begin above stack and end at a5. */
 	  GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
           		     (ptr_t)LMGetCurrentA5(), FALSE);
+	  /* MATTHEW: Handle Far Globals */          		     
+#         if __option(far_data)
+      /* Far globals follow he QD globals: */
+	  GC_add_roots_inner((ptr_t)LMGetCurrentA5(),
+          		     (ptr_t)GC_MacGetDataEnd(), FALSE);
+#         endif
 #       else
 	  extern char __data_start__[], __data_end__[];
 	  GC_add_roots_inner((ptr_t)&__data_start__,
@@ -1007,7 +1030,15 @@ word bytes;
 #else  /* Not RS6000 */
 
 #if defined(USE_MMAP)
-/* Tested only under IRIX5 */
+/* Tested only under IRIX5 and Solaris 2 */
+
+#ifdef USE_MMAP_FIXED
+#   define GC_MMAP_FLAGS MAP_FIXED | MAP_PRIVATE
+	/* Seems to yield better performance on Solaris 2, but can	*/
+	/* be unreliable if something is already mapped at the address.	*/
+#else
+#   define GC_MMAP_FLAGS MAP_PRIVATE
+#endif
 
 ptr_t GC_unix_get_mem(bytes)
 word bytes;
@@ -1023,7 +1054,7 @@ word bytes;
     }
     if (bytes & (GC_page_size -1)) ABORT("Bad GET_MEM arg");
     result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
-		  MAP_PRIVATE | MAP_FIXED, fd, 0/* offset */);
+		  GC_MMAP_FLAGS, fd, 0/* offset */);
     if (result == MAP_FAILED) return(0);
     last_addr = (ptr_t)result + bytes + GC_page_size - 1;
     last_addr = (ptr_t)((word)last_addr & ~(GC_page_size - 1));
@@ -1106,6 +1137,17 @@ word bytes;
     GC_heap_bases[GC_n_heap_bases++] = result;
     return(result);			  
 }
+
+void GC_win32_free_heap ()
+{
+    if (GC_win32s) {
+ 	while (GC_n_heap_bases > 0) {
+ 	    GlobalFree (GC_heap_bases[--GC_n_heap_bases]);
+ 	    GC_heap_bases[GC_n_heap_bases] = 0;
+ 	}
+    }
+}
+
 
 # endif
 
@@ -1225,7 +1267,8 @@ void GC_default_push_other_roots()
 # endif /* SRC_M3 */
 
 # if defined(SOLARIS_THREADS) || defined(WIN32_THREADS) \
-     || defined(IRIX_THREADS) || defined LINUX_THREADS
+     || defined(IRIX_THREADS) || defined(LINUX_THREADS) \
+     || defined(IRIX_PCR_THREADS)
 
 extern void GC_push_all_stacks();
 
@@ -1382,9 +1425,6 @@ struct hblk *h;
 	  
 # endif
 
-VOLATILE page_hash_table GC_dirty_pages;
-				/* Pages dirtied since last GC_read_dirty. */
-
 #if defined(SUNOS4) || defined(FREEBSD)
     typedef void (* SIG_PF)();
 #endif
@@ -1444,7 +1484,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #   endif
 # endif
 # if defined(LINUX)
-#   if (LINUX_VERSION_CODE >= 0x20100)
+#   if (LINUX_VERSION_CODE >= 0x20100) && !defined(M68K)
       void GC_write_fault_handler(int sig, struct sigcontext sc)
 #   else
       void GC_write_fault_handler(int sig, struct sigcontext_struct sc)
@@ -1482,7 +1522,35 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #     ifdef I386
 	char * addr = (char *) (sc.cr2);
 #     else
-        char * addr = /* As of 1.3.90 there seemed to be no way to do this. */;
+#	if defined(M68K)
+          char * addr = NULL;
+
+	  struct sigcontext *scp = (struct sigcontext *)(&sc);
+
+	  int format = (scp->sc_formatvec >> 12) & 0xf;
+	  unsigned long *framedata = (unsigned long *)(scp + 1); 
+	  unsigned long ea;
+
+	  if (format == 0xa || format == 0xb) {
+	  	/* 68020/030 */
+	  	ea = framedata[2];
+	  } else if (format == 7) {
+	  	/* 68040 */
+	  	ea = framedata[3];
+	  } else if (format == 4) {
+	  	/* 68060 */
+	  	ea = framedata[0];
+	  	if (framedata[1] & 0x08000000) {
+	  		/* correct addr on misaligned access */
+	  		ea = (ea+4095)&(~4095);
+	  	}
+	  }	
+	  addr = (char *)ea;
+#	else
+          char * addr =
+		/* As of 1.3.90 there seemed to be no way to do this
+		   on Linux/Alpha */;
+#	endif
 #     endif
 #   endif
 #   if defined(MSWIN32)
@@ -1518,6 +1586,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
             }
             if (old_handler == SIG_DFL) {
 #		ifndef MSWIN32
+		    GC_err_printf1("Segfault at 0x%lx\n", addr);
                     ABORT("Unexpected bus error or segmentation fault");
 #		else
 		    return(EXCEPTION_CONTINUE_SEARCH);
@@ -1565,6 +1634,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #ifdef MSWIN32
     return EXCEPTION_CONTINUE_SEARCH;
 #else
+    GC_err_printf1("Segfault at 0x%lx\n", addr);
     ABORT("Unexpected bus error or segmentation fault");
 #endif
 }
@@ -1642,7 +1712,7 @@ void GC_dirty_init()
       }
 #   endif
 #   if defined(SUNOS5SIGS) || defined(IRIX5)
-#     ifdef IRIX_THREADS
+#     if defined(IRIX_THREADS) || defined(IRIX_PCR_THREADS)
       	sigaction(SIGSEGV, 0, &oldact);
       	sigaction(SIGSEGV, &act, 0);
 #     else
@@ -1842,8 +1912,6 @@ word n;
 #define INITIAL_BUF_SZ 4096
 word GC_proc_buf_size = INITIAL_BUF_SZ;
 char *GC_proc_buf;
-
-page_hash_table GC_written_pages = { 0 };	/* Pages ever dirtied	*/
 
 #ifdef SOLARIS_THREADS
 /* We don't have exact sp values for threads.  So we count on	*/
@@ -2135,7 +2203,7 @@ struct hblk *h;
  * Call stack save code for debugging.
  * Should probably be in mach_dep.c, but that requires reorganization.
  */
-#if defined(SPARC)
+#if defined(SPARC) && !defined(LINUX)
 #   if defined(SUNOS4)
 #     include <machine/frame.h>
 #   else

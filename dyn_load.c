@@ -47,7 +47,7 @@
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32)) && !defined(PCR)
 #if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && \
     !defined(MSWIN32) && !(defined(ALPHA) && defined(OSF1)) && \
-    !defined(HP_PA) && (!defined(LINUX) && !defined(__ELF__)) && \
+    !defined(HP_PA) && !(defined(LINUX) && defined(__ELF__)) && \
     !defined(RS6000) && !defined(SCO_ELF)
  --> We only know how to find data segments of dynamic libraries for the
  --> above.  Additional SVR4 variants might not be too

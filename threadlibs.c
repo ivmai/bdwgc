@@ -1,4 +1,4 @@
-# include "config.h"
+# include "gcconfig.h"
 # include <stdio.h>
 
 int main()

@@ -1,6 +1,6 @@
 #define GC_VERSION_MAJOR 4
 #define GC_VERSION_MINOR 13
-#define GC_ALPHA_VERSION 2
+#define GC_ALPHA_VERSION 3
 
 #   define GC_NOT_ALPHA 0xff
 

@@ -38,12 +38,17 @@
 /* subset of the places the conservative marker would.  It must be safe	*/
 /* to invoke the normal mark procedure instead.				*/
 # define PROC_BYTES 100
-typedef struct ms_entry * (*mark_proc)(/* word * addr, mark_stack_ptr,
-					  mark_stack_limit, env */);
+/* The real declarations of the following are in gc_priv.h, so that	*/
+/* we can avoid scanning the following table.				*/
+/*
+typedef struct ms_entry * (*mark_proc)(   word * addr, mark_stack_ptr,
+					  mark_stack_limit, env   );
 					  
 # define LOG_MAX_MARK_PROCS 6
 # define MAX_MARK_PROCS (1 << LOG_MAX_MARK_PROCS)
 extern mark_proc GC_mark_procs[MAX_MARK_PROCS];
+*/
+
 extern word GC_n_mark_procs;
 
 /* Object descriptors on mark stack or in objects.  Low order two	*/

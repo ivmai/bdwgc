@@ -15,6 +15,11 @@
 /* Boehm, October 9, 1995 1:16 pm PDT */
 # include "gc_priv.h"
 
+void GC_default_print_heap_obj_proc();
+GC_API void GC_register_finalizer_no_order
+    	GC_PROTO((GC_PTR obj, GC_finalization_proc fn, GC_PTR cd,
+		  GC_finalization_proc *ofn, GC_PTR *ocd));
+
 /* Do we want to and know how to save the call stack at the time of	*/
 /* an allocation?  How much space do we want to use in each object?	*/
 
@@ -602,6 +607,31 @@ struct closure {
     GC_register_finalizer(base, GC_debug_invoke_finalizer,
     			  GC_make_closure(fn,cd), ofn, ocd);
 }
+
+# ifdef __STDC__
+    void GC_debug_register_finalizer_no_order
+    				    (GC_PTR obj, GC_finalization_proc fn,
+    				     GC_PTR cd, GC_finalization_proc *ofn,
+				     GC_PTR *ocd)
+# else
+    void GC_debug_register_finalizer_no_order
+    				    (obj, fn, cd, ofn, ocd)
+    GC_PTR obj;
+    GC_finalization_proc fn;
+    GC_PTR cd;
+    GC_finalization_proc *ofn;
+    GC_PTR *ocd;
+# endif
+{
+    ptr_t base = GC_base(obj);
+    if (0 == base || (ptr_t)obj - base != sizeof(oh)) {
+        GC_err_printf1(
+	  "GC_register_finalizer_no_order called with non-base-pointer 0x%lx\n",
+	  obj);
+    }
+    GC_register_finalizer_no_order(base, GC_debug_invoke_finalizer,
+     			  	      GC_make_closure(fn,cd), ofn, ocd);
+ }
 
 # ifdef __STDC__
     void GC_debug_register_finalizer_ignore_self

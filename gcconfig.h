@@ -22,6 +22,11 @@
 
 /* Machine specific parts contributed by various people.  See README file. */
 
+/* First a unified test for Linux: */
+# if defined(linux) || defined(__linux__)
+#    define LINUX
+# endif
+
 /* Determine the machine type: */
 # if defined(sun) && defined(mc68000)
 #    define M68K
@@ -90,7 +95,7 @@
 #     endif
 #   define mach_type_known
 # endif
-# if defined(sparc) && defined(unix) && !defined(sun)
+# if defined(sparc) && defined(unix) && !defined(sun) && !defined(linux)
 #   define SPARC
 #   define DRSNX
 #   define mach_type_known
@@ -114,25 +119,31 @@
 #   define SYSV
 #   define mach_type_known
 # endif
-# if defined(_PA_RISC1_0) || defined(_PA_RISC1_1)
+# if defined(_PA_RISC1_0) || defined(_PA_RISC1_1) \
+     || defined(hppa) || defined(__hppa__)
 #   define HP_PA
 #   define mach_type_known
 # endif
-# if defined(linux) && defined(i386)
+# if defined(LINUX) && defined(i386)
 #    define I386
-#    define LINUX
 #    define mach_type_known
 # endif
-# if defined(linux) && defined(powerpc)
+# if defined(LINUX) && defined(powerpc)
 #    define POWERPC
+#    define mach_type_known
+# endif
+# if defined(LINUX) && defined(__mc68000__)
+#    define M68K
+#    define mach_type_known
+# endif
+# if defined(linux) && defined(sparc)
+#    define SPARC
 #    define LINUX
 #    define mach_type_known
 # endif
 # if defined(__alpha) || defined(__alpha__)
 #   define ALPHA
-#   if defined(linux) || defined(__linux__)
-#     define LINUX
-#   else
+#   if !defined(LINUX)
 #     define OSF1	/* a.k.a Digital Unix */
 #   endif
 #   define mach_type_known
@@ -192,7 +203,8 @@
     /* DGUX defined */
 #   define mach_type_known
 # endif
-# if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300)
+# if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \
+     || defined(_WIN32)
 #   define I386
 #   define MSWIN32	/* or Win32s */
 #   define mach_type_known
@@ -254,7 +266,7 @@
 		    /*             I386       ==> Intel 386	 	*/
 		    /*		    (SEQUENT, OS2, SCO, LINUX, NETBSD,	*/
 		    /*		     FREEBSD, THREE86BSD, MSWIN32,	*/
-		    /* 		     BSDI, SUNOS5, NEXT	variants)	*/
+		    /* 		     BSDI,SUNOS5, NEXT, other variants)	*/
                     /*             NS32K      ==> Encore Multimax 	*/
                     /*             MIPS       ==> R2000 or R3000	*/
                     /*			(RISCOS, ULTRIX variants)	*/
@@ -370,6 +382,29 @@
 #	define HEURISTIC2
 	extern char etext;
 #	define DATASTART ((ptr_t)(&etext))
+#   endif
+#   ifdef LINUX
+#       define OS_TYPE "LINUX"
+#       define STACKBOTTOM ((ptr_t)0xf0000000)
+#       define MPROTECT_VDB
+#       ifdef __ELF__
+#            define DYNAMIC_LOADING
+             extern char **__environ;
+#            define DATASTART ((ptr_t)(&__environ))
+                             /* hideous kludge: __environ is the first */
+                             /* word in crt0.o, and delimits the start */
+                             /* of the data segment, no matter which   */
+                             /* ld options were passed through.        */
+                             /* We could use _etext instead, but that  */
+                             /* would include .rodata, which may       */
+                             /* contain large read-only data tables    */
+                             /* that we'd rather not scan.             */
+             extern int _end;
+#            define DATAEND (&_end)
+#       else
+             extern int etext;
+#            define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
+#       endif
 #   endif
 #   ifdef SUNOS4
 #	define OS_TYPE "SUNOS4"
@@ -498,11 +533,15 @@
 #	  define HEAP_START DATAEND
 #       endif
 #	define PROC_VDB
-#	define HEURISTIC1
+/*	HEURISTIC1 reportedly no longer works under 2.7.  Thus we	*/
+/* 	switched to HEURISTIC2, eventhough it creates some debugging	*/
+/*	issues.								*/
+#	define HEURISTIC2
 #	include <unistd.h>
 #       define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
 		/* getpagesize() appeared to be missing from at least one */
 		/* Solaris 5.4 installation.  Weird.			  */
+#	define DYNAMIC_LOADING
 #   endif
 #   ifdef SUNOS4
 #	define OS_TYPE "SUNOS4"
@@ -521,6 +560,7 @@
 #       define DATASTART ((ptr_t)(*(int *)(TEXTSTART+0x4)+TEXTSTART))
 #	define MPROTECT_VDB
 #	define HEURISTIC1
+# 	define DYNAMIC_LOADING
 #   endif
 #   ifdef DRSNX
 #       define CPP_WORDSZ 32
@@ -530,8 +570,21 @@
 #       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &etext)
 #	define MPROTECT_VDB
 #       define STACKBOTTOM ((ptr_t) 0xdfff0000)
+#	define DYNAMIC_LOADING
 #   endif
-#   define DYNAMIC_LOADING
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+#     ifdef __ELF__
+#         define DATASTART GC_data_start
+#         define DYNAMIC_LOADING
+#     else
+          Linux Sparc non elf ?
+#     endif
+      extern int _end;
+#     define DATAEND (&_end)
+#     define SVR4
+#     define STACKBOTTOM ((ptr_t) 0xf0000000)
+#   endif
 # endif
 
 # ifdef I386
@@ -590,16 +643,21 @@
 	/* Appears to be 0xe0000000 for at least one 2.1.91 kernel.	*/
 	/* Probably needs to be more flexible, but I don't yet 		*/
 	/* fully understand how flexible.				*/
-#	define MPROTECT_VDB
+#       if !defined(LINUX_THREADS) || !defined(REDIRECT_MALLOC)
+#	    define MPROTECT_VDB
+#	else
+	    /* We seem to get random errors in incremental mode,	*/
+	    /* possibly because Linux threads is itself a malloc client */
+	    /* and can't deal with the signals.				*/
+#	endif
 #       ifdef __ELF__
 #            define DYNAMIC_LOADING
 #	     ifdef UNDEFINED	/* includes ro data */
 	       extern int _etext;
 #              define DATASTART ((ptr_t)((((word) (&_etext)) + 0xfff) & ~0xfff))
 #	     endif
-#	     include <linux/version.h>
 #	     include <features.h>
-#	     if LINUX_VERSION_CODE >= 0x20000 && defined(__GLIBC__) && __GLIBC__ >= 2
+#	     if defined(__GLIBC__) && __GLIBC__ >= 2
 		 extern int __data_start;
 #		 define DATASTART ((ptr_t)(&__data_start))
 #	     else
@@ -622,6 +680,7 @@
 #       endif
 #   endif
 #   ifdef CYGWIN32
+#       define OS_TYPE "CYGWIN32"
           extern int _data_start__;
           extern int _data_end__;
           extern int _bss_start__;
@@ -636,8 +695,8 @@
   	/* minumum/maximum of the two.			*/
 #   	define MAX(x,y) ((x) > (y) ? (x) : (y))
 #   	define MIN(x,y) ((x) < (y) ? (x) : (y))
-#       define DATASTART ((ptr_t) MIN(_data_start__, _bss_start__))
-#       define DATAEND	 ((ptr_t) MAX(_data_end__, _bss_end__))
+#       define DATASTART ((ptr_t) MIN(&_data_start__, &_bss_start__))
+#       define DATAEND	 ((ptr_t) MAX(&_data_end__, &_bss_end__))
 #	undef STACK_GRAN
 #       define STACK_GRAN 0x10000
 #       define HEURISTIC1
@@ -695,18 +754,18 @@
 #   endif
 #   ifdef DOS4GW
 #     define OS_TYPE "DOS4GW"
-      /* Get_DATASTART, Get_DATAEND, Get_STACKBOTTOM
-       *      Defined in gc-watcom.asm
-       */
-      extern char* Get_DATASTART (void);
-      extern char* Get_DATAEND (void);
-      extern char* Get_STACKBOTTOM (void);
-#     pragma aux Get_DATASTART "*" value [eax];
-#     pragma aux Get_DATAEND "*" value [eax];
-#     pragma aux Get_STACKBOTTOM "*" value [eax];
-#     define DATASTART ((ptr_t) Get_DATASTART())
-#     define STACKBOTTOM ((ptr_t) Get_STACKBOTTOM())
-#     define DATAEND ((ptr_t) Get_DATAEND())
+      extern long __nullarea;
+      extern char _end;
+      extern char *_STACKTOP;
+      /* Depending on calling conventions Watcom C either precedes
+         or does not precedes with undescore names of C-variables.
+         Make sure startup code variables always have the same names.  */
+      #pragma aux __nullarea "*";
+      #pragma aux _end "*";
+#     define STACKBOTTOM ((ptr_t) _STACKTOP)
+                         /* confused? me too. */
+#     define DATASTART ((ptr_t) &__nullarea)
+#     define DATAEND ((ptr_t) &_end)
 #   endif
 # endif
 
@@ -810,6 +869,8 @@
 #   ifdef OSF1
 #	define OS_TYPE "OSF1"
 #   	define DATASTART ((ptr_t) 0x140000000)
+	extern _end;
+#   	define DATAEND ((ptr_t) &_end)
 #   	define HEURISTIC2
 	/* Normally HEURISTIC2 is too conervative, since		*/
 	/* the text segment immediately follows the stack.		*/
@@ -941,7 +1002,13 @@
 #   define DEFAULT_VDB
 # endif
 
+# if defined(_SOLARIS_PTHREADS) && !defined(SOLARIS_THREADS)
+#   define SOLARIS_THREADS
+# endif
 # if defined(IRIX_THREADS) && !defined(IRIX5)
+--> inconsistent configuration
+# endif
+# if defined(IRIX_JDK_THREADS) && !defined(IRIX5)
 --> inconsistent configuration
 # endif
 # if defined(LINUX_THREADS) && !defined(LINUX)
@@ -952,11 +1019,12 @@
 # endif
 # if defined(PCR) || defined(SRC_M3) || \
 	defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || \
-	defined(IRIX_THREADS) || defined(LINUX_THREADS)
+	defined(IRIX_THREADS) || defined(LINUX_THREADS) || \
+	defined(IRIX_JDK_THREADS)
 #   define THREADS
 # endif
 
-# if defined(SPARC)
+# if defined(SPARC) && !defined(LINUX)
 #   define SAVE_CALL_CHAIN
 #   define ASM_CLEAR_CODE	/* Stack clearing is crucial, and we 	*/
 				/* include assembly code to do it well.	*/
