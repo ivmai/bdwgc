@@ -10,7 +10,7 @@
  *
  * This file contains the functions:
  *	static void clear_marks()
- *	void GC_gcollect_inner(force)
+ *	bool GC_gcollect_inner(force)
  *	void GC_gcollect()
  *	bool GC_expand_hp(n)
  *	ptr_t GC_allocobj(sz, kind)
@@ -86,7 +86,12 @@ char * GC_copyright[] =
 extern signed_word GC_mem_found;  /* Number of reclaimed longwords	*/
 				  /* after garbage collection      	*/
 
-extern errno;
+/* clear all mark bits in the header */
+void GC_clear_hdr_marks(hhdr)
+register hdr * hhdr;
+{
+    bzero((char *)hhdr -> hb_marks, (int)(MARK_BITS_SZ*sizeof(word)));
+}
 
 /*
  * Clear all mark bits associated with block h.
@@ -97,11 +102,8 @@ struct hblk *h;
 word dummy;
 {
     register hdr * hhdr = HDR(h);
-    register int j;
     
-    for (j = 0; j < MARK_BITS_SZ; j++) {
-	hhdr -> hb_marks[j] = 0;
-    }
+    GC_clear_hdr_marks(hhdr);
 }
 
 /*
@@ -136,6 +138,36 @@ static word min_words_allocd()
     return(BYTES_TO_WORDS(GC_heapsize + total_root_size)/GC_free_space_divisor);
 }
 
+/* Return the number of words allocated, adjusted for explicit storage	*/
+/* management.  This number can be used in deciding when to trigger	*/
+/* collections.								*/
+word GC_adj_words_allocd()
+{
+    register signed_word result;
+    register signed_word expl_managed =
+    		BYTES_TO_WORDS((long)GC_non_gc_bytes
+    				- (long)GC_non_gc_bytes_at_gc);
+    
+    /* Don't count what was explicitly freed, or newly allocated for	*/
+    /* explicit management.  Note that deallocating an explicitly	*/
+    /* managed object should not alter result, assuming the client	*/
+    /* is playing by the rules.						*/
+    result = (signed_word)GC_words_allocd
+    	     - (signed_word)GC_mem_freed - expl_managed;
+    if (result > (signed_word)GC_words_allocd) result = GC_words_allocd;
+    	/* probably client bug or unfortunate scheduling */
+    if (result < (signed_word)(GC_words_allocd >> 2)) {
+    	/* Always count at least 1/8 of the allocations.  We don't want	*/
+    	/* to collect too infrequently, since that would inhibit	*/
+    	/* coalescing of free storage blocks.				*/
+    	/* This also makes us partially robust against client bugs.	*/
+        return(GC_words_allocd >> 3);
+    } else {
+        return(result);
+    }
+}
+
+
 /* Clear up a few frames worth og garbage left at the top of the stack.	*/
 /* This is used to prevent us from accidentally treating garbade left	*/
 /* on the stack by other parts of the collector as roots.  This 	*/
@@ -156,8 +188,10 @@ void GC_clear_a_few_frames()
  * garbage collection)
  * We assume we hold the allocation lock, and are not interruptable by
  * signals, if that matters.
+ * If force is FALSE and we didn't do anything, return FALSE.
+ * Otherwise return TRUE
  */
-void GC_gcollect_inner(force)
+bool GC_gcollect_inner(force)
 bool force;	/* Collect even if only a small amount of allocation	*/
 		/* has taken place.  Otherwise we refuse, allowing the  */
 		/* heap to grow.					*/
@@ -169,12 +203,12 @@ bool force;	/* Collect even if only a small amount of allocation	*/
 #   endif
 
     if (!force && !GC_dont_expand
-        && GC_words_allocd < min_words_allocd()) return;
+        && GC_adj_words_allocd() < min_words_allocd()) return(FALSE);
 #   ifdef PRINTTIMES
 	GET_TIME(start_time);
 #   endif
 #   ifdef PRINTSTATS
-	GC_printf("Collection %lu reclaimed %ld bytes\n",
+	GC_printf2("Collection %lu reclaimed %ld bytes\n",
 		  (unsigned long) GC_gc_no,
 	   	  (long)WORDS_TO_BYTES(GC_mem_found));
 #   endif
@@ -185,15 +219,14 @@ bool force;	/* Collect even if only a small amount of allocation	*/
         GC_atomic_in_use = 0;
 #   endif
 #   ifdef PRINTSTATS
-      GC_printf("Collection number %lu after %lu allocated bytes ",
+      GC_printf2("Collection number %lu after %lu allocated bytes ",
       	        (unsigned long) GC_gc_no,
       	        (unsigned long) WORDS_TO_BYTES(GC_words_allocd));
-      GC_printf("(heapsize = %lu bytes)\n",
+      GC_printf1("(heapsize = %lu bytes)\n",
       	        (unsigned long) GC_heapsize);
       /* Printf arguments may be pushed in funny places.  Clear the	*/
       /* space.								*/
-      GC_printf("", (unsigned long)0, (unsigned long)0, (unsigned long)0,
-      		    (unsigned long)0, (unsigned long)0, (unsigned long)0);
+      GC_printf0("");
 #   endif      	        
 
     clear_marks();
@@ -278,7 +311,7 @@ bool force;	/* Collect even if only a small amount of allocation	*/
 
 
 #     ifdef PRINTSTATS
-	GC_printf("Bytes recovered before GC_reclaim - f.l. count = %ld\n",
+	GC_printf1("Bytes recovered before GC_reclaim - f.l. count = %ld\n",
 	          (long)WORDS_TO_BYTES(GC_mem_found));
 #     endif
 
@@ -288,25 +321,29 @@ bool force;	/* Collect even if only a small amount of allocation	*/
 #   endif /* FIND_LEAK */
 
 #   ifdef PRINTSTATS
-	GC_printf("Immediately reclaimed %ld bytes in heap of size %lu bytes\n",
+	GC_printf2(
+		  "Immediately reclaimed %ld bytes in heap of size %lu bytes\n",
 	          (long)WORDS_TO_BYTES(GC_mem_found),
 	          (unsigned long)GC_heapsize);
-	GC_printf("%lu (atomic) + %lu (composite) bytes in use\n",
-	          (unsigned long)WORDS_TO_BYTES(GC_atomic_in_use),
-	          (unsigned long)WORDS_TO_BYTES(GC_composite_in_use));
+	GC_printf2("%lu (atomic) + %lu (composite) bytes in use\n",
+	           (unsigned long)WORDS_TO_BYTES(GC_atomic_in_use),
+	           (unsigned long)WORDS_TO_BYTES(GC_composite_in_use));
 #   endif
 
     /* Reset or increment counters for next cycle */
       GC_words_allocd_before_gc += GC_words_allocd;
+      GC_non_gc_bytes_at_gc = GC_non_gc_bytes;
       GC_words_allocd = 0;
+      GC_mem_freed = 0;
 
   /* Get final time */
 #   ifdef PRINTTIMES
 	GET_TIME(done_time);
-	GC_printf("Garbage collection took %lu + %lu msecs\n",
-	          MS_TIME_DIFF(mark_time,start_time),
-	          MS_TIME_DIFF(done_time,mark_time));
+	GC_printf2("Garbage collection took %lu + %lu msecs\n",
+	           MS_TIME_DIFF(mark_time,start_time),
+	           MS_TIME_DIFF(done_time,mark_time));
 #   endif
+    return(TRUE);
 }
 
 /* Externally callable version of above */
@@ -319,7 +356,7 @@ void GC_gcollect()
     if (!GC_is_initialized) GC_init_inner();
     /* Minimize junk left in my registers */
       GC_noop(0,0,0,0,0,0);
-    GC_gcollect_inner(TRUE);
+    (void) GC_gcollect_inner(TRUE);
     UNLOCK();
     ENABLE_SIGNALS();
 }
@@ -388,7 +425,7 @@ word n;
 	return(FALSE);
     }
 #   ifdef PRINTSTATS
-	GC_printf("Increasing heap size by %lu\n",
+	GC_printf1("Increasing heap size by %lu\n",
 	           (unsigned long)bytes);
 #   endif
     expansion_slop = 8 * WORDS_TO_BYTES(min_words_allocd());
@@ -429,6 +466,26 @@ int n;
     return(result);
 }
 
+void GC_collect_or_expand(needed_blocks)
+word needed_blocks;
+{
+    static int count = 0;  /* How many failures? */
+    
+    if (GC_dont_gc || !GC_gcollect_inner(FALSE)) {
+      if (!GC_expand_hp_inner(GC_hincr + needed_blocks)
+        && !GC_expand_hp_inner(needed_blocks)) {
+      	if (count++ < 20) {
+      	    WARN("Out of Memory!  Trying to continue ...\n");
+	    (void) GC_gcollect_inner(TRUE);
+	} else {
+	    GC_err_printf0("Out of Memory!  Giving up!\n");
+	    EXIT();
+	}
+      }
+      update_GC_hincr;
+    }
+}
+
 /*
  * Make sure the object free list for sz is not empty.
  * Return a pointer to the first object on the free list.
@@ -440,25 +497,16 @@ word sz;
 int kind;
 {
     register ptr_t * flh = &(GC_obj_kinds[kind].ok_freelist[sz]);
+    
     if (sz == 0) return(0);
 
-    if (*flh == 0) {
+    while (*flh == 0) {
       GC_continue_reclaim(sz, kind);
-    }
-    if (*flh == 0) {
-      if (!GC_sufficient_hb(sz, kind) && !GC_dont_gc) {
-	if (GC_DIV * GC_non_gc_bytes < GC_MULT * GC_heapsize) {
-	  GC_gcollect_inner(FALSE);
-	  GC_continue_reclaim(sz, kind);
-	} else {
-	  if (!GC_expand_hp_inner(NON_GC_HINCR)) {
-	      GC_gcollect_inner(FALSE);
-	      GC_continue_reclaim(sz, kind);
-	  }
-	}
+      if (*flh == 0) {
+        GC_new_hblk(sz, kind);
       }
       if (*flh == 0) {
-	  GC_new_hblk(sz, kind);
+        GC_collect_or_expand((word)1);
       }
     }
     return(*flh);

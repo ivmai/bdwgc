@@ -1,19 +1,76 @@
 # include <stdio.h>
 # include "gc_private.h"
-# define MAX_ROOT_SETS 50
+
 # ifdef PCR
+#   define MAX_ROOT_SETS 1024
 #   include "pcr/il/PCR_IL.h"
 #   include "pcr/th/PCR_ThCtl.h"
 #   include "pcr/mm/PCR_MM.h"
+# else
+#   define MAX_ROOT_SETS 64
 # endif
 
+/* Data structure for list of root sets.				*/
+/* We keep a hash table, so that we can filter out duplicate additions.	*/
 struct roots {
 	ptr_t r_start;
 	ptr_t r_end;
+	struct roots * r_next;
 };
 
 static struct roots static_roots[MAX_ROOT_SETS];
+
 static n_root_sets = 0;
+
+	/* static_roots[0..n_root_sets) contains the valid root sets. */
+
+#define RT_SIZE 64  /* Power of 2, may be != MAX_ROOT_SETS */
+#define LOG_RT_SIZE 6
+
+static struct roots * root_index[RT_SIZE];
+	/* Hash table header.  Used only to check whether a range is 	*/
+	/* already present.						*/
+
+static int rt_hash(addr)
+char * addr;
+{
+    word result = (word) addr;
+#   if CPP_WORDSZ > 8*LOG_RT_SIZE
+	result ^= result >> 8*LOG_RT_SIZE;
+#   endif
+#   if CPP_WORDSZ > 4*LOG_RT_SIZE
+	result ^= result >> 4*LOG_RT_SIZE;
+#   endif
+    result ^= result >> 2*LOG_RT_SIZE;
+    result ^= result >> LOG_RT_SIZE;
+    result &= (RT_SIZE-1);
+    return(result);
+}
+
+/* Is a range starting at addr already in the table? */
+static bool roots_present(b, e)
+char *b, *e;
+{
+    register int h = rt_hash(b);
+    register struct roots *p = root_index[h];
+    
+    while (p != 0) {
+        if (p -> r_start == (ptr_t)b && p -> r_end >= (ptr_t)e) return(TRUE);
+        p = p -> r_next;
+    }
+    return(FALSE);
+}
+
+/* Add the given root structure to the index. */
+static void add_roots_to_index(p)
+struct roots *p;
+{
+    register int h = rt_hash(p -> r_start);
+    
+    p -> r_next = root_index[h];
+    root_index[h] = p;
+}
+
 
 word GC_root_size = 0;
 
@@ -30,7 +87,10 @@ char * b; char * e;
 }
 
 
-
+/* Add [b,e) to the root set.  Adding the same interval a second time	*/
+/* is a moderately fast noop, and hence benign.  We do not handle	*/
+/* different but overlapping intervals efficiently.  (We do handle	*/
+/* them correctly.)							*/
 void GC_add_roots_inner(b, e)
 char * b; char * e;
 {
@@ -47,11 +107,14 @@ char * b; char * e;
     } else if ((ptr_t)b < endGC_arrays && (ptr_t)e > endGC_arrays) {
         b = (char *)endGC_arrays;
     }
+    if (roots_present(b,e)) return;
     if (n_root_sets == MAX_ROOT_SETS) {
         ABORT("Too many root sets\n");
     }
     static_roots[n_root_sets].r_start = (ptr_t)b;
     static_roots[n_root_sets].r_end = (ptr_t)e;
+    static_roots[n_root_sets].r_next = 0;
+    add_roots_to_index(static_roots + n_root_sets);
     GC_root_size += (ptr_t)e - (ptr_t)b;
     n_root_sets++;
 }
@@ -125,36 +188,19 @@ GC_mark_roots()
 	
         /* Add new static data areas of dynamically loaded modules.	*/
         {
-          PCR_IL_LoadedFile * p = PCR_IL_GetLoadedFiles();
-          static PCR_IL_LoadedFile * last_already_added = NIL;
-          	/* Last file that was already added to the list of roots. */
-          PCR_IL_LoadedFile * last_committed;
+          PCR_IL_LoadedFile * p = PCR_IL_GetLastLoadedFile();
           PCR_IL_LoadedSegment * q;
           
-          if (p != NIL && last_already_added == NIL) {
-            /* Switch to obtaining roots from the dynamic loader. */
-              /* Make sure the loader is properly initialized and that	*/
-              /* it has a correct description of PCR static data.	*/
-                PCR_IL_Lock(PCR_Bool_false,
-                	    PCR_allSigsBlocked, PCR_waitForever);
-	        PCR_IL_Unlock();
-	      /* Discard old root sets. */
-	        n_root_sets = 0;
-	        GC_root_size = 0;
-	      /* We claim there are no dynamic libraries, or they	*/
-	      /* don't contain roots, since they allocate using the	*/
-	      /* system malloc, and they can't retain our pointers.	*/
-          }
           /* Skip uncommited files */
           while (p != NIL && !(p -> lf_commitPoint)) {
               /* The loading of this file has not yet been committed	*/
               /* Hence its description could be inconsistent.  		*/
-              /* Furthermore, it hasn't yet been run.  Hence it's data  */
-              /* segments can possibly reference heap allocated objects.*/
+              /* Furthermore, it hasn't yet been run.  Hence its data	*/
+              /* segments can't possibly reference heap allocated	*/
+              /* objects.						*/
               p = p -> lf_prev;
           }
-          last_committed = p;
-          for (; p != last_already_added; p = p -> lf_prev) {
+          for (; p != NIL; p = p -> lf_prev) {
             for (q = p -> lf_ls; q != NIL; q = q -> ls_next) {
               if ((q -> ls_flags & PCR_IL_SegFlags_Traced_MASK)
                   == PCR_IL_SegFlags_Traced_on) {
@@ -164,7 +210,6 @@ GC_mark_roots()
               }
             }
           }
-          last_already_added = last_committed;
         }
         
         
@@ -181,12 +226,15 @@ GC_mark_roots()
 #	  else
 	    GC_mark_all_stack( GC_stackbottom, GC_approx_sp() );
 #	  endif
+
 #   endif
 
+    /* Reregister dynamic libraries, in case one got added.	*/
+       GC_register_dynamic_libraries();
     /* Mark everything in static data areas                             */
-    for (i = 0; i < n_root_sets; i++) {
+      for (i = 0; i < n_root_sets; i++) {
         GC_mark_all(static_roots[i].r_start, static_roots[i].r_end);
-    }
+      }
 }
 
 /*

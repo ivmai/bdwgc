@@ -44,7 +44,7 @@ extern int GC_dont_expand;
 			
 extern word GC_non_gc_bytes;
 			/* Bytes not considered candidates for collection. */
-
+			/* Used only to control scheduling of collections. */
 
 extern word GC_free_space_divisor;
 			/* We try to make sure that we allocate at 	*/

@@ -69,6 +69,24 @@ sexpr y;
     return(r);
 }
 
+sexpr small_cons (x, y)
+sexpr x;
+sexpr y;
+{
+    register sexpr r;
+    register int *p;
+    
+    r = (sexpr) GC_MALLOC(sizeof(struct SEXPR));
+    if (r == 0) {
+        (void)printf("Out of memory\n");
+        exit(1);
+    }
+    r -> sexpr_car = x;
+    r -> sexpr_cdr = y;
+    return(r);
+}
+
+
 /* Return reverse(x) concatenated with y */
 sexpr reverse1(x, y)
 sexpr x, y;
@@ -92,7 +110,7 @@ int low, up;
     if (low > up) {
 	return(nil);
     } else {
-        return(cons((sexpr)low, ints(low+1, up)));
+        return(small_cons(small_cons((sexpr)low, 0), ints(low+1, up)));
     }
 }
 
@@ -100,7 +118,7 @@ void check_ints(list, low, up)
 sexpr list;
 int low, up;
 {
-    if ((int)(car(list)) != low) {
+    if ((int)(car(car(list))) != low) {
         (void)printf(
            "List reversal produced incorrect list - collector is broken\n");
         exit(1);
@@ -122,7 +140,7 @@ sexpr x;
     if (is_nil(x)) {
         (void)printf("NIL\n");
     } else {
-        (void)printf("%d", car(x));
+        (void)printf("(%d)", car(car(x)));
         if (!is_nil(cdr(x))) {
             (void)printf(", ");
             (void)print_int_list(cdr(x));
@@ -147,9 +165,11 @@ reverse_test()
 {
     int i;
     sexpr b;
+    sexpr c;
 
     a = ints(1, 100);
     b = ints(1, 50);
+    c = ints(1, 4500);
     for (i = 0; i < 50; i++) {
         b = reverse(reverse(b));
     }
@@ -168,7 +188,8 @@ reverse_test()
     }
     check_ints(a,1,100);
     check_ints(b,1,50);
-    a = b = 0;
+    check_ints(c,1,4500);
+    a = b = c = 0;
 }
 
 /*

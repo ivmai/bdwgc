@@ -100,7 +100,7 @@ word sz;
     }
     new_map = GC_scratch_alloc(MAP_SIZE);
 #   ifdef PRINTSTATS
-        GC_printf("Adding block map for size %lu\n", (unsigned long)sz);
+        GC_printf1("Adding block map for size %lu\n", (unsigned long)sz);
 #   endif
     for (displ = 0; displ < HBLKSIZE; displ++) {
         MAP_ENTRY(new_map,displ) = OBJ_INVALID;

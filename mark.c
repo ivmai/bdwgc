@@ -31,8 +31,7 @@
 /*
  * Limits of stack for GC_mark routine.  Set by caller to GC_mark.
  * All items between GC_mark_stack_top and GC_mark_stack_bottom-1 still need
- * to be marked.  All items on the stack satisfy quicktest.  They do
- * not necessarily reference real objects.
+ * to be marked.
  */
  
 mse * GC_mark_stack;
@@ -88,9 +87,7 @@ register mse * msp, * msl;
 /*
  * Mark all objects pointed to by the regions described by
  * mark stack entries between GC_mark_stack and GC_mark_stack_top,
- * inclusive.  We assume and preserve the invariant
- * that everything on the mark stack points into a hblk that has an
- * allocated header.  Assumes the upper limit of a mark stack entry
+ * inclusive.  Assumes the upper limit of a mark stack entry
  * is never 0.
  */
 void GC_mark()
@@ -206,8 +203,8 @@ word n;
         }
     } else {
         if (new_stack == 0) {
-            GC_printf("No space for mark stack\n");
-            exit(1);
+            GC_err_printf0("No space for mark stack\n");
+            EXIT();
         }
         GC_mark_stack = new_stack;
         GC_mark_stack_size = n;
@@ -229,8 +226,8 @@ void GC_mark_reliable()
     while (dropped_some) {
         dropped_some = FALSE;
 #	ifdef PRINTSTATS
-	    GC_printf("Mark stack overflow; current size = %lu entries\n",
-	    	      GC_mark_stack_size);
+	    GC_printf1("Mark stack overflow; current size = %lu entries\n",
+	    	       GC_mark_stack_size);
 #	endif      
         alloc_mark_stack(2*GC_mark_stack_size);
         GC_remark();
@@ -332,7 +329,7 @@ word dummy;
     register word * lim;
     register mse * GC_mark_stack_top_reg = GC_mark_stack_top;
     
-    if (sz < 0) return;
+    if (hhdr -> hb_obj_kind == PTRFREE) return;
     if (sz > MAXOBJSZ) {
         lim = (word *)(h + 1);
     } else {
@@ -348,6 +345,7 @@ word dummy;
              GC_mark_stack_top_reg -> mse_end = p + sz;
          }
     }
+    GC_mark_stack_top = GC_mark_stack_top_reg;
     GC_mark();   
 }
 

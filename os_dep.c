@@ -1,6 +1,18 @@
+/*
+ * Copyright (c) 1991-1993 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to copy this garbage collector for any purpose,
+ * provided the above notices are retained on all copies.
+ */
 # include "gc_private.h"
 # include <stdio.h>
 # include <signal.h>
+
+/* Blatantly OS dependent routines, except for those that are related 	*/
+/* dynamic loading.							*/
 
 /* Disable and enable signals during nontrivial allocations	*/
 
@@ -43,40 +55,66 @@ void GC_enable_signals(void)
 
 # else
 
-static int old_mask;
+#  ifndef PCR
+
+#   ifdef sigmask
+	/* Use the traditional BSD interface */
+#	define SIGSET_T int
+#	define SIG_DEL(set, signal) (set) &= ~(sigmask(signal))
+#	define SIG_FILL(set)  (set) = 0x7fffffff
+    	  /* Setting the leading bit appears to provoke a bug in some	*/
+    	  /* longjmp implementations.  Most systems appear not to have	*/
+    	  /* a signal 32.						*/
+#	define SIGSETMASK(old, new) (old) = sigsetmask(new)
+#   else
+	/* Use POSIX/SYSV interface	*/
+#	define SIGSET_T sigset_t
+#	define SIG_DEL(set, signal) sigdelset(&(set), (signal))
+#	define SIG_FILL(set) sigfillset(&set)
+#	define SIGSETMASK(old, new) sigprocmask(SIG_SETMASK, &(new), &(old))
+#   endif
+
+static bool mask_initialized = FALSE;
+
+static SIGSET_T new_mask;
+
+static SIGSET_T old_mask;
+
+static SIGSET_T dummy;
 
 void GC_disable_signals()
 {
-    int mask = 0x7fffffff;
-    	/* Setting the leading bit appears to provoke a bug in some	*/
-    	/* longjmp implementations.  Most systems appear not to have    */
-    	/* a signal 32.							*/
+    if (!mask_initialized) {
+    	SIG_FILL(new_mask);
 
-    mask &= ~(1<<(SIGSEGV-1));
-    mask &= ~(1<<(SIGILL-1));
-    mask &= ~(1<<(SIGQUIT-1));
-#   ifdef SIGBUS
-        mask &= ~(1<<(SIGBUS-1));
-#   endif
-#   ifdef SIGIOT
-        mask &= ~(1<<(SIGIOT-1));
-#   endif
-#   ifdef SIGEMT
-        mask &= ~(1<<(SIGEMT-1));
-#   endif
-#   ifdef SIGTRAP
-        mask &= ~(1<<(SIGTRAP-1));
-#   endif      
-    old_mask = sigsetmask(mask);
+	SIG_DEL(new_mask, SIGSEGV);
+	SIG_DEL(new_mask, SIGILL);
+	SIG_DEL(new_mask, SIGQUIT);
+#	ifdef SIGBUS
+	    SIG_DEL(new_mask, SIGBUS);
+#	endif
+#	ifdef SIGIOT
+	    SIG_DEL(new_mask, SIGIOT);
+#	endif
+#	ifdef SIGEMT
+	    SIG_DEL(new_mask, SIGEMT);
+#	endif
+#	ifdef SIGTRAP
+	    SIG_DEL(new_mask, SIGTRAP);
+#	endif 
+	mask_initialized = TRUE;
+    }     
+    SIGSETMASK(old_mask,new_mask);
 }
 
 void GC_enable_signals()
 {
-    (void)sigsetmask(old_mask);
+    SIGSETMASK(dummy,old_mask);
 }
 
+#  endif  /* !PCR */
 
-# endif
+# endif /*!OS/2 */
 
 /*
  * Find the base of the stack.
@@ -93,7 +131,7 @@ ptr_t GC_get_stack_base()
     PPIB ppib;
     
     if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
-    	fprintf(stderr, "DosGetInfoBlocks failed\n");
+    	GC_err_printf0("DosGetInfoBlocks failed\n");
     	ABORT("DosGetInfoBlocks failed\n");
     }
     return((ptr_t)(ptib -> tib_pstacklimit));
@@ -172,8 +210,8 @@ ptr_t GC_get_stack_base()
 	      result += MIN_PAGE_SIZE;
 #	   endif
 #	endif /* HEURISTIC2 */
+    	return(result);
 #   endif /* STACKBOTTOM */
-    return(result);
 }
 
 # endif /* ! OS2 */
@@ -203,12 +241,12 @@ void GC_register_data_segments()
     
     
     if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
-    	fprintf(stderr, "DosGetInfoBlocks failed\n");
+    	GC_err_printf0("DosGetInfoBlocks failed\n");
     	ABORT("DosGetInfoBlocks failed\n");
     }
     module_handle = ppib -> pib_hmte;
     if (DosQueryModuleName(module_handle, PBUFSIZ, path) != NO_ERROR) {
-    	fprintf(stderr, "DosQueryModuleName failed\n");
+    	GC_err_printf0("DosQueryModuleName failed\n");
     	ABORT("DosGetInfoBlocks failed\n");
     }
     myexefile = fopen(path, "rb");
@@ -269,7 +307,7 @@ void GC_register_data_segments()
       if (!(flags & OBJWRITE)) continue;
       if (!(flags & OBJREAD)) continue;
       if (flags & OBJINVALID) {
-          fprintf(stderr, "Object with invalid pages?\n");
+          GC_err_printf0("Object with invalid pages?\n");
           continue;
       } 
       GC_add_roots_inner(O32_BASE(seg), O32_BASE(seg)+O32_SIZE(seg));
@@ -281,15 +319,12 @@ void GC_register_data_segments()
 void GC_register_data_segments()
 {
     extern int end;
-        
-    GC_add_roots_inner(DATASTART, (char *)(&end));
-#   ifdef DYNAMIC_LOADING
-	{
-	   extern void GC_setup_dynamic_loading();
-	       
-	   GC_setup_dynamic_loading();
-	}
+ 
+#   ifndef PCR      
+      GC_add_roots_inner(DATASTART, (char *)(&end));
 #   endif
+    /* Dynamic libraries are added at every collection, since they may  */
+    /* change.								*/
 }
 
 # endif  /* ! OS2 */

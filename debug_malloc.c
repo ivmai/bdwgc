@@ -94,25 +94,25 @@ ptr_t p;
 {
     register oh * ohdr = (oh *)GC_base(p);
     
-    GC_err_printf("0x%lx (", (unsigned long)ohdr + sizeof(oh));
+    GC_err_printf1("0x%lx (", (unsigned long)ohdr + sizeof(oh));
     GC_err_puts(ohdr -> oh_string);
-    GC_err_printf(":%ld, sz=%ld)\n", (unsigned long)(ohdr -> oh_int),
-        			     (unsigned long)(ohdr -> oh_sz));
+    GC_err_printf2(":%ld, sz=%ld)\n", (unsigned long)(ohdr -> oh_int),
+        			      (unsigned long)(ohdr -> oh_sz));
 }
 void GC_print_smashed_obj(p, clobbered_addr)
 ptr_t p, clobbered_addr;
 {
     register oh * ohdr = (oh *)GC_base(p);
     
-    GC_err_printf("0x%lx in object at 0x%lx(", (unsigned long)clobbered_addr,
-    					       (unsigned long)p);
+    GC_err_printf2("0x%lx in object at 0x%lx(", (unsigned long)clobbered_addr,
+    					        (unsigned long)p);
     if (clobbered_addr <= (ptr_t)(&(ohdr -> oh_sz))) {
-        GC_err_printf("<smashed>, appr. sz = %ld)\n",
-        	      BYTES_TO_WORDS(GC_size((ptr_t)ohdr)));
+        GC_err_printf1("<smashed>, appr. sz = %ld)\n",
+        	       BYTES_TO_WORDS(GC_size((ptr_t)ohdr)));
     } else {
         GC_err_puts(ohdr -> oh_string);
-        GC_err_printf(":%ld, sz=%ld)\n", (unsigned long)(ohdr -> oh_int),
-        			         (unsigned long)(ohdr -> oh_sz));
+        GC_err_printf2(":%ld, sz=%ld)\n", (unsigned long)(ohdr -> oh_int),
+        			          (unsigned long)(ohdr -> oh_sz));
     }
 }
 
@@ -128,10 +128,10 @@ ptr_t p, clobbered_addr;
     extern_ptr_t result = GC_malloc(lb + DEBUG_BYTES);
     
     if (result == 0) {
-        GC_err_printf("GC_debug_malloc(%ld) returning NIL (",
-        	      (unsigned long) lb);
+        GC_err_printf1("GC_debug_malloc(%ld) returning NIL (",
+        	       (unsigned long) lb);
         GC_err_puts(s);
-        GC_err_printf(":%ld)\n", (unsigned long)i);
+        GC_err_printf1(":%ld)\n", (unsigned long)i);
         return(0);
     }
     if (!GC_debugging_started) {
@@ -153,10 +153,10 @@ ptr_t p, clobbered_addr;
     extern_ptr_t result = GC_malloc_atomic(lb + DEBUG_BYTES);
     
     if (result == 0) {
-        GC_err_printf("GC_debug_malloc_atomic(%ld) returning NIL (",
+        GC_err_printf1("GC_debug_malloc_atomic(%ld) returning NIL (",
         	      (unsigned long) lb);
         GC_err_puts(s);
-        GC_err_printf(":%ld)\n", (unsigned long)i);
+        GC_err_printf1(":%ld)\n", (unsigned long)i);
         return(0);
     }
     if (!GC_debugging_started) {
@@ -176,17 +176,18 @@ ptr_t p, clobbered_addr;
     register ptr_t clobbered;
     
     if (base == 0) {
-        GC_err_printf("Attempt to free invalid pointer %lx\n",
-        	      (unsigned long)p);
+        GC_err_printf1("Attempt to free invalid pointer %lx\n",
+        	       (unsigned long)p);
         ABORT("free(invalid pointer)");
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
-        GC_err_printf("GC_debug_free called on pointer %lx wo debugging info\n",
+        GC_err_printf1(
+        	  "GC_debug_free called on pointer %lx wo debugging info\n",
         	  (unsigned long)p);
     } else {
       clobbered = GC_check_annotated_obj((oh *)base);
       if (clobbered != 0) {
-        GC_err_printf("GC_debug_free: found smashed object at ");
+        GC_err_printf0("GC_debug_free: found smashed object at ");
         GC_print_smashed_obj(p, clobbered);
       }
     }
@@ -210,19 +211,19 @@ ptr_t p, clobbered_addr;
     register size_t old_sz;
     
     if (base == 0) {
-        GC_err_printf(
+        GC_err_printf1(
               "Attempt to free invalid pointer %lx\n", (unsigned long)p);
         ABORT("realloc(invalid pointer)");
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
-        GC_err_printf(
+        GC_err_printf1(
         	"GC_debug_realloc called on pointer %lx wo debugging info\n",
         	(unsigned long)p);
         return(GC_realloc(p, lb));
     }
     clobbered = GC_check_annotated_obj((oh *)base);
     if (clobbered != 0) {
-        GC_err_printf("GC_debug_realloc: found smashed object at ");
+        GC_err_printf0("GC_debug_realloc: found smashed object at ");
         GC_print_smashed_obj(p, clobbered);
     }
     old_sz = ((oh *)base) -> oh_sz;
@@ -255,7 +256,7 @@ word dummy;
 	        ptr_t clobbered = GC_check_annotated_obj((oh *)p);
 	        
 	        if (clobbered != 0) {
-	            GC_err_printf(
+	            GC_err_printf0(
 	                "GC_check_heap_block: found smashed object at ");
         	    GC_print_smashed_obj((ptr_t)p, clobbered);
 	        }
@@ -306,3 +307,4 @@ struct closure {
     
     (*(cl -> cl_fn))((extern_ptr_t)((char *)obj + sizeof(oh)), cl -> cl_data);
 } 
+

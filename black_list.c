@@ -114,8 +114,8 @@ word p;
         if (HDR(p) == 0 || get_bl_entry_from_index(GC_new_normal_bl, index)) {
 #   	    ifdef PRINTBLACKLIST
 		if (!get_bl_entry_from_index(GC_incomplete_normal_bl, index)) {
-	    	  GC_printf("Black listing (normal) 0x%lx\n",
-	    	  	    (unsigned long) p);
+	    	  GC_printf1("Black listing (normal) 0x%lx\n",
+	    	  	     (unsigned long) p);
 	    	}
 #           endif
             set_bl_entry_from_index(GC_incomplete_normal_bl, index);
@@ -134,8 +134,8 @@ word p;
     if (HDR(p) == 0 || get_bl_entry_from_index(GC_new_stack_bl, index)) {
 #   	ifdef PRINTBLACKLIST
 	    if (!get_bl_entry_from_index(GC_incomplete_stack_bl, index)) {
-	    	  GC_printf("Black listing (stack) 0x%lx\n",
-	    	            (unsigned long)p);
+	    	  GC_printf1("Black listing (stack) 0x%lx\n",
+	    	             (unsigned long)p);
 	    }
 #       endif
 	set_bl_entry_from_index(GC_incomplete_stack_bl, index);

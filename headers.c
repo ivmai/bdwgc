@@ -73,10 +73,10 @@ register word bytes;
          
         scratch_free_ptr = (char *)GET_MEM(bytes_to_get);
         if (scratch_free_ptr == 0) {
-            GC_printf("Out of memory - trying to allocate less\n");
+            GC_err_printf0("Out of memory - trying to allocate less\n");
             result = (char *)GET_MEM(bytes);
             if (result == 0) {
-                GC_printf("Out of memory - giving up\n");
+                GC_err_printf0("Out of memory - giving up\n");
             } else {
                 scratch_free_ptr -= bytes;
                 return(result);

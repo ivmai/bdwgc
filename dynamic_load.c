@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1991,1992 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1993 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -9,84 +9,134 @@
  * Author: Bill Janssen
  * Modified by: Hans Boehm
  */
+
+/*
+ * This is incredibly OS specific code for tracking down data sections in
+ * dynamic libraries.  There appears to be no way of doing this quickly
+ * without groveling through undocumented data structures.  We would argue
+ * that this is a bug in the design of the dlopen interface.  THIS CODE
+ * MAY BREAK IN FUTURE OS RELEASES.  If this matters to you, don't hesitate
+ * to let your vendor know ...
+ */
 #include "gc_private.h"
 #ifdef DYNAMIC_LOADING
-#if !defined(M68K_SUN) && !defined(SPARC)
+#if !(defined(M68K) && defined(SUNOS)) && !defined(SPARC)
  --> We only know how to find data segments of dynamic libraries under SunOS 4.X
 #endif
-#include <sys/types.h>
+
 #include <stdio.h>
-#include <dlfcn.h>
-#include <link.h>
-#include <a.out.h>
-#include <stab.h>
+#if defined SUNOS5
+#   include <sys/elf.h>
+#   include <dlfcn.h>
+#   include <link.h>
+#else
+#   include <dlfcn.h>
+#   include <link.h>
+#   include <a.out.h>
+  /* struct link_map field overrides */
+#   define l_next	lm_next
+#   define l_addr	lm_addr
+#   define l_name	lm_name
+# endif
 
-extern struct link_dynamic _DYNAMIC;
 
-void GC_setup_dynamic_loading()
+#ifdef SUNOS5
+
+static struct link_map *
+GC_FirstDLOpenedLinkMap()
 {
-  struct link_map *lm;
-  struct exec *e;
+    extern Elf32_Dyn _DYNAMIC;
+    Elf32_Dyn *dp;
+    struct r_debug *r;
+    static struct link_map * cachedResult = 0;
 
-  if (&_DYNAMIC == 0) {
-      /* No dynamic libraries.  Furthermore, the rest of this would 	*/
-      /* segment fault.							*/
-      return;
-  }
-  for (lm = _DYNAMIC.ld_un.ld_1->ld_loaded;
-       lm != (struct link_map *) 0;  lm = lm->lm_next)
+    if( &_DYNAMIC == 0) {
+        return(0);
+    }
+    if( cachedResult == 0 ) {
+        int tag;
+        for( dp = ((Elf32_Dyn *)(&_DYNAMIC)); (tag = dp->d_tag) != 0; dp++ ) {
+            if( tag == DT_DEBUG ) {
+                struct link_map *lm
+                        = ((struct r_debug *)(dp->d_un.d_ptr))->r_map;
+                if( lm != 0 ) cachedResult = lm->l_next; /* might be NIL */
+                break;
+            }
+        }
+    }
+    return cachedResult;
+}
+
+# endif
+
+# ifdef SUNOS4
+
+static struct link_map *
+GC_FirstDLOpenedLinkMap()
+{
+    extern struct link_dynamic _DYNAMIC;
+
+    if( &_DYNAMIC == 0) {
+        return(0);
+    }
+    return(_DYNAMIC.ld_un.ld_1->ld_loaded);
+}
+
+
+# endif
+
+/* Add dynamic library data sections to the root set.		*/
+# if !defined(PCR) && defined(THREADS)
+	--> fix mutual exclusion with dlopen
+# endif
+void GC_register_dynamic_libraries()
+{
+  struct link_map *lm = GC_FirstDLOpenedLinkMap();
+  
+
+  for (lm = GC_FirstDLOpenedLinkMap();
+       lm != (struct link_map *) 0;  lm = lm->l_next)
     {
-      e = (struct exec *) lm->lm_addr;
-      GC_add_roots_inner(
+#     ifdef SUNOS4
+	struct exec *e;
+	 
+        e = (struct exec *) lm->lm_addr;
+        GC_add_roots_inner(
       		    ((char *) (N_DATOFF(*e) + lm->lm_addr)),
 		    ((char *) (N_BSSADDR(*e) + e->a_bss + lm->lm_addr)));
-    }
-}
-
-#ifdef DEFINE_DLOPEN
-char *GC_dlopen (path, mode) 
-     char *path;
-     int  mode;
-{
-  char *etext, *end;
-  struct link_map *lm;
-  struct exec *e;
-  char *handle;
-
-  handle = dlopen(path, mode);
-  if (handle == NULL)
-    {
-      fprintf (stderr,
-	       "GC_sun_dlopen:  dlopen(%s, %d) failed:  %s.\n",
-	       path, mode, dlerror());
-      return (NULL);
-    }
-
-  for (lm = _DYNAMIC.ld_un.ld_1->ld_loaded;
-       lm != (struct link_map *) 0;  lm = lm->lm_next)
-    {
-      if (strcmp(path, lm->lm_name) == 0)
-	{
-	  e = (struct exec *) lm->lm_addr;
-	  etext = (void *) (N_DATOFF(*e) + lm->lm_addr);
-	  end = (void *) (N_BSSADDR(*e) + e->a_bss + lm->lm_addr);
-	  GC_add_roots (etext, end);
-	  break;
+#     endif
+#     ifdef SUNOS5
+	Elf32_Ehdr * e;
+        Elf32_Phdr * p;
+        unsigned long offset;
+        char * start;
+        register int i;
+        
+	e = (Elf32_Ehdr *) lm->l_addr;
+        p = ((Elf32_Phdr *)(((char *)(e)) + e->e_phoff));
+        offset = ((unsigned long)(lm->l_addr));
+        for( i = 0; i < e->e_phnum; ((i++),(p++)) ) {
+          switch( p->p_type ) {
+            case PT_LOAD:
+              {
+                if( !(p->p_flags & PF_W) ) break;
+                start = ((char *)(p->p_vaddr)) + offset;
+                GC_add_roots_inner(
+                  start,
+                  start + p->p_memsz
+                );
+              }
+              break;
+            default:
+              break;
+          }
 	}
+#     endif
     }
-
-  if (lm == (struct link_map *) 0)
-    {
-      fprintf (stderr,
-	      "GC_sun_dlopen:  couldn't find \"%s\" in _DYNAMIC link list.\n",
-	      path);
-      dlclose(handle);
-      return (NULL);
-    }
-  else
-    return (handle);
 }
-#endif
+
 #else
+void GC_register_dynamic_libraries(){}
+
 int GC_no_dynamic_loading;
 #endif

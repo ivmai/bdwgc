@@ -21,14 +21,14 @@ ptr_t p;
 word sz;
 {
     if (HDR(p) -> hb_obj_kind == PTRFREE) {
-        GC_err_printf("Leaked atomic object at ");
+        GC_err_printf0("Leaked atomic object at ");
     } else {
-        GC_err_printf("Leaked composite object at ");
+        GC_err_printf0("Leaked composite object at ");
     }
     if (GC_debugging_started && GC_has_debug_info(p)) {
         GC_print_obj(p);
     } else {
-        GC_err_printf("0x%lx (appr. size = %ld)\n",
+        GC_err_printf1("0x%lx (appr. size = %ld)\n",
        		      (unsigned long)WORDS_TO_BYTES(sz));
     }
 }
@@ -434,13 +434,13 @@ int abort_if_found;		/* Abort if a reclaimable object is found */
     sz = hhdr -> hb_sz;
     ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
 #   ifdef PRINTBLOCKS
-        GC_printf("%ld(", (unsigned long)sz);
+        GC_printf1("%ld(", (unsigned long)sz);
         if (hhdr -> hb_obj_kind == PTRFREE) {
-            GC_printf("a");
+            GC_printf0("a");
         } else if (hhdr -> hb_obj_kind == NORMAL){
-            GC_printf("c");
+            GC_printf0("c");
         } else {
-            GC_printf("o");
+            GC_printf0("o");
         }
 #   endif
 
@@ -472,7 +472,7 @@ int abort_if_found;		/* Abort if a reclaimable object is found */
         }
     }
 #   ifdef PRINTBLOCKS
-        if (empty) {GC_printf("e),");} else {GC_printf("n),");}
+        if (empty) {GC_printf0("e),");} else {GC_printf0("n),");}
 #   endif
 }
 
@@ -507,7 +507,7 @@ int abort_if_found;		/* Abort if a GC_reclaimable object is found */
       }
     
 #   ifdef PRINTBLOCKS
-        GC_printf("GC_reclaim: current block sizes:\n");
+        GC_printf0("GC_reclaim: current block sizes:\n");
 #   endif
 
   /* Go through all heap blocks (in hblklist) and reclaim unmarked objects */
@@ -515,7 +515,7 @@ int abort_if_found;		/* Abort if a GC_reclaimable object is found */
     GC_apply_to_all_blocks(GC_reclaim_block, abort_if_found);
     
 #   ifdef PRINTBLOCKS
-        GC_printf("\n");
+        GC_printf0("\n");
 #   endif
 }
 

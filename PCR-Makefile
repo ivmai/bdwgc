@@ -1,41 +1,44 @@
 OBJS= alloc.o reclaim.o allochblk.o misc.o mach_dep.o os_dep.o mark_roots.o headers.o mark.o obj_map.o pcr_interface.o black_list.o finalize.o new_hblk.o real_malloc.o dynamic_load.o debug_malloc.o
 
+CSRCS= reclaim.c allochblk.c misc.c alloc.c mach_dep.c os_dep.c mark_roots.c headers.c mark.c obj_map.c pcr_interface.c black_list.c finalize.c new_hblk.c real_malloc.c dynamic_load.c debug_malloc.c
+
+SHELL= /bin/sh
+
 # Fix to point to local pcr installation directory.
-PCRDIR= /project/ppcr/dev
+PCRDIR= /project/ppcr/v1.5
 CC= gcc
 CFLAGS= -g -DPCR -I$(PCRDIR) -I$(PCRDIR)/pcr -I$(PCRDIR)/pcr/ansi -I$(PCRDIR)/pcr/posix
-# On Sun systems under 4.x, it's safer to link with -Bstatic.
-# On other systems, -Bstatic usually doesn't make sense, and should be
-# removed.
-# Setjmp_test may yield overly optimistic results when compiled
-# without optimization.
 
-SPECIALCFLAGS = 
-# Alternative flags to the C compiler for mach_dep.c.
-# Mach_dep.c often doesn't like optimization, and it's
-# not time-critical anyway.
-# Set SPECIALCFLAGS to -q nodirect_code on Encore.
-
-PCRINCLS= $(PCRDIR)/pcr/il/PCR_IL.h $(PCRDIR)/pcr/th/PCR_ThCtl.h $(PCRDIR)/pcr/mm/PCR_MM.h
-
+# We assume that mach_dep.o has already been built by top level makefile.  It doesn't
+# care about pcr vs UNIX, and we don't want to repeat that cruft.
 
 all: gc.o test.o gcpcr
 
 gcpcr: gc.o test.o $(PCRDIR)/pcr/base/pcr.o $(PCRDIR)/pcr/base/PCR_BaseMain.o
-	$(CC) -static -o gcpcr $(PCRDIR)/pcr/base/pcr.o $(PCRDIR)/pcr/base/PCR_BaseMain.o gc.o test.o
-
-$(OBJS) test.o: gc_private.h gc_headers.h gc.h PCR-Makefile $(PCRINCLS)
+	$(CC) -o gcpcr $(PCRDIR)/pcr/base/pcr.o $(PCRDIR)/pcr/base/PCR_BaseMain.o gc.o test.o -ldl
 
 gc.o: $(OBJS)
 	-ld -r -o gc.o $(OBJS)
 
-# On a MIPS machine, replace the rule for mach_dep.o by the
-# following:
-# mach_dep.o: mips_mach_dep.s
-#	as -o mach_dep.o mips_mach_dep.s
-# On an IBM RS6000, use the following two lines:
-# mach_dep.o: rs6000_mach_dep.s
-#	as -o mach_dep.o rs6000_mach_dep.s
-mach_dep.o: mach_dep.c
-	$(CC) -c ${SPECIALCFLAGS} mach_dep.c
+#
+# Dependency construction
+#
+# NOTE: the makefile must include "# DO NOT DELETE THIS LINE" after the
+#   last target.  "make depend" will replace everything following that line
+#   by a newly-constructed list of dependencies.
+#
+depend: $(CSRCS)
+	rm -f makedep eddep ; \
+    $(CC) -M $(CFLAGS) $(CSRCS) \
+			| sed -e '/:$$/d' > makedep ; \
+    echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep ; \
+	echo '$$r makedep' >>eddep ; \
+	echo 'w' >>eddep ; \
+	cp PCR-Makefile PCR-Makefile.bak ; \
+	ex - PCR-Makefile < eddep ; \
+	rm -f eddep makedep
+	touch depend
+	
+# DO NOT DELETE THIS LINE
+
 

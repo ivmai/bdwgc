@@ -2,7 +2,12 @@ OBJS= alloc.o reclaim.o allochblk.o misc.o mach_dep.o os_dep.o mark_roots.o head
 
 CSRCS= reclaim.c allochblk.c misc.c alloc.c mach_dep.c os_dep.c mark_roots.c headers.c mark.c obj_map.c pcr_interface.c black_list.c finalize.c new_hblk.c real_malloc.c dynamic_load.c debug_malloc.c
 
-SRCS= $(CSRCS) mips_mach_dep.s rs6000_mach_dep.s interface.c gc.h gc_headers.h gc_private.h gc_inline.h gc.man
+SRCS= $(CSRCS) mips_mach_dep.s rs6000_mach_dep.s interface.c gc.h gc_headers.h gc_private.h config.h gc_inline.h gc.man if_mach.c if_not_there.c
+
+# The following is irrelevant on most systems.  But a few
+# versions of make otherwise fork the shell specified in
+# the SHELL environment variable.
+SHELL= /bin/sh
 
 CC= cc
 CFLAGS= -O
@@ -17,40 +22,34 @@ SPECIALCFLAGS =
 
 all: gc.a gctest
 
-pcr: PCR-Makefile gc_private.h gc_headers.h gc.h $(SRCS)
+pcr: PCR-Makefile gc_private.h gc_headers.h gc.h config.h mach_dep.o $(SRCS)
+	make -f PCR-Makefile depend
 	make -f PCR-Makefile
 
-$(OBJS) test.o: gc_private.h gc_headers.h gc.h Makefile
+$(OBJS) test.o: gc_private.h gc_headers.h gc.h config.h Makefile
 
-#  On some machines, the ranlib command may have to be removed.
-#  On an SGI for example, ranlib doesn't exist, and is not needed.
-#  Ditto for Solaris 2.X.
 gc.a: $(OBJS)
 	ar ru gc.a $(OBJS)
-	ranlib gc.a
+	ranlib gc.a || cat /dev/null
+#	ignore ranlib failure; that usually means it doesn't exist, and isn't needed
 
-# On a MIPS-based machine, replace the rule for mach_dep.o by the
-# following:
-# mach_dep.o: mips_mach_dep.s
-#	as -o mach_dep.o mips_mach_dep.s
-# On an IBM RS6000, use the following two lines:
-# mach_dep.o: rs6000_mach_dep.s
-#	as -o mach_dep.o rs6000_mach_dep.s
-mach_dep.o: mach_dep.c
-	$(CC) -c $(SPECIALCFLAGS) mach_dep.c
+mach_dep.o: mach_dep.c mips_mach_dep.s rs6000_mach_dep.s if_mach if_not_there
+	rm -f mach_dep.o
+	./if_mach MIPS "" as -o mach_dep.o mips_mach_dep.s
+	./if_mach RS6000 "" as -o mach_dep.o rs6000_mach_dep.s
+	./if_not_there mach_dep.o $(CC) -c $(SPECIALCFLAGS) mach_dep.c
+
+if_mach: if_mach.c config.h
+	$(CC) $(CFLAGS) -o if_mach if_mach.c
+	
+if_not_there: if_not_there.c
+	$(CC) $(CFLAGS) -o if_not_there if_not_there.c
 
 clean: 
 	rm -f gc.a test.o gctest output-local output-diff $(OBJS) \
 	      setjmp_test  mon.out gmon.out a.out core
 	-rm -f *~
 
-
-# On a MIPS system, the BSD version of libc.a should be used to get
-# sigsetmask.  I found it necessary to link against the system V
-# library first, to get a working version of fprintf.  But this may have
-# been due to my failure to find the right version of stdio.h or some
-# such thing.
-# On a Solaris 2.X system, also make sure you're using BSD libraries.
 gctest: test.o gc.a
 	$(CC) $(CFLAGS) -o gctest test.o gc.a
 

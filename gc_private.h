@@ -10,13 +10,16 @@
  * provided the above notices are retained on all copies.
  */
  
-/* Machine specific parts contributed by various people.  See README file. */
 
 # ifndef GC_PRIVATE_H
 # define GC_PRIVATE_H
 
 # ifndef GC_H
 #   include "gc.h"
+# endif
+
+# ifndef CONFIG_H
+#   include "config.h"
 # endif
 
 # ifndef HEADERS_H
@@ -41,6 +44,10 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
     typedef char * extern_ptr_t;
 #endif
 
+# ifndef OS2
+#   include <sys/types.h>
+# endif
+
 /*********************************/
 /*                               */
 /* Definitions for conservative  */
@@ -54,113 +61,6 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 /*                               */
 /*********************************/
 
-# if defined(sun) && defined(mc68000)
-#    define M68K_SUN
-#    define mach_type_known
-# endif
-# if defined(hp9000s300)
-#    define M68K_HP
-#    define mach_type_known
-# endif
-# if defined(vax)
-#    define VAX
-#    ifdef ultrix
-#	define ULTRIX
-#    else
-#	define BSD
-#    endif
-#    define mach_type_known
-# endif
-# if defined(mips)
-#    define MIPS
-#    ifdef ultrix
-#	define ULTRIX
-#    else
-#	define RISCOS
-#    endif
-#    define mach_type_known
-# endif
-# if defined(sequent) && defined(i386)
-#    define I386
-#    define SEQUENT
-#    define mach_type_known
-# endif
-# if defined(__OS2__) && defined(__32BIT__)
-#    define I386
-#    define OS2
-#    define mach_type_known
-# endif
-# if defined(ibm032)
-#   define RT
-#   define mach_type_known
-# endif
-# if defined(sun) && defined(sparc)
-#   define SPARC
-#   define mach_type_known
-# endif
-# if defined(_IBMR2)
-#   define IBMRS6000
-#   define mach_type_known
-# endif
-# if defined(SCO)
-#   define I386
-#   define SCO
-#   define mach_type_known
-/*	--> incompletely implemented */
-# endif
-# if defined(_AUX_SOURCE)
-#   define M68K_SYSV
-#   define mach_type_known
-# endif
-# if defined(_PA_RISC1_0) || defined(_PA_RISC1_1)
-#   define HP_PA
-#   define mach_type_known
-# endif
-# if defined(linux) && defined(i386)
-#    define I386
-#    define LINUX
-#    define mach_type_known
-# endif
-
-# ifndef OS2
-#   include <sys/types.h>
-# endif
-
-/* Feel free to add more clauses here */
-
-/* Or manually define the machine type here.  A machine type is 	*/
-/* characterized by the architecture and assembler syntax.  Some	*/
-/* machine types are further subdivided by OS.  In that case, we use	*/
-/* the macros ULTRIX, RISCOS, and BSD to distinguish.			*/
-/* Note that SGI IRIX is treated identically to RISCOS.			*/
-/* The distinction in these cases is usually the stack starting address */
-# ifndef mach_type_known
-#   define M68K_SUN /* Guess "Sun" */
-		    /* Mapping is: M68K_SUN   ==> Sun3 assembler 	*/
-		    /*             M68K_HP    ==> HP9000/300 		*/
-		    /*		   M68K_SYSV  ==> A/UX, maybe others	*/
-		    /*             I386       ==> Intel 386	 	*/
-		    /*		    (SEQUENT, OS2, SCO, LINUX variants)	*/
-		    /*		     SCO is incomplete.			*/
-                    /*             NS32K      ==> Encore Multimax 	*/
-                    /*             MIPS       ==> R2000 or R3000	*/
-                    /*			(RISCOS, ULTRIX variants)	*/
-                    /*		   VAX	      ==> DEC VAX		*/
-                    /*			(BSD, ULTRIX variants)		*/
-                    /*		   RS6000     ==> IBM RS/6000 AIX3.1	*/
-                    /*		   RT	      ==> IBM PC/RT		*/
-                    /*		   HP_PA      ==> HP9000/700 & /800	*/
-                    /*				  HP/UX			*/
-		    /*		   SPARC      ==> SPARC under SunOS	*/
-# endif
-
-# ifdef SPARC
-  /* Test for SunOS 5.x */
-#   include <errno.h>
-#   ifdef ECHRNG
-#     define SUNOS5
-#   endif
-# endif
 
 #define ALL_INTERIOR_POINTERS
 		    /* Forces all pointers into the interior of an 	*/
@@ -231,9 +131,11 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 			 /* apparently required by SPARC architecture. */
 #endif
 
-#if defined(SPARC) || defined(M68K_SUN)
-# if !defined(PCR) && !defined(SUNOS5)
+#if defined(SPARC) || defined(M68K) && defined(SUNOS)
+# if !defined(PCR)
 #   define DYNAMIC_LOADING /* Search dynamic libraries for roots.	*/
+# else
+    /* PCR handles any dynamic loading whether with dlopen or otherwise */
 # endif
 #endif
 
@@ -253,261 +155,6 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #   define MERGE_SIZES
 # endif
 
-#if defined(M68K_SUN) || defined(M68K_SYSV)
-#  define ALIGNMENT   2   /* Pointers are aligned on 2 byte boundaries */
-			  /* by the Sun C compiler.                    */
-#else
-#  ifdef VAX
-#    define ALIGNMENT 4   /* Pointers are longword aligned by 4.2 C compiler */
-#  else
-#    ifdef RT
-#      define ALIGNMENT 4
-#    else
-#      ifdef SPARC
-#        define ALIGNMENT 4
-#      else
-#        ifdef I386
-#           define ALIGNMENT 4      /* 32-bit compilers align pointers */
-#        else
-#          ifdef NS32K
-#            define ALIGNMENT 4     /* Pointers are aligned on NS32K */
-#          else
-#            ifdef MIPS
-#              define ALIGNMENT 4   /* MIPS hardware requires pointer */
-				    /* alignment                      */
-#            else
-#              ifdef M68K_HP
-#                define ALIGNMENT 2 /* 2 byte alignment inside struct/union, */
-				    /* 4 bytes elsewhere 		     */
-#              else
-#		 ifdef IBMRS6000
-#		   define ALIGNMENT 4
-#		 else
-#		   ifdef HP_PA
-#		     define ALIGNMENT 4
-#		   else
-		     --> specify alignment <--
-#		   endif
-#		 endif
-#              endif
-#            endif
-#          endif
-#        endif
-#      endif
-#    endif
-#  endif
-# endif
-
-/*
- * STACKBOTTOM is the cool end of the stack, which is usually the
- * highest address in the stack.
- * Under PCR or OS/2, we have other ways of finding thread stacks.
- * For each machine, the following should:
- * 1) define STACK_GROWS_UP if the stack grows toward higher addresses, and
- * 2) define exactly one of
- *	STACKBOTTOM (should be defined to be an expression)
- *	HEURISTIC1
- *	HEURISTIC2
- * If either of the last two macros are defined, then STACKBOTTOM is computed
- * during collector startup using one of the following two heuristics:
- * HEURISTIC1:  Take an address inside GC_init's frame, and round it up to
- *		the next multiple of 16 MB.
- * HEURISTIC2:  Take an address inside GC_init's frame, increment it repeatedly
- *		in small steps (decrement if STACK_GROWS_UP), and read the value
- *		at each location.  Remember the value when the first
- *		Segmentation violation or Bus error is signalled.  Round that
- *		to the nearest plausible page boundary, and use that instead
- *		of STACKBOTTOM.
- *
- * If no expression for STACKBOTTOM can be found, and neither of the above
- * heuristics are usable, the collector can still be used with all of the above
- * undefined, provided one of the following is done:
- * 1) GC_mark_roots can be changed to somehow mark from the correct stack(s)
- *    without reference to STACKBOTTOM.  This is appropriate for use in
- *    conjunction with thread packages, since there will be multiple stacks.
- *    (Allocating thread stacks in the heap, and treating them as ordinary
- *    heap data objects is also possible as a last resort.  However, this is
- *    likely to introduce significant amounts of excess storage retention
- *    unless the dead parts of the thread stacks are periodically cleared.)
- * 2) Client code may set GC_stackbottom before calling any GC_ routines.
- *    If the author of the client code controls the main program, this is
- *    easily accomplished by introducing a new main program, setting
- *    GC_stackbottom to the address of a local variable, and then calling
- *    the original main program.  The new main program would read something
- *    like:
- *
- *		# include "gc_private.h"
- *
- *		main(argc, argv, envp)
- *		int argc;
- *		char **argv, **envp;
- *		{
- *		    int dummy;
- *
- *		    GC_stackbottom = (ptr_t)(&dummy);
- *		    return(real_main(argc, argv, envp));
- *		}
- */
-#ifndef PCR
-# ifdef RT
-#   define STACKBOTTOM ((ptr_t) 0x1fffd800)
-# else
-#   ifdef I386
-#     ifdef SEQUENT
-#       define STACKBOTTOM ((ptr_t) 0x3ffff000)  /* For Sequent */
-#     else
-#	ifdef SCO
-#	  define STACKBOTTOM ((ptr_t) 0x7ffffffc)
-#	else
-#	  ifdef LINUX
-#	    define STACKBOTTOM ((ptr_t)0xc0000000)
-#	  else
-#	    ifdef OS2
- 	    	/* This is handled specially in GC_init_inner.	*/
-		/* OS2 actually has the right system call!	*/
-#	    else
-		 --> Your OS isnt supported yet
-#	    endif
-#	  endif
-#	endif
-#     endif
-#   else
-#     ifdef NS32K
-#       define STACKBOTTOM ((ptr_t) 0xfffff000) /* for Encore */
-#     else
-#       ifdef M68K_SYSV
-#	  define STACKBOTTOM ((ptr_t)0xFFFFFFFE)
-			/* The stack starts at the top of memory, but   */
-			/* 0x0 cannot be used as setjump_test complains */
-			/* that the stack direction is incorrect.  Two  */
-			/* bytes down from 0x0 should be safe enough.   */
-			/* 		--Parag				*/
-#       else
-#         ifdef M68K_HP
-#           define STACKBOTTOM ((ptr_t) 0xffeffffc)
-			      /* empirically determined.  seems to work. */
-#	  else
-#	    ifdef IBMRS6000
-#	      define STACKBOTTOM ((ptr_t) 0x2ff80000)
-#           else
-#	      if defined(VAX) && defined(ULTRIX)
-#		ifdef ULTRIX
-#		  define STACKBOTTOM ((ptr_t) 0x7fffc800)
-#		else
-#		  define HEURISTIC1
-			/* HEURISTIC2 may be OK, but it's hard to test. */
-#		endif
-#	      else
-		  /* Sun systems, HP PA systems, and DEC MIPS systems have  */
-		  /* STACKBOTTOM values that differ between machines that   */
-		  /* are intended to be object code compatible.		    */
-#		    if defined(SPARC) || defined(M68K_SUN)
-#		      define HEURISTIC1
-#		    else
-#		      ifdef HP_PA
-#			define STACK_GROWS_UP
-#		      endif
-#		      define HEURISTIC2
-#		    endif
-#	      endif
-#	    endif
-#         endif
-#       endif
-#     endif
-#   endif
-# endif
-#endif /* PCR */
-
-
-# ifndef STACK_GROWS_UP
-#   define STACK_GROWS_DOWN
-# endif
-
-/* Start of data segment for each of the above systems.  Note that the */
-/* default case works only for contiguous text and data, such as on a  */
-/* Vax.                                                                */
-# ifdef M68K_SUN
-    extern char etext;
-#   define DATASTART ((ptr_t)((((word) (&etext)) + 0x1ffff) & ~0x1ffff))
-# else
-#   ifdef RT
-#     define DATASTART ((ptr_t) 0x10000000)
-#   else
-#     if (defined(I386) && (defined(SEQUENT)||defined(LINUX))) || defined(SPARC)
-	extern int etext;
-#	ifdef SUNOS5
-#         define DATASTART ((ptr_t)((((word) (&etext)) + 0x10003) & ~0x3))
-		/* Experimentally determined.  			*/
-		/* Inconsistent with man a.out, which appears	*/
-		/* to be wrong.					*/
-#	else
-#         define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
-		/* On very old SPARCs this is too conservative. */
-#	endif
-#     else
-#       ifdef NS32K
-	  extern char **environ;
-#         define DATASTART ((ptr_t)(&environ))
-			      /* hideous kludge: environ is the first   */
-			      /* word in crt0.o, and delimits the start */
-			      /* of the data segment, no matter which   */
-			      /* ld options were passed through.        */
-#       else
-#         ifdef MIPS
-#           define DATASTART 0x10000000
-			      /* Could probably be slightly higher since */
-			      /* startup code allocates lots of junk     */
-#         else
-#           ifdef M68K_HP
-	      extern char etext;
-#             define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
-#	    else
-#             ifdef IBMRS6000
-#		define DATASTART ((ptr_t)0x20000000)
-#	      else
-#		ifdef I386
-#		  ifdef SCO
-#   		    define DATASTART ((ptr_t)((((word) (&etext)) + 0x3fffff) \
-					    & ~0x3fffff) \
-					    +((word)&etext & 0xfff))
-#		  else
-#		    ifdef OS2
-#   		      define DATASTART ((ptr_t)((((word) (&etext)) + 0x3fffff) \
-					    & ~0x3fffff) \
-					    +((word)&etext & 0xfff))
-#		    else
-			--> Your OS not supported yet
-#		    endif
-#		  endif
-#		else
-#		  ifdef M68K_SYSV
-	/* This only works for shared-text binaries with magic number 0413.
-	   The other sorts of SysV binaries put the data at the end of the text,
-	   in which case the default of &etext would work.  Unfortunately,
-	   handling both would require having the magic-number available.
-	   	   		-- Parag
-	   */
-	   	    extern etext;
-#   		    define DATASTART ((ptr_t)((((word) (&etext)) + 0x3fffff) \
-					      & ~0x3fffff) \
-					      +((word)&etext & 0x1fff))    
-#                 else
-#		    ifdef HP_PA
-			extern int __data_start;
-#			define DATASTART ((ptr_t)(&__data_start))
-#		    else
-		    	extern char etext;
-#                   	define DATASTART ((ptr_t)(&etext))
-#		    endif
-#		  endif
-#		endif
-#	      endif
-#           endif
-#         endif
-#       endif
-#     endif
-#   endif
-# endif
 
 # define HINCR 16          /* Initial heap increment, in blocks of 4K        */
 # define MAXHINCR 512      /* Maximum heap increment, in blocks              */
@@ -549,7 +196,17 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 		(1000.0*(double)((a)-(b))/(double)CLOCKS_PER_SEC))
 
 /* We use bzero and bcopy internally.  They may not be available.	*/
-# ifdef OS2
+# if defined(SPARC) && defined(SUNOS4)
+#   define BCOPY_EXISTS
+# endif
+# if defined(M68K) && defined(SUNOS)
+#   define BCOPY_EXISTS
+# endif
+# if defined(VAX)
+#   define BCOPY_EXISTS
+# endif
+
+# ifndef BCOPY_EXISTS
 #   include <string.h>
 #   define bcopy(x,y,n) memcpy(y,x,n)
 #   define bzero(x,n)  memset(x, 0, n)
@@ -674,7 +331,7 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 # endif
 
 /* Print warning message, e.g. almost out of memory.	*/
-# define WARN(s) GC_printf(s)
+# define WARN(s) GC_printf0(s)
 
 /*********************************/
 /*                               */
@@ -682,22 +339,25 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 /*                               */
 /*********************************/
 
-#define WORDS_TO_BYTES(x)   ((x)<<2)
-#define BYTES_TO_WORDS(x)   ((x)>>2)
+#if CPP_WORDSZ == 32
+#  define WORDS_TO_BYTES(x)   ((x)<<2)
+#  define BYTES_TO_WORDS(x)   ((x)>>2)
+#  define LOGWL               ((word)5)    /* log[2] of CPP_WORDSZ */
+#  define modWORDSZ(n) ((n) & 0x1f)          /* n mod size of word	    */
+#endif
 
-#define CPP_WORDSZ              32
+#if CPP_WORDSZ == 64
+#  define WORDS_TO_BYTES(x)   ((x)<<3)
+#  define BYTES_TO_WORDS(x)   ((x)>>3)
+#  define LOGWL               ((word)6)    /* log[2] of CPP_WORDSZ */
+#  define modWORDSZ(n) ((n) & 0x3f)          /* n mod size of word	    */
+#endif
+
 #define WORDSZ ((word)CPP_WORDSZ)
-#define LOGWL               ((word)5)    /* log[2] of above */
+#define SIGNB  ((word)1 << (WORDSZ-1))
 #define BYTES_PER_WORD      ((word)(sizeof (word)))
-#define ONES                0xffffffff
-#define MSBYTE              0xff000000
-#define SIGNB               0x80000000
-#define MAXSHORT            0x7fff
-#define modHALFWORDSZ(n) ((n) & 0xf)    /* mod n by size of half word    */
-#define divHALFWORDSZ(n) ((n) >> 4)	/* divide n by size of half word */
-#define modWORDSZ(n) ((n) & 0x1f)       /* mod n by size of word         */
-#define divWORDSZ(n) ((n) >> 5)         /* divide n by size of word      */
-#define twice(n) ((n) << 1)             /* double n                      */
+#define ONES                ((word)(-1))
+#define divWORDSZ(n) ((n) >> LOGWL)	   /* divide n by size of word      */
 
 /*********************/
 /*                   */
@@ -841,6 +501,13 @@ struct _GC_arrays {
 # endif
   word _words_allocd;
   	/* Number of words allocated during this collection cycle */
+  word _non_gc_bytes_at_gc;
+  	/* Number of explicitly managed bytes of storage 	*/
+  	/* at last collection.					*/
+  word _mem_freed;
+  	/* Number of explicitly deallocated words of memory	*/
+  	/* since last collection.				*/
+  	
   ptr_t _objfreelist[MAXOBJSZ+1];
 			  /* free list for objects */
 # ifdef MERGE_SIZES
@@ -913,6 +580,8 @@ extern struct _GC_arrays GC_arrays;
 # define GC_last_heap_addr GC_arrays._last_heap_addr
 # define GC_prev_heap_addr GC_arrays._prev_heap_addr
 # define GC_words_allocd GC_arrays._words_allocd
+# define GC_non_gc_bytes_at_gc GC_arrays._non_gc_bytes_at_gc
+# define GC_mem_freed GC_arrays._mem_freed
 # define GC_heapsize GC_arrays._heapsize
 # define GC_words_allocd_before_gc GC_arrays._words_allocd_before_gc
 # ifdef GATHERSTATS
@@ -1031,7 +700,10 @@ void GC_mark_all_stack(/*b,t*/);    /* Mark from everything in a range,	    */
 void GC_remark();	/* Mark from all marked objects.  Used	*/
 		 	/* only if we had to drop something.	*/
 void GC_tl_mark(/*p*/);	/* Mark from a single root.		*/
+void GC_clear_hdr_marks(/* hhdr */);  /* Clear the mark bits in a header */
 void GC_add_roots_inner();
+void GC_register_dynamic_libraries();
+		/* Add dynamic library data sections to the root set. */
 
 /* Machine dependent startup routines */
 ptr_t GC_get_stack_base();
@@ -1099,8 +771,16 @@ void GC_continue_reclaim(/*size, kind*/);
 				/* kind, as long as possible, and	*/
 				/* as long as the corr. free list is    */
 				/* empty.				*/
-void GC_gcollect_inner();	/* Collect; caller must have acquired	*/
+bool GC_gcollect_inner(/* force */);
+				/* Collect; caller must have acquired	*/
 				/* lock and disabled signals.		*/
+				/* FALSE return indicates nothing was	*/
+				/* done due to insufficient allocation. */
+void GC_collect_or_expand(/* needed_blocks */);
+				/* Collect or expand heap in an attempt */
+				/* make the indicated number of free	*/
+				/* blocks available.  Should be called	*/
+				/* until it succeeds or exits.		*/
 void GC_init();			/* Initialize collector.		*/
 
 ptr_t GC_generic_malloc(/* bytes, kind */);
@@ -1147,16 +827,41 @@ void GC_check_heap();
 			/* debugging info are intact.  Print 		*/
 			/* descriptions of any that are not.		*/
 
-void GC_printf(/* format, ... */);
+void GC_printf(/* format, a, b, c, d, e, f */);
 			/* A version of printf that doesn't allocate,	*/
 			/* is restricted to long arguments, and		*/
 			/* (unfortunately) doesn't use varargs for	*/
 			/* portability.  Restricted to 6 args and	*/
 			/* 1K total output length.			*/
 			/* (We use sprintf.  Hopefully that doesn't	*/
-			/* allocate for long arguments.  		*/
-void GC_err_printf(/* format, ... */);
+			/* allocate for long arguments.)  		*/
+# define GC_printf0(f) GC_printf(f, 0l, 0l, 0l, 0l, 0l, 0l)
+# define GC_printf1(f,a) GC_printf(f, (long)a, 0l, 0l, 0l, 0l, 0l)
+# define GC_printf2(f,a,b) GC_printf(f, (long)a, (long)b, 0l, 0l, 0l, 0l)
+# define GC_printf3(f,a,b,c) GC_printf(f, (long)a, (long)b, (long)c, 0l, 0l, 0l)
+# define GC_printf4(f,a,b,c,d) GC_printf(f, (long)a, (long)b, (long)c, \
+					    (long)d, 0l, 0l)
+# define GC_printf5(f,a,b,c,d,e) GC_printf(f, (long)a, (long)b, (long)c, \
+					      (long)d, (long)e, 0l)
+# define GC_printf6(f,a,b,c,d,e,g) GC_printf(f, (long)a, (long)b, (long)c, \
+						(long)d, (long)e, (long)g)
+
+void GC_err_printf(/* format, a, b, c, d, e, f */);
+# define GC_err_printf0(f) GC_err_puts(f)
+# define GC_err_printf1(f,a) GC_err_printf(f, (long)a, 0l, 0l, 0l, 0l, 0l)
+# define GC_err_printf2(f,a,b) GC_err_printf(f, (long)a, (long)b, 0l, 0l, 0l, 0l)
+# define GC_err_printf3(f,a,b,c) GC_err_printf(f, (long)a, (long)b, (long)c, \
+						  0l, 0l, 0l)
+# define GC_err_printf4(f,a,b,c,d) GC_err_printf(f, (long)a, (long)b, \
+						    (long)c, (long)d, 0l, 0l)
+# define GC_err_printf5(f,a,b,c,d,e) GC_err_printf(f, (long)a, (long)b, \
+						      (long)c, (long)d, \
+						      (long)e, 0l)
+# define GC_err_printf6(f,a,b,c,d,e,g) GC_err_printf(f, (long)a, (long)b, \
+							(long)c, (long)d, \
+							(long)e, (long)g)
 			/* Ditto, writes to stderr.			*/
+			
 void GC_err_puts(/* char *s */);
 			/* Write s to stderr, don't buffer, don't add	*/
 			/* newlines, don't ...				*/

@@ -38,61 +38,24 @@ struct hblk *GC_savhbp = (struct hblk *)0;  /* heap block preceding next */
 					 /* block to be examined by   */
 					 /* GC_allochblk.                */
 
-/*
- * Return TRUE if there is a heap block sufficient for object size sz,
- * FALSE otherwise.  Advance GC_savhbp to point to the block prior to the
- * first such block.
- */
-bool GC_sufficient_hb(sz, kind)
-word sz;
+/* Initialize hdr for a block containing the indicated size and 	*/
+/* kind of objects.							*/
+static setup_header(hhdr, sz, kind)
+register hdr * hhdr;
+word sz;	/* object size in words */
 int kind;
 {
-register struct hblk *hbp;
-register hdr * hhdr;
-struct hblk *prevhbp;
-signed_word size_needed;
-signed_word size_avail;
-bool first_time = TRUE;
-
-    size_needed = WORDS_TO_BYTES(sz);
-    size_needed = (size_needed+HDR_BYTES+HBLKSIZE-1) & ~HBLKMASK;
-#   ifdef DEBUG
-	GC_printf("GC_sufficient_hb: sz = %ld, size_needed = 0x%lx\n",
-		  (long)sz, (unsigned long)size_needed);
-#   endif
-    /* search for a big enough block in free list */
-	hbp = GC_savhbp;
-	hhdr = HDR(hbp);
-	for(;;) {
-	    prevhbp = hbp;
-	    hbp = ((prevhbp == (struct hblk *)0)
-		    ? GC_hblkfreelist
-		    : hhdr->hb_next);
-	    hhdr = HDR(hbp);
-
-	    if( prevhbp == GC_savhbp && !first_time) {
-		/* no sufficiently big blocks on free list */
-		return(FALSE);
-	    }
-	    first_time = 0;
-	    if( hbp == (struct hblk *)0 ) continue;
-	    size_avail = hhdr->hb_sz;
-	    if ( kind != PTRFREE || size_needed > MAX_BLACK_LIST_ALLOC) {
-	      struct hblk * thishbp;
-	      struct hblk * lasthbp = hbp;
-	      
-	      while ((ptr_t)lasthbp - (ptr_t)hbp < size_avail
-	             && (thishbp = GC_is_black_listed(lasthbp,
-	             				      (word)size_needed))) {
-	          lasthbp = thishbp;
-	      }
-	      size_avail -= (ptr_t)lasthbp - (ptr_t)hbp;
-	    }
-	    if( size_avail >= size_needed ) {
-		GC_savhbp = prevhbp;
-		return(TRUE);
-	    }
-	}
+    /* Set size, kind and mark proc fields */
+      hhdr -> hb_sz = sz;
+      hhdr -> hb_obj_kind = kind;
+      hhdr -> hb_mark_proc = GC_obj_kinds[kind].ok_mark_proc;
+      
+    /* Add description of valid object pointers */
+      GC_add_map_entry(sz);
+      hhdr -> hb_map = GC_obj_map[sz > MAXOBJSZ? 0 : sz];
+      
+    /* Clear mark bits */
+      GC_clear_hdr_marks(hhdr);
 }
 
 /*
@@ -134,31 +97,10 @@ int kind;
 	    hhdr = HDR(hbp);
 
 	    if( prevhbp == GC_savhbp && !first_time) {
-		/* no sufficiently big blocks on free list, */
-		/* let thishbp --> a newly-allocated block, */
-		/* free it (to merge into existing block    */
-		/* list) and start the search again, this   */
-		/* time with guaranteed success.            */
-                  word size_to_get = size_needed + GC_hincr * HBLKSIZE;
-
-		  if (! GC_expand_hp_inner(divHBLKSZ(size_to_get))) {
-		      if (! GC_expand_hp_inner(divHBLKSZ((word)size_needed)))
-		      {
-		          /* GC_printf("Out of Memory!  Giving up ...\n"); */
-		          /* There are other things we could try.  It 	*/
-		          /* would probably be reasonable to clear 	*/
-		          /* black lists at tthis point.		*/
-		          return(0);
-		      } else {
-		          WARN("Out of Memory!  Trying to continue ...\n");
-		          GC_gcollect_inner(TRUE);
-		      }
-		  }
-                  update_GC_hincr;
-                  return (GC_allochblk(sz, kind));
+	        return(0);
 	    }
 
-	    first_time = 0;
+	    first_time = FALSE;
 
 	    if( hbp == 0 ) continue;
 
@@ -205,7 +147,30 @@ int kind;
 		      phdr = hhdr;
 		      hbp = thishbp;
 		      hhdr = thishdr;
-	      } 
+	      } else if (size_avail == 0
+	      		 && size_needed == HBLKSIZE
+	      		 && prevhbp != 0) {
+	      	  static unsigned count = 0;
+	      	  
+	      	  /* The block is completely blacklisted.  We need 	*/
+	      	  /* to drop some such blocks, since otherwise we spend */
+	      	  /* all our time traversing them if pointerfree	*/
+	      	  /* blocks are unpopular.				*/
+	          /* A dropped block will be reconsidered at next GC.	*/
+	          if ((++count & 3) == 0) {
+	            /* Allocate and drop the block */
+	              phdr -> hb_next = hhdr -> hb_next;
+	              GC_install_counts(hbp, hhdr->hb_sz);
+	              setup_header(hhdr,
+	              		   BYTES_TO_WORDS(hhdr->hb_sz - HDR_BYTES),
+	              		   PTRFREE);
+	              if (GC_savhbp == hbp) GC_savhbp = prevhbp;
+	            /* Restore hbp to point at free block */
+	              hbp = prevhbp;
+	              hhdr = phdr;
+	              if (hbp == GC_savhbp) first_time = TRUE;
+	          }
+	      }
 	    }
 	    if( size_avail >= size_needed ) {
 		/* found a big enough block       */
@@ -237,34 +202,16 @@ int kind;
 	    }
 	}
 
-    /* set size and mask field of *thishbp correctly */
-	thishdr->hb_sz = sz;
-
     /* Clear block if necessary */
 	if (sz > MAXOBJSZ && GC_obj_kinds[kind].ok_init) {
 	    bzero((char *)thishbp + HDR_BYTES,  (int)(size_needed - HDR_BYTES));
 	}
-	
-    /* Clear mark bits */
-	{
-	    register word *p = (word *)(&(thishdr -> hb_marks[0]));
-	    register word * plim =
-	    		(word *)(&(thishdr -> hb_marks[MARK_BITS_SZ]));
-	    while (p < plim) {
-		*p++ = 0;
-	    }
-	}
-	
-    /* Add it to data structure describing hblks in use */
-        GC_install_counts(thishbp, (word)size_needed);
+
+    /* Set up header */
+        setup_header(thishdr, sz, kind);
         
-    /* Add description of valid object pointers. */
-        GC_add_map_entry(sz);
-        thishdr -> hb_map = GC_obj_map[sz > MAXOBJSZ? 0 : sz];
-        
-    /* Set kind related fields */
-        thishdr -> hb_obj_kind = kind;
-        thishdr -> hb_mark_proc = GC_obj_kinds[kind].ok_mark_proc;
+    /* Add it to map of valid blocks */
+    	GC_install_counts(thishbp, (word)size_needed);
 
     return( thishbp );
 }
@@ -311,10 +258,10 @@ register signed_word size;
     /* Check for duplicate deallocation in the easy case */
       if (hbp != 0 && (ptr_t)p + size > (ptr_t)hbp
         || prevhbp != 0 && (ptr_t)prevhbp + prevhdr->hb_sz > (ptr_t)p) {
-        GC_printf("Duplicate large block deallocation of 0x%lx\n",
-        	  (unsigned long) p);
-        GC_printf("Surrounding free blocks are 0x%lx and 0x%lx\n",
-           	  (unsigned long) prevhbp, (unsigned long) hbp);
+        GC_printf1("Duplicate large block deallocation of 0x%lx\n",
+        	   (unsigned long) p);
+        GC_printf2("Surrounding free blocks are 0x%lx and 0x%lx\n",
+           	   (unsigned long) prevhbp, (unsigned long) hbp);
       }
 
     /* Coalesce with successor, if possible */

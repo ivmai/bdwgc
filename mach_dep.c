@@ -27,8 +27,8 @@ GC_mark_regs()
 	  asm("pushl r7");	asm("calls $1,_GC_tl_mark");
 	  asm("pushl r6");	asm("calls $1,_GC_tl_mark");
 #       endif
-#       ifdef M68K_SUN
-	/*  M68K_SUN - could be replaced by generic code */
+#       if defined(M68K) && defined(SUNOS)
+	/*  M68K SUNOS - could be replaced by generic code */
 	  /* a0, a1 and d1 are caller save          */
 	  /*  and therefore are on stack or dead.   */
 	
@@ -50,8 +50,8 @@ GC_mark_regs()
 	  asm("addqw #0x4,sp");		/* put stack back where it was	*/
 #       endif
 
-#       ifdef M68K_HP
-	/*  M68K_HP - could be replaced by generic code */
+#       if defined(M68K) && defined(HP)
+	/*  M68K HP - could be replaced by generic code */
 	  /* a0, a1 and d1 are caller save.  */
 	
 	  asm("subq.w &0x4,%sp");	/* allocate word on top of stack */
@@ -70,9 +70,9 @@ GC_mark_regs()
 	  asm("mov.l %d7,(%sp)"); asm("jsr _GC_tl_mark");
 
 	  asm("addq.w &0x4,%sp");	/* put stack back where it was	*/
-#       endif /* M68K_HP */
+#       endif /* M68K HP */
 
-#       if defined(I386) && !defined(OS2)
+#       if defined(I386) && !defined(OS2) && !defined(SUNOS5)
 	/* I386 code, generic code does not appear to work */
 	/* It does appear to work under OS2, and asms dont */
 	  asm("pushl %eax");  asm("call _GC_tl_mark"); asm("addl $4,%esp");
@@ -81,6 +81,17 @@ GC_mark_regs()
 	  asm("pushl %esi");  asm("call _GC_tl_mark"); asm("addl $4,%esp");
 	  asm("pushl %edi");  asm("call _GC_tl_mark"); asm("addl $4,%esp");
 	  asm("pushl %ebx");  asm("call _GC_tl_mark"); asm("addl $4,%esp");
+#       endif
+
+#       if defined(I386) && defined(SUNOS5)
+	/* I386 code, generic code does not appear to work */
+	/* It does appear to work under OS2, and asms dont */
+	  asm("pushl %eax");  asm("call GC_tl_mark"); asm("addl $4,%esp");
+	  asm("pushl %ecx");  asm("call GC_tl_mark"); asm("addl $4,%esp");
+	  asm("pushl %edx");  asm("call GC_tl_mark"); asm("addl $4,%esp");
+	  asm("pushl %esi");  asm("call GC_tl_mark"); asm("addl $4,%esp");
+	  asm("pushl %edi");  asm("call GC_tl_mark"); asm("addl $4,%esp");
+	  asm("pushl %ebx");  asm("call GC_tl_mark"); asm("addl $4,%esp");
 #       endif
 
 #       ifdef NS32K
@@ -111,7 +122,7 @@ GC_mark_regs()
 	    asm("cas r11, r15, r0"); GC_tl_mark(TMP_SP);
 #       endif
 
-#       ifdef M68K_SYSV
+#       if defined(M68K) && defined(SYSV)
   	/*  Once again similar to SUN and HP, though setjmp appears to work.
   		--Parag
   	 */
@@ -150,7 +161,7 @@ GC_mark_regs()
   
   	  asm("addq.w &0x4,%sp");	/* put stack back where it was	*/
 #        endif /* !__GNUC__ */
-#       endif /* M68K_SYSV */
+#       endif /* M68K/SYSV */
 
 
 #     if defined(HP_PA) || (defined(I386) && defined(OS2))
@@ -174,8 +185,12 @@ GC_mark_regs()
 #     endif
 
       /* other machines... */
-#       if !(defined M68K_SUN) && !defined(M68K_HP) && !(defined VAX) && !(defined RT) && !(defined SPARC) && !(defined I386) &&!(defined NS32K) &&!defined(HP_PA) && !defined(M68K_SYSV)
+#       if !(defined M68K) && !(defined VAX) && !(defined RT) 
+#	if !(defined SPARC) && !(defined I386) &&!(defined NS32K)
+#	if !defined(HP_PA)
 	    --> bad news <--
+#       endif
+#       endif
 #       endif
 }
 

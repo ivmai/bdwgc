@@ -10,7 +10,7 @@
 /* code.)						     */
 #include <stdio.h>
 #include <setjmp.h>
-#include "gc_private.h"
+#include "config.h"
 
 #ifdef __hpux
 /* X/OPEN PG3 defines "void* sbrk();" and this clashes with the definition */
@@ -23,6 +23,16 @@ int
 getpagesize()
 {
     return sysconf(_SC_PAGE_SIZE);
+}
+#endif
+
+#if defined(SUNOS5)
+#define _CLASSIC_XOPEN_TYPES
+#include <unistd.h>
+int
+getpagesize()
+{
+    return sysconf(_SC_PAGESIZE);
 }
 #endif
 
@@ -95,7 +105,7 @@ main()
 	if (y == 1) {
 	    if (x == 2) {
 		printf("Generic mark_regs code probably wont work\n");
-#		if defined(SPARC) || defined(IBMRS6000)
+#		if defined(SPARC) || defined(IBMRS6000) || defined(VAX) || defined(MIPS) || defined(M68K) || defined(I386) || defined(NS32K) || defined(RT)
 		    printf("Assembly code supplied\n");
 #		else
 		    printf("Need assembly code\n");

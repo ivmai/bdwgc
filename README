@@ -8,7 +8,7 @@ Permission is hereby granted to copy this garbage collector for any purpose,
 provided the above notices are retained on all copies.
 
 
-This is version 2.4.  Note that functions were renamed since version 1.9
+This is version 2.6.  Note that functions were renamed since version 1.9
 to make naming consistent with PCR collectors.
 
 HISTORY -
@@ -542,3 +542,16 @@ for PPCR.
   under 4.1.1U1, but apparently not 4.1.1.  If you have such a machine,
   use -Bstatic.)
   
+  Version 2.5 added Solaris dynamic libary support, Solaris/Intel support,
+  and fixed the following bugs:
+- Removed an explicit call to exit(1)
+- Fixed calls to GC_printf and GC_err_printf, so the correct number of
+  arguments are always supplied.  The OS/2 C compiler gets confused if
+  the number of actuals and the number of formals differ.  (ANSI C
+  doesn't require this to work.  The ANSI sanctioned way of doing things
+  causes too many compatibility problems.)
+  
+  Version 2.6 fixed a bug diagnosed by Al Dosser at DEC.  The marker
+  could lose some pointers in the event of a mark stack overflow, a case
+  it was intended to handle correctly.  (He also pointed out a performance
+  bug that was tickled under the same circumstances.)

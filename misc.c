@@ -34,8 +34,10 @@ struct _GC_arrays GC_arrays = { 0 };
 /* This must be done statically since they may be accessed before 	*/
 /* GC_init is called.							*/
 struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
-/* PTRFREE */ { GC_aobjfreelist, GC_areclaim_list, GC_no_mark_proc, FALSE },
-/* NORMAL  */ { GC_objfreelist, GC_reclaim_list, GC_normal_mark_proc, TRUE },
+/* PTRFREE */ { &GC_aobjfreelist[0], &GC_areclaim_list[0],
+		GC_no_mark_proc, FALSE },
+/* NORMAL  */ { &GC_objfreelist[0], &GC_reclaim_list[0],
+		GC_normal_mark_proc, TRUE },
 };
 
 ptr_t GC_stackbottom = 0;
@@ -235,10 +237,9 @@ DCL_LOCK_STATE;
 	
 	if (!GC_is_initialized) GC_init_inner();
 	lw = ROUNDED_UP_WORDS(lb);
-	if (!GC_sufficient_hb(lw, k) && !GC_dont_gc) {
-            GC_gcollect_inner(FALSE);
+	while ((h = GC_allochblk(lw, k)) == 0) {
+	   GC_collect_or_expand(divHBLKSZ(lb) + 1);
 	}
-	h = GC_allochblk(lw, k);
 	if (h == 0) {
 	    op = 0;
 	} else {
@@ -505,6 +506,7 @@ int obj_kind;
     h = HBLKPTR(p);
     hhdr = HDR(h);
     sz = hhdr -> hb_sz;
+    GC_mem_freed += sz;
     ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
   
     if (sz > MAXOBJSZ) {
@@ -546,56 +548,59 @@ void GC_init_inner()
       }
 #   endif
     if  (sizeof (ptr_t) != sizeof(word)) {
-        GC_printf("sizeof (ptr_t) != sizeof(word)\n");
+        GC_err_printf0("sizeof (ptr_t) != sizeof(word)\n");
         ABORT("sizeof (ptr_t) != sizeof(word)\n");
     }
     if  (sizeof (signed_word) != sizeof(word)) {
-        GC_printf("sizeof (signed_word) != sizeof(word)\n");
+        GC_err_printf0("sizeof (signed_word) != sizeof(word)\n");
         ABORT("sizeof (signed_word) != sizeof(word)\n");
     }
     if  (sizeof (struct hblk) != HBLKSIZE) {
-        GC_printf("sizeof (struct hblk) != HBLKSIZE\n");
+        GC_err_printf0("sizeof (struct hblk) != HBLKSIZE\n");
         ABORT("sizeof (struct hblk) != HBLKSIZE\n");
     }
 #   ifndef THREADS
 #     if defined(STACK_GROWS_UP) && defined(STACK_GROWS_DOWN)
-  	GC_printf(
+  	GC_err_printf0(
   	  "Only one of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd\n");
   	ABORT("stack direction 1\n");
 #     endif
 #     if !defined(STACK_GROWS_UP) && !defined(STACK_GROWS_DOWN)
-  	GC_printf(
+  	GC_err_printf0(
   	  "One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd\n");
   	ABORT("stack direction 2\n");
 #     endif
 #     ifdef STACK_GROWS_DOWN
         if ((word)(&dummy) > (word)GC_stackbottom) {
-          GC_printf("STACK_GROWS_DOWN is defd, but stack appears to grow up\n");
-          GC_printf("sp = 0x%lx, GC_stackbottom = 0x%lx\n",
-          	    (unsigned long) (&dummy),
-          	    (unsigned long) GC_stackbottom);
+          GC_err_printf0(
+          	"STACK_GROWS_DOWN is defd, but stack appears to grow up\n");
+          GC_err_printf2("sp = 0x%lx, GC_stackbottom = 0x%lx\n",
+          	   	 (unsigned long) (&dummy),
+          	   	 (unsigned long) GC_stackbottom);
           ABORT("stack direction 3\n");
         }
 #     else
         if ((word)(&dummy) < (word)GC_stackbottom) {
-          GC_printf("STACK_GROWS_UP is defd, but stack appears to grow down\n");
-          GC_printf("sp = 0x%lx, GC_stackbottom = 0x%lx\n",
-          	    (unsigned long) (&dummy),
-          	    (unsigned long) GC_stackbottom);
+          GC_err_printf0(
+          	"STACK_GROWS_UP is defd, but stack appears to grow down\n");
+          GC_err_printf2("sp = 0x%lx, GC_stackbottom = 0x%lx\n",
+          	       	 (unsigned long) (&dummy),
+          	     	 (unsigned long) GC_stackbottom);
           ABORT("stack direction 4");
         }
 #     endif
 #   endif
 #   if !defined(_AUX_SOURCE) || defined(__GNUC__)
       if ((word)(-1) < (word)0) {
-    	GC_printf("The type word should be an unsigned integer type\n");
-    	GC_printf("It appears to be signed\n");
+    	GC_err_printf0("The type word should be an unsigned integer type\n");
+    	GC_err_printf0("It appears to be signed\n");
     	ABORT("word");
       }
 #   endif
     if ((signed_word)(-1) >= (signed_word)0) {
-    	GC_printf("The type signed_word should be a signed integer type\n");
-    	GC_printf("It appears to be unsigned\n");
+    	GC_err_printf0(
+    		"The type signed_word should be a signed integer type\n");
+    	GC_err_printf0("It appears to be unsigned\n");
     	ABORT("signed_word");
     }
     
@@ -604,7 +609,7 @@ void GC_init_inner()
     GC_bl_init();
     GC_mark_init();
     if (!GC_expand_hp_inner(GC_hincr)) {
-        GC_printf("Can't start up: no memory\n");
+        GC_printf0("Can't start up: no memory\n");
         EXIT();
     }
     GC_register_displacement_inner(0L);
@@ -614,11 +619,13 @@ void GC_init_inner()
     /* Add initial guess of root sets */
       GC_register_data_segments();
 #   ifdef PCR
+      PCR_IL_Lock(PCR_Bool_false, PCR_allSigsBlocked, PCR_waitForever);
+      PCR_IL_Unlock();
       GC_pcr_install();
 #   endif
     /* Get black list set up */
-      GC_gcollect_inner(TRUE);
-      GC_gcollect_inner(TRUE);
+      (void)GC_gcollect_inner(TRUE);
+      (void)GC_gcollect_inner(TRUE);
     /* Convince lint that some things are used */
       {
           extern char * GC_copyright[];
@@ -633,7 +640,6 @@ void GC_init_inner()
 /* Assumes that all arguments have been converted to something of the	  */
 /* same size as long, and that the format conversions expect something	  */
 /* of that size.							  */
-/*VARARGS1*/
 void GC_printf(format, a, b, c, d, e, f)
 char * format;
 long a, b, c, d, e, f;
@@ -652,7 +658,6 @@ long a, b, c, d, e, f;
 #   endif
 }
 
-/*VARARGS1*/
 void GC_err_printf(format, a, b, c, d, e, f)
 char * format;
 long a, b, c, d, e, f;

@@ -36,8 +36,6 @@ void * GC_AllocProc(size_t size, PCR_Bool ptrFree, PCR_Bool clear )
 
 # define GC_FreeProc GC_free
 
-void GC_NoOpProc () {}
-
 typedef struct {
   PCR_ERes (*ed_proc)(void *p, size_t size, PCR_Any data);
   bool ed_pointerfree;
@@ -92,14 +90,18 @@ PCR_ERes GC_EnumerateProc(
     }
 }
 
+void GC_DummyFreeProc(void *p) {};
+
+void GC_DummyShutdownProc(void) {};
+
 struct PCR_MM_ProcsRep GC_Rep = {
 	MY_MAGIC,
 	GC_AllocProc,
 	GC_ReallocProc,
-	GC_NoOpProc,  /* mmp_free */
-	GC_FreeProc,  /* mmp_unsafeFree */
+	GC_DummyFreeProc,  	/* mmp_free */
+	GC_FreeProc,  		/* mmp_unsafeFree */
 	GC_EnumerateProc,
-	GC_NoOpProc,  /* mmp_shutdown */
+	GC_DummyShutdownProc	/* mmp_shutdown */
 };
 
 void GC_pcr_install()
