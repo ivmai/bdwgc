@@ -1102,7 +1102,7 @@ struct hblk *h;
 {
     register hdr * hhdr;
     
-    h = GC_next_block(h);
+    h = GC_next_used_block(h);
     if (h == 0) return(0);
     hhdr = HDR(h);
     GC_push_marked(h, hhdr);
@@ -1118,7 +1118,7 @@ struct hblk *h;
     
     if (!GC_dirty_maintained) { ABORT("dirty bits not set up"); }
     for (;;) {
-        h = GC_next_block(h);
+        h = GC_next_used_block(h);
         if (h == 0) return(0);
         hhdr = HDR(h);
 #	ifdef STUBBORN_ALLOC
@@ -1147,7 +1147,7 @@ struct hblk *h;
     register hdr * hhdr = HDR(h);
     
     for (;;) {
-        h = GC_next_block(h);
+        h = GC_next_used_block(h);
         if (h == 0) return(0);
         hhdr = HDR(h);
 	if (hhdr -> hb_obj_kind == UNCOLLECTABLE) break;

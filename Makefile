@@ -98,6 +98,10 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 #   fragmentation, but generally better performance for large heaps.
 # -DUSE_MMAP use MMAP instead of sbrk to get new memory.
 #   Works for Solaris and Irix.
+# -DUSE_MUNMAP causes memory to be returned to the OS under the right
+#   circumstances.  This currently disables VM-based incremental collection.
+#   This is currently experimental, and works only under some Unix and
+#   Linux versions.
 # -DMMAP_STACKS (for Solaris threads) Use mmap from /dev/zero rather than
 #   GC_scratch_alloc() to get stack memory.
 # -DPRINT_BLACK_LIST Whenever a black list entry is added, i.e. whenever
@@ -111,6 +115,11 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 #   large block allocator and/or collecting more frequently.
 #   If you expect the allocator to promtly use an explicitly expanded
 #   heap, this is highly recommended.
+# -DGC_ASSERTIONS Enable some internal GC assertion checking.  Currently
+#   this facility is only used in a few places.  It is intended primarily
+#   for debugging of the garbage collector itself, but could also
+#   occasionally be useful for debugging of client code.  Slows down the
+#   collector somewhat, but not drastically.
 #
 
 
@@ -199,19 +208,23 @@ mark.o typd_mlc.o finalize.o: $(srcdir)/gc_mark.h
 
 base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
 	echo > base_lib
-	rm -f on_sparc_sunos5_1
-	./if_mach SPARC SUNOS5 touch on_sparc_sunos5_1
+	rm -f dont_ar_1
+	./if_mach SPARC SUNOS5 touch dont_ar_1
 	./if_mach SPARC SUNOS5 $(AR) rus gc.a $(OBJS) dyn_load.o
-	./if_not_there on_sparc_sunos5_1 $(AR) ru gc.a $(OBJS) dyn_load.o
-	./if_not_there on_sparc_sunos5_1 $(RANLIB) gc.a || cat /dev/null
+	./if_mach M68K AMIGA touch dont_ar_1
+	./if_mach M68K AMIGA $(AR) -vrus gc.a $(OBJS) dyn_load.o
+	./if_not_there dont_ar_1 $(AR) ru gc.a $(OBJS) dyn_load.o
+	./if_not_there dont_ar_1 $(RANLIB) gc.a || cat /dev/null
 #	ignore ranlib failure; that usually means it doesn't exist, and isn't needed
 
 cords: $(CORD_OBJS) cord/cordtest $(UTILS)
-	rm -f on_sparc_sunos5_3
-	./if_mach SPARC SUNOS5 touch on_sparc_sunos5_3
+	rm -f dont_ar_3
+	./if_mach SPARC SUNOS5 touch dont_ar_3
 	./if_mach SPARC SUNOS5 $(AR) rus gc.a $(CORD_OBJS)
-	./if_not_there on_sparc_sunos5_3 $(AR) ru gc.a $(CORD_OBJS)
-	./if_not_there on_sparc_sunos5_3 $(RANLIB) gc.a || cat /dev/null
+	./if_mach M68K AMIGA touch dont_ar_3
+	./if_mach M68K AMIGA $(AR) -vrus gc.a $(CORD_OBJS)
+	./if_not_there dont_ar_3 $(AR) ru gc.a $(CORD_OBJS)
+	./if_not_there dont_ar_3 $(RANLIB) gc.a || cat /dev/null
 
 gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/gc_cpp.h $(srcdir)/gc.h Makefile
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
@@ -223,11 +236,13 @@ base_lib $(UTILS)
 	./if_not_there test_cpp $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/test_cpp.cc gc_cpp.o gc.a `./threadlibs`
 
 c++: gc_cpp.o $(srcdir)/gc_cpp.h test_cpp
-	rm -f on_sparc_sunos5_4
-	./if_mach SPARC SUNOS5 touch on_sparc_sunos5_4
+	rm -f dont_ar_4
+	./if_mach SPARC SUNOS5 touch dont_ar_4
 	./if_mach SPARC SUNOS5 $(AR) rus gc.a gc_cpp.o
-	./if_not_there on_sparc_sunos5_4 $(AR) ru gc.a gc_cpp.o
-	./if_not_there on_sparc_sunos5_4 $(RANLIB) gc.a || cat /dev/null
+	./if_mach M68K AMIGA touch dont_ar_4
+	./if_mach M68K AMIGA $(AR) -vrus gc.a gc_cpp.o
+	./if_not_there dont_ar_4 $(AR) ru gc.a gc_cpp.o
+	./if_not_there dont_ar_4 $(RANLIB) gc.a || cat /dev/null
 	./test_cpp 1
 	echo > c++
 
@@ -276,6 +291,7 @@ mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ul
 	./if_mach ALPHA "" $(AS) -o mach_dep.o $(srcdir)/alpha_mach_dep.s
 	./if_mach SPARC SUNOS5 $(AS) -o mach_dep.o $(srcdir)/sparc_mach_dep.s
 	./if_mach SPARC SUNOS4 $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
+	./if_mach SPARC OPENBSD $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_not_there mach_dep.o $(CC) -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
 
 mark_rts.o: $(srcdir)/mark_rts.c if_mach if_not_there $(UTILS)
@@ -313,6 +329,7 @@ cord/de: $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(UTILS)
 	./if_mach RS6000 "" $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
 	./if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
 	./if_mach ALPHA LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
 	./if_not_there cord/de $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) `./threadlibs`
 
 if_mach: $(srcdir)/if_mach.c $(srcdir)/gcconfig.h

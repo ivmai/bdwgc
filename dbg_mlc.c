@@ -110,7 +110,7 @@ word integer;
     return((ptr_t)result);
 }
 
-/* Check the object with debugging info at p 		*/
+/* Check the object with debugging info at ohdr		*/
 /* return NIL if it's OK.  Else return clobbered	*/
 /* address.						*/
 ptr_t GC_check_annotated_obj(ohdr)
@@ -408,7 +408,7 @@ GC_PTR p;
             GC_err_printf0(
                   "GC_debug_free: found previously deallocated (?) object at ");
         } else {
-            GC_err_printf0("GC_debug_free: found smashed object at ");
+            GC_err_printf0("GC_debug_free: found smashed location at ");
         }
         GC_print_smashed_obj(p, clobbered);
       }
@@ -491,7 +491,7 @@ GC_PTR p;
     }
     clobbered = GC_check_annotated_obj((oh *)base);
     if (clobbered != 0) {
-        GC_err_printf0("GC_debug_realloc: found smashed object at ");
+        GC_err_printf0("GC_debug_realloc: found smashed location at ");
         GC_print_smashed_obj(p, clobbered);
     }
     old_sz = ((oh *)base) -> oh_sz;
@@ -528,7 +528,7 @@ word dummy;
 	        
 	        if (clobbered != 0) {
 	            GC_err_printf0(
-	                "GC_check_heap_block: found smashed object at ");
+	                "GC_check_heap_block: found smashed location at ");
         	    GC_print_smashed_obj((ptr_t)p, clobbered);
 	        }
 	    }

@@ -283,6 +283,9 @@ void GC_register_dynamic_libraries()
 static struct link_map *
 GC_FirstDLOpenedLinkMap()
 {
+#   ifdef __GNUC__
+#     pragma weak _DYNAMIC
+#   endif
     extern ElfW(Dyn) _DYNAMIC[];
     ElfW(Dyn) *dp;
     struct r_debug *r;

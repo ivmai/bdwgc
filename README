@@ -11,7 +11,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.14 of a conservative garbage collector for C and C++.
+This is version 5.0alpha1 of a conservative garbage collector for C and C++.
 
 You might find a more recent version of this at
 
@@ -23,7 +23,7 @@ HISTORY -
 projects supported in part by the National Science Foundation
 and the Defense Advance Research Projects Agency.
 Much of the code was rewritten by Hans-J. Boehm at Xerox PARC
-and is now maintained by him at SGI (boehm@sgi.com).
+and is now maintained by him at SGI (boehm@sgi.com or boehm@acm.org).
 
 Some other contributors:  
 
@@ -40,8 +40,8 @@ Robert Brazile (brazile@diamond.bbn.com) originally supplied the ULTRIX code.
 Al Dosser (dosser@src.dec.com) and Regis Cridlig (Regis.Cridlig@cl.cam.ac.uk)
 subsequently provided updates and information on variation between ULTRIX
 systems.  Parag Patel (parag@netcom.com) supplied the A/UX code.
-Jesper Peterson(jep@mtiame.mtia.oz.au) and
-Michel Schinz supplied the Amiga port.
+Jesper Peterson(jep@mtiame.mtia.oz.au), Michel Schinz, and
+Martin Tauchmann (martintauchmann@bigfoot.com) supplied the Amiga port.
 Thomas Funke (thf@zelator.in-berlin.de(?)) and
 Brian D.Carlstrom (bdc@clark.lcs.mit.edu) supplied the NeXT ports.
 Douglas Steel (doug@wg.icl.co.uk) provided ICL DRS6000 code.
@@ -612,7 +612,7 @@ reclaimed.  Exclusive-or'ing forward and backward links in a list
 doesn't cut it.
   Some C optimizers may lose the last undisguised pointer to a memory
 object as a consequence of clever optimizations.  This has almost
-never been observed in practice.  Send mail to boehm@sgi.com
+never been observed in practice.  Send mail to boehm@acm.org
 for suggestions on how to fix your compiler.
   This is not a real-time collector.  In the standard configuration,
 percentage of time required for collection should be constant across
@@ -621,7 +621,7 @@ heap sizes.  But collection pauses will increase for larger heaps.
 per MB of accessible memory that needs to be scanned.  Your mileage
 may vary.)  The incremental/generational collection facility helps,
 but is portable only if "stubborn" allocation is used.
-  Please address bug reports to boehm@sgi.com.  If you are
+  Please address bug reports to boehm@acm.org.  If you are
 contemplating a major addition, you might also send mail to ask whether
 it's already been done (or whether we tried and discarded it).
 
@@ -1452,6 +1452,37 @@ Since 4.14alpha1
 Since 4.14alpha2
  - changed STACKBOTTOM for DJGPP (Thanks to Salvador Eduardo Tropea).
 
+Since 4.14
+ - Reworked large block allocator.  Now uses multiple doubly linked free
+   lists to approximate best fit.
+ - Changed heap expansion heuristic.  Entirely free blocks are no longer
+   counted towards the heap size.  This seems to have a major impact on
+   heap size stability; the old version could expand the heap way too
+   much in the presence of large block fragmentation.
+ - added -DGC_ASSERTIONS and some simple assertions inside the collector.
+   This is mainlyt for collector debugging.
+ - added -DUSE_MUNMAP to allow the heap to shrink.  Suupported on only
+   a few UNIX-like platforms for now.
+ - added GC_dump_regions() for debugging of fragmentation issues.
+ - Changed PowerPC pointer alignment under Linux to 4.  (This needs
+   checking by someone who has one.  The suggestions came to me via a
+   rather circuitous path.)
+ - Changed the Linux/Alpha port to walk the data segment backwards until
+   it encounters a SIGSEGV.  The old way to find the start of the data
+   segment broke with a recent release.
+ - cordxtra.c needed to call GC_REGISTER_FINALIZER instead of
+   GC_register_finalizer, so that it would continue to work with GC_DEBUG.
+ - allochblk sometimes cleared the wrong block for debugging purposes
+   when it dropped blacklisted blocks.  This could result in spurious
+   error reports with GC_DEBUG.
+ - added MACOS X Server support.  (Thanks to Andrew Stone.)
+ - Changed the Solaris threads code to ignore stack limits > 8 MB with
+   a warning.  Empirically, it is not safe to access arbitrary pages
+   in such large stacks.  And the dirty bit implementation does not
+   guarantee that none of them will be accessed.
+ - Integrated Martin Tauchmann's Amiga changes.
+ - Inetgrated James Dominy's OpenBSD/SPARC port.
+
 To do:
  - Very large root set sizes (> 16 MB or so) could cause the collector
    to abort with an unexpected mark stack overflow.  (Thanks again to
@@ -1469,9 +1500,4 @@ To do:
    blocks reside in the newly allocated heap section, the heuristic for
    temporarily ignoring black-listing fails, and the heap grows too much.
    (This was observed in only one case, and could be worked around, but ...)
- - I've started work on rewriting the large block allocator to use approximate
-   best fit.  There are rare cases in which the current allocator results in
-   excessive large block fragmentation, even with the 4.13 fixes.  This should
-   also reduce large block allocation time, whcih has become occasionally
-   noticable in 4.13.
- 
+ - Some platform specific updates are waiting for 4.15alpha1. 

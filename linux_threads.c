@@ -118,12 +118,13 @@ GC_linux_thread_top_of_stack() relies on implementation details of
 LinuxThreads, namely that thread stacks are allocated on 2M boundaries
 and grow to no more than 2M.
 To make sure that we're using LinuxThreads and not some other thread
-package, we generate a dummy reference to `__pthread_initial_thread_bos',
+package, we generate a dummy reference to `__pthread_kill_other_threads_np'
+(was `__pthread_initial_thread_bos' but that disappeared),
 which is a symbol defined in LinuxThreads, but (hopefully) not in other
 thread packages.
 */
 extern char * __pthread_initial_thread_bos;
-char **dummy_var_to_force_linux_threads = &__pthread_initial_thread_bos;
+char **dummy_var_to_force_linux_threads = &__pthread_kill_other_threads_np;
 
 #define LINUX_THREADS_STACK_SIZE  (2 * 1024 * 1024)
 

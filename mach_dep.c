@@ -20,7 +20,11 @@
 #   define _longjmp(b,v) longjmp(b,v)
 # endif
 # ifdef AMIGA
-#   include <dos.h>
+#   ifndef __GNUC__
+#     include <dos/dos.h>
+#   else
+#     include <machine/reg.h>
+#   endif
 # endif
 
 #if defined(__MWERKS__) && !defined(POWERPC)
@@ -126,9 +130,28 @@ void GC_push_regs()
 	  asm("addq.w &0x4,%sp");	/* put stack back where it was	*/
 #       endif /* M68K HP */
 
-#       ifdef AMIGA
-	/*  AMIGA - could be replaced by generic code 			*/
-	  /* a0, a1, d0 and d1 are caller save */
+#	if defined(M68K) && defined(AMIGA)
+ 	 /*  AMIGA - could be replaced by generic code 			*/
+ 	 /* a0, a1, d0 and d1 are caller save */
+
+#        ifdef __GNUC__
+	  asm("subq.w &0x4,%sp");	/* allocate word on top of stack */
+
+	  asm("mov.l %a2,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %a3,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %a4,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %a5,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %a6,(%sp)"); asm("jsr _GC_push_one");
+	  /* Skip frame pointer and stack pointer */
+	  asm("mov.l %d2,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %d3,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %d4,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %d5,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %d6,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %d7,(%sp)"); asm("jsr _GC_push_one");
+
+	  asm("addq.w &0x4,%sp");	/* put stack back where it was	*/
+#        else /* !__GNUC__ */
 	  GC_push_one(getreg(REG_A2));
 	  GC_push_one(getreg(REG_A3));
 	  GC_push_one(getreg(REG_A4));
@@ -141,7 +164,8 @@ void GC_push_regs()
 	  GC_push_one(getreg(REG_D5));
 	  GC_push_one(getreg(REG_D6));
 	  GC_push_one(getreg(REG_D7));
-#       endif
+#	 endif /* !__GNUC__ */
+#       endif /* AMIGA */
 
 #	if defined(M68K) && defined(MACOS)
 #	if defined(THINK_C)

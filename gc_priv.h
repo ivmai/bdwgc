@@ -73,7 +73,7 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #   define CONST
 #endif
 
-#ifdef AMIGA
+#if 0 /* was once defined for AMIGA */
 #   define GC_FAR __far
 #else
 #   define GC_FAR
@@ -350,7 +350,7 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 				    + GC_page_size) \
                                     + GC_page_size-1)
 #   else
-#     if defined(AMIGA) || defined(NEXT) || defined(DOS4GW)
+#     if defined(AMIGA) || defined(NEXT) || defined(MACOSX) || defined(DOS4GW)
 #       define GET_MEM(bytes) HBLKPTR((size_t) \
 				      calloc(1, (size_t)bytes + GC_page_size) \
                                       + GC_page_size-1)
@@ -823,6 +823,7 @@ struct hblkhdr {
     struct hblk * hb_next; 	/* Link field for hblk free list	 */
     				/* and for lists of chunks waiting to be */
     				/* reclaimed.				 */
+    struct hblk * hb_prev;	/* Backwards link for free list.	*/
     word hb_descr;   		/* object descriptor for marking.  See	*/
     				/* mark.h.				*/
     char* hb_map;	/* A pointer to a pointer validity map of the block. */
@@ -837,9 +838,20 @@ struct hblkhdr {
 #	define IGNORE_OFF_PAGE	1	/* Ignore pointers that do not	*/
 					/* point to the first page of 	*/
 					/* this object.			*/
+#	define WAS_UNMAPPED 2	/* This is a free block, which has	*/
+				/* been unmapped from the address 	*/
+				/* space.				*/
+				/* GC_remap must be invoked on it	*/
+				/* before it can be reallocated.	*/
+				/* Only set with USE_MUNMAP.		*/
     unsigned short hb_last_reclaimed;
     				/* Value of GC_gc_no when block was	*/
     				/* last allocated or swept. May wrap.   */
+				/* For a free block, this is maintained */
+				/* unly for USE_MUNMAP, and indicates	*/
+				/* when the header was allocated, or	*/
+				/* when the size of the block last	*/
+				/* changed.				*/
     word hb_marks[MARK_BITS_SZ];
 			    /* Bit i in the array refers to the             */
 			    /* object starting at the ith word (header      */
@@ -959,6 +971,9 @@ struct _GC_arrays {
   word _max_heapsize;
   ptr_t _last_heap_addr;
   ptr_t _prev_heap_addr;
+  word _large_free_bytes;
+	/* Total bytes contained in blocks on large object free */
+	/* list.						*/
   word _words_allocd_before_gc;
 		/* Number of words allocated before this	*/
 		/* collection cycle.				*/
@@ -1005,6 +1020,9 @@ struct _GC_arrays {
    		/* Number of words in accessible atomic		*/
 		/* objects.					*/
 # endif
+# ifdef USE_MUNMAP
+    word _unmapped_bytes;
+# endif
 # ifdef MERGE_SIZES
     unsigned _size_map[WORDS_TO_BYTES(MAXOBJSZ+1)];
     	/* Number of words to allocate for a given allocation request in */
@@ -1022,7 +1040,7 @@ struct _GC_arrays {
     		       /* to an object at				*/
     		       /* block_start+i&~3 - WORDS_TO_BYTES(j).		*/
     		       /* (If ALL_INTERIOR_POINTERS is defined, then	*/
-    		       /* instead ((short *)(hbh_map[sz])[i] is j if	*/
+    		       /* instead ((short *)(hb_map[sz])[i] is j if	*/
     		       /* block_start+WORDS_TO_BYTES(i) is in the	*/
     		       /* interior of an object starting at		*/
     		       /* block_start+WORDS_TO_BYTES(i-j)).		*/
@@ -1135,6 +1153,7 @@ GC_API GC_FAR struct _GC_arrays GC_arrays;
 # define GC_prev_heap_addr GC_arrays._prev_heap_addr
 # define GC_words_allocd GC_arrays._words_allocd
 # define GC_words_wasted GC_arrays._words_wasted
+# define GC_large_free_bytes GC_arrays._large_free_bytes
 # define GC_words_finalized GC_arrays._words_finalized
 # define GC_non_gc_bytes_at_gc GC_arrays._non_gc_bytes_at_gc
 # define GC_mem_freed GC_arrays._mem_freed
@@ -1144,6 +1163,9 @@ GC_API GC_FAR struct _GC_arrays GC_arrays;
 # define GC_words_allocd_before_gc GC_arrays._words_allocd_before_gc
 # define GC_heap_sects GC_arrays._heap_sects
 # define GC_last_stack GC_arrays._last_stack
+# ifdef USE_MUNMAP
+#   define GC_unmapped_bytes GC_arrays._unmapped_bytes
+# endif
 # ifdef MSWIN32
 #   define GC_heap_bases GC_arrays._heap_bases
 # endif
@@ -1236,7 +1258,7 @@ extern char * GC_invalid_map;
 			/* Pointer to the nowhere valid hblk map */
 			/* Blocks pointing to this map are free. */
 
-extern struct hblk * GC_hblkfreelist;
+extern struct hblk * GC_hblkfreelist[];
 				/* List of completely empty heap blocks	*/
 				/* Linked through hb_next field of 	*/
 				/* header structure associated with	*/
@@ -1311,7 +1333,12 @@ GC_bool GC_should_collect();
 void GC_apply_to_all_blocks(/*fn, client_data*/);
 			/* Invoke fn(hbp, client_data) for each 	*/
 			/* allocated heap block.			*/
-struct hblk * GC_next_block(/* struct hblk * h */);
+struct hblk * GC_next_used_block(/* struct hblk * h */);
+			/* Return first in-use block >= h	*/
+struct hblk * GC_prev_block(/* struct hblk * h */);
+			/* Return last block <= h.  Returned block	*/
+			/* is managed by GC, but may or may not be in	*/
+			/* use.						*/
 void GC_mark_init();
 void GC_clear_marks();	/* Clear mark bits for all heap objects. */
 void GC_invalidate_mark_state();	/* Tell the marker that	marked 	   */
@@ -1608,6 +1635,15 @@ extern void (*GC_print_heap_obj)(/* ptr_t p */);
 			/* detailed description of the object 		*/
 			/* referred to by p.				*/
 			
+/* Memory unmapping: */
+#ifdef USE_MUNMAP
+  void GC_unmap_old(void);
+  void GC_merge_unmapped(void);
+  void GC_unmap(ptr_t start, word bytes);
+  void GC_remap(ptr_t start, word bytes);
+  void GC_unmap_gap(ptr_t start1, word bytes1, ptr_t start2, word bytes2);
+#endif
+
 /* Virtual dirty bit implementation:		*/
 /* Each implementation exports the following:	*/
 void GC_read_dirty();	/* Retrieve dirty bits.	*/
@@ -1689,5 +1725,14 @@ void GC_err_puts(/* char *s */);
 			/* Write s to stderr, don't buffer, don't add	*/
 			/* newlines, don't ...				*/
 
+
+#   ifdef GC_ASSERTIONS
+#	define GC_ASSERT(expr) if(!(expr)) {\
+		GC_err_printf2("Assertion failure: %s:%ld\n", \
+				__FILE__, (unsigned long)__LINE__); \
+		ABORT("assertion failure"); }
+#   else 
+#	define GC_ASSERT(expr)
+#   endif
 
 # endif /* GC_PRIVATE_H */
