@@ -11,7 +11,7 @@
 /* version at the end, that is likely, but not guaranteed to work       */
 /* on your architecture.  Run the test_setjmp program to see whether    */
 /* there is any chance it will work.                                    */
-GC_mark_regs()
+void GC_push_regs()
 {
 #       ifdef RT
 	  register long TMP_SP; /* must be bound to r11 */
@@ -20,32 +20,32 @@ GC_mark_regs()
 	/* VAX - generic code below does not work under 4.2 */
 	  /* r1 through r5 are caller save, and therefore     */
 	  /* on the stack or dead.                            */
-	  asm("pushl r11");     asm("calls $1,_GC_tl_mark");
-	  asm("pushl r10"); 	asm("calls $1,_GC_tl_mark");
-	  asm("pushl r9");	asm("calls $1,_GC_tl_mark");
-	  asm("pushl r8");	asm("calls $1,_GC_tl_mark");
-	  asm("pushl r7");	asm("calls $1,_GC_tl_mark");
-	  asm("pushl r6");	asm("calls $1,_GC_tl_mark");
+	  asm("pushl r11");     asm("calls $1,_GC_push_one");
+	  asm("pushl r10"); 	asm("calls $1,_GC_push_one");
+	  asm("pushl r9");	asm("calls $1,_GC_push_one");
+	  asm("pushl r8");	asm("calls $1,_GC_push_one");
+	  asm("pushl r7");	asm("calls $1,_GC_push_one");
+	  asm("pushl r6");	asm("calls $1,_GC_push_one");
 #       endif
-#       if defined(M68K) && defined(SUNOS)
+#       if defined(M68K) && (defined(SUNOS4) || defined(NEXT))
 	/*  M68K SUNOS - could be replaced by generic code */
 	  /* a0, a1 and d1 are caller save          */
 	  /*  and therefore are on stack or dead.   */
 	
 	  asm("subqw #0x4,sp");		/* allocate word on top of stack */
 
-	  asm("movl a2,sp@");	asm("jbsr _GC_tl_mark");
-	  asm("movl a3,sp@");	asm("jbsr _GC_tl_mark");
-	  asm("movl a4,sp@");	asm("jbsr _GC_tl_mark");
-	  asm("movl a5,sp@");	asm("jbsr _GC_tl_mark");
+	  asm("movl a2,sp@");	asm("jbsr _GC_push_one");
+	  asm("movl a3,sp@");	asm("jbsr _GC_push_one");
+	  asm("movl a4,sp@");	asm("jbsr _GC_push_one");
+	  asm("movl a5,sp@");	asm("jbsr _GC_push_one");
 	  /* Skip frame pointer and stack pointer */
-	  asm("movl d1,sp@");	asm("jbsr _GC_tl_mark");
-	  asm("movl d2,sp@");	asm("jbsr _GC_tl_mark");
-	  asm("movl d3,sp@");	asm("jbsr _GC_tl_mark");
-	  asm("movl d4,sp@");	asm("jbsr _GC_tl_mark");
-	  asm("movl d5,sp@");	asm("jbsr _GC_tl_mark");
-	  asm("movl d6,sp@");	asm("jbsr _GC_tl_mark");
-	  asm("movl d7,sp@");	asm("jbsr _GC_tl_mark");
+	  asm("movl d1,sp@");	asm("jbsr _GC_push_one");
+	  asm("movl d2,sp@");	asm("jbsr _GC_push_one");
+	  asm("movl d3,sp@");	asm("jbsr _GC_push_one");
+	  asm("movl d4,sp@");	asm("jbsr _GC_push_one");
+	  asm("movl d5,sp@");	asm("jbsr _GC_push_one");
+	  asm("movl d6,sp@");	asm("jbsr _GC_push_one");
+	  asm("movl d7,sp@");	asm("jbsr _GC_push_one");
 
 	  asm("addqw #0x4,sp");		/* put stack back where it was	*/
 #       endif
@@ -56,18 +56,18 @@ GC_mark_regs()
 	
 	  asm("subq.w &0x4,%sp");	/* allocate word on top of stack */
 
-	  asm("mov.l %a2,(%sp)"); asm("jsr _GC_tl_mark");
-	  asm("mov.l %a3,(%sp)"); asm("jsr _GC_tl_mark");
-	  asm("mov.l %a4,(%sp)"); asm("jsr _GC_tl_mark");
-	  asm("mov.l %a5,(%sp)"); asm("jsr _GC_tl_mark");
+	  asm("mov.l %a2,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %a3,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %a4,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %a5,(%sp)"); asm("jsr _GC_push_one");
 	  /* Skip frame pointer and stack pointer */
-	  asm("mov.l %d1,(%sp)"); asm("jsr _GC_tl_mark");
-	  asm("mov.l %d2,(%sp)"); asm("jsr _GC_tl_mark");
-	  asm("mov.l %d3,(%sp)"); asm("jsr _GC_tl_mark");
-	  asm("mov.l %d4,(%sp)"); asm("jsr _GC_tl_mark");
-	  asm("mov.l %d5,(%sp)"); asm("jsr _GC_tl_mark");
-	  asm("mov.l %d6,(%sp)"); asm("jsr _GC_tl_mark");
-	  asm("mov.l %d7,(%sp)"); asm("jsr _GC_tl_mark");
+	  asm("mov.l %d1,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %d2,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %d3,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %d4,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %d5,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %d6,(%sp)"); asm("jsr _GC_push_one");
+	  asm("mov.l %d7,(%sp)"); asm("jsr _GC_push_one");
 
 	  asm("addq.w &0x4,%sp");	/* put stack back where it was	*/
 #       endif /* M68K HP */
@@ -75,51 +75,55 @@ GC_mark_regs()
 #       if defined(I386) && !defined(OS2) && !defined(SUNOS5)
 	/* I386 code, generic code does not appear to work */
 	/* It does appear to work under OS2, and asms dont */
-	  asm("pushl %eax");  asm("call _GC_tl_mark"); asm("addl $4,%esp");
-	  asm("pushl %ecx");  asm("call _GC_tl_mark"); asm("addl $4,%esp");
-	  asm("pushl %edx");  asm("call _GC_tl_mark"); asm("addl $4,%esp");
-	  asm("pushl %esi");  asm("call _GC_tl_mark"); asm("addl $4,%esp");
-	  asm("pushl %edi");  asm("call _GC_tl_mark"); asm("addl $4,%esp");
-	  asm("pushl %ebx");  asm("call _GC_tl_mark"); asm("addl $4,%esp");
+	  asm("pushl %eax");  asm("call _GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %ecx");  asm("call _GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %edx");  asm("call _GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %esi");  asm("call _GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %edi");  asm("call _GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %ebx");  asm("call _GC_push_one"); asm("addl $4,%esp");
 #       endif
 
 #       if defined(I386) && defined(SUNOS5)
 	/* I386 code, generic code does not appear to work */
 	/* It does appear to work under OS2, and asms dont */
-	  asm("pushl %eax");  asm("call GC_tl_mark"); asm("addl $4,%esp");
-	  asm("pushl %ecx");  asm("call GC_tl_mark"); asm("addl $4,%esp");
-	  asm("pushl %edx");  asm("call GC_tl_mark"); asm("addl $4,%esp");
-	  asm("pushl %esi");  asm("call GC_tl_mark"); asm("addl $4,%esp");
-	  asm("pushl %edi");  asm("call GC_tl_mark"); asm("addl $4,%esp");
-	  asm("pushl %ebx");  asm("call GC_tl_mark"); asm("addl $4,%esp");
+	  asm("pushl %eax");  asm("call GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %ecx");  asm("call GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %edx");  asm("call GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %esi");  asm("call GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %edi");  asm("call GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %ebx");  asm("call GC_push_one"); asm("addl $4,%esp");
 #       endif
 
 #       ifdef NS32K
-	  asm ("movd r3, tos"); asm ("bsr ?_GC_tl_mark"); asm ("adjspb $-4");
-	  asm ("movd r4, tos"); asm ("bsr ?_GC_tl_mark"); asm ("adjspb $-4");
-	  asm ("movd r5, tos"); asm ("bsr ?_GC_tl_mark"); asm ("adjspb $-4");
-	  asm ("movd r6, tos"); asm ("bsr ?_GC_tl_mark"); asm ("adjspb $-4");
-	  asm ("movd r7, tos"); asm ("bsr ?_GC_tl_mark"); asm ("adjspb $-4");
+	  asm ("movd r3, tos"); asm ("bsr ?_GC_push_one"); asm ("adjspb $-4");
+	  asm ("movd r4, tos"); asm ("bsr ?_GC_push_one"); asm ("adjspb $-4");
+	  asm ("movd r5, tos"); asm ("bsr ?_GC_push_one"); asm ("adjspb $-4");
+	  asm ("movd r6, tos"); asm ("bsr ?_GC_push_one"); asm ("adjspb $-4");
+	  asm ("movd r7, tos"); asm ("bsr ?_GC_push_one"); asm ("adjspb $-4");
 #       endif
 
 #       ifdef SPARC
-	  /* generic code will not work */
-	  GC_save_regs_in_stack();
+	  {
+	      void GC_save_regs_in_stack();
+	      
+	      /* generic code will not work */
+	      GC_save_regs_in_stack();
+	  }
 #       endif
 
 #	ifdef RT
-	    GC_tl_mark(TMP_SP);    /* GC_tl_mark from r11 */
+	    GC_push_one(TMP_SP);    /* GC_push_one from r11 */
 
-	    asm("cas r11, r6, r0"); GC_tl_mark(TMP_SP);	/* r6 */
-	    asm("cas r11, r7, r0"); GC_tl_mark(TMP_SP);	/* through */
-	    asm("cas r11, r8, r0"); GC_tl_mark(TMP_SP);	/* r10 */
-	    asm("cas r11, r9, r0"); GC_tl_mark(TMP_SP);
-	    asm("cas r11, r10, r0"); GC_tl_mark(TMP_SP);
+	    asm("cas r11, r6, r0"); GC_push_one(TMP_SP);	/* r6 */
+	    asm("cas r11, r7, r0"); GC_push_one(TMP_SP);	/* through */
+	    asm("cas r11, r8, r0"); GC_push_one(TMP_SP);	/* r10 */
+	    asm("cas r11, r9, r0"); GC_push_one(TMP_SP);
+	    asm("cas r11, r10, r0"); GC_push_one(TMP_SP);
 
-	    asm("cas r11, r12, r0"); GC_tl_mark(TMP_SP); /* r12 */
-	    asm("cas r11, r13, r0"); GC_tl_mark(TMP_SP); /* through */
-	    asm("cas r11, r14, r0"); GC_tl_mark(TMP_SP); /* r15 */
-	    asm("cas r11, r15, r0"); GC_tl_mark(TMP_SP);
+	    asm("cas r11, r12, r0"); GC_push_one(TMP_SP); /* r12 */
+	    asm("cas r11, r13, r0"); GC_push_one(TMP_SP); /* through */
+	    asm("cas r11, r14, r0"); GC_push_one(TMP_SP); /* r15 */
+	    asm("cas r11, r15, r0"); GC_push_one(TMP_SP);
 #       endif
 
 #       if defined(M68K) && defined(SYSV)
@@ -129,35 +133,35 @@ GC_mark_regs()
 #        ifdef __GNUC__
   	  asm("subqw #0x4,%sp");	/* allocate word on top of stack */
   
-  	  asm("movl %a2,%sp@");	asm("jbsr GC_tl_mark");
-  	  asm("movl %a3,%sp@");	asm("jbsr GC_tl_mark");
-  	  asm("movl %a4,%sp@");	asm("jbsr GC_tl_mark");
-  	  asm("movl %a5,%sp@");	asm("jbsr GC_tl_mark");
+  	  asm("movl %a2,%sp@");	asm("jbsr GC_push_one");
+  	  asm("movl %a3,%sp@");	asm("jbsr GC_push_one");
+  	  asm("movl %a4,%sp@");	asm("jbsr GC_push_one");
+  	  asm("movl %a5,%sp@");	asm("jbsr GC_push_one");
   	  /* Skip frame pointer and stack pointer */
-  	  asm("movl %d1,%sp@");	asm("jbsr GC_tl_mark");
-  	  asm("movl %d2,%sp@");	asm("jbsr GC_tl_mark");
-  	  asm("movl %d3,%sp@");	asm("jbsr GC_tl_mark");
-  	  asm("movl %d4,%sp@");	asm("jbsr GC_tl_mark");
-  	  asm("movl %d5,%sp@");	asm("jbsr GC_tl_mark");
-  	  asm("movl %d6,%sp@");	asm("jbsr GC_tl_mark");
-  	  asm("movl %d7,%sp@");	asm("jbsr GC_tl_mark");
+  	  asm("movl %d1,%sp@");	asm("jbsr GC_push_one");
+  	  asm("movl %d2,%sp@");	asm("jbsr GC_push_one");
+  	  asm("movl %d3,%sp@");	asm("jbsr GC_push_one");
+  	  asm("movl %d4,%sp@");	asm("jbsr GC_push_one");
+  	  asm("movl %d5,%sp@");	asm("jbsr GC_push_one");
+  	  asm("movl %d6,%sp@");	asm("jbsr GC_push_one");
+  	  asm("movl %d7,%sp@");	asm("jbsr GC_push_one");
   
   	  asm("addqw #0x4,%sp");	/* put stack back where it was	*/
 #        else /* !__GNUC__*/
   	  asm("subq.w &0x4,%sp");	/* allocate word on top of stack */
   
-  	  asm("mov.l %a2,(%sp)"); asm("jsr GC_tl_mark");
-  	  asm("mov.l %a3,(%sp)"); asm("jsr GC_tl_mark");
-  	  asm("mov.l %a4,(%sp)"); asm("jsr GC_tl_mark");
-  	  asm("mov.l %a5,(%sp)"); asm("jsr GC_tl_mark");
+  	  asm("mov.l %a2,(%sp)"); asm("jsr GC_push_one");
+  	  asm("mov.l %a3,(%sp)"); asm("jsr GC_push_one");
+  	  asm("mov.l %a4,(%sp)"); asm("jsr GC_push_one");
+  	  asm("mov.l %a5,(%sp)"); asm("jsr GC_push_one");
   	  /* Skip frame pointer and stack pointer */
-  	  asm("mov.l %d1,(%sp)"); asm("jsr GC_tl_mark");
-  	  asm("mov.l %d2,(%sp)"); asm("jsr GC_tl_mark");
-  	  asm("mov.l %d3,(%sp)"); asm("jsr GC_tl_mark");
-  	  asm("mov.l %d4,(%sp)"); asm("jsr GC_tl_mark");
-  	  asm("mov.l %d5,(%sp)"); asm("jsr GC_tl_mark");
-   	  asm("mov.l %d6,(%sp)"); asm("jsr GC_tl_mark");
-  	  asm("mov.l %d7,(%sp)"); asm("jsr GC_tl_mark");
+  	  asm("mov.l %d1,(%sp)"); asm("jsr GC_push_one");
+  	  asm("mov.l %d2,(%sp)"); asm("jsr GC_push_one");
+  	  asm("mov.l %d3,(%sp)"); asm("jsr GC_push_one");
+  	  asm("mov.l %d4,(%sp)"); asm("jsr GC_push_one");
+  	  asm("mov.l %d5,(%sp)"); asm("jsr GC_push_one");
+   	  asm("mov.l %d6,(%sp)"); asm("jsr GC_push_one");
+  	  asm("mov.l %d7,(%sp)"); asm("jsr GC_push_one");
   
   	  asm("addq.w &0x4,%sp");	/* put stack back where it was	*/
 #        endif /* !__GNUC__ */
@@ -170,7 +174,7 @@ GC_mark_regs()
 	/* We're not sure whether he would like  */
 	/* to be he acknowledged for it or not.  */
 	{
-	    jmp_buf regs;
+	    static jmp_buf regs;
 	    register word * i = (word *) regs;
 	    register ptr_t lim = (ptr_t)(regs) + (sizeof regs);
 
@@ -180,7 +184,7 @@ GC_mark_regs()
 		    *i = 0;
 		}
 	    (void) _setjmp(regs);
-	    GC_mark_all_stack((ptr_t)regs, lim);
+	    GC_push_all_stack((ptr_t)regs, lim);
 	}
 #     endif
 
@@ -197,6 +201,7 @@ GC_mark_regs()
 /* On register window machines, we need a way to force registers into 	*/
 /* the stack.								*/
 # ifdef SPARC
+    asm("	.seg 	\"text\"");
 #   ifdef SUNOS5
       asm("	.globl	GC_save_regs_in_stack");
       asm("GC_save_regs_in_stack:");
@@ -208,5 +213,9 @@ GC_mark_regs()
     asm("	mov	%sp,%o0");
     asm("	retl");
     asm("	nop");
+    
+#   ifdef LINT
+	void GC_save_regs_in_stack() {}
+#   endif
 # endif
 

@@ -45,6 +45,14 @@ getpagesize()
 }
 #endif
 
+#ifdef AMIGA
+int
+getpagesize()
+{
+    return(4096);
+}
+#endif
+
 #ifdef __OS2__
 #define INCL_DOSFILEMGR
 #define INCL_DOSMISC
@@ -105,7 +113,7 @@ main()
 	if (y == 1) {
 	    if (x == 2) {
 		printf("Generic mark_regs code probably wont work\n");
-#		if defined(SPARC) || defined(IBMRS6000) || defined(VAX) || defined(MIPS) || defined(M68K) || defined(I386) || defined(NS32K) || defined(RT)
+#		if defined(SPARC) || defined(RS6000) || defined(VAX) || defined(MIPS) || defined(M68K) || defined(I386) || defined(NS32K) || defined(RT)
 		    printf("Assembly code supplied\n");
 #		else
 		    printf("Need assembly code\n");

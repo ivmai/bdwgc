@@ -10,7 +10,7 @@
 /* Determine the machine type: */
 # if defined(sun) && defined(mc68000)
 #    define M68K
-#    define SUNOS
+#    define SUNOS4
 #    define mach_type_known
 # endif
 # if defined(hp9000s300)
@@ -32,7 +32,11 @@
 #    ifdef ultrix
 #	define ULTRIX
 #    else
-#	define RISCOS
+#	ifdef _SYSTYPE_SVR4
+#	  define IRIX5
+#	else
+#	  define RISCOS  /* or IRIX 4.X */
+#	endif
 #    endif
 #    define mach_type_known
 # endif
@@ -67,7 +71,7 @@
 #   define mach_type_known
 # endif
 # if defined(_IBMR2)
-#   define IBMRS6000
+#   define RS6000
 #   define mach_type_known
 # endif
 # if defined(SCO)
@@ -90,6 +94,20 @@
 #    define LINUX
 #    define mach_type_known
 # endif
+# if defined(__alpha)
+#   define ALPHA
+#   define mach_type_known
+# endif
+# if defined(_AMIGA)
+#   define AMIGA
+#   define M68K
+#   define mach_type_known
+# endif
+# if defined(NeXT) && defined(mc68000)
+#    define M68K
+#    define NEXT
+#    define mach_type_known
+# endif
 
 /* Feel free to add more clauses here */
 
@@ -104,9 +122,8 @@
 	--> unknown machine type
 # endif
 		    /* Mapping is: M68K       ==> Motorola 680X0	*/
-		    /*		   (SUNOS, HP, and SYSV (A/UX) variants)*/
-		    /*             M68K_HP    ==> HP9000/300 		*/
-		    /*		   M68K_SYSV  ==> A/UX, maybe others	*/
+		    /*		   (SUNOS4,HP,NEXT, and SYSV (A/UX),	*/
+		    /*		   and AMIGA variants)			*/
 		    /*             I386       ==> Intel 386	 	*/
 		    /*		    (SEQUENT, OS2, SCO, LINUX variants)	*/
 		    /*		     SCO is incomplete.			*/
@@ -120,7 +137,8 @@
                     /*		   HP_PA      ==> HP9000/700 & /800	*/
                     /*				  HP/UX			*/
 		    /*		   SPARC      ==> SPARC under SunOS	*/
-		    /*			(SUNOS4, SUNOS5 variants)
+		    /*			(SUNOS4, SUNOS5 variants)	*/
+		    /* 		   ALPHA      ==> DEC Alpha OSF/1	*/
 
 
 /*
@@ -192,14 +210,20 @@
  *		    GC_stackbottom = (ptr_t)(&dummy);
  *		    return(real_main(argc, argv, envp));
  *		}
+ *
+ *
+ * Each architecture may also define the style of virtual dirty bit
+ * implementation to be used:
+ *   MPROTECT_VDB: Write protect the heap and catch faults.
+ *   PROC_VDB: Use the SVR4 /proc primitives to read dirty bits.
  */
 
 
 # ifdef M68K
 #   define MACH_TYPE "M68K"
 #   define ALIGNMENT 2
-#   ifdef SUNOS
-#	define OS_TYPE "SUNOS"
+#   ifdef SUNOS4
+#	define OS_TYPE "SUNOS4"
 	extern char etext;
 #	define DATASTART ((ptr_t)((((word) (&etext)) + 0x1ffff) & ~0x1ffff))
 #	define HEURISTIC1	/* differs	*/
@@ -229,6 +253,16 @@
 			/* that the stack direction is incorrect.  Two  */
 			/* bytes down from 0x0 should be safe enough.   */
 			/* 		--Parag				*/
+#   endif
+#   ifdef AMIGA
+#	define OS_TYPE "AMIGA"
+ 	    	/* STACKBOTTOM and DATASTART handled specially	*/
+ 	    	/* in os_dep.c					*/
+#   endif
+#   ifdef NEXT
+#	define OS_TYPE "NEXT"
+#	define DATASTART ((ptr_t) get_etext())
+#	define STACKBOTTOM ((ptr_t) 0x4000000)
 #   endif
 # endif
 
@@ -265,11 +299,13 @@
 		/* Experimentally determined.  			*/
 		/* Inconsistent with man a.out, which appears	*/
 		/* to be wrong.					*/
+#	define PROC_VDB
 #   endif
 #   ifdef SUNOS4
 #	define OS_TYPE "SUNOS4"
 #       define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
 		/* On very old SPARCs this is too conservative. */
+#	define MPROTECT_VDB
 #   endif
 #   define HEURISTIC1
 # endif
@@ -289,6 +325,7 @@
 #       define DATASTART ((ptr_t)((((word) (&etext)) + 0x1003) & ~0x3))
 	extern int _start();
 #	define STACKBOTTOM ((ptr_t)(&_start))
+#	define PROC_VDB
 #   endif
 #   ifdef SCO
 #	define OS_TYPE "SCO"
@@ -332,6 +369,16 @@
 			      /* Could probably be slightly higher since */
 			      /* startup code allocates lots of junk     */
 #   define HEURISTIC2
+#   ifdef ULTRIX
+#	define OS_TYPE "ULTRIX"
+#   endif
+#   ifdef RISCOS
+#	define OS_TYPE "RISCOS"
+#   endif
+#   ifdef IRIX5
+#	define OS_TYPE "IRIX5"
+#	define MPROTECT_VDB
+#   endif
 # endif
 
 # ifdef RS6000
@@ -348,6 +395,15 @@
 #   define DATASTART ((ptr_t)(&__data_start))
 #   define HEURISTIC2
 #   define STACK_GROWS_UP
+# endif
+
+# ifdef ALPHA
+#   define MACH_TYPE "ALPHA"
+#   define ALIGNMENT 8
+#   define DATASTART ((ptr_t) 0x140000000)
+#   define HEURISTIC2
+#   define CPP_WORDSZ 64
+#   define MPROTECT_VDB
 # endif
 
 # ifndef STACK_GROWS_UP
@@ -370,6 +426,19 @@
 #   undef STACKBOTTOM
 #   undef HEURISTIC1
 #   undef HEURISTIC2
+#   undef PROC_VDB
+#   undef MPROTECT_VDB
+#   define PCR_VDB
+# endif
+
+# ifdef SRC_M3
+/* Postponed for now. */
+#   undef PROC_VDB
+#   undef MPROTECT_VDB
+# endif
+
+# if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB)
+#   define DEFAULT_VDB
 # endif
 
 # endif

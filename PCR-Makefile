@@ -1,21 +1,23 @@
-OBJS= alloc.o reclaim.o allochblk.o misc.o mach_dep.o os_dep.o mark_roots.o headers.o mark.o obj_map.o pcr_interface.o black_list.o finalize.o new_hblk.o real_malloc.o dynamic_load.o debug_malloc.o
+OBJS= alloc.o reclaim.o allochblk.o misc.o mach_dep.o os_dep.o mark_roots.o headers.o mark.o obj_map.o pcr_interface.o black_list.o finalize.o new_hblk.o real_malloc.o dynamic_load.o debug_malloc.o malloc.o stubborn.o
 
-CSRCS= reclaim.c allochblk.c misc.c alloc.c mach_dep.c os_dep.c mark_roots.c headers.c mark.c obj_map.c pcr_interface.c black_list.c finalize.c new_hblk.c real_malloc.c dynamic_load.c debug_malloc.c
+CSRCS= reclaim.c allochblk.c misc.c alloc.c mach_dep.c os_dep.c mark_roots.c headers.c mark.c obj_map.c pcr_interface.c black_list.c finalize.c new_hblk.c real_malloc.c dynamic_load.c debug_malloc.c malloc.c stubborn.c
 
 SHELL= /bin/sh
 
 # Fix to point to local pcr installation directory.
-PCRDIR= /project/ppcr/v1.5
+PCRDIR= /project/ppcr/dev
 CC= gcc
-CFLAGS= -g -DPCR -I$(PCRDIR) -I$(PCRDIR)/pcr -I$(PCRDIR)/pcr/ansi -I$(PCRDIR)/pcr/posix
+CFLAGS= -g -DPCR -I$(PCRDIR) -I$(PCRDIR)/ansi -I$(PCRDIR)/posix
 
 # We assume that mach_dep.o has already been built by top level makefile.  It doesn't
 # care about pcr vs UNIX, and we don't want to repeat that cruft.
 
+default: gc.o
+
 all: gc.o test.o gcpcr
 
-gcpcr: gc.o test.o $(PCRDIR)/pcr/base/pcr.o $(PCRDIR)/pcr/base/PCR_BaseMain.o
-	$(CC) -o gcpcr $(PCRDIR)/pcr/base/pcr.o $(PCRDIR)/pcr/base/PCR_BaseMain.o gc.o test.o -ldl
+gcpcr: gc.o test.o $(PCRDIR)/base/pcr.o $(PCRDIR)/base/PCR_BaseMain.o
+	$(CC) -o gcpcr $(PCRDIR)/base/pcr.o $(PCRDIR)/base/PCR_BaseMain.o gc.o test.o -ldl
 
 gc.o: $(OBJS)
 	-ld -r -o gc.o $(OBJS)

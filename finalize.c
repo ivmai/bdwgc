@@ -24,8 +24,8 @@
     & (TSIZE - 1))
     
 static struct disappearing_link {
-    word dl_hidden_base;	/* Pointer to object base	*/
-    word dl_offset;	/* byte offset within object.	*/
+    word dl_hidden_obj;		/* Pointer to object base	*/
+    word dl_hidden_link;	/* Field to be cleared.		*/
     struct disappearing_link * dl_next;
 } * dl_head[TSIZE] = {0};
 
@@ -37,30 +37,46 @@ static struct finalizable_object {
     struct finalizable_object * fo_next;
 } * fo_head[TSIZE] = {0};
 
+# ifdef SRC_M3
+void GC_push_finalizer_structures()
+{
+    GC_push_all((ptr_t)dl_head, (ptr_t)(dl_head + TSIZE));
+    GC_push_all((ptr_t)fo_head, (ptr_t)(fo_head + TSIZE));
+}
+# endif
+
 # define ALLOC(x, t) t *x = (t *)GC_malloc(sizeof (t))
 
 int GC_register_disappearing_link(link)
 void_star * link;
 {
     ptr_t base;
-    unsigned long offset;
+    
+    base = (ptr_t)GC_base((void_star)link);
+    if (base == 0)
+    	ABORT("Bad arg to GC_register_disappearing_link");
+    return(GC_general_register_disappearing_link(link, base));
+}
+
+int GC_general_register_disappearing_link(link, obj)
+void_star * link;
+void_star obj;
+{
     struct disappearing_link *curr_dl;
     int index;
     /* Allocate before acquiring lock */
       ALLOC(new_dl, struct disappearing_link);
     DCL_LOCK_STATE;
-      
+    
+    index = HASH(link);
+    if ((word)link & (ALIGNMENT-1))
+    	ABORT("Bad arg to GC_general_register_disappearing_link");
     DISABLE_SIGNALS();
     LOCK();
-    base = (ptr_t)GC_base((void_star)link);
-    index = HASH(base);
-    offset = (ptr_t)link - base;
-    if (base == 0 || ((word)link & (ALIGNMENT-1)))
-    		ABORT("Bad arg to GC_register_disappearing_link");
     curr_dl = dl_head[index];
     for (curr_dl = dl_head[index]; curr_dl != 0; curr_dl = curr_dl -> dl_next) {
-        if (curr_dl -> dl_hidden_base == HIDE_POINTER(base)
-            && curr_dl -> dl_offset == offset) {
+        if (curr_dl -> dl_hidden_link == HIDE_POINTER(link)) {
+            curr_dl -> dl_hidden_obj = HIDE_POINTER(obj);
             UNLOCK();
     	    ENABLE_SIGNALS();
     	    GC_free((extern_ptr_t)new_dl);
@@ -68,8 +84,8 @@ void_star * link;
         }
     }
     {
-        new_dl -> dl_hidden_base = HIDE_POINTER(base);
-        new_dl -> dl_offset = offset;
+        new_dl -> dl_hidden_obj = HIDE_POINTER(obj);
+        new_dl -> dl_hidden_link = HIDE_POINTER(link);
         new_dl -> dl_next = dl_head[index];
         dl_head[index] = new_dl;
         UNLOCK();
@@ -78,27 +94,21 @@ void_star * link;
     }
 }
 
-
 int GC_unregister_disappearing_link(link)
 void_star * link;
 {
-    ptr_t base;
-    unsigned long offset;
     struct disappearing_link *curr_dl, *prev_dl;
     int index;
     DCL_LOCK_STATE;
     
+    index = HASH(link);
+    if (((unsigned long)link & (ALIGNMENT-1)))
+    	return(0);
     DISABLE_SIGNALS();
     LOCK();
-    base = (ptr_t)GC_base((void_star)link);
-    index = HASH(base);
-    offset = (ptr_t)link - base;
-    if (base == 0 || ((unsigned long)link & (ALIGNMENT-1)))
-    	return(0);
     prev_dl = 0; curr_dl = dl_head[index];
     while (curr_dl != 0) {
-        if (curr_dl -> dl_hidden_base == HIDE_POINTER(base)
-            && curr_dl -> dl_offset == offset) {
+        if (curr_dl -> dl_hidden_link == HIDE_POINTER(link)) {
             if (prev_dl == 0) {
                 dl_head[index] = curr_dl -> dl_next;
             } else {
@@ -109,42 +119,12 @@ void_star * link;
             GC_free((extern_ptr_t)curr_dl);
             return(1);
         }
-        curr_dl = curr_dl -> dl_next;
         prev_dl = curr_dl;
+        curr_dl = curr_dl -> dl_next;
     }
     UNLOCK();
     ENABLE_SIGNALS();
     return(0);
-}
-
-bool GC_is_marked(p)
-ptr_t p;
-{
-    register struct hblk *h = HBLKPTR(p);
-    register hdr * hhdr = HDR(h);
-    register int word_no = (word *)p - (word *)h;
-    
-    return(mark_bit_from_hdr(hhdr, word_no));
-}
-
-void GC_set_mark_bit(p)
-ptr_t p;
-{
-    register struct hblk *h = HBLKPTR(p);
-    register hdr * hhdr = HDR(h);
-    register int word_no = (word *)p - (word *)h;
-    
-    set_mark_bit_from_hdr(hhdr, word_no);
-}
-
-void GC_clear_mark_bit(p)
-ptr_t p;
-{
-    register struct hblk *h = HBLKPTR(p);
-    register hdr * hhdr = HDR(h);
-    register int word_no = (word *)p - (word *)h;
-    
-    clear_mark_bit_from_hdr(hhdr, word_no);
 }
 
 void GC_register_finalizer(obj, fn, cd, ofn, ocd)
@@ -191,8 +171,8 @@ void_star * ocd;
             GC_free((extern_ptr_t)new_fo);
             return;
         }
-        curr_fo = curr_fo -> fo_next;
         prev_fo = curr_fo;
+        curr_fo = curr_fo -> fo_next;
     }
     {
         if (ofn) *ofn = 0;
@@ -228,9 +208,9 @@ void GC_finalize()
       curr_dl = dl_head[i];
       prev_dl = 0;
       while (curr_dl != 0) {
-        real_ptr = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_base);
+        real_ptr = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_obj);
         if (!GC_is_marked(real_ptr)) {
-            *(word *)(real_ptr + curr_dl -> dl_offset) = 0;
+            *(word *)(REVEAL_POINTER(curr_dl -> dl_hidden_link)) = 0;
             next_dl = curr_dl -> dl_next;
             if (prev_dl == 0) {
                 dl_head[i] = next_dl;
@@ -251,7 +231,8 @@ void GC_finalize()
       for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = curr_fo -> fo_next) {
         real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
-            GC_mark_all(real_ptr, real_ptr + curr_fo -> fo_object_size);
+            GC_push_all(real_ptr, real_ptr + curr_fo -> fo_object_size);
+            while (!GC_mark_stack_empty()) GC_mark_from_mark_stack();
         }
         /* 
         if (GC_is_marked(real_ptr)) {

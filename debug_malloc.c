@@ -15,9 +15,8 @@ typedef struct {
 /* and to be a multiple of the word length.				*/
 
 #define DEBUG_BYTES (sizeof (oh) + sizeof (word))
+#undef ROUNDED_UP_WORDS
 #define ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1) - 1)
-
-bool GC_debugging_started = FALSE;
 
 /* Check whether object with base pointer p has debugging info	*/ 
 /* p is assumed to point to a legitimate object in our part	*/
@@ -116,6 +115,15 @@ ptr_t p, clobbered_addr;
     }
 }
 
+void GC_check_heap_proc();
+
+void GC_start_debugging()
+{
+    GC_check_heap = GC_check_heap_proc;
+    GC_debugging_started = TRUE;
+    GC_register_displacement((word)sizeof(oh));
+}
+
 # ifdef __STDC__
     extern_ptr_t GC_debug_malloc(size_t lb, char * s, int i)
 # else
@@ -135,11 +143,77 @@ ptr_t p, clobbered_addr;
         return(0);
     }
     if (!GC_debugging_started) {
-        GC_debugging_started = TRUE;
-        GC_register_displacement((word)sizeof(oh));
+    	GC_start_debugging();
     }
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
+
+#ifdef STUBBORN_ALLOC
+# ifdef __STDC__
+    extern_ptr_t GC_debug_malloc_stubborn(size_t lb, char * s, int i)
+# else
+    extern_ptr_t GC_debug_malloc_stubborn(lb, s, i)
+    size_t lb;
+    char * s;
+    int i;
+# endif
+{
+    extern_ptr_t result = GC_malloc_stubborn(lb + DEBUG_BYTES);
+    
+    if (result == 0) {
+        GC_err_printf1("GC_debug_malloc(%ld) returning NIL (",
+        	       (unsigned long) lb);
+        GC_err_puts(s);
+        GC_err_printf1(":%ld)\n", (unsigned long)i);
+        return(0);
+    }
+    if (!GC_debugging_started) {
+    	GC_start_debugging();
+    }
+    return (GC_store_debug_info(result, (word)lb, s, (word)i));
+}
+
+void GC_debug_change_stubborn(p)
+extern_ptr_t p;
+{
+    register extern_ptr_t q = GC_base(p);
+    register hdr * hhdr;
+    
+    if (q == 0) {
+        GC_err_printf1("Bad argument: 0x%lx to GC_debug_change_stubborn\n",
+        	       (unsigned long) p);
+        ABORT("GC_debug_change_stubborn: bad arg");
+    }
+    hhdr = HDR(q);
+    if (hhdr -> hb_obj_kind != STUBBORN) {
+        GC_err_printf1("GC_debug_change_stubborn arg not stubborn: 0x%lx\n",
+        	       (unsigned long) p);
+        ABORT("GC_debug_change_stubborn: arg not stubborn");
+    }
+    GC_change_stubborn(q);
+}
+
+void GC_debug_end_stubborn_change(p)
+extern_ptr_t p;
+{
+    register extern_ptr_t q = GC_base(p);
+    register hdr * hhdr;
+    
+    if (q == 0) {
+        GC_err_printf1("Bad argument: 0x%lx to GC_debug_end_stubborn_change\n",
+        	       (unsigned long) p);
+        ABORT("GC_debug_end_stubborn_change: bad arg");
+    }
+    hhdr = HDR(q);
+    if (hhdr -> hb_obj_kind != STUBBORN) {
+        GC_err_printf1("debug_end_stubborn_change arg not stubborn: 0x%lx\n",
+        	       (unsigned long) p);
+        ABORT("GC_debug_end_stubborn_change: arg not stubborn");
+    }
+    GC_end_stubborn_change(q);
+}
+
+#endif /* STUBBORN_ALLOC */
 
 # ifdef __STDC__
     extern_ptr_t GC_debug_malloc_atomic(size_t lb, char * s, int i)
@@ -160,11 +234,36 @@ ptr_t p, clobbered_addr;
         return(0);
     }
     if (!GC_debugging_started) {
-        GC_debugging_started = TRUE;
-        GC_register_displacement((word)sizeof(oh));
+        GC_start_debugging();
     }
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
+
+# ifdef __STDC__
+    extern_ptr_t GC_debug_malloc_uncollectable(size_t lb, char * s, int i)
+# else
+    extern_ptr_t GC_debug_malloc_uncollectable(lb, s, i)
+    size_t lb;
+    char * s;
+    int i;
+# endif
+{
+    extern_ptr_t result = GC_malloc_uncollectable(lb + DEBUG_BYTES);
+    
+    if (result == 0) {
+        GC_err_printf1("GC_debug_malloc_uncollectable(%ld) returning NIL (",
+        	      (unsigned long) lb);
+        GC_err_puts(s);
+        GC_err_printf1(":%ld)\n", (unsigned long)i);
+        return(0);
+    }
+    if (!GC_debugging_started) {
+        GC_start_debugging();
+    }
+    return (GC_store_debug_info(result, (word)lb, s, (word)i));
+}
+
+
 # ifdef __STDC__
     void GC_debug_free(extern_ptr_t p)
 # else
@@ -209,7 +308,9 @@ ptr_t p, clobbered_addr;
     register extern_ptr_t result = GC_debug_malloc(lb, s, i);
     register size_t copy_sz = lb;
     register size_t old_sz;
+    register hdr * hhdr;
     
+    if (p == 0) return(GC_debug_malloc(lb, s, i));
     if (base == 0) {
         GC_err_printf1(
               "Attempt to free invalid pointer %lx\n", (unsigned long)p);
@@ -220,6 +321,23 @@ ptr_t p, clobbered_addr;
         	"GC_debug_realloc called on pointer %lx wo debugging info\n",
         	(unsigned long)p);
         return(GC_realloc(p, lb));
+    }
+    hhdr = HDR(base);
+    switch (hhdr -> hb_obj_kind) {
+#    ifdef STUBBORN_ALLOC
+      case STUBBORN:
+        result = GC_debug_malloc_stubborn(lb, s, i);
+        break;
+#    endif
+      case NORMAL:
+        result = GC_debug_malloc(lb, s, i);
+        break;
+      case PTRFREE:
+        result = GC_debug_malloc_atomic(lb, s, i);
+        break;
+      default:
+        GC_err_printf0("GC_debug_realloc: encountered bad kind\n");
+        ABORT("bad kind");
     }
     clobbered = GC_check_annotated_obj((oh *)base);
     if (clobbered != 0) {
@@ -269,7 +387,7 @@ word dummy;
 
 /* This assumes that all accessible objects are marked, and that	*/
 /* I hold the allocation lock.	Normally called by collector.		*/
-void GC_check_heap()
+void GC_check_heap_proc()
 {
     GC_apply_to_all_blocks(GC_check_heap_block, (word)0);
 }

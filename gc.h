@@ -23,17 +23,25 @@
 /* better choices.  But those appear to have incorrect definitions	*/
 /* on may systems.  Notably "typedef int size_t" seems to be both	*/
 /* frequent and WRONG.							*/
-typedef unsigned long word;
-typedef long signed_word;
+typedef unsigned long GC_word;
+typedef long GC_signed_word;
 
 /* Public read-only variables */
 
-extern word GC_heapsize;       /* Heap size in bytes */
+extern GC_word GC_heapsize;       /* Heap size in bytes */
 
-extern word GC_gc_no;	/* Counter incremented per collection.  	*/
+extern GC_word GC_gc_no;/* Counter incremented per collection.  	*/
 			/* Includes empty GCs at startup.		*/
+			
+extern int GC_incremental;  /* Using incremental/generational collection. */
+
 
 /* Public R/W variables */
+
+extern int GC_quiet;	/* Disable statistics output.  Only matters if	*/
+			/* collector has been compiled with statistics	*/
+			/* enabled.  This involves a performance cost,	*/
+			/* and is thus not the default.			*/
 
 extern int GC_dont_gc;	/* Dont collect unless explicitly requested, e.g. */
 			/* beacuse it's not safe.			  */
@@ -41,12 +49,16 @@ extern int GC_dont_gc;	/* Dont collect unless explicitly requested, e.g. */
 extern int GC_dont_expand;
 			/* Dont expand heap unless explicitly requested */
 			/* or forced to.				*/
+
+extern int GC_full_freq;    /* Number of partial collections between	*/
+			    /* full collections.  Matters only if	*/
+			    /* GC_incremental is set.			*/
 			
-extern word GC_non_gc_bytes;
+extern GC_word GC_non_gc_bytes;
 			/* Bytes not considered candidates for collection. */
 			/* Used only to control scheduling of collections. */
 
-extern word GC_free_space_divisor;
+extern GC_word GC_free_space_divisor;
 			/* We try to make sure that we allocate at 	*/
 			/* least N/GC_free_space_divisor bytes between	*/
 			/* collections, where N is the heap size plus	*/
@@ -63,30 +75,60 @@ extern word GC_free_space_divisor;
 /*
  * general purpose allocation routines, with roughly malloc calling conv.
  * The atomic versions promise that no relevant pointers are contained
- * in the object.  The nonatomic version guarantees that the new object
- * is cleared.
+ * in the object.  The nonatomic versions guarantee that the new object
+ * is cleared.  GC_malloc_stubborn promises that no changes to the object
+ * will occur after GC_end_stubborn_change has been called on the
+ * result of GC_malloc_stubborn. GC_malloc_uncollectable allocates an object
+ * that is scanned for pointers to collectable objects, but is not itself
+ * collectable.  GC_malloc_uncollectable and GC_free called on the resulting
+ * object implicitly update GC_non_gc_bytes appropriately.
  */
-# ifdef __STDC__
+#if defined(__STDC__) || defined(__cplusplus)
   extern void * GC_malloc(size_t size_in_bytes);
   extern void * GC_malloc_atomic(size_t size_in_bytes);
+  extern void * GC_malloc_uncollectable(size_t size_in_bytes);
+  extern void * GC_malloc_stubborn(size_t size_in_bytes);
 # else
   extern char * GC_malloc(/* size_in_bytes */);
   extern char * GC_malloc_atomic(/* size_in_bytes */);
+  extern char * GC_malloc_uncollectable(/* size_in_bytes */);
+  extern char * GC_malloc_stubborn(/* size_in_bytes */);
 # endif
 
 /* Explicitly deallocate an object.  Dangerous if used incorrectly.     */
 /* Requires a pointer to the base of an object.				*/
-# ifdef __STDC__
+/* If the argument is stubborn, it should not be changeable when freed. */
+/* An object should not be enable for finalization when it is 		*/
+/* explicitly deallocated.						*/
+#if defined(__STDC__) || defined(__cplusplus)
   extern void GC_free(void * object_addr);
 # else
   extern void GC_free(/* object_addr */);
 # endif
 
+/*
+ * Stubborn objects may be changed only if the collector is explicitly informed.
+ * The collector is implicitly informed of coming change when such
+ * an object is first allocated.  The following routines inform the
+ * collector that an object will no longer be changed, or that it will
+ * once again be changed.  Only nonNIL pointer stores into the object
+ * are considered to be changes.  The argument to GC_end_stubborn_change
+ * must be exacly the value returned by GC_malloc_stubborn or passed to
+ * GC_change_stubborn.  (In the second case it may be an interior pointer
+ * within 512 bytes of the beginning of the objects.)
+ * There is a performance penalty for allowing more than
+ * one stubborn object to be changed at once, but it is acceptable to
+ * do so.  The same applies to dropping stubborn objects that are still
+ * changeable.
+ */
+void GC_change_stubborn(/* p */);
+void GC_end_stubborn_change(/* p */);
+
 /* Return a pointer to the base (lowest address) of an object given	*/
 /* a pointer to a location within the object.				*/
 /* Return 0 if displaced_pointer doesn't point to within a valid	*/
 /* object.								*/
-# ifdef __STDC__
+# if defined(__STDC__) || defined(__cplusplus)
   void * GC_base(void * displaced_pointer);
 # else
   char * GC_base(/* char * displaced_pointer */);
@@ -95,7 +137,7 @@ extern word GC_free_space_divisor;
 /* Given a pointer to the base of an object, return its size in bytes.	*/
 /* The returned size may be slightly larger than what was originally	*/
 /* requested.								*/
-# ifdef __STDC__
+# if defined(__STDC__) || defined(__cplusplus)
   size_t GC_size(void * object_addr);
 # else
   size_t GC_size(/* char * object_addr */);
@@ -105,7 +147,10 @@ extern word GC_free_space_divisor;
 /* a malloc followed by a bcopy.  But if you rely on that, either here	*/
 /* or with the standard C library, your code is broken.  In my		*/
 /* opinion, it shouldn't have been invented, but now we're stuck. -HB	*/
-# ifdef __STDC__
+/* The resulting object has the same kind as the original.		*/
+/* If the argument is stubborn, the result will have changes enabled.	*/
+/* It is an error to have changes enabled for the original object.	*/
+# if defined(__STDC__) || defined(__cplusplus)
     extern void * GC_realloc(void * old_object, size_t new_size_in_bytes);
 # else
     extern char * GC_realloc(/* old_object, new_size_in_bytes */);
@@ -137,13 +182,24 @@ void GC_register_displacement(/* n */);
 /* Explicitly trigger a collection. 	*/
 void GC_gcollect();
 
+/* Enable incremental/generational collection.	*/
+/* Not advisable unless dirty bits are 		*/
+/* available or most heap objects are		*/
+/* pointerfree(atomic) or immutable.		*/
+/* Don't use in leak finding mode.		*/
+void GC_enable_incremental();
+
 /* Debugging (annotated) allocation.  GC_gcollect will check 		*/
 /* objects allocated in this way for overwrites, etc.			*/
-# ifdef __STDC__
+# if defined(__STDC__) || defined(__cplusplus)
   extern void * GC_debug_malloc(size_t size_in_bytes,
   				char * descr_string, int descr_int);
   extern void * GC_debug_malloc_atomic(size_t size_in_bytes,
   				       char * descr_string, int descr_int);
+  extern void * GC_debug_malloc_uncollectable(size_t size_in_bytes,
+  				           char * descr_string, int descr_int);
+  extern void * GC_debug_malloc_stubborn(size_t size_in_bytes,
+  				         char * descr_string, int descr_int);
   extern void GC_debug_free(void * object_addr);
   extern void * GC_debug_realloc(void * old_object,
   			 	 size_t new_size_in_bytes,
@@ -152,26 +208,42 @@ void GC_gcollect();
   extern char * GC_debug_malloc(/* size_in_bytes, descr_string, descr_int */);
   extern char * GC_debug_malloc_atomic(/* size_in_bytes, descr_string,
   					  descr_int */);
+  extern char * GC_debug_malloc_uncollectable(/* size_in_bytes, descr_string,
+  					  descr_int */);
+  extern char * GC_debug_malloc_stubborn(/* size_in_bytes, descr_string,
+  					  descr_int */);
   extern void GC_debug_free(/* object_addr */);
   extern char * GC_debug_realloc(/* old_object, new_size_in_bytes,
   			            descr_string, descr_int */);
 # endif
+void GC_debug_change_stubborn(/* p */);
+void GC_debug_end_stubborn_change(/* p */);
 # ifdef GC_DEBUG
 #   define GC_MALLOC(sz) GC_debug_malloc(sz, __FILE__, __LINE__)
 #   define GC_MALLOC_ATOMIC(sz) GC_debug_malloc_atomic(sz, __FILE__, __LINE__)
+#   define GC_MALLOC_UNCOLLECTABLE(sz) GC_debug_malloc_uncollectable(sz, \
+							__FILE__, __LINE__)
 #   define GC_REALLOC(old, sz) GC_debug_realloc(old, sz, __FILE__, \
 							       __LINE__)
 #   define GC_FREE(p) GC_debug_free(p)
 #   define GC_REGISTER_FINALIZER(p, f, d, of, od) \
 	GC_register_finalizer(GC_base(p), GC_debug_invoke_finalizer, \
 			      GC_make_closure(f,d), of, od)
+#   define GC_MALLOC_STUBBORN(sz) GC_debug_malloc_stubborn(sz, __FILE__, \
+							       __LINE__)
+#   define GC_CHANGE_STUBBORN(p) GC_debug_change_stubborn(p)
+#   define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
 # else
 #   define GC_MALLOC(sz) GC_malloc(sz)
 #   define GC_MALLOC_ATOMIC(sz) GC_malloc_atomic(sz)
+#   define GC_MALLOC_UNCOLLECTABLE(sz) GC_malloc_uncollectable(sz)
 #   define GC_REALLOC(old, sz) GC_realloc(old, sz)
 #   define GC_FREE(p) GC_free(p)
 #   define GC_REGISTER_FINALIZER(p, f, d, of, od) \
 	GC_register_finalizer(p, f, d, of, od)
+#   define GC_MALLOC_STUBBORN(sz) GC_malloc_stubborn(sz)
+#   define GC_CHANGE_STUBBORN(p) GC_change_stubborn(p)
+#   define GC_END_STUBBORN_CHANGE(p) GC_end_stubborn_change(p)
 # endif
 
 /* Finalization.  Some of these primitives are grossly unsafe.		*/
@@ -181,7 +253,7 @@ void GC_gcollect();
 /* with Alan Demers, Dan Greene, Carl Hauser, Barry Hayes, 		*/
 /* Christian Jacobi, and Russ Atkinson.  It's not perfect, and		*/
 /* probably nobody else agrees with it.	    Hans-J. Boehm  3/13/92	*/
-# ifdef __STDC__
+# if defined(__STDC__) || defined(__cplusplus)
   typedef void (*GC_finalization_proc)(void * obj, void * client_data);
 # else
   typedef void (*GC_finalization_proc)(/* void * obj, void * client_data */);
@@ -219,7 +291,7 @@ void GC_register_finalizer(/* void * obj,
 
 /* The following routine may be used to break cycles between	*/
 /* finalizable objects, thus causing cyclic finalizable		*/
-/* objects to be finalized in the cirrect order.  Standard	*/
+/* objects to be finalized in the correct order.  Standard	*/
 /* use involves calling GC_register_disappearing_link(&p),	*/
 /* where p is a pointer that is not followed by finalization	*/
 /* code, and should not be considered in determining 		*/
@@ -241,13 +313,27 @@ int GC_register_disappearing_link(/* void ** link */);
 	/* But this causes problems if that action alters, or 	*/
 	/* examines connectivity.				*/
 	/* Returns 1 if link was already registered, 0		*/
-	/* otherise.						*/
+	/* otherwise.						*/
+	/* Only exists for backward compatibility.  See below:	*/
+int GC_general_register_disappearing_link(/* void ** link, void * obj */);
+	/* A slight generalization of the above. *link is	*/
+	/* cleared when obj first becomes inaccessible.  This	*/
+	/* can be used to implement weak pointers easily and	*/
+	/* safely. Typically link will point to a location	*/
+	/* holding a disguised pointer to obj.  In this way	*/
+	/* soft pointers are broken before any object		*/
+	/* reachable from them are finalized.  Each link	*/
+	/* May be registered only once, i.e. with one obj	*/
+	/* value.  This was added after a long email discussion */
+	/* with John Ellis.					*/
 int GC_unregister_disappearing_link(/* void ** link */);
 	/* Returns 0 if link was not actually registered.	*/
+	/* Undoes a registration by either of the above two	*/
+	/* routines.						*/
 
 /* Auxiliary fns to make finalization work correctly with displaced	*/
 /* pointers introduced by the debugging allocators.			*/
-# ifdef __STDC__
+# if defined(__STDC__) || defined(__cplusplus)
     void * GC_make_closure(GC_finalization_proc fn, void * data);
     void GC_debug_invoke_finalizer(void * obj, void * data);
 # else
@@ -262,7 +348,7 @@ int GC_unregister_disappearing_link(/* void ** link */);
 /* disappear.  Otherwise objects can be accessed after they	*/
 /* have been collected.						*/
 # ifdef I_HIDE_POINTERS
-#   ifdef __STDC__
+#   if defined(__STDC__) || defined(__cplusplus)
 #     define HIDE_POINTER(p) (~(size_t)(p))
 #     define REVEAL_POINTER(p) ((void *)(HIDE_POINTER(p)))
 #   else
@@ -273,7 +359,7 @@ int GC_unregister_disappearing_link(/* void ** link */);
     /* that the object still exists.  This involves acquiring the  	*/
     /* allocator lock to avoid a race with the collector.		*/
     typedef char * (*GC_fn_type)();
-#   ifdef __STDC__
+#   if defined(__STDC__) || defined(__cplusplus)
         void * GC_call_with_alloc_lock(GC_fn_type fn, void * client_data);
 #   else
         char * GC_call_with_alloc_lock(/* GC_fn_type fn, char * client_data */);

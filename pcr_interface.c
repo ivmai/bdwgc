@@ -17,7 +17,7 @@
  * We wrap all of the allocator functions to avoid questions of
  * compatibility between the prototyped and nonprototyped versions of the f
  */
-# include "pcr/mm/PCR_MM.h"
+# include "mm/PCR_MM.h"
 
 # define MY_MAGIC 17L
 

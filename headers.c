@@ -1,6 +1,6 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991, 1992 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1993 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -16,72 +16,57 @@
  *
  * Access speed is crucial.  We implement an index structure based on a 2
  * level tree.
- * For 64 bit machines this will have to be rewritten.  We expect that the
- * winning strategy there is to use a hash table as a cache, with
- * collisions resolved through a 4 or 5 level tree.
  */
  
 # include "gc_private.h"
 
-# if CPP_WORDSZ != 32
-#   if CPP_WORDSZ > 32
- 	--> This needs to be reimplemented.  See above.
-#   else
-	--> Get a real machine.
-#   endif
-# endif
- 
-hdr ** GC_top_index [TOP_SZ];
- 
-typedef hdr * bottom_index[BOTTOM_SZ];
- 
-/*
- * The bottom level index contains one of three kinds of values:
- * 0 means we're not responsible for this block.
- * 1 < (long)X <= MAX_JUMP means the block starts at least
- *        X * HBLKSIZE bytes before the current address.
- * A valid pointer points to a hdr structure. (The above can't be
- * valid pointers due to the GET_MEM return convention.)
- */
- 
-static bottom_index all_nils = { 0 };
+bottom_index * GC_all_bottom_indices = 0;
  
 /* Non-macro version of header location routine */
 hdr * GC_find_header(h)
 ptr_t h;
 {
-   return(HDR(h));
+#   ifdef TL_HASH
+	register hdr * result;
+	GET_HDR(h, result);
+	return(result);
+#   else
+	return(HDR(h));
+#   endif
 }
  
 /* Routines to dynamically allocate collector data structures that will */
 /* never be freed.							 */
  
-static char * scratch_free_ptr = 0;
+static ptr_t scratch_free_ptr = 0;
  
-static char * scratch_end_ptr = 0;
+static ptr_t scratch_end_ptr = 0;
  
 ptr_t GC_scratch_alloc(bytes)
 register word bytes;
 {
-    register char * result = scratch_free_ptr;
+    register ptr_t result = scratch_free_ptr;
     scratch_free_ptr += bytes;
     if (scratch_free_ptr <= scratch_end_ptr) {
         return(result);
     }
     {
-        long bytes_to_get = ((HINCR+1) * HBLKSIZE + bytes) & ~(HBLKSIZE - 1);
+        word bytes_to_get = MINHINCR * HBLKSIZE;
          
-        scratch_free_ptr = (char *)GET_MEM(bytes_to_get);
-        if (scratch_free_ptr == 0) {
-            GC_err_printf0("Out of memory - trying to allocate less\n");
-            result = (char *)GET_MEM(bytes);
-            if (result == 0) {
-                GC_err_printf0("Out of memory - giving up\n");
-            } else {
-                scratch_free_ptr -= bytes;
-                return(result);
-            }
+        if (bytes_to_get <= bytes) {
+          /* Undo the damage, and get memory directly */
+            scratch_free_ptr -= bytes;
+            return((ptr_t)GET_MEM(bytes));
         }
+        result = (ptr_t)GET_MEM(bytes_to_get);
+        if (result == 0) {
+#	    ifdef PRINTSTATS
+                GC_printf0("Out of memory - trying to allocate less\n");
+#	    endif
+            scratch_free_ptr -= bytes;
+            return((ptr_t)GET_MEM(bytes));
+        }
+        scratch_free_ptr = result;
         scratch_end_ptr = scratch_free_ptr + bytes_to_get;
         return(GC_scratch_alloc(bytes));
     }
@@ -115,35 +100,66 @@ GC_init_headers()
     register int i;
      
     for (i = 0; i < TOP_SZ; i++) {
-        GC_top_index[i] = all_nils;
+        GC_top_index[i] = &GC_all_nils;
     }
 }
 
 /* Make sure that there is a bottom level index block for address addr  */
-static void get_index(addr)
+/* Return FALSE on failure.						*/
+static bool get_index(addr)
 register word addr;
 {
-    register word indx =
+    register word hi =
     		(word)(addr) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
-    		
-    if (GC_top_index[indx] == all_nils) {
-        GC_top_index[indx] = (hdr **)
-        		GC_scratch_alloc((word)(sizeof (bottom_index)));
-        bzero((char *)(GC_top_index[indx]), (int)(sizeof (bottom_index)));
-    }
+    register bottom_index * r;
+    register bottom_index * p;
+    register bottom_index ** prev;
+#   ifdef HASH_TL
+      register i = TL_HASH(hi);
+      register bottom_index * old;
+      
+      old = p = GC_top_index[i];
+      while(p != &GC_all_nils) {
+          if (p -> key == hi) return(TRUE);
+          p = p -> hash_link;
+      }
+      r = (bottom_index*)GC_scratch_alloc((word)(sizeof (bottom_index)));
+      if (r == 0) return(FALSE);
+      bzero((char *)r, (int)(sizeof (bottom_index)));
+      r -> hash_link = old;
+      GC_top_index[i] = r;
+#   else
+      if (GC_top_index[hi] != &GC_all_nils) return(TRUE);
+      r = (bottom_index*)GC_scratch_alloc((word)(sizeof (bottom_index)));
+      if (r == 0) return(FALSE);
+      GC_top_index[hi] = r;
+      bzero((char *)r, (int)(sizeof (bottom_index)));
+# endif
+    r -> key = hi;
+    /* Add it to the list of bottom indices */
+      prev = &GC_all_bottom_indices;
+      while ((p = *prev) != 0 && p -> key < hi) prev = &(p -> asc_link);
+      r -> asc_link = p;
+      *prev = r;
+    return(TRUE);
 }
 
 /* Install a header for block h.  */
 /* The header is uninitialized.	  */
-void GC_install_header(h)
+/* Returns FALSE on failure.	  */
+bool GC_install_header(h)
 register struct hblk * h;
 {
-    get_index((word) h);
-    HDR(h) = alloc_hdr();
+    hdr * result;
+    
+    if (!get_index((word) h)) return(FALSE);
+    result = alloc_hdr();
+    SET_HDR(h, result);
+    return(result != 0);
 }
 
 /* Set up forwarding counts for block h of size sz */
-void GC_install_counts(h, sz)
+bool GC_install_counts(h, sz)
 register struct hblk * h;
 register word sz; /* bytes */
 {
@@ -151,21 +167,25 @@ register word sz; /* bytes */
     register int i;
     
     for (hbp = h; (char *)hbp < (char *)h + sz; hbp += BOTTOM_SZ) {
-        get_index((word) hbp);
+        if (!get_index((word) hbp)) return(FALSE);
     }
-    get_index((word)h + sz - 1);
+    if (!get_index((word)h + sz - 1)) return(FALSE);
     for (hbp = h + 1; (char *)hbp < (char *)h + sz; hbp += 1) {
-        i = hbp - h;
-        HDR(hbp) = (hdr *)(i > MAX_JUMP? MAX_JUMP : i);
+        i = HBLK_PTR_DIFF(hbp, h);
+        SET_HDR(hbp, (hdr *)(i > MAX_JUMP? MAX_JUMP : i));
     }
+    return(TRUE);
 }
 
 /* Remove the header for block h */
 void GC_remove_header(h)
 register struct hblk * h;
 {
-    free_hdr(HDR(h));
-    HDR(h) = 0;
+    hdr ** ha;
+    
+    GET_HDR_ADDR(h, ha);
+    free_hdr(*ha);
+    *ha = 0;
 }
 
 /* Remove forwarding counts for h */
@@ -176,7 +196,7 @@ register word sz; /* bytes */
     register struct hblk * hbp;
     
     for (hbp = h+1; (char *)hbp < (char *)h + sz; hbp += 1) {
-        HDR(hbp) = 0;
+        SET_HDR(hbp, 0);
     }
 }
 
@@ -186,26 +206,60 @@ void GC_apply_to_all_blocks(fn, client_data)
 void (*fn)(/* struct hblk *h, word client_data */);
 word client_data;
 {
-    register int i, j;
-    register hdr ** index_p;
+    register int j;
+    register bottom_index * index_p;
     
-    for (i = 0; i < TOP_SZ; i++) {
-        index_p = GC_top_index[i];
-        if (index_p != all_nils) {
-            for (j = BOTTOM_SZ-1; j >= 0;) {
-                if (!IS_FORWARDING_ADDR_OR_NIL(index_p[j])) {
-                  if (index_p[j]->hb_map != GC_invalid_map) {
+    for (index_p = GC_all_bottom_indices; index_p != 0;
+         index_p = index_p -> asc_link) {
+        for (j = BOTTOM_SZ-1; j >= 0;) {
+            if (!IS_FORWARDING_ADDR_OR_NIL(index_p->index[j])) {
+                if (index_p->index[j]->hb_map != GC_invalid_map) {
                     (*fn)(((struct hblk *)
-                  	      (((i << LOG_BOTTOM_SZ) + j) << LOG_HBLKSIZE)),
+                  	      (((index_p->key << LOG_BOTTOM_SZ) + (word)j)
+                  	       << LOG_HBLKSIZE)),
                           client_data);
-                  }
-                  j--;
-                } else if (index_p[j] == 0) {
-                  j--;
+                }
+                j--;
+             } else if (index_p->index[j] == 0) {
+                j--;
+             } else {
+                j -= (int)(index_p->index[j]);
+             }
+         }
+     }
+}
+
+/* Get the next valid block whose address is at least h	*/
+/* Return 0 if there is none.				*/
+struct hblk * GC_next_block(h)
+struct hblk * h;
+{
+    register bottom_index * bi;
+    register word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
+    
+    GET_BI(h, bi);
+    if (bi == &GC_all_nils) {
+        register int hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
+        bi = GC_all_bottom_indices;
+        while (bi != 0 && bi -> key < hi) bi = bi -> asc_link;
+        j = 0;
+    }
+    while(bi != 0) {
+        while (j < BOTTOM_SZ) {
+            if (IS_FORWARDING_ADDR_OR_NIL(bi -> index[j])) {
+                j++;
+            } else {
+                if (bi->index[j]->hb_map != GC_invalid_map) {
+                    return((struct hblk *)
+                  	      (((bi -> key << LOG_BOTTOM_SZ) + j)
+                  	       << LOG_HBLKSIZE));
                 } else {
-                  j -= (int)(index_p[j]);
+                    j += divHBLKSZ(bi->index[j] -> hb_sz);
                 }
             }
         }
+        j = 0;
+        bi = bi -> asc_link;
     }
+    return(0);
 }

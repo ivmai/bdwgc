@@ -30,6 +30,11 @@ hdr *hhdr;
     
     if (GC_invalid_map == 0) {
         GC_invalid_map = GC_scratch_alloc(MAP_SIZE);
+        if (GC_invalid_map == 0) {
+            GC_err_printf0(
+            	"Cant initialize GC_invalid_map: insufficient memory\n");
+            EXIT();
+        }
         for (displ = 0; displ < HBLKSIZE; displ++) {
             MAP_ENTRY(GC_invalid_map, displ) = OBJ_INVALID;
         }
@@ -68,14 +73,14 @@ word offset;
       for (i = 0; i <= MAXOBJSZ; i++) {
           if (GC_obj_map[i] != 0) {
              if (i == 0) {
-               GC_obj_map[i][offset + HDR_BYTES] = offset >> 2;
+               GC_obj_map[i][offset + HDR_BYTES] = BYTES_TO_WORDS(offset);
              } else {
                register int j;
                register int lb = WORDS_TO_BYTES(i);
                
                if (offset < lb) {
                  for (j = offset + HDR_BYTES; j < HBLKSIZE; j += lb) {
-                   GC_obj_map[i][j] = offset >> 2;
+                   GC_obj_map[i][j] = BYTES_TO_WORDS(offset);
                  }
                }
              }
@@ -86,8 +91,9 @@ word offset;
 }
 
 
-/* Add a heap block map for objects of size sz to obj_map.  */
-void GC_add_map_entry(sz)
+/* Add a heap block map for objects of size sz to obj_map.	*/
+/* Return FALSE on failure.					*/
+bool GC_add_map_entry(sz)
 word sz;
 {
     register int obj_start;
@@ -96,9 +102,10 @@ word sz;
     
     if (sz > MAXOBJSZ) sz = 0;
     if (GC_obj_map[sz] != 0) {
-        return;
+        return(TRUE);
     }
     new_map = GC_scratch_alloc(MAP_SIZE);
+    if (new_map == 0) return(FALSE);
 #   ifdef PRINTSTATS
         GC_printf1("Adding block map for size %lu\n", (unsigned long)sz);
 #   endif
@@ -124,4 +131,5 @@ word sz;
         }
     }
     GC_obj_map[sz] = new_map;
+    return(TRUE);
 }

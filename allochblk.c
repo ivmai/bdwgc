@@ -38,24 +38,52 @@ struct hblk *GC_savhbp = (struct hblk *)0;  /* heap block preceding next */
 					 /* block to be examined by   */
 					 /* GC_allochblk.                */
 
+void GC_print_hblkfreelist()
+{
+    struct hblk * h = GC_hblkfreelist;
+    word total_free = 0;
+    hdr * hhdr = HDR(h);
+    word sz;
+    
+    while (h != 0) {
+        sz = hhdr -> hb_sz;
+    	GC_printf2("0x%lx size %lu ", (unsigned long)h, (unsigned long)sz);
+    	total_free += sz;
+        if (GC_is_black_listed(h, HBLKSIZE) != 0) {
+             GC_printf0("start black listed\n");
+        } else if (GC_is_black_listed(h, hhdr -> hb_sz) != 0) {
+             GC_printf0("partially black listed\n");
+        } else {
+             GC_printf0("not black listed\n");
+        }
+        h = hhdr -> hb_next;
+        hhdr = HDR(h);
+    }
+    GC_printf1("Total of %lu bytes on free list\n", (unsigned long)total_free);
+}
+
 /* Initialize hdr for a block containing the indicated size and 	*/
 /* kind of objects.							*/
-static setup_header(hhdr, sz, kind)
+/* Return FALSE on failure.						*/
+static bool setup_header(hhdr, sz, kind)
 register hdr * hhdr;
 word sz;	/* object size in words */
 int kind;
 {
+    /* Add description of valid object pointers */
+      if (!GC_add_map_entry(sz)) return(FALSE);
+      hhdr -> hb_map = GC_obj_map[sz > MAXOBJSZ? 0 : sz];
+      
     /* Set size, kind and mark proc fields */
       hhdr -> hb_sz = sz;
       hhdr -> hb_obj_kind = kind;
       hhdr -> hb_mark_proc = GC_obj_kinds[kind].ok_mark_proc;
       
-    /* Add description of valid object pointers */
-      GC_add_map_entry(sz);
-      hhdr -> hb_map = GC_obj_map[sz > MAXOBJSZ? 0 : sz];
-      
     /* Clear mark bits */
       GC_clear_hdr_marks(hhdr);
+      
+    hhdr -> hb_last_reclaimed = GC_gc_no;
+    return(TRUE);
 }
 
 /*
@@ -83,8 +111,7 @@ int kind;
     signed_word size_avail;	/* bytes available in this block	*/
     bool first_time = TRUE;
 
-    size_needed = WORDS_TO_BYTES(sz);
-    size_needed = (size_needed+HDR_BYTES+HBLKSIZE-1) & ~HBLKMASK;
+    size_needed = HBLKSIZE * OBJ_SZ_TO_BLOCKS(sz);
 
     /* search for a big enough block in free list */
 	hbp = GC_savhbp;
@@ -124,17 +151,18 @@ int kind;
 	    }
 	    if ( kind != PTRFREE || size_needed > MAX_BLACK_LIST_ALLOC) {
 	      struct hblk * lasthbp = hbp;
+	      ptr_t search_end = (ptr_t)hbp + size_avail - size_needed;
 	      
-	      while (size_avail >= size_needed
+	      while ((ptr_t)lasthbp <= search_end
 	             && (thishbp = GC_is_black_listed(lasthbp,
 	             				      (word)size_needed))) {
 	        lasthbp = thishbp;
 	      }
 	      size_avail -= (ptr_t)lasthbp - (ptr_t)hbp;
 	      thishbp = lasthbp;
-	      if (size_avail >= size_needed && thishbp != hbp) {
+	      if (size_avail >= size_needed && thishbp != hbp
+	          && GC_install_header(thishbp)) {
 	          /* Split the block at thishbp */
-	              GC_install_header(thishbp);
 	              thishdr = HDR(thishbp);
 	              /* GC_invalidate_map not needed, since we will	*/
 	              /* allocate this block.				*/
@@ -150,6 +178,7 @@ int kind;
 	      } else if (size_avail == 0
 	      		 && size_needed == HBLKSIZE
 	      		 && prevhbp != 0) {
+#		ifndef FIND_LEAK
 	      	  static unsigned count = 0;
 	      	  
 	      	  /* The block is completely blacklisted.  We need 	*/
@@ -159,17 +188,24 @@ int kind;
 	          /* A dropped block will be reconsidered at next GC.	*/
 	          if ((++count & 3) == 0) {
 	            /* Allocate and drop the block */
-	              phdr -> hb_next = hhdr -> hb_next;
-	              GC_install_counts(hbp, hhdr->hb_sz);
-	              setup_header(hhdr,
-	              		   BYTES_TO_WORDS(hhdr->hb_sz - HDR_BYTES),
-	              		   PTRFREE);
-	              if (GC_savhbp == hbp) GC_savhbp = prevhbp;
+	              if (GC_install_counts(hbp, hhdr->hb_sz)) {
+	                phdr -> hb_next = hhdr -> hb_next;
+	                (void) setup_header(
+	                	  hhdr,
+	              		  BYTES_TO_WORDS(hhdr->hb_sz - HDR_BYTES),
+	              		  PTRFREE); /* Cant fail */
+	              	if (GC_debugging_started) {
+	              	    bzero((char *)hbp + HDR_BYTES,
+	              	          (int)(hhdr->hb_sz - HDR_BYTES));
+	              	}
+	                if (GC_savhbp == hbp) GC_savhbp = prevhbp;
+	              }
 	            /* Restore hbp to point at free block */
 	              hbp = prevhbp;
 	              hhdr = phdr;
 	              if (hbp == GC_savhbp) first_time = TRUE;
 	          }
+#		endif
 	      }
 	    }
 	    if( size_avail >= size_needed ) {
@@ -183,8 +219,8 @@ int kind;
 			hhdr = HDR(hbp);
 		    } else {
 			hbp = (struct hblk *)
-			    (((unsigned)thishbp) + size_needed);
-			GC_install_header(hbp);
+			    (((word)thishbp) + size_needed);
+			if (!GC_install_header(hbp)) continue;
 			hhdr = HDR(hbp);
 			GC_invalidate_map(hhdr);
 			hhdr->hb_next = thishdr->hb_next;
@@ -201,21 +237,31 @@ int kind;
 		break;
 	    }
 	}
-
+	
+    /* Notify virtual dirty bit implementation that we are about to write. */
+    	GC_write_hint(thishbp);
+    
+    /* Add it to map of valid blocks */
+    	if (!GC_install_counts(thishbp, (word)size_needed)) return(0);
+    	/* This leaks memory under very rare conditions. */
+    		
+    /* Set up header */
+        if (!setup_header(thishdr, sz, kind)) {
+            GC_remove_counts(thishbp, (word)size_needed);
+            return(0); /* ditto */
+        }
+        
     /* Clear block if necessary */
-	if (sz > MAXOBJSZ && GC_obj_kinds[kind].ok_init) {
+	if (GC_debugging_started
+	    || sz > MAXOBJSZ && GC_obj_kinds[kind].ok_init) {
 	    bzero((char *)thishbp + HDR_BYTES,  (int)(size_needed - HDR_BYTES));
 	}
-
-    /* Set up header */
-        setup_header(thishdr, sz, kind);
-        
-    /* Add it to map of valid blocks */
-    	GC_install_counts(thishbp, (word)size_needed);
-
+    
     return( thishbp );
 }
  
+struct hblk * GC_freehblk_ptr = 0;  /* Search position hint for GC_freehblk */
+
 /*
  * Free a heap block.
  *
@@ -237,15 +283,23 @@ register signed_word size;
 
     phdr = HDR(p);
     size = phdr->hb_sz;
-    size = 
-	((WORDS_TO_BYTES(size)+HDR_BYTES+HBLKSIZE-1)
-		 & (~HBLKMASK));
+    size = HBLKSIZE * OBJ_SZ_TO_BLOCKS(size);
     GC_remove_counts(p, (word)size);
     phdr->hb_sz = size;
     GC_invalidate_map(phdr);
-
     prevhbp = 0;
-    hbp = GC_hblkfreelist;
+    
+    /* The following optimization was suggested by David Detlefs.	*/
+    /* Note that the header cannot be NIL, since there cannot be an	*/
+    /* intervening  call to GC_freehblk without resetting		*/
+    /* GC_freehblk_ptr.							*/
+    if (GC_freehblk_ptr != 0 &&
+    	HDR(GC_freehblk_ptr)->hb_map == GC_invalid_map &&
+    	(ptr_t)GC_freehblk_ptr < (ptr_t)p) {
+      hbp = GC_freehblk_ptr;
+    } else {
+      hbp = GC_hblkfreelist;
+    };
     hhdr = HDR(hbp);
 
     while( (hbp != 0) && (hbp < p) ) {
@@ -254,6 +308,7 @@ register signed_word size;
 	hbp = hhdr->hb_next;
 	hhdr = HDR(hbp);
     }
+    GC_freehblk_ptr = prevhbp;
     
     /* Check for duplicate deallocation in the easy case */
       if (hbp != 0 && (ptr_t)p + size > (ptr_t)hbp

@@ -14,6 +14,7 @@
  * We maintain several hash tables of hblks that have had false hits.
  * Each contains one bit per hash bucket;  If any page in the bucket
  * has had a false hit, we assume that all of them have.
+ * See the definition of page_hash_table in gc_private.h.
  * False hits from the stack(s) are much more dangerous than false hits
  * from elsewhere, since the former can pin a large object that spans the
  * block, eventhough it does not start on the dangerous block.
@@ -30,55 +31,42 @@
  * All require that the allocator lock is held.
  */
 
-# define LOG_HT_ENTRIES  14	/* Collisions are likely if heap grows	*/
-				/* to more than 16K hblks = 64MB.	*/
-				/* Each hash table occupies 2K bytes.   */
-# define HT_ENTRIES ((word)1 << LOG_HT_ENTRIES)
-# define HT_SIZE (HT_ENTRIES >> LOGWL)
-typedef word black_list_t[HT_SIZE];
-
-# define HASH(addr) (((addr) >> LOG_HBLKSIZE) & (HT_ENTRIES - 1))
-
 /* Pointers to individual tables.  We replace one table by another by 	*/
-/* switching these pointers.  GC_black_lists is not used directly.	*/
-word * GC_new_normal_bl;
-		/* Nonstack false references seen at last complete	*/
-		/* collection.						*/
+/* switching these pointers. 						*/
 word * GC_old_normal_bl;
-		/* Nonstack false references seen at preceding		*/
+		/* Nonstack false references seen at last full		*/
 		/* collection.						*/
 word * GC_incomplete_normal_bl;
-		/* Nonstack false references seen at current,		*/
-		/* not yet completed collection.			*/
-word * GC_new_stack_bl;
+		/* Nonstack false references seen since last		*/
+		/* full collection.					*/
 word * GC_old_stack_bl;
 word * GC_incomplete_stack_bl;
 
-# define get_bl_entry_from_index(bl, index) \
-		(((bl)[divWORDSZ(index)] >> modWORDSZ(index)) & 1)
-# define set_bl_entry_from_index(bl, index) \
-		(bl)[divWORDSZ(index)] |= 1 << modWORDSZ(index)
-# define clear_bl_entry_from_index(bl, index) \
-		(bl)[divWORDSZ(index)] &= ~(1 << modWORDSZ(index))
-		
 GC_bl_init()
 {
 # ifndef ALL_INTERIOR_POINTERS
-    GC_new_normal_bl = (word *)GC_scratch_alloc((word)(sizeof(black_list_t)));
-    GC_old_normal_bl = (word *)GC_scratch_alloc((word)(sizeof (black_list_t)));
+    GC_old_normal_bl = (word *)
+    			 GC_scratch_alloc((word)(sizeof (page_hash_table)));
     GC_incomplete_normal_bl = (word *)GC_scratch_alloc
-    					((word)(sizeof(black_list_t)));
+    					((word)(sizeof(page_hash_table)));
+    if (GC_old_normal_bl == 0 || GC_incomplete_normal_bl == 0) {
+        GC_err_printf0("Insufficient memory for black list\n");
+        EXIT();
+    }
 # endif
-    GC_new_stack_bl = (word *)GC_scratch_alloc((word)(sizeof(black_list_t)));
-    GC_old_stack_bl = (word *)GC_scratch_alloc((word)(sizeof(black_list_t)));
+    GC_old_stack_bl = (word *)GC_scratch_alloc((word)(sizeof(page_hash_table)));
     GC_incomplete_stack_bl = (word *)GC_scratch_alloc
-    					((word)(sizeof(black_list_t)));
+    					((word)(sizeof(page_hash_table)));
+    if (GC_old_stack_bl == 0 || GC_incomplete_stack_bl == 0) {
+        GC_err_printf0("Insufficient memory for black list\n");
+        EXIT();
+    }
 }
 		
 void GC_clear_bl(doomed)
 word *doomed;
 {
-    bzero((char *)doomed, (int)HT_SIZE*sizeof(word));
+    bzero((char *)doomed, (int)sizeof(page_hash_table));
 }
 
 /* Signal the completion of a collection.  Turn the incomplete black	*/
@@ -88,10 +76,8 @@ void GC_promote_black_lists()
     word * very_old_normal_bl = GC_old_normal_bl;
     word * very_old_stack_bl = GC_old_stack_bl;
     
-    GC_old_normal_bl = GC_new_normal_bl;
-    GC_new_normal_bl = GC_incomplete_normal_bl;
-    GC_old_stack_bl = GC_new_stack_bl;
-    GC_new_stack_bl = GC_incomplete_stack_bl;
+    GC_old_normal_bl = GC_incomplete_normal_bl;
+    GC_old_stack_bl = GC_incomplete_stack_bl;
 #   ifndef ALL_INTERIOR_POINTERS
       GC_clear_bl(very_old_normal_bl);
 #   endif
@@ -109,16 +95,16 @@ word p;
 {
     if (!(GC_modws_valid_offsets[p & (sizeof(word)-1)])) return;
     {
-        register int index = HASH(p);
+        register int index = PHT_HASH(p);
         
-        if (HDR(p) == 0 || get_bl_entry_from_index(GC_new_normal_bl, index)) {
+        if (HDR(p) == 0 || get_pht_entry_from_index(GC_old_normal_bl, index)) {
 #   	    ifdef PRINTBLACKLIST
-		if (!get_bl_entry_from_index(GC_incomplete_normal_bl, index)) {
+		if (!get_pht_entry_from_index(GC_incomplete_normal_bl, index)) {
 	    	  GC_printf1("Black listing (normal) 0x%lx\n",
 	    	  	     (unsigned long) p);
 	    	}
 #           endif
-            set_bl_entry_from_index(GC_incomplete_normal_bl, index);
+            set_pht_entry_from_index(GC_incomplete_normal_bl, index);
         } /* else this is probably just an interior pointer to an allocated */
           /* object, and isn't worth black listing.			    */
     }
@@ -129,16 +115,16 @@ word p;
 void GC_add_to_black_list_stack(p)
 word p;
 {
-    register int index = HASH(p);
+    register int index = PHT_HASH(p);
         
-    if (HDR(p) == 0 || get_bl_entry_from_index(GC_new_stack_bl, index)) {
+    if (HDR(p) == 0 || get_pht_entry_from_index(GC_old_stack_bl, index)) {
 #   	ifdef PRINTBLACKLIST
-	    if (!get_bl_entry_from_index(GC_incomplete_stack_bl, index)) {
+	    if (!get_pht_entry_from_index(GC_incomplete_stack_bl, index)) {
 	    	  GC_printf1("Black listing (stack) 0x%lx\n",
 	    	             (unsigned long)p);
 	    }
 #       endif
-	set_bl_entry_from_index(GC_incomplete_stack_bl, index);
+	set_pht_entry_from_index(GC_incomplete_stack_bl, index);
     }
 }
 
@@ -154,30 +140,31 @@ struct hblk * GC_is_black_listed(h, len)
 struct hblk * h;
 word len;
 {
-    register int index = HASH((word)h);
+    register int index = PHT_HASH((word)h);
     register word i;
     word nblocks = divHBLKSZ(len);
 
 #   ifndef ALL_INTERIOR_POINTERS
-      if (get_bl_entry_from_index(GC_new_normal_bl, index)
-        && get_bl_entry_from_index(GC_old_normal_bl, index)) {
+      if (get_pht_entry_from_index(GC_old_normal_bl, index)
+          || get_pht_entry_from_index(GC_incomplete_normal_bl, index)) {
         return(h+1);
       }
 #   endif
     
     for (i = 0; ; ) {
-        if (GC_new_stack_bl[divWORDSZ(index)] == 0) {
+        if (GC_old_stack_bl[divWORDSZ(index)] == 0
+            && GC_incomplete_stack_bl[divWORDSZ(index)] == 0) {
             /* An easy case */
             i += WORDSZ - modWORDSZ(index);
         } else {
-          if (get_bl_entry_from_index(GC_new_stack_bl, index)
-            && get_bl_entry_from_index(GC_old_stack_bl, index)) {
+          if (get_pht_entry_from_index(GC_old_stack_bl, index)
+              || get_pht_entry_from_index(GC_incomplete_stack_bl, index)) {
             return(h+i+1);
           }
           i++;
         }
         if (i >= nblocks) break;
-        index = HASH((word)(h+i));
+        index = PHT_HASH((word)(h+i));
     }
     return(0);
 }

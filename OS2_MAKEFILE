@@ -6,10 +6,10 @@
 # We also haven't figured out how to do partial links or build static libraries.  Hence a
 # client currently needs to link against all of the following:
 
-OBJS= alloc.obj reclaim.obj allochblk.obj misc.obj mach_dep.obj os_dep.obj mark_roots.obj headers.obj mark.obj obj_map.obj black_list.obj finalize.obj new_hblk.obj real_malloc.obj dynamic_load.obj debug_malloc.obj
+OBJS= alloc.obj reclaim.obj allochblk.obj misc.obj mach_dep.obj os_dep.obj mark_roots.obj headers.obj mark.obj obj_map.obj black_list.obj finalize.obj new_hblk.obj real_malloc.obj dynamic_load.obj debug_malloc.obj malloc.obj stubborn.obj
 
 CC= icc
-CFLAGS= /O /Q
+CFLAGS= /O /Q /DSILENT
 # Use /Ti instead of /O for debugging
 # Setjmp_test may yield overly optimistic results when compiled
 # without optimization.
@@ -22,5 +22,5 @@ mach_dep.obj: mach_dep.c
 	$(CC) $(CFLAGS) /C mach_dep.c
 
 gctest: test.obj $(OBJS)
-	$(CC) $(CFLAGS) /Fegctest test.obj $(OBJS)
+	$(CC) $(CFLAGS) /B"/STACK:524288" /Fegctest test.obj $(OBJS)
 

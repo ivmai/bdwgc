@@ -1,6 +1,6 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991,1992 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1993 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -21,14 +21,19 @@
 
 # ifdef THREADS
 #   ifdef PCR
-#     include "pcr/il/PCR_IL.h"
+#     include "il/PCR_IL.h"
       struct PCR_Th_MLRep GC_allocate_ml;
 #   else
+#     ifdef SRC_M3
+	/* Critical section counter is defined in the M3 runtime 	*/
+	/* That's all we use.						*/
+#     else
 	--> declare allocator lock here
+#     endif
 #   endif
 # endif
 
-struct _GC_arrays GC_arrays = { 0 };
+FAR struct _GC_arrays GC_arrays = { 0 };
 
 /* Initialize GC_obj_kinds properly and standard free lists properly.  	*/
 /* This must be done statically since they may be accessed before 	*/
@@ -38,23 +43,33 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 		GC_no_mark_proc, FALSE },
 /* NORMAL  */ { &GC_objfreelist[0], &GC_reclaim_list[0],
 		GC_normal_mark_proc, TRUE },
+/* UNCOLLECTABLE */
+	      { &GC_uobjfreelist[0], &GC_ureclaim_list[0],
+		GC_normal_mark_proc, TRUE },
+# ifdef STUBBORN_ALLOC
+/*STUBBORN*/ { &GC_sobjfreelist[0], &GC_sreclaim_list[0],
+		GC_normal_mark_proc, TRUE },
+# endif
 };
+
+# ifdef STUBBORN_ALLOC
+  int GC_n_kinds = 4;
+# else
+  int GC_n_kinds = 3;
+# endif
+
+bool GC_debugging_started = FALSE;
+	/* defined here so we don't have to load debug_malloc.o */
+
+void (*GC_check_heap)() = (void (*)())0;
 
 ptr_t GC_stackbottom = 0;
 
-word GC_hincr;
-
-int GC_n_kinds = 2;
-
 bool GC_dont_gc = 0;
 
-extern signed_word GC_mem_found;
+bool GC_quiet = 0;
 
-# ifdef ALL_INTERIOR_POINTERS
-#   define ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1))
-# else
-#   define ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1) - 1)
-# endif
+extern signed_word GC_mem_found;
 
 # ifdef MERGE_SIZES
     /* Set things up so that GC_size_map[i] >= words(i),		*/
@@ -62,11 +77,6 @@ extern signed_word GC_mem_found;
     /* and so that size_map contains relatively few distinct entries 	*/
     /* This is stolen from Russ Atkinson's Cedar quantization		*/
     /* alogrithm (but we precompute it).				*/
-    
-#   if (CPP_WORDSZ != 32) 
-  	--> fix the following code
-#   endif
-
 
 
     void GC_init_size_map()
@@ -77,11 +87,11 @@ extern signed_word GC_mem_found;
 	/* Map size 0 to 1.  This avoids problems at lower levels. */
 	  GC_size_map[0] = 1;
 	/* One word objects don't have to be 2 word aligned.	   */
-	  GC_size_map[1] = 1;
-	  GC_size_map[2] = 1;
-	  GC_size_map[3] = 1;
-	  GC_size_map[4] = ROUNDED_UP_WORDS(4);
-	for (i = 5; i <= 32; i++) {
+	  for (i = 1; i < sizeof(word); i++) {
+	      GC_size_map[i] = 1;
+	  }
+	  GC_size_map[sizeof(word)] = ROUNDED_UP_WORDS(sizeof(word));
+	for (i = sizeof(word) + 1; i <= 8 * sizeof(word); i++) {
 #           ifdef ALIGN_DOUBLE
 	      GC_size_map[i] = (ROUNDED_UP_WORDS(i) + 1) & (~1);
 #           else
@@ -89,7 +99,7 @@ extern signed_word GC_mem_found;
 #           endif
 	}
 	
-	for (i = 33; i <= WORDS_TO_BYTES(MAXOBJSZ); i++) {
+	for (i = 8*sizeof(word)+1; i <= WORDS_TO_BYTES(MAXOBJSZ); i++) {
 	    if (sz_rounded_up < ROUNDED_UP_WORDS(i)) {
 	        register int size = ROUNDED_UP_WORDS(i);
                 register unsigned m = 0;
@@ -107,14 +117,6 @@ extern signed_word GC_mem_found;
 	    GC_size_map[i] = sz_rounded_up;
 	}
     }
-# endif
-
-# ifdef ALL_INTERIOR_POINTERS
-#   define SMALL_OBJ(bytes) ((bytes) < WORDS_TO_BYTES(MAXOBJSZ))
-#   define ADD_SLOP(bytes) ((bytes)+1)
-# else
-#   define SMALL_OBJ(bytes) ((bytes) <= WORDS_TO_BYTES(MAXOBJSZ))
-#   define ADD_SLOP(bytes) (bytes)
 # endif
 
 /*
@@ -191,237 +193,6 @@ void GC_clear_stack()
 # endif
 }
 
-/* allocate lb bytes for an object of kind k */
-ptr_t GC_generic_malloc(lb, k)
-register word lb;
-register int k;
-{
-register word lw;
-register ptr_t op;
-register ptr_t *opp;
-DCL_LOCK_STATE;
-
-    DISABLE_SIGNALS();
-    LOCK();
-    if( SMALL_OBJ(lb) ) {
-#       ifdef MERGE_SIZES
-	  lw = GC_size_map[lb];
-#	else
-	  lw = ROUNDED_UP_WORDS(lb);
-	  if (lw == 0) lw = 1;
-#       endif
-	opp = &(GC_obj_kinds[k].ok_freelist[lw]);
-        if( (op = *opp) == 0 ) {
-            if (!GC_is_initialized) {
-                GC_init_inner();
-                ENABLE_SIGNALS();
-                /* This may have fixed GC_size_map */
-                UNLOCK();
-                return(GC_generic_malloc(lb, k));
-            }
-            GC_clear_stack();
-	    op = GC_allocobj(lw, k);
-	    if (op == 0) goto out;
-        }
-        /* Here everything is in a consistent state.	*/
-        /* We assume the following assignment is	*/
-        /* atomic.  If we get aborted			*/
-        /* after the assignment, we lose an object,	*/
-        /* but that's benign.				*/
-        /* Volatile declarations may need to be added	*/
-        /* to prevent the compiler from breaking things.*/
-        *opp = obj_link(op);
-        obj_link(op) = 0;
-    } else {
-	register struct hblk * h;
-	
-	if (!GC_is_initialized) GC_init_inner();
-	lw = ROUNDED_UP_WORDS(lb);
-	while ((h = GC_allochblk(lw, k)) == 0) {
-	   GC_collect_or_expand(divHBLKSZ(lb) + 1);
-	}
-	if (h == 0) {
-	    op = 0;
-	} else {
-	    op = (ptr_t) (h -> hb_body);
-	}
-    }
-    GC_words_allocd += lw;
-    
-out:
-    UNLOCK();
-    ENABLE_SIGNALS();
-    return((ptr_t)op);
-}
-
-/* Analogous to the above, but assumes a small object size, and 	*/
-/* bypasses MERGE_SIZES mechanism.  Used by gc_inline.h.		*/
-ptr_t GC_generic_malloc_words_small(lw, k)
-register word lw;
-register int k;
-{
-register ptr_t op;
-register ptr_t *opp;
-DCL_LOCK_STATE;
-
-    LOCK();
-    DISABLE_SIGNALS();
-    opp = &(GC_obj_kinds[k].ok_freelist[lw]);
-    if( (op = *opp) == 0 ) {
-        if (!GC_is_initialized) {
-            GC_init_inner();
-        }
-        GC_clear_stack();
-	op = GC_allocobj(lw, k);
-	if (op == 0) goto out;
-    }
-    *opp = obj_link(op);
-    obj_link(op) = 0;
-    GC_words_allocd += lw;
-    
-out:
-    UNLOCK();
-    ENABLE_SIGNALS();
-    return((ptr_t)op);
-}
-
-/* Allocate lb bytes of atomic (pointerfree) data */
-# ifdef __STDC__
-    extern_ptr_t GC_malloc_atomic(size_t lb)
-# else
-    extern_ptr_t GC_malloc_atomic(lb)
-    size_t lb;
-# endif
-{
-register ptr_t op;
-register ptr_t * opp;
-register word lw;
-DCL_LOCK_STATE;
-
-    if( SMALL_OBJ(lb) ) {
-#       ifdef MERGE_SIZES
-	  lw = GC_size_map[lb];
-#	else
-	  lw = ROUNDED_UP_WORDS(lb);
-#       endif
-	opp = &(GC_aobjfreelist[lw]);
-	FASTLOCK();
-        if( !FASTLOCK_SUCCEEDED() || (op = *opp) == 0 ) {
-            FASTUNLOCK();
-            return(GC_generic_malloc((word)lb, PTRFREE));
-        }
-        /* See above comment on signals.	*/
-        *opp = obj_link(op);
-        GC_words_allocd += lw;
-        FASTUNLOCK();
-        return((extern_ptr_t) op);
-   } else {
-       return((extern_ptr_t)
-       		GC_generic_malloc((word)lb, PTRFREE));
-   }
-}
-
-/* Allocate lb bytes of composite (pointerful) data */
-# ifdef __STDC__
-    extern_ptr_t GC_malloc(size_t lb)
-# else
-    extern_ptr_t GC_malloc(lb)
-    size_t lb;
-# endif
-{
-register ptr_t op;
-register ptr_t *opp;
-register word lw;
-DCL_LOCK_STATE;
-
-    if( SMALL_OBJ(lb) ) {
-#       ifdef MERGE_SIZES
-	  lw = GC_size_map[lb];
-#	else
-	  lw = ROUNDED_UP_WORDS(lb);
-#       endif
-	opp = &(GC_objfreelist[lw]);
-	FASTLOCK();
-        if( !FASTLOCK_SUCCEEDED() || (op = *opp) == 0 ) {
-            FASTUNLOCK();
-            return(GC_generic_malloc((word)lb, NORMAL));
-        }
-        /* See above comment on signals.	*/
-        *opp = obj_link(op);
-        obj_link(op) = 0;
-        GC_words_allocd += lw;
-        FASTUNLOCK();
-        return((extern_ptr_t) op);
-   } else {
-       return((extern_ptr_t)
-          	GC_generic_malloc((word)lb, NORMAL));
-   }
-}
-
-/* Change the size of the block pointed to by p to contain at least   */
-/* lb bytes.  The object may be (and quite likely will be) moved.     */
-/* The kind (e.g. atomic) is the same as that of the old.	      */
-/* Shrinking of large blocks is not implemented well.                 */
-# ifdef __STDC__
-    extern_ptr_t GC_realloc(extern_ptr_t p, size_t lb)
-# else
-    extern_ptr_t GC_realloc(p,lb)
-    extern_ptr_t p;
-    size_t lb;
-# endif
-{
-register struct hblk * h;
-register hdr * hhdr;
-register signed_word sz;	 /* Current size in bytes	*/
-register word orig_sz;	 /* Original sz in bytes	*/
-int obj_kind;
-
-    if (p == 0) return(GC_malloc(lb));	/* Required by ANSI */
-    h = HBLKPTR(p);
-    hhdr = HDR(h);
-    sz = hhdr -> hb_sz;
-    obj_kind = hhdr -> hb_obj_kind;
-    sz = WORDS_TO_BYTES(sz);
-    orig_sz = sz;
-
-    if (sz > WORDS_TO_BYTES(MAXOBJSZ)) {
-	/* Round it up to the next whole heap block */
-	  
-	  sz = (sz+HDR_BYTES+HBLKSIZE-1)
-		& (~HBLKMASK);
-	  sz -= HDR_BYTES;
-	  hhdr -> hb_sz = BYTES_TO_WORDS(sz);
-	  /* Extra area is already cleared by allochblk. */
-    }
-    if (ADD_SLOP(lb) <= sz) {
-	if (lb >= (sz >> 1)) {
-	    if (orig_sz > lb) {
-	      /* Clear unneeded part of object to avoid bogus pointer */
-	      /* tracing.					      */
-	        bzero(((char *)p) + lb, (int)(orig_sz - lb));
-	    }
-	    return(p);
-	} else {
-	    /* shrink */
-	      extern_ptr_t result = GC_generic_malloc((word)lb, obj_kind);
-
-	      if (result == 0) return(0);
-	          /* Could also return original object.  But this 	*/
-	          /* gives the client warning of imminent disaster.	*/
-	      bcopy(p, result, (int)lb);
-	      GC_free(p);
-	      return(result);
-	}
-    } else {
-	/* grow */
-	  extern_ptr_t result = GC_generic_malloc((word)lb, obj_kind);
-
-	  if (result == 0) return(0);
-	  bcopy(p, result, (int)sz);
-	  GC_free(p);
-	  return(result);
-    }
-}
 
 /* Return a pointer to the base address of p, given a pointer to a	*/
 /* an address within an object.  Return 0 o.w.				*/
@@ -459,7 +230,7 @@ int obj_kind;
 	    correction = offset % sz;
 	    r -= (WORDS_TO_BYTES(correction));
 	    if (((word *)r + sz) > (word *)(h + 1)
-	        && sz <= MAXOBJSZ) {
+	        && sz <= BYTES_TO_WORDS(HBLKSIZE) - HDR_WORDS) {
 	        return(0);
 	    }
 	}
@@ -484,41 +255,6 @@ int obj_kind;
         return(-sz);
     } else {
         return(sz);
-    }
-}
-
-/* Explicitly deallocate an object p.				*/
-# ifdef __STDC__
-    void GC_free(extern_ptr_t p)
-# else
-    void GC_free(p)
-    extern_ptr_t p;
-# endif
-{
-    register struct hblk *h;
-    register hdr *hhdr;
-    register signed_word sz;
-    register ptr_t * flh;
-    register struct obj_kind * ok;
-
-    if (p == 0) return;
-    	/* Required by ANSI.  It's not my fault ...	*/
-    h = HBLKPTR(p);
-    hhdr = HDR(h);
-    sz = hhdr -> hb_sz;
-    GC_mem_freed += sz;
-    ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
-  
-    if (sz > MAXOBJSZ) {
-	GC_freehblk(h);
-    } else {
-        ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
-	if (ok -> ok_init) {
-	    bzero((char *)((word *)p + 1), (int)(WORDS_TO_BYTES(sz-1)));
-	}
-	flh = &(ok -> ok_freelist[sz]);
-	obj_link(p) = *flh;
-	*flh = (ptr_t)p;
     }
 }
 
@@ -604,14 +340,19 @@ void GC_init_inner()
     	ABORT("signed_word");
     }
     
-    GC_hincr = HINCR;
     GC_init_headers();
     GC_bl_init();
     GC_mark_init();
-    if (!GC_expand_hp_inner(GC_hincr)) {
-        GC_printf0("Can't start up: no memory\n");
+    if (!GC_expand_hp_inner((word)MINHINCR)) {
+        GC_err_printf0("Can't start up: not enough memory\n");
         EXIT();
     }
+    /* Preallocate large object map.  It's otherwise inconvenient to 	*/
+    /* deal with failure.						*/
+      if (!GC_add_map_entry((word)0)) {
+        GC_err_printf0("Can't start up: not enough memory\n");
+        EXIT();
+      }
     GC_register_displacement_inner(0L);
 #   ifdef MERGE_SIZES
       GC_init_size_map();
@@ -624,14 +365,45 @@ void GC_init_inner()
       GC_pcr_install();
 #   endif
     /* Get black list set up */
-      (void)GC_gcollect_inner(TRUE);
-      (void)GC_gcollect_inner(TRUE);
+      GC_gcollect_inner();
+#   ifdef STUBBORN_ALLOC
+    	GC_stubborn_init();
+#   endif
     /* Convince lint that some things are used */
+#   ifdef LINT
       {
           extern char * GC_copyright[];
-          GC_noop(GC_copyright, GC_find_header,
-                  GC_tl_mark, GC_call_with_alloc_lock);
+          extern GC_read();
+          
+          GC_noop(GC_copyright, GC_find_header, GC_print_block_list,
+                  GC_push_one, GC_call_with_alloc_lock, GC_read,
+                  GC_print_hblkfreelist, GC_dont_expand);
       }
+#   endif
+}
+
+void GC_enable_incremental()
+{
+    DCL_LOCK_STATE;
+    
+# ifndef FIND_LEAK
+    DISABLE_SIGNALS();
+    LOCK();
+    if (!GC_is_initialized) {
+        GC_init_inner();
+    }
+    if (GC_words_allocd > 0) {
+    	/* There may be unmarked reachable objects */
+    	GC_gcollect_inner();
+    }   /* else we're OK in assumeing everything's */
+    	/* clean since nothing can point to an	   */
+    	/* unmarked object.			   */
+    GC_dirty_init();
+    GC_read_dirty();
+    GC_incremental = TRUE;
+    UNLOCK();
+    ENABLE_SIGNALS();
+# endif
 }
 
 /* A version of printf that is unlikely to call malloc, and is thus safer */
@@ -646,6 +418,7 @@ long a, b, c, d, e, f;
 {
     char buf[1025];
     
+    if (GC_quiet) return;
     buf[1024] = 0x15;
     (void) sprintf(buf, format, a, b, c, d, e, f);
     if (buf[1024] != 0x15) ABORT("GC_printf clobbered stack");
@@ -688,3 +461,14 @@ char *s;
 #   endif
 }
 
+# ifdef SRC_M3
+void GC_enable()
+{
+    GC_dont_gc--;
+}
+
+void GC_disable()
+{
+    GC_dont_gc++;
+}
+# endif

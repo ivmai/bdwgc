@@ -42,6 +42,10 @@
 
 #ifdef SUNOS5
 
+#ifdef LINT
+    Elf32_Dyn _DYNAMIC;
+#endif
+
 static struct link_map *
 GC_FirstDLOpenedLinkMap()
 {
@@ -71,6 +75,10 @@ GC_FirstDLOpenedLinkMap()
 
 # ifdef SUNOS4
 
+#ifdef LINT
+    struct link_dynamic _DYNAMIC;
+#endif
+
 static struct link_map *
 GC_FirstDLOpenedLinkMap()
 {
@@ -82,12 +90,34 @@ GC_FirstDLOpenedLinkMap()
     return(_DYNAMIC.ld_un.ld_1->ld_loaded);
 }
 
+/* Return the address of the ld.so allocated common symbol	*/
+/* with the least address, or 0 if none.			*/
+static ptr_t GC_first_common()
+{
+    ptr_t result = 0;
+    extern struct link_dynamic _DYNAMIC;
+    struct rtc_symb * curr_symbol;
+    
+    if( &_DYNAMIC == 0) {
+        return(0);
+    }
+    curr_symbol = _DYNAMIC.ldd -> ldd_cp;
+    for (; curr_symbol != 0; curr_symbol = curr_symbol -> rtc_next) {
+        if (result == 0
+            || (ptr_t)(curr_symbol -> rtc_sp -> n_value) < result) {
+            result = (ptr_t)(curr_symbol -> rtc_sp -> n_value);
+        }
+    }
+    return(result);
+}
 
 # endif
 
 /* Add dynamic library data sections to the root set.		*/
 # if !defined(PCR) && defined(THREADS)
+#   ifndef SRC_M3
 	--> fix mutual exclusion with dlopen
+#   endif  /* We assume M3 programs don't call dlopen for now */
 # endif
 void GC_register_dynamic_libraries()
 {
@@ -115,7 +145,7 @@ void GC_register_dynamic_libraries()
 	e = (Elf32_Ehdr *) lm->l_addr;
         p = ((Elf32_Phdr *)(((char *)(e)) + e->e_phoff));
         offset = ((unsigned long)(lm->l_addr));
-        for( i = 0; i < e->e_phnum; ((i++),(p++)) ) {
+        for( i = 0; i < (int)(e->e_phnum); ((i++),(p++)) ) {
           switch( p->p_type ) {
             case PT_LOAD:
               {
@@ -133,6 +163,19 @@ void GC_register_dynamic_libraries()
 	}
 #     endif
     }
+#   ifdef SUNOS4
+      {
+      	static ptr_t common_start = 0;
+      	ptr_t common_end;
+      	extern ptr_t GC_find_limit();
+      	
+      	if (common_start == 0) common_start = GC_first_common();
+      	if (common_start != 0) {
+      	    common_end = GC_find_limit(common_start, TRUE);
+      	    GC_add_roots_inner((char *)common_start, (char *)common_end);
+      	}
+      }
+#   endif
 }
 
 #else

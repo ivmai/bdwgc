@@ -1,5 +1,5 @@
 Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
-Copyright (c) 1991, 1992 by Xerox Corporation.  All rights reserved.
+Copyright (c) 1991-1993 by Xerox Corporation.  All rights reserved.
 
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -8,7 +8,7 @@ Permission is hereby granted to copy this garbage collector for any purpose,
 provided the above notices are retained on all copies.
 
 
-This is version 2.6.  Note that functions were renamed since version 1.9
+This is version 3.3.  Note that functions were renamed since version 1.9
 to make naming consistent with PCR collectors.
 
 HISTORY -
@@ -26,13 +26,15 @@ Robert Brazile (brazile@diamond.bbn.com) originally supplied the ULTRIX code.
 Al Dosser (dosser@src.dec.com) and Regis Cridlig (Regis.Cridlig@cl.cam.ac.uk)
 subsequently provided updates and information on variation between ULTRIX
 systems.  Parag Patel (parag@netcom.com) supplied the A/UX code.
+Jesper Peterson(jep@mtiame.mtia.oz.au) supplied the Amiga port.
+Thomas Funke (thf@zelator.in-berlin.de(?)) supplied the NeXT port.
 Bill Janssen (janssen@parc.xerox.com) supplied the SunOS dynamic loader
 specific code. Manuel Serrano (serrano@cornas.inria.fr) supplied linux and
-Sony News specific code.
-
-  (Blame for misinstallation of those modifications goes to the first author,
-however.) Some of the improvements incorporated in this version were
-suggested by David Chase, then at Olivetti Research.
+Sony News specific code.  Al Dosser provided Alpha/OSF/1 code.  He and
+Dave Detlefs(detlefs@src.dec.com) also provided several generic bug fixes.
+David Chase, then at Olivetti Research, suggested several improvements.
+(Blame for misinstallation of these modifications goes to the first author,
+however.)
 
   Much of the code was rewritten by Hans-J. Boehm at Xerox PARC.
 
@@ -42,12 +44,24 @@ allocator.  The algorithms used are described in:
 Boehm, H., and M. Weiser, "Garbage Collection in an Uncooperative Environment",
 Software Practice & Experience, September 1988, pp. 807-820.
 
+Boehm, H., A. Demers, and S. Shenker, "Mostly Parallel Garbage Collection",
+Proceedings of the ACM SIGPLAN '91 Conference on Programming Language Design
+and Implementation, SIGPLAN Notices 26, 6 (June 1991), pp. 157-164.
+
+Boehm, H., "Space Efficient Conservative Garbage Collection", Proceedings
+of the ACM SIGPLAN '91 Conference on Programming Language Design and
+Implementation, SIGPLAN Notices 28, 6 (June 1993), pp. 197-206.
+
+  Unlike the collector described in the second reference, this collector
+operates either with the mutator stopped during the entire collection
+(default) or incrementally during allocations.  (The latter is supported
+on only a few machines.)  It does not rely on threads, but is intended
+to be thread-safe.
+
   Some of the ideas underlying the collector have previously been explored
 by others.  (Doug McIlroy wrote a vaguely similar collector that is part of
 version 8 UNIX (tm).)  However none of this work appears to have been widely
 disseminated.
-
-  This collector includes numerous refinements not described in the above paper.
 
   Rudimentary tools for use of the collector as a leak detector are included.
 
@@ -114,7 +128,7 @@ which is usually unacceptable.)
 
 INSTALLATION AND PORTABILITY
 
-  As distributed, the macro SILENT is defined at the top of gc_private.h.
+  As distributed, the macro SILENT is defined in Makefile.
 In the event of problems, this can be removed to obtain a moderate
 amount of descriptive output for each collection.
 (The given statistics exhibit a few peculiarities.
@@ -145,25 +159,28 @@ the following machines:
 	    Sun 3
 	    Sun 4 under SunOS 4.X or Solaris2.X
 	    Vax under 4.3BSD, Ultrix
-	    Intel 386 or 486 under OS/2 (no threads) or linux.
-	    Sequent Symmetry  (no concurrency)
-	    Encore Multimax   (no concurrency)
+	    Intel 386 or 486 under OS/2 (single threaded) or linux.
+	    Sequent Symmetry  (single threaded)
+	    Encore Multimax   (single threaded)
 	    MIPS M/120 (and presumably M/2000) (RISC/os 4.0 with BSD libraries)
 	    IBM PC/RT  (Berkeley UNIX)
 	    IBM RS/6000
 	    HP9000/300
 	    HP9000/700
 	    DECstations under Ultrix
+	    DEC Alpha running OSF/1
 	    SGI workstations under IRIX
 	    Sony News
 	    Apple MacIntosh under A/UX
+	    Commodore Amiga (see README.amiga)
+	    NeXT machines
 
-  For these machines you should check the beginning of gc.h
+  For these machines you should check in config.h
 to verify that the machine type is correctly defined.  On 
 nonSun machines, you may also need to make changes to the
 Makefile, as described by comments there.
 
-  Dynamic libraries are completely supported only under SunOS4.X
+  Dynamic libraries are completely supported only under SunOS
 (and even that support is not functional on the last Sun 3 release).
 On other machines we recommend that you do one of the following:
 
@@ -332,9 +349,7 @@ and cause all allocations to simply grow the heap.
 
   The variable GC_non_gc_bytes, which is normally 0, may be changed to reflect
 the amount of memory allocated by the above routines that should not be
-considered as a candidate for collection.  Collections are inhibited
-if this exceeds a given fraction (currently 3/4) of the total heap size.
-The heap is simply expanded instead.  Careless use may, of course, result
+considered as a candidate for collection.  Careless use may, of course, result
 in excessive memory consumption.
 
   Some additional tuning is possible through the parameters defined
@@ -348,14 +363,6 @@ near the top of gc_private.h.
   For small pieces of VERY allocation intensive code, gc_inline.h
 includes some allocation macros that may be used in place of GC_malloc
 and friends.
-
-  Somewhat different emulations of the standard C allocation routines are
-contained and described in "interface.c" (contributed by David Chase, but
-subsequently mangled by Hans Boehm).  These are appropriate for mixed
-systems, where part of the system uses explicit deallocation, and does not
-leak.  Exclusive use of interface.c routines can result in needless
-fragmentation, since certain kinds of object coalescing are only done
-by the collector.
 
   All externally visible names in the garbage collector start with "GC_".
 To avoid name conflicts, client code should avoid this prefix, except when
@@ -440,6 +447,62 @@ of 16 bytes form the object beginning, and some translation is necessary
 when finalization routines are invoked.  For details, about what's stored
 in the header, see the definition of the type oh in debug_malloc.c)
 
+INCREMENTAL/GENERATIONAL COLLECTION:
+
+The collector normally interrupts client code for the duration of 
+a garbage collection mark phase.  This may be unacceptable if interactive
+response is needed for programs with large heaps.  The collector
+can also run in a "generational" mode, in which it usually attempts to
+collect only objects allocated since the last garbage collection.
+Furthermore, in this mode, garbage collections run mostly incrementally,
+with a small amount of work performed in response to each of a large number of
+GC_malloc requests.
+
+This mode is enabled by a call to GC_enable_incremental().
+
+Incremental and generational collection is effective in reducing
+pause times only if the collector has some way to tell which objects
+or pages have been recently modified.  The collector uses two sources
+of information:
+
+1. Information provided by the VM system.  This may be provided in
+one of several forms.  Under Solaris 2.X (and potentially under other
+similar systems) information on dirty pages can be read from the
+/proc file system.  Under other systems (currently SunOS4.X) it is
+possible to write-protect the heap, and catch the resulting faults.
+On these systems we require that system calls writing to the heap
+(other than read) be handled specially by client code.
+See os_dep.c for details.
+
+2. Information supplied by the programmer.  We define "stubborn"
+objects to be objects that are rarely changed.  Such an object
+can be allocated (and enabled for writing) with GC_malloc_stubborn.
+Once it has been initialized, the collector should be informed with
+a call to GC_end_stubborn_change.  Subsequent writes that store
+pointers into the object must be preceded by a call to
+GC_change_stubborn.
+
+This mechanism performs best for objects that are written only for
+initialization, and such that only one stubborn object is writable
+at once.  It is typically not worth using for short-lived
+objects.  Stubborn objects are treated less efficiently than pointerfree
+(atomic) objects.
+
+A rough rule of thumb is that, in the absence of VM information, garbage
+collection pauses are proportional to the amount of pointerful storage
+plus the amount of modified "stubborn" storage that is reachable during
+the collection.  
+
+Initial allocation of stubborn objects takes longer than allocation
+of other objects, since other data structures need to be maintained.
+
+We recommend against random use of stubborn objects in client
+code, since bugs caused by inappropriate writes to stubborn objects
+are likely to be very infrequently observed and hard to trace.  
+However, their use may be appropriate in a few carefully written
+library routines that do not make the objects themselves available
+for writing by client code.
+
 
 BUGS:
 
@@ -455,10 +518,8 @@ percentage of time required for collection should be constant across
 heap sizes.  But collection pauses will increase for larger heaps.
 (On SPARCstation 2s collection times will be on the order of 300 msecs
 per MB of accessible memory that needs to be scanned.  Your mileage
-may vary.)  Much better real-time behavior would be possible if we
-had a portable way to identify sections of memory that were recently
-modified.  Experience with PCR indicates that 100 msec pause times
-are probably possible, almost independent of heap size.
+may vary.)  The incremental/generational collection facility helps,
+but is portable only if "stubborn" allocation is used.
 
 RECENT VERSIONS:
 
@@ -542,8 +603,7 @@ for PPCR.
   under 4.1.1U1, but apparently not 4.1.1.  If you have such a machine,
   use -Bstatic.)
   
-  Version 2.5 added Solaris dynamic libary support, Solaris/Intel support,
-  and fixed the following bugs:
+  Version 2.5 fixed the following bugs:
 - Removed an explicit call to exit(1)
 - Fixed calls to GC_printf and GC_err_printf, so the correct number of
   arguments are always supplied.  The OS/2 C compiler gets confused if
@@ -551,7 +611,44 @@ for PPCR.
   doesn't require this to work.  The ANSI sanctioned way of doing things
   causes too many compatibility problems.)
   
-  Version 2.6 fixed a bug diagnosed by Al Dosser at DEC.  The marker
-  could lose some pointers in the event of a mark stack overflow, a case
-  it was intended to handle correctly.  (He also pointed out a performance
-  bug that was tickled under the same circumstances.)
+  Version 3.0  added generational/incremental collection and stubborn
+  objects.
+
+  Version 3.1 added the following features:
+- A workaround for a SunOS 4.X SPARC C compiler
+  misfeature that caused problems when the collector was turned into
+  a dynamic library.  
+- A fix for a bug in GC_base that could result in a memory fault.
+- A fix for a performance bug (and several other misfeatures) pointed
+  out by Dave Detelfs and Al Dosser.
+- Use of dirty bit information for static data under Solaris 2.X.
+- DEC Alpha/OSF1 support (thanks to Al Dosser).
+- Incremental collection on more platforms.
+- A more refined heap expansion policy.  Less space usage by default.
+- Various minor enhancements to reduce space usage, and to reduce
+  the amount of memory scanned by the collector.
+- Uncollectable allocation without per object overhead.
+- More conscientious handling of out-of-memory conditions.
+- Fixed a bug in debugging stubborn allocation.
+- Fixed a bug that resulted in occasional erroneous reporting of smashed
+  objects with debugging allocation.
+- Fixed bogus leak reports of size 4096 blocks with FIND_LEAK.
+
+  Version 3.2 fixed a serious and not entirely repeatable bug in
+  the incremental collector.  It appeared only when dirty bit info
+  on the roots was available, which is normally only under Solaris.
+  It also added GC_general_register_disappearing_link, and some
+  testing code.  Interface.c disappeared.
+
+  Version 3.3 fixes several bugs and adds new ports:
+- PCR-specific bugs.
+- Missing locking in GC_free, redundant FASTUNLOCK
+  in GC_malloc_stubborn, and 2 bugs in
+  GC_unregister_disappearing_link.
+  All of the above were pointed out by Neil Sharman
+  (neil@cs.mu.oz.au).
+- Common symbols allocated by the SunOS4.X dynamic loader were not included in the root set.
+- Bug in GC_finalize (reported by Brian Beuning and Al Dosser)
+- Merged Amiga port from Jesper Peterson (untested)
+- Merged NeXT port from Thomas Funke (significantly modified and untested)
+  

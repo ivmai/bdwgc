@@ -3,9 +3,9 @@
 
 # ifdef PCR
 #   define MAX_ROOT_SETS 1024
-#   include "pcr/il/PCR_IL.h"
-#   include "pcr/th/PCR_ThCtl.h"
-#   include "pcr/mm/PCR_MM.h"
+#   include "il/PCR_IL.h"
+#   include "th/PCR_ThCtl.h"
+#   include "mm/PCR_MM.h"
 # else
 #   define MAX_ROOT_SETS 64
 # endif
@@ -47,15 +47,16 @@ char * addr;
     return(result);
 }
 
-/* Is a range starting at addr already in the table? */
-static bool roots_present(b, e)
-char *b, *e;
+/* Is a range starting at b already in the table? If so return a	*/
+/* pointer to it, else NIL.						*/
+static struct roots * roots_present(b)
+char *b;
 {
     register int h = rt_hash(b);
     register struct roots *p = root_index[h];
     
     while (p != 0) {
-        if (p -> r_start == (ptr_t)b && p -> r_end >= (ptr_t)e) return(TRUE);
+        if (p -> r_start == (ptr_t)b) return(p);
         p = p -> r_next;
     }
     return(FALSE);
@@ -94,6 +95,8 @@ char * b; char * e;
 void GC_add_roots_inner(b, e)
 char * b; char * e;
 {
+    struct roots * old;
+    
     /* We exclude GC data structures from root sets.  It's usually safe	*/
     /* to mark from those, but it is a waste of time.			*/
     if ( (ptr_t)b < beginGC_arrays && (ptr_t)e > beginGC_arrays) {
@@ -107,7 +110,14 @@ char * b; char * e;
     } else if ((ptr_t)b < endGC_arrays && (ptr_t)e > endGC_arrays) {
         b = (char *)endGC_arrays;
     }
-    if (roots_present(b,e)) return;
+    old = roots_present(b);
+    if (old != 0) {
+        if ((ptr_t)e <= old -> r_end) /* already there */ return;
+        /* else extend */
+        GC_root_size += (ptr_t)e - old -> r_end;
+        old -> r_end = (ptr_t)e;
+        return;
+    }
     if (n_root_sets == MAX_ROOT_SETS) {
         ABORT("Too many root sets\n");
     }
@@ -131,25 +141,40 @@ void GC_clear_roots()
     ENABLE_SIGNALS();
 }
 
-# ifdef PCR
-PCR_ERes GC_mark_thread_stack(PCR_Th_T *t, PCR_Any dummy)
+# ifdef THREADS
+#   ifdef PCR
+PCR_ERes GC_push_thread_stack(PCR_Th_T *t, PCR_Any dummy)
 {
     struct PCR_ThCtl_TInfoRep info;
     PCR_ERes result;
     
     info.ti_stkLow = info.ti_stkHi = 0;
     result = PCR_ThCtl_GetInfo(t, &info);
-    GC_mark_all_stack((ptr_t)(info.ti_stkLow), (ptr_t)(info.ti_stkHi));
+    GC_push_all_stack((ptr_t)(info.ti_stkLow), (ptr_t)(info.ti_stkHi));
     return(result);
 }
 
-PCR_ERes GC_mark_old_obj(void *p, size_t size, PCR_Any data)
+/* Push the contents of an old object. We treat this as stack	*/
+/* data only becasue that makes it robust against mark stack	*/
+/* overflow.							*/
+PCR_ERes GC_push_old_obj(void *p, size_t size, PCR_Any data)
 {
-    GC_mark_all((ptr_t)p, (ptr_t)p + size);
+    GC_push_all_stack((ptr_t)p, (ptr_t)p + size);
     return(PCR_ERes_okay);
 }
+#   endif
 
-# else
+#   ifdef SRC_M3
+extern void ThreadF__ProcessStacks();
+
+void GC_push_thread_stack(start, stop)
+word start, stop;
+{
+   GC_push_all_stack((ptr_t)start, (ptr_t)stop + sizeof(word));
+}
+#   endif
+
+# else /* ! THREADS */
 ptr_t GC_approx_sp()
 {
     word dummy;
@@ -157,35 +182,64 @@ ptr_t GC_approx_sp()
     return((ptr_t)(&dummy));
 }
 # endif
+
+# ifdef SRC_M3
+# ifdef ALL_INTERIOR_POINTERS
+    --> misconfigured
+# endif
+/* Push routine with M3 specific calling convention. */
+GC_m3_push_root(dummy1, p, dummy2, dummy3)
+word *p;
+ptr_t dummy1, dummy2;
+int dummy3;
+{
+    word q = *p;
+    
+    if ((ptr_t)(q) >= GC_least_plausible_heap_addr
+	 && (ptr_t)(q) < GC_greatest_plausible_heap_addr) {
+	 GC_push_one_checked(q,FALSE);
+    }
+}
+
+/* M3 set equivalent to RTHeap.TracedRefTypes */
+typedef struct { int elts[1]; }  RefTypeSet;
+RefTypeSet GC_TracedRefTypes = {{0x1}};
+
+/* From finalize.c */
+extern void GC_push_finalizer_structures();
+
+/* From stubborn.c: */
+# ifdef STUBBORN_ALLOC
+    extern extern_ptr_t * GC_changing_list_start;
+# endif
+# endif
+
 /*
- * Call the mark routines (GC_tl_mark for a single pointer, GC_mark_all
+ * Call the mark routines (GC_tl_push for a single pointer, GC_push_conditional
  * on groups of pointers) on every top level accessible pointer.
- * This is source language specific.  The following works for C.
+ * If all is FALSE, arrange to push only possibly altered values.
  */
 
-GC_mark_roots()
+void GC_push_roots(all)
+bool all;
 {
     register int i;
 
     /*
-     * mark from registers - i.e., call GC_tl_mark(i) for each
-     * register i
+     * push registers - i.e., call GC_push_one(r) for each
+     * register contents r.
      */
-        GC_mark_regs(); /* usually defined in machine_dep.c */
-
-
-#   ifdef PCR
-	/* Traverse data allocated by previous memory managers.		*/
-	{
-	  extern struct PCR_MM_ProcsRep * GC_old_allocator;
-	  
-	  if ((*(GC_old_allocator->mmp_enumerate))(PCR_Bool_false,
-	  					   GC_mark_old_obj, 0)
-	      != PCR_ERes_okay) {
-	      ABORT("Old object enumeration failed");
-	  }
-	}
-	
+        GC_push_regs(); /* usually defined in machine_dep.c */
+        
+    /*
+     * Next push static data.  This must happen early on, since it's
+     * not robust against mark stack overflow.
+     */
+     /* Reregister dynamic libraries, in case one got added.	*/
+#      ifndef SRC_M3
+         GC_register_dynamic_libraries();
+#      endif
+#      ifdef PCR
         /* Add new static data areas of dynamically loaded modules.	*/
         {
           PCR_IL_LoadedFile * p = PCR_IL_GetLastLoadedFile();
@@ -211,41 +265,65 @@ GC_mark_roots()
             }
           }
         }
-        
-        
+#      endif
+     /* Mark everything in static data areas                             */
+       for (i = 0; i < n_root_sets; i++) {
+         GC_push_conditional(static_roots[i].r_start,
+			     static_roots[i].r_end, all);
+       }
+       
+#    ifdef SRC_M3
+       /* Use the M3 provided routine for finding static roots.	*/
+       /* This is a bit dubious, since it presumes no C roots.	*/
+       /* We handle the collector roots explicitly.		*/
+       {
+# 	 ifdef STUBBORN_ALLOC
+           GC_push_one(GC_changing_list_start);
+#	 endif
+      	 GC_push_finalizer_structures();
+      	 RTMain__GlobalMapProc(GC_m3_push_root, 0, GC_TracedRefTypes);
+       }
+#    endif
+    
+#   ifdef PCR
+	/* Traverse data allocated by previous memory managers.		*/
+	{
+	  extern struct PCR_MM_ProcsRep * GC_old_allocator;
+	  
+	  if ((*(GC_old_allocator->mmp_enumerate))(PCR_Bool_false,
+	  					   GC_push_old_obj, all)
+	      != PCR_ERes_okay) {
+	      ABORT("Old object enumeration failed");
+	  }
+	}
+#   endif
+	
+    /*
+     * Now traverse stacks.
+     */
+#   ifdef PCR 
         /* Traverse all thread stacks. */
           if (PCR_ERes_IsErr(
-                PCR_ThCtl_ApplyToAllOtherThreads(GC_mark_thread_stack,0))
-              || PCR_ERes_IsErr(GC_mark_thread_stack(PCR_Th_CurrThread(), 0))) {
+                PCR_ThCtl_ApplyToAllOtherThreads(GC_push_thread_stack,0))
+              || PCR_ERes_IsErr(GC_push_thread_stack(PCR_Th_CurrThread(), 0))) {
               ABORT("Thread stack marking failed\n");
           }
-#   else
+#   endif
+#   ifdef SRC_M3
+	if (GC_words_allocd > 0) {
+	    ThreadF__ProcessStacks(GC_push_thread_stack);
+	}
+	/* Otherwise this isn't absolutely necessary, and we have	*/
+	/* startup ordering problems.					*/
+#   endif
+#   ifndef THREADS
         /* Mark everything on the stack.           */
 #   	  ifdef STACK_GROWS_DOWN
-	    GC_mark_all_stack( GC_approx_sp(), GC_stackbottom );
+	    GC_push_all_stack( GC_approx_sp(), GC_stackbottom );
 #	  else
-	    GC_mark_all_stack( GC_stackbottom, GC_approx_sp() );
+	    GC_push_all_stack( GC_stackbottom, GC_approx_sp() );
 #	  endif
-
 #   endif
 
-    /* Reregister dynamic libraries, in case one got added.	*/
-       GC_register_dynamic_libraries();
-    /* Mark everything in static data areas                             */
-      for (i = 0; i < n_root_sets; i++) {
-        GC_mark_all(static_roots[i].r_start, static_roots[i].r_end);
-      }
 }
 
-/*
- * Top level GC_mark routine. Mark from the object pointed to by p.
- * GC_tl_mark is normally called by GC_mark_regs, and thus must be defined.
- */
-void GC_tl_mark(p)
-word p;
-{
-    word q;
-
-    q = p;
-    GC_mark_all_stack((ptr_t)(&q), (ptr_t)((&q)+1));
-}
