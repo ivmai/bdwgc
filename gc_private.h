@@ -8,6 +8,7 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
+/* Boehm, December 16, 1993 4:52 pm PST */
  
 
 # ifndef GC_PRIVATE_H
@@ -36,8 +37,11 @@ typedef GC_signed_word signed_word;
 
 typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 			/* byte displacments.				*/
+			/* Prefereably identical to caddr_t, if it 	*/
+			/* exists.					*/
 			
 #ifdef __STDC__
+#   include <stdlib.h>
 #   if !(defined( sony_news ) )
 #       include <stddef.h>
 #   endif
@@ -53,10 +57,6 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #else
 #   define FAR
 #endif
-
-# ifndef OS2
-#   include <sys/types.h>
-# endif
 
 /*********************************/
 /*                               */
@@ -139,14 +139,19 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #   define GATHERSTATS
 #endif
 
+# if defined(PCR) || defined(SRC_M3)
+#   define THREADS
+# endif
 
 #ifdef SPARC
 #   define ALIGN_DOUBLE  /* Align objects of size > 1 word on 2 word   */
 			 /* boundaries.  Wasteful of memory, but       */
 			 /* apparently required by SPARC architecture. */
+#   define ASM_CLEAR_CODE	/* Stack clearing is crucial, and we 	*/
+				/* include assembly code to do it well.	*/
 #endif
 
-#if defined(SPARC) || defined(M68K) && defined(SUNOS4)
+#if defined(SPARC) || defined(M68K) && defined(SUNOS4) || defined(IRIX5)
 # if !defined(PCR)
 #   define DYNAMIC_LOADING /* Search dynamic libraries for roots.	*/
 # else
@@ -174,6 +179,8 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 # define MINHINCR 16       /* Minimum heap increment, in blocks of HBLKSIZE  */
 # define MAXHINCR 512      /* Maximum heap increment, in blocks              */
 
+# define TIME_LIMIT 50	   /* We try to keep pause times from exceeding	 */
+			   /* this by much. In milliseconds.		 */
 
 /*********************************/
 /*                               */
@@ -225,10 +232,6 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #   include <string.h>
 #   define bcopy(x,y,n) memcpy(y,x,n)
 #   define bzero(x,n)  memset(x, 0, n)
-# endif
-
-# if defined(PCR) || defined(SRC_M3)
-#   define THREADS
 # endif
 
 /* HBLKSIZE aligned allocation.  0 is taken to mean failure 	*/
@@ -351,7 +354,7 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
     void PCR_Base_Panic(const char *fmt, ...);
 #   define ABORT(s) PCR_Base_Panic(s)
 # else
-#   define ABORT(s) abort(s)
+#   define ABORT(msg) { GC_err_printf1("%s\n", msg); (void) abort(); }
 # endif
 
 /* Exit abnormally, but without making a mess (e.g. out of memory) */
@@ -859,8 +862,8 @@ struct hblk * GC_push_next_marked(/* h */);
 		/* Ditto, but also mark from clean pages.	*/
 struct hblk * GC_push_next_marked_uncollectable(/* h */);
 		/* Ditto, but mark only from uncollectable pages.	*/
-void GC_stopped_mark(); /* Mark from all roots and rescuers	*/
-			/* with the world stopped.		*/
+bool GC_stopped_mark(); /* Stop world and mark from all roots	*/
+			/* and rescuers.			*/
 void GC_clear_hdr_marks(/* hhdr */);  /* Clear the mark bits in a header */
 void GC_add_roots_inner();
 void GC_register_dynamic_libraries();

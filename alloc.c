@@ -9,6 +9,7 @@
  * provided the above notices are retained on all copies.
  *
  */
+/* Boehm, November 18, 1993 12:30 pm PST */
 
 
 # include <stdio.h>
@@ -53,7 +54,7 @@ word GC_gc_no = 0;
 
 int GC_incremental = 0;    /* By default, stop the world.	*/
 
-int GC_full_freq = 3;	   /* Every 4th collection is a full	*/
+int GC_full_freq = 4;	   /* Every 5th collection is a full	*/
 			   /* collection.			*/
 
 char * GC_copyright[] =
@@ -132,7 +133,7 @@ word GC_adj_words_allocd()
 }
 
 
-/* Clear up a few frames worth og garbage left at the top of the stack.	*/
+/* Clear up a few frames worth of garbage left at the top of the stack.	*/
 /* This is used to prevent us from accidentally treating garbade left	*/
 /* on the stack by other parts of the collector as roots.  This 	*/
 /* differs from the code in misc.c, which actually tries to keep the	*/
@@ -169,7 +170,10 @@ void GC_maybe_gc()
             GC_initiate_full();
             n_partial_gcs = 0;
         } else {
-            GC_initiate_partial(GC_gc_no+1);
+            /* We try to mark with the world stopped.	*/
+            /* If we run out of time, this turns into	*/
+            /* incremental marking.			*/
+            if (GC_stopped_mark(FALSE)) GC_finish_collection();
             n_partial_gcs++;
         }
     }
@@ -189,9 +193,7 @@ void GC_gcollect_inner()
     GC_promote_black_lists();
     /* GC_reclaim_or_delete_all();  -- not needed: no intervening allocation */
     GC_clear_marks();
-    STOP_WORLD();
-    GC_stopped_mark();
-    START_WORLD();
+    (void) GC_stopped_mark(TRUE);
     GC_finish_collection();
 }
 
@@ -200,64 +202,92 @@ void GC_gcollect_inner()
  * roughly a GC_RATE pages.  Every once in a while, we do more than that.
  */
 # define GC_RATE 8
+
+int GC_deficit = 0;	/* The number of extra calls to GC_mark_some	*/
+			/* that we have made.				*/
+			/* Negative values are equivalent to 0.		*/
 void GC_collect_a_little(n)
 int n;
 {
     register int i;
     
     if (GC_collection_in_progress()) {
-    	for (i = 0; i < GC_RATE*n; i++) {
+    	for (i = GC_deficit; i < GC_RATE*n; i++) {
     	    if (GC_mark_some()) {
     	        /* Need to finish a collection */
-    	        STOP_WORLD();
-    	        GC_stopped_mark();
-    	        START_WORLD();
+    	        (void) GC_stopped_mark(TRUE);
     	        GC_finish_collection();
     	        break;
     	    }
     	}
+    	if (GC_deficit > 0) GC_deficit -= GC_RATE*n;
     } else {
         GC_maybe_gc();
     }
 }
 
 /*
- * World-stopped mark phase.  Assumes lock is held, signals are disabled,
- * and the world is stopped.
+ * Assumes lock is held, signals are disabled.
+ * We stop the world.
+ * If final is TRUE, then we finish the collection, no matter how long
+ * it takes.
+ * Otherwise we may fail and return FALSE if this takes too long.
+ * Increment GC_gc_no if we succeed.
  */
-void GC_stopped_mark()
+bool GC_stopped_mark(final)
+bool final;
 {
-#   ifdef PRINTTIMES
-	CLOCK_TYPE start_time;
-	CLOCK_TYPE done_time;
+    CLOCK_TYPE start_time;
+    CLOCK_TYPE current_time;
+    unsigned long time_diff;
+    register int i;
 	
-	GET_TIME(start_time);
-#   endif
+    GET_TIME(start_time);
+    STOP_WORLD();
 #   ifdef PRINTSTATS
-	GC_printf2("Collection %lu reclaimed %ld bytes\n",
-		  (unsigned long) GC_gc_no,
-	   	  (long)WORDS_TO_BYTES(GC_mem_found));
+	GC_printf1("--> Marking for collection %lu ",
+	           (unsigned long) GC_gc_no + 1);
+	GC_printf2("after %lu allocd bytes + %lu wasted bytes\n",
+	   	   (unsigned long) WORDS_TO_BYTES(GC_words_allocd),
+	   	   (unsigned long) WORDS_TO_BYTES(GC_words_wasted));
 #   endif
-    GC_gc_no++;
-#   ifdef PRINTSTATS
-      GC_printf3(
-       	"--> Collection number %lu after %lu allocated + %lu wasted bytes\n",
-      	(unsigned long) GC_gc_no,
-      	(unsigned long) WORDS_TO_BYTES(GC_words_allocd),
-      	(unsigned long) WORDS_TO_BYTES(GC_words_wasted));
-      GC_printf1("---> heapsize = %lu bytes\n",
-      	        (unsigned long) GC_heapsize);
-      /* Printf arguments may be pushed in funny places.  Clear the	*/
-      /* space.								*/
-      GC_printf0("");
-#   endif      	        
 
     /* Mark from all roots.  */
         /* Minimize junk left in my registers and on the stack */
             GC_clear_a_few_frames();
             GC_noop(0,0,0,0,0,0);
-	GC_initiate_partial(GC_gc_no);
-	while(!GC_mark_some());
+	GC_initiate_partial();
+	for(i = 0;;i++) {
+	    if (GC_mark_some()) break;
+	    if (final) continue;
+	    if ((i & 3) == 0) {
+	        GET_TIME(current_time);
+	        time_diff = MS_TIME_DIFF(current_time,start_time);
+	        if (time_diff >= TIME_LIMIT) {
+	            START_WORLD();
+#   		    ifdef PRINTSTATS
+		    	GC_printf0("Abandoning stopped marking after ");
+			GC_printf2("%lu iterations and %lu msecs\n",
+				   (unsigned long)i,
+			    	   (unsigned long)time_diff);
+#		    endif
+		    GC_deficit = i;  /* Give the mutator a chance. */
+	            return(FALSE);
+	        }
+	    }
+	}
+	
+    GC_gc_no++;
+#   ifdef PRINTSTATS
+      GC_printf2("Collection %lu reclaimed %ld bytes",
+		  (unsigned long) GC_gc_no - 1,
+	   	  (long)WORDS_TO_BYTES(GC_mem_found));
+      GC_printf1(" ---> heapsize = %lu bytes\n",
+      	        (unsigned long) GC_heapsize);
+      /* Printf arguments may be pushed in funny places.  Clear the	*/
+      /* space.								*/
+      GC_printf0("");
+#   endif      
 
     /* Check all debugged objects for consistency */
         if (GC_debugging_started) {
@@ -265,11 +295,12 @@ void GC_stopped_mark()
         }
     
 #   ifdef PRINTTIMES
-	GET_TIME(done_time);
+	GET_TIME(current_time);
 	GC_printf1("World-stopped marking took %lu msecs\n",
-	           MS_TIME_DIFF(done_time,start_time));
+	           MS_TIME_DIFF(current_time,start_time));
 #   endif
-
+    START_WORLD();
+    return(TRUE);
 }
 
 
@@ -419,8 +450,6 @@ word bytes;
     word words;
     
     if (GC_n_heap_sects >= MAX_HEAP_SECTS) {
-        GC_err_printf0(
-            "Too many heap sections: Increase MAXHINCR or MAX_HEAP_SECTS");
     	ABORT("Too many heap sections: Increase MAXHINCR or MAX_HEAP_SECTS");
     }
     if (!GC_install_header(p)) {

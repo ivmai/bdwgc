@@ -12,6 +12,7 @@
  *	ptr_t GC_build_flXXX(h, old_fl)
  *	void GC_new_hblk(n)
  */
+/* Boehm, December 17, 1993 11:53 am PST */
 
 
 # include <stdio.h>
@@ -160,7 +161,7 @@ int kind;
 
 #   ifdef PRINTSTATS
 	if ((sizeof (struct hblk)) > HBLKSIZE) {
-	    abort("HBLK SZ inconsistency");
+	    ABORT("HBLK SZ inconsistency");
         }
 #   endif
 

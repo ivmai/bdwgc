@@ -8,7 +8,6 @@ alloc.o : alloc.c $(INC)
 reclaim.o : reclaim.c $(INC)
 allochblk.o : allochblk.c $(INC)
 misc.o : misc.c $(INC)
-mach_dep.o : mach_dep.c $(INC)
 os_dep.o : os_dep.c $(INC)
 mark_roots.o : mark_roots.c $(INC)
 headers.o : headers.c $(INC)
@@ -24,6 +23,9 @@ malloc.o : malloc.c $(INC)
 stubborn.o : stubborn.c $(INC)
 checksums.o : checksums.c $(INC)
 test.o : test.c $(INC)
+
+mach_dep.o : mach_dep.c $(INC)
+	sc noopt mach_dep.c			# optimizer mangles reg save hack
 
 gc.lib: $(OBJS)
 	oml gc.lib r $(OBJS)

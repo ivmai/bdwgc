@@ -49,7 +49,7 @@ char * addr;
 
 /* Is a range starting at b already in the table? If so return a	*/
 /* pointer to it, else NIL.						*/
-static struct roots * roots_present(b)
+struct roots * GC_roots_present(b)
 char *b;
 {
     register int h = rt_hash(b);
@@ -110,7 +110,7 @@ char * b; char * e;
     } else if ((ptr_t)b < endGC_arrays && (ptr_t)e > endGC_arrays) {
         b = (char *)endGC_arrays;
     }
-    old = roots_present(b);
+    old = GC_roots_present(b);
     if (old != 0) {
         if ((ptr_t)e <= old -> r_end) /* already there */ return;
         /* else extend */

@@ -1,7 +1,7 @@
 # include "gc_private.h"
 # include <stdio.h>
 # include <setjmp.h>
-# ifdef OS2
+# if defined(OS2) || defined(CX_UX)
 #   define _setjmp(b) setjmp(b)
 #   define _longjmp(b,v) longjmp(b,v)
 # endif
@@ -11,13 +11,29 @@
 /* version at the end, that is likely, but not guaranteed to work       */
 /* on your architecture.  Run the test_setjmp program to see whether    */
 /* there is any chance it will work.                                    */
-void GC_push_regs()
+
+#ifdef AMIGA
+__asm GC_push_regs(
+	  register __a2 word a2,
+	  register __a3 word a3,
+	  register __a4 word a4,
+	  register __a5 word a5,
+	  register __a6 word a6,
+	  register __d2 const word d2,
+	  register __d3 const word d3,
+	  register __d4 const word d4,
+	  register __d5 const word d5,
+	  register __d6 const word d6,
+	  register __d7 const word d7)
+#else
+  void GC_push_regs()
+#endif
 {
 #       ifdef RT
 	  register long TMP_SP; /* must be bound to r11 */
 #       endif
 #       ifdef VAX
-	/* VAX - generic code below does not work under 4.2 */
+	  /* VAX - generic code below does not work under 4.2 */
 	  /* r1 through r5 are caller save, and therefore     */
 	  /* on the stack or dead.                            */
 	  asm("pushl r11");     asm("calls $1,_GC_push_one");
@@ -72,6 +88,24 @@ void GC_push_regs()
 	  asm("addq.w &0x4,%sp");	/* put stack back where it was	*/
 #       endif /* M68K HP */
 
+#       ifdef AMIGA
+	/*  AMIGA - could be replaced by generic code 			*/
+	/*	  SAS/C optimizer mangles this so compile with "noopt"	*/
+	  /* a0, a1, d0 and d1 are caller save */
+	  GC_push_one(a2);
+	  GC_push_one(a3);
+	  GC_push_one(a4);
+	  GC_push_one(a5);
+	  GC_push_one(a6);
+	  /* Skip stack pointer */
+	  GC_push_one(d2);
+	  GC_push_one(d3);
+	  GC_push_one(d4);
+	  GC_push_one(d5);
+	  GC_push_one(d6);
+	  GC_push_one(d7);
+#       endif
+
 #       if defined(I386) && !defined(OS2) && !defined(SUNOS5)
 	/* I386 code, generic code does not appear to work */
 	/* It does appear to work under OS2, and asms dont */
@@ -84,8 +118,7 @@ void GC_push_regs()
 #       endif
 
 #       if defined(I386) && defined(SUNOS5)
-	/* I386 code, generic code does not appear to work */
-	/* It does appear to work under OS2, and asms dont */
+	/* I386 code, SVR4 variant, generic code does not appear to work */
 	  asm("pushl %eax");  asm("call GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %ecx");  asm("call GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %edx");  asm("call GC_push_one"); asm("addl $4,%esp");
@@ -168,7 +201,7 @@ void GC_push_regs()
 #       endif /* M68K/SYSV */
 
 
-#     if defined(HP_PA) || (defined(I386) && defined(OS2))
+#     if defined(HP_PA) || defined(M88K) || (defined(I386) && defined(OS2))
 	/* Generic code                          */
 	/* The idea is due to Parag Patel at HP. */
 	/* We're not sure whether he would like  */
@@ -190,8 +223,8 @@ void GC_push_regs()
 
       /* other machines... */
 #       if !(defined M68K) && !(defined VAX) && !(defined RT) 
-#	if !(defined SPARC) && !(defined I386) &&!(defined NS32K)
-#	if !defined(HP_PA)
+#	if !(defined SPARC) && !(defined I386) && !(defined NS32K)
+#	if !defined(HP_PA) && !defined(M88K)
 	    --> bad news <--
 #       endif
 #       endif
@@ -219,3 +252,42 @@ void GC_push_regs()
 #   endif
 # endif
 
+
+/* GC_clear_stack_inner(arg, limit) clears stack area up to limit and	*/
+/* returns arg.  Stack clearing is crucial on SPARC, so we supply	*/
+/* an assembly version that's more careful.  Assumes limit is hotter	*/
+/* than sp, and limit is 8 byte aligned.				*/
+#if defined(ASM_CLEAR_CODE) && !defined(THREADS)
+#ifndef SPARC
+	--> fix it
+#endif
+# ifdef SUNOS4
+    asm(".globl _GC_clear_stack_inner");
+    asm("_GC_clear_stack_inner:");
+# else
+    asm(".globl GC_clear_stack_inner");
+    asm("GC_clear_stack_inner:");
+# endif
+  asm("mov %sp,%o2");		/* Save sp	*/
+  asm("add %sp,-8,%o3");	/* p = sp-8	*/
+  asm("clr %g1");		/* [g0,g1] = 0	*/
+  asm("add %o1,-0x60,%sp");	/* Move sp out of the way,	*/
+  				/* so that traps still work.	*/
+  				/* Includes some extra words	*/
+  				/* so we can be sloppy below.	*/
+  asm("loop:");
+  asm("std %g0,[%o3]");		/* *(long long *)p = 0	*/
+  asm("cmp %o3,%o1");
+  asm("bgu loop	");		/* if (p > limit) goto loop	*/
+    asm("add %o3,-8,%o3");	/* p -= 8 (delay slot) */
+  asm("retl");
+    asm("mov %o2,%sp");		/* Restore sp., delay slot	*/
+  /* First argument = %o0 = return value */
+  
+# ifdef LINT
+    /*ARGSUSED*/
+    ptr_t GC_clear_stack_inner(arg, limit)
+    ptr_t arg; word limit;
+    { return(arg); }
+# endif
+#endif  

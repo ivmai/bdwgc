@@ -278,12 +278,14 @@ void GC_finalize()
     void_star client_data;
 # endif
 {
+    void_star result;
     DCL_LOCK_STATE;
     
     DISABLE_SIGNALS();
     LOCK();
-    (*fn)(client_data);
+    result = (*fn)(client_data);
     UNLOCK();
     ENABLE_SIGNALS();
+    return(result);
 }
 

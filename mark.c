@@ -182,7 +182,7 @@ void GC_prime_marker()
 void GC_initiate_full()
 {
 #   ifdef PRINTSTATS
-	GC_printf2("Full mark for collection %lu after %ld allocd bytes\n",
+	GC_printf2("***>Full mark for collection %lu after %ld allocd bytes\n",
 		  (unsigned long) GC_gc_no+1,
 	   	  (long)WORDS_TO_BYTES(GC_words_allocd));
 #   endif
@@ -208,16 +208,8 @@ void GC_initiate_full()
 
 /* Initiate partial marking.	*/
 /*ARGSUSED*/
-void GC_initiate_partial(gc_no)
-word gc_no;
+void GC_initiate_partial()
 {
-#   ifdef PRINTSTATS
-      if (gc_no > GC_gc_no) {
-	GC_printf2("Partial mark for collection %lu after %ld allocd bytes\n",
-		  (unsigned long) gc_no,
-	   	  (long)WORDS_TO_BYTES(GC_words_allocd));
-       }  /* else the world is stopped, and we just printed this */
-#   endif
     if (GC_incremental) GC_read_dirty();
 #   ifdef STUBBORN_ALLOC
     	GC_read_changed();
@@ -267,6 +259,7 @@ bool GC_mark_some()
 				   (unsigned long)GC_n_rescuing_pages);
 #		    endif
     	    	    GC_push_roots(FALSE);
+    	    	    GC_objects_are_marked = TRUE;
     	    	    if (GC_mark_state != MS_INVALID) {
     	    	        GC_mark_state = MS_ROOTS_PUSHED;
     	    	    }
@@ -283,6 +276,7 @@ bool GC_mark_some()
     	        scan_ptr = GC_push_next_marked_uncollectable(scan_ptr);
     	        if (scan_ptr == 0) {
     	    	    GC_push_roots(TRUE);
+    	    	    GC_objects_are_marked = TRUE;
     	    	    if (GC_mark_state != MS_INVALID) {
     	    	        GC_mark_state = MS_ROOTS_PUSHED;
     	    	    }
@@ -320,6 +314,7 @@ bool GC_mark_some()
     	    scan_ptr = GC_push_next_marked(scan_ptr);
     	    if (scan_ptr == 0 && GC_mark_state == MS_PARTIALLY_INVALID) {
     	    	GC_push_roots(TRUE);
+    	    	GC_objects_are_marked = TRUE;
     	    	if (GC_mark_state != MS_INVALID) {
     	    	    GC_mark_state = MS_ROOTS_PUSHED;
     	    	}
@@ -354,7 +349,13 @@ register mse * msp, * msl;
 	    return(msp-INITIAL_MARK_STACK_SIZE/8);
 	}
         msp -> mse_start = addr;
-        msp -> mse_end = addr + sz;
+#	ifdef ALL_INTERIOR_POINTERS
+	    /* Last word can't possibly contain pointers, since	we	*/
+	    /* pad the size by a byte.					*/
+            msp -> mse_end = addr + sz - 1;
+#	else
+            msp -> mse_end = addr + sz;
+#	endif
 #   ifdef GATHERSTATS
 	GC_composite_in_use += sz;
 #   endif
@@ -509,9 +510,17 @@ word n;
     
     if (GC_mark_stack_size != 0) {
         if (new_stack != 0) {
+          word displ = HBLKDISPL(GC_mark_stack);
+          word size = GC_mark_stack_size * sizeof(struct ms_entry);
+          
           /* Recycle old space */
-            GC_add_to_heap((struct hblk *)GC_mark_stack,
-            		   GC_mark_stack_size * sizeof(struct ms_entry));
+            if (displ == 0) {
+              GC_add_to_heap((struct hblk *)GC_mark_stack, size);
+	    } else {
+	      GC_add_to_heap((struct hblk *)
+	      			((word)GC_mark_stack - displ + HBLKSIZE),
+	      		     size - HBLKSIZE);
+	    }
           GC_mark_stack = new_stack;
           GC_mark_stack_size = n;
         }
@@ -892,6 +901,7 @@ register hdr * hhdr;
 #   ifdef GATHERSTATS
         GC_n_rescuing_pages++;
 #   endif
+    GC_objects_are_marked = TRUE;
     if (sz > MAXOBJSZ) {
         lim = (word *)(h + 1);
     } else {

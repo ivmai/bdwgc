@@ -8,6 +8,7 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
+/* Boehm, November 15, 1993 1:37 pm PST */
 # ifndef GC_HEADERS_H
 # define GC_HEADERS_H
 typedef struct hblkhdr hdr;
@@ -106,7 +107,7 @@ typedef struct bi {
 			      (hhdr) = *_ha; }
 #   define SET_HDR(p, hhdr) { register hdr ** _ha; GET_HDR_ADDR(p, _ha); \
 			      *_ha = (hhdr); }
-#   define HDR(p) GC_find_header(p)
+#   define HDR(p) GC_find_header((ptr_t)(p))
 # endif
 			    
 /* Is the result a forwarding address to someplace closer to the	*/

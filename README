@@ -8,7 +8,7 @@ Permission is hereby granted to copy this garbage collector for any purpose,
 provided the above notices are retained on all copies.
 
 
-This is version 3.3.  Note that functions were renamed since version 1.9
+This is version 3.6.  Note that functions were renamed since version 1.9
 to make naming consistent with PCR collectors.
 
 HISTORY -
@@ -16,6 +16,7 @@ HISTORY -
   Early versions of this collector were developed as a part of research
 projects supported in part by the National Science Foundation
 and the Defense Advance Research Projects Agency.
+Much of the code was rewritten by Hans-J. Boehm at Xerox PARC.
 The SPARC specific code was contributed by Mark Weiser
 (weiser@parc.xerox.com).  The Encore Multimax modifications were supplied by
 Kevin Kenny (kenny@m.cs.uiuc.edu).  The adaptation to the RT is largely due
@@ -32,13 +33,16 @@ Bill Janssen (janssen@parc.xerox.com) supplied the SunOS dynamic loader
 specific code. Manuel Serrano (serrano@cornas.inria.fr) supplied linux and
 Sony News specific code.  Al Dosser provided Alpha/OSF/1 code.  He and
 Dave Detlefs(detlefs@src.dec.com) also provided several generic bug fixes.
+Alistair G. Crooks(agc@uts.amdahl.com) supplied the NetBSD and 386BSD ports.
+Brent Benson (brent@jade.ssd.csd.harris.com) ported the collector to
+a Motorola 88K processor running CX/UX (Harris NightHawk).
+Ari Huttunen (Ari.Huttunen@hut.fi) generalized the OS/2 port to
+nonIBM development environments (a nontrivial task).
 David Chase, then at Olivetti Research, suggested several improvements.
 (Blame for misinstallation of these modifications goes to the first author,
 however.)
 
-  Much of the code was rewritten by Hans-J. Boehm at Xerox PARC.
-
-  This is intended to be a general purpose, garbage collecting storage
+    This is intended to be a general purpose, garbage collecting storage
 allocator.  The algorithms used are described in:
 
 Boehm, H., and M. Weiser, "Garbage Collection in an Uncooperative Environment",
@@ -63,7 +67,9 @@ by others.  (Doug McIlroy wrote a vaguely similar collector that is part of
 version 8 UNIX (tm).)  However none of this work appears to have been widely
 disseminated.
 
-  Rudimentary tools for use of the collector as a leak detector are included.
+  Rudimentary tools for use of the collector as a leak detector are included, as
+is a fairly sophisticated string package "cord" that makes use of the collector.
+(See cord/README.)
 
 
 GENERAL DESCRIPTION
@@ -91,10 +97,12 @@ not disallow interior pointers; it simply requires that there must be a
 pointer to the beginning of every accessible object, in addition to any
 interior pointers.)  There are two facilities for altering this behavior.
 The macro ALL_INTERIOR_POINTERS may be defined in gc_private.h to
-cause any pointer into an object to retain the object.  A routine
-GC_register_displacement is provided to allow for more controlled
-interior pointer use in the heap.  Defining ALL_INTERIOR_POINTERS
-is somewhat dangerous.  See gc_private.h for details.  The routine
+cause any pointer into an object (or one past the end) to retain the
+object.  A routine GC_register_displacement is provided to allow for
+more controlled interior pointer use in the heap.  Defining
+ALL_INTERIOR_POINTERS is somewhat dangerous, in that it can result
+in unnecessary memroy retention.  However this is much less of a
+problem than with older collector versions.  The routine
 GC_register_displacement is described in gc.h.
 
   Note that pointers inside memory allocated by the standard "malloc" are not
@@ -102,16 +110,17 @@ seen by the garbage collector.  Thus objects pointed to only from such a
 region may be prematurely deallocated.  It is thus suggested that the
 standard "malloc" be used only for memory regions, such as I/O buffers, that
 are guaranteed not to contain pointers.  Pointers in C language automatic,
-static, or register variables, are correctly recognized.
+static, or register variables, are correctly recognized.  (Note that
+GC_malloc_uncollectable has semantics similar to standard malloc,
+but allocates objects that are traced by the collector.)
 
   The collector does not generally know how to find pointers in data
 areas that are associated with dynamic libraries.  This is easy to
 remedy IF you know how to find those data areas on your operating
-system (see GC_add_roots).  Code for doing this under SunOS4.X only is
-included (see dynamic_load.c).  (Note that it includes a special version
-of dlopen, GC_dlopen, that should be called instead of the standard one.
-By default, this is not compiled in, since it requires the -ldl library.)
-Note that the garbage collector does not need to be informed of shared
+system (see GC_add_roots).  Code for doing this under SunOS and IRIX 5.X is
+included (see dynamic_load.c).
+
+  Note that the garbage collector does not need to be informed of shared
 read-only data.  However if the shared library mechanism can introduce
 discontiguous data areas that may contain pointers, then the collector does
 need to be informed.
@@ -121,10 +130,13 @@ and during uninterruptible parts of the allocation process.  Unlike
 standard ANSI C mallocs, it is intended to be safe to invoke malloc
 from a signal handler while another malloc is in progress, provided
 the original malloc is not restarted.  (Empirically, many UNIX
-applications already asssume this.)  The allocator/collector can
-also be configured for thread-safe operation.  (Full signal safety can
-also be acheived, but only at the cost of two system calls per malloc,
-which is usually unacceptable.)
+applications already asssume this.)  Even this modest level of signal-
+safety may be too expensive on some systems.  If so, ENABLE_SIGNALS
+and DISABLE_SIGNALS may be redefined to the empty statement in gc_private.h.
+
+  The allocator/collector can also be configured for thread-safe operation.
+(Full signal safety can also be acheived, but only at the cost of two system
+calls per malloc, which is usually unacceptable.)
 
 INSTALLATION AND PORTABILITY
 
@@ -142,16 +154,23 @@ about configuring the collector, which is useful primarily if you have
 a machine that's not already supported.  Gctest is a somewhat superficial
 test of collector functionality.  Failure is indicated by a core dump or
 a message to the effect that the collector is broken.  Gctest takes about 
-20 seconds to run on a SPARCstation 2. On a slower machine,
+35 seconds to run on a SPARCstation 2. On a slower machine,
 expect it to take a while.  It may use up to 8 MB of memory.  (The
-multi-threaded version will use more.)
+multi-threaded version will use more.)  "Make test" will also, as
+its last step, attempt to build and test the "cord" string library.
+This will fail without an ANSI C compiler.
 
   The Makefile will generate a library gc.a which you should link against.
+Typing "make cords" will add the cord library to gc.a.
 It is suggested that if you need to replace a piece of the collector
 (e.g. GC_mark_roots.c) you simply list your version ahead of gc.a on the
 ld command line, rather than replacing the one in gc.a.  (This will
 generate numerous warnings under some versions of AIX, but it still
 works.)
+
+  All include files that need to be used by clients will be put in the
+include subdirectory.  (Normally this is just gc.h.  "Make cord" adds
+"cord.h" and "ec.h".)
 
   The collector currently is designed to run essentially unmodified on
 the following machines:
@@ -159,7 +178,7 @@ the following machines:
 	    Sun 3
 	    Sun 4 under SunOS 4.X or Solaris2.X
 	    Vax under 4.3BSD, Ultrix
-	    Intel 386 or 486 under OS/2 (single threaded) or linux.
+	    Intel 386 or 486 under many operating systems, but not MSDOS.
 	    Sequent Symmetry  (single threaded)
 	    Encore Multimax   (single threaded)
 	    MIPS M/120 (and presumably M/2000) (RISC/os 4.0 with BSD libraries)
@@ -224,7 +243,7 @@ following are likely to require change:
    On some machines, it is difficult to obtain such a value that is
    valid across a variety of MMUs, OS releases, etc.  A number of
    alternatives exist for using the collector in spite of this.  See the
-   discussion in gc_private.h immediately preceding the various
+   discussion in config.h.h immediately preceding the various
    definitions of STACKBOTTOM.
    
 2.  mach_dep.c.
@@ -520,6 +539,9 @@ heap sizes.  But collection pauses will increase for larger heaps.
 per MB of accessible memory that needs to be scanned.  Your mileage
 may vary.)  The incremental/generational collection facility helps,
 but is portable only if "stubborn" allocation is used.
+  Please address bug reports to boehm@xerox.com.  If you are contemplating
+a major addition, you might also send mail to ask whether it's already
+been done.
 
 RECENT VERSIONS:
 
@@ -540,10 +562,6 @@ to determine such values.
 
   Version 1.5 and earlier did not ensure 8 byte alignment for objects
 allocated on a sparc based machine.
-
-  Please address bug reports to boehm@xerox.com.  If you are contemplating
-a major addition, you might also send mail to ask whether it's already
-been done.
 
   Version 1.8 added ULTRIX support in gc_private.h.
   
@@ -647,8 +665,51 @@ for PPCR.
   GC_unregister_disappearing_link.
   All of the above were pointed out by Neil Sharman
   (neil@cs.mu.oz.au).
-- Common symbols allocated by the SunOS4.X dynamic loader were not included in the root set.
+- Common symbols allocated by the SunOS4.X dynamic loader
+  were not included in the root set.
 - Bug in GC_finalize (reported by Brian Beuning and Al Dosser)
 - Merged Amiga port from Jesper Peterson (untested)
-- Merged NeXT port from Thomas Funke (significantly modified and untested)
+- Merged NeXT port from Thomas Funke (significantly
+  modified and untested)
+
+  Version 3.4:
+- Fixed a performance bug in GC_realloc.
+- Updated the amiga port.
+- Added NetBSD and 386BSD ports.
+- Added cord library.
+- Added trivial performance enhancement for
+  ALL_INTERIOR_POINTERS.  (Don't scan last word.)
   
+  Version 3.5
+- Minor collections now mark from roots only once, if that
+  doesn't cause an excessive pause.
+- The stack clearing heuristic was refined to prevent anomalies
+  with very heavily recursive programs and sparse stacks.
+- Fixed a bug that prevented mark stack growth in some cases.
+  GC_objects_are_marked should be set to TRUE after a call
+  to GC_push_roots and as part of GC_push_marked, since
+  both can now set mark bits.  I think this is only a performance
+  bug, but I wouldn't bet on it.  It's certainly very hard to argue
+  that the old version was correct.
+- Fixed an incremental collection bug that prevented it from
+  working at all when HBLKSIZE != getpagesize()
+- Changed dynamic_loading.c to include gc_private.h before testing
+  DYNAMIC_LOADING.  SunOS dynamic library scanning
+  must have been broken in 3.4.
+- Object size rounding now adapts to program behavior.
+- Added a workaround (provided by Manuel Serrano and
+  colleagues) to a long-standing SunOS 4.X (and 3.X?) ld bug
+  that I had incorrectly assumed to have been squished.
+  The collector was broken if the text segment size was within
+  32 bytes of a multiple of 8K bytes, and if the beginning of
+  the data segment contained interesting roots.  The workaround
+  assumes a demand-loadable executable.  The original may have
+  have "worked" in some other cases.
+- Added dynamic library support under IRIX5.
+- Added support for EMX under OS/2 (thanks to Ari Huttunen).
+  
+Version 3.6:
+- fixed a bug in the mark stack growth code that was introduced
+  in 3.4.
+- fixed Makefile to work around DEC AXP compiler tail recursion
+  bug.

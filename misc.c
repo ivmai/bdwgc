@@ -8,6 +8,7 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
+/* Boehm, December 20, 1993 3:06 pm PST */
 
 #define DEBUG       /* Some run-time consistency checks */
 #undef DEBUG
@@ -82,7 +83,6 @@ extern signed_word GC_mem_found;
     void GC_init_size_map()
     {
 	register unsigned i;
-	register unsigned sz_rounded_up = 0;
 
 	/* Map size 0 to 1.  This avoids problems at lower levels. */
 	  GC_size_map[0] = 1;
@@ -98,48 +98,76 @@ extern signed_word GC_mem_found;
 	      GC_size_map[i] = ROUNDED_UP_WORDS(i);
 #           endif
 	}
-	
-	for (i = 8*sizeof(word)+1; i <= WORDS_TO_BYTES(MAXOBJSZ); i++) {
-	    if (sz_rounded_up < ROUNDED_UP_WORDS(i)) {
-	        register int size = ROUNDED_UP_WORDS(i);
-                register unsigned m = 0;
-            
-                while (size > 7) {
-                  m += 1;
-                  size += 1;
-                  size >>= 1;
-                }
-	        sz_rounded_up = size << m;
-		if (sz_rounded_up > MAXOBJSZ) {
-		    sz_rounded_up = MAXOBJSZ;
-		}
-	    }
-	    GC_size_map[i] = sz_rounded_up;
+	/* We leave the rest of the array to be filled in on demand. */
+    }
+    
+    /* Fill in additional entries in GC_size_map, including the ith one */
+    /* We assume the ith entry is currently 0.				*/
+    /* Note that a filled in section of the array ending at n always    */
+    /* has length at least n/4.						*/
+    void GC_extend_size_map(i)
+    word i;
+    {
+        word orig_word_sz = ROUNDED_UP_WORDS(i);
+        word word_sz = orig_word_sz;
+    	register word byte_sz = WORDS_TO_BYTES(word_sz);
+    				/* The size we try to preserve.		*/
+    				/* Close to to i, unless this would	*/
+    				/* introduce too many distinct sizes.	*/
+    	word smaller_than_i = byte_sz - (byte_sz >> 3);
+    	word much_smaller_than_i = byte_sz - (byte_sz >> 2);
+    	register word low_limit;	/* The lowest indexed entry we 	*/
+    					/* initialize.			*/
+    	register int j;
+    	
+    	if (GC_size_map[smaller_than_i] == 0) {
+    	    low_limit = much_smaller_than_i;
+    	    while (GC_size_map[low_limit] != 0) low_limit++;
+    	} else {
+    	    low_limit = smaller_than_i + 1;
+    	    while (GC_size_map[low_limit] != 0) low_limit++;
+    	    word_sz = ROUNDED_UP_WORDS(low_limit);
+    	    word_sz += word_sz >> 3;
+    	    if (word_sz < orig_word_sz) word_sz = orig_word_sz;
+    	}
+#	ifdef ALIGN_DOUBLE
+	    word_sz += 1;
+	    word_sz &= ~1;
+#	endif
+	if (word_sz > MAXOBJSZ) {
+	    word_sz = MAXOBJSZ;
 	}
+    	byte_sz = WORDS_TO_BYTES(word_sz);
+#	ifdef ALL_INTERIOR_POINTERS
+	    /* We need one extra byte; don't fill in GC_size_map[byte_sz] */
+	    byte_sz--;
+#	endif
+
+    	for (j = low_limit; j <= byte_sz; j++) GC_size_map[j] = word_sz;  
     }
 # endif
+
 
 /*
  * The following is a gross hack to deal with a problem that can occur
  * on machines that are sloppy about stack frame sizes, notably SPARC.
  * Bogus pointers may be written to the stack and not cleared for
  * a LONG time, because they always fall into holes in stack frames
- * that are not written.  We partially address this by randomly clearing
+ * that are not written.  We partially address this by clearing
  * sections of the stack whenever we get control.
  */
 word GC_stack_last_cleared = 0;	/* GC_no when we last did this */
 # define CLEAR_SIZE 213
-# define CLEAR_THRESHOLD 10000
 # define DEGRADE_RATE 50
 
-ptr_t GC_min_sp;	/* Coolest stack pointer value from which we've */
+word GC_min_sp;		/* Coolest stack pointer value from which we've */
 			/* already cleared the stack.			*/
 			
 # ifdef STACK_GROWS_DOWN
 #   define COOLER_THAN >
 #   define HOTTER_THAN <
 #   define MAKE_COOLER(x,y) if ((word)(x)+(y) > (word)(x)) {(x) += (y);} \
-			    else {(x) = (ptr_t)ONES;}
+			    else {(x) = (word)ONES;}
 #   define MAKE_HOTTER(x,y) (x) -= (y)
 # else
 #   define COOLER_THAN <
@@ -148,49 +176,100 @@ ptr_t GC_min_sp;	/* Coolest stack pointer value from which we've */
 #   define MAKE_HOTTER(x,y) (x) += (y)
 # endif
 
-ptr_t GC_high_water;
+word GC_high_water;
 			/* "hottest" stack pointer value we have seen	*/
 			/* recently.  Degrades over time.		*/
+
+word GC_stack_upper_bound()
+{
+    word dummy;
+    
+    return((word)(&dummy));
+}
+
+word GC_words_allocd_at_reset;
+
+#if defined(ASM_CLEAR_CODE) && !defined(THREADS)
+  extern ptr_t GC_clear_stack_inner();
+#endif  
+
+#if !defined(ASM_CLEAR_CODE) && !defined(THREADS)
+/* Clear the stack up to about limit.  Return arg. */
 /*ARGSUSED*/
-void GC_clear_stack_inner(d)
-word *d;
+ptr_t GC_clear_stack_inner(arg, limit)
+ptr_t arg;
+word limit;
 {
     word dummy[CLEAR_SIZE];
     
     bzero((char *)dummy, (int)(CLEAR_SIZE*sizeof(word)));
-#   ifdef THREADS
-  	GC_noop(dummy);
-#   else
-        if ((ptr_t)(dummy) COOLER_THAN GC_min_sp) {
-            GC_clear_stack_inner(dummy);
-        }
-#   endif
+    if ((word)(dummy) COOLER_THAN limit) {
+        (void) GC_clear_stack_inner(arg, limit);
+    }
+    /* Make sure the recursive call is not a tail call, and the bzero	*/
+    /* call is not recognized as dead code.				*/
+    GC_noop(dummy);
+    return(arg);
 }
+#endif
 
-void GC_clear_stack()
+
+/* Clear some of the inaccessible part of the stack.  Returns its	*/
+/* argument, so it can be used in a tail call position, hence clearing  */
+/* another frame.							*/
+ptr_t GC_clear_stack(arg)
+ptr_t arg;
 {
-    word dummy;
-
-
+    register word sp = GC_stack_upper_bound();
+    register word limit;
+#   ifdef THREADS
+        word dummy[CLEAR_SIZE];;
+#   endif
+    
+#   define SLOP 200
+	/* Extra bytes we clear every time.  This clears our own	*/
+	/* activation record, and should cause more frequent		*/
+	/* clearing near the cold end of the stack, a good thing.	*/
+#   define CLEAR_THRESHOLD 100000
+	/* We restart the clearing process after this many bytes of	*/
+	/* allocation.  Otherwise very heavily recursive programs	*/
+	/* with sparse stacks may result in heaps that grow almost	*/
+	/* without bounds.  As the heap gets larger, collection 	*/
+	/* frequency decreases, thus clearing frequency would decrease, */
+	/* thus more junk remains accessible, thus the heap gets	*/
+	/* larger ...							*/
 # ifdef THREADS
-    GC_clear_stack_inner(&dummy);
+    bzero((char *)dummy, (int)(CLEAR_SIZE*sizeof(word)));
 # else
     if (GC_gc_no > GC_stack_last_cleared) {
         /* Start things over, so we clear the entire stack again */
-        if (GC_stack_last_cleared == 0) GC_high_water = GC_stackbottom;
+        if (GC_stack_last_cleared == 0) GC_high_water = (word) GC_stackbottom;
         GC_min_sp = GC_high_water;
         GC_stack_last_cleared = GC_gc_no;
+        GC_words_allocd_at_reset = GC_words_allocd;
     }
     /* Adjust GC_high_water */
         MAKE_COOLER(GC_high_water, WORDS_TO_BYTES(DEGRADE_RATE));
-        if ((word)(&dummy) HOTTER_THAN (word)GC_high_water) {
-            GC_high_water = (ptr_t)(&dummy);
+        if (sp HOTTER_THAN GC_high_water) {
+            GC_high_water = sp;
         }
-    if ((word)(&dummy) COOLER_THAN (word)GC_min_sp) {
-        GC_clear_stack_inner(&dummy);
-        GC_min_sp = (ptr_t)(&dummy);
-    }
+    if (sp COOLER_THAN GC_min_sp) {
+        limit = GC_min_sp;
+        MAKE_HOTTER(limit, SLOP);
+        limit &= ~0xf;	/* Make it sufficiently aligned for assembly	*/
+        		/* implementations of GC_clear_stack_inner.	*/
+        GC_min_sp = sp;
+        return(GC_clear_stack_inner(arg, limit));
+    } else if (WORDS_TO_BYTES(GC_words_allocd_at_reset - GC_words_allocd)
+    	       > CLEAR_THRESHOLD) {
+    	/* Restart clearing process, but limit how much clearing we do. */
+    	GC_min_sp = sp;
+    	MAKE_HOTTER(GC_min_sp, CLEAR_THRESHOLD/4);
+    	if (GC_min_sp HOTTER_THAN GC_high_water) GC_min_sp = GC_high_water;
+    	GC_words_allocd_at_reset = GC_words_allocd;
+    }  
 # endif
+  return(arg);
 }
 
 
@@ -284,27 +363,22 @@ void GC_init_inner()
       }
 #   endif
     if  (sizeof (ptr_t) != sizeof(word)) {
-        GC_err_printf0("sizeof (ptr_t) != sizeof(word)\n");
         ABORT("sizeof (ptr_t) != sizeof(word)\n");
     }
     if  (sizeof (signed_word) != sizeof(word)) {
-        GC_err_printf0("sizeof (signed_word) != sizeof(word)\n");
         ABORT("sizeof (signed_word) != sizeof(word)\n");
     }
     if  (sizeof (struct hblk) != HBLKSIZE) {
-        GC_err_printf0("sizeof (struct hblk) != HBLKSIZE\n");
         ABORT("sizeof (struct hblk) != HBLKSIZE\n");
     }
 #   ifndef THREADS
 #     if defined(STACK_GROWS_UP) && defined(STACK_GROWS_DOWN)
-  	GC_err_printf0(
+  	ABORT(
   	  "Only one of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd\n");
-  	ABORT("stack direction 1\n");
 #     endif
 #     if !defined(STACK_GROWS_UP) && !defined(STACK_GROWS_DOWN)
-  	GC_err_printf0(
+  	ABORT(
   	  "One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd\n");
-  	ABORT("stack direction 2\n");
 #     endif
 #     ifdef STACK_GROWS_DOWN
         if ((word)(&dummy) > (word)GC_stackbottom) {
@@ -341,6 +415,8 @@ void GC_init_inner()
     }
     
     GC_init_headers();
+    /* Add initial guess of root sets */
+      GC_register_data_segments();
     GC_bl_init();
     GC_mark_init();
     if (!GC_expand_hp_inner((word)MINHINCR)) {
@@ -357,8 +433,6 @@ void GC_init_inner()
 #   ifdef MERGE_SIZES
       GC_init_size_map();
 #   endif
-    /* Add initial guess of root sets */
-      GC_register_data_segments();
 #   ifdef PCR
       PCR_IL_Lock(PCR_Bool_false, PCR_allSigsBlocked, PCR_waitForever);
       PCR_IL_Unlock();
@@ -392,12 +466,18 @@ void GC_enable_incremental()
     if (!GC_is_initialized) {
         GC_init_inner();
     }
+    if (GC_dont_gc) {
+        /* Can't easily do it. */
+        UNLOCK();
+    	ENABLE_SIGNALS();
+    	return;
+    }
     if (GC_words_allocd > 0) {
-    	/* There may be unmarked reachable objects */
+    	/* There may be unmarked reachable objects	*/
     	GC_gcollect_inner();
-    }   /* else we're OK in assumeing everything's */
-    	/* clean since nothing can point to an	   */
-    	/* unmarked object.			   */
+    }   /* else we're OK in assuming everything's	*/
+    	/* clean since nothing can point to an	  	*/
+    	/* unmarked object.			  	*/
     GC_dirty_init();
     GC_read_dirty();
     GC_incremental = TRUE;

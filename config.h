@@ -108,6 +108,21 @@
 #    define NEXT
 #    define mach_type_known
 # endif
+# if defined(__NetBSD__) && defined(i386)
+#    define I386
+#    define NETBSD
+#    define mach_type_known
+# endif
+# if !defined(mach_type_known) && defined(__386BSD__)
+#    define I386
+#    define THREE86BSD
+#    define mach_type_known
+# endif
+# if defined(_CX_UX) && defined(_M88K)
+#    define M88K
+#    define CX_UX
+#    define mach_type_known
+# endif
 
 /* Feel free to add more clauses here */
 
@@ -125,8 +140,9 @@
 		    /*		   (SUNOS4,HP,NEXT, and SYSV (A/UX),	*/
 		    /*		   and AMIGA variants)			*/
 		    /*             I386       ==> Intel 386	 	*/
-		    /*		    (SEQUENT, OS2, SCO, LINUX variants)	*/
-		    /*		     SCO is incomplete.			*/
+		    /*		    (SEQUENT, OS2, SCO, LINUX, NETBSD,	*/
+		    /*		     THREE86BSD variants,		*/
+		    /*		     some are incomplete or untested)	*/
                     /*             NS32K      ==> Encore Multimax 	*/
                     /*             MIPS       ==> R2000 or R3000	*/
                     /*			(RISCOS, ULTRIX variants)	*/
@@ -139,6 +155,8 @@
 		    /*		   SPARC      ==> SPARC under SunOS	*/
 		    /*			(SUNOS4, SUNOS5 variants)	*/
 		    /* 		   ALPHA      ==> DEC Alpha OSF/1	*/
+		    /* 		   M88K       ==> Motorola 88XX0        */
+		    /* 		        (CX/UX so far)			*/
 
 
 /*
@@ -296,15 +314,22 @@
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
 #       define DATASTART ((ptr_t)((((word) (&etext)) + 0x10003) & ~0x3))
-		/* Experimentally determined.  			*/
-		/* Inconsistent with man a.out, which appears	*/
-		/* to be wrong.					*/
 #	define PROC_VDB
 #   endif
 #   ifdef SUNOS4
 #	define OS_TYPE "SUNOS4"
-#       define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
-		/* On very old SPARCs this is too conservative. */
+	/* [If you have a weak stomach, don't read this.]		*/
+	/* We would like to use:					*/
+/* #       define DATASTART ((ptr_t)((((word) (&etext)) + 0x1fff) & ~0x1fff)) */
+	/* This fails occasionally, due to an ancient, but very 	*/
+	/* persistent ld bug.  &etext is set 32 bytes too high.		*/
+	/* We instead read the text segment size from the a.out		*/
+	/* header, which happens to be mapped into our address space	*/
+	/* at the start of the text segment.  The detective work here	*/
+	/* was done by Robert Ehrlich, Manuel Serrano, and Bernard	*/
+	/* Serpette of INRIA.						*/
+	/* This assumes ZMAGIC, i.e. demand-loadable executables.	*/
+#       define DATASTART ((ptr_t)(*(int *)0x2004+0x2000))
 #	define MPROTECT_VDB
 #   endif
 #   define HEURISTIC1
@@ -312,7 +337,7 @@
 
 # ifdef I386
 #   define MACH_TYPE "I386"
-#   define ALIGNMENT 4	/* 32-bit compilers align pointers */
+#   define ALIGNMENT 4	/* Appears to hold for all "32 bit" compilers */
 #   ifdef SEQUENT
 #	define OS_TYPE "SEQUENT"
 	extern int etext;
@@ -348,6 +373,18 @@
  	    	/* STACKBOTTOM is handled specially in GC_init_inner.	*/
 		/* OS2 actually has the right system call!		*/
 #   endif
+#   ifdef NETBSD
+#	define OS_TYPE "NETBSD"
+#	define HEURISTIC2
+	extern char etext;
+#	define DATASTART ((ptr_t)(&etext))
+#    endif
+#   ifdef THREE86BSD
+#	define OS_TYPE "THREE86BSD"
+#   	define ALIGNMENT 4
+	extern char etext;
+#	define DATASTART ((ptr_t)(&etext))
+#    endif
 # endif
 
 # ifdef NS32K
@@ -404,6 +441,13 @@
 #   define HEURISTIC2
 #   define CPP_WORDSZ 64
 #   define MPROTECT_VDB
+# endif
+
+# ifdef M88K
+#   define MACH_TYPE "M88K"
+#   define ALIGNMENT 4
+#   define DATASTART ((((word)&etext + 0x3fffff) & ~0x3fffff) + 0x10000)
+#   define STACKBOTTOM ((char*)0xf0000000) /* determined empirically */
 # endif
 
 # ifndef STACK_GROWS_UP

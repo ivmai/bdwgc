@@ -1,5 +1,6 @@
 /* An incomplete test for the garbage collector.  		*/
 /* Some more obscure entry points are not tested at all.	*/
+/* Boehm, November 24, 1993 5:14 pm PST */
 # include <stdlib.h>
 # include <stdio.h>
 # include "gc.h"
@@ -15,7 +16,7 @@
 #  define FAR
 # endif
 
-# define FAIL abort()
+# define FAIL (void)abort()
 
 /* AT_END may be defined to excercise the interior pointer test	*/
 /* if the collector is configured with ALL_INTERIOR_POINTERS.   */
@@ -251,7 +252,7 @@ reverse_test()
     }
     for (i = 0; i < 60; i++) {
     	/* This maintains the invariant that a always points to a list of */
-    	/* 100 integers.  Thus this is thread safe without locks.	  */
+    	/* 49 integers.  Thus this is thread safe without locks.	  */
         a = reverse(reverse(a));
 #	if !defined(AT_END) && !defined(PCR)
 	  /* This is not thread safe, since realloc explicitly deallocates */
@@ -422,6 +423,13 @@ void run_one_test()
 {
     DCL_LOCK_STATE;
     
+#   ifndef GC_DEBUG
+	if (GC_size(GC_MALLOC(7)) != 8
+	    || GC_size(GC_MALLOC(15)) != 16) {
+	    (void)printf ("GC_size produced unexpected results\n");
+	    FAIL;
+	}
+#   endif
     reverse_test();
     tree_test();
     LOCK();

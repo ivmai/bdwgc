@@ -23,6 +23,11 @@
 #   define SMALL_OBJ(bytes) ((bytes) <= WORDS_TO_BYTES(MAXOBJSZ))
 # endif
 
+extern ptr_t GC_clear_stack();	/* in misc.c, behaves like identity */
+
+#define GENERAL_MALLOC(lb,k) \
+    (extern_ptr_t)GC_clear_stack(GC_generic_malloc((word)lb, k))
+
 /* Data structure representing immutable objects that 	*/
 /* are still being initialized.				*/
 /* This is a bit baroque in order to avoid acquiring	*/
@@ -190,7 +195,7 @@ extern_ptr_t p;
 register ptr_t op;
 register ptr_t *opp;
 register word lw;
-extern_ptr_t result;
+ptr_t result;
 DCL_LOCK_STATE;
 
     if( SMALL_OBJ(lb) ) {
@@ -212,7 +217,7 @@ DCL_LOCK_STATE;
         result = (extern_ptr_t) op;
         ADD_CHANGING(result);
         FASTUNLOCK();
-        return(result);
+        return((extern_ptr_t)result);
    } else {
        result = (extern_ptr_t)
           	GC_generic_malloc((word)lb, STUBBORN);
@@ -223,7 +228,7 @@ record:
    ADD_CHANGING(result);
    UNLOCK();
    ENABLE_SIGNALS();
-   return(result);
+   return((extern_ptr_t)GC_clear_stack(result));
 }
 
 

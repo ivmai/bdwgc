@@ -7,6 +7,10 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
+/* Boehm, December 16, 1993 4:25 pm PST */
+# if !defined(OS2) && !defined(PCR) && !defined(AMIGA)
+#   include <sys/types.h>
+# endif
 # include "gc_private.h"
 # include <stdio.h>
 # include <signal.h>
@@ -21,7 +25,67 @@
 # include <workbench/startup.h>
 #endif
 
+#ifdef IRIX5
+# include <sys/uio.h>
+#endif
+
 # ifdef OS2
+
+# ifndef __IBMC__ /* e.g. EMX */
+
+struct exe_hdr {
+    unsigned short      magic_number;
+    unsigned short      padding[29];
+    long                new_exe_offset;
+};
+
+#define E_MAGIC(x)      (x).magic_number
+#define EMAGIC          0x5A4D  
+#define E_LFANEW(x)     (x).new_exe_offset
+
+struct e32_exe {
+    unsigned char       magic_number[2]; 
+    unsigned char       byte_order; 
+    unsigned char       word_order; 
+    unsigned long       exe_format_level;
+    unsigned short      cpu;       
+    unsigned short      os;
+    unsigned long       padding1[13];
+    unsigned long       object_table_offset;
+    unsigned long       object_count;    
+    unsigned long       padding2[31];
+};
+
+#define E32_MAGIC1(x)   (x).magic_number[0]
+#define E32MAGIC1       'L'
+#define E32_MAGIC2(x)   (x).magic_number[1]
+#define E32MAGIC2       'X'
+#define E32_BORDER(x)   (x).byte_order
+#define E32LEBO         0
+#define E32_WORDER(x)   (x).word_order
+#define E32LEWO         0
+#define E32_CPU(x)      (x).cpu
+#define E32CPU286       1
+#define E32_OBJTAB(x)   (x).object_table_offset
+#define E32_OBJCNT(x)   (x).object_count
+
+struct o32_obj {
+    unsigned long       size;  
+    unsigned long       base;
+    unsigned long       flags;  
+    unsigned long       pagemap;
+    unsigned long       mapsize; 
+    unsigned long       reserved;
+};
+
+#define O32_FLAGS(x)    (x).flags
+#define OBJREAD         0x0001L
+#define OBJWRITE        0x0002L
+#define OBJINVALID      0x0080L
+#define O32_SIZE(x)     (x).size
+#define O32_BASE(x)     (x).base
+
+# else  /* IBM's compiler */
 
 # define INCL_DOSEXCEPTIONS
 # define INCL_DOSPROCESS
@@ -40,6 +104,8 @@
 # define EXE386 1
 # include <newexe.h>
 # include <exe386.h>
+
+# endif  /* __IBMC__ */
 
 /* Disable and enable signals during nontrivial allocations	*/
 
@@ -423,7 +489,7 @@ void GC_register_data_segments()
         extern int end;
 #   endif
  
-#   if !defined(PCR) && !defined(SRC_M3) && !defined(NEXT) 
+#   if !defined(PCR) && !defined(SRC_M3) && !defined(NEXT)
       GC_add_roots_inner(DATASTART, (char *)(&end));
 #   endif
 #   if !defined(PCR) && defined(NEXT)
@@ -549,6 +615,25 @@ VOLATILE page_hash_table GC_dirty_pages;
 
 word GC_page_size;
 
+bool GC_just_outside_heap(addr)
+word addr;
+{
+    register int i;
+    register word start;
+    register word end;
+    word mask = GC_page_size-1;
+    
+    for (i = 0; i < GC_n_heap_sects; i++) {
+    	start = (word) GC_heap_sects[i].hs_start;
+    	end = start + (word)GC_heap_sects[i].hs_bytes;
+        if (addr < start && addr >= (start & ~mask)
+            || addr >= end && addr < ((end + mask) & ~mask)) {
+            return(TRUE);
+        }
+    }
+    return(FALSE);
+}
+
 /*ARGSUSED*/
 # ifdef SUNOS4
     void GC_write_fault_handler(sig, code, scp, addr)
@@ -586,12 +671,12 @@ word GC_page_size;
         register struct hblk * h =
         		(struct hblk *)((word)addr & ~(GC_page_size-1));
         
-        for (i = 0; i < GC_page_size/HBLKSIZE; i++) {
+        if (HDR(addr) == 0 && !GC_just_outside_heap((word)addr)) {
+            ABORT("Unexpected bus error or segmentation fault");
+        }
+        for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
             register int index = PHT_HASH(h+i);
             
-            if (HDR(h+i) == 0) {
-                ABORT("Unexpected bus error or segmentation fault");
-            }
             set_pht_entry_from_index(GC_dirty_pages, index);
         }
         if (mprotect((caddr_t)h, (int)GC_page_size,
@@ -758,7 +843,24 @@ int nbyte;
     
     GC_begin_syscall();
     GC_unprotect_range(buf, (word)nbyte);
-    result = syscall(SYS_read, fd, buf, nbyte);
+#   ifdef IRIX5
+	/* Indirect system call exists, but is undocumented, and	*/
+	/* always seems to return EINVAL.  There seems to be no		*/
+	/* general way to wrap system calls, since the system call	*/
+	/* convention appears to require an immediate argument for	*/
+	/* the system call number, and building the required code	*/
+	/* in the data segment also seems dangerous.  We can fake it	*/
+	/* for read; anything else is up to the client.			*/
+	{
+	    struct iovec iov;
+
+	    iov.iov_base = buf;
+	    iov.iov_len = nbyte;
+	    result = readv(fd, &iov, 1);
+	}
+#   else
+    	result = syscall(SYS_read, fd, buf, nbyte);
+#   endif
     GC_end_syscall();
     return(result);
 }
@@ -794,7 +896,7 @@ int GC_proc_fd;
 void GC_dirty_init()
 {
     int fd;
-    char buf[20];
+    char buf[30];
 
     sprintf(buf, "/proc/%d", getpid());
     fd = open(buf, O_RDONLY);

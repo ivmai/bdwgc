@@ -8,7 +8,6 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
-/* Boehm, December 20, 1993 3:05 pm PST */
  
 #ifndef GC_H
 
@@ -188,7 +187,6 @@ void GC_gcollect();
 /* available or most heap objects are		*/
 /* pointerfree(atomic) or immutable.		*/
 /* Don't use in leak finding mode.		*/
-/* Ignored if GC_dont_gc is true.		*/
 void GC_enable_incremental();
 
 /* Debugging (annotated) allocation.  GC_gcollect will check 		*/

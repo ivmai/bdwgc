@@ -5,10 +5,10 @@
     .globl  GC_push_regs
     .ent    GC_push_regs
 GC_push_regs:
-    subu    $sp,4       ## Need to save only return address
+    subu    $sp,8       ## Need to save only return address
     sw      $31,4($sp)
-    .mask   0x80000000,0
-    .frame  $sp,4,$31
+    .mask   0x80000000,-4
+    .frame  $sp,8,$31
     call_push($2)
     call_push($3)
     call_push($16)
@@ -21,6 +21,6 @@ GC_push_regs:
     call_push($23)
     call_push($30)
     lw      $31,4($sp)
-    addu    $sp,4
+    addu    $sp,8
     j       $31
     .end    GC_push_regs

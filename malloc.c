@@ -8,11 +8,13 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
+/* Boehm, November 17, 1993 5:51 pm PST */
  
 #include <stdio.h>
 #include "gc_private.h"
 
-extern void GC_clear_stack();	/* in misc.c */
+extern ptr_t GC_clear_stack();	/* in misc.c, behaves like identity */
+void GC_extend_size_map();	/* in misc.c. */
 
 # ifdef ALL_INTERIOR_POINTERS
 #   define SMALL_OBJ(bytes) ((bytes) < WORDS_TO_BYTES(MAXOBJSZ))
@@ -46,11 +48,18 @@ register ptr_t *opp;
 #       endif
 	opp = &(GC_obj_kinds[k].ok_freelist[lw]);
         if( (op = *opp) == 0 ) {
-            if (!GC_is_initialized) {
-                GC_init_inner();
-                return(GC_generic_malloc_inner(lb, k));
-            }
-            GC_clear_stack();
+#	    ifdef MERGE_SIZES
+	      if (GC_size_map[lb] == 0) {
+	        if (!GC_is_initialized)  GC_init_inner();
+	        if (GC_size_map[lb] == 0) GC_extend_size_map(lb);
+	        return(GC_generic_malloc_inner(lb, k));
+	      }
+#	    else
+	      if (!GC_is_initialized) {
+	        GC_init_inner();
+	        return(GC_generic_malloc_inner(lb, k));
+	      }
+#	    endif
 	    op = GC_allocobj(lw, k);
 	    if (op == 0) goto out;
         }
@@ -119,8 +128,7 @@ DCL_LOCK_STATE;
         if (!GC_is_initialized) {
             GC_init_inner();
         }
-        GC_clear_stack();
-	op = GC_allocobj(lw, k);
+	op = GC_clear_stack(GC_allocobj(lw, k));
 	if (op == 0) goto out;
     }
     *opp = obj_link(op);
@@ -132,6 +140,11 @@ out:
     ENABLE_SIGNALS();
     return((ptr_t)op);
 }
+
+#define GENERAL_MALLOC(lb,k) \
+    (extern_ptr_t)GC_clear_stack(GC_generic_malloc((word)lb, k))
+/* We make the GC_clear_stack_call a tail call, hoping to get more of	*/
+/* the stack.								*/
 
 /* Allocate lb bytes of atomic (pointerfree) data */
 # ifdef __STDC__
@@ -156,7 +169,7 @@ DCL_LOCK_STATE;
 	FASTLOCK();
         if( !FASTLOCK_SUCCEEDED() || (op = *opp) == 0 ) {
             FASTUNLOCK();
-            return(GC_generic_malloc((word)lb, PTRFREE));
+            return(GENERAL_MALLOC((word)lb, PTRFREE));
         }
         /* See above comment on signals.	*/
         *opp = obj_link(op);
@@ -164,8 +177,7 @@ DCL_LOCK_STATE;
         FASTUNLOCK();
         return((extern_ptr_t) op);
    } else {
-       return((extern_ptr_t)
-       		GC_generic_malloc((word)lb, PTRFREE));
+       return(GENERAL_MALLOC((word)lb, PTRFREE));
    }
 }
 
@@ -192,7 +204,7 @@ DCL_LOCK_STATE;
 	FASTLOCK();
         if( !FASTLOCK_SUCCEEDED() || (op = *opp) == 0 ) {
             FASTUNLOCK();
-            return(GC_generic_malloc((word)lb, NORMAL));
+            return(GENERAL_MALLOC((word)lb, NORMAL));
         }
         /* See above comment on signals.	*/
         *opp = obj_link(op);
@@ -201,8 +213,7 @@ DCL_LOCK_STATE;
         FASTUNLOCK();
         return((extern_ptr_t) op);
    } else {
-       return((extern_ptr_t)
-          	GC_generic_malloc((word)lb, NORMAL));
+       return(GENERAL_MALLOC((word)lb, NORMAL));
    }
 }
 
@@ -270,6 +281,10 @@ int knd;
 	case STUBBORN:
 	    return(GC_malloc_stubborn((size_t)lb));
 #     endif
+	case PTRFREE:
+	    return(GC_malloc_atomic((size_t)lb));
+	case NORMAL:
+	    return(GC_malloc((size_t)lb));
 	case UNCOLLECTABLE:
 	    return(GC_malloc_uncollectable((size_t)lb));
 	default:
