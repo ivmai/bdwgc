@@ -17,13 +17,13 @@
 #ifdef GC_GCJ_SUPPORT
 
 /*
- * This is an allocator interface tuned for gcj (the GNU/Cygnus static
+ * This is an allocator interface tuned for gcj (the GNU static
  * java compiler).
  *
  * Each allocated object has a pointer in its first word to a vtable,
  * which for our purposes is simply a structure describing the type of
  * the object.
- * This descriptor structur contains a GC marking descriptor at offset
+ * This descriptor structure contains a GC marking descriptor at offset
  * MARK_DESCR_OFFSET.
  *
  * It is hoped that this interface may also be useful for other systems,
@@ -36,8 +36,7 @@
  *  3) FASTLOCK is not a significant win.
  */
 
-#include "private/gc_priv.h"
-#include "private/gc_mark.h"
+#include "private/gc_pmark.h"
 #include "gc_gcj.h"
 #include "private/dbg_mlc.h"
 
@@ -52,7 +51,7 @@ ptr_t * GC_gcjobjfreelist;
 ptr_t * GC_gcjdebugobjfreelist;
 
 /* Caller does not hold allocation lock. */
-void GC_init_gcj_malloc(int mp_index, void * /* really mark_proc */mp)
+void GC_init_gcj_malloc(int mp_index, void * /* really GC_mark_proc */mp)
 {
     register int i;
     DCL_LOCK_STATE;
@@ -66,7 +65,7 @@ void GC_init_gcj_malloc(int mp_index, void * /* really mark_proc */mp)
       return;
     }
     GC_gcj_malloc_initialized = TRUE;
-    GC_mark_procs[mp_index] = (mark_proc)mp;
+    GC_mark_procs[mp_index] = (GC_mark_proc)mp;
     if (mp_index >= GC_n_mark_procs) ABORT("GC_init_gcj_malloc: bad index");
     /* Set up object kind gcj-style indirect descriptor. */
       GC_gcjobjfreelist = (ptr_t *)
@@ -77,7 +76,7 @@ void GC_init_gcj_malloc(int mp_index, void * /* really mark_proc */mp)
       GC_obj_kinds[GC_gcj_kind].ok_freelist = GC_gcjobjfreelist;
       GC_obj_kinds[GC_gcj_kind].ok_reclaim_list = 0;
       GC_obj_kinds[GC_gcj_kind].ok_descriptor =
-    	(((word)(-MARK_DESCR_OFFSET - INDIR_PER_OBJ_BIAS)) | DS_PER_OBJECT);
+    	(((word)(-MARK_DESCR_OFFSET - GC_INDIR_PER_OBJ_BIAS)) | GC_DS_PER_OBJECT);
       GC_obj_kinds[GC_gcj_kind].ok_relocate_descr = FALSE;
       GC_obj_kinds[GC_gcj_kind].ok_init = TRUE;
     /* Set up object kind for objects that require mark proc call.	*/
@@ -90,7 +89,7 @@ void GC_init_gcj_malloc(int mp_index, void * /* really mark_proc */mp)
       GC_obj_kinds[GC_gcj_debug_kind].ok_freelist = GC_gcjdebugobjfreelist;
       GC_obj_kinds[GC_gcj_debug_kind].ok_reclaim_list = 0;
       GC_obj_kinds[GC_gcj_debug_kind].ok_descriptor =
-    	MAKE_PROC(mp_index, 1 /* allocated with debug info */);
+    	GC_MAKE_PROC(mp_index, 1 /* allocated with debug info */);
       GC_obj_kinds[GC_gcj_debug_kind].ok_relocate_descr = FALSE;
       GC_obj_kinds[GC_gcj_debug_kind].ok_init = TRUE;
     UNLOCK();
@@ -115,7 +114,7 @@ register ptr_t * opp;
 register word lw;
 DCL_LOCK_STATE;
 
-    if( SMALL_OBJ(lb) ) {
+    if( EXPECT(SMALL_OBJ(lb), 1) ) {
 #       ifdef MERGE_SIZES
 	  lw = GC_size_map[lb];
 #	else
@@ -123,7 +122,8 @@ DCL_LOCK_STATE;
 #       endif
 	opp = &(GC_gcjobjfreelist[lw]);
 	LOCK();
-        if( (op = *opp) == 0 ) {
+	op = *opp;
+        if( EXPECT(op == 0, 0)) {
             op = (ptr_t)GENERAL_MALLOC((word)lb, GC_gcj_kind);
 	    if (0 == op) {
 		UNLOCK();
@@ -192,7 +192,8 @@ DCL_LOCK_STATE;
 
     opp = &(GC_gcjobjfreelist[lw]);
     LOCK();
-    if( (op = *opp) == 0 ) {
+    op = *opp;
+    if( EXPECT(op == 0, 0) ) {
         op = (ptr_t)GC_clear_stack(
 		GC_generic_malloc_words_small_inner(lw, GC_gcj_kind));
 	if (0 == op) {
@@ -263,7 +264,6 @@ DCL_LOCK_STATE;
         } else {
             *opp = obj_link(op);
             GC_words_allocd += lw;
-            FASTUNLOCK();
         }
 	*(void **)op = ptr_to_struct_containing_descr;
 	UNLOCK();

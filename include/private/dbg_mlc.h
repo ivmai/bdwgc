@@ -32,26 +32,57 @@
 #   include "gc_backptr.h"
 # endif
 
+#ifndef HIDE_POINTER
+  /* Gc.h was previously included, and hence the I_HIDE_POINTERS	*/
+  /* definition had no effect.  Repeat the gc.h definitions here to	*/
+  /* get them anyway.							*/
+    typedef GC_word GC_hidden_pointer;
+#   define HIDE_POINTER(p) (~(GC_hidden_pointer)(p))
+#   define REVEAL_POINTER(p) ((GC_PTR)(HIDE_POINTER(p)))
+#endif /* HIDE_POINTER */
+
 # define START_FLAG ((word)0xfedcedcb)
 # define END_FLAG ((word)0xbcdecdef)
 	/* Stored both one past the end of user object, and one before	*/
 	/* the end of the object as seen by the allocator.		*/
 
+# if defined(KEEP_BACK_PTRS) || defined(PRINT_BLACK_LIST)
+    /* Pointer "source"s that aren't real locations.	*/
+    /* Used in oh_back_ptr fields and as "source"	*/
+    /* argument to some marking functions.		*/
+#	define NOT_MARKED (ptr_t)(0)
+#	define MARKED_FOR_FINALIZATION (ptr_t)(2)
+	    /* Object was marked because it is finalizable.	*/
+#	define MARKED_FROM_REGISTER (ptr_t)(4)
+	    /* Object was marked from a rgister.  Hence the	*/
+	    /* source of the reference doesn't have an address.	*/
+# endif /* KEEP_BACK_PTRS || PRINT_BLACK_LIST */
 
 /* Object header */
 typedef struct {
 #   ifdef KEEP_BACK_PTRS
-	ptr_t oh_back_ptr;
-#	define MARKED_FOR_FINALIZATION (ptr_t)(-1)
-	    /* Object was marked because it is finalizable.	*/
-#	define MARKED_FROM_REGISTER (ptr_t)(-2)
-	    /* Object was marked from a rgister.  Hence the	*/
-	    /* source of the reference doesn't have an address.	*/
+	GC_hidden_pointer oh_back_ptr;
+	    /* We make sure that we only store even valued	*/
+	    /* pointers here, so that the hidden version has	*/
+	    /* the least significant bit set.  We never		*/
+	    /* overwrite a value with the least significant	*/
+	    /* bit clear, thus ensuring that we never overwrite	*/
+	    /* a free list link field.				*/
+	    /* The following are special back pointer values.	*/
+	    /* Note that the "hidden" (i.e. bitwise 		*/
+	    /* complemented version) of these is actually 	*/
+	    /* stored.						*/
+#       if ALIGNMENT == 1
+	  /* Fudge back pointer to be even.  */
+#	  define HIDE_BACK_PTR(p) HIDE_POINTER(~1 & (GC_word)(p))
+#	else
+#	  define HIDE_BACK_PTR(p) HIDE_POINTER(p)
+#	endif
 #	ifdef ALIGN_DOUBLE
 	  word oh_dummy;
 #	endif
 #   endif
-    char * oh_string;		/* object descriptor string	*/
+    GC_CONST char * oh_string;	/* object descriptor string	*/
     word oh_int;		/* object descriptor integers	*/
 #   ifdef NEED_CALLINFO
       struct callinfo oh_ci[NFRAMES];
@@ -64,13 +95,17 @@ typedef struct {
 /* The size of the above structure is assumed not to dealign things,	*/
 /* and to be a multiple of the word length.				*/
 
-#define DEBUG_BYTES (sizeof (oh) + sizeof (word))
+#ifdef SHORT_DBG_HDRS
+#   define DEBUG_BYTES (sizeof (oh))
+#else
+    /* Add space for END_FLAG, but use any extra space that was already	*/
+    /* added to catch off-the-end pointers.				*/
+#   define DEBUG_BYTES (sizeof (oh) + sizeof (word) - EXTRA_BYTES)
+#endif
 #define USR_PTR_FROM_BASE(p) ((ptr_t)(p) + sizeof(oh))
 
-/* There is no reason to ever add a byte at the end explicitly, since we */
-/* already add a guard word.						 */
-#undef ROUNDED_UP_WORDS
-#define ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1) - 1)
+/* Round bytes to words without adding extra byte at end.	*/
+#define SIMPLE_ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1) - 1)
 
 #ifdef SAVE_CALL_CHAIN
 #   define ADD_CALL_CHAIN(base, ra) GC_save_callers(((oh *)(base)) -> oh_ci)
@@ -96,9 +131,16 @@ typedef struct {
 /* p is assumed to point to a legitimate object in our part	*/
 /* of the heap.							*/
 #ifdef SHORT_DBG_HDRS
-# define GC_has_debug_info(p) TRUE
+# define GC_has_other_debug_info(p) TRUE
 #else
-  GC_bool GC_has_debug_info(/* p */);
+  GC_bool GC_has_other_debug_info(/* p */);
+#endif
+
+#ifdef KEEP_BACK_PTRS
+# define GC_HAS_DEBUG_INFO(p) \
+	((((oh *)p)->oh_back_ptr & 1) && GC_has_other_debug_info(p))
+#else
+# define GC_HAS_DEBUG_INFO(p) GC_has_other_debug_info(p)
 #endif
 
 /* Store debugging info into p.  Return displaced pointer. */

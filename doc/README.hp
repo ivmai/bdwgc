@@ -10,7 +10,9 @@ correctly.
 
 Incremental collection support was reccently added, and should now work.
 
-Thread support for HP/UX 11 Pthreads was also recently added, but is very
-unreliable.  At best it might work for running short tests on a uniprocessor.
-It currently appears that this will be fixed only for future versions of the
-pthread library.
+In spite of past claims, pthread support under HP/UX 11 should now work.
+Define GC_HPUX_THREADS for the build.  Incremental collection still does not
+work in combination with it.
+
+The stack finding code can be confused by putenv calls before collector
+initialization.  Call GC_malloc or GC_init before any putenv calls.

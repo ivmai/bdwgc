@@ -1,5 +1,6 @@
 # Microsoft Developer Studio Generated NMAKE File, Format Version 4.10
-# ** DO NOT EDIT **
+# This has been hand-edited way too many times.
+# A clean, manually generated makefile would be an improvement.
 
 # TARGTYPE "Win32 (x86) Application" 0x0101
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
@@ -72,6 +73,8 @@ CLEAN :
 	-@erase ".\Release\finalize.obj"
 	-@erase ".\Release\finalize.sbr"
 	-@erase ".\Release\gc.bsc"
+	-@erase ".\Release\gc_cpp.obj"
+	-@erase ".\Release\gc_cpp.sbr"
 	-@erase ".\Release\gc.dll"
 	-@erase ".\Release\gc.exp"
 	-@erase ".\Release\gc.lib"
@@ -155,6 +158,7 @@ BSC32_SBRS= \
 	".\Release\dbg_mlc.sbr" \
 	".\Release\dyn_load.sbr" \
 	".\Release\finalize.sbr" \
+	".\Release\gc_cpp.sbr" \
 	".\Release\headers.sbr" \
 	".\Release\mach_dep.sbr" \
 	".\Release\malloc.sbr" \
@@ -192,6 +196,7 @@ LINK32_OBJS= \
 	".\Release\dbg_mlc.obj" \
 	".\Release\dyn_load.obj" \
 	".\Release\finalize.obj" \
+	".\Release\gc_cpp.obj" \
 	".\Release\headers.obj" \
 	".\Release\mach_dep.obj" \
 	".\Release\malloc.obj" \
@@ -245,6 +250,8 @@ CLEAN :
 	-@erase ".\Debug\dyn_load.sbr"
 	-@erase ".\Debug\finalize.obj"
 	-@erase ".\Debug\finalize.sbr"
+	-@erase ".\Debug\gc_cpp.obj"
+	-@erase ".\Debug\gc_cpp.sbr"
 	-@erase ".\Debug\gc.bsc"
 	-@erase ".\Debug\gc.dll"
 	-@erase ".\Debug\gc.exp"
@@ -334,6 +341,7 @@ BSC32_SBRS= \
 	".\Debug\dbg_mlc.sbr" \
 	".\Debug\dyn_load.sbr" \
 	".\Debug\finalize.sbr" \
+	".\Debug\gc_cpp.sbr" \
 	".\Debug\headers.sbr" \
 	".\Debug\mach_dep.sbr" \
 	".\Debug\malloc.sbr" \
@@ -371,6 +379,7 @@ LINK32_OBJS= \
 	".\Debug\dbg_mlc.obj" \
 	".\Debug\dyn_load.obj" \
 	".\Debug\finalize.obj" \
+	".\Debug\gc_cpp.obj" \
 	".\Debug\headers.obj" \
 	".\Debug\mach_dep.obj" \
 	".\Debug\malloc.obj" \
@@ -415,6 +424,9 @@ CLEAN :
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+test.c : tests\test.c
+	copy tests\test.c test.c
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
@@ -763,6 +775,56 @@ LINK32_OBJS= \
 ################################################################################
 # Begin Source File
 
+SOURCE=.\gc_cpp.cpp
+
+!IF  "$(CFG)" == "gc - Win32 Release"
+
+DEP_CPP_RECLA=\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
+	".\include\gc_cpp.h"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
+	
+NODEP_CPP_RECLA=\
+	".\th\PCR_Th.h"\
+	".\th\PCR_ThCrSec.h"\
+	".\th\PCR_ThCtl.h"\
+	
+
+".\Release\gc_cpp.obj" : $(SOURCE) $(DEP_CPP_RECLA) "$(INTDIR)"
+
+".\Release\gc_cpp.sbr" : $(SOURCE) $(DEP_CPP_RECLA) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "gc - Win32 Debug"
+
+DEP_CPP_RECLA=\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
+	".\include\gc_cpp.h"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
+	
+NODEP_CPP_RECLA=\
+	".\th\PCR_Th.h"\
+	".\th\PCR_ThCrSec.h"\
+	".\th\PCR_ThCtl.h"\
+	
+
+".\Debug\gc_cpp.obj" : $(SOURCE) $(DEP_CPP_RECLA) "$(INTDIR)"
+
+".\Debug\gc_cpp.sbr" : $(SOURCE) $(DEP_CPP_RECLA) "$(INTDIR)"
+
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
 SOURCE=.\reclaim.c
 
 !IF  "$(CFG)" == "gc - Win32 Release"
@@ -808,6 +870,7 @@ NODEP_CPP_RECLA=\
 !ENDIF 
 
 # End Source File
+
 ################################################################################
 # Begin Source File
 
@@ -1309,7 +1372,8 @@ DEP_CPP_MARK_C=\
 	".\include\private\gcconfig.h"\
 	".\include\gc.h"\
 	".\include\private\gc_hdrs.h"\
-	".\include\private\gc_mark.h"\
+	".\include\private\gc_pmark.h"\
+	".\include\gc_mark.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
@@ -1330,7 +1394,8 @@ DEP_CPP_MARK_C=\
 	".\include\private\gcconfig.h"\
 	".\include\gc.h"\
 	".\include\private\gc_hdrs.h"\
-	".\include\private\gc_mark.h"\
+	".\include\private\gc_pmark.h"\
+	".\include\gc_mark.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
@@ -1455,7 +1520,8 @@ DEP_CPP_FINAL=\
 	".\include\private\gcconfig.h"\
 	".\include\gc.h"\
 	".\include\private\gc_hdrs.h"\
-	".\include\private\gc_mark.h"\
+	".\include\private\gc_pmark.h"\
+	".\include\gc_mark.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
@@ -1476,7 +1542,8 @@ DEP_CPP_FINAL=\
 	".\include\private\gcconfig.h"\
 	".\include\gc.h"\
 	".\include\private\gc_hdrs.h"\
-	".\include\private\gc_mark.h"\
+	".\include\private\gc_pmark.h"\
+	".\include\gc_mark.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
@@ -1601,7 +1668,8 @@ DEP_CPP_TYPD_=\
 	".\include\private\gcconfig.h"\
 	".\include\gc.h"\
 	".\include\private\gc_hdrs.h"\
-	".\include\private\gc_mark.h"\
+	".\include\private\gc_pmark.h"\
+	".\include\gc_mark.h"\
 	".\include\private\gc_priv.h"\
 	".\include\gc_typed.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
@@ -1623,7 +1691,8 @@ DEP_CPP_TYPD_=\
 	".\include\private\gcconfig.h"\
 	".\include\gc.h"\
 	".\include\private\gc_hdrs.h"\
-	".\include\private\gc_mark.h"\
+	".\include\private\gc_pmark.h"\
+	".\include\gc_mark.h"\
 	".\include\private\gc_priv.h"\
 	".\include\gc_typed.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
@@ -1653,7 +1722,8 @@ DEP_CPP_PTR_C=\
 	".\include\private\gcconfig.h"\
 	".\include\gc.h"\
 	".\include\private\gc_hdrs.h"\
-	".\include\private\gc_mark.h"\
+	".\include\private\gc_pmark.h"\
+	".\include\gc_mark.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
@@ -1674,7 +1744,8 @@ DEP_CPP_PTR_C=\
 	".\include\private\gcconfig.h"\
 	".\include\gc.h"\
 	".\include\private\gc_hdrs.h"\
-	".\include\private\gc_mark.h"\
+	".\include\private\gc_pmark.h"\
+	".\include\gc_mark.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
@@ -1876,7 +1947,7 @@ NODEP_CPP_CHECK=\
 ################################################################################
 # Begin Source File
 
-SOURCE=.\test.c
+SOURCE=.\tests\test.c
 DEP_CPP_TEST_=\
 	".\include\private\gcconfig.h"\
 	".\include\gc.h"\

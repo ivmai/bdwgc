@@ -15,6 +15,7 @@ char ** envp;
     if (strcmp(OS_TYPE, "") != 0 && strcmp(argv[2], "") != 0
         && strcmp(OS_TYPE, argv[2]) != 0) return(0);
     printf("^^^^Starting command^^^^\n");
+    fflush(stdout);
     execvp(argv[3], argv+3);
     perror("Couldn't execute");
     

@@ -50,6 +50,8 @@ static __inline__ long quick_thread_id() {
     return (long)(&dummy) >> 12;
 }
 
+#define INVALID_QTID ((unsigned long)(-1))
+
 typedef struct thread_specific_data {
     tse * volatile cache[TS_CACHE_SIZE];
 			/* A faster index to the hash table */
@@ -63,7 +65,7 @@ extern int PREFIXED(key_create) (tsd ** key_ptr, void (* destructor)(void *));
 
 extern int PREFIXED(setspecific) (tsd * key, void * value);
 
-extern int PREFIXED(remove_specific) (tsd * key);
+extern void PREFIXED(remove_specific) (tsd * key);
 
 /* An internal version of getspecific that assumes a cache miss.	*/
 void * PREFIXED(slow_getspecific) (tsd * key, unsigned long qtid,

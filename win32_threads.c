@@ -24,6 +24,13 @@ volatile GC_bool GC_please_stop = FALSE;
 
 volatile struct thread_entry thread_table[MAX_THREADS];
 
+void GC_push_thread_structures GC_PROTO((void))
+{
+    /* Unlike the other threads implementations, the thread table here	*/
+    /* contains no pointers to the collectable heap.  Thus we have	*/
+    /* no private structures we need to preserve.			*/
+}
+
 void GC_stop_world()
 {
   DWORD thread_id = GetCurrentThreadId();
@@ -49,7 +56,7 @@ void GC_stop_world()
             thread_table[i].stack = 0;
 	    thread_table[i].in_use = FALSE;
 	    CloseHandle(thread_table[i].handle);
-	    BZERO(&thread_table[i].context, sizeof(CONTEXT));
+	    BZERO((void *)(&thread_table[i].context), sizeof(CONTEXT));
 	    continue;
 	}
 	if (SuspendThread(thread_table[i].handle) == (DWORD)-1)
@@ -564,16 +571,18 @@ BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
       DWORD thread_id = GetCurrentThreadId();
       LOCK();
       for (i = 0;
-           thread_table[i].stack == 0 || thread_table[i].id != thread_id;
-	   i++) {
-	if (i == MAX_THREADS - 1)
-	  ABORT("thread not found on detach");
-      }
-      thread_table[i].stack = 0;
-      thread_table[i].in_use = FALSE;
-      CloseHandle(thread_table[i].handle);
+           i < MAX_THREADS &&
+	   (thread_table[i].stack == 0 || thread_table[i].id != thread_id);
+	   i++) {}
+      if (i >= MAX_THREADS) {
+	  WARN("thread %ld not found on detach", (GC_word)thread_id);
+      } else {
+          thread_table[i].stack = 0;
+          thread_table[i].in_use = FALSE;
+          CloseHandle(thread_table[i].handle);
 	    /* cast away volatile qualifier */
-      BZERO((void *) &thread_table[i].context, sizeof(CONTEXT));
+          BZERO((void *) &thread_table[i].context, sizeof(CONTEXT));
+      }
       UNLOCK();
     }
     break;

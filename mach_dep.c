@@ -21,7 +21,7 @@
 # endif
 # ifdef AMIGA
 #   ifndef __GNUC__
-#     include <dos/dos.h>
+#     include <dos.h>
 #   else
 #     include <machine/reg.h>
 #   endif
@@ -178,7 +178,10 @@ void GC_push_regs()
 #        else /* !__GNUC__ */
 	  GC_push_one(getreg(REG_A2));
 	  GC_push_one(getreg(REG_A3));
-	  GC_push_one(getreg(REG_A4));
+#         ifndef __SASC
+	      /* Can probably be changed to #if 0 -Kjetil M. (a4=globals)*/
+	    GC_push_one(getreg(REG_A4));
+#	  endif
 	  GC_push_one(getreg(REG_A5));
 	  GC_push_one(getreg(REG_A6));
 	  /* Skip stack pointer */
@@ -220,8 +223,11 @@ void GC_push_regs()
 #       if defined(I386) &&!defined(OS2) &&!defined(SVR4) \
 	&& (defined(__MINGW32__) || !defined(MSWIN32)) \
 	&& !defined(SCO) && !defined(SCO_ELF) \
- 	&& !(defined(LINUX)       && defined(__ELF__)) \
+ 	&& !(defined(LINUX) && defined(__ELF__)) \
 	&& !(defined(FREEBSD) && defined(__ELF__)) \
+	&& !(defined(NETBSD) && defined(__ELF__)) \
+	&& !(defined(OPENBSD) && defined(__ELF__)) \
+	&& !(defined(BEOS) && defined(__ELF__)) \
 	&& !defined(DOS4GW)
 	/* I386 code, generic code does not appear to work */
 	/* It does appear to work under OS2, and asms dont */
@@ -236,7 +242,9 @@ void GC_push_regs()
 #       endif
 
 #	if ( defined(I386) && defined(LINUX) && defined(__ELF__) ) \
-	|| ( defined(I386) && defined(FREEBSD) && defined(__ELF__) )
+	|| ( defined(I386) && defined(FREEBSD) && defined(__ELF__) ) \
+	|| ( defined(I386) && defined(NETBSD) && defined(__ELF__) ) \
+	|| ( defined(I386) && defined(OPENBSD) && defined(__ELF__) )
 
 	/* This is modified for Linux with ELF (Note: _ELF_ only) */
 	/* This section handles FreeBSD with ELF. */
@@ -252,6 +260,17 @@ void GC_push_regs()
 	  asm("pushl %edi; call GC_push_one; addl $4,%esp");
 	  asm("pushl %ebx; call GC_push_one; addl $4,%esp");
 #	endif
+
+#	if ( defined(I386) && defined(BEOS) && defined(__ELF__) )
+	/* As far as I can understand from				*/
+	/* http://www.beunited.org/articles/jbq/nasm.shtml,		*/
+	/* only ebp, esi, edi and ebx are not scratch. How MMX 		*/
+	/* etc. registers should be treated, I have no idea. 		*/
+	  asm("pushl %ebp; call GC_push_one; addl $4,%esp");
+	  asm("pushl %esi; call GC_push_one; addl $4,%esp");
+	  asm("pushl %edi; call GC_push_one; addl $4,%esp");
+	  asm("pushl %ebx; call GC_push_one; addl $4,%esp");
+#       endif
 
 #       if defined(I386) && defined(MSWIN32) && !defined(__MINGW32__) \
 	   && !defined(USE_GENERIC)
@@ -393,7 +412,7 @@ ptr_t cold_gc_frame;
 	/* We're not sure whether he would like  */
 	/* to be he acknowledged for it or not.  */
 	{
-	    static jmp_buf regs;
+	    jmp_buf regs;
 	    register word * i = (word *) regs;
 	    register ptr_t lim = (ptr_t)(regs) + (sizeof regs);
 
@@ -461,6 +480,7 @@ ptr_t cold_gc_frame;
 /* up on the other side of the stack segment.				*/
 /* Returns the backing store pointer for the register stack.		*/
 # ifdef IA64
+#   ifdef __GNUC__
 	asm("        .text");
 	asm("        .psr abi64");
 	asm("        .psr lsb");
@@ -477,6 +497,14 @@ ptr_t cold_gc_frame;
 	asm("        mov r8=ar.bsp");
 	asm("        br.ret.sptk.few rp");
 	asm("        .endp GC_save_regs_in_stack");
+#   else
+	void GC_save_regs_in_stack() {
+	  asm("        flushrs");
+	  asm("        ;;");
+	  asm("        mov r8=ar.bsp");
+	  asm("        br.ret.sptk.few rp");
+	}
+#   endif
 # endif
 
 /* GC_clear_stack_inner(arg, limit) clears stack area up to limit and	*/

@@ -1,6 +1,7 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 2000 by Hewlett-Packard Company.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -38,7 +39,7 @@ register struct obj_kind * kind;
 ptr_t GC_alloc_large(lw, k, flags)
 word lw;
 int k;
-unsigned char flags;
+unsigned flags;
 {
     struct hblk * h;
     word n_blocks = OBJ_SZ_TO_BLOCKS(lw);
@@ -61,8 +62,14 @@ unsigned char flags;
     if (h == 0) {
 	result = 0;
     } else {
+	int total_bytes = BYTES_TO_WORDS(n_blocks * HBLKSIZE);
+	if (n_blocks > 1) {
+	    GC_large_allocd_bytes += n_blocks * HBLKSIZE;
+	    if (GC_large_allocd_bytes > GC_max_large_allocd_bytes)
+	        GC_max_large_allocd_bytes = GC_large_allocd_bytes;
+	}
 	result = (ptr_t) (h -> hb_body);
-	GC_words_wasted += BYTES_TO_WORDS(n_blocks * HBLKSIZE) - lw;
+	GC_words_wasted += total_bytes - lw;
     }
     return result;
 }
@@ -72,7 +79,7 @@ unsigned char flags;
 ptr_t GC_alloc_large_and_clear(lw, k, flags)
 word lw;
 int k;
-unsigned char flags;
+unsigned flags;
 {
     ptr_t result = GC_alloc_large(lw, k, flags);
     word n_blocks = OBJ_SZ_TO_BLOCKS(lw);
@@ -80,7 +87,7 @@ unsigned char flags;
     if (0 == result) return 0;
     if (GC_debugging_started || GC_obj_kinds[k].ok_init) {
 	/* Clear the whole block, in case of GC_realloc call. */
-	BZERO(result, n_blocks * HBLKSIZE - HDR_BYTES);
+	BZERO(result, n_blocks * HBLKSIZE);
     }
     return result;
 }
@@ -150,6 +157,24 @@ out:
     return op;
 }
 
+/* Allocate a composite object of size n bytes.  The caller guarantees  */
+/* that pointers past the first page are not relevant.  Caller holds    */
+/* allocation lock.                                                     */
+ptr_t GC_generic_malloc_inner_ignore_off_page(lb, k)
+register size_t lb;
+register int k;
+{
+    register word lw;
+    ptr_t op;
+
+    if (lb <= HBLKSIZE)
+        return(GC_generic_malloc_inner((word)lb, k));
+    lw = ROUNDED_UP_WORDS(lb);
+    op = (ptr_t)GC_alloc_large_and_clear(lw, k, IGNORE_OFF_PAGE);
+    GC_words_allocd += lw;
+    return op;
+}
+
 ptr_t GC_generic_malloc(lb, k)
 register word lb;
 register int k;
@@ -174,14 +199,25 @@ register int k;
 	DISABLE_SIGNALS();
 	LOCK();
 	result = (ptr_t)GC_alloc_large(lw, k, 0);
-	if (GC_debugging_started) {
-	    BZERO(result, n_blocks * HBLKSIZE - HDR_BYTES);
+	if (0 != result) {
+	  if (GC_debugging_started) {
+	    BZERO(result, n_blocks * HBLKSIZE);
+	  } else {
+#           ifdef THREADS
+	      /* Clear any memory that might be used for GC descriptors */
+	      /* before we release the lock.			      */
+	        ((word *)result)[0] = 0;
+	        ((word *)result)[1] = 0;
+	        ((word *)result)[lw-1] = 0;
+	        ((word *)result)[lw-2] = 0;
+#	    endif
+	  }
 	}
 	GC_words_allocd += lw;
 	UNLOCK();
 	ENABLE_SIGNALS();
     	if (init & !GC_debugging_started && 0 != result) {
-	    BZERO(result, n_blocks * HBLKSIZE - HDR_BYTES);
+	    BZERO(result, n_blocks * HBLKSIZE);
         }
     }
     if (0 == result) {
@@ -210,7 +246,7 @@ register ptr_t * opp;
 register word lw;
 DCL_LOCK_STATE;
 
-    if( SMALL_OBJ(lb) ) {
+    if( EXPECT(SMALL_OBJ(lb), 1) ) {
 #       ifdef MERGE_SIZES
 	  lw = GC_size_map[lb];
 #	else
@@ -218,7 +254,7 @@ DCL_LOCK_STATE;
 #       endif
 	opp = &(GC_aobjfreelist[lw]);
 	FASTLOCK();
-        if( !FASTLOCK_SUCCEEDED() || (op = *opp) == 0 ) {
+        if( EXPECT(!FASTLOCK_SUCCEEDED() || (op = *opp) == 0, 0) ) {
             FASTUNLOCK();
             return(GENERAL_MALLOC((word)lb, PTRFREE));
         }
@@ -245,7 +281,7 @@ register ptr_t *opp;
 register word lw;
 DCL_LOCK_STATE;
 
-    if( SMALL_OBJ(lb) ) {
+    if( EXPECT(SMALL_OBJ(lb), 1) ) {
 #       ifdef MERGE_SIZES
 	  lw = GC_size_map[lb];
 #	else
@@ -253,7 +289,7 @@ DCL_LOCK_STATE;
 #       endif
 	opp = &(GC_objfreelist[lw]);
 	FASTLOCK();
-        if( !FASTLOCK_SUCCEEDED() || (op = *opp) == 0 ) {
+        if( EXPECT(!FASTLOCK_SUCCEEDED() || (op = *opp) == 0, 0) ) {
             FASTUNLOCK();
             return(GENERAL_MALLOC((word)lb, NORMAL));
         }
@@ -289,7 +325,7 @@ DCL_LOCK_STATE;
        */
       if (!GC_is_initialized) return sbrk(lb);
 #   endif /* I386 && SOLARIS_THREADS */
-    return(REDIRECT_MALLOC(lb));
+    return((GC_PTR)REDIRECT_MALLOC(lb));
   }
 
 # ifdef __STDC__
@@ -299,125 +335,7 @@ DCL_LOCK_STATE;
     size_t n, lb;
 # endif
   {
-    return(REDIRECT_MALLOC(n*lb));
-  }
-# endif /* REDIRECT_MALLOC */
-
-GC_PTR GC_generic_or_special_malloc(lb,knd)
-word lb;
-int knd;
-{
-    switch(knd) {
-#     ifdef STUBBORN_ALLOC
-	case STUBBORN:
-	    return(GC_malloc_stubborn((size_t)lb));
-#     endif
-	case PTRFREE:
-	    return(GC_malloc_atomic((size_t)lb));
-	case NORMAL:
-	    return(GC_malloc((size_t)lb));
-	case UNCOLLECTABLE:
-	    return(GC_malloc_uncollectable((size_t)lb));
-#       ifdef ATOMIC_UNCOLLECTABLE
-	  case AUNCOLLECTABLE:
-	    return(GC_malloc_atomic_uncollectable((size_t)lb));
-#	endif /* ATOMIC_UNCOLLECTABLE */
-	default:
-	    return(GC_generic_malloc(lb,knd));
-    }
-}
-
-
-/* Change the size of the block pointed to by p to contain at least   */
-/* lb bytes.  The object may be (and quite likely will be) moved.     */
-/* The kind (e.g. atomic) is the same as that of the old.	      */
-/* Shrinking of large blocks is not implemented well.                 */
-# ifdef __STDC__
-    GC_PTR GC_realloc(GC_PTR p, size_t lb)
-# else
-    GC_PTR GC_realloc(p,lb)
-    GC_PTR p;
-    size_t lb;
-# endif
-{
-register struct hblk * h;
-register hdr * hhdr;
-register word sz;	 /* Current size in bytes	*/
-register word orig_sz;	 /* Original sz in bytes	*/
-int obj_kind;
-
-    if (p == 0) return(GC_malloc(lb));	/* Required by ANSI */
-    h = HBLKPTR(p);
-    hhdr = HDR(h);
-    sz = hhdr -> hb_sz;
-    obj_kind = hhdr -> hb_obj_kind;
-    sz = WORDS_TO_BYTES(sz);
-    orig_sz = sz;
-
-    if (sz > MAXOBJBYTES) {
-	/* Round it up to the next whole heap block */
-	  register word descr;
-	  
-	  sz = (sz+HDR_BYTES+HBLKSIZE-1)
-		& (~HBLKMASK);
-	  sz -= HDR_BYTES;
-	  hhdr -> hb_sz = BYTES_TO_WORDS(sz);
-	  descr = GC_obj_kinds[obj_kind].ok_descriptor;
-          if (GC_obj_kinds[obj_kind].ok_relocate_descr) descr += sz;
-          hhdr -> hb_descr = descr;
-	  if (IS_UNCOLLECTABLE(obj_kind)) GC_non_gc_bytes += (sz - orig_sz);
-	  /* Extra area is already cleared by GC_alloc_large_and_clear. */
-    }
-    if (ADD_SLOP(lb) <= sz) {
-	if (lb >= (sz >> 1)) {
-#	    ifdef STUBBORN_ALLOC
-	        if (obj_kind == STUBBORN) GC_change_stubborn(p);
-#	    endif
-	    if (orig_sz > lb) {
-	      /* Clear unneeded part of object to avoid bogus pointer */
-	      /* tracing.					      */
-	      /* Safe for stubborn objects.			      */
-	        BZERO(((ptr_t)p) + lb, orig_sz - lb);
-	    }
-	    return(p);
-	} else {
-	    /* shrink */
-	      GC_PTR result =
-	      		GC_generic_or_special_malloc((word)lb, obj_kind);
-
-	      if (result == 0) return(0);
-	          /* Could also return original object.  But this 	*/
-	          /* gives the client warning of imminent disaster.	*/
-	      BCOPY(p, result, lb);
-#	      ifndef IGNORE_FREE
-	        GC_free(p);
-#	      endif
-	      return(result);
-	}
-    } else {
-	/* grow */
-	  GC_PTR result =
-	  	GC_generic_or_special_malloc((word)lb, obj_kind);
-
-	  if (result == 0) return(0);
-	  BCOPY(p, result, sz);
-#	  ifndef IGNORE_FREE
-	    GC_free(p);
-#	  endif
-	  return(result);
-    }
-}
-
-# ifdef REDIRECT_MALLOC
-# ifdef __STDC__
-    GC_PTR realloc(GC_PTR p, size_t lb)
-# else
-    GC_PTR realloc(p,lb)
-    GC_PTR p;
-    size_t lb;
-# endif
-  {
-    return(GC_realloc(p, lb));
+    return((GC_PTR)REDIRECT_MALLOC(n*lb));
   }
 # endif /* REDIRECT_MALLOC */
 
@@ -442,15 +360,18 @@ int obj_kind;
     h = HBLKPTR(p);
     hhdr = HDR(h);
 #   if defined(REDIRECT_MALLOC) && \
-	(defined(SOLARIS_THREADS) || defined(LINUX_THREADS))
-	/* We have to redirect malloc calls during initialization.	*/
+	(defined(SOLARIS_THREADS) || defined(LINUX_THREADS) \
+	 || defined(__MINGW32__)) /* Should this be MSWIN32 in general? */
+	/* For Solaris, we have to redirect malloc calls during		*/
+	/* initialization.  For the others, this seems to happen 	*/
+ 	/* implicitly.							*/
 	/* Don't try to deallocate that memory.				*/
 	if (0 == hhdr) return;
 #   endif
     knd = hhdr -> hb_obj_kind;
     sz = hhdr -> hb_sz;
     ok = &GC_obj_kinds[knd];
-    if (sz <= MAXOBJSZ) {
+    if (EXPECT((sz <= MAXOBJSZ), 1)) {
 #	ifdef THREADS
 	    DISABLE_SIGNALS();
 	    LOCK();
@@ -482,6 +403,42 @@ int obj_kind;
         ENABLE_SIGNALS();
     }
 }
+
+/* Explicitly deallocate an object p when we already hold lock.		*/
+/* Only used for internally allocated objects, so we can take some 	*/
+/* shortcuts.								*/
+#ifdef THREADS
+void GC_free_inner(GC_PTR p)
+{
+    register struct hblk *h;
+    register hdr *hhdr;
+    register signed_word sz;
+    register ptr_t * flh;
+    register int knd;
+    register struct obj_kind * ok;
+    DCL_LOCK_STATE;
+
+    h = HBLKPTR(p);
+    hhdr = HDR(h);
+    knd = hhdr -> hb_obj_kind;
+    sz = hhdr -> hb_sz;
+    ok = &GC_obj_kinds[knd];
+    if (sz <= MAXOBJSZ) {
+	GC_mem_freed += sz;
+	if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= WORDS_TO_BYTES(sz);
+	if (ok -> ok_init) {
+	    BZERO((word *)p + 1, WORDS_TO_BYTES(sz-1));
+	}
+	flh = &(ok -> ok_freelist[sz]);
+	obj_link(p) = *flh;
+	*flh = (ptr_t)p;
+    } else {
+        GC_mem_freed += sz;
+	if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= WORDS_TO_BYTES(sz);
+        GC_freehblk(h);
+    }
+}
+#endif /* THREADS */
 
 # ifdef REDIRECT_MALLOC
 #   ifdef __STDC__

@@ -20,7 +20,7 @@
 /* recommended that this be run optimized.  (If the machine  */
 /* has no callee-save registers, then the generic code is    */
 /* safe, but this will not be noticed by this piece of       */
-/* code.)						     */
+/* code.)  This test appears to be far from perfect.	     */
 #include <stdio.h>
 #include <setjmp.h>
 #include <string.h>

@@ -32,6 +32,8 @@ struct roots {
 struct roots GC_static_roots[MAX_ROOT_SETS];
 */
 
+int GC_no_dls = 0;	/* Register dynamic library data segments.	*/
+
 static int n_root_sets = 0;
 
 	/* GC_static_roots[0..n_root_sets) contains the valid root sets. */
@@ -250,12 +252,15 @@ GC_bool tmp;
     n_root_sets++;
 }
 
+static roots_were_cleared = FALSE;
+
 void GC_clear_roots GC_PROTO((void))
 {
     DCL_LOCK_STATE;
     
     DISABLE_SIGNALS();
     LOCK();
+    roots_were_cleared = TRUE;
     n_root_sets = 0;
     GC_root_size = 0;
 #   if !defined(MSWIN32) && !defined(MSWINCE)
@@ -462,15 +467,16 @@ ptr_t cold_gc_frame;
 			/* Previously set to backing store pointer.	*/
 		ptr_t bsp = (ptr_t) GC_save_regs_ret_val;
 	        ptr_t cold_gc_bs_pointer;
-#		ifdef ALL_INTERIOR_POINTERS
+		if (GC_all_interior_pointers) {
 	          cold_gc_bs_pointer = bsp - 2048;
 		  if (cold_gc_bs_pointer < BACKING_STORE_BASE) {
 		    cold_gc_bs_pointer = BACKING_STORE_BASE;
+		  } else {
+		    GC_push_all_stack(BACKING_STORE_BASE, cold_gc_bs_pointer);
 		  }
-		  GC_push_all(BACKING_STORE_BASE, cold_gc_bs_pointer);
-#		else
+		} else {
 		  cold_gc_bs_pointer = BACKING_STORE_BASE;
-#		endif
+		}
 		GC_push_all_eager(cold_gc_bs_pointer, bsp);
 		/* All values should be sufficiently aligned that we	*/
 		/* dont have to worry about the boundary.		*/
@@ -482,6 +488,23 @@ ptr_t cold_gc_frame;
 #       endif
 #   endif /* !THREADS */
 }
+
+/*
+ * Push GC internal roots.  Only called if there is some reason to believe
+ * these would not otherwise get registered.
+ */
+void GC_push_gc_structures GC_PROTO((void))
+{
+    GC_push_finalizer_structures();
+    GC_push_stubborn_structures();
+#   if defined(THREADS)
+      GC_push_thread_structures();
+#   endif
+}
+
+#ifdef THREAD_LOCAL_ALLOC
+  void GC_mark_thread_local_free_lists();
+#endif
 
 /*
  * Call the mark routines (GC_tl_push for a single pointer, GC_push_conditional
@@ -516,14 +539,29 @@ ptr_t cold_gc_frame;
 #      if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
 	   || defined(PCR)) && !defined(SRC_M3)
          GC_remove_tmp_roots();
-         GC_register_dynamic_libraries();
+         if (!GC_no_dls) GC_register_dynamic_libraries();
+#      else
+	 GC_no_dls = TRUE;
 #      endif
+
      /* Mark everything in static data areas                             */
        for (i = 0; i < n_root_sets; i++) {
          GC_push_conditional_with_exclusions(
 			     GC_static_roots[i].r_start,
 			     GC_static_roots[i].r_end, all);
        }
+
+     /* Mark from GC internal roots if those might otherwise have	*/
+     /* been excluded.							*/
+       if (GC_no_dls || roots_were_cleared) {
+	   GC_push_gc_structures();
+       }
+
+     /* Mark thread local free lists, even if their mark 	*/
+     /* descriptor excludes the link field.			*/
+#      ifdef THREAD_LOCAL_ALLOC
+         GC_mark_thread_local_free_lists();
+#      endif
 
     /*
      * Now traverse stacks.

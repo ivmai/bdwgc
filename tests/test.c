@@ -14,6 +14,9 @@
  */
 /* An incomplete test for the garbage collector.  		*/
 /* Some more obscure entry points are not tested at all.	*/
+/* This must be compiled with the same flags used to build the 	*/
+/* GC.  It uses GC internals to allow more precise results	*/
+/* checking for some of the tests.				*/
 
 # undef GC_BUILD
 
@@ -34,14 +37,14 @@
 #   include <assert.h>        /* Not normally used, but handy for debugging. */
 # endif
 # include <assert.h>	/* Not normally used, but handy for debugging. */
-# include "include/gc.h"
-# include "include/gc_typed.h"
+# include "gc.h"
+# include "gc_typed.h"
 # ifdef THREAD_LOCAL_ALLOC
-#   include "include/gc_local_alloc.h"
+#   include "gc_local_alloc.h"
 # endif
-# include "include/private/gc_priv.h"	/* For output, locking, MIN_WORDS, 	*/
+# include "private/gc_priv.h"	/* For output, locking, MIN_WORDS, 	*/
 			/* and some statistics.			*/
-# include "include/private/gcconfig.h"
+# include "private/gcconfig.h"
 
 # if defined(MSWIN32) || defined(MSWINCE)
 #   include <windows.h>
@@ -73,10 +76,6 @@
     static CRITICAL_SECTION incr_cs;
 # endif
 
-# ifdef AMIGA
-   long __stack = 200000;
-# endif
-
 
 /* Allocation Statistics */
 int stubborn_count = 0;
@@ -85,6 +84,45 @@ int collectable_count = 0;
 int atomic_count = 0;
 int realloc_count = 0;
 
+#if defined(GC_AMIGA_FASTALLOC) && defined(AMIGA)
+
+  extern void GC_amiga_free_all_mem(void);
+  void Amiga_Fail(void){GC_amiga_free_all_mem();abort();}
+# define FAIL (void)Amiga_Fail()
+  void *GC_amiga_gctest_malloc_explicitly_typed(size_t lb, GC_descr d){
+    void *ret=GC_malloc_explicitly_typed(lb,d);
+    if(ret==NULL){
+		if(!GC_dont_gc){
+	      GC_gcollect();
+	      ret=GC_malloc_explicitly_typed(lb,d);
+		}
+      if(ret==NULL){
+        GC_printf0("Out of memory, (typed allocations are not directly "
+		   "supported with the GC_AMIGA_FASTALLOC option.)\n");
+        FAIL;
+      }
+    }
+    return ret;
+  }
+  void *GC_amiga_gctest_calloc_explicitly_typed(size_t a,size_t lb, GC_descr d){
+    void *ret=GC_calloc_explicitly_typed(a,lb,d);
+    if(ret==NULL){
+		if(!GC_dont_gc){
+	      GC_gcollect();
+	      ret=GC_calloc_explicitly_typed(a,lb,d);
+		}
+      if(ret==NULL){
+        GC_printf0("Out of memory, (typed allocations are not directly "
+		   "supported with the GC_AMIGA_FASTALLOC option.)\n");
+        FAIL;
+      }
+    }
+    return ret;
+  }
+# define GC_malloc_explicitly_typed(a,b) GC_amiga_gctest_malloc_explicitly_typed(a,b) 
+# define GC_calloc_explicitly_typed(a,b,c) GC_amiga_gctest_calloc_explicitly_typed(a,b,c) 
+
+#else /* !AMIGA_FASTALLOC */
 
 # ifdef PCR
 #   define FAIL (void)abort()
@@ -95,6 +133,8 @@ int realloc_count = 0;
 #     define FAIL GC_abort("Test failed");
 #   endif
 # endif
+
+#endif /* !AMIGA_FASTALLOC */
 
 /* AT_END may be defined to exercise the interior pointer test	*/
 /* if the collector is configured with ALL_INTERIOR_POINTERS.   */
@@ -202,8 +242,8 @@ sexpr y;
 #ifdef GC_GCJ_SUPPORT
 
 #include "gc_mark.h"
-#include "dbg_mlc.h"
-#include "include/gc_gcj.h"
+#include "private/dbg_mlc.h"  /* For USR_PTR_FROM_BASE */
+#include "gc_gcj.h"
 
 /* The following struct emulates the vtable in gcj.	*/
 /* This assumes the default value of MARK_DESCR_OFFSET. */
@@ -216,13 +256,13 @@ struct fake_vtable gcj_class_struct1 = { 0, sizeof(struct SEXPR)
 					    + sizeof(struct fake_vtable *) };
 			/* length based descriptor.	*/
 struct fake_vtable gcj_class_struct2 =
-				{ 0, (3l << (CPP_WORDSZ - 3)) | DS_BITMAP};
+				{ 0, (3l << (CPP_WORDSZ - 3)) | GC_DS_BITMAP};
 			/* Bitmap based descriptor.	*/
 
-struct ms_entry * fake_gcj_mark_proc(word * addr,
-				     struct ms_entry *mark_stack_ptr,
-				     struct ms_entry *mark_stack_limit,
-				     word env   )
+struct GC_ms_entry * fake_gcj_mark_proc(word * addr,
+				        struct GC_ms_entry *mark_stack_ptr,
+				        struct GC_ms_entry *mark_stack_limit,
+				        word env   )
 {
     sexpr x;
     if (1 == env) {
@@ -230,16 +270,12 @@ struct ms_entry * fake_gcj_mark_proc(word * addr,
 	addr = (word *)USR_PTR_FROM_BASE(addr);
     }
     x = (sexpr)(addr + 1); /* Skip the vtable pointer. */
-    /* We could just call PUSH_CONTENTS directly here.  But any real	*/
-    /* real client would try to filter out the obvious misses.		*/
-    if (0 != x -> sexpr_cdr) {
-	PUSH_CONTENTS((ptr_t)(x -> sexpr_cdr), mark_stack_ptr,
-			      mark_stack_limit, &(x -> sexpr_cdr), exit1);
-    }
-    if ((ptr_t)(x -> sexpr_car) > GC_least_plausible_heap_addr) {
-	PUSH_CONTENTS((ptr_t)(x -> sexpr_car), mark_stack_ptr,
-			      mark_stack_limit, &(x -> sexpr_car), exit2);
-    }
+    mark_stack_ptr = GC_MARK_AND_PUSH(
+			      (GC_PTR)(x -> sexpr_cdr), mark_stack_ptr,
+			      mark_stack_limit, (GC_PTR *)&(x -> sexpr_cdr));
+    mark_stack_ptr = GC_MARK_AND_PUSH(
+			      (GC_PTR)(x -> sexpr_car), mark_stack_ptr,
+			      mark_stack_limit, (GC_PTR *)&(x -> sexpr_car));
     return(mark_stack_ptr);
 }
 
@@ -495,7 +531,12 @@ void reverse_test()
 	  /* WinCE only allows 64K stacks */
 #	  define BIG 500
 #	else
-#         define BIG 4500
+#	  if defined(OSF1)
+	    /* OSF has limited stack space by default, and large frames. */
+#           define BIG 200
+#	  else
+#           define BIG 4500
+#	  endif
 #	endif
 #     endif
 #   endif
@@ -531,11 +572,9 @@ void reverse_test()
       for (i = 0; i < 10; i++) {
         (void)ints(1, BIG);
       }
-#   ifdef ALL_INTERIOR_POINTERS
-	/* Superficially test interior pointer recognition on stack */
-	c = (sexpr)((char *)c + sizeof(char *));
-	d = (sexpr)((char *)d + sizeof(char *));
-#   endif
+    /* Superficially test interior pointer recognition on stack */
+      c = (sexpr)((char *)c + sizeof(char *));
+      d = (sexpr)((char *)d + sizeof(char *));
 
 #   ifdef __STDC__
         GC_FREE((void *)e);
@@ -567,10 +606,8 @@ void reverse_test()
     }
     check_ints(a,1,49);
     check_ints(b,1,50);
-#   ifdef ALL_INTERIOR_POINTERS
-	c = (sexpr)((char *)c - sizeof(char *));
-	d = (sexpr)((char *)d - sizeof(char *));
-#   endif
+    c = (sexpr)((char *)c - sizeof(char *));
+    d = (sexpr)((char *)d - sizeof(char *));
     check_ints(c,1,BIG);
     check_uncollectable_ints(d, 1, 100);
     check_ints(f[5], 1,17);
@@ -665,6 +702,13 @@ int n;
 #   endif
     
     collectable_count++;
+#   ifdef THREAD_LOCAL_ALLOC
+       /* Minimally exercise thread local allocation */
+       {
+         char * result = (char *)GC_LOCAL_MALLOC_ATOMIC(17);
+	 memset(result, 'a', 17);
+       }
+#   endif /* THREAD_LOCAL_ALLOC */
 #   if defined(MACOS)
 	/* get around static data limitations. */
 	if (!live_indicators)
@@ -1113,7 +1157,8 @@ void run_one_test()
 #      if defined(RS6000) || defined(POWERPC)
         if (!TEST_FAIL_COUNT(1)) {
 #      else
-        if (!TEST_FAIL_COUNT(2)) {
+        if (GC_all_interior_pointers && !TEST_FAIL_COUNT(1)
+	    || !GC_all_interior_pointers && !TEST_FAIL_COUNT(2)) {
 #      endif
     	  (void)GC_printf0("GC_is_valid_displacement produced wrong failure indication\n");
     	  FAIL;
@@ -1170,7 +1215,10 @@ void check_heap_stats()
 #   ifdef GC_DEBUG
 	max_heap_sz *= 2;
 #       ifdef SAVE_CALL_CHAIN
-	    max_heap_sz *= 2;
+	    max_heap_sz *= 3;
+#           ifdef SAVE_CALL_COUNT
+		max_heap_sz *= SAVE_CALL_COUNT/4;
+#	    endif
 #       endif
 #   endif
     /* Garbage collect repeatedly so that all inaccessible objects	*/
@@ -1309,7 +1357,7 @@ void SetMinimumStack(long minSize)
 #   endif
     run_one_test();
     check_heap_stats();
-#   ifndef MSWINE
+#   ifndef MSWINCE
     (void)fflush(stdout);
 #   endif
 #   ifdef LINT
@@ -1327,7 +1375,7 @@ void SetMinimumStack(long minSize)
 	        GC_page_was_ever_dirty, GC_is_fresh,
 		GC_malloc_ignore_off_page, GC_malloc_atomic_ignore_off_page,
 		GC_set_max_heap_size, GC_get_bytes_since_gc,
-		GC_pre_incr, GC_post_incr);
+		GC_get_total_bytes, GC_pre_incr, GC_post_incr);
 #   endif
 #   ifdef MSWIN32
       GC_win32_free_heap();
@@ -1575,7 +1623,7 @@ main()
     	pthread_attr_setstacksize(&attr, 1000000);
 #   endif
     n_tests = 0;
-#   if  defined(MPROTECT_VDB) && !defined(PARALLEL_MARK)
+#   if  defined(MPROTECT_VDB) && !defined(PARALLEL_MARK) &&!defined(REDIRECT_MALLOC)
     	GC_enable_incremental();
         (void) GC_printf0("Switched to incremental mode\n");
 	(void) GC_printf0("Emulating dirty bits with mprotect/signals\n");

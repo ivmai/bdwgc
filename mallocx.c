@@ -39,24 +39,126 @@ ptr_t * GC_CONST GC_uobjfreelist_ptr = GC_uobjfreelist;
 # endif
 
 
-
-/* Allocate a composite object of size n bytes.  The caller guarantees  */
-/* that pointers past the first page are not relevant.  Caller holds    */
-/* allocation lock.                                                     */
-ptr_t GC_generic_malloc_inner_ignore_off_page(lb, k)
-register size_t lb;
-register int k;
+GC_PTR GC_generic_or_special_malloc(lb,knd)
+word lb;
+int knd;
 {
-    register word lw;
-    ptr_t op;
-
-    if (lb <= HBLKSIZE)
-        return(GC_generic_malloc_inner((word)lb, k));
-    lw = ROUNDED_UP_WORDS(lb);
-    op = (ptr_t)GC_alloc_large_and_clear(lw, k, IGNORE_OFF_PAGE);
-    GC_words_allocd += lw;
-    return op;
+    switch(knd) {
+#     ifdef STUBBORN_ALLOC
+	case STUBBORN:
+	    return(GC_malloc_stubborn((size_t)lb));
+#     endif
+	case PTRFREE:
+	    return(GC_malloc_atomic((size_t)lb));
+	case NORMAL:
+	    return(GC_malloc((size_t)lb));
+	case UNCOLLECTABLE:
+	    return(GC_malloc_uncollectable((size_t)lb));
+#       ifdef ATOMIC_UNCOLLECTABLE
+	  case AUNCOLLECTABLE:
+	    return(GC_malloc_atomic_uncollectable((size_t)lb));
+#	endif /* ATOMIC_UNCOLLECTABLE */
+	default:
+	    return(GC_generic_malloc(lb,knd));
+    }
 }
+
+
+/* Change the size of the block pointed to by p to contain at least   */
+/* lb bytes.  The object may be (and quite likely will be) moved.     */
+/* The kind (e.g. atomic) is the same as that of the old.	      */
+/* Shrinking of large blocks is not implemented well.                 */
+# ifdef __STDC__
+    GC_PTR GC_realloc(GC_PTR p, size_t lb)
+# else
+    GC_PTR GC_realloc(p,lb)
+    GC_PTR p;
+    size_t lb;
+# endif
+{
+register struct hblk * h;
+register hdr * hhdr;
+register word sz;	 /* Current size in bytes	*/
+register word orig_sz;	 /* Original sz in bytes	*/
+int obj_kind;
+
+    if (p == 0) return(GC_malloc(lb));	/* Required by ANSI */
+    h = HBLKPTR(p);
+    hhdr = HDR(h);
+    sz = hhdr -> hb_sz;
+    obj_kind = hhdr -> hb_obj_kind;
+    sz = WORDS_TO_BYTES(sz);
+    orig_sz = sz;
+
+    if (sz > MAXOBJBYTES) {
+	/* Round it up to the next whole heap block */
+	  register word descr;
+	  
+	  sz = (sz+HBLKSIZE-1) & (~HBLKMASK);
+	  hhdr -> hb_sz = BYTES_TO_WORDS(sz);
+	  descr = GC_obj_kinds[obj_kind].ok_descriptor;
+          if (GC_obj_kinds[obj_kind].ok_relocate_descr) descr += sz;
+          hhdr -> hb_descr = descr;
+	  if (IS_UNCOLLECTABLE(obj_kind)) GC_non_gc_bytes += (sz - orig_sz);
+	  /* Extra area is already cleared by GC_alloc_large_and_clear. */
+    }
+    if (ADD_SLOP(lb) <= sz) {
+	if (lb >= (sz >> 1)) {
+#	    ifdef STUBBORN_ALLOC
+	        if (obj_kind == STUBBORN) GC_change_stubborn(p);
+#	    endif
+	    if (orig_sz > lb) {
+	      /* Clear unneeded part of object to avoid bogus pointer */
+	      /* tracing.					      */
+	      /* Safe for stubborn objects.			      */
+	        BZERO(((ptr_t)p) + lb, orig_sz - lb);
+	    }
+	    return(p);
+	} else {
+	    /* shrink */
+	      GC_PTR result =
+	      		GC_generic_or_special_malloc((word)lb, obj_kind);
+
+	      if (result == 0) return(0);
+	          /* Could also return original object.  But this 	*/
+	          /* gives the client warning of imminent disaster.	*/
+	      BCOPY(p, result, lb);
+#	      ifndef IGNORE_FREE
+	        GC_free(p);
+#	      endif
+	      return(result);
+	}
+    } else {
+	/* grow */
+	  GC_PTR result =
+	  	GC_generic_or_special_malloc((word)lb, obj_kind);
+
+	  if (result == 0) return(0);
+	  BCOPY(p, result, sz);
+#	  ifndef IGNORE_FREE
+	    GC_free(p);
+#	  endif
+	  return(result);
+    }
+}
+
+# if defined(REDIRECT_MALLOC) || defined(REDIRECT_REALLOC)
+# ifdef __STDC__
+    GC_PTR realloc(GC_PTR p, size_t lb)
+# else
+    GC_PTR realloc(p,lb)
+    GC_PTR p;
+    size_t lb;
+# endif
+  {
+#   ifdef REDIRECT_REALLOC
+      return(REDIRECT_REALLOC(p, lb));
+#   else
+      return(GC_realloc(p, lb));
+#   endif
+  }
+# endif /* REDIRECT_MALLOC */
+
 
 /* The same thing, except caller does not hold allocation lock.	*/
 /* We avoid holding allocation lock while we clear memory.	*/
@@ -79,8 +181,19 @@ register int k;
     DISABLE_SIGNALS();
     LOCK();
     result = (ptr_t)GC_alloc_large(lw, k, IGNORE_OFF_PAGE);
-    if (GC_debugging_started) {
-	BZERO(result, n_blocks * HBLKSIZE - HDR_BYTES);
+    if (0 != result) {
+        if (GC_debugging_started) {
+	    BZERO(result, n_blocks * HBLKSIZE);
+        } else {
+#           ifdef THREADS
+	      /* Clear any memory that might be used for GC descriptors */
+	      /* before we release the lock.			      */
+	        ((word *)result)[0] = 0;
+	        ((word *)result)[1] = 0;
+	        ((word *)result)[lw-1] = 0;
+	        ((word *)result)[lw-2] = 0;
+#	    endif
+        }
     }
     GC_words_allocd += lw;
     UNLOCK();
@@ -89,7 +202,7 @@ register int k;
         return((*GC_oom_fn)(lb));
     } else {
     	if (init & !GC_debugging_started) {
-	    BZERO(result, n_blocks * HBLKSIZE - HDR_BYTES);
+	    BZERO(result, n_blocks * HBLKSIZE);
         }
         return(result);
     }
@@ -210,10 +323,15 @@ extern ptr_t GC_reclaim_generic();
 /* GC_malloc_many or friends to replenish it.  (We do not round up	*/
 /* object sizes, since a call indicates the intention to consume many	*/
 /* objects of exactly this size.)					*/
+/* We return the free-list by assigning it to *result, since it is	*/
+/* not safe to return, e.g. a linked list of pointer-free objects,	*/
+/* since the collector would not retain the entire list if it were 	*/
+/* invoked just as we were returning.					*/
 /* Note that the client should usually clear the link field.		*/
-ptr_t GC_generic_malloc_many(lb, k)
+void GC_generic_malloc_many(lb, k, result)
 register word lb;
 register int k;
+ptr_t *result;
 {
 ptr_t op;
 ptr_t p;
@@ -232,12 +350,20 @@ DCL_LOCK_STATE;
     if (!SMALL_OBJ(lb)) {
         op = GC_generic_malloc(lb, k);
         if(0 != op) obj_link(op) = 0;
-        return(op);
+	*result = op;
+        return;
     }
     lw = ALIGNED_WORDS(lb);
     GC_INVOKE_FINALIZERS();
     DISABLE_SIGNALS();
     LOCK();
+    if (!GC_is_initialized) GC_init_inner();
+    /* Do our share of marking work */
+      if (GC_incremental && !GC_dont_gc) {
+        ENTER_GC();
+	GC_collect_a_little_inner(1);
+        EXIT_GC();
+      }
     /* First see if we can reclaim a page of objects waiting to be */
     /* reclaimed.						   */
     {
@@ -245,7 +371,6 @@ DCL_LOCK_STATE;
 	struct hblk * hbp;
 	hdr * hhdr;
 
-  	if (rlh == 0) return;	/* No blocks of this kind.	*/
 	rlh += lw;
     	while ((hbp = *rlh) != 0) {
             hhdr = HDR(hbp);
@@ -259,8 +384,9 @@ DCL_LOCK_STATE;
 		  /* Thus we can't accidentally adjust it down in more	*/
 		  /* than one thread simultaneously.			*/
 		  if (my_words_allocd_tmp != 0) {
-		    (void)GC_atomic_add(&GC_words_allocd_tmp,
-					-my_words_allocd_tmp);
+		    (void)GC_atomic_add(
+				(volatile GC_word *)(&GC_words_allocd_tmp),
+				(GC_word)(-my_words_allocd_tmp));
 		    GC_words_allocd += my_words_allocd_tmp;
 		  }
 		}
@@ -289,12 +415,16 @@ DCL_LOCK_STATE;
 		GC_mem_found += my_words_allocd;
 #	      endif
 #	      ifdef PARALLEL_MARK
-	        (void)GC_atomic_add(&GC_words_allocd_tmp, my_words_allocd);
+		*result = op;
+		(void)GC_atomic_add(
+				(volatile GC_word *)(&GC_words_allocd_tmp),
+				(GC_word)(my_words_allocd));
 		GC_acquire_mark_lock();
 		-- GC_fl_builder_count;
 		if (GC_fl_builder_count == 0) GC_notify_all_builder();
 		GC_release_mark_lock();
-		return op;
+		(void) GC_clear_stack(0);
+		return;
 #	      else
 	        GC_words_allocd += my_words_allocd;
 	        goto out;
@@ -313,6 +443,24 @@ DCL_LOCK_STATE;
 #	    endif
     	}
     }
+    /* Next try to use prefix of global free list if there is one.	*/
+    /* We don't refill it, but we need to use it up before allocating	*/
+    /* a new block ourselves.						*/
+      opp = &(GC_obj_kinds[k].ok_freelist[lw]);
+      if ( (op = *opp) != 0 ) {
+	*opp = 0;
+        my_words_allocd = 0;
+        for (p = op; p != 0; p = obj_link(p)) {
+          my_words_allocd += lw;
+          if (my_words_allocd >= BODY_SZ) {
+            *opp = obj_link(p);
+            obj_link(p) = 0;
+            break;
+	  }
+        }
+	GC_words_allocd += my_words_allocd;
+	goto out;
+      }
     /* Next try to allocate a new block worth of objects of this size.	*/
     {
 	struct hblk *h = GC_allochblk(lw, k, 0);
@@ -330,31 +478,36 @@ DCL_LOCK_STATE;
 
 	  op = GC_build_fl(h, lw, ok -> ok_init, 0);
 #	  ifdef PARALLEL_MARK
+	    *result = op;
 	    GC_acquire_mark_lock();
 	    -- GC_fl_builder_count;
 	    if (GC_fl_builder_count == 0) GC_notify_all_builder();
 	    GC_release_mark_lock();
-	    return op;
+	    (void) GC_clear_stack(0);
+	    return;
 #	  else
 	    goto out;
 #	  endif
 	}
     }
     
-    op = GC_generic_malloc_inner(lb, k);
-    obj_link(op) = 0;
+    /* As a last attempt, try allocating a single object.  Note that	*/
+    /* this may trigger a collection or expand the heap.		*/
+      op = GC_generic_malloc_inner(lb, k);
+      if (0 != op) obj_link(op) = 0;
     
-#   ifndef PARALLEL_MARK
-      out:
-#   endif
+  out:
+    *result = op;
     UNLOCK();
     ENABLE_SIGNALS();
-    return(op);
+    (void) GC_clear_stack(0);
 }
 
-void * GC_malloc_many(size_t lb)
+GC_PTR GC_malloc_many(size_t lb)
 {
-    return(GC_generic_malloc_many(lb, NORMAL));
+    ptr_t result;
+    GC_generic_malloc_many(lb, NORMAL, &result);
+    return result;
 }
 
 /* Note that the "atomic" version of this would be unsafe, since the	*/
@@ -376,11 +529,9 @@ DCL_LOCK_STATE;
 
     if( SMALL_OBJ(lb) ) {
 #       ifdef MERGE_SIZES
-#	  ifdef ADD_BYTE_AT_END
-	    if (lb != 0) lb--;
+	  if (EXTRA_BYTES != 0 && lb != 0) lb--;
 	    	  /* We don't need the extra byte, since this won't be	*/
 	    	  /* collected anyway.					*/
-#	  endif
 	  lw = GC_size_map[lb];
 #	else
 	  lw = ALIGNED_WORDS(lb);
@@ -442,11 +593,9 @@ DCL_LOCK_STATE;
 
     if( SMALL_OBJ(lb) ) {
 #       ifdef MERGE_SIZES
-#	  ifdef ADD_BYTE_AT_END
-	    if (lb != 0) lb--;
+	  if (EXTRA_BYTES != 0 && lb != 0) lb--;
 	    	  /* We don't need the extra byte, since this won't be	*/
 	    	  /* collected anyway.					*/
-#	  endif
 	  lw = GC_size_map[lb];
 #	else
 	  lw = ALIGNED_WORDS(lb);

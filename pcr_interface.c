@@ -169,4 +169,10 @@ PCR_GC_Run(void)
     return PCR_ERes_okay;
 }
 
+void GC_push_thread_structures(void)
+{
+    /* PCR doesn't work unless static roots are pushed.  Can't get here. */
+    ABORT("In GC_push_thread_structures()");
+}
+
 # endif

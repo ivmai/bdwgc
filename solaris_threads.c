@@ -558,6 +558,11 @@ void GC_old_stacks_are_fresh()
 # define THREAD_TABLE_SZ 128	/* Must be power of 2	*/
 volatile GC_thread GC_threads[THREAD_TABLE_SZ];
 
+void GC_push_thread_structures GC_PROTO((void))
+{
+    GC_push_all((ptr_t)(GC_threads), (ptr_t)(GC_threads)+sizeof(GC_threads));
+}
+
 /* Add a thread to GC_threads.  We assume it wasn't already there.	*/
 /* Caller holds allocation lock.					*/
 GC_thread GC_new_thread(thread_t id)
@@ -673,7 +678,7 @@ void GC_push_all_stacks()
     
 #   define PUSH(bottom,top) \
       if (GC_dirty_maintained) { \
-	GC_push_dirty((bottom), (top), GC_page_was_ever_dirty, \
+	GC_push_selected((bottom), (top), GC_page_was_ever_dirty, \
 		      GC_push_all_stack); \
       } else { \
         GC_push_all_stack((bottom), (top)); \
@@ -703,7 +708,6 @@ int GC_is_thread_stack(ptr_t addr)
     register int i;
     register GC_thread p;
     register ptr_t bottom, top;
-    struct rlimit rl;
     
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
@@ -714,6 +718,7 @@ int GC_is_thread_stack(ptr_t addr)
 	}
       }
     }
+    return 0;
 }
 
 /* The only thread that ever really performs a thr_join.	*/

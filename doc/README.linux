@@ -41,11 +41,13 @@ To use threads, you need to abide by the following requirements:
    with -DGC_USE_LD_WRAP, and to link the final program with
 
    (for ld) --wrap read --wrap dlopen --wrap pthread_create \
-	    --wrap pthread_join --wrap pthread_sigmask
+	    --wrap pthread_join --wrap pthread_detach \
+	    --wrap pthread_sigmask --wrap sleep
 
    (for gcc) -Wl,--wrap -Wl,read -Wl,--wrap -Wl,dlopen -Wl,--wrap \
 	     -Wl,pthread_create -Wl,--wrap -Wl,pthread_join -Wl,--wrap \
-	     -Wl,pthread_sigmask
+	     -Wl,pthread_detach -Wl,--wrap -Wl,pthread_sigmask \
+	     -Wl,--wrap -Wl,sleep
 
    In any case, _REENTRANT should be defined during compilation.
 

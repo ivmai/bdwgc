@@ -1,7 +1,8 @@
-The collector has only been compiled under Windows NT, with the
-original Microsoft SDK, with Visual C++ 2.0 and later, with
+The collector has at various times been compiled under Windows 95 & NT,
+with the original Microsoft SDK, with Visual C++ 2.0, 4.0, and 6, with
 the GNU win32 environment, with Borland 4.5, and recently with
-Watcom C.
+Watcom C.  It is likely that some of these have been broken in the
+meantime.  Patches are appreciated.
 
 It runs under both win32s and win32, but with different semantics.
 Under win32, all writable pages outside of the heaps and stack are
@@ -23,7 +24,7 @@ the two systems, and under different versions of win32s.)
 The collector test program "gctest" is linked as a GUI application,
 but does not open any windows.  Its output appears in the file
 "gc.log".  It may be started from the file manager.  The hour glass
-cursor will appear as long as it's running.  If it is started from the
+cursor may appear as long as it's running.  If it is started from the
 command line, it will usually run in the background.  Wait a few
 minutes (a few seconds on a modern machine) before you check the output.
 You should see either a failure indication or a "Collector appears to
@@ -41,9 +42,17 @@ characters are displayed explicitly, but in this case as red text.
 This may be suboptimal for some tastes and/or sets of default
 window colors.)
 
+In general -DREDIRECT_MALLOC is unlikely to work unless the
+application is completely statically linked.
+
 For Microsoft development tools, rename NT_MAKEFILE as
 MAKEFILE.  (Make sure that the CPU environment variable is defined
-to be i386.)
+to be i386.)  In order to use the gc_cpp.h C++ interface, all
+client code should include gc_cpp.h.
+
+Clients may need to define GC_NOT_DLL before including gc.h, if the
+collector was built as a static library (as it normally is in the
+absence of thread support).
 
 For GNU-win32, use the regular makefile, possibly after uncommenting
 the line "include Makefile.DLLs".  The latter should be necessary only
@@ -67,8 +76,8 @@ version, change the line near the top.  By default, it does not
 require the assembler.  If you do have the assembler, I recommend
 removing the -DUSE_GENERIC.
 
-Incremental collection support was recently added.  This is
-currently pretty simpleminded.  Pages are protected.  Protection
+There is some support for incremental collection.  This is
+currently pretty simple-minded.  Pages are protected.  Protection
 faults are caught by a handler installed at the bottom of the handler
 stack.  This is both slow and interacts poorly with a debugger.
 Whenever possible, I recommend adding a call to
@@ -80,19 +89,10 @@ call does not encounter a protection fault while it's running.
 (As usual, none of this is an issue unless GC_enable_incremental
 is called.)
 
-Note that incremental collection is disabled with -DSMALL_CONFIG,
-which is the default for win32.  If you need incremental collection,
-undefine SMALL_CONFIG.
-
-Incremental collection is not supported under win32s, and it may not
-be possible to do so.  However, win32 applications that attempt to use
-incremental collection should continue to run, since the
-collector detects if it's running under win32s and turns calls to
-GC_enable_incremental() into noops.
+Note that incremental collection is disabled with -DSMALL_CONFIG.
 
 James Clark has contributed the necessary code to support win32 threads.
-This code is known to exhibit some problems with incremental collection
-enabled.  Use NT_THREADS_MAKEFILE (a.k.a gc.mak) instead of NT_MAKEFILE
+Use NT_THREADS_MAKEFILE (a.k.a gc.mak) instead of NT_MAKEFILE
 to build this version.  Note that this requires some files whose names
 are more than 8 + 3 characters long.  Thus you should unpack the tar file
 so that long file names are preserved.  To build the garbage collector

@@ -47,7 +47,6 @@
 #endif
 
 /* We assume ANSI C for this interface.	*/
-/* GC_init() must be called explicitly before use of this interface.	*/
 
 GC_PTR GC_local_malloc(size_t bytes);
 

@@ -26,11 +26,13 @@ GC_API void GC_register_finalizer_no_order
 /* Check whether object with base pointer p has debugging info	*/ 
 /* p is assumed to point to a legitimate object in our part	*/
 /* of the heap.							*/
+/* This excludes the check as to whether the back pointer is 	*/
+/* odd, which is added by the GC_HAS_DEBUG_INFO macro.		*/
 /* Note that if DBG_HDRS_ALL is set, uncollectable objects	*/
 /* on free lists may not have debug information set.  Thus it's	*/
 /* not always safe to return TRUE, even if the client does	*/
 /* its part.							*/
-GC_bool GC_has_debug_info(p)
+GC_bool GC_has_other_debug_info(p)
 ptr_t p;
 {
     register oh * ohdr = (oh *)p;
@@ -54,6 +56,16 @@ ptr_t p;
 #endif
 
 #ifdef KEEP_BACK_PTRS
+
+# include <stdlib.h>
+
+# if defined(LINUX) || defined(SUNOS4) || defined(SUNOS5) \
+     || defined(HPUX) || defined(IRIX) || defined(OSF1)
+#   define RANDOM() random()
+# else
+#   define RANDOM() (long)rand()
+# endif
+
   /* Store back pointer to source in dest, if that appears to be possible. */
   /* This is not completely safe, since we may mistakenly conclude that	   */
   /* dest has a debugging wrapper.  But the error probability is very	   */
@@ -62,8 +74,8 @@ ptr_t p;
   /* be a pointer to the interior of an object.				   */
   void GC_store_back_pointer(ptr_t source, ptr_t dest)
   {
-    if (GC_has_debug_info(dest)) {
-      ((oh *)dest) -> oh_back_ptr = (ptr_t)HIDE_POINTER(source);
+    if (GC_HAS_DEBUG_INFO(dest)) {
+      ((oh *)dest) -> oh_back_ptr = HIDE_BACK_PTR(source);
     }
   }
 
@@ -82,19 +94,34 @@ ptr_t p;
     oh * hdr = (oh *)GC_base(dest);
     ptr_t bp;
     ptr_t bp_base;
-    if (!GC_has_debug_info((ptr_t) hdr)) return GC_NO_SPACE;
-    bp = hdr -> oh_back_ptr;
+    if (!GC_HAS_DEBUG_INFO((ptr_t) hdr)) return GC_NO_SPACE;
+    bp = REVEAL_POINTER(hdr -> oh_back_ptr);
     if (MARKED_FOR_FINALIZATION == bp) return GC_FINALIZER_REFD;
     if (MARKED_FROM_REGISTER == bp) return GC_REFD_FROM_REG;
-    if (0 == bp) return GC_UNREFERENCED;
-    bp = REVEAL_POINTER(bp);
+    if (NOT_MARKED == bp) return GC_UNREFERENCED;
+#   if ALIGNMENT == 1
+      /* Heuristically try to fix off by 1 errors we introduced by 	*/
+      /* insisting on even addresses.					*/
+      {
+	ptr_t alternate_ptr = bp + 1;
+	ptr_t target = *(ptr_t *)bp;
+	ptr_t alternate_target = *(ptr_t *)alternate_ptr;
+
+	if (alternate_target >= GC_least_plausible_heap_addr
+	    && alternate_target <= GC_greatest_plausible_heap_addr
+	    && (target < GC_least_plausible_heap_addr
+		|| target > GC_greatest_plausible_heap_addr)) {
+	    bp = alternate_ptr;
+	}
+      }
+#   endif
     bp_base = GC_base(bp);
     if (0 == bp_base) {
       *base_p = bp;
       *offset_p = 0;
       return GC_REFD_FROM_ROOT;
     } else {
-      if (GC_has_debug_info(bp_base)) bp_base += sizeof(oh);
+      if (GC_HAS_DEBUG_INFO(bp_base)) bp_base += sizeof(oh);
       *base_p = bp_base;
       *offset_p = bp - bp_base;
       return GC_REFD_FROM_HEAP;
@@ -107,7 +134,15 @@ ptr_t p;
   void *GC_generate_random_heap_address(void)
   {
     int i;
-    int heap_offset = random() % GC_heapsize;
+    long heap_offset = RANDOM();
+    if (GC_heapsize > RAND_MAX) {
+	heap_offset *= RAND_MAX;
+	heap_offset += RANDOM();
+    }
+    heap_offset %= GC_heapsize;
+    	/* This doesn't yield a uniform distribution, especially if	*/
+        /* e.g. RAND_MAX = 1.5* GC_heapsize.  But for typical cases,	*/
+        /* it's not too bad.						*/
     for (i = 0; i < GC_n_heap_sects; ++ i) {
 	int size = GC_heap_sects[i].hs_bytes;
 	if (heap_offset < size) {
@@ -198,7 +233,7 @@ ptr_t p;
 ptr_t GC_store_debug_info(p, sz, string, integer)
 register ptr_t p;	/* base pointer */
 word sz; 	/* bytes */
-char * string;
+GC_CONST char * string;
 word integer;
 {
     register word * result = (word *)((oh *)p + 1);
@@ -209,7 +244,7 @@ word integer;
     /* inconsistent while we're in the handler.				*/
     LOCK();
 #   ifdef KEEP_BACK_PTRS
-      ((oh *)p) -> oh_back_ptr = 0;
+      ((oh *)p) -> oh_back_ptr = HIDE_BACK_PTR(NOT_MARKED);
 #   endif
     ((oh *)p) -> oh_string = string;
     ((oh *)p) -> oh_int = integer;
@@ -217,7 +252,7 @@ word integer;
       ((oh *)p) -> oh_sz = sz;
       ((oh *)p) -> oh_sf = START_FLAG ^ (word)result;
       ((word *)p)[BYTES_TO_WORDS(GC_size(p))-1] =
-         result[ROUNDED_UP_WORDS(sz)] = END_FLAG ^ (word)result;
+         result[SIMPLE_ROUNDED_UP_WORDS(sz)] = END_FLAG ^ (word)result;
 #   endif
     UNLOCK();
     return((ptr_t)result);
@@ -234,7 +269,7 @@ word integer;
 {
     register word * result = (word *)((oh *)p + 1);
     
-    /* There is some argument that we should dissble signals here.	*/
+    /* There is some argument that we should disable signals here.	*/
     /* But that's expensive.  And this way things should only appear	*/
     /* inconsistent while we're in the handler.				*/
 #   ifdef KEEP_BACK_PTRS
@@ -246,7 +281,7 @@ word integer;
       ((oh *)p) -> oh_sz = sz;
       ((oh *)p) -> oh_sf = START_FLAG ^ (word)result;
       ((word *)p)[BYTES_TO_WORDS(GC_size(p))-1] =
-         result[ROUNDED_UP_WORDS(sz)] = END_FLAG ^ (word)result;
+         result[SIMPLE_ROUNDED_UP_WORDS(sz)] = END_FLAG ^ (word)result;
 #   endif
     return((ptr_t)result);
 }
@@ -270,9 +305,9 @@ register oh * ohdr;
     if (((word *)ohdr)[BYTES_TO_WORDS(gc_sz)-1] != (END_FLAG ^ (word)body)) {
         return((ptr_t)((word *)ohdr + BYTES_TO_WORDS(gc_sz)-1));
     }
-    if (((word *)body)[ROUNDED_UP_WORDS(ohdr -> oh_sz)]
+    if (((word *)body)[SIMPLE_ROUNDED_UP_WORDS(ohdr -> oh_sz)]
         != (END_FLAG ^ (word)body)) {
-        return((ptr_t)((word *)body + ROUNDED_UP_WORDS(ohdr -> oh_sz)));
+        return((ptr_t)((word *)body + SIMPLE_ROUNDED_UP_WORDS(ohdr -> oh_sz)));
     }
     return(0);
 }
@@ -301,7 +336,7 @@ ptr_t p;
     ptr_t p;
 # endif
 {
-    if (GC_has_debug_info(p)) {
+    if (GC_HAS_DEBUG_INFO(p)) {
 	GC_print_obj(p);
     } else {
 	GC_default_print_heap_obj_proc(p);
@@ -650,6 +685,17 @@ GC_PTR p;
     } /* !GC_find_leak */
 }
 
+#ifdef THREADS
+
+extern void GC_free_inner(GC_PTR p);
+
+/* Used internally; we assume it's called correctly.	*/
+void GC_debug_free_inner(GC_PTR p)
+{
+    GC_free_inner(GC_base(p));
+}
+#endif
+
 # ifdef __STDC__
     GC_PTR GC_debug_realloc(GC_PTR p, size_t lb, GC_EXTRA_PARAMS)
 # else
@@ -738,7 +784,7 @@ GC_PTR p;
     register word *p, *plim;
     
     p = (word *)(hbp->hb_body);
-    word_no = HDR_WORDS;
+    word_no = 0;
     if (sz > MAXOBJSZ) {
 	plim = p;
     } else {
@@ -747,7 +793,7 @@ GC_PTR p;
     /* go through all words in block */
 	while( p <= plim ) {
 	    if( mark_bit_from_hdr(hhdr, word_no)
-	        && GC_has_debug_info((ptr_t)p)) {
+	        && GC_HAS_DEBUG_INFO((ptr_t)p)) {
 	        ptr_t clobbered = GC_check_annotated_obj((oh *)p);
 	        
 	        if (clobbered != 0) {
@@ -887,4 +933,23 @@ struct closure {
     }
     GC_register_finalizer_ignore_self(base, GC_debug_invoke_finalizer,
     			  	      GC_make_closure(fn,cd), ofn, ocd);
+}
+
+#ifdef GC_ADD_CALLER
+# define RA GC_RETURN_ADDR,
+#else
+# define RA
+#endif
+
+GC_PTR GC_debug_malloc_replacement(lb)
+size_t lb;
+{
+    return GC_debug_malloc(lb, RA "unknown", 0);
+}
+
+GC_PTR GC_debug_realloc_replacement(p, lb)
+GC_PTR p;
+size_t lb;
+{
+    return GC_debug_realloc(p, lb, RA "unknown", 0);
 }

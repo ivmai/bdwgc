@@ -20,7 +20,7 @@
 signed_word GC_mem_found = 0;
 			/* Number of words of memory reclaimed     */
 
-#ifdef PARALLEL_MARK
+#if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
   word GC_fl_builder_count = 0;
 	/* Number of threads currently building free lists without 	*/
 	/* holding GC lock.  It is not safe to collect if this is 	*/
@@ -187,8 +187,6 @@ hdr *hhdr;
 #   if CPP_WORDSZ != 32 && CPP_WORDSZ != 64
       return DONT_KNOW;	/* Shouldn't be used in any standard config.	*/
 #   endif
-    if (0 != HDR_WORDS) return DONT_KNOW;
-	/* Also shouldn't happen */
 #   if CPP_WORDSZ == 32
       switch(sz) {
         case 1:
@@ -284,7 +282,7 @@ COUNT_DECL
     
     GC_ASSERT(hhdr == GC_find_header((ptr_t)hbp));
     p = (word *)(hbp->hb_body);
-    word_no = HDR_WORDS;
+    word_no = 0;
     plim = (word *)((((word)hbp) + HBLKSIZE)
 		   - WORDS_TO_BYTES(sz));
 
@@ -333,7 +331,7 @@ hdr * hhdr;
 register ptr_t list;
 COUNT_DECL
 {
-    register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
+    register word * mark_word_addr = &(hhdr->hb_marks[0]);
     register word *p, *plim;
     register word mark_word;
     register int i;
@@ -376,7 +374,7 @@ hdr * hhdr;
 register ptr_t list;
 COUNT_DECL
 {
-    register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
+    register word * mark_word_addr = &(hhdr->hb_marks[0]);
     register word *p, *plim;
     register word mark_word;
     NWORDS_DECL
@@ -431,12 +429,11 @@ register ptr_t list;
 register word sz;
 COUNT_DECL
 {
-    register int word_no;
+    register int word_no = 0;
     register word *p, *plim;
     NWORDS_DECL
     
     p = (word *)(hbp->hb_body);
-    word_no = HDR_WORDS;
     plim = (word *)((((word)hbp) + HBLKSIZE)
 		   - WORDS_TO_BYTES(sz));
 
@@ -462,14 +459,13 @@ register struct hblk *hbp;	/* ptr to current heap block		*/
 register hdr * hhdr;
 register word sz;
 {
-    register int word_no;
+    register int word_no = 0;
     register word *p, *plim;
 #   ifdef GATHERSTATS
         register int n_words_found = 0;
 #   endif
     
     p = (word *)(hbp->hb_body);
-    word_no = HDR_WORDS;
     plim = (word *)((((word)hbp) + HBLKSIZE)
 		   - WORDS_TO_BYTES(sz));
 
@@ -494,7 +490,7 @@ hdr * hhdr;
 register ptr_t list;
 COUNT_DECL
 {
-    register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
+    register word * mark_word_addr = &(hhdr->hb_marks[0]);
     register word *p, *plim;
     register word mark_word;
     register int i;
@@ -536,7 +532,7 @@ hdr * hhdr;
 register ptr_t list;
 COUNT_DECL
 {
-    register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
+    register word * mark_word_addr = &(hhdr->hb_marks[0]);
     register word *p, *plim;
     register word mark_word;
     NWORDS_DECL
@@ -586,7 +582,7 @@ hdr * hhdr;
 register ptr_t list;
 COUNT_DECL
 {
-    register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
+    register word * mark_word_addr = &(hhdr->hb_marks[0]);
     register word *p, *plim;
     register word mark_word;
     register int i;
@@ -632,7 +628,6 @@ ptr_t list;
 word sz;
 COUNT_DECL
 {
-    GC_bool full;
     ptr_t result = list;
 
     GC_ASSERT(GC_find_header((ptr_t)hbp) == hhdr);
@@ -640,41 +635,22 @@ COUNT_DECL
       switch(sz) {
 #      if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES)
         case 1:
-#           if CPP_WORDSZ == 64
-	      full = GC_block_nearly_full1(hhdr, 0xffffffffffffffffl);
-#	    else
-	      full = GC_block_nearly_full1(hhdr, 0xffffffffl);
-#	    endif
-	    if (TRUE == full) goto out;
-	    if (FALSE == full) GC_write_hint(hbp);
-	    /* In the DONT_KNOW case, we let reclaim fault.	*/
+	    /* We now issue the hint even if GC_nearly_full returned	*/
+	    /* DONT_KNOW.						*/
+	    GC_write_hint(hbp);
             result = GC_reclaim1(hbp, hhdr, list COUNT_ARG);
             break;
         case 2:
-#           if CPP_WORDSZ == 64
-	      full = GC_block_nearly_full1(hhdr, 0x5555555555555555l);
-#	    else
-	      full = GC_block_nearly_full1(hhdr, 0x55555555l);
-#	    endif
-	    if (TRUE == full) goto out;
-	    if (FALSE == full) GC_write_hint(hbp);
+	    GC_write_hint(hbp);
             result = GC_reclaim_clear2(hbp, hhdr, list COUNT_ARG);
             break;
         case 4:
-#           if CPP_WORDSZ == 64
-	      full = GC_block_nearly_full1(hhdr, 0x1111111111111111l);
-#	    else
-	      full = GC_block_nearly_full1(hhdr, 0x11111111l);
-#	    endif
-	    if (TRUE == full) goto out;
-	    if (FALSE == full) GC_write_hint(hbp);
+	    GC_write_hint(hbp);
             result = GC_reclaim_clear4(hbp, hhdr, list COUNT_ARG);
             break;
 #      endif /* !SMALL_CONFIG && !USE_MARK_BYTES */
         default:
-	    full = GC_block_nearly_full(hhdr);
-	    if (TRUE == full) goto out;
-	    if (FALSE == full) GC_write_hint(hbp);
+	    GC_write_hint(hbp);
             result = GC_reclaim_clear(hbp, hhdr, sz, list COUNT_ARG);
             break;
       }
@@ -682,45 +658,24 @@ COUNT_DECL
       switch(sz) {
 #      if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES)
         case 1:
-#           if CPP_WORDSZ == 64
-	      full = GC_block_nearly_full1(hhdr, 0xffffffffffffffffl);
-#	    else
-	      full = GC_block_nearly_full1(hhdr, 0xffffffffl);
-#	    endif
-	    if (TRUE == full) goto out;
-	    if (FALSE == full) GC_write_hint(hbp);
+	    GC_write_hint(hbp);
             result = GC_reclaim1(hbp, hhdr, list COUNT_ARG);
             break;
         case 2:
-#           if CPP_WORDSZ == 64
-	      full = GC_block_nearly_full1(hhdr, 0x5555555555555555l);
-#	    else
-	      full = GC_block_nearly_full1(hhdr, 0x55555555l);
-#	    endif
-	    if (TRUE == full) goto out;
-	    if (FALSE == full) GC_write_hint(hbp);
+	    GC_write_hint(hbp);
             result = GC_reclaim_uninit2(hbp, hhdr, list COUNT_ARG);
             break;
         case 4:
-#           if CPP_WORDSZ == 64
-	      full = GC_block_nearly_full1(hhdr, 0x1111111111111111l);
-#	    else
-	      full = GC_block_nearly_full1(hhdr, 0x11111111l);
-#	    endif
-	    if (TRUE == full) goto out;
-	    if (FALSE == full) GC_write_hint(hbp);
+	    GC_write_hint(hbp);
             result = GC_reclaim_uninit4(hbp, hhdr, list COUNT_ARG);
             break;
 #      endif /* !SMALL_CONFIG && !USE_MARK_BYTES */
         default:
-	    full = GC_block_nearly_full(hhdr);
-	    if (TRUE == full) goto out;
-	    if (FALSE == full) GC_write_hint(hbp);
+	    GC_write_hint(hbp);
             result = GC_reclaim_uninit(hbp, hhdr, sz, list COUNT_ARG);
             break;
       }
     } 
-out:
     if (IS_UNCOLLECTABLE(hhdr -> hb_obj_kind)) GC_set_hdr_marks(hhdr);
     return result;
 }
@@ -778,10 +733,14 @@ COUNT_DECL
     ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
 
     if( sz > MAXOBJSZ ) {  /* 1 big object */
-        if( !mark_bit_from_hdr(hhdr, HDR_WORDS) ) {
+        if( !mark_bit_from_hdr(hhdr, 0) ) {
 	    if (report_if_found) {
-	      FOUND_FREE(hbp, HDR_WORDS);
+	      FOUND_FREE(hbp, 0);
 	    } else {
+	      word blocks = OBJ_SZ_TO_BLOCKS(sz);
+	      if (blocks > 1) {
+	        GC_large_allocd_bytes -= blocks * HBLKSIZE;
+	      }
 #	      ifdef GATHERSTATS
 	        GC_mem_found += sz;
 #	      endif
@@ -798,12 +757,16 @@ COUNT_DECL
             GC_mem_found += BYTES_TO_WORDS(HBLKSIZE);
 #	  endif
           GC_freehblk(hbp);
-        } else {
+        } else if (TRUE != GC_block_nearly_full(hhdr)){
           /* group of smaller objects, enqueue the real work */
           rlh = &(ok -> ok_reclaim_list[sz]);
           hhdr -> hb_next = *rlh;
           *rlh = hbp;
-        }
+        } /* else not worth salvaging. */
+	/* We used to do the nearly_full check later, but we 	*/
+	/* already have the right cache context here.  Also	*/
+	/* doing it here avoids some silly lock contention in	*/
+	/* GC_malloc_many.					*/
     }
 }
 
@@ -875,7 +838,7 @@ hdr * hhdr;
     GC_printf3("(%lu:%lu,%lu)", (unsigned long)(hhdr -> hb_obj_kind),
     			        (unsigned long)bytes,
     			        (unsigned long)(GC_n_set_marks(hhdr)));
-    bytes += HDR_BYTES + HBLKSIZE-1;
+    bytes += HBLKSIZE-1;
     bytes &= ~(HBLKSIZE-1);
     total_bytes += bytes;
     number_of_blocks++;
@@ -903,6 +866,9 @@ int report_if_found;		/* Abort if a GC_reclaimable object is found */
 {
     int kind;
     
+#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+      GC_ASSERT(0 == GC_fl_builder_count);
+#   endif
     /* Clear reclaim- and free-lists */
       for (kind = 0; kind < GC_n_kinds; kind++) {
         register ptr_t *fop;
@@ -938,6 +904,9 @@ int report_if_found;		/* Abort if a GC_reclaimable object is found */
     /* This is a very stupid thing to do.  We make it possible anyway,	*/
     /* so that you can convince yourself that it really is very stupid.	*/
     GC_reclaim_all((GC_stop_func)0, FALSE);
+# endif
+# if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+    GC_ASSERT(0 == GC_fl_builder_count);
 # endif
     
 }

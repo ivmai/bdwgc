@@ -139,7 +139,7 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 
 #if ! defined( OPERATOR_NEW_ARRAY ) \
     && (__BORLANDC__ >= 0x450 || (__GNUC__ >= 2 && __GNUC_MINOR__ >= 6) \
-	|| __WATCOMC__ >= 1050 || _MSC_VER >= 1100)
+	|| __WATCOMC__ >= 1050 || _MSC_VER >= 1100 || _ENABLE_ARRAYNEW)
 #   define OPERATOR_NEW_ARRAY
 #endif
 
@@ -210,11 +210,43 @@ inline void* operator new(
  /** This ensures that the system default operator new[] doesn't get
   *  undefined, which is what seems to happen on VC++ 6 for some reason
   *  if we define a multi-argument operator new[].
+  *  There seems to be really redirect new in this environment without
+  *  including this everywhere. 
   */
  inline void *operator new[]( size_t size )
  {
-    return ::operator new( size );
+    return GC_MALLOC_UNCOLLECTABLE( size );
  }
+
+ inline void operator delete[](void* obj)
+ {
+    GC_FREE(obj);
+ };
+
+ inline void* operator new( size_t size)
+ {
+    return GC_MALLOC_UNCOLLECTABLE( size);
+ };   
+
+ inline void operator delete(void* obj)
+ {
+    GC_FREE(obj);
+ };
+
+
+// This new operator is used by VC++ in case of Debug builds !
+  inline void* operator new( size_t size,
+		      int ,//nBlockUse,
+		      const char * szFileName,
+		      int nLine
+		      ) {
+# ifndef GC_DEBUG
+     return GC_malloc_uncollectable( size );
+# else
+     return GC_debug_malloc_uncollectable(size, szFileName, nLine);
+# endif
+  }
+
 #endif /* _MSC_VER */
 
 inline void* operator new[](
@@ -273,11 +305,12 @@ inline gc_cleanup::gc_cleanup() {
     void* oldData;
     void* base = GC_base( (void *) this );
     if (0 != base)  {
-      GC_REGISTER_FINALIZER_IGNORE_SELF( 
+      // Don't call the debug version, since this is a real base address.
+      GC_register_finalizer_ignore_self( 
         base, (GC_finalization_proc)cleanup, (void*) ((char*) this - (char*) base), 
         &oldProc, &oldData );
       if (0 != oldProc) {
-        GC_REGISTER_FINALIZER_IGNORE_SELF( base, oldProc, oldData, 0, 0 );}}}
+        GC_register_finalizer_ignore_self( base, oldProc, oldData, 0, 0 );}}}
 
 inline void* operator new( 
     size_t size, 

@@ -85,18 +85,18 @@ ptr_t p;
 
 void GC_bl_init()
 {
-# ifndef ALL_INTERIOR_POINTERS
-    GC_old_normal_bl = (word *)
+    if (!GC_all_interior_pointers) {
+      GC_old_normal_bl = (word *)
     			 GC_scratch_alloc((word)(sizeof (page_hash_table)));
-    GC_incomplete_normal_bl = (word *)GC_scratch_alloc
+      GC_incomplete_normal_bl = (word *)GC_scratch_alloc
     					((word)(sizeof(page_hash_table)));
-    if (GC_old_normal_bl == 0 || GC_incomplete_normal_bl == 0) {
+      if (GC_old_normal_bl == 0 || GC_incomplete_normal_bl == 0) {
         GC_err_printf0("Insufficient memory for black list\n");
         EXIT();
+      }
+      GC_clear_bl(GC_old_normal_bl);
+      GC_clear_bl(GC_incomplete_normal_bl);
     }
-    GC_clear_bl(GC_old_normal_bl);
-    GC_clear_bl(GC_incomplete_normal_bl);
-# endif
     GC_old_stack_bl = (word *)GC_scratch_alloc((word)(sizeof(page_hash_table)));
     GC_incomplete_stack_bl = (word *)GC_scratch_alloc
     					((word)(sizeof(page_hash_table)));
@@ -131,9 +131,9 @@ void GC_promote_black_lists()
     
     GC_old_normal_bl = GC_incomplete_normal_bl;
     GC_old_stack_bl = GC_incomplete_stack_bl;
-#   ifndef ALL_INTERIOR_POINTERS
+    if (!GC_all_interior_pointers) {
       GC_clear_bl(very_old_normal_bl);
-#   endif
+    }
     GC_clear_bl(very_old_stack_bl);
     GC_incomplete_normal_bl = very_old_normal_bl;
     GC_incomplete_stack_bl = very_old_stack_bl;
@@ -160,13 +160,12 @@ void GC_promote_black_lists()
 
 void GC_unpromote_black_lists()
 {
-#   ifndef ALL_INTERIOR_POINTERS
+    if (!GC_all_interior_pointers) {
       GC_copy_bl(GC_old_normal_bl, GC_incomplete_normal_bl);
-#   endif
+    }
     GC_copy_bl(GC_old_stack_bl, GC_incomplete_stack_bl);
 }
 
-# ifndef ALL_INTERIOR_POINTERS
 /* P is not a valid pointer reference, but it falls inside	*/
 /* the plausible heap bounds.					*/
 /* Add it to the normal incomplete black list if appropriate.	*/
@@ -197,7 +196,6 @@ word p;
           /* object, and isn't worth black listing.			    */
     }
 }
-# endif
 
 /* And the same for false pointers from the stack. */
 #ifdef PRINT_BLACK_LIST
@@ -240,12 +238,12 @@ word len;
     register word i;
     word nblocks = divHBLKSZ(len);
 
-#   ifndef ALL_INTERIOR_POINTERS
+    if (!GC_all_interior_pointers) {
       if (get_pht_entry_from_index(GC_old_normal_bl, index)
           || get_pht_entry_from_index(GC_incomplete_normal_bl, index)) {
         return(h+1);
       }
-#   endif
+    }
     
     for (i = 0; ; ) {
         if (GC_old_stack_bl[divWORDSZ(index)] == 0

@@ -29,9 +29,9 @@ few minutes to complete.
 #include <stdlib.h>
 #include <string.h>
 #ifdef __GNUC__
-#   include "include/new_gc_alloc.h"
+#   include "new_gc_alloc.h"
 #else
-#   include "include/gc_alloc.h"
+#   include "gc_alloc.h"
 #endif
 extern "C" {
 #include "private/gc_priv.h"
@@ -226,7 +226,7 @@ int APIENTRY WinMain(
         for (i = 0; i < 1000; i++) {
             C* c = new C( 2 );
             C c1( 2 );           /* stack allocation should work too */
-            D* d = ::new (USE_GC, D::CleanUp, (void*) i) D( i );
+            D* d = ::new (USE_GC, D::CleanUp, (void*)(long)i) D( i );
             F* f = new F;
             if (0 == i % 10) delete c;}
 

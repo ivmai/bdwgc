@@ -31,6 +31,12 @@ extern ptr_t GC_clear_stack();	/* in misc.c, behaves like identity */
 
 GC_PTR * GC_changing_list_start;
 
+void GC_push_stubborn_structures GC_PROTO((void))
+{
+    GC_push_all((ptr_t)(&GC_changing_list_start),
+		(ptr_t)(&GC_changing_list_start) + sizeof(GC_PTR *));
+}
+
 # ifdef THREADS
   VOLATILE GC_PTR * VOLATILE GC_changing_list_current;
 # else
@@ -313,5 +319,8 @@ GC_PTR p;
 {
 }
 
+void GC_push_stubborn_structures GC_PROTO((void))
+{
+}
 
 #endif

@@ -31,7 +31,7 @@ ptr_t GC_build_fl1(h, ofl)
 struct hblk *h;
 ptr_t ofl;
 {
-    register word * p = (word *)h;
+    register word * p = h -> hb_body;
     register word * lim = (word *)(h + 1);
     
     p[0] = (word)ofl;
@@ -53,7 +53,7 @@ ptr_t GC_build_fl_clear2(h, ofl)
 struct hblk *h;
 ptr_t ofl;
 {
-    register word * p = (word *)h;
+    register word * p = h -> hb_body;
     register word * lim = (word *)(h + 1);
     
     p[0] = (word)ofl;
@@ -75,7 +75,7 @@ ptr_t GC_build_fl_clear3(h, ofl)
 struct hblk *h;
 ptr_t ofl;
 {
-    register word * p = (word *)h;
+    register word * p = h -> hb_body;
     register word * lim = (word *)(h + 1) - 2;
     
     p[0] = (word)ofl;
@@ -95,7 +95,7 @@ ptr_t GC_build_fl_clear4(h, ofl)
 struct hblk *h;
 ptr_t ofl;
 {
-    register word * p = (word *)h;
+    register word * p = h -> hb_body;
     register word * lim = (word *)(h + 1);
     
     p[0] = (word)ofl;
@@ -117,7 +117,7 @@ ptr_t GC_build_fl2(h, ofl)
 struct hblk *h;
 ptr_t ofl;
 {
-    register word * p = (word *)h;
+    register word * p = h -> hb_body;
     register word * lim = (word *)(h + 1);
     
     p[0] = (word)ofl;
@@ -135,7 +135,7 @@ ptr_t GC_build_fl4(h, ofl)
 struct hblk *h;
 ptr_t ofl;
 {
-    register word * p = (word *)h;
+    register word * p = h -> hb_body;
     register word * lim = (word *)(h + 1);
     
     p[0] = (word)ofl;

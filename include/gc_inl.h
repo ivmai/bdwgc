@@ -17,12 +17,12 @@
 #   include "private/gc_priv.h"
 # endif
 
-/* USE OF THIS FILE IS NOT RECOMMENDED unless the collector has been	*/
-/* compiled without -DALL_INTERIOR_POINTERS or with			*/
+/* USE OF THIS FILE IS NOT RECOMMENDED unless GC_all_interior_pointers	*/
+/* is always set, or the collector has been built with			*/
 /* -DDONT_ADD_BYTE_AT_END, or the specified size includes a pointerfree	*/
 /* word at the end.  In the standard collector configuration,		*/
 /* the final word of each object may not be scanned.			*/
-/* This is most useful for compilers that generate C.			*/
+/* This iinterface is most useful for compilers that generate C.	*/
 /* Manual use is hereby discouraged.					*/
 
 /* Allocate n words (NOT BYTES).  X is made to point to the result.	*/

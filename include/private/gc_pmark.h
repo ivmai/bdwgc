@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 2001 by Hewlett-Packard Company. All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -11,115 +12,63 @@
  * modified is included with the above copyright notice.
  *
  */
-/* Boehm, November 7, 1994 4:56 pm PST */
+
+/* Private declarations of GC marker data structures and macros */
 
 /*
  * Declarations of mark stack.  Needed by marker and client supplied mark
- * routines.  To be included after gc_priv.h.
+ * routines.  Transitively include gc_priv.h.
+ * (Note that gc_priv.h should not be included before this, since this
+ * includes dbg_mlc.h, which wants to include gc_priv.h AFTER defining
+ * I_HIDE_POINTERS.)
  */
-#ifndef GC_MARK_H
-# define GC_MARK_H
+#ifndef GC_PMARK_H
+# define GC_PMARK_H
 
-# ifdef KEEP_BACK_PTRS
+# if defined(KEEP_BACK_PTRS) || defined(PRINT_BLACK_LIST)
 #   include "dbg_mlc.h"
 # endif
+# ifndef GC_MARK_H
+#   include "../gc_mark.h"
+# endif
+# ifndef GC_PRIVATE_H
+#   include "gc_priv.h"
+# endif
 
-/* A client supplied mark procedure.  Returns new mark stack pointer.	*/
-/* Primary effect should be to push new entries on the mark stack.	*/
-/* Mark stack pointer values are passed and returned explicitly.	*/
-/* Global variables decribing mark stack are not necessarily valid.	*/
-/* (This usually saves a few cycles by keeping things in registers.)	*/
-/* Assumed to scan about PROC_BYTES on average.  If it needs to do	*/
-/* much more work than that, it should do it in smaller pieces by	*/
-/* pushing itself back on the mark stack.				*/
-/* Note that it should always do some work (defined as marking some	*/
-/* objects) before pushing more than one entry on the mark stack.	*/
-/* This is required to ensure termination in the event of mark stack	*/
-/* overflows.								*/
-/* This procedure is always called with at least one empty entry on the */
-/* mark stack.								*/
-/* Currently we require that mark procedures look for pointers in a	*/
-/* subset of the places the conservative marker would.  It must be safe	*/
-/* to invoke the normal mark procedure instead.				*/
-/* WARNING: Such a mark procedure may be invoked on an unused object    */
-/* residing on a free list.  Such objects are cleared, except for a	*/
-/* free list link field in the first word.  Thus mark procedures may	*/
-/* not count on the presence of a type descriptor, and must handle this	*/
-/* case correctly somehow.						*/
-# define PROC_BYTES 100
-/* The real declarations of the following are in gc_priv.h, so that	*/
+/* The real declarations of the following is in gc_priv.h, so that	*/
 /* we can avoid scanning the following table.				*/
 /*
-typedef struct ms_entry * (*mark_proc)(   word * addr,
-					  struct ms_entry *mark_stack_ptr,
-					  struct ms_entry *mark_stack_limit,
-					  word env   );
-					  
-# define LOG_MAX_MARK_PROCS 6
-# define MAX_MARK_PROCS (1 << LOG_MAX_MARK_PROCS)
 extern mark_proc GC_mark_procs[MAX_MARK_PROCS];
 */
+
+/*
+ * Mark descriptor stuff that should remain private for now, mostly
+ * because it's hard to export WORDSZ without including gcconfig.h.
+ */
+# define BITMAP_BITS (WORDSZ - GC_DS_TAG_BITS)
+# define PROC(descr) \
+	(GC_mark_procs[((descr) >> GC_DS_TAG_BITS) & (GC_MAX_MARK_PROCS-1)])
+# define ENV(descr) \
+	((descr) >> (GC_DS_TAG_BITS + GC_LOG_MAX_MARK_PROCS))
+# define MAX_ENV \
+  	(((word)1 << (WORDSZ - GC_DS_TAG_BITS - GC_LOG_MAX_MARK_PROCS)) - 1)
+
 
 extern word GC_n_mark_procs;
 
 /* Number of mark stack entries to discard on overflow.	*/
 #define GC_MARK_STACK_DISCARDS (INITIAL_MARK_STACK_SIZE/8)
 
-/* In a few cases it's necessary to assign statically known indices to	*/
-/* certain mark procs.  Thus we reserve a few for well known clients.	*/
-/* (This is necessary if mark descriptors are compiler generated.)	*/
-#define GC_RESERVED_MARK_PROCS 8
-#   define GCJ_RESERVED_MARK_PROC_INDEX 0
-
-/* Object descriptors on mark stack or in objects.  Low order two	*/
-/* bits are tags distinguishing among the following 4 possibilities	*/
-/* for the high order 30 bits.						*/
-#define DS_TAG_BITS 2
-#define DS_TAGS   ((1 << DS_TAG_BITS) - 1)
-#define DS_LENGTH 0	/* The entire word is a length in bytes that	*/
-			/* must be a multiple of 4.			*/
-#define DS_BITMAP 1	/* 30 bits are a bitmap describing pointer	*/
-			/* fields.  The msb is 1 iff the first word	*/
-			/* is a pointer.				*/
-			/* (This unconventional ordering sometimes	*/
-			/* makes the marker slightly faster.)		*/
-			/* Zeroes indicate definite nonpointers.  Ones	*/
-			/* indicate possible pointers.			*/
-			/* Only usable if pointers are word aligned.	*/
-#   define BITMAP_BITS (WORDSZ - DS_TAG_BITS)
-#define DS_PROC   2
-			/* The objects referenced by this object can be */
-			/* pushed on the mark stack by invoking		*/
-			/* PROC(descr).  ENV(descr) is passed as the	*/
-			/* last argument.				*/
-#   define PROC(descr) \
-		(GC_mark_procs[((descr) >> DS_TAG_BITS) & (MAX_MARK_PROCS-1)])
-#   define ENV(descr) \
-		((descr) >> (DS_TAG_BITS + LOG_MAX_MARK_PROCS))
-#   define MAX_ENV \
-  	      (((word)1 << (WORDSZ - DS_TAG_BITS - LOG_MAX_MARK_PROCS)) - 1)
-#   define MAKE_PROC(proc_index, env) \
-	    (((((env) << LOG_MAX_MARK_PROCS) | (proc_index)) << DS_TAG_BITS) \
-	    | DS_PROC)
-#define DS_PER_OBJECT 3	/* The real descriptor is at the		*/
-			/* byte displacement from the beginning of the	*/
-			/* object given by descr & ~DS_TAGS		*/
-			/* If the descriptor is negative, the real	*/
-			/* descriptor is at (*<object_start>) -		*/
-			/* (descr & ~DS_TAGS) - INDIR_PER_OBJ_BIAS	*/
-			/* The latter alternative can be used if each	*/
-			/* object contains a type descriptor in the	*/
-			/* first word.					*/
-#define INDIR_PER_OBJ_BIAS 0x10
-			
-typedef struct ms_entry {
-    word * mse_start;   /* First word of object */
-    word mse_descr;	/* Descriptor; low order two bits are tags,	*/
+typedef struct GC_ms_entry {
+    GC_word * mse_start;   /* First word of object */
+    GC_word mse_descr;	/* Descriptor; low order two bits are tags,	*/
     			/* identifying the upper 30 bits as one of the	*/
     			/* following:					*/
 } mse;
 
 extern word GC_mark_stack_size;
+
+extern mse * GC_mark_stack_limit;
 
 #ifdef PARALLEL_MARK
   extern mse * VOLATILE GC_mark_stack_top;
@@ -183,7 +132,17 @@ extern mse * GC_mark_stack;
      */
 #endif /* PARALLEL_MARK */
 
-ptr_t GC_find_start();
+/* Return a pointer to within 1st page of object.  	*/
+/* Set *new_hdr_p to corr. hdr.				*/
+#ifdef __STDC__
+# ifdef PRINT_BLACK_LIST
+    ptr_t GC_find_start(ptr_t current, hdr *hhdr, hdr **new_hdr_p, word source);
+# else
+    ptr_t GC_find_start(ptr_t current, hdr *hhdr, hdr **new_hdr_p);
+# endif
+#else
+  ptr_t GC_find_start();
+#endif
 
 mse * GC_signal_mark_stack_overflow();
 
@@ -215,11 +174,11 @@ mse * GC_signal_mark_stack_overflow();
 }
 
 #ifdef PRINT_BLACK_LIST
-#   define GC_FIND_START(current, hhdr, source) \
-	GC_find_start(current, hhdr, source)
+#   define GC_FIND_START(current, hhdr, new_hdr_p, source) \
+	GC_find_start(current, hhdr, new_hdr_p, source)
 #else
-#   define GC_FIND_START(current, hhdr, source) \
-	GC_find_start(current, hhdr)
+#   define GC_FIND_START(current, hhdr, new_hdr_p, source) \
+	GC_find_start(current, hhdr, new_hdr_p)
 #endif
 
 /* Push the contents of current onto the mark stack if it is a valid	*/
@@ -234,9 +193,10 @@ mse * GC_signal_mark_stack_overflow();
  \
     GET_HDR(my_current, my_hhdr); \
     if (IS_FORWARDING_ADDR_OR_NIL(my_hhdr)) { \
-         my_current = GC_FIND_START(my_current, my_hhdr, (word)source); \
-         if (my_current == 0) goto exit_label; \
-         my_hhdr = GC_find_header(my_current); \
+	 hdr * new_hdr = GC_invalid_header; \
+         my_current = GC_FIND_START(my_current, my_hhdr, \
+			 	    &new_hdr, (word)source); \
+         my_hhdr = new_hdr; \
     } \
     PUSH_CONTENTS_HDR(my_current, mark_stack_top, mark_stack_limit, \
 		  source, exit_label, my_hhdr);	\
@@ -254,27 +214,6 @@ exit_label: ; \
     PUSH_CONTENTS_HDR(my_current, mark_stack_top, mark_stack_limit, \
 		  source, exit_label, my_hhdr);	\
 exit_label: ; \
-}
-
-/* As above, but deal with two pointers in interleaved fashion.	*/
-# define HC_PUSH_CONTENTS2(current1, current2, mark_stack_top, \
-			   mark_stack_limit, \
-		           source1, source2, exit_label1, exit_label2) \
-{ \
-    hdr * hhdr1; \
-    ptr_t my_current1 = current1; \
-    hdr * hhdr2; \
-    ptr_t my_current2 = current2; \
- \
-    HC_GET_HDR2(my_current1, hhdr1, source1, my_current2, hhdr2, source2); \
-    PUSH_CONTENTS_HDR(my_current1, mark_stack_top, mark_stack_limit, \
-		  source1, exit_label1, hhdr1);	\
-exit_label1: ; \
-    if (0 != hhdr2) { \
-      PUSH_CONTENTS_HDR(my_current2, mark_stack_top, mark_stack_limit, \
-		  source2, exit_label2, hhdr2);	\
-    } \
-exit_label2: ; \
 }
 
 /* Set mark bit, exit if it was already set.	*/
@@ -303,19 +242,37 @@ exit_label2: ; \
     } 
 # endif /* USE_MARK_BYTES */
 
+/* If the mark bit corresponding to current is not set, set it, and 	*/
+/* push the contents of the object on the mark stack.  For a small 	*/
+/* object we assume that current is the (possibly interior) pointer	*/
+/* to the object.  For large objects we assume that current points	*/
+/* to somewhere inside the first page of the object.  If		*/
+/* GC_all_interior_pointers is set, it may have been previously 	*/
+/* adjusted to make that true.						*/
 # define PUSH_CONTENTS_HDR(current, mark_stack_top, mark_stack_limit, \
 		           source, exit_label, hhdr) \
 { \
     int displ;  /* Displacement in block; first bytes, then words */ \
-    map_entry_type map_entry; \
+    int map_entry; \
     \
     displ = HBLKDISPL(current); \
     map_entry = MAP_ENTRY((hhdr -> hb_map), displ); \
-    if (map_entry == OBJ_INVALID) { \
-        GC_ADD_TO_BLACK_LIST_NORMAL((word)current, source); goto exit_label; \
-    } \
     displ = BYTES_TO_WORDS(displ); \
-    displ -= map_entry; \
+    if (map_entry > CPP_MAX_OFFSET) { \
+	if (map_entry == OFFSET_TOO_BIG) { \
+	  map_entry = displ % (hhdr -> hb_sz); \
+	  displ -= map_entry; \
+	  if (displ + (hhdr -> hb_sz) > BYTES_TO_WORDS(HBLKSIZE)) { \
+	    GC_ADD_TO_BLACK_LIST_NORMAL((word)current, source); \
+	    goto exit_label; \
+	  } \
+	} else { \
+          GC_ADD_TO_BLACK_LIST_NORMAL((word)current, source); goto exit_label; \
+	} \
+    } else { \
+        displ -= map_entry; \
+    } \
+    GC_ASSERT(displ >= 0 && displ < MARK_BITS_PER_HBLK); \
     SET_MARK_BIT_EXIT_IF_SET(hhdr, displ, exit_label); \
     GC_STORE_BACK_PTR((ptr_t)source, (ptr_t)HBLKPTR(current) \
 				      + WORDS_TO_BYTES(displ)); \
@@ -324,11 +281,11 @@ exit_label2: ; \
 }
 
 #if defined(PRINT_BLACK_LIST) || defined(KEEP_BACK_PTRS)
-#   define PUSH_ONE_CHECKED(p, ip, source) \
-	GC_push_one_checked(p, ip, (ptr_t)(source))
+#   define PUSH_ONE_CHECKED_STACK(p, source) \
+	GC_mark_and_push_stack(p, (ptr_t)(source))
 #else
-#   define PUSH_ONE_CHECKED(p, ip, source) \
-	GC_push_one_checked(p, ip)
+#   define PUSH_ONE_CHECKED_STACK(p, source) \
+	GC_mark_and_push_stack(p)
 #endif
 
 /*
@@ -338,24 +295,21 @@ exit_label2: ; \
  * if the mark stack overflows.
  */
 # define GC_PUSH_ONE_STACK(p, source) \
-    if ((ptr_t)(p) >= GC_least_plausible_heap_addr 	\
-	 && (ptr_t)(p) < GC_greatest_plausible_heap_addr) {	\
-	 PUSH_ONE_CHECKED(p, TRUE, source);	\
+    if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr 	\
+	 && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {	\
+	 PUSH_ONE_CHECKED_STACK(p, source);	\
     }
 
 /*
  * As above, but interior pointer recognition as for
  * normal for heap pointers.
  */
-# ifdef ALL_INTERIOR_POINTERS
-#   define AIP TRUE
-# else
-#   define AIP FALSE
-# endif
 # define GC_PUSH_ONE_HEAP(p,source) \
-    if ((ptr_t)(p) >= GC_least_plausible_heap_addr 	\
-	 && (ptr_t)(p) < GC_greatest_plausible_heap_addr) {	\
-	 PUSH_ONE_CHECKED(p,AIP,source);	\
+    if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr 	\
+	 && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {	\
+	    GC_mark_stack_top = GC_mark_and_push( \
+			    (GC_PTR)(p), GC_mark_stack_top, \
+			    GC_mark_stack_limit, (GC_PTR *)(source)); \
     }
 
 /* Mark starting at mark stack entry top (incl.) down to	*/
@@ -380,7 +334,7 @@ mse * GC_mark_from GC_PROTO((mse * top, mse * bottom, mse *limit));
     while (!GC_mark_stack_empty()) MARK_FROM_MARK_STACK(); \
     if (GC_mark_state != MS_NONE) { \
         GC_set_mark_bit(real_ptr); \
-        while (!GC_mark_some((ptr_t)0)); \
+        while (!GC_mark_some((ptr_t)0)) {} \
     } \
 }
 
@@ -430,5 +384,5 @@ typedef int mark_state_t;	/* Current state of marking, as follows:*/
 
 extern mark_state_t GC_mark_state;
 
-#endif  /* GC_MARK_H */
+#endif  /* GC_PMARK_H */
 
