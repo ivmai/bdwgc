@@ -241,7 +241,12 @@ static void alloc_mark_stack();
 /* Perform a small amount of marking.			*/
 /* We try to touch roughly a page of memory.		*/
 /* Return TRUE if we just finished a mark phase.	*/
-GC_bool GC_mark_some()
+/* Cold_gc_frame is an address inside a GC frame that	*/
+/* remains valid until all marking is complete.		*/
+/* A zero value indicates that it's OK to miss some	*/
+/* register values.					*/
+GC_bool GC_mark_some(cold_gc_frame)
+ptr_t cold_gc_frame;
 {
     switch(GC_mark_state) {
     	case MS_NONE:
@@ -259,7 +264,7 @@ GC_bool GC_mark_some()
 			GC_printf1("Marked from %lu dirty pages\n",
 				   (unsigned long)GC_n_rescuing_pages);
 #		    endif
-    	    	    GC_push_roots(FALSE);
+    	    	    GC_push_roots(FALSE, cold_gc_frame);
     	    	    GC_objects_are_marked = TRUE;
     	    	    if (GC_mark_state != MS_INVALID) {
     	    	        GC_mark_state = MS_ROOTS_PUSHED;
@@ -276,7 +281,7 @@ GC_bool GC_mark_some()
     	    } else {
     	        scan_ptr = GC_push_next_marked_uncollectable(scan_ptr);
     	        if (scan_ptr == 0) {
-    	    	    GC_push_roots(TRUE);
+    	    	    GC_push_roots(TRUE, cold_gc_frame);
     	    	    GC_objects_are_marked = TRUE;
     	    	    if (GC_mark_state != MS_INVALID) {
     	    	        GC_mark_state = MS_ROOTS_PUSHED;
@@ -317,7 +322,7 @@ GC_bool GC_mark_some()
     	    }
     	    scan_ptr = GC_push_next_marked(scan_ptr);
     	    if (scan_ptr == 0 && GC_mark_state == MS_PARTIALLY_INVALID) {
-    	    	GC_push_roots(TRUE);
+    	    	GC_push_roots(TRUE, cold_gc_frame);
     	    	GC_objects_are_marked = TRUE;
     	    	if (GC_mark_state != MS_INVALID) {
     	    	    GC_mark_state = MS_ROOTS_PUSHED;
@@ -516,13 +521,15 @@ word n;
     if (GC_mark_stack_size != 0) {
         if (new_stack != 0) {
           word displ = (word)GC_mark_stack & (GC_page_size - 1);
-          word size = GC_mark_stack_size * sizeof(struct ms_entry);
+          signed_word size = GC_mark_stack_size * sizeof(struct ms_entry);
           
           /* Recycle old space */
 	      if (0 != displ) displ = GC_page_size - displ;
 	      size = (size - displ) & ~(GC_page_size - 1);
-	      GC_add_to_heap((struct hblk *)
-	      			((word)GC_mark_stack + displ), size);
+	      if (size > 0) {
+	        GC_add_to_heap((struct hblk *)
+	      			((word)GC_mark_stack + displ), (word)size);
+	      }
           GC_mark_stack = new_stack;
           GC_mark_stack_size = n;
 #	  ifdef PRINTSTATS
@@ -819,43 +826,52 @@ ptr_t top;
 #   undef GC_least_plausible_heap_addr
 }
 
+#ifndef THREADS
 /*
  * A version of GC_push_all that treats all interior pointers as valid
  * and scans part of the area immediately, to make sure that saved
  * register values are not lost.
+ * Cold_gc_frame delimits the stack section that must be scanned
+ * eagerly.  A zero value indicates that no eager scanning is needed.
  */
-void GC_push_all_stack(bottom, top)
+void GC_push_all_stack_partially_eager(bottom, top, cold_gc_frame)
 ptr_t bottom;
 ptr_t top;
+ptr_t cold_gc_frame;
 {
 # ifdef ALL_INTERIOR_POINTERS
 #   define EAGER_BYTES 1024
     /* Push the hot end of the stack eagerly, so that register values   */
     /* saved inside GC frames are marked before they disappear.		*/
     /* The rest of the marking can be deferred until later.		*/
-    ptr_t mid;
+    if (0 == cold_gc_frame) {
+	GC_push_all_stack(bottom, top);
+	return;
+    }
 #   ifdef STACK_GROWS_DOWN
-	mid = bottom + 1024;
-	if (mid < top) {
-	    GC_push_all_eager(bottom, mid);
-	    GC_push_all(mid - sizeof(ptr_t), top);
-	} else {
-	    GC_push_all_eager(bottom, top);
-	}
+	GC_push_all_eager(bottom, cold_gc_frame);
+	GC_push_all(cold_gc_frame - sizeof(ptr_t), top);
 #   else /* STACK_GROWS_UP */
-	mid = top - 1024;
-	if (mid > bottom) {
-	    GC_push_all_eager(mid, top);
-	    GC_push_all(bottom, mid + sizeof(ptr_t));
-	} else {
-	    GC_push_all_eager(bottom, top);
-	}
+	GC_push_all_eager(cold_gc_frame, top);
+	GC_push_all(bottom, cold_gc_frame + sizeof(ptr_t));
 #   endif /* STACK_GROWS_UP */
 # else
     GC_push_all_eager(bottom, top);
 # endif
 # ifdef TRACE_BUF
       GC_add_trace_entry("GC_push_all_stack", bottom, top);
+# endif
+}
+#endif /* !THREADS */
+
+void GC_push_all_stack(bottom, top)
+ptr_t bottom;
+ptr_t top;
+{
+# ifdef ALL_INTERIOR_POINTERS
+    GC_push_all(bottom, top);
+# else
+    GC_push_all_eager(bottom, top);
 # endif
 }
 

@@ -31,7 +31,11 @@
       /* make sure the former gets defined to be the latter if appropriate. */
 #     include <features.h>
 #     if 2 <= __GLIBC__
-#       include <sigcontext.h>
+#       if 0 == __GLIBC_MINOR__
+	  /* glibc 2.1 no longer has sigcontext.h.  But signal.h	*/
+	  /* has the right declaration for glibc 2.1.			*/
+#         include <sigcontext.h>
+#       endif /* 0 == __GLIBC_MINOR__ */
 #     else /* not 2 <= __GLIBC__ */
         /* libc5 doesn't have <sigcontext.h>: go directly with the kernel   */
         /* one.  Check LINUX_VERSION_CODE to see which we should reference. */

@@ -139,7 +139,7 @@ ptr_t p;
 {
     register oh * ohdr = (oh *)GC_base(p);
     
-    GC_err_printf1("0x%lx (", (unsigned long)ohdr + sizeof(oh));
+    GC_err_printf1("0x%lx (", ((unsigned long)ohdr + sizeof(oh)));
     GC_err_puts(ohdr -> oh_string);
     GC_err_printf2(":%ld, sz=%ld)\n", (unsigned long)(ohdr -> oh_int),
         			      (unsigned long)(ohdr -> oh_sz));
@@ -166,7 +166,7 @@ ptr_t p, clobbered_addr;
     if (clobbered_addr <= (ptr_t)(&(ohdr -> oh_sz))
         || ohdr -> oh_string == 0) {
         GC_err_printf1("<smashed>, appr. sz = %ld)\n",
-        	       GC_size((ptr_t)ohdr) - DEBUG_BYTES);
+        	       (GC_size((ptr_t)ohdr) - DEBUG_BYTES));
     } else {
         if (ohdr -> oh_string[0] == '\0') {
             GC_err_puts("EMPTY(smashed?)");

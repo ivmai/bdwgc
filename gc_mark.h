@@ -224,7 +224,7 @@ mse * GC_signal_mark_stack_overflow();
     while (!GC_mark_stack_empty()) GC_mark_from_mark_stack(); \
     if (GC_mark_state != MS_NONE) { \
         GC_set_mark_bit(real_ptr); \
-        while (!GC_mark_some()); \
+        while (!GC_mark_some((ptr_t)0)); \
     } \
 }
 

@@ -91,6 +91,12 @@ void GC_push_all_stacks()
 	if (thread_table[i].context.Esp >= (DWORD)thread_table[i].stack
 	    || thread_table[i].context.Esp < (DWORD)bottom)
 	    ABORT("Thread stack pointer out of range");
+	GC_push_one ((word) thread_table[i].context.Edi);
+    	GC_push_one ((word) thread_table[i].context.Esi);
+    	GC_push_one ((word) thread_table[i].context.Ebx);
+    	GC_push_one ((word) thread_table[i].context.Edx);
+    	GC_push_one ((word) thread_table[i].context.Ecx);
+    	GC_push_one ((word) thread_table[i].context.Eax);
 	GC_push_all_stack(thread_table[i].context.Esp, thread_table[i].stack);
       }
     }

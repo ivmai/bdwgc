@@ -11,7 +11,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.14alpha1 of a conservative garbage collector for C and C++.
+This is version 4.14alpha2 of a conservative garbage collector for C and C++.
 
 You might find a more recent version of this at
 
@@ -22,7 +22,14 @@ HISTORY -
   Early versions of this collector were developed as a part of research
 projects supported in part by the National Science Foundation
 and the Defense Advance Research Projects Agency.
-Much of the code was rewritten by Hans-J. Boehm at Xerox PARC.
+Much of the code was rewritten by Hans-J. Boehm at Xerox PARC
+and is now maintained by him at SGI (boehm@sgi.com).
+
+Some other contributors:  
+
+More recent contributors are mentioned in the modification history at the
+end of this file.  My apologies for any omissions.
+
 The SPARC specific code was contributed by Mark Weiser
 (weiser@parc.xerox.com).  The Encore Multimax modifications were supplied by
 Kevin Kenny (kenny@m.cs.uiuc.edu).  The adaptation to the RT is largely due
@@ -59,8 +66,7 @@ made it into the released version of the collector, yet.)
 (Blame for misinstallation of these modifications goes to the first author,
 however.)
 
-Credits for some more recent modifications are given in the modification
-history at the end of this file.
+OVERVIEW
 
     This is intended to be a general purpose, garbage collecting storage
 allocator.  The algorithms used are described in:
@@ -89,7 +95,7 @@ of the ACM SIGPLAN '96 Conference on Programming Language Design and
 Implementation.
 
 (Both are also available from
-http://reality.sgi.com/employees/boehm_mti/papers/, among other places.)
+http://reality.sgi.com/boehm/papers/, among other places.)
 
   Unlike the collector described in the second reference, this collector
 operates either with the mutator stopped during the entire collection
@@ -606,7 +612,7 @@ reclaimed.  Exclusive-or'ing forward and backward links in a list
 doesn't cut it.
   Some C optimizers may lose the last undisguised pointer to a memory
 object as a consequence of clever optimizations.  This has almost
-never been observed in practice.  Send mail to boehm@mti.sgi.com
+never been observed in practice.  Send mail to boehm@sgi.com
 for suggestions on how to fix your compiler.
   This is not a real-time collector.  In the standard configuration,
 percentage of time required for collection should be constant across
@@ -615,7 +621,7 @@ heap sizes.  But collection pauses will increase for larger heaps.
 per MB of accessible memory that needs to be scanned.  Your mileage
 may vary.)  The incremental/generational collection facility helps,
 but is portable only if "stubborn" allocation is used.
-  Please address bug reports to boehm@mti.sgi.com.  If you are
+  Please address bug reports to boehm@sgi.com.  If you are
 contemplating a major addition, you might also send mail to ask whether
 it's already been done (or whether we tried and discarded it).
 
@@ -1424,13 +1430,24 @@ Since 4.13:
    after the relevant frame was overwritten, and the new save location
    might be outside the scanned area.  Fixed by more eager stack scanning.)
  - PRINT_BLACK_LIST had some problems.  A few source addresses were garbage.
- - Removed a prototype in code that shouldn't assume prototype support.
  - Replaced Makefile.dj and added -I flags to cord make targets.
    (Thanks to Gary Leavens.)
  - GC_try_to_collect was broken with the nonincremental collector.
  - gc_cleanup destructors could pass the wrong address to
    GC_register_finalizer_ignore_self in the presence of multiple
    inheritance.  (Thanks to Darrell Schiebel.)
+ - Changed PowerPC Linux stack finding code.
+
+Since 4.14alpha1
+ - -DSMALL_CONFIG did not work reliably with large (> 4K) pages.
+   Recycling the mark stack during expansion could result in a size
+   zero heap segment, which confused things.  (This was probably also an
+   issue with the normal config and huge pages.)
+ - Did more work to make sure that callee-save registers were scanned
+   completely, even with the setjmp-based code.  Added USE_GENERIC_PUSH_REGS
+   macro to facilitate testing on machines I have access to.
+ - Added code to explicitly push register contents for win32 threads.
+   This seems to be necessary.  (Thanks to Pierre de Rop.)
 
 
 To do:

@@ -254,6 +254,19 @@ liblinuxgc.so: $(OBJS) dyn_load.o
 	gcc -shared -o liblinuxgc.so $(OBJS) dyn_load.o -lo
 	ln liblinuxgc.so libgc.so
 
+# Alternative Linux rule.  This is preferable, but is likely to break the
+# Makefile for some non-linux platforms.
+# LIBOBJS= $(patsubst %.o, %.lo, $(OBJS))
+#
+#.SUFFIXES: .lo $(SUFFIXES)
+#
+#.c.lo:
+#	$(CC) $(CFLAGS) $(CPPFLAGS) -fPIC -c $< -o $@
+#
+# liblinuxgc.so: $(LIBOBJS) dyn_load.lo
+# 	gcc -shared -Wl,-soname=libgc.so.0 -o libgc.so.0 $(LIBOBJS) dyn_load.lo
+#	touch liblinuxgc.so
+
 mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ultrix_mach_dep.s $(srcdir)/rs6000_mach_dep.s $(UTILS)
 	rm -f mach_dep.o
 	./if_mach MIPS IRIX5 $(AS) -o mach_dep.o $(srcdir)/mips_sgi_mach_dep.s
@@ -369,7 +382,7 @@ gc.tar.gz: gc.tar
 	gzip gc.tar
 
 lint: $(CSRCS) test.c
-	lint -DLINT $(CSRCS) test.c | egrep -v "possible pointer alignment problem|abort|exit|sbrk|mprotect|syscall"
+	lint -DLINT $(CSRCS) test.c | egrep -v "possible pointer alignment problem|abort|exit|sbrk|mprotect|syscall|change in ANSI|improper alignment"
 
 # BTL: added to test shared library version of collector.
 # Currently works only under SunOS5.  Requires GC_INIT call from statically

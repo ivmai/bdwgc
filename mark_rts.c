@@ -400,13 +400,44 @@ int all;
 }
 
 /*
+ * In the absence of threads, push the stack contents.
+ * In the presence of threads, push enough of the current stack
+ * to ensure that callee-save registers saved in collector frames have been
+ * seen.
+ */
+void GC_push_current_stack(cold_gc_frame)
+ptr_t cold_gc_frame;
+{
+#   if defined(THREADS)
+	if (0 == cold_gc_frame) return;
+#       ifdef STACK_GROWS_DOWN
+    	  GC_push_all_eager(GC_approx_sp(), cold_gc_frame);
+#       else
+	  GC_push_all_eager( cold_gc_frame, GC_approx_sp() );
+#       endif
+#   else
+#   	ifdef STACK_GROWS_DOWN
+    	    GC_push_all_stack_partially_eager( GC_approx_sp(), GC_stackbottom,
+					       cold_gc_frame );
+#       else
+	    GC_push_all_stack_partially_eager( GC_stackbottom, GC_approx_sp(),
+					       cold_gc_frame );
+#       endif
+#   endif /* !THREADS */
+}
+
+/*
  * Call the mark routines (GC_tl_push for a single pointer, GC_push_conditional
  * on groups of pointers) on every top level accessible pointer.
  * If all is FALSE, arrange to push only possibly altered values.
+ * Cold_gc_frame is an address inside a GC frame that
+ * remains valid until all marking is complete.
+ * A zero value indicates that it's OK to miss some
+ * register values.
  */
-
-void GC_push_roots(all)
+void GC_push_roots(all, cold_gc_frame)
 GC_bool all;
+ptr_t cold_gc_frame;
 {
     register int i;
 
@@ -414,7 +445,11 @@ GC_bool all;
      * push registers - i.e., call GC_push_one(r) for each
      * register contents r.
      */
+#   ifdef USE_GENERIC_PUSH_REGS
+	GC_generic_push_regs(cold_gc_frame);
+#   else
         GC_push_regs(); /* usually defined in machine_dep.c */
+#   endif
         
     /*
      * Next push static data.  This must happen early on, since it's
@@ -436,13 +471,12 @@ GC_bool all;
     /*
      * Now traverse stacks.
      */
-#   ifndef THREADS
-        /* Mark everything on the stack.           */
-#   	  ifdef STACK_GROWS_DOWN
-	    GC_push_all_stack( GC_approx_sp(), GC_stackbottom );
-#	  else
-	    GC_push_all_stack( GC_stackbottom, GC_approx_sp() );
-#	  endif
+#   if !defined(USE_GENERIC_PUSH_REGS)
+	GC_push_current_stack(cold_gc_frame);
+	/* IN the threads case, this only pushes collector frames.      */
+	/* In the USE_GENERIC_PUSH_REGS case, this is done inside	*/
+	/* GC_push_regs, so that we catch callee-save registers saved	*/
+	/* inside the GC_push_regs frame.				*/
 #   endif
     if (GC_push_other_roots != 0) (*GC_push_other_roots)();
     	/* In the threads case, this also pushes thread stacks.	*/

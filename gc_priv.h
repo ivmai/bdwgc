@@ -1323,7 +1323,8 @@ void GC_mark_from_mark_stack(); /* Mark from everything on the mark stack. */
 				/* Return after about one pages worth of   */
 				/* work.				   */
 GC_bool GC_mark_stack_empty();
-GC_bool GC_mark_some();	/* Perform about one pages worth of marking	*/
+GC_bool GC_mark_some(/* cold_gc_frame */);
+			/* Perform about one pages worth of marking	*/
 			/* work of whatever kind is needed.  Returns	*/
 			/* quickly if no collection is in progress.	*/
 			/* Return TRUE if mark phase finished.		*/
@@ -1345,7 +1346,31 @@ void GC_push_dirty(/*b,t*/);      /* Push all possibly changed	 	*/
 				/* on the third arg.			*/
 void GC_push_all_stack(/*b,t*/);    /* As above, but consider		*/
 				    /*  interior pointers as valid  	*/
-void GC_push_roots(/* GC_bool all */); /* Push all or dirty roots.	*/
+void GC_push_all_eager(/*b,t*/);    /* Same as GC_push_all_stack, but   */
+				    /* ensures that stack is scanned	*/
+				    /* immediately, not just scheduled  */
+				    /* for scanning.			*/
+#ifndef THREADS
+  void GC_push_all_stack_partially_eager(/* bottom, top, cold_gc_frame */);
+			/* Similar to GC_push_all_eager, but only the	*/
+			/* part hotter than cold_gc_frame is scanned	*/
+			/* immediately.  Needed to endure that callee-	*/
+			/* save registers are not missed.		*/
+#else
+  /* In the threads case, we push part of the current thread stack	*/
+  /* with GC_push_all_eager when we push the registers.  This gets the  */
+  /* callee-save registers that may disappear.  The remainder of the	*/
+  /* stacks are scheduled for scanning in *GC_push_other_roots, which	*/
+  /* is thread-package-specific.					*/
+#endif
+void GC_push_current_stack(/* ptr_t cold_gc_frame */);
+			/* Push enough of the current stack eagerly to	*/
+			/* ensure that callee-save registers saved in	*/
+			/* GC frames are scanned.			*/
+			/* In the non-threads case, schedule entire	*/
+			/* stack for scanning.				*/
+void GC_push_roots(/* GC_bool all, ptr_t cold_gc_frame */);
+			/* Push all or dirty roots.	*/
 extern void (*GC_push_other_roots)();
 			/* Push system or application specific roots	*/
 			/* onto the mark stack.  In some environments	*/
