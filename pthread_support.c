@@ -645,6 +645,17 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
   }
 #endif /* GC_ASSERTIONS && THREAD_LOCAL_ALLOC */
 
+GC_API int GC_CALL GC_thread_is_registered(void)
+{
+    void *ptr;
+
+    LOCK();
+    ptr = (void *)GC_lookup_thread(pthread_self());
+    UNLOCK();
+
+    return ptr ? 1 : 0;
+}
+
 #ifdef HANDLE_FORK
 /* Remove all entries from the GC_threads table, except the     */
 /* one for the current thread.  We need to do this in the child */

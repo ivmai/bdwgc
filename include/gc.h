@@ -1122,6 +1122,10 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* A manually registered thread requires manual unregistering.        */
   GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *);
 
+  /* Return TRUE if and only if the calling thread is registered with   */
+  /* the garbage collector.                                             */
+  GC_API int GC_CALL GC_thread_is_registered(void);
+
   /* Unregister the current thread.  Only an explicitly registered      */
   /* thread (i.e. for which GC_register_my_thread() returns GC_SUCCESS) */
   /* is allowed (and required) to call this function.  (As a special    */

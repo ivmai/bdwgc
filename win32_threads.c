@@ -584,6 +584,12 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
   }
 #endif /* GC_ASSERTIONS && THREAD_LOCAL_ALLOC */
 
+GC_API int GC_CALL GC_thread_is_registered(void)
+{
+       /* FIXME: Works only if registered by DllMain */
+       return 1;
+}
+
 /* Make sure thread descriptor t is not protected by the VDB            */
 /* implementation.                                                      */
 /* Used to prevent write faults when the world is (partially) stopped,  */
