@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, January 31, 1995 3:01 pm PST */
+/* Boehm, June 13, 1995 3:34 pm PDT */
 
 #define DEBUG
 #undef DEBUG
@@ -19,11 +19,11 @@
 #include "gc_priv.h"
 
 
-/**/
-/* allocate/free routines for heap blocks
-/* Note that everything called from outside the garbage collector
-/* should be prepared to abort at any point as the result of a signal.
-/**/
+/*
+ * allocate/free routines for heap blocks
+ * Note that everything called from outside the garbage collector
+ * should be prepared to abort at any point as the result of a signal.
+ */
 
 /*
  * Free heap blocks are kept on a list sorted by address.
@@ -42,6 +42,7 @@ struct hblk *GC_savhbp = (struct hblk *)0;  /* heap block preceding next */
 					 /* block to be examined by   */
 					 /* GC_allochblk.                */
 
+# if !defined(NO_DEBUGGING)
 void GC_print_hblkfreelist()
 {
     struct hblk * h = GC_hblkfreelist;
@@ -65,6 +66,8 @@ void GC_print_hblkfreelist()
     }
     GC_printf1("Total of %lu bytes on free list\n", (unsigned long)total_free);
 }
+
+# endif /* NO_DEBUGGING */
 
 /* Initialize hdr for a block containing the indicated size and 	*/
 /* kind of objects.							*/
@@ -196,7 +199,8 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 	      } else if (size_needed > BL_LIMIT
 	                 && orig_avail - size_needed > BL_LIMIT) {
 	        /* Punt, since anything else risks unreasonable heap growth. */
-	        WARN("Need to allocated blacklisted block at %ld\n", (word)hbp);
+	        WARN("Needed to allocate blacklisted block at %ld\n",
+		     (word)hbp);
 	        thishbp = hbp;
 	        size_avail = orig_avail;
 	      } else if (size_avail == 0

@@ -13,7 +13,7 @@
  * Original author: Bill Janssen
  * Heavily modified by Hans Boehm and others
  */
-/* Boehm, September 12, 1994 4:27 pm PDT */
+/* Boehm, April 17, 1995 3:20 pm PDT */
 
 /*
  * This is incredibly OS specific code for tracking down data sections in
@@ -45,7 +45,7 @@
 # endif
 
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32)) && !defined(PCR)
-#if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && !defined(MSWIN32)
+#if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && !defined(MSWIN32) && !defined(ALPHA)
  --> We only know how to find data segments of dynamic libraries under SunOS,
  --> IRIX5, DRSNX and Win32.  Additional SVR4 variants might not be too
  --> hard to add.
@@ -202,7 +202,8 @@ void GC_register_dynamic_libraries()
         e = (struct exec *) lm->lm_addr;
         GC_add_roots_inner(
       		    ((char *) (N_DATOFF(*e) + lm->lm_addr)),
-		    ((char *) (N_BSSADDR(*e) + e->a_bss + lm->lm_addr)));
+		    ((char *) (N_BSSADDR(*e) + e->a_bss + lm->lm_addr)),
+		    TRUE);
 #     endif
 #     ifdef SUNOS5DL
 	Elf32_Ehdr * e;
@@ -222,7 +223,8 @@ void GC_register_dynamic_libraries()
                 start = ((char *)(p->p_vaddr)) + offset;
                 GC_add_roots_inner(
                   start,
-                  start + p->p_memsz
+                  start + p->p_memsz,
+                  TRUE
                 );
               }
               break;
@@ -241,7 +243,7 @@ void GC_register_dynamic_libraries()
       	if (common_start == 0) common_start = GC_first_common();
       	if (common_start != 0) {
       	    common_end = GC_find_limit(common_start, TRUE);
-      	    GC_add_roots_inner((char *)common_start, (char *)common_end);
+      	    GC_add_roots_inner((char *)common_start, (char *)common_end, TRUE);
       	}
       }
 #   endif
@@ -341,7 +343,7 @@ void GC_register_dynamic_libraries()
 	        }
 	    }
 	}
-        GC_add_roots_inner(start, limit);
+        GC_add_roots_inner(start, limit, TRUE);
       irrelevant: ;
     }
 }
@@ -371,7 +373,7 @@ void GC_register_dynamic_libraries()
     	/* Part of the stack; ignore it. */
     	return;
     }
-    GC_add_roots_inner(base, limit);
+    GC_add_roots_inner(base, limit, TRUE);
   }
   
   extern bool GC_win32s;
@@ -418,6 +420,9 @@ void GC_register_dynamic_libraries()
 #endif /* MSWIN32 */
 
 #if defined(ALPHA)
+
+#include <loader.h>
+
 void GC_register_dynamic_libraries()
 {
   int status;
@@ -510,7 +515,8 @@ void GC_register_dynamic_libraries()
           /* register region as a garbage collection root */
             GC_add_roots_inner (
                 (char *)regioninfo.lri_mapaddr,
-                (char *)regioninfo.lri_mapaddr + regioninfo.lri_size);
+                (char *)regioninfo.lri_mapaddr + regioninfo.lri_size,
+                TRUE);
 
         }
     }
@@ -548,7 +554,8 @@ void GC_register_dynamic_libraries()
                   == PCR_IL_SegFlags_Traced_on) {
                 GC_add_roots_inner
                 	((char *)(q -> ls_addr), 
-                	 (char *)(q -> ls_addr) + q -> ls_bytes);
+                	 (char *)(q -> ls_addr) + q -> ls_bytes,
+                	 TRUE);
               }
             }
           }

@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, February 10, 1995 12:55 pm PST */
+/* Boehm, June 13, 1995 3:07 pm PDT */
  
 #include <stdio.h>
 #include "gc_priv.h"
@@ -115,7 +115,6 @@ ptr_t GC_generic_malloc_inner_ignore_off_page(lb, k)
 register size_t lb;
 register int k;
 {
-# ifdef ALL_INTERIOR_POINTERS
     register struct hblk * h;
     register word n_blocks;
     register word lw;
@@ -139,9 +138,6 @@ register int k;
     }
     GC_words_allocd += lw;
     return((ptr_t)op);
-# else
-    return(GC_generic_malloc_inner((word)lb, k));
-# endif
 }
 
 ptr_t GC_generic_malloc_ignore_off_page(lb, k)
@@ -508,11 +504,15 @@ int obj_kind;
 
     if (sz > WORDS_TO_BYTES(MAXOBJSZ)) {
 	/* Round it up to the next whole heap block */
+	  register word descr;
 	  
 	  sz = (sz+HDR_BYTES+HBLKSIZE-1)
 		& (~HBLKMASK);
 	  sz -= HDR_BYTES;
 	  hhdr -> hb_sz = BYTES_TO_WORDS(sz);
+	  descr = GC_obj_kinds[obj_kind].ok_descriptor;
+          if (GC_obj_kinds[obj_kind].ok_relocate_descr) descr += sz;
+          hhdr -> hb_descr = descr;
 	  if (obj_kind == UNCOLLECTABLE) GC_non_gc_bytes += (sz - orig_sz);
 	  /* Extra area is already cleared by allochblk. */
     }

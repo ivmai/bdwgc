@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, October 27, 1994 9:57 am PDT */
+/* Boehm, April 18, 1995 3:29 pm PDT */
 # include "gc_priv.h"
 
 /* Do we want to and know how to save the call stack at the time of	*/
@@ -153,6 +153,7 @@ ptr_t p, clobbered_addr;
         }
         GC_err_printf2(":%ld, sz=%ld)\n", (unsigned long)(ohdr -> oh_int),
         			          (unsigned long)(ohdr -> oh_sz));
+        PRINT_CALL_CHAIN(ohdr);
     }
 }
 

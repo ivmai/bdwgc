@@ -11,19 +11,23 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, September 15, 1994 2:15 pm PDT */
+/* Boehm, April 18, 1995 3:04 pm PDT */
 # include <stdio.h>
 # include "gc_priv.h"
 
-# ifdef PCR
-#   define MAX_ROOT_SETS 1024
+# ifdef LARGE_CONFIG
+#   define MAX_ROOT_SETS 4096
 # else
-#   ifdef MSWIN32
+#   ifdef PCR
+#     define MAX_ROOT_SETS 1024
+#   else
+#     ifdef MSWIN32
 #	define MAX_ROOT_SETS 512
 	    /* Under NT, we add only written pages, which can result 	*/
 	    /* in many small root sets.					*/
-#   else
+#     else
 #       define MAX_ROOT_SETS 64
+#     endif
 #   endif
 # endif
 
@@ -37,6 +41,8 @@ struct roots {
 #	ifndef MSWIN32
 	  struct roots * r_next;
 #	endif
+	bool r_tmp;
+	  	/* Delete before registering new dynamic libraries */
 };
 
 static struct roots static_roots[MAX_ROOT_SETS];
@@ -44,6 +50,32 @@ static struct roots static_roots[MAX_ROOT_SETS];
 static int n_root_sets = 0;
 
 	/* static_roots[0..n_root_sets) contains the valid root sets. */
+
+# if !defined(NO_DEBUGGING)
+/* For debugging:	*/
+void GC_print_static_roots()
+{
+    register int i;
+    size_t total = 0;
+    
+    for (i = 0; i < n_root_sets; i++) {
+        GC_printf2("From 0x%lx to 0x%lx ",
+        	   (unsigned long) static_roots[i].r_start,
+        	   (unsigned long) static_roots[i].r_end);
+        if (static_roots[i].r_tmp) {
+            GC_printf0(" (temporary)\n");
+        } else {
+            GC_printf0("\n");
+        }
+        total += static_roots[i].r_end - static_roots[i].r_start;
+    }
+    GC_printf1("Total size: %ld\n", (unsigned long) total);
+    if (GC_root_size != total) {
+     	GC_printf1("GC_root_size incorrect: %ld!!\n",
+     		   (unsigned long) GC_root_size);
+    }
+}
+# endif /* NO_DEBUGGING */
 
 /* Primarily for debugging support:	*/
 /* Is the address p in one of the registered static			*/
@@ -134,7 +166,7 @@ char * b; char * e;
     
     DISABLE_SIGNALS();
     LOCK();
-    GC_add_roots_inner(b, e);
+    GC_add_roots_inner(b, e, FALSE);
     UNLOCK();
     ENABLE_SIGNALS();
 }
@@ -144,8 +176,11 @@ char * b; char * e;
 /* is a moderately fast noop, and hence benign.  We do not handle	*/
 /* different but overlapping intervals efficiently.  (We do handle	*/
 /* them correctly.)							*/
-void GC_add_roots_inner(b, e)
+/* Tmp specifies that the interval may be deleted before 		*/
+/* reregistering dynamic libraries.					*/ 
+void GC_add_roots_inner(b, e, tmp)
 char * b; char * e;
+bool tmp;
 {
     struct roots * old;
     
@@ -158,8 +193,8 @@ char * b; char * e;
         } else if ((ptr_t)b >= beginGC_arrays) {
             b = (char *)endGC_arrays;
         } else {
-            GC_add_roots_inner(b, (char *)beginGC_arrays);
-            GC_add_roots_inner((char *)endGC_arrays, e);
+            GC_add_roots_inner(b, (char *)beginGC_arrays, tmp);
+            GC_add_roots_inner((char *)endGC_arrays, e, tmp);
             return;
         }
     }
@@ -178,10 +213,13 @@ char * b; char * e;
             if ((ptr_t)b <= old -> r_end && (ptr_t)e >= old -> r_start) {
                 if ((ptr_t)b < old -> r_start) {
                     old -> r_start = (ptr_t)b;
+                    GC_root_size += (old -> r_start - (ptr_t)b);
                 }
                 if ((ptr_t)e > old -> r_end) {
                     old -> r_end = (ptr_t)e;
+                    GC_root_size += ((ptr_t)e - old -> r_end);
                 }
+                old -> r_tmp &= tmp;
                 break;
             }
         }
@@ -196,14 +234,18 @@ char * b; char * e;
               if ((ptr_t)b <= old -> r_end && (ptr_t)e >= old -> r_start) {
                 if ((ptr_t)b < old -> r_start) {
                     old -> r_start = (ptr_t)b;
+                    GC_root_size += (old -> r_start - (ptr_t)b);
                 }
                 if ((ptr_t)e > old -> r_end) {
                     old -> r_end = (ptr_t)e;
+                    GC_root_size += ((ptr_t)e - old -> r_end);
                 }
+                old -> r_tmp &= other -> r_tmp;
                 /* Delete this entry. */
+                  GC_root_size -= (other -> r_end - other -> r_start);
                   other -> r_start = static_roots[n_root_sets-1].r_start;
                   other -> r_end = static_roots[n_root_sets-1].r_end;
-                  n_root_sets--;
+                                  n_root_sets--;
               }
             }
           return;
@@ -224,6 +266,7 @@ char * b; char * e;
     }
     static_roots[n_root_sets].r_start = (ptr_t)b;
     static_roots[n_root_sets].r_end = (ptr_t)e;
+    static_roots[n_root_sets].r_tmp = tmp;
 #   ifndef MSWIN32
       static_roots[n_root_sets].r_next = 0;
 #   endif
@@ -249,6 +292,33 @@ void GC_clear_roots(NO_PARAMS)
 #   endif
     UNLOCK();
     ENABLE_SIGNALS();
+}
+
+/* Internal use only; lock held.	*/
+void GC_remove_tmp_roots()
+{
+    register int i;
+    
+    for (i = 0; i < n_root_sets; ) {
+    	if (static_roots[i].r_tmp) {
+    	    GC_root_size -= (static_roots[i].r_end - static_roots[i].r_start);
+    	    static_roots[i].r_start = static_roots[n_root_sets-1].r_start;
+    	    static_roots[i].r_end = static_roots[n_root_sets-1].r_end;
+    	    static_roots[i].r_tmp = static_roots[n_root_sets-1].r_tmp;
+    	    n_root_sets--;
+    	} else {
+    	    i++;
+    	}
+    }
+#   ifndef MSWIN32
+    {
+    	register int i;
+    	
+    	for (i = 0; i < RT_SIZE; i++) root_index[i] = 0;
+    	for (i = 0; i < n_root_sets; i++) add_roots_to_index(static_roots + i);
+    }
+#   endif
+    
 }
 
 ptr_t GC_approx_sp()
@@ -282,6 +352,7 @@ bool all;
      /* Reregister dynamic libraries, in case one got added.	*/
 #      if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(PCR)) \
            && !defined(SRC_M3)
+         GC_remove_tmp_roots();
          GC_register_dynamic_libraries();
 #      endif
      /* Mark everything in static data areas                             */

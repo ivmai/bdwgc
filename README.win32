@@ -11,7 +11,7 @@ scanned for roots.  Thus the collector sees pointers in DLL data
 segments.  Under win32s, only the main data segment is scanned.
 (The main data segment should always be scanned.  Under some
 versions of win32s, other regions may also be scanned.)
-Thus all accessible objects should be excessible from local variables
+Thus all accessible objects should be accessible from local variables
 or variables in the main data segment.  Alternatively, other data
 segments (e.g. in DLLs) may be registered with the collector by
 calling GC_init() and then GC_register_root_section(a), where
@@ -40,7 +40,8 @@ This may be suboptimal for some tastes and/or sets of default
 window colors.)
 
 For Microsoft development tools, rename NT_MAKEFILE as
-MAKEFILE.  For Borland tools, use BCC_MAKEFILE.  Note that
+MAKEFILE.  (Make sure that the CPU environment variable is defined
+to be i386.) For Borland tools, use BCC_MAKEFILE.  Note that
 Borland's compiler defaults to 1 byte alignment in structures (-a1),
 whereas Visual C++ appears to default to 8 byte alignment (/Zp8).
 The garbage collector in its default configuration EXPECTS AT
@@ -50,4 +51,27 @@ I expect that -a1 introduces major performance penalties on a
 486 or Pentium.)  Note that this changes structure layouts.  (As a last
 resort, config.h can be changed to allow 1 byte alignment.  But
 this has significant negative performance implications.)
+
+Incremental collection support was recently added.  This is
+currently pretty simpleminded.  Pages are protected.  Protection
+faults are caught by a handler installed at the bottom of the handler
+stack.  This is both slow and interacts poorly with a debugger.
+Whenever possible, I recommend adding a call to
+GC_enable_incremental at the last possible moment, after most
+debugging is complete.  Unlike the UNIX versions, no system
+calls are wrapped by the collector itself.  It may be necessary
+to wrap ReadFile calls that use a buffer in the heap, so that the
+call does not encounter a protection fault while it's running.
+(As usual, none of this is an issue unless GC_enable_incremental
+is called.)
+
+Note that incremental collection is disabled with -DSMALL_CONFIG,
+which is the default for win32.  If you need incremental collection,
+undefine SMALL_CONFIG.
+
+Incremental collection is not supported under win32s, and it may not
+be possible to do so.  However, win32 applications that attempt to use
+incremental collection should continue to run, since the
+colllector detects if it's running under win32s and turns calls to
+GC_enable_incremental() into noops.
 

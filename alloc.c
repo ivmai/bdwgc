@@ -12,7 +12,7 @@
  * modified is included with the above copyright notice.
  *
  */
-/* Boehm, February 10, 1995 1:18 pm PST */
+/* Boehm, April 28, 1995 4:36 pm PDT */
 
 
 # include "gc_priv.h"
@@ -567,6 +567,29 @@ word bytes;
         GC_greatest_plausible_heap_addr = (ptr_t)p + bytes;
     }
 }
+
+# if !defined(NO_DEBUGGING)
+void GC_print_heap_sects()
+{
+    register unsigned i;
+    
+    GC_printf1("Total heap size: %lu\n", (unsigned long) GC_heapsize);
+    for (i = 0; i < GC_n_heap_sects; i++) {
+        unsigned long start = (unsigned long) GC_heap_sects[i].hs_start;
+        unsigned long len = (unsigned long) GC_heap_sects[i].hs_bytes;
+        struct hblk *h;
+        unsigned nbl = 0;
+        
+    	GC_printf3("Section %ld form 0x%lx to 0x%lx ", (unsigned long)i,
+    		   start, (unsigned long)(start + len));
+    	for (h = (struct hblk *)start; h < (struct hblk *)(start + len); h++) {
+    	    if (GC_is_black_listed(h, HBLKSIZE)) nbl++;
+    	}
+    	GC_printf2("%lu/%lu blacklisted\n", (unsigned long)nbl,
+    		   (unsigned long)(len/HBLKSIZE));
+    }
+}
+# endif
 
 ptr_t GC_least_plausible_heap_addr = (ptr_t)ONES;
 ptr_t GC_greatest_plausible_heap_addr = 0;

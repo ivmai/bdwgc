@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, January 30, 1995 4:01 pm PST */
+/* Boehm, April 18, 1995 2:51 pm PDT */
  
 
 # ifndef GC_PRIVATE_H
@@ -201,8 +201,13 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #endif
 
 
-# define MINHINCR 16       /* Minimum heap increment, in blocks of HBLKSIZE  */
-# define MAXHINCR 512      /* Maximum heap increment, in blocks              */
+# ifndef LARGE_CONFIG
+#   define MINHINCR 16	/* Minimum heap increment, in blocks of HBLKSIZE  */
+#   define MAXHINCR 512	/* Maximum heap increment, in blocks              */
+# else
+#   define MINHINCR 64
+#   define MAXHINCR 4096
+# endif
 
 # define TIME_LIMIT 50	   /* We try to keep pause times from exceeding	 */
 			   /* this by much. In milliseconds.		 */
@@ -606,9 +611,13 @@ extern GC_warn_proc GC_current_warn_proc;
  * Used by black-listing code, and perhaps by dirty bit maintenance code.
  */
  
-# define LOG_PHT_ENTRIES  14	/* Collisions are likely if heap grows	*/
+# ifdef LARGE_CONFIG
+#   define LOG_PHT_ENTRIES  17
+# else
+#   define LOG_PHT_ENTRIES  14	/* Collisions are likely if heap grows	*/
 				/* to more than 16K hblks = 64MB.	*/
 				/* Each hash table occupies 2K bytes.   */
+# endif
 # define PHT_ENTRIES ((word)1 << LOG_PHT_ENTRIES)
 # define PHT_SIZE (PHT_ENTRIES >> LOGWL)
 typedef word page_hash_table[PHT_SIZE];
@@ -822,7 +831,15 @@ struct _GC_arrays {
       page_hash_table _grungy_pages; /* Pages that were dirty at last 	   */
 				     /* GC_read_dirty.			   */
 # endif
-# define MAX_HEAP_SECTS 256	/* Separately added heap sections. */
+# ifdef LARGE_CONFIG
+#   if CPP_WORDSZ > 32
+#     define MAX_HEAP_SECTS 4096 	/* overflows at roughly 64 GB	   */
+#   else
+#     define MAX_HEAP_SECTS 768		/* Separately added heap sections. */
+#   endif
+# else
+#   define MAX_HEAP_SECTS 256
+# endif
   struct HeapSect {
       ptr_t hs_start; word hs_bytes;
   } _heap_sects[MAX_HEAP_SECTS];
@@ -1254,6 +1271,9 @@ void GC_stubborn_init();
 /* Debugging print routines: */
 void GC_print_block_list();
 void GC_print_hblkfreelist();
+void GC_print_heap_sects();
+void GC_print_static_roots();
+void GC_dump();
 
 /* Make arguments appear live to compiler */
 void GC_noop();

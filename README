@@ -10,7 +10,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.4 of a conservative garbage collector for C and C++.
+This is version 4.5 of a conservative garbage collector for C and C++.
 
 HISTORY -
 
@@ -93,7 +93,7 @@ is a fairly sophisticated string package "cord" that makes use of the collector.
 
 GENERAL DESCRIPTION
 
-  This is a garbage colecting storage allocator that is intended to be
+  This is a garbage collecting storage allocator that is intended to be
 used as a plug-in replacement for C's malloc.
 
   Since the collector does not require pointers to be tagged, it does not
@@ -120,7 +120,7 @@ cause any pointer into an object (or one past the end) to retain the
 object.  A routine GC_register_displacement is provided to allow for
 more controlled interior pointer use in the heap.  Defining
 ALL_INTERIOR_POINTERS is somewhat dangerous, in that it can result
-in unnecessary memroy retention.  However this is much less of a
+in unnecessary memory retention.  However this is much less of a
 problem than with older collector versions.  The routine
 GC_register_displacement is described in gc.h.
 
@@ -144,17 +144,16 @@ read-only data.  However if the shared library mechanism can introduce
 discontiguous data areas that may contain pointers, then the collector does
 need to be informed.
 
-  Signal processing for most signals is normally deferred during collection,
+  Signal processing for most signals may be deferred during collection,
 and during uninterruptible parts of the allocation process.  Unlike
-standard ANSI C mallocs, it is intended to be safe to invoke malloc
+standard ANSI C mallocs, it can be safe to invoke malloc
 from a signal handler while another malloc is in progress, provided
 the original malloc is not restarted.  (Empirically, many UNIX
-applications already asssume this.)  Even this modest level of signal-
-safety may be too expensive on some systems.  If so, ENABLE_SIGNALS
-and DISABLE_SIGNALS may be redefined to the empty statement in gc_private.h.
+applications already assume this.)  To obtain this level  of signal
+safety, remove the definition of -DNO_SIGNALS in Makefile.
 
   The allocator/collector can also be configured for thread-safe operation.
-(Full signal safety can also be acheived, but only at the cost of two system
+(Full signal safety can also be achieved, but only at the cost of two system
 calls per malloc, which is usually unacceptable.)
 
 INSTALLATION AND PORTABILITY
@@ -216,7 +215,7 @@ trademarks of their respective holders):
 	    DEC Alpha running OSF/1
 	    SGI workstations under IRIX 4 & 5
 	    Sony News
-	    Apple MacIntosh under A/UX or MacOS
+	    Apple Macintosh under A/UX or MacOS
 	    Commodore Amiga (see README.amiga)
 	    NeXT machines
 
@@ -239,7 +238,7 @@ On other machines we recommend that you do one of the following:
 
   In all cases we assume that pointer alignment is consistent with that
 enforced by the standard C compilers.  If you use a nonstandard compiler
-you may have to adjust the alignment parameters defined in gc_private.h.
+you may have to adjust the alignment parameters defined in gc_priv.h.
 
   A port to a machine that is not byte addressed, or does not use 32 bit
 or 64 bit addresses will require a major effort.  A port to MSDOS is hard,
@@ -266,7 +265,7 @@ following are likely to require change:
    On some machines, it is difficult to obtain such a value that is
    valid across a variety of MMUs, OS releases, etc.  A number of
    alternatives exist for using the collector in spite of this.  See the
-   discussion in config.h.h immediately preceding the various
+   discussion in config.h immediately preceding the various
    definitions of STACKBOTTOM.
    
 2.  mach_dep.c.
@@ -345,7 +344,7 @@ good way for the collector to compute this value.)  Client code may include
 
 2)  GC_malloc_atomic(nbytes)
     - allocate an object of size nbytes that is guaranteed not to contain any
-      pointers.  The returned object is not guaranteed to be cleeared.
+      pointers.  The returned object is not guaranteed to be cleared.
       (Can always be replaced by GC_malloc, but results in faster collection
       times.  The collector will probably run faster if large character
       arrays, etc. are allocated with GC_malloc_atomic than if they are
@@ -412,7 +411,7 @@ considered as a candidate for collection.  Careless use may, of course, result
 in excessive memory consumption.
 
   Some additional tuning is possible through the parameters defined
-near the top of gc_private.h.
+near the top of gc_priv.h.
   
   If only GC_malloc is intended to be used, it might be appropriate to define:
 
@@ -435,7 +434,7 @@ THE C++ INTERFACE TO THE ALLOCATOR:
   The Ellis-Hull C++ interface to the collector is included in
 the collector distribution.  If you intend to use this, type
 "make c++" after the initial build of the collector is complete.
-See gc_cpp.h for the difinition of the interface.  This interface
+See gc_cpp.h for the definition of the interface.  This interface
 tries to approximate the Ellis-Detlefs C++ garbage collection
 proposal without compiler changes.
 
@@ -504,7 +503,7 @@ NIL.
   GC_debug_malloc checking  during garbage collection is enabled
 with the first call to GC_debug_malloc.  This will result in some
 slowdown during collections.  If frequent heap checks are desired,
-this can be acheived by explicitly invoking GC_gcollect, e.g. from
+this can be achieved by explicitly invoking GC_gcollect, e.g. from
 the debugger.
 
   GC_debug_malloc allocated objects should not be passed to GC_realloc
@@ -650,7 +649,7 @@ for PPCR.
   Version 2.2 added debugging allocation, and fixed various bugs.  Among them:
 - GC_realloc could fail to extend the size of the object for certain large object sizes.
 - A blatant subscript range error in GC_printf, which unfortunately
-  wasn't excercised on machines with sufficient stack alignment constraints.
+  wasn't exercised on machines with sufficient stack alignment constraints.
 - GC_register_displacement did the wrong thing if it was called after
   any allocation had taken place.
 - The leak finding code would eventually break after 2048 byte
@@ -705,7 +704,7 @@ for PPCR.
   a dynamic library.  
 - A fix for a bug in GC_base that could result in a memory fault.
 - A fix for a performance bug (and several other misfeatures) pointed
-  out by Dave Detelfs and Al Dosser.
+  out by Dave Detlefs and Al Dosser.
 - Use of dirty bit information for static data under Solaris 2.X.
 - DEC Alpha/OSF1 support (thanks to Al Dosser).
 - Incremental collection on more platforms.
@@ -760,7 +759,7 @@ for PPCR.
   that the old version was correct.
 - Fixed an incremental collection bug that prevented it from
   working at all when HBLKSIZE != getpagesize()
-- Changed dynamic_loading.c to include gc_private.h before testing
+- Changed dynamic_loading.c to include gc_priv.h before testing
   DYNAMIC_LOADING.  SunOS dynamic library scanning
   must have been broken in 3.4.
 - Object size rounding now adapts to program behavior.
@@ -988,7 +987,7 @@ functionality not tested by the other programs.
   suggestion).
 - Renamed C++ related files so they could live in a FAT
   file system. (Charles Fiterman's suggestion.)
-- Changed Windoes NT Makefile to include C++ support in
+- Changed Windows NT Makefile to include C++ support in
   gc.lib.  Added C++ test as Makefile target.
   
 Since version 4.3:
@@ -1044,3 +1043,39 @@ Since version 4.3:
  - Fixed a win32 specific performance bug that could result in scanning of
    objects allocated with the system malloc.
  - Added REDIRECT_MALLOC.
+
+Since version 4.4:
+ - Fixed many minor and one major README bugs. (Thanks to Franklin Chen
+   (chen@adi.com) for pointing out many of them.)
+ - Fixed ALPHA/OSF/1 dynamic library support. (Thanks to Jonathan Bachrach
+   (jonathan@harlequin.com)).
+ - Added incremental GC support (MPROTECT_VDB) for Linux (with some
+   help from Bruno Haible).
+ - Altered SPARC recognition tests in gc.h and config.h (mostly as
+   suggested by Fergus Henderson).
+ - Added basic incremental GC support for win32, as implemented by
+   Windows NT and Windows 95.  GC_enable_incremental is a noop
+   under win32s, which doesn't implement enough of the VM interface.
+ - Added -DLARGE_CONFIG.
+ - Fixed GC_..._ignore_off_page to also function without
+   -DALL_INTERIOR_POINTERS.
+ - (Hopefully) fixed RS/6000 port.  (Only the test was broken.)
+ - Fixed a performance bug in the nonincremental collector running
+   on machines supporting incremental collection with MPROTECT_VDB
+   (e.g. SunOS 4, DEC AXP).  This turned into a correctness bug under
+   win32s with win32 incremental collection.  (Not all memory protection
+   was disabled.)
+ - Fixed some ppcr related bit rot.
+ - Caused dynamic libraries to be unregistered before reregistering.
+   The old way turned out to be a performance bug on some machines.
+ - GC_root_size was not properly maintained under MSWIN32.
+ - Added -DNO_DEBUGGING and GC_dump.
+ - Fixed a couple of bugs arising with SOLARIS_THREADS +
+   REDIRECT_MALLOC.
+ - Added NetBSD/M68K port.  (Thanks to Peter Seebach
+   <seebs@taniemarie.solon.com>.)
+ - Fixed a serious realloc bug.  For certain object sizes, the collector
+   wouldn't scan the expanded part of the object.  (Thanks to Clay Spence
+   (cds@peanut.sarnoff.com) for noticing the problem, and helping me to
+   track it down.)
+   

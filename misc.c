@@ -11,17 +11,21 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, February 10, 1995 12:37 pm PST */
+/* Boehm, May 2, 1995 11:20 am PDT */
 
 
 #include <stdio.h>
 #include <signal.h>
-#ifdef SOLARIS_THREADS
-# include <sys/syscall.h>
-#endif
 
 #define I_HIDE_POINTERS	/* To make GC_call_with_alloc_lock visible */
 #include "gc_priv.h"
+
+#ifdef SOLARIS_THREADS
+# include <sys/syscall.h>
+#endif
+#ifdef MSWIN32
+# include <windows.h>
+#endif
 
 # ifdef THREADS
 #   ifdef PCR
@@ -453,10 +457,11 @@ void GC_init_inner()
     	ABORT("signed_word");
     }
     
-    GC_init_headers();
-    /* Add initial guess of root sets */
+    /* Add initial guess of root sets.  Do this first, since sbrk(0)	*/
+    /* mightbe used.							*/
       GC_register_data_segments();
-    GC_bl_init();
+    GC_init_headers();
+        GC_bl_init();
     GC_mark_init();
     if (!GC_expand_hp_inner((word)MINHINCR)) {
         GC_err_printf0("Can't start up: not enough memory\n");
@@ -495,9 +500,12 @@ void GC_init_inner()
           extern int GC_read();
           extern void GC_register_finalizer_no_order();
           
-          GC_noop(GC_copyright, GC_find_header, GC_print_block_list,
+          GC_noop(GC_copyright, GC_find_header,
                   GC_push_one, GC_call_with_alloc_lock, GC_read,
-                  GC_print_hblkfreelist, GC_dont_expand,
+                  GC_dont_expand,
+#		  ifndef NO_DEBUGGING
+		    GC_dump,
+#		  endif
                   GC_register_finalizer_no_order);
       }
 #   endif
@@ -511,6 +519,14 @@ void GC_enable_incremental(NO_PARAMS)
     DISABLE_SIGNALS();
     LOCK();
     if (GC_incremental) goto out;
+#   ifdef MSWIN32
+      {
+        extern bool GC_is_win32s();
+
+	/* VirtualProtect is not functional under win32s.	*/
+	if (GC_is_win32s()) goto out;
+      }
+#   endif /* MSWIN32 */
 #   ifndef SOLARIS_THREADS
         GC_dirty_init();
 #   endif
@@ -540,7 +556,6 @@ out:
 
 #ifdef MSWIN32
 # define LOG_FILE "gc.log"
-# include <windows.h>
 
   HANDLE GC_stdout = 0, GC_stderr;
   int GC_tmp;
@@ -549,7 +564,8 @@ out:
   void GC_set_files()
   {
     if (!GC_stdout) {
-        GC_stdout = CreateFile(LOG_FILE, GENERIC_WRITE, FILE_SHARE_READ,
+        GC_stdout = CreateFile(LOG_FILE, GENERIC_WRITE,
+        		       FILE_SHARE_READ | FILE_SHARE_WRITE,
         		       NULL, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH,
         		       NULL); 
     	if (INVALID_HANDLE_VALUE == GC_stdout) ABORT("Open of log file failed");
@@ -585,23 +601,42 @@ int GC_tmp;  /* Should really be local ... */
 # endif
 #endif
 
-#ifdef SOLARIS_THREADS
-#   define WRITE(f, buf, len) syscall(SYS_write, (f), (buf), (len))
-#else
-# ifdef MSWIN32
+#if !defined(MSWIN32)  && !defined(OS2) && !defined(MACOS)
+int GC_write(fd, buf, len)
+int fd;
+char *buf;
+size_t len;
+{
+     register int bytes_written = 0;
+     register int result;
+     
+     while (bytes_written < len) {
+#	ifdef SOLARIS_THREADS
+	    result = syscall(SYS_write, fd, buf + bytes_written,
+	    			  	    len - bytes_written);
+#	else
+     	    result = write(fd, buf + bytes_written, len - bytes_written);
+#	endif
+	if (-1 == result) return(result);
+	bytes_written += result;
+    }
+    return(bytes_written);
+}
+#endif /* UN*X */
+
+#ifdef MSWIN32
 #   define WRITE(f, buf, len) (GC_set_files(), \
 			       GC_tmp = WriteFile((f), (buf), \
 			       			  (len), &GC_junk, NULL),\
 			       (GC_tmp? 1 : -1))
-# else
+#else
 #   if defined(OS2) || defined(MACOS)
 #   define WRITE(f, buf, len) (GC_set_files(), \
 			       GC_tmp = fwrite((buf), 1, (len), (f)), \
 			       fflush(f), GC_tmp)
 #   else
-#     define WRITE(f, buf, len) write((f), (buf), (len))
+#     define WRITE(f, buf, len) GC_write((f), (buf), (len))
 #   endif
-# endif
 #endif
 
 /* A version of printf that is unlikely to call malloc, and is thus safer */
@@ -691,3 +726,19 @@ void GC_disable()
     GC_dont_gc++;
 }
 # endif
+
+#if !defined(NO_DEBUGGING)
+
+void GC_dump()
+{
+    GC_printf0("***Static roots:\n");
+    GC_print_static_roots();
+    GC_printf0("\n***Heap sections:\n");
+    GC_print_heap_sects();
+    GC_printf0("\n***Free blocks:\n");
+    GC_print_hblkfreelist();
+    GC_printf0("\n***Blocks in use:\n");
+    GC_print_block_list();
+}
+
+# endif /* NO_DEBUGGING */

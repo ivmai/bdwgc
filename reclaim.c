@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, January 19, 1995 5:39 pm PST */
+/* Boehm, April 18, 1995 1:59 pm PDT */
 
 #include <stdio.h>
 #include "gc_priv.h"
@@ -532,6 +532,7 @@ word abort_if_found;		/* Abort if a reclaimable object is found */
     }
 }
 
+#if !defined(NO_DEBUGGING)
 /* Routines to gather and print heap block info 	*/
 /* intended for debugging.  Otherwise should be called	*/
 /* with lock.						*/
@@ -592,6 +593,8 @@ void GC_print_block_list()
     	       (unsigned long)number_of_blocks,
     	       (unsigned long)total_bytes);
 }
+
+#endif /* NO_DEBUGGING */
 
 /*
  * Do the same thing on the entire heap, after first clearing small object

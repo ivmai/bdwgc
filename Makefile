@@ -6,7 +6,7 @@
 #      	 and runs some tests of collector and cords.  Does not add cords or
 #	 c++ interface to gc.a
 # cord/de - builds dumb editor based on cords.
-CC= gcc
+CC= cc
 CXX=g++ -ansi
 # Needed only for "make c++", which adds the c++ interface
 AS=as
@@ -30,6 +30,9 @@ CFLAGS= -O -DALL_INTERIOR_POINTERS -DNO_SIGNALS -DSILENT
 # -DSMALL_CONFIG tries to tune the collector for small heap sizes,
 #   usually causing it to use less space in such situations.
 #   Incremental collection no longer works in this case.
+# -DLARGE_CONFIG tunes the collector for unusually large heaps.
+#   Necessary for heaps larger than about 500 MB on most machines.
+#   Recommended for heaps larger than about 64 MB.
 # -DDONT_ADD_BYTE_AT_END is meaningful only with
 #   -DALL_INTERIOR_POINTERS.  Normally -DALL_INTERIOR_POINTERS
 #   causes all objects to be padded so that pointers just past the end of
@@ -54,6 +57,8 @@ CFLAGS= -O -DALL_INTERIOR_POINTERS -DNO_SIGNALS -DSILENT
 #   existing code, but it often does.  Neither works on all platforms,
 #   since some ports use malloc or calloc to obtain system memory.
 #   (Probably works for UNIX, and win32.)
+# -DNO_DEBUG removes GC_dump and the debugging routines it calls.
+#   Reduces code size slightly at the expense of debuggability.
 
 CXXFLAGS= $(CFLAGS)
 AR= ar
@@ -138,7 +143,7 @@ cords: $(CORD_OBJS) cord/cordtest
 
 gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/gc_cpp.h $(srcdir)/gc.h Makefile
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
-	
+
 test_cpp: $(srcdir)/test_cpp.cc $(srcdir)/gc_cpp.h gc_cpp.o $(srcdir)/gc.h gc.a
 	$(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/test_cpp.cc gc_cpp.o gc.a
 
@@ -156,6 +161,10 @@ dyn_load_sunos53.o: dyn_load.c
 # SunOS5 shared library version of the collector
 libgc.so: $(OBJS) dyn_load_sunos53.o
 	$(CC) -G -o libgc.so $(OBJS) dyn_load_sunos53.o -ldl
+
+# Alpha/OSF shared library version of the collector
+libalphagc.so: $(OBJS)
+	ld -shared -o libalphagc.so $(OBJS) dyn_load.o -lc
 
 mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_mach_dep.s $(srcdir)/rs6000_mach_dep.s if_mach if_not_there
 	rm -f mach_dep.o
@@ -215,7 +224,6 @@ clean:
 
 gctest: test.o gc.a if_mach if_not_there
 	rm -f gctest
-	./if_mach ALPHA "" $(CC) $(CFLAGS) -o gctest $(ALPHACFLAGS) test.o gc.a
 	./if_mach SPARC SUNOS5 $(CC) $(CFLAGS) -o gctest  test.o gc.a -lthread -ldl
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o gctest  test.o gc.a -lucb
 	./if_not_there gctest $(CC) $(CFLAGS) -o gctest test.o gc.a
@@ -224,9 +232,7 @@ gctest: test.o gc.a if_mach if_not_there
 # odds are your compiler is broken.  Gctest may still work.
 # Try compiling setjmp_t.c unoptimized.
 setjmp_test: $(srcdir)/setjmp_t.c $(srcdir)/gc.h if_mach if_not_there
-	rm -f setjmp_test
-	./if_mach ALPHA "" $(CC) $(CFLAGS) -o setjmp_test $(ALPHACFLAGS) $(srcdir)/setjmp_t.c
-	./if_not_there setjmp_test $(CC) $(CFLAGS) -o setjmp_test $(srcdir)/setjmp_t.c
+	$(CC) $(CFLAGS) -o setjmp_test $(srcdir)/setjmp_t.c
 
 test:  KandRtest cord/cordtest
 	cord/cordtest
@@ -238,7 +244,7 @@ KandRtest: setjmp_test gctest
 
 gc.tar: $(SRCS) $(OTHER_FILES)
 	tar cvf gc.tar $(SRCS) $(OTHER_FILES)
-	
+
 pc_gc.tar: $(SRCS) $(OTHER_FILES)
 	tar cvfX pc_gc.tar pc_excludes $(SRCS) $(OTHER_FILES)
 
@@ -258,7 +264,7 @@ gc.tar.Z: gc.tar
 
 lint: $(CSRCS) test.c
 	lint -DLINT $(CSRCS) test.c | egrep -v "possible pointer alignment problem|abort|exit|sbrk|mprotect|syscall"
-	
+
 # BTL: added to test shared library version of collector.
 # Currently works only under SunOS5.  Requires GC_INIT call from statically
 # loaded client code.

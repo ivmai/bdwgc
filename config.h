@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, February 6, 1995 5:24 pm PST */
+/* Boehm, May 30, 1995 5:04 pm PDT */
  
 #ifndef CONFIG_H
 
@@ -31,6 +31,11 @@
 # if defined(hp9000s300)
 #    define M68K
 #    define HP
+#    define mach_type_known
+# endif
+# if defined(__NetBSD__) && defined(m68k)
+#    define M68K
+#    define NETBSD
 #    define mach_type_known
 # endif
 # if defined(vax)
@@ -74,7 +79,7 @@
 #   define RT
 #   define mach_type_known
 # endif
-# if defined(sun) && defined(sparc)
+# if defined(sun) && (defined(sparc) || defined(__sparc))
 #   define SPARC
     /* Test for SunOS 5.x */
 #     include <errno.h>
@@ -305,6 +310,12 @@
 # ifdef M68K
 #   define MACH_TYPE "M68K"
 #   define ALIGNMENT 2
+#   ifdef NETBSD
+#	define OS_TYPE "NETBSD"
+#	define HEURISTIC2
+	extern char etext;
+#	define DATASTART ((ptr_t)(&etext))
+#   endif
 #   ifdef SUNOS4
 #	define OS_TYPE "SUNOS4"
 	extern char etext;
@@ -419,7 +430,8 @@
 	/* was done by Robert Ehrlich, Manuel Serrano, and Bernard	*/
 	/* Serpette of INRIA.						*/
 	/* This assumes ZMAGIC, i.e. demand-loadable executables.	*/
-#       define DATASTART ((ptr_t)(*(int *)0x2004+0x2000))
+#	define TEXTSTART 0x2000
+#       define DATASTART ((ptr_t)(*(int *)(TEXTSTART+0x4)+TEXTSTART))
 #	define MPROTECT_VDB
 #	define HEURISTIC1
 #   endif
@@ -467,6 +479,7 @@
 	extern int etext;
 #       define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
 #	define STACKBOTTOM ((ptr_t)0xc0000000)
+#	define MPROTECT_VDB
 #   endif
 #   ifdef OS2
 #	define OS_TYPE "OS2"
@@ -478,6 +491,7 @@
 #	define OS_TYPE "MSWIN32"
 		/* STACKBOTTOM and DATASTART are handled specially in 	*/
 		/* os_dep.c.						*/
+#	define MPROTECT_VDB
 #   endif
 #   ifdef FREEBSD
 #	define OS_TYPE "FREEBSD"
@@ -570,6 +584,7 @@
 #   define HEURISTIC2_LIMIT ((ptr_t)((word)(&__start) & ~(getpagesize()-1)))
 #   define CPP_WORDSZ 64
 #   define MPROTECT_VDB
+#   define DYNAMIC_LOADING
 # endif
 
 # ifdef M88K

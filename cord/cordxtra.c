@@ -555,6 +555,17 @@ CORD CORD_from_file_lazy_inner(FILE * f, size_t len)
     register int i;
     
     if (state == 0) OUT_OF_MEMORY;
+    if (len != 0) {
+	/* Dummy read to force buffer allocation.  	*/
+	/* This greatly increases the probability	*/
+	/* of avoiding deadlock if buffer allocation	*/
+	/* is redirected to GC_malloc and the		*/
+	/* world is multithreaded.			*/
+	char buf[1];
+
+	(void) fread(buf, 1, 1, f); 
+	rewind(f);
+    }
     state -> lf_file = f;
     for (i = 0; i < CACHE_SZ/LINE_SZ; i++) {
         state -> lf_cache[i] = 0;

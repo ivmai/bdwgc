@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, February 10, 1995 1:14 pm PST */
+/* Boehm, May 2, 1995 11:20 am PDT */
 
 # include "gc_priv.h"
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS)
@@ -245,7 +245,7 @@ void GC_enable_signals()
 /* Get the page size.	*/
 word GC_page_size = 0;
 
-word GC_get_page_size()
+word GC_getpagesize()
 {
     SYSTEM_INFO sysinfo;
     
@@ -285,7 +285,7 @@ ptr_t GC_get_stack_base()
 {
     int dummy;
     ptr_t sp = (ptr_t)(&dummy);
-    ptr_t trunc_sp = (ptr_t)((word)sp & ~(GC_get_page_size() - 1));
+    ptr_t trunc_sp = (ptr_t)((word)sp & ~(GC_getpagesize() - 1));
     word size = GC_get_writable_length(trunc_sp, 0);
    
     return(trunc_sp + size);
@@ -564,7 +564,7 @@ void GC_register_data_segments()
           GC_err_printf0("Object with invalid pages?\n");
           continue;
       } 
-      GC_add_roots_inner(O32_BASE(seg), O32_BASE(seg)+O32_SIZE(seg));
+      GC_add_roots_inner(O32_BASE(seg), O32_BASE(seg)+O32_SIZE(seg), FALSE);
     }
 }
 
@@ -580,9 +580,17 @@ void GC_register_data_segments()
   /* We rgister the main data segment here.				*/
   bool GC_win32s = FALSE;	/* We're running under win32s.	*/
   
+  bool GC_is_win32s()
+  {
+      DWORD v = GetVersion();
+      
+      /* Check that this is not NT, and Windows major version <= 3	*/
+      return ((v & 0x80000000) && (v & 0xff) <= 3);
+  }
+  
   void GC_init_win32()
   {
-      if (GetVersion() & 0x80000000) GC_win32s = TRUE;
+      GC_win32s = GC_is_win32s();
   }
   
   /* Return the smallest address a such that VirtualQuery		*/
@@ -599,9 +607,9 @@ void GC_register_data_segments()
     
     GetSystemInfo(&sysinfo);
     limit = sysinfo.lpMinimumApplicationAddress;
-    p = (ptr_t)((word)start & ~(GC_get_page_size() - 1));
+    p = (ptr_t)((word)start & ~(GC_getpagesize() - 1));
     for (;;) {
-    	q = (LPVOID)(p - GC_get_page_size());
+    	q = (LPVOID)(p - GC_getpagesize());
     	if ((ptr_t)q > (ptr_t)p /* underflow */ || q < limit) break;
     	result = VirtualQuery(q, &buf, sizeof(buf));
     	if (result != sizeof(buf) || buf.AllocationBase == 0) break;
@@ -661,7 +669,7 @@ void GC_register_data_segments()
             if ((char *)p == limit) {
                 limit = new_limit;
             } else {
-                if (base != limit) GC_add_roots_inner(base, limit);
+                if (base != limit) GC_add_roots_inner(base, limit, FALSE);
                 base = p;
                 limit = new_limit;
             }
@@ -669,7 +677,7 @@ void GC_register_data_segments()
         if (p > (LPVOID)new_limit /* overflow */) break;
         p = (LPVOID)new_limit;
       }
-      if (base != limit) GC_add_roots_inner(base, limit);
+      if (base != limit) GC_add_roots_inner(base, limit, FALSE);
   }
   
   void GC_register_data_segments()
@@ -717,7 +725,8 @@ void GC_register_data_segments()
 #	 else
       	   {
 #	 endif /* AMIGA_SKIP_SEG */
-          GC_add_roots_inner((char *)&data[1], ((char *)&data[1]) + data[-1]);
+          GC_add_roots_inner((char *)&data[1],
+          		     ((char *)&data[1]) + data[-1], FALSE);
          }
     }
   }
@@ -749,10 +758,21 @@ void GC_register_data_segments()
 #   endif
  
 #   if !defined(PCR) && !defined(SRC_M3) && !defined(NEXT) && !defined(MACOS)
-      GC_add_roots_inner(DATASTART, (char *)(&end));
+#     if defined(REDIRECT_MALLOC) && defined(SOLARIS_THREADS)
+	/* As of Solaris 2.3, the Solaris threads implementation	*/
+	/* allocates the data structure for the initial thread with	*/
+	/* sbrk at process startup.  It needs to be scanned, so that	*/
+	/* we don't lose some malloc allocated data structures		*/
+	/* hanging from it.  We're on thin ice here ...			*/
+        extern caddr_t sbrk();
+
+	GC_add_roots_inner(DATASTART, (char *)sbrk(0), FALSE);
+#     else
+	GC_add_roots_inner(DATASTART, (char *)(&end), FALSE);
+#     endif
 #   endif
 #   if !defined(PCR) && defined(NEXT)
-      GC_add_roots_inner(DATASTART, (char *) get_end());
+      GC_add_roots_inner(DATASTART, (char *) get_end(), FALSE);
 #   endif
 #   if defined(MACOS)
     {
@@ -760,11 +780,11 @@ void GC_register_data_segments()
 	extern void* GC_MacGetDataStart(void);
 	/* globals begin above stack and end at a5. */
 	GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
-			   (ptr_t)LMGetCurrentA5());
+			   (ptr_t)LMGetCurrentA5(), FALSE);
 #   else
 #     if defined(__MWERKS__)
 	extern long __datastart, __dataend;
-	GC_add_roots_inner((ptr_t)&__datastart, (ptr_t)&__dataend);
+	GC_add_roots_inner((ptr_t)&__datastart, (ptr_t)&__dataend, FALSE);
 #     endif
 #   endif
     }
@@ -1035,7 +1055,7 @@ void (*GC_push_other_roots)() = GC_default_push_other_roots;
  *		or write only to the stack.
  */
  
-bool GC_dirty_maintained;
+bool GC_dirty_maintained = FALSE;
 
 # ifdef DEFAULT_VDB
 
@@ -1118,9 +1138,42 @@ struct hblk *h;
  * not to work under a number of other systems.
  */
 
-# include <sys/mman.h>
-# include <signal.h>
-# include <sys/syscall.h>
+# ifndef MSWIN32
+
+#   include <sys/mman.h>
+#   include <signal.h>
+#   include <sys/syscall.h>
+
+#   define PROTECT(addr, len) \
+    	  if (mprotect((caddr_t)(addr), (int)(len), \
+    	      	       PROT_READ | PROT_EXEC) < 0) { \
+    	    ABORT("mprotect failed"); \
+    	  }
+#   define UNPROTECT(addr, len) \
+    	  if (mprotect((caddr_t)(addr), (int)(len), \
+    	  	       PROT_WRITE | PROT_READ | PROT_EXEC) < 0) { \
+    	    ABORT("un-mprotect failed"); \
+    	  }
+    	  
+# else
+
+#   include <signal.h>
+
+    static DWORD protect_junk;
+#   define PROTECT(addr, len) \
+	  if (!VirtualProtect((addr), (len), PAGE_EXECUTE_READ, \
+	  		      &protect_junk)) { \
+	    DWORD last_error = GetLastError(); \
+	    GC_printf1("Last error code: %lx\n", last_error); \
+	    ABORT("VirtualProtect failed"); \
+	  }
+#   define UNPROTECT(addr, len) \
+	  if (!VirtualProtect((addr), (len), PAGE_EXECUTE_READWRITE, \
+	  		      &protect_junk)) { \
+	    ABORT("un-VirtualProtect failed"); \
+	  }
+	  
+# endif
 
 VOLATILE page_hash_table GC_dirty_pages;
 				/* Pages dirtied since last GC_read_dirty. */
@@ -1130,7 +1183,7 @@ word GC_page_size;
 bool GC_just_outside_heap(addr)
 word addr;
 {
-    register int i;
+    register unsigned i;
     register word start;
     register word end;
     word mask = GC_page_size-1;
@@ -1149,8 +1202,13 @@ word addr;
 #if defined(SUNOS4) || defined(FREEBSD)
     typedef void (* SIG_PF)();
 #endif
-#if defined(SUNOS5SIGS) || defined(ALPHA) /* OSF1 */
+#if defined(SUNOS5SIGS) || defined(ALPHA) /* OSF1 */ || defined(LINUX)
     typedef void (* SIG_PF)(int);
+#endif
+#if defined(MSWIN32)
+    typedef LPTOP_LEVEL_EXCEPTION_FILTER SIG_PF;
+#   undef SIG_DFL
+#   define SIG_DFL (LPTOP_LEVEL_EXCEPTION_FILTER) (-1)
 #endif
 
 #if defined(IRIX5) || defined(ALPHA) /* OSF1 */
@@ -1159,9 +1217,13 @@ word addr;
 #if defined(SUNOS5SIGS)
     typedef void (* REAL_SIG_PF)(int, struct siginfo *, void *);
 #endif
+#if defined(LINUX)
+#   include <asm/signal.h>
+    typedef void (* REAL_SIG_PF)(int, struct sigcontext_struct);
+# endif
 
 SIG_PF GC_old_bus_handler;
-SIG_PF GC_old_segv_handler;
+SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 
 /*ARGSUSED*/
 # if defined (SUNOS4) || defined(FREEBSD)
@@ -1191,13 +1253,28 @@ SIG_PF GC_old_segv_handler;
 #     define CODE_OK (code == EACCES)
 #   endif
 # endif
+# if defined(LINUX)
+    void GC_write_fault_handler(int sig, struct sigcontext_struct sc)
+#   define SIG_OK (sig == SIGSEGV)
+#   define CODE_OK TRUE
+	/* Empirically c.trapno == 14, but is that useful?      */
+	/* We assume Intel architecture, so alignment		*/
+	/* faults are not possible.				*/
+# endif
 # if defined(SUNOS5SIGS)
     void GC_write_fault_handler(int sig, struct siginfo *scp, void * context)
 #   define SIG_OK (sig == SIGSEGV)
 #   define CODE_OK (scp -> si_code == SEGV_ACCERR)
 # endif
+# if defined(MSWIN32)
+    LONG WINAPI GC_write_fault_handler(struct _EXCEPTION_POINTERS *exc_info)
+#   define SIG_OK (exc_info -> ExceptionRecord -> ExceptionCode == \
+			EXCEPTION_ACCESS_VIOLATION)
+#   define CODE_OK (exc_info -> ExceptionRecord -> ExceptionInformation[0] == 1)
+			/* Write fault */
+# endif
 {
-    register int i;
+    register unsigned i;
 #   ifdef IRIX5
 	char * addr = (char *) (scp -> sc_badvaddr);
 #   endif
@@ -1206,6 +1283,14 @@ SIG_PF GC_old_segv_handler;
 #   endif
 #   ifdef SUNOS5SIGS
 	char * addr = (char *) (scp -> si_addr);
+#   endif
+#   ifdef LINUX
+	char * addr = (char *) (sc.cr2);
+#   endif
+#   if defined(MSWIN32)
+	char * addr = (char *) (exc_info -> ExceptionRecord
+				-> ExceptionInformation[1]);
+#	define sig SIGSEGV
 #   endif
     
     if (SIG_OK && CODE_OK) {
@@ -1221,18 +1306,31 @@ SIG_PF GC_old_segv_handler;
                 old_handler = GC_old_bus_handler;
             }
             if (old_handler == SIG_DFL) {
-                ABORT("Unexpected bus error or segmentation fault");
+#		ifndef MSWIN32
+                    ABORT("Unexpected bus error or segmentation fault");
+#		else
+		    return(EXCEPTION_CONTINUE_SEARCH);
+#		endif
             } else {
 #		if defined (SUNOS4) || defined(FREEBSD)
-		  (*old_handler) (sig, code, scp, addr);
-#		else
-#		  if defined (SUNOS5SIGS)
-		    (*(REAL_SIG_PF)old_handler) (sig, scp, context);
-#		  else
-		    (*(REAL_SIG_PF)old_handler) (sig, code, scp);
-#		  endif
+		    (*old_handler) (sig, code, scp, addr);
+		    return;
 #		endif
-		return;
+#		if defined (SUNOS5SIGS)
+		    (*(REAL_SIG_PF)old_handler) (sig, scp, context);
+		    return;
+#		endif
+#		if defined (LINUX)
+		    (*(REAL_SIG_PF)old_handler) (sig, sc);
+		    return;
+#		endif
+#		if defined (IRIX5) || defined(ALPHA)
+		    (*(REAL_SIG_PF)old_handler) (sig, code, scp);
+		    return;
+#		endif
+#		ifdef MSWIN32
+		    return((*old_handler)(exc_info));
+#		endif
             }
         }
         for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
@@ -1240,17 +1338,18 @@ SIG_PF GC_old_segv_handler;
             
             set_pht_entry_from_index(GC_dirty_pages, index);
         }
-        if (mprotect((caddr_t)h, (int)GC_page_size,
-            PROT_WRITE | PROT_READ | PROT_EXEC) < 0) {
-    	    ABORT("mprotect failed in handler");
-    	}
-#	if defined(IRIX5) || defined(ALPHA)
-	    /* IRIX resets the signal handler each time. */
+        UNPROTECT(h, GC_page_size);
+#	if defined(IRIX5) || defined(ALPHA) || defined(LINUX)
+	    /* These reset the signal handler each time by default. */
 	    signal(SIGSEGV, (SIG_PF) GC_write_fault_handler);
 #	endif
     	/* The write may not take place before dirty bits are read.	*/
     	/* But then we'll fault again ...				*/
-    	return;
+#	ifdef MSWIN32
+	    return(EXCEPTION_CONTINUE_EXECUTION);
+#	else
+	    return;
+#	endif
     }
 
     ABORT("Unexpected bus error or segmentation fault");
@@ -1259,11 +1358,13 @@ SIG_PF GC_old_segv_handler;
 void GC_write_hint(h)
 struct hblk *h;
 {
-    register struct hblk * h_trunc =
-        		(struct hblk *)((word)h & ~(GC_page_size-1));
-    register int i;
-    register bool found_clean = FALSE;
+    register struct hblk * h_trunc;
+    register unsigned i;
+    register bool found_clean;
     
+    if (!GC_dirty_maintained) return;
+    h_trunc = (struct hblk *)((word)h & ~(GC_page_size-1));
+    found_clean = FALSE;
     for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
         register int index = PHT_HASH(h_trunc+i);
             
@@ -1273,10 +1374,7 @@ struct hblk *h;
         }
     }
     if (found_clean) {
-   	if (mprotect((caddr_t)h_trunc, (int)GC_page_size,
-            PROT_WRITE | PROT_READ | PROT_EXEC) < 0) {
-    	    ABORT("mprotect failed in GC_write_hint");
-    	}
+    	UNPROTECT(h_trunc, GC_page_size);
     }
 }
 
@@ -1288,7 +1386,11 @@ GC_getpagesize()
     return sysconf(_SC_PAGESIZE);
 }
 #else
-# define GC_getpagesize() getpagesize()
+# ifdef MSWIN32
+   /* GC_getpagesize() defined above */
+# else
+#  define GC_getpagesize() getpagesize()
+# endif
 #endif
 				 
 void GC_dirty_init()
@@ -1299,6 +1401,9 @@ void GC_dirty_init()
     act.sa_flags	= SA_RESTART | SA_SIGINFO;
     (void)sigemptyset(&act.sa_mask); 
 #endif
+#   ifdef PRINTSTATS
+	GC_printf0("Inititalizing mprotect virtual dirty bit implementation\n");
+#   endif
     GC_dirty_maintained = TRUE;
     GC_page_size = GC_getpagesize();
     if (GC_page_size % HBLKSIZE != 0) {
@@ -1317,7 +1422,7 @@ void GC_dirty_init()
 #	endif
       }
 #   endif
-#   if defined(IRIX5) || defined(ALPHA) || defined(SUNOS4)
+#   if defined(IRIX5) || defined(ALPHA) || defined(SUNOS4) || defined(LINUX)
       GC_old_segv_handler = signal(SIGSEGV, (SIG_PF)GC_write_fault_handler);
       if (GC_old_segv_handler == SIG_IGN) {
         GC_err_printf0("Previously ignored segmentation violation!?");
@@ -1346,6 +1451,16 @@ void GC_dirty_init()
 #       endif
       }
 #    endif
+#   if defined(MSWIN32)
+      GC_old_segv_handler = SetUnhandledExceptionFilter(GC_write_fault_handler);
+      if (GC_old_segv_handler != NULL) {
+#	ifdef PRINTSTATS
+          GC_err_printf0("Replaced other UnhandledExceptionFilter\n");
+#	endif
+      } else {
+          GC_old_segv_handler = SIG_DFL;
+      }
+#   endif
 }
 
 
@@ -1357,16 +1472,14 @@ void GC_protect_heap()
     ptr_t start;
     word offset;
     word len;
-    int i;
+    unsigned i;
     
     for (i = 0; i < GC_n_heap_sects; i++) {
         offset = (word)(GC_heap_sects[i].hs_start) & pmask;
         start = GC_heap_sects[i].hs_start - offset;
         len = GC_heap_sects[i].hs_bytes + offset;
         len += ps-1; len &= ~pmask;
-    	if (mprotect((caddr_t)start, (int)len, PROT_READ | PROT_EXEC) < 0) {
-    	    ABORT("mprotect failed");
-    	}
+        PROTECT(start, len);
     }
 }
 
@@ -1431,14 +1544,11 @@ word len;
         
         set_pht_entry_from_index(GC_dirty_pages, index);
     }
-    if (mprotect((caddr_t)start_block,
-    	         (int)((ptr_t)end_block - (ptr_t)start_block)
-    	         + HBLKSIZE,
-    	         PROT_WRITE | PROT_READ | PROT_EXEC) < 0) {
-    	ABORT("mprotect failed in GC_unprotect_range:");
-    }
+    UNPROTECT(start_block,
+    	      ((ptr_t)end_block - (ptr_t)start_block) + HBLKSIZE);
 }
 
+#ifndef MSWIN32
 /* Replacement for UNIX system call.	 */
 /* Other calls that write to the heap	 */
 /* should be handled similarly.		 */
@@ -1476,6 +1586,7 @@ int nbyte;
     GC_end_syscall();
     return(result);
 }
+#endif /* !MSWIN32 */
 
 /*ARGSUSED*/
 bool GC_page_was_ever_dirty(h)
@@ -1859,12 +1970,12 @@ struct callinfo info[NFRAMES];
     GC_err_printf0("\tCall chain at allocation:\n");
     for (i = 0; i < NFRAMES; i++) {
      	if (info[i].ci_pc == 0) break;
-     	GC_err_printf1("\t##PC##= 0x%X\n\t\targs: ", info[i].ci_pc);
      	for (j = 0; j < NARGS; j++) {
      	    if (j != 0) GC_err_printf0(", ");
      	    GC_err_printf2("%d (0x%X)", ~(info[i].ci_arg[j]),
      	    				~(info[i].ci_arg[j]));
      	}
+     	GC_err_printf1("\t##PC##= 0x%X\n\t\targs: ", info[i].ci_pc);
      	GC_err_printf0("\n");
     }
 }

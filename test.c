@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, January 27, 1995 12:58 pm PST */
+/* Boehm, June 13, 1995 2:33 pm PDT */
 /* An incomplete test for the garbage collector.  		*/
 /* Some more obscure entry points are not tested at all.	*/
 
@@ -269,11 +269,17 @@ void reverse_test()
     sexpr c;
     sexpr d;
     sexpr e;
+    sexpr *f, *g, *h;
 #   if defined(MSWIN32) || defined(MACOS)
       /* Win32S only allows 128K stacks */
 #     define BIG 1000
 #   else
-#     define BIG 4500
+#     if defined PCR
+	/* PCR default stack is 100K.  Stack frames are up to 120 bytes. */
+#	define BIG 700
+#     else
+#       define BIG 4500
+#     endif
 #   endif
 
     A.dummy = 17;
@@ -282,9 +288,24 @@ void reverse_test()
     c = ints(1, BIG);
     d = uncollectable_ints(1, 100);
     e = uncollectable_ints(1, 1);
+    /* Check that realloc updates object descriptors correctly */
+    f = (sexpr *)GC_malloc(4 * sizeof(sexpr));
+    f = (sexpr *)GC_realloc(f, 6 * sizeof(sexpr));
+    f[5] = ints(1,17);
+    g = (sexpr *)GC_malloc(513 * sizeof(sexpr));
+    g = (sexpr *)GC_realloc(g, 800 * sizeof(sexpr));
+    g[799] = ints(1,18);
+    h = (sexpr *)GC_malloc(1025 * sizeof(sexpr));
+    h = (sexpr *)GC_realloc(h, 2000 * sizeof(sexpr));
+    h[1999] = ints(1,19);
+    /* Try to force some collections and reuse of small list elements */
+      for (i = 0; i < 10; i++) {
+        (void)ints(1, BIG);
+      }
     /* Superficially test interior pointer recognition on stack */
     c = (sexpr)((char *)c + sizeof(char *));
     d = (sexpr)((char *)d + sizeof(char *));
+
 #   ifdef __STDC__
         GC_FREE((void *)e);
 #   else
@@ -318,6 +339,9 @@ void reverse_test()
     d = (sexpr)((char *)d - sizeof(char *));
     check_ints(c,1,BIG);
     check_uncollectable_ints(d, 1, 100);
+    check_ints(f[5], 1,17);
+    check_ints(g[799], 1,18);
+    check_ints(h[1999], 1,19);
 #   ifndef THREADS
 	a = 0;
 #   endif  
@@ -661,10 +685,16 @@ void run_one_test()
     GC_is_valid_displacement_print_proc = fail_proc;
     GC_is_visible_print_proc = fail_proc;
     x = GC_malloc(16);
-    if (GC_base(x + 13) != x || GC_base(y) != 0) {
-    	(void)GC_printf0("GC_base produced incorrect result\n");
+    if (GC_base(x + 13) != x) {
+    	(void)GC_printf0("GC_base(heap ptr) produced incorrect result\n");
 	FAIL;
     }
+#   ifndef PCR
+      if (GC_base(y) != 0) {
+    	(void)GC_printf0("GC_base(fn_ptr) produced incorrect result\n");
+	FAIL;
+      }
+#   endif
     if (GC_same_obj(x+5, x) != x + 5) {
     	(void)GC_printf0("GC_same_obj produced incorrect result\n");
 	FAIL;
@@ -674,8 +704,12 @@ void run_one_test()
 	FAIL;
     }
     if (!TEST_FAIL_COUNT(1)) {
-    	(void)GC_printf0("GC_is_visible produced wrong failure indication\n");
-    	FAIL;
+#	ifndef RS6000
+	  /* ON RS6000s function pointers point to a descriptor in the	*/
+	  /* data segment, so there should have been no failures.	*/
+    	  (void)GC_printf0("GC_is_visible produced wrong failure indication\n");
+    	  FAIL;
+#	endif
     }
     if (GC_is_valid_displacement(y) != y
         || GC_is_valid_displacement(x) != x
@@ -685,7 +719,11 @@ void run_one_test()
 	FAIL;
     }
 #   ifndef ALL_INTERIOR_POINTERS
+#    ifdef RS6000
+      if (!TEST_FAIL_COUNT(1)) {
+#    else
       if (!TEST_FAIL_COUNT(2)) {
+#    endif
     	(void)GC_printf0("GC_is_valid_displacement produced wrong failure indication\n");
     	FAIL;
       }
@@ -860,7 +898,7 @@ test()
     int code;
 
     n_tests = 0;
-    GC_enable_incremental();
+    /* GC_enable_incremental(); */
     (void) GC_set_warn_proc(warn_proc);
     th1 = PCR_Th_Fork(run_one_test, 0);
     th2 = PCR_Th_Fork(run_one_test, 0);

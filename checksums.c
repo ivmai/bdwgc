@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, January 31, 1995 12:36 pm PST */
+/* Boehm, March 29, 1995 12:51 pm PST */
 # ifdef CHECKSUMS
 
 # include "gc_priv.h"
@@ -125,7 +125,7 @@ word dummy;
    GC_bytes_in_used_blocks += bytes;
 }
 
-GC_check_blocks()
+void GC_check_blocks()
 {
     word bytes_in_free_blocks = 0;
     struct hblk * h = GC_hblkfreelist;
@@ -152,7 +152,7 @@ GC_check_blocks()
 void GC_check_dirty()
 {
     register int index;
-    register int i;
+    register unsigned i;
     register struct hblk *h;
     register ptr_t start;
     
