@@ -90,13 +90,13 @@ cords: $(CORD_OBJS) cord/cordtest.exe
 	cp $(srcdir)/cord/ec.h include/ec.h
 	cp $(srcdir)/cord/cord_pos.h include/cord_pos.h
 
-gc_c++.o: $(srcdir)/gc_c++.cc $(srcdir)/gc_c++.h
-	$(CXX) -c -O $(srcdir)/gc_c++.cc
+gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/gc_cpp.h
+	$(CXX) -c -O $(srcdir)/gc_cpp.cc
 	
-c++: gc_c++.o $(srcdir)/gc_c++.h
-	$(AR) ru gc.a gc_c++.o
+c++: gc_cpp.o $(srcdir)/gc_cpp.h
+	$(AR) ru gc.a gc_cpp.o
 	$(RANLIB) gc.a
-	cp $(srcdir)/gc_c++.h include/gc_c++.h 
+	cp $(srcdir)/gc_cpp.h include/gc_cpp.h 
 
 mach_dep.o: $(srcdir)/mach_dep.c
 	$(CC) -o mach_dep.o -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c

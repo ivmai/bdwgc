@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, April 14, 1995 3:10 pm PDT */
+/* Boehm, February 7, 1996 11:09 am PST */
 # include "gc_priv.h"
 
 # ifdef PCR
@@ -113,9 +113,9 @@ PCR_ERes GC_EnumerateProc(
     }
 }
 
-void GC_DummyFreeProc(void *p) {};
+void GC_DummyFreeProc(void *p) {}
 
-void GC_DummyShutdownProc(void) {};
+void GC_DummyShutdownProc(void) {}
 
 struct PCR_MM_ProcsRep GC_Rep = {
 	MY_MAGIC,

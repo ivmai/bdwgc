@@ -429,6 +429,7 @@ extern GC_PTR GC_make_closure GC_PROTO((GC_finalization_proc fn, GC_PTR data));
 extern void GC_debug_invoke_finalizer GC_PROTO((GC_PTR obj, GC_PTR data));
 
 /* GC_set_warn_proc can be used to redirect or filter warning messages.	*/
+/* p may not be a NULL pointer.						*/
 typedef void (*GC_warn_proc) GC_PROTO((char *msg, GC_word arg));
 extern GC_warn_proc GC_set_warn_proc GC_PROTO((GC_warn_proc p));
     /* Returns old warning procedure.	*/

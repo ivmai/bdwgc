@@ -45,7 +45,7 @@
 #   endif
 # endif
 
-GC_FAR struct _GC_arrays GC_arrays = { 0 };
+GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
 
 
 bool GC_debugging_started = FALSE;

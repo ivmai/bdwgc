@@ -48,7 +48,7 @@ word * GC_incomplete_stack_bl;
 
 word GC_total_black_listed;
 
-word GC_black_list_spacing = 10000000;
+word GC_black_list_spacing = MINHINCR*HBLKSIZE;  /* Initial rough guess */
 
 void GC_clear_bl();
 

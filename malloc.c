@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 31, 1995 5:02 pm PDT */
+/* Boehm, February 7, 1996 4:32 pm PST */
  
 #include <stdio.h>
 #include "gc_priv.h"
@@ -94,7 +94,7 @@ register ptr_t *opp;
 		GC_collect_a_little_inner((int)n_blocks);
 	lw = ROUNDED_UP_WORDS(lb);
 	while ((h = GC_allochblk(lw, k, 0)) == 0
-		&& GC_collect_or_expand(n_blocks));
+		&& GC_collect_or_expand(n_blocks, FALSE));
 	if (h == 0) {
 	    op = 0;
 	} else {
@@ -129,7 +129,7 @@ register int k;
 	GC_collect_a_little_inner((int)n_blocks);
     lw = ROUNDED_UP_WORDS(lb);
     while ((h = GC_allochblk(lw, k, IGNORE_OFF_PAGE)) == 0
-	   && GC_collect_or_expand(n_blocks));
+	   && GC_collect_or_expand(n_blocks, TRUE));
     if (h == 0) {
 	op = 0;
     } else {

@@ -1,5 +1,8 @@
 Debugging suggestions:
 
+****If you get a segmentation fault or bus error while debugging with a debugger:
+If the fault occurred in GC_find_limit, or with incremental collection enabled, this is probably normal.  The collector installs handlers to take care of these.  You will not see these unless you are using a debugger.  Your debugger should allow you to continue.  It's preferable to tell the debugger to ignore SIGBUS and SIGSEGV ("handle" in gdb, "ignore" in most versions of dbx) and set a breakpoint in abort.  The collector will call abort if the signal had another cause, and there was not other handler previously installed.  I recommend debugging without incremental collection if possible.  (This applies directly to UNIX systems.  Debugging with incremental collection under win32 is worse.  See README.win32.)  
+
 ****If you get warning messages informing you that the collector needed to allocate blacklisted blocks:
 
 0) Ignore these warnings while you are using GC_DEBUG.  Some of the routines mentioned below don't have debugging equivalents.  (Alternatively, write the missing routines and send them to me.)
