@@ -31,9 +31,9 @@ word GC_n_mark_procs = 0;
 /* GC_init is called.							*/
 /* It's done here, since we need to deal with mark descriptors.		*/
 struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
-/* PTRFREE */ { &GC_aobjfreelist[0], &GC_areclaim_list[0],
+/* PTRFREE */ { &GC_aobjfreelist[0], 0 /* filled in dynamically */,
 		0 | DS_LENGTH, FALSE, FALSE },
-/* NORMAL  */ { &GC_objfreelist[0], &GC_reclaim_list[0],
+/* NORMAL  */ { &GC_objfreelist[0], 0,
 #		ifdef ADD_BYTE_AT_END
 		(word)(WORDS_TO_BYTES(-1)) | DS_LENGTH,
 #		else
@@ -41,10 +41,10 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 #		endif
 		TRUE /* add length to descr */, TRUE },
 /* UNCOLLECTABLE */
-	      { &GC_uobjfreelist[0], &GC_ureclaim_list[0],
+	      { &GC_uobjfreelist[0], 0,
 		0 | DS_LENGTH, TRUE /* add length to descr */, TRUE },
 # ifdef STUBBORN_ALLOC
-/*STUBBORN*/ { &GC_sobjfreelist[0], &GC_sreclaim_list[0],
+/*STUBBORN*/ { &GC_sobjfreelist[0], 0,
 		0 | DS_LENGTH, TRUE /* add length to descr */, TRUE },
 # endif
 };
@@ -722,6 +722,51 @@ register bool interior_ptrs;
     }
 }
 
+# ifdef TRACE_BUF
+
+# define TRACE_ENTRIES 1000
+
+struct trace_entry {
+    char * kind;
+    word gc_no;
+    word words_allocd;
+    word arg1;
+    word arg2;
+} GC_trace_buf[TRACE_ENTRIES];
+
+int GC_trace_buf_ptr = 0;
+
+void GC_add_trace_entry(char *kind, word arg1, word arg2)
+{
+    GC_trace_buf[GC_trace_buf_ptr].kind = kind;
+    GC_trace_buf[GC_trace_buf_ptr].gc_no = GC_gc_no;
+    GC_trace_buf[GC_trace_buf_ptr].words_allocd = GC_words_allocd;
+    GC_trace_buf[GC_trace_buf_ptr].arg1 = arg1 ^ 0x80000000;
+    GC_trace_buf[GC_trace_buf_ptr].arg2 = arg2 ^ 0x80000000;
+    GC_trace_buf_ptr++;
+    if (GC_trace_buf_ptr >= TRACE_ENTRIES) GC_trace_buf_ptr = 0;
+}
+
+void GC_print_trace(word gc_no, bool lock)
+{
+    int i;
+    struct trace_entry *p;
+    
+    if (lock) LOCK();
+    for (i = GC_trace_buf_ptr-1; i != GC_trace_buf_ptr; i--) {
+    	if (i < 0) i = TRACE_ENTRIES-1;
+    	p = GC_trace_buf + i;
+    	if (p -> gc_no < gc_no || p -> kind == 0) return;
+    	printf("Trace:%s (gc:%d,words:%d) 0x%X, 0x%X\n",
+    		p -> kind, p -> gc_no, p -> words_allocd,
+    		(p -> arg1) ^ 0x80000000, (p -> arg2) ^ 0x80000000);
+    }
+    printf("Trace incomplete\n");
+    if (lock) UNLOCK();
+}
+
+# endif /* TRACE_BUF */
+
 /*
  * A version of GC_push_all that treats all interior pointers as valid
  */
@@ -731,6 +776,9 @@ ptr_t top;
 {
 # ifdef ALL_INTERIOR_POINTERS
     GC_push_all(bottom, top);
+#   ifdef TRACE_BUF
+        GC_add_trace_entry("GC_push_all_stack", bottom, top);
+#   endif
 # else
     word * b = (word *)(((long) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((long) top) & ~(ALIGNMENT-1));

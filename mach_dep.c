@@ -11,13 +11,16 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 1:58 pm PDT */
+/* Boehm, July 25, 1994 3:39 pm PDT */
 # include "gc_priv.h"
 # include <stdio.h>
 # include <setjmp.h>
 # if defined(OS2) || defined(CX_UX)
 #   define _setjmp(b) setjmp(b)
 #   define _longjmp(b,v) longjmp(b,v)
+# endif
+# ifdef AMIGA
+#   include <dos.h>
 # endif
 
 
@@ -27,22 +30,7 @@
 /* on your architecture.  Run the test_setjmp program to see whether    */
 /* there is any chance it will work.                                    */
 
-#ifdef AMIGA
-__asm GC_push_regs(
-	  register __a2 word a2,
-	  register __a3 word a3,
-	  register __a4 word a4,
-	  register __a5 word a5,
-	  register __a6 word a6,
-	  register __d2 const word d2,
-	  register __d3 const word d3,
-	  register __d4 const word d4,
-	  register __d5 const word d5,
-	  register __d6 const word d6,
-	  register __d7 const word d7)
-#else
-  void GC_push_regs()
-#endif
+void GC_push_regs()
 {
 #       ifdef RT
 	  register long TMP_SP; /* must be bound to r11 */
@@ -107,19 +95,40 @@ __asm GC_push_regs(
 	/*  AMIGA - could be replaced by generic code 			*/
 	/*	  SAS/C optimizer mangles this so compile with "noopt"	*/
 	  /* a0, a1, d0 and d1 are caller save */
-	  GC_push_one(a2);
-	  GC_push_one(a3);
-	  GC_push_one(a4);
-	  GC_push_one(a5);
-	  GC_push_one(a6);
+	  GC_push_one(getreg(REG_A2));
+	  GC_push_one(getreg(REG_A3));
+	  GC_push_one(getreg(REG_A4));
+	  GC_push_one(getreg(REG_A5));
+	  GC_push_one(getreg(REG_A6));
 	  /* Skip stack pointer */
-	  GC_push_one(d2);
-	  GC_push_one(d3);
-	  GC_push_one(d4);
-	  GC_push_one(d5);
-	  GC_push_one(d6);
-	  GC_push_one(d7);
+	  GC_push_one(getreg(REG_D2));
+	  GC_push_one(getreg(REG_D3));
+	  GC_push_one(getreg(REG_D4));
+	  GC_push_one(getreg(REG_D5));
+	  GC_push_one(getreg(REG_D6));
+	  GC_push_one(getreg(REG_D7));
 #       endif
+
+#	if defined(M68K) && defined(MACOS)
+#         define PushMacReg(reg) \
+              move.l  reg,(sp) \
+              jsr             GC_push_one
+	  asm {
+              sub.w   #4,sp                   ; reserve space for one parameter.
+              PushMacReg(a2);
+              PushMacReg(a3);
+              PushMacReg(a4);
+              ; skip a5 (globals), a6 (frame pointer), and a7 (stack pointer)
+              PushMacReg(d2);
+              PushMacReg(d3);
+              PushMacReg(d4);
+              PushMacReg(d5);
+              PushMacReg(d6);
+              PushMacReg(d7);
+              add.w   #4,sp                   ; fix stack.
+	  }
+#	  undef PushMacReg
+#       endif	/* Macintosh */
 
 #       if defined(I386) &&!defined(OS2) &&!defined(SUNOS5) &&!defined(MSWIN32)
 	/* I386 code, generic code does not appear to work */

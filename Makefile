@@ -45,7 +45,7 @@ OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers
 
 CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c typd_mlc.c
 
-CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c cord/cord.h cord/ec.h cord/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC
+CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c cord/cord.h cord/ec.h cord/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC cord/SCOPTIONS.amiga cord/SMakefile.amiga
 
 CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
@@ -53,9 +53,10 @@ SRCS= $(CSRCS) mips_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s sparc_mach_dep
 
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE \
            README test.c setjmp_t.c SMakefile.amiga SCoptions.amiga \
-           README.amiga README.win32 cord/README include/gc.h \
+           README.amiga README.win32 cord/README cord/gc.h include/gc.h \
            include/gc_typed.h README.QUICK callprocs pc_excludes \
-           barrett_diagram README.OS2
+           barrett_diagram README.OS2 README.Mac MacProjects.sit.hqx \
+           MacOS.c EMX_MAKEFILE makefile.depend
 
 CORD_INCLUDE_FILES= $(srcdir)/gc.h $(srcdir)/cord/cord.h $(srcdir)/cord/ec.h \
            $(srcdir)/cord/cord_pos.h
@@ -141,7 +142,7 @@ cord/cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
 cord/cordtest: $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a
 	rm -f cord/cordtest
 	./if_mach SPARC SUNOS5 $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a -lthread
-	./if_not_there cord/cord_test $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a
+	./if_not_there cord/cordtest $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a
 
 cord/de: $(srcdir)/cord/de.c $(srcdir)/cord/cordbscs.o $(srcdir)/cord/cordxtra.o gc.a
 	rm -f cord/de

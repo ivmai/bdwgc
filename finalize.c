@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:08 pm PDT */
+/* Boehm, June 9, 1994 2:17 pm PDT */
 # define I_HIDE_POINTERS
 # include "gc.h"
 # include "gc_priv.h"
@@ -92,8 +92,8 @@ signed_word * log_size_ptr;
     word old_size = ((log_old_size == -1)? 0: (1 << log_old_size));
     register word new_size = 1 << log_new_size;
     struct hash_chain_entry **new_table = (struct hash_chain_entry **)
-    	GC_malloc_ignore_off_page_inner(
-    		(size_t)new_size * sizeof(struct hash_chain_entry *));
+    	GC_generic_malloc_inner_ignore_off_page(
+    		(size_t)new_size * sizeof(struct hash_chain_entry *), NORMAL);
     
     if (new_table == 0) {
     	if (table == 0) {
@@ -232,12 +232,18 @@ out:
 /* in the nonthreads case, we try to avoid disabling signals,	*/
 /* since it can be expensive.  Threads packages typically	*/
 /* make it cheaper.						*/
-void GC_register_finalizer(obj, fn, cd, ofn, ocd)
-extern_ptr_t obj;
-GC_finalization_proc fn;
-extern_ptr_t cd;
-GC_finalization_proc * ofn;
-extern_ptr_t * ocd;
+# if defined(__STDC__)
+    void GC_register_finalizer(void * obj,
+			       GC_finalization_proc fn, void * cd,
+			       GC_finalization_proc *ofn, void ** ocd)
+# else
+    void GC_register_finalizer(obj, fn, cd, ofn, ocd)
+    extern_ptr_t obj;
+    GC_finalization_proc fn;
+    extern_ptr_t cd;
+    GC_finalization_proc * ofn;
+    extern_ptr_t * ocd;
+# endif
 {
     ptr_t base;
     struct finalizable_object * curr_fo, * prev_fo;

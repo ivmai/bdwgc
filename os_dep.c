@@ -10,11 +10,12 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:10 pm PDT */
-# if !defined(OS2) && !defined(PCR) && !defined(AMIGA)
+/* Boehm, July 28, 1994 11:11 am PDT */
+
+# include "gc_priv.h"
+# if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS)
 #   include <sys/types.h>
 # endif
-# include "gc_priv.h"
 # include <stdio.h>
 # include <signal.h>
 
@@ -36,6 +37,10 @@
 # define WIN32_LEAN_AND_MEAN
 # define NOSERVICE
 # include <windows.h>
+#endif
+
+#ifdef MACOS
+# include <Processes.h>
 #endif
 
 #ifdef IRIX5
@@ -108,13 +113,6 @@ struct o32_obj {
 
 # else  /* IBM's compiler */
 
-# define INCL_DOSEXCEPTIONS
-# define INCL_DOSPROCESS
-# define INCL_DOSERRORS
-# define INCL_DOSMODULEMGR
-# define INCL_DOSMEMMGR
-# include <os2.h>
-
 /* A kludge to get around what appears to be a header file bug */
 # ifndef WORD
 #   define WORD unsigned short
@@ -128,6 +126,14 @@ struct o32_obj {
 # include <exe386.h>
 
 # endif  /* __IBMC__ */
+
+# define INCL_DOSEXCEPTIONS
+# define INCL_DOSPROCESS
+# define INCL_DOSERRORS
+# define INCL_DOSMODULEMGR
+# define INCL_DOSMEMMGR
+# include <os2.h>
+
 
 /* Disable and enable signals during nontrivial allocations	*/
 
@@ -150,7 +156,7 @@ void GC_enable_signals(void)
 
 # else
 
-#  if !defined(PCR) && !defined(AMIGA) && !defined(MSWIN32)
+#  if !defined(PCR) && !defined(AMIGA) && !defined(MSWIN32) && !defined(MACOS)
 
 #   ifdef sigmask
 	/* Use the traditional BSD interface */
@@ -677,18 +683,41 @@ void GC_register_data_segments()
 
 # else
 
+# if defined(SUNOS5) || defined(AUX)
+char * GC_SysVGetDataStart(int max_page_size)
+{
+    extern int etext;
+    word text_end = ((word)(&etext) + sizeof(word) - 1) & ~(sizeof(word) - 1);
+    	/* etext rounded to word boundary	*/
+    word next_page = ((text_end + (word)max_page_size - 1)
+    		      & ~((word)max_page_size - 1));
+    word page_offset = (text_end & ((word)max_page_size - 1));
+    
+    return((char *)(next_page + page_offset));
+}
+# endif
+
 void GC_register_data_segments()
 {
-#   ifndef NEXT
+#   if !defined(NEXT) && !defined(MACOS)
         extern int end;
 #   endif
  
-#   if !defined(PCR) && !defined(SRC_M3) && !defined(NEXT)
+#   if !defined(PCR) && !defined(SRC_M3) && !defined(NEXT) && !defined(MACOS)
       GC_add_roots_inner(DATASTART, (char *)(&end));
 #   endif
 #   if !defined(PCR) && defined(NEXT)
       GC_add_roots_inner(DATASTART, (char *) get_end());
 #   endif
+#   if defined(MACOS)
+    {
+	extern void* GC_MacGetDataStart(void);
+	/* globals begin above stack and end at a5. */
+	GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
+			   (ptr_t)LMGetCurrentA5());
+    }
+#   endif
+
     /* Dynamic libraries are added at every collection, since they may  */
     /* change.								*/
 }
@@ -701,7 +730,8 @@ void GC_register_data_segments()
  * Auxiliary routines for obtaining memory from OS.
  */
  
-# if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MSWIN32)
+# if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
+	&& !defined(MSWIN32) && !defined(MACOS)
 
 extern caddr_t sbrk();
 # ifdef __STDC__
@@ -757,7 +787,7 @@ word bytes;
 
 # endif
 
-# ifdef __OS2__
+# ifdef OS2
 
 void * os2_alloc(size_t bytes)
 {
@@ -1384,7 +1414,8 @@ word n;
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define BUFSZ 20000
+#define INITIAL_BUF_SZ 4096
+word GC_proc_buf_size = INITIAL_BUF_SZ;
 char *GC_proc_buf;
 
 page_hash_table GC_written_pages = { 0 };	/* Pages ever dirtied	*/
@@ -1438,11 +1469,11 @@ void GC_dirty_init()
     if (fd < 0) {
     	ABORT("/proc open failed");
     }
-    GC_proc_fd = ioctl(fd, PIOCOPENPD, 0);
+    GC_proc_fd = syscall(SYS_ioctl, fd, PIOCOPENPD, 0);
     if (GC_proc_fd < 0) {
     	ABORT("/proc ioctl failed");
     }
-    GC_proc_buf = GC_scratch_alloc(BUFSZ);
+    GC_proc_buf = GC_scratch_alloc(GC_proc_buf_size);
 #   ifdef SOLARIS_THREADS
 	GC_fresh_pages = (struct hblk **)
 	  GC_scratch_alloc(MAX_FRESH_PAGES * sizeof (struct hblk *));
@@ -1461,6 +1492,13 @@ struct hblk *h;
 {
 }
 
+#ifdef SOLARIS_THREADS
+    int GC_read_from_fixed_lwp(int fd, char *buf, int nbytes);
+#   define READ GC_read_from_fixed_lwp
+#else
+#   define READ read
+#endif
+
 void GC_read_dirty()
 {
     unsigned long ps, np;
@@ -1470,12 +1508,36 @@ void GC_read_dirty()
     char * bufp;
     ptr_t current_addr, limit;
     int i;
+int dummy;
 
     BZERO(GC_grungy_pages, (sizeof GC_grungy_pages));
     
     bufp = GC_proc_buf;
-    if (read(GC_proc_fd, bufp, BUFSZ) <= 0) {
-        ABORT("/proc read failed: BUFSZ too small?\n");
+    if (READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
+#	ifdef PRINTSTATS
+            GC_printf1("/proc read failed: GC_proc_buf_size = %lu\n",
+            	       GC_proc_buf_size);
+#	endif       
+        {
+            /* Retry with larger buffer. */
+            word new_size = 2 * GC_proc_buf_size;
+            char * new_buf = GC_scratch_alloc(new_size);
+            
+            if (new_buf != 0) {
+                GC_proc_buf = bufp = new_buf;
+                GC_proc_buf_size = new_size;
+            }
+            if (syscall(SYS_read, GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
+                WARN("Insufficient space for /proc read\n");
+                /* Punt:	*/
+        	memset(GC_grungy_pages, 0xff, sizeof (page_hash_table));
+#		ifdef SOLARIS_THREADS
+		    BZERO(GC_fresh_pages,
+		    	  MAX_FRESH_PAGES * sizeof (struct hblk *)); 
+#		endif
+		return;
+            }
+        }
     }
     /* Copy dirty bits into GC_grungy_pages */
     	nmaps = ((struct prpageheader *)bufp) -> pr_nmap;
@@ -1524,6 +1586,8 @@ void GC_read_dirty()
 #   endif
 }
 
+#undef READ
+
 bool GC_page_was_dirty(h)
 struct hblk *h;
 {
@@ -1555,6 +1619,7 @@ struct hblk *h;
     return(result);
 }
 
+/* Caller holds allocation lock.	*/
 void GC_is_fresh(h, n)
 struct hblk *h;
 word n;
@@ -1567,7 +1632,7 @@ word n;
       
       if (GC_fresh_pages != 0) {
         for (i = 0; i < n; i++) {
-          PAGE_IS_FRESH(h + n);
+          ADD_FRESH_PAGE(h + i);
         }
       }
 #   endif
@@ -1639,6 +1704,69 @@ struct hblk *h;
 }
 
 # endif /* PCR_VDB */
+
+/*
+ * Call stack save code for debugging.
+ * Should probably be in mach_dep.c, but that requires reorganization.
+ */
+#if defined(SPARC)
+#   if defined(SUNOS4)
+#     include <machine/frame.h>
+#   else
+#     include <sys/frame.h>
+#   endif
+#   if NARGS > 6
+	--> We only know how to to get the first 6 arguments
+#   endif
+
+/* Fill in the pc and argument information for up to NFRAMES of my	*/
+/* callers.  Ignore my frame and my callers frame.			*/
+void GC_save_callers (info) 
+struct callinfo info[NFRAMES];
+{
+  struct frame *frame;
+  struct frame *fp;
+  int nframes = 0;
+  word GC_save_regs_in_stack();
+
+  frame = (struct frame *) GC_save_regs_in_stack ();
+  
+  for (fp = frame -> fr_savfp; fp != 0 && nframes < NFRAMES;
+       fp = fp -> fr_savfp, nframes++) {
+      register int i;
+      
+      info[nframes].ci_pc = fp->fr_savpc;
+      for (i = 0; i < NARGS; i++) {
+	info[nframes].ci_arg[i] = ~(fp->fr_arg[i]);
+      }
+  }
+  if (nframes < NFRAMES) info[nframes].ci_pc = 0;
+}
+
+#endif /* SPARC */
+
+#ifdef SAVE_CALL_CHAIN
+
+void GC_print_callers (info)
+struct callinfo info[NFRAMES];
+{
+    register int i,j;
+    
+    GC_err_printf0("\tCall chain at allocation:\n");
+    for (i = 0; i < NFRAMES; i++) {
+     	if (info[i].ci_pc == 0) break;
+     	GC_err_printf1("\t##PC##= 0x%X\n\t\targs: ", info[i].ci_pc);
+     	for (j = 0; j < NARGS; j++) {
+     	    if (j != 0) GC_err_printf0(", ");
+     	    GC_err_printf2("%d (0x%X)", ~(info[i].ci_arg[j]),
+     	    				~(info[i].ci_arg[j]));
+     	}
+     	GC_err_printf0("\n");
+    }
+}
+
+#endif /* SAVE_CALL_CHAIN */
+
 
 
 

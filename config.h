@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:11 pm PDT */
+/* Boehm, July 28, 1994 11:03 am PDT */
  
 #ifndef CONFIG_H
 
@@ -65,7 +65,7 @@
 #    define SUNOS5
 #    define mach_type_known
 # endif
-# if defined(__OS2__) && defined(__32BIT__)
+# if (defined(__OS2__) || defined(__EMX__)) && defined(__32BIT__)
 #    define I386
 #    define OS2
 #    define mach_type_known
@@ -114,12 +114,22 @@
 #   define mach_type_known
 # endif
 # if defined(_AMIGA)
-#   define AMIGA
 #   define M68K
+#   define AMIGA
+#   define mach_type_known
+# endif
+# if defined(THINK_C)
+#   define M68K
+#   define MACOS
 #   define mach_type_known
 # endif
 # if defined(NeXT) && defined(mc68000)
 #   define M68K
+#   define NEXT
+#   define mach_type_known
+# endif
+# if defined(NeXT) && defined(i386)
+#   define I386
 #   define NEXT
 #   define mach_type_known
 # endif
@@ -168,11 +178,11 @@
 # endif
 		    /* Mapping is: M68K       ==> Motorola 680X0	*/
 		    /*		   (SUNOS4,HP,NEXT, and SYSV (A/UX),	*/
-		    /*		   and AMIGA variants)			*/
+		    /*		   MACOS and AMIGA variants)		*/
 		    /*             I386       ==> Intel 386	 	*/
 		    /*		    (SEQUENT, OS2, SCO, LINUX, NETBSD,	*/
 		    /*		     FREEBSD, THREE86BSD, MSWIN32,	*/
-		    /* 		     BSDI, SUNOS5 variants)		*/
+		    /* 		     BSDI, SUNOS5, NEXT	variants)	*/
                     /*             NS32K      ==> Encore Multimax 	*/
                     /*             MIPS       ==> R2000 or R3000	*/
                     /*			(RISCOS, ULTRIX variants)	*/
@@ -311,6 +321,15 @@
  	    	/* STACKBOTTOM and DATASTART handled specially	*/
  	    	/* in os_dep.c					*/
 #   endif
+#   ifdef MACOS
+#     include <LowMem.h>
+#     define OS_TYPE "MACOS"
+#     define DATASTART ((ptr_t) LMGetCurStackBase())
+				/* globals begin above stack. */
+#     define DATAEND ((ptr_t) LMGetCurrentA5())
+				/* and end at a5. */
+#     define STACKBOTTOM ((ptr_t) LMGetCurStackBase())
+#   endif
 #   ifdef NEXT
 #	define OS_TYPE "NEXT"
 #	define DATASTART ((ptr_t) get_etext())
@@ -347,7 +366,8 @@
     extern int etext;
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
-#       define DATASTART ((ptr_t)((((word) (&etext)) + 0x10003) & ~0x3))
+	extern char * GC_SysVGetDataStart(int max_page_size);
+#       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000)
 #	define PROC_VDB
 #   endif
 #   ifdef SUNOS4
@@ -382,8 +402,8 @@
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
   	extern int etext;
-#       define DATASTART ((ptr_t)((((word) (&etext)) + 0x1003) & ~0x3))
-	extern int _start();
+  	extern ptr_t GC_SysVGetDataStart(int max_page_size);
+#       define DATASTART GC_SysVGetDataStart(0x1000)
 #	define STACKBOTTOM ((ptr_t)(&_start))
 #	define PROC_VDB
 #   endif
@@ -429,6 +449,11 @@
 #	define HEURISTIC2
 	extern char etext;
 #	define DATASTART ((ptr_t)(&etext))
+#   endif
+#   ifdef NEXT
+#	define OS_TYPE "NEXT"
+#	define DATASTART ((ptr_t) get_etext())
+#	define STACKBOTTOM ((ptr_t)0xc0000000)
 #   endif
 # endif
 
@@ -536,6 +561,10 @@
 
 # if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB)
 #   define DEFAULT_VDB
+# endif
+
+# if defined(SPARC)
+#   define SAVE_CALL_CHAIN
 # endif
 
 # endif

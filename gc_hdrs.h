@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:16 pm PDT */
+/* Boehm, July 14, 1994 12:49 pm PDT */
 # ifndef GC_HEADERS_H
 # define GC_HEADERS_H
 typedef struct hblkhdr hdr;
@@ -104,7 +104,7 @@ typedef struct bi {
 	        (word)(p) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE); \
 	    register bottom_index * _bi = GC_top_index[TL_HASH(hi)]; \
 	    \
-	    while (_bi -> key != hi && _bi != &GC_all_nils) \
+	    while (_bi -> key != hi && _bi != GC_all_nils) \
 	    	_bi = _bi -> hash_link; \
 	    (bottom_indx) = _bi; \
 	}

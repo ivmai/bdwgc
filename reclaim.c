@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:00 pm PDT */
+/* Boehm, June 13, 1994 6:22 pm PDT */
 
 #include <stdio.h>
 #include "gc_priv.h"
@@ -606,9 +606,11 @@ int abort_if_found;		/* Abort if a GC_reclaimable object is found */
       for (kind = 0; kind < GC_n_kinds; kind++) {
         register ptr_t *fop;
         register ptr_t *lim;
-        register struct hblk ** hbpp;
-        register struct hblk ** hlim;
-          
+        register struct hblk ** rlp;
+        register struct hblk ** rlim;
+        register struct hblk ** rlist = GC_obj_kinds[kind].ok_reclaim_list;
+        
+        if (rlist == 0) continue;	/* This kind not used.	*/
         if (!abort_if_found) {
             lim = &(GC_obj_kinds[kind].ok_freelist[MAXOBJSZ+1]);
 	    for( fop = GC_obj_kinds[kind].ok_freelist; fop < lim; fop++ ) {
@@ -616,10 +618,9 @@ int abort_if_found;		/* Abort if a GC_reclaimable object is found */
 	    }
 	} /* otherwise free list objects are marked, 	*/
 	  /* and its safe to leave them			*/
-	hlim = &(GC_obj_kinds[kind].ok_reclaim_list[MAXOBJSZ+1]);
-	for( hbpp = GC_obj_kinds[kind].ok_reclaim_list;
-	    hbpp < hlim; hbpp++ ) {
-	    *hbpp = 0;
+	rlim = rlist + MAXOBJSZ+1;
+	for( rlp = rlist; rlp < rlim; rlp++ ) {
+	    *rlp = 0;
 	}
       }
     
@@ -646,10 +647,11 @@ int kind;
     register hdr * hhdr;
     register struct hblk * hbp;
     register struct obj_kind * ok = &(GC_obj_kinds[kind]);
-    struct hblk ** rlh = &(ok -> ok_reclaim_list[sz]);
+    struct hblk ** rlh = ok -> ok_reclaim_list;
     ptr_t *flh = &(ok -> ok_freelist[sz]);
     
-    
+    if (rlh == 0) return;	/* No blocks of this kind.	*/
+    rlh += sz;
     while ((hbp = *rlh) != 0) {
         hhdr = HDR(hbp);
         *rlh = hhdr -> hb_next;
@@ -673,6 +675,7 @@ void GC_reclaim_or_delete_all()
     register hdr * hhdr;
     register struct hblk * hbp;
     register struct obj_kind * ok;
+    struct hblk ** rlp;
     struct hblk ** rlh;
 #   ifdef PRINTTIMES
 	CLOCK_TYPE start_time;
@@ -683,8 +686,10 @@ void GC_reclaim_or_delete_all()
     
     for (kind = 0; kind < GC_n_kinds; kind++) {
     	ok = &(GC_obj_kinds[kind]);
+    	rlp = ok -> ok_reclaim_list;
+    	if (rlp == 0) continue;
     	for (sz = 1; sz <= MAXOBJSZ; sz++) {
-    	    rlh = &(ok -> ok_reclaim_list[sz]);
+    	    rlh = rlp + sz;
     	    while ((hbp = *rlh) != 0) {
         	hhdr = HDR(hbp);
         	*rlh = hhdr -> hb_next;

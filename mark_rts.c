@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 1:58 pm PDT */
+/* Boehm, July 4, 1994 10:46 am PDT */
 # include <stdio.h>
 # include "gc_priv.h"
 
@@ -210,7 +210,7 @@ char * b; char * e;
     n_root_sets++;
 }
 
-void GC_clear_roots()
+void GC_clear_roots(NO_PARAMS)
 {
     DCL_LOCK_STATE;
     
@@ -222,14 +222,12 @@ void GC_clear_roots()
     ENABLE_SIGNALS();
 }
 
-# ifndef THREADS
 ptr_t GC_approx_sp()
 {
     word dummy;
     
     return((ptr_t)(&dummy));
 }
-# endif
 
 /*
  * Call the mark routines (GC_tl_push for a single pointer, GC_push_conditional

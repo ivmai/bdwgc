@@ -12,8 +12,8 @@
  *
  * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
-/* Boehm, May 19, 1994 2:18 pm PDT */
-# include "../gc.h"
+/* Boehm, June 9, 1994 2:22 pm PDT */
+# include "gc.h"
 # include "cord.h"
 # include <stdlib.h>
 # include <stdio.h>

@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:07 pm PDT */
+/* Boehm, July 14, 1994 3:27 pm PDT */
 # ifdef CHECKSUMS
 
 # include "gc_priv.h"
@@ -80,13 +80,19 @@ int index;
     if (pe -> block != 0 && pe -> block != h + OFFSET) ABORT("goofed");
     pe -> old_sum = pe -> new_sum;
     pe -> new_sum = GC_checksum(h);
+#   ifndef MSWIN32
+        if (pe -> new_sum != 0 && !GC_page_was_ever_dirty(h)) {
+            GC_printf1("GC_page_was_ever_dirty(0x%lx) is wrong\n",
+        	       (unsigned long)h);
+        }
+#   endif
     if (GC_page_was_dirty(h)) {
     	GC_n_dirty++;
     } else {
     	GC_n_clean++;
     }
     if (pe -> new_valid && pe -> old_sum != pe -> new_sum) {
-    	if (!GC_page_was_dirty(h)) {
+    	if (!GC_page_was_dirty(h) || !GC_page_was_ever_dirty(h)) {
     	    /* Set breakpoint here */GC_n_dirty_errors++;
     	}
 #	ifdef STUBBORN_ALLOC
@@ -139,6 +145,11 @@ out:
     if (GC_n_changed_errors > 0) {
     	GC_printf1("Found %lu changed bit errors\n",
         	   (unsigned long)GC_n_changed_errors);
+	GC_printf0("These may be benign (provoked by nonpointer changes)\n");
+#	ifdef THREADS
+	    GC_printf0(
+	    "Also expect 1 per thread currently allocating a stubborn obj.\n");
+#	endif
     }
 }
 

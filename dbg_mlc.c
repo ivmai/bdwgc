@@ -11,33 +11,17 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:07 pm PDT */
+/* Boehm, June 16, 1994 4:54 pm PDT */
 # include "gc_priv.h"
 
 /* Do we want to and know how to save the call stack at the time of	*/
 /* an allocation?  How much space do we want to use in each object?	*/
-
-# if defined(SPARC) && defined(SUNOS4)
-#   include <machine/frame.h>
-#   define SAVE_CALL_CHAIN
-#   define NFRAMES 5	/* Number of frames to save. */
-#   define NARGS 2	/* Mumber of arguments to save for each call. */
-#   if NARGS > 6
-	--> We only know how to to get the first 6 arguments
-#   endif
-# endif
 
 # define START_FLAG ((word)0xfedcedcb)
 # define END_FLAG ((word)0xbcdecdef)
 	/* Stored both one past the end of user object, and one before	*/
 	/* the end of the object as seen by the allocator.		*/
 
-#ifdef SAVE_CALL_CHAIN
-    struct callinfo {
-	word ci_pc;
-	word ci_arg[NARGS];	/* bit-wise complement to avoid retention */
-    };
-#endif
 
 /* Object header */
 typedef struct {
@@ -56,50 +40,6 @@ typedef struct {
 #undef ROUNDED_UP_WORDS
 #define ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1) - 1)
 
-#if defined(SPARC) && defined(SUNOS4)
-/* Fill in the pc and argument information for up to NFRAMES of my	*/
-/* callers.  Ignore my frame and my callers frame.			*/
-void GC_save_callers (info) 
-struct callinfo info[NFRAMES];
-{
-  struct frame *frame;
-  struct frame *fp;
-  int nframes = 0;
-  word GC_save_regs_in_stack();
-
-  frame = (struct frame *) GC_save_regs_in_stack ();
-  
-  for (fp = frame -> fr_savfp; fp != 0 && nframes < NFRAMES;
-       fp = fp -> fr_savfp, nframes++) {
-      register int i;
-      
-      info[nframes].ci_pc = fp->fr_savpc;
-      for (i = 0; i < NARGS; i++) {
-	info[nframes].ci_arg[i] = ~(fp->fr_arg[i]);
-      }
-  }
-  if (nframes < NFRAMES) info[nframes].ci_pc = 0;
-}
-
-void GC_print_callers (info)
-struct callinfo info[NFRAMES];
-{
-    register int i,j;
-    
-    GC_err_printf0("\tCall chain at allocation:\n");
-    for (i = 0; i < NFRAMES; i++) {
-     	if (info[i].ci_pc == 0) break;
-     	GC_err_printf1("\t##PC##= 0x%X\n\t\targs: ", info[i].ci_pc);
-     	for (j = 0; j < NARGS; j++) {
-     	    if (j != 0) GC_err_printf0(", ");
-     	    GC_err_printf2("%d (0x%X)", ~(info[i].ci_arg[j]),
-     	    				~(info[i].ci_arg[j]));
-     	}
-     	GC_err_printf0("\n");
-    }
-}
-
-#endif /* SPARC & SUNOS4 */
 
 #ifdef SAVE_CALL_CHAIN
 #   define ADD_CALL_CHAIN(base) GC_save_callers(((oh *)(base)) -> oh_ci)
@@ -204,7 +144,7 @@ ptr_t p, clobbered_addr;
     if (clobbered_addr <= (ptr_t)(&(ohdr -> oh_sz))
         || ohdr -> oh_string == 0) {
         GC_err_printf1("<smashed>, appr. sz = %ld)\n",
-        	       BYTES_TO_WORDS(GC_size((ptr_t)ohdr)));
+        	       GC_size((ptr_t)ohdr) - DEBUG_BYTES);
     } else {
         if (ohdr -> oh_string[0] == '\0') {
             GC_err_puts("EMPTY(smashed?)");

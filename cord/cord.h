@@ -37,6 +37,23 @@
  * ASCII NUL characters may be embedded in cords using CORD_from_fn.
  * This is handled correctly, but CORD_to_char_star will produce a string
  * with embedded NULs when given such a cord. 
+ *
+ * This interface is fairly big, largely for performance reasons.
+ * The most basic constants and functions:
+ *
+ * CORD - the type fo a cord;
+ * CORD_EMPTY - empty cord;
+ * CORD_len(cord) - length of a cord;
+ * CORD_cat(cord1,cord2) - concatenation of two cords;
+ * CORD_substr(cord, start, len) - substring (or subcord);
+ * CORD_pos i;  CORD_FOR(i, cord) {  ... CORD_pos_fetch(i) ... } -
+ *    examine each character in a cord.  CORD_pos_fetch(i) is the char.
+ * CORD_fetch(int i) - Retrieve i'th character (slowly).
+ * CORD_cmp(cord1, cord2) - compare two cords.
+ * CORD_from_file(FILE * f) - turn a read-only file into a cord.
+ * CORD_to_char_start(cord) - convert to C string.
+ *   (Non-NULL C constant strings are cords.)
+ * CORD_printf (etc.) - cord version of printf. Use %r for cords.
  */
 # ifndef CORD_H
 
@@ -149,7 +166,7 @@ int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 	size_t CORD_pos_to_index(CORD_pos p);
 	
 	/* Fetch the character located at the given position:
-	char CORD_pos_fetch(register CORD_pos p);
+	char CORD_pos_fetch(CORD_pos p);
 	
 	/* Initialize the position to refer to the give cord and index.
 	/* Note that this is the most expensive function on positions:

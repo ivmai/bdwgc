@@ -65,6 +65,16 @@ back to A, forming a cycle, that's considered a storage leak, and
 neither will ever become inaccessible.  See the C interface gc.h for
 low-level facilities for handling such cycles of objects with cleanup.
 
+Cautions:
+1. Arrays allocated without new placement syntax are
+allocated as uncollectable objects.  They are traced by the
+collector, but will not be reclaimed.
+
+2. Be sure the collector has been augmented with "make c++".
+
+3. If your compiler supports an overloaded new[] operator,
+then gc_c++.cc and gc_c++.h should be suitably modified.
+
 ****************************************************************************/
 
 #ifndef GC_CPP_H
@@ -78,9 +88,9 @@ enum GCPlacement {GC, NoGC};
 
 class gc {
 public:
-    void* operator new( size_t size );
-    void* operator new( size_t size, GCPlacement gcp );
-    void operator delete( void* obj ); };
+    inline void* operator new( size_t size );
+    inline void* operator new( size_t size, GCPlacement gcp );
+    inline void operator delete( void* obj );  };
     /*
     Intances of classes derived from "gc" will be allocated in the 
     collected heap by default, unless an explicit NoGC placement is
@@ -88,10 +98,10 @@ public:
 
 class gc_cleanup: public gc {
 public:
-    gc_cleanup();
-    virtual ~gc_cleanup();
+    inline gc_cleanup();
+    inline virtual ~gc_cleanup();
 private:
-    static void cleanup( void* obj, void* clientData ); };
+    inline static void cleanup( void* obj, void* clientData ); };
     /*
     Instances of classes derived from "gc_cleanup" will be allocated
     in the collected heap by default.  Further, when the collector
@@ -101,7 +111,7 @@ private:
     inheritance heirarchy -- i.e. it should always be a virtual
     base. */
 
-void* operator new( 
+inline void* operator new( 
     size_t size, 
     GCPlacement gcp,
     void (*cleanup)( void*, void* ) = 0,
@@ -120,8 +130,8 @@ Inline implementation
 ****************************************************************************/
 
 inline void* gc::operator new( size_t size ) {
-    return GC_MALLOC( size ); };
-
+    return GC_MALLOC( size ); }
+    
 inline void* gc::operator new( size_t size, GCPlacement gcp ) {
     if (gcp == GC) 
         return GC_MALLOC( size );
@@ -129,22 +139,24 @@ inline void* gc::operator new( size_t size, GCPlacement gcp ) {
         return GC_MALLOC_UNCOLLECTABLE( size ); }
 
 inline void gc::operator delete( void* obj ) {
-    GC_FREE( obj ); }; 
-
-inline gc_cleanup::gc_cleanup() {
-    GC_REGISTER_FINALIZER( GC_base( this ), cleanup, this, 0, 0 ); }
-
-inline void gc_cleanup::cleanup( void* obj, void* realThis ) {
-    ((gc_cleanup*) realThis)->~gc_cleanup(); }
-
+    GC_FREE( obj ); }
+    
 inline gc_cleanup::~gc_cleanup() {
     GC_REGISTER_FINALIZER( this, 0, 0, 0, 0 ); }
+
+inline void gc_cleanup::cleanup( void* obj, void* displ ) {
+    ((gc_cleanup*) ((char *)obj + (ptrdiff_t)displ))->~gc_cleanup(); }
+
+inline gc_cleanup::gc_cleanup() {
+    register void *base = GC_base((void *)this);
+    GC_REGISTER_FINALIZER( base, cleanup,
+			   (void *)((char *)this - (char *)base), 0, 0 ); }
 
 inline void* operator new( 
     size_t size, 
     GCPlacement gcp,
-    void (*cleanup)( void*, void* ) = 0,
-    void* clientData = 0 )
+    void (*cleanup)( void*, void* ),
+    void* clientData )
 {
     void* obj;
 

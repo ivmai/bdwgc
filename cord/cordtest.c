@@ -10,8 +10,9 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:21 pm PDT */
+/* Boehm, July 25, 1994 3:24 pm PDT */
 # include "cord.h"
+# include <string.h>
 # include <stdio.h>
 /* This is a very incomplete test of the cord package.  It knows about	*/
 /* a few internals of the package (e.g. when C strings are returned)	*/
@@ -45,7 +46,7 @@ char id_cord_fn(size_t i, void * client_data)
     return((char)i);
 }
 
-test_basics()
+void test_basics()
 {
     CORD x = "ab";
     register int i;
@@ -112,11 +113,14 @@ test_basics()
     if (i != 13) ABORT("Bad apparent length for function node");
 }
 
-test_extras()
+void test_extras()
 {
-#   ifdef __OS2__
+#   if defined(__OS2__)
 #	define FNAME1 "tmp1"
 #	define FNAME2 "tmp2"
+#   elif defined(AMIGA)
+#	define FNAME1 "T:tmp1"
+#	define FNAME2 "T:tmp2"
 #   else
 #	define FNAME1 "/tmp/cord_test"
 #	define FNAME2 "/tmp/cord_test2"
@@ -182,7 +186,7 @@ test_extras()
     }
 }
 
-test_printf()
+void test_printf()
 {
     CORD result;
     char result2[200];
@@ -190,7 +194,7 @@ test_printf()
     short s;
     CORD x;
     
-    if (CORD_sprintf(&result, "%7.2f%ln", 3.14159, &l) != 7)
+    if (CORD_sprintf(&result, "%7.2f%ln", 3.14159F, &l) != 7)
     	ABORT("CORD_sprintf failed 1");
     if (CORD_cmp(result, "   3.14") != 0)ABORT("CORD_sprintf goofed 1");
     if (l != 7) ABORT("CORD_sprintf goofed 2");
@@ -210,6 +214,9 @@ test_printf()
 
 main()
 {
+#   ifdef THINK_C
+        printf("cordtest:\n");
+#   endif
     test_basics();
     test_extras();
     test_printf();

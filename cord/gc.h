@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 7, 1994 11:32 am PDT */
+/* Boehm, June 8, 1994 1:12 pm PDT */
  
 #ifndef _GC_H
 
@@ -284,8 +284,6 @@ void GC_debug_end_stubborn_change(/* p */);
 							       __LINE__)
 #   define GC_CHANGE_STUBBORN(p) GC_debug_change_stubborn(p)
 #   define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
-#   define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
-	GC_general_register_disappearing_link(link, GC_base(obj))
 # else
 #   define GC_MALLOC(sz) GC_malloc(sz)
 #   define GC_MALLOC_ATOMIC(sz) GC_malloc_atomic(sz)
@@ -297,8 +295,6 @@ void GC_debug_end_stubborn_change(/* p */);
 #   define GC_MALLOC_STUBBORN(sz) GC_malloc_stubborn(sz)
 #   define GC_CHANGE_STUBBORN(p) GC_change_stubborn(p)
 #   define GC_END_STUBBORN_CHANGE(p) GC_end_stubborn_change(p)
-#   define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
-	GC_general_register_disappearing_link(link, obj)
 # endif
 /* The following are included because they are often convenient, and	*/
 /* reduce the chance for a misspecifed size argument.  But calls may	*/
@@ -359,10 +355,7 @@ void GC_debug_end_stubborn_change(/* p */);
 	/* finalization, even if neither the old nor new	*/
 	/* finalizer were NULL.					*/
 	/* Obj should be the nonNULL starting address of an 	*/
-	/* object allocated by GC_malloc or friends.		*/
-	/* Note that any garbage collectable object referenced	*/
-	/* by cd will be considered accessible until the	*/
-	/* finalizer is invoked.				*/
+	/* object allocated by GC_malloc or friends.		*/	
 
 /* The following routine may be used to break cycles between	*/
 /* finalizable objects, thus causing cyclic finalizable		*/
@@ -456,7 +449,6 @@ int GC_unregister_disappearing_link(/* void ** link */);
 /* uncollectable objects, which are deallocated using the destructor	*/
 /* facility in thr_keycreate.						*/
 # include <thread.h>
-# include <signal.h>
   int GC_thr_create(void *stack_base, size_t stack_size,
                     void *(*start_routine)(void *), void *arg, long flags,
                     thread_t *new_thread);

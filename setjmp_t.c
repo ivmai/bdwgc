@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:01 pm PDT */
+/* Boehm, July 25, 1994 2:34 pm PDT */
  
 /* Check whether setjmp actually saves registers in jmp_buf. */
 /* If it doesn't, the generic mark_regs code won't work.     */
@@ -59,7 +59,7 @@ getpagesize()
 }
 #endif
 
-#ifdef AMIGA
+#if defined(AMIGA) || defined(MACOS)
 int
 getpagesize()
 {
@@ -67,7 +67,7 @@ getpagesize()
 }
 #endif
 
-#ifdef __OS2__
+#ifdef OS2
 #define INCL_DOSFILEMGR
 #define INCL_DOSMISC
 #define INCL_DOSERRORS

@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:11 pm PDT */
+/* Boehm, July 28, 1994 10:01 am PDT */
 
 
 #include "gc_priv.h"
@@ -77,7 +77,9 @@ bool GC_compact_changing_list()
 {
     register extern_ptr_t *p, *q;
     register word count = 0;
-    word old_size = GC_changing_list_limit-GC_changing_list_start+1;
+    word old_size = (char **)GC_changing_list_limit
+    		    - (char **)GC_changing_list_start+1;
+    		    /* The casts are needed as a workaround for an Amiga bug */
     register word new_size = old_size;
     extern_ptr_t * new_list;
     
@@ -198,7 +200,7 @@ DCL_LOCK_STATE;
 #       ifdef MERGE_SIZES
 	  lw = GC_size_map[lb];
 #	else
-	  lw = ROUNDED_UP_WORDS(lb);
+	  lw = ALIGNED_WORDS(lb);
 #       endif
 	opp = &(GC_sobjfreelist[lw]);
 	FASTLOCK();

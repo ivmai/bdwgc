@@ -12,13 +12,16 @@
  * modified is included with the above copyright notice.
  *
  */
-/* Boehm, May 19, 1994 2:02 pm PDT */
+/* Boehm, July 25, 1994 1:22 pm PDT */
 
+
+# include "gc_priv.h"
 
 # include <stdio.h>
-# include <signal.h>
-# include <sys/types.h>
-# include "gc_priv.h"
+# ifndef MACOS
+#   include <signal.h>
+#   include <sys/types.h>
+# endif
 
 /*
  * Separate free lists are maintained for different sized objects
@@ -124,7 +127,7 @@ word GC_adj_words_allocd()
      	/* This doesn't reflect useful work.  But if there is lots of	*/
      	/* new fragmentation, the same is probably true of the heap,	*/
      	/* and the collection will be correspondingly cheaper.		*/
-    if (result < (signed_word)(GC_words_allocd >> 2)) {
+    if (result < (signed_word)(GC_words_allocd >> 3)) {
     	/* Always count at least 1/8 of the allocations.  We don't want	*/
     	/* to collect too infrequently, since that would inhibit	*/
     	/* coalescing of free storage blocks.				*/
@@ -176,7 +179,12 @@ void GC_maybe_gc()
             /* We try to mark with the world stopped.	*/
             /* If we run out of time, this turns into	*/
             /* incremental marking.			*/
-            if (GC_stopped_mark(FALSE)) GC_finish_collection();
+            if (GC_stopped_mark(FALSE)) {
+#               ifdef SAVE_CALL_CHAIN
+                  GC_save_callers(GC_last_stack);
+#               endif
+                GC_finish_collection();
+            }
             n_partial_gcs++;
         }
     }
@@ -196,6 +204,9 @@ void GC_gcollect_inner()
     GC_promote_black_lists();
     /* GC_reclaim_or_delete_all();  -- not needed: no intervening allocation */
     GC_clear_marks();
+#   ifdef SAVE_CALL_CHAIN
+        GC_save_callers(GC_last_stack);
+#   endif
     (void) GC_stopped_mark(TRUE);
     GC_finish_collection();
 }
@@ -211,7 +222,7 @@ int GC_deficit = 0;	/* The number of extra calls to GC_mark_some	*/
 			/* Negative values are equivalent to 0.		*/
 extern bool GC_collection_in_progress();
 
-void GC_collect_a_little(n)
+void GC_collect_a_little_inner(n)
 int n;
 {
     register int i;
@@ -220,7 +231,10 @@ int n;
     	for (i = GC_deficit; i < GC_RATE*n; i++) {
     	    if (GC_mark_some()) {
     	        /* Need to finish a collection */
-    	        (void) GC_stopped_mark(TRUE);
+#     		ifdef SAVE_CALL_CHAIN
+        	    GC_save_callers(GC_last_stack);
+#     		endif
+		(void) GC_stopped_mark(TRUE);
     	        GC_finish_collection();
     	        break;
     	    }
@@ -229,6 +243,20 @@ int n;
     } else {
         GC_maybe_gc();
     }
+}
+
+int GC_collect_a_little(NO_PARAMS)
+{
+    int result;
+    DCL_LOCK_STATE;
+
+    DISABLE_SIGNALS();
+    LOCK();
+    GC_collect_a_little_inner(1);
+    result = (int)GC_collection_in_progress();
+    UNLOCK();
+    ENABLE_SIGNALS();
+    return(result);
 }
 
 /*
@@ -407,7 +435,7 @@ void GC_finish_collection()
 		  "Immediately reclaimed %ld bytes in heap of size %lu bytes\n",
 	          (long)WORDS_TO_BYTES(GC_mem_found),
 	          (unsigned long)GC_heapsize);
-	GC_printf2("%lu (atomic) + %lu (composite) bytes in use\n",
+	GC_printf2("%lu (atomic) + %lu (composite) collectable bytes in use\n",
 	           (unsigned long)WORDS_TO_BYTES(GC_atomic_in_use),
 	           (unsigned long)WORDS_TO_BYTES(GC_composite_in_use));
 #   endif
@@ -428,7 +456,7 @@ void GC_finish_collection()
 }
 
 /* Externally callable routine to invoke full, stop-world collection */
-void GC_gcollect()
+void GC_gcollect(NO_PARAMS)
 {
     DCL_LOCK_STATE;
     
@@ -576,6 +604,9 @@ word needed_blocks;
     static int count = 0;  /* How many failures? */
     
     if (!GC_incremental && !GC_dont_gc && GC_should_collect()) {
+#     ifdef SAVE_CALL_CHAIN
+        GC_save_callers(GC_last_stack);
+#     endif
       GC_gcollect_inner();
     } else {
       word blocks_to_get = GC_heapsize/(HBLKSIZE*GC_free_space_divisor)
@@ -619,7 +650,7 @@ int kind;
 
     while (*flh == 0) {
       /* Do our share of marking work */
-        if(GC_incremental && !GC_dont_gc) GC_collect_a_little(1);
+        if(GC_incremental && !GC_dont_gc) GC_collect_a_little_inner(1);
       /* Sweep blocks for objects of this size */
           GC_continue_reclaim(sz, kind);
       if (*flh == 0) {

@@ -18,8 +18,10 @@ You should ensure (using implementation-dependent techniques) that the
 linker finds this module before the library that defines the default
 built-in "new" and "delete".
 
+Authors: Jesse Hull and John Ellis
 
 **************************************************************************/
+/* Boehm, June 8, 1994 3:10 pm PDT */
 
 #include "gc_c++.h"
 
@@ -27,7 +29,7 @@ void* operator new( size_t size ) {
     return GC_MALLOC_UNCOLLECTABLE( size ); }
   
 void operator delete( void* obj ) {
-    return GC_FREE( obj ); }
+    GC_FREE( obj ); }
   
 
 

@@ -13,7 +13,7 @@
  * Original author: Bill Janssen
  * Heavily modified by Hans Boehm and others
  */
-/* Boehm, May 19, 1994 1:57 pm PDT */
+/* Boehm, June 7, 1994 4:35 pm PDT */
 
 /*
  * This is incredibly OS specific code for tracking down data sections in
@@ -26,7 +26,9 @@
  * None of this is safe with dlclose and incremental collection.
  * But then not much of anything is safe in the presence of dlclose.
  */
-#include <sys/types.h>
+#ifndef MACOS
+#  include <sys/types.h>
+#endif
 #include "gc_priv.h"
 
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32)) && !defined(PCR)

@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:03 pm PDT */
+/* Boehm, July 13, 1994 12:32 pm PDT */
  
 #include <stdio.h>
 #include "gc_priv.h"
@@ -34,13 +34,14 @@ register ptr_t op;
 register ptr_t *opp;
 
     if( SMALL_OBJ(lb) ) {
+        register struct obj_kind * kind = GC_obj_kinds + k;
 #       ifdef MERGE_SIZES
 	  lw = GC_size_map[lb];
 #	else
-	  lw = ROUNDED_UP_WORDS(lb);
+	  lw = ALIGNED_WORDS(lb);
 	  if (lw == 0) lw = 1;
 #       endif
-	opp = &(GC_obj_kinds[k].ok_freelist[lw]);
+	opp = &(kind -> ok_freelist[lw]);
         if( (op = *opp) == 0 ) {
 #	    ifdef MERGE_SIZES
 	      if (GC_size_map[lb] == 0) {
@@ -54,6 +55,14 @@ register ptr_t *opp;
 	        return(GC_generic_malloc_inner(lb, k));
 	      }
 #	    endif
+	    if (kind -> ok_reclaim_list == 0) {
+	    	/* Allocate reclaim list */
+	    	struct hblk ** result = (struct hblk **)
+	    		GC_scratch_alloc((MAXOBJSZ+1) * sizeof(struct hblk *));
+	    	if (result == 0) goto out;
+	    	BZERO(result, (MAXOBJSZ+1)*sizeof(struct hblk *));
+	    	kind -> ok_reclaim_list = result;
+	    }
 	    op = GC_allocobj(lw, k);
 	    if (op == 0) goto out;
         }
@@ -73,7 +82,8 @@ register ptr_t *opp;
 	
 	if (!GC_is_initialized) GC_init_inner();
 	/* Do our share of marking work */
-          if(GC_incremental && !GC_dont_gc) GC_collect_a_little((int)n_blocks);
+          if(GC_incremental && !GC_dont_gc)
+		GC_collect_a_little_inner((int)n_blocks);
 	lw = ROUNDED_UP_WORDS(lb);
 	while ((h = GC_allochblk(lw, k, 0)) == 0
 		&& GC_collect_or_expand(n_blocks));
@@ -93,8 +103,9 @@ out:
 /* Allocate a composite object of size n bytes.  The caller guarantees	*/
 /* that pointers past the first page are not relevant.  Caller holds	*/
 /* allocation lock.							*/
-ptr_t GC_malloc_ignore_off_page_inner(lb)
+ptr_t GC_generic_malloc_inner_ignore_off_page(lb, k)
 register size_t lb;
+register int k;
 {
 # ifdef ALL_INTERIOR_POINTERS
     register struct hblk * h;
@@ -103,13 +114,14 @@ register size_t lb;
     register ptr_t op;
 
     if (lb <= HBLKSIZE)
-        return(GC_generic_malloc_inner((word)lb, NORMAL));
+        return(GC_generic_malloc_inner((word)lb, k));
     n_blocks = divHBLKSZ(ADD_SLOP(lb) + HDR_BYTES + HBLKSIZE-1);
     if (!GC_is_initialized) GC_init_inner();
     /* Do our share of marking work */
-    if(GC_incremental && !GC_dont_gc) GC_collect_a_little((int)n_blocks);
+    if(GC_incremental && !GC_dont_gc)
+	GC_collect_a_little_inner((int)n_blocks);
     lw = ROUNDED_UP_WORDS(lb);
-    while ((h = GC_allochblk(lw, NORMAL, IGNORE_OFF_PAGE)) == 0
+    while ((h = GC_allochblk(lw, k, IGNORE_OFF_PAGE)) == 0
 	   && GC_collect_or_expand(n_blocks));
     if (h == 0) {
 	op = 0;
@@ -120,8 +132,24 @@ register size_t lb;
     GC_words_allocd += lw;
     return((ptr_t)op);
 # else
-    return(GC_generic_malloc_inner((word)lb, NORMAL));
+    return(GC_generic_malloc_inner((word)lb, k));
 # endif
+}
+
+ptr_t GC_generic_malloc_ignore_off_page(lb, k)
+register size_t lb;
+register int k;
+{
+    register ptr_t result;
+    DCL_LOCK_STATE;
+    
+    GC_invoke_finalizers();
+    DISABLE_SIGNALS();
+    LOCK();
+    result = GC_generic_malloc_inner_ignore_off_page(lb,k);
+    UNLOCK();
+    ENABLE_SIGNALS();
+    return(result);
 }
 
 # if defined(__STDC__) || defined(__cplusplus)
@@ -131,16 +159,17 @@ register size_t lb;
   register size_t lb;
 # endif
 {
-    register extern_ptr_t result;
-    DCL_LOCK_STATE;
-    
-    GC_invoke_finalizers();
-    DISABLE_SIGNALS();
-    LOCK();
-    result = GC_malloc_ignore_off_page_inner(lb);
-    UNLOCK();
-    ENABLE_SIGNALS();
-    return(result);
+    return((extern_ptr_t)GC_generic_malloc_ignore_off_page(lb, NORMAL));
+}
+
+# if defined(__STDC__) || defined(__cplusplus)
+  void * GC_malloc_atomic_ignore_off_page(size_t lb)
+# else
+  char * GC_malloc_atomic_ignore_off_page(lb)
+  register size_t lb;
+# endif
+{
+    return((extern_ptr_t)GC_generic_malloc_ignore_off_page(lb, PTRFREE));
 }
 
 ptr_t GC_generic_malloc(lb, k)
@@ -218,7 +247,7 @@ DCL_LOCK_STATE;
         obj_link(op) = 0;
         return(op);
     }
-    lw = ROUNDED_UP_WORDS(lb);
+    lw = ALIGNED_WORDS(lb);
     GC_invoke_finalizers();
     DISABLE_SIGNALS();
     LOCK();
@@ -280,7 +309,7 @@ DCL_LOCK_STATE;
 #       ifdef MERGE_SIZES
 	  lw = GC_size_map[lb];
 #	else
-	  lw = ROUNDED_UP_WORDS(lb);
+	  lw = ALIGNED_WORDS(lb);
 #       endif
 	opp = &(GC_aobjfreelist[lw]);
 	FASTLOCK();
@@ -315,7 +344,7 @@ DCL_LOCK_STATE;
 #       ifdef MERGE_SIZES
 	  lw = GC_size_map[lb];
 #	else
-	  lw = ROUNDED_UP_WORDS(lb);
+	  lw = ALIGNED_WORDS(lb);
 #       endif
 	opp = &(GC_objfreelist[lw]);
 	FASTLOCK();
@@ -355,7 +384,7 @@ DCL_LOCK_STATE;
 #	  endif
 	  lw = GC_size_map[lb];
 #	else
-	  lw = ROUNDED_UP_WORDS(lb);
+	  lw = ALIGNED_WORDS(lb);
 #       endif
 	opp = &(GC_uobjfreelist[lw]);
 	FASTLOCK();

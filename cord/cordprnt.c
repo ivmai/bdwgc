@@ -20,14 +20,14 @@
 /* We assume that void * and char * have the same size.			*/
 /* All this cruft is needed because we want to rely on the underlying	*/
 /* sprintf implementation whenever possible.				*/
-/* Boehm, May 19, 1994 2:19 pm PDT */
+/* Boehm, July 25, 1994 3:42 pm PDT */
 
 #include "cord.h"
 #include "ec.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include "../gc.h"
+#include "gc.h"
 
 #define CONV_SPEC_LEN 50	/* Maximum length of a single	*/
 				/* conversion specification.	*/
@@ -254,7 +254,6 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
             	/* Use standard sprintf to perform conversion */
             	{
             	    register char * buf;
-            	    int needed_sz;
             	    va_list vsprintf_args = args;
             	    	/* The above does not appear to be sanctioned	*/
             	    	/* by the ANSI C standard.			*/

@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:17 pm PDT */
+/* Boehm, July 28, 1994 10:35 am PDT */
  
 
 # ifndef GC_PRIVATE_H
@@ -39,8 +39,8 @@ typedef GC_signed_word signed_word;
 # define FALSE 0
 
 typedef char * ptr_t;	/* A generic pointer to which we can add	*/
-			/* byte displacments.				*/
-			/* Prefereably identical to caddr_t, if it 	*/
+			/* byte displacements.				*/
+			/* Preferably identical to caddr_t, if it 	*/
 			/* exists.					*/
 			
 #if defined(__STDC__)
@@ -159,6 +159,10 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 				/* include assembly code to do it well.	*/
 #endif
 
+#ifdef HP_PA
+#   define ALIGN_DOUBLE
+#endif
+
 #define MERGE_SIZES /* Round up some object sizes, so that fewer distinct */
 		    /* free lists are actually maintained.  This applies  */
 		    /* only to the top level routines in misc.c, not to   */
@@ -185,6 +189,35 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 
 # define TIME_LIMIT 50	   /* We try to keep pause times from exceeding	 */
 			   /* this by much. In milliseconds.		 */
+
+/*********************************/
+/*                               */
+/* Stack saving for debugging	 */
+/*                               */
+/*********************************/
+
+/*
+ * Number of frames and arguments to save in objects allocated by
+ * debugging allocator.
+ */
+#   define NFRAMES 5	/* Number of frames to save. */
+#   define NARGS 2	/* Mumber of arguments to save for each call. */
+
+
+#ifdef SAVE_CALL_CHAIN
+    struct callinfo {
+	word ci_pc;
+	word ci_arg[NARGS];	/* bit-wise complement to avoid retention */
+    };
+
+/* Fill in the pc and argument information for up to NFRAMES of my	*/
+/* callers.  Ignore my frame and my callers frame.			*/
+void GC_save_callers (/* struct callinfo info[NFRAMES] */);
+
+void GC_print_callers (/* struct callinfo info[NFRAMES] */);
+
+#endif
+
 
 /*********************************/
 /*                               */
@@ -254,15 +287,28 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
                                     + HBLKSIZE-1)
 #   else
 #     if defined(AMIGA) || defined(NEXT)
-#       define GET_MEM(bytes) HBLKPTR(calloc(1, (size_t)bytes + HBLKSIZE) \
-				+ HBLKSIZE-1)
+#       define GET_MEM(bytes) HBLKPTR((size_t) \
+				      calloc(1, (size_t)bytes + HBLKSIZE) \
+                                      + HBLKSIZE-1)
 #     else
 #	ifdef MSWIN32
           extern ptr_t GC_win32_get_mem();
 #         define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
 #	else
-          extern ptr_t GC_unix_get_mem();
-#         define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
+#	  ifdef MACOS
+#	    if defined(USE_TEMPORARY_MEMORY)
+		extern Ptr GC_MacTemporaryNewPtr(size_t size,
+						 Boolean clearMemory);
+#               define GET_MEM(bytes) HBLKPTR( \
+		    GC_MacTemporaryNewPtr(bytes + HBLKSIZE, true) + HBLKSIZE-1)
+#	    else
+#         	    define GET_MEM(bytes) HBLKPTR( \
+			NewPtrClear(bytes + HBLKSIZE) + HBLKSIZE-1)
+#	    endif
+#	  else
+            extern ptr_t GC_unix_get_mem();
+#           define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
+#	  endif
 #	endif
 #     endif
 #   endif
@@ -302,8 +348,8 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #    include <base/PCR_Base.h>
 #    include <th/PCR_Th.h>
      extern PCR_Th_ML GC_allocate_ml;
-#    define DCL_LOCK_STATE  PCR_ERes GC_fastLockRes; PCR_sigset_t GC_old_sig_mas
-k
+#    define DCL_LOCK_STATE \
+	 PCR_ERes GC_fastLockRes; PCR_sigset_t GC_old_sig_mask
 #    define LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml)
 #    define UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
 #    define FASTLOCK() (GC_fastLockRes = PCR_Th_ML_Try(&GC_allocate_ml))
@@ -349,7 +395,8 @@ k
 #   define ENABLE_SIGNALS() \
 		PCR_Th_SetSigMask(&GC_old_sig_mask, NIL)
 # else
-#   if defined(SRC_M3) || defined(AMIGA) || defined(SOLARIS_THREADS) || defined(MSWIN32)
+#   if defined(SRC_M3) || defined(AMIGA) || defined(SOLARIS_THREADS) \
+	|| defined(MSWIN32) || defined(MACOS)
 			/* Also useful for debugging, and unusually	*/
 	 		/* correct client code.				*/
 	/* Should probably use thr_sigsetmask for SOLARIS_THREADS. */
@@ -388,7 +435,6 @@ k
 
 /* Abandon ship */
 # ifdef PCR
-    void PCR_Base_Panic(const char *fmt, ...);
 #   define ABORT(s) PCR_Base_Panic(s)
 # else
 #   ifdef SMALL_CONFIG
@@ -401,8 +447,7 @@ k
 
 /* Exit abnormally, but without making a mess (e.g. out of memory) */
 # ifdef PCR
-    void PCR_Base_Exit(int status);
-#   define EXIT() PCR_Base_Exit(1)
+#   define EXIT() PCR_Base_Exit(1,PCR_waitForever)
 # else
 #   define EXIT() (void)exit(1)
 # endif
@@ -483,10 +528,21 @@ k
 /* Round up byte allocation requests to integral number of words, etc. */
 # ifdef ADD_BYTE_AT_END
 #   define ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1))
+#   ifdef ALIGN_DOUBLE
+#       define ALIGNED_WORDS(n) (BYTES_TO_WORDS((n) + WORDS_TO_BYTES(2)) & ~1)
+#   else
+#       define ALIGNED_WORDS(n) ROUNDED_UP_WORDS(n)
+#   endif
 #   define SMALL_OBJ(bytes) ((bytes) < WORDS_TO_BYTES(MAXOBJSZ))
 #   define ADD_SLOP(bytes) ((bytes)+1)
 # else
 #   define ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + (WORDS_TO_BYTES(1) - 1))
+#   ifdef ALIGN_DOUBLE
+#       define ALIGNED_WORDS(n) \
+			(BYTES_TO_WORDS((n) + WORDS_TO_BYTES(2) - 1) & ~1)
+#   else
+#       define ALIGNED_WORDS(n) ROUNDED_UP_WORDS(n)
+#   endif
 #   define SMALL_OBJ(bytes) ((bytes) <= WORDS_TO_BYTES(MAXOBJSZ))
 #   define ADD_SLOP(bytes) (bytes)
 # endif
@@ -656,7 +712,7 @@ struct _GC_arrays {
   			  /* free list for immutable objects	*/
   ptr_t _obj_map[MAXOBJSZ+1];
                        /* If not NIL, then a pointer to a map of valid  */
-    		       /* object addresses. hbh_map[sz][i] is j if the  */
+    		       /* object addresses. _obj_map[sz][i] is j if the	*/
     		       /* address block_start+i is a valid pointer      */
     		       /* to an object at				*/
     		       /* block_start+i&~3 - WORDS_TO_BYTES(j).		*/
@@ -668,7 +724,7 @@ struct _GC_arrays {
     		       /* It is OBJ_INVALID if				*/
     		       /* block_start+WORDS_TO_BYTES(i) is not		*/
     		       /* valid as a pointer to an object.              */
-    		       /* We assume that all values of j <= OBJ_INVALID */
+    		       /* We assume all values of j <= OBJ_INVALID.	*/
     		       /* The zeroth entry corresponds to large objects.*/
 #   ifdef ALL_INTERIOR_POINTERS
 #	define map_entry_type short
@@ -701,11 +757,7 @@ struct _GC_arrays {
 				/* GC_valid_offsets[i] ==>		  */
 				/* GC_modws_valid_offsets[i%sizeof(word)] */
 #   endif
-  struct hblk * _reclaim_list[MAXOBJSZ+1];
-  struct hblk * _areclaim_list[MAXOBJSZ+1];
-  struct hblk * _ureclaim_list[MAXOBJSZ+1];
 # ifdef STUBBORN_ALLOC
-      struct hblk * _sreclaim_list[MAXOBJSZ+1];
       page_hash_table _changed_pages;
         /* Stubborn object pages that were changes since last call to	*/
 	/* GC_read_changed.						*/
@@ -726,8 +778,16 @@ struct _GC_arrays {
     		/* Start address of memory regions obtained from kernel. */
 # endif
   /* Block header index; see gc_headers.h */
-  bottom_index _all_nils;
+  bottom_index * _all_nils;
   bottom_index * _top_index [TOP_SZ];
+#ifdef SAVE_CALL_CHAIN
+  struct callinfo _last_stack[NFRAMES];	/* Stack at last garbage collection.*/
+  					/* Useful for debugging	mysterious  */
+  					/* object disappearances.	    */
+  					/* In the multithreaded case, we    */
+  					/* currently only save the calling  */
+  					/* stack.			    */
+#endif
 };
 
 extern GC_FAR struct _GC_arrays GC_arrays; 
@@ -738,11 +798,7 @@ extern GC_FAR struct _GC_arrays GC_arrays;
 # define GC_sobjfreelist GC_arrays._sobjfreelist
 # define GC_valid_offsets GC_arrays._valid_offsets
 # define GC_modws_valid_offsets GC_arrays._modws_valid_offsets
-# define GC_reclaim_list GC_arrays._reclaim_list
-# define GC_areclaim_list GC_arrays._areclaim_list
-# define GC_ureclaim_list GC_arrays._ureclaim_list
 # ifdef STUBBORN_ALLOC
-#    define GC_sreclaim_list GC_arrays._sreclaim_list
 #    define GC_changed_pages GC_arrays._changed_pages
 #    define GC_prev_changed_pages GC_arrays._prev_changed_pages
 # endif
@@ -756,6 +812,7 @@ extern GC_FAR struct _GC_arrays GC_arrays;
 # define GC_heapsize GC_arrays._heapsize
 # define GC_words_allocd_before_gc GC_arrays._words_allocd_before_gc
 # define GC_heap_sects GC_arrays._heap_sects
+# define GC_last_stack GC_arrays._last_stack
 # ifdef MSWIN32
 #   define GC_heap_bases GC_arrays._heap_bases
 # endif
@@ -1030,7 +1087,7 @@ bool GC_collect_or_expand(/* needed_blocks */);
 				/* blocks available.  Should be called	*/
 				/* until it fails by returning FALSE.	*/
 void GC_init();			/* Initialize collector.		*/
-void GC_collect_a_little(/* n */);
+void GC_collect_a_little_inner(/* int n */);
 				/* Do n units worth of garbage 		*/
 				/* collection work, if appropriate.	*/
 				/* A unit is an amount appropriate for  */
@@ -1050,7 +1107,7 @@ ptr_t GC_generic_malloc_words_small(/*words, kind*/);
 				/* As above, but size in units of words */
 				/* Bypasses MERGE_SIZES.  Assumes	*/
 				/* words <= MAXOBJSZ.			*/
-ptr_t GC_malloc_ignore_off_page_inner(/* bytes */);
+ptr_t GC_generic_malloc_inner_ignore_off_page(/* bytes, kind */);
 				/* Allocate an object, where		*/
 				/* the client guarantees that there	*/
 				/* will always be a pointer to the 	*/

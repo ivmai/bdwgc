@@ -11,15 +11,15 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:04 pm PDT */
+/* Boehm, July 11, 1994 4:41 pm PDT */
 
-#define DEBUG       /* Some run-time consistency checks */
-#undef DEBUG
-#define VERBOSE
-#undef VERBOSE
 
 #include <stdio.h>
 #include <signal.h>
+#ifdef SOLARIS_THREADS
+# include <sys/syscall.h>
+#endif
+
 #define I_HIDE_POINTERS	/* To make GC_call_with_alloc_lock visible */
 #include "gc_priv.h"
 
@@ -329,7 +329,7 @@ ptr_t arg;
     }
 }
 
-size_t GC_get_heap_size()
+size_t GC_get_heap_size(NO_PARAMS)
 {
     return ((size_t) GC_heapsize);
 }
@@ -464,7 +464,7 @@ void GC_init_inner()
 #   endif
 }
 
-void GC_enable_incremental()
+void GC_enable_incremental(NO_PARAMS)
 {
     DCL_LOCK_STATE;
     
@@ -527,6 +527,12 @@ out:
   }
 #endif
 
+#ifdef SOLARIS_THREADS
+#   define WRITE(f, buf, len) syscall(SYS_write, (f), (buf), (len))
+#else
+#   define WRITE(f, buf, len) write((f), (buf), (len))
+#endif
+
 /* A version of printf that is unlikely to call malloc, and is thus safer */
 /* to call from the collector in case malloc has been bound to GC_malloc. */
 /* Assumes that no more than 1023 characters are written at once.	  */
@@ -550,7 +556,7 @@ long a, b, c, d, e, f;
           ABORT("write to stdout failed");
       fflush(GC_stdout);
 #   else
-      if (write(1, buf, strlen(buf)) < 0) ABORT("write to stdout failed");
+      if (WRITE(1, buf, strlen(buf)) < 0) ABORT("write to stdout failed");
 #   endif
 }
 
@@ -570,7 +576,7 @@ long a, b, c, d, e, f;
           ABORT("write to stderr failed");
       fflush(GC_stderr);
 #   else
-      if (write(2, buf, strlen(buf)) < 0) ABORT("write to stderr failed");
+      if (WRITE(2, buf, strlen(buf)) < 0) ABORT("write to stderr failed");
 #   endif
 }
 
@@ -584,7 +590,7 @@ char *s;
           ABORT("write to stderr failed");
       fflush(GC_stderr);
 #   else
-      if (write(2, s, strlen(s)) < 0) ABORT("write to stderr failed");
+      if (WRITE(2, s, strlen(s)) < 0) ABORT("write to stderr failed");
 #   endif
 }
 

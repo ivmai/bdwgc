@@ -1,4 +1,18 @@
 
+[Note: The original Amiga port was made by Jesper Peterson. I (Michel
+Schinz) modified it slightly to reflect the changes made in the new
+official distribution, and to take advantage of the new SAS/C 6.x
+features. I also created a makefile to compile the "cord" package (see
+the cord subdirectory).
+
+If you have any problem with this version, please contact me at
+schinz@alphanet.ch (but do *not* send long files, since we pay for
+every mail!).
+
+Following is Jesper's original README.amiga. Please read it
+carefully.]
+
+
 ADDITIONAL NOTES FOR AMIGA PORT
 
 These notes assume some familiarity with Amiga internals.

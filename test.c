@@ -8,7 +8,7 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
-/* Boehm, May 6, 1994 3:32 pm PDT */
+/* Boehm, July 27, 1994 9:45 am PDT */
 /* An incomplete test for the garbage collector.  		*/
 /* Some more obscure entry points are not tested at all.	*/
 
@@ -64,6 +64,7 @@ typedef struct SEXPR * sexpr;
 
 extern sexpr cons();
 
+# undef nil
 # define nil ((sexpr) 0)
 # define car(x) ((x) -> sexpr_car)
 # define cdr(x) ((x) -> sexpr_cdr)
@@ -190,12 +191,12 @@ int low, up;
     if ((int)(car(car(list))) != low) {
         (void)GC_printf0(
            "List reversal produced incorrect list - collector is broken\n");
-        exit(1);
+        FAIL;
     }
     if (low == up) {
         if (cdr(list) != nil) {
            (void)GC_printf0("List too long - collector is broken\n");
-           exit(1);
+           FAIL;
         }
     } else {
         check_ints(cdr(list), low+1, up);
@@ -211,12 +212,12 @@ int low, up;
     if ((int)(car(car(list))) != low) {
         (void)GC_printf0(
            "Uncollectable list corrupted - collector is broken\n");
-        exit(1);
+        FAIL;
     }
     if (low == up) {
         if (UNCOLLECTABLE_CDR(list) != nil) {
            (void)GC_printf0("Uncollectable ist too long - collector is broken\n");
-           exit(1);
+           FAIL;
         }
     } else {
         check_uncollectable_ints(UNCOLLECTABLE_CDR(list), low+1, up);
@@ -258,13 +259,14 @@ void reverse_test()
     sexpr c;
     sexpr d;
     sexpr e;
-#   if defined(MSWIN32)
+#   if defined(MSWIN32) || defined(MACOS)
       /* Win32S only allows 128K stacks */
 #     define BIG 1000
 #   else
 #     define BIG 4500
 #   endif
 
+    A.dummy = 17;
     a = ints(1, 49);
     b = ints(1, 50);
     c = ints(1, BIG);
@@ -278,10 +280,14 @@ void reverse_test()
 #   else
         GC_FREE((char *)e);
 #   endif
+    check_ints(b,1,50);
+    check_ints(a,1,49);
     for (i = 0; i < 50; i++) {
+        check_ints(b,1,50);
         b = reverse(reverse(b));
     }
     check_ints(b,1,50);
+    check_ints(a,1,49);
     for (i = 0; i < 60; i++) {
     	/* This maintains the invariant that a always points to a list of */
     	/* 49 integers.  Thus this is thread safe without locks.	  */
@@ -301,7 +307,10 @@ void reverse_test()
     d = (sexpr)((char *)d - sizeof(char *));
     check_ints(c,1,BIG);
     check_uncollectable_ints(d, 1, 100);
-    a = b = c = 0;
+#   ifndef THREADS
+	a = 0;
+#   endif  
+    b = c = 0;
 }
 
 /*
@@ -351,7 +360,14 @@ int dropped_something = 0;
 size_t counter = 0;
 
 # define MAX_FINALIZED 8000
-GC_FAR GC_word live_indicators[MAX_FINALIZED] = {0};
+
+# if !defined(MACOS)
+  GC_FAR GC_word live_indicators[MAX_FINALIZED] = {0};
+#else
+  /* Too big for THINK_C. have to allocate it dynamically. */
+  GC_word *live_indicators = 0;
+#endif
+
 int live_indicators_count = 0;
 
 tn * mktree(n)
@@ -359,6 +375,16 @@ int n;
 {
     tn * result = (tn *)GC_MALLOC(sizeof(tn));
     
+#if defined(MACOS)
+	/* get around static data limitations. */
+	if (!live_indicators)
+		live_indicators =
+		    (GC_word*)NewPtrClear(MAX_FINALIZED * sizeof(GC_word));
+	if (!live_indicators) {
+        (void)GC_printf0("Out of memory\n");
+        exit(1);
+    }
+#endif
     if (n == 0) return(0);
     if (result == 0) {
         (void)GC_printf0("Out of memory\n");
@@ -397,8 +423,12 @@ int n;
 
         GC_REGISTER_FINALIZER((void_star)result, finalizer, (void_star)n,
         		      (GC_finalization_proc *)0, (void_star *)0);
+        if (my_index >= MAX_FINALIZED) {
+		GC_printf0("live_indicators overflowed\n");
+		FAIL;
+	}
         live_indicators[my_index] = 13;
-        if (GC_general_register_disappearing_link(
+        if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(
          	(void_star *)(&(live_indicators[my_index])),
          	(void_star)result) != 0) {
          	GC_printf0("GC_general_register_disappearing_link failed\n");
@@ -410,7 +440,7 @@ int n;
          	GC_printf0("GC_unregister_disappearing_link failed\n");
          	FAIL;
         }
-        if (GC_general_register_disappearing_link(
+        if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(
          	(void_star *)(&(live_indicators[my_index])),
          	(void_star)result) != 0) {
          	GC_printf0("GC_general_register_disappearing_link failed 2\n");
@@ -489,22 +519,27 @@ int n;
     }
 }
 
+# if defined(THREADS) && defined(GC_DEBUG)
+#   define TREE_HEIGHT 15
+# else
+#   define TREE_HEIGHT 16
+# endif
 void tree_test()
 {
     tn * root;
     register int i;
     
-    root = mktree(16);
+    root = mktree(TREE_HEIGHT);
     alloc_small(5000000);
-    chktree(root, 16);
+    chktree(root, TREE_HEIGHT);
     if (finalized_count && ! dropped_something) {
         (void)GC_printf0("Premature finalization - collector is broken\n");
         FAIL;
     }
     dropped_something = 1;
-    root = mktree(16);
-    chktree(root, 16);
-    for (i = 16; i >= 0; i--) {
+    root = mktree(TREE_HEIGHT);
+    chktree(root, TREE_HEIGHT);
+    for (i = TREE_HEIGHT; i >= 0; i--) {
         root = mktree(i);
         chktree(root, i);
     }
@@ -606,7 +641,7 @@ void check_heap_stats()
     if (sizeof(char *) > 4) {
         max_heap_sz = 13000000;
     } else {
-    	max_heap_sz = 10000000;
+    	max_heap_sz = 11000000;
     }
 #   ifdef GC_DEBUG
 	max_heap_sz *= 2;
@@ -616,6 +651,7 @@ void check_heap_stats()
 #   endif
     /* Garbage collect repeatedly so that all inaccessible objects	*/
     /* can be finalized.						*/
+      while (GC_collect_a_little()) { }
       for (i = 0; i < 16; i++) {
         GC_gcollect();
       }
@@ -659,6 +695,24 @@ void check_heap_stats()
     (void)GC_printf0("Collector appears to work\n");
 }
 
+#if defined(MACOS)
+void SetMinimumStack(long minSize)
+{
+	long newApplLimit;
+
+	if (minSize > LMGetDefltStack())
+	{
+		newApplLimit = (long) GetApplLimit()
+				- (minSize - LMGetDefltStack());
+		SetApplLimit((Ptr) newApplLimit);
+		MaxApplZone();
+	}
+}
+
+#define cMinStackSpace (512L * 1024L)
+
+#endif
+
 #if !defined(PCR) && !defined(SOLARIS_THREADS) || defined(LINT)
 #ifdef MSWIN32
   int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
@@ -667,6 +721,13 @@ void check_heap_stats()
 #endif
 {
     n_tests = 0;
+    
+#   if defined(MACOS)
+	/* Make sure we have lots and lots of stack space. 	*/
+	SetMinimumStack(cMinStackSpace);
+	/* Cheat and let stdio initialize toolbox for us.	*/
+	printf("Testing GC Macintosh port.\n");
+#   endif
 #   if defined(MPROTECT_VDB) || defined(PROC_VDB)
       GC_enable_incremental();
       (void) GC_printf0("Switched to incremental mode\n");
@@ -690,7 +751,7 @@ void check_heap_stats()
 	        GC_debug_free, GC_debug_realloc, GC_generic_malloc_words_small,
 	        GC_init, GC_make_closure, GC_debug_invoke_finalizer,
 	        GC_page_was_ever_dirty, GC_is_fresh,
-		GC_malloc_ignore_off_page);
+		GC_malloc_ignore_off_page, GC_malloc_atomic_ignore_off_page);
 #   endif
     return(0);
 }
@@ -728,6 +789,11 @@ void * thr_run_one_test(void * arg)
     run_one_test();
     return(0);
 }
+
+#ifdef GC_DEBUG
+#  define GC_free GC_debug_free
+#endif
+
 main()
 {
     thread_t th1;

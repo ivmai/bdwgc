@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 1:59 pm PDT */
+/* Boehm, March 28, 1994 1:58 pm PST */
 # include "gc_priv.h"
 
 # ifdef PCR
@@ -20,7 +20,9 @@
  * We wrap all of the allocator functions to avoid questions of
  * compatibility between the prototyped and nonprototyped versions of the f
  */
+# include "config/PCR_StdTypes.h"
 # include "mm/PCR_MM.h"
+# include <errno.h>
 
 # define MY_MAGIC 17L
 
@@ -111,4 +113,30 @@ void GC_pcr_install()
 {
     PCR_MM_Install(&GC_Rep, &GC_old_allocator);
 }
+
+PCR_ERes
+PCR_GC_Setup(void)
+{
+    return PCR_ERes_okay;
+}
+
+PCR_ERes
+PCR_GC_Run(void)
+{
+
+    if( !PCR_Base_TestPCRArg("-nogc") ) {
+        GC_quiet = ( PCR_Base_TestPCRArg("-gctrace") ? 0 : 1 );
+        GC_init();
+        if( !PCR_Base_TestPCRArg("-nogc_incremental") ) {
+            /*
+             * awful hack to test whether VD is implemented ...
+             */
+            if( PCR_VD_Start( 0, NIL, 0) != PCR_ERes_FromErr(ENOSYS) ) {
+	        GC_enable_incremental();
+	    }
+	}
+    }
+    return PCR_ERes_okay;
+}
+
 # endif

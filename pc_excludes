@@ -7,9 +7,6 @@ alpha_mach_dep.s
 sparc_mach_dep.s
 PCR-Makefile
 setjmp_t.c
-SMakefile.amiga
-SCoptions.amiga
-README.amiga
 callprocs
 gc.man
 pc_excludes

@@ -17,7 +17,7 @@
  * implementation.  They serve also serve as example client code for
  * cord_basics.
  */
-/* Boehm, May 19, 1994 2:18 pm PDT */
+/* Boehm, July 25, 1994 3:46 pm PDT */
 # include <stdio.h>
 # include <string.h>
 # include <stdlib.h>
@@ -27,7 +27,7 @@
 				/* We use this for lazy file reading, 	*/
 				/* so that we remain independent 	*/
 				/* of the threads primitives.		*/
-# include "../gc.h"
+# include "gc.h"
 
 /* The standard says these are in stdio.h, but they aren't always: */
 # ifndef SEEK_SET
@@ -86,7 +86,7 @@ int CORD_batched_fill_proc(const char * s, void * client_data)
     register char * buf = d -> buf;
     register const char * t = s;
     
-    while(((d -> buf)[count] = *t++) != '\0') {
+    while((buf[count] = *t++) != '\0') {
         count++;
         if (count >= max) {
             d -> count = count;
@@ -97,7 +97,7 @@ int CORD_batched_fill_proc(const char * s, void * client_data)
     return(0);
 }
 
-/* Fill buf with between min and max characters starting at i.  	*/
+/* Fill buf with len characters starting at i.  			*/
 /* Assumes len characters are available.				*/ 
 void CORD_fill_buf(CORD x, size_t i, size_t len, char * buf)
 {
