@@ -12,7 +12,7 @@
  *
  * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
-/* Boehm, June 9, 1994 2:22 pm PDT */
+/* Boehm, October 3, 1994 5:19 pm PDT */
 # include "gc.h"
 # include "cord.h"
 # include <stdlib.h>
@@ -87,11 +87,11 @@ typedef union {
 
 #define LEN(s) (((CordRep *)s) -> generic.len)
 #define DEPTH(s) (((CordRep *)s) -> generic.depth)
-#define GEN_LEN(s) (IS_STRING(s) ? strlen(s) : LEN(s))
+#define GEN_LEN(s) (CORD_IS_STRING(s) ? strlen(s) : LEN(s))
 
 #define LEFT_LEN(c) ((c) -> left_len != 0? \
 				(c) -> left_len \
-				: (IS_STRING((c) -> left) ? \
+				: (CORD_IS_STRING((c) -> left) ? \
 					(c) -> len - GEN_LEN((c) -> right) \
 					: LEN((c) -> left)))
 
@@ -110,7 +110,7 @@ void CORD_dump_inner(CORD x, unsigned n)
     }
     if (x == 0) {
       	fputs("NIL\n", stdout);
-    } else if (IS_STRING(x)) {
+    } else if (CORD_IS_STRING(x)) {
         for (i = 0; i <= SHORT_LIMIT; i++) {
             if (x[i] == '\0') break;
             putchar(x[i]);
@@ -152,7 +152,7 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
     
     if (x == CORD_EMPTY) return(y);
     if (leny == 0) return(x);
-    if (IS_STRING(x)) {
+    if (CORD_IS_STRING(x)) {
         lenx = strlen(x);
         result_len = lenx + leny;
         if (result_len <= SHORT_LIMIT) {
@@ -176,9 +176,9 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
     	
         if (leny <= SHORT_LIMIT/2
     	    && IS_CONCATENATION(x)
-            && IS_STRING(right = ((CordRep *)x) -> concatenation.right)) {
+            && CORD_IS_STRING(right = ((CordRep *)x) -> concatenation.right)) {
             /* Merge y into right part of x. */
-            if (!IS_STRING(left = ((CordRep *)x) -> concatenation.left)) {
+            if (!CORD_IS_STRING(left = ((CordRep *)x) -> concatenation.left)) {
             	right_len = lenx - LEN(left);
             } else if (((CordRep *)x) -> concatenation.left_len != 0) {
                 right_len = lenx - ((CordRep *)x) -> concatenation.left_len;
@@ -197,7 +197,7 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
             	lenx -= right_len;
             	/* Now fall through to concatenate the two pieces: */
             }
-            if (IS_STRING(x)) {
+            if (CORD_IS_STRING(x)) {
                 depth = 1;
             } else {
                 depth = DEPTH(x) + 1;
@@ -236,9 +236,9 @@ CORD CORD_cat(CORD x, CORD y)
     
     if (x == CORD_EMPTY) return(y);
     if (y == CORD_EMPTY) return(x);
-    if (IS_STRING(y)) {
+    if (CORD_IS_STRING(y)) {
         return(CORD_cat_char_star(x, y, strlen(y)));
-    } else if (IS_STRING(x)) {
+    } else if (CORD_IS_STRING(x)) {
         lenx = strlen(x);
         depth = DEPTH(y) + 1;
     } else {
@@ -356,7 +356,7 @@ CORD CORD_substr_closure(CORD x, size_t i, size_t n, CORD_fn f)
 /* A version of CORD_substr that assumes i >= 0, n > 0, and i + n < length(x).*/
 CORD CORD_substr_checked(CORD x, size_t i, size_t n)
 {
-    if (IS_STRING(x)) {
+    if (CORD_IS_STRING(x)) {
         if (n > SUBSTR_LIMIT) {
             return(CORD_substr_closure(x, i, n, CORD_index_access_fn));
         } else {
@@ -448,9 +448,11 @@ CORD CORD_substr(CORD x, size_t i, size_t n)
     	/* n < 0 is impossible in a correct C implementation, but	*/
     	/* quite possible  under SunOS 4.X.				*/
     if (i + n > len) n = len - i;
-    if (i < 0) ABORT("CORD_substr: second arg. negative");
+#   ifndef __STDC__
+      if (i < 0) ABORT("CORD_substr: second arg. negative");
     	/* Possible only if both client and C implementation are buggy.	*/
     	/* But empirically this happens frequently.			*/
+#   endif
     return(CORD_substr_checked(x, i, n));
 }
 
@@ -459,7 +461,7 @@ int CORD_iter5(CORD x, size_t i, CORD_iter_fn f1,
 			 CORD_batched_iter_fn f2, void * client_data)
 {
     if (x == 0) return(0);
-    if (IS_STRING(x)) {
+    if (CORD_IS_STRING(x)) {
     	register const char *p = x+i;
     	
     	if (*p == '\0') ABORT("2nd arg to CORD_iter5 too big");
@@ -512,7 +514,7 @@ int CORD_iter(CORD x, CORD_iter_fn f1, void * client_data)
 int CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void * client_data)
 {
     if (x == 0) return(0);
-    if (IS_STRING(x)) {
+    if (CORD_IS_STRING(x)) {
 	register const char *p = x + i;
 	register char c;
                
@@ -542,12 +544,12 @@ int CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void * client_data)
         register struct Function * f = &(((CordRep *)x) -> function);
         register size_t j;
         
-        for (j = i; j >= 0; j--) {
+        for (j = i; ; j--) {
             if ((*f1)((*(f -> fn))(j, f -> client_data), client_data)) {
                 return(1);
             }
+            if (j == 0) return(0);
         }
-        return(0);
     }
 }
 
@@ -682,7 +684,7 @@ void CORD_balance_insert(CORD x, size_t len, ForestElement * forest)
 {
     register int depth;
     
-    if (IS_STRING(x)) {
+    if (CORD_IS_STRING(x)) {
         CORD_add_forest(forest, x, len);
     } else if (IS_CONCATENATION(x)
                && ((depth = DEPTH(x)) >= MAX_DEPTH
@@ -705,7 +707,7 @@ CORD CORD_balance(CORD x)
     register size_t len;
     
     if (x == 0) return(0);
-    if (IS_STRING(x)) return(x);
+    if (CORD_IS_STRING(x)) return(x);
     if (!min_len_init) CORD_init_min_len();
     len = LEN(x);
     CORD_init_forest(forest, len);
@@ -730,7 +732,7 @@ void CORD__extend_path(register CORD_pos p)
      register size_t top_len = GEN_LEN(top);
      
      /* Fill in the rest of the path. */
-       while(!IS_STRING(top) && IS_CONCATENATION(top)) {
+       while(!CORD_IS_STRING(top) && IS_CONCATENATION(top)) {
      	 register struct Concatenation * conc =
      	 		&(((CordRep *)top) -> concatenation);
      	 register size_t left_len;
@@ -749,7 +751,7 @@ void CORD__extend_path(register CORD_pos p)
      	 p[0].path_len++;
        }
      /* Fill in leaf description for fast access. */
-       if (IS_STRING(top)) {
+       if (CORD_IS_STRING(top)) {
          p[0].cur_leaf = top;
          p[0].cur_start = top_pos;
          p[0].cur_end = top_pos + top_len;
@@ -778,7 +780,7 @@ void CORD__next(register CORD_pos p)
     
     /* Leaf is not a string or we're at end of leaf */
     p[0].cur_pos = cur_pos;
-    if (!IS_STRING(leaf)) {
+    if (!CORD_IS_STRING(leaf)) {
     	/* Function leaf	*/
     	register struct Function * f = &(((CordRep *)leaf) -> function);
     	register size_t start_pos = current_pe -> pe_start_pos;

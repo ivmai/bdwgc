@@ -3,7 +3,7 @@ is good reason to believe this is fixable.  (SRC M3 works with
 NT threads.)
 
 The collector has only been compiled under Windows NT, with the
-Microsoft tools.
+original Microsoft SDK and Visual C++ 2.0.
 
 It runs under both win32s and win32, but with different semantics.
 Under win32, all writable pages outside of the heaps and stack are

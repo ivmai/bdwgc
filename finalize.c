@@ -11,11 +11,15 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, June 9, 1994 2:17 pm PDT */
+/* Boehm, November 8, 1994 5:35 pm PST */
 # define I_HIDE_POINTERS
-# include "gc.h"
 # include "gc_priv.h"
 # include "gc_mark.h"
+
+/* Type of mark procedure used for marking from finalizable object.	*/
+/* This procedure normally does not mark the object, only its		*/
+/* descendents.								*/
+typedef void finalization_mark_proc(/* ptr_t finalizable_obj_ptr */); 
 
 # define HASH3(addr,size,log_size) \
     ((((word)(addr) >> 3) ^ ((word)(addr) >> (3+(log_size)))) \
@@ -57,6 +61,7 @@ static struct finalizable_object {
     GC_finalization_proc fo_fn;	/* Finalizer.			*/
     ptr_t fo_client_data;
     word fo_object_size;	/* In bytes.			*/
+    finalization_mark_proc * fo_mark_proc;	/* Mark-through procedure */
 } **fo_head = 0;
 
 struct finalizable_object * GC_finalize_now = 0;
@@ -228,22 +233,60 @@ out:
     return(0);
 }
 
+/* Possible finalization_marker procedures.  Note that mark stack	*/
+/* overflow is handled by the caller, and is not a disaster.		*/
+void GC_normal_finalize_mark_proc(p)
+ptr_t p;
+{
+    hdr * hhdr = HDR(p);
+    
+    PUSH_OBJ((word *)p, hhdr, GC_mark_stack_top,
+	     &(GC_mark_stack[GC_mark_stack_size]));
+}
+
+/* This only pays very partial attention to the mark descriptor.	*/
+/* It does the right thing for normal and atomic objects, and treats	*/
+/* most others as normal.						*/
+void GC_ignore_self_finalize_mark_proc(p)
+ptr_t p;
+{
+    hdr * hhdr = HDR(p);
+    word descr = hhdr -> hb_descr;
+    ptr_t q, r;
+    ptr_t limit;
+    
+    if ((descr & DS_TAGS) == DS_LENGTH) {
+       limit = p + descr - sizeof(word);
+    } else {
+       limit = p + WORDS_TO_BYTES(hhdr -> hb_sz - 1);
+    }
+    for (q = p; q <= limit; q += ALIGNMENT) {
+    	r = *(ptr_t *)q;
+    	if (r < p || r > limit) {
+    	    GC_PUSH_ONE_HEAP((word)r);
+    	}
+    }
+}
+
+/*ARGSUSED*/
+void GC_null_finalize_mark_proc(p)
+ptr_t p;
+{
+}
+
+
+
 /* Register a finalization function.  See gc.h for details.	*/
 /* in the nonthreads case, we try to avoid disabling signals,	*/
 /* since it can be expensive.  Threads packages typically	*/
 /* make it cheaper.						*/
-# if defined(__STDC__)
-    void GC_register_finalizer(void * obj,
-			       GC_finalization_proc fn, void * cd,
-			       GC_finalization_proc *ofn, void ** ocd)
-# else
-    void GC_register_finalizer(obj, fn, cd, ofn, ocd)
-    extern_ptr_t obj;
-    GC_finalization_proc fn;
-    extern_ptr_t cd;
-    GC_finalization_proc * ofn;
-    extern_ptr_t * ocd;
-# endif
+void GC_register_finalizer_inner(obj, fn, cd, ofn, ocd, mp)
+extern_ptr_t obj;
+GC_finalization_proc fn;
+extern_ptr_t cd;
+GC_finalization_proc * ofn;
+extern_ptr_t * ocd;
+finalization_mark_proc * mp;
 {
     ptr_t base;
     struct finalizable_object * curr_fo, * prev_fo;
@@ -300,6 +343,7 @@ out:
             } else {
                 curr_fo -> fo_fn = fn;
                 curr_fo -> fo_client_data = (ptr_t)cd;
+                curr_fo -> fo_mark_proc = mp;
 		/* Reinsert it.  We deleted it first to maintain	*/
 		/* consistency in the event of a signal.		*/
 		if (prev_fo == 0) {
@@ -337,6 +381,7 @@ out:
 	new_fo -> fo_fn = fn;
 	new_fo -> fo_client_data = (ptr_t)cd;
 	new_fo -> fo_object_size = GC_size(base);
+	new_fo -> fo_mark_proc = mp;
 	fo_set_next(new_fo, fo_head[index]);
 	GC_fo_entries++;
 	fo_head[index] = new_fo;
@@ -349,6 +394,58 @@ out:
 #   endif
 }
 
+# if defined(__STDC__)
+    void GC_register_finalizer(void * obj,
+			       GC_finalization_proc fn, void * cd,
+			       GC_finalization_proc *ofn, void ** ocd)
+# else
+    void GC_register_finalizer(obj, fn, cd, ofn, ocd)
+    extern_ptr_t obj;
+    GC_finalization_proc fn;
+    extern_ptr_t cd;
+    GC_finalization_proc * ofn;
+    extern_ptr_t * ocd;
+# endif
+{
+    GC_register_finalizer_inner(obj, fn, cd, ofn,
+    				ocd, GC_normal_finalize_mark_proc);
+}
+
+# if defined(__STDC__)
+    void GC_register_finalizer_ignore_self(void * obj,
+			       GC_finalization_proc fn, void * cd,
+			       GC_finalization_proc *ofn, void ** ocd)
+# else
+    void GC_register_finalizer_ignore_self(obj, fn, cd, ofn, ocd)
+    extern_ptr_t obj;
+    GC_finalization_proc fn;
+    extern_ptr_t cd;
+    GC_finalization_proc * ofn;
+    extern_ptr_t * ocd;
+# endif
+{
+    GC_register_finalizer_inner(obj, fn, cd, ofn,
+    				ocd, GC_ignore_self_finalize_mark_proc);
+}
+
+# if defined(__STDC__)
+    void GC_register_finalizer_no_order(void * obj,
+			       GC_finalization_proc fn, void * cd,
+			       GC_finalization_proc *ofn, void ** ocd)
+# else
+    void GC_register_finalizer_no_order(obj, fn, cd, ofn, ocd)
+    extern_ptr_t obj;
+    GC_finalization_proc fn;
+    extern_ptr_t cd;
+    GC_finalization_proc * ofn;
+    extern_ptr_t * ocd;
+# endif
+{
+    GC_register_finalizer_inner(obj, fn, cd, ofn,
+    				ocd, GC_null_finalize_mark_proc);
+}
+
+
 /* Called with world stopped.  Cause disappearing links to disappear,	*/
 /* and invoke finalizers.						*/
 void GC_finalize()
@@ -357,8 +454,8 @@ void GC_finalize()
     struct finalizable_object * curr_fo, * prev_fo, * next_fo;
     ptr_t real_ptr, real_link;
     register int i;
-    int dl_size = 1 << log_dl_table_size;
-    int fo_size = 1 << log_fo_table_size;
+    int dl_size = (log_dl_table_size == -1 ) ? 0 : (1 << log_dl_table_size);
+    int fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
     
   /* Make disappearing links disappear */
     for (i = 0; i < dl_size; i++) {
@@ -393,10 +490,7 @@ void GC_finalize()
       for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
         real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
-            hdr * hhdr = HDR(real_ptr);
-            
-            PUSH_OBJ((word *)real_ptr, hhdr, GC_mark_stack_top,
-	             &(GC_mark_stack[GC_mark_stack_size]));
+            (*(curr_fo -> fo_mark_proc))(real_ptr);
             while (!GC_mark_stack_empty()) GC_mark_from_mark_stack();
             if (GC_mark_state != MS_NONE) {
                 /* Mark stack overflowed. Very unlikely. */

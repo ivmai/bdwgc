@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, June 8, 1994 12:27 pm PDT */
+/* Boehm, October 7, 1994 9:54 pm PDT */
  
 /*
  * This implements:
@@ -229,7 +229,7 @@ word client_data;
              } else if (index_p->index[j] == 0) {
                 j--;
              } else {
-                j -= (int)(index_p->index[j]);
+                j -= (word)(index_p->index[j]);
              }
          }
      }

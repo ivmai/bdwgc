@@ -11,11 +11,27 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 7, 1994 11:32 am PDT */
+/* Boehm, December 7, 1994 12:09 pm PST */
+
+/*
+ * Note that this defines a large number of tuning hooks, which can
+ * safely be ignored in nearly all cases.  For normal use it suffices
+ * to call only GC_MALLOC and perhaps GC_REALLOC.
+ * For better performance, also look at GC_MALLOC_ATOMIC, and
+ * GC_enable_incremental.  If you need an action to be performed
+ * immediately before an object is collected, look at GC_register_finalizer.
+ * If you are using Solaris threads, look at the end of this file.
+ * Everything else is best ignored unless you encounter performance
+ * problems.
+ */
  
 #ifndef _GC_H
 
 # define _GC_H
+
+# ifdef __cplusplus
+    extern "C" {
+# endif
 
 # include <stddef.h>
 
@@ -84,7 +100,7 @@ extern GC_word GC_free_space_divisor;
  * collectable.  GC_malloc_uncollectable and GC_free called on the resulting
  * object implicitly update GC_non_gc_bytes appropriately.
  */
-#if defined(__STDC__) || defined(__cplusplus)
+# if defined(__STDC__) || defined(__cplusplus)
   extern void * GC_malloc(size_t size_in_bytes);
   extern void * GC_malloc_atomic(size_t size_in_bytes);
   extern void * GC_malloc_uncollectable(size_t size_in_bytes);
@@ -108,7 +124,7 @@ extern GC_word GC_free_space_divisor;
 /* An object should not be enable for finalization when it is 		*/
 /* explicitly deallocated.						*/
 /* GC_free(0) is a no-op, as required by ANSI C for free.		*/
-#if defined(__STDC__) || defined(__cplusplus)
+# if defined(__STDC__) || defined(__cplusplus)
   extern void GC_free(void * object_addr);
 # else
   extern void GC_free(/* object_addr */);
@@ -170,10 +186,10 @@ void GC_end_stubborn_change(/* p */);
 /* Returns 0 on failure, 1 on success.  */
 extern int GC_expand_hp(/* number_of_bytes */);
 
-/* Clear the set of root segments */
+/* Clear the set of root segments.  Wizards only. */
 extern void GC_clear_roots(NO_PARAMS);
 
-/* Add a root segment */
+/* Add a root segment.  Wizards only. */
 extern void GC_add_roots(/* low_address, high_address_plus_1 */);
 
 /* Add a displacement to the set of those considered valid by the	*/
@@ -188,7 +204,11 @@ extern void GC_add_roots(/* low_address, high_address_plus_1 */);
 /* retention.								*/
 /* This is a no-op if the collector was compiled with recognition of	*/
 /* arbitrary interior pointers enabled, which is now the default.	*/
-void GC_register_displacement(/* n */);
+void GC_register_displacement(/* GC_word n */);
+
+/* The following version should be used if any debugging allocation is	*/
+/* being done.								*/
+void GC_debug_register_displacement(/* GC_word n */);
 
 /* Explicitly trigger a full, world-stop collection. 	*/
 void GC_gcollect(NO_PARAMS);
@@ -280,12 +300,17 @@ void GC_debug_end_stubborn_change(/* p */);
 #   define GC_REGISTER_FINALIZER(p, f, d, of, od) \
 	GC_register_finalizer(GC_base(p), GC_debug_invoke_finalizer, \
 			      GC_make_closure(f,d), of, od)
+#   define GC_REGISTER_FINALIZER_IGNORE_SELF(p, f, d, of, od) \
+	GC_register_finalizer_ignore_self( \
+             GC_base(p), GC_debug_invoke_finalizer, \
+	     GC_make_closure(f,d), of, od)
 #   define GC_MALLOC_STUBBORN(sz) GC_debug_malloc_stubborn(sz, __FILE__, \
 							       __LINE__)
 #   define GC_CHANGE_STUBBORN(p) GC_debug_change_stubborn(p)
 #   define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
 #   define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
 	GC_general_register_disappearing_link(link, GC_base(obj))
+#   define GC_REGISTER_DISPLACEMENT(n) GC_debug_register_displacement(n)
 # else
 #   define GC_MALLOC(sz) GC_malloc(sz)
 #   define GC_MALLOC_ATOMIC(sz) GC_malloc_atomic(sz)
@@ -294,11 +319,14 @@ void GC_debug_end_stubborn_change(/* p */);
 #   define GC_FREE(p) GC_free(p)
 #   define GC_REGISTER_FINALIZER(p, f, d, of, od) \
 	GC_register_finalizer(p, f, d, of, od)
+#   define GC_REGISTER_FINALIZER_IGNORE_SELF(p, f, d, of, od) \
+	GC_register_finalizer_ignore_self(p, f, d, of, od)
 #   define GC_MALLOC_STUBBORN(sz) GC_malloc_stubborn(sz)
 #   define GC_CHANGE_STUBBORN(p) GC_change_stubborn(p)
 #   define GC_END_STUBBORN_CHANGE(p) GC_end_stubborn_change(p)
 #   define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
 	GC_general_register_disappearing_link(link, obj)
+#   define GC_REGISTER_DISPLACEMENT(n) GC_register_displacement(n)
 # endif
 /* The following are included because they are often convenient, and	*/
 /* reduce the chance for a misspecifed size argument.  But calls may	*/
@@ -364,6 +392,22 @@ void GC_debug_end_stubborn_change(/* p */);
 	/* by cd will be considered accessible until the	*/
 	/* finalizer is invoked.				*/
 
+/* Another versions of the above follow.  It ignores		*/
+/* self-cycles, i.e. pointers from a finalizable object to	*/
+/* itself.  There is a stylistic argument that this is wrong,	*/
+/* but it's unavoidable for C++, since the compiler may		*/
+/* silently introduce these.  It's also benign in that specific	*/
+/* case.							*/
+# if defined(__STDC__) || defined(__cplusplus)
+    void GC_register_finalizer_ignore_self(void * obj,
+			       GC_finalization_proc fn, void * cd,
+			       GC_finalization_proc *ofn, void ** ocd);
+# else	
+    void GC_register_finalizer_ignore_self(/* void * obj,
+			          GC_finalization_proc fn, void * cd,
+			          GC_finalization_proc *ofn, void ** ocd */);
+# endif
+
 /* The following routine may be used to break cycles between	*/
 /* finalizable objects, thus causing cyclic finalizable		*/
 /* objects to be finalized in the correct order.  Standard	*/
@@ -395,8 +439,10 @@ int GC_general_register_disappearing_link(/* void ** link, void * obj */);
 	/* cleared when obj first becomes inaccessible.  This	*/
 	/* can be used to implement weak pointers easily and	*/
 	/* safely. Typically link will point to a location	*/
-	/* holding a disguised pointer to obj.  In this way	*/
-	/* soft pointers are broken before any object		*/
+	/* holding a disguised pointer to obj.  (A pointer 	*/
+	/* inside an "atomic" object is effectively  		*/
+	/* disguised.)   In this way soft			*/
+	/* pointers are broken before any object		*/
 	/* reachable from them are finalized.  Each link	*/
 	/* May be registered only once, i.e. with one obj	*/
 	/* value.  This was added after a long email discussion */
@@ -427,6 +473,9 @@ int GC_unregister_disappearing_link(/* void ** link */);
 /* that finalization code will arrange for hidden pointers to	*/
 /* disappear.  Otherwise objects can be accessed after they	*/
 /* have been collected.						*/
+/* Note that putting pointers in atomic objects or in 		*/
+/* nonpointer slots of "typed" objects is equivalent to 	*/
+/* disguising them in this way, and may have other advantages.	*/
 # ifdef I_HIDE_POINTERS
 #   if defined(__STDC__) || defined(__cplusplus)
 #     define HIDE_POINTER(p) (~(size_t)(p))
@@ -447,6 +496,76 @@ int GC_unregister_disappearing_link(/* void ** link */);
         char * GC_call_with_alloc_lock(/* GC_fn_type fn, char * client_data */);
 #   endif
 # endif
+
+/* Check that p and q point to the same object.  		*/
+/* Fail conspicuously if they don't.				*/
+/* Returns the first argument.  				*/
+/* Succeeds if neither p nor q points to the heap.		*/
+/* May succeed if both p and q point to between heap objects.	*/
+#ifdef __STDC__
+  void * GC_same_obj(register void *p, register void *q);
+#else
+  char * GC_same_obj(/* char * p, char * q */);
+#endif
+
+/* Check that p is visible						*/
+/* to the collector as a possibly pointer containing location.		*/
+/* If it isn't fail conspicuously.					*/
+/* Returns the argument in all cases.  May erroneously succeed		*/
+/* in hard cases.  (This is intended for debugging use with		*/
+/* untyped allocations.  The idea is that it should be possible, though	*/
+/* slow, to add such a call to all indirect pointer stores.)		*/
+/* Currently useless for multithreaded worlds.				*/
+#ifdef __STDC__
+  void * GC_is_visible(void *p);
+#else
+  char *GC_is_visible(/* char * p */);
+#endif
+
+/* Check that if p is a pointer to a heap page, then it points to	*/
+/* a valid displacement within a heap object.				*/
+/* Fail conspicuously if this property does not hold.			*/
+/* Uninteresting with ALL_INTERIOR_POINTERS.				*/
+/* Always returns its argument.						*/
+#ifdef __STDC__
+  void * GC_is_valid_displacement(void *p);
+#else
+  char *GC_is_valid_displacement(/* char * p */);
+#endif
+
+/* Safer, but slow, pointer addition.  Probably useful mainly with 	*/
+/* a preprocessor.  Useful only for heap pointers.			*/
+#ifdef GC_DEBUG
+#   define GC_PTR_ADD3(x, n, type_of_result) \
+	((type_of_result)GC_same_obj((x)+(n), (x)))
+#   ifdef __GNUC__
+#       define GC_PTR_ADD(x, n) \
+	    ((typeof(x))GC_same_obj((x)+(n), (x)))
+#   else
+	/* We can't do this right without typeof, which ANSI	*/
+	/* decided was not sufficiently useful.  Repeatedly	*/
+	/* mentioning the arguments seems too dangerous to be	*/
+	/* useful.  So does not casting the result.		*/
+#   	define GC_PTR_ADD(x, n) ((x)+(n))
+#   endif
+#else	/* !GC_DEBUG */
+#   define GC_PTR_ADD3(x, n, type_of_result) ((x)+(n))
+#   define GC_PTR_ADD(x, n) ((x)+(n))
+#endif
+
+/* Safer assignment of a pointer to a nonstack location.	*/
+#ifdef GC_DEBUG
+# ifdef __STDC__
+#   define GC_PTR_STORE(p, q) \
+	(*(void **)GC_is_visible(p) = GC_is_valid_displacement(q))
+# else
+#   define GC_PTR_STORE(p, q) \
+	(*(char **)GC_is_visible(p) = GC_is_valid_displacement(q))
+# endif
+#else /* !GC_DEBUG */
+#   define GC_PTR_STORE(p, q) *((p) = (q))
+#endif
+
 
 #ifdef SOLARIS_THREADS
 /* We need to intercept calls to many of the threads primitives, so 	*/
@@ -479,5 +598,22 @@ void * GC_malloc_many(size_t lb);
 					/* in returned list.		*/
 
 #endif /* SOLARIS_THREADS */
+
+/*
+ * If you are planning on putting
+ * the collector in a SunOS 5 dynamic library, you need to call GC_INIT()
+ * from the statically loaded program section.
+ * This circumvents a Solaris 2.X (X<=4) linker bug.
+ */
+#ifdef sparc
+#   define GC_INIT() { extern end, etext; \
+		       GC_noop(&end, &etext); }
+#else
+#   define GC_INIT()
+#endif
+
+#ifdef __cplusplus
+    }  /* end of extern "C" */
+#endif
 
 #endif /* _GC_H */

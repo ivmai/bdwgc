@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 11, 1994 4:41 pm PDT */
+/* Boehm, November 8, 1994 5:53 pm PST */
 
 
 #include <stdio.h>
@@ -124,6 +124,16 @@ extern signed_word GC_mem_found;
 #	endif
 	if (word_sz > MAXOBJSZ) {
 	    word_sz = MAXOBJSZ;
+	}
+	/* If we can fit the same number of larger objects in a block,	*/
+	/* do so.							*/ 
+	{
+#	    ifdef ALIGN_DOUBLE
+#	        define INCR 2
+#	    else
+#		define INCR 1
+#	    endif
+	    while (BODY_SZ/word_sz == BODY_SZ/(word_sz + INCR)) word_sz += INCR;
 	}
     	byte_sz = WORDS_TO_BYTES(word_sz);
 #	ifdef ADD_BYTE_AT_END
@@ -277,6 +287,7 @@ ptr_t arg;
     register word r;
     register struct hblk *h;
     register hdr *candidate_hdr;
+    register word limit;
     
     r = (word)p;
     h = HBLKPTR(r);
@@ -285,7 +296,7 @@ ptr_t arg;
     /* If it's a pointer to the middle of a large object, move it	*/
     /* to the beginning.						*/
 	while (IS_FORWARDING_ADDR_OR_NIL(candidate_hdr)) {
-	   h = h - (int)candidate_hdr;
+	   h = FORWARDED_ADDR(h,candidate_hdr);
 	   r = (word)h + HDR_BYTES;
 	   candidate_hdr = HDR(h);
 	}
@@ -294,19 +305,35 @@ ptr_t arg;
 	r &= ~(WORDS_TO_BYTES(1) - 1);
         {
 	    register int offset =
-	        	(word *)r - (word *)(HBLKPTR(r)) - HDR_WORDS;
+	        	(char *)r - (char *)(HBLKPTR(r)) - HDR_BYTES;
 	    register signed_word sz = candidate_hdr -> hb_sz;
-	    register int correction;
-	        
-	    correction = offset % sz;
-	    r -= (WORDS_TO_BYTES(correction));
-	    if (((word *)r + sz) > (word *)(h + 1)
+	    
+#	    ifdef ALL_INTERIOR_POINTERS
+	      register map_entry_type map_entry;
+	      
+	      map_entry = MAP_ENTRY((candidate_hdr -> hb_map), offset);
+	      if (map_entry == OBJ_INVALID) {
+            	return(0);
+              }
+              r -= WORDS_TO_BYTES(map_entry);
+              limit = r + WORDS_TO_BYTES(sz);
+#	    else
+	      register int correction;
+	      
+	      offset = BYTES_TO_WORDS(offset - HDR_BYTES);
+	      correction = offset % sz;
+	      r -= (WORDS_TO_BYTES(correction));
+	      limit = r + WORDS_TO_BYTES(sz);
+	      if (limit > (word)(h + 1)
 	        && sz <= BYTES_TO_WORDS(HBLKSIZE) - HDR_WORDS) {
 	        return(0);
-	    }
+	      }
+#	    endif
+	    if ((word)p >= limit) return(0);
 	}
     return((extern_ptr_t)r);
 }
+
 
 /* Return the size of an object, given a pointer to its base.		*/
 /* (For small obects this also happens to work from interior pointers,	*/
@@ -357,7 +384,6 @@ void GC_init_inner()
     word dummy;
     
     if (GC_is_initialized) return;
-    GC_is_initialized = TRUE;
 #   ifdef MSWIN32
  	GC_init_win32();
 #   endif
@@ -442,7 +468,12 @@ void GC_init_inner()
       GC_init_size_map();
 #   endif
 #   ifdef PCR
-      PCR_IL_Lock(PCR_Bool_false, PCR_allSigsBlocked, PCR_waitForever);
+      if (PCR_IL_Lock(PCR_Bool_false, PCR_allSigsBlocked, PCR_waitForever)
+          != PCR_ERes_okay) {
+          ABORT("Can't lock load state\n");
+      } else if (PCR_IL_Unlock() != PCR_ERes_okay) {
+          ABORT("Can't unlock load state\n");
+      }
       PCR_IL_Unlock();
       GC_pcr_install();
 #   endif
@@ -451,15 +482,18 @@ void GC_init_inner()
 #   ifdef STUBBORN_ALLOC
     	GC_stubborn_init();
 #   endif
+    GC_is_initialized = TRUE;
     /* Convince lint that some things are used */
 #   ifdef LINT
       {
           extern char * GC_copyright[];
-          extern GC_read();
+          extern int GC_read();
+          extern void GC_register_finalizer_no_order();
           
           GC_noop(GC_copyright, GC_find_header, GC_print_block_list,
                   GC_push_one, GC_call_with_alloc_lock, GC_read,
-                  GC_print_hblkfreelist, GC_dont_expand);
+                  GC_print_hblkfreelist, GC_dont_expand,
+                  GC_register_finalizer_no_order);
       }
 #   endif
 }
@@ -498,10 +532,15 @@ out:
 # endif
 }
 
-#if defined(OS2) || defined(MSWIN32)
+#if defined(OS2) || defined(MSWIN32) || defined(MACOS)
     FILE * GC_stdout = NULL;
     FILE * GC_stderr = NULL;
+#else
+#   if !defined(AMIGA)
+#       include <unistd.h>
+#   endif
 #endif
+
 
 #ifdef MSWIN32
   void GC_set_files()
@@ -515,7 +554,7 @@ out:
   }
 #endif
 
-#ifdef OS2
+#if defined(OS2) || defined(MACOS)
   void GC_set_files()
   {
       if (GC_stdout == NULL) {
@@ -549,7 +588,7 @@ long a, b, c, d, e, f;
     buf[1024] = 0x15;
     (void) sprintf(buf, format, a, b, c, d, e, f);
     if (buf[1024] != 0x15) ABORT("GC_printf clobbered stack");
-#   if defined(OS2) || defined(MSWIN32)
+#   if defined(OS2) || defined(MSWIN32) || defined(MACOS)
       GC_set_files();
       /* We hope this doesn't allocate */
       if (fwrite(buf, 1, strlen(buf), GC_stdout) != strlen(buf))
@@ -569,7 +608,7 @@ long a, b, c, d, e, f;
     buf[1024] = 0x15;
     (void) sprintf(buf, format, a, b, c, d, e, f);
     if (buf[1024] != 0x15) ABORT("GC_err_printf clobbered stack");
-#   if defined(OS2) || defined(MSWIN32)
+#   if defined(OS2) || defined(MSWIN32) || defined(MACOS)
       GC_set_files();
       /* We hope this doesn't allocate */
       if (fwrite(buf, 1, strlen(buf), GC_stderr) != strlen(buf))
@@ -583,7 +622,7 @@ long a, b, c, d, e, f;
 void GC_err_puts(s)
 char *s;
 {
-#   if defined(OS2) || defined(MSWIN32)
+#   if defined(OS2) || defined(MSWIN32) || defined(MACOS)
       GC_set_files();
       /* We hope this doesn't allocate */
       if (fwrite(s, 1, strlen(s), GC_stderr) != strlen(s))

@@ -11,13 +11,26 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 13, 1994 12:32 pm PDT */
+/* Boehm, September 19, 1994 4:18 pm PDT */
  
 #include <stdio.h>
 #include "gc_priv.h"
 
 extern ptr_t GC_clear_stack();	/* in misc.c, behaves like identity */
 void GC_extend_size_map();	/* in misc.c. */
+
+/* Allocate reclaim list for kind:	*/
+/* Return TRUE on success		*/
+bool GC_alloc_reclaim_list(kind)
+register struct obj_kind * kind;
+{
+    struct hblk ** result = (struct hblk **)
+    		GC_scratch_alloc((MAXOBJSZ+1) * sizeof(struct hblk *));
+    if (result == 0) return(FALSE);
+    BZERO(result, (MAXOBJSZ+1)*sizeof(struct hblk *));
+    kind -> ok_reclaim_list = result;
+    return(TRUE);
+}
 
 /* allocate lb bytes for an object of kind.	*/
 /* Should not be used to directly to allocate	*/
@@ -56,12 +69,7 @@ register ptr_t *opp;
 	      }
 #	    endif
 	    if (kind -> ok_reclaim_list == 0) {
-	    	/* Allocate reclaim list */
-	    	struct hblk ** result = (struct hblk **)
-	    		GC_scratch_alloc((MAXOBJSZ+1) * sizeof(struct hblk *));
-	    	if (result == 0) goto out;
-	    	BZERO(result, (MAXOBJSZ+1)*sizeof(struct hblk *));
-	    	kind -> ok_reclaim_list = result;
+	    	if (!GC_alloc_reclaim_list(kind)) goto out;
 	    }
 	    op = GC_allocobj(lw, k);
 	    if (op == 0) goto out;
@@ -197,16 +205,20 @@ register int k;
 {
 register ptr_t op;
 register ptr_t *opp;
+register struct obj_kind * kind = GC_obj_kinds + k;
 DCL_LOCK_STATE;
 
     GC_invoke_finalizers();
     DISABLE_SIGNALS();
     LOCK();
-    opp = &(GC_obj_kinds[k].ok_freelist[lw]);
+    opp = &(kind -> ok_freelist[lw]);
     if( (op = *opp) == 0 ) {
         if (!GC_is_initialized) {
             GC_init_inner();
         }
+	if (kind -> ok_reclaim_list == 0) {
+	    if (!GC_alloc_reclaim_list(kind)) goto out;
+	}
 	op = GC_clear_stack(GC_allocobj(lw, k));
 	if (op == 0) goto out;
     }

@@ -20,7 +20,7 @@
 /* We assume that void * and char * have the same size.			*/
 /* All this cruft is needed because we want to rely on the underlying	*/
 /* sprintf implementation whenever possible.				*/
-/* Boehm, July 25, 1994 3:42 pm PDT */
+/* Boehm, October 3, 1994 5:15 pm PDT */
 
 #include "cord.h"
 #include "ec.h"
@@ -258,6 +258,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
             	    	/* The above does not appear to be sanctioned	*/
             	    	/* by the ANSI C standard.			*/
             	    int max_size = 0;
+            	    int res;
             	    	
             	    if (width == VARIABLE) width = va_arg(args, int);
             	    if (prec == VARIABLE) prec = va_arg(args, int);
@@ -301,11 +302,12 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
             	        default:
             	            return(-1);
             	    }
-            	    len = (size_t)vsprintf(buf, conv_spec, vsprintf_args);
-            	    if ((char *)len == buf) {
+            	    res = vsprintf(buf, conv_spec, vsprintf_args);
+            	    len = (size_t)res;
+            	    if ((char *)res == buf) {
             	    	/* old style vsprintf */
             	    	len = strlen(buf);
-            	    } else if (len < 0) {
+            	    } else if (res < 0) {
             	        return(-1);
             	    }
             	    if (buf != result[0].ec_bufptr) {

@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 25, 1994 3:39 pm PDT */
+/* Boehm, December 12, 1994 5:03 pm PST */
 # include "gc_priv.h"
 # include <stdio.h>
 # include <setjmp.h>
@@ -23,6 +23,35 @@
 #   include <dos.h>
 # endif
 
+#if defined(__MWERKS__) && !defined(POWERPC)
+
+asm static void PushMacRegisters()
+{
+	sub.w   #4,sp                   // reserve space for one parameter.
+    move.l  a2,(sp)
+    jsr		GC_push_one
+    move.l  a3,(sp)
+    jsr		GC_push_one
+    move.l  a4,(sp)
+    jsr		GC_push_one
+	// skip a5 (globals), a6 (frame pointer), and a7 (stack pointer)
+    move.l  d2,(sp)
+    jsr		GC_push_one
+    move.l  d3,(sp)
+    jsr		GC_push_one
+    move.l  d4,(sp)
+    jsr		GC_push_one
+    move.l  d5,(sp)
+    jsr		GC_push_one
+    move.l  d6,(sp)
+    jsr		GC_push_one
+    move.l  d7,(sp)
+    jsr		GC_push_one
+	add.w   #4,sp                   // fix stack.
+	rts
+}
+
+#endif /* __MWERKS__ */
 
 /* Routine to mark from registers that are preserved by the C compiler. */
 /* This must be ported to every new architecture.  There is a generic   */
@@ -110,6 +139,7 @@ void GC_push_regs()
 #       endif
 
 #	if defined(M68K) && defined(MACOS)
+#	if defined(THINK_C)
 #         define PushMacReg(reg) \
               move.l  reg,(sp) \
               jsr             GC_push_one
@@ -128,9 +158,13 @@ void GC_push_regs()
               add.w   #4,sp                   ; fix stack.
 	  }
 #	  undef PushMacReg
-#       endif	/* Macintosh */
+#	endif /* THINK_C */
+#	if defined(__MWERKS__)
+	  PushMacRegisters();
+#	endif	/* __MWERKS__ */
+#   endif	/* MACOS */
 
-#       if defined(I386) &&!defined(OS2) &&!defined(SUNOS5) &&!defined(MSWIN32)
+#       if defined(I386) &&!defined(OS2) &&!defined(SVR4) &&!defined(MSWIN32) && !defined(SCO)
 	/* I386 code, generic code does not appear to work */
 	/* It does appear to work under OS2, and asms dont */
 	  asm("pushl %eax");  asm("call _GC_push_one"); asm("addl $4,%esp");
@@ -146,10 +180,16 @@ void GC_push_regs()
 	  __asm  push eax
 	  __asm  call GC_push_one
 	  __asm  add esp,4
+	  __asm  push ebx
+	  __asm  call GC_push_one
+	  __asm  add esp,4
 	  __asm  push ecx
 	  __asm  call GC_push_one
 	  __asm  add esp,4
 	  __asm  push edx
+	  __asm  call GC_push_one
+	  __asm  add esp,4
+	  __asm  push ebp
 	  __asm  call GC_push_one
 	  __asm  add esp,4
 	  __asm  push esi
@@ -158,19 +198,17 @@ void GC_push_regs()
 	  __asm  push edi
 	  __asm  call GC_push_one
 	  __asm  add esp,4
-	  __asm  push ebx
-	  __asm  call GC_push_one
-	  __asm  add esp,4
 #       endif
 
-#       if defined(I386) && defined(SUNOS5)
+#       if defined(I386) && (defined(SVR4) || defined(SCO))
 	/* I386 code, SVR4 variant, generic code does not appear to work */
 	  asm("pushl %eax");  asm("call GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %ebx");  asm("call GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %ecx");  asm("call GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %edx");  asm("call GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %ebp");  asm("call GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %esi");  asm("call GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %edi");  asm("call GC_push_one"); asm("addl $4,%esp");
-	  asm("pushl %ebx");  asm("call GC_push_one"); asm("addl $4,%esp");
 #       endif
 
 #       ifdef NS32K
@@ -247,7 +285,7 @@ void GC_push_regs()
 #       endif /* M68K/SYSV */
 
 
-#     if defined(HP_PA) || defined(M88K) || (defined(I386) && defined(OS2))
+#     if defined(HP_PA) || defined(M88K) || defined(POWERPC) || (defined(I386) && defined(OS2))
 	/* Generic code                          */
 	/* The idea is due to Parag Patel at HP. */
 	/* We're not sure whether he would like  */
@@ -262,7 +300,11 @@ void GC_push_regs()
 		for (; (char *)i < lim; i++) {
 		    *i = 0;
 		}
-	    (void) _setjmp(regs);
+#	    ifdef POWERPC
+		(void) setjmp(regs);
+#	    else
+	        (void) _setjmp(regs);
+#	    endif
 	    GC_push_all_stack((ptr_t)regs, lim);
 	}
 #     endif
@@ -281,9 +323,10 @@ void GC_push_regs()
 /* the stack.	Return sp.						*/
 # ifdef SPARC
     asm("	.seg 	\"text\"");
-#   ifdef SUNOS5
+#   ifdef SVR4
       asm("	.globl	GC_save_regs_in_stack");
       asm("GC_save_regs_in_stack:");
+      asm("	.type GC_save_regs_in_stack,#function");
 #   else
       asm("	.globl	_GC_save_regs_in_stack");
       asm("_GC_save_regs_in_stack:");
@@ -292,7 +335,10 @@ void GC_push_regs()
     asm("	mov	%sp,%o0");
     asm("	retl");
     asm("	nop");
-    
+#   ifdef SVR4
+      asm("	.GC_save_regs_in_stack_end:");
+      asm("	.size GC_save_regs_in_stack,.GC_save_regs_in_stack_end-GC_save_regs_in_stack");
+#   endif
 #   ifdef LINT
 	word GC_save_regs_in_stack() { return(0 /* sp really */);}
 #   endif
@@ -313,6 +359,7 @@ void GC_push_regs()
 # else
     asm(".globl GC_clear_stack_inner");
     asm("GC_clear_stack_inner:");
+    asm(".type GC_save_regs_in_stack,#function");
 # endif
   asm("mov %sp,%o2");		/* Save sp	*/
   asm("add %sp,-8,%o3");	/* p = sp-8	*/
@@ -329,6 +376,10 @@ void GC_push_regs()
   asm("retl");
     asm("mov %o2,%sp");		/* Restore sp., delay slot	*/
   /* First argument = %o0 = return value */
+#   ifdef SVR4
+      asm("	.GC_clear_stack_inner_end:");
+      asm("	.size GC_clear_stack_inner,.GC_clear_stack_inner_end-GC_clear_stack_inner");
+#   endif
   
 # ifdef LINT
     /*ARGSUSED*/

@@ -11,7 +11,7 @@
  * modified is included with the above copyright notice.
  *
  */
-/* Boehm, May 19, 1994 2:15 pm PDT */
+/* Boehm, November 7, 1994 4:56 pm PST */
 
 /*
  * Declarations of mark stack.  Needed by marker and client supplied mark
@@ -21,7 +21,6 @@
 # define GC_MARK_H
 
 /* A client supplied mark procedure.  Returns new mark stack pointer.	*/
-/* Not currently used for predefined object kinds.			*/
 /* Primary effect should be to push new entries on the mark stack.	*/
 /* Mark stack pointer values are passed and returned explicitly.	*/
 /* Global variables decribing mark stack are not necessarily valid.	*/
@@ -35,7 +34,9 @@
 /* overflows.								*/
 /* This procedure is always called with at least one empty entry on the */
 /* mark stack.								*/
-/* Boehm, March 15, 1994 2:38 pm PST */
+/* Currently we require that mark procedures look for pointers in a	*/
+/* subset of the places the conservative marker would.  It must be safe	*/
+/* to invoke the normal mark procedure instead.				*/
 # define PROC_BYTES 100
 typedef struct ms_entry * (*mark_proc)(/* word * addr, mark_stack_ptr,
 					  mark_stack_limit, env */);
@@ -159,6 +160,36 @@ mse * GC_signal_mark_stack_overflow();
     PUSH_OBJ(((word *)(HBLKPTR(current)) + displ), hhdr, \
     	     mark_stack_top, mark_stack_limit) \
 }
+
+/*
+ * Push a single value onto mark stack. Mark from the object pointed to by p.
+ * GC_push_one is normally called by GC_push_regs, and thus must be defined.
+ * P is considered valid even if it is an interior pointer.
+ * Previously marked objects are not pushed.  Hence we make progress even
+ * if the mark stack overflows.
+ */
+# define GC_PUSH_ONE_STACK(p) \
+    if ((ptr_t)(p) >= GC_least_plausible_heap_addr 	\
+	 && (ptr_t)(p) < GC_greatest_plausible_heap_addr) {	\
+	 GC_push_one_checked(p,TRUE);	\
+    }
+
+/*
+ * As above, but interior pointer recognition as for
+ * normal for heap pointers.
+ */
+# ifdef ALL_INTERIOR_POINTERS
+#   define AIP TRUE
+# else
+#   define AIP FALSE
+# endif
+# define GC_PUSH_ONE_HEAP(p) \
+    if ((ptr_t)(p) >= GC_least_plausible_heap_addr 	\
+	 && (ptr_t)(p) < GC_greatest_plausible_heap_addr) {	\
+	 GC_push_one_checked(p,AIP);	\
+    }
+
+
 
 extern bool GC_mark_stack_too_small;
 				/* We need a larger mark stack.  May be	*/

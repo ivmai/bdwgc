@@ -11,3 +11,5 @@ callprocs
 gc.man
 pc_excludes
 barrett_diagram
+include/gc_c++.h
+include/gc_inline.h

@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, June 16, 1994 4:54 pm PDT */
+/* Boehm, October 27, 1994 9:57 am PDT */
 # include "gc_priv.h"
 
 /* Do we want to and know how to save the call stack at the time of	*/
@@ -163,6 +163,13 @@ void GC_start_debugging()
     GC_check_heap = GC_check_heap_proc;
     GC_debugging_started = TRUE;
     GC_register_displacement((word)sizeof(oh));
+}
+
+void GC_debug_register_displacement(n)
+word n;
+{
+    GC_register_displacement(n);
+    GC_register_displacement((word)sizeof(oh) + n);
 }
 
 # ifdef __STDC__
@@ -443,6 +450,11 @@ word dummy;
 /* I hold the allocation lock.	Normally called by collector.		*/
 void GC_check_heap_proc()
 {
+#   ifndef SMALL_CONFIG
+	if (sizeof(oh) & (2 * sizeof(word) - 1) != 0) {
+	    ABORT("Alignment problem: object header has inappropriate size\n");
+	}
+#   endif
     GC_apply_to_all_blocks(GC_check_heap_block, (word)0);
 }
 

@@ -17,10 +17,11 @@
  * implementation.  They serve also serve as example client code for
  * cord_basics.
  */
-/* Boehm, July 25, 1994 3:46 pm PDT */
+/* Boehm, October 3, 1994 5:10 pm PDT */
 # include <stdio.h>
 # include <string.h>
 # include <stdlib.h>
+# include <stdarg.h>
 # include "cord.h"
 # include "ec.h"
 # define I_HIDE_POINTERS	/* So we get access to allocation lock.	*/
@@ -28,6 +29,14 @@
 				/* so that we remain independent 	*/
 				/* of the threads primitives.		*/
 # include "gc.h"
+
+/* For now we assume that pointer reads and writes are atomic, 	*/
+/* i.e. another thread always sees the state before or after	*/
+/* a write.  This might be false on a Motorola M68K with	*/
+/* pointers that are not 32-bit aligned.  But there probably	*/
+/* aren't too many threads packages running on those.		*/
+# define ATOMIC_WRITE(x,y) (x) = (y)
+# define ATOMIC_READ(x) (*(x))
 
 /* The standard says these are in stdio.h, but they aren't always: */
 # ifndef SEEK_SET
@@ -56,6 +65,21 @@ CORD CORD_cat_char(CORD x, char c)
     string[0] = c;
     string[1] = '\0';
     return(CORD_cat_char_star(x, string, 1));
+}
+
+CORD CORD_catn(int nargs, ...)
+{
+    register CORD result = CORD_EMPTY;
+    va_list args;
+    register int i;
+
+    va_start(args, nargs);
+    for (i = 0; i < nargs; i++) {
+        register CORD next = va_arg(args, CORD);
+        result = CORD_cat(result, next);
+    }
+    va_end(args);
+    return(result);
 }
 
 typedef struct {
@@ -117,7 +141,7 @@ int CORD_cmp(CORD x, CORD y)
     
     if (y == CORD_EMPTY) return(x != CORD_EMPTY);
     if (x == CORD_EMPTY) return(-1);
-    if (IS_STRING(y) && IS_STRING(x)) return(strcmp(x,y));
+    if (CORD_IS_STRING(y) && CORD_IS_STRING(x)) return(strcmp(x,y));
     CORD_set_pos(xpos, x, 0);
     CORD_set_pos(ypos, y, 0);
     for(;;) {
@@ -209,6 +233,13 @@ char * CORD_to_char_star(CORD x)
     CORD_fill_buf(x, 0, len, result);
     result[len] = '\0';
     return(result);
+}
+
+const char * CORD_to_const_char_star(CORD x)
+{
+    if (x == 0) return("");
+    if (CORD_IS_STRING(x)) return((const char *)x);
+    return(CORD_to_char_star(x));
 }
 
 char CORD_fetch(CORD x, size_t i)
@@ -330,7 +361,7 @@ size_t CORD_str(CORD x, size_t start, CORD s)
     register size_t match_pos;
     
     if (s == CORD_EMPTY) return(start);
-    if (IS_STRING(s)) {
+    if (CORD_IS_STRING(s)) {
         s_start = s;
         slen = strlen(s);
     } else {
@@ -484,7 +515,7 @@ refill_data * client_data;
     }
     new_cache -> tag = DIV_LINE_SZ(file_pos);
     /* Store barrier goes here. */
-    state -> lf_cache[line_no] = new_cache;
+    ATOMIC_WRITE(state -> lf_cache[line_no], new_cache);
     state -> lf_current = line_start + LINE_SZ;
     return(new_cache->data[MOD_LINE_SZ(file_pos)]);
 }
@@ -492,7 +523,9 @@ refill_data * client_data;
 char CORD_lf_func(size_t i, void * client_data)
 {
     register lf_state * state = (lf_state *)client_data;
-    register cache_line * cl = state -> lf_cache[DIV_LINE_SZ(MOD_CACHE_SZ(i))];
+    register cache_line * volatile * cl_addr =
+		&(state -> lf_cache[DIV_LINE_SZ(MOD_CACHE_SZ(i))]);
+    register cache_line * cl = (cache_line *)ATOMIC_READ(cl_addr);
     
     if (cl == 0 || cl -> tag != DIV_LINE_SZ(i)) {
     	/* Cache miss */
@@ -533,7 +566,7 @@ CORD CORD_from_file_lazy_inner(FILE * f, size_t len)
 
 CORD CORD_from_file_lazy(FILE * f)
 {
-    register size_t len;
+    register long len;
     
     if (fseek(f, 0l, SEEK_END) != 0) {
         ABORT("Bad fd argument - fseek failed");
@@ -542,14 +575,14 @@ CORD CORD_from_file_lazy(FILE * f)
         ABORT("Bad fd argument - ftell failed");
     }
     rewind(f);
-    return(CORD_from_file_lazy_inner(f, len));
+    return(CORD_from_file_lazy_inner(f, (size_t)len));
 }
 
 # define LAZY_THRESHOLD (128*1024 + 1)
 
 CORD CORD_from_file(FILE * f)
 {
-    register size_t len;
+    register long len;
     
     if (fseek(f, 0l, SEEK_END) != 0) {
         ABORT("Bad fd argument - fseek failed");
@@ -561,6 +594,6 @@ CORD CORD_from_file(FILE * f)
     if (len < LAZY_THRESHOLD) {
         return(CORD_from_file_eager(f));
     } else {
-        return(CORD_from_file_lazy_inner(f, len));
+        return(CORD_from_file_lazy_inner(f, (size_t)len));
     }
 }

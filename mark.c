@@ -340,7 +340,7 @@ register hdr * hhdr;
 	    
 	    current = (word)HBLKPTR(current) + HDR_BYTES;
 	    do {
-	      current = current - HBLKSIZE*(int)hhdr;
+	      current = current - HBLKSIZE*(word)hhdr;
 	      hhdr = HDR(current);
 	    } while(IS_FORWARDING_ADDR_OR_NIL(hhdr));
 	    /* current points to the start of the large object */
@@ -624,34 +624,6 @@ ptr_t top;
 }
 #endif
 
-/*
- * Push a single value onto mark stack. Mark from the object pointed to by p.
- * GC_push_one is normally called by GC_push_regs, and thus must be defined.
- * P is considered valid even if it is an interior pointer.
- * Previously marked objects are not pushed.  Hence we make progress even
- * if the mark stack overflows.
- */
-# define GC_PUSH_ONE_STACK(p) \
-    if ((ptr_t)(p) >= GC_least_plausible_heap_addr 	\
-	 && (ptr_t)(p) < GC_greatest_plausible_heap_addr) {	\
-	 GC_push_one_checked(p,TRUE);	\
-    }
-
-/*
- * As above, but interior pointer recognition as for
- * normal for heap pointers.
- */
-# ifdef ALL_INTERIOR_POINTERS
-#   define AIP TRUE
-# else
-#   define AIP FALSE
-# endif
-# define GC_PUSH_ONE_HEAP(p) \
-    if ((ptr_t)(p) >= GC_least_plausible_heap_addr 	\
-	 && (ptr_t)(p) < GC_greatest_plausible_heap_addr) {	\
-	 GC_push_one_checked(p,AIP);	\
-    }
-
 # ifdef MSWIN32
   void __cdecl GC_push_one(p)
 # else
@@ -843,6 +815,8 @@ register hdr * hhdr;
 }
 
 
+#ifndef UNALIGNED
+
 /* Push all objects reachable from marked objects in the given block */
 /* of size 2 objects.						     */
 void GC_push_marked2(h, hhdr)
@@ -929,6 +903,8 @@ register hdr * hhdr;
 #   undef GC_least_plausible_heap_addr        
 }
 
+#endif UNALIGNED
+
 #endif /* SMALL_CONFIG */
 
 /* Push all objects reachable from marked objects in the given block */
@@ -957,10 +933,12 @@ register hdr * hhdr;
     }
     
     switch(sz) {
-#   ifndef SMALL_CONFIG    
+#   if !defined(SMALL_CONFIG)    
      case 1:
        GC_push_marked1(h, hhdr);
        break;
+#   endif
+#   if !defined(SMALL_CONFIG) && !defined(UNALIGNED)
      case 2:
        GC_push_marked2(h, hhdr);
        break;
@@ -972,7 +950,10 @@ register hdr * hhdr;
       GC_mark_stack_top_reg = GC_mark_stack_top;
       for (p = (word *)h + HDR_WORDS, word_no = HDR_WORDS; p <= lim;
          p += sz, word_no += sz) {
-         /* This needs manual optimization: */
+         /* This ignores user specified mark procs.  This currently	*/
+         /* doesn't matter, since marking from the whole object		*/
+         /* is always sufficient, and we will eventually use the user	*/
+         /* mark proc to avoid any bogus pointers.			*/
          if (mark_bit_from_hdr(hhdr, word_no)) {
            /* Mark from fields inside the object */
              PUSH_OBJ((word *)p, hhdr, GC_mark_stack_top_reg, mark_stack_limit);

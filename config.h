@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 28, 1994 11:03 am PDT */
+/* Boehm, November 22, 1994 11:55 am PST */
  
 #ifndef CONFIG_H
 
@@ -42,9 +42,9 @@
 #    endif
 #    define mach_type_known
 # endif
-# if defined(mips)
+# if defined(mips) || defined(__mips)
 #    define MIPS
-#    ifdef ultrix
+#    if defined(ultrix) || defined(__ultrix)
 #	define ULTRIX
 #    else
 #	ifdef _SYSTYPE_SVR4
@@ -85,15 +85,20 @@
 #     endif
 #   define mach_type_known
 # endif
+# if defined(sparc) && defined(unix) && !defined(sun)
+#   define SPARC
+#   define DRSNX
+#   define mach_type_known
+# endif
 # if defined(_IBMR2)
 #   define RS6000
 #   define mach_type_known
 # endif
-# if defined(SCO)
+# if defined(_M_XENIX) && defined(_M_SYSV) && defined(_M_I386)
+	/* The above test may need refinement	*/
 #   define I386
 #   define SCO
 #   define mach_type_known
-/*	--> incompletely implemented */
 # endif
 # if defined(_AUX_SOURCE)
 #   define M68K
@@ -118,10 +123,14 @@
 #   define AMIGA
 #   define mach_type_known
 # endif
-# if defined(THINK_C)
+# if defined(THINK_C) || defined(__MWERKS__) && !defined(__powerc)
 #   define M68K
 #   define MACOS
 #   define mach_type_known
+# endif
+# if defined(__MWERKS__) && defined(__powerc)
+#   define POWERPC
+#   define MACOS
 # endif
 # if defined(NeXT) && defined(mc68000)
 #   define M68K
@@ -158,6 +167,11 @@
 #   define CX_UX
 #   define mach_type_known
 # endif
+# if defined(DGUX)
+#   define M88K
+    /* DGUX defined */
+#   define mach_type_known
+# endif
 # if defined(_MSDOS) && (_M_IX86 == 300) || (_M_IX86 == 400)
 #   define I386
 #   define MSWIN32	/* or Win32s */
@@ -188,15 +202,16 @@
                     /*			(RISCOS, ULTRIX variants)	*/
                     /*		   VAX	      ==> DEC VAX		*/
                     /*			(BSD, ULTRIX variants)		*/
-                    /*		   RS6000     ==> IBM RS/6000 AIX3.1	*/
+                    /*		   RS6000     ==> IBM RS/6000 AIX3.X	*/
                     /*		   RT	      ==> IBM PC/RT		*/
                     /*		   HP_PA      ==> HP9000/700 & /800	*/
                     /*				  HP/UX			*/
 		    /*		   SPARC      ==> SPARC under SunOS	*/
-		    /*			(SUNOS4, SUNOS5 variants)	*/
+		    /*			(SUNOS4, SUNOS5,		*/
+		    /*			 DRSNX variants)		*/
 		    /* 		   ALPHA      ==> DEC Alpha OSF/1	*/
 		    /* 		   M88K       ==> Motorola 88XX0        */
-		    /* 		        (CX/UX so far)			*/
+		    /* 		        (CX_UX and DGUX)		*/
 
 
 /*
@@ -232,7 +247,7 @@
  * If either of the last two macros are defined, then STACKBOTTOM is computed
  * during collector startup using one of the following two heuristics:
  * HEURISTIC1:  Take an address inside GC_init's frame, and round it up to
- *		the next multiple of 16 MB.
+ *		the next multiple of STACK_GRAN.
  * HEURISTIC2:  Take an address inside GC_init's frame, increment it repeatedly
  *		in small steps (decrement if STACK_GROWS_UP), and read the value
  *		at each location.  Remember the value when the first
@@ -280,6 +295,7 @@
  */
 
 
+# define STACK_GRAN 0x1000000
 # ifdef M68K
 #   define MACH_TYPE "M68K"
 #   define ALIGNMENT 2
@@ -322,12 +338,11 @@
  	    	/* in os_dep.c					*/
 #   endif
 #   ifdef MACOS
+#     ifndef __LOWMEM__
 #     include <LowMem.h>
+#     endif
 #     define OS_TYPE "MACOS"
-#     define DATASTART ((ptr_t) LMGetCurStackBase())
-				/* globals begin above stack. */
-#     define DATAEND ((ptr_t) LMGetCurrentA5())
-				/* and end at a5. */
+			/* see os_dep.c for details of global data segments. */
 #     define STACKBOTTOM ((ptr_t) LMGetCurStackBase())
 #   endif
 #   ifdef NEXT
@@ -366,9 +381,11 @@
     extern int etext;
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
-	extern char * GC_SysVGetDataStart(int max_page_size);
-#       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000)
+	extern int etext;
+	extern char * GC_SysVGetDataStart();
+#       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &etext)
 #	define PROC_VDB
+#	define HEURISTIC1
 #   endif
 #   ifdef SUNOS4
 #	define OS_TYPE "SUNOS4"
@@ -385,8 +402,17 @@
 	/* This assumes ZMAGIC, i.e. demand-loadable executables.	*/
 #       define DATASTART ((ptr_t)(*(int *)0x2004+0x2000))
 #	define MPROTECT_VDB
+#	define HEURISTIC1
 #   endif
-#   define HEURISTIC1
+#   ifdef DRSNX
+#       define CPP_WORDSZ 32
+#	define OS_TYPE "DRSNX"
+	extern char * GC_SysVGetDataStart();
+	extern int etext;
+#       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &etext)
+#	define MPROTECT_VDB
+#       define STACKBOTTOM ((ptr_t) 0xdfff0000)
+#   endif
 #   define DYNAMIC_LOADING
 # endif
 
@@ -401,14 +427,15 @@
 #   endif
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
-  	extern int etext;
-  	extern ptr_t GC_SysVGetDataStart(int max_page_size);
-#       define DATASTART GC_SysVGetDataStart(0x1000)
+  	extern int etext, _start;
+  	extern char * GC_SysVGetDataStart();
+#       define DATASTART GC_SysVGetDataStart(0x1000, &etext)
 #	define STACKBOTTOM ((ptr_t)(&_start))
 #	define PROC_VDB
 #   endif
 #   ifdef SCO
 #	define OS_TYPE "SCO"
+	extern int etext;
 #   	define DATASTART ((ptr_t)((((word) (&etext)) + 0x3fffff) \
 				  & ~0x3fffff) \
 				 +((word)&etext & 0xfff))
@@ -485,6 +512,11 @@
 #   ifdef IRIX5
 #	define OS_TYPE "IRIX5"
 #	define MPROTECT_VDB
+		/* The above is dubious.  Mprotect and signals do work,	*/
+		/* and dirty bits are implemented under IRIX5.  But,	*/
+		/* at least under IRIX5.2, mprotect seems to be so	*/
+		/* slow relative to the hardware that incremental	*/
+		/* collection is likely to be rarely useful.		*/
 #	define DYNAMIC_LOADING
 #   endif
 # endif
@@ -510,6 +542,11 @@
 #   define ALIGNMENT 8
 #   define DATASTART ((ptr_t) 0x140000000)
 #   define HEURISTIC2
+	/* Normally HEURISTIC2 is too conervative, since		*/
+	/* the text segment immediately follows the stack.		*/
+	/* Hence we give an upper pound.				*/
+    extern __start;
+#   define HEURISTIC2_LIMIT ((ptr_t)((word)(&__start) & ~(getpagesize()-1)))
 #   define CPP_WORDSZ 64
 #   define MPROTECT_VDB
 # endif
@@ -517,7 +554,13 @@
 # ifdef M88K
 #   define MACH_TYPE "M88K"
 #   define ALIGNMENT 4
-#   define DATASTART ((((word)&etext + 0x3fffff) & ~0x3fffff) + 0x10000)
+#   ifdef CX_UX
+#       define DATASTART ((((word)&etext + 0x3fffff) & ~0x3fffff) + 0x10000)
+#   endif
+#   ifdef  DGUX
+	extern char * GC_SysVGetDataStart();
+#       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &etext)
+#   endif
 #   define STACKBOTTOM ((char*)0xf0000000) /* determined empirically */
 # endif
 
@@ -531,6 +574,19 @@
 
 # ifndef OS_TYPE
 #   define OS_TYPE ""
+# endif
+
+# if defined(SUNOS5) || defined(DRSNX)
+    /* OS has SVR4 generic features.  Probably others also qualify.	*/
+#   define SVR4
+# endif
+
+# if defined(SUNOS5) || defined(DRSNX)
+    /* OS has SUNOS5 style semi-undocumented interface to dynamic 	*/
+    /* loader.								*/
+#   define SUNOS5DL
+    /* OS has SUNOS5 style signal handlers.				*/
+#   define SUNOS5SIGS
 # endif
 
 # if CPP_WORDSZ != 32 && CPP_WORDSZ != 64

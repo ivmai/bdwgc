@@ -574,6 +574,11 @@ char ** argv;
 	    do_command(c);
     }
 done:
+    move(LINES-1, 0);
+    clrtoeol();
+    refresh();
+    nl();
+    echo();
     endwin();
     exit(0);
 usage:

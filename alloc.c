@@ -12,7 +12,7 @@
  * modified is included with the above copyright notice.
  *
  */
-/* Boehm, July 25, 1994 1:22 pm PDT */
+/* Boehm, November 21, 1994 4:35 pm PST */
 
 
 # include "gc_priv.h"
@@ -621,13 +621,16 @@ word needed_blocks;
       }
       if (!GC_expand_hp_inner(blocks_to_get)
         && !GC_expand_hp_inner(needed_blocks)) {
-      	if (count++ < 5) {
+      	if (count++ < 10) {
       	    WARN("Out of Memory!  Trying to continue ...\n");
 	    GC_gcollect_inner();
 	} else {
 	    WARN("Out of Memory!  Returning NIL!\n");
 	    return(FALSE);
 	}
+      } else if (count) {
+          WARN("Memory available again! Continue ...\n");
+          count = 0;
       }
     }
     return(TRUE);

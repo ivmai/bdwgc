@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 28, 1994 11:11 am PDT */
+/* Boehm, November 4, 1994 4:23 pm PST */
 
 # include "gc_priv.h"
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS)
@@ -45,6 +45,10 @@
 
 #ifdef IRIX5
 # include <sys/uio.h>
+#endif
+
+#ifdef SUNOS5SIGS
+# include <sys/siginfo.h>
 #endif
 
 #ifdef PCR
@@ -374,12 +378,21 @@ ptr_t GC_get_stack_base()
     		/* static since it's only called once, with the		*/
     		/* allocation lock held.				*/
 
-        static handler old_segv_handler, old_bus_handler;
+#	ifdef SUNOS5SIGS
+	  struct sigaction	act, oldact;
+
+	  act.sa_handler		= GC_fault_handler;
+	  act.sa_flags		= SA_RESTART | SA_SIGINFO;
+	  (void) sigemptyset(&act.sa_mask);
+	  (void) sigaction(SIGSEGV, &act, &oldact);
+#	else
+          static handler old_segv_handler, old_bus_handler;
       		/* See above for static declaration.			*/
 
-    	old_segv_handler = signal(SIGSEGV, GC_fault_handler);
-#	ifdef SIGBUS
-	   old_bus_handler = signal(SIGBUS, GC_fault_handler);
+    	  old_segv_handler = signal(SIGSEGV, GC_fault_handler);
+#	  ifdef SIGBUS
+	    old_bus_handler = signal(SIGBUS, GC_fault_handler);
+#	  endif
 #	endif
 	if (setjmp(GC_jmp_buf) == 0) {
 	    result = (ptr_t)(((word)(p))
@@ -393,10 +406,14 @@ ptr_t GC_get_stack_base()
 		GC_noop(*result);
 	    }
 	}
-	(void) signal(SIGSEGV, old_segv_handler);
-#	ifdef SIGBUS
+#       ifdef SUNOS5SIGS
+	  (void) sigaction(SIGSEGV, &oldact, 0);
+#       else
+  	  (void) signal(SIGSEGV, old_segv_handler);
+#	  ifdef SIGBUS
 	    (void) signal(SIGBUS, old_bus_handler);
-#	endif
+#	  endif
+#       endif
  	if (!up) {
 	    result += MIN_PAGE_SIZE;
  	}
@@ -410,7 +427,7 @@ ptr_t GC_get_stack_base()
     word dummy;
     ptr_t result;
 
-#   define STACKBOTTOM_ALIGNMENT_M1 0xffffff
+#   define STACKBOTTOM_ALIGNMENT_M1 ((word)STACK_GRAN - 1)
 
 #   ifdef STACKBOTTOM
 	return(STACKBOTTOM);
@@ -428,9 +445,22 @@ ptr_t GC_get_stack_base()
 #	ifdef HEURISTIC2
 #	    ifdef STACK_GROWS_DOWN
 		result = GC_find_limit((ptr_t)(&dummy), TRUE);
+#           	ifdef HEURISTIC2_LIMIT
+		    if (result > HEURISTIC2_LIMIT
+		        && (ptr_t)(&dummy) < HEURISTIC2_LIMIT) {
+		            result = HEURISTIC2_LIMIT;
+		    }
+#	        endif
 #	    else
 		result = GC_find_limit((ptr_t)(&dummy), FALSE);
+#           	ifdef HEURISTIC2_LIMIT
+		    if (result < HEURISTIC2_LIMIT
+		        && (ptr_t)(&dummy) > HEURISTIC2_LIMIT) {
+		            result = HEURISTIC2_LIMIT;
+		    }
+#	        endif
 #	    endif
+
 #	endif /* HEURISTIC2 */
     	return(result);
 #   endif /* STACKBOTTOM */
@@ -683,11 +713,13 @@ void GC_register_data_segments()
 
 # else
 
-# if defined(SUNOS5) || defined(AUX)
-char * GC_SysVGetDataStart(int max_page_size)
+# if defined(SVR4) || defined(AUX) || defined(DGUX)
+char * GC_SysVGetDataStart(max_page_size, etext_addr)
+int max_page_size;
+int * etext_addr;
 {
-    extern int etext;
-    word text_end = ((word)(&etext) + sizeof(word) - 1) & ~(sizeof(word) - 1);
+    word text_end = ((word)(etext_addr) + sizeof(word) - 1)
+    		    & ~(sizeof(word) - 1);
     	/* etext rounded to word boundary	*/
     word next_page = ((text_end + (word)max_page_size - 1)
     		      & ~((word)max_page_size - 1));
@@ -696,6 +728,7 @@ char * GC_SysVGetDataStart(int max_page_size)
     return((char *)(next_page + page_offset));
 }
 # endif
+
 
 void GC_register_data_segments()
 {
@@ -711,12 +744,19 @@ void GC_register_data_segments()
 #   endif
 #   if defined(MACOS)
     {
+#   if defined(THINK_C)
 	extern void* GC_MacGetDataStart(void);
 	/* globals begin above stack and end at a5. */
 	GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
 			   (ptr_t)LMGetCurrentA5());
-    }
+#   else
+#     if defined(__MWERKS__)
+	extern long __datastart, __dataend;
+	GC_add_roots_inner((ptr_t)&__datastart, (ptr_t)&__dataend);
+#     endif
 #   endif
+    }
+#   endif /* MACOS */
 
     /* Dynamic libraries are added at every collection, since they may  */
     /* change.								*/
@@ -1097,12 +1137,15 @@ word addr;
 #if defined(SUNOS4) || defined(FREEBSD)
     typedef void (* SIG_PF)();
 #endif
-
-#if defined(ALPHA) /* OSF1 */
+#if defined(SUNOS5SIGS) || defined(ALPHA) /* OSF1 */
     typedef void (* SIG_PF)(int);
 #endif
+
 #if defined(IRIX5) || defined(ALPHA) /* OSF1 */
     typedef void (* REAL_SIG_PF)(int, int, struct sigcontext *);
+#endif
+#if defined(SUNOS5SIGS)
+    typedef void (* REAL_SIG_PF)(int, struct siginfo *, void *);
 #endif
 
 SIG_PF GC_old_bus_handler;
@@ -1136,6 +1179,11 @@ SIG_PF GC_old_segv_handler;
 #     define CODE_OK (code == EACCES)
 #   endif
 # endif
+# if defined(SUNOS5SIGS)
+    void GC_write_fault_handler(int sig, struct siginfo *scp, void * context)
+#   define SIG_OK (sig == SIGSEGV)
+#   define CODE_OK (scp -> si_code == SEGV_ACCERR)
+# endif
 {
     register int i;
 #   ifdef IRIX5
@@ -1143,6 +1191,9 @@ SIG_PF GC_old_segv_handler;
 #   endif
 #   ifdef ALPHA
 	char * addr = (char *) (scp -> sc_traparg_a0);
+#   endif
+#   ifdef SUNOS5SIGS
+	char * addr = (char *) (scp -> si_addr);
 #   endif
     
     if (SIG_OK && CODE_OK) {
@@ -1163,7 +1214,11 @@ SIG_PF GC_old_segv_handler;
 #		if defined (SUNOS4) || defined(FREEBSD)
 		  (*old_handler) (sig, code, scp, addr);
 #		else
-		  (*(REAL_SIG_PF)old_handler) (sig, code, scp);
+#		  if defined (SUNOS5SIGS)
+		    (*(REAL_SIG_PF)old_handler) (sig, scp, context);
+#		  else
+		    (*(REAL_SIG_PF)old_handler) (sig, code, scp);
+#		  endif
 #		endif
 		return;
             }
@@ -1212,11 +1267,28 @@ struct hblk *h;
     	}
     }
 }
+
+#if defined(SUNOS5) || defined(DRSNX)
+#include <unistd.h>
+int
+GC_getpagesize()
+{
+    return sysconf(_SC_PAGESIZE);
+}
+#else
+# define GC_getpagesize() getpagesize()
+#endif
 				 
 void GC_dirty_init()
 {
+#if defined(SUNOS5SIGS)
+    struct sigaction	act, oldact;
+    act.sa_sigaction	= GC_write_fault_handler;
+    act.sa_flags	= SA_RESTART | SA_SIGINFO;
+    (void)sigemptyset(&act.sa_mask); 
+#endif
     GC_dirty_maintained = TRUE;
-    GC_page_size = getpagesize();
+    GC_page_size = GC_getpagesize();
     if (GC_page_size % HBLKSIZE != 0) {
         GC_err_printf0("Page size not multiple of HBLKSIZE\n");
         ABORT("Page size not multiple of HBLKSIZE");
@@ -1245,6 +1317,23 @@ void GC_dirty_init()
 #	endif
       }
 #   endif
+#   if defined(SUNOS5SIGS)
+      sigaction(SIGSEGV, &act, &oldact);
+      if (oldact.sa_flags & SA_SIGINFO) {
+          GC_old_segv_handler = (SIG_PF)(oldact.sa_sigaction);
+      } else {
+          GC_old_segv_handler = oldact.sa_handler;
+      }
+      if (GC_old_segv_handler == SIG_IGN) {
+	     GC_err_printf0("Previously ignored segmentation violation!?");
+	     GC_old_segv_handler == SIG_DFL;
+      }
+      if (GC_old_segv_handler != SIG_DFL) {
+#       ifdef PRINTSTATS
+	  GC_err_printf0("Replaced other SIGSEGV handler\n");
+#       endif
+      }
+#    endif
 }
 
 
@@ -1276,9 +1365,9 @@ void GC_protect_heap()
 
 void GC_read_dirty()
 {
-    BCOPY(GC_dirty_pages, GC_grungy_pages,
+    BCOPY((word *)GC_dirty_pages, GC_grungy_pages,
           (sizeof GC_dirty_pages));
-    BZERO(GC_dirty_pages, (sizeof GC_dirty_pages));
+    BZERO((word *)GC_dirty_pages, (sizeof GC_dirty_pages));
     GC_protect_heap();
 }
 
@@ -1334,7 +1423,7 @@ word len;
     	         (int)((ptr_t)end_block - (ptr_t)start_block)
     	         + HBLKSIZE,
     	         PROT_WRITE | PROT_READ | PROT_EXEC) < 0) {
-    	ABORT("mprotect failed in GC_unprotect_range");
+    	ABORT("mprotect failed in GC_unprotect_range:");
     }
 }
 
@@ -1493,10 +1582,9 @@ struct hblk *h;
 }
 
 #ifdef SOLARIS_THREADS
-    int GC_read_from_fixed_lwp(int fd, char *buf, int nbytes);
-#   define READ GC_read_from_fixed_lwp
+#   define READ(fd,buf,nbytes) syscall(SYS_read, fd, buf, nbytes)
 #else
-#   define READ read
+#   define READ(fd,buf,nbytes) read(fd, buf, nbytes)
 #endif
 
 void GC_read_dirty()
@@ -1713,7 +1801,11 @@ struct hblk *h;
 #   if defined(SUNOS4)
 #     include <machine/frame.h>
 #   else
-#     include <sys/frame.h>
+#     if defined (DRSNX)
+#	include <sys/sparc/frame.h>
+#     else
+#       include <sys/frame.h>
+#     endif
 #   endif
 #   if NARGS > 6
 	--> We only know how to to get the first 6 arguments

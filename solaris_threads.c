@@ -14,7 +14,7 @@
  * Support code for Solaris threads.  Provides functionality we wish Sun
  * had provided.  Relies on some information we probably shouldn't rely on.
  */
-/* Boehm, July 23, 1994 11:11 am PDT */
+/* Boehm, September 14, 1994 4:44 pm PDT */
 
 # if defined(SOLARIS_THREADS)
 
@@ -46,8 +46,6 @@ cond_t GC_prom_join_cv;		/* Broadcast when any thread terminates	*/
 cond_t GC_create_cv;		/* Signalled when a new undetached	*/
 				/* thread starts.			*/
 				
-
-lwpid_t GC_read_lwp;		/* Lwp for reading /proc.		*/
 
 /* We use the allocation lock to protect thread-related data structures. */
 
@@ -173,8 +171,7 @@ static void stop_all_lwps()
         }
         changed = FALSE;
         for (i = 0; GC_current_ids[i] != 0; i++) {
-            if (GC_current_ids[i] != last_ids[i]
-                && GC_current_ids[i] != GC_read_lwp) {
+            if (GC_current_ids[i] != last_ids[i]) {
                 changed = TRUE;
                 if (GC_current_ids[i] != me) {
 		    /* PIOCSTOP doesn't work without a writable		*/
@@ -193,8 +190,7 @@ static void stop_all_lwps()
         /* that _lwp_suspend is idempotent.				*/
         for (i = 0; GC_current_ids[i] != 0; i++) {
             if (GC_current_ids[i] != last_ids[i]) {
-                if (GC_current_ids[i] != me
-                    && GC_current_ids[i] != GC_read_lwp) {
+                if (GC_current_ids[i] != me) {
                     lwp_fd = open_lwp(GC_current_ids[i]);
 		    /* LWP should be stopped.  Empirically it sometimes	*/
 		    /* isn't, and more frequently the PR_STOPPED flag	*/
@@ -247,7 +243,7 @@ static void restart_all_lwps()
 
     for (i = 0; GC_current_ids[i] != 0; i++) {
 #	ifdef PARANOID
-	  if (GC_current_ids[i] != me && GC_current_ids[i] != GC_read_lwp) {
+	  if (GC_current_ids[i] != me) {
 	    int lwp_fd = open_lwp(GC_current_ids[i]);
 	    prstatus_t status;
 	    gwindows_t windows;
@@ -299,71 +295,6 @@ size_t GC_min_stack_sz;
 size_t GC_page_sz;
 
 
-
-/* Variables for communication between GC_read_from_fixed_lwp	*/
-/* and GC_read_daemon.						*/
-struct {
-    lwp_mutex_t ml;
-    lwp_cond_t cv;
-    int fd;
-    char * buf;
-    int nbytes;
-    int result;
-    bool request_pending;
-} GC_read_params = {0};
-    
-
-/* Empirically it helps to read /proc from a single lwp.  Otherwise it	*/
-/* appears to be unreliable, at least in 2.3.  (Of course, it may be	*/
-/* unreliable even from a single lwp ...)				*/
-/* We assume the caller holds the allocation lock.			*/
-int GC_read_from_fixed_lwp(int fd, char *buf, int nbytes)
-{
-    int result;
-    
-    if (!GC_thr_initialized) GC_thr_init();
-    (void) _lwp_mutex_lock(&GC_read_params.ml);
-    if (GC_read_params.request_pending) ABORT("Concurrent read requests");
-    GC_read_params.fd = fd;
-    GC_read_params.buf = buf;
-    GC_read_params.nbytes = nbytes;
-    GC_read_params.request_pending = TRUE;
-    (void) _lwp_cond_signal(&GC_read_params.cv);
-    while (GC_read_params.request_pending) {
-    	(void)_lwp_cond_wait(&GC_read_params.cv, &GC_read_params.ml);
-    }
-    result = GC_read_params.result;
-    (void) _lwp_mutex_unlock(&GC_read_params.ml);
-    return(result);
-}
-
-void * GC_read_daemon(void *arg)
-{
-    GC_read_lwp = _lwp_self();
-    (void) _lwp_mutex_lock(&GC_read_params.ml);
-    for (;;) {
-    	while (!GC_read_params.request_pending) {
-    	    (void)_lwp_cond_wait(&GC_read_params.cv, &GC_read_params.ml);
-    	}
-    	GC_read_params.result = syscall(SYS_read,
-    					   GC_read_params.fd,
-    					   GC_read_params.buf,
-    					   GC_read_params.nbytes);
-    	GC_read_params.request_pending = FALSE;
-    	(void) _lwp_cond_signal(&GC_read_params.cv);
-    }
-}
-
-
-void GC_read_init()
-{
-    if (thr_create(0, 0, GC_read_daemon, 0,
-    		   THR_BOUND | THR_DETACHED | THR_DAEMON, 0) != 0) {
-    	ABORT("Couldn't fork read daemon");
-    }
-    while (GC_read_lwp == 0) { thr_yield(); GC_msec_sleep(10); thr_yield();}
-}
-
 # define N_FREE_LISTS 25
 ptr_t GC_stack_free_lists[N_FREE_LISTS] = { 0 };
 		/* GC_stack_free_lists[i] is free list for stacks of 	*/
@@ -395,7 +326,9 @@ ptr_t GC_stack_alloc(size_t * stack_size)
         result = (ptr_t) GC_scratch_alloc(search_sz + 2*GC_page_sz);
         result = (ptr_t)(((word)result + GC_page_sz) & ~(GC_page_sz - 1));
         /* Protect hottest page to detect overflow. */
-        mprotect(result, GC_page_sz, PROT_NONE);
+#	ifdef SOLARIS23_MPROTECT_BUG_FIXED
+            mprotect(result, GC_page_sz, PROT_NONE);
+#	endif
         GC_is_fresh((struct hblk *)result, divHBLKSZ(search_sz));
         result += GC_page_sz;
     }
@@ -646,8 +579,8 @@ GC_thr_init()
     GC_thread t;
 
     GC_thr_initialized = TRUE;
-    GC_read_init();
-    GC_min_stack_sz = ((thr_min_stack() + HBLKSIZE-1) & ~(HBLKSIZE - 1));
+    GC_min_stack_sz = ((thr_min_stack() + 128*1024 + HBLKSIZE-1)
+    		       & ~(HBLKSIZE - 1));
     GC_page_sz = sysconf(_SC_PAGESIZE);
     cond_init(&GC_prom_join_cv, USYNC_THREAD, 0);
     cond_init(&GC_create_cv, USYNC_THREAD, 0);

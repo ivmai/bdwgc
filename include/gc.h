@@ -1,17 +1,37 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
+ */
+/* Boehm, December 7, 1994 12:09 pm PST */
+
+/*
+ * Note that this defines a large number of tuning hooks, which can
+ * safely be ignored in nearly all cases.  For normal use it suffices
+ * to call only GC_MALLOC and perhaps GC_REALLOC.
+ * For better performance, also look at GC_MALLOC_ATOMIC, and
+ * GC_enable_incremental.  If you need an action to be performed
+ * immediately before an object is collected, look at GC_register_finalizer.
+ * If you are using Solaris threads, look at the end of this file.
+ * Everything else is best ignored unless you encounter performance
+ * problems.
  */
  
-#ifndef GC_H
+#ifndef _GC_H
 
-# define GC_H
+# define _GC_H
+
+# ifdef __cplusplus
+    extern "C" {
+# endif
 
 # include <stddef.h>
 
@@ -28,13 +48,9 @@ typedef long GC_signed_word;
 
 /* Public read-only variables */
 
-extern GC_word GC_heapsize;       /* Heap size in bytes */
-
 extern GC_word GC_gc_no;/* Counter incremented per collection.  	*/
 			/* Includes empty GCs at startup.		*/
 			
-extern int GC_incremental;  /* Using incremental/generational collection. */
-
 
 /* Public R/W variables */
 
@@ -67,9 +83,10 @@ extern GC_word GC_free_space_divisor;
 			/* Increasing its value will use less space	*/
 			/* but more collection time.  Decreasing it	*/
 			/* will appreciably decrease collection time	*/
-			/* at the expens of space.			*/
+			/* at the expense of space.			*/
 			/* GC_free_space_divisor = 1 will effectively	*/
 			/* disable collections.				*/
+
 			
 /* Public procedures */
 /*
@@ -83,7 +100,7 @@ extern GC_word GC_free_space_divisor;
  * collectable.  GC_malloc_uncollectable and GC_free called on the resulting
  * object implicitly update GC_non_gc_bytes appropriately.
  */
-#if defined(__STDC__) || defined(__cplusplus)
+# if defined(__STDC__) || defined(__cplusplus)
   extern void * GC_malloc(size_t size_in_bytes);
   extern void * GC_malloc_atomic(size_t size_in_bytes);
   extern void * GC_malloc_uncollectable(size_t size_in_bytes);
@@ -95,12 +112,19 @@ extern GC_word GC_free_space_divisor;
   extern char * GC_malloc_stubborn(/* size_in_bytes */);
 # endif
 
+#if defined(__STDC__) && !defined(__cplusplus)
+# define NO_PARAMS void
+#else
+# define NO_PARAMS
+#endif
+
 /* Explicitly deallocate an object.  Dangerous if used incorrectly.     */
 /* Requires a pointer to the base of an object.				*/
 /* If the argument is stubborn, it should not be changeable when freed. */
 /* An object should not be enable for finalization when it is 		*/
 /* explicitly deallocated.						*/
-#if defined(__STDC__) || defined(__cplusplus)
+/* GC_free(0) is a no-op, as required by ANSI C for free.		*/
+# if defined(__STDC__) || defined(__cplusplus)
   extern void GC_free(void * object_addr);
 # else
   extern void GC_free(/* object_addr */);
@@ -150,6 +174,7 @@ void GC_end_stubborn_change(/* p */);
 /* The resulting object has the same kind as the original.		*/
 /* If the argument is stubborn, the result will have changes enabled.	*/
 /* It is an error to have changes enabled for the original object.	*/
+/* Follows ANSI comventions for NULL old_object.			*/
 # if defined(__STDC__) || defined(__cplusplus)
     extern void * GC_realloc(void * old_object, size_t new_size_in_bytes);
 # else
@@ -159,12 +184,12 @@ void GC_end_stubborn_change(/* p */);
 
 /* Explicitly increase the heap size.	*/
 /* Returns 0 on failure, 1 on success.  */
-extern int GC_expand_hp(/* number_of_4K_blocks */);
+extern int GC_expand_hp(/* number_of_bytes */);
 
-/* Clear the set of root segments */
-extern void GC_clear_roots();
+/* Clear the set of root segments.  Wizards only. */
+extern void GC_clear_roots(NO_PARAMS);
 
-/* Add a root segment */
+/* Add a root segment.  Wizards only. */
 extern void GC_add_roots(/* low_address, high_address_plus_1 */);
 
 /* Add a displacement to the set of those considered valid by the	*/
@@ -177,17 +202,63 @@ extern void GC_add_roots(/* low_address, high_address_plus_1 */);
 /* Preferably, this should be called before any other GC procedures.	*/
 /* Calling it later adds to the probability of excess memory		*/
 /* retention.								*/
-void GC_register_displacement(/* n */);
+/* This is a no-op if the collector was compiled with recognition of	*/
+/* arbitrary interior pointers enabled, which is now the default.	*/
+void GC_register_displacement(/* GC_word n */);
 
-/* Explicitly trigger a collection. 	*/
-void GC_gcollect();
+/* The following version should be used if any debugging allocation is	*/
+/* being done.								*/
+void GC_debug_register_displacement(/* GC_word n */);
+
+/* Explicitly trigger a full, world-stop collection. 	*/
+void GC_gcollect(NO_PARAMS);
+
+/* Return the number of bytes in the heap.  Excludes collector private	*/
+/* data structures.  Includes empty blocks and fragmentation loss.	*/
+/* Includes some pages that were allocated but never written.		*/
+size_t GC_get_heap_size(NO_PARAMS);
 
 /* Enable incremental/generational collection.	*/
 /* Not advisable unless dirty bits are 		*/
 /* available or most heap objects are		*/
 /* pointerfree(atomic) or immutable.		*/
 /* Don't use in leak finding mode.		*/
-void GC_enable_incremental();
+/* Ignored if GC_dont_gc is true.		*/
+void GC_enable_incremental(NO_PARAMS);
+
+/* Perform some garbage collection work, if appropriate.	*/
+/* Return 0 if there is no more work to be done.		*/
+/* Typically performs an amount of work corresponding roughly	*/
+/* to marking from one page.  May do more work if further	*/
+/* progress requires it, e.g. if incremental collection is	*/
+/* disabled.  It is reasonable to call this in a wait loop	*/
+/* until it returns 0.						*/
+int GC_collect_a_little(NO_PARAMS);
+
+/* Allocate an object of size lb bytes.  The client guarantees that	*/
+/* as long as the object is live, it will be referenced by a pointer	*/
+/* that points to somewhere within the first 256 bytes of the object.	*/
+/* (This should normally be declared volatile to prevent the compiler	*/
+/* from invalidating this assertion.)  This routine is only useful	*/
+/* if a large array is being allocated.  It reduces the chance of 	*/
+/* accidentally retaining such an array as a result of scanning an	*/
+/* integer that happens to be an address inside the array.  (Actually,	*/
+/* it reduces the chance of the allocator not finding space for such	*/
+/* an array, since it will try hard to avoid introducing such a false	*/
+/* reference.)  On a SunOS 4.X or MS Windows system this is recommended */
+/* for arrays likely to be larger than 100K or so.  For other systems,	*/
+/* or if the collector is not configured to recognize all interior	*/
+/* pointers, the threshold is normally much higher.			*/
+# if defined(__STDC__) || defined(__cplusplus)
+  void * GC_malloc_ignore_off_page(size_t lb);
+# else
+  char * GC_malloc_ignore_off_page(/* size_t lb */);
+# endif
+# if defined(__STDC__) || defined(__cplusplus)
+  void * GC_malloc_atomic_ignore_off_page(size_t lb);
+# else
+  char * GC_malloc_atomic_ignore_off_page(/* size_t lb */);
+# endif
 
 /* Debugging (annotated) allocation.  GC_gcollect will check 		*/
 /* objects allocated in this way for overwrites, etc.			*/
@@ -229,10 +300,17 @@ void GC_debug_end_stubborn_change(/* p */);
 #   define GC_REGISTER_FINALIZER(p, f, d, of, od) \
 	GC_register_finalizer(GC_base(p), GC_debug_invoke_finalizer, \
 			      GC_make_closure(f,d), of, od)
+#   define GC_REGISTER_FINALIZER_IGNORE_SELF(p, f, d, of, od) \
+	GC_register_finalizer_ignore_self( \
+             GC_base(p), GC_debug_invoke_finalizer, \
+	     GC_make_closure(f,d), of, od)
 #   define GC_MALLOC_STUBBORN(sz) GC_debug_malloc_stubborn(sz, __FILE__, \
 							       __LINE__)
 #   define GC_CHANGE_STUBBORN(p) GC_debug_change_stubborn(p)
 #   define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
+#   define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
+	GC_general_register_disappearing_link(link, GC_base(obj))
+#   define GC_REGISTER_DISPLACEMENT(n) GC_debug_register_displacement(n)
 # else
 #   define GC_MALLOC(sz) GC_malloc(sz)
 #   define GC_MALLOC_ATOMIC(sz) GC_malloc_atomic(sz)
@@ -241,9 +319,14 @@ void GC_debug_end_stubborn_change(/* p */);
 #   define GC_FREE(p) GC_free(p)
 #   define GC_REGISTER_FINALIZER(p, f, d, of, od) \
 	GC_register_finalizer(p, f, d, of, od)
+#   define GC_REGISTER_FINALIZER_IGNORE_SELF(p, f, d, of, od) \
+	GC_register_finalizer_ignore_self(p, f, d, of, od)
 #   define GC_MALLOC_STUBBORN(sz) GC_malloc_stubborn(sz)
 #   define GC_CHANGE_STUBBORN(p) GC_change_stubborn(p)
 #   define GC_END_STUBBORN_CHANGE(p) GC_end_stubborn_change(p)
+#   define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
+	GC_general_register_disappearing_link(link, obj)
+#   define GC_REGISTER_DISPLACEMENT(n) GC_register_displacement(n)
 # endif
 /* The following are included because they are often convenient, and	*/
 /* reduce the chance for a misspecifed size argument.  But calls may	*/
@@ -252,7 +335,7 @@ void GC_debug_end_stubborn_change(/* p */);
 # define GC_NEW(t) (t *)GC_MALLOC(sizeof (t))
 # define GC_NEW_ATOMIC(t) (t *)GC_MALLOC_ATOMIC(sizeof (t))
 # define GC_NEW_STUBBORN(t) (t *)GC_MALLOC_STUBBORN(sizeof (t))
-# define GC_NEW_UNCOLLECTABLE(t) (t *)GC_NEW_UNCOLLECTABLE(sizeof (t))
+# define GC_NEW_UNCOLLECTABLE(t) (t *)GC_MALLOC_UNCOLLECTABLE(sizeof (t))
 
 /* Finalization.  Some of these primitives are grossly unsafe.		*/
 /* The idea is to make them both cheap, and sufficient to build		*/
@@ -266,10 +349,16 @@ void GC_debug_end_stubborn_change(/* p */);
 # else
   typedef void (*GC_finalization_proc)(/* void * obj, void * client_data */);
 # endif
-	
-void GC_register_finalizer(/* void * obj,
-			      GC_finalization_proc fn, void * cd,
-			      GC_finalization_proc *ofn, void ** ocd */);
+
+# if defined(__STDC__) || defined(__cplusplus)
+    void GC_register_finalizer(void * obj,
+			       GC_finalization_proc fn, void * cd,
+			       GC_finalization_proc *ofn, void ** ocd);
+# else	
+    void GC_register_finalizer(/* void * obj,
+			          GC_finalization_proc fn, void * cd,
+			          GC_finalization_proc *ofn, void ** ocd */);
+# endif
 	/* When obj is no longer accessible, invoke		*/
 	/* (*fn)(obj, cd).  If a and b are inaccessible, and	*/
 	/* a points to b (after disappearing links have been	*/
@@ -281,10 +370,7 @@ void GC_register_finalizer(/* void * obj,
 	/* pointers will not be finalized (or collected).	*/
 	/* Thus cycles involving finalizable objects should	*/
 	/* be avoided, or broken by disappearing links.		*/
-	/* fn is invoked with the allocation lock held.  It may */
-	/* not allocate.  (Any storage it might need		*/
-	/* should be preallocated and passed as part of cd.) 	*/
-	/* fn should terminate as quickly as possible, and	*/
+	/* Fn should terminate as quickly as possible, and	*/
 	/* defer extended computation.				*/
 	/* All but the last finalizer registered for an object  */
 	/* is ignored.						*/
@@ -296,6 +382,31 @@ void GC_register_finalizer(/* void * obj,
 	/* pointers only if the allocation lock is held, and	*/
 	/* such conversions are not performed by finalization	*/
 	/* routines.						*/
+	/* If GC_register_finalizer is aborted as a result of	*/
+	/* a signal, the object may be left with no		*/
+	/* finalization, even if neither the old nor new	*/
+	/* finalizer were NULL.					*/
+	/* Obj should be the nonNULL starting address of an 	*/
+	/* object allocated by GC_malloc or friends.		*/
+	/* Note that any garbage collectable object referenced	*/
+	/* by cd will be considered accessible until the	*/
+	/* finalizer is invoked.				*/
+
+/* Another versions of the above follow.  It ignores		*/
+/* self-cycles, i.e. pointers from a finalizable object to	*/
+/* itself.  There is a stylistic argument that this is wrong,	*/
+/* but it's unavoidable for C++, since the compiler may		*/
+/* silently introduce these.  It's also benign in that specific	*/
+/* case.							*/
+# if defined(__STDC__) || defined(__cplusplus)
+    void GC_register_finalizer_ignore_self(void * obj,
+			       GC_finalization_proc fn, void * cd,
+			       GC_finalization_proc *ofn, void ** ocd);
+# else	
+    void GC_register_finalizer_ignore_self(/* void * obj,
+			          GC_finalization_proc fn, void * cd,
+			          GC_finalization_proc *ofn, void ** ocd */);
+# endif
 
 /* The following routine may be used to break cycles between	*/
 /* finalizable objects, thus causing cyclic finalizable		*/
@@ -328,12 +439,19 @@ int GC_general_register_disappearing_link(/* void ** link, void * obj */);
 	/* cleared when obj first becomes inaccessible.  This	*/
 	/* can be used to implement weak pointers easily and	*/
 	/* safely. Typically link will point to a location	*/
-	/* holding a disguised pointer to obj.  In this way	*/
-	/* soft pointers are broken before any object		*/
+	/* holding a disguised pointer to obj.  (A pointer 	*/
+	/* inside an "atomic" object is effectively  		*/
+	/* disguised.)   In this way soft			*/
+	/* pointers are broken before any object		*/
 	/* reachable from them are finalized.  Each link	*/
 	/* May be registered only once, i.e. with one obj	*/
 	/* value.  This was added after a long email discussion */
 	/* with John Ellis.					*/
+	/* Obj must be a pointer to the first word of an object */
+	/* we allocated.  It is unsafe to explicitly deallocate */
+	/* the object containing link.  Explicitly deallocating */
+	/* obj may or may not cause link to eventually be	*/
+	/* cleared.						*/
 int GC_unregister_disappearing_link(/* void ** link */);
 	/* Returns 0 if link was not actually registered.	*/
 	/* Undoes a registration by either of the above two	*/
@@ -355,6 +473,9 @@ int GC_unregister_disappearing_link(/* void ** link */);
 /* that finalization code will arrange for hidden pointers to	*/
 /* disappear.  Otherwise objects can be accessed after they	*/
 /* have been collected.						*/
+/* Note that putting pointers in atomic objects or in 		*/
+/* nonpointer slots of "typed" objects is equivalent to 	*/
+/* disguising them in this way, and may have other advantages.	*/
 # ifdef I_HIDE_POINTERS
 #   if defined(__STDC__) || defined(__cplusplus)
 #     define HIDE_POINTER(p) (~(size_t)(p))
@@ -376,4 +497,123 @@ int GC_unregister_disappearing_link(/* void ** link */);
 #   endif
 # endif
 
+/* Check that p and q point to the same object.  		*/
+/* Fail conspicuously if they don't.				*/
+/* Returns the first argument.  				*/
+/* Succeeds if neither p nor q points to the heap.		*/
+/* May succeed if both p and q point to between heap objects.	*/
+#ifdef __STDC__
+  void * GC_same_obj(register void *p, register void *q);
+#else
+  char * GC_same_obj(/* char * p, char * q */);
 #endif
+
+/* Check that p is visible						*/
+/* to the collector as a possibly pointer containing location.		*/
+/* If it isn't fail conspicuously.					*/
+/* Returns the argument in all cases.  May erroneously succeed		*/
+/* in hard cases.  (This is intended for debugging use with		*/
+/* untyped allocations.  The idea is that it should be possible, though	*/
+/* slow, to add such a call to all indirect pointer stores.)		*/
+/* Currently useless for multithreaded worlds.				*/
+#ifdef __STDC__
+  void * GC_is_visible(void *p);
+#else
+  char *GC_is_visible(/* char * p */);
+#endif
+
+/* Check that if p is a pointer to a heap page, then it points to	*/
+/* a valid displacement within a heap object.				*/
+/* Fail conspicuously if this property does not hold.			*/
+/* Uninteresting with ALL_INTERIOR_POINTERS.				*/
+/* Always returns its argument.						*/
+#ifdef __STDC__
+  void * GC_is_valid_displacement(void *p);
+#else
+  char *GC_is_valid_displacement(/* char * p */);
+#endif
+
+/* Safer, but slow, pointer addition.  Probably useful mainly with 	*/
+/* a preprocessor.  Useful only for heap pointers.			*/
+#ifdef GC_DEBUG
+#   define GC_PTR_ADD3(x, n, type_of_result) \
+	((type_of_result)GC_same_obj((x)+(n), (x)))
+#   ifdef __GNUC__
+#       define GC_PTR_ADD(x, n) \
+	    ((typeof(x))GC_same_obj((x)+(n), (x)))
+#   else
+	/* We can't do this right without typeof, which ANSI	*/
+	/* decided was not sufficiently useful.  Repeatedly	*/
+	/* mentioning the arguments seems too dangerous to be	*/
+	/* useful.  So does not casting the result.		*/
+#   	define GC_PTR_ADD(x, n) ((x)+(n))
+#   endif
+#else	/* !GC_DEBUG */
+#   define GC_PTR_ADD3(x, n, type_of_result) ((x)+(n))
+#   define GC_PTR_ADD(x, n) ((x)+(n))
+#endif
+
+/* Safer assignment of a pointer to a nonstack location.	*/
+#ifdef GC_DEBUG
+# ifdef __STDC__
+#   define GC_PTR_STORE(p, q) \
+	(*(void **)GC_is_visible(p) = GC_is_valid_displacement(q))
+# else
+#   define GC_PTR_STORE(p, q) \
+	(*(char **)GC_is_visible(p) = GC_is_valid_displacement(q))
+# endif
+#else /* !GC_DEBUG */
+#   define GC_PTR_STORE(p, q) *((p) = (q))
+#endif
+
+
+#ifdef SOLARIS_THREADS
+/* We need to intercept calls to many of the threads primitives, so 	*/
+/* that we can locate thread stacks and stop the world.			*/
+/* Note also that the collector cannot see thread specific data.	*/
+/* Thread specific data should generally consist of pointers to		*/
+/* uncollectable objects, which are deallocated using the destructor	*/
+/* facility in thr_keycreate.						*/
+# include <thread.h>
+# include <signal.h>
+  int GC_thr_create(void *stack_base, size_t stack_size,
+                    void *(*start_routine)(void *), void *arg, long flags,
+                    thread_t *new_thread);
+  int GC_thr_join(thread_t wait_for, thread_t *departed, void **status);
+  int GC_thr_suspend(thread_t target_thread);
+  int GC_thr_continue(thread_t target_thread);
+  void * GC_dlopen(const char *path, int mode);
+
+# define thr_create GC_thr_create
+# define thr_join GC_thr_join
+# define thr_suspend GC_thr_suspend
+# define thr_continue GC_thr_continue
+# define dlopen GC_dlopen
+
+/* This returns a list of objects, linked through their first		*/
+/* word.  Its use can greatly reduce lock contention problems, since	*/
+/* the allocation lock can be acquired and released many fewer times.	*/
+void * GC_malloc_many(size_t lb);
+#define GC_NEXT(p) (*(void **)(p)) 	/* Retrieve the next element	*/
+					/* in returned list.		*/
+
+#endif /* SOLARIS_THREADS */
+
+/*
+ * If you are planning on putting
+ * the collector in a SunOS 5 dynamic library, you need to call GC_INIT()
+ * from the statically loaded program section.
+ * This circumvents a Solaris 2.X (X<=4) linker bug.
+ */
+#ifdef sparc
+#   define GC_INIT() { extern end, etext; \
+		       GC_noop(&end, &etext); }
+#else
+#   define GC_INIT()
+#endif
+
+#ifdef __cplusplus
+    }  /* end of extern "C" */
+#endif
+
+#endif /* _GC_H */

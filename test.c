@@ -5,14 +5,21 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  */
-/* Boehm, July 27, 1994 9:45 am PDT */
+/* Boehm, November 8, 1994 5:50 pm PST */
 /* An incomplete test for the garbage collector.  		*/
 /* Some more obscure entry points are not tested at all.	*/
 
-# include <stdlib.h>
+# if defined(mips) && defined(SYSTYPE_BSD43)
+    /* MIPS RISCOS 4 */
+# else
+#   include <stdlib.h>
+# endif
 # include <stdio.h>
 # include "gc.h"
 # include "gc_typed.h"
@@ -54,6 +61,7 @@ struct SEXPR {
     struct SEXPR * sexpr_cdr;
 };
 
+
 # ifdef __STDC__
     typedef void * void_star;
 # else
@@ -62,10 +70,12 @@ struct SEXPR {
 
 typedef struct SEXPR * sexpr;
 
+# define INT_TO_SEXPR(x) ((sexpr)(unsigned long)(x))
+
 extern sexpr cons();
 
 # undef nil
-# define nil ((sexpr) 0)
+# define nil (INT_TO_SEXPR(0))
 # define car(x) ((x) -> sexpr_car)
 # define cdr(x) ((x) -> sexpr_cdr)
 # define is_nil(x) ((x) == nil)
@@ -140,7 +150,7 @@ sexpr y;
         exit(1);
     }
     r -> sexpr_car = x;
-    r -> sexpr_cdr = (sexpr) (~(unsigned long)y);
+    r -> sexpr_cdr = (sexpr)(~(unsigned long)y);
     return(r);
 }
 
@@ -167,7 +177,7 @@ int low, up;
     if (low > up) {
 	return(nil);
     } else {
-        return(small_cons(small_cons((sexpr)low, (sexpr)0), ints(low+1, up)));
+        return(small_cons(small_cons(INT_TO_SEXPR(low), nil), ints(low+1, up)));
     }
 }
 
@@ -179,7 +189,7 @@ int low, up;
     if (low > up) {
 	return(nil);
     } else {
-        return(small_cons_uncollectable(small_cons((sexpr)low, (sexpr)0),
+        return(small_cons_uncollectable(small_cons(INT_TO_SEXPR(low), nil),
                uncollectable_ints(low+1, up)));
     }
 }
@@ -290,7 +300,8 @@ void reverse_test()
     check_ints(a,1,49);
     for (i = 0; i < 60; i++) {
     	/* This maintains the invariant that a always points to a list of */
-    	/* 49 integers.  Thus this is thread safe without locks.	  */
+    	/* 49 integers.  Thus this is thread safe without locks,	  */
+    	/* assuming atomic pointer assignments.				  */
         a = reverse(reverse(a));
 #	if !defined(AT_END) && !defined(THREADS)
 	  /* This is not thread safe, since realloc explicitly deallocates */
@@ -325,7 +336,7 @@ typedef struct treenode {
 
 int finalizable_count = 0;
 int finalized_count = 0;
-int dropped_something = 0;
+VOLATILE int dropped_something = 0;
 
 # ifdef __STDC__
   void finalizer(void * obj, void * client_data)
@@ -537,6 +548,8 @@ void tree_test()
         FAIL;
     }
     dropped_something = 1;
+    GC_noop(root);	/* Root needs to remain live until	*/
+    			/* dropped_something is set.		*/
     root = mktree(TREE_HEIGHT);
     chktree(root, TREE_HEIGHT);
     for (i = TREE_HEIGHT; i >= 0; i--) {
@@ -606,18 +619,77 @@ void typed_test()
     }
 }
 
+int fail_count = 0;
+
+/*ARGSUSED*/
+void fail_proc(x)
+ptr_t x;
+{
+    fail_count++;
+}
+
+extern void (*GC_is_valid_displacement_print_proc)();
+
+extern void (*GC_is_visible_print_proc)();
+
+#ifdef THREADS
+#   define TEST_FAIL_COUNT(n) 1
+#else 
+#   define TEST_FAIL_COUNT(n) (fail_count >= (n))
+#endif
+
 void run_one_test()
 {
+    char *x;
+#   ifdef LINT
+    	char *y = 0;
+#   else
+    	char *y = (char *)fail_proc;
+#   endif
     DCL_LOCK_STATE;
     
-#   ifndef GC_DEBUG
-	if (GC_size(GC_MALLOC(7)) != 8
-	    || GC_size(GC_MALLOC(15)) != 16) {
+    if (GC_size(GC_malloc(7)) != 8
+	|| GC_size(GC_malloc(15)) != 16) {
 	    (void)GC_printf0("GC_size produced unexpected results\n");
 	    FAIL;
-	}
+    }
+    GC_is_valid_displacement_print_proc = fail_proc;
+    GC_is_visible_print_proc = fail_proc;
+    x = GC_malloc(16);
+    if (GC_base(x + 13) != x || GC_base(y) != 0) {
+    	(void)GC_printf0("GC_base produced incorrect result\n");
+	FAIL;
+    }
+    if (GC_same_obj(x+5, x) != x + 5) {
+    	(void)GC_printf0("GC_same_obj produced incorrect result\n");
+	FAIL;
+    }
+    if (GC_is_visible(y) != y || GC_is_visible(x) != x) {
+    	(void)GC_printf0("GC_is_visible produced incorrect result\n");
+	FAIL;
+    }
+    if (!TEST_FAIL_COUNT(1)) {
+    	(void)GC_printf0("GC_is_visible produced wrong failure indication\n");
+    	FAIL;
+    }
+    if (GC_is_valid_displacement(y) != y
+        || GC_is_valid_displacement(x) != x
+        || GC_is_valid_displacement(x + 3) != x + 3) {
+    	(void)GC_printf0(
+    		"GC_is_valid_displacement produced incorrect result\n");
+	FAIL;
+    }
+#   ifndef ALL_INTERIOR_POINTERS
+      if (!TEST_FAIL_COUNT(2)) {
+    	(void)GC_printf0("GC_is_valid_displacement produced wrong failure indication\n");
+    	FAIL;
+      }
 #   endif
-    reverse_test();
+    /* Test floating point alignment */
+	*(double *)GC_MALLOC(sizeof(double)) = 1.0;
+	*(double *)GC_MALLOC(sizeof(double)) = 1.0;
+    /* Repeated list reversal test. */
+	reverse_test();
 #   ifdef PRINTSTATS
 	GC_printf0("-------------Finished reverse_test\n");
 #   endif
@@ -728,6 +800,7 @@ void SetMinimumStack(long minSize)
 	/* Cheat and let stdio initialize toolbox for us.	*/
 	printf("Testing GC Macintosh port.\n");
 #   endif
+    GC_INIT();	/* Only needed if gc is dynamic library.	*/
 #   if defined(MPROTECT_VDB) || defined(PROC_VDB)
       GC_enable_incremental();
       (void) GC_printf0("Switched to incremental mode\n");
@@ -746,6 +819,8 @@ void SetMinimumStack(long minSize)
 	/* This is a bit SunOS4 specific.				   */			
 	GC_noop(GC_expand_hp, GC_add_roots, GC_clear_roots,
 	        GC_register_disappearing_link,
+	        GC_register_finalizer_ignore_self,
+		GC_debug_register_displacement,
 	        GC_print_obj, GC_debug_change_stubborn,
 	        GC_debug_end_stubborn_change, GC_debug_malloc_uncollectable,
 	        GC_debug_free, GC_debug_realloc, GC_generic_malloc_words_small,
@@ -801,6 +876,7 @@ main()
     int code;
 
     n_tests = 0;
+    GC_INIT();	/* Only needed if gc is dynamic library.	*/
     GC_enable_incremental();
     if (thr_keycreate(&fl_key, GC_free) != 0) {
         (void)GC_printf1("Key creation failed %lu\n", (unsigned long)code);

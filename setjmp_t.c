@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 25, 1994 2:34 pm PDT */
+/* Boehm, September 12, 1994 3:39 pm PDT */
  
 /* Check whether setjmp actually saves registers in jmp_buf. */
 /* If it doesn't, the generic mark_regs code won't work.     */
@@ -27,11 +27,6 @@
 #include "config.h"
 
 #ifdef __hpux
-/* X/OPEN PG3 defines "void* sbrk();" and this clashes with the definition */
-/* in gc_private.h, so we set the clock backwards with _CLASSIC_XOPEN_TYPES. */
-/* This is for HP-UX 8.0.
-/* sbrk() is not used in this file, of course.  W. Underwood, 15 Jun 1992 */
-#define _CLASSIC_XOPEN_TYPES
 #include <unistd.h>
 int
 getpagesize()
@@ -40,8 +35,7 @@ getpagesize()
 }
 #endif
 
-#if defined(SUNOS5)
-#define _CLASSIC_XOPEN_TYPES
+#if defined(SUNOS5) || defined(DRSNX)
 #include <unistd.h>
 int
 getpagesize()

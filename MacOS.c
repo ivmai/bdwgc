@@ -6,6 +6,9 @@
 	
 	<Revision History>
 	
+	11/22/94  pcb  StripAddress the temporary memory handle for 24-bit mode.
+	11/30/94  pcb  Tracking all memory usage so we can deallocate it all at once.
+	
 	by Patrick C. Beard.
  */
 /* Boehm, July 28, 1994 10:35 am PDT */
@@ -14,6 +17,7 @@
 #include <Memory.h>
 #include <LowMem.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 // use 'CODE' resource 0 to get exact location of the beginning of global space.
@@ -38,18 +42,57 @@ void* GC_MacGetDataStart()
 	return 0;
 }
 
+/* track the use of temporary memory so it can be freed all at once. */
+
+typedef struct TemporaryMemoryBlock TemporaryMemoryBlock, **TemporaryMemoryHandle;
+
+struct TemporaryMemoryBlock {
+	TemporaryMemoryHandle nextBlock;
+	char data[];
+};
+
+TemporaryMemoryHandle theTemporaryMemory = NULL;
+
+static void GC_MacFreeTemporaryMemory(void);
+
 Ptr GC_MacTemporaryNewPtr(Size size, Boolean clearMemory)
 {
+	static Boolean firstTime = true;
 	OSErr result;
-	Handle tempHandle;
-	Ptr tempPtr;
-	
-	tempHandle = TempNewHandle(size, &result);
-	if (tempHandle && result == noErr) {
-		HLockHi(tempHandle);
-		tempPtr = *tempHandle;
+	TemporaryMemoryHandle tempMemBlock;
+	Ptr tempPtr = nil;
+
+	tempMemBlock = (TemporaryMemoryHandle)TempNewHandle(size + sizeof(TemporaryMemoryBlock), &result);
+	if (tempMemBlock && result == noErr) {
+		HLockHi((Handle)tempMemBlock);
+		tempPtr = (**tempMemBlock).data;
 		if (clearMemory) memset(tempPtr, 0, size);
-		return tempPtr;
+		tempPtr = StripAddress(tempPtr);
+
+		// keep track of the allocated blocks.
+		(**tempMemBlock).nextBlock = theTemporaryMemory;
+		theTemporaryMemory = tempMemBlock;
 	}
-	return nil;
+	
+	// install an exit routine to clean up the memory used at the end.
+	if (firstTime) {
+		atexit(&GC_MacFreeTemporaryMemory);
+		firstTime = false;
+	}
+	
+	return tempPtr;
+}
+
+static void GC_MacFreeTemporaryMemory()
+{
+	long totalMemoryUsed = 0;
+	TemporaryMemoryHandle tempMemBlock = theTemporaryMemory;
+	while (tempMemBlock != NULL) {
+		TemporaryMemoryHandle nextBlock = (**tempMemBlock).nextBlock;
+		totalMemoryUsed += GetHandleSize((Handle)tempMemBlock);
+		DisposeHandle((Handle)tempMemBlock);
+		tempMemBlock = nextBlock;
+	}
+	theTemporaryMemory = NULL;
+	fprintf(stdout, "[total memory used:  %ld bytes.]\n", totalMemoryUsed);
 }

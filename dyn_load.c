@@ -13,7 +13,7 @@
  * Original author: Bill Janssen
  * Heavily modified by Hans Boehm and others
  */
-/* Boehm, June 7, 1994 4:35 pm PDT */
+/* Boehm, September 12, 1994 4:27 pm PDT */
 
 /*
  * This is incredibly OS specific code for tracking down data sections in
@@ -31,14 +31,28 @@
 #endif
 #include "gc_priv.h"
 
+/* BTL: avoid circular redefinition of dlopen if SOLARIS_THREADS defined */
+# if defined(SOLARIS_THREADS) && defined(dlopen)
+    /* To support threads in Solaris, gc.h interposes on dlopen by       */
+    /* defining "dlopen" to be "GC_dlopen", which is implemented below.  */
+    /* However, both GC_FirstDLOpenedLinkMap() and GC_dlopen() use the   */
+    /* real system dlopen() in their implementation. We first remove     */
+    /* gc.h's dlopen definition and restore it later, after GC_dlopen(). */
+#   undef dlopen
+#   define GC_must_restore_redefined_dlopen
+# else
+#   undef GC_must_restore_redefined_dlopen
+# endif
+
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32)) && !defined(PCR)
-#if !defined(SUNOS4) && !defined(SUNOS5) && !defined(IRIX5) && !defined(MSWIN32)
+#if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && !defined(MSWIN32)
  --> We only know how to find data segments of dynamic libraries under SunOS,
- --> IRIX5 and Win32.  Additional SVR4 variants might not be too hard to add.
+ --> IRIX5, DRSNX and Win32.  Additional SVR4 variants might not be too
+ --> hard to add.
 #endif
 
 #include <stdio.h>
-#ifdef SUNOS5
+#ifdef SUNOS5DL
 #   include <sys/elf.h>
 #   include <dlfcn.h>
 #   include <link.h>
@@ -54,7 +68,7 @@
 #endif
 
 
-#ifdef SUNOS5
+#ifdef SUNOS5DL
 
 #ifdef LINT
     Elf32_Dyn _DYNAMIC;
@@ -67,8 +81,23 @@ GC_FirstDLOpenedLinkMap()
     Elf32_Dyn *dp;
     struct r_debug *r;
     static struct link_map * cachedResult = 0;
+    static Elf32_Dyn *dynStructureAddr = 0;
+    			/* BTL: added to avoid Solaris 5.3 ld.so _DYNAMIC bug */
 
-    if( &_DYNAMIC == 0) {
+#   ifdef SUNOS53_SHARED_LIB
+	/* BTL: Avoid the Solaris 5.3 bug that _DYNAMIC isn't being set	*/
+	/* up properly in dynamically linked .so's. This means we have	*/
+	/* to use its value in the set of original object files loaded	*/
+	/* at program startup.						*/
+	if( dynStructureAddr == 0 ) {
+	  void* startupSyms = dlopen(0, RTLD_LAZY);
+	  dynStructureAddr = (Elf32_Dyn*)dlsym(startupSyms, "_DYNAMIC");
+		}
+#   else
+	dynStructureAddr = &_DYNAMIC;
+#   endif
+
+    if( dynStructureAddr == 0) {
         return(0);
     }
     if( cachedResult == 0 ) {
@@ -127,7 +156,7 @@ static ptr_t GC_first_common()
 
 #endif
 
-# if defined(SUNOS4) || defined(SUNOS5)
+# if defined(SUNOS4) || defined(SUNOS5DL)
 /* Add dynamic library data sections to the root set.		*/
 # if !defined(PCR) && !defined(SOLARIS_THREADS) && defined(THREADS)
 #   ifndef SRC_M3
@@ -154,6 +183,11 @@ void * GC_dlopen(const char *path, int mode)
 }
 # endif
 
+/* BTL: added to fix circular dlopen definition if SOLARIS_THREADS defined */
+# if defined(GC_must_restore_redefined_dlopen)
+#   define dlopen GC_dlopen
+# endif
+
 void GC_register_dynamic_libraries()
 {
   struct link_map *lm = GC_FirstDLOpenedLinkMap();
@@ -170,7 +204,7 @@ void GC_register_dynamic_libraries()
       		    ((char *) (N_DATOFF(*e) + lm->lm_addr)),
 		    ((char *) (N_BSSADDR(*e) + e->a_bss + lm->lm_addr)));
 #     endif
-#     ifdef SUNOS5
+#     ifdef SUNOS5DL
 	Elf32_Ehdr * e;
         Elf32_Phdr * p;
         unsigned long offset;

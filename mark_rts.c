@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 4, 1994 10:46 am PDT */
+/* Boehm, September 15, 1994 2:15 pm PDT */
 # include <stdio.h>
 # include "gc_priv.h"
 
@@ -44,6 +44,28 @@ static struct roots static_roots[MAX_ROOT_SETS];
 static int n_root_sets = 0;
 
 	/* static_roots[0..n_root_sets) contains the valid root sets. */
+
+/* Primarily for debugging support:	*/
+/* Is the address p in one of the registered static			*/
+/* root sections?							*/
+bool GC_is_static_root(p)
+ptr_t p;
+{
+    static int last_root_set = 0;
+    register int i;
+    
+    
+    if (p >= static_roots[last_root_set].r_start
+        && p < static_roots[last_root_set].r_end) return(TRUE);
+    for (i = 0; i < n_root_sets; i++) {
+    	if (p >= static_roots[i].r_start
+            && p < static_roots[i].r_end) {
+            last_root_set = i;
+            return(TRUE);
+        }
+    }
+    return(FALSE);
+}
 
 #ifndef MSWIN32
 #   define LOG_RT_SIZE 6
@@ -218,6 +240,13 @@ void GC_clear_roots(NO_PARAMS)
     LOCK();
     n_root_sets = 0;
     GC_root_size = 0;
+#   ifndef MSWIN32
+    {
+    	register int i;
+    	
+    	for (i = 0; i < RT_SIZE; i++) root_index[i] = 0;
+    }
+#   endif
     UNLOCK();
     ENABLE_SIGNALS();
 }

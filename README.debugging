@@ -1,0 +1,28 @@
+Debugging suggestions:
+
+If the collector dies in GC_malloc while trying to remove a free list element:
+
+1) With > 99% probability, you wrote past the end of an allocated object.  Try setting GC_DEBUG and using the debugging facilities in gc.h.
+
+
+If the heap grows too much:
+
+1) Consider using GC_malloc_atomic for objects containing nonpointers.  This is especially important for large arrays containg compressed data, pseudo-random numbers, and the like.  (This isn't all that likely to solve your problem, but it's a useful and easy optimization anyway, and this is a good time to try it.)   If you allocate large objects containg only one or two pointers at the beginning, either try the typed allocation primitives is gc.h, or separate out the pointerfree component.
+2) If you are using the collector in its default mode, with interior pointer recognition enabled, consider using GC_malloc_ignore_off_page to allocate large objects.  (See gc.h for details.  Large means > 100K in most environments.)  You can determine whether this is necessary by compiling the collector with logging on (without -DSILENT).  If the collector expands the heap many times, without intervening colllections, it is unable to find a sufficiently large chunk of memory that is not "referenced" by "false pointers".  In that case, use GC_malloc_ignore_off_page.
+3) GC_print_block_list() will print a list of all currently allocated heap blocks and what size objects they contain.  GC_print_hblkfreelist() will print a list of free heap blocks, and whether they are blacklisted.
+4) Write a tool that traces back references to the appropriate root.  Send me the code.  (I have code that does this for old PCR.)
+
+
+If the collector appears to be losing objects:
+
+1) Replace all calls to GC_malloc_atomic and typed allocation by GC_malloc calls.  If this fixes the problem, gradually reinsert your optimizations.
+2) You may also want to try the safe(r) pointer manipulation primitives in gc.h.  But those are hard to use until the preprocessor becomes available.
+3) Try using the GC_DEBUG facilities.  This is lless likely to be successful here than if the collector crashes.
+[The rest of these are primarily for wizards.  You shouldn't need them unless you're doing something really strange, or debugging a collector port.]
+4) Don't turn on incremental collection.  If that fixes the problem, suspect a bug in the dirty bit implementation.  Try compiling with -DCHECKSUMS to check for modified, but supposedly clean, pages.
+5) On a SPARC, in a single-threaded environment, GC_print_callers(GC_arrays._last_stack) prints a cryptic stack trace as of the time of the last collection.  (You will need a debugger to decipher the result.)  The question to ask then is "why should this object have been accessible at the time of the last collection?  Where was a pointer to it stored?".  This facility should be easy to add for some other collector ports (namely if it's easy to traverse stack frames), but will be hard for others.
+6) "print *GC_find_header(p)" in dbx or gdb will print the garbage collector block header information associated with the object p (e.g. object size, etc.)
+7) GC_is_marked(p) determines whether p is the base address of a marked object.  Note that objects allocated since the last collection should not be marked, and that unmarked objects are reclaimed incrementally.
+8) Look at the tracing facility in mark.c.  (Ignore this suggestion unless you are very familiar with collector internals.)
+
+

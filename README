@@ -10,7 +10,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.2 of a conservative garbage collector for C and C++.
+This is version 4.3 of a conservative garbage collector for C and C++.
 
 HISTORY -
 
@@ -32,6 +32,7 @@ Jesper Peterson(jep@mtiame.mtia.oz.au) and
 Michel Schinz supplied the Amiga port.
 Thomas Funke (thf@zelator.in-berlin.de(?)) and
 Brian D.Carlstrom (bdc@clark.lcs.mit.edu) supplied the NeXT ports.
+Douglas Steel (doug@wg.icl.co.uk) provided ICL DRS6000 code.
 Bill Janssen (janssen@parc.xerox.com) supplied the SunOS dynamic loader
 specific code. Manuel Serrano (serrano@cornas.inria.fr) supplied linux and
 Sony News specific code.  Al Dosser provided Alpha/OSF/1 code.  He and
@@ -894,3 +895,98 @@ Since version 4.1:
   64K of static data (and thus crashing).
 - Fixed some blatant anachronisms in the README file.
 - Fixed PCR-Makefile for upcoming PPCR release.
+
+Since version 4.2:
+- Fixed SPARC alignment problem with GC_DEBUG.
+- Fixed Solaris threads /proc workaround.  The real
+  problem was an interaction with mprotect.
+- Incorporated fix from Patrick Beard for gc_c++.h.
+- Slightly improved allocator space utilization by
+  fixing the GC_size_map mechanism.
+- Integrated some Sony News and MIPS RISCos 4.51
+  patches.  (Thanks to Nobuyuki Hikichi of
+  Software Research Associates, Inc. Japan)
+- Fixed HP_PA alignment problem.  (Thanks to
+  xjam@cork.cs.berkeley.edu.)
+- Added GC_same_obj and friends.  Changed GC_base
+  to return 0 for pointers past the end of large objects.
+  Improved GC_base performance with ALL_INTERIOR_POINTERS
+  on machines with a slow integer mod operation.
+  Added GC_PTR_ADD, GC_PTR_STORE, etc. to prepare
+  for preprocessor.
+- changed the default on most UNIX machines to be that
+  signals are not disabled during critical GC operations.
+  This is still ANSI-conforming, though somewhat dangerous
+  in the presence of signal handlers. But the performance
+  cost of the alternative is sometimes problematic.
+  Can be changed back with a minor Makefile edit.
+- renamed IS_STRING in gc.h, to CORD_IS_STRING, thus
+  following my own naming convention.  Added the function
+  CORD_to_const_char_star.
+- Fixed a gross bug in GC_finalize.  Symptom: occasional
+  address faults in that function.  (Thanks to Anselm
+  Baird-Smith (Anselm.BairdSmith@inria.fr)
+- Added port to ICL DRS6000 running DRS/NX.  Restructured
+  things a bit to factor out common code, and remove obsolete
+  code.  Collector should now run under SUNOS5 with either
+  mprotect or /proc dirty bits.  (Thanks to Douglas Steel
+  (doug@wg.icl.co.uk)).
+- More bug fixes and workarounds for Solaris 2.X.  (These were
+  mostly related to putting the collector in a dynamic library,
+  which didn't really work before.  Also SOLARIS_THREADS
+  didn't interact well with dl_open.)  Thanks to btlewis@eng.sun.com.
+- Fixed a serious performance bug on the DEC Alpha.  The text
+  segment was getting registered as part of the root set.
+  (Amazingly, the result was still fast enough that the bug
+  was not conspicuous.) The fix works on OSF/1, version 1.3.
+  Hopefully it also works on other versions of OSF/1 ...
+- Fixed a bug in GC_clear_roots.
+- Fixed a bug in GC_generic_malloc_words_small that broke
+  gc_inl.h.  (Reported by Antoine de Maricourt.  I broke it
+  in trying to tweak the Mac port.) 
+- Fixed some problems with cord/de under Linux.
+- Fixed some cord problems, notably with CORD_riter4.
+- Added DG/UX port.
+  Thanks to Ben A. Mesander (ben@piglet.cr.usgs.gov)
+- Added finalization registration routines with weaker ordering
+  constraints.  (This is necessary for C++ finalization with
+  multiple inheritance, since the compiler often adds self-cycles.)
+- Filled the holes in the SCO port. (Thanks to Michael Arnoldus
+  <chime@proinf.dk>.)
+- John Ellis' additions to the C++ support:  From John:
+
+* I completely rewrote the documentation in the interface gc_c++.h.
+I've tried to make it both clearer and more precise.
+
+* The definition of accessibility now ignores pointers from an
+finalizable object (an object with a clean-up function) to itself.
+This allows objects with virtual base classes to be finalizable by the
+collector.  Compilers typically implement virtual base classes using
+pointers from an object to itself, which under the old definition of
+accessibility prevented objects with virtual base classes from ever
+being collected or finalized.
+
+* gc_cleanup now includes gc as a virtual base.  This was enabled by
+the change in the definition of accessibility.
+
+* I added support for operator new[].  Since most (all?) compilers
+don't yet support operator new[], it is conditionalized on
+-DOPERATOR_NEW_ARRAY.  The code is untested, but its trivial and looks
+correct.
+
+* The test program test_gc_c++ tries to test for the C++-specific
+functionality not tested by the other programs.
+- Added <unistd.h> include to misc.c.  (Needed for ppcr.)
+- Added PowerMac port. (Thanks to Patrick Beard again.)
+- Fixed "srcdir"-related Makefile problems.  Changed things so
+  that all externally visible include files always appear in the
+  include subdirectory of the source.  Made gc.h directly
+  includable from C++ code.  (These were at Per
+  Bothner's suggestion.)
+- Changed Intel code to also mark from ebp (Kevin Warne's
+  suggestion).
+- Renamed C++ related files so they could live in a FAT
+  file system. (Charles Fiterman's suggestion.)
+- Changed Windoes NT Makefile to include C++ support in
+  gc.lib.  Added C++ test as Makefile target.
+  
