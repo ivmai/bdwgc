@@ -1,6 +1,6 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, April 18, 1995 3:29 pm PDT */
+/* Boehm, October 9, 1995 1:16 pm PDT */
 # include "gc_priv.h"
 
 /* Do we want to and know how to save the call stack at the time of	*/
@@ -166,23 +166,27 @@ void GC_start_debugging()
     GC_register_displacement((word)sizeof(oh));
 }
 
-void GC_debug_register_displacement(n)
-word n;
+# if defined(__STDC__) || defined(__cplusplus)
+    void GC_debug_register_displacement(GC_word offset)
+# else
+    void GC_debug_register_displacement(offset) 
+    GC_word offset;
+# endif
 {
-    GC_register_displacement(n);
-    GC_register_displacement((word)sizeof(oh) + n);
+    GC_register_displacement(offset);
+    GC_register_displacement((word)sizeof(oh) + offset);
 }
 
 # ifdef __STDC__
-    extern_ptr_t GC_debug_malloc(size_t lb, char * s, int i)
+    GC_PTR GC_debug_malloc(size_t lb, char * s, int i)
 # else
-    extern_ptr_t GC_debug_malloc(lb, s, i)
+    GC_PTR GC_debug_malloc(lb, s, i)
     size_t lb;
     char * s;
     int i;
 # endif
 {
-    extern_ptr_t result = GC_malloc(lb + DEBUG_BYTES);
+    GC_PTR result = GC_malloc(lb + DEBUG_BYTES);
     
     if (result == 0) {
         GC_err_printf1("GC_debug_malloc(%ld) returning NIL (",
@@ -200,15 +204,15 @@ word n;
 
 #ifdef STUBBORN_ALLOC
 # ifdef __STDC__
-    extern_ptr_t GC_debug_malloc_stubborn(size_t lb, char * s, int i)
+    GC_PTR GC_debug_malloc_stubborn(size_t lb, char * s, int i)
 # else
-    extern_ptr_t GC_debug_malloc_stubborn(lb, s, i)
+    GC_PTR GC_debug_malloc_stubborn(lb, s, i)
     size_t lb;
     char * s;
     int i;
 # endif
 {
-    extern_ptr_t result = GC_malloc_stubborn(lb + DEBUG_BYTES);
+    GC_PTR result = GC_malloc_stubborn(lb + DEBUG_BYTES);
     
     if (result == 0) {
         GC_err_printf1("GC_debug_malloc(%ld) returning NIL (",
@@ -225,9 +229,9 @@ word n;
 }
 
 void GC_debug_change_stubborn(p)
-extern_ptr_t p;
+GC_PTR p;
 {
-    register extern_ptr_t q = GC_base(p);
+    register GC_PTR q = GC_base(p);
     register hdr * hhdr;
     
     if (q == 0) {
@@ -245,9 +249,9 @@ extern_ptr_t p;
 }
 
 void GC_debug_end_stubborn_change(p)
-extern_ptr_t p;
+GC_PTR p;
 {
-    register extern_ptr_t q = GC_base(p);
+    register GC_PTR q = GC_base(p);
     register hdr * hhdr;
     
     if (q == 0) {
@@ -267,15 +271,15 @@ extern_ptr_t p;
 #endif /* STUBBORN_ALLOC */
 
 # ifdef __STDC__
-    extern_ptr_t GC_debug_malloc_atomic(size_t lb, char * s, int i)
+    GC_PTR GC_debug_malloc_atomic(size_t lb, char * s, int i)
 # else
-    extern_ptr_t GC_debug_malloc_atomic(lb, s, i)
+    GC_PTR GC_debug_malloc_atomic(lb, s, i)
     size_t lb;
     char * s;
     int i;
 # endif
 {
-    extern_ptr_t result = GC_malloc_atomic(lb + DEBUG_BYTES);
+    GC_PTR result = GC_malloc_atomic(lb + DEBUG_BYTES);
     
     if (result == 0) {
         GC_err_printf1("GC_debug_malloc_atomic(%ld) returning NIL (",
@@ -292,15 +296,15 @@ extern_ptr_t p;
 }
 
 # ifdef __STDC__
-    extern_ptr_t GC_debug_malloc_uncollectable(size_t lb, char * s, int i)
+    GC_PTR GC_debug_malloc_uncollectable(size_t lb, char * s, int i)
 # else
-    extern_ptr_t GC_debug_malloc_uncollectable(lb, s, i)
+    GC_PTR GC_debug_malloc_uncollectable(lb, s, i)
     size_t lb;
     char * s;
     int i;
 # endif
 {
-    extern_ptr_t result = GC_malloc_uncollectable(lb + DEBUG_BYTES);
+    GC_PTR result = GC_malloc_uncollectable(lb + DEBUG_BYTES);
     
     if (result == 0) {
         GC_err_printf1("GC_debug_malloc_uncollectable(%ld) returning NIL (",
@@ -318,13 +322,13 @@ extern_ptr_t p;
 
 
 # ifdef __STDC__
-    void GC_debug_free(extern_ptr_t p)
+    void GC_debug_free(GC_PTR p)
 # else
     void GC_debug_free(p)
-    extern_ptr_t p;
+    GC_PTR p;
 # endif
 {
-    register extern_ptr_t base = GC_base(p);
+    register GC_PTR base = GC_base(p);
     register ptr_t clobbered;
     
     if (base == 0) {
@@ -356,18 +360,18 @@ extern_ptr_t p;
 }
 
 # ifdef __STDC__
-    extern_ptr_t GC_debug_realloc(extern_ptr_t p, size_t lb, char *s, int i)
+    GC_PTR GC_debug_realloc(GC_PTR p, size_t lb, char *s, int i)
 # else
-    extern_ptr_t GC_debug_realloc(p, lb, s, i)
-    extern_ptr_t p;
+    GC_PTR GC_debug_realloc(p, lb, s, i)
+    GC_PTR p;
     size_t lb;
     char *s;
     int i;
 # endif
 {
-    register extern_ptr_t base = GC_base(p);
+    register GC_PTR base = GC_base(p);
     register ptr_t clobbered;
-    register extern_ptr_t result = GC_debug_malloc(lb, s, i);
+    register GC_PTR result = GC_debug_malloc(lb, s, i);
     register size_t copy_sz = lb;
     register size_t old_sz;
     register hdr * hhdr;
@@ -461,15 +465,15 @@ void GC_check_heap_proc()
 
 struct closure {
     GC_finalization_proc cl_fn;
-    extern_ptr_t cl_data;
+    GC_PTR cl_data;
 };
 
 # ifdef __STDC__
     void * GC_make_closure(GC_finalization_proc fn, void * data)
 # else
-    extern_ptr_t GC_make_closure(fn, data)
+    GC_PTR GC_make_closure(fn, data)
     GC_finalization_proc fn;
-    extern_ptr_t data;
+    GC_PTR data;
 # endif
 {
     struct closure * result =
@@ -477,7 +481,7 @@ struct closure {
     
     result -> cl_fn = fn;
     result -> cl_data = data;
-    return((extern_ptr_t)result);
+    return((GC_PTR)result);
 }
 
 # ifdef __STDC__
@@ -490,6 +494,6 @@ struct closure {
 {
     register struct closure * cl = (struct closure *) data;
     
-    (*(cl -> cl_fn))((extern_ptr_t)((char *)obj + sizeof(oh)), cl -> cl_data);
+    (*(cl -> cl_fn))((GC_PTR)((char *)obj + sizeof(oh)), cl -> cl_data);
 } 
 

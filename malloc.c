@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, June 13, 1995 3:07 pm PDT */
+/* Boehm, July 31, 1995 5:02 pm PDT */
  
 #include <stdio.h>
 #include "gc_priv.h"
@@ -163,7 +163,7 @@ register int k;
   register size_t lb;
 # endif
 {
-    return((extern_ptr_t)GC_generic_malloc_ignore_off_page(lb, NORMAL));
+    return((GC_PTR)GC_generic_malloc_ignore_off_page(lb, NORMAL));
 }
 
 # if defined(__STDC__) || defined(__cplusplus)
@@ -173,7 +173,7 @@ register int k;
   register size_t lb;
 # endif
 {
-    return((extern_ptr_t)GC_generic_malloc_ignore_off_page(lb, PTRFREE));
+    return((GC_PTR)GC_generic_malloc_ignore_off_page(lb, PTRFREE));
 }
 
 ptr_t GC_generic_malloc(lb, k)
@@ -296,15 +296,15 @@ void * GC_malloc_many(size_t lb)
 # endif
 
 #define GENERAL_MALLOC(lb,k) \
-    (extern_ptr_t)GC_clear_stack(GC_generic_malloc((word)lb, k))
+    (GC_PTR)GC_clear_stack(GC_generic_malloc((word)lb, k))
 /* We make the GC_clear_stack_call a tail call, hoping to get more of	*/
 /* the stack.								*/
 
 /* Allocate lb bytes of atomic (pointerfree) data */
 # ifdef __STDC__
-    extern_ptr_t GC_malloc_atomic(size_t lb)
+    GC_PTR GC_malloc_atomic(size_t lb)
 # else
-    extern_ptr_t GC_malloc_atomic(lb)
+    GC_PTR GC_malloc_atomic(lb)
     size_t lb;
 # endif
 {
@@ -329,7 +329,7 @@ DCL_LOCK_STATE;
         *opp = obj_link(op);
         GC_words_allocd += lw;
         FASTUNLOCK();
-        return((extern_ptr_t) op);
+        return((GC_PTR) op);
    } else {
        return(GENERAL_MALLOC((word)lb, PTRFREE));
    }
@@ -337,9 +337,9 @@ DCL_LOCK_STATE;
 
 /* Allocate lb bytes of composite (pointerful) data */
 # ifdef __STDC__
-    extern_ptr_t GC_malloc(size_t lb)
+    GC_PTR GC_malloc(size_t lb)
 # else
-    extern_ptr_t GC_malloc(lb)
+    GC_PTR GC_malloc(lb)
     size_t lb;
 # endif
 {
@@ -365,7 +365,7 @@ DCL_LOCK_STATE;
         obj_link(op) = 0;
         GC_words_allocd += lw;
         FASTUNLOCK();
-        return((extern_ptr_t) op);
+        return((GC_PTR) op);
    } else {
        return(GENERAL_MALLOC((word)lb, NORMAL));
    }
@@ -373,9 +373,9 @@ DCL_LOCK_STATE;
 
 # ifdef REDIRECT_MALLOC
 # ifdef __STDC__
-    extern_ptr_t malloc(size_t lb)
+    GC_PTR malloc(size_t lb)
 # else
-    extern_ptr_t malloc(lb)
+    GC_PTR malloc(lb)
     size_t lb;
 # endif
   {
@@ -386,9 +386,9 @@ DCL_LOCK_STATE;
   }
 
 # ifdef __STDC__
-    extern_ptr_t calloc(size_t n, size_t lb)
+    GC_PTR calloc(size_t n, size_t lb)
 # else
-    extern_ptr_t calloc(n, lb)
+    GC_PTR calloc(n, lb)
     size_t n, lb;
 # endif
   {
@@ -398,9 +398,9 @@ DCL_LOCK_STATE;
 
 /* Allocate lb bytes of pointerful, traced, but not collectable data */
 # ifdef __STDC__
-    extern_ptr_t GC_malloc_uncollectable(size_t lb)
+    GC_PTR GC_malloc_uncollectable(size_t lb)
 # else
-    extern_ptr_t GC_malloc_uncollectable(lb)
+    GC_PTR GC_malloc_uncollectable(lb)
     size_t lb;
 # endif
 {
@@ -412,7 +412,8 @@ DCL_LOCK_STATE;
     if( SMALL_OBJ(lb) ) {
 #       ifdef MERGE_SIZES
 #	  ifdef ADD_BYTE_AT_END
-	    lb--; /* We don't need the extra byte, since this won't be	*/
+	    if (lb != 0) lb--;
+	    	  /* We don't need the extra byte, since this won't be	*/
 	    	  /* collected anyway.					*/
 #	  endif
 	  lw = GC_size_map[lb];
@@ -429,7 +430,7 @@ DCL_LOCK_STATE;
             GC_set_mark_bit(op);
             GC_non_gc_bytes += WORDS_TO_BYTES(lw);
             FASTUNLOCK();
-            return((extern_ptr_t) op);
+            return((GC_PTR) op);
         }
         FASTUNLOCK();
         op = (ptr_t)GC_generic_malloc((word)lb, UNCOLLECTABLE);
@@ -451,11 +452,11 @@ DCL_LOCK_STATE;
 	GC_non_gc_bytes += WORDS_TO_BYTES(lw);
 	UNLOCK();
 	ENABLE_SIGNALS();
-	return((extern_ptr_t) op);
+	return((GC_PTR) op);
     }
 }
 
-extern_ptr_t GC_generic_or_special_malloc(lb,knd)
+GC_PTR GC_generic_or_special_malloc(lb,knd)
 word lb;
 int knd;
 {
@@ -481,10 +482,10 @@ int knd;
 /* The kind (e.g. atomic) is the same as that of the old.	      */
 /* Shrinking of large blocks is not implemented well.                 */
 # ifdef __STDC__
-    extern_ptr_t GC_realloc(extern_ptr_t p, size_t lb)
+    GC_PTR GC_realloc(GC_PTR p, size_t lb)
 # else
-    extern_ptr_t GC_realloc(p,lb)
-    extern_ptr_t p;
+    GC_PTR GC_realloc(p,lb)
+    GC_PTR p;
     size_t lb;
 # endif
 {
@@ -530,7 +531,7 @@ int obj_kind;
 	    return(p);
 	} else {
 	    /* shrink */
-	      extern_ptr_t result =
+	      GC_PTR result =
 	      		GC_generic_or_special_malloc((word)lb, obj_kind);
 
 	      if (result == 0) return(0);
@@ -542,7 +543,7 @@ int obj_kind;
 	}
     } else {
 	/* grow */
-	  extern_ptr_t result =
+	  GC_PTR result =
 	  	GC_generic_or_special_malloc((word)lb, obj_kind);
 
 	  if (result == 0) return(0);
@@ -554,10 +555,10 @@ int obj_kind;
 
 # ifdef REDIRECT_MALLOC
 # ifdef __STDC__
-    extern_ptr_t realloc(extern_ptr_t p, size_t lb)
+    GC_PTR realloc(GC_PTR p, size_t lb)
 # else
-    extern_ptr_t realloc(p,lb)
-    extern_ptr_t p;
+    GC_PTR realloc(p,lb)
+    GC_PTR p;
     size_t lb;
 # endif
   {
@@ -567,10 +568,10 @@ int obj_kind;
 
 /* Explicitly deallocate an object p.				*/
 # ifdef __STDC__
-    void GC_free(extern_ptr_t p)
+    void GC_free(GC_PTR p)
 # else
     void GC_free(p)
-    extern_ptr_t p;
+    GC_PTR p;
 # endif
 {
     register struct hblk *h;
@@ -620,10 +621,10 @@ int obj_kind;
 
 # ifdef REDIRECT_MALLOC
 #   ifdef __STDC__
-      void free(extern_ptr_t p)
+      void free(GC_PTR p)
 #   else
       void free(p)
-      extern_ptr_t p;
+      GC_PTR p;
 #   endif
   {
       GC_free(p);

@@ -10,7 +10,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.5 of a conservative garbage collector for C and C++.
+This is version 4.6 of a conservative garbage collector for C and C++.
 
 HISTORY -
 
@@ -1079,3 +1079,46 @@ Since version 4.4:
    (cds@peanut.sarnoff.com) for noticing the problem, and helping me to
    track it down.)
    
+Since version 4.5:
+ - Added Linux ELF support.  (Thanks to Arrigo Triulzi <arrigo@ic.ac.uk>.)
+ - GC_base crashed if it was called before any other GC_ routines.
+   This could happen if a gc_cleanup object was allocated outside the heap
+   before any heap allocation.
+ - The heap expansion heuristic was not stable if all objects had finalization
+   enabled.  Fixed finalize.c to count memory in finalization queue and
+   avoid explicit deallocation.  Changed alloc.c to also consider this count.
+   (This is still not recommended.  It's expensive if nothing else.)  Thanks
+   to John Ellis for pointing this out.
+ - GC_malloc_uncollectable(0) was broken.  Thanks to Phong Vo for pointing
+   this out.
+ - The collector didn't compile under Linux 1.3.X.  (Thanks to Fred Gilham for
+   pointing this out.)  The current workaround is ugly, but expected to be
+   temporary.
+ - Fixed a formatting problem for SPARC stack traces.
+ - Fixed some '=='s in os_dep.c that should have been assignments.
+   Fortunately these were in code that should never be executed anyway.
+   (Thanks to Fergus Henderson.)
+ - Fixed the heap block allocator to only drop blacklisted blocks in small
+   chunks.  Made BL_LIMIT self adjusting.  (Both of these were in response
+   to heap growth observed by Paul Graham.)
+ - Fixed the Metrowerks/68K Mac code to also mark from a6.  (Thanks
+   to Patrick Beard.)
+ - Significantly updated README.debugging.
+ - Fixed some problems with longjmps out of signal handlers, especially under
+   Solaris.  Added a workaround for the fact that siglongjmp doesn't appear to
+   do the right thing with -lthread under Solaris.
+ - Added MSDOS/djgpp port.  (Thanks to Mitch Harris  (maharri@uiuc.edu).)
+ - Added "make reserved_namespace" and "make user_namespace".  The
+   first renames ALL "GC_xxx" identifiers as "_GC_xxx".  The second is the
+   inverse transformation.  Note that doing this is guaranteed to break all
+   clients written for the other names.
+ - descriptor field for kinf NORMAL in GC_obj_kinds with ADD_BYTE_AT_END
+   defined should be -ALIGNMENT not WORDS_TO_BYTES(-1).  This is
+   a serious bug on machines with pointer alignment of less than a word.
+ - GC_ignore_self_finalize_mark_proc didn't handle pointers to very near the
+   end of the object correctly.  Caused failures of the C++ test on a DEC Alpha
+   with g++.
+ - gc_inl.h still had problems.  Partially fixed.  Added warnings at the
+   beginning to hopefully specify the remaining dangers.
+ - Added DATAEND definition to config.h.
+ - Fixed some of the .h file organization.  Fixed "make floppy".

@@ -11,7 +11,7 @@
  * modified is included with the above copyright notice.
  *
  */
-/* Boehm, July 13, 1994 12:34 pm PDT */
+/* Boehm, July 31, 1995 5:02 pm PDT */
 
 
 /*
@@ -628,7 +628,7 @@ word env;
 ptr_t GC_clear_stack();
 
 #define GENERAL_MALLOC(lb,k) \
-    (extern_ptr_t)GC_clear_stack(GC_generic_malloc((word)lb, k))
+    (GC_PTR)GC_clear_stack(GC_generic_malloc((word)lb, k))
     
 #if defined(__STDC__) || defined(__cplusplus)
   extern void * GC_malloc_explicitly_typed(size_t lb, GC_descr d)
@@ -668,7 +668,7 @@ DCL_LOCK_STATE;
        lw = BYTES_TO_WORDS(GC_size(op));
    }
    ((word *)op)[lw - 1] = d;
-   return((extern_ptr_t) op);
+   return((GC_PTR) op);
 }
 
 #if defined(__STDC__) || defined(__cplusplus)
@@ -748,9 +748,9 @@ DCL_LOCK_STATE;
        /* Make sure the descriptor is cleared once there is any danger	*/
        /* it may have been collected.					*/
        (void)
-         GC_general_register_disappearing_link((extern_ptr_t *)
+         GC_general_register_disappearing_link((GC_PTR *)
          					  ((word *)op+lw-1),
-       					          (extern_ptr_t) op);
+       					          (GC_PTR) op);
        if (ff != GC_finalization_failures) {
            /* We may have failed to register op due to lack of memory.	*/
            /* We were out of memory very recently, so we can safely 	*/
@@ -759,5 +759,5 @@ DCL_LOCK_STATE;
            return(0);
        }			          
    }
-   return((extern_ptr_t) op);
+   return((GC_PTR) op);
 }

@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, January 28, 1995 4:26 pm PST */
+/* Boehm, September 22, 1995 5:49 pm PDT */
 # define I_HIDE_POINTERS
 # include "gc_priv.h"
 # include "gc_mark.h"
@@ -79,8 +79,6 @@ void GC_push_finalizer_structures()
 }
 # endif
 
-# define ALLOC(x, t) t *x = GC_NEW(t)
-
 /* Double the size of a hash table. *size_ptr is the log of its current	*/
 /* size.  May be a noop.						*/
 /* *table is a pointer to an array of hash headers.  If we succeed, we	*/
@@ -124,27 +122,27 @@ signed_word * log_size_ptr;
 }
 
 # if defined(__STDC__) || defined(__cplusplus)
-    int GC_register_disappearing_link(extern_ptr_t * link)
+    int GC_register_disappearing_link(GC_PTR * link)
 # else
     int GC_register_disappearing_link(link)
-    extern_ptr_t * link;
+    GC_PTR * link;
 # endif
 {
     ptr_t base;
     
-    base = (ptr_t)GC_base((extern_ptr_t)link);
+    base = (ptr_t)GC_base((GC_PTR)link);
     if (base == 0)
     	ABORT("Bad arg to GC_register_disappearing_link");
     return(GC_general_register_disappearing_link(link, base));
 }
 
 # if defined(__STDC__) || defined(__cplusplus)
-    int GC_general_register_disappearing_link(extern_ptr_t * link,
-    					      extern_ptr_t obj)
+    int GC_general_register_disappearing_link(GC_PTR * link,
+    					      GC_PTR obj)
 # else
     int GC_general_register_disappearing_link(link, obj)
-    extern_ptr_t * link;
-    extern_ptr_t obj;
+    GC_PTR * link;
+    GC_PTR obj;
 # endif
 
 {
@@ -190,7 +188,8 @@ signed_word * log_size_ptr;
       new_dl = (struct disappearing_link *)
     	GC_generic_malloc_inner(sizeof(struct disappearing_link),NORMAL);
 #   else
-      new_dl = GC_NEW(struct disappearing_link);
+      new_dl = (struct disappearing_link *)
+	GC_malloc(sizeof(struct disappearing_link));
 #   endif
     if (new_dl != 0) {
         new_dl -> dl_hidden_obj = HIDE_POINTER(obj);
@@ -209,10 +208,10 @@ signed_word * log_size_ptr;
 }
 
 # if defined(__STDC__) || defined(__cplusplus)
-    int GC_unregister_disappearing_link(extern_ptr_t * link)
+    int GC_unregister_disappearing_link(GC_PTR * link)
 # else
     int GC_unregister_disappearing_link(link)
-    extern_ptr_t * link;
+    GC_PTR * link;
 # endif
 {
     struct disappearing_link *curr_dl, *prev_dl;
@@ -234,7 +233,7 @@ signed_word * log_size_ptr;
             GC_dl_entries--;
             UNLOCK();
     	    ENABLE_SIGNALS();
-            GC_free((extern_ptr_t)curr_dl);
+            GC_free((GC_PTR)curr_dl);
             return(1);
         }
         prev_dl = curr_dl;
@@ -266,16 +265,17 @@ ptr_t p;
     hdr * hhdr = HDR(p);
     word descr = hhdr -> hb_descr;
     ptr_t q, r;
-    ptr_t limit;
+    ptr_t scan_limit;
+    ptr_t target_limit = p + WORDS_TO_BYTES(hhdr -> hb_sz) - 1;
     
     if ((descr & DS_TAGS) == DS_LENGTH) {
-       limit = p + descr - sizeof(word);
+       scan_limit = p + descr - sizeof(word);
     } else {
-       limit = p + WORDS_TO_BYTES(hhdr -> hb_sz - 1);
+       scan_limit = target_limit + 1 - sizeof(word);
     }
-    for (q = p; q <= limit; q += ALIGNMENT) {
+    for (q = p; q <= scan_limit; q += ALIGNMENT) {
     	r = *(ptr_t *)q;
-    	if (r < p || r > limit) {
+    	if (r < p || r > target_limit) {
     	    GC_PUSH_ONE_HEAP((word)r);
     	}
     }
@@ -294,11 +294,11 @@ ptr_t p;
 /* since it can be expensive.  Threads packages typically	*/
 /* make it cheaper.						*/
 void GC_register_finalizer_inner(obj, fn, cd, ofn, ocd, mp)
-extern_ptr_t obj;
+GC_PTR obj;
 GC_finalization_proc fn;
-extern_ptr_t cd;
+GC_PTR cd;
 GC_finalization_proc * ofn;
-extern_ptr_t * ocd;
+GC_PTR * ocd;
 finalization_mark_proc * mp;
 {
     ptr_t base;
@@ -337,7 +337,7 @@ finalization_mark_proc * mp;
             /* should be safe.  The client may see only *ocd	*/
             /* updated, but we'll declare that to be his	*/
             /* problem.						*/
-            if (ocd) *ocd = (extern_ptr_t) curr_fo -> fo_client_data;
+            if (ocd) *ocd = (GC_PTR) curr_fo -> fo_client_data;
             if (ofn) *ofn = curr_fo -> fo_fn;
             /* Delete the structure for base. */
                 if (prev_fo == 0) {
@@ -351,7 +351,7 @@ finalization_mark_proc * mp;
                   /* estimate will only make the table larger than	*/
                   /* necessary.						*/
 #		ifndef THREADS
-                  GC_free((extern_ptr_t)curr_fo);
+                  GC_free((GC_PTR)curr_fo);
 #		endif
             } else {
                 curr_fo -> fo_fn = fn;
@@ -387,7 +387,8 @@ finalization_mark_proc * mp;
       new_fo = (struct finalizable_object *)
     	GC_generic_malloc_inner(sizeof(struct finalizable_object),NORMAL);
 #   else
-      new_fo = GC_NEW(struct finalizable_object);
+      new_fo = (struct finalizable_object *)
+	GC_malloc(sizeof(struct finalizable_object));
 #   endif
     if (new_fo != 0) {
         new_fo -> fo_hidden_base = (word)HIDE_POINTER(base);
@@ -413,11 +414,11 @@ finalization_mark_proc * mp;
 			       GC_finalization_proc *ofn, void ** ocd)
 # else
     void GC_register_finalizer(obj, fn, cd, ofn, ocd)
-    extern_ptr_t obj;
+    GC_PTR obj;
     GC_finalization_proc fn;
-    extern_ptr_t cd;
+    GC_PTR cd;
     GC_finalization_proc * ofn;
-    extern_ptr_t * ocd;
+    GC_PTR * ocd;
 # endif
 {
     GC_register_finalizer_inner(obj, fn, cd, ofn,
@@ -430,11 +431,11 @@ finalization_mark_proc * mp;
 			       GC_finalization_proc *ofn, void ** ocd)
 # else
     void GC_register_finalizer_ignore_self(obj, fn, cd, ofn, ocd)
-    extern_ptr_t obj;
+    GC_PTR obj;
     GC_finalization_proc fn;
-    extern_ptr_t cd;
+    GC_PTR cd;
     GC_finalization_proc * ofn;
-    extern_ptr_t * ocd;
+    GC_PTR * ocd;
 # endif
 {
     GC_register_finalizer_inner(obj, fn, cd, ofn,
@@ -447,11 +448,11 @@ finalization_mark_proc * mp;
 			       GC_finalization_proc *ofn, void ** ocd)
 # else
     void GC_register_finalizer_no_order(obj, fn, cd, ofn, ocd)
-    extern_ptr_t obj;
+    GC_PTR obj;
     GC_finalization_proc fn;
-    extern_ptr_t cd;
+    GC_PTR cd;
     GC_finalization_proc * ofn;
-    extern_ptr_t * ocd;
+    GC_PTR * ocd;
 # endif
 {
     GC_register_finalizer_inner(obj, fn, cd, ofn,
@@ -517,7 +518,7 @@ void GC_finalize()
 		    while (!GC_mark_some());
             }
             if (GC_is_marked(real_ptr)) {
-                WARN("Finalization cycle involving %ld\n", real_ptr);
+                WARN("Finalization cycle involving %lx\n", real_ptr);
             }
         }
         
@@ -525,6 +526,7 @@ void GC_finalize()
     }
   /* Enqueue for finalization all objects that are still		*/
   /* unreachable.							*/
+    GC_words_finalized = 0;
     for (i = 0; i < fo_size; i++) {
       curr_fo = fo_head[i];
       prev_fo = 0;
@@ -543,6 +545,9 @@ void GC_finalize()
             /* Add to list of objects awaiting finalization.	*/
               fo_set_next(curr_fo, GC_finalize_now);
               GC_finalize_now = curr_fo;
+              GC_words_finalized +=
+                 	ALIGNED_WORDS(curr_fo -> fo_object_size)
+              		+ ALIGNED_WORDS(sizeof(struct finalizable_object));
 #	    ifdef PRINTSTATS
               if (!GC_is_marked((ptr_t)curr_fo)) {
                 ABORT("GC_finalize: found accessible unmarked object\n");
@@ -601,23 +606,29 @@ void GC_invoke_finalizers()
 #	else
 	    GC_finalize_now = fo_next(curr_fo);
 #	endif
+ 	fo_set_next(curr_fo, 0);
     	real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
     	(*(curr_fo -> fo_fn))(real_ptr, curr_fo -> fo_client_data);
-#	ifndef THREADS
-    	    GC_free((extern_ptr_t)curr_fo);
+    	curr_fo -> fo_client_data = 0;
+#	ifdef UNDEFINED
+	    /* This is probably a bad idea.  It throws off accounting if */
+	    /* nearly all objects are finalizable.  O.w. it shouldn't	 */
+	    /* matter.							 */
+    	    GC_free((GC_PTR)curr_fo);
 #	endif
     }
 }
 
 # ifdef __STDC__
-    extern_ptr_t GC_call_with_alloc_lock(GC_fn_type fn, extern_ptr_t client_data)
+    GC_PTR GC_call_with_alloc_lock(GC_fn_type fn,
+    					 GC_PTR client_data)
 # else
-    extern_ptr_t GC_call_with_alloc_lock(fn, client_data)
+    GC_PTR GC_call_with_alloc_lock(fn, client_data)
     GC_fn_type fn;
-    extern_ptr_t client_data;
+    GC_PTR client_data;
 # endif
 {
-    extern_ptr_t result;
+    GC_PTR result;
     DCL_LOCK_STATE;
     
 #   ifdef THREADS

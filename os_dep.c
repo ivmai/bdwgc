@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -10,9 +10,18 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 2, 1995 11:20 am PDT */
+/* Boehm, October 3, 1995 6:39 pm PDT */
 
 # include "gc_priv.h"
+# ifdef LINUX
+    /* Ugly hack to get struct sigcontext_struct definition.  Required	*/
+    /* for some early 1.3.X releases.  Will hopefully go away soon.	*/
+    /* in some later Linux releases, asm/sigcontext.h may have to	*/
+    /* be included instead.						*/
+#   define __KERNEL__
+#   include <asm/signal.h>
+#   undef __KERNEL__
+# endif
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS)
 #   include <sys/types.h>
 # endif
@@ -21,6 +30,22 @@
 
 /* Blatantly OS dependent routines, except for those that are related 	*/
 /* dynamic loading.							*/
+
+# if !defined(THREADS) && !defined(STACKBOTTOM) && defined(HEURISTIC2)
+#   define NEED_FIND_LIMIT
+# endif
+
+# if defined(SUNOS4) & defined(DYNAMIC_LOADING)
+#   define NEED_FIND_LIMIT
+# endif
+
+# if defined(SVR4) || defined(AUX) || defined(DGUX)
+#   define NEED_FIND_LIMIT
+# endif
+
+#ifdef NEED_FIND_LIMIT
+#   include <setjmp.h>
+#endif
 
 #ifdef FREEBSD
 #  include <machine/trap.h>
@@ -49,6 +74,11 @@
 
 #ifdef SUNOS5SIGS
 # include <sys/siginfo.h>
+# undef setjmp
+# undef longjmp
+# define setjmp(env) sigsetjmp(env, 1)
+# define longjmp(env, val) siglongjmp(env, val)
+# define jmp_buf sigjmp_buf
 #endif
 
 #ifdef PCR
@@ -160,7 +190,8 @@ void GC_enable_signals(void)
 
 # else
 
-#  if !defined(PCR) && !defined(AMIGA) && !defined(MSWIN32) && !defined(MACOS)
+#  if !defined(PCR) && !defined(AMIGA) && !defined(MSWIN32) \
+      && !defined(MACOS) && !defined(DJGPP)
 
 #   ifdef sigmask
 	/* Use the traditional BSD interface */
@@ -339,18 +370,11 @@ ptr_t GC_get_stack_base()
 
 # else
 
-# if !defined(THREADS) && !defined(STACKBOTTOM) && defined(HEURISTIC2)
-#   define NEED_FIND_LIMIT
-# endif
 
-# if defined(SUNOS4) & defined(DYNAMIC_LOADING)
-#   define NEED_FIND_LIMIT
-# endif
 
 # ifdef NEED_FIND_LIMIT
   /* Some tools to implement HEURISTIC2	*/
 #   define MIN_PAGE_SIZE 256	/* Smallest conceivable page size, bytes */
-#   include <setjmp.h>
     /* static */ jmp_buf GC_jmp_buf;
     
     /*ARGSUSED*/
@@ -366,6 +390,47 @@ ptr_t GC_get_stack_base()
 	typedef void (*handler)();
 #   endif
 
+#   ifdef SUNOS5SIGS
+	static struct sigaction oldact;
+#   else
+        static handler old_segv_handler, old_bus_handler;
+#   endif
+    
+    GC_setup_temporary_fault_handler()
+    {
+#	ifdef SUNOS5SIGS
+	  struct sigaction	act;
+
+	  act.sa_handler	= GC_fault_handler;
+          act.sa_flags          = SA_RESTART | SA_SIGINFO | SA_NODEFER;
+          /* The presence of SA_NODEFER represents yet another gross    */
+          /* hack.  Under Solaris 2.3, siglongjmp doesn't appear to     */
+          /* interact correctly with -lthread.  We hide the confusion   */
+          /* by making sure that signal handling doesn't affect the     */
+          /* signal mask.                                               */
+
+	  (void) sigemptyset(&act.sa_mask);
+	  (void) sigaction(SIGSEGV, &act, &oldact);
+#	else
+    	  old_segv_handler = signal(SIGSEGV, GC_fault_handler);
+#	  ifdef SIGBUS
+	    old_bus_handler = signal(SIGBUS, GC_fault_handler);
+#	  endif
+#	endif
+    }
+    
+    GC_reset_fault_handler()
+    {
+#       ifdef SUNOS5SIGS
+	  (void) sigaction(SIGSEGV, &oldact, 0);
+#       else
+  	  (void) signal(SIGSEGV, old_segv_handler);
+#	  ifdef SIGBUS
+	    (void) signal(SIGBUS, old_bus_handler);
+#	  endif
+#       endif
+    }
+
     /* Return the first nonaddressible location > p (up) or 	*/
     /* the smallest location q s.t. [q,p] is addressible (!up).	*/
     ptr_t GC_find_limit(p, up)
@@ -378,22 +443,8 @@ ptr_t GC_get_stack_base()
     		/* static since it's only called once, with the		*/
     		/* allocation lock held.				*/
 
-#	ifdef SUNOS5SIGS
-	  struct sigaction	act, oldact;
 
-	  act.sa_handler		= GC_fault_handler;
-	  act.sa_flags		= SA_RESTART | SA_SIGINFO;
-	  (void) sigemptyset(&act.sa_mask);
-	  (void) sigaction(SIGSEGV, &act, &oldact);
-#	else
-          static handler old_segv_handler, old_bus_handler;
-      		/* See above for static declaration.			*/
-
-    	  old_segv_handler = signal(SIGSEGV, GC_fault_handler);
-#	  ifdef SIGBUS
-	    old_bus_handler = signal(SIGBUS, GC_fault_handler);
-#	  endif
-#	endif
+	GC_setup_temporary_fault_handler();
 	if (setjmp(GC_jmp_buf) == 0) {
 	    result = (ptr_t)(((word)(p))
 			      & ~(MIN_PAGE_SIZE-1));
@@ -406,14 +457,7 @@ ptr_t GC_get_stack_base()
 		GC_noop(*result);
 	    }
 	}
-#       ifdef SUNOS5SIGS
-	  (void) sigaction(SIGSEGV, &oldact, 0);
-#       else
-  	  (void) signal(SIGSEGV, old_segv_handler);
-#	  ifdef SIGBUS
-	    (void) signal(SIGBUS, old_bus_handler);
-#	  endif
-#       endif
+	GC_reset_fault_handler();
  	if (!up) {
 	    result += MIN_PAGE_SIZE;
  	}
@@ -745,18 +789,30 @@ int * etext_addr;
     word next_page = ((text_end + (word)max_page_size - 1)
     		      & ~((word)max_page_size - 1));
     word page_offset = (text_end & ((word)max_page_size - 1));
+    VOLATILE char * result = (char *)(next_page + page_offset);
+    /* Note that this isnt equivalent to just adding		*/
+    /* max_page_size to &etext if &etext is at a page boundary	*/
     
-    return((char *)(next_page + page_offset));
+    GC_setup_temporary_fault_handler();
+    if (setjmp(GC_jmp_buf) == 0) {
+    	/* Try writing to the address.	*/
+    	*result = *result;
+    } else {
+    	/* We got here via a longjmp.  The address is not readable.	*/
+    	/* This is known to happen under Solaris 2.4 + gcc, which place	*/
+    	/* string constants in the text segment, but after etext.	*/
+    	/* Use plan B.  Note that we now know there is a gap between	*/
+    	/* text and data segments, so plan A bought us something.	*/
+    	result = (char *)GC_find_limit((ptr_t)(DATAEND) - MIN_PAGE_SIZE, FALSE);
+    }
+    GC_reset_fault_handler();
+    return((char *)result);
 }
 # endif
 
 
 void GC_register_data_segments()
 {
-#   if !defined(NEXT) && !defined(MACOS)
-        extern int end;
-#   endif
- 
 #   if !defined(PCR) && !defined(SRC_M3) && !defined(NEXT) && !defined(MACOS)
 #     if defined(REDIRECT_MALLOC) && defined(SOLARIS_THREADS)
 	/* As of Solaris 2.3, the Solaris threads implementation	*/
@@ -768,7 +824,7 @@ void GC_register_data_segments()
 
 	GC_add_roots_inner(DATASTART, (char *)sbrk(0), FALSE);
 #     else
-	GC_add_roots_inner(DATASTART, (char *)(&end), FALSE);
+	GC_add_roots_inner(DATASTART, (char *)(DATAEND), FALSE);
 #     endif
 #   endif
 #   if !defined(PCR) && defined(NEXT)
@@ -996,7 +1052,7 @@ extern void GC_push_finalizer_structures();
 
 /* From stubborn.c: */
 # ifdef STUBBORN_ALLOC
-    extern extern_ptr_t * GC_changing_list_start;
+    extern GC_PTR * GC_changing_list_start;
 # endif
 
 
@@ -1218,7 +1274,6 @@ word addr;
     typedef void (* REAL_SIG_PF)(int, struct siginfo *, void *);
 #endif
 #if defined(LINUX)
-#   include <asm/signal.h>
     typedef void (* REAL_SIG_PF)(int, struct sigcontext_struct);
 # endif
 
@@ -1414,7 +1469,7 @@ void GC_dirty_init()
       GC_old_bus_handler = signal(SIGBUS, GC_write_fault_handler);
       if (GC_old_bus_handler == SIG_IGN) {
         GC_err_printf0("Previously ignored bus error!?");
-        GC_old_bus_handler == SIG_DFL;
+        GC_old_bus_handler = SIG_DFL;
       }
       if (GC_old_bus_handler != SIG_DFL) {
 #	ifdef PRINTSTATS
@@ -1426,7 +1481,7 @@ void GC_dirty_init()
       GC_old_segv_handler = signal(SIGSEGV, (SIG_PF)GC_write_fault_handler);
       if (GC_old_segv_handler == SIG_IGN) {
         GC_err_printf0("Previously ignored segmentation violation!?");
-        GC_old_segv_handler == SIG_DFL;
+        GC_old_segv_handler = SIG_DFL;
       }
       if (GC_old_segv_handler != SIG_DFL) {
 #	ifdef PRINTSTATS
@@ -1443,7 +1498,7 @@ void GC_dirty_init()
       }
       if (GC_old_segv_handler == SIG_IGN) {
 	     GC_err_printf0("Previously ignored segmentation violation!?");
-	     GC_old_segv_handler == SIG_DFL;
+	     GC_old_segv_handler = SIG_DFL;
       }
       if (GC_old_segv_handler != SIG_DFL) {
 #       ifdef PRINTSTATS
@@ -1970,19 +2025,16 @@ struct callinfo info[NFRAMES];
     GC_err_printf0("\tCall chain at allocation:\n");
     for (i = 0; i < NFRAMES; i++) {
      	if (info[i].ci_pc == 0) break;
+     	GC_err_printf0("\t\targs: ");
      	for (j = 0; j < NARGS; j++) {
      	    if (j != 0) GC_err_printf0(", ");
      	    GC_err_printf2("%d (0x%X)", ~(info[i].ci_arg[j]),
      	    				~(info[i].ci_arg[j]));
      	}
-     	GC_err_printf1("\t##PC##= 0x%X\n\t\targs: ", info[i].ci_pc);
-     	GC_err_printf0("\n");
+     	GC_err_printf1("\n\t\t##PC##= 0x%X\n", info[i].ci_pc);
     }
 }
 
 #endif /* SAVE_CALL_CHAIN */
-
-
-
 
 

@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, December 12, 1994 5:03 pm PST */
+/* Boehm, September 14, 1995 12:42 pm PDT */
 # include "gc_priv.h"
 # include <stdio.h>
 # include <setjmp.h>
@@ -27,14 +27,17 @@
 
 asm static void PushMacRegisters()
 {
-	sub.w   #4,sp                   // reserve space for one parameter.
+    sub.w   #4,sp                   // reserve space for one parameter.
     move.l  a2,(sp)
     jsr		GC_push_one
     move.l  a3,(sp)
     jsr		GC_push_one
     move.l  a4,(sp)
     jsr		GC_push_one
-	// skip a5 (globals), a6 (frame pointer), and a7 (stack pointer)
+    	// <pcb> perhaps a6 should be pushed if stack frames arent being used.
+    move.l  a6,(sp)
+    jsr     GC_push_one
+	// skip a5 (globals), and a7 (stack pointer)
     move.l  d2,(sp)
     jsr		GC_push_one
     move.l  d3,(sp)
@@ -47,8 +50,8 @@ asm static void PushMacRegisters()
     jsr		GC_push_one
     move.l  d7,(sp)
     jsr		GC_push_one
-	add.w   #4,sp                   // fix stack.
-	rts
+    add.w   #4,sp                   // fix stack.
+    rts
 }
 
 #endif /* __MWERKS__ */
@@ -163,16 +166,28 @@ void GC_push_regs()
 #	endif	/* __MWERKS__ */
 #   endif	/* MACOS */
 
-#       if defined(I386) &&!defined(OS2) &&!defined(SVR4) &&!defined(MSWIN32) && !defined(SCO)
+#       if defined(I386) &&!defined(OS2) &&!defined(SVR4) &&!defined(MSWIN32) && !defined(SCO) && (!defined(LINUX) || !defined(__ELF__))
 	/* I386 code, generic code does not appear to work */
 	/* It does appear to work under OS2, and asms dont */
 	  asm("pushl %eax");  asm("call _GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %ecx");  asm("call _GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %edx");  asm("call _GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %ebp");  asm("call _GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %esi");  asm("call _GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %edi");  asm("call _GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %ebx");  asm("call _GC_push_one"); asm("addl $4,%esp");
 #       endif
+
+#	if defined(I386) && defined(LINUX) && defined(__ELF__)
+	/* This is modified for Linux with ELF (Note: _ELF_ only) */
+	  asm("pushl %eax");  asm("call GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %ecx");  asm("call GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %edx");  asm("call GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %ebp");  asm("call GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %esi");  asm("call GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %edi");  asm("call GC_push_one"); asm("addl $4,%esp");
+	  asm("pushl %ebx");  asm("call GC_push_one"); asm("addl $4,%esp");
+#	endif
 
 #       if defined(I386) && defined(MSWIN32)
 	/* I386 code, Microsoft variant		*/

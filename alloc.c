@@ -12,7 +12,7 @@
  * modified is included with the above copyright notice.
  *
  */
-/* Boehm, April 28, 1995 4:36 pm PDT */
+/* Boehm, October 9, 1995 1:03 pm PDT */
 
 
 # include "gc_priv.h"
@@ -79,11 +79,11 @@ bool GC_dont_expand = 0;
 
 word GC_free_space_divisor = 4;
 
-int GC_never_stop_func(NO_PARAMS) { return(0); }
+int GC_never_stop_func GC_PROTO((void)) { return(0); }
 
 CLOCK_TYPE GC_start_time;
 
-int GC_timeout_stop_func(NO_PARAMS)
+int GC_timeout_stop_func GC_PROTO((void))
 {
     CLOCK_TYPE current_time;
     static unsigned count = 0;
@@ -144,8 +144,15 @@ word GC_adj_words_allocd()
     /* is playing by the rules.						*/
     result = (signed_word)GC_words_allocd
     	     - (signed_word)GC_mem_freed - expl_managed;
-    if (result > (signed_word)GC_words_allocd) result = GC_words_allocd;
+    if (result > (signed_word)GC_words_allocd) {
+        result = GC_words_allocd;
     	/* probably client bug or unfortunate scheduling */
+    }
+    result += GC_words_finalized;
+    	/* We count objects enqueued for finalization as though they	*/
+    	/* had been reallocated this round. Finalization is user	*/
+    	/* visible progress.  And if we don't count this, we have	*/
+    	/* stability problems for programs that finalize all objects.	*/
     result += GC_words_wasted;
      	/* This doesn't reflect useful work.  But if there is lots of	*/
      	/* new fragmentation, the same is probably true of the heap,	*/
@@ -294,7 +301,7 @@ int n;
     }
 }
 
-int GC_collect_a_little(NO_PARAMS)
+int GC_collect_a_little GC_PROTO(())
 {
     int result;
     DCL_LOCK_STATE;
@@ -522,7 +529,7 @@ void GC_finish_collection()
     return(result);
 }
 
-void GC_gcollect(NO_PARAMS)
+void GC_gcollect GC_PROTO(())
 {
     (void)GC_try_to_collect(GC_never_stop_func);
 }
@@ -580,7 +587,7 @@ void GC_print_heap_sects()
         struct hblk *h;
         unsigned nbl = 0;
         
-    	GC_printf3("Section %ld form 0x%lx to 0x%lx ", (unsigned long)i,
+    	GC_printf3("Section %ld from 0x%lx to 0x%lx ", (unsigned long)i,
     		   start, (unsigned long)(start + len));
     	for (h = (struct hblk *)start; h < (struct hblk *)(start + len); h++) {
     	    if (GC_is_black_listed(h, HBLKSIZE)) nbl++;
@@ -606,8 +613,12 @@ ptr_t x, y;
     return(x < y? x : y);
 }
 
-void GC_set_max_heap_size(n)
-word n;
+# if defined(__STDC__) || defined(__cplusplus)
+    void GC_set_max_heap_size(GC_word n)
+# else
+    void GC_set_max_heap_size(n)
+    GC_word n;
+# endif
 {
     GC_max_heapsize = n;
 }
@@ -672,8 +683,12 @@ word n;
 
 /* Really returns a bool, but it's externally visible, so that's clumsy. */
 /* Arguments is in bytes.						*/
-int GC_expand_hp(bytes)
-size_t bytes;
+# if defined(__STDC__) || defined(__cplusplus)
+  int GC_expand_hp(size_t bytes)
+# else
+  int GC_expand_hp(bytes)
+  size_t bytes;
+# endif
 {
     int result;
     DCL_LOCK_STATE;

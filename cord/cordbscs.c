@@ -518,10 +518,11 @@ int CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void * client_data)
 	register const char *p = x + i;
 	register char c;
                
-	while (p >= x) {
+	for(;;) {
 	    c = *p;
 	    if (c == '\0') ABORT("2nd arg to CORD_riter4 too big");
             if ((*f1)(c, client_data)) return(1);
+	    if (p == x) break;
             p--;
 	}
 	return(0);

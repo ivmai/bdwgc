@@ -13,7 +13,7 @@
  * Original author: Bill Janssen
  * Heavily modified by Hans Boehm and others
  */
-/* Boehm, April 17, 1995 3:20 pm PDT */
+/* Boehm, September 21, 1995 5:57 pm PDT */
 
 /*
  * This is incredibly OS specific code for tracking down data sections in
@@ -456,15 +456,15 @@ void GC_register_dynamic_libraries()
       /* Check status AFTER checking moduleid because */
       /* of a bug in the non-shared ldr_next_module stub */
         if (status != 0 ) {
-            GC_printf("dynamic_load: status = %ld\n", (long)status);
+            GC_printf1("dynamic_load: status = %ld\n", (long)status);
             {
                 extern char *sys_errlist[];
                 extern int sys_nerr;
                 extern int errno;
                 if (errno <= sys_nerr) {
-                    GC_printf("dynamic_load: %s\n", sys_errlist[errno]);
+                    GC_printf1("dynamic_load: %s\n", (long)sys_errlist[errno]);
                } else {
-                    GC_printf("dynamic_load: %d\n", errno);
+                    GC_printf1("dynamic_load: %d\n", (long)errno);
                 }
         }
             ABORT("ldr_next_module failed");

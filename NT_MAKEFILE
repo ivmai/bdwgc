@@ -2,6 +2,7 @@
 # DLLs are included in the root set under NT, but not under win32S.
 # Use "nmake nodebug=1 all" for optimized versions of library, gctest and editor.
 
+CPU= i386
 !include <ntwin32.mak>
 
 OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj malloc.obj stubborn.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj
@@ -31,7 +32,7 @@ gctest.exe: test.obj gc.lib
 cord\de_win.rbj: cord\de_win.res
 	cvtres -$(CPU) cord\de_win.res -o cord\de_win.rbj
 
-cord\de.obj cord\de_win.obj: cord\cord.h cord\cord_pos.h cord\de_win.h cord\de_cmds.h
+cord\de.obj cord\de_win.obj: cord\cord.h cord\private\cord_pos.h cord\de_win.h cord\de_cmds.h
 
 cord\de_win.res: cord\de_win.rc cord\de_win.h cord\de_cmds.h
 	$(rc) $(rcvars) -r -fo cord\de_win.res $(cvars) cord\de_win.rc
@@ -50,10 +51,9 @@ test_cpp.cpp: test_cpp.cc
 
 # This generates the C++ test executable.  The executable expects
 # a single numeric argument, which is the number of iterations.
-# Unlike the other test programs, this is currently a console application,
-# and hence does not run under win32s.
+# The output appears in the file "gc.log".
 test_cpp.exe: test_cpp.obj gc_cpp.h gc.h gc.lib
-	$(link) -debug:full -debugtype:cv $(conflags) -stack:16384 -out:test_cpp.exe test_cpp.obj gc.lib $(conlibs)
+	$(link) -debug:full -debugtype:cv $(guiflags) -stack:16384 -out:test_cpp.exe test_cpp.obj gc.lib $(guilibs)
 
 
 

@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, September 12, 1994 3:39 pm PDT */
+/* Boehm, September 21, 1995 5:39 pm PDT */
  
 /* Check whether setjmp actually saves registers in jmp_buf. */
 /* If it doesn't, the generic mark_regs code won't work.     */
@@ -24,6 +24,7 @@
 /* code.)						     */
 #include <stdio.h>
 #include <setjmp.h>
+#include <string.h>
 #include "config.h"
 
 #ifdef __hpux
@@ -95,9 +96,10 @@ main()
 	int dummy;
 	long ps = getpagesize();
 	jmp_buf b;
-	register int x = strlen("a");  /* 1, slightly disguised */
+	register int x = (int)strlen("a");  /* 1, slightly disguised */
 	static int y = 0;
 
+	printf("This appears to be a %s running %s\n", MACH_TYPE, OS_TYPE);
 	if (nested_sp() < &dummy) {
 	  printf("Stack appears to grow down, which is the default.\n");
 	  printf("A good guess for STACKBOTTOM on this machine is 0x%X.\n",
@@ -110,6 +112,7 @@ main()
 	}
 	printf("Note that this may vary between machines of ostensibly\n");
 	printf("the same architecture (e.g. Sun 3/50s and 3/80s).\n");
+	printf("On many machines the value is not fixed.\n");
 	printf("A good guess for ALIGNMENT on this machine is %d.\n",
 	       (unsigned long)(&(a.a_b))-(unsigned long)(&a));
 	

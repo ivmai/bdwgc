@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, June 13, 1995 2:33 pm PDT */
+/* Boehm, September 21, 1995 5:43 pm PDT */
 /* An incomplete test for the garbage collector.  		*/
 /* Some more obscure entry points are not tested at all.	*/
 
@@ -61,12 +61,6 @@ struct SEXPR {
     struct SEXPR * sexpr_cdr;
 };
 
-
-# ifdef __STDC__
-    typedef void * void_star;
-# else
-    typedef char * void_star;
-# endif
 
 typedef struct SEXPR * sexpr;
 
@@ -198,7 +192,7 @@ void check_ints(list, low, up)
 sexpr list;
 int low, up;
 {
-    if ((int)(car(car(list))) != low) {
+    if ((int)(GC_word)(car(car(list))) != low) {
         (void)GC_printf0(
            "List reversal produced incorrect list - collector is broken\n");
         FAIL;
@@ -219,7 +213,7 @@ void check_uncollectable_ints(list, low, up)
 sexpr list;
 int low, up;
 {
-    if ((int)(car(car(list))) != low) {
+    if ((int)(GC_word)(car(car(list))) != low) {
         (void)GC_printf0(
            "Uncollectable list corrupted - collector is broken\n");
         FAIL;
@@ -290,13 +284,13 @@ void reverse_test()
     e = uncollectable_ints(1, 1);
     /* Check that realloc updates object descriptors correctly */
     f = (sexpr *)GC_malloc(4 * sizeof(sexpr));
-    f = (sexpr *)GC_realloc(f, 6 * sizeof(sexpr));
+    f = (sexpr *)GC_realloc((GC_PTR)f, 6 * sizeof(sexpr));
     f[5] = ints(1,17);
     g = (sexpr *)GC_malloc(513 * sizeof(sexpr));
-    g = (sexpr *)GC_realloc(g, 800 * sizeof(sexpr));
+    g = (sexpr *)GC_realloc((GC_PTR)g, 800 * sizeof(sexpr));
     g[799] = ints(1,18);
     h = (sexpr *)GC_malloc(1025 * sizeof(sexpr));
-    h = (sexpr *)GC_realloc(h, 2000 * sizeof(sexpr));
+    h = (sexpr *)GC_realloc((GC_PTR)h, 2000 * sizeof(sexpr));
     h[1999] = ints(1,19);
     /* Try to force some collections and reuse of small list elements */
       for (i = 0; i < 10; i++) {
@@ -327,9 +321,9 @@ void reverse_test()
 #	if !defined(AT_END) && !defined(THREADS)
 	  /* This is not thread safe, since realloc explicitly deallocates */
           if (i & 1) {
-            a = (sexpr)GC_REALLOC((void_star)a, 500);
+            a = (sexpr)GC_REALLOC((GC_PTR)a, 500);
           } else {
-            a = (sexpr)GC_REALLOC((void_star)a, 8200);
+            a = (sexpr)GC_REALLOC((GC_PTR)a, 8200);
           }
 #	endif
     }
@@ -379,7 +373,7 @@ VOLATILE int dropped_something = 0;
     static mutex_t incr_lock;
     mutex_lock(&incr_lock);
 # endif
-  if ((int)client_data != t -> level) {
+  if ((int)(GC_word)client_data != t -> level) {
      (void)GC_printf0("Wrong finalization data - collector is broken\n");
      FAIL;
   }
@@ -456,28 +450,28 @@ int n;
 #	  endif
 	}
 
-        GC_REGISTER_FINALIZER((void_star)result, finalizer, (void_star)n,
-        		      (GC_finalization_proc *)0, (void_star *)0);
+        GC_REGISTER_FINALIZER((GC_PTR)result, finalizer, (GC_PTR)(GC_word)n,
+        		      (GC_finalization_proc *)0, (GC_PTR *)0);
         if (my_index >= MAX_FINALIZED) {
 		GC_printf0("live_indicators overflowed\n");
 		FAIL;
 	}
         live_indicators[my_index] = 13;
         if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(
-         	(void_star *)(&(live_indicators[my_index])),
-         	(void_star)result) != 0) {
+         	(GC_PTR *)(&(live_indicators[my_index])),
+         	(GC_PTR)result) != 0) {
          	GC_printf0("GC_general_register_disappearing_link failed\n");
          	FAIL;
         }
         if (GC_unregister_disappearing_link(
-         	(void_star *)
+         	(GC_PTR *)
          	   (&(live_indicators[my_index]))) == 0) {
          	GC_printf0("GC_unregister_disappearing_link failed\n");
          	FAIL;
         }
         if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(
-         	(void_star *)(&(live_indicators[my_index])),
-         	(void_star)result) != 0) {
+         	(GC_PTR *)(&(live_indicators[my_index])),
+         	(GC_PTR)result) != 0) {
          	GC_printf0("GC_general_register_disappearing_link failed 2\n");
          	FAIL;
         }
@@ -682,6 +676,15 @@ void run_one_test()
 	    (void)GC_printf0("GC_size produced unexpected results\n");
 	    FAIL;
     }
+    if (GC_size(GC_malloc(0)) != 4 && GC_size(GC_malloc(0)) != 8) {
+    	(void)GC_printf0("GC_malloc(0) failed\n");
+	    FAIL;
+    }
+    if (GC_size(GC_malloc_uncollectable(0)) != 4
+        && GC_size(GC_malloc_uncollectable(0)) != 8) {
+    	(void)GC_printf0("GC_malloc_uncollectable(0) failed\n");
+	    FAIL;
+    }
     GC_is_valid_displacement_print_proc = fail_proc;
     GC_is_visible_print_proc = fail_proc;
     x = GC_malloc(16);
@@ -884,7 +887,8 @@ void SetMinimumStack(long minSize)
 	        GC_init, GC_make_closure, GC_debug_invoke_finalizer,
 	        GC_page_was_ever_dirty, GC_is_fresh,
 		GC_malloc_ignore_off_page, GC_malloc_atomic_ignore_off_page,
-		GC_set_max_heap_size, GC_get_bytes_since_gc);
+		GC_set_max_heap_size, GC_get_bytes_since_gc,
+		GC_pre_incr, GC_post_incr);
 #   endif
     return(0);
 }

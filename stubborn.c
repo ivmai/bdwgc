@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 28, 1994 10:01 am PDT */
+/* Boehm, July 31, 1995 5:02 pm PDT */
 
 
 #include "gc_priv.h"
@@ -22,24 +22,24 @@
 extern ptr_t GC_clear_stack();	/* in misc.c, behaves like identity */
 
 #define GENERAL_MALLOC(lb,k) \
-    (extern_ptr_t)GC_clear_stack(GC_generic_malloc((word)lb, k))
+    (GC_PTR)GC_clear_stack(GC_generic_malloc((word)lb, k))
 
 /* Data structure representing immutable objects that 	*/
 /* are still being initialized.				*/
 /* This is a bit baroque in order to avoid acquiring	*/
 /* the lock twice for a typical allocation.		*/
 
-extern_ptr_t * GC_changing_list_start;
+GC_PTR * GC_changing_list_start;
 
 # ifdef THREADS
-  VOLATILE extern_ptr_t * VOLATILE GC_changing_list_current;
+  VOLATILE GC_PTR * VOLATILE GC_changing_list_current;
 # else
-  extern_ptr_t * GC_changing_list_current;
+  GC_PTR * GC_changing_list_current;
 # endif
 	/* Points at last added element.  Also (ab)used for		*/
 	/* synchronization.  Updates and reads are assumed atomic.	*/
 
-extern_ptr_t * GC_changing_list_limit;
+GC_PTR * GC_changing_list_limit;
 	/* Points at the last word of the buffer, which is always 0	*/
 	/* All entries in (GC_changing_list_current,			*/
 	/* GC_changing_list_limit] are 0				*/
@@ -49,12 +49,12 @@ void GC_stubborn_init()
 {
 #   define INIT_SIZE 10
 
-    GC_changing_list_start = (extern_ptr_t *)
+    GC_changing_list_start = (GC_PTR *)
     			GC_generic_malloc_inner(
-    				(word)(INIT_SIZE * sizeof(extern_ptr_t)),
+    				(word)(INIT_SIZE * sizeof(GC_PTR)),
     				PTRFREE);
     BZERO(GC_changing_list_start,
-    	  INIT_SIZE * sizeof(extern_ptr_t));
+    	  INIT_SIZE * sizeof(GC_PTR));
     if (GC_changing_list_start == 0) {
         GC_err_printf0("Insufficient space to start up\n");
         ABORT("GC_stubborn_init: put of space");
@@ -75,26 +75,26 @@ void GC_stubborn_init()
 /* Returns FALSE on failure.						*/
 bool GC_compact_changing_list()
 {
-    register extern_ptr_t *p, *q;
+    register GC_PTR *p, *q;
     register word count = 0;
     word old_size = (char **)GC_changing_list_limit
     		    - (char **)GC_changing_list_start+1;
     		    /* The casts are needed as a workaround for an Amiga bug */
     register word new_size = old_size;
-    extern_ptr_t * new_list;
+    GC_PTR * new_list;
     
     for (p = GC_changing_list_start; p < GC_changing_list_limit; p++) {
         if (*p != 0) count++;
     }
     if (2 * count > old_size) new_size = 2 * count;
-    new_list = (extern_ptr_t *)
+    new_list = (GC_PTR *)
     		GC_generic_malloc_inner(
-    				new_size * sizeof(extern_ptr_t), PTRFREE);
+    				new_size * sizeof(GC_PTR), PTRFREE);
     		/* PTRFREE is a lie.  But we don't want the collector to  */
     		/* consider these.  We do want the list itself to be  	  */
     		/* collectable.						  */
     if (new_list == 0) return(FALSE);
-    BZERO(new_list, new_size * sizeof(extern_ptr_t));
+    BZERO(new_list, new_size * sizeof(GC_PTR));
     q = new_list;
     for (p = GC_changing_list_start; p < GC_changing_list_limit; p++) {
         if (*p != 0) *q++ = *p;
@@ -120,7 +120,7 @@ bool GC_compact_changing_list()
 	*GC_changing_list_current = p;
 
 void GC_change_stubborn(p)
-extern_ptr_t p;
+GC_PTR p;
 {
     DCL_LOCK_STATE;
     
@@ -132,12 +132,12 @@ extern_ptr_t p;
 }
 
 void GC_end_stubborn_change(p)
-extern_ptr_t p;
+GC_PTR p;
 {
 #   ifdef THREADS
-      register VOLATILE extern_ptr_t * my_current = GC_changing_list_current;
+      register VOLATILE GC_PTR * my_current = GC_changing_list_current;
 #   else
-      register extern_ptr_t * my_current = GC_changing_list_current;
+      register GC_PTR * my_current = GC_changing_list_current;
 #   endif
     register bool tried_quick;
     DCL_LOCK_STATE;
@@ -184,9 +184,9 @@ extern_ptr_t p;
 /* GC_end_stubborn_change(p) where p is the value	*/
 /* returned by GC_malloc_stubborn.			*/
 # ifdef __STDC__
-    extern_ptr_t GC_malloc_stubborn(size_t lb)
+    GC_PTR GC_malloc_stubborn(size_t lb)
 # else
-    extern_ptr_t GC_malloc_stubborn(lb)
+    GC_PTR GC_malloc_stubborn(lb)
     size_t lb;
 # endif
 {
@@ -212,12 +212,12 @@ DCL_LOCK_STATE;
         *opp = obj_link(op);
         obj_link(op) = 0;
         GC_words_allocd += lw;
-        result = (extern_ptr_t) op;
+        result = (GC_PTR) op;
         ADD_CHANGING(result);
         FASTUNLOCK();
-        return((extern_ptr_t)result);
+        return((GC_PTR)result);
    } else {
-       result = (extern_ptr_t)
+       result = (GC_PTR)
           	GC_generic_malloc((word)lb, STUBBORN);
    }
 record:
@@ -226,7 +226,7 @@ record:
    ADD_CHANGING(result);
    UNLOCK();
    ENABLE_SIGNALS();
-   return((extern_ptr_t)GC_clear_stack(result));
+   return((GC_PTR)GC_clear_stack(result));
 }
 
 
@@ -234,8 +234,8 @@ record:
 /* Report pages on which stubborn objects were changed.		*/
 void GC_read_changed()
 {
-    register extern_ptr_t * p = GC_changing_list_start;
-    register extern_ptr_t q;
+    register GC_PTR * p = GC_changing_list_start;
+    register GC_PTR q;
     register struct hblk * h;
     register word index;
     
@@ -264,8 +264,8 @@ struct hblk * h;
 /* called with mark bits consistent and lock held.		*/
 void GC_clean_changing_list()
 {
-    register extern_ptr_t * p = GC_changing_list_start;
-    register extern_ptr_t q;
+    register GC_PTR * p = GC_changing_list_start;
+    register GC_PTR q;
     register ptr_t r;
     register unsigned long count = 0;
     register unsigned long dropped_count = 0;
@@ -292,9 +292,9 @@ void GC_clean_changing_list()
 #else /* !STUBBORN_ALLOC */
 
 # ifdef __STDC__
-    extern_ptr_t GC_malloc_stubborn(size_t lb)
+    GC_PTR GC_malloc_stubborn(size_t lb)
 # else
-    extern_ptr_t GC_malloc_stubborn(lb)
+    GC_PTR GC_malloc_stubborn(lb)
     size_t lb;
 # endif
 {
@@ -303,13 +303,13 @@ void GC_clean_changing_list()
 
 /*ARGSUSED*/
 void GC_end_stubborn_change(p)
-extern_ptr_t p;
+GC_PTR p;
 {
 }
 
 /*ARGSUSED*/
 void GC_change_stubborn(p)
-extern_ptr_t p;
+GC_PTR p;
 {
 }
 

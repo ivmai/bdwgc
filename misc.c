@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 2, 1995 11:20 am PDT */
+/* Boehm, July 31, 1995 5:02 pm PDT */
 
 
 #include <stdio.h>
@@ -182,13 +182,6 @@ word GC_high_water;
 			/* "hottest" stack pointer value we have seen	*/
 			/* recently.  Degrades over time.		*/
 
-word GC_stack_upper_bound()
-{
-    word dummy;
-    
-    return((word)(&dummy));
-}
-
 word GC_words_allocd_at_reset;
 
 #if defined(ASM_CLEAR_CODE) && !defined(THREADS)
@@ -215,6 +208,7 @@ word limit;
 }
 #endif
 
+extern ptr_t GC_approx_sp();	/* in mark_rts.c */
 
 /* Clear some of the inaccessible part of the stack.  Returns its	*/
 /* argument, so it can be used in a tail call position, hence clearing  */
@@ -222,7 +216,7 @@ word limit;
 ptr_t GC_clear_stack(arg)
 ptr_t arg;
 {
-    register word sp = GC_stack_upper_bound();
+    register word sp = (word)GC_approx_sp();  /* Hotter than actual sp */
     register word limit;
 #   ifdef THREADS
         word dummy[CLEAR_SIZE];;
@@ -282,20 +276,26 @@ ptr_t arg;
 /* Return a pointer to the base address of p, given a pointer to a	*/
 /* an address within an object.  Return 0 o.w.				*/
 # ifdef __STDC__
-    extern_ptr_t GC_base(extern_ptr_t p)
+    GC_PTR GC_base(GC_PTR p)
 # else
-    extern_ptr_t GC_base(p)
-    extern_ptr_t p;
+    GC_PTR GC_base(p)
+    GC_PTR p;
 # endif
 {
     register word r;
     register struct hblk *h;
+    register bottom_index *bi;
     register hdr *candidate_hdr;
     register word limit;
     
     r = (word)p;
     h = HBLKPTR(r);
-    candidate_hdr = HDR(r);
+    GET_BI(r, bi);
+    if (bi == 0) {
+        /* Collector uninitialized. Nothing allocated yet. */
+        return(0);
+    }
+    candidate_hdr = HDR_FROM_BI(bi, r);
     if (candidate_hdr == 0) return(0);
     /* If it's a pointer to the middle of a large object, move it	*/
     /* to the beginning.						*/
@@ -335,7 +335,7 @@ ptr_t arg;
 #	    endif
 	    if ((word)p >= limit) return(0);
 	}
-    return((extern_ptr_t)r);
+    return((GC_PTR)r);
 }
 
 
@@ -343,10 +343,10 @@ ptr_t arg;
 /* (For small obects this also happens to work from interior pointers,	*/
 /* but that shouldn't be relied upon.)					*/
 # ifdef __STDC__
-    size_t GC_size(extern_ptr_t p)
+    size_t GC_size(GC_PTR p)
 # else
     size_t GC_size(p)
-    extern_ptr_t p;
+    GC_PTR p;
 # endif
 {
     register int sz;
@@ -360,12 +360,12 @@ ptr_t arg;
     }
 }
 
-size_t GC_get_heap_size(NO_PARAMS)
+size_t GC_get_heap_size GC_PROTO(())
 {
     return ((size_t) GC_heapsize);
 }
 
-size_t GC_get_bytes_since_gc(NO_PARAMS)
+size_t GC_get_bytes_since_gc GC_PROTO(())
 {
     return ((size_t) WORDS_TO_BYTES(GC_words_allocd));
 }
@@ -511,7 +511,7 @@ void GC_init_inner()
 #   endif
 }
 
-void GC_enable_incremental(NO_PARAMS)
+void GC_enable_incremental GC_PROTO(())
 {
     DCL_LOCK_STATE;
     

@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, June 13, 1995 3:34 pm PDT */
+/* Boehm, August 9, 1995 5:08 pm PDT */
 
 #define DEBUG
 #undef DEBUG
@@ -167,7 +167,7 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 	         (kind != PTRFREE || size_needed > MAX_BLACK_LIST_ALLOC)) {
 	      struct hblk * lasthbp = hbp;
 	      ptr_t search_end = (ptr_t)hbp + size_avail - size_needed;
-	      word orig_avail = size_avail;
+	      signed_word orig_avail = size_avail;
 	      signed_word eff_size_needed = ((flags & IGNORE_OFF_PAGE)?
 	      					HBLKSIZE
 	      					: size_needed);
@@ -196,10 +196,11 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 		      hbp = thishbp;
 		      hhdr = thishdr;
 		}
-	      } else if (size_needed > BL_LIMIT
-	                 && orig_avail - size_needed > BL_LIMIT) {
+	      } else if (size_needed > (signed_word)BL_LIMIT
+	                 && orig_avail - size_needed
+			    > (signed_word)BL_LIMIT) {
 	        /* Punt, since anything else risks unreasonable heap growth. */
-	        WARN("Needed to allocate blacklisted block at %ld\n",
+	        WARN("Needed to allocate blacklisted block at 0x%lx\n",
 		     (word)hbp);
 	        thishbp = hbp;
 	        size_avail = orig_avail;
@@ -215,19 +216,27 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 	      	  /* blocks are unpopular.				*/
 	          /* A dropped block will be reconsidered at next GC.	*/
 	          if ((++count & 3) == 0) {
-	            /* Allocate and drop the block */
-	              if (GC_install_counts(hbp, hhdr->hb_sz)) {
-	                phdr -> hb_next = hhdr -> hb_next;
-	                (void) setup_header(
+	            /* Allocate and drop the block in small chunks, to	*/
+	            /* maximize the chance that we will recover some	*/
+	            /* later.						*/
+	              struct hblk * limit = hbp + (hhdr->hb_sz/HBLKSIZE);
+	              struct hblk * h;
+	              
+	              phdr -> hb_next = hhdr -> hb_next;
+	              for (h = hbp; h < limit; h++) {
+	                if (h == hbp || GC_install_header(h)) {
+	                  hhdr = HDR(h);
+	                  (void) setup_header(
 	                	  hhdr,
-	              		  BYTES_TO_WORDS(hhdr->hb_sz - HDR_BYTES),
+	              		  BYTES_TO_WORDS(HBLKSIZE - HDR_BYTES),
 	              		  PTRFREE, 0); /* Cant fail */
-	              	if (GC_debugging_started) {
-	              	    BZERO(hbp + HDR_BYTES, hhdr->hb_sz - HDR_BYTES);
-	              	}
-	                if (GC_savhbp == hbp) GC_savhbp = prevhbp;
+	              	  if (GC_debugging_started) {
+	              	    BZERO(hbp + HDR_BYTES, HBLKSIZE - HDR_BYTES);
+	              	  }
+	                }
 	              }
 	            /* Restore hbp to point at free block */
+	              if (GC_savhbp == hbp) GC_savhbp = prevhbp;
 	              hbp = prevhbp;
 	              hhdr = phdr;
 	              if (hbp == GC_savhbp) first_time = TRUE;

@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 1:59 pm PDT */
+/* Boehm, October 9, 1995 1:09 pm PDT */
   
 /* Routines for maintaining maps describing heap block
  * layouts for various object sizes.  Allows fast pointer validity checks
@@ -46,8 +46,13 @@ hdr *hhdr;
 
 /* Consider pointers that are offset bytes displaced from the beginning */
 /* of an object to be valid.                                            */
-void GC_register_displacement(offset) 
-word offset;
+
+# if defined(__STDC__) || defined(__cplusplus)
+    void GC_register_displacement(GC_word offset)
+# else
+    void GC_register_displacement(offset) 
+    GC_word offset;
+# endif
 {
 # ifndef ALL_INTERIOR_POINTERS
     DCL_LOCK_STATE;

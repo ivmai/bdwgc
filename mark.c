@@ -35,7 +35,7 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 		0 | DS_LENGTH, FALSE, FALSE },
 /* NORMAL  */ { &GC_objfreelist[0], 0,
 #		ifdef ADD_BYTE_AT_END
-		(word)(WORDS_TO_BYTES(-1)) | DS_LENGTH,
+		(word)(-ALIGNMENT) | DS_LENGTH,
 #		else
 		0 | DS_LENGTH,
 #		endif

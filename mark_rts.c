@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, April 18, 1995 3:04 pm PDT */
+/* Boehm, October 9, 1995 1:06 pm PDT */
 # include <stdio.h>
 # include "gc_priv.h"
 
@@ -275,7 +275,7 @@ bool tmp;
     n_root_sets++;
 }
 
-void GC_clear_roots(NO_PARAMS)
+void GC_clear_roots GC_PROTO((void))
 {
     DCL_LOCK_STATE;
     

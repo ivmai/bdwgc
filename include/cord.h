@@ -81,6 +81,8 @@ CORD CORD_cat(CORD x, CORD y);
 /* Concatenate a cord and a C string with known length.  Except for the	*/
 /* empty string case, this is a special case of CORD_cat.  Since the	*/
 /* length is known, it can be faster.					*/
+/* The string y is shared with the resulting CORD.  Hence it should	*/
+/* not be altered by the caller.					*/
 CORD CORD_cat_char_star(CORD x, const char * y, size_t leny);
 
 /* Compute the length of a cord */
@@ -152,7 +154,7 @@ int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 /* described below.  Also note that					*/
 /* CORD_pos_fetch, CORD_next and CORD_prev have both macro and function	*/
 /* definitions.  The former may evaluate their argument more than once. */
-# include "cord_pos.h"
+# include "private/cord_pos.h"
 
 /*
 	Visible definitions from above:

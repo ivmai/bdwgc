@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, January 30, 1995 4:05 pm PST */
+/* Boehm, September 19, 1995 1:26 pm PDT */
 
 #include "gc_priv.h"
 #include "gc_mark.h"
@@ -35,9 +35,9 @@ void (*GC_same_obj_print_proc)() = GC_default_same_obj_print_proc;
 /* be called by production code, but this can easily make	*/
 /* debugging intolerably slow.)					*/
 #ifdef __STDC__
-  void * GC_same_obj(register void *p, register void *q)
+  GC_PTR GC_same_obj(register void *p, register void *q)
 #else
-  char * GC_same_obj(p, q)
+  GC_PTR GC_same_obj(p, q)
   register char *p, *q;
 #endif
 {
@@ -58,7 +58,7 @@ void (*GC_same_obj_print_proc)() = GC_default_same_obj_print_proc;
     /* If it's a pointer to the middle of a large object, move it	*/
     /* to the beginning.						*/
     if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-    	h = HBLKPTR(p) - (int)hhdr;
+    	h = HBLKPTR(p) - (word)hhdr;
     	hhdr = HDR(h);
 	while (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
 	   h = FORWARDED_ADDR(h, hhdr);
@@ -184,6 +184,27 @@ ptr_t p;
 void (*GC_is_visible_print_proc)() = 
 	GC_default_is_visible_print_proc;
 
+/* Could p be a stack address? */
+bool GC_on_stack(p)
+ptr_t p;
+{
+#   ifdef THREADS
+	return(TRUE);
+#   else
+	int dummy;
+#   	ifdef STACK_GROWS_DOWN
+	    if ((ptr_t)p >= (ptr_t)(&dummy) && (ptr_t)p < GC_stackbottom ) {
+	    	return(TRUE);
+	    }
+#	else
+	    if ((ptr_t)p <= (ptr_t)(&dummy) && (ptr_t)p > GC_stackbottom ) {
+	    	return(TRUE);
+	    }
+#	endif
+	return(FALSE);
+#   endif
+}
+
 /* Check that p is visible						*/
 /* to the collector as a possibly pointer containing location.		*/
 /* If it isn't invoke *GC_is_visible_print_proc.			*/
@@ -200,7 +221,6 @@ void (*GC_is_visible_print_proc)() =
 #endif
 {
     register hdr *hhdr;
-    int dummy;
     
     if ((word)p & (ALIGNMENT - 1)) goto fail;
     if (!GC_is_initialized) GC_init();
@@ -214,15 +234,7 @@ void (*GC_is_visible_print_proc)() =
         }
 #   else
 	/* Check stack first: */
-#   	  ifdef STACK_GROWS_DOWN
-	    if ((ptr_t)p >= (ptr_t)(&dummy) && (ptr_t)p < GC_stackbottom ) {
-	    	return(p);
-	    }
-#	  else
-	    if ((ptr_t)p <= (ptr_t)(&dummy) && (ptr_t)p > GC_stackbottom ) {
-	    	return(p);
-	    }
-#	  endif
+	  if (GC_on_stack(p)) return(p);
 	hhdr = HDR((word)p);
     	if (hhdr == 0) {
     	    bool result;
@@ -274,3 +286,30 @@ fail:
     return(p);
 }
 
+
+GC_PTR GC_pre_incr (p, how_much)
+GC_PTR *p;
+size_t how_much;
+{
+    GC_PTR initial = *p;
+    GC_PTR result = GC_same_obj((GC_PTR)((word)initial + how_much), initial);
+    
+#   ifndef ALL_INTERIOR_POINTERS
+    	(void) GC_is_valid_displacement(result);
+#   endif
+    return (*p = result);
+}
+
+GC_PTR GC_post_incr (p, how_much)
+GC_PTR *p;
+size_t how_much;
+{
+    GC_PTR initial = *p;
+    GC_PTR result = GC_same_obj((GC_PTR)((word)initial + how_much), initial);
+ 
+#   ifndef ALL_INTERIOR_POINTERS
+    	(void) GC_is_valid_displacement(result);
+#   endif   
+    *p = result;
+    return(initial);
+}

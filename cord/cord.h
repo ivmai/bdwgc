@@ -12,7 +12,7 @@
  *
  * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
-/* Boehm, October 4, 1994 5:34 pm PDT */
+/* Boehm, October 5, 1995 4:20 pm PDT */
  
 /*
  * Cords are immutable character strings.  A number of operations
@@ -81,6 +81,8 @@ CORD CORD_cat(CORD x, CORD y);
 /* Concatenate a cord and a C string with known length.  Except for the	*/
 /* empty string case, this is a special case of CORD_cat.  Since the	*/
 /* length is known, it can be faster.					*/
+/* The string y is shared with the resulting CORD.  Hence it should	*/
+/* not be altered by the caller.					*/
 CORD CORD_cat_char_star(CORD x, const char * y, size_t leny);
 
 /* Compute the length of a cord */
@@ -152,7 +154,7 @@ int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 /* described below.  Also note that					*/
 /* CORD_pos_fetch, CORD_next and CORD_prev have both macro and function	*/
 /* definitions.  The former may evaluate their argument more than once. */
-# include "cord_pos.h"
+# include "private/cord_pos.h"
 
 /*
 	Visible definitions from above:
@@ -198,7 +200,7 @@ extern void (* CORD_oom_fn)(void);
 void CORD_dump(CORD x);
 
 /* The following could easily be implemented by the client.  They are	*/
-/* provided in cord_xtra.c for convenience.				*/
+/* provided in cordxtra.c for convenience.				*/
 
 /* Concatenate a character to the end of a cord.	*/
 CORD CORD_cat_char(CORD x, char c);
