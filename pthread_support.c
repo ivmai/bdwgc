@@ -168,6 +168,7 @@ void GC_init_parallel();
 
 /* We don't really support thread-local allocation with DBG_HDRS_ALL */
 
+static
 #ifdef USE_COMPILER_TLS
   __thread
 #endif
@@ -390,6 +391,47 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
 	    return GC_local_gcj_malloc(bytes, ptr_to_struct_containing_descr);
 	}
     }
+}
+
+/* Similar to GC_local_gcj_malloc, but the size is in words, and we don't	*/
+/* adjust it.  The size is assumed to be such that it can be 	*/
+/* allocated as a small object.					*/
+void * GC_local_gcj_fast_malloc(size_t lw, void * ptr_to_struct_containing_descr)
+{
+	ptr_t * my_fl = ((GC_thread)GC_getspecific(GC_thread_key))
+		-> gcj_freelists + lw;
+	ptr_t my_entry = *my_fl;
+
+    GC_ASSERT(GC_gcj_malloc_initialized);
+
+	if (EXPECT((word)my_entry >= HBLKSIZE, 1)) {
+	    GC_PTR result = (GC_PTR)my_entry;
+	    GC_ASSERT(!GC_incremental);
+	    /* We assert that any concurrent marker will stop us.	*/
+	    /* Thus it is impossible for a mark procedure to see the 	*/
+	    /* allocation of the next object, but to see this object 	*/
+	    /* still containing a free list pointer.  Otherwise the 	*/
+	    /* marker might find a random "mark descriptor".		*/
+	    *(volatile ptr_t *)my_fl = obj_link(my_entry);
+	    /* We must update the freelist before we store the pointer.	*/
+	    /* Otherwise a GC at this point would see a corrupted	*/
+	    /* free list.						*/
+	    /* A memory barrier is probably never needed, since the 	*/
+	    /* action of stopping this thread will cause prior writes	*/
+	    /* to complete.						*/
+	    GC_ASSERT(((void * volatile *)result)[1] == 0); 
+	    *(void * volatile *)result = ptr_to_struct_containing_descr; 
+	    return result;
+	} else if ((word)my_entry - 1 < DIRECT_GRANULES) {
+	    if (!GC_incremental) *my_fl = my_entry + lw + 1;
+	    	/* In the incremental case, we always have to take this */
+	    	/* path.  Thus we leave the counter alone.		*/
+            return GC_gcj_fast_malloc(lw, ptr_to_struct_containing_descr);
+	} else {
+	    GC_generic_malloc_many(BYTES_FROM_INDEX(lw), GC_gcj_kind, my_fl);
+	    if (*my_fl == 0) return GC_oom_fn(BYTES_FROM_INDEX(lw));
+	    return GC_local_gcj_fast_malloc(lw, ptr_to_struct_containing_descr);
+	}
 }
 
 #endif /* GC_GCJ_SUPPORT */
