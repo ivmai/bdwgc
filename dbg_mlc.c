@@ -1,14 +1,49 @@
-# include "gc_private.h"
+/* 
+ * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to copy this garbage collector for any purpose,
+ * provided the above notices are retained on all copies.
+ */
+/* Boehm, April 5, 1994 1:52 pm PDT */
+# include "gc_priv.h"
+
+/* Do we want to and know how to save the call stack at the time of	*/
+/* an allocation?  How much space do we want to use in each object?	*/
+
+# if defined(SPARC) && defined(SUNOS4)
+#   include <machine/frame.h>
+#   define SAVE_CALL_CHAIN
+#   define NFRAMES 5	/* Number of frames to save. */
+#   define NARGS 2	/* Mumber of arguments to save for each call. */
+#   if NARGS > 6
+	--> We only know how to to get the first 6 arguments
+#   endif
+# endif
+
 # define START_FLAG ((word)0xfedcedcb)
 # define END_FLAG ((word)0xbcdecdef)
 	/* Stored both one past the end of user object, and one before	*/
 	/* the end of the object as seen by the allocator.		*/
 
+#ifdef SAVE_CALL_CHAIN
+    struct callinfo {
+	word ci_pc;
+	word ci_arg[NARGS];
+    };
+#endif
+
 /* Object header */
 typedef struct {
-    char * oh_string;	/* object descriptor string	*/
+    char * oh_string;		/* object descriptor string	*/
     word oh_int;		/* object descriptor integers	*/
-    word oh_sz;		/* Original malloc arg.		*/
+#   ifdef SAVE_CALL_CHAIN
+      struct callinfo oh_ci[NFRAMES];
+#   endif
+    word oh_sz;			/* Original malloc arg.		*/
     word oh_sf;			/* start flag */
 } oh;
 /* The size of the above structure is assumed not to dealign things,	*/
@@ -17,6 +52,58 @@ typedef struct {
 #define DEBUG_BYTES (sizeof (oh) + sizeof (word))
 #undef ROUNDED_UP_WORDS
 #define ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1) - 1)
+
+#if defined(SPARC) && defined(SUNOS4)
+/* Fill in the pc and argument information for up to NFRAMES of my	*/
+/* callers.  Ignore my frame and my callers frame.			*/
+void GC_save_callers (info) 
+struct callinfo info[NFRAMES];
+{
+  struct frame *frame;
+  struct frame *fp;
+  int nframes = 0;
+  word GC_save_regs_in_stack();
+
+  frame = (struct frame *) GC_save_regs_in_stack ();
+  
+  for (fp = frame -> fr_savfp; fp != 0 && nframes < NFRAMES;
+       fp = fp -> fr_savfp, nframes++) {
+      register int i;
+      
+      info[nframes].ci_pc = fp->fr_savpc;
+      for (i = 0; i < NARGS; i++) {
+	info[nframes].ci_arg[i] = fp->fr_arg[i];
+      }
+  }
+  if (nframes < NFRAMES) info[nframes].ci_pc = 0;
+}
+
+void GC_print_callers (info)
+struct callinfo info[NFRAMES];
+{
+    register int i,j;
+    
+    GC_err_printf0("\tCall chain at allocation:\n");
+    for (i = 0; i < NFRAMES; i++) {
+     	if (info[i].ci_pc == 0) break;
+     	GC_err_printf1("\t##PC##= 0x%X\n\t\targs: ", info[i].ci_pc);
+     	for (j = 0; j < NARGS; j++) {
+     	    if (j != 0) GC_err_printf0(", ");
+     	    GC_err_printf2("%d (0x%X)", info[i].ci_arg[j],info[i].ci_arg[j]);
+     	}
+     	GC_err_printf0("\n");
+    }
+}
+
+#endif /* SPARC & SUNOS4 */
+
+#ifdef SAVE_CALL_CHAIN
+#   define ADD_CALL_CHAIN(base) GC_save_callers(((oh *)(base)) -> oh_ci)
+#   define PRINT_CALL_CHAIN(base) GC_print_callers(((oh *)(base)) -> oh_ci)
+#else
+#   define ADD_CALL_CHAIN(base)
+#   define PRINT_CALL_CHAIN(base)
+#endif
 
 /* Check whether object with base pointer p has debugging info	*/ 
 /* p is assumed to point to a legitimate object in our part	*/
@@ -97,6 +184,7 @@ ptr_t p;
     GC_err_puts(ohdr -> oh_string);
     GC_err_printf2(":%ld, sz=%ld)\n", (unsigned long)(ohdr -> oh_int),
         			      (unsigned long)(ohdr -> oh_sz));
+    PRINT_CALL_CHAIN(ohdr);
 }
 void GC_print_smashed_obj(p, clobbered_addr)
 ptr_t p, clobbered_addr;
@@ -105,11 +193,16 @@ ptr_t p, clobbered_addr;
     
     GC_err_printf2("0x%lx in object at 0x%lx(", (unsigned long)clobbered_addr,
     					        (unsigned long)p);
-    if (clobbered_addr <= (ptr_t)(&(ohdr -> oh_sz))) {
+    if (clobbered_addr <= (ptr_t)(&(ohdr -> oh_sz))
+        || ohdr -> oh_string == 0) {
         GC_err_printf1("<smashed>, appr. sz = %ld)\n",
         	       BYTES_TO_WORDS(GC_size((ptr_t)ohdr)));
     } else {
-        GC_err_puts(ohdr -> oh_string);
+        if (ohdr -> oh_string[0] == '\0') {
+            GC_err_puts("EMPTY(smashed?)");
+        } else {
+            GC_err_puts(ohdr -> oh_string);
+        }
         GC_err_printf2(":%ld, sz=%ld)\n", (unsigned long)(ohdr -> oh_int),
         			          (unsigned long)(ohdr -> oh_sz));
     }
@@ -145,6 +238,7 @@ void GC_start_debugging()
     if (!GC_debugging_started) {
     	GC_start_debugging();
     }
+    ADD_CALL_CHAIN(result);
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
@@ -170,6 +264,7 @@ void GC_start_debugging()
     if (!GC_debugging_started) {
     	GC_start_debugging();
     }
+    ADD_CALL_CHAIN(result);
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
@@ -236,6 +331,7 @@ extern_ptr_t p;
     if (!GC_debugging_started) {
         GC_start_debugging();
     }
+    ADD_CALL_CHAIN(result);
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
@@ -260,6 +356,7 @@ extern_ptr_t p;
     if (!GC_debugging_started) {
         GC_start_debugging();
     }
+    ADD_CALL_CHAIN(result);
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
@@ -277,7 +374,7 @@ extern_ptr_t p;
     if (base == 0) {
         GC_err_printf1("Attempt to free invalid pointer %lx\n",
         	       (unsigned long)p);
-        ABORT("free(invalid pointer)");
+        if (p != 0) ABORT("free(invalid pointer)");
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
         GC_err_printf1(
@@ -286,11 +383,20 @@ extern_ptr_t p;
     } else {
       clobbered = GC_check_annotated_obj((oh *)base);
       if (clobbered != 0) {
-        GC_err_printf0("GC_debug_free: found smashed object at ");
+        if (((oh *)base) -> oh_sz == GC_size(base)) {
+            GC_err_printf0(
+                  "GC_debug_free: found previously deallocated (?) object at ");
+        } else {
+            GC_err_printf0("GC_debug_free: found smashed object at ");
+        }
         GC_print_smashed_obj(p, clobbered);
       }
+      /* Invalidate size */
+      ((oh *)base) -> oh_sz = GC_size(base);
     }
-    GC_free(GC_base(p));
+#   ifdef FIND_LEAK
+        GC_free(base);
+#   endif
 }
 
 # ifdef __STDC__
@@ -347,7 +453,7 @@ extern_ptr_t p;
     old_sz = ((oh *)base) -> oh_sz;
     if (old_sz < copy_sz) copy_sz = old_sz;
     if (result == 0) return(0);
-    bcopy((char *)p, (char *)result, (int) copy_sz);
+    BCOPY(p, result,  copy_sz);
     return(result);
 }
 

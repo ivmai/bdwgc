@@ -1,6 +1,6 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991-1993 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -8,7 +8,7 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
-/* Boehm, March 14, 1994 3:21 pm PST */
+/* Boehm, April 6, 1994 11:53 am PDT */
 
 #define DEBUG       /* Some run-time consistency checks */
 #undef DEBUG
@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <signal.h>
 #define I_HIDE_POINTERS	/* To make GC_call_with_alloc_lock visible */
-#include "gc_private.h"
+#include "gc_priv.h"
 
 # ifdef THREADS
 #   ifdef PCR
@@ -29,35 +29,17 @@
 	/* Critical section counter is defined in the M3 runtime 	*/
 	/* That's all we use.						*/
 #     else
-	--> declare allocator lock here
+#	ifdef SOLARIS_THREADS
+	  mutex_t GC_allocate_ml;	/* Implicitly initialized.	*/
+#	else
+	  --> declare allocator lock here
+#	endif
 #     endif
 #   endif
 # endif
 
-FAR struct _GC_arrays GC_arrays = { 0 };
+GC_FAR struct _GC_arrays GC_arrays = { 0 };
 
-/* Initialize GC_obj_kinds properly and standard free lists properly.  	*/
-/* This must be done statically since they may be accessed before 	*/
-/* GC_init is called.							*/
-struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
-/* PTRFREE */ { &GC_aobjfreelist[0], &GC_areclaim_list[0],
-		GC_no_mark_proc, FALSE },
-/* NORMAL  */ { &GC_objfreelist[0], &GC_reclaim_list[0],
-		GC_normal_mark_proc, TRUE },
-/* UNCOLLECTABLE */
-	      { &GC_uobjfreelist[0], &GC_ureclaim_list[0],
-		GC_normal_mark_proc, TRUE },
-# ifdef STUBBORN_ALLOC
-/*STUBBORN*/ { &GC_sobjfreelist[0], &GC_sreclaim_list[0],
-		GC_normal_mark_proc, TRUE },
-# endif
-};
-
-# ifdef STUBBORN_ALLOC
-  int GC_n_kinds = 4;
-# else
-  int GC_n_kinds = 3;
-# endif
 
 bool GC_debugging_started = FALSE;
 	/* defined here so we don't have to load debug_malloc.o */
@@ -98,6 +80,9 @@ extern signed_word GC_mem_found;
 	      GC_size_map[i] = ROUNDED_UP_WORDS(i);
 #           endif
 	}
+	for (i = 8*sizeof(word) + 1; i <= 16 * sizeof(word); i++) {
+	      GC_size_map[i] = (ROUNDED_UP_WORDS(i) + 1) & (~1);
+	}
 	/* We leave the rest of the array to be filled in on demand. */
     }
     
@@ -118,7 +103,7 @@ extern signed_word GC_mem_found;
     	word much_smaller_than_i = byte_sz - (byte_sz >> 2);
     	register word low_limit;	/* The lowest indexed entry we 	*/
     					/* initialize.			*/
-    	register int j;
+    	register word j;
     	
     	if (GC_size_map[smaller_than_i] == 0) {
     	    low_limit = much_smaller_than_i;
@@ -138,7 +123,7 @@ extern signed_word GC_mem_found;
 	    word_sz = MAXOBJSZ;
 	}
     	byte_sz = WORDS_TO_BYTES(word_sz);
-#	ifdef ALL_INTERIOR_POINTERS
+#	ifdef ADD_BYTE_AT_END
 	    /* We need one extra byte; don't fill in GC_size_map[byte_sz] */
 	    byte_sz--;
 #	endif
@@ -202,7 +187,7 @@ word limit;
 {
     word dummy[CLEAR_SIZE];
     
-    bzero((char *)dummy, (int)(CLEAR_SIZE*sizeof(word)));
+    BZERO(dummy, CLEAR_SIZE*sizeof(word));
     if ((word)(dummy) COOLER_THAN limit) {
         (void) GC_clear_stack_inner(arg, limit);
     }
@@ -242,7 +227,7 @@ ptr_t arg;
 	/* thus more junk remains accessible, thus the heap gets	*/
 	/* larger ...							*/
 # ifdef THREADS
-    bzero((char *)dummy, (int)(CLEAR_SIZE*sizeof(word)));
+    BZERO(dummy, CLEAR_SIZE*sizeof(word));
 # else
     if (GC_gc_no > GC_stack_last_cleared) {
         /* Start things over, so we clear the entire stack again */
@@ -341,6 +326,11 @@ ptr_t arg;
     }
 }
 
+size_t GC_get_heap_size()
+{
+    return ((size_t) GC_heapsize);
+}
+
 bool GC_is_initialized = FALSE;
 
 void GC_init()
@@ -355,13 +345,24 @@ void GC_init()
 
 }
 
+#ifdef MSWIN32
+    extern void GC_init_win32();
+#endif
+
 void GC_init_inner()
 {
     word dummy;
     
     if (GC_is_initialized) return;
     GC_is_initialized = TRUE;
-#   ifndef THREADS
+#   ifdef MSWIN32
+ 	GC_init_win32();
+#   endif
+#   ifdef SOLARIS_THREADS
+	/* We need dirty bits in order to find live stack sections.	*/
+        GC_dirty_init();
+#   endif
+#   if !defined(THREADS) || defined(SOLARIS_THREADS)
       if (GC_stackbottom == 0) {
 	GC_stackbottom = GC_get_stack_base();
       }
@@ -467,6 +468,10 @@ void GC_enable_incremental()
 # ifndef FIND_LEAK
     DISABLE_SIGNALS();
     LOCK();
+    if (GC_incremental) goto out;
+#   ifndef SOLARIS_THREADS
+        GC_dirty_init();
+#   endif
     if (!GC_is_initialized) {
         GC_init_inner();
     }
@@ -482,13 +487,41 @@ void GC_enable_incremental()
     }   /* else we're OK in assuming everything's	*/
     	/* clean since nothing can point to an	  	*/
     	/* unmarked object.			  	*/
-    GC_dirty_init();
     GC_read_dirty();
     GC_incremental = TRUE;
+out:
     UNLOCK();
     ENABLE_SIGNALS();
 # endif
 }
+
+#if defined(OS2) || defined(MSWIN32)
+    FILE * GC_stdout = NULL;
+    FILE * GC_stderr = NULL;
+#endif
+
+#ifdef MSWIN32
+  void GC_set_files()
+  {
+    if (GC_stdout == NULL) {
+	GC_stdout = fopen("gc.log", "wt");
+    }
+    if (GC_stderr == NULL) {
+	GC_stderr = GC_stdout;
+    }
+  }
+#endif
+
+#ifdef OS2
+  void GC_set_files()
+  {
+      if (GC_stdout == NULL) {
+	GC_stdout = stdout;
+    }
+    if (GC_stderr == NULL) {
+	GC_stderr = stderr;
+    }
+#endif
 
 /* A version of printf that is unlikely to call malloc, and is thus safer */
 /* to call from the collector in case malloc has been bound to GC_malloc. */
@@ -506,10 +539,12 @@ long a, b, c, d, e, f;
     buf[1024] = 0x15;
     (void) sprintf(buf, format, a, b, c, d, e, f);
     if (buf[1024] != 0x15) ABORT("GC_printf clobbered stack");
-#   ifdef OS2
+#   if defined(OS2) || defined(MSWIN32)
+      GC_set_files();
       /* We hope this doesn't allocate */
-      if (fwrite(buf, 1, strlen(buf), stdout) != strlen(buf))
+      if (fwrite(buf, 1, strlen(buf), GC_stdout) != strlen(buf))
           ABORT("write to stdout failed");
+      fflush(GC_stdout);
 #   else
       if (write(1, buf, strlen(buf)) < 0) ABORT("write to stdout failed");
 #   endif
@@ -524,10 +559,12 @@ long a, b, c, d, e, f;
     buf[1024] = 0x15;
     (void) sprintf(buf, format, a, b, c, d, e, f);
     if (buf[1024] != 0x15) ABORT("GC_err_printf clobbered stack");
-#   ifdef OS2
+#   if defined(OS2) || defined(MSWIN32)
+      GC_set_files();
       /* We hope this doesn't allocate */
-      if (fwrite(buf, 1, strlen(buf), stderr) != strlen(buf))
+      if (fwrite(buf, 1, strlen(buf), GC_stderr) != strlen(buf))
           ABORT("write to stderr failed");
+      fflush(GC_stderr);
 #   else
       if (write(2, buf, strlen(buf)) < 0) ABORT("write to stderr failed");
 #   endif
@@ -536,14 +573,25 @@ long a, b, c, d, e, f;
 void GC_err_puts(s)
 char *s;
 {
-#   ifdef OS2
+#   if defined(OS2) || defined(MSWIN32)
+      GC_set_files();
       /* We hope this doesn't allocate */
-      if (fwrite(s, 1, strlen(s), stderr) != strlen(s))
+      if (fwrite(s, 1, strlen(s), GC_stderr) != strlen(s))
           ABORT("write to stderr failed");
+      fflush(GC_stderr);
 #   else
       if (write(2, s, strlen(s)) < 0) ABORT("write to stderr failed");
 #   endif
 }
+
+#ifndef PCR
+void GC_abort(msg)
+char * msg;
+{
+    GC_err_printf1("%s\n", msg);
+    (void) abort();
+}
+#endif
 
 # ifdef SRC_M3
 void GC_enable()

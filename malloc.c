@@ -1,6 +1,6 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991-1993 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -8,22 +8,13 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
-/* Boehm, November 17, 1993 5:51 pm PST */
+/* Boehm, March 29, 1994 4:40 pm PST */
  
 #include <stdio.h>
-#include "gc_private.h"
+#include "gc_priv.h"
 
 extern ptr_t GC_clear_stack();	/* in misc.c, behaves like identity */
 void GC_extend_size_map();	/* in misc.c. */
-
-# ifdef ALL_INTERIOR_POINTERS
-#   define SMALL_OBJ(bytes) ((bytes) < WORDS_TO_BYTES(MAXOBJSZ))
-#   define ADD_SLOP(bytes) ((bytes)+1)
-# else
-#   define SMALL_OBJ(bytes) ((bytes) <= WORDS_TO_BYTES(MAXOBJSZ))
-#   define ADD_SLOP(bytes) (bytes)
-# endif
-
 
 /* allocate lb bytes for an object of kind.	*/
 /* Should not be used to directly to allocate	*/
@@ -141,6 +132,72 @@ out:
     return((ptr_t)op);
 }
 
+#if defined(THREADS) && !defined(SRC_M3)
+/* Return a list of 1 or more objects of the indicated size, linked	*/
+/* through the first word in the object.  This has the advantage that	*/
+/* it acquires the allocation lock only once, and may greatly reduce	*/
+/* time wasted contending for the allocation lock.  Typical usage would */
+/* be in a thread that requires many items of the same size.  It would	*/
+/* keep its own free list in thread-local storage, and call		*/
+/* GC_malloc_many or friends to replenish it.  (We do not round up	*/
+/* object sizes, since a call indicates the intention to consume many	*/
+/* objects of exactly this size.)					*/
+/* Note that the client should usually clear the link field.		*/
+ptr_t GC_generic_malloc_many(lb, k)
+register word lb;
+register int k;
+{
+ptr_t op;
+register ptr_t p;
+ptr_t *opp;
+word lw;
+register word my_words_allocd;
+DCL_LOCK_STATE;
+
+    if (!SMALL_OBJ(lb)) {
+        op = GC_generic_malloc(lb, k);
+        obj_link(op) = 0;
+        return(op);
+    }
+    lw = ROUNDED_UP_WORDS(lb);
+    DISABLE_SIGNALS();
+    LOCK();
+    opp = &(GC_obj_kinds[k].ok_freelist[lw]);
+    if( (op = *opp) == 0 ) {
+        if (!GC_is_initialized) {
+            GC_init_inner();
+        }
+	op = GC_clear_stack(GC_allocobj(lw, k));
+	if (op == 0) goto out;
+    }
+    *opp = 0;
+    my_words_allocd = 0;
+    for (p = op; p != 0; p = obj_link(p)) {
+        my_words_allocd += lw;
+        if (my_words_allocd >= BODY_SZ) {
+            *opp = obj_link(p);
+            obj_link(p) = 0;
+            break;
+        }
+    }
+    GC_words_allocd += my_words_allocd;
+    
+out:
+    UNLOCK();
+    ENABLE_SIGNALS();
+    return(op);
+
+}
+
+void * GC_malloc_many(size_t lb)
+{
+    return(GC_generic_malloc_many(lb, NORMAL));
+}
+
+/* Note that the "atomic" version of this would be unsafe, since the	*/
+/* links would not be seen by the collector.				*/
+# endif
+
 #define GENERAL_MALLOC(lb,k) \
     (extern_ptr_t)GC_clear_stack(GC_generic_malloc((word)lb, k))
 /* We make the GC_clear_stack_call a tail call, hoping to get more of	*/
@@ -232,6 +289,10 @@ DCL_LOCK_STATE;
 
     if( SMALL_OBJ(lb) ) {
 #       ifdef MERGE_SIZES
+#	  ifdef ADD_BYTE_AT_END
+	    lb--; /* We don't need the extra byte, since this won't be	*/
+	    	  /* collected anyway.					*/
+#	  endif
 	  lw = GC_size_map[lb];
 #	else
 	  lw = ROUNDED_UP_WORDS(lb);
@@ -307,7 +368,7 @@ int knd;
 {
 register struct hblk * h;
 register hdr * hhdr;
-register signed_word sz;	 /* Current size in bytes	*/
+register word sz;	 /* Current size in bytes	*/
 register word orig_sz;	 /* Original sz in bytes	*/
 int obj_kind;
 
@@ -338,7 +399,7 @@ int obj_kind;
 	      /* Clear unneeded part of object to avoid bogus pointer */
 	      /* tracing.					      */
 	      /* Safe for stubborn objects.			      */
-	        bzero(((char *)p) + lb, (int)(orig_sz - lb));
+	        BZERO(((ptr_t)p) + lb, orig_sz - lb);
 	    }
 	    return(p);
 	} else {
@@ -349,7 +410,7 @@ int obj_kind;
 	      if (result == 0) return(0);
 	          /* Could also return original object.  But this 	*/
 	          /* gives the client warning of imminent disaster.	*/
-	      bcopy(p, result, (int)lb);
+	      BCOPY(p, result, lb);
 	      GC_free(p);
 	      return(result);
 	}
@@ -359,7 +420,7 @@ int obj_kind;
 	  	GC_generic_or_special_malloc((word)lb, obj_kind);
 
 	  if (result == 0) return(0);
-	  bcopy(p, result, (int)sz);
+	  BCOPY(p, result, sz);
 	  GC_free(p);
 	  return(result);
     }
@@ -395,7 +456,7 @@ int obj_kind;
 	/* inconsistent.  We claim this is benign.			*/
 	if (knd == UNCOLLECTABLE) GC_non_gc_bytes -= sz;
 	if (ok -> ok_init) {
-	    bzero((char *)((word *)p + 1), (int)(WORDS_TO_BYTES(sz-1)));
+	    BZERO((word *)p + 1, WORDS_TO_BYTES(sz-1));
 	}
 	flh = &(ok -> ok_freelist[sz]);
 	obj_link(p) = *flh;
@@ -411,3 +472,4 @@ int obj_kind;
         ENABLE_SIGNALS();
     }
 }
+

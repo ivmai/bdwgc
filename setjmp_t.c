@@ -1,3 +1,14 @@
+/*
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to copy this garbage collector for any purpose,
+ * provided the above notices are retained on all copies.
+ */
+/* Boehm, February 18, 1994 2:00 pm PST */
+ 
 /* Check whether setjmp actually saves registers in jmp_buf. */
 /* If it doesn't, the generic mark_regs code won't work.     */
 /* Compilers vary as to whether they will put x in a 	     */

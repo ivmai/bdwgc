@@ -8,16 +8,15 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
+/* Boehm, February 24, 1994 3:55 pm PST */
   
 /* Routines for maintaining maps describing heap block
  * layouts for various object sizes.  Allows fast pointer validity checks
  * and fast location of object start locations on machines (such as SPARC)
  * with slow division.
- *
- * Boehm, February 6, 1992 1:00:09 pm PST
  */
  
-# include "gc_private.h"
+# include "gc_priv.h"
 
 char * GC_invalid_map = 0;
 
@@ -62,7 +61,7 @@ void GC_register_displacement_inner(offset)
 word offset;
 {
 # ifndef ALL_INTERIOR_POINTERS
-    register int i;
+    register unsigned i;
     
     if (offset > MAX_OFFSET) {
         ABORT("Bad argument to GC_register_displacement");
@@ -73,14 +72,14 @@ word offset;
       for (i = 0; i <= MAXOBJSZ; i++) {
           if (GC_obj_map[i] != 0) {
              if (i == 0) {
-               GC_obj_map[i][offset + HDR_BYTES] = BYTES_TO_WORDS(offset);
+               GC_obj_map[i][offset + HDR_BYTES] = (char)BYTES_TO_WORDS(offset);
              } else {
-               register int j;
-               register int lb = WORDS_TO_BYTES(i);
+               register unsigned j;
+               register unsigned lb = WORDS_TO_BYTES(i);
                
                if (offset < lb) {
                  for (j = offset + HDR_BYTES; j < HBLKSIZE; j += lb) {
-                   GC_obj_map[i][j] = BYTES_TO_WORDS(offset);
+                   GC_obj_map[i][j] = (char)BYTES_TO_WORDS(offset);
                  }
                }
              }
@@ -96,8 +95,8 @@ word offset;
 bool GC_add_map_entry(sz)
 word sz;
 {
-    register int obj_start;
-    register int displ;
+    register unsigned obj_start;
+    register unsigned displ;
     register char * new_map;
     
     if (sz > MAXOBJSZ) sz = 0;

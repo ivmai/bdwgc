@@ -1,6 +1,16 @@
+/*
+ * Copyright (c) 1992-1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to copy this garbage collector for any purpose,
+ * provided the above notices are retained on all copies.
+ */
+/* Boehm, February 18, 1994 2:04 pm PST */
 # ifdef CHECKSUMS
 
-# include "gc_private.h"
+# include "gc_priv.h"
 
 /* This is debugging code intended to verify the results of dirty bit	*/
 /* computations. Works only in a single threaded environment.		*/

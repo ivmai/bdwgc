@@ -8,11 +8,11 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
-/* Boehm, December 20, 1993 3:05 pm PST */
+/* Boehm, April 6, 1994 10:55 am PDT */
  
-#ifndef GC_H
+#ifndef _GC_H
 
-# define GC_H
+# define _GC_H
 
 # include <stddef.h>
 
@@ -29,13 +29,9 @@ typedef long GC_signed_word;
 
 /* Public read-only variables */
 
-extern GC_word GC_heapsize;       /* Heap size in bytes */
-
 extern GC_word GC_gc_no;/* Counter incremented per collection.  	*/
 			/* Includes empty GCs at startup.		*/
 			
-extern int GC_incremental;  /* Using incremental/generational collection. */
-
 
 /* Public R/W variables */
 
@@ -68,9 +64,10 @@ extern GC_word GC_free_space_divisor;
 			/* Increasing its value will use less space	*/
 			/* but more collection time.  Decreasing it	*/
 			/* will appreciably decrease collection time	*/
-			/* at the expens of space.			*/
+			/* at the expense of space.			*/
 			/* GC_free_space_divisor = 1 will effectively	*/
 			/* disable collections.				*/
+
 			
 /* Public procedures */
 /*
@@ -160,7 +157,7 @@ void GC_end_stubborn_change(/* p */);
 
 /* Explicitly increase the heap size.	*/
 /* Returns 0 on failure, 1 on success.  */
-extern int GC_expand_hp(/* number_of_4K_blocks */);
+extern int GC_expand_hp(/* number_of_bytes */);
 
 /* Clear the set of root segments */
 extern void GC_clear_roots();
@@ -182,6 +179,11 @@ void GC_register_displacement(/* n */);
 
 /* Explicitly trigger a collection. 	*/
 void GC_gcollect();
+
+/* Return the number of bytes in the heap.  Excludes collector private	*/
+/* data structures.  Includes empty blocks and fragmentation loss.	*/
+/* Includes some pages that were allocated but never written.		*/
+size_t GC_get_heap_size();
 
 /* Enable incremental/generational collection.	*/
 /* Not advisable unless dirty bits are 		*/
@@ -254,7 +256,7 @@ void GC_debug_end_stubborn_change(/* p */);
 # define GC_NEW(t) (t *)GC_MALLOC(sizeof (t))
 # define GC_NEW_ATOMIC(t) (t *)GC_MALLOC_ATOMIC(sizeof (t))
 # define GC_NEW_STUBBORN(t) (t *)GC_MALLOC_STUBBORN(sizeof (t))
-# define GC_NEW_UNCOLLECTABLE(t) (t *)GC_NEW_UNCOLLECTABLE(sizeof (t))
+# define GC_NEW_UNCOLLECTABLE(t) (t *)GC_MALLOC_UNCOLLECTABLE(sizeof (t))
 
 /* Finalization.  Some of these primitives are grossly unsafe.		*/
 /* The idea is to make them both cheap, and sufficient to build		*/
@@ -298,6 +300,10 @@ void GC_register_finalizer(/* void * obj,
 	/* pointers only if the allocation lock is held, and	*/
 	/* such conversions are not performed by finalization	*/
 	/* routines.						*/
+	/* If GC_register_finalizer is aborted as a result of	*/
+	/* a signal, the object may be left with no		*/
+	/* finalization, even if neither the old nor new	*/
+	/* finalizer were NULL.					*/
 
 /* The following routine may be used to break cycles between	*/
 /* finalizable objects, thus causing cyclic finalizable		*/
@@ -378,4 +384,35 @@ int GC_unregister_disappearing_link(/* void ** link */);
 #   endif
 # endif
 
-#endif
+#ifdef SOLARIS_THREADS
+/* We need to intercept calls to many of the threads primitives, so 	*/
+/* that we can locate thread stacks and stop the world.			*/
+/* Note also that the collector cannot see thread specific data.	*/
+/* Thread specific data should generally consist of pointers to		*/
+/* uncollectable objects, which are deallocated using the destructor	*/
+/* facility in thr_keycreate.						*/
+# include <thread.h>
+  int GC_thr_create(void *stack_base, size_t stack_size,
+                    void *(*start_routine)(void *), void *arg, long flags,
+                    thread_t *new_thread);
+  int GC_thr_join(thread_t wait_for, thread_t *departed, void **status);
+  int GC_thr_suspend(thread_t target_thread);
+  int GC_thr_continue(thread_t target_thread);
+  void * GC_dlopen(const char *path, int mode);
+
+# define thr_create GC_thr_create
+# define thr_join GC_thr_join
+# define thr_suspend GC_thr_suspend
+# define thr_continue GC_thr_continue
+# define dlopen GC_dlopen
+
+/* This returns a list of objects, linked through their first		*/
+/* word.  Its use can greatly reduce lock contention problems, since	*/
+/* the allocation lock can be acquired and released many fewer times.	*/
+void * GC_malloc_many(size_t lb);
+#define GC_NEXT(p) (*(void **)(p)) 	/* Retrieve the next element	*/
+					/* in returned list.		*/
+
+#endif /* SOLARIS_THREADS */
+
+#endif /* _GC_H */

@@ -757,7 +757,7 @@ void CORD__extend_path(register CORD_pos p)
 
 char CORD__pos_fetch(register CORD_pos p)
 {
-    /* Leaf is not a function node */
+    /* Leaf is a function node */
     struct CORD_pe * pe = &((p)[0].path[(p)[0].path_len]);
     CORD leaf = pe -> pe_cord;
     register struct Function * f = &(((CordRep *)leaf) -> function);
@@ -768,22 +768,42 @@ char CORD__pos_fetch(register CORD_pos p)
 
 void CORD__next(register CORD_pos p)
 {
+    register size_t cur_pos = p[0].cur_pos + 1;
+    register struct CORD_pe * current_pe = &((p)[0].path[(p)[0].path_len]);
+    register CORD leaf = current_pe -> pe_cord;
+    
     /* Leaf is not a string or we're at end of leaf */
-    p[0].cur_pos++;
-    if (p[0].cur_end == 0) {
+    p[0].cur_pos = cur_pos;
+    if (!IS_STRING(leaf)) {
     	/* Function leaf	*/
-    	struct CORD_pe * pe = &(p[0].path[p[0].path_len]);
-    	CORD leaf = pe -> pe_cord;
     	register struct Function * f = &(((CordRep *)leaf) -> function);
+    	register size_t start_pos = current_pe -> pe_start_pos;
+    	register size_t end_pos = start_pos + f -> len;
     	
-    	if (p[0].cur_pos < pe -> pe_start_pos + f -> len) return;
+    	if (cur_pos < end_pos) {
+    	  /* Fill cache and return. */
+    	    register int i;
+    	    register int limit = cur_pos + FUNCTION_BUF_SZ;
+    	    register CORD_fn fn = f -> fn;
+    	    register void * client_data = f -> client_data;
+    	    
+    	    if (limit > end_pos) {
+    	        limit = end_pos;
+    	    }
+    	    for (i = cur_pos; i < limit; i++) {
+    	        p[0].function_buf[i - cur_pos] =
+    	        	(*fn)(i - start_pos, client_data);
+    	    }
+    	    p[0].cur_start = cur_pos;
+    	    p[0].cur_leaf = p[0].function_buf;
+    	    p[0].cur_end = limit;
+    	    return;
+    	}
     }
     /* End of leaf	*/
     /* Pop the stack until we find two concatenation nodes with the 	*/
     /* same start position: this implies we were in left part.		*/
     {
-    	register struct CORD_pe * current_pe = &((p)[0].path[(p)[0].path_len]);
-    	
     	while (p[0].path_len > 0
     	       && current_pe[0].pe_start_pos != current_pe[-1].pe_start_pos) {
     	    p[0].path_len--;

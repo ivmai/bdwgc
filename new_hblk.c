@@ -1,6 +1,6 @@
 /*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991,1992 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -12,12 +12,13 @@
  *	ptr_t GC_build_flXXX(h, old_fl)
  *	void GC_new_hblk(n)
  */
-/* Boehm, December 17, 1993 11:53 am PST */
+/* Boehm, April 1, 1994 5:42 pm PST */
 
 
 # include <stdio.h>
-# include "gc_private.h"
+# include "gc_priv.h"
 
+#ifndef SMALL_CONFIG
 /*
  * Build a free list for size 1 objects inside hblk h.  Set the last link to
  * be ofl.  Return a pointer tpo the first free list entry.
@@ -143,6 +144,7 @@ ptr_t ofl;
     return((ptr_t)(p-4));
 }
 
+#endif /* !SMALL_CONFIG */
 
 /*
  * Allocate a new heapblock for small objects of size n.
@@ -171,6 +173,7 @@ int kind;
 
   /* Handle small objects sizes more efficiently.  For larger objects 	*/
   /* the difference is less significant.				*/
+#  ifndef SMALL_CONFIG
     switch (sz) {
         case 1: GC_obj_kinds[kind].ok_freelist[1] =
         	  GC_build_fl1(h, GC_obj_kinds[kind].ok_freelist[1]);
@@ -202,15 +205,17 @@ int kind;
         default:
         	break;
     }
+#  endif /* !SMALL_CONFIG */
     
   /* Clear the page if necessary. */
-    if (clear) bzero((char *)h, (int)HBLKSIZE);
+    if (clear) BZERO(h, HBLKSIZE);
     
   /* Add objects to free list */
     p = &(h -> hb_body[sz]);	/* second object in *h	*/
     prev = &(h -> hb_body[0]);       	/* One object behind p	*/
     last_object = (word *)((char *)h + HBLKSIZE);
-    last_object -= sz;	 /* Last place for last object to start */
+    last_object -= sz;
+			    /* Last place for last object to start */
 
   /* make a list of all objects in *h with head as last object */
     while (p <= last_object) {

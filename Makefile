@@ -1,19 +1,57 @@
+# Primary targets:
+# gc.a - builds basic library
+# c++ - adds C++ interface to library and include directory
+# cords - adds cords (heavyweight strings) to library and include directory
+# test - prints porting information, then builds basic version of gc.a, and runs
+#        some tests of collector and cords.  Does not add cords or c++ interface to gc.a
+# cord/de - builds dumb editor based on cords.
+CC= cc
+CXX=g++
+# Needed only for "make c++", which adds the c++ interface
+
+CFLAGS= -O -DALL_INTERIOR_POINTERS -DSILENT
+# Setjmp_test may yield overly optimistic results when compiled
+# without optimization.
+# -DSILENT disables statistics printing, and improves performance.
+# -DCHECKSUMS reports on erroneously clear dirty bits, and unexpectedly
+#   altered stubborn objects, at substantial performance cost.
+# -DFIND_LEAK causes the collector to assume that all inaccessible
+#   objects should have been explicitly deallocated, and reports exceptions
+# -DSOLARIS_THREADS enables support for Solaris (thr_) threads.
+#   (Clients should also define SOLARIS_THREADS and then include
+#   gc.h before performing thr_ or GC_ operations.)
+# -DALL_INTERIOR_POINTERS allows all pointers to the interior
+#   of objects to be recognized.  (See gc_private.h for consequences.)
+# -DSMALL_CONFIG tries to tune the collector for small heap sizes,
+#   usually causing it to use less space in such situations.
+#   Incremental collection no longer works in this case.
+
+AR= ar
+RANLIB= ranlib
+
+
 # Redefining srcdir allows object code for the nonPCR version of the collector
 # to be generated in different directories
 srcdir = .
 VPATH = $(srcdir)
 
-OBJS= alloc.o reclaim.o allochblk.o misc.o mach_dep.o os_dep.o mark_roots.o headers.o mark.o obj_map.o black_list.o finalize.o new_hblk.o real_malloc.o dynamic_load.o debug_malloc.o malloc.o stubborn.o checksums.o
+OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dyn_load.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o typd_mlc.o
 
-CSRCS= reclaim.c allochblk.c misc.c alloc.c mach_dep.c os_dep.c mark_roots.c headers.c mark.c obj_map.c pcr_interface.c black_list.c finalize.c new_hblk.c real_malloc.c dynamic_load.c debug_malloc.c malloc.c stubborn.c checksums.c
+CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c typd_mlc.c
 
-CORD_SRCS=  cord/cord_basics.c cord/cord_extras.c cord/de.c cord/cord_test.c cord/cord.h cord/ec.h cord/cord_position.h
+CORD_SRCS=  cord/cord_basics.c cord/cord_extras.c cord/cord_printf.c cord/de.c cord/cord_test.c cord/cord.h cord/ec.h cord/cord_position.h
 
-CORD_OBJS=  cord/cord_basics.o cord/cord_extras.o
+CORD_OBJS=  cord/cord_basics.o cord/cord_extras.o cord/cord_printf.o
 
-SRCS= $(CSRCS) mips_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s sparc_mach_dep.s gc.h gc_headers.h gc_private.h config.h gc_inline.h gc.man if_mach.c if_not_there.c $(CORD_SRCS)
+SRCS= $(CSRCS) mips_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s sparc_mach_dep.s gc.h gc_typed.h gc_hdrs.h gc_priv.h gc_private.h config.h gc_mark.h gc_inl.h gc_inline.h gc.man if_mach.c if_not_there.c gc_c++.cc gc_c++.h $(CORD_SRCS)
 
-INCLUDE_FILES= gc.h cord/cord.h cord/ec.h cord/cord_position.h
+OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE \
+           README test.c setjmp_t.c SMakefile.amiga SCoptions.amiga \
+           README.amiga README.win32 cord/README include/gc.h \
+           include/gc_typed.h README.QUICK callprocs
+
+CORD_INCLUDE_FILES= $(srcdir)/gc.h $(srcdir)/cord/cord.h $(srcdir)/cord/ec.h \
+           $(srcdir)/cord/cord_position.h
 
 # Libraries needed for curses applications.  Only needed for de.
 CURSES= -lcurses -ltermlib
@@ -22,18 +60,6 @@ CURSES= -lcurses -ltermlib
 # versions of make otherwise fork the shell specified in
 # the SHELL environment variable.
 SHELL= /bin/sh
-
-AR= ar
-RANLIB= ranlib
-CC= cc
-CFLAGS= -O -DSILENT
-# Setjmp_test may yield overly optimistic results when compiled
-# without optimization.
-# -DSILENT disables statistics printing, and improves performance.
-# -DCHECKSUMS reports on erroneously clear dirty bits, and unexpectedly
-# altered stubborn objects, at substantial performance cost.
-# -DFIND_LEAK causes the collector to assume that all inaccessible
-# objects should have been explicitly deallocated, and reports exceptions
 
 SPECIALCFLAGS = 
 # Alternative flags to the C compiler for mach_dep.c.
@@ -46,11 +72,17 @@ ALPHACFLAGS = -non_shared
 
 all: gc.a gctest
 
-pcr: PCR-Makefile gc_private.h gc_headers.h gc.h config.h mach_dep.o $(SRCS)
+pcr: PCR-Makefile gc_private.h gc_hdrs.h gc.h config.h mach_dep.o $(SRCS)
 	make -f PCR-Makefile depend
 	make -f PCR-Makefile
 
-$(OBJS) test.o: $(srcdir)/gc_private.h $(srcdir)/gc_headers.h $(srcdir)/gc.h $(srcdir)/config.h
+$(OBJS) test.o: $(srcdir)/gc_priv.h $(srcdir)/gc_hdrs.h $(srcdir)/gc.h \
+    $(srcdir)/config.h $(srcdir)/gc_typed.h Makefile
+# The dependency on Makefile is needed.  Changing
+# options such as -DSILENT affects the size of GC_arrays,
+# invalidating all .o files that rely on gc_priv.h
+
+mark.o typd_mlc.o finalize.o: $(srcdir)/gc_mark.h
 
 gc.a: $(OBJS)
 	$(AR) ru gc.a $(OBJS)
@@ -60,9 +92,17 @@ gc.a: $(OBJS)
 cords: $(CORD_OBJS) cord/cord_test
 	$(AR) ru gc.a $(CORD_OBJS)
 	$(RANLIB) gc.a || cat /dev/null
-	ln cord/cord.h include/cord.h
-	ln cord/ec.h include/ec.h
-	ln cord/cord_position.h include/cord_position.h
+	cp $(srcdir)/cord/cord.h include/cord.h
+	cp $(srcdir)/cord/ec.h include/ec.h
+	cp $(srcdir)/cord/cord_position.h include/cord_position.h
+
+gc_c++.o: $(srcdir)/gc_c++..cc $(srcdir)/gc_c++.h
+	$(CXX) -c -O $(srcdir)/gc_c++..cc
+	
+c++: gc_c++.o $(srcdir)/gc_c++.h
+	$(AR) ru gc.a gc_c++.o
+	$(RANLIB) gc.a || cat /dev/null
+	cp $(srcdir)/gc_c++.h include/gc_c++.h 
 
 mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_mach_dep.s $(srcdir)/rs6000_mach_dep.s if_mach if_not_there
 	rm -f mach_dep.o
@@ -72,23 +112,30 @@ mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_mach_dep.s $(srcdir)/rs6000_mach
 	./if_mach SPARC SUNOS5 as -o mach_dep.o $(srcdir)/sparc_mach_dep.s
 	./if_not_there mach_dep.o $(CC) -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
 
-mark_roots.o: $(srcdir)/mark_roots.c
-	rm -f mark_roots.o
-	./if_mach ALPHA "" $(CC) -c $(CFLAGS) -Wo,-notail $(srcdir)/mark_roots.c
-	./if_not_there mark_roots.o $(CC) -c $(CFLAGS) $(srcdir)/mark_roots.c
+mark_rts.o: $(srcdir)/mark_rts.c if_mach if_not_there
+	rm -f mark_rts.o
+	./if_mach ALPHA "" $(CC) -c $(CFLAGS) -Wo,-notail $(srcdir)/mark_rts.c
+	./if_not_there mark_rts.o $(CC) -c $(CFLAGS) $(srcdir)/mark_rts.c
 #	work-around for DEC optimizer tail recursion elimination bug
 
-cord/cord_basics.o: $(srcdir)/cord/cord_basics.c $(INCLUDE_FILES)
+cord/cord_basics.o: $(srcdir)/cord/cord_basics.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -o cord/cord_basics.o $(srcdir)/cord/cord_basics.c
 
-cord/cord_extras.o: $(srcdir)/cord/cord_extras.c $(INCLUDE_FILES)
+cord/cord_extras.o: $(srcdir)/cord/cord_extras.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -o cord/cord_extras.o $(srcdir)/cord/cord_extras.c
 
+cord/cord_printf.o: $(srcdir)/cord/cord_printf.c $(CORD_INCLUDE_FILES)
+	$(CC) $(CFLAGS) -c -o cord/cord_printf.o $(srcdir)/cord/cord_printf.c
+
 cord/cord_test: $(srcdir)/cord/cord_test.c $(CORD_OBJS) gc.a
-	$(CC) $(CFLAGS) -o cord/cord_test $(srcdir)/cord/cord_test.c $(CORD_OBJS) gc.a
+	rm -f cord/cord_test
+	./if_mach SPARC SUNOS5 $(CC) $(CFLAGS) -o cord/cord_test $(srcdir)/cord/cord_test.c $(CORD_OBJS) gc.a -lthread
+	./if_not_there cord/cord_test $(CC) $(CFLAGS) -o cord/cord_test $(srcdir)/cord/cord_test.c $(CORD_OBJS) gc.a
 
 cord/de: $(srcdir)/cord/de.c $(CORD_OBJS) gc.a
-	$(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c $(CORD_OBJS) gc.a $(CURSES)
+	rm -f cord/de
+	./if_mach SPARC SUNOS5 $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c $(CORD_OBJS) gc.a $(CURSES) -lthread
+	./if_not_there cord/de $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c $(CORD_OBJS) gc.a $(CURSES)
 
 if_mach: $(srcdir)/if_mach.c $(srcdir)/config.h
 	$(CC) $(CFLAGS) -o if_mach $(srcdir)/if_mach.c
@@ -105,15 +152,16 @@ clean:
 gctest: test.o gc.a if_mach if_not_there
 	rm -f gctest
 	./if_mach ALPHA "" $(CC) $(CFLAGS) -o gctest $(ALPHACFLAGS) test.o gc.a
+	./if_mach SPARC SUNOS5 $(CC) $(CFLAGS) -o gctest $(CFLAGS) test.o gc.a -lthread
 	./if_not_there gctest $(CC) $(CFLAGS) -o gctest test.o gc.a
 
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  Gctest may still work.
-# Try compiling setjmp_test unoptimized.
-setjmp_test: $(srcdir)/setjmp_test.c $(srcdir)/gc.h if_mach if_not_there
+# Try compiling setjmp_t.c unoptimized.
+setjmp_test: $(srcdir)/setjmp_t.c $(srcdir)/gc.h if_mach if_not_there
 	rm -f setjmp_test
-	./if_mach ALPHA "" $(CC) $(CFLAGS) -o setjmp_test $(ALPHACFLAGS) $(srcdir)/setjmp_test.c
-	./if_not_there setjmp_test $(CC) $(CFLAGS) -o setjmp_test $(srcdir)/setjmp_test.c
+	./if_mach ALPHA "" $(CC) $(CFLAGS) -o setjmp_test $(ALPHACFLAGS) $(srcdir)/setjmp_t.c
+	./if_not_there setjmp_test $(CC) $(CFLAGS) -o setjmp_test $(srcdir)/setjmp_t.c
 
 test: setjmp_test gctest
 	./setjmp_test
@@ -121,9 +169,10 @@ test: setjmp_test gctest
 	make cord/cord_test
 	cord/cord_test
 
-tar:
-	tar cvf gc.tar $(SRCS) Makefile PCR-Makefile OS2_MAKEFILE README test.c setjmp_test.c \
-		SMakefile.amiga SCoptions.amiga README.amiga cord/README include/gc.h
+gc.tar: $(SRCS) $(OTHER_FILES)
+	tar cvf gc.tar $(SRCS) $(OTHER_FILES)
+
+gc.tar.Z: gc.tar
 	compress gc.tar
 
 lint: $(CSRCS) test.c

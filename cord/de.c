@@ -23,12 +23,14 @@
  *	The redisplay algorithm doesn't let curses do the scrolling.
  *	The rule for moving the window over the file is suboptimal.
  */
+/* Boehm, January 5, 1994 2:35 pm PST */
 #include <stdio.h>
 #include <curses.h>
 #include "../gc.h"
 #include "cord.h"
 
 /* List of line number to position mappings, in descending order. */
+/* There may be holes.						  */
 typedef struct LineMapRep {
     int line;
     size_t pos;
@@ -45,7 +47,11 @@ typedef struct HistoryRep {
 history now = 0;
 CORD current;		/* == now -> file_contents.	*/
 size_t current_len;	/* Current file length.		*/
-line_map current_map = 0;	/* Current line no. to pos. map	*/
+line_map current_map = 0;	/* Current line no. to pos. map	 */
+size_t current_map_size = 0;	/* Number of current_map entries.	*/
+				/* Not always accurate, but reset	*/
+				/* by prune_map.			*/
+# define MAX_MAP_SIZE 3000
 
 /* Current display position */
 int dis_line = 0;
@@ -64,22 +70,44 @@ size_t file_pos = 0;	/* Character position corresponding to cursor.	*/
 /* Invalidate line map for lines > i */
 void invalidate_map(int i)
 {
-    while(current_map -> line > i) current_map = current_map -> previous;
+    while(current_map -> line > i) {
+        current_map = current_map -> previous;
+        current_map_size--;
+    }
 }
 
+/* Reduce the number of map entries to save space for huge files. */
+/* This also affects maps in histories.				  */
+void prune_map()
+{
+    line_map map = current_map;
+    int start_line = map -> line;
+    
+    current_map_size = 0;
+    for(; map != 0; map = map -> previous) {
+    	current_map_size++;
+    	if (map -> line < start_line - LINES && map -> previous != 0) {
+    	    map -> previous = map -> previous -> previous;
+    	}
+    }
+}
 /* Add mapping entry */
 void add_map(int line, size_t pos)
 {
     line_map new_map = GC_NEW(struct LineMapRep);
     
+    if (current_map_size >= MAX_MAP_SIZE) prune_map();
     new_map -> line = line;
     new_map -> pos = pos;
     new_map -> previous = current_map;
     current_map = new_map;
+    current_map_size++;
 }
 
+
+
 /* Return position of column *c of ith line in   */
-/* current file. Adjust c to be within the line. */
+/* current file. Adjust *c to be within the line.*/
 /* A 0 pointer is taken as 0 column.		 */
 /* Returns CORD_NOT_FOUND if i is too big.	 */
 /* Assumes i > dis_line.			 */
@@ -90,7 +118,8 @@ size_t line_pos(int i, int *c)
     size_t next;
     line_map map = current_map;
     
-    while (map -> line > i) map = map -> previous; 
+    while (map -> line > i) map = map -> previous;
+    if (map -> line < i - 2) /* rebuild */ invalidate_map(i);
     for (j = map -> line, cur = map -> pos; j < i;) {
 	cur = CORD_chr(current, cur, '\n');
         if (cur == current_len-1) return(CORD_NOT_FOUND);
@@ -218,6 +247,7 @@ void fix_cursor(void)
     if (need_redisplay != NONE) redisplay();
     move(line - dis_line, col - dis_col);
     refresh();
+    fflush(stdout);
 }
 
 /* Make sure line, col, and dis_pos are somewhere inside file.	*/
@@ -239,6 +269,20 @@ void fix_pos()
     }
 }
 
+/*
+ * beep() is part of some curses packages and not others.
+ * We try to match the type of the builtin one, if any.
+ */
+#ifdef __STDC__
+    int beep(void)
+#else
+    int beep()
+#endif
+{
+    putc('\007', stderr);
+    return(0);
+}
+
 # define UP '\020'	/* ^P */
 # define DOWN '\016'	/* ^N */
 # define LEFT '\002'	/* ^B */
@@ -249,6 +293,8 @@ void fix_pos()
 # define WRITE '\027'	/* ^W */
 # define QUIT '\004'	/* ^D */
 # define REPEAT '\022'	/* ^R */
+# define LOCATE '\014'	/* ^L */
+# define TOP '\024'	/* ^T */
 
 main(argc, argv)
 int argc;
@@ -260,6 +306,8 @@ char ** argv;
 #   define NO_PREFIX -1
 #   define BARE_PREFIX -2
     int repeat_count = NO_PREFIX;
+    int locate_mode = 0;	/* Currently between 2 ^Ls	*/
+    CORD locate_string = CORD_EMPTY;
     int i, file_len;
     int need_fix_pos; 
 
@@ -278,7 +326,6 @@ char ** argv;
     add_hist(initial);
     now -> map = current_map;
     now -> previous = now;  /* Can't back up further: beginning of the world */
-    GC_enable_incremental();
     setvbuf(stdout, GC_MALLOC_ATOMIC(8192), _IOFBF, 8192);
     initscr();
     noecho(); nonl(); cbreak();
@@ -287,6 +334,35 @@ char ** argv;
     
     while ((c = getchar()) != QUIT) {
       if ( c == '\r') c = '\n';
+      if (locate_mode) {
+          size_t new_pos;
+          
+          if (c == LOCATE) {
+              locate_mode = 0;
+              locate_string = CORD_EMPTY;
+              continue;
+          }
+          locate_string = CORD_cat_char(locate_string,c);
+          new_pos = CORD_str(current, file_pos - CORD_len(locate_string) + 1,
+          		     locate_string);
+          if (new_pos != CORD_NOT_FOUND) {
+              need_redisplay = ALL;
+              new_pos += CORD_len(locate_string);
+              for (;;) {
+              	  file_pos = line_pos(line + 1, 0);
+              	  if (file_pos > new_pos) break;
+              	  line++;
+              }
+              col = new_pos - line_pos(line, 0);
+              file_pos = new_pos;
+              fix_cursor();
+          } else {
+              locate_string = CORD_substr(locate_string, 0,
+              				  CORD_len(locate_string) - 1);
+              beep();
+          }
+          continue;
+      }
       if ( c == REPEAT ) {
       	repeat_count = BARE_PREFIX; continue;
       } else if (isdigit(c)){
@@ -304,6 +380,12 @@ char ** argv;
       need_fix_pos = 0;
       for (i = 0; i < repeat_count; i++) {
         switch(c) {
+          case LOCATE:
+            locate_mode = 1;
+            break;
+          case TOP:
+            line = col = file_pos = 0;
+            break;
      	  case UP:
      	    if (line != 0) {
      	        line--;
@@ -328,7 +410,10 @@ char ** argv;
      	    need_redisplay = ALL; need_fix_pos = 1;
      	    break;
      	  case BS:
-     	    if (col == 0) break;
+     	    if (col == 0) {
+     	        beep();
+     	        break;
+     	    }
      	    col--; file_pos--;
      	    /* fall through: */
      	  case DEL:
@@ -355,12 +440,10 @@ char ** argv;
             break;
      	  default:
      	    {
-     	        char * new_char = GC_MALLOC_ATOMIC(2);
      	        CORD left_part = CORD_substr(current, 0, file_pos);
      	        CORD right_part = CORD_substr(current, file_pos, current_len);
      	        
-     	        new_char[0] = c; new_char[1] = '\0';
-     	        add_hist(CORD_cat(CORD_cat(left_part, new_char), right_part));
+     	        add_hist(CORD_cat(CORD_cat_char(left_part, c), right_part));
      	        invalidate_map(line);
      	        if (c == '\n') {
      	            col = 0; line++; file_pos++;
@@ -384,5 +467,6 @@ usage:
     fprintf(stderr, "Usage: %s file\n", argv[0]);
     fprintf(stderr, "Cursor keys: ^B(left) ^F(right) ^P(up) ^N(down)\n");
     fprintf(stderr, "Undo: ^U    Write: ^W   Quit:^D  Repeat count: ^R[n]\n");
+    fprintf(stderr, "Top: ^T   Locate (search, find): ^L text ^L\n");
     exit(1);
 }

@@ -1,6 +1,6 @@
 /*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991-1993 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -9,13 +9,13 @@
  * provided the above notices are retained on all copies.
  *
  */
-/* Boehm, November 18, 1993 12:30 pm PST */
+/* Boehm, April 6, 1994 10:55 am PDT */
 
 
 # include <stdio.h>
 # include <signal.h>
 # include <sys/types.h>
-# include "gc_private.h"
+# include "gc_priv.h"
 
 /*
  * Separate free lists are maintained for different sized objects
@@ -206,6 +206,8 @@ void GC_gcollect_inner()
 int GC_deficit = 0;	/* The number of extra calls to GC_mark_some	*/
 			/* that we have made.				*/
 			/* Negative values are equivalent to 0.		*/
+extern bool GC_collection_in_progress();
+
 void GC_collect_a_little(n)
 int n;
 {
@@ -518,6 +520,11 @@ word n;
 	GC_printf2("Increasing heap size by %lu after %lu allocated bytes\n",
 	           (unsigned long)bytes,
 	           (unsigned long)WORDS_TO_BYTES(GC_words_allocd));
+# 	ifdef UNDEFINED
+	  GC_printf1("Root size = %lu\n", GC_root_size);
+	  GC_print_block_list(); GC_print_hblkfreelist();
+	  GC_printf0("\n");
+#	endif
 #   endif
     expansion_slop = 8 * WORDS_TO_BYTES(min_words_allocd());
     if (5 * HBLKSIZE * MAXHINCR > expansion_slop) {
@@ -542,8 +549,9 @@ word n;
 }
 
 /* Really returns a bool, but it's externally visible, so that's clumsy. */
-int GC_expand_hp(n)
-int n;
+/* Arguments is in bytes.						*/
+int GC_expand_hp(bytes)
+size_t bytes;
 {
     int result;
     DCL_LOCK_STATE;
@@ -551,7 +559,7 @@ int n;
     DISABLE_SIGNALS();
     LOCK();
     if (!GC_is_initialized) GC_init_inner();
-    result = (int)GC_expand_hp_inner((word)n);
+    result = (int)GC_expand_hp_inner(divHBLKSZ((word)bytes));
     UNLOCK();
     ENABLE_SIGNALS();
     return(result);

@@ -5,7 +5,7 @@
 /* that real clients shouldn't rely on.					*/
 
 # define ABORT(string) \
-{ int x = 0; fprintf(stderr, "FAILED: %s\n", string); x = 1 / x; }
+{ int x = 0; fprintf(stderr, "FAILED: %s\n", string); x = 1 / x; abort(); }
 
 int count;
 
@@ -27,11 +27,16 @@ int test_fn(char c, void * client_data)
     }
 }
 
+char id_cord_fn(size_t i, void * client_data)
+{
+    return((char)i);
+}
 
 test_basics()
 {
     CORD x = "ab";
     register int i;
+    char c;
     CORD y;
     CORD_pos p;
     
@@ -83,6 +88,15 @@ test_basics()
     y = CORD_substr(x, 1023, 5);
     if (!IS_STRING(y)) ABORT("short cord should usually be a string");
     if (strcmp(y, "babab") != 0) ABORT("bad CORD_substr result");
+    y = CORD_from_fn(id_cord_fn, 0, 13);
+    i = 0;
+    CORD_set_pos(p, y, i);
+    while(CORD_pos_valid(p)) {
+        c = CORD_pos_fetch(p);
+       	if(c != i) ABORT("Traversal of function node failed");
+	CORD_next(p); i++;
+    }
+    if (i != 13) ABORT("Bad apparent length for function node");
 }
 
 test_extras()
@@ -131,12 +145,44 @@ test_extras()
     if (strcmp(CORD_substr(w, 1000*36, 2), "ab") != 0)
     	ABORT("short file substr wrong");
     if (remove("/tmp/cord_test") != 0) ABORT("remove failed");
+    if (CORD_str(x,1,"9a") != 35) ABORT("CORD_str failed 1");
+    if (CORD_str(x,0,"9abcdefghijk") != 35) ABORT("CORD_str failed 2");
+    if (CORD_str(x,0,"9abcdefghijx") != CORD_NOT_FOUND)
+    	ABORT("CORD_str failed 3");
+    if (CORD_str(x,0,"9>") != CORD_NOT_FOUND) ABORT("CORD_str failed 4");
+}
+
+test_printf()
+{
+    CORD result;
+    char result2[200];
+    long l;
+    short s;
+    CORD x;
+    
+    if (CORD_sprintf(&result, "%7.2f%ln", 3.14159, &l) != 7)
+    	ABORT("CORD_sprintf failed 1");
+    if (CORD_cmp(result, "   3.14") != 0)ABORT("CORD_sprintf goofed 1");
+    if (l != 7) ABORT("CORD_sprintf goofed 2");
+    if (CORD_sprintf(&result, "%-7.2s%hn%c%s", "abcd", &s, 'x', "yz") != 10)
+    	ABORT("CORD_sprintf failed 2");
+    if (CORD_cmp(result, "ab     xyz") != 0)ABORT("CORD_sprintf goofed 3");
+    if (s != 7) ABORT("CORD_sprintf goofed 4");
+    x = "abcdefghij";
+    x = CORD_cat(x,x);
+    x = CORD_cat(x,x);
+    x = CORD_cat(x,x);
+    if (CORD_sprintf(&result, "->%-120.78r!\n", x) != 124)
+    	ABORT("CORD_sprintf failed 3");
+    (void) sprintf(result2, "->%-120.78s!\n", CORD_to_char_star(x));
+    if (CORD_cmp(result, result2) != 0)ABORT("CORD_sprintf goofed 5");
 }
 
 main()
 {
     test_basics();
     test_extras();
-    fprintf(stderr, "SUCCEEDED\n");
+    test_printf();
+    CORD_fprintf(stderr, "SUCCEEDED\n");
     return(0);
 }

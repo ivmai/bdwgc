@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1993 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1993-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -14,6 +14,7 @@
  * implementation.  They serve also serve as example client code for
  * cord_basics.
  */
+/* Boehm, January 4, 1994 5:53 pm PST */
 # include <stdio.h>
 # include <string.h>
 # include "cord.h"
@@ -40,9 +41,20 @@ typedef void (* oom_fn)(void);
 # define OUT_OF_MEMORY {  if (CORD_oom_fn != (oom_fn) 0) (*CORD_oom_fn)(); \
 			  abort("Out of memory\n"); }
 
+CORD CORD_cat_char(CORD x, char c)
+{
+    register char * string;
+    
+    if (c == '\0') return(CORD_cat(x, CORD_nul(1)));
+    string = GC_MALLOC_ATOMIC(2);
+    if (string == 0) OUT_OF_MEMORY;
+    string[0] = c;
+    string[1] = '\0';
+    return(CORD_cat_char_star(x, string, 1));
+}
+
 typedef struct {
-	size_t min;
-	size_t max;
+	size_t len;
 	size_t count;
 	char * buf;
 } CORD_fill_data;
@@ -54,7 +66,7 @@ int CORD_fill_proc(char c, void * client_data)
     
     (d -> buf)[count] = c;
     d -> count = ++count;
-    if (count >= d -> min) {
+    if (count >= d -> len) {
     	return(1);
     } else {
     	return(0);
@@ -65,114 +77,119 @@ int CORD_batched_fill_proc(const char * s, void * client_data)
 {
     register CORD_fill_data * d = (CORD_fill_data *)client_data;
     register size_t count = d -> count;
-    register size_t max = d -> max;
+    register size_t max = d -> len;
     register char * buf = d -> buf;
     register const char * t = s;
     
     while(((d -> buf)[count] = *t++) != '\0') {
         count++;
-        if (count >= max) break;
-    }
-    d -> count = count;
-    if (count >= d -> min) {
-    	return(1);
-    } else {
-    	return(0);
-    }
-}
-
-/* Fill buf with between min and max characters starting at i.  Returns */
-/* the number of characters actually put in buf. Assumes min characters	*/
-/* are available.							*/ 
-size_t CORD_fill_buf(CORD x, size_t i, size_t min,
-			     size_t max, char * buf)
-{
-    CORD_fill_data fd;
-    
-    fd.min = min;
-    fd.max = max;
-    fd.buf = buf;
-    fd.count = 0;
-    (void)CORD_iter5(x, i, CORD_fill_proc, CORD_batched_fill_proc, &fd);
-    return(fd.count);
-}
-
-
-/* Compare two nonempty strings the hard way. */
-int CORD_cmp_general_case(CORD x, size_t xlen, CORD y, size_t ylen)
-{
-    char xbuf [BUFSZ];
-    char ybuf [BUFSZ];
-    register size_t pos = 0;	/* First position not yet transfered to xbuf */
-    register size_t n_to_get;
-    register int result;  
-    for (;;) {
-        n_to_get = BUFSZ;
-        if (xlen < BUFSZ) n_to_get = xlen;
-        if (ylen < n_to_get) n_to_get = ylen;
-        (void) CORD_fill_buf(x, pos, n_to_get, n_to_get, xbuf);
-        (void) CORD_fill_buf(y, pos, n_to_get, n_to_get, ybuf);
-        result = strncmp(xbuf,ybuf,n_to_get);
-        if (result != 0) return(result);
-        pos += n_to_get; xlen -= n_to_get; ylen -= n_to_get;
-        if (xlen == 0) {
-            if (ylen == 0) {
-            	return(0);
-            } else {
-            	return(-1);
-            }
-        }
-        if (ylen == 0) {
+        if (count >= max) {
+            d -> count = count;
             return(1);
         }
     }
+    d -> count = count;
+    return(0);
 }
 
+/* Fill buf with between min and max characters starting at i.  	*/
+/* Assumes len characters are available.				*/ 
+void CORD_fill_buf(CORD x, size_t i, size_t len, char * buf)
+{
+    CORD_fill_data fd;
+    
+    fd.len = len;
+    fd.buf = buf;
+    fd.count = 0;
+    (void)CORD_iter5(x, i, CORD_fill_proc, CORD_batched_fill_proc, &fd);
+}
 
 int CORD_cmp(CORD x, CORD y)
 {
-    if (x == 0) {
-        if (y == 0) {
-            return (0);
-        } else {
-            return(-1);
+    CORD_pos xpos;
+    CORD_pos ypos;
+    register size_t avail, yavail;
+    
+    if (y == CORD_EMPTY) return(x != CORD_EMPTY);
+    if (x == CORD_EMPTY) return(-1);
+    if (IS_STRING(y) && IS_STRING(x)) return(strcmp(x,y));
+    CORD_set_pos(xpos, x, 0);
+    CORD_set_pos(ypos, y, 0);
+    for(;;) {
+        if (!CORD_pos_valid(xpos)) {
+            if (CORD_pos_valid(ypos)) {
+            	return(-1);
+            } else {
+                return(0);
+            }
         }
-    }
-    if (y == 0) return(1);
-    if(IS_STRING(x) && IS_STRING(y)) {
-        return(strcmp(x, y));
-    }
-    {
-#	define SBUFLEN 30
-#	define MINCMPLEN 5
-        char xbuf[SBUFLEN];
-        char ybuf[SBUFLEN];
-        register size_t xlen = CORD_len(x);
-        register size_t ylen = CORD_len(y);
-        register size_t req_len = 0;
-        register int result;
-        
-        if (xlen <= SBUFLEN) req_len = xlen;
-        if (ylen <= SBUFLEN && ylen < xlen) req_len = ylen;
-        if (req_len != 0) {
-            (void) CORD_fill_buf(x, 0, req_len, req_len, xbuf);
-            (void) CORD_fill_buf(x, 0, req_len, req_len, ybuf);
-            result = strncmp(xbuf, ybuf, req_len);
-            if (result != 0) return(result);
-            return(xlen-ylen);
+        if (!CORD_pos_valid(ypos)) {
+            return(1);
+        }
+        if ((avail = CORD_pos_chars_left(xpos)) <= 0
+            || (yavail = CORD_pos_chars_left(ypos)) <= 0) {
+            register char xcurrent = CORD_pos_fetch(xpos);
+            register char ycurrent = CORD_pos_fetch(ypos);
+            if (xcurrent != ycurrent) return(xcurrent - ycurrent);
+            CORD_next(xpos);
+            CORD_next(ypos);
         } else {
-            /* Both have length > SBUFLEN */
-            register size_t xchars;
-            register size_t ychars;
+            /* process as many characters as we can	*/
             register int result;
             
-            xchars = CORD_fill_buf(x, 0, MINCMPLEN, SBUFLEN, xbuf);
-            ychars = CORD_fill_buf(y, 0, MINCMPLEN, SBUFLEN, ybuf);
-            result = strncmp(xbuf, ybuf, xchars < ychars? xchars : ychars);
+            if (avail > yavail) avail = yavail;
+            result = strncmp(CORD_pos_cur_char_addr(xpos),
+            		     CORD_pos_cur_char_addr(ypos), avail);
             if (result != 0) return(result);
-            return(CORD_cmp_general_case(x, xlen, y, ylen));
+            CORD_pos_advance(xpos, avail);
+            CORD_pos_advance(ypos, avail);
         }
     }
+}
+
+int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
+{
+    CORD_pos xpos;
+    CORD_pos ypos;
+    register size_t count;
+    register size_t avail, yavail;
+    
+    CORD_set_pos(xpos, x, x_start);
+    CORD_set_pos(ypos, y, y_start);
+    for(count = 0; count < len;) {
+        if (!CORD_pos_valid(xpos)) {
+            if (CORD_pos_valid(ypos)) {
+            	return(-1);
+            } else {
+                return(0);
+            }
+        }
+        if (!CORD_pos_valid(ypos)) {
+            return(1);
+        }
+        if ((avail = CORD_pos_chars_left(xpos)) <= 0
+            || (yavail = CORD_pos_chars_left(ypos)) <= 0) {
+            register char xcurrent = CORD_pos_fetch(xpos);
+            register char ycurrent = CORD_pos_fetch(ypos);
+            if (xcurrent != ycurrent) return(xcurrent - ycurrent);
+            CORD_next(xpos);
+            CORD_next(ypos);
+            count++;
+        } else {
+            /* process as many characters as we can	*/
+            register int result;
+            
+            if (avail > yavail) avail = yavail;
+            count += avail;
+            if (count > len) avail -= (count - len);
+            result = strncmp(CORD_pos_cur_char_addr(xpos),
+            		     CORD_pos_cur_char_addr(ypos), avail);
+            if (result != 0) return(result);
+            CORD_pos_advance(xpos, avail);
+            CORD_pos_advance(ypos, avail);
+        }
+    }
+    return(0);
 }
 
 char * CORD_to_char_star(CORD x)
@@ -184,32 +201,18 @@ char * CORD_to_char_star(CORD x)
     len = CORD_len(x);
     result = (char *)GC_MALLOC_ATOMIC(len + 1);
     if (result == 0) OUT_OF_MEMORY;
-    if (CORD_fill_buf(x, 0, len, len, result) != len) abort("Goofed");
+    CORD_fill_buf(x, 0, len, result);
     result[len] = '\0';
     return(result);
 }
 
-typedef struct FetchDataRep {
-    struct FetchCacheRep * new_cache;
-    char character;
-} * fetch_data;
-
-int CORD_fetch_proc(char c, void * client_data)
-{
-    register fetch_data d = (fetch_data)client_data;
-    
-    d -> character = c;
-    return(1);
-}
-
 char CORD_fetch(CORD x, size_t i)
 {
-    struct FetchDataRep result;
+    CORD_pos xpos;
     
-    if (!CORD_iter5(x, i, CORD_fetch_proc, CORD_NO_FN, &result)) {
-    	abort("bad index?");
-    }
-    return (result.character);
+    CORD_set_pos(xpos, x, i);
+    if (!CORD_pos_valid(xpos)) abort("bad index?");
+    return(CORD_pos_fetch(xpos));
 }
 
 
@@ -300,6 +303,61 @@ size_t CORD_rchr(CORD x, size_t i, int c)
     }
 }
 
+/* Find the first occurrence of s in x at position start or later.	*/
+/* This uses an asymptotically poor algorithm, which should typically 	*/
+/* perform acceptably.  We compare the first few characters directly,	*/
+/* and call CORD_ncmp whenever there is a partial match.		*/
+/* This has the advantage that we allocate very little, or not at all.	*/
+/* It's very fast if there are few close misses.			*/
+size_t CORD_str(CORD x, size_t start, CORD s)
+{
+    CORD_pos xpos;
+    size_t xlen = CORD_len(x);
+    size_t slen;
+    register size_t start_len;
+    const char * s_start;
+    unsigned long s_buf = 0;	/* The first few characters of s	*/
+    unsigned long x_buf;	/* Start of candidate substring.	*/
+    unsigned long mask = 0;
+    register int i;
+    register int match_pos;
+    
+    if (s == CORD_EMPTY) return(i);
+    if (IS_STRING(s)) {
+        s_start = s;
+        slen = strlen(s);
+    } else {
+        s_start = CORD_to_char_star(CORD_substr(s, 0, sizeof(unsigned long)));
+        slen = CORD_len(s);
+    }
+    if (xlen < start || xlen - start < slen) return(CORD_NOT_FOUND);
+    start_len = slen;
+    if (start_len > sizeof(unsigned long)) start_len = sizeof(unsigned long);
+    CORD_set_pos(xpos, x, start);
+    for (i = 0; i < start_len; i++) {
+        mask <<= 8;
+        mask |= 0xff;
+        s_buf <<= 8;
+        s_buf |= s_start[i];
+        x_buf <<= 8;
+        x_buf |= CORD_pos_fetch(xpos);
+        CORD_next(xpos);
+    }
+    for (match_pos = start; match_pos < xlen - slen; match_pos++) {
+    	if ((x_buf & mask) == s_buf) {
+    	    if (slen == start_len ||
+    	     	CORD_ncmp(x, match_pos + start_len,
+    	     	 	  s, start_len, slen - start_len) == 0) {
+    	        return(match_pos);
+    	    }
+    	}
+    	x_buf <<= 8;
+        x_buf |= CORD_pos_fetch(xpos);
+        CORD_next(xpos);
+    }
+    return(CORD_NOT_FOUND);
+}
+
 void CORD_ec_flush_buf(CORD_ec x)
 {
     register size_t len = x[0].ec_bufptr - x[0].ec_buf;
@@ -313,16 +371,22 @@ void CORD_ec_flush_buf(CORD_ec x)
     x[0].ec_bufptr = x[0].ec_buf;
 }
 
+void CORD_ec_append_cord(CORD_ec x, CORD s)
+{
+    CORD_ec_flush_buf(x);
+    x[0].ec_cord = CORD_cat(x[0].ec_cord, s);
+}
+
 /*ARGSUSED*/
 char CORD_nul_func(size_t i, void * client_data)
 {
-    return('\0');
+    return((char)(unsigned long)client_data);
 }
 
 
-CORD CORD_nul(size_t i)
+CORD CORD_chars(char c, size_t i)
 {
-    return(CORD_from_fn(CORD_nul_func, 0, i));
+    return(CORD_from_fn(CORD_nul_func, (void *)(unsigned long)c, i));
 }
 
 CORD CORD_from_file_eager(FILE * f)
@@ -365,7 +429,7 @@ CORD CORD_from_file_eager(FILE * f)
 
 # define LOG_CACHE_SZ 14
 # define CACHE_SZ (1 << LOG_CACHE_SZ)
-# define LOG_LINE_SZ 7
+# define LOG_LINE_SZ 9
 # define LINE_SZ (1 << LOG_LINE_SZ)
 
 typedef struct {
@@ -475,7 +539,7 @@ CORD CORD_from_file_lazy(FILE * f)
     return(CORD_from_file_lazy_inner(f, len));
 }
 
-# define LAZY_THRESHOLD (16*1024 + 1)
+# define LAZY_THRESHOLD (128*1024 + 1)
 
 CORD CORD_from_file(FILE * f)
 {

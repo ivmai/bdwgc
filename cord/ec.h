@@ -44,7 +44,7 @@ typedef struct CORD_ec_struct {
 /* ec_buf[0 ... (ec_bufptr-ec_buf-1)]					*/
 
 /* Flush the buffer part of the extended chord into ec_cord.	*/
-/* Note that this is the only real function, and it is		*/
+/* Note that this is almost the only real function, and it is	*/
 /* implemented in 6 lines in cord_extras.c			*/
 void CORD_ec_flush_buf(CORD_ec x);
       
@@ -62,5 +62,9 @@ void CORD_ec_flush_buf(CORD_ec x);
 	} \
 	*((x)[0].ec_bufptr)++ = (c); \
     }
+
+/* Append a cord to an extensible cord.  Structure remains shared with 	*/
+/* original.								*/
+void CORD_ec_append_cord(CORD_ec x, CORD s);
 
 # endif /* EC_H */

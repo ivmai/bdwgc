@@ -8,7 +8,8 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
-# include "gc_private.h"
+/* Boehm, March 28, 1994 2:04 pm PST */
+# include "gc_priv.h"
 
 /*
  * We maintain several hash tables of hblks that have had false hits.
@@ -42,7 +43,7 @@ word * GC_incomplete_normal_bl;
 word * GC_old_stack_bl;
 word * GC_incomplete_stack_bl;
 
-GC_bl_init()
+void GC_bl_init()
 {
 # ifndef ALL_INTERIOR_POINTERS
     GC_old_normal_bl = (word *)
@@ -66,7 +67,7 @@ GC_bl_init()
 void GC_clear_bl(doomed)
 word *doomed;
 {
-    bzero((char *)doomed, (int)sizeof(page_hash_table));
+    BZERO(doomed, sizeof(page_hash_table));
 }
 
 /* Signal the completion of a collection.  Turn the incomplete black	*/

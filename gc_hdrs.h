@@ -8,7 +8,7 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
-/* Boehm, November 15, 1993 1:37 pm PST */
+/* Boehm, March 10, 1994 3:36 pm PST */
 # ifndef GC_HEADERS_H
 # define GC_HEADERS_H
 typedef struct hblkhdr hdr;
@@ -28,7 +28,12 @@ typedef struct hblkhdr hdr;
 # endif
 
 /* Define appropriate out-degrees for each of the two tree levels	*/
-# define LOG_BOTTOM_SZ 10
+# ifdef SMALL_CONFIG
+#   define LOG_BOTTOM_SZ 11
+	/* Keep top index size reasonable with smaller blocks. */
+# else
+#   define LOG_BOTTOM_SZ 10
+# endif
 # ifndef HASH_TL
 #   define LOG_TOP_SZ (WORDSZ - LOG_BOTTOM_SZ - LOG_HBLKSIZE)
 # else
@@ -75,12 +80,17 @@ typedef struct bi {
 # ifndef HASH_TL
 #   define BI(p) (GC_top_index \
 		[(word)(p) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE)])
-#   define HDR(p) (BI(p)->index \
+#   define HDR_INNER(p) (BI(p)->index \
 		[((word)(p) >> LOG_HBLKSIZE) & (BOTTOM_SZ - 1)])
+#   ifdef SMALL_CONFIG
+#	define HDR(p) GC_find_header((ptr_t)(p))
+#   else
+#	define HDR(p) HDR_INNER(p)
+#   endif
 #   define GET_BI(p, bottom_indx) (bottom_indx) = BI(p)
 #   define GET_HDR(p, hhdr) (hhdr) = HDR(p)
-#   define SET_HDR(p, hhdr) HDR(p) = (hhdr)
-#   define GET_HDR_ADDR(p, ha) (ha) = &(HDR(p))
+#   define SET_HDR(p, hhdr) HDR_INNER(p) = (hhdr)
+#   define GET_HDR_ADDR(p, ha) (ha) = &(HDR_INNER(p))
 # else /* hash */
 /*  Hash function for tree top level */
 #   define TL_HASH(hi) ((hi) & (TOP_SZ - 1))

@@ -1,7 +1,6 @@
-
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991-1993 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -9,19 +8,13 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
+/* Boehm, March 28, 1994 1:55 pm PST */
 
 
-#include "gc_private.h"
+#include "gc_priv.h"
 
 # ifdef STUBBORN_ALLOC
 /* Stubborn object (hard to change, nearly immutable) allocation. */
-
-
-# ifdef ALL_INTERIOR_POINTERS
-#   define SMALL_OBJ(bytes) ((bytes) < WORDS_TO_BYTES(MAXOBJSZ))
-# else
-#   define SMALL_OBJ(bytes) ((bytes) <= WORDS_TO_BYTES(MAXOBJSZ))
-# endif
 
 extern ptr_t GC_clear_stack();	/* in misc.c, behaves like identity */
 
@@ -57,8 +50,8 @@ void GC_stubborn_init()
     			GC_generic_malloc_inner(
     				(word)(INIT_SIZE * sizeof(extern_ptr_t)),
     				PTRFREE);
-    bzero((char *)GC_changing_list_start,
-    	  (int)(INIT_SIZE * sizeof(extern_ptr_t)));
+    BZERO(GC_changing_list_start,
+    	  INIT_SIZE * sizeof(extern_ptr_t));
     if (GC_changing_list_start == 0) {
         GC_err_printf0("Insufficient space to start up\n");
         ABORT("GC_stubborn_init: put of space");
@@ -80,7 +73,7 @@ void GC_stubborn_init()
 bool GC_compact_changing_list()
 {
     register extern_ptr_t *p, *q;
-    register int count = 0;
+    register word count = 0;
     word old_size = GC_changing_list_limit-GC_changing_list_start+1;
     register word new_size = old_size;
     extern_ptr_t * new_list;
@@ -96,7 +89,7 @@ bool GC_compact_changing_list()
     		/* consider these.  We do want the list itself to be  	  */
     		/* collectable.						  */
     if (new_list == 0) return(FALSE);
-    bzero((char *)new_list, (int)(new_size * sizeof(extern_ptr_t)));
+    BZERO(new_list, new_size * sizeof(extern_ptr_t));
     q = new_list;
     for (p = GC_changing_list_start; p < GC_changing_list_limit; p++) {
         if (*p != 0) *q++ = *p;
@@ -242,9 +235,9 @@ void GC_read_changed()
     register word index;
     
     if (p == 0) /* initializing */ return;
-    bcopy((char *)GC_changed_pages, (char *)GC_prev_changed_pages,
-          (int)(sizeof GC_changed_pages));
-    bzero((char *)GC_changed_pages, (int)(sizeof GC_changed_pages));
+    BCOPY(GC_changed_pages, GC_prev_changed_pages,
+          (sizeof GC_changed_pages));
+    BZERO(GC_changed_pages, (sizeof GC_changed_pages));
     for (; p <= GC_changing_list_current; p++) {
         if ((q = *p) != 0) {
             h = HBLKPTR(q);

@@ -1,0 +1,22 @@
+The collector currently does not handle multiple threads.  There
+is good reason to believe this is fixable.  (SRC M3 works with
+NT threads.)
+
+The collector has only been compiler under Windows NT, with the
+Microsoft tools.
+
+It runs under both win32s and win32, but with different semantics.
+Under win32, all writable pages outside of the heaps and stack are
+scanned for roots.  Thus the collector sees pointers in DLL data
+segments.  Under win32s, only the main data segment is scanned.
+Thus all accessible objects should be excessible from local variables
+or variables in the main data segment.
+
+(There are two reasons for this.  We didn't want to see many 16:16
+pointers.  And the VirtualQuery call has different semantics under
+the two systems.)
+
+The collector test program "gctest" is linked as a GUI application,
+but does not open any windows.  Its output appears in the file
+"gc.log".  It may be started from the file manager.  The hour glass
+cursor will appear as long as it's running.

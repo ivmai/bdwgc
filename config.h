@@ -104,24 +104,39 @@
 #   define mach_type_known
 # endif
 # if defined(NeXT) && defined(mc68000)
-#    define M68K
-#    define NEXT
-#    define mach_type_known
+#   define M68K
+#   define NEXT
+#   define mach_type_known
+# endif
+# if defined(__FreeBSD__) && defined(i386)
+#   define I386
+#   define FREEBSD
+#   define mach_type_known
 # endif
 # if defined(__NetBSD__) && defined(i386)
+#   define I386
+#   define NETBSD
+#   define mach_type_known
+# endif
+# if defined(bsdi) && defined(i386)
 #    define I386
-#    define NETBSD
+#    define BSDI
 #    define mach_type_known
 # endif
 # if !defined(mach_type_known) && defined(__386BSD__)
-#    define I386
-#    define THREE86BSD
-#    define mach_type_known
+#   define I386
+#   define THREE86BSD
+#   define mach_type_known
 # endif
 # if defined(_CX_UX) && defined(_M88K)
-#    define M88K
-#    define CX_UX
-#    define mach_type_known
+#   define M88K
+#   define CX_UX
+#   define mach_type_known
+# endif
+# if defined(_MSDOS) && (_M_IX86 == 300) || (_M_IX86 == 400)
+#   define I386
+#   define MSWIN32	/* or Win32s */
+#   define mach_type_known
 # endif
 
 /* Feel free to add more clauses here */
@@ -141,8 +156,8 @@
 		    /*		   and AMIGA variants)			*/
 		    /*             I386       ==> Intel 386	 	*/
 		    /*		    (SEQUENT, OS2, SCO, LINUX, NETBSD,	*/
-		    /*		     THREE86BSD variants,		*/
-		    /*		     some are incomplete or untested)	*/
+		    /*		     FREEBSD, THREE86BSD, MSWIN32,	*/
+		    /* 		     BSDI, SUNOS5 variants)		*/
                     /*             NS32K      ==> Encore Multimax 	*/
                     /*             MIPS       ==> R2000 or R3000	*/
                     /*			(RISCOS, ULTRIX variants)	*/
@@ -164,10 +179,10 @@
  *
  * CPP_WORD_SZ is a simple integer constant representing the word size.
  * in bits.  We assume byte addressibility, where a byte has 8 bits.
- * We also assume CPP_WORD_SZ is either 32 or 64.  Only 32 is completely
- * implemented.  (We care about the length of pointers, not hardware
+ * We also assume CPP_WORD_SZ is either 32 or 64.
+ * (We care about the length of pointers, not hardware
  * bus widths.  Thus a 64 bit processor with a C compiler that uses
- * 32 bit pointers should use CPP_WORD_SZ of 32, not 64.)
+ * 32 bit pointers should use CPP_WORD_SZ of 32, not 64. Default is 32.)
  *
  * MACH_TYPE is a string representation of the machine type.
  * OS_TYPE is analogous for the OS.
@@ -234,6 +249,9 @@
  * implementation to be used:
  *   MPROTECT_VDB: Write protect the heap and catch faults.
  *   PROC_VDB: Use the SVR4 /proc primitives to read dirty bits.
+ *
+ * An architecture may define DYNAMIC_LOADING if dynamic_load.c
+ * defined GC_register_dynamic_libraries() for the architecture.
  */
 
 
@@ -245,6 +263,7 @@
 	extern char etext;
 #	define DATASTART ((ptr_t)((((word) (&etext)) + 0x1ffff) & ~0x1ffff))
 #	define HEURISTIC1	/* differs	*/
+#	define DYNAMIC_LOADING
 #   endif
 #   ifdef HP
 #	define OS_TYPE "HP"
@@ -333,6 +352,7 @@
 #	define MPROTECT_VDB
 #   endif
 #   define HEURISTIC1
+#   define DYNAMIC_LOADING
 # endif
 
 # ifdef I386
@@ -367,24 +387,34 @@
 #   endif
 #   ifdef OS2
 #	define OS_TYPE "OS2"
-#   	define DATASTART ((ptr_t)((((word) (&etext)) + 0x3fffff) \
-				  & ~0x3fffff) \
-				 +((word)&etext & 0xfff))
- 	    	/* STACKBOTTOM is handled specially in GC_init_inner.	*/
-		/* OS2 actually has the right system call!		*/
+ 	    	/* STACKBOTTOM and DATASTART are handled specially in 	*/
+		/* os_dep.c. OS2 actually has the right			*/
+		/* system call!						*/
+#   endif
+#   ifdef MSWIN32
+#	define OS_TYPE "MSWIN32"
+		/* STACKBOTTOM and DATASTART are handled specially in 	*/
+		/* os_dep.c.						*/
+#   endif
+#   ifdef FREEBSD
+#	define OS_TYPE "FREEBSD"
+#	define MPROTECT_VDB
 #   endif
 #   ifdef NETBSD
 #	define OS_TYPE "NETBSD"
+#   endif
+#   ifdef THREE86BSD
+#	define OS_TYPE "THREE86BSD"
+#   endif
+#   ifdef BSDI
+#	define OS_TYPE "BSDI"
+#   endif
+#   if defined(FREEBSD) || defined(NETBSD) \
+        || defined(THREE86BSD) || defined(BSDI)
 #	define HEURISTIC2
 	extern char etext;
 #	define DATASTART ((ptr_t)(&etext))
-#    endif
-#   ifdef THREE86BSD
-#	define OS_TYPE "THREE86BSD"
-#   	define ALIGNMENT 4
-	extern char etext;
-#	define DATASTART ((ptr_t)(&etext))
-#    endif
+#   endif
 # endif
 
 # ifdef NS32K
@@ -415,6 +445,7 @@
 #   ifdef IRIX5
 #	define OS_TYPE "IRIX5"
 #	define MPROTECT_VDB
+#	define DYNAMIC_LOADING
 #   endif
 # endif
 
@@ -467,6 +498,7 @@
 # endif
 
 # ifdef PCR
+#   undef DYNAMIC_LOADING
 #   undef STACKBOTTOM
 #   undef HEURISTIC1
 #   undef HEURISTIC2
@@ -477,6 +509,12 @@
 
 # ifdef SRC_M3
 /* Postponed for now. */
+#   undef PROC_VDB
+#   undef MPROTECT_VDB
+# endif
+
+# ifdef SMALL_CONFIG
+/* Presumably not worth the space it takes. */
 #   undef PROC_VDB
 #   undef MPROTECT_VDB
 # endif

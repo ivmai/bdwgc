@@ -8,11 +8,12 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
+/* Boehm, March 28, 1994 2:05 pm PST */
 
 #define DEBUG
 #undef DEBUG
 #include <stdio.h>
-#include "gc_private.h"
+#include "gc_priv.h"
 
 
 /**/
@@ -70,6 +71,8 @@ register hdr * hhdr;
 word sz;	/* object size in words */
 int kind;
 {
+    register word descr;
+    
     /* Add description of valid object pointers */
       if (!GC_add_map_entry(sz)) return(FALSE);
       hhdr -> hb_map = GC_obj_map[sz > MAXOBJSZ? 0 : sz];
@@ -77,12 +80,14 @@ int kind;
     /* Set size, kind and mark proc fields */
       hhdr -> hb_sz = sz;
       hhdr -> hb_obj_kind = kind;
-      hhdr -> hb_mark_proc = GC_obj_kinds[kind].ok_mark_proc;
+      descr = GC_obj_kinds[kind].ok_descriptor;
+      if (GC_obj_kinds[kind].ok_relocate_descr) descr += WORDS_TO_BYTES(sz);
+      hhdr -> hb_descr = descr;
       
     /* Clear mark bits */
       GC_clear_hdr_marks(hhdr);
       
-    hhdr -> hb_last_reclaimed = GC_gc_no;
+    hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
     return(TRUE);
 }
 
@@ -137,12 +142,12 @@ int kind;
 	    /* This prevents us from disassembling a single large block */
 	    /* to get tiny blocks.					*/
 	    {
-	      word next_size;
+	      signed_word next_size;
 	      
 	      thishbp = hhdr -> hb_next;
 	      if (thishbp == 0) thishbp = GC_hblkfreelist; 
 	      thishdr = HDR(thishbp);
-	      next_size = thishdr -> hb_sz;
+	      next_size = (signed_word)(thishdr -> hb_sz);
 	      if (next_size < size_avail
 	          && next_size >= size_needed
 	          && !GC_is_black_listed(thishbp, (word)size_needed)) {
@@ -195,8 +200,7 @@ int kind;
 	              		  BYTES_TO_WORDS(hhdr->hb_sz - HDR_BYTES),
 	              		  PTRFREE); /* Cant fail */
 	              	if (GC_debugging_started) {
-	              	    bzero((char *)hbp + HDR_BYTES,
-	              	          (int)(hhdr->hb_sz - HDR_BYTES));
+	              	    BZERO(hbp + HDR_BYTES, hhdr->hb_sz - HDR_BYTES);
 	              	}
 	                if (GC_savhbp == hbp) GC_savhbp = prevhbp;
 	              }
@@ -254,7 +258,7 @@ int kind;
     /* Clear block if necessary */
 	if (GC_debugging_started
 	    || sz > MAXOBJSZ && GC_obj_kinds[kind].ok_init) {
-	    bzero((char *)thishbp + HDR_BYTES,  (int)(size_needed - HDR_BYTES));
+	    BZERO(thishbp + HDR_BYTES,  size_needed - HDR_BYTES);
 	}
     
     return( thishbp );

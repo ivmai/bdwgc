@@ -1,6 +1,6 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991-1993 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -8,6 +8,7 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
+/* Boehm, March 28, 1994 2:04 pm PST */
  
 /*
  * This implements:
@@ -18,7 +19,7 @@
  * level tree.
  */
  
-# include "gc_private.h"
+# include "gc_priv.h"
 
 bottom_index * GC_all_bottom_indices = 0;
  
@@ -26,12 +27,12 @@ bottom_index * GC_all_bottom_indices = 0;
 hdr * GC_find_header(h)
 ptr_t h;
 {
-#   ifdef TL_HASH
+#   ifdef HASH_TL
 	register hdr * result;
 	GET_HDR(h, result);
 	return(result);
 #   else
-	return(HDR(h));
+	return(HDR_INNER(h));
 #   endif
 }
  
@@ -95,7 +96,7 @@ hdr * hhdr;
     hdr_free_list = hhdr;
 }
  
-GC_init_headers()
+void GC_init_headers()
 {
     register int i;
      
@@ -125,7 +126,7 @@ register word addr;
       }
       r = (bottom_index*)GC_scratch_alloc((word)(sizeof (bottom_index)));
       if (r == 0) return(FALSE);
-      bzero((char *)r, (int)(sizeof (bottom_index)));
+      BZERO(r, sizeof (bottom_index));
       r -> hash_link = old;
       GC_top_index[i] = r;
 #   else
@@ -133,7 +134,7 @@ register word addr;
       r = (bottom_index*)GC_scratch_alloc((word)(sizeof (bottom_index)));
       if (r == 0) return(FALSE);
       GC_top_index[hi] = r;
-      bzero((char *)r, (int)(sizeof (bottom_index)));
+      BZERO(r, sizeof (bottom_index));
 # endif
     r -> key = hi;
     /* Add it to the list of bottom indices */
@@ -239,7 +240,7 @@ struct hblk * h;
     
     GET_BI(h, bi);
     if (bi == &GC_all_nils) {
-        register int hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
+        register word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
         bi = GC_all_bottom_indices;
         while (bi != 0 && bi -> key < hi) bi = bi -> asc_link;
         j = 0;

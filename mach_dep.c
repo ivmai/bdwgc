@@ -1,10 +1,22 @@
-# include "gc_private.h"
+/* 
+ * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to copy this garbage collector for any purpose,
+ * provided the above notices are retained on all copies.
+ */
+/* Boehm, April 5, 1994 1:46 pm PDT */
+# include "gc_priv.h"
 # include <stdio.h>
 # include <setjmp.h>
 # if defined(OS2) || defined(CX_UX)
 #   define _setjmp(b) setjmp(b)
 #   define _longjmp(b,v) longjmp(b,v)
 # endif
+
 
 /* Routine to mark from registers that are preserved by the C compiler. */
 /* This must be ported to every new architecture.  There is a generic   */
@@ -106,7 +118,7 @@ __asm GC_push_regs(
 	  GC_push_one(d7);
 #       endif
 
-#       if defined(I386) && !defined(OS2) && !defined(SUNOS5)
+#       if defined(I386) &&!defined(OS2) &&!defined(SUNOS5) &&!defined(MSWIN32)
 	/* I386 code, generic code does not appear to work */
 	/* It does appear to work under OS2, and asms dont */
 	  asm("pushl %eax");  asm("call _GC_push_one"); asm("addl $4,%esp");
@@ -115,6 +127,28 @@ __asm GC_push_regs(
 	  asm("pushl %esi");  asm("call _GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %edi");  asm("call _GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %ebx");  asm("call _GC_push_one"); asm("addl $4,%esp");
+#       endif
+
+#       if defined(I386) && defined(MSWIN32)
+	/* I386 code, Microsoft variant		*/
+	  __asm  push eax
+	  __asm  call GC_push_one
+	  __asm  add esp,4
+	  __asm  push ecx
+	  __asm  call GC_push_one
+	  __asm  add esp,4
+	  __asm  push edx
+	  __asm  call GC_push_one
+	  __asm  add esp,4
+	  __asm  push esi
+	  __asm  call GC_push_one
+	  __asm  add esp,4
+	  __asm  push edi
+	  __asm  call GC_push_one
+	  __asm  add esp,4
+	  __asm  push ebx
+	  __asm  call GC_push_one
+	  __asm  add esp,4
 #       endif
 
 #       if defined(I386) && defined(SUNOS5)
@@ -137,10 +171,10 @@ __asm GC_push_regs(
 
 #       ifdef SPARC
 	  {
-	      void GC_save_regs_in_stack();
+	      word GC_save_regs_in_stack();
 	      
 	      /* generic code will not work */
-	      GC_save_regs_in_stack();
+	      (void)GC_save_regs_in_stack();
 	  }
 #       endif
 
@@ -232,7 +266,7 @@ __asm GC_push_regs(
 }
 
 /* On register window machines, we need a way to force registers into 	*/
-/* the stack.								*/
+/* the stack.	Return sp.						*/
 # ifdef SPARC
     asm("	.seg 	\"text\"");
 #   ifdef SUNOS5
@@ -248,7 +282,7 @@ __asm GC_push_regs(
     asm("	nop");
     
 #   ifdef LINT
-	void GC_save_regs_in_stack() {}
+	word GC_save_regs_in_stack() { return(0 /* sp really */);}
 #   endif
 # endif
 

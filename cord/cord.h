@@ -9,6 +9,7 @@
  *
  * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
+/* Boehm, January 21, 1994 5:10 pm PST */
  
 /*
  * Cords are immutable character strings.  A number of operations
@@ -159,7 +160,7 @@ int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 	/* Move the position to the preceding character.
 	/* P must be initialized and valid.
 	/* Invalidates p if past beginning:
-	void CORD_next(CORD_pos p);
+	void CORD_prev(CORD_pos p);
 	
 	/* Is the position valid, i.e. inside the cord?
 	int CORD_pos_valid(CORD_pos p);
@@ -179,15 +180,29 @@ void CORD_dump(CORD x);
 /* The following could easily be implemented by the client.  They are	*/
 /* provided in cord_extras.c for convenience.				*/
 
+/* Concatenate a character to the end of a cord.	*/
+CORD CORD_cat_char(CORD x, char c);
+
 /* Return the character in CORD_substr(x, i, 1)  	*/
 char CORD_fetch(CORD x, size_t i);
 
 /* Return < 0, 0, or > 0, depending on whether x < y, x = y, x > y	*/
 int CORD_cmp(CORD x, CORD y);
 
-/* Return a cord consisting of i ASCII NULs.  Dangerous in 		*/
-/* conjunction with CORD_to_char_star.					*/
-CORD CORD_nul(size_t i);
+/* A generalization that takes both starting positions for the 		*/
+/* comparison, and a limit on the number of characters to be compared.	*/
+int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len);
+
+/* Find the first occurrence of s in x at position start or later.	*/
+/* Return the position of the first character of s in x, or		*/
+/* CORD_NOT_FOUND if there is none.					*/
+size_t CORD_str(CORD x, size_t start, CORD s);
+
+/* Return a cord consisting of i copies of (possibly NUL) c.  Dangerous	*/
+/* in conjunction with CORD_to_char_star.				*/
+/* The resulting representation takes constant space, independent of i.	*/
+CORD CORD_chars(char c, size_t i);
+# define CORD_nul(i) CORD_chars('\0', (i))
 
 /* Turn a file into cord.  The file must be seekable.  Its contents	*/
 /* must remain constant.  The file may be accessed as an immediate	*/
@@ -231,4 +246,43 @@ size_t CORD_chr(CORD x, size_t i, int c);
 /* of (char) c inside x at position i or earlier. The value i		*/
 /* must be < CORD_len(x).						*/
 size_t CORD_rchr(CORD x, size_t i, int c);
+
+
+/* The following are also not primitive, but are implemented in 	*/
+/* cord_printf.c.  They provide functionality similar to the ANSI C	*/
+/* functions with corresponding names, but with the following		*/
+/* additions and changes:						*/
+/* 1. A %r conversion specification specifies a CORD argument.  Field	*/
+/*    width, precision, etc. have the same semantics as for %s.		*/
+/*    (Note that %c,%C, and %S were already taken.)			*/
+/* 2. The format string is represented as a CORD.		        */
+/* 3. CORD_sprintf and CORD_vsprintf assign the result through the 1st	*/ 	/*    argument.	Unlike their ANSI C versions, there is no need to guess	*/
+/*    the correct buffer size.						*/
+/* 4. Most of the conversions are implement through the native 		*/
+/*    vsprintf.  Hence they are usually no faster, and 			*/
+/*    idiosyncracies of the native printf are preserved.  However,	*/
+/*    CORD arguments to CORD_sprintf and CORD_vsprintf are NOT copied;	*/
+/*    the result shares the original structure.  This may make them	*/
+/*    very efficient in some unusual applications.			*/
+/*    The format string is copied.					*/
+/* All functions return the number of characters generated or -1 on	*/
+/* error.  This complies with the ANSI standard, but is inconsistent	*/
+/* with some older implementations of sprintf.				*/
+
+/* The implementation of these is probably less portable than the rest	*/
+/* of this package.							*/
+
+#ifndef CORD_NO_IO
+
+#include <stdarg.h>
+
+int CORD_sprintf(CORD * out, CORD format, ...);
+int CORD_vsprintf(CORD * out, CORD format, va_list args);
+int CORD_fprintf(FILE * f, CORD format, ...);
+int CORD_vfprintf(FILE * f, CORD format, va_list args);
+int CORD_printf(CORD format, ...);
+int CORD_vprintf(CORD format, va_list args);
+
+#endif /* CORD_NO_IO */
+
 # endif /* CORD_H */

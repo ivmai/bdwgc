@@ -1,6 +1,15 @@
-/* We put this here to minimize the risk of inlining. */
-/*VARARGS*/
-GC_noop() {}
+/* 
+ * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to copy this garbage collector for any purpose,
+ * provided the above notices are retained on all copies.
+ */
+/* Boehm, February 18, 1994 2:23 pm PST */
+
 
 # ifdef PCR
 /*
@@ -22,24 +31,3 @@ GC_noop() {}
 }
 #endif /* PCR */
 
-# ifdef __OS2__
-
-# include <stddef.h>
-# define INCL_DOSMEMMGR
-# define INCL_DOSERRORS
-# include <os2.h>
-
-void * os2_alloc(size_t bytes)
-{
-    void * result;
-
-    if (DosAllocMem(&result, bytes, PAG_EXECUTE | PAG_READ |
-    				    PAG_WRITE | PAG_COMMIT)
-		    != NO_ERROR) {
-	return(0);
-    }
-    if (result == 0) return(os2_alloc(bytes));
-    return(result);
-}
-
-# endif /* OS2 */

@@ -1,6 +1,6 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991-1993 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -8,9 +8,10 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
+/* Boehm, March 1, 1994 3:30 pm PST */
 
 #include <stdio.h>
-#include "gc_private.h"
+#include "gc_priv.h"
 
 signed_word GC_mem_found = 0;
 			/* Number of longwords of memory GC_reclaimed     */
@@ -121,6 +122,8 @@ register word sz;
     return(list);
 }
 
+#ifndef SMALL_CONFIG
+
 /*
  * A special case for 2 word composite objects (e.g. cons cells):
  */
@@ -229,6 +232,8 @@ register ptr_t list;
 #   undef DO_OBJ
 }
 
+#endif /* !SMALL_CONFIG */
+
 /* The same thing, but don't clear objects: */
 /*ARGSUSED*/
 ptr_t GC_reclaim_uninit(hbp, hhdr, sz, list, abort_if_found)
@@ -267,6 +272,7 @@ register word sz;
     return(list);
 }
 
+#ifndef SMALL_CONFIG
 /*
  * Another special case for 2 word atomic objects:
  */
@@ -416,13 +422,15 @@ register ptr_t list;
 #   undef DO_OBJ
 }
 
+#endif /* !SMALL_CONFIG */
+
 /*
  * Restore unmarked small objects in the block pointed to by hbp
  * to the appropriate object free list.
  * If entirely empty blocks are to be completely deallocated, then
  * caller should perform that check.
  */
-GC_reclaim_small_nonempty_block(hbp, abort_if_found)
+void GC_reclaim_small_nonempty_block(hbp, abort_if_found)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 int abort_if_found;		/* Abort if a reclaimable object is found */
 {
@@ -433,13 +441,14 @@ int abort_if_found;		/* Abort if a reclaimable object is found */
     
     hhdr = HDR(hbp);
     sz = hhdr -> hb_sz;
-    hhdr -> hb_last_reclaimed = GC_gc_no;
+    hhdr -> hb_last_reclaimed = (unsigned short) GC_gc_no;
     ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
     flh = &(ok -> ok_freelist[sz]);
     GC_write_hint(hbp);
 
     if (ok -> ok_init) {
       switch(sz) {
+#      ifndef SMALL_CONFIG
         case 1:
             *flh = GC_reclaim1(hbp, hhdr, *flh, abort_if_found);
             break;
@@ -449,12 +458,14 @@ int abort_if_found;		/* Abort if a reclaimable object is found */
         case 4:
             *flh = GC_reclaim_clear4(hbp, hhdr, *flh, abort_if_found);
             break;
+#      endif
         default:
             *flh = GC_reclaim_clear(hbp, hhdr, sz, *flh, abort_if_found);
             break;
       }
     } else {
       switch(sz) {
+#      ifndef SMALL_CONFIG
         case 1:
             *flh = GC_reclaim1(hbp, hhdr, *flh, abort_if_found);
             break;
@@ -464,6 +475,7 @@ int abort_if_found;		/* Abort if a reclaimable object is found */
         case 4:
             *flh = GC_reclaim_uninit4(hbp, hhdr, *flh, abort_if_found);
             break;
+#      endif
         default:
             *flh = GC_reclaim_uninit(hbp, hhdr, sz, *flh, abort_if_found);
             break;

@@ -1,0 +1,25 @@
+# Makefile for Windows NT.  Assumes Microsoft compiler, and a single thread.
+# DLLs are included in the root set under NT, but not under win32S.
+
+!include <ntwin32.mak>
+
+# We also haven't figured out how to do partial links or build static libraries.  Hence a
+# client currently needs to link against all of the following:
+
+OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj malloc.obj stubborn.obj dyn_load.obj typd_mlc.obj
+
+all: $(OBJS) gctest.exe
+
+.c.obj:
+	$(cc) $(cdebug) $(cflags) $(cvars) -DSMALL_CONFIG -DSILENT -DALL_INTERIOR_POINTERS $*.c
+
+$(OBJS) test.obj: gc_priv.h gc_hdrs.h gc.h
+
+gctest.exe: test.obj gc.lib
+#	The following works for win32 debugging.  For win32s debugging use debugtype:coff
+#	and add mapsympe line.
+	$(link) -debug:full -debugtype:cv $(guiflags) -stack:131072 -out:$*.exe test.obj $(conlibs) gc.lib
+#	mapsympe -n -o gctest.sym gctest.exe
+
+gc.lib: $(OBJS)
+	lib32 /MACHINE:i386 /out:gc.lib $(OBJS)

@@ -1,6 +1,5 @@
 /* 
- * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991, 1992 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -8,7 +7,8 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
-# include "gc_private.h"
+/* Boehm, March 28, 1994 1:58 pm PST */
+# include "gc_priv.h"
 
 # ifdef PCR
 /*
@@ -25,7 +25,7 @@ void * GC_AllocProc(size_t size, PCR_Bool ptrFree, PCR_Bool clear )
 {
     if (ptrFree) {
         void * result = (void *)GC_malloc_atomic(size);
-        if (clear && result != 0) bzero(result, size);
+        if (clear && result != 0) BZERO(result, size);
         return(result);
     } else {
         return((void *)GC_malloc(size));

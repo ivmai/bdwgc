@@ -8,7 +8,7 @@ Permission is hereby granted to copy this garbage collector for any purpose,
 provided the above notices are retained on all copies.
 
 
-This is version 3.7.  Note that functions were renamed since version 1.9
+This is version 4.0.  Note that functions were renamed since version 1.9
 to make naming consistent with PCR collectors.
 
 HISTORY -
@@ -34,11 +34,15 @@ specific code. Manuel Serrano (serrano@cornas.inria.fr) supplied linux and
 Sony News specific code.  Al Dosser provided Alpha/OSF/1 code.  He and
 Dave Detlefs(detlefs@src.dec.com) also provided several generic bug fixes.
 Alistair G. Crooks(agc@uts.amdahl.com) supplied the NetBSD and 386BSD ports.
+Jeffrey Hsu (hsu@soda.berkeley.edu) provided the FreeBSD port.
 Brent Benson (brent@jade.ssd.csd.harris.com) ported the collector to
 a Motorola 88K processor running CX/UX (Harris NightHawk).
 Ari Huttunen (Ari.Huttunen@hut.fi) generalized the OS/2 port to
 nonIBM development environments (a nontrivial task).
 David Chase, then at Olivetti Research, suggested several improvements.
+Scott Schwartz (schwartz@groucho.cse.psu.edu) supplied some of the
+code to save and print call stacks for leak detection on a SPARC.
+Jesse Hull and John Ellis supplied the C++ interface code.
 (Blame for misinstallation of these modifications goes to the first author,
 however.)
 
@@ -173,12 +177,15 @@ include subdirectory.  (Normally this is just gc.h.  "Make cord" adds
 "cord.h" and "ec.h".)
 
   The collector currently is designed to run essentially unmodified on
-the following machines:
+the following machines (most of the operating systems mentioned are
+trademarks of their respective holders):
 
 	    Sun 3
-	    Sun 4 under SunOS 4.X or Solaris2.X
+	    Sun 4 under SunOS 4.X or Solaris2.X (with or without threads)
 	    Vax under 4.3BSD, Ultrix
 	    Intel 386 or 486 under many operating systems, but not MSDOS.
+	    	(Win32S is somewhat supported, so it is possible to
+	    	build applications for Windows 3.1)
 	    Sequent Symmetry  (single threaded)
 	    Encore Multimax   (single threaded)
 	    MIPS M/120 (and presumably M/2000) (RISC/os 4.0 with BSD libraries)
@@ -194,13 +201,11 @@ the following machines:
 	    Commodore Amiga (see README.amiga)
 	    NeXT machines
 
-  For these machines you should check in config.h
-to verify that the machine type is correctly defined.  On 
-nonSun machines, you may also need to make changes to the
-Makefile, as described by comments there.
+  In a few cases (Amiga, OS/2, Win32) a separate makefile is supplied.
 
   Dynamic libraries are completely supported only under SunOS
-(and even that support is not functional on the last Sun 3 release).
+(and even that support is not functional on the last Sun 3 release),
+IRIX 5, Win32 (not Win32S) and OSF/1 on DEC AXP machines.
 On other machines we recommend that you do one of the following:
 
   1) Add dynamic library support (and send us the code).
@@ -379,7 +384,7 @@ near the top of gc_private.h.
 #define malloc(n) GC_malloc(n)
 #define calloc(m,n) GC_malloc((m)*(n))
 
-  For small pieces of VERY allocation intensive code, gc_inline.h
+  For small pieces of VERY allocation intensive code, gc_inl.h
 includes some allocation macros that may be used in place of GC_malloc
 and friends.
 
@@ -387,14 +392,8 @@ and friends.
 To avoid name conflicts, client code should avoid this prefix, except when
 accessing garbage collector routines or variables.
 
-  The internals of the collector understand different object "kinds" (sometimes
-called "regions").  By default, the only two kinds are ATOMIC and NORMAL.
-Its should be possible to add others, e.g. for data types for which layout
-information is known.  The allocation routine "GC_generic_malloc"
-takes an explicit kind argument.  (You will probably want to add
-faster kind-specific routines as well.) You will need to add another kind
-descriptor, including your own mark routine to add a new object kind.
-This requires a fairly detailed understanding of at least GC_mark.
+  Thre are provisions for allocation with explicit type information.
+This is rarely necessary.  Details can be found in gc_typed.h.
 
 
 USE AS LEAK DETECTOR:
@@ -402,19 +401,26 @@ USE AS LEAK DETECTOR:
   The collector may be used to track down leaks in C programs that are
 intended to run with malloc/free (e.g. code with extreme real-time or
 portability constraints).  To do so define FIND_LEAK somewhere in
-gc_private.h.  This will cause the collector to invoke the report_leak
+gc_priv.h.  This will cause the collector to invoke the report_leak
 routine defined near the top of reclaim.c whenever an inaccessible
 object is found that has not been explicitly freed.
   Productive use of this facility normally involves redefining report_leak
 to do something more intelligent.  This typically requires annotating
 objects with additional information (e.g. creation time stack trace) that
 identifies their origin.  Such code is typically not very portable, and is
-not included here.
+not included here, except on SPARC machines.
   If all objects are allocated with GC_DEBUG_MALLOC (see next section),
 then the default version of report_leak will report the source file
 and line number at which the leaked object was allocated.  This may
-sometimes be sufficient.
-
+sometimes be sufficient.  (On SPARC/SUNOS4 machines, it will also report
+a cryptic stack trace.  This can often be turned into a sympolic stack
+trace by invoking program "foo" with "callprocs foo".  Callprocs is
+a short shell script that invokes adb to expand program counter values
+to symbolic addresses.  It was largely supplied by Scott Schwartz.)
+  Note that the debugging facilities described in the next section can
+sometimes be slightly LESS effective in leak finding mode, since in
+leak finding mode, GC_debug_free actually results in reuse of the object.
+(Otherwise the object is simply marked invalid.)
 
 DEBUGGING FACILITIES:
 
@@ -539,9 +545,9 @@ heap sizes.  But collection pauses will increase for larger heaps.
 per MB of accessible memory that needs to be scanned.  Your mileage
 may vary.)  The incremental/generational collection facility helps,
 but is portable only if "stubborn" allocation is used.
-  Please address bug reports to boehm@xerox.com.  If you are contemplating
-a major addition, you might also send mail to ask whether it's already
-been done.
+  Please address bug reports to boehm@parc.xerox.com.  If you are
+contemplatinga major addition, you might also send mail to ask whether
+it's already been done.
 
 RECENT VERSIONS:
 
@@ -718,4 +724,46 @@ Version 3.7:
 - Added a workaround for an HP/UX compiler bug.
 - Fixed another stack clearing performance bug.  Reworked
   that code once more.
-
+  
+Version 4.0:
+- Added support for Solaris threads (which was possible
+  only be reimplementing some fraction of Solaris threads,
+  since Sun doesn't currently make the thread debugging
+  interface available).
+- Added non-threads win32 and win32S support.
+- (Grudgingly, with suitable muttering of obscenities) renamed
+  files so that the collector distribution could live on a FAT
+  file system.  Files that are guaranteed to be useless on
+  a PC still have long names.  Gc_inline.h and gc_private.h
+  still exist, but now just include  gc_inl.h and gc_priv.h.
+- Fixed a really obscure bug in finalization that could cause
+  undetected mark stack overflows.  (I would be surprised if
+  any real code ever tickled this one.)
+- Changed finalization code to dynamically resize the hash
+  tables it maintains.  (This probably does not matter for well-
+  -written code.  It no doubt does for C++ code that overuses
+  destructors.)
+- Added typed allocation primitves.  Rewrote the marker to
+  accommodate them with more reasonable efficiency.  This
+  change should also speed up marking for GC_malloc allocated
+  objects a little.  See gc_typed.h for new primitives.
+- Improved debugging facilities slightly.  Allocation time
+  stack traces are now kept by default on SPARC/SUNOS4.
+  (Thanks to Scott Schwartz.)
+- Added better support for small heap applications.
+- Significantly extended cord package.  Fixed a bug in the
+  implementation of lazily read files.  Printf and friends now
+  have cord variants.  Cord traversals are a bit faster.
+- Made ALL_INTERIOR_POINTERS recognition the default.
+- Fixed de so that it can run in constant space, independent
+  of file size.  Added simple string searching to cords and de.
+- Added the Hull-Ellis C++ interface.
+- Added dynamic library support for OSF/1.
+  (Thanks to Al Dosser and Tim Bingham at DEC.)
+- Changed argument to GC_expand_hp to be expressed
+  in units of bytes instead of heap blocks.  (Necessary
+  since the heap block size now varies depending on
+  configuration.  The old version was never very clean.)
+- Added GC_get_heap_size().  The previous "equivalent"
+  was broken.
+- Restructured the Makefile a bit.  
