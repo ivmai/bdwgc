@@ -2367,6 +2367,9 @@ EOF
 EOF
 
     ;;
+ ia64-*-hpux*)
+    machdep="mach_dep.lo ia64_save_regs_in_stack.lo"
+    ;;
 esac
 if test x"$machdep" = x; then
    machdep="mach_dep.lo"
