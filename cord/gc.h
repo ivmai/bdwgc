@@ -473,6 +473,14 @@ GC_API int GC_unregister_disappearing_link GC_PROTO((GC_PTR * /* link */));
 GC_API GC_PTR GC_make_closure GC_PROTO((GC_finalization_proc fn, GC_PTR data));
 GC_API void GC_debug_invoke_finalizer GC_PROTO((GC_PTR obj, GC_PTR data));
 
+GC_API int GC_invoke_finalizers GC_PROTO((void));
+	/* Run finalizers for all objects that are ready to	*/
+	/* be finalized.  Return the number of finalizers	*/
+	/* that were run.  Normally this is also called		*/
+	/* implicitly during some allocations.	If		*/
+	/* FINALIZE_ON_DEMAND is defined, it must be called	*/
+	/* explicitly.						*/
+
 /* GC_set_warn_proc can be used to redirect or filter warning messages.	*/
 /* p may not be a NULL pointer.						*/
 typedef void (*GC_warn_proc) GC_PROTO((char *msg, GC_word arg));
@@ -670,14 +678,6 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
 # else
 #   define GC_INIT()
 # endif
-#endif
-
-#ifdef __WATCOMC__
-  /* Ivan Demakov: Programs compiled by Watcom C with -5r option
-   * crash without this declaration
-   * HB: Could this go into gc_priv.h?
-   */
-  void GC_noop(void*, ...);
 #endif
 
 #ifdef __cplusplus

@@ -219,7 +219,11 @@ int main( int argc, char* argv[] ) {
             if (0 == i % 10) {
                 B::Deleting( 1 );
                 delete b;
-                B::Deleting( 0 );}}
+                B::Deleting( 0 );}
+#	    ifdef FINALIZE_ON_DEMAND
+	      GC_invoke_finalizers();
+#	    endif
+	    }
 
             /* Make sure the uncollectable As and Bs are still there. */
         for (i = 0; i < 1000; i++) {
@@ -230,7 +234,12 @@ int main( int argc, char* argv[] ) {
             b->Test( i );
             B::Deleting( 1 );
             delete b;
-            B::Deleting( 0 );}
+            B::Deleting( 0 );
+#	    ifdef FINALIZE_ON_DEMAND
+	   	 GC_invoke_finalizers();
+#	    endif
+
+	    }
 
             /* Make sure most of the finalizable Cs, Ds, and Fs have
             gone away. */

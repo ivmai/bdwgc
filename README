@@ -11,7 +11,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.12 of a conservative garbage collector for C and C++.
+This is version 4.13alpha1 of a conservative garbage collector for C and C++.
 
 HISTORY -
 
@@ -1324,6 +1324,28 @@ Since 4.11:
    On the other hand, it seems to be needed often enough that it's worth
    adding as a standard facility.
 
+Since 4.12:
+ - Fixed a crucial bug in the Watcom port.  There was a redundant decl
+   of GC_push_one in gc_priv.h.
+ - Added FINALIZE_ON_DEMAND.
+ - Fixed some pre-ANSI cc problems in test.c.
+ - Removed getpagesize() use for Solaris.  It seems to be missing in one
+   or two versions.
+ - Fixed bool handling for SPARCCompiler version 4.2.
+ - Fixed some files in include that had gotten unlinked from the main
+   copy.
+ - Some RS/6000 fixes (missing casts).  Thanks to Toralf Foerster.
+ - Fixed several problems in GC_debug_realloc, affecting mostly the
+   FIND_LEAK case.
+ - GC_exclude_static_roots contained a buggy unsigned comparison to
+   terminate a loop.  (Thanks to Wilson Ho.)
+ - CORD_str failed if the substring occurred at the last possible position.
+   (Only affects cord users.)
+ - Fixed Linux code to deal with RedHat 5.0 and integrated Peter Bigot's
+   os_dep.c code for dealing with various Linux versions.
+ - Added workaround for Irix pthreads sigaction bug and possible signal
+   misdirection problems.
+
 To do:
  - Very large root set sizes (> 16 MB or so) could cause the collector
    to abort with an unexpected mark stack overflow.  (Thanks again to
@@ -1336,6 +1358,11 @@ To do:
    off DYNAMIC_LOADING in the collector as a workaround.  It may also
    be possible to conditionally intercept mmap and use GC_exclude_static_roots.
    The real fix is to walk rld data structures, which looks possible.
- - SGI pthreads and incremental collection don't mix yet.
+ - SGI pthreads and incremental collection don't mix yet.  This actually
+   now appears to work under Irix 6.5, but is not enabled by default.
  - Integrate MIT and DEC pthreads ports.
+ - The Irix pthreads locking mechanism leaves something to be desired.
+   It should eventually resort to nanosleep with exponential backoff.
+   There seem to be associated performance problems with
+   pthreads + incremental GC.
  

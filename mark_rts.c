@@ -378,8 +378,8 @@ GC_PTR finish;
 	  return;
       }
       next_index = next - excl_table;
-      for (i = excl_table_entries - 1; i >= next_index; --i) {
-	excl_table[i+1] = excl_table[i];
+      for (i = excl_table_entries; i > next_index; --i) {
+	excl_table[i] = excl_table[i-1];
       }
     } else {
       next_index = excl_table_entries;

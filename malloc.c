@@ -115,7 +115,7 @@ register int k;
     ptr_t result;
     DCL_LOCK_STATE;
 
-    GC_invoke_finalizers();
+    GC_INVOKE_FINALIZERS();
     DISABLE_SIGNALS();
     LOCK();
     result = GC_generic_malloc_inner(lb, k);

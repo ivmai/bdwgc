@@ -28,3 +28,12 @@ include gc.h.  Gc.h redefines some of the pthread primitives as macros which
 also provide the collector with information it requires.
 
 4) For the time being, you should not use dlopen.
+
+5) pthread_cond_wait and pthread_cond_timed_wait should be prepared for premature 
+wakeups.  (I believe the pthreads and realted standards require this anyway.
+Irix pthreads often terminate a wait if a signal arrives.  The garbage collector
+uses signals to stop threads.)
+
+6) It is expensive to stop a thread waiting in IO at the time the request is
+initiated.  Applications with many such threads may not exhibit acceptable
+performance with the collector.  (Increasing the heap size may help.)

@@ -548,7 +548,7 @@ void GC_finish_collection()
     int result;
     DCL_LOCK_STATE;
     
-    GC_invoke_finalizers();
+    GC_INVOKE_FINALIZERS();
     DISABLE_SIGNALS();
     LOCK();
     ENTER_GC();
@@ -559,7 +559,7 @@ void GC_finish_collection()
     EXIT_GC();
     UNLOCK();
     ENABLE_SIGNALS();
-    if(result) GC_invoke_finalizers();
+    if(result) GC_INVOKE_FINALIZERS();
     return(result);
 }
 

@@ -65,6 +65,10 @@ typedef struct GC_Thread_Rep {
 				  /* guaranteed to be dead, but we may  */
 				  /* not yet have registered the join.) */
     pthread_t id;
+    word stop;
+#	define NOT_STOPPED 0
+#	define PLEASE_STOP 1
+#	define STOPPED 2
     word flags;
 #	define FINISHED 1   	/* Thread has exited.	*/
 #	define DETACHED 2	/* Thread is intended to be detached.	*/
@@ -90,7 +94,6 @@ GC_thread GC_lookup_thread(pthread_t id);
 # define SIG_SUSPEND (SIGRTMIN + 6)
 
 pthread_mutex_t GC_suspend_lock = PTHREAD_MUTEX_INITIALIZER;
-volatile unsigned GC_n_stopped = 0;
 				/* Number of threads stopped so far	*/
 pthread_cond_t GC_suspend_ack_cv = PTHREAD_COND_INITIALIZER;
 pthread_cond_t GC_continue_cv = PTHREAD_COND_INITIALIZER;
@@ -110,8 +113,13 @@ void GC_suspend_handler(int sig)
     /* of a thread which holds the allocation lock in order	*/
     /* to stop the world.  Thus concurrent modification of the	*/
     /* data structure is impossible.				*/
+    if (PLEASE_STOP != me -> stop) {
+	/* Misdirected signal.	*/
+	pthread_mutex_unlock(&GC_suspend_lock);
+	return;
+    }
     me -> stack_ptr = (ptr_t)(&dummy);
-    GC_n_stopped++;
+    me -> stop = STOPPED;
     pthread_cond_signal(&GC_suspend_ack_cv);
     pthread_cond_wait(&GC_continue_cv, &GC_suspend_lock);
     pthread_mutex_unlock(&GC_suspend_lock);
@@ -204,7 +212,8 @@ GC_thread GC_new_thread(pthread_t id)
     result -> id = id;
     result -> next = GC_threads[hv];
     GC_threads[hv] = result;
-    /* result -> flags = 0; */
+    /* result -> flags = 0;     */
+    /* result -> stop = 0;	*/
     return(result);
 }
 
@@ -271,21 +280,23 @@ void GC_stop_world()
     pthread_t my_thread = pthread_self();
     register int i;
     register GC_thread p;
-    register int n_live_threads = 0;
     register int result;
+    struct timespec timeout;
     
-    GC_n_stopped = 0;
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (p -> id != my_thread) {
-            if (p -> flags & FINISHED) continue;
-            n_live_threads++;
+            if (p -> flags & FINISHED) {
+		p -> stop = STOPPED;
+		continue;
+	    }
+	    p -> stop = PLEASE_STOP;
             result = pthread_kill(p -> id, SIG_SUSPEND);
 	    /* GC_printf1("Sent signal to 0x%x\n", p -> id); */
 	    switch(result) {
                 case ESRCH:
                     /* Not really there anymore.  Possible? */
-                    n_live_threads--;
+                    p -> stop = STOPPED;
                     break;
                 case 0:
                     break;
@@ -296,10 +307,25 @@ void GC_stop_world()
       }
     }
     pthread_mutex_lock(&GC_suspend_lock);
-    while(GC_n_stopped < n_live_threads) {
-        /* GC_printf3("\nwaiting:%d %d %d\n", GC_gc_no,
-			GC_n_stopped, n_live_threads); */
-    	pthread_cond_wait(&GC_suspend_ack_cv, &GC_suspend_lock);
+    for (i = 0; i < THREAD_TABLE_SZ; i++) {
+      for (p = GC_threads[i]; p != 0; p = p -> next) {
+        while (p -> id != my_thread && p -> stop != STOPPED) {
+	    clock_gettime(CLOCK_REALTIME, &timeout);
+            timeout.tv_nsec += 50000000; /* 50 msecs */
+            if (timeout.tv_nsec >= 1000000000) {
+                timeout.tv_nsec -= 1000000000;
+                ++timeout.tv_sec;
+            }
+            result = pthread_cond_timedwait(&GC_suspend_ack_cv,
+					    &GC_suspend_lock,
+                                            &timeout);
+            if (result == ETIMEDOUT) {
+                /* Signal was lost or misdirected.  Try again.      */
+                /* Duplicate signals should be benign.              */
+                result = pthread_kill(p -> id, SIG_SUSPEND);
+	    }
+	}
+      }
     }
     pthread_mutex_unlock(&GC_suspend_lock);
     /* GC_printf1("World stopped 0x%x\n", pthread_self()); */
@@ -308,7 +334,15 @@ void GC_stop_world()
 /* Caller holds allocation lock.	*/
 void GC_start_world()
 {
+    GC_thread p;
+    unsigned i;
+
     /* GC_printf0("World starting\n"); */
+    for (i = 0; i < THREAD_TABLE_SZ; i++) {
+      for (p = GC_threads[i]; p != 0; p = p -> next) {
+	p -> stop = NOT_STOPPED;
+      }
+    }
     pthread_mutex_lock(&GC_suspend_lock);
     /* All other threads are at pthread_cond_wait in signal handler.	*/
     /* Otherwise we couldn't have acquired the lock.			*/

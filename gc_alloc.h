@@ -32,6 +32,8 @@
 
 #define GC_ALLOC_H
 #define __ALLOC_H	// Prevent inclusion of the default version.  Ugly.
+#define __SGI_STL_ALLOC_H
+#define __SGI_STL_INTERNAL_ALLOC_H
 
 #ifndef __ALLOC
 #   define __ALLOC alloc
@@ -304,8 +306,8 @@ class gc_alloc_template {
      	static void * allocate(size_t n) { return GC_malloc(n); }
      	static void * ptr_free_allocate(size_t n)
 		{ return GC_malloc_atomic(n); }
-	static void deallocate(void *p, size_t n) { }
-	static void ptr_free_deallocate(void *p, size_t n) { }
+	static void deallocate(void *, size_t) { }
+	static void ptr_free_deallocate(void *, size_t) { }
 };
 
 typedef gc_alloc_template < 0 > gc_alloc;
@@ -316,8 +318,8 @@ class alloc_template {
      	static void * allocate(size_t n) { return GC_malloc_uncollectable(n); }
      	static void * ptr_free_allocate(size_t n)
 		{ return GC_malloc_atomic_uncollectable(n); }
-	static void deallocate(void *p, size_t n) { GC_free(p); }
-	static void ptr_free_deallocate(void *p, size_t n) { GC_free(p); }
+	static void deallocate(void *p, size_t) { GC_free(p); }
+	static void ptr_free_deallocate(void *p, size_t) { GC_free(p); }
 };
 
 typedef alloc_template < 0 > alloc;

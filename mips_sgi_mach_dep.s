@@ -9,6 +9,7 @@
 #   define RAOFF FRAMESZ-SZREG
 #   define GPOFF FRAMESZ-(2*SZREG)
     NESTED(GC_push_regs, FRAMESZ, ra)
+    .mask 0x80000000,-SZREG	# inform debugger of saved ra loc
     move 	t0,gp
     SETUP_GPX(t8)
     PTR_SUBU	sp,FRAMESZ

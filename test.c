@@ -646,7 +646,7 @@ void typed_test()
 #   endif
     GC_descr d3 = GC_make_descriptor(&bm_large, 32);
     GC_descr d4 = GC_make_descriptor(bm_huge, 320);
-    GC_word * x = GC_malloc_explicitly_typed(2000, d4);
+    GC_word * x = (GC_word *)GC_malloc_explicitly_typed(2000, d4);
     register int i;
     
     old = 0;
@@ -811,7 +811,7 @@ void run_one_test()
     LOCK();
     n_tests++;
     UNLOCK();
-    /* GC_printf1("Finished %x\n", pthread_self());    */
+    /* GC_printf1("Finished %x\n", pthread_self()); */
 }
 
 void check_heap_stats()
@@ -819,6 +819,7 @@ void check_heap_stats()
     unsigned long max_heap_sz;
     register int i;
     int still_live;
+    int late_finalize_count = 0;
     
     if (sizeof(char *) > 4) {
         max_heap_sz = 13000000;
@@ -836,11 +837,18 @@ void check_heap_stats()
       while (GC_collect_a_little()) { }
       for (i = 0; i < 16; i++) {
         GC_gcollect();
+        late_finalize_count += GC_invoke_finalizers();
       }
     (void)GC_printf1("Completed %lu tests\n", (unsigned long)n_tests);
     (void)GC_printf2("Finalized %lu/%lu objects - ",
     		     (unsigned long)finalized_count,
     		     (unsigned long)finalizable_count);
+#   ifdef FINALIZE_ON_DEMAND
+	if (finalized_count != late_finalize_count) {
+            (void)GC_printf0("Demand finalization error\n");
+	    FAIL;
+	}
+#   endif
     if (finalized_count > finalizable_count
         || finalized_count < finalizable_count/2) {
         (void)GC_printf0("finalization is probably broken\n");
@@ -857,8 +865,7 @@ void check_heap_stats()
     i = finalizable_count - finalized_count - still_live;
     if (0 != i) {
         (void)GC_printf2
-            ("%lu disappearing links remain and %lu more objects "
-	     "were not finalized\n",
+            ("%lu disappearing links remain and %lu more objects were not finalized\n",
              (unsigned long) still_live, (unsigned long)i);
         if (i > 10) {
 	    GC_printf0("\tVery suspicious!\n");
@@ -1105,7 +1112,9 @@ main()
     pthread_attr_init(&attr);
     pthread_attr_setstacksize(&attr, 1000000);
     n_tests = 0;
-    GC_enable_incremental();
+#   ifdef MPROTECT_VDB
+    	GC_enable_incremental();
+#   endif
     (void) GC_set_warn_proc(warn_proc);
     if ((code = pthread_create(&th1, &attr, thr_run_one_test, 0)) != 0) {
     	(void)GC_printf1("Thread 1 creation failed %lu\n", (unsigned long)code);

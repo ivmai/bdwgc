@@ -7,15 +7,16 @@
 #      	 and runs some tests of collector and cords.  Does not add cords or
 #	 c++ interface to gc.a
 # cord/de - builds dumb editor based on cords.
-CC=cc
-CXX=CC
-AS=as
+ABI_FLAG= 
+CC=cc $(ABI_FLAG)
+CXX=CC $(ABI_FLAG)
+AS=as $(ABI_FLAG)
 #  The above doesn't work with gas, which doesn't run cpp.
 #  Define AS as `gcc -c -x assembler-with-cpp' instead.
 #  Under Irix 6, you will have to specify the ABI for as if you specify
 #  it for the C compiler.
 
-CFLAGS= -O -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DATOMIC_UNCOLLECTABLE -DNO_EXECUTE_PERMISSION -DSILENT
+CFLAGS= -O -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION -DSILENT
 
 # Setjmp_test may yield overly optimistic results when compiled
 # without optimization.
@@ -80,6 +81,8 @@ CFLAGS= -O -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DATOMIC_UNCOLLECTABLE -DNO_EXEC
 #   in a sepearte postpass, and hence their memory won't be reclaimed.
 #   Not recommended unless you are implementing a language that specifies
 #   these semantics.
+# -DFINALIZE_ON_DEMAND causes finalizers to be run only in response
+#   to explicit GC_invoke_finalizers() calls.
 # -DATOMIC_UNCOLLECTABLE includes code for GC_malloc_atomic_uncollectable.
 #   This is useful if either the vendor malloc implementation is poor,
 #   or if REDIRECT_MALLOC is used.
@@ -229,10 +232,12 @@ libgc.so: $(OBJS) dyn_load_sunos53.o
 # Alpha/OSF shared library version of the collector
 libalphagc.so: $(OBJS)
 	ld -shared -o libalphagc.so $(OBJS) dyn_load.o -lc
+	ln libalphagc.so libgc.so
 
 # IRIX shared library version of the collector
 libirixgc.so: $(OBJS) dyn_load.o
-	ld -shared -o libirixgc.so $(OBJS) dyn_load.o -lc
+	ld -shared $(ABI_FLAG) -o libirixgc.so $(OBJS) dyn_load.o -lc
+	ln libirixgc.so libgc.so
 
 mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ultrix_mach_dep.s $(srcdir)/rs6000_mach_dep.s $(UTILS)
 	rm -f mach_dep.o

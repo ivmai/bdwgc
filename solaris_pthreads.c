@@ -36,6 +36,7 @@
 # define _CLASSIC_XOPEN_TYPES
 # include <unistd.h>
 # include <errno.h>
+# include "solaris_threads.h"
 
 #undef pthread_join
 #undef pthread_create
@@ -163,7 +164,7 @@ GC_pthread_create(pthread_t *new_thread,
 # else
 
 #ifndef LINT
-  int GC_no_sunOS_threads;
+  int GC_no_sunOS_pthreads;
 #endif
 
 # endif /* SOLARIS_THREADS */

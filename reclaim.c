@@ -20,7 +20,7 @@ signed_word GC_mem_found = 0;
 			/* Number of words of memory reclaimed     */
 
 # ifdef FIND_LEAK
-static report_leak(p, sz)
+static void report_leak(p, sz)
 ptr_t p;
 word sz;
 {
@@ -40,7 +40,7 @@ word sz;
 
 #   define FOUND_FREE(hblk, word_no) \
       if (abort_if_found) { \
-         report_leak((long)hblk + WORDS_TO_BYTES(word_no), \
+         report_leak((ptr_t)hblk + WORDS_TO_BYTES(word_no), \
          	     HDR(hblk) -> hb_sz); \
       }
 # else

@@ -1,6 +1,7 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1997 by Silicon Graphics.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -320,6 +321,33 @@ GC_PTR p;
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
+#ifdef ATOMIC_UNCOLLECTABLE
+# ifdef __STDC__
+    GC_PTR GC_debug_malloc_atomic_uncollectable(size_t lb, char * s, int i)
+# else
+    GC_PTR GC_debug_malloc_atomic_uncollectable(lb, s, i)
+    size_t lb;
+    char * s;
+    int i;
+# endif
+{
+    GC_PTR result = GC_malloc_atomic_uncollectable(lb + DEBUG_BYTES);
+    
+    if (result == 0) {
+        GC_err_printf1(
+		"GC_debug_malloc_atomic_uncollectable(%ld) returning NIL (",
+                (unsigned long) lb);
+        GC_err_puts(s);
+        GC_err_printf1(":%ld)\n", (unsigned long)i);
+        return(0);
+    }
+    if (!GC_debugging_started) {
+        GC_start_debugging();
+    }
+    ADD_CALL_CHAIN(result);
+    return (GC_store_debug_info(result, (word)lb, s, (word)i));
+}
+#endif /* ATOMIC_UNCOLLECTABLE */
 
 # ifdef __STDC__
     void GC_debug_free(GC_PTR p)
@@ -386,7 +414,7 @@ GC_PTR p;
 {
     register GC_PTR base = GC_base(p);
     register ptr_t clobbered;
-    register GC_PTR result = GC_debug_malloc(lb, s, i);
+    register GC_PTR result;
     register size_t copy_sz = lb;
     register size_t old_sz;
     register hdr * hhdr;
@@ -394,7 +422,7 @@ GC_PTR p;
     if (p == 0) return(GC_debug_malloc(lb, s, i));
     if (base == 0) {
         GC_err_printf1(
-              "Attempt to free invalid pointer %lx\n", (unsigned long)p);
+              "Attempt to reallocate invalid pointer %lx\n", (unsigned long)p);
         ABORT("realloc(invalid pointer)");
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
@@ -419,6 +447,11 @@ GC_PTR p;
       case UNCOLLECTABLE:
 	result = GC_debug_malloc_uncollectable(lb, s, i);
  	break;
+#    ifdef ATOMIC_UNCOLLECTABLE
+      case AUNCOLLECTABLE:
+	result = GC_debug_malloc_atomic_uncollectable(lb, s, i);
+	break;
+#    endif
       default:
         GC_err_printf0("GC_debug_realloc: encountered bad kind\n");
         ABORT("bad kind");
@@ -432,6 +465,7 @@ GC_PTR p;
     if (old_sz < copy_sz) copy_sz = old_sz;
     if (result == 0) return(0);
     BCOPY(p, result,  copy_sz);
+    GC_debug_free(p);
     return(result);
 }
 
