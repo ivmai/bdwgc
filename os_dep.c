@@ -1091,6 +1091,9 @@ void GC_register_data_segments()
 	GC_add_roots_inner(DATASTART, (char *)sbrk(0), FALSE);
 #     else
 	GC_add_roots_inner(DATASTART, (char *)(DATAEND), FALSE);
+#       if defined(DATASTART2)
+         GC_add_roots_inner(DATASTART2, (char *)(DATAEND2), FALSE);
+#       endif
 #     endif
 #   endif
 #   if !defined(PCR) && (defined(NEXT) || defined(MACOSX))
@@ -1289,8 +1292,14 @@ void * os2_alloc(size_t bytes)
 SYSTEM_INFO GC_sysinfo;
 # endif
 
-
 # ifdef MSWIN32
+
+# ifdef USE_GLOBAL_ALLOC
+#   define GLOBAL_ALLOC_TEST 1
+# else
+#   define GLOBAL_ALLOC_TEST GC_win32s
+# endif
+
 word GC_n_heap_bases = 0;
 
 ptr_t GC_win32_get_mem(bytes)
@@ -1298,7 +1307,7 @@ word bytes;
 {
     ptr_t result;
 
-    if (GC_win32s) {
+    if (GLOBAL_ALLOC_TEST) {
     	/* VirtualAlloc doesn't like PAGE_EXECUTE_READWRITE.	*/
     	/* There are also unconfirmed rumors of other		*/
     	/* problems, so we dodge the issue.			*/
@@ -2537,11 +2546,15 @@ word len;
     	      ((ptr_t)end_block - (ptr_t)start_block) + HBLKSIZE);
 }
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(GC_LINUX_THREADS) \
+#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(THREADS) \
     && !defined(GC_USE_LD_WRAP)
-/* Replacement for UNIX system call.	 */
-/* Other calls that write to the heap	 */
-/* should be handled similarly.		 */
+/* Replacement for UNIX system call.					 */
+/* Other calls that write to the heap should be handled similarly.	 */
+/* Note that this doesn't work well for blocking reads:  It will hold	 */
+/* tha allocation lock for the entur duration of the call. Multithreaded */
+/* clients should really ensure that it won't block, either by setting 	 */
+/* the descriptor nonblocking, or by calling select or poll first, to	 */
+/* make sure that input is available.					 */
 # if defined(__STDC__) && !defined(SUNOS4)
 #   include <unistd.h>
 #   include <sys/uio.h>
@@ -2589,7 +2602,7 @@ word len;
 }
 #endif /* !MSWIN32 && !MSWINCE && !GC_LINUX_THREADS */
 
-#ifdef GC_USE_LD_WRAP
+#if defined(GC_USE_LD_WRAP) && !defined(THREADS)
     /* We use the GNU ld call wrapping facility.			*/
     /* This requires that the linker be invoked with "--wrap read".	*/
     /* This can be done by passing -Wl,"--wrap read" to gcc.		*/

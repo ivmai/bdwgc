@@ -78,7 +78,7 @@ char * GC_copyright[] =
 {"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
 "Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved. ",
 "Copyright (c) 1996-1998 by Silicon Graphics.  All rights reserved. ",
-"Copyright (c) 1999-2000 by Hewlett-Packard Company.  All rights reserved. ",
+"Copyright (c) 1999-2001 by Hewlett-Packard Company.  All rights reserved. ",
 "THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY",
 " EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.",
 "See source code for details." };
@@ -96,6 +96,8 @@ word GC_free_space_divisor = 3;
 
 extern GC_bool GC_collection_in_progress();
 		/* Collection is in progress, or was abandoned.	*/
+
+extern GC_bool GC_print_back_height;
 
 int GC_never_stop_func GC_PROTO((void)) { return(0); }
 
@@ -434,13 +436,16 @@ GC_stop_func stop_func;
 {
     register int i;
     int dummy;
-#   ifdef PRINTTIMES
+#   if defined(PRINTTIMES) || defined(CONDPRINT)
 	CLOCK_TYPE start_time, current_time;
 #   endif
 	
     STOP_WORLD();
 #   ifdef PRINTTIMES
 	GET_TIME(start_time);
+#   endif
+#   if defined(CONDPRINT) && !defined(PRINTTIMES)
+	if (GC_print_stats) GET_TIME(start_time);
 #   endif
 #   ifdef CONDPRINT
       if (GC_print_stats) {
@@ -449,6 +454,11 @@ GC_stop_func stop_func;
 	GC_printf2("after %lu allocd bytes + %lu wasted bytes\n",
 	   	   (unsigned long) WORDS_TO_BYTES(GC_words_allocd),
 	   	   (unsigned long) WORDS_TO_BYTES(GC_words_wasted));
+      }
+#   endif
+#   ifdef MAKE_BACK_GRAPH
+      if (GC_print_back_height) {
+        GC_build_back_graph();
       }
 #   endif
 
@@ -504,6 +514,14 @@ GC_stop_func stop_func;
 	GET_TIME(current_time);
 	GC_printf1("World-stopped marking took %lu msecs\n",
 	           MS_TIME_DIFF(current_time,start_time));
+#   else
+#     ifdef CONDPRINT
+	if (GC_print_stats) {
+	  GET_TIME(current_time);
+	  GC_printf1("World-stopped marking took %lu msecs\n",
+	             MS_TIME_DIFF(current_time,start_time));
+	}
+#     endif
 #   endif
     START_WORLD();
     return(TRUE);
@@ -609,6 +627,17 @@ void GC_finish_collection()
 #   ifdef PRINTTIMES
       GET_TIME(finalize_time);
 #   endif
+
+    if (GC_print_back_height) {
+#     ifdef MAKE_BACK_GRAPH
+	GC_traverse_back_graph();
+#     else
+#	ifndef SMALL_CONFIG
+	  GC_err_printf0("Back height not available: "
+		         "Rebuild collector with -DMAKE_BACK_GRAPH\n");
+#  	endif
+#     endif
+    }
 
     /* Clear free list mark bits, in case they got accidentally marked   */
     /* (or GC_find_leak is set and they were intentionally marked).	 */

@@ -1,5 +1,5 @@
 The garbage collector looks at a number of environment variables which are
-the used to affect its operation.  These are examined only on Un*x-like
+then used to affect its operation.  These are examined only on Un*x-like
 platforms.
 
 GC_INITIAL_HEAP_SIZE=<bytes> -	Initial heap size in bytes.  May speed up
@@ -31,6 +31,27 @@ GC_NPROCS=<n> - Linux w/threads only.  Explicitly sets the number of processors
 
 GC_NO_BLACKLIST_WARNING - Prevents the collector from issuing
 		"Needed to allocate blacklisted block at ..." warnings.
+
+GC_IGNORE_GCJ_INFO - Ignore the type descriptors implicitly supplied by
+		     GC_gcj_malloc and friends.  This is useful for debugging
+		     descriptor generation problems, and possibly for
+		     temporarily working around such problems.  It forces a
+		     fully conservative scan of all heap objects except
+		     those known to be pointerfree, and may thus have other
+		     adverse effects.
+
+GC_PRINT_BACK_HEIGHT - Print max length of chain through unreachable objects
+		     ending in a reachable one.  If this number remains
+		     bounded, then the program is "GC robust".  This ensures
+		     that a fixed number of misidentified pointers can only
+		     result in a bounded space leak.  This currently only
+		     works if debugging allocation is used throughout.
+		     It increases GC space and time requirements appreciably.
+		     This feature is still somewhat experimental, and requires
+		     that the collector have been built with MAKE_BACK_GRAPH
+		     defined.  For details, see Boehm, "Bounding Space Usage
+		     of Conservative Garbage Collectors", POPL 2001, or
+		     http://lib.hpl.hp.com/techpubs/2001/HPL-2001-251.html .
 
 The following turn on runtime flags that are also program settable.  Checked
 only during initialization.  We expect that they will usually be set through

@@ -78,9 +78,12 @@
 #    endif
 #    define mach_type_known
 # endif
-# if defined(mips) || defined(__mips)
+# if defined(mips) || defined(__mips) || defined(_mips)
 #    define MIPS
-#    if !defined(LINUX)
+#    if defined(nec_ews) || defined(_nec_ews)
+#      define EWS4800
+#    endif
+#    if !defined(LINUX) && !defined(EWS4800)
 #      if defined(ultrix) || defined(__ultrix) || defined(__NetBSD__)
 #	 define ULTRIX
 #      else
@@ -726,8 +729,12 @@
 	extern char * GC_SysVGetDataStart();
 #       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &_etext)
 #	define DATAEND (&_end)
-#	ifndef USE_MMAP
+#	if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
 #	    define USE_MMAP
+	    /* Otherwise we now use calloc.  Mmap may result in the	*/
+	    /* heap interleaved with thread stacks, which can result in	*/
+	    /* excessive blacklisting.  Sbrk is unusable since it	*/
+	    /* doesn't interact correctly with the system malloc.	*/
 #	endif
 #       ifdef USE_MMAP
 #         define HEAP_START (ptr_t)0x40000000
@@ -849,21 +856,29 @@
 #   endif
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
-  	extern int etext, _start;
+        extern int _etext, _end;
   	extern char * GC_SysVGetDataStart();
-#       define DATASTART GC_SysVGetDataStart(0x1000, &etext)
+#       define DATASTART GC_SysVGetDataStart(0x1000, &_etext)
+#	define DATAEND (&_end)
 /*	# define STACKBOTTOM ((ptr_t)(&_start)) worked through 2.7,  	*/
 /*      but reportedly breaks under 2.8.  It appears that the stack	*/
 /* 	base is a property of the executable, so this should not break	*/
 /* 	old executables.						*/
 /*  	HEURISTIC2 probably works, but this appears to be preferable.	*/
-#       include <sys/vmparam.h>
+#       include <sys/vm.h>
 #	define STACKBOTTOM USRSTACK
-/** At least in Solaris 2.5, PROC_VDB gives wrong values for dirty bits. */
-/*#	define PROC_VDB*/
+/* At least in Solaris 2.5, PROC_VDB gives wrong values for dirty bits. */
+/* It appears to be fixed in 2.8 and 2.9.				*/
+#	ifdef SOLARIS25_PROC_VDB_BUG_FIXED
+#	  define PROC_VDB
+#	endif
 #	define DYNAMIC_LOADING
-#	ifndef USE_MMAP
+#	if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
 #	    define USE_MMAP
+	    /* Otherwise we now use calloc.  Mmap may result in the	*/
+	    /* heap interleaved with thread stacks, which can result in	*/
+	    /* excessive blacklisting.  Sbrk is unusable since it	*/
+	    /* doesn't interact correctly with the system malloc.	*/
 #	endif
 #       ifdef USE_MMAP
 #         define HEAP_START (ptr_t)0x40000000
@@ -1014,11 +1029,17 @@
 #   endif
 #   ifdef FREEBSD
 #	define OS_TYPE "FREEBSD"
-#	define MPROTECT_VDB
+#	ifndef GC_FREEBSD_THREADS
+#	    define MPROTECT_VDB
+#	endif
+#	define SIG_SUSPEND SIGUSR1
+#	define SIG_THR_RESTART SIGUSR2
 #	define FREEBSD_STACKBOTTOM
 #	ifdef __ELF__
 #	    define DYNAMIC_LOADING
 #	endif
+	extern char etext;
+#	define DATASTART ((ptr_t)(&etext))
 #   endif
 #   ifdef NETBSD
 #	define OS_TYPE "NETBSD"
@@ -1029,7 +1050,7 @@
 #   ifdef BSDI
 #	define OS_TYPE "BSDI"
 #   endif
-#   if defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
+#   if defined(OPENBSD) || defined(NETBSD) \
         || defined(THREE86BSD) || defined(BSDI)
 #	define HEURISTIC2
 	extern char etext;
@@ -1097,6 +1118,29 @@
 	/* instead. But some kernel versions seem to give the wrong	*/
 	/* value from /proc.						*/
 #   endif /* Linux */
+#   ifdef EWS4800
+#      define HEURISTIC2
+#      if defined(_MIPS_SZPTR) && (_MIPS_SZPTR == 64)
+         extern int _fdata[], _end[];
+#        define DATASTART ((ptr_t)_fdata)
+#        define DATAEND ((ptr_t)_end)
+#        define CPP_WORDSZ _MIPS_SZPTR
+#        define ALIGNMENT (_MIPS_SZPTR/8)
+#      else
+         extern int etext, edata, end;
+         extern int _DYNAMIC_LINKING, _gp;
+#        define DATASTART ((ptr_t)((((word)&etext + 0x3ffff) & ~0x3ffff) \
+               + ((word)&etext & 0xffff)))
+#        define DATAEND (&edata)
+#        define DATASTART2 (&_DYNAMIC_LINKING \
+               ? (ptr_t)(((word)&_gp + 0x8000 + 0x3ffff) & ~0x3ffff) \
+               : (ptr_t)&edata)
+#        define DATAEND2 (&end)
+#        define ALIGNMENT 4
+#      endif
+#      define OS_TYPE "EWS4800"
+#      define USE_GENERIC_PUSH_REGS 1
+#   endif
 #   ifdef ULTRIX
 #	define HEURISTIC2
 #       define DATASTART (ptr_t)0x10000000
@@ -1374,7 +1418,13 @@
 #	define BACKING_STORE_BASE ((ptr_t)GC_register_stackbottom)
 #	define SEARCH_FOR_DATA_START
 #	define DATASTART GC_data_start
-#       define DYNAMIC_LOADING
+#	ifdef __GNUC__
+#         define DYNAMIC_LOADING
+#	else
+	  /* In the Intel compiler environment, we seem to end up with  */
+	  /* statically linked executables and an undefined reference	*/
+	  /* to _DYNAMIC						*/
+#  	endif
 #	define MPROTECT_VDB
 		/* Requires Linux 2.3.47 or later.	*/
 	extern int _end;
@@ -1689,6 +1739,10 @@
 #   define SAVE_CALL_CHAIN
 #   define ASM_CLEAR_CODE	/* Stack clearing is crucial, and we 	*/
 				/* include assembly code to do it well.	*/
+# endif
+
+# if defined(MAKE_BACK_GRAPH) && !defined(DBG_HDRS_ALL)
+#   define DBG_HDRS_ALL
 # endif
 
 # endif /* GCCONFIG_H */

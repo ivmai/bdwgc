@@ -1,6 +1,7 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1999-2001 by Hewlett-Packard Company. All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -96,6 +97,8 @@ GC_bool GC_dont_precollect = 0;
 GC_bool GC_quiet = 0;
 
 GC_bool GC_print_stats = 0;
+
+GC_bool GC_print_back_height = 0;
 
 #ifdef FIND_LEAK
   int GC_find_leak = 1;
@@ -496,6 +499,9 @@ void GC_init_inner()
     }
     if (0 != GETENV("GC_DONT_GC")) {
       GC_dont_gc = 1;
+    }
+    if (0 != GETENV("GC_PRINT_BACK_HEIGHT")) {
+      GC_print_back_height = 1;
     }
 #   ifdef UNIX_LIKE
       if (0 != GETENV("GC_LOOP_ON_ABORT")) {

@@ -117,7 +117,7 @@ MULTICLEAN = true
 
 toolexeclib_LTLIBRARIES = $(target_all)
 EXTRA_LTLIBRARIES = libgc.la
-libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c irix_threads.c linux_threads.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c solaris_pthreads.c solaris_threads.c specific.c stubborn.c typd_mlc.c
+libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c irix_threads.c linux_threads.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c solaris_pthreads.c solaris_threads.c specific.c stubborn.c typd_mlc.c backgraph.c
 
 
 # Include THREADLIBS here to ensure that the correct versions of
@@ -171,7 +171,7 @@ dbg_mlc.lo dyn_load.lo finalize.lo gc_dlopen.lo gcj_mlc.lo headers.lo \
 irix_threads.lo linux_threads.lo malloc.lo mallocx.lo mark.lo \
 mark_rts.lo misc.lo new_hblk.lo obj_map.lo os_dep.lo pcr_interface.lo \
 ptr_chck.lo real_malloc.lo reclaim.lo solaris_pthreads.lo \
-solaris_threads.lo specific.lo stubborn.lo typd_mlc.lo
+solaris_threads.lo specific.lo stubborn.lo typd_mlc.lo backgraph.lo
 check_PROGRAMS =  gctest$(EXEEXT)
 gctest_DEPENDENCIES =  ./libgc.la
 gctest_LDFLAGS = 

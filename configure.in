@@ -157,6 +157,9 @@ case "$host" in
 # alpha*-*-*)
 #    machdep="alpha_mach_dep.lo"
 #    ;;
+ i?86-*-solaris2.[[89]]*)
+    AC_DEFINE(SOLARIS25_PROC_VDB_BUG_FIXED)
+    ;;
  alpha-*-openbsd*)
     if test x"${ac_cv_lib_dl_dlopen}" != xyes ; then
        AC_MSG_WARN(OpenBSD/Alpha without dlopen(). Shared library support is disabled)
@@ -178,7 +181,7 @@ case "$host" in
  sparc-sun-solaris2.3*)
     AC_DEFINE(SUNOS53_SHARED_LIB)
     ;;
- ia64-*-hpux*)
+ ia64-*-*)
     machdep="mach_dep.lo ia64_save_regs_in_stack.lo"
     ;;
 esac
@@ -241,7 +244,11 @@ AC_ARG_ENABLE(full-debug,
     AC_DEFINE(KEEP_BACK_PTRS)
     AC_DEFINE(DBG_HDRS_ALL)
     case $host in
+      ia64-*-linux* )
+	AC_DEFINE(MAKE_BACK_GRAPH)
+      ;;
       x86-*-linux* | i586-*-linux* | i686-*-linux* )
+	AC_DEFINE(MAKE_BACK_GRAPH)
 	AC_MSG_WARN("Client must not use -fomit-frame-pointer.")
 	AC_DEFINE(SAVE_CALL_COUNT, 8)
       ;;

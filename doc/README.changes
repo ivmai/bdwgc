@@ -1413,6 +1413,30 @@ Since 6.0:
    less common thread implementations, since some of the original code
    didn't stand up to close scrutiny.  Support for the next pthreads
    implementation should be easier to add.
+Since 6.0alpha1:
+ - No longer wrap read by default in multithreaded applications.  It was
+   pointed out on the libgcj list that this holds the allocation lock for
+   way too long if the read blocks.  For now, reads into the heap are
+   broken with incremental collection.  It's possible to turn this back on
+   if you make sure that read calls don't block (e.g. by calling select
+   first).
+ - Fix ifdef in Solaris_threads.h to refer to GC_SOLARIS_THREADS.
+ - Added check for environment variable GC_IGNORE_GCJ_INFO.
+ - Added printing of stop-the-world GC times if GC_PRINT_STATS environment
+   variable is set.
+ - The calloc definition in leak_detector.h was missing parentheses, and
+   realloc was missing a second argument to GC_REALLOC.  (Thanks to Elrond.)
+ - Added GC_PRINT_BACK_HEIGHT environment variable and associated
+   code, mostly in the new file backgraph.c.  See doc/README.environment.
+ - Added -DUSE_GLOBAL_ALLOC to work around a Windows NT issue.  (Thanks to
+   Jonathan Clark.)
+ - Integrated port to NEC EWS4800 (MIPS-based workstation, with somewhat
+   different address-space layout). This may help for other machines with
+   holes in the data segment.  (Thanks to Hironori Sakamoto.)
+ - Changed the order in which GC_push_roots and friends push things onto
+   the mark stack.  GC_push_all calls need to come first, since we can't
+   necessarily recovere if thos overflow the mark stack.  (Thanks to
+   Matthew Flatt for tracking down the problem.)
  
 
 To do:

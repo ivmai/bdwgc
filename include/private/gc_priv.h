@@ -396,7 +396,8 @@ struct hblk;	/* See below.	*/
                                     + GC_page_size-1)
 #   else
 #     if defined(NEXT) || defined(MACOSX) || defined(DOS4GW) || \
-	 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC))
+	 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) || \
+	 (defined(SUNOS5) && !defined(USE_MMAP))
 #       define GET_MEM(bytes) HBLKPTR((size_t) \
 				      calloc(1, (size_t)bytes + GC_page_size) \
                                       + GC_page_size-1)
