@@ -214,8 +214,8 @@ int APIENTRY WinMain(
       x = 0;
 #   endif
     if (argc != 2 || (0 >= (n = atoi( argv[ 1 ] )))) {
-        GC_printf0( "usage: test_cpp number-of-iterations\n" );
-        exit( 1 );}
+        GC_printf0( "usage: test_cpp number-of-iterations\nAssuming 10 iters\n" );
+        n = 10;}
         
     for (iters = 1; iters <= n; iters++) {
         GC_printf1( "Starting iteration %d\n", iters );

@@ -808,8 +808,7 @@ int GC_pthread_detach(pthread_t thread) {
 #else
 
 /*
- * This isn't generally safe, since DllMain is not premptible.
- * If another thread holds the lock while this runs we're in trouble.
+ * We avoid acquiring locks here, since this doesn't seem to be preemptable.
  * Pontus Rydin suggests wrapping the thread start routine instead.
  */
 BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)

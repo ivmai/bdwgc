@@ -571,6 +571,7 @@ mse * mark_stack_limit;
           while (descr != 0) {
             if ((signed_word)descr < 0) {
               current = *current_p;
+	      FIXUP_POINTER(current);
 	      if ((ptr_t)current >= least_ha && (ptr_t)current < greatest_ha) {
 		PREFETCH(current);
                 HC_PUSH_CONTENTS((ptr_t)current, mark_stack_top,
@@ -645,6 +646,7 @@ mse * mark_stack_limit;
 	  PREFETCH((ptr_t)limit - PREF_DIST*CACHE_LINE_SIZE);
 	  GC_ASSERT(limit >= current_p);
 	  deferred = *limit;
+	  FIXUP_POINTER(deferred);
 	  limit = (word *)((char *)limit - ALIGNMENT);
 	  if ((ptr_t)deferred >= least_ha && (ptr_t)deferred <  greatest_ha) {
 	    PREFETCH(deferred);
@@ -654,6 +656,7 @@ mse * mark_stack_limit;
 	  /* Unroll once, so we don't do too many of the prefetches 	*/
 	  /* based on limit.						*/
 	  deferred = *limit;
+	  FIXUP_POINTER(deferred);
 	  limit = (word *)((char *)limit - ALIGNMENT);
 	  if ((ptr_t)deferred >= least_ha && (ptr_t)deferred <  greatest_ha) {
 	    PREFETCH(deferred);
@@ -668,6 +671,7 @@ mse * mark_stack_limit;
 	/* Since HC_PUSH_CONTENTS expands to a lot of code,	*/
 	/* we don't.						*/
         current = *current_p;
+	FIXUP_POINTER(current);
         PREFETCH((ptr_t)current_p + PREF_DIST*CACHE_LINE_SIZE);
         if ((ptr_t)current >= least_ha && (ptr_t)current <  greatest_ha) {
   	  /* Prefetch the contents of the object we just pushed.  It's	*/
@@ -1346,8 +1350,8 @@ ptr_t top;
 #   define GC_least_plausible_heap_addr least_ha
 
     if (top == 0) return;
-    /* check all pointers in range and put in push if they appear */
-    /* to be valid.						  */
+    /* check all pointers in range and push if they appear	*/
+    /* to be valid.						*/
       lim = t - 1 /* longword */;
       for (p = b; p <= lim; p = (word *)(((char *)p) + ALIGNMENT)) {
 	q = *p;
@@ -1370,7 +1374,7 @@ ptr_t bottom;
 ptr_t top;
 ptr_t cold_gc_frame;
 {
-  if (GC_all_interior_pointers) {
+  if (!NEED_FIXUP_POINTER && GC_all_interior_pointers) {
 #   define EAGER_BYTES 1024
     /* Push the hot end of the stack eagerly, so that register values   */
     /* saved inside GC frames are marked before they disappear.		*/
@@ -1379,6 +1383,7 @@ ptr_t cold_gc_frame;
 	GC_push_all_stack(bottom, top);
 	return;
     }
+    GC_ASSERT(bottom <= cold_gc_frame && cold_gc_frame <= top);
 #   ifdef STACK_GROWS_DOWN
 	GC_push_all(cold_gc_frame - sizeof(ptr_t), top);
 	GC_push_all_eager(bottom, cold_gc_frame);
@@ -1399,7 +1404,7 @@ void GC_push_all_stack(bottom, top)
 ptr_t bottom;
 ptr_t top;
 {
-  if (GC_all_interior_pointers) {
+  if (!NEED_FIXUP_POINTER && GC_all_interior_pointers) {
     GC_push_all(bottom, top);
   } else {
     GC_push_all_eager(bottom, top);

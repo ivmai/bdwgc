@@ -1676,16 +1676,92 @@ Since 6.1alpha5:
    to work correctly with these.
  - Fixed Linux USE_PROC_FOR_LIBRARIES to work with a 64-bit /proc format.
 
+Since 6.1:
+ - Guard the test for GC_DUMP_REGULARLY in misc.c with
+   "#ifndef NO_DEBUGGING".  Otherwise it fails to build with NO_DEBUGGING
+   defined.  (Thanks to Manuel Serrano.)
+ - Message about retrying suspend signals was incorrectly generated even when
+   flag was not set.
+ - Cleaned up MACOSX/NEXT root registration code.  There was apparently a
+   separate ifdef case in GC_register_data_segments() for no reason.
+ - Removed MPROTECT_VDB for MACOSX port, based on one negative report.
+ - Arrange for gc.h and friends to be correctly installed with GNU-style
+   "make install".
+ - Enable the GNU-style build facility include C++ support in the library
+   with --enable-cplusplus. (Thanks to Thomas Maier for some of the patch.)
+ - Mark from GC_thread_key in linux_threads.c, in case that's allocated
+   from the garbage collected heap, as it is with our own thread-specific
+   storage implementation.  (Thanks to Jeff Sturm.)
+ - Mark all free list header blocks if they are heap allocated.  This avoids
+   some unnecessary tracing.  And it remains correct if we turn clear the
+   root set. (Thanks to Jeff Sturm for identifying the bug.)
+ - Improved S390/Linux support.  Add S390/Linux 64-bit support.  (Thanks
+   to Ulrich Weigand.)
+ - Corrected the spelling of GC_{M,C}ALLOC_EXPLICTLY_TYPED to
+   GC_{M,C}ALLOC_EXPLICITLY_TYPED in gc_typed.h.  This is technically
+   an interface change.  Based on the fact that nobody reported this,
+   I suspect/hope there were no clients.
+ - Cleaned up gc_typed.h so that (1) it adds an extern "C" declaration
+   when appropriate, (2) doesn't generate references to undefined internal
+   macros, and (3) allows easier manual construction of descriptors.
+ - Close the file descriptor used by GC_print_address_map().
+ - Set the "close-on-exec" bit for various file descriptors maintained
+   for the collector's internal use.
+ - Added a hack to find memory segments owned by the system allocator
+   under win32.  Based on my tests, this tends to eventually find all
+   segments, though it may take a while.  There appear to be cleaner,
+   but slower solutions under NT/XP.  But they rely on an API that's
+   unsupported under 9X.
+ - Changed Linux PowerPC stack finding to LINUX_STACKBOTTOM.  (Thanks
+   to Akira Tagoh for pointing out that HEURISTIC1 doesn't work on
+   64-bit kernels.)
+ - Added GC_set_free_space_divisor to avoid some Windows dll issues.
+ - Added FIXUP_POINTER, POINTER_SHIFT, POINTER_MASK to allow preprocessing
+   of candidate pointers for tagging, etc.
+ - Always lock around GC_notify_full_gc().  Simplified code for
+   invoking GC_notify_full_gc().
+ - Changed the way DATASTART is defined on FreeBSD to be robust against
+   an unmapped page after etext.  (Thanks to Hironori Sakamoto for
+   tracking down the intermittent failure.)
+ - Made GC_enable() and GC_disable() official.  Deprecated direct update
+   of GC_dont_gc.  Changed GC_gcollect to be a noop when garbage collection
+   is disabled.
+ - Call GC_register_dynamic_libraries before stopping the world on Linux,
+   in order to avoid a potential deadlock due to the dl_iterate_phdr lock.
+ - Introduced a more general mechanism for platform-dependent code to
+   decide whether the main data segment should be handled separately
+   from dynamic libraries, or registered by GC_register_dynamic_libraries.
+   The latter is more reliable and easier on Linux with dl_iterate_phdr. 
+
+Since 6.2alpha1:
+ - Fixed the completely broken FreeBSD code in 6.2alpha1.  (Thanks to
+   Hironori Sakamoto for the patch.)
+ - Changed IRIX reference in dbg_mlc.c to IRIX5. (Thanks to Marcus Herbert.)
+ - Attempted to work around the problems with .S filenames and the SGI
+   compiler.  (Reported by several people. Untested.)
+ - Worked around an HP/UX make issue with the GNU-style build process.
+ - Fixed the --enable-cplusplus build machinery to allow builds without
+   a C++ compiler.  (That was always the intent ...)
+ - Changed the debugging allocation macros to explicitly pass the return
+   address for Linux and XXXBSD on hardware for which we can't get stack
+   traces.  Use __builtin_return_address(0) to generate it when possible.
+   Some of the configuration work was cleaned up (good) and moved to gc.h
+   (bad, but necessary).  This should make leak detection more useful
+   on a number of platforms.  (Thanks to Fabian Thylman for the suggestion.)
+ - Fixed compilation problems in dbg_mlc.c with GC_ADD_CALLER.
+ - Bumped revision number for dynamic library.
+
+Since 6.2alpha2:
+ - Don't include execinfo.h in os_dep.c when it's not needed, and may not exist.
+
 To do:
+ - A dynamic libgc.so references dlopen unconditionally, but doesn't link
+   against libdl.
+ - GC_proc_fd for Solaris is not correctly updated in response to a
+   fork() call.  Thus incremental collection in the child won't work
+   correctly.  (Thanks to Ben Cottrell for pointing this out.)
  - --enable-redirect-malloc is mostly untested and known not to work
    on some platforms. 
- - The win32 collector ends up tracing some (most?) objects allocated with
-   the system allocator, in spite if the fact that it tries not to.
-   This costs time and space, though it remains correct.
-   We need a way to identify memory regions used by the system malloc(),
-   or an alternate way to locate dll data areas.  A very partial
-   workaround is to use GC_malloc_atomic_uncollectable() instead of
-   the system malloc() for most allocation.
  - There seem to be outstanding issues on Solaris/X86, possibly with
    finding the data segment starting address.  Information/patches would
    be appreciated.

@@ -392,7 +392,7 @@
 #   define mach_type_known
 # endif
 # if defined(__s390__) && defined(LINUX)
-#    define S370
+#    define S390
 #    define mach_type_known
 # endif
 # if defined(__GNU__)
@@ -441,7 +441,8 @@
 		    /* 		        (CX_UX and DGUX)		*/
 		    /* 		   S370	      ==> 370-like machine	*/
 		    /* 			running Amdahl UTS4		*/
-		    /*			or a 390 running LINUX		*/
+                    /*             S390       ==> 390-like machine      */
+		    /*                  running LINUX                   */
 		    /* 		   ARM32      ==> Intel StrongARM	*/
 		    /* 		   IA64	      ==> Intel IPF		*/
 		    /*				  (e.g. Itanium)	*/
@@ -698,7 +699,9 @@
 #     define ALIGNMENT 4	/* Guess.  Can someone verify?	*/
 				/* This was 2, but that didn't sound right. */
 #     define OS_TYPE "LINUX"
-#     define HEURISTIC1
+      /* HEURISTIC1 has been reliably reported to fail for a 32-bit	*/
+      /* executable on a 64 bit kernel.					*/
+#     define LINUX_STACKBOTTOM
 #     define DYNAMIC_LOADING
 #     undef STACK_GRAN
 #     define STACK_GRAN 0x10000000
@@ -714,7 +717,8 @@
 #     define DATASTART ((ptr_t) get_etext())
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
 #     define DATAEND	/* not needed */
-#     define MPROTECT_VDB
+/* #     define MPROTECT_VDB  -- There is some evidence that this breaks 
+ *       on some minor versions of MACOSX.  In theory, it should be OK */
 #     include <unistd.h>
 #     define GETPAGESIZE() getpagesize()
 #   endif
@@ -777,8 +781,8 @@
 #	define OS_TYPE "SUNOS5"
 	extern int _etext[];
 	extern int _end[];
-	extern char * GC_SysVGetDataStart();
-#       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, _etext)
+	extern ptr_t GC_SysVGetDataStart();
+#       define DATASTART GC_SysVGetDataStart(0x10000, _etext)
 #	define DATAEND (_end)
 #	if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
 #	    define USE_MMAP
@@ -832,9 +836,9 @@
 #   endif
 #   ifdef DRSNX
 #	define OS_TYPE "DRSNX"
-	extern char * GC_SysVGetDataStart();
+	extern ptr_t GC_SysVGetDataStart();
 	extern int etext[];
-#       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, etext)
+#       define DATASTART GC_SysVGetDataStart(0x10000, etext)
 #	define MPROTECT_VDB
 #       define STACKBOTTOM ((ptr_t) 0xdfff0000)
 #	define DYNAMIC_LOADING
@@ -850,12 +854,13 @@
       extern int _etext[];
 #     define DATAEND (_end)
 #     define SVR4
+      extern ptr_t GC_SysVGetDataStart();
 #     ifdef __arch64__
-#	define DATASTART (ptr_t)GC_SysVGetDataStart(0x100000, _etext)
+#	define DATASTART GC_SysVGetDataStart(0x100000, _etext)
 	/* libc_stack_end is not set reliably for sparc64 */
 #       define STACKBOTTOM ((ptr_t) 0x80000000000ULL)
 #     else
-#       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, _etext)
+#       define DATASTART GC_SysVGetDataStart(0x10000, _etext)
 #	define LINUX_STACKBOTTOM
 #     endif
 #   endif
@@ -907,7 +912,7 @@
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
         extern int _etext[], _end[];
-  	extern char * GC_SysVGetDataStart();
+  	extern ptr_t GC_SysVGetDataStart();
 #       define DATASTART GC_SysVGetDataStart(0x1000, _etext)
 #	define DATAEND (_end)
 /*	# define STACKBOTTOM ((ptr_t)(_start)) worked through 2.7,  	*/
@@ -955,7 +960,7 @@
 #   ifdef DGUX
 #	define OS_TYPE "DGUX"
 	extern int _etext, _end;
-	extern char * GC_SysVGetDataStart();
+	extern ptr_t GC_SysVGetDataStart();
 #	define DATASTART GC_SysVGetDataStart(0x1000, &_etext)
 #	define DATAEND (&_end)
 #	define STACK_GROWS_DOWN
@@ -1118,7 +1123,8 @@
 #	    define DYNAMIC_LOADING
 #	endif
 	extern char etext[];
-#	define DATASTART ((ptr_t)(etext))
+	extern char * GC_FreeBSDGetDataStart();
+#	define DATASTART GC_FreeBSDGetDataStart(0x1000, &etext)
 #   endif
 #   ifdef NETBSD
 #	define OS_TYPE "NETBSD"
@@ -1565,13 +1571,15 @@
 #   endif
 #   ifdef  DGUX
 #	define OS_TYPE "DGUX"
-	extern char * GC_SysVGetDataStart();
-#       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, etext)
+	extern ptr_t GC_SysVGetDataStart();
+#       define DATASTART GC_SysVGetDataStart(0x10000, etext)
 #   endif
 #   define STACKBOTTOM ((char*)0xf0000000) /* determined empirically */
 # endif
 
 # ifdef S370
+    /* If this still works, and if anyone cares, this should probably	*/
+    /* be moved to the S390 category.					*/
 #   define MACH_TYPE "S370"
 #   define ALIGNMENT 4	/* Required by hardware	*/
 #   define USE_GENERIC_PUSH_REGS
@@ -1580,17 +1588,34 @@
         extern int etext[];
 	extern int _etext[];
 	extern int _end[];
-	extern char * GC_SysVGetDataStart();
-#       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, _etext)
+	extern ptr_t GC_SysVGetDataStart();
+#       define DATASTART GC_SysVGetDataStart(0x10000, _etext)
 #	define DATAEND (_end)
 #	define HEURISTIC2
 #   endif
+# endif
+
+# ifdef S390
+#   define MACH_TYPE "S390"
+#   define USE_GENERIC_PUSH_REGS
+#   ifndef __s390x__
+#   define ALIGNMENT 4
+#   define CPP_WORDSZ 32
+#   else
+#   define ALIGNMENT 8
+#   define CPP_WORDSZ 64
+#   define HBLKSIZE 4096
+#   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
-#       define HEURISTIC1
+#       define LINUX_STACKBOTTOM
 #       define DYNAMIC_LOADING
         extern int __data_start[];
 #       define DATASTART ((ptr_t)(__data_start))
+    extern int _end[];
+#   define DATAEND (_end)
+#   define CACHE_LINE_SIZE 256
+#   define GETPAGESIZE() 4096
 #   endif
 # endif
 
@@ -1686,6 +1711,9 @@
 #   define MACH_TYPE "X86_64"
 #   define ALIGNMENT 8
 #   define CPP_WORDSZ 64
+#   ifndef HBLKSIZE
+#     define HBLKSIZE 4096
+#   endif
 #   define CACHE_LINE_SIZE 64
 #   define USE_GENERIC_PUSH_REGS
 #   ifdef LINUX
@@ -1831,6 +1859,15 @@
 #   define CACHE_LINE_SIZE 32	/* Wild guess	*/
 # endif
 
+# ifdef LINUX
+#   define REGISTER_LIBRARIES_EARLY
+    /* We sometimes use dl_iterate_phdr, which may acquire an internal	*/
+    /* lock.  This isn't safe after the world has stopped.  So we must	*/
+    /* call GC_register_dynamic_libraries before stopping the world.	*/
+    /* For performance reasons, this may be beneficial on other		*/
+    /* platforms as well, though it should be avoided in win32.		*/
+# endif /* LINUX */
+
 # if defined(SEARCH_FOR_DATA_START) && defined(GC_PRIVATE_H)
     extern ptr_t GC_data_start;
 #   define DATASTART GC_data_start
@@ -1872,47 +1909,37 @@
 # if defined(HP_PA) || defined(M88K) || defined(POWERPC) && !defined(MACOSX) \
 	     || defined(LINT) || defined(MSWINCE) || defined(ARM32) \
 	     || (defined(I386) && defined(__LCC__))
-		/* Use setjmp based hack to mark from callee-save registers.    */
-		/* The define should move to the individual platform 		*/
-		/* descriptions.						*/
+	/* Use setjmp based hack to mark from callee-save registers.    */
+	/* The define should move to the individual platform 		*/
+	/* descriptions.						*/
 #	define USE_GENERIC_PUSH_REGS
 # endif
 
 # if defined(SPARC)
 #   define ASM_CLEAR_CODE	/* Stack clearing is crucial, and we 	*/
-					/* include assembly code to do it well.	*/
+				/* include assembly code to do it well.	*/
 # endif
 
-	/* Can we save call chain in objects for debugging?   		        */
-	/* SET NFRAMES (# of saved frames) and NARGS (#of args for each frame)	*/
-	/* to reasonable values for the platform.				*/
-	/* Set SAVE_CALL_CHAIN if we can.  SAVE_CALL_COUNT can be specified at	*/
-	/* build time, though we feel free to adjust it slightly.		*/
-	/* Define NEED_CALLINFO if we either save the call stack or 		*/
-	/* GC_ADD_CALLER is defined.						*/
-#ifdef LINUX
-# include <features.h>
-# if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 1 || __GLIBC__ > 2
-#   define HAVE_BUILTIN_BACKTRACE
-# endif
-#endif
+  /* Can we save call chain in objects for debugging?   	        */
+  /* SET NFRAMES (# of saved frames) and NARGS (#of args for each 	*/
+  /* frame) to reasonable values for the platform.			*/
+  /* Set SAVE_CALL_CHAIN if we can.  SAVE_CALL_COUNT can be specified 	*/
+  /* at build time, though we feel free to adjust it slightly.		*/
+  /* Define NEED_CALLINFO if we either save the call stack or 		*/
+  /* GC_ADD_CALLER is defined.						*/
+  /* GC_CAN_SAVE_CALL_STACKS is set in gc.h.				*/
 
 #if defined(SPARC)
-# define CAN_SAVE_CALL_STACKS
 # define CAN_SAVE_CALL_ARGS
 #endif
 #if (defined(I386) || defined(X86_64)) && defined(LINUX)
 	    /* SAVE_CALL_CHAIN is supported if the code is compiled to save	*/
 	    /* frame pointers by default, i.e. no -fomit-frame-pointer flag.	*/
-# define CAN_SAVE_CALL_STACKS
 # define CAN_SAVE_CALL_ARGS
-#endif
-#if defined(HAVE_BUILTIN_BACKTRACE) && !defined(CAN_SAVE_CALL_STACKS)
-# define CAN_SAVE_CALL_STACKS
 #endif
 
 # if defined(SAVE_CALL_COUNT) && !defined(GC_ADD_CALLER) \
-	     && defined(CAN_SAVE_CALL_STACKS)
+	     && defined(GC_CAN_SAVE_CALL_STACKS)
 #   define SAVE_CALL_CHAIN 
 # endif
 # ifdef SAVE_CALL_CHAIN
@@ -1939,6 +1966,25 @@
 
 # if defined(MAKE_BACK_GRAPH) && !defined(DBG_HDRS_ALL)
 #   define DBG_HDRS_ALL
+# endif
+
+# if defined(POINTER_MASK) && !defined(POINTER_SHIFT)
+#   define POINTER_SHIFT 0
+# endif
+
+# if defined(POINTER_SHIFT) && !defined(POINTER_MASK)
+#   define POINTER_MASK ((GC_word)(-1))
+# endif
+
+# if !defined(FIXUP_POINTER) && defined(POINTER_MASK)
+#   define FIXUP_POINTER(p) (p) = ((p) & (POINTER_MASK) << POINTER_SHIFT)
+# endif
+
+# if defined(FIXUP_POINTER)
+#   define NEED_FIXUP_POINTER 1
+# else
+#   define NEED_FIXUP_POINTER 0
+#   define FIXUP_POINTER(p)
 # endif
 
 #ifdef GC_PRIVATE_H

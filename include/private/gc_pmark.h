@@ -281,21 +281,39 @@ exit_label: ; \
 
 /*
  * Push a single value onto mark stack. Mark from the object pointed to by p.
+ * Invoke FIXUP_POINTER(p) before any further processing.
  * P is considered valid even if it is an interior pointer.
  * Previously marked objects are not pushed.  Hence we make progress even
  * if the mark stack overflows.
  */
-# define GC_PUSH_ONE_STACK(p, source) \
-    if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr 	\
+
+# if NEED_FIXUP_POINTER
+    /* Try both the raw version and the fixed up one.	*/
+#   define GC_PUSH_ONE_STACK(p, source) \
+      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr 	\
 	 && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {	\
 	 PUSH_ONE_CHECKED_STACK(p, source);	\
-    }
+      } \
+      FIXUP_POINTER(p); \
+      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr 	\
+	 && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {	\
+	 PUSH_ONE_CHECKED_STACK(p, source);	\
+      }
+# else /* !NEED_FIXUP_POINTER */
+#   define GC_PUSH_ONE_STACK(p, source) \
+      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr 	\
+	 && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {	\
+	 PUSH_ONE_CHECKED_STACK(p, source);	\
+      }
+# endif
+
 
 /*
  * As above, but interior pointer recognition as for
  * normal for heap pointers.
  */
 # define GC_PUSH_ONE_HEAP(p,source) \
+    FIXUP_POINTER(p); \
     if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr 	\
 	 && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {	\
 	    GC_mark_stack_top = GC_mark_and_push( \

@@ -814,7 +814,9 @@ void GC_notify_or_invoke_finalizers GC_PROTO((void))
     if (GC_finalize_now == 0) return;
     if (!GC_finalize_on_demand) {
 	(void) GC_invoke_finalizers();
-	GC_ASSERT(GC_finalize_now == 0);
+#	ifndef THREADS
+	  GC_ASSERT(GC_finalize_now == 0);
+#	endif	/* Otherwise GC can run concurrently and add more */
 	return;
     }
     if (GC_finalizer_notifier != (void (*) GC_PROTO((void)))0

@@ -226,8 +226,14 @@ GC_API void (* GC_finalizer_notifier)();
 			/* thread, which will call GC_invoke_finalizers */
 			/* in response.					*/
 
-GC_API int GC_dont_gc;	/* Dont collect unless explicitly requested, e.g. */
-			/* because it's not safe.			  */
+GC_API int GC_dont_gc;	/* != 0 ==> Dont collect.  In versions 7.2a1+,	*/
+			/* this overrides explicit GC_gcollect() calls.	*/
+			/* Used as a counter, so that nested enabling	*/
+			/* and disabling work correctly.  Should	*/
+			/* normally be updated with GC_enable() and	*/
+			/* GC_disable() calls.				*/
+			/* Direct assignment to GC_dont_gc is 		*/
+			/* deprecated.					*/
 
 GC_API int GC_dont_expand;
 			/* Dont expand heap unless explicitly requested */
@@ -475,8 +481,17 @@ GC_API size_t GC_get_free_bytes GC_PROTO((void));
 GC_API size_t GC_get_bytes_since_gc GC_PROTO((void));
 
 /* Return the total number of bytes allocated in this process.		*/
-/* Never decreases.							*/
+/* Never decreases, except due to wrapping.				*/
 GC_API size_t GC_get_total_bytes GC_PROTO((void));
+
+/* Disable garbage collection.  Even GC_gcollect calls will be 		*/
+/* ineffective.								*/
+GC_API void GC_disable GC_PROTO((void));
+
+/* Reenable garbage collection.  GC_diable() and GC_enable() calls 	*/
+/* nest.  Garbage collection is enabled if the number of calls to both	*/
+/* both functions is equal.						*/
+GC_API void GC_enable GC_PROTO((void));
 
 /* Enable incremental/generational collection.	*/
 /* Not advisable unless dirty bits are 		*/
@@ -531,6 +546,42 @@ GC_API GC_PTR GC_malloc_atomic_ignore_off_page GC_PROTO((size_t lb));
 #if defined(__sgi) && !defined(__GNUC__) && _COMPILER_VERSION >= 720
 #   define GC_ADD_CALLER
 #   define GC_RETURN_ADDR (GC_word)__return_address
+#endif
+
+#ifdef __linux__
+# include <features.h>
+# if (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1 || __GLIBC__ > 2) \
+     && !defined(__ia64__)
+#   define GC_HAVE_BUILTIN_BACKTRACE
+#   define GC_CAN_SAVE_CALL_STACKS
+# endif
+# if defined(__i386__) || defined(__x86_64__)
+#   define GC_CAN_SAVE_CALL_STACKS
+# endif
+#endif
+
+#if defined(__sparc__)
+#   define GC_CAN_SAVE_CALL_STACKS
+#endif
+
+/* If we're on an a platform on which we can't save call stacks, but	*/
+/* gcc is normally used, we go ahead and define GC_ADD_CALLER.  	*/
+/* We make this decision independent of whether gcc is actually being	*/
+/* used, in order to keep the interface consistent, and allow mixing	*/
+/* of compilers.							*/
+/* This may also be desirable if it is possible but expensive to	*/
+/* retrieve the call chain.						*/
+#if (defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) \
+     || defined(__FreeBSD__)) & !defined(GC_CAN_SAVE_CALL_STACKS)
+# define GC_ADD_CALLER
+# if __GNUC__ >= 3 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95) 
+    /* gcc knows how to retrieve return address, but we don't know */
+    /* how to generate call stacks.				   */
+#   define GC_RETURN_ADDR (GC_word)__builtin_return_address(0)
+# else
+    /* Just pass 0 for gcc compatibility. */
+#   define GC_RETURN_ADDR 0
+# endif
 #endif
 
 #ifdef GC_ADD_CALLER
@@ -770,6 +821,10 @@ GC_API int GC_invoke_finalizers GC_PROTO((void));
 typedef void (*GC_warn_proc) GC_PROTO((char *msg, GC_word arg));
 GC_API GC_warn_proc GC_set_warn_proc GC_PROTO((GC_warn_proc p));
     /* Returns old warning procedure.	*/
+
+GC_API GC_word GC_set_free_space_divisor GC_PROTO((GC_word value));
+    /* Set free_space_divisor.  See above for definition.	*/
+    /* Returns old value.					*/
 	
 /* The following is intended to be used by a higher level	*/
 /* (e.g. Java-like) finalization facility.  It is expected	*/

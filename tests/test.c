@@ -376,6 +376,9 @@ sexpr x, y;
 sexpr reverse(x)
 sexpr x;
 {
+#   ifdef TEST_WITH_SYSTEM_MALLOC
+      malloc(100000);
+#   endif
     return( reverse1(x, nil) );
 }
 

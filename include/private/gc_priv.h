@@ -1413,6 +1413,11 @@ GC_bool GC_is_tmp_root GC_PROTO((ptr_t p));
 # endif
 void GC_register_dynamic_libraries GC_PROTO((void));
   		/* Add dynamic library data sections to the root set. */
+
+GC_bool GC_register_main_static_data GC_PROTO((void));
+		/* We need to register the main data segment.  Returns	*/
+		/* TRUE unless this is done implicitly as part of	*/
+		/* dynamic library registration.			*/
   
 /* Machine dependent startup routines */
 ptr_t GC_get_stack_base GC_PROTO((void));	/* Cold end of stack */
@@ -1664,6 +1669,10 @@ extern void (*GC_print_heap_obj) GC_PROTO((ptr_t p));
   			/* If possible print s followed by a more	*/
   			/* detailed description of the object 		*/
   			/* referred to by p.				*/
+#if defined(LINUX) && defined(__ELF__) && !defined(SMALL_CONFIG)
+  void GC_print_address_map GC_PROTO((void));
+  			/* Print an address map of the process.		*/
+#endif
 
 extern GC_bool GC_have_errors;  /* We saw a smashed or leaked object.	*/
 				/* Call error printing routine 		*/

@@ -84,6 +84,10 @@ AC_ARG_ENABLE(parallel-mark,
     esac]
 )
 
+AC_ARG_ENABLE(cplusplus,
+[  --enable-cplusplus		include C++ support in GC library and include directory],
+)
+
 INCLUDES=-I${srcdir}/include
 THREADLIBS=
 case "$THREADS" in
@@ -189,6 +193,8 @@ TARGET_ECOS="$with_ecos"
 )
 
 addobjs=
+addincludes=
+addtests=
 CXXINCLUDES=
 case "$TARGET_ECOS" in
    no)
@@ -199,6 +205,13 @@ case "$TARGET_ECOS" in
       addobjs="$addobjs ecos.lo"
       ;;
 esac
+
+if test "${enable_cplusplus}" = yes; then
+      addobjs="$addobjs gc_cpp.lo"
+      addincludes="$addincludes include/gc_cpp.h include/gc_allocator.h"
+      addtests="$addtests test_cpp"
+fi
+
 AC_SUBST(CXX)
 
 AC_SUBST(INCLUDES)
@@ -263,6 +276,8 @@ if test x"$machdep" = x; then
 fi
 addobjs="$addobjs $machdep"
 AC_SUBST(addobjs)
+AC_SUBST(addincludes)
+AC_SUBST(addtests)
 
 AC_PROG_LIBTOOL
 

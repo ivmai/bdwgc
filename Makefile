@@ -249,6 +249,21 @@ HOSTCFLAGS=$(CFLAGS)
 # -DHANDLE_FORK attempts to make GC_malloc() work in a child process fork()ed
 #   from a multithreaded parent.  Currently only supported by linux_threads.c.
 #   (Similar code should work on Solaris or Irix, but it hasn't been tried.)
+# -DTEST_WITH_SYSTEM_MALLOC causes gctest to allocate (and leak) large chunks
+#   of memory with the standard system malloc.  This will cause the root
+#   set and collected heap to grow significantly if malloced memory is
+#   somehow getting traced by the collector.  This has no impact on the
+#   generated library; it only affects the test.
+# -DPOINTER_MASK=0x... causes candidate pointers to be ANDed with the
+#   given mask before being considered.  If either this or the following
+#   macro is defined, it will be assumed that all pointers stored in
+#   the heap need to be processed this way.  Stack and register pointers
+#   will be considered both with and without processing.
+#   These macros are normally needed only to support systems that use
+#   high-order pointer tags. EXPERIMENTAL.
+# -DPOINTER_SHIFT=n causes the collector to left shift candidate pointers
+#   by the indicated amount before trying to interpret them.  Applied
+#   after POINTER_MASK. EXPERIMENTAL.  See also the preceding macro.
 #
 
 CXXFLAGS= $(CFLAGS) 
@@ -466,7 +481,8 @@ mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.S \
 	    $(srcdir)/ia64_save_regs_in_stack.s \
 	    $(srcdir)/sparc_netbsd_mach_dep.s $(UTILS)
 	rm -f mach_dep.o
-	./if_mach MIPS IRIX5 $(AS) -o mach_dep.o $(srcdir)/mips_sgi_mach_dep.S
+	./if_mach MIPS IRIX5 $(CC) -E $(srcdir)/mips_sgi_mach_dep.S \
+	 | ./if_mach MIPS IRIX5 grep -v "^\#" > $(srcdir)/mips_sgi_mach_dep.s
 	./if_mach MIPS RISCOS $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
 	./if_mach MIPS ULTRIX $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
 	./if_mach POWERPC MACOSX $(AS) -o mach_dep.o $(srcdir)/powerpc_macosx_mach_dep.s
@@ -536,7 +552,7 @@ if_not_there: $(srcdir)/if_not_there.c
 clean: 
 	rm -f gc.a *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
 	      setjmp_test  mon.out gmon.out a.out core if_not_there if_mach \
-	      threadlibs $(CORD_OBJS) cord/cordtest cord/de
+	      threadlibs $(CORD_OBJS) cord/cordtest cord/de mips_sgi_mach_dep.s
 	-rm -f *~
 
 gctest: tests/test.o gc.a $(UTILS)

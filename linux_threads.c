@@ -754,6 +754,10 @@ volatile GC_thread GC_threads[THREAD_TABLE_SZ];
 void GC_push_thread_structures GC_PROTO((void))
 {
     GC_push_all((ptr_t)(GC_threads), (ptr_t)(GC_threads)+sizeof(GC_threads));
+#   if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
+      GC_push_all((ptr_t)(&GC_thread_key),
+	  (ptr_t)(&GC_thread_key)+sizeof(&GC_thread_key));
+#   endif
 }
 
 #ifdef THREAD_LOCAL_ALLOC
@@ -1335,7 +1339,7 @@ void GC_thr_init()
 	  GC_retry_signals = FALSE;
       }
 #     ifdef CONDPRINT
-          if (GC_print_stats) {
+          if (GC_print_stats && GC_retry_signals) {
               GC_printf0("Will retry suspend signal if necessary.\n");
 	  }
 #     endif

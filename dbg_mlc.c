@@ -60,7 +60,7 @@ ptr_t p;
 # include <stdlib.h>
 
 # if defined(LINUX) || defined(SUNOS4) || defined(SUNOS5) \
-     || defined(HPUX) || defined(IRIX) || defined(OSF1)
+     || defined(HPUX) || defined(IRIX5) || defined(OSF1)
 #   define RANDOM() random()
 # else
 #   define RANDOM() (long)rand()
@@ -460,7 +460,7 @@ void GC_start_debugging()
         	       (unsigned long) lb);
         return(0);
     }
-    ADD_CALL_CHAIN(result, ra);
+    ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
     return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", (word)0));
   }
 
@@ -474,7 +474,7 @@ void GC_start_debugging()
         	       (unsigned long) lb);
         return(0);
     }
-    ADD_CALL_CHAIN(result, ra);
+    ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
     return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", (word)0));
   }
 # endif

@@ -77,6 +77,14 @@
 #undef STACKBASE
 #endif
 
+/* Dont unnecessarily call GC_register_main_static_data() in case 	*/
+/* dyn_load.c isn't linked in.						*/
+#ifdef DYNAMIC_LOADING
+# define GC_REGISTER_MAIN_STATIC_DATA() GC_register_main_static_data()
+#else
+# define GC_REGISTER_MAIN_STATIC_DATA() TRUE
+#endif
+
 GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
 
 
@@ -507,6 +515,10 @@ void GC_exit_check GC_PROTO((void))
    GC_gcollect();
 }
 
+#ifdef SEARCH_FOR_DATA_START
+  extern void GC_init_linux_data_start GC_PROTO((void));
+#endif
+
 void GC_init_inner()
 {
 #   if !defined(THREADS) && defined(GC_ASSERTIONS)
@@ -524,9 +536,11 @@ void GC_init_inner()
     if (0 != GETENV("GC_PRINT_STATS")) {
       GC_print_stats = 1;
     } 
-    if (0 != GETENV("GC_DUMP_REGULARLY")) {
-      GC_dump_regularly = 1;
-    }
+#   ifndef NO_DEBUGGING
+      if (0 != GETENV("GC_DUMP_REGULARLY")) {
+        GC_dump_regularly = 1;
+      }
+#   endif
     if (0 != GETENV("GC_FIND_LEAK")) {
       GC_find_leak = 1;
 #     ifdef __STDC__
@@ -589,7 +603,7 @@ void GC_init_inner()
  	GC_init_win32();
 #   endif
 #   if defined(SEARCH_FOR_DATA_START)
-	GC_init_linux_data_start();
+	if (GC_REGISTER_MAIN_STATIC_DATA()) GC_init_linux_data_start();
 #   endif
 #   if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__)
 	GC_init_netbsd_elf();
@@ -608,6 +622,16 @@ void GC_init_inner()
 #       if defined(LINUX) && defined(IA64)
 	  GC_register_stackbottom = GC_get_register_stack_base();
 #       endif
+      } else {
+#       if defined(LINUX) && defined(IA64)
+	  if (GC_register_stackbottom == 0) {
+	    WARN("GC_register_stackbottom should be set with GC_stackbottom", 0);
+	    /* The following is likely to fail, since we rely on 	*/
+	    /* alignment properties that may not hold with a user set	*/
+	    /* GC_stackbottom.						*/
+	    GC_register_stackbottom = GC_get_register_stack_base();
+	  }
+#	endif
       }
 #   endif
     GC_ASSERT(sizeof (ptr_t) == sizeof(word));
@@ -636,7 +660,7 @@ void GC_init_inner()
     
     /* Add initial guess of root sets.  Do this first, since sbrk(0)	*/
     /* might be used.							*/
-      GC_register_data_segments();
+      if (GC_REGISTER_MAIN_STATIC_DATA()) GC_register_data_segments();
     GC_init_headers();
     GC_bl_init();
     GC_mark_init();
@@ -954,6 +978,17 @@ GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
     return(result);
 }
 
+# if defined(__STDC__) || defined(__cplusplus)
+    GC_word GC_set_free_space_divisor (GC_word value)
+# else
+    GC_word GC_set_free_space_divisor (value)
+    GC_word value;
+# endif
+{
+    GC_word old = GC_free_space_divisor;
+    GC_free_space_divisor = value;
+    return old;
+}
 
 #ifndef PCR
 void GC_abort(msg)
@@ -980,17 +1015,18 @@ GC_CONST char * msg;
 }
 #endif
 
-
-/* Needed by SRC_M3, gcj, and should perhaps be the official interface	*/
-/* to GC_dont_gc.							*/
 void GC_enable()
 {
+    LOCK();
     GC_dont_gc--;
+    UNLOCK();
 }
 
 void GC_disable()
 {
+    LOCK();
     GC_dont_gc++;
+    UNLOCK();
 }
 
 #if !defined(NO_DEBUGGING)
