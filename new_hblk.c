@@ -209,8 +209,8 @@ int kind;
   /* Add objects to free list */
     p = &(h -> hb_body[sz]);	/* second object in *h	*/
     prev = &(h -> hb_body[0]);       	/* One object behind p	*/
-    last_object = ((word *)((char *)h + HBLKSIZE)) - sz;
-			    /* Last place for last object to start */
+    last_object = (word *)((char *)h + HBLKSIZE);
+    last_object -= sz;	 /* Last place for last object to start */
 
   /* make a list of all objects in *h with head as last object */
     while (p <= last_object) {

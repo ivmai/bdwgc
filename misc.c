@@ -8,7 +8,7 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
-/* Boehm, December 20, 1993 3:06 pm PST */
+/* Boehm, March 14, 1994 3:21 pm PST */
 
 #define DEBUG       /* Some run-time consistency checks */
 #undef DEBUG
@@ -226,10 +226,13 @@ ptr_t arg;
         word dummy[CLEAR_SIZE];;
 #   endif
     
-#   define SLOP 200
+#   define SLOP 400
 	/* Extra bytes we clear every time.  This clears our own	*/
 	/* activation record, and should cause more frequent		*/
 	/* clearing near the cold end of the stack, a good thing.	*/
+#   define GC_SLOP 4000
+	/* We make GC_high_water this much hotter than we really saw   	*/
+	/* saw it, to cover for GC noise etc. above our current frame.	*/
 #   define CLEAR_THRESHOLD 100000
 	/* We restart the clearing process after this many bytes of	*/
 	/* allocation.  Otherwise very heavily recursive programs	*/
@@ -249,18 +252,19 @@ ptr_t arg;
         GC_words_allocd_at_reset = GC_words_allocd;
     }
     /* Adjust GC_high_water */
-        MAKE_COOLER(GC_high_water, WORDS_TO_BYTES(DEGRADE_RATE));
+        MAKE_COOLER(GC_high_water, WORDS_TO_BYTES(DEGRADE_RATE) + GC_SLOP);
         if (sp HOTTER_THAN GC_high_water) {
             GC_high_water = sp;
         }
-    if (sp COOLER_THAN GC_min_sp) {
-        limit = GC_min_sp;
-        MAKE_HOTTER(limit, SLOP);
+        MAKE_HOTTER(GC_high_water, GC_SLOP);
+    limit = GC_min_sp;
+    MAKE_HOTTER(limit, SLOP);
+    if (sp COOLER_THAN limit) {
         limit &= ~0xf;	/* Make it sufficiently aligned for assembly	*/
         		/* implementations of GC_clear_stack_inner.	*/
         GC_min_sp = sp;
         return(GC_clear_stack_inner(arg, limit));
-    } else if (WORDS_TO_BYTES(GC_words_allocd_at_reset - GC_words_allocd)
+    } else if (WORDS_TO_BYTES(GC_words_allocd - GC_words_allocd_at_reset)
     	       > CLEAR_THRESHOLD) {
     	/* Restart clearing process, but limit how much clearing we do. */
     	GC_min_sp = sp;

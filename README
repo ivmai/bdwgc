@@ -1,5 +1,5 @@
 Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
-Copyright (c) 1991-1993 by Xerox Corporation.  All rights reserved.
+Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
 
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -8,7 +8,7 @@ Permission is hereby granted to copy this garbage collector for any purpose,
 provided the above notices are retained on all copies.
 
 
-This is version 3.6.  Note that functions were renamed since version 1.9
+This is version 3.7.  Note that functions were renamed since version 1.9
 to make naming consistent with PCR collectors.
 
 HISTORY -
@@ -713,3 +713,9 @@ Version 3.6:
   in 3.4.
 - fixed Makefile to work around DEC AXP compiler tail recursion
   bug.
+
+Version 3.7:
+- Added a workaround for an HP/UX compiler bug.
+- Fixed another stack clearing performance bug.  Reworked
+  that code once more.
+
