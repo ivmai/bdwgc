@@ -113,6 +113,9 @@ GC_API GC_oom_func GC_oom_fn;
 GC_API void GC_CALL GC_set_oom_fn(GC_oom_func);
 GC_API GC_oom_func GC_CALL GC_get_oom_fn(void);
 
+GC_API void (*GC_on_heap_resize)(size_t /* new_size */);
+                        /* Invoked when the heap grows or shrinks        */
+
 GC_API int GC_find_leak;
                         /* Do not actually garbage collect, but simply  */
                         /* report inaccessible memory that was not      */
