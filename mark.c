@@ -1,7 +1,7 @@
 
 /*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -362,6 +362,12 @@ register hdr * hhdr;
 #   endif
 }
 
+void GC_invalidate_mark_state()
+{
+    GC_mark_state = MS_INVALID;
+    GC_mark_stack_top = GC_mark_stack-1;
+}
+
 mse * GC_signal_mark_stack_overflow(msp)
 mse * msp;
 {
@@ -421,7 +427,7 @@ void GC_mark_from_mark_stack()
           		WORDS_TO_BYTES(SPLIT_RANGE_WORDS-1);
           /* Make sure that pointers overlapping the two ranges are	*/
           /* considered. 						*/
-          limit += sizeof(word) - ALIGNMENT;
+          limit = (word *)((char *)limit + sizeof(word) - ALIGNMENT);
           break;
         case DS_BITMAP:
           GC_mark_stack_top_reg--;
@@ -903,7 +909,7 @@ register hdr * hhdr;
 #   undef GC_least_plausible_heap_addr        
 }
 
-#endif UNALIGNED
+#endif /* UNALIGNED */
 
 #endif /* SMALL_CONFIG */
 

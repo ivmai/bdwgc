@@ -16,7 +16,7 @@ the code was modified is included with the above copyright notice.
 C++ Interface to the Boehm Collector
 
     John R. Ellis and Jesse Hull 
-    Last modified on Thu Dec  8 12:41:07 PST 1994 by ellis
+    Last modified on Wed Jan  4 16:30:20 PST 1995 by ellis
 
 This interface provides access to the Boehm collector.  It provides
 basic facilities similar to those described in "Safe, Efficient
@@ -125,6 +125,10 @@ for that to occur.
 #define _cdecl
 #endif
 
+#if __BORLANDC__ >= 0x450 && !defined(OPERATOR_NEW_ARRAY)
+#   define OPERATOR_NEW_ARRAY
+#endif
+
 enum GCPlacement {GC, NoGC};
 
 class gc {public:
@@ -228,9 +232,10 @@ inline void gc_cleanup::cleanup( void* obj, void* displ ) {
     ((gc_cleanup*) ((char*) obj + (ptrdiff_t) displ))->~gc_cleanup();}
 
 inline gc_cleanup::gc_cleanup() {
-    register void *base = GC_base( (void *) this );
-    GC_REGISTER_FINALIZER_IGNORE_SELF( 
-        base, cleanup, (void*) ((char*) this - (char*) base), 0, 0 );}
+    void* base = GC_base( (void *) this );
+    if (0 != base) {
+        GC_REGISTER_FINALIZER_IGNORE_SELF( 
+            base, cleanup, (void*) ((char*) this - (char*) base), 0, 0 );}}
 
 inline void* operator new( 
     size_t size, 

@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 14, 1994 3:27 pm PDT */
+/* Boehm, January 31, 1995 12:36 pm PST */
 # ifdef CHECKSUMS
 
 # include "gc_priv.h"
@@ -22,7 +22,7 @@
 /* safe under other conditions.)					*/
 # define NSUMS 2000
 
-# define OFFSET 100000
+# define OFFSET 0x10000
 
 typedef struct {
 	bool new_valid;
@@ -44,7 +44,7 @@ struct hblk *h;
     while (p < lim) {
         result += *p++;
     }
-    return(result);
+    return(result | 0x80000000 /* doesn't look like pointer */);
 }
 
 # ifdef STUBBORN_ALLOC
@@ -111,6 +111,43 @@ int index;
     pe -> block = h + OFFSET;
 }
 
+word GC_bytes_in_used_blocks;
+
+void GC_add_block(h, dummy)
+struct hblk *h;
+word dummy;
+{
+   register hdr * hhdr = HDR(h);
+   register bytes = WORDS_TO_BYTES(hhdr -> hb_sz);
+   
+   bytes += HDR_BYTES + HBLKSIZE-1;
+   bytes &= ~(HBLKSIZE-1);
+   GC_bytes_in_used_blocks += bytes;
+}
+
+GC_check_blocks()
+{
+    word bytes_in_free_blocks = 0;
+    struct hblk * h = GC_hblkfreelist;
+    hdr * hhdr = HDR(h);
+    word sz;
+    
+    GC_bytes_in_used_blocks = 0;
+    GC_apply_to_all_blocks(GC_add_block, (word)0);
+    while (h != 0) {
+        sz = hhdr -> hb_sz;
+        bytes_in_free_blocks += sz;
+        h = hhdr -> hb_next;
+        hhdr = HDR(h);
+    }
+    GC_printf2("GC_bytes_in_used_blocks = %ld, bytes_in_free_blocks = %ld ",
+    		GC_bytes_in_used_blocks, bytes_in_free_blocks);
+    GC_printf("GC_heapsize = %ld\n", GC_heapsize);
+    if (GC_bytes_in_used_blocks + bytes_in_free_blocks != GC_heapsize) {
+    	GC_printf("LOST SOME BLOCKS!!\n");
+    }
+}
+
 /* Should be called immediately after GC_read_dirty and GC_read_changed. */
 void GC_check_dirty()
 {
@@ -118,6 +155,8 @@ void GC_check_dirty()
     register int i;
     register struct hblk *h;
     register ptr_t start;
+    
+    GC_check_blocks();
     
     GC_n_dirty_errors = 0;
     GC_n_changed_errors = 0;

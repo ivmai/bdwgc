@@ -16,7 +16,7 @@ the code was modified is included with the above copyright notice.
 C++ Interface to the Boehm Collector
 
     John R. Ellis and Jesse Hull 
-    Last modified on Sun Nov 20 17:37:45 PST 1994 by ellis
+    Last modified on Wed Jan  4 16:30:20 PST 1995 by ellis
 
 This interface provides access to the Boehm collector.  It provides
 basic facilities similar to those described in "Safe, Efficient
@@ -105,10 +105,17 @@ The elements of "a" will not have their destructors invoked when the
 collector frees "a".  You must supply an explicit clean-up function
 for that to occur.
 
-3. Evidently cfront 3.0 does not allow destructors to be explicitly
-invoked using the ANSI-conforming syntax t->~T().  If you're using
-cfront 3.0, you'll have to comment out the class gc_cleanup, which
-uses explicit invocation.
+4. Compiler bugs:
+
+    Solaris 2's CC (SC3.0) doesn't implement t->~T() correctly, so the
+    destructors of classes derived from gc_cleanup won't be invoked.
+    You'll have to explicitly register a clean-up function with
+    new-placement syntax.
+
+    Evidently cfront 3.0 does not allow destructors to be explicitly
+    invoked using the ANSI-conforming syntax t->~T().  If you're using
+    cfront 3.0, you'll have to comment out the class gc_cleanup, which
+    uses explicit invocation.
 
 ****************************************************************************/
 
@@ -116,6 +123,10 @@ uses explicit invocation.
 
 #ifndef THINK_CPLUS
 #define _cdecl
+#endif
+
+#if __BORLANDC__ >= 0x450 && !defined(OPERATOR_NEW_ARRAY)
+#   define OPERATOR_NEW_ARRAY
 #endif
 
 enum GCPlacement {GC, NoGC};
@@ -129,7 +140,7 @@ class gc {public:
     inline void* operator new[]( size_t size );
     inline void* operator new[]( size_t size, GCPlacement gcp );
     inline void operator delete[]( void* obj );
-#endif OPERATOR_NEW_ARRAY
+#endif /* OPERATOR_NEW_ARRAY */
     };    
     /*
     Instances of classes derived from "gc" will be allocated in the 
@@ -221,9 +232,10 @@ inline void gc_cleanup::cleanup( void* obj, void* displ ) {
     ((gc_cleanup*) ((char*) obj + (ptrdiff_t) displ))->~gc_cleanup();}
 
 inline gc_cleanup::gc_cleanup() {
-    register void *base = GC_base( (void *) this );
-    GC_REGISTER_FINALIZER_IGNORE_SELF( 
-        base, cleanup, (void*) ((char*) this - (char*) base), 0, 0 );}
+    void* base = GC_base( (void *) this );
+    if (0 != base) {
+        GC_REGISTER_FINALIZER_IGNORE_SELF( 
+            base, cleanup, (void*) ((char*) this - (char*) base), 0, 0 );}}
 
 inline void* operator new( 
     size_t size, 
@@ -253,7 +265,7 @@ inline void* operator new[](
 {
     return ::operator new( size, gcp, cleanup, clientData );}
 
-#endif OPERATOR_NEW_ARRAY
+#endif /* OPERATOR_NEW_ARRAY */
 
 
 #endif /* GC_CPP_H */

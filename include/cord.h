@@ -159,30 +159,30 @@ int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 	
 	typedef <OPAQUE but fairly big> CORD_pos[1];
 	
-	/* Extract the cord from a position:
+	* Extract the cord from a position:
 	CORD CORD_pos_to_cord(CORD_pos p);
 	
-	/* Extract the current index from a position:
+	* Extract the current index from a position:
 	size_t CORD_pos_to_index(CORD_pos p);
 	
-	/* Fetch the character located at the given position:
+	* Fetch the character located at the given position:
 	char CORD_pos_fetch(CORD_pos p);
 	
-	/* Initialize the position to refer to the given cord and index.
-	/* Note that this is the most expensive function on positions:
+	* Initialize the position to refer to the given cord and index.
+	* Note that this is the most expensive function on positions:
 	void CORD_set_pos(CORD_pos p, CORD x, size_t i);
 	
-	/* Advance the position to the next character.
-	/* P must be initialized and valid.
-	/* Invalidates p if past end:
+	* Advance the position to the next character.
+	* P must be initialized and valid.
+	* Invalidates p if past end:
 	void CORD_next(CORD_pos p);
 	
-	/* Move the position to the preceding character.
-	/* P must be initialized and valid.
-	/* Invalidates p if past beginning:
+	* Move the position to the preceding character.
+	* P must be initialized and valid.
+	* Invalidates p if past beginning:
 	void CORD_prev(CORD_pos p);
 	
-	/* Is the position valid, i.e. inside the cord?
+	* Is the position valid, i.e. inside the cord?
 	int CORD_pos_valid(CORD_pos p);
 */
 # define CORD_FOR(pos, cord) \

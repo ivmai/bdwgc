@@ -122,7 +122,6 @@ void GC_push_regs()
 
 #       ifdef AMIGA
 	/*  AMIGA - could be replaced by generic code 			*/
-	/*	  SAS/C optimizer mangles this so compile with "noopt"	*/
 	  /* a0, a1, d0 and d1 are caller save */
 	  GC_push_one(getreg(REG_A2));
 	  GC_push_one(getreg(REG_A3));
@@ -312,7 +311,7 @@ void GC_push_regs()
       /* other machines... */
 #       if !(defined M68K) && !(defined VAX) && !(defined RT) 
 #	if !(defined SPARC) && !(defined I386) && !(defined NS32K)
-#	if !defined(HP_PA) && !defined(M88K)
+#	if !defined(HP_PA) && !defined(M88K) && !defined(POWERPC)
 	    --> bad news <--
 #       endif
 #       endif

@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, November 22, 1994 11:55 am PST */
+/* Boehm, February 6, 1995 5:24 pm PST */
  
 #ifndef CONFIG_H
 
@@ -131,6 +131,7 @@
 # if defined(__MWERKS__) && defined(__powerc)
 #   define POWERPC
 #   define MACOS
+#   define mach_type_known
 # endif
 # if defined(NeXT) && defined(mc68000)
 #   define M68K
@@ -175,6 +176,11 @@
 # if defined(_MSDOS) && (_M_IX86 == 300) || (_M_IX86 == 400)
 #   define I386
 #   define MSWIN32	/* or Win32s */
+#   define mach_type_known
+# endif
+# if defined(__BORLANDC__)
+#   define I386
+#   define MSWIN32
 #   define mach_type_known
 # endif
 
@@ -352,6 +358,19 @@
 #   endif
 # endif
 
+# ifdef POWERPC
+#   define MACH_TYPE "POWERPC"
+#   define ALIGNMENT 2
+#   ifdef MACOS
+#     ifndef __LOWMEM__
+#     include <LowMem.h>
+#     endif
+#     define OS_TYPE "MACOS"
+			/* see os_dep.c for details of global data segments. */
+#     define STACKBOTTOM ((ptr_t) LMGetCurStackBase())
+#   endif
+# endif
+
 # ifdef VAX
 #   define MACH_TYPE "VAX"
 #   define ALIGNMENT 4	/* Pointers are longword aligned by 4.2 C compiler */
@@ -418,7 +437,9 @@
 
 # ifdef I386
 #   define MACH_TYPE "I386"
-#   define ALIGNMENT 4	/* Appears to hold for all "32 bit" compilers */
+#   define ALIGNMENT 4	/* Appears to hold for all "32 bit" compilers	*/
+			/* except Borland.  The -a4 option fixes 	*/
+			/* Borland.					*/
 #   ifdef SEQUENT
 #	define OS_TYPE "SEQUENT"
 	extern int etext;

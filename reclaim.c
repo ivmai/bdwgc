@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, June 13, 1994 6:22 pm PDT */
+/* Boehm, January 19, 1995 5:39 pm PST */
 
 #include <stdio.h>
 #include "gc_priv.h"
@@ -665,7 +665,8 @@ int kind;
  * Clear lists of blocks waiting to be reclaimed.
  * Must be done before clearing mark bits with the world running,
  * since otherwise a subsequent reclamation of block would see
- * the wrong mark bits.
+ * the wrong mark bits.  (Alternatively, GC_reclaim_all
+ * may be used.)
  * SHOULD PROBABLY BE INCREMENTAL
  */
 void GC_reclaim_or_delete_all()
@@ -707,4 +708,49 @@ void GC_reclaim_or_delete_all()
 	GC_printf1("Disposing of reclaim lists took %lu msecs\n",
 	           MS_TIME_DIFF(done_time,start_time));
 #   endif
+}
+
+/*
+ * Reclaim all small blocks waiting to be reclaimed.
+ * Abort and return FALSE when/if (*stop_func)() returns TRUE.
+ * If this returns TRUE, then it's safe to restart the world
+ * with incorrectly cleared mark bits.
+ */
+bool GC_reclaim_all(stop_func)
+GC_stop_func stop_func;
+{
+    register word sz;
+    register int kind;
+    register hdr * hhdr;
+    register struct hblk * hbp;
+    register struct obj_kind * ok;
+    struct hblk ** rlp;
+    struct hblk ** rlh;
+#   ifdef PRINTTIMES
+	CLOCK_TYPE start_time;
+	CLOCK_TYPE done_time;
+	
+	GET_TIME(start_time);
+#   endif
+    
+    for (kind = 0; kind < GC_n_kinds; kind++) {
+    	ok = &(GC_obj_kinds[kind]);
+    	rlp = ok -> ok_reclaim_list;
+    	if (rlp == 0) continue;
+    	for (sz = 1; sz <= MAXOBJSZ; sz++) {
+    	    rlh = rlp + sz;
+    	    while ((hbp = *rlh) != 0) {
+    	        if ((*stop_func)()) return(FALSE);
+        	hhdr = HDR(hbp);
+        	*rlh = hhdr -> hb_next;
+        	GC_reclaim_small_nonempty_block(hbp, FALSE);
+            }
+        }
+    }
+#   ifdef PRINTTIMES
+	GET_TIME(done_time);
+	GC_printf1("Disposing of reclaim lists took %lu msecs\n",
+	           MS_TIME_DIFF(done_time,start_time));
+#   endif
+    return(TRUE);
 }

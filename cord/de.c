@@ -26,7 +26,7 @@
  *	The redisplay algorithm doesn't let curses do the scrolling.
  *	The rule for moving the window over the file is suboptimal.
  */
-/* Boehm, June 13, 1994 2:35 pm PDT */
+/* Boehm, February 6, 1995 12:27 pm PST */
 
 /* Boehm, May 19, 1994 2:20 pm PDT */
 #include <stdio.h>
@@ -36,6 +36,12 @@
 #ifdef THINK_C
 #define MACINTOSH
 #include <ctype.h>
+#endif
+
+#if defined(__BORLANDC__) && !defined(WIN32)
+    /* If this is DOS or win16, we'll fail anyway.	*/
+    /* Might as well assume win32.			*/
+#   define WIN32
 #endif
 
 #if defined(WIN32)

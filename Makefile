@@ -1,23 +1,26 @@
 # Primary targets:
 # gc.a - builds basic library
-# c++ - adds C++ interface to library and include directory
-# cords - adds cords (heavyweight strings) to library and include directory
-# test - prints porting information, then builds basic version of gc.a, and runs
-#        some tests of collector and cords.  Does not add cords or c++ interface to gc.a
+# c++ - adds C++ interface to library
+# cords - adds cords (heavyweight strings) to library
+# test - prints porting information, then builds basic version of gc.a,
+#      	 and runs some tests of collector and cords.  Does not add cords or
+#	 c++ interface to gc.a
 # cord/de - builds dumb editor based on cords.
-CC= cc
+CC= gcc
 CXX=g++ -ansi
 # Needed only for "make c++", which adds the c++ interface
 AS=as
 
-CFLAGS= -O -DSILENT -DALL_INTERIOR_POINTERS -DNO_SIGNALS
+CFLAGS= -O -DALL_INTERIOR_POINTERS -DNO_SIGNALS -DSILENT
 # Setjmp_test may yield overly optimistic results when compiled
 # without optimization.
 # -DSILENT disables statistics printing, and improves performance.
 # -DCHECKSUMS reports on erroneously clear dirty bits, and unexpectedly
 #   altered stubborn objects, at substantial performance cost.
+#   Use only for incremental collector debugging.
 # -DFIND_LEAK causes the collector to assume that all inaccessible
-#   objects should have been explicitly deallocated, and reports exceptions
+#   objects should have been explicitly deallocated, and reports exceptions.
+#   Finalization and the test program are not usable in this mode.
 # -DSOLARIS_THREADS enables support for Solaris (thr_) threads.
 #   (Clients should also define SOLARIS_THREADS and then include
 #   gc.h before performing thr_ or dl* or GC_ operations.)
@@ -41,7 +44,18 @@ CFLAGS= -O -DSILENT -DALL_INTERIOR_POINTERS -DNO_SIGNALS
 # -DOPERATOR_NEW_ARRAY declares that the C++ compiler supports the
 #   new syntax "operator new[]" for allocating and deleting arrays.
 #   See gc_cpp.h for details.  No effect on the C part of the collector.
+#   This is defined implicitly in a few environments.
+# -DREDIRECT_MALLOC=X causes malloc, realloc, and free to be defined
+#   as aliases for X, GC_realloc, and GC_free, respectively.
+#   Calloc is redefined in terms of the new malloc.  X should
+#   be either GC_malloc or GC_malloc_uncollectable.
+#   The former is occasionally useful for working around leaks in code
+#   you don't want to (or can't) look at.  It may not work for
+#   existing code, but it often does.  Neither works on all platforms,
+#   since some ports use malloc or calloc to obtain system memory.
+#   (Probably works for UNIX, and win32.)
 
+CXXFLAGS= $(CFLAGS)
 AR= ar
 RANLIB= ranlib
 
@@ -62,7 +76,7 @@ CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
 SRCS= $(CSRCS) mips_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s sparc_mach_dep.s gc.h gc_typed.h gc_hdrs.h gc_priv.h gc_private.h config.h gc_mark.h include/gc_inl.h include/gc_inline.h gc.man if_mach.c if_not_there.c gc_cpp.cc gc_cpp.h $(CORD_SRCS)
 
-OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE \
+OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README test.c test_cpp.cc setjmp_t.c SMakefile.amiga \
            SCoptions.amiga README.amiga README.win32 cord/README \
            cord/gc.h include/gc.h include/gc_typed.h include/cord.h \
@@ -70,7 +84,8 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE \
            README.QUICK callprocs pc_excludes barrett_diagram \
            README.OS2 README.Mac MacProjects.sit.hqx MacOS.c \
            EMX_MAKEFILE makefile.depend README.debugging \
-           include/gc_cpp.h
+           include/gc_cpp.h Mac_files/datastart.c Mac_files/dataend.c \
+           Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h
 
 CORD_INCLUDE_FILES= $(srcdir)/gc.h $(srcdir)/cord/cord.h $(srcdir)/cord/ec.h \
            $(srcdir)/cord/cord_pos.h
@@ -122,18 +137,18 @@ cords: $(CORD_OBJS) cord/cordtest
 	./if_not_there on_sparc_sunos5 $(RANLIB) gc.a || cat /dev/null
 
 gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/gc_cpp.h $(srcdir)/gc.h Makefile
-	$(CXX) -c -O $(srcdir)/gc_cpp.cc
+	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
 	
-test_gc_c++: $(srcdir)/test_cpp.cc $(srcdir)/gc_cpp.h gc_cpp.o $(srcdir)/gc.h gc.a
-	$(CXX) -O -o test_gc_c++ $(srcdir)/test_cpp.cc gc_cpp.o gc.a
+test_cpp: $(srcdir)/test_cpp.cc $(srcdir)/gc_cpp.h gc_cpp.o $(srcdir)/gc.h gc.a
+	$(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/test_cpp.cc gc_cpp.o gc.a
 
-c++: gc_cpp.o $(srcdir)/gc_cpp.h test_gc_c++
+c++: gc_cpp.o $(srcdir)/gc_cpp.h test_cpp
 	rm -f on_sparc_sunos5
 	./if_mach SPARC SUNOS5 touch on_sparc_sunos5
 	./if_mach SPARC SUNOS5 $(AR) rus gc.a gc_cpp.o
 	./if_not_there on_sparc_sunos5 $(AR) ru gc.a gc_cpp.o
 	./if_not_there on_sparc_sunos5 $(RANLIB) gc.a || cat /dev/null
-	./test_gc_c++ 1
+	./test_cpp 1
 
 dyn_load_sunos53.o: dyn_load.c
 	$(CC) $(CFLAGS) -DSUNOS53_SHARED_LIB -c dyn_load.c -o $@
@@ -193,8 +208,7 @@ if_not_there: $(srcdir)/if_not_there.c
 	$(CC) $(CFLAGS) -o if_not_there $(srcdir)/if_not_there.c
 
 clean: 
-	rm -f gc.a test.o gctest $(OBJS) dyn_load.o dyn_load_sunos53.o \
-		  gctest_dyn_link \
+	rm -f gc.a *.o gctest gctest_dyn_link test_cpp \
 	      setjmp_test  mon.out gmon.out a.out core if_not_there if_mach \
 	      $(CORD_OBJS) cord/cordtest cord/de
 	-rm -f *~
@@ -214,11 +228,13 @@ setjmp_test: $(srcdir)/setjmp_t.c $(srcdir)/gc.h if_mach if_not_there
 	./if_mach ALPHA "" $(CC) $(CFLAGS) -o setjmp_test $(ALPHACFLAGS) $(srcdir)/setjmp_t.c
 	./if_not_there setjmp_test $(CC) $(CFLAGS) -o setjmp_test $(srcdir)/setjmp_t.c
 
-test: setjmp_test gctest
+test:  KandRtest cord/cordtest
+	cord/cordtest
+
+# Those tests that work even with a K&R C compiler:
+KandRtest: setjmp_test gctest
 	./setjmp_test
 	./gctest
-	make cord/cordtest
-	cord/cordtest
 
 gc.tar: $(SRCS) $(OTHER_FILES)
 	tar cvf gc.tar $(SRCS) $(OTHER_FILES)

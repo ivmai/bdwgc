@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, September 20, 1994 11:51 am PDT */
+/* Boehm, January 30, 1995 4:05 pm PST */
 
 #include "gc_priv.h"
 #include "gc_mark.h"
@@ -249,7 +249,7 @@ void (*GC_is_visible_print_proc)() =
     retry:
     	    switch(descr & DS_TAGS) {
     	        case DS_LENGTH:
-    	            if ((ptr_t)p - (ptr_t)base > (word)descr) goto fail;
+    	            if ((word)((ptr_t)p - (ptr_t)base) > (word)descr) goto fail;
     	            break;
     	        case DS_BITMAP:
     	            if ((ptr_t)p - (ptr_t)base

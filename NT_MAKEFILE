@@ -9,7 +9,7 @@ OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_r
 all: gctest.exe cord\de.exe test_cpp.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(cvars) -DSMALL_CONFIG -DSILENT -DALL_INTERIOR_POINTERS $*.c /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(cvars) -DSMALL_CONFIG -DSILENT -DALL_INTERIOR_POINTERS -D__STDC__ $*.c /Fo$*.obj
 
 .cpp.obj:
 	$(cc) $(cdebug) $(cflags) $(cvars) -DSMALL_CONFIG -DSILENT -DALL_INTERIOR_POINTERS $*.CPP /Fo$*.obj

@@ -1,54 +1,50 @@
 README.Mac
 ----------
 
-This is a preliminary version of my port of the collector to the Macintosh.
-It passes all tests in the file test.c, but there might be more bugs lurking.
+v4.3 of the collector now runs under Symantec C++/THINK C v7.0.4, and
+Metrowerks C/C++ v4.5 both 68K and PowerPC. Project files are provided
+to build and test the collector under both development systems.
 
-Mac Specific Files
-------------------
+Configuration
+-------------
 
-Since I built the collector under Symantec C++ 7, and it doesn't use Makefile's
-in the standard sense, I'm including the file mac_proj.sit.hqx, which contains
-a binhexed (similar to uuencoding) copy of the compressed project files you'll
-need to build this on the Macintosh. This contains projects for building
-the test program, gctest.pi, a project containing just the library sources,
-gc.lib.pi, for testing the cord library, cord.pi, and finally a hacked up
-version of the cord text editor, de, that runs under the console emulation
-library, ANSI++, under Symantec. It has a pretty weak emulation of curses
-and only really works if you hack console.c a little bit in ANSI++. However
-it works well enough to page through a file and move around editing, etc.
+To configure the collector, under both development systems, a prefix file
+is used to set preprocessor directives. This file is called "MacOS_config.h".
+Also to test the collector, "MacOS_Test_config.h" is provided.
 
-Changes
+Testing
 -------
 
-The biggest changes made to the source was providing a target for MACINTOSH.
-Some care had to be taken to fit it in with the rest of the #ifdefs, as usual.
-The most most major change was converting the GC_arrays structure from static
-data to dynamically allocated, because no file can contain more than 32k of
-global data under Symantec C/C++. However; on the non-Macintosh platforms
-I still leave it as global data, I just take a pointer to it rather than
-dynamically allocating it.
+To test the collector (always a good idea), build one of the gctest projects,
+gctest.¹ (Symantec C++/THINK C), mw/gctest.68K.¹, or mw/gctest.PPC.¹. The
+test will ask you how many times to run; 1 should be sufficient.
 
-One thing this affects is that it is really a good idea to call GC_init
-before using the collector. I don't trust the collector to be able to
-do this automatically with these new changes.
+Building 
+--------
 
-Also, since GC_arrays is no longer at a constant location, the static
-initialization of the array GC_obj_kinds won't work. So, I added a new
-function to mark.c, called C_init_mark() which does the rest of the
-initializations of GC_obj_kinds.
+For your convenience project files for the major Macintosh development
+systems are provided.
 
-Happy garbage collecting!
+For Symantec C++/THINK C, you must build the two projects gclib-1.¹ and
+gclib-2.¹. It has to be split up because the collector has more than 32k
+of static data and no library can have more than this in the Symantec
+environment. (Future versions will probably fix this.)
 
-Patrick Beard, June 6, 1994.
+For Metrowerks C/C++ 4.5 you build gc.68K.¹/gc.PPC.¹ and the result will
+be a library called gc.68K.lib/gc.PPC.lib.
 
-I undid some of Patrick's changes, to keep things as consistent as
-possible across platforms.  GC_arrays is statically allocated.  A few
-of its former components are now dynamically allocated separately.
-It should not be necessary to call GC_init explicitly.
+Using
+-----
 
-I replaced the macro MACINTOSH with MACOS, both for consistency with
-other platforms, and to better distinguish it from AUX (which is
-admittedly less interesting, but was already supported).
+Under Symantec C++/THINK C, you can just add the gclib-1.¹ and gclib-2.¹
+projects to your own project. Under Metrowerks, you add gc.68K.lib or
+gc.PPC.lib and two additional files. You add the files called datastart.c
+and dataend.c to your project, bracketing all files that use the collector.
+See mw/gctest.¹ for an example.
 
-Hans-J. Boehm, June 9, 1994
+Include the projects/libraries you built above into your own project,
+#include "gc.h", and call GC_malloc. You don't have to call GC_free.
+
+
+Patrick C. Beard
+January 4, 1995

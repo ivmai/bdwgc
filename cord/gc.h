@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, December 7, 1994 12:09 pm PST */
+/* Boehm, January 28, 1995 3:59 pm PST */
 
 /*
  * Note that this defines a large number of tuning hooks, which can
@@ -86,7 +86,7 @@ extern GC_word GC_free_space_divisor;
 			/* at the expense of space.			*/
 			/* GC_free_space_divisor = 1 will effectively	*/
 			/* disable collections.				*/
-
+			
 			
 /* Public procedures */
 /*
@@ -186,6 +186,11 @@ void GC_end_stubborn_change(/* p */);
 /* Returns 0 on failure, 1 on success.  */
 extern int GC_expand_hp(/* number_of_bytes */);
 
+/* Limit the heap size to n bytes.  Useful when you're debugging, 	*/
+/* especially on systems that don't handle running out of memory well.	*/
+/* n == 0 ==> unbounded.  This is the default.				*/
+extern void GC_set_max_heap_size(/* n */);
+
 /* Clear the set of root segments.  Wizards only. */
 extern void GC_clear_roots(NO_PARAMS);
 
@@ -213,10 +218,28 @@ void GC_debug_register_displacement(/* GC_word n */);
 /* Explicitly trigger a full, world-stop collection. 	*/
 void GC_gcollect(NO_PARAMS);
 
+/* Trigger a full world-stopped collection.  Abort the collection if 	*/
+/* and when stop_func returns a nonzero value.  Stop_func will be 	*/
+/* called frequently, and should be reasonably fast.  This works even	*/
+/* if virtual dirty bits, and hence incremental collection is not 	*/
+/* available for this architecture.  Collections can be aborted faster	*/
+/* than normal pause times for incremental collection.  However,	*/
+/* aborted collections do no useful work; the next collection needs	*/
+/* to start from the beginning.						*/
+typedef int (* GC_stop_func)(NO_PARAMS);
+# if defined(__STDC__) || defined(__cplusplus)
+    int GC_try_to_collect(GC_stop_func stop_func);
+# else
+    int GC_try_to_collect(/* GC_stop_func stop_func */);
+# endif
+
 /* Return the number of bytes in the heap.  Excludes collector private	*/
 /* data structures.  Includes empty blocks and fragmentation loss.	*/
 /* Includes some pages that were allocated but never written.		*/
 size_t GC_get_heap_size(NO_PARAMS);
+
+/* Return the number of bytes allocated since the last collection.	*/
+size_t GC_get_bytes_since_gc(NO_PARAMS);
 
 /* Enable incremental/generational collection.	*/
 /* Not advisable unless dirty bits are 		*/
@@ -414,8 +437,13 @@ void GC_debug_end_stubborn_change(/* p */);
 /* use involves calling GC_register_disappearing_link(&p),	*/
 /* where p is a pointer that is not followed by finalization	*/
 /* code, and should not be considered in determining 		*/
-/* finalization order.						*/ 
-int GC_register_disappearing_link(/* void ** link */);
+/* finalization order.						*/
+# if defined(__STDC__) || defined(__cplusplus)
+    int GC_register_disappearing_link(void ** link);
+# else
+    int GC_register_disappearing_link(/* void ** link */);
+# endif
+
 	/* Link should point to a field of a heap allocated 	*/
 	/* object obj.  *link will be cleared when obj is	*/
 	/* found to be inaccessible.  This happens BEFORE any	*/
@@ -434,7 +462,11 @@ int GC_register_disappearing_link(/* void ** link */);
 	/* Returns 1 if link was already registered, 0		*/
 	/* otherwise.						*/
 	/* Only exists for backward compatibility.  See below:	*/
-int GC_general_register_disappearing_link(/* void ** link, void * obj */);
+# if defined(__STDC__) || defined(__cplusplus)
+    int GC_general_register_disappearing_link(void ** link, void * obj);
+# else
+    int GC_general_register_disappearing_link(/* void ** link, void * obj */);
+# endif
 	/* A slight generalization of the above. *link is	*/
 	/* cleared when obj first becomes inaccessible.  This	*/
 	/* can be used to implement weak pointers easily and	*/
@@ -452,7 +484,11 @@ int GC_general_register_disappearing_link(/* void ** link, void * obj */);
 	/* the object containing link.  Explicitly deallocating */
 	/* obj may or may not cause link to eventually be	*/
 	/* cleared.						*/
-int GC_unregister_disappearing_link(/* void ** link */);
+# if defined(__STDC__) || defined(__cplusplus)
+    int GC_unregister_disappearing_link(void ** link);
+# else
+    int GC_unregister_disappearing_link(/* void ** link */);
+# endif
 	/* Returns 0 if link was not actually registered.	*/
 	/* Undoes a registration by either of the above two	*/
 	/* routines.						*/
@@ -467,6 +503,15 @@ int GC_unregister_disappearing_link(/* void ** link */);
     void GC_debug_invoke_finalizer(/* void * obj, void * data */);
 # endif
 
+/* GC_set_warn_proc can be used to redirect or filter warning messages.	*/
+# if defined(__STDC__) || defined(__cplusplus)
+    typedef void (*GC_warn_proc)(char *msg, GC_word arg);
+    GC_warn_proc GC_set_warn_proc(GC_warn_proc p);
+    /* Returns old warning procedure.	*/
+# else
+    typedef void (*GC_warn_proc)(/* char *msg, GC_word arg */);
+    GC_warn_proc GC_set_warn_proc(/* GC_warn_proc p */);
+# endif
 	
 /* The following is intended to be used by a higher level	*/
 /* (e.g. cedar-like) finalization facility.  It is expected	*/

@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, November 4, 1994 4:23 pm PST */
+/* Boehm, February 10, 1995 1:14 pm PST */
 
 # include "gc_priv.h"
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS)
@@ -604,7 +604,7 @@ void GC_register_data_segments()
     	q = (LPVOID)(p - GC_get_page_size());
     	if ((ptr_t)q > (ptr_t)p /* underflow */ || q < limit) break;
     	result = VirtualQuery(q, &buf, sizeof(buf));
-    	if (result != sizeof(buf)) break;
+    	if (result != sizeof(buf) || buf.AllocationBase == 0) break;
     	p = (ptr_t)(buf.AllocationBase);
     }
     return(p);
@@ -614,19 +614,23 @@ void GC_register_data_segments()
   /* heap sections?						*/
   bool GC_is_heap_base (ptr_t p)
   {
-     static ptr_t malloc_heap_pointer = 0;
-     register unsigned i;
-     register DWORD result;
      
-     if (malloc_heap_pointer = 0) {
-        MEMORY_BASIC_INFORMATION buf;
-        result = VirtualQuery(malloc(1), &buf, sizeof(buf));
-        if (result != sizeof(buf)) {
-            ABORT("Weird VirtualQuery result");
-        }
-        malloc_heap_pointer = (ptr_t)(buf.AllocationBase);
-     }
-     if (p == malloc_heap_pointer) return(TRUE);
+     register unsigned i;
+     
+#    ifndef REDIRECT_MALLOC
+       static ptr_t malloc_heap_pointer = 0;
+     
+       if (0 == malloc_heap_pointer) {
+         MEMORY_BASIC_INFORMATION buf;
+         register DWORD result = VirtualQuery(malloc(1), &buf, sizeof(buf));
+         
+         if (result != sizeof(buf)) {
+             ABORT("Weird VirtualQuery result");
+         }
+         malloc_heap_pointer = (ptr_t)(buf.AllocationBase);
+       }
+       if (p == malloc_heap_pointer) return(TRUE);
+#    endif
      for (i = 0; i < GC_n_heap_bases; i++) {
          if (GC_heap_bases[i] == p) return(TRUE);
      }
@@ -648,7 +652,8 @@ void GC_register_data_segments()
       GetSystemInfo(&sysinfo);
       while (p < sysinfo.lpMaximumApplicationAddress) {
         result = VirtualQuery(p, &buf, sizeof(buf));
-        if (result != sizeof(buf) || GC_is_heap_base(buf.AllocationBase)) break;
+        if (result != sizeof(buf) || buf.AllocationBase == 0
+            || GC_is_heap_base(buf.AllocationBase)) break;
         new_limit = (char *)p + buf.RegionSize;
         protect = buf.Protect;
         if (buf.State == MEM_COMMIT
@@ -706,7 +711,14 @@ void GC_register_data_segments()
 
     for (data = (ULONG *)BADDR(myseglist); data != 0;
          data = (ULONG *)BADDR(data[0])) {
-	GC_add_roots_inner((char *)&data[1], ((char *)&data[1]) + data[-1]);
+#        ifdef AMIGA_SKIP_SEG
+           if (((ULONG) GC_register_data_segments < (ULONG) &data[1]) ||
+           ((ULONG) GC_register_data_segments > (ULONG) &data[1] + data[-1])) {
+#	 else
+      	   {
+#	 endif /* AMIGA_SKIP_SEG */
+          GC_add_roots_inner((char *)&data[1], ((char *)&data[1]) + data[-1]);
+         }
     }
   }
 
@@ -1616,7 +1628,7 @@ int dummy;
                 GC_proc_buf_size = new_size;
             }
             if (syscall(SYS_read, GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
-                WARN("Insufficient space for /proc read\n");
+                WARN("Insufficient space for /proc read\n", 0);
                 /* Punt:	*/
         	memset(GC_grungy_pages, 0xff, sizeof (page_hash_table));
 #		ifdef SOLARIS_THREADS

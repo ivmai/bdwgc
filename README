@@ -1,5 +1,5 @@
 Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
-Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
 
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -10,7 +10,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.3 of a conservative garbage collector for C and C++.
+This is version 4.4 of a conservative garbage collector for C and C++.
 
 HISTORY -
 
@@ -273,13 +273,13 @@ following are likely to require change:
       The most important routine here is one to mark from registers.
     The distributed file includes a generic hack (based on setjmp) that
     happens to work on many machines, and may work on yours.  Try
-    compiling and running setjmp_test.c to see whether it has a chance of
+    compiling and running setjmp_t.c to see whether it has a chance of
     working.  (This is not correct C, so don't blame your compiler if it
     doesn't work.  Based on limited experience, register window machines
     are likely to cause trouble.  If your version of setjmp claims that
     all accessible variables, including registers, have the value they
     had at the time of the longjmp, it also will not work.  Vanilla 4.2 BSD
-    makes such a claim.  SunOS does not.)
+    on Vaxen makes such a claim.  SunOS does not.)
       If your compiler does not allow in-line assembly code, or if you prefer
     not to use such a facility, mach_dep.c may be replaced by a .s file
     (as we did for the MIPS machine and the PC/RT).
@@ -328,7 +328,7 @@ collector doesn't already understand them.)  On some machines, it may
 be desirable to set GC_stacktop to a good approximation of the stack base. 
 (This enhances code portability on HP PA machines, since there is no
 good way for the collector to compute this value.)  Client code may include
-"gc.h", which defines all of the following, plus a few others.
+"gc.h", which defines all of the following, plus many others.
 
 1)  GC_malloc(nbytes)
     - allocate an object of size nbytes.  Unlike malloc, the object is
@@ -373,22 +373,18 @@ good way for the collector to compute this value.)  Client code may include
       if a garbage collection failed to GC_reclaim enough memory.  Explicit
       calls to GC_expand_hp may prevent unnecessarily frequent collections at
       program startup.)
-      
-6)  GC_clear_roots()
-    - Reset the collectors idea of where static variables containing pointers
-      may be located to the empty set of locations.  No statically allocated
-      variables will be traced from after this call, unless there are
-      intervening GC_add_roots calls.  The collector will still trace from
-      registers and the program stack.
-	  
-7)  GC_add_roots(low_address, high_address_plus_1)
-    - Add [low_address, high_address) as an area that may contain root pointers
-      and should be traced by the collector.  The static data and bss segments
-      are considered by default, and should not be added unless GC_clear_roots
-      has been called.  The number of root areas is currently limited to 50.
-      This is intended as a way to register data areas for dynamic libraries,
-      or to replace the entire data ans bss segments by smaller areas that are
-      known to contain all the roots. 
+
+6)  GC_malloc_ignore_off_page(bytes)
+	- identical to GC_malloc, but the client promises to keep a pointer to
+	  the somewhere within the first 256 bytes of the object while it is
+	  live.  (This pointer should nortmally be declared volatile to prevent
+	  interference from compiler optimizations.)  This is the recommended
+	  way to allocate anything that is likely to be larger than 100Kbytes
+	  or so.  (GC_malloc may result in failure to reclaim such objects.)
+
+7)  GC_set_warn_proc(proc)
+	- Can be used to redirect warnings from the collector.  Such warnings
+	  should be rare, and should not be ignored during code development.
       
 8) GC_enable_incremental()
     - Enables generational and incremental collection.  Useful for large
@@ -439,7 +435,7 @@ THE C++ INTERFACE TO THE ALLOCATOR:
   The Ellis-Hull C++ interface to the collector is included in
 the collector distribution.  If you intend to use this, type
 "make c++" after the initial build of the collector is complete.
-See gc_c++.h for the difinition of the interface.  This interface
+See gc_cpp.h for the difinition of the interface.  This interface
 tries to approximate the Ellis-Detlefs C++ garbage collection
 proposal without compiler changes.
 
@@ -455,13 +451,16 @@ This is likely to result in disaster without linker warnings.
 3. If your compiler supports an overloaded new[] operator,
 then gc_c++.cc and gc_c++.h should be suitably modified.
 
+4. Many current C++ compilers have deficiencies that
+break some of the functionality.  See the comments in gc_cpp.h
+for suggested workarounds.
 
 USE AS LEAK DETECTOR:
 
   The collector may be used to track down leaks in C programs that are
 intended to run with malloc/free (e.g. code with extreme real-time or
-portability constraints).  To do so define FIND_LEAK somewhere in
-gc_priv.h.  This will cause the collector to invoke the report_leak
+portability constraints).  To do so define FIND_LEAK in Makefile
+This will cause the collector to invoke the report_leak
 routine defined near the top of reclaim.c whenever an inaccessible
 object is found that has not been explicitly freed.
   Productive use of this facility normally involves redefining report_leak
@@ -480,7 +479,9 @@ to symbolic addresses.  It was largely supplied by Scott Schwartz.)
   Note that the debugging facilities described in the next section can
 sometimes be slightly LESS effective in leak finding mode, since in
 leak finding mode, GC_debug_free actually results in reuse of the object.
-(Otherwise the object is simply marked invalid.)
+(Otherwise the object is simply marked invalid.)  Also note that the test
+program is not designed to run meaningfully in FIND_LEAK mode.
+Use "make gc.a" to build the collector.
 
 DEBUGGING FACILITIES:
 
@@ -990,3 +991,56 @@ functionality not tested by the other programs.
 - Changed Windoes NT Makefile to include C++ support in
   gc.lib.  Added C++ test as Makefile target.
   
+Since version 4.3:
+ - ASM_CLEAR_CODE was erroneously defined for HP
+   PA machines, resulting in a compile error.
+ - Fixed OS/2 Makefile to create a library.  (Thanks to
+   Mark Boulter (mboulter@vnet.ibm.com)).
+ - Gc_cleanup objects didn't work if they were created on
+   the stack.  Fixed.
+ - One copy of Gc_cpp.h in the distribution was out of 
+   synch, and failed to document some known compiler
+   problems with explicit destructor invocation.  Partially
+   fixed.  There are probably other compilers on which
+   gc_cleanup is miscompiled.
+ - Fixed Makefile to pass C compiler flags to C++ compiler.
+ - Added Mac fixes.
+ - Fixed os_dep.c to work around what appears to be
+   a new and different VirtualQuery bug under newer
+   versions of win32S.
+ - GC_non_gc_bytes was not correctly maintained by
+   GC_free.  Fixed.  Thanks to James Clark (jjc@jclark.com).
+ - Added GC_set_max_heap_size.
+ - Changed allocation code to ignore blacklisting if it is preventing
+   use of a very large block of memory.  This has the advantage
+   that naive code allocating very large objects is much more
+   likely to work.  The downside is you might no
+   longer find out that such code should really use
+   GC_malloc_ignore_off_page.
+ - Changed GC_printf under win32 to close and reopen the file
+   between calls.  FAT file systems otherwise make the log file
+   useless for debugging.
+ - Added GC_try_to_collect and GC_get_bytes_since_gc.  These
+   allow starting an abortable collection during idle times. 
+   This facility does not require special OS support.  (Thanks to
+   Michael Spertus of Geodesic Systems for suggesting this.  It was
+   actually an easy addition.  Kumar Srikantan previously added a similar
+   facility to a now ancient version of the collector.  At the time
+   this was much harder, and the result was less convincing.)
+ - Added some support for the Borland development environment.  (Thanks
+   to John Ellis and Michael Spertus.)
+ - Removed a misfeature from checksums.c that caused unexpected 
+   heap growth.  (Thanks to Scott Schwartz.)
+ - Changed finalize.c to call WARN if it encounters a finalization cycle.
+   WARN is defined in gc_priv.h to write a message, usually to stdout.
+   In many environments, this may be inappropriate.
+ - Renamed NO_PARAMS in gc.h to GC_NO_PARAMS, thus adhering to my own
+   naming convention.
+ - Added GC_set_warn_proc to intercept warnings.
+ - Fixed Amiga port. (Thanks to Michel Schinz (schinz@alphanet.ch).)
+ - Fixed a bug in mark.c that could result in an access to unmapped
+   memory from GC_mark_from_mark_stack on machines with unaligned
+   pointers.
+ - Fixed a win32 specific performance bug that could result in scanning of
+   objects allocated with the system malloc.
+ - Added REDIRECT_MALLOC.

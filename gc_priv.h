@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, November 8, 1994 5:49 pm PST */
+/* Boehm, January 30, 1995 4:01 pm PST */
  
 
 # ifndef GC_PRIVATE_H
@@ -168,7 +168,7 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #   define THREADS
 # endif
 
-#if defined(SPARC) || defined(HP_PA)
+#if defined(SPARC)
 #   define ALIGN_DOUBLE  /* Align objects of size > 1 word on 2 word   */
 			 /* boundaries.  Wasteful of memory, but       */
 			 /* apparently required by SPARC architecture. */
@@ -206,6 +206,18 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 
 # define TIME_LIMIT 50	   /* We try to keep pause times from exceeding	 */
 			   /* this by much. In milliseconds.		 */
+
+# define BL_LIMIT (25*HBLKSIZE)
+			   /* If we need a block of N bytes, and we have */
+			   /* a block of N + BL_LIMIT bytes available, 	 */
+			   /* and N > BL_LIMIT,				 */
+			   /* but all possible positions in it are 	 */
+			   /* blacklisted, we just use it anyway (and	 */
+			   /* print a warning, if warnings are enabled). */
+			   /* This risks subsequently leaking the block	 */
+			   /* due to a false reference.  But not using	 */
+			   /* the block risks unreasonable immediate	 */
+			   /* heap growth.				 */
 
 /*********************************/
 /*                               */
@@ -486,7 +498,8 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 # endif
 
 /* Print warning message, e.g. almost out of memory.	*/
-# define WARN(s) GC_printf0(s)
+# define WARN(msg,arg) (*GC_current_warn_proc)(msg, (GC_word)(arg))
+extern GC_warn_proc GC_current_warn_proc;
 
 /*********************************/
 /*                               */
@@ -707,6 +720,7 @@ struct hblk {
 
 struct _GC_arrays {
   word _heapsize;
+  word _max_heapsize;
   ptr_t _last_heap_addr;
   ptr_t _prev_heap_addr;
   word _words_allocd_before_gc;
@@ -849,6 +863,7 @@ extern GC_FAR struct _GC_arrays GC_arrays;
 # define GC_non_gc_bytes_at_gc GC_arrays._non_gc_bytes_at_gc
 # define GC_mem_freed GC_arrays._mem_freed
 # define GC_heapsize GC_arrays._heapsize
+# define GC_max_heapsize GC_arrays._max_heapsize
 # define GC_words_allocd_before_gc GC_arrays._words_allocd_before_gc
 # define GC_heap_sects GC_arrays._heap_sects
 # define GC_last_stack GC_arrays._last_stack
@@ -977,6 +992,11 @@ void GC_apply_to_all_blocks(/*fn, client_data*/);
 struct hblk * GC_next_block(/* struct hblk * h */);
 void GC_mark_init();
 void GC_clear_marks();	/* Clear mark bits for all heap objects. */
+void GC_invalidate_mark_state();	/* Tell the marker that	marked 	   */
+					/* objects may point to	unmarked   */
+					/* ones, and roots may point to	   */
+					/* unmarked objects.		   */
+					/* Reset mark stack.		   */
 void GC_mark_from_mark_stack(); /* Mark from everything on the mark stack. */
 				/* Return after about one pages worth of   */
 				/* work.				   */
@@ -1063,6 +1083,10 @@ struct hblk * GC_is_black_listed(/* h, len */);
 			/* these false references.			*/
 void GC_promote_black_lists();
 			/* Declare an end to a black listing phase.	*/
+void GC_unpromote_black_lists();
+			/* Approximately undo the effect of the above.	*/
+			/* This actually loses some information, but	*/
+			/* only in a reasonably safe way.		*/
 		 	
 ptr_t GC_scratch_alloc(/*bytes*/);
 				/* GC internal memory allocation for	*/
@@ -1115,18 +1139,26 @@ void GC_reclaim_or_delete_all();
 				/* Arrange for all reclaim lists to be	*/
 				/* empty.  Judiciously choose between	*/
 				/* sweeping and discarding each page.	*/
+bool GC_reclaim_all(/* GC_stop_func f*/);
+				/* Reclaim all blocks.  Abort (in a	*/
+				/* consistent state) if f returns TRUE. */
 bool GC_block_empty(/* hhdr */); /* Block completely unmarked? 	*/
-void GC_gcollect_inner();
+bool GC_never_stop_func();	/* Returns FALSE.		*/
+bool GC_try_to_collect_inner(/* GC_stop_func f */);
 				/* Collect; caller must have acquired	*/
 				/* lock and disabled signals.		*/
-				/* FALSE return indicates nothing was	*/
-				/* done due to insufficient allocation. */
+				/* Collection is aborted if f returns	*/
+				/* TRUE.  Returns TRUE if it completes	*/
+				/* successfully.			*/
+# define GC_gcollect_inner() \
+	(void) GC_try_to_collect_inner(GC_never_stop_func)
 void GC_finish_collection();	/* Finish collection.  Mark bits are	*/
 				/* consistent and lock is still held.	*/
 bool GC_collect_or_expand(/* needed_blocks */);
 				/* Collect or expand heap in an attempt */
 				/* make the indicated number of free	*/
 				/* blocks available.  Should be called	*/
+				/* until the blocks are available or	*/
 				/* until it fails by returning FALSE.	*/
 void GC_init();			/* Initialize collector.		*/
 void GC_collect_a_little_inner(/* int n */);

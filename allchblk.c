@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 1:55 pm PDT */
+/* Boehm, January 31, 1995 3:01 pm PST */
 
 #define DEBUG
 #undef DEBUG
@@ -110,7 +110,7 @@ struct hblk *
 GC_allochblk(sz, kind, flags)
 word sz;
 int kind;
-unsigned char flags;
+unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 {
     register struct hblk *thishbp;
     register hdr * thishdr;		/* Header corr. to thishbp */
@@ -164,6 +164,7 @@ unsigned char flags;
 	         (kind != PTRFREE || size_needed > MAX_BLACK_LIST_ALLOC)) {
 	      struct hblk * lasthbp = hbp;
 	      ptr_t search_end = (ptr_t)hbp + size_avail - size_needed;
+	      word orig_avail = size_avail;
 	      signed_word eff_size_needed = ((flags & IGNORE_OFF_PAGE)?
 	      					HBLKSIZE
 	      					: size_needed);
@@ -176,8 +177,8 @@ unsigned char flags;
 	      }
 	      size_avail -= (ptr_t)lasthbp - (ptr_t)hbp;
 	      thishbp = lasthbp;
-	      if (size_avail >= size_needed && thishbp != hbp
-	          && GC_install_header(thishbp)) {
+	      if (size_avail >= size_needed) {
+	        if (thishbp != hbp && GC_install_header(thishbp)) {
 	          /* Split the block at thishbp */
 	              thishdr = HDR(thishbp);
 	              /* GC_invalidate_map not needed, since we will	*/
@@ -191,6 +192,13 @@ unsigned char flags;
 		      phdr = hhdr;
 		      hbp = thishbp;
 		      hhdr = thishdr;
+		}
+	      } else if (size_needed > BL_LIMIT
+	                 && orig_avail - size_needed > BL_LIMIT) {
+	        /* Punt, since anything else risks unreasonable heap growth. */
+	        WARN("Need to allocated blacklisted block at %ld\n", (word)hbp);
+	        thishbp = hbp;
+	        size_avail = orig_avail;
 	      } else if (size_avail == 0
 	      		 && size_needed == HBLKSIZE
 	      		 && prevhbp != 0) {

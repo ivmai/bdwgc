@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, November 8, 1994 5:53 pm PST */
+/* Boehm, February 10, 1995 12:37 pm PST */
 
 
 #include <stdio.h>
@@ -361,6 +361,11 @@ size_t GC_get_heap_size(NO_PARAMS)
     return ((size_t) GC_heapsize);
 }
 
+size_t GC_get_bytes_since_gc(NO_PARAMS)
+{
+    return ((size_t) WORDS_TO_BYTES(GC_words_allocd));
+}
+
 bool GC_is_initialized = FALSE;
 
 void GC_init()
@@ -532,29 +537,35 @@ out:
 # endif
 }
 
-#if defined(OS2) || defined(MSWIN32) || defined(MACOS)
-    FILE * GC_stdout = NULL;
-    FILE * GC_stderr = NULL;
-#else
-#   if !defined(AMIGA)
-#       include <unistd.h>
-#   endif
-#endif
-
 
 #ifdef MSWIN32
+# define LOG_FILE "gc.log"
+# include <windows.h>
+
+  HANDLE GC_stdout = 0, GC_stderr;
+  int GC_tmp;
+  DWORD GC_junk;
+
   void GC_set_files()
   {
-    if (GC_stdout == NULL) {
-	GC_stdout = fopen("gc.log", "wt");
+    if (!GC_stdout) {
+        GC_stdout = CreateFile(LOG_FILE, GENERIC_WRITE, FILE_SHARE_READ,
+        		       NULL, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH,
+        		       NULL); 
+    	if (INVALID_HANDLE_VALUE == GC_stdout) ABORT("Open of log file failed");
     }
-    if (GC_stderr == NULL) {
+    if (GC_stderr == 0) {
 	GC_stderr = GC_stdout;
     }
   }
+
 #endif
 
 #if defined(OS2) || defined(MACOS)
+FILE * GC_stdout = NULL;
+FILE * GC_stderr = NULL;
+int GC_tmp;  /* Should really be local ... */
+
   void GC_set_files()
   {
       if (GC_stdout == NULL) {
@@ -566,10 +577,31 @@ out:
   }
 #endif
 
+#if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32)
+  int GC_stdout = 1;
+  int GC_stderr = 2;
+# if !defined(AMIGA)
+#   include <unistd.h>
+# endif
+#endif
+
 #ifdef SOLARIS_THREADS
 #   define WRITE(f, buf, len) syscall(SYS_write, (f), (buf), (len))
 #else
-#   define WRITE(f, buf, len) write((f), (buf), (len))
+# ifdef MSWIN32
+#   define WRITE(f, buf, len) (GC_set_files(), \
+			       GC_tmp = WriteFile((f), (buf), \
+			       			  (len), &GC_junk, NULL),\
+			       (GC_tmp? 1 : -1))
+# else
+#   if defined(OS2) || defined(MACOS)
+#   define WRITE(f, buf, len) (GC_set_files(), \
+			       GC_tmp = fwrite((buf), 1, (len), (f)), \
+			       fflush(f), GC_tmp)
+#   else
+#     define WRITE(f, buf, len) write((f), (buf), (len))
+#   endif
+# endif
 #endif
 
 /* A version of printf that is unlikely to call malloc, and is thus safer */
@@ -588,15 +620,7 @@ long a, b, c, d, e, f;
     buf[1024] = 0x15;
     (void) sprintf(buf, format, a, b, c, d, e, f);
     if (buf[1024] != 0x15) ABORT("GC_printf clobbered stack");
-#   if defined(OS2) || defined(MSWIN32) || defined(MACOS)
-      GC_set_files();
-      /* We hope this doesn't allocate */
-      if (fwrite(buf, 1, strlen(buf), GC_stdout) != strlen(buf))
-          ABORT("write to stdout failed");
-      fflush(GC_stdout);
-#   else
-      if (WRITE(1, buf, strlen(buf)) < 0) ABORT("write to stdout failed");
-#   endif
+    if (WRITE(GC_stdout, buf, strlen(buf)) < 0) ABORT("write to stdout failed");
 }
 
 void GC_err_printf(format, a, b, c, d, e, f)
@@ -608,30 +632,44 @@ long a, b, c, d, e, f;
     buf[1024] = 0x15;
     (void) sprintf(buf, format, a, b, c, d, e, f);
     if (buf[1024] != 0x15) ABORT("GC_err_printf clobbered stack");
-#   if defined(OS2) || defined(MSWIN32) || defined(MACOS)
-      GC_set_files();
-      /* We hope this doesn't allocate */
-      if (fwrite(buf, 1, strlen(buf), GC_stderr) != strlen(buf))
-          ABORT("write to stderr failed");
-      fflush(GC_stderr);
-#   else
-      if (WRITE(2, buf, strlen(buf)) < 0) ABORT("write to stderr failed");
-#   endif
+    if (WRITE(GC_stderr, buf, strlen(buf)) < 0) ABORT("write to stderr failed");
 }
 
 void GC_err_puts(s)
 char *s;
 {
-#   if defined(OS2) || defined(MSWIN32) || defined(MACOS)
-      GC_set_files();
-      /* We hope this doesn't allocate */
-      if (fwrite(s, 1, strlen(s), GC_stderr) != strlen(s))
-          ABORT("write to stderr failed");
-      fflush(GC_stderr);
-#   else
-      if (WRITE(2, s, strlen(s)) < 0) ABORT("write to stderr failed");
-#   endif
+    if (WRITE(GC_stderr, s, strlen(s)) < 0) ABORT("write to stderr failed");
 }
+
+# if defined(__STDC__) || defined(__cplusplus)
+    void GC_default_warn_proc(char *msg, GC_word arg)
+# else
+    void GC_default_warn_proc(msg, arg)
+    char *msg;
+    GC_word arg;
+# endif
+{
+    GC_err_printf1(msg, (unsigned long)arg);
+}
+
+GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
+
+# if defined(__STDC__) || defined(__cplusplus)
+    GC_warn_proc GC_set_warn_proc(GC_warn_proc p)
+# else
+    GC_warn_proc GC_set_warn_proc(p)
+    GC_warn_proc p;
+# endif
+{
+    GC_warn_proc result;
+
+    LOCK();
+    result = GC_current_warn_proc;
+    GC_current_warn_proc = p;
+    UNLOCK();
+    return(result);
+}
+
 
 #ifndef PCR
 void GC_abort(msg)

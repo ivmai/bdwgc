@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, November 8, 1994 5:50 pm PST */
+/* Boehm, January 27, 1995 12:58 pm PST */
 /* An incomplete test for the garbage collector.  		*/
 /* Some more obscure entry points are not tested at all.	*/
 
@@ -648,6 +648,11 @@ void run_one_test()
 #   endif
     DCL_LOCK_STATE;
     
+#   ifdef FIND_LEAK
+	(void)GC_printf0(
+		"This test program is not designed for leak detection mode\n");
+	(void)GC_printf0("Expect lots of problems.\n");
+#   endif
     if (GC_size(GC_malloc(7)) != 8
 	|| GC_size(GC_malloc(15)) != 16) {
 	    (void)GC_printf0("GC_size produced unexpected results\n");
@@ -785,6 +790,19 @@ void SetMinimumStack(long minSize)
 
 #endif
 
+#ifdef __STDC__
+    void warn_proc(char *msg, GC_word p)
+#else
+    void warn_proc(msg, p)
+    char *msg;
+    GC_word p;
+#endif
+{
+    GC_printf1(msg, (unsigned long)p);
+    FAIL;
+}
+
+
 #if !defined(PCR) && !defined(SOLARIS_THREADS) || defined(LINT)
 #ifdef MSWIN32
   int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
@@ -801,6 +819,7 @@ void SetMinimumStack(long minSize)
 	printf("Testing GC Macintosh port.\n");
 #   endif
     GC_INIT();	/* Only needed if gc is dynamic library.	*/
+    (void) GC_set_warn_proc(warn_proc);
 #   if defined(MPROTECT_VDB) || defined(PROC_VDB)
       GC_enable_incremental();
       (void) GC_printf0("Switched to incremental mode\n");
@@ -826,7 +845,8 @@ void SetMinimumStack(long minSize)
 	        GC_debug_free, GC_debug_realloc, GC_generic_malloc_words_small,
 	        GC_init, GC_make_closure, GC_debug_invoke_finalizer,
 	        GC_page_was_ever_dirty, GC_is_fresh,
-		GC_malloc_ignore_off_page, GC_malloc_atomic_ignore_off_page);
+		GC_malloc_ignore_off_page, GC_malloc_atomic_ignore_off_page,
+		GC_set_max_heap_size, GC_get_bytes_since_gc);
 #   endif
     return(0);
 }
@@ -841,6 +861,7 @@ test()
 
     n_tests = 0;
     GC_enable_incremental();
+    (void) GC_set_warn_proc(warn_proc);
     th1 = PCR_Th_Fork(run_one_test, 0);
     th2 = PCR_Th_Fork(run_one_test, 0);
     run_one_test();
@@ -878,6 +899,7 @@ main()
     n_tests = 0;
     GC_INIT();	/* Only needed if gc is dynamic library.	*/
     GC_enable_incremental();
+    (void) GC_set_warn_proc(warn_proc);
     if (thr_keycreate(&fl_key, GC_free) != 0) {
         (void)GC_printf1("Key creation failed %lu\n", (unsigned long)code);
     	FAIL;

@@ -79,6 +79,12 @@ word *doomed;
     BZERO(doomed, sizeof(page_hash_table));
 }
 
+void GC_copy_bl(old, new)
+word *new, *old;
+{
+    BCOPY(old, new, sizeof(page_hash_table));
+}
+
 /* Signal the completion of a collection.  Turn the incomplete black	*/
 /* lists into new black lists, etc.					*/			 
 void GC_promote_black_lists()
@@ -94,6 +100,14 @@ void GC_promote_black_lists()
     GC_clear_bl(very_old_stack_bl);
     GC_incomplete_normal_bl = very_old_normal_bl;
     GC_incomplete_stack_bl = very_old_stack_bl;
+}
+
+void GC_unpromote_black_lists()
+{
+#   ifndef ALL_INTERIOR_POINTERS
+      GC_copy_bl(GC_old_normal_bl, GC_incomplete_normal_bl);
+#   endif
+    GC_copy_bl(GC_old_stack_bl, GC_incomplete_stack_bl);
 }
 
 # ifndef ALL_INTERIOR_POINTERS

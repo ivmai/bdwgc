@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, September 19, 1994 4:18 pm PDT */
+/* Boehm, February 10, 1995 12:55 pm PST */
  
 #include <stdio.h>
 #include "gc_priv.h"
@@ -375,6 +375,31 @@ DCL_LOCK_STATE;
    }
 }
 
+# ifdef REDIRECT_MALLOC
+# ifdef __STDC__
+    extern_ptr_t malloc(size_t lb)
+# else
+    extern_ptr_t malloc(lb)
+    size_t lb;
+# endif
+  {
+    /* It might help to manually inline the GC_malloc call here.	*/
+    /* But any decent compiler should reduce the extra procedure call	*/
+    /* to at most a jump instruction in this case.			*/
+    return(REDIRECT_MALLOC(lb));
+  }
+
+# ifdef __STDC__
+    extern_ptr_t calloc(size_t n, size_t lb)
+# else
+    extern_ptr_t calloc(n, lb)
+    size_t n, lb;
+# endif
+  {
+    return(REDIRECT_MALLOC(n*lb));
+  }
+# endif /* REDIRECT_MALLOC */
+
 /* Allocate lb bytes of pointerful, traced, but not collectable data */
 # ifdef __STDC__
     extern_ptr_t GC_malloc_uncollectable(size_t lb)
@@ -527,6 +552,19 @@ int obj_kind;
     }
 }
 
+# ifdef REDIRECT_MALLOC
+# ifdef __STDC__
+    extern_ptr_t realloc(extern_ptr_t p, size_t lb)
+# else
+    extern_ptr_t realloc(p,lb)
+    extern_ptr_t p;
+    size_t lb;
+# endif
+  {
+    return(GC_realloc(p, lb));
+  }
+# endif /* REDIRECT_MALLOC */
+
 /* Explicitly deallocate an object p.				*/
 # ifdef __STDC__
     void GC_free(extern_ptr_t p)
@@ -558,7 +596,7 @@ int obj_kind;
 	GC_mem_freed += sz;
 	/* A signal here can make GC_mem_freed and GC_non_gc_bytes	*/
 	/* inconsistent.  We claim this is benign.			*/
-	if (knd == UNCOLLECTABLE) GC_non_gc_bytes -= sz;
+	if (knd == UNCOLLECTABLE) GC_non_gc_bytes -= WORDS_TO_BYTES(sz);
 	if (ok -> ok_init) {
 	    BZERO((word *)p + 1, WORDS_TO_BYTES(sz-1));
 	}
@@ -573,10 +611,21 @@ int obj_kind;
     	DISABLE_SIGNALS();
         LOCK();
         GC_mem_freed += sz;
-	if (knd == UNCOLLECTABLE) GC_non_gc_bytes -= sz;
+	if (knd == UNCOLLECTABLE) GC_non_gc_bytes -= WORDS_TO_BYTES(sz);
         GC_freehblk(h);
         UNLOCK();
         ENABLE_SIGNALS();
     }
 }
 
+# ifdef REDIRECT_MALLOC
+#   ifdef __STDC__
+      void free(extern_ptr_t p)
+#   else
+      void free(p)
+      extern_ptr_t p;
+#   endif
+  {
+      GC_free(p);
+  }
+# endif  /* REDIRECT_MALLOC */

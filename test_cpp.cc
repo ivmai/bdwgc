@@ -10,8 +10,10 @@ Permission to modify the code and to distribute modified code is
 granted, provided the above notices are retained, and a notice that
 the code was modified is included with the above copyright notice.
 ****************************************************************************
+Last modified on Wed Jan  4 16:35:11 PST 1995 by ellis
+     modified on December 20, 1994 7:27 pm PST by boehm
 
-usage: test_gc_c++ number-of-iterations
+usage: test_cpp number-of-iterations
 
 This program tries to test the specific C++ functionality provided by
 gc_c++.h that isn't tested by the more general test routines of the
@@ -21,7 +23,6 @@ A recommended value for number-of-iterations is 10, which will take a
 few minutes to complete.
 
 ***************************************************************************/
-/* Boehm, December 20, 1994 7:27 pm PST */
 
 #include "gc_cpp.h"
 #include <assert.h>
@@ -113,7 +114,7 @@ int main( int argc, char* argv[] ) {
     int i, iters, n;
 
     if (argc != 2 || (0 >= (n = atoi( argv[ 1 ] )))) {
-        fprintf( stderr, "usage: test_gc_c++ number-of-iterations\n" );
+        fprintf( stderr, "usage: test_cpp number-of-iterations\n" );
         exit( 1 );}
         
     for (iters = 1; iters <= n; iters++) {
@@ -132,6 +133,7 @@ int main( int argc, char* argv[] ) {
             check to make sure they've gone away. */
         for (i = 0; i < 1000; i++) {
             C* c = new C( 2 );
+            C c1( 2 );           /* stack allocation should work too */
             D* d = ::new (GC, D::CleanUp, (void*) i) D( i );
             if (0 == i % 10) delete c;}
 

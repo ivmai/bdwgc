@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, November 8, 1994 5:35 pm PST */
+/* Boehm, January 28, 1995 4:26 pm PST */
 # define I_HIDE_POINTERS
 # include "gc_priv.h"
 # include "gc_mark.h"
@@ -123,9 +123,12 @@ signed_word * log_size_ptr;
     *table = new_table;
 }
 
-
-int GC_register_disappearing_link(link)
-extern_ptr_t * link;
+# if defined(__STDC__) || defined(__cplusplus)
+    int GC_register_disappearing_link(extern_ptr_t * link)
+# else
+    int GC_register_disappearing_link(link)
+    extern_ptr_t * link;
+# endif
 {
     ptr_t base;
     
@@ -135,9 +138,15 @@ extern_ptr_t * link;
     return(GC_general_register_disappearing_link(link, base));
 }
 
-int GC_general_register_disappearing_link(link, obj)
-extern_ptr_t * link;
-extern_ptr_t obj;
+# if defined(__STDC__) || defined(__cplusplus)
+    int GC_general_register_disappearing_link(extern_ptr_t * link,
+    					      extern_ptr_t obj)
+# else
+    int GC_general_register_disappearing_link(link, obj)
+    extern_ptr_t * link;
+    extern_ptr_t obj;
+# endif
+
 {
     struct disappearing_link *curr_dl;
     int index;
@@ -199,8 +208,12 @@ extern_ptr_t obj;
     return(0);
 }
 
-int GC_unregister_disappearing_link(link)
-extern_ptr_t * link;
+# if defined(__STDC__) || defined(__cplusplus)
+    int GC_unregister_disappearing_link(extern_ptr_t * link)
+# else
+    int GC_unregister_disappearing_link(link)
+    extern_ptr_t * link;
+# endif
 {
     struct disappearing_link *curr_dl, *prev_dl;
     int index;
@@ -503,11 +516,9 @@ void GC_finalize()
 		    GC_set_mark_bit(real_ptr);
 		    while (!GC_mark_some());
             }
-            /* 
             if (GC_is_marked(real_ptr)) {
-                --> Report finalization cycle here, if desired
+                WARN("Finalization cycle involving %ld\n", real_ptr);
             }
-            */
         }
         
       }
