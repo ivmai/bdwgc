@@ -714,13 +714,29 @@
       /* There are reasons to suspect this may not be reliable. 	*/
 #     define ALIGNMENT 4
 #     define OS_TYPE "MACOSX"
+#     ifdef GC_MACOSX_THREADS
+#	define SIG_SUSPEND SIGXCPU
+#	define SIG_THR_RESTART SIGXFSZ
+#     endif
+#     define DYNAMIC_LOADING
+      /* XXX: see get_end(3), get_etext() and get_end() should not be used */
 #     define DATASTART ((ptr_t) get_etext())
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
-#     define DATAEND	/* not needed */
+#     define DATAEND	((ptr_t) get_end())
+#     define USE_MMAP
+#     define USE_MMAP_ANON
 /* #     define MPROTECT_VDB  -- There is some evidence that this breaks 
- *       on some minor versions of MACOSX.  In theory, it should be OK */
+ *       on some minor versions of MACOSX, i.e. 10.2.3.  In theory,
+ *       it should be OK */
 #     include <unistd.h>
 #     define GETPAGESIZE() getpagesize()
+#     if defined(USE_PPC_PREFETCH) && defined(__GNUC__)
+	/* The performance impact of prefetches is untested */
+#	define PREFETCH(x) \
+	  __asm__ __volatile__ ("dcbt 0,%0" : : "r" ((const void *) (x)))
+#	define PREFETCH_FOR_WRITE(x) \
+	  __asm__ __volatile__ ("dcbtst 0,%0" : : "r" ((const void *) (x)))
+#     endif
 #   endif
 #   ifdef NETBSD
 #     define ALIGNMENT 4
@@ -1203,7 +1219,7 @@
 #     define DATASTART ((ptr_t)(__data_start))
 #     define ALIGNMENT 4
 #     define USE_GENERIC_PUSH_REGS
-#     if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 4 || __GLIBC__ > 2
+#     if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 2 || __GLIBC__ > 2
 #        define LINUX_STACKBOTTOM
 #     else
 #        define STACKBOTTOM 0x80000000
@@ -2015,7 +2031,7 @@
 					    + GC_page_size) \
 					    + GC_page_size-1)
 #   else
-#     if defined(NEXT) || defined(MACOSX) || defined(DOS4GW) || \
+#     if defined(NEXT) || defined(DOS4GW) || \
 		 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) || \
 		 (defined(SUNOS5) && !defined(USE_MMAP))
 #       define GET_MEM(bytes) HBLKPTR((size_t) \

@@ -1693,7 +1693,7 @@ Since 6.1:
    from the garbage collected heap, as it is with our own thread-specific
    storage implementation.  (Thanks to Jeff Sturm.)
  - Mark all free list header blocks if they are heap allocated.  This avoids
-   some unnecessary tracing.  And it remains correct if we turn clear the
+   some unnecessary tracing.  And it remains correct if we clear the
    root set. (Thanks to Jeff Sturm for identifying the bug.)
  - Improved S390/Linux support.  Add S390/Linux 64-bit support.  (Thanks
    to Ulrich Weigand.)
@@ -1754,7 +1754,34 @@ Since 6.2alpha1:
 Since 6.2alpha2:
  - Don't include execinfo.h in os_dep.c when it's not needed, and may not exist.
 
+Since 6.2alpha3:
+ - Use LINUX_STACKBOTTOM for >= glibc2.2 on Linux/MIPS.  (See Debian bug
+   # 177204)
+ - Integrated Jeff Sturm and Jesse Rosenstock's MACOSX threads patches.
+ - Integrated Grzegorz Jakacki's substantial GNU build patch.  "Make dist"
+   should now work for the GNU build process.  Documentation files
+   are installed under share/gc.
+ - Tweaked gc_cpp.h to again support the Borland compiler.  (Thanks to
+   Rene Girard for pointing out the problems.)
+ - Updated BCC_MAKEFILE (thanks to Rene Girard).
+ - Added GC_ASSERT check for minimum thread stack size.
+ - Added --enable-gc-assertions.
+ - Added some web documentation to the distribution.  Updated it in the
+   process.
+ - Separate gc_conf_macros.h from gc.h.
+ - Added generic GC_THREADS client-defined macro to set the appropriate
+   GC_XXX_THREADS internal macro.  (gc_config_macros.h.)
+ - Add debugging versions of _ignore_off_page allocation primitves.
+ - Moved declarations of GC_make_closure and GC_debug_invoke_finalizer
+   from gc.h to gc_priv.h.
+ - Reset GC_fail_count even if only a small allocation succeeds.
+ - Integrated Brian Alliet's patch for dynamic library support on Darwin.
+ - gc_cpp.h's gc_cleanup destructor called GC_REGISTER_FINALIZER_IGNORE_SELF
+   when it should have called the lower case version, since it was
+   explicitly computing a base pointer.
+
 To do:
+ - MacOSX thread support still appears to be a bit unreliable.
  - A dynamic libgc.so references dlopen unconditionally, but doesn't link
    against libdl.
  - GC_proc_fd for Solaris is not correctly updated in response to a

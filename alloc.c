@@ -1051,6 +1051,8 @@ int kind;
 	EXIT_GC();
       }
     }
+    /* Successful allocation; reset failure count.	*/
+    GC_fail_count = 0;
     
     return(*flh);
 }

@@ -107,6 +107,10 @@
 # include <sys/stat.h>
 # include <fcntl.h>
 
+#if defined(GC_MACOSX_THREADS)
+# include <sys/sysctl.h>
+#endif /* GC_MACOSX_THREADS */
+
 #if defined(GC_DGUX386_THREADS)
 # include <sys/dg_sys_info.h>
 # include <sys/_int_psem.h>
@@ -511,7 +515,15 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
 #  endif
 #endif
 
-sem_t GC_suspend_ack_sem;
+#ifdef GC_MACOSX_THREADS
+#  include <mach/task.h>
+#  include <mach/mach_init.h>
+#  include <mach/semaphore.h>
+
+   semaphore_t GC_suspend_ack_sem;
+#else
+   sem_t GC_suspend_ack_sem;
+#endif
 
 #if 0
 /*
@@ -675,7 +687,11 @@ void GC_suspend_handler(int sig)
     /* Tell the thread that wants to stop the world that this   */
     /* thread has been stopped.  Note that sem_post() is  	*/
     /* the only async-signal-safe primitive in LinuxThreads.    */
-    sem_post(&GC_suspend_ack_sem);
+#   ifdef GC_MACOSX_THREADS
+      semaphore_signal(GC_suspend_ack_sem);
+#   else
+      sem_post(&GC_suspend_ack_sem);
+#   endif
     me -> last_stop_count = my_stop_count;
 
     /* Wait until that thread tells us to restart by sending    */
@@ -965,38 +981,47 @@ void GC_stop_world()
 #   endif /* PARALLEL_MARK */
     ++GC_stop_count;
     n_live_threads = GC_suspend_all();
-    if (GC_retry_signals) {
-	unsigned long wait_usecs = 0;  /* Total wait since retry.	*/
-#	define WAIT_UNIT 3000
-#	define RETRY_INTERVAL 100000
-	for (;;) {
-	    int ack_count;
+    /* sem_getvalue() is not suppored on OS X, and there does not appear */
+    /* to be a mach equivalent, so we disable this code.		 */
+#   ifndef GC_MACOSX_THREADS
+      if (GC_retry_signals) {
+	  unsigned long wait_usecs = 0;  /* Total wait since retry.	*/
+#	  define WAIT_UNIT 3000
+#	  define RETRY_INTERVAL 100000
+	  for (;;) {
+	      int ack_count;
 
-	    sem_getvalue(&GC_suspend_ack_sem, &ack_count);
-	    if (ack_count == n_live_threads) break;
-	    if (wait_usecs > RETRY_INTERVAL) {
-		int newly_sent = GC_suspend_all();
+	      sem_getvalue(&GC_suspend_ack_sem, &ack_count);
+	      if (ack_count == n_live_threads) break;
+	      if (wait_usecs > RETRY_INTERVAL) {
+		  int newly_sent = GC_suspend_all();
 
-#               ifdef CONDPRINT
-                  if (GC_print_stats) {
-		    GC_printf1("Resent %ld signals after timeout\n",
-		               newly_sent);
-	          }
-#               endif
-	        sem_getvalue(&GC_suspend_ack_sem, &ack_count);
-		if (newly_sent < n_live_threads - ack_count) {
-		    WARN("Lost some threads during GC_stop_world?!\n",0);
-		    n_live_threads = ack_count + newly_sent;
-		}
-		wait_usecs = 0;
-	    }
-	    usleep(WAIT_UNIT);
-	    wait_usecs += WAIT_UNIT;
-	}
-    }
+#                 ifdef CONDPRINT
+		    if (GC_print_stats) {
+		      GC_printf1("Resent %ld signals after timeout\n",
+				 newly_sent);
+		    }
+#                 endif
+		  sem_getvalue(&GC_suspend_ack_sem, &ack_count);
+		  if (newly_sent < n_live_threads - ack_count) {
+		      WARN("Lost some threads during GC_stop_world?!\n",0);
+		      n_live_threads = ack_count + newly_sent;
+		  }
+		  wait_usecs = 0;
+	      }
+	      usleep(WAIT_UNIT);
+	      wait_usecs += WAIT_UNIT;
+	  }
+      }
+#   endif /* GC_MACOSX_THREADS */
     for (i = 0; i < n_live_threads; i++) {
-    	if (0 != sem_wait(&GC_suspend_ack_sem))
-	    ABORT("sem_wait in handler failed");
+#	ifdef GC_MACOSX_THREADS
+	  if (KERN_SUCCESS != semaphore_wait(GC_suspend_ack_sem))
+	      ABORT("semaphore_wait in handler failed");
+#	else
+	  if (0 != sem_wait(&GC_suspend_ack_sem))
+	      ABORT("sem_wait in handler failed");
+#	endif
     }
 #   ifdef PARALLEL_MARK
       GC_release_mark_lock();
@@ -1295,8 +1320,14 @@ void GC_thr_init()
     if (GC_thr_initialized) return;
     GC_thr_initialized = TRUE;
 
-    if (sem_init(&GC_suspend_ack_sem, 0, 0) != 0)
-    	ABORT("sem_init failed");
+#   ifdef GC_MACOSX_THREADS
+      if (semaphore_create(mach_task_self(), &GC_suspend_ack_sem,
+			   SYNC_POLICY_FIFO, 0) != KERN_SUCCESS)
+	  ABORT("semaphore_create failed");
+#   else
+      if (sem_init(&GC_suspend_ack_sem, 0, 0) != 0)
+	  ABORT("sem_init failed");
+#   endif
 
     act.sa_flags = SA_RESTART;
     if (sigfillset(&act.sa_mask) != 0) {
@@ -1360,6 +1391,12 @@ void GC_thr_init()
 #	endif
 #       if defined(GC_FREEBSD_THREADS)
           GC_nprocs = 1;
+#       endif
+#       if defined(GC_MACOSX_THREADS)
+	  int ncpus = 1;
+	  size_t len = sizeof(ncpus);
+	  sysctl((int[2]) {CTL_HW, HW_NCPU}, 2, &ncpus, &len, NULL, 0);
+	  GC_nprocs = ncpus;
 #       endif
 #	if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
           GC_nprocs = GC_get_nprocs();
@@ -1500,8 +1537,12 @@ struct start_info {
     void *(*start_routine)(void *);
     void *arg;
     word flags;
+#ifdef GC_MACOSX_THREADS
+    semaphore_t registered;
+#else
     sem_t registered;   	/* 1 ==> in our thread table, but 	*/
 				/* parent hasn't yet noticed.		*/
+#endif
 };
 
 /* Called at thread exit.				*/
@@ -1630,7 +1671,11 @@ void * GC_start_routine(void * arg)
 	GC_printf1("start_routine = 0x%lx\n", start);
 #   endif
     start_arg = si -> arg;
-    sem_post(&(si -> registered));	/* Last action on si.	*/
+#   ifdef GC_MACOSX_THREADS
+      semaphore_signal(si->registered);
+#   else
+      sem_post(&(si -> registered));	/* Last action on si.	*/
+#   endif
     					/* OK to deallocate.	*/
     pthread_cleanup_push(GC_thread_exit_proc, 0);
 #   if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
@@ -1675,11 +1720,31 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     UNLOCK();
     if (!parallel_initialized) GC_init_parallel();
     if (0 == si) return(ENOMEM);
-    sem_init(&(si -> registered), 0, 0);
+#   ifdef GC_MACOSX_THREADS
+      semaphore_create(mach_task_self(), &si->registered, SYNC_POLICY_FIFO, 0);
+#   else
+      sem_init(&(si -> registered), 0, 0);
+#   endif
     si -> start_routine = start_routine;
     si -> arg = arg;
     LOCK();
     if (!GC_thr_initialized) GC_thr_init();
+#   ifdef GC_ASSERTIONS
+      {
+	int stack_size;
+	if (NULL == attr) {
+	   pthread_attr_t my_attr;
+	   pthread_attr_init(&my_attr);
+	   pthread_attr_getstacksize(&my_attr, &stack_size);
+	} else {
+	   pthread_attr_getstacksize(attr, &stack_size);
+	}
+	GC_ASSERT(stack_size >= (8*HBLKSIZE*sizeof(word)));
+	/* Our threads may need to do some work for the GC.	*/
+	/* Ridiculously small threads won't work, and they	*/
+	/* probably wouldn't work anyway.			*/
+      }
+#   endif
     if (NULL == attr) {
 	detachstate = PTHREAD_CREATE_JOINABLE;
     } else { 
@@ -1701,10 +1766,15 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     /* This also ensures that we hold onto si until the child is done	*/
     /* with it.  Thus it doesn't matter whether it is otherwise		*/
     /* visible to the collector.					*/
-        while (0 != sem_wait(&(si -> registered))) {
-	    if (EINTR != errno) ABORT("sem_wait failed");
-	}
-        sem_destroy(&(si -> registered));
+#	ifdef GC_MACOSX_THREADS
+	    semaphore_wait(si->registered);
+	    semaphore_destroy(mach_task_self(), si->registered);
+#	else
+	    while (0 != sem_wait(&(si -> registered))) {
+		if (EINTR != errno) ABORT("sem_wait failed");
+	    }
+	    sem_destroy(&(si -> registered));
+#	endif
 	LOCK();
 	GC_INTERNAL_FREE(si);
 	UNLOCK();

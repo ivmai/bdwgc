@@ -25,7 +25,8 @@
 
 #include "private/gc_priv.h"
 
-# if defined(GC_PTHREADS) || defined(GC_SOLARIS_THREADS)
+# if (defined(GC_PTHREADS) && !defined(GC_MACOSX_THREADS)) \
+      || defined(GC_SOLARIS_THREADS)
 
 # if defined(dlopen) && !defined(GC_USE_LD_WRAP)
     /* To support various threads pkgs, gc.h interposes on dlopen by     */

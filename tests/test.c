@@ -70,6 +70,7 @@
 
 # ifdef GC_WIN32_THREADS
 #   ifndef MSWINCE
+      /* FIXME - Why is this here? */
 #     include <process.h>
 #     define GC_CreateThread(a,b,c,d,e,f) ((HANDLE) _beginthreadex(a,b,c,d,e,f))
 #   endif
@@ -1748,7 +1749,8 @@ main()
 	}
 #   endif	/* GC_HPUX_THREADS */
     pthread_attr_init(&attr);
-#   if defined(GC_IRIX_THREADS) || defined(GC_FREEBSD_THREADS)
+#   if defined(GC_IRIX_THREADS) || defined(GC_FREEBSD_THREADS) \
+    	|| defined(GC_MACOSX_THREADS)
     	pthread_attr_setstacksize(&attr, 1000000);
 #   endif
     n_tests = 0;

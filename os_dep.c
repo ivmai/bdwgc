@@ -1329,19 +1329,28 @@ word bytes;
 ptr_t GC_unix_get_mem(bytes)
 word bytes;
 {
-    static GC_bool initialized = FALSE;
-    static int fd;
     void *result;
     static ptr_t last_addr = HEAP_START;
 
-    if (!initialized) {
-	fd = open("/dev/zero", O_RDONLY);
-	fcntl(fd, F_SETFD, FD_CLOEXEC);
-	initialized = TRUE;
-    }
+#   ifndef USE_MMAP_ANON
+      static GC_bool initialized = FALSE;
+      static int fd;
+
+      if (!initialized) {
+	  fd = open("/dev/zero", O_RDONLY);
+	  fcntl(fd, F_SETFD, FD_CLOEXEC);
+	  initialized = TRUE;
+      }
+#   endif
+
     if (bytes & (GC_page_size -1)) ABORT("Bad GET_MEM arg");
-    result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
-		  GC_MMAP_FLAGS, fd, 0/* offset */);
+#   ifdef USE_MMAP_ANON
+      result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
+		    GC_MMAP_FLAGS | MAP_ANON, -1, 0/* offset */);
+#   else
+      result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
+		    GC_MMAP_FLAGS, fd, 0/* offset */);
+#   endif
     if (result == MAP_FAILED) return(0);
     last_addr = (ptr_t)result + bytes + GC_page_size - 1;
     last_addr = (ptr_t)((word)last_addr & ~(GC_page_size - 1));

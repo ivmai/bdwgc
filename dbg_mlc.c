@@ -442,6 +442,62 @@ void GC_start_debugging()
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
+# ifdef __STDC__
+    GC_PTR GC_debug_malloc_ignore_off_page(size_t lb, GC_EXTRA_PARAMS)
+# else
+    GC_PTR GC_debug_malloc_ignore_off_page(lb, s, i)
+    size_t lb;
+    char * s;
+    int i;
+#   ifdef GC_ADD_CALLER
+	--> GC_ADD_CALLER not implemented for K&R C
+#   endif
+# endif
+{
+    GC_PTR result = GC_malloc_ignore_off_page(lb + DEBUG_BYTES);
+    
+    if (result == 0) {
+        GC_err_printf1("GC_debug_malloc_ignore_off_page(%ld) returning NIL (",
+        	       (unsigned long) lb);
+        GC_err_puts(s);
+        GC_err_printf1(":%ld)\n", (unsigned long)i);
+        return(0);
+    }
+    if (!GC_debugging_started) {
+    	GC_start_debugging();
+    }
+    ADD_CALL_CHAIN(result, ra);
+    return (GC_store_debug_info(result, (word)lb, s, (word)i));
+}
+
+# ifdef __STDC__
+    GC_PTR GC_debug_malloc_atomic_ignore_off_page(size_t lb, GC_EXTRA_PARAMS)
+# else
+    GC_PTR GC_debug_malloc_atomic_ignore_off_page(lb, s, i)
+    size_t lb;
+    char * s;
+    int i;
+#   ifdef GC_ADD_CALLER
+	--> GC_ADD_CALLER not implemented for K&R C
+#   endif
+# endif
+{
+    GC_PTR result = GC_malloc_atomic_ignore_off_page(lb + DEBUG_BYTES);
+    
+    if (result == 0) {
+        GC_err_printf1("GC_debug_malloc_atomic_ignore_off_page(%ld)"
+		       " returning NIL (", (unsigned long) lb);
+        GC_err_puts(s);
+        GC_err_printf1(":%ld)\n", (unsigned long)i);
+        return(0);
+    }
+    if (!GC_debugging_started) {
+    	GC_start_debugging();
+    }
+    ADD_CALL_CHAIN(result, ra);
+    return (GC_store_debug_info(result, (word)lb, s, (word)i));
+}
+
 # ifdef DBG_HDRS_ALL
 /* 
  * An allocation function for internal use.
@@ -891,12 +947,12 @@ struct closure {
 # endif
 {
     struct closure * result =
-#		ifdef DBG_HDRS_ALL
-    		  (struct closure *) GC_debug_malloc(sizeof (struct closure),
-						     GC_EXTRAS);
-#		else
-    		  (struct closure *) GC_malloc(sizeof (struct closure));
-#		endif
+#   ifdef DBG_HDRS_ALL
+      (struct closure *) GC_debug_malloc(sizeof (struct closure),
+				         GC_EXTRAS);
+#   else
+      (struct closure *) GC_malloc(sizeof (struct closure));
+#   endif
     
     result -> cl_fn = fn;
     result -> cl_data = data;
@@ -957,7 +1013,7 @@ GC_PTR *ocd;
     ptr_t base = GC_base(obj);
     if (0 == base || (ptr_t)obj - base != sizeof(oh)) {
         GC_err_printf1(
-	    "GC_register_finalizer called with non-base-pointer 0x%lx\n",
+	    "GC_debug_register_finalizer called with non-base-pointer 0x%lx\n",
 	    obj);
     }
     if (0 == fn) {
@@ -989,7 +1045,7 @@ GC_PTR *ocd;
     ptr_t base = GC_base(obj);
     if (0 == base || (ptr_t)obj - base != sizeof(oh)) {
         GC_err_printf1(
-	  "GC_register_finalizer_no_order called with non-base-pointer 0x%lx\n",
+	  "GC_debug_register_finalizer_no_order called with non-base-pointer 0x%lx\n",
 	  obj);
     }
     if (0 == fn) {
@@ -1022,7 +1078,7 @@ GC_PTR *ocd;
     ptr_t base = GC_base(obj);
     if (0 == base || (ptr_t)obj - base != sizeof(oh)) {
         GC_err_printf1(
-	    "GC_register_finalizer_ignore_self called with non-base-pointer 0x%lx\n",
+	    "GC_debug_register_finalizer_ignore_self called with non-base-pointer 0x%lx\n",
 	    obj);
     }
     if (0 == fn) {

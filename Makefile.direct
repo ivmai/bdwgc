@@ -73,8 +73,11 @@ HOSTCFLAGS=$(CFLAGS)
 # -DGC_OSF1_THREADS enables support for Tru64 pthreads.  Untested.
 # -DGC_FREEBSD_THREADS enables support for FreeBSD pthreads.  Untested.
 #   Appeared to run into some underlying thread problems.
+# -DGC_MACOSX_THREADS enables support for Mac OS X pthreads.  Untested.
 # -DGC_DGUX386_THREADS enables support for DB/UX on I386 threads.
 #   See README.DGUX386.
+# -DGC_THREADS should set the appropriate one of the above macros.
+#   It assumes pthreads for Solaris.
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
 #   of objects to be recognized.  (See gc_priv.h for consequences.)
 #   Alternatively, GC_all_interior_pointers can be set at process
@@ -218,6 +221,9 @@ HOSTCFLAGS=$(CFLAGS)
 # -DUSE_3DNOW_PREFETCH causes the collector to issue AMD 3DNow style
 #   prefetch instructions.  Same restrictions as USE_I686_PREFETCH.
 #   Minimally tested.  Didn't appear to be an obvious win on a K6-2/500.
+# -DUSE_PPC_PREFETCH causes the collector to issue PowerPC style
+#   prefetch instructions.  No effect except on PowerPC OS X platforms.
+#   Performance impact untested.
 # -DGC_USE_LD_WRAP in combination with the old flags listed in README.linux
 #   causes the collector some system and pthread calls in a more transparent
 #   fashion than the usual macro-based approach.  Requires GNU ld, and
@@ -295,7 +301,7 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.S rs6000_mach_dep.s alpha_mach_dep.S \
     include/private/specific.h powerpc_macosx_mach_dep.s \
     include/leak_detector.h include/gc_amiga_redirects.h \
     include/gc_pthread_redirects.h ia64_save_regs_in_stack.s \
-    $(CORD_SRCS)
+    include/gc_config_macros.h $(CORD_SRCS)
 
 DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 	doc/README.amiga doc/README.cords doc/debugging.html \
@@ -305,7 +311,8 @@ DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
         doc/README.contributors doc/README.changes doc/gc.man \
 	doc/README.environment doc/tree.html doc/gcdescr.html \
 	doc/README.autoconf doc/README.macros doc/README.ews4800 \
-	doc/README.DGUX386 doc/README.arm.cross doc/leak.html
+	doc/README.DGUX386 doc/README.arm.cross doc/leak.html \
+	doc/scale.html doc/gcinterface.html
 
 TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 	tests/leak_test.c tests/thread_leak_test.c
@@ -313,6 +320,8 @@ TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 GNU_BUILD_FILES= configure.in Makefile.am configure acinclude.m4 \
 		 libtool.m4 install-sh configure.host Makefile.in \
 		 ltconfig aclocal.m4 config.sub config.guess \
+		 include/Makefile.am include/Makefile.in \
+		 doc/Makefile.am doc/Makefile.in \
 		 ltmain.sh mkinstalldirs depcomp missing
 
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
@@ -370,9 +379,9 @@ mach_dep.o $(SRCS)
 $(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
     $(srcdir)/include/private/gc_priv.h \
     $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
-    $(srcdir)/include/gc.h \
+    $(srcdir)/include/gc.h $(srcdir)/include/gc_pthread_redirects.h \
     $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h \
-    Makefile
+    $(srcdir)/include/gc_config_macros.h Makefile
 # The dependency on Makefile is needed.  Changing
 # options such as -DSILENT affects the size of GC_arrays,
 # invalidating all .o files that rely on gc_priv.h

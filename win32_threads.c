@@ -58,7 +58,7 @@ void GC_push_thread_structures GC_PROTO((void))
     for (i = 0; i < MAX_THREADS; i++)
       if (thread_table[i].in_use) GC_push_all((ptr_t)&(thread_table[i].status),(ptr_t)(&(thread_table[i].status)+1));
   }
-#endif
+# endif
 }
 
 void GC_stop_world()
@@ -87,14 +87,15 @@ void GC_stop_world()
 	DWORD exitCode; 
 	if (GetExitCodeThread(thread_table[i].handle,&exitCode) &&
             exitCode != STILL_ACTIVE) {
-            thread_table[i].stack = 0; /* prevent stack from being pushed */
-#       ifndef CYGWIN32
-          /* this breaks pthread_join on Cygwin, which is guaranteed to only see user pthreads */
+          thread_table[i].stack = 0; /* prevent stack from being pushed */
+#         ifndef CYGWIN32
+            /* this breaks pthread_join on Cygwin, which is guaranteed to  */
+	    /* only see user pthreads 					   */
 	    thread_table[i].in_use = FALSE;
 	    CloseHandle(thread_table[i].handle);
 	    BZERO((void *)(&thread_table[i].context), sizeof(CONTEXT));
-#endif
-	    continue;
+#         endif
+	  continue;
 	}
 	if (SuspendThread(thread_table[i].handle) == (DWORD)-1)
 	  ABORT("SuspendThread failed");

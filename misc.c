@@ -144,6 +144,13 @@ GC_PTR (*GC_oom_fn) GC_PROTO((size_t bytes_requested)) = GC_default_oom_fn;
 
 extern signed_word GC_mem_found;
 
+void * GC_project2(arg1, arg2)
+void *arg1;
+void *arg2;
+{
+  return arg2;
+}
+
 # ifdef MERGE_SIZES
     /* Set things up so that GC_size_map[i] >= words(i),		*/
     /* but not too much bigger						*/
@@ -603,7 +610,7 @@ void GC_init_inner()
  	GC_init_win32();
 #   endif
 #   if defined(SEARCH_FOR_DATA_START)
-	if (GC_REGISTER_MAIN_STATIC_DATA()) GC_init_linux_data_start();
+	GC_init_linux_data_start();
 #   endif
 #   if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__)
 	GC_init_netbsd_elf();

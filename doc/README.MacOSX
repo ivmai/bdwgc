@@ -25,3 +25,16 @@ MacOS X. You have to add -fno-common to the CFLAGS in the Makefile. MacOSX
 disallows common symbols in anything that eventually finds its way into a
 shared library. (I don't completely understand why, but -fno-common seems to
 work and doesn't mess up the garbage collector's functionality).
+
+Feb 26, 2003
+
+Jeff Sturm and Jesse Rosenstock provided a patch that adds thread support.
+GC_MACOSX_THREADS should be defined in the build and in clients.  Real
+dynamic library support is still missing, i.e. dynamic library data segments
+are still not scanned.  Code that stores pointers to the garbage collected
+heap in statically allocated variables should not reside in a dynamic
+library.  This still doesn't appear to be 100% reliable.  
+
+Mar 10, 2003
+Brian Alliet contributed dynamic library support for MacOSX.  It could also
+use more testing.
