@@ -47,7 +47,7 @@
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32)) && !defined(PCR)
 #if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && \
     !defined(MSWIN32) && !(defined(ALPHA) && defined(OSF1)) && \
-    !defined(HP_PA) && !(defined(LINUX) && defined(__ELF__)) && \
+    !defined(HPUX) && !(defined(LINUX) && defined(__ELF__)) && \
     !defined(RS6000) && !defined(SCO_ELF)
  --> We only know how to find data segments of dynamic libraries for the
  --> above.  Additional SVR4 variants might not be too
@@ -658,7 +658,7 @@ void GC_register_dynamic_libraries()
 }
 #endif
 
-#if defined(HP_PA)
+#if defined(HPUX)
 
 #include <errno.h>
 #include <dl.h>
@@ -681,6 +681,11 @@ void GC_register_dynamic_libraries()
 
       /* Check if this is the end of the list or if some error occured */
         if (status != 0) {
+#	 ifdef HPUX_THREADS
+	   /* I've seen errno values of 0.  The man page is not clear	*/
+	   /* as to whether errno should get set on a -1 return.	*/
+	   break;
+#	 else
           if (errno == EINVAL) {
               break; /* Moved past end of shared library list --> finished */
           } else {
@@ -691,6 +696,7 @@ void GC_register_dynamic_libraries()
 	      }
               ABORT("shl_get failed");
           }
+#	 endif
         }
 
 #     ifdef VERBOSE
@@ -713,7 +719,7 @@ void GC_register_dynamic_libraries()
         index++;
     }
 }
-#endif /* HP_PA */
+#endif /* HPUX */
 
 #ifdef RS6000
 #pragma alloca

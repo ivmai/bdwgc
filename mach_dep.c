@@ -62,6 +62,12 @@ asm static void PushMacRegisters()
 
 #endif /* __MWERKS__ */
 
+# if defined(SPARC) || defined(IA64)
+    /* Value returned from register flushing routine; either sp (SPARC) */
+    /* or ar.bsp (IA64)							*/
+    word GC_save_regs_ret_val;
+# endif
+
 /* Routine to mark from registers that are preserved by the C compiler. */
 /* This must be ported to every new architecture.  There is a generic   */
 /* version at the end, that is likely, but not guaranteed to work       */
@@ -268,12 +274,12 @@ void GC_push_regs()
 	  asm ("movd r7, tos"); asm ("bsr ?_GC_push_one"); asm ("adjspb $-4");
 #       endif
 
-#       ifdef SPARC
+#       if defined(SPARC) || defined(IA64)
 	  {
 	      word GC_save_regs_in_stack();
 	      
 	      /* generic code will not work */
-	      (void)GC_save_regs_in_stack();
+	      GC_save_regs_ret_val = GC_save_regs_in_stack();
 	  }
 #       endif
 
@@ -333,12 +339,22 @@ void GC_push_regs()
 #        endif /* !__GNUC__ */
 #       endif /* M68K/SYSV */
 
+#     if defined(PJ)
+	{
+	    register int * sp asm ("optop");
+	    extern int *__libc_stack_end;
+
+	    GC_push_all_stack (sp, __libc_stack_end);
+        }
+#     endif
 
       /* other machines... */
 #       if !(defined M68K) && !(defined VAX) && !(defined RT) 
 #	if !(defined SPARC) && !(defined I386) && !(defined NS32K)
-#	if !defined(POWERPC) && !defined(UTS4)
+#	if !defined(POWERPC) && !defined(UTS4) && !defined(IA64)
+#       if !defined(PJ)
 	    --> bad news <--
+#	endif
 #       endif
 #       endif
 #       endif
@@ -398,6 +414,27 @@ ptr_t cold_gc_frame;
 #   endif
 # endif
 
+/* On IA64, we also need to flush register windows.  But they end	*/
+/* up on the other side of the stack segment.				*/
+/* Returns the backing store pointer for the register stack.		*/
+# ifdef IA64
+	asm("        .text");
+	asm("        .psr abi64");
+	asm("        .psr lsb");
+	asm("        .lsb");
+	asm("");
+	asm("        .text");
+	asm("        .align 16");
+	asm("        .global GC_save_regs_in_stack");
+	asm("        .proc GC_save_regs_in_stack");
+	asm("GC_save_regs_in_stack:");
+	asm("        .body");
+	asm("        flushrs");
+	asm("        ;;");
+	asm("        mov r8=ar.bsp");
+	asm("        br.ret.sptk.few rp");
+	asm("        .endp GC_save_regs_in_stack");
+# endif
 
 /* GC_clear_stack_inner(arg, limit) clears stack area up to limit and	*/
 /* returns arg.  Stack clearing is crucial on SPARC, so we supply	*/

@@ -44,12 +44,13 @@
 #          else
 #             if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
 		 || defined(IRIX_JDK_THREADS)
-#		ifdef UNDEFINED
-		    pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
-#		endif
 	        pthread_t GC_lock_holder = NO_THREAD;
 #	      else
-	        --> declare allocator lock here
+#	        if defined(HPUX_THREADS)
+		  pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
+#		else 
+	          --> declare allocator lock here
+#		endif
 #	      endif
 #	   endif
 #	endif
@@ -391,6 +392,11 @@ size_t GC_get_heap_size GC_PROTO(())
     return ((size_t) GC_heapsize);
 }
 
+size_t GC_get_free_bytes GC_PROTO(())
+{
+    return ((size_t) GC_large_free_bytes);
+}
+
 size_t GC_get_bytes_since_gc GC_PROTO(())
 {
     return ((size_t) WORDS_TO_BYTES(GC_words_allocd));
@@ -433,7 +439,8 @@ void GC_init_inner()
 #   ifdef MSWIN32
  	GC_init_win32();
 #   endif
-#   if defined(LINUX) && (defined(POWERPC) || defined(ALPHA) || defined(SPARC))
+#   if defined(LINUX) && \
+	(defined(POWERPC) || defined(ALPHA) || defined(SPARC) || defined(IA64))
 	GC_init_linux_data_start();
 #   endif
 #   ifdef SOLARIS_THREADS
@@ -442,11 +449,12 @@ void GC_init_inner()
         GC_dirty_init();
 #   endif
 #   if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
-       || defined(IRIX_JDK_THREADS)
+       || defined(IRIX_JDK_THREADS) || defined(HPUX_THREADS)
         GC_thr_init();
 #   endif
 #   if !defined(THREADS) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) \
-       || defined(IRIX_THREADS) || defined(LINUX_THREADS)
+       || defined(IRIX_THREADS) || defined(LINUX_THREADS) \
+       || defined(HPUX_THREADS)
       if (GC_stackbottom == 0) {
 	GC_stackbottom = GC_get_stack_base();
       }

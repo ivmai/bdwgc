@@ -412,6 +412,9 @@ ptr_t cold_gc_frame;
 	if (0 == cold_gc_frame) return;
 #       ifdef STACK_GROWS_DOWN
     	  GC_push_all_eager(GC_approx_sp(), cold_gc_frame);
+#	  ifdef IA64
+	    --> fix this
+#	  endif
 #       else
 	  GC_push_all_eager( cold_gc_frame, GC_approx_sp() );
 #       endif
@@ -419,6 +422,31 @@ ptr_t cold_gc_frame;
 #   	ifdef STACK_GROWS_DOWN
     	    GC_push_all_stack_partially_eager( GC_approx_sp(), GC_stackbottom,
 					       cold_gc_frame );
+#	    ifdef IA64
+	      /* We also need to push the register stack backing store. */
+	      /* This should really be done in the same way as the	*/
+	      /* regular stack.  For now we fudge it a bit.		*/
+	      /* Note that the backing store grows up, so we can't use	*/
+	      /* GC_push_all_stack_partially_eager.			*/
+	      {
+		extern word GC_save_regs_ret_val;
+			/* Previously set to backing store pointer.	*/
+		ptr_t bsp = (ptr_t) GC_save_regs_ret_val;
+	        ptr_t cold_gc_bs_pointer;
+#		ifdef ALL_INTERIOR_POINTERS
+	          cold_gc_bs_pointer = bsp - 2048;
+		  if (cold_gc_bs_pointer < BACKING_STORE_BASE) {
+		    cold_gc_bs_pointer = BACKING_STORE_BASE;
+		  }
+		  GC_push_all(BACKING_STORE_BASE, cold_gc_bs_pointer);
+#		else
+		  cold_gc_bs_pointer = BACKING_STORE_BASE;
+#		endif
+		GC_push_all_eager(cold_gc_bs_pointer, bsp);
+		/* All values should be sufficiently aligned that we	*/
+		/* dont have to worry about the boundary.		*/
+	      }
+#	    endif
 #       else
 	    GC_push_all_stack_partially_eager( GC_stackbottom, GC_approx_sp(),
 					       cold_gc_frame );

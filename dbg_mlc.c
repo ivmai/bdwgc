@@ -343,10 +343,10 @@ void GC_start_debugging()
 }
 
 # ifdef GC_ADD_CALLER
-#   define EXTRA_ARGS word ra, char * s, int i
+#   define EXTRA_ARGS word ra, CONST char * s, int i
 #   define OPT_RA ra,
 # else
-#   define EXTRA_ARGS char * s, int i
+#   define EXTRA_ARGS CONST char * s, int i
 #   define OPT_RA
 # endif
 
@@ -531,13 +531,15 @@ GC_PTR p;
     GC_PTR p;
 # endif
 {
-    register GC_PTR base = GC_base(p);
+    register GC_PTR base;
     register ptr_t clobbered;
     
+    if (0 == p) return;
+    base = GC_base(p);
     if (base == 0) {
         GC_err_printf1("Attempt to free invalid pointer %lx\n",
         	       (unsigned long)p);
-        if (p != 0) ABORT("free(invalid pointer)");
+        ABORT("free(invalid pointer)");
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
         GC_err_printf1(

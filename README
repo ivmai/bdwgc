@@ -1,6 +1,7 @@
 Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
 Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
 Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
+Copyright (c) 1999 by Hewlett-Packard Company. All rights reserved.
 
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -11,7 +12,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 5.0alpha3 of a conservative garbage collector for C and C++.
+This is version 5.0alpha4 of a conservative garbage collector for C and C++.
 
 You might find a more recent version of this at
 
@@ -1497,6 +1498,32 @@ Since 5.0alpha2
  - Significantly changed the way leak detection is handled, as a consequence
    of the above.
 
+Since 5.0 alpha3
+ - Added protection fault handling patch for Linux/M68K from Fergus
+   Henderson and Roman Hodek.
+ - Removed the tests for SGI_SOURCE in new_gc_alloc.h.  This was causing that
+   interface to fail on nonSGI platforms.
+ - Changed the Linux stack finding code to use /proc, after chnging it
+   to use HEURISTIC1.  (Thanks to David Mossberger for pointing out the
+   /proc hook.)
+ - Added HP/UX incremental GC support and HP/UX 11 thread support.
+ - Added basic Linux/IA64 support.
+ - Integrated Anthony Green's PicoJava support.
+ - Integrated Scott Ananian's StrongARM/NetBSD support.
+ - Fixed some fairly serious performance bugs in the incremental
+   collector.  These have probably been there essentially forever.
+   (Mark bits were sometimes set before scanning dirty pages.
+   The reclaim phase unnecessarily dirtied full small object pages.)
+ - Changed the reclaim phase to ignore nearly full pages to avoid
+   touching them.
+ - Limited GC_black_list_spacing to roughly the heap growth increment.
+ - Changed full collection triggering heuristic to decrease full GC
+   frequency by default, but to explicitly trigger full GCs during
+   heap growth.  This doesn't always improve things, but on average it's
+   probably a win.
+ - GC_debug_free(0, ...) failed.  Thanks to Fergus Henderson for the
+   bug report and fix.
+
 To do:
  - Very large root set sizes (> 16 MB or so) could cause the collector
    to abort with an unexpected mark stack overflow.  (Thanks again to
@@ -1510,8 +1537,6 @@ To do:
    be possible to conditionally intercept mmap and use GC_exclude_static_roots.
    The real fix is to walk rld data structures, which looks possible.
  - Integrate MIT and DEC pthreads ports.
- - Deal with very uneven black-listing distributions.  If all the black listed
-   blocks reside in the newly allocated heap section, the heuristic for
-   temporarily ignoring black-listing fails, and the heap grows too much.
-   (This was observed in only one case, and could be worked around, but ...)
- - Some platform specific updates are waiting for 4.15alpha1. 
+ - Incremental collector should handle large objects better.  Currently,
+   it looks like the whole object is treated as dirty if any part of it
+   is.

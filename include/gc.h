@@ -58,9 +58,11 @@
 # if defined(__STDC__) || defined(__cplusplus)
 #   define GC_PROTO(args) args
     typedef void * GC_PTR;
+#   define GC_CONST const
 # else
 #   define GC_PROTO(args) ()
     typedef char * GC_PTR;
+#   define GC_CONST
 #  endif
 
 # ifdef __cplusplus
@@ -131,6 +133,12 @@ GC_API int GC_dont_expand;
 GC_API int GC_full_freq;    /* Number of partial collections between	*/
 			    /* full collections.  Matters only if	*/
 			    /* GC_incremental is set.			*/
+			    /* Full collections are also triggered if	*/
+			    /* the collector detects a substantial	*/
+			    /* increase in the number of in-use heap	*/
+			    /* blocks.  Values in the tens are now	*/
+			    /* perfectly reasonable, unlike for		*/
+			    /* earlier GC versions.			*/
 			
 GC_API GC_word GC_non_gc_bytes;
 			/* Bytes not considered candidates for collection. */
@@ -297,6 +305,9 @@ GC_API int GC_try_to_collect GC_PROTO((GC_stop_func stop_func));
 /* Includes some pages that were allocated but never written.		*/
 GC_API size_t GC_get_heap_size GC_PROTO((void));
 
+/* Return a lower bound on the number of free bytes in the heap.	*/
+GC_API size_t GC_get_free_bytes GC_PROTO((void));
+
 /* Return the number of bytes allocated since the last collection.	*/
 GC_API size_t GC_get_bytes_since_gc GC_PROTO((void));
 
@@ -341,10 +352,11 @@ GC_API GC_PTR GC_malloc_atomic_ignore_off_page GC_PROTO((size_t lb));
 
 #ifdef GC_ADD_CALLER
 #  define GC_EXTRAS GC_RETURN_ADDR, __FILE__, __LINE__
-#  define GC_EXTRA_PARAMS GC_word ra, char * descr_string, int descr_int
+#  define GC_EXTRA_PARAMS GC_word ra, GC_CONST char * descr_string,
+		          int descr_int
 #else
 #  define GC_EXTRAS __FILE__, __LINE__
-#  define GC_EXTRA_PARAMS char * descr_string, int descr_int
+#  define GC_EXTRA_PARAMS GC_CONST char * descr_string, int descr_int
 #endif
 
 /* Debugging (annotated) allocation.  GC_gcollect will check 		*/
@@ -688,7 +700,7 @@ GC_API void (*GC_is_visible_print_proc)
 # endif /* SOLARIS_THREADS */
 
 
-#if defined(IRIX_THREADS) || defined(LINUX_THREADS)
+#if defined(IRIX_THREADS) || defined(LINUX_THREADS) || defined(HPUX_THREADS)
 /* We treat these similarly. */
 # include <pthread.h>
 # include <signal.h>
@@ -707,7 +719,7 @@ GC_API void (*GC_is_visible_print_proc)
 
 # if defined(PCR) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || \
 	defined(IRIX_THREADS) || defined(LINUX_THREADS) || \
-	defined(IRIX_JDK_THREADS)
+	defined(IRIX_JDK_THREADS) || defined(HPUX_THREADS)
    	/* Any flavor of threads except SRC_M3.	*/
 /* This returns a list of objects, linked through their first		*/
 /* word.  Its use can greatly reduce lock contention problems, since	*/

@@ -53,6 +53,11 @@
 #    define NETBSD
 #    define mach_type_known
 # endif
+# if defined(__NetBSD__) && defined(arm32)
+#    define ARM32
+#    define NETBSD
+#    define mach_type_known
+# endif
 # if defined(vax)
 #    define VAX
 #    ifdef ultrix
@@ -130,13 +135,20 @@
 #   define SYSV
 #   define mach_type_known
 # endif
-# if defined(_PA_RISC1_0) || defined(_PA_RISC1_1) \
+# if defined(_PA_RISC1_0) || defined(_PA_RISC1_1) || defined(_PA_RISC2_0) \
      || defined(hppa) || defined(__hppa__)
 #   define HP_PA
+#   ifndef LINUX
+#     define HPUX
+#   endif
 #   define mach_type_known
 # endif
 # if defined(LINUX) && (defined(i386) || defined(__i386__))
 #    define I386
+#    define mach_type_known
+# endif
+# if defined(LINUX) && (defined(__ia64__) || defined(__ia64))
+#    define IA64
 #    define mach_type_known
 # endif
 # if defined(LINUX) && defined(powerpc)
@@ -251,6 +263,10 @@
 # if defined(_UTS) && !defined(mach_type_known)
 #   define S370
 #   define UTS4
+#   define mach_type_known
+# endif
+# if defined(__pj__)
+#   define PJ
 #   define mach_type_known
 # endif
 /* Ivan Demakov */
@@ -517,6 +533,11 @@
 #     define STACK_GRAN 0x10000000
 	/* Stack usually starts at 0x80000000 */
 #     define DATASTART GC_data_start
+	/* Others have reported better success with */
+        /*  	extern int __data_start;	    */
+	/*#     define DATASTART (&__data_start)    */
+	/* and disabling the GC_data_start	    */
+	/* initialization code.			    */
       extern int _end;
 #     define DATAEND (&_end)
 #   endif
@@ -892,9 +913,17 @@
 # endif
 
 # ifdef HP_PA
+    /* OS is assumed to be HP/UX	*/
 #   define MACH_TYPE "HP_PA"
-#   define ALIGNMENT 4
-#   define ALIGN_DOUBLE
+#   define OS_TYPE "HPUX"
+#   ifdef __LP64__
+#     define CPP_WORDSZ 64
+#     define ALIGNMENT 8
+#   else
+#     define CPP_WORDSZ 32
+#     define ALIGNMENT 4
+#     define ALIGN_DOUBLE
+#   endif
     extern int __data_start;
 #   define DATASTART ((ptr_t)(&__data_start))
 #   if 0
@@ -911,6 +940,9 @@
 #   endif
 #   define STACK_GROWS_UP
 #   define DYNAMIC_LOADING
+#   ifndef HPUX_THREADS
+#     define MPROTECT_VDB
+#   endif
 #   include <unistd.h>
 #   define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
 	/* They misspelled the Posix macro?	*/
@@ -957,6 +989,31 @@
 #   endif
 # endif
 
+# ifdef IA64
+#   define MACH_TYPE "IA64"
+#   define ALIGN_DOUBLE
+	/* Requires 16 byte alignment for malloc */
+#   define ALIGNMENT 8
+#   ifdef HPUX
+	--> needs work
+#   endif
+#   ifdef LINUX
+#       define OS_TYPE "LINUX"
+#       define CPP_WORDSZ 64
+	/* This should really be done through /proc, but that	*/
+	/* requires we run on an IA64 kernel.			*/
+#       define STACKBOTTOM ((ptr_t) 0xa000000000000000l)
+	/* We also need the base address of the register stack	*/
+	/* backing store.  There is probably a better way to	*/
+	/* get that, too ...					*/
+#	define BACKING_STORE_BASE ((ptr_t) 0x9fffffff80000000l)
+#       define DATASTART GC_data_start
+#       define DYNAMIC_LOADING
+	extern int _end;
+#	define DATAEND (&_end)
+#   endif
+# endif
+
 # ifdef M88K
 #   define MACH_TYPE "M88K"
 #   define ALIGNMENT 4
@@ -986,6 +1043,26 @@
 #	define DATAEND (&_end)
 #	define HEURISTIC2
 # endif
+
+# if defined(PJ)
+#   define ALIGNMENT 4
+    extern int _etext;
+#   define DATASTART ((ptr_t)(&_etext))
+#   define HEURISTIC1
+# endif
+
+# ifdef ARM32
+#   define CPP_WORDSZ 32
+#   define MACH_TYPE "ARM32"
+#   define ALIGNMENT 4
+#   ifdef NETBSD
+#       define OS_TYPE "NETBSD"
+#       define HEURISTIC2
+        extern char etext;
+#       define DATASTART ((ptr_t)(&etext))
+#       define USE_GENERIC_PUSH_REGS
+#   endif
+#endif
 
 # ifndef STACK_GROWS_UP
 #   define STACK_GROWS_DOWN
@@ -1026,6 +1103,10 @@
     /* loader.								*/
 #   define SUNOS5DL
     /* OS has SUNOS5 style signal handlers.				*/
+#   define SUNOS5SIGS
+# endif
+
+# if defined(HPUX)
 #   define SUNOS5SIGS
 # endif
 
@@ -1078,10 +1159,13 @@
 # if defined(SOLARIS_THREADS) && !defined(SUNOS5)
 --> inconsistent configuration
 # endif
+# if defined(HPUX_THREADS) && !defined(HPUX)
+--> inconsistent configuration
+# endif
 # if defined(PCR) || defined(SRC_M3) || \
 	defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || \
 	defined(IRIX_THREADS) || defined(LINUX_THREADS) || \
-	defined(IRIX_JDK_THREADS)
+	defined(IRIX_JDK_THREADS) || defined(HPUX_THREADS)
 #   define THREADS
 # endif
 

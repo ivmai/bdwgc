@@ -1,6 +1,8 @@
 /*
+ * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
- * Copyright (c) 1996-1997 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 1999 by Hewlett-Packard Company.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -31,7 +33,7 @@
       /* make sure the former gets defined to be the latter if appropriate. */
 #     include <features.h>
 #     if 2 <= __GLIBC__
-#       if 0 == __GLIBC_MINOR__
+#       if 2 == __GLIBC__ && 0 == __GLIBC_MINOR__
 	  /* glibc 2.1 no longer has sigcontext.h.  But signal.h	*/
 	  /* has the right declaration for glibc 2.1.			*/
 #         include <sigcontext.h>
@@ -54,13 +56,13 @@
 # include <signal.h>
 
 /* Blatantly OS dependent routines, except for those that are related 	*/
-/* dynamic loading.							*/
+/* to dynamic loading.							*/
 
 # if !defined(THREADS) && !defined(STACKBOTTOM) && defined(HEURISTIC2)
 #   define NEED_FIND_LIMIT
 # endif
 
-# if defined(IRIX_THREADS)
+# if defined(IRIX_THREADS) || defined(HPUX_THREADS)
 #   define NEED_FIND_LIMIT
 # endif
 
@@ -72,7 +74,8 @@
 #   define NEED_FIND_LIMIT
 # endif
 
-# if defined(LINUX) && (defined(POWERPC) || defined(SPARC) || defined(ALPHA))
+# if defined(LINUX) && \
+     (defined(POWERPC) || defined(SPARC) || defined(ALPHA) || defined(IA64))
 #   define NEED_FIND_LIMIT
 # endif
 
@@ -139,7 +142,8 @@
 # define OPT_PROT_EXEC 0
 #endif
 
-#if defined(LINUX) && (defined(POWERPC) || defined(SPARC) || defined(ALPHA))
+#if defined(LINUX) && (defined(POWERPC) || defined(SPARC) || defined(ALPHA) \
+    		       || defined(IA64))
   /* The I386 case can be handled without a search.  The Alpha case	*/
   /* used to be handled differently as well, but the rules changed	*/
   /* for recent Linux versions.  This seems to be the easiest way to	*/
@@ -497,7 +501,7 @@ ptr_t GC_get_stack_base()
 
 #   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1)
 	static struct sigaction old_segv_act;
-#	if defined(_sigargs) /* !Irix6.x */
+#	if defined(_sigargs) || defined(HPUX) /* !Irix6.x */
 	    static struct sigaction old_bus_act;
 #	endif
 #   else
@@ -525,10 +529,11 @@ ptr_t GC_get_stack_base()
 	        (void) sigaction(SIGSEGV, &act, 0);
 #	  else
 	        (void) sigaction(SIGSEGV, &act, &old_segv_act);
-#		ifdef _sigargs	/* Irix 5.x, not 6.x */
-		    /* Under 5.x, we may get SIGBUS.			*/
-		    /* Pthreads doesn't exist under 5.x, so we don't	*/
-		    /* have to worry in the threads case.		*/
+#		if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
+		   || defined(HPUX)
+		    /* Under Irix 5.x or HP/UX, we may get SIGBUS.	*/
+		    /* Pthreads doesn't exist under Irix 5.x, so we	*/
+		    /* don't have to worry in the threads case.		*/
 		    (void) sigaction(SIGBUS, &act, &old_bus_act);
 #		endif
 #	  endif	/* IRIX_THREADS */
@@ -544,7 +549,8 @@ ptr_t GC_get_stack_base()
     {
 #       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1)
 	  (void) sigaction(SIGSEGV, &old_segv_act, 0);
-#	  ifdef _sigargs	/* Irix 5.x, not 6.x */
+#	  if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
+	     || defined(HPUX)
 	      (void) sigaction(SIGBUS, &old_bus_act, 0);
 #	  endif
 #       else
@@ -589,6 +595,40 @@ ptr_t GC_get_stack_base()
     }
 # endif
 
+#ifdef LINUX_STACKBOTTOM
+
+# define STAT_SKIP 27   /* Number of fields preceding startstack	*/
+			/* field in /proc/<pid>/stat			*/
+
+  ptr_t GC_linux_stack_base(void)
+  {
+    char buf[50];
+    FILE *f;
+    char c;
+    word result = 0;
+    int i;
+
+    sprintf(buf, "/proc/%d/stat", getpid());
+    f = fopen(buf, "r");
+    if (NULL == f) ABORT("Couldn't open /proc/<pid>/stat");
+    c = getc(f);
+    /* Skip the required number of fields.  This number is hopefully	*/
+    /* constant across all Linux implementations.			*/
+      for (i = 0; i < STAT_SKIP; ++i) {
+	while (isspace(c)) c = getc(f);
+	while (!isspace(c)) c = getc(f);
+      }
+    while (isspace(c)) c = getc(f);
+    while (isdigit(c)) {
+      result *= 10;
+      result += c - '0';
+      c = getc(f);
+    }
+    if (result < 0x10000000) ABORT("Absurd stack bottom value");
+    return (ptr_t)result;
+  }
+
+#endif /* LINUX_STACKBOTTOM */
 
 ptr_t GC_get_stack_base()
 {
@@ -610,6 +650,9 @@ ptr_t GC_get_stack_base()
 			      & ~STACKBOTTOM_ALIGNMENT_M1);
 #	   endif
 #	endif /* HEURISTIC1 */
+#	ifdef LINUX_STACKBOTTOM
+	   result = GC_linux_stack_base();
+#	endif
 #	ifdef HEURISTIC2
 #	    ifdef STACK_GROWS_DOWN
 		result = GC_find_limit((ptr_t)(&dummy), TRUE);
@@ -1443,7 +1486,7 @@ void GC_default_push_other_roots()
 
 # if defined(SOLARIS_THREADS) || defined(WIN32_THREADS) \
      || defined(IRIX_THREADS) || defined(LINUX_THREADS) \
-     || defined(IRIX_PCR_THREADS)
+     || defined(IRIX_JDK_THREADS) || defined(HPUX_THREADS)
 
 extern void GC_push_all_stacks();
 
@@ -1570,12 +1613,12 @@ struct hblk *h;
 #   include <sys/syscall.h>
 
 #   define PROTECT(addr, len) \
-    	  if (mprotect((caddr_t)(addr), (int)(len), \
+    	  if (mprotect((caddr_t)(addr), (size_t)(len), \
     	      	       PROT_READ | OPT_PROT_EXEC) < 0) { \
     	    ABORT("mprotect failed"); \
     	  }
 #   define UNPROTECT(addr, len) \
-    	  if (mprotect((caddr_t)(addr), (int)(len), \
+    	  if (mprotect((caddr_t)(addr), (size_t)(len), \
     	  	       PROT_WRITE | PROT_READ | OPT_PROT_EXEC ) < 0) { \
     	    ABORT("un-mprotect failed"); \
     	  }
@@ -1604,7 +1647,11 @@ struct hblk *h;
     typedef void (* SIG_PF)();
 #endif
 #if defined(SUNOS5SIGS) || defined(OSF1) || defined(LINUX)
+# ifdef __STDC__
     typedef void (* SIG_PF)(int);
+# else
+    typedef void (* SIG_PF)();
+# endif
 #endif
 #if defined(MSWIN32)
     typedef LPTOP_LEVEL_EXCEPTION_FILTER SIG_PF;
@@ -1616,17 +1663,34 @@ struct hblk *h;
     typedef void (* REAL_SIG_PF)(int, int, struct sigcontext *);
 #endif
 #if defined(SUNOS5SIGS)
-    typedef void (* REAL_SIG_PF)(int, struct siginfo *, void *);
+# ifdef HPUX
+#   define SIGINFO __siginfo
+# else
+#   define SIGINFO siginfo
+# endif
+# ifdef __STDC__
+    typedef void (* REAL_SIG_PF)(int, struct SIGINFO *, void *);
+# else
+    typedef void (* REAL_SIG_PF)();
+# endif
 #endif
 #if defined(LINUX)
 #   include <linux/version.h>
-#   if (LINUX_VERSION_CODE >= 0x20100) && !defined(M68K) || defined(ALPHA)
+#   if (LINUX_VERSION_CODE >= 0x20100) && !defined(M68K) || defined(ALPHA) || defined(IA64)
       typedef struct sigcontext s_c;
 #   else
       typedef struct sigcontext_struct s_c;
 #   endif
+#   if defined(ALPHA) || defined(M68K)
+      typedef void (* REAL_SIG_PF)(int, int, s_c *);
+#   else
+#     if defined(IA64)
+        typedef void (* REAL_SIG_PF)(int, siginfo_t *, s_c *);
+#     else
+        typedef void (* REAL_SIG_PF)(int, s_c);
+#     endif
+#   endif
 #   ifdef ALPHA
-    typedef void (* REAL_SIG_PF)(int, int, s_c *);
     /* Retrieve fault address from sigcontext structure by decoding	*/
     /* instruction.							*/
     char * get_fault_addr(s_c *sc) {
@@ -1638,8 +1702,6 @@ struct hblk *h;
 	faultaddr += (word) (((int)instr << 16) >> 16);
 	return (char *)faultaddr;
     }
-#   else /* !ALPHA */
-    typedef void (* REAL_SIG_PF)(int, s_c);
 #   endif /* !ALPHA */
 # endif
 
@@ -1675,21 +1737,41 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #   endif
 # endif
 # if defined(LINUX)
-#   ifdef ALPHA
+#   if defined(ALPHA) || defined(M68K)
       void GC_write_fault_handler(int sig, int code, s_c * sc)
 #   else
-      void GC_write_fault_handler(int sig, s_c sc)
+#     if defined(IA64)
+        void GC_write_fault_handler(int sig, siginfo_t * si, s_c * scp)
+#     else
+        void GC_write_fault_handler(int sig, s_c sc)
+#     endif
 #   endif
 #   define SIG_OK (sig == SIGSEGV)
 #   define CODE_OK TRUE
-	/* Empirically c.trapno == 14, but is that useful?      */
-	/* We assume Intel architecture, so alignment		*/
-	/* faults are not possible.				*/
+	/* Empirically c.trapno == 14, on IA32, but is that useful?     */
+	/* Should probably consider alignment issues on other 		*/
+	/* architectures.						*/
 # endif
 # if defined(SUNOS5SIGS)
-    void GC_write_fault_handler(int sig, struct siginfo *scp, void * context)
-#   define SIG_OK (sig == SIGSEGV)
-#   define CODE_OK (scp -> si_code == SEGV_ACCERR)
+#  ifdef __STDC__
+    void GC_write_fault_handler(int sig, struct SIGINFO *scp, void * context)
+#  else
+    void GC_write_fault_handler(sig, scp, context)
+    int sig;
+    struct SIGINFO *scp;
+    void * context;
+#  endif
+#   ifdef HPUX
+#     define SIG_OK (sig == SIGSEGV || sig == SIGBUS)
+#     define CODE_OK (scp -> si_code == SEGV_ACCERR) \
+		     || (scp -> si_code == BUS_ADRERR) \
+		     || (scp -> si_code == BUS_UNKNOWN) \
+		     || (scp -> si_code == SEGV_UNKNOWN) \
+		     || (scp -> si_code == BUS_OBJERR)
+#   else
+#     define SIG_OK (sig == SIGSEGV)
+#     define CODE_OK (scp -> si_code == SEGV_ACCERR)
+#   endif
 # endif
 # if defined(MSWIN32)
     LONG WINAPI GC_write_fault_handler(struct _EXCEPTION_POINTERS *exc_info)
@@ -1741,7 +1823,15 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #	  ifdef ALPHA
             char * addr = get_fault_addr(sc);
 #	  else
+#	    ifdef IA64
+	      char * addr = si -> si_addr;
+#	    else
+#             if defined(POWERPC)
+                char * addr = (char *) (sc.regs->dar);
+#	      else
 		--> architecture not supported
+#	      endif
+#	    endif
 #	  endif
 #	endif
 #     endif
@@ -1794,10 +1884,14 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 		    return;
 #		endif
 #		if defined (LINUX)
-#		    ifdef ALPHA
+#		    if defined(ALPHA) || defined(M68K)
 		        (*(REAL_SIG_PF)old_handler) (sig, code, sc);
 #		    else 
+#		      if defined(IA64)
+		        (*(REAL_SIG_PF)old_handler) (sig, si, scp);
+#		      else
 		        (*(REAL_SIG_PF)old_handler) (sig, sc);
+#		      endif
 #		    endif
 		    return;
 #		endif
@@ -1909,7 +2003,7 @@ void GC_dirty_init()
       }
 #   endif
 #   if defined(SUNOS5SIGS) || defined(IRIX5)
-#     if defined(IRIX_THREADS) || defined(IRIX_PCR_THREADS)
+#     if defined(IRIX_THREADS) || defined(IRIX_JDK_THREADS)
       	sigaction(SIGSEGV, 0, &oldact);
       	sigaction(SIGSEGV, &act, 0);
 #     else
@@ -1935,6 +2029,15 @@ void GC_dirty_init()
 	  GC_err_printf0("Replaced other SIGSEGV handler\n");
 #       endif
       }
+#     ifdef HPUX
+      	  sigaction(SIGBUS, &act, &oldact);
+          GC_old_bus_handler = oldact.sa_handler;
+          if (GC_old_segv_handler != SIG_DFL) {
+#           ifdef PRINTSTATS
+	      GC_err_printf0("Replaced other SIGBUS handler\n");
+#           endif
+          }
+#     endif
 #    endif
 #   if defined(MSWIN32)
       GC_old_segv_handler = SetUnhandledExceptionFilter(GC_write_fault_handler);

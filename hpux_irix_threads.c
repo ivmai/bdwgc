@@ -1,6 +1,7 @@
 /* 
- * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 1999 by Hewlett-Packard Company. All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -16,12 +17,19 @@
  * not guaranteed by the Pthread standard.  It may or may not be portable
  * to other implementations.
  *
+ * This now also includes an initial attempt at thread support for
+ * HP/UX 11.
+ *
  * Note that there is a lot of code duplication between linux_threads.c
- * and irix_threads.c; any changes made here may need to be reflected
+ * and hpux_irix_threads.c; any changes made here may need to be reflected
  * there too.
  */
 
-# if defined(IRIX_THREADS)
+# if defined(IRIX_THREADS) || defined(HPUX_THREADS)
+
+# if defined(HPUX_THREADS)
+#   include <sys/semaphore.h>
+# endif
 
 # include "gc_priv.h"
 # include <pthread.h>
@@ -169,8 +177,12 @@ ptr_t GC_stack_alloc(size_t * stack_size)
         result = (ptr_t) GC_scratch_alloc(search_sz + 2*GC_page_sz);
         result = (ptr_t)(((word)result + GC_page_sz) & ~(GC_page_sz - 1));
         /* Protect hottest page to detect overflow. */
-        /* mprotect(result, GC_page_sz, PROT_NONE); */
-        result += GC_page_sz;
+#	ifdef STACK_GROWS_UP
+          /* mprotect(result + search_sz, GC_page_sz, PROT_NONE); */
+#	else
+          /* mprotect(result, GC_page_sz, PROT_NONE); */
+          result += GC_page_sz;
+#	endif
     }
     *stack_size = search_sz;
     return(result);
@@ -381,7 +393,7 @@ void GC_push_all_stacks()
     register int i;
     register GC_thread p;
     register ptr_t sp = GC_approx_sp();
-    register ptr_t lo, hi;
+    register ptr_t hot, cold;
     pthread_t me = pthread_self();
     
     if (!GC_thr_initialized) GC_thr_init();
@@ -390,17 +402,25 @@ void GC_push_all_stacks()
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (p -> flags & FINISHED) continue;
         if (pthread_equal(p -> id, me)) {
-	    lo = GC_approx_sp();
+	    hot = GC_approx_sp();
 	} else {
-	    lo = p -> stack_ptr;
+	    hot = p -> stack_ptr;
 	}
         if (p -> stack_size != 0) {
-            hi = p -> stack + p -> stack_size;
+#	  ifdef STACK_GROWS_UP
+	    cold = p -> stack;
+#	  else
+            cold = p -> stack + p -> stack_size;
+#	  endif
         } else {
             /* The original stack. */
-            hi = GC_stackbottom;
+            cold = GC_stackbottom;
         }
-        GC_push_all_stack(lo, hi);
+#	ifdef STACK_GROWS_UP
+          GC_push_all_stack(cold, hot);
+#	else
+          GC_push_all_stack(hot, cold);
+#	endif
       }
     }
 }
@@ -531,6 +551,40 @@ void * GC_start_routine(void * arg)
     return(result);
 }
 
+# ifdef HPUX_THREADS
+  /* pthread_attr_t is not a structure, thus a simple structure copy	*/
+  /* won't work.							*/
+  static void copy_attr(pthread_attr_t * pa_ptr,
+			const pthread_attr_t  * source) {
+    int tmp;
+    size_t stmp;
+    void * vtmp;
+    struct sched_param sp_tmp;
+    pthread_spu_t ps_tmp;
+    (void) pthread_attr_init(pa_ptr);
+    (void) pthread_attr_getdetachstate(source, &tmp);
+    (void) pthread_attr_setdetachstate(pa_ptr, tmp);
+    (void) pthread_attr_getinheritsched(source, &tmp);
+    (void) pthread_attr_setinheritsched(pa_ptr, tmp);
+    (void) pthread_attr_getschedpolicy(source, &tmp);
+    (void) pthread_attr_setschedpolicy(pa_ptr, tmp);
+    (void) pthread_attr_getstacksize(source, &stmp);
+    (void) pthread_attr_setstacksize(pa_ptr, stmp);
+    (void) pthread_attr_getguardsize(source, &stmp);
+    (void) pthread_attr_setguardsize(pa_ptr, stmp);
+    (void) pthread_attr_getstackaddr(source, &vtmp);
+    (void) pthread_attr_setstackaddr(pa_ptr, vtmp);
+    (void) pthread_attr_getscope(source, &tmp);
+    (void) pthread_attr_setscope(pa_ptr, tmp);
+    (void) pthread_attr_getschedparam(source, &sp_tmp);
+    (void) pthread_attr_setschedparam(pa_ptr, &sp_tmp);
+    (void) pthread_attr_getprocessor_np(source, &ps_tmp, &tmp);
+    (void) pthread_attr_setprocessor_np(pa_ptr, ps_tmp, tmp);
+  }
+# else
+#   define copy_attr(pa_ptr, source) *(pa_ptr) = *(source)
+# endif
+
 int
 GC_pthread_create(pthread_t *new_thread,
 		  const pthread_attr_t *attr,
@@ -548,7 +602,9 @@ GC_pthread_create(pthread_t *new_thread,
 	/* library, which isn't visible to the collector.		 */
 
     if (0 == si) return(ENOMEM);
-    sem_init(&(si -> registered), 0, 0);
+    if (0 != sem_init(&(si -> registered), 0, 0)) {
+        ABORT("sem_init failed");
+    }
     si -> start_routine = start_routine;
     si -> arg = arg;
     LOCK();
@@ -557,7 +613,7 @@ GC_pthread_create(pthread_t *new_thread,
         stack = 0;
 	(void) pthread_attr_init(&new_attr);
     } else {
-        new_attr = *attr;
+	copy_attr(&new_attr, attr);
 	pthread_attr_getstackaddr(&new_attr, &stack);
     }
     pthread_attr_getstacksize(&new_attr, &stacksize);
@@ -586,23 +642,38 @@ GC_pthread_create(pthread_t *new_thread,
     /* This also ensures that we hold onto si until the child is done	*/
     /* with it.  Thus it doesn't matter whether it is otherwise		*/
     /* visible to the collector.					*/
-        if (0 != sem_wait(&(si -> registered))) ABORT("sem_wait failed");
+        while (0 != sem_wait(&(si -> registered))) {
+	  if (errno != EINTR) {
+	    GC_printf1("Sem_wait: errno = %ld\n", (unsigned long) errno);
+	    ABORT("sem_wait failed");
+	  }
+	}
         sem_destroy(&(si -> registered));
-    /* pthread_attr_destroy(&new_attr); */
+    pthread_attr_destroy(&new_attr);  /* Not a no-op under HPUX */
     return(result);
 }
+
+#ifndef HPUX_THREADS
+/* For now we use the pthreads locking primitives on HP/UX */
 
 GC_bool GC_collecting = 0; /* A hint that we're in the collector and       */
                         /* holding the allocation lock for an           */
                         /* extended period.                             */
 
 /* Reasonably fast spin locks.  Basically the same implementation */
-/* as STL alloc.h.  This isn't really the right way to do this.   */
-/* but until the POSIX scheduling mess gets straightened out ...  */
-
-unsigned long GC_allocate_lock = 0;
+/* as STL alloc.h.						  */
 
 #define SLEEP_THRESHOLD 3
+
+#ifdef HPUX
+   unsigned long GC_allocate_lock = 1;
+#  define GC_TRY_LOCK() GC_test_and_clear(&GC_allocate_lock)
+#  define GC_LOCK_TAKEN !GC_allocate_lock
+#else
+   unsigned long GC_allocate_lock = 0;
+#  define GC_TRY_LOCK() !GC_test_and_set(&GC_allocate_lock,1)
+#  define GC_LOCK_TAKEN GC_allocate_lock
+#endif
 
 void GC_lock()
 {
@@ -616,7 +687,7 @@ void GC_lock()
 #   define PAUSE junk *= junk; junk *= junk; junk *= junk; junk *= junk
     int i;
 
-    if (!GC_test_and_set(&GC_allocate_lock, 1)) {
+    if (GC_TRY_LOCK()) {
         return;
     }
     junk = 0;
@@ -624,11 +695,11 @@ void GC_lock()
     my_last_spins = last_spins;
     for (i = 0; i < my_spin_max; i++) {
         if (GC_collecting) goto yield;
-        if (i < my_last_spins/2 || GC_allocate_lock) {
+        if (i < my_last_spins/2 || GC_LOCK_TAKEN) {
             PAUSE; 
             continue;
         }
-        if (!GC_test_and_set(&GC_allocate_lock, 1)) {
+        if (GC_TRY_LOCK()) {
 	    /*
              * got it!
              * Spinning worked.  Thus we're probably not being scheduled
@@ -644,7 +715,7 @@ void GC_lock()
     spin_max = low_spin_max;
 yield:
     for (i = 0;; ++i) {
-        if (!GC_test_and_set(&GC_allocate_lock, 1)) {
+        if (GC_TRY_LOCK()) {
             return;
         }
         if (i < SLEEP_THRESHOLD) {
@@ -662,7 +733,7 @@ yield:
     }
 }
 
-
+#endif /* !HPUX_THREADS */
 
 # else
 
