@@ -1834,10 +1834,39 @@ Since 6.2alpha4:
    Since there are unavoidable problems with C programs linking against a
    dynamic library that includes C++ code, I separated out the c++ code into
    libgccpp.
+
+Since 6.2alpha5:
+ - There was extra underscore in the name of GC_save_registers_in_stack
+   for NetBSD/SPARC.  (Thanks to Jaap Boender for the patch.)
+ - Integrated Brian Alliet's patch for Darwin.  This restructured the
+   linuxthreads/pthreads support to separate generic pthreads support
+   from more the system-dependent thread-stopping code.  I believe this
+   should make it easier to eliminate the code duplication between
+   pthreads platforms in the future.  The patch included some other
+   code cleanups.
+ - Integrated Dan Bonachea's patch to support AIX threads.  This required
+   substantial manual integration, mostly due to conflicts with other
+   recent threads changes.  It may take another iteration to
+   get it to work.
+ - Removed HPUX/PA-RISC support from aix_irix_threads.c.  It wasn't used
+   anyway and it cluttered up the code.  And anything we can do to migrate
+   towards generic pthreads support is a good thing.
+ - Added a more explicit test for tracing of function arguments to test.c.
+   (Thanks to Dan Grayson.)
+ - Added Akira Tagoh's PowerPC64 patch.
+ - Fixed some bit rot in the Cygwin port.  (Thanks to Dan Bonachea for
+   pointing it out.)  Gc.h now includes just windows.h, not winbase.h.
+ - Declared GC_save_regs_in_stack() in gc_priv.h.  Remove other declarations.
+ - Changed --enable-cplusplus to use automake consitionals.  The old way
+   confused libtool.  "Make install" didn't work correctly for the old version.
+   Previously --enable-cplusplus was broken on cygwin.
+ - Changed the C version of GC_push_regs to fail at compile time if it is
+   generated with an empty body.  This seems to have been the cause of one
+   or two subtle failures on unusual platforms.  Those failures should
+   now occur at build time and be easily fixable.
     
 
 To do:
- - MacOSX thread support still appears to be a bit unreliable.
  - A dynamic libgc.so references dlopen unconditionally, but doesn't link
    against libdl.
  - GC_proc_fd for Solaris is not correctly updated in response to a

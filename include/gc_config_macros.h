@@ -19,6 +19,9 @@
 #  define GC_DGUX386_THREADS
 # endif
 #endif
+#if defined(AIX_THREADS)
+# define GC_AIX_THREADS
+#endif
 #if defined(HPUX_THREADS)
 # define GC_HPUX_THREADS
 #endif
@@ -38,6 +41,7 @@
 #if !defined(_REENTRANT) && (defined(GC_SOLARIS_THREADS) \
 		             || defined(GC_SOLARIS_PTHREADS) \
 			     || defined(GC_HPUX_THREADS) \
+			     || defined(GC_AIX_THREADS) \
 			     || defined(GC_LINUX_THREADS))
 # define _REENTRANT
 	/* Better late than never.  This fails if system headers that	*/
@@ -51,7 +55,8 @@
 # if defined(GC_SOLARIS_PTHREADS) || defined(GC_FREEBSD_THREADS) || \
 	defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) || \
 	defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) || \
-	defined(GC_DGUX386_THREADS) || defined(GC_MACOSX_THREADS) || \
+	defined(GC_DGUX386_THREADS) || defined(GC_DARWIN_THREADS) || \
+	defined(GC_AIX_THREADS) || \
         (defined(GC_WIN32_THREADS) && defined(__CYGWIN32__))
 #   define GC_PTHREADS
 # endif
@@ -79,7 +84,7 @@
 #   define GC_PTHREADS
 # endif
 # if defined(__APPLE__) && defined(__MACH__) && defined(__ppc__)
-#   define GC_MACOSX_THREADS
+#   define GC_DARWIN_THREADS
 #   define GC_PTHREADS
 # endif
 # if !defined(GC_PTHREADS) && defined(__FreeBSD__)

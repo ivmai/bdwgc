@@ -487,6 +487,15 @@ void GC_init()
 	  GC_init_parallel();
 	}
 #   endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
+
+#   if defined(DYNAMIC_LOADING) && defined(DARWIN)
+    {
+        /* This must be called WITHOUT the allocation lock held
+        and before any threads are created */
+        extern void GC_init_dyld();
+        GC_init_dyld();
+    }
+#   endif
 }
 
 #if defined(MSWIN32) || defined(MSWINCE)

@@ -1,6 +1,7 @@
 #if defined(GC_WIN32_THREADS) 
 
 #include "private/gc_priv.h"
+#include <windows.h>
 
 #ifdef CYGWIN32
 # include <errno.h>
@@ -369,6 +370,8 @@ void GC_get_next_stack(char *start, char **lo, char **hi)
     if (*lo < start) *lo = start;
 }
 
+#if !defined(CYGWIN32)
+
 #if !defined(MSWINCE) && defined(GC_DLL)
 
 /* We register threads from DllMain */
@@ -510,6 +513,8 @@ static DWORD WINAPI thread_start(LPVOID arg)
     return ret;
 }
 #endif /* !defined(MSWINCE) && !(defined(__MINGW32__) && !defined(_DLL))  */
+
+#endif /* !CYGWIN32 */
 
 #ifdef MSWINCE
 

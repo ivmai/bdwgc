@@ -1,7 +1,7 @@
 /* 
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
- * Copyright (c) 1999 by Hewlett-Packard Company. All rights reserved.
+ * Copyright (c) 1999-2003 by Hewlett-Packard Company. All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -13,22 +13,24 @@
  * modified is included with the above copyright notice.
  */
 /*
- * Support code for Irix (>=6.2) Pthreads.  This relies on properties
+ * Support code for Irix (>=6.2) Pthreads and for AIX pthreads.
+ * This relies on properties
  * not guaranteed by the Pthread standard.  It may or may not be portable
  * to other implementations.
  *
- * This now also includes an initial attempt at thread support for
- * HP/UX 11.
+ * Note that there is a lot of code duplication between this file and
+ * (pthread_support.c, pthread_stop_world.c).  They should be merged.
+ * Pthread_support.c should be directly usable.
  *
- * Note that there is a lot of code duplication between linux_threads.c
- * and irix_threads.c; any changes made here may need to be reflected
- * there too.
+ * Please avoid adding new ports here; use the generic pthread support
+ * as a base instead.
  */
 
-# if defined(GC_IRIX_THREADS)
+# if defined(GC_IRIX_THREADS) || defined(GC_AIX_THREADS)
 
 # include "private/gc_priv.h"
 # include <pthread.h>
+# include <assert.h>
 # include <semaphore.h>
 # include <time.h>
 # include <errno.h>
@@ -39,10 +41,9 @@
 #undef pthread_create
 #undef pthread_sigmask
 #undef pthread_join
-#undef pthread_detach
 
-#ifdef HANDLE_FORK
-  --> Not yet supported.  Try porting the code from linux_threads.c.
+#if defined(GC_IRIX_THREADS) && !defined(MUTEX_RECURSIVE_NP)
+#define MUTEX_RECURSIVE_NP PTHREAD_MUTEX_RECURSIVE
 #endif
 
 void GC_thr_init();
@@ -104,8 +105,14 @@ GC_thread GC_lookup_thread(pthread_t id);
  * The only way to suspend threads given the pthread interface is to send
  * signals.  Unfortunately, this means we have to reserve
  * a signal, and intercept client calls to change the signal mask.
- * We use SIG_SUSPEND, defined in gc_priv.h.
  */
+#if 0 /* DOB: 6.1 */
+# if defined(GC_AIX_THREADS)
+#   define SIG_SUSPEND SIGUSR1
+# else
+#   define SIG_SUSPEND (SIGRTMIN + 6)
+# endif
+#endif
 
 pthread_mutex_t GC_suspend_lock = PTHREAD_MUTEX_INITIALIZER;
 				/* Number of threads stopped so far	*/
@@ -145,6 +152,8 @@ GC_bool GC_thr_initialized = FALSE;
 
 size_t GC_min_stack_sz;
 
+size_t GC_page_sz;
+
 # define N_FREE_LISTS 25
 ptr_t GC_stack_free_lists[N_FREE_LISTS] = { 0 };
 		/* GC_stack_free_lists[i] is free list for stacks of 	*/
@@ -173,14 +182,14 @@ ptr_t GC_stack_alloc(size_t * stack_size)
     if (result != 0) {
         GC_stack_free_lists[index] = *(ptr_t *)result;
     } else {
-        result = (ptr_t) GC_scratch_alloc(search_sz + 2*GC_page_size);
-        result = (ptr_t)(((word)result + GC_page_size) & ~(GC_page_size - 1));
+        result = (ptr_t) GC_scratch_alloc(search_sz + 2*GC_page_sz);
+        result = (ptr_t)(((word)result + GC_page_sz) & ~(GC_page_sz - 1));
         /* Protect hottest page to detect overflow. */
 #	ifdef STACK_GROWS_UP
-          /* mprotect(result + search_sz, GC_page_size, PROT_NONE); */
+          /* mprotect(result + search_sz, GC_page_sz, PROT_NONE); */
 #	else
-          /* mprotect(result, GC_page_size, PROT_NONE); */
-          result += GC_page_size;
+          /* mprotect(result, GC_page_sz, PROT_NONE); */
+          result += GC_page_sz;
 #	endif
     }
     *stack_size = search_sz;
@@ -227,7 +236,7 @@ GC_thread GC_new_thread(pthread_t id)
     	/* Dont acquire allocation lock, since we may already hold it. */
     } else {
         result = (struct GC_Thread_Rep *)
-        	 GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
+        	 GC_generic_malloc_inner(sizeof(struct GC_Thread_Rep), NORMAL);
     }
     if (result == 0) return(0);
     result -> id = id;
@@ -294,6 +303,42 @@ GC_thread GC_lookup_thread(pthread_t id)
     return(p);
 }
 
+#if defined(GC_AIX_THREADS)
+void GC_stop_world()
+{
+    pthread_t my_thread = pthread_self();
+    register int i;
+    register GC_thread p;
+    register int result;
+    struct timespec timeout;
+
+    for (i = 0; i < THREAD_TABLE_SZ; i++) {
+      for (p = GC_threads[i]; p != 0; p = p -> next) {
+        if (p -> id != my_thread) {
+          pthread_suspend_np(p->id);
+        }
+      }
+    }
+    /* GC_printf1("World stopped 0x%x\n", pthread_self()); */
+}
+
+void GC_start_world()
+{
+    GC_thread p;
+    unsigned i;
+    pthread_t my_thread = pthread_self();
+
+    /* GC_printf0("World starting\n"); */
+    for (i = 0; i < THREAD_TABLE_SZ; i++) {
+      for (p = GC_threads[i]; p != 0; p = p -> next) {
+        if (p -> id != my_thread) {
+          pthread_continue_np(p->id);
+        }
+      }
+    }
+}
+
+#else /* GC_AIX_THREADS */
 
 /* Caller holds allocation lock.	*/
 void GC_stop_world()
@@ -371,6 +416,8 @@ void GC_start_world()
     pthread_cond_broadcast(&GC_continue_cv);
 }
 
+#endif /* GC_AIX_THREADS */
+
 # ifdef MMAP_STACKS
 --> not really supported yet.
 int GC_is_thread_stack(ptr_t addr)
@@ -409,7 +456,41 @@ void GC_push_all_stacks()
         if (pthread_equal(p -> id, me)) {
 	    hot = GC_approx_sp();
 	} else {
-	    hot = p -> stack_ptr;
+#ifdef GC_AIX_THREADS
+          /* AIX doesn't use signals to suspend, so we need to get an accurate hot stack pointer */
+          pthread_t id = p -> id;
+          struct __pthrdsinfo pinfo;
+          int val = 255;
+          char regbuf[255];
+          int retval = pthread_getthrds_np(&id, PTHRDSINFO_QUERY_ALL, &pinfo, sizeof(pinfo), regbuf, &val);
+          if (retval != 0) { printf("ERROR: pthread_getthrds_np() failed in GC\n"); abort(); }
+          hot = (ptr_t)(unsigned long)pinfo.__pi_ustk;
+          if ((p -> stack_size != 0 && 
+               (pinfo.__pi_stackend != ((ptr_t)p -> stack) + p -> stack_size || 
+                p -> stack_ptr < p -> stack || 
+                p -> stack_ptr > ((ptr_t)p -> stack) + p -> stack_size))) {
+            printf("ERROR in GC_push_all_stacks() stack state:\n"
+                "p->stack:                 0x%08x\n"
+                "p->stack_size:            0x%08x\n"
+                "p->stack_ptr:             0x%08x\n"
+                "(p->stack+p->stack_size): 0x%08x\n"
+                "pinfo.__pi_stackaddr:     0x%08x\n"
+                "pinfo.__pi_stacksize:     0x%08x\n"
+                "pinfo.__pi_stackend:      0x%08x\n"
+                "GC_stackbottom:           0x%08x\n"
+                ,
+                (uintptr_t)p->stack, (uintptr_t)p->stack_size, 
+                (uintptr_t)p->stack_ptr, (uintptr_t)(((ptr_t)(p->stack))+p->stack_size),
+                (uintptr_t)pinfo.__pi_stackaddr, (uintptr_t)pinfo.__pi_stacksize, (uintptr_t)pinfo.__pi_stackend,
+                (uintptr_t)GC_stackbottom
+                );
+          }
+          /* push the registers too, because they won't be on stack */
+          GC_push_all_eager((ptr_t)&pinfo.__pi_context, (ptr_t)((&pinfo.__pi_context)+1));
+          GC_push_all_eager((ptr_t)regbuf, (ptr_t)&regbuf[val]);
+#else
+              hot = p -> stack_ptr;
+#endif
 	}
         if (p -> stack_size != 0) {
 #	  ifdef STACK_GROWS_UP
@@ -424,6 +505,7 @@ void GC_push_all_stacks()
 #	ifdef STACK_GROWS_UP
           GC_push_all_stack(cold, hot);
 #	else
+ /* printf("thread 0x%x: hot=0x%08x cold=0x%08x\n", p -> id, hot, cold); */
           GC_push_all_stack(hot, cold);
 #	endif
       }
@@ -440,6 +522,8 @@ void GC_thr_init()
     if (GC_thr_initialized) return;
     GC_thr_initialized = TRUE;
     GC_min_stack_sz = HBLKSIZE;
+    GC_page_sz = sysconf(_SC_PAGESIZE);
+#ifndef GC_AIX_THREADS
     (void) sigaction(SIG_SUSPEND, 0, &act);
     if (act.sa_handler != SIG_DFL)
     	ABORT("Previously installed SIG_SUSPEND handler");
@@ -449,6 +533,7 @@ void GC_thr_init()
 	(void) sigemptyset(&act.sa_mask);
         if (0 != sigaction(SIG_SUSPEND, &act, 0))
 	    ABORT("Failed to install SIG_SUSPEND handler");
+#endif
     /* Add the initial thread, so we can stop it.	*/
       t = GC_new_thread(pthread_self());
       t -> stack_size = 0;
@@ -460,6 +545,10 @@ int GC_pthread_sigmask(int how, const sigset_t *set, sigset_t *oset)
 {
     sigset_t fudged_set;
     
+#ifdef GC_AIX_THREADS
+    return(pthread_sigmask(how, set, oset));
+#endif
+
     if (set != NULL && (how == SIG_BLOCK || how == SIG_SETMASK)) {
         fudged_set = *set;
         sigdelset(&fudged_set, SIG_SUSPEND);
@@ -474,8 +563,7 @@ struct start_info {
     word flags;
     ptr_t stack;
     size_t stack_size;
-    sem_t registered;   	/* 1 ==> in our thread table, but 	*/
-				/* parent hasn't yet noticed.		*/
+    sem_t registered;	
 };
 
 void GC_thread_exit_proc(void *arg)
@@ -506,33 +594,10 @@ int GC_pthread_join(pthread_t thread, void **retval)
     /* Some versions of the Irix pthreads library can erroneously 	*/
     /* return EINTR when the call succeeds.				*/
 	if (EINTR == result) result = 0;
-    if (result == 0) {
-        LOCK();
-        /* Here the pthread thread id may have been recycled. */
-        GC_delete_gc_thread(thread, thread_gc_id);
-        UNLOCK();
-    }
-    return result;
-}
-
-int GC_pthread_detach(pthread_t thread)
-{
-    int result;
-    GC_thread thread_gc_id;
-    
     LOCK();
-    thread_gc_id = GC_lookup_thread(thread);
+    /* Here the pthread thread id may have been recycled. */
+    GC_delete_gc_thread(thread, thread_gc_id);
     UNLOCK();
-    result = pthread_detach(thread);
-    if (result == 0) {
-      LOCK();
-      thread_gc_id -> flags |= DETACHED;
-      /* Here the pthread thread id may have been recycled. */
-      if (thread_gc_id -> flags & FINISHED) {
-        GC_delete_gc_thread(thread, thread_gc_id);
-      }
-      UNLOCK();
-    }
     return result;
 }
 
@@ -562,7 +627,12 @@ void * GC_start_routine(void * arg)
     me -> flags = si -> flags;
     me -> stack = si -> stack;
     me -> stack_size = si -> stack_size;
+#ifdef STACK_GROWS_UP
     me -> stack_ptr = (ptr_t)si -> stack + si -> stack_size - sizeof(word);
+#else
+    /* stack_ptr needs to point to the hot part of the stack (or conservatively, past it) */
+    me -> stack_ptr = (ptr_t)si -> stack;
+#endif
     UNLOCK();
     start = si -> start_routine;
     start_arg = si -> arg;
@@ -578,7 +648,43 @@ void * GC_start_routine(void * arg)
     return(result);
 }
 
-# define copy_attr(pa_ptr, source) *(pa_ptr) = *(source)
+# if defined(GC_AIX_THREADS)
+  /* pthread_attr_t is not a structure, thus a simple structure copy	*/
+  /* won't work.							*/
+  static void copy_attr(pthread_attr_t * pa_ptr,
+			const pthread_attr_t  * source) {
+    int tmp;
+    size_t stmp;
+    void * vtmp;
+    struct sched_param sp_tmp;
+#ifndef GC_AIX_THREADS
+    pthread_spu_t ps_tmp;
+#endif
+    (void) pthread_attr_init(pa_ptr);
+    (void) pthread_attr_getdetachstate(source, &tmp);
+    (void) pthread_attr_setdetachstate(pa_ptr, tmp);
+    (void) pthread_attr_getinheritsched(source, &tmp);
+    (void) pthread_attr_setinheritsched(pa_ptr, tmp);
+    (void) pthread_attr_getschedpolicy(source, &tmp);
+    (void) pthread_attr_setschedpolicy(pa_ptr, tmp);
+    (void) pthread_attr_getstacksize(source, &stmp);
+    (void) pthread_attr_setstacksize(pa_ptr, stmp);
+    (void) pthread_attr_getguardsize(source, &stmp);
+    (void) pthread_attr_setguardsize(pa_ptr, stmp);
+    (void) pthread_attr_getstackaddr(source, &vtmp);
+    (void) pthread_attr_setstackaddr(pa_ptr, vtmp);
+    (void) pthread_attr_getscope(source, &tmp);
+    (void) pthread_attr_setscope(pa_ptr, tmp);
+    (void) pthread_attr_getschedparam(source, &sp_tmp);
+    (void) pthread_attr_setschedparam(pa_ptr, &sp_tmp);
+#ifndef GC_AIX_THREADS
+    (void) pthread_attr_getprocessor_np(source, &ps_tmp, &tmp);
+    (void) pthread_attr_setprocessor_np(pa_ptr, ps_tmp, tmp);
+#endif
+  }
+# else
+#   define copy_attr(pa_ptr, source) *(pa_ptr) = *(source)
+# endif
 
 int
 GC_pthread_create(pthread_t *new_thread,
@@ -593,8 +699,9 @@ GC_pthread_create(pthread_t *new_thread,
     int detachstate;
     word my_flags = 0;
     struct start_info * si = GC_malloc(sizeof(struct start_info)); 
-	/* This is otherwise saved only in an area mmapped by the thread */
-	/* library, which isn't visible to the collector.		 */
+
+    /* This is otherwise saved only in an area mmapped by the thread */
+    /* library, which isn't visible to the collector.		 */
 
     if (0 == si) return(ENOMEM);
     if (0 != sem_init(&(si -> registered), 0, 0)) {
@@ -603,7 +710,8 @@ GC_pthread_create(pthread_t *new_thread,
     si -> start_routine = start_routine;
     si -> arg = arg;
     LOCK();
-    if (!GC_is_initialized) GC_init();
+    if (!GC_thr_initialized) GC_thr_init();
+
     if (NULL == attr) {
         stack = 0;
 	(void) pthread_attr_init(&new_attr);
@@ -613,25 +721,43 @@ GC_pthread_create(pthread_t *new_thread,
     }
     pthread_attr_getstacksize(&new_attr, &stacksize);
     pthread_attr_getdetachstate(&new_attr, &detachstate);
-    if (stacksize < GC_min_stack_sz) ABORT("Stack too small");
-    if (0 == stack) {
-     	stack = (void *)GC_stack_alloc(&stacksize);
-     	if (0 == stack) {
-     	    UNLOCK();
-     	    return(ENOMEM);
-     	}
-	pthread_attr_setstackaddr(&new_attr, stack);
-    } else {
-    	my_flags |= CLIENT_OWNS_STACK;
+#ifdef GC_AIX_THREADS
+    GC_min_stack_sz = 5*1048576;
+    if (stacksize < GC_min_stack_sz) {
+      stacksize = GC_min_stack_sz;
     }
+    { int alignment = 16*1024; /* size must be multiple of 16KB greater than 56KB */
+      int minval = 56*1024;
+      if ((stacksize - minval) % alignment != 0) {
+        stacksize = minval + alignment * ((stacksize-minval)/alignment + 1);
+      }
+    }
+#endif
+    if (0 == stack) { 
+      stack = (void *)GC_stack_alloc(&stacksize);
+      if (0 == stack) {
+	UNLOCK();
+	return(ENOMEM);
+      }
+      pthread_attr_setstacksize(&new_attr, stacksize);
+#ifdef GC_AIX_THREADS
+      pthread_attr_setstackaddr(&new_attr, ((char *)stack)+stacksize);
+#else
+      pthread_attr_setstackaddr(&new_attr, stack);
+#endif
+    } else {
+      my_flags |= CLIENT_OWNS_STACK;
+    }
+
     if (PTHREAD_CREATE_DETACHED == detachstate) my_flags |= DETACHED;
     si -> flags = my_flags;
     si -> stack = stack;
     si -> stack_size = stacksize;
-    result = pthread_create(new_thread, &new_attr, GC_start_routine, si);
+    result = pthread_create(new_thread, &new_attr, GC_start_routine, si); 
+
     if (0 == new_thread && !(my_flags & CLIENT_OWNS_STACK)) {
       	GC_stack_free(stack, stacksize);
-    }        
+    } 
     UNLOCK();  
     /* Wait until child has been added to the thread table.		*/
     /* This also ensures that we hold onto si until the child is done	*/
@@ -644,12 +770,14 @@ GC_pthread_create(pthread_t *new_thread,
 	  }
 	}
         sem_destroy(&(si -> registered));
-    pthread_attr_destroy(&new_attr);  /* Probably unnecessary under Irix */
+    pthread_attr_destroy(&new_attr);  
+
     return(result);
 }
 
-VOLATILE GC_bool GC_collecting = 0;
-			/* A hint that we're in the collector and       */
+/* For now we use the pthreads locking primitives on HP/UX */
+
+VOLATILE GC_bool GC_collecting = 0; /* A hint that we're in the collector and       */
                         /* holding the allocation lock for an           */
                         /* extended period.                             */
 
@@ -658,9 +786,9 @@ VOLATILE GC_bool GC_collecting = 0;
 
 #define SLEEP_THRESHOLD 3
 
-unsigned long GC_allocate_lock = 0;
-# define GC_TRY_LOCK() !GC_test_and_set(&GC_allocate_lock)
-# define GC_LOCK_TAKEN GC_allocate_lock
+volatile unsigned int GC_allocate_lock = 0;
+#define GC_TRY_LOCK() !GC_test_and_set(&GC_allocate_lock)
+#define GC_LOCK_TAKEN GC_allocate_lock
 
 void GC_lock()
 {
@@ -720,11 +848,11 @@ yield:
     }
 }
 
-# else
+# else  /* !GC_IRIX_THREADS && !GC_AIX_THREADS */
 
 #ifndef LINT
   int GC_no_Irix_threads;
 #endif
 
-# endif /* GC_IRIX_THREADS */
+# endif /* IRIX_THREADS */
 

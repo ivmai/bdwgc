@@ -341,6 +341,10 @@ GC_API void GC_clear_roots GC_PROTO((void));
 GC_API void GC_add_roots GC_PROTO((char * low_address,
 				   char * high_address_plus_1));
 
+/* Remove a root segment.  Wizards only. */
+GC_API void GC_remove_roots GC_PROTO((char * low_address, 
+    char * high_address_plus_1));
+
 /* Add a displacement to the set of those considered valid by the	*/
 /* collector.  GC_register_displacement(n) means that if p was returned */
 /* by GC_malloc, then (char *)p + n will be considered to be a valid	*/
@@ -872,9 +876,8 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
 
 #endif /* THREADS && !SRC_M3 */
 
-#if defined(GC_WIN32_THREADS)
+#if defined(GC_WIN32_THREADS) && !defined(__CYGWIN32__) && !defined(__CYGWIN__)
 # include <windows.h>
-# include <winbase.h>
 
   /*
    * All threads must be created using GC_CreateThread, so that they will be
@@ -905,7 +908,7 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
 #  endif
 # endif /* defined(_WIN32_WCE) */
 
-#endif /* defined(GC_WIN32_THREADS) */
+#endif /* defined(GC_WIN32_THREADS)  && !cygwin */
 
 /*
  * If you are planning on putting
@@ -924,7 +927,11 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
      */
 #   define GC_INIT() { GC_add_roots(DATASTART, DATAEND); }
 # else
+#  if defined(__APPLE__) && defined(__MACH__)
+#   define GC_INIT() { GC_init(); }
+#  else
 #   define GC_INIT()
+#  endif
 # endif
 #endif
 

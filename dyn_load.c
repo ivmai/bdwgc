@@ -58,7 +58,7 @@
     !defined(RS6000) && !defined(SCO_ELF) && !defined(DGUX) && \
     !(defined(FREEBSD) && defined(__ELF__)) && \
     !(defined(NETBSD) && defined(__ELF__)) && !defined(HURD) && \
-    !defined(MACOSX)
+    !defined(DARWIN)
  --> We only know how to find data segments of dynamic libraries for the
  --> above.  Additional SVR4 variants might not be too
  --> hard to add.
@@ -961,7 +961,7 @@ void GC_register_dynamic_libraries()
 		len = ldi->ldinfo_next;
 		GC_add_roots_inner(
 				ldi->ldinfo_dataorg,
-				(unsigned long)ldi->ldinfo_dataorg
+				(ptr_t)(unsigned long)ldi->ldinfo_dataorg
 			        + ldi->ldinfo_datasize,
 				TRUE);
 		ldi = len ? (struct ld_info *)((char *)ldi + len) : 0;
@@ -969,63 +969,122 @@ void GC_register_dynamic_libraries()
 }
 #endif /* RS6000 */
 
-#ifdef MACOSX
+#ifdef DARWIN
 
 #include <mach-o/dyld.h>
 #include <mach-o/getsect.h>
 
-/*#define MACOSX_DEBUG */
+/*#define DARWIN_DEBUG*/
 
-void GC_register_dynamic_libraries() 
-{
-    unsigned long image_count;
-    const struct mach_header *mach_header;
-    const struct section *sec;
-    unsigned long slide;
-    unsigned long filetype;
-    int i,j;
-    unsigned long start;
-    unsigned long end;
-    
-    static struct { 
+const static struct { 
         const char *seg;
         const char *sect;
-    } sections[] = {
+} GC_dyld_sections[] = {
         { SEG_DATA, SECT_DATA },
         { SEG_DATA, SECT_BSS },
         { SEG_DATA, SECT_COMMON }
-    };
+};
     
-    image_count = _dyld_image_count();
-    for(i=0;i<image_count;i++)
-    {
-        mach_header = _dyld_get_image_header(i);
-        slide = _dyld_get_image_vmaddr_slide(i);
-        filetype = mach_header->filetype;
+#ifdef DARWIN_DEBUG
+static const char *GC_dyld_name_for_hdr(struct mach_header *hdr) {
+    unsigned long i,c;
+    c = _dyld_image_count();
+    for(i=0;i<c;i++) if(_dyld_get_image_header(i) == hdr)
+        return _dyld_get_image_name(i);
+    return NULL;
+}
+#endif
         
-        for(j=0;j<sizeof(sections)/sizeof(sections[0]);j++) {
-            sec = getsectbynamefromheader(mach_header,sections[j].seg,sections[j].sect);
+/* This should never be called by a thread holding the lock */
+static void GC_dyld_image_add(struct mach_header* hdr, unsigned long slide) {
+    unsigned long start,end,i;
+    const struct section *sec;
+    for(i=0;i<sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]);i++) {
+        sec = getsectbynamefromheader(
+            hdr,GC_dyld_sections[i].seg,GC_dyld_sections[i].sect);
             if(sec == NULL || sec->size == 0) continue;
             start = slide + sec->addr;
             end = start + sec->size;
-#			ifdef MACOSX_DEBUG
+#		ifdef DARWIN_DEBUG
                 GC_printf4("Adding section at %p-%p (%lu bytes) from image %s\n",
-                    start,end,sec->size,_dyld_get_image_name(i));
+                start,end,sec->size,GC_dyld_name_for_hdr(hdr));
 #			endif
-
-            GC_add_roots_inner((char*)start,(char*)end,
-                filetype == MH_EXECUTE ? FALSE : TRUE);
+        GC_add_roots((char*)start,(char*)end);
         }
+#	ifdef DARWIN_DEBUG
+    GC_print_static_roots();
+#	endif
+}
+
+/* This should never be called by a thread holding the lock */
+static void GC_dyld_image_remove(struct mach_header* hdr, unsigned long slide) {
+    unsigned long start,end,i;
+    const struct section *sec;
+    for(i=0;i<sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]);i++) {
+        sec = getsectbynamefromheader(
+            hdr,GC_dyld_sections[i].seg,GC_dyld_sections[i].sect);
+        if(sec == NULL || sec->size == 0) continue;
+        start = slide + sec->addr;
+        end = start + sec->size;
+#		ifdef DARWIN_DEBUG
+            GC_printf4("Removing section at %p-%p (%lu bytes) from image %s\n",
+                start,end,sec->size,GC_dyld_name_for_hdr(hdr));
+#		endif
+        GC_remove_roots((char*)start,(char*)end);
     }
+#	ifdef DARWIN_DEBUG
+    GC_print_static_roots();
+#	endif
+}
+
+void GC_register_dynamic_libraries() {
+    /* Currently does nothing. The callbacks are setup by GC_init_dyld() 
+    The dyld library takes it from there. */
+}
+
+/* The _dyld_* functions have an internal lock so no _dyld functions
+   can be called while the world is stopped without the risk of a deadlock.
+   Because of this we MUST setup callbacks BEFORE we ever stop the world.
+   This should be called BEFORE any thread in created and WITHOUT the
+   allocation lock held. */
+   
+void GC_init_dyld() {
+    static GC_bool initialized = FALSE;
+    
+    if(initialized) return;
+    
+#   ifdef DARWIN_DEBUG
+        GC_printf0("Forcing full bind of GC code...\n");
+#   endif
+    if(!_dyld_bind_fully_image_containing_address((unsigned long*)GC_malloc))
+        GC_abort("_dyld_bind_fully_image_containing_addres failed");
+            
+#   ifdef DARWIN_DEBUG
+        GC_printf0("Registering dyld callbacks...\n");
+#   endif
+
+    /* Apple's Documentation:
+    When you call _dyld_register_func_for_add_image, the dynamic linker runtime
+    calls the specified callback (func) once for each of the images that is
+    currently loaded into the program. When a new image is added to the program,
+    your callback is called again with the mach_header for the new image, and the 	virtual memory slide amount of the new image. 
+        
+    This WILL properly register existing and all future libraries
+    */
+        
+    _dyld_register_func_for_add_image(GC_dyld_image_add);
+    _dyld_register_func_for_remove_image(GC_dyld_image_remove);
+    initialized = TRUE;
 }
 
 #define HAVE_REGISTER_MAIN_STATIC_DATA
 GC_bool GC_register_main_static_data()
 {
+  /* Already done through dyld callbacks */
   return FALSE;
 }
 
-#endif /* MACOSX */
+#endif /* DARWIN */
 
 #else /* !DYNAMIC_LOADING */
 

@@ -132,6 +132,11 @@
 # define jmp_buf sigjmp_buf
 #endif
 
+#ifdef DARWIN
+/* for get_etext and friends */
+#include <mach-o/getsect.h>
+#endif
+
 #ifdef DJGPP
   /* Apparently necessary for djgpp 2.01.  May cause problems with	*/
   /* other versions.							*/
@@ -272,10 +277,11 @@ char *GC_parse_map_entry(char *buf_ptr, word *start, word *end,
         return NULL;
     }
 
-    memcpy(prot_buf, buf_ptr+OFFSET_MAP_PROT, 4); // do the protections first
+    memcpy(prot_buf, buf_ptr+OFFSET_MAP_PROT, 4);
+    				/* do the protections first. */
     prot_buf[4] = '\0';
 
-    if (prot_buf[1] == 'w') { // we can skip all of this if it's not writable
+    if (prot_buf[1] == 'w') {/* we can skip all of this if it's not writable. */
 
         tok = buf_ptr;
         buf_ptr[OFFSET_MAP_START+ADDR_WIDTH] = '\0';
@@ -864,7 +870,7 @@ ptr_t GC_get_stack_base()
 	  && 0 != __libc_ia64_register_backing_store_base) {
 	/* Glibc 2.2.4 has a bug such that for dynamically linked	*/
 	/* executables __libc_ia64_register_backing_store_base is 	*/
-	/* defined but ininitialized during constructor calls.  	*/
+	/* defined but uninitialized during constructor calls.  	*/
 	/* Hence we check for both nonzero address and value.		*/
 	return __libc_ia64_register_backing_store_base;
       } else {
@@ -961,8 +967,11 @@ ptr_t GC_get_stack_base()
 
 ptr_t GC_get_stack_base()
 {
+#   if defined(HEURISTIC1) || defined(HEURISTIC2) || \
+       defined(LINUX_STACKBOTTOM) || defined(FREEBSD_STACKBOTTOM)
     word dummy;
     ptr_t result;
+#   endif
 
 #   define STACKBOTTOM_ALIGNMENT_M1 ((word)STACK_GRAN - 1)
 
@@ -2007,7 +2016,6 @@ void (*GC_push_other_roots) GC_PROTO((void)) = GC_default_push_other_roots;
  *		make sure that other system calls are similarly protected
  *		or write only to the stack.
  */
- 
 GC_bool GC_dirty_maintained = FALSE;
 
 # ifdef DEFAULT_VDB
@@ -2021,6 +2029,9 @@ GC_bool GC_dirty_maintained = FALSE;
 /* Initialize virtual dirty bit implementation.			*/
 void GC_dirty_init()
 {
+#   ifdef PRINTSTATS
+      GC_printf0("Initializing DEFAULT_VDB...\n");
+#   endif
     GC_dirty_maintained = TRUE;
 }
 
@@ -2103,7 +2114,7 @@ GC_bool is_ptrfree;
  * objects only if they are the same.
  */
 
-# if !defined(MSWIN32) && !defined(MSWINCE)
+# if !defined(MSWIN32) && !defined(MSWINCE) && !defined(DARWIN)
 
 #   include <sys/mman.h>
 #   include <signal.h>
@@ -2122,6 +2133,23 @@ GC_bool is_ptrfree;
     	  
 # else
 
+# ifdef DARWIN
+    /* Using vm_protect (mach syscall) over mprotect (BSD syscall) seems to
+       decrease the likelihood of some of the problems described below. */
+    #include <mach/vm_map.h>
+    extern mach_port_t GC_task_self;
+    #define PROTECT(addr,len) \
+        if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
+                FALSE,VM_PROT_READ) != KERN_SUCCESS) { \
+            ABORT("vm_portect failed"); \
+        }
+    #define UNPROTECT(addr,len) \
+        if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
+                FALSE,VM_PROT_READ|VM_PROT_WRITE) != KERN_SUCCESS) { \
+            ABORT("vm_portect failed"); \
+        }
+# else
+    
 #   ifndef MSWINCE
 #     include <signal.h>
 #   endif
@@ -2139,20 +2167,22 @@ GC_bool is_ptrfree;
 	  		      &protect_junk)) { \
 	    ABORT("un-VirtualProtect failed"); \
 	  }
-	  
-# endif
+# endif /* !DARWIN */
+# endif /* MSWIN32 || MSWINCE || DARWIN */
 
 #if defined(SUNOS4) || defined(FREEBSD)
     typedef void (* SIG_PF)();
-#endif
+#endif /* SUNOS4 || FREEBSD */
+
 #if defined(SUNOS5SIGS) || defined(OSF1) || defined(LINUX) \
-    || defined(MACOSX) || defined(HURD)
+    || defined(HURD)
 # ifdef __STDC__
     typedef void (* SIG_PF)(int);
 # else
     typedef void (* SIG_PF)();
 # endif
-#endif
+#endif /* SUNOS5SIGS || OSF1 || LINUX || HURD */
+
 #if defined(MSWIN32)
     typedef LPTOP_LEVEL_EXCEPTION_FILTER SIG_PF;
 #   undef SIG_DFL
@@ -2166,7 +2196,8 @@ GC_bool is_ptrfree;
 
 #if defined(IRIX5) || defined(OSF1) || defined(HURD)
     typedef void (* REAL_SIG_PF)(int, int, struct sigcontext *);
-#endif
+#endif /* IRIX5 || OSF1 || HURD */
+
 #if defined(SUNOS5SIGS)
 # ifdef HPUX
 #   define SIGINFO __siginfo
@@ -2178,7 +2209,8 @@ GC_bool is_ptrfree;
 # else
     typedef void (* REAL_SIG_PF)();
 # endif
-#endif
+#endif /* SUNOS5SIGS */
+
 #if defined(LINUX)
 #   if __GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ >= 2
       typedef struct sigcontext s_c;
@@ -2212,139 +2244,14 @@ GC_bool is_ptrfree;
 	return (char *)faultaddr;
     }
 #   endif /* !ALPHA */
-# endif
+# endif /* LINUX */
 
-# if defined(MACOSX) /* Should also test for PowerPC? */
-    typedef void (* REAL_SIG_PF)(int, int, struct sigcontext *);
-
-/* Decodes the machine instruction which was responsible for the sending of the
-   SIGBUS signal. Sadly this is the only way to find the faulting address because
-   the signal handler doesn't get it directly from the kernel (although it is
-   available on the Mach level, but droppped by the BSD personality before it
-   calls our signal handler...)
-   This code should be able to deal correctly with all PPCs starting from the
-   601 up to and including the G4s (including Velocity Engine). */
-#define EXTRACT_OP1(iw)     (((iw) & 0xFC000000) >> 26)
-#define EXTRACT_OP2(iw)     (((iw) & 0x000007FE) >> 1)
-#define EXTRACT_REGA(iw)    (((iw) & 0x001F0000) >> 16)
-#define EXTRACT_REGB(iw)    (((iw) & 0x03E00000) >> 21)
-#define EXTRACT_REGC(iw)    (((iw) & 0x0000F800) >> 11)
-#define EXTRACT_DISP(iw)    ((short *) &(iw))[1]
-
-static char *get_fault_addr(struct sigcontext *scp)
-{
-   unsigned int   instr = *((unsigned int *) scp->sc_ir);
-   unsigned int * regs = &((unsigned int *) scp->sc_regs)[2];
-   int            disp = 0, tmp;
-   unsigned int   baseA = 0, baseB = 0;
-   unsigned int   addr, alignmask = 0xFFFFFFFF;
-
-#ifdef GC_DEBUG_DECODER
-   GC_err_printf1("Instruction: 0x%lx\n", instr);
-   GC_err_printf1("Opcode 1: d\n", (int)EXTRACT_OP1(instr));
-#endif
-   switch(EXTRACT_OP1(instr)) {
-      case 38:   /* stb */
-      case 39:   /* stbu */
-      case 54:   /* stfd */
-      case 55:   /* stfdu */
-      case 52:   /* stfs */
-      case 53:   /* stfsu */
-      case 44:   /* sth */
-      case 45:   /* sthu */
-      case 47:   /* stmw */
-      case 36:   /* stw */
-      case 37:   /* stwu */
-            tmp = EXTRACT_REGA(instr);
-            if(tmp > 0)
-               baseA = regs[tmp];
-            disp = EXTRACT_DISP(instr);
-            break;
-      case 31:
-#ifdef GC_DEBUG_DECODER
-            GC_err_printf1("Opcode 2: %d\n", (int)EXTRACT_OP2(instr));
-#endif
-            switch(EXTRACT_OP2(instr)) {
-               case 86:    /* dcbf */
-               case 54:    /* dcbst */
-               case 1014:  /* dcbz */
-               case 247:   /* stbux */
-               case 215:   /* stbx */
-               case 759:   /* stfdux */
-               case 727:   /* stfdx */
-               case 983:   /* stfiwx */
-               case 695:   /* stfsux */
-               case 663:   /* stfsx */
-               case 918:   /* sthbrx */
-               case 439:   /* sthux */
-               case 407:   /* sthx */
-               case 661:   /* stswx */
-               case 662:   /* stwbrx */
-               case 150:   /* stwcx. */
-               case 183:   /* stwux */
-               case 151:   /* stwx */
-               case 135:   /* stvebx */
-               case 167:   /* stvehx */
-               case 199:   /* stvewx */
-               case 231:   /* stvx */
-               case 487:   /* stvxl */
-                     tmp = EXTRACT_REGA(instr);
-                     if(tmp > 0)
-                        baseA = regs[tmp];
-                        baseB = regs[EXTRACT_REGC(instr)];
-                        /* determine Altivec alignment mask */
-                        switch(EXTRACT_OP2(instr)) {
-                           case 167:   /* stvehx */
-                                 alignmask = 0xFFFFFFFE;
-                                 break;
-                           case 199:   /* stvewx */
-                                 alignmask = 0xFFFFFFFC;
-                                 break;
-                           case 231:   /* stvx */
-                                 alignmask = 0xFFFFFFF0;
-                                 break;
-                           case 487:  /* stvxl */
-                                 alignmask = 0xFFFFFFF0;
-                                 break;
-                        }
-                        break;
-               case 725:   /* stswi */
-                     tmp = EXTRACT_REGA(instr);
-                     if(tmp > 0)
-                        baseA = regs[tmp];
-                        break;
-               default:   /* ignore instruction */
-#ifdef GC_DEBUG_DECODER
-                     GC_err_printf("Ignored by inner handler\n");
-#endif
-                     return NULL;
-                    break;
-            }
-            break;
-      default:   /* ignore instruction */
-#ifdef GC_DEBUG_DECODER
-            GC_err_printf("Ignored by main handler\n");
-#endif
-            return NULL;
-            break;
-   }
-	
-   addr = (baseA + baseB) + disp;
-  addr &= alignmask;
-#ifdef GC_DEBUG_DECODER
-   GC_err_printf1("BaseA: %d\n", baseA);
-   GC_err_printf1("BaseB: %d\n", baseB);
-   GC_err_printf1("Disp:  %d\n", disp);
-   GC_err_printf1("Address: %d\n", addr);
-#endif
-   return (char *)addr;
-}
-#endif /* MACOSX */
-
+#ifndef DARWIN
 SIG_PF GC_old_bus_handler;
 SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
+#endif /* !DARWIN */
 
-#ifdef THREADS
+#if defined(THREADS)
 /* We need to lock around the bitmap update in the write fault handler	*/
 /* in order to avoid the risk of losing a bit.  We do this with a 	*/
 /* test-and-set spin lock if we know how to do that.  Otherwise we	*/
@@ -2393,6 +2300,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #endif /* !THREADS */
 
 /*ARGSUSED*/
+#if !defined(DARWIN)
 # if defined (SUNOS4) || defined(FREEBSD)
     void GC_write_fault_handler(sig, code, scp, addr)
     int sig, code;
@@ -2408,7 +2316,8 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #     define SIG_OK (sig == SIGBUS)
 #     define CODE_OK (code == BUS_PAGE_FAULT)
 #   endif
-# endif
+# endif /* SUNOS4 || FREEBSD */
+
 # if defined(IRIX5) || defined(OSF1) || defined(HURD)
 #   include <errno.h>
     void GC_write_fault_handler(int sig, int code, struct sigcontext *scp)
@@ -2424,7 +2333,8 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #     define SIG_OK (sig == SIGBUS || sig == SIGSEGV) 	
 #     define CODE_OK  TRUE
 #   endif
-# endif
+# endif /* IRIX5 || OSF1 || HURD */
+
 # if defined(LINUX)
 #   if defined(ALPHA) || defined(M68K)
       void GC_write_fault_handler(int sig, int code, s_c * sc)
@@ -2444,7 +2354,8 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 	/* Empirically c.trapno == 14, on IA32, but is that useful?     */
 	/* Should probably consider alignment issues on other 		*/
 	/* architectures.						*/
-# endif
+# endif /* LINUX */
+
 # if defined(SUNOS5SIGS)
 #  ifdef __STDC__
     void GC_write_fault_handler(int sig, struct SIGINFO *scp, void * context)
@@ -2465,13 +2376,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #     define SIG_OK (sig == SIGSEGV)
 #     define CODE_OK (scp -> si_code == SEGV_ACCERR)
 #   endif
-# endif
-
-# if defined(MACOSX)
-    void GC_write_fault_handler(int sig, int code, struct sigcontext *scp)
-#   define SIG_OK (sig == SIGBUS)
-#   define CODE_OK (code == 0 /* experimentally determined */)
-# endif
+# endif /* SUNOS5SIGS */
 
 # if defined(MSWIN32) || defined(MSWINCE)
     LONG WINAPI GC_write_fault_handler(struct _EXCEPTION_POINTERS *exc_info)
@@ -2479,7 +2384,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 			STATUS_ACCESS_VIOLATION)
 #   define CODE_OK (exc_info -> ExceptionRecord -> ExceptionInformation[0] == 1)
 			/* Write fault */
-# endif
+# endif /* MSWIN32 || MSWINCE */
 {
     register unsigned i;
 #   if defined(HURD) 
@@ -2550,9 +2455,6 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #	endif
 #     endif
 #   endif
-#   if defined(MACOSX)
-        char * addr = get_fault_addr(scp);
-#   endif
 #   if defined(MSWIN32) || defined(MSWINCE)
 	char * addr = (char *) (exc_info -> ExceptionRecord
 				-> ExceptionInformation[1]);
@@ -2616,9 +2518,6 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 		    (*(REAL_SIG_PF)old_handler) (sig, code, scp);
 		    return;
 #		endif
-#		ifdef MACOSX
-		    (*(REAL_SIG_PF)old_handler) (sig, code, scp);
-#		endif
 #		ifdef MSWIN32
 		    return((*old_handler)(exc_info));
 #		endif
@@ -2660,6 +2559,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
     ABORT("Unexpected bus error or segmentation fault");
 #endif
 }
+#endif /* !DARWIN */
 
 /*
  * We hold the allocation lock.  We expect block h to be written
@@ -2692,6 +2592,7 @@ GC_bool is_ptrfree;
     UNPROTECT(h_trunc, (ptr_t)h_end - (ptr_t)h_trunc);
 }
 
+#if !defined(DARWIN)
 void GC_dirty_init()
 {
 #   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(LINUX) || \
@@ -2714,13 +2615,6 @@ void GC_dirty_init()
         (void)sigaddset(&act.sa_mask, SIG_SUSPEND);
 #     endif /* SIG_SUSPEND */
 #    endif
-#   if defined(MACOSX)
-      struct sigaction act, oldact;
-
-      act.sa_flags = SA_RESTART;
-      act.sa_handler = GC_write_fault_handler;
-      sigemptyset(&act.sa_mask);
-#   endif
 #   ifdef PRINTSTATS
 	GC_printf0("Inititalizing mprotect virtual dirty bit implementation\n");
 #   endif
@@ -2786,7 +2680,7 @@ void GC_dirty_init()
 #       endif
       }
 #   endif
-#   if defined(MACOSX) || defined(HPUX) || defined(LINUX) || defined(HURD)
+#   if defined(HPUX) || defined(LINUX) || defined(HURD)
       sigaction(SIGBUS, &act, &oldact);
       GC_old_bus_handler = oldact.sa_handler;
       if (GC_old_bus_handler == SIG_IGN) {
@@ -2798,7 +2692,7 @@ void GC_dirty_init()
 	  GC_err_printf0("Replaced other SIGBUS handler\n");
 #       endif
       }
-#   endif /* MACOS || HPUX || LINUX */
+#   endif /* HPUX || LINUX || HURD */
 #   if defined(MSWIN32)
       GC_old_segv_handler = SetUnhandledExceptionFilter(GC_write_fault_handler);
       if (GC_old_segv_handler != NULL) {
@@ -2810,6 +2704,7 @@ void GC_dirty_init()
       }
 #   endif
 }
+#endif /* !DARWIN */
 
 int GC_incremental_protection_needs()
 {
@@ -3377,6 +3272,553 @@ GC_bool is_ptrfree;
 
 # endif /* PCR_VDB */
 
+#if defined(MPROTECT_VDB) && defined(DARWIN)
+/* The following sources were used as a *reference* for this exception handling
+   code:
+      1. Apple's mach/xnu documentation
+      2. Timothy J. Wood's "Mach Exception Handlers 101" post to the
+         omnigroup's macosx-dev list. 
+         www.omnigroup.com/mailman/archive/macosx-dev/2000-June/002030.html
+      3. macosx-nat.c from Apple's GDB source code.
+*/
+   
+/* There seem to be numerous problems with darwin's mach exception handling.
+   I'm pretty sure they are not problems in my code. Search for 
+   BROKEN_EXCEPTION_HANDLING for more information. */
+#define BROKEN_EXCEPTION_HANDLING
+   
+#include <mach/mach.h>
+#include <mach/mach_error.h>
+#include <mach/thread_status.h>
+#include <mach/exception.h>
+#include <mach/task.h>
+#include <pthread.h>
+
+/* These are not defined in any header, although they are documented */
+extern boolean_t exc_server(mach_msg_header_t *,mach_msg_header_t *);
+extern kern_return_t exception_raise(
+    mach_port_t,mach_port_t,mach_port_t,
+    exception_type_t,exception_data_t,mach_msg_type_number_t);
+extern kern_return_t exception_raise_state(
+    mach_port_t,mach_port_t,mach_port_t,
+    exception_type_t,exception_data_t,mach_msg_type_number_t,
+    thread_state_flavor_t*,thread_state_t,mach_msg_type_number_t,
+    thread_state_t,mach_msg_type_number_t*);
+extern kern_return_t exception_raise_state_identity(
+    mach_port_t,mach_port_t,mach_port_t,
+    exception_type_t,exception_data_t,mach_msg_type_number_t,
+    thread_state_flavor_t*,thread_state_t,mach_msg_type_number_t,
+    thread_state_t,mach_msg_type_number_t*);
+
+
+#define MAX_EXCEPTION_PORTS 16
+
+static mach_port_t GC_task_self;
+
+static struct {
+    mach_msg_type_number_t count;
+    exception_mask_t      masks[MAX_EXCEPTION_PORTS];
+    exception_handler_t   ports[MAX_EXCEPTION_PORTS];
+    exception_behavior_t  behaviors[MAX_EXCEPTION_PORTS];
+    thread_state_flavor_t flavors[MAX_EXCEPTION_PORTS];
+} GC_old_exc_ports;
+
+static struct {
+    mach_port_t exception;
+#if defined(THREADS)
+    mach_port_t reply;
+#endif
+} GC_ports;
+
+typedef struct {
+    mach_msg_header_t head;
+} GC_msg_t;
+
+typedef enum {
+    GC_MP_NORMAL, GC_MP_DISCARDING, GC_MP_STOPPED
+} GC_mprotect_state_t;
+
+/* FIXME: 1 and 2 seem to be safe to use in the msgh_id field,
+   but it isn't  documented. Use the source and see if they
+   should be ok. */
+#define ID_STOP 1
+#define ID_RESUME 2
+
+/* These values are only used on the reply port */
+#define ID_ACK 3
+
+#if defined(THREADS)
+
+GC_mprotect_state_t GC_mprotect_state;
+
+/* The following should ONLY be called when the world is stopped  */
+static void GC_mprotect_thread_notify(mach_msg_id_t id) {
+    struct {
+        GC_msg_t msg;
+        mach_msg_trailer_t trailer;
+    } buf;
+    mach_msg_return_t r;
+    /* remote, local */
+    buf.msg.head.msgh_bits = 
+        MACH_MSGH_BITS(MACH_MSG_TYPE_MAKE_SEND,0);
+    buf.msg.head.msgh_size = sizeof(buf.msg);
+    buf.msg.head.msgh_remote_port = GC_ports.exception;
+    buf.msg.head.msgh_local_port = MACH_PORT_NULL;
+    buf.msg.head.msgh_id = id;
+            
+    r = mach_msg(
+        &buf.msg.head,
+        MACH_SEND_MSG|MACH_RCV_MSG|MACH_RCV_LARGE,
+        sizeof(buf.msg),
+        sizeof(buf),
+        GC_ports.reply,
+        MACH_MSG_TIMEOUT_NONE,
+        MACH_PORT_NULL);
+    if(r != MACH_MSG_SUCCESS)
+	ABORT("mach_msg failed in GC_mprotect_thread_notify");
+    if(buf.msg.head.msgh_id != ID_ACK)
+        ABORT("invalid ack in GC_mprotect_thread_notify");
+}
+
+/* Should only be called by the mprotect thread */
+static void GC_mprotect_thread_reply() {
+    GC_msg_t msg;
+    mach_msg_return_t r;
+    /* remote, local */
+    msg.head.msgh_bits = 
+        MACH_MSGH_BITS(MACH_MSG_TYPE_MAKE_SEND,0);
+    msg.head.msgh_size = sizeof(msg);
+    msg.head.msgh_remote_port = GC_ports.reply;
+    msg.head.msgh_local_port = MACH_PORT_NULL;
+    msg.head.msgh_id = ID_ACK;
+            
+    r = mach_msg(
+        &msg.head,
+        MACH_SEND_MSG,
+        sizeof(msg),
+        0,
+        MACH_PORT_NULL,
+        MACH_MSG_TIMEOUT_NONE,
+        MACH_PORT_NULL);
+    if(r != MACH_MSG_SUCCESS)
+	ABORT("mach_msg failed in GC_mprotect_thread_reply");
+}
+
+void GC_mprotect_stop() {
+    GC_mprotect_thread_notify(ID_STOP);
+}
+void GC_mprotect_resume() {
+    GC_mprotect_thread_notify(ID_RESUME);
+}
+
+#else /* !THREADS */
+/* The compiler should optimize away any GC_mprotect_state computations */
+#define GC_mprotect_state GC_MP_NORMAL
+#endif
+
+static void *GC_mprotect_thread(void *arg) {
+    mach_msg_return_t r;
+    /* These two structures contain some private kernel data. We don't need to
+       access any of it so we don't bother defining a proper struct. The
+       correct definitions are in the xnu source code. */
+    struct {
+        mach_msg_header_t head;
+        char data[256];
+    } reply;
+    struct {
+        mach_msg_header_t head;
+        mach_msg_body_t msgh_body;
+        char data[1024];
+    } msg;
+
+    mach_msg_id_t id;
+    
+    for(;;) {
+        r = mach_msg(
+            &msg.head,
+            MACH_RCV_MSG|MACH_RCV_LARGE|
+                (GC_mprotect_state == GC_MP_DISCARDING ? MACH_RCV_TIMEOUT : 0),
+            0,
+            sizeof(msg),
+            GC_ports.exception,
+            GC_mprotect_state == GC_MP_DISCARDING ? 0 : MACH_MSG_TIMEOUT_NONE,
+            MACH_PORT_NULL);
+        
+        id = r == MACH_MSG_SUCCESS ? msg.head.msgh_id : -1;
+        
+#if defined(THREADS)
+        if(GC_mprotect_state == GC_MP_DISCARDING) {
+            if(r == MACH_RCV_TIMED_OUT) {
+                GC_mprotect_state = GC_MP_STOPPED;
+                GC_mprotect_thread_reply();
+                continue;
+            }
+            if(r == MACH_MSG_SUCCESS && (id == ID_STOP || id == ID_RESUME))
+                ABORT("out of order mprotect thread request");
+        }
+#endif
+        
+        if(r != MACH_MSG_SUCCESS) {
+            GC_err_printf2("mach_msg failed with %d %s\n", 
+                (int)r,mach_error_string(r));
+            ABORT("mach_msg failed");
+        }
+        
+        switch(id) {
+#if defined(THREADS)
+            case ID_STOP:
+                if(GC_mprotect_state != GC_MP_NORMAL)
+                    ABORT("Called mprotect_stop when state wasn't normal");
+                GC_mprotect_state = GC_MP_DISCARDING;
+                break;
+            case ID_RESUME:
+                if(GC_mprotect_state != GC_MP_STOPPED)
+                    ABORT("Called mprotect_resume when state wasn't stopped");
+                GC_mprotect_state = GC_MP_NORMAL;
+                GC_mprotect_thread_reply();
+                break;
+#endif /* THREADS */
+            default:
+	            /* Handle the message (calls catch_exception_raise) */
+    	        if(!exc_server(&msg.head,&reply.head))
+                    ABORT("exc_server failed");
+                /* Send the reply */
+                r = mach_msg(
+                    &reply.head,
+                    MACH_SEND_MSG,
+                    reply.head.msgh_size,
+                    0,
+                    MACH_PORT_NULL,
+                    MACH_MSG_TIMEOUT_NONE,
+                    MACH_PORT_NULL);
+	        if(r != MACH_MSG_SUCCESS) {
+	        	/* This will fail if the thread dies, but the thread shouldn't
+	        	   die... */
+	        	#ifdef BROKEN_EXCEPTION_HANDLING
+    	        	GC_err_printf2(
+                        "mach_msg failed with %d %s while sending exc reply\n",
+                        (int)r,mach_error_string(r));
+    	        #else
+    	        	ABORT("mach_msg failed while sending exception reply");
+    	        #endif
+        	}
+        } /* switch */
+    } /* for(;;) */
+    /* NOT REACHED */
+    return NULL;
+}
+
+/* All this SIGBUS code shouldn't be necessary. All protection faults should
+   be going throught the mach exception handler. However, it seems a SIGBUS is
+   occasionally sent for some unknown reason. Even more odd, it seems to be
+   meaningless and safe to ignore. */
+#ifdef BROKEN_EXCEPTION_HANDLING
+
+typedef void (* SIG_PF)();
+static SIG_PF GC_old_bus_handler;
+
+/* Updates to this aren't atomic, but the SIGBUSs seem pretty rare.
+   Even if this doesn't get updated property, it isn't really a problem */
+static int GC_sigbus_count;
+
+static void GC_darwin_sigbus(int num,siginfo_t *sip,void *context) {
+    if(num != SIGBUS) ABORT("Got a non-sigbus signal in the sigbus handler");
+    
+    /* Ugh... some seem safe to ignore, but too many in a row probably means
+       trouble. GC_sigbus_count is reset for each mach exception that is
+       handled */
+    if(GC_sigbus_count >= 8) {
+        ABORT("Got more than 8 SIGBUSs in a row!");
+    } else {
+        GC_sigbus_count++;
+        GC_err_printf0("GC: WARNING: Ignoring SIGBUS.\n");
+    }
+}
+#endif /* BROKEN_EXCEPTION_HANDLING */
+
+void GC_dirty_init() {
+    kern_return_t r;
+    mach_port_t me;
+    pthread_t thread;
+    pthread_attr_t attr;
+    exception_mask_t mask;
+    
+#   ifdef PRINTSTATS
+        GC_printf0("Inititalizing mach/darwin mprotect virtual dirty bit "
+            "implementation\n");
+#   endif  
+#	ifdef BROKEN_EXCEPTION_HANDLING
+        GC_err_printf0("GC: WARNING: Enabling workarounds for various darwin "
+            "exception handling bugs.\n");
+#	endif
+    GC_dirty_maintained = TRUE;
+    if (GC_page_size % HBLKSIZE != 0) {
+        GC_err_printf0("Page size not multiple of HBLKSIZE\n");
+        ABORT("Page size not multiple of HBLKSIZE");
+    }
+    
+    GC_task_self = me = mach_task_self();
+    
+    r = mach_port_allocate(me,MACH_PORT_RIGHT_RECEIVE,&GC_ports.exception);
+    if(r != KERN_SUCCESS) ABORT("mach_port_allocate failed (exception port)");
+    
+    r = mach_port_insert_right(me,GC_ports.exception,GC_ports.exception,
+    	MACH_MSG_TYPE_MAKE_SEND);
+    if(r != KERN_SUCCESS)
+    	ABORT("mach_port_insert_right failed (exception port)");
+
+    #if defined(THREADS)
+        r = mach_port_allocate(me,MACH_PORT_RIGHT_RECEIVE,&GC_ports.reply);
+        if(r != KERN_SUCCESS) ABORT("mach_port_allocate failed (reply port)");
+    #endif
+
+    /* The exceptions we want to catch */  
+    mask = EXC_MASK_BAD_ACCESS;
+
+    r = task_get_exception_ports(
+        me,
+        mask,
+        GC_old_exc_ports.masks,
+        &GC_old_exc_ports.count,
+        GC_old_exc_ports.ports,
+        GC_old_exc_ports.behaviors,
+        GC_old_exc_ports.flavors
+    );
+    if(r != KERN_SUCCESS) ABORT("task_get_exception_ports failed");
+        
+    r = task_set_exception_ports(
+        me,
+        mask,
+        GC_ports.exception,
+        EXCEPTION_DEFAULT,
+        MACHINE_THREAD_STATE
+    );
+    if(r != KERN_SUCCESS) ABORT("task_set_exception_ports failed");
+
+    if(pthread_attr_init(&attr) != 0) ABORT("pthread_attr_init failed");
+    if(pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED) != 0) 
+        ABORT("pthread_attr_setdetachedstate failed");
+
+#	undef pthread_create
+    /* This will call the real pthread function, not our wrapper */
+    if(pthread_create(&thread,&attr,GC_mprotect_thread,NULL) != 0)
+        ABORT("pthread_create failed");
+    pthread_attr_destroy(&attr);
+    
+    /* Setup the sigbus handler for ignoring the meaningless SIGBUSs */
+    #ifdef BROKEN_EXCEPTION_HANDLING 
+    {
+        struct sigaction sa, oldsa;
+        sa.sa_handler = (SIG_PF)GC_darwin_sigbus;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = SA_RESTART|SA_SIGINFO;
+        if(sigaction(SIGBUS,&sa,&oldsa) < 0) ABORT("sigaction");
+        GC_old_bus_handler = (SIG_PF)oldsa.sa_handler;
+        if (GC_old_bus_handler != SIG_DFL) {
+#       	ifdef PRINTSTATS
+                GC_err_printf0("Replaced other SIGBUS handler\n");
+#       	endif
+        }
+    }
+    #endif /* BROKEN_EXCEPTION_HANDLING  */
+}
+ 
+/* The source code for Apple's GDB was used as a reference for the exception
+   forwarding code. This code is similar to be GDB code only because there is 
+   only one way to do it. */
+static kern_return_t GC_forward_exception(
+        mach_port_t thread,
+        mach_port_t task,
+        exception_type_t exception,
+        exception_data_t data,
+        mach_msg_type_number_t data_count
+) {
+    int i;
+    kern_return_t r;
+    mach_port_t port;
+    exception_behavior_t behavior;
+    thread_state_flavor_t flavor;
+    
+    thread_state_data_t thread_state;
+    mach_msg_type_number_t thread_state_count = THREAD_STATE_MAX;
+        
+    for(i=0;i<GC_old_exc_ports.count;i++)
+        if(GC_old_exc_ports.masks[i] & (1 << exception))
+            break;
+    if(i==GC_old_exc_ports.count) ABORT("No handler for exception!");
+    
+    port = GC_old_exc_ports.ports[i];
+    behavior = GC_old_exc_ports.behaviors[i];
+    flavor = GC_old_exc_ports.flavors[i];
+
+    if(behavior != EXCEPTION_DEFAULT) {
+        r = thread_get_state(thread,flavor,thread_state,&thread_state_count);
+        if(r != KERN_SUCCESS)
+            ABORT("thread_get_state failed in forward_exception");
+    }
+    
+    switch(behavior) {
+        case EXCEPTION_DEFAULT:
+            r = exception_raise(port,thread,task,exception,data,data_count);
+            break;
+        case EXCEPTION_STATE:
+            r = exception_raise_state(port,thread,task,exception,data,
+                data_count,&flavor,thread_state,thread_state_count,
+                thread_state,&thread_state_count);
+            break;
+        case EXCEPTION_STATE_IDENTITY:
+            r = exception_raise_state_identity(port,thread,task,exception,data,
+                data_count,&flavor,thread_state,thread_state_count,
+                thread_state,&thread_state_count);
+            break;
+        default:
+            r = KERN_FAILURE; /* make gcc happy */
+            ABORT("forward_exception: unknown behavior");
+            break;
+    }
+    
+    if(behavior != EXCEPTION_DEFAULT) {
+        r = thread_set_state(thread,flavor,thread_state,thread_state_count);
+        if(r != KERN_SUCCESS)
+            ABORT("thread_set_state failed in forward_exception");
+    }
+    
+    return r;
+}
+
+#define FWD() GC_forward_exception(thread,task,exception,code,code_count)
+
+/* This violates the namespace rules but there isn't anything that can be done
+   about it. The exception handling stuff is hard coded to call this */
+kern_return_t
+catch_exception_raise(
+   mach_port_t exception_port,mach_port_t thread,mach_port_t task,
+   exception_type_t exception,exception_data_t code,
+   mach_msg_type_number_t code_count
+) {
+    kern_return_t r;
+    char *addr;
+    struct hblk *h;
+    int i;
+#ifdef POWERPC
+    thread_state_flavor_t flavor = PPC_EXCEPTION_STATE;
+    mach_msg_type_number_t exc_state_count = PPC_EXCEPTION_STATE_COUNT;
+    ppc_exception_state_t exc_state;
+#else
+#	error FIXME for non-ppc darwin
+#endif
+
+    
+    if(exception != EXC_BAD_ACCESS || code[0] != KERN_PROTECTION_FAILURE) {
+        #ifdef DEBUG_EXCEPTION_HANDLING
+        /* We aren't interested, pass it on to the old handler */
+        GC_printf3("Exception: 0x%x Code: 0x%x 0x%x in catch....\n",
+            exception,
+            code_count > 0 ? code[0] : -1,
+            code_count > 1 ? code[1] : -1); 
+        #endif
+        return FWD();
+    }
+
+    r = thread_get_state(thread,flavor,
+        (natural_t*)&exc_state,&exc_state_count);
+    if(r != KERN_SUCCESS) {
+        /* The thread is supposed to be suspended while the exception handler
+           is called. This shouldn't fail. */
+        #ifdef BROKEN_EXCEPTION_HANDLING
+            GC_err_printf0("thread_get_state failed in "
+                "catch_exception_raise\n");
+            return KERN_SUCCESS;
+        #else
+            ABORT("thread_get_state failed in catch_exception_raise");
+        #endif
+    }
+    
+    /* This is the address that caused the fault */
+    addr = (char*) exc_state.dar;
+        
+    if((HDR(addr)) == 0) {
+        /* Ugh... just like the SIGBUS problem above, it seems we get a bogus 
+           KERN_PROTECTION_FAILURE every once and a while. We wait till we get
+           a bunch in a row before doing anything about it. If a "real" fault 
+           ever occurres it'll just keep faulting over and over and we'll hit
+           the limit pretty quickly. */
+        #ifdef BROKEN_EXCEPTION_HANDLING
+            static char *last_fault;
+            static int last_fault_count;
+            
+            if(addr != last_fault) {
+                last_fault = addr;
+                last_fault_count = 0;
+            }
+            if(++last_fault_count < 32) {
+                if(last_fault_count == 1)
+                    GC_err_printf1(
+                        "GC: WARNING: Ignoring KERN_PROTECTION_FAILURE at %p\n",
+                        addr);
+                return KERN_SUCCESS;
+            }
+            
+            GC_err_printf1("Unexpected KERN_PROTECTION_FAILURE at %p\n",addr);
+            /* Can't pass it along to the signal handler because that is
+               ignoring SIGBUS signals. We also shouldn't call ABORT here as
+               signals don't always work too well from the exception handler. */
+            GC_err_printf0("Aborting\n");
+            exit(EXIT_FAILURE);
+        #else /* BROKEN_EXCEPTION_HANDLING */
+            /* Pass it along to the next exception handler 
+               (which should call SIGBUS/SIGSEGV) */
+            return FWD();
+        #endif /* !BROKEN_EXCEPTION_HANDLING */
+    }
+
+    #ifdef BROKEN_EXCEPTION_HANDLING
+        /* Reset the number of consecutive SIGBUSs */
+        GC_sigbus_count = 0;
+    #endif
+    
+    if(GC_mprotect_state == GC_MP_NORMAL) { /* common case */
+        h = (struct hblk*)((word)addr & ~(GC_page_size-1));
+        UNPROTECT(h, GC_page_size);	
+        for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
+            register int index = PHT_HASH(h+i);
+            async_set_pht_entry_from_index(GC_dirty_pages, index);
+        }
+    } else if(GC_mprotect_state == GC_MP_DISCARDING) {
+        /* Lie to the thread for now. No sense UNPROTECT()ing the memory
+           when we're just going to PROTECT() it again later. The thread
+           will just fault again once it resumes */
+    } else {
+        /* Shouldn't happen, i don't think */
+        GC_printf0("KERN_PROTECTION_FAILURE while world is stopped\n");
+        return FWD();
+    }
+    return KERN_SUCCESS;
+}
+#undef FWD
+
+/* These should never be called, but just in case...  */
+kern_return_t catch_exception_raise_state(mach_port_name_t exception_port,
+    int exception, exception_data_t code, mach_msg_type_number_t codeCnt,
+    int flavor, thread_state_t old_state, int old_stateCnt,
+    thread_state_t new_state, int new_stateCnt)
+{
+    ABORT("catch_exception_raise_state");
+    return(KERN_INVALID_ARGUMENT);
+}
+kern_return_t catch_exception_raise_state_identity(
+    mach_port_name_t exception_port, mach_port_t thread, mach_port_t task,
+    int exception, exception_data_t code, mach_msg_type_number_t codeCnt,
+    int flavor, thread_state_t old_state, int old_stateCnt, 
+    thread_state_t new_state, int new_stateCnt)
+{
+    ABORT("catch_exception_raise_state_identity");
+    return(KERN_INVALID_ARGUMENT);
+}
+
+
+#endif /* DARWIN && MPROTECT_VDB */
+
 # ifndef HAVE_INCREMENTAL_PROTECTION_NEEDS
   int GC_incremental_protection_needs()
   {
@@ -3496,8 +3938,6 @@ struct callinfo info[NFRAMES];
     asm("movl %%ebp,%0" : "=r"(frame));
     fp = frame;
 # else
-    word GC_save_regs_in_stack();
-
     frame = (struct frame *) GC_save_regs_in_stack ();
     fp = (struct frame *)((long) frame -> FR_SAVFP + BIAS);
 #endif
