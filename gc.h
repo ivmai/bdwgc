@@ -5,736 +5,279 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this compiler for any purpose,
+ * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
  
-/* Machine specific parts contributed by various people.  See README file. */
+#ifndef GC_H
 
-/*********************************/
-/*                               */
-/* Definitions for conservative  */
-/* collector                     */
-/*                               */
-/*********************************/
+# define GC_H
 
-/*********************************/
-/*                               */
-/* Easily changeable parameters  */
-/*                               */
-/*********************************/
+# include <stddef.h>
 
-# if defined(sun) && defined(mc68000)
-#    define M68K_SUN
-#    define mach_type_known
-# endif
-# if defined(hp9000s300)
-#    define M68K_HP
-#    define mach_type_known
-# endif
-# if defined(vax)
-#    define VAX
-#    ifdef ultrix
-#	define ULTRIX
-#    else
-#	define BSD
-#    endif
-#    define mach_type_known
-# endif
-# if defined(mips)
-#    define MIPS
-#    ifdef ultrix
-#	define ULTRIX
-#    else
-#	define RISCOS
-#    endif
-#    define mach_type_known
-# endif
-# if defined(sequent) && defined(i386)
-#    define I386
-#    define mach_type_known
-# endif
-# if defined(ibm032)
-#   define RT
-#   define mach_type_known
-# endif
-# if defined(sun) && defined(sparc)
-#   define SPARC
-#   define mach_type_known
-# endif
-# if defined(_IBMR2)
-#   define IBMRS6000
-#   define mach_type_known
-# endif
-
-
-/* Feel free to add more clauses here */
-
-/* Or manually define the machine type here.  A machine type is 	*/
-/* characterized by the architecture and assembler syntax.  Some	*/
-/* machine types are further subdivided by OS.  In that case, we use	*/
-/* the macros ULTRIX, RISCOS, and BSD to distinguish.			*/
-/* The distinction in these cases is usually the stack starting address */
-# ifndef mach_type_known
-#   define M68K_SUN /* Guess "Sun" */
-		    /* Mapping is: M68K_SUN   ==> Sun3 assembler,      */
-		    /*             M68K_HP    ==> HP9000/300,          */
-		    /*             I386       ==> Sequent Symmetry,    */
-                    /*             NS32K      ==> Encore Multimax,     */
-                    /*             MIPS       ==> R2000 or R3000       */
-                    /*			(RISCOS, ULTRIX variants)      */
-                    /*		   VAX	      ==> DEC VAX	       */
-                    /*			(BSD, ULTRIX variants)	       */
-# endif
-
-#define PRINTSTATS  /* Print garbage collection statistics                  */
-		    /* For less verbose output, undefine in reclaim.c      */
-
-#define PRINTTIMES  /* Print the amount of time consumed by each garbage   */
-		    /* collection.                                         */
-
-#define PRINTBLOCKS /* Print object sizes associated with heap blocks,     */
-		    /* whether the objects are atomic or composite, and    */
-		    /* whether or not the block was found to be empty      */
-		    /* duing the reclaim phase.  Typically generates       */
-		    /* about one screenful per garbage collection.         */
-#undef PRINTBLOCKS
-
-#ifdef SILENT
-#  ifdef PRINTSTATS
-#    undef PRINTSTATS
-#  endif
-#  ifdef PRINTTIMES
-#    undef PRINTTIMES
-#  endif
-#  ifdef PRINTNBLOCKS
-#    undef PRINTNBLOCKS
-#  endif
-#endif
-
-#define HBLK_MAP    /* Maintain a map of all potential heap blocks        */
-		    /* starting at heapstart.                             */
-		    /* Normally, this performs about as well as the       */
-		    /* standard stack of chunk pointers that is used      */
-		    /* otherwise.  It loses if a small section of the     */
-		    /* heap consists of garbage collected objects.        */
-		    /* It is ESSENTIAL if pointers to object interiors    */
-		    /* are considered valid, i.e. if INTERIOR_POINTERS    */
-		    /* is defined.                                        */
-#undef HBLK_MAP
-
-#define MAP_SIZE 8192  /* total data size < MAP_SIZE * HBLKSIZE = 32 Meg  */
-#define MAXHBLKS 4096  /* Maximum number of chunks which can be           */
-		       /* allocated                                       */
-#define INTERIOR_POINTERS
-		    /* Follow pointers to the interior of an object.      */
-		    /* Substantially increases the probability of         */
-		    /* unnnecessary space retention.  May be necessary    */
-		    /* with gcc -O or other C compilers that may clobber  */
-		    /* values of dead variables prematurely.  Pcc         */
-		    /* derived compilers appear to pose no such problems. */
-		    /* Empirical evidence suggests that this is probably  */
-		    /* still OK for most purposes, so long as pointers    */
-		    /* are known to be 32 bit aligned.  The combination   */
-		    /* of INTERIOR_POINTERS and UNALIGNED (e.g. on a      */
-		    /* Sun 3 with the standard compiler) causes easily    */
-		    /* observable spurious retention and performance      */
-		    /* degradation.                                       */
-#undef INTERIOR_POINTERS
-
-#ifdef SPARC
-#   define ALIGN_DOUBLE  /* Align objects of size > 1 word on 2 word   */
-			 /* boundaries.  Wasteful of memory, but       */
-			 /* apparently required by SPARC architecture. */
-
-#endif
-
-#if defined(INTERIOR_POINTERS) && !defined(HBLK_MAP)
-    --> check for interior pointers requires a heap block map
-#endif
-
-#define MERGE_SIZES /* Round up some object sizes, so that fewer distinct */
-		    /* free lists are actually maintained.  This applies  */
-		    /* only to the top level routines in misc.c, not to   */
-		    /* user generated code that calls allocobj and        */
-		    /* allocaobj directly.                                */
-		    /* Slows down average programs slightly.  May however */
-		    /* substantially reduce fragmentation if allocation   */
-		    /* request sizes are widely scattered.                */
-#undef MERGE_SIZES
-
-/* ALIGN_DOUBLE requires MERGE_SIZES at present. */
-# if defined(ALIGN_DOUBLE) && !defined(MERGE_SIZES)
-#   define MERGE_SIZES
-# endif
-
-
-/* For PRINTTIMES to tell the truth, we need to know the value of HZ for
-   this system. */
-
-#if defined(M68K_HP) || defined(M68K_SUN) || defined(SPARC)
-#  include <sys/param.h>
-#  define FLOAT_HZ (double)HZ
-#else
-#  define FLOAT_HZ 60.0    /* Guess that we're in the U.S. */
-#endif
-
-#ifdef M68K_SUN
-#  define UNALIGNED       /* Pointers are not longword aligned         */
-#  define ALIGNMENT   2   /* Pointers are aligned on 2 byte boundaries */
-			  /* by the Sun C compiler.                    */
-#else
-#  ifdef VAX
-#    undef UNALIGNED      /* Pointers are longword aligned by 4.2 C compiler */
-#    define ALIGNMENT 4
-#  else
-#    ifdef RT
-#      undef UNALIGNED
-#      define ALIGNMENT 4
-#    else
-#      ifdef SPARC
-#        undef UNALIGNED
-#        define ALIGNMENT 4
-#      else
-#        ifdef I386
-#           undef UNALIGNED         /* Sequent compiler aligns pointers */
-#           define ALIGNMENT 4
-#        else
-#          ifdef NS32K
-#            undef UNALIGNED        /* Pointers are aligned on NS32K */
-#            define ALIGNMENT 4
-#          else
-#            ifdef MIPS
-#              undef UNALIGNED      /* MIPS hardware requires pointer */
-				    /* alignment                      */
-#              define ALIGNMENT 4
-#            else
-#              ifdef M68K_HP
-#                define UNALIGNED
-#                define ALIGNMENT 2 /* 2 byte alignment inside struct/union, */
-				    /* 4 bytes elsewhere */
-#              else
-#		 ifdef IBMRS6000
-#		   undef UNALIGNED
-#		   define ALIGNMENT 4
-#		 else
-		    --> specify alignment <--
-#		 endif
-#              endif
-#            endif
-#          endif
-#        endif
-#      endif
-#    endif
-#  endif
-# endif
-
-# ifdef RT
-#   define STACKTOP ((word *) 0x1fffd800)
-# else
-#   ifdef I386
-#     define STACKTOP ((word *) 0x3ffff000)  /* For Sequent */
-#   else
-#     ifdef NS32K
-#       define STACKTOP ((word *) 0xfffff000) /* for Encore */
-#     else
-#       ifdef MIPS
-#	  ifdef ULTRIX
-#           define STACKTOP ((word *) 0x7fffc000)
-#	  else
-#	    ifdef RISCOS
-#             define STACKTOP ((word *) 0x7ffff000)
-			      /* Could probably be slightly lower since  */
-			      /* startup code allocates lots of junk     */
-#	    else
-		--> fix it
-#	    endif
-#	  endif
-#       else
-#         ifdef M68K_HP
-#           define STACKTOP ((word *) 0xffeffffc)
-			      /* empirically determined.  seems to work. */
-#	  else
-#	    ifdef IBMRS6000
-#	      define STACKTOP ((word *) 0x2ff80000)
-#           else
-#	      if defined(VAX) && defined(ULTRIX)
-#		define STACKTOP ((word *) 0x7fffc800)
-#	      else
-	 /* other VAXes, SPARC, and various flavors of Sun 2s and Sun 3s use */
-	 /* the default heuristic, which is to take the address of a local   */
-	 /* variable in gc_init, and round it up to the next multiple        */
-	 /* of 16 Meg.  This is crucial on Suns, since various models        */
-	 /* that are supposed to be able to share executables, do not        */
-	 /* use the same stack base.  In particular, Sun 3/80s are           */
-	 /* different from other Sun 3s.                                     */
-	 /* This probably works on some more of the above machines.          */
-#	      endif
-#	    endif
-#         endif
-#       endif
-#     endif
-#   endif
-# endif
-
-/* Start of data segment for each of the above systems.  Note that the */
-/* default case works only for contiguous text and data, such as on a  */
-/* Vax.                                                                */
-# ifdef M68K_SUN
-#   define DATASTART ((char *)((((long) (&etext)) + 0x1ffff) & ~0x1ffff))
-# else
-#   ifdef RT
-#     define DATASTART ((char *) 0x10000000)
-#   else
-#     ifdef I386
-#       define DATASTART ((char *)((((long) (&etext)) + 0xfff) & ~0xfff))
-#     else
-#       ifdef NS32K
-	  extern char **environ;
-#         define DATASTART ((char *)(&environ))
-			      /* hideous kludge: environ is the first   */
-			      /* word in crt0.o, and delimits the start */
-			      /* of the data segment, no matter which   */
-			      /* ld options were passed through.        */
-#       else
-#         ifdef MIPS
-#           define DATASTART 0x10000000
-			      /* Could probably be slightly higher since */
-			      /* startup code allocates lots of junk     */
-#         else
-#           ifdef M68K_HP
-#             define DATASTART ((char *)((((long) (&etext)) + 0xfff) & ~0xfff))
-#	    else
-#             ifdef IBMRS6000
-#		define DATASTART ((char *)0x20000000)
-#             else
-#               define DATASTART (&etext)
-#	      endif
-#           endif
-#         endif
-#       endif
-#     endif
-#   endif
-# endif
-
-# define HINCR 16          /* Initial heap increment, in blocks of 4K        */
-# define MAXHINCR 512      /* Maximum heap increment, in blocks              */
-# define HINCR_MULT 3      /* After each new allocation, hincr is multiplied */
-# define HINCR_DIV 2       /* by HINCR_MULT/HINCR_DIV                        */
-# define GC_MULT 3         /* Don't collect if the fraction of   */
-			   /* non-collectable memory in the heap */
-			   /* exceeds GC_MUL/GC_DIV              */
-# define GC_DIV  4
-
-# define NON_GC_HINCR 8    /* Heap increment if most of heap if collection */
-			   /* was suppressed because most of heap is not   */
-			   /* collectable                                  */
-
-/*  heap address bounds.  These are extreme bounds used for sanity checks. */
-/*  HEAPLIM may have to be increased for machines with incredibly large    */
-/*  amounts of memory.                                                     */
-
-#ifdef RT
-#   define HEAPSTART 0x10000000
-#   define HEAPLIM   0x1fff0000
-#else
-# if defined(M68K_SUN) || defined(M68K_HP)
-#   define HEAPSTART 0x00010000
-#   define HEAPLIM   0x04000000
-# else
-#   ifdef SPARC
-#       define HEAPSTART 0x00010000
-#       define HEAPLIM   0x10000000
-#   else
-#     ifdef VAX
-#       define HEAPSTART 0x400
-#       define HEAPLIM   0x10000000
-#     else
-#       ifdef I386
-#         define HEAPSTART 0x1000
-#         define HEAPLIM 0x10000000
-#       else
-#         ifdef NS32K
-#           define HEAPSTART 0x2000
-#           define HEAPLIM   0x10000000
-#         else
-#           ifdef MIPS
-#             define HEAPSTART 0x10000000
-#             define HEAPLIM 0x20000000
-#           else
-#	      ifdef IBMRS6000
-#		define HEAPSTART 0x20000000
-#		define HEAPLIM 0x2ff70000
-#	      else
-	         --> values unknown <--
-#	      endif
-#           endif
-#         endif
-#       endif
-#     endif
-#   endif
-# endif
-#endif
-
-/*********************************/
-/*                               */
-/* Machine-dependent defines     */
-/*                               */
-/*********************************/
-
-#define WORDS_TO_BYTES(x)   ((x)<<2)
-#define BYTES_TO_WORDS(x)   ((x)>>2)
-
-#define WORDSZ              32
-#define LOGWL               5    /* log[2] of above */
-#define BYTES_PER_WORD      (sizeof (word))
-#define ONES                0xffffffff
-#define MSBYTE              0xff000000
-#define SIGNB               0x80000000
-#define MAXSHORT            0x7fff
-#define modHALFWORDSZ(n) ((n) & 0xf)    /* mod n by size of half word    */
-#define divHALFWORDSZ(n) ((n) >> 4)	/* divide n by size of half word */
-#define modWORDSZ(n) ((n) & 0x1f)       /* mod n by size of word         */
-#define divWORDSZ(n) ((n) >> 5)         /* divide n by size of word      */
-#define twice(n) ((n) << 1)             /* double n                      */
-
+/* Define word and signed_word to be unsigned and signed types of the 	*/
+/* size as char * or void *.  There seems to be no way to do this	*/
+/* even semi-portably.  The following is probably no better/worse 	*/
+/* than almost anything else.						*/
+/* The ANSI standard suggests that size_t and ptr_diff_t might be 	*/
+/* better choices.  But those appear to have incorrect definitions	*/
+/* on may systems.  Notably "typedef int size_t" seems to be both	*/
+/* frequent and WRONG.							*/
 typedef unsigned long word;
+typedef long signed_word;
 
-#define TRUE  1
-#define FALSE 0
+/* Public read-only variables */
 
-/*********************/
-/*                   */
-/*  Size Parameters  */
-/*                   */
-/*********************/
+extern word GC_heapsize;       /* Heap size in bytes */
 
-/*  heap block size, bytes */
-/* for RT see comment below */
+extern word GC_gc_no;	/* Counter incremented per collection.  	*/
+			/* Includes empty GCs at startup.		*/
 
-#define HBLKSIZE   0x1000
+/* Public R/W variables */
 
+extern int GC_dont_gc;	/* Dont collect unless explicitly requested, e.g. */
+			/* beacuse it's not safe.			  */
 
-/*  max size objects supported by freelist (larger objects may be   */
-/*  allocated, but less efficiently)                                */
-/*      asm(".set MAXOBJSZ,0x200")      if HBLKSIZE/2 == 0x200      */
-
-#define MAXOBJSZ    (HBLKSIZE/8)
-		/* Should be BYTES_TO_WORDS(HBLKSIZE/2), but a cpp */
-		/* misfeature prevents that.                       */
-#define MAXAOBJSZ   (HBLKSIZE/8)
-
-# define divHBLKSZ(n) ((n) >> 12)
- 
-# define modHBLKSZ(n) ((n) & 0xfff)
- 
-# define HBLKPTR(objptr) ((struct hblk *)(((long) (objptr)) & ~0xfff))
+extern int GC_dont_expand;
+			/* Dont expand heap unless explicitly requested */
+			/* or forced to.				*/
+			
+extern word GC_non_gc_bytes;
+			/* Bytes not considered candidates for collection. */
 
 
-
-/********************************************/
-/*                                          */
-/*    H e a p   B l o c k s                 */
-/*                                          */
-/********************************************/
-
-/*  heap block header */
-#define HBLKMASK   (HBLKSIZE-1)
-
-#define BITS_PER_HBLK (HBLKSIZE * 8)
-
-#define MARK_BITS_PER_HBLK (BITS_PER_HBLK/WORDSZ)
-	   /* upper bound                                    */
-	   /* We allocate 1 bit/word.  Only the first word   */
-	   /* in each object is actually marked.             */
-
-# ifdef ALIGN_DOUBLE
-#   define MARK_BITS_SZ (((MARK_BITS_PER_HBLK + 2*WORDSZ - 1)/(2*WORDSZ))*2)
-# else
-#   define MARK_BITS_SZ ((MARK_BITS_PER_HBLK + WORDSZ - 1)/WORDSZ)
-# endif
-	   /* Upper bound on number of mark words per heap block  */
-
-struct hblkhdr {
-    long hbh_sz;    /* sz > 0 ==> objects are sz-tuples of poss. pointers */
-		    /* sz < 0 ==> objects are sz-tuples not pointers      */
-		    /* if free, the size in bytes of the whole block      */
-		    /* Misc.c knows that hbh_sz comes first.              */
-# ifndef HBLK_MAP
-    struct hblk ** hbh_index;   /* Pointer to heap block list entry   */
-				/* for this block                     */
-# else
-#   ifdef ALIGN_DOUBLE
-      /* Add another 1 word field to make the total even.  Gross, but ... */
-	long hbh_dummy;
-#   endif
-# endif
-    struct hblk * hbh_next; /* Link field for hblk free list */
-    long hbh_mask;      /* If hbh_mask >= 0 then:                          */
-			/*   x % (4 * hbh_sz) == x & hbh_mask              */
-			/*   sz is a power of 2 and < the size of a heap   */
-			/*     block.                                      */
-			/* A hack to speed up pointer validity check on    */
-			/* machines with slow division.                    */
-    long hbh_marks[MARK_BITS_SZ];
-			    /* Bit i in the array refers to the             */
-			    /* object starting at the ith word (header      */
-			    /* INCLUDED) in the heap block.                 */
-			    /* For free blocks, hbh_marks[0] = 1, indicates */
-			    /* block is uninitialized.                      */
-};
-
-/*  heap block body */
-
-# define BODY_SZ ((HBLKSIZE-sizeof(struct hblkhdr))/sizeof(word))
-
-struct hblk {
-    struct hblkhdr hb_hdr;
-    word hb_body[BODY_SZ];
-};
-
-# define hb_sz hb_hdr.hbh_sz
-# ifndef HBLK_MAP
-#   define hb_index hb_hdr.hbh_index
-# endif
-# define hb_marks hb_hdr.hbh_marks
-# define hb_next hb_hdr.hbh_next
-# define hb_uninit hb_hdr.hbh_marks[0]
-# define hb_mask hb_hdr.hbh_mask
-
-/*  lists of all heap blocks and free lists  */
-/* These are grouped together in a struct    */
-/* so that they can be easily skipped by the */
-/* mark routine.                             */
-/* Mach_dep.c knows about the internals      */
-/* of this structure.                        */
-
-struct __gc_arrays {
-  struct obj * _aobjfreelist[MAXAOBJSZ+1];
-			  /* free list for atomic objs*/
-  struct obj * _objfreelist[MAXOBJSZ+1];
-			  /* free list for objects */
-# ifdef HBLK_MAP
-    char _hblkmap[MAP_SIZE];
-#   define HBLK_INVALID 0    /* Not administered by collector   */
-#   define HBLK_VALID 0x7f   /* Beginning of a valid heap block */
-    /* A value n, 0 < n < 0x7f denotes the continuation of a valid heap    */
-    /* block which starts at the current address - n * HBLKSIZE or earlier */
-# else
-    struct hblk * _hblklist[MAXHBLKS];
-# endif
-};
-
-extern struct __gc_arrays _gc_arrays; 
-
-# define objfreelist _gc_arrays._objfreelist
-# define aobjfreelist _gc_arrays._aobjfreelist
-# ifdef HBLK_MAP
-#   define hblkmap _gc_arrays._hblkmap
-# else
-#   define hblklist _gc_arrays._hblklist
-# endif
-
-# define begin_gc_arrays ((char *)(&_gc_arrays))
-# define end_gc_arrays (((char *)(&_gc_arrays)) + (sizeof _gc_arrays))
-
-struct hblk ** last_hblk;  /* Pointer to one past the real end of hblklist */
-
-struct hblk * hblkfreelist;
-
-extern long heapsize;       /* Heap size in bytes */
-
-long hincr;                /* current heap increment, in blocks              */
-
-/* Operations */
-# define update_hincr  hincr = (hincr * HINCR_MULT)/HINCR_DIV; \
-		       if (hincr > MAXHINCR) {hincr = MAXHINCR;}
-# define HB_SIZE(p) abs((p) -> hb_sz)
-# define abs(x)  ((x) < 0? (-(x)) : (x))
-
-/*  procedures */
-
-extern void
-freehblk();
-
-extern struct hblk *
-allochblk();
-
-/****************************/
-/*                          */
-/*   Objects                */
-/*                          */
-/****************************/
-
-/*  object structure */
-
-struct obj {
-    union {
-	struct obj *oun_link;   /* --> next object in freelist */
-#         define obj_link       obj_un.oun_link
-	word oun_component[1];  /* treats obj as list of words */
-#         define obj_component  obj_un.oun_component
-    } obj_un;
-};
-
-/*  Test whether something points to a legitimate heap object */
-
-
-extern char end;
-
-# ifdef HBLK_MAP
-  char * heapstart; /* A lower bound on all heap addresses */
-		    /* Known to be HBLKSIZE aligned.       */
-# endif
-
-char * heaplim;   /* 1 + last address in heap */
-
-word * stacktop;  /* 1 + highest address in stack.  Set by gc_init. */
-
-/* Check whether the given HBLKSIZE aligned hblk pointer refers to the   */
-/* beginning of a legitimate chunk.                                      */
-/* Assumes that *p is addressable                                        */
-# ifdef HBLK_MAP
-#   define is_hblk(p)  (hblkmap[divHBLKSZ(((long)p) - ((long)heapstart))] \
-			== HBLK_VALID)
-# else
-#   define is_hblk(p) ( (p) -> hb_index >= hblklist \
-			&& (p) -> hb_index < last_hblk \
-			&& *((p)->hb_index) == (p))
-# endif
-# ifdef INTERIOR_POINTERS
-    /* Return the hblk_map entry for the pointer p */
-#     define get_map(p)  (hblkmap[divHBLKSZ(((long)p) - ((long)heapstart))])
-# endif
-
-# ifdef INTERIOR_POINTERS
-  /* Return the word displacement of the beginning of the object to       */
-  /* which q points.  q is an address inside hblk p for objects of size s */
-  /* with mask m corresponding to s.                                      */
-#  define get_word_no(q,p,s,m) \
-	    (((long)(m)) >= 0 ? \
-		(((((long)q) - ((long)p) - (sizeof (struct hblkhdr))) & ~(m)) \
-		 + (sizeof (struct hblkhdr)) >> 2) \
-		: ((((long)q) - ((long)p) - (sizeof (struct hblkhdr)) >> 2) \
-		   / (s)) * (s) \
-		   + ((sizeof (struct hblkhdr)) >> 2))
-# else
-  /* Check whether q points to an object inside hblk p for objects of size s */
-  /* with mask m corresponding to s.                                         */
-#  define is_proper_obj(q,p,s,m) \
-	    (((long)(m)) >= 0 ? \
-		(((((long)(q)) - (sizeof (struct hblkhdr))) & (m)) == 0) \
-		: (((long) (q)) - ((long)(p)) - (sizeof (struct hblkhdr))) \
-		   % ((s) << 2) == 0)
-#  endif
-
-/* The following is a quick test whether something is an object pointer */
-/* It may err in the direction of identifying bogus pointers            */
-/* Assumes heap + text + data + bss < 64 Meg.                           */
-#ifdef M68K_SUN
-#   define TMP_POINTER_MASK 0xfc000003  /* pointer & POINTER_MASK should be 0 */
-#else
-# ifdef RT
-#   define TMP_POINTER_MASK 0xc0000003
-# else
-#   ifdef VAX
-#     define TMP_POINTER_MASK 0xfc000003
-#   else
-#     ifdef SPARC
-#       define TMP_POINTER_MASK 0xfc000003
-#     else
-#       ifdef I386
-#         define TMP_POINTER_MASK 0xfc000003
-#       else
-#         ifdef NS32K
-#           define TMP_POINTER_MASK 0xfc000003
-#         else
-#           ifdef MIPS
-#             define TMP_POINTER_MASK 0xc0000003
-#           else
-#             ifdef M68K_HP
-#               define TMP_POINTER_MASK 0xfc000003
-#             else
-#		ifdef IBMRS6000
-#		  define TMP_POINTER_MASK 0xd0000003
-#		else
-	          --> dont know <--
-#		endif
-#             endif
-#           endif
-#         endif
-#       endif
-#     endif
-#   endif
-# endif
-#endif
-
-#ifdef INTERIOR_POINTERS
-#   define POINTER_MASK (TMP_POINTER_MASK & 0xfffffff8)
-	/* Don't pay attention to whether address is properly aligned */
-#else
-#   define POINTER_MASK TMP_POINTER_MASK
-#endif
-
-#ifdef HBLK_MAP
-#  define quicktest(p) (((long)(p)) > ((long)(heapstart)) \
-			&& !(((unsigned long)(p)) & POINTER_MASK))
-#else
-# ifdef UNALIGNED
-#  define quicktest(p) (((long)(p)) > ((long)(&end)) \
-                        && !(((unsigned long)(p)) & POINTER_MASK) \
-                        && (((long)(p)) & HBLKMASK))
-	/* The last test throws out pointers to the beginning of heap */
-        /* blocks.  Small integers shifted by 16 bits tend to look    */
-        /* like these.                                                */
-# else
-#  define quicktest(p) (((long)(p)) > ((long)(&end)) \
-			&& !(((unsigned long)(p)) & POINTER_MASK))
-# endif
-#endif
-
-
-/*  Marks are in a reserved area in                          */
-/*  each heap block.  Each word has one mark bits associated */
-/*  with it. Only those corresponding to the beginning of an */
-/*  object are used.                                         */
-
-
-/* Operations */
-
+extern word GC_free_space_divisor;
+			/* We try to make sure that we allocate at 	*/
+			/* least N/GC_free_space_divisor bytes between	*/
+			/* collections, where N is the heap size plus	*/
+			/* a rough estimate of the root set size.	*/
+			/* Initially, GC_free_space_divisor = 4.	*/
+			/* Increasing its value will use less space	*/
+			/* but more collection time.  Decreasing it	*/
+			/* will appreciably decrease collection time	*/
+			/* at the expens of space.			*/
+			/* GC_free_space_divisor = 1 will effectively	*/
+			/* disable collections.				*/
+			
+/* Public procedures */
 /*
- * Retrieve, set, clear the mark bit corresponding
- * to the nth word in a given heap block.
- * Note that retrieval will work, so long as *hblk is addressable.
- * In particular, the check whether hblk is a legitimate heap block
- * can be postponed until after the mark bit is examined.
- *
- * (Recall that bit n corresponds to object beginning at word n)
+ * general purpose allocation routines, with roughly malloc calling conv.
+ * The atomic versions promise that no relevant pointers are contained
+ * in the object.  The nonatomic version guarantees that the new object
+ * is cleared.
  */
+# ifdef __STDC__
+  extern void * GC_malloc(size_t size_in_bytes);
+  extern void * GC_malloc_atomic(size_t size_in_bytes);
+# else
+  extern char * GC_malloc(/* size_in_bytes */);
+  extern char * GC_malloc_atomic(/* size_in_bytes */);
+# endif
 
-# define mark_bit(hblk,n) (((hblk)->hb_marks[divWORDSZ(n)] \
-			    >> (modWORDSZ(n))) & 1)
+/* Explicitly deallocate an object.  Dangerous if used incorrectly.     */
+/* Requires a pointer to the base of an object.				*/
+# ifdef __STDC__
+  extern void GC_free(void * object_addr);
+# else
+  extern void GC_free(/* object_addr */);
+# endif
 
-/* The following assume the mark bit in question is either initially */
-/* cleared or it already has its final value                         */
-# define set_mark_bit(hblk,n) (hblk)->hb_marks[divWORDSZ(n)] \
-				|= 1 << modWORDSZ(n)
+/* Return a pointer to the base (lowest address) of an object given	*/
+/* a pointer to a location within the object.				*/
+/* Return 0 if displaced_pointer doesn't point to within a valid	*/
+/* object.								*/
+# ifdef __STDC__
+  void * GC_base(void * displaced_pointer);
+# else
+  char * GC_base(/* char * displaced_pointer */);
+# endif
 
-# define clear_mark_bit(hblk,n) (hblk)->hb_marks[divWORDSZ(n)] \
-				&= ~(1 << modWORDSZ(n))
+/* Given a pointer to the base of an object, return its size in bytes.	*/
+/* The returned size may be slightly larger than what was originally	*/
+/* requested.								*/
+# ifdef __STDC__
+  size_t GC_size(void * object_addr);
+# else
+  size_t GC_size(/* char * object_addr */);
+# endif
 
-/*  procedures */
+/* For compatibility with C library.  This is occasionally faster than	*/
+/* a malloc followed by a bcopy.  But if you rely on that, either here	*/
+/* or with the standard C library, your code is broken.  In my		*/
+/* opinion, it shouldn't have been invented, but now we're stuck. -HB	*/
+# ifdef __STDC__
+    extern void * GC_realloc(void * old_object, size_t new_size_in_bytes);
+# else
+    extern char * GC_realloc(/* old_object, new_size_in_bytes */);
+# endif
 
-/* Small object allocation routines */
-extern struct obj * allocobj();
-extern struct obj * allocaobj();
 
-/* Small object allocation routines that mark only from registers */
-/* expected to be preserved by C.                                 */
-extern struct obj * _allocobj();
-extern struct obj * _allocaobj();
+/* Explicitly increase the heap size.	*/
+/* Returns 0 on failure, 1 on success.  */
+extern int GC_expand_hp(/* number_of_4K_blocks */);
 
-/* general purpose allocation routines */
-extern struct obj * gc_malloc();
-extern struct obj * gc_malloc_atomic();
+/* Clear the set of root segments */
+extern void GC_clear_roots();
 
+/* Add a root segment */
+extern void GC_add_roots(/* low_address, high_address_plus_1 */);
+
+/* Add a displacement to the set of those considered valid by the	*/
+/* collector.  GC_register_displacement(n) means that if p was returned */
+/* by GC_malloc, then (char *)p + n will be considered to be a valid	*/
+/* pointer to n.  N must be small and less than the size of p.		*/
+/* (All pointers to the interior of objects from the stack are		*/
+/* considered valid in any case.  This applies to heap objects and	*/
+/* static data.)							*/
+/* Preferably, this should be called before any other GC procedures.	*/
+/* Calling it later adds to the probability of excess memory		*/
+/* retention.								*/
+void GC_register_displacement(/* n */);
+
+/* Explicitly trigger a collection. 	*/
+void GC_gcollect();
+
+/* Debugging (annotated) allocation.  GC_gcollect will check 		*/
+/* objects allocated in this way for overwrites, etc.			*/
+# ifdef __STDC__
+  extern void * GC_debug_malloc(size_t size_in_bytes,
+  				char * descr_string, int descr_int);
+  extern void * GC_debug_malloc_atomic(size_t size_in_bytes,
+  				       char * descr_string, int descr_int);
+  extern void GC_debug_free(void * object_addr);
+  extern void * GC_debug_realloc(void * old_object,
+  			 	 size_t new_size_in_bytes,
+  			 	 char * descr_string, int descr_int);
+# else
+  extern char * GC_debug_malloc(/* size_in_bytes, descr_string, descr_int */);
+  extern char * GC_debug_malloc_atomic(/* size_in_bytes, descr_string,
+  					  descr_int */);
+  extern void GC_debug_free(/* object_addr */);
+  extern char * GC_debug_realloc(/* old_object, new_size_in_bytes,
+  			            descr_string, descr_int */);
+# endif
+# ifdef GC_DEBUG
+#   define GC_MALLOC(sz) GC_debug_malloc(sz, __FILE__, __LINE__)
+#   define GC_MALLOC_ATOMIC(sz) GC_debug_malloc_atomic(sz, __FILE__, __LINE__)
+#   define GC_REALLOC(old, sz) GC_debug_realloc(old, sz, __FILE__, \
+							       __LINE__)
+#   define GC_FREE(p) GC_debug_free(p)
+#   define GC_REGISTER_FINALIZER(p, f, d, of, od) \
+	GC_register_finalizer(GC_base(p), GC_debug_invoke_finalizer, \
+			      GC_make_closure(f,d), of, od)
+# else
+#   define GC_MALLOC(sz) GC_malloc(sz)
+#   define GC_MALLOC_ATOMIC(sz) GC_malloc_atomic(sz)
+#   define GC_REALLOC(old, sz) GC_realloc(old, sz)
+#   define GC_FREE(p) GC_free(p)
+#   define GC_REGISTER_FINALIZER(p, f, d, of, od) \
+	GC_register_finalizer(p, f, d, of, od)
+# endif
+
+/* Finalization.  Some of these primitives are grossly unsafe.		*/
+/* The idea is to make them both cheap, and sufficient to build		*/
+/* a safer layer, closer to PCedar finalization.			*/
+/* The interface represents my conclusions from a long discussion	*/
+/* with Alan Demers, Dan Greene, Carl Hauser, Barry Hayes, 		*/
+/* Christian Jacobi, and Russ Atkinson.  It's not perfect, and		*/
+/* probably nobody else agrees with it.	    Hans-J. Boehm  3/13/92	*/
+# ifdef __STDC__
+  typedef void (*GC_finalization_proc)(void * obj, void * client_data);
+# else
+  typedef void (*GC_finalization_proc)(/* void * obj, void * client_data */);
+# endif
+	
+void GC_register_finalizer(/* void * obj,
+			      GC_finalization_proc fn, void * cd,
+			      GC_finalization_proc *ofn, void ** ocd */);
+	/* When obj is no longer accessible, invoke		*/
+	/* (*fn)(obj, cd).  If a and b are inaccessible, and	*/
+	/* a points to b (after disappearing links have been	*/
+	/* made to disappear), then only a will be		*/
+	/* finalized.  (If this does not create any new		*/
+	/* pointers to b, then b will be finalized after the	*/
+	/* next collection.)  Any finalizable object that	*/
+	/* is reachable from itself by following one or more	*/
+	/* pointers will not be finalized (or collected).	*/
+	/* Thus cycles involving finalizable objects should	*/
+	/* be avoided, or broken by disappearing links.		*/
+	/* fn is invoked with the allocation lock held.  It may */
+	/* not allocate.  (Any storage it might need		*/
+	/* should be preallocated and passed as part of cd.) 	*/
+	/* fn should terminate as quickly as possible, and	*/
+	/* defer extended computation.				*/
+	/* All but the last finalizer registered for an object  */
+	/* is ignored.						*/
+	/* Finalization may be removed by passing 0 as fn.	*/
+	/* The old finalizer and client data are stored in	*/
+	/* *ofn and *ocd.					*/ 
+	/* Fn is never invoked on an accessible object,		*/
+	/* provided hidden pointers are converted to real 	*/
+	/* pointers only if the allocation lock is held, and	*/
+	/* such conversions are not performed by finalization	*/
+	/* routines.						*/
+
+/* The following routine may be used to break cycles between	*/
+/* finalizable objects, thus causing cyclic finalizable		*/
+/* objects to be finalized in the cirrect order.  Standard	*/
+/* use involves calling GC_register_disappearing_link(&p),	*/
+/* where p is a pointer that is not followed by finalization	*/
+/* code, and should not be considered in determining 		*/
+/* finalization order.						*/ 
+int GC_register_disappearing_link(/* void ** link */);
+	/* Link should point to a field of a heap allocated 	*/
+	/* object obj.  *link will be cleared when obj is	*/
+	/* found to be inaccessible.  This happens BEFORE any	*/
+	/* finalization code is invoked, and BEFORE any		*/
+	/* decisions about finalization order are made.		*/
+	/* This is useful in telling the finalizer that 	*/
+	/* some pointers are not essential for proper		*/
+	/* finalization.  This may avoid finalization cycles.	*/
+	/* Note that obj may be resurrected by another		*/
+	/* finalizer, and thus the clearing of *link may	*/
+	/* be visible to non-finalization code.  		*/
+	/* There's an argument that an arbitrary action should  */
+	/* be allowed here, instead of just clearing a pointer. */
+	/* But this causes problems if that action alters, or 	*/
+	/* examines connectivity.				*/
+	/* Returns 1 if link was already registered, 0		*/
+	/* otherise.						*/
+int GC_unregister_disappearing_link(/* void ** link */);
+	/* Returns 0 if link was not actually registered.	*/
+
+/* Auxiliary fns to make finalization work correctly with displaced	*/
+/* pointers introduced by the debugging allocators.			*/
+# ifdef __STDC__
+    void * GC_make_closure(GC_finalization_proc fn, void * data);
+    void GC_debug_invoke_finalizer(void * obj, void * data);
+# else
+    char * GC_make_closure(/* GC_finalization_proc fn, char * data */);
+    void GC_debug_invoke_finalizer(/* void * obj, void * data */);
+# endif
+
+	
+/* The following is intended to be used by a higher level	*/
+/* (e.g. cedar-like) finalization facility.  It is expected	*/
+/* that finalization code will arrange for hidden pointers to	*/
+/* disappear.  Otherwise objects can be accessed after they	*/
+/* have been collected.						*/
+# ifdef I_HIDE_POINTERS
+#   ifdef __STDC__
+#     define HIDE_POINTER(p) (~(size_t)(p))
+#     define REVEAL_POINTER(p) ((void *)(HIDE_POINTER(p)))
+#   else
+#     define HIDE_POINTER(p) (~(unsigned long)(p))
+#     define REVEAL_POINTER(p) ((char *)(HIDE_POINTER(p)))
+#   endif
+    /* Converting a hidden pointer to a real pointer requires verifying	*/
+    /* that the object still exists.  This involves acquiring the  	*/
+    /* allocator lock to avoid a race with the collector.		*/
+    typedef char * (*GC_fn_type)();
+#   ifdef __STDC__
+        void * GC_call_with_alloc_lock(GC_fn_type fn, void * client_data);
+#   else
+        char * GC_call_with_alloc_lock(/* GC_fn_type fn, char * client_data */);
+#   endif
+# endif
+
+#endif

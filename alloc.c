@@ -5,56 +5,27 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this compiler for any purpose,
+ * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  *
  * This file contains the functions:
- *	void new_hblk(n)
  *	static void clear_marks()
- *      mark(alignment)
- *      mark_all(b,t,alignment)
- *	void gcollect()
- *	expand_hp: func[val Short] val Void
- *	struct obj * _allocobj(sz)
- *	struct obj * _allocaobj(sz)
+ *	void GC_gcollect_inner(force)
+ *	void GC_gcollect()
+ *	bool GC_expand_hp(n)
+ *	ptr_t GC_allocobj(sz, kind)
  */
 
 
 # include <stdio.h>
 # include <signal.h>
 # include <sys/types.h>
-# include <sys/times.h>
-# include "gc.h"
-
-/* Leaving these defined enables output to stderr.  In order of */
-/* increasing verbosity:                                        */
-#define REPORT_FAILURE   /* Print values that looked "almost" like pointers */
-#undef REPORT_FAILURE
-#define DEBUG            /* Verbose debugging output */
-#undef DEBUG
-#define DEBUG2           /* EXTREMELY verbose debugging output */
-#undef DEBUG2
-#define USE_STACK       /* Put mark stack onto process stack.  This assumes */
-			/* that it's safe to put data below the stack ptr,  */
-			/* and that the system will expand the stack as     */
-			/* necessary.  This is known to be true under Sun   */
-			/* UNIX (tm) and Vax Berkeley UNIX.  It is also     */
-			/* known to be false under some other UNIX          */
-			/* implementations.                                 */
-#undef USE_HEAP
-#ifdef RT
-#   define USE_HEAP
-#   undef USE_STACK
-#endif
-#ifdef MIPS
-#   define USE_HEAP
-#   undef USE_STACK
-#endif
+# include "gc_private.h"
 
 /*
- * This is an attempt at a garbage collecting storage allocator
+ * This is a garbage collecting storage allocator
  * that should run on most UNIX systems.  The garbage
- * collector is overly conservative in that it may fail to reclaim
+ * collector is overly conservative in that it may fail to GC_reclaim
  * inaccessible storage.  On the other hand, it does not assume
  * any runtime tag information.
  * We make the following assumptions:
@@ -70,770 +41,425 @@
 
 /*
  * Separate free lists are maintained for different sized objects
- * up to MAXOBJSZ or MAXAOBJSZ.
- * The lists objfreelist[i] contain free objects of size i which may
- * contain nested pointers.  The lists aobjfreelist[i] contain free
- * atomic objects, which may not contain nested pointers.
- * The call allocobj(i) insures that objfreelist[i] points to a non-empty
- * free list it returns a pointer to the first entry on the free list.
- * Allocobj may be called to allocate an object of (small) size i
- * as follows:
+ * up to MAXOBJSZ.
+ * The call GC_allocobj(i,k) ensures that the freelist for
+ * kind k objects of size i points to a non-empty
+ * free list. It returns a pointer to the first entry on the free list.
+ * In a single-threaded world, GC_allocobj may be called to allocate
+ * an object of (small) size i as follows:
  *
- *            opp = &(objfreelist[i]);
- *            if (*opp == (struct obj *)0) allocobj(i);
+ *            opp = &(GC_objfreelist[i]);
+ *            if (*opp == 0) GC_allocobj(i, NORMAL);
  *            ptr = *opp;
  *            *opp = ptr->next;
  *
- * The call to allocobj may be replaced by a call to _allocobj if it
- * is made from C, or if C register save conventions are sufficient.
  * Note that this is very fast if the free list is non-empty; it should
  * only involve the execution of 4 or 5 simple instructions.
  * All composite objects on freelists are cleared, except for
- * their first longword.
+ * their first word.
  */
 
 /*
- *  The allocator uses allochblk to allocate large chunks of objects.
+ *  The allocator uses GC_allochblk to allocate large chunks of objects.
  * These chunks all start on addresses which are multiples of
- * HBLKSZ.  All starting addresses are maintained on a contiguous
- * list so that they can be traversed in the sweep phase of garbage collection.
+ * HBLKSZ.   Each allocated chunk has an associated header,
+ * which can be located quickly based on the address of the chunk.
+ * (See headers.c for details.) 
  * This makes it possible to check quickly whether an
  * arbitrary address corresponds to an object administered by the
  * allocator.
- *  We make the (probably false) claim that this can be interrupted
- * by a signal with at most the loss of some chunk of memory.
  */
 
-/* Declarations for fundamental data structures.  These are grouped */
-/* together, so that the collector can skip over them.              */
-/* This relies on some assumptions about the compiler that are not  */
-/* guaranteed valid, but ...                                        */
+word GC_non_gc_bytes = 0;  /* Number of bytes not intended to be collected */
 
-long heapsize = 0;      /* Heap size in bytes */
+word GC_gc_no = 0;
 
-long non_gc_bytes = 0;  /* Number of bytes not intended to be collected */
-
-char copyright[] = "Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers";
-char copyright2[] =
-         "Copyright (c) 1991 by Xerox Corporation.  All rights reserved.";
-char copyright3[] =
-	 "THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY";
-char copyright4[] =
-	 " EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.";
-
-/* Return a rough approximation to the stack pointer.  A hack,  */
-/* but it's semi-portable.                                      */
-word * get_current_sp()
-{
-    word x;
-    return(&x);
-}
-
-/*
- * Allocate a new heapblock for objects of size n.
- * Add all of the heapblock's objects to the free list for objects
- * of that size.  A negative n requests atomic objects.
- */
-void new_hblk(n)
-long n;
-{
-    register word *p,
-		  *r;
-    word *last_object;		/* points to last object in new hblk	*/
-    register struct hblk *h;	/* the new heap block			*/
-    register long abs_sz;	/* |n|	*/
-    register int i;
-
-#   ifdef PRINTSTATS
-	if ((sizeof (struct hblk)) > HBLKSIZE) {
-	    abort("HBLK SZ inconsistency");
-        }
-#   endif
-
-  /* Allocate a new heap block */
-    h = allochblk(n);
-
-  /* Add it to hblklist */
-    add_hblklist(h);
-
-  /* Add objects to free list */
-    abs_sz = abs(n);
-    p = &(h -> hb_body[abs_sz]);	/* second object in *h	*/
-    r = &(h -> hb_body[0]);       	/* One object behind p	*/
-    last_object = ((word *)((char *)h + HBLKSIZE)) - abs_sz;
-			    /* Last place for last object to start */
-
-  /* make a list of all objects in *h with head as last object */
-    while (p <= last_object) {
-      /* current object's link points to last object */
-	((struct obj *)p) -> obj_link = (struct obj *)r;
-	r = p;
-	p += abs_sz;
-    }
-    p -= abs_sz;			/* p now points to last object */
-
-  /*
-   * put p (which is now head of list of objects in *h) as first
-   * pointer in the appropriate free list for this size.
-   */
-    if (n < 0) {
-	((struct obj *)(h -> hb_body)) -> obj_link = aobjfreelist[abs_sz];
-	aobjfreelist[abs_sz] = ((struct obj *)p);
-    } else {
-	((struct obj *)(h -> hb_body)) -> obj_link = objfreelist[abs_sz];
-	objfreelist[abs_sz] = ((struct obj *)p);
-    }
-
-  /*
-   * Set up mask in header to facilitate alignment checks
-   * See "gc.h" for a description of how this works.
-   */
-#   ifndef RT
-	switch (abs_sz) {
-	    case 1:
-		h -> hb_mask = 0x3;
-		break;
-	    case 2:
-		h -> hb_mask = 0x7;
-		break;
-	    case 4:
-		h -> hb_mask = 0xf;
-		break;
-	    case 8:
-		h -> hb_mask = 0x1f;
-		break;
-	    case 16:
-		h -> hb_mask = 0x3f;
-		break;
-	    /* By default it remains set to a negative value */
-	}
-#   else
-      /* the 4.2 pcc C compiler did not produce correct code for the switch */
-	if (abs_sz == 1)	{ h -> hb_mask = 0x3; }
-	else if (abs_sz == 2)	{ h -> hb_mask = 0x7; }
-	else if (abs_sz == 4)	{ h -> hb_mask = 0xf; }
-	else if (abs_sz == 8)	{ h -> hb_mask = 0x1f; }
-	else if (abs_sz == 16)	{ h -> hb_mask = 0x3f; }
-	/* else skip; */
-#   endif
-
-#   ifdef DEBUG
-	gc_printf("Allocated new heap block at address 0x%X\n",
-		h);
-#   endif
-}
+char * GC_copyright[] =
+{"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers",
+"Copyright (c) 1991,1992 by Xerox Corporation.  All rights reserved.",
+"THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY",
+" EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK."};
 
 
 /* some more variables */
 
-extern long mem_found;  /* Number of reclaimed longwords */
-			/* after garbage collection      */
+extern signed_word GC_mem_found;  /* Number of reclaimed longwords	*/
+				  /* after garbage collection      	*/
 
-extern long atomic_in_use, composite_in_use;
 extern errno;
+
+/*
+ * Clear all mark bits associated with block h.
+ */
+/*ARGSUSED*/
+static void clear_marks_for_block(h, dummy)
+struct hblk *h;
+word dummy;
+{
+    register hdr * hhdr = HDR(h);
+    register int j;
+    
+    for (j = 0; j < MARK_BITS_SZ; j++) {
+	hhdr -> hb_marks[j] = 0;
+    }
+}
 
 /*
  * Clear mark bits in all allocated heap blocks
  */
 static void clear_marks()
 {
-    register int j;
-    register struct hblk **p;
-    register struct hblk *q;
-
-# ifdef HBLK_MAP
-    for (q = (struct hblk *) heapstart; ((char*)q) < heaplim; q++)
-      if (is_hblk(q)) {
-# else
-    for (p = hblklist; p < last_hblk; p++) {
-	q = *p;
-# endif
-        for (j = 0; j < MARK_BITS_SZ; j++) {
-	    q -> hb_marks[j] = 0;
-        }
-    }
+    GC_apply_to_all_blocks(clear_marks_for_block, (word)0);
 }
 
-/* Limits of stack for mark routine.  Set by caller to mark.           */
-/* All items between mark_stack_top and mark_stack_bottom-1 still need */
-/* to be marked.  All items on the stack satisfy quicktest.  They do   */
-/* not necessarily reference real objects.                             */
-word * mark_stack_bottom;
-word * mark_stack_top;
+bool GC_dont_expand = 0;
 
-#ifdef USE_STACK
-# define STACKGAP 1024 /* Gap in longwords between hardware stack and	*/
-		       /* the mark stack.				*/
-		       /* Must suffice for printf calls and signal      */
-		       /* handling.					*/
-#endif
+word GC_free_space_divisor = 4;
 
-
-#ifdef USE_STACK
-#   define PUSH_MS(ptr) *(--mark_stack_top) = (word) ptr
-#   define NOT_DONE(a,b) (a < b)
-#else
-# ifdef USE_HEAP
-    char *cur_break = 0;
-
-#   define STACKINCR 0x4000
-#   define PUSH_MS(ptr) 						\
-	mark_stack_top++;                                               \
-	if ((char*)mark_stack_top >= cur_break) { 			\
-	    if (sbrk(STACKINCR) == -1) {				\
-		fprintf(stderr, "sbrk failed, code = %d\n",errno);      \
-		exit(1);						\
-	    } else {							\
-		cur_break += STACKINCR;                                \
-	    }								\
-	}								\
-	*mark_stack_top = (word) ptr
-#   define NOT_DONE(a,b) (a > b)
-# else
-	--> where does the mark stack go? <--
-# endif
-#endif
-
-
-/* Mark all objects corresponding to pointers between mark_stack_bottom */
-/* and mark_stack_top.  Assume that nested pointers are aligned         */
-/* on alignment-byte boundaries.					*/
-mark(alignment)
-int alignment;
+/* Return the minimum number of words that must be allocated between	*/
+/* collections to amortize the collection cost.				*/
+static word min_words_allocd()
 {
-  register long sz;
-  extern char end, etext;
-  register struct obj *p; /* pointer to current object to be marked */
-
-  while (NOT_DONE(mark_stack_top,mark_stack_bottom)) {
-      register long word_no;
-      register long mask;
-      register struct hblk * h;
-
-#    ifdef USE_STACK
-	  p = (struct obj *)(*mark_stack_top++);
-#    else
-#     ifdef USE_HEAP
-	p = (struct obj *)(*mark_stack_top--);
-#     else
-	--> fixit <--
-#     endif
-#    endif
-
-  /* if not a pointer to obj on heap, skip it */
-    if (((char *) p) >= heaplim) {
-	continue;
-    }
-
-    h = HBLKPTR(p);
-
-# ifndef INTERIOR_POINTERS
-    /* Check mark bit first, since this test is much more likely to */
-    /* fail than later ones.                                        */
-      word_no = ((word *)p) - ((word *)h);
-      if (mark_bit(h, word_no)) {
-	continue;
-      }
-# endif
-
-# ifdef INTERIOR_POINTERS
-    if (!is_hblk(h)) {
-	char m = get_map(h);
-	while (m > 0 && m < 0x7f) {
-	    h -= m;
-	    m = get_map(h);
-	}
-	if (m == HBLK_INVALID) {
-#         ifdef REPORT_FAILURE
-	    gc_printf("-> Pointer to non-heap loc: %X\n", p);
-#         endif
-	  continue;
-	}
-    }
-    if (((long)p) - ((long)h) < sizeof (struct hblkhdr)) {
-	continue;
-    }
-# else
-    if (!is_hblk(h)) {
-#	ifdef REPORT_FAILURE
-	  gc_printf("-> Pointer to non-heap loc: %X\n", p);
-#       endif
-	continue;
-    }
-# endif
-    sz = HB_SIZE(h);
-    mask = h -> hb_mask;
-
-# ifdef INTERIOR_POINTERS
-    word_no = get_word_no(p,h,sz,mask);
-# else
-    if (!is_proper_obj(p,h,sz,mask)) {
-#       ifdef REPORT_FAILURE
-	    gc_printf("-> Bad pointer to heap block: %X,sz = %d\n",p,sz);
-#	endif
-	continue;
-    }
-# endif
-
-    if (word_no + sz > BYTES_TO_WORDS(HBLKSIZE)
-	&& word_no != BYTES_TO_WORDS(sizeof(struct hblkhdr))
-	   /* Not first object */) {
-      /* 
-       * Note that we dont necessarily check for pointers to the block header.
-       * This doesn't cause any problems, since we have mark
-       * bits allocated for such bogus objects.
-       * We have to check for references past the last object, since
-       * marking from uch an "object" could cause an exception.
-       */
-#       ifdef REPORT_FAILURE
-	    gc_printf("-> Bad pointer to heap block: %X,sz = %d\n",p,sz);
-#	endif
-	continue;
-    }
-
-#   ifdef INTERIOR_POINTERS
-      if (mark_bit(h, word_no)) {
-	continue;
-      }
-#   endif
-
-#   ifdef DEBUG2
-	gc_printf("*** set bit for heap %x, word %x\n",h,word_no);
-#   endif
-    set_mark_bit(h, word_no);
-    if (h -> hb_sz < 0) {
-	/* Atomic object */
-	  continue;
-    }
-    {
-      /* Mark from fields inside the object */
-	register struct obj ** q;
-	register struct obj * r;
-	register long lim;   /* Should be struct obj **, but we're out of */
-			     /* A registers on a 68000.                   */
-
-#       ifdef INTERIOR_POINTERS
-	  /* Adjust p, so that it's properly aligned */
-#           ifdef DEBUG
-	      if (p != ((struct obj *)(((word *)h) + word_no))) {
-		gc_printf("Adjusting from %X to ", p);
-		p = ((struct obj *)(((word *)h) + word_no));
-		gc_printf("%X\n", p);
-	      } else {
-		p = ((struct obj *)(((word *)h) + word_no));
-	      }
-#           else
-	      p = ((struct obj *)(((word *)h) + word_no));
-#           endif
-#       endif
-#       ifdef UNALIGNED
-	  lim = ((long)(&(p -> obj_component[sz]))) - 3;
-#       else
-	  lim = (long)(&(p -> obj_component[sz]));
-#       endif
-	for (q = (struct obj **)(&(p -> obj_component[0]));
-					q < (struct obj **)lim;) {
-	    r = *q;
-	    if (quicktest(r)) {
-#               ifdef DEBUG2
-		    gc_printf("Found plausible nested pointer");
-		    gc_printf(": 0x%X inside 0x%X at 0x%X\n", r, p, q);
-#               endif
-		PUSH_MS(((word)r));
-	    }
-#           ifdef UNALIGNED
-		q = ((struct obj **)(((long)q)+alignment));
-#           else
-		q++;
-#           endif 
-	}
-    }
-  }
-}
-
-
-/*********************************************************************/
-/* Mark all locations reachable via pointers located between b and t */
-/* b is the first location to be checked. t is one past the last     */
-/* location to be checked.                                           */
-/* Assume that pointers are aligned on alignment-byte                */
-/* boundaries.							     */
-/*********************************************************************/
-void mark_all(b, t, alignment)
-word * b;
-word * t;
-int alignment;
-{
-    register word *p;
-    register word r;
-    register word *lim;
-
-#   ifdef DEBUG
-	gc_printf("Checking for pointers between 0x%X and 0x%X\n",
-		  b, t);
-#   endif
-
-    /* Allocate mark stack, leaving a hole below the real stack. */
-#     ifdef USE_STACK
-	mark_stack_bottom = get_current_sp() - STACKGAP;
-	mark_stack_top = mark_stack_bottom;
-#     else
-#       ifdef USE_HEAP
-	  mark_stack_bottom = (word *) sbrk(0); /* current break */
-	  cur_break = (char *) mark_stack_bottom;
-	  mark_stack_top = mark_stack_bottom;
-#       else
-	  -> then where should the mark stack go ? <-
-#       endif
-#     endif
-
-  /* Round b down so it is properly aligned */
-#   ifdef UNALIGNED
-      if (alignment == 2) {
-        b = (word *)(((long) b) & ~1);
-      } else if (alignment == 4) {
-	b = (word *)(((long) b) & ~3);
-      } else if (alignment != 1) {
-	fprintf(stderr, "Bad alignment parameter to mark_all\n");
-	abort(alignment);
-      }
+    int dummy;
+#   ifdef THREADS
+ 	/* We punt, for now. */
+ 	register signed_word stack_size = 10000;
 #   else
-      b = (word *)(((long) b) & ~3);
+        register signed_word stack_size = (ptr_t)(&dummy) - GC_stackbottom;
 #   endif
+    register word total_root_size;  /* includes double stack size,	*/
+    				    /* since the stack is expensive	*/
+    				    /* to scan.				*/
+    
+    if (stack_size < 0) stack_size = -stack_size;
+    total_root_size = 2 * stack_size + GC_root_size;
+    return(BYTES_TO_WORDS(GC_heapsize + total_root_size)/GC_free_space_divisor);
+}
 
-  /* check all pointers in range and put on mark_stack if quicktest true */
-    lim = t - 1 /* longword */;
-    for (p = b; ((unsigned) p) <= ((unsigned) lim);) {
-	    /* Coercion to unsigned in the preceding appears to be necessary */
-	    /* due to a bug in the 4.2BSD C compiler.                        */
-	r = *p;
-	if (quicktest(r)) {
-#           ifdef DEBUG2
-		gc_printf("Found plausible pointer: %X\n", r);
-#           endif
-	    PUSH_MS(r);         /* push r onto the mark stack */
-	}
-#       ifdef UNALIGNED
-	  p = (word *)(((char *)p) + alignment);
-#       else
-	  p++;
-#       endif
-    }
-    if (mark_stack_top != mark_stack_bottom) mark(alignment);
-
-#   ifdef USE_HEAP
-      brk(mark_stack_bottom);     /* reset break to where it was before */
-      cur_break = (char *) mark_stack_bottom;
-#   endif
+/* Clear up a few frames worth og garbage left at the top of the stack.	*/
+/* This is used to prevent us from accidentally treating garbade left	*/
+/* on the stack by other parts of the collector as roots.  This 	*/
+/* differs from the code in misc.c, which actually tries to keep the	*/
+/* stack clear of long-lived, client-generated garbage.			*/
+void GC_clear_a_few_frames()
+{
+#   define NWORDS 64
+    word frames[NWORDS];
+    register int i;
+    
+    for (i = 0; i < NWORDS; i++) frames[i] = 0;
 }
 
 /*
  * Restore inaccessible objects to the free list 
- * update mem_found (number of reclaimed longwords after garbage collection)
+ * update GC_mem_found (number of reclaimed longwords after
+ * garbage collection)
+ * We assume we hold the allocation lock, and are not interruptable by
+ * signals, if that matters.
  */
-void gcollect()
+void GC_gcollect_inner(force)
+bool force;	/* Collect even if only a small amount of allocation	*/
+		/* has taken place.  Otherwise we refuse, allowing the  */
+		/* heap to grow.					*/
 {
-    extern void mark_regs();
-
-    extern int holdsigs();  /* disables non-urgent signals - see the	*/
-			    /* file "callcc.c"				*/
-
-    long Omask = 0;     /* mask to restore signal mask to after
-			 * critical section.
-			 */
-
 #   ifdef PRINTTIMES
-      /* some debugging values */
-	double start_time = 0;
-	double mark_time = 0;
-	double done_time = 0;
-	static struct tms time_buf;
-#       define FTIME \
-		 (((double)(time_buf.tms_utime + time_buf.tms_stime))/FLOAT_HZ)
-
-      /* Get starting time */
-	    times(&time_buf);
-	    start_time = FTIME;
+	CLOCK_TYPE start_time;
+	CLOCK_TYPE mark_time;
+	CLOCK_TYPE done_time;
 #   endif
 
-#   ifdef DEBUG2
-	gc_printf("Here we are in gcollect\n"); 
+    if (!force && !GC_dont_expand
+        && GC_words_allocd < min_words_allocd()) return;
+#   ifdef PRINTTIMES
+	GET_TIME(start_time);
 #   endif
+#   ifdef PRINTSTATS
+	GC_printf("Collection %lu reclaimed %ld bytes\n",
+		  (unsigned long) GC_gc_no,
+	   	  (long)WORDS_TO_BYTES(GC_mem_found));
+#   endif
+    GC_gc_no++;
+#   ifdef GATHERSTATS
+        GC_mem_found = 0;
+        GC_composite_in_use = 0;
+        GC_atomic_in_use = 0;
+#   endif
+#   ifdef PRINTSTATS
+      GC_printf("Collection number %lu after %lu allocated bytes ",
+      	        (unsigned long) GC_gc_no,
+      	        (unsigned long) WORDS_TO_BYTES(GC_words_allocd));
+      GC_printf("(heapsize = %lu bytes)\n",
+      	        (unsigned long) GC_heapsize);
+      /* Printf arguments may be pushed in funny places.  Clear the	*/
+      /* space.								*/
+      GC_printf("", (unsigned long)0, (unsigned long)0, (unsigned long)0,
+      		    (unsigned long)0, (unsigned long)0, (unsigned long)0);
+#   endif      	        
 
-    /* Don't want to deal with signals in the middle so mask 'em out */
-	Omask = holdsigs();
+    clear_marks();
+
+    STOP_WORLD();
 
     /* Mark from all roots.  */
-	mark_roots();
+        /* Minimize junk left in my registers and on the stack */
+            GC_clear_a_few_frames();
+            GC_noop(0,0,0,0,0,0);
+	GC_mark_roots();
+	GC_promote_black_lists();
+
+    /* Check all debugged objects for consistency */
+        if (GC_debugging_started) {
+            GC_check_heap();
+        }
+	
+    START_WORLD();
+    
+#   ifdef PRINTTIMES
+	GET_TIME(mark_time);
+#   endif
+
 
 #   ifdef FIND_LEAK
       /* Mark all objects on the free list.  All objects should be */
       /* marked when we're done.				   */
 	{
-	  register int size;		/* current object size		*/
-	  register struct obj * p;	/* pointer to current object	*/
-	  register struct hblk * q;	/* pointer to block containing *p */
+	  register word size;		/* current object size		*/
+	  register ptr_t p;	/* pointer to current object	*/
+	  register struct hblk * h;	/* pointer to block containing *p */
+	  register hdr * hhdr;
 	  register int word_no;           /* "index" of *p in *q          */
+	  int kind;
 
-	  for (size = 1; size < MAXOBJSZ; size++) {
-	    for (p= objfreelist[size]; p != ((struct obj *)0); p=p->obj_link){
-		q = HBLKPTR(p);
-		word_no = (((word *)p) - ((word *)q));
-		set_mark_bit(q, word_no);
-	    }
-	  }
-	  for (size = 1; size < MAXAOBJSZ; size++) {
-	    for(p= aobjfreelist[size]; p != ((struct obj *)0); p=p->obj_link){
-		q = HBLKPTR(p);
-		word_no = (((long *)p) - ((long *)q));
-		set_mark_bit(q, word_no);
+	  for (kind = 0; kind < GC_n_kinds; kind++) {
+	    for (size = 1; size <= MAXOBJSZ; size++) {
+	      for (p= GC_obj_kinds[kind].ok_freelist[size];
+	           p != 0; p=obj_link(p)){
+		h = HBLKPTR(p);
+		hhdr = HDR(h);
+		word_no = (((word *)p) - ((word *)h));
+		set_mark_bit_from_hdr(hhdr, word_no);
+	      }
 	    }
 	  }
 	}
-	/* Check that everything is marked */
-	  reclaim(TRUE);
-#   endif
+      /* Check that everything is marked */
+	GC_start_reclaim(TRUE);
+#   else
 
-    /* Clear free list mark bits, in case they got accidentally marked   */
-    /* Note: HBLKPTR(p) == pointer to head of block containing *p        */
-    /* Also subtract memory remaining from mem_found count.              */
-    /* Note that composite objects on free list are cleared.             */
-    /* Thus accidentally marking a free list is not a problem;  only     */
-    /* objects on the list itself will be marked, and that's fixed here. */
+      GC_finalize();
+
+      /* Clear free list mark bits, in case they got accidentally marked   */
+      /* Note: HBLKPTR(p) == pointer to head of block containing *p        */
+      /* Also subtract memory remaining from GC_mem_found count.           */
+      /* Note that composite objects on free list are cleared.             */
+      /* Thus accidentally marking a free list is not a problem;  only     */
+      /* objects on the list itself will be marked, and that's fixed here. */
       {
-	register int size;		/* current object size		*/
-	register struct obj * p;	/* pointer to current object	*/
-	register struct hblk * q;	/* pointer to block containing *p */
+	register word size;		/* current object size		*/
+	register ptr_t p;	/* pointer to current object	*/
+	register struct hblk * h;	/* pointer to block containing *p */
+	register hdr * hhdr;
 	register int word_no;           /* "index" of *p in *q          */
-#       ifdef REPORT_FAILURE
-	    int prev_failure = 0;
-#       endif
+	int kind;
 
-	for (size = 1; size < MAXOBJSZ; size++) {
-	    for (p= objfreelist[size]; p != ((struct obj *)0); p=p->obj_link){
-		q = HBLKPTR(p);
-		word_no = (((word *)p) - ((word *)q));
-#               ifdef REPORT_FAILURE
-		  if (!prev_failure && mark_bit(q, word_no)) {
-		    gc_printf("-> Pointer to composite free list: %X,sz = %d\n",
-			      p, size);
-		    prev_failure = 1;
-		  }
-#               endif
-		clear_mark_bit(q, word_no);
-		mem_found -= size;
+	for (kind = 0; kind < GC_n_kinds; kind++) {
+	  for (size = 1; size <= MAXOBJSZ; size++) {
+	    for (p= GC_obj_kinds[kind].ok_freelist[size];
+	         p != 0; p=obj_link(p)){
+		h = HBLKPTR(p);
+		hhdr = HDR(h);
+		word_no = (((word *)p) - ((word *)h));
+		clear_mark_bit_from_hdr(hhdr, word_no);
+		GC_mem_found -= size;
 	    }
-#           ifdef REPORT_FAILURE
-		prev_failure = 0;
-#           endif
-	}
-	for (size = 1; size < MAXAOBJSZ; size++) {
-	    for(p= aobjfreelist[size]; p != ((struct obj *)0); p=p->obj_link){
-		q = HBLKPTR(p);
-		word_no = (((long *)p) - ((long *)q));
-#               ifdef REPORT_FAILURE
-		  if (!prev_failure && mark_bit(q, word_no)) {
-		    gc_printf("-> Pointer to atomic free list: %X,sz = %d\n",
-			      p, size);
-		    prev_failure = 1;
-		  }
-#               endif
-		clear_mark_bit(q, word_no);
-		mem_found -= size;
-	    }
-#           ifdef REPORT_FAILURE
-		prev_failure = 0;
-#           endif
-	}
-      }
-
-#   ifdef PRINTTIMES
-      /* Get intermediate time */
-	times(&time_buf);
-	mark_time = FTIME;
-#   endif
-
-#   ifdef PRINTSTATS
-	gc_printf("Bytes recovered before reclaim - f.l. count = %d\n",
-	          WORDS_TO_BYTES(mem_found));
-#   endif
-
-  /* Reconstruct free lists to contain everything not marked */
-    reclaim(FALSE);
-
-  /* clear mark bits in all allocated heap blocks */
-    clear_marks();
-
-#   ifdef PRINTSTATS
-	gc_printf("Reclaimed %d bytes in heap of size %d bytes\n",
-	          WORDS_TO_BYTES(mem_found), heapsize);
-	gc_printf("%d (atomic) + %d (composite) bytes in use\n",
-	          WORDS_TO_BYTES(atomic_in_use),
-	          WORDS_TO_BYTES(composite_in_use));
-#   endif
-
-  /*
-   * What follows is somewhat heuristic.  Constant may benefit
-   * from tuning ...
-   */
-#   ifndef FIND_LEAK
-    /* In the leak finding case, we expect gcollect to be called manually */
-    /* before we're out of heap space.					  */
-      if (WORDS_TO_BYTES(mem_found) * 4 < heapsize) {
-        /* Less than about 1/4 of available memory was reclaimed - get more */
-	  {
-	    long size_to_get = HBLKSIZE + hincr * HBLKSIZE;
-	    struct hblk * thishbp;
-	    char * nheaplim;
-
-	    thishbp = HBLKPTR(((unsigned)sbrk(0))+HBLKSIZE-1 );
-	    nheaplim = (char *) (((unsigned)thishbp) + size_to_get);
-	    if( ((char *) brk(nheaplim)) == ((char *)-1) ) {
-		write(2,"Out of memory, trying to continue ...\n",38);
-	    } else {
-		heaplim = nheaplim;
-		thishbp->hb_sz = 
-		    BYTES_TO_WORDS(size_to_get - sizeof(struct hblkhdr));
-		freehblk(thishbp);
-		heapsize += size_to_get;
-		update_hincr;
-	    }
-#           ifdef PRINTSTATS
-		gc_printf("Gcollect: needed to increase heap size by %d\n",
-		          size_to_get);
-#           endif
 	  }
+	}
       }
-#  endif
 
-   /* Reset mem_found for next collection */
-     mem_found = 0;
 
-  /* Reenable signals */
-    sigsetmask(Omask);
+#     ifdef PRINTSTATS
+	GC_printf("Bytes recovered before GC_reclaim - f.l. count = %ld\n",
+	          (long)WORDS_TO_BYTES(GC_mem_found));
+#     endif
+
+    /* Reconstruct free lists to contain everything not marked */
+      GC_start_reclaim(FALSE);
+    
+#   endif /* FIND_LEAK */
+
+#   ifdef PRINTSTATS
+	GC_printf("Immediately reclaimed %ld bytes in heap of size %lu bytes\n",
+	          (long)WORDS_TO_BYTES(GC_mem_found),
+	          (unsigned long)GC_heapsize);
+	GC_printf("%lu (atomic) + %lu (composite) bytes in use\n",
+	          (unsigned long)WORDS_TO_BYTES(GC_atomic_in_use),
+	          (unsigned long)WORDS_TO_BYTES(GC_composite_in_use));
+#   endif
+
+    /* Reset or increment counters for next cycle */
+      GC_words_allocd_before_gc += GC_words_allocd;
+      GC_words_allocd = 0;
 
   /* Get final time */
 #   ifdef PRINTTIMES
-	times(&time_buf);
-	done_time = FTIME;
-	gc_printf("Garbage collection took %d + %d msecs\n",
-	          (int)(1000.0 * (mark_time - start_time)),
-	          (int)(1000.0 * (done_time - mark_time)));
+	GET_TIME(done_time);
+	GC_printf("Garbage collection took %lu + %lu msecs\n",
+	          MS_TIME_DIFF(mark_time,start_time),
+	          MS_TIME_DIFF(done_time,mark_time));
 #   endif
+}
+
+/* Externally callable version of above */
+void GC_gcollect()
+{
+    DCL_LOCK_STATE;
+    
+    DISABLE_SIGNALS();
+    LOCK();
+    if (!GC_is_initialized) GC_init_inner();
+    /* Minimize junk left in my registers */
+      GC_noop(0,0,0,0,0,0);
+    GC_gcollect_inner(TRUE);
+    UNLOCK();
+    ENABLE_SIGNALS();
+}
+
+/*
+ * Use the chunk of memory starting at p of syze bytes as part of the heap.
+ * Assumes p is HBLKSIZE aligned, and bytes is a multiple of HBLKSIZE.
+ */
+void GC_add_to_heap(p, bytes)
+struct hblk *p;
+word bytes;
+{
+    word words;
+    
+    GC_install_header(p);
+    words = BYTES_TO_WORDS(bytes - HDR_BYTES);
+    HDR(p) -> hb_sz = words;
+    GC_freehblk(p);
+    GC_heapsize += bytes;
+    if ((ptr_t)p <= GC_least_plausible_heap_addr
+        || GC_least_plausible_heap_addr == 0) {
+        GC_least_plausible_heap_addr = (ptr_t)p - sizeof(word);
+        	/* Making it a little smaller than necessary prevents	*/
+        	/* us from getting a false hit from the variable	*/
+        	/* itself.  There's some unintentional reflection	*/
+        	/* here.						*/
+    }
+    if ((ptr_t)p + bytes >= GC_greatest_plausible_heap_addr) {
+        GC_greatest_plausible_heap_addr = (ptr_t)p + bytes;
+    }
+}
+
+ptr_t GC_least_plausible_heap_addr = (ptr_t)ONES;
+ptr_t GC_greatest_plausible_heap_addr = 0;
+
+ptr_t GC_max(x,y)
+ptr_t x, y;
+{
+    return(x > y? x : y);
+}
+
+ptr_t GC_min(x,y)
+ptr_t x, y;
+{
+    return(x < y? x : y);
 }
 
 /*
  * this explicitly increases the size of the heap.  It is used
- * internally, but my also be invoked directly by the user.
+ * internally, but my also be invoked from GC_expand_hp by the user.
  * The argument is in units of HBLKSIZE.
+ * Returns FALSE on failure.
  */
-void expand_hp(n)
-int n;
+bool GC_expand_hp_inner(n)
+word n;
 {
-    struct hblk * thishbp = HBLKPTR(((unsigned)sbrk(0))+HBLKSIZE-1 );
-    extern int holdsigs();
-    int Omask;
+    word bytes = n * HBLKSIZE;
+    struct hblk * space = GET_MEM(bytes);
+    word expansion_slop;	/* Number of bytes by which we expect the */
+    				/* heap to expand soon.			  */
 
-    /* Don't want to deal with signals in the middle of this */
-	Omask = holdsigs();
-
-    heaplim = (char *) (((unsigned)thishbp) + n * HBLKSIZE);
-    if (n > 2*hincr) {
-	hincr = n/2;
+    if (n > 2*GC_hincr) {
+	GC_hincr = n/2;
     }
-    if( ((char *) brk(heaplim)) == ((char *)-1) ) {
-	write(2,"Out of Memory!\n",15);
-	exit(-1);
+    if( space == 0 ) {
+	return(FALSE);
     }
 #   ifdef PRINTSTATS
-	gc_printf("Voluntarily increasing heap size by %d\n",
-	          n*HBLKSIZE);
+	GC_printf("Increasing heap size by %lu\n",
+	           (unsigned long)bytes);
 #   endif
-    thishbp->hb_sz = BYTES_TO_WORDS(n * HBLKSIZE - sizeof(struct hblkhdr));
-    freehblk(thishbp);
-    heapsize += ((char *)heaplim) - ((char *)thishbp);
-    /* Reenable signals */
-	sigsetmask(Omask);
+    expansion_slop = 8 * WORDS_TO_BYTES(min_words_allocd());
+    if (5 * HBLKSIZE * MAXHINCR > expansion_slop) {
+        expansion_slop = 5 * HBLKSIZE * MAXHINCR;
+    }
+    if (GC_last_heap_addr == 0 && !((word)space & SIGNB)
+        || GC_last_heap_addr != 0 && GC_last_heap_addr < (ptr_t)space) {
+        /* Assume the heap is growing up */
+        GC_greatest_plausible_heap_addr =
+            GC_max(GC_greatest_plausible_heap_addr,
+                   (ptr_t)space + bytes + expansion_slop);
+    } else {
+        /* Heap is growing down */
+        GC_least_plausible_heap_addr =
+            GC_min(GC_least_plausible_heap_addr,
+                   (ptr_t)space - expansion_slop);
+    }
+    GC_prev_heap_addr = GC_last_heap_addr;
+    GC_last_heap_addr = (ptr_t)space;
+    GC_add_to_heap(space, bytes);
+    return(TRUE);
 }
 
-
-extern int dont_gc;  /* Unsafe to start garbage collection */
-
-/*
- * Make sure the composite object free list for sz is not empty.
- * Return a pointer to the first object on the free list.
- * The object MUST BE REMOVED FROM THE FREE LIST BY THE CALLER.
- *
- * note: _allocobj
- */
-struct obj * _allocobj(sz)
-long sz;
+/* Really returns a bool, but it's externally visible, so that's clumsy. */
+int GC_expand_hp(n)
+int n;
 {
-    if (sz == 0) return((struct obj *)0);
-
-#   ifdef DEBUG2
-	gc_printf("here we are in _allocobj\n");
-#   endif
-
-    if (objfreelist[sz] == ((struct obj *)0)) {
-      if (hblkfreelist == ((struct hblk *)0) && !dont_gc) {
-	if (GC_DIV * non_gc_bytes < GC_MULT * heapsize) {
-#         ifdef DEBUG
-	    gc_printf("Calling gcollect\n");
-#         endif
-	  gcollect();
-	} else {
-	  expand_hp(NON_GC_HINCR);
-	}
-      }
-      if (objfreelist[sz] == ((struct obj *)0)) {
-#       ifdef DEBUG
-	    gc_printf("Calling new_hblk\n");
-#	endif
-	  new_hblk(sz);
-      }
-    }
-#   ifdef DEBUG2
-	gc_printf("Returning %x from _allocobj\n",objfreelist[sz]);
-	gc_printf("Objfreelist[%d] = %x\n",sz,objfreelist[sz]);
-#   endif
-    return(objfreelist[sz]);
+    int result;
+    DCL_LOCK_STATE;
+    
+    DISABLE_SIGNALS();
+    LOCK();
+    if (!GC_is_initialized) GC_init_inner();
+    result = (int)GC_expand_hp_inner((word)n);
+    UNLOCK();
+    ENABLE_SIGNALS();
+    return(result);
 }
 
 /*
- * Make sure the atomic object free list for sz is not empty.
+ * Make sure the object free list for sz is not empty.
  * Return a pointer to the first object on the free list.
  * The object MUST BE REMOVED FROM THE FREE LIST BY THE CALLER.
  *
- * note: this is called by allocaobj (see the file mach_dep.c)
  */
-struct obj * _allocaobj(sz)
-long sz;
+ptr_t GC_allocobj(sz, kind)
+word sz;
+int kind;
 {
-    if (sz == 0) return((struct obj *)0);
+    register ptr_t * flh = &(GC_obj_kinds[kind].ok_freelist[sz]);
+    if (sz == 0) return(0);
 
-    if (aobjfreelist[sz] == ((struct obj *) 0)) {
-      if (hblkfreelist == ((struct hblk *)0) && !dont_gc) {
-	if (GC_DIV * non_gc_bytes < GC_MULT * heapsize) {
-#         ifdef DEBUG
-	    gc_printf("Calling gcollect\n");
-#         endif
-	  gcollect();
+    if (*flh == 0) {
+      GC_continue_reclaim(sz, kind);
+    }
+    if (*flh == 0) {
+      if (!GC_sufficient_hb(sz, kind) && !GC_dont_gc) {
+	if (GC_DIV * GC_non_gc_bytes < GC_MULT * GC_heapsize) {
+	  GC_gcollect_inner(FALSE);
+	  GC_continue_reclaim(sz, kind);
 	} else {
-	  expand_hp(NON_GC_HINCR);
+	  if (!GC_expand_hp_inner(NON_GC_HINCR)) {
+	      GC_gcollect_inner(FALSE);
+	      GC_continue_reclaim(sz, kind);
+	  }
 	}
       }
-      if (aobjfreelist[sz] == ((struct obj *) 0)) {
-	  new_hblk(-sz);
+      if (*flh == 0) {
+	  GC_new_hblk(sz, kind);
       }
     }
-    return(aobjfreelist[sz]);
+    return(*flh);
 }
-
-# ifdef SPARC
-  put_mark_stack_bottom(val)
-  long val;
-  {
-    mark_stack_bottom = (word *)val;
-  }
-# endif

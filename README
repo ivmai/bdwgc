@@ -1,5 +1,5 @@
 Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
-Copyright (c) 1991 by Xerox Corporation.  All rights reserved.
+Copyright (c) 1991, 1992 by Xerox Corporation.  All rights reserved.
 
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -8,22 +8,33 @@ Permission is hereby granted to copy this garbage collector for any purpose,
 provided the above notices are retained on all copies.
 
 
-This is version 1.9.
+This is version 2.4.  Note that functions were renamed since version 1.9
+to make naming consistent with PCR collectors.
 
 HISTORY -
 
-  This collector was developed as a part of research projects supported in
-part by the National Science Foundation and the Defense Advance Research
-Projects Agency.  The SPARC specific code was contributed by Mark Weiser
-(weiser.pa@xerox.com).  The Encore Multimax modifications were supplied by
+  Early versions of this collector were developed as a part of research
+projects supported in part by the National Science Foundation
+and the Defense Advance Research Projects Agency.
+The SPARC specific code was contributed by Mark Weiser
+(weiser@parc.xerox.com).  The Encore Multimax modifications were supplied by
 Kevin Kenny (kenny@m.cs.uiuc.edu).  The adaptation to the RT is largely due
 to Vernon Lee (scorpion@rice.edu), on machines made available by IBM.
-The HP specific code and a number of good suggestions for improving the
+Much of the HP specific code and a number of good suggestions for improving the
 generic code are due to Walter Underwood (wunder@hp-ses.sde.hp.com).
-Robert Brazile (brazile@diamond.bbn.com) supplied the ULTRIX code.
-(Blame for misinstallation of those modifications goes to the first author,
+Robert Brazile (brazile@diamond.bbn.com) originally supplied the ULTRIX code.
+Al Dosser (dosser@src.dec.com) and Regis Cridlig (Regis.Cridlig@cl.cam.ac.uk)
+subsequently provided updates and information on variation between ULTRIX
+systems.  Parag Patel (parag@netcom.com) supplied the A/UX code.
+Bill Janssen (janssen@parc.xerox.com) supplied the SunOS dynamic loader
+specific code. Manuel Serrano (serrano@cornas.inria.fr) supplied linux and
+Sony News specific code.
+
+  (Blame for misinstallation of those modifications goes to the first author,
 however.) Some of the improvements incorporated in this version were
 suggested by David Chase, then at Olivetti Research.
+
+  Much of the code was rewritten by Hans-J. Boehm at Xerox PARC.
 
   This is intended to be a general purpose, garbage collecting storage
 allocator.  The algorithms used are described in:
@@ -31,36 +42,46 @@ allocator.  The algorithms used are described in:
 Boehm, H., and M. Weiser, "Garbage Collection in an Uncooperative Environment",
 Software Practice & Experience, September 1988, pp. 807-820.
 
-  Many of the ideas underlying the collector have previously been explored
-by others.  (We discovered recently that Doug McIlroy wrote a more or less
-similar collector that is part of version 8 UNIX (tm).)  However none of this
-work appears to have been widely disseminated.
+  Some of the ideas underlying the collector have previously been explored
+by others.  (Doug McIlroy wrote a vaguely similar collector that is part of
+version 8 UNIX (tm).)  However none of this work appears to have been widely
+disseminated.
 
-  The tools for detecting storage leaks described in the above paper
-are not included here.  There is some hope that they might be released
-by Xerox in the future.
+  This collector includes numerous refinements not described in the above paper.
+
+  Rudimentary tools for use of the collector as a leak detector are included.
 
 
 GENERAL DESCRIPTION
 
+  This is a garbage colecting storage allocator that is intended to be
+used as a plug-in replacement for C's malloc.
+
   Since the collector does not require pointers to be tagged, it does not
-attempt to insure that all inaccessible storage is reclaimed.  However,
+attempt to ensure that all inaccessible storage is reclaimed.  However,
 in our experience, it is typically more successful at reclaiming unused
-memory than most C programs using explicit deallocation.
+memory than most C programs using explicit deallocation.  Unlike manually
+introduced leaks, the amount of unreclaimed memory typically stays
+bounded.
 
   In the following, an "object" is defined to be a region of memory allocated
 by the routines described below.  
 
   Any objects not intended to be collected must be pointed to either
 from other such accessible objects, or from the registers,
-stack, data, or statically allocated bss segments.  It is usually assumed
-that all such pointers point to the beginning of the object.  (This does
+stack, data, or statically allocated bss segments.  Pointers from
+the stack or registers may point to anywhere inside an object.
+However, it is usually assumed that all pointers originating in the
+heap point to the beginning of an object.  (This does
 not disallow interior pointers; it simply requires that there must be a
 pointer to the beginning of every accessible object, in addition to any
-interior pointers.  Conditionally compiled code to check for pointers to the
-interiors of objects is supplied.  As explained in "gc.h", this
-may create other problems, but on modern machines requiring 32-bit-aligned
-pointers, this is often acceptable.)
+interior pointers.)  There are two facilities for altering this behavior.
+The macro ALL_INTERIOR_POINTERS may be defined in gc_private.h to
+cause any pointer into an object to retain the object.  A routine
+GC_register_displacement is provided to allow for more controlled
+interior pointer use in the heap.  Defining ALL_INTERIOR_POINTERS
+is somewhat dangerous.  See gc_private.h for details.  The routine
+GC_register_displacement is described in gc.h.
 
   Note that pointers inside memory allocated by the standard "malloc" are not
 seen by the garbage collector.  Thus objects pointed to only from such a
@@ -69,88 +90,126 @@ standard "malloc" be used only for memory regions, such as I/O buffers, that
 are guaranteed not to contain pointers.  Pointers in C language automatic,
 static, or register variables, are correctly recognized.
 
-  The collector does not understand SunOS 4.x dynamic libraries.  Space
-allocated by the dynamic linker past at addresses higher than "_end" will not
-be seen by the collector.  (We have not had a chance to track down exactly
-what ends up there.  Some data does.  If we understood exactly where things
-ended up, it would probably be easy to fix this problem.)  When in doubt,
-use -Bstatic.
+  The collector does not generally know how to find pointers in data
+areas that are associated with dynamic libraries.  This is easy to
+remedy IF you know how to find those data areas on your operating
+system (see GC_add_roots).  Code for doing this under SunOS4.X only is
+included (see dynamic_load.c).  (Note that it includes a special version
+of dlopen, GC_dlopen, that should be called instead of the standard one.
+By default, this is not compiled in, since it requires the -ldl library.)
+Note that the garbage collector does not need to be informed of shared
+read-only data.  However if the shared library mechanism can introduce
+discontiguous data areas that may contain pointers, then the collector does
+need to be informed.
 
-  The collector is designed to minimize stack growth if list-like structures
-store the link in their first field; for example
- 
-  struct list_node {
-	  struct list_node * link; /* first field */
-	  ...
-	  };
-  
-instead of
-
-  struct list_node {
-	  ...
-	  struct list_node * link; /* last field */
-	  };
-
-  This should not matter for lists that are less than tens of thousands
-of elements long.
-
-  Signal processing for most signals is deferred during collection. (The
-necessary calls to sigsetmask may need to be commented out under a pure
-system V implementation, since there does not seem to be an equivalent
-call.  Multiple calls to signal are likely to be slow.)
+  Signal processing for most signals is normally deferred during collection,
+and during uninterruptible parts of the allocation process.  Unlike
+standard ANSI C mallocs, it is intended to be safe to invoke malloc
+from a signal handler while another malloc is in progress, provided
+the original malloc is not restarted.  (Empirically, many UNIX
+applications already asssume this.)  The allocator/collector can
+also be configured for thread-safe operation.  (Full signal safety can
+also be acheived, but only at the cost of two system calls per malloc,
+which is usually unacceptable.)
 
 INSTALLATION AND PORTABILITY
 
-  As distributed, the collector produces garbage collection statistics
-during every collection.  Once the collector is known to operate properly,
-these can be suppressed by defining the macro SILENT at the top
-of "gc.h".  (The given statistics exhibit a few peculiarities.
+  As distributed, the macro SILENT is defined at the top of gc_private.h.
+In the event of problems, this can be removed to obtain a moderate
+amount of descriptive output for each collection.
+(The given statistics exhibit a few peculiarities.
 Things don't appear to add up for a variety of reasons, most notably
 fragmentation losses.  These are probably much more significant for the
 contrived program "test.c" than for your application.)
 
-  Note that typing "make test" will automatically compare the output
-of the test program against the correct output.  This does require that
-collection statistics have been disabled.
+  Note that typing "make test" will automatically build the collector
+and then run setjmp_test and gctest. Setjmp_test will give you information
+about configuring the collector, which is useful primarily if you have
+a machine that's not already supported.  Gctest is a somewhat superficial
+test of collector functionality.  Failure is indicated by a core dump or
+a message to the effect that the collector is broken.  Gctest takes about 
+20 seconds to run on a SPARCstation 2. On a slower machine,
+expect it to take a while.  It may use up to 8 MB of memory.  (The
+multi-threaded version will use more.)
 
   The Makefile will generate a library gc.a which you should link against.
 It is suggested that if you need to replace a piece of the collector
-(e.g. mark_roots.c) you simply list your version ahead of gc.a on the
-ld command line, rather than replacing the one in gc.a.
+(e.g. GC_mark_roots.c) you simply list your version ahead of gc.a on the
+ld command line, rather than replacing the one in gc.a.  (This will
+generate numerous warnings under some versions of AIX, but it still
+works.)
 
   The collector currently is designed to run essentially unmodified on
 the following machines:
 
 	    Sun 3
-	    Sun 4  (except under some versions of 3.2)
-	    Vax under Berkeley UNIX
+	    Sun 4 under SunOS 4.X or Solaris2.X
+	    Vax under 4.3BSD, Ultrix
+	    Intel 386 or 486 under OS/2 (no threads) or linux.
 	    Sequent Symmetry  (no concurrency)
 	    Encore Multimax   (no concurrency)
 	    MIPS M/120 (and presumably M/2000) (RISC/os 4.0 with BSD libraries)
 	    IBM PC/RT  (Berkeley UNIX)
 	    IBM RS/6000
 	    HP9000/300
+	    HP9000/700
+	    DECstations under Ultrix
+	    SGI workstations under IRIX
+	    Sony News
+	    Apple MacIntosh under A/UX
 
   For these machines you should check the beginning of gc.h
-to verify that the machine type is correctly defined.  On an Encore Multimax,
-MIPS M/120, or a PC/RT, you will also need to make changes to the
+to verify that the machine type is correctly defined.  On 
+nonSun machines, you may also need to make changes to the
 Makefile, as described by comments there.
+
+  Dynamic libraries are completely supported only under SunOS4.X
+(and even that support is not functional on the last Sun 3 release).
+On other machines we recommend that you do one of the following:
+
+  1) Add dynamic library support (and send us the code).
+  2) Use static versions of the libraries.
+  3) Arrange for dynamic libraries to use the standard malloc.
+     This is still dangerous if the library stores a pointer to a
+     garbage collected object.  But nearly all standard interfaces
+     prohibit this, because they deal correctly with pointers
+     to stack allocated objects.  (Strtok is an exception.  Don't
+     use it.)
 
   In all cases we assume that pointer alignment is consistent with that
 enforced by the standard C compilers.  If you use a nonstandard compiler
-you may have to adjust the alignment parameters defined in gc.h.
+you may have to adjust the alignment parameters defined in gc_private.h.
 
-  On a MIPS machine or PC/RT, we assume that no calls to sbrk occur during a
-collection. (This is necessary due to the way stack expansion works on these
-machines.) This may become false if certain kinds of I/O calls are inserted
-into the collector.
+  A port to a machine that is not byte addressed, or does not use 32 bit
+addresses will require a major effort.  (Parts of the code try to anticipate
+64 bit addresses.  Others will need to be rewritten, since different data
+structures are needed.)  A port to MSDOS is hopeless, unless you are willing
+to assume an 80386 or better, and that only flat 32 bit pointers will ever be
+used.
 
   For machines not already mentioned, or for nonstandard compilers, the
 following are likely to require change:
 
-1.  The parameters at the top of gc.h and the definition of
-    TMP_POINTER_MASK further down in the same file.
-
+1.  The parameters at the top of gc_private.h.
+      The parameters that will usually require adjustment are
+   STACKBOTTOM,  ALIGNMENT and DATASTART.  Setjmp_test
+   prints its guesses of the first two.
+      DATASTART should be an expression for computing the
+   address of the beginning of the data segment.  This can often be
+   &etext.  But some memory management units require that there be
+   some unmapped space between the text and the data segment.  Thus
+   it may be more complicated.   On UNIX systems, this is rarely
+   documented.  But the adb "$m" command may be helpful.  (Note
+   that DATASTART will usually be a function of &etext.  Thus a
+   single experiment is usually insufficient.)
+     STACKBOTTOM is used to initialize GC_stackbottom, which
+   should be a sufficient approximation to the coldest stack address.
+   On some machines, it is difficult to obtain such a value that is
+   valid across a variety of MMUs, OS releases, etc.  A number of
+   alternatives exist for using the collector in spite of this.  See the
+   discussion in gc_private.h immediately preceding the various
+   definitions of STACKBOTTOM.
+   
 2.  mach_dep.c.
       The most important routine here is one to mark from registers.
     The distributed file includes a generic hack (based on setjmp) that
@@ -162,28 +221,20 @@ following are likely to require change:
     all accessible variables, including registers, have the value they
     had at the time of the longjmp, it also will not work.  Vanilla 4.2 BSD
     makes such a claim.  SunOS does not.)
-      This file also contains interface routines that save registers
-    not normally preserved by the C compiler.  These are intended for
-    a fast assembly language interface to the allocator, such as the
-    one that is used by the Russell compiler.  (These routines work
-    only for small objects.  A call to one of these routines ensures
-    that the free list for a particular object size is nonempty.  Normally
-    in-line code would call these routines only after finding an empty free
-    list for an about-to-be-allocated object size.)  If a pure C interface
-    is used, these routines are not needed.
-      If your machine does not allow in-line assembly code, or if you prefer
+      If your compiler does not allow in-line assembly code, or if you prefer
     not to use such a facility, mach_dep.c may be replaced by a .s file
     (as we did for the MIPS machine and the PC/RT).
 
 3.  mark_roots.c.
       These are the top level mark routines that determine which sections
     of memory the collector should mark from.  This is normally not
-    architecture specific (aside from the macros defined in gc.h and
+    architecture specific (aside from the macros defined in gc_private.h and
     referenced here), but it can be programming language and compiler
     specific.  The supplied routine should work for most C compilers
-    running under UNIX.
+    running under UNIX.  Calls to GC_add_roots may sometimes be used
+    for similar effect.
 
-4.  The sigsetmask call does not appear to exist under system V UNIX.
+4.  The sigsetmask call does not appear to exist under early system V UNIX.
     It is used by the collector to block and unblock signals at times at
     which an asynchronous allocation inside a signal handler could not
     be tolerated.  Under system V, it is possible to remove these calls,
@@ -193,68 +244,93 @@ following are likely to require change:
 
   For a different versions of Berkeley UN*X or different machines using the
 Motorola 68000, Vax, SPARC, 80386, NS 32000, PC/RT, or MIPS architecture,
-it should frequently suffice to change definitions in gc.h.
+it should frequently suffice to change definitions in gc_private.h.
 
 
 THE C INTERFACE TO THE ALLOCATOR
 
   The following routines are intended to be directly called by the user.
-Note that only gc_malloc and gc_init are necessary.  Gc_realloc is provided
-for applications that already use realloc.  The remaining routines are used
-solely to enhance performance.  It is suggested that they be used only after
-initial debugging.
+Note that usually only GC_malloc is necessary.  GC_clear_roots and GC_add_roots
+calls may be required if the collector has to trace from nonstandard places
+(e.g. from dynamic library data areas on a machine on which the 
+collector doesn't already understand them.)  On some machines, it may
+be desirable to set GC_stacktop to a good approximation of the stack base. 
+(This enhances code portability on HP PA machines, since there is no
+good way for the collector to compute this value.)  Client code may include
+"gc.h", which defines all of the following, plus a few others.
 
-1)  gc_init()
-    - called once before allocation to initialize the collector.
-
-2)  gc_malloc(nbytes)
+1)  GC_malloc(nbytes)
     - allocate an object of size nbytes.  Unlike malloc, the object is
-      cleared before being returned to the user.  (For even better performance,
-      it may help to expand the relevant part of gc_malloc in line.
-      This is done by the Russell compiler, for example.)  Gc_malloc will
+      cleared before being returned to the user.  Gc_malloc will
       invoke the garbage collector when it determines this to be appropriate.
-      (A number of previous collector bugs resulted in objects not getting
-      completely cleared.  We claim these are all fixed.  But if you encounter
-      problems, this is a likely source to check for.  The collector tries
-      hard to avoid clearing any words that it doesn't have to.  Thus this
-      is a bit subtle.)  Gc_malloc fails (generates a segmentation fault)
-      if it is called with a 0 argument.
+      GC_malloc may return 0 if it is unable to acquire sufficient
+      space from the operating system.  This is the most probable
+      consequence of running out of space.  Other possible consequences
+      are that a function call will fail due to lack of stack space,
+      or that the collector will fail in other ways because it cannot
+      maintain its internal data structures, or that a crucial system
+      process will fail and take down the machine.  Most of these
+      possibilities are independent of the malloc implementation.
 
-3)  gc_malloc_atomic(nbytes)
+2)  GC_malloc_atomic(nbytes)
     - allocate an object of size nbytes that is guaranteed not to contain any
       pointers.  The returned object is not guaranteed to be cleeared.
-      (Can always be replaced by gc_malloc, but results in faster collection
+      (Can always be replaced by GC_malloc, but results in faster collection
       times.  The collector will probably run faster if large character
-      arrays, etc. are allocated with gc_malloc_atomic than if they are
+      arrays, etc. are allocated with GC_malloc_atomic than if they are
       statically allocated.)
 
-4)  gc_realloc(object, new_size)
+3)  GC_realloc(object, new_size)
     - change the size of object to be new_size.  Returns a pointer to the
       new object, which may, or may not, be the same as the pointer to
       the old object.  The new object is taken to be atomic iff the old one
       was.  If the new object is composite and larger than the original object,
       then the newly added bytes are cleared (we hope).  This is very likely
-      to allocate a new object, unless MERGE_SIZES is defined in gc.h.
+      to allocate a new object, unless MERGE_SIZES is defined in gc_private.h.
       Even then, it is likely to recycle the old object only if the object
       is grown in small additive increments (which, we claim, is generally bad
       coding practice.)
 
-5)  gc_free(object)
-    - explicitly deallocate an object returned by gc_malloc or
-      gc_malloc_atomic.  Not necessary, but can be used to minimize
+4)  GC_free(object)
+    - explicitly deallocate an object returned by GC_malloc or
+      GC_malloc_atomic.  Not necessary, but can be used to minimize
       collections if performance is critical.
 
-6)  expand_hp(number_of_4K_blocks)
+5)  GC_expand_hp(number_of_4K_blocks)
     - Explicitly increase the heap size.  (This is normally done automatically
-      if a garbage collection failed to reclaim enough memory.  Explicit
-      calls to expand_hp may prevent unnecessarily frequent collections at
+      if a garbage collection failed to GC_reclaim enough memory.  Explicit
+      calls to GC_expand_hp may prevent unnecessarily frequent collections at
       program startup.)
+      
+6)  GC_clear_roots()
+    - Reset the collectors idea of where static variables containing pointers
+      may be located to the empty set of locations.  No statically allocated
+      variables will be traced from after this call, unless there are
+      intervening GC_add_roots calls.  The collector will still trace from
+      registers and the program stack.
+	  
+7)  GC_add_roots(low_address, high_address_plus_1)
+    - Add [low_address, high_address) as an area that may contain root pointers
+      and should be traced by the collector.  The static data and bss segments
+      are considered by default, and should not be added unless GC_clear_roots
+      has been called.  The number of root areas is currently limited to 50.
+      This is intended as a way to register data areas for dynamic libraries,
+      or to replace the entire data ans bss segments by smaller areas that are
+      known to contain all the roots. 
 
-  The global variable dont_gc can be set to a non-zero value to inhibit
-collections, e.g. during a time-critical section of code.  (This may cause
-otherwise unnecessary expansion of the process' memory.)
+8) Several routines to allow for registration of finalization code.
+   User supplied finalization code may be invoked when an object becomes
+   unreachable.  To call (*f)(obj, x) when obj becomes inaccessible, use
+	GC_register_finalizer(obj, f, x, 0, 0);
+   For more sophisticated uses, and for finalization ordering issues,
+   see gc.h.
 
-  The variable non_gc_bytes, which is normally 0, may be changed to reflect
+  The global variable GC_free_space_divisor may be adjusted up from its
+default value of 4 to use less space and more collection time, or down for
+the opposite effect.  Setting it to 1 or 0 will effectively disable collections
+and cause all allocations to simply grow the heap.
+
+  The variable GC_non_gc_bytes, which is normally 0, may be changed to reflect
 the amount of memory allocated by the above routines that should not be
 considered as a candidate for collection.  Collections are inhibited
 if this exceeds a given fraction (currently 3/4) of the total heap size.
@@ -262,53 +338,129 @@ The heap is simply expanded instead.  Careless use may, of course, result
 in excessive memory consumption.
 
   Some additional tuning is possible through the parameters defined
-near the top of gc.h.
+near the top of gc_private.h.
   
-  The two gc_malloc routines may be declared to return a suitable pointer
-type.  It is not intended that gc.h be included by the user program.
-If only gc_malloc is intended to be used, it might be appropriate to define:
+  If only GC_malloc is intended to be used, it might be appropriate to define:
 
-#define malloc(n) gc_malloc(n)
-#define calloc(m,n) gc_malloc((m)*(n))
+#define malloc(n) GC_malloc(n)
+#define calloc(m,n) GC_malloc((m)*(n))
 
-  More complete emulations of the standard C allocation routines are
-contained and described in "interface.c" (contributed by David Chase).
+  For small pieces of VERY allocation intensive code, gc_inline.h
+includes some allocation macros that may be used in place of GC_malloc
+and friends.
 
-  No attempt is made to use obscure names for garbage collector routines
-and data structures.  Name conflicts are possible.  (Running "nm gc.a"
-should identify names to be avoided.)
+  Somewhat different emulations of the standard C allocation routines are
+contained and described in "interface.c" (contributed by David Chase, but
+subsequently mangled by Hans Boehm).  These are appropriate for mixed
+systems, where part of the system uses explicit deallocation, and does not
+leak.  Exclusive use of interface.c routines can result in needless
+fragmentation, since certain kinds of object coalescing are only done
+by the collector.
 
+  All externally visible names in the garbage collector start with "GC_".
+To avoid name conflicts, client code should avoid this prefix, except when
+accessing garbage collector routines or variables.
 
-ASSEMBLY LANGUAGE INTERFACE
+  The internals of the collector understand different object "kinds" (sometimes
+called "regions").  By default, the only two kinds are ATOMIC and NORMAL.
+Its should be possible to add others, e.g. for data types for which layout
+information is known.  The allocation routine "GC_generic_malloc"
+takes an explicit kind argument.  (You will probably want to add
+faster kind-specific routines as well.) You will need to add another kind
+descriptor, including your own mark routine to add a new object kind.
+This requires a fairly detailed understanding of at least GC_mark.
 
-  There is a provision for a very fast assembly language and/or in-line
-C interface.  See the beginning comments in alloc.c.  On some architectures,
-additional code must be supplied near the beginning of mach_dep.c for
-this to work.  Using an assembly language interface, and partially
-expanding the allocation code in-line, most allocations will take on the
-order of 4 or 5 instructions each.  (Explicit deallocations can be kept
-down to something similar if the object is atomic and of known size.
-Note that in-line deallocation code for composite objects should clear
-the object before returning it to the appropriate free list.)
 
 USE AS LEAK DETECTOR:
 
   The collector may be used to track down leaks in C programs that are
 intended to run with malloc/free (e.g. code with extreme real-time or
-portability constraints).  To do so define FIND_LEAK somewhere in gc.h.
-This will cause the collector to invoke the report_leak routine defined
-near the top of reclaim.c whenever an inaccessible object is found that has
-not been explicitly freed.
+portability constraints).  To do so define FIND_LEAK somewhere in
+gc_private.h.  This will cause the collector to invoke the report_leak
+routine defined near the top of reclaim.c whenever an inaccessible
+object is found that has not been explicitly freed.
   Productive use of this facility normally involves redefining report_leak
 to do something more intelligent.  This typically requires annotating
 objects with additional information (e.g. creation time stack trace) that
 identifies their origin.  Such code is typically not very portable, and is
 not included here.
+  If all objects are allocated with GC_DEBUG_MALLOC (see next section),
+then the default version of report_leak will report the source file
+and line number at which the leaked object was allocated.  This may
+sometimes be sufficient.
 
 
-BUGS
+DEBUGGING FACILITIES:
 
-  Recently fixed bugs:
+  The routines GC_debug_malloc, GC_debug_malloc_atomic, GC_debug_realloc,
+and GC_debug_free provide an alternate interface to the collector, which
+provides some help with memory overwrite errors, and the like.
+Objects allocated in this way are annotated with additional
+information.  Some of this information is checked during garbage
+collections, and detected inconsistencies are reported to stderr.
+
+  Simple cases of writing past the end of an allocated object should
+be caught if the object is explicitly deallocated, or if the
+collector is invoked while the object is live.  The first deallocation
+of an object will clear the debugging info associated with an
+object, so accidentally repeated calls to GC_debug_free will report the
+deallocation of an object without debugging information.  Out of
+memory errors will be reported to stderr, in addition to returning
+NIL.
+
+  GC_debug_malloc checking  during garbage collection is enabled
+with the first call to GC_debug_malloc.  This will result in some
+slowdown during collections.  If frequent heap checks are desired,
+this can be acheived by explicitly invoking GC_gcollect, e.g. from
+the debugger.
+
+  GC_debug_malloc allocated objects should not be passed to GC_realloc
+or GC_free, and conversely.  It is however acceptable to allocate only
+some objects with GC_debug_malloc, and to use GC_malloc for other objects,
+provided the two pools are kept distinct.  In this case, there is a very
+low probablility that GC_malloc allocated objects may be misidentified as
+having been overwritten.  This should happen with probability at most
+one in 2**32.  This probability is zero if GC_debug_malloc is never called.
+
+  GC_debug_malloc, GC_malloc_atomic, and GC_debug_realloc take two
+additional trailing arguments, a string and an integer.  These are not
+interpreted by the allocator.  They are stored in the object (the string is
+not copied).  If an error involving the object is detected, they are printed.
+
+  The macros GC_MALLOC, GC_MALLOC_ATOMIC, GC_REALLOC, GC_FREE, and
+GC_REGISTER_FINALIZER are also provided.  These require the same arguments
+as the corresponding (nondebugging) routines.  If gc.h is included
+with GC_DEBUG defined, they call the debugging versions of these
+functions, passing the current file name and line number as the two
+extra arguments, where appropriate.  If gc.h is included without GC_DEBUG
+defined, then all these macros will instead be defined to their nondebugging
+equivalents.  (GC_REGISTER_FINALIZER is necessary, since pointers to
+objects with debugging information are really pointers to a displacement
+of 16 bytes form the object beginning, and some translation is necessary
+when finalization routines are invoked.  For details, about what's stored
+in the header, see the definition of the type oh in debug_malloc.c)
+
+
+BUGS:
+
+  Any memory that does not have a recognizable pointer to it will be
+reclaimed.  Exclusive-or'ing forward and backward links in a list
+doesn't cut it.
+  Some C optimizers may lose the last undisguised pointer to a memory
+object as a consequence of clever optimizations.  This has almost
+never been observed in practice.  Send mail to boehm@parc.xerox.com
+for suggestions on how to fix your compiler.
+  This is not a real-time collector.  In the standard configuration,
+percentage of time required for collection should be constant across
+heap sizes.  But collection pauses will increase for larger heaps.
+(On SPARCstation 2s collection times will be on the order of 300 msecs
+per MB of accessible memory that needs to be scanned.  Your mileage
+may vary.)  Much better real-time behavior would be possible if we
+had a portable way to identify sections of memory that were recently
+modified.  Experience with PCR indicates that 100 msec pause times
+are probably possible, almost independent of heap size.
+
+RECENT VERSIONS:
 
   Version 1.3 and immediately preceding versions contained spurious
 assembly language assignments to TMP_SP.  Only the assignment in the PC/RT
@@ -332,8 +484,61 @@ allocated on a sparc based machine.
 a major addition, you might also send mail to ask whether it's already
 been done.
 
-  Version 1.8 added ULTRIX support in gc.h.
+  Version 1.8 added ULTRIX support in gc_private.h.
+  
+  Version 1.9 fixed a major bug in gc_realloc.
+  
+  Version 2.0 introduced a consistent naming convention for collector
+routines and added support for registering dynamic library data segments
+in the standard mark_roots.c.  Most of the data structures were revamped.
+The treatment of interior pointers was completely changed.  Finalization
+was added.  Support for locking was added.  Object kinds were added.
+We added a black listing facility to avoid allocating at addresses known
+to occur as integers somewhere in the address space.  Much of this
+was accomplished by adapting ideas and code from the PCR collector.
+The test program was changed and expanded.
 
-  Version 1.9 fixed a serious realloc bug.  Expanding a large pointerful
-object by a small amount could result in pointers in the added section
-not getting scanned.
+  Version 2.1 was the first stable version since 1.9, and added support
+for PPCR.
+
+  Version 2.2 added debugging allocation, and fixed various bugs.  Among them:
+- GC_realloc could fail to extend the size of the object for certain large object sizes.
+- A blatant subscript range error in GC_printf, which unfortunately
+  wasn't excercised on machines with sufficient stack alignment constraints.
+- GC_register_displacement did the wrong thing if it was called after
+  any allocation had taken place.
+- The leak finding code would eventually break after 2048 byte
+  byte objects leaked.
+- interface.c didn't compile.
+- The heap size remained much too small for large stacks.
+- The stack clearing code behaved badly for large stacks, and perhaps
+  on HP/PA machines.
+
+  Version 2.3 added ALL_INTERIOR_POINTERS and fixed the following bugs:
+- Missing declaration of etext in the A/UX version.
+- Some PCR root-finding problems.
+- Blacklisting was not 100% effective, because the plausible future
+  heap bounds were being miscalculated.
+- GC_realloc didn't handle out-of-memory correctly.
+- GC_base could return a nonzero value for addresses inside free blocks.
+- test.c wasn't really thread safe, and could erroneously report failure
+  in a multithreaded environment.  (The locking primitives need to be
+  replaced for other threads packages.)
+- GC_CONS was thoroughly broken.
+- On a SPARC with dynamic linking, signals stayed diabled while the
+  client code was running.
+  (Thanks to Manuel Serrano at INRIA for reporting the last two.)
+  
+  Version 2.4 added GC_free_space_divisor as a tuning knob, added
+  support for OS/2 and linux, and fixed the following bugs:
+- On machines with unaligned pointers (e.g. Sun 3), every 128th word could
+  fail to be considered for marking.
+- Dynamic_load.c erroneously added 4 bytes to the length of the data and
+  bss sections of the dynamic library.  This could result in a bad memory
+  reference if the actual length was a multiple of a page.  (Observed on
+  Sun 3.  Can probably also happen on a Sun 4.)
+  (Thanks to Robert Brazile for pointing out that the Sun 3 version
+  was broken.  Dynamic library handling is still broken on Sun 3s
+  under 4.1.1U1, but apparently not 4.1.1.  If you have such a machine,
+  use -Bstatic.)
+  

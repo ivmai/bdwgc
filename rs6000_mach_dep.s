@@ -1,17 +1,3 @@
- # Set up _gc_arrays with labels in the middle
-    .csect  data[RW]
-    .globl  _gc_arrays
-    .globl  aobjfreelist
-    .globl  objfreelist
-    .align  2
-_gc_arrays:
-aobjfreelist:
-    .space  4*513
-objfreelist:
-    .space  4*513
- # either hblkmap or hblklist.  Reserve space for HBLK_MAP, which is bigger.
-    .space  4*8192
-
     .csect
     .set   r0,0
     .set   r1,1
@@ -47,71 +33,71 @@ objfreelist:
     .set   r31,31
 
  # Mark from machine registers that are saved by C compiler
-    .globl  .mark_regs
-.mark_regs:
-    .extern .tl_mark
+    .globl  .GC_mark_regs
+.GC_mark_regs:
+    .extern .GC_tl_mark
     stu	    r1,-64(r1)  # reserve stack frame
     mflr    r0		# save link register
     st      r0,0x48(r1)
-    oril    r3,r2,0x0   # mark from r2
-    bl 	    .tl_mark
+    oril    r3,r2,0x0   # GC_mark from r2
+    bl 	    .GC_tl_mark
     cror    15,15,15
-    oril    r3,r13,0x0   # mark from r13-r31
-    bl 	    .tl_mark
+    oril    r3,r13,0x0   # GC_mark from r13-r31
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r14,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r15,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r16,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r17,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r18,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r19,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r20,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r21,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r22,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r23,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r24,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r25,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r26,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r27,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r28,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r29,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r30,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     oril    r3,r31,0x0
-    bl 	    .tl_mark
+    bl 	    .GC_tl_mark
     cror    15,15,15
     l       r0,0x48(r1)
     mtlr    r0

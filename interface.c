@@ -1,44 +1,26 @@
-#include "gc.h"
+#include "gc_private.h"
+#include <stddef.h>
+
 /* These are some additional routines to interface the collector to C     */
-/* They were contributed by David Chase (chase@orc.olivetti.com)          */
-/* They illustrates the use of non_gc_bytes, and provide an interface to  */
-/* the storage allocator's size information.  Note that there is a        */
-/* check to guard against 0 length allocations.                           */
-/* Hacked by H. Boehm (11/16/89) to accomodate gc_realloc.                */
+/* This is a rather special purpose interface that tries to keep down the */
+/* number of collections in the presence of explicit deallocations.	  */
+/* A call to this malloc effectively declares that the resulting object   */
+/* will be explicitly deallocated with very high probability.		  */
+/* The reduced collection frequency may interfere with object 		  */
+/* coalescing.								  */
+/* If you just want to rename GC_malloc and friends, this is NOT	  */
+/* the right way to do it.						  */
 
-initialize_allocator() {
-  non_gc_bytes = 0;
-  gc_init();
-}
-
-
-/* Use of gc_gasp to report errors reduces risk of bizarre
-   interactions with I/O system in desperate situations.  */
-
-gc_gasp(s) char * s;
-{
-  write(2,s,strlen(s));
-}
-
-
-/* This reports how many bytes are actually available to an object.
-   It is a fatal error to request the size of memory addressed by a
-   pointer not obtained from the storage allocator. */
-
-size_of_obj_in_bytes(p)
-     struct obj * p;
-{
-  register struct hblk * h;
-  register int size;
-  
-  h = HBLKPTR(p);
-  
-  if (is_hblk(h)) {
-    return (HB_SIZE(h))<<2;
-  }
-  gc_gasp("GC/size_of_obj_in_bytes: requested byte size of non-pointer!\n");
-  exit(1);
-}
+/* This contributed by David Chase (chase@eng.sun.com) a long time	  */
+/* ago. Much of its original functionality has since been absorbed	  */
+/* elsewhere.								  */
+/* They illustrates the use of GC_non_gc_bytes 				  */
+/* Hacked by H. Boehm (11/16/89) to accomodate GC_realloc.                */
+/* Further updated (2/20/92) to reflect changes in interfaces and data	  */
+/* structures.								  */
+/* Further updated (8/25/92) to correct previously introduced bugs and 	  */
+/* make it compile with semi-modern compilers.				  */
+/* Note that extern_ptr_t is either void * or char *, as appropriate.     */
 
 
 /* This free routine is merely advisory -- it reduces the estimate of
@@ -46,19 +28,23 @@ size_of_obj_in_bytes(p)
    making it more likely that the collector will run next time more
    memory is needed. */
 
-void free(p) {
-  int inc = size_of_obj_in_bytes(p);
-  non_gc_bytes -= inc;
+void free(p)
+extern_ptr_t p;
+{
+  size_t inc = GC_size(p);
+  GC_non_gc_bytes -= inc;
 }
 
 /* This free routine adjusts the collector estimates of space in use,
    but also actually releases the memory for reuse.  It is thus "unsafe"
    if the programmer "frees" memory that is actually still in use.  */
 
-void unsafe_free(p) {
-  int inc = size_of_obj_in_bytes(p);
-  non_gc_bytes -= inc;
-  gc_free(p);
+void unsafe_free(p)
+extern_ptr_t p;
+{
+  size_t inc = GC_size(p);
+  GC_non_gc_bytes -= inc;
+  GC_free(p);
 }
 
 
@@ -68,26 +54,33 @@ void unsafe_free(p) {
    its size is added to non_gc_bytes.
 */
 
-word malloc(bytesize) {
-word result;
-if (bytesize == 0) bytesize = 4;
-result = (word) gc_malloc (bytesize);
-non_gc_bytes += (bytesize + 3) & ~3;
-return result;
+extern_ptr_t malloc(bytesize)
+size_t bytesize;
+{
+  extern_ptr_t result;
+  
+  result = (extern_ptr_t) GC_malloc (bytesize);
+  GC_non_gc_bytes += (bytesize + 3) & ~3;
+  return result;
 }
 
-word malloc_atomic(bytesize) {
-word result;
-if (bytesize == 0) bytesize = 4;
-result = (word) gc_malloc_atomic (bytesize);
-non_gc_bytes += (bytesize + 3) & ~3;
-return result;
+extern_ptr_t malloc_atomic(bytesize)
+size_t bytesize;
+{
+  extern_ptr_t result;
+  
+  result = (extern_ptr_t) GC_malloc_atomic (bytesize);
+  GC_non_gc_bytes += (bytesize + 3) & ~3;
+  return result;
 }
 
-word realloc(old,size) word old,size; {
-    int inc = size_of_obj_in_bytes(old);
+extern_ptr_t realloc(old,size)
+extern_ptr_t old;
+size_t size;
+{
+  int inc = GC_size(old);
 
-    non_gc_bytes += ((size + 3) & ~3) - inc;
-    return(gc_realloc(old, size);
-    }
+  GC_non_gc_bytes += ((size + 3) & ~3) - inc;
+  return(GC_realloc(old, size));
+}
 
