@@ -10,7 +10,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.6 of a conservative garbage collector for C and C++.
+This is version 4.7 of a conservative garbage collector for C and C++.
 
 HISTORY -
 
@@ -1112,7 +1112,7 @@ Since version 4.5:
    first renames ALL "GC_xxx" identifiers as "_GC_xxx".  The second is the
    inverse transformation.  Note that doing this is guaranteed to break all
    clients written for the other names.
- - descriptor field for kinf NORMAL in GC_obj_kinds with ADD_BYTE_AT_END
+ - descriptor field for kind NORMAL in GC_obj_kinds with ADD_BYTE_AT_END
    defined should be -ALIGNMENT not WORDS_TO_BYTES(-1).  This is
    a serious bug on machines with pointer alignment of less than a word.
  - GC_ignore_self_finalize_mark_proc didn't handle pointers to very near the
@@ -1122,3 +1122,10 @@ Since version 4.5:
    beginning to hopefully specify the remaining dangers.
  - Added DATAEND definition to config.h.
  - Fixed some of the .h file organization.  Fixed "make floppy".
+ 
+Since version 4.6:
+ - Fixed some compilation problems with -DCHECKSUMS (thanks to Ian Searle)
+ - Updated some Mac specific files to synchronize with Patrick Beard.
+ - Fixed a serious bug for machines with non-word-aligned pointers.
+   (Thanks to Patrick Beard for pointing out the problem.  The collector
+   should fail almost any conceivable test immediately on such machines.)

@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, September 14, 1995 12:42 pm PDT */
+/* Boehm, November 17, 1995 12:13 pm PST */
 # include "gc_priv.h"
 # include <stdio.h>
 # include <setjmp.h>
@@ -34,10 +34,12 @@ asm static void PushMacRegisters()
     jsr		GC_push_one
     move.l  a4,(sp)
     jsr		GC_push_one
-    	// <pcb> perhaps a6 should be pushed if stack frames arent being used.
-    move.l  a6,(sp)
-    jsr     GC_push_one
-	// skip a5 (globals), and a7 (stack pointer)
+#   if !__option(a6frames)
+	// <pcb> perhaps a6 should be pushed if stack frames aren't being used.    
+  	move.l	a6,(sp)
+  	jsr		GC_push_one
+#   endif
+	// skip a5 (globals), a6 (frame pointer), and a7 (stack pointer)
     move.l  d2,(sp)
     jsr		GC_push_one
     move.l  d3,(sp)

@@ -11,7 +11,7 @@
 	
 	by Patrick C. Beard.
  */
-/* Boehm, July 28, 1994 10:35 am PDT */
+/* Boehm, November 17, 1995 11:50 am PST */
 
 #include <Resources.h>
 #include <Memory.h>
@@ -51,9 +51,10 @@ struct TemporaryMemoryBlock {
 	char data[];
 };
 
-TemporaryMemoryHandle theTemporaryMemory = NULL;
+static TemporaryMemoryHandle theTemporaryMemory = NULL;
+static Boolean firstTime = true;
 
-static void GC_MacFreeTemporaryMemory(void);
+void GC_MacFreeTemporaryMemory(void);
 
 Ptr GC_MacTemporaryNewPtr(Size size, Boolean clearMemory)
 {
@@ -83,7 +84,7 @@ Ptr GC_MacTemporaryNewPtr(Size size, Boolean clearMemory)
 	return tempPtr;
 }
 
-static void GC_MacFreeTemporaryMemory()
+void GC_MacFreeTemporaryMemory()
 {
 	long totalMemoryUsed = 0;
 	TemporaryMemoryHandle tempMemBlock = theTemporaryMemory;

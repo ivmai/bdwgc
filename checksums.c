@@ -142,9 +142,9 @@ void GC_check_blocks()
     }
     GC_printf2("GC_bytes_in_used_blocks = %ld, bytes_in_free_blocks = %ld ",
     		GC_bytes_in_used_blocks, bytes_in_free_blocks);
-    GC_printf("GC_heapsize = %ld\n", GC_heapsize);
+    GC_printf1("GC_heapsize = %ld\n", GC_heapsize);
     if (GC_bytes_in_used_blocks + bytes_in_free_blocks != GC_heapsize) {
-    	GC_printf("LOST SOME BLOCKS!!\n");
+    	GC_printf0("LOST SOME BLOCKS!!\n");
     }
 }
 
