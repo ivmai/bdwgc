@@ -14,8 +14,8 @@
  */
 /* Boehm, February 1, 1996 1:19 pm PST */
 # define I_HIDE_POINTERS
-# include "gc_priv.h"
-# include "gc_mark.h"
+# include "private/gc_priv.h"
+# include "private/gc_mark.h"
 
 # ifdef FINALIZE_ON_DEMAND
     int GC_finalize_on_demand = 1;
@@ -110,7 +110,7 @@ signed_word * log_size_ptr;
     word old_size = ((log_old_size == -1)? 0: (1 << log_old_size));
     register word new_size = 1 << log_new_size;
     struct hash_chain_entry **new_table = (struct hash_chain_entry **)
-    	GC_generic_malloc_inner_ignore_off_page(
+    	GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
     		(size_t)new_size * sizeof(struct hash_chain_entry *), NORMAL);
     
     if (new_table == 0) {
@@ -199,13 +199,8 @@ signed_word * log_size_ptr;
             return(1);
         }
     }
-#   ifdef THREADS
-      new_dl = (struct disappearing_link *)
-    	GC_generic_malloc_inner(sizeof(struct disappearing_link),NORMAL);
-#   else
-      new_dl = (struct disappearing_link *)
-	GC_malloc(sizeof(struct disappearing_link));
-#   endif
+    new_dl = (struct disappearing_link *)
+    	GC_INTERNAL_MALLOC(sizeof(struct disappearing_link),NORMAL);
     if (new_dl != 0) {
         new_dl -> dl_hidden_obj = HIDE_POINTER(obj);
         new_dl -> dl_hidden_link = HIDE_POINTER(link);
@@ -248,7 +243,11 @@ signed_word * log_size_ptr;
             GC_dl_entries--;
             UNLOCK();
     	    ENABLE_SIGNALS();
-            GC_free((GC_PTR)curr_dl);
+#	    ifdef DBG_HDRS_ALL
+	      dl_next(curr_dl) = 0;
+#	    else
+              GC_free((GC_PTR)curr_dl);
+#	    endif
             return(1);
         }
         prev_dl = curr_dl;
@@ -369,7 +368,7 @@ finalization_mark_proc * mp;
                   /* May not happen if we get a signal.  But a high	*/
                   /* estimate will only make the table larger than	*/
                   /* necessary.						*/
-#		ifndef THREADS
+#		if !defined(THREADS) && !defined(DBG_HDRS_ALL)
                   GC_free((GC_PTR)curr_fo);
 #		endif
             } else {
@@ -402,13 +401,8 @@ finalization_mark_proc * mp;
 #	endif
         return;
     }
-#   ifdef THREADS
-      new_fo = (struct finalizable_object *)
-    	GC_generic_malloc_inner(sizeof(struct finalizable_object),NORMAL);
-#   else
-      new_fo = (struct finalizable_object *)
-	GC_malloc(sizeof(struct finalizable_object));
-#   endif
+    new_fo = (struct finalizable_object *)
+    	GC_INTERNAL_MALLOC(sizeof(struct finalizable_object),NORMAL);
     if (new_fo != 0) {
         new_fo -> fo_hidden_base = (word)HIDE_POINTER(base);
 	new_fo -> fo_fn = fn;
@@ -477,6 +471,34 @@ finalization_mark_proc * mp;
     GC_register_finalizer_inner(obj, fn, cd, ofn,
     				ocd, GC_null_finalize_mark_proc);
 }
+
+#ifndef NO_DEBUGGING
+void GC_dump_finalization()
+{
+    struct disappearing_link * curr_dl;
+    struct finalizable_object * curr_fo;
+    ptr_t real_ptr, real_link;
+    int dl_size = (log_dl_table_size == -1 ) ? 0 : (1 << log_dl_table_size);
+    int fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
+    int i;
+
+    GC_printf0("Disappearing links:\n");
+    for (i = 0; i < dl_size; i++) {
+      for (curr_dl = dl_head[i]; curr_dl != 0; curr_dl = dl_next(curr_dl)) {
+        real_ptr = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_obj);
+        real_link = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_link);
+        GC_printf2("Object: 0x%lx, Link:0x%lx\n", real_ptr, real_link);
+      }
+    }
+    GC_printf0("Finalizers:\n");
+    for (i = 0; i < fo_size; i++) {
+      for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
+        real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
+        GC_printf1("Finalizable object: 0x%lx\n", real_ptr);
+      }
+    }
+}
+#endif
 
 /* Called with world stopped.  Cause disappearing links to disappear,	*/
 /* and invoke finalizers.						*/
@@ -758,7 +780,9 @@ int GC_invoke_finalizers()
 #   endif
     result = (*fn)(client_data);
 #   ifdef THREADS
-      UNSET_LOCK_HOLDER();
+#     ifndef GC_ASSERTIONS
+        UNSET_LOCK_HOLDER();
+#     endif /* o.w. UNLOCK() does it implicitly */
       UNLOCK();
       ENABLE_SIGNALS();
 #   endif

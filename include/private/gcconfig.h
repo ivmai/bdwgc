@@ -2,6 +2,7 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 2000 by Hewlett-Packard Company.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -194,10 +195,16 @@
 #   define MACOS
 #   define mach_type_known
 # endif
-# if defined(macosx)
+# if defined(macosx) || \
+     defined(__APPLE__) && defined(__MACH__) && defined(__ppc__)
 #    define MACOSX
 #    define POWERPC
 #    define mach_type_known
+# endif
+# if defined(__APPLE__) && defined(__MACH__) && defined(__i386__)
+#    define MACOSX
+#    define I386
+     --> Not really supported, but at least we recognize it.
 # endif
 # if defined(NeXT) && defined(mc68000)
 #   define M68K
@@ -244,11 +251,23 @@
     /* DGUX defined */
 #   define mach_type_known
 # endif
-# if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \
-     || defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__)
-#   define I386
-#   define MSWIN32	/* or Win32s */
+# if defined(_WIN32_WCE)
+    /* SH3, SH4, MIPS already defined for corresponding architectures */
+#   if defined(x86)
+#     define I386
+#   endif
+#   if defined(ARM)
+#     define ARM32
+#   endif
+#   define MSWINCE
 #   define mach_type_known
+# else
+#   if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \
+        || defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__)
+#     define I386
+#     define MSWIN32	/* or Win32s */
+#     define mach_type_known
+#   endif
 # endif
 # if defined(__DJGPP__)
 #   define I386
@@ -326,8 +345,8 @@
                     /*		   RT	      ==> IBM PC/RT		*/
                     /*		   HP_PA      ==> HP9000/700 & /800	*/
                     /*				  HP/UX			*/
-		    /*		   SPARC      ==> SPARC under SunOS	*/
-		    /*			(SUNOS4, SUNOS5,		*/
+		    /*		   SPARC      ==> SPARC	v7/v8/v9	*/
+		    /*			(SUNOS4, SUNOS5, LINUX,		*/
 		    /*			 DRSNX variants)		*/
 		    /* 		   ALPHA      ==> DEC Alpha 		*/
 		    /*			(OSF1 and LINUX variants)	*/
@@ -462,8 +481,12 @@
 #       define MPROTECT_VDB
 #       ifdef __ELF__
 #            define DYNAMIC_LOADING
-             extern char **__environ;
-#            define DATASTART ((ptr_t)(&__environ))
+#	     include <features.h>
+#	     if defined(__GLIBC__)&& __GLIBC__>=2
+#              define LINUX_DATA_START
+#	     else /* !GLIBC2 */
+               extern char **__environ;
+#              define DATASTART ((ptr_t)(&__environ))
                              /* hideous kludge: __environ is the first */
                              /* word in crt0.o, and delimits the start */
                              /* of the data segment, no matter which   */
@@ -472,6 +495,7 @@
                              /* would include .rodata, which may       */
                              /* contain large read-only data tables    */
                              /* that we'd rather not scan.             */
+#	     endif /* !GLIBC2 */
              extern int _end;
 #            define DATAEND (&_end)
 #       else
@@ -567,11 +591,17 @@
 #     define DATAEND (&_end)
 #   endif
 #   ifdef MACOSX
+      /* There are reasons to suspect this may not be reliable. 	*/
 #     define ALIGNMENT 4
 #     define OS_TYPE "MACOSX"
 #     define DATASTART ((ptr_t) get_etext())
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
 #     define DATAEND	/* not needed */
+#     ifdef POWERPC
+#        define MPROTECT_VDB
+#     endif
+#  	include <unistd.h>
+#	   define GETPAGESIZE() getpagesize()
 #   endif
 # endif
 
@@ -600,7 +630,11 @@
 
 # ifdef SPARC
 #   define MACH_TYPE "SPARC"
-#   define ALIGNMENT 4	/* Required by hardware	*/
+#   if defined(__arch64__) || defined(__sparcv9)
+#     define ALIGNMENT 8
+#   else
+#     define ALIGNMENT 4	/* Required by hardware	*/
+#   endif
 #   define ALIGN_DOUBLE
     extern int etext;
 #   ifdef SUNOS5
@@ -661,15 +695,22 @@
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     ifdef __ELF__
-#       define LINUX_DATA_START
 #       define DYNAMIC_LOADING
 #     else
-          Linux Sparc non elf ?
+          Linux Sparc/a.out not supported
 #     endif
       extern int _end;
+      extern int _etext;
 #     define DATAEND (&_end)
 #     define SVR4
-#     define STACKBOTTOM ((ptr_t) 0xf0000000)
+#     ifdef __arch64__
+#       define STACKBOTTOM ((ptr_t) 0x80000000000ULL)
+#	define DATASTART (ptr_t)GC_SysVGetDataStart(0x100000, &_etext)
+#	define CPP_WORDSZ 64
+#     else
+#       define STACKBOTTOM ((ptr_t) 0xf0000000)
+#	define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &_etext)
+#     endif
 #   endif
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
@@ -833,6 +874,10 @@
 #	endif
 #       define DATAEND  /* not needed */
 #   endif
+#   ifdef MSWINCE
+#	define OS_TYPE "MSWINCE"
+#       define DATAEND  /* not needed */
+#   endif
 #   ifdef DJGPP
 #       define OS_TYPE "DJGPP"
 #       include "stubinfo.h"
@@ -960,6 +1005,11 @@
 #	endif
 #	define DYNAMIC_LOADING
 #   endif
+#   ifdef MSWINCE
+#       define OS_TYPE "MSWINCE"
+#       define ALIGNMENT 4
+#       define DATAEND /* not needed */
+#   endif
 # endif
 
 # ifdef RS6000
@@ -1009,6 +1059,12 @@
 #   endif
 #   include <unistd.h>
 #   define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
+#   ifndef __GNUC__
+#     define PREFETCH(x)  { \
+                            register long addr = (long)(x); \
+                            (void) _asm ("LDW", 0, 0, addr, 0); \
+                          }
+#   endif
 # endif
 
 # ifdef ALPHA
@@ -1059,8 +1115,13 @@
 	/* Requires 16 byte alignment for malloc */
 #   define ALIGNMENT 8
 #   define USE_GENERIC_PUSH_REGS
-	/* We need to get preserved registers in addition to register windows.	*/
-	/* That's easiest to do with setjmp.					*/
+	/* We need to get preserved registers in addition to register   */
+	/* windows.   That's easiest to do with setjmp.			*/
+#   ifdef PARALLEL_MARK
+#	define USE_MARK_BYTES
+	    /* Compare-and-exchange is too expensive to use for 	*/
+	    /* setting mark bits.					*/
+#   endif
 #   ifdef HPUX
 	--> needs work
 #   endif
@@ -1173,7 +1234,25 @@
 #            define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
 #       endif
 #   endif
+#   ifdef MSWINCE
+#     define OS_TYPE "MSWINCE"
+#     define DATAEND /* not needed */
+#   endif
 #endif
+
+# ifdef SH3
+#   define MACH_TYPE "SH3"
+#   define OS_TYPE "MSWINCE"
+#   define ALIGNMENT 4
+#   define DATAEND /* not needed */
+# endif
+ 
+# ifdef SH4
+#   define MACH_TYPE "SH4"
+#   define OS_TYPE "MSWINCE"
+#   define ALIGNMENT 4
+#   define DATAEND /* not needed */
+# endif
 
 #ifdef LINUX_DATA_START
     /* Some Linux distributions arrange to define __data_start.  Some	*/
@@ -1188,6 +1267,14 @@
 #   define DATASTART ((ptr_t)(&__data_start != 0? &__data_start : &data_start))
 #endif
 
+#if defined(LINUX) && defined(REDIRECT_MALLOC) && !defined(LINUX_THREADS)
+    /* Rld appears to allocate some meory with its own allocator, and	*/
+    /* some through malloc, which might be redirected.  To make this	*/
+    /* work with collectable memory, we have to scan memory allocated	*/
+    /* by rld's internal malloc.					*/
+#   define USE_PROC_FOR_LIBRARIES
+#endif
+    
 # ifndef STACK_GROWS_UP
 #   define STACK_GROWS_DOWN
 # endif
@@ -1264,6 +1351,10 @@
 #   undef MPROTECT_VDB  /* Can't deal with address space holes. */
 # endif
 
+# ifdef PARALLEL_MARK
+#   undef MPROTECT_VDB  /* For now.	*/
+# endif
+
 # if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB)
 #   define DEFAULT_VDB
 # endif
@@ -1288,13 +1379,33 @@
 	((word*)x)[1] = 0;
 # endif /* CLEAR_DOUBLE */
 
+/* Internally to the collector we test only the XXX_THREADS macros	*/
+/* not the GC_XXX_THREADS versions.  Here we make sure the latter	*/
+/* are treated as equivalent.						*/
+#if defined(GC_SOLARIS_THREADS) && !defined(_SOLARIS_THREADS)
+#   define _SOLARIS_THREADS
+#endif
+#if defined(GC_SOLARIS_THREADS) && !defined(_SOLARIS_PTHREADS)
+#   define _SOLARIS_PTHREADS
+#endif
+#if defined(GC_IRIX_THREADS) && !defined(IRIX_THREADS)
+#   define IRIX_THREADS
+#endif
+#if defined(GC_LINUX_THREADS) && !defined(LINUX_THREADS)
+#   define LINUX_THREADS
+#endif
+#if defined(GC_WIN32_THREADS) && !defined(WIN32_THREADS)
+#   define WIN32_THREADS
+#endif
+#if defined(GC_HPUX_THREADS) && !defined(HPUX_THREADS)
+#   define HPUX_THREADS
+#endif
+
+/* Internally we use SOLARIS_THREADS to test for either old or pthreads. */
 # if defined(_SOLARIS_PTHREADS) && !defined(SOLARIS_THREADS)
 #   define SOLARIS_THREADS
 # endif
 # if defined(IRIX_THREADS) && !defined(IRIX5)
---> inconsistent configuration
-# endif
-# if defined(IRIX_JDK_THREADS) && !defined(IRIX5)
 --> inconsistent configuration
 # endif
 # if defined(LINUX_THREADS) && !defined(LINUX)
@@ -1309,16 +1420,22 @@
 # if defined(PCR) || defined(SRC_M3) || \
 	defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || \
 	defined(IRIX_THREADS) || defined(LINUX_THREADS) || \
-	defined(IRIX_JDK_THREADS) || defined(HPUX_THREADS)
+	defined(HPUX_THREADS)
 #   define THREADS
 # endif
 
-# if defined(HP_PA) || defined(M88K) || defined(POWERPC) \
-     || (defined(I386) && defined(OS2)) || defined(UTS4) || defined(LINT)
+# if defined(HP_PA) || defined(M88K) || defined(POWERPC) && !defined(MACOSX) \
+     || (defined(I386) && defined(OS2)) || defined(UTS4) || defined(LINT) \
+     || defined(MSWINCE)
 	/* Use setjmp based hack to mark from callee-save registers. */
 #	define USE_GENERIC_PUSH_REGS
 # endif
-# if defined(SPARC) && !defined(LINUX)
+# if defined(I386) && defined(LINUX)
+    /* SAVE_CALL_CHAIN is supported if the code is compiled to save	*/
+    /* frame pointers by default, i.e. no -fomit-frame-pointer flag.	*/
+/* #   define SAVE_CALL_CHAIN */
+# endif
+# if defined(SPARC)
 #   define SAVE_CALL_CHAIN
 #   define ASM_CLEAR_CODE	/* Stack clearing is crucial, and we 	*/
 				/* include assembly code to do it well.	*/

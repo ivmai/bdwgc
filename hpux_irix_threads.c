@@ -25,13 +25,13 @@
  * there too.
  */
 
-# if defined(IRIX_THREADS) || defined(HPUX_THREADS)
+# if defined(GC_IRIX_THREADS) || defined(GC_HPUX_THREADS) \
+     || defined(IRIX_THREADS) || defined(HPUX_THREADS)
 
+# include "private/gc_priv.h"
 # if defined(HPUX_THREADS)
 #   include <sys/semaphore.h>
 # endif
-
-# include "gc_priv.h"
 # include <pthread.h>
 # include <semaphore.h>
 # include <time.h>
@@ -223,7 +223,7 @@ GC_thread GC_new_thread(pthread_t id)
     	/* Dont acquire allocation lock, since we may already hold it. */
     } else {
         result = (struct GC_Thread_Rep *)
-        	 GC_generic_malloc_inner(sizeof(struct GC_Thread_Rep), NORMAL);
+        	 GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
     }
     if (result == 0) return(0);
     result -> id = id;

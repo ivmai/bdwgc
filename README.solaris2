@@ -20,15 +20,15 @@ You may want to reverse this decisions if you use -DREDIRECT_MALLOC=...
 
 SOLARIS THREADS:
 
-The collector must be compiled with -DSOLARIS_THREADS to be thread safe.
+The collector must be compiled with -DGC_SOLARIS_THREADS (thr_ functions)
+or -DGC_SOLARIS_PTHREADS (pthread_ functions) to be thread safe.
 It is also essential that gc.h be included in files that call thr_create,
 thr_join, thr_suspend, thr_continue, or dlopen.  Gc.h macro defines
 these to also do GC bookkeeping, etc.  Gc.h must be included with
-SOLARIS_THREADS defined, otherwise these replacements are not visible.
+one or both of these macros defined, otherwise
+these replacements are not visible.
 A collector built in this way way only be used by programs that are
 linked with the threads library.
-
-If you are using the Pthreads interface, also define _SOLARIS_PTHREADS.
 
 In this mode, the collector contains various workarounds for older Solaris
 bugs.  Mostly, these should not be noticeable unless you look at system

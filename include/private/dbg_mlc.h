@@ -29,7 +29,7 @@
 # define I_HIDE_POINTERS
 # include "gc_priv.h"
 # ifdef KEEP_BACK_PTRS
-#   include "backptr.h"
+#   include "gc_backptr.h"
 # endif
 
 # define START_FLAG ((word)0xfedcedcb)
@@ -56,8 +56,10 @@ typedef struct {
 #   ifdef NEED_CALLINFO
       struct callinfo oh_ci[NFRAMES];
 #   endif
-    word oh_sz;			/* Original malloc arg.		*/
-    word oh_sf;			/* start flag */
+#   ifndef SHORT_DBG_HDRS
+      word oh_sz;			/* Original malloc arg.		*/
+      word oh_sf;			/* start flag */
+#   endif /* SHORT_DBG_HDRS */
 } oh;
 /* The size of the above structure is assumed not to dealign things,	*/
 /* and to be a multiple of the word length.				*/
@@ -93,7 +95,11 @@ typedef struct {
 /* Check whether object with base pointer p has debugging info	*/ 
 /* p is assumed to point to a legitimate object in our part	*/
 /* of the heap.							*/
-GC_bool GC_has_debug_info(/* p */);
+#ifdef SHORT_DBG_HDRS
+# define GC_has_debug_info(p) TRUE
+#else
+  GC_bool GC_has_debug_info(/* p */);
+#endif
 
 /* Store debugging info into p.  Return displaced pointer. */
 /* Assumes we don't hold allocation lock.		   */

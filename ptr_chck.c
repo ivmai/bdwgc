@@ -10,10 +10,9 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, September 19, 1995 1:26 pm PDT */
 
-#include "gc_priv.h"
-#include "gc_mark.h"
+#include "private/gc_priv.h"
+#include "private/gc_mark.h"
 
 #ifdef __STDC__
 void GC_default_same_obj_print_proc(GC_PTR p, GC_PTR q)
@@ -252,7 +251,8 @@ ptr_t p;
     	    
     	    if (GC_is_static_root(p)) return(p);
     	    /* Else do it again correctly:	*/
-#           if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(PCR)) \
+#           if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || \
+		defined(MSWINCE) || defined(PCR)) \
                 && !defined(SRC_M3)
     	        DISABLE_SIGNALS();
     	        GC_register_dynamic_libraries();

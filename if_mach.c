@@ -1,7 +1,9 @@
 /* Conditionally execute a command based on machine and OS from gcconfig.h */
 
-# include "gcconfig.h"
+# include "private/gcconfig.h"
 # include <stdio.h>
+# include <string.h>
+# include <unistd.h>
 
 int main(argc, argv, envp)
 int argc;

@@ -28,7 +28,11 @@
 /* Allocate n words (NOT BYTES).  X is made to point to the result.	*/
 /* It is assumed that n < MAXOBJSZ, and					*/
 /* that n > 0.  On machines requiring double word alignment of some	*/
-/* data, we also assume that n is 1 or even.  This bypasses the		*/
+/* data, we also assume that n is 1 or even.				*/
+/* If the collector is built with -DUSE_MARK_BYTES or -DPARALLEL_MARK,	*/
+/* the n = 1 case is also disallowed.					*/
+/* Effectively this means that portable code should make sure n is even.*/
+/* This bypasses the							*/
 /* MERGE_SIZES mechanism.  In order to minimize the number of distinct	*/
 /* free lists that are maintained, the caller should ensure that a 	*/
 /* small number of distinct values of n are used.  (The MERGE_SIZES	*/

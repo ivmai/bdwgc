@@ -1,6 +1,5 @@
 # Primary targets:
 # gc.a - builds basic library
-# libgc.a - builds library for use with g++ "-fgc-keyword" extension
 # c++ - adds C++ interface to library
 # cords - adds cords (heavyweight strings) to library
 # test - prints porting information, then builds basic version of gc.a,
@@ -9,7 +8,6 @@
 # cord/de - builds dumb editor based on cords.
 ABI_FLAG= 
 CC=cc $(ABI_FLAG)
-HOSTCC=$(CC)
 CXX=g++ $(ABI_FLAG)
 AS=as $(ABI_FLAG)
 #  The above doesn't work with gas, which doesn't run cpp.
@@ -17,7 +15,19 @@ AS=as $(ABI_FLAG)
 #  Under Irix 6, you will have to specify the ABI (-o32, -n32, or -64)
 #  if you use something other than the default ABI on your machine.
 
-CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSILENT
+# Redefining srcdir allows object code for the nonPCR version of the collector
+# to be generated in different directories.
+srcdir= .
+VPATH= $(srcdir)
+
+CFLAGS= -O -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSILENT 
+
+# HOSTCC and HOSTCFLAGS are used to build executables that will be run as
+# part of the build process, i.e. on the build machine.  These will usually
+# be the same as CC and CFLAGS, except in a cross-compilation environment.
+# Note that HOSTCFLAGS should include any -D flags that affect thread support.
+HOSTCC=$(CC)
+HOSTCFLAGS=$(CFLAGS)
 
 # For dynamic library builds, it may be necessary to add flags to generate
 # PIC code, e.g. -fPIC on Linux.
@@ -29,16 +39,17 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 #   This causes the collector to assume that all inaccessible
 #   objects should have been explicitly deallocated, and reports exceptions.
 #   Finalization and the test program are not usable in this mode.
-# -DSOLARIS_THREADS enables support for Solaris (thr_) threads.
-#   (Clients should also define SOLARIS_THREADS and then include
+# -DGC_SOLARIS_THREADS enables support for Solaris (thr_) threads.
+#   (Clients should also define GC_SOLARIS_THREADS and then include
 #   gc.h before performing thr_ or dl* or GC_ operations.)
 #   Must also define -D_REENTRANT.
-# -D_SOLARIS_PTHREADS enables support for Solaris pthreads.
+# -DGC_SOLARIS_PTHREADS enables support for Solaris pthreads.
 #   Define SOLARIS_THREADS as well.
-# -DIRIX_THREADS enables support for Irix pthreads.  See README.irix.
-# -DHPUX_THREADS enables support for HP/UX 11 pthreads.
-#  Also requires -D_REENTRANT. See README.hp.
-# -DLINUX_THREADS enables support for Xavier Leroy's Linux threads.
+# -DGC_IRIX_THREADS enables support for Irix pthreads.  See README.irix.
+# -DGC_HPUX_THREADS enables support for HP/UX 11 pthreads.
+#   Not currently reliable.
+#   Also requires -D_REENTRANT. See README.hp.
+# -DGC_LINUX_THREADS enables support for Xavier Leroy's Linux threads.
 #   see README.linux.  -D_REENTRANT may also be required.
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
 #   of objects to be recognized.  (See gc_priv.h for consequences.)
@@ -119,11 +130,23 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 #   for objects allocated with the debugging allocator.  If all objects
 #   through GC_MALLOC with GC_DEBUG defined, this allows the client
 #   to determine how particular or randomly chosen objects are reachable
-#   for debugging/profiling purposes.  The backptr.h interface is
+#   for debugging/profiling purposes.  The gc_backptr.h interface is
 #   implemented only if this is defined.
 # -DGC_ASSERTIONS Enable some internal GC assertion checking.  Currently
 #   this facility is only used in a few places.  It is intended primarily
 #   for debugging of the garbage collector itself, but could also
+# -DDBG_HDRS_ALL Make sure that all objects have debug headers.  Increases
+#   the reliability (from 99.9999% to 100%) of some of the debugging
+#   code (especially KEEP_BACK_PTRS).  Makes -DSHORT_DBG_HDRS possible.
+#   Assumes that all client allocation is done through debugging
+#   allocators.
+# -DSHORT_DBG_HDRS Assume that all objects have debug headers.  Shorten
+#   the headers to minimize object size, at the expense of checking for
+#   writes past the end of an object.  This is intended for environments
+#   in which most client code is written in a "safe" language, such as
+#   Scheme or Java.  Assumes that all client allocation is done using
+#   the GC_debug_ functions (or through the macros that expand to these.
+#   (Also eliminates the field for the requested object size.)
 #   occasionally be useful for debugging of client code.  Slows down the
 #   collector somewhat, but not drastically.
 # -DCHECKSUMS reports on erroneously clear dirty bits, and unexpectedly
@@ -143,66 +166,64 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 # -DUSE_3DNOW_PREFETCH causes the collector to issue AMD 3DNow style
 #   prefetch instructions.  Same restrictions as USE_I686_PREFETCH.
 #   UNTESTED!!
-# -DUSE_LD_WRAP in combination with the gld flags listed in README.linux
+# -DGC_USE_LD_WRAP in combination with the gld flags listed in README.linux
 #   causes the collector some system and pthread calls in a more transparent
 #   fashion than the usual macro-based approach.  Requires GNU ld, and
 #   currently probably works only with Linux.
+# -DTHREAD_LOCAL_ALLOC defines GC_local_malloc(), GC_local_malloc_atomic()
+#   and GC_local_gcj_malloc().  Needed for gc_gcj.h interface.  These allocate
+#   in a way that usually does not involve acquisition of a global lock.
+#   Currently requires -DGC_LINUX_THREADS, but should be easy to port to
+#   other pthreads environments.  Recommended for multiprocessors.
+# -DPARALLEL_MARK allows the marker to run in multiple threads.  Recommended
+#   for multiprocessors.  Currently requires Linux on X86 or IA64, though
+#   support for other Posix platforms should be fairly easy to add,
+#   if the thread implementation is otherwise supported.
 #
-
-
-LIBGC_CFLAGS= -O -DNO_SIGNALS -DSILENT \
-    -DREDIRECT_MALLOC=GC_malloc_uncollectable \
-    -DDONT_ADD_BYTE_AT_END -DALL_INTERIOR_POINTERS
-#   Flags for building libgc.a -- the last two are required.
 
 CXXFLAGS= $(CFLAGS) 
 AR= ar
 RANLIB= ranlib
 
 
-# Redefining srcdir allows object code for the nonPCR version of the collector
-# to be generated in different directories.  In this case, the destination directory
-# should contain a copy of the original include directory.
-srcdir = .
-VPATH = $(srcdir)
+OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o hpux_irix_threads.o linux_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o gcj_mlc.o specific.o
 
-OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o hpux_irix_threads.o linux_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o gcj_mlc.o
+CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c hpux_irix_threads.c linux_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c gcj_mlc.c specific.c
 
-CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c hpux_irix_threads.c linux_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c gcj_mlc.c
-
-CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c cord/cord.h cord/ec.h cord/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC cord/SCOPTIONS.amiga cord/SMakefile.amiga
+CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c include/cord.h include/ec.h include/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC cord/SCOPTIONS.amiga cord/SMakefile.amiga
 
 CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
 SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
-    sparc_mach_dep.s gc.h gc_typed.h gc_hdrs.h gc_priv.h gc_private.h \
-    gcconfig.h gc_mark.h include/gc_inl.h include/gc_inline.h gc.man \
-    threadlibs.c if_mach.c if_not_there.c gc_cpp.cc gc_cpp.h weakpointer.h \
-    gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h gc_alloc.h \
+    sparc_mach_dep.s include/gc.h include/gc_typed.h \
+    include/private/gc_hdrs.h include/private/gc_priv.h \
+    include/private/gcconfig.h include/private/gc_mark.h \
+    include/gc_inl.h include/gc_inline.h gc.man \
+    threadlibs.c if_mach.c if_not_there.c gc_cpp.cc include/gc_cpp.h \
+    include/weakpointer.h include/private/gc_locks.h \
+    gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h \
     include/new_gc_alloc.h include/javaxfc.h sparc_sunos4_mach_dep.s \
-    solaris_threads.h backptr.h hpux_test_and_clear.s include/gc_gcj.h \
-    dbg_mlc.h $(CORD_SRCS)
+    include/private/solaris_threads.h include/gc_backptr.h \
+    hpux_test_and_clear.s include/gc_gcj.h \
+    include/gc_local_alloc.h include/private/dbg_mlc.h \
+    include/private/specific.h powerpc_macosx_mach_dep.s \
+    include/leak_detector.h $(CORD_SRCS)
 
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README test.c test_cpp.cc setjmp_t.c SMakefile.amiga \
            SCoptions.amiga README.amiga README.win32 cord/README \
-           cord/gc.h include/gc.h include/gc_typed.h include/cord.h \
-           include/ec.h include/private/cord_pos.h include/private/gcconfig.h \
-           include/private/gc_hdrs.h include/private/gc_priv.h \
-	   include/gc_cpp.h README.rs6000 include/backptr.h \
-           include/weakpointer.h README.QUICK callprocs pc_excludes \
+	   README.rs6000 README.QUICK callprocs pc_excludes \
            barrett_diagram README.OS2 README.Mac MacProjects.sit.hqx \
            MacOS.c EMX_MAKEFILE makefile.depend README.debugging \
-           include/gc_cpp.h Mac_files/datastart.c Mac_files/dataend.c \
+           Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
            add_gc_prefix.c README.solaris2 README.sgi README.hp README.uts \
 	   win32_threads.c NT_THREADS_MAKEFILE gc.mak README.dj Makefile.dj \
-	   README.alpha README.linux version.h Makefile.DLLs \
-	   WCC_MAKEFILE nursery.c include/gc_nursery.h include/gc_copy_descr.h \
-	   include/leak_detector.h
+	   README.alpha README.linux README.MacOSX version.h Makefile.DLLs \
+	   WCC_MAKEFILE 
 
-CORD_INCLUDE_FILES= $(srcdir)/gc.h $(srcdir)/cord/cord.h $(srcdir)/cord/ec.h \
-           $(srcdir)/cord/private/cord_pos.h
+CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
+	$(srcdir)/include/ec.h $(srcdir)/include/private/cord_pos.h
 
 UTILS= if_mach if_not_there threadlibs
 
@@ -214,7 +235,7 @@ CURSES= -lcurses -ltermlib
 # the SHELL environment variable.
 SHELL= /bin/sh
 
-SPECIALCFLAGS = 
+SPECIALCFLAGS = -I$(srcdir)/include
 # Alternative flags to the C compiler for mach_dep.c.
 # Mach_dep.c often doesn't like optimization, and it's
 # not time-critical anyway.
@@ -222,17 +243,29 @@ SPECIALCFLAGS =
 
 all: gc.a gctest
 
-pcr: PCR-Makefile gc_private.h gc_hdrs.h gc.h gcconfig.h mach_dep.o $(SRCS)
+pcr: PCR-Makefile include/private/gc_private.h include/private/gc_hdrs.h \
+include/private/gc_locks.h include/gc.h include/private/gcconfig.h \
+mach_dep.o $(SRCS)
 	make -f PCR-Makefile depend
 	make -f PCR-Makefile
 
-$(OBJS) test.o dyn_load.o dyn_load_sunos53.o: $(srcdir)/gc_priv.h $(srcdir)/gc_hdrs.h $(srcdir)/gc.h \
-    $(srcdir)/gcconfig.h $(srcdir)/gc_typed.h Makefile
+$(OBJS) test.o dyn_load.o dyn_load_sunos53.o: \
+    $(srcdir)/include/private/gc_priv.h \
+    $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
+    $(srcdir)/include/gc.h \
+    $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h \
+    Makefile
 # The dependency on Makefile is needed.  Changing
 # options such as -DSILENT affects the size of GC_arrays,
 # invalidating all .o files that rely on gc_priv.h
 
-mark.o typd_mlc.o finalize.o: $(srcdir)/gc_mark.h
+mark.o typd_mlc.o finalize.o: $(srcdir)/include/private/gc_mark.h
+
+specific.o linux_threads.o: $(srcdir)/include/private/specific.h
+
+solaris_threads.o solaris_pthreads.o: $(srcdir)/include/private/solaris_threads.h
+
+dbg_mlc.o gcj_mlc.o: $(srcdir)/include/private/dbg_mlc.h
 
 base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
 	echo > base_lib
@@ -254,16 +287,16 @@ cords: $(CORD_OBJS) cord/cordtest $(UTILS)
 	./if_not_there dont_ar_3 $(AR) ru gc.a $(CORD_OBJS)
 	./if_not_there dont_ar_3 $(RANLIB) gc.a || cat /dev/null
 
-gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/gc_cpp.h $(srcdir)/gc.h Makefile
+gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h Makefile
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
 
-test_cpp: $(srcdir)/test_cpp.cc $(srcdir)/gc_cpp.h gc_cpp.o $(srcdir)/gc.h \
+test_cpp: $(srcdir)/test_cpp.cc $(srcdir)/include/gc_cpp.h gc_cpp.o $(srcdir)/include/gc.h \
 base_lib $(UTILS)
 	rm -f test_cpp
 	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/test_cpp.cc gc_cpp.o gc.a -ldld `./threadlibs`
 	./if_not_there test_cpp $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/test_cpp.cc gc_cpp.o gc.a `./threadlibs`
 
-c++: gc_cpp.o $(srcdir)/gc_cpp.h test_cpp
+c++: gc_cpp.o $(srcdir)/include/gc_cpp.h test_cpp
 	rm -f dont_ar_4
 	./if_mach SPARC SUNOS5 touch dont_ar_4
 	./if_mach SPARC SUNOS5 $(AR) rus gc.a gc_cpp.o
@@ -310,12 +343,14 @@ liblinuxgc.so: $(OBJS) dyn_load.o
 # 	gcc -shared -Wl,-soname=libgc.so.0 -o libgc.so.0 $(LIBOBJS) dyn_load.lo
 #	touch liblinuxgc.so
 
-mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ultrix_mach_dep.s $(srcdir)/rs6000_mach_dep.s $(UTILS)
+mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ultrix_mach_dep.s \
+            $(srcdir)/rs6000_mach_dep.s $(srcdir)/powerpc_macosx_mach_dep.s $(UTILS)
 	rm -f mach_dep.o
 	./if_mach MIPS IRIX5 $(AS) -o mach_dep.o $(srcdir)/mips_sgi_mach_dep.s
 	./if_mach MIPS RISCOS $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
 	./if_mach MIPS ULTRIX $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
 	./if_mach RS6000 "" $(AS) -o mach_dep.o $(srcdir)/rs6000_mach_dep.s
+	./if_mach POWERPC MACOSX $(AS) -o mach_dep.o $(srcdir)/powerpc_macosx_mach_dep.s
 #	./if_mach ALPHA "" $(AS) -o mach_dep.o $(srcdir)/alpha_mach_dep.s
 #	alpha_mach_dep.s assumes that pointers are not saved in fp registers.
 #	Gcc on a 21264 can spill pointers to fp registers.  Oops.
@@ -360,20 +395,21 @@ cord/de: $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(UTILS)
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -lucb `./threadlibs`
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -ldld `./threadlibs`
 	./if_mach RS6000 "" $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
+	./if_mach POWERPC MACOSX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a
 	./if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
 	./if_mach ALPHA LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
 	./if_mach IA64 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
 	./if_mach M68K AMIGA $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
 	./if_not_there cord/de $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) `./threadlibs`
 
-if_mach: $(srcdir)/if_mach.c $(srcdir)/gcconfig.h
-	$(HOSTCC) $(CFLAGS) -o if_mach $(srcdir)/if_mach.c
+if_mach: $(srcdir)/if_mach.c $(srcdir)/include/private/gcconfig.h
+	$(HOSTCC) $(HOSTCFLAGS) -o if_mach $(srcdir)/if_mach.c
 
-threadlibs: $(srcdir)/threadlibs.c $(srcdir)/gcconfig.h Makefile
-	$(HOSTCC) $(CFLAGS) -o threadlibs $(srcdir)/threadlibs.c
+threadlibs: $(srcdir)/threadlibs.c $(srcdir)/include/private/gcconfig.h Makefile
+	$(HOSTCC) $(HOSTCFLAGS) -o threadlibs $(srcdir)/threadlibs.c
 
 if_not_there: $(srcdir)/if_not_there.c
-	$(HOSTCC) $(CFLAGS) -o if_not_there $(srcdir)/if_not_there.c
+	$(HOSTCC) $(HOSTCFLAGS) -o if_not_there $(srcdir)/if_not_there.c
 
 clean: 
 	rm -f gc.a *.o gctest gctest_dyn_link test_cpp \
@@ -390,7 +426,7 @@ gctest: test.o gc.a $(UTILS)
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  Gctest may still work.
 # Try compiling setjmp_t.c unoptimized.
-setjmp_test: $(srcdir)/setjmp_t.c $(srcdir)/gc.h $(UTILS)
+setjmp_test: $(srcdir)/setjmp_t.c $(srcdir)/include/gc.h $(UTILS)
 	$(CC) $(CFLAGS) -o setjmp_test $(srcdir)/setjmp_t.c
 
 test:  KandRtest cord/cordtest
@@ -445,6 +481,8 @@ gctest_dyn_link: test.o libgc.so
 gctest_irix_dyn_link: test.o libirixgc.so
 	$(CC) -L$(ABSDIR) -o gctest_irix_dyn_link test.o -lirixgc
 
+# The following appear to be dead, especially since libgc_globals.h
+# is apparently lost.
 test_dll.o: test.c libgc_globals.h
 	$(CC) $(CFLAGS) -DGC_USE_DLL -c test.c -o test_dll.o
 

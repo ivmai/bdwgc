@@ -111,8 +111,8 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "SILENT" /D "GC_BUILD" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "WIN32_THREADS" /FR /YX /c
-CPP_PROJ=/nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "SILENT" /D "GC_BUILD" /D\
+# ADD CPP /nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "SILENT" /D "GC_BUILD" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "WIN32_THREADS" /FR /YX /c
+CPP_PROJ=/nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "SILENT" /D "GC_BUILD" /D\
  "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D\
  "WIN32_THREADS" /FR"$(INTDIR)/" /Fp"$(INTDIR)/gc.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\Release/
@@ -289,8 +289,8 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /D "_DEBUG" /D "SILENT" /D "GC_BUILD" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "WIN32_THREADS" /FR /YX /c
-CPP_PROJ=/nologo /MDd /W3 /Gm /GX /Zi /Od /D "_DEBUG" /D "SILENT" /D "GC_BUILD"\
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I include /D "_DEBUG" /D "SILENT" /D "GC_BUILD" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "WIN32_THREADS" /FR /YX /c
+CPP_PROJ=/nologo /MDd /W3 /Gm /GX /Zi /Od /I include /D "_DEBUG" /D "SILENT" /D "GC_BUILD"\
  /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D\
  "WIN32_THREADS" /FR"$(INTDIR)/" /Fp"$(INTDIR)/gc.pch" /YX /Fo"$(INTDIR)/"\
  /Fd"$(INTDIR)/" /c 
@@ -418,8 +418,8 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "WIN32_THREADS" /YX /c
-CPP_PROJ=/nologo /MD /W3 /GX /O2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D\
+# ADD CPP /nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "WIN32_THREADS" /YX /c
+CPP_PROJ=/nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D\
  "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "WIN32_THREADS"\
  /Fp"$(INTDIR)/gctest.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\gctest\Release/
@@ -505,7 +505,7 @@ CLEAN :
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "WIN32_THREADS" /FR /YX /c
-CPP_PROJ=/nologo /MDd /W3 /Gm /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS"\
+CPP_PROJ=/nologo /MDd /W3 /Gm /GX /Zi /Od /I include /D "_DEBUG" /D "WIN32" /D "_WINDOWS"\
  /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "WIN32_THREADS" /FR"$(INTDIR)/"\
  /Fp"$(INTDIR)/gctest.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 CPP_OBJS=.\gctest\Debug/
@@ -596,7 +596,7 @@ CLEAN :
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MD /W3 /GX /O2 /I "." /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /YX /c
-CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "." /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D\
+CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "." /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D\
  "ALL_INTERIOR_POINTERS" /Fp"$(INTDIR)/cord.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\cord\Release/
 CPP_SBRS=.\.
@@ -688,7 +688,7 @@ CLEAN :
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "." /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /YX /c
-CPP_PROJ=/nologo /MDd /W3 /Gm /GX /Zi /Od /I "." /D "_DEBUG" /D "WIN32" /D\
+CPP_PROJ=/nologo /MDd /W3 /Gm /GX /Zi /Od /I "." /I include /D "_DEBUG" /D "WIN32" /D\
  "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /Fp"$(INTDIR)/cord.pch" /YX\
  /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 CPP_OBJS=.\cord\Debug/
@@ -768,10 +768,10 @@ SOURCE=.\reclaim.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_RECLA=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_RECLA=\
@@ -788,10 +788,10 @@ NODEP_CPP_RECLA=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_RECLA=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_RECLA=\
@@ -816,10 +816,10 @@ SOURCE=.\os_dep.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_OS_DE=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\STAT.H"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
@@ -840,10 +840,10 @@ NODEP_CPP_OS_DE=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_OS_DE=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\STAT.H"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
@@ -872,10 +872,10 @@ SOURCE=.\misc.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_MISC_=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_MISC_=\
@@ -893,10 +893,10 @@ NODEP_CPP_MISC_=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_MISC_=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_MISC_=\
@@ -922,10 +922,10 @@ SOURCE=.\mark_rts.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_MARK_=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_MARK_=\
@@ -942,10 +942,10 @@ NODEP_CPP_MARK_=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_MARK_=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_MARK_=\
@@ -970,10 +970,10 @@ SOURCE=.\mach_dep.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_MACH_=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_MACH_=\
@@ -990,10 +990,10 @@ NODEP_CPP_MACH_=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_MACH_=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_MACH_=\
@@ -1018,10 +1018,10 @@ SOURCE=.\headers.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_HEADE=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_HEADE=\
@@ -1038,10 +1038,10 @@ NODEP_CPP_HEADE=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_HEADE=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_HEADE=\
@@ -1066,10 +1066,10 @@ SOURCE=.\alloc.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_ALLOC=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_ALLOC=\
@@ -1086,10 +1086,10 @@ NODEP_CPP_ALLOC=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_ALLOC=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_ALLOC=\
@@ -1114,10 +1114,10 @@ SOURCE=.\allchblk.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_ALLCH=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_ALLCH=\
@@ -1134,10 +1134,10 @@ NODEP_CPP_ALLCH=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_ALLCH=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_ALLCH=\
@@ -1162,10 +1162,10 @@ SOURCE=.\stubborn.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_STUBB=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_STUBB=\
@@ -1182,10 +1182,10 @@ NODEP_CPP_STUBB=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_STUBB=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_STUBB=\
@@ -1210,10 +1210,10 @@ SOURCE=.\obj_map.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_OBJ_M=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_OBJ_M=\
@@ -1230,10 +1230,10 @@ NODEP_CPP_OBJ_M=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_OBJ_M=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_OBJ_M=\
@@ -1258,10 +1258,10 @@ SOURCE=.\new_hblk.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_NEW_H=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_NEW_H=\
@@ -1278,10 +1278,10 @@ NODEP_CPP_NEW_H=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_NEW_H=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_NEW_H=\
@@ -1306,11 +1306,11 @@ SOURCE=.\mark.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_MARK_C=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_mark.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_mark.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_MARK_C=\
@@ -1327,11 +1327,11 @@ NODEP_CPP_MARK_C=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_MARK_C=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_mark.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_mark.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_MARK_C=\
@@ -1356,10 +1356,10 @@ SOURCE=.\malloc.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_MALLO=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_MALLO=\
@@ -1376,10 +1376,10 @@ NODEP_CPP_MALLO=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_MALLO=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_MALLO=\
@@ -1404,10 +1404,10 @@ SOURCE=.\mallocx.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_MALLX=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_MALLX=\
@@ -1424,10 +1424,10 @@ NODEP_CPP_MALLX=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_MALLX=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_MALLX=\
@@ -1452,11 +1452,11 @@ SOURCE=.\finalize.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_FINAL=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_mark.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_mark.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_FINAL=\
@@ -1473,11 +1473,11 @@ NODEP_CPP_FINAL=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_FINAL=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_mark.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_mark.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_FINAL=\
@@ -1502,10 +1502,10 @@ SOURCE=.\dbg_mlc.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_DBG_M=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_DBG_M=\
@@ -1522,10 +1522,10 @@ NODEP_CPP_DBG_M=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_DBG_M=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_DBG_M=\
@@ -1550,10 +1550,10 @@ SOURCE=.\blacklst.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_BLACK=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_BLACK=\
@@ -1570,10 +1570,10 @@ NODEP_CPP_BLACK=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_BLACK=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_BLACK=\
@@ -1598,12 +1598,12 @@ SOURCE=.\typd_mlc.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_TYPD_=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_mark.h"\
-	".\gc_priv.h"\
-	".\gc_typed.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_mark.h"\
+	".\include\private\gc_priv.h"\
+	".\include\gc_typed.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_TYPD_=\
@@ -1620,12 +1620,12 @@ NODEP_CPP_TYPD_=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_TYPD_=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_mark.h"\
-	".\gc_priv.h"\
-	".\gc_typed.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_mark.h"\
+	".\include\private\gc_priv.h"\
+	".\include\gc_typed.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_TYPD_=\
@@ -1650,11 +1650,11 @@ SOURCE=.\ptr_chck.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_PTR_C=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_mark.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_mark.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_PTR_C=\
@@ -1671,11 +1671,11 @@ NODEP_CPP_PTR_C=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_PTR_C=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_mark.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_mark.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_PTR_C=\
@@ -1700,10 +1700,10 @@ SOURCE=.\dyn_load.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_DYN_L=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\STAT.H"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
@@ -1723,10 +1723,10 @@ NODEP_CPP_DYN_L=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_DYN_L=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\STAT.H"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
@@ -1754,10 +1754,10 @@ SOURCE=.\win32_threads.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_WIN32=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_WIN32=\
@@ -1774,10 +1774,10 @@ NODEP_CPP_WIN32=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_WIN32=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_WIN32=\
@@ -1802,10 +1802,10 @@ SOURCE=.\checksums.c
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_CHECK=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_CHECK=\
@@ -1822,10 +1822,10 @@ NODEP_CPP_CHECK=\
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
 
 DEP_CPP_CHECK=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_CHECK=\
@@ -1878,11 +1878,11 @@ NODEP_CPP_CHECK=\
 
 SOURCE=.\test.c
 DEP_CPP_TEST_=\
-	".\gcconfig.h"\
-	".\gc.h"\
-	".\gc_hdrs.h"\
-	".\gc_priv.h"\
-	".\gc_typed.h"\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
+	".\include\gc_typed.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_TEST_=\
@@ -1944,13 +1944,13 @@ NODEP_CPP_TEST_=\
 
 SOURCE=.\cord\de_win.c
 DEP_CPP_DE_WI=\
-	".\cord\cord.h"\
+	".\include\cord.h"\
 	".\cord\de_cmds.h"\
 	".\cord\de_win.h"\
-	".\cord\private\cord_pos.h"\
+	".\include\private\cord_pos.h"\
 	
 NODEP_CPP_DE_WI=\
-	".\cord\gc.h"\
+	".\include\gc.h"\
 	
 
 !IF  "$(CFG)" == "cord - Win32 Release"
@@ -1975,13 +1975,13 @@ NODEP_CPP_DE_WI=\
 
 SOURCE=.\cord\de.c
 DEP_CPP_DE_C2e=\
-	".\cord\cord.h"\
+	".\include\cord.h"\
 	".\cord\de_cmds.h"\
 	".\cord\de_win.h"\
-	".\cord\private\cord_pos.h"\
+	".\include\private\cord_pos.h"\
 	
 NODEP_CPP_DE_C2e=\
-	".\cord\gc.h"\
+	".\include\gc.h"\
 	
 
 !IF  "$(CFG)" == "cord - Win32 Release"
@@ -2006,12 +2006,12 @@ NODEP_CPP_DE_C2e=\
 
 SOURCE=.\cord\cordxtra.c
 DEP_CPP_CORDX=\
-	".\cord\cord.h"\
-	".\cord\ec.h"\
-	".\cord\private\cord_pos.h"\
+	".\include\cord.h"\
+	".\include\ec.h"\
+	".\include\private\cord_pos.h"\
 	
 NODEP_CPP_CORDX=\
-	".\cord\gc.h"\
+	".\include\gc.h"\
 	
 
 !IF  "$(CFG)" == "cord - Win32 Release"
@@ -2036,11 +2036,11 @@ NODEP_CPP_CORDX=\
 
 SOURCE=.\cord\cordbscs.c
 DEP_CPP_CORDB=\
-	".\cord\cord.h"\
-	".\cord\private\cord_pos.h"\
+	".\include\cord.h"\
+	".\include\private\cord_pos.h"\
 	
 NODEP_CPP_CORDB=\
-	".\cord\gc.h"\
+	".\include\gc.h"\
 	
 
 !IF  "$(CFG)" == "cord - Win32 Release"

@@ -16,10 +16,10 @@
  */
 /* Boehm, September 14, 1994 4:44 pm PDT */
 
-# if defined(SOLARIS_THREADS)
+# if defined(GC_SOLARIS_THREADS) || defined(SOLARIS_THREADS)
 
-# include "gc_priv.h"
-# include "solaris_threads.h"
+# include "private/gc_priv.h"
+# include "private/solaris_threads.h"
 # include <thread.h>
 # include <synch.h>
 # include <signal.h>
@@ -573,7 +573,7 @@ GC_thread GC_new_thread(thread_t id)
     	/* Dont acquire allocation lock, since we may already hold it. */
     } else {
         result = (struct GC_Thread_Rep *)
-        	 GC_generic_malloc_inner(sizeof(struct GC_Thread_Rep), NORMAL);
+        	 GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
     }
     if (result == 0) return(0);
     result -> id = id;
@@ -627,7 +627,7 @@ word GC_get_orig_stack_size() {
     result = (word)rl.rlim_cur & ~(HBLKSIZE-1);
     if (result > MAX_ORIG_STACK_SIZE) {
 	if (!warned) {
-	    WARN("Large stack limit(%ld): only scanning 8 MB", result);
+	    WARN("Large stack limit(%ld): only scanning 8 MB\n", result);
 	    warned = 1;
 	}
 	result = MAX_ORIG_STACK_SIZE;

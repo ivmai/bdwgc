@@ -16,10 +16,10 @@
  */
 
 
-# include "gc_priv.h"
+# include "private/gc_priv.h"
 
 # include <stdio.h>
-# ifndef MACOS
+# if !defined(MACOS) && !defined(MSWINCE)
 #   include <signal.h>
 #   include <sys/types.h>
 # endif
@@ -60,8 +60,10 @@ word GC_non_gc_bytes = 0;  /* Number of bytes not intended to be collected */
 word GC_gc_no = 0;
 
 #ifndef SMALL_CONFIG
-  int GC_incremental = 0;    /* By default, stop the world.	*/
+  int GC_incremental = 0;  /* By default, stop the world.	*/
 #endif
+
+int GC_parallel = FALSE;   /* By default, parallel GC is off.	*/
 
 int GC_full_freq = 19;	   /* Every 20th collection is a full	*/
 			   /* collection, whether we need it 	*/
@@ -76,6 +78,7 @@ char * GC_copyright[] =
 {"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
 "Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved. ",
 "Copyright (c) 1996-1998 by Silicon Graphics.  All rights reserved. ",
+"Copyright (c) 1999-2000 by Hewlett-Packard Company.  All rights reserved. ",
 "THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY",
 " EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.",
 "See source code for details." };
@@ -220,7 +223,7 @@ GC_bool GC_should_collect()
 
 void GC_notify_full_gc()
 {
-    if (GC_start_call_back != (void (*)())0) {
+    if (GC_start_call_back != (void (*) GC_PROTO((void)))0) {
 	(*GC_start_call_back)();
     }
 }
@@ -251,6 +254,9 @@ void GC_maybe_gc()
 	   	(long)WORDS_TO_BYTES(GC_words_allocd));
 #           endif
 	    GC_promote_black_lists();
+#   	    ifdef PARALLEL_MARK
+		GC_wait_for_reclaim();
+#   	    endif
 	    (void)GC_reclaim_all((GC_stop_func)0, TRUE);
 	    GC_clear_marks();
             n_partial_gcs = 0;
@@ -308,7 +314,10 @@ GC_stop_func stop_func;
     /* If we're guaranteed to finish, then this is unnecessary.		*/
     /* In the find_leak case, we have to finish to guarantee that 	*/
     /* previously unmarked objects are not reported as leaks.		*/
-	if ((GC_find_leak || stop_func != GC_never_stop_func)
+#       ifdef PARALLEL_MARK
+	    GC_wait_for_reclaim();
+#       endif
+ 	if ((GC_find_leak || stop_func != GC_never_stop_func)
 	    && !GC_reclaim_all(stop_func, FALSE)) {
 	    /* Aborted.  So far everything is still consistent.	*/
 	    return(FALSE);
@@ -410,13 +419,15 @@ GC_stop_func stop_func;
 {
     register int i;
     int dummy;
-#   ifdef PRINTSTATS
+#   ifdef PRINTTIMES
 	CLOCK_TYPE start_time, current_time;
 #   endif
 	
     STOP_WORLD();
-#   ifdef PRINTSTATS
+#   ifdef PRINTTIMES
 	GET_TIME(start_time);
+#   endif
+#   ifdef PRINTSTATS
 	GC_printf1("--> Marking for collection %lu ",
 	           (unsigned long) GC_gc_no + 1);
 	GC_printf2("after %lu allocd bytes + %lu wasted bytes\n",

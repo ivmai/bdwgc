@@ -41,6 +41,11 @@
 /* Currently we require that mark procedures look for pointers in a	*/
 /* subset of the places the conservative marker would.  It must be safe	*/
 /* to invoke the normal mark procedure instead.				*/
+/* WARNING: Such a mark procedure may be invoked on an unused object    */
+/* residing on a free list.  Such objects are cleared, except for a	*/
+/* free list link field in the first word.  Thus mark procedures may	*/
+/* not count on the presence of a type descriptor, and must handle this	*/
+/* case correctly somehow.						*/
 # define PROC_BYTES 100
 /* The real declarations of the following are in gc_priv.h, so that	*/
 /* we can avoid scanning the following table.				*/
@@ -56,6 +61,9 @@ extern mark_proc GC_mark_procs[MAX_MARK_PROCS];
 */
 
 extern word GC_n_mark_procs;
+
+/* Number of mark stack entries to discard on overflow.	*/
+#define GC_MARK_STACK_DISCARDS (INITIAL_MARK_STACK_SIZE/8)
 
 /* In a few cases it's necessary to assign statically known indices to	*/
 /* certain mark procs.  Thus we reserve a few for well known clients.	*/
@@ -113,9 +121,67 @@ typedef struct ms_entry {
 
 extern word GC_mark_stack_size;
 
-extern mse * GC_mark_stack_top;
+#ifdef PARALLEL_MARK
+  extern mse * VOLATILE GC_mark_stack_top;
+#else
+  extern mse * GC_mark_stack_top;
+#endif
 
 extern mse * GC_mark_stack;
+
+#ifdef PARALLEL_MARK
+    /*
+     * Allow multiple threads to participate in the marking process.
+     * This works roughly as follows:
+     *  The main mark stack never shrinks, but it can grow.
+     *
+     *	The initiating threads holds the GC lock, and sets GC_help_wanted.
+     *  
+     *  Other threads:
+     *     1) update helper_count (while holding mark_lock.)
+     *	   2) allocate a local mark stack
+     *     repeatedly:
+     *		3) Steal a global mark stack entry by atomically replacing
+     *		   its descriptor with 0.
+     *		4) Copy it to the local stack.
+     *	        5) Mark on the local stack until it is empty, or
+     *		   it may be profitable to copy it back.
+     *	        6) If necessary, copy local stack to global one,
+     *		   holding mark lock.
+     *    7) Stop when the global mark stack is empty.
+     *    8) decrement helper_count (holding mark_lock).
+     *
+     * This is an experiment to see if we can do something along the lines
+     * of the University of Tokyo SGC in a less intrusive, though probably
+     * also less performant, way.
+     */
+    void GC_do_parallel_mark();
+		/* inititate parallel marking.	*/
+
+    extern GC_bool GC_help_wanted;	/* Protected by mark lock	*/
+    extern unsigned GC_helper_count;	/* Number of running helpers.	*/
+					/* Protected by mark lock	*/
+    extern unsigned GC_active_count;	/* Number of active helpers.	*/
+					/* Protected by mark lock	*/
+					/* May increase and decrease	*/
+					/* within each mark cycle.  But	*/
+					/* once it returns to 0, it	*/
+					/* stays zero for the cycle.	*/
+    /* GC_mark_stack_top is also protected by mark lock.	*/
+    extern mse * VOLATILE GC_first_nonempty;
+					/* Lowest entry on mark stack	*/
+					/* that may be nonempty.	*/
+					/* Updated only by initiating 	*/
+					/* thread.			*/
+    /*
+     * GC_notify_all_marker() is used when GC_help_wanted is first set,
+     * when the last helper becomes inactive,
+     * when something is added to the global mark stack, and just after
+     * GC_mark_no is incremented.
+     * This could be split into multiple CVs (and probably should be to
+     * scale to really large numbers of processors.)
+     */
+#endif /* PARALLEL_MARK */
 
 ptr_t GC_find_start();
 
@@ -211,6 +277,32 @@ exit_label1: ; \
 exit_label2: ; \
 }
 
+/* Set mark bit, exit if it was already set.	*/
+
+# ifdef USE_MARK_BYTES
+    /* Unlike the mark bit case, there is a race here, and we may set	*/
+    /* the bit twice in the concurrent case.  This can result in the	*/
+    /* object being pushed twice.  But that's only a performance issue.	*/
+#   define SET_MARK_BIT_EXIT_IF_SET(hhdr,displ,exit_label) \
+    { \
+        register VOLATILE char * mark_byte_addr = \
+				hhdr -> hb_marks + ((displ) >> 1); \
+        register char mark_byte = *mark_byte_addr; \
+          \
+	if (mark_byte) goto exit_label; \
+	*mark_byte_addr = 1;  \
+    } 
+# else
+#   define SET_MARK_BIT_EXIT_IF_SET(hhdr,displ,exit_label) \
+    { \
+        register word * mark_word_addr = hhdr -> hb_marks + divWORDSZ(displ); \
+        register word mark_word = *mark_word_addr; \
+          \
+        OR_WORD_EXIT_IF_SET(mark_word_addr, (word)1 << modWORDSZ(displ), \
+			    exit_label); \
+    } 
+# endif /* USE_MARK_BYTES */
+
 # define PUSH_CONTENTS_HDR(current, mark_stack_top, mark_stack_limit, \
 		           source, exit_label, hhdr) \
 { \
@@ -220,24 +312,13 @@ exit_label2: ; \
     displ = HBLKDISPL(current); \
     map_entry = MAP_ENTRY((hhdr -> hb_map), displ); \
     if (map_entry == OBJ_INVALID) { \
-        GC_ADD_TO_BLACK_LIST_NORMAL(current, source); goto exit_label; \
+        GC_ADD_TO_BLACK_LIST_NORMAL((word)current, source); goto exit_label; \
     } \
     displ = BYTES_TO_WORDS(displ); \
     displ -= map_entry; \
-	\
-    { \
-        register word * mark_word_addr = hhdr -> hb_marks + divWORDSZ(displ); \
-        register word mark_word = *mark_word_addr; \
-        register word mark_bit = (word)1 << modWORDSZ(displ); \
-          \
-        if (mark_word & mark_bit) { \
-	      /* Mark bit is already set */ \
-	      goto exit_label; \
-        } \
-        GC_STORE_BACK_PTR((ptr_t)source, (ptr_t)HBLKPTR(current) \
+    SET_MARK_BIT_EXIT_IF_SET(hhdr, displ, exit_label); \
+    GC_STORE_BACK_PTR((ptr_t)source, (ptr_t)HBLKPTR(current) \
 				      + WORDS_TO_BYTES(displ)); \
-        *mark_word_addr = mark_word | mark_bit; \
-    } \
     PUSH_OBJ(((word *)(HBLKPTR(current)) + displ), hhdr, \
     	     mark_stack_top, mark_stack_limit) \
 }
@@ -277,6 +358,17 @@ exit_label2: ; \
 	 PUSH_ONE_CHECKED(p,AIP,source);	\
     }
 
+/* Mark starting at mark stack entry top (incl.) down to	*/
+/* mark stack entry bottom (incl.).  Stop after performing	*/
+/* about one page worth of work.  Return the new mark stack	*/
+/* top entry.							*/
+mse * GC_mark_from GC_PROTO((mse * top, mse * bottom, mse *limit));
+
+#define MARK_FROM_MARK_STACK() \
+	GC_mark_stack_top = GC_mark_from(GC_mark_stack_top, \
+					 GC_mark_stack, \
+					 GC_mark_stack + GC_mark_stack_size);
+
 /*
  * Mark from one finalizable object using the specified
  * mark proc. May not mark the object pointed to by 
@@ -285,7 +377,7 @@ exit_label2: ; \
 # define GC_MARK_FO(real_ptr, mark_proc) \
 { \
     (*(mark_proc))(real_ptr); \
-    while (!GC_mark_stack_empty()) GC_mark_from_mark_stack(); \
+    while (!GC_mark_stack_empty()) MARK_FROM_MARK_STACK(); \
     if (GC_mark_state != MS_NONE) { \
         GC_set_mark_bit(real_ptr); \
         while (!GC_mark_some((ptr_t)0)); \

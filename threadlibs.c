@@ -1,16 +1,15 @@
-# include "gcconfig.h"
+# include "private/gcconfig.h"
 # include <stdio.h>
 
 int main()
 {
-#   if defined(LINUX_THREADS)
-#     ifdef USE_LD_WRAP
+#   if defined(GC_USE_LD_WRAP)
 	printf("-Wl,--wrap -Wl,read -Wl,--wrap -Wl,dlopen "
 	       "-Wl,--wrap -Wl,pthread_create -Wl,--wrap -Wl,pthread_join "
-	       "-Wl,--wrap -Wl,pthread_sigmask -lpthread -ldl\n");
-#     else
-	printf("-lpthread -ldl\n");
-#     endif
+	       "-Wl,--wrap -Wl,pthread_sigmask\n");
+#   endif
+#   if defined(LINUX_THREADS)
+      printf("-lpthread -ldl\n");
 #   endif
 #   if defined(IRIX_THREADS)
 	printf("-lpthread\n");

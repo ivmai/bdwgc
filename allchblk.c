@@ -14,10 +14,9 @@
  * modified is included with the above copyright notice.
  */
 
-#define DEBUG
-#undef DEBUG
+/* #define DEBUG */
 #include <stdio.h>
-#include "gc_priv.h"
+#include "private/gc_priv.h"
 
 GC_bool GC_use_entire_heap = 0;
 
@@ -484,8 +483,8 @@ struct hblk * GC_allochblk_nth();
  * NOTE: We set obj_map field in header correctly.
  *       Caller is responsible for building an object freelist in block.
  *
- * We clear the block if it is destined for large objects, and if
- * kind requires that newly allocated objects be cleared.
+ * Unlike older versions of the collectors, the client is responsible
+ * for clearing the block, if necessary.
  */
 struct hblk *
 GC_allochblk(sz, kind, flags)
@@ -664,12 +663,6 @@ int n;
             return(0); /* ditto */
         }
         
-    /* Clear block if necessary */
-	if (GC_debugging_started
-	    || sz > MAXOBJSZ && GC_obj_kinds[kind].ok_init) {
-	    BZERO(hbp + HDR_BYTES,  size_needed - HDR_BYTES);
-	}
-
     /* We just successfully allocated a block.  Restart count of	*/
     /* consecutive failures.						*/
     {

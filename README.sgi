@@ -13,7 +13,7 @@ ports.
 
 Pthreads support is provided.  This requires that:
 
-1) You compile the collector with -DIRIX_THREADS specified in the Makefile.
+1) You compile the collector with -DGC_IRIX_THREADS specified in the Makefile.
 
 2) You have the latest pthreads patches installed.  
 

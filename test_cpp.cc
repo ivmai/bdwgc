@@ -28,11 +28,13 @@ few minutes to complete.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef __GNUC__
-#   include "gc_alloc.h"
+#ifdef __GNUC__
+#   include "include/new_gc_alloc.h"
+#else
+#   include "include/gc_alloc.h"
 #endif
 extern "C" {
-#include "gc_priv.h"
+#include "private/gc_priv.h"
 }
 #ifdef MSWIN32
 #   include <windows.h>
@@ -193,8 +195,12 @@ int APIENTRY WinMain(
     argc = sizeof(argv_)/sizeof(argv_[0]);  //       commandline
 #  endif 
     int i, iters, n;
-#   if !defined(__GNUC__) && !defined(MACOS)
-      int *x = (int *)alloc::allocate(sizeof(int));
+#   if !defined(MACOS)
+#     ifdef __GNUC__
+        int *x = (int *)gc_alloc::allocate(sizeof(int));
+#     else
+        int *x = (int *)alloc::allocate(sizeof(int));
+#     endif
 
       *x = 29;
       x -= 3;

@@ -10,8 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, February 7, 1996 11:09 am PST */
-# include "gc_priv.h"
+# include "private/gc_priv.h"
 
 # ifdef PCR
 /*

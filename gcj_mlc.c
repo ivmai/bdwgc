@@ -36,10 +36,10 @@
  *  3) FASTLOCK is not a significant win.
  */
 
-#include "gc_priv.h"
-#include "gc_mark.h"
-#include "include/gc_gcj.h"
-#include "dbg_mlc.h"
+#include "private/gc_priv.h"
+#include "private/gc_mark.h"
+#include "gc_gcj.h"
+#include "private/dbg_mlc.h"
 
 GC_bool GC_gcj_malloc_initialized = FALSE;
 
@@ -50,10 +50,6 @@ int GC_gcj_debug_kind;	/* The kind of objects that is always marked 	*/
 
 ptr_t * GC_gcjobjfreelist;
 ptr_t * GC_gcjdebugobjfreelist;
-
-void * GC_default_oom_action(void) { return 0; }
-
-void * (*GC_oom_action)(void) = GC_default_oom_action;
 
 /* Caller does not hold allocation lock. */
 void GC_init_gcj_malloc(int mp_index, void * /* really mark_proc */mp)
@@ -74,7 +70,7 @@ void GC_init_gcj_malloc(int mp_index, void * /* really mark_proc */mp)
     if (mp_index >= GC_n_mark_procs) ABORT("GC_init_gcj_malloc: bad index");
     /* Set up object kind gcj-style indirect descriptor. */
       GC_gcjobjfreelist = (ptr_t *)
-          GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(ptr_t), PTRFREE);
+          GC_INTERNAL_MALLOC((MAXOBJSZ+1)*sizeof(ptr_t), PTRFREE);
       if (GC_gcjobjfreelist == 0) ABORT("Couldn't allocate GC_gcjobjfreelist");
       BZERO(GC_gcjobjfreelist, (MAXOBJSZ+1)*sizeof(ptr_t));
       GC_gcj_kind = GC_n_kinds++;
@@ -86,7 +82,7 @@ void GC_init_gcj_malloc(int mp_index, void * /* really mark_proc */mp)
       GC_obj_kinds[GC_gcj_kind].ok_init = TRUE;
     /* Set up object kind for objects that require mark proc call.	*/
       GC_gcjdebugobjfreelist = (ptr_t *)
-          GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(ptr_t), PTRFREE);
+          GC_INTERNAL_MALLOC((MAXOBJSZ+1)*sizeof(ptr_t), PTRFREE);
       if (GC_gcjdebugobjfreelist == 0)
 	  ABORT("Couldn't allocate GC_gcjdebugobjfreelist");
       BZERO(GC_gcjdebugobjfreelist, (MAXOBJSZ+1)*sizeof(ptr_t));
@@ -131,7 +127,7 @@ DCL_LOCK_STATE;
             op = (ptr_t)GENERAL_MALLOC((word)lb, GC_gcj_kind);
 	    if (0 == op) {
 		UNLOCK();
-		return(GC_oom_action());
+		return(GC_oom_fn(lb));
 	    }
 #	    ifdef MERGE_SIZES
 		lw = GC_size_map[lb];	/* May have been uninitialized.	*/
@@ -139,7 +135,6 @@ DCL_LOCK_STATE;
         } else {
             *opp = obj_link(op);
             GC_words_allocd += lw;
-            FASTUNLOCK();
         }
 	*(void **)op = ptr_to_struct_containing_descr;
 	UNLOCK();
@@ -148,7 +143,7 @@ DCL_LOCK_STATE;
 	op = (ptr_t)GENERAL_MALLOC((word)lb, GC_gcj_kind);
 	if (0 == op) {
 	    UNLOCK();
-	    return(GC_oom_action());
+	    return(GC_oom_fn(lb));
 	}
 	*(void **)op = ptr_to_struct_containing_descr;
 	UNLOCK();
@@ -175,7 +170,7 @@ GC_PTR GC_debug_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr,
 		       (unsigned long) ptr_to_struct_containing_descr);
         GC_err_puts(s);
         GC_err_printf1(":%ld)\n", (unsigned long)i);
-        return(GC_oom_action());
+        return(GC_oom_fn(lb));
     }
     *((void **)((ptr_t)result + sizeof(oh))) = ptr_to_struct_containing_descr;
     UNLOCK();
@@ -202,7 +197,7 @@ DCL_LOCK_STATE;
 		GC_generic_malloc_words_small_inner(lw, GC_gcj_kind));
 	if (0 == op) {
 	    UNLOCK();
-	    return(GC_oom_action());
+	    return GC_oom_fn(WORDS_TO_BYTES(lw));
 	}
     } else {
         *opp = obj_link(op);
@@ -233,7 +228,7 @@ void * GC_debug_gcj_fast_malloc(size_t lw,
 		       (unsigned long) ptr_to_struct_containing_descr);
         GC_err_puts(s);
         GC_err_printf1(":%ld)\n", (unsigned long)i);
-        return(GC_oom_action());
+        return GC_oom_fn(WORDS_TO_BYTES(lw));
     }
     *((void **)((ptr_t)result + sizeof(oh))) = ptr_to_struct_containing_descr;
     UNLOCK();

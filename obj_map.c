@@ -11,7 +11,6 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, October 9, 1995 1:09 pm PDT */
   
 /* Routines for maintaining maps describing heap block
  * layouts for various object sizes.  Allows fast pointer validity checks
@@ -19,7 +18,7 @@
  * with slow division.
  */
  
-# include "gc_priv.h"
+# include "private/gc_priv.h"
 
 char * GC_invalid_map = 0;
 

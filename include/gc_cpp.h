@@ -139,7 +139,7 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 
 #if ! defined( OPERATOR_NEW_ARRAY ) \
     && (__BORLANDC__ >= 0x450 || (__GNUC__ >= 2 && __GNUC_MINOR__ >= 6) \
-        || __WATCOMC__ >= 1050 || _MSC_VER >= 1100)
+	|| __WATCOMC__ >= 1050 || _MSC_VER >= 1100)
 #   define OPERATOR_NEW_ARRAY
 #endif
 
@@ -178,6 +178,12 @@ private:
     invoked. */
 
 extern "C" {typedef void (*GCCleanUpFunc)( void* obj, void* clientData );}
+
+#ifdef _MSC_VER
+  // Disable warning that "no matching operator delete found; memory will
+  // not be freed if initialization throws an exception"
+# pragma warning(disable:4291)
+#endif
 
 inline void* operator new( 
     size_t size, 

@@ -26,15 +26,15 @@
  * None of this is safe with dlclose and incremental collection.
  * But then not much of anything is safe in the presence of dlclose.
  */
-#ifndef MACOS
+#if !defined(MACOS) && !defined(_WIN32_WCE)
 #  include <sys/types.h>
 #endif
-#include "gc_priv.h"
+#include "private/gc_priv.h"
 
 /* BTL: avoid circular redefinition of dlopen if SOLARIS_THREADS defined */
 # if (defined(LINUX_THREADS) || defined(SOLARIS_THREADS) \
       || defined(HPUX_THREADS) || defined(IRIX_THREADS)) && defined(dlopen) \
-     && !defined(USE_LD_WRAP)
+     && !defined(GC_USE_LD_WRAP)
     /* To support threads in Solaris, gc.h interposes on dlopen by       */
     /* defining "dlopen" to be "GC_dlopen", which is implemented below.  */
     /* However, both GC_FirstDLOpenedLinkMap() and GC_dlopen() use the   */
@@ -46,9 +46,11 @@
 #   undef GC_must_restore_redefined_dlopen
 # endif
 
-#if (defined(DYNAMIC_LOADING) || defined(MSWIN32)) && !defined(PCR)
+#if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE)) \
+    && !defined(PCR)
 #if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && \
-    !defined(MSWIN32) && !(defined(ALPHA) && defined(OSF1)) && \
+    !defined(MSWIN32) && !defined(MSWINCE) && \
+    !(defined(ALPHA) && defined(OSF1)) && \
     !defined(HPUX) && !(defined(LINUX) && defined(__ELF__)) && \
     !defined(RS6000) && !defined(SCO_ELF)
  --> We only know how to find data segments of dynamic libraries for the
@@ -193,7 +195,7 @@ static ptr_t GC_first_common()
 
 #include <dlfcn.h>
 
-#ifdef USE_LD_WRAP
+#ifdef GC_USE_LD_WRAP
   void * __wrap_dlopen(const char *path, int mode)
 #else
   void * GC_dlopen(path, mode)
@@ -207,7 +209,7 @@ static ptr_t GC_first_common()
 #   ifndef USE_PROC_FOR_LIBRARIES
       dont_gc_save = disable_gc_for_dlopen();
 #   endif
-#   ifdef USE_LD_WRAP
+#   ifdef GC_USE_LD_WRAP
       result = __real_dlopen(path, mode);
 #   else
       result = dlopen(path, mode);
@@ -299,6 +301,110 @@ void GC_register_dynamic_libraries()
 
 #if defined(LINUX) && defined(__ELF__) || defined(SCO_ELF)
 
+#ifdef USE_PROC_FOR_LIBRARIES
+
+#include <string.h>
+
+#ifdef LINUX_THREADS
+--> To support threads here, we would need to filter out all stack
+--> segments.  This should just be a SMOP.
+#endif
+
+#ifdef GC_USE_LD_WRAP
+#   define READ __wrap_read
+#else
+#   define READ read
+#endif
+
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#define MAPS_BUF_SIZE (32*1024)
+
+void GC_register_dynamic_libraries()
+{
+    int f;  	/* File descriptor for /proc/self/maps.  Empirically	*/
+    		/* it should not be kept open across calls.  This may	*/
+    		/* be related to the fact that older kernels may not	*/
+    		/* support seeking on the file.				*/
+    int result;
+    char prot_buf[5];
+    char maps_buf[MAPS_BUF_SIZE];
+    char *buf_ptr;
+    int count;
+    word start, end;
+    unsigned int maj_dev, min_dev;
+    word least_ha, greatest_ha;
+    unsigned i;
+    word datastart = (word)(DATASTART);
+
+    /* Read /proc/self/maps	*/
+        /* Note that we may not allocate, and thus can't use stdio.	*/
+        f = open("/proc/self/maps", O_RDONLY);
+        if (-1 == f) ABORT("Couldn't open /proc/self/maps");
+        result = read(f, maps_buf, MAPS_BUF_SIZE);
+        if (result <= 0) ABORT("Couldn't read /proc/self/maps");
+        if (result == MAPS_BUF_SIZE) ABORT("Too many memory mappings");
+        maps_buf[result] = '\0';
+        buf_ptr = maps_buf;
+    /* Compute heap bounds. Should be done by add_to_heap?	*/
+	least_ha = (word)(-1);
+	greatest_ha = 0;
+	for (i = 0; i < GC_n_heap_sects; ++i) {
+	    word sect_start = (word)GC_heap_sects[i].hs_start;
+	    word sect_end = sect_start + GC_heap_sects[i].hs_bytes;
+	    if (sect_start < least_ha) least_ha = sect_start;
+	    if (sect_end > greatest_ha) greatest_ha = sect_end;
+        }
+    	if (greatest_ha < (word)GC_scratch_last_end_ptr)
+	    greatest_ha = (word)GC_scratch_last_end_ptr; 
+    for (;;) {
+	count = 0;
+	result = sscanf(buf_ptr, "%lx-%lx %4s %*lx %x:%x%*[^\n]\n%n",
+			&start, &end, prot_buf, &maj_dev, &min_dev, &count);
+	if (0 == result || EOF == result) {
+	    close(f);
+	    return;
+	}
+	if (result < 5 || 0 == count) ABORT("Bad /proc/self/maps format\n");
+	buf_ptr += count;
+	if (strchr(prot_buf, 'w') != 0) {
+	    /* This is a writable mapping.  Add it to		*/
+	    /* the root set unless it is already otherwise	*/
+	    /* accounted for.					*/
+	    if (start <= (word)GC_stackbottom && end >= (word)GC_stackbottom) {
+		/* Stack mapping; discard	*/
+		continue;
+	    }
+	    if (start <= datastart && end > datastart && maj_dev != 0) {
+		/* Main data segment; discard	*/
+		continue;
+	    }
+	    /* The rest of this assumes that there is no mapping	*/
+	    /* spanning the beginning of the data segment, or extending	*/
+	    /* beyond the entire heap at both ends.  			*/
+	    /* Empirically these assumptions hold.			*/
+	    
+	    if (start < (word)DATAEND && end > (word)DATAEND) {
+		/* Rld may use space at the end of the main data 	*/
+		/* segment.  Thus we add that in.			*/
+		start = (word)DATAEND;
+	    }
+	    if (start < least_ha && end > least_ha) {
+		end = least_ha;
+	    }
+	    if (start < greatest_ha && end > greatest_ha) {
+		start = greatest_ha;
+	    }
+	    if (start >= least_ha && end <= greatest_ha) continue;
+	    GC_add_roots_inner((char *)start, (char *)end, TRUE);
+	}
+    }
+}
+
+#else
+
 /* Dynamic loading code for Linux running ELF. Somewhat tested on
  * Linux/x86, untested but hopefully should work on Linux/Alpha. 
  * This code was derived from the Solaris/ELF support. Thanks to
@@ -379,9 +485,11 @@ void GC_register_dynamic_libraries()
     }
 }
 
-#endif
+#endif /* !USE_PROC_FOR_LIBRARIES */
 
-#if defined(IRIX5) || defined(USE_PROC_FOR_LIBRARIES)
+#endif /* LINUX */
+
+#if defined(IRIX5) || (defined(USE_PROC_FOR_LIBRARIES) && !defined(LINUX))
 
 #include <sys/procfs.h>
 #include <sys/stat.h>
@@ -393,9 +501,6 @@ extern void * GC_roots_present();
 	/* The type is a lie, since the real type doesn't make sense here, */
 	/* and we only test for NULL.					   */
 
-#ifndef GC_scratch_last_end_ptr   /* Never an extern any more? */
-extern ptr_t GC_scratch_last_end_ptr; /* End of GC_scratch_alloc arena	*/
-#endif
 
 /* We use /proc to track down all parts of the address space that are	*/
 /* mapped by the process, and throw out regions we know we shouldn't	*/
@@ -504,7 +609,7 @@ void GC_register_dynamic_libraries()
 
 # endif /* USE_PROC || IRIX5 */
 
-# ifdef MSWIN32
+# if defined(MSWIN32) || defined(MSWINCE)
 
 # define WIN32_LEAN_AND_MEAN
 # define NOSERVICE
@@ -513,86 +618,97 @@ void GC_register_dynamic_libraries()
 
   /* We traverse the entire address space and register all segments 	*/
   /* that could possibly have been written to.				*/
-  DWORD GC_allocation_granularity;
   
   extern GC_bool GC_is_heap_base (ptr_t p);
 
 # ifdef WIN32_THREADS
     extern void GC_get_next_stack(char *start, char **lo, char **hi);
-# endif
-  
-  void GC_cond_add_roots(char *base, char * limit)
-  {
-    char dummy;
-    char * stack_top
-           = (char *) ((word)(&dummy) & ~(GC_allocation_granularity-1));
-    if (base == limit) return;
-#   ifdef WIN32_THREADS
+    void GC_cond_add_roots(char *base, char * limit)
     {
-        char * curr_base = base;
-	char * next_stack_lo;
-	char * next_stack_hi;
-	
-	for(;;) {
-	    GC_get_next_stack(curr_base, &next_stack_lo, &next_stack_hi);
-	    if (next_stack_lo >= limit) break;
-	    GC_add_roots_inner(curr_base, next_stack_lo, TRUE);
-	    curr_base = next_stack_hi;
-	}
-	if (curr_base < limit) GC_add_roots_inner(curr_base, limit, TRUE);
+      char * curr_base = base;
+      char * next_stack_lo;
+      char * next_stack_hi;
+   
+      if (base == limit) return;
+      for(;;) {
+	  GC_get_next_stack(curr_base, &next_stack_lo, &next_stack_hi);
+	  if (next_stack_lo >= limit) break;
+	  GC_add_roots_inner(curr_base, next_stack_lo, TRUE);
+	  curr_base = next_stack_hi;
+      }
+      if (curr_base < limit) GC_add_roots_inner(curr_base, limit, TRUE);
     }
-#   else
-        if (limit > stack_top && base < GC_stackbottom) {
-    	    /* Part of the stack; ignore it. */
-    	    return;
-        }
-        GC_add_roots_inner(base, limit, TRUE);
-#   endif
-  }
-  
+# else
+    void GC_cond_add_roots(char *base, char * limit)
+    {
+      char dummy;
+      char * stack_top
+	 = (char *) ((word)(&dummy) & ~(GC_sysinfo.dwAllocationGranularity-1));
+      if (base == limit) return;
+      if (limit > stack_top && base < GC_stackbottom) {
+    	  /* Part of the stack; ignore it. */
+    	  return;
+      }
+      GC_add_roots_inner(base, limit, TRUE);
+    }
+# endif
+
+# ifndef MSWINCE
   extern GC_bool GC_win32s;
+# endif
   
   void GC_register_dynamic_libraries()
   {
     MEMORY_BASIC_INFORMATION buf;
-    SYSTEM_INFO sysinfo;
     DWORD result;
     DWORD protect;
     LPVOID p;
     char * base;
     char * limit, * new_limit;
-    
-    if (GC_win32s) return;
-    GetSystemInfo(&sysinfo);
-    base = limit = p = sysinfo.lpMinimumApplicationAddress;
-    GC_allocation_granularity = sysinfo.dwAllocationGranularity;
-    while (p < sysinfo.lpMaximumApplicationAddress) {
+
+#   ifdef MSWIN32
+      if (GC_win32s) return;
+#   endif
+    base = limit = p = GC_sysinfo.lpMinimumApplicationAddress;
+#   if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)
+    /* Only the first 32 MB of address space belongs to the current process */
+    while (p < (LPVOID)0x02000000) {
         result = VirtualQuery(p, &buf, sizeof(buf));
-        if (result != sizeof(buf)) {
-            ABORT("Weird VirtualQuery result");
-        }
-        new_limit = (char *)p + buf.RegionSize;
-        protect = buf.Protect;
-        if (buf.State == MEM_COMMIT
-            && (protect == PAGE_EXECUTE_READWRITE
-                || protect == PAGE_READWRITE)
-            && !GC_is_heap_base(buf.AllocationBase)) {
-            if ((char *)p == limit) {
-                limit = new_limit;
-            } else {
-                GC_cond_add_roots(base, limit);
-                base = p;
-                limit = new_limit;
-            }
-        }
+	if (result == 0) {
+	    /* Page is free; advance to the next possible allocation base */
+	    new_limit = (char *)
+		(((DWORD) p + GC_sysinfo.dwAllocationGranularity)
+		 & ~(GC_sysinfo.dwAllocationGranularity-1));
+	} else
+#   else
+    while (p < GC_sysinfo.lpMaximumApplicationAddress) {
+        result = VirtualQuery(p, &buf, sizeof(buf));
+#   endif
+	{
+	    if (result != sizeof(buf)) {
+		ABORT("Weird VirtualQuery result");
+	    }
+	    new_limit = (char *)p + buf.RegionSize;
+	    protect = buf.Protect;
+	    if (buf.State == MEM_COMMIT
+		&& (protect == PAGE_EXECUTE_READWRITE
+		    || protect == PAGE_READWRITE)
+		&& !GC_is_heap_base(buf.AllocationBase)) {
+		if ((char *)p != limit) {
+		    GC_cond_add_roots(base, limit);
+		    base = p;
+		}
+		limit = new_limit;
+	    }
+	}
         if (p > (LPVOID)new_limit /* overflow */) break;
         p = (LPVOID)new_limit;
     }
     GC_cond_add_roots(base, limit);
   }
 
-#endif /* MSWIN32 */
-
+#endif /* MSWIN32 || MSWINCE */
+  
 #if defined(ALPHA) && defined(OSF1)
 
 #include <loader.h>

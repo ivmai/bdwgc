@@ -12,7 +12,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 5.3 of a conservative garbage collector for C and C++.
+This is version 6.0alpha3 of a conservative garbage collector for C and C++.
 
 You might find a more recent version of this at
 
@@ -31,12 +31,12 @@ Some other contributors:
 More recent contributors are mentioned in the modification history at the
 end of this file.  My apologies for any omissions.
 
-The SPARC specific code was contributed by Mark Weiser
-(weiser@parc.xerox.com).  The Encore Multimax modifications were supplied by
+The SPARC specific code was contributed by Mark Weiser.
+The Encore Multimax modifications were supplied by
 Kevin Kenny (kenny@m.cs.uiuc.edu).  The adaptation to the RT is largely due
-to Vernon Lee (scorpion@rice.edu), on machines made available by IBM.
+to Vernon Lee, on machines made available by IBM.
 Much of the HP specific code and a number of good suggestions for improving the
-generic code are due to Walter Underwood (wunder@hp-ses.sde.hp.com).
+generic code are due to Walter Underwood.
 Robert Brazile (brazile@diamond.bbn.com) originally supplied the ULTRIX code.
 Al Dosser (dosser@src.dec.com) and Regis Cridlig (Regis.Cridlig@cl.cam.ac.uk)
 subsequently provided updates and information on variation between ULTRIX
@@ -1576,6 +1576,8 @@ Since 5.0 alpha4
    Serrano for helping me debug this by email.)  Changed the IA64 code to
    do something similar for similar reasons.
 
+[5.0alpha5 doesn't really exist, but it may have escaped.]
+
 Since 5.0alpha6:
  - -DREDIRECT_MALLOC was broken in alpha6. Fixed.
  - Cleaned up gc_ccp.h slightly, thus also causing the HP C++ compiler to
@@ -1616,8 +1618,6 @@ Since 5.0
  - The block nearly full tests in reclaim.c were not correct for 64 bit
    environments.  This could result in unnecessary heap growth under unlikely
    conditions.
- - Removed use of CLEAR_DOUBLE from generic reclaim code, since odd sizes
-   could occur.
 
 Since 5.1
  - dyn_load.c declared GC_scratch_last_end_ptr as an extern even if it
@@ -1633,7 +1633,7 @@ Since 5.1
  - The two copies of gc_hdrs.h had diverged.  Made one a link to the other
    again.
 
-Since 5.2
+Since 5.2  (A few 5.2 patches are not in 6.0alpha1)
  - Fixed _end declaration for OSF1.
  - There were lots of spurious leak reports in leak detection mode, caused
    by the fact that some pages were not being swept, and hence unmarked
@@ -1642,8 +1642,96 @@ Since 5.2
  - Added the GetExitCodeThread to Win32 GC_stop_world to (mostly) work
    around a Windows 95 GetOpenFileName problem.  (Thanks to Jacob Navia.)
 
+Since 5.3  (A few 5.3 patches are not in 6.0alpha2)
+ - Added HP/PA prefetch support.
+ - Added -DDBG_HDRS_ALL and -DSHORT_DBG_HDRS to reduce the cost and improve
+   the reliability of generating pointer backtrace information, e.g. in
+   the Bigloo environment.
+ - Added parallel marking support (-DPARALLEL_MARK).  This currently
+   works only under IA32 and IA64 Linux, but it shouldn't be hard to adapt
+   to other platforms.  This is intended to be a lighter-weight (less
+   new code, probably not as scalable) solution than the work by Toshio Endo
+   et al, at the University of Tokyo.  A number of their ideas were
+   reused, though the code wasn't, and the underlying data structure
+   is significantly different.  In particular, we keep the global mark
+   stack as a single shared data structure, but most of the work is done
+   on smaller thread-local mark stacks.
+ - Changed GC_malloc_many to be cheaper, and to require less mutual exclusion
+   with -DPARALLEL_MARK.
+ - Added full support for thread local allocation under Linux
+   (-DTHREAD_LOCAL_ALLOC).  This is a thin veneer on GC_malloc_many, and
+   should be easily portable to other platforms, especially those that
+   support pthreads.
+ - CLEAR_DOUBLE was not always getting invoked when it should have been.
+ - GC_gcj_malloc and friends used different out of memory handling than
+   everything else, probably because I forgot about one when I implemented
+   the other.  They now both call GC_oom_fn(), not GC_oom_action().
+ - Integrated Jakub Jelinek's fixes for Linux/SPARC.
+ - Moved GC_objfreelist, GC_aobjfreelist, and GC_words_allocd out of
+   GC_arrays, and separately registered the first two as excluded roots.
+   This makes code compiled with gc_inl.h less dependent on the
+   collector version.  (It would be nice to remove the inclusion of
+   gc_priv.h by gc_inl.h completely, but we're not there yet.  The
+   locking definitions in gc_priv.h are still referenced.)
+   This change was later coniditoned on SEPARATE_GLOBALS, which
+   is not defined by default, since it involves a performance hit.
+ - Register GC_obj_kinds separately as an excluded root region.  The
+   attempt to register it with GC_arrays was usually failing.  (This wasn't
+   serious, but seemed to generate some confusion.) 
+ - Moved backptr.h to gc_backptr.h.
+
+Since 6.0alpha1
+ - Added USE_MARK_BYTES to reduce the need for compare-and-swap on platforms
+   for which that's expensive.
+ - Fixed a locking bug ib GC_gcj_malloc and some locking assertion problems.
+ - Added a missing volatile to OR_WORD and renamed the parameter to
+   GC_compare_and_swap so it's not a C++ reserved word.  (Thanks to
+   Toshio Endo for pointing out both of those.)
+ - Changed Linux dynamic library registration code to look at /proc/self/maps
+   instead of the rld data structures when REDIRECT_MALLOC is defined.
+   Otherwise some of the rld data data structures may be prematurely garbage
+   collected.  (Thanks to Eric Benson for helping to track this down.)
+ - Fixed USE_LD_WRAP a bit more, so it should now work without threads.
+ - Renamed XXX_THREADS macros to GC_XXX_THREADS for namespace correctness.
+   Tomporarily added some backward compatibility definitions.  Renamed
+   USE_LD_WRAP to GC_USE_LD_WRAP.
+ - Many MACOSX POWERPC changes, some additions to the gctest output, and
+   a few minor generic bug fixes.  (Thanks to Dietmar Planitzer.)
+
+Since 6.0 alpha2
+ - Fixed the /proc/self/maps code to not seek, since that apparently is not
+   reliable across all interesting kernels.
+ - Fixed some compilation problems in the absence of PARALLEL_MARK
+   (introduced in alpha2).
+ - Fixed an algorithmic problem with PARALLEL_MARK.  If work needs to
+   be given back to the main mark "stack", the BOTTOM entries of the local
+   stack should be given away, not the top ones.  This has substantial
+   performance impact, especially for > 2 processors, from what I can tell.
+ - Extracted gc_lock.h from gc_priv.h.  This should eventually make it a
+   bit easier to avoid including gc_priv.h in clients.
+ - Moved all include files to include/ and removed duplicate links to the
+   same file.  The old scheme was a bad idea because it was too easy to get the
+   copies out of sync, and many systems don't support hard links.
+   Unfortunately, it's likely that I broke some of the non-Unix Makefiles in
+   the process, although I tried to update them appropriately.
+ - Removed the partial support for a copied nursery.  It's not clear that
+   this would be a tremendous win, since we don't consistently lose to
+   generational copying collectors.  And it would significantly complicate
+   many things.  May be reintroduced if/when it really turns out to win.
+ - Removed references to IRIX_JDK_THREADS, since I believe there never
+   were and never will be any clients.
+ - Added some code to linux_threads.c to possibly support HPUX threads
+   using the Linux code.  Unfortunately, it doesn't work yet, and is
+   currently disabled.
+ - Added support under Linux/X86 for saving the call chain, both in (debug)
+   objects for client debugging, and in GC_arrays._last_stack for GC
+   debugging.  This was previously supported only under Solaris.  It is
+   not enabled by default under X86, since it requires that code be compiled
+   to explicitly dave frame pointers on the call stack.  (With gcc this
+   currently happens by default, but is often turned off explicitly.)
+   To turn it on, define SAVE_CALL_CHAIN.
+
 To do:
- - Integrate Linux/SPARC fixes.
  - Very large root set sizes (> 16 MB or so) could cause the collector
    to abort with an unexpected mark stack overflow.  (Thanks again to
    Peter Chubb.)  NOT YET FIXED.  Workaround is to increase the initial
@@ -1663,3 +1751,7 @@ To do:
    we make some unwarranted assumptions about how varargs are handled.  This
    currently makes the cord-aware versions of printf unusable on some platforms.
    Fixing this is unfortunately not trivial.
+ - There should be an option to require all objects to be at least 2 words
+   long, and to reserve 4 mark bits for each word instead of one.  This would
+   allow mark bits to be updated with a normal byte store in the parallel
+   marker, instead of a compare-and-exchange or similar operation.  

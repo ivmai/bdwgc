@@ -20,6 +20,8 @@
  * The implementation idea is due to A. Demers.
  */
 
+#ifndef GC_BACKPTR_H
+#define GC_BACKPTR_H
 /* Store information about the object referencing dest in *base_p     */
 /* and *offset_p.                                                     */
 /* If multiple objects or roots point to dest, the one reported	      */
@@ -60,4 +62,4 @@ void GC_generate_random_backtrace(void);
 /* before invocation.						*/
 void GC_print_backtrace(void *);
 
-
+#endif /* GC_BACKPTR_H */

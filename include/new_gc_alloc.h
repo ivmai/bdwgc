@@ -43,6 +43,9 @@
 // problems.  The argument for changing it is that the usual default
 // allocator is usually a very bad choice for a garbage collected environment.)
 //
+// This code assumes that the collector itself has been compiled with a
+// compiler that defines __STDC__ .
+//
 
 #ifndef GC_ALLOC_H
 

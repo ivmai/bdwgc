@@ -2,6 +2,7 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 2000 by Hewlett-Packard Company.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -21,7 +22,7 @@
  */
 
 #include <stdio.h>
-#include "gc_priv.h"
+#include "private/gc_priv.h"
 
 extern ptr_t GC_clear_stack();  /* in misc.c, behaves like identity */
 void GC_extend_size_map();      /* in misc.c. */
@@ -30,12 +31,14 @@ GC_bool GC_alloc_reclaim_list();	/* in malloc.c */
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h	 */
 /* or introducing dependencies on internal data structure layouts.	 */
-ptr_t * CONST GC_objfreelist_ptr = GC_objfreelist;
-ptr_t * CONST GC_aobjfreelist_ptr = GC_aobjfreelist;
-ptr_t * CONST GC_uobjfreelist_ptr = GC_uobjfreelist;
+ptr_t * GC_CONST GC_objfreelist_ptr = GC_objfreelist;
+ptr_t * GC_CONST GC_aobjfreelist_ptr = GC_aobjfreelist;
+ptr_t * GC_CONST GC_uobjfreelist_ptr = GC_uobjfreelist;
 # ifdef ATOMIC_UNCOLLECTABLE
-    ptr_t * CONST GC_auobjfreelist_ptr = GC_auobjfreelist;
+    ptr_t * GC_CONST GC_auobjfreelist_ptr = GC_auobjfreelist;
 # endif
+
+
 
 /* Allocate a composite object of size n bytes.  The caller guarantees  */
 /* that pointers past the first page are not relevant.  Caller holds    */
@@ -44,55 +47,50 @@ ptr_t GC_generic_malloc_inner_ignore_off_page(lb, k)
 register size_t lb;
 register int k;
 {
-    register struct hblk * h;
-    register word n_blocks;
     register word lw;
-    register ptr_t op;
+    ptr_t op;
 
     if (lb <= HBLKSIZE)
         return(GC_generic_malloc_inner((word)lb, k));
-    n_blocks = divHBLKSZ(ADD_SLOP(lb) + HDR_BYTES + HBLKSIZE-1);
-    if (!GC_is_initialized) GC_init_inner();
-    /* Do our share of marking work */
-    if(GC_incremental && !GC_dont_gc)
-        GC_collect_a_little_inner((int)n_blocks);
     lw = ROUNDED_UP_WORDS(lb);
-    h = GC_allochblk(lw, k, IGNORE_OFF_PAGE);
-#   ifdef USE_MUNMAP
-      if (0 == h) {
-        GC_merge_unmapped();
-        h = GC_allochblk(lw, k, IGNORE_OFF_PAGE);
-      }
-#   endif
-    while (0 == h && GC_collect_or_expand(n_blocks, TRUE)) {
-      h = GC_allochblk(lw, k, IGNORE_OFF_PAGE);
-    }
-    if (h == 0) {
-        op = 0;
-    } else {
-        op = (ptr_t) (h -> hb_body);
-        GC_words_wasted += BYTES_TO_WORDS(n_blocks * HBLKSIZE) - lw;
-    }
+    op = (ptr_t)GC_alloc_large_and_clear(lw, k, IGNORE_OFF_PAGE);
     GC_words_allocd += lw;
-    return((ptr_t)op);
+    return op;
 }
 
+/* The same thing, except caller does not hold allocation lock.	*/
+/* We avoid holding allocation lock while we clear memory.	*/
 ptr_t GC_generic_malloc_ignore_off_page(lb, k)
 register size_t lb;
 register int k;
 {
     register ptr_t result;
+    word lw;
+    word n_blocks;
+    GC_bool init;
     DCL_LOCK_STATE;
     
+    if (SMALL_OBJ(lb))
+        return(GC_generic_malloc((word)lb, k));
+    lw = ROUNDED_UP_WORDS(lb);
+    n_blocks = OBJ_SZ_TO_BLOCKS(lw);
+    init = GC_obj_kinds[k].ok_init;
     GC_INVOKE_FINALIZERS();
     DISABLE_SIGNALS();
     LOCK();
-    result = GC_generic_malloc_inner_ignore_off_page(lb,k);
+    result = (ptr_t)GC_alloc_large(lw, k, IGNORE_OFF_PAGE);
+    if (GC_debugging_started) {
+	BZERO(result, n_blocks * HBLKSIZE - HDR_BYTES);
+    }
+    GC_words_allocd += lw;
     UNLOCK();
     ENABLE_SIGNALS();
     if (0 == result) {
         return((*GC_oom_fn)(lb));
     } else {
+    	if (init & !GC_debugging_started) {
+	    BZERO(result, n_blocks * HBLKSIZE - HDR_BYTES);
+        }
         return(result);
     }
 }
@@ -185,6 +183,24 @@ DCL_LOCK_STATE;
 }
 
 #if defined(THREADS) && !defined(SRC_M3)
+
+extern signed_word GC_mem_found;   /* Protected by GC lock.  */
+
+#ifdef PARALLEL_MARK
+volatile signed_word GC_words_allocd_tmp = 0;
+                        /* Number of words of memory allocated since    */
+                        /* we released the GC lock.  Instead of         */
+                        /* reacquiring the GC lock just to add this in, */
+                        /* we add it in the next time we reacquire      */
+                        /* the lock.  (Atomically adding it doesn't     */
+                        /* work, since we would have to atomically      */
+                        /* update it in GC_malloc, which is too         */
+                        /* expensive.                                   */
+#endif /* PARALLEL_MARK */
+
+/* See reclaim.c: */
+extern ptr_t GC_reclaim_generic();
+
 /* Return a list of 1 or more objects of the indicated size, linked	*/
 /* through the first word in the object.  This has the advantage that	*/
 /* it acquires the allocation lock only once, and may greatly reduce	*/
@@ -200,12 +216,19 @@ register word lb;
 register int k;
 {
 ptr_t op;
-register ptr_t p;
+ptr_t p;
 ptr_t *opp;
 word lw;
-register word my_words_allocd;
+word my_words_allocd = 0;
+struct obj_kind * ok = &(GC_obj_kinds[k]);
 DCL_LOCK_STATE;
 
+#   if defined(GATHERSTATS) || defined(PARALLEL_MARK)
+#     define COUNT_ARG , &my_words_allocd
+#   else
+#     define COUNT_ARG
+#     define NEED_TO_COUNT
+#   endif
     if (!SMALL_OBJ(lb)) {
         op = GC_generic_malloc(lb, k);
         if(0 != op) obj_link(op) = 0;
@@ -215,37 +238,118 @@ DCL_LOCK_STATE;
     GC_INVOKE_FINALIZERS();
     DISABLE_SIGNALS();
     LOCK();
-    opp = &(GC_obj_kinds[k].ok_freelist[lw]);
-    if( (op = *opp) == 0 ) {
-        if (!GC_is_initialized) {
-            GC_init_inner();
-        }
-	op = GC_clear_stack(GC_allocobj(lw, k));
-	if (op == 0) {
+    /* First see if we can reclaim a page of objects waiting to be */
+    /* reclaimed.						   */
+    {
+	struct hblk ** rlh = ok -> ok_reclaim_list;
+	struct hblk * hbp;
+	hdr * hhdr;
+
+  	if (rlh == 0) return;	/* No blocks of this kind.	*/
+	rlh += lw;
+    	while ((hbp = *rlh) != 0) {
+            hhdr = HDR(hbp);
+            *rlh = hhdr -> hb_next;
+#	    ifdef PARALLEL_MARK
+		{
+		  signed_word my_words_allocd_tmp = GC_words_allocd_tmp;
+
+		  GC_ASSERT(my_words_allocd_tmp >= 0);
+		  /* We only decrement it while holding the GC lock.	*/
+		  /* Thus we can't accidentally adjust it down in more	*/
+		  /* than one thread simultaneously.			*/
+		  if (my_words_allocd_tmp != 0) {
+		    (void)GC_atomic_add(&GC_words_allocd_tmp,
+					-my_words_allocd_tmp);
+		    GC_words_allocd += my_words_allocd_tmp;
+		  }
+		}
+		GC_acquire_mark_lock();
+		++ GC_fl_builder_count;
+		UNLOCK();
+		ENABLE_SIGNALS();
+		GC_release_mark_lock();
+#	    endif
+	    op = GC_reclaim_generic(hbp, hhdr, lw,
+				    ok -> ok_init, 0 COUNT_ARG);
+            if (op != 0) {
+#	      ifdef NEED_TO_COUNT
+		/* We are neither gathering statistics, nor marking in	*/
+		/* parallel.  Thus GC_reclaim_generic doesn't count	*/
+		/* for us.						*/
+    		for (p = op; p != 0; p = obj_link(p)) {
+        	  my_words_allocd += lw;
+		}
+#	      endif
+#	      if defined(GATHERSTATS)
+	        /* We also reclaimed memory, so we need to adjust 	*/
+	        /* that count.						*/
+		/* This should be atomic, so the results may be		*/
+		/* inaccurate.						*/
+		GC_mem_found += my_words_allocd;
+#	      endif
+#	      ifdef PARALLEL_MARK
+	        (void)GC_atomic_add(&GC_words_allocd_tmp, my_words_allocd);
+		GC_acquire_mark_lock();
+		-- GC_fl_builder_count;
+		if (GC_fl_builder_count == 0) GC_notify_all_builder();
+		GC_release_mark_lock();
+		return op;
+#	      else
+	        GC_words_allocd += my_words_allocd;
+	        goto out;
+#	      endif
+	    }
+#	    ifdef PARALLEL_MARK
+	      GC_acquire_mark_lock();
+	      -- GC_fl_builder_count;
+	      if (GC_fl_builder_count == 0) GC_notify_all_builder();
+	      GC_release_mark_lock();
+	      DISABLE_SIGNALS();
+	      LOCK();
+	      /* GC lock is needed for reclaim list access.	We	*/
+	      /* must decrement fl_builder_count before reaquiring GC	*/
+	      /* lock.  Hopefully this path is rare.			*/
+#	    endif
+    	}
+    }
+    /* Next try to allocate a new block worth of objects of this size.	*/
+    {
+	struct hblk *h = GC_allochblk(lw, k, 0);
+	if (h != 0) {
+	  if (IS_UNCOLLECTABLE(k)) GC_set_hdr_marks(HDR(h));
+	  GC_words_allocd += BYTES_TO_WORDS(HBLKSIZE)
+			       - BYTES_TO_WORDS(HBLKSIZE) % lw;
+#	  ifdef PARALLEL_MARK
+	    GC_acquire_mark_lock();
+	    ++ GC_fl_builder_count;
 	    UNLOCK();
 	    ENABLE_SIGNALS();
-	    op = (*GC_oom_fn)(lb);
-	    if(0 != op) obj_link(op) = 0;
-            return(op);
+	    GC_release_mark_lock();
+#	  endif
+
+	  op = GC_build_fl(h, lw, ok -> ok_init, 0);
+#	  ifdef PARALLEL_MARK
+	    GC_acquire_mark_lock();
+	    -- GC_fl_builder_count;
+	    if (GC_fl_builder_count == 0) GC_notify_all_builder();
+	    GC_release_mark_lock();
+	    return op;
+#	  else
+	    goto out;
+#	  endif
 	}
     }
-    *opp = 0;
-    my_words_allocd = 0;
-    for (p = op; p != 0; p = obj_link(p)) {
-        my_words_allocd += lw;
-        if (my_words_allocd >= BODY_SZ) {
-            *opp = obj_link(p);
-            obj_link(p) = 0;
-            break;
-        }
-    }
-    GC_words_allocd += my_words_allocd;
     
-out:
+    op = GC_generic_malloc_inner(lb, k);
+    obj_link(op) = 0;
+    
+#   ifndef PARALLEL_MARK
+      out:
+#   endif
     UNLOCK();
     ENABLE_SIGNALS();
     return(op);
-
 }
 
 void * GC_malloc_many(size_t lb)
