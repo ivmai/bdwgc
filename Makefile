@@ -120,8 +120,13 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 #   for debugging of the garbage collector itself, but could also
 #   occasionally be useful for debugging of client code.  Slows down the
 #   collector somewhat, but not drastically.
+# -DKEEP_BACK_PTRS Add code to save back pointers in debugging headers
+#   for objects allocated with the debugging allocator.  If all objects
+#   through GC_MALLOC with GC_DEBUG defined, this allows the client
+#   to determine how particular or randomly chosen objects are reachable
+#   for debugging/profiling purposes.  The backptr.h interface is
+#   implemented only if this is defined.
 #
-
 
 
 LIBGC_CFLAGS= -O -DNO_SIGNALS -DSILENT \
@@ -154,7 +159,7 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     threadlibs.c if_mach.c if_not_there.c gc_cpp.cc gc_cpp.h weakpointer.h \
     gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h gc_alloc.h \
     include/new_gc_alloc.h include/javaxfc.h sparc_sunos4_mach_dep.s \
-    solaris_threads.h $(CORD_SRCS)
+    solaris_threads.h backptr.h $(CORD_SRCS)
 
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README test.c test_cpp.cc setjmp_t.c SMakefile.amiga \
@@ -162,7 +167,7 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            cord/gc.h include/gc.h include/gc_typed.h include/cord.h \
            include/ec.h include/private/cord_pos.h include/private/gcconfig.h \
            include/private/gc_hdrs.h include/private/gc_priv.h \
-	   include/gc_cpp.h README.rs6000 \
+	   include/gc_cpp.h README.rs6000 include/backptr.h \
            include/weakpointer.h README.QUICK callprocs pc_excludes \
            barrett_diagram README.OS2 README.Mac MacProjects.sit.hqx \
            MacOS.c EMX_MAKEFILE makefile.depend README.debugging \

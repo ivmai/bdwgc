@@ -505,6 +505,7 @@ void GC_finalize()
       for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
         real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
+	    GC_MARKED_FOR_FINALIZATION(real_ptr);
             GC_MARK_FO(real_ptr, curr_fo -> fo_mark_proc);
             if (GC_is_marked(real_ptr)) {
                 WARN("Finalization cycle involving %lx\n", real_ptr);

@@ -72,7 +72,7 @@
 #   define NEED_FIND_LIMIT
 # endif
 
-# if defined(LINUX) && (defined(POWERPC) || defined(SPARC))
+# if defined(LINUX) && (defined(POWERPC) || defined(SPARC) || defined(ALPHA))
 #   define NEED_FIND_LIMIT
 # endif
 
@@ -2412,7 +2412,6 @@ struct hblk *h;
 #        else
 #          include <sys/frame.h>
 #        endif
-#       include <sys/frame.h>
 #     endif
 #   endif
 #   if NARGS > 6

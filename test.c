@@ -930,7 +930,7 @@ void check_heap_stats()
     int late_finalize_count = 0;
     
     if (sizeof(char *) > 4) {
-        max_heap_sz = 13000000;
+        max_heap_sz = 15000000;
     } else {
     	max_heap_sz = 11000000;
     }

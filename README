@@ -11,7 +11,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 5.0alpha1 of a conservative garbage collector for C and C++.
+This is version 5.0alpha2 of a conservative garbage collector for C and C++.
 
 You might find a more recent version of this at
 
@@ -1451,7 +1451,7 @@ Since 4.14alpha1
 
 Since 4.14alpha2
  - changed STACKBOTTOM for DJGPP (Thanks to Salvador Eduardo Tropea).
-
+ 
 Since 4.14
  - Reworked large block allocator.  Now uses multiple doubly linked free
    lists to approximate best fit.
@@ -1481,7 +1481,13 @@ Since 4.14
    in such large stacks.  And the dirty bit implementation does not
    guarantee that none of them will be accessed.
  - Integrated Martin Tauchmann's Amiga changes.
- - Inetgrated James Dominy's OpenBSD/SPARC port.
+ - Integrated James Dominy's OpenBSD/SPARC port.
+
+Since 5.0alpha1
+ - Fixed bugs introduced in alpha1 (OpenBSD & large block initialization).
+
+ - Added -DKEEP_BACK_PTRS and backptr.h interface.  (The implementation
+   idea came from Al Demers.)
 
 To do:
  - Very large root set sizes (> 16 MB or so) could cause the collector

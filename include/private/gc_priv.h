@@ -1676,6 +1676,16 @@ void GC_print_heap_sects();
 void GC_print_static_roots();
 void GC_dump();
 
+#ifdef KEEP_BACK_PTRS
+   void GC_store_back_pointer(ptr_t source, ptr_t dest);
+   void GC_marked_for_finalization(ptr_t dest);
+#  define GC_STORE_BACK_PTR(source, dest) GC_store_back_pointer(source, dest)
+#  define GC_MARKED_FOR_FINALIZATION(dest) GC_marked_for_finalization(dest)
+#else
+#  define GC_STORE_BACK_PTR(source, dest) 
+#  define GC_MARKED_FOR_FINALIZATION(dest)
+#endif
+
 /* Make arguments appear live to compiler */
 # ifdef __WATCOMC__
   void GC_noop(void*, ...);

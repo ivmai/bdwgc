@@ -650,7 +650,7 @@ int n;
     /* Clear block if necessary */
 	if (GC_debugging_started
 	    || sz > MAXOBJSZ && GC_obj_kinds[kind].ok_init) {
-	    BZERO(thishbp + HDR_BYTES,  size_needed - HDR_BYTES);
+	    BZERO(hbp + HDR_BYTES,  size_needed - HDR_BYTES);
 	}
 
     /* We just successfully allocated a block.  Restart count of	*/

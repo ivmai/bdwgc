@@ -43,7 +43,7 @@
 #    define OPENBSD
 #    define mach_type_known
 # endif
-# if defined(__OpenBSD__) && defined(sparc)
+# if defined(__OpenBSD__) && defined(__sparc__)
 #    define SPARC
 #    define OPENBSD
 #    define mach_type_known
