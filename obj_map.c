@@ -100,7 +100,7 @@ word offset;
 
 /* Add a heap block map for objects of size sz to obj_map.	*/
 /* Return FALSE on failure.					*/
-bool GC_add_map_entry(sz)
+GC_bool GC_add_map_entry(sz)
 word sz;
 {
     register unsigned obj_start;

@@ -12,12 +12,15 @@
 /* Boehm, November 17, 1995 12:10 pm PST */
 
 #ifdef __MWERKS__
-#if defined(__powerc)
-#include <MacHeadersPPC>
-#else
-#include <MacHeaders68K>
+
+// for CodeWarrior Pro with Metrowerks Standard Library (MSL).
+// #define MSL_USE_PRECOMPILED_HEADERS 0
+#include <ansi_prefix.mac.h>
+#ifndef __STDC__
+#define __STDC__ 0
 #endif
-#endif
+
+#endif /* __MWERKS__ */
 
 // these are defined again in gc_priv.h.
 #undef TRUE

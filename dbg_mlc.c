@@ -28,7 +28,7 @@
 typedef struct {
     char * oh_string;		/* object descriptor string	*/
     word oh_int;		/* object descriptor integers	*/
-#   ifdef SAVE_CALL_CHAIN
+#   ifdef NEED_CALLINFO
       struct callinfo oh_ci[NFRAMES];
 #   endif
     word oh_sz;			/* Original malloc arg.		*/
@@ -43,17 +43,22 @@ typedef struct {
 
 
 #ifdef SAVE_CALL_CHAIN
-#   define ADD_CALL_CHAIN(base) GC_save_callers(((oh *)(base)) -> oh_ci)
+#   define ADD_CALL_CHAIN(base, ra) GC_save_callers(((oh *)(base)) -> oh_ci)
 #   define PRINT_CALL_CHAIN(base) GC_print_callers(((oh *)(base)) -> oh_ci)
 #else
-#   define ADD_CALL_CHAIN(base)
+# ifdef GC_ADD_CALLER
+#   define ADD_CALL_CHAIN(base, ra) ((oh *)(base)) -> oh_ci[0].ci_pc = (ra)
+#   define PRINT_CALL_CHAIN(base) GC_print_callers(((oh *)(base)) -> oh_ci)
+# else
+#   define ADD_CALL_CHAIN(base, ra)
 #   define PRINT_CALL_CHAIN(base)
+# endif
 #endif
 
 /* Check whether object with base pointer p has debugging info	*/ 
 /* p is assumed to point to a legitimate object in our part	*/
 /* of the heap.							*/
-bool GC_has_debug_info(p)
+GC_bool GC_has_debug_info(p)
 ptr_t p;
 {
     register oh * ohdr = (oh *)p;
@@ -135,6 +140,17 @@ ptr_t p;
         			      (unsigned long)(ohdr -> oh_sz));
     PRINT_CALL_CHAIN(ohdr);
 }
+
+void GC_debug_print_heap_obj_proc(p)
+ptr_t p;
+{
+    if (GC_has_debug_info(p)) {
+	GC_print_obj(p);
+    } else {
+	GC_default_print_heap_obj_proc(p);
+    }
+}
+
 void GC_print_smashed_obj(p, clobbered_addr)
 ptr_t p, clobbered_addr;
 {
@@ -163,6 +179,7 @@ void GC_check_heap_proc();
 void GC_start_debugging()
 {
     GC_check_heap = GC_check_heap_proc;
+    GC_print_heap_obj = GC_debug_print_heap_obj_proc;
     GC_debugging_started = TRUE;
     GC_register_displacement((word)sizeof(oh));
 }
@@ -178,13 +195,24 @@ void GC_start_debugging()
     GC_register_displacement((word)sizeof(oh) + offset);
 }
 
+# ifdef GC_ADD_CALLER
+#   define EXTRA_ARGS word ra, char * s, int i
+#   define OPT_RA ra,
+# else
+#   define EXTRA_ARGS char * s, int i
+#   define OPT_RA
+# endif
+
 # ifdef __STDC__
-    GC_PTR GC_debug_malloc(size_t lb, char * s, int i)
+    GC_PTR GC_debug_malloc(size_t lb, EXTRA_ARGS)
 # else
     GC_PTR GC_debug_malloc(lb, s, i)
     size_t lb;
     char * s;
     int i;
+#   ifdef GC_ADD_CALLER
+	--> GC_ADD_CALLER not implemented for K&R C
+#   endif
 # endif
 {
     GC_PTR result = GC_malloc(lb + DEBUG_BYTES);
@@ -199,13 +227,13 @@ void GC_start_debugging()
     if (!GC_debugging_started) {
     	GC_start_debugging();
     }
-    ADD_CALL_CHAIN(result);
+    ADD_CALL_CHAIN(result, ra);
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
 #ifdef STUBBORN_ALLOC
 # ifdef __STDC__
-    GC_PTR GC_debug_malloc_stubborn(size_t lb, char * s, int i)
+    GC_PTR GC_debug_malloc_stubborn(size_t lb, EXTRA_ARGS)
 # else
     GC_PTR GC_debug_malloc_stubborn(lb, s, i)
     size_t lb;
@@ -225,7 +253,7 @@ void GC_start_debugging()
     if (!GC_debugging_started) {
     	GC_start_debugging();
     }
-    ADD_CALL_CHAIN(result);
+    ADD_CALL_CHAIN(result, ra);
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
@@ -272,7 +300,7 @@ GC_PTR p;
 #endif /* STUBBORN_ALLOC */
 
 # ifdef __STDC__
-    GC_PTR GC_debug_malloc_atomic(size_t lb, char * s, int i)
+    GC_PTR GC_debug_malloc_atomic(size_t lb, EXTRA_ARGS)
 # else
     GC_PTR GC_debug_malloc_atomic(lb, s, i)
     size_t lb;
@@ -292,12 +320,12 @@ GC_PTR p;
     if (!GC_debugging_started) {
         GC_start_debugging();
     }
-    ADD_CALL_CHAIN(result);
+    ADD_CALL_CHAIN(result, ra);
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
 # ifdef __STDC__
-    GC_PTR GC_debug_malloc_uncollectable(size_t lb, char * s, int i)
+    GC_PTR GC_debug_malloc_uncollectable(size_t lb, EXTRA_ARGS)
 # else
     GC_PTR GC_debug_malloc_uncollectable(lb, s, i)
     size_t lb;
@@ -317,13 +345,13 @@ GC_PTR p;
     if (!GC_debugging_started) {
         GC_start_debugging();
     }
-    ADD_CALL_CHAIN(result);
+    ADD_CALL_CHAIN(result, ra);
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
 #ifdef ATOMIC_UNCOLLECTABLE
 # ifdef __STDC__
-    GC_PTR GC_debug_malloc_atomic_uncollectable(size_t lb, char * s, int i)
+    GC_PTR GC_debug_malloc_atomic_uncollectable(size_t lb, EXTRA_ARGS)
 # else
     GC_PTR GC_debug_malloc_atomic_uncollectable(lb, s, i)
     size_t lb;
@@ -344,7 +372,7 @@ GC_PTR p;
     if (!GC_debugging_started) {
         GC_start_debugging();
     }
-    ADD_CALL_CHAIN(result);
+    ADD_CALL_CHAIN(result, ra);
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 #endif /* ATOMIC_UNCOLLECTABLE */
@@ -387,7 +415,7 @@ GC_PTR p;
 #   else
 	{
 	    register hdr * hhdr = HDR(p);
-	    bool uncollectable = FALSE;
+	    GC_bool uncollectable = FALSE;
 
 	    if (hhdr ->  hb_obj_kind == UNCOLLECTABLE) {
 		uncollectable = TRUE;
@@ -403,7 +431,7 @@ GC_PTR p;
 }
 
 # ifdef __STDC__
-    GC_PTR GC_debug_realloc(GC_PTR p, size_t lb, char *s, int i)
+    GC_PTR GC_debug_realloc(GC_PTR p, size_t lb, EXTRA_ARGS)
 # else
     GC_PTR GC_debug_realloc(p, lb, s, i)
     GC_PTR p;
@@ -419,7 +447,7 @@ GC_PTR p;
     register size_t old_sz;
     register hdr * hhdr;
     
-    if (p == 0) return(GC_debug_malloc(lb, s, i));
+    if (p == 0) return(GC_debug_malloc(lb, OPT_RA s, i));
     if (base == 0) {
         GC_err_printf1(
               "Attempt to reallocate invalid pointer %lx\n", (unsigned long)p);
@@ -435,21 +463,21 @@ GC_PTR p;
     switch (hhdr -> hb_obj_kind) {
 #    ifdef STUBBORN_ALLOC
       case STUBBORN:
-        result = GC_debug_malloc_stubborn(lb, s, i);
+        result = GC_debug_malloc_stubborn(lb, OPT_RA s, i);
         break;
 #    endif
       case NORMAL:
-        result = GC_debug_malloc(lb, s, i);
+        result = GC_debug_malloc(lb, OPT_RA s, i);
         break;
       case PTRFREE:
-        result = GC_debug_malloc_atomic(lb, s, i);
+        result = GC_debug_malloc_atomic(lb, OPT_RA s, i);
         break;
       case UNCOLLECTABLE:
-	result = GC_debug_malloc_uncollectable(lb, s, i);
+	result = GC_debug_malloc_uncollectable(lb, OPT_RA s, i);
  	break;
 #    ifdef ATOMIC_UNCOLLECTABLE
       case AUNCOLLECTABLE:
-	result = GC_debug_malloc_atomic_uncollectable(lb, s, i);
+	result = GC_debug_malloc_atomic_uncollectable(lb, OPT_RA s, i);
 	break;
 #    endif
       default:

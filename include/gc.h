@@ -293,37 +293,48 @@ GC_API int GC_collect_a_little GC_PROTO((void));
 GC_API GC_PTR GC_malloc_ignore_off_page GC_PROTO((size_t lb));
 GC_API GC_PTR GC_malloc_atomic_ignore_off_page GC_PROTO((size_t lb));
 
+#if defined(__sgi) && !defined(__GNUC__) && _COMPILER_VERSION >= 720
+#   define GC_ADD_CALLER
+#   define GC_RETURN_ADDR (GC_word)__return_address
+#endif
+
+#ifdef GC_ADD_CALLER
+#  define GC_EXTRAS GC_RETURN_ADDR, __FILE__, __LINE__
+#  define GC_EXTRA_PARAMS GC_word ra, char * descr_string, int descr_int
+#else
+#  define GC_EXTRAS __FILE__, __LINE__
+#  define GC_EXTRA_PARAMS char * descr_string, int descr_int
+#endif
+
 /* Debugging (annotated) allocation.  GC_gcollect will check 		*/
 /* objects allocated in this way for overwrites, etc.			*/
 GC_API GC_PTR GC_debug_malloc
-	GC_PROTO((size_t size_in_bytes, char * descr_string, int descr_int));
+	GC_PROTO((size_t size_in_bytes, GC_EXTRA_PARAMS));
 GC_API GC_PTR GC_debug_malloc_atomic
-	GC_PROTO((size_t size_in_bytes, char * descr_string, int descr_int));
+	GC_PROTO((size_t size_in_bytes, GC_EXTRA_PARAMS));
 GC_API GC_PTR GC_debug_malloc_uncollectable
-	GC_PROTO((size_t size_in_bytes, char * descr_string, int descr_int));
+	GC_PROTO((size_t size_in_bytes, GC_EXTRA_PARAMS));
 GC_API GC_PTR GC_debug_malloc_stubborn
-	GC_PROTO((size_t size_in_bytes, char * descr_string, int descr_int));
+	GC_PROTO((size_t size_in_bytes, GC_EXTRA_PARAMS));
 GC_API void GC_debug_free GC_PROTO((GC_PTR object_addr));
 GC_API GC_PTR GC_debug_realloc
 	GC_PROTO((GC_PTR old_object, size_t new_size_in_bytes,
-  		  char * descr_string, int descr_int));
+  		  GC_EXTRA_PARAMS));
   			 	 
 GC_API void GC_debug_change_stubborn GC_PROTO((GC_PTR));
 GC_API void GC_debug_end_stubborn_change GC_PROTO((GC_PTR));
 # ifdef GC_DEBUG
-#   define GC_MALLOC(sz) GC_debug_malloc(sz, __FILE__, __LINE__)
-#   define GC_MALLOC_ATOMIC(sz) GC_debug_malloc_atomic(sz, __FILE__, __LINE__)
+#   define GC_MALLOC(sz) GC_debug_malloc(sz, GC_EXTRAS)
+#   define GC_MALLOC_ATOMIC(sz) GC_debug_malloc_atomic(sz, GC_EXTRAS)
 #   define GC_MALLOC_UNCOLLECTABLE(sz) GC_debug_malloc_uncollectable(sz, \
-							__FILE__, __LINE__)
-#   define GC_REALLOC(old, sz) GC_debug_realloc(old, sz, __FILE__, \
-							       __LINE__)
+							GC_EXTRAS)
+#   define GC_REALLOC(old, sz) GC_debug_realloc(old, sz, GC_EXTRAS)
 #   define GC_FREE(p) GC_debug_free(p)
 #   define GC_REGISTER_FINALIZER(p, f, d, of, od) \
 	GC_debug_register_finalizer(p, f, d, of, od)
 #   define GC_REGISTER_FINALIZER_IGNORE_SELF(p, f, d, of, od) \
 	GC_debug_register_finalizer_ignore_self(p, f, d, of, od)
-#   define GC_MALLOC_STUBBORN(sz) GC_debug_malloc_stubborn(sz, __FILE__, \
-							       __LINE__)
+#   define GC_MALLOC_STUBBORN(sz) GC_debug_malloc_stubborn(sz, GC_EXTRAS);
 #   define GC_CHANGE_STUBBORN(p) GC_debug_change_stubborn(p)
 #   define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
 #   define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
@@ -632,7 +643,7 @@ GC_API void (*GC_is_visible_print_proc)
 # endif /* SOLARIS_THREADS */
 
 
-#ifdef IRIX_THREADS
+#if defined(IRIX_THREADS) || defined(LINUX_THREADS)
 /* We treat these similarly. */
 # include <pthread.h>
 # include <signal.h>
@@ -647,9 +658,9 @@ GC_API void (*GC_is_visible_print_proc)
 # define pthread_sigmask GC_pthread_sigmask
 # define pthread_join GC_pthread_join
 
-#endif /* IRIX_THREADS */
+#endif /* IRIX_THREADS || LINUX_THREADS */
 
-#if defined(SOLARIS_THREADS) || defined(IRIX_THREADS)
+#if defined(THREADS) && !defined(SRC_M3)
 /* This returns a list of objects, linked through their first		*/
 /* word.  Its use can greatly reduce lock contention problems, since	*/
 /* the allocation lock can be acquired and released many fewer times.	*/
@@ -658,7 +669,7 @@ GC_PTR GC_malloc_many(size_t lb);
 					/* in returned list.		*/
 extern void GC_thr_init();	/* Needed for Solaris/X86	*/
 
-#endif /* SOLARIS_THREADS */
+#endif /* THREADS && !SRC_M3 */
 
 /*
  * If you are planning on putting

@@ -1,6 +1,7 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1998 by Silicon Graphics.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -72,7 +73,7 @@ void GC_print_hblkfreelist()
 /* Initialize hdr for a block containing the indicated size and 	*/
 /* kind of objects.							*/
 /* Return FALSE on failure.						*/
-static bool setup_header(hhdr, sz, kind, flags)
+static GC_bool setup_header(hhdr, sz, kind, flags)
 register hdr * hhdr;
 word sz;	/* object size in words */
 int kind;
@@ -99,6 +100,12 @@ unsigned char flags;
     return(TRUE);
 }
 
+#ifdef EXACT_FIRST
+#   define LAST_TRIP 2
+#else
+#   define LAST_TRIP 1
+#endif
+	
 /*
  * Allocate (and return pointer to) a heap block
  *   for objects of size sz words.
@@ -123,7 +130,7 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
     register hdr * phdr;		/* Header corr. to prevhbp */
     signed_word size_needed;    /* number of bytes in requested objects */
     signed_word size_avail;	/* bytes available in this block	*/
-    bool first_time = TRUE;
+    int trip_count = 0;
 
     size_needed = HBLKSIZE * OBJ_SZ_TO_BLOCKS(sz);
 
@@ -137,16 +144,25 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 	    hbp = (prevhbp == 0? GC_hblkfreelist : phdr->hb_next);
 	    hhdr = HDR(hbp);
 
-	    if( prevhbp == GC_savhbp && !first_time) {
-	        return(0);
+	    if( prevhbp == GC_savhbp) {
+		if (trip_count == LAST_TRIP) return(0);
+		++trip_count;
 	    }
-
-	    first_time = FALSE;
 
 	    if( hbp == 0 ) continue;
 
 	    size_avail = hhdr->hb_sz;
+#	    ifdef EXACT_FIRST
+		if (trip_count <= 1 && size_avail != size_needed) continue;
+#	    endif
 	    if (size_avail < size_needed) continue;
+#	    ifdef PRESERVE_LAST
+		if (size_avail != size_needed
+		    && !GC_incremental
+		    && GC_in_last_heap_sect(hbp) && GC_should_collect()) {
+		    continue;
+		} 
+#	    endif
 	    /* If the next heap block is obviously better, go on.	*/
 	    /* This prevents us from disassembling a single large block */
 	    /* to get tiny blocks.					*/
@@ -240,7 +256,7 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 	              if (GC_savhbp == hbp) GC_savhbp = prevhbp;
 	              hbp = prevhbp;
 	              hhdr = phdr;
-	              if (hbp == GC_savhbp) first_time = TRUE;
+	              if (hbp == GC_savhbp) --trip_count;
 	          }
 #		endif
 	      }

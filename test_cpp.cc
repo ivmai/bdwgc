@@ -34,9 +34,9 @@ few minutes to complete.
 extern "C" {
 #include "gc_priv.h"
 }
-# ifdef MSWIN32
-#     include <windows.h>
-#     endif
+#ifdef MSWIN32
+#   include <windows.h>
+#endif
 
 
 #define my_assert( e ) \
@@ -174,11 +174,20 @@ int APIENTRY WinMain(
         if (0 == argv[ argc ]) break;}
 
 #else
-int main( int argc, char* argv[] ) {
+# ifdef MACOS
+    int main() {
+# else
+    int main( int argc, char* argv[] ) {
+# endif
 #endif
 
+#  if defined(MACOS)                        // MacOS
+    char* argv_[] = {"test_cpp", "10"};     //   doesn't
+    argv = argv_;                           //     have a
+    argc = sizeof(argv_)/sizeof(argv_[0]);  //       commandline
+#  endif 
     int i, iters, n;
-#   ifndef __GNUC__
+#   if !defined(__GNUC__) && !defined(MACOS)
       int *x = (int *)alloc::allocate(sizeof(int));
 
       *x = 29;
@@ -247,7 +256,7 @@ int main( int argc, char* argv[] ) {
         D::Test();
         F::Test();}
 
-#   ifndef __GNUC__
+#   if !defined(__GNUC__) && !defined(MACOS)
       my_assert (29 == x[3]);
 #   endif
     GC_printf0( "The test appears to have succeeded.\n" );

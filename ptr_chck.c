@@ -196,7 +196,7 @@ void (*GC_is_visible_print_proc) GC_PROTO((GC_PTR p)) =
 	GC_default_is_visible_print_proc;
 
 /* Could p be a stack address? */
-bool GC_on_stack(p)
+GC_bool GC_on_stack(p)
 ptr_t p;
 {
 #   ifdef THREADS
@@ -248,7 +248,7 @@ ptr_t p;
 	  if (GC_on_stack(p)) return(p);
 	hhdr = HDR((word)p);
     	if (hhdr == 0) {
-    	    bool result;
+    	    GC_bool result;
     	    
     	    if (GC_is_static_root(p)) return(p);
     	    /* Else do it again correctly:	*/

@@ -37,6 +37,7 @@
 # include <unistd.h>
 # include <errno.h>
 # include "solaris_threads.h"
+# include <stdio.h>
 
 #undef pthread_join
 #undef pthread_create

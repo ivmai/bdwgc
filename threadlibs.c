@@ -3,7 +3,7 @@
 
 int main()
 {
-#   ifdef IRIX_THREADS
+#   if defined(IRIX_THREADS) || defined(LINUX_THREADS)
 	printf("-lpthread\n");
 #   endif
 #   ifdef SOLARIS_THREADS

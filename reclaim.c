@@ -59,7 +59,7 @@ word sz;
  * memory.
  */
  
-bool GC_block_empty(hhdr)
+GC_bool GC_block_empty(hhdr)
 register hdr * hhdr;
 {
     register word *p = (word *)(&(hhdr -> hb_marks[0]));
@@ -85,7 +85,7 @@ register hdr * hhdr;
 ptr_t GC_reclaim_clear(hbp, hhdr, sz, list, abort_if_found)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 register hdr * hhdr;
-bool abort_if_found;		/* Abort if a reclaimable object is found */
+GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 register word sz;
 {
@@ -134,7 +134,7 @@ register word sz;
 ptr_t GC_reclaim_clear2(hbp, hhdr, list, abort_if_found)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 hdr * hhdr;
-bool abort_if_found;		/* Abort if a reclaimable object is found */
+GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 {
     register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
@@ -182,7 +182,7 @@ register ptr_t list;
 ptr_t GC_reclaim_clear4(hbp, hhdr, list, abort_if_found)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 hdr * hhdr;
-bool abort_if_found;		/* Abort if a reclaimable object is found */
+GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 {
     register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
@@ -242,7 +242,7 @@ register ptr_t list;
 ptr_t GC_reclaim_uninit(hbp, hhdr, sz, list, abort_if_found)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 register hdr * hhdr;
-bool abort_if_found;		/* Abort if a reclaimable object is found */
+GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 register word sz;
 {
@@ -283,7 +283,7 @@ register word sz;
 ptr_t GC_reclaim_uninit2(hbp, hhdr, list, abort_if_found)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 hdr * hhdr;
-bool abort_if_found;		/* Abort if a reclaimable object is found */
+GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 {
     register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
@@ -330,7 +330,7 @@ register ptr_t list;
 ptr_t GC_reclaim_uninit4(hbp, hhdr, list, abort_if_found)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 hdr * hhdr;
-bool abort_if_found;		/* Abort if a reclaimable object is found */
+GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 {
     register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
@@ -385,7 +385,7 @@ register ptr_t list;
 ptr_t GC_reclaim1(hbp, hhdr, list, abort_if_found)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 hdr * hhdr;
-bool abort_if_found;		/* Abort if a reclaimable object is found */
+GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 {
     register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
@@ -518,7 +518,7 @@ word abort_if_found;		/* Abort if a reclaimable object is found */
 	    GC_freehblk(hbp);
 	}
     } else {
-        bool empty = GC_block_empty(hhdr);
+        GC_bool empty = GC_block_empty(hhdr);
         if (abort_if_found) {
     	  GC_reclaim_small_nonempty_block(hbp, (int)abort_if_found);
         } else if (empty) {
@@ -675,9 +675,9 @@ int kind;
  * recently reclaimed, and discard the rest.
  * Stop_func may be 0.
  */
-bool GC_reclaim_all(stop_func, ignore_old)
+GC_bool GC_reclaim_all(stop_func, ignore_old)
 GC_stop_func stop_func;
-bool ignore_old;
+GC_bool ignore_old;
 {
     register word sz;
     register int kind;

@@ -52,6 +52,28 @@ word GC_black_list_spacing = MINHINCR*HBLKSIZE;  /* Initial rough guess */
 
 void GC_clear_bl();
 
+void GC_default_print_heap_obj_proc(p)
+ptr_t p;
+{
+    ptr_t base = GC_base(p);
+
+    GC_err_printf2("start: 0x%lx, appr. length: %ld", base, GC_size(base));
+}
+
+void (*GC_print_heap_obj)(/* char * s, ptr_t p */) =
+				GC_default_print_heap_obj_proc;
+
+void GC_print_source_ptr(ptr_t p)
+{
+    ptr_t base = GC_base(p);
+    if (0 == base) {
+	GC_err_printf0("in root set");
+    } else {
+	GC_err_printf0("in object at ");
+	(*GC_print_heap_obj)(base);
+    }
+}
+
 void GC_bl_init()
 {
 # ifndef ALL_INTERIOR_POINTERS
@@ -132,7 +154,12 @@ void GC_unpromote_black_lists()
 /* P is not a valid pointer reference, but it falls inside	*/
 /* the plausible heap bounds.					*/
 /* Add it to the normal incomplete black list if appropriate.	*/
-void GC_add_to_black_list_normal(p)
+#ifdef PRINT_BLACK_LIST
+  void GC_add_to_black_list_normal(p, source)
+  ptr_t source;
+#else
+  void GC_add_to_black_list_normal(p)
+#endif
 word p;
 {
     if (!(GC_modws_valid_offsets[p & (sizeof(word)-1)])) return;
@@ -140,10 +167,13 @@ word p;
         register int index = PHT_HASH(p);
         
         if (HDR(p) == 0 || get_pht_entry_from_index(GC_old_normal_bl, index)) {
-#   	    ifdef PRINTBLACKLIST
+#   	    ifdef PRINT_BLACK_LIST
 		if (!get_pht_entry_from_index(GC_incomplete_normal_bl, index)) {
-	    	  GC_printf1("Black listing (normal) 0x%lx\n",
-	    	  	     (unsigned long) p);
+	    	  GC_err_printf2(
+			"Black listing (normal) 0x%lx referenced from 0x%lx ",
+	    	        (unsigned long) p, (unsigned long) source);
+		  GC_print_source_ptr(source);
+		  GC_err_puts("\n");
 	    	}
 #           endif
             set_pht_entry_from_index(GC_incomplete_normal_bl, index);
@@ -154,16 +184,24 @@ word p;
 # endif
 
 /* And the same for false pointers from the stack. */
-void GC_add_to_black_list_stack(p)
+#ifdef PRINT_BLACK_LIST
+  void GC_add_to_black_list_stack(p, source)
+  ptr_t source;
+#else
+  void GC_add_to_black_list_stack(p)
+#endif
 word p;
 {
     register int index = PHT_HASH(p);
         
     if (HDR(p) == 0 || get_pht_entry_from_index(GC_old_stack_bl, index)) {
-#   	ifdef PRINTBLACKLIST
+#   	ifdef PRINT_BLACK_LIST
 	    if (!get_pht_entry_from_index(GC_incomplete_stack_bl, index)) {
-	    	  GC_printf1("Black listing (stack) 0x%lx\n",
-	    	             (unsigned long)p);
+	    	  GC_err_printf2(
+			"Black listing (stack) 0x%lx referenced from 0x%lx ",
+	    	        (unsigned long)p, (unsigned long)source);
+		  GC_print_source_ptr(source);
+		  GC_err_puts("\n");
 	    }
 #       endif
 	set_pht_entry_from_index(GC_incomplete_stack_bl, index);

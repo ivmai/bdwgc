@@ -24,7 +24,7 @@
   } * GC_thread;
   extern GC_thread GC_new_thread(thread_t id);
 
-  extern bool GC_thr_initialized;
+  extern GC_bool GC_thr_initialized;
   extern volatile GC_thread GC_threads[];
   extern size_t GC_min_stack_sz;
   extern size_t GC_page_sz;

@@ -43,7 +43,10 @@ to be i386.)
 
 For GNU-win32, use the regular makefile, possibly after uncommenting
 the line "include Makefile.DLLs".  The latter should be necessary only
-if you want to package the collector as a DLL.
+if you want to package the collector as a DLL.  The GNU-win32 port is
+believed to work only for b18, not b19, probably dues to linker changes
+in b19.  This is probably fixable with a different definition of
+DATASTART and DATAEND in config.h.
 
 For Borland tools, use BCC_MAKEFILE.  Note that
 Borland's compiler defaults to 1 byte alignment in structures (-a1),

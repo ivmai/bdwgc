@@ -9,10 +9,10 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-Please send bug reports to Hans-J. Boehm (boehm@parc.xerox.com).
+Please send bug reports to Hans-J. Boehm (boehm@sgi.com).
 
 This is a string packages that uses a tree-based representation.
-See gc.h for a description of the functions provided.  Ec.h describes
+See cord.h for a description of the functions provided.  Ec.h describes
 "extensible cords", which are essentially output streams that write
 to a cord.  These allow for efficient construction of cords without
 requiring a bound on the size of a cord.

@@ -124,9 +124,20 @@ mse * GC_signal_mark_stack_overflow();
     } \
 }
 
-/* Push the contenst of current onto the mark stack if it is a valid	*/
+#ifdef PRINT_BLACK_LIST
+#   define GC_FIND_START(current, hhdr, source) \
+	GC_find_start(current, hhdr, source)
+#else
+#   define GC_FIND_START(current, hhdr, source) \
+	GC_find_start(current, hhdr)
+#endif
+
+/* Push the contents of current onto the mark stack if it is a valid	*/
 /* ptr to a currently unmarked object.  Mark it.			*/
-# define PUSH_CONTENTS(current, mark_stack_top, mark_stack_limit) \
+/* If we assumed a standard-conforming compiler, we could probably	*/
+/* generate the exit_label transparently.				*/
+# define PUSH_CONTENTS(current, mark_stack_top, mark_stack_limit, \
+		       source, exit_label) \
 { \
     register int displ;  /* Displacement in block; first bytes, then words */ \
     register hdr * hhdr; \
@@ -134,14 +145,14 @@ mse * GC_signal_mark_stack_overflow();
     \
     GET_HDR(current,hhdr); \
     if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) { \
-         current = GC_find_start(current, hhdr); \
-         if (current == 0) continue; \
+         current = GC_FIND_START(current, hhdr, (word)source); \
+         if (current == 0) goto exit_label; \
          hhdr = HDR(current); \
     } \
     displ = HBLKDISPL(current); \
     map_entry = MAP_ENTRY((hhdr -> hb_map), displ); \
     if (map_entry == OBJ_INVALID) { \
-        GC_ADD_TO_BLACK_LIST_NORMAL(current); continue; \
+        GC_ADD_TO_BLACK_LIST_NORMAL(current, source); goto exit_label; \
     } \
     displ = BYTES_TO_WORDS(displ); \
     displ -= map_entry; \
@@ -153,12 +164,13 @@ mse * GC_signal_mark_stack_overflow();
           \
         if (mark_word & mark_bit) { \
 	      /* Mark bit is already set */ \
-	      continue; \
+	      goto exit_label; \
         } \
         *mark_word_addr = mark_word | mark_bit; \
     } \
     PUSH_OBJ(((word *)(HBLKPTR(current)) + displ), hhdr, \
     	     mark_stack_top, mark_stack_limit) \
+  exit_label: ; \
 }
 
 
@@ -205,7 +217,7 @@ mse * GC_signal_mark_stack_overflow();
     } \
 }
 
-extern bool GC_mark_stack_too_small;
+extern GC_bool GC_mark_stack_too_small;
 				/* We need a larger mark stack.  May be	*/
 				/* set by client supplied mark routines.*/
 

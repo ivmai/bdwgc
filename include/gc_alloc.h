@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 1996-1998 by Silicon Graphics.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -368,6 +368,12 @@ __GC_SPECIALIZE(int, single_client_alloc)
 __GC_SPECIALIZE(unsigned, single_client_alloc)
 __GC_SPECIALIZE(float, single_client_alloc)
 __GC_SPECIALIZE(double, single_client_alloc)
+
+#ifdef __STL_USE_STD_ALLOCATORS
+
+???copy stuff from stl_alloc.h or remove it to a different file ???
+
+#endif /* __STL_USE_STD_ALLOCATORS */
 
 #endif /* _SGI_SOURCE */
 

@@ -103,12 +103,12 @@ static struct hblk * scan_ptr;
 
 mark_state_t GC_mark_state = MS_NONE;
 
-bool GC_mark_stack_too_small = FALSE;
+GC_bool GC_mark_stack_too_small = FALSE;
 
-bool GC_objects_are_marked = FALSE;	/* Are there collectable marked	*/
+GC_bool GC_objects_are_marked = FALSE;	/* Are there collectable marked	*/
 					/* objects in the heap?		*/
 
-bool GC_collection_in_progress()
+GC_bool GC_collection_in_progress()
 {
     return(GC_mark_state != MS_NONE);
 }
@@ -169,7 +169,7 @@ ptr_t p;
     clear_mark_bit_from_hdr(hhdr, word_no);
 }
 
-bool GC_is_marked(p)
+GC_bool GC_is_marked(p)
 ptr_t p;
 {
     register struct hblk *h = HBLKPTR(p);
@@ -233,7 +233,7 @@ static void alloc_mark_stack();
 /* Perform a small amount of marking.			*/
 /* We try to touch roughly a page of memory.		*/
 /* Return TRUE if we just finished a mark phase.	*/
-bool GC_mark_some()
+GC_bool GC_mark_some()
 {
     switch(GC_mark_state) {
     	case MS_NONE:
@@ -320,7 +320,7 @@ bool GC_mark_some()
 }
 
 
-bool GC_mark_stack_empty()
+GC_bool GC_mark_stack_empty()
 {
     return(GC_mark_stack_top < GC_mark_stack);
 }	
@@ -339,7 +339,13 @@ bool GC_mark_stack_empty()
 /* Returns NIL without black listing if current points to a block	*/
 /* with IGNORE_OFF_PAGE set.						*/
 /*ARGSUSED*/
-word GC_find_start(current, hhdr)
+# ifdef PRINT_BLACK_LIST
+  word GC_find_start(current, hhdr, source)
+  word source;
+# else
+  word GC_find_start(current, hhdr)
+# define source 0
+# endif
 register word current;
 register hdr * hhdr;
 {
@@ -357,18 +363,19 @@ register hdr * hhdr;
 	    if ((word *)orig - (word *)current
 	         >= (ptrdiff_t)(hhdr->hb_sz)) {
 	        /* Pointer past the end of the block */
-	        GC_ADD_TO_BLACK_LIST_NORMAL(orig);
+	        GC_ADD_TO_BLACK_LIST_NORMAL(orig, source);
 	        return(0);
 	    }
 	    return(current);
 	} else {
-	    GC_ADD_TO_BLACK_LIST_NORMAL(current);
+	    GC_ADD_TO_BLACK_LIST_NORMAL(current, source);
 	    return(0);
         }
 #   else
-        GC_ADD_TO_BLACK_LIST_NORMAL(current);
+        GC_ADD_TO_BLACK_LIST_NORMAL(current, source);
         return(0);
 #   endif
+#   undef source
 }
 
 void GC_invalidate_mark_state()
@@ -444,15 +451,14 @@ void GC_mark_from_mark_stack()
           credit -= WORDS_TO_BYTES(WORDSZ/2); /* guess */
           while (descr != 0) {
             if ((signed_word)descr < 0) {
-              current = *current_p++;
-              descr <<= 1;
-              if ((ptr_t)current < least_ha) continue;
-              if ((ptr_t)current >= greatest_ha) continue;
-              PUSH_CONTENTS(current, GC_mark_stack_top_reg, mark_stack_limit);
-            } else {
-              descr <<= 1;
-              current_p++;
+              current = *current_p;
+	      if ((ptr_t)current >= least_ha && (ptr_t)current < greatest_ha) {
+                PUSH_CONTENTS(current, GC_mark_stack_top_reg, mark_stack_limit,
+			      current_p, exit1);
+	      }
             }
+	    descr <<= 1;
+	    ++ current_p;
           }
           continue;
         case DS_PROC:
@@ -477,10 +483,11 @@ void GC_mark_from_mark_stack()
     limit -= 1;
     while (current_p <= limit) {
       current = *current_p;
+      if ((ptr_t)current >= least_ha && (ptr_t)current <  greatest_ha) {
+        PUSH_CONTENTS(current, GC_mark_stack_top_reg,
+		      mark_stack_limit, current_p, exit2);
+      }
       current_p = (word *)((char *)current_p + ALIGNMENT);
-      if ((ptr_t)current < least_ha) continue;
-      if ((ptr_t)current >= greatest_ha) continue;
-      PUSH_CONTENTS(current, GC_mark_stack_top_reg, mark_stack_limit);
     }
   }
   GC_mark_stack_top = GC_mark_stack_top_reg;
@@ -655,9 +662,15 @@ word p;
 # endif
 
 /* As above, but argument passed preliminary test. */
-void GC_push_one_checked(p, interior_ptrs)
+# ifdef PRINT_BLACK_LIST
+    void GC_push_one_checked(p, interior_ptrs, source)
+    ptr_t source;
+# else
+    void GC_push_one_checked(p, interior_ptrs)
+#   define source 0
+# endif
 register word p;
-register bool interior_ptrs;
+register GC_bool interior_ptrs;
 {
     register word r;
     register hdr * hhdr; 
@@ -695,9 +708,14 @@ register bool interior_ptrs;
     /* displ is the word index within the block.		 */
     if (hhdr == 0) {
     	if (interior_ptrs) {
-	    GC_add_to_black_list_stack(p);
+#	    ifdef PRINT_BLACK_LIST
+	      GC_add_to_black_list_stack(p, source);
+#	    else
+	      GC_add_to_black_list_stack(p);
+#	    endif
 	} else {
-	    GC_ADD_TO_BLACK_LIST_NORMAL(p);
+	    GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
+#	    undef source  /* In case we had to define it. */
 	}
     } else {
 	if (!mark_bit_from_hdr(hhdr, displ)) {
@@ -733,7 +751,7 @@ void GC_add_trace_entry(char *kind, word arg1, word arg2)
     if (GC_trace_buf_ptr >= TRACE_ENTRIES) GC_trace_buf_ptr = 0;
 }
 
-void GC_print_trace(word gc_no, bool lock)
+void GC_print_trace(word gc_no, GC_bool lock)
 {
     int i;
     struct trace_entry *p;
@@ -989,7 +1007,7 @@ register hdr * hhdr;
 
 #ifndef SMALL_CONFIG
 /* Test whether any page in the given block is dirty	*/
-bool GC_block_was_dirty(h, hhdr)
+GC_bool GC_block_was_dirty(h, hhdr)
 struct hblk *h;
 register hdr * hhdr;
 {

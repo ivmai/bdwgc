@@ -147,7 +147,7 @@ SPECIALCFLAGS =
 # not time-critical anyway.
 # Set SPECIALCFLAGS to -q nodirect_code on Encore.
 
-all: gc.a gctest
+all: gc.a gctest$(EXE_SUFFIX)
 
 pcr: PCR-Makefile gc_private.h gc_hdrs.h gc.h config.h mach_dep.o $(SRCS)
 	make -f PCR-Makefile depend
@@ -194,19 +194,19 @@ base_lib $(UTILS)
 	-$(RM) test_cpp test_cpp$(EXE_SUFFIX)
 	./if_mach HP_PA "" $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/test_cpp.cc gc_cpp.o gc.a -ldld
 	./if_not_there test_cpp$(EXE_SUFFIX) $(CXXLD) $(CXXFLAGS) -o test_cpp $(srcdir)/test_cpp.cc gc_cpp.o gc.a
+	$(RM) test_cpp
 
 c++: gc_cpp.o $(srcdir)/gc_cpp.h test_cpp
 	-$(RM) on_sparc_sunos5
 	$(AR) ru gc.a gc_cpp.o
 	$(RANLIB) gc.a
-	./test_cpp 1
+	./test_cpp$(EXE_SUFFIX) 1
 	echo > c++
 
 dyn_load_sunos53.o: dyn_load.c
 	$(CC) $(CFLAGS) -DSUNOS53_SHARED_LIB -c $(srcdir)/dyn_load.c -o $@
 
 mach_dep.o: $(srcdir)/mach_dep.c
-# $(srcdir)/mips_mach_dep.s $(srcdir)/rs6000_mach_dep.s if_mach if_not_there
 	-$(RM) mach_dep.o
 	$(CC) -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
 
@@ -251,15 +251,20 @@ cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES)
 
 if_mach$(EXE_SUFFIX): $(srcdir)/if_mach.c $(srcdir)/config.h
 	$(CC) $(CFLAGS) -o if_mach $(srcdir)/if_mach.c
+	-$(RM) if_mach
 
 threadlibs$(EXE_SUFFIX): $(srcdir)/threadlibs.c $(srcdir)/config.h Makefile
 	$(CC) $(CFLAGS) -o threadlibs $(srcdir)/threadlibs.c
+	-$(RM) threadlibs
 
 if_not_there$(EXE_SUFFIX): $(srcdir)/if_not_there.c
 	$(CC) $(CFLAGS) -o if_not_there $(srcdir)/if_not_there.c
+	-$(RM) if_not_there
 
 clean:
-	-$(RM) gc.a *.o gctest gctest_dyn_link test_cpp \
+	-$(RM) gc.a *.o
+	-$(RM) *.o
+	-$(RM) gctest gctest_dyn_link test_cpp \
 	      setjmp_test  mon.out gmon.out a.out core if_not_there if_mach \
 	      $(CORD_OBJS) cordtest cord/cordtest de cord/de
 	-$(RM) gctest$(EXE_SUFFIX) gctest_dyn_link$(EXE_SUFFIX) test_cpp$(EXE_SUFFIX) \
@@ -270,6 +275,7 @@ clean:
 gctest$(EXE_SUFFIX): test.o gc.a
 	-$(RM) gctest$(EXE_SUFFIX)
 	$(CC) $(CFLAGS) -o gctest test.o gc.a
+	$(RM) gctest
 
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  Gctest may still work.
@@ -278,6 +284,7 @@ setjmp_test$(EXE_SUFFIX): $(srcdir)/setjmp_t.c $(srcdir)/gc.h \
 		if_mach$(EXE_SUFFIX) if_not_there$(EXE_SUFFIX)
 	-$(RM) setjmp_test$(EXE_SUFFIX)
 	$(CC) $(CFLAGS) -o setjmp_test $(srcdir)/setjmp_t.c
+	$(RM) setjmp_test
 
 test:  KandRtest cord/cordtest$(EXE_SUFFIX)
 	./cord/cordtest$(EXE_SUFFIX)
@@ -286,5 +293,4 @@ test:  KandRtest cord/cordtest$(EXE_SUFFIX)
 KandRtest: setjmp_test$(EXE_SUFFIX) gctest$(EXE_SUFFIX)
 	./setjmp_test$(EXE_SUFFIX)
 	./gctest$(EXE_SUFFIX)
-
 

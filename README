@@ -1,6 +1,6 @@
 Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
 Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
-Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
+Copyright (c) 1996-1998 by Silicon Graphics.  All rights reserved.
 
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -11,7 +11,11 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.13alpha1 of a conservative garbage collector for C and C++.
+This is version 4.13alpha2 of a conservative garbage collector for C and C++.
+
+You might find a more recent version of this at
+
+http://reality.sgi.com/boehm/gc.html
 
 HISTORY -
 
@@ -144,18 +148,19 @@ See README.debugging for details.
 seen by the garbage collector.  Thus objects pointed to only from such a
 region may be prematurely deallocated.  It is thus suggested that the
 standard "malloc" be used only for memory regions, such as I/O buffers, that
-are guaranteed not to contain pointers.  Pointers in C language automatic,
-static, or register variables, are correctly recognized.  (Note that
-GC_malloc_uncollectable has semantics similar to standard malloc,
-but allocates objects that are traced by the collector.)
+are guaranteed not to contain pointers to garbage collectable memory.
+Pointers in C language automatic, static, or register variables,
+are correctly recognized.  (Note that GC_malloc_uncollectable has semantics
+similar to standard malloc, but allocates objects that are traced by the
+collector.)
 
   The collector does not always know how to find pointers in data
 areas that are associated with dynamic libraries.  This is easy to
 remedy IF you know how to find those data areas on your operating
 system (see GC_add_roots).  Code for doing this under SunOS, IRIX 5.X and 6.X,
-HP/UX, Alpha OSF/1 and win32 is included and used by default.  (See
-README.win32 for win32 details.)  On other systems pointers from dynamic library
-data areas may not be considered by the collector.
+HP/UX, Alpha OSF/1, Linux, and win32 is included and used by default.  (See
+README.win32 for win32 details.)  On other systems pointers from dynamic
+library data areas may not be considered by the collector.
 
   Note that the garbage collector does not need to be informed of shared
 read-only data.  However if the shared library mechanism can introduce
@@ -1345,8 +1350,27 @@ Since 4.12:
    os_dep.c code for dealing with various Linux versions.
  - Added workaround for Irix pthreads sigaction bug and possible signal
    misdirection problems.
+Since alpha1:
+ - Changed RS6000 STACKBOTTOM.
+ - Integrated Patrick Beard's Mac changes.
+ - Alpha1 didn't compile on Irix m.n, m < 6.
+ - Replaced Makefile.dj with a new one from Gary Leavens.
+ - Added Andrew Stitcher's changes to support SCO OpenServer.
+ - Added PRINT_BLACK_LIST, to allow debugging of high densities of false
+   pointers.
+ - Added code to debug allocator to keep track of return address
+   in GC_malloc caller, thus giving a bit more context.
+ - Changed default behavior of large block allocator to more
+   aggressively avoid fragmentation.  This is likely to slow down the
+   collector when it succeeds at reducing space cost.
+ - Integrated Fergus Henderson's CYGWIN32 changes.  They are untested,
+   but needed for newer versions.
+ - USE_MMAP had some serious bugs.  This caused the collector to fail
+   consistently on Solaris with -DSMALL_CONFIG.
+ - Added Linux threads support, thanks largely to Fergus Henderson.
 
 To do:
+ - I have a backlog of unintegrated contributed platform-specific changes.
  - Very large root set sizes (> 16 MB or so) could cause the collector
    to abort with an unexpected mark stack overflow.  (Thanks again to
    Peter Chubb.)  NOT YET FIXED.  Workaround is to increase the initial
@@ -1358,11 +1382,5 @@ To do:
    off DYNAMIC_LOADING in the collector as a workaround.  It may also
    be possible to conditionally intercept mmap and use GC_exclude_static_roots.
    The real fix is to walk rld data structures, which looks possible.
- - SGI pthreads and incremental collection don't mix yet.  This actually
-   now appears to work under Irix 6.5, but is not enabled by default.
  - Integrate MIT and DEC pthreads ports.
- - The Irix pthreads locking mechanism leaves something to be desired.
-   It should eventually resort to nanosleep with exponential backoff.
-   There seem to be associated performance problems with
-   pthreads + incremental GC.
  
