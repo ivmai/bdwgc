@@ -818,7 +818,15 @@ GC_PTR p;
 		    uncollectable = TRUE;
 	    }
 #	endif
-	if (uncollectable) GC_free(base);
+	if (uncollectable) {
+	    GC_free(base);
+	} else {
+	    size_t i;
+	    size_t obj_sz = hhdr -> hb_sz - BYTES_TO_WORDS(sizeof(oh));
+
+	    for (i = 0; i < obj_sz; ++i) ((word *)p)[i] = 0xdeadbeef;
+	    GC_ASSERT((word *)p + i == (word *)base + hhdr -> hb_sz);
+	}
     } /* !GC_find_leak */
 }
 

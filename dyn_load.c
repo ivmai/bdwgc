@@ -91,10 +91,18 @@
 /* Newer versions of GNU/Linux define this macro.  We
  * define it similarly for any ELF systems that don't.  */
 #  ifndef ElfW
-#    if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
-#      define ElfW(type) Elf32_##type
+#    ifdef __NetBSD__
+#      if ELFSIZE == 32
+#        define ElfW(type) Elf32_##type
+#      else
+#        define ElfW(type) Elf64_##type
+#      endif
 #    else
-#      define ElfW(type) Elf64_##type
+#      if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
+#        define ElfW(type) Elf32_##type
+#      else
+#        define ElfW(type) Elf64_##type
+#      endif
 #    endif
 #  endif
 

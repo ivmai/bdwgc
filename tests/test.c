@@ -1255,9 +1255,11 @@ void run_one_test()
 	FAIL;
       }
       if (!TEST_FAIL_COUNT(1)) {
-#	if!(defined(RS6000) || defined(POWERPC) || defined(IA64))
+#	if!(defined(RS6000) || defined(POWERPC) || defined(IA64)) || defined(M68K)
 	  /* ON RS6000s function pointers point to a descriptor in the	*/
 	  /* data segment, so there should have been no failures.	*/
+	  /* The same applies to IA64.  Something similar seems to	*/
+	  /* be going on with NetBSD/M68K.				*/
     	  (void)GC_printf0("GC_is_visible produced wrong failure indication\n");
     	  FAIL;
 #	endif

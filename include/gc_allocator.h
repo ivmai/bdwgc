@@ -35,6 +35,10 @@
  * library, which itself was derived from the SGI STL implementation.
  */
 
+#ifndef GC_ALLOCATOR_H
+
+#define GC_ALLOCATOR_H
+
 #include "gc.h" 	// For size_t
 
 /* First some helpers to allow us to dispatch on whether or not a type
@@ -230,3 +234,4 @@ inline bool operator!=(const traceable_allocator<GC_T1>&, const traceable_alloca
   return false;
 }
 
+#endif /* GC_ALLOCATOR_H */

@@ -17,7 +17,7 @@ dnl Process this file with autoconf to produce configure.
 # Initialization
 # ==============
 
-AC_INIT(gc,6.3alpha5,Hans.Boehm@hp.com) 
+AC_INIT(gc,6.3alpha6,Hans.Boehm@hp.com) 
     ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
@@ -308,12 +308,10 @@ AC_PROG_LIBTOOL
 #
 # Check for AViiON Machines running DGUX
 #
-AC_MSG_CHECKING(if host is AViiON running DGUX)
 ac_is_dgux=no
 AC_CHECK_HEADER(sys/dg_sys_info.h,
 [ac_is_dgux=yes;])
 
-AC_MSG_RESULT($ac_is_dgux) 
     ## :GOTCHA: we do not check anything but sys/dg_sys_info.h
 if test $ac_is_dgux = yes; then
     if test "$enable_full_debug" = "yes"; then
