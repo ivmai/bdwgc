@@ -83,13 +83,12 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #   define VOLATILE
 #endif
 
-#if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
-/* This doesn't work in some earlier gcc versions */
+#if 0 /* defined(__GNUC__) doesn't work yet */
 # define EXPECT(expr, outcome) __builtin_expect(expr,outcome)
   /* Equivalent to (expr), but predict that usually (expr)==outcome. */
 #else
 # define EXPECT(expr, outcome) (expr)
-#endif
+#endif /* __GNUC__ */
 
 # ifndef GC_LOCKS_H
 #   include "gc_locks.h"
@@ -579,7 +578,7 @@ extern GC_warn_proc GC_current_warn_proc;
 # else
 #       define ALIGNED_WORDS(n) ROUNDED_UP_WORDS(n)
 # endif
-# define SMALL_OBJ(bytes) ((bytes) <= (MAXOBJBYTES - EXTRA_BYTES))
+# define SMALL_OBJ(bytes) ((bytes) < (MAXOBJBYTES - EXTRA_BYTES))
 # define ADD_SLOP(bytes) ((bytes) + EXTRA_BYTES)
 # ifndef MIN_WORDS
     /* MIN_WORDS is the size of the smallest allocated object.	*/

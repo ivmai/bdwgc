@@ -37,7 +37,10 @@
  * These routines normally require an explicit call to GC_init(), though
  * that may be done from a constructor function.
  */
- 
+
+#ifndef GC_LOCAL_ALLOC_H
+#define GC_LOCAL_ALLOC_H
+
 #ifndef _GC_H
 #   include "gc.h"
 #endif
@@ -45,9 +48,6 @@
 #if defined(GC_GCJ_SUPPORT) && !defined(GC_GCJ_H)
 #   include "gc_gcj.h"
 #endif
-
-#ifndef GC_LOCAL_ALLOC_H
-#define GC_LOCAL_ALLOC_H
 
 /* We assume ANSI C for this interface.	*/
 
@@ -58,8 +58,6 @@ GC_PTR GC_local_malloc_atomic(size_t bytes);
 #if defined(GC_GCJ_SUPPORT)
   GC_PTR GC_local_gcj_malloc(size_t bytes,
 			     void * ptr_to_struct_containing_descr);
-  GC_PTR GC_local_gcj_fast_malloc(size_t lw,
-			     void * ptr_to_struct_containing_descr);
 #endif
 
 # ifdef GC_DEBUG
@@ -68,14 +66,12 @@ GC_PTR GC_local_malloc_atomic(size_t bytes);
 #   define GC_LOCAL_MALLOC_ATOMIC(s) GC_debug_malloc_atomic(s,GC_EXTRAS)
 #   ifdef GC_GCJ_SUPPORT
 #	define GC_LOCAL_GCJ_MALLOC(s,d) GC_debug_gcj_malloc(s,d,GC_EXTRAS)
-#	define GC_LOCAL_GCJ_FAST_MALLOC(s,d) GC_debug_gcj_fast_malloc(s,d,GC_EXTRAS)
 #   endif
 # else
 #   define GC_LOCAL_MALLOC(s) GC_local_malloc(s)
 #   define GC_LOCAL_MALLOC_ATOMIC(s) GC_local_malloc_atomic(s)
 #   ifdef GC_GCJ_SUPPORT
 #	define GC_LOCAL_GCJ_MALLOC(s,d) GC_local_gcj_malloc(s,d)
-#	define GC_LOCAL_GCJ_FAST_MALLOC(s,d) GC_local_gcj_fast_malloc(s,d)
 #   endif
 # endif
 
@@ -86,9 +82,7 @@ GC_PTR GC_local_malloc_atomic(size_t bytes);
 #   define GC_MALLOC_ATOMIC(s) GC_LOCAL_MALLOC_ATOMIC(s)
 #   ifdef GC_GCJ_SUPPORT
 #	undef GC_GCJ_MALLOC
-#	undef GC_GCJ_FAST_MALLOC
 # 	define GC_GCJ_MALLOC(s,d) GC_LOCAL_GCJ_MALLOC(s,d)
-# 	define GC_GCJ_FAST_MALLOC(s,d) GC_LOCAL_GCJ_FAST_MALLOC(s,d)
 #   endif
 # endif
 

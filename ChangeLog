@@ -1,49 +1,10 @@
-2004-08-20 Ben Maurer  <bmaurer@users.sourceforge.net>
-
-	* include/private/gc_priv.h: use the test glib does
-	for EXPECT.
-
-2004-08-20  Zoltan Varga  <vargaz@freemail.hu>
-
-	* include/private/gc_priv.h (__GNUC_PREREQ): Fix typo spotted by Ben.
-
-	* include/gc_local_alloc.h pthread_support.c: Add 
-	GC_local_gcj_fast_malloc.
-
-	* include/private/gc_priv.h (EXPECT): Enable this on modern versions
-	of gcc.
-
-2004-08-17 Ben Maurer  <bmaurer@users.sourceforge.net>
-
-	* pthread_support.c: make __thread variable static
-	
-	* include/gc_local_alloc.c: make the other headers get
-	included before we define our own variable. This fixes
-	up an ordering problem with GCJ and thread local alloc.
-	
-	The problem was that gc.h needed to include gc_local_alloc.h
-	before gc_gcj.h. However, when gc.h was included after
-	GC_LOCAL_ALLOC_H was #defined, it would not include
-	gc_local_alloc.h.
-
-2004-08-16  Zoltan Varga  <vargaz@freemail.hu>
-
-	* Makefile.am: Create a static version of libmonogc for inclusion into
-	the mono executable.
-
 2004-07-27  John Merryweather Cooper <john_m_cooper@yahoo.com>
-
-	* configure.in:  Fix to properly select flags for pthreads
-	on FreeBSD 4.x (aka -STABLE) and 5.x (aka -CURRENT).
+	# configure.in: Fix compiler flags selection to be correct for
+	both FreeBSD 4.x (aka -STABLE) and FreeBSD 5.x (aka -CURRENT).
 	
 2004-07-01  Zoltan Varga  <vargaz@freemail.hu>
 
 	* include/install-sh doc/install-sh: New files.
-
-2004-06-30  Zoltan Varga  <vargaz@freemail.hu>
-
-	* include/private/gc_priv.h (SMALL_OBJ): Add Hans' fix for crashes
-	seen on SPARC64.
 
 Thu Jun 24 15:39:00 CEST 2004 Paolo Molaro <lupus@ximian.com>
 
