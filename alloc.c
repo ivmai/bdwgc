@@ -1199,6 +1199,9 @@ GC_INNER unsigned GC_fail_count = 0;
                         /* How many consecutive GC/expansion failures?  */
                         /* Reset by GC_allochblk.                       */
 
+static word last_fo_entries = 0;
+static word last_bytes_finalized = 0;
+
 /* Collect or expand heap in an attempt make the indicated number of    */
 /* free blocks available.  Should be called until the blocks are        */
 /* available (seting retry value to TRUE unless this is the first call  */
@@ -1213,7 +1216,10 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
 
     DISABLE_CANCEL(cancel_state);
     if (!GC_incremental && !GC_dont_gc &&
-        ((GC_dont_expand && GC_bytes_allocd > 0) || GC_should_collect())) {
+        ((GC_dont_expand && GC_bytes_allocd > 0)
+         || (GC_fo_entries > (last_fo_entries + 500)
+             && (last_bytes_finalized | GC_bytes_finalized) != 0)
+         || GC_should_collect())) {
       /* Try to do a full collection using 'default' stop_func (unless  */
       /* nothing has been allocated since the latest collection or heap */
       /* expansion is disabled).                                        */
@@ -1223,6 +1229,8 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
       if (gc_not_stopped == TRUE || !retry) {
         /* Either the collection hasn't been aborted or this is the     */
         /* first attempt (in a loop).                                   */
+        last_fo_entries = GC_fo_entries;
+        last_bytes_finalized = GC_bytes_finalized;
         RESTORE_CANCEL(cancel_state);
         return(TRUE);
       }
