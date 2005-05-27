@@ -99,7 +99,7 @@ extern signed_word GC_mem_found;  /* Number of reclaimed longwords	*/
 
 GC_bool GC_dont_expand = 0;
 
-word GC_free_space_divisor = 3;
+word GC_free_space_divisor = 4; /* PLTSCHEME: 3 -> 4 */
 
 extern GC_bool GC_collection_in_progress();
 		/* Collection is in progress, or was abandoned.	*/
@@ -308,6 +308,9 @@ void GC_maybe_gc()
     }
 }
 
+/* PLTSCHEME: notification callback for starting/ending a GC */
+void (*GC_collect_start_callback)(void) = NULL;
+void (*GC_collect_end_callback)(void) = NULL;
 
 /*
  * Stop the world garbage collection.  Assumes lock held, signals disabled.
@@ -321,6 +324,9 @@ GC_stop_func stop_func;
         CLOCK_TYPE start_time, current_time;
 #   endif
     if (GC_dont_gc) return FALSE;
+    /* PLTSCHEME */
+    if (GC_collect_start_callback)
+      GC_collect_start_callback();
     if (GC_incremental && GC_collection_in_progress()) {
 #   ifdef CONDPRINT
       if (GC_print_stats) {
@@ -383,6 +389,9 @@ GC_stop_func stop_func;
                    MS_TIME_DIFF(current_time,start_time));
       }
 #   endif
+    /* PLTSCHEME */
+    if (GC_collect_end_callback)
+      GC_collect_end_callback();
     return(TRUE);
 }
 
@@ -963,6 +972,9 @@ word n;
     return(TRUE);
 }
 
+/* PLTSCHEME: To report out-of-memory in an app- or platform-specific way. */
+void (*GC_out_of_memory)(void) = NULL;
+
 /* Really returns a bool, but it's externally visible, so that's clumsy. */
 /* Arguments is in bytes.						*/
 # if defined(__STDC__) || defined(__cplusplus)
@@ -1018,9 +1030,16 @@ GC_bool ignore_off_page;
       if (!GC_expand_hp_inner(blocks_to_get)
         && !GC_expand_hp_inner(needed_blocks)) {
       	if (GC_fail_count++ < GC_max_retries) {
+	  /* PLTSCHEME: rather not see this message */
+#if 0
       	    WARN("Out of Memory!  Trying to continue ...\n", 0);
+#endif
 	    GC_gcollect_inner();
 	} else {
+	    /* PLTSCHEME */
+	    if (GC_out_of_memory)
+	      GC_out_of_memory();
+
 #	    if !defined(AMIGA) || !defined(GC_AMIGA_FASTALLOC)
 	      WARN("Out of Memory!  Returning NIL!\n", 0);
 #	    endif

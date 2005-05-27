@@ -672,10 +672,13 @@ int n;
 	        /* Punt, since anything else risks unreasonable heap growth. */
 		if (++GC_large_alloc_warn_suppressed
 		    >= GC_large_alloc_warn_interval) {
+		/* PLTSCHEME: rather not see this particular message (or setenv). */
+#if 0
 	          WARN("Repeated allocation of very large block "
 		       "(appr. size %ld):\n"
 		       "\tMay lead to memory leak and poor performance.\n",
 		       size_needed);
+#endif
 		  GC_large_alloc_warn_suppressed = 0;
 		}
 	        size_avail = orig_avail;

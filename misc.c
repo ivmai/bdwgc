@@ -713,8 +713,16 @@ void GC_init_inner()
 #   endif
     GC_ASSERT((signed_word)(-1) < (signed_word)0);
     
+    /* PLTSCHEME: In case we use near data for 68k Mac, this array is declared FAR */
+#ifdef __MC68K__
+    GC_add_roots_inner((ptr_t)&GC_arrays, 
+                       (ptr_t)(((char *)&GC_arrays) + sizeof(GC_arrays)), 
+                       FALSE);
+#endif
+
     /* Add initial guess of root sets.  Do this first, since sbrk(0)	*/
     /* might be used.							*/
+    if (!GC_no_dls) /* PLTSCHEME: hack */
       if (GC_REGISTER_MAIN_STATIC_DATA()) GC_register_data_segments();
     GC_init_headers();
     GC_bl_init();
@@ -1054,7 +1062,7 @@ void GC_abort(msg)
 GC_CONST char * msg;
 {
 #   if defined(MSWIN32)
-      (void) MessageBoxA(NULL, msg, "Fatal error in gc", MB_ICONERROR|MB_OK);
+      //(void) MessageBoxA(NULL, msg, "Fatal error in gc", MB_ICONERROR|MB_OK);
 #   else
       GC_err_printf1("%s\n", msg);
 #   endif
@@ -1173,3 +1181,23 @@ void GC_dump()
 }
 
 #endif /* NO_DEBUGGING */
+
+/* PLTSCHEME: GC_get_memory_use */
+static void get_size(struct hblk *h, word lptr)
+{
+  hdr *hhdr = HDR(h);
+  long bytes = WORDS_TO_BYTES(hhdr->hb_sz);
+
+  bytes += HBLKSIZE-1;
+  bytes &= ~(HBLKSIZE-1);
+
+  *(long *)lptr += bytes;
+}
+long GC_get_memory_use()
+{
+  long c = 0;
+  LOCK();
+  GC_apply_to_all_blocks(get_size, (word)&c);
+  UNLOCK();
+  return c;
+}

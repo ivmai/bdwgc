@@ -44,29 +44,65 @@ word x;
 
 word GC_n_mark_procs = GC_RESERVED_MARK_PROCS;
 
+/* PLTSCHEME: To work with MSVC /MD flag. Client must call GC_pre_init(). */
+#ifdef USE_MSVC_MD_LIBRARY
+# define INIT_FLD(x) 0
+#else
+# define INIT_FLD(x) x
+#endif
+
 /* Initialize GC_obj_kinds properly and standard free lists properly.  	*/
 /* This must be done statically since they may be accessed before 	*/
 /* GC_init is called.							*/
 /* It's done here, since we need to deal with mark descriptors.		*/
 struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
-/* PTRFREE */ { &GC_aobjfreelist[0], 0 /* filled in dynamically */,
+/* PTRFREE */ { INIT_FLD(&GC_aobjfreelist[0]), 0 /* filled in dynamically */,
 		0 | GC_DS_LENGTH, FALSE, FALSE },
-/* NORMAL  */ { &GC_objfreelist[0], 0,
+/* NORMAL  */ { INIT_FLD(&GC_objfreelist[0]), 0,
 		0 | GC_DS_LENGTH,  /* Adjusted in GC_init_inner for EXTRA_BYTES */
 		TRUE /* add length to descr */, TRUE },
 /* UNCOLLECTABLE */
-	      { &GC_uobjfreelist[0], 0,
+	      { INIT_FLD(&GC_uobjfreelist[0]), 0,
 		0 | GC_DS_LENGTH, TRUE /* add length to descr */, TRUE },
 # ifdef ATOMIC_UNCOLLECTABLE
    /* AUNCOLLECTABLE */
-	      { &GC_auobjfreelist[0], 0,
+	      { INIT_FLD(&GC_auobjfreelist[0]), 0,
 		0 | GC_DS_LENGTH, FALSE /* add length to descr */, FALSE },
 # endif
 # ifdef STUBBORN_ALLOC
-/*STUBBORN*/ { &GC_sobjfreelist[0], 0,
+/*STUBBORN*/ { INIT_FLD(&GC_sobjfreelist[0]), 0,
 		0 | GC_DS_LENGTH, TRUE /* add length to descr */, TRUE },
 # endif
 };
+
+/* PLTSCHEME: explicit init proc */
+#ifdef USE_MSVC_MD_LIBRARY
+# ifdef __CYGWIN32__
+#  include <windows.h>
+# endif
+void GC_pre_init(void)
+{
+  int i = 0;
+  GC_obj_kinds[i++].ok_freelist = &GC_aobjfreelist[0];
+  GC_obj_kinds[i++].ok_freelist = &GC_objfreelist[0];
+  GC_obj_kinds[i++].ok_freelist = &GC_uobjfreelist[0];
+# ifdef ATOMIC_UNCOLLECTABLE
+  GC_obj_kinds[i++].ok_freelist = &GC_auobjfreelist[0];
+# endif
+# ifdef STUBBORN_ALLOC
+  GC_obj_kinds[i++].ok_freelist = &GC_sobjfreelist[0];
+# endif
+}
+
+# ifdef MD_LIB_MAIN
+BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
+{
+  if (reason == DLL_PROCESS_ATTACH)
+    GC_pre_init();
+  return TRUE;
+}
+# endif
+#endif
 
 # ifdef ATOMIC_UNCOLLECTABLE
 #   ifdef STUBBORN_ALLOC
@@ -594,6 +630,17 @@ mse * msp;
 #   endif
     return(msp - GC_MARK_STACK_DISCARDS);
 }
+
+/* PLTSCHEME: used by setjmpup: */
+int GC_did_mark_stack_overflow(void)
+{
+  return GC_mark_state == MS_INVALID;
+}
+void GC_mark_from_mark_stack(void)
+{
+  MARK_FROM_MARK_STACK();
+}
+
 
 /*
  * Mark objects pointed to by the regions described by

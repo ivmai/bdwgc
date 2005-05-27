@@ -271,7 +271,8 @@
 #   define MACOS
 #   define mach_type_known
 # endif
-# if defined(__MWERKS__) && defined(__powerc) && !defined(__MACH__)
+/* PLTSCHEME: added MPW_C */
+# if (defined(__MWERKS__) || defined(MPW_C)) && defined(__powerc) && !defined(__MACH__)
 #   define POWERPC
 #   define MACOS
 #   define mach_type_known
@@ -705,6 +706,12 @@
 #	define GETPAGESIZE() 4096
 #   endif
 #   ifdef MACOS
+      /* PLTSCHEME: 4-byte alignment */
+#     ifdef USE_POWERPC_FOUR_BYTE_ALIGN
+#      define ALIGNMENT 4
+#     else
+#      define ALIGNMENT 2
+#     endif
 #     ifndef __LOWMEM__
 #     include <LowMem.h>
 #     endif

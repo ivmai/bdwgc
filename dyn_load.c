@@ -1166,6 +1166,12 @@ void GC_init_dyld() {
   char *bind_fully_env = NULL;
   
   if(initialized) return;
+
+  /* PLTSCHEME: not if dls are disabled */
+  if (GC_no_dls) {
+    initialized = TRUE;
+    return;
+  }
   
 #   ifdef DARWIN_DEBUG
   GC_printf0("Registering dyld callbacks...\n");

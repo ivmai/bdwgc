@@ -1,7 +1,6 @@
 /*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
- * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
 
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -15,18 +14,6 @@
 /* Boehm, February 1, 1996 1:19 pm PST */
 # define I_HIDE_POINTERS
 # include "private/gc_pmark.h"
-
-# ifdef FINALIZE_ON_DEMAND
-    int GC_finalize_on_demand = 1;
-# else
-    int GC_finalize_on_demand = 0;
-# endif
-
-# ifdef JAVA_FINALIZATION
-    int GC_java_finalization = 1;
-# else
-    int GC_java_finalization = 0;
-# endif
 
 /* Type of mark procedure used for marking from finalizable object.	*/
 /* This procedure normally does not mark the object, only its		*/
@@ -46,6 +33,10 @@ struct hash_chain_entry {
 unsigned GC_finalization_failures = 0;
 	/* Number of finalization requests that failed for lack of memory. */
 
+/* PLTSCHEME: */
+void (*GC_custom_finalize)(void);
+void (*GC_push_last_roots_again)(void);
+
 static struct disappearing_link {
     struct hash_chain_entry prolog;
 #   define dl_hidden_link prolog.hidden_key
@@ -54,6 +45,16 @@ static struct disappearing_link {
 #   define dl_set_next(x,y) (x) -> prolog.next = (struct hash_chain_entry *)(y)
 
     word dl_hidden_obj;		/* Pointer to object base	*/
+
+    /* PLTSCHEME: for restoring: */
+    union {
+      short kind;
+#           define NORMAL_DL  0
+#           define RESTORE_DL 1
+#           define LATE_DL    2
+      word value; /* old value when zeroed */
+    } dl_special;
+    struct disappearing_link *restore_next;
 } **dl_head = 0;
 
 static signed_word log_dl_table_size = -1;
@@ -76,7 +77,9 @@ static struct finalizable_object {
     ptr_t fo_client_data;
     word fo_object_size;	/* In bytes.			*/
     finalization_mark_proc * fo_mark_proc;	/* Mark-through procedure */
+    int eager_level; /* PLTSCHEME: eager finalizers don't care about cycles */
 } **fo_head = 0;
+
 
 struct finalizable_object * GC_finalize_now = 0;
 	/* LIst of objects that should be finalized now.	*/
@@ -89,8 +92,8 @@ void GC_push_finalizer_structures GC_PROTO((void))
 {
     GC_push_all((ptr_t)(&dl_head), (ptr_t)(&dl_head) + sizeof(word));
     GC_push_all((ptr_t)(&fo_head), (ptr_t)(&fo_head) + sizeof(word));
-    GC_push_all((ptr_t)(&GC_finalize_now),
-		(ptr_t)(&GC_finalize_now) + sizeof(word));
+
+    GC_push_all((ptr_t)(&GC_finalize_now), (ptr_t)(&GC_finalize_now) + sizeof(GC_finalize_now));
 }
 
 /* Double the size of a hash table. *size_ptr is the log of its current	*/
@@ -150,6 +153,16 @@ signed_word * log_size_ptr;
     return(GC_general_register_disappearing_link(link, base));
 }
 
+/* PLTSCHEME: GC_register_late_disappearing_link */
+static int late_dl; /* a stupid way to pass arguments (to minimize my changes). */
+GC_API void GC_register_late_disappearing_link(void **link, void *obj)
+{
+  late_dl= 1;
+  GC_general_register_disappearing_link((GC_PTR *)link, (GC_PTR)obj);
+  late_dl = 0;
+}
+
+
 # if defined(__STDC__) || defined(__cplusplus)
     int GC_general_register_disappearing_link(GC_PTR * link,
     					      GC_PTR obj)
@@ -165,6 +178,14 @@ signed_word * log_size_ptr;
     struct disappearing_link * new_dl;
     DCL_LOCK_STATE;
     
+#if 1
+    /* PLTSCHEME: If wxObjects are sometimes stack-allocated, 
+       MrEd needs this. Keeping it for now just-in-case, though
+       it should be eliminated in the future. */
+    if (!GC_base(link))
+      return 1;
+#endif
+
     if ((word)link & (ALIGNMENT-1))
     	ABORT("Bad arg to GC_general_register_disappearing_link");
 #   ifdef THREADS
@@ -201,14 +222,14 @@ signed_word * log_size_ptr;
         }
     }
     new_dl = (struct disappearing_link *)
-    	GC_INTERNAL_MALLOC(sizeof(struct disappearing_link),NORMAL);
+      GC_INTERNAL_MALLOC(sizeof(struct disappearing_link),NORMAL);
     if (0 == new_dl) {
 #     ifdef THREADS
 	UNLOCK();
     	ENABLE_SIGNALS();
 #     endif
       new_dl = (struct disappearing_link *)
-	      GC_oom_fn(sizeof(struct disappearing_link));
+          GC_oom_fn(sizeof(struct disappearing_link));
       if (0 == new_dl) {
 	GC_finalization_failures++;
 	return(0);
@@ -221,6 +242,7 @@ signed_word * log_size_ptr;
     }
     new_dl -> dl_hidden_obj = HIDE_POINTER(obj);
     new_dl -> dl_hidden_link = HIDE_POINTER(link);
+    new_dl -> dl_special.kind = late_dl ? LATE_DL : (obj ? NORMAL_DL : RESTORE_DL); /* PLTSCHEME: Set flag */
     dl_set_next(new_dl, dl_head[index]);
     dl_head[index] = new_dl;
     GC_dl_entries++;
@@ -257,11 +279,11 @@ signed_word * log_size_ptr;
             GC_dl_entries--;
             UNLOCK();
     	    ENABLE_SIGNALS();
-#	    ifdef DBG_HDRS_ALL
-	      dl_set_next(curr_dl, 0);
-#	    else
-              GC_free((GC_PTR)curr_dl);
-#	    endif
+#           ifdef DBG_HDRS_ALL
+              dl_set_next(curr_dl, 0);
+#           else
+                GC_free((GC_PTR)curr_dl);
+#           endif
             return(1);
         }
         prev_dl = curr_dl;
@@ -275,7 +297,7 @@ out:
 
 /* Possible finalization_marker procedures.  Note that mark stack	*/
 /* overflow is handled by the caller, and is not a disaster.		*/
-GC_API void GC_normal_finalize_mark_proc(p)
+void GC_normal_finalize_mark_proc(p)
 ptr_t p;
 {
     hdr * hhdr = HDR(p);
@@ -287,7 +309,7 @@ ptr_t p;
 /* This only pays very partial attention to the mark descriptor.	*/
 /* It does the right thing for normal and atomic objects, and treats	*/
 /* most others as normal.						*/
-GC_API void GC_ignore_self_finalize_mark_proc(p)
+void GC_ignore_self_finalize_mark_proc(p)
 ptr_t p;
 {
     hdr * hhdr = HDR(p);
@@ -310,7 +332,7 @@ ptr_t p;
 }
 
 /*ARGSUSED*/
-GC_API void GC_null_finalize_mark_proc(p)
+void GC_null_finalize_mark_proc(p)
 ptr_t p;
 {
 }
@@ -321,17 +343,14 @@ ptr_t p;
 /* in the nonthreads case, we try to avoid disabling signals,	*/
 /* since it can be expensive.  Threads packages typically	*/
 /* make it cheaper.						*/
-/* The last parameter is a procedure that determines		*/
-/* marking for finalization ordering.  Any objects marked	*/
-/* by that procedure will be guaranteed to not have been	*/
-/* finalized when this finalizer is invoked.			*/
-GC_API void GC_register_finalizer_inner(obj, fn, cd, ofn, ocd, mp)
+void GC_register_finalizer_inner(obj, fn, cd, ofn, ocd, mp, eager_level) /* PLTSCHEME: eager_level */
 GC_PTR obj;
 GC_finalization_proc fn;
 GC_PTR cd;
 GC_finalization_proc * ofn;
 GC_PTR * ocd;
 finalization_mark_proc * mp;
+int eager_level; /* PLTSCHEME */
 {
     ptr_t base;
     struct finalizable_object * curr_fo, * prev_fo;
@@ -351,11 +370,9 @@ finalization_mark_proc * mp;
 #	endif
     	GC_grow_table((struct hash_chain_entry ***)(&fo_head),
     		      &log_fo_table_size);
-#	ifdef CONDPRINT
-	  if (GC_print_stats) {
+#	ifdef PRINTSTATS
 	    GC_printf1("Grew fo table to %lu entries\n",
 	    		(unsigned long)(1 << log_fo_table_size));
-	  }
 #	endif
 #	ifndef THREADS
 	    ENABLE_SIGNALS();
@@ -392,6 +409,7 @@ finalization_mark_proc * mp;
                 curr_fo -> fo_fn = fn;
                 curr_fo -> fo_client_data = (ptr_t)cd;
                 curr_fo -> fo_mark_proc = mp;
+		curr_fo -> eager_level = eager_level; /* PLTSCHEME */
 		/* Reinsert it.  We deleted it first to maintain	*/
 		/* consistency in the event of a signal.		*/
 		if (prev_fo == 0) {
@@ -412,6 +430,32 @@ finalization_mark_proc * mp;
     if (ofn) *ofn = 0;
     if (ocd) *ocd = 0;
     if (fn == 0) {
+
+      /* PLTSCHEME: */
+      /* If this item is already queued, de-queue it. */
+#if 1
+      if (GC_finalize_now) {
+	ptr_t real_ptr;
+	register struct finalizable_object * curr_fo, *prev_fo;
+	
+	prev_fo = NULL;
+	curr_fo = GC_finalize_now;
+	while (curr_fo != 0) {
+	  real_ptr = (ptr_t)(curr_fo -> fo_hidden_base);
+	  if (real_ptr == obj) {
+	    if (prev_fo)
+	      fo_set_next(prev_fo, fo_next(curr_fo));
+	    else
+	      GC_finalize_now = fo_next(curr_fo);
+	    GC_free((GC_PTR)curr_fo);
+	    break;
+	  }
+	  prev_fo = curr_fo;
+	  curr_fo = fo_next(curr_fo);
+	}
+      }
+#endif
+
 #	ifdef THREADS
             UNLOCK();
     	    ENABLE_SIGNALS();
@@ -428,14 +472,14 @@ finalization_mark_proc * mp;
       return;
     }
     new_fo = (struct finalizable_object *)
-    	GC_INTERNAL_MALLOC(sizeof(struct finalizable_object),NORMAL);
+      GC_INTERNAL_MALLOC(sizeof(struct finalizable_object),NORMAL);
     if (0 == new_fo) {
 #     ifdef THREADS
 	UNLOCK();
     	ENABLE_SIGNALS();
 #     endif
       new_fo = (struct finalizable_object *)
-	      GC_oom_fn(sizeof(struct finalizable_object));
+          GC_oom_fn(sizeof(struct finalizable_object));
       if (0 == new_fo) {
 	GC_finalization_failures++;
 	return;
@@ -451,6 +495,7 @@ finalization_mark_proc * mp;
     new_fo -> fo_client_data = (ptr_t)cd;
     new_fo -> fo_object_size = hhdr -> hb_sz;
     new_fo -> fo_mark_proc = mp;
+    new_fo -> eager_level = eager_level; /* PLTSCHEME */
     fo_set_next(new_fo, fo_head[index]);
     GC_fo_entries++;
     fo_head[index] = new_fo;
@@ -474,7 +519,28 @@ finalization_mark_proc * mp;
 # endif
 {
     GC_register_finalizer_inner(obj, fn, cd, ofn,
-    				ocd, GC_normal_finalize_mark_proc);
+    				ocd, GC_normal_finalize_mark_proc, 
+				0); /* PLTSCHEME */
+}
+
+/* PLTSCHEME: eager finalizers */
+# if defined(__STDC__)
+    void GC_register_eager_finalizer(void * obj, int eager_level,
+			            GC_finalization_proc fn, void * cd,
+			            GC_finalization_proc *ofn, void ** ocd)
+# else
+    void GC_register_eager_finalizer(obj, eager_level, fn, cd, ofn, ocd)
+    GC_PTR obj;
+    int eager_level;
+    GC_finalization_proc fn;
+    GC_PTR cd;
+    GC_finalization_proc * ofn;
+    GC_PTR * ocd;
+# endif
+{
+    GC_register_finalizer_inner(obj, fn, cd, ofn,
+    				ocd, GC_normal_finalize_mark_proc, 
+				eager_level);
 }
 
 # if defined(__STDC__)
@@ -491,7 +557,8 @@ finalization_mark_proc * mp;
 # endif
 {
     GC_register_finalizer_inner(obj, fn, cd, ofn,
-    				ocd, GC_ignore_self_finalize_mark_proc);
+    				ocd, GC_ignore_self_finalize_mark_proc, 
+				0); /* PLTSCHEME */
 }
 
 # if defined(__STDC__)
@@ -508,36 +575,84 @@ finalization_mark_proc * mp;
 # endif
 {
     GC_register_finalizer_inner(obj, fn, cd, ofn,
-    				ocd, GC_null_finalize_mark_proc);
+    				ocd, GC_null_finalize_mark_proc, 
+				0); /* PLTSCHEME */
 }
 
-#ifndef NO_DEBUGGING
-void GC_dump_finalization()
+/* PLTSCHEME: eager finalization: */
+static void finalize_eagers(int eager_level)
 {
-    struct disappearing_link * curr_dl;
-    struct finalizable_object * curr_fo;
-    ptr_t real_ptr, real_link;
-    int dl_size = (log_dl_table_size == -1 ) ? 0 : (1 << log_dl_table_size);
-    int fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
-    int i;
+  struct finalizable_object * curr_fo, * prev_fo, * next_fo;
+  struct finalizable_object * end_eager_mark;
+  ptr_t real_ptr;
+  register int i;
+  int fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
 
-    GC_printf0("Disappearing links:\n");
-    for (i = 0; i < dl_size; i++) {
-      for (curr_dl = dl_head[i]; curr_dl != 0; curr_dl = dl_next(curr_dl)) {
-        real_ptr = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_obj);
-        real_link = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_link);
-        GC_printf2("Object: 0x%lx, Link:0x%lx\n", real_ptr, real_link);
+  end_eager_mark = GC_finalize_now; /* PLTSCHEME */
+  for (i = 0; i < fo_size; i++) {
+    curr_fo = fo_head[i];
+    prev_fo = 0;
+    while (curr_fo != 0) {
+      if (curr_fo -> eager_level == eager_level) {
+	real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
+	if (!GC_is_marked(real_ptr)) {
+	  /* We assume that (non-eager) finalization orders do not
+	     need to take into account connections through memory
+	     with eager finalizations. Otherwise, this mark bit
+	     could break the chain from one (non-eager) finalizeable
+	     to another. */
+	  GC_set_mark_bit(real_ptr);
+	  
+	  /* Delete from hash table */
+	  next_fo = fo_next(curr_fo);
+	  if (prev_fo == 0) {
+	    fo_head[i] = next_fo;
+	  } else {
+	    fo_set_next(prev_fo, next_fo);
+	  }
+	  GC_fo_entries--;
+	  /* Add to list of objects awaiting finalization.	*/
+	  fo_set_next(curr_fo, GC_finalize_now);
+	  GC_finalize_now = curr_fo;
+	  /* unhide object pointer so any future collections will	*/
+	  /* see it.						*/
+	  curr_fo -> fo_hidden_base = 
+	    (word) REVEAL_POINTER(curr_fo -> fo_hidden_base);
+	  GC_words_finalized +=
+	    ALIGNED_WORDS(curr_fo -> fo_object_size)
+	      + ALIGNED_WORDS(sizeof(struct finalizable_object));
+#	    ifdef PRINTSTATS
+	  if (!GC_is_marked((ptr_t)curr_fo)) {
+	    ABORT("GC_finalize: found accessible unmarked object\n");
+	  }
+#	    endif
+	  curr_fo = next_fo;
+	} else {
+	  prev_fo = curr_fo;
+	  curr_fo = fo_next(curr_fo);
+	}
+      } else {
+	prev_fo = curr_fo;
+	curr_fo = fo_next(curr_fo);
       }
     }
-    GC_printf0("Finalizers:\n");
-    for (i = 0; i < fo_size; i++) {
-      for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
-        real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
-        GC_printf1("Finalizable object: 0x%lx\n", real_ptr);
+  }
+  
+  /* PLTSCHEME: Mark from queued eagers: */
+  for (curr_fo = GC_finalize_now; curr_fo != end_eager_mark; curr_fo = fo_next(curr_fo)) {
+    /* PLTSCHEME: if this is an eager finalization, then objects
+       accessible from real_ptr need to be marked */
+    if (curr_fo -> eager_level == eager_level) {
+      (*(curr_fo -> fo_mark_proc))(curr_fo -> fo_hidden_base);
+      while (!GC_mark_stack_empty()) MARK_FROM_MARK_STACK();
+      if (GC_mark_state != MS_NONE) {
+	/* Mark stack overflowed. Very unlikely. 
+	   Everything's ok, though. Just mark from scratch. */
+	while (!GC_mark_some((ptr_t)0));
       }
     }
+  }
 }
-#endif
 
 /* Called with world stopped.  Cause disappearing links to disappear,	*/
 /* and invoke finalizers.						*/
@@ -549,58 +664,116 @@ void GC_finalize()
     register int i;
     int dl_size = (log_dl_table_size == -1 ) ? 0 : (1 << log_dl_table_size);
     int fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
-    
-  /* Make disappearing links disappear */
+    /* PLTSCHEME: for resetting the disapearing link */
+    struct disappearing_link *done_dl = NULL, *last_done_dl = NULL;
+
+    /* Make disappearing links disappear */
+    /* PLTSCHEME: handle NULL real_link and remember old values */
     for (i = 0; i < dl_size; i++) {
       curr_dl = dl_head[i];
       prev_dl = 0;
       while (curr_dl != 0) {
-        real_ptr = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_obj);
+	/* PLTSCHEME: skip late dls: */
+	if (curr_dl->dl_special.kind == LATE_DL) {
+	  prev_dl = curr_dl;
+	  curr_dl = dl_next(curr_dl);
+	  continue;
+	}
+	/* PLTSCHEME: reorder and set real_ptr based on real_link: */
         real_link = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_link);
-        if (!GC_is_marked(real_ptr)) {
-            *(word *)real_link = 0;
-            next_dl = dl_next(curr_dl);
-            if (prev_dl == 0) {
-                dl_head[i] = next_dl;
-            } else {
-                dl_set_next(prev_dl, next_dl);
-            }
-            GC_clear_mark_bit((ptr_t)curr_dl);
-            GC_dl_entries--;
-            curr_dl = next_dl;
-        } else {
+        real_ptr = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_obj);
+	if (!real_ptr)
+	  real_ptr = (ptr_t)GC_base(*(GC_PTR *)real_link);
+	/* PLTSCHEME: keep the dl entry if dl_special.kind = 1: */
+        if (real_ptr && !GC_is_marked(real_ptr)) {
+	  int needs_restore = (curr_dl->dl_special.kind == RESTORE_DL);
+	  if (needs_restore)
+  	    curr_dl->dl_special.value = *(word *)real_link;
+	  *(word *)real_link = 0;
+
+	  next_dl = dl_next(curr_dl);
+
+          if (needs_restore && curr_dl->dl_special.value) {
+	    if (!last_done_dl)
+	      done_dl = curr_dl;
+	    else
+	      last_done_dl->restore_next = curr_dl;
+	    last_done_dl = curr_dl;
+	  } else {
+	    if (prev_dl == 0)
+	      dl_head[i] = next_dl;
+	    else
+	      dl_set_next(prev_dl, next_dl);
+
+	    GC_clear_mark_bit((ptr_t)curr_dl);
+ 	    GC_dl_entries--;
+	  }
+	  curr_dl = next_dl;
+	} else {
             prev_dl = curr_dl;
             curr_dl = dl_next(curr_dl);
         }
       }
     }
+
+    /* PLTSCHEME: set NULL terminator: */
+    if (last_done_dl)
+      last_done_dl->restore_next = NULL;
+
+  /* PLTSCHEME: All eagers first */
+  /* Enqueue for finalization all EAGER objects that are still		*/
+  /* unreachable.							*/
+    GC_words_finalized = 0;
+    finalize_eagers(1);
+    if (GC_push_last_roots_again) GC_push_last_roots_again();
+    finalize_eagers(2);
+    if (GC_push_last_roots_again) GC_push_last_roots_again();
+
   /* Mark all objects reachable via chains of 1 or more pointers	*/
   /* from finalizable objects.						*/
+  /* PLTSCHEME: non-eager finalizations only (eagers already marked) */
+#   ifdef PRINTSTATS
     GC_ASSERT(GC_mark_state == MS_NONE);
+#   endif
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
-        real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
-        if (!GC_is_marked(real_ptr)) {
-	    GC_MARKED_FOR_FINALIZATION(real_ptr);
-            GC_MARK_FO(real_ptr, curr_fo -> fo_mark_proc);
-            if (GC_is_marked(real_ptr)) {
-                WARN("Finalization cycle involving %lx\n", real_ptr);
+	if (!(curr_fo -> eager_level)) { /* PLTSCHEME */
+	  real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
+	  if (!GC_is_marked(real_ptr)) {
+            (*(curr_fo -> fo_mark_proc))(real_ptr);
+            while (!GC_mark_stack_empty()) MARK_FROM_MARK_STACK();
+            if (GC_mark_state != MS_NONE) {
+	      /* Mark stack overflowed. Very unlikely. */
+#		ifdef PRINTSTATS
+	      if (GC_mark_state != MS_INVALID) ABORT("Bad mark state");
+	      GC_printf0("Mark stack overflowed in finalization!!\n");
+#		endif
+	      /* Make mark bits consistent again.  Forget about	*/
+	      /* finalizing this object for now.			*/
+	      GC_set_mark_bit(real_ptr);
+	      while (!GC_mark_some((ptr_t)0));
             }
-        }
+#if 0
+            if (GC_is_marked(real_ptr)) {
+	      /* PLTSCHEME: we have some ok cycles (below a parent) */
+	      printf("Finalization cycle involving %lx\n", real_ptr);
+            }
+#endif
+	  }
+	}
       }
     }
   /* Enqueue for finalization all objects that are still		*/
   /* unreachable.							*/
-    GC_words_finalized = 0;
+    /* GC_words_finalized = 0; */ /* PLTSCHEME: done above */
     for (i = 0; i < fo_size; i++) {
       curr_fo = fo_head[i];
       prev_fo = 0;
       while (curr_fo != 0) {
         real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
-	    if (!GC_java_finalization) {
-              GC_set_mark_bit(real_ptr);
-	    }
+            GC_set_mark_bit(real_ptr);
+
             /* Delete from hash table */
               next_fo = fo_next(curr_fo);
               if (prev_fo == 0) {
@@ -619,7 +792,6 @@ void GC_finalize()
               GC_words_finalized +=
                  	ALIGNED_WORDS(curr_fo -> fo_object_size)
               		+ ALIGNED_WORDS(sizeof(struct finalizable_object));
-	    GC_ASSERT(GC_is_marked(GC_base((ptr_t)curr_fo)));
             curr_fo = next_fo;
         } else {
             prev_fo = curr_fo;
@@ -628,22 +800,18 @@ void GC_finalize()
       }
     }
 
-  if (GC_java_finalization) {
-    /* make sure we mark everything reachable from objects finalized
-       using the no_order mark_proc */
-      for (curr_fo = GC_finalize_now; 
-  	 curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
-  	real_ptr = (ptr_t)curr_fo -> fo_hidden_base;
-  	if (!GC_is_marked(real_ptr)) {
-  	    if (curr_fo -> fo_mark_proc == GC_null_finalize_mark_proc) {
-  	        GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
-  	    }
-  	    GC_set_mark_bit(real_ptr);
-  	}
-      }
-  }
+    /* PLTSCHEME: Restore disappeared links. */
+    curr_dl = done_dl;
+    while (curr_dl != 0) {
+      real_link = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_link);
+      *(word *)real_link = curr_dl->dl_special.value;
+      curr_dl->dl_special.kind = RESTORE_DL;
+      prev_dl = curr_dl;
+      curr_dl = curr_dl->restore_next;
+      prev_dl->restore_next = NULL;
+    }
 
-  /* Remove dangling disappearing links. */
+    /* Remove dangling disappearing links. */
     for (i = 0; i < dl_size; i++) {
       curr_dl = dl_head[i];
       prev_dl = 0;
@@ -665,9 +833,49 @@ void GC_finalize()
         }
       }
     }
+
+    /* PLTSCHEME: late disappearing links */
+    for (i = 0; i < dl_size; i++) {
+      curr_dl = dl_head[i];
+      prev_dl = 0;
+      while (curr_dl != 0) {
+	if (curr_dl -> dl_special.kind == LATE_DL) {
+	  /* PLTSCHEME: reorder and set real_ptr based on real_link: */
+	  real_link = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_link);
+	  real_ptr = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_obj);
+	  if (!real_ptr)
+	    real_ptr = (ptr_t)GC_base(*(GC_PTR *)real_link);
+	  if (real_ptr && !GC_is_marked(real_ptr)) {
+	    *(word *)real_link = 0;
+
+	    next_dl = dl_next(curr_dl);
+
+	    if (prev_dl == 0)
+	      dl_head[i] = next_dl;
+	    else
+	      dl_set_next(prev_dl, next_dl);
+
+	    GC_clear_mark_bit((ptr_t)curr_dl);
+ 	    GC_dl_entries--;
+
+	    curr_dl = next_dl;
+	  } else {
+	    prev_dl = curr_dl;
+	    curr_dl = dl_next(curr_dl);
+	  }
+	} else {
+	  prev_dl = curr_dl;
+	  curr_dl = dl_next(curr_dl);
+        }
+      }
+    }
+
+    /* PLTSCHEME: */
+    if (GC_custom_finalize)
+      GC_custom_finalize();
 }
 
-#ifndef JAVA_FINALIZATION_NOT_NEEDED
+#ifdef JAVA_FINALIZATION
 
 /* Enqueue all remaining finalizers to be run - Assumes lock is
  * held, and signals are disabled */
@@ -722,15 +930,10 @@ void GC_enqueue_all_finalizers()
  * Unfortunately, the Java standard implies we have to keep running
  * finalizers until there are no more left, a potential infinite loop.
  * YUCK.
- * Note that this is even more dangerous than the usual Java
- * finalizers, in that objects reachable from static variables
- * may have been finalized when these finalizers are run.
- * Finalizers run at this point must be prepared to deal with a
- * mostly broken world.
  * This routine is externally callable, so is called without 
  * the allocation lock. 
  */
-GC_API void GC_finalize_all()
+void GC_finalize_all()
 {
     DCL_LOCK_STATE;
 
@@ -749,22 +952,20 @@ GC_API void GC_finalize_all()
 }
 #endif
 
-/* Returns true if it is worth calling GC_invoke_finalizers. (Useful if	*/
-/* finalizers can only be called from some kind of `safe state' and	*/
-/* getting into that safe state is expensive.)				*/
-int GC_should_invoke_finalizers GC_PROTO((void))
-{
-    return GC_finalize_now != 0;
-}
-
 /* Invoke finalizers for all objects that are ready to be finalized.	*/
 /* Should be called without allocation lock.				*/
 int GC_invoke_finalizers()
 {
+    static int doing = 0; /* PLTSCHEME */
     struct finalizable_object * curr_fo;
     int count = 0;
     word mem_freed_before;
     DCL_LOCK_STATE;
+
+    /* PLTSCHEME: don't allow nested finalizations */
+    if (doing)
+      return 0;
+    doing++;
     
     while (GC_finalize_now != 0) {
 #	ifdef THREADS
@@ -795,6 +996,9 @@ int GC_invoke_finalizers()
     	    GC_free((GC_PTR)curr_fo);
 #	endif
     }
+
+    doing--; /* PLTSCHEME */
+
     if (count != 0 && mem_freed_before != GC_mem_freed) {
         LOCK();
 	GC_finalizer_mem_freed += (GC_mem_freed - mem_freed_before);
@@ -839,7 +1043,7 @@ void GC_notify_or_invoke_finalizers GC_PROTO((void))
       }
 #   endif
     if (GC_finalize_now == 0) return;
-    if (!GC_finalize_on_demand) {
+    {
 	(void) GC_invoke_finalizers();
 #	ifndef THREADS
 	  GC_ASSERT(GC_finalize_now == 0);
@@ -895,3 +1099,16 @@ void GC_print_finalization_stats()
 }
 
 #endif /* NO_DEBUGGING */
+
+
+/* PLTSCHEME: GC_register_fnl_statics */
+/* See call in GC_init_inner (misc.c) for details. */
+void GC_register_fnl_statics(void)
+{
+#define REG(p) GC_add_roots_inner((char *)&p, ((char *)&p) + sizeof(p) + 1, FALSE);
+
+  REG(GC_finalize_now);
+  REG(GC_fo_entries);
+  REG(dl_head);
+  REG(fo_head);
+}

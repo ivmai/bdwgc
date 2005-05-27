@@ -645,12 +645,19 @@ word GC_get_writable_length(ptr_t p, ptr_t *base)
 
 ptr_t GC_get_stack_base()
 {
+  /* PLTSCHEME: set page size if it's not ready (so I can use this
+     function before a GC happens). */
+  if (!GC_page_size) GC_setpagesize();
+  {
+
     int dummy;
     ptr_t sp = (ptr_t)(&dummy);
     ptr_t trunc_sp = (ptr_t)((word)sp & ~(GC_page_size - 1));
     word size = GC_get_writable_length(trunc_sp, 0);
    
     return(trunc_sp + size);
+
+  } /* PLTSCHEME: close brace */
 }
 
 
@@ -1565,6 +1572,13 @@ ptr_t GC_unix_get_mem(bytes)
 word bytes;
 {
     void *result;
+    /* PLTSCHEME: make sure HEAP_START and MAP_FAILED are defined: */
+#if !defined(HEAP_START)
+# define HEAP_START 0
+#endif
+#if !defined(MAP_FAILED)
+# define MAP_FAILED ((void *)-1)
+#endif
     static ptr_t last_addr = HEAP_START;
 
 #   ifndef USE_MMAP_ANON
@@ -1602,6 +1616,18 @@ word bytes;
 ptr_t GC_unix_get_mem(bytes)
 word bytes;
 {
+  /* PLTSCHEME: The SunOS4 man page says not use to sbrk() with malloc().
+     Xt definitely breaks in SunOS 4.x if I use sbrk. */
+#if defined(sun)
+  ptr_t mem;
+
+  mem = malloc(bytes + HBLKSIZE - 1);
+
+  if ((long)mem % HBLKSIZE)
+    return mem + (HBLKSIZE - ((long)mem % HBLKSIZE));
+  else
+    return mem;
+#else /* PLTSCHEME: end malloc() */
   ptr_t result;
 # ifdef IRIX5
     /* Bare sbrk isn't thread safe.  Play by malloc rules.	*/
@@ -1623,6 +1649,7 @@ word bytes;
     __UNLOCK_MALLOC();
 # endif
   return(result);
+#endif /* PLTSCHEME: close */
 }
 
 #endif /* Not USE_MMAP */
@@ -1682,9 +1709,10 @@ word bytes;
 	/* This wastes a small amount of memory, and risks	*/
 	/* increased fragmentation.  But better alternatives	*/
 	/* would require effort.				*/
+        /* PLTSCHEME: PAGE_READWRITE works better for MrEd (because I don't need execute?) */
         result = (ptr_t) VirtualAlloc(NULL, bytes + 1,
     				      MEM_COMMIT | MEM_RESERVE,
-    				      PAGE_EXECUTE_READWRITE);
+    				      PAGE_READWRITE);
     }
     if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
     	/* If I read the documentation correctly, this can	*/
@@ -2933,7 +2961,8 @@ word len;
 /* to the write-protected heap with a system call.			*/
 /* This still serves as sample code if you do want to wrap system calls.*/
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(GC_USE_LD_WRAP)
+/* PLTSCHEME: no read() redefinition for MacOS X */
+#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(GC_USE_LD_WRAP) && !defined(DARWIN)
 /* Replacement for UNIX system call.					  */
 /* Other calls that write to the heap should be handled similarly.	  */
 /* Note that this doesn't work well for blocking reads:  It will hold	  */
@@ -3505,7 +3534,10 @@ static void *GC_mprotect_thread(void *arg) {
 
     mach_msg_id_t id;
 
+    /* PLTSCHEME: only needed when THREADS? */
+#if defined(THREADS)
     GC_darwin_register_mach_handler_thread(mach_thread_self());
+#endif
     
     for(;;) {
         r = mach_msg(

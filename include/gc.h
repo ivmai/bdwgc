@@ -683,6 +683,16 @@ GC_API void GC_debug_register_finalizer_no_order
 		  GC_finalization_proc *ofn, GC_PTR *ocd));
 
 
+/* PLTSCHEME: eager finalizers do not care about cycles at all.
+   The intent is for guardian-like and will-like uses where
+   the object will always be made immediately live again, but
+   some action needed to be triggered by the object's (possibly
+   temporary) unreachableness. */
+GC_API void GC_register_eager_finalizer
+    	GC_PROTO((GC_PTR obj, int eager_level,
+                  GC_finalization_proc fn, GC_PTR cd,
+		  GC_finalization_proc *ofn, GC_PTR *ocd));
+
 /* The following routine may be used to break cycles between	*/
 /* finalizable objects, thus causing cyclic finalizable		*/
 /* objects to be finalized in the correct order.  Standard	*/
@@ -937,6 +947,8 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
      * from the statically loaded program section.
      * This circumvents a Solaris 2.X (X<=4) linker bug.
      */
+/* PLTSCHEME: "extern" provided by Matthew.R.Wette@jpl.nasa.gov: */
+extern void GC_noop(void *p, ...);
 #   define GC_INIT() { extern end, etext; \
 		       GC_noop(&end, &etext); }
 #else
@@ -971,6 +983,19 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
 #if defined(GC_REDIRECT_TO_LOCAL) && !defined(GC_LOCAL_ALLOC_H)
 #  include  "gc_local_alloc.h"
 #endif
+
+/* PLTSCHEME: */
+GC_API void (*GC_custom_finalize)(void);
+GC_API void (*GC_push_last_roots)(void);
+GC_API void (*GC_push_last_roots_again)(void);
+GC_API void (*GC_collect_start_callback)(void);
+GC_API void (*GC_collect_end_callback)(void);
+GC_API void (*GC_out_of_memory)(void);
+GC_API int GC_did_mark_stack_overflow(void);
+GC_API void GC_mark_from_mark_stack(void);
+GC_API void GC_flush_mark_stack(void);
+GC_API long GC_get_memory_use(void);
+GC_API void GC_pre_init(void);
 
 #ifdef __cplusplus
     }  /* end of extern "C" */

@@ -38,6 +38,9 @@ static int n_root_sets = 0;
 
 	/* GC_static_roots[0..n_root_sets) contains the valid root sets. */
 
+/* PLTSCHEME: hook for last roots; need to mark copies of the stack */
+void (*GC_push_last_roots)() = 0;
+
 # if !defined(NO_DEBUGGING)
 /* For debugging:	*/
 void GC_print_static_roots()
@@ -175,7 +178,8 @@ GC_bool tmp;
 {
     struct roots * old;
     
-#   if defined(MSWIN32) || defined(MSWINCE)
+/* PLTSCHEME: always merge overlapping: */
+#   if 1 || defined(MSWIN32) || defined(MSWINCE)
       /* Spend the time to ensure that there are no overlapping	*/
       /* or adjacent intervals.					*/
       /* This could be done faster with e.g. a			*/
@@ -187,7 +191,8 @@ GC_bool tmp;
         
         for (i = 0; i < n_root_sets; i++) {
             old = GC_static_roots + i;
-            if ((ptr_t)b <= old -> r_end && (ptr_t)e >= old -> r_start) {
+            if ((ptr_t)b <= old -> r_end && (ptr_t)e >= old -> r_start
+		&& tmp == old -> r_tmp) { /* PLTSCHEME: merge only same kinds */
                 if ((ptr_t)b < old -> r_start) {
                     old -> r_start = (ptr_t)b;
                     GC_root_size += (old -> r_start - (ptr_t)b);
@@ -208,7 +213,9 @@ GC_bool tmp;
               other = GC_static_roots + i;
               b = (char *)(other -> r_start);
               e = (char *)(other -> r_end);
-              if ((ptr_t)b <= old -> r_end && (ptr_t)e >= old -> r_start) {
+	      tmp = other -> r_tmp; /* PLTSCHEME */
+              if ((ptr_t)b <= old -> r_end && (ptr_t)e >= old -> r_start
+		  && tmp == old -> r_tmp) {  /* PLTSCHEME: merge only same kinds */
                 if ((ptr_t)b < old -> r_start) {
                     old -> r_start = (ptr_t)b;
                     GC_root_size += (old -> r_start - (ptr_t)b);
@@ -645,5 +652,13 @@ ptr_t cold_gc_frame;
         /* Note that without interior pointer recognition lots	*/
     	/* of stuff may have been pushed already, and this	*/
     	/* should be careful about mark stack overflows.	*/
+    /* PLTSCHEME: hook for last roots; need to mark copies of the stack */
+    if (GC_push_last_roots != 0) (*GC_push_last_roots)();
 }
 
+
+/* PLTSCHEME */
+void GC_flush_mark_stack()
+{
+  while (!GC_mark_stack_empty()) GC_mark_from_mark_stack();
+}
