@@ -2443,6 +2443,8 @@ Since gc7.0alpha5
    (more 6.7 changes)
  - Declare GC_dump() in gc.h.
  - Add --enable-large-config, which just defines the LARGE_CONFIG macro.
+ - Make GlobalAlloc address alignment a bit more intuitive.  (Thanks to
+   Charles Mills.)
   
 To do:
  - REDIRECT_MALLOC and threads combination is getting closer, but currently

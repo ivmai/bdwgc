@@ -1703,7 +1703,7 @@ ptr_t GC_win32_get_mem(word bytes)
     	/* There are also unconfirmed rumors of other		*/
     	/* problems, so we dodge the issue.			*/
         result = (ptr_t) GlobalAlloc(0, bytes + HBLKSIZE);
-        result = (ptr_t)(((word)result + HBLKSIZE) & ~(HBLKSIZE-1));
+        result = (ptr_t)(((word)result + HBLKSIZE - 1) & ~(HBLKSIZE-1));
     } else {
 	/* VirtualProtect only works on regions returned by a	*/
 	/* single VirtualAlloc call.  Thus we allocate one 	*/
