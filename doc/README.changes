@@ -2436,6 +2436,11 @@ Since gc7.0alpha4
  - Made thread local allocation sort of work with Cygwin.  The code should
    be there to deal with other Windows variants, But non-Cygwin Windows
    threads need more bug fixes.
+
+Since gc7.0alpha5
+   (more 6.7 changes)
+ - Declare GC_dump() in gc.h.
+ - Add --enable-large-config, which just defines the LARGE_CONFIG macro.
   
 To do:
  - REDIRECT_MALLOC and threads combination is getting closer, but currently

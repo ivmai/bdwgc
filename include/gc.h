@@ -849,6 +849,11 @@ GC_API void * GC_is_visible (void * p);
 /* Always returns its argument.						*/
 GC_API void * GC_is_valid_displacement (void *	p);
 
+/* Explicitly dump the GC state.  This is most often called from the	*/
+/* debugger, or by setting the GC_DUMP_REGULARLY environment variable,	*/
+/* but it may be useful to call it from client code during debugging.	*/
+void GC_dump(void);
+
 /* Safer, but slow, pointer addition.  Probably useful mainly with 	*/
 /* a preprocessor.  Useful only for heap pointers.			*/
 #ifdef GC_DEBUG
@@ -916,7 +921,7 @@ GC_API void (*GC_is_visible_print_proc) (void * p);
 void * GC_malloc_many(size_t lb);
 #define GC_NEXT(p) (*(void * *)(p)) 	/* Retrieve the next element	*/
 					/* in returned list.		*/
-extern void GC_thr_init(void);	/* Needed for Solaris/X86	*/
+extern void GC_thr_init(void);	/* Needed for Solaris/X86 ??	*/
 
 #endif /* THREADS && !SRC_M3 */
 

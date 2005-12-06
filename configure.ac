@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha6,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.1 $)
+AC_REVISION($Revision: 1.2 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -446,6 +446,13 @@ if test "${enable_redirect_malloc}" = yes; then
     fi
 fi
 
+AC_ARG_ENABLE(large-config,
+    [AC_HELP_STRING([--enable-large-config],
+	[Optimize for large (> 100 MB) heap or root set])])
+
+if test "${enable_large_config}" = yes; then
+    AC_DEFINE(LARGE_CONFIG, 1, [Define to optimize for large heaps or root sets])
+fi
 
 dnl This is something of a hack.  When cross-compiling we turn off
 dnl some functionality.  We also enable the "small" configuration.

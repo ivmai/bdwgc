@@ -1782,7 +1782,7 @@ void GC_print_hblkfreelist(void);
 void GC_print_heap_sects(void);
 void GC_print_static_roots(void);
 void GC_print_finalization_stats(void);
-void GC_dump(void);
+/* void GC_dump(void); - declared in gc.h */
 
 #ifdef KEEP_BACK_PTRS
    void GC_store_back_pointer(ptr_t source, ptr_t dest);
