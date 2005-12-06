@@ -2249,6 +2249,9 @@ Since 6.6:
    value.  Added a cast to GC_adj_words_allocd.  Use GetModuleHandleA
    when retrieving a handle to kernel32.dll under win32.  (Thanks to the
    Visual Prolog developers.)
+ - Added Tandem S-Series support.  (Thanks to Craig McDaniel.  A modified
+   version of his patch was applied, and hence breakage is probably not
+   his fault.)
 
 Since gc6.7:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler

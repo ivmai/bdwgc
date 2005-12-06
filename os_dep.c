@@ -1551,7 +1551,7 @@ void GC_register_data_segments(void)
 
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
 	&& !defined(MSWIN32) && !defined(MSWINCE) \
-	&& !defined(MACOS) && !defined(DOS4GW)
+	&& !defined(MACOS) && !defined(DOS4GW) && !defined(NONSTOP)
 
 # define SBRK_ARG_T ptrdiff_t
 

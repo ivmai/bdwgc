@@ -43,6 +43,10 @@
   int GC_log;  /* Forward decl, so we can set it.	*/
 #endif
 
+#ifdef NONSTOP
+# include <floss.h>
+#endif
+
 #if defined(THREADS) && defined(PCR)
 # include "il/PCR_IL.h"
   PCR_Th_ML GC_allocate_ml;

@@ -435,6 +435,13 @@
 #     define  mach_type_known
 #    endif 
 # endif
+# if defined(__TANDEM)
+    /* Nonstop S-series */
+    /* FIXME: Should recognize Integrity series? */
+#   define MIPS
+#   define NONSTOP
+#   define mach_type_known
+# endif
 
 /* Feel free to add more clauses here */
 
@@ -455,8 +462,8 @@
 		    /*		     FREEBSD, THREE86BSD, MSWIN32,	*/
 		    /* 		     BSDI,SUNOS5, NEXT, other variants)	*/
                     /*             NS32K      ==> Encore Multimax 	*/
-                    /*             MIPS       ==> R2000 or R3000	*/
-                    /*			(ULTRIX variants)		*/
+                    /*             MIPS       ==> R2000 through R14K	*/
+                    /*			(many variants)			*/
                     /*		   VAX	      ==> DEC VAX		*/
                     /*			(BSD, ULTRIX variants)		*/
                     /*		   HP_PA      ==> HP9000/700 & /800	*/
@@ -1344,6 +1351,16 @@
 #       define STACKBOTTOM ((ptr_t) 0x7ffff000)
 #     endif /* _ELF_ */
 #  endif
+#  if defined(NONSTOP)
+#    define CPP_WORDSZ 32
+#    define OS_TYPE "NONSTOP"
+#    define ALIGNMENT 4
+#    define DATASTART ((ptr_t) 0x08000000)
+     extern int _end[];
+#    define DATAEND (_end)
+#    define STACKBOTTOM ((ptr_t) 0x4fffffff)
+#    define USE_GENERIC_PUSH_REGS
+#   endif
 # endif
 
 # ifdef HP_PA
@@ -2110,7 +2127,7 @@
 					    + GC_page_size) \
 					    + GC_page_size-1)
 #   else
-#     if defined(NEXT) || defined(DOS4GW) || \
+#     if defined(NEXT) || defined(DOS4GW) || defined(NONSTOP) || \
 		 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) || \
 		 (defined(SUNOS5) && !defined(USE_MMAP))
 #       define GET_MEM(bytes) HBLKPTR((size_t) \
