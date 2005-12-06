@@ -2252,6 +2252,8 @@ Since 6.6:
  - Added Tandem S-Series support.  (Thanks to Craig McDaniel.  A modified
    version of his patch was applied, and hence breakage is probably not
    his fault.)
+ - Remove spurious gc:: qualifier for operator delete[] in gc_cpp.h.
+   (Thanks to Hanno Boeck.)
 
 Since gc6.7:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
