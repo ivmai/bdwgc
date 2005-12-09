@@ -67,6 +67,9 @@ defines, again enclosed in <TT>ifdef</tt>s.
 A section that fills in defaults for some macros left undefined in the preceding
 section, and defines some other macros that rarely need adjustment for
 new platforms.  You will typically not have to touch these.
+If you are porting to an OS that
+was previously completely unsupported, it is likely that you will
+need to add another clause to the definition of <TT>GET_MEM</tt>.
 </ol>
 The following macros must be defined correctly for each architecture and operating
 system:
@@ -200,6 +203,31 @@ of <TT>GC_malloc</tt>ed memory, e.g. 8-byte alignment with a
 32-bit ABI.  Most modern machines are likely to require this.
 This is no longer needed for GC7 and later.
 </dl>
+<H2>Additional requirements for a basic port</h2>
+In some cases, you may have to add additional platform-specific code
+to other files.  A likely candidate is the implementation of
+<TT>GC_with_callee_saves_pushed</tt> in </tt>mach_dep.c</tt>.
+This ensure that register contents that the collector must trace
+from are copied to the stack.  Typically this can be done portably,
+but on some platforms it may require assembly code, or just
+tweaking of conditional compilation tests.
+<P>
+For GC7, if your platform supports <TT>getcontext()</tt>, then definining
+the macro <TT>UNIX_LIKE</tt> for your OS in <TT>gcconfig.h</tt>
+(if it isn't defined there already) is likely to solve the problem.
+otherwise, if you are using gcc, <TT>_builtin_unwind_init()</tt>
+will be used, and should work fine.  If that is not applicable either,
+the implementation will try to use <TT>setjmp()</tt>.  This will work if your
+<TT>setjmp</tt> implementation saves all possibly pointer-valued registers
+into the buffer, as opposed to trying to unwind the stack at
+<TT>longjmp</tt> time.  The <TT>setjmp_test</tt> test tries to determine this,
+but often doesn't get it right.
+<P>
+In GC6.x versions of the collector, tracing of registers
+was more commonly handled
+with assembly code.  In GC7, this is generally to be avoided.
+<P>
+Most commonly <TT>os_dep.c</tt> will not require attention, but see below.
 <H2>Thread support</h2>
 Supporting threads requires that the collector be able to find and suspend
 all threads potentially accessing the garbage-collected heap, and locate
@@ -233,12 +261,18 @@ The easiest case is probably a new pthreads platform
 on which threads can be stopped
 with signals.  In this case, the changes involve:
 <OL>
-<LI>Introducing a suitable <TT>GC_xxx_THREADS</tt> macro, which should
+<LI>Introducing a suitable <TT>GC_</tt><I>X</i><TT>_THREADS</tt> macro, which should
 be automatically defined by <TT>gc_config_macros.h</tt> in the right cases.
 It should also result in a definition of <TT>GC_PTHREADS</tt>, as for the
 existing cases.
 <LI>For GC7+, ensuring that the <TT>atomic_ops</tt> package at least
-minimally supports the platform.  For earlier versions define
+minimally supports the platform.
+If incremental GC is needed, or if pthread locks don't
+perform adequately as the allocation lock, you will probably need to
+ensure that a sufficient <TT>atomic_ops</tt> port
+exists for the platform to provided an atomic test and set
+operation.  (Current GC7 versions require more<TT>atomic_ops</tt>
+asupport than necessary.  This is a bug.)  For earlier versions define
 <TT>GC_test_and_set</tt> in <TT>gc_locks.h</tt>.
 <LI>Making any needed adjustments to <TT>pthread_stop_world.c</tt> and
 <TT>pthread_support.c</tt>.  Ideally none should be needed.  In fact,
@@ -250,10 +284,23 @@ thread-local allocation and parallel marking requires further work
 in <TT>pthread_support.c</tt>, and may require better <TT>atomic_ops</tt>
 support.
 <H2>Dynamic library support</h2>
-The function <TT>GC-register_dynamic_libraries</tt> in <TT>dyn_load.c</tt>
-must be defined to invoke <TT>GC_cond_add_roots</tt> on each data segment
-that should be traced for pointers.  The implementation is highly
-platform specific.
+So long as <TT>DATASTART</tt> and <TT>DATAEND</tt> are defined correctly,
+the collector will trace memory reachable from file scope or <TT>static</tt>
+variables defined as part of the main executable.  This is sufficient
+if either the program is statically linked, or if pointers to the
+garbage-collected heap are never stored in non-stack variables
+defined in dynamic libraries.
+<P>
+If dynamic library data sections must also be traced, then
+<UL>
+<LI><TT>DYNAMIC_LOADING</tt> must be defined in the appropriate section
+of <TT>gcconfig.h</tt>.
+<LI>An appropriate versions of the functions
+<TT>GC_register_dynamic_libraries()</tt> should be defined in
+<TT>dyn_load.c</tt>.  This function should invoke
+<TT>GC_cond_add_roots(</tt><I>region_start, region_end</i><TT>, TRUE)</tt>
+on each dynamic library data section.
+</ul>
 <P>
 Implementations that scan for writable data segments are error prone, particularly
 in the presence of threads.  They frequently result in race conditions
@@ -266,7 +313,21 @@ It is usually safer to walk the dynamic linker data structure, especially
 if the linker exports an interface to do so.  But beware of poorly documented
 locking behavior in this case.
 <H2>Incremental GC support</h2>
-If incremental/generational GC support is needed, one of the
-"virtual dirty bit" implementations in <TT>os_dep.c</tt> must be ported.
+For incremental and generational collection to work, <TT>os_dep.c</tt>
+must contain a suitable "virtual dirty bit" implementation, which
+allows the collector to track which heap pages (assumed to be
+a multiple of the collectors block size) have been written during
+a certain time interval.  The collector provides several
+implementations, which might be adapted.  The default
+(<TT>DEFAULT_VDB</tt>) is a placeholder which treats all pages
+as having been written.  This ensures correctness, but renders
+incremental and generational collection essentially useless.
+<H2>Stack traces for debug support</h2>
+If stack traces in objects are need for debug support,
+<TT>GC_dave_callers</tt> and <TT>GC_print_callers</tt> must be
+implemented.
+<H2>Disclaimer</h2>
+This is an initial pass at porting guidelines.  Some things
+have no doubt been overlooked.
 </body>
 </html>

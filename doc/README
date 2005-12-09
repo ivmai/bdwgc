@@ -223,10 +223,6 @@ machines that use a flat 32-bit or 64-bit address space.
 That includes the vast majority of Workstations and X86 (X >= 3) PCs.
 (The list here was deleted because it was getting too long and constantly
 out of date.)
-  It does NOT run under plain 16-bit DOS or Windows 3.X.  There are however
-various packages (e.g. win32s, djgpp) that allow flat 32-bit address
-applications to run under those systemsif the have at least an 80386 processor,
-and several of those are compatible with the collector.
 
   In a few cases (Amiga, OS/2, Win32, MacOS) a separate makefile
 or equivalent is supplied.  Many of these have separate README.system
@@ -258,77 +254,8 @@ enforce less alignment for pointers.
 or 64 bit addresses will require a major effort.  A port to plain MSDOS
 or win16 is hard.
 
-  For machines not already mentioned, or for nonstandard compilers, the
-following are likely to require change:
-
-1.  The parameters in gcconfig.h.
-      The parameters that will usually require adjustment are
-   STACKBOTTOM,  ALIGNMENT and DATASTART.  Setjmp_test
-   prints its guesses of the first two.
-      DATASTART should be an expression for computing the
-   address of the beginning of the data segment.  This can often be
-   &etext.  But some memory management units require that there be
-   some unmapped space between the text and the data segment.  Thus
-   it may be more complicated.   On UNIX systems, this is rarely
-   documented.  But the adb "$m" command may be helpful.  (Note
-   that DATASTART will usually be a function of &etext.  Thus a
-   single experiment is usually insufficient.)
-     STACKBOTTOM is used to initialize GC_stackbottom, which
-   should be a sufficient approximation to the coldest stack address.
-   On some machines, it is difficult to obtain such a value that is
-   valid across a variety of MMUs, OS releases, etc.  A number of
-   alternatives exist for using the collector in spite of this.  See the
-   discussion in gcconfig.h immediately preceding the various
-   definitions of STACKBOTTOM.
-   
-2.  mach_dep.c.
-      The most important routine here is one to mark from registers.
-    The distributed file includes a generic hack (based on setjmp) that
-    happens to work on many machines, and may work on yours.  Try
-    compiling and running setjmp_t.c to see whether it has a chance of
-    working.  (This is not correct C, so don't blame your compiler if it
-    doesn't work.  Based on limited experience, register window machines
-    are likely to cause trouble.  If your version of setjmp claims that
-    all accessible variables, including registers, have the value they
-    had at the time of the longjmp, it also will not work.  Vanilla 4.2 BSD
-    on Vaxen makes such a claim.  SunOS does not.)
-      If your compiler does not allow in-line assembly code, or if you prefer
-    not to use such a facility, mach_dep.c may be replaced by a .s file
-    (as we did for the MIPS machine and the PC/RT).
-      At this point enough architectures are supported by mach_dep.c
-    that you will rarely need to do more than adjust for assembler
-    syntax.
-
-3.  os_dep.c (and gc_priv.h).
-  	  Several kinds of operating system dependent routines reside here.
-  	Many are optional.  Several are invoked only through corresponding
-  	macros in gc_priv.h, which may also be redefined as appropriate.
-      The routine GC_register_data_segments is crucial.  It registers static
-    data areas that must be traversed by the collector. (User calls to
-    GC_add_roots may sometimes be used for similar effect.)
-      Routines to obtain memory from the OS also reside here.
-    Alternatively this can be done entirely by the macro GET_MEM
-    defined in gc_priv.h.  Routines to disable and reenable signals
-    also reside here if they are need by the macros DISABLE_SIGNALS
-    and ENABLE_SIGNALS defined in gc_priv.h.
-      In a multithreaded environment, the macros LOCK and UNLOCK
-    in gc_priv.h will need to be suitably redefined.
-      The incremental collector requires page dirty information, which
-    is acquired through routines defined in os_dep.c.  Unless directed
-    otherwise by gcconfig.h, these are implemented as stubs that simply
-    treat all pages as dirty.  (This of course makes the incremental
-    collector much less useful.)
-
-4.  dyn_load.c
-	This provides a routine that allows the collector to scan data
-	segments associated with dynamic libraries.  Often it is not
-	necessary to provide this routine unless user-written dynamic
-	libraries are used.
-
-  For a different version of UN*X or different machines using the
-Motorola 68000, Vax, SPARC, 80386, NS 32000, PC/RT, or MIPS architecture,
-it should frequently suffice to change definitions in gcconfig.h.
-
+  For machines not already mentioned, or for nonstandard compilers,
+some porting suggestions are provided in the "porting.html" file.
 
 THE C INTERFACE TO THE ALLOCATOR
 
