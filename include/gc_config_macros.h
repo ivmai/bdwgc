@@ -65,7 +65,7 @@
 #   define GC_LINUX_THREADS
 #   define GC_PTHREADS
 # endif
-# if !defined(LINUX) && (defined(_PA_RISC1_1) || defined(_PA_RISC2_0) \
+# if !defined(__linux__) && (defined(_PA_RISC1_1) || defined(_PA_RISC2_0) \
                          || defined(hppa) || defined(__HPPA))
 #   define GC_HPUX_THREADS
 #   define GC_PTHREADS

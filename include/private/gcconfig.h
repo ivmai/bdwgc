@@ -699,7 +699,7 @@
 # endif
 
 # if defined(POWERPC)
-#   defined MACH_TYPE "POWERPC"
+#   define MACH_TYPE "POWERPC"
 #   ifdef MACOS
 #     define ALIGNMENT 2  /* Still necessary?  Could it be 4?	*/
 #     ifndef __LOWMEM__
@@ -2116,58 +2116,44 @@
 	/* though we should perhaps take advantage of the case in which */
 	/* does.							*/
 	struct hblk;	/* See gc_priv.h.	*/
-# ifdef PCR
-	    char * real_malloc();
+# if defined(PCR)
+    char * real_malloc();
 #   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)bytes + GC_page_size) \
 					  + GC_page_size-1)
-# else
-#   ifdef OS2
-	      void * os2_alloc(size_t bytes);
-#     define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc((size_t)bytes \
+# elif defined(OS2)
+    void * os2_alloc(size_t bytes);
+#   define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc((size_t)bytes \
 					    + GC_page_size) \
 					    + GC_page_size-1)
-#   else
-#     if defined(NEXT) || defined(DOS4GW) || defined(NONSTOP) || \
+# elif defined(NEXT) || defined(DOS4GW) || defined(NONSTOP) || \
 		 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) || \
 		 (defined(SUNOS5) && !defined(USE_MMAP))
-#       define GET_MEM(bytes) HBLKPTR((size_t) \
-					      calloc(1, (size_t)bytes + GC_page_size) \
-					      + GC_page_size-1)
-#     else
-#	ifdef MSWIN32
-	  extern ptr_t GC_win32_get_mem();
-#         define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
-#	else
-#	  ifdef MACOS
-#	    if defined(USE_TEMPORARY_MEMORY)
-			extern Ptr GC_MacTemporaryNewPtr(size_t size,
-							 Boolean clearMemory);
-#               define GET_MEM(bytes) HBLKPTR( \
+#   define GET_MEM(bytes) HBLKPTR((size_t) calloc(1, (size_t)bytes + GC_page_size) \
+					             + GC_page_size-1)
+# elif defined(MSWIN32)
+    extern ptr_t GC_win32_get_mem();
+#   define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
+# elif defined(MACOS)
+#   if defined(USE_TEMPORARY_MEMORY)
+      extern Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory);
+#     define GET_MEM(bytes) HBLKPTR( \
 			    GC_MacTemporaryNewPtr(bytes + GC_page_size, true) \
 			    + GC_page_size-1)
-#	    else
-#         	    define GET_MEM(bytes) HBLKPTR( \
+#   else
+#     define GET_MEM(bytes) HBLKPTR( \
 				NewPtrClear(bytes + GC_page_size) + GC_page_size-1)
-#	    endif
-#	  else
-#	    ifdef MSWINCE
-	      extern ptr_t GC_wince_get_mem();
-#	      define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
-#	    else
-#	      if defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
-			extern void *GC_amiga_get_mem(size_t size);
-#		define GET_MEM(bytes) HBLKPTR((size_t) \
+#   endif
+# elif defined(MSWINCE)
+    extern ptr_t GC_wince_get_mem();
+#   define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
+# elif defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
+    extern void *GC_amiga_get_mem(size_t size);
+#   define GET_MEM(bytes) HBLKPTR((size_t) \
 			  GC_amiga_get_mem((size_t)bytes + GC_page_size) \
 			  + GC_page_size-1)
-#	      else
-		extern ptr_t GC_unix_get_mem();
-#               define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
-#	      endif
-#	    endif
-#	  endif
-#	endif
-#     endif
-#   endif
+# else
+    extern ptr_t GC_unix_get_mem();
+#   define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
 # endif
 
 #endif /* GC_PRIVATE_H */
