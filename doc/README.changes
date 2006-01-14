@@ -2449,6 +2449,7 @@ Since gc7.0alpha5
  - Use #elif in the definitions of GET_MEM.
  - Overhaul porting.html.  Remove corresponding text from README.
  - Fix typo in DARWIN section of gcconfig.h.
+ - Fix Darwin thread memory leak.  (Thanks to Bruce Mitchener.)
   
 To do:
  - REDIRECT_MALLOC and threads combination is getting closer, but currently
