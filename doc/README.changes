@@ -2255,6 +2255,8 @@ Since 6.6:
  - Remove spurious gc:: qualifier for operator delete[] in gc_cpp.h.
    (Thanks to Hanno Boeck.)
  - Changed a test for LINUX in config_macros.h to one for __linux__.
+ - Add prototypes for GC_finalizer_notifier and GC_thr_init.  (Thanks to
+   David Ayers.)
 
 Since gc6.7:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
@@ -2450,6 +2452,7 @@ Since gc7.0alpha5
  - Overhaul porting.html.  Remove corresponding text from README.
  - Fix typo in DARWIN section of gcconfig.h.
  - Fix Darwin thread memory leak.  (Thanks to Bruce Mitchener.)
+ - Update x86 AO_test_and_set implementation to use "=q".
   
 To do:
  - REDIRECT_MALLOC and threads combination is getting closer, but currently

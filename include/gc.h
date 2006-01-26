@@ -114,7 +114,7 @@ GC_API int GC_java_finalization;
 			/* ordered finalization.  Default value is	*/
 			/* determined by JAVA_FINALIZATION macro.	*/
 
-GC_API void (* GC_finalizer_notifier)();
+GC_API void (* GC_finalizer_notifier)(void);
 			/* Invoked by the collector when there are 	*/
 			/* objects to be finalized.  Invoked at most	*/
 			/* once per GC cycle.  Never invoked unless 	*/
