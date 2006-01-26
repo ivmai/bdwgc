@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha6,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.2 $)
+AC_REVISION($Revision: 1.3 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -458,7 +458,6 @@ dnl This is something of a hack.  When cross-compiling we turn off
 dnl some functionality.  We also enable the "small" configuration.
 dnl These is only correct when targetting an embedded system.  FIXME.
 if test -n "${with_cross_host}"; then
-   AC_DEFINE(NO_SIGSET)
    AC_DEFINE(NO_CLOCK)
    AC_DEFINE(SMALL_CONFIG)
    AC_DEFINE(NO_DEBUGGING)
