@@ -2257,6 +2257,8 @@ Since 6.6:
  - Changed a test for LINUX in config_macros.h to one for __linux__.
  - Add prototypes for GC_finalizer_notifier and GC_thr_init.  (Thanks to
    David Ayers.)
+ - Use ld instead of nonexitent ldz instruction in Darwin FindTopOfStack.
+   (Thanks to Andreas Tobler.)
 
 Since gc6.7:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
