@@ -2259,6 +2259,8 @@ Since 6.6:
    David Ayers.)
  - Use ld instead of nonexitent ldz instruction in Darwin FindTopOfStack.
    (Thanks to Andreas Tobler.)
+ - Add support for Darwin/X86.  (Thanks to Geoff Norton and the Mono
+   developers.)
 
 Since gc6.7:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
