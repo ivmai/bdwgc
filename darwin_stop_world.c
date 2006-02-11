@@ -1,5 +1,7 @@
 #include "private/pthread_support.h"
 
+/* This probably needs more porting work to ppc64. */
+
 # if defined(GC_DARWIN_THREADS)
 
 /* From "Inside Mac OS X - Mach-O Runtime Architecture" published by Apple

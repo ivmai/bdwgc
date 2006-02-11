@@ -1362,8 +1362,8 @@
 #       define DATAEND /* not needed */
 #   endif
 #   if defined(NETBSD)
-#     define ALIGNMENT 4
 #     define OS_TYPE "NETBSD"
+#     define ALIGNMENT 4
 #     define HEURISTIC2
 #     ifdef __ELF__
         extern int etext[];

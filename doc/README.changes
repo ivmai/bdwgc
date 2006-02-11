@@ -2261,6 +2261,8 @@ Since 6.6:
    (Thanks to Andreas Tobler.)
  - Add support for Darwin/X86.  (Thanks to Geoff Norton and the Mono
    developers.)
+ - Merge in some recent gcc fixes.  Add ppc64 asm code.  (Thanks to Bryce
+   McKinley and other gcj developers.)
 
 Since gc6.7:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
