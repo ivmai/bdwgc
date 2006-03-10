@@ -27,6 +27,10 @@ int main()
           printf("-pthread\n");
 #       endif
 #   endif
+#   if defined(GC_NETBSD_THREADS)
+	  printf("-lpthread -lrt\n");
+#   endif
+
 #   if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS)
 	printf("-lpthread -lrt\n");
 #   endif

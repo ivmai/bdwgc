@@ -42,7 +42,8 @@
 #   elif defined(LINUX) && defined(__GNUC__)
 #     define USE_COMPILER_TLS
 #   elif (defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) || \
-         defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS))
+         defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS)) || \
+	 defined(GC_NETBSD_THREADS)
 #     define USE_PTHREAD_SPECIFIC
 #   elif defined(GC_HPUX_THREADS)
 #     ifdef __GNUC__

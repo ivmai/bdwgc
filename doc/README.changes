@@ -2263,6 +2263,17 @@ Since 6.6:
    developers.)
  - Merge in some recent gcc fixes.  Add ppc64 asm code.  (Thanks to Bryce
    McKinley and other gcj developers.)
+ - Scan MEM_PRIVATE sections under Windows ME and predecessors.
+ - Interior pointers with some largish offsets into large objects could
+   be ignored, if GC_all_interior_pointers was set.  (Oddly this worked
+   correctly for stack references if it was not set.  Otherwise it failed
+   for both stack and heap references.)  Thanks to Andrew McKinlay for the
+   critical test case.
+ - Integrated Tatsuya Bizenn's NETBSD threads support, with some
+   untested changes.
+ - Added GC_strdup and friends to make leak detection work correctly
+   for strdup clients.  (Thanks to Jon Moore.)  Fixed the existing strdup
+   with malloc redirection to handle a null malloc return correctly.
 
 Since gc6.7:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
@@ -2459,6 +2470,8 @@ Since gc7.0alpha5
  - Fix typo in DARWIN section of gcconfig.h.
  - Fix Darwin thread memory leak.  (Thanks to Bruce Mitchener.)
  - Update x86 AO_test_and_set implementation to use "=q".
+ - Add $(EXEEXT) to many tests in tests/tests.am.  (Corresponds to a
+   6.7 fix, which no longer applied.)
   
 To do:
  - REDIRECT_MALLOC and threads combination is getting closer, but currently

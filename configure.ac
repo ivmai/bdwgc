@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha6,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.3 $)
+AC_REVISION($Revision: 1.4 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -113,6 +113,13 @@ case "$THREADS" in
 	INCLUDES="$INCLUDES -pthread"
 	THREADDLLIBS=-pthread
       	;;
+     *-*-netbsd*)
+	AC_MSG_WARN("Only on NetBSD 2.0 or later.")
+	AC_DEFINE(GC_NETBSD_THREADS)
+	AC_DEFINE(_REENTRANT)
+	AC_DEFINE(_PTHREADS)
+	THREADDLLIBS="-lpthread -lrt"
+	;;
      *-*-solaris*)
 	AC_DEFINE(GC_SOLARIS_THREADS)
 	AC_DEFINE(GC_SOLARIS_PTHREADS)

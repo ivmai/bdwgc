@@ -14,6 +14,8 @@
  * modified is included with the above copyright notice.
  */
 
+#include <errno.h>
+#include <string.h>
 #include "private/dbg_mlc.h"
 
 void GC_default_print_heap_obj_proc();
@@ -634,6 +636,19 @@ void * GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)
     }
     ADD_CALL_CHAIN(result, ra);
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
+}
+
+char *GC_debug_strdup(const char *str, GC_EXTRA_PARAMS)
+{
+    char *copy;
+    if (str == NULL) return NULL;
+    copy = GC_debug_malloc_atomic(strlen(str) + 1, OPT_RA s, i);
+    if (copy == NULL) {
+      errno = ENOMEM;
+      return NULL;
+    }
+    strcpy(copy, str);
+    return copy;
 }
 
 void * GC_debug_malloc_uncollectable(size_t lb, GC_EXTRA_PARAMS)

@@ -1240,12 +1240,18 @@ void GC_register_data_segments(void)
     }
 
 # endif
+
+  GC_bool GC_wnt = FALSE;
+         /* This is a Windows NT derivative, i.e. NT, W2K, XP or later.  */
   
   void GC_init_win32(void)
   {
-    /* if we're running under win32s, assume that no DLLs will be loaded */
+    /* Set GC_wnt.							 */
+    /* If we're running under win32s, assume that no DLLs will be loaded */
+    /* I doubt anyone still runs win32s, but ...			 */
     DWORD v = GetVersion();
-    GC_no_win32_dlls |= ((v & 0x80000000) && (v & 0xff) <= 3);
+    GC_wnt = !(v & 0x80000000);
+    GC_no_win32_dlls |= ((!GC_wnt) && (v & 0xff) <= 3);
   }
 
   /* Return the smallest address a such that VirtualQuery		*/

@@ -14,6 +14,8 @@
  */
  
 #include <stdio.h>
+#include <string.h>
+#include <errno.h>
 #include "private/gc_priv.h"
 
 extern void * GC_clear_stack(void *);	/* in misc.c, behaves like identity */
@@ -229,6 +231,26 @@ void * GC_generic_malloc(size_t lb, int k)
    }
 }
 
+/* provide a version of strdup() that uses the collector to allocate the
+   copy of the string */
+# ifdef __STDC__
+    char *GC_strdup(const char *s)
+# else
+    char *GC_strdup(s)
+    char *s;
+#endif
+{
+  char *copy;
+
+  if (s == NULL) return NULL;
+  if ((copy = GC_malloc_atomic(strlen(s) + 1)) == NULL) {
+    errno = ENOMEM;
+    return NULL;
+  }
+  strcpy(copy, s);
+  return copy;
+}
+
 /* Allocate lb bytes of composite (pointerful) data */
 #ifdef THREAD_LOCAL_ALLOC
   void * GC_core_malloc(size_t lb)
@@ -308,6 +330,10 @@ void * calloc(size_t n, size_t lb)
   {
     size_t len = strlen(s) + 1;
     char * result = ((char *)REDIRECT_MALLOC(len+1));
+    if (result == 0) {
+      errno = ENOMEM;
+      return 0;
+    }
     BCOPY(s, result, len+1);
     return result;
   }

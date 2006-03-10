@@ -109,13 +109,13 @@ DIST_COMMON = $(am__configure_deps) $(am__pkginclude_HEADERS_DIST) \
 	config.guess config.sub depcomp install-sh ltmain.sh missing \
 	mkinstalldirs
 
-#TESTS += tracetest
+#TESTS += tracetest$(EXEEXT)
 #check_PROGRAMS += tracetest
 #tracetest_SOURCES = tests/trace_test.c
 #tracetest_LDADD = $(test_ldadd)
-@THREADS_TRUE@am__append_1 = threadleaktest
+@THREADS_TRUE@am__append_1 = threadleaktest$(EXEEXT)
 @THREADS_TRUE@am__append_2 = threadleaktest
-@CPLUSPLUS_TRUE@am__append_3 = test_cpp
+@CPLUSPLUS_TRUE@am__append_3 = test_cpp$(EXEEXT)
 @CPLUSPLUS_TRUE@am__append_4 = test_cpp
 
 # C Library: Architecture Dependent
@@ -471,7 +471,8 @@ dist_noinst_HEADERS = include/private/gc_hdrs.h \
 	include/private/darwin_stop_world.h \
 	include/private/thread_local_alloc.h include/cord.h \
 	include/ec.h include/javaxfc.h version.h
-TESTS = gctest leaktest middletest $(am__append_1) $(am__append_3)
+TESTS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
+	$(am__append_1) $(am__append_3)
 pkgconfigdir = $(libdir)/pkgconfig
 dist_pkgconfig_DATA = bdw-gc.pc
 libcord_la_SOURCES = \

@@ -1921,6 +1921,11 @@
 #   define SUNOS5SIGS
 # endif
 
+# ifdef GC_NETBSD_THREADS
+#   define SIGRTMIN 33
+#   define SIGRTMAX 63
+# endif
+
 # if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
 	    || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
 	    || defined(DGUX) || defined(BSD) \
@@ -2010,6 +2015,9 @@
 	--> inconsistent configuration
 # endif
 # if defined(GC_LINUX_THREADS) && !defined(LINUX)
+	--> inconsistent configuration
+# endif
+# if defined(GC_NETBSD_THREADS) && !defined(NETBSD)
 	--> inconsistent configuration
 # endif
 # if defined(GC_SOLARIS_THREADS) && !defined(SUNOS5)

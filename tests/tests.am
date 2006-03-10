@@ -23,36 +23,36 @@ test_ldadd = \
 
 
 
-TESTS += gctest
+TESTS += gctest$(EXEEXT)
 check_PROGRAMS += gctest
 gctest_SOURCES = tests/test.c
 gctest_LDADD = $(test_ldadd)
 gctest_DEPENDENCIES = $(top_builddir)/libgc.la
 
-TESTS += leaktest
+TESTS += leaktest$(EXEEXT)
 check_PROGRAMS += leaktest
 leaktest_SOURCES = tests/leak_test.c
 leaktest_LDADD = $(test_ldadd)
 
-TESTS += middletest
+TESTS += middletest$(EXEEXT)
 check_PROGRAMS += middletest
 middletest_SOURCES = tests/middle.c
 middletest_LDADD = $(test_ldadd)
 
-#TESTS += tracetest
+#TESTS += tracetest$(EXEEXT)
 #check_PROGRAMS += tracetest
 #tracetest_SOURCES = tests/trace_test.c
 #tracetest_LDADD = $(test_ldadd)
 
 if THREADS
-TESTS += threadleaktest
+TESTS += threadleaktest$(EXEEXT)
 check_PROGRAMS += threadleaktest
 threadleaktest_SOURCES = tests/thread_leak_test.c
 threadleaktest_LDADD = $(test_ldadd)
 endif
 
 if CPLUSPLUS
-TESTS += test_cpp
+TESTS += test_cpp$(EXEEXT)
 check_PROGRAMS += test_cpp
 test_cpp_SOURCES = tests/test_cpp.cc
 test_cpp_LDADD = libgccpp.la $(test_ldadd)

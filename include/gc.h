@@ -253,6 +253,7 @@ GC_API void GC_init(void);
  */
 GC_API void * GC_malloc(size_t size_in_bytes);
 GC_API void * GC_malloc_atomic(size_t size_in_bytes);
+GC_API char * GC_strdup (const char *str);
 GC_API void * GC_malloc_uncollectable(size_t size_in_bytes);
 GC_API void * GC_malloc_stubborn(size_t size_in_bytes);
 
@@ -505,6 +506,7 @@ GC_API void * GC_malloc_atomic_ignore_off_page(size_t lb);
 /* objects allocated in this way for overwrites, etc.			*/
 GC_API void * GC_debug_malloc(size_t size_in_bytes, GC_EXTRA_PARAMS);
 GC_API void * GC_debug_malloc_atomic(size_t size_in_bytes, GC_EXTRA_PARAMS);
+GC_API char * GC_debug_strdup(const char *str, GC_EXTRA_PARAMS);
 GC_API void * GC_debug_malloc_uncollectable
 	(size_t size_in_bytes, GC_EXTRA_PARAMS);
 GC_API void * GC_debug_malloc_stubborn
@@ -538,6 +540,7 @@ GC_API void * GC_debug_realloc_replacement
 # ifdef GC_DEBUG
 #   define GC_MALLOC(sz) GC_debug_malloc(sz, GC_EXTRAS)
 #   define GC_MALLOC_ATOMIC(sz) GC_debug_malloc_atomic(sz, GC_EXTRAS)
+#   define GC_STRDUP(s) GC_debug_strdup((s), GC_EXTRAS)
 #   define GC_MALLOC_UNCOLLECTABLE(sz) \
 			GC_debug_malloc_uncollectable(sz, GC_EXTRAS)
 #   define GC_MALLOC_IGNORE_OFF_PAGE(sz) \
@@ -561,6 +564,7 @@ GC_API void * GC_debug_realloc_replacement
 # else
 #   define GC_MALLOC(sz) GC_malloc(sz)
 #   define GC_MALLOC_ATOMIC(sz) GC_malloc_atomic(sz)
+#   define GC_STRDUP(s) GC_strdup(s)
 #   define GC_MALLOC_UNCOLLECTABLE(sz) GC_malloc_uncollectable(sz)
 #   define GC_MALLOC_IGNORE_OFF_PAGE(sz) \
 			GC_malloc_ignore_off_page(sz)

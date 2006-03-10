@@ -80,6 +80,11 @@
 # include <sys/sysctl.h>
 #endif /* GC_DARWIN_THREADS */
 
+#if defined(GC_NETBSD_THREADS)
+# include <sys/param.h>
+# include <sys/sysctl.h>
+#endif        /* GC_NETBSD_THREADS */
+
 /* Allocator lock definitions.		*/
 #if defined(USE_SPIN_LOCK)
   pthread_t GC_lock_holder = NO_THREAD;
@@ -652,6 +657,18 @@ int GC_get_nprocs(void)
 }
 #endif /* GC_DGUX386_THREADS */
 
+#if defined(GC_NETBSD_THREADS)
+static int get_ncpu(void)
+{
+    int mib[] = {CTL_HW,HW_NCPU};
+    int res;
+    size_t len = sizeof(res);
+
+    sysctl(mib, sizeof(mib)/sizeof(int), &res, &len, NULL, 0);
+    return res;
+}
+#endif	/* GC_NETBSD_THREADS */
+
 /* We hold the allocation lock.	*/
 void GC_thr_init(void)
 {
@@ -697,6 +714,9 @@ void GC_thr_init(void)
 #       if defined(GC_IRIX_THREADS)
 	  GC_nprocs = sysconf(_SC_NPROC_ONLN);
 	  if (GC_nprocs <= 0) GC_nprocs = 1;
+#       endif
+#       if defined(GC_NETBSD_THREADS)
+	  GC_nprocs = get_ncpu();
 #       endif
 #       if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS)
 	  int ncpus = 1;
