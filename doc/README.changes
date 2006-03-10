@@ -2276,6 +2276,10 @@ Since 6.6:
    with malloc redirection to handle a null malloc return correctly.
 
 Since gc6.7:
+ - Added some support for Dragonfly BSD.  (Thanks to Joerg Sonnenberger and
+   Thomas Klausner.)
+
+Since gc6.8:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
    and use ANSI constructs unconditionally.
  - Introduce #elif and #error in some of the appropriate places.

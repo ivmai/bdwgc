@@ -482,7 +482,7 @@ GC_API void * GC_malloc_atomic_ignore_off_page(size_t lb);
 /* This may also be desirable if it is possible but expensive to	*/
 /* retrieve the call chain.						*/
 #if (defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) \
-     || defined(__FreeBSD__)) & !defined(GC_CAN_SAVE_CALL_STACKS)
+     || defined(__FreeBSD__) || defined(__DragonFly__)) & !defined(GC_CAN_SAVE_CALL_STACKS)
 # define GC_ADD_CALLER
 # if __GNUC__ >= 3 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95) 
     /* gcc knows how to retrieve return address, but we don't know */

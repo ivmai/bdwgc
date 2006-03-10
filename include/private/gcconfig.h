@@ -56,7 +56,7 @@
 # endif
 
 /* And one for FreeBSD: */
-# if defined(__FreeBSD__) && !defined(FREEBSD)
+# if (defined(__FreeBSD__) || defined(__DragonFly__)) && !defined(FREEBSD)
 #    define FREEBSD
 # endif
 
@@ -161,7 +161,8 @@
 #   define mach_type_known
 # endif
 # if defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
-     && !defined(__OpenBSD__) && !defined(__NetBSD__) && !defined(__FreeBSD__)
+     && !defined(__OpenBSD__) && !defined(__NetBSD__) && !defined(__FreeBSD__) \
+     && !defined(__DragonFly__)
 #   define SPARC
 #   define DRSNX
 #   define mach_type_known
@@ -1917,7 +1918,7 @@
 #   define SUNOS5SIGS
 # endif
 
-# if defined(FREEBSD) && (__FreeBSD__ >= 4)
+# if defined(FREEBSD) && (defined(__DragonFly__) || __FreeBSD__ >= 4)
 #   define SUNOS5SIGS
 # endif
 
