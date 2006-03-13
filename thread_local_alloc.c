@@ -172,7 +172,7 @@ void * GC_malloc_atomic(size_t bytes)
     void **tiny_fl = ((GC_tlfs)GC_getspecific(GC_thread_key))
 		        		-> ptrfree_freelists;
     GC_FAST_MALLOC_GRANS(result, bytes, tiny_fl, DIRECT_GRANULES,
-		         PTRFREE, GC_core_malloc_atomic(bytes), /* no init */);
+		         PTRFREE, GC_core_malloc_atomic(bytes), 0/* no init */);
     return result;
 }
 

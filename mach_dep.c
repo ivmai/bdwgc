@@ -192,6 +192,8 @@ void GC_push_regs()
 
 #if defined(HAVE_PUSH_REGS) && defined(THREADS)
 # error GC_push_regs cannot be used with threads
+ /* Would fail for GC_do_blocking.  There are probably other safety	*/
+ /* issues.								*/
 # undef HAVE_PUSH_REGS
 #endif
 
@@ -210,7 +212,8 @@ void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 
 #   if defined(HAVE_PUSH_REGS)
       GC_push_regs();
-#   elif defined(UNIX_LIKE)
+#   elif defined(UNIX_LIKE) && !defined(DARWIN)
+      /* Older versions of Darwin seem to lack getcontext(). */
       ucontext_t ctxt;
       getcontext(&ctxt);
       context = &ctxt;

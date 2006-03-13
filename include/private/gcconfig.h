@@ -747,10 +747,9 @@
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
 #     define USE_MMAP
 #     define USE_MMAP_ANON
-#     define USE_ASM_PUSH_REGS
-      /* This is potentially buggy. It needs more testing. See the comments in
-         os_dep.c.  It relies on threads to track writes. */
 #     ifdef GC_DARWIN_THREADS
+       /* This is potentially buggy. It needs more testing. See the comments in
+          os_dep.c.  It relies on threads to track writes. */
 #       define MPROTECT_VDB
 #     endif
 #     include <unistd.h>
