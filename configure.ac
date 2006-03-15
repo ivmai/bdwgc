@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha6,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.4 $)
+AC_REVISION($Revision: 1.5 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -203,7 +203,6 @@ case "$host" in
       powerpc_darwin=true
       ;;
 esac
-AM_CONDITIONAL(POWERPC_DARWIN,test x$powerpc_darwin = xtrue)
 
 AC_MSG_CHECKING(for xlc)
 AC_TRY_COMPILE([],[
