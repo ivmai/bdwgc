@@ -307,10 +307,10 @@ GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
     CLOCK_TYPE start_time, current_time;
     if (GC_dont_gc) return FALSE;
     if (GC_incremental && GC_collection_in_progress()) {
-    if (GC_print_stats) {
+      if (GC_print_stats) {
 	GC_log_printf(
 	    "GC_try_to_collect_inner: finishing collection in progress\n");
-    }
+      }
       /* Just finish collection already in progress.	*/
     	while(GC_collection_in_progress()) {
     	    if (stop_func()) return(FALSE);
@@ -369,7 +369,7 @@ GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 /*
  * Perform n units of garbage collection work.  A unit is intended to touch
  * roughly GC_RATE pages.  Every once in a while, we do more than that.
- * This needa to be a fairly large number with our current incremental
+ * This needs to be a fairly large number with our current incremental
  * GC strategy, since otherwise we allocate too much during GC, and the
  * cleanup gets expensive.
  */
