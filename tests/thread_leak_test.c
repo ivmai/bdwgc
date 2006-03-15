@@ -24,6 +24,7 @@ main() {
     pthread_t t[NTHREADS];
     int code;
 
+    GC_INIT();
     for (i = 0; i < NTHREADS; ++i) {
 	if ((code = pthread_create(t + i, 0, test, 0)) != 0) {
     	    printf("Thread creation failed %d\n", code);
