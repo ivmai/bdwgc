@@ -69,9 +69,6 @@ endif
 #libgc_la_SOURCES += solaris_pthreads.c solaris_threads.c
 #endif
 
-if POWERPC_DARWIN
-libgc_la_SOURCES += powerpc_darwin_mach_dep.s
-endif
 if DARWIN_THREADS
 libgc_la_SOURCES += darwin_stop_world.c
 endif

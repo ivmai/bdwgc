@@ -339,7 +339,7 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.S \
     include/gc_backptr.h \
     hpux_test_and_clear.s include/gc_gcj.h \
     include/private/dbg_mlc.h \
-    include/private/specific.h powerpc_darwin_mach_dep.s \
+    include/private/specific.h \
     include/leak_detector.h include/gc_amiga_redirects.h \
     include/gc_pthread_redirects.h ia64_save_regs_in_stack.s \
     include/gc_config_macros.h include/private/pthread_support.h \
@@ -369,7 +369,7 @@ GNU_BUILD_FILES= configure.ac Makefile.am configure acinclude.m4 \
 		 include/include.am doc/doc.am \
 		 ltmain.sh mkinstalldirs depcomp missing \
 		 cord/cord.am tests/tests.am autogen.sh \
-		 bdw-gc.pc.in
+		 bdw-gc.pc.in compile
 
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
 		 BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
@@ -553,7 +553,7 @@ dyn_test:
 
 mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s \
 	    $(srcdir)/mips_ultrix_mach_dep.s \
-            $(srcdir)/rs6000_mach_dep.s $(srcdir)/powerpc_darwin_mach_dep.s \
+            $(srcdir)/rs6000_mach_dep.s \
 	    $(srcdir)/sparc_mach_dep.S $(srcdir)/sparc_sunos4_mach_dep.s \
 	    $(srcdir)/ia64_save_regs_in_stack.s \
 	    $(srcdir)/sparc_netbsd_mach_dep.s $(UTILS)
