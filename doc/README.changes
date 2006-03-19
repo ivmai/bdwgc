@@ -2476,7 +2476,9 @@ Since gc7.0alpha5
  - Update x86 AO_test_and_set implementation to use "=q".
  - Add $(EXEEXT) to many tests in tests/tests.am.  (Corresponds to a
    6.7 fix, which no longer applied.)
- - Add partial Darwin fixes.
+ - Fix Darwin/PPC port.
+ - Fix Cygwin/threads port.
+ - Fix gcj malloc support.
   
 To do:
  - REDIRECT_MALLOC and threads combination is getting closer, but currently
