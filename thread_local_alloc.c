@@ -191,13 +191,15 @@ void * GC_gcj_malloc(size_t bytes,
 {
     size_t granules = ROUNDED_UP_GRANULES(bytes);
     void *result;
-    void **tiny_fl = (GC_tlfs)GC_getspecific(GC_thread_key)
-		        		-> ptrfree_freelists;
+    void **tiny_fl = ((GC_tlfs)GC_getspecific(GC_thread_key))
+		        		-> gcj_freelists;
     GC_ASSERT(GC_gcj_malloc_initialized);
     GC_FAST_MALLOC_GRANS(result, bytes, tiny_fl, DIRECT_GRANULES,
-		         PTRFREE, GC_core_gcj_malloc(bytes),
-			 (AO_compiler_barrier(),
-			  *(void **)result = ptr_to_struct_containing_descr));
+		         GC_gcj_kind,
+			 GC_core_gcj_malloc(bytes,
+				 	    ptr_to_struct_containing_descr),
+			 {AO_compiler_barrier();
+			  *(void **)result = ptr_to_struct_containing_descr;});
     	/* This forces the initialization of the "method ptr".		*/
         /* This is necessary to ensure some very subtle properties	*/
     	/* required if a GC is run in the middle of such an allocation.	*/

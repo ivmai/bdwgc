@@ -84,11 +84,9 @@ extern int GC_gcj_debug_kind;
 
 # ifdef GC_DEBUG
 #   define GC_GCJ_MALLOC(s,d) GC_debug_gcj_malloc(s,d,GC_EXTRAS)
-#   define GC_GCJ_FAST_MALLOC(s,d) GC_debug_gcj_fast_malloc(s,d,GC_EXTRAS)
 #   define GC_GCJ_MALLOC_IGNORE_OFF_PAGE(s,d) GC_debug_gcj_malloc(s,d,GC_EXTRAS)
 # else
 #   define GC_GCJ_MALLOC(s,d) GC_gcj_malloc(s,d)
-#   define GC_GCJ_FAST_MALLOC(s,d) GC_gcj_fast_malloc(s,d)
 #   define GC_GCJ_MALLOC_IGNORE_OFF_PAGE(s,d) \
 	GC_gcj_malloc_ignore_off_page(s,d)
 # endif

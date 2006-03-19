@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha6,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.5 $)
+AC_REVISION($Revision: 1.6 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -413,10 +413,10 @@ dnl
 dnl By default, make the library as general as possible.
 
 dnl :FIXME: gcj does not work as of gc-7.0_alpha2, so default set to no.
-enable_gcj_support=no
+dnl enable_gcj_support=no
 AC_ARG_ENABLE(gcj-support,
-    [AC_HELP_STRING([--enable-gcj-support],
-	[Enable support for gcj.])])
+    [AC_HELP_STRING([--disable-gcj-support],
+	[Disable support for gcj.])])
 AM_CONDITIONAL(ENABLE_GCJ_SUPPORT,
     [test x"$enable_gcj_support" != xno])
 if test x"$enable_gcj_support" != xno; then

@@ -154,7 +154,6 @@ static void maybe_finalize()
 		UNLOCK();
 		return(GC_oom_fn(lb));
 	    }
-	    lw = GC_size_map[lb];	/* May have been uninitialized.	*/
         } else {
             *opp = obj_link(op);
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
@@ -190,11 +189,10 @@ void * GC_debug_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr,
     result = GC_generic_malloc_inner(lb + DEBUG_BYTES, GC_gcj_debug_kind);
     if (result == 0) {
 	UNLOCK();
-        GC_err_printf2("GC_debug_gcj_malloc(%ld, 0x%lx) returning NIL (",
-        	       (unsigned long) lb,
-		       (unsigned long) ptr_to_struct_containing_descr);
+        GC_err_printf("GC_debug_gcj_malloc(%ld, %p) returning NIL (",
+        	      (unsigned long)lb, ptr_to_struct_containing_descr);
         GC_err_puts(s);
-        GC_err_printf1(":%ld)\n", (unsigned long)i);
+        GC_err_printf(":%d)\n", i);
         return(GC_oom_fn(lb));
     }
     *((void **)((ptr_t)result + sizeof(oh))) = ptr_to_struct_containing_descr;
