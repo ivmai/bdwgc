@@ -76,6 +76,7 @@ DATASTART and DATAEND in gcconfig.h.
 
 The collector should also be buildable under Cygwin with either the
 old standard Makefile, or with the "configure;make" machinery.
+(For the latter use --enable-threads=posix for thread support.)
 
 Borland Tools
 -------------

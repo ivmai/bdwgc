@@ -149,44 +149,6 @@ void GC_push_regs()
 #	  define HAVE_PUSH_REGS
 #	endif	/* __MWERKS__ */
 #   endif	/* MACOS */
-
-#       if defined(I386) && (defined(__MINGW32__) || defined(CYGWIN32))
-	  asm("pushl %eax");  asm("call _GC_push_one"); asm("addl $4,%esp");
-	  asm("pushl %ecx");  asm("call _GC_push_one"); asm("addl $4,%esp");
-	  asm("pushl %edx");  asm("call _GC_push_one"); asm("addl $4,%esp");
-	  asm("pushl %ebp");  asm("call _GC_push_one"); asm("addl $4,%esp");
-	  asm("pushl %esi");  asm("call _GC_push_one"); asm("addl $4,%esp");
-	  asm("pushl %edi");  asm("call _GC_push_one"); asm("addl $4,%esp");
-	  asm("pushl %ebx");  asm("call _GC_push_one"); asm("addl $4,%esp");
-#	  define HAVE_PUSH_REGS
-#       endif
-
-#       if defined(I386) && defined(MSWIN32) && !defined(__MINGW32__) \
-	   && !defined(CYGWIN32)
-	/* I386 code, Microsoft variant		*/
-	  __asm  push eax
-	  __asm  call GC_push_one
-	  __asm  add esp,4
-	  __asm  push ebx
-	  __asm  call GC_push_one
-	  __asm  add esp,4
-	  __asm  push ecx
-	  __asm  call GC_push_one
-	  __asm  add esp,4
-	  __asm  push edx
-	  __asm  call GC_push_one
-	  __asm  add esp,4
-	  __asm  push ebp
-	  __asm  call GC_push_one
-	  __asm  add esp,4
-	  __asm  push esi
-	  __asm  call GC_push_one
-	  __asm  add esp,4
-	  __asm  push edi
-	  __asm  call GC_push_one
-	  __asm  add esp,4
-#	  define HAVE_PUSH_REGS
-#       endif
 }
 #endif /* !USE_ASM_PUSH_REGS */
 
