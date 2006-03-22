@@ -2479,6 +2479,11 @@ Since gc7.0alpha5
  - Fix Darwin/PPC port.
  - Fix Cygwin/threads port.
  - Fix gcj malloc support.
+ - For GNU-style make, don't build libatomic_ops unless threads are requested.
+   This should allow single-threaded builds on platforms which do not
+   currently support libatomic_ops.
+ - Clean up and hopefully fix the CFLAGS calculation for GNU build.
+   (Substantially improves things on HP/UX.)
   
 To do:
  - REDIRECT_MALLOC and threads combination is getting closer, but currently

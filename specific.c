@@ -12,10 +12,10 @@
  */
 
 #include "private/gc_priv.h"	/* For configuration, pthreads.h. */
-#include "atomic_ops.h"
 
 #if defined(GC_LINUX_THREADS)
 
+#include "atomic_ops.h"
 #include "private/specific.h"
 
 static tse invalid_tse = {INVALID_QTID, 0, 0, INVALID_THREADID};
