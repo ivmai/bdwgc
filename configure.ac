@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha6,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.7 $)
+AC_REVISION($Revision: 1.8 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -96,8 +96,8 @@ case "$THREADS" in
 	AC_DEFINE(GC_AIX_THREADS)
 	AC_DEFINE(_REENTRANT)
 	;;
-     *-*-hpux*)
-	AC_MSG_WARN("Only HP/UX 11 threads are supported.")
+     *-*-hpux11*)
+	AC_MSG_WARN("Only HP/UX 11 POSIX threads are supported.")
 	AC_DEFINE(GC_HPUX_THREADS)
 	AC_DEFINE(_POSIX_C_SOURCE,199506L)
 	if test "${enable_parallel_mark}" = yes; then
@@ -106,12 +106,16 @@ case "$THREADS" in
 	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	AC_MSG_WARN("Explict GC_INIT() calls may be required.");
 	THREADDLLIBS="-lpthread -lrt"
+	# HPUX needs REENTRANT for the _r calls.
+	AC_DEFINE(_REENTRANT, 1, [Required define if using POSIX threads])
+	;;
+     *-*-hpux10*)
+	AC_MSG_WARN("Only HP-UX 11 POSIX threads are supported.")
 	;;
      *-*-freebsd*)
 	AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
 	AC_DEFINE(GC_FREEBSD_THREADS)
 	INCLUDES="$INCLUDES -pthread"
-	THREADDLLIBS=-pthread
       	;;
      *-*-netbsd*)
 	AC_MSG_WARN("Only on NetBSD 2.0 or later.")

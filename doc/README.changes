@@ -2278,6 +2278,8 @@ Since 6.6:
 Since gc6.7:
  - Added some support for Dragonfly BSD.  (Thanks to Joerg Sonnenberger and
    Thomas Klausner.)
+ - Improvements to the HP/UX section of configure.in/configure.ac.
+   (Thanks to Andreas Tobler)
 
 Since gc6.8:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
