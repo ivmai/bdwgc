@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha6,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.8 $)
+AC_REVISION($Revision: 1.9 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -126,7 +126,6 @@ case "$THREADS" in
 	;;
      *-*-solaris*)
 	AC_DEFINE(GC_SOLARIS_THREADS)
-	AC_DEFINE(GC_SOLARIS_PTHREADS)
 	solaris_threads=true
 	;;
      *-*-irix*)
@@ -538,12 +537,11 @@ AC_CHECK_HEADER(atomic_ops.h,
 	AC_MSG_ERROR([Missig libatomic_ops.])
     fi
     ao_version="${ao_dir#*libatomic_ops-}"
-    ao_dir=libatomic_ops-${ao_version}
     AC_MSG_NOTICE([Using internal version of libatomic_ops])
 
     dnl Automake does not accept shell variables in AC_CONFIG_SUBDIRS
     test -e ${srcdir}/libatomic_ops \
-	|| ln -sf ${ao_dir} ${srcdir}/libatomic_ops
+	|| ln -f -s ${ao_dir} ${srcdir}/libatomic_ops
     AC_CONFIG_SUBDIRS(libatomic_ops)
 
     dnl This gets the source include files, which is close enough?
