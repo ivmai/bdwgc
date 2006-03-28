@@ -8,7 +8,6 @@
 	.globl	GC_save_regs_in_stack
 	.globl 	GC_push_regs
 GC_save_regs_in_stack:
-GC_push_regs:
 #if defined(__arch64__) || defined(__sparcv9)
 	save	%sp,-128,%sp
 	flushw
