@@ -862,7 +862,8 @@
 #     define ALIGNMENT 4	/* Required by hardware	*/
 #     define CPP_WORDSZ 32
 #   endif
-#   define USE_ASM_PUSH_REGS
+    /* Don't define USE_ASM_PUSH_REGS.  We do use an asm helper, but	*/
+    /* not to push the registers on the mark stack.			*/
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
 	extern int _etext[];
@@ -1257,7 +1258,6 @@
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
 #     define USE_MMAP
 #     define USE_MMAP_ANON
-#     define USE_ASM_PUSH_REGS
       /* This is potentially buggy. It needs more testing. See the comments in
         os_dep.c.  It relies on threads to track writes. */
 #     ifdef GC_DARWIN_THREADS
