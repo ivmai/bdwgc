@@ -19,7 +19,7 @@
 # Common libs to _LDADD for all tests.
 test_ldadd = \
 	$(top_builddir)/libgc.la \
-	$(THREADLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
+	$(THREADDLLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
 
 
 
