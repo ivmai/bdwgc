@@ -45,7 +45,7 @@
 #    define UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
 #  endif
 
-#  if !defined(AO_have_test_and_set_acquire)
+#  if !defined(AO_HAVE_test_and_set_acquire)
 #    define USE_PTHREAD_LOCKS
 #  endif
 
