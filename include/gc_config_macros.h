@@ -9,7 +9,9 @@
     || defined(_SOLARIS_PTHREADS) || defined(GC_SOLARIS_PTHREADS)
   /* We no longer support old style Solaris threads.		*/
   /* GC_SOLARIS_THREADS now means pthreads.			*/
-# define GC_SOLARIS_THREADS
+# ifndef GC_SOLARIS_THREADS
+#   define GC_SOLARIS_THREADS
+# endif
 #endif
 #if defined(IRIX_THREADS)
 # define GC_IRIX_THREADS
