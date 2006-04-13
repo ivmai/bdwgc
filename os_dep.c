@@ -1229,11 +1229,31 @@ void GC_register_data_segments(void)
                                     MEM_WRITE_WATCH | MEM_RESERVE,
                                     PAGE_READWRITE);
         if (page != NULL) {
-          GetWriteWatch_alloc_flag = MEM_WRITE_WATCH;
+          PVOID pages[16];
+          DWORD count = 16;
+          DWORD page_size;
+          /* On recent W2K versions, everything may exist, but always fail. */
+          if (GetWriteWatch_func(WRITE_WATCH_FLAG_RESET,
+                                 page, GC_page_size,
+                                 pages,
+                                 &count,
+                                 &page_size) != 0) {
+            /* GetWriteWatch always fails. */
+            GetWriteWatch_func = NULL;
+          } else {
+            GetWriteWatch_alloc_flag = MEM_WRITE_WATCH;
+          }
           VirtualFree(page, GC_page_size, MEM_RELEASE);
         } else {
           /* GetWriteWatch will be useless. */
           GetWriteWatch_func = NULL;
+        }
+      }
+      if (GC_print_stats) {
+        if (GetWriteWatch_func == NULL) {
+          GC_log_printf("Did not find a usable GetWriteWatch()\n");
+        } else {
+          GC_log_printf("Using GetWriteWatch()\n");
         }
       }
       done = TRUE;
@@ -2152,7 +2172,8 @@ void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
                                &page_size) != 0)
         {
           GC_err_printf(
-            "GC_gww_read_dirty fell back to marking all pages dirty\n");
+            "GC_gww_read_dirty unexpectedly failed: "
+            "Falling back to marking all pages dirty\n");
           memset(GC_grungy_pages, 0xff, sizeof(page_hash_table));
           memset(GC_written_pages, 0xff, sizeof(page_hash_table));
           return;
@@ -3826,7 +3847,11 @@ kern_return_t catch_exception_raise_state_identity(
 #endif /* NEED_CALLINFO */
 
 #if defined(GC_HAVE_BUILTIN_BACKTRACE)
-# include <execinfo.h>
+# ifdef _MSC_VER
+#  include "private/msvc_dbg.h"
+# else
+#  include <execinfo.h>
+# endif
 #endif
 
 #ifdef SAVE_CALL_CHAIN

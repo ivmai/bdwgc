@@ -800,7 +800,12 @@ out:
 
 
 #if defined(MSWIN32) || defined(MSWINCE)
-# define LOG_FILE _T("gc.log")
+# if defined(_MSC_VER) && defined(_DEBUG)
+#  include <crtdbg.h>
+# endif
+# ifdef OLD_WIN32_LOG_FILE
+#   define LOG_FILE _T("gc.log")
+# endif
 
   HANDLE GC_stdout = 0;
 
@@ -823,15 +828,26 @@ out:
       if (GC_stdout == INVALID_HANDLE_VALUE) {
 	  return -1;
       } else if (GC_stdout == 0) {
-	  GC_stdout = CreateFile(LOG_FILE, GENERIC_WRITE,
-        			 FILE_SHARE_READ | FILE_SHARE_WRITE,
+	  char logPath[_MAX_PATH + 5];
+#         ifdef OLD_WIN32_LOG_FILE
+	    strcpy(logPath, LOG_FILE);
+#	  else
+	    GetModuleFileName(NULL, logPath, _MAX_PATH);
+	    strcat(logPath, ".log");
+#	  endif
+	  GC_stdout = CreateFile(logPath, GENERIC_WRITE,
+        			 FILE_SHARE_READ,
         			 NULL, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH,
         			 NULL); 
-    	  if (GC_stdout == INVALID_HANDLE_VALUE) ABORT("Open of log file failed");
+    	  if (GC_stdout == INVALID_HANDLE_VALUE)
+	    ABORT("Open of log file failed");
       }
       tmp = WriteFile(GC_stdout, buf, len, &written, NULL);
       if (!tmp)
 	  DebugBreak();
+#     if defined(_MSC_VER) && defined(_DEBUG)
+	  _CrtDbgReport(_CRT_WARN, NULL, 0, NULL, "%.*s", len, buf);
+#     endif
       LeaveCriticalSection(&GC_write_cs);
       return tmp ? (int)written : -1;
   }

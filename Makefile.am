@@ -64,11 +64,6 @@ if PTHREADS
 libgc_la_SOURCES += pthread_support.c pthread_stop_world.c
 endif
 
-# CHECK: No solaris_pthreads.c solaris_threads.c in gc7.0alpha2.tar.gz.
-#if ARCH_SOLARIS
-#libgc_la_SOURCES += solaris_pthreads.c solaris_threads.c
-#endif
-
 if DARWIN_THREADS
 libgc_la_SOURCES += darwin_stop_world.c
 endif
@@ -172,7 +167,8 @@ EXTRA_DIST += add_gc_prefix.c gcname.c if_mach.c if_not_there.c \
     MacProjects.sit.hqx mach_dep.c setjmp_t.c \
     threadlibs.c AmigaOS.c \
     Mac_files/datastart.c Mac_files/dataend.c \
-    Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h
+    Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
+    include/private/msvc_dbg.h msvc_dbg.c
 # :CHECK: If pc_excludes still around, re-add to EXTRA_DIST.
 
 

@@ -121,11 +121,6 @@ DIST_COMMON = $(am__configure_deps) $(am__pkginclude_HEADERS_DIST) \
 # C Library: Architecture Dependent
 # ---------------------------------
 @PTHREADS_TRUE@am__append_5 = pthread_support.c pthread_stop_world.c
-
-# CHECK: No solaris_pthreads.c solaris_threads.c in gc7.0alpha2.tar.gz.
-#if ARCH_SOLARIS
-#libgc_la_SOURCES += solaris_pthreads.c solaris_threads.c
-#endif
 @DARWIN_THREADS_TRUE@am__append_6 = darwin_stop_world.c
 @WIN32_THREADS_TRUE@am__append_7 = win32_threads.c
 
@@ -190,7 +185,7 @@ libgccpp_la_OBJECTS = $(am_libgccpp_la_OBJECTS)
 am_gctest_OBJECTS = tests/test.$(OBJEXT)
 gctest_OBJECTS = $(am_gctest_OBJECTS)
 am__DEPENDENCIES_2 = $(top_builddir)/libgc.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_leaktest_OBJECTS = tests/leak_test.$(OBJEXT)
 leaktest_OBJECTS = $(am_leaktest_OBJECTS)
 leaktest_DEPENDENCIES = $(am__DEPENDENCIES_2)
@@ -278,8 +273,6 @@ AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
 AR = @AR@
-ARCH_SOLARIS_FALSE = @ARCH_SOLARIS_FALSE@
-ARCH_SOLARIS_TRUE = @ARCH_SOLARIS_TRUE@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -437,7 +430,7 @@ EXTRA_DIST = cord/cordbscs.c cord/cordtest.c cord/de.c cord/cordprnt.c \
 	mach_dep.c setjmp_t.c threadlibs.c AmigaOS.c \
 	Mac_files/datastart.c Mac_files/dataend.c \
 	Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-	libtool.m4
+	include/private/msvc_dbg.h msvc_dbg.c libtool.m4
 
 # C Library
 # ---------
@@ -484,7 +477,7 @@ libcord_la_SOURCES = \
 # Common libs to _LDADD for all tests.
 test_ldadd = \
 	$(top_builddir)/libgc.la \
-	$(THREADLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
+	$(THREADDLLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
 
 gctest_SOURCES = tests/test.c
 gctest_LDADD = $(test_ldadd)

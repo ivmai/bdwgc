@@ -2486,6 +2486,14 @@ Since gc7.0alpha5
    currently support libatomic_ops.
  - Clean up and hopefully fix the CFLAGS calculation for GNU build.
    (Substantially improves things on HP/UX.)
+ - Integrated Andrei Polushin's Visual C++ patches.  These provide for
+   stack traces, better C++ debug support, and better log file handling.
+   Note that these change the location of the log file to a the path of the
+   executable with a .log extension.  To get the old behavior back, define
+   OLD_WIN32_LOG_FILE.  For the time being, I'm checking his project
+   files and the like into a windows-untested subdirectory.  They
+   are almost certainly already out of date, but better than what we had
+   before.
   
 To do:
  - REDIRECT_MALLOC and threads combination is getting closer, but currently

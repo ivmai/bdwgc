@@ -57,5 +57,11 @@ void* operator new( size_t size,
 #endif
 }
 
+// This new operator is used by VC++ 7.0 and later in Debug builds.
+void* operator new[](size_t size, int nBlockUse, const char* szFileName, int nLine)
+{
+    return operator new(size, nBlockUse, szFileName, nLine);
+}
+
 #endif /* _MSC_VER */
 

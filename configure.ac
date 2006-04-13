@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha6,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.9 $)
+AC_REVISION($Revision: 1.10 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -126,7 +126,7 @@ case "$THREADS" in
 	;;
      *-*-solaris*)
 	AC_DEFINE(GC_SOLARIS_THREADS)
-	solaris_threads=true
+	THREADDLLIBS="-lpthread -lrt"
 	;;
      *-*-irix*)
 	AC_DEFINE(GC_IRIX_THREADS)
@@ -198,7 +198,6 @@ AC_SUBST(THREADDLLIBS)
 AM_CONDITIONAL(THREADS, test x$THREADS != xnone)
 AM_CONDITIONAL(PTHREADS, test x$THREADS = xposix)
 AM_CONDITIONAL(DARWIN_THREADS, test x$darwin_threads = xtrue)
-AM_CONDITIONAL(ARCH_SOLARIS, test x$solaris_threads = xtrue)
 AM_CONDITIONAL(WIN32_THREADS, test x$win32_threads = xtrue)
 
 case "$host" in 
