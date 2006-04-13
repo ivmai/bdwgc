@@ -34,7 +34,7 @@ int main()
 #   if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS)
 	printf("-lpthread -lrt\n");
 #   endif
-#   if defined(GC_SOLARIS_THREADS) || defined(GC_SOLARIS_PTHREADS)
+#   if defined(GC_SOLARIS_THREADS)
         printf("-lthread -lposix4\n");
 		/* Is this right for recent versions? */
 #   endif
