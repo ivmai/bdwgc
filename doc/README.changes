@@ -2494,6 +2494,7 @@ Since gc7.0alpha5
    files and the like into a windows-untested subdirectory.  They
    are almost certainly already out of date, but better than what we had
    before.
+ - Fixed some win32 threads bugs, and added support for _beginthreadex.
   
 To do:
  - REDIRECT_MALLOC and threads combination is getting closer, but currently

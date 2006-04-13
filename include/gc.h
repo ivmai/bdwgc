@@ -466,6 +466,12 @@ GC_API void * GC_malloc_atomic_ignore_off_page(size_t lb);
 # endif
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER >= 1200 /* version 12.0+ (MSVC 6.0+)  */
+# ifndef GC_HAVE_NO_BUILTIN_BACKTRACE
+#   define GC_HAVE_BUILTIN_BACKTRACE
+# endif
+#endif
+
 #if defined(GC_HAVE_BUILTIN_BACKTRACE) && !defined(GC_CAN_SAVE_CALL_STACKS)
 # define GC_CAN_SAVE_CALL_STACKS
 #endif
@@ -933,11 +939,19 @@ extern void GC_thr_init(void);	/* Needed for Solaris/X86 ??	*/
 # include <windows.h>
 
   /*
-   * All threads must be created using GC_CreateThread, so that they will be
-   * recorded in the thread table.  For backwards compatibility, this is not
-   * technically true if the GC is built as a dynamic library, since it can
-   * and does then use DllMain to keep track of thread creations.  But new code
-   * should be built to call GC_CreateThread.
+   * All threads must be created using GC_CreateThread or GC_beginthreadex,
+   * or must explicitly call GC_register_my_thread,
+   * so that they will be recorded in the thread table.
+   * For backwards compatibility, it is possible to build the GC
+   * with GC_DLL defined, and set GC_win32_dll_threads to true.
+   * This implicitly registers all created threads, but appears to be
+   * less robust.
+   *
+   * Currently the collector expects all threads to fall through and
+   * terminate normally, or call GC_endthreadex() or GC_ExitThread,
+   * so that the thread is properly unregistered.  (An explicit call
+   * to GC_unregister_my_thread() should also work, but risks unregistering
+   * the thread twice.)
    */
    GC_API HANDLE WINAPI GC_CreateThread(
       LPSECURITY_ATTRIBUTES lpThreadAttributes,
@@ -957,9 +971,13 @@ extern void GC_thr_init(void);	/* Needed for Solaris/X86 ??	*/
 
 #  ifndef GC_BUILD
 #    define WinMain GC_WinMain
-#    define CreateThread GC_CreateThread
 #  endif
 # endif /* defined(_WIN32_WCE) */
+
+# define CreateThread GC_CreateThread
+# define ExitThread GC_ExitThread
+# define _beginthreadex GC_beginthreadex
+# define _endthreadex GC_endthreadex
 
 #endif /* defined(GC_WIN32_THREADS)  && !cygwin */
 

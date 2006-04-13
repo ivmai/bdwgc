@@ -39,6 +39,13 @@
 
 # include <pthread.h>
 
+#else
+
+# undef CreateThread
+# undef ExitThread
+# undef _beginthreadex
+# undef _endthreadex
+
 #endif
 
 #if defined(GC_DLL) && !defined(MSWINCE)
@@ -585,7 +592,7 @@ void GC_push_thread_structures(void)
 }
 
 /* Suspend the given thread, if it's still active.	*/
-GC_suspend(GC_thread t)
+void GC_suspend(GC_thread t)
 {
 # ifdef MSWINCE
     /* SuspendThread will fail if thread is running kernel code */
@@ -867,6 +874,42 @@ typedef struct {
 
 static DWORD WINAPI thread_start(LPVOID arg);
 
+void * GC_win32_start_inner(struct GC_stack_base *sb, LPVOID arg)
+{
+    void * ret;
+    thread_args *args = (thread_args *)arg;
+
+    GC_register_my_thread(sb); /* This waits for an in-progress GC. */
+
+    /* Clear the thread entry even if we exit with an exception.	*/
+    /* This is probably pointless, since an uncaught exception is	*/
+    /* supposed to result in the process being killed.			*/
+#ifndef __GNUC__
+    __try {
+#endif /* __GNUC__ */
+	ret = (void *)args->start (args->param);
+#ifndef __GNUC__
+    } __finally {
+#endif /* __GNUC__ */
+#       if defined(THREAD_LOCAL_ALLOC)
+          LOCK();
+          GC_destroy_thread_local(&(me->tlfs));
+          UNLOCK();
+#       endif
+	GC_free(args);
+	GC_delete_thread(GetCurrentThreadId());
+#ifndef __GNUC__
+    }
+#endif /* __GNUC__ */
+
+    return ret;
+}
+
+DWORD WINAPI GC_win32_start(LPVOID arg)
+{
+    return (DWORD)GC_call_with_stack_base(GC_win32_start_inner, arg);
+}
+
 GC_API HANDLE WINAPI GC_CreateThread(
     LPSECURITY_ATTRIBUTES lpThreadAttributes, 
     DWORD dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, 
@@ -906,41 +949,55 @@ GC_API HANDLE WINAPI GC_CreateThread(
     }
 }
 
-void * GC_win32_start_inner(struct GC_stack_base *sb, LPVOID arg)
+void WINAPI GC_ExitThread(DWORD dwExitCode)
 {
-    void * ret;
-    thread_args *args = (thread_args *)arg;
+  GC_unregister_my_thread();
+  ExitThread(dwExitCode);
+}
 
-    GC_register_my_thread(sb); /* This waits for an in-progress GC. */
+uintptr_t GC_beginthreadex(
+    void *security, unsigned stack_size,
+    unsigned ( __stdcall *start_address )( void * ),
+    void *arglist, unsigned initflag, unsigned *thrdaddr)
+{
+    uintptr_t thread_h = -1L;
 
-    /* Clear the thread entry even if we exit with an exception.	*/
-    /* This is probably pointless, since an uncaught exception is	*/
-    /* supposed to result in the process being killed.			*/
-#ifndef __GNUC__
-    __try {
-#endif /* __GNUC__ */
-	ret = (void *)args->start (args->param);
-#ifndef __GNUC__
-    } __finally {
-#endif /* __GNUC__ */
-#       if defined(THREAD_LOCAL_ALLOC)
-          LOCK();
-          GC_destroy_thread_local(&(me->tlfs));
-          UNLOCK();
-#       endif
-	GC_free(args);
-	GC_delete_thread(GetCurrentThreadId());
-#ifndef __GNUC__
+    thread_args *args;
+
+    if (!parallel_initialized) GC_init_parallel();
+    		/* make sure GC is initialized (i.e. main thread is attached,
+		   tls initialized) */
+
+    client_has_run = TRUE;
+    if (GC_win32_dll_threads) {
+      return _beginthreadex(security, stack_size, start_address,
+                            arglist, initflag, thrdaddr);
+    } else {
+      args = GC_malloc_uncollectable(sizeof(thread_args)); 
+	/* Handed off to and deallocated by child thread.	*/
+      if (0 == args) {
+	SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return -1L;
+      }
+
+      /* set up thread arguments */
+    	args -> start = start_address;
+    	args -> param = arglist;
+
+      GC_need_to_lock = TRUE;
+      thread_h = _beginthreadex(security, stack_size, GC_win32_start,
+                                args, initflag, thrdaddr);
+
+      return thread_h;
     }
-#endif /* __GNUC__ */
-
-    return ret;
 }
 
-DWORD WINAPI GC_win32_start(struct GC_stack_base *sb, LPVOID arg)
+void GC_endthreadex(unsigned retval)
 {
-    return (DWORD)GC_call_with_stack_base(GC_win32_start_inner, arg);
+  GC_unregister_my_thread();
+  _endthreadex(retval);
 }
+
 #endif /* !CYGWIN32 */
 
 #ifdef MSWINCE
