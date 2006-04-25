@@ -1156,6 +1156,11 @@ void run_one_test()
 	(GC_gcollect(),GC_malloc(12)),
         (void *)0);
 #   endif
+    /* GC_malloc(0) must return NULL or something we can deallocate. */
+        GC_free(GC_malloc(0));
+        GC_free(GC_malloc_atomic(0));
+        GC_free(GC_malloc(0));
+        GC_free(GC_malloc_atomic(0));
     /* Repeated list reversal test. */
 	reverse_test();
 #   ifdef PRINTSTATS

@@ -28,6 +28,27 @@ GC_key_t GC_thread_key;
 
 static GC_bool keys_initialized;
 
+/* Return a single nonempty freelist fl to the global one pointed to 	*/
+/* by gfl.	*/
+
+static void return_single_freelist(void *fl, void **gfl)
+{
+    void *q, **qptr;
+
+    if (fl == ERROR_FL) return;
+    if (*gfl == 0) {
+      *gfl = fl;
+    } else {
+      GC_ASSERT(GC_size(fl) == GC_size(*gfl));
+      /* Concatenate: */
+	for (qptr = &(obj_link(fl)), q = *qptr;
+	     (word)q >= HBLKSIZE; qptr = &(obj_link(q)), q = *qptr);
+	GC_ASSERT(0 == q);
+	*qptr = *gfl;
+	*gfl = fl;
+    }
+}
+
 /* Recover the contents of the freelist array fl into the global one gfl.*/
 /* We hold the allocator lock.						*/
 static void return_freelists(void **fl, void **gfl)
@@ -37,30 +58,17 @@ static void return_freelists(void **fl, void **gfl)
 
     for (i = 1; i < TINY_FREELISTS; ++i) {
 	if ((word)(fl[i]) >= HBLKSIZE) {
-	  if (gfl[i] == 0) {
-	    gfl[i] = fl[i];
-	  } else {
-	    GC_ASSERT(GC_size(fl[i]) == GRANULES_TO_BYTES(i));
-	    GC_ASSERT(GC_size(gfl[i]) == GRANULES_TO_BYTES(i));
-	    /* Concatenate: */
-	      for (qptr = fl+i, q = *qptr;
-		   (word)q >= HBLKSIZE; qptr = &(obj_link(q)), q = *qptr);
-	      GC_ASSERT(0 == q);
-	      *qptr = gfl[i];
-	      gfl[i] = fl[i];
-	  }
+	  return_single_freelist(fl[i], gfl+i);
 	}
 	/* Clear fl[i], since the thread structure may hang around.	*/
 	/* Do it in a way that is likely to trap if we access it.	*/
 	fl[i] = (ptr_t)HBLKSIZE;
     }
+    /* The 0 granule freelist really contains 1 granule objects.	*/
+    if ((word)(fl[0]) >= HBLKSIZE && fl[0] != ERROR_FL) {
+        return_single_freelist(fl[0], gfl+1);
+    }
 }
-
-/* We statically allocate a single "size 0" object. It is linked to	*/
-/* itself, and is thus repeatedly reused for all size 0 allocation	*/
-/* requests.  (Size 0 gcj allocation requests are incorrect, and	*/
-/* we arrange for those to fault asap.)					*/
-static ptr_t size_zero_object = (ptr_t)(&size_zero_object);
 
 /* Each thread structure must be initialized.	*/
 /* This call must be made from the new thread.	*/
@@ -86,10 +94,13 @@ void GC_init_thread_local(GC_tlfs p)
 #	endif
     }   
     /* Set up the size 0 free lists.	*/
-    p -> ptrfree_freelists[0] = (void *)(&size_zero_object);
-    p -> normal_freelists[0] = (void *)(&size_zero_object);
+    /* We now handle most of them like regular free lists, to ensure	*/
+    /* That explicit deallocation works.  However, allocation of a	*/
+    /* size 0 "gcj" object is always an error.				*/
+    p -> ptrfree_freelists[0] = (void *)1;
+    p -> normal_freelists[0] = (void *)1;
 #   ifdef GC_GCJ_SUPPORT
-        p -> gcj_freelists[0] = (void *)(-1);
+        p -> gcj_freelists[0] = ERROR_FL;
 #   endif
 }
 

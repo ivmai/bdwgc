@@ -69,7 +69,8 @@
 		goto out; \
             } else { \
 		/* Large counter or NULL */ \
-                GC_generic_malloc_many(RAW_BYTES_FROM_INDEX(granules), \
+                GC_generic_malloc_many(((granules) == 0? GC_GRANULE_BYTES : \
+					  RAW_BYTES_FROM_INDEX(granules)), \
 				       kind, my_fl); \
 		my_entry = *my_fl; \
                 if (my_entry == 0) { \
