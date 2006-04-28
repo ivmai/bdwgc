@@ -197,9 +197,30 @@ void * GC_malloc_atomic(size_t bytes)
 
 extern int GC_gcj_kind;
 
+/* Gcj-style allocation without locks is extremely tricky.  The 	*/
+/* fundamental issue is that we may end up marking a free list, which	*/
+/* has freelist links instead of "vtable" pointers.  That is usually	*/
+/* OK, since the next object on the free list will be cleared, and	*/
+/* will thus be interpreted as containg a zero descriptor.  That's fine	*/
+/* if the object has not yet been initialized.  But there are		*/
+/* interesting potential races.						*/
+/* In the case of incremental collection, this seems hopeless, since	*/
+/* the marker may run asynchronously, and may pick up the pointer to  	*/
+/* the next freelist entry (which it thinks is a vtable pointer), get	*/
+/* suspended for a while, and then see an allocated object instead	*/
+/* of the vtable.  This made be avoidable with either a handshake with	*/
+/* the collector or, probably more easily, by moving the free list	*/
+/* links to the second word of each object.  The latter isn't a		*/
+/* universal win, since on architecture like Itanium, nonzero offsets	*/
+/* are not necessarily free.  And there may be cache fill order issues.	*/
+/* For now, we punt with incremental GC.  This probably means that	*/
+/* incremental GC should be enabled before we fork a second thread.	*/
 void * GC_gcj_malloc(size_t bytes,
 		     void * ptr_to_struct_containing_descr)
 {
+  if (GC_EXPECT(GC_incremental, 0)) {
+    return GC_core_gcj_malloc(bytes, ptr_to_struct_containing_descr);
+  } else {
     size_t granules = ROUNDED_UP_GRANULES(bytes);
     void *result;
     void **tiny_fl = ((GC_tlfs)GC_getspecific(GC_thread_key))
@@ -226,8 +247,11 @@ void * GC_gcj_malloc(size_t bytes,
 	/* Thus it is impossible for a mark procedure to see the 	*/
 	/* allocation of the next object, but to see this object 	*/
 	/* still containing a free list pointer.  Otherwise the 	*/
-	/* marker might find a random "mark descriptor".		*/
+	/* marker, by misinterpreting the freelist link as a vtable	*/
+        /* pointer, might find a random "mark descriptor" in the next	*/
+        /* object.							*/
     return result;
+  }
 }
 
 #endif /* GC_GCJ_SUPPORT */
