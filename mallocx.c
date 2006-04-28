@@ -470,7 +470,6 @@ void * GC_malloc_uncollectable(size_t lb)
 	GC_ASSERT(0 == op || GC_is_marked(op));
         return((void *) op);
     } else {
-	size_t lb;
 	hdr * hhdr;
 	
 	op = (ptr_t)GC_generic_malloc((word)lb, UNCOLLECTABLE);
