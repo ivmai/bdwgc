@@ -594,7 +594,11 @@
  * Each architecture may also define the style of virtual dirty bit
  * implementation to be used:
  *   MPROTECT_VDB: Write protect the heap and catch faults.
+ *   GWW_VDB: Use win32 GetWriteWatch primitive.
  *   PROC_VDB: Use the SVR4 /proc primitives to read dirty bits.
+ *
+ * The first and second one may be combined, in which case a runtime
+ * selection will be made, based on GetWriteWatch availability.
  *
  * An architecture may define DYNAMIC_LOADING if dynamic_load.c
  * defined GC_register_dynamic_libraries() for the architecture.
@@ -1153,13 +1157,13 @@
 #	define OS_TYPE "MSWIN32"
 		/* STACKBOTTOM and DATASTART are handled specially in 	*/
 		/* os_dep.c.						*/
-#       if !defined(__WATCOMC__) && !defined(GC_WIN32_THREADS)
+#       if !defined(__WATCOMC__)
 #	  define MPROTECT_VDB
+	  /* We also avoided doing this in the past with GC_WIN32_THREADS */
+	  /* Hopefully that's fixed.					  */
 #	endif
 #	if _MSC_VER >= 1300  /* .NET, i.e. > VisualStudio 6	*/
 #         define GWW_VDB
-#	else
-#	  define MPROTECT_VDB
 #	endif
 #       define DATAEND  /* not needed */
 #   endif
