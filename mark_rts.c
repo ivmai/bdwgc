@@ -150,6 +150,7 @@ void GC_add_roots(void *b, void *e)
 {
     DCL_LOCK_STATE;
     
+    if (!GC_is_initialized) GC_init();
     LOCK();
     GC_add_roots_inner((ptr_t)b, (ptr_t)e, FALSE);
     UNLOCK();
@@ -249,6 +250,7 @@ void GC_clear_roots (void)
 {
     DCL_LOCK_STATE;
     
+    if (!GC_is_initialized) GC_init();
     LOCK();
     roots_were_cleared = TRUE;
     n_root_sets = 0;

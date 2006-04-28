@@ -410,6 +410,9 @@ GC_API void GC_enable(void);
 /* Causes GC_local_gcj_malloc() to revert to	*/
 /* locked allocation.  Must be called 		*/
 /* before any GC_local_gcj_malloc() calls.	*/
+/* For best performance, should be called as early as possible.	*/
+/* On some platforms, calling it later may have adverse effects.*/
+/* Safe to call before GC_INIT().  Includes a GC_init() call.	*/
 GC_API void GC_enable_incremental(void);
 
 /* Does incremental mode write-protect pages?  Returns zero or	*/
@@ -1004,10 +1007,10 @@ extern void GC_thr_init(void);	/* Needed for Solaris/X86 ??	*/
 #     define GC_DATASTART ((void *) GC_MIN(_data_start__, _bss_start__))
 #     define GC_DATAEND	 ((void *) GC_MAX(_data_end__, _bss_end__))
 #     if defined(GC_DLL)
-#       define GC_INIT() { GC_add_roots(GC_DATASTART, GC_DATAEND); GC_init(); }
+#       define GC_INIT() { GC_add_roots(GC_DATASTART, GC_DATAEND); \
+			   GC_gcollect(); /* For blacklisting. */}
 #     else
-	/* Main program init not required, but other defined needed for */
-	/* uniformity.							*/
+	/* Main program init not required  */
 #       define GC_INIT() { GC_init(); }
 #     endif
 #   endif
@@ -1015,7 +1018,7 @@ extern void GC_thr_init(void);	/* Needed for Solaris/X86 ??	*/
       extern int _data[], _end[];
 #     define GC_DATASTART ((void *)((ulong)_data))
 #     define GC_DATAEND ((void *)((ulong)_end))
-#     define GC_INIT() { GC_add_roots(GC_DATASTART, GC_DATAEND); GC_init(); }
+#     define GC_INIT() { GC_add_roots(GC_DATASTART, GC_DATAEND); }
 #   endif
 #else
 #   define GC_INIT() { GC_init(); }
