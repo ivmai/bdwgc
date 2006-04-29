@@ -525,8 +525,11 @@ extern GC_warn_proc GC_current_warn_proc;
 
 
 /*
- * Hash table representation of sets of pages.  This assumes it is
- * OK to add spurious entries to sets.
+ * Hash table representation of sets of pages.
+ * Implements a map from aligned HBLKSIZE chunks of the address space to one
+ * bit each.
+ * This assumes it is OK to spuriously set bits, e.g. because multiple
+ * addresses are represented by a single location.
  * Used by black-listing code, and perhaps by dirty bit maintenance code.
  */
  
