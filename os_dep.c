@@ -1232,7 +1232,9 @@ void GC_register_data_segments(void)
           PVOID pages[16];
           DWORD count = 16;
           DWORD page_size;
-          /* On recent W2K versions, everything may exist, but always fail. */
+          /* Check that it actually works.  In spite of some 		*/
+	  /* documentation it actually seems to exist on W2K.		*/
+	  /* This test may be unnecessary, but ...			*/
           if (GetWriteWatch_func(WRITE_WATCH_FLAG_RESET,
                                  page, GC_page_size,
                                  pages,
@@ -1259,7 +1261,7 @@ void GC_register_data_segments(void)
       done = TRUE;
     }
 
-# endif
+# endif /* GWW_VDB */
 
   GC_bool GC_wnt = FALSE;
          /* This is a Windows NT derivative, i.e. NT, W2K, XP or later.  */
@@ -1662,13 +1664,19 @@ ptr_t GC_unix_get_mem(word bytes)
     ptr_t cur_brk = (ptr_t)sbrk(0);
     SBRK_ARG_T lsbs = (word)cur_brk & (GC_page_size-1);
     
-    if ((SBRK_ARG_T)bytes < 0) return(0); /* too big */
+    if ((SBRK_ARG_T)bytes < 0) {
+	result = 0; /* too big */
+	goto out;
+    }
     if (lsbs != 0) {
-        if((ptr_t)sbrk(GC_page_size - lsbs) == (ptr_t)(-1)) return(0);
+        if((ptr_t)sbrk(GC_page_size - lsbs) == (ptr_t)(-1)) {
+	    result = 0;
+	    goto out;
+	}
     }
 #   ifdef ADD_HEAP_GUARD_PAGES
-      /* This is useful for catching severe memory overwrite problems that span	*/
-      /* heap sections.  It shouldn't otherwise be turned on.			*/
+      /* This is useful for catching severe memory overwrite problems that */
+      /* span heap sections.  It shouldn't otherwise be turned on.	   */
       {
 	ptr_t guard = (ptr_t)sbrk((SBRK_ARG_T)GC_page_size);
 	if (mprotect(guard, GC_page_size, PROT_NONE) != 0)
@@ -1678,6 +1686,7 @@ ptr_t GC_unix_get_mem(word bytes)
     result = (ptr_t)sbrk((SBRK_ARG_T)bytes);
     if (result == (ptr_t)(-1)) result = 0;
   }
+ out:
 # ifdef IRIX5
     __UNLOCK_MALLOC();
 # endif
@@ -2160,32 +2169,52 @@ void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
         /*
         * GetWriteWatch is documented as returning non-zero when it fails,
         * but the documentation doesn't explicitly say why it would fail or
-        * what its behaviour will be if it fails.  If there are more dirty
+        * what its behaviour will be if it fails.
+	* It does appear to fail, at least on recent W2K instances, if
+	* the underlying memory was not allocated with the appropriate
+	* flag.  This is common if GC_enable_incremental is called
+	* shortly after GC initialization.  To avoid modifying the
+	* interface, we silently work around such a failure, it it only
+	* affects the initial (small) heap allocation.
+	* If there are more dirty
         * pages than will fit in the buffer, this is not treated as a
         * failure; we must check the page count in the loop condition.
+	* Since each partial call will reset the status of some
+	* pages, this should eventually terminate even in the overflow
+	* case.
         */
         if (GetWriteWatch_func(WRITE_WATCH_FLAG_RESET,
                                GC_heap_sects[i].hs_start,
                                GC_heap_sects[i].hs_bytes,
                                pages,
                                &count,
-                               &page_size) != 0)
-        {
-          GC_err_printf(
-            "GC_gww_read_dirty unexpectedly failed: "
-            "Falling back to marking all pages dirty\n");
-          memset(GC_grungy_pages, 0xff, sizeof(page_hash_table));
-          memset(GC_written_pages, 0xff, sizeof(page_hash_table));
-          return;
-        }
+                               &page_size) != 0) {
+          static int warn_count = 0;
+          unsigned j;
+          struct hblk * start = (struct hblk *)GC_heap_sects[i].hs_start;
+          static struct hblk *last_warned = 0;
+          unsigned nblocks = divHBLKSZ(GC_heap_sects[i].hs_bytes);
 
-        pages_end = pages + count;
-        while (pages != pages_end) {
-          struct hblk * h = (struct hblk *) *pages++;
-          struct hblk * h_end = (struct hblk *) ((char *) h + page_size);
-          do
-            set_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
-          while (++h < h_end);
+          if ( i != 0 && last_warned != start && warn_count++ < 5) {
+            last_warned = start;
+            WARN(
+              "GC_gww_read_dirty unexpectedly failed at %ld: "
+              "Falling back to marking all pages dirty\n", start);
+          }
+          for (j = 0; j < nblocks; ++j) {
+              word hash = PHT_HASH(start + j);
+              set_pht_entry_from_index(GC_grungy_pages, hash);
+          }
+          count = 1;  /* Done with this section. */
+        } else /* succeeded */{
+          pages_end = pages + count;
+          while (pages != pages_end) {
+            struct hblk * h = (struct hblk *) *pages++;
+            struct hblk * h_end = (struct hblk *) ((char *) h + page_size);
+            do
+              set_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
+            while (++h < h_end);
+          }
         }
       } while (count == GC_GWW_BUF_LEN);
     }

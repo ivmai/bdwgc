@@ -2280,6 +2280,9 @@ Since gc6.7:
    Thomas Klausner.)
  - Improvements to the HP/UX section of configure.in/configure.ac.
    (Thanks to Andreas Tobler)
+ - GC_unix_get_mem could neglect to release the malloc lock on Irix, under
+   extremely unlikely circumstances.  Thanks to Jean-Baptiste Nivois for
+   some careful code reading.
 
 Since gc6.8:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
@@ -2495,6 +2498,11 @@ Since gc7.0alpha5
    are almost certainly already out of date, but better than what we had
    before.
  - Fixed some win32 threads bugs, and added support for _beginthreadex.
+ - Fix zero size thread local allocation so that explicit deallocation
+   works correctly.
+ - Removed serious bug in GC_malloc_uncollectable(large size).
+ - Do not try to do thread-local gcj allocation in incremental mode.  There
+   are races in setting up the descriptor.
   
 To do:
  - REDIRECT_MALLOC and threads combination is getting closer, but currently

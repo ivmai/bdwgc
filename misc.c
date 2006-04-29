@@ -627,10 +627,6 @@ void GC_init_inner()
        || defined(GC_WIN32_THREADS)
         GC_thr_init();
 #   endif
-#   ifdef GC_SOLARIS_THREADS
-	/* We need dirty bits in order to find live stack sections.	*/
-        GC_dirty_init();
-#   endif
 #   if !defined(THREADS) || defined(GC_PTHREADS) || defined(GC_WIN32_THREADS) \
 	|| defined(GC_SOLARIS_THREADS)
       if (GC_stackbottom == 0) {
@@ -674,6 +670,17 @@ void GC_init_inner()
       /* word should be unsigned */
 #   endif
     GC_ASSERT((signed_word)(-1) < (signed_word)0);
+#   if !defined(SMALL_CONFIG)
+      if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
+	/* This used to test for !GC_no_win32_dlls.  Why? */
+        GC_setpagesize();
+	/* For GWW_MPROTECT on Win32, this needs to happen before any	*/
+	/* heap memory is allocated.					*/
+        GC_dirty_init();
+        GC_ASSERT(GC_bytes_allocd == 0)
+    	GC_incremental = TRUE;
+      }
+#   endif /* !SMALL_CONFIG */
     
     /* Add initial guess of root sets.  Do this first, since sbrk(0)	*/
     /* might be used.							*/
@@ -721,17 +728,6 @@ void GC_init_inner()
       PCR_IL_Unlock();
       GC_pcr_install();
 #   endif
-#   if !defined(SMALL_CONFIG)
-      if (!GC_no_win32_dlls && 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
-	GC_ASSERT(!GC_incremental);
-        GC_setpagesize();
-#       ifndef GC_SOLARIS_THREADS
-          GC_dirty_init();
-#       endif
-        GC_ASSERT(GC_bytes_allocd == 0)
-    	GC_incremental = TRUE;
-      }
-#   endif /* !SMALL_CONFIG */
     COND_DUMP;
     /* Get black list set up and/or incremental GC started */
       if (!GC_dont_precollect || GC_incremental) GC_gcollect_inner();
@@ -769,16 +765,15 @@ void GC_enable_incremental(void)
     LOCK();
     if (GC_incremental) goto out;
     GC_setpagesize();
-    if (GC_no_win32_dlls) goto out;
-#   ifndef GC_SOLARIS_THREADS 
-      maybe_install_looping_handler();  /* Before write fault handler! */
-      GC_dirty_init();
-      if (!GC_dirty_maintained) goto out;
-#   endif
+    /* if (GC_no_win32_dlls) goto out; Should be win32S test? */
+    maybe_install_looping_handler();  /* Before write fault handler! */
+    GC_incremental = TRUE;
     if (!GC_is_initialized) {
         GC_init_inner();
+    } else {
+	GC_dirty_init();
     }
-    if (GC_incremental) goto out;
+    if (!GC_dirty_maintained) goto out;
     if (GC_dont_gc) {
         /* Can't easily do it. */
         UNLOCK();
@@ -791,10 +786,13 @@ void GC_enable_incremental(void)
     	/* clean since nothing can point to an	  	*/
     	/* unmarked object.			  	*/
     GC_read_dirty();
-    GC_incremental = TRUE;
 out:
     UNLOCK();
+  } else {
+    GC_init();
   }
+# else
+    GC_init();
 # endif
 }
 
@@ -828,18 +826,23 @@ out:
       if (GC_stdout == INVALID_HANDLE_VALUE) {
 	  return -1;
       } else if (GC_stdout == 0) {
-	  char logPath[_MAX_PATH + 5];
+	char * file_name = GETENV("GC_LOG_FILE");
+	char logPath[_MAX_PATH + 5];
+
+        if (0 == file_name) {
 #         ifdef OLD_WIN32_LOG_FILE
 	    strcpy(logPath, LOG_FILE);
 #	  else
 	    GetModuleFileName(NULL, logPath, _MAX_PATH);
 	    strcat(logPath, ".log");
 #	  endif
-	  GC_stdout = CreateFile(logPath, GENERIC_WRITE,
-        			 FILE_SHARE_READ,
-        			 NULL, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH,
-        			 NULL); 
-    	  if (GC_stdout == INVALID_HANDLE_VALUE)
+	  file_name = logPath;
+	}
+	GC_stdout = CreateFile(logPath, GENERIC_WRITE,
+        		       FILE_SHARE_READ,
+        		       NULL, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH,
+        		       NULL); 
+    	if (GC_stdout == INVALID_HANDLE_VALUE)
 	    ABORT("Open of log file failed");
       }
       tmp = WriteFile(GC_stdout, buf, len, &written, NULL);
@@ -867,6 +870,9 @@ int GC_tmp;  /* Should really be local ... */
     }
     if (GC_stderr == NULL) {
 	GC_stderr = stderr;
+    }
+    if (GC_log == NULL) {
+	GC_log = stderr;
     }
   }
 #endif
@@ -922,6 +928,7 @@ int GC_write(fd, buf, len)
 
 
 #if defined(MSWIN32) || defined(MSWINCE)
+    /* FIXME: This is pretty ugly ... */
 #   define WRITE(f, buf, len) GC_write(buf, len)
 #else
 #   if defined(OS2) || defined(MACOS)

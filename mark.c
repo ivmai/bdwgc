@@ -1173,20 +1173,33 @@ void GC_help_marker(word my_mark_no)
 static void alloc_mark_stack(size_t n)
 {
     mse * new_stack = (mse *)GC_scratch_alloc(n * sizeof(struct GC_ms_entry));
+#   ifdef GWW_VDB
+      /* Don't recycle a stack segment obtained with the wrong flags. 	*/
+      /* Win32 GetWriteWatch requires the right kind of memory.		*/
+      static GC_incremental_at_stack_alloc = 0;
+      GC_bool recycle_old = (!GC_incremental || GC_incremental_at_stack_alloc);
+
+      GC_incremental_at_stack_alloc = GC_incremental;
+#   else
+#     define recycle_old 1
+#   endif
     
     GC_mark_stack_too_small = FALSE;
     if (GC_mark_stack_size != 0) {
         if (new_stack != 0) {
-          word displ = (word)GC_mark_stack & (GC_page_size - 1);
-          signed_word size = GC_mark_stack_size * sizeof(struct GC_ms_entry);
+	  if (recycle_old) {
+            /* Recycle old space */
+              size_t page_offset = (word)GC_mark_stack & (GC_page_size - 1);
+              size_t size = GC_mark_stack_size * sizeof(struct GC_ms_entry);
+	      size_t displ = 0;
           
-          /* Recycle old space */
-	      if (0 != displ) displ = GC_page_size - displ;
+	      if (0 != page_offset) displ = GC_page_size - page_offset;
 	      size = (size - displ) & ~(GC_page_size - 1);
 	      if (size > 0) {
 	        GC_add_to_heap((struct hblk *)
 	      			((word)GC_mark_stack + displ), (word)size);
 	      }
+	  }
           GC_mark_stack = new_stack;
           GC_mark_stack_size = n;
 	  GC_mark_stack_limit = new_stack + n;
