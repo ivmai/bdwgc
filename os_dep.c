@@ -2776,9 +2776,8 @@ void GC_dirty_init(void)
 #     endif
       GC_old_segv_handler = SetUnhandledExceptionFilter(GC_write_fault_handler);
       if (GC_old_segv_handler != NULL) {
-#	ifdef PRINTSTATS
-          GC_err_printf0("Replaced other UnhandledExceptionFilter\n");
-#	endif
+	if (GC_print_stats)
+          GC_log_printf("Replaced other UnhandledExceptionFilter\n");
       } else {
           GC_old_segv_handler = SIG_DFL;
       }

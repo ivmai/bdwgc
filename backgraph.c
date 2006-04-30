@@ -247,7 +247,7 @@ static void add_edge(ptr_t p,  ptr_t q)
     if (be -> n_edges == 100) {
 #       if 0
 	  if (GC_print_stats) {
-	    GC_err_printf0("The following object has in-degree >= 100:\n");
+	    GC_err_printf("The following object has in-degree >= 100:\n");
 	    GC_print_heap_obj(q);
 	  }
 #	endif
@@ -448,12 +448,12 @@ void GC_traverse_back_graph(void)
 
 void GC_print_back_graph_stats(void)
 {
-  GC_printf2("Maximum backwards height of reachable objects at GC %lu is %ld\n",
-	     (unsigned long) GC_gc_no, GC_max_height);
+  GC_printf("Maximum backwards height of reachable objects at GC %lu is %ld\n",
+	    (unsigned long) GC_gc_no, (unsigned long)GC_max_height);
   if (GC_max_height > GC_max_max_height) {
     GC_max_max_height = GC_max_height;
-    GC_printf0("The following unreachable object is last in a longest chain "
-	       "of unreachable objects:\n");
+    GC_printf("The following unreachable object is last in a longest chain "
+	      "of unreachable objects:\n");
     GC_print_heap_obj(GC_deepest_obj);
   }
   if (GC_print_stats) {
