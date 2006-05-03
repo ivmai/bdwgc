@@ -2503,6 +2503,9 @@ Since gc7.0alpha5
  - Removed serious bug in GC_malloc_uncollectable(large size).
  - Do not try to do thread-local gcj allocation in incremental mode.  There
    are races in setting up the descriptor.
+ - Add GC_INIT() to middle.c, fix some more GC_printfn calls.
+ - Some assertions erroneously used I_HOLD_LOCK() negatively, eventhough
+   it can now spuriously return TRUE.
   
 To do:
  - REDIRECT_MALLOC and threads combination is getting closer, but currently
