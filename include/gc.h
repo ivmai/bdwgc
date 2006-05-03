@@ -419,7 +419,7 @@ GC_API void GC_enable_incremental(void);
 /* more of the following, or'ed together:			*/
 #define GC_PROTECTS_POINTER_HEAP  1 /* May protect non-atomic objs.	*/
 #define GC_PROTECTS_PTRFREE_HEAP  2
-#define GC_PROTECTS_STATIC_DATA   4 /* Curently never.			*/
+#define GC_PROTECTS_STATIC_DATA   4 /* Currently never.			*/
 #define GC_PROTECTS_STACK	  8 /* Probably impractical.		*/
 
 #define GC_PROTECTS_NONE 0
