@@ -2898,8 +2898,11 @@ GC_bool GC_page_was_dirty(struct hblk *h)
 
 static GC_bool syscall_acquired_lock = FALSE;	/* Protected by GC lock. */
  
+#if 0
 void GC_begin_syscall(void)
 {
+    /* FIXME: Resurrecting this code would require fixing the	*/
+    /* test, which can spuriously return TRUE.			*/
     if (!I_HOLD_LOCK()) {
 	LOCK();
 	syscall_acquired_lock = TRUE;
@@ -2939,7 +2942,6 @@ void GC_unprotect_range(ptr_t addr, word len)
     	      ((ptr_t)end_block - (ptr_t)start_block) + HBLKSIZE);
 }
 
-#if 0
 
 /* We no longer wrap read by default, since that was causing too many	*/
 /* problems.  It is preferred that the client instead avoids writing	*/

@@ -30,6 +30,8 @@
  *   GC_word GC_atomic_add( volatile GC_word *addr, GC_word how_much )
  *   void GC_memory_barrier( )
  *   
+ * Note that I_HOLD_LOCK and I_DONT_HOLD_LOCK are used only positively
+ * in assertions, and may return TRUE in the "dont know" case.
  */  
 # ifdef THREADS
 #  include <atomic_ops.h>
@@ -73,6 +75,8 @@
 #    define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
 #    define I_HOLD_LOCK() (!GC_need_to_lock \
 			   || GC_lock_holder == GetCurrentThreadId())
+#    define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
+			   || GC_lock_holder != GetCurrentThreadId())
 #  elif defined(GC_PTHREADS)
 #    define NO_THREAD (pthread_t)(-1)
 #    include <pthread.h>
@@ -129,6 +133,8 @@
 #    define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
 #    define I_HOLD_LOCK() (!GC_need_to_lock \
 			   || pthread_equal(GC_lock_holder, pthread_self()))
+#    define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
+			   || !pthread_equal(GC_lock_holder, pthread_self()))
      extern volatile GC_bool GC_collecting;
 #    define ENTER_GC() GC_collecting = 1;
 #    define EXIT_GC() GC_collecting = 0;
@@ -146,6 +152,7 @@
 #   define SET_LOCK_HOLDER()
 #   define UNSET_LOCK_HOLDER()
 #   define I_HOLD_LOCK() TRUE
+#   define I_DONT_HOLD_LOCK() TRUE
        		/* Used only in positive assertions or to test whether	*/
        		/* we still need to acaquire the lock.	TRUE works in	*/
        		/* either case.						*/
