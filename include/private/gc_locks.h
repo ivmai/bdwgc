@@ -87,20 +87,22 @@
       /* and sleeping for fixed periods are likely to result in 	*/
       /* significant wasted time.  We thus rely mostly on queued locks. */
 #     define USE_SPIN_LOCK
-      extern volatile unsigned int GC_allocate_lock;
+      extern volatile AO_TS_t GC_allocate_lock;
       extern void GC_lock(void);
 	/* Allocation lock holder.  Only set if acquired by client through */
 	/* GC_call_with_alloc_lock.					   */
 #     ifdef GC_ASSERTIONS
 #        define UNCOND_LOCK() \
-		{ if (AO_test_and_set_acquire(&GC_allocate_lock)) GC_lock(); \
+		{ if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
+			GC_lock(); \
 		  SET_LOCK_HOLDER(); }
 #        define UNCOND_UNLOCK() \
 		{ GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
 	          AO_CLEAR(&GC_allocate_lock); }
 #     else
 #        define UNCOND_LOCK() \
-		{ if (AO_test_and_set_acquire(&GC_allocate_lock)) GC_lock(); }
+		{ if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
+			GC_lock(); }
 #        define UNCOND_UNLOCK() \
 		AO_CLEAR(&GC_allocate_lock)
 #     endif /* !GC_ASSERTIONS */
