@@ -19,11 +19,18 @@
 ## FIXME: `make distcheck' in this directory will not currently work.
 ##     This is most likely to the explicit flags passed to submakes.
 
-if USE_INTERNAL_LIBATOMICS_OPS
-SUBDIRS = @maybe_libatomic_ops@
-else
+# We currently use the source files directly from libatomic_ops, if we
+# use the internal version.  This is done since libatomic_ops doesn't
+# use libtool, since it has no real use for it.  But that seems to make
+# it hard to use either the resulting object files or libraries.
+# Thus there seems too be no real reason to recusively build in the
+# libatomic_ops directory.
+# if USE_INTERNAL_LIBATOMICS_OPS
+# SUBDIRS = @maybe_libatomic_ops@
+# else
+# SUBDIRS =
+# endif
 SUBDIRS =
-endif
 
 SUBDIRS += .
 
@@ -70,6 +77,10 @@ endif
 
 if WIN32_THREADS
 libgc_la_SOURCES += win32_threads.c
+endif
+
+if USE_INTERNAL_LIBATOMIC_OPS
+libgc_la_SOURCES += libatomic_ops/src/atomic_ops.c libatomic_ops/src/atomic_ops_sysdeps.S
 endif
 
 # Include THREADDLLIBS here to ensure that the correct versions of

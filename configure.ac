@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha6,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.10 $)
+AC_REVISION($Revision: 1.11 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -409,8 +409,6 @@ dnl Interface Selection
 dnl -------------------
 dnl
 dnl By default, make the library as general as possible.
-
-dnl :FIXME: gcj does not work as of gc-7.0_alpha2, so default set to no.
 dnl enable_gcj_support=no
 AC_ARG_ENABLE(gcj-support,
     [AC_HELP_STRING([--disable-gcj-support],
@@ -515,6 +513,7 @@ AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
 dnl Atomic Ops
 dnl ----------
 
+atomic_ops_libs=-latomic_ops
 AC_CHECK_HEADER(atomic_ops.h,
   [ AC_MSG_NOTICE([Using pre-installed libatomic_ops]) ],
   [ ao_dir=
@@ -545,13 +544,12 @@ AC_CHECK_HEADER(atomic_ops.h,
 
     dnl This gets the source include files, which is close enough?
     GC_CFLAGS="${GC_CFLAGS} -I \$(top_srcdir)/libatomic_ops/src"
-    ATOMIC_OPS_LIBS="-L \$(top_builddir)/libatomic_ops/src -latomic_ops"
-    maybe_libatomic_ops=libatomic_ops
+    maybe_libatomic_ops="libatomic_ops"
   ])
 
-AM_CONDITIONAL(USE_INTERNAL_LIBATOMICS_OPS,
-		test -z "$maybe_libatomic_ops" -a "$THREADS" != "none")
-AC_SUBST(maybe_libatomic_ops)
+AM_CONDITIONAL(USE_INTERNAL_LIBATOMIC_OPS,
+		test -n "$maybe_libatomic_ops" -a "$THREADS" != "none")
+AC_SUBST(atomic_ops_libs)
 
 dnl Produce the Files
 dnl -----------------
