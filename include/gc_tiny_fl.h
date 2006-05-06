@@ -43,6 +43,9 @@
  * space, so we no longer do so.
  */
 #ifndef GC_GRANULE_BYTES
+  /* GC_GRANULE_BYTES should not be overridden in any instances of the GC */
+  /* library that may be shared between applications, since it affects	  */
+  /* the binary interface to the library.				  */
 # if defined(__LP64__) || defined (_LP64) || defined(_WIN64) \
 	|| defined(__s390x__) || defined(__x86_64__) \
 	|| defined(__alpha__) || defined(__powerpc64__) \
