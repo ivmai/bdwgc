@@ -1028,7 +1028,14 @@ void * GC_inner_start_routine(struct GC_stack_base *sb, void * arg)
 
 void * GC_start_routine(void * arg)
 {
-    GC_call_with_stack_base(GC_inner_start_routine, arg);
+#   ifdef INCLUDE_LINUX_THREAD_DESCR
+      struct GC_stack_base sb;
+      if (GC_get_stack_base(&sb) != GC_SUCCESS)
+	ABORT("Failed to get thread stack base.");
+      return GC_inner_start_routine(&sb, arg);
+#   else
+      return GC_call_with_stack_base(GC_inner_start_routine, arg);
+#   endif
 }
 
 int
@@ -1253,7 +1260,7 @@ void GC_lock(void)
     unsigned my_last_spins;
     int i;
 
-    if (!AO_test_and_set_acquire(&GC_allocate_lock)) {
+    if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_CLEAR) {
         return;
     }
     my_spin_max = spin_max;
@@ -1264,7 +1271,7 @@ void GC_lock(void)
             GC_pause();
             continue;
         }
-        if (!AO_test_and_set_acquire(&GC_allocate_lock)) {
+        if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_CLEAR) {
 	    /*
              * got it!
              * Spinning worked.  Thus we're probably not being scheduled
@@ -1280,7 +1287,7 @@ void GC_lock(void)
     spin_max = low_spin_max;
 yield:
     for (i = 0;; ++i) {
-        if (!AO_test_and_set_acquire(&GC_allocate_lock)) {
+        if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_CLEAR) {
             return;
         }
 #       define SLEEP_THRESHOLD 12
