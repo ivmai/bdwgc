@@ -121,7 +121,7 @@ DIST_COMMON = $(am__configure_deps) $(am__pkginclude_HEADERS_DIST) \
 @PTHREADS_TRUE@am__append_5 = pthread_support.c pthread_stop_world.c
 @DARWIN_THREADS_TRUE@am__append_6 = darwin_stop_world.c
 @WIN32_THREADS_TRUE@am__append_7 = win32_threads.c
-@USE_INTERNAL_LIBATOMIC_OPS_TRUE@am__append_8 = libatomic_ops/src/atomic_ops.c libatomic_ops/src/atomic_ops_sysdeps.S
+@USE_INTERNAL_LIBATOMIC_OPS_TRUE@am__append_8 = atomic_ops.c atomic_ops_sysdeps.S
 
 # C++ Interface
 # -------------
@@ -161,14 +161,13 @@ am__libgc_la_SOURCES_DIST = allchblk.c alloc.c blacklst.c checksums.c \
 	real_malloc.c reclaim.c specific.c stubborn.c typd_mlc.c \
 	backgraph.c thread_local_alloc.c pthread_support.c \
 	pthread_stop_world.c darwin_stop_world.c win32_threads.c \
-	libatomic_ops/src/atomic_ops.c \
-	libatomic_ops/src/atomic_ops_sysdeps.S
+	atomic_ops.c atomic_ops_sysdeps.S
 @PTHREADS_TRUE@am__objects_1 = pthread_support.lo \
 @PTHREADS_TRUE@	pthread_stop_world.lo
 @DARWIN_THREADS_TRUE@am__objects_2 = darwin_stop_world.lo
 @WIN32_THREADS_TRUE@am__objects_3 = win32_threads.lo
-@USE_INTERNAL_LIBATOMIC_OPS_TRUE@am__objects_4 = libatomic_ops/src/atomic_ops.lo \
-@USE_INTERNAL_LIBATOMIC_OPS_TRUE@	libatomic_ops/src/atomic_ops_sysdeps.lo
+@USE_INTERNAL_LIBATOMIC_OPS_TRUE@am__objects_4 = atomic_ops.lo \
+@USE_INTERNAL_LIBATOMIC_OPS_TRUE@	atomic_ops_sysdeps.lo
 am_libgc_la_OBJECTS = allchblk.lo alloc.lo blacklst.lo checksums.lo \
 	dbg_mlc.lo dyn_load.lo finalize.lo gc_dlopen.lo gcj_mlc.lo \
 	headers.lo malloc.lo mallocx.lo mark.lo mark_rts.lo misc.lo \
@@ -663,17 +662,6 @@ cord/cordtest.lo: cord/$(am__dirstamp) cord/$(DEPDIR)/$(am__dirstamp)
 cord/cordxtra.lo: cord/$(am__dirstamp) cord/$(DEPDIR)/$(am__dirstamp)
 libcord.la: $(libcord_la_OBJECTS) $(libcord_la_DEPENDENCIES) 
 	$(LINK) -rpath $(libdir) $(libcord_la_LDFLAGS) $(libcord_la_OBJECTS) $(libcord_la_LIBADD) $(LIBS)
-libatomic_ops/src/$(am__dirstamp):
-	@$(mkdir_p) libatomic_ops/src
-	@: > libatomic_ops/src/$(am__dirstamp)
-libatomic_ops/src/$(DEPDIR)/$(am__dirstamp):
-	@$(mkdir_p) libatomic_ops/src/$(DEPDIR)
-	@: > libatomic_ops/src/$(DEPDIR)/$(am__dirstamp)
-libatomic_ops/src/atomic_ops.lo: libatomic_ops/src/$(am__dirstamp) \
-	libatomic_ops/src/$(DEPDIR)/$(am__dirstamp)
-libatomic_ops/src/atomic_ops_sysdeps.lo:  \
-	libatomic_ops/src/$(am__dirstamp) \
-	libatomic_ops/src/$(DEPDIR)/$(am__dirstamp)
 libgc.la: $(libgc_la_OBJECTS) $(libgc_la_DEPENDENCIES) 
 	$(LINK) -rpath $(libdir) $(libgc_la_LDFLAGS) $(libgc_la_OBJECTS) $(libgc_la_LIBADD) $(LIBS)
 libgccpp.la: $(libgccpp_la_OBJECTS) $(libgccpp_la_DEPENDENCIES) 
@@ -727,10 +715,6 @@ mostlyclean-compile:
 	-rm -f cord/cordtest.lo
 	-rm -f cord/cordxtra.$(OBJEXT)
 	-rm -f cord/cordxtra.lo
-	-rm -f libatomic_ops/src/atomic_ops.$(OBJEXT)
-	-rm -f libatomic_ops/src/atomic_ops.lo
-	-rm -f libatomic_ops/src/atomic_ops_sysdeps.$(OBJEXT)
-	-rm -f libatomic_ops/src/atomic_ops_sysdeps.lo
 	-rm -f tests/leak_test.$(OBJEXT)
 	-rm -f tests/middle.$(OBJEXT)
 	-rm -f tests/test.$(OBJEXT)
@@ -742,6 +726,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allchblk.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alloc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atomic_ops.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/backgraph.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blacklst.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checksums.Plo@am__quote@
@@ -776,7 +761,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@cord/$(DEPDIR)/cordprnt.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@cord/$(DEPDIR)/cordtest.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@cord/$(DEPDIR)/cordxtra.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@libatomic_ops/src/$(DEPDIR)/atomic_ops.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/leak_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/middle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test.Po@am__quote@
@@ -849,7 +833,6 @@ mostlyclean-libtool:
 clean-libtool:
 	-rm -rf .libs _libs
 	-rm -rf cord/.libs cord/_libs
-	-rm -rf libatomic_ops/src/.libs libatomic_ops/src/_libs
 
 distclean-libtool:
 	-rm -f libtool
@@ -1302,8 +1285,6 @@ distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-rm -f cord/$(DEPDIR)/$(am__dirstamp)
 	-rm -f cord/$(am__dirstamp)
-	-rm -f libatomic_ops/src/$(DEPDIR)/$(am__dirstamp)
-	-rm -f libatomic_ops/src/$(am__dirstamp)
 	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
 	-rm -f tests/$(am__dirstamp)
 
@@ -1317,7 +1298,7 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libLTLIBRARIES \
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf ./$(DEPDIR) cord/$(DEPDIR) libatomic_ops/src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf ./$(DEPDIR) cord/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-libtool distclean-tags
@@ -1346,7 +1327,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf ./$(DEPDIR) cord/$(DEPDIR) libatomic_ops/src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf ./$(DEPDIR) cord/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -1390,6 +1371,12 @@ uninstall-info: uninstall-info-recursive
 	uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLTLIBRARIES uninstall-pkgincludeHEADERS
 
+
+$(srcdir)/atomic_ops.c: $(srcdir)/libatomic_ops/src/atomic_ops.c
+	cp $(srcdir)/libatomic_ops/src/atomic_ops.c $(srcdir)/atomic_ops.c
+
+$(srcdir)/atomic_ops_sysdeps.S: $(srcdir)/libatomic_ops/src/atomic_ops_sysdeps.S
+	cp $(srcdir)/libatomic_ops/src/atomic_ops_sysdeps.S $(srcdir)/atomic_ops_sysdeps.S
 .s.lo:
 	$(LTCOMPILE) $(ASM_CPP_OPTIONS) -c $<
 

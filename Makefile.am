@@ -80,8 +80,14 @@ libgc_la_SOURCES += win32_threads.c
 endif
 
 if USE_INTERNAL_LIBATOMIC_OPS
-libgc_la_SOURCES += libatomic_ops/src/atomic_ops.c libatomic_ops/src/atomic_ops_sysdeps.S
+libgc_la_SOURCES += atomic_ops.c atomic_ops_sysdeps.S
 endif
+
+$(srcdir)/atomic_ops.c: $(srcdir)/libatomic_ops/src/atomic_ops.c
+	cp $(srcdir)/libatomic_ops/src/atomic_ops.c $(srcdir)/atomic_ops.c
+
+$(srcdir)/atomic_ops_sysdeps.S: $(srcdir)/libatomic_ops/src/atomic_ops_sysdeps.S
+	cp $(srcdir)/libatomic_ops/src/atomic_ops_sysdeps.S $(srcdir)/atomic_ops_sysdeps.S
 
 # Include THREADDLLIBS here to ensure that the correct versions of
 # linuxthread semaphore functions get linked:
