@@ -96,7 +96,13 @@
 # include <sys/uio.h>
 # include <malloc.h>   /* for locking */
 #endif
-#if defined(USE_MMAP) || defined(USE_MUNMAP) || defined(ADD_HEAP_GUARD_PAGES)
+
+#if defined(LINUX) || defined(FREEBSD) || defined(SOLARIS) || defined(IRIX5) \
+	|| defined(USE_MMAP) || defined(USE_MUNMAP)
+# define MMAP_SUPPORTED
+#endif
+
+#if defined(MMAP_SUPPORTED) || defined(ADD_HEAP_GUARD_PAGES)
 # if defined(USE_MUNMAP) && !defined(USE_MMAP)
     --> USE_MUNMAP requires USE_MMAP
 # endif
@@ -560,8 +566,7 @@ word GC_page_size;
   }
 
 # else
-#   if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(USE_MMAP) \
-       || defined(USE_MUNMAP)
+#   if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(USE_MMAP)
 	void GC_setpagesize(void)
 	{
 	    GC_page_size = GETPAGESIZE();
@@ -1583,8 +1588,7 @@ void GC_register_data_segments(void)
 
 # define SBRK_ARG_T ptrdiff_t
 
-
-#if defined(USE_MMAP) || defined(USE_MUNMAP)
+#if defined(MMAP_SUPPORTED)
 
 #ifdef USE_MMAP_FIXED
 #   define GC_MMAP_FLAGS MAP_FIXED | MAP_PRIVATE
@@ -1606,16 +1610,11 @@ void GC_register_data_segments(void)
 # define OPT_MAP_ANON 0
 #endif 
 
-#endif /* defined(USE_MMAP) || defined(USE_MUNMAP) */
-
-#if defined(USE_MMAP)
-/* Tested only under Linux, IRIX5 and Solaris 2 */
-
 #ifndef HEAP_START
 #   define HEAP_START 0
 #endif
 
-ptr_t GC_unix_get_mem(word bytes)
+ptr_t GC_unix_mmap_get_mem(word bytes)
 {
     void *result;
     static ptr_t last_addr = HEAP_START;
@@ -1643,7 +1642,7 @@ ptr_t GC_unix_get_mem(word bytes)
 	/* don't work, so we discard it and try again.			*/
 	munmap(result, (size_t)(-GC_page_size) - (size_t)result);
 			/* Leave last page mapped, so we can't repeat. */
-	return GC_unix_get_mem(bytes);
+	return GC_unix_mmap_get_mem(bytes);
       }
 #   else
       GC_ASSERT(last_addr != 0);
@@ -1651,8 +1650,18 @@ ptr_t GC_unix_get_mem(word bytes)
     return((ptr_t)result);
 }
 
-#else /* Not USE_MMAP */
+# endif  /* MMAP_SUPPORTED */
+
+#if defined(USE_MMAP)
+
 ptr_t GC_unix_get_mem(word bytes)
+{
+    return GC_unix_mmap_get_mem(bytes);
+}
+
+#else /* Not USE_MMAP */
+
+ptr_t GC_unix_sbrk_get_mem(word bytes)
 {
   ptr_t result;
 # ifdef IRIX5
@@ -1692,6 +1701,35 @@ ptr_t GC_unix_get_mem(word bytes)
 # endif
   return(result);
 }
+
+#if defined(MMAP_SUPPORTED)
+
+/* By default, we try both sbrk and mmap, in that order. */
+ptr_t GC_unix_get_mem(word bytes)
+{
+    static GC_bool sbrk_failed = FALSE;
+    ptr_t result = 0;
+
+    if (!sbrk_failed) result = GC_unix_sbrk_get_mem(bytes);
+    if (0 == result) {
+	sbrk_failed = TRUE;
+	result = GC_unix_mmap_get_mem(bytes);
+    }
+    if (0 == result) {
+	/* Try sbrk again, in case sbrk memory became available. */
+	result = GC_unix_sbrk_get_mem(bytes);
+    }
+    return result;
+}
+
+#else /* !MMAP_SUPPORTED */
+
+ptr_t GC_unix_get_mem(word bytes)
+{
+    return GC_unix_sbrk_get_mem(bytes);
+}
+
+#endif
 
 #endif /* Not USE_MMAP */
 

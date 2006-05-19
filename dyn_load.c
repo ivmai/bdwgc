@@ -51,7 +51,7 @@
 
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE)) \
     && !defined(PCR)
-#if !defined(SUNOS5DL) && !defined(IRIX5) && \
+#if !defined(SOLARISDL) && !defined(IRIX5) && \
     !defined(MSWIN32) && !defined(MSWINCE) && \
     !(defined(ALPHA) && defined(OSF1)) && \
     !defined(HPUX) && !(defined(LINUX) && defined(__ELF__)) && \
@@ -65,7 +65,7 @@
 #endif
 
 #include <stdio.h>
-#ifdef SUNOS5DL
+#ifdef SOLARISDL
 #   include <sys/elf.h>
 #   include <dlfcn.h>
 #   include <link.h>
@@ -108,7 +108,7 @@
 #    endif
 #  endif
 
-#if defined(SUNOS5DL) && !defined(USE_PROC_FOR_LIBRARIES)
+#if defined(SOLARISDL) && !defined(USE_PROC_FOR_LIBRARIES)
 
 #ifdef LINT
     Elf32_Dyn _DYNAMIC;
@@ -154,19 +154,17 @@ GC_FirstDLOpenedLinkMap()
     return cachedResult;
 }
 
-#endif /* SUNOS5DL ... */
+#endif /* SOLARISDL ... */
 
 /* BTL: added to fix circular dlopen definition if GC_SOLARIS_THREADS defined */
 # if defined(GC_must_restore_redefined_dlopen)
 #   define dlopen GC_dlopen
 # endif
 
-# if defined(SUNOS5DL)
+# if defined(SOLARISDL)
 /* Add dynamic library data sections to the root set.		*/
 # if !defined(PCR) && !defined(GC_SOLARIS_THREADS) && defined(THREADS)
-#   ifndef SRC_M3
 	--> fix mutual exclusion with dlopen
-#   endif  /* We assume M3 programs don't call dlopen for now */
 # endif
 
 # ifndef USE_PROC_FOR_LIBRARIES
@@ -178,7 +176,6 @@ void GC_register_dynamic_libraries()
   for (lm = GC_FirstDLOpenedLinkMap();
        lm != (struct link_map *) 0;  lm = lm->l_next)
     {
-#     ifdef SUNOS5DL
 	ElfW(Ehdr) * e;
         ElfW(Phdr) * p;
         unsigned long offset;
@@ -205,12 +202,11 @@ void GC_register_dynamic_libraries()
               break;
           }
 	}
-#     endif
     }
 }
 
 # endif /* !USE_PROC ... */
-# endif /* SUNOS */
+# endif /* SOLARISDL */
 
 #if defined(LINUX) && defined(__ELF__) || defined(SCO_ELF) || \
     (defined(FREEBSD) && defined(__ELF__)) || defined(DGUX) || \
@@ -530,9 +526,9 @@ void GC_register_dynamic_libraries()
     ptr_t heap_start = (ptr_t)HEAP_START;
     ptr_t heap_end = heap_start;
 
-#   ifdef SUNOS5DL
+#   ifdef SOLARISDL
 #     define MA_PHYS 0
-#   endif /* SUNOS5DL */
+#   endif /* SOLARISDL */
 
     if (fd < 0) {
       sprintf(buf, "/proc/%d", getpid());

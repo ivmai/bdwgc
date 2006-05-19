@@ -467,8 +467,8 @@ base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
 	echo > base_lib
 	rm -f dont_ar_1
 	cp $(AO_INSTALL_DIR)/lib/libatomic_ops.a gc.a
-	./if_mach SPARC SUNOS5 touch dont_ar_1
-	./if_mach SPARC SUNOS5 $(AR) rus gc.a $(OBJS) dyn_load.o
+	./if_mach SPARC SOLARIS touch dont_ar_1
+	./if_mach SPARC SOLARIS $(AR) rus gc.a $(OBJS) dyn_load.o
 	./if_mach M68K AMIGA touch dont_ar_1
 	./if_mach M68K AMIGA $(AR) -vrus gc.a $(OBJS) dyn_load.o
 	./if_not_there dont_ar_1 $(AR) ru gc.a $(OBJS) dyn_load.o
@@ -477,8 +477,8 @@ base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
 
 cords: $(CORD_OBJS) cord/cordtest $(UTILS)
 	rm -f dont_ar_3
-	./if_mach SPARC SUNOS5 touch dont_ar_3
-	./if_mach SPARC SUNOS5 $(AR) rus gc.a $(CORD_OBJS)
+	./if_mach SPARC SOLARIS touch dont_ar_3
+	./if_mach SPARC SOLARIS $(AR) rus gc.a $(CORD_OBJS)
 	./if_mach M68K AMIGA touch dont_ar_3
 	./if_mach M68K AMIGA $(AR) -vrus gc.a $(CORD_OBJS)
 	./if_not_there dont_ar_3 $(AR) ru gc.a $(CORD_OBJS)
@@ -501,8 +501,8 @@ c++-nt: c++
 
 c++: gc_cpp.o $(srcdir)/include/gc_cpp.h test_cpp
 	rm -f dont_ar_4
-	./if_mach SPARC SUNOS5 touch dont_ar_4
-	./if_mach SPARC SUNOS5 $(AR) rus gc.a gc_cpp.o
+	./if_mach SPARC SOLARIS touch dont_ar_4
+	./if_mach SPARC SOLARIS $(AR) rus gc.a gc_cpp.o
 	./if_mach M68K AMIGA touch dont_ar_4
 	./if_mach M68K AMIGA $(AR) -vrus gc.a gc_cpp.o
 	./if_not_there dont_ar_4 $(AR) ru gc.a gc_cpp.o
@@ -558,7 +558,7 @@ mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s \
 	    $(srcdir)/ia64_save_regs_in_stack.s \
 	    $(srcdir)/sparc_netbsd_mach_dep.s $(UTILS)
 	rm -f mach_dep.o
-	./if_mach SPARC SUNOS5 $(CC) -c -o mach_dep2.o $(srcdir)/sparc_mach_dep.S
+	./if_mach SPARC SOLARIS $(CC) -c -o mach_dep2.o $(srcdir)/sparc_mach_dep.S
 	./if_mach SPARC OPENBSD $(AS) -o mach_dep2.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_mach SPARC NETBSD $(AS) -o mach_dep2.o $(srcdir)/sparc_netbsd_mach_dep.s
 	./if_mach SPARC "" $(CC) -c -o mach_dep1.o $(SPECIALCFLAGS) $(srcdir)/mach_dep.c

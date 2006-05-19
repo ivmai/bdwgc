@@ -142,7 +142,7 @@
 # endif
 # if defined(sun) && (defined(i386) || defined(__i386__))
 #    define I386
-#    define SUNOS5
+#    define SOLARIS
 #    define mach_type_known
 # endif
 # if (defined(__OS2__) || defined(__EMX__)) && defined(__32BIT__)
@@ -157,7 +157,7 @@
 #   define SPARC
     /* Test for SunOS 5.x */
 #     include <errno.h>
-#     define SUNOS5
+#     define SOLARIS
 #   define mach_type_known
 # endif
 # if defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
@@ -462,7 +462,7 @@
 		    /*             I386       ==> Intel 386	 	*/
 		    /*		    (SEQUENT, OS2, SCO, LINUX, NETBSD,	*/
 		    /*		     FREEBSD, THREE86BSD, MSWIN32,	*/
-		    /* 		     BSDI,SUNOS5, NEXT, other variants)	*/
+		    /* 		     BSDI,SOLARIS, NEXT, other variants)	*/
                     /*             NS32K      ==> Encore Multimax 	*/
                     /*             MIPS       ==> R2000 through R14K	*/
                     /*			(many variants)			*/
@@ -471,7 +471,7 @@
                     /*		   HP_PA      ==> HP9000/700 & /800	*/
                     /*				  HP/UX, LINUX		*/
 		    /*		   SPARC      ==> SPARC	v7/v8/v9	*/
-		    /*			(SUNOS5, LINUX, DRSNX variants)	*/
+		    /*			(SOLARIS, LINUX, DRSNX variants)	*/
 		    /* 		   ALPHA      ==> DEC Alpha 		*/
 		    /*			(OSF1 and LINUX variants)	*/
 		    /* 		   M88K       ==> Motorola 88XX0        */
@@ -868,8 +868,8 @@
 #   endif
     /* Don't define USE_ASM_PUSH_REGS.  We do use an asm helper, but	*/
     /* not to push the registers on the mark stack.			*/
-#   ifdef SUNOS5
-#	define OS_TYPE "SUNOS5"
+#   ifdef SOLARIS
+#	define OS_TYPE "SOLARIS"
 	extern int _etext[];
 	extern int _end[];
 	extern ptr_t GC_SysVGetDataStart(size_t, ptr_t);
@@ -996,8 +996,8 @@
       extern int etext[];
 #     define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
 #   endif
-#   ifdef SUNOS5
-#	define OS_TYPE "SUNOS5"
+#   ifdef SOLARIS
+#	define OS_TYPE "SOLARIS"
         extern int _etext[], _end[];
   	extern ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
@@ -1897,23 +1897,24 @@
 # endif
 
 # ifndef GETPAGESIZE
-#   if defined(SUNOS5) || defined(IRIX5) || defined(LINUX) \
+#   if defined(SOLARIS) || defined(IRIX5) || defined(LINUX) \
        || defined(NETBSD) || defined(FREEBSD) || defined(HPUX)
 #	include <unistd.h>
 #   endif
 #   define GETPAGESIZE() getpagesize()
 # endif
 
-# if defined(SUNOS5) || defined(DRSNX) || defined(UTS4)
-	    /* OS has SVR4 generic features.  Probably others also qualify.	*/
+# if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
+	    /* OS has SVR4 generic features.		*/
+    	    /* Probably others also qualify.		*/
 #   define SVR4
 # endif
 
-# if defined(SUNOS5) || defined(DRSNX)
-	    /* OS has SUNOS5 style semi-undocumented interface to dynamic 	*/
-	    /* loader.								*/
-#   define SUNOS5DL
-	    /* OS has SUNOS5 style signal handlers.				*/
+# if defined(SOLARIS) || defined(DRSNX)
+	    /* OS has SOLARIS style semi-undocumented interface */
+    	    /* to dynamic loader.				*/
+#   define SOLARISDL
+	    /* OS has SOLARIS style signal handlers.		*/
 #   define SUNOS5SIGS
 # endif
 
@@ -2024,7 +2025,7 @@
 # if defined(GC_NETBSD_THREADS) && !defined(NETBSD)
 	--> inconsistent configuration
 # endif
-# if defined(GC_SOLARIS_THREADS) && !defined(SUNOS5)
+# if defined(GC_SOLARIS_THREADS) && !defined(SOLARIS)
 	--> inconsistent configuration
 # endif
 # if defined(GC_HPUX_THREADS) && !defined(HPUX)
@@ -2163,7 +2164,7 @@
 					    + GC_page_size-1)
 # elif defined(NEXT) || defined(DOS4GW) || defined(NONSTOP) || \
 		 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) || \
-		 (defined(SUNOS5) && !defined(USE_MMAP))
+		 (defined(SOLARIS) && !defined(USE_MMAP))
 #   define GET_MEM(bytes) HBLKPTR((size_t) calloc(1, (size_t)bytes + GC_page_size) \
 					             + GC_page_size-1)
 # elif defined(MSWIN32)

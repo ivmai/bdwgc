@@ -60,7 +60,7 @@ GC_bool GC_has_other_debug_info(ptr_t p)
 
 # include <stdlib.h>
 
-# if defined(LINUX) || defined(SUNOS5) \
+# if defined(LINUX) || defined(SOLARIS) \
      || defined(HPUX) || defined(IRIX5) || defined(OSF1)
 #   define RANDOM() random()
 # else

@@ -56,7 +56,7 @@ mach_dep.o: mach_dep.c mips_mach_dep.s rs6000_mach_dep.s if_mach if_not_there
 	./if_mach MIPS "" as -o mach_dep.o mips_mach_dep.s
 	./if_mach POWERPC AIX as -o mach_dep.o rs6000_mach_dep.s
 	./if_mach ALPHA "" as -o mach_dep.o alpha_mach_dep.s
-	./if_mach SPARC SUNOS5 as -o mach_dep.o sparc_mach_dep.s
+	./if_mach SPARC SOLARIS as -o mach_dep.o sparc_mach_dep.s
 	./if_not_there mach_dep.o $(CC) -c $(SPECIALCFLAGS) mach_dep.c
 
 if_mach: if_mach.c gcconfig.h
