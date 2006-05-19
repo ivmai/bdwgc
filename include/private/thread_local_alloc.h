@@ -93,13 +93,13 @@ typedef struct thread_local_freelists {
 #   define GC_getspecific pthread_getspecific
 #   define GC_setspecific pthread_setspecific
 #   define GC_key_create pthread_key_create
-#   define GC_remove_specific()  /* No need for cleanup on exit. */
+#   define GC_remove_specific(key)  /* No need for cleanup on exit. */
     typedef pthread_key_t GC_key_t;
 # elif defined(USE_COMPILER_TLS) || defined(USE_WIN32_COMPILER_TLS)
 #   define GC_getspecific(x) (x)
 #   define GC_setspecific(key, v) ((key) = (v), 0)
 #   define GC_key_create(key, d) 0
-#   define GC_remove_specific()  /* No need for cleanup on exit. */
+#   define GC_remove_specific(key)  /* No need for cleanup on exit. */
     typedef void * GC_key_t;
 # elif defined(USE_WIN32_SPECIFIC)
 #   include <windows.h>
@@ -109,7 +109,7 @@ typedef struct thread_local_freelists {
 #   define GC_key_create(key, d)  \
 	((d) != 0? (ABORT("Destructor unsupported by TlsAlloc"),0) \
 	 	 : (*(key) = TlsAlloc(), 0))
-#   define GC_remove_specific()  /* No need for cleanup on thread exit. */
+#   define GC_remove_specific(key)  /* No need for cleanup on thread exit. */
     	/* Need TlsFree on process exit/detach ? */
     typedef DWORD GC_key_t;
 # elif defined(USE_CUSTOM_SPECIFIC)

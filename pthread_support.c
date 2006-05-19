@@ -869,7 +869,7 @@ int GC_unregister_my_thread(void)
 	me -> flags |= FINISHED;
     }
 #   if defined(THREAD_LOCAL_ALLOC)
-      GC_remove_specific();
+      GC_remove_specific(GC_thread_key);
 #   endif
     UNLOCK();
     return GC_SUCCESS;
@@ -1068,13 +1068,22 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     if (!GC_thr_initialized) GC_thr_init();
 #   ifdef GC_ASSERTIONS
       {
-	size_t stack_size;
-	if (NULL == attr) {
+	size_t stack_size = 0;
+	if (NULL != attr) {
+	   pthread_attr_getstacksize(attr, &stack_size);
+	}
+	if (0 == stack_size) {
 	   pthread_attr_t my_attr;
 	   pthread_attr_init(&my_attr);
 	   pthread_attr_getstacksize(&my_attr, &stack_size);
-	} else {
-	   pthread_attr_getstacksize(attr, &stack_size);
+	}
+	/* On Solaris 10, with default attr initialization, 	*/
+	/* stack_size remains 0.  Fudge it.			*/
+	if (0 == stack_size) {
+#	    ifndef SOLARIS
+	      WARN("Failed to get stack size for assertion checking\n", 0);
+#	    endif
+	    stack_size = 1000000;
 	}
 #       ifdef PARALLEL_MARK
 	  GC_ASSERT(stack_size >= (8*HBLKSIZE*sizeof(word)));

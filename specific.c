@@ -12,11 +12,14 @@
  */
 
 #include "private/gc_priv.h"	/* For configuration, pthreads.h. */
+#include "private/thread_local_alloc.h"
+				/* To determine type of tsd impl. */
+				/* Includes private/specific.h	  */
+				/* if needed.			  */
 
-#if defined(GC_LINUX_THREADS)
+#if defined(USE_CUSTOM_SPECIFIC)
 
 #include "atomic_ops.h"
-#include "private/specific.h"
 
 static tse invalid_tse = {INVALID_QTID, 0, 0, INVALID_THREADID};
 			/* A thread-specific data entry which will never    */
@@ -159,4 +162,4 @@ void PREFIXED(check_tsd_marks) (tsd *key)
 
 #endif
 
-#endif /* GC_LINUX_THREADS */
+#endif /* USE_CUSTOM_SPECIFIC */
