@@ -2075,6 +2075,9 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
 #   else
       GC_ASSERT(last_addr != 0);
 #   endif
+    if (((word)result % HBLKSIZE) != 0)
+      ABORT(
+       "GC_unix_get_mem: Memory returned by mmap is not aligned to HBLKSIZE.");
     return((ptr_t)result);
 }
 
