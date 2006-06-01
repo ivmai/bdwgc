@@ -149,9 +149,9 @@ void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 
     if (sig != SIG_SUSPEND) ABORT("Bad signal in suspend_handler");
 
-#if DEBUG_THREADS
-    GC_printf("Suspending 0x%x\n", (unsigned)my_thread);
-#endif
+#   if DEBUG_THREADS
+      GC_printf("Suspending 0x%x\n", (unsigned)my_thread);
+#   endif
 
     me = GC_lookup_thread(my_thread);
     /* The lookup here is safe, since I'm doing this on behalf  */
@@ -203,9 +203,9 @@ void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
     /* Simply dropping the sigsuspend call should be safe, but is unlikely  */
     /* to be efficient.							    */
 
-#if DEBUG_THREADS
-    GC_printf("Continuing 0x%x\n", (unsigned)my_thread);
-#endif
+#   if DEBUG_THREADS
+      GC_printf("Continuing 0x%x\n", (unsigned)my_thread);
+#   endif
 }
 
 void GC_restart_handler(int sig)
@@ -215,9 +215,9 @@ void GC_restart_handler(int sig)
 
     if (sig != SIG_THR_RESTART) ABORT("Bad signal in suspend_handler");
 
-#ifdef GC_NETBSD_THREADS_WORKAROUND
-    sem_post(&GC_restart_ack_sem);
-#endif
+#   ifdef GC_NETBSD_THREADS_WORKAROUND
+      sem_post(&GC_restart_ack_sem);
+#   endif
 
     /*
     ** Note: even if we don't do anything useful here,
@@ -227,9 +227,9 @@ void GC_restart_handler(int sig)
     ** will thus not interrupt the sigsuspend() above.
     */
 
-#if DEBUG_THREADS
-    GC_printf("In GC_restart_handler for 0x%x\n", (unsigned)pthread_self());
-#endif
+#   if DEBUG_THREADS
+      GC_printf("In GC_restart_handler for 0x%x\n", (unsigned)pthread_self());
+#   endif
 }
 
 # ifdef IA64
@@ -250,9 +250,9 @@ void GC_push_all_stacks()
     pthread_t me = pthread_self();
     
     if (!GC_thr_initialized) GC_thr_init();
-    #if DEBUG_THREADS
+#   if DEBUG_THREADS
         GC_printf("Pushing stacks from thread 0x%x\n", (unsigned) me);
-    #endif
+#   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (p -> flags & FINISHED) continue;
@@ -276,10 +276,10 @@ void GC_push_all_stacks()
             hi = GC_stackbottom;
 	    IF_IA64(bs_lo = BACKING_STORE_BASE;)
         }
-        #if DEBUG_THREADS
+#	if DEBUG_THREADS
             GC_printf("Stack for thread 0x%x = [%p,%p)\n",
     	              (unsigned)(p -> id), lo, hi);
-        #endif
+#	endif
 	if (0 == lo) ABORT("GC_push_all_stacks: sp not set!\n");
 #       ifdef STACK_GROWS_UP
 	  /* We got them backwards! */
@@ -331,10 +331,10 @@ int GC_suspend_all()
             if (p -> stop_info.last_stop_count == GC_stop_count) continue;
 	    if (p -> thread_blocked) /* Will wait */ continue;
             n_live_threads++;
-	    #if DEBUG_THREADS
+#	    if DEBUG_THREADS
 	      GC_printf("Sending suspend signal to 0x%x\n",
 			(unsigned)(p -> id));
-	    #endif
+#	    endif
         
             result = pthread_kill(p -> id, SIG_SUSPEND);
 	    switch(result) {
@@ -360,9 +360,9 @@ void GC_stop_world()
     int code;
 
     GC_ASSERT(I_HOLD_LOCK());
-    #if DEBUG_THREADS
+#   if DEBUG_THREADS
       GC_printf("Stopping the world from 0x%x\n", (unsigned)pthread_self());
-    #endif
+#   endif
        
     /* Make sure all free list construction has stopped before we start. */
     /* No new construction can start, since free list construction is	*/
@@ -435,9 +435,9 @@ void GC_start_world()
     register GC_thread p;
     register int n_live_threads = 0;
     register int result;
-#ifdef GC_NETBSD_THREADS_WORKAROUND
-    int code;
-#endif
+#   ifdef GC_NETBSD_THREADS_WORKAROUND
+      int code;
+#   endif
 
 #   if DEBUG_THREADS
       GC_printf("World starting\n");
@@ -469,17 +469,18 @@ void GC_start_world()
         }
       }
     }
-#ifdef GC_NETBSD_THREADS_WORKAROUND
-    for (i = 0; i < n_live_threads; i++)
+#   ifdef GC_NETBSD_THREADS_WORKAROUND
+      for (i = 0; i < n_live_threads; i++)
 	while (0 != (code = sem_wait(&GC_restart_ack_sem)))
 	    if (errno != EINTR) {
-		GC_err_printf1("sem_wait() returned %ld\n", (unsigned long)code);
+		GC_err_printf1("sem_wait() returned %ld\n",
+			       (unsigned long)code);
 		ABORT("sem_wait() for restart handler failed");
 	    }
-#endif
-    #if DEBUG_THREADS
+#    endif
+#    if DEBUG_THREADS
       GC_printf("World started\n");
-    #endif
+#    endif
 }
 
 void GC_stop_init() {
@@ -487,10 +488,10 @@ void GC_stop_init() {
     
     if (sem_init(&GC_suspend_ack_sem, 0, 0) != 0)
         ABORT("sem_init failed");
-#ifdef GC_NETBSD_THREADS_WORKAROUND
-    if (sem_init(&GC_restart_ack_sem, 0, 0) != 0)
+#   ifdef GC_NETBSD_THREADS_WORKAROUND
+      if (sem_init(&GC_restart_ack_sem, 0, 0) != 0)
 	ABORT("sem_init failed");
-#endif
+#   endif
 
     act.sa_flags = SA_RESTART | SA_SIGINFO;
     if (sigfillset(&act.sa_mask) != 0) {
