@@ -1866,14 +1866,24 @@
 #   define USE_MMAP_ANON
 #endif
 
-#if defined(LINUX) && defined(REDIRECT_MALLOC)
-    /* Rld appears to allocate some memory with its own allocator, and	*/
-    /* some through malloc, which might be redirected.  To make this	*/
-    /* work with collectable memory, we have to scan memory allocated	*/
-    /* by rld's internal malloc.					*/
+#if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC)
+    /* Nptl allocates thread stacks with mmap, which is fine.  But it	*/
+    /* keeps a cache of thread stacks.  Thread stacks contain the	*/
+    /* thread control blocks.  These in turn contain a pointer to	*/
+    /* (sizeof (void *) from the beginning of) the dtv for thread-local	*/
+    /* storage, which is calloc allocated.  If we don't scan the cached	*/
+    /* thread stacks, we appear to lose the dtv.  This tends to		*/
+    /* result in something that looks like a bogus dtv count, which	*/
+    /* tends to result in a memset call on a block that is way too	*/
+    /* large.  Sometimes we're lucky and the process just dies ...	*/
+    /* FIXME: Thus we currently have to use /proc, eventhough we know	*/
+    /* that performs very poorly, precisely because we end up scanning 	*/
+    /* cached stacks.							*/
+    /* A possible workaround might be to have calloc look at its	*/
+    /* caller.								*/
 #   define USE_PROC_FOR_LIBRARIES
 #endif
-    
+
 # ifndef STACK_GROWS_UP
 #   define STACK_GROWS_DOWN
 # endif
@@ -2011,9 +2021,11 @@
 		((word*)x)[1] = 0;
 # endif /* CLEAR_DOUBLE */
 
-	/* Internally we use GC_SOLARIS_THREADS to test for either old or pthreads. */
-# if defined(GC_SOLARIS_PTHREADS) && !defined(GC_SOLARIS_THREADS)
-#   define GC_SOLARIS_THREADS
+# if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC) \
+     && !defined(INCLUDE_LINUX_THREAD_DESCR)
+    /* Will not work, since libc and the dynamic loader use thread 	*/
+    /* locals, sometimes as the only reference.				*/
+#   define INCLUDE_LINUX_THREAD_DESCR
 # endif
 
 # if defined(GC_IRIX_THREADS) && !defined(IRIX5)
