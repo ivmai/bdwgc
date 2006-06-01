@@ -617,6 +617,12 @@ void GC_init_inner()
 #   ifdef MSWIN32
  	GC_init_win32();
 #   endif
+#   if defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS)
+	WARN("USE_PROC_FOR_LIBRARIES + GC_LINUX_THREADS performs poorly.", 0);
+	/* If thread stacks are cached, they tend to be scanned in 	*/
+	/* entirety as part of the root set.  This wil grow them to	*/
+	/* maximum size, and is generally not desirable.		*/
+#   endif
 #   if defined(SEARCH_FOR_DATA_START)
 	GC_init_linux_data_start();
 #   endif
@@ -669,6 +675,8 @@ void GC_init_inner()
       GC_ASSERT((word)(-1) > (word)0);
       /* word should be unsigned */
 #   endif
+    GC_ASSERT((ptr_t)(word)(-1) > (ptr_t)0);
+    	/* Ptr_t comparisons should behave as unsigned comparisons.	*/
     GC_ASSERT((signed_word)(-1) < (signed_word)0);
 #   if !defined(SMALL_CONFIG)
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
@@ -717,6 +725,12 @@ void GC_init_inner()
     }
     GC_initialize_offsets();
     GC_register_displacement_inner(0L);
+#   if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC)
+      if (!GC_all_interior_pointers) {
+	/* TLS ABI uses pointer-sized offsets for dtv. */
+        GC_register_displacement_inner(sizeof(void *));
+      }
+#   endif
     GC_init_size_map();
 #   ifdef PCR
       if (PCR_IL_Lock(PCR_Bool_false, PCR_allSigsBlocked, PCR_waitForever)

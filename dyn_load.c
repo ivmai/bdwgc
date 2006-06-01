@@ -227,9 +227,9 @@ extern ssize_t GC_repeat_read(int fd, char *buf, size_t count);
 	/* Repeatedly read until buffer is filled, or EOF is encountered */
 	/* Defined in os_dep.c.  					 */
 
-char *GC_parse_map_entry(char *buf_ptr, word *start, word *end,
+char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
                          char *prot_buf, unsigned int *maj_dev);
-word GC_apply_to_maps(word (*fn)(char *));
+char *GC_get_maps(void);
 	/* From os_dep.c	*/
 
 word GC_register_map_entries(char *maps)
@@ -237,23 +237,24 @@ word GC_register_map_entries(char *maps)
     char prot_buf[5];
     char *buf_ptr = maps;
     int count;
-    word start, end;
+    ptr_t start, end;
     unsigned int maj_dev;
-    word least_ha, greatest_ha;
+    ptr_t least_ha, greatest_ha;
     unsigned i;
-    word datastart = (word)(DATASTART);
+    ptr_t datastart = (ptr_t)(DATASTART);
 
-    /* Compute heap bounds. FIXME: Should be done by add_to_heap?	*/
-	least_ha = (word)(-1);
+    /* Compute heap bounds. FIXME: Should work if heap and roots are 	*/
+    /* interleaved?							*/
+	least_ha = (ptr_t)(word)(-1);
 	greatest_ha = 0;
 	for (i = 0; i < GC_n_heap_sects; ++i) {
-	    word sect_start = (word)GC_heap_sects[i].hs_start;
-	    word sect_end = sect_start + GC_heap_sects[i].hs_bytes;
+	    ptr_t sect_start = GC_heap_sects[i].hs_start;
+	    ptr_t sect_end = sect_start + GC_heap_sects[i].hs_bytes;
 	    if (sect_start < least_ha) least_ha = sect_start;
 	    if (sect_end > greatest_ha) greatest_ha = sect_end;
         }
-    	if (greatest_ha < (word)GC_scratch_last_end_ptr)
-	    greatest_ha = (word)GC_scratch_last_end_ptr; 
+    	if (greatest_ha < (ptr_t)GC_scratch_last_end_ptr)
+	    greatest_ha = (ptr_t)GC_scratch_last_end_ptr; 
 
     for (;;) {
         buf_ptr = GC_parse_map_entry(buf_ptr, &start, &end, prot_buf, &maj_dev);
@@ -262,11 +263,11 @@ word GC_register_map_entries(char *maps)
 	    /* This is a writable mapping.  Add it to		*/
 	    /* the root set unless it is already otherwise	*/
 	    /* accounted for.					*/
-	    if (start <= (word)GC_stackbottom && end >= (word)GC_stackbottom) {
+	    if (start <= GC_stackbottom && end >= GC_stackbottom) {
 		/* Stack mapping; discard	*/
 		continue;
 	    }
-#	    if def THREADS
+#	    ifdef THREADS
 	      /* This may fail, since a thread may already be 		*/
 	      /* unregistered, but its thread stack may still be there.	*/
 	      /* That can fail because the stack may disappear while	*/
@@ -298,14 +299,14 @@ word GC_register_map_entries(char *maps)
 
 void GC_register_dynamic_libraries()
 {
-   if (!GC_apply_to_maps(GC_register_map_entries))
-       ABORT("Failed to read /proc for library registration.");
+    if (!GC_register_map_entries(GC_get_maps()))
+        ABORT("Failed to read /proc for library registration.");
 }
 
 /* We now take care of the main data segment ourselves: */
 GC_bool GC_register_main_static_data()
 {
-  return FALSE;
+    return FALSE;
 }
   
 # define HAVE_REGISTER_MAIN_STATIC_DATA

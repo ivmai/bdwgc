@@ -137,7 +137,10 @@
 
 #if defined(LINUX) && \
     (defined(USE_PROC_FOR_LIBRARIES) || defined(IA64) || !defined(SMALL_CONFIG))
+# define NEED_PROC_MAPS
+#endif
 
+#ifdef NEED_PROC_MAPS
 /* We need to parse /proc/self/maps, either to find dynamic libraries,	*/
 /* and/or to find the register backing store base (IA64).  Do it once	*/
 /* here.								*/
@@ -160,49 +163,96 @@ ssize_t GC_repeat_read(int fd, char *buf, size_t count)
     return num_read;
 }
 
+/* Determine the length of a file by incrementally reading it into a 	*/
+/* This would be sily to use on a file supporting lseek, but Linux	*/
+/* /proc files usually do not.						*/
+size_t GC_get_file_len(int f)
+{
+    size_t total = 0;
+    ssize_t result;
+#   define GET_FILE_LEN_BUF_SZ 500
+    char buf[GET_FILE_LEN_BUF_SZ];
+
+    do {
+	result = read(f, buf, GET_FILE_LEN_BUF_SZ);
+	if (result == -1) return 0;
+	total += result;
+    } while (result > 0);
+    return total;
+}
+
+size_t GC_get_maps_len(void)
+{
+    int f = open("/proc/self/maps", O_RDONLY);
+    size_t result = GC_get_file_len(f);
+    close(f);
+    return result;
+}
+
 /*
- * Apply fn to a buffer containing the contents of /proc/self/maps.
- * Return the result of fn or, if we failed, 0.
- * We currently do nothing to /proc/self/maps other than simply read
- * it.  This code could be simplified if we could determine its size
+ * Copy the contents of /proc/self/maps to a buffer in our address space.
+ * Return the address of the buffer, or zero on failure.
+ * This code could be simplified if we could determine its size
  * ahead of time.
  */
-
-word GC_apply_to_maps(word (*fn)(char *))
+char * GC_get_maps(void)
 {
     int f;
     int result;
-    size_t maps_size = 4000;  /* Initial guess. 	*/
     static char init_buf[1];
     static char *maps_buf = init_buf;
     static size_t maps_buf_sz = 1;
+    size_t maps_size, old_maps_size = 0;
+
+    /* The buffer is essentially static, so there must be a single client. */
+    GC_ASSERT(I_HOLD_LOCK());
 
     /* Note that in the presence of threads, the maps file can	*/
     /* essentially shrink asynchronously and unexpectedly as 	*/
     /* threads that we already think of as dead release their	*/
-    /* stacks.  And their is no easy way to read the entire	*/
+    /* stacks.  And there is no easy way to read the entire	*/
     /* file atomically.  This is arguably a misfeature of the	*/
     /* /proc/.../maps interface.				*/
 
-    /* FIXME:  Since we dont believe the file can grow		*/
+    /* Since we dont believe the file can grow			*/
     /* asynchronously, it should suffice to first determine	*/
     /* the size (using lseek or read), and then to reread the	*/
     /* file.  If the size is inconsistent we have to retry.	*/
     /* This only matters with threads enabled, and if we use 	*/
     /* this to locate roots (not the default).			*/
 
+    /* Determine the initial size of /proc/self/maps.		*/
+    /* Note that lseek doesn't work, at least as of 2.6.15.	*/
+#   ifdef THREADS
+	maps_size = GC_get_maps_len();
+	if (0 == maps_size) return 0;
+#   else
+	maps_size = 4000;	/* Guess */
+#   endif
+
     /* Read /proc/self/maps, growing maps_buf as necessary.	*/
-        /* Note that we may not allocate conventionally, and	*/
-        /* thus can't use stdio.				*/
+    /* Note that we may not allocate conventionally, and	*/
+    /* thus can't use stdio.					*/
 	do {
-	    if (maps_size >= maps_buf_sz) {
+	    while (maps_size >= maps_buf_sz) {
 	      /* Grow only by powers of 2, since we leak "too small" buffers. */
 	      while (maps_size >= maps_buf_sz) maps_buf_sz *= 2;
 	      maps_buf = GC_scratch_alloc(maps_buf_sz);
+#	      ifdef THREADS
+	        /* Recompute initial length, since we allocated.	*/
+	        /* This can only happen a few times per program		*/
+	        /* execution.						*/
+	        maps_size = GC_get_maps_len();
+	        if (0 == maps_size) return 0;
+#	      endif
 	      if (maps_buf == 0) return 0;
 	    }
+	    GC_ASSERT(maps_buf_sz >= maps_size + 1);
 	    f = open("/proc/self/maps", O_RDONLY);
 	    if (-1 == f) return 0;
+#	    ifdef THREADS
+	      old_maps_size = maps_size;
+#	    endif
 	    maps_size = 0;
 	    do {
 	        result = GC_repeat_read(f, maps_buf, maps_buf_sz-1);
@@ -210,16 +260,22 @@ word GC_apply_to_maps(word (*fn)(char *))
 	        maps_size += result;
 	    } while (result == maps_buf_sz-1);
 	    close(f);
-	} while (maps_size >= maps_buf_sz);
+#	    ifdef THREADS
+	      if (maps_size > old_maps_size) {
+		GC_err_printf("Old maps size = %d, new maps size = %d\n",
+			      old_maps_size, maps_size);
+		ABORT("Unexpected asynchronous /proc/self/maps growth: "
+		      "Unregistered thread?");
+	      }
+#	    endif
+	} while (maps_size >= maps_buf_sz || maps_size < old_maps_size);
+		/* In the single-threaded case, the second clause is false.	*/
         maps_buf[maps_size] = '\0';
 	
     /* Apply fn to result. */
-	return fn(maps_buf);
+	return maps_buf;
 }
 
-#endif /* Need GC_apply_to_maps */
-
-#if defined(LINUX) && (defined(USE_PROC_FOR_LIBRARIES) || defined(IA64))
 //
 //  GC_parse_map_entry parses an entry from /proc/self/maps so we can
 //  locate all writable data segments that belong to shared libraries.
@@ -229,7 +285,7 @@ word GC_apply_to_maps(word (*fn)(char *))
 //  ^^^^^^^^ ^^^^^^^^ ^^^^          ^^
 //  start    end      prot          maj_dev
 //
-//  Note that since about auguat 2003 kernels, the columns no longer have
+//  Note that since about august 2003 kernels, the columns no longer have
 //  fixed offsets on 64-bit kernels.  Hence we no longer rely on fixed offsets
 //  anywhere, which is safer anyway.
 //
@@ -238,7 +294,7 @@ word GC_apply_to_maps(word (*fn)(char *))
  * Assign various fields of the first line in buf_ptr to *start, *end,
  * *prot_buf and *maj_dev.  Only *prot_buf may be set for unwritable maps.
  */
-char *GC_parse_map_entry(char *buf_ptr, word *start, word *end,
+char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
                                 char *prot_buf, unsigned int *maj_dev)
 {
     char *start_start, *end_start, *prot_start, *maj_dev_start;
@@ -253,13 +309,13 @@ char *GC_parse_map_entry(char *buf_ptr, word *start, word *end,
     while (isspace(*p)) ++p;
     start_start = p;
     GC_ASSERT(isxdigit(*start_start));
-    *start = strtoul(start_start, &endp, 16); p = endp;
+    *start = (ptr_t)strtoul(start_start, &endp, 16); p = endp;
     GC_ASSERT(*p=='-');
 
     ++p;
     end_start = p;
     GC_ASSERT(isxdigit(*end_start));
-    *end = strtoul(end_start, &endp, 16); p = endp;
+    *end = (ptr_t)strtoul(end_start, &endp, 16); p = endp;
     GC_ASSERT(isspace(*p));
 
     while (isspace(*p)) ++p;
@@ -283,7 +339,49 @@ char *GC_parse_map_entry(char *buf_ptr, word *start, word *end,
     return p;
 }
 
-#endif /* Need to parse /proc/self/maps. */	
+/* Try to read the backing store base from /proc/self/maps.		*/
+/* Return the bounds of the writable mapping with a 0 major device,	*/
+/* which includes the address passed as data.				*/
+/* Return FALSE if there is no such mapping.				*/
+GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
+{
+  char prot_buf[5];
+  ptr_t my_start, my_end;
+  unsigned int maj_dev;
+  char *maps = GC_get_maps();
+  char *buf_ptr = maps;
+  
+  if (0 == maps) return(FALSE);
+  for (;;) {
+    buf_ptr = GC_parse_map_entry(buf_ptr, &my_start, &my_end,
+		    	         prot_buf, &maj_dev);
+
+    if (buf_ptr == NULL) return FALSE;
+    if (prot_buf[1] == 'w' && maj_dev == 0) {
+        if (my_end > addr && my_start <= addr) {
+    	  *startp = my_start;
+	  *endp = my_end;
+	  return TRUE;
+	}
+    }
+  }
+}
+
+#ifdef IA64
+static ptr_t backing_store_base_from_proc(void)
+{
+    ptr_t my_start, my_end;
+    if (!GC_enclosing_mapping(GC_save_regs_in_stack(), &my_start, &my_end)) {
+	if (GC_print_stats) {
+	    GC_log_printf("Failed to find backing store base from /proc\n");
+	}
+	return 0;
+    }
+    return my_start;
+}
+#endif
+
+#endif /* NEED_PROC_MAPS */	
 
 #if defined(SEARCH_FOR_DATA_START)
   /* The I386 case can be handled without a search.  The Alpha case	*/
@@ -735,6 +833,9 @@ ptr_t GC_get_main_stack_base(void)
 
     void GC_setup_temporary_fault_handler(void)
     {
+	/* Handler is process-wide, so this should only happen in */
+	/* one thread at a time.				  */
+	GC_ASSERT(I_HOLD_LOCK());
 	GC_set_and_save_fault_handler(GC_fault_handler);
     }
     
@@ -758,15 +859,16 @@ ptr_t GC_get_main_stack_base(void)
     /* Return the first nonaddressible location > p (up) or 	*/
     /* the smallest location q s.t. [q,p) is addressable (!up).	*/
     /* We assume that p (up) or p-1 (!up) is addressable.	*/
-    ptr_t GC_find_limit(ptr_t p, GC_bool up)
+    /* Requires allocation lock.				*/
+    ptr_t GC_find_limit_with_bound(ptr_t p, GC_bool up, ptr_t bound)
     {
         static volatile ptr_t result;
-    		/* Needs to be static, since otherwise it may not be	*/
+    		/* Safer if static, since otherwise it may not be	*/
     		/* preserved across the longjmp.  Can safely be 	*/
-    		/* static since it's only called once, with the		*/
+    		/* static since it's only called with the		*/
     		/* allocation lock held.				*/
 
-
+	GC_ASSERT(I_HOLD_LOCK());
 	GC_setup_temporary_fault_handler();
 	if (SETJMP(GC_jmp_buf) == 0) {
 	    result = (ptr_t)(((word)(p))
@@ -774,8 +876,10 @@ ptr_t GC_get_main_stack_base(void)
 	    for (;;) {
  	        if (up) {
 		    result += MIN_PAGE_SIZE;
+		    if (result >= bound) return bound;
  	        } else {
 		    result -= MIN_PAGE_SIZE;
+		    if (result <= bound) return bound;
  	        }
 		GC_noop1((word)(*result));
 	    }
@@ -785,6 +889,15 @@ ptr_t GC_get_main_stack_base(void)
 	    result += MIN_PAGE_SIZE;
  	}
 	return(result);
+    }
+
+    ptr_t GC_find_limit(ptr_t p, GC_bool up)
+    {
+      if (up) {
+	return GC_find_limit_with_bound(p, up, (ptr_t)(word)(-1));
+      } else {
+	return GC_find_limit_with_bound(p, up, 0);
+      }
     }
 # endif
 
@@ -832,34 +945,6 @@ ptr_t GC_get_main_stack_base(void)
 #endif
 
 # ifdef IA64
-    /* Try to read the backing store base from /proc/self/maps.	*/
-    /* We look for the writable mapping with a 0 major device,  */
-    /* which is	as close to our frame as possible, but below it.*/
-    static word backing_store_base_from_maps(char *maps)
-    {
-      char prot_buf[5];
-      char *buf_ptr = maps;
-      word start, end;
-      unsigned int maj_dev;
-      word current_best = 0;
-      word dummy;
-  
-      for (;;) {
-        buf_ptr = GC_parse_map_entry(buf_ptr, &start, &end, prot_buf, &maj_dev);
-	if (buf_ptr == NULL) return current_best;
-	if (prot_buf[1] == 'w' && maj_dev == 0) {
-	    if (end < (word)(&dummy) && start > current_best)
-		current_best = start;
-	}
-      }
-      return current_best;
-    }
-
-    static word backing_store_base_from_proc(void)
-    {
-        return GC_apply_to_maps(backing_store_base_from_maps);
-    }
-
 #   ifdef USE_LIBC_PRIVATES
 #     pragma weak __libc_ia64_register_backing_store_base
       extern ptr_t __libc_ia64_register_backing_store_base;
@@ -867,6 +952,8 @@ ptr_t GC_get_main_stack_base(void)
 
     ptr_t GC_get_register_stack_base(void)
     {
+      ptr_t result;
+
 #     ifdef USE_LIBC_PRIVATES
         if (0 != &__libc_ia64_register_backing_store_base
 	    && 0 != __libc_ia64_register_backing_store_base) {
@@ -877,16 +964,14 @@ ptr_t GC_get_main_stack_base(void)
 	  return __libc_ia64_register_backing_store_base;
         }
 #     endif
-      word result = backing_store_base_from_proc();
+      result = backing_store_base_from_proc();
       if (0 == result) {
-	  /* Use dumb heuristics.  Works only for default configuration. */
-	  result = (word)GC_stackbottom - BACKING_STORE_DISPLACEMENT;
-	  result += BACKING_STORE_ALIGNMENT - 1;
-	  result &= ~(BACKING_STORE_ALIGNMENT - 1);
-	  /* Verify that it's at least readable.  If not, we goofed. */
-	  GC_noop1(*(word *)result); 
+	  result = GC_find_limit(GC_save_regs_in_stack(), FALSE);
+	  /* Now seems to work better than constant displacement	*/
+	  /* heuristic used in 6.X versions.  The latter seems to	*/
+	  /* fail for 2.6 kernels.					*/
       }
-      return (ptr_t)result;
+      return result;
     }
 # endif
 
@@ -1042,6 +1127,11 @@ ptr_t GC_get_main_stack_base(void)
 
 #include <pthread.h>
 
+#ifdef IA64
+  ptr_t GC_greatest_stack_base_below(ptr_t bound);
+  	/* From pthread_support.c */
+#endif
+
 int GC_get_stack_base(struct GC_stack_base *b)
 {
     pthread_attr_t attr;
@@ -1054,8 +1144,27 @@ int GC_get_stack_base(struct GC_stack_base *b)
     if (pthread_attr_getstack(&attr, &(b -> mem_base), &size) != 0) {
 	ABORT("pthread_attr_getstack failed");
     }
+#   ifdef STACK_GROWS_DOWN
+        b -> mem_base = (char *)(b -> mem_base) + size;
+#   endif
 #   ifdef IA64
-        b -> reg_base = b -> mem_base - size;
+      /* We could try backing_store_base_from_proc, but that's safe	*/
+      /* only if no mappings are being asynchronously created.		*/
+      /* Subtracting the size from the stack base doesn't work for at	*/
+      /* least the main thread.						*/
+      LOCK();
+      {
+	ptr_t bsp = GC_save_regs_in_stack();
+	ptr_t next_stack = GC_greatest_stack_base_below(bsp);
+	if (0 == next_stack) {
+          b -> reg_base = GC_find_limit(bsp, FALSE);
+	} else {
+	  /* Avoid walking backwards into preceding memory stack and	*/
+	  /* growing it.						*/
+          b -> reg_base = GC_find_limit_with_bound(bsp, FALSE, next_stack);
+	}
+      }
+      UNLOCK();
 #   endif
     return GC_SUCCESS;
 }
@@ -1532,7 +1641,7 @@ void GC_register_data_segments(void)
 #     else
 	GC_add_roots_inner(DATASTART, (ptr_t)(DATAEND), FALSE);
 #       if defined(DATASTART2)
-         GC_add_roots_inner(DATASTART2, (ptr_t)(DATAEND2), FALSE);
+          GC_add_roots_inner(DATASTART2, (ptr_t)(DATAEND2), FALSE);
 #       endif
 #     endif
 #   endif
@@ -4179,7 +4288,7 @@ static word dump_maps(char *maps)
 void GC_print_address_map(void)
 {
     GC_err_printf("---------- Begin address map ----------\n");
-    GC_apply_to_maps(dump_maps);
+    dump_maps(GC_get_maps());
     GC_err_printf("---------- End address map ----------\n");
 }
 

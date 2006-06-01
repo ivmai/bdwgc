@@ -270,12 +270,18 @@ void GC_mark_thread_local_free_lists(void)
 # endif
 
 static ptr_t marker_sp[MAX_MARKERS] = {0};
+#ifdef IA64
+  static ptr_t marker_bsp[MAX_MARKERS] = {0};
+#endif
 
 void * GC_mark_thread(void * id)
 {
   word my_mark_no = 0;
 
   marker_sp[(word)id] = GC_approx_sp();
+# ifdef IA64
+    marker_bsp[(word)id] = GC_save_regs_in_stack();
+# endif
   for (;; ++my_mark_no) {
     /* GC_mark_no is passed only to allow GC_help_marker to terminate	*/
     /* promptly.  This is important if it were called from the signal	*/
@@ -488,30 +494,62 @@ void GC_remove_all_threads_but_me(void)
 #endif /* HANDLE_FORK */
 
 #ifdef USE_PROC_FOR_LIBRARIES
-int GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
+GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
 {
     int i;
     GC_thread p;
     
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef PARALLEL_MARK
       for (i = 0; i < GC_markers; ++i) {
-	if (marker_sp[i] > lo & marker_sp[i] < hi) return 1;
+	if (marker_sp[i] > lo & marker_sp[i] < hi) return TRUE;
+#       ifdef IA64
+	  if (marker_bsp[i] > lo & marker_bsp[i] < hi) return TRUE;
+#	endif
       }
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
 	if (0 != p -> stack_end) {
 #	  ifdef STACK_GROWS_UP
-            if (p -> stack_end >= lo && p -> stack_end < hi) return 1;
+            if (p -> stack_end >= lo && p -> stack_end < hi) return TRUE;
 #	  else /* STACK_GROWS_DOWN */
-            if (p -> stack_end > lo && p -> stack_end <= hi) return 1;
+            if (p -> stack_end > lo && p -> stack_end <= hi) return TRUE;
 #	  endif
 	}
       }
     }
-    return 0;
+    return FALSE;
 }
 #endif /* USE_PROC_FOR_LIBRARIES */
+
+#ifdef IA64
+/* Find the largest stack_base smaller than bound.  May be used	*/
+/* to find the boundary between a register stack and adjacent	*/
+/* immediately preceding memory stack.				*/
+ptr_t GC_greatest_stack_base_below(ptr_t bound)
+{
+    int i;
+    GC_thread p;
+    ptr_t result = 0;
+    
+    GC_ASSERT(I_HOLD_LOCK());
+#   ifdef PARALLEL_MARK
+      for (i = 0; i < GC_markers; ++i) {
+	if (marker_sp[i] > result && marker_sp[i] < bound)
+	  result = marker_sp[i];
+      }
+#   endif
+    for (i = 0; i < THREAD_TABLE_SZ; i++) {
+      for (p = GC_threads[i]; p != 0; p = p -> next) {
+	if (p -> stack_end > result && p -> stack_end < bound) {
+	  result = p -> stack_end;
+	}
+      }
+    }
+    return result;
+}
+#endif /* IA64 */
 
 #ifdef GC_LINUX_THREADS
 /* Return the number of processors, or i<= 0 if it can't be determined.	*/
@@ -669,12 +707,16 @@ static int get_ncpu(void)
 }
 #endif	/* GC_NETBSD_THREADS */
 
+# if defined(GC_LINUX_THREADS) && defined(INCLUDE_LINUX_THREAD_DESCR)
+__thread int dummy_thread_local;
+# endif
+
 /* We hold the allocation lock.	*/
 void GC_thr_init(void)
 {
-#	ifndef GC_DARWIN_THREADS
+#   ifndef GC_DARWIN_THREADS
         int dummy;
-#	endif
+#   endif
     GC_thread t;
 
     if (GC_thr_initialized) return;
@@ -685,6 +727,21 @@ void GC_thr_init(void)
         pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
 	  	       GC_fork_child_proc);
 #   endif /* HANDLE_FORK */
+#   if defined(INCLUDE_LINUX_THREAD_DESCR)
+      /* Explicitly register the region including the address 		*/
+      /* of a thread local variable.  This should included thread	*/
+      /* locals for the main thread, except for those allocated		*/
+      /* in response to dlopen calls.					*/  
+	{
+	  ptr_t thread_local_addr = (ptr_t)(&dummy_thread_local);
+	  ptr_t main_thread_start, main_thread_end;
+          if (!GC_enclosing_mapping(thread_local_addr, &main_thread_start,
+				    &main_thread_end)) {
+	    ABORT("Failed to find mapping for main thread thread locals");
+	  }
+	  GC_add_roots_inner(main_thread_start, main_thread_end, FALSE);
+	}
+#   endif
     /* Add the initial thread, so we can stop it.	*/
       t = GC_new_thread(pthread_self());
 #     ifdef GC_DARWIN_THREADS

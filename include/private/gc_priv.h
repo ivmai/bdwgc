@@ -57,9 +57,8 @@ typedef int GC_bool;
 # define FALSE 0
 
 typedef char * ptr_t;	/* A generic pointer to which we can add	*/
-			/* byte displacements.				*/
-			/* Preferably identical to caddr_t, if it 	*/
-			/* exists.					*/
+			/* byte displacements and which can be used	*/
+			/* for address comparisons.			*/
 
 # ifndef GCCONFIG_H
 #   include "gcconfig.h"
@@ -1956,6 +1955,11 @@ void GC_err_puts(const char *s);
     && !defined(NEED_FIND_LIMIT)
    /* Used by GC_init_netbsd_elf() in os_dep.c.	*/
 #  define NEED_FIND_LIMIT
+#endif
+
+#if defined(IA64) && !defined(NEED_FIND_LIMIT)
+#  define NEED_FIND_LIMIT
+     /* May be needed for register backing store base. */
 #endif
 
 # if defined(NEED_FIND_LIMIT) || \
