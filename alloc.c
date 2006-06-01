@@ -144,7 +144,7 @@ static word min_bytes_allocd()
 {
 #   ifdef THREADS
  	/* We punt, for now. */
- 	register signed_word stack_size = 10000;
+ 	signed_word stack_size = 10000;
 #   else
         int dummy;
         signed_word stack_size = (ptr_t)(&dummy) - GC_stackbottom;
@@ -171,8 +171,8 @@ static word min_bytes_allocd()
 /* collections.								*/
 word GC_adj_bytes_allocd(void)
 {
-    register signed_word result;
-    register signed_word expl_managed =
+    signed_word result;
+    signed_word expl_managed =
     		(long)GC_non_gc_bytes - (long)GC_non_gc_bytes_at_gc;
     
     /* Don't count what was explicitly freed, or newly allocated for	*/
