@@ -2509,14 +2509,16 @@ Since gc7.0alpha5
  - Rename SUNOS5 macro and OS name to SOLARIS and SUNOS5DL to SOLARISDL.
  - On Linux and some Un*x variants, allocate memory by first trying sbrk,
    and then switching to mmap if that fails.
+ - Fixed /proc/x/maps reading to deal with asynchronous deletions.
+ - Fix REDIRECT_MALLOC with threads on Linux.  It now usually seems to work
+   with ugly hacks that include having calloc behave differently when it is
+   called from ld.so or the pthreads library.  A reasonable amount of
+   infrastructure was added to support some of this.  Thanks to Roland McGrath
+   for ideas and information.
   
 To do:
- - REDIRECT_MALLOC and threads combination is getting closer, but currently
-   usually fails because the DTV (dynamic thread vector) used to access
-   thread-local storage is referenced only from the base of a thread stack,
-   but often allocated through malloc.  The symptom on IA64 is a runaway
-   memset in thread creation, which may cause failures elsewhere.
-   Typically large heap sections end up cleared.
+ - REDIRECT_MALLOC and threads combination should work on more platforms,
+   and needs more testing on Linux.
  - Clone marker inner loop to support arch-dependent prefetching,
    and counting of objects marked for finalization.
  - The USE_MUNMAP code should really use a separate data structure
