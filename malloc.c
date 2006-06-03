@@ -319,8 +319,54 @@ void * malloc(size_t lb)
     return((void *)REDIRECT_MALLOC(lb));
   }
 
+#ifdef GC_LINUX_THREADS
+  static ptr_t GC_libpthread_start = 0;
+  static ptr_t GC_libpthread_end = 0;
+  static ptr_t GC_libld_start = 0;
+  static ptr_t GC_libld_end = 0;
+  extern GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp);
+  	/* From os_dep.c */
+
+  void GC_init_lib_bounds(void)
+  {
+    if (GC_libpthread_start != 0) return;
+    if (!GC_text_mapping("/lib/tls/libpthread-",
+			 &GC_libpthread_start, &GC_libpthread_end)
+	&& !GC_text_mapping("/lib/libpthread-",
+			    &GC_libpthread_start, &GC_libpthread_end)) {
+	WARN("Failed to find libpthread.so text mapping: Expect crash\n", 0);
+        /* This might still work with some versions of libpthread,	*/
+    	/* so we don't abort.  Perhaps we should.			*/
+        /* Generate message only once:					*/
+          GC_libpthread_start = (ptr_t)1;
+    }
+    if (!GC_text_mapping("/lib/ld-", &GC_libld_start, &GC_libld_end)) {
+	WARN("Failed to find ld.so text mapping: Expect crash\n", 0);
+    }
+  }
+#endif
+
 void * calloc(size_t n, size_t lb)
 {
+#   if defined(GC_LINUX_THREADS) && !defined(USE_PROC_FOR_LIBRARIES)
+	/* libpthread allocated some memory that is only pointed to by	*/
+	/* mmapped thread stacks.  Make sure it's not collectable.	*/
+	{
+	  static GC_bool lib_bounds_set = FALSE;
+	  ptr_t caller = (ptr_t)__builtin_return_address(0);
+	  /* This test does not need to ensure memory visibility, since */
+	  /* the bounds will be set when/if we create another thread.	*/
+	  if (!lib_bounds_set) {
+	    GC_init_lib_bounds();
+	    lib_bounds_set = TRUE;
+	  }
+	  if (caller >= GC_libpthread_start && caller < GC_libpthread_end
+	      || (caller >= GC_libld_start && caller < GC_libld_end))
+	    return GC_malloc_uncollectable(n*lb);
+	  /* The two ranges are actually usually adjacent, so there may	*/
+	  /* be a way to speed this up.					*/
+	}
+#   endif
     return((void *)REDIRECT_MALLOC(n*lb));
 }
 
@@ -447,6 +493,20 @@ void GC_free_inner(void * p)
 # ifdef REDIRECT_FREE
   void free(void * p)
   {
+#   if defined(GC_LINUX_THREADS) && !defined(USE_PROC_FOR_LIBRARIES)
+	{
+	  /* Don't bother with initialization checks.  If nothing	*/
+	  /* has been initialized, the check fails, and that's safe,	*/
+	  /* since we haven't allocated uncollectable objects either.	*/
+	  ptr_t caller = (ptr_t)__builtin_return_address(0);
+	  /* This test does not need to ensure memory visibility, since */
+	  /* the bounds will be set when/if we create another thread.	*/
+	  if (caller >= GC_libpthread_start && caller > GC_libpthread_end) {
+	    GC_free(p);
+	    return;
+	  }
+	}
+#   endif
 #   ifndef IGNORE_FREE
       REDIRECT_FREE(p);
 #   endif

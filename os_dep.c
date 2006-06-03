@@ -292,12 +292,15 @@ char * GC_get_maps(void)
 
 /*
  * Assign various fields of the first line in buf_ptr to *start, *end,
- * *prot_buf and *maj_dev.  Only *prot_buf may be set for unwritable maps.
+ * *prot, *maj_dev and *mapping_name.  Mapping_name may be NULL.
+ * *prot and *mapping_name are assigned pointers into the original
+ * buffer.
  */
 char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
-                                char *prot_buf, unsigned int *maj_dev)
+                                char **prot, unsigned int *maj_dev,
+				char **mapping_name)
 {
-    char *start_start, *end_start, *prot_start, *maj_dev_start;
+    char *start_start, *end_start, *maj_dev_start;
     char *p;
     char *endp;
 
@@ -319,22 +322,24 @@ char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
     GC_ASSERT(isspace(*p));
 
     while (isspace(*p)) ++p;
-    prot_start = p;
-    GC_ASSERT(*prot_start == 'r' || *prot_start == '-');
-    memcpy(prot_buf, prot_start, 4);
-    prot_buf[4] = '\0';
-    if (prot_buf[1] == 'w') {/* we can skip the rest if it's not writable. */
-	/* Skip past protection field to offset field */
+    GC_ASSERT(*p == 'r' || *p == '-');
+    *prot = p;
+    /* Skip past protection field to offset field */
+       while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
+    GC_ASSERT(isxdigit(*p));
+    /* Skip past offset field, which we ignore */
           while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
-          GC_ASSERT(isxdigit(*p));
-	/* Skip past offset field, which we ignore */
-          while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
-	maj_dev_start = p;
-        GC_ASSERT(isxdigit(*maj_dev_start));
-        *maj_dev = strtoul(maj_dev_start, NULL, 16);
-    }
+    maj_dev_start = p;
+    GC_ASSERT(isxdigit(*maj_dev_start));
+    *maj_dev = strtoul(maj_dev_start, NULL, 16);
 
-    while (*p && *p++ != '\n');
+    if (mapping_name == 0) {
+      while (*p && *p++ != '\n');
+    } else {
+      while (*p && *p != '\n' && *p != '/' && *p != '[') p++;
+      *mapping_name = p;
+      while (*p && *p++ != '\n');
+    }
 
     return p;
 }
@@ -345,7 +350,7 @@ char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
 /* Return FALSE if there is no such mapping.				*/
 GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
 {
-  char prot_buf[5];
+  char *prot;
   ptr_t my_start, my_end;
   unsigned int maj_dev;
   char *maps = GC_get_maps();
@@ -354,10 +359,10 @@ GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
   if (0 == maps) return(FALSE);
   for (;;) {
     buf_ptr = GC_parse_map_entry(buf_ptr, &my_start, &my_end,
-		    	         prot_buf, &maj_dev);
+		    	         &prot, &maj_dev, 0);
 
     if (buf_ptr == NULL) return FALSE;
-    if (prot_buf[1] == 'w' && maj_dev == 0) {
+    if (prot[1] == 'w' && maj_dev == 0) {
         if (my_end > addr && my_start <= addr) {
     	  *startp = my_start;
 	  *endp = my_end;
@@ -365,6 +370,34 @@ GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
 	}
     }
   }
+  return FALSE;
+}
+
+/* Find the text(code) mapping for the library whose name starts with nm. */
+GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp)
+{
+  size_t nm_len = strlen(nm);
+  char *prot;
+  char *map_path;
+  ptr_t my_start, my_end;
+  unsigned int maj_dev;
+  char *maps = GC_get_maps();
+  char *buf_ptr = maps;
+  
+  if (0 == maps) return(FALSE);
+  for (;;) {
+    buf_ptr = GC_parse_map_entry(buf_ptr, &my_start, &my_end,
+		    	         &prot, &maj_dev, &map_path);
+
+    if (buf_ptr == NULL) return FALSE;
+    if (prot[0] == 'r' && prot[1] == '-' && prot[2] == 'x' &&
+	strncmp(nm, map_path, nm_len) == 0) {
+    	  *startp = my_start;
+	  *endp = my_end;
+	  return TRUE;
+    }
+  }
+  return FALSE;
 }
 
 #ifdef IA64

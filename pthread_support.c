@@ -595,6 +595,7 @@ int GC_get_nprocs(void)
 extern GC_bool GC_collection_in_progress(void);
 void GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
+    GC_ASSERT(I_HOLD_LOCK());
     if (GC_incremental && GC_collection_in_progress()) {
 	int old_gc_no = GC_gc_no;
 
@@ -997,7 +998,7 @@ WRAP_FUNC(pthread_detach)(pthread_t thread)
     return result;
 }
 
-GC_bool GC_in_thread_creation = FALSE;
+GC_bool GC_in_thread_creation = FALSE;  /* Protected by allocation lock. */
 
 GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
 				      pthread_t my_pthread)
@@ -1087,8 +1088,19 @@ void * GC_start_routine(void * arg)
 {
 #   ifdef INCLUDE_LINUX_THREAD_DESCR
       struct GC_stack_base sb;
+
+#     ifdef REDIRECT_MALLOC
+      	/* GC_get_stack_base may call pthread_getattr_np, which can 	*/
+        /* unfortunately call realloc, which may allocate from an	*/
+        /* unregistered thread.  This is unpleasant, since it might	*/ 
+        /* force heap growth.						*/
+        GC_disable();
+#     endif
       if (GC_get_stack_base(&sb) != GC_SUCCESS)
 	ABORT("Failed to get thread stack base.");
+#     ifdef REDIRECT_MALLOC
+        GC_enable();
+#     endif
       return GC_inner_start_routine(&sb, arg);
 #   else
       return GC_call_with_stack_base(GC_inner_start_routine, arg);

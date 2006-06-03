@@ -228,13 +228,14 @@ extern ssize_t GC_repeat_read(int fd, char *buf, size_t count);
 	/* Defined in os_dep.c.  					 */
 
 char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
-                         char *prot_buf, unsigned int *maj_dev);
+                         char **prot, unsigned int *maj_dev,
+			 char **mapping_name);
 char *GC_get_maps(void);
 	/* From os_dep.c	*/
 
 word GC_register_map_entries(char *maps)
 {
-    char prot_buf[5];
+    char *prot_buf;
     char *buf_ptr = maps;
     int count;
     ptr_t start, end;
@@ -257,9 +258,9 @@ word GC_register_map_entries(char *maps)
 	    greatest_ha = (ptr_t)GC_scratch_last_end_ptr; 
 
     for (;;) {
-        buf_ptr = GC_parse_map_entry(buf_ptr, &start, &end, prot_buf, &maj_dev);
+        buf_ptr = GC_parse_map_entry(buf_ptr, &start, &end, &prot, &maj_dev, 0);
 	if (buf_ptr == NULL) return 1;
-	if (prot_buf[1] == 'w') {
+	if (prot[1] == 'w') {
 	    /* This is a writable mapping.  Add it to		*/
 	    /* the root set unless it is already otherwise	*/
 	    /* accounted for.					*/
