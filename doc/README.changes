@@ -2283,6 +2283,7 @@ Since gc6.7:
  - GC_unix_get_mem could neglect to release the malloc lock on Irix, under
    extremely unlikely circumstances.  Thanks to Jean-Baptiste Nivois for
    some careful code reading.
+ - Added support for kFreeBSD + glibc (Thanks to Petr Salinger)
 
 Since gc6.8:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler

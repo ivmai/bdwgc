@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha6,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.12 $)
+AC_REVISION($Revision: 1.13 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -116,6 +116,17 @@ case "$THREADS" in
 	AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
 	AC_DEFINE(GC_FREEBSD_THREADS)
 	INCLUDES="$INCLUDES -pthread"
+      	;;
+     *-*-kfreebsd*-gnu)
+	AC_DEFINE(GC_FREEBSD_THREADS)
+	INCLUDES="$INCLUDES -pthread"
+	THREADDLLIBS=-pthread
+	AC_DEFINE(_REENTRANT)
+        if test "${enable_parallel_mark}" = yes; then
+	  AC_DEFINE(PARALLEL_MARK)
+	fi
+	AC_DEFINE(THREAD_LOCAL_ALLOC)
+	AC_DEFINE(USE_COMPILER_TLS)
       	;;
      *-*-netbsd*)
 	AC_MSG_WARN("Only on NetBSD 2.0 or later.")
