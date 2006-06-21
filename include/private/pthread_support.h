@@ -62,9 +62,7 @@ typedef struct GC_Thread_Rep {
                                 /* it unregisters itself, since it      */
                                 /* may not return a GC pointer.         */
 #       define MAIN_THREAD 4    /* True for the original thread only.   */
-#       define SUSPENDED_EXT 8  /* Thread was suspended externally      */
-                                /* (this is not used by the unmodified  */
-                                /* GC itself at present).               */
+#       define SUSPENDED_EXT 8  /* Thread was suspended externally.     */
 #       define DISABLED_GC 0x10 /* Collections are disabled while the   */
                                 /* thread is exiting.                   */
 

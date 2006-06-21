@@ -50,6 +50,8 @@
 /* It's safe to call original pthread_sigmask() here.   */
 #undef pthread_sigmask
 
+void suspend_self();
+
 #ifdef DEBUG_THREADS
 # ifndef NSIG
 #   if defined(MAXSIG)
@@ -210,6 +212,11 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 #endif
 {
   int old_errno = errno;
+  GC_thread me = GC_lookup_thread (pthread_self());
+  if (me -> flags & SUSPENDED_EXT) {
+    suspend_self();
+    return;
+  }
 
   if (sig != GC_sig_suspend) {
 #   if defined(GC_FREEBSD_THREADS)
@@ -337,6 +344,72 @@ STATIC void GC_restart_handler(int sig)
 # if defined(DEBUG_THREADS) || defined(GC_NETBSD_THREADS_WORKAROUND)
     errno = old_errno;
 # endif
+}
+
+#ifndef GC_TIME_LIMIT
+# define GC_TIME_LIMIT 50
+#endif
+
+void GC_brief_async_signal_safe_sleep()
+{
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 1000 * GC_TIME_LIMIT / 2;
+    select(0, 0, 0, 0, &tv);
+}
+
+static void *GC_CALLBACK suspend_self_inner(void *client_data) {
+  GC_thread me = (GC_thread)client_data;
+
+  while (me -> flags & SUSPENDED_EXT)
+    GC_brief_async_signal_safe_sleep();
+  return NULL;
+}
+
+void suspend_self() {
+  GC_thread me = GC_lookup_thread(pthread_self());
+  if (me == NULL)
+    ABORT("attempting to suspend unknown thread");
+
+  me -> flags |= SUSPENDED_EXT;
+  (void)GC_do_blocking(suspend_self_inner, me);
+}
+
+#ifdef USE_TKILL_ON_ANDROID
+  static int android_thread_kill(pid_t tid, int sig);
+#endif
+
+void GC_suspend_thread(pthread_t thread) {
+  if (thread == pthread_self())
+    suspend_self();
+  else {
+    int result;
+    GC_thread t = GC_lookup_thread(thread);
+    if (t == NULL)
+      ABORT("attempting to suspend unknown thread");
+
+    t -> flags |= SUSPENDED_EXT;
+#   ifndef USE_TKILL_ON_ANDROID
+      result = pthread_kill(t -> id, GC_sig_suspend);
+#   else
+      result = android_thread_kill(t -> kernel_id, GC_sig_suspend);
+#   endif
+    switch (result) {
+    case ESRCH:
+    case 0:
+      break;
+    default:
+      ABORT("pthread_kill failed");
+    }
+  }
+}
+
+void GC_resume_thread(pthread_t thread) {
+  GC_thread t = GC_lookup_thread(thread);
+  if (t == NULL)
+    ABORT("attempting to resume unknown thread");
+
+  t -> flags &= ~SUSPENDED_EXT;
 }
 
 #endif /* !GC_OPENBSD_UTHREADS && !NACL */

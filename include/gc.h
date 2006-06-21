@@ -1912,6 +1912,17 @@ GC_API void GC_CALL GC_win32_free_heap(void);
         (*GC_amiga_allocwrapper_do)(a,GC_malloc_atomic_ignore_off_page)
 #endif /* _AMIGA && !GC_AMIGA_MAKINGLIB */
 
+/* External thread suspension support. These functions do not implement
+ * suspension counts or any other higher-level abstraction. Threads which
+ * have been suspended numerous times will resume with the very first call
+ * to GC_resume_thread.
+ */
+#if defined(GC_PTHREADS) && !defined(__native_client__) \
+  && !defined(GC_WIN32_THREADS) && !defined(GC_DARWIN_THREADS)
+GC_API void GC_suspend_thread(pthread_t);
+GC_API void GC_resume_thread(pthread_t);
+#endif
+
 #ifdef __cplusplus
   }  /* end of extern "C" */
 #endif
