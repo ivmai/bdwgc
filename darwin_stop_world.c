@@ -169,6 +169,7 @@ void GC_push_all_stacks() {
 
 void GC_push_all_stacks() {
     int i;
+	task_t my_task;
     kern_return_t r;
     mach_port_t me;
     ptr_t lo, hi;
@@ -178,7 +179,8 @@ void GC_push_all_stacks() {
     me = mach_thread_self();
     if (!GC_thr_initialized) GC_thr_init();
     
-    r = task_threads(current_task(), &act_list, &listcount);
+	my_task = current_task();
+    r = task_threads(my_task, &act_list, &listcount);
     if(r != KERN_SUCCESS) ABORT("task_threads failed");
     for(i = 0; i < listcount; i++) {
       thread_act_t thread = act_list[i];
@@ -266,8 +268,11 @@ void GC_push_all_stacks() {
 		);
 #     endif
       GC_push_all_stack(lo, hi); 
+	  mach_port_deallocate(my_task, thread);
     } /* for(p=GC_threads[i]...) */
-    vm_deallocate(current_task(), (vm_address_t)act_list, sizeof(thread_t) * listcount);
+    vm_deallocate(my_task, (vm_address_t)act_list,
+		  sizeof(thread_t) * listcount);
+    mach_port_deallocate(my_task, me);
 }
 #endif /* !DARWIN_DONT_PARSE_STACK */
 
@@ -362,6 +367,7 @@ int GC_suspend_thread_list(thread_act_array_t act_list, int count,
     } 
     if (!found) GC_mach_threads_count++;
   }
+  mach_port_deallocate(current_task(), my_thread);
   return changed;
 }
 
@@ -369,8 +375,9 @@ int GC_suspend_thread_list(thread_act_array_t act_list, int count,
 /* Caller holds allocation lock.	*/
 void GC_stop_world()
 {
-  int i, changes;
+    int i, changes;
     GC_thread p;
+    task_t my_task = current_task();
     mach_port_t my_thread = mach_thread_self();
     kern_return_t kern_result;
     thread_act_array_t act_list, prev_list;
@@ -407,13 +414,22 @@ void GC_stop_world()
       prevcount = 0;
       do {
 	int result;
-	kern_result = task_threads(current_task(), &act_list, &listcount);
+	kern_result = task_threads(my_task, &act_list, &listcount);
 	result = GC_suspend_thread_list(act_list, listcount,
 					prev_list, prevcount);
 	changes = result;
 	prev_list = act_list;
 	prevcount = listcount;
-        vm_deallocate(current_task(), (vm_address_t)act_list, sizeof(thread_t) * listcount);
+	
+	if(kern_result == KERN_SUCCESS) {
+	    int i;
+	
+	    for(i = 0; i < listcount; i++)
+		mach_port_deallocate(my_task, act_list[i]);
+		
+            vm_deallocate(my_task, (vm_address_t)act_list,
+			  sizeof(thread_t) * listcount);
+	}
       } while (changes);
       
  
@@ -427,15 +443,18 @@ void GC_stop_world()
 #   ifdef PARALLEL_MARK
       GC_release_mark_lock();
 #   endif
-    #if DEBUG_THREADS
+#   if DEBUG_THREADS
       GC_printf("World stopped from 0x%lx\n", (unsigned long)my_thread);
-    #endif
+#   endif
+	  
+    mach_port_deallocate(my_task, my_thread);
 }
 
 /* Caller holds allocation lock, and has held it continuously since	*/
 /* the world stopped.							*/
 void GC_start_world()
 {
+  task_t my_task = current_task();
   mach_port_t my_thread = mach_thread_self();
   int i, j;
   GC_thread p;
@@ -456,7 +475,7 @@ void GC_start_world()
       }
 #   endif
 
-    kern_result = task_threads(current_task(), &act_list, &listcount);
+    kern_result = task_threads(my_task, &act_list, &listcount);
     for(i = 0; i < listcount; i++) {
       thread_act_t thread = act_list[i];
       if (thread != my_thread &&
@@ -484,8 +503,12 @@ void GC_start_world()
 	  } 
 	}
       }
+      mach_port_deallocate(my_task, thread);
     }
-    vm_deallocate(current_task(), (vm_address_t)act_list, sizeof(thread_t) * listcount);
+    vm_deallocate(my_task, (vm_address_t)act_list,
+		  sizeof(thread_t) * listcount);
+	
+    mach_port_deallocate(my_task, my_thread);
 #   if DEBUG_THREADS
      GC_printf("World started\n");
 #   endif
