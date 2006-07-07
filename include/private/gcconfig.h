@@ -146,6 +146,11 @@
 #    define SOLARIS
 #    define mach_type_known
 # endif
+# if defined(sun) && defined(__amd64)
+#    define X86_64
+#    define SOLARIS
+#    define mach_type_known
+# endif
 # if (defined(__OS2__) || defined(__EMX__)) && defined(__32BIT__)
 #    define I386
 #    define OS2
@@ -1887,6 +1892,47 @@
 #	define HEURISTIC2
 	extern char etext[];
 #	define SEARCH_FOR_DATA_START
+#   endif
+#   ifdef SOLARIS
+#	define OS_TYPE "SOLARIS"
+#	define ELF_CLASS ELFCLASS64
+        extern int _etext[], _end[];
+  	extern ptr_t GC_SysVGetDataStart(size_t, ptr_t);
+#       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
+#	define DATAEND (_end)
+/*	# define STACKBOTTOM ((ptr_t)(_start)) worked through 2.7,  	*/
+/*      but reportedly breaks under 2.8.  It appears that the stack	*/
+/* 	base is a property of the executable, so this should not break	*/
+/* 	old executables.						*/
+/*  	HEURISTIC2 probably works, but this appears to be preferable.	*/
+/*	Apparently USRSTACK is defined to be USERLIMIT, but in some	*/
+/* 	installations that's undefined.  We work around this with a	*/
+/*	gross hack:							*/
+#       include <sys/vmparam.h>
+#	ifdef USERLIMIT
+	  /* This should work everywhere, but doesn't.	*/
+#	  define STACKBOTTOM USRSTACK
+#       else
+#	  define HEURISTIC2
+#       endif
+/* At least in Solaris 2.5, PROC_VDB gives wrong values for dirty bits. */
+/* It appears to be fixed in 2.8 and 2.9.				*/
+#	ifdef SOLARIS25_PROC_VDB_BUG_FIXED
+#	  define PROC_VDB
+#	endif
+#	define DYNAMIC_LOADING
+#	if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
+#	    define USE_MMAP
+	    /* Otherwise we now use calloc.  Mmap may result in the	*/
+	    /* heap interleaved with thread stacks, which can result in	*/
+	    /* excessive blacklisting.  Sbrk is unusable since it	*/
+	    /* doesn't interact correctly with the system malloc.	*/
+#	endif
+#       ifdef USE_MMAP
+#         define HEAP_START (ptr_t)0x40000000
+#       else
+#	  define HEAP_START DATAEND
+#       endif
 #   endif
 # endif
 
