@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha6,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.13 $)
+AC_REVISION($Revision: 1.14 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -70,6 +70,7 @@ AC_ARG_ENABLE(cplusplus,
 
 INCLUDES=-I${srcdir}/include
 THREADDLLIBS=
+need_atomic_ops_asm=false
 ## Libraries needed to support dynamic loading and/or threads.
 case "$THREADS" in
  no | none | single)
@@ -139,6 +140,10 @@ case "$THREADS" in
 	AC_DEFINE(GC_SOLARIS_THREADS)
 	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	THREADDLLIBS="-lpthread -lrt"
+	if test "$GCC" != yes; then
+          CFLAGS="$CFLAGS -O"
+          need_atomic_ops_asm=true
+        fi
 	;;
      *-*-irix*)
 	AC_DEFINE(GC_IRIX_THREADS)
@@ -551,16 +556,27 @@ AC_CHECK_HEADER(atomic_ops.h,
 
     dnl Automake does not accept shell variables in AC_CONFIG_SUBDIRS
     test -e ${srcdir}/libatomic_ops \
-	|| ln -f -s ${ao_dir} ${srcdir}/libatomic_ops
+	|| ln -s ${ao_dir} ${srcdir}/libatomic_ops
     AC_CONFIG_SUBDIRS(libatomic_ops)
 
-    dnl This gets the source include files, which is close enough?
+    dnl Also copy the source files to be linked in.
+    test -e ${srcdir}/atomic_ops.c \
+    	|| ln -s ${srcdir}/libatomic_ops/src/atomic_ops.c \
+		 ${srcdir}/atomic_ops.c
+
+    test -e ${srcdir}/atomic_ops_sysdeps.S \
+    	|| ln -s ${srcdir}/libatomic_ops/src/atomic_ops_sysdeps.S \
+		 ${srcdir}/atomic_ops_sysdeps.S
+
+    dnl This gets the source include files, which is often close enough.
+    dnl It also makes atomic_ops_sysdeps.S assemble.
     GC_CFLAGS="${GC_CFLAGS} -I \$(top_srcdir)/libatomic_ops/src"
     maybe_libatomic_ops="libatomic_ops"
   ])
 
 AM_CONDITIONAL(USE_INTERNAL_LIBATOMIC_OPS,
 		test -n "$maybe_libatomic_ops" -a "$THREADS" != "none")
+AM_CONDITIONAL(NEED_ATOMIC_OPS_ASM, test -n "$maybe_libatomic_ops" -a x$need_atomic_ops_asm = xtrue)
 AC_SUBST(atomic_ops_libs)
 
 dnl Produce the Files

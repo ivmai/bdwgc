@@ -121,12 +121,13 @@ DIST_COMMON = $(am__configure_deps) $(am__pkginclude_HEADERS_DIST) \
 @PTHREADS_TRUE@am__append_5 = pthread_support.c pthread_stop_world.c
 @DARWIN_THREADS_TRUE@am__append_6 = darwin_stop_world.c
 @WIN32_THREADS_TRUE@am__append_7 = win32_threads.c
-@USE_INTERNAL_LIBATOMIC_OPS_TRUE@am__append_8 = atomic_ops.c atomic_ops_sysdeps.S
+@USE_INTERNAL_LIBATOMIC_OPS_TRUE@am__append_8 = atomic_ops.c
+@NEED_ATOMIC_OPS_ASM_TRUE@am__append_9 = atomic_ops_sysdeps.S
 
 # C++ Interface
 # -------------
-@CPLUSPLUS_TRUE@am__append_9 = libgccpp.la
-@CPLUSPLUS_TRUE@am__append_10 = include/gc_cpp.h include/gc_allocator.h
+@CPLUSPLUS_TRUE@am__append_10 = libgccpp.la
+@CPLUSPLUS_TRUE@am__append_11 = include/gc_cpp.h include/gc_allocator.h
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
@@ -166,15 +167,16 @@ am__libgc_la_SOURCES_DIST = allchblk.c alloc.c blacklst.c checksums.c \
 @PTHREADS_TRUE@	pthread_stop_world.lo
 @DARWIN_THREADS_TRUE@am__objects_2 = darwin_stop_world.lo
 @WIN32_THREADS_TRUE@am__objects_3 = win32_threads.lo
-@USE_INTERNAL_LIBATOMIC_OPS_TRUE@am__objects_4 = atomic_ops.lo \
-@USE_INTERNAL_LIBATOMIC_OPS_TRUE@	atomic_ops_sysdeps.lo
+@USE_INTERNAL_LIBATOMIC_OPS_TRUE@am__objects_4 = atomic_ops.lo
+@NEED_ATOMIC_OPS_ASM_TRUE@am__objects_5 = atomic_ops_sysdeps.lo
 am_libgc_la_OBJECTS = allchblk.lo alloc.lo blacklst.lo checksums.lo \
 	dbg_mlc.lo dyn_load.lo finalize.lo gc_dlopen.lo gcj_mlc.lo \
 	headers.lo malloc.lo mallocx.lo mark.lo mark_rts.lo misc.lo \
 	new_hblk.lo obj_map.lo os_dep.lo pcr_interface.lo ptr_chck.lo \
 	real_malloc.lo reclaim.lo specific.lo stubborn.lo typd_mlc.lo \
 	backgraph.lo thread_local_alloc.lo $(am__objects_1) \
-	$(am__objects_2) $(am__objects_3) $(am__objects_4)
+	$(am__objects_2) $(am__objects_3) $(am__objects_4) \
+	$(am__objects_5)
 libgc_la_OBJECTS = $(am_libgc_la_OBJECTS)
 @CPLUSPLUS_TRUE@libgccpp_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 @CPLUSPLUS_TRUE@	$(am__DEPENDENCIES_1)
@@ -325,6 +327,8 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
+NEED_ATOMIC_OPS_ASM_FALSE = @NEED_ATOMIC_OPS_ASM_FALSE@
+NEED_ATOMIC_OPS_ASM_TRUE = @NEED_ATOMIC_OPS_ASM_TRUE@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -447,7 +451,7 @@ EXTRA_DIST = cord/cordbscs.c cord/cordtest.c cord/de.c cord/cordprnt.c \
 
 # C Library
 # ---------
-lib_LTLIBRARIES = libcord.la libgc.la $(am__append_9)
+lib_LTLIBRARIES = libcord.la libgc.la $(am__append_10)
 include_HEADERS = 
 
 # installed headers
@@ -458,7 +462,7 @@ pkginclude_HEADERS = include/gc.h include/gc_typed.h \
 	include/gc_allocator.h include/gc_backptr.h include/gc_gcj.h \
 	include/leak_detector.h include/gc_amiga_redirects.h \
 	include/gc_pthread_redirects.h include/gc_config_macros.h \
-	include/gc_tiny_fl.h $(am__append_10)
+	include/gc_tiny_fl.h $(am__append_11)
 
 # headers which are not installed
 #
@@ -548,7 +552,7 @@ libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
 	os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c \
 	specific.c stubborn.c typd_mlc.c backgraph.c \
 	thread_local_alloc.c $(am__append_5) $(am__append_6) \
-	$(am__append_7) $(am__append_8)
+	$(am__append_7) $(am__append_8) $(am__append_9)
 
 # Include THREADDLLIBS here to ensure that the correct versions of
 # linuxthread semaphore functions get linked:
@@ -1371,12 +1375,6 @@ uninstall-info: uninstall-info-recursive
 	uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLTLIBRARIES uninstall-pkgincludeHEADERS
 
-
-$(srcdir)/atomic_ops.c: $(srcdir)/libatomic_ops/src/atomic_ops.c
-	cp $(srcdir)/libatomic_ops/src/atomic_ops.c $(srcdir)/atomic_ops.c
-
-$(srcdir)/atomic_ops_sysdeps.S: $(srcdir)/libatomic_ops/src/atomic_ops_sysdeps.S
-	cp $(srcdir)/libatomic_ops/src/atomic_ops_sysdeps.S $(srcdir)/atomic_ops_sysdeps.S
 .s.lo:
 	$(LTCOMPILE) $(ASM_CPP_OPTIONS) -c $<
 
