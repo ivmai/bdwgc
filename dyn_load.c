@@ -49,6 +49,11 @@
 #   undef GC_must_restore_redefined_dlopen
 # endif
 
+/* A user-supplied routine that is called to determine if a DSO must
+   be scanned by the gc.  */
+static int (*GC_has_static_roots)(const char *, void *, size_t);
+
+
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE)) \
     && !defined(PCR)
 #if !defined(SOLARISDL) && !defined(IRIX5) && \
@@ -349,6 +354,11 @@ static int GC_register_dynlib_callback(info, size, ptr)
 	{
 	  if( !(p->p_flags & PF_W) ) break;
 	  start = ((char *)(p->p_vaddr)) + info->dlpi_addr;
+
+	  if (GC_has_static_roots
+	      && !GC_has_static_roots(info->dlpi_name, start, p->p_memsz))
+	    break;
+
 	  GC_add_roots_inner(start, start + p->p_memsz, TRUE);
 	}
       break;
@@ -1154,5 +1164,13 @@ GC_bool GC_register_main_static_data()
 {
   return TRUE;
 }
+
+/* Register a routine to filter dynamic library registration.  */
+void
+GC_register_has_static_roots_callback
+  (int (*callback)(const char *, void *, size_t)) {
+  GC_has_static_roots = callback;
+}
+
 #endif /* HAVE_REGISTER_MAIN_STATIC_DATA */
 

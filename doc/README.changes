@@ -2285,6 +2285,7 @@ Since gc6.7:
    some careful code reading.
  - Added support for kFreeBSD + glibc (Thanks to Petr Salinger)
  - Fix more MacOS threads memory leaks (Thanks to Allan Hsu)
+ - Added initial Solaris/X86-64 support (Thanks to Rainer Orth)
 
 Since gc6.8:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
@@ -2518,6 +2519,7 @@ Since gc7.0alpha5
    infrastructure was added to support some of this.  Thanks to Roland McGrath
    for ideas and information.
  - Import various updated build scripts.
+ - Add GC_register_has_static_roots_callback.  (Thanks to Andrew Haley.)
   
 To do:
  - REDIRECT_MALLOC and threads combination should work on more platforms,
