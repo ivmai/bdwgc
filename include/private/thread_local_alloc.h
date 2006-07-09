@@ -39,7 +39,8 @@
 #     else
 #       define USE_WIN32_COMPILER_TLS
 #     endif /* !GNU */
-#   elif defined(LINUX) && defined(__GNUC__)
+#   elif defined(LINUX) && \
+		 (__GNUC__ > 3 || (__GNUC == 3 && __GNUC_MINOR__ >=3))
 #     define USE_COMPILER_TLS
 #   elif (defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) || \
          defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS)) || \
