@@ -2520,6 +2520,9 @@ Since gc7.0alpha5
    for ideas and information.
  - Import various updated build scripts.
  - Add GC_register_has_static_roots_callback.  (Thanks to Andrew Haley.)
+ - Fix serious bugs in GC_malloc_atomic_uncollectable().
+ - Return GC_SUCCESS form GC_get_stack_base().
+ - Fix several atomic_ops problems on IA64 with HP Compiler.
   
 To do:
  - REDIRECT_MALLOC and threads combination should work on more platforms,
