@@ -15,6 +15,7 @@ void * test(void * arg) {
     for (i = 1; i < 10; ++i) {
         free(p[i]);
     }
+    return 0;
 }       
 
 #define NTHREADS 5

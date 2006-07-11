@@ -538,7 +538,7 @@ void * GC_malloc_atomic_uncollectable(size_t lb)
 	if (EXTRA_BYTES != 0 && lb != 0) lb--;
 	    	  /* We don't need the extra byte, since this won't be	*/
 	    	  /* collected anyway.					*/
-	lg = GC_size_map[lg];
+	lg = GC_size_map[lb];
 	opp = &(GC_auobjfreelist[lg]);
 	LOCK();
         if( (op = *opp) != 0 ) {
@@ -556,7 +556,6 @@ void * GC_malloc_atomic_uncollectable(size_t lb)
 	GC_ASSERT(0 == op || GC_is_marked(op));
         return((void *) op);
     } else {
-	size_t lb;
 	hdr * hhdr;
 	
 	op = (ptr_t)GC_generic_malloc(lb, AUNCOLLECTABLE);

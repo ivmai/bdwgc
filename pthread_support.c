@@ -351,13 +351,7 @@ static void start_mark_threads(void)
     }
 }
 
-#else  /* !PARALLEL_MARK */
-
-static __inline__ void start_mark_threads(void)
-{
-}
-
-#endif /* !PARALLEL_MARK */
+#endif /* PARALLEL_MARK */
 
 GC_bool GC_thr_initialized = FALSE;
 

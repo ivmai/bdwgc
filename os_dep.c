@@ -1227,6 +1227,7 @@ int GC_get_stack_base(struct GC_stack_base *b)
 #     else
 	b -> mem_base = GC_find_limit(&dummy, FALSE);
 #     endif
+      return GC_SUCCESS;
 #   else
       return GC_UNIMPLEMENTED;
 #   endif
