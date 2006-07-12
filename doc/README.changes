@@ -2523,6 +2523,8 @@ Since gc7.0alpha5
  - Fix serious bugs in GC_malloc_atomic_uncollectable().
  - Return GC_SUCCESS form GC_get_stack_base().
  - Fix several atomic_ops problems on IA64 with HP Compiler.
+ - Update to atomic_ops-1.2.
+ - Fix hb_n_marks description and reclaim.c assertion.
   
 To do:
  - REDIRECT_MALLOC and threads combination should work on more platforms,
