@@ -666,10 +666,13 @@ struct hblkhdr {
     				/* never decrement it to zero during a	*/
     				/* collection, and hence the count may 	*/
     				/* be one too high.  Due to concurrent	*/
-    				/* updates, and arbitrary number of	*/
+    				/* updates, an arbitrary number of	*/
     				/* increments, but not all of them (!)	*/
     				/* may be lost, hence it may in theory	*/
     				/* be much too low.			*/
+    				/* The count may also be too high if	*/
+    				/* multiple mark threads mark the	*/
+    				/* same object due to a race.		*/
     				/* Without parallel marking, the count	*/
     				/* is accurate.				*/
 #   ifdef USE_MARK_BYTES

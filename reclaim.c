@@ -290,8 +290,13 @@ void GC_reclaim_block(struct hblk *hbp, word report_if_found)
     } else {
         GC_bool empty = GC_block_empty(hhdr);
 #	ifdef PARALLEL_MARK
-	  /* Count can be low or one too high.	*/
-	  GC_ASSERT(hhdr -> hb_n_marks <= HBLKSIZE/sz + 1);
+	  /* Count can be low or one too high because we sometimes	*/
+	  /* have to ignore decrements.  Objects can also potentially   */
+	  /* be repeatedly marked by each marker.			*/
+	  /* Here we assume two markers, but this is extremely		*/
+	  /* unlikely to fail spuriously with more.  And if it does, it	*/
+	  /* should be looked at.					*/
+	  GC_ASSERT(hhdr -> hb_n_marks <= 2 * (HBLKSIZE/sz + 1) + 16);
 #	else
 	  GC_ASSERT(sz * hhdr -> hb_n_marks <= HBLKSIZE);
 #	endif
