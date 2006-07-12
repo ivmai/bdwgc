@@ -32,7 +32,7 @@ VPATH= $(srcdir)
 
 # Atomic_ops installation directory.  If this doesn't exist, we create
 # it from the included libatomic_ops distribution.
-AO_VERSION=1.1
+AO_VERSION=1.2
 AO_SRC_DIR=$(srcdir)/libatomic_ops-$(AO_VERSION)
 AO_INSTALL_DIR=$(srcdir)/libatomic_ops-install
 
