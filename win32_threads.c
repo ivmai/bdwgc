@@ -10,11 +10,7 @@
 
 /* Allocation lock declarations.	*/
 #if !defined(USE_PTHREAD_LOCKS)
-# if defined(GC_DLL)
-    __declspec(dllexport) CRITICAL_SECTION GC_allocate_ml;
-# else
-    CRITICAL_SECTION GC_allocate_ml;
-# endif
+  /* GC_allocate_ml declaration in gc_locks.h suffices.	*/
   DWORD GC_lock_holder = NO_THREAD;
   	/* Thread id for current holder of allocation lock */
 #else

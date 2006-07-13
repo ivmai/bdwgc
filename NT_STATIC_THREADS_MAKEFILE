@@ -10,7 +10,7 @@ CPU=$(MY_CPU)
 # should do, since we only need the headers.
 # We assume this was manually unpacked, since I'm not sure there is
 # a Windows standard command line tool to do this.
-AO_VERSION=1.1
+AO_VERSION=1.2
 AO_SRC_DIR=libatomic_ops-$(AO_VERSION)/src
 AO_INCLUDE_DIR=$(AO_SRC_DIR)
 

@@ -5,6 +5,7 @@
 # TARGTYPE "Win32 (x86) Application" 0x0101
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
+AO_VERSION=1.2
 !IF "$(CFG)" == ""
 CFG=gctest - Win32 Release
 !MESSAGE No configuration specified.  Defaulting to cord - Win32 Debug.
@@ -119,7 +120,8 @@ CPP=cl.exe
 # ADD CPP /nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "GC_BUILD" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "GC_WIN32_THREADS" /FR /YX /c
 CPP_PROJ=/nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "GC_BUILD" /D\
  "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D\
- "GC_WIN32_THREADS" /FR"$(INTDIR)/" /Fp"$(INTDIR)/gc.pch" /YX /Fo"$(INTDIR)/" /c 
+ "GC_WIN32_THREADS" /FR"$(INTDIR)/" /Fp"$(INTDIR)/gc.pch" \
+ /Ilibatomic_ops-$(AO_VERSION)/src /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\Release/
 CPP_SBRS=.\Release/
 
@@ -441,7 +443,8 @@ CPP=cl.exe
 # ADD CPP /nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "GC_WIN32_THREADS" /YX /c
 CPP_PROJ=/nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D\
  "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "GC_WIN32_THREADS"\
- /Fp"$(INTDIR)/gctest.pch" /YX /Fo"$(INTDIR)/" /c 
+ /Ilibatomic_ops-$(AO_VERSION)/src /Fp"$(INTDIR)/gctest.pch" \
+ /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\gctest\Release/
 CPP_SBRS=.\.
 
@@ -527,7 +530,7 @@ CPP=cl.exe
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "GC_WIN32_THREADS" /FR /YX /c
 CPP_PROJ=/nologo /MDd /W3 /Gm /GX /Zi /Od /I include /D "_DEBUG" /D "WIN32" /D "_WINDOWS"\
  /D "ALL_INTERIOR_POINTERS" /D "__STDC__" /D "GC_WIN32_THREADS" /FR"$(INTDIR)/"\
- /Fp"$(INTDIR)/gctest.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
+ /Ilibatomic_ops-$(AO_VERSION)/src /Fp"$(INTDIR)/gctest.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 CPP_OBJS=.\gctest\Debug/
 CPP_SBRS=.\gctest\Debug/
 
@@ -617,7 +620,7 @@ CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MD /W3 /GX /O2 /I "." /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /YX /c
 CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "." /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D\
- "ALL_INTERIOR_POINTERS" /Fp"$(INTDIR)/cord.pch" /YX /Fo"$(INTDIR)/" /c 
+ /Ilibatomic_ops-$(AO_VERSION)/src "ALL_INTERIOR_POINTERS" /Fp"$(INTDIR)/cord.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\cord\Release/
 CPP_SBRS=.\.
 
@@ -710,7 +713,7 @@ CPP=cl.exe
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "." /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /YX /c
 CPP_PROJ=/nologo /MDd /W3 /Gm /GX /Zi /Od /I "." /I include /D "_DEBUG" /D "WIN32" /D\
  "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /Fp"$(INTDIR)/cord.pch" /YX\
- /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
+ /Ilibatomic_ops-$(AO_VERSION)/src /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 CPP_OBJS=.\cord\Debug/
 CPP_SBRS=.\.
 
@@ -1886,7 +1889,6 @@ DEP_CPP_WIN32=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_priv.h"\
 	".\include\private\msvc_dbg.h"\
-	".\include\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_WIN32=\
