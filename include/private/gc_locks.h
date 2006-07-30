@@ -59,11 +59,7 @@
 #    include <windows.h>
 #    define NO_THREAD (DWORD)(-1)
      extern DWORD GC_lock_holder;
-#    if defined(GC_DLL)
-       __declspec(dllexport) CRITICAL_SECTION GC_allocate_ml;
-#    else
-       CRITICAL_SECTION GC_allocate_ml;
-#    endif
+     GC_API CRITICAL_SECTION GC_allocate_ml;
 #    ifdef GC_ASSERTIONS
 #        define UNCOND_LOCK() \
 		{ EnterCriticalSection(&GC_allocate_ml); \
