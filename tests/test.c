@@ -1481,6 +1481,10 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
     HANDLE win_thr_h;
 # endif
   DWORD thread_id;
+
+# ifdef GC_DLL
+    GC_use_DllMain();  /* Test with implicit thread registration if possible. */
+# endif
   GC_INIT();
 # ifndef NO_INCREMENTAL
     GC_enable_incremental();
