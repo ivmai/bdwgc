@@ -956,7 +956,7 @@ GC_register_has_static_roots_callback
    * or must explicitly call GC_register_my_thread,
    * so that they will be recorded in the thread table.
    * For backwards compatibility, it is possible to build the GC
-   * with GC_DLL defined, and set GC_win32_dll_threads to true.
+   * with GC_DLL defined, and to call GC_use_DllMain().
    * This implicitly registers all created threads, but appears to be
    * less robust.
    *
@@ -986,6 +986,11 @@ GC_register_has_static_roots_callback
 #    define WinMain GC_WinMain
 #  endif
 # endif /* defined(_WIN32_WCE) */
+
+  /*
+   * Use implicit thread registration via DllMain.
+   */
+GC_API void GC_use_DllMain(void);
 
 # define CreateThread GC_CreateThread
 # define ExitThread GC_ExitThread

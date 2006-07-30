@@ -2288,6 +2288,9 @@ Since gc6.7:
  - Added initial Solaris/X86-64 support (Thanks to Rainer Orth)
 
 Since gc6.8:
+ - Fix typo in PREFETCH implementation for X86_64.  (Thanks to Peter Wang.)
+
+Since gc6.9:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
    and use ANSI constructs unconditionally.
  - Introduce #elif and #error in some of the appropriate places.
@@ -2525,6 +2528,8 @@ Since gc7.0alpha5
  - Fix several atomic_ops problems on IA64 with HP Compiler.
  - Update to atomic_ops-1.2.
  - Fix hb_n_marks description and reclaim.c assertion.
+ - Various additional win32 threads fixes.
+ - Enable GC_ASSERTIONS for Debug build with NT_THREADS_MAKEFILE.
   
 To do:
  - REDIRECT_MALLOC and threads combination should work on more platforms,
