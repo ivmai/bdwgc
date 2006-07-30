@@ -2315,7 +2315,7 @@ void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
   static PVOID gww_buf[GC_GWW_BUF_LEN];
 
 # ifdef MPROTECT_VDB
-    static GC_bool GC_gww_dirty_init(void)
+    GC_bool GC_gww_dirty_init(void)
     {
       detect_GetWriteWatch();
       return GC_GWW_AVAILABLE();
