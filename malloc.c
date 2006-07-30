@@ -423,9 +423,7 @@ void GC_free(void * p)
     knd = hhdr -> hb_obj_kind;
     ok = &GC_obj_kinds[knd];
     if (EXPECT((ngranules <= MAXOBJGRANULES), 1)) {
-#	ifdef THREADS
-	    LOCK();
-#	endif
+	LOCK();
 	GC_bytes_freed += sz;
 	if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
 		/* Its unnecessary to clear the mark bit.  If the 	*/
@@ -437,9 +435,7 @@ void GC_free(void * p)
 	flh = &(ok -> ok_freelist[ngranules]);
 	obj_link(p) = *flh;
 	*flh = (ptr_t)p;
-#	ifdef THREADS
-	    UNLOCK();
-#	endif
+	UNLOCK();
     } else {
         LOCK();
         GC_bytes_freed += sz;
