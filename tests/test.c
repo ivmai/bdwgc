@@ -1484,6 +1484,7 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
 
 # ifdef GC_DLL
     GC_use_DllMain();  /* Test with implicit thread registration if possible. */
+    GC_printf("Using DllMain to track threads\n");
 # endif
   GC_INIT();
 # ifndef NO_INCREMENTAL
