@@ -658,12 +658,10 @@ void GC_init_inner()
     GC_STATIC_ASSERT(sizeof (struct hblk) == HBLKSIZE);
 #   ifndef THREADS
 #     if defined(STACK_GROWS_UP) && defined(STACK_GROWS_DOWN)
-  	ABORT(
-  	  "Only one of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd\n");
+#       error "Only one of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd"
 #     endif
 #     if !defined(STACK_GROWS_UP) && !defined(STACK_GROWS_DOWN)
-  	ABORT(
-  	  "One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd\n");
+#       error "One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd"
 #     endif
 #     ifdef STACK_GROWS_DOWN
         GC_ASSERT((word)(&dummy) <= (word)GC_stackbottom);
