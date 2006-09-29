@@ -2289,6 +2289,7 @@ Since gc6.7:
 
 Since gc6.8:
  - Fix typo in PREFETCH implementation for X86_64.  (Thanks to Peter Wang.)
+ - Fix M68K LINUX port. (Thanks to Debian packagers.)
 
 Since gc6.9:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
@@ -2530,6 +2531,13 @@ Since gc7.0alpha5
  - Fix hb_n_marks description and reclaim.c assertion.
  - Various additional win32 threads fixes.
  - Enable GC_ASSERTIONS for Debug build with NT_THREADS_MAKEFILE.
+
+[gc7.0alpha7 was released and version bumped to gc7.0alpha8]
+
+Since first gc7.0alpha8 version:
+ [ Some gc6.9 changes ]
+ - Change FindTopOfStack decl in darwin_stop_world.c.
+ - Move some static tests from misc.c to gcconfig.h.  Use #error.
   
 To do:
  - REDIRECT_MALLOC and threads combination should work on more platforms,
