@@ -460,7 +460,7 @@
 /* SYSV on an M68K actually means A/UX.					*/
 /* The distinction in these cases is usually the stack starting address */
 # ifndef mach_type_known
-	--> unknown machine type
+#   error "The collector has not been ported to this machine/OS combination."
 # endif
 		    /* Mapping is: M68K       ==> Motorola 680X0	*/
 		    /*		   (NEXT, and SYSV (A/UX),		*/
@@ -659,8 +659,8 @@
 #   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
-#       define STACKBOTTOM ((ptr_t)0xf0000000)
-/* #       define MPROTECT_VDB - Reported to not work  9/17/01 */
+#       define LINUX_STACKBOTTOM
+#       define MPROTECT_VDB
 #       ifdef __ELF__
 #            define DYNAMIC_LOADING
 #	     include <features.h>
@@ -1400,7 +1400,6 @@
      extern int _end[];
 #    define DATAEND (_end)
 #    define STACKBOTTOM ((ptr_t) 0x4fffffff)
-#    define USE_GENERIC_PUSH_REGS
 #   endif
 # endif
 
@@ -2224,8 +2223,20 @@
 #   define MARK_BIT_PER_GRANULE	/* Usually faster */
 # endif
 
+/* Some static sanity tests.	*/
 # if defined(MARK_BIT_PER_GRANULE) && defined(MARK_BIT_PER_OBJ)
 #   error Define only one of MARK_BIT_PER_GRANULE and MARK_BIT_PER_OBJ.
+# endif
+
+# if defined(STACK_GROWS_UP) && defined(STACK_GROWS_DOWN)
+#   error "Only one of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd."
+# endif
+# if !defined(STACK_GROWS_UP) && !defined(STACK_GROWS_DOWN)
+#   error "One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd."
+# endif
+
+# if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX)
+#   error "REDIRECT_MALLOC with THREADS works at most on Linux."
 # endif
 
 #ifdef GC_PRIVATE_H
