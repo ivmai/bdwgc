@@ -115,7 +115,7 @@ sem_t GC_suspend_ack_sem;
 
 void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 
-#if defined(IA64) || defined(HP_PA)
+#if defined(IA64) || defined(HP_PA) || defined(M68K)
 void GC_suspend_handler(int sig, siginfo_t *info, void *context)
 {
   int old_errno = errno;
