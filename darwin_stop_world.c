@@ -75,14 +75,16 @@ void GC_push_all_stacks() {
   GC_thread p;
   pthread_t me;
   ptr_t lo, hi;
-#if defined(POWERPC)
-  ppc_thread_state_t state;
-#elif defined(I386)
-  i386_thread_state_t state;
-#else
-# error FIXME for non-x86 || ppc architectures
-#endif
-  mach_msg_type_number_t thread_state_count = MACHINE_THREAD_STATE_COUNT;
+# if defined(POWERPC)
+    ppc_thread_state_t state;
+    mach_msg_type_number_t thread_state_count = PPC_THREAD_STATE_COUNT;
+# elif defined(I386)
+    i386_thread_state_t state;
+    mach_msg_type_number_t thread_state_count = i386_THREAD_STATE_COUNT;
+# else
+#   error FIXME for non-x86 || ppc architectures
+    mach_msg_type_number_t thread_state_count = MACHINE_THREAD_STATE_COUNT;
+# endif
   
   me = pthread_self();
   if (!GC_thr_initialized) GC_thr_init();
@@ -96,70 +98,82 @@ void GC_push_all_stacks() {
 	/* Get the thread state (registers, etc) */
 	r = thread_get_state(
 			     p->stop_info.mach_thread,
-			     MACHINE_THREAD_STATE,
+#			     if defined(POWERPC)
+			       PPC_THREAD_STATE,
+#			     elif defined(I386)
+			       i386_THREAD_STATE,
+#			     else
+#			       error FIXME for non-x86 || ppc architectures
+			       MACHINE_THREAD_STATE,
+#			     endif
 			     (natural_t*)&state,
 			     &thread_state_count);
+
+#       ifdef DEBUG_THREADS
+	  GC_printf("thread_get_state return value = %d\n", r);    
+#	endif
+
 	if(r != KERN_SUCCESS) ABORT("thread_get_state failed");
 	
-#if defined(I386)
-	lo = state.esp;
+#       if defined(I386)
+	  lo = state.esp;
 
-	GC_push_one(state.eax); 
-	GC_push_one(state.ebx); 
-	GC_push_one(state.ecx); 
-	GC_push_one(state.edx); 
-	GC_push_one(state.edi); 
-	GC_push_one(state.esi); 
-	GC_push_one(state.ebp); 
-#elif defined(POWERPC)
-	lo = (void*)(state.r1 - PPC_RED_ZONE_SIZE);
+	  GC_push_one(state.eax); 
+	  GC_push_one(state.ebx); 
+	  GC_push_one(state.ecx); 
+	  GC_push_one(state.edx); 
+	  GC_push_one(state.edi); 
+	  GC_push_one(state.esi); 
+	  GC_push_one(state.ebp); 
+#       elif defined(POWERPC)
+	  lo = (void*)(state.r1 - PPC_RED_ZONE_SIZE);
         
-	GC_push_one(state.r0); 
-	GC_push_one(state.r2); 
-	GC_push_one(state.r3); 
-	GC_push_one(state.r4); 
-	GC_push_one(state.r5); 
-	GC_push_one(state.r6); 
-	GC_push_one(state.r7); 
-	GC_push_one(state.r8); 
-	GC_push_one(state.r9); 
-	GC_push_one(state.r10); 
-	GC_push_one(state.r11); 
-	GC_push_one(state.r12); 
-	GC_push_one(state.r13); 
-	GC_push_one(state.r14); 
-	GC_push_one(state.r15); 
-	GC_push_one(state.r16); 
-	GC_push_one(state.r17); 
-	GC_push_one(state.r18); 
-	GC_push_one(state.r19); 
-	GC_push_one(state.r20); 
-	GC_push_one(state.r21); 
-	GC_push_one(state.r22); 
-	GC_push_one(state.r23); 
-	GC_push_one(state.r24); 
-	GC_push_one(state.r25); 
-	GC_push_one(state.r26); 
-	GC_push_one(state.r27); 
-	GC_push_one(state.r28); 
-	GC_push_one(state.r29); 
-	GC_push_one(state.r30); 
-	GC_push_one(state.r31);
-#else
-# error FIXME for non-x86 || ppc architectures
-#endif
+	  GC_push_one(state.r0); 
+	  GC_push_one(state.r2); 
+	  GC_push_one(state.r3); 
+	  GC_push_one(state.r4); 
+	  GC_push_one(state.r5); 
+	  GC_push_one(state.r6); 
+	  GC_push_one(state.r7); 
+	  GC_push_one(state.r8); 
+	  GC_push_one(state.r9); 
+	  GC_push_one(state.r10); 
+	  GC_push_one(state.r11); 
+	  GC_push_one(state.r12); 
+	  GC_push_one(state.r13); 
+	  GC_push_one(state.r14); 
+	  GC_push_one(state.r15); 
+	  GC_push_one(state.r16); 
+	  GC_push_one(state.r17); 
+	  GC_push_one(state.r18); 
+	  GC_push_one(state.r19); 
+	  GC_push_one(state.r20); 
+	  GC_push_one(state.r21); 
+	  GC_push_one(state.r22); 
+	  GC_push_one(state.r23); 
+	  GC_push_one(state.r24); 
+	  GC_push_one(state.r25); 
+	  GC_push_one(state.r26); 
+	  GC_push_one(state.r27); 
+	  GC_push_one(state.r28); 
+	  GC_push_one(state.r29); 
+	  GC_push_one(state.r30); 
+	  GC_push_one(state.r31);
+#	else
+#	  error FIXME for non-x86 || ppc architectures
+#	endif
       } /* p != me */
       if(p->flags & MAIN_THREAD)
 	hi = GC_stackbottom;
       else
 	hi = p->stack_end;
-#if DEBUG_THREADS
-      GC_printf3("Darwin: Stack for thread 0x%lx = [%lx,%lx)\n",
-		 (unsigned long) p -> id,
-		 (unsigned long) lo,
-		 (unsigned long) hi
+#     if DEBUG_THREADS
+        GC_printf("Darwin: Stack for thread 0x%lx = [%lx,%lx)\n",
+		   (unsigned long) p -> id,
+		   (unsigned long) lo,
+		   (unsigned long) hi
 		 );
-#endif
+#     endif
       GC_push_all_stack(lo,hi);
     } /* for(p=GC_threads[i]...) */
   } /* for(i=0;i<THREAD_TABLE_SZ...) */
