@@ -82,6 +82,20 @@ Darwin/OS X port.
 -Brian Alliet
 brian@brianweb.net
 
+gc_cpp.h usage
+==============
+
+Replacement of operator new and delete is apparently not supported with
+dynamic libraries.  This means that applications using gc_cpp.h
+(including the built-in test) will probably not work correctly with
+the collector in a dynamic library, unless special care is taken.
+
+See
+http://article.gmane.org/gmane.comp.programming.garbage-collection.boehmgc/1421
+for some details.
+
+- Hans Boehm (based on information from Andrew Begel)
+
 
 Older Information (Most of this no longer applies to the current code)
 ======================================================================
