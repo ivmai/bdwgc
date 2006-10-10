@@ -60,6 +60,10 @@ EXTRA_libmonogc_la_SOURCES = alpha_mach_dep.S \
     rs6000_mach_dep.s sparc_mach_dep.S sparc_netbsd_mach_dep.s \
     sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s
 
+libmonogc_static_la_SOURCES = $(libmonogc_la_SOURCES)
+libmonogc_static_la_LIBADD = $(libmonogc_la_LIBADD)
+libmonogc_static_la_LDFLAGS = -static
+
 EXTRA_DIST += alpha_mach_dep.S mips_sgi_mach_dep.s sparc_mach_dep.S
 
 AM_CFLAGS = @GC_CFLAGS@

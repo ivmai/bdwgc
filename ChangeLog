@@ -1,3 +1,9 @@
+
+Tue Oct 10 16:58:37 CEST 2006 Paolo Molaro <lupus@ximian.com>
+
+	* darwin_stop_world.c: patch from Allan Hsu <allan@counterpop.net>
+	to avoid using memory just after freeing it.
+
 2006-08-31  Zoltan Varga  <vargaz@freemail.hu>
 
 	* libgc.vcproj: Define GC_INSIDE_DLL on VC build too.
@@ -140,10 +146,14 @@ Tue Jan 24 12:34:06 CET 2006 Paolo Molaro <lupus@ximian.com>
 	Bryan Berg (bryan AT imeem DOT com).
 
 2005-10-11  Zoltan Varga  <vargaz@gmail.com>
- 
+
 	* pthread_support.c (GC_thread_deregister_foreign): Make this return
 	void instead of void*.
-	
+
+2005-09-29  Raja R Harinath  <harinath@gmail.com>
+
+	* configure.host: Fix syntax error.
+
 2005-08-24  Zoltan Varga  <vargaz@gmail.com>
 
 	* win32_threads.c: If GC_INSIDE_DLL is defined, define the DllMain function for automatic registration
@@ -335,12 +345,18 @@ Tue Jan 18 11:19:47 CET 2005 Paolo Molaro <lupus@ximian.com>
 	the mono executable.
 
 2004-07-27  John Merryweather Cooper <john_m_cooper@yahoo.com>
-	# configure.in: Fix compiler flags selection to be correct for
-	both FreeBSD 4.x (aka -STABLE) and FreeBSD 5.x (aka -CURRENT).
+
+	* configure.in:  Fix to properly select flags for pthreads
+	on FreeBSD 4.x (aka -STABLE) and 5.x (aka -CURRENT).
 	
 2004-07-01  Zoltan Varga  <vargaz@freemail.hu>
 
 	* include/install-sh doc/install-sh: New files.
+
+2004-06-30  Zoltan Varga  <vargaz@freemail.hu>
+
+	* include/private/gc_priv.h (SMALL_OBJ): Add Hans' fix for crashes
+	seen on SPARC64.
 
 Thu Jun 24 15:39:00 CEST 2004 Paolo Molaro <lupus@ximian.com>
 
