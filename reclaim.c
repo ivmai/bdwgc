@@ -433,6 +433,25 @@ void GC_print_block_list()
     	      (unsigned long)pstats.total_bytes);
 }
 
+/* Currently for debugger use only: */
+void GC_print_free_list(int kind, size_t sz_in_granules)
+{
+    struct obj_kind * ok = &GC_obj_kinds[kind];
+    ptr_t flh = ok -> ok_freelist[sz_in_granules];
+    struct hblk *lastBlock = 0;
+    int n = 0;
+
+    while (flh){
+        struct hblk *block = HBLKPTR(flh);
+        if (block != lastBlock){
+            GC_printf("\nIn heap block at 0x%x:\n\t", block);
+            lastBlock = block;
+        }
+        GC_printf("%d: 0x%x;", ++n, flh);
+        flh = obj_link(flh);
+    }
+}
+
 #endif /* NO_DEBUGGING */
 
 /*
