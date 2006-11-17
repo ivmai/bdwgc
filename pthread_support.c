@@ -785,6 +785,9 @@ void GC_thr_init(void)
 #	if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
           GC_nprocs = GC_get_nprocs();
 #	endif
+#       if defined(GC_GNU_THREADS)
+	  if (GC_nprocs <= 0) GC_nprocs = 1;
+#       endif
       }
       if (GC_nprocs <= 0) {
 	WARN("GC_get_nprocs() returned %ld\n", GC_nprocs);

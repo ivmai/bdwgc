@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha8,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.16 $)
+AC_REVISION($Revision: 1.17 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -92,6 +92,11 @@ case "$THREADS" in
      *-*-linux*)
 	AC_DEFINE(GC_LINUX_THREADS)
 	AC_DEFINE(_REENTRANT)
+	;;
+     *-*-gnu*)
+	AC_DEFINE(GC_GNU_THREADS)
+	AC_DEFINE(_REENTRANT)
+	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	;;
      *-*-aix*)
 	AC_DEFINE(GC_AIX_THREADS)

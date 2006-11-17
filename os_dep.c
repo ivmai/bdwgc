@@ -422,7 +422,7 @@ static ptr_t backing_store_base_from_proc(void)
   /* for recent Linux versions.  This seems to be the easiest way to	*/
   /* cover all versions.						*/
 
-# ifdef LINUX
+# if defined(LINUX) || defined(HURD)
     /* Some Linux distributions arrange to define __data_start.  Some	*/
     /* define data_start as a weak symbol.  The latter is technically	*/
     /* broken, since the user program may define data_start, in which	*/
@@ -441,7 +441,7 @@ static ptr_t backing_store_base_from_proc(void)
   {
     extern ptr_t GC_find_limit(ptr_t, GC_bool);
 
-#   ifdef LINUX
+#   if defined(LINUX) || defined(HURD)
       /* Try the easy approaches first:	*/
       if ((ptr_t)__data_start != 0) {
 	  GC_data_start = (ptr_t)(__data_start);

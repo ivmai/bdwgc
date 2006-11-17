@@ -11,7 +11,8 @@ int main()
 	       "-Wl,--wrap -Wl,pthread_sigmask -Wl,--wrap -Wl,sleep\n");
 #   endif
 #   if defined(GC_LINUX_THREADS) || defined(GC_IRIX_THREADS) \
-	|| defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS)
+	|| defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS) \
+	|| defined(GC_GNU_THREADS)
 #       ifdef GC_USE_DLOPEN_WRAP
 	  printf("-ldl ");
 #	endif

@@ -1257,10 +1257,11 @@
 #     define OS_TYPE "HURD"
 #     define STACK_GROWS_DOWN
 #     define HEURISTIC2
-      extern int  __data_start[];
-#     define DATASTART ( (ptr_t) (__data_start))
-      extern int   _end[];
-#     define DATAEND ( (ptr_t) (_end))
+#     define SIG_SUSPEND SIGUSR1
+#     define SIG_THR_RESTART SIGUSR2
+#     define SEARCH_FOR_DATA_START
+      extern int _end[];
+#     define DATAEND ((ptr_t) (_end))
 /* #     define MPROTECT_VDB  Not quite working yet? */
 #     define DYNAMIC_LOADING
 #   endif
@@ -2023,7 +2024,8 @@
 # if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
 	    || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
 	    || defined(DGUX) || defined(BSD) \
-	    || defined(AIX) || defined(DARWIN) || defined(OSF1)
+	    || defined(AIX) || defined(DARWIN) || defined(OSF1) \
+	    || defined(HURD)
 #   define UNIX_LIKE   /* Basic Unix-like system calls work.	*/
 # endif
 
@@ -2080,7 +2082,7 @@
 #   define CACHE_LINE_SIZE 32	/* Wild guess	*/
 # endif
 
-# if defined(LINUX) || defined(__GLIBC__)
+# if defined(LINUX) || defined(HURD) || defined(__GLIBC__)
 #   define REGISTER_LIBRARIES_EARLY
     /* We sometimes use dl_iterate_phdr, which may acquire an internal	*/
     /* lock.  This isn't safe after the world has stopped.  So we must	*/
@@ -2123,6 +2125,9 @@
 	--> inconsistent configuration
 # endif
 # if defined(GC_AIX_THREADS) && !defined(_AIX)
+	--> inconsistent configuration
+# endif
+# if defined(GC_GNU_THREADS) && !defined(HURD)
 	--> inconsistent configuration
 # endif
 # if defined(GC_WIN32_THREADS) && !defined(MSWIN32) && !defined(CYGWIN32)
