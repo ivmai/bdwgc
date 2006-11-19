@@ -77,14 +77,17 @@ void GC_push_all_stacks() {
   ptr_t lo, hi;
 #if defined(POWERPC)
   ppc_thread_state_t state;
+  mach_msg_type_number_t thread_state_count = PPC_THREAD_STATE_COUNT;
 #elif defined(I386)
   i386_thread_state_t state;
+  mach_msg_type_number_t thread_state_count = i386_THREAD_STATE_COUNT;
 #elif defined(ARM)
   arm_thread_state_t state;
+  mach_msg_type_number_t thread_state_count = ARM_THREAD_STATE_COUNT;
 #else
 # error FIXME for non-x86 || ppc architectures
-#endif
   mach_msg_type_number_t thread_state_count = MACHINE_THREAD_STATE_COUNT;
+#endif
   
   me = pthread_self();
   if (!GC_thr_initialized) GC_thr_init();
@@ -98,7 +101,7 @@ void GC_push_all_stacks() {
 	/* Get the thread state (registers, etc) */
 	r = thread_get_state(
 			     p->stop_info.mach_thread,
-			     MACHINE_THREAD_STATE,
+			     GC_MACH_THREAD_STATE_FLAVOR,
 			     (natural_t*)&state,
 			     &thread_state_count);
 	if(r != KERN_SUCCESS) ABORT("thread_get_state failed");
@@ -265,7 +268,7 @@ void GC_push_all_stacks() {
 	ppc_thread_state64_t info;
 #      endif
 	mach_msg_type_number_t outCount = THREAD_STATE_MAX;
-	r = thread_get_state(thread, MACHINE_THREAD_STATE,
+	r = thread_get_state(thread, GC_MACH_THREAD_STATE_FLAVOR,
 			     (natural_t *)&info, &outCount);
 	if(r != KERN_SUCCESS) ABORT("task_get_state failed");
 
@@ -345,7 +348,7 @@ void GC_push_all_stacks() {
 	WARN("This is completely untested and likely will not work\n", 0);
 	i386_thread_state_t info;
 	mach_msg_type_number_t outCount = THREAD_STATE_MAX;
-	r = thread_get_state(thread, MACHINE_THREAD_STATE,
+	r = thread_get_state(thread, GC_MACH_THREAD_STATE_FLAVOR,
 			     (natural_t *)&info, &outCount);
 	if(r != KERN_SUCCESS) ABORT("task_get_state failed");
 

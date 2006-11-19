@@ -3690,7 +3690,7 @@ void GC_dirty_init() {
         mask,
         GC_ports.exception,
         EXCEPTION_DEFAULT,
-        MACHINE_THREAD_STATE
+        GC_MACH_THREAD_STATE_FLAVOR
     );
     if(r != KERN_SUCCESS) ABORT("task_set_exception_ports failed");
 
