@@ -2290,6 +2290,7 @@ Since gc6.7:
 Since gc6.8:
  - Fix typo in PREFETCH implementation for X86_64.  (Thanks to Peter Wang.)
  - Fix M68K LINUX port. (Thanks to Debian packagers.)
+ - __GNUC__ was misspelled as __GNUC in new_gc_alloc.h. (Thanks to Peter Wang.)
 
 Since gc6.9:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
@@ -2538,6 +2539,11 @@ Since first gc7.0alpha8 version:
  [ Some gc6.9 changes ]
  - Change FindTopOfStack decl in darwin_stop_world.c.
  - Move some static tests from misc.c to gcconfig.h.  Use #error.
+ - Add GC_print_free_list() function.  (Thanks to Bruce Hoult.)
+ - Add GC_GNU_THREADS support on HURD. (Thanks to Aleksey Demakov,
+   Barry DeFreese, and possibly other Debian maintainers.)
+ - __GNUC__ was misspelled as __GNUC in thread_local_alloc.h.
+   (Thanks to Peter Wang.)
   
 To do:
  - REDIRECT_MALLOC and threads combination should work on more platforms,

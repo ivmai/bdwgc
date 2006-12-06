@@ -724,6 +724,15 @@ GC_API int GC_general_register_disappearing_link (void * * link, void * obj);
 	/* the object containing link.  Explicitly deallocating */
 	/* obj may or may not cause link to eventually be	*/
 	/* cleared.						*/
+	/* This can be used to implement certain types of	*/
+	/* weak pointers.  Note however that this generally	*/
+	/* requires that thje allocation lock is held (see	*/
+	/* GC_call_with_allock_lock() below) when the disguised	*/
+	/* pointer is accessed.  Otherwise a strong pointer	*/
+	/* could be recreated between the time the collector    */
+	/* decides to reclaim the object and the link is	*/
+	/* cleared.						*/
+
 GC_API int GC_unregister_disappearing_link (void * * link);
 	/* Returns 0 if link was not actually registered.	*/
 	/* Undoes a registration by either of the above two	*/
