@@ -22,6 +22,17 @@
 # endif
 #endif
 
+/* Try to work out the right way to access thread state structure members.
+   The structure has changed its definition in different Darwin versions.  */
+/* This now defaults to the (older) names without __, thus hopefully	*/
+/* not breaking any existing Makefile.direct builds.			*/
+#if defined (HAS_PPC_THREAD_STATE___R0) || \
+    defined (HAS_I386_THREAD_STATE___EAX)
+#  define THREAD_FLD(x) __ ## x
+#else
+#  define THREAD_FLD(x) x
+#endif
+
 typedef struct StackFrame {
   unsigned long	savedSP;
   unsigned long	savedCR;
@@ -75,16 +86,10 @@ void GC_push_all_stacks() {
   GC_thread p;
   pthread_t me;
   ptr_t lo, hi;
-# if defined(POWERPC)
-    ppc_thread_state_t state;
-    mach_msg_type_number_t thread_state_count = PPC_THREAD_STATE_COUNT;
-# elif defined(I386)
-    i386_thread_state_t state;
-    mach_msg_type_number_t thread_state_count = i386_THREAD_STATE_COUNT;
-# else
-#   error FIXME for non-x86 || ppc architectures
-    mach_msg_type_number_t thread_state_count = MACHINE_THREAD_STATE_COUNT;
-# endif
+  GC_THREAD_STATE_T state;
+  /* MACHINE_THREAD_STATE_COUNT doesn't seem to be defined everywhere.	*/
+  /* Hence we use our own version.					*/
+  mach_msg_type_number_t thread_state_count = GC_MACH_THREAD_STATE_COUNT;
   
   me = pthread_self();
   if (!GC_thr_initialized) GC_thr_init();
@@ -98,14 +103,7 @@ void GC_push_all_stacks() {
 	/* Get the thread state (registers, etc) */
 	r = thread_get_state(
 			     p->stop_info.mach_thread,
-#			     if defined(POWERPC)
-			       PPC_THREAD_STATE,
-#			     elif defined(I386)
-			       i386_THREAD_STATE,
-#			     else
-#			       error FIXME for non-x86 || ppc architectures
-			       MACHINE_THREAD_STATE,
-#			     endif
+			     GC_MACH_THREAD_STATE,
 			     (natural_t*)&state,
 			     &thread_state_count);
 
@@ -116,49 +114,49 @@ void GC_push_all_stacks() {
 	if(r != KERN_SUCCESS) ABORT("thread_get_state failed");
 	
 #       if defined(I386)
-	  lo = state.esp;
+	  lo = (void*)state . THREAD_FLD (esp);
 
-	  GC_push_one(state.eax); 
-	  GC_push_one(state.ebx); 
-	  GC_push_one(state.ecx); 
-	  GC_push_one(state.edx); 
-	  GC_push_one(state.edi); 
-	  GC_push_one(state.esi); 
-	  GC_push_one(state.ebp); 
+	  GC_push_one(state . THREAD_FLD (eax)); 
+	  GC_push_one(state . THREAD_FLD (ebx)); 
+	  GC_push_one(state . THREAD_FLD (ecx)); 
+	  GC_push_one(state . THREAD_FLD (edx)); 
+	  GC_push_one(state . THREAD_FLD (edi)); 
+	  GC_push_one(state . THREAD_FLD (esi)); 
+	  GC_push_one(state . THREAD_FLD (ebp));
 #       elif defined(POWERPC)
-	  lo = (void*)(state.r1 - PPC_RED_ZONE_SIZE);
+	  lo = (void*)(state . THREAD_FLD (r1) - PPC_RED_ZONE_SIZE);
         
-	  GC_push_one(state.r0); 
-	  GC_push_one(state.r2); 
-	  GC_push_one(state.r3); 
-	  GC_push_one(state.r4); 
-	  GC_push_one(state.r5); 
-	  GC_push_one(state.r6); 
-	  GC_push_one(state.r7); 
-	  GC_push_one(state.r8); 
-	  GC_push_one(state.r9); 
-	  GC_push_one(state.r10); 
-	  GC_push_one(state.r11); 
-	  GC_push_one(state.r12); 
-	  GC_push_one(state.r13); 
-	  GC_push_one(state.r14); 
-	  GC_push_one(state.r15); 
-	  GC_push_one(state.r16); 
-	  GC_push_one(state.r17); 
-	  GC_push_one(state.r18); 
-	  GC_push_one(state.r19); 
-	  GC_push_one(state.r20); 
-	  GC_push_one(state.r21); 
-	  GC_push_one(state.r22); 
-	  GC_push_one(state.r23); 
-	  GC_push_one(state.r24); 
-	  GC_push_one(state.r25); 
-	  GC_push_one(state.r26); 
-	  GC_push_one(state.r27); 
-	  GC_push_one(state.r28); 
-	  GC_push_one(state.r29); 
-	  GC_push_one(state.r30); 
-	  GC_push_one(state.r31);
+	  GC_push_one(state . THREAD_FLD (r0)); 
+	  GC_push_one(state . THREAD_FLD (r2)); 
+	  GC_push_one(state . THREAD_FLD (r3)); 
+	  GC_push_one(state . THREAD_FLD (r4)); 
+	  GC_push_one(state . THREAD_FLD (r5)); 
+	  GC_push_one(state . THREAD_FLD (r6)); 
+	  GC_push_one(state . THREAD_FLD (r7)); 
+	  GC_push_one(state . THREAD_FLD (r8)); 
+	  GC_push_one(state . THREAD_FLD (r9)); 
+	  GC_push_one(state . THREAD_FLD (r10)); 
+	  GC_push_one(state . THREAD_FLD (r11)); 
+	  GC_push_one(state . THREAD_FLD (r12)); 
+	  GC_push_one(state . THREAD_FLD (r13)); 
+	  GC_push_one(state . THREAD_FLD (r14)); 
+	  GC_push_one(state . THREAD_FLD (r15)); 
+	  GC_push_one(state . THREAD_FLD (r16)); 
+	  GC_push_one(state . THREAD_FLD (r17)); 
+	  GC_push_one(state . THREAD_FLD (r18)); 
+	  GC_push_one(state . THREAD_FLD (r19)); 
+	  GC_push_one(state . THREAD_FLD (r20)); 
+	  GC_push_one(state . THREAD_FLD (r21)); 
+	  GC_push_one(state . THREAD_FLD (r22)); 
+	  GC_push_one(state . THREAD_FLD (r23)); 
+	  GC_push_one(state . THREAD_FLD (r24)); 
+	  GC_push_one(state . THREAD_FLD (r25)); 
+	  GC_push_one(state . THREAD_FLD (r26)); 
+	  GC_push_one(state . THREAD_FLD (r27)); 
+	  GC_push_one(state . THREAD_FLD (r28)); 
+	  GC_push_one(state . THREAD_FLD (r29)); 
+	  GC_push_one(state . THREAD_FLD (r30)); 
+	  GC_push_one(state . THREAD_FLD (r31));
 #	else
 #	  error FIXME for non-x86 || ppc architectures
 #	endif
@@ -203,77 +201,75 @@ void GC_push_all_stacks() {
 	hi = (ptr_t)FindTopOfStack(0);
       } else {
 #     if defined(POWERPC)
-#      if CPP_WORDSZ == 32
-	ppc_thread_state_t info;
-#      else
-	ppc_thread_state64_t info;
-#      endif
+	GC_THREAD_STATE_T info;
 	mach_msg_type_number_t outCount = THREAD_STATE_MAX;
-	r = thread_get_state(thread, MACHINE_THREAD_STATE,
+	r = thread_get_state(thread, GC_MACH_THREAD_STATE,
 			     (natural_t *)&info, &outCount);
 	if(r != KERN_SUCCESS) ABORT("task_get_state failed");
 
-	lo = (void*)(info.r1 - PPC_RED_ZONE_SIZE);
-	hi = (ptr_t)FindTopOfStack(info.r1);
+	lo = (void*)(info . THREAD_FLD (r1) - PPC_RED_ZONE_SIZE);
+	hi = (ptr_t)FindTopOfStack(info . THREAD_FLD (r1));
 
-	GC_push_one(info.r0); 
-	GC_push_one(info.r2); 
-	GC_push_one(info.r3); 
-	GC_push_one(info.r4); 
-	GC_push_one(info.r5); 
-	GC_push_one(info.r6); 
-	GC_push_one(info.r7); 
-	GC_push_one(info.r8); 
-	GC_push_one(info.r9); 
-	GC_push_one(info.r10); 
-	GC_push_one(info.r11); 
-	GC_push_one(info.r12); 
-	GC_push_one(info.r13); 
-	GC_push_one(info.r14); 
-	GC_push_one(info.r15); 
-	GC_push_one(info.r16); 
-	GC_push_one(info.r17); 
-	GC_push_one(info.r18); 
-	GC_push_one(info.r19); 
-	GC_push_one(info.r20); 
-	GC_push_one(info.r21); 
-	GC_push_one(info.r22); 
-	GC_push_one(info.r23); 
-	GC_push_one(info.r24); 
-	GC_push_one(info.r25); 
-	GC_push_one(info.r26); 
-	GC_push_one(info.r27); 
-	GC_push_one(info.r28); 
-	GC_push_one(info.r29); 
-	GC_push_one(info.r30); 
-	GC_push_one(info.r31);
+	GC_push_one(info . THREAD_FLD (r0)); 
+	GC_push_one(info . THREAD_FLD (r2)); 
+	GC_push_one(info . THREAD_FLD (r3)); 
+	GC_push_one(info . THREAD_FLD (r4)); 
+	GC_push_one(info . THREAD_FLD (r5)); 
+	GC_push_one(info . THREAD_FLD (r6)); 
+	GC_push_one(info . THREAD_FLD (r7)); 
+	GC_push_one(info . THREAD_FLD (r8)); 
+	GC_push_one(info . THREAD_FLD (r9)); 
+	GC_push_one(info . THREAD_FLD (r10)); 
+	GC_push_one(info . THREAD_FLD (r11)); 
+	GC_push_one(info . THREAD_FLD (r12)); 
+	GC_push_one(info . THREAD_FLD (r13)); 
+	GC_push_one(info . THREAD_FLD (r14)); 
+	GC_push_one(info . THREAD_FLD (r15)); 
+	GC_push_one(info . THREAD_FLD (r16)); 
+	GC_push_one(info . THREAD_FLD (r17)); 
+	GC_push_one(info . THREAD_FLD (r18)); 
+	GC_push_one(info . THREAD_FLD (r19)); 
+	GC_push_one(info . THREAD_FLD (r20)); 
+	GC_push_one(info . THREAD_FLD (r21)); 
+	GC_push_one(info . THREAD_FLD (r22)); 
+	GC_push_one(info . THREAD_FLD (r23)); 
+	GC_push_one(info . THREAD_FLD (r24)); 
+	GC_push_one(info . THREAD_FLD (r25)); 
+	GC_push_one(info . THREAD_FLD (r26)); 
+	GC_push_one(info . THREAD_FLD (r27)); 
+	GC_push_one(info . THREAD_FLD (r28)); 
+	GC_push_one(info . THREAD_FLD (r29)); 
+	GC_push_one(info . THREAD_FLD (r30)); 
+	GC_push_one(info . THREAD_FLD (r31));
 #      else
+	/* FIXME: This looks wrong for X86_64! */
 	/* FIXME: Remove after testing:	*/
 	WARN("This is completely untested and likely will not work\n", 0);
-	i386_thread_state_t info;
+	GC_THREAD_STATE_T info;
 	mach_msg_type_number_t outCount = THREAD_STATE_MAX;
-	r = thread_get_state(thread, MACHINE_THREAD_STATE,
+	r = thread_get_state(thread, GC_MACH_THREAD_STATE,
 			     (natural_t *)&info, &outCount);
 	if(r != KERN_SUCCESS) ABORT("task_get_state failed");
 
-	lo = (void*)info.esp;
-	hi = (ptr_t)FindTopOfStack(info.esp);
+	lo = (void*)info . THREAD_FLD (esp);
+	hi = (ptr_t)FindTopOfStack(info . THREAD_FLD (esp));
 
-	GC_push_one(info.eax); 
-	GC_push_one(info.ebx); 
-	GC_push_one(info.ecx); 
-	GC_push_one(info.edx); 
-	GC_push_one(info.edi); 
-	GC_push_one(info.esi); 
-	/* GC_push_one(info.ebp);  */
-	/* GC_push_one(info.esp);  */
-	GC_push_one(info.ss); 
-	GC_push_one(info.eip); 
-	GC_push_one(info.cs); 
-	GC_push_one(info.ds); 
-	GC_push_one(info.es); 
-	GC_push_one(info.fs); 
-	GC_push_one(info.gs); 
+	GC_push_one(info . THREAD_FLD (eax)); 
+	GC_push_one(info . THREAD_FLD (ebx)); 
+	GC_push_one(info . THREAD_FLD (ecx)); 
+	GC_push_one(info . THREAD_FLD (edx)); 
+	GC_push_one(info . THREAD_FLD (edi)); 
+	GC_push_one(info . THREAD_FLD (esi)); 
+	/* GC_push_one(info . THREAD_FLD (ebp));  */
+	/* GC_push_one(info . THREAD_FLD (esp));  */
+	GC_push_one(info . THREAD_FLD (ss)); 
+	GC_push_one(info . THREAD_FLD (eip)); 
+	GC_push_one(info . THREAD_FLD (cs)); 
+	GC_push_one(info . THREAD_FLD (ds)); 
+	GC_push_one(info . THREAD_FLD (es)); 
+	GC_push_one(info . THREAD_FLD (fs)); 
+	GC_push_one(info . THREAD_FLD (gs)); 
+
 #      endif /* !POWERPC */
       }
 #     if DEBUG_THREADS
@@ -415,36 +411,44 @@ void GC_stop_world()
       /* We should have previously waited for it to become zero. */
 #   endif /* PARALLEL_MARK */
 
-      /* Loop stopping threads until you have gone over the whole list
-	 twice without a new one appearing. thread_create() won't
-	 return (and thus the thread stop) until the new thread
-	 exists, so there is no window whereby you could stop a
-	 thread, recognise it is stopped, but then have a new thread
-	 it created before stopping show up later.
-      */
-      
-      changes = 1;
-      prev_list = NULL;
-      prevcount = 0;
-      do {
-	int result;
-	kern_result = task_threads(my_task, &act_list, &listcount);
-	result = GC_suspend_thread_list(act_list, listcount,
-					prev_list, prevcount);
-	changes = result;
-	prev_list = act_list;
-	prevcount = listcount;
-	
-	if(kern_result == KERN_SUCCESS) {
-	    int i;
-	
-	    for(i = 0; i < listcount; i++)
-		mach_port_deallocate(my_task, act_list[i]);
-		
-            vm_deallocate(my_task, (vm_address_t)act_list,
-			  sizeof(thread_t) * listcount);
-	}
-      } while (changes);
+    /* Loop stopping threads until you have gone over the whole list
+       twice without a new one appearing. thread_create() won't
+       return (and thus the thread stop) until the new thread
+       exists, so there is no window whereby you could stop a
+       thread, recognise it is stopped, but then have a new thread
+       it created before stopping show up later.
+    */
+    
+    changes = 1;
+    prev_list = NULL;
+    prevcount = 0;
+    do {
+      int result;		  
+      kern_result = task_threads(my_task, &act_list, &listcount);
+        
+      if(kern_result == KERN_SUCCESS) {	
+        result = GC_suspend_thread_list(act_list, listcount,
+      				  prev_list, prevcount);
+        changes = result;
+       
+        if(prev_list != NULL) {
+          for(i = 0; i < prevcount; i++)
+            mach_port_deallocate(my_task, prev_list[i]);
+      	  
+          vm_deallocate(my_task,
+           		  (vm_address_t)prev_list,
+      		  sizeof(thread_t) * prevcount);
+        }
+        prev_list = act_list;
+        prevcount = listcount;
+      }
+    } while (changes);
+    GC_ASSERT(prev_list != 0);
+    for(i = 0; i < prevcount; i++)
+      mach_port_deallocate(my_task, prev_list[i]);
+
+    vm_deallocate(my_task, (vm_address_t)act_list,
+    sizeof(thread_t) * listcount);
       
  
 #   ifdef MPROTECT_VDB

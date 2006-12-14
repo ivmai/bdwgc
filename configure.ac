@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha8,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.17 $)
+AC_REVISION($Revision: 1.18 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -226,6 +226,41 @@ case "$host" in
    powerpc-*-darwin*)
       powerpc_darwin=true
       ;;
+esac
+
+# Darwin needs a few extra special tests to deal with variation in the
+# system headers.
+case "$host" in
+  powerpc*-*-darwin*)
+    AC_CHECK_MEMBER(ppc_thread_state_t.r0,
+      AC_DEFINE(HAS_PPC_THREAD_STATE_R0,,[ppc_thread_state_t has field r0]),,
+      [#include <mach/thread_status.h>])
+    AC_CHECK_MEMBER(ppc_thread_state_t.__r0,
+      AC_DEFINE(HAS_PPC_THREAD_STATE___R0,,dnl
+        [ppc_thread_state_t has field __r0]),,
+      [#include <mach/thread_status.h>])
+    AC_CHECK_MEMBER(ppc_thread_state64_t.r0,
+      AC_DEFINE(HAS_PPC_THREAD_STATE64_R0,,dnl
+        [ppc_thread_state64_t has field r0]),,
+      [#include <mach/thread_status.h>])
+    AC_CHECK_MEMBER(ppc_thread_state64_t.__r0,
+      AC_DEFINE(HAS_PPC_THREAD_STATE64___R0,,dnl
+        [ppc_thread_state64_t has field __r0]),,
+      [#include <mach/thread_status.h>])
+    ;;
+  i?86*-*-darwin*)
+    AC_CHECK_MEMBER(i386_thread_state_t.eax,
+      AC_DEFINE(HAS_I386_THREAD_STATE_EAX,,dnl
+        [i386_thread_state_t has field eax]),,
+      [#include <sys/cdefs.h>
+#include <mach/thread_status.h>])
+    AC_CHECK_MEMBER(i386_thread_state_t.__eax,
+      AC_DEFINE(HAS_I386_THREAD_STATE___EAX,,dnl
+        [i386_thread_state_t has field __eax]),,
+      [#include <sys/cdefs.h>
+#include <mach/thread_status.h>])
+    ;;
+  *) ;;
 esac
 
 AC_MSG_CHECKING(for xlc)

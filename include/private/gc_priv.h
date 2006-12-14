@@ -363,6 +363,27 @@ extern GC_warn_proc GC_current_warn_proc;
 #   define GETENV(name) 0
 #endif
 
+#if defined(DARWIN)
+#	if defined(POWERPC)
+#		if CPP_WORDSZ == 32
+# 		  define GC_THREAD_STATE_T ppc_thread_state_t
+#	        else
+# 		  define GC_THREAD_STATE_T ppc_thread_state64_t
+#		endif
+#		define GC_MACH_THREAD_STATE PPC_THREAD_STATE
+#		define GC_MACH_THREAD_STATE_COUNT PPC_THREAD_STATE_COUNT
+#	elif defined(I386) || defined(X86_64)
+		/* FIXME: This looks dubious for X86_64	*/
+#		define GC_THREAD_STATE_T i386_thread_state_t
+#		define GC_MACH_THREAD_STATE i386_THREAD_STATE
+#		define GC_MACH_THREAD_STATE_COUNT I386_THREAD_STATE_COUNT
+#	else
+#		error define GC_THREAD_STATE_T
+#		define GC_MACH_THREAD_STATE MACHINE_THREAD_STATE
+#		define GC_MACH_THREAD_STATE_COUNT MACHINE_THREAD_STATE_COUNT
+#	endif
+#endif
+
 /*********************************/
 /*                               */
 /* Word-size-dependent defines   */

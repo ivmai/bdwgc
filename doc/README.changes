@@ -2291,6 +2291,7 @@ Since gc6.8:
  - Fix typo in PREFETCH implementation for X86_64.  (Thanks to Peter Wang.)
  - Fix M68K LINUX port. (Thanks to Debian packagers.)
  - __GNUC__ was misspelled as __GNUC in new_gc_alloc.h. (Thanks to Peter Wang.)
+ - Integrated Allan Hsu's patch for OS X VM deallocation problems.
 
 Since gc6.9:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
@@ -2544,6 +2545,10 @@ Since first gc7.0alpha8 version:
    Barry DeFreese, and possibly other Debian maintainers.)
  - __GNUC__ was misspelled as __GNUC in thread_local_alloc.h.
    (Thanks to Peter Wang.)
+ - Integrated various MacOSX patches and tried to reconcile them.
+   Thanks to Allan Hsu, several contributers at Apple, and probably
+   others.
+ - Added some casts to powerpc.h in libatomic_ops to silence warnings.
   
 To do:
  - REDIRECT_MALLOC and threads combination should work on more platforms,

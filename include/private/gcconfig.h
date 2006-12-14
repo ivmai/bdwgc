@@ -296,7 +296,10 @@
 #    define POWERPC
 #    define mach_type_known
 #   endif
-#   if defined(__i386__)
+#   if defined(__x86_64__)
+#    define X86_64
+#    define mach_type_known
+#   elif defined(__i386__)
 #    define I386
 #    define mach_type_known
 #   endif
@@ -742,7 +745,7 @@
 #     define DATAEND (_end)
 #   endif
 #   ifdef DARWIN
-#     ifdef __ppc64__
+#     if defined(__ppc64__) || defined(__x86_64__)
 #       define ALIGNMENT 8
 #       define CPP_WORDSZ 64
 #     else
