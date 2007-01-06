@@ -376,7 +376,7 @@ extern GC_warn_proc GC_current_warn_proc;
 		/* FIXME: This looks dubious for X86_64	*/
 #		define GC_THREAD_STATE_T i386_thread_state_t
 #		define GC_MACH_THREAD_STATE i386_THREAD_STATE
-#		define GC_MACH_THREAD_STATE_COUNT I386_THREAD_STATE_COUNT
+#		define GC_MACH_THREAD_STATE_COUNT i386_THREAD_STATE_COUNT
 #	else
 #		error define GC_THREAD_STATE_T
 #		define GC_MACH_THREAD_STATE MACHINE_THREAD_STATE
