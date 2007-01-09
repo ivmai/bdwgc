@@ -1,0 +1,6 @@
+2007-01-09  Andreas Tobler  <a.tobler@schweiz.org>
+
+	* libtool.m4: Update to version from libtool-1.5.22.
+	* ltmain.sh: Likewise.
+	* ChangeLog: Created.
+
