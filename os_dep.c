@@ -3860,17 +3860,23 @@ catch_exception_raise(
 #   if defined(POWERPC)
 #     if CPP_WORDSZ == 32
         thread_state_flavor_t flavor = PPC_EXCEPTION_STATE;
-        mach_msg_type_number_t exc_state_count = PPC_EXCEPTION_STATE_COUNT;
-        ppc_exception_state_t exc_state;
+	mach_msg_type_number_t exc_state_count = PPC_EXCEPTION_STATE_COUNT;
+	ppc_exception_state_t exc_state;
 #     else
-        thread_state_flavor_t flavor = PPC_EXCEPTION_STATE64;
-        mach_msg_type_number_t exc_state_count = PPC_EXCEPTION_STATE64_COUNT;
-        ppc_exception_state64_t exc_state;
+	thread_state_flavor_t flavor = PPC_EXCEPTION_STATE64;
+	mach_msg_type_number_t exc_state_count = PPC_EXCEPTION_STATE64_COUNT;
+	ppc_exception_state64_t exc_state;
 #     endif
-#   elif defined(I386)
-        thread_state_flavor_t flavor = i386_EXCEPTION_STATE;
-        mach_msg_type_number_t exc_state_count = i386_EXCEPTION_STATE_COUNT;
-        i386_exception_state_t exc_state;
+#   elif defined(I386) || defined(X86_64)
+#     if CPP_WORDSZ == 32
+	thread_state_flavor_t flavor = x86_EXCEPTION_STATE32;
+	mach_msg_type_number_t exc_state_count = x86_EXCEPTION_STATE32_COUNT;
+	x86_exception_state32_t exc_state;
+#     else
+	thread_state_flavor_t flavor = x86_EXCEPTION_STATE64;
+	mach_msg_type_number_t exc_state_count = x86_EXCEPTION_STATE64_COUNT;
+	x86_exception_state64_t exc_state;
+#     endif
 #   else
 #	error FIXME for non-ppc/x86 darwin
 #   endif
@@ -3904,7 +3910,7 @@ catch_exception_raise(
     /* This is the address that caused the fault */
 #if defined(POWERPC)
     addr = (char*) exc_state.dar;
-#elif defined (I386)
+#elif defined (I386) || defined (X86_64)
     addr = (char*) exc_state.faultvaddr;
 #else
 #   error FIXME for non POWERPC/I386

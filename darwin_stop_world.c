@@ -26,8 +26,10 @@
    The structure has changed its definition in different Darwin versions.  */
 /* This now defaults to the (older) names without __, thus hopefully	*/
 /* not breaking any existing Makefile.direct builds.			*/
-#if defined (HAS_PPC_THREAD_STATE___R0) || \
-    defined (HAS_I386_THREAD_STATE___EAX)
+#if defined (HAS_PPC_THREAD_STATE___R0) ||	\
+    defined (HAS_PPC_THREAD_STATE64___R0) ||	\
+    defined (HAS_X86_THREAD_STATE32___EAX) ||	\
+    defined (HAS_X86_THREAD_STATE64___RAX)
 #  define THREAD_FLD(x) __ ## x
 #else
 #  define THREAD_FLD(x) x
@@ -123,6 +125,32 @@ void GC_push_all_stacks() {
 	  GC_push_one(state . THREAD_FLD (edi)); 
 	  GC_push_one(state . THREAD_FLD (esi)); 
 	  GC_push_one(state . THREAD_FLD (ebp));
+
+#       elif defined(X86_64)
+	  lo = (void*)state . THREAD_FLD (rsp);
+
+	  GC_push_one(state . THREAD_FLD (rax));
+	  GC_push_one(state . THREAD_FLD (rbx));
+	  GC_push_one(state . THREAD_FLD (rcx));
+	  GC_push_one(state . THREAD_FLD (rdx));
+	  GC_push_one(state . THREAD_FLD (rdi));
+	  GC_push_one(state . THREAD_FLD (rsi));
+	  GC_push_one(state . THREAD_FLD (rbp));
+	  GC_push_one(state . THREAD_FLD (rsp));
+	  GC_push_one(state . THREAD_FLD (r8));
+	  GC_push_one(state . THREAD_FLD (r9));
+	  GC_push_one(state . THREAD_FLD (r10));
+	  GC_push_one(state . THREAD_FLD (r11));
+	  GC_push_one(state . THREAD_FLD (r12));
+	  GC_push_one(state . THREAD_FLD (r13));
+	  GC_push_one(state . THREAD_FLD (r14));
+	  GC_push_one(state . THREAD_FLD (r15));
+	  GC_push_one(state . THREAD_FLD (rip));
+	  GC_push_one(state . THREAD_FLD (rflags));
+	  GC_push_one(state . THREAD_FLD (cs));
+	  GC_push_one(state . THREAD_FLD (fs));
+	  GC_push_one(state . THREAD_FLD (gs));
+
 #       elif defined(POWERPC)
 	  lo = (void*)(state . THREAD_FLD (r1) - PPC_RED_ZONE_SIZE);
         
@@ -241,8 +269,8 @@ void GC_push_all_stacks() {
 	GC_push_one(info . THREAD_FLD (r29)); 
 	GC_push_one(info . THREAD_FLD (r30)); 
 	GC_push_one(info . THREAD_FLD (r31));
-#      else
-	/* FIXME: This looks wrong for X86_64! */
+
+#      elif defined(I386)
 	/* FIXME: Remove after testing:	*/
 	WARN("This is completely untested and likely will not work\n", 0);
 	GC_THREAD_STATE_T info;
@@ -270,7 +298,41 @@ void GC_push_all_stacks() {
 	GC_push_one(info . THREAD_FLD (fs)); 
 	GC_push_one(info . THREAD_FLD (gs)); 
 
-#      endif /* !POWERPC */
+#      elif defined(X86_64)
+	GC_THREAD_STATE_T info;
+	mach_msg_type_number_t outCount = THREAD_STATE_MAX;
+	r = thread_get_state(thread, GC_MACH_THREAD_STATE,
+			     (natural_t *)&info, &outCount);
+	if(r != KERN_SUCCESS) ABORT("task_get_state failed");
+
+	lo = (void*)info . THREAD_FLD (rsp);
+	hi = (ptr_t)FindTopOfStack(info . THREAD_FLD (rsp));
+
+	GC_push_one(info . THREAD_FLD (rax));
+	GC_push_one(info . THREAD_FLD (rbx));
+	GC_push_one(info . THREAD_FLD (rcx));
+	GC_push_one(info . THREAD_FLD (rdx));
+	GC_push_one(info . THREAD_FLD (rdi));
+	GC_push_one(info . THREAD_FLD (rsi));
+	GC_push_one(info . THREAD_FLD (rbp));
+	GC_push_one(info . THREAD_FLD (rsp));
+	GC_push_one(info . THREAD_FLD (r8));
+	GC_push_one(info . THREAD_FLD (r9));
+	GC_push_one(info . THREAD_FLD (r10));
+	GC_push_one(info . THREAD_FLD (r11));
+	GC_push_one(info . THREAD_FLD (r12));
+	GC_push_one(info . THREAD_FLD (r13));
+	GC_push_one(info . THREAD_FLD (r14));
+	GC_push_one(info . THREAD_FLD (r15));
+	GC_push_one(info . THREAD_FLD (rip));
+	GC_push_one(info . THREAD_FLD (rflags));
+	GC_push_one(info . THREAD_FLD (cs));
+	GC_push_one(info . THREAD_FLD (fs));
+	GC_push_one(info . THREAD_FLD (gs));
+
+#      else
+#	  error FIXME for non-x86 || ppc architectures
+#      endif
       }
 #     if DEBUG_THREADS
        GC_printf("Darwin: Stack for thread 0x%lx = [%p,%p)\n",

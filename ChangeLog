@@ -1,3 +1,30 @@
+2007-01-11  Andreas Tobler  <a.tobler@schweiz.org>
+
+	* configure.ac (i?86*-*-darwin*): Replaced HAS_I386_THREAD_STATE_* with
+	HAS_X86_THREAD_STATE32_*.
+	(x86_64-*-darwin*): Extended the above check for x86_64-*-darwin* with
+	HAS_X86_THREAD_STATE64_*.
+	Added value 1 in the above AC_DEFINE's. Important for the upcoming
+	Leopard.
+	* configure: Regenerated.
+	* include/private/gcconfig.h: Modified X86_64 define for Darwin.
+	Removed __x86_64__ check in POWERPC section. Added base definitions
+	for the X86_64 Darwin port.
+	* include/private/gc_priv.h: Added GC_MACH_HEADER and GC_MACH_SECTION
+	to distinguish between 32 and 64-bit applications. Added definitions
+	for X86_64 Darwin.
+	* darwin_stop_world.c: Added HAS_X86_THREAD_STATE64___RAX. And
+	replaced HAS_I386_THREAD_STATE___EAX with HAS_X86_THREAD_STATE32___EAX.
+	(GC_push_all_stacks): Added code for X86_64 Darwin. Even for the
+	!DARWIN_DONT_PARSE_STACK. Maybe obsolete.
+	* dyn_load.c (GC_dyld_name_for_hdr): Use GC_MACH_HEADER.
+	(GC_dyld_image_add): Use GC_MACH_HEADER and GC_MACH_SECTION.
+	Distinguish between getsectbynamefromheader_64 and
+	getsectbynamefromheader.
+	* os_dep.c (catch_exception_raise): Introduce exception definition for
+	X86_64 Darwin. Replaced old i386_EXCEPTION_STATE_* definition with
+	x86_EXCEPTION_STATE32_*. Add X86_64 for exc_state.faultvaddr.
+
 2007-01-09  Andreas Tobler  <a.tobler@schweiz.org>
 
 	* libtool.m4: Update to version from libtool-1.5.22.
