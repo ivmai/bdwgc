@@ -1,3 +1,9 @@
+2007-01-18  Andreas Tobler  <a.tobler@schweiz.org>
+
+	* os_dep.c (if defined(MPROTECT_VDB) && defined(DARWIN)): Clean up and
+	reformat code.
+	Correct email reference.
+
 2007-01-11  Andreas Tobler  <a.tobler@schweiz.org>
 
 	* configure.ac (i?86*-*-darwin*): Replaced HAS_I386_THREAD_STATE_* with
