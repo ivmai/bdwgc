@@ -3895,9 +3895,9 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
 
     /* This is the address that caused the fault */
 # if defined(POWERPC)
-    addr = (char*) exc_state.dar;
+    addr = (char*) exc_state. THREAD_FLD(dar);
 # elif defined (I386) || defined (X86_64)
-    addr = (char*) exc_state.faultvaddr;
+    addr = (char*) exc_state. THREAD_FLD(faultvaddr);
 # else
 #   error FIXME for non POWERPC/I386
 # endif

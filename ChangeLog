@@ -1,3 +1,11 @@
+2007-01-25  Andreas Tobler  <a.tobler@schweiz.org>
+
+	* darwin_stop_world.c: Move THREAD_FLD defines to ...
+	* include/private/gc_priv.h: ... here.
+	Fix THREAD_STATE definitions for ppc64.
+	* os_dep.c (catch_exception_raise): Use THREAD_FLD for exc_state member
+	access.
+
 2007-01-18  Andreas Tobler  <a.tobler@schweiz.org>
 
 	* os_dep.c (if defined(MPROTECT_VDB) && defined(DARWIN)): Clean up and
