@@ -1,3 +1,10 @@
+2007-01-25  Petr Salinger and Hans Boehm <Hans.Boehm@hp.com>
+	* include/private/gc_priv.h (NEED_FIND_LIMIT, FREEBSD variant):
+	also define for X86_64.
+	* configure.ac: Move generic gnu (Hurd) case to below kfreebsd case.
+	* configure: Regenerate.
+	* README.changes: Point to ChangeLog.
+	
 2007-01-25  Andreas Tobler  <a.tobler@schweiz.org>
 
 	* darwin_stop_world.c: Move THREAD_FLD defines to ...

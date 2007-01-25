@@ -1994,7 +1994,7 @@ void GC_err_puts(const char *s);
 #   define NEED_FIND_LIMIT
 # endif
 
-#if defined(FREEBSD) && (defined(I386) || defined(powerpc) \
+#if defined(FREEBSD) && (defined(I386) || defined(X86_64) || defined(powerpc) \
     || defined(__powerpc__))
 #  include <machine/trap.h>
 #  if !defined(PCR)
