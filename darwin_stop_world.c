@@ -196,8 +196,8 @@ void GC_push_all_stacks() {
 #else /* !DARWIN_DONT_PARSE_STACK; Use FindTopOfStack() */
 
 void GC_push_all_stacks() {
-    int i;
-	task_t my_task;
+    unsigned int i;
+    task_t my_task;
     kern_return_t r;
     mach_port_t me;
     ptr_t lo, hi;
@@ -435,8 +435,7 @@ int GC_suspend_thread_list(thread_act_array_t act_list, int count,
 /* Caller holds allocation lock.	*/
 void GC_stop_world()
 {
-    int i, changes;
-    GC_thread p;
+    unsigned int i, changes;
     task_t my_task = current_task();
     mach_port_t my_thread = mach_thread_self();
     kern_return_t kern_result;
@@ -524,8 +523,8 @@ void GC_start_world()
 {
   task_t my_task = current_task();
   mach_port_t my_thread = mach_thread_self();
-  int i, j;
-  GC_thread p;
+  unsigned int i;
+  int j;
   kern_return_t kern_result;
   thread_act_array_t act_list;
   mach_msg_type_number_t listcount;

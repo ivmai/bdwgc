@@ -1,10 +1,24 @@
+2007-01-28  Andreas Tobler  <a.tobler@schweiz.org>
+
+	* darwin_stop_world.c (GC_push_all_stacks): Fix compiler warnings.
+	Make i unsigned.
+	(GC_stop_world): Likewise. Remove unused GC_thread p.
+	(GC_start_world): Likewise.
+
+	* os_dep.c: Define GC_darwin_register_mach_handler_thread extern.
+	Remove double SIG_HNDLR_PTR definition.
+	(GC_forward_exception): Fix compiler warnings, make i unsigned.
+	Initialize thread_state to NULL.
+	(catch_exception_raise): Fix compiler warnings, make i unsigned.
+
 2007-01-25  Petr Salinger and Hans Boehm <Hans.Boehm@hp.com>
+
 	* include/private/gc_priv.h (NEED_FIND_LIMIT, FREEBSD variant):
 	also define for X86_64.
 	* configure.ac: Move generic gnu (Hurd) case to below kfreebsd case.
 	* configure: Regenerate.
 	* README.changes: Point to ChangeLog.
-	
+
 2007-01-25  Andreas Tobler  <a.tobler@schweiz.org>
 
 	* darwin_stop_world.c: Move THREAD_FLD defines to ...

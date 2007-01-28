@@ -3445,7 +3445,7 @@ void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
 /* The bug that caused all this trouble should now be fixed. This should
    eventually be removed if all goes well. */
 
-/* define BROKEN_EXCEPTION_HANDLING */
+/* #define BROKEN_EXCEPTION_HANDLING */
 
 #include <mach/mach.h>
 #include <mach/mach_error.h>
@@ -3453,6 +3453,8 @@ void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
 #include <mach/exception.h>
 #include <mach/task.h>
 #include <pthread.h>
+
+extern void GC_darwin_register_mach_handler_thread(mach_port_t);
 
 /* These are not defined in any header, although they are documented */
 extern boolean_t
@@ -3665,7 +3667,6 @@ static void *GC_mprotect_thread(void *arg)
    meaningless and safe to ignore. */
 #ifdef BROKEN_EXCEPTION_HANDLING
 
-typedef void (* SIG_HNDLR_PTR)();
 static SIG_HNDLR_PTR GC_old_bus_handler;
 
 /* Updates to this aren't atomic, but the SIGBUSs seem pretty rare.
@@ -3778,13 +3779,13 @@ static kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 					  exception_data_t data,
 					  mach_msg_type_number_t data_count)
 {
-  int i;
+  unsigned int i;
   kern_return_t r;
   mach_port_t port;
   exception_behavior_t behavior;
   thread_state_flavor_t flavor;
 
-  thread_state_t thread_state;
+  thread_state_t thread_state = NULL;
   mach_msg_type_number_t thread_state_count = THREAD_STATE_MAX;
 
   for(i=0; i < GC_old_exc_ports.count; i++)
@@ -3845,7 +3846,7 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
   kern_return_t r;
   char *addr;
   struct hblk *h;
-  int i;
+  unsigned int i;
 # if defined(POWERPC)
 #   if CPP_WORDSZ == 32
       thread_state_flavor_t flavor = PPC_EXCEPTION_STATE;
