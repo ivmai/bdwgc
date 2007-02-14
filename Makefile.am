@@ -87,11 +87,13 @@ if NEED_ATOMIC_OPS_ASM
 libgc_la_SOURCES += atomic_ops_sysdeps.S
 endif
 
+extra_ldflags_libgc = @extra_ldflags_libgc@
+
 # Include THREADDLLIBS here to ensure that the correct versions of
 # linuxthread semaphore functions get linked:
 libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS)
 libgc_la_DEPENDENCIES = @addobjs@
-libgc_la_LDFLAGS = -version-info 1:2:0
+libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info 1:2:0
 
 EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
     mips_sgi_mach_dep.s mips_ultrix_mach_dep.s \
