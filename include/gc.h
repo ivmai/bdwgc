@@ -1921,6 +1921,7 @@ GC_API void GC_CALL GC_win32_free_heap(void);
   && !defined(GC_WIN32_THREADS) && !defined(GC_DARWIN_THREADS)
 GC_API void GC_suspend_thread(pthread_t);
 GC_API void GC_resume_thread(pthread_t);
+GC_API int GC_is_thread_suspended(pthread_t);
 #endif
 
 #ifdef __cplusplus

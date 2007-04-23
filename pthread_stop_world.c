@@ -412,6 +412,14 @@ void GC_resume_thread(pthread_t thread) {
   t -> flags &= ~SUSPENDED_EXT;
 }
 
+int GC_is_thread_suspended(pthread_t thread) {
+  GC_thread t = GC_lookup_thread(thread);
+  if (t == NULL)
+    ABORT("querying suspension state of unknown thread");
+
+  return (t -> flags & SUSPENDED_EXT);
+}
+
 #endif /* !GC_OPENBSD_UTHREADS && !NACL */
 
 #ifdef IA64
