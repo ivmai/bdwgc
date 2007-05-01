@@ -1,3 +1,14 @@
+2007-05-01  Hans Boehm <Hans.Boehm@hp.com>
+		(and Manuel Serrano, Craig McDaniel)
+
+	* configure.ac: Comment out redundant
+	  AC_DEFINE(NO_EXECUTE_PERMISSION).
+	* configure: Regenerate.
+	* sparc_mach_dep.S: Remove single quote in comment.
+	* include/private/gcconfig.h: Fix DATAEND for NONSTOP.
+	* win32_threads.c: Include stdint.h for Mingw.  Add GC_API for DllMain.
+	(GC_use_DllMain): Fix assertion.
+
 2007-02-14  Andreas Tobler  <a.tobler@schweiz.org>
 
 	* configure.ac: Introduce extra_ldflags_libgc. Use it for Darwin.

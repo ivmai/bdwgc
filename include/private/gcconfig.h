@@ -1405,8 +1405,8 @@
 #    define OS_TYPE "NONSTOP"
 #    define ALIGNMENT 4
 #    define DATASTART ((ptr_t) 0x08000000)
-     extern int _end[];
-#    define DATAEND (_end)
+     extern char **environ;
+#    define DATAEND ((ptr_t)(environ - 0x10))
 #    define STACKBOTTOM ((ptr_t) 0x4fffffff)
 #   endif
 # endif

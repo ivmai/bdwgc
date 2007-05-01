@@ -2,6 +2,13 @@
 
 #if defined(GC_WIN32_THREADS) 
 
+#if defined( _MINGW_VER )
+# include <stdint.h>
+	/* We mention uintptr_t.					*/
+	/* Perhaps this should be included in pure msft environments	*/
+	/* as well?							*/
+#endif
+
 #include <windows.h>
 
 #ifdef THREAD_LOCAL_ALLOC
@@ -83,6 +90,13 @@
 # define GC_win32_dll_threads FALSE
 #endif
 
+/* We have two versions of the thread table.  Which one	*/
+/* we us depends on whether or not GC_win32_dll_threads */
+/* is set.  The one complication is that at process	*/
+/* startup, we use both, since the client hasn't yet	*/
+/* had a chance to tell us which one (s)he wants.	*/
+static GC_bool client_has_run = FALSE;
+
 /* The type of the first argument to InterlockedExchange.	*/
 /* Documented to be LONG volatile *, but at least gcc likes 	*/
 /* this better.							*/
@@ -108,7 +122,7 @@ void GC_init_parallel(void);
 #     endif
       GC_need_to_lock = TRUE;
   	/* Cannot intercept thread creation.	*/
-      GC_ASSERT(GC_gc_no == 0);
+      GC_ASSERT(!client_has_run);
       GC_win32_dll_threads = TRUE;
   }
 #else
@@ -166,13 +180,6 @@ typedef volatile struct GC_Thread_Rep * GC_vthread;
  */
 
 volatile GC_bool GC_please_stop = FALSE;
-
-/* We have two versions of the thread table.  Which one	*/
-/* we us depends on whether or not GC_win32_dll_threads */
-/* is set.  The one complication is that at process	*/
-/* startup, we use both, since the client hasn't yet	*/
-/* had a chance to tell us which one (s)he wants.	*/
-static GC_bool client_has_run = FALSE;
 
 /* Thread table used if GC_win32_dll_threads is set.	*/
 /* This is a fixed size array.				*/
@@ -1284,7 +1291,7 @@ int GC_pthread_detach(pthread_t thread)
  * we do in other places.
  */
 #ifdef GC_DLL
-BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
+GC_API BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
 {
   struct GC_stack_base sb;
   DWORD thread_id;
