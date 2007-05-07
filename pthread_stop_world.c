@@ -242,6 +242,7 @@ void GC_restart_handler(int sig)
 void GC_push_all_stacks()
 {
     GC_bool found_me = FALSE;
+    size_t nthreads = 0;
     int i;
     GC_thread p;
     ptr_t lo, hi;
@@ -256,6 +257,7 @@ void GC_push_all_stacks()
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (p -> flags & FINISHED) continue;
+	++nthreads;
         if (pthread_equal(p -> id, me)) {
 #  	    ifdef SPARC
 	        lo = (ptr_t)GC_save_regs_in_stack();
@@ -301,6 +303,9 @@ void GC_push_all_stacks()
 	  }
 #	endif
       }
+    }
+    if (GC_print_stats == VERBOSE) {
+	GC_log_printf("Pushed %d thread stacks\n", nthreads);
     }
     if (!found_me && !GC_in_thread_creation)
       ABORT("Collecting from unknown thread.");
