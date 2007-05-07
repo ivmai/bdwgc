@@ -834,8 +834,9 @@ out:
       DWORD written;
       if (len == 0)
 	  return 0;
-      EnterCriticalSection(&GC_write_cs);
+      if (GC_need_to_lock) EnterCriticalSection(&GC_write_cs);
       if (GC_stdout == INVALID_HANDLE_VALUE) {
+          if (GC_need_to_lock) LeaveCriticalSection(&GC_write_cs);
 	  return -1;
       } else if (GC_stdout == 0) {
 	char * file_name = GETENV("GC_LOG_FILE");
@@ -863,7 +864,7 @@ out:
 #     if defined(_MSC_VER) && defined(_DEBUG)
 	  _CrtDbgReport(_CRT_WARN, NULL, 0, NULL, "%.*s", len, buf);
 #     endif
-      LeaveCriticalSection(&GC_write_cs);
+      if (GC_need_to_lock) LeaveCriticalSection(&GC_write_cs);
       return tmp ? (int)written : -1;
   }
 

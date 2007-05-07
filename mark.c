@@ -462,6 +462,11 @@ static void alloc_mark_stack(size_t);
     }
 # endif /* __GNUC__  && MSWIN32 */
 
+#ifdef GC_WIN32_THREADS
+  extern GC_bool GC_started_thread_while_stopped(void);
+  /* In win32_threads.c.  Did we invalidate mark phase with an	*/
+  /* unexpected thread start?					*/
+#endif
 
 # ifdef WRAP_MARK_SOME
   GC_bool GC_mark_some(ptr_t cold_gc_frame)
@@ -484,6 +489,21 @@ static void alloc_mark_stack(size_t);
       /* USE_PROC_FOR_LIBRARIES.				 */
 
       __try {
+          ret_val = GC_mark_some_inner(cold_gc_frame);
+      } __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ?
+                EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
+	  goto handle_ex;
+      }
+#     ifdef GC_WIN32_THREADS
+	/* With DllMain-based thread tracking, a thread may have	*/
+	/* started while we were marking.  This is logically equivalent	*/
+	/* to the exception case; our results are invalid and we have	*/
+	/* to start over.  This cannot be prevented since we can't	*/
+	/* block in DllMain.						*/
+	if (GC_started_thread_while_stopped()) goto handle_ex;
+#     endif
+     rm_handler:
+      return ret_val;
 
 #    else /* __GNUC__ */
 
@@ -497,6 +517,15 @@ static void alloc_mark_stack(size_t);
       er.ex_reg.handler = mark_ex_handler;
       asm volatile ("movl %%fs:0, %0" : "=r" (er.ex_reg.prev));
       asm volatile ("movl %0, %%fs:0" : : "r" (&er));
+      ret_val = GC_mark_some_inner(cold_gc_frame);
+      /* Prevent GCC from considering the following code unreachable */
+      /* and thus eliminating it.                                    */
+        if (er.alt_path == 0)
+          goto handle_ex;
+    rm_handler:
+      /* Uninstall the exception handler */
+      asm volatile ("mov %0, %%fs:0" : : "r" (er.ex_reg.prev));
+      return ret_val;
 
 #    endif /* __GNUC__ */
 #   else /* !MSWIN32 */
@@ -510,63 +539,27 @@ static void alloc_mark_stack(size_t);
       	/* I'm not sure if this could still work ...	*/
       GC_setup_temporary_fault_handler();
       if(SETJMP(GC_jmp_buf) != 0) goto handle_ex;
+      ret_val = GC_mark_some_inner(cold_gc_frame);
+    rm_handler:
+      GC_reset_fault_handler();
+      return ret_val;
       
 #   endif /* !MSWIN32 */
 
-          ret_val = GC_mark_some_inner(cold_gc_frame);
-
-#   ifdef MSWIN32
-#    ifndef __GNUC__
-
-      } __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ?
-                EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
-
-#    else /* __GNUC__ */
-
-          /* Prevent GCC from considering the following code unreachable */
-          /* and thus eliminating it.                                    */
-          if (er.alt_path != 0)
-              goto rm_handler;
-
 handle_ex:
-          /* Execution resumes from here on an access violation. */
-
-#    endif /* __GNUC__ */
-#   else /* !MSWIN32 */
-	  goto rm_handler;
-handle_ex:
-#   endif /* __GNUC__ */
-
-          if (GC_print_stats) {
-	      GC_log_printf("Caught ACCESS_VIOLATION in marker. "
-		            "Memory mapping disappeared.\n");
-          }
-
-          /* We have bad roots on the stack.  Discard mark stack.  */
-          /* Rescan from marked objects.  Redetermine roots.	 */
-          GC_invalidate_mark_state();	
-          scan_ptr = 0;
-
-          ret_val = FALSE;
-
-#   if defined(MSWIN32)
-#    if !defined(__GNUC__)
-
+    /* Exception handler starts here for all cases. */
+      if (GC_print_stats) {
+        GC_log_printf("Caught ACCESS_VIOLATION in marker. "
+		      "Memory mapping disappeared.\n");
       }
 
-#    else /* __GNUC__  && MSWIN32 */
+      /* We have bad roots on the stack.  Discard mark stack.	*/
+      /* Rescan from marked objects.  Redetermine roots.	*/
+      GC_invalidate_mark_state();	
+      scan_ptr = 0;
 
-rm_handler:
-      /* Uninstall the exception handler */
-      asm volatile ("mov %0, %%fs:0" : : "r" (er.ex_reg.prev));
-
-#    endif /* __GNUC__ */
-#   else /* !MSWIN32 */
-rm_handler:
-      GC_reset_fault_handler();
-#   endif /* !MSWIN32 */
-
-      return ret_val;
+      ret_val = FALSE;
+      goto rm_handler;  // Back to platform-specific code.
   }
 #endif /* WRAP_MARK_SOME */
 
