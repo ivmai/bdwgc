@@ -139,7 +139,7 @@ extern
 #if defined(USE_COMPILER_TLS)
   __thread
 #elif defined(USE_WIN32_COMPILER_TLS)
-  declspec(thread)
+  __declspec(thread)
 #endif
 GC_key_t GC_thread_key;
 

@@ -1,3 +1,9 @@
+2007-05-08  Hans Boehm <Hans.Boehm@hp.com>
+
+	* thread_local_alloc.c, include/private/thread_local_alloc.h:
+	Spell __declspec correctly.
+	* NT_STATIC_THREADS_MAKEFILE: Enable thread-local allocation.
+
 2007-05-07  Hans Boehm <Hans.Boehm@hp.com>
 
 	* doc/README.win32: Adjust GC_win32_dll_threads rules again.

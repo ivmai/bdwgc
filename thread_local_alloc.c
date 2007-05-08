@@ -22,7 +22,7 @@
 #if defined(USE_COMPILER_TLS)
   __thread
 #elif defined(USE_WIN32_COMPILER_TLS)
-  declspec(thread)
+  __declspec(thread)
 #endif
 GC_key_t GC_thread_key;
 
@@ -53,7 +53,6 @@ static void return_single_freelist(void *fl, void **gfl)
 static void return_freelists(void **fl, void **gfl)
 {
     int i;
-    void *q, **qptr;
 
     for (i = 1; i < TINY_FREELISTS; ++i) {
 	if ((word)(fl[i]) >= HBLKSIZE) {
