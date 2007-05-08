@@ -2070,12 +2070,6 @@
 #   define PCR_VDB
 # endif
 
-# ifdef SRC_M3
-	/* Postponed for now. */
-#   undef PROC_VDB
-#   undef MPROTECT_VDB
-# endif
-
 # ifdef SMALL_CONFIG
 	/* Presumably not worth the space it takes. */
 #   undef PROC_VDB
@@ -2161,9 +2155,7 @@
 	--> inconsistent configuration
 # endif
 
-# if defined(PCR) || defined(SRC_M3) || \
-		defined(GC_SOLARIS_THREADS) || defined(GC_WIN32_THREADS) || \
-		defined(GC_PTHREADS)
+# if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS)
 #   define THREADS
 # endif
 

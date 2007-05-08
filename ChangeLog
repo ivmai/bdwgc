@@ -1,5 +1,16 @@
 2007-05-08  Hans Boehm <Hans.Boehm@hp.com>
 
+	* Makefile.direct: Update THREAD_LOCAL_ALLOC documentation.
+	* cord/de_win.c: Rename and move AboutBox.  Call GC_INIT.  Remove
+	MakeProcInstance anachronism.
+	* doc/README.macros: Officially remove elif prohibition.
+	Remove documentation for defunct SRC_M3 support.
+	* include/gc.h: Remove more SRC_M3 references.
+	* include/private/gcconfig.h: Remove still more SRC_M3 references.
+	GC_SOLARIS_THREADS no longer needs to be checked separately.
+	
+2007-05-08  Hans Boehm <Hans.Boehm@hp.com>
+
 	* thread_local_alloc.c, include/private/thread_local_alloc.h:
 	Spell __declspec correctly.
 	* NT_STATIC_THREADS_MAKEFILE: Enable thread-local allocation.

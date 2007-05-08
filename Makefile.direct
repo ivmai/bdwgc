@@ -249,7 +249,8 @@ HOSTCFLAGS=$(CFLAGS)
 #   These then allocate  in a way that usually does not involve
 #   acquisition of a global lock.  Currently supported only on platforms
 #   such as Linux that use pthread_support.c.  Recommended for multiprocessors.
-#   Requires explicit GC_INIT() call.
+#   Requires explicit GC_INIT() call, unless REDIRECT_MALLOC is
+#   defined and GC_malloc is used first.
 # -DUSE_COMPILER_TLS causes thread local allocation to use compiler-supported
 #   "__thread" thread-local variables.  This is the default in HP/UX.  It
 #   may help performance on recent Linux installations.  (It failed for

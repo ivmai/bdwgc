@@ -934,7 +934,7 @@ GC_API void (*GC_is_visible_print_proc) (void * p);
 
 # if defined(PCR) || defined(GC_SOLARIS_THREADS) || \
      defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
-   	/* Any flavor of threads except SRC_M3.	*/
+   	/* Any flavor of threads.	*/
 /* This returns a list of objects, linked through their first		*/
 /* word.  Its use can greatly reduce lock contention problems, since	*/
 /* the allocation lock can be acquired and released many fewer times.	*/
@@ -945,7 +945,7 @@ void * GC_malloc_many(size_t lb);
 					/* in returned list.		*/
 extern void GC_thr_init(void);	/* Needed for Solaris/X86 ??	*/
 
-#endif /* THREADS && !SRC_M3 */
+#endif /* THREADS */
 
 /* Register a callback to control the scanning of dynamic libraries.
    When the GC scans the static data of a dynamic library, it will
