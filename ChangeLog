@@ -1,5 +1,9 @@
 2007-05-07  Hans Boehm <Hans.Boehm@hp.com>
 
+	* doc/README.win32: Adjust GC_win32_dll_threads rules again.
+
+2007-05-07  Hans Boehm <Hans.Boehm@hp.com>
+
 	* mark.c (GC_mark_some wrapper): Restructure for readability, handle
 	GC_started_thread_while_stopped.
 	* misc.c (Win32 GC_write): Lock GC_write_cs only if needed.

@@ -164,7 +164,7 @@ This version of the collector by default handles threads similarly
 to other platforms.  James Clark's code which tracks threads attached
 to the collector DLL still exists, but requires that both
 - the collector is built in a DLL with GC_DLL defined, and
-- GC_win32_dll_threads be set to true before GC initialization, which
+- GC_use_DllMain() is called before GC initialization, which
   in turn must happen before creating additional threads.
 We generally recommend avoiding this if possible, since it seems to
 be less than 100% reliable.
