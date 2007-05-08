@@ -80,11 +80,11 @@ libgc_la_SOURCES += win32_threads.c
 endif
 
 if USE_INTERNAL_LIBATOMIC_OPS
-libgc_la_SOURCES += atomic_ops.c
+nodist_libgc_la_SOURCES = atomic_ops.c
 endif
 
 if NEED_ATOMIC_OPS_ASM
-libgc_la_SOURCES += atomic_ops_sysdeps.S
+nodist_libgc_la_SOURCES = atomic_ops_sysdeps.S
 endif
 
 extra_ldflags_libgc = @extra_ldflags_libgc@
@@ -186,8 +186,10 @@ EXTRA_DIST += add_gc_prefix.c gcname.c if_mach.c if_not_there.c \
     Mac_files/datastart.c Mac_files/dataend.c \
     Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
     include/private/msvc_dbg.h msvc_dbg.c
-# :CHECK: If pc_excludes still around, re-add to EXTRA_DIST.
 
+# The libatomic_ops library.  This is not ideal, since we pick up junk from
+# there.  The hard-coded version number should also go.
+EXTRA_DIST += libatomic_ops-1.2
 
 # this is an auxiliary shell file used by Makefile and Makefile.direct
 #

@@ -22,7 +22,7 @@ AC_INIT(gc,7.0alpha8,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.22 $)
+AC_REVISION($Revision: 1.23 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -155,6 +155,7 @@ case "$THREADS" in
 	;;
      *-*-cygwin*)
 	AC_DEFINE(GC_WIN32_THREADS)
+	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	win32_threads=true
 	;;
      *-*-darwin*)

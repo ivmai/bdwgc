@@ -32,6 +32,14 @@
 #ifdef CYGWIN32
 # include <errno.h>
 
+/* GC_DLL should not normally be defined, especially since we often do turn on	*/
+/* THREAD_LOCAL_ALLOC, which is currently incompatible. 			*/
+/* It might be possible to get GC_DLL and DllMain-based	thread registration to  */
+/* work with Cygwin, but if you try you are on your own.			*/
+#ifdef GC_DLL
+# error GC_DLL untested with Cygwin
+#endif
+
  /* Cygwin-specific forward decls */
 # undef pthread_create 
 # undef pthread_sigmask 

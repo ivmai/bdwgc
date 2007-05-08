@@ -1,5 +1,14 @@
 2007-05-08  Hans Boehm <Hans.Boehm@hp.com>
 
+	* Makefile.am: Dont distribute copied atomic_ops files.  Include
+	libatomic_ops with "make dist".
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Enable THREAD_LOCAL_ALLOC for Cygwin with threads.
+	* win32_threads.c: Report error for Cygwin + GC_DLL.
+
+2007-05-08  Hans Boehm <Hans.Boehm@hp.com>
+
 	* Makefile.direct: Update THREAD_LOCAL_ALLOC documentation.
 	* cord/de_win.c: Rename and move AboutBox.  Call GC_INIT.  Remove
 	MakeProcInstance anachronism.
@@ -128,4 +137,6 @@
 	* libtool.m4: Update to version from libtool-1.5.22.
 	* ltmain.sh: Likewise.
 	* ChangeLog: Created.
+
+See doc/README.changes for earlier changes.
 
