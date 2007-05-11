@@ -175,7 +175,7 @@ EXTRA_DIST += README.QUICK
 EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE \
     OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE	\
     Makefile.direct Makefile.dj	Makefile.DLLs SMakefile.amiga \
-    WCC_MAKEFILE
+    WCC_MAKEFILE configure_atomic_ops.sh
 
 # files used by makefiles other than Makefile.am
 #

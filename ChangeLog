@@ -1,3 +1,11 @@
+2007-05-10  Hans Boehm <Hans.Boehm@hp.com>
+
+	* include/gc_cpp.h: Documentation updates.
+	* include/gc_config_macros.h: Don't check for __ppc__ to set
+	DARWIN_THREADS.
+	* Makefile.am: Include configure_atomic_ops.sh in dist.
+	* Makefile.in: Regenerate.
+
 2007-05-08  Hans Boehm <Hans.Boehm@hp.com>
 
 	* Makefile.am: Dont distribute copied atomic_ops files.  Include

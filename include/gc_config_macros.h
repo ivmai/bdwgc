@@ -92,8 +92,7 @@
 #   define GC_SOLARIS_THREADS
 #   define GC_PTHREADS
 # endif
-
-# if defined(__APPLE__) && defined(__MACH__) && defined(__ppc__)
+# if defined(__APPLE__) && defined(__MACH__)
 #   define GC_DARWIN_THREADS
 #   define GC_PTHREADS
 # endif

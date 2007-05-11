@@ -48,6 +48,12 @@ using the NoGC placement:
     class A: public gc {...};
     A* a = new (NoGC) A;   // a is uncollectable.
 
+The new(PointerFreeGC) syntax allows the allocation of collectable
+objects that are not scanned by the collector.  This useful if you
+are allocating compressed data, bitmaps, or network packets.  (In
+the latter case, it may remove danger of unfriendly network packets
+intentionally containing values that cause spurious memory retention.)
+
 Both uncollectable and collectable objects can be explicitly deleted
 with "delete", which invokes an object's destructors and frees its
 storage immediately.
@@ -80,7 +86,8 @@ objects.  In practice, it finds almost all of them.
 
 Cautions:
 
-1. Be sure the collector has been augmented with "make c++".
+1. Be sure the collector has been augmented with "make c++" or
+"--enable-cplusplus".
 
 2.  If your compiler supports the new "operator new[]" syntax, then
 add -DGC_OPERATOR_NEW_ARRAY to the Makefile.
@@ -111,7 +118,7 @@ clean-up function:
 that preserves the correct exception semantics requires a language
 extension, e.g. the "gc" keyword.)
 
-4. Compiler bugs:
+4. Compiler bugs (now hopefully history):
 
 * Solaris 2's CC (SC3.0) doesn't implement t->~T() correctly, so the
 destructors of classes derived from gc_cleanup won't be invoked.
