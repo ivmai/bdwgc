@@ -1,3 +1,10 @@
+2007-05-11  Hans Boehm <Hans.Boehm@hp.com>
+
+	* dbg_mlc.c, include/gc.h, finalize.c: Merge Alexandre Oliva's
+	GC_debug_register_finalizer_unreachable() patch from gcc tree.
+	* thread_local_alloc.c (GC_malloc, GC_malloc_atomic): Add assertions
+	to check GC has been initialized.
+
 2007-05-10  Hans Boehm <Hans.Boehm@hp.com>
 
 	* include/gc_cpp.h: Documentation updates.

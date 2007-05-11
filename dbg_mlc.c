@@ -3,6 +3,7 @@
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1997 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
+ * Copyright (C) 2007 Free Software Foundation, Inc
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -991,7 +992,32 @@ void GC_debug_register_finalizer_no_order
 				     &my_old_cd);
     }
     store_old(obj, my_old_fn, (struct closure *)my_old_cd, ofn, ocd);
- }
+}
+
+void GC_debug_register_finalizer_unreachable
+    				    (void * obj, GC_finalization_proc fn,
+    				     void * cd, GC_finalization_proc *ofn,
+				     void * *ocd)
+{
+    GC_finalization_proc my_old_fn;
+    void * my_old_cd;
+    ptr_t base = GC_base(obj);
+    if (0 == base) return;
+    if ((ptr_t)obj - base != sizeof(oh)) {
+        GC_err_printf(
+	    "GC_debug_register_finalizer_unreachable called with "
+	    "non-base-pointer %p\n",
+	    obj);
+    }
+    if (0 == fn) {
+      GC_register_finalizer_unreachable(base, 0, 0, &my_old_fn, &my_old_cd);
+    } else {
+      GC_register_finalizer_unreachable(base, GC_debug_invoke_finalizer,
+    			    	        GC_make_closure(fn,cd), &my_old_fn,
+				        &my_old_cd);
+    }
+    store_old(obj, my_old_fn, (struct closure *)my_old_cd, ofn, ocd);
+}
 
 void GC_debug_register_finalizer_ignore_self
     				    (void * obj, GC_finalization_proc fn,

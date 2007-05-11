@@ -3,6 +3,7 @@
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  * Copyright 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright 1999 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (C) 2007 Free Software Foundation, Inc
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -113,6 +114,8 @@ GC_API int GC_java_finalization;
 			/* it a bit safer to use non-topologically-	*/
 			/* ordered finalization.  Default value is	*/
 			/* determined by JAVA_FINALIZATION macro.	*/
+			/* Enables register_finalizer_unreachable to	*/
+			/* work correctly.				*/
 
 GC_API void (* GC_finalizer_notifier)(void);
 			/* Invoked by the collector when there are 	*/
@@ -564,6 +567,8 @@ GC_API void * GC_debug_realloc_replacement
 	GC_debug_register_finalizer_ignore_self(p, f, d, of, od)
 #   define GC_REGISTER_FINALIZER_NO_ORDER(p, f, d, of, od) \
 	GC_debug_register_finalizer_no_order(p, f, d, of, od)
+#   define GC_REGISTER_FINALIZER_UNREACHABLE(p, f, d, of, od) \
+	GC_debug_register_finalizer_unreachable(p, f, d, of, od)
 #   define GC_MALLOC_STUBBORN(sz) GC_debug_malloc_stubborn(sz, GC_EXTRAS);
 #   define GC_CHANGE_STUBBORN(p) GC_debug_change_stubborn(p)
 #   define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
@@ -587,6 +592,8 @@ GC_API void * GC_debug_realloc_replacement
 	GC_register_finalizer_ignore_self(p, f, d, of, od)
 #   define GC_REGISTER_FINALIZER_NO_ORDER(p, f, d, of, od) \
 	GC_register_finalizer_no_order(p, f, d, of, od)
+#   define GC_REGISTER_FINALIZER_UNREACHABLE(p, f, d, of, od) \
+	GC_register_finalizer_unreachable(p, f, d, of, od)
 #   define GC_MALLOC_STUBBORN(sz) GC_malloc_stubborn(sz)
 #   define GC_CHANGE_STUBBORN(p) GC_change_stubborn(p)
 #   define GC_END_STUBBORN_CHANGE(p) GC_end_stubborn_change(p)
@@ -678,6 +685,28 @@ GC_API void GC_debug_register_finalizer_no_order
 		(void * obj, GC_finalization_proc fn, void * cd,
 		 GC_finalization_proc *ofn, void * *ocd);
 
+/* This is a special finalizer that is useful when an object's  */
+/* finalizer must be run when the object is known to be no      */
+/* longer reachable, not even from other finalizable objects.   */
+/* It behaves like "normal" finalization, except that the 	*/
+/* finalizer is not run while the object is reachable from	*/
+/* other objects specifying unordered finalization.		*/
+/* Effectively it allows an object referenced, possibly		*/
+/* indirectly, from an unordered finalizable object to override */
+/* the unordered finalization request.				*/
+/* This can be used in combination with finalizer_no_order so   */
+/* as to release resources that must not be released while an   */
+/* object can still be brought back to life by other            */
+/* finalizers.                                                  */
+/* Only works if GC_java_finalization is set.  Probably only 	*/
+/* of interest when implementing a language that requires	*/
+/* unordered finalization (e.g. Java, C#).			*/
+GC_API void GC_register_finalizer_unreachable
+	         (void * obj, GC_finalization_proc fn, void * cd,
+		  GC_finalization_proc *ofn, void * *ocd);
+GC_API void GC_debug_register_finalizer_unreachable
+		 (void * obj, GC_finalization_proc fn, void * cd,
+		  GC_finalization_proc *ofn, void * *ocd);
 
 /* The following routine may be used to break cycles between	*/
 /* finalizable objects, thus causing cyclic finalizable		*/
