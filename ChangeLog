@@ -1,3 +1,15 @@
+2007-05-15  Hans Boehm <Hans.Boehm@hp.com>
+	* Makefile.am: Include NT_STSTIC_THREADS_MAKEFILE in dist.
+	* Makefile.in: Regenerate.
+	* include/private/gc_locks.h: GC_compare_and_exchange, GC_atomic_add:
+	remove. NUMERIC_THREAD_ID, THREAD_EQUAL: New.  GC_lock_holder: now
+	unsigned long.  I_DONT_HOLD_LOCK, I_HOLD_LOCK: Update.
+	* pthread_stop_world.c, pthread_support.c, win32_threads.c: Use
+	NUMERIC_THREAD_ID, THREAD_EQUAL.
+	* include/private/gcconfig.h: GENERIC_COMPARE_AND_SWAP: Remove.
+	* include/private/thread_local_alloc.h: Don't USE_COMPILER_TLS on
+	ARM.
+
 2007-05-11  Hans Boehm <Hans.Boehm@hp.com>
 
 	* dbg_mlc.c, include/gc.h, finalize.c: Merge Alexandre Oliva's
