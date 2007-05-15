@@ -26,7 +26,7 @@
   	/* Thread id for current holder of allocation lock */
 #else
   pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
-  pthread_t GC_lock_holder = NO_THREAD;
+  unsigned long GC_lock_holder = NO_THREAD;
 #endif
 
 #ifdef CYGWIN32
@@ -573,7 +573,7 @@ int GC_unregister_my_thread(void)
 /* and win32 thread id.						*/
 #define PTHREAD_MAP_SIZE 512
 DWORD GC_pthread_map_cache[PTHREAD_MAP_SIZE];
-#define HASH(pthread_id) ((((word)(pthread_id) >> 5)) % PTHREAD_MAP_SIZE)
+#define HASH(pthread_id) ((NUMERIC_THREAD_ID(pthread_id) >> 5) % PTHREAD_MAP_SIZE)
 	/* It appears pthread_t is really a pointer type ... */
 #define SET_PTHREAD_MAP_CACHE(pthread_id, win32_id) \
 	GC_pthread_map_cache[HASH(pthread_id)] = (win32_id);
@@ -609,12 +609,12 @@ static GC_thread GC_lookup_pthread(pthread_t id)
 
     LOCK();
     for (p = GC_threads[hv_guess]; 0 != p; p = p -> next) {
-      if (pthread_equal(p -> pthread_id, id))
+      if (THREAD_EQUAL(p -> pthread_id, id))
 	goto foundit; 
     }
     for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
       for (p = GC_threads[hv]; 0 != p; p = p -> next) {
-        if (pthread_equal(p -> pthread_id, id))
+        if (THREAD_EQUAL(p -> pthread_id, id))
 	  goto foundit; 
       }
     }

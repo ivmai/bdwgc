@@ -1425,9 +1425,6 @@
 #       define MPROTECT_VDB
 #     endif
 #   else
-#     define GENERIC_COMPARE_AND_SWAP
-	/* No compare-and-swap instruction.  Use pthread mutexes 	*/
-	/* when we absolutely have to.					*/
 #     ifdef PARALLEL_MARK
 #	define USE_MARK_BYTES
 		/* Minimize compare-and-swap usage.		*/

@@ -258,7 +258,7 @@ void GC_push_all_stacks()
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (p -> flags & FINISHED) continue;
 	++nthreads;
-        if (pthread_equal(p -> id, me)) {
+        if (THREAD_EQUAL(p -> id, me)) {
 #  	    ifdef SPARC
 	        lo = (ptr_t)GC_save_regs_in_stack();
 #  	    else
@@ -294,7 +294,7 @@ void GC_push_all_stacks()
             GC_printf("Reg stack for thread 0x%x = [%lx,%lx)\n",
     	              (unsigned)p -> id, bs_lo, bs_hi);
 #	  endif
-          if (pthread_equal(p -> id, me)) {
+          if (THREAD_EQUAL(p -> id, me)) {
 	    /* FIXME:  This may add an unbounded number of entries,	*/
 	    /* and hence overflow the mark stack, which is bad.		*/
 	    GC_push_all_eager(bs_lo, bs_hi);
@@ -331,7 +331,7 @@ int GC_suspend_all()
     GC_stopping_pid = getpid();                /* debugging only.      */
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
-        if (p -> id != my_thread) {
+        if (!THREAD_EQUAL(p -> id, my_thread)) {
             if (p -> flags & FINISHED) continue;
             if (p -> stop_info.last_stop_count == GC_stop_count) continue;
 	    if (p -> thread_blocked) /* Will wait */ continue;
@@ -451,7 +451,7 @@ void GC_start_world()
     AO_store(&GC_world_is_stopped, FALSE);
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
-        if (p -> id != my_thread) {
+        if (!THREAD_EQUAL(p -> id, my_thread)) {
             if (p -> flags & FINISHED) continue;
 	    if (p -> thread_blocked) continue;
             n_live_threads++;

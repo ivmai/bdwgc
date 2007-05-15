@@ -23,13 +23,6 @@
  * Needed if there is more than one allocator thread.
  * DCL_LOCK_STATE declares any local variables needed by LOCK and UNLOCK.
  *
- * In the PARALLEL_MARK case, we also need to define a number of
- * other inline finctions here:
- *   GC_bool GC_compare_and_exchange( volatile GC_word *addr,
- *   				      GC_word old, GC_word new )
- *   GC_word GC_atomic_add( volatile GC_word *addr, GC_word how_much )
- *   void GC_memory_barrier( )
- *   
  * Note that I_HOLD_LOCK and I_DONT_HOLD_LOCK are used only positively
  * in assertions, and may return TRUE in the "dont know" case.
  */  
@@ -78,8 +71,28 @@
 #    define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
 			   || GC_lock_holder != GetCurrentThreadId())
 #  elif defined(GC_PTHREADS)
-#    define NO_THREAD (pthread_t)(-1)
 #    include <pthread.h>
+     
+     /* Posix allows pthread_t to be a struct, though it rarely is.	*/
+     /* Unfortunately, we need to use a pthread_t to index a data 	*/
+     /* structure.  It also helps if comparisons don't involve a	*/
+     /* function call.  Hence we introduce platform-dependent macros	*/
+     /* to compare pthread_t ids and to map them to integers.		*/
+     /* the mapping to integers does not need to result in different	*/
+     /* integers for each thread, though that should be true as much	*/
+     /* as possible.							*/
+#    if 1 /* Refine to exclude platforms on which pthread_t is struct */
+#	define NUMERIC_THREAD_ID(id) ((unsigned long)(id))
+#	define THREAD_EQUAL(id1, id2) ((id1) == (id2))
+#       define NUMERIC_THREAD_ID_UNIQUE
+#    else
+	/* Generic definitions that always work, but will result in	*/
+	/* poor performance and weak assertion checking.		*/
+#	define NUMERIC_THREAD_ID(id) 1l
+#	define THREAD_EQUAL(id1, id2) pthread_equal(id1, id2)
+#       undef NUMERIC_THREAD_ID_UNIQUE
+#    endif
+#    define NO_THREAD (-1l)  /* != NUMERIC_THREAD_ID(pthread_self()) for any thread */
 
 #    if !defined(THREAD_LOCAL_ALLOC) && !defined(USE_PTHREAD_LOCKS)
       /* In the THREAD_LOCAL_ALLOC case, the allocation lock tends to	*/
@@ -131,19 +144,23 @@
 #        define UNCOND_UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
 #      endif /* !GC_ASSERTIONS */
 #    endif /* USE_PTHREAD_LOCKS */
-#    define SET_LOCK_HOLDER() GC_lock_holder = pthread_self()
+#    define SET_LOCK_HOLDER() GC_lock_holder = NUMERIC_THREAD_ID(pthread_self())
 #    define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
 #    define I_HOLD_LOCK() (!GC_need_to_lock \
-			   || pthread_equal(GC_lock_holder, pthread_self()))
-#    define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
-			   || !pthread_equal(GC_lock_holder, pthread_self()))
+			   || GC_lock_holder == NUMERIC_THREAD_ID(pthread_self()))
+#    ifndef NUMERIC_THREAD_ID_UNIQUE
+#      define I_DONT_HOLD_LOCK() 1  /* Conservatively say yes */
+#    else
+#      define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
+			   || GC_lock_holder != NUMERIC_THREAD_ID(pthread_self()))
+#    endif
      extern volatile GC_bool GC_collecting;
 #    define ENTER_GC() GC_collecting = 1;
 #    define EXIT_GC() GC_collecting = 0;
      extern void GC_lock(void);
-     extern pthread_t GC_lock_holder;
+     extern unsigned long GC_lock_holder;
 #    ifdef GC_ASSERTIONS
-      extern pthread_t GC_mark_lock_holder;
+      extern unsigned long GC_mark_lock_holder;
 #    endif
 #  endif /* GC_PTHREADS with linux_threads.c implementation */
 
