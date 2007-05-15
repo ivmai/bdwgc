@@ -1,4 +1,10 @@
 2007-05-15  Hans Boehm <Hans.Boehm@hp.com>
+
+	* configure.ac, version.h, doc/README: Change version to 7.0alpha9.
+	* configure: Regenerate.
+
+2007-05-15  Hans Boehm <Hans.Boehm@hp.com>
+
 	* Makefile.am: Include NT_STSTIC_THREADS_MAKEFILE in dist.
 	* Makefile.in: Regenerate.
 	* include/private/gc_locks.h: GC_compare_and_exchange, GC_atomic_add:
