@@ -1,3 +1,8 @@
+2007-05-16  Hans Boehm <Hans.Boehm@hp.com>
+
+	* finalize.c (GC_unreachable_finalize_mark_proc): Don't return void
+	value.
+
 2007-05-15  Hans Boehm <Hans.Boehm@hp.com>
 
 	* configure.ac, version.h, doc/README: Change version to 7.0alpha10.

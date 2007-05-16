@@ -290,7 +290,7 @@ GC_API void GC_null_finalize_mark_proc(ptr_t p)
 GC_API void GC_unreachable_finalize_mark_proc(p)
 ptr_t p;
 {
-    return GC_normal_finalize_mark_proc(p);
+    GC_normal_finalize_mark_proc(p);
 }
 
 
