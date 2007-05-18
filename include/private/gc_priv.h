@@ -36,6 +36,10 @@
 #   include <sys/resource.h>
 #endif /* BSD_TIME */
 
+#ifdef PARALLEL_MARK
+#   define AO_REQUIRE_CAS
+#endif
+
 #ifndef _GC_H
 #   include "../gc.h"
 #endif

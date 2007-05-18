@@ -1,3 +1,7 @@
+2007-05-17  Hans Boehm <Hans.Boehm@hp.com>
+
+	* include/private/gc_priv.h: Ddefine AO_REQUIRE_CAS.
+
 2007-05-16  Hans Boehm <Hans.Boehm@hp.com>
 
 	* finalize.c (GC_unreachable_finalize_mark_proc): Don't return void
