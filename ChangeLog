@@ -1,6 +1,6 @@
 2007-05-17  Hans Boehm <Hans.Boehm@hp.com>
 
-	* include/private/gc_priv.h: Ddefine AO_REQUIRE_CAS.
+	* include/private/gc_priv.h: Define AO_REQUIRE_CAS.
 
 2007-05-16  Hans Boehm <Hans.Boehm@hp.com>
 
