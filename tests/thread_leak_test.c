@@ -1,4 +1,6 @@
-#define GC_LINUX_THREADS
+#ifndef GC_THREADS
+#  define GC_THREADS
+#endif /* GC_THREADS */
 #include "leak_detector.h"
 #include <pthread.h>
 #include <stdio.h>

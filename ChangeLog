@@ -1,3 +1,9 @@
+2007-05-21  Hans Boehm <Hans.Boehm@hp.com>
+
+	* alloc.c (GC_try_to_collect): Call GC_init if necessary.
+	* tests/thread_leak_test.c: Don't unconditionally define
+	GC_LINUX_THREADS.
+
 2007-05-21  Andreas Tobler  <a.tobler@schweiz.org>
 
 	* Makefile.am: Remove extra_ldflags_libgc definition.

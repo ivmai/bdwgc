@@ -729,6 +729,7 @@ int GC_try_to_collect(GC_stop_func stop_func)
     int result;
     DCL_LOCK_STATE;
     
+    if (!GC_is_initialized) GC_init();
     if (GC_debugging_started) GC_print_all_smashed();
     GC_INVOKE_FINALIZERS();
     LOCK();
