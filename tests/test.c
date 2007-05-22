@@ -773,6 +773,7 @@ int n;
          	GC_printf("GC_general_register_disappearing_link failed 2\n");
          	FAIL;
         }
+	GC_reachable_here(result);
     }
     return(result);
 }

@@ -2,7 +2,7 @@
 
 #if defined(GC_WIN32_THREADS) 
 
-#if defined( _MINGW_VER )
+#if defined( _MINGW_VER ) || defined( __MINGW32__ )
 # include <stdint.h>
 	/* We mention uintptr_t.					*/
 	/* Perhaps this should be included in pure msft environments	*/
@@ -1014,7 +1014,7 @@ GC_API HANDLE WINAPI GC_CreateThread(
     			      dwStackSize, GC_win32_start,
     			      args, dwCreationFlags,
     			      lpThreadId);
-
+      if( thread_h == 0 ) GC_free( args );
       return thread_h;
     }
 }
@@ -1056,7 +1056,7 @@ uintptr_t GC_beginthreadex(
       GC_need_to_lock = TRUE;
       thread_h = _beginthreadex(security, stack_size, GC_win32_start,
                                 args, initflag, thrdaddr);
-
+      if( thread_h == 0 ) GC_free( args );
       return thread_h;
     }
 }

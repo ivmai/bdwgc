@@ -413,7 +413,7 @@ void GC_free(void * p)
     GC_ASSERT(GC_base(p) == p);
 #   if defined(REDIRECT_MALLOC) && \
 	(defined(GC_SOLARIS_THREADS) || defined(GC_LINUX_THREADS) \
-	 || defined(__MINGW32__)) /* Should this be MSWIN32 in general? */
+	 || defined(MSWIN32))
 	/* For Solaris, we have to redirect malloc calls during		*/
 	/* initialization.  For the others, this seems to happen 	*/
  	/* implicitly.							*/

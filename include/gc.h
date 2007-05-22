@@ -778,6 +778,23 @@ GC_API int GC_invoke_finalizers(void);
 	/* GC-finalize_on_demand is nonzero, it must be called	*/
 	/* explicitly.						*/
 
+/* Explicitly tell the collector that an object is reachable	*/
+/* at a particular program point.  This prevents the argument	*/
+/* pointer from being optimized away, even it is otherwise no	*/
+/* longer needed.  It should have no visible effect in the	*/
+/* absence of finalizers or disappearing links.  But it may be	*/
+/* needed to prevent finalizers from running while the		*/
+/* associated external resource is still in use.		*/
+/* The function is sometimes called keep_alive in other		*/
+/* settings.							*/
+# if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#   define GC_reachable_here(ptr) \
+    __asm__ volatile(" " : : "X"(ptr) : "memory");
+# else
+    GC_API void GC_noop1(GC_word x);
+#   define GC_reachable_here(ptr) GC_noop1((GC_word)(ptr));
+#endif
+
 /* GC_set_warn_proc can be used to redirect or filter warning messages.	*/
 /* p may not be a NULL pointer.						*/
 typedef void (*GC_warn_proc) (char *msg, GC_word arg);
@@ -1014,11 +1031,20 @@ GC_register_has_static_roots_callback
    * win32_threads.c implements the real WinMain, which will start a new thread
    * to call GC_WinMain after initializing the garbage collector.
    */
-  int WINAPI GC_WinMain(
+  GC_API int WINAPI GC_WinMain(
       HINSTANCE hInstance,
       HINSTANCE hPrevInstance,
       LPWSTR lpCmdLine,
       int nCmdShow );
+
+  GC_API uintptr_t GC_beginthreadex(
+    void *security, unsigned stack_size,
+    unsigned ( __stdcall *start_address )( void * ),
+    void *arglist, unsigned initflag, unsigned *thrdaddr);
+
+  GC_API void GC_endthreadex(unsigned retval);
+
+  GC_API void WINAPI GC_ExitThread(DWORD dwExitCode);
 
 #  ifndef GC_BUILD
 #    define WinMain GC_WinMain

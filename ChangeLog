@@ -1,3 +1,16 @@
+2007-05-22  Hans Boehm <Hans.Boehm@hp.com>
+	
+	* malloc.c(GC_free): Ignore bad frees on MSWIN32 with REDIRECT_MALLOC.
+	* NT_MAKEFILE: msvc_dbg.h is in include/private.  Don't use cvars
+	rc.
+	* misc.c (WIN32 GC_write): Define GC_need_to_lock in single-threaded
+	case.
+	* win32_threads.c: Test for __MINGW32__ in addition to _MINGW_VER.
+	(GC_CreateThread, GC_beginthreadex): Deallocate args even if we fail.
+	* include/gc.h: Add GC_reachable_here().  (GC_WinMain): Add GC_API.
+	(GC_beginthreadex, GC_endthreadex, GC_ExitThread): Declare.
+	* tests/test.c: Add GC_reachable_here() call.
+
 2007-05-21  Hans Boehm <Hans.Boehm@hp.com>
 
 	* alloc.c (GC_try_to_collect): Call GC_init if necessary.

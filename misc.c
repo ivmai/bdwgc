@@ -826,6 +826,9 @@ out:
       }
   }
 
+# ifndef THREADS
+#   define GC_need_to_lock 0  /* Not defined without threads */
+# endif
   int GC_write(buf, len)
   const char * buf;
   size_t len;
@@ -867,6 +870,7 @@ out:
       if (GC_need_to_lock) LeaveCriticalSection(&GC_write_cs);
       return tmp ? (int)written : -1;
   }
+# undef GC_need_to_lock
 
 #endif
 
