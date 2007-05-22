@@ -92,7 +92,8 @@
 #	define THREAD_EQUAL(id1, id2) pthread_equal(id1, id2)
 #       undef NUMERIC_THREAD_ID_UNIQUE
 #    endif
-#    define NO_THREAD (-1l)  /* != NUMERIC_THREAD_ID(pthread_self()) for any thread */
+#    define NO_THREAD (-1l)
+		/* != NUMERIC_THREAD_ID(pthread_self()) for any thread */
 
 #    if !defined(THREAD_LOCAL_ALLOC) && !defined(USE_PTHREAD_LOCKS)
       /* In the THREAD_LOCAL_ALLOC case, the allocation lock tends to	*/
@@ -144,15 +145,18 @@
 #        define UNCOND_UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
 #      endif /* !GC_ASSERTIONS */
 #    endif /* USE_PTHREAD_LOCKS */
-#    define SET_LOCK_HOLDER() GC_lock_holder = NUMERIC_THREAD_ID(pthread_self())
+#    define SET_LOCK_HOLDER() \
+		GC_lock_holder = NUMERIC_THREAD_ID(pthread_self())
 #    define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
-#    define I_HOLD_LOCK() (!GC_need_to_lock \
-			   || GC_lock_holder == NUMERIC_THREAD_ID(pthread_self()))
+#    define I_HOLD_LOCK() \
+		(!GC_need_to_lock || \
+		 GC_lock_holder == NUMERIC_THREAD_ID(pthread_self()))
 #    ifndef NUMERIC_THREAD_ID_UNIQUE
 #      define I_DONT_HOLD_LOCK() 1  /* Conservatively say yes */
 #    else
-#      define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
-			   || GC_lock_holder != NUMERIC_THREAD_ID(pthread_self()))
+#      define I_DONT_HOLD_LOCK() \
+		(!GC_need_to_lock \
+		 || GC_lock_holder != NUMERIC_THREAD_ID(pthread_self()))
 #    endif
      extern volatile GC_bool GC_collecting;
 #    define ENTER_GC() GC_collecting = 1;
