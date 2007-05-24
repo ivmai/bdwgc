@@ -1,6 +1,9 @@
 
 lib_LTLIBRARIES += libcord.la
 
+libcord_la_LIBADD = $(top_builddir)/libgc.la
+libcord_la_LDFLAGS = -version-info 1:3:0 -no-undefined
+
 libcord_la_SOURCES = \
 	cord/cordbscs.c				\
 	cord/cordprnt.c				\

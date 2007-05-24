@@ -17,10 +17,7 @@
 
 
 # Common libs to _LDADD for all tests.
-test_ldadd = \
-	$(top_builddir)/libgc.la \
-	$(THREADDLLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
-
+test_ldadd = $(top_builddir)/libgc.la $(EXTRA_TEST_LIBS)
 
 
 TESTS += gctest$(EXEEXT)

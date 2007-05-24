@@ -1026,6 +1026,16 @@ GC_register_has_static_roots_callback
       DWORD dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress,
       LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId );
 
+
+   GC_API uintptr_t GC_beginthreadex(
+     void *security, unsigned stack_size,
+     unsigned ( __stdcall *start_address )( void * ),
+     void *arglist, unsigned initflag, unsigned *thrdaddr);
+
+   GC_API void GC_endthreadex(unsigned retval);
+
+   GC_API void WINAPI GC_ExitThread(DWORD dwExitCode);
+
 # if defined(_WIN32_WCE)
   /*
    * win32_threads.c implements the real WinMain, which will start a new thread
@@ -1036,16 +1046,6 @@ GC_register_has_static_roots_callback
       HINSTANCE hPrevInstance,
       LPWSTR lpCmdLine,
       int nCmdShow );
-
-  GC_API uintptr_t GC_beginthreadex(
-    void *security, unsigned stack_size,
-    unsigned ( __stdcall *start_address )( void * ),
-    void *arglist, unsigned initflag, unsigned *thrdaddr);
-
-  GC_API void GC_endthreadex(unsigned retval);
-
-  GC_API void WINAPI GC_ExitThread(DWORD dwExitCode);
-
 #  ifndef GC_BUILD
 #    define WinMain GC_WinMain
 #  endif
@@ -1060,6 +1060,7 @@ GC_API void GC_use_DllMain(void);
 # define ExitThread GC_ExitThread
 # define _beginthreadex GC_beginthreadex
 # define _endthreadex GC_endthreadex
+# define _beginthread { > "Please use _beginthreadex instead of _beginthread" < }
 
 #endif /* defined(GC_WIN32_THREADS)  && !cygwin */
 

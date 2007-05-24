@@ -1,3 +1,14 @@
+2007-05-23  Hans Boehm <Hans.Boehm@hp.com>
+
+	* Makefile.am: Move includes to bottom.  Add better library
+	dependencies.  Increment library version.  Remove "SUBDIRS += .".
+	* cord/cord.am, tests/tests.am: Add better library dependencies.
+	Remove now unnecessary dependencies.
+	* Makefile.in: Regenerate.
+	* include/gc.h (GC_begin_thread_ex, GC_endthreadex, GC_ExitThread):
+	Move to define on all Windows platforms.  (_beginthread): define
+	to generate error if used.
+
 2007-05-22  Hans Boehm <Hans.Boehm@hp.com>
 
 	* include/private/gc_locks.h: Format to 80 columns.

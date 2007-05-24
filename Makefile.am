@@ -32,8 +32,6 @@
 # endif
 SUBDIRS =
 
-SUBDIRS += .
-
 # Initialize variables so that we can declare files locally.
 EXTRA_DIST = 
 lib_LTLIBRARIES =
@@ -45,12 +43,6 @@ TESTS =
 
 pkgconfigdir = $(libdir)/pkgconfig
 dist_pkgconfig_DATA = bdw-gc.pc
-
-include include/include.am
-include cord/cord.am
-include tests/tests.am
-include doc/doc.am
-
 
 # C Library
 # ---------
@@ -91,7 +83,8 @@ endif
 # linuxthread semaphore functions get linked:
 libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS)
 libgc_la_DEPENDENCIES = @addobjs@
-libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info 1:2:0
+libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info 1:3:0
+# -no-undefined doesn't work here, since we get a reference to __tls_get_addr.
 
 EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
     mips_sgi_mach_dep.s mips_ultrix_mach_dep.s \
@@ -106,8 +99,8 @@ if CPLUSPLUS
 lib_LTLIBRARIES += libgccpp.la
 pkginclude_HEADERS += include/gc_cpp.h include/gc_allocator.h
 libgccpp_la_SOURCES = gc_cpp.cc
-libgccpp_la_LIBADD = $(THREADDLLIBS) $(UNWINDLIBS)
-libgccpp_la_LDFLAGS = -version-info 1:2:0
+libgccpp_la_LIBADD = $(top_builddir)/libgc.la
+libgccpp_la_LDFLAGS = -version-info 1:3:0 -no-undefined
 endif
 
 # FIXME: If Visual C++ users use Makefile.am, this should go into
@@ -203,3 +196,12 @@ EXTRA_DIST += libtool.m4
 # it will not remove dest if building fails
 .S.s:
 	if $(CPP) $< >$@ ; then :; else rm -f $@; fi
+
+include include/include.am
+include cord/cord.am
+include tests/tests.am
+include doc/doc.am
+# Putting these at the top causes cord to be built first, and not find libgc.a
+# on HP/UX.  There may be a better fix.
+
+
