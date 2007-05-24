@@ -67,28 +67,37 @@ HOSTCFLAGS=$(CFLAGS)
 #   This causes the collector to assume that all inaccessible
 #   objects should have been explicitly deallocated, and reports exceptions.
 #   Finalization and the test program are not usable in this mode.
-# -DGC_SOLARIS_THREADS enables support for Solaris (thr_) threads.
+#
+# IMPORTANT: Any of the _THREADS options must normally also be defined in
+# the client before including gc.h.  This redefines thread primitives to
+# invoke the GC_ versions instead.  Alternatively, linker-based symbol
+# interception can be used on a few platforms.
+# -DGC_THREADS should set the appropriate one of the below macros,
+#   except -DGC_WIN32_PTHREADS, which must be set explicitly.
+# -DGC_SOLARIS_PTHREADS enables support for Solaris pthreads.
 #   (Clients should also define GC_SOLARIS_THREADS and then include
 #   gc.h before performing thr_ or dl* or GC_ operations.)
 #   Must also define -D_REENTRANT.
-# -DGC_SOLARIS_PTHREADS enables support for Solaris pthreads.
-#   (Internally this define GC_SOLARIS_THREADS as well.)
 # -DGC_IRIX_THREADS enables support for Irix pthreads.  See README.irix.
 # -DGC_HPUX_THREADS enables support for HP/UX 11 pthreads.
 #   Also requires -D_REENTRANT or -D_POSIX_C_SOURCE=199506L. See README.hp.
-# -DGC_LINUX_THREADS enables support for Xavier Leroy's Linux threads.
-#   see README.linux.  -D_REENTRANT may also be required.
+# -DGC_LINUX_THREADS enables support for Xavier Leroy's Linux threads
+#   or NPTL threads. See README.linux.  -D_REENTRANT may also be required.
 # -DGC_OSF1_THREADS enables support for Tru64 pthreads.
 # -DGC_FREEBSD_THREADS enables support for FreeBSD pthreads.
 #   Appeared to run into some underlying thread problems.
 # -DGC_DARWIN_THREADS enables support for Mac OS X pthreads.
 # -DGC_AIX_THREADS enables support for IBM AIX threads.
 # -DGC_DGUX386_THREADS enables support for DB/UX on I386 threads.
-#   See README.DGUX386.
+#   See README.DGUX386.  (Probably has not been tested recently.)
 # -DGC_WIN32_THREADS enables support for win32 threads.  That makes sense
 #   for this Makefile only under Cygwin.
-# -DGC_THREADS should set the appropriate one of the above macros.
-#   It assumes pthreads for Solaris.
+# -DGC_WIN32_PTHREADS enables support for Ming32 pthreads.  This cannot be
+#   enabled automatically by GC_THREADS, which would assume Win32 native
+#   threads.
+# -DPTW32_STATIC_LIB causes the static version of the Mingw pthreads library
+#   to be used.  Requires -DGC_WIN32_PTHREADS.
+#   
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
 #   of objects to be recognized.  (See gc_priv.h for consequences.)
 #   Alternatively, GC_all_interior_pointers can be set at process

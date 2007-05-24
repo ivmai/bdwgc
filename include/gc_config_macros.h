@@ -69,6 +69,11 @@
 #   define GC_PTHREADS
 # endif
 
+#if defined(GC_WIN32_PTHREADS)
+#   define GC_WIN32_THREADS
+#   define GC_PTHREADS
+#endif
+
 #if defined(GC_THREADS) && !defined(GC_PTHREADS)
 # if defined(__linux__)
 #   define GC_LINUX_THREADS

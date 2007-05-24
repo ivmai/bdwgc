@@ -196,10 +196,20 @@ Cygwin, use standard pthread calls instead.)  As in the pthread
 case, including gc.h will redefine CreateThread, _beginthreadex,
 _endthreadex, and ExitThread to call the GC_ versions instead.
 
+Note that, as usual, GC_CreateThread tends to introduce resource leaks
+that are avoided by GC_beginthreadex.  There is currently no equivalent of
+_beginthread, and it should not be used.
+
 GC_INIT should be called from the main executable before other GC calls.
 
 We strongly advise against using the TerminateThread() win32 API call,
 especially with the garbage collector.  Any use is likely to provoke a
 crash in the GC, since it makes it impossible for the collector to
 correctly track threads.
+
+To build the collector for Mingw32 Pthreads, use Makefile.direct and
+explicitly set GC_WIN32_PTHREADS.  Use -DPTW32_STATIC_LIB for the static
+threads library.  Note that the DEBUG_WIN32_PTHREADS support in
+win32_threads.c is currently broken and looking for someone to debug it.
+(This information and the port came from Romano Paolo Tenca).
 

@@ -81,16 +81,23 @@
      /* the mapping to integers does not need to result in different	*/
      /* integers for each thread, though that should be true as much	*/
      /* as possible.							*/
-#    if 1 /* Refine to exclude platforms on which pthread_t is struct */
-#	define NUMERIC_THREAD_ID(id) ((unsigned long)(id))
-#	define THREAD_EQUAL(id1, id2) ((id1) == (id2))
-#       define NUMERIC_THREAD_ID_UNIQUE
+     /* Refine to exclude platforms on which pthread_t is struct */
+#    if !defined(GC_WIN32_PTHREADS)
+#      define NUMERIC_THREAD_ID(id) ((unsigned long)(id))
+#      define THREAD_EQUAL(id1, id2) ((id1) == (id2))
+#      define NUMERIC_THREAD_ID_UNIQUE
 #    else
-	/* Generic definitions that always work, but will result in	*/
-	/* poor performance and weak assertion checking.		*/
-#	define NUMERIC_THREAD_ID(id) 1l
-#	define THREAD_EQUAL(id1, id2) pthread_equal(id1, id2)
-#       undef NUMERIC_THREAD_ID_UNIQUE
+#      if defined(GC_WIN32_PTHREADS)
+#	 define NUMERIC_THREAD_ID(id) ((unsigned long)(id.p))
+#	 define THREAD_EQUAL(id1, id2) pthread_equal(id1, id2)
+#        undef NUMERIC_THREAD_ID_UNIQUE
+#      else
+	 /* Generic definitions that always work, but will result in	*/
+	 /* poor performance and weak assertion checking.		*/
+#   	 define NUMERIC_THREAD_ID(id) 1l
+#	 define THREAD_EQUAL(id1, id2) pthread_equal(id1, id2)
+#        undef NUMERIC_THREAD_ID_UNIQUE
+#      endif
 #    endif
 #    define NO_THREAD (-1l)
 		/* != NUMERIC_THREAD_ID(pthread_self()) for any thread */

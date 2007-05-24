@@ -42,6 +42,14 @@ int main()
 #   if defined(GC_WIN32_THREADS) && defined(CYGWIN32)
         printf("-lpthread\n");
 #   endif
+#   if defined(GC_WIN32_PTHREADS)
+#      ifdef PTW32_STATIC_LIB
+	 /* assume suffix s for static version of the win32 pthread library */
+         printf("-lpthreadGC2s -lws2_32\n");
+#      else
+         printf("-lpthreadGC2\n");
+#      endif
+#   endif
 #   if defined(GC_OSF1_THREADS)
 	printf("-pthread -lrt"); /* DOB: must be -pthread, not -lpthread */
 #   endif

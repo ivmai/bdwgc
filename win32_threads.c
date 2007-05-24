@@ -29,7 +29,7 @@
   unsigned long GC_lock_holder = NO_THREAD;
 #endif
 
-#ifdef CYGWIN32
+#ifdef GC_PTHREADS
 # include <errno.h>
 
 /* GC_DLL should not normally be defined, especially since we often do turn on	*/
@@ -48,6 +48,7 @@
 # undef dlopen 
 
 # define DEBUG_CYGWIN_THREADS 0
+# define DEBUG_WIN32_PTHREADS 0
 
   void * GC_pthread_start(void * arg);
   void GC_thread_exit_proc(void *arg);
@@ -165,7 +166,7 @@ struct GC_Thread_Rep {
 			/* !in_use ==> stack_base == 0	*/
   GC_bool suspended;
 
-# ifdef CYGWIN32
+# ifdef GC_PTHREADS
     void *status; /* hold exit value until join in case it's a pointer */
     pthread_t pthread_id;
     short flags;		/* Protected by GC lock.	*/
@@ -255,7 +256,8 @@ GC_thread GC_new_thread(DWORD id)
         GC_ASSERT(!GC_win32_dll_threads);
         result = (struct GC_Thread_Rep *)
         	 GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
-#       ifdef CYGWIN32
+#       ifdef GC_PTHREADS
+	  /* result can be NULL -> segfault */
 	  GC_ASSERT(result -> flags == 0);
 #       endif
     }
@@ -263,7 +265,7 @@ GC_thread GC_new_thread(DWORD id)
     /* result -> id = id; Done by caller.	*/
     result -> next = GC_threads[hv];
     GC_threads[hv] = result;
-#   ifdef CYGWIN32
+#   ifdef GC_PTHREADS
       GC_ASSERT(result -> flags == 0 /* && result -> thread_blocked == 0 */);
 #   endif
     return(result);
@@ -345,9 +347,11 @@ static GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
     GC_ASSERT(I_HOLD_LOCK());
     me = GC_new_thread(thread_id);
   }
-# ifdef CYGWIN32
-    me -> pthread_id = pthread_self();
+# ifdef GC_PTHREADS
+  /* me can be NULL -> segfault */
+  me -> pthread_id = pthread_self();
 # endif
+
   if (!DuplicateHandle(GetCurrentProcess(),
                  	GetCurrentThread(),
 		        GetCurrentProcess(),
@@ -471,6 +475,9 @@ void GC_delete_gc_thread(GC_vthread gc_id)
 #   ifdef CYGWIN32
       gc_id -> pthread_id = 0;
 #   endif /* CYGWIN32 */
+#   ifdef GC_WIN32_PTHREADS
+      gc_id -> pthread_id.p = NULL;
+#   endif /* GC_WIN32_PTHREADS */
     AO_store_release(&(gc_id->in_use), FALSE);
   } else {
     /* Cast away volatile qualifier, since we have lock. */
@@ -567,7 +574,7 @@ int GC_unregister_my_thread(void)
 }
 
 
-#ifdef CYGWIN32
+#ifdef GC_PTHREADS
 
 /* A quick-and-dirty cache of the mapping between pthread_t	*/
 /* and win32 thread id.						*/
@@ -595,7 +602,7 @@ static GC_thread GC_lookup_pthread(pthread_t id)
     for (i = 0;
          i <= my_max &&
          (!AO_load_acquire(&(dll_thread_table[i].in_use))
-	  || dll_thread_table[i].pthread_id != id);
+	  || THREAD_EQUAL(dll_thread_table[i].pthread_id, id));
        /* Must still be in_use, since nobody else can store our thread_id. */
        i++);
     if (i > my_max) return 0;
@@ -625,7 +632,7 @@ static GC_thread GC_lookup_pthread(pthread_t id)
   }
 }
 
-#endif /* CYGWIN32 */
+#endif /* GC_PTHREADS */
 
 void GC_push_thread_structures(void)
 {
@@ -634,7 +641,7 @@ void GC_push_thread_structures(void)
     /* Unlike the other threads implementations, the thread table here	*/
     /* contains no pointers to the collectable heap.  Thus we have	*/
     /* no private structures we need to preserve.			*/
-#   ifdef CYGWIN32
+#   ifdef GC_PTHREADS 
     { int i; /* pthreads may keep a pointer in the thread exit value */
       LONG my_max = GC_get_max_thread_index();
 
@@ -671,7 +678,7 @@ void GC_suspend(GC_thread t)
     if (GetExitCodeThread(t -> handle, &exitCode) &&
         exitCode != STILL_ACTIVE) {
       t -> stack_base = 0; /* prevent stack from being pushed */
-#     ifndef CYGWIN32
+#     ifndef GC_PTHREADS
         /* this breaks pthread_join on Cygwin, which is guaranteed to  */
         /* only see user pthreads 	 			       */
         AO_store(&(t -> in_use), FALSE);
@@ -686,7 +693,7 @@ void GC_suspend(GC_thread t)
 }
 
 /* Defined in misc.c */
-#ifndef CYGWIN32
+#ifndef GC_PTHREADS
   extern CRITICAL_SECTION GC_write_cs;
 #endif
 
@@ -699,7 +706,7 @@ void GC_stop_world(void)
   GC_ASSERT(I_HOLD_LOCK());
 
   GC_please_stop = TRUE;
-# ifndef CYGWIN32
+# ifndef GC_PTHREADS
     EnterCriticalSection(&GC_write_cs);
 # endif
   if (GC_win32_dll_threads) {
@@ -728,7 +735,7 @@ void GC_stop_world(void)
 	}
       }
   }
-# ifndef CYGWIN32
+# ifndef GC_PTHREADS
     LeaveCriticalSection(&GC_write_cs);
 # endif    
 }
@@ -850,6 +857,10 @@ void GC_push_stack_for(GC_thread thread)
 	  GC_printf("Pushing thread from %p to %p for %d from %d\n",
 		    sp, thread -> stack_base, thread -> id, me);
 #       endif
+#       if DEBUG_WIN32_PTHREADS
+	  GC_printf("Pushing thread from %p to %p for 0x%x from 0x%x\n",
+		    sp, thread -> stack_base, thread -> id, me);
+#       endif
         GC_push_all_stack(sp, thread->stack_base);
       } else {
         WARN("Thread stack pointer 0x%lx out of range, pushing everything\n",
@@ -938,7 +949,7 @@ void GC_get_next_stack(char *start, char **lo, char **hi)
     if (*lo < start) *lo = start;
 }
 
-#if !defined(CYGWIN32)
+#ifndef GC_PTHREADS
 
 /* We have no DllMain to take care of new threads.  Thus we	*/
 /* must properly intercept thread creation.			*/
@@ -1067,7 +1078,7 @@ void GC_endthreadex(unsigned retval)
   _endthreadex(retval);
 }
 
-#endif /* !CYGWIN32 */
+#endif /* !GC_PTHREADS */
 
 #ifdef MSWINCE
 
@@ -1137,7 +1148,7 @@ void GC_thr_init(void) {
     GC_register_my_thread(&sb);
 }
 
-#ifdef CYGWIN32
+#ifdef GC_PTHREADS
 
 struct start_info {
     void *(*start_routine)(void *);
@@ -1153,6 +1164,10 @@ int GC_pthread_join(pthread_t pthread_id, void **retval) {
 #   if DEBUG_CYGWIN_THREADS
       GC_printf("thread 0x%x(0x%x) is joining thread 0x%x.\n",
 		(int)pthread_self(), GetCurrentThreadId(), (int)pthread_id);
+#   endif
+#   if DEBUG_WIN32_PTHREADS
+      GC_printf("thread 0x%x(0x%x) is joining thread 0x%x.\n",
+		(pthread_self()).p, GetCurrentThreadId(), pthread_id.p);
 #   endif
 
     if (!parallel_initialized) GC_init_parallel();
@@ -1174,6 +1189,10 @@ int GC_pthread_join(pthread_t pthread_id, void **retval) {
 #   if DEBUG_CYGWIN_THREADS
       GC_printf("thread 0x%x(0x%x) completed join with thread 0x%x.\n",
 		 (int)pthread_self(), GetCurrentThreadId(), (int)pthread_id);
+#   endif
+#   if DEBUG_WIN32_PTHREADS
+      GC_printf("thread 0x%x(0x%x) completed join with thread 0x%x.\n",
+		(pthread_self()).p, GetCurrentThreadId(), pthread_id.p);
 #   endif
 
     return result;
@@ -1213,6 +1232,10 @@ GC_pthread_create(pthread_t *new_thread,
       GC_printf("About to create a thread from 0x%x(0x%x)\n",
 		(int)pthread_self(), GetCurrentThreadId);
 #   endif
+#   if DEBUG_WIN32_PTHREADS
+      GC_printf("About to create a thread from 0x%x(0x%x)\n",
+		(pthread_self()).p, GetCurrentThreadId());
+#   endif
     GC_need_to_lock = TRUE;
     result = pthread_create(new_thread, attr, GC_pthread_start, si); 
 
@@ -1238,6 +1261,10 @@ void * GC_pthread_start_inner(struct GC_stack_base *sb, void * arg)
 #   if DEBUG_CYGWIN_THREADS
       GC_printf("thread 0x%x(0x%x) starting...\n",(int)pthread_id,
 		      				  thread_id);
+#   endif
+#   if DEBUG_WIN32_PTHREADS
+      GC_printf("thread 0x%x(0x%x) starting...\n",(int) pthread_id.p,
+      						  thread_id);
 #   endif
 
     GC_ASSERT(!GC_win32_dll_threads);
@@ -1268,6 +1295,10 @@ void * GC_pthread_start_inner(struct GC_stack_base *sb, void * arg)
       GC_printf("thread 0x%x(0x%x) returned from start routine.\n",
 		(int)pthread_self(),GetCurrentThreadId());
 #   endif
+#   if DEBUG_WIN32_PTHREADS
+      GC_printf("thread 0x%x(0x%x) returned from start routine.\n",
+		(int)(pthread_self()).p, GetCurrentThreadId());
+#   endif
 
     return(result);
 }
@@ -1287,6 +1318,10 @@ void GC_thread_exit_proc(void *arg)
       GC_printf("thread 0x%x(0x%x) called pthread_exit().\n",
 		(int)pthread_self(),GetCurrentThreadId());
 #   endif
+#   if DEBUG_WIN32_PTHREADS
+      GC_printf("thread 0x%x(0x%x) called pthread_exit().\n",
+		(int)(pthread_self()).p,GetCurrentThreadId());
+#   endif
 
     LOCK();
 #   if defined(THREAD_LOCAL_ALLOC)
@@ -1301,11 +1336,14 @@ void GC_thread_exit_proc(void *arg)
     UNLOCK();
 }
 
+#ifndef GC_WIN32_PTHREADS
+/* win32 pthread does not support sigmask */
 /* nothing required here... */
 int GC_pthread_sigmask(int how, const sigset_t *set, sigset_t *oset) {
   if (!parallel_initialized) GC_init_parallel();
   return pthread_sigmask(how, set, oset);
 }
+#endif
 
 int GC_pthread_detach(pthread_t thread)
 {
@@ -1329,7 +1367,7 @@ int GC_pthread_detach(pthread_t thread)
     return result;
 }
 
-#else /* !CYGWIN32 */
+#else /* !GC_PTHREADS */
 
 /*
  * We avoid acquiring locks here, since this doesn't seem to be preemptable.
@@ -1394,7 +1432,7 @@ GC_API BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
   return TRUE;
 }
 #endif /* GC_DLL */
-#endif /* !CYGWIN32 */
+#endif /* !GC_PTHREADS */
 
 # endif /* !MSWINCE */
 

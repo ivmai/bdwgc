@@ -124,7 +124,8 @@ void GC_destroy_thread_local(GC_tlfs p)
 #   endif
 }
 
-#if defined(GC_ASSERTIONS) && defined(GC_PTHREADS) && !defined(CYGWIN32)
+#if defined(GC_ASSERTIONS) && defined(GC_PTHREADS) && !defined(CYGWIN32) \
+    && !defined(GC_WIN32_PTHREADS)
 # include <pthread.h>
   extern char * GC_lookup_thread(pthread_t id);
 #endif

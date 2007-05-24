@@ -1003,7 +1003,8 @@ GC_register_has_static_roots_callback
   (int (*callback)(const char *, void *, size_t));
 
 
-#if defined(GC_WIN32_THREADS) && !defined(__CYGWIN32__) && !defined(__CYGWIN__)
+#if defined(GC_WIN32_THREADS) && !defined(__CYGWIN32__) && !defined(__CYGWIN__) \
+	&& !defined(GC_PTHREADS)
 # include <windows.h>
 
   /*

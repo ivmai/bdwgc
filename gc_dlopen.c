@@ -25,7 +25,7 @@
 
 #include "private/gc_priv.h"
 
-# if (defined(GC_PTHREADS) && !defined(GC_DARWIN_THREADS)) \
+# if (defined(GC_PTHREADS) && !defined(GC_DARWIN_THREADS)) && !defined(GC_WIN32_PTHREADS)\
       || defined(GC_SOLARIS_THREADS)
 
 # if defined(dlopen) && !defined(GC_USE_LD_WRAP)

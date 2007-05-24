@@ -446,7 +446,7 @@ void check_marks_int_list(sexpr x)
  */
 #ifdef THREADS
 
-# if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)
+# if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
     DWORD  __stdcall tiny_reverse_test(void * arg)
 # else
     void * tiny_reverse_test(void * arg)
@@ -1385,7 +1385,7 @@ void SetMinimumStack(long minSize)
 }
 # endif
 
-#if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)
+#if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
 
 DWORD __stdcall thr_run_one_test(void *arg)
 {
@@ -1581,7 +1581,6 @@ int main()
     pthread_t th2;
     pthread_attr_t attr;
     int code;
-
 #   ifdef GC_IRIX_THREADS
 	/* Force a larger stack to be preallocated      */
 	/* Since the initial cant always grow later.	*/
@@ -1594,6 +1593,10 @@ int main()
           (void)GC_printf("pthread_default_stacksize_np failed.\n");
 	}
 #   endif	/* GC_HPUX_THREADS */
+#   ifdef PTW32_STATIC_LIB
+	pthread_win32_process_attach_np ();
+	pthread_win32_thread_attach_np ();
+#   endif
     GC_INIT();
 
     pthread_attr_init(&attr);
@@ -1644,6 +1647,10 @@ int main()
     (void)fflush(stdout);
     pthread_attr_destroy(&attr);
     GC_printf("Completed %d collections\n", GC_gc_no);
+#   ifdef PTW32_STATIC_LIB
+	pthread_win32_thread_detach_np ();
+	pthread_win32_process_detach_np ();
+#   endif
     return(0);
 }
 #endif /* GC_PTHREADS */
