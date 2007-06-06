@@ -1,3 +1,12 @@
+2007-06-06  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Romano Paolo Tenca)
+	* win32_threads.c: Separate out DEBUG_WIN32_PTHREADS_STACK.  Ignore
+	FINISHED threads for suspension.  (GC_pthread_join): Add
+	pthread_self() cast.  (GC_pthread_start_inner): Execute cleanup
+	handler when popping it.
+	* include/private/gc_locks.h: Inline THREAD_EQUAL for
+	GC_WIN32_PTHREADS.  Define USE_PTHREAD_LOCKS only if we have
+	pthreads.
+
 2007-05-23  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Romano Paolo Tenca)
 
 	* gc_dlopen.c, thread_local_alloc.c, threadlibs.c, win32_threads.c,

@@ -40,7 +40,7 @@
 #    define UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
 #  endif
 
-#  if !defined(AO_HAVE_test_and_set_acquire)
+#  if !defined(AO_HAVE_test_and_set_acquire) && defined(GC_PTHREADS)
 #    define USE_PTHREAD_LOCKS
 #  endif
 
@@ -89,7 +89,10 @@
 #    else
 #      if defined(GC_WIN32_PTHREADS)
 #	 define NUMERIC_THREAD_ID(id) ((unsigned long)(id.p))
-#	 define THREAD_EQUAL(id1, id2) pthread_equal(id1, id2)
+	 /* Using documented internal details of win32_pthread library. */
+	 /* Faster than pthread_equal(). Should not change with		*/
+	 /* future versions of win32_pthread library.                   */
+#	 define THREAD_EQUAL(id1, id2) ((id1.p == id2.p) && (id1.x == id2.x))
 #        undef NUMERIC_THREAD_ID_UNIQUE
 #      else
 	 /* Generic definitions that always work, but will result in	*/
