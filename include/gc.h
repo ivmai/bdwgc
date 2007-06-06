@@ -52,8 +52,8 @@
   /* Win64 isn't really supported yet, but this is the first step. And	*/
   /* it might cause error messages to show up in more plausible places.	*/
   /* This needs basetsd.h, which is included by windows.h.	 	*/
-  typedef ULONG_PTR GC_word;
-  typedef LONG_PTR GC_word;
+  typedef unsigned long long GC_word;
+  typedef long long GC_signed_word;
 #endif
 
 /* Public read-only variables */
@@ -1003,10 +1003,19 @@ GC_register_has_static_roots_callback
   (int (*callback)(const char *, void *, size_t));
 
 
-#if defined(GC_WIN32_THREADS) && !defined(__CYGWIN32__) && !defined(__CYGWIN__) \
+#if defined(GC_WIN32_THREADS) && !defined(__CYGWIN32__) \
+	&& !defined(__CYGWIN__) \
 	&& !defined(GC_PTHREADS)
+
+#ifdef __cplusplus
+    }  /* Including windows.h in an extern "C" context no longer works. */
+#endif
+
 # include <windows.h>
 
+#ifdef __cplusplus
+    extern "C" {
+#endif
   /*
    * All threads must be created using GC_CreateThread or GC_beginthreadex,
    * or must explicitly call GC_register_my_thread,

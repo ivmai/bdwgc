@@ -137,7 +137,8 @@ struct SEXPR {
 
 typedef struct SEXPR * sexpr;
 
-# define INT_TO_SEXPR(x) ((sexpr)(unsigned long)(x))
+# define INT_TO_SEXPR(x) ((sexpr)(GC_word)(x))
+# define SEXPR_TO_INT(x) ((int)(GC_word)(x))
 
 # undef nil
 # define nil (INT_TO_SEXPR(0))
@@ -153,13 +154,11 @@ int extra_count = 0;        /* Amount of space wasted in cons node */
 # ifdef VERY_SMALL_CONFIG
 #   define cons small_cons
 # else
-sexpr cons (x, y)
-sexpr x;
-sexpr y;
+sexpr cons (sexpr x, sexpr y)
 {
-    register sexpr r;
-    register int *p;
-    register int my_extra = extra_count;
+    sexpr r;
+    int *p;
+    int my_extra = extra_count;
     
     stubborn_count++;
     r = (sexpr) GC_MALLOC_STUBBORN(sizeof(struct SEXPR) + my_extra);
@@ -173,7 +172,7 @@ sexpr y;
 	    (void)GC_printf("Found nonzero at %p - allocator is broken\n", p);
 	    FAIL;
         }
-        *p = (13 << 12) + ((p - (int *)r) & 0xfff);
+        *p = (int)((13 << 12) + ((p - (int *)r) & 0xfff));
     }
 #   ifdef AT_END
 	r = (sexpr)((char *)r + (my_extra & ~7));
@@ -233,11 +232,9 @@ struct GC_ms_entry * fake_gcj_mark_proc(word * addr,
 #endif /* GC_GCJ_SUPPORT */
 
 
-sexpr small_cons (x, y)
-sexpr x;
-sexpr y;
+sexpr small_cons (sexpr x, sexpr y)
 {
-    register sexpr r;
+    sexpr r;
     
     collectable_count++;
     r = (sexpr) GC_MALLOC(sizeof(struct SEXPR));
@@ -250,11 +247,9 @@ sexpr y;
     return(r);
 }
 
-sexpr small_cons_uncollectable (x, y)
-sexpr x;
-sexpr y;
+sexpr small_cons_uncollectable (sexpr x, sexpr y)
 {
-    register sexpr r;
+    sexpr r;
     
     uncollectable_count++;
     r = (sexpr) GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR));
@@ -263,16 +258,14 @@ sexpr y;
         exit(1);
     }
     r -> sexpr_car = x;
-    r -> sexpr_cdr = (sexpr)(~(unsigned long)y);
+    r -> sexpr_cdr = (sexpr)(~(GC_word)y);
     return(r);
 }
 
 #ifdef GC_GCJ_SUPPORT
 
 
-sexpr gcj_cons(x, y)
-sexpr x;
-sexpr y;
+sexpr gcj_cons(sexpr x, sexpr y)
 {
     GC_word * r;
     sexpr result;
@@ -293,8 +286,7 @@ sexpr y;
 #endif
 
 /* Return reverse(x) concatenated with y */
-sexpr reverse1(x, y)
-sexpr x, y;
+sexpr reverse1(sexpr x, sexpr y)
 {
     if (is_nil(x)) {
         return(y);
@@ -303,8 +295,7 @@ sexpr x, y;
     }
 }
 
-sexpr reverse(x)
-sexpr x;
+sexpr reverse(sexpr x)
 {
 #   ifdef TEST_WITH_SYSTEM_MALLOC
       malloc(100000);
@@ -312,8 +303,7 @@ sexpr x;
     return( reverse1(x, nil) );
 }
 
-sexpr ints(low, up)
-int low, up;
+sexpr ints(int low, int up)
 {
     if (low > up) {
 	return(nil);
@@ -324,8 +314,7 @@ int low, up;
 
 #ifdef GC_GCJ_SUPPORT
 /* Return reverse(x) concatenated with y */
-sexpr gcj_reverse1(x, y)
-sexpr x, y;
+sexpr gcj_reverse1(sexpr x, sexpr y)
 {
     if (is_nil(x)) {
         return(y);
@@ -334,14 +323,12 @@ sexpr x, y;
     }
 }
 
-sexpr gcj_reverse(x)
-sexpr x;
+sexpr gcj_reverse(sexpr x)
 {
     return( gcj_reverse1(x, nil) );
 }
 
-sexpr gcj_ints(low, up)
-int low, up;
+sexpr gcj_ints(int low, int up)
 {
     if (low > up) {
 	return(nil);
@@ -353,8 +340,7 @@ int low, up;
 
 /* To check uncollectable allocation we build lists with disguised cdr	*/
 /* pointers, and make sure they don't go away.				*/
-sexpr uncollectable_ints(low, up)
-int low, up;
+sexpr uncollectable_ints(int low, int up)
 {
     if (low > up) {
 	return(nil);
@@ -364,11 +350,9 @@ int low, up;
     }
 }
 
-void check_ints(list, low, up)
-sexpr list;
-int low, up;
+void check_ints(sexpr list, int low, int up)
 {
-    if ((int)(GC_word)(car(car(list))) != low) {
+    if (SEXPR_TO_INT(car(car(list))) != low) {
         (void)GC_printf(
            "List reversal produced incorrect list - collector is broken\n");
         FAIL;
@@ -383,13 +367,11 @@ int low, up;
     }
 }
 
-# define UNCOLLECTABLE_CDR(x) (sexpr)(~(unsigned long)(cdr(x)))
+# define UNCOLLECTABLE_CDR(x) (sexpr)(~(GC_word)(cdr(x)))
 
-void check_uncollectable_ints(list, low, up)
-sexpr list;
-int low, up;
+void check_uncollectable_ints(sexpr list, int low, int up)
 {
-    if ((int)(GC_word)(car(car(list))) != low) {
+    if (SEXPR_TO_INT(car(car(list))) != low) {
         (void)GC_printf(
            "Uncollectable list corrupted - collector is broken\n");
         FAIL;
@@ -410,7 +392,7 @@ void print_int_list(sexpr x)
     if (is_nil(x)) {
         (void)GC_printf("NIL\n");
     } else {
-        (void)GC_printf("(%ld)", (long)(car(car(x))));
+        (void)GC_printf("(%d)", SEXPR_TO_INT(car(car(x))));
         if (!is_nil(cdr(x))) {
             (void)GC_printf(", ");
             (void)print_int_list(cdr(x));
@@ -431,7 +413,7 @@ void check_marks_int_list(sexpr x)
         (void)GC_printf("NIL\n");
     } else {
         if (!GC_is_marked((ptr_t)car(x))) GC_printf("[unm car:%p]", car(x));
-        (void)GC_printf("(%ld)", (long)(car(car(x))));
+        (void)GC_printf("(%d)", SEXPR_TO_INT(car(car(x))));
         if (!is_nil(cdr(x))) {
             (void)GC_printf(", ");
             (void)check_marks_int_list(cdr(x));
@@ -692,8 +674,7 @@ size_t counter = 0;
 
 int live_indicators_count = 0;
 
-tn * mktree(n)
-int n;
+tn * mktree(int n)
 {
     tn * result = (tn *)GC_MALLOC(sizeof(tn));
     
@@ -778,9 +759,7 @@ int n;
     return(result);
 }
 
-void chktree(t,n)
-tn *t;
-int n;
+void chktree(tn *t, int n)
 {
     if (n == 0 && t != 0) {
         (void)GC_printf("Clobbered a leaf - collector is broken\n");
@@ -844,10 +823,9 @@ void * alloc8bytes()
 #   define alloc8bytes() GC_MALLOC_ATOMIC(8)
 #endif
 
-void alloc_small(n)
-int n;
+void alloc_small(int n)
 {
-    register int i;
+    int i;
     
     for (i = 0; i < n; i += 8) {
         atomic_count++;
@@ -874,7 +852,7 @@ int n;
 void tree_test()
 {
     tn * root;
-    register int i;
+    int i;
     
     root = mktree(TREE_HEIGHT);
 #   ifndef VERY_SMALL_CONFIG

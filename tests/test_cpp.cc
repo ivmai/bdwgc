@@ -37,7 +37,11 @@ few minutes to complete.
 #   include "gc_alloc.h"
 #endif
 extern "C" {
-#include "private/gc_priv.h"
+# include "private/gcconfig.h"
+  GC_API void GC_printf(const char *format, ...);
+  /* Use GC private output to reach the same log file.  */
+  /* Don't include gc_priv.h, since that may include Windows system	*/
+  /* header files that don't take kindly to this context.		*/
 }
 #ifdef MSWIN32
 #   include <windows.h>

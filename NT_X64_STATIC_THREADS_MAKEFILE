@@ -2,7 +2,7 @@
 # DLLs are included in the root set under NT, but not under win32S.
 # Use "nmake nodebug=1 all" for optimized versions of library, gctest and editor.
 
-MY_CPU=X86
+MY_CPU=AMD64
 CPU=$(MY_CPU)
 !include <ntwin32.mak>
 
@@ -24,7 +24,10 @@ OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_r
 all: gctest.exe cord\de.exe test_cpp.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(cvarsmt) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -D__STDC__ -DGC_NOT_DLL -DGC_WIN32_THREADS -DTHREAD_LOCAL_ALLOC $*.c /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(cvarsmt) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -D__STDC__ -DGC_NOT_DLL -DGC_WIN32_THREADS -DTHREAD_LOCAL_ALLOC $*.c /Fo$*.obj /wd4107 -D_CRT_SECURE_NO_DEPRECATE
+# Disable "may not be initialized" warnings.  They're too approximate.
+# Disable crt security warnings, since unfortunately they warn about all sorts
+# of safe uses of strncpy.  It would be nice to leave the rest enabled.
 
 .cpp.obj:
 	$(cc) $(cdebug) $(cflags) $(cvarsmt) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -DGC_NOT_DLL $*.CPP -DGC_WIN32_THREADS -DTHREAD_LOCAL_ALLOC /Fo$*.obj
@@ -32,16 +35,13 @@ all: gctest.exe cord\de.exe test_cpp.exe
 $(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc_mark.h include\private\msvc_dbg.h
 
 gc.lib: $(OBJS)
-	lib /MACHINE:i386 /out:gc.lib $(OBJS)
-# The original NT SDK used lib32 instead of lib
+	lib /MACHINE:X64 /out:gc.lib $(OBJS)
 
 gctest.exe: tests\test.obj gc.lib
-#	The following works for win32 debugging.  For win32s debugging use debugtype:coff
-#	and add mapsympe line.
 #  This produces a "GUI" applications that opens no windows and writes to the log file
-#  "gc.log".  This is done to make the result runnable under win32s.
-	$(link) -debug:full -debugtype:cv $(guiflags) -stack:131072 -out:$*.exe tests\test.obj $(guilibs) gc.lib
-#	mapsympe -n -o gctest.sym gctest.exe
+#  "gc.log".  This was done to make the result runnable under win32s and
+#  should be fixed.
+	$(link) -debugtype:cv $(guiflags) -stack:131072 -out:$*.exe tests\test.obj $(guilibs) gc.lib
 
 cord\de_win.rbj: cord\de_win.res
 	cvtres /MACHINE:$(MY_CPU) /OUT:cord\de_win.rbj cord\de_win.res
@@ -53,7 +53,7 @@ cord\de_win.res: cord\de_win.rc cord\de_win.h cord\de_cmds.h
 
 # Cord/de is a real win32 gui application.
 cord\de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\de.obj cord\de_win.obj cord\de_win.rbj gc.lib
-	$(link) -debug:full -debugtype:cv $(guiflags) -stack:16384 -out:cord\de.exe  cord\cordbscs.obj cord\cordxtra.obj cord\de.obj cord\de_win.obj cord\de_win.rbj gc.lib $(guilibs)
+	$(link) -debugtype:cv $(guiflags) -stack:16384 -out:cord\de.exe  cord\cordbscs.obj cord\cordxtra.obj cord\de.obj cord\de_win.obj cord\de_win.rbj gc.lib $(guilibs)
 
 gc_cpp.obj: include\gc_cpp.h include\gc.h
 
@@ -67,7 +67,7 @@ test_cpp.cpp: tests\test_cpp.cc
 # a single numeric argument, which is the number of iterations.
 # The output appears in the file "gc.log".
 test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib
-	$(link) -debug:full -debugtype:cv $(guiflags) -stack:16384 -out:test_cpp.exe test_cpp.obj gc.lib $(guilibs)
+	$(link) -debugtype:cv $(guiflags) -stack:16384 -out:test_cpp.exe test_cpp.obj gc.lib $(guilibs)
 
 AO_SCR_DIR:
 	        tar xvfz $(AO_SRC_DIR).tar.gz;

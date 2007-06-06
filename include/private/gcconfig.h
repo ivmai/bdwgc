@@ -374,8 +374,12 @@
 # else
 #   if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \
         || defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__)
-#     define I386
-#     define MSWIN32	/* or Win32s */
+#     if defined(__LP64__) || defined(_WIN64)
+#	define X86_64
+#     else
+#       define I386
+#     endif
+#     define MSWIN32	/* or Win64 */
 #     define mach_type_known
 #   endif
 #   if defined(_MSC_VER) && defined(_M_IA64)
@@ -988,8 +992,7 @@
 # ifdef I386
 #   define MACH_TYPE "I386"
 #   if defined(__LP64__) || defined(_WIN64)
-#     define CPP_WORDSZ 64
-#     define ALIGNMENT 8
+#     error This should be handled as X86_64
 #   else
 #     define CPP_WORDSZ 32
 #     define ALIGNMENT 4
@@ -1957,6 +1960,20 @@
 #       else
 #	  define HEAP_START DATAEND
 #       endif
+#   endif
+#   ifdef MSWIN32
+#	define OS_TYPE "MSWIN32"
+		/* STACKBOTTOM and DATASTART are handled specially in 	*/
+		/* os_dep.c.						*/
+#       if !defined(__WATCOMC__)
+#	  define MPROTECT_VDB
+	  /* We also avoided doing this in the past with GC_WIN32_THREADS */
+	  /* Hopefully that's fixed.					  */
+#	endif
+#	if _MSC_VER >= 1300  /* .NET, i.e. > VisualStudio 6	*/
+#         define GWW_VDB
+#	endif
+#       define DATAEND  /* not needed */
 #   endif
 # endif
 
