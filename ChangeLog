@@ -1,4 +1,16 @@
+2007-06-06  Hans Boehm <Hans.Boehm@hp.com>
+	
+	* include/gc.h: (GC_word, GC_signed_word): Fix win64 definitions.
+	Don't include windows.h in an extern "C" context.
+	* include/private/gcconfig.h: Fix win64/X86_64 configuration.
+	* tests/test.c: Eliminate more old style function definitions.
+	Cleanup pointer and integer casts for win64.
+	* tests/test_cpp.cc: Don't include gc_priv.h.
+	* NT_STATIC_THREADS_MAKEFILE: Restrict suffixes for VC++ 2005.
+	* NT_X64_STATIC_THREADS_MAKEFILE: New.
+
 2007-06-06  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Romano Paolo Tenca)
+
 	* win32_threads.c: Separate out DEBUG_WIN32_PTHREADS_STACK.  Ignore
 	FINISHED threads for suspension.  (GC_pthread_join): Add
 	pthread_self() cast.  (GC_pthread_start_inner): Execute cleanup
