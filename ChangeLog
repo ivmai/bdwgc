@@ -1,4 +1,8 @@
 2007-06-06  Hans Boehm <Hans.Boehm@hp.com>
+
+	* msvc_dbg.c(GetModuleBase): Replace strcat with strcat_s.
+
+2007-06-06  Hans Boehm <Hans.Boehm@hp.com>
 	
 	* include/gc.h: (GC_word, GC_signed_word): Fix win64 definitions.
 	Don't include windows.h in an extern "C" context.
