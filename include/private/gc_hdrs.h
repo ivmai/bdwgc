@@ -198,9 +198,9 @@ typedef struct bi {
 			    
 /* Is the result a forwarding address to someplace closer to the	*/
 /* beginning of the block or NIL?					*/
-# define IS_FORWARDING_ADDR_OR_NIL(hhdr) ((unsigned long) (hhdr) <= MAX_JUMP)
+# define IS_FORWARDING_ADDR_OR_NIL(hhdr) ((size_t) (hhdr) <= MAX_JUMP)
 
 /* Get an HBLKSIZE aligned address closer to the beginning of the block */
 /* h.  Assumes hhdr == HDR(h) and IS_FORWARDING_ADDR(hhdr).		*/
-# define FORWARDED_ADDR(h, hhdr) ((struct hblk *)(h) - (unsigned long)(hhdr))
+# define FORWARDED_ADDR(h, hhdr) ((struct hblk *)(h) - (size_t)(hhdr))
 # endif /*  GC_HEADERS_H */

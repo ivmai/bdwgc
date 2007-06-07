@@ -75,8 +75,8 @@ void * GC_same_obj(void *p, void *q)
         goto fail;
       }
     } else {
-      int offset;
-      int pdispl = HBLKDISPL(p);
+      size_t offset;
+      size_t pdispl = HBLKDISPL(p);
       
       offset = pdispl % sz;
       if (HBLKPTR(p) != HBLKPTR(q)) goto fail;

@@ -168,7 +168,7 @@ void GC_unpromote_black_lists(void)
 {
     if (!(GC_modws_valid_offsets[p & (sizeof(word)-1)])) return;
     {
-        register int index = PHT_HASH(p);
+        word index = PHT_HASH((word)p);
         
         if (HDR(p) == 0 || get_pht_entry_from_index(GC_old_normal_bl, index)) {
 #   	    ifdef PRINT_BLACK_LIST
@@ -194,7 +194,7 @@ void GC_unpromote_black_lists(void)
   void GC_add_to_black_list_stack(word p)
 #endif
 {
-    register int index = PHT_HASH(p);
+    word index = PHT_HASH((word)p);
         
     if (HDR(p) == 0 || get_pht_entry_from_index(GC_old_stack_bl, index)) {
 #   	ifdef PRINT_BLACK_LIST
@@ -220,8 +220,8 @@ void GC_unpromote_black_lists(void)
  */
 struct hblk * GC_is_black_listed(struct hblk *h, word len)
 {
-    register int index = PHT_HASH((word)h);
-    register word i;
+    word index = PHT_HASH((word)h);
+    word i;
     word nblocks = divHBLKSZ(len);
 
     if (!GC_all_interior_pointers) {
@@ -259,7 +259,7 @@ word GC_number_stack_black_listed(struct hblk *start, struct hblk *endp1)
     word result = 0;
     
     for (h = start; h < endp1; h++) {
-        register int index = PHT_HASH((word)h);
+        word index = PHT_HASH((word)h);
         
         if (get_pht_entry_from_index(GC_old_stack_bl, index)) result++;
     }

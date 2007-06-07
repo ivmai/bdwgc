@@ -206,7 +206,7 @@ volatile GC_bool GC_please_stop = FALSE;
  * If we notice this in the middle of marking.
  */
 
-AO_t GC_attached_thread = 0;
+AO_t GC_attached_thread = FALSE;
 /* Return TRUE if an thread was attached since we last asked or	*/
 /* since GC_attached_thread was explicitly reset.		*/
 GC_bool GC_started_thread_while_stopped(void)
@@ -219,7 +219,7 @@ GC_bool GC_started_thread_while_stopped(void)
     if (result) {
       AO_store(&GC_attached_thread, FALSE);
     }
-    return (result);
+    return ((GC_bool)result);
   } else {
     return FALSE;
   }
@@ -253,7 +253,7 @@ GC_bool GC_started_thread_while_stopped(void)
 /* Unlike the pthreads version, the id field is set by the caller.	*/
 GC_thread GC_new_thread(DWORD id)
 {
-    int hv = ((word)id) % THREAD_TABLE_SZ;
+    word hv = ((word)id) % THREAD_TABLE_SZ;
     GC_thread result;
     /* It may not be safe to allocate when we register the first thread. */
     static struct GC_Thread_Rep first_thread;
@@ -439,7 +439,7 @@ GC_thread GC_lookup_thread_inner(DWORD thread_id) {
       return (GC_thread)(dll_thread_table + i);
     }
   } else {
-    int hv = ((word)thread_id) % THREAD_TABLE_SZ;
+    word hv = ((word)thread_id) % THREAD_TABLE_SZ;
     register GC_thread p = GC_threads[hv];
     
     GC_ASSERT(I_HOLD_LOCK());
@@ -494,7 +494,7 @@ void GC_delete_gc_thread(GC_vthread gc_id)
     /* Cast away volatile qualifier, since we have lock. */
     GC_thread gc_nvid = (GC_thread)gc_id;
     DWORD id = gc_nvid -> id;
-    int hv = ((word)id) % THREAD_TABLE_SZ;
+    word hv = ((word)id) % THREAD_TABLE_SZ;
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
 
@@ -529,7 +529,7 @@ void GC_delete_thread(DWORD id)
       GC_delete_gc_thread(t);
     }
   } else {
-    int hv = ((word)id) % THREAD_TABLE_SZ;
+    word hv = ((word)id) % THREAD_TABLE_SZ;
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
     
@@ -832,6 +832,10 @@ void GC_push_stack_for(GC_thread thread)
 #       if defined(I386)
           PUSH4(Edi,Esi,Ebx,Edx), PUSH2(Ecx,Eax), PUSH1(Ebp);
 	  sp = (ptr_t)context.Esp;
+#	elif defined(X86_64)
+	  PUSH4(Rax,Rcx,Rdx,Rbx); PUSH2(Rbp, Rsi); PUSH1(Rdi);
+	  PUSH4(R8, R9, R10, R11); PUSH4(R12, R13, R14, R15);
+	  sp = (ptr_t)context.Rsp;
 #       elif defined(ARM32)
 	  PUSH4(R0,R1,R2,R3),PUSH4(R4,R5,R6,R7),PUSH4(R8,R9,R10,R11),PUSH1(R12);
 	  sp = (ptr_t)context.Sp;
@@ -876,7 +880,7 @@ void GC_push_stack_for(GC_thread thread)
         GC_push_all_stack(sp, thread->stack_base);
       } else {
         WARN("Thread stack pointer 0x%lx out of range, pushing everything\n",
-	     (unsigned long)sp);
+	     (unsigned long)(size_t)sp);
         GC_push_all_stack(stack_min, thread->stack_base);
       }
     } /* thread looks live */
@@ -986,7 +990,7 @@ void * GC_win32_start_inner(struct GC_stack_base *sb, LPVOID arg)
 #ifndef __GNUC__
     __try {
 #endif /* __GNUC__ */
-	ret = (void *)args->start (args->param);
+	ret = (void *)(size_t)args->start (args->param);
 #ifndef __GNUC__
     } __finally {
 #endif /* __GNUC__ */
@@ -1001,7 +1005,7 @@ void * GC_win32_start_inner(struct GC_stack_base *sb, LPVOID arg)
 
 DWORD WINAPI GC_win32_start(LPVOID arg)
 {
-    return (DWORD)GC_call_with_stack_base(GC_win32_start_inner, arg);
+    return (DWORD)(size_t)GC_call_with_stack_base(GC_win32_start_inner, arg);
 }
 
 GC_API HANDLE WINAPI GC_CreateThread(
@@ -1069,7 +1073,7 @@ uintptr_t GC_beginthreadex(
 	/* Handed off to and deallocated by child thread.	*/
       if (0 == args) {
 	SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-        return -1L;
+        return (uintptr_t)(-1);
       }
 
       /* set up thread arguments */

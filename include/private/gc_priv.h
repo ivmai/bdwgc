@@ -553,7 +553,7 @@ extern GC_warn_proc GC_current_warn_proc;
  
 # define HBLKPTR(objptr) ((struct hblk *)(((word) (objptr)) & ~(HBLKSIZE-1)))
 
-# define HBLKDISPL(objptr) (((word) (objptr)) & (HBLKSIZE-1))
+# define HBLKDISPL(objptr) (((size_t) (objptr)) & (HBLKSIZE-1))
 
 /* Round up byte allocation requests to integral number of words, etc. */
 # define ROUNDED_UP_WORDS(n) \
@@ -908,7 +908,7 @@ struct _GC_arrays {
     word _unmapped_bytes;
 # endif
 
-    unsigned _size_map[MAXOBJBYTES+1];
+    size_t _size_map[MAXOBJBYTES+1];
     	/* Number of words to allocate for a given allocation request in */
     	/* bytes.							 */
 
@@ -1132,7 +1132,7 @@ extern struct obj_kind {
 #   define IS_UNCOLLECTABLE(k) ((k) == UNCOLLECTABLE)
 # endif
 
-extern int GC_n_kinds;
+extern unsigned GC_n_kinds;
 
 GC_API word GC_fo_entries;
 
@@ -1241,7 +1241,7 @@ extern long GC_large_alloc_warn_suppressed;
 #endif /* !USE_MARK_BYTES */
 
 #ifdef MARK_BIT_PER_OBJ
-#  define MARK_BIT_NO(offset, sz) ((offset)/(sz))
+#  define MARK_BIT_NO(offset, sz) (((unsigned)(offset))/(sz))
 	/* Get the mark bit index corresponding to the given byte	*/
 	/* offset and size (in bytes). 				        */
 #  define MARK_BIT_OFFSET(sz) 1
@@ -1250,7 +1250,7 @@ extern long GC_large_alloc_warn_suppressed;
 #  define FINAL_MARK_BIT(sz) ((sz) > MAXOBJBYTES? 1 : HBLK_OBJS(sz))
 	/* Position of final, always set, mark bit.			*/
 #else /* MARK_BIT_PER_GRANULE */
-#  define MARK_BIT_NO(offset, sz) BYTES_TO_GRANULES(offset)
+#  define MARK_BIT_NO(offset, sz) BYTES_TO_GRANULES((unsigned)(offset))
 #  define MARK_BIT_OFFSET(sz) BYTES_TO_GRANULES(sz)
 #  define IF_PER_OBJ(x)
 #  define FINAL_MARK_BIT(sz) \
@@ -1542,7 +1542,7 @@ ptr_t GC_build_fl(struct hblk *h, size_t words, GC_bool clear, ptr_t list);
 				/* called explicitly without GC lock.	*/
 
 struct hblk * GC_allochblk (size_t size_in_bytes, int kind,
-		            unsigned char flags);
+		            unsigned flags);
 				/* Allocate a heap block, inform	*/
 				/* the marker that block is valid	*/
 				/* for objects of indicated size.	*/

@@ -238,7 +238,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
       	   if (wParam == QUIT) {
       	       SendMessage( hwnd, WM_CLOSE, 0, 0L );
       	   } else {
-      	       do_command(wParam);
+      	       do_command((int)wParam);
       	   }
       	   return(0);
       
@@ -323,13 +323,14 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
       	           SetTextColor(dc, GetSysColor(COLOR_WINDOWTEXT));
       	           
       	           TextOut(dc, this_line.left, this_line.top,
-      	           	   plain, len);
-      	           TextOut(dc, this_line.left + len * char_width, this_line.top,
-      	           	   blanks, COLS - len);
+      	           	   plain, (int)len);
+      	           TextOut(dc, this_line.left + (int)len * char_width,
+		   	   this_line.top,
+      	           	   blanks, (int)(COLS - len));
       	           SetBkMode(dc, TRANSPARENT);
       	           SetTextColor(dc, RED);
       	           TextOut(dc, this_line.left, this_line.top,
-      	           	   control, strlen(control));
+      	           	   control, (int)strlen(control));
       	       }
       	   }
       	   EndPaint(hwnd, &ps);

@@ -54,7 +54,7 @@ extern mark_proc GC_mark_procs[MAX_MARK_PROCS];
   	(((word)1 << (WORDSZ - GC_DS_TAG_BITS - GC_LOG_MAX_MARK_PROCS)) - 1)
 
 
-extern word GC_n_mark_procs;
+extern unsigned GC_n_mark_procs;
 
 /* Number of mark stack entries to discard on overflow.	*/
 #define GC_MARK_STACK_DISCARDS (INITIAL_MARK_STACK_SIZE/8)

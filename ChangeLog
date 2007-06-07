@@ -1,5 +1,24 @@
 2007-06-06  Hans Boehm <Hans.Boehm@hp.com>
 
+	* Makefile.am, Makefile.direct: Add NT_X64_STATIC_THREADS_MAKEFILE.
+	* Makefile.in: Regenerate.
+	* NT_X64_STATIC_THREADS_MAKEFILE: Fix warning flags.
+	* allochblk.c, alloc.c, blacklst.c, dbg_malc.c, dyn_load.c,
+	finalize.c, headers.c, mach_dep.c, malloc.c, mark.c, misc.c,
+	obj_map.c, os_dep.c, ptr_chck.c, reclaim.c, typd_mlc.c,
+	win32_threads.c, cord/de_win.c, include/gc_mark.h,
+	include/private/gc_hdrs.h, include/private/gc_pmark.h,
+	include/private/gc_priv.h, tests/test_cpp.cc:
+	Replace old style function declarations.  Clean up integral types.
+	Remove register declarations.  The change in malloc.c and the
+	"int descr" declaration in mark.c are the most likely to have
+	been real bugs outside of win64.
+	* msvc_dbg.c: Disable on win64.
+	* win32_threads.c: Add AMD64 support.
+	* include/gc.h: no backtrace on AMD64 for now.
+
+2007-06-06  Hans Boehm <Hans.Boehm@hp.com>
+
 	* msvc_dbg.c(GetModuleBase): Replace strcat with strcat_s.
 
 2007-06-06  Hans Boehm <Hans.Boehm@hp.com>

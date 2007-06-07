@@ -68,7 +68,7 @@ GC_bool GC_add_map_entry(size_t granules)
       }
     } else {
       for (displ = 0; displ < BYTES_TO_GRANULES(HBLKSIZE); displ++) {
-	new_map[displ] = displ % granules;
+	new_map[displ] = (short)(displ % granules);
       }
     }
     GC_obj_map[granules] = new_map;

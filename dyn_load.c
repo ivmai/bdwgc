@@ -716,7 +716,7 @@ void GC_register_dynamic_libraries()
   void GC_register_dynamic_libraries()
   {
     MEMORY_BASIC_INFORMATION buf;
-    DWORD result;
+    size_t result;
     DWORD protect;
     LPVOID p;
     char * base;
@@ -727,8 +727,8 @@ void GC_register_dynamic_libraries()
 #   endif
     base = limit = p = GC_sysinfo.lpMinimumApplicationAddress;
 #   if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)
-    /* Only the first 32 MB of address space belongs to the current process */
-    while (p < (LPVOID)0x02000000) {
+      /* Only the first 32 MB of address space belongs to the current process */
+      while (p < (LPVOID)0x02000000) {
         result = VirtualQuery(p, &buf, sizeof(buf));
 	if (result == 0) {
 	    /* Page is free; advance to the next possible allocation base */
@@ -737,7 +737,7 @@ void GC_register_dynamic_libraries()
 		 & ~(GC_sysinfo.dwAllocationGranularity-1));
 	} else
 #   else
-    while (p < GC_sysinfo.lpMaximumApplicationAddress) {
+      while (p < GC_sysinfo.lpMaximumApplicationAddress) {
         result = VirtualQuery(p, &buf, sizeof(buf));
 #   endif
 	{

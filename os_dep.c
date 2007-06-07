@@ -1378,7 +1378,7 @@ void GC_register_data_segments(void)
                                     PAGE_READWRITE);
         if (page != NULL) {
           PVOID pages[16];
-          DWORD count = 16;
+          ULONG_PTR count = 16;
           DWORD page_size;
           /* Check that it actually works.  In spite of some 		*/
 	  /* documentation it actually seems to exist on W2K.		*/
@@ -1430,7 +1430,7 @@ void GC_register_data_segments(void)
   ptr_t GC_least_described_address(ptr_t start)
   {  
     MEMORY_BASIC_INFORMATION buf;
-    DWORD result;
+    size_t result;
     LPVOID limit;
     ptr_t p;
     LPVOID q;
@@ -1444,7 +1444,7 @@ void GC_register_data_segments(void)
     	if (result != sizeof(buf) || buf.AllocationBase == 0) break;
     	p = (ptr_t)(buf.AllocationBase);
     }
-    return(p);
+    return p;
   }
 # endif
 
@@ -1480,7 +1480,7 @@ void GC_register_data_segments(void)
   void *GC_get_allocation_base(void *p)
   {
     MEMORY_BASIC_INFORMATION buf;
-    DWORD result = VirtualQuery(p, &buf, sizeof(buf));
+    size_t result = VirtualQuery(p, &buf, sizeof(buf));
     if (result != sizeof(buf)) {
       ABORT("Weird VirtualQuery result");
     }
@@ -1528,7 +1528,7 @@ void GC_register_data_segments(void)
      unsigned i;
      
 #    ifndef REDIRECT_MALLOC
-       static word last_gc_no = -1;
+       static word last_gc_no = (word)(-1);
      
        if (last_gc_no != GC_gc_no) {
 	 GC_add_current_malloc_heap();
@@ -1547,7 +1547,7 @@ void GC_register_data_segments(void)
   void GC_register_root_section(ptr_t static_root)
   {
       MEMORY_BASIC_INFORMATION buf;
-      DWORD result;
+      size_t result;
       DWORD protect;
       LPVOID p;
       char * base;
@@ -2339,7 +2339,7 @@ void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
     BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
 
     for (i = 0; i != GC_n_heap_sects; ++i) {
-      DWORD count;
+      ULONG_PTR count;
 
       do {
         PVOID * pages, * pages_end;
@@ -2374,7 +2374,7 @@ void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
           unsigned j;
           struct hblk * start = (struct hblk *)GC_heap_sects[i].hs_start;
           static struct hblk *last_warned = 0;
-          unsigned nblocks = divHBLKSZ(GC_heap_sects[i].hs_bytes);
+          size_t nblocks = divHBLKSZ(GC_heap_sects[i].hs_bytes);
 
           if ( i != 0 && last_warned != start && warn_count++ < 5) {
             last_warned = start;
@@ -2532,6 +2532,7 @@ GC_bool GC_page_was_ever_dirty(struct hblk *h)
 /* entire object.							*/
 void GC_dirty(ptr_t p)
 {
+    word index = PHT_HASH(p);
     async_set_pht_entry_from_index(GC_dirty_pages, index);
 }
 
@@ -2660,7 +2661,7 @@ GC_bool GC_old_segv_handler_used_si;
 /* correctly.								*/
 #ifdef AO_HAVE_test_and_set_acquire
   static volatile AO_TS_t fault_handler_lock = 0;
-  void async_set_pht_entry_from_index(volatile page_hash_table db, int index) {
+  void async_set_pht_entry_from_index(volatile page_hash_table db, size_t index) {
     while (AO_test_and_set_acquire(&fault_handler_lock) == AO_TS_SET) {}
     /* Could also revert to set_pht_entry_from_index_safe if initial	*/
     /* GC_test_and_set fails.						*/
@@ -2668,8 +2669,9 @@ GC_bool GC_old_segv_handler_used_si;
     AO_CLEAR(&fault_handler_lock);
   }
 #else /* !AO_have_test_and_set_acquire */
-# error No test-and_set operation: Introduces a race.
-  /* THIS IS INCORRECT! The dirty bit vector may be temporarily wrong,	*/
+# error No test_and_set operation: Introduces a race.
+  /* THIS WOULD BE INCORRECT!						*/
+  /* The dirty bit vector may be temporarily wrong,			*/
   /* just before we notice the conflict and correct it. We may end up   */
   /* looking at it while it's wrong.  But this requires contention	*/
   /* exactly when a GC is triggered, which seems far less likely to	*/
@@ -2677,7 +2679,7 @@ GC_bool GC_old_segv_handler_used_si;
   /* leave it this way while we think of something better, or support	*/
   /* GC_test_and_set on the remaining platforms.			*/
   static volatile word currently_updating = 0;
-  void async_set_pht_entry_from_index(volatile page_hash_table db, int index) {
+  void async_set_pht_entry_from_index(volatile page_hash_table db, size_t index) {
     unsigned int update_dummy;
     currently_updating = (word)(&update_dummy);
     set_pht_entry_from_index(db, index);
@@ -2830,7 +2832,7 @@ GC_bool GC_old_segv_handler_used_si;
 	/* and then to have the thread stopping code set the dirty	*/
 	/* flag, if necessary.						*/
         for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
-            register int index = PHT_HASH(h+i);
+            size_t index = PHT_HASH(h+i);
             
             async_set_pht_entry_from_index(GC_dirty_pages, index);
         }
@@ -2873,7 +2875,7 @@ void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
 	                    & ~(GC_page_size-1));
     found_clean = FALSE;
     for (current = h_trunc; current < h_end; ++current) {
-        int index = PHT_HASH(current);
+        size_t index = PHT_HASH(current);
             
         if (!is_ptrfree || current < h || current >= h + nblocks) {
             async_set_pht_entry_from_index(GC_dirty_pages, index);

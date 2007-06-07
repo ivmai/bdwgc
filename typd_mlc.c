@@ -107,7 +107,7 @@ signed_word GC_add_ext_descriptor(GC_bitmap bm, word nbits)
     signed_word result;
     size_t i;
     word last_part;
-    int extra_bits;
+    size_t extra_bits;
     DCL_LOCK_STATE;
 
     LOCK();
@@ -525,7 +525,7 @@ GC_descr GC_make_descriptor(GC_bitmap bm, size_t len)
 {
     signed_word last_set_bit = len - 1;
     GC_descr result;
-    int i;
+    signed_word i;
 #   define HIGH_BIT (((word)1) << (WORDSZ - 1))
     
     if (!GC_explicit_typing_initialized) GC_init_explicit_typing();
@@ -634,7 +634,7 @@ DCL_LOCK_STATE;
    } else {
        op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
        if (op != NULL)
-       lg = BYTES_TO_WORDS(GC_size(op));
+         lg = BYTES_TO_WORDS(GC_size(op));
    }
    if (op != NULL)
        ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;

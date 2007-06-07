@@ -19,6 +19,10 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
 */
+#ifndef _M_AMD64
+
+/* X86_64 is ccurrently missing some meachine-dependent code below. */
+
 #include "private/msvc_dbg.h"
 
 #define WIN32_LEAN_AND_MEAN
@@ -340,3 +344,5 @@ char** backtrace_symbols(void*const* addresses, int count)
 	GetDescriptionFromStack(addresses, count, NULL, symbols, size);
 	return symbols;
 }
+
+#endif /* !_M_AMD64 */

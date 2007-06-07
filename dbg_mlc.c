@@ -302,8 +302,7 @@ ptr_t GC_store_debug_info_inner(ptr_t p, word sz, char *string, word integer)
 /* Check the object with debugging info at ohdr		*/
 /* return NIL if it's OK.  Else return clobbered	*/
 /* address.						*/
-ptr_t GC_check_annotated_obj(ohdr)
-register oh * ohdr;
+ptr_t GC_check_annotated_obj(oh *ohdr)
 {
     register ptr_t body = (ptr_t)(ohdr + 1);
     register word gc_sz = GC_size((ptr_t)ohdr);
@@ -326,17 +325,14 @@ register oh * ohdr;
 
 static GC_describe_type_fn GC_describe_type_fns[MAXOBJKINDS] = {0};
 
-void GC_register_describe_type_fn(kind, fn)
-int kind;
-GC_describe_type_fn fn;
+void GC_register_describe_type_fn(int kind, GC_describe_type_fn fn)
 {
   GC_describe_type_fns[kind] = fn;
 }
 
 /* Print a type description for the object whose client-visible address	*/
 /* is p.								*/
-void GC_print_type(p)
-ptr_t p;
+void GC_print_type(ptr_t p)
 {
     hdr * hhdr = GC_find_header(p);
     char buffer[GC_TYPE_DESCR_LEN + 1];
@@ -377,8 +373,7 @@ ptr_t p;
 
     
 
-void GC_print_obj(p)
-ptr_t p;
+void GC_print_obj(ptr_t p)
 {
     register oh * ohdr = (oh *)GC_base(p);
     
@@ -609,13 +604,11 @@ void * GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
     return GC_debug_malloc(lb, OPT_RA s, i);
 }
 
-void GC_debug_change_stubborn(p)
-void * p;
+void GC_debug_change_stubborn(void *p)
 {
 }
 
-void GC_debug_end_stubborn_change(p)
-void * p;
+void GC_debug_end_stubborn_change(void *p)
 {
 }
 
@@ -862,7 +855,7 @@ void GC_check_heap_block(struct hblk *hbp, word dummy)
 {
     struct hblkhdr * hhdr = HDR(hbp);
     size_t sz = hhdr -> hb_sz;
-    int bit_no;
+    size_t bit_no;
     char *p, *plim;
     
     p = hbp->hb_body;

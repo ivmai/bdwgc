@@ -112,7 +112,7 @@ GC_bool GC_block_nearly_full(hdr *hhdr)
 ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, size_t sz,
 		       ptr_t list, signed_word *count)
 {
-    int bit_no = 0;
+    word bit_no = 0;
     word *p, *q, *plim;
     signed_word n_bytes_found = 0;
     
@@ -160,7 +160,7 @@ ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, size_t sz,
 ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
 			ptr_t list, signed_word *count)
 {
-    int bit_no = 0;
+    word bit_no = 0;
     word *p, *plim;
     signed_word n_bytes_found = 0;
     
@@ -187,7 +187,7 @@ ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
 /*ARGSUSED*/
 void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
 {
-    int bit_no = 0;
+    word bit_no = 0;
     ptr_t p, plim;
     
     GC_ASSERT(sz == hhdr -> hb_sz);
@@ -400,7 +400,7 @@ int GC_n_set_marks(hdr *hhdr)
 void GC_print_block_descr(struct hblk *h, word /* struct PrintStats */ raw_ps)
 {
     hdr * hhdr = HDR(h);
-    unsigned bytes = hhdr -> hb_sz;
+    size_t bytes = hhdr -> hb_sz;
     struct Print_stats *ps;
     unsigned n_marks = GC_n_set_marks(hhdr);
     
@@ -478,7 +478,7 @@ void GC_clear_fl_links(void **flp)
  */
 void GC_start_reclaim(GC_bool report_if_found)
 {
-    int kind;
+    unsigned kind;
     
 #   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
       GC_ASSERT(0 == GC_fl_builder_count);
@@ -566,7 +566,7 @@ void GC_continue_reclaim(size_t sz /* granules */, int kind)
 GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
 {
     word sz;
-    int kind;
+    unsigned kind;
     hdr * hhdr;
     struct hblk * hbp;
     struct obj_kind * ok;

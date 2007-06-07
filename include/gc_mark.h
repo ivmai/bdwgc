@@ -157,18 +157,18 @@ void ** GC_new_free_list(void);
 void ** GC_new_free_list_inner(void);
 
 /* Return a new kind, as specified. */
-int GC_new_kind(void **free_list, GC_word mark_descriptor_template,
+unsigned GC_new_kind(void **free_list, GC_word mark_descriptor_template,
 		int add_size_to_descriptor, int clear_new_objects);
 		/* The last two parameters must be zero or one. */
-int GC_new_kind_inner(void **free_list,
+unsigned GC_new_kind_inner(void **free_list,
 		      GC_word mark_descriptor_template,
 		      int add_size_to_descriptor,
 		      int clear_new_objects);
 
 /* Return a new mark procedure identifier, suitable for use as	*/
 /* the first argument in GC_MAKE_PROC.				*/
-int GC_new_proc(GC_mark_proc);
-int GC_new_proc_inner(GC_mark_proc);
+unsigned GC_new_proc(GC_mark_proc);
+unsigned GC_new_proc_inner(GC_mark_proc);
 
 /* Allocate an object of a given kind.  Note that in multithreaded	*/
 /* contexts, this is usually unsafe for kinds that have the descriptor	*/

@@ -213,7 +213,7 @@ void GC_clear_a_few_frames()
 {
 #   define NWORDS 64
     word frames[NWORDS];
-    register int i;
+    int i;
     
     for (i = 0; i < NWORDS; i++) frames[i] = 0;
 }
@@ -517,7 +517,7 @@ void GC_set_fl_marks(ptr_t q)
    struct hblk * h, * last_h = 0;
    hdr *hhdr;  /* gcc "might be uninitialized" warning is bogus. */
    IF_PER_OBJ(size_t sz;)
-   int bit_no;
+   unsigned bit_no;
 
    for (p = q; p != 0; p = obj_link(p)){
 	h = HBLKPTR(p);
@@ -558,7 +558,7 @@ void GC_clear_fl_marks(ptr_t q)
    struct hblk * h, * last_h = 0;
    hdr *hhdr;
    size_t sz;
-   int bit_no;
+   unsigned bit_no;
 
    for (p = q; p != 0; p = obj_link(p)){
 	h = HBLKPTR(p);
@@ -569,7 +569,7 @@ void GC_clear_fl_marks(ptr_t q)
 	}
 	bit_no = MARK_BIT_NO((ptr_t)p - (ptr_t)h, sz);
 	if (mark_bit_from_hdr(hhdr, bit_no)) {
-	  int n_marks = hhdr -> hb_n_marks - 1;
+	  size_t n_marks = hhdr -> hb_n_marks - 1;
       	  clear_mark_bit_from_hdr(hhdr, bit_no);
 #	  ifdef PARALLEL_MARK
 	    /* Appr. count, don't decrement to zero! */
@@ -617,8 +617,8 @@ void GC_finish_collection()
       /* Mark all objects on the free list.  All objects should be */
       /* marked when we're done.				   */
 	{
-	  register word size;		/* current object size		*/
-	  int kind;
+	  word size;		/* current object size		*/
+	  unsigned kind;
 	  ptr_t q;
 
 	  for (kind = 0; kind < GC_n_kinds; kind++) {
@@ -658,9 +658,9 @@ void GC_finish_collection()
     /* Thus accidentally marking a free list is not a problem;  only     */
     /* objects on the list itself will be marked, and that's fixed here. */
       {
-	register word size;		/* current object size		*/
-	register ptr_t q;	/* pointer to current object	*/
-	int kind;
+	word size;		/* current object size		*/
+	ptr_t q;	/* pointer to current object	*/
+	unsigned kind;
 
 	for (kind = 0; kind < GC_n_kinds; kind++) {
 	  for (size = 1; size <= MAXOBJGRANULES; size++) {
@@ -796,7 +796,7 @@ void GC_add_to_heap(struct hblk *p, size_t bytes)
 # if !defined(NO_DEBUGGING)
 void GC_print_heap_sects(void)
 {
-    register unsigned i;
+    unsigned i;
     
     GC_printf("Total heap size: %lu\n", (unsigned long) GC_heapsize);
     for (i = 0; i < GC_n_heap_sects; i++) {
@@ -806,7 +806,7 @@ void GC_print_heap_sects(void)
         unsigned nbl = 0;
         
     	GC_printf("Section %d from %p to %p ", i,
-    		   start, (unsigned long)(start + len));
+    		   start, start + len);
     	for (h = (struct hblk *)start; h < (struct hblk *)(start + len); h++) {
     	    if (GC_is_black_listed(h, HBLKSIZE)) nbl++;
     	}

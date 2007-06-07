@@ -104,10 +104,10 @@ void GC_grow_table(struct hash_chain_entry ***table,
 {
     register word i;
     register struct hash_chain_entry *p;
-    int log_old_size = *log_size_ptr;
-    register int log_new_size = log_old_size + 1;
+    signed_word log_old_size = *log_size_ptr;
+    signed_word log_new_size = log_old_size + 1;
     word old_size = ((log_old_size == -1)? 0: (1 << log_old_size));
-    register word new_size = 1 << log_new_size;
+    word new_size = (word)1 << log_new_size;
     /* FIXME: Power of 2 size often gets rounded up to one more page. */
     struct hash_chain_entry **new_table = (struct hash_chain_entry **)
     	GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
@@ -123,9 +123,9 @@ void GC_grow_table(struct hash_chain_entry ***table,
     for (i = 0; i < old_size; i++) {
       p = (*table)[i];
       while (p != 0) {
-        register ptr_t real_key = (ptr_t)REVEAL_POINTER(p -> hidden_key);
-        register struct hash_chain_entry *next = p -> next;
-        register int new_hash = HASH3(real_key, new_size, log_new_size);
+        ptr_t real_key = (ptr_t)REVEAL_POINTER(p -> hidden_key);
+        struct hash_chain_entry *next = p -> next;
+        size_t new_hash = HASH3(real_key, new_size, log_new_size);
         
         p -> next = new_table[new_hash];
         new_table[new_hash] = p;
@@ -149,7 +149,7 @@ int GC_register_disappearing_link(void * * link)
 int GC_general_register_disappearing_link(void * * link, void * obj)
 {
     struct disappearing_link *curr_dl;
-    int index;
+    size_t index;
     struct disappearing_link * new_dl;
     DCL_LOCK_STATE;
     
@@ -209,12 +209,12 @@ int GC_general_register_disappearing_link(void * * link, void * obj)
 int GC_unregister_disappearing_link(void * * link)
 {
     struct disappearing_link *curr_dl, *prev_dl;
-    int index;
+    size_t index;
     DCL_LOCK_STATE;
     
     LOCK();
     index = HASH2(link, log_dl_table_size);
-    if (((unsigned long)link & (ALIGNMENT-1))) goto out;
+    if (((word)link & (ALIGNMENT-1))) goto out;
     prev_dl = 0; curr_dl = dl_head[index];
     while (curr_dl != 0) {
         if (curr_dl -> dl_hidden_link == HIDE_POINTER(link)) {
@@ -287,8 +287,7 @@ GC_API void GC_null_finalize_mark_proc(ptr_t p)
 /* behavior.  Objects registered in this way are not finalized		*/
 /* if they are reachable by other finalizable objects, eve if those	*/
 /* other objects specify no ordering.					*/
-GC_API void GC_unreachable_finalize_mark_proc(p)
-ptr_t p;
+GC_API void GC_unreachable_finalize_mark_proc(ptr_t p)
 {
     GC_normal_finalize_mark_proc(p);
 }
@@ -310,7 +309,7 @@ GC_API void GC_register_finalizer_inner(void * obj,
 {
     ptr_t base;
     struct finalizable_object * curr_fo, * prev_fo;
-    int index;
+    size_t index;
     struct finalizable_object *new_fo;
     hdr *hhdr;
     DCL_LOCK_STATE;
@@ -494,7 +493,7 @@ void GC_finalize(void)
     struct disappearing_link * curr_dl, * prev_dl, * next_dl;
     struct finalizable_object * curr_fo, * prev_fo, * next_fo;
     ptr_t real_ptr, real_link;
-    register int i;
+    size_t i;
     int dl_size = (log_dl_table_size == -1 ) ? 0 : (1 << log_dl_table_size);
     int fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
     
@@ -752,6 +751,7 @@ int GC_invoke_finalizers(void)
 #	endif
 	if (count == 0) {
 	    bytes_freed_before = GC_bytes_freed;
+	    /* Don't do this outside, since we need the lock. */
 	}
     	curr_fo = GC_finalize_now;
 #	ifdef THREADS
@@ -773,6 +773,7 @@ int GC_invoke_finalizers(void)
     	    GC_free((void *)curr_fo);
 #	endif
     }
+    /* bytes_freed_before is initialized whenever count != 0 */
     if (count != 0 && bytes_freed_before != GC_bytes_freed) {
         LOCK();
 	GC_finalizer_bytes_freed += (GC_bytes_freed - bytes_freed_before);
