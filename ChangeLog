@@ -1,5 +1,11 @@
 2007-06-06  Hans Boehm <Hans.Boehm@hp.com>
 
+	* doc/README.win64: New file.
+	* doc/doc.am, Makefile.direct: Add README.win64.
+	* Makefile.in: Regenerate.
+
+2007-06-06  Hans Boehm <Hans.Boehm@hp.com>
+
 	* Makefile.am, Makefile.direct: Add NT_X64_STATIC_THREADS_MAKEFILE.
 	* Makefile.in: Regenerate.
 	* NT_X64_STATIC_THREADS_MAKEFILE: Fix warning flags.

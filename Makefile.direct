@@ -368,7 +368,7 @@ DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 	doc/README.autoconf doc/README.macros doc/README.ews4800 \
 	doc/README.DGUX386 doc/README.arm.cross doc/leak.html \
 	doc/scale.html doc/gcinterface.html doc/README.darwin \
-	doc/simple_example.html
+	doc/simple_example.html doc/README.win64
 
 TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 	tests/leak_test.c tests/thread_leak_test.c tests/middle.c
