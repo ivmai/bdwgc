@@ -550,7 +550,7 @@ void GC_cond_register_dynamic_libraries(void)
 void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
 {
     int i;
-    int kind;
+    unsigned kind;
 
     /*
      * Next push static data.  This must happen early on, since it's

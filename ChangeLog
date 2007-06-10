@@ -1,3 +1,8 @@
+2007-06-10  Hans Boehm <Hans.Boehm@hp.com>
+
+	* NT_X64_STATIC_THREADS_MAKEFILE: Replace obsolete -debugtype:cv.
+	* mark_rts.c (GC_push_roots): Fix kind type.
+
 2007-06-06  Hans Boehm <Hans.Boehm@hp.com>
 
 	* doc/README.win64: New file.

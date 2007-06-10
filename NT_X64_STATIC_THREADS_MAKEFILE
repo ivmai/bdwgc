@@ -41,7 +41,7 @@ gctest.exe: tests\test.obj gc.lib
 #  This produces a "GUI" applications that opens no windows and writes to the log file
 #  "gc.log".  This was done to make the result runnable under win32s and
 #  should be fixed.
-	$(link) -debugtype:cv $(guiflags) -stack:131072 -out:$*.exe tests\test.obj $(guilibs) gc.lib
+	$(link) $(ldebug) $(guiflags) -stack:131072 -out:$*.exe tests\test.obj $(guilibs) gc.lib
 
 cord\de_win.rbj: cord\de_win.res
 	cvtres /MACHINE:$(MY_CPU) /OUT:cord\de_win.rbj cord\de_win.res
@@ -53,7 +53,7 @@ cord\de_win.res: cord\de_win.rc cord\de_win.h cord\de_cmds.h
 
 # Cord/de is a real win32 gui application.
 cord\de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\de.obj cord\de_win.obj cord\de_win.rbj gc.lib
-	$(link) -debugtype:cv $(guiflags) -stack:16384 -out:cord\de.exe  cord\cordbscs.obj cord\cordxtra.obj cord\de.obj cord\de_win.obj cord\de_win.rbj gc.lib $(guilibs)
+	$(link) $(ldebug) $(guiflags) -stack:16384 -out:cord\de.exe  cord\cordbscs.obj cord\cordxtra.obj cord\de.obj cord\de_win.obj cord\de_win.rbj gc.lib $(guilibs)
 
 gc_cpp.obj: include\gc_cpp.h include\gc.h
 
@@ -67,7 +67,7 @@ test_cpp.cpp: tests\test_cpp.cc
 # a single numeric argument, which is the number of iterations.
 # The output appears in the file "gc.log".
 test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib
-	$(link) -debugtype:cv $(guiflags) -stack:16384 -out:test_cpp.exe test_cpp.obj gc.lib $(guilibs)
+	$(link) $(ldebug) $(guiflags) -stack:16384 -out:test_cpp.exe test_cpp.obj gc.lib $(guilibs)
 
 AO_SCR_DIR:
 	        tar xvfz $(AO_SRC_DIR).tar.gz;
