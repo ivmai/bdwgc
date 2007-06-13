@@ -1,3 +1,7 @@
+2007-06-12  Hans Boehm <Hans.Boehm@hp.com>
+
+	* aclocal.m4: Regenerate to update date.
+
 2007-06-10  Hans Boehm <Hans.Boehm@hp.com>
 
 	* NT_X64_STATIC_THREADS_MAKEFILE: Replace obsolete -debugtype:cv.
