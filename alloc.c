@@ -166,14 +166,15 @@ static word min_bytes_allocd()
     }
 }
 
-/* Return the number of words allocated, adjusted for explicit storage	*/
+/* Return the number of bytes allocated, adjusted for explicit storage	*/
 /* management, etc..  This number is used in deciding when to trigger	*/
 /* collections.								*/
 word GC_adj_bytes_allocd(void)
 {
     signed_word result;
     signed_word expl_managed =
-    		(long)GC_non_gc_bytes - (long)GC_non_gc_bytes_at_gc;
+    		(signed_word)GC_non_gc_bytes
+		- (signed_word)GC_non_gc_bytes_at_gc;
     
     /* Don't count what was explicitly freed, or newly allocated for	*/
     /* explicit management.  Note that deallocating an explicitly	*/
@@ -801,7 +802,7 @@ void GC_print_heap_sects(void)
     GC_printf("Total heap size: %lu\n", (unsigned long) GC_heapsize);
     for (i = 0; i < GC_n_heap_sects; i++) {
         ptr_t start = GC_heap_sects[i].hs_start;
-        unsigned long len = (unsigned long) GC_heap_sects[i].hs_bytes;
+        size_t len = GC_heap_sects[i].hs_bytes;
         struct hblk *h;
         unsigned nbl = 0;
         

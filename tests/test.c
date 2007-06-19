@@ -1169,7 +1169,7 @@ void run_one_test()
 
 void check_heap_stats()
 {
-    unsigned long max_heap_sz;
+    size_t max_heap_sz;
     int i;
     int still_live;
     int late_finalize_count = 0;

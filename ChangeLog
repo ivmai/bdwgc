@@ -1,3 +1,14 @@
+2007-06-19  Hans Boehm <Hans.Boehm@hp.com>
+
+	* alloc.c (GC_adj_bytes_allocd): Avoid (long) casts, fix comment.
+	(GC_print_heap_sects): Use size_t instead of unsigned long.
+	* thread_local_alloc.c (GC_lookup_thread): Define in the correct
+	context.
+	* win32_threads.c, include/gc_config_macros.h: The last of Romano
+	Paolo Tenca's patch.  Move stdint.h include to gc_config_macros.h.
+	* include/gc_inline.h: Avoid gc_priv.h dependencies.
+	* tests/test.c (check_heap_stats): Replace unsigned long with size_t.
+
 2007-06-12  Hans Boehm <Hans.Boehm@hp.com>
 
 	* aclocal.m4: Regenerate to update date.

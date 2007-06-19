@@ -1,13 +1,6 @@
 #include "private/gc_priv.h"
 
-#if defined(GC_WIN32_THREADS) 
-
-#if defined( _MINGW_VER ) || defined( __MINGW32__ )
-# include <stdint.h>
-	/* We mention uintptr_t.					*/
-	/* Perhaps this should be included in pure msft environments	*/
-	/* as well?							*/
-#endif
+#if defined(GC_WIN32_THREADS)
 
 #include <windows.h>
 
@@ -47,15 +40,18 @@
 # undef pthread_detach
 # undef dlopen 
 
-# define DEBUG_CYGWIN_THREADS 0
-# define DEBUG_WIN32_PTHREADS 0
-# define DEBUG_WIN32_PTHREADS_STACK 0
-
-# if DEBUG_WIN32_PTHREADS_STACK
-    /* It seems that is not safe to call GC_printf() if any threads  */
-    /* are suspended while executing GC_printf().                    */
+# ifdef DEBUG_THREADS
+#   ifdef CYGWIN32
+#     define DEBUG_CYGWIN_THREADS 1
+#     define DEBUG_WIN32_PTHREADS 0
+#   else
+#     define DEBUG_WIN32_PTHREADS 1
+#     define DEBUG_CYGWIN_THREADS 0
+#   endif
+# else
+#   define DEBUG_CYGWIN_THREADS 0
 #   define DEBUG_WIN32_PTHREADS 0
-# endif  
+# endif
 
   void * GC_pthread_start(void * arg);
   void GC_thread_exit_proc(void *arg);
@@ -64,11 +60,23 @@
 
 #else
 
+# ifdef DEBUG_THREADS
+#   define DEBUG_WIN32_THREADS 1
+# else
+#   define DEBUG_WIN32_THREADS 0
+# endif
+
 # undef CreateThread
 # undef ExitThread
 # undef _beginthreadex
-# undef _beginthread
 # undef _endthreadex
+# undef _beginthread
+# ifdef DEBUG_THREADS
+#   define DEBUG_WIN32_THREADS 1
+# else
+#   define DEBUG_WIN32_THREADS 0
+# endif
+
 # include <process.h>  /* For _beginthreadex, _endthreadex */
 
 #endif
@@ -290,6 +298,8 @@ extern LONG WINAPI GC_write_fault_handler(struct _EXCEPTION_POINTERS *exc_info);
   /* may be called repeatedly.						*/
 #endif
 
+GC_bool GC_in_thread_creation = FALSE;  /* Protected by allocation lock. */
+
 /*
  * This may be called from DllMain, and hence operates under unusual
  * constraints.  In particular, it must be lock-free if GC_win32_dll_threads
@@ -356,11 +366,13 @@ static GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
     me = dll_thread_table + i;
   } else /* Not using DllMain */ {
     GC_ASSERT(I_HOLD_LOCK());
+    GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
     me = GC_new_thread(thread_id);
+    GC_in_thread_creation = FALSE;
   }
 # ifdef GC_PTHREADS
-  /* me can be NULL -> segfault */
-  me -> pthread_id = pthread_self();
+    /* me can be NULL -> segfault */
+    me -> pthread_id = pthread_self();
 # endif
 
   if (!DuplicateHandle(GetCurrentProcess(),
@@ -704,7 +716,7 @@ void GC_suspend(GC_thread t)
 }
 
 /* Defined in misc.c */
-#ifndef GC_PTHREADS
+#ifndef CYGWIN32
   extern CRITICAL_SECTION GC_write_cs;
 #endif
 
@@ -717,7 +729,7 @@ void GC_stop_world(void)
   GC_ASSERT(I_HOLD_LOCK());
 
   GC_please_stop = TRUE;
-# ifndef GC_PTHREADS
+# ifndef CYGWIN32
     EnterCriticalSection(&GC_write_cs);
 # endif
   if (GC_win32_dll_threads) {
@@ -747,7 +759,7 @@ void GC_stop_world(void)
 	}
       }
   }
-# ifndef GC_PTHREADS
+# ifndef CYGWIN32
     LeaveCriticalSection(&GC_write_cs);
 # endif    
 }
@@ -869,11 +881,8 @@ void GC_push_stack_for(GC_thread thread)
       stack_min = GC_get_stack_min(thread->stack_base);
 
       if (sp >= stack_min && sp < thread->stack_base) {
-#       if DEBUG_CYGWIN_THREADS
-	  GC_printf("Pushing thread from %p to %p for %d from %d\n",
-		    sp, thread -> stack_base, thread -> id, me);
-#       endif
-#       if DEBUG_WIN32_PTHREADS_STACK
+#       if DEBUG_WIN32_PTHREADS || DEBUG_WIN32_THREADS \
+           || DEBUG_CYGWIN_THREADS
 	  GC_printf("Pushing thread from %p to %p for 0x%x from 0x%x\n",
 		    sp, thread -> stack_base, thread -> id, me);
 #       endif
@@ -924,7 +933,8 @@ void GC_push_all_stacks(void)
     	GC_log_printf("\n");
     }
   }
-  if (!found_me) ABORT("Collecting from unknown thread.");
+  if (!found_me && !GC_in_thread_creation)
+    ABORT("Collecting from unknown thread.");
 }
 
 void GC_get_next_stack(char *start, char **lo, char **hi)
@@ -982,6 +992,10 @@ void * GC_win32_start_inner(struct GC_stack_base *sb, LPVOID arg)
     void * ret;
     thread_args *args = (thread_args *)arg;
 
+#   if DEBUG_WIN32_THREADS
+      GC_printf("thread 0x%x starting...\n", GetCurrentThreadId());
+#   endif
+
     GC_register_my_thread(sb); /* This waits for an in-progress GC. */
 
     /* Clear the thread entry even if we exit with an exception.	*/
@@ -1000,6 +1014,10 @@ void * GC_win32_start_inner(struct GC_stack_base *sb, LPVOID arg)
     }
 #endif /* __GNUC__ */
 
+#   if DEBUG_WIN32_THREADS
+      GC_printf("thread 0x%x returned from start routine.\n",
+		GetCurrentThreadId());
+#   endif
     return ret;
 }
 
@@ -1021,6 +1039,9 @@ GC_API HANDLE WINAPI GC_CreateThread(
     		/* make sure GC is initialized (i.e. main thread is attached,
 		   tls initialized) */
 
+#   if DEBUG_WIN32_THREADS
+      GC_printf("About to create a thread from 0x%x\n", GetCurrentThreadId());
+#   endif
     if (GC_win32_dll_threads) {
       return CreateThread(lpThreadAttributes, dwStackSize, lpStartAddress,
                         lpParameter, dwCreationFlags, lpThreadId);
@@ -1064,6 +1085,9 @@ uintptr_t GC_beginthreadex(
     if (!parallel_initialized) GC_init_parallel();
     		/* make sure GC is initialized (i.e. main thread is attached,
 		   tls initialized) */
+#   if DEBUG_WIN32_THREADS
+      GC_printf("About to create a thread from 0x%x\n", GetCurrentThreadId());
+#   endif
 
     if (GC_win32_dll_threads) {
       return _beginthreadex(security, stack_size, start_address,
@@ -1077,11 +1101,12 @@ uintptr_t GC_beginthreadex(
       }
 
       /* set up thread arguments */
-    	args -> start = start_address;
+    	args -> start = (LPTHREAD_START_ROUTINE)start_address;
     	args -> param = arglist;
 
       GC_need_to_lock = TRUE;
-      thread_h = _beginthreadex(security, stack_size, GC_win32_start,
+      thread_h = _beginthreadex(security, stack_size,
+      		 (unsigned (__stdcall *) (void *))GC_win32_start,
                                 args, initflag, thrdaddr);
       if( thread_h == 0 ) GC_free( args );
       return thread_h;

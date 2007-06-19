@@ -59,10 +59,10 @@
         void *my_entry=*my_fl; \
 	void *next; \
  \
-	while (GC_EXPECT((word)my_entry \
+	while (GC_EXPECT((GC_word)my_entry \
 				<= num_direct + GC_TINY_FREELISTS + 1, 0)) { \
 	    /* Entry contains counter or NULL */ \
-	    if ((word)my_entry - 1 < num_direct) { \
+	    if ((GC_word)my_entry - 1 < num_direct) { \
 		/* Small counter value, not NULL */ \
                 *my_fl = (ptr_t)my_entry + granules + 1; \
                 result = default_expr; \
@@ -79,13 +79,13 @@
 		} \
 	    } \
         } \
-        next = obj_link(my_entry); \
+        next = *(void **)(my_entry); \
         result = (void *)my_entry; \
         *my_fl = next; \
 	init; \
         PREFETCH_FOR_WRITE(next); \
         GC_ASSERT(GC_size(result) >= bytes + EXTRA_BYTES); \
-        GC_ASSERT((kind) == PTRFREE || ((word *)result)[1] == 0); \
+        GC_ASSERT((kind) == PTRFREE || ((GC_word *)result)[1] == 0); \
       out: ; \
    } \
 }

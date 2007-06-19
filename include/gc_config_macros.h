@@ -132,6 +132,12 @@
 # define __GC
 # ifndef _WIN32_WCE
 #   include <stddef.h>
+#   if defined(__MINGW32__)
+#     include <stdint.h>
+      /* We mention uintptr_t.					    */
+      /* Perhaps this should be included in pure msft environments  */
+      /* as well?						    */
+#   endif
 # else /* ! _WIN32_WCE */
 /* Yet more kluges for WinCE */
 #   include <stdlib.h>		/* size_t is defined here */
