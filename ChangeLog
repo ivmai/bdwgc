@@ -1,3 +1,10 @@
+2007-06-23  Hans Boehm <Hans.Boehm@hp.com>
+
+	* alloc.c: Also use GC_check_tls on non-Linux systems.
+	* mallocx.c (GC_reclaim_generic): Remove bogus declaration.
+	* include/private/gc_priv.h (GC_reclaim_generic): Declare correctly
+	with prototype.
+
 2007-06-19  Hans Boehm <Hans.Boehm@hp.com>
 
 	* alloc.c (GC_adj_bytes_allocd): Avoid (long) casts, fix comment.

@@ -585,7 +585,7 @@ void GC_clear_fl_marks(ptr_t q)
    }
 }
 
-#if defined(GC_ASSERTIONS) && defined(GC_LINUX_THREADS)
+#if defined(GC_ASSERTIONS) && defined(THREADS) && defined(THREAD_LOCAL_ALLOC)
 extern void GC_check_tls(void);
 #endif
 
@@ -597,7 +597,7 @@ void GC_finish_collection()
     CLOCK_TYPE finalize_time;
     CLOCK_TYPE done_time;
 	
-#   if defined(GC_ASSERTIONS) && defined(GC_LINUX_THREADS) \
+#   if defined(GC_ASSERTIONS) && defined(THREADS) \
        && defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
 	/* Check that we marked some of our own data.  		*/
         /* FIXME: Add more checks.				*/

@@ -1586,6 +1586,13 @@ void GC_reclaim_or_delete_all(void);
 GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old);
   				/* Reclaim all blocks.  Abort (in a	*/
   				/* consistent state) if f returns TRUE. */
+ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
+			 GC_bool init, ptr_t list, signed_word *count);
+			 	/* Rebuild free list in hbp with 	*/
+				/* header hhdr, with objects of size sz */
+				/* bytes.  Add list to the end of the	*/
+				/* free list.  Add the number of	*/
+				/* reclaimed bytes to *count.		*/
 GC_bool GC_block_empty(hdr * hhdr);
  				/* Block completely unmarked? 	*/
 GC_bool GC_never_stop_func(void);
