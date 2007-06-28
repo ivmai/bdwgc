@@ -3687,7 +3687,7 @@ static void GC_darwin_sigbus(int num, siginfo_t *sip, void *context)
     ABORT("Got more than 8 SIGBUSs in a row!");
   } else {
     GC_sigbus_count++;
-    GC_err_printf("GC: WARNING: Ignoring SIGBUS.\n");
+    WARN("Ignoring SIGBUS.\n", 0);
   }
 }
 #endif /* BROKEN_EXCEPTION_HANDLING */
@@ -3704,8 +3704,8 @@ void GC_dirty_init(void)
     GC_log_printf("Inititalizing mach/darwin mprotect virtual dirty bit "
 		  "implementation\n");
 # ifdef BROKEN_EXCEPTION_HANDLING
-    GC_err_printf("GC: WARNING: Enabling workarounds for various darwin "
-		"exception handling bugs.\n");
+    WARN("Enabling workarounds for various darwin "
+	 "exception handling bugs.\n", 0);
 # endif
   GC_dirty_maintained = TRUE;
   if (GC_page_size % HBLKSIZE != 0) {
@@ -3921,8 +3921,7 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
 	}
 	if(++last_fault_count < 32) {
 	  if(last_fault_count == 1)
-	    GC_err_printf("GC: WARNING: Ignoring KERN_PROTECTION_FAILURE"
-			  "at %p\n", addr);
+	    WARN("Ignoring KERN_PROTECTION_FAILURE at %lx\n", (GC_word)addr);
 	  return KERN_SUCCESS;
 	}
 

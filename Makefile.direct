@@ -312,6 +312,13 @@ HOSTCFLAGS=$(CFLAGS)
 #   stack bounds in the same way as other pthread ports, without trying to
 #   walk the frames onthe stack.  This is recommended only as a fallback
 #   for applications that don't support proper stack unwinding.
+# -DUSE_PROC_FOR_LIBRARIES Causes the Linux collector to treat writable
+#   memory mappings (as reported by /proc) as roots, if it doesn't have
+#   otherinformation about them.  It no longer traverses dynamic loader
+#   data structures to find dynamic library static data.  This may be
+#   required for applications that store pointers in mmapped segments without
+#   informaing the collector.  But it typically performs poorly, especially
+#   since it will scan inactive but cached NPTL thread stacks completely.
 #
 
 CXXFLAGS= $(CFLAGS) 

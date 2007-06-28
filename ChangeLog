@@ -1,3 +1,17 @@
+2007-06-28  Hans Boehm <Hans.Boehm@hp.com>
+
+	* Makefile.am: Use -no-undefined for libgc.
+	* Makefile.in: Regenerate.
+	* Makefile.direct: Document USE_PROC_FOR_LIBRARIES.
+	* dyn_load.c (GC_register_map_entries): Rename prot_buf to prot
+	consistently.
+	* misc.c: Fix some WARN calls.  Move GC_is_initialized setting and
+	GC_thr_init() call.
+	* os_dep.c: Consistently use WARN where appropriate.
+	* thread_local_alloc.c: Revert change to GC_WIN32_THREADS test.  Instead
+	remove inappropriate pthread.h include.
+	* doc/README.linux: Remove some anachronisms.
+
 2007-06-23  Hans Boehm <Hans.Boehm@hp.com>
 
 	* alloc.c: Also use GC_check_tls on non-Linux systems.

@@ -241,7 +241,7 @@ char *GC_get_maps(void);
 
 word GC_register_map_entries(char *maps)
 {
-    char *prot_buf;
+    char *prot;
     char *buf_ptr = maps;
     int count;
     ptr_t start, end;

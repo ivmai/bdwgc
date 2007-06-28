@@ -130,8 +130,7 @@ void GC_destroy_thread_local(GC_tlfs p)
   extern char * GC_lookup_thread(pthread_t id);
 #endif
 
-#if defined(GC_ASSERTIONS) && !defined(GC_WIN32_THREADS)
-# include <pthread.h>
+#if defined(GC_ASSERTIONS) && defined(GC_WIN32_THREADS)
   extern char * GC_lookup_thread(int id);
 #endif
 

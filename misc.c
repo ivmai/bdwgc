@@ -576,7 +576,7 @@ void GC_init_inner()
 	    long addr = strtoul(addr_string, NULL, 16);
 #	  endif
 	  if (addr < 0x1000)
-	      WARN("Unlikely trace address: 0x%lx", (unsigned long)addr);
+	      WARN("Unlikely trace address: 0x%lx\n", (GC_word)addr);
 	  GC_trace_addr = (ptr_t)addr;
 #	endif
       }
@@ -621,7 +621,7 @@ void GC_init_inner()
  	GC_init_win32();
 #   endif
 #   if defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS)
-	WARN("USE_PROC_FOR_LIBRARIES + GC_LINUX_THREADS performs poorly.", 0);
+	WARN("USE_PROC_FOR_LIBRARIES + GC_LINUX_THREADS performs poorly.\n", 0);
 	/* If thread stacks are cached, they tend to be scanned in 	*/
 	/* entirety as part of the root set.  This wil grow them to	*/
 	/* maximum size, and is generally not desirable.		*/
@@ -631,10 +631,6 @@ void GC_init_inner()
 #   endif
 #   if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__)
 	GC_init_netbsd_elf();
-#   endif
-#   if defined(GC_PTHREADS) || defined(GC_SOLARIS_THREADS) \
-       || defined(GC_WIN32_THREADS)
-        GC_thr_init();
 #   endif
 #   if !defined(THREADS) || defined(GC_PTHREADS) || defined(GC_WIN32_THREADS) \
 	|| defined(GC_SOLARIS_THREADS)
@@ -646,7 +642,7 @@ void GC_init_inner()
       } else {
 #       if (defined(LINUX) || defined(HPUX)) && defined(IA64)
 	  if (GC_register_stackbottom == 0) {
-	    WARN("GC_register_stackbottom should be set with GC_stackbottom", 0);
+	    WARN("GC_register_stackbottom should be set with GC_stackbottom\n", 0);
 	    /* The following may fail, since we may rely on	 	*/
 	    /* alignment properties that may not hold with a user set	*/
 	    /* GC_stackbottom.						*/
@@ -737,10 +733,13 @@ void GC_init_inner()
       PCR_IL_Unlock();
       GC_pcr_install();
 #   endif
+    GC_is_initialized = TRUE;
+#   if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
+        GC_thr_init();
+#   endif
     COND_DUMP;
     /* Get black list set up and/or incremental GC started */
       if (!GC_dont_precollect || GC_incremental) GC_gcollect_inner();
-    GC_is_initialized = TRUE;
 #   ifdef STUBBORN_ALLOC
     	GC_stubborn_init();
 #   endif
