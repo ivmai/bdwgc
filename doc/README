@@ -74,7 +74,7 @@ http://www.hpl.hp.com/personal/Hans_Boehm/papers/, among other places.)
   Unlike the collector described in the second reference, this collector
 operates either with the mutator stopped during the entire collection
 (default) or incrementally during allocations.  (The latter is supported
-on only a few machines.)  On the most common platforms, it can be built
+on fewer machines.)  On the most common platforms, it can be built
 with or without thread support.  On a few platforms, it can take advantage
 of a multiprocessor to speed up garbage collection.
 
@@ -120,12 +120,14 @@ from other such accessible objects, or from the registers,
 stack, data, or statically allocated bss segments.  Pointers from
 the stack or registers may point to anywhere inside an object.
 The same is true for heap pointers if the collector is compiled with
- ALL_INTERIOR_POINTERS defined, as is now the default.
+ALL_INTERIOR_POINTERS defined, or GC_all_interior_pointers is otherwise
+set, as is now the default.
 
 Compiling without ALL_INTERIOR_POINTERS may reduce accidental retention
 of garbage objects, by requiring pointers from the heap to to the beginning
 of an object.  But this no longer appears to be a significant
-issue for most programs.
+issue for most programs occupying a small fraction of the possible
+address space.
 
 There are a number of routines which modify the pointer recognition
 algorithm.  GC_register_displacement allows certain interior pointers
@@ -184,25 +186,33 @@ stored on the thread's stack for the duration of their lifetime.
 
 INSTALLATION AND PORTABILITY
 
-  As distributed, the macro SILENT is defined in Makefile.
-In the event of problems, this can be removed to obtain a moderate
-amount of descriptive output for each collection.
+  As distributed, the collector operates silently
+In the event of problems, this can usually be changed by defining the
+GC_PRINT_STATS or GC_PRINT_VERBOSE_STATS environment variables.  This
+will result in a few lines of descriptive output for each collection.
 (The given statistics exhibit a few peculiarities.
 Things don't appear to add up for a variety of reasons, most notably
 fragmentation losses.  These are probably much more significant for the
 contrived program "test.c" than for your application.)
 
-  Note that typing "make test" will automatically build the collector
+  On most Un*x-like platforms, the collector can be built either using a
+GNU autoconf-based build infrastructure (type "configure; make" in the
+simplest case), or with a classic makefile by itself (type
+"cp Makefile.direct Makefile; make").  Here we focus on the latter option.
+On other platforms, typically only the latter option is available, though
+with a different supplied Makefile.)
+
+  Typing "make test" nstead of "make" will automatically build the collector
 and then run setjmp_test and gctest. Setjmp_test will give you information
 about configuring the collector, which is useful primarily if you have
 a machine that's not already supported.  Gctest is a somewhat superficial
 test of collector functionality.  Failure is indicated by a core dump or
 a message to the effect that the collector is broken.  Gctest takes about 
-35 seconds to run on a SPARCstation 2. It may use up to 8 MB of memory.  (The
+a second to two to run on reasonable 2007 vintage desktops.
+It may use up to about 30MB of memory.  (The
 multi-threaded version will use more.  64-bit versions may use more.)
 "Make test" will also, as its last step, attempt to build and test the
-"cord" string library.  This will fail without an ANSI C compiler, but
-the garbage collector itself should still be usable.
+"cord" string library.)
 
   The Makefile will generate a library gc.a which you should link against.
 Typing "make cords" will add the cord library to gc.a.
@@ -378,21 +388,10 @@ See gc_cpp.h for the definition of the interface.  This interface
 tries to approximate the Ellis-Detlefs C++ garbage collection
 proposal without compiler changes.
 
-Cautions:
-1. Arrays allocated without new placement syntax are
-allocated as uncollectable objects.  They are traced by the
-collector, but will not be reclaimed.
-
-2. Failure to use "make c++" in combination with (1) will
-result in arrays allocated using the default new operator.
-This is likely to result in disaster without linker warnings.
-
-3. If your compiler supports an overloaded new[] operator,
-then gc_cpp.cc and gc_cpp.h should be suitably modified.
-
-4. Many current C++ compilers have deficiencies that
-break some of the functionality.  See the comments in gc_cpp.h
-for suggested workarounds.
+  Very often it will also be necessary to use gc_allocator.h and the
+allocator declared there to construct STL data structures.  Otherwise
+subobjects of STL data structures wil be allcoated using a system
+allocator, and objects they refer to may be prematurely collected.
 
 USE AS LEAK DETECTOR:
 
@@ -403,19 +402,14 @@ This will cause the collector to invoke the report_leak
 routine defined near the top of reclaim.c whenever an inaccessible
 object is found that has not been explicitly freed.  Such objects will
 also be automatically reclaimed.
-  Productive use of this facility normally involves redefining report_leak
-to do something more intelligent.  This typically requires annotating
-objects with additional information (e.g. creation time stack trace) that
-identifies their origin.  Such code is typically not very portable, and is
-not included here, except on SPARC machines.
-  If all objects are allocated with GC_DEBUG_MALLOC (see next section),
-then the default version of report_leak will report the source file
-and line number at which the leaked object was allocated.  This may
-sometimes be sufficient.  (On SPARC/SUNOS4 machines, it will also report
-a cryptic stack trace.  This can often be turned into a sympolic stack
-trace by invoking program "foo" with "callprocs foo".  Callprocs is
-a short shell script that invokes adb to expand program counter values
-to symbolic addresses.  It was largely supplied by Scott Schwartz.)
+  If all objects are allocated with GC_DEBUG_MALLOC (see next section), then
+the default version of report_leak will report at least the source file and
+line number at which the leaked object was allocated.  This may sometimes be
+sufficient.  (On a few machines, it will also report a cryptic stack trace.
+If this is not symbolic, it can somethimes be called into a sympolic stack
+trace by invoking program "foo" with "callprocs foo".  Callprocs is a short
+shell script that invokes adb to expand program counter values to symbolic
+addresses.  It was largely supplied by Scott Schwartz.)
   Note that the debugging facilities described in the next section can
 sometimes be slightly LESS effective in leak finding mode, since in
 leak finding mode, GC_debug_free actually results in reuse of the object.
@@ -542,10 +536,12 @@ for suggestions on how to fix your compiler.
   This is not a real-time collector.  In the standard configuration,
 percentage of time required for collection should be constant across
 heap sizes.  But collection pauses will increase for larger heaps.
-(On SPARCstation 2s collection times will be on the order of 300 msecs
-per MB of accessible memory that needs to be scanned.  Your mileage
-may vary.)  The incremental/generational collection facility helps,
-but is portable only if "stubborn" allocation is used.
+They will decrease with the number of processors if parallel marking
+is enabled.
+(On 2007 vintage machines, GC times may be on the order of 5 msecs
+per MB of accessible memory that needs to be scanned and processor.
+Your mileage may vary.)  The incremental/generational collection facility
+may help in some cases.
   Please address bug reports to boehm@acm.org.  If you are
 contemplating a major addition, you might also send mail to ask whether
 it's already been done (or whether we tried and discarded it).

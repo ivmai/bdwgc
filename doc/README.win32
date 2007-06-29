@@ -68,9 +68,15 @@ absence of thread support).
 
 GNU Tools
 ---------
-The collector should be buildable under Cygwin with either the
-old standard Makefile, or with the "configure;make" machinery.
-(For the latter use --enable-threads=posix for thread support.)
+The collector should be buildable under Cygwin with either the old standard
+Makefile, or possibly with the "configure --diable-shared;make" machinery.
+(For the latter use --enable-threads=posix for thread support.) The major issue
+here seems to be that dynamic library support is not currently enabled for
+Cygwin.  (This is probably fixable without a great deal of difficulty by
+reusing the standard WIN32 code.  But it requires some tweaking.)  As a result
+of this, "configure; make; make check" currently does not completely succeed,
+though the static library appears to be OK when used only from the main
+programs, and correspondingly the Makefile.direct self tests succeed.
 
 Mingw32 builds are not regularly tested, and may or may not work.
 The following paragraph is probably obsolete:

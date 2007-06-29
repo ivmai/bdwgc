@@ -28,7 +28,7 @@
  */
 #if (defined(__linux__) || defined(__GLIBC__) || defined(__GNU__)) \
      && !defined(_GNU_SOURCE)
-    /* Can't test LINUX, since this must be define before other includes */
+    /* Can't test LINUX, since this must be defined before other includes */
 #   define _GNU_SOURCE
 #endif
 #if !defined(MACOS) && !defined(_WIN32_WCE)
@@ -64,7 +64,7 @@ static int (*GC_has_static_roots)(const char *, void *, size_t);
     !defined(AIX) && !defined(SCO_ELF) && !defined(DGUX) && \
     !(defined(FREEBSD) && defined(__ELF__)) && \
     !(defined(NETBSD) && defined(__ELF__)) && !defined(HURD) && \
-    !defined(DARWIN)
+    !defined(DARWIN) && !defined(CYGWIN32)
  --> We only know how to find data segments of dynamic libraries for the
  --> above.  Additional SVR4 variants might not be too
  --> hard to add.
@@ -636,7 +636,7 @@ void GC_register_dynamic_libraries()
 
 # endif /* USE_PROC || IRIX5 */
 
-# if defined(MSWIN32) || defined(MSWINCE)
+# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 
 # define WIN32_LEAN_AND_MEAN
 # define NOSERVICE
@@ -772,7 +772,7 @@ void GC_register_dynamic_libraries()
     GC_cond_add_roots(base, limit);
   }
 
-#endif /* MSWIN32 || MSWINCE */
+#endif /* MSWIN32 || MSWINCE || CYGWIN32 */
   
 #if defined(ALPHA) && defined(OSF1)
 

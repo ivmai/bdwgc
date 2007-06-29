@@ -1,5 +1,11 @@
 2007-06-28  Hans Boehm <Hans.Boehm@hp.com>
 
+	* doc/README.win32, doc/README, README.QUICK: Fix some of the worst
+	anachronisms.
+	* dyn_load.c: Partially support cygwin, but don't enable it yet.
+
+2007-06-28  Hans Boehm <Hans.Boehm@hp.com>
+
 	* Makefile.am: Use -no-undefined for libgc.
 	* Makefile.in: Regenerate.
 	* Makefile.direct: Document USE_PROC_FOR_LIBRARIES.
