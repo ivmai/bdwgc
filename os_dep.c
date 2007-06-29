@@ -1910,6 +1910,10 @@ SYSTEM_INFO GC_sysinfo;
 
 word GC_n_heap_bases = 0;
 
+word GC_mem_top_down = 0;  /* Change to MEM_TOP_DOWN  for better 64-bit */
+			   /* testing.  Otherwise all addresses tend to */
+			   /* end up in first 4GB, hiding bugs.		*/
+
 ptr_t GC_win32_get_mem(word bytes)
 {
     ptr_t result;
@@ -1938,7 +1942,8 @@ ptr_t GC_win32_get_mem(word bytes)
 #                                     ifdef GWW_VDB
                                         GetWriteWatch_alloc_flag |
 #                                     endif
-    				      MEM_COMMIT | MEM_RESERVE,
+    				      MEM_COMMIT | MEM_RESERVE
+				      | GC_mem_top_down,
     				      PAGE_EXECUTE_READWRITE);
     }
     if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");

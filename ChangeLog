@@ -1,3 +1,8 @@
+2007-06-29  Hans Boehm <Hans.Boehm@hp.com>
+
+	* finalize.c (GC_finalize): Change dl_size and fo_size to size_t.
+	* os_dep.c (GC_win32_get_mem): Add GC_mem_top_down option.
+
 2007-06-28  Hans Boehm <Hans.Boehm@hp.com>
 
 	* doc/README.win32, doc/README, README.QUICK: Fix some of the worst

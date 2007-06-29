@@ -494,8 +494,8 @@ void GC_finalize(void)
     struct finalizable_object * curr_fo, * prev_fo, * next_fo;
     ptr_t real_ptr, real_link;
     size_t i;
-    int dl_size = (log_dl_table_size == -1 ) ? 0 : (1 << log_dl_table_size);
-    int fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
+    size_t dl_size = (log_dl_table_size == -1 ) ? 0 : (1 << log_dl_table_size);
+    size_t fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
     
   /* Make disappearing links disappear */
     for (i = 0; i < dl_size; i++) {
