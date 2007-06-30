@@ -1,5 +1,10 @@
 2007-06-29  Hans Boehm <Hans.Boehm@hp.com>
 
+	* backgraph.c (per_object_func): Make argument types consistent.
+	(GC_traverse_back_graph): Mark GC_deepest_obj.
+	
+2007-06-29  Hans Boehm <Hans.Boehm@hp.com>
+
 	* finalize.c (GC_finalize): Change dl_size and fo_size to size_t.
 	* os_dep.c (GC_win32_get_mem): Add GC_mem_top_down option.
 
