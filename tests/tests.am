@@ -86,3 +86,15 @@ else
 test_cpp_LDADD = libgccpp.la $(test_ldadd)
 endif
 endif
+
+if ENABLE_DISCLAIM
+TESTS += disclaim_test
+check_PROGRAMS += disclaim_test
+disclaim_test_SOURCES = tests/disclaim_test.c
+disclaim_test_LDADD = $(test_ldadd)
+
+TESTS += disclaim_bench
+check_PROGRAMS += disclaim_bench
+disclaim_bench_SOURCES = tests/disclaim_bench.c
+disclaim_bench_LDADD = $(test_ldadd)
+endif

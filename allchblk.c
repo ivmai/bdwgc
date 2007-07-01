@@ -224,6 +224,12 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
 #   ifndef MARK_BIT_PER_OBJ
       size_t granules;
 #   endif
+#   ifdef ENABLE_DISCLAIM
+      if (GC_obj_kinds[kind].ok_disclaim_proc)
+        flags |= HAS_DISCLAIM;
+      if (GC_obj_kinds[kind].ok_mark_unconditionally)
+        flags |= MARK_UNCONDITIONALLY;
+#   endif
 
     /* Set size, kind and mark proc fields */
       hhdr -> hb_sz = byte_sz;
