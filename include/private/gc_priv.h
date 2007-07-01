@@ -805,6 +805,14 @@ struct hblkhdr {
                                 /* before it can be reallocated.        */
                                 /* Only set with USE_MUNMAP.            */
 #       define FREE_BLK 4       /* Block is free, i.e. not in use.      */
+#       ifdef ENABLE_DISCLAIM
+#           define HAS_DISCLAIM 8
+                                    /* This kind has a callback on reclaim. */
+#           define MARK_UNCONDITIONALLY 16
+                                /* Mark from all objects, marked or     */
+                                /* not. Used to mark objects needed by  */
+                                /* reclaim notifier.                    */
+#       endif
     unsigned short hb_last_reclaimed;
                                 /* Value of GC_gc_no when block was     */
                                 /* last allocated or swept. May wrap.   */
@@ -1215,6 +1223,18 @@ GC_EXTERN struct obj_kind {
                         /* template to obtain descriptor.  Otherwise    */
                         /* template is used as is.                      */
    GC_bool ok_init;   /* Clear objects before putting them on the free list. */
+#  ifdef ENABLE_DISCLAIM
+     GC_bool ok_mark_unconditionally;
+                        /* Mark from all, including unmarked, objects   */
+                        /* in block.  Used to protect objects reachable */
+                        /* from reclaim notifiers.                      */
+     int (*ok_disclaim_proc)(void *obj, void *cd);
+     void *ok_disclaim_cd;
+                        /* The disclaim procedure is called before obj  */
+                        /* is reclaimed, but must also tolerate being   */
+                        /* called with object from freelist.  Non-zero  */
+                        /* exit prevents object from being reclaimed.   */
+#  endif
 } GC_obj_kinds[MAXOBJKINDS];
 
 #define beginGC_obj_kinds ((ptr_t)(&GC_obj_kinds))

@@ -1762,6 +1762,36 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     }
 }
 
+#ifdef MARK_UNCONDITIONALLY
+/* Mark all objects which have not been reclaimed according to the convension
+ * that the first word is odd for live objects.  This is used optionally to
+ * guard the contents of objects passed to reclaim notifiers. */
+void GC_push_unconditionally(struct hblk *h, hdr *hhdr)
+{
+    int sz = hhdr -> hb_sz;
+    int descr = hhdr -> hb_descr;
+    ptr_t p;
+    ptr_t lim;
+    mse * GC_mark_stack_top_reg;
+    mse * mark_stack_limit = GC_mark_stack_limit;
+
+    /* Shortcut */
+        if ((0 | GC_DS_LENGTH) == descr) return;
+    GC_n_rescuing_pages++;
+    GC_objects_are_marked = TRUE;
+    if (sz > MAXOBJBYTES)
+        lim = h -> hb_body;
+    else
+        lim = (h + 1)->hb_body - sz;
+
+    GC_mark_stack_top_reg = GC_mark_stack_top;
+    for (p = h -> hb_body; p <= lim; p += sz)
+        if ((*(GC_word *)p & 0x3) != 0)
+            PUSH_OBJ(p, hhdr, GC_mark_stack_top_reg, mark_stack_limit);
+    GC_mark_stack_top = GC_mark_stack_top_reg;
+}
+#endif
+
 #ifndef GC_DISABLE_INCREMENTAL
   /* Test whether any page in the given block is dirty.   */
   STATIC GC_bool GC_block_was_dirty(struct hblk *h, hdr *hhdr)
@@ -1842,10 +1872,18 @@ STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h)
           if (h == 0) return(0);
           hhdr = GC_find_header((ptr_t)h);
         }
-        if (hhdr -> hb_obj_kind == UNCOLLECTABLE) break;
+        if (hhdr -> hb_obj_kind == UNCOLLECTABLE) {
+            GC_push_marked(h, hhdr);
+            break;
+        }
+#       ifdef MARK_UNCONDITIONALLY
+            if (hhdr -> hb_flags & MARK_UNCONDITIONALLY) {
+                GC_push_unconditionally(h, hhdr);
+                break;
+            }
+#       endif
         h += OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
         hhdr = HDR(h);
     }
-    GC_push_marked(h, hhdr);
     return(h + OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz));
 }
