@@ -72,6 +72,10 @@ if WIN32_THREADS
 libgc_la_SOURCES += win32_threads.c
 endif
 
+if ENABLE_DISCLAIM
+libgc_la_SOURCES += disclaim.c
+endif
+
 if USE_INTERNAL_LIBATOMIC_OPS
 nodist_libgc_la_SOURCES = libatomic_ops/src/atomic_ops.c
 endif

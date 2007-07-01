@@ -88,6 +88,9 @@ typedef struct thread_local_freelists {
 # define DIRECT_GRANULES (HBLKSIZE/GRANULE_BYTES)
         /* Don't use local free lists for up to this much       */
         /* allocation.                                          */
+# ifdef ENABLE_DISCLAIM
+    void * finalized_freelists[TINY_FREELISTS];
+# endif
 } *GC_tlfs;
 
 #if defined(USE_PTHREAD_SPECIFIC)

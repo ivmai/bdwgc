@@ -15,6 +15,7 @@
  */
 
 #include "private/gc_priv.h"
+#include "gc_disclaim.h"
 
 #include <stdio.h>
 
@@ -117,6 +118,11 @@ GC_INNER void GC_print_all_errors(void)
 /* objects.  This does not require the block to be in physical memory.  */
 GC_INNER GC_bool GC_block_empty(hdr *hhdr)
 {
+    /* XXX: Only if reclaim notifiers have not been run. */
+#   ifdef ENABLE_DISCLAIM
+        if (hhdr -> hb_flags & HAS_DISCLAIM)
+            return FALSE;
+#   endif
     return (hhdr -> hb_n_marks == 0);
 }
 
@@ -206,6 +212,56 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
     return(list);
 }
 
+#ifdef ENABLE_DISCLAIM
+/* Call reclaim notifier for block's kind on each unmarked object in    */
+/* block, all within a pair of corresponding enter/leave callbacks.     */
+ptr_t GC_disclaim_and_reclaim(struct hblk *hbp, hdr *hhdr, size_t sz,
+                              ptr_t list, signed_word *count)
+{
+    register int bit_no = 0;
+    register word *p, *q, *plim;
+    signed_word n_bytes_found = 0;
+    struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
+    int (*proc)(void *, void *) = ok -> ok_disclaim_proc;
+    void *cd = ok -> ok_disclaim_cd;
+
+    GC_ASSERT(sz == hhdr -> hb_sz);
+    p = (word *)(hbp -> hb_body);
+    plim = (word *)((ptr_t)p + HBLKSIZE - sz);
+
+    while (p <= plim) {
+        if (mark_bit_from_hdr(hhdr, bit_no) || (*proc)(p, cd))
+            p = (word *)((ptr_t)p + sz);
+        else {
+                n_bytes_found += sz;
+                /* object is available - put on list */
+                    obj_link(p) = list;
+                    list = ((ptr_t)p);
+                /* Clear object, advance p to next object in the process */
+                    q = (word *)((ptr_t)p + sz);
+#                   ifdef USE_MARK_BYTES
+                      GC_ASSERT(!(sz & 1)
+                                && !((word)p & (2 * sizeof(word) - 1)));
+                      p[1] = 0;
+                      p += 2;
+                      while (p < q) {
+                        CLEAR_DOUBLE(p);
+                        p += 2;
+                      }
+#                   else
+                      p++; /* Skip link field */
+                      while (p < q) {
+                        *p++ = 0;
+                      }
+#                   endif
+        }
+        bit_no += MARK_BIT_OFFSET(sz);
+    }
+    *count += n_bytes_found;
+    return list;
+}
+#endif /* ENABLE_DISCLAIM */
+
 /* Don't really reclaim objects, just check for unmarked ones: */
 STATIC void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
 {
@@ -237,6 +293,11 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
     GC_ASSERT(GC_find_header((ptr_t)hbp) == hhdr);
 #   ifndef GC_DISABLE_INCREMENTAL
       GC_remove_protection(hbp, 1, (hhdr)->hb_descr == 0 /* Pointer-free? */);
+#   endif
+#   ifdef ENABLE_DISCLAIM
+    if (hhdr -> hb_flags & HAS_DISCLAIM)
+      result = GC_disclaim_and_reclaim(hbp, hhdr, sz, list, count);
+    else
 #   endif
     if (init || GC_debugging_started) {
       result = GC_reclaim_clear(hbp, hhdr, sz, list, count);
@@ -293,6 +354,17 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
               GC_add_leaked((ptr_t)hbp);
             } else {
               size_t blocks = OBJ_SZ_TO_BLOCKS(sz);
+#             ifdef ENABLE_DISCLAIM
+                if (EXPECT(hhdr->hb_flags & HAS_DISCLAIM, 0)) {
+                  struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
+                  int resurrect;
+                  resurrect = (*ok->ok_disclaim_proc)(hbp, ok->ok_disclaim_cd);
+                  if (resurrect) {
+                    set_mark_bit_from_hdr(hhdr, 0);
+                    /* excuse me, */ goto in_use;
+                  }
+                }
+#             endif
               if (blocks > 1) {
                 GC_large_allocd_bytes -= blocks * HBLKSIZE;
               }
@@ -300,6 +372,7 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
               GC_freehblk(hbp);
             }
         } else {
+          in_use:
             if (hhdr -> hb_descr != 0) {
               GC_composite_in_use += sz;
             } else {
