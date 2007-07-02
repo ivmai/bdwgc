@@ -1,5 +1,10 @@
 2007-07-02  Hans Boehm <Hans.Boehm@hp.com>
 	
+	* version.h, configure.ac, doc/README: Change to version 7.1alpha1.
+	* configure: Regenerate.
+
+2007-07-02  Hans Boehm <Hans.Boehm@hp.com>
+	
 	* version.h, configure.ac, doc/README: Change to version 7.0.
 	* configure: Regenerate.
 
