@@ -1,3 +1,8 @@
+2007-07-02  Hans Boehm <Hans.Boehm@hp.com>
+
+	* mach_dep.c (GC_with_callee_saves_pushed): Don't use getcontext()
+	on ARM/Linux.  Check getcontext() return value.
+
 2007-06-29  Hans Boehm <Hans.Boehm@hp.com>
 
 	* backgraph.c (per_object_func): Make argument types consistent.
