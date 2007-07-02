@@ -1,5 +1,13 @@
 2007-07-02  Hans Boehm <Hans.Boehm@hp.com>
 
+	* include/gc_config_macros.h: Also check for IA64 when setting
+	GC_HPUX_THREADS.
+	* mallocx.c: Change my_bytes_allocd to signed_word.
+	* include/gc_pthread_redirects.h: Remove obsolete Solaris threads
+	(as opposed to pthreads) support.
+
+2007-07-02  Hans Boehm <Hans.Boehm@hp.com>
+
 	* mach_dep.c (GC_with_callee_saves_pushed): Don't use getcontext()
 	on ARM/Linux.  Check getcontext() return value.
 

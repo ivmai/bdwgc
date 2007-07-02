@@ -80,7 +80,8 @@
 #   define GC_PTHREADS
 # endif
 # if !defined(__linux__) && (defined(_PA_RISC1_1) || defined(_PA_RISC2_0) \
-                         || defined(hppa) || defined(__HPPA))
+                         || defined(hppa) || defined(__HPPA)) \
+			 || (defined(__ia64) && defined(_HPUX_SOURCE))
 #   define GC_HPUX_THREADS
 #   define GC_PTHREADS
 # endif

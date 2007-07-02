@@ -272,7 +272,7 @@ void *p;
 void **opp;
 size_t lw;	/* Length in words.	*/
 size_t lg;	/* Length in granules.	*/
-word my_bytes_allocd = 0;
+signed_word my_bytes_allocd = 0;
 struct obj_kind * ok = &(GC_obj_kinds[k]);
 DCL_LOCK_STATE;
 
