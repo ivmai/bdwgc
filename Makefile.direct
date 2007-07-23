@@ -183,7 +183,8 @@ HOSTCFLAGS=$(CFLAGS)
 # -DUSE_MUNMAP causes memory to be returned to the OS under the right
 #   circumstances.  This currently disables VM-based incremental collection.
 #   This is currently experimental, and works only under some Unix,
-#   Linux and Windows versions.
+#   Linux and Windows versions.  Requires -DUSE_MMAP, even under Windows,
+#   where USE_MMAP doesn't do anything.
 # -DMMAP_STACKS (for Solaris threads) Use mmap from /dev/zero rather than
 #   GC_scratch_alloc() to get stack memory.
 # -DPRINT_BLACK_LIST Whenever a black list entry is added, i.e. whenever

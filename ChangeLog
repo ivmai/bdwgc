@@ -1,3 +1,20 @@
+2007-07-23  Hans Boehm <Hans.Boehm@hp.com>
+
+	* alloc.c (GC_stopped_mark): Call GC_add_current_malloc_heap()
+	while world is still running.
+	* os_dep.c (GC_is_heap_base): Don't call GC_add_current_malloc_heap()
+	with world stopped.
+	* include/gc.h (GC_INIT for cygwin): Always call GC_add_roots.
+	* misc.c (GC_init/GC_init_inner): Perform all work in
+	GC_init_inner.
+	* Makefile.direct: Expand -DUSE_MUNMAP comment.
+
+2007-07-23  Hans Boehm <Hans.Boehm@hp.com> (really Jim Marshall)
+
+	* include/gc.h: Define uintptr_t explicitly for VC++6.
+	* msvc_dbg.c (GetModuleBase): Revert to strcat if strcat_s doesn't
+	exist.
+
 2007-07-02  Hans Boehm <Hans.Boehm@hp.com>
 	
 	* version.h, configure.ac, doc/README: Change to version 7.1alpha1.

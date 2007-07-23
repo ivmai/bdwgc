@@ -405,46 +405,12 @@ GC_bool GC_is_initialized = FALSE;
   extern void GC_init_parallel(void);
 # endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
 
+/* FIXME: The GC_init/GC_init_inner distinction should go away. */
 void GC_init(void)
 {
-    DCL_LOCK_STATE;
-    
-#if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
-    if (!GC_is_initialized) {
-      BOOL (WINAPI *pfn) (LPCRITICAL_SECTION, DWORD) = NULL;
-      HMODULE hK32 = GetModuleHandleA("kernel32.dll");
-      if (hK32)
-	  pfn = (BOOL (WINAPI *) (LPCRITICAL_SECTION, DWORD))
-		GetProcAddress (hK32,
-				"InitializeCriticalSectionAndSpinCount");
-      if (pfn)
-          pfn(&GC_allocate_ml, 4000);
-      else
-	  InitializeCriticalSection (&GC_allocate_ml);
-    }
-#endif /* MSWIN32 */
-
-    LOCK();
+    /* LOCK(); -- no longer does anything this early. */
     GC_init_inner();
-    UNLOCK();
-
-#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
-	/* Make sure marker threads and started and thread local */
-	/* allocation is initialized, in case we didn't get 	 */
-	/* called from GC_init_parallel();			 */
-        {
-	  GC_init_parallel();
-	}
-#   endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
-
-#   if defined(DYNAMIC_LOADING) && defined(DARWIN)
-    {
-        /* This must be called WITHOUT the allocation lock held
-        and before any threads are created */
-        extern void GC_init_dyld();
-        GC_init_dyld();
-    }
-#   endif
+    /* UNLOCK(); */
 }
 
 #if defined(MSWIN32) || defined(MSWINCE)
@@ -510,6 +476,28 @@ void GC_init_inner()
     word initial_heap_sz = (word)MINHINCR;
     
     if (GC_is_initialized) return;
+
+    /* Note that although we are nominally called with the */
+    /* allocation lock held, the allocation lock is now	   */
+    /* only really acquired once a second thread is forked.*/
+    /* And the initialization code needs to run before     */
+    /* then.  Thus we really don't hold any locks, and can */
+    /* in fact safely initialize them here.		   */
+    GC_ASSERT(!GC_need_to_lock);
+#   if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
+      if (!GC_is_initialized) {
+        BOOL (WINAPI *pfn) (LPCRITICAL_SECTION, DWORD) = NULL;
+        HMODULE hK32 = GetModuleHandleA("kernel32.dll");
+        if (hK32)
+  	  pfn = (BOOL (WINAPI *) (LPCRITICAL_SECTION, DWORD))
+  		GetProcAddress (hK32,
+  				"InitializeCriticalSectionAndSpinCount");
+        if (pfn)
+            pfn(&GC_allocate_ml, 4000);
+        else
+  	  InitializeCriticalSection (&GC_allocate_ml);
+      }
+#endif /* MSWIN32 */
 #   if defined(MSWIN32) || defined(MSWINCE)
       InitializeCriticalSection(&GC_write_cs);
 #   endif
@@ -764,6 +752,26 @@ void GC_init_inner()
 #		  endif
                   GC_register_finalizer_no_order);
       }
+#   endif
+
+    /* The rest of this again assumes we don't really hold	*/
+    /* the allocation lock.					*/
+#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+	/* Make sure marker threads and started and thread local */
+	/* allocation is initialized, in case we didn't get 	 */
+	/* called from GC_init_parallel();			 */
+        {
+	  GC_init_parallel();
+	}
+#   endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
+
+#   if defined(DYNAMIC_LOADING) && defined(DARWIN)
+    {
+        /* This must be called WITHOUT the allocation lock held
+        and before any threads are created */
+        extern void GC_init_dyld();
+        GC_init_dyld();
+    }
 #   endif
 }
 

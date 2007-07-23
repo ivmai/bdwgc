@@ -1528,12 +1528,6 @@ void GC_register_data_segments(void)
      unsigned i;
      
 #    ifndef REDIRECT_MALLOC
-       static word last_gc_no = (word)(-1);
-     
-       if (last_gc_no != GC_gc_no) {
-	 GC_add_current_malloc_heap();
-	 last_gc_no = GC_gc_no;
-       }
        if (GC_root_size > GC_max_root_size) GC_max_root_size = GC_root_size;
        if (GC_is_malloc_heap_base(p)) return TRUE;
 #    endif

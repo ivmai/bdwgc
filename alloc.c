@@ -448,6 +448,9 @@ GC_bool GC_stopped_mark(GC_stop_func stop_func)
     if (GC_print_stats)
 	GET_TIME(start_time);
 
+#   if !defined(REDIRECT_MALLOC) && (defined(MSWIN32) || defined(MSWINCE))
+        GC_add_current_malloc_heap();
+#   endif
 #   if defined(REGISTER_LIBRARIES_EARLY)
         GC_cond_register_dynamic_libraries();
 #   endif

@@ -1037,6 +1037,9 @@ GC_register_has_static_roots_callback
       DWORD dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress,
       LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId );
 
+#  if defined(_MSC_VER) && _MSC_VER >= 1200 && !defined(_UINTPTR_T_DEFINED)
+     typedef unsigned long uintptr_t;
+#  endif
 
    GC_API uintptr_t GC_beginthreadex(
      void *security, unsigned stack_size,
@@ -1097,13 +1100,9 @@ GC_API void GC_use_DllMain(void);
 #     define GC_MIN(x,y) ((x) < (y) ? (x) : (y))
 #     define GC_DATASTART ((void *) GC_MIN(_data_start__, _bss_start__))
 #     define GC_DATAEND	 ((void *) GC_MAX(_data_end__, _bss_end__))
-#     if defined(GC_DLL)
-#       define GC_INIT() { GC_add_roots(GC_DATASTART, GC_DATAEND); \
+#     define GC_INIT() { GC_add_roots(GC_DATASTART, GC_DATAEND); \
 			   GC_gcollect(); /* For blacklisting. */}
-#     else
-	/* Main program init not required  */
-#       define GC_INIT() { GC_init(); }
-#     endif
+	/* Required at least if GC is in dll.  And doesn't hurt. */
 #   endif
 #   if defined(_AIX)
       extern int _data[], _end[];

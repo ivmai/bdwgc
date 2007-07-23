@@ -77,7 +77,12 @@ static ULONG_ADDR CALLBACK GetModuleBase(HANDLE hProcess, ULONG_ADDR dwAddress)
 		// Save and restore current directory around SymLoadModule, see KB article Q189780
 		GetCurrentDirectoryA(sizeof(curDir), curDir);
 		GetModuleFileNameA(NULL, exePath, sizeof(exePath));
+#if defined(_MSC_VER) && _MSC_VER == 1200
+		/* use strcat for VC6 */
+		strcat(exePath, "\\..");
+#else
 		strcat_s(exePath, sizeof(exePath), "\\..");
+#endif /* _MSC_VER >= 1200 */
 		SetCurrentDirectoryA(exePath);
 #ifdef _DEBUG
 		GetCurrentDirectoryA(sizeof(exePath), exePath);
