@@ -731,12 +731,6 @@ void GC_init_inner()
 #   ifdef STUBBORN_ALLOC
     	GC_stubborn_init();
 #   endif
-#   if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC)
-	{
-	  extern void GC_init_lib_bounds(void);
-	  GC_init_lib_bounds();
-	}
-#   endif
     /* Convince lint that some things are used */
 #   ifdef LINT
       {

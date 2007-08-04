@@ -86,6 +86,8 @@ static back_edges * new_back_edges(void)
   if (0 == back_edge_space) {
     back_edge_space = (back_edges *)
 	    		GET_MEM(MAX_BACK_EDGE_STRUCTS*sizeof(back_edges));
+    GC_add_to_our_memory((ptr_t)back_edge_space,
+    			 MAX_BACK_EDGE_STRUCTS*sizeof(back_edges));
   }
   if (0 != avail_back_edges) {
     back_edges * result = avail_back_edges;
@@ -125,11 +127,15 @@ static void push_in_progress(ptr_t p)
     if (in_progress_size == 0) {
       in_progress_size = INITIAL_IN_PROGRESS;
       in_progress_space = (ptr_t *)GET_MEM(in_progress_size * sizeof(ptr_t));
+      GC_add_to_our_memory((ptr_t)in_progress_space,
+      			   in_progress_size * sizeof(ptr_t));
     } else {
       ptr_t * new_in_progress_space;
       in_progress_size *= 2;
       new_in_progress_space = (ptr_t *)
 	      			GET_MEM(in_progress_size * sizeof(ptr_t));
+      GC_add_to_our_memory((ptr_t)new_in_progress_space,
+      			   in_progress_size * sizeof(ptr_t));
       BCOPY(in_progress_space, new_in_progress_space,
 	    n_in_progress * sizeof(ptr_t));
       in_progress_space = new_in_progress_space;

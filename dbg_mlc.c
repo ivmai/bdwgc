@@ -402,12 +402,15 @@ void GC_debug_print_heap_obj_proc(ptr_t p)
 }
 
 #ifndef SHORT_DBG_HDRS
+/* Use GC_err_printf and friends to print a description of the object	*/
+/* whose client-visible address is p, and which was smashed at		*/
+/* clobbered_addr.							*/
 void GC_print_smashed_obj(ptr_t p, ptr_t clobbered_addr)
 {
     register oh * ohdr = (oh *)GC_base(p);
     
     GC_ASSERT(I_DONT_HOLD_LOCK());
-    GC_err_printf("%p in object at %p(", clobbered_addr, p);
+    GC_err_printf("%p in or near object at %p(", clobbered_addr, p);
     if (clobbered_addr <= (ptr_t)(&(ohdr -> oh_sz))
         || ohdr -> oh_string == 0) {
         GC_err_printf("<smashed>, appr. sz = %ld)\n",
@@ -842,7 +845,8 @@ void GC_print_all_smashed_proc(void)
     if (GC_n_smashed == 0) return;
     GC_err_printf("GC_check_heap_block: found smashed heap objects:\n");
     for (i = 0; i < GC_n_smashed; ++i) {
-        GC_print_smashed_obj(GC_base(GC_smashed[i]), GC_smashed[i]);
+        GC_print_smashed_obj((ptr_t)GC_base(GC_smashed[i]) + sizeof(oh),
+			     GC_smashed[i]);
 	GC_smashed[i] = 0;
     }
     GC_n_smashed = 0;

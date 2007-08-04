@@ -1,4 +1,23 @@
 2007-08-03  Hans Boehm <Hans.Boehm@hp.com>
+	
+	* alloc.c, backgraph.c, headers.c, include/private/gc_priv.h:
+	Maintain GC_our_memory and GC_n_memory.
+	* dbg_mlc.c (GC_print_smashed_obj): Improve message.
+	(GC_print_all_smashed_proc): Pass client object address instead of
+	base.
+	* dyn_load.c (sort_heap_sects): New.  (GC_register_map_entries):
+	Register sections that are contiguous and merged with our heap.
+	* malloc.c, os_dep.c (GC_text_mapping): Check for just base name
+	of libraries.
+	* malloc.c (calloc): Check for special callers even with
+	USE_PROC_FOR_LIBRARIES. Move assertion.  Add rudimentary
+	malloc/free tracing.
+	* misc.c: No longer call GC_init_lib_bounds explicitly.
+	* thread_local_alloc.c (GC_malloc, GC_malloc_atomic): Always
+	initialize on demand.
+	* tests/test.c: Call GC_INIT only when required.
+
+2007-08-03  Hans Boehm <Hans.Boehm@hp.com>
 
 	* Makefile.direct: Remove comment fragment.
 	* tests/tests.am: Add smashtest.

@@ -759,6 +759,22 @@ void GC_gcollect(void)
 
 word GC_n_heap_sects = 0;	/* Number of sections currently in heap. */
 
+#ifdef USE_PROC_FOR_LIBRARIES
+  word GC_n_memory = 0;		/* Number of GET_MEM allocated memory	*/
+				/* sections.				*/
+#endif
+
+#ifdef USE_PROC_FOR_LIBRARIES
+  /* Add HBLKSIZE aligned, GET_MEM-generated block to GC_our_memory. */
+  /* Defined to do nothing if USE_PROC_FOR_LIBRARIES not set.	    */
+  void GC_add_to_our_memory(ptr_t p, size_t bytes)
+  {
+    if (0 == p) return;
+    GC_our_memory[GC_n_memory].hs_start = p;
+    GC_our_memory[GC_n_memory].hs_bytes = bytes;
+    GC_n_memory++;
+  }
+#endif
 /*
  * Use the chunk of memory starting at p of size bytes as part of the heap.
  * Assumes p is HBLKSIZE aligned, and bytes is a multiple of HBLKSIZE.
@@ -868,6 +884,7 @@ GC_bool GC_expand_hp_inner(word n)
         return(FALSE);
     }
     space = GET_MEM(bytes);
+    GC_add_to_our_memory((ptr_t)space, bytes);
     if( space == 0 ) {
 	if (GC_print_stats) {
 	    GC_log_printf("Failed to expand heap by %ld bytes\n",

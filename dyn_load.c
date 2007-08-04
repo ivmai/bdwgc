@@ -239,6 +239,36 @@ char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
 char *GC_get_maps(void);
 	/* From os_dep.c	*/
 
+/* Sort an array of HeapSects by start address.				*/
+/* Unfortunately at least some versions of				*/
+/* Linux qsort end up calling malloc by way of sysconf, and hence can't */
+/* be used in the colector.  Hence we roll our own.  Should be		*/
+/* reasonably fast if the array is already mostly sorted, as we expect	*/
+/* it to be.								*/
+void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
+{
+    signed_word n = (signed_word)number_of_elements;
+    signed_word nsorted = 1;
+    signed_word i;
+
+    while (nsorted < n) {
+      while (nsorted < n &&
+    	     base[nsorted-1].hs_start < base[nsorted].hs_start)
+          ++nsorted;
+      if (nsorted == n) break;
+      GC_ASSERT(base[nsorted-1].hs_start > base[nsorted].hs_start);
+      i = nsorted - 1;
+      while (i >= 0 && base[i].hs_start > base[i+1].hs_start) {
+        struct HeapSect tmp = base[i];
+	base[i] = base[i+1];
+	base[i+1] = tmp;
+	--i;
+      }
+      GC_ASSERT(base[nsorted-1].hs_start < base[nsorted].hs_start);
+      ++nsorted;
+    }
+}
+
 word GC_register_map_entries(char *maps)
 {
     char *prot;
@@ -250,18 +280,11 @@ word GC_register_map_entries(char *maps)
     unsigned i;
     ptr_t datastart = (ptr_t)(DATASTART);
 
-    /* Compute heap bounds. FIXME: Should work if heap and roots are 	*/
-    /* interleaved?							*/
-	least_ha = (ptr_t)(word)(-1);
-	greatest_ha = 0;
-	for (i = 0; i < GC_n_heap_sects; ++i) {
-	    ptr_t sect_start = GC_heap_sects[i].hs_start;
-	    ptr_t sect_end = sect_start + GC_heap_sects[i].hs_bytes;
-	    if (sect_start < least_ha) least_ha = sect_start;
-	    if (sect_end > greatest_ha) greatest_ha = sect_end;
-        }
-    	if (greatest_ha < (ptr_t)GC_scratch_last_end_ptr)
-	    greatest_ha = (ptr_t)GC_scratch_last_end_ptr; 
+    GC_ASSERT(I_HOLD_LOCK());
+    sort_heap_sects(GC_our_memory, GC_n_memory);
+    least_ha = GC_our_memory[0].hs_start;
+    greatest_ha = GC_our_memory[GC_n_memory-1].hs_start
+    		  + GC_our_memory[GC_n_memory-1].hs_bytes;
 
     for (;;) {
         buf_ptr = GC_parse_map_entry(buf_ptr, &start, &end, &prot, &maj_dev, 0);
@@ -280,25 +303,53 @@ word GC_register_map_entries(char *maps)
 	      /* That can fail because the stack may disappear while	*/
 	      /* we're marking.  Thus the marker is, and has to be	*/
 	      /* prepared to recover from segmentation faults.		*/
+
 	      if (GC_segment_is_thread_stack(start, end)) continue;
-	      /* FIXME: REDIRECT_MALLOC actually works with threads on	*/
-	      /* LINUX/IA64 if we omit this check.  The problem is that	*/
+
+	      /* FIXME: NPTL squirrels					*/
+	      /* away pointers in pieces of the stack segment that we	*/
+	      /* don't scan.  We work around this			*/
+	      /* by treating anything allocated by libpthread as	*/
+	      /* uncollectable, as we do in some other cases.		*/
+	      /* A specifically identified problem is that		*/ 
 	      /* thread stacks contain pointers to dynamic thread	*/
 	      /* vectors, which may be reused due to thread caching.	*/
-	      /* Currently they may not be marked if the thread is 	*/
-	      /* still live.						*/
-	      /* For dead threads, we trace the whole stack, which is	*/
+	      /* They may not be marked if the thread is still live.	*/
+	      /* This specific instance should be addressed by 		*/
+	      /* INCLUDE_LINUX_THREAD_DESCR, but that doesn't quite	*/
+	      /* seem to suffice.					*/
+	      /* We currently trace entire thread stacks, if they are	*/
+	      /* are currently cached but unused.  This is		*/
 	      /* very suboptimal for performance reasons.		*/
 #	    endif
 	    /* We no longer exclude the main data segment.		*/
-	    if (start < least_ha && end > least_ha) {
-		end = least_ha;
+	    if (end <= least_ha || start >= greatest_ha) {
+	      /* The easy case; just trace entire segment */
+	      GC_add_roots_inner((char *)start, (char *)end, TRUE);
+	      continue;
 	    }
-	    if (start < greatest_ha && end > greatest_ha) {
-		start = greatest_ha;
-	    }
-	    if (start >= least_ha && end <= greatest_ha) continue;
-	    GC_add_roots_inner((char *)start, (char *)end, TRUE);
+	    /* Add sections that dont belong to us. */
+	      i = 0;
+	      while (GC_our_memory[i].hs_start + GC_our_memory[i].hs_bytes
+	             < start)
+		  ++i;
+	      GC_ASSERT(i < GC_n_memory);
+	      if (GC_our_memory[i].hs_start <= start) {
+	          start = GC_our_memory[i].hs_start
+		  	  + GC_our_memory[i].hs_bytes;
+		  ++i;
+	      }
+	      while (i < GC_n_memory && GC_our_memory[i].hs_start < end
+		     && start < end) {
+		  if ((char *)start < GC_our_memory[i].hs_start)
+		    GC_add_roots_inner((char *)start,
+				       GC_our_memory[i].hs_start, TRUE);
+		  start = GC_our_memory[i].hs_start
+			  + GC_our_memory[i].hs_bytes;
+		  ++i;
+	      }
+	      if (start < end)
+	          GC_add_roots_inner((char *)start, (char *)end, TRUE);
 	}
     }
     return 1;

@@ -63,6 +63,13 @@
 # include <stdarg.h>
 #endif
 
+/* Call GC_INIT only on platforms on which we think we really need it,	*/
+/* so that we can test automatic initialization on the rest.		*/
+#if defined(__CYGWIN32__) || defined (_AIX)
+#  define GC_COND_INIT() GC_INIT()
+#else
+#  define GC_COND_INIT()
+#endif
 
 /* Allocation Statistics */
 int stubborn_count = 0;
@@ -1318,7 +1325,7 @@ void SetMinimumStack(long minSize)
 	/* Cheat and let stdio initialize toolbox for us.	*/
 	printf("Testing GC Macintosh port.\n");
 #   endif
-    GC_INIT();	/* Only needed on a few platforms.	*/
+    GC_COND_INIT();
     (void) GC_set_warn_proc(warn_proc);
 #   if (defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(GWW_VDB)) \
           && !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL)
@@ -1465,7 +1472,7 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
     GC_use_DllMain();  /* Test with implicit thread registration if possible. */
     GC_printf("Using DllMain to track threads\n");
 # endif
-  GC_INIT();
+  GC_COND_INIT();
 # ifndef NO_INCREMENTAL
     GC_enable_incremental();
 # endif
@@ -1575,7 +1582,7 @@ int main()
 	pthread_win32_process_attach_np ();
 	pthread_win32_thread_attach_np ();
 #   endif
-    GC_INIT();
+    GC_COND_INIT();
 
     pthread_attr_init(&attr);
 #   if defined(GC_IRIX_THREADS) || defined(GC_FREEBSD_THREADS) \

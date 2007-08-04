@@ -972,7 +972,14 @@ struct _GC_arrays {
 # endif
   struct HeapSect {
       ptr_t hs_start; size_t hs_bytes;
-  } _heap_sects[MAX_HEAP_SECTS];
+  } _heap_sects[MAX_HEAP_SECTS];	/* Heap segments potentially 	*/
+  					/* client objects.		*/
+# if defined(USE_PROC_FOR_LIBRARIES)
+     struct HeapSect _our_memory[MAX_HEAP_SECTS];
+     					/* All GET_MEM allocated	*/
+					/* memory.  Includes block 	*/
+					/* headers and the like.	*/
+# endif
 # if defined(MSWIN32) || defined(MSWINCE)
     ptr_t _heap_bases[MAX_HEAP_SECTS];
     		/* Start address of memory regions obtained from kernel. */
@@ -1040,6 +1047,9 @@ GC_API GC_FAR struct _GC_arrays GC_arrays;
 # define GC_requested_heapsize GC_arrays._requested_heapsize
 # define GC_bytes_allocd_before_gc GC_arrays._bytes_allocd_before_gc
 # define GC_heap_sects GC_arrays._heap_sects
+# ifdef USE_PROC_FOR_LIBRARIES
+#   define GC_our_memory GC_arrays._our_memory
+# endif
 # define GC_last_stack GC_arrays._last_stack
 #ifdef ENABLE_TRACE
 #define GC_trace_addr GC_arrays._trace_addr
@@ -1138,6 +1148,11 @@ GC_API word GC_fo_entries;
 
 extern word GC_n_heap_sects;	/* Number of separately added heap	*/
 				/* sections.				*/
+
+#ifdef USE_PROC_FOR_LIBRARIES
+  extern word GC_n_memory;	/* Number of GET_MEM allocated memory	*/
+				/* sections.				*/
+#endif
 
 extern word GC_page_size;
 
@@ -1713,6 +1728,14 @@ GC_API void GC_debug_invoke_finalizer(void * obj, void * data);
   			
 void GC_add_to_heap(struct hblk *p, size_t bytes);
   			/* Add a HBLKSIZE aligned chunk to the heap.	*/
+
+#ifdef USE_PROC_FOR_LIBRARIES
+  void GC_add_to_our_memory(ptr_t p, size_t bytes);
+  			/* Add a chunk to GC_our_memory.	*/
+			/* If p == 0, do nothing.		*/
+#else
+# define GC_add_to_our_memory(p, bytes)
+#endif
   
 void GC_print_obj(ptr_t p);
   			/* P points to somewhere inside an object with	*/

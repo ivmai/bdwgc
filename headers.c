@@ -132,11 +132,13 @@ ptr_t GC_scratch_alloc(size_t bytes)
 		bytes_to_get &= ~(GC_page_size - 1);
 #	    endif
    	    result = (ptr_t)GET_MEM(bytes_to_get);
+	    GC_add_to_our_memory(result, bytes_to_get);
             scratch_free_ptr -= bytes;
 	    GC_scratch_last_end_ptr = result + bytes;
             return(result);
         }
         result = (ptr_t)GET_MEM(bytes_to_get);
+        GC_add_to_our_memory(result, bytes_to_get);
         if (result == 0) {
 	    if (GC_print_stats)
                 GC_printf("Out of memory - trying to allocate less\n");
@@ -146,7 +148,9 @@ ptr_t GC_scratch_alloc(size_t bytes)
 		bytes_to_get += GC_page_size - 1;
 		bytes_to_get &= ~(GC_page_size - 1);
 #	    endif
-            return((ptr_t)GET_MEM(bytes_to_get));
+            result = (ptr_t)GET_MEM(bytes_to_get);
+            GC_add_to_our_memory(result, bytes_to_get);
+	    return result;
         }
         scratch_free_ptr = result;
         GC_scratch_end_ptr = scratch_free_ptr + bytes_to_get;
