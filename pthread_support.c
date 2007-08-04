@@ -728,7 +728,7 @@ void GC_thr_init(void)
 #   endif /* HANDLE_FORK */
 #   if defined(INCLUDE_LINUX_THREAD_DESCR)
       /* Explicitly register the region including the address 		*/
-      /* of a thread local variable.  This should included thread	*/
+      /* of a thread local variable.  This should include thread	*/
       /* locals for the main thread, except for those allocated		*/
       /* in response to dlopen calls.					*/  
 	{

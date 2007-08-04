@@ -96,7 +96,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 check_PROGRAMS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
-	$(am__EXEEXT_1) $(am__EXEEXT_2)
+	smashtest$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2)
 
 # C Library: Architecture Dependent
 # ---------------------------------
@@ -191,6 +191,9 @@ leaktest_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_middletest_OBJECTS = tests/middle.$(OBJEXT)
 middletest_OBJECTS = $(am_middletest_OBJECTS)
 middletest_DEPENDENCIES = $(am__DEPENDENCIES_2)
+am_smashtest_OBJECTS = tests/smash_test.$(OBJEXT)
+smashtest_OBJECTS = $(am_smashtest_OBJECTS)
+smashtest_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am__test_cpp_SOURCES_DIST = tests/test_cpp.cc
 @CPLUSPLUS_TRUE@am_test_cpp_OBJECTS = tests/test_cpp.$(OBJEXT)
 test_cpp_OBJECTS = $(am_test_cpp_OBJECTS)
@@ -227,12 +230,12 @@ CXXLINK = $(LIBTOOL) --tag=CXX --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 SOURCES = $(libcord_la_SOURCES) $(libgc_la_SOURCES) \
 	$(EXTRA_libgc_la_SOURCES) $(nodist_libgc_la_SOURCES) \
 	$(libgccpp_la_SOURCES) $(gctest_SOURCES) $(leaktest_SOURCES) \
-	$(middletest_SOURCES) $(test_cpp_SOURCES) \
+	$(middletest_SOURCES) $(smashtest_SOURCES) $(test_cpp_SOURCES) \
 	$(threadleaktest_SOURCES)
 DIST_SOURCES = $(libcord_la_SOURCES) $(am__libgc_la_SOURCES_DIST) \
 	$(EXTRA_libgc_la_SOURCES) $(am__libgccpp_la_SOURCES_DIST) \
 	$(gctest_SOURCES) $(leaktest_SOURCES) $(middletest_SOURCES) \
-	$(am__test_cpp_SOURCES_DIST) \
+	$(smashtest_SOURCES) $(am__test_cpp_SOURCES_DIST) \
 	$(am__threadleaktest_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
@@ -491,7 +494,7 @@ dist_noinst_HEADERS = version.h include/private/gc_hdrs.h \
 	include/private/thread_local_alloc.h include/cord.h \
 	include/ec.h include/javaxfc.h
 TESTS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
-	$(am__append_6) $(am__append_8)
+	smashtest$(EXEEXT) $(am__append_6) $(am__append_8)
 pkgconfigdir = $(libdir)/pkgconfig
 dist_pkgconfig_DATA = bdw-gc.pc
 libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
@@ -555,6 +558,8 @@ leaktest_SOURCES = tests/leak_test.c
 leaktest_LDADD = $(test_ldadd)
 middletest_SOURCES = tests/middle.c
 middletest_LDADD = $(test_ldadd)
+smashtest_SOURCES = tests/smash_test.c
+smashtest_LDADD = $(test_ldadd)
 @THREADS_TRUE@threadleaktest_SOURCES = tests/thread_leak_test.c
 @THREADS_TRUE@threadleaktest_LDADD = $(test_ldadd)
 @CPLUSPLUS_TRUE@test_cpp_SOURCES = tests/test_cpp.cc
@@ -709,6 +714,11 @@ tests/middle.$(OBJEXT): tests/$(am__dirstamp) \
 middletest$(EXEEXT): $(middletest_OBJECTS) $(middletest_DEPENDENCIES) 
 	@rm -f middletest$(EXEEXT)
 	$(LINK) $(middletest_LDFLAGS) $(middletest_OBJECTS) $(middletest_LDADD) $(LIBS)
+tests/smash_test.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+smashtest$(EXEEXT): $(smashtest_OBJECTS) $(smashtest_DEPENDENCIES) 
+	@rm -f smashtest$(EXEEXT)
+	$(LINK) $(smashtest_LDFLAGS) $(smashtest_OBJECTS) $(smashtest_LDADD) $(LIBS)
 tests/test_cpp.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 test_cpp$(EXEEXT): $(test_cpp_OBJECTS) $(test_cpp_DEPENDENCIES) 
@@ -732,6 +742,7 @@ mostlyclean-compile:
 	-rm -f cord/cordxtra.lo
 	-rm -f tests/leak_test.$(OBJEXT)
 	-rm -f tests/middle.$(OBJEXT)
+	-rm -f tests/smash_test.$(OBJEXT)
 	-rm -f tests/test.$(OBJEXT)
 	-rm -f tests/test_cpp.$(OBJEXT)
 	-rm -f tests/thread_leak_test.$(OBJEXT)
@@ -778,6 +789,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@cord/$(DEPDIR)/cordxtra.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/leak_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/middle.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/smash_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_cpp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/thread_leak_test.Po@am__quote@

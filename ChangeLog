@@ -1,3 +1,17 @@
+2007-08-03  Hans Boehm <Hans.Boehm@hp.com>
+
+	* Makefile.direct: Remove comment fragment.
+	* tests/tests.am: Add smashtest.
+	* Makefile.in: Regenerate.
+	* configure.ac: Define GC_USE_DLOPEN_WRAP with redirect-malloc.
+	* configure: Regenerate.
+	* pthread_support.c: Fix comment spelling.
+	* include/private/gcconfig.h: Define USE_PROC_FOR_LIBRARIES with
+	GC_LINUX_THREADS and REDIRECT_MALLOC.
+	* tests/smash_test.c: Initial check-in.
+	* obj_map.c: Print log entry to correct file.
+	* include/private/thread_local_alloc.h: Add TlsAlloc error check.
+
 2007-07-23  Hans Boehm <Hans.Boehm@hp.com>
 
 	* alloc.c (GC_stopped_mark): Call GC_add_current_malloc_heap()

@@ -60,7 +60,7 @@ GC_bool GC_add_map_entry(size_t granules)
     new_map = (short *)GC_scratch_alloc(MAP_LEN * sizeof(short));
     if (new_map == 0) return(FALSE);
     if (GC_print_stats)
-        GC_printf("Adding block map for size of %u granules (%u bytes)\n",
+        GC_log_printf("Adding block map for size of %u granules (%u bytes)\n",
 		  (unsigned)granules, (unsigned)(GRANULES_TO_BYTES(granules)));
     if (granules == 0) {
       for (displ = 0; displ < BYTES_TO_GRANULES(HBLKSIZE); displ++) {

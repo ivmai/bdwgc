@@ -1995,13 +1995,18 @@
     /* large.  Sometimes we're lucky and the process just dies ...	*/
     /* There seems to be a similar issue with some other memory 	*/
     /* allocated by the dynamic loader.					*/
-    /* This can be avoided by either:					*/
+    /* This should be avoidable by either:				*/
     /* - Defining USE_PROC_FOR_LIBRARIES here.				*/
     /*   That performs very poorly, precisely because we end up 	*/
     /*   scanning cached stacks.					*/
-    /* - Have calloc look at its callers.  That is currently what we do.*/
+    /* - Have calloc look at its callers.  				*/
     /*   In spite of the fact that it is gross and disgusting.		*/
-/* #   define USE_PROC_FOR_LIBRARIES */
+    /* In fact neither seems to suffice, probably in part because 	*/
+    /* even with USE_PROC_FOR_LIBRARIES, we don't scan parts of stack	*/
+    /* segments that appear to be out of bounds.  Thus we actually	*/
+    /* do both, which seems to yield the best results.			*/
+
+#   define USE_PROC_FOR_LIBRARIES
 #endif
 
 # ifndef STACK_GROWS_UP

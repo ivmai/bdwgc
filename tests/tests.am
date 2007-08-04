@@ -36,6 +36,11 @@ check_PROGRAMS += middletest
 middletest_SOURCES = tests/middle.c
 middletest_LDADD = $(test_ldadd)
 
+TESTS += smashtest$(EXEEXT)
+check_PROGRAMS += smashtest
+smashtest_SOURCES = tests/smash_test.c
+smashtest_LDADD = $(test_ldadd)
+
 #TESTS += tracetest$(EXEEXT)
 #check_PROGRAMS += tracetest
 #tracetest_SOURCES = tests/trace_test.c

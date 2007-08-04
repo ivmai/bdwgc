@@ -22,7 +22,7 @@ AC_INIT(gc,7.1alpha1,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.27 $)
+AC_REVISION($Revision: 1.28 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -527,6 +527,7 @@ if test "${enable_redirect_malloc}" = yes; then
     else
 	AC_DEFINE(REDIRECT_MALLOC, GC_malloc)
     fi
+    AC_DEFINE(GC_USE_DLOPEN_WRAP)
 fi
 
 AC_ARG_ENABLE(large-config,
