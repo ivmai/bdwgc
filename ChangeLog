@@ -1,3 +1,11 @@
+2007-08-14  Hans Boehm <Hans.Boehm@hp.com> (really mostly Samuel Thibault)
+
+	* dbg_mlc.c: Use random() on all glibc systems.
+	* mach_dep.c (GC_with_callee_saves_pushed): Don't use getcontext() on
+	HURD.  Add comment.
+	* pthread_stop_world.c (GC_suspend_handler, GC_stop_init): Accomodate
+	systems without SA_SIGINFO.
+
 2007-08-14  Hans Boehm <Hans.Boehm@hp.com> (partly really Henrik Theiling)
 
 	* include/gc.h (GC_PTR_STORE): Fix non-DEBUG parentheses.

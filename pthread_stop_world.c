@@ -116,7 +116,11 @@ sem_t GC_suspend_ack_sem;
 void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 
 #if defined(IA64) || defined(HP_PA) || defined(M68K)
+#ifdef SA_SIGINFO
 void GC_suspend_handler(int sig, siginfo_t *info, void *context)
+#else
+void GC_suspend_handler(int sig)
+#endif
 {
   int old_errno = errno;
   GC_with_callee_saves_pushed(GC_suspend_handler_inner, (ptr_t)(word)sig);
@@ -125,9 +129,16 @@ void GC_suspend_handler(int sig, siginfo_t *info, void *context)
 #else
 /* We believe that in all other cases the full context is already	*/
 /* in the signal handler frame.						*/
+#ifdef SA_SIGINFO
 void GC_suspend_handler(int sig, siginfo_t *info, void *context)
+#else
+void GC_suspend_handler(int sig)
+#endif
 {
   int old_errno = errno;
+# ifndef SA_SIGINFO
+    void *context = 0;
+# endif
   GC_suspend_handler_inner((ptr_t)(word)sig, context);
   errno = old_errno;
 }
@@ -498,19 +509,29 @@ void GC_stop_init() {
 	ABORT("sem_init failed");
 #   endif
 
-    act.sa_flags = SA_RESTART | SA_SIGINFO;
+    act.sa_flags = SA_RESTART
+#   ifdef SA_SIGINFO
+    	| SA_SIGINFO
+#   endif
+	;
     if (sigfillset(&act.sa_mask) != 0) {
     	ABORT("sigfillset() failed");
     }
     GC_remove_allowed_signals(&act.sa_mask);
     /* SIG_THR_RESTART is set in the resulting mask.		*/
     /* It is unmasked by the handler when necessary. 		*/
+#   ifdef SA_SIGINFO
     act.sa_sigaction = GC_suspend_handler;
+#   else
+    act.sa_handler = GC_suspend_handler;
+#   endif
     if (sigaction(SIG_SUSPEND, &act, NULL) != 0) {
     	ABORT("Cannot set SIG_SUSPEND handler");
     }
 
+#   ifdef SA_SIGINFO
     act.sa_flags &= ~ SA_SIGINFO;
+#   endif
     act.sa_handler = GC_restart_handler;
     if (sigaction(SIG_THR_RESTART, &act, NULL) != 0) {
     	ABORT("Cannot set SIG_THR_RESTART handler");
