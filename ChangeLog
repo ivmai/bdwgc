@@ -1,3 +1,7 @@
+2007-08-14  Hans Boehm <Hans.Boehm@hp.com> (really David Daney)
+
+	* include/private/gcconfig.h: Add Linux/mips-64 support.
+
 2007-08-14  Hans Boehm <Hans.Boehm@hp.com> (really mostly Samuel Thibault)
 
 	* dbg_mlc.c: Use random() on all glibc systems.
