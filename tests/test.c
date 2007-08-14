@@ -1023,6 +1023,7 @@ static void uniq(void *p, ...) {
 void run_one_test()
 {
     char *x;
+    char **z;
 #   ifdef LINT
     	char *y = 0;
 #   else
@@ -1077,9 +1078,15 @@ void run_one_test()
     	(void)GC_printf("GC_is_visible produced incorrect result\n");
 	FAIL;
       }
+      z = GC_malloc(8);
+      GC_PTR_STORE(z, x);
+      if (*z != x) {
+        (void)GC_printf("GC_PTR_STORE failed: %p != %p\n", *z, x);
+        FAIL;
+      }
       if (!TEST_FAIL_COUNT(1)) {
-#	if!(defined(RS6000) || defined(POWERPC) || defined(IA64)) || defined(M68K)
-	  /* ON RS6000s function pointers point to a descriptor in the	*/
+#	if!(defined(POWERPC) || defined(IA64)) || defined(M68K)
+	  /* On POWERPCs function pointers point to a descriptor in the	*/
 	  /* data segment, so there should have been no failures.	*/
 	  /* The same applies to IA64.  Something similar seems to	*/
 	  /* be going on with NetBSD/M68K.				*/

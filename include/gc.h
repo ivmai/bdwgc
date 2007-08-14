@@ -960,7 +960,7 @@ void GC_dump(void);
 #   define GC_PTR_STORE(p, q) \
 	(*(void **)GC_is_visible(p) = GC_is_valid_displacement(q))
 #else /* !GC_DEBUG */
-#   define GC_PTR_STORE(p, q) *((p) = (q))
+#   define GC_PTR_STORE(p, q) (*(p) = (q))
 #endif
 
 /* Functions called to report pointer checking errors */

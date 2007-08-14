@@ -1,3 +1,9 @@
+2007-08-14  Hans Boehm <Hans.Boehm@hp.com> (partly really Henrik Theiling)
+
+	* include/gc.h (GC_PTR_STORE): Fix non-DEBUG parentheses.
+	* tests/test.c (run_one_test): Add GC_PTR_STORE test.
+	No longer test for RS6000.
+
 2007-08-03  Hans Boehm <Hans.Boehm@hp.com>
 	
 	* alloc.c, backgraph.c, headers.c, include/private/gc_priv.h:
