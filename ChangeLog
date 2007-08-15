@@ -1,3 +1,8 @@
+2007-08-15  Hans Boehm <Hans.Boehm@hp.com> (really Samuel Thibault)
+	
+	* pthread_support.c (GC_thr_init): Use sysconf(_SC_NPROCESSORS_ONLN)
+	for HURD.
+
 2007-08-14  Hans Boehm <Hans.Boehm@hp.com> (really David Daney)
 
 	* include/private/gcconfig.h: Add Linux/mips-64 support.
