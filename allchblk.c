@@ -59,6 +59,8 @@ struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
   static GC_bool GC_enough_large_bytes_left(word bytes, int n)
   {
     int i;
+
+    GC_ASSERT(GC_max_large_allocd_bytes <= GC_heapsize);
     for (i = N_HBLK_FLS; i >= n; --i) {
 	bytes += GC_free_bytes[i];
 	if (bytes > GC_max_large_allocd_bytes) return TRUE;

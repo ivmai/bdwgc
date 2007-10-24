@@ -438,9 +438,13 @@ void GC_free(void * p)
 	*flh = (ptr_t)p;
 	UNLOCK();
     } else {
+        size_t nblocks = OBJ_SZ_TO_BLOCKS(sz);
         LOCK();
         GC_bytes_freed += sz;
 	if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
+	if (nblocks > 1) {
+	  GC_large_allocd_bytes -= nblocks * HBLKSIZE;
+	}  
         GC_freehblk(h);
         UNLOCK();
     }
@@ -477,8 +481,12 @@ void GC_free_inner(void * p)
 	obj_link(p) = *flh;
 	*flh = (ptr_t)p;
     } else {
+        size_t nblocks = OBJ_SZ_TO_BLOCKS(sz);
         GC_bytes_freed += sz;
 	if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
+	if (nblocks > 1) {
+	  GC_large_allocd_bytes -= nblocks * HBLKSIZE;
+	}
         GC_freehblk(h);
     }
 }
