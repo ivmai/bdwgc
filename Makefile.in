@@ -465,7 +465,9 @@ EXTRA_DIST = gc_cpp.cpp README.QUICK BCC_MAKEFILE NT_MAKEFILE \
 # C Library
 # ---------
 lib_LTLIBRARIES = libgc.la $(am__append_4) libcord.la
-include_HEADERS = 
+
+# unprefixed header
+include_HEADERS = include/extra/gc.h include/extra/gc_cpp.h
 
 # installed headers
 #
@@ -1141,7 +1143,7 @@ check-TESTS: $(TESTS)
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/Mac_files $(distdir)/cord $(distdir)/doc $(distdir)/include $(distdir)/include/private $(distdir)/tests
+	$(mkdir_p) $(distdir)/. $(distdir)/Mac_files $(distdir)/cord $(distdir)/doc $(distdir)/include $(distdir)/include/extra $(distdir)/include/private $(distdir)/tests
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

@@ -52,3 +52,8 @@ dist_noinst_HEADERS += \
 	include/cord.h \
 	include/ec.h \
 	include/javaxfc.h 
+
+# unprefixed header
+include_HEADERS += \
+        include/extra/gc.h \
+        include/extra/gc_cpp.h
