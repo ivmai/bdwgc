@@ -427,7 +427,7 @@ all: gc.a gctest
 # the default location, and we need to build
 $(AO_INSTALL_DIR): 
 	CC=$(CC) $(srcdir)/configure_atomic_ops.sh
-	cd $(AO_SRC_DIR); make CC=$(CC) install
+	cd $(AO_SRC_DIR); $(MAKE) CC=$(CC) install
 
 LEAKFLAGS=$(CFLAGS) -DFIND_LEAK
 
@@ -675,7 +675,7 @@ dist gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
 	cp Makefile Makefile.old
 	cp Makefile.direct Makefile
 	CC=$(CC) ./configure_atomic_ops.sh
-	cd $(AO_SRC_DIR); make dist
+	cd $(AO_SRC_DIR); $(MAKE) dist
 	if test $(srcdir)/libatomic_ops-$(AO_VERSION) = $(AO_SRC_DIR); \
 	then \
 	  mv $(AO_SRC_DIR) $(AO_SRC_DIR).bak ; \
