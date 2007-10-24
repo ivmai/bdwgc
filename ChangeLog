@@ -1,3 +1,14 @@
+2007-10-23  Hans Boehm <Hans.Boehm@hp.com>
+
+	* doc/scale.html: Reflect gc7 thread local allocation behavior.
+
+2007-10-23  Hans Boehm <Hans.Boehm@hp.com> (really Petter Urkedal)
+
+	* include/extra/gc.h, include/extra/gc_cpp.h: New.
+	* include/include.am: Install gc.h and gc_cpp.h in $(prefix)/include
+	again.
+	* Makefile.in: Regenerate.
+
 2007-08-15  Hans Boehm <Hans.Boehm@hp.com> (really Samuel Thibault)
 	
 	* pthread_support.c (GC_thr_init): Use sysconf(_SC_NPROCESSORS_ONLN)
