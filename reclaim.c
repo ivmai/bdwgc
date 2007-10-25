@@ -19,6 +19,8 @@
 
 signed_word GC_bytes_found = 0;
 			/* Number of bytes of memory reclaimed     */
+			/* minus the number of bytes originally	   */
+			/* on free lists which we had to drop.	   */
 
 #if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
   word GC_fl_builder_count = 0;

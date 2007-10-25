@@ -1127,8 +1127,8 @@ GC_API void GC_use_DllMain(void);
 # include "gc_amiga_redirects.h"
 #endif
 
-#if defined(GC_REDIRECT_TO_LOCAL) && !defined(GC_LOCAL_ALLOC_H)
-#  include  "gc_local_alloc.h"
+#if defined(GC_REDIRECT_TO_LOCAL)
+  /* Now redundant; that's the default with THREAD_LOCAL_ALLOC */
 #endif
 
 #ifdef __cplusplus

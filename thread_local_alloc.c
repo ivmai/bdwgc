@@ -206,7 +206,7 @@ void * GC_malloc_atomic(size_t bytes)
 #   endif
     GC_ASSERT(GC_is_initialized);
     tiny_fl = ((GC_tlfs)tsd) -> ptrfree_freelists;
-    GC_FAST_MALLOC_GRANS(result, bytes, tiny_fl, DIRECT_GRANULES,
+    GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, DIRECT_GRANULES,
 		         PTRFREE, GC_core_malloc_atomic(bytes), 0/* no init */);
     return result;
 }
@@ -252,7 +252,7 @@ void * GC_gcj_malloc(size_t bytes,
     void **tiny_fl = ((GC_tlfs)GC_getspecific(GC_thread_key))
 		        		-> gcj_freelists;
     GC_ASSERT(GC_gcj_malloc_initialized);
-    GC_FAST_MALLOC_GRANS(result, bytes, tiny_fl, DIRECT_GRANULES,
+    GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, DIRECT_GRANULES,
 		         GC_gcj_kind,
 			 GC_core_gcj_malloc(bytes,
 				 	    ptr_to_struct_containing_descr),

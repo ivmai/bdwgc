@@ -1127,9 +1127,19 @@ void run_one_test()
 #     endif
 #   endif /* DBG_HDRS_ALL */
     /* Test floating point alignment */
-   collectable_count += 2;
+        collectable_count += 2;
 	*(double *)GC_MALLOC(sizeof(double)) = 1.0;
 	*(double *)GC_MALLOC(sizeof(double)) = 1.0;
+    /* Test size 0 allocation a bit more */
+    	{
+	   size_t i;
+	   for (i = 0; i < 10000; ++i) {
+	     GC_MALLOC(0);
+	     GC_FREE(GC_MALLOC(0));
+	     GC_MALLOC_ATOMIC(0);
+	     GC_FREE(GC_MALLOC_ATOMIC(0));
+	   }
+	 }
 #   ifdef GC_GCJ_SUPPORT
       GC_REGISTER_DISPLACEMENT(sizeof(struct fake_vtable *));
       GC_init_gcj_malloc(0, (void *)fake_gcj_mark_proc);
