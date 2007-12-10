@@ -1,3 +1,10 @@
+2007-12-10  Andreas Tobler  <a.tobler@schweiz.org>
+
+	* dyn_load.c (GC_dyld_image_add): Remove ifdef clause and use the macro
+	GC_GETSECTBYNAME instead.
+	* include/private/gc_priv.h: Define GC_GETSECTBYNAME according to the
+	architecture (Darwin).
+
 2007-10-24  Hans Boehm <Hans.Boehm@hp.com>
 
 	* reclaim.c (GC_bytes_found): Expand comment.

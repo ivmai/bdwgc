@@ -1064,13 +1064,8 @@ static void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr, intptr_t slide)
     const struct GC_MACH_SECTION *sec;
     if (GC_no_dls) return;
     for(i=0;i<sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]);i++) {
-#   if defined (__LP64__)
-      sec = getsectbynamefromheader_64(
-#   else
-      sec = getsectbynamefromheader(
-#   endif
-				    hdr, GC_dyld_sections[i].seg,
-				    GC_dyld_sections[i].sect);
+      sec = GC_GETSECTBYNAME(hdr, GC_dyld_sections[i].seg,
+			     GC_dyld_sections[i].sect);
       if(sec == NULL || sec->size == 0) continue;
       start = slide + sec->addr;
       end = start + sec->size;
@@ -1092,13 +1087,8 @@ static void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
     unsigned long start,end,i;
     const struct GC_MACH_SECTION *sec;
     for(i=0;i<sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]);i++) {
-#   if defined (__LP64__)
-      sec = getsectbynamefromheader_64(
-#   else
-      sec = getsectbynamefromheader(
-#   endif
-				    hdr, GC_dyld_sections[i].seg,
-				    GC_dyld_sections[i].sect);
+      sec = GC_GETSECTBYNAME(hdr, GC_dyld_sections[i].seg,
+			     GC_dyld_sections[i].sect);
       if(sec == NULL || sec->size == 0) continue;
       start = slide + sec->addr;
       end = start + sec->size;
