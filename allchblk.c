@@ -392,13 +392,15 @@ void GC_unmap_old(void)
     word sz;
     unsigned short last_rec, threshold;
     int i;
-#   define UNMAP_THRESHOLD 6
+#   ifndef MUNMAP_THRESHOLD
+#     define MUNMAP_THRESHOLD 6
+#   endif
     
     for (i = 0; i <= N_HBLK_FLS; ++i) {
       for (h = GC_hblkfreelist[i]; 0 != h; h = hhdr -> hb_next) {
         hhdr = HDR(h);
 	if (!IS_MAPPED(hhdr)) continue;
-	threshold = (unsigned short)(GC_gc_no - UNMAP_THRESHOLD);
+	threshold = (unsigned short)(GC_gc_no - MUNMAP_THRESHOLD);
 	last_rec = hhdr -> hb_last_reclaimed;
 	if ((last_rec > GC_gc_no || last_rec < threshold)
 	    && threshold < GC_gc_no /* not recently wrapped */) {

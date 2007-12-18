@@ -22,7 +22,7 @@ AC_INIT(gc,7.1alpha1,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.28 $)
+AC_REVISION($Revision: 1.29 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -587,6 +587,25 @@ AC_ARG_ENABLE(gc-assertions,
 	[collector-internal assertion checking])])
 if test "${enable_gc_assertions}" = yes; then
     AC_DEFINE(GC_ASSERTIONS)
+fi
+
+AC_ARG_ENABLE(munmap,
+    [AC_HELP_STRING([--enable-munmap=N],
+	[return page to the os if empty for N collections])],
+  MUNMAP_THRESHOLD=$enableval;
+   [case "$MMAP" in
+      no)
+        AC_MSG_ERROR([--enable-munmap requires --enable-mmap])
+        ;;
+    esac]
+   )
+if test "${enable_munmap}" != ""; then
+    AC_DEFINE(USE_MMAP)
+    AC_DEFINE(USE_MUNMAP)
+    if test "${MUNMAP_THRESHOLD}" = "yes"; then
+      MUNMAP_THRESHOLD=6
+    fi
+    AC_DEFINE_UNQUOTED(MUNMAP_THRESHOLD, ${MUNMAP_THRESHOLD})
 fi
 
 AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")

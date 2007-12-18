@@ -22,9 +22,8 @@ built-in "new" and "delete".
 Authors: John R. Ellis and Jesse Hull
 
 **************************************************************************/
-/* Boehm, December 20, 1994 7:26 pm PST */
 
-#include "gc_cpp.h"
+#include <gc_cpp.h>
 
 void* operator new( size_t size ) {
     return GC_MALLOC_UNCOLLECTABLE( size );}

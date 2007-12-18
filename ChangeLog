@@ -1,3 +1,12 @@
+2007-12-18  Hans Boehm <Hans.Boehm@hp.com>
+
+	* gc_cpp.cc: Don't include gc_cpp.h from local directory.
+
+2007-12-18  Hans Boehm <Hans.Boehm@hp.com> (really Adam Megacz)
+
+	* allchblk.c, configure.ac (add --enable-munmap)
+	* configure: Regenerate.
+
 2007-12-10  Andreas Tobler  <a.tobler@schweiz.org>
 
 	* dyn_load.c (GC_dyld_image_add): Remove ifdef clause and use the macro
