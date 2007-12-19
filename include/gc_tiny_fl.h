@@ -27,7 +27,7 @@
  */
 
 /*
- * We always set GRANULE_BYTES to twice the length of a pointer.
+ * We always set GC_GRANULE_BYTES to twice the length of a pointer.
  * This means that all allocation requests are rounded up to the next
  * multiple of 16 on 64-bit architectures or 8 on 32-bit architectures.
  * This appears to be a reasonable compromise between fragmentation overhead
@@ -61,7 +61,7 @@
 #if GC_GRANULE_WORDS == 2
 #  define GC_WORDS_TO_GRANULES(n) ((n)>>1)
 #else
-#  define GC_WORDS_TO_GRANULES(n) ((n)*sizeof(void *)/GRANULE_BYTES)
+#  define GC_WORDS_TO_GRANULES(n) ((n)*sizeof(void *)/GC_GRANULE_BYTES)
 #endif
 
 /* A "tiny" free list header contains TINY_FREELISTS pointers to 	*/
@@ -76,7 +76,7 @@
 # endif
 #endif /* !GC_TINY_FREELISTS */
 
-/* The ith free list corresponds to size i*GRANULE_BYTES	*/
+/* The ith free list corresponds to size i*GC_GRANULE_BYTES	*/
 /* Internally to the collector, the index can be computed with	*/
 /* ROUNDED_UP_GRANULES.  Externally, we don't know whether	*/
 /* DONT_ADD_BYTE_AT_END is set, but the client should know.	*/
@@ -84,6 +84,6 @@
 /* Convert a free list index to the actual size of objects	*/
 /* on that list, including extra space we added.  Not an	*/
 /* inverse of the above.					*/
-#define RAW_BYTES_FROM_INDEX(i) ((i) * GC_GRANULE_BYTES)
+#define GC_RAW_BYTES_FROM_INDEX(i) ((i) * GC_GRANULE_BYTES)
 
 #endif /* GC_TINY_FL_H */

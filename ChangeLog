@@ -1,3 +1,12 @@
+2007-12-18  Hans Boehm <Hans.Boehm@hp.com> (really mainly Peter Wang)
+
+	* include/gc_inline.h, include/gc_tiny_fl.h: cleanups to make usable in other
+	contexts.
+
+2007-12-18  Hans Boehm <Hans.Boehm@hp.com> (really Radek Polak)
+
+	* include/gc.h: Don't define GC_HAVE_BUILTIN_BACKTRACE for uclibc.
+
 2007-12-18  Hans Boehm <Hans.Boehm@hp.com>
 
 	* gc_cpp.cc: Don't include gc_cpp.h from local directory.

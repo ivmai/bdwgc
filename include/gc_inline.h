@@ -34,9 +34,9 @@
 #endif /* __GNUC__ */
 
 /* The ultimately general inline allocation macro.  Allocate an object	*/
-/* of size bytes, putting the resulting pointer in result.  Tiny_fl is	*/
-/* a "tiny" free list array, which will be used first, if the size	*/
-/* is appropriate.  If bytes is too large, we allocate with 		*/
+/* of size granules, putting the resulting pointer in result.  Tiny_fl  */
+/* is a "tiny" free list array, which will be used first, if the size	*/
+/* is appropriate.  If granules is too large, we allocate with 		*/
 /* default_expr instead.  If we need to refill the free list, we use	*/
 /* GC_generic_malloc_many with the indicated kind.			*/
 /* Tiny_fl should be an array of GC_TINY_FREELISTS void * pointers.	*/
@@ -47,7 +47,7 @@
 /* be initialized to (void *)0.						*/
 /* We rely on much of this hopefully getting optimized away in the	*/
 /* num_direct = 0 case.							*/
-/* Particularly if bytes is constant, this should generate a small	*/
+/* Particularly if granules is constant, this should generate a small	*/
 /* amount of code.							*/
 # define GC_FAST_MALLOC_GRANS(result,granules,tiny_fl,num_direct,\
 			      kind,default_expr,init) \
@@ -64,17 +64,17 @@
 	    /* Entry contains counter or NULL */ \
 	    if ((GC_word)my_entry - 1 < num_direct) { \
 		/* Small counter value, not NULL */ \
-                *my_fl = (ptr_t)my_entry + granules + 1; \
+                *my_fl = (char *)my_entry + granules + 1; \
                 result = default_expr; \
 		goto out; \
             } else { \
 		/* Large counter or NULL */ \
                 GC_generic_malloc_many(((granules) == 0? GC_GRANULE_BYTES : \
-					  RAW_BYTES_FROM_INDEX(granules)), \
+					  GC_RAW_BYTES_FROM_INDEX(granules)), \
 				       kind, my_fl); \
 		my_entry = *my_fl; \
                 if (my_entry == 0) { \
-		    result = GC_oom_fn(bytes); \
+		    result = GC_oom_fn(granules*GC_GRANULE_BYTES); \
 		    goto out; \
 		} \
 	    } \
@@ -84,7 +84,7 @@
         *my_fl = next; \
 	init; \
         PREFETCH_FOR_WRITE(next); \
-        GC_ASSERT(GC_size(result) >= bytes + EXTRA_BYTES); \
+        GC_ASSERT(GC_size(result) >= granules*GC_GRANULE_BYTES); \
         GC_ASSERT((kind) == PTRFREE || ((GC_word *)result)[1] == 0); \
       out: ; \
    } \
@@ -102,17 +102,17 @@
 /* a global array.							*/
 # define GC_MALLOC_WORDS(result,n,tiny_fl) \
 {	\
-    size_t grans = WORDS_TO_WHOLE_GRANULES(n); \
+    size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
     GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
-			 NORMAL, GC_malloc(grans*GRANULE_BYTES), \
+			 NORMAL, GC_malloc(grans*GC_GRANULE_BYTES), \
 			 *(void **)result = 0); \
 }
 
 # define GC_MALLOC_ATOMIC_WORDS(result,n,tiny_fl) \
 {	\
-    size_t grans = WORDS_TO_WHOLE_GRANULES(n); \
+    size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
     GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
-			 PTRFREE, GC_malloc_atomic(grans*GRANULE_BYTES), \
+			 PTRFREE, GC_malloc_atomic(grans*GC_GRANULE_BYTES), \
 			 /* no initialization */); \
 }
 
@@ -120,9 +120,9 @@
 /* And once more for two word initialized objects: */
 # define GC_CONS(result, first, second, tiny_fl) \
 {	\
-    size_t grans = WORDS_TO_WHOLE_GRANULES(2); \
+    size_t grans = GC_WORDS_TO_WHOLE_GRANULES(2); \
     GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
-			 NORMAL, GC_malloc(grans*GRANULE_BYTES), \
+			 NORMAL, GC_malloc(grans*GC_GRANULE_BYTES), \
 			 *(void **)result = (void *)(first)); \
     ((void **)(result))[1] = (void *)(second);	\
 }
