@@ -188,7 +188,7 @@ int GC_general_register_disappearing_link(void * * link, void * obj)
 	      GC_oom_fn(sizeof(struct disappearing_link));
       if (0 == new_dl) {
 	GC_finalization_failures++;
-	return(0);
+	return(2);
       }
       /* It's not likely we'll make it here, but ... */
 #     ifdef THREADS
@@ -392,7 +392,6 @@ GC_API void GC_register_finalizer_inner(void * obj,
     }
     new_fo = (struct finalizable_object *)
     	GC_INTERNAL_MALLOC(sizeof(struct finalizable_object),NORMAL);
-    GC_ASSERT(GC_size(new_fo) >= sizeof(struct finalizable_object));
     if (EXPECT(0 == new_fo, FALSE)) {
 #     ifdef THREADS
 	UNLOCK();
@@ -408,6 +407,7 @@ GC_API void GC_register_finalizer_inner(void * obj,
 	LOCK();
 #     endif
     }
+    GC_ASSERT(GC_size(new_fo) >= sizeof(struct finalizable_object));
     new_fo -> fo_hidden_base = (word)HIDE_POINTER(base);
     new_fo -> fo_fn = fn;
     new_fo -> fo_client_data = (ptr_t)cd;

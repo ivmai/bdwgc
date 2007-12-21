@@ -782,6 +782,7 @@ word GC_n_heap_sects = 0;	/* Number of sections currently in heap. */
 void GC_add_to_heap(struct hblk *p, size_t bytes)
 {
     hdr * phdr;
+    word endp;
     
     if (GC_n_heap_sects >= MAX_HEAP_SECTS) {
     	ABORT("Too many heap sections: Increase MAXHINCR or MAX_HEAP_SECTS");
@@ -793,6 +794,20 @@ void GC_add_to_heap(struct hblk *p, size_t bytes)
     	/* which is entirely appropriate.				*/
     	return;
     }
+    while ((word)p <= HBLKSIZE) {
+        /* Can't handle memory near address zero. */
+        ++p;
+	bytes -= HBLKSIZE;
+        if (0 == bytes) return;
+    }
+    endp = (word)p + bytes;
+    if (endp <= (word)p) {
+    	/* Address wrapped. */
+	bytes -= HBLKSIZE;
+        if (0 == bytes) return;
+	endp -= HBLKSIZE;
+    }
+    GC_ASSERT(endp > (word)p && endp == (word)p + bytes);
     GC_heap_sects[GC_n_heap_sects].hs_start = (ptr_t)p;
     GC_heap_sects[GC_n_heap_sects].hs_bytes = bytes;
     GC_n_heap_sects++;
@@ -809,7 +824,7 @@ void GC_add_to_heap(struct hblk *p, size_t bytes)
         	/* here.						*/
     }
     if ((ptr_t)p + bytes >= (ptr_t)GC_greatest_plausible_heap_addr) {
-        GC_greatest_plausible_heap_addr = (void *)((ptr_t)p + bytes);
+        GC_greatest_plausible_heap_addr = (void *)endp;
     }
 }
 
@@ -839,12 +854,12 @@ void GC_print_heap_sects(void)
 void * GC_least_plausible_heap_addr = (void *)ONES;
 void * GC_greatest_plausible_heap_addr = 0;
 
-static INLINE ptr_t GC_max(ptr_t x, ptr_t y)
+static INLINE word GC_max(word x, word y)
 {
     return(x > y? x : y);
 }
 
-static INLINE ptr_t GC_min(ptr_t x, ptr_t y)
+static INLINE word GC_min(word x, word y)
 {
     return(x < y? x : y);
 }
@@ -897,27 +912,27 @@ GC_bool GC_expand_hp_inner(word n)
 	              (unsigned long)bytes,
 	              (unsigned long)GC_bytes_allocd);
     }
+    /* Adjust heap limits generously for blacklisting to work better.	*/
+    /* GC_add_to_heap performs minimal adjustment need for correctness.	*/
     expansion_slop = min_bytes_allocd() + 4*MAXHINCR*HBLKSIZE;
     if ((GC_last_heap_addr == 0 && !((word)space & SIGNB))
         || (GC_last_heap_addr != 0 && GC_last_heap_addr < (ptr_t)space)) {
         /* Assume the heap is growing up */
-        GC_greatest_plausible_heap_addr =
-            (void *)GC_max((ptr_t)GC_greatest_plausible_heap_addr,
-                           (ptr_t)space + bytes + expansion_slop);
+	word new_limit = (word)space + bytes + expansion_slop;
+	if (new_limit > (word)space) {
+          GC_greatest_plausible_heap_addr =
+            (void *)GC_max((word)GC_greatest_plausible_heap_addr,
+                           (word)new_limit);
+	}
     } else {
         /* Heap is growing down */
-        GC_least_plausible_heap_addr =
-            (void *)GC_min((ptr_t)GC_least_plausible_heap_addr,
-                           (ptr_t)space - expansion_slop);
+	word new_limit = (word)space - expansion_slop;
+	if (new_limit < (word)space) {
+          GC_least_plausible_heap_addr =
+            (void *)GC_min((word)GC_least_plausible_heap_addr,
+                           (word)space - expansion_slop);
+	}
     }
-#   if defined(LARGE_CONFIG)
-      if (((ptr_t)GC_greatest_plausible_heap_addr <= (ptr_t)space + bytes
-           || (ptr_t)GC_least_plausible_heap_addr >= (ptr_t)space)
-	  && GC_heapsize > 0) {
-	/* GC_add_to_heap will fix this, but ... */
-	WARN("Too close to address space limit: blacklisting ineffective\n", 0);
-      }
-#   endif
     GC_prev_heap_addr = GC_last_heap_addr;
     GC_last_heap_addr = (ptr_t)space;
     GC_add_to_heap(space, bytes);

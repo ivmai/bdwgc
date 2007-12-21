@@ -1,7 +1,15 @@
+2007-12-20  Hans Boehm <Hans.Boehm@hp.com>
+	
+	* alloc.c: Deal correctly with address wrapping for 
+	GC_greatest_plausible_heap_addr and GC_least_plausible_heap_addr.
+	* finalize.c, include/gc.h (GC_register_disappearing_link,
+	GC_register_finalizer_inner): Improve out-of-memory handling.
+	* include/private/gc_pmark.h: Fix comment spelling.
+
 2007-12-18  Hans Boehm <Hans.Boehm@hp.com> (really mainly Peter Wang)
 
-	* include/gc_inline.h, include/gc_tiny_fl.h: cleanups to make usable in other
-	contexts.
+	* include/gc_inline.h, include/gc_tiny_fl.h: cleanups to make usable
+	in other contexts.
 
 2007-12-18  Hans Boehm <Hans.Boehm@hp.com> (really Radek Polak)
 

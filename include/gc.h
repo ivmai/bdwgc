@@ -732,8 +732,9 @@ GC_API int GC_register_disappearing_link(void * * link );
 	/* be allowed here, instead of just clearing a pointer. */
 	/* But this causes problems if that action alters, or 	*/
 	/* examines connectivity.				*/
-	/* Returns 1 if link was already registered, 0		*/
-	/* otherwise.						*/
+	/* Returns 1 if link was already registered, 0 if	*/
+	/* registration succeeded, 2 if it failed for lack of	*/
+	/* memory, and GC_oom_fn did not handle the problem.	*/
 	/* Only exists for backward compatibility.  See below:	*/
 	
 GC_API int GC_general_register_disappearing_link (void * * link, void * obj);
