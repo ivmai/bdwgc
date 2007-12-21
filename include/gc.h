@@ -975,8 +975,8 @@ GC_API void (*GC_is_visible_print_proc) (void * p);
 /* For pthread support, we generally need to intercept a number of 	*/
 /* thread library calls.  We do that here by macro defining them.	*/
 
-#if !defined(GC_USE_LD_WRAP) && \
-    (defined(GC_PTHREADS) || defined(GC_SOLARIS_THREADS))
+#if !defined(GC_USE_LD_WRAP) && !defined(GC_NO_THREAD_REDIRECTS) \
+    && defined(GC_PTHREADS)
 # include "gc_pthread_redirects.h"
 #endif
 
@@ -991,7 +991,6 @@ GC_API void (*GC_is_visible_print_proc) (void * p);
 void * GC_malloc_many(size_t lb);
 #define GC_NEXT(p) (*(void * *)(p)) 	/* Retrieve the next element	*/
 					/* in returned list.		*/
-extern void GC_thr_init(void);	/* Needed for Solaris/X86 ??	*/
 
 #endif /* THREADS */
 
@@ -1013,6 +1012,7 @@ GC_register_has_static_roots_callback
     }  /* Including windows.h in an extern "C" context no longer works. */
 #endif
 
+#ifndef GC_NO_THREAD_DECLS
 # include <windows.h>
 
 #ifdef __cplusplus
@@ -1065,17 +1065,20 @@ GC_register_has_static_roots_callback
 #    define WinMain GC_WinMain
 #  endif
 # endif /* defined(_WIN32_WCE) */
+#endif /* !GC_NO_THREAD_DECLS */
 
   /*
    * Use implicit thread registration via DllMain.
    */
 GC_API void GC_use_DllMain(void);
 
-# define CreateThread GC_CreateThread
-# define ExitThread GC_ExitThread
-# define _beginthreadex GC_beginthreadex
-# define _endthreadex GC_endthreadex
-# define _beginthread { > "Please use _beginthreadex instead of _beginthread" < }
+# ifndef GC_NO_THREAD_REDIRECTS
+#   define CreateThread GC_CreateThread
+#   define ExitThread GC_ExitThread
+#   define _beginthreadex GC_beginthreadex
+#   define _endthreadex GC_endthreadex
+#   define _beginthread { > "Please use _beginthreadex instead of _beginthread" < }
+# endif /* !GC_NO_THREAD_REDIRECTS */
 
 #endif /* defined(GC_WIN32_THREADS)  && !cygwin */
 
