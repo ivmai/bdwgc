@@ -165,7 +165,7 @@ CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordt
 CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
 SRCS= $(CSRCS) mips_sgi_mach_dep.S rs6000_mach_dep.s alpha_mach_dep.S \
-    sparc_mach_dep.S include/gc.h include/gc_typed.h \
+    sparc_mach_dep.S include/gc.h include/gc_version.h include/gc_typed.h \
     include/private/gc_hdrs.h include/private/gc_priv.h \
     include/private/gcconfig.h include/private/gc_mark.h \
     include/gc_inline.h gc.man \
@@ -189,7 +189,7 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
            add_gc_prefix.c README.solaris2 README.sgi README.hp README.uts \
 	   win32_threads.c NT_THREADS_MAKEFILE gc.mak README.dj Makefile.dj \
-	   README.alpha README.linux README.MacOSX version.h Makefile.DLLs \
+	   README.alpha README.linux README.MacOSX Makefile.DLLs \
 	   WCC_MAKEFILE nursery.c include/gc_nursery.h include/gc_copy_descr.h
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
@@ -302,7 +302,7 @@ mark_rts.o: $(srcdir)/mark_rts.c if_mach if_not_there $(UTILS)
 #	Work-around for DEC optimizer tail recursion elimination bug.
 #  The ALPHA-specific line should be removed if gcc is used.
 
-alloc.o: version.h
+alloc.o: include/gc_version.h
 
 cord/cordbscs.o: $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordbscs.c

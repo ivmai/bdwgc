@@ -71,14 +71,6 @@ if WIN32_THREADS
 libgc_la_SOURCES += win32_threads.c
 endif
 
-if USE_INTERNAL_LIBATOMIC_OPS
-nodist_libgc_la_SOURCES = atomic_ops.c
-endif
-
-if NEED_ATOMIC_OPS_ASM
-nodist_libgc_la_SOURCES = atomic_ops_sysdeps.S
-endif
-
 # Include THREADDLLIBS here to ensure that the correct versions of
 # linuxthread semaphore functions get linked:
 libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS)
@@ -154,7 +146,6 @@ dist_noinst_SCRIPTS = callprocs configure.host
 # headers which are not installed
 # (see include/include.am for more)
 #
-dist_noinst_HEADERS += version.h
 
 # documentation which is not installed
 #

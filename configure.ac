@@ -22,7 +22,7 @@ AC_INIT(gc,7.1alpha1,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.29 $)
+AC_REVISION($Revision: 1.30 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -639,22 +639,22 @@ AC_CHECK_HEADER(atomic_ops.h,
     AC_MSG_NOTICE([Using internal version of libatomic_ops])
 
     dnl Automake does not accept shell variables in AC_CONFIG_SUBDIRS
-    test -e ${srcdir}/libatomic_ops \
-	|| ln -s ${ao_dir} ${srcdir}/libatomic_ops
+    test -e libatomic_ops \
+	|| ln -s ${ao_dir} libatomic_ops
     AC_CONFIG_SUBDIRS(libatomic_ops)
 
     dnl Also copy the source files to be linked in.
-    test -e ${srcdir}/atomic_ops.c \
-    	|| ln -s ${srcdir}/libatomic_ops/src/atomic_ops.c \
-		 ${srcdir}/atomic_ops.c
+    test -e atomic_ops.c \
+    	|| ln -s libatomic_ops/src/atomic_ops.c \
+		 atomic_ops.c
 
-    test -e ${srcdir}/atomic_ops_sysdeps.S \
-    	|| ln -s ${srcdir}/libatomic_ops/src/atomic_ops_sysdeps.S \
-		 ${srcdir}/atomic_ops_sysdeps.S
+    test -e atomic_ops_sysdeps.S \
+    	|| ln -s libatomic_ops/src/atomic_ops_sysdeps.S \
+		 atomic_ops_sysdeps.S
 
     dnl This gets the source include files, which is often close enough.
     dnl It also makes atomic_ops_sysdeps.S assemble.
-    GC_CFLAGS="${GC_CFLAGS} -I \$(top_srcdir)/libatomic_ops/src"
+    GC_CFLAGS="${GC_CFLAGS} -I libatomic_ops/src"
     maybe_libatomic_ops="libatomic_ops"
   ])
 

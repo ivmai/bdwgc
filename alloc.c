@@ -90,7 +90,14 @@ char * GC_copyright[] =
 " EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.",
 "See source code for details." };
 
-# include "version.h"
+/* Version macros are now defined in gc_version.h, which is included by	*/
+/* gc.h, which is included by gc_priv.h".				*/
+
+#ifndef GC_NO_VERSION_VAR
+
+unsigned GC_version = ((GC_VERSION_MAJOR << 16) | (GC_VERSION_MINOR << 8) | GC_TMP_ALPHA_VERSION);
+
+#endif /* GC_NO_VERSION_VAR */
 
 /* some more variables */
 
