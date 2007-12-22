@@ -31,7 +31,8 @@ pkginclude_HEADERS += \
 	include/gc_amiga_redirects.h \
 	include/gc_pthread_redirects.h \
 	include/gc_config_macros.h \
-	include/gc_tiny_fl.h
+	include/gc_tiny_fl.h \
+	include/gc_version.h
 
 # headers which are not installed
 #

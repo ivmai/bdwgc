@@ -1,3 +1,21 @@
+2007-12-21  Hans Boehm <Hans.Boehm@hp.com>
+
+	* alloc.c: Define GC_version instead of in version.h.
+	* version.h: Remove.
+	* include/gc_version.h: Move most of version.h here.
+	* include/gc.h: Include gc_version.h.
+	* gcname.c, add_gc_prefix.c: include gc.h instead of version.h.
+	* Makefile.direct, Makefile.dj, Makefile.am, include/include.am: Adjust for
+	version.h rename.
+	* Makefile.in: Regenerate.
+
+2007-12-21  Hans Boehm <Hans.Boehm@hp.com> (Really mostly russ sludge dot net)
+
+	* configure.ac: Put libatomic_ops links in build directory.
+	* configure: Regenerate.
+	* Makefile.am: Dont mention atomic_ops.c and atomic_ops_sysdeps.S
+	as nodist sources.
+
 2007-12-20  Hans Boehm <Hans.Boehm@hp.com>
 
 	* include/gc.h, doc/README.macros: Add GC_NO_THREAD_REDIRECTS,

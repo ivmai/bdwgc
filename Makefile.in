@@ -171,10 +171,7 @@ am_libgc_la_OBJECTS = allchblk.lo alloc.lo blacklst.lo checksums.lo \
 	real_malloc.lo reclaim.lo specific.lo stubborn.lo typd_mlc.lo \
 	backgraph.lo thread_local_alloc.lo $(am__objects_1) \
 	$(am__objects_2) $(am__objects_3)
-@NEED_ATOMIC_OPS_ASM_FALSE@@USE_INTERNAL_LIBATOMIC_OPS_TRUE@nodist_libgc_la_OBJECTS = atomic_ops.lo
-@NEED_ATOMIC_OPS_ASM_TRUE@nodist_libgc_la_OBJECTS =  \
-@NEED_ATOMIC_OPS_ASM_TRUE@	atomic_ops_sysdeps.lo
-libgc_la_OBJECTS = $(am_libgc_la_OBJECTS) $(nodist_libgc_la_OBJECTS)
+libgc_la_OBJECTS = $(am_libgc_la_OBJECTS)
 @CPLUSPLUS_TRUE@libgccpp_la_DEPENDENCIES = $(top_builddir)/libgc.la
 am__libgccpp_la_SOURCES_DIST = gc_cpp.cc
 @CPLUSPLUS_TRUE@am_libgccpp_la_OBJECTS = gc_cpp.lo
@@ -228,9 +225,9 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libcord_la_SOURCES) $(libgc_la_SOURCES) \
-	$(EXTRA_libgc_la_SOURCES) $(nodist_libgc_la_SOURCES) \
-	$(libgccpp_la_SOURCES) $(gctest_SOURCES) $(leaktest_SOURCES) \
-	$(middletest_SOURCES) $(smashtest_SOURCES) $(test_cpp_SOURCES) \
+	$(EXTRA_libgc_la_SOURCES) $(libgccpp_la_SOURCES) \
+	$(gctest_SOURCES) $(leaktest_SOURCES) $(middletest_SOURCES) \
+	$(smashtest_SOURCES) $(test_cpp_SOURCES) \
 	$(threadleaktest_SOURCES)
 DIST_SOURCES = $(libcord_la_SOURCES) $(am__libgc_la_SOURCES_DIST) \
 	$(EXTRA_libgc_la_SOURCES) $(am__libgccpp_la_SOURCES_DIST) \
@@ -252,7 +249,8 @@ am__pkginclude_HEADERS_DIST = include/gc_cpp.h include/gc_allocator.h \
 	include/gc_mark.h include/weakpointer.h include/new_gc_alloc.h \
 	include/gc_backptr.h include/gc_gcj.h include/leak_detector.h \
 	include/gc_amiga_redirects.h include/gc_pthread_redirects.h \
-	include/gc_config_macros.h include/gc_tiny_fl.h
+	include/gc_config_macros.h include/gc_tiny_fl.h \
+	include/gc_version.h
 pkgincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(dist_noinst_HEADERS) $(include_HEADERS) \
 	$(pkginclude_HEADERS)
@@ -433,6 +431,10 @@ SUBDIRS =
 # pkginclude_HEADERS with proper AM_CONDITIONALization.  Otherwise
 # delete this comment.
 
+# headers which are not installed
+# (see include/include.am for more)
+#
+
 # documentation which is not installed
 #
 
@@ -452,10 +454,10 @@ EXTRA_DIST = gc_cpp.cpp README.QUICK BCC_MAKEFILE NT_MAKEFILE \
 	EMX_MAKEFILE Makefile.direct Makefile.dj Makefile.DLLs \
 	SMakefile.amiga WCC_MAKEFILE configure_atomic_ops.sh \
 	NT_STATIC_THREADS_MAKEFILE NT_X64_STATIC_THREADS_MAKEFILE \
-	add_gc_prefix.c gcname.c if_mach.c if_not_there.c \
-	hpux_test_and_clear.s gc.mak MacOS.c MacProjects.sit.hqx \
-	mach_dep.c setjmp_t.c threadlibs.c AmigaOS.c \
-	Mac_files/datastart.c Mac_files/dataend.c \
+	NT_X64_THREADS_MAKEFILE add_gc_prefix.c gcname.c if_mach.c \
+	if_not_there.c hpux_test_and_clear.s gc.mak MacOS.c \
+	MacProjects.sit.hqx mach_dep.c setjmp_t.c threadlibs.c \
+	AmigaOS.c Mac_files/datastart.c Mac_files/dataend.c \
 	Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
 	include/private/msvc_dbg.h msvc_dbg.c libatomic_ops-1.2 \
 	libtool.m4 cord/cordbscs.c cord/cordtest.c cord/de.c \
@@ -477,15 +479,11 @@ pkginclude_HEADERS = $(am__append_5) include/gc.h include/gc_typed.h \
 	include/gc_allocator.h include/gc_backptr.h include/gc_gcj.h \
 	include/leak_detector.h include/gc_amiga_redirects.h \
 	include/gc_pthread_redirects.h include/gc_config_macros.h \
-	include/gc_tiny_fl.h
-
-# headers which are not installed
-# (see include/include.am for more)
-#
+	include/gc_tiny_fl.h include/gc_version.h
 
 # headers which are not installed
 #
-dist_noinst_HEADERS = version.h include/private/gc_hdrs.h \
+dist_noinst_HEADERS = include/private/gc_hdrs.h \
 	include/private/gc_priv.h include/private/gcconfig.h \
 	include/private/gc_pmark.h include/private/gc_locks.h \
 	include/private/dbg_mlc.h include/private/specific.h \
@@ -506,8 +504,6 @@ libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
 	specific.c stubborn.c typd_mlc.c backgraph.c \
 	thread_local_alloc.c $(am__append_1) $(am__append_2) \
 	$(am__append_3)
-@NEED_ATOMIC_OPS_ASM_TRUE@nodist_libgc_la_SOURCES = atomic_ops_sysdeps.S
-@USE_INTERNAL_LIBATOMIC_OPS_TRUE@nodist_libgc_la_SOURCES = atomic_ops.c
 
 # Include THREADDLLIBS here to ensure that the correct versions of
 # linuxthread semaphore functions get linked:
@@ -754,7 +750,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allchblk.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alloc.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atomic_ops.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/backgraph.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blacklst.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checksums.Plo@am__quote@
