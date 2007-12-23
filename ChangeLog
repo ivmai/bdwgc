@@ -1,3 +1,7 @@
+2007-12-23  Hans Boehm <Hans.Boehm@hp.com>
+
+	* Makefile.am: Add NT_X64_THREADS_MAKEFILE.
+ 
 2007-12-23  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Friedrich Dominicus)
 
 	* NT_X64_STATIC_THREADS_MAKEFILE: Clean up obsolete comment.

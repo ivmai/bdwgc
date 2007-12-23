@@ -157,7 +157,8 @@ EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE \
     OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE	\
     Makefile.direct Makefile.dj	Makefile.DLLs SMakefile.amiga \
     WCC_MAKEFILE configure_atomic_ops.sh \
-    NT_STATIC_THREADS_MAKEFILE NT_X64_STATIC_THREADS_MAKEFILE
+    NT_STATIC_THREADS_MAKEFILE NT_X64_STATIC_THREADS_MAKEFILE \
+    NT_X64_THREADS_MAKEFILE
 
 # files used by makefiles other than Makefile.am
 #
