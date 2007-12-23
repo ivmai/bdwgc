@@ -440,6 +440,9 @@ int GC_collect_a_little(void)
     return(result);
 }
 
+# if !defined(REDIRECT_MALLOC) && (defined(MSWIN32) || defined(MSWINCE))
+  void GC_add_current_malloc_heap();
+# endif
 /*
  * Assumes lock is held, signals are disabled.
  * We stop the world.

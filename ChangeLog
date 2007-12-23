@@ -1,3 +1,12 @@
+2007-12-23  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Friedrich Dominicus)
+
+	* NT_X64_STATIC_THREADS_MAKEFILE: Clean up obsolete comment.
+	* alloc.c: Add declaration for GC_add_current_malloc_heap.
+	* win32_threads.c (GC_beginthreadex): Clean up error
+	return code.
+	* doc/README.win64, NT_X64_THREADS_MAKEFILE, Makefile.direct:
+	Add NT_X64_THREADS_MAKEFILE.
+
 2007-12-21  Hans Boehm <Hans.Boehm@hp.com>
 
 	* alloc.c: Define GC_version instead of in version.h.
@@ -5,8 +14,8 @@
 	* include/gc_version.h: Move most of version.h here.
 	* include/gc.h: Include gc_version.h.
 	* gcname.c, add_gc_prefix.c: include gc.h instead of version.h.
-	* Makefile.direct, Makefile.dj, Makefile.am, include/include.am: Adjust for
-	version.h rename.
+	* Makefile.direct, Makefile.dj, Makefile.am, include/include.am:
+	Adjust for version.h rename.
 	* Makefile.in: Regenerate.
 
 2007-12-21  Hans Boehm <Hans.Boehm@hp.com> (Really mostly russ sludge dot net)

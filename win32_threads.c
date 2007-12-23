@@ -1078,7 +1078,7 @@ uintptr_t GC_beginthreadex(
     unsigned ( __stdcall *start_address )( void * ),
     void *arglist, unsigned initflag, unsigned *thrdaddr)
 {
-    uintptr_t thread_h = -1L;
+    uintptr_t thread_h;
 
     thread_args *args;
 
@@ -1097,7 +1097,7 @@ uintptr_t GC_beginthreadex(
 	/* Handed off to and deallocated by child thread.	*/
       if (0 == args) {
 	SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-        return (uintptr_t)(-1);
+        return (uintptr_t)(-1L);
       }
 
       /* set up thread arguments */
