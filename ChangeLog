@@ -1,3 +1,7 @@
+2007-01-03  Hans Boehm <Hans.Boehm@hp.com>
+
+	* include/gc.h (GC_INIT,GC_init): Update comments.
+
 2007-01-03  Hans Boehm <Hans.Boehm@hp.com> (based on a patch from
 	John Bowman, and an ancient patch from Fergus Henderson)
 

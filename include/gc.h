@@ -237,11 +237,8 @@ GC_API unsigned long GC_time_limit;
 
 /* Public procedures */
 
-/* Initialize the collector.  This is only required when using thread-local
- * allocation, since unlike the regular allocation routines, GC_local_malloc
- * is not self-initializing.  If you use GC_local_malloc you should arrange
- * to call this somehow (e.g. from a constructor) before doing any allocation.
- * For win32 threads, it needs to be called explicitly.
+/* Initialize the collector.  Portable clients should call GC_INIT() from
+ * the main program instead.
  */
 GC_API void GC_init(void);
 
@@ -1095,7 +1092,8 @@ GC_API void GC_use_DllMain(void);
   * no-op and the collector self-initializes.  But a number of platforms
   * make that too hard.
   * A GC_INIT call is required if the collector is built with THREAD_LOCAL_ALLOC
-  * defined and the initial allocation call is not to GC_malloc().
+  * defined and the initial allocation call is not to GC_malloc() or
+  * GC_malloc_atomic().
   */
 #if defined(__CYGWIN32__) || defined (_AIX)
     /*
