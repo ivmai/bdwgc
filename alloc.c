@@ -164,7 +164,7 @@ static word min_bytes_allocd()
     
     if (stack_size < 0) stack_size = -stack_size;
     total_root_size = 2 * stack_size + GC_root_size;
-    scan_size = 2 * GC_composite_in_use + GC_atomic_in_use
+    scan_size = 2 * GC_composite_in_use + GC_atomic_in_use/4
 		+ total_root_size;
     if (TRUE_INCREMENTAL) {
         return scan_size / (2 * GC_free_space_divisor);
@@ -188,6 +188,7 @@ word GC_adj_bytes_allocd(void)
     /* managed object should not alter result, assuming the client	*/
     /* is playing by the rules.						*/
     result = (signed_word)GC_bytes_allocd
+    	     + (signed_word)GC_bytes_dropped
     	     - (signed_word)GC_bytes_freed 
 	     + (signed_word)GC_finalizer_bytes_freed
 	     - expl_managed;
@@ -723,6 +724,7 @@ void GC_finish_collection()
       GC_bytes_allocd_before_gc += GC_bytes_allocd;
       GC_non_gc_bytes_at_gc = GC_non_gc_bytes;
       GC_bytes_allocd = 0;
+      GC_bytes_dropped = 0;
       GC_bytes_freed = 0;
       GC_finalizer_bytes_freed = 0;
       

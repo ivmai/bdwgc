@@ -1,3 +1,10 @@
+2007-01-03  Hans Boehm <Hans.Boehm@hp.com> (based on a patch from
+	John Bowman, and an ancient patch from Fergus Henderson)
+
+	* allchblk.c, alloc.c, include/private/gc_priv.h:
+	Track GC_bytes_dropped and use in GC triggering decisions.
+	* alloc.c (min_bytes_allocd): Weight atomic blocks less.
+
 2007-01-02  Hans Boehm <Hans.Boehm@hp.com>
 
 	* alloc.c (GC_add_to_heap): Call GC_install_header(p) AFTER

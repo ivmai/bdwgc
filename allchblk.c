@@ -720,6 +720,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n)
 		      struct hblk * prev = hhdr -> hb_prev;
 	              
 		      GC_large_free_bytes -= total_size;
+		      GC_bytes_dropped += total_size;
 		      GC_remove_from_fl(hhdr, n);
 	              for (h = hbp; h < limit; h++) {
 	                if (h == hbp || 0 != (hhdr = GC_install_header(h))) {

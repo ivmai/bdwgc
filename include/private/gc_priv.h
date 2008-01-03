@@ -862,6 +862,11 @@ struct _GC_arrays {
     word _bytes_allocd;
   	/* Number of words allocated during this collection cycle */
 # endif
+  word _bytes_dropped;
+  	/* Number of black-listed bytes dropped during GC cycle	*/
+	/* as a result of repeated scanning during allocation	*/
+	/* attempts.  These are treated largely as allocated,	*/
+	/* even though they are not useful to the client.	*/
   word _bytes_finalized;
   	/* Approximate number of bytes in objects (and headers)	*/
   	/* That became ready for finalization in the last 	*/
@@ -1039,6 +1044,7 @@ GC_API GC_FAR struct _GC_arrays GC_arrays;
 # define GC_large_free_bytes GC_arrays._large_free_bytes
 # define GC_large_allocd_bytes GC_arrays._large_allocd_bytes
 # define GC_max_large_allocd_bytes GC_arrays._max_large_allocd_bytes
+# define GC_bytes_dropped GC_arrays._bytes_dropped
 # define GC_bytes_finalized GC_arrays._bytes_finalized
 # define GC_non_gc_bytes_at_gc GC_arrays._non_gc_bytes_at_gc
 # define GC_bytes_freed GC_arrays._bytes_freed
