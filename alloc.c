@@ -797,13 +797,6 @@ void GC_add_to_heap(struct hblk *p, size_t bytes)
     if (GC_n_heap_sects >= MAX_HEAP_SECTS) {
     	ABORT("Too many heap sections: Increase MAXHINCR or MAX_HEAP_SECTS");
     }
-    phdr = GC_install_header(p);
-    if (0 == phdr) {
-    	/* This is extremely unlikely. Can't add it.  This will		*/
-    	/* almost certainly result in a	0 return from the allocator,	*/
-    	/* which is entirely appropriate.				*/
-    	return;
-    }
     while ((word)p <= HBLKSIZE) {
         /* Can't handle memory near address zero. */
         ++p;
@@ -816,6 +809,13 @@ void GC_add_to_heap(struct hblk *p, size_t bytes)
 	bytes -= HBLKSIZE;
         if (0 == bytes) return;
 	endp -= HBLKSIZE;
+    }
+    phdr = GC_install_header(p);
+    if (0 == phdr) {
+    	/* This is extremely unlikely. Can't add it.  This will		*/
+    	/* almost certainly result in a	0 return from the allocator,	*/
+    	/* which is entirely appropriate.				*/
+    	return;
     }
     GC_ASSERT(endp > (word)p && endp == (word)p + bytes);
     GC_heap_sects[GC_n_heap_sects].hs_start = (ptr_t)p;

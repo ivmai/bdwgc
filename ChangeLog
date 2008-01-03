@@ -1,3 +1,8 @@
+2007-01-02  Hans Boehm <Hans.Boehm@hp.com>
+
+	* alloc.c (GC_add_to_heap): Call GC_install_header(p) AFTER
+	adjusting p.
+
 2007-12-23  Hans Boehm <Hans.Boehm@hp.com>
 
 	* Makefile.am: Add NT_X64_THREADS_MAKEFILE.
