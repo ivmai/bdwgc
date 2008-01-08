@@ -589,19 +589,26 @@ extern GC_warn_proc GC_current_warn_proc;
  */
  
 # ifdef LARGE_CONFIG
-#   define LOG_PHT_ENTRIES  20  /* Collisions likely at 1M blocks,	*/
+#   if CPP_WORDSZ == 32
+#    define LOG_PHT_ENTRIES  20 /* Collisions likely at 1M blocks,	*/
 				/* which is >= 4GB.  Each table takes	*/
 				/* 128KB, some of which may never be	*/
 				/* touched.				*/
+#   else
+#    define LOG_PHT_ENTRIES  21 /* Collisions likely at 2M blocks,	*/
+				/* which is >= 8GB.  Each table takes	*/
+				/* 256KB, some of which may never be	*/
+				/* touched.				*/
+#   endif
 # else
 #   ifdef SMALL_CONFIG
-#     define LOG_PHT_ENTRIES  14 /* Collisions are likely if heap grows	*/
-				 /* to more than 16K hblks = 64MB.	*/
-				 /* Each hash table occupies 2K bytes.   */
+#     define LOG_PHT_ENTRIES  15 /* Collisions are likely if heap grows	*/
+				 /* to more than 32K hblks = 128MB.	*/
+				 /* Each hash table occupies 4K bytes.  */
 #   else /* default "medium" configuration */
-#     define LOG_PHT_ENTRIES  16 /* Collisions are likely if heap grows	*/
-				 /* to more than 64K hblks >= 256MB.	*/
-				 /* Each hash table occupies 8K bytes.  */
+#     define LOG_PHT_ENTRIES  18 /* Collisions are likely if heap grows	*/
+				 /* to more than 256K hblks >= 1GB.	*/
+				 /* Each hash table occupies 32K bytes. */
 				 /* Even for somewhat smaller heaps, 	*/
 				 /* say half that, collisions may be an	*/
 				 /* issue because we blacklist 		*/
@@ -780,11 +787,13 @@ struct hblk {
 /* MAX_ROOT_SETS is the maximum number of ranges that can be 	*/
 /* registered as static roots. 					*/
 # ifdef LARGE_CONFIG
-#   define MAX_ROOT_SETS 4096
+#   define MAX_ROOT_SETS 8192
 # else
-    /* GCJ LOCAL: MAX_ROOT_SETS increased to permit more shared */
-    /* libraries to be loaded.                                  */ 
-#   define MAX_ROOT_SETS 1024
+#   ifdef SMALL_CONFIG
+#     define MAX_ROOT_SETS 512
+#   else
+#     define MAX_ROOT_SETS 2048
+#   endif
 # endif
 
 # define MAX_EXCLUSIONS (MAX_ROOT_SETS/4)
