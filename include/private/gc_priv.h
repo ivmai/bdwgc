@@ -490,17 +490,22 @@ extern GC_warn_proc GC_current_warn_proc;
 /*                   */
 /*********************/
 
-/*  heap block size, bytes. Should be power of 2 */
+/*  Heap block size, bytes. Should be power of 2.		*/
+/* Incremental GC with MPROTECT_VDB currently requires the	*/
+/* page size to be a multiple of HBLKSIZE.  Since most modern	*/
+/* architectures support variable page sizes down to 4K, and	*/
+/* X86 is generally 4K, we now default to 4K, except for	*/
+/*   Alpha: Seems to be used with 8K pages.			*/
+/*   SMALL_CONFIG: Want less block-level fragmentation.		*/
 
 #ifndef HBLKSIZE
 # ifdef SMALL_CONFIG
 #   define CPP_LOG_HBLKSIZE 10
 # else
-#   if (CPP_WORDSZ == 32) || (defined(HPUX) && defined(HP_PA))
-      /* HPUX/PA seems to use 4K pages with the 64 bit ABI */
-#     define CPP_LOG_HBLKSIZE 12
-#   else
+#   if defined(ALPHA)
 #     define CPP_LOG_HBLKSIZE 13
+#   else
+#     define CPP_LOG_HBLKSIZE 12
 #   endif
 # endif
 #else
@@ -527,6 +532,7 @@ extern GC_warn_proc GC_current_warn_proc;
 # endif
 # undef HBLKSIZE
 #endif
+
 # define CPP_HBLKSIZE (1 << CPP_LOG_HBLKSIZE)
 # define LOG_HBLKSIZE   ((size_t)CPP_LOG_HBLKSIZE)
 # define HBLKSIZE ((size_t)CPP_HBLKSIZE)

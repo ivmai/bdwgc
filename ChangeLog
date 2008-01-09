@@ -1,4 +1,4 @@
-2008-01-07  Hans Boehm <Hans.Boehm@hp.com>
+2008-01-09  Hans Boehm <Hans.Boehm@hp.com>
 
 	* include/private/gc_priv.h: Update MAX_ROOT_SETS
 	and LOG_PHT_ENTRIES to handle larger heaps.
