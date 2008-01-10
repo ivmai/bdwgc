@@ -22,7 +22,7 @@ AC_INIT(gc,7.1alpha1,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.30 $)
+AC_REVISION($Revision: 1.31 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -162,9 +162,10 @@ case "$THREADS" in
 	AC_DEFINE(GC_DARWIN_THREADS)
 	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	AC_MSG_WARN("Explict GC_INIT() calls may be required.");
-	if test "${enable_parallel_mark}" = yes; then
-	  AC_DEFINE(PARALLEL_MARK)
-	fi
+	# Parallel-mark is currently unreliable on Darwin; ignore request
+	# if test "${enable_parallel_mark}" = yes; then
+	#   AC_DEFINE(PARALLEL_MARK)
+	# fi
 	darwin_threads=true
 	;;
      *-*-osf*)

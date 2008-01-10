@@ -476,6 +476,8 @@ void GC_stop_world()
        it created before stopping show up later.
     */
 
+    /* FIXME: This seems to erroneously stop the parallel marker threads? */
+
     changes = 1;
     prev_list = NULL;
     prevcount = 0;

@@ -1,3 +1,9 @@
+2008-01-10  Hans Boehm <Hans.Boehm@hp.com>
+
+	* configure.ac: Ignore --enable-parallel-mark on Darwin for now.
+	* configure: Regenerate.
+	* darwin_stop_world.c: Add FIXME comment for parallel marker.
+
 2008-01-09  Hans Boehm <Hans.Boehm@hp.com>
 
 	* include/private/gc_priv.h: Update MAX_ROOT_SETS
