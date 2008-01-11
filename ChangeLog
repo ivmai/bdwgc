@@ -1,5 +1,11 @@
 2008-01-10  Hans Boehm <Hans.Boehm@hp.com>
 	
+	* include/gc_version.h, configure.ac, doc/README:
+	Change to version 7.1alpha2.
+	* configure: Regenerate.
+
+2008-01-10  Hans Boehm <Hans.Boehm@hp.com>
+	
 	* Makefile.am: Mention atomic_ops.c and atomic_ops_sysdeps.S
 	again.  Refer to build directory as ".".
 	* Makefile.in: Regenerate.
