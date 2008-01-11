@@ -171,8 +171,11 @@ am_libgc_la_OBJECTS = allchblk.lo alloc.lo blacklst.lo checksums.lo \
 	real_malloc.lo reclaim.lo specific.lo stubborn.lo typd_mlc.lo \
 	backgraph.lo thread_local_alloc.lo $(am__objects_1) \
 	$(am__objects_2) $(am__objects_3)
-libgc_la_OBJECTS = $(am_libgc_la_OBJECTS)
-@CPLUSPLUS_TRUE@libgccpp_la_DEPENDENCIES = $(top_builddir)/libgc.la
+@NEED_ATOMIC_OPS_ASM_FALSE@@USE_INTERNAL_LIBATOMIC_OPS_TRUE@nodist_libgc_la_OBJECTS = ./atomic_ops.lo
+@NEED_ATOMIC_OPS_ASM_TRUE@nodist_libgc_la_OBJECTS =  \
+@NEED_ATOMIC_OPS_ASM_TRUE@	./atomic_ops_sysdeps.lo
+libgc_la_OBJECTS = $(am_libgc_la_OBJECTS) $(nodist_libgc_la_OBJECTS)
+@CPLUSPLUS_TRUE@libgccpp_la_DEPENDENCIES = ./libgc.la
 am__libgccpp_la_SOURCES_DIST = gc_cpp.cc
 @CPLUSPLUS_TRUE@am_libgccpp_la_OBJECTS = gc_cpp.lo
 libgccpp_la_OBJECTS = $(am_libgccpp_la_OBJECTS)
@@ -225,9 +228,9 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libcord_la_SOURCES) $(libgc_la_SOURCES) \
-	$(EXTRA_libgc_la_SOURCES) $(libgccpp_la_SOURCES) \
-	$(gctest_SOURCES) $(leaktest_SOURCES) $(middletest_SOURCES) \
-	$(smashtest_SOURCES) $(test_cpp_SOURCES) \
+	$(EXTRA_libgc_la_SOURCES) $(nodist_libgc_la_SOURCES) \
+	$(libgccpp_la_SOURCES) $(gctest_SOURCES) $(leaktest_SOURCES) \
+	$(middletest_SOURCES) $(smashtest_SOURCES) $(test_cpp_SOURCES) \
 	$(threadleaktest_SOURCES)
 DIST_SOURCES = $(libcord_la_SOURCES) $(am__libgc_la_SOURCES_DIST) \
 	$(EXTRA_libgc_la_SOURCES) $(am__libgccpp_la_SOURCES_DIST) \
@@ -504,6 +507,8 @@ libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
 	specific.c stubborn.c typd_mlc.c backgraph.c \
 	thread_local_alloc.c $(am__append_1) $(am__append_2) \
 	$(am__append_3)
+@NEED_ATOMIC_OPS_ASM_TRUE@nodist_libgc_la_SOURCES = ./atomic_ops_sysdeps.S 	 
+@USE_INTERNAL_LIBATOMIC_OPS_TRUE@nodist_libgc_la_SOURCES = ./atomic_ops.c 	 
 
 # Include THREADDLLIBS here to ensure that the correct versions of
 # linuxthread semaphore functions get linked:
@@ -516,7 +521,7 @@ EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
     sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s
 
 @CPLUSPLUS_TRUE@libgccpp_la_SOURCES = gc_cpp.cc
-@CPLUSPLUS_TRUE@libgccpp_la_LIBADD = $(top_builddir)/libgc.la
+@CPLUSPLUS_TRUE@libgccpp_la_LIBADD = ./libgc.la
 @CPLUSPLUS_TRUE@libgccpp_la_LDFLAGS = -version-info 1:3:0 -no-undefined
 
 # Misc
@@ -680,6 +685,14 @@ cord/cordtest.lo: cord/$(am__dirstamp) cord/$(DEPDIR)/$(am__dirstamp)
 cord/cordxtra.lo: cord/$(am__dirstamp) cord/$(DEPDIR)/$(am__dirstamp)
 libcord.la: $(libcord_la_OBJECTS) $(libcord_la_DEPENDENCIES) 
 	$(LINK) -rpath $(libdir) $(libcord_la_LDFLAGS) $(libcord_la_OBJECTS) $(libcord_la_LIBADD) $(LIBS)
+./$(am__dirstamp):
+	@$(mkdir_p) .
+	@: > ./$(am__dirstamp)
+$(DEPDIR)/$(am__dirstamp):
+	@$(mkdir_p) ./$(DEPDIR)
+	@: > $(DEPDIR)/$(am__dirstamp)
+./atomic_ops_sysdeps.lo: ./$(am__dirstamp) $(DEPDIR)/$(am__dirstamp)
+./atomic_ops.lo: ./$(am__dirstamp) $(DEPDIR)/$(am__dirstamp)
 libgc.la: $(libgc_la_OBJECTS) $(libgc_la_DEPENDENCIES) 
 	$(LINK) -rpath $(libdir) $(libgc_la_LDFLAGS) $(libgc_la_OBJECTS) $(libgc_la_LIBADD) $(LIBS)
 libgccpp.la: $(libgccpp_la_OBJECTS) $(libgccpp_la_DEPENDENCIES) 
@@ -730,6 +743,10 @@ threadleaktest$(EXEEXT): $(threadleaktest_OBJECTS) $(threadleaktest_DEPENDENCIES
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f ./atomic_ops.$(OBJEXT)
+	-rm -f ./atomic_ops.lo
+	-rm -f ./atomic_ops_sysdeps.$(OBJEXT)
+	-rm -f ./atomic_ops_sysdeps.lo
 	-rm -f cord/cordbscs.$(OBJEXT)
 	-rm -f cord/cordbscs.lo
 	-rm -f cord/cordprnt.$(OBJEXT)
@@ -750,6 +767,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allchblk.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alloc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atomic_ops.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/backgraph.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blacklst.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checksums.Plo@am__quote@
@@ -1307,10 +1325,12 @@ clean-generic:
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
+	-rm -f ./$(am__dirstamp)
 	-rm -f cord/$(DEPDIR)/$(am__dirstamp)
 	-rm -f cord/$(am__dirstamp)
 	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
 	-rm -f tests/$(am__dirstamp)
+	-test -z "$(DEPDIR)/$(am__dirstamp)" || rm -f $(DEPDIR)/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
