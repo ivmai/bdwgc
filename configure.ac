@@ -17,12 +17,12 @@ dnl Process this file with autoconf to produce configure.
 # Initialization
 # ==============
 
-AC_INIT(gc,7.1alpha2,Hans.Boehm@hp.com) 
+AC_INIT(gc,7.1alpha3,Hans.Boehm@hp.com) 
     ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.32 $)
+AC_REVISION($Revision: 1.33 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
