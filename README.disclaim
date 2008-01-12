@@ -1,0 +1,14 @@
+== Applying the Disclaim Patch ==
+
+Pick the patch closest in date to the version of GC you want to patch.
+
+1.  Unpack the source code, or make a copy of the CVS tree.
+
+2.  From the top level source directory, issue 'patch -p1 <PATCHFILE.patch'.
+    If it doesn't apply cleanly, you should try another GC/patch combination.
+
+3.  IMPORTANT: Run 'autoreconf -vi'.  This regenerates auto-generated files
+    which are not included in the patch.
+
+4.  Build, test and install the collector.  It's a very good idea to run
+    'make check' before installing.

@@ -117,7 +117,7 @@ void * GC_finalized_malloc(size_t client_lb, struct GC_finalizer_closure *fclos)
             *my_fl = (ptr_t)my_entry + lg + 1;
             return GC_core_finalized_malloc(client_lb, fclos);
         } else {
-            GC_generic_malloc_many(RAW_BYTES_FROM_INDEX(lg),
+            GC_generic_malloc_many(GC_RAW_BYTES_FROM_INDEX(lg),
                                    GC_finalized_kind, my_fl);
             my_entry = *my_fl;
             if (my_entry == 0)
