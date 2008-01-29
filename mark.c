@@ -1798,7 +1798,8 @@ GC_bool GC_block_was_dirty(struct hblk *h, hdr *hhdr)
 }
 #endif /* SMALL_CONFIG */
 
-/* Similar to GC_push_next_marked, but return address of next block	*/
+/* Similar to GC_push_marked, but skip over unallocated blocks	*/
+/* and return address of next plausible block.			*/
 struct hblk * GC_push_next_marked(struct hblk *h)
 {
     hdr * hhdr = HDR(h);

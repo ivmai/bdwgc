@@ -318,6 +318,8 @@ HOSTCFLAGS=$(CFLAGS)
 #   required for applications that store pointers in mmapped segments without
 #   informaing the collector.  But it typically performs poorly, especially
 #   since it will scan inactive but cached NPTL thread stacks completely.
+# -DNO_PROC_STAT Causes the collector to avoid relying on Linux'
+#   /proc/self/stat.
 #
 
 CXXFLAGS= $(CFLAGS) 

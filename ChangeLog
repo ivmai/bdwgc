@@ -1,3 +1,9 @@
+2008-01-29  Hans Boehm <Hans.Boehm@hp.com>  (with help from Manuel Serrano)
+	
+	* mark.c (GC_push_next_marked): correct comment.
+	* Makefile.direct: document NO_PROC_STAT.
+	* include/private/gcconfig.h: Accomodate NO_PROC_STAT.
+
 2008-01-10  Hans Boehm <Hans.Boehm@hp.com>
 	
 	* include/gc_version.h, configure.ac, doc/README:

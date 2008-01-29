@@ -558,7 +558,9 @@
  * If STACKBOTTOM is defined, then it's value will be used directly as the
  * stack base.  If LINUX_STACKBOTTOM is defined, then it will be determined
  * with a method appropriate for most Linux systems.  Currently we look
- * first for __libc_stack_end, and if that fails read it from /proc.
+ * first for __libc_stack_end (currently only id USE_LIBC_PRIVATES is
+ * defined), and if that fails read it from /proc.  (If USE_LIBC_PRIVATES
+ * is not defined and NO_PROC_STAT is defined, we revert to HEURISTIC2.)
  * If either of the last two macros are defined, then STACKBOTTOM is computed
  * during collector startup using one of the following two heuristics:
  * HEURISTIC1:  Take an address inside GC_init's frame, and round it up to
@@ -1981,6 +1983,16 @@
 #       define DATAEND  /* not needed */
 #   endif
 # endif
+
+#if defined(LINUX_STACKBOTTOM) && defined(NO_PROC_STAT) \
+    && !defined(USE_LIBC_PRIVATES)
+    /* This combination will fail, since we have no way to get	*/
+    /* the stack base.	Use HEURISTIC2 instead.			*/
+#   undef LINUX_STACKBOTTOM
+#   define HEURISTIC2
+    /* This may still fail on some architectures like IA64.	*/
+    /* We tried ...						*/
+#endif
 
 #if defined(LINUX) && defined(USE_MMAP)
     /* The kernel may do a somewhat better job merging mappings etc.	*/
