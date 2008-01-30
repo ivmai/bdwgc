@@ -429,9 +429,10 @@ void GC_merge_unmapped(void)
 	size = hhdr->hb_sz;
 	next = (struct hblk *)((word)h + size);
 	GET_HDR(next, nexthdr);
+	nextsize = nexthdr -> hb_sz;
 	/* Coalesce with successor, if possible */
-	  if (0 != nexthdr && HBLK_IS_FREE(nexthdr)) {
-	    nextsize = nexthdr -> hb_sz;
+	  if (0 != nexthdr && HBLK_IS_FREE(nexthdr)
+	      && (signed_word) (size + next_size) > 0 /* no pot. overflow */) {
 	    if (IS_MAPPED(hhdr)) {
 	      GC_ASSERT(!IS_MAPPED(nexthdr));
 	      /* make both consistent, so that we can merge */
@@ -808,6 +809,11 @@ signed_word size;
     GET_HDR(hbp, hhdr);
     size = hhdr->hb_sz;
     size = HBLKSIZE * OBJ_SZ_TO_BLOCKS(size);
+    if (size <= 0)
+      ABORT("Deallocating excessively large block.  Too large an allocation?");
+      /* Probably possible if we try to allocate more than half the address */
+      /* space at once.  If we dont catch it here, strange things happen    */
+      /* later.								    */
     GC_remove_counts(hbp, (word)size);
     hhdr->hb_sz = size;
 #   ifdef USE_MUNMAP
@@ -826,7 +832,9 @@ signed_word size;
     GET_HDR(next, nexthdr);
     prev = GC_free_block_ending_at(hbp);
     /* Coalesce with successor, if possible */
-      if(0 != nexthdr && HBLK_IS_FREE(nexthdr) && IS_MAPPED(nexthdr)) {
+      if(0 != nexthdr && HBLK_IS_FREE(nexthdr) && IS_MAPPED(nexthdr)
+         && (signed_word)(hhdr -> hb_sz + nexthdr -> hb_sz) > 0
+	 /* no overflow */) {
 	GC_remove_from_fl(nexthdr, FL_UNKNOWN);
 	hhdr -> hb_sz += nexthdr -> hb_sz; 
 	GC_remove_header(next);
@@ -834,7 +842,8 @@ signed_word size;
     /* Coalesce with predecessor, if possible. */
       if (0 != prev) {
 	prevhdr = HDR(prev);
-	if (IS_MAPPED(prevhdr)) {
+	if (IS_MAPPED(prevhdr)
+	    && (signed_word)(hhdr -> hb_sz + prevhdr -> hb_sz) > 0) {
 	  GC_remove_from_fl(prevhdr, FL_UNKNOWN);
 	  prevhdr -> hb_sz += hhdr -> hb_sz;
 #	  ifdef USE_MUNMAP

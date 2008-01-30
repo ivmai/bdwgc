@@ -1,3 +1,10 @@
+2008-01-29  Hans Boehm <Hans.Boehm@hp.com>
+
+	* allchblk.c (GC_merge_unmapped, GC_freehblk): Refuse to create
+	blocks large enough that their size, when interpreted as a signed
+	value, would be negative.
+	* include/private/gc_priv.h: Comment hb_sz range limit.
+
 2008-01-29  Hans Boehm <Hans.Boehm@hp.com>  (with help from Manuel Serrano)
 	
 	* mark.c (GC_push_next_marked): correct comment.
