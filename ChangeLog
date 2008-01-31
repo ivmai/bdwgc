@@ -1,3 +1,8 @@
+2008-01-31  Hans Boehm <Hans.Boehm@hp.com> (mostly from Andreas Tobler)
+
+	* tests/test.c: Call GC_INIT for DARWIN; test system type using
+	gcconfig.h-defined macros.
+
 2008-01-29  Hans Boehm <Hans.Boehm@hp.com>
 
 	* allchblk.c (GC_merge_unmapped, GC_freehblk): Refuse to create

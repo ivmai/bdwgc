@@ -65,7 +65,7 @@
 
 /* Call GC_INIT only on platforms on which we think we really need it,	*/
 /* so that we can test automatic initialization on the rest.		*/
-#if defined(__CYGWIN32__) || defined (_AIX)
+#if defined(CYGWIN32) || defined (AIX) || defined(DARWIN)
 #  define GC_COND_INIT() GC_INIT()
 #else
 #  define GC_COND_INIT()
