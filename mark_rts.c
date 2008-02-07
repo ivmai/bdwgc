@@ -511,6 +511,8 @@ void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
 #   endif /* !THREADS */
 }
 
+void (*GC_push_typed_structures) (void) = NULL;
+
 /*
  * Push GC internal roots.  Only called if there is some reason to believe
  * these would not otherwise get registered.
@@ -521,6 +523,8 @@ void GC_push_gc_structures(void)
 #   if defined(THREADS)
       GC_push_thread_structures();
 #   endif
+    if( GC_push_typed_structures )
+      GC_push_typed_structures();
 }
 
 #ifdef THREAD_LOCAL_ALLOC

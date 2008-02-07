@@ -97,6 +97,11 @@ size_t GC_avail_descr = 0;	/* Next available slot.		*/
 int GC_typed_mark_proc_index;	/* Indices of my mark		*/
 int GC_array_mark_proc_index;	/* procedures.			*/
 
+static void GC_push_typed_structures_proc (void)
+{
+  GC_push_all((ptr_t)&GC_ext_descriptors, (ptr_t)&GC_ext_descriptors + sizeof(word));
+}
+
 /* Add a multiword bitmap to GC_ext_descriptors arrays.  Return	*/
 /* starting index.						*/
 /* Returns -1 on failure.					*/
@@ -116,10 +121,12 @@ signed_word GC_add_ext_descriptor(GC_bitmap bm, word nbits)
     	size_t new_size;
     	word ed_size = GC_ed_size;
     	
-    	UNLOCK();
     	if (ed_size == 0) {
+    	    GC_push_typed_structures = GC_push_typed_structures_proc;
+    	    UNLOCK();
     	    new_size = ED_INITIAL_SIZE;
     	} else {
+    	    UNLOCK();
     	    new_size = 2 * ed_size;
     	    if (new_size > MAX_ENV) return(-1);
     	} 

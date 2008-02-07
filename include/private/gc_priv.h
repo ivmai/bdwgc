@@ -1403,6 +1403,9 @@ extern void GC_push_gc_structures(void);
 #	ifdef THREADS
 	  extern void GC_push_thread_structures (void);
 #	endif
+	extern void (*GC_push_typed_structures) (void);
+			/* A pointer such that we can avoid linking in	*/
+			/* the typed allocation support if unused.	*/
 extern void (*GC_start_call_back) (void);
   			/* Called at start of full collections.		*/
   			/* Not called if 0.  Called with allocation 	*/
