@@ -1,3 +1,15 @@
+2008-02-08  Hans Boehm <Hans.Boehm@hp.com>
+
+	* misc.c (GC_init_inner): Assert !GC_need_to_lock only when
+	defined.  (GC_call_with_stack_base): Add GC_API.
+	* os_dep.c (GC_get_stack_base): Add GC_API.
+	* win32_threads.c: (GC_register_my_thread, GC_unregister_my_thread):
+	Add GC_API.
+	* include/gc.h: Add GC_API annotations.
+	* include/private/gc_locks.h: Define UNCOND_LOCK etc. also for
+	PCR.
+	* include/private/gc_pmark.h: Fix comments.
+
 2008-02-06  Hans Boehm <Hans.Boehm@hp.com> (mostly from Henning Makholm)
 
 	* include/private/gc_priv.h, mark_rts.c, typd_mlc.c:

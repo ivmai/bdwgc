@@ -856,7 +856,7 @@ typedef void * (*GC_stack_base_func)(struct GC_stack_base *sb, void *arg);
 /* somewhere in the GC_call_with_stack_base frame.  This often can	*/
 /* be used to provide a sufficiently accurate stack base.  And we 	*/
 /* implement it everywhere.						*/
-void * GC_call_with_stack_base(GC_stack_base_func fn, void *arg);
+GC_API void * GC_call_with_stack_base(GC_stack_base_func fn, void *arg);
 
 /* Register the current thread, with the indicated stack base, as	*/
 /* a new thread whose stack(s) should be traced by the GC.  If a 	*/
@@ -869,7 +869,7 @@ void * GC_call_with_stack_base(GC_stack_base_func fn, void *arg);
 #define GC_DUPLICATE 1	/* Was already registered.	*/
 #define GC_NO_THREADS 2	/* No thread support in GC.  	*/
 #define GC_UNIMPLEMENTED 3	/* Not yet implemented on this platform. */
-int GC_register_my_thread(struct GC_stack_base *);
+GC_API int GC_register_my_thread(struct GC_stack_base *);
 
 /* Unregister the current thread.  The thread may no longer allocate	*/
 /* garbage collected memory or manipulate pointers to the		*/
@@ -878,7 +878,7 @@ int GC_register_my_thread(struct GC_stack_base *);
 /* pointer to the garbage-collected heap to another thread, it must	*/
 /* do this before calling GC_unregister_my_thread, most probably	*/
 /* by saving it in a global data structure.				*/
-int GC_unregister_my_thread(void);
+GC_API int GC_unregister_my_thread(void);
 
 /* Attempt to fill in the GC_stack_base structure with the stack base	*/
 /* for this thread.  This appears to be required to implement anything	*/
@@ -886,7 +886,7 @@ int GC_unregister_my_thread(void);
 /* threads are not automatically registered with the collector.		*/
 /* It is also unfortunately hard to implement well on many platforms.	*/
 /* Returns GC_SUCCESS or GC_UNIMPLEMENTED.				*/
-int GC_get_stack_base(struct GC_stack_base *);
+GC_API int GC_get_stack_base(struct GC_stack_base *);
 
 /* The following routines are primarily intended for use with a 	*/
 /* preprocessor which inserts calls to check C pointer arithmetic.	*/

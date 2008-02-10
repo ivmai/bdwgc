@@ -36,8 +36,8 @@
      extern PCR_Th_ML GC_allocate_ml;
 #    define DCL_LOCK_STATE \
 	 PCR_ERes GC_fastLockRes; PCR_sigset_t GC_old_sig_mask
-#    define LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml)
-#    define UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
+#    define UNCOND_LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml)
+#    define UNCOND_UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
 #  endif
 
 #  if !defined(AO_HAVE_test_and_set_acquire) && defined(GC_PTHREADS)

@@ -752,7 +752,7 @@ word GC_get_writable_length(ptr_t p, ptr_t *base)
     return(buf.RegionSize);
 }
 
-int GC_get_stack_base(struct GC_stack_base *sb)
+GC_API int GC_get_stack_base(struct GC_stack_base *sb)
 {
     int dummy;
     ptr_t sp = (ptr_t)(&dummy);

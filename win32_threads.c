@@ -559,7 +559,7 @@ void GC_delete_thread(DWORD id)
   }
 }
 
-int GC_register_my_thread(struct GC_stack_base *sb) {
+GC_API int GC_register_my_thread(struct GC_stack_base *sb) {
   DWORD t = GetCurrentThreadId();
 
   if (0 == GC_lookup_thread(t)) {
@@ -573,7 +573,7 @@ int GC_register_my_thread(struct GC_stack_base *sb) {
   }
 }
 
-int GC_unregister_my_thread(void)
+GC_API int GC_unregister_my_thread(void)
 {
     DWORD t = GetCurrentThreadId();
 

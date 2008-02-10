@@ -483,7 +483,9 @@ void GC_init_inner()
     /* And the initialization code needs to run before     */
     /* then.  Thus we really don't hold any locks, and can */
     /* in fact safely initialize them here.		   */
-    GC_ASSERT(!GC_need_to_lock);
+#   ifdef THREADS
+      GC_ASSERT(!GC_need_to_lock);
+#   endif
 #   if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
       if (!GC_is_initialized) {
         BOOL (WINAPI *pfn) (LPCRITICAL_SECTION, DWORD) = NULL;
@@ -1146,7 +1148,7 @@ unsigned GC_new_proc(GC_mark_proc proc)
     return result;
 }
 
-void * GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
+GC_API void * GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 {
     int dummy;
     struct GC_stack_base base;

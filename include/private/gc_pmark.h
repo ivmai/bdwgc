@@ -60,10 +60,9 @@ extern unsigned GC_n_mark_procs;
 #define GC_MARK_STACK_DISCARDS (INITIAL_MARK_STACK_SIZE/8)
 
 typedef struct GC_ms_entry {
-    ptr_t mse_start;   /* First word of object */
+    ptr_t mse_start;   /* First word of object, word aligned  */
     GC_word mse_descr;	/* Descriptor; low order two bits are tags,	*/
-    			/* identifying the upper 30 bits as one of the	*/
-    			/* following:					*/
+    			/* as described in gc_mark.h.  			*/
 } mse;
 
 extern size_t GC_mark_stack_size;
