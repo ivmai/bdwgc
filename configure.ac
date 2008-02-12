@@ -22,7 +22,7 @@ AC_INIT(gc,7.1alpha3,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.33 $)
+AC_REVISION($Revision: 1.34 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -351,12 +351,12 @@ AC_ENABLE_SHARED
 case "$host" in
  alpha-*-openbsd*)
      enable_shared=no
-     AC_MSG_RESULT(no)
      ;;
  *)
-     AC_MSG_RESULT(yes)
      ;;
 esac
+
+AC_MSG_RESULT($enable_shared)
 
 # Configuration of machine-dependent code
 #

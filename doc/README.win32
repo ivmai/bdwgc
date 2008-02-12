@@ -69,7 +69,7 @@ absence of thread support).
 GNU Tools
 ---------
 The collector should be buildable under Cygwin with either the old standard
-Makefile, or possibly with the "configure --diable-shared;make" machinery.
+Makefile, or possibly with the "configure --disable-shared;make" machinery.
 (For the latter use --enable-threads=posix for thread support.) The major issue
 here seems to be that dynamic library support is not currently enabled for
 Cygwin.  (This is probably fixable without a great deal of difficulty by

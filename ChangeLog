@@ -1,3 +1,9 @@
+2008-02-11  Hans Boehm <Hans.Boehm@hp.com> (partly David Leonard)
+
+	* doc/README.win32: Fix typo.
+	* configure.ac: Fix printing of enable-shared result.
+	* configure: Regenerate.
+
 2008-02-08  Hans Boehm <Hans.Boehm@hp.com>
 
 	* misc.c (GC_init_inner): Assert !GC_need_to_lock only when
