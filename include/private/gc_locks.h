@@ -102,7 +102,7 @@
 #        undef NUMERIC_THREAD_ID_UNIQUE
 #      endif
 #    endif
-#    define NO_THREAD (-1l)
+#    define NO_THREAD ((unsigned long)(-1l))
 		/* != NUMERIC_THREAD_ID(pthread_self()) for any thread */
 
 #    if !defined(THREAD_LOCAL_ALLOC) && !defined(USE_PTHREAD_LOCKS)

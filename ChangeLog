@@ -1,3 +1,18 @@
+2008-02-15  Hans Boehm <Hans.Boehm@hp.com>
+
+	* windows-untested/gc.def: Remove CreateThread line.
+	* windows-untested/README: New file.
+	* win32_threads.c (GC_use_DllMain): Force collector initialization.
+	(GC_init_parallel): Reformat comment.
+	* include/gc.h (GC_use_DllMain): Clarify usage rules in comment.
+	* mark.c (GC_mark_from): Slightly simplify GC_DS_PER_OBJECT code.
+	* include/gc_cpp.h: Add matching placement delete overloads
+	everywhere.
+	* include/private/gc_locks.h (NO_THREAD): Add cast.
+	* include/private/gcconfig.h: Add test for __HP_aCC.
+	* configure.ac, tests/tests.am:  Avoid libgccpp on HP/UX.
+	* Makefile.in, configure: Regenerate.
+
 2008-02-11  Hans Boehm <Hans.Boehm@hp.com> (partly David Leonard)
 
 	* doc/README.win32: Fix typo.

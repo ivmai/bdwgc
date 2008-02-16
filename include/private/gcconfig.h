@@ -203,7 +203,7 @@
 #   endif
 #   define mach_type_known
 # endif
-# if defined(__ia64) && defined(_HPUX_SOURCE)
+# if defined(__ia64) && (defined(_HPUX_SOURCE) || defined(__HP_aCC))
 #   define IA64
 #   ifndef HPUX
 #     define HPUX

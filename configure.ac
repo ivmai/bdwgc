@@ -22,7 +22,7 @@ AC_INIT(gc,7.1alpha3,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.34 $)
+AC_REVISION($Revision: 1.35 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -299,6 +299,15 @@ case "$host" in
     AC_CHECK_LIB(dl, dlopen, THREADDLLIBS="$THREADDLLIBS -ldl")
     ;;
 esac
+
+case "$host" in
+  *-*-hpux*)
+    avoid_cpp_lib=yes;;
+  *)
+    avoid_cpp_lib=no;
+    ;;
+esac
+AM_CONDITIONAL(AVOID_CPP_LIB,test $avoid_cpp_lib = yes)
 
 # extra LD Flags which are required for targets
 case "${host}" in

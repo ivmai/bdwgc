@@ -147,6 +147,7 @@ void GC_init_parallel(void);
 #     endif
       GC_ASSERT(!parallel_initialized);
       GC_win32_dll_threads = TRUE;
+      GC_init_parallel();
   }
 #else
   GC_API void GC_use_DllMain(void)
@@ -1497,10 +1498,10 @@ void GC_init_parallel(void)
     if (!GC_is_initialized) GC_init();
     if (GC_win32_dll_threads) {
       GC_need_to_lock = TRUE;
-  	/* Cannot intercept thread creation.  Hence we don't know if other	*/
-	/* threads exist.  However, client is not allowed to create other	*/
-	/* threads before collector initialization.  Thus it's OK not to	*/
-	/* lock before this.							*/
+	/* Cannot intercept thread creation.  Hence we don't know if	*/
+	/* other threads exist.  However, client is not allowed to 	*/
+	/* create other threads before collector initialization.	*/
+	/* Thus it's OK not to lock before this.			*/
     }
     /* Initialize thread local free lists if used.	*/
 #   if defined(THREAD_LOCAL_ALLOC)

@@ -177,7 +177,9 @@ class gc {public:
     	/* Must be redefined here, since the other overloadings	*/
     	/* hide the global definition.				*/
     inline void operator delete( void* obj );
-#   ifdef GC_PLACEMENT_DELETE  
+#   ifdef GC_PLACEMENT_DELETE
+      inline void operator delete( void*, GCPlacement );
+      	/* called if construction fails.	*/
       inline void operator delete( void*, void* );
 #   endif
 
@@ -187,6 +189,7 @@ class gc {public:
     inline void* operator new[]( size_t size, void *p );
     inline void operator delete[]( void* obj );
 #   ifdef GC_PLACEMENT_DELETE
+      inline void operator delete[]( void*, GCPlacement );
       inline void operator delete[]( void*, void* );
 #   endif
 #endif /* GC_OPERATOR_NEW_ARRAY */
@@ -235,12 +238,15 @@ inline void* operator new(
     classes derived from "gc_cleanup" or containing members derived
     from "gc_cleanup". */
 
+#   ifdef GC_PLACEMENT_DELETE
+      inline void operator delete( void*, GCPlacement, GCCleanUpFunc, void * );
+#   endif
 
 #ifdef _MSC_VER
  /** This ensures that the system default operator new[] doesn't get
   *  undefined, which is what seems to happen on VC++ 6 for some reason
   *  if we define a multi-argument operator new[].
-  *  There seems to be really redirect new in this environment without
+  *  There seems to be no way to redirect new in this environment without
   *  including this everywhere. 
   */
  void *operator new[]( size_t size );
@@ -296,6 +302,10 @@ inline void gc::operator delete( void* obj ) {
     
 #ifdef GC_PLACEMENT_DELETE
   inline void gc::operator delete( void*, void* ) {}
+
+  inline void gc::operator delete( void* p, GCPlacement gcp ) {
+    GC_FREE(p);
+  }
 #endif
 
 #ifdef GC_OPERATOR_NEW_ARRAY
@@ -314,6 +324,10 @@ inline void gc::operator delete[]( void* obj ) {
 
 #ifdef GC_PLACEMENT_DELETE
   inline void gc::operator delete[]( void*, void* ) {}
+
+  inline void gc::operator delete[]( void* p, GCPlacement gcp ) {
+    gc::operator delete(p); }
+
 #endif
     
 #endif /* GC_OPERATOR_NEW_ARRAY */
@@ -356,6 +370,16 @@ inline void* operator new(
         obj = GC_MALLOC_UNCOLLECTABLE( size );};
     return obj;}
         
+# ifdef GC_PLACEMENT_DELETE
+inline void operator delete ( 
+    void *p, 
+    GCPlacement gcp,
+    GCCleanUpFunc cleanup,
+    void* clientData )
+{
+    GC_FREE(p);
+}
+# endif
 
 #ifdef GC_OPERATOR_NEW_ARRAY
 

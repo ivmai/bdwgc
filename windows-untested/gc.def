@@ -1,3 +1,2 @@
 EXPORTS
     GC_version          DATA
-    GC_CreateThread=KERNEL32.CreateThread

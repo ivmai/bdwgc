@@ -1073,6 +1073,9 @@ GC_register_has_static_roots_callback
 
   /*
    * Use implicit thread registration via DllMain.
+   * Must be called before GC_INIT and other GC routines.
+   * Should be avoided if GC_beginthreadex and friends can be called
+   * instead.
    */
 GC_API void GC_use_DllMain(void);
 

@@ -197,8 +197,11 @@ smashtest_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am__test_cpp_SOURCES_DIST = tests/test_cpp.cc
 @CPLUSPLUS_TRUE@am_test_cpp_OBJECTS = tests/test_cpp.$(OBJEXT)
 test_cpp_OBJECTS = $(am_test_cpp_OBJECTS)
-@CPLUSPLUS_TRUE@test_cpp_DEPENDENCIES = libgccpp.la \
-@CPLUSPLUS_TRUE@	$(am__DEPENDENCIES_2)
+@AVOID_CPP_LIB_FALSE@@CPLUSPLUS_TRUE@test_cpp_DEPENDENCIES =  \
+@AVOID_CPP_LIB_FALSE@@CPLUSPLUS_TRUE@	libgccpp.la \
+@AVOID_CPP_LIB_FALSE@@CPLUSPLUS_TRUE@	$(am__DEPENDENCIES_2)
+@AVOID_CPP_LIB_TRUE@@CPLUSPLUS_TRUE@test_cpp_DEPENDENCIES = gc_cpp.o \
+@AVOID_CPP_LIB_TRUE@@CPLUSPLUS_TRUE@	$(am__DEPENDENCIES_2)
 am__threadleaktest_SOURCES_DIST = tests/thread_leak_test.c
 @THREADS_TRUE@am_threadleaktest_OBJECTS =  \
 @THREADS_TRUE@	tests/thread_leak_test.$(OBJEXT)
@@ -279,6 +282,8 @@ AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
+AVOID_CPP_LIB_FALSE = @AVOID_CPP_LIB_FALSE@
+AVOID_CPP_LIB_TRUE = @AVOID_CPP_LIB_TRUE@
 AWK = @AWK@
 CC = @CC@
 CCAS = @CCAS@
@@ -566,7 +571,8 @@ smashtest_LDADD = $(test_ldadd)
 @THREADS_TRUE@threadleaktest_SOURCES = tests/thread_leak_test.c
 @THREADS_TRUE@threadleaktest_LDADD = $(test_ldadd)
 @CPLUSPLUS_TRUE@test_cpp_SOURCES = tests/test_cpp.cc
-@CPLUSPLUS_TRUE@test_cpp_LDADD = libgccpp.la $(test_ldadd)
+@AVOID_CPP_LIB_FALSE@@CPLUSPLUS_TRUE@test_cpp_LDADD = libgccpp.la $(test_ldadd)
+@AVOID_CPP_LIB_TRUE@@CPLUSPLUS_TRUE@test_cpp_LDADD = gc_cpp.o $(test_ldadd)
 
 # installed documentation
 #
