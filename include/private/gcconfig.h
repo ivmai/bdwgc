@@ -2175,6 +2175,9 @@
 # if defined(GC_NETBSD_THREADS) && !defined(NETBSD)
 	--> inconsistent configuration
 # endif
+# if defined(GC_FREEBSD_THREADS) && !defined(FREEBSD)
+	--> inconsistent configuration
+# endif
 # if defined(GC_SOLARIS_THREADS) && !defined(SOLARIS)
 	--> inconsistent configuration
 # endif

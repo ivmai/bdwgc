@@ -1,5 +1,10 @@
 2008-02-20  Hans Boehm <Hans.Boehm@hp.com>
 
+	* include/private/gcconfig.h: Add misssing FREEBSD macro
+	consistency test.
+
+2008-02-20  Hans Boehm <Hans.Boehm@hp.com>
+
 	* allchblk.c (GC_enough_large_bytes_left): No longer take
 	parameters; return free list index bound.
 	(GC_merge_unmapped): Don't access nexthdr until after null test.
