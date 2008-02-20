@@ -363,13 +363,16 @@ void GC_add_to_fl(struct hblk *h, hdr *hhdr)
     int index = GC_hblk_fl_from_blocks(divHBLKSZ(hhdr -> hb_sz));
     struct hblk *second = GC_hblkfreelist[index];
     hdr * second_hdr;
-#   ifdef GC_ASSERTIONS
+#   if defined(GC_ASSERTIONS) && !defined(USE_MUNMAP)
       struct hblk *next = (struct hblk *)((word)h + hhdr -> hb_sz);
       hdr * nexthdr = HDR(next);
       struct hblk *prev = GC_free_block_ending_at(h);
       hdr * prevhdr = HDR(prev);
-      GC_ASSERT(nexthdr == 0 || !HBLK_IS_FREE(nexthdr) || !IS_MAPPED(nexthdr));
-      GC_ASSERT(prev == 0 || !HBLK_IS_FREE(prevhdr) || !IS_MAPPED(prevhdr));
+      GC_ASSERT(nexthdr == 0 || !HBLK_IS_FREE(nexthdr)
+                || (signed_word)GC_heapsize < 0);
+		/* In the last case, blocks may be too large to merge. */
+      GC_ASSERT(prev == 0 || !HBLK_IS_FREE(prevhdr)
+      		|| (signed_word)GC_heapsize < 0);
 #   endif
     GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);
     GC_hblkfreelist[index] = h;
@@ -765,6 +768,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, GC_bool may_split)
 		  if (!IS_MAPPED(hhdr)) {
 		    GC_remap((ptr_t)hbp, hhdr -> hb_sz);
 		    hhdr -> hb_flags &= ~WAS_UNMAPPED;
+		    /* Note: This may leave adjacent, mapped free blocks. */
 		  }
 #	        endif
 		/* hbp may be on the wrong freelist; the parameter n	*/
