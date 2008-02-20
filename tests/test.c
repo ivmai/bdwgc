@@ -1208,7 +1208,7 @@ void run_one_test()
       }
 #   endif
     if (GC_print_stats)
-      GC_log_printf("Finished %x\n", pthread_self());
+      GC_log_printf("Finished %p\n", &start_time);
 }
 
 void check_heap_stats()

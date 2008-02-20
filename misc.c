@@ -423,7 +423,6 @@ void GC_init(void)
 
 extern void GC_setpagesize();
 
-
 #ifdef MSWIN32
 extern GC_bool GC_no_win32_dlls;
 #else
@@ -466,6 +465,10 @@ static void maybe_install_looping_handler()
 
 # define maybe_install_looping_handler()
 
+#endif
+
+#if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
+  void GC_thr_init(void);
 #endif
 
 void GC_init_inner()

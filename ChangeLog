@@ -1,5 +1,10 @@
 2008-02-20  Hans Boehm <Hans.Boehm@hp.com>
 
+	* tests/test.c (run_one_test): Don't mention pthread_self().
+	* misc.c: Declare GC_thr_init().
+
+2008-02-20  Hans Boehm <Hans.Boehm@hp.com>
+
 	* allchblk.c (add_to_fl): disable assertions with USE_MUNMAP,
 	and refine assertions to handle huge unmergable blocks.
 	(GC_allochblk_nth): Add comment.
