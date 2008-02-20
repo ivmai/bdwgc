@@ -489,8 +489,8 @@ void GC_start_world()
       for (i = 0; i < n_live_threads; i++)
 	while (0 != (code = sem_wait(&GC_restart_ack_sem)))
 	    if (errno != EINTR) {
-		GC_err_printf1("sem_wait() returned %ld\n",
-			       (unsigned long)code);
+		GC_err_printf("sem_wait() returned %d\n",
+			       code);
 		ABORT("sem_wait() for restart handler failed");
 	    }
 #    endif

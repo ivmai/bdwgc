@@ -234,7 +234,13 @@ static word GC_collect_at_heapsize = (word)(-1);
 /* Have we allocated enough to amortize a collection? */
 GC_bool GC_should_collect(void)
 {
-    return(GC_adj_bytes_allocd() >= min_bytes_allocd()
+    static word last_min_bytes_allocd;
+    static word last_gc_no;
+    if (last_gc_no != GC_gc_no) {
+      last_gc_no = GC_gc_no;
+      last_min_bytes_allocd = min_bytes_allocd();
+    }
+    return(GC_adj_bytes_allocd() >= last_min_bytes_allocd
 	   || GC_heapsize >= GC_collect_at_heapsize);
 }
 
@@ -252,12 +258,12 @@ GC_bool GC_is_full_gc = FALSE;
  * Initiate a garbage collection if appropriate.
  * Choose judiciously
  * between partial, full, and stop-world collections.
- * Assumes lock held, signals disabled.
  */
 void GC_maybe_gc(void)
 {
     static int n_partial_gcs = 0;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (GC_should_collect()) {
         if (!GC_incremental) {
             GC_gcollect_inner();

@@ -1,3 +1,19 @@
+2008-02-20  Hans Boehm <Hans.Boehm@hp.com>
+
+	* allchblk.c (GC_enough_large_bytes_left): No longer take
+	parameters; return free list index bound.
+	(GC_merge_unmapped): Don't access nexthdr until after null test.
+	(Fixes bug in 1/29/08 check-in.)  (GC_allochblk): Calculate
+	when splitting is allowable only once here, not when considering each
+	block. (GC_allchblk_nth): Accept new may_split parameter.
+	Avoid some redundant tests for exact size matches.
+	* alloc.c (GC_should_collect): Cache min_bytes_allocd.
+	(GC_maybe_gc): Make locking assertion testable.
+	* mark_rts.c: Fix indentation.
+	* pthread_stop_world.c: Replace old GC_err_printf1 reference.
+	* tests/test.c: Remove (void) casts.  Optionally print some
+	timing information.
+
 2008-02-15  Hans Boehm <Hans.Boehm@hp.com>
 
 	* windows-untested/gc.def: Remove CreateThread line.

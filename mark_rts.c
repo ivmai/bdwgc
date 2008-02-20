@@ -296,7 +296,7 @@ void GC_remove_tmp_roots(void)
             GC_remove_root_at_pos(i);
     	} else {
     	    i++;
-    }
+	}
     }
     #if !defined(MSWIN32) && !defined(MSWINCE)
     GC_rebuild_root_index();
