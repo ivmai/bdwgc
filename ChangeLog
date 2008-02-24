@@ -1,3 +1,10 @@
+2008-02-24  Hans Boehm <Hans.Boehm@hp.com>
+
+	* win32_threads.c (GC_delete_gc_thread, GC_delete_thread):
+	Consistently call CloseHandle. (GC_suspend): Call
+	GC_delete_gc_thread.
+	* tests/test.c: Don't reference GC_print_stats if not exported.
+
 2008-02-20  Hans Boehm <Hans.Boehm@hp.com>
 
 	* tests/test.c (run_one_test): Don't mention pthread_self().

@@ -488,12 +488,12 @@ static GC_thread GC_lookup_thread(DWORD thread_id)
 /* thread being deleted.					*/
 void GC_delete_gc_thread(GC_vthread gc_id)
 {
+  CloseHandle(gc_id->handle);
   if (GC_win32_dll_threads) {
     /* This is intended to be lock-free.				*/
     /* It is either called synchronously from the thread being deleted,	*/
     /* or by the joining thread.					*/
     /* In this branch asynchronosu changes to *gc_id are possible.	*/
-    CloseHandle(gc_id->handle);
     gc_id -> stack_base = 0;
     gc_id -> id = 0;
 #   ifdef CYGWIN32
@@ -551,6 +551,7 @@ void GC_delete_thread(DWORD id)
         prev = p;
         p = p -> next;
     }
+    CloseHandle(p->handle);
     if (prev == 0) {
         GC_threads[hv] = p -> next;
     } else {
@@ -705,8 +706,8 @@ void GC_suspend(GC_thread t)
 #     ifndef GC_PTHREADS
         /* this breaks pthread_join on Cygwin, which is guaranteed to  */
         /* only see user pthreads 	 			       */
-        AO_store(&(t -> in_use), FALSE);
-        CloseHandle(t -> handle);
+	GC_ASSERT(GC_win32_dll_threads);
+	GC_delete_gc_thread(t);
 #     endif
       return;
     }
