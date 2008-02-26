@@ -114,7 +114,7 @@ void GC_grow_table(struct hash_chain_entry ***table,
     		(size_t)new_size * sizeof(struct hash_chain_entry *), NORMAL);
     
     if (new_table == 0) {
-    	if (table == 0) {
+    	if (*table == 0) {
     	    ABORT("Insufficient space for initial table allocation");
     	} else {
     	    return;
