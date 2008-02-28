@@ -1,3 +1,7 @@
+2008-02-28  Hans Boehm <Hans.Boehm@hp.com>
+
+	* malloc.c: (free replacement) Fix caller address space check.
+
 2008-02-25  Hans Boehm <Hans.Boehm@hp.com>
 
 	* finalize.c (GC_grow_table): Dereference table in null-check.

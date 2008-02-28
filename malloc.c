@@ -506,7 +506,8 @@ void GC_free_inner(void * p)
 	  ptr_t caller = (ptr_t)__builtin_return_address(0);
 	  /* This test does not need to ensure memory visibility, since */
 	  /* the bounds will be set when/if we create another thread.	*/
-	  if (caller >= GC_libpthread_start && caller > GC_libpthread_end) {
+	  if (caller >= GC_libpthread_start && caller < GC_libpthread_end
+	      || (caller >= GC_libld_start && caller < GC_libld_end)) {
 	    GC_free(p);
 	    return;
 	  }
