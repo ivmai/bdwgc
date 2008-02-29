@@ -1953,7 +1953,7 @@ ptr_t GC_win32_get_mem(word bytes)
     	/* If I read the documentation correctly, this can	*/
     	/* only happen if HBLKSIZE > 64k or not a power of 2.	*/
     if (GC_n_heap_bases >= MAX_HEAP_SECTS) ABORT("Too many heap sections");
-    GC_heap_bases[GC_n_heap_bases++] = result;
+    if (0 != result) GC_heap_bases[GC_n_heap_bases++] = result;
     return(result);			  
 }
 

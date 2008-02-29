@@ -1,3 +1,9 @@
+2008-02-29  Hans Boehm <Hans.Boehm@hp.com>
+
+	* pthread_support.c: Fix typo in comment.
+	* os_dep.c (GC_win32_get_mem): Add heap section only if
+	allocation succeeded.
+
 2008-02-28  Hans Boehm <Hans.Boehm@hp.com>
 
 	* malloc.c: (free replacement) Fix caller address space check.

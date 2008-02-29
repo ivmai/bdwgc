@@ -153,7 +153,7 @@ unsigned long GC_lock_holder = NO_THREAD;
 #if defined(GC_USE_DL_WRAP) || defined(GC_USE_DLOPEN_WRAP)
 /* Define GC_ functions as aliases for the plain ones, which will	*/
 /* be intercepted.  This allows files which include gc.h, and hence	*/
-/* generate referemces to the GC_ symbols, to see the right symbols.	*/
+/* generate references to the GC_ symbols, to see the right symbols.	*/
       int GC_pthread_create(pthread_t * t, const pthread_attr_t * a,
 		         void * (* fn)(void *), void * arg) {
 	  return pthread_create(t, a, fn, arg);
