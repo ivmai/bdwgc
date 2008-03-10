@@ -96,7 +96,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 check_PROGRAMS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
-	smashtest$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2)
+	smashtest$(EXEEXT) hugetest$(EXEEXT) $(am__EXEEXT_1) \
+	$(am__EXEEXT_2)
 
 # C Library: Architecture Dependent
 # ---------------------------------
@@ -185,6 +186,9 @@ libgccpp_la_OBJECTS = $(am_libgccpp_la_OBJECTS)
 am_gctest_OBJECTS = tests/test.$(OBJEXT)
 gctest_OBJECTS = $(am_gctest_OBJECTS)
 am__DEPENDENCIES_2 = $(top_builddir)/libgc.la $(am__DEPENDENCIES_1)
+am_hugetest_OBJECTS = tests/huge_test.$(OBJEXT)
+hugetest_OBJECTS = $(am_hugetest_OBJECTS)
+hugetest_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_leaktest_OBJECTS = tests/leak_test.$(OBJEXT)
 leaktest_OBJECTS = $(am_leaktest_OBJECTS)
 leaktest_DEPENDENCIES = $(am__DEPENDENCIES_2)
@@ -232,13 +236,14 @@ CXXLINK = $(LIBTOOL) --tag=CXX --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libcord_la_SOURCES) $(libgc_la_SOURCES) \
 	$(EXTRA_libgc_la_SOURCES) $(nodist_libgc_la_SOURCES) \
-	$(libgccpp_la_SOURCES) $(gctest_SOURCES) $(leaktest_SOURCES) \
-	$(middletest_SOURCES) $(smashtest_SOURCES) $(test_cpp_SOURCES) \
-	$(threadleaktest_SOURCES)
+	$(libgccpp_la_SOURCES) $(gctest_SOURCES) $(hugetest_SOURCES) \
+	$(leaktest_SOURCES) $(middletest_SOURCES) $(smashtest_SOURCES) \
+	$(test_cpp_SOURCES) $(threadleaktest_SOURCES)
 DIST_SOURCES = $(libcord_la_SOURCES) $(am__libgc_la_SOURCES_DIST) \
 	$(EXTRA_libgc_la_SOURCES) $(am__libgccpp_la_SOURCES_DIST) \
-	$(gctest_SOURCES) $(leaktest_SOURCES) $(middletest_SOURCES) \
-	$(smashtest_SOURCES) $(am__test_cpp_SOURCES_DIST) \
+	$(gctest_SOURCES) $(hugetest_SOURCES) $(leaktest_SOURCES) \
+	$(middletest_SOURCES) $(smashtest_SOURCES) \
+	$(am__test_cpp_SOURCES_DIST) \
 	$(am__threadleaktest_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
@@ -502,7 +507,8 @@ dist_noinst_HEADERS = include/private/gc_hdrs.h \
 	include/private/thread_local_alloc.h include/cord.h \
 	include/ec.h include/javaxfc.h
 TESTS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
-	smashtest$(EXEEXT) $(am__append_6) $(am__append_8)
+	smashtest$(EXEEXT) hugetest$(EXEEXT) $(am__append_6) \
+	$(am__append_8)
 pkgconfigdir = $(libdir)/pkgconfig
 dist_pkgconfig_DATA = bdw-gc.pc
 libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
@@ -568,6 +574,8 @@ middletest_SOURCES = tests/middle.c
 middletest_LDADD = $(test_ldadd)
 smashtest_SOURCES = tests/smash_test.c
 smashtest_LDADD = $(test_ldadd)
+hugetest_SOURCES = tests/huge_test.c
+hugetest_LDADD = $(test_ldadd)
 @THREADS_TRUE@threadleaktest_SOURCES = tests/thread_leak_test.c
 @THREADS_TRUE@threadleaktest_LDADD = $(test_ldadd)
 @CPLUSPLUS_TRUE@test_cpp_SOURCES = tests/test_cpp.cc
@@ -721,6 +729,11 @@ tests/test.$(OBJEXT): tests/$(am__dirstamp) \
 gctest$(EXEEXT): $(gctest_OBJECTS) $(gctest_DEPENDENCIES) 
 	@rm -f gctest$(EXEEXT)
 	$(LINK) $(gctest_LDFLAGS) $(gctest_OBJECTS) $(gctest_LDADD) $(LIBS)
+tests/huge_test.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+hugetest$(EXEEXT): $(hugetest_OBJECTS) $(hugetest_DEPENDENCIES) 
+	@rm -f hugetest$(EXEEXT)
+	$(LINK) $(hugetest_LDFLAGS) $(hugetest_OBJECTS) $(hugetest_LDADD) $(LIBS)
 tests/leak_test.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 leaktest$(EXEEXT): $(leaktest_OBJECTS) $(leaktest_DEPENDENCIES) 
@@ -761,6 +774,7 @@ mostlyclean-compile:
 	-rm -f cord/cordtest.lo
 	-rm -f cord/cordxtra.$(OBJEXT)
 	-rm -f cord/cordxtra.lo
+	-rm -f tests/huge_test.$(OBJEXT)
 	-rm -f tests/leak_test.$(OBJEXT)
 	-rm -f tests/middle.$(OBJEXT)
 	-rm -f tests/smash_test.$(OBJEXT)
@@ -808,6 +822,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@cord/$(DEPDIR)/cordprnt.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@cord/$(DEPDIR)/cordtest.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@cord/$(DEPDIR)/cordxtra.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/huge_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/leak_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/middle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/smash_test.Po@am__quote@

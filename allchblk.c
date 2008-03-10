@@ -587,6 +587,9 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
 
     GC_ASSERT((sz & (GRANULE_BYTES - 1)) == 0);
     blocks = OBJ_SZ_TO_BLOCKS(sz);
+    if ((signed_word)(blocks * HBLKSIZE) < 0) {
+      return 0;
+    }
     start_list = GC_hblk_fl_from_blocks(blocks);
     /* Try for an exact match first. */
     result = GC_allochblk_nth(sz, kind, flags, start_list, FALSE);

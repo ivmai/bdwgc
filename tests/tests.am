@@ -10,7 +10,7 @@
 # modified is included with the above copyright notice.
 
 
-## FIXME: trace_test don't works on macosx 10.3 
+## FIXME: trace_test doesn't work on macosx 10.3 
 ## gcc -g -O2 -o .libs/tracetest trace_test.o  ../.libs/libgc.dylib -lpthread
 ## ld: Undefined symbols:
 ## _GC_generate_random_backtrace
@@ -40,6 +40,11 @@ TESTS += smashtest$(EXEEXT)
 check_PROGRAMS += smashtest
 smashtest_SOURCES = tests/smash_test.c
 smashtest_LDADD = $(test_ldadd)
+
+TESTS += hugetest$(EXEEXT)
+check_PROGRAMS += hugetest
+hugetest_SOURCES = tests/huge_test.c
+hugetest_LDADD = $(test_ldadd)
 
 #TESTS += tracetest$(EXEEXT)
 #check_PROGRAMS += tracetest

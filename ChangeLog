@@ -1,3 +1,11 @@
+2008-03-10  Hans Boehm <Hans.Boehm@hp.com>
+
+	* allchblk.c (GC_allochblk): Check for overflow during size
+	rounding.
+	* tests/huge_test.c: New.
+	* Makefile.direct, tests/tests.am: Add huge_test.c
+	* Makefile.in: Regenerate.
+
 2008-02-29  Hans Boehm <Hans.Boehm@hp.com>
 
 	* pthread_support.c: Fix typo in comment.
