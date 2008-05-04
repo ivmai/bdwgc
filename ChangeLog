@@ -1,4 +1,10 @@
 2008-05-03  Hans Boehm <Hans.Boehm@hp.com>
+	
+	* include/gc_version.h, configure.ac, doc/README:
+	Change to version 7.1.
+	* configure: Regenerate.
+
+2008-05-03  Hans Boehm <Hans.Boehm@hp.com>
 
 	* doc/gcinterface.html: Improve C++ interface documentation.
 
