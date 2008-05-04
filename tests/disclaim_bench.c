@@ -1,11 +1,12 @@
 #include "gc_disclaim.h"
+#include "atomic_ops.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 
-static int nf = 0;
+static AO_t free_count = 0;
 
 typedef struct testobj_s *testobj_t;
 struct testobj_s {
@@ -16,13 +17,13 @@ struct testobj_s {
 void testobj_finalize(void *obj, void *carg)
 {
 #define obj ((testobj_t)obj)
-    ++*(int *)carg;
+    AO_fetch_and_add1((AO_t *)carg);
     assert(obj->i++ == 109);
 #undef obj
 }
 static struct GC_finalizer_closure fclos = {
     testobj_finalize,
-    &nf
+    &free_count
 };
 
 testobj_t testobj_new(int model)
@@ -31,7 +32,7 @@ testobj_t testobj_new(int model)
     switch (model) {
 	case 0:
 	    obj = GC_malloc(sizeof(struct testobj_s));
-	    GC_register_finalizer_no_order(obj, testobj_finalize, &nf,
+	    GC_register_finalizer_no_order(obj, testobj_finalize, &free_count,
 					   NULL, NULL);
 	    break;
 	case 1:
@@ -43,14 +44,14 @@ testobj_t testobj_new(int model)
 	default:
 	    abort();
     }
+    assert(obj->i == 0 && obj->keep_link == NULL);
     obj->i = 109;
-    obj->keep_link = NULL;
     return obj;
 }
 
 
 #define ALLOC_CNT (4*1024*1024)
-#define KEEP_CNT (32*1024)
+#define KEEP_CNT  (    32*1024)
 
 int main(int argc, char **argv)
 {
@@ -106,7 +107,7 @@ int main(int argc, char **argv)
     t /= CLOCKS_PER_SEC;
     if (model < 2)
 	printf("%20s: %12.4lf %12lg %12lg\n", model_str[model],
-	       nf/(double)ALLOC_CNT, t, t/nf);
+	       free_count/(double)ALLOC_CNT, t, t/free_count);
     else
 	printf("%20s:            0 %12lg          N/A\n",
 	       model_str[model], t);
