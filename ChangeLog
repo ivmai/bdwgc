@@ -1,3 +1,7 @@
+2008-05-03  Hans Boehm <Hans.Boehm@hp.com>
+
+	* doc/gcinterface.html: Improve C++ interface documentation.
+
 2008-03-10  Hans Boehm <Hans.Boehm@hp.com>
 
 	* allchblk.c (GC_allochblk): Check for overflow during size
