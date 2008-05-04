@@ -42,6 +42,10 @@ STATIC unsigned GC_n_leaked = 0;
 
 GC_INNER GC_bool GC_have_errors = FALSE;
 
+#if !defined(EAGER_SWEEP) && defined(MARK_UNCONDITIONALLY)
+void GC_reclaim_unconditionally_marked(void);
+#endif
+
 GC_INLINE void GC_add_leaked(ptr_t leaked)
 {
 #  ifndef SHORT_DBG_HDRS
@@ -609,6 +613,11 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
     /* This is a very stupid thing to do.  We make it possible anyway,  */
     /* so that you can convince yourself that it really is very stupid. */
     GC_reclaim_all((GC_stop_func)0, FALSE);
+# elif defined(MARK_UNCONDITIONALLY)
+    /* However, make sure to clear reclaimable objects of kinds with	*/
+    /* unconditional marking enabled before we do any significant	*/
+    /* marking work.							*/
+    GC_reclaim_unconditionally_marked();
 # endif
 # if defined(PARALLEL_MARK)
     GC_ASSERT(0 == GC_fl_builder_count);
@@ -695,3 +704,33 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
 #   endif
     return(TRUE);
 }
+
+#if !defined(EAGER_SWEEP) && defined(MARK_UNCONDITIONALLY)
+/* Part of disclaim patch.  This could be merged with the above, but I don't
+ * want to clobber the original source too much by changing the prototype and
+ * testing for defined(MARK_UNCONDITIONALLY). */
+void GC_reclaim_unconditionally_marked(void)
+{
+    word sz;
+    unsigned kind;
+    hdr * hhdr;
+    struct hblk * hbp;
+    struct obj_kind * ok;
+    struct hblk ** rlp;
+    struct hblk ** rlh;
+    for (kind = 0; kind < GC_n_kinds; kind++) {
+	ok = &(GC_obj_kinds[kind]);
+	if (!ok->ok_mark_unconditionally) continue;
+	rlp = ok->ok_reclaim_list;
+	if (rlp == 0) continue;
+	for (sz = 1; sz <= MAXOBJGRANULES; sz++) {
+	    rlh = rlp + sz;
+	    while ((hbp = *rlh) != 0) {
+		hhdr = HDR(hbp);
+		*rlh = hhdr->hb_next;
+		GC_reclaim_small_nonempty_block(hbp, FALSE, &GC_bytes_found);
+	    }
+	}
+    }
+}
+#endif
