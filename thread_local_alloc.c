@@ -291,14 +291,16 @@ void GC_mark_thread_local_fls_for(GC_tlfs p)
     ptr_t q;
     int j;
     
-    for (j = 1; j < TINY_FREELISTS; ++j) {
+    for (j = 0; j < TINY_FREELISTS; ++j) {
       q = p -> ptrfree_freelists[j];
       if ((word)q > HBLKSIZE) GC_set_fl_marks(q);
       q = p -> normal_freelists[j];
       if ((word)q > HBLKSIZE) GC_set_fl_marks(q);
 #     ifdef GC_GCJ_SUPPORT
-        q = p -> gcj_freelists[j];
-        if ((word)q > HBLKSIZE) GC_set_fl_marks(q);
+	if (j > 0) {
+          q = p -> gcj_freelists[j];
+          if ((word)q > HBLKSIZE) GC_set_fl_marks(q);
+	}
 #     endif /* GC_GCJ_SUPPORT */
     }
 }

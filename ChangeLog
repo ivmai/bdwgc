@@ -1,3 +1,12 @@
+2008-05-30  Hans Boehm <Hans.Boehm@hp.com> (some really dmcmahill)
+
+	* configure.ac: SPARC fixes.
+	* configure: Regenerate.
+	* thread_local_alloc.c(GC_mark_thread_local_fls_for): Include
+	size 0, except for gcj.
+	* doc/gc.man: Expand C++ cautions.
+	* include/gc_inline.h: Fix comments.
+
 2008-05-03  Hans Boehm <Hans.Boehm@hp.com>
 	
 	* include/gc_version.h, configure.ac, doc/README:

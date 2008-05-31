@@ -13,14 +13,16 @@
  * modified is included with the above copyright notice.
  */
  
-/* USE OF THIS FILE IS NOT RECOMMENDED unless GC_all_interior_pointers	*/
-/* is not set, or the collector has been built with			*/
-/* -DDONT_ADD_BYTE_AT_END, or the specified size includes a pointerfree	*/
-/* word at the end.  In the standard collector configuration,		*/
-/* the final word of each object may not be scanned.			*/
+/* WARNING:								*/
+/* Note that for these routines, it is the clients responsibility to	*/
+/* add the extra byte at the end to deal with one-past-the-end pointers.*/
+/* In the standard collector configuration, the collector assumes that	*/
+/* such a byte has been added, and hence does not trace the last word	*/
+/* in the resulting object.						*/
+/* This is not an issue if the collector is compiled with 		*/
+/* -DDONT_ADD_BYTE_AT_END, or if GC_all_interior_pointers is not set.	*/
 /* This interface is most useful for compilers that generate C.		*/
-/* It is also used internally for thread-local allocation, in which	*/
-/* case, the size is suitably adjusted by the caller.			*/
+/* It is also used internally for thread-local allocation.		*/
 /* Manual use is hereby discouraged.					*/
 
 #include "gc.h"
@@ -45,6 +47,8 @@
 /* directly using gmalloc before putting multiple objects into the	*/
 /* tiny_fl entry.  If num_direct is zero, then the free lists may also	*/
 /* be initialized to (void *)0.						*/
+/* Note that we use the zeroth free list to hold objects 1 granule in	*/
+/* size that are used to satisfy size 0 allocation requests.		*/
 /* We rely on much of this hopefully getting optimized away in the	*/
 /* num_direct = 0 case.							*/
 /* Particularly if granules is constant, this should generate a small	*/
