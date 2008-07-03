@@ -1,3 +1,10 @@
+2008-07-03  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Thiemo Seufer)
+
+	* include/private/gcconfig.h: Update MIPS/LINUX config.
+	* doc/gcdescr.html: Fix typo.
+	* mach_dep.c (GC_with_callee_saves_pushed): Don't rely on getcontext
+	for MIPS/LINUX.
+
 2008-05-30  Hans Boehm <Hans.Boehm@hp.com> (some really dmcmahill)
 
 	* configure.ac: SPARC fixes.

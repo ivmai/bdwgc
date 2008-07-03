@@ -1316,24 +1316,18 @@
 # ifdef MIPS
 #   define MACH_TYPE "MIPS"
 #   ifdef LINUX
-      /* This was developed for a linuxce style platform.  Probably	*/
-      /* needs to be tweaked for workstation class machines.		*/
 #     define OS_TYPE "LINUX"
 #     define DYNAMIC_LOADING
       extern int _end[];
 #     define DATAEND (_end)
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
-#     ifdef _MIPS_SZPTR
-#	define CPP_WORDSZ _MIPS_SZPTR
-#	define ALIGNMENT (_MIPS_SZPTR/8)
-#     else
-#	define ALIGNMENT 4
-#     endif
+#     define CPP_WORDSZ _MIPS_SZPTR
+#     define ALIGNMENT (_MIPS_SZPTR/8)
 #     if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 2 || __GLIBC__ > 2
-#        define LINUX_STACKBOTTOM
+#       define LINUX_STACKBOTTOM
 #     else
-#        define STACKBOTTOM 0x80000000
+#       define STACKBOTTOM ((ptr_t)0x7fff8000)
 #     endif
 #   endif /* Linux */
 #   ifdef EWS4800

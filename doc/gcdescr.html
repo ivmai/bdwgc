@@ -438,7 +438,7 @@ bytes of allocation have taken place.
 After <TT>GC_full_freq</tt> minor collections a major collection
 is started.
 <P>
-All collections initially run interrupted until a predetermined
+All collections initially run uninterrupted until a predetermined
 amount of time (50 msecs by default) has expired.  If this allows
 the collection to complete entirely, we can avoid correcting
 for data structure modifications during the collection.  If it does
