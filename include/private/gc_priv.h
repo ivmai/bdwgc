@@ -75,9 +75,13 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #if __GNUC__ >= 3
 # define EXPECT(expr, outcome) __builtin_expect(expr,outcome)
   /* Equivalent to (expr), but predict that usually (expr)==outcome. */
-# define INLINE inline
 #else
 # define EXPECT(expr, outcome) (expr)
+#endif /* __GNUC__ */
+
+#if __GNUC__ >= 3
+# define INLINE inline
+#else
 # define INLINE
 #endif /* __GNUC__ */
 

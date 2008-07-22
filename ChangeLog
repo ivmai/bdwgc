@@ -1,3 +1,8 @@
+2008-07-21  Hans Boehm <Hans.Boehm@hp.com>
+	* Makefile.direct, mach_dep.c: Add support for NO_GETCONTEXT.
+	* mach_dep.c: Include signal.h.
+	* gc_priv.h: Factor out INLINE declaration.
+
 2008-07-03  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Thiemo Seufer)
 
 	* include/private/gcconfig.h: Update MIPS/LINUX config.

@@ -320,6 +320,10 @@ HOSTCFLAGS=$(CFLAGS)
 #   since it will scan inactive but cached NPTL thread stacks completely.
 # -DNO_PROC_STAT Causes the collector to avoid relying on Linux'
 #   /proc/self/stat.
+# -DNO_GETCONTEXT Causes the collector to not assume the existence of
+#   the getcontext() function on linux-like platforms.  This currently
+#   happens implicitly on Darwin, Hurd, or ARM or MIPS hardware.
+#   It is explicitly needed for some old versions of FreeBSD.
 #
 
 CXXFLAGS= $(CFLAGS) 

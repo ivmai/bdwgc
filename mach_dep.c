@@ -160,9 +160,14 @@ void GC_push_regs()
 #endif
 
 #if !defined(HAVE_PUSH_REGS) && defined(UNIX_LIKE)
+# include <signal.h>
 # include <ucontext.h>
 #endif
 
+#if defined(UNIX_LIKE) && !defined(NO_GETCONTEXT) &&  \
+	(defined(DARWIN) || defined(HURD) || defined(ARM32) || defined(MIPS))
+#  define NO_GETCONTEXT
+#endif
 /* Ensure that either registers are pushed, or callee-save registers	*/
 /* are somewhere on the stack, and then call fn(arg, ctxt).		*/
 /* ctxt is either a pointer to a ucontext_t we generated, or NULL.	*/
@@ -174,8 +179,7 @@ void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 
 #   if defined(HAVE_PUSH_REGS)
       GC_push_regs();
-#   elif defined(UNIX_LIKE) && !defined(DARWIN) && !defined(ARM32) && \
-	 !defined(MIPS) && !defined(HURD)
+#   elif defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
       /* Older versions of Darwin seem to lack getcontext(). */
       /* ARM and MIPS Linux often doesn't support a real     */
       /* getcontext(). 					     */
