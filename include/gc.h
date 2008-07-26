@@ -49,7 +49,7 @@
 /* size as char * or void *.  There seems to be no way to do this	*/
 /* even semi-portably.  The following is probably no better/worse 	*/
 /* than almost anything else.						*/
-/* The ANSI standard suggests that size_t and ptr_diff_t might be 	*/
+/* The ANSI standard suggests that size_t and ptrdiff_t might be 	*/
 /* better choices.  But those had incorrect definitions on some older	*/
 /* systems.  Notably "typedef int size_t" is WRONG.			*/
 #ifndef _WIN64
@@ -59,14 +59,22 @@
   /* Win64 isn't really supported yet, but this is the first step. And	*/
   /* it might cause error messages to show up in more plausible places.	*/
   /* This needs basetsd.h, which is included by windows.h.	 	*/
+#ifdef __int64
+  typedef unsigned __int64 GC_word;
+  typedef __int64 GC_signed_word;
+#else
   typedef unsigned long long GC_word;
   typedef long long GC_signed_word;
 #endif
+#endif
 
 /* Public read-only variables */
+/* Getter procedures are supplied in some cases and preferred for new	*/
+/* code.								*/
 
 GC_API GC_word GC_gc_no;/* Counter incremented per collection.  	*/
 			/* Includes empty GCs at startup.		*/
+GC_API GC_word GC_get_gc_no(void);
 
 GC_API int GC_parallel;	/* GC is parallelized for performance on	*/
 			/* multiprocessors.  Currently set only		*/
@@ -77,11 +85,13 @@ GC_API int GC_parallel;	/* GC is parallelized for performance on	*/
 			/* If GC_parallel is set, incremental		*/
 			/* collection is only partially functional,	*/
 			/* and may not be desirable.			*/
+GC_API int GC_get_parallel(void);
 			
 
 /* Public R/W variables */
 
-GC_API void * (*GC_oom_fn) (size_t bytes_requested);
+typedef void * (* GC_oom_func)(size_t /* bytes_requested */);
+GC_API GC_oom_func GC_oom_fn;
 			/* When there is insufficient memory to satisfy */
 			/* an allocation request, we return		*/
 			/* (*GC_oom_fn)().  By default this just	*/
@@ -89,6 +99,7 @@ GC_API void * (*GC_oom_fn) (size_t bytes_requested);
 			/* If it returns, it must return 0 or a valid	*/
 			/* pointer to a previously allocated heap 	*/
 			/* object.					*/
+GC_API GC_oom_func GC_set_oom_fn(GC_oom_func);
 
 GC_API int GC_find_leak;
 			/* Do not actually garbage collect, but simply	*/
@@ -114,6 +125,7 @@ GC_API int GC_finalize_on_demand;
 			/* call.  The default is determined by whether	*/
 			/* the FINALIZE_ON_DEMAND macro is defined	*/
 			/* when the collector is built.			*/
+GC_API int GC_set_finalize_on_demand(int);
 
 GC_API int GC_java_finalization;
 			/* Mark objects reachable from finalizable 	*/
@@ -123,8 +135,10 @@ GC_API int GC_java_finalization;
 			/* determined by JAVA_FINALIZATION macro.	*/
 			/* Enables register_finalizer_unreachable to	*/
 			/* work correctly.				*/
+GC_API int GC_set_java_finalization(int);
 
-GC_API void (* GC_finalizer_notifier)(void);
+typedef void (* GC_finalizer_notifier_proc)(void);
+GC_API GC_finalizer_notifier_proc GC_finalizer_notifier;
 			/* Invoked by the collector when there are 	*/
 			/* objects to be finalized.  Invoked at most	*/
 			/* once per GC cycle.  Never invoked unless 	*/
@@ -132,6 +146,8 @@ GC_API void (* GC_finalizer_notifier)(void);
 			/* Typically this will notify a finalization	*/
 			/* thread, which will call GC_invoke_finalizers */
 			/* in response.					*/
+GC_API GC_finalizer_notifier_proc GC_set_finalizer_notifier(
+					GC_finalizer_notifier_proc);
 
 GC_API int GC_dont_gc;	/* != 0 ==> Dont collect.  In versions 6.2a1+,	*/
 			/* this overrides explicit GC_gcollect() calls.	*/
@@ -145,13 +161,14 @@ GC_API int GC_dont_gc;	/* != 0 ==> Dont collect.  In versions 6.2a1+,	*/
 GC_API int GC_dont_expand;
 			/* Dont expand heap unless explicitly requested */
 			/* or forced to.				*/
+GC_API int GC_set_dont_expand(int);
 
 GC_API int GC_use_entire_heap;
 		/* Causes the nonincremental collector to use the	*/
 		/* entire heap before collecting.  This was the only 	*/
 		/* option for GC versions < 5.0.  This sometimes	*/
 		/* results in more large block fragmentation, since	*/
-		/* very larg blocks will tend to get broken up		*/
+		/* very large blocks will tend to get broken up		*/
 		/* during each GC cycle.  It is likely to result in a	*/
 		/* larger working set, but lower collection		*/
 		/* frequencies, and hence fewer instructions executed	*/
@@ -180,6 +197,7 @@ GC_API int GC_no_dls;
 			/* In Microsoft Windows environments, this will	 */
 			/* usually also prevent registration of the	 */
 			/* main data segment as part of the root set.	 */
+GC_API int GC_set_no_dls(int);
 
 GC_API GC_word GC_free_space_divisor;
 			/* We try to make sure that we allocate at 	*/
@@ -199,6 +217,7 @@ GC_API GC_word GC_max_retries;
 			/* The maximum number of GCs attempted before	*/
 			/* reporting out of memory after heap		*/
 			/* expansion fails.  Initially 0.		*/
+GC_API GC_word GC_set_max_retries(GC_word);
 			
 
 GC_API char *GC_stackbottom;    /* Cool end of user stack.		*/
@@ -220,6 +239,7 @@ GC_API int GC_dont_precollect;  /* Don't collect as part of 		*/
 				/* before the first collection.		*/
 				/* Interferes with blacklisting.	*/
 				/* Wizards only.			*/
+GC_API int GC_set_dont_precollect(int);
 
 GC_API unsigned long GC_time_limit;
 				/* If incremental collection is enabled, */
@@ -319,7 +339,7 @@ GC_API size_t GC_size(void * object_addr);
 /* The resulting object has the same kind as the original.		*/
 /* If the argument is stubborn, the result will have changes enabled.	*/
 /* It is an error to have changes enabled for the original object.	*/
-/* Follows ANSI comventions for NULL old_object.			*/
+/* Follows ANSI conventions for NULL old_object.			*/
 GC_API void * GC_realloc(void * old_object, size_t new_size_in_bytes);
 				   
 /* Explicitly increase the heap size.	*/
@@ -805,11 +825,15 @@ GC_API int GC_invoke_finalizers(void);
 /* p may not be a NULL pointer.						*/
 typedef void (*GC_warn_proc) (char *msg, GC_word arg);
 GC_API GC_warn_proc GC_set_warn_proc(GC_warn_proc p);
-    /* Returns old warning procedure.	*/
+    /* Returns old warning procedure.			     */
+    /* With 0 argument, current warn_proc remains unchanged. */
+    /* (Only true for GC7.2+)				     */
 
 GC_API GC_word GC_set_free_space_divisor(GC_word value);
     /* Set free_space_divisor.  See above for definition.	*/
     /* Returns old value.					*/
+    /* With zero argument, nothing is changed, but old value is	*/
+    /* returned.  (Only true for GC7.2+)		        */
 	
 /* The following is intended to be used by a higher level	*/
 /* (e.g. Java-like) finalization facility.  It is expected	*/
@@ -926,7 +950,7 @@ GC_API void * GC_is_valid_displacement (void *	p);
 /* Explicitly dump the GC state.  This is most often called from the	*/
 /* debugger, or by setting the GC_DUMP_REGULARLY environment variable,	*/
 /* but it may be useful to call it from client code during debugging.	*/
-void GC_dump(void);
+GC_API void GC_dump(void);
 
 /* Safer, but slow, pointer addition.  Probably useful mainly with 	*/
 /* a preprocessor.  Useful only for heap pointers.			*/
@@ -992,7 +1016,7 @@ GC_API void (*GC_is_visible_print_proc) (void * p);
 /* the allocation lock can be acquired and released many fewer times.	*/
 /* It is used internally by gc_local_alloc.h, which provides a simpler	*/
 /* programming interface on Linux.					*/
-void * GC_malloc_many(size_t lb);
+GC_API void * GC_malloc_many(size_t lb);
 #define GC_NEXT(p) (*(void * *)(p)) 	/* Retrieve the next element	*/
 					/* in returned list.		*/
 
@@ -1042,11 +1066,14 @@ GC_register_has_static_roots_callback
       DWORD dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress,
       LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId );
 
-#  if defined(_MSC_VER) && _MSC_VER >= 1200 && !defined(_UINTPTR_T_DEFINED)
-     typedef unsigned long uintptr_t;
+#  if !defined(_UINTPTR_T) && !defined(_UINTPTR_T_DEFINED) \
+        && !defined(UINTPTR_MAX)
+     typedef GC_word GC_uintptr_t;
+#  else
+     typedef uintptr_t GC_uintptr_t;
 #  endif
 
-   GC_API uintptr_t GC_beginthreadex(
+   GC_API GC_uintptr_t GC_beginthreadex(
      void *security, unsigned stack_size,
      unsigned ( __stdcall *start_address )( void * ),
      void *arglist, unsigned initflag, unsigned *thrdaddr);
@@ -1082,9 +1109,11 @@ GC_API void GC_use_DllMain(void);
 # ifndef GC_NO_THREAD_REDIRECTS
 #   define CreateThread GC_CreateThread
 #   define ExitThread GC_ExitThread
+#   undef _beginthreadex
 #   define _beginthreadex GC_beginthreadex
+#   undef _endthreadex
 #   define _endthreadex GC_endthreadex
-#   define _beginthread { > "Please use _beginthreadex instead of _beginthread" < }
+/* #   define _beginthread { > "Please use _beginthreadex instead of _beginthread" < } */
 # endif /* !GC_NO_THREAD_REDIRECTS */
 
 #endif /* defined(GC_WIN32_THREADS)  && !cygwin */
@@ -1126,22 +1155,19 @@ GC_API void GC_use_DllMain(void);
 #   define GC_INIT() { GC_init(); }
 #endif
 
-#if !defined(_WIN32_WCE) \
-    && ((defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \
-        || defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__))
   /* win32S may not free all resources on process exit.  */
   /* This explicitly deallocates the heap.		 */
-    GC_API void GC_win32_free_heap ();
-#endif
+GC_API void GC_win32_free_heap(void);
 
 #if ( defined(_AMIGA) && !defined(GC_AMIGA_MAKINGLIB) )
   /* Allocation really goes through GC_amiga_allocwrapper_do */
 # include "gc_amiga_redirects.h"
 #endif
 
-#if defined(GC_REDIRECT_TO_LOCAL)
-  /* Now redundant; that's the default with THREAD_LOCAL_ALLOC */
-#endif
+  /*
+   * GC_REDIRECT_TO_LOCAL is now redundant;
+   * that's the default with THREAD_LOCAL_ALLOC.
+   */
 
 #ifdef __cplusplus
     }  /* end of extern "C" */

@@ -50,11 +50,6 @@
 #   undef GC_must_restore_redefined_dlopen
 # endif
 
-/* A user-supplied routine that is called to determine if a DSO must
-   be scanned by the gc.  */
-static int (*GC_has_static_roots)(const char *, void *, size_t);
-
-
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE)) \
     && !defined(PCR)
 #if !defined(SOLARISDL) && !defined(IRIX5) && \
@@ -121,7 +116,7 @@ static int (*GC_has_static_roots)(const char *, void *, size_t);
 #endif
 
 static struct link_map *
-GC_FirstDLOpenedLinkMap()
+GC_FirstDLOpenedLinkMap(void)
 {
     extern ElfW(Dyn) _DYNAMIC;
     ElfW(Dyn) *dp;
@@ -138,7 +133,7 @@ GC_FirstDLOpenedLinkMap()
 	if( dynStructureAddr == 0 ) {
 	  void* startupSyms = dlopen(0, RTLD_LAZY);
 	  dynStructureAddr = (ElfW(Dyn)*)dlsym(startupSyms, "_DYNAMIC");
-		}
+	}
 #   else
 	dynStructureAddr = &_DYNAMIC;
 #   endif
@@ -174,7 +169,7 @@ GC_FirstDLOpenedLinkMap()
 # endif
 
 # ifndef USE_PROC_FOR_LIBRARIES
-void GC_register_dynamic_libraries()
+void GC_register_dynamic_libraries(void)
 {
   struct link_map *lm = GC_FirstDLOpenedLinkMap();
   
@@ -245,7 +240,7 @@ char *GC_get_maps(void);
 /* be used in the colector.  Hence we roll our own.  Should be		*/
 /* reasonably fast if the array is already mostly sorted, as we expect	*/
 /* it to be.								*/
-void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
+static void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
 {
     signed_word n = (signed_word)number_of_elements;
     signed_word nsorted = 1;
@@ -269,7 +264,7 @@ void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
     }
 }
 
-word GC_register_map_entries(char *maps)
+STATIC word GC_register_map_entries(char *maps)
 {
     char *prot;
     char *buf_ptr = maps;
@@ -355,14 +350,14 @@ word GC_register_map_entries(char *maps)
     return 1;
 }
 
-void GC_register_dynamic_libraries()
+void GC_register_dynamic_libraries(void)
 {
     if (!GC_register_map_entries(GC_get_maps()))
         ABORT("Failed to read /proc for library registration.");
 }
 
 /* We now take care of the main data segment ourselves: */
-GC_bool GC_register_main_static_data()
+GC_bool GC_register_main_static_data(void)
 {
     return FALSE;
 }
@@ -384,6 +379,10 @@ GC_bool GC_register_main_static_data()
 /* It may still not be available in the library on the target system.   */
 /* Thus we also treat it as a weak symbol.				*/
 #define HAVE_DL_ITERATE_PHDR
+
+/* A user-supplied routine that is called to determine if a DSO must
+   be scanned by the gc.  */
+static int (*GC_has_static_roots)(const char *, void *, size_t);
 
 static int GC_register_dynlib_callback(info, size, ptr)
      struct dl_phdr_info * info;
@@ -427,7 +426,7 @@ static int GC_register_dynlib_callback(info, size, ptr)
 
 #pragma weak dl_iterate_phdr
 
-GC_bool GC_register_dynamic_libraries_dl_iterate_phdr()
+GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 {
   if (dl_iterate_phdr) {
     int did_something = 0;
@@ -448,7 +447,7 @@ GC_bool GC_register_dynamic_libraries_dl_iterate_phdr()
 }
 
 /* Do we need to separately register the main static data segment? */
-GC_bool GC_register_main_static_data()
+GC_bool GC_register_main_static_data(void)
 {
   return (dl_iterate_phdr == 0);
 }
@@ -490,7 +489,7 @@ GC_bool GC_register_main_static_data()
 extern ElfW(Dyn) _DYNAMIC[];
 
 static struct link_map *
-GC_FirstDLOpenedLinkMap()
+GC_FirstDLOpenedLinkMap(void)
 {
     ElfW(Dyn) *dp;
     static struct link_map *cachedResult = 0;
@@ -513,7 +512,7 @@ GC_FirstDLOpenedLinkMap()
 }
 
 
-void GC_register_dynamic_libraries()
+void GC_register_dynamic_libraries(void)
 {
   struct link_map *lm;
   
@@ -568,7 +567,7 @@ void GC_register_dynamic_libraries()
 # define IRIX6
 #endif
 
-extern void * GC_roots_present();
+extern void * GC_roots_present(ptr_t);
 	/* The type is a lie, since the real type doesn't make sense here, */
 	/* and we only test for NULL.					   */
 
@@ -576,7 +575,7 @@ extern void * GC_roots_present();
 /* We use /proc to track down all parts of the address space that are	*/
 /* mapped by the process, and throw out regions we know we shouldn't	*/
 /* worry about.  This may also work under other SVR4 variants.		*/
-void GC_register_dynamic_libraries()
+void GC_register_dynamic_libraries(void)
 {
     static int fd = -1;
     char buf[30];
@@ -587,7 +586,7 @@ void GC_register_dynamic_libraries()
     long flags;
     ptr_t start;
     ptr_t limit;
-    ptr_t heap_start = (ptr_t)HEAP_START;
+    ptr_t heap_start = HEAP_START;
     ptr_t heap_end = heap_start;
 
 #   ifdef SOLARISDL
@@ -733,14 +732,14 @@ void GC_register_dynamic_libraries()
 
 # ifdef MSWINCE
   /* Do we need to separately register the main static data segment? */
-  GC_bool GC_register_main_static_data()
+  GC_bool GC_register_main_static_data(void)
   {
     return FALSE;
   }
 # else /* win32 */
   extern GC_bool GC_no_win32_dlls;
 
-  GC_bool GC_register_main_static_data()
+  GC_bool GC_register_main_static_data(void)
   {
     return GC_no_win32_dlls;
   }
@@ -764,7 +763,7 @@ void GC_register_dynamic_libraries()
   extern GC_bool GC_wnt;  /* Is Windows NT derivative.		*/
   			  /* Defined and set in os_dep.c.	*/
 
-  void GC_register_dynamic_libraries()
+  void GC_register_dynamic_libraries(void)
   {
     MEMORY_BASIC_INFORMATION buf;
     size_t result;
@@ -806,7 +805,7 @@ void GC_register_dynamic_libraries()
  		 * and predecessors.  Hence we now also check for
  		 * that case.	*/
  		&& (buf.Type == MEM_IMAGE ||
- 		    !GC_wnt && buf.Type == MEM_PRIVATE)) {
+  		    (!GC_wnt && buf.Type == MEM_PRIVATE))) {
 #	        ifdef DEBUG_VIRTUALQUERY
 	          GC_dump_meminfo(&buf);
 #	        endif
@@ -829,7 +828,7 @@ void GC_register_dynamic_libraries()
 
 #include <loader.h>
 
-void GC_register_dynamic_libraries()
+void GC_register_dynamic_libraries(void)
 {
   int status;
   ldr_process_t mypid;
@@ -995,7 +994,7 @@ void GC_register_dynamic_libraries()
 #pragma alloca
 #include <sys/ldr.h>
 #include <sys/errno.h>
-void GC_register_dynamic_libraries()
+void GC_register_dynamic_libraries(void)
 {
 	int len;
 	char *ldibuf;
@@ -1155,7 +1154,7 @@ void GC_init_dyld() {
 }
 
 #define HAVE_REGISTER_MAIN_STATIC_DATA
-GC_bool GC_register_main_static_data()
+GC_bool GC_register_main_static_data(void)
 {
   /* Already done through dyld callbacks */
   return FALSE;
@@ -1171,7 +1170,7 @@ GC_bool GC_register_main_static_data()
 #   include "th/PCR_ThCtl.h"
 #   include "mm/PCR_MM.h"
 
-void GC_register_dynamic_libraries()
+void GC_register_dynamic_libraries(void)
 {
     /* Add new static data areas of dynamically loaded modules.	*/
         {
@@ -1206,8 +1205,6 @@ void GC_register_dynamic_libraries()
 
 void GC_register_dynamic_libraries(){}
 
-int GC_no_dynamic_loading;
-
 #endif /* !PCR */
 
 #endif /* !DYNAMIC_LOADING */
@@ -1215,16 +1212,18 @@ int GC_no_dynamic_loading;
 #ifndef HAVE_REGISTER_MAIN_STATIC_DATA
 
 /* Do we need to separately register the main static data segment? */
-GC_bool GC_register_main_static_data()
+GC_bool GC_register_main_static_data(void)
 {
   return TRUE;
 }
 
 /* Register a routine to filter dynamic library registration.  */
-void
+GC_API void
 GC_register_has_static_roots_callback
   (int (*callback)(const char *, void *, size_t)) {
-  GC_has_static_roots = callback;
+# ifdef HAVE_DL_ITERATE_PHDR
+    GC_has_static_roots = callback;
+# endif
 }
 
 #endif /* HAVE_REGISTER_MAIN_STATIC_DATA */

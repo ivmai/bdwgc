@@ -23,7 +23,7 @@ void GC_extend_size_map(size_t);	/* in misc.c. */
 
 /* Allocate reclaim list for kind:	*/
 /* Return TRUE on success		*/
-GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
+STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
 {
     struct hblk ** result = (struct hblk **)
     		GC_scratch_alloc((MAXOBJGRANULES+1) * sizeof(struct hblk *));
@@ -206,7 +206,7 @@ void * GC_generic_malloc(size_t lb, int k)
 #ifdef THREAD_LOCAL_ALLOC
   void * GC_core_malloc_atomic(size_t lb)
 #else
-  void * GC_malloc_atomic(size_t lb)
+  GC_API void * GC_malloc_atomic(size_t lb)
 #endif
 {
     void *op;
@@ -233,12 +233,7 @@ void * GC_generic_malloc(size_t lb, int k)
 
 /* provide a version of strdup() that uses the collector to allocate the
    copy of the string */
-# ifdef __STDC__
-    char *GC_strdup(const char *s)
-# else
-    char *GC_strdup(s)
-    char *s;
-#endif
+GC_API char *GC_strdup(const char *s)
 {
   char *copy;
 
@@ -255,7 +250,7 @@ void * GC_generic_malloc(size_t lb, int k)
 #ifdef THREAD_LOCAL_ALLOC
   void * GC_core_malloc(size_t lb)
 #else
-  void * GC_malloc(size_t lb)
+  GC_API void * GC_malloc(size_t lb)
 #endif
 {
     void *op;
@@ -273,10 +268,10 @@ void * GC_generic_malloc(size_t lb, int k)
         }
         /* See above comment on signals.	*/
 	GC_ASSERT(0 == obj_link(op)
-		  || (word)obj_link(op)
+		  || ((word)obj_link(op)
 		  	<= (word)GC_greatest_plausible_heap_addr
 		     && (word)obj_link(op)
-		     	>= (word)GC_least_plausible_heap_addr);
+		     	>= (word)GC_least_plausible_heap_addr));
         *opp = obj_link(op);
         obj_link(op) = 0;
         GC_bytes_allocd += GRANULES_TO_BYTES(lg);
@@ -327,7 +322,7 @@ void * malloc(size_t lb)
   extern GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp);
   	/* From os_dep.c */
 
-  void GC_init_lib_bounds(void)
+  STATIC void GC_init_lib_bounds(void)
   {
     if (GC_libpthread_start != 0) return;
     if (!GC_text_mapping("libpthread-",
@@ -391,7 +386,7 @@ void * calloc(size_t n, size_t lb)
 # endif /* REDIRECT_MALLOC */
 
 /* Explicitly deallocate an object p.				*/
-void GC_free(void * p)
+GC_API void GC_free(void * p)
 {
     struct hblk *h;
     hdr *hhdr;

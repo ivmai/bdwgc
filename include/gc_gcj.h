@@ -14,8 +14,7 @@
  * modified is included with the above copyright notice.
  */
 
-/* This file assumes the collector has been compiled with GC_GCJ_SUPPORT */
-/* and that an ANSI C compiler is available.				 */
+/* This file assumes the collector has been compiled with GC_GCJ_SUPPORT. */
 
 /*
  * We allocate objects whose first word contains a pointer to a struct
@@ -59,28 +58,28 @@
 /* detect the presence or absence of the debug header.			*/
 /* Mp is really of type mark_proc, as defined in gc_mark.h.  We don't 	*/
 /* want to include that here for namespace pollution reasons.		*/
-extern void GC_init_gcj_malloc(int mp_index, void * /* really mark_proc */mp);
+GC_API void GC_init_gcj_malloc(int mp_index, void * /* really mark_proc */mp);
 
 /* Allocate an object, clear it, and store the pointer to the	*/
 /* type structure (vtable in gcj).				*/
 /* This adds a byte at the end of the object if GC_malloc would.*/
-extern void * GC_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr);
+GC_API void * GC_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr);
 /* The debug versions allocate such that the specified mark_proc	*/
 /* is always invoked.							*/
-extern void * GC_debug_gcj_malloc(size_t lb,
+GC_API void * GC_debug_gcj_malloc(size_t lb,
 				  void * ptr_to_struct_containing_descr,
 				  GC_EXTRA_PARAMS);
 
 /* Similar to GC_gcj_malloc, but assumes that a pointer to near the	*/
 /* beginning of the resulting object is always maintained.		*/
-extern void * GC_gcj_malloc_ignore_off_page(size_t lb,
+GC_API void * GC_gcj_malloc_ignore_off_page(size_t lb,
 				void * ptr_to_struct_containing_descr);
 
 /* The kind numbers of normal and debug gcj objects.		*/
 /* Useful only for debug support, we hope.			*/
-extern int GC_gcj_kind;
+GC_API int GC_gcj_kind;
 
-extern int GC_gcj_debug_kind;
+GC_API int GC_gcj_debug_kind;
 
 # ifdef GC_DEBUG
 #   define GC_GCJ_MALLOC(s,d) GC_debug_gcj_malloc(s,d,GC_EXTRAS)

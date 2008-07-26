@@ -123,24 +123,19 @@ long GC_large_alloc_warn_suppressed = 0;
 	/* Number of warnings suppressed so far.	*/
 
 /*ARGSUSED*/
-void * GC_default_oom_fn(size_t bytes_requested)
+STATIC void * GC_default_oom_fn(size_t bytes_requested)
 {
     return(0);
 }
 
-void * (*GC_oom_fn) (size_t bytes_requested) = GC_default_oom_fn;
-
-void * GC_project2(void *arg1, void *arg2)
-{
-  return arg2;
-}
+GC_oom_func GC_oom_fn = GC_default_oom_fn;
 
 /* Set things up so that GC_size_map[i] >= granules(i),		*/
 /* but not too much bigger						*/
 /* and so that size_map contains relatively few distinct entries 	*/
 /* This was originally stolen from Russ Atkinson's Cedar		*/
 /* quantization alogrithm (but we precompute it).			*/ 
-void GC_init_size_map(void)
+STATIC void GC_init_size_map(void)
 {
     int i;
 
@@ -329,7 +324,7 @@ void * GC_clear_stack(void *arg)
 
 /* Return a pointer to the base address of p, given a pointer to a	*/
 /* an address within an object.  Return 0 o.w.				*/
-void * GC_base(void * p)
+GC_API void * GC_base(void * p)
 {
     ptr_t r;
     struct hblk *h;
@@ -372,29 +367,29 @@ void * GC_base(void * p)
 /* Return the size of an object, given a pointer to its base.		*/
 /* (For small obects this also happens to work from interior pointers,	*/
 /* but that shouldn't be relied upon.)					*/
-size_t GC_size(void * p)
+GC_API size_t GC_size(void * p)
 {
     hdr * hhdr = HDR(p);
     
     return hhdr -> hb_sz;
 }
 
-size_t GC_get_heap_size(void)
+GC_API size_t GC_get_heap_size(void)
 {
     return GC_heapsize;
 }
 
-size_t GC_get_free_bytes(void)
+GC_API size_t GC_get_free_bytes(void)
 {
     return GC_large_free_bytes;
 }
 
-size_t GC_get_bytes_since_gc(void)
+GC_API size_t GC_get_bytes_since_gc(void)
 {
     return GC_bytes_allocd;
 }
 
-size_t GC_get_total_bytes(void)
+GC_API size_t GC_get_total_bytes(void)
 {
     return GC_bytes_allocd+GC_bytes_allocd_before_gc;
 }
@@ -406,7 +401,7 @@ GC_bool GC_is_initialized = FALSE;
 # endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
 
 /* FIXME: The GC_init/GC_init_inner distinction should go away. */
-void GC_init(void)
+GC_API void GC_init(void)
 {
     /* LOCK(); -- no longer does anything this early. */
     GC_init_inner();
@@ -421,15 +416,9 @@ void GC_init(void)
     extern void GC_init_win32(void);
 #endif
 
-extern void GC_setpagesize();
+extern void GC_setpagesize(void);
 
-#ifdef MSWIN32
-extern GC_bool GC_no_win32_dlls;
-#else
-# define GC_no_win32_dlls FALSE
-#endif
-
-void GC_exit_check(void)
+STATIC void GC_exit_check(void)
 {
    GC_gcollect();
 }
@@ -442,8 +431,7 @@ void GC_exit_check(void)
 
 extern void GC_set_and_save_fault_handler(void (*handler)(int));
 
-static void looping_handler(sig)
-int sig;
+static void looping_handler(int sig)
 {
     GC_err_printf("Caught signal %d: looping in handler\n", sig);
     for(;;);
@@ -451,7 +439,7 @@ int sig;
 
 static GC_bool installed_looping_handler = FALSE;
 
-static void maybe_install_looping_handler()
+static void maybe_install_looping_handler(void)
 {
     /* Install looping handler before the write fault handler, so we	*/
     /* handle write faults correctly.					*/
@@ -471,7 +459,7 @@ static void maybe_install_looping_handler()
   void GC_thr_init(void);
 #endif
 
-void GC_init_inner()
+void GC_init_inner(void)
 {
 #   if !defined(THREADS) && defined(GC_ASSERTIONS)
         word dummy;
@@ -644,7 +632,6 @@ void GC_init_inner()
 #	endif
       }
 #   endif
-    /* Ignore gcc -Wall warnings on the following. */
     GC_STATIC_ASSERT(sizeof (ptr_t) == sizeof(word));
     GC_STATIC_ASSERT(sizeof (signed_word) == sizeof(word));
     GC_STATIC_ASSERT(sizeof (struct hblk) == HBLKSIZE);
@@ -774,7 +761,7 @@ void GC_init_inner()
 #   endif
 }
 
-void GC_enable_incremental(void)
+GC_API void GC_enable_incremental(void)
 {
 # if !defined(SMALL_CONFIG) && !defined(KEEP_BACK_PTRS)
   /* If we are keeping back pointers, the GC itself dirties all	*/
@@ -826,9 +813,9 @@ out:
 #   define LOG_FILE _T("gc.log")
 # endif
 
-  HANDLE GC_stdout = 0;
+  STATIC HANDLE GC_stdout = 0;
 
-  void GC_deinit()
+  void GC_deinit(void)
   {
       if (GC_is_initialized) {
   	DeleteCriticalSection(&GC_write_cs);
@@ -861,7 +848,7 @@ out:
 #	  endif
 	  file_name = logPath;
 	}
-	GC_stdout = CreateFile(logPath, GENERIC_WRITE,
+	GC_stdout = CreateFile(file_name, GENERIC_WRITE,
         		       FILE_SHARE_READ,
         		       NULL, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH,
         		       NULL); 
@@ -882,12 +869,12 @@ out:
 #endif
 
 #if defined(OS2) || defined(MACOS)
-FILE * GC_stdout = NULL;
-FILE * GC_stderr = NULL;
-FILE * GC_log = NULL;
-int GC_tmp;  /* Should really be local ... */
+STATIC FILE * GC_stdout = NULL;
+STATIC FILE * GC_stderr = NULL;
+STATIC FILE * GC_log = NULL;
+STATIC int GC_tmp;  /* Should really be local ... */
 
-  void GC_set_files()
+  STATIC void GC_set_files(void)
   {
       if (GC_stdout == NULL) {
 	GC_stdout = stdout;
@@ -902,8 +889,8 @@ int GC_tmp;  /* Should really be local ... */
 #endif
 
 #if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
-  int GC_stdout = 1;
-  int GC_stderr = 2;
+  STATIC int GC_stdout = 1;
+  STATIC int GC_stderr = 2;
   int GC_log = 2;
 # if !defined(AMIGA)
 #   include <unistd.h>
@@ -912,10 +899,7 @@ int GC_tmp;  /* Should really be local ... */
 
 #if !defined(MSWIN32) && !defined(MSWINCE) && !defined(OS2) \
     && !defined(MACOS)  && !defined(ECOS) && !defined(NOSYS)
-int GC_write(fd, buf, len)
-int fd;
-const char *buf;
-size_t len;
+int GC_write(int fd, const char *buf, size_t len)
 {
      register int bytes_written = 0;
      register int result;
@@ -935,7 +919,7 @@ size_t len;
 #endif /* UN*X */
 
 #ifdef ECOS
-int GC_write(fd, buf, len)
+int GC_write(int fd, const char *buf, size_t len)
 {
   _Jv_diag_write (buf, len);
   return len;
@@ -943,7 +927,7 @@ int GC_write(fd, buf, len)
 #endif
 
 #ifdef NOSYS
-int GC_write(fd, buf, len)
+int GC_write(int fd, const char *buf, size_t len)
 {
   /* No writing.  */
   return len;
@@ -1019,22 +1003,20 @@ void GC_err_puts(const char *s)
 }
 
 #if defined(LINUX) && !defined(SMALL_CONFIG)
-void GC_err_write(buf, len)
-const char *buf;
-size_t len;
+void GC_err_write(const char *buf, size_t len)
 {
     if (WRITE(GC_stderr, buf, len) < 0) ABORT("write to stderr failed");
 }
 #endif
 
-void GC_default_warn_proc(char *msg, GC_word arg)
+STATIC void GC_default_warn_proc(char *msg, GC_word arg)
 {
     GC_err_printf(msg, arg);
 }
 
 GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
 
-GC_warn_proc GC_set_warn_proc(GC_warn_proc p)
+GC_API GC_warn_proc GC_set_warn_proc(GC_warn_proc p)
 {
     GC_warn_proc result;
 
@@ -1043,22 +1025,24 @@ GC_warn_proc GC_set_warn_proc(GC_warn_proc p)
 #   endif
     LOCK();
     result = GC_current_warn_proc;
-    GC_current_warn_proc = p;
+    if (p != (GC_warn_proc)0)
+	GC_current_warn_proc = p;
     UNLOCK();
     return(result);
 }
 
-GC_word GC_set_free_space_divisor (GC_word value)
+GC_API GC_word GC_set_free_space_divisor (GC_word value)
 {
     GC_word old = GC_free_space_divisor;
-    GC_free_space_divisor = value;
+    if (value != ~(GC_word)0)
+	GC_free_space_divisor = value;
     return old;
 }
 
 #ifndef PCR
 void GC_abort(const char *msg)
 {
-#   if defined(MSWIN32)
+#   if defined(MSWIN32) && !defined(DONT_USE_USER32_DLL)
       (void) MessageBoxA(NULL, msg, "Fatal error in gc", MB_ICONERROR|MB_OK);
 #   else
       GC_err_printf("%s\n", msg);
@@ -1078,14 +1062,14 @@ void GC_abort(const char *msg)
 }
 #endif
 
-void GC_enable()
+GC_API void GC_enable(void)
 {
     LOCK();
     GC_dont_gc--;
     UNLOCK();
 }
 
-void GC_disable()
+GC_API void GC_disable(void)
 {
     LOCK();
     GC_dont_gc++;
@@ -1093,7 +1077,7 @@ void GC_disable()
 }
 
 /* Helper procedures for new kind creation.	*/
-void ** GC_new_free_list_inner()
+void ** GC_new_free_list_inner(void)
 {
     void *result = GC_INTERNAL_MALLOC((MAXOBJGRANULES+1)*sizeof(ptr_t),
 		    		      PTRFREE);
@@ -1102,7 +1086,7 @@ void ** GC_new_free_list_inner()
     return result;
 }
 
-void ** GC_new_free_list()
+void ** GC_new_free_list(void)
 {
     void *result;
     LOCK();
@@ -1167,7 +1151,7 @@ GC_API void * GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 
 #if !defined(NO_DEBUGGING)
 
-void GC_dump()
+GC_API void GC_dump(void)
 {
     GC_printf("***Static roots:\n");
     GC_print_static_roots();
@@ -1182,3 +1166,78 @@ void GC_dump()
 }
 
 #endif /* NO_DEBUGGING */
+
+GC_API GC_word GC_get_gc_no(void)
+{
+    return GC_gc_no;
+}
+
+GC_API int GC_get_parallel(void)
+{
+    return GC_parallel;
+}
+
+GC_API GC_oom_func GC_set_oom_fn(GC_oom_func fn)
+{
+    GC_oom_func ofn = GC_oom_fn;
+    if (fn != (GC_oom_func)0)
+	GC_oom_fn = fn;
+    return ofn;
+}
+
+GC_API GC_finalizer_notifier_proc GC_set_finalizer_notifier(
+					GC_finalizer_notifier_proc fn)
+{
+    GC_finalizer_notifier_proc ofn = GC_finalizer_notifier;
+    if (fn != (GC_finalizer_notifier_proc)-1L)
+	GC_finalizer_notifier = fn;
+    return ofn;
+}
+
+GC_API int GC_set_finalize_on_demand(int value)
+{
+    int ovalue = GC_finalize_on_demand;
+    if (value != -1)
+	GC_finalize_on_demand = value;
+    return ovalue;
+}
+
+GC_API int GC_set_java_finalization(int value)
+{
+    int ovalue = GC_java_finalization;
+    if (value != -1)
+	GC_java_finalization = value;
+    return ovalue;
+}
+
+GC_API int GC_set_dont_expand(int value)
+{
+    int ovalue = GC_dont_expand;
+    if (value != -1)
+	GC_dont_expand = value;
+    return ovalue;
+}
+
+GC_API int GC_set_no_dls(int value)
+{
+    int ovalue = GC_no_dls;
+    if (value != -1)
+	GC_no_dls = value;
+    return ovalue;
+}
+
+GC_API GC_word GC_set_max_retries(GC_word value)
+{
+    GC_word ovalue = GC_max_retries;
+    if (value != ~(GC_word)0)
+	GC_max_retries = value;
+    return ovalue;
+}
+
+GC_API int GC_set_dont_precollect(int value)
+{
+    int ovalue = GC_dont_precollect;
+    if (value != -1)
+	GC_dont_precollect = value;
+    return ovalue;
+}

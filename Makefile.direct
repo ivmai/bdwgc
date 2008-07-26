@@ -324,6 +324,10 @@ HOSTCFLAGS=$(CFLAGS)
 #   the getcontext() function on linux-like platforms.  This currently
 #   happens implicitly on Darwin, Hurd, or ARM or MIPS hardware.
 #   It is explicitly needed for some old versions of FreeBSD.
+# -DSTATIC=static Causes various GC_ symbols that could logically be
+#   declared static to be declared.  Reduces the number of visible symbols,
+#   which is probably cleaner, but may make some kinds of debugging and
+#   profiling harder.
 #
 
 CXXFLAGS= $(CFLAGS) 

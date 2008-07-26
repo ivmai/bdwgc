@@ -34,8 +34,7 @@ typedef struct {
 
 page_entry GC_sums [NSUMS];
 
-word GC_checksum(h)
-struct hblk *h;
+STATIC word GC_checksum(struct hblk *h)
 {
     register word *p = (word *)h;
     register word *lim = (word *)(h+1);
@@ -50,8 +49,7 @@ struct hblk *h;
 # ifdef STUBBORN_ALLOC
 /* Check whether a stubborn object from the given block appears on	*/
 /* the appropriate free list.						*/
-GC_bool GC_on_free_list(struct hblk *h)
-struct hblk *h;
+STATIC GC_bool GC_on_free_list(struct hblk *h)
 {
     hdr * hhdr = HDR(h);
     int sz = BYTES_TO_WORDS(hhdr -> hb_sz);
@@ -70,7 +68,7 @@ int GC_n_changed_errors;
 int GC_n_clean;
 int GC_n_dirty;
 
-void GC_update_check_page(struct hblk *h, int index)
+STATIC void GC_update_check_page(struct hblk *h, int index)
 {
     page_entry *pe = GC_sums + index;
     register hdr * hhdr = HDR(h);
@@ -117,19 +115,18 @@ void GC_update_check_page(struct hblk *h, int index)
 
 unsigned long GC_bytes_in_used_blocks;
 
-void GC_add_block(h, dummy)
-struct hblk *h;
-word dummy;
+/*ARGSUSED*/
+STATIC void GC_add_block(struct hblk *h, word dummy)
 {
    hdr * hhdr = HDR(h);
-   bytes = hhdr -> hb_sz;
+   size_t bytes = hhdr -> hb_sz;
    
    bytes += HBLKSIZE-1;
    bytes &= ~(HBLKSIZE-1);
    GC_bytes_in_used_blocks += bytes;
 }
 
-void GC_check_blocks()
+STATIC void GC_check_blocks(void)
 {
     unsigned long bytes_in_free_blocks = GC_large_free_bytes;
     
@@ -144,7 +141,7 @@ void GC_check_blocks()
 }
 
 /* Should be called immediately after GC_read_dirty and GC_read_changed. */
-void GC_check_dirty()
+void GC_check_dirty(void)
 {
     register int index;
     register unsigned i;

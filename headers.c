@@ -24,11 +24,11 @@
  
 # include "private/gc_priv.h"
 
-bottom_index * GC_all_bottom_indices = 0;
+STATIC bottom_index * GC_all_bottom_indices = 0;
 				/* Pointer to first (lowest addr) */
 				/* bottom_index.		  */
 
-bottom_index * GC_all_bottom_indices_end = 0;
+STATIC bottom_index * GC_all_bottom_indices_end = 0;
 				/* Pointer to last (highest addr) */
 				/* bottom_index.		  */
  

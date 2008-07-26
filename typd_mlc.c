@@ -106,7 +106,7 @@ static void GC_push_typed_structures_proc (void)
 /* starting index.						*/
 /* Returns -1 on failure.					*/
 /* Caller does not hold allocation lock.			*/
-signed_word GC_add_ext_descriptor(GC_bitmap bm, word nbits)
+STATIC signed_word GC_add_ext_descriptor(GC_bitmap bm, word nbits)
 {
     size_t nwords = divWORDSZ(nbits + WORDSZ-1);
     signed_word result;
@@ -167,7 +167,7 @@ GC_descr GC_bm_table[WORDSZ/2];
 /* The result is known to be short enough to fit into a bitmap		*/
 /* descriptor.								*/
 /* Descriptor is a GC_DS_LENGTH or GC_DS_BITMAP descriptor.		*/
-GC_descr GC_double_descr(GC_descr descriptor, word nwords)
+STATIC GC_descr GC_double_descr(GC_descr descriptor, word nwords)
 {
     if ((descriptor & GC_DS_TAGS) == GC_DS_LENGTH) {
         descriptor = GC_bm_table[BYTES_TO_WORDS((word)descriptor)];
@@ -176,7 +176,9 @@ GC_descr GC_double_descr(GC_descr descriptor, word nwords)
     return(descriptor);
 }
 
-complex_descriptor * GC_make_sequence_descriptor();
+STATIC complex_descriptor *
+GC_make_sequence_descriptor(complex_descriptor *first,
+			    complex_descriptor *second);
 
 /* Build a descriptor for an array with nelements elements,	*/
 /* each of which can be described by a simple descriptor.	*/
@@ -197,10 +199,10 @@ complex_descriptor * GC_make_sequence_descriptor();
 # define LEAF 1
 # define SIMPLE 0
 # define NO_MEM (-1)
-int GC_make_array_descriptor(size_t nelements, size_t size, GC_descr descriptor,
-			     GC_descr *simple_d,
-			     complex_descriptor **complex_d,
-			     struct LeafDescriptor * leaf)
+STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
+				    GC_descr descriptor, GC_descr *simple_d,
+				    complex_descriptor **complex_d,
+				    struct LeafDescriptor * leaf)
 {
 #   define OPT_THRESHOLD 50
 	/* For larger arrays, we try to combine descriptors of adjacent	*/
@@ -293,8 +295,9 @@ int GC_make_array_descriptor(size_t nelements, size_t size, GC_descr descriptor,
     }
 }
 
-complex_descriptor * GC_make_sequence_descriptor(complex_descriptor *first,
-						 complex_descriptor *second)
+STATIC complex_descriptor *
+GC_make_sequence_descriptor(complex_descriptor *first,
+			    complex_descriptor *second)
 {
     struct SequenceDescriptor * result =
         (struct SequenceDescriptor *)
@@ -331,20 +334,18 @@ ptr_t * GC_eobjfreelist;
 
 ptr_t * GC_arobjfreelist;
 
-mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
-			 mse * mark_stack_limit, word env);
+STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
+				mse * mark_stack_limit, word env);
 
-mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
-			 mse * mark_stack_limit, word env);
+STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
+				mse * mark_stack_limit, word env);
 
 /* Caller does not hold allocation lock. */
-void GC_init_explicit_typing(void)
+STATIC void GC_init_explicit_typing(void)
 {
     register int i;
     DCL_LOCK_STATE;
 
-    
-    /* Ignore gcc "no effect" warning.	*/
     GC_STATIC_ASSERT(sizeof(struct LeafDescriptor) % sizeof(word) == 0);
     LOCK();
     if (GC_explicit_typing_initialized) {
@@ -375,8 +376,8 @@ void GC_init_explicit_typing(void)
     UNLOCK();
 }
 
-mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
-			 mse * mark_stack_limit, word env)
+STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
+				mse * mark_stack_limit, word env)
 {
     word bm = GC_ext_descriptors[env].ed_bitmap;
     word * current_p = addr;
@@ -392,7 +393,7 @@ mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
 	    FIXUP_POINTER(current);
     	    if ((ptr_t)current >= least_ha && (ptr_t)current <= greatest_ha) {
     	        PUSH_CONTENTS((ptr_t)current, mark_stack_ptr,
-			      mark_stack_limit, current_p, exit1);
+			      mark_stack_limit, (ptr_t)current_p, exit1);
     	    }
     	}
     }
@@ -415,7 +416,7 @@ mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
 /* Return the size of the object described by d.  It would be faster to	*/
 /* store this directly, or to compute it as part of			*/
 /* GC_push_complex_descriptor, but hopefully it doesn't matter.		*/
-word GC_descr_obj_size(complex_descriptor *d)
+STATIC word GC_descr_obj_size(complex_descriptor *d)
 {
     switch(d -> TAG) {
       case LEAF_TAG:
@@ -434,8 +435,8 @@ word GC_descr_obj_size(complex_descriptor *d)
 
 /* Push descriptors for the object at addr with complex descriptor d	*/
 /* onto the mark stack.  Return 0 if the mark stack overflowed.  	*/
-mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
-				 mse *msp, mse *msl)
+STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
+					mse *msp, mse *msl)
 {
     register ptr_t current = (ptr_t) addr;
     register word nelements;
@@ -490,8 +491,8 @@ mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
 }
 
 /*ARGSUSED*/
-mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
-			 mse * mark_stack_limit, word env)
+STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
+				mse * mark_stack_limit, word env)
 {
     hdr * hhdr = HDR(addr);
     size_t sz = hhdr -> hb_sz;
@@ -528,7 +529,7 @@ mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
     return new_mark_stack_ptr;
 }
 
-GC_descr GC_make_descriptor(GC_bitmap bm, size_t len)
+GC_API GC_descr GC_make_descriptor(GC_bitmap bm, size_t len)
 {
     signed_word last_set_bit = len - 1;
     GC_descr result;
@@ -575,7 +576,7 @@ GC_descr GC_make_descriptor(GC_bitmap bm, size_t len)
     }
 }
 
-ptr_t GC_clear_stack();
+void * GC_clear_stack(void *);
 
 #define GENERAL_MALLOC(lb,k) \
     (void *)GC_clear_stack(GC_generic_malloc((word)lb, k))
@@ -583,7 +584,7 @@ ptr_t GC_clear_stack();
 #define GENERAL_MALLOC_IOP(lb,k) \
     (void *)GC_clear_stack(GC_generic_malloc_ignore_off_page(lb, k))
 
-void * GC_malloc_explicitly_typed(size_t lb, GC_descr d)
+GC_API void * GC_malloc_explicitly_typed(size_t lb, GC_descr d)
 {
     ptr_t op;
     ptr_t * opp;
@@ -616,7 +617,7 @@ void * GC_malloc_explicitly_typed(size_t lb, GC_descr d)
    return((void *) op);
 }
 
-void * GC_malloc_explicitly_typed_ignore_off_page(size_t lb, GC_descr d)
+GC_API void * GC_malloc_explicitly_typed_ignore_off_page(size_t lb, GC_descr d)
 {
 ptr_t op;
 ptr_t * opp;
@@ -648,7 +649,7 @@ DCL_LOCK_STATE;
    return((void *) op);
 }
 
-void * GC_calloc_explicitly_typed(size_t n, size_t lb, GC_descr d)
+GC_API void * GC_calloc_explicitly_typed(size_t n, size_t lb, GC_descr d)
 {
 ptr_t op;
 ptr_t * opp;

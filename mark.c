@@ -32,7 +32,7 @@
 #endif
 
 /* Single argument version, robust against whole program analysis. */
-void GC_noop1(word x)
+GC_API void GC_noop1(word x)
 {
     static volatile word sink;
 
@@ -62,7 +62,7 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 		0 | GC_DS_LENGTH, FALSE /* add length to descr */, FALSE },
 # endif
 # ifdef STUBBORN_ALLOC
-/*STUBBORN*/ { &GC_sobjfreelist[0], 0,
+/*STUBBORN*/ { (void **)&GC_sobjfreelist[0], 0,
 		0 | GC_DS_LENGTH, TRUE /* add length to descr */, TRUE },
 # endif
 };
@@ -98,7 +98,7 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
  * need to be marked from.
  */
 
-word GC_n_rescuing_pages;	/* Number of dirty pages we marked from */
+STATIC word GC_n_rescuing_pages;/* Number of dirty pages we marked from */
 				/* excludes ptrfree pages, etc.		*/
 
 mse * GC_mark_stack;
@@ -251,7 +251,6 @@ void GC_clear_marks(void)
 
 /* Initiate a garbage collection.  Initiates a full collection if the	*/
 /* mark	state is invalid.						*/
-/*ARGSUSED*/
 void GC_initiate_gc(void)
 {
     if (GC_dirty_maintained) GC_read_dirty();
@@ -559,7 +558,7 @@ handle_ex:
       scan_ptr = 0;
 
       ret_val = FALSE;
-      goto rm_handler;  // Back to platform-specific code.
+      goto rm_handler;  /* Back to platform-specific code. */
   }
 #endif /* WRAP_MARK_SOME */
 
@@ -858,7 +857,6 @@ mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
 
 #ifdef PARALLEL_MARK
 
-/* We assume we have an ANSI C Compiler.	*/
 GC_bool GC_help_wanted = FALSE;
 unsigned GC_helper_count = 0;
 unsigned GC_active_count = 0;
@@ -875,8 +873,8 @@ word GC_mark_no = 0;
 /* Return a pointer to the top of the local mark stack.		        */
 /* *next is replaced by a pointer to the next unscanned mark stack	*/
 /* entry.								*/
-mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
-			  unsigned max, mse **next)
+STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
+				 unsigned max, mse **next)
 {
     mse *p;
     mse *top = local - 1;
@@ -908,7 +906,7 @@ mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
 
 /* Copy back a local mark stack.	*/
 /* low and high are inclusive bounds.	*/
-void GC_return_mark_stack(mse * low, mse * high)
+STATIC void GC_return_mark_stack(mse * low, mse * high)
 {
     mse * my_top;
     mse * my_start;
@@ -942,7 +940,7 @@ void GC_return_mark_stack(mse * low, mse * high)
 /* On return, the local mark stack is empty.	*/
 /* But this may be achieved by copying the	*/
 /* local mark stack back into the global one.	*/
-void GC_do_local_mark(mse *local_mark_stack, mse *local_top)
+STATIC void GC_do_local_mark(mse *local_mark_stack, mse *local_top)
 {
     unsigned n;
 #   define N_LOCAL_ITERS 1
@@ -994,7 +992,7 @@ long GC_markers = 2;		/* Normally changed by thread-library-	*/
 /* Caller does not hold mark lock.					*/
 /* Caller has already incremented GC_helper_count.  We decrement it,	*/
 /* and maintain GC_active_count.					*/
-void GC_mark_local(mse *local_mark_stack, int id)
+STATIC void GC_mark_local(mse *local_mark_stack, int id)
 {
     mse * my_first_nonempty;
 
@@ -1097,7 +1095,7 @@ void GC_mark_local(mse *local_mark_stack, int id)
 /* We hold the GC lock, not the mark lock.	*/
 /* Currently runs until the mark stack is	*/
 /* empty.					*/
-void GC_do_parallel_mark()
+void GC_do_parallel_mark(void)
 {
     mse local_mark_stack[LOCAL_MARK_STACK_SIZE];
 
@@ -1218,7 +1216,7 @@ static void alloc_mark_stack(size_t n)
     GC_mark_stack_top = GC_mark_stack-1;
 }
 
-void GC_mark_init()
+void GC_mark_init(void)
 {
     alloc_mark_stack(INITIAL_MARK_STACK_SIZE);
 }
@@ -1356,21 +1354,21 @@ struct GC_ms_entry *GC_mark_and_push(void *obj,
       if (GC_all_interior_pointers) {
 	hhdr = GC_find_header(GC_base(obj));
 	if (hhdr == 0) {
-          GC_ADD_TO_BLACK_LIST_NORMAL(obj, src);
+          GC_ADD_TO_BLACK_LIST_NORMAL(obj, (ptr_t)src);
 	  return mark_stack_ptr;
 	}
       } else {
-        GC_ADD_TO_BLACK_LIST_NORMAL(obj, src);
+        GC_ADD_TO_BLACK_LIST_NORMAL(obj, (ptr_t)src);
 	return mark_stack_ptr;
       }
     }
     if (EXPECT(HBLK_IS_FREE(hhdr),0)) {
-	GC_ADD_TO_BLACK_LIST_NORMAL(obj, src);
+	GC_ADD_TO_BLACK_LIST_NORMAL(obj, (ptr_t)src);
 	return mark_stack_ptr;
     }
 
     PUSH_CONTENTS_HDR(obj, mark_stack_ptr /* modified */, mark_stack_limit,
-		      src, was_marked, hhdr, TRUE);
+		      (ptr_t)src, was_marked, hhdr, TRUE);
  was_marked:
     return mark_stack_ptr;
 }
@@ -1386,7 +1384,7 @@ struct GC_ms_entry *GC_mark_and_push(void *obj,
     void GC_mark_and_push_stack(ptr_t p, ptr_t source)
 # else
     void GC_mark_and_push_stack(ptr_t p)
-#   define source 0
+#   define source ((ptr_t)0)
 # endif
 {
     hdr * hhdr; 
@@ -1405,7 +1403,7 @@ struct GC_ms_entry *GC_mark_and_push(void *obj,
 	}
     }
     if (EXPECT(HBLK_IS_FREE(hhdr),0)) {
-	GC_ADD_TO_BLACK_LIST_NORMAL(p, src);
+	GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
 	return;
     }
 #   if defined(MANUAL_VDB) && defined(THREADS)
@@ -1781,7 +1779,7 @@ void GC_push_marked(struct hblk *h, hdr *hhdr)
 
 #ifndef SMALL_CONFIG
 /* Test whether any page in the given block is dirty	*/
-GC_bool GC_block_was_dirty(struct hblk *h, hdr *hhdr)
+STATIC GC_bool GC_block_was_dirty(struct hblk *h, hdr *hhdr)
 {
     size_t sz = hhdr -> hb_sz;
     

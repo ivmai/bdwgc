@@ -37,14 +37,14 @@
 
 /* Pointers to individual tables.  We replace one table by another by 	*/
 /* switching these pointers. 						*/
-word * GC_old_normal_bl;
+STATIC word * GC_old_normal_bl;
 		/* Nonstack false references seen at last full		*/
 		/* collection.						*/
-word * GC_incomplete_normal_bl;
+STATIC word * GC_incomplete_normal_bl;
 		/* Nonstack false references seen since last		*/
 		/* full collection.					*/
-word * GC_old_stack_bl;
-word * GC_incomplete_stack_bl;
+STATIC word * GC_old_stack_bl;
+STATIC word * GC_incomplete_stack_bl;
 
 word GC_total_stack_black_listed;
 
@@ -62,7 +62,8 @@ void GC_default_print_heap_obj_proc(ptr_t p)
 
 void (*GC_print_heap_obj) (ptr_t p) = GC_default_print_heap_obj_proc;
 
-void GC_print_source_ptr(ptr_t p)
+#ifdef PRINT_BLACK_LIST
+STATIC void GC_print_source_ptr(ptr_t p)
 {
     ptr_t base = GC_base(p);
     if (0 == base) {
@@ -76,6 +77,7 @@ void GC_print_source_ptr(ptr_t p)
 	(*GC_print_heap_obj)(base);
     }
 }
+#endif
 
 void GC_bl_init(void)
 {
@@ -189,7 +191,6 @@ void GC_unpromote_black_lists(void)
 /* And the same for false pointers from the stack. */
 #ifdef PRINT_BLACK_LIST
   void GC_add_to_black_list_stack(word p, ptr_t source)
-  ptr_t source;
 #else
   void GC_add_to_black_list_stack(word p)
 #endif

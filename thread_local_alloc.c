@@ -131,10 +131,10 @@ void GC_destroy_thread_local(GC_tlfs p)
 #endif
 
 #if defined(GC_ASSERTIONS) && defined(GC_WIN32_THREADS)
-  extern char * GC_lookup_thread(int id);
+  void * /*GC_thread*/ GC_lookup_thread_inner(unsigned /*DWORD*/ thread_id);
 #endif
 
-void * GC_malloc(size_t bytes)
+GC_API void * GC_malloc(size_t bytes)
 {
     size_t granules = ROUNDED_UP_GRANULES(bytes);
     void *tsd;
@@ -181,7 +181,7 @@ void * GC_malloc(size_t bytes)
     return result;
 }
 
-void * GC_malloc_atomic(size_t bytes)
+GC_API void * GC_malloc_atomic(size_t bytes)
 {
     size_t granules = ROUNDED_UP_GRANULES(bytes);
     void *tsd;
@@ -206,8 +206,8 @@ void * GC_malloc_atomic(size_t bytes)
 #   endif
     GC_ASSERT(GC_is_initialized);
     tiny_fl = ((GC_tlfs)tsd) -> ptrfree_freelists;
-    GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, DIRECT_GRANULES,
-		         PTRFREE, GC_core_malloc_atomic(bytes), 0/* no init */);
+    GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, DIRECT_GRANULES, PTRFREE,
+			 GC_core_malloc_atomic(bytes), (void)0 /* no init */);
     return result;
 }
 
@@ -241,8 +241,8 @@ extern int GC_gcj_kind;
 /* incremental GC should be enabled before we fork a second thread.	*/
 /* Unlike the other thread local allocation calls, we assume that the	*/
 /* collector has been explicitly initialized.				*/
-void * GC_gcj_malloc(size_t bytes,
-		     void * ptr_to_struct_containing_descr)
+GC_API void * GC_gcj_malloc(size_t bytes,
+			    void * ptr_to_struct_containing_descr)
 {
   if (GC_EXPECT(GC_incremental, 0)) {
     return GC_core_gcj_malloc(bytes, ptr_to_struct_containing_descr);
@@ -325,9 +325,5 @@ void GC_mark_thread_local_fls_for(GC_tlfs p)
     }
 #endif /* GC_ASSERTIONS */
 
-# else  /* !THREAD_LOCAL_ALLOC  */
-
-#   define GC_destroy_thread_local(t)
-
-# endif /* !THREAD_LOCAL_ALLOC */
+# endif /* THREAD_LOCAL_ALLOC */
 

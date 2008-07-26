@@ -56,20 +56,20 @@
 # define GC_FAST_MALLOC_GRANS(result,granules,tiny_fl,num_direct,\
 			      kind,default_expr,init) \
 { \
-    if (GC_EXPECT(granules >= GC_TINY_FREELISTS,0)) { \
-        result = default_expr; \
+    if (GC_EXPECT((granules) >= GC_TINY_FREELISTS,0)) { \
+        result = (default_expr); \
     } else { \
-	void **my_fl = tiny_fl + granules; \
+	void **my_fl = (tiny_fl) + (granules); \
         void *my_entry=*my_fl; \
 	void *next; \
  \
 	while (GC_EXPECT((GC_word)my_entry \
-				<= num_direct + GC_TINY_FREELISTS + 1, 0)) { \
+			<= (num_direct) + GC_TINY_FREELISTS + 1, 0)) { \
 	    /* Entry contains counter or NULL */ \
-	    if ((GC_word)my_entry - 1 < num_direct) { \
+	    if ((GC_word)my_entry - 1 < (num_direct)) { \
 		/* Small counter value, not NULL */ \
-                *my_fl = (char *)my_entry + granules + 1; \
-                result = default_expr; \
+                *my_fl = (char *)my_entry + (granules) + 1; \
+                result = (default_expr); \
 		goto out; \
             } else { \
 		/* Large counter or NULL */ \
@@ -78,7 +78,7 @@
 				       kind, my_fl); \
 		my_entry = *my_fl; \
                 if (my_entry == 0) { \
-		    result = GC_oom_fn(granules*GC_GRANULE_BYTES); \
+		    result = GC_oom_fn((granules)*GC_GRANULE_BYTES); \
 		    goto out; \
 		} \
 	    } \
@@ -88,7 +88,7 @@
         *my_fl = next; \
 	init; \
         PREFETCH_FOR_WRITE(next); \
-        GC_ASSERT(GC_size(result) >= granules*GC_GRANULE_BYTES); \
+        GC_ASSERT(GC_size(result) >= (granules)*GC_GRANULE_BYTES); \
         GC_ASSERT((kind) == PTRFREE || ((GC_word *)result)[1] == 0); \
       out: ; \
    } \
@@ -117,7 +117,7 @@
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
     GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
 			 PTRFREE, GC_malloc_atomic(grans*GC_GRANULE_BYTES), \
-			 /* no initialization */); \
+			 (void)0 /* no initialization */); \
 }
 
 

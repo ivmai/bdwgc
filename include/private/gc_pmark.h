@@ -196,7 +196,6 @@ exit_label: ; \
 # endif
 
 
-#ifdef USE_MARK_BYTES
 # if defined(I386) && defined(__GNUC__)
 #  define LONG_MULT(hprod, lprod, x, y) { \
 	asm("mull %2" : "=a"(lprod), "=d"(hprod) : "g"(y), "0"(x)); \
@@ -210,6 +209,7 @@ exit_label: ; \
    }
 # endif
 
+#ifdef USE_MARK_BYTES
   /* There is a race here, and we may set				*/
   /* the bit twice in the concurrent case.  This can result in the	*/
   /* object being pushed twice.  But that's only a performance issue.	*/
@@ -312,7 +312,7 @@ exit_label: ; \
 		           source, exit_label, hhdr, do_offset_check) \
 { \
     size_t displ = HBLKDISPL(current); /* Displacement in block; in bytes. */\
-    unsigned32 low_prod, high_prod, offset_fraction; \
+    unsigned32 low_prod, high_prod; \
     unsigned32 inv_sz = hhdr -> hb_inv_sz; \
     ptr_t base = current;  \
     LONG_MULT(high_prod, low_prod, displ, inv_sz); \

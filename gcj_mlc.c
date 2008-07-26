@@ -31,9 +31,8 @@
  * is to get better gcj performance.
  *
  * We assume:
- *  1) We have an ANSI conforming C compiler.
- *  2) Counting on explicit initialization of this interface is OK.
- *  3) FASTLOCK is not a significant win.
+ *  1) Counting on explicit initialization of this interface is OK;
+ *  2) FASTLOCK is not a significant win.
  */
 
 #include "private/gc_pmark.h"
@@ -51,9 +50,8 @@ ptr_t * GC_gcjobjfreelist;
 ptr_t * GC_gcjdebugobjfreelist;
 
 /* Caller does not hold allocation lock. */
-void GC_init_gcj_malloc(int mp_index, void * /* really GC_mark_proc */mp)
+GC_API void GC_init_gcj_malloc(int mp_index, void * /* really GC_mark_proc */mp)
 {
-    register int i;
     GC_bool ignore_gcj_info;
     DCL_LOCK_STATE;
 
@@ -70,7 +68,8 @@ void GC_init_gcj_malloc(int mp_index, void * /* really GC_mark_proc */mp)
     }
     GC_ASSERT(GC_mark_procs[mp_index] == (GC_mark_proc)0); /* unused */
     GC_mark_procs[mp_index] = (GC_mark_proc)mp;
-    if (mp_index >= GC_n_mark_procs) ABORT("GC_init_gcj_malloc: bad index");
+    if ((unsigned)mp_index >= GC_n_mark_procs)
+	ABORT("GC_init_gcj_malloc: bad index");
     /* Set up object kind gcj-style indirect descriptor. */
       GC_gcjobjfreelist = (ptr_t *)GC_new_free_list_inner();
       if (ignore_gcj_info) {
@@ -116,9 +115,9 @@ void * GC_clear_stack(void *);
 /* We do this even where we could just call GC_INVOKE_FINALIZERS,	*/
 /* since it's probably cheaper and certainly more uniform.		*/
 /* FIXME - Consider doing the same elsewhere?				*/
-static void maybe_finalize()
+static void maybe_finalize(void)
 {
-   static int last_finalized_no = 0;
+   static word last_finalized_no = 0;
 
    if (GC_gc_no == last_finalized_no) return;
    if (!GC_is_initialized) return;
@@ -134,7 +133,7 @@ static void maybe_finalize()
 #ifdef THREAD_LOCAL_ALLOC
   void * GC_core_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr)
 #else
-  void * GC_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr)
+  GC_API void * GC_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr)
 #endif
 {
     ptr_t op;
@@ -175,10 +174,12 @@ static void maybe_finalize()
     return((void *) op);
 }
 
+void GC_start_debugging(void);
+
 /* Similar to GC_gcj_malloc, but add debug info.  This is allocated	*/
 /* with GC_gcj_debug_kind.						*/
-void * GC_debug_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr,
-			   GC_EXTRA_PARAMS)
+GC_API void * GC_debug_gcj_malloc(size_t lb,
+		void * ptr_to_struct_containing_descr, GC_EXTRA_PARAMS)
 {
     void * result;
 
@@ -204,7 +205,7 @@ void * GC_debug_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr,
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
-void * GC_gcj_malloc_ignore_off_page(size_t lb,
+GC_API void * GC_gcj_malloc_ignore_off_page(size_t lb,
 				     void * ptr_to_struct_containing_descr) 
 {
     ptr_t op;
@@ -219,7 +220,7 @@ void * GC_gcj_malloc_ignore_off_page(size_t lb,
         if( (op = *opp) == 0 ) {
 	    maybe_finalize();
             op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_gcj_kind);
-	    lg = GC_size_map[lb];	/* May have been uninitialized.	*/
+	    /* lg = GC_size_map[lb]; */	/* May have been uninitialized.	*/
         } else {
             *opp = obj_link(op);
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
@@ -240,6 +241,7 @@ void * GC_gcj_malloc_ignore_off_page(size_t lb,
 
 #else
 
-char GC_no_gcj_support;
+extern int GC_quiet;
+	/* ANSI C doesn't allow translation units to be empty.  */
 
 #endif  /* GC_GCJ_SUPPORT */

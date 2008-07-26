@@ -56,11 +56,13 @@ void* operator new( size_t size,
 #endif
 }
 
+#if _MSC_VER > 1020
 // This new operator is used by VC++ 7.0 and later in Debug builds.
 void* operator new[](size_t size, int nBlockUse, const char* szFileName, int nLine)
 {
     return operator new(size, nBlockUse, szFileName, nLine);
 }
+#endif
 
 #endif /* _MSC_VER */
 

@@ -79,7 +79,7 @@ GC_bool GC_need_full_gc = FALSE;
 # define IF_THREADS(x)
 #endif
 
-word GC_used_heap_size_after_full = 0;
+STATIC word GC_used_heap_size_after_full = 0;
 
 char * GC_copyright[] =
 {"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
@@ -108,23 +108,25 @@ GC_bool GC_dont_expand = 0;
 
 word GC_free_space_divisor = 3;
 
-extern GC_bool GC_collection_in_progress();
+extern GC_bool GC_collection_in_progress(void);
 		/* Collection is in progress, or was abandoned.	*/
 
 int GC_never_stop_func (void) { return(0); }
 
 unsigned long GC_time_limit = TIME_LIMIT;
 
-CLOCK_TYPE GC_start_time;  	/* Time at which we stopped world.	*/
+#ifndef NO_CLOCK
+STATIC CLOCK_TYPE GC_start_time;/* Time at which we stopped world.	*/
 				/* used only in GC_timeout_stop_func.	*/
+#endif
 
-int GC_n_attempts = 0;		/* Number of attempts at finishing	*/
+STATIC int GC_n_attempts = 0;	/* Number of attempts at finishing	*/
 				/* collection within GC_time_limit.	*/
 
 #if defined(SMALL_CONFIG) || defined(NO_CLOCK)
 #   define GC_timeout_stop_func GC_never_stop_func
 #else
-  int GC_timeout_stop_func (void)
+  STATIC int GC_timeout_stop_func (void)
   {
     CLOCK_TYPE current_time;
     static unsigned count = 0;
@@ -147,7 +149,7 @@ int GC_n_attempts = 0;		/* Number of attempts at finishing	*/
 
 /* Return the minimum number of words that must be allocated between	*/
 /* collections to amortize the collection cost.				*/
-static word min_bytes_allocd()
+static word min_bytes_allocd(void)
 {
 #   ifdef THREADS
  	/* We punt, for now. */
@@ -176,7 +178,7 @@ static word min_bytes_allocd()
 /* Return the number of bytes allocated, adjusted for explicit storage	*/
 /* management, etc..  This number is used in deciding when to trigger	*/
 /* collections.								*/
-word GC_adj_bytes_allocd(void)
+STATIC word GC_adj_bytes_allocd(void)
 {
     signed_word result;
     signed_word expl_managed =
@@ -218,7 +220,7 @@ word GC_adj_bytes_allocd(void)
 /* on the stack by other parts of the collector as roots.  This 	*/
 /* differs from the code in misc.c, which actually tries to keep the	*/
 /* stack clear of long-lived, client-generated garbage.			*/
-void GC_clear_a_few_frames()
+STATIC void GC_clear_a_few_frames(void)
 {
 #   define NWORDS 64
     word frames[NWORDS];
@@ -245,21 +247,21 @@ GC_bool GC_should_collect(void)
 }
 
 
-void GC_notify_full_gc(void)
+STATIC void GC_notify_full_gc(void)
 {
     if (GC_start_call_back != (void (*) (void))0) {
 	(*GC_start_call_back)();
     }
 }
 
-GC_bool GC_is_full_gc = FALSE;
+STATIC GC_bool GC_is_full_gc = FALSE;
 
 /* 
  * Initiate a garbage collection if appropriate.
  * Choose judiciously
  * between partial, full, and stop-world collections.
  */
-void GC_maybe_gc(void)
+STATIC void GC_maybe_gc(void)
 {
     static int n_partial_gcs = 0;
 
@@ -319,7 +321,9 @@ void GC_maybe_gc(void)
  */
 GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 {
-    CLOCK_TYPE start_time, current_time;
+#   ifndef SMALL_CONFIG
+      CLOCK_TYPE start_time, current_time;
+#   endif
     if (GC_dont_gc) return FALSE;
     if (GC_incremental && GC_collection_in_progress()) {
       if (GC_print_stats) {
@@ -333,12 +337,14 @@ GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
     	}
     }
     if (stop_func == GC_never_stop_func) GC_notify_full_gc();
-    if (GC_print_stats) {
-        GET_TIME(start_time);
+#   ifndef SMALL_CONFIG
+      if (GC_print_stats) {
+	GET_TIME(start_time);
 	GC_log_printf(
 	   "Initiating full world-stop collection %lu after %ld allocd bytes\n",
 	   (unsigned long)GC_gc_no+1, (long)GC_bytes_allocd);
-    }
+      }
+#   endif
     GC_promote_black_lists();
     /* Make sure all blocks have been reclaimed, so sweep routines	*/
     /* don't see cleared mark bits.					*/
@@ -371,11 +377,13 @@ GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
       return(FALSE);
     }
     GC_finish_collection();
-    if (GC_print_stats) {
+#   ifndef SMALL_CONFIG
+      if (GC_print_stats) {
         GET_TIME(current_time);
         GC_log_printf("Complete collection took %lu msecs\n",
                   MS_TIME_DIFF(current_time,start_time));
-    }
+      }
+#   endif
     return(TRUE);
 }
 
@@ -395,8 +403,8 @@ GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
  	/* how long it takes.  Doesn't count the initial root scan	*/
  	/* for a full GC.						*/
 
-int GC_deficit = 0;	/* The number of extra calls to GC_mark_some	*/
-			/* that we have made.				*/
+STATIC int GC_deficit = 0;/* The number of extra calls to GC_mark_some	*/
+			  /* that we have made.				*/
 
 void GC_collect_a_little_inner(int n)
 {
@@ -415,7 +423,9 @@ void GC_collect_a_little_inner(int n)
 #		endif
 		if (GC_n_attempts < MAX_PRIOR_ATTEMPTS
 		    && GC_time_limit != GC_TIME_UNLIMITED) {
-		  GET_TIME(GC_start_time);
+#		  ifndef NO_CLOCK
+		    GET_TIME(GC_start_time);
+#		  endif
 		  if (!GC_stopped_mark(GC_timeout_stop_func)) {
 		    GC_n_attempts++;
 		    break;
@@ -434,7 +444,7 @@ void GC_collect_a_little_inner(int n)
     }
 }
 
-int GC_collect_a_little(void)
+GC_API int GC_collect_a_little(void)
 {
     int result;
     DCL_LOCK_STATE;
@@ -448,8 +458,11 @@ int GC_collect_a_little(void)
 }
 
 # if !defined(REDIRECT_MALLOC) && (defined(MSWIN32) || defined(MSWINCE))
-  void GC_add_current_malloc_heap();
+  void GC_add_current_malloc_heap(void);
 # endif
+#ifdef MAKE_BACK_GRAPH
+  void GC_build_back_graph(void);
+#endif
 /*
  * Assumes lock is held, signals are disabled.
  * We stop the world.
@@ -460,10 +473,12 @@ GC_bool GC_stopped_mark(GC_stop_func stop_func)
 {
     unsigned i;
     int dummy;
-    CLOCK_TYPE start_time, current_time;
+#   ifndef SMALL_CONFIG
+      CLOCK_TYPE start_time, current_time;
 	
-    if (GC_print_stats)
+      if (GC_print_stats)
 	GET_TIME(start_time);
+#   endif
 
 #   if !defined(REDIRECT_MALLOC) && (defined(MSWIN32) || defined(MSWINCE))
         GC_add_current_malloc_heap();
@@ -523,11 +538,13 @@ GC_bool GC_stopped_mark(GC_stop_func stop_func)
     
     IF_THREADS(GC_world_stopped = FALSE);
     START_WORLD();
-    if (GC_print_stats) {
-      GET_TIME(current_time);
-      GC_log_printf("World-stopped marking took %lu msecs\n",
-	            MS_TIME_DIFF(current_time,start_time));
-    }
+#   ifndef SMALL_CONFIG
+      if (GC_print_stats) {
+	GET_TIME(current_time);
+	GC_log_printf("World-stopped marking took %lu msecs\n",
+		      MS_TIME_DIFF(current_time,start_time));
+      }
+#   endif
     return(TRUE);
 }
 
@@ -573,7 +590,7 @@ void GC_check_fl_marks(ptr_t q)
 
 /* Clear all mark bits for the free list whose first entry is q	*/
 /* Decrement GC_bytes_found by number of bytes on free list.	*/
-void GC_clear_fl_marks(ptr_t q)
+STATIC void GC_clear_fl_marks(ptr_t q)
 {
    ptr_t p;
    struct hblk * h, * last_h = 0;
@@ -609,13 +626,19 @@ void GC_clear_fl_marks(ptr_t q)
 extern void GC_check_tls(void);
 #endif
 
+#ifdef MAKE_BACK_GRAPH
+void GC_traverse_back_graph(void);
+#endif
+
 /* Finish up a collection.  Assumes lock is held, signals are disabled,	*/
 /* but the world is otherwise running.					*/
-void GC_finish_collection()
+void GC_finish_collection(void)
 {
-    CLOCK_TYPE start_time;
-    CLOCK_TYPE finalize_time;
-    CLOCK_TYPE done_time;
+#   ifndef SMALL_CONFIG
+      CLOCK_TYPE start_time;
+      CLOCK_TYPE finalize_time;
+      CLOCK_TYPE done_time;
+#   endif
 	
 #   if defined(GC_ASSERTIONS) && defined(THREADS) \
        && defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
@@ -624,8 +647,10 @@ void GC_finish_collection()
         GC_check_tls();
 #   endif
 
-    if (GC_print_stats)
-      GET_TIME(start_time);
+#   ifndef SMALL_CONFIG
+      if (GC_print_stats)
+	GET_TIME(start_time);
+#   endif
 
     GC_bytes_found = 0;
 #   if defined(LINUX) && defined(__ELF__) && !defined(SMALL_CONFIG)
@@ -658,8 +683,10 @@ void GC_finish_collection()
       GC_clean_changing_list();
 #   endif
 
-    if (GC_print_stats)
-      GET_TIME(finalize_time);
+#   ifndef SMALL_CONFIG
+      if (GC_print_stats)
+	GET_TIME(finalize_time);
+#   endif
 
     if (GC_print_back_height) {
 #     ifdef MAKE_BACK_GRAPH
@@ -737,16 +764,19 @@ void GC_finish_collection()
 #   ifdef USE_MUNMAP
       GC_unmap_old();
 #   endif
-    if (GC_print_stats) {
+
+#   ifndef SMALL_CONFIG
+      if (GC_print_stats) {
 	GET_TIME(done_time);
 	GC_log_printf("Finalize + initiate sweep took %lu + %lu msecs\n",
 	              MS_TIME_DIFF(finalize_time,start_time),
 	              MS_TIME_DIFF(done_time,finalize_time));
-    }
+      }
+#   endif
 }
 
 /* Externally callable routine to invoke full, stop-world collection */
-int GC_try_to_collect(GC_stop_func stop_func)
+GC_API int GC_try_to_collect(GC_stop_func stop_func)
 {
     int result;
     DCL_LOCK_STATE;
@@ -769,7 +799,7 @@ int GC_try_to_collect(GC_stop_func stop_func)
     return(result);
 }
 
-void GC_gcollect(void)
+GC_API void GC_gcollect(void)
 {
     (void)GC_try_to_collect(GC_never_stop_func);
     if (GC_have_errors) GC_print_all_errors();
@@ -882,7 +912,7 @@ static INLINE word GC_min(word x, word y)
     return(x < y? x : y);
 }
 
-void GC_set_max_heap_size(GC_word n)
+GC_API void GC_set_max_heap_size(GC_word n)
 {
     GC_max_heapsize = n;
 }
@@ -966,7 +996,7 @@ GC_bool GC_expand_hp_inner(word n)
 
 /* Really returns a bool, but it's externally visible, so that's clumsy. */
 /* Arguments is in bytes.						*/
-int GC_expand_hp(size_t bytes)
+GC_API int GC_expand_hp(size_t bytes)
 {
     int result;
     DCL_LOCK_STATE;

@@ -48,7 +48,7 @@ struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
 
 #ifndef USE_MUNMAP
 
-  word GC_free_bytes[N_HBLK_FLS+1] = { 0 };
+  STATIC word GC_free_bytes[N_HBLK_FLS+1] = { 0 };
 	/* Number of free bytes on each list.	*/
 
   /* Return the largest n such that 					*/
@@ -83,7 +83,7 @@ struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
 #endif /* USE_MUNMAP */
 
 /* Map a number of blocks to the appropriate large block free list index. */
-int GC_hblk_fl_from_blocks(word blocks_needed)
+STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
 {
     if (blocks_needed <= UNIQUE_THRESHOLD) return (int)blocks_needed;
     if (blocks_needed >= HUGE_THRESHOLD) return N_HBLK_FLS;
@@ -97,12 +97,12 @@ int GC_hblk_fl_from_blocks(word blocks_needed)
 
 # ifdef USE_MUNMAP
 #   define IS_MAPPED(hhdr) (((hhdr) -> hb_flags & WAS_UNMAPPED) == 0)
-# else  /* !USE_MMAP */
+# else  /* !USE_MUNMAP */
 #   define IS_MAPPED(hhdr) 1
 # endif /* USE_MUNMAP */
 
 # if !defined(NO_DEBUGGING)
-void GC_print_hblkfreelist()
+void GC_print_hblkfreelist(void)
 {
     struct hblk * h;
     word total_free = 0;
@@ -145,7 +145,7 @@ void GC_print_hblkfreelist()
 
 /* Return the free list index on which the block described by the header */
 /* appears, or -1 if it appears nowhere.				 */
-int free_list_index_of(hdr *wanted)
+static int free_list_index_of(hdr *wanted)
 {
     struct hblk * h;
     hdr * hhdr;
@@ -162,7 +162,7 @@ int free_list_index_of(hdr *wanted)
     return -1;
 }
 
-void GC_dump_regions()
+void GC_dump_regions(void)
 {
     unsigned i;
     ptr_t start, end;
@@ -226,7 +226,9 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
 			    int kind, unsigned flags)
 {
     word descr;
-    size_t granules;
+#   ifndef MARK_BIT_PER_OBJ
+      size_t granules;
+#   endif
     
     /* Set size, kind and mark proc fields */
       hhdr -> hb_sz = byte_sz;
@@ -286,7 +288,7 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
  * We assume it is on the nth free list, or on the size
  * appropriate free list if n is FL_UNKNOWN.
  */
-void GC_remove_from_fl(hdr *hhdr, int n)
+STATIC void GC_remove_from_fl(hdr *hhdr, int n)
 {
     int index;
 
@@ -327,7 +329,7 @@ void GC_remove_from_fl(hdr *hhdr, int n)
 /*
  * Return a pointer to the free block ending just before h, if any.
  */
-struct hblk * GC_free_block_ending_at(struct hblk *h)
+STATIC struct hblk * GC_free_block_ending_at(struct hblk *h)
 {
     struct hblk * p = h - 1;
     hdr * phdr;
@@ -358,7 +360,7 @@ struct hblk * GC_free_block_ending_at(struct hblk *h)
  * Add hhdr to the appropriate free list.
  * We maintain individual free lists sorted by address.
  */
-void GC_add_to_fl(struct hblk *h, hdr *hhdr)
+STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 {
     int index = GC_hblk_fl_from_blocks(divHBLKSZ(hhdr -> hb_sz));
     struct hblk *second = GC_hblkfreelist[index];
@@ -487,8 +489,8 @@ void GC_merge_unmapped(void)
  * The header for the returned block must be set up by the caller.
  * If the return value is not 0, then hhdr is the header for it.
  */
-struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
-			        size_t bytes, int index)
+STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
+				       size_t bytes, int index)
 {
     word total_size = hhdr -> hb_sz;
     struct hblk * rest;
@@ -526,8 +528,8 @@ struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
  * (Hence adding it to a free list is silly.  But this path is hopefully
  * rare enough that it doesn't matter.  The code is cleaner this way.)
  */
-void GC_split_block(struct hblk *h, hdr *hhdr, struct hblk *n,
-		    hdr *nhdr, int index /* Index of free list */)
+STATIC void GC_split_block(struct hblk *h, hdr *hhdr, struct hblk *n,
+			   hdr *nhdr, int index /* Index of free list */)
 {
     word total_size = hhdr -> hb_sz;
     word h_size = (word)n - (word)h;
@@ -562,7 +564,7 @@ void GC_split_block(struct hblk *h, hdr *hhdr, struct hblk *n,
     nhdr -> hb_flags |= FREE_BLK;
 }
 	
-struct hblk *
+STATIC struct hblk *
 GC_allochblk_nth(size_t sz/* bytes */, int kind, unsigned flags, int n,
 		 GC_bool may_split);
 
@@ -636,7 +638,7 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
  * Unlike the above, sz is in bytes.
  * The may_split flag indicates whether it's OK to split larger blocks.
  */
-struct hblk *
+STATIC struct hblk *
 GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, GC_bool may_split)
 {
     struct hblk *hbp;
@@ -812,8 +814,6 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, GC_bool may_split)
     return( hbp );
 }
  
-struct hblk * GC_freehblk_ptr = 0;  /* Search position hint for GC_freehblk */
-
 /*
  * Free a heap block.
  *

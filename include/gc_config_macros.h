@@ -40,17 +40,6 @@
 # define GC_USE_LD_WRAP
 #endif
 
-#if !defined(_REENTRANT) && (defined(GC_SOLARIS_THREADS) \
-			     || defined(GC_HPUX_THREADS) \
-			     || defined(GC_AIX_THREADS) \
-			     || defined(GC_LINUX_THREADS) \
-			     || defined(GC_NETBSD_THREADS) \
-			     || defined(GC_GNU_THREADS))
-# define _REENTRANT
-	/* Better late than never.  This fails if system headers that	*/
-	/* depend on this were previously included.			*/
-#endif
-
 #if !defined(_PTHREADS) && defined(GC_NETBSD_THREADS)
 # define _PTHREADS
 #endif
@@ -120,6 +109,17 @@
 # endif
 #endif /* GC_THREADS */
 
+#if !defined(_REENTRANT) && (defined(GC_SOLARIS_THREADS) \
+			     || defined(GC_HPUX_THREADS) \
+			     || defined(GC_AIX_THREADS) \
+			     || defined(GC_LINUX_THREADS) \
+			     || defined(GC_NETBSD_THREADS) \
+			     || defined(GC_GNU_THREADS))
+# define _REENTRANT
+	/* Better late than never.  This fails if system headers that	*/
+	/* depend on this were previously included.			*/
+#endif
+
 #if defined(GC_THREADS) && !defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
     && (defined(_WIN32) || defined(_MSC_VER) || defined(__CYGWIN__) \
      || defined(__MINGW32__) || defined(__BORLANDC__) \
@@ -157,7 +157,8 @@
 # endif
 #endif
 
-#if (defined(__DMC__) || defined(_MSC_VER)) && defined(GC_DLL)
+#if (defined(__DMC__) || defined(_MSC_VER) || defined(__BORLANDC__)) \
+    && defined(GC_DLL)
 # ifdef GC_BUILD
 #   define GC_API extern __declspec(dllexport)
 # else

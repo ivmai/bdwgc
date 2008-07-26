@@ -24,9 +24,7 @@
 #include <stdio.h>
 #include "private/gc_priv.h"
 
-extern ptr_t GC_clear_stack();  /* in misc.c, behaves like identity */
-void GC_extend_size_map();      /* in misc.c. */
-GC_bool GC_alloc_reclaim_list();	/* in malloc.c */
+void * GC_clear_stack(void *);	/* in misc.c, behaves like identity */
 
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h	 */
@@ -39,7 +37,7 @@ void ** const GC_uobjfreelist_ptr = GC_uobjfreelist;
 # endif
 
 
-void * GC_generic_or_special_malloc(size_t lb, int knd)
+STATIC void * GC_generic_or_special_malloc(size_t lb, int knd)
 {
     switch(knd) {
 #     ifdef STUBBORN_ALLOC
@@ -66,7 +64,7 @@ void * GC_generic_or_special_malloc(size_t lb, int knd)
 /* lb bytes.  The object may be (and quite likely will be) moved.     */
 /* The kind (e.g. atomic) is the same as that of the old.	      */
 /* Shrinking of large blocks is not implemented well.                 */
-void * GC_realloc(void * p, size_t lb)
+GC_API void * GC_realloc(void * p, size_t lb)
 {
     struct hblk * h;
     hdr * hhdr;
@@ -211,12 +209,12 @@ void * GC_generic_malloc_ignore_off_page(size_t lb, int k)
     }
 }
 
-void * GC_malloc_ignore_off_page(size_t lb)
+GC_API void * GC_malloc_ignore_off_page(size_t lb)
 {
     return((void *)GC_generic_malloc_ignore_off_page(lb, NORMAL));
 }
 
-void * GC_malloc_atomic_ignore_off_page(size_t lb)
+GC_API void * GC_malloc_atomic_ignore_off_page(size_t lb)
 {
     return((void *)GC_generic_malloc_ignore_off_page(lb, PTRFREE));
 }
@@ -276,7 +274,7 @@ signed_word my_bytes_allocd = 0;
 struct obj_kind * ok = &(GC_obj_kinds[k]);
 DCL_LOCK_STATE;
 
-    GC_ASSERT((lb & (GRANULE_BYTES-1)) == 0);
+    GC_ASSERT(lb != 0 && (lb & (GRANULE_BYTES-1)) == 0);
     if (!SMALL_OBJ(lb)) {
         op = GC_generic_malloc(lb, k);
         if(0 != op) obj_link(op) = 0;
@@ -318,7 +316,7 @@ DCL_LOCK_STATE;
 		  /* than one thread simultaneously.			*/
 		  if (my_bytes_allocd_tmp != 0) {
 		    (void)AO_fetch_and_add(
-				(volatile AO_t *)(&GC_bytes_allocd_tmp),
+				(volatile void *)(&GC_bytes_allocd_tmp),
 				(AO_t)(-my_bytes_allocd_tmp));
 		    GC_bytes_allocd += my_bytes_allocd_tmp;
 		  }
@@ -421,7 +419,7 @@ DCL_LOCK_STATE;
     (void) GC_clear_stack(0);
 }
 
-void * GC_malloc_many(size_t lb)
+GC_API void * GC_malloc_many(size_t lb)
 {
     void *result;
     GC_generic_malloc_many(((lb + EXTRA_BYTES + GRANULE_BYTES-1)
@@ -435,7 +433,7 @@ void * GC_malloc_many(size_t lb)
 # endif
 
 /* Allocate lb bytes of pointerful, traced, but not collectable data */
-void * GC_malloc_uncollectable(size_t lb)
+GC_API void * GC_malloc_uncollectable(size_t lb)
 {
     void *op;
     void **opp;
@@ -477,7 +475,6 @@ void * GC_malloc_uncollectable(size_t lb)
 	/* We don't need the lock here, since we have an undisguised 	*/
 	/* pointer.  We do need to hold the lock while we adjust	*/
 	/* mark bits.							*/
-	lb = hhdr -> hb_sz;
 	LOCK();
 	set_mark_bit_from_hdr(hhdr, 0);	/* Only object.	*/
 	GC_ASSERT(hhdr -> hb_n_marks == 0);
@@ -524,7 +521,7 @@ void * GC_memalign(size_t align, size_t lb)
 /* Allocate lb bytes of pointerfree, untraced, uncollectable data 	*/
 /* This is normally roughly equivalent to the system malloc.		*/
 /* But it may be useful if malloc is redefined.				*/
-void * GC_malloc_atomic_uncollectable(size_t lb)
+GC_API void * GC_malloc_atomic_uncollectable(size_t lb)
 {
     void *op;
     void **opp;
@@ -560,7 +557,6 @@ void * GC_malloc_atomic_uncollectable(size_t lb)
 
 	GC_ASSERT(((word)op & (HBLKSIZE - 1)) == 0);
 	hhdr = HDR((struct hbklk *)op);
-	lb = hhdr -> hb_sz;
 	
 	LOCK();
 	set_mark_bit_from_hdr(hhdr, 0);	/* Only object.	*/

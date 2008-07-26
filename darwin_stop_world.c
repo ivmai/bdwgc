@@ -73,7 +73,9 @@ unsigned long FindTopOfStack(unsigned long stack_start)
 }
 
 #ifdef DARWIN_DONT_PARSE_STACK
-void GC_push_all_stacks()
+void GC_thr_init(void);
+
+void GC_push_all_stacks(void)
 {
   int i;
   kern_return_t r;
@@ -194,7 +196,7 @@ void GC_push_all_stacks()
 
 #else /* !DARWIN_DONT_PARSE_STACK; Use FindTopOfStack() */
 
-void GC_push_all_stacks()
+void GC_push_all_stacks(void)
 {
   unsigned int i;
   task_t my_task;
@@ -346,7 +348,7 @@ static int GC_use_mach_handler_thread = 0;
 static struct GC_mach_thread GC_mach_threads[THREAD_TABLE_SZ];
 static int GC_mach_threads_count;
 
-void GC_stop_init()
+void GC_stop_init(void)
 {
   int i;
 
@@ -358,8 +360,8 @@ void GC_stop_init()
 }
 
 /* returns true if there's a thread in act_list that wasn't in old_list */
-int GC_suspend_thread_list(thread_act_array_t act_list, int count,
-			   thread_act_array_t old_list, int old_count)
+STATIC int GC_suspend_thread_list(thread_act_array_t act_list, int count,
+				  thread_act_array_t old_list, int old_count)
 {
   mach_port_t my_thread = mach_thread_self();
   int i, j;
@@ -441,7 +443,7 @@ int GC_suspend_thread_list(thread_act_array_t act_list, int count,
 
 
 /* Caller holds allocation lock.	*/
-void GC_stop_world()
+void GC_stop_world(void)
 {
     unsigned int i, changes;
     task_t my_task = current_task();
@@ -527,7 +529,7 @@ void GC_stop_world()
 
 /* Caller holds allocation lock, and has held it continuously since	*/
 /* the world stopped.							*/
-void GC_start_world()
+void GC_start_world(void)
 {
   task_t my_task = current_task();
   mach_port_t my_thread = mach_thread_self();

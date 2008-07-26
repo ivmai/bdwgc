@@ -160,7 +160,8 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 #endif
 
 #if    ! defined ( __BORLANDC__ )  /* Confuses the Borland compiler. */ \
-    && ! defined ( __sgi )
+    && ! defined ( __sgi ) && ! defined( __WATCOMC__ ) \
+    && (!defined(_MSC_VER) || _MSC_VER > 1020)
 #  define GC_PLACEMENT_DELETE
 #endif
 
@@ -249,9 +250,11 @@ inline void* operator new(
   *  There seems to be no way to redirect new in this environment without
   *  including this everywhere. 
   */
+#if _MSC_VER > 1020
  void *operator new[]( size_t size );
  
  void operator delete[](void* obj);
+#endif
 
  void* operator new( size_t size);
 

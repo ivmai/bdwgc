@@ -135,10 +135,6 @@ static void add_roots_to_index(struct roots *p)
     GC_root_index[h] = p;
 }
 
-# else /* MSWIN32 || MSWINCE */
-
-#   define add_roots_to_index(p)
-
 # endif
 
 
@@ -146,7 +142,7 @@ static void add_roots_to_index(struct roots *p)
 
 word GC_root_size = 0;
 
-void GC_add_roots(void *b, void *e)
+GC_API void GC_add_roots(void *b, void *e)
 {
     DCL_LOCK_STATE;
     
@@ -238,15 +234,15 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
     GC_static_roots[n_root_sets].r_tmp = tmp;
 #   if !defined(MSWIN32) && !defined(MSWINCE)
       GC_static_roots[n_root_sets].r_next = 0;
+      add_roots_to_index(GC_static_roots + n_root_sets);
 #   endif
-    add_roots_to_index(GC_static_roots + n_root_sets);
     GC_root_size += e - b;
     n_root_sets++;
 }
 
 static GC_bool roots_were_cleared = FALSE;
 
-void GC_clear_roots (void)
+GC_API void GC_clear_roots (void)
 {
     DCL_LOCK_STATE;
     
@@ -286,8 +282,10 @@ static void GC_rebuild_root_index(void)
 }
 #endif
 
+#if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
+     || defined(PCR)
 /* Internal use only; lock held.	*/
-void GC_remove_tmp_roots(void)
+STATIC void GC_remove_tmp_roots(void)
 {
     int i;
     
@@ -298,13 +296,14 @@ void GC_remove_tmp_roots(void)
     	    i++;
 	}
     }
-    #if !defined(MSWIN32) && !defined(MSWINCE)
-    GC_rebuild_root_index();
-    #endif
+#   if !defined(MSWIN32) && !defined(MSWINCE)
+      GC_rebuild_root_index();
+#   endif
 }
+#endif
 
 #if !defined(MSWIN32) && !defined(MSWINCE)
-void GC_remove_roots(void *b, void *e)
+GC_API void GC_remove_roots(void *b, void *e)
 {
     DCL_LOCK_STATE;
     
@@ -362,6 +361,7 @@ ptr_t GC_approx_sp(void)
 #   ifdef _MSC_VER
 #     pragma warning(disable:4172)
 #   endif
+	/* Ignore "function returns address of local variable" warning.	*/
     return((ptr_t)(&dummy));
 #   ifdef _MSC_VER
 #     pragma warning(default:4172)
@@ -382,12 +382,12 @@ struct exclusion GC_excl_table[MAX_EXCLUSIONS];
 					-- address order.
 */
 
-size_t GC_excl_table_entries = 0;	/* Number of entries in use.	  */
+STATIC size_t GC_excl_table_entries = 0;/* Number of entries in use.	  */
 
 /* Return the first exclusion range that includes an address >= start_addr */
 /* Assumes the exclusion table contains at least one entry (namely the	   */
 /* GC data structures).							   */
-struct exclusion * GC_next_exclusion(ptr_t start_addr)
+STATIC struct exclusion * GC_next_exclusion(ptr_t start_addr)
 {
     size_t low = 0;
     size_t high = GC_excl_table_entries - 1;
@@ -406,7 +406,7 @@ struct exclusion * GC_next_exclusion(ptr_t start_addr)
     return GC_excl_table + low;
 }
 
-void GC_exclude_static_roots(void *start, void *finish)
+GC_API void GC_exclude_static_roots(void *start, void *finish)
 {
     struct exclusion * next;
     size_t next_index, i;
@@ -440,7 +440,8 @@ void GC_exclude_static_roots(void *start, void *finish)
 }
 
 /* Invoke push_conditional on ranges that are not excluded. */
-void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top, GC_bool all)
+STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
+						GC_bool all)
 {
     struct exclusion * next;
     ptr_t excl_start;
@@ -463,6 +464,7 @@ void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top, GC_bool all)
  * seen.
  * FIXME: Merge with per-thread stuff.
  */
+/*ARGSUSED*/
 void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
 {
 #   if defined(THREADS)

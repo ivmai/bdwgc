@@ -1,3 +1,60 @@
+2008-07-25  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Ivan Maidanski)
+	Ivan's description of the patch follows. Note that a few pieces like
+	the GC_malloc(0) patch, were not applied since an alternate had been
+	previously applied.  A few differed stylistically from the rest of
+	the code (mostly casts to void * instead of target type),
+	or were classified as too minor to bother.  Note that
+	all of Ivan's static declarations which did not correct outright
+	naming bugs (as a few did), where replaced by STATIC, which is
+	ignored by default.
+
+        - minor bug fixing (for FreeBSD, for THREAD_LOCAL_ALLOC and for
+	  GC_malloc(0));
+        - addition of missing getter/setter functions for public variables
+	  (may be useful if compiled as Win32 DLL);
+        - addition of missing GC_API for some exported functions;
+        - addition of missing "static" declarator for internal functions
+	   and variables (where possible);
+        - replacement of all remaining K&R-style definitions with ANSI
+	  C ones (__STDC__ macro is not used anymore);
+        - addition of some Win32 macro definitions (that may be missing in
+	  the standard headers supplied with a compiler) for GWW_VDB mode;
+        - elimination of most compiler warnings (except for
+	  "uninitialized data" warning);
+        - several typos correction;
+        - missing parenthesis addition in macros in some header files of
+	  "libatomic_ops" module.
+
+	My highlights based on reading the patch:
+
+	* allchblk.c: Remove GC_freehblk_ptr decl.
+	Make free_list_index_of() static.
+	* include/gc.h: Use __int64 on win64, define GC_oom_func, 
+	GC_finalizer_notifier_proc, GC_finalizer_notifier_proc,
+	add getter and setters: GC_get_gc_no, GC_get_parallel,
+	GC_set_oom_fn, GC_set_finalize_on_demand,
+	GC_set_java_finalization, GC_set_dont_expand,
+	GC_set_no_dls, GC_set_max_retries, GC_set_dont_precollect,
+	GC_set_finalizer_notifier.  Always define GC_win32_free_heap.
+	gc_config_macros.h: Define _REENTRANT after processing
+	GC_THREADS.
+	* include/gc_cpp.h: Improve GC_PLACEMENT_DELETE test,
+	handling of operator new[] for old Windows compilers.
+	* include/gc_inline.h (GC_MALLOC_FAST_GRANS): Add parentheses
+	around arguments.
+	* dbg_mlc.c, malloc.c, misc.c: Add many GC_API specs.
+	* mark.c (GC_mark_and_push_stack): Fix source argument for
+	blacklist printing.
+	* misc.c: Fix log file naming based on environment variable
+	for Windows.  Make GC_set_warn_proc and GC_set_free_space_divisor
+	just return current value with 0 argument.  Add DONT_USER_USER32_DLL.
+	Add various getters and setters as in gc.h.
+	* os_dep.c: Remove no longer used GC_disable/enable_signals
+	implementations.  (GC_get_stack_base): Add pthread_attr_destroy
+	call.  No longer set GC_old_bus_handler in DARWIN workaround.
+	* pthread_support.c: GC_register_my_thread must also
+	call GC_init_thread_local.
+
 2008-07-21  Hans Boehm <Hans.Boehm@hp.com>
 	* Makefile.direct, mach_dep.c: Add support for NO_GETCONTEXT.
 	* mach_dep.c: Include signal.h.
