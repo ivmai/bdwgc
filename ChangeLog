@@ -1,3 +1,7 @@
+2008-08-01  Hans Boehm <Hans.Boehm@hp.com> (Really Klaus Treichel)
+	* configure.ac: Set win32_threads on MinGW.
+	* configure: Regenerate.
+
 2008-07-25  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Ivan Maidanski)
 	Ivan's description of the patch follows. Note that a few pieces like
 	the GC_malloc(0) patch, were not applied since an alternate had been
