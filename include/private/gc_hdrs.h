@@ -54,10 +54,6 @@ typedef struct hblkhdr hdr;
 # define TOP_SZ (1 << LOG_TOP_SZ)
 # define BOTTOM_SZ (1 << LOG_BOTTOM_SZ)
 
-#ifndef SMALL_CONFIG
-# define USE_HDR_CACHE
-#endif
-
 /* #define COUNT_HDR_CACHE_HITS  */
 
 # ifdef COUNT_HDR_CACHE_HITS

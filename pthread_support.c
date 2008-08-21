@@ -1036,9 +1036,9 @@ GC_API int GC_register_my_thread(struct GC_stack_base *sb)
 	me -> flags |= DETACHED;
     	  /* Treat as detached, since we do not need to worry about	*/
     	  /* pointer results.						*/
-#   if defined(THREAD_LOCAL_ALLOC)
-        GC_init_thread_local(&(me->tlfs));
-#   endif
+#       if defined(THREAD_LOCAL_ALLOC)
+          GC_init_thread_local(&(me->tlfs));
+#       endif
 	UNLOCK();
         return GC_SUCCESS;
     } else {

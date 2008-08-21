@@ -1802,7 +1802,7 @@ struct hblk * GC_push_next_marked(struct hblk *h)
 {
     hdr * hhdr = HDR(h);
     
-    if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr), FALSE)) {
+    if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr) || HBLK_IS_FREE(hhdr), FALSE)) {
       h = GC_next_used_block(h);
       if (h == 0) return(0);
       hhdr = GC_find_header((ptr_t)h);
@@ -1819,7 +1819,8 @@ struct hblk * GC_push_next_marked_dirty(struct hblk *h)
     
     if (!GC_dirty_maintained) { ABORT("dirty bits not set up"); }
     for (;;) {
-	if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr), FALSE)) {
+	if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr)
+	           || HBLK_IS_FREE(hhdr), FALSE)) {
           h = GC_next_used_block(h);
           if (h == 0) return(0);
           hhdr = GC_find_header((ptr_t)h);
@@ -1850,7 +1851,8 @@ struct hblk * GC_push_next_marked_uncollectable(struct hblk *h)
     hdr * hhdr = HDR(h);
     
     for (;;) {
-	if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr), FALSE)) {
+	if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr)
+	           || HBLK_IS_FREE(hhdr), FALSE)) {
           h = GC_next_used_block(h);
           if (h == 0) return(0);
           hhdr = GC_find_header((ptr_t)h);

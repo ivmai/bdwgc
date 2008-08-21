@@ -110,6 +110,8 @@ extern void * GC_least_plausible_heap_addr;
 extern void * GC_greatest_plausible_heap_addr;
 			/* Bounds on the heap.  Guaranteed valid	*/
 			/* Likely to include future heap expansion.	*/
+			/* Hence usually includes not-yet-mapped	*/
+			/* memory.					*/
 
 /* Handle nested references in a custom mark procedure.			*/
 /* Check if obj is a valid object. If so, ensure that it is marked.	*/

@@ -50,6 +50,7 @@ hdr * GC_find_header(ptr_t h)
 /* GUARANTEED to return 0 for a pointer past the first page	*/
 /* of an object unless both GC_all_interior_pointers is set	*/
 /* and p is in fact a valid object pointer.			*/
+/* Never returns a pointer to a free hblk.			*/
 #ifdef PRINT_BLACK_LIST
   hdr * GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce, ptr_t source)
 #else
@@ -70,17 +71,19 @@ hdr * GC_find_header(ptr_t h)
 	    hhdr = HDR(current);
 	} while(IS_FORWARDING_ADDR_OR_NIL(hhdr));
 	/* current points to near the start of the large object */
-	if (hhdr -> hb_flags & IGNORE_OFF_PAGE
-	    || HBLK_IS_FREE(hhdr))
+	if (hhdr -> hb_flags & IGNORE_OFF_PAGE)
 	    return 0;
-	if (p - current >= (ptrdiff_t)(hhdr->hb_sz)) {
+	if (HBLK_IS_FREE(hhdr)
+	    || p - current >= (ptrdiff_t)(hhdr->hb_sz)) {
 	    GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
 	    /* Pointer past the end of the block */
 	    return 0;
 	}
       } else {
 	GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
+	/* And return zero: */
       }
+      GC_ASSERT(hhdr == 0 || !HBLK_IS_FREE(hhdr));
       return hhdr;
       /* Pointers past the first page are probably too rare	*/
       /* to add them to the cache.  We don't.			*/
@@ -181,7 +184,7 @@ static void free_hdr(hdr * hhdr)
     hdr_free_list = hhdr;
 }
 
-#ifdef USE_HDR_CACHE
+#ifdef COUNT_HDR_CACHE_HITS
   word GC_hdr_cache_hits = 0;
   word GC_hdr_cache_misses = 0;
 #endif

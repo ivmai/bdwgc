@@ -1,3 +1,18 @@
+2008-08-21  Hans Boehm <Hans.Boehm@hp.com>
+	* mark.c: (GC_push_next_marked, GC_push_next_marked_dirty,
+	GC_push_next_marked_uncollectable): Never invoke GC_push_marked
+	on free hblk.
+	* headers.c: Test COUNT_HDR_CACHE_HITS not USE_HDR_CACHE.
+	(GC_header_cache_miss): Always blacklist pointers for free
+	hblks.  Add assertion and comment.
+	* pthread_support.c (GC_register_my_thread): Fix #if indentation.
+	* include/private/gc_hdrs.h: USE_HDR_CACHE is no longer tested.
+	Delete it.
+	* include/private/gc_pmark.h: (PUSH_OBJ): Add assertion.
+
+2008-08-21  Hans Boehm <Hans.Boehm@hp.com>
+	* alloc.c, include/gc_mark.h, Makefile.direct: Improve comments.
+
 2008-08-01  Hans Boehm <Hans.Boehm@hp.com> (Really Klaus Treichel)
 	* configure.ac: Set win32_threads on MinGW.
 	* configure: Regenerate.

@@ -961,7 +961,8 @@ GC_bool GC_expand_hp_inner(word n)
 	              (unsigned long)GC_bytes_allocd);
     }
     /* Adjust heap limits generously for blacklisting to work better.	*/
-    /* GC_add_to_heap performs minimal adjustment need for correctness.	*/
+    /* GC_add_to_heap performs minimal adjustment needed for		*/
+    /* correctness.							*/
     expansion_slop = min_bytes_allocd() + 4*MAXHINCR*HBLKSIZE;
     if ((GC_last_heap_addr == 0 && !((word)space & SIGNB))
         || (GC_last_heap_addr != 0 && GC_last_heap_addr < (ptr_t)space)) {

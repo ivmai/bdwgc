@@ -138,6 +138,7 @@ mse * GC_signal_mark_stack_overflow(mse *msp);
 { \
     register word _descr = (hhdr) -> hb_descr; \
         \
+    GC_ASSERT(!HBLK_IS_FREE(hhdr)); \
     if (_descr != 0) { \
         mark_stack_top++; \
         if (mark_stack_top >= mark_stack_limit) { \
