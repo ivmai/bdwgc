@@ -1069,8 +1069,15 @@ void run_one_test()
       GC_is_visible_print_proc = fail_proc1;
       collectable_count += 1;
       x = GC_malloc(16);
-      if (GC_base(x + 13) != x) {
+      if (GC_base(GC_PTR_ADD(x, 13)) != x) {
     	GC_printf("GC_base(heap ptr) produced incorrect result\n");
+	FAIL;
+      }
+      GC_PRE_INCR(x, 0);
+      GC_POST_INCR(x);
+      GC_POST_DECR(x);
+      if (GC_base(x) != x) {
+    	GC_printf("Bad INCR/DECR result\n");
 	FAIL;
       }
 #     ifndef PCR

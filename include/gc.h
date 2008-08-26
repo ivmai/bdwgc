@@ -927,8 +927,8 @@ GC_API void * GC_same_obj (void * p, void * q);
 /* the second argument is in units of bytes, not multiples of the	*/
 /* object size.  This should either be invoked from a macro, or the	*/
 /* call should be automatically generated.				*/
-GC_API void * GC_pre_incr (void * *p, size_t how_much);
-GC_API void * GC_post_incr (void * *p, size_t how_much);
+GC_API void * GC_pre_incr (void * *p, ptrdiff_t how_much);
+GC_API void * GC_post_incr (void * *p, ptrdiff_t how_much);
 
 /* Check that p is visible						*/
 /* to the collector as a possibly pointer containing location.		*/
@@ -954,34 +954,36 @@ GC_API void GC_dump(void);
 
 /* Safer, but slow, pointer addition.  Probably useful mainly with 	*/
 /* a preprocessor.  Useful only for heap pointers.			*/
-#ifdef GC_DEBUG
+/* Only the macros without trailing digits are meant to be used		*/
+/* by clients.  These are designed to model the available C pointer	*/
+/* arithmetic expressions.  						*/
+/* Even then, these are probably more useful as 			*/
+/* documentation than as part of the API.				*/
+/* Note that GC_PTR_ADD evaluates the first argument more than once.	*/
+#if defined(GC_DEBUG) && defined(__GNUC__)
 #   define GC_PTR_ADD3(x, n, type_of_result) \
 	((type_of_result)GC_same_obj((x)+(n), (x)))
 #   define GC_PRE_INCR3(x, n, type_of_result) \
-	((type_of_result)GC_pre_incr(&(x), (n)*sizeof(*x))
-#   define GC_POST_INCR2(x, type_of_result) \
-	((type_of_result)GC_post_incr(&(x), sizeof(*x))
-#   ifdef __GNUC__
-#       define GC_PTR_ADD(x, n) \
+	((type_of_result)GC_pre_incr(&(x), (n)*sizeof(*x)))
+#   define GC_POST_INCR3(x, n, type_of_result) \
+	((type_of_result)GC_post_incr(&(x), (n)*sizeof(*x)))
+#   define GC_PTR_ADD(x, n) \
 	    GC_PTR_ADD3(x, n, typeof(x))
-#       define GC_PRE_INCR(x, n) \
+#   define GC_PRE_INCR(x, n) \
 	    GC_PRE_INCR3(x, n, typeof(x))
-#       define GC_POST_INCR(x, n) \
-	    GC_POST_INCR3(x, typeof(x))
-#   else
+#   define GC_POST_INCR(x) \
+	    GC_POST_INCR3(x, 1, typeof(x))
+#   define GC_POST_DECR(x) \
+	    GC_POST_INCR3(x, -1, typeof(x))
+#else	/* !GC_DEBUG || !__GNUC__ */
 	/* We can't do this right without typeof, which ANSI	*/
-	/* decided was not sufficiently useful.  Repeatedly	*/
-	/* mentioning the arguments seems too dangerous to be	*/
-	/* useful.  So does not casting the result.		*/
-#   	define GC_PTR_ADD(x, n) ((x)+(n))
-#   endif
-#else	/* !GC_DEBUG */
-#   define GC_PTR_ADD3(x, n, type_of_result) ((x)+(n))
+	/* decided was not sufficiently useful.  Without it	*/
+	/* we resort to the non-debug version.			*/
+	/* FIXME: This should eventially support C++0x decltype */
 #   define GC_PTR_ADD(x, n) ((x)+(n))
-#   define GC_PRE_INCR3(x, n, type_of_result) ((x) += (n))
 #   define GC_PRE_INCR(x, n) ((x) += (n))
-#   define GC_POST_INCR2(x, n, type_of_result) ((x)++)
-#   define GC_POST_INCR(x, n) ((x)++)
+#   define GC_POST_INCR(x) ((x)++)
+#   define GC_POST_DECR(x) ((x)--)
 #endif
 
 /* Safer assignment of a pointer to a nonstack location.	*/

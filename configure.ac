@@ -22,7 +22,7 @@ AC_INIT(gc,7.2alpha1,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.39 $)
+AC_REVISION($Revision: 1.40 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -432,6 +432,7 @@ AC_PROG_LIBTOOL
 
 #
 # Check for AViiON Machines running DGUX
+# FIXME: Should this be moved down to below the gc-debug processing?
 #
 ac_is_dgux=no
 AC_CHECK_HEADER(sys/dg_sys_info.h,
@@ -439,7 +440,7 @@ AC_CHECK_HEADER(sys/dg_sys_info.h,
 
     ## :GOTCHA: we do not check anything but sys/dg_sys_info.h
 if test $ac_is_dgux = yes; then
-    if test "$enable_full_debug" = "yes"; then
+    if test "$enable_gc_debug" = "yes"; then
       CFLAGS="-g -mstandard -DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
       CXXFLAGS="-g -mstandard -DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
     else
@@ -514,54 +515,6 @@ if test x"$enable_gcj_support" != xno; then
     AC_DEFINE(GC_GCJ_SUPPORT, 1, [Define to include support for gcj])
 fi
 
-AC_ARG_ENABLE(java-finalization,
-    [AC_HELP_STRING([--disable-java-finalization],
-	[Disable support for java finalization.])])
-if test x"$enable_java_finalization" != xno; then
-    AC_DEFINE(JAVA_FINALIZATION)
-fi
-
-AC_ARG_ENABLE(atomic-uncollectable,
-    [AC_HELP_STRING([--disable-atomic-uncollectible],
-	[Disable support for atomic uncollectible allocation.])])
-if test x"$enable_atomic_uncollectible" != x"no"; then
-    AC_DEFINE(ATOMIC_UNCOLLECTABLE, 1,
-	[Define to enable atomic uncollectible allocation.])
-fi
-
-AC_ARG_ENABLE(redirect-malloc,
-    [AC_HELP_STRING([--enable-redirect-malloc],
-	[Redirect malloc and friends to GC routines])])
-
-if test "${enable_redirect_malloc}" = yes; then
-    if test "${enable_full_debug}" = yes; then
-	AC_DEFINE(REDIRECT_MALLOC, GC_debug_malloc_replacement)
-	AC_DEFINE(REDIRECT_REALLOC, GC_debug_realloc_replacement)
-	AC_DEFINE(REDIRECT_FREE, GC_debug_free)
-    else
-	AC_DEFINE(REDIRECT_MALLOC, GC_malloc)
-    fi
-    AC_DEFINE(GC_USE_DLOPEN_WRAP)
-fi
-
-AC_ARG_ENABLE(large-config,
-    [AC_HELP_STRING([--enable-large-config],
-	[Optimize for large (> 100 MB) heap or root set])])
-
-if test "${enable_large_config}" = yes; then
-    AC_DEFINE(LARGE_CONFIG, 1, [Define to optimize for large heaps or root sets])
-fi
-
-dnl This is something of a hack.  When cross-compiling we turn off
-dnl some functionality.  We also enable the "small" configuration.
-dnl These is only correct when targetting an embedded system.  FIXME.
-if test -n "${with_cross_host}"; then
-   AC_DEFINE(NO_CLOCK)
-   AC_DEFINE(SMALL_CONFIG)
-   AC_DEFINE(NO_DEBUGGING)
-fi
-
-
 dnl Debugging
 dnl ---------
 
@@ -593,6 +546,54 @@ AC_ARG_ENABLE(gc-debug,
       ;;
     esac ]
   fi)
+
+AC_ARG_ENABLE(java-finalization,
+    [AC_HELP_STRING([--disable-java-finalization],
+	[Disable support for java finalization.])])
+if test x"$enable_java_finalization" != xno; then
+    AC_DEFINE(JAVA_FINALIZATION)
+fi
+
+AC_ARG_ENABLE(atomic-uncollectable,
+    [AC_HELP_STRING([--disable-atomic-uncollectible],
+	[Disable support for atomic uncollectible allocation.])])
+if test x"$enable_atomic_uncollectible" != x"no"; then
+    AC_DEFINE(ATOMIC_UNCOLLECTABLE, 1,
+	[Define to enable atomic uncollectible allocation.])
+fi
+
+AC_ARG_ENABLE(redirect-malloc,
+    [AC_HELP_STRING([--enable-redirect-malloc],
+	[Redirect malloc and friends to GC routines])])
+
+if test "${enable_redirect_malloc}" = yes; then
+    if test "${enable_gc_debug}" = yes; then
+	AC_DEFINE(REDIRECT_MALLOC, GC_debug_malloc_replacement)
+	AC_DEFINE(REDIRECT_REALLOC, GC_debug_realloc_replacement)
+	AC_DEFINE(REDIRECT_FREE, GC_debug_free)
+    else
+	AC_DEFINE(REDIRECT_MALLOC, GC_malloc)
+    fi
+    AC_DEFINE(GC_USE_DLOPEN_WRAP)
+fi
+
+AC_ARG_ENABLE(large-config,
+    [AC_HELP_STRING([--enable-large-config],
+	[Optimize for large (> 100 MB) heap or root set])])
+
+if test "${enable_large_config}" = yes; then
+    AC_DEFINE(LARGE_CONFIG, 1, [Define to optimize for large heaps or root sets])
+fi
+
+dnl This is something of a hack.  When cross-compiling we turn off
+dnl some functionality.  We also enable the "small" configuration.
+dnl These is only correct when targetting an embedded system.  FIXME.
+if test -n "${with_cross_host}"; then
+   AC_DEFINE(NO_CLOCK)
+   AC_DEFINE(SMALL_CONFIG)
+   AC_DEFINE(NO_DEBUGGING)
+fi
+
 
 AC_SUBST(UNWINDLIBS)
 

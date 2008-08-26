@@ -152,8 +152,15 @@ for details.
 </dl>
 <P>
 If you are concerned with multiprocessor performance and scalability,
-you should consider enabling and using thread local allocation (<I>e.g.</i>
-<TT>GC_LOCAL_MALLOC</tt>, see <TT>gc_local_alloc.h</tt>.  If your platform
+you should consider enabling and using thread local allocation.
+For GC versions before 7.0, use <I>e.g.</i>
+<TT>GC_LOCAL_MALLOC</tt> and see <TT>gc_local_alloc.h</tt>;
+for later versions enabling thread-local allocations when the collector
+library is built changes the
+implementation of <TT>GC_MALLOC</tt>, so the client doesn't need to
+change.
+<P>
+If your platform
 supports it, you should build the collector with parallel marking support
 (<TT>-DPARALLEL_MARK</tt>, or <TT>--enable-parallel-mark</tt>).
 <P>

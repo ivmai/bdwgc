@@ -23,7 +23,7 @@
      to build only the static version of libgc.
   
      To enable debugging messages please do:
-     1) Add the "--enable-full-debug" flag during configuration. 
+     1) Add the "--enable-gc-debug" flag during configuration. 
      2) Edit the file linux-threads.c and uncommnect the line:
 
      /* #define DEBUG_THREADS 1 */ to ---> 

@@ -1,3 +1,15 @@
+2008-08-26  Hans Boehm <Hans.Boehm@hp.com> (with help from Marco Maggi)
+	* configure.ac: Check for gc-debug earlier; replace remaining
+	full-debug tests.
+	* configure: Regenerate.
+	* include/gc.h, ptr_chck.c (GC_pre_incr, GC_post_incr):
+	Use signed offset type.  Use ptr_t internally.
+	* doc/gcinterface.html: Update LOCAL_MALLOC description.
+	* doc/README.autoconf, doc/leak.html, doc/README.DGUX386:
+	Fix full-debug reference.
+	* include/gc.h: Rewrite GC_..._INCR and friends.
+	* tests/test.c: Minimally test GC_..._INCR and friends.
+
 2008-08-21  Hans Boehm <Hans.Boehm@hp.com>
 	* mark.c: (GC_push_next_marked, GC_push_next_marked_dirty,
 	GC_push_next_marked_uncollectable): Never invoke GC_push_marked
