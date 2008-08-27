@@ -125,7 +125,8 @@ should first define the macro <TT>GC_THREADS</tt>, and then
 include <TT>"gc.h"</tt>.  On some platforms this will redefine some
 threads primitives, e.g. to let the collector keep track of thread creation.
 <LI>
-To take advantage of fast thread-local allocation, use the following instead
+To take advantage of fast thread-local allocation in versions before 7.0,
+use the following instead
 of including <TT>gc.h</tt>:
 <PRE>
 #define GC_REDIRECT_TO_LOCAL
@@ -133,6 +134,8 @@ of including <TT>gc.h</tt>:
 </pre>
 This will cause GC_MALLOC and GC_MALLOC_ATOMIC to keep per-thread allocation
 caches, and greatly reduce the number of lock acquisitions during allocation.
+For versions after 7.0, this happens implicitly if the collector is built
+with thread-local allocation enabled.
 </ul>
 
 <H3>C++</h3>

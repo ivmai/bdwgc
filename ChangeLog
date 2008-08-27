@@ -1,3 +1,7 @@
+2008-08-27  Hans Boehm <Hans.Boehm@hp.com> (with help from Marco Maggi)
+	* doc/simple_example.html: Update thread-local allocation
+	description.
+
 2008-08-26  Hans Boehm <Hans.Boehm@hp.com> (with help from Marco Maggi)
 	* configure.ac: Check for gc-debug earlier; replace remaining
 	full-debug tests.
