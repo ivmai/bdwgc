@@ -1,3 +1,9 @@
+2008-08-27  Hans Boehm <Hans.Boehm@hp.com>
+	* doc/simple_example.html: update --enable-full-debug reference,
+	Make HTML formatting standards compliant.
+	* doc/debugging.html, doc/leak.html: Fix HTML formatting bugs.
+	* doc/gcinterface.html: specify encoding.
+
 2008-08-27  Hans Boehm <Hans.Boehm@hp.com> (with help from Marco Maggi)
 	* doc/simple_example.html: Update thread-local allocation
 	description.

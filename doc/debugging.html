@@ -1,5 +1,7 @@
-<HTML>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en-us">
 <HEAD>
+<meta http-equiv="Content-Type" content="text/html;charset=US-ASCII" >
 <TITLE>Debugging Garbage Collector Related Problems</title>
 </head>
 <BODY>
@@ -81,8 +83,8 @@ void * big_realloc(void *p, size_t new_size)
     size_t old_size = GC_size(p);
     void * result;
  
-    if (new_size <= 10000) return(GC_realloc(p, new_size));
-    if (new_size <= old_size) return(p);
+    if (new_size &lt;= 10000) return(GC_realloc(p, new_size));
+    if (new_size &lt;= old_size) return(p);
     result = GC_malloc_ignore_off_page(new_size);
     if (result == 0) return(0);
     memcpy(result,p,old_size);
@@ -186,7 +188,8 @@ primitives is <TT>gc_typed.h</tt>, or separate out the pointerfree component.
 to allocate large objects.  (See <TT>gc.h</tt> and above for details.
 Large means &gt; 100K in most environments.)
 <LI> If your heap size is larger than 100MB or so, build the collector with
--DLARGE_CONFIG.  This allows the collector to keep more precise black-list
+<TT>-DLARGE_CONFIG</tt>.
+This allows the collector to keep more precise black-list
 information.
 <LI> If you are using heaps close to, or larger than, a gigabyte on a 32-bit
 machine, you may want to consider moving to a platform with 64-bit pointers.
