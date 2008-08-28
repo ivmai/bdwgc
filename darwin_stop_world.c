@@ -79,6 +79,8 @@ void GC_push_all_stacks() {
   ppc_thread_state_t state;
 #elif defined(I386)
   i386_thread_state_t state;
+#elif defined(ARM)
+  arm_thread_state_t state;
 #else
 # error FIXME for non-x86 || ppc architectures
 #endif
@@ -145,6 +147,26 @@ void GC_push_all_stacks() {
 	GC_push_one(state.r29); 
 	GC_push_one(state.r30); 
 	GC_push_one(state.r31);
+#elif defined(ARM)
+        lo = (void*)state.__sp;
+
+        GC_push_one(state.__r[0]);
+        GC_push_one(state.__r[1]);
+        GC_push_one(state.__r[2]);
+        GC_push_one(state.__r[3]);
+        GC_push_one(state.__r[4]);
+        GC_push_one(state.__r[5]);
+        GC_push_one(state.__r[6]);
+        GC_push_one(state.__r[7]);
+        GC_push_one(state.__r[8]);
+        GC_push_one(state.__r[9]);
+        GC_push_one(state.__r[10]);
+        GC_push_one(state.__r[11]);
+        GC_push_one(state.__r[12]);
+        /* GC_push_one(state.__sp);  */
+        GC_push_one(state.__lr);
+        GC_push_one(state.__pc);
+        GC_push_one(state.__cpsr);
 #else
 # error FIXME for non-x86 || ppc architectures
 #endif
@@ -233,7 +255,7 @@ void GC_push_all_stacks() {
 	GC_push_one(info.r29); 
 	GC_push_one(info.r30); 
 	GC_push_one(info.r31);
-#      else
+#      elif defined(I386) /* !POWERPC */
 	/* FIXME: Remove after testing:	*/
 	WARN("This is completely untested and likely will not work\n", 0);
 	i386_thread_state_t info;
@@ -260,7 +282,36 @@ void GC_push_all_stacks() {
 	GC_push_one(info.es); 
 	GC_push_one(info.fs); 
 	GC_push_one(info.gs); 
-#      endif /* !POWERPC */
+#      elif defined(ARM) /* !I386 */
+	arm_thread_state_t info;
+	mach_msg_type_number_t outCount = THREAD_STATE_MAX;
+	r = thread_get_state(thread, GC_MACH_THREAD_STATE_FLAVOR,
+			     (natural_t *)&info, &outCount);
+	if(r != KERN_SUCCESS) continue;
+
+	lo = (void*)info.__sp;
+	hi = (ptr_t)FindTopOfStack(info.__sp);
+
+	GC_push_one(info.__r[0]); 
+	GC_push_one(info.__r[1]); 
+	GC_push_one(info.__r[2]); 
+	GC_push_one(info.__r[3]); 
+	GC_push_one(info.__r[4]); 
+	GC_push_one(info.__r[5]); 
+	GC_push_one(info.__r[6]); 
+	GC_push_one(info.__r[7]); 
+	GC_push_one(info.__r[8]); 
+	GC_push_one(info.__r[9]); 
+	GC_push_one(info.__r[10]); 
+	GC_push_one(info.__r[11]); 
+	GC_push_one(info.__r[12]); 
+	/* GC_push_one(info.__sp);  */
+	GC_push_one(info.__lr); 
+	GC_push_one(info.__pc); 
+	GC_push_one(info.__cpsr); 
+#      else /* !ARM */
+#      error Unknown architecture
+#      endif
       }
 #     if DEBUG_THREADS
        GC_printf3("Darwin: Stack for thread 0x%lx = [%lx,%lx)\n",

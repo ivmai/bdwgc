@@ -60,10 +60,15 @@
 #    define FREEBSD
 # endif
 
+/* And one for Darwin: */
+# if defined(macosx) || (defined(__APPLE__) && defined(__MACH__))
+#   define DARWIN
+# endif
+
 /* Determine the machine type: */
 # if defined(__arm__) || defined(__thumb__)
 #    define ARM32
-#    if !defined(LINUX) && !defined(NETBSD)
+#    if !defined(LINUX) && !defined(NETBSD) && !defined(DARWIN)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -304,15 +309,38 @@
 #   define MACOS
 #   define mach_type_known
 # endif
-# if defined(macosx) || (defined(__APPLE__) && defined(__MACH__))
-#   define DARWIN
+# ifdef DARWIN
 #   if defined(__ppc__)  || defined(__ppc64__)
 #    define POWERPC
 #    define mach_type_known
-#   endif
-#   if defined(__i386__)
+#   elif defined(__i386__)
 #    define I386
 #    define mach_type_known
+#    define DARWIN_DONT_PARSE_STACK
+#    define OS_TYPE "DARWIN"
+#    define DYNAMIC_LOADING
+     /* XXX: see get_end(3), get_etext() and get_end() should not be used.
+        These aren't used when dyld support is enabled (it is by default) */
+#    define DATASTART ((ptr_t) get_etext())
+#    define DATAEND	((ptr_t) get_end())
+#    define STACKBOTTOM ((ptr_t) 0xc0000000)
+#    define USE_MMAP
+#    define USE_MMAP_ANON
+#    define USE_ASM_PUSH_REGS
+     /* This is potentially buggy. It needs more testing. See the comments in
+        os_dep.c.  It relies on threads to track writes. */
+#    ifdef GC_DARWIN_THREADS
+/* #       define MPROTECT_VDB -- diabled for now.  May work for some apps. */
+#    endif
+#    include <unistd.h>
+#    define GETPAGESIZE() getpagesize()
+      /* There seems to be some issues with trylock hanging on darwin. This
+         should be looked into some more */
+#     define NO_PTHREAD_TRYLOCK
+#   elif defined(__arm__)
+#    define ARM
+#    define mach_type_known
+#    define DARWIN_DONT_PARSE_STACK
 #   endif
 # endif
 # if defined(NeXT) && defined(mc68000)
@@ -1895,6 +1923,14 @@
 #   ifdef MSWINCE
 #     define OS_TYPE "MSWINCE"
 #     define DATAEND /* not needed */
+#   endif
+#   ifdef DARWIN
+#     define OS_TYPE "DARWIN"
+#     define DATASTART ((ptr_t) get_etext())
+#     define DATAEND	((ptr_t) get_end())
+#     define STACKBOTTOM ((ptr_t) 0x30000000)
+#     undef USE_MMAP
+#     undef USE_MUNMAP
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.  */
