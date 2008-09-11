@@ -964,9 +964,9 @@ GC_API void GC_dump(void);
 #   define GC_PTR_ADD3(x, n, type_of_result) \
 	((type_of_result)GC_same_obj((x)+(n), (x)))
 #   define GC_PRE_INCR3(x, n, type_of_result) \
-	((type_of_result)GC_pre_incr(&(x), (n)*sizeof(*x)))
+	((type_of_result)GC_pre_incr((void **)(&(x)), (n)*sizeof(*x)))
 #   define GC_POST_INCR3(x, n, type_of_result) \
-	((type_of_result)GC_post_incr(&(x), (n)*sizeof(*x)))
+	((type_of_result)GC_post_incr((void **)(&(x)), (n)*sizeof(*x)))
 #   define GC_PTR_ADD(x, n) \
 	    GC_PTR_ADD3(x, n, typeof(x))
 #   define GC_PRE_INCR(x, n) \

@@ -20,7 +20,7 @@
 
 # undef GC_BUILD
 
-#if defined(DBG_HDRS_ALL) || defined(MAKE_BACK_GRAPH)
+#if (defined(DBG_HDRS_ALL) || defined(MAKE_BACK_GRAPH)) && !defined(GC_DEBUG)
 #  define GC_DEBUG
 #endif
 

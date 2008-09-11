@@ -1,3 +1,15 @@
+2008-09-10  Hans Boehm <Hans.Boehm@hp.com>
+	* dbg_mlc.c (GC_print_smashed_obj): Increase robustness with
+	smashed string, (GC_debug_free_inner): Mark as free.
+	* mallocx.c (GC_malloc_many): Always clear new block if
+	GC_debugging_started.
+	* reclaim.c: Move GC_debugging_started from
+	GC_reclaim_small_nonempty_block() to GC_reclaim_generic(),
+	which is also called directly.
+	* doc/README: Fix spelling error.  Update license summary.
+	* include/gc.h (GC_PRE_INCR3, GC_POST_INCR3): add (void **) casts.
+	* tests/test.c: Don't define GC_DEBUG if already defined.
+
 2008-08-27  Hans Boehm <Hans.Boehm@hp.com>
 	* doc/simple_example.html: update --enable-full-debug reference,
 	Make HTML formatting standards compliant.

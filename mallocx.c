@@ -393,7 +393,7 @@ DCL_LOCK_STATE;
 	    GC_release_mark_lock();
 #	  endif
 
-	  op = GC_build_fl(h, lw, ok -> ok_init, 0);
+	  op = GC_build_fl(h, lw, (ok -> ok_init || GC_debugging_started), 0);
 #	  ifdef PARALLEL_MARK
 	    *result = op;
 	    GC_acquire_mark_lock();

@@ -420,7 +420,9 @@ STATIC void GC_print_smashed_obj(ptr_t p, ptr_t clobbered_addr)
         GC_err_printf("<smashed>, appr. sz = %ld)\n",
         	       (GC_size((ptr_t)ohdr) - DEBUG_BYTES));
     } else {
-        if (ohdr -> oh_string[0] == '\0') {
+        if ((word)(ohdr -> oh_string) < HBLKSIZE) {
+            GC_err_puts("(smashed string)");
+        } else if (ohdr -> oh_string[0] == '\0') {
             GC_err_puts("EMPTY(smashed?)");
         } else {
             GC_err_puts(ohdr -> oh_string);
@@ -758,7 +760,11 @@ extern void GC_free_inner(void * p);
 /* Used internally; we assume it's called correctly.	*/
 void GC_debug_free_inner(void * p)
 {
-    GC_free_inner(GC_base(p));
+    ptr_t base = GC_base(p);
+    GC_ASSERT((ptr_t)p - (ptr_t)base == sizeof(oh));
+    /* Invalidate size */
+        ((oh *)base) -> oh_sz = GC_size(base);
+    GC_free_inner(base);
 }
 #endif
 

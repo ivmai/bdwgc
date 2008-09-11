@@ -216,7 +216,7 @@ ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
 
     GC_ASSERT(GC_find_header((ptr_t)hbp) == hhdr);
     GC_remove_protection(hbp, 1, (hhdr)->hb_descr == 0 /* Pointer-free? */);
-    if (init) {
+    if (init || GC_debugging_started) {
       result = GC_reclaim_clear(hbp, hhdr, sz, list, count);
     } else {
       GC_ASSERT((hhdr)->hb_descr == 0 /* Pointer-free block */);
@@ -247,7 +247,7 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp,
 	GC_reclaim_check(hbp, hhdr, sz);
     } else {
         *flh = GC_reclaim_generic(hbp, hhdr, sz,
-				  (ok -> ok_init || GC_debugging_started),
+				  ok -> ok_init,
 	 			  *flh, &GC_bytes_found);
     }
 }
