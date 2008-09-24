@@ -990,7 +990,7 @@ struct _GC_arrays {
 # endif
 # ifdef LARGE_CONFIG
 #   if CPP_WORDSZ > 32
-#     define MAX_HEAP_SECTS 4096 	/* overflows at roughly 64 GB	   */
+#     define MAX_HEAP_SECTS 8192 	/* overflows at roughly 128 GB	   */
 #   else
 #     define MAX_HEAP_SECTS 768		/* Separately added heap sections. */
 #   endif
@@ -998,7 +998,11 @@ struct _GC_arrays {
 #   ifdef SMALL_CONFIG
 #     define MAX_HEAP_SECTS 128		/* Roughly 256MB (128*2048*1K)	*/
 #   else
-#     define MAX_HEAP_SECTS 384		/* Roughly 3GB			*/
+#     if CPP_WORDSZ > 32
+#       define MAX_HEAP_SECTS 1024	/* Roughly 8GB			 */
+#     else
+#       define MAX_HEAP_SECTS 512	/* Roughly 4GB			 */
+#     endif
 #   endif
 # endif
   struct HeapSect {

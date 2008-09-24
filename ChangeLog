@@ -1,3 +1,6 @@
+2008-09-24  Hans Boehm <Hans.Boehm@hp.com>
+	* include/private/gc_priv.h: Update MAX_HEAP_SECTS.
+
 2008-09-10  Hans Boehm <Hans.Boehm@hp.com>
 	* dbg_mlc.c (GC_print_smashed_obj): Increase robustness with
 	smashed string, (GC_debug_free_inner): Mark as free.
