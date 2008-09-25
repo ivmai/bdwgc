@@ -1,4 +1,13 @@
 2008-09-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	* win32_threads.c (GC_pthread_join, GC_pthread_start_inner):
+	Remove unused variables.
+	* darwin_stop_world.c: Always declare GC_thr_init().
+	* dbg_mlc.c (GC_debug_free_inner): Dont touch oh_sz if
+	SHORT_DBG_HDRS is defined.
+	* include/private/gc_pmark.h (OR_WORD_EXIT_IF_SET, parallel
+	mark, USE_MARK_BITS version): Refer to correct parameter name.
+
+2008-09-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	* finalize.c (GC_general_register_disappearing_link): Remove
 	redundant code.
 	* gcj_mlc.c (GC_init_gcj_malloc): Add cast to signed.

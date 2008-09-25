@@ -72,8 +72,9 @@ unsigned long FindTopOfStack(unsigned long stack_start)
   return (unsigned long)frame;
 }
 
-#ifdef DARWIN_DONT_PARSE_STACK
 void GC_thr_init(void);
+
+#ifdef DARWIN_DONT_PARSE_STACK
 
 void GC_push_all_stacks(void)
 {

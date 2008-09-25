@@ -172,10 +172,10 @@ exit_label: ; \
       /* For our uses, that's benign:                                       */
 #     define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
         { \
-          if (!(*(addr) & (mask))) { \
-            AO_or((AO_t *)(addr), (mask); \
+          if (!(*(addr) & (bits))) { \
+            AO_or((AO_t *)(addr), (bits)); \
           } else { \
-            goto label; \
+            goto exit_label; \
           } \
         }
 #   else

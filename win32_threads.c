@@ -1212,7 +1212,6 @@ struct start_info {
 
 int GC_pthread_join(pthread_t pthread_id, void **retval) {
     int result;
-    int i;
     GC_thread joinee;
 
 #   if DEBUG_CYGWIN_THREADS
@@ -1316,8 +1315,6 @@ STATIC void * GC_pthread_start_inner(struct GC_stack_base *sb, void * arg)
     DWORD thread_id = GetCurrentThreadId();
     pthread_t pthread_id = pthread_self();
     GC_thread me;
-    GC_bool detached;
-    int i;
 
 #   if DEBUG_CYGWIN_THREADS
       GC_printf("thread 0x%x(0x%x) starting...\n",(int)pthread_id,
