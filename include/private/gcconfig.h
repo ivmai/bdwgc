@@ -1968,8 +1968,6 @@
 #	  define MPROTECT_VDB
 	  /* We also avoided doing this in the past with GC_WIN32_THREADS */
 	  /* Hopefully that's fixed.					  */
-#	endif
-#	if _MSC_VER >= 1300  /* .NET, i.e. > VisualStudio 6	*/
 #         define GWW_VDB
 #	endif
 #       define DATAEND  /* not needed */
@@ -2132,7 +2130,11 @@
 # endif
 
 # ifndef STATIC
-#   define STATIC /* ignore to aid profiling and possibly debugging */
+#   ifndef NO_DEBUGGING
+#     define STATIC /* ignore to aid profiling and possibly debugging */
+#   else
+#     define STATIC static
+#   endif
 # endif
 
 # if defined(LINUX) || defined(HURD) || defined(__GLIBC__)

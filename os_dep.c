@@ -2622,13 +2622,13 @@ STATIC GC_bool GC_old_segv_handler_used_si;
 #   include <errno.h>
 #   if defined(FREEBSD)
 #     define SIG_OK TRUE
-#     define CODE_OK (code == BUS_PAGE_FAULT)
+#     define CODE_OK (si -> si_code == BUS_PAGE_FAULT)
 #   elif defined(OSF1)
 #     define SIG_OK (sig == SIGSEGV)
-#     define CODE_OK (code == 2 /* experimentally determined */)
+#     define CODE_OK (si -> si_code == 2 /* experimentally determined */)
 #   elif defined(IRIX5)
 #     define SIG_OK (sig == SIGSEGV)
-#     define CODE_OK (code == EACCES)
+#     define CODE_OK (si -> si_code == EACCES)
 #   elif defined(HURD)
 #     define SIG_OK (sig == SIGBUS || sig == SIGSEGV) 	
 #     define CODE_OK  TRUE
@@ -2645,9 +2645,6 @@ STATIC GC_bool GC_old_segv_handler_used_si;
 		     || (si -> si_code == BUS_UNKNOWN) \
 		     || (si -> si_code == SEGV_UNKNOWN) \
 		     || (si -> si_code == BUS_OBJERR)
-#   elif defined(FREEBSD)
-#     define SIG_OK (sig == SIGBUS)
-#     define CODE_OK (si -> si_code == BUS_PAGE_FAULT)
 #   elif defined(SUNOS5SIGS)
 #     define SIG_OK (sig == SIGSEGV)
 #     define CODE_OK (si -> si_code == SEGV_ACCERR)

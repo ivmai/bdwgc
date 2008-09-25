@@ -81,7 +81,8 @@ GC_API void GC_init_gcj_malloc(int mp_index, void * /* really GC_mark_proc */mp)
       } else {
 	GC_gcj_kind = GC_new_kind_inner(
 			(void **)GC_gcjobjfreelist,
-			(((word)(-MARK_DESCR_OFFSET - GC_INDIR_PER_OBJ_BIAS))
+			(((word)(-(signed_word)MARK_DESCR_OFFSET
+				 - GC_INDIR_PER_OBJ_BIAS))
 	   		 | GC_DS_PER_OBJECT),
 			FALSE, TRUE);
       }

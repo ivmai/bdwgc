@@ -1,3 +1,13 @@
+2008-09-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	* finalize.c (GC_general_register_disappearing_link): Remove
+	redundant code.
+	* gcj_mlc.c (GC_init_gcj_malloc): Add cast to signed.
+	* os_dep.c: (GC_write_fault_handler): Remove remaining
+	references to deleted variable "code".  Remove redundant
+	FREEBSD definitions.
+	* include/private/gcconfig.h (GWW_VDB): Define for X86_64 when
+	defined for X86. (STATIC): Define as "static" with NO_DEBUGGING.
+
 2008-09-24  Hans Boehm <Hans.Boehm@hp.com>
 	* include/private/gc_priv.h: Update MAX_HEAP_SECTS.
 

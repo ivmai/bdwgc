@@ -169,7 +169,6 @@ GC_API int GC_general_register_disappearing_link(void * * link, void * obj)
 	}
     }
     index = HASH2(link, log_dl_table_size);
-    curr_dl = dl_head[index];
     for (curr_dl = dl_head[index]; curr_dl != 0; curr_dl = dl_next(curr_dl)) {
         if (curr_dl -> dl_hidden_link == HIDE_POINTER(link)) {
             curr_dl -> dl_hidden_obj = HIDE_POINTER(obj);
