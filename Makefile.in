@@ -261,7 +261,7 @@ am__pkginclude_HEADERS_DIST = include/gc_cpp.h include/gc_allocator.h \
 	include/gc_backptr.h include/gc_gcj.h include/leak_detector.h \
 	include/gc_amiga_redirects.h include/gc_pthread_redirects.h \
 	include/gc_config_macros.h include/gc_tiny_fl.h \
-	include/gc_version.h
+	include/gc_version.h include/cord.h
 pkgincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(dist_noinst_HEADERS) $(include_HEADERS) \
 	$(pkginclude_HEADERS)
@@ -492,7 +492,7 @@ pkginclude_HEADERS = $(am__append_5) include/gc.h include/gc_typed.h \
 	include/gc_allocator.h include/gc_backptr.h include/gc_gcj.h \
 	include/leak_detector.h include/gc_amiga_redirects.h \
 	include/gc_pthread_redirects.h include/gc_config_macros.h \
-	include/gc_tiny_fl.h include/gc_version.h
+	include/gc_tiny_fl.h include/gc_version.h include/cord.h
 
 # headers which are not installed
 #

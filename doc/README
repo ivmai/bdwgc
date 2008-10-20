@@ -207,21 +207,24 @@ simplest case), or with a classic makefile by itself (type
 On other platforms, typically only the latter option is available, though
 with a different supplied Makefile.)
 
-  Typing "make test" nstead of "make" will automatically build the collector
-and then run setjmp_test and gctest. Setjmp_test will give you information
-about configuring the collector, which is useful primarily if you have
-a machine that's not already supported.  Gctest is a somewhat superficial
-test of collector functionality.  Failure is indicated by a core dump or
-a message to the effect that the collector is broken.  Gctest takes about 
-a second to two to run on reasonable 2007 vintage desktops.
-It may use up to about 30MB of memory.  (The
-multi-threaded version will use more.  64-bit versions may use more.)
-"Make test" will also, as its last step, attempt to build and test the
-"cord" string library.)
+  For the Makefile.direct-based process, typing "make test" instead of "make"
+will automatically build the collector and then run setjmp_test and gctest.
+Setjmp_test will give you information about configuring the collector, which is
+useful primarily if you have a machine that's not already supported.  Gctest is
+a somewhat superficial test of collector functionality.  Failure is indicated
+by a core dump or a message to the effect that the collector is broken.  Gctest
+takes about a second to two to run on reasonable 2007 vintage desktops.  It may
+use up to about 30MB of memory.  (The multi-threaded version will use more.
+64-bit versions may use more.) "Make test" will also, as its last step, attempt
+to build and test the "cord" string library.)
 
-  The Makefile will generate a library gc.a which you should link against.
-Typing "make cords" will add the cord library to gc.a.
-Note that this requires an ANSI C compiler.
+  Makefile.direct will generate a library gc.a which you should link against.
+Typing "make cords" will add the cord library to gc.a.  
+
+  The GNU style build process understands the usual targets.  "Make check"
+runs a number of tests.  "Make install" installs at least libgc, and libcord.
+Try "./configure --help" to see the configuration options.  It is currently
+not possible to exercise all combinations of build options this way.
 
   It is suggested that if you need to replace a piece of the collector
 (e.g. GC_mark_rts.c) you simply list your version ahead of gc.a on the
