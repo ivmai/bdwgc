@@ -63,7 +63,7 @@
 #   include <signal.h>
 # endif
 
-#ifdef UNIX_LIKE
+#if defined(UNIX_LIKE) || defined(CYGWIN32)
 # include <fcntl.h>
 #endif
 
@@ -626,7 +626,8 @@ word GC_page_size;
  * With threads, GC_mark_roots needs to know how to do this.
  * Called with allocator lock held.
  */
-# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+# if defined(MSWIN32) || defined(MSWINCE) \
+       || (defined(CYGWIN32) && !defined(USE_MMAP))
 # define is_writable(prot) ((prot) == PAGE_READWRITE \
 			    || (prot) == PAGE_WRITECOPY \
 			    || (prot) == PAGE_EXECUTE_READWRITE \
@@ -1004,7 +1005,7 @@ ptr_t GC_get_main_stack_base(void)
 
 #if !defined(BEOS) && !defined(AMIGA) && !defined(MSWIN32) \
     && !defined(MSWINCE) && !defined(OS2) && !defined(NOSYS) && !defined(ECOS) \
-    && !defined(CYGWIN32)
+    && (!defined(CYGWIN32) || defined(USE_MMAP))
 
 ptr_t GC_get_main_stack_base(void)
 {

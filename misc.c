@@ -35,7 +35,7 @@
 # include <tchar.h>
 #endif
 
-#ifdef UNIX_LIKE
+#if defined(UNIX_LIKE) || defined(CYGWIN32)
 # include <fcntl.h>
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -501,7 +501,7 @@ void GC_init_inner(void)
       if (0 != GETENV("GC_PRINT_VERBOSE_STATS")) {
         GC_print_stats = VERBOSE;
       } 
-#     if defined(UNIX_LIKE)
+#     if defined(UNIX_LIKE) || defined(CYGWIN32)
         {
 	  char * file_name = GETENV("GC_LOG_FILE");
           if (0 != file_name) {

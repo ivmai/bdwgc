@@ -1,3 +1,10 @@
+2008-10-20  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	* misc.c (GC_init_inner): Enable GC_LOG_FILE on Cygwin.
+	* include/private/gcconfig.h: Consider USE_MMAP for Cygwin.
+	* os_dep.c (GC_get_main_stack_base): Use alternate definition
+	with USE_MMAP.
+	* include/private/gc_priv.h: Sometimes define SETJMP on Cygwin.
+
 2008-10-20  Hans Boehm <Hans.Boehm@hp.com>
 	* doc/README: Make it clearer when Makefile.direct is assumed.
 	* cord/cord.am: install include/cord.h.

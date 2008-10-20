@@ -2032,7 +2032,7 @@ void GC_err_puts(const char *s);
 /* were possible, and a couple of routines to facilitate	*/
 /* catching accesses to bad addresses when that's		*/
 /* possible/needed.						*/
-#ifdef UNIX_LIKE
+#if defined(UNIX_LIKE) || (defined(NEED_FIND_LIMIT) && defined(CYGWIN32))
 # include <setjmp.h>
 # if defined(SUNOS5SIGS) && !defined(FREEBSD)
 #  include <sys/siginfo.h>

@@ -1165,6 +1165,10 @@
 #	undef STACK_GRAN
 #       define STACK_GRAN 0x10000
 #       define HEURISTIC1
+#       ifdef USE_MMAP
+#         define NEED_FIND_LIMIT
+#         define USE_MMAP_ANON
+#       endif
 #   endif
 #   ifdef OS2
 #	define OS_TYPE "OS2"
