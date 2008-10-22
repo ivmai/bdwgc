@@ -1256,7 +1256,7 @@ volatile GC_bool GC_collecting = 0;
 /* yield by calling pthread_mutex_lock(); it never makes sense to	*/
 /* explicitly sleep.							*/
 
-#define LOCK_STATS
+/* #define LOCK_STATS */
 #ifdef LOCK_STATS
   unsigned long GC_spin_count = 0;
   unsigned long GC_block_count = 0;

@@ -1,3 +1,7 @@
+2008-10-21  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	* pthread_support.c: Comment out LOCK_STATS.
+	* include/gc.h: Fix comments.
+
 2008-10-20  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	* misc.c (GC_init_inner): Enable GC_LOG_FILE on Cygwin.
 	* include/private/gcconfig.h: Consider USE_MMAP for Cygwin.

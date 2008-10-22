@@ -781,7 +781,7 @@ GC_API int GC_general_register_disappearing_link (void * * link, void * obj);
 	/* cleared.						*/
 	/* This can be used to implement certain types of	*/
 	/* weak pointers.  Note however that this generally	*/
-	/* requires that thje allocation lock is held (see	*/
+	/* requires that the allocation lock is held (see	*/
 	/* GC_call_with_allock_lock() below) when the disguised	*/
 	/* pointer is accessed.  Otherwise a strong pointer	*/
 	/* could be recreated between the time the collector    */
