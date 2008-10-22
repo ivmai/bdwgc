@@ -110,7 +110,7 @@ typedef struct {
       word oh_sf;			/* start flag */
 #   endif /* SHORT_DBG_HDRS */
 } oh;
-/* The size of the above structure is assumed not to dealign things,	*/
+/* The size of the above structure is assumed not to de-align things,	*/
 /* and to be a multiple of the word length.				*/
 
 #ifdef SHORT_DBG_HDRS

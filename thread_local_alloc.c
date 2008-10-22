@@ -225,8 +225,8 @@ extern int GC_gcj_kind;
 /* fundamental issue is that we may end up marking a free list, which	*/
 /* has freelist links instead of "vtable" pointers.  That is usually	*/
 /* OK, since the next object on the free list will be cleared, and	*/
-/* will thus be interpreted as containg a zero descriptor.  That's fine	*/
-/* if the object has not yet been initialized.  But there are		*/
+/* will thus be interpreted as containing a zero descriptor.  That's	*/
+/* fine if the object has not yet been initialized.  But there are	*/
 /* interesting potential races.						*/
 /* In the case of incremental collection, this seems hopeless, since	*/
 /* the marker may run asynchronously, and may pick up the pointer to  	*/

@@ -535,7 +535,7 @@ void GC_stop_init(void) {
     	ABORT("Cannot set SIG_THR_RESTART handler");
     }
 
-    /* Inititialize suspend_handler_mask. It excludes SIG_THR_RESTART. */
+    /* Initiialize suspend_handler_mask. It excludes SIG_THR_RESTART. */
       if (sigfillset(&suspend_handler_mask) != 0) ABORT("sigfillset() failed");
       GC_remove_allowed_signals(&suspend_handler_mask);
       if (sigdelset(&suspend_handler_mask, SIG_THR_RESTART) != 0)

@@ -11,7 +11,7 @@
  * This is needed for strict compliance with the Java standard, 
  * which can make the runtime guarantee that all finalizers are run.
  * This is problematic for several reasons:
- * 1) It means that finalizers, and all methods calle by them,
+ * 1) It means that finalizers, and all methods called by them,
  *    must be prepared to deal with objects that have been finalized in
  *    spite of the fact that they are still referenced by statically
  *    allocated pointer variables.

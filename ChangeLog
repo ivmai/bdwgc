@@ -1,4 +1,11 @@
 2008-10-21  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	* include/private/gc_locks.h, include/private/gc_pmark.h,
+	include/private/gc_priv.h, include/private/gcconfig.h,
+	mach_dep.c, mark_rts.c, misc.c, os_dep.c, pthread_stop_world.c,
+	pthread_support.c, thread_local_alloc.c, typd_mlc.c, win32_threads.c:
+	Fix comments.
+
+2008-10-21  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	* pthread_support.c: Comment out LOCK_STATS.
 	* include/gc.h: Fix comments.
 

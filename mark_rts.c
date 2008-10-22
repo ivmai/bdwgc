@@ -154,11 +154,11 @@ GC_API void GC_add_roots(void *b, void *e)
 
 
 /* Add [b,e) to the root set.  Adding the same interval a second time	*/
-/* is a moderately fast noop, and hence benign.  We do not handle	*/
+/* is a moderately fast no-op, and hence benign.  We do not handle	*/
 /* different but overlapping intervals efficiently.  (We do handle	*/
 /* them correctly.)							*/
 /* Tmp specifies that the interval may be deleted before 		*/
-/* reregistering dynamic libraries.					*/ 
+/* re-registering dynamic libraries.					*/ 
 void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 {
     struct roots * old;
@@ -562,7 +562,7 @@ void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
      * Next push static data.  This must happen early on, since it's
      * not robust against mark stack overflow.
      */
-     /* Reregister dynamic libraries, in case one got added.		*/
+     /* Re-register dynamic libraries, in case one got added.		*/
      /* There is some argument for doing this as late as possible,	*/
      /* especially on win32, where it can change asynchronously.	*/
      /* In those cases, we do it here.  But on other platforms, it's	*/

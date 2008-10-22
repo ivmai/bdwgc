@@ -133,7 +133,7 @@ public:
   // real one must be updated with a procedure call.
   static size_t GC_bytes_recently_allocd;
 
-  // Same for uncollectable mmory.  Not yet reflected in either
+  // Same for uncollectable memory.  Not yet reflected in either
   // GC_bytes_recently_allocd or GC_non_gc_bytes.
   static size_t GC_uncollectable_bytes_recently_allocd;
 
@@ -183,7 +183,7 @@ typedef GC_aux_template<0> GC_aux;
 
 // A fast, single-threaded, garbage-collected allocator
 // We assume the first word will be immediately overwritten.
-// In this version, deallocation is not a noop, and explicit
+// In this version, deallocation is not a no-op, and explicit
 // deallocation is likely to help performance.
 template <int dummy>
 class single_client_gc_alloc_template {
@@ -347,7 +347,7 @@ class traceable_alloc_template {
 typedef traceable_alloc_template < 0 > traceable_alloc;
 
 // We want to specialize simple_alloc so that it does the right thing
-// for all pointerfree types.  At the moment there is no portable way to
+// for all pointer-free types.  At the moment there is no portable way to
 // even approximate that.  The following approximation should work for
 // SGI compilers, and recent versions of g++.
 

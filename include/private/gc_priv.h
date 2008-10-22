@@ -123,7 +123,7 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 /*********************************/
 
 /* #define STUBBORN_ALLOC */
-		    /* Enable stubborm allocation, and thus a limited	*/
+		    /* Enable stubborn allocation, and thus a limited	*/
 		    /* form of incremental collection w/o dirty bits.	*/
 
 /* #define ALL_INTERIOR_POINTERS */
@@ -142,7 +142,7 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 		    /* 2. This option makes it hard for the collector	*/
 		    /*    to allocate space that is not ``pointed to''  */
 		    /*    by integers, etc.  Under SunOS 4.X with a 	*/
-		    /*    statically linked libc, we empiricaly		*/
+		    /*    statically linked libc, we empirically	*/
 		    /*    observed that it would be difficult to 	*/
 		    /*	  allocate individual objects larger than 100K.	*/
 		    /* 	  Even if only smaller objects are allocated,	*/
@@ -1021,7 +1021,7 @@ struct _GC_arrays {
 # endif
 # ifdef MSWINCE
     word _heap_lengths[MAX_HEAP_SECTS];
-    		/* Commited lengths of memory regions obtained from kernel. */
+    		/* Committed lengths of memory regions obtained from kernel. */
 # endif
   struct roots _static_roots[MAX_ROOT_SETS];
 # if !defined(MSWIN32) && !defined(MSWINCE)
@@ -1342,7 +1342,7 @@ GC_bool GC_mark_some(ptr_t cold_gc_frame);
 void GC_initiate_gc(void);
 				/* initiate collection.			*/
   				/* If the mark state is invalid, this	*/
-  				/* becomes full colleection.  Otherwise */
+  				/* becomes full collection.  Otherwise	*/
   				/* it's partial.			*/
 void GC_push_all(ptr_t bottom, ptr_t top);
 				/* Push everything in a range 		*/
@@ -1397,9 +1397,9 @@ extern void (*GC_push_other_roots)(void);
   			/* Push system or application specific roots	*/
   			/* onto the mark stack.  In some environments	*/
   			/* (e.g. threads environments) this is		*/
-  			/* predfined to be non-zero.  A client supplied */
-  			/* replacement should also call the original	*/
-  			/* function.					*/
+  			/* predefined to be non-zero.  A client		*/
+  			/* supplied replacement should also call the	*/
+  			/* original function.				*/
 extern void GC_push_gc_structures(void);
 			/* Push GC internal roots.  These are normally	*/
 			/* included in the static data segment, and 	*/
@@ -1875,7 +1875,7 @@ GC_bool GC_page_was_ever_dirty(struct hblk *h);
   			/* Could the page contain valid heap pointers?	*/
 void GC_remove_protection(struct hblk *h, word nblocks,
 			  GC_bool pointerfree);
-  			/* h is about to be writteni or allocated.  Ensure  */
+  			/* h is about to be written or allocated.  Ensure   */
 			/* that it's not write protected by the virtual	    */
 			/* dirty bit implementation.			    */
 			

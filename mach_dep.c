@@ -69,7 +69,7 @@ asm static void PushMacRegisters()
 # endif
 
 /* Routine to mark from registers that are preserved by the C compiler. */
-/* This must be ported to every new architecture.  It is noe optional,	*/
+/* This must be ported to every new architecture.  It is not optional,	*/
 /* and should not be used on platforms that are either UNIX-like, or	*/
 /* require thread support.						*/
 

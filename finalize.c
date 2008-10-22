@@ -81,7 +81,7 @@ static struct finalizable_object {
 } **fo_head = 0;
 
 STATIC struct finalizable_object * GC_finalize_now = 0;
-	/* LIst of objects that should be finalized now.	*/
+	/* List of objects that should be finalized now.	*/
 
 static signed_word log_fo_table_size = -1;
 
@@ -96,7 +96,7 @@ void GC_push_finalizer_structures(void)
 }
 
 /* Double the size of a hash table. *size_ptr is the log of its current	*/
-/* size.  May be a noop.						*/
+/* size.  May be a no-op.						*/
 /* *table is a pointer to an array of hash headers.  If we succeed, we	*/
 /* update both *table and *log_size_ptr.				*/
 /* Lock is held.  Signals are disabled.					*/
@@ -486,8 +486,8 @@ void GC_dump_finalization(void)
 }
 #endif
 
-/* Called with world stopped.  Cause disappearing links to disappear,	*/
-/* and invoke finalizers.						*/
+/* Called with held lock (but the world is running).			*/
+/* Cause disappearing links to disappear, and invoke finalizers.	*/
 void GC_finalize(void)
 {
     struct disappearing_link * curr_dl, * prev_dl, * next_dl;

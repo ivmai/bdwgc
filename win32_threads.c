@@ -313,7 +313,7 @@ static GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
 {
   GC_vthread me;
 
-  /* The following should be a noop according to the win32	*/
+  /* The following should be a no-op according to the win32	*/
   /* documentation.  There is empirical evidence that it	*/
   /* isn't.		- HB					*/
 # if defined(MPROTECT_VDB)
@@ -328,7 +328,7 @@ static GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
   if (GC_win32_dll_threads) {
     int i;
     /* It appears to be unsafe to acquire a lock here, since this	*/
-    /* code is apparently not preeemptible on some systems.		*/
+    /* code is apparently not preemptible on some systems.		*/
     /* (This is based on complaints, not on Microsoft's official	*/
     /* documentation, which says this should perform "only simple	*/
     /* initialization tasks".)						*/
@@ -1428,7 +1428,7 @@ int GC_pthread_detach(pthread_t thread)
 #else /* !GC_PTHREADS */
 
 /*
- * We avoid acquiring locks here, since this doesn't seem to be preemptable.
+ * We avoid acquiring locks here, since this doesn't seem to be preemptible.
  * This may run with an uninitialized collector, in which case we don't do much.
  * This implies that no threads other than the main one should be created
  * with an uninitialized collector.  (The alternative of initializing

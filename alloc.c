@@ -216,7 +216,7 @@ STATIC word GC_adj_bytes_allocd(void)
 
 
 /* Clear up a few frames worth of garbage left at the top of the stack.	*/
-/* This is used to prevent us from accidentally treating garbade left	*/
+/* This is used to prevent us from accidentally treating garbage left	*/
 /* on the stack by other parts of the collector as roots.  This 	*/
 /* differs from the code in misc.c, which actually tries to keep the	*/
 /* stack clear of long-lived, client-generated garbage.			*/

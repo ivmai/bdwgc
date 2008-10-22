@@ -21,7 +21,7 @@
  * guaranteed by the pthread standard, though it now does
  * very little of that.  It now also supports NPTL, and many
  * other Posix thread implementations.  We are trying to merge
- * all flavors of pthread dupport code into this file.
+ * all flavors of pthread support code into this file.
  */
  /* DG/UX ix86 support <takis@xfree86.org> */
 /*

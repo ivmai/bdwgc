@@ -32,7 +32,7 @@
 /* A client supplied mark procedure.  Returns new mark stack pointer.	*/
 /* Primary effect should be to push new entries on the mark stack.	*/
 /* Mark stack pointer values are passed and returned explicitly.	*/
-/* Global variables decribing mark stack are not necessarily valid.	*/
+/* Global variables describing mark stack are not necessarily valid.	*/
 /* (This usually saves a few cycles by keeping things in registers.)	*/
 /* Assumed to scan about GC_PROC_BYTES on average.  If it needs to do	*/
 /* much more work than that, it should do it in smaller pieces by	*/
@@ -74,7 +74,7 @@ typedef struct GC_ms_entry * (*GC_mark_proc) (
 #define GC_DS_LENGTH 0	/* The entire word is a length in bytes that	*/
 			/* must be a multiple of 4.			*/
 #define GC_DS_BITMAP 1	/* 30 (62) bits are a bitmap describing pointer	*/
-			/* fields.  The msb is 1 iff the first word	*/
+			/* fields.  The msb is 1 if the first word	*/
 			/* is a pointer.				*/
 			/* (This unconventional ordering sometimes	*/
 			/* makes the marker slightly faster.)		*/
@@ -99,7 +99,7 @@ typedef struct GC_ms_entry * (*GC_mark_proc) (
 			/* object contains a type descriptor in the	*/
 			/* first word.					*/
 			/* Note that in multithreaded environments	*/
-			/* per object descriptors maust be located in	*/
+			/* per object descriptors must be located in	*/
 			/* either the first two or last two words of	*/
 			/* the object, since only those are guaranteed	*/
 			/* to be cleared while the allocation lock is	*/

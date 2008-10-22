@@ -140,7 +140,7 @@
       /* as well?						    */
 #   endif
 # else /* ! _WIN32_WCE */
-/* Yet more kluges for WinCE */
+/* Yet more kludges for WinCE */
 #   include <stdlib.h>		/* size_t is defined here */
     typedef long ptrdiff_t;	/* ptrdiff_t is not defined */
 # endif

@@ -385,7 +385,7 @@
 #   if defined(_MSC_VER) && defined(_M_IA64)
 #     define IA64
 #     define MSWIN32	/* Really win64, but we don't treat 64-bit 	*/
-			/* variants as a differnt platform.		*/
+			/* variants as a different platform.		*/
 #   endif
 # endif
 # if defined(__DJGPP__)
@@ -516,7 +516,7 @@
  * For each architecture and OS, the following need to be defined:
  *
  * CPP_WORDSZ is a simple integer constant representing the word size.
- * in bits.  We assume byte addressibility, where a byte has 8 bits.
+ * in bits.  We assume byte addressability, where a byte has 8 bits.
  * We also assume CPP_WORDSZ is either 32 or 64.
  * (We care about the length of pointers, not hardware
  * bus widths.  Thus a 64 bit processor with a C compiler that uses
@@ -568,7 +568,7 @@
  * HEURISTIC2:  Take an address inside GC_init's frame, increment it repeatedly
  *		in small steps (decrement if STACK_GROWS_UP), and read the value
  *		at each location.  Remember the value when the first
- *		Segmentation violation or Bus error is signalled.  Round that
+ *		Segmentation violation or Bus error is signaled.  Round that
  *		to the nearest plausible page boundary, and use that instead
  *		of STACKBOTTOM.
  *
@@ -1141,7 +1141,7 @@
 #	  define PREFETCH(x) \
 	    __asm__ __volatile__ ("	prefetchnta	%0": : "m"(*(char *)(x)))
 	    /* Empirically prefetcht0 is much more effective at reducing	*/
-	    /* cache miss stalls for the targetted load instructions.  But it	*/
+	    /* cache miss stalls for the targeted load instructions.  But it	*/
 	    /* seems to interfere enough with other cache traffic that the net	*/
 	    /* result is worse than prefetchnta.				*/
 #         if 0 
@@ -1260,7 +1260,7 @@
       extern char _end;
       extern char *_STACKTOP;
       /* Depending on calling conventions Watcom C either precedes
-         or does not precedes with undescore names of C-variables.
+         or does not precedes with underscore names of C-variables.
          Make sure startup code variables always have the same names.  */
       #pragma aux __nullarea "*";
       #pragma aux _end "*";
@@ -1532,7 +1532,7 @@
 	/* initialization.						   */
 #	define STACKBOTTOM ((ptr_t)(((word)(environ) | (getpagesize()-1))+1))
 /* #   	define HEURISTIC2 */
-	/* Normally HEURISTIC2 is too conervative, since		*/
+	/* Normally HEURISTIC2 is too conservative, since		*/
 	/* the text segment immediately follows the stack.		*/
 	/* Hence we give an upper pound.				*/
 	/* This is currently unused, since we disabled HEURISTIC2	*/
@@ -2311,7 +2311,7 @@
 	/* How to get heap memory from the OS:				*/
 	/* Note that sbrk()-like allocation is preferred, since it 	*/
 	/* usually makes it possible to merge consecutively allocated	*/
-	/* chunks.  It also avoids unintented recursion with		*/
+	/* chunks.  It also avoids unintended recursion with		*/
 	/* -DREDIRECT_MALLOC.						*/
 	/* GET_MEM() returns a HLKSIZE aligned chunk.			*/
 	/* 0 is taken to mean failure. 					*/

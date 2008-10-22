@@ -237,7 +237,7 @@ char *GC_get_maps(void);
 /* Sort an array of HeapSects by start address.				*/
 /* Unfortunately at least some versions of				*/
 /* Linux qsort end up calling malloc by way of sysconf, and hence can't */
-/* be used in the colector.  Hence we roll our own.  Should be		*/
+/* be used in the collector.  Hence we roll our own.  Should be		*/
 /* reasonably fast if the array is already mostly sorted, as we expect	*/
 /* it to be.								*/
 static void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
@@ -1177,7 +1177,7 @@ void GC_register_dynamic_libraries(void)
           PCR_IL_LoadedFile * p = PCR_IL_GetLastLoadedFile();
           PCR_IL_LoadedSegment * q;
           
-          /* Skip uncommited files */
+          /* Skip uncommitted files */
           while (p != NIL && !(p -> lf_commitPoint)) {
               /* The loading of this file has not yet been committed	*/
               /* Hence its description could be inconsistent.  		*/

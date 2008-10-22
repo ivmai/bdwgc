@@ -26,7 +26,7 @@
  * This implements standard-conforming allocators that interact with
  * the garbage collector.  Gc_alloctor<T> allocates garbage-collectable
  * objects of type T.  Traceable_allocator<T> allocates objects that
- * are not temselves garbage collected, but are scanned by the
+ * are not themselves garbage collected, but are scanned by the
  * collector for pointers to collectable objects.  Traceable_alloc
  * should be used for explicitly managed STL containers that may
  * point to collectable objects.
@@ -49,7 +49,7 @@
 #endif
 
 /* First some helpers to allow us to dispatch on whether or not a type
- * is known to be pointerfree.
+ * is known to be pointer-free.
  * These are private, except that the client may invoke the
  * GC_DECLARE_PTRFREE macro.
  */
@@ -79,8 +79,8 @@ GC_DECLARE_PTRFREE(double);
 GC_DECLARE_PTRFREE(long double);
 /* The client may want to add others.	*/
 
-// In the following GC_Tp is GC_true_type iff we are allocating a
-// pointerfree object.
+// In the following GC_Tp is GC_true_type if we are allocating a
+// pointer-free object.
 template <class GC_Tp>
 inline void * GC_selective_alloc(size_t n, GC_Tp) {
     return GC_MALLOC(n);

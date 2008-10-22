@@ -104,7 +104,7 @@ extern mse * GC_mark_stack;
      * also less performant, way.
      */
     void GC_do_parallel_mark();
-		/* inititate parallel marking.	*/
+		/* initiate parallel marking.	*/
 
     extern GC_bool GC_help_wanted;	/* Protected by mark lock	*/
     extern unsigned GC_helper_count;	/* Number of running helpers.	*/
@@ -242,7 +242,7 @@ exit_label: ; \
 #endif
 /* If the mark bit corresponding to current is not set, set it, and 	*/
 /* push the contents of the object on the mark stack.  Current points	*/
-/* to the bginning of the object.  We rely on the fact that the 	*/
+/* to the beginning of the object.  We rely on the fact that the 	*/
 /* preceding header calculation will succeed for a pointer past the 	*/
 /* first page of an object, only if it is in fact a valid pointer	*/
 /* to the object.  Thus we can omit the otherwise necessary tests	*/
@@ -431,7 +431,7 @@ mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
  * real_ptr. That is the job of the caller, if appropriate.
  * Note that this is called with the mutator running, but
  * with us holding the allocation lock.  This is safe only if the
- * mutator needs tha allocation lock to reveal hidden pointers.
+ * mutator needs the allocation lock to reveal hidden pointers.
  * FIXME: Why do we need the GC_mark_state test below?
  */
 # define GC_MARK_FO(real_ptr, mark_proc) \
