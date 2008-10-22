@@ -728,7 +728,7 @@ void GC_reclaim_unconditionally_marked(void)
 	    while ((hbp = *rlh) != 0) {
 		hhdr = HDR(hbp);
 		*rlh = hhdr->hb_next;
-		GC_reclaim_small_nonempty_block(hbp, FALSE, &GC_bytes_found);
+		GC_reclaim_small_nonempty_block(hbp, FALSE);
 	    }
 	}
     }
