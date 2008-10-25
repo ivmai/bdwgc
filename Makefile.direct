@@ -403,8 +403,7 @@ OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
 		 PCR-Makefile SMakefile.amiga Makefile.DLLs \
 		 digimars.mak Makefile.direct NT_STATIC_THREADS_MAKEFILE \
 		 NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE \
-		 configure_atomic_ops.sh
-#	Makefile and Makefile.direct are copies of each other.
+		 build_atomic_ops.sh build_atomic_ops.sh.cygwin 
 
 OTHER_FILES= Makefile setjmp_t.c callprocs \
            MacProjects.sit.hqx MacOS.c \
@@ -438,8 +437,7 @@ all: gc.a gctest
 # if AO_INSTALL_DIR doesn't exist, we assume that it is pointing to
 # the default location, and we need to build
 $(AO_INSTALL_DIR): 
-	CC=$(CC) $(srcdir)/configure_atomic_ops.sh
-	cd $(AO_SRC_DIR); $(MAKE) CC=$(CC) install
+	CC=$(CC) MAKE=$(MAKE) $(srcdir)/build_atomic_ops.sh
 
 LEAKFLAGS=$(CFLAGS) -DFIND_LEAK
 

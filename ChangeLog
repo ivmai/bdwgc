@@ -1,3 +1,19 @@
+2008-10-24  Hans Boehm <Hans.Boehm@hp.com>
+	(Partially based loosely on patch from Ivan Maidanski)
+	* win32_threads.c (GC_may_be_in_stack): New.  (GC_Thread_Rep):
+	Add last_stack_min.  (GC_push_stack_for): Use last_stack_min.
+	(GC_get_next_stack): Add limit argument, use_last_stack_min.
+	(GC_suspend): make stack_base assignment conditional.
+	* dyn_load.c (win32 GC_cod_add_roots): Pass limit to
+	GC_get_next_stack.
+	* configure_atomic_ops.sh: Remove.
+	* build_atomic_ops.sh, build_atomic_ops.sh.cygwin, doc/README.win32,
+	Makefile.direct: Partially support build directories whose path
+	name contains blanks.
+	* Makefile.am: Support new files (build_atomic_ops.sh,
+	build_atomic_ops.sh.cygwin)
+	* Makefile.in: Regenerate.
+
 2008-10-21  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	* include/private/gc_locks.h, include/private/gc_pmark.h,
 	include/private/gc_priv.h, include/private/gcconfig.h,

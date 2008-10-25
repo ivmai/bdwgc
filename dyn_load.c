@@ -699,7 +699,9 @@ void GC_register_dynamic_libraries(void)
   extern GC_bool GC_is_heap_base (ptr_t p);
 
 # ifdef GC_WIN32_THREADS
-    extern void GC_get_next_stack(char *start, char **lo, char **hi);
+    extern void GC_get_next_stack(char *start, char * limit, char **lo,
+    				  char **hi);
+
     void GC_cond_add_roots(char *base, char * limit)
     {
       char * curr_base = base;
@@ -708,9 +710,10 @@ void GC_register_dynamic_libraries(void)
    
       if (base == limit) return;
       for(;;) {
-	  GC_get_next_stack(curr_base, &next_stack_lo, &next_stack_hi);
+	  GC_get_next_stack(curr_base, &next_stack_lo, &next_stack_hi, limit);
 	  if (next_stack_lo >= limit) break;
-	  GC_add_roots_inner(curr_base, next_stack_lo, TRUE);
+	  if (next_stack_lo > curr_base)
+	    GC_add_roots_inner(curr_base, next_stack_lo, TRUE);
 	  curr_base = next_stack_hi;
       }
       if (curr_base < limit) GC_add_roots_inner(curr_base, limit, TRUE);

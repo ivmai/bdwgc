@@ -1,0 +1,14 @@
+#!/bin/sh
+# We install through the temporary directory in case pwd contains spaces,
+# which otherwise breaks the build machinery.
+# This is a gross hack and probably breaks incremental rebuilds
+mkdir libatomic_ops-install
+P=`pwd`
+Q=`mktemp -d`
+ln -s "$P" $Q/dir
+cd $Q/dir/libatomic_ops-*[0-9]
+./configure --prefix=$Q/dir/libatomic_ops-install
+$MAKE CC=$CC install
+cd /
+rm $Q/dir
+rmdir $Q
