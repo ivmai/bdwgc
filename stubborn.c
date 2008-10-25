@@ -22,35 +22,35 @@
 /* MANUAL_VDB.  But that imposes the additional constraint that	  */
 /* written, but not yet GC_dirty()ed objects must be referenced	  */
 /* by a stack.							  */
-GC_API void * GC_malloc_stubborn(size_t lb)
+GC_API void * GC_CALL GC_malloc_stubborn(size_t lb)
 {
     return(GC_malloc(lb));
 }
 
-GC_API void GC_end_stubborn_change(void *p)
+GC_API void GC_CALL GC_end_stubborn_change(void *p)
 {
     GC_dirty(p);
 }
 
 /*ARGSUSED*/
-GC_API void GC_change_stubborn(void *p)
+GC_API void GC_CALL GC_change_stubborn(void *p)
 {
 }
 
 #else /* !MANUAL_VDB */
 
-GC_API void * GC_malloc_stubborn(size_t lb)
+GC_API void * GC_CALL GC_malloc_stubborn(size_t lb)
 {
     return(GC_malloc(lb));
 }
 
 /*ARGSUSED*/
-GC_API void GC_end_stubborn_change(void *p)
+GC_API void GC_CALL GC_end_stubborn_change(void *p)
 {
 }
 
 /*ARGSUSED*/
-GC_API void GC_change_stubborn(void *p)
+GC_API void GC_CALL GC_change_stubborn(void *p)
 {
 }
 

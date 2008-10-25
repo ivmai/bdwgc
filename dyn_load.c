@@ -382,7 +382,7 @@ GC_bool GC_register_main_static_data(void)
 
 /* A user-supplied routine that is called to determine if a DSO must
    be scanned by the gc.  */
-static int (*GC_has_static_roots)(const char *, void *, size_t);
+static int (GC_CALLBACK * GC_has_static_roots)(const char *, void *, size_t);
 
 static int GC_register_dynlib_callback(info, size, ptr)
      struct dl_phdr_info * info;
@@ -1221,9 +1221,8 @@ GC_bool GC_register_main_static_data(void)
 }
 
 /* Register a routine to filter dynamic library registration.  */
-GC_API void
-GC_register_has_static_roots_callback
-  (int (*callback)(const char *, void *, size_t)) {
+GC_API void GC_CALL GC_register_has_static_roots_callback
+  (int (GC_CALLBACK * callback)(const char *, void *, size_t)) {
 # ifdef HAVE_DL_ITERATE_PHDR
     GC_has_static_roots = callback;
 # endif

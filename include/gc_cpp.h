@@ -141,7 +141,7 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 #include "gc.h"
 
 #ifndef THINK_CPLUS
-#  define GC_cdecl
+#  define GC_cdecl GC_CALLBACK
 #else
 #  define GC_cdecl _cdecl
 #endif
@@ -212,7 +212,9 @@ private:
     member derived from "gc_cleanup", its destructors will be
     invoked. */
 
-extern "C" {typedef void (*GCCleanUpFunc)( void* obj, void* clientData );}
+extern "C" {
+    typedef void (GC_CALLBACK * GCCleanUpFunc)( void* obj, void* clientData );
+}
 
 #ifdef _MSC_VER
   // Disable warning that "no matching operator delete found; memory will
@@ -339,7 +341,7 @@ inline void gc::operator delete[]( void* obj ) {
 inline gc_cleanup::~gc_cleanup() {
     GC_register_finalizer_ignore_self( GC_base(this), 0, 0, 0, 0 );}
 
-inline void gc_cleanup::cleanup( void* obj, void* displ ) {
+inline void GC_CALLBACK gc_cleanup::cleanup( void* obj, void* displ ) {
     ((gc_cleanup*) ((char*) obj + (ptrdiff_t) displ))->~gc_cleanup();}
 
 inline gc_cleanup::gc_cleanup() {

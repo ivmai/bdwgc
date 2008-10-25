@@ -20,7 +20,7 @@
  *    probably unlikely.
  * Thus this is not recommended for general use.
  */
-GC_API void GC_finalize_all(void);
+GC_API void GC_CALL GC_finalize_all(void);
 
 # ifdef __cplusplus
     }  /* end of extern "C" */

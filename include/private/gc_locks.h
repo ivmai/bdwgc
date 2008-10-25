@@ -29,7 +29,7 @@
 # ifdef THREADS
 #  include <atomic_ops.h>
 
-   void GC_noop1(word);
+   GC_API void GC_CALL GC_noop1(word);
 #  ifdef PCR
 #    include <base/PCR_Base.h>
 #    include <th/PCR_Th.h>

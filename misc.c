@@ -123,7 +123,7 @@ long GC_large_alloc_warn_suppressed = 0;
 	/* Number of warnings suppressed so far.	*/
 
 /*ARGSUSED*/
-STATIC void * GC_default_oom_fn(size_t bytes_requested)
+STATIC void * GC_CALLBACK GC_default_oom_fn(size_t bytes_requested)
 {
     return(0);
 }
@@ -324,7 +324,7 @@ void * GC_clear_stack(void *arg)
 
 /* Return a pointer to the base address of p, given a pointer to a	*/
 /* an address within an object.  Return 0 o.w.				*/
-GC_API void * GC_base(void * p)
+GC_API void * GC_CALL GC_base(void * p)
 {
     ptr_t r;
     struct hblk *h;
@@ -367,29 +367,29 @@ GC_API void * GC_base(void * p)
 /* Return the size of an object, given a pointer to its base.		*/
 /* (For small objects this also happens to work from interior pointers,	*/
 /* but that shouldn't be relied upon.)					*/
-GC_API size_t GC_size(void * p)
+GC_API size_t GC_CALL GC_size(void * p)
 {
     hdr * hhdr = HDR(p);
     
     return hhdr -> hb_sz;
 }
 
-GC_API size_t GC_get_heap_size(void)
+GC_API size_t GC_CALL GC_get_heap_size(void)
 {
     return GC_heapsize;
 }
 
-GC_API size_t GC_get_free_bytes(void)
+GC_API size_t GC_CALL GC_get_free_bytes(void)
 {
     return GC_large_free_bytes;
 }
 
-GC_API size_t GC_get_bytes_since_gc(void)
+GC_API size_t GC_CALL GC_get_bytes_since_gc(void)
 {
     return GC_bytes_allocd;
 }
 
-GC_API size_t GC_get_total_bytes(void)
+GC_API size_t GC_CALL GC_get_total_bytes(void)
 {
     return GC_bytes_allocd+GC_bytes_allocd_before_gc;
 }
@@ -401,7 +401,7 @@ GC_bool GC_is_initialized = FALSE;
 # endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
 
 /* FIXME: The GC_init/GC_init_inner distinction should go away. */
-GC_API void GC_init(void)
+GC_API void GC_CALL GC_init(void)
 {
     /* LOCK(); -- no longer does anything this early. */
     GC_init_inner();
@@ -761,7 +761,7 @@ void GC_init_inner(void)
 #   endif
 }
 
-GC_API void GC_enable_incremental(void)
+GC_API void GC_CALL GC_enable_incremental(void)
 {
 # if !defined(SMALL_CONFIG) && !defined(KEEP_BACK_PTRS)
   /* If we are keeping back pointers, the GC itself dirties all	*/
@@ -1009,14 +1009,14 @@ void GC_err_write(const char *buf, size_t len)
 }
 #endif
 
-STATIC void GC_default_warn_proc(char *msg, GC_word arg)
+STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
 {
     GC_err_printf(msg, arg);
 }
 
 GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
 
-GC_API GC_warn_proc GC_set_warn_proc(GC_warn_proc p)
+GC_API GC_warn_proc GC_CALL GC_set_warn_proc(GC_warn_proc p)
 {
     GC_warn_proc result;
 
@@ -1031,7 +1031,7 @@ GC_API GC_warn_proc GC_set_warn_proc(GC_warn_proc p)
     return(result);
 }
 
-GC_API GC_word GC_set_free_space_divisor (GC_word value)
+GC_API GC_word GC_CALL GC_set_free_space_divisor (GC_word value)
 {
     GC_word old = GC_free_space_divisor;
     if (value != ~(GC_word)0)
@@ -1062,14 +1062,14 @@ void GC_abort(const char *msg)
 }
 #endif
 
-GC_API void GC_enable(void)
+GC_API void GC_CALL GC_enable(void)
 {
     LOCK();
     GC_dont_gc--;
     UNLOCK();
 }
 
-GC_API void GC_disable(void)
+GC_API void GC_CALL GC_disable(void)
 {
     LOCK();
     GC_dont_gc++;
@@ -1135,7 +1135,7 @@ unsigned GC_new_proc(GC_mark_proc proc)
     return result;
 }
 
-GC_API void * GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
+GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 {
     int dummy;
     struct GC_stack_base base;
@@ -1151,7 +1151,7 @@ GC_API void * GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 
 #if !defined(NO_DEBUGGING)
 
-GC_API void GC_dump(void)
+GC_API void GC_CALL GC_dump(void)
 {
     GC_printf("***Static roots:\n");
     GC_print_static_roots();
@@ -1167,17 +1167,17 @@ GC_API void GC_dump(void)
 
 #endif /* NO_DEBUGGING */
 
-GC_API GC_word GC_get_gc_no(void)
+GC_API GC_word GC_CALL GC_get_gc_no(void)
 {
     return GC_gc_no;
 }
 
-GC_API int GC_get_parallel(void)
+GC_API int GC_CALL GC_get_parallel(void)
 {
     return GC_parallel;
 }
 
-GC_API GC_oom_func GC_set_oom_fn(GC_oom_func fn)
+GC_API GC_oom_func GC_CALL GC_set_oom_fn(GC_oom_func fn)
 {
     GC_oom_func ofn = GC_oom_fn;
     if (fn != (GC_oom_func)0)
@@ -1185,7 +1185,7 @@ GC_API GC_oom_func GC_set_oom_fn(GC_oom_func fn)
     return ofn;
 }
 
-GC_API GC_finalizer_notifier_proc GC_set_finalizer_notifier(
+GC_API GC_finalizer_notifier_proc GC_CALL GC_set_finalizer_notifier(
 					GC_finalizer_notifier_proc fn)
 {
     GC_finalizer_notifier_proc ofn = GC_finalizer_notifier;
@@ -1194,7 +1194,7 @@ GC_API GC_finalizer_notifier_proc GC_set_finalizer_notifier(
     return ofn;
 }
 
-GC_API int GC_set_finalize_on_demand(int value)
+GC_API int GC_CALL GC_set_finalize_on_demand(int value)
 {
     int ovalue = GC_finalize_on_demand;
     if (value != -1)
@@ -1202,7 +1202,7 @@ GC_API int GC_set_finalize_on_demand(int value)
     return ovalue;
 }
 
-GC_API int GC_set_java_finalization(int value)
+GC_API int GC_CALL GC_set_java_finalization(int value)
 {
     int ovalue = GC_java_finalization;
     if (value != -1)
@@ -1210,7 +1210,7 @@ GC_API int GC_set_java_finalization(int value)
     return ovalue;
 }
 
-GC_API int GC_set_dont_expand(int value)
+GC_API int GC_CALL GC_set_dont_expand(int value)
 {
     int ovalue = GC_dont_expand;
     if (value != -1)
@@ -1218,7 +1218,7 @@ GC_API int GC_set_dont_expand(int value)
     return ovalue;
 }
 
-GC_API int GC_set_no_dls(int value)
+GC_API int GC_CALL GC_set_no_dls(int value)
 {
     int ovalue = GC_no_dls;
     if (value != -1)
@@ -1226,7 +1226,7 @@ GC_API int GC_set_no_dls(int value)
     return ovalue;
 }
 
-GC_API GC_word GC_set_max_retries(GC_word value)
+GC_API GC_word GC_CALL GC_set_max_retries(GC_word value)
 {
     GC_word ovalue = GC_max_retries;
     if (value != ~(GC_word)0)
@@ -1234,7 +1234,7 @@ GC_API GC_word GC_set_max_retries(GC_word value)
     return ovalue;
 }
 
-GC_API int GC_set_dont_precollect(int value)
+GC_API int GC_CALL GC_set_dont_precollect(int value)
 {
     int ovalue = GC_dont_precollect;
     if (value != -1)

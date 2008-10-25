@@ -50,7 +50,8 @@ ptr_t * GC_gcjobjfreelist;
 ptr_t * GC_gcjdebugobjfreelist;
 
 /* Caller does not hold allocation lock. */
-GC_API void GC_init_gcj_malloc(int mp_index, void * /* really GC_mark_proc */mp)
+GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
+				void * /* really GC_mark_proc */mp)
 {
     GC_bool ignore_gcj_info;
     DCL_LOCK_STATE;
@@ -134,7 +135,8 @@ static void maybe_finalize(void)
 #ifdef THREAD_LOCAL_ALLOC
   void * GC_core_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr)
 #else
-  GC_API void * GC_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr)
+  GC_API void * GC_CALL GC_gcj_malloc(size_t lb,
+				void * ptr_to_struct_containing_descr)
 #endif
 {
     ptr_t op;
@@ -179,7 +181,7 @@ void GC_start_debugging(void);
 
 /* Similar to GC_gcj_malloc, but add debug info.  This is allocated	*/
 /* with GC_gcj_debug_kind.						*/
-GC_API void * GC_debug_gcj_malloc(size_t lb,
+GC_API void * GC_CALL GC_debug_gcj_malloc(size_t lb,
 		void * ptr_to_struct_containing_descr, GC_EXTRA_PARAMS)
 {
     void * result;
@@ -206,7 +208,7 @@ GC_API void * GC_debug_gcj_malloc(size_t lb,
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
-GC_API void * GC_gcj_malloc_ignore_off_page(size_t lb,
+GC_API void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
 				     void * ptr_to_struct_containing_descr) 
 {
     ptr_t op;

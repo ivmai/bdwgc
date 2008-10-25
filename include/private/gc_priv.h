@@ -1649,7 +1649,7 @@ ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
 				/* reclaimed bytes to *count.		*/
 GC_bool GC_block_empty(hdr * hhdr);
  				/* Block completely unmarked? 	*/
-GC_bool GC_never_stop_func(void);
+GC_bool GC_CALLBACK GC_never_stop_func(void);
 				/* Returns FALSE.		*/
 GC_bool GC_try_to_collect_inner(GC_stop_func f);
 
@@ -1760,7 +1760,7 @@ void GC_notify_or_invoke_finalizers(void);
 			/* this procedure yet this GC cycle.		*/
 
 GC_API void * GC_make_closure(GC_finalization_proc fn, void * data);
-GC_API void GC_debug_invoke_finalizer(void * obj, void * data);
+GC_API void GC_CALLBACK GC_debug_invoke_finalizer(void * obj, void * data);
 			/* Auxiliary fns to make finalization work	*/
 			/* correctly with displaced pointers introduced	*/
 			/* by the debugging allocators.			*/
@@ -1923,7 +1923,7 @@ void GC_print_finalization_stats(void);
 #   endif
 # endif
 
-void GC_noop1(word);
+GC_API void GC_CALL GC_noop1(word);
 
 /* Logging and diagnostic output: 	*/
 GC_API void GC_printf (const char * format, ...);

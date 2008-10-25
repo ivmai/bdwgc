@@ -206,7 +206,7 @@ void * GC_generic_malloc(size_t lb, int k)
 #ifdef THREAD_LOCAL_ALLOC
   void * GC_core_malloc_atomic(size_t lb)
 #else
-  GC_API void * GC_malloc_atomic(size_t lb)
+  GC_API void * GC_CALL GC_malloc_atomic(size_t lb)
 #endif
 {
     void *op;
@@ -233,7 +233,7 @@ void * GC_generic_malloc(size_t lb, int k)
 
 /* provide a version of strdup() that uses the collector to allocate the
    copy of the string */
-GC_API char *GC_strdup(const char *s)
+GC_API char * GC_CALL GC_strdup(const char *s)
 {
   char *copy;
 
@@ -250,7 +250,7 @@ GC_API char *GC_strdup(const char *s)
 #ifdef THREAD_LOCAL_ALLOC
   void * GC_core_malloc(size_t lb)
 #else
-  GC_API void * GC_malloc(size_t lb)
+  GC_API void * GC_CALL GC_malloc(size_t lb)
 #endif
 {
     void *op;
@@ -386,7 +386,7 @@ void * calloc(size_t n, size_t lb)
 # endif /* REDIRECT_MALLOC */
 
 /* Explicitly deallocate an object p.				*/
-GC_API void GC_free(void * p)
+GC_API void GC_CALL GC_free(void * p)
 {
     struct hblk *h;
     hdr *hhdr;

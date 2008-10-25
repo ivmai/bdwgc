@@ -18,13 +18,13 @@
 
 #include "private/gc_pmark.h"
 
-STATIC void GC_default_same_obj_print_proc(void * p, void * q)
+STATIC void GC_CALLBACK GC_default_same_obj_print_proc(void * p, void * q)
 {
     GC_err_printf("%p and %p are not in the same object\n", p, q);
     ABORT("GC_same_obj test failed");
 }
 
-void (*GC_same_obj_print_proc) (void *, void *)
+void (GC_CALLBACK *GC_same_obj_print_proc) (void *, void *)
 		= GC_default_same_obj_print_proc;
 
 /* Check that p and q point to the same object.  Call		*/
@@ -36,7 +36,7 @@ void (*GC_same_obj_print_proc) (void *, void *)
 /* We assume this is performance critical.  (It shouldn't	*/
 /* be called by production code, but this can easily make	*/
 /* debugging intolerably slow.)					*/
-GC_API void * GC_same_obj(void *p, void *q)
+GC_API void * GC_CALL GC_same_obj(void *p, void *q)
 {
     struct hblk *h;
     hdr *hhdr;
@@ -99,13 +99,13 @@ fail:
     return(p);
 }
 
-STATIC void GC_default_is_valid_displacement_print_proc (void *p)
+STATIC void GC_CALLBACK GC_default_is_valid_displacement_print_proc (void *p)
 {
     GC_err_printf("%p does not point to valid object displacement\n", p);
     ABORT("GC_is_valid_displacement test failed");
 }
 
-void (*GC_is_valid_displacement_print_proc)(void *) = 
+void (GC_CALLBACK *GC_is_valid_displacement_print_proc)(void *) = 
 	GC_default_is_valid_displacement_print_proc;
 
 /* Check that if p is a pointer to a heap page, then it points to	*/
@@ -114,7 +114,7 @@ void (*GC_is_valid_displacement_print_proc)(void *) =
 /* Always returns its argument.						*/
 /* Note that we don't lock, since nothing relevant about the header	*/
 /* should change while we have a valid object pointer to the block.	*/
-GC_API void * GC_is_valid_displacement(void *p)
+GC_API void * GC_CALL GC_is_valid_displacement(void *p)
 {
     hdr *hhdr;
     word pdispl;
@@ -149,13 +149,14 @@ fail:
     return(p);
 }
 
-STATIC void GC_default_is_visible_print_proc(void * p)
+STATIC void GC_CALLBACK GC_default_is_visible_print_proc(void * p)
 {
     GC_err_printf("%p is not a GC visible pointer location\n", p);
     ABORT("GC_is_visible test failed");
 }
 
-void (*GC_is_visible_print_proc)(void * p) = GC_default_is_visible_print_proc;
+void (GC_CALLBACK *GC_is_visible_print_proc)(void * p) =
+		GC_default_is_visible_print_proc;
 
 #ifndef THREADS
 /* Could p be a stack address? */
@@ -183,7 +184,7 @@ void (*GC_is_visible_print_proc)(void * p) = GC_default_is_visible_print_proc;
 /* untyped allocations.  The idea is that it should be possible, though	*/
 /* slow, to add such a call to all indirect pointer stores.)		*/
 /* Currently useless for multithreaded worlds.				*/
-GC_API void * GC_is_visible(void *p)
+GC_API void * GC_CALL GC_is_visible(void *p)
 {
     hdr *hhdr;
     
@@ -255,7 +256,7 @@ fail:
 }
 
 
-GC_API void * GC_pre_incr (void **p, ptrdiff_t how_much)
+GC_API void * GC_CALL GC_pre_incr (void **p, ptrdiff_t how_much)
 {
     void * initial = *p;
     void * result = GC_same_obj((void *)((ptr_t)initial + how_much), initial);
@@ -266,7 +267,7 @@ GC_API void * GC_pre_incr (void **p, ptrdiff_t how_much)
     return (*p = result);
 }
 
-GC_API void * GC_post_incr (void **p, ptrdiff_t how_much)
+GC_API void * GC_CALL GC_post_incr (void **p, ptrdiff_t how_much)
 {
     void * initial = *p;
     void * result = GC_same_obj((void *)((ptr_t)initial + how_much), initial);

@@ -137,7 +137,7 @@ void GC_init_parallel(void);
 
 #ifdef GC_DLL
   /* Turn on GC_win32_dll_threads	*/
-  GC_API void GC_use_DllMain(void)
+  GC_API void GC_CALL GC_use_DllMain(void)
   {
 #     ifdef THREAD_LOCAL_ALLOC
 	  ABORT("Cannot use thread local allocation with DllMain-based "
@@ -150,7 +150,7 @@ void GC_init_parallel(void);
       GC_init_parallel();
   }
 #else
-  GC_API void GC_use_DllMain(void)
+  GC_API void GC_CALL GC_use_DllMain(void)
   {
       ABORT("GC not configured as DLL");
   }
@@ -566,7 +566,7 @@ STATIC void GC_delete_thread(DWORD id)
   }
 }
 
-GC_API int GC_register_my_thread(struct GC_stack_base *sb) {
+GC_API int GC_CALL GC_register_my_thread(struct GC_stack_base *sb) {
   DWORD t = GetCurrentThreadId();
 
   if (0 == GC_lookup_thread(t)) {
@@ -580,7 +580,7 @@ GC_API int GC_register_my_thread(struct GC_stack_base *sb) {
   }
 }
 
-GC_API int GC_unregister_my_thread(void)
+GC_API int GC_CALL GC_unregister_my_thread(void)
 {
     DWORD t = GetCurrentThreadId();
 
@@ -1065,7 +1065,8 @@ typedef struct {
     LPVOID param;
 } thread_args;
 
-STATIC void * GC_win32_start_inner(struct GC_stack_base *sb, LPVOID arg)
+STATIC void * GC_CALLBACK GC_win32_start_inner(struct GC_stack_base *sb,
+						void *arg)
 {
     void * ret;
     thread_args *args = (thread_args *)arg;
@@ -1151,7 +1152,7 @@ GC_API void WINAPI GC_ExitThread(DWORD dwExitCode)
   ExitThread(dwExitCode);
 }
 
-GC_API GC_uintptr_t GC_beginthreadex(
+GC_API GC_uintptr_t GC_CALL GC_beginthreadex(
     void *security, unsigned stack_size,
     unsigned ( __stdcall *start_address )( void * ),
     void *arglist, unsigned initflag, unsigned *thrdaddr)
@@ -1191,7 +1192,7 @@ GC_API GC_uintptr_t GC_beginthreadex(
     }
 }
 
-GC_API void GC_endthreadex(unsigned retval)
+GC_API void GC_CALL GC_endthreadex(unsigned retval)
 {
   GC_unregister_my_thread();
   _endthreadex(retval);
@@ -1376,7 +1377,8 @@ GC_pthread_create(pthread_t *new_thread,
     return(result);
 }
 
-STATIC void * GC_pthread_start_inner(struct GC_stack_base *sb, void * arg)
+STATIC void * GC_CALLBACK GC_pthread_start_inner(struct GC_stack_base *sb,
+						void * arg)
 {
     struct start_info * si = arg;
     void * result;

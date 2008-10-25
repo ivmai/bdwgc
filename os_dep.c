@@ -653,7 +653,7 @@ STATIC word GC_get_writable_length(ptr_t p, ptr_t *base)
     return(buf.RegionSize);
 }
 
-GC_API int GC_get_stack_base(struct GC_stack_base *sb)
+GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
 {
     int dummy;
     ptr_t sp = (ptr_t)(&dummy);
@@ -1072,7 +1072,7 @@ ptr_t GC_get_main_stack_base(void)
   	/* From pthread_support.c */
 #endif
 
-GC_API int GC_get_stack_base(struct GC_stack_base *b)
+GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
 {
     pthread_attr_t attr;
     size_t size;
@@ -1122,7 +1122,7 @@ GC_API int GC_get_stack_base(struct GC_stack_base *b)
 /* next.  Thus this is likely to identify way too large a	*/
 /* "stack" and thus at least result in disastrous performance.	*/
 /* FIXME - Implement better strategies here.			*/
-GC_API int GC_get_stack_base(struct GC_stack_base *b)
+GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
 {
 #   ifdef NEED_FIND_LIMIT
       int dummy;
@@ -1871,7 +1871,7 @@ ptr_t GC_win32_get_mem(word bytes)
     return(result);			  
 }
 
-GC_API void GC_win32_free_heap(void)
+GC_API void GC_CALL GC_win32_free_heap(void)
 {
     if (GC_no_win32_dlls) {
  	while (GC_n_heap_bases > 0) {
@@ -2882,7 +2882,7 @@ void GC_dirty_init(void)
 }
 #endif /* !DARWIN */
 
-GC_API int GC_incremental_protection_needs(void)
+GC_API int GC_CALL GC_incremental_protection_needs(void)
 {
     if (GC_page_size == HBLKSIZE) {
 	return GC_PROTECTS_POINTER_HEAP;
@@ -3895,7 +3895,7 @@ catch_exception_raise_state_identity(mach_port_name_t exception_port,
 #endif /* DARWIN && MPROTECT_VDB */
 
 # ifndef HAVE_INCREMENTAL_PROTECTION_NEEDS
-  GC_API int GC_incremental_protection_needs(void)
+  GC_API int GC_CALL GC_incremental_protection_needs(void)
   {
     return GC_PROTECTS_NONE;
   }

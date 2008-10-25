@@ -58,21 +58,23 @@
 /* detect the presence or absence of the debug header.			*/
 /* Mp is really of type mark_proc, as defined in gc_mark.h.  We don't 	*/
 /* want to include that here for namespace pollution reasons.		*/
-GC_API void GC_init_gcj_malloc(int mp_index, void * /* really mark_proc */mp);
+GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
+				void * /* really mark_proc */mp);
 
 /* Allocate an object, clear it, and store the pointer to the	*/
 /* type structure (vtable in gcj).				*/
 /* This adds a byte at the end of the object if GC_malloc would.*/
-GC_API void * GC_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr);
+GC_API void * GC_CALL GC_gcj_malloc(size_t lb,
+				void * ptr_to_struct_containing_descr);
 /* The debug versions allocate such that the specified mark_proc	*/
 /* is always invoked.							*/
-GC_API void * GC_debug_gcj_malloc(size_t lb,
+GC_API void * GC_CALL GC_debug_gcj_malloc(size_t lb,
 				  void * ptr_to_struct_containing_descr,
 				  GC_EXTRA_PARAMS);
 
 /* Similar to GC_gcj_malloc, but assumes that a pointer to near the	*/
 /* beginning of the resulting object is always maintained.		*/
-GC_API void * GC_gcj_malloc_ignore_off_page(size_t lb,
+GC_API void  * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
 				void * ptr_to_struct_containing_descr);
 
 /* The kind numbers of normal and debug gcj objects.		*/

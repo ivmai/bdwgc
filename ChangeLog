@@ -1,3 +1,14 @@
+2008-10-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	* alloc.c, dbg_mlc.c, dyn_load.c, finalize.c, gcj_mlc.c,
+	include/gc.h, include/gc_config_macros.h, include/gc_cpp.h,
+	include/gc_gcj.h, include/gc_mark.h, include/gc_typed.h,
+	include/javaxfc.h, include/private/gc_locks.h,
+	include/private/gc_priv.h, malloc.c, mallocx.c, mark.c, mark_rts.c,
+	misc.c, obj_map.c, os_dep.c, pthread_support.c, ptr_chck.c,
+	stubborn.c, tests/test.c, thread_local_alloc.c, typd_mlc.c
+	win32_threads.c: Add GC_CALL and GC_CALLBACK macro invocations.
+	* test.c: Remove some old K&R code.
+
 2008-10-24  Hans Boehm <Hans.Boehm@hp.com>
 	(Partially based loosely on patch from Ivan Maidanski)
 	* win32_threads.c (GC_may_be_in_stack): New.  (GC_Thread_Rep):

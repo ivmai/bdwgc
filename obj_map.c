@@ -24,7 +24,7 @@
 /* Consider pointers that are offset bytes displaced from the beginning */
 /* of an object to be valid.                                            */
 
-GC_API void GC_register_displacement(size_t offset)
+GC_API void GC_CALL GC_register_displacement(size_t offset)
 {
     DCL_LOCK_STATE;
     

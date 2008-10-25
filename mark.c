@@ -32,7 +32,7 @@
 #endif
 
 /* Single argument version, robust against whole program analysis. */
-GC_API void GC_noop1(word x)
+GC_API void GC_CALL GC_noop1(word x)
 {
     static volatile word sink;
 

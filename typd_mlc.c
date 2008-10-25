@@ -529,7 +529,7 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
     return new_mark_stack_ptr;
 }
 
-GC_API GC_descr GC_make_descriptor(GC_bitmap bm, size_t len)
+GC_API GC_descr GC_CALL GC_make_descriptor(GC_bitmap bm, size_t len)
 {
     signed_word last_set_bit = len - 1;
     GC_descr result;
@@ -584,7 +584,7 @@ void * GC_clear_stack(void *);
 #define GENERAL_MALLOC_IOP(lb,k) \
     (void *)GC_clear_stack(GC_generic_malloc_ignore_off_page(lb, k))
 
-GC_API void * GC_malloc_explicitly_typed(size_t lb, GC_descr d)
+GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t lb, GC_descr d)
 {
     ptr_t op;
     ptr_t * opp;
@@ -617,7 +617,8 @@ GC_API void * GC_malloc_explicitly_typed(size_t lb, GC_descr d)
    return((void *) op);
 }
 
-GC_API void * GC_malloc_explicitly_typed_ignore_off_page(size_t lb, GC_descr d)
+GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page(size_t lb,
+								GC_descr d)
 {
 ptr_t op;
 ptr_t * opp;
@@ -649,7 +650,8 @@ DCL_LOCK_STATE;
    return((void *) op);
 }
 
-GC_API void * GC_calloc_explicitly_typed(size_t n, size_t lb, GC_descr d)
+GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t n, size_t lb,
+						GC_descr d)
 {
 ptr_t op;
 ptr_t * opp;

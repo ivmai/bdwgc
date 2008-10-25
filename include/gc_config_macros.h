@@ -175,6 +175,13 @@
 #endif
 
 #ifndef GC_API
-#define GC_API extern
+# define GC_API extern
 #endif
 
+#ifndef GC_CALL
+# define GC_CALL
+#endif
+
+#ifndef GC_CALLBACK
+# define GC_CALLBACK GC_CALL
+#endif

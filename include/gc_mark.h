@@ -180,7 +180,7 @@ unsigned GC_new_proc_inner(GC_mark_proc);
 /* cause a GC crash if they are accidentally traced.			*/
 void * GC_generic_malloc(size_t lb, int k);
 
-typedef void (*GC_describe_type_fn) (void *p, char *out_buf);
+typedef void (GC_CALLBACK * GC_describe_type_fn) (void *p, char *out_buf);
 				/* A procedure which			*/
 				/* produces a human-readable 		*/
 				/* description of the "type" of object	*/
@@ -194,7 +194,7 @@ typedef void (*GC_describe_type_fn) (void *p, char *out_buf);
 				/* global free list.			*/
 #	define GC_TYPE_DESCR_LEN 40
 
-void GC_register_describe_type_fn(int kind, GC_describe_type_fn knd);
+void GC_CALL GC_register_describe_type_fn(int kind, GC_describe_type_fn knd);
 				/* Register a describe_type function	*/
 				/* to be used when printing objects	*/
 				/* of a particular kind.		*/

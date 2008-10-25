@@ -19,8 +19,8 @@
 #include <string.h>
 #include "private/dbg_mlc.h"
 
-void GC_default_print_heap_obj_proc();
-GC_API void GC_register_finalizer_no_order
+void GC_default_print_heap_obj_proc(ptr_t p);
+GC_API void GC_CALL GC_register_finalizer_no_order
     	(void * obj, GC_finalization_proc fn, void * cd,
 	 GC_finalization_proc *ofn, void * *ocd);
 
@@ -329,7 +329,7 @@ STATIC ptr_t GC_check_annotated_obj(oh *ohdr)
 
 static GC_describe_type_fn GC_describe_type_fns[MAXOBJKINDS] = {0};
 
-void GC_register_describe_type_fn(int kind, GC_describe_type_fn fn)
+void GC_CALL GC_register_describe_type_fn(int kind, GC_describe_type_fn fn)
 {
   GC_describe_type_fns[kind] = fn;
 }
@@ -457,13 +457,13 @@ void GC_start_debugging(void)
 
 size_t GC_debug_header_size = sizeof(oh);
 
-GC_API void GC_debug_register_displacement(size_t offset)
+GC_API void GC_CALL GC_debug_register_displacement(size_t offset)
 {
     GC_register_displacement(offset);
     GC_register_displacement((word)sizeof(oh) + offset);
 }
 
-GC_API void * GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
+GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc(lb + DEBUG_BYTES);
     
@@ -481,7 +481,8 @@ GC_API void * GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
-GC_API void * GC_debug_malloc_ignore_off_page(size_t lb, GC_EXTRA_PARAMS)
+GC_API void * GC_CALL GC_debug_malloc_ignore_off_page(size_t lb,
+						GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc_ignore_off_page(lb + DEBUG_BYTES);
     
@@ -499,7 +500,8 @@ GC_API void * GC_debug_malloc_ignore_off_page(size_t lb, GC_EXTRA_PARAMS)
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
-GC_API void * GC_debug_malloc_atomic_ignore_off_page(size_t lb, GC_EXTRA_PARAMS)
+GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
+							GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc_atomic_ignore_off_page(lb + DEBUG_BYTES);
     
@@ -555,7 +557,7 @@ GC_API void * GC_debug_malloc_atomic_ignore_off_page(size_t lb, GC_EXTRA_PARAMS)
 # endif
 
 #ifdef STUBBORN_ALLOC
-GC_API void * GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
+GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc_stubborn(lb + DEBUG_BYTES);
     
@@ -573,7 +575,7 @@ GC_API void * GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
-GC_API void GC_debug_change_stubborn(void *p)
+GC_API void GC_CALL GC_debug_change_stubborn(void *p)
 {
     void * q = GC_base(p);
     hdr * hhdr;
@@ -590,7 +592,7 @@ GC_API void GC_debug_change_stubborn(void *p)
     GC_change_stubborn(q);
 }
 
-GC_API void GC_debug_end_stubborn_change(void *p)
+GC_API void GC_CALL GC_debug_end_stubborn_change(void *p)
 {
     register void * q = GC_base(p);
     register hdr * hhdr;
@@ -609,22 +611,22 @@ GC_API void GC_debug_end_stubborn_change(void *p)
 
 #else /* !STUBBORN_ALLOC */
 
-GC_API void * GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
+GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
 {
     return GC_debug_malloc(lb, OPT_RA s, i);
 }
 
-GC_API void GC_debug_change_stubborn(void *p)
+GC_API void GC_CALL GC_debug_change_stubborn(void *p)
 {
 }
 
-GC_API void GC_debug_end_stubborn_change(void *p)
+GC_API void GC_CALL GC_debug_end_stubborn_change(void *p)
 {
 }
 
 #endif /* !STUBBORN_ALLOC */
 
-GC_API void * GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)
+GC_API void * GC_CALL GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc_atomic(lb + DEBUG_BYTES);
     
@@ -642,7 +644,7 @@ GC_API void * GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
-GC_API char *GC_debug_strdup(const char *str, GC_EXTRA_PARAMS)
+GC_API char * GC_CALL GC_debug_strdup(const char *str, GC_EXTRA_PARAMS)
 {
     char *copy;
     if (str == NULL) return NULL;
@@ -655,7 +657,7 @@ GC_API char *GC_debug_strdup(const char *str, GC_EXTRA_PARAMS)
     return copy;
 }
 
-GC_API void * GC_debug_malloc_uncollectable(size_t lb, GC_EXTRA_PARAMS)
+GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb, GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc_uncollectable(lb + UNCOLLECTABLE_DEBUG_BYTES);
     
@@ -695,7 +697,7 @@ void * GC_debug_malloc_atomic_uncollectable(size_t lb, GC_EXTRA_PARAMS)
 }
 #endif /* ATOMIC_UNCOLLECTABLE */
 
-GC_API void GC_debug_free(void * p)
+GC_API void GC_CALL GC_debug_free(void * p)
 {
     ptr_t base;
 #   ifndef SHORT_DBG_HDRS
@@ -770,7 +772,7 @@ void GC_debug_free_inner(void * p)
 }
 #endif
 
-GC_API void * GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
+GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
 {
     void * base;
 #   ifndef SHORT_DBG_HDRS
@@ -934,7 +936,7 @@ void * GC_make_closure(GC_finalization_proc fn, void * data)
     return((void *)result);
 }
 
-void GC_debug_invoke_finalizer(void * obj, void * data)
+void GC_CALLBACK GC_debug_invoke_finalizer(void * obj, void * data)
 {
     register struct closure * cl = (struct closure *) data;
     
@@ -961,7 +963,8 @@ static void store_old (void *obj, GC_finalization_proc my_old_fn,
     }
 }
 
-GC_API void GC_debug_register_finalizer(void * obj, GC_finalization_proc fn,
+GC_API void GC_CALL GC_debug_register_finalizer(void * obj,
+					GC_finalization_proc fn,
     					void * cd, GC_finalization_proc *ofn,
 					void * *ocd)
 {
@@ -983,7 +986,7 @@ GC_API void GC_debug_register_finalizer(void * obj, GC_finalization_proc fn,
     store_old(obj, my_old_fn, (struct closure *)my_old_cd, ofn, ocd);
 }
 
-GC_API void GC_debug_register_finalizer_no_order
+GC_API void GC_CALL GC_debug_register_finalizer_no_order
     				    (void * obj, GC_finalization_proc fn,
     				     void * cd, GC_finalization_proc *ofn,
 				     void * *ocd)
@@ -1008,7 +1011,7 @@ GC_API void GC_debug_register_finalizer_no_order
     store_old(obj, my_old_fn, (struct closure *)my_old_cd, ofn, ocd);
 }
 
-GC_API void GC_debug_register_finalizer_unreachable
+GC_API void GC_CALL GC_debug_register_finalizer_unreachable
     				    (void * obj, GC_finalization_proc fn,
     				     void * cd, GC_finalization_proc *ofn,
 				     void * *ocd)
@@ -1033,7 +1036,7 @@ GC_API void GC_debug_register_finalizer_unreachable
     store_old(obj, my_old_fn, (struct closure *)my_old_cd, ofn, ocd);
 }
 
-GC_API void GC_debug_register_finalizer_ignore_self
+GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
     				    (void * obj, GC_finalization_proc fn,
     				     void * cd, GC_finalization_proc *ofn,
 				     void * *ocd)
@@ -1063,12 +1066,12 @@ GC_API void GC_debug_register_finalizer_ignore_self
 # define RA
 #endif
 
-GC_API void * GC_debug_malloc_replacement(size_t lb)
+GC_API void * GC_CALL GC_debug_malloc_replacement(size_t lb)
 {
     return GC_debug_malloc(lb, RA "unknown", 0);
 }
 
-GC_API void * GC_debug_realloc_replacement(void *p, size_t lb)
+GC_API void * GC_CALL GC_debug_realloc_replacement(void *p, size_t lb)
 {
     return GC_debug_realloc(p, lb, RA "unknown", 0);
 }

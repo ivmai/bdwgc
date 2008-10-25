@@ -870,7 +870,7 @@ int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set, sigset_t *oset)
 /* length of time.							*/
 
 struct blocking_data {
-    void (*fn)(void *);
+    void (GC_CALLBACK *fn)(void *);
     void *arg;
 };
 
@@ -897,7 +897,7 @@ static void GC_do_blocking_inner(ptr_t data, void * context) {
     UNLOCK();
 }
 
-void GC_do_blocking(void (*fn)(void *), void *arg) {
+void GC_CALL GC_do_blocking(void (GC_CALLBACK *fn)(void *), void *arg) {
     struct blocking_data my_data;
 
     my_data.fn = fn;
@@ -913,7 +913,7 @@ struct start_info {
 				/* parent hasn't yet noticed.		*/
 };
 
-GC_API int GC_unregister_my_thread(void)
+GC_API int GC_CALL GC_unregister_my_thread(void)
 {
     GC_thread me;
 
@@ -1024,7 +1024,7 @@ STATIC GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
     return me;
 }
 
-GC_API int GC_register_my_thread(struct GC_stack_base *sb)
+GC_API int GC_CALL GC_register_my_thread(struct GC_stack_base *sb)
 {
     pthread_t my_pthread = pthread_self();
     GC_thread me;
@@ -1047,7 +1047,8 @@ GC_API int GC_register_my_thread(struct GC_stack_base *sb)
     }
 }
 
-STATIC void * GC_inner_start_routine(struct GC_stack_base *sb, void * arg)
+STATIC void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb,
+						void * arg)
 {
     struct start_info * si = arg;
     void * result;

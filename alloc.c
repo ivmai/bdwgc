@@ -111,7 +111,7 @@ word GC_free_space_divisor = 3;
 extern GC_bool GC_collection_in_progress(void);
 		/* Collection is in progress, or was abandoned.	*/
 
-int GC_never_stop_func (void) { return(0); }
+int GC_CALLBACK GC_never_stop_func (void) { return(0); }
 
 unsigned long GC_time_limit = TIME_LIMIT;
 
@@ -126,7 +126,7 @@ STATIC int GC_n_attempts = 0;	/* Number of attempts at finishing	*/
 #if defined(SMALL_CONFIG) || defined(NO_CLOCK)
 #   define GC_timeout_stop_func GC_never_stop_func
 #else
-  STATIC int GC_timeout_stop_func (void)
+  STATIC int GC_CALLBACK GC_timeout_stop_func (void)
   {
     CLOCK_TYPE current_time;
     static unsigned count = 0;
@@ -444,7 +444,7 @@ void GC_collect_a_little_inner(int n)
     }
 }
 
-GC_API int GC_collect_a_little(void)
+GC_API int GC_CALL GC_collect_a_little(void)
 {
     int result;
     DCL_LOCK_STATE;
@@ -776,7 +776,7 @@ void GC_finish_collection(void)
 }
 
 /* Externally callable routine to invoke full, stop-world collection */
-GC_API int GC_try_to_collect(GC_stop_func stop_func)
+GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
 {
     int result;
     DCL_LOCK_STATE;
@@ -799,7 +799,7 @@ GC_API int GC_try_to_collect(GC_stop_func stop_func)
     return(result);
 }
 
-GC_API void GC_gcollect(void)
+GC_API void GC_CALL GC_gcollect(void)
 {
     (void)GC_try_to_collect(GC_never_stop_func);
     if (GC_have_errors) GC_print_all_errors();
@@ -912,7 +912,7 @@ static INLINE word GC_min(word x, word y)
     return(x < y? x : y);
 }
 
-GC_API void GC_set_max_heap_size(GC_word n)
+GC_API void GC_CALL GC_set_max_heap_size(GC_word n)
 {
     GC_max_heapsize = n;
 }
@@ -997,7 +997,7 @@ GC_bool GC_expand_hp_inner(word n)
 
 /* Really returns a bool, but it's externally visible, so that's clumsy. */
 /* Arguments is in bytes.						*/
-GC_API int GC_expand_hp(size_t bytes)
+GC_API int GC_CALL GC_expand_hp(size_t bytes)
 {
     int result;
     DCL_LOCK_STATE;

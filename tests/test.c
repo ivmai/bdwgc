@@ -63,9 +63,7 @@
     static CRITICAL_SECTION incr_cs;
 # endif
 
-#ifdef __STDC__
 # include <stdarg.h>
-#endif
 
 /* Call GC_INIT only on platforms on which we think we really need it,	*/
 /* so that we can test automatic initialization on the rest.		*/
@@ -128,6 +126,9 @@ int realloc_count = 0;
 #   ifdef MSWINCE
 #     define FAIL DebugBreak()
 #   else
+#     ifdef SMALL_CONFIG
+	void GC_abort(const char * msg);
+#     endif
 #     define FAIL GC_abort("Test failed");
 #   endif
 # endif
@@ -280,7 +281,6 @@ sexpr gcj_cons(sexpr x, sexpr y)
 {
     GC_word * r;
     sexpr result;
-    static int count = 0;
     
     r = (GC_word *) GC_GCJ_MALLOC(sizeof(struct SEXPR)
 		   		  + sizeof(struct fake_vtable*),
@@ -575,11 +575,8 @@ void reverse_test()
       c = (sexpr)((char *)c + sizeof(char *));
       d = (sexpr)((char *)d + sizeof(char *));
 
-#   ifdef __STDC__
-        GC_FREE((void *)e);
-#   else
-        GC_FREE((char *)e);
-#   endif
+    GC_FREE((void *)e);
+
     check_ints(b,1,50);
     check_ints(a,1,49);
     for (i = 0; i < 50; i++) {
@@ -637,13 +634,7 @@ int finalizable_count = 0;
 int finalized_count = 0;
 volatile int dropped_something = 0;
 
-# ifdef __STDC__
-  void finalizer(void * obj, void * client_data)
-# else
-  void finalizer(obj, client_data)
-  char * obj;
-  char * client_data;
-# endif
+void GC_CALLBACK finalizer(void * obj, void * client_data)
 {
   tn * t = (tn *)obj;
 
@@ -981,18 +972,8 @@ void typed_test()
 
 int fail_count = 0;
 
-#ifndef __STDC__
 /*ARGSUSED*/
-void fail_proc1(x)
-void * x;
-{
-    fail_count++;
-}
-
-#else
-
-/*ARGSUSED*/
-void fail_proc1(void * x)
+void GC_CALLBACK fail_proc1(void * x)
 {
     fail_count++;
 }   
@@ -1003,7 +984,7 @@ static void uniq(void *p, ...) {
   int n = 0, i, j;
   q[n++] = p;
   va_start(a,p);
-  for (;(q[n] = va_arg(a,void *));n++) ;
+  for (;(q[n] = va_arg(a,void *)) != NULL;n++) ;
   va_end(a);
   for (i=0; i<n; i++)
     for (j=0; j<i; j++)
@@ -1016,8 +997,6 @@ static void uniq(void *p, ...) {
       }
 }
 
-#endif /* __STDC__ */
-
 #ifdef THREADS
 #   define TEST_FAIL_COUNT(n) 1
 #else 
@@ -1026,16 +1005,18 @@ static void uniq(void *p, ...) {
 
 void run_one_test()
 {
-    char *x;
-    char **z;
-#   ifdef LINT
-    	char *y = 0;
-#   else
-    	char *y = (char *)(size_t)fail_proc1;
+#   ifndef DBG_HDRS_ALL
+	char *x;
+	char **z;
+#	ifdef LINT
+	    char *y = 0;
+#  	else
+	    char *y = (char *)(size_t)fail_proc1;
+#	endif
+	CLOCK_TYPE typed_time;
 #   endif
     CLOCK_TYPE start_time;
     CLOCK_TYPE reverse_time;
-    CLOCK_TYPE typed_time;
     CLOCK_TYPE tree_time;
     unsigned long time_diff;
     DCL_LOCK_STATE;
@@ -1117,7 +1098,7 @@ void run_one_test()
     		"GC_is_valid_displacement produced incorrect result\n");
 	FAIL;
       }
-#     if defined(__STDC__) && !defined(MSWIN32) && !defined(MSWINCE)
+#     if !defined(MSWIN32) && !defined(MSWINCE)
         /* Harder to test under Windows without a gc.h declaration.  */
         {
 	  size_t i;
@@ -1134,8 +1115,8 @@ void run_one_test()
 #      if defined(RS6000) || defined(POWERPC)
         if (!TEST_FAIL_COUNT(1)) {
 #      else
-        if (GC_all_interior_pointers && !TEST_FAIL_COUNT(1)
-	    || !GC_all_interior_pointers && !TEST_FAIL_COUNT(2)) {
+        if ((GC_all_interior_pointers && !TEST_FAIL_COUNT(1))
+	    || (!GC_all_interior_pointers && !TEST_FAIL_COUNT(2))) {
 #      endif
     	  GC_printf("GC_is_valid_displacement produced wrong failure indication\n");
     	  FAIL;
@@ -1161,7 +1142,6 @@ void run_one_test()
       GC_init_gcj_malloc(0, (void *)fake_gcj_mark_proc);
 #   endif
     /* Make sure that fn arguments are visible to the collector.	*/
-#   ifdef __STDC__
       uniq(
         GC_malloc(12), GC_malloc(12), GC_malloc(12),
         (GC_gcollect(),GC_malloc(12)),
@@ -1174,7 +1154,6 @@ void run_one_test()
         GC_malloc(12), GC_malloc(12), GC_malloc(12),
 	(GC_gcollect(),GC_malloc(12)),
         (void *)0);
-#   endif
     /* GC_malloc(0) must return NULL or something we can deallocate. */
         GC_free(GC_malloc(0));
         GC_free(GC_malloc_atomic(0));
@@ -1335,13 +1314,7 @@ void SetMinimumStack(long minSize)
 
 #endif
 
-#ifdef __STDC__
-    void warn_proc(char *msg, GC_word p)
-#else
-    void warn_proc(msg, p)
-    char *msg;
-    GC_word p;
-#endif
+void GC_CALLBACK warn_proc(char *msg, GC_word p)
 {
     GC_printf(msg, (unsigned long)p);
     /*FAIL;*/
