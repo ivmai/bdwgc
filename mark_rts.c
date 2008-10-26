@@ -353,19 +353,13 @@ GC_bool GC_is_tmp_root(ptr_t p)
 
 ptr_t GC_approx_sp(void)
 {
-    volatile word dummy;
-
-    dummy = 42;	/* Force stack to grow if necessary.	Otherwise the	*/
+    volatile word sp;
+    sp = (word)&sp;
+		/* Also force stack to grow if necessary. Otherwise the	*/
     		/* later accesses might cause the kernel to think we're	*/
     		/* doing something wrong.				*/
-#   ifdef _MSC_VER
-#     pragma warning(disable:4172)
-#   endif
-	/* Ignore "function returns address of local variable" warning.	*/
-    return((ptr_t)(&dummy));
-#   ifdef _MSC_VER
-#     pragma warning(default:4172)
-#   endif
+
+    return((ptr_t)sp);
 }
 
 /*
