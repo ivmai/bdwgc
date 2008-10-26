@@ -1,3 +1,7 @@
+2008-10-25  Hans Boehm <Hans.Boehm@hp.com>
+	* dyn_load.c (GC_cond_add_roots): Fix GC_get_next_stack argument
+	order.
+
 2008-10-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	* alloc.c, dbg_mlc.c, dyn_load.c, finalize.c, gcj_mlc.c,
 	include/gc.h, include/gc_config_macros.h, include/gc_cpp.h,

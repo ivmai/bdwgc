@@ -710,7 +710,7 @@ void GC_register_dynamic_libraries(void)
    
       if (base == limit) return;
       for(;;) {
-	  GC_get_next_stack(curr_base, &next_stack_lo, &next_stack_hi, limit);
+	  GC_get_next_stack(curr_base, limit, &next_stack_lo, &next_stack_hi);
 	  if (next_stack_lo >= limit) break;
 	  if (next_stack_lo > curr_base)
 	    GC_add_roots_inner(curr_base, next_stack_lo, TRUE);
