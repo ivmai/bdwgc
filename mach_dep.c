@@ -168,6 +168,10 @@ void GC_push_regs()
 	(defined(DARWIN) || defined(HURD) || defined(ARM32) || defined(MIPS))
 #  define NO_GETCONTEXT
 #endif
+
+#if defined(LINUX) && defined(SPARC) && !defined(NO_GETCONTEXT)
+#  define NO_GETCONTEXT
+#endif
 /* Ensure that either registers are pushed, or callee-save registers	*/
 /* are somewhere on the stack, and then call fn(arg, ctxt).		*/
 /* ctxt is either a pointer to a ucontext_t we generated, or NULL.	*/

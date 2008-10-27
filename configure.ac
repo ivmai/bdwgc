@@ -22,7 +22,7 @@ AC_INIT(gc,7.2alpha1,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.40 $)
+AC_REVISION($Revision: 1.41 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -402,6 +402,9 @@ case "$host" in
     dnl AC_DEFINE(NO_EXECUTE_PERMISSION)
     dnl This is now redundant, but it is also important for incremental GC
     dnl performance under Irix.
+    ;;
+ sparc*-*-linux*)
+    machdep="mach_dep.lo sparc_mach_dep.lo"
     ;;
  sparc-*-netbsd*)
     machdep="mach_dep.lo sparc_netbsd_mach_dep.lo"

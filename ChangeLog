@@ -1,3 +1,9 @@
+2008-10-25  Hans Boehm <Hans.Boehm@hp.com> (Really Rex Dieter and
+	Petr Krajca)
+	* mach_dep.c (NO_GETCONTEXT): Define for sparc linux.
+	* configure.ac: Define mach_dep for sparc-linux.
+	* configure: Regenerate.
+
 2008-10-25  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
 	* mark_rts.c (GC_approx_sp): Use volatile to avoid common
 	warning.
