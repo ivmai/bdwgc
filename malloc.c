@@ -159,12 +159,13 @@ void * GC_generic_malloc(size_t lb, int k)
         result = GC_generic_malloc_inner((word)lb, k);
 	UNLOCK();
     } else {
-	size_t lw;
+	size_t lg, lw;
 	size_t lb_rounded;
 	word n_blocks;
 	GC_bool init;
-	lw = ROUNDED_UP_WORDS(lb);
-	lb_rounded = WORDS_TO_BYTES(lw);
+	lg = ROUNDED_UP_GRANULES(lb);
+	lw = GRANULES_TO_WORDS(lg);
+	lb_rounded = GRANULES_TO_BYTES(lg);
 	n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
 	init = GC_obj_kinds[k].ok_init;
 	LOCK();

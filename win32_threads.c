@@ -814,6 +814,12 @@ void GC_start_world(void)
 #   define GC_get_stack_min(s) \
         ((ptr_t)(((DWORD)(s) - 1) & 0xFFFF0000))
 # else
+
+    /* A cache holding the results of the last VirtualQuery call. 	*/
+    /* Protected by the allocation lock.				*/
+    static ptr_t last_address = 0;
+    static MEMORY_BASIC_INFORMATION last_info;
+
     /* Probe stack memory region (starting at "s") to find out its	*/
     /* lowest address (i.e. stack top).					*/
     /* S must be a mapped address inside the region, NOT the first	*/
@@ -821,13 +827,18 @@ void GC_start_world(void)
     static ptr_t GC_get_stack_min(ptr_t s)
     {
 	ptr_t bottom;
-	MEMORY_BASIC_INFORMATION info;
-	VirtualQuery(s, &info, sizeof(info));
+
+	GC_ASSERT(I_HOLD_LOCK());
+	if (s != last_address) {
+	    VirtualQuery(s, &last_info, sizeof(last_info));
+	    last_address = s;
+	}
 	do {
-	    bottom = info.BaseAddress;
-	    VirtualQuery(bottom - 1, &info, sizeof(info));
-	} while ((info.Protect & PAGE_READWRITE)
-		 && !(info.Protect & PAGE_GUARD));
+	    bottom = last_info.BaseAddress;
+	    VirtualQuery(bottom - 1, &last_info, sizeof(last_info));
+	    last_address = bottom - 1;
+	} while ((last_info.Protect & PAGE_READWRITE)
+		 && !(last_info.Protect & PAGE_GUARD));
 	return(bottom);
     }
 
@@ -835,9 +846,13 @@ void GC_start_world(void)
     /* for a stack page.					*/
     static GC_bool GC_may_be_in_stack(ptr_t s)
     {
-	MEMORY_BASIC_INFORMATION info;
-	VirtualQuery(s, &info, sizeof(info));
-	return (info.Protect & PAGE_READWRITE) && !(info.Protect & PAGE_GUARD);
+	GC_ASSERT(I_HOLD_LOCK());
+	if (s != last_address) {
+	    VirtualQuery(s, &last_info, sizeof(last_info));
+	    last_address = s;
+	}
+	return (last_info.Protect & PAGE_READWRITE)
+	        && !(last_info.Protect & PAGE_GUARD);
     }
 # endif
 
@@ -908,11 +923,15 @@ STATIC void GC_push_stack_for(GC_thread thread)
       if (thread -> last_stack_min == ADDR_LIMIT) {
       	stack_min = GC_get_stack_min(thread -> stack_base);
       } else {
-        if (GC_may_be_in_stack(thread -> last_stack_min)) {
-          stack_min = GC_get_stack_min(thread -> last_stack_min);
-	} else {
+#       ifdef MSWINCE
 	  stack_min = GC_get_stack_min(thread -> stack_base);
-	}
+#       else
+          if (GC_may_be_in_stack(thread -> last_stack_min)) {
+            stack_min = GC_get_stack_min(thread -> last_stack_min);
+	  } else {
+	    stack_min = GC_get_stack_min(thread -> stack_base);
+	  }
+#	endif
       }
       thread -> last_stack_min = stack_min;
 
@@ -1032,13 +1051,15 @@ void GC_get_next_stack(char *start, char *limit,
 
     GC_ASSERT(current_min > start);
 
-    if (current_min > limit && !GC_may_be_in_stack(limit)) {
-      /* Skip the rest since the memory region at limit address is not	*/
-      /* a stack (so the lowest address of the found stack would be	*/
-      /* above the limit value anyway).					*/
-      *lo = ADDR_LIMIT;
-      return;
-    }
+#   ifndef MSWINCE
+      if (current_min > limit && !GC_may_be_in_stack(limit)) {
+        /* Skip the rest since the memory region at limit address is    */
+	/* not a stack (so the lowest address of the found stack would  */
+	/* be above the limit value anyway).				*/
+        *lo = ADDR_LIMIT;
+        return;
+      }
+#   endif
     
     /* Get the minimum address of the found stack by probing its memory	*/
     /* region starting from the last known minimum (if set).		*/

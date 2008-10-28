@@ -1,4 +1,16 @@
-2008-10-25  Hans Boehm <Hans.Boehm@hp.com> (Really Rex Dieter and
+2008-10-27  Hans Boehm <Hans.Boehm@hp.com>
+	* win32_threads.c (GC_get_stack_min, GC_may_be_in_stack):
+	Add one entry VirtualQuery cache, I_HOLD_LOCK assertions.
+	(GC_push_stack_for, GC_get_next_stack) : Hopefully fix WINCE support.
+
+2008-10-27  Hans Boehm <Hans.Boehm@hp.com> (Thanks to Klaus Treichel.)
+	* finalize.c (GC_general_register_disappearing_link): Add
+	assertion.
+	* malloc.c (GC_generic_malloc): Round lb to granules, not words.
+	* mallocx.c (GC_generic_malloc_ignore_off_page): Round lb to
+	granules, not words.
+
+2008-10-27  Hans Boehm <Hans.Boehm@hp.com> (Really Rex Dieter and
 	Petr Krajca)
 	* mach_dep.c (NO_GETCONTEXT): Define for sparc linux.
 	* configure.ac: Define mach_dep for sparc-linux.

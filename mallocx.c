@@ -167,7 +167,7 @@ void * realloc(void * p, size_t lb)
 void * GC_generic_malloc_ignore_off_page(size_t lb, int k)
 {
     void *result;
-    size_t lw;
+    size_t lg, lw;
     size_t lb_rounded;
     word n_blocks;
     GC_bool init;
@@ -175,8 +175,9 @@ void * GC_generic_malloc_ignore_off_page(size_t lb, int k)
     
     if (SMALL_OBJ(lb))
         return(GC_generic_malloc((word)lb, k));
-    lw = ROUNDED_UP_WORDS(lb);
-    lb_rounded = WORDS_TO_BYTES(lw);
+    lg = ROUNDED_UP_GRANULES(lb);
+    lw = GRANULES_TO_WORDS(lg);
+    lb_rounded = GRANULES_TO_BYTES(lg);
     n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
     init = GC_obj_kinds[k].ok_init;
     if (GC_have_errors) GC_print_all_errors();
