@@ -284,7 +284,7 @@ GC_API void * GC_CALL GC_gcj_malloc(size_t bytes,
 
 /* The thread support layer must arrange to mark thread-local	*/
 /* free lists explicitly, since the link field is often 	*/
-/* invisible to the marker.  It knows hoe to find all threads;	*/
+/* invisible to the marker.  It knows how to find all threads;	*/
 /* we take care of an individual thread freelist structure.	*/
 void GC_mark_thread_local_fls_for(GC_tlfs p)
 {

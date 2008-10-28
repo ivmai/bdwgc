@@ -405,8 +405,6 @@ GC_API void GC_CALL GC_free(void * p)
 #   endif
     h = HBLKPTR(p);
     hhdr = HDR(h);
-    sz = hhdr -> hb_sz;
-    ngranules = BYTES_TO_GRANULES(sz);
 #   if defined(REDIRECT_MALLOC) && \
 	(defined(GC_SOLARIS_THREADS) || defined(GC_LINUX_THREADS) \
 	 || defined(MSWIN32))
@@ -417,6 +415,8 @@ GC_API void GC_CALL GC_free(void * p)
 	if (0 == hhdr) return;
 #   endif
     GC_ASSERT(GC_base(p) == p);
+    sz = hhdr -> hb_sz;
+    ngranules = BYTES_TO_GRANULES(sz);
     knd = hhdr -> hb_obj_kind;
     ok = &GC_obj_kinds[knd];
     if (EXPECT((ngranules <= MAXOBJGRANULES), 1)) {

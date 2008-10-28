@@ -1,3 +1,10 @@
+2008-10-27  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+	* thread_local_alloc.c, include/private/thread_local_alloc.h:
+	Fix typos in comments.
+	* finalize.c: Declare mark_procs and GC_register_finalizer_inner
+	STATIC.
+	* malloc.c (GC_free): Move size calculation below assertion.
+
 2008-10-27  Hans Boehm <Hans.Boehm@hp.com>
 	* win32_threads.c (GC_get_stack_min, GC_may_be_in_stack):
 	Add one entry VirtualQuery cache, I_HOLD_LOCK assertions.
