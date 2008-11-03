@@ -895,7 +895,7 @@ compiler."
 	rpath | xrpath)
 	  # We need an absolute path.
 	  case $arg in
-	  [\\/]* | [A-Za-z]:[\\/]*) ;;
+	  [\\/@]* | [A-Za-z]:[\\/]*) ;;
 	  *)
 	    $echo "$modename: only absolute run-paths are allowed" 1>&2
 	    exit 1
