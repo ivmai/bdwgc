@@ -227,6 +227,7 @@ HOSTCFLAGS=$(CFLAGS)
 # -DCHECKSUMS reports on erroneously clear dirty bits, and unexpectedly
 #   altered stubborn objects, at substantial performance cost.
 #   Use only for debugging of the incremental collector.
+#   Not compatible with USE_MUNMAP or threads.
 # -DGC_GCJ_SUPPORT includes support for gcj (and possibly other systems
 #   that include a pointer to a type descriptor in each allocated object).
 #   Building this way requires an ANSI C compiler.
