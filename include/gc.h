@@ -891,12 +891,20 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn,
 						void *arg);
 
 /* Register the current thread, with the indicated stack base, as	*/
-/* a new thread whose stack(s) should be traced by the GC.  If a 	*/
-/* platform does not implicitly do so, this must be called before a	*/
+/* a new thread whose stack(s) should be traced by the GC.  If it 	*/
+/* is not implicitly called by the GC, this must be called before a	*/
 /* thread can allocate garbage collected memory, or assign pointers	*/
 /* to the garbage collected heap.  Once registered, a thread will be	*/
 /* stopped during garbage collections.					*/
-/* Return codes:	*/
+/* This should never be called from the main thread, where it is 	*/
+/* always done implicitly.  This is normally done implicitly if GC_	*/
+/* functions are called to create the thread, e.g. by defining		*/
+/* GC_THREADS and including gc.h (which redefines some system		*/
+/* functions) before calling the system thread creation function.	*/
+/* It is also always done implicitly under win32 with DllMain-based	*/
+/* thread registration enabled.  Except in this latter case, explicit	*/
+/* calls are normally required for threads created by third-party	*/
+/* libraries.								*/
 #define GC_SUCCESS 0
 #define GC_DUPLICATE 1	/* Was already registered.	*/
 #define GC_NO_THREADS 2	/* No thread support in GC.  	*/

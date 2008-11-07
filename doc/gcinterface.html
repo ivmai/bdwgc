@@ -10,7 +10,8 @@ On many platforms, a single-threaded garbage collector library can be built
 to act as a plug-in malloc replacement.
 (Build with <TT>-DREDIRECT_MALLOC=GC_malloc -DIGNORE_FREE</tt>.)
 This is often the best way to deal with third-party libraries
-which leak or prematurely free objects.  <TT>-DREDIRECT_MALLOC</tt> is intended
+which leak or prematurely free objects.
+<TT>-DREDIRECT_MALLOC=GC_malloc</tt> is intended
 primarily as an easy way to adapt old code, not for new development.
 <P>
 New code should use the interface discussed below.
@@ -49,7 +50,9 @@ Allocates and clears <I>nbytes</i> of storage.
 Requires (amortized) time proportional to <I>nbytes</i>.
 The resulting object will be automatically deallocated when unreferenced.
 References from objects allocated with the system malloc are usually not
-considered by the collector.  (See <TT>GC_MALLOC_UNCOLLECTABLE</tt>, however.)
+considered by the collector.  (See <TT>GC_MALLOC_UNCOLLECTABLE</tt>, however.
+Building the collector with <TT>-DREDIRECT_MALLOC=GC_malloc_uncollectable
+is often a way around this.)
 <TT>GC_MALLOC</tt> is a macro which invokes <TT>GC_malloc</tt> by default or,
 if <TT>GC_DEBUG</tt>
 is defined before <TT>gc.h</tt> is included, a debugging version that checks
