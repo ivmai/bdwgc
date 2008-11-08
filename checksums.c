@@ -52,7 +52,7 @@ STATIC word GC_checksum(struct hblk *h)
 STATIC GC_bool GC_on_free_list(struct hblk *h)
 {
     hdr * hhdr = HDR(h);
-    int sz = BYTES_TO_WORDS(hhdr -> hb_sz);
+    size_t sz = BYTES_TO_WORDS(hhdr -> hb_sz);
     ptr_t p;
     
     if (sz > MAXOBJWORDS) return(FALSE);
@@ -113,7 +113,7 @@ STATIC void GC_update_check_page(struct hblk *h, int index)
     pe -> block = h + OFFSET;
 }
 
-unsigned long GC_bytes_in_used_blocks;
+word GC_bytes_in_used_blocks;
 
 /*ARGSUSED*/
 STATIC void GC_add_block(struct hblk *h, word dummy)
@@ -128,12 +128,13 @@ STATIC void GC_add_block(struct hblk *h, word dummy)
 
 STATIC void GC_check_blocks(void)
 {
-    unsigned long bytes_in_free_blocks = GC_large_free_bytes;
+    word bytes_in_free_blocks = GC_large_free_bytes;
     
     GC_bytes_in_used_blocks = 0;
     GC_apply_to_all_blocks(GC_add_block, (word)0);
     GC_printf("GC_bytes_in_used_blocks = %lu, bytes_in_free_blocks = %lu ",
-    	      GC_bytes_in_used_blocks, bytes_in_free_blocks);
+    	      (unsigned long)GC_bytes_in_used_blocks,
+	      (unsigned long)bytes_in_free_blocks);
     GC_printf("GC_heapsize = %lu\n", (unsigned long)GC_heapsize);
     if (GC_bytes_in_used_blocks + bytes_in_free_blocks != GC_heapsize) {
     	GC_printf("LOST SOME BLOCKS!!\n");

@@ -1078,7 +1078,7 @@
 #	ifndef USE_MMAP
 #	  define USE_MMAP
 #	endif /* USE_MMAP */
-#	define MAP_FAILED (void *) -1
+#	define MAP_FAILED (void *) ((word)-1)
 #	ifdef USE_MMAP
 #	  define HEAP_START (ptr_t)0x40000000
 #	else /* USE_MMAP */

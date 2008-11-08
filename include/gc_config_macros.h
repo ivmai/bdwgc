@@ -83,7 +83,8 @@
 #   define GC_PTHREADS
 # endif
 # if defined(__sparc) && !defined(__linux__) \
-     || defined(sun) && (defined(i386) || defined(__i386__))
+     || defined(sun) && (defined(i386) || defined(__i386__) \
+     			|| defined(__amd64__))
 #   define GC_SOLARIS_THREADS
 #   define GC_PTHREADS
 # endif

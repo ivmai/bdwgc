@@ -135,8 +135,8 @@ GC_bool GC_has_other_debug_info(ptr_t p)
   /* not necessarily inside a valid object.	*/
   void *GC_generate_random_heap_address(void)
   {
-    int i;
-    long heap_offset = RANDOM();
+    size_t i;
+    word heap_offset = RANDOM();
     if (GC_heapsize > RAND_MAX) {
 	heap_offset *= RAND_MAX;
 	heap_offset += RANDOM();

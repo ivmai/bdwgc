@@ -341,8 +341,8 @@ STATIC int GC_n_set_marks(hdr *hhdr)
     int result = 0;
     int i;
     size_t sz = hhdr -> hb_sz;
-    int offset = MARK_BIT_OFFSET(sz);
-    int limit = FINAL_MARK_BIT(sz);
+    int offset = (int)MARK_BIT_OFFSET(sz);
+    int limit = (int)FINAL_MARK_BIT(sz);
 
     for (i = 0; i < limit; i += offset) {
         result += hhdr -> hb_marks[i];
@@ -373,7 +373,7 @@ STATIC int GC_n_set_marks(hdr *hhdr)
     int i;
     int n_mark_words;
 #   ifdef MARK_BIT_PER_OBJ
-      int n_objs = HBLK_OBJS(hhdr -> hb_sz);
+      int n_objs = (int)HBLK_OBJS(hhdr -> hb_sz);
     
       if (0 == n_objs) n_objs = 1;
       n_mark_words = divWORDSZ(n_objs + WORDSZ - 1);

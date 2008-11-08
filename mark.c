@@ -158,10 +158,10 @@ void GC_set_hdr_marks(hdr *hhdr)
 {
     unsigned i;
     size_t sz = hhdr -> hb_sz;
-    size_t n_marks = FINAL_MARK_BIT(sz);
+    unsigned n_marks = (unsigned)FINAL_MARK_BIT(sz);
 
 #   ifdef USE_MARK_BYTES
-      for (i = 0; i <= n_marks; i += MARK_BIT_OFFSET(sz)) {
+      for (i = 0; i <= n_marks; i += (unsigned)MARK_BIT_OFFSET(sz)) {
     	hhdr -> hb_marks[i] = 1;
       }
 #   else
@@ -249,6 +249,10 @@ void GC_clear_marks(void)
     scan_ptr = 0;
 }
 
+#ifdef CHECKSUMS
+extern void GC_check_dirty(void);
+#endif
+
 /* Initiate a garbage collection.  Initiates a full collection if the	*/
 /* mark	state is invalid.						*/
 void GC_initiate_gc(void)
@@ -258,11 +262,7 @@ void GC_initiate_gc(void)
     	GC_read_changed();
 #   endif
 #   ifdef CHECKSUMS
-	{
-	    extern void GC_check_dirty();
-	    
-	    if (GC_dirty_maintained) GC_check_dirty();
-	}
+	if (GC_dirty_maintained) GC_check_dirty();
 #   endif
     GC_n_rescuing_pages = 0;
     if (GC_mark_state == MS_NONE) {
@@ -880,7 +880,7 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
     mse *top = local - 1;
     unsigned i = 0;
 
-    GC_ASSERT(high >= low-1 && high - low + 1 <= GC_mark_stack_size);
+    GC_ASSERT(high >= low-1 && (word)(high - low + 1) <= GC_mark_stack_size);
     for (p = low; p <= high && i <= max; ++p) {
 	word descr = AO_load((volatile AO_t *) &(p -> mse_descr));
 	if (descr != 0) {
@@ -892,12 +892,12 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
 	    top -> mse_descr = descr;
 	    top -> mse_start = p -> mse_start;
 	    GC_ASSERT((top -> mse_descr & GC_DS_TAGS) != GC_DS_LENGTH || 
-		      top -> mse_descr < (ptr_t)GC_greatest_plausible_heap_addr
-			                 - (ptr_t)GC_least_plausible_heap_addr);
+		      top -> mse_descr < (word)GC_greatest_plausible_heap_addr
+			                 - (word)GC_least_plausible_heap_addr);
 	    /* If this is a big object, count it as			*/
 	    /* size/256 + 1 objects.					*/
 	    ++i;
-	    if ((descr & GC_DS_TAGS) == GC_DS_LENGTH) i += (descr >> 8);
+	    if ((descr & GC_DS_TAGS) == GC_DS_LENGTH) i += (int)(descr >> 8);
 	}
     }
     *next = p;
@@ -1007,7 +1007,7 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
     GC_release_mark_lock();
     for (;;) {
   	size_t n_on_stack;
-        size_t n_to_get;
+        unsigned n_to_get;
 	mse * my_top;
 	mse * local_top;
         mse * global_first_nonempty = (mse *)AO_load(&GC_first_nonempty);
@@ -1145,7 +1145,7 @@ void GC_help_marker(word my_mark_no)
       GC_wait_marker();
     }
     my_id = GC_helper_count;
-    if (GC_mark_no != my_mark_no || my_id >= GC_markers) {
+    if (GC_mark_no != my_mark_no || my_id >= (unsigned)GC_markers) {
       /* Second test is useful only if original threads can also	*/
       /* act as helpers.  Under Linux they can't.			*/
       GC_release_mark_lock();

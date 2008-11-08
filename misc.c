@@ -144,7 +144,10 @@ STATIC void GC_init_size_map(void)
       GC_size_map[0] = 1;
     for (i = 1; i <= GRANULES_TO_BYTES(TINY_FREELISTS-1) - EXTRA_BYTES; i++) {
         GC_size_map[i] = ROUNDED_UP_GRANULES(i);
-        GC_ASSERT(GC_size_map[i] < TINY_FREELISTS);
+#       ifndef _MSC_VER
+          GC_ASSERT(GC_size_map[i] < TINY_FREELISTS);
+	  /* Seems to tickle bug in some versions of VC++ */
+#	endif
     }
     /* We leave the rest of the array to be filled in on demand. */
 }
@@ -552,12 +555,12 @@ void GC_init_inner(void)
 	  WARN("Tracing not enabled: Ignoring GC_TRACE value\n", 0);
 #       else
 #	  ifdef STRTOULL
-	    long long addr = strtoull(addr_string, NULL, 16);
+	    word addr = (word)strtoull(addr_string, NULL, 16);
 #	  else
-	    long addr = strtoul(addr_string, NULL, 16);
+	    word addr = (word)strtoul(addr_string, NULL, 16);
 #	  endif
 	  if (addr < 0x1000)
-	      WARN("Unlikely trace address: 0x%lx\n", (GC_word)addr);
+	      WARN("Unlikely trace address: 0x%lx\n", (long)addr);
 	  GC_trace_addr = (ptr_t)addr;
 #	endif
       }
@@ -1189,7 +1192,7 @@ GC_API GC_finalizer_notifier_proc GC_CALL GC_set_finalizer_notifier(
 					GC_finalizer_notifier_proc fn)
 {
     GC_finalizer_notifier_proc ofn = GC_finalizer_notifier;
-    if (fn != (GC_finalizer_notifier_proc)-1L)
+    if (fn != (GC_finalizer_notifier_proc)((signed_word)-1))
 	GC_finalizer_notifier = fn;
     return ofn;
 }

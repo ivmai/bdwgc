@@ -798,7 +798,7 @@ void GC_notify_or_invoke_finalizers(void)
 
       if (GC_gc_no > last_back_trace_gc_no) {
 #	ifdef KEEP_BACK_PTRS
-	  word i;
+	  long i;
 	  LOCK();
   	  /* Stops when GC_gc_no wraps; that's OK.	*/
 	  last_back_trace_gc_no = (word)(-1);  /* disable others. */

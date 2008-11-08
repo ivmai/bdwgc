@@ -1462,7 +1462,6 @@ STATIC void * GC_pthread_start(void * arg)
 STATIC void GC_thread_exit_proc(void *arg)
 {
     GC_thread me = (GC_thread)arg;
-    int i;
 
     GC_ASSERT(!GC_win32_dll_threads);
 #   if DEBUG_CYGWIN_THREADS

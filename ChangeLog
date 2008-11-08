@@ -1,3 +1,30 @@
+2008-11-07  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+	(Mostly improves LLP64 support.)
+	* backgraph.c, checksums.c, dbg_mlc.c, finalize.c, mark.c,
+	misc.c,	reclaim.c: Changed some int and long type to word or size_t
+	(and vice versa where appropriate)
+	* gcj_mlc.c, include/private/dbg_mlc.h, include/private/gcconfig.h,
+	include/private/thread_local_alloc.h, mark.c,
+	misc.c, thread_local_alloc.c, win32_threads.c: Added intermediate
+	casts to word type when casting from int to pointer (or pointer
+	to int, or data pointer to code pointer) - just to remove the
+	corresponding compiler warning.
+	* ptr_chck.c (GC_is_visible): cast int const to word type to
+	prevent left shift overflow.
+	* os_dep.c: change the type of GC_mem_top_down global var
+	(containing a flag) to DWORD.
+	* include/gc_config_macros.h: define GC_SOLARIS_THREADS if GC_THREADS
+	is defined on SunOS x86_64.
+	* misc.c (GC_init_size_map): Ifdef out GC_ASSERT as a workaround
+	for VC++ 2008 amd64 (v15.00.21022.08 for x64) compiler bug
+	(the compiler gets hung if invoked with -Ox -D
+	ALL_INTERIOR_POINTERS -D GC_ASSERTIONS)
+	* backgraph.c: cast GC_gc_no value to unsigned short when
+	assigned/compared to height_gc_no field of back_edges.
+	* os_dep.c (GC_remove_protection): Add ARGSUSED.
+	* win32_threads.c (GC_thread_exit_proc): Remove unused local var.
+	* mark.c (GC_check_dirty): Move declaration out of func body.
+
 2008-11-06  Hans Boehm <Hans.Boehm@hp.com>
 	* doc/gcinterface.html: Improve REDIRECT_MALLOC documentation.
 	* include/gc.h (GC_register_my_thread): Improve comment.

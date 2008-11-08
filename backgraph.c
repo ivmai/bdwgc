@@ -151,7 +151,7 @@ static void push_in_progress(ptr_t p)
 
 static GC_bool is_in_progress(ptr_t p)
 {
-  int i;
+  size_t i;
   for (i = 0; i < n_in_progress; ++i) {
     if (in_progress_space[i] == p) return TRUE;
   }
@@ -179,8 +179,9 @@ static void pop_in_progress(ptr_t p)
     } else { \
       back_edges *orig_be_ = (back_edges *)((word)q & ~FLAG_MANY); \
       back_edges *be_ = orig_be_; \
-      int total_, local_; \
-      int n_edges_ = be_ -> n_edges; \
+      int local_; \
+      word total_; \
+      word n_edges_ = be_ -> n_edges; \
       for (total_ = 0, local_ = 0; total_ < n_edges_; ++local_, ++total_) { \
 	  if (local_ == MAX_IN) { \
 	      be_ = be_ -> cont; \
@@ -206,7 +207,7 @@ static void ensure_struct(ptr_t p)
       be -> edges[0] = old_back_ptr;
     }
     be -> height = HEIGHT_UNKNOWN;
-    be -> height_gc_no = GC_gc_no - 1;
+    be -> height_gc_no = (unsigned short)(GC_gc_no - 1);
     GC_ASSERT(be >= back_edge_space);
     SET_OH_BG_PTR(p, (word)be | FLAG_MANY);
   }
@@ -274,8 +275,8 @@ static void per_object_helper(struct hblk *h, word fn)
 
   do {
     f((ptr_t)(h -> hb_body + i), sz, descr);
-    i += sz;
-  } while (i + sz <= BYTES_TO_WORDS(HBLKSIZE));
+    i += (int)sz;
+  } while (i + (int)sz <= BYTES_TO_WORDS(HBLKSIZE));
 }
 
 void GC_apply_to_each_object(per_object_func f)
@@ -367,7 +368,7 @@ static word backwards_height(ptr_t p)
     return result;
   }
   be = (back_edges *)((word)back_ptr & ~FLAG_MANY);
-  if (be -> height >= 0 && be -> height_gc_no == GC_gc_no)
+  if (be -> height >= 0 && be -> height_gc_no == (unsigned short)GC_gc_no)
       return be -> height;
   /* Ignore back edges in DFS */
     if (be -> height == HEIGHT_IN_PROGRESS) return 0;
@@ -387,7 +388,7 @@ static word backwards_height(ptr_t p)
     if (this_height >= result) result = this_height + 1;
   });
   be -> height = result;
-  be -> height_gc_no = GC_gc_no;
+  be -> height_gc_no = (unsigned short)GC_gc_no;
   return result;
 }
 
@@ -437,7 +438,7 @@ static void update_max_height(ptr_t p, size_t n_bytes, word gc_descr)
 	}
 	be -> flags |= RETAIN;
 	be -> height = p_height;
-	be -> height_gc_no = GC_gc_no;
+	be -> height_gc_no = (unsigned short)GC_gc_no;
     }
     if (p_height > GC_max_height) {
 	GC_max_height = p_height;

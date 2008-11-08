@@ -88,18 +88,18 @@ void GC_init_thread_local(GC_tlfs p)
 	ABORT("Failed to set thread specific allocation pointers");
     }
     for (i = 1; i < TINY_FREELISTS; ++i) {
-	p -> ptrfree_freelists[i] = (void *)1;
-	p -> normal_freelists[i] = (void *)1;
+	p -> ptrfree_freelists[i] = (void *)(word)1;
+	p -> normal_freelists[i] = (void *)(word)1;
 #	ifdef GC_GCJ_SUPPORT
-	  p -> gcj_freelists[i] = (void *)1;
+	  p -> gcj_freelists[i] = (void *)(word)1;
 #	endif
     }   
     /* Set up the size 0 free lists.	*/
     /* We now handle most of them like regular free lists, to ensure	*/
     /* That explicit deallocation works.  However, allocation of a	*/
     /* size 0 "gcj" object is always an error.				*/
-    p -> ptrfree_freelists[0] = (void *)1;
-    p -> normal_freelists[0] = (void *)1;
+    p -> ptrfree_freelists[0] = (void *)(word)1;
+    p -> normal_freelists[0] = (void *)(word)1;
 #   ifdef GC_GCJ_SUPPORT
         p -> gcj_freelists[0] = ERROR_FL;
 #   endif

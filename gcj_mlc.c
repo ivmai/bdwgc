@@ -68,7 +68,7 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
         GC_log_printf("Gcj-style type information is disabled!\n");
     }
     GC_ASSERT(GC_mark_procs[mp_index] == (GC_mark_proc)0); /* unused */
-    GC_mark_procs[mp_index] = (GC_mark_proc)mp;
+    GC_mark_procs[mp_index] = (GC_mark_proc)(word)mp;
     if ((unsigned)mp_index >= GC_n_mark_procs)
 	ABORT("GC_init_gcj_malloc: bad index");
     /* Set up object kind gcj-style indirect descriptor. */

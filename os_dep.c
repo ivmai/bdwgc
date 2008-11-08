@@ -1827,7 +1827,7 @@ SYSTEM_INFO GC_sysinfo;
 
 word GC_n_heap_bases = 0;
 
-word GC_mem_top_down = 0;  /* Change to MEM_TOP_DOWN  for better 64-bit */
+DWORD GC_mem_top_down = 0; /* Change to MEM_TOP_DOWN  for better 64-bit */
 			   /* testing.  Otherwise all addresses tend to */
 			   /* end up in first 4GB, hiding bugs.		*/
 
@@ -2339,6 +2339,7 @@ STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
   }
 
 # ifndef MPROTECT_VDB
+    /*ARGSUSED*/
     void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
     {}
 # endif
@@ -2541,7 +2542,7 @@ void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
 #if defined(MSWIN32)
     typedef LPTOP_LEVEL_EXCEPTION_FILTER SIG_HNDLR_PTR;
 #   undef SIG_DFL
-#   define SIG_DFL (LPTOP_LEVEL_EXCEPTION_FILTER) (-1)
+#   define SIG_DFL (LPTOP_LEVEL_EXCEPTION_FILTER)((signed_word)-1)
 #elif defined(MSWINCE)
     typedef LONG (WINAPI *SIG_HNDLR_PTR)(struct _EXCEPTION_POINTERS *);
 #   undef SIG_DFL

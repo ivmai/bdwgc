@@ -52,10 +52,10 @@
     /* Used in oh_back_ptr fields and as "source"	*/
     /* argument to some marking functions.		*/
 #	define NOT_MARKED (ptr_t)(0)
-#	define MARKED_FOR_FINALIZATION (ptr_t)(2)
+#	define MARKED_FOR_FINALIZATION ((ptr_t)(word)2)
 	    /* Object was marked because it is finalizable.	*/
-#	define MARKED_FROM_REGISTER (ptr_t)(4)
-	    /* Object was marked from a rgister.  Hence the	*/
+#	define MARKED_FROM_REGISTER ((ptr_t)(word)4)
+	    /* Object was marked from a register.  Hence the	*/
 	    /* source of the reference doesn't have an address.	*/
 # endif /* KEEP_BACK_PTRS || PRINT_BLACK_LIST */
 
