@@ -94,6 +94,9 @@ GC_RETRY_SIGNALS, GC_NO_RETRY_SIGNALS - Try to compensate for lost
 		     was turned into a runtime flag to enable last-minute
 		     work-arounds.
 
+GC_DISABLE_INCREMENTAL - Ignore runtime requests to enable incremental GC.
+		     Useful for debugging.
+
 The following turn on runtime flags that are also program settable.  Checked
 only during initialization.  We expect that they will usually be set through
 other means, but this may help with debugging and testing:
@@ -118,6 +121,10 @@ GC_PAUSE_TIME_TARGET - Set the desired garbage collector pause time in msecs.
 		     run on a multiprocessor, incremental collection should
 		     only be used with unlimited pause time.
 
+GC_FREE_SPACE_DIVISOR - Set GC_free_space_divisor to the indicated value.
+                      Setting it to larger values decreases space consumption
+		      and increases GC frequency.
+
 GC_FIND_LEAK - Turns on GC_find_leak and thus leak detection.  Forces a
 	       collection at program termination to detect leaks that would
 	       otherwise occur after the last GC.
@@ -129,7 +136,7 @@ GC_DONT_GC - Turns off garbage collection.  Use cautiously.
 
 GC_TRACE=addr - Intended for collector debugging.  Requires that the collector
 		have been built with ENABLE_TRACE defined.  Causes the debugger
-		to log information about the tracing of address ranges containing
-		addr.  Typically addr is the address that contains a pointer to
-		an object that mysteriously failed to get marked.  Addr must be
-		specified as a hexadecimal integer.
+		to log information about the tracing of address ranges
+		containing addr.  Typically addr is the address that contains
+		a pointer to an object that mysteriously failed to get marked.
+		Addr must be specified as a hexadecimal integer.

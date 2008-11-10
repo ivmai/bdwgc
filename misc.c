@@ -589,6 +589,14 @@ void GC_init_inner(void)
         }
       }
     }
+    {
+	char * space_divisor_string = GETENV("GC_FREE_SPACE_DIVISOR");
+	if (space_divisor_string != NULL) {
+	  int space_divisor = atoi(space_divisor_string);
+	  if (space_divisor > 0)
+	    GC_free_space_divisor = (GC_word)space_divisor;
+	}
+    }
     maybe_install_looping_handler();
     /* Adjust normal object descriptor for extra allocation.	*/
     if (ALIGNMENT > GC_DS_TAGS && EXTRA_BYTES != 0) {
@@ -770,7 +778,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
   /* If we are keeping back pointers, the GC itself dirties all	*/
   /* pages on which objects have been marked, making 		*/
   /* incremental GC pointless.					*/
-  if (!GC_find_leak) {
+  if (!GC_find_leak && 0 == GETENV("GC_DISABLE_INCREMENTAL")) {
     DCL_LOCK_STATE;
     
     LOCK();

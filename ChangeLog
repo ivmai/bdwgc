@@ -1,3 +1,9 @@
+2008-11-10  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Ivan Maidansky)
+	* misc.c, doc/README.environment: Add support  for
+	GC_FREE_SPACE_DIVISOR and GC-disable-incremental.
+	* include/gc.h: Make GC_set_free_space_divisor correspond to
+	(somewhat unfortunate) reality.
+
 2008-11-07  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
 	(Mostly improves LLP64 support.)
 	* backgraph.c, checksums.c, dbg_mlc.c, finalize.c, mark.c,

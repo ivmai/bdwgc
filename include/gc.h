@@ -837,7 +837,7 @@ GC_API GC_warn_proc GC_CALL GC_set_warn_proc(GC_warn_proc p);
 GC_API GC_word GC_CALL GC_set_free_space_divisor(GC_word value);
     /* Set free_space_divisor.  See above for definition.	*/
     /* Returns old value.					*/
-    /* With zero argument, nothing is changed, but old value is	*/
+    /* With -1 argument, nothing is changed, but old value is	*/
     /* returned.  (Only true for GC7.2+)		        */
 	
 /* The following is intended to be used by a higher level	*/
