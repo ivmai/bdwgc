@@ -234,8 +234,9 @@ void GC_print_callers(struct callinfo info[NFRAMES]);
 #   define GET_TIME(x) { struct rusage rusage; \
 			 getrusage (RUSAGE_SELF,  &rusage); \
 			 x = rusage.ru_utime; }
-#   define MS_TIME_DIFF(a,b) ((double) (a.tv_sec - b.tv_sec) * 1000.0 \
-                               + (double) (a.tv_usec - b.tv_usec) / 1000.0)
+#   define MS_TIME_DIFF(a,b) \
+		((unsigned long)((double) (a.tv_sec - b.tv_sec) * 1000.0 \
+                               + (double) (a.tv_usec - b.tv_usec) / 1000.0))
 #else /* !BSD_TIME */
 # if defined(MSWIN32) || defined(MSWINCE)
 #   include <windows.h>

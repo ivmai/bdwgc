@@ -340,9 +340,7 @@ GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
 	GET_TIME(start_time);
-	GC_log_printf(
-	   "Initiating full world-stop collection %lu after %ld allocd bytes\n",
-	   (unsigned long)GC_gc_no+1, (long)GC_bytes_allocd);
+	GC_log_printf("Initiating full world-stop collection!\n");
       }
 #   endif
     GC_promote_black_lists();
@@ -463,6 +461,21 @@ GC_API int GC_CALL GC_collect_a_little(void)
 #ifdef MAKE_BACK_GRAPH
   void GC_build_back_graph(void);
 #endif
+
+#ifndef SMALL_CONFIG
+  /* Variables for world-stop average delay time statistic computation.	*/
+  /* "divisor" is incremented every world-stop and halved when reached	*/
+  /* its maximum (or upon "total_time" oveflow).			*/
+  STATIC unsigned world_stopped_total_time = 0;
+  STATIC unsigned world_stopped_total_divisor = 0;
+# ifndef MAX_TOTAL_TIME_DIVISOR
+    /* We shall not use big values here (so "outdated" delay time	*/
+    /* values would have less impact on "average" delay time value than	*/
+    /* newer ones).							*/
+#   define MAX_TOTAL_TIME_DIVISOR 1000
+# endif
+#endif
+
 /*
  * Assumes lock is held, signals are disabled.
  * We stop the world.
@@ -475,17 +488,20 @@ GC_bool GC_stopped_mark(GC_stop_func stop_func)
     int dummy;
 #   ifndef SMALL_CONFIG
       CLOCK_TYPE start_time, current_time;
-	
-      if (GC_print_stats)
-	GET_TIME(start_time);
 #   endif
-
+	
 #   if !defined(REDIRECT_MALLOC) && (defined(MSWIN32) || defined(MSWINCE))
         GC_add_current_malloc_heap();
 #   endif
 #   if defined(REGISTER_LIBRARIES_EARLY)
         GC_cond_register_dynamic_libraries();
 #   endif
+
+#   ifndef SMALL_CONFIG
+      if (GC_print_stats)
+	GET_TIME(start_time);
+#   endif
+
     STOP_WORLD();
     IF_THREADS(GC_world_stopped = TRUE);
     if (GC_print_stats) {
@@ -540,9 +556,29 @@ GC_bool GC_stopped_mark(GC_stop_func stop_func)
     START_WORLD();
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
+	unsigned long time_diff;
+	unsigned total_time, divisor;
 	GET_TIME(current_time);
-	GC_log_printf("World-stopped marking took %lu msecs\n",
-		      MS_TIME_DIFF(current_time,start_time));
+	time_diff = MS_TIME_DIFF(current_time,start_time);
+
+	/* Compute new world-stop delay total time */
+	total_time = world_stopped_total_time;
+	divisor = world_stopped_total_divisor;
+	if ((int)total_time < 0 || divisor >= MAX_TOTAL_TIME_DIVISOR) {
+	  /* Halve values if overflow occurs */
+	  total_time >>= 1;
+	  divisor >>= 1;
+	}
+	total_time += time_diff < (((unsigned)-1) >> 1) ?
+			(unsigned)time_diff : ((unsigned)-1) >> 1;
+	/* Update old world_stopped_total_time and its divisor */
+	world_stopped_total_time = total_time;
+	world_stopped_total_divisor = ++divisor;
+	
+	GC_ASSERT(divisor != 0);
+	GC_log_printf(
+		"World-stopped marking took %lu msecs (%lu in average)\n",
+		time_diff, total_time / divisor);
       }
 #   endif
     return(TRUE);

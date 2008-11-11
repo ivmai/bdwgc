@@ -1,3 +1,9 @@
+2008-11-10  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+	* alloc.c (GC_try_to_collect_inner): Don't print redundant
+	GC_bytes_allocd and GC_gc_no.
+	(GC_stopped_mark): Print average world stop time.
+	* include/private/gc_priv.h (MS_TIME_DIFF): Add cast.
+
 2008-11-10  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Ivan Maidansky)
 	* misc.c, doc/README.environment: Add support  for
 	GC_FREE_SPACE_DIVISOR and GC-disable-incremental.
