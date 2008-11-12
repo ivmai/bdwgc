@@ -2110,7 +2110,8 @@
 #   undef MPROTECT_VDB  /* Can't deal with address space holes. */
 # endif
 
-# ifdef PARALLEL_MARK
+# if defined(PARALLEL_MARK)
+    /* FIXME: Should we undef it even in case of GWW_VDB? */
 #   undef MPROTECT_VDB  /* For now.	*/
 # endif
 

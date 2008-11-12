@@ -1,3 +1,14 @@
+2008-11-11  Hans Boehm <Hans.Boehm@hp.com>
+	(Really almost entirely Ivan Maidansky)
+	* win32_threads.c: Support PARALLEL_MARK.  Make printf arg
+	types agree with format specifiers.  Add missing copyright header.
+	Add STATIC for GC_threads.
+	* include/private/gcconfig.h: Add FIXME comment.
+	* tests/test.c (run_ine_test): Replace LOCK/UNLOCK use with
+	AO_fetch_and_add1_full.  Declare n_tests as AO_t.
+	(WinMain): Dont call GC_use_DllMain.
+	with PARALLEL_MARK or THREAD_LOCAL_ALLOC.
+
 2008-11-10  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
 	* alloc.c (GC_try_to_collect_inner): Don't print redundant
 	GC_bytes_allocd and GC_gc_no.

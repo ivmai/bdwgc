@@ -879,7 +879,7 @@ void tree_test()
 #   endif
 }
 
-unsigned n_tests = 0;
+AO_t n_tests = 0;
 
 GC_word bm_huge[10] = {
     0xffffffff,
@@ -1019,7 +1019,6 @@ void run_one_test()
     CLOCK_TYPE reverse_time;
     CLOCK_TYPE tree_time;
     unsigned long time_diff;
-    DCL_LOCK_STATE;
     
 #   ifdef FIND_LEAK
 	GC_printf(
@@ -1184,9 +1183,11 @@ void run_one_test()
       GC_log_printf("-------------Finished tree_test at time %u (%p)\n",
 	  	      (unsigned) time_diff, &start_time);
     }
-    LOCK();
-    n_tests++;
-    UNLOCK();
+#   ifdef THREADS
+      (void)AO_fetch_and_add1_full(&n_tests);
+#   else
+      n_tests++;
+#   endif
 #   if defined(THREADS) && defined(HANDLE_FORK)
       if (fork() == 0) {
 	GC_gcollect();
@@ -1238,7 +1239,7 @@ void check_heap_stats()
         GC_gcollect();
         late_finalize_count += GC_invoke_finalizers();
       }
-    (void)GC_printf("Completed %u tests\n", n_tests);
+    (void)GC_printf("Completed %u tests\n", (unsigned) n_tests);
     (void)GC_printf("Allocated %d collectable objects\n", collectable_count);
     (void)GC_printf("Allocated %d uncollectable objects\n",
 		    uncollectable_count);
@@ -1489,7 +1490,7 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
 # endif
   DWORD thread_id;
 
-# ifdef GC_DLL
+# if defined(GC_DLL) && !defined(THREAD_LOCAL_ALLOC) && !defined(PARALLEL_MARK)
     GC_use_DllMain();  /* Test with implicit thread registration if possible. */
     GC_printf("Using DllMain to track threads\n");
 # endif
