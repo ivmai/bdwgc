@@ -1188,7 +1188,7 @@ STATIC pthread_cond_t builder_cv = PTHREAD_COND_INITIALIZER;
 /* as in pthread_support.c except that GC_generic_lock() is not used.	*/
 
 #ifdef LOCK_STATS
-  unsigned long GC_block_count = 0;
+  AO_t GC_block_count = 0;
 #endif
 
 void GC_acquire_mark_lock(void)
@@ -1197,7 +1197,7 @@ void GC_acquire_mark_lock(void)
 	ABORT("pthread_mutex_lock failed");
     }
 #   ifdef LOCK_STATS
-	++GC_block_count;
+	(void)AO_fetch_and_add1(&GC_block_count);
 #   endif
     /* GC_generic_lock(&mark_mutex); */
 #   ifdef GC_ASSERTIONS
@@ -1305,109 +1305,31 @@ STATIC HANDLE builder_cv = (HANDLE)0; /* Event with manual reset */
 
 /* mark_mutex_event, builder_cv, mark_cv are initialized in GC_thr_init(). */
 
-#ifdef MARKLOCK_USES_SPIN
-/* MARKLOCK_USES_SPIN has the opposite meaning to NO_PTHREAD_TRYLOCK. */
-
-/* GC_pause() is the same as in pthread_support.c */
-
-/* Spend a few cycles in a way that can't introduce contention with	*/
-/* other threads.							*/
-STATIC void GC_pause(void)
-{
-    int i;
-#   if !defined(__GNUC__) || defined(__INTEL_COMPILER)
-      volatile word dummy = 0;
-#   endif
-
-    for (i = 0; i < 10; ++i) { 
-#     if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-        __asm__ __volatile__ (" " : : : "memory");
-#     else
-	/* Something that's unlikely to be optimized away. */
-	GC_noop1(++dummy);
-#     endif
-    }
-}
-
-#ifndef SPIN_MAX
-#define SPIN_MAX 128	/* Maximum number of calls to GC_pause before	*/
-#endif			/* give up.					*/
-
-volatile unsigned GC_spinning_disabled; /* don't spin if non-zero */
-
-STATIC int GC_spin_and_trylock(volatile AO_t *pmutex_waitcnt)
-{
-  unsigned pause_length;
-  unsigned i;
-  GC_pause();
-  for (pause_length = 2; pause_length <= SPIN_MAX; pause_length <<= 1) {
-    /* FIXME: Should we use ..._full version of CAS here (and below)?	*/
-    if (AO_compare_and_swap(pmutex_waitcnt, 0, 1))
-      return 0;
-    if (GC_spinning_disabled)
-      break;
-    for (i = 0; i < pause_length; ++i)
-      GC_pause();
-  }
-  /* Failed. */
-  /* Don't do final AO_compare_and_swap() after pausing. */
-  return -1;
-}
-
-#endif /* MARKLOCK_USES_SPIN */
-
 /* #define LOCK_STATS */
 #ifdef LOCK_STATS
-  unsigned long GC_spin_count = 0;
-  unsigned long GC_block_count = 0;
-  unsigned long GC_unlocked_count = 0;
+  AO_t GC_block_count = 0;
+  AO_t GC_unlocked_count = 0;
 #endif
 
 void GC_acquire_mark_lock(void)
 {
-# ifdef MARKLOCK_USES_SPIN
-  /* Here we implement the same spinning algorithm as	*/
-  /* in GC_generic_lock() in pthread_support.c.	*/
-
-  if (GC_spinning_disabled)
-    goto nospinning;
-  if (!AO_compare_and_swap(&GC_mark_mutex_waitcnt, 0, 1)) {
-    if (GC_spin_and_trylock(&GC_mark_mutex_waitcnt) < 0) {
-     nospinning:
-# endif
-
-      if (AO_fetch_and_add1_full(&GC_mark_mutex_waitcnt) != 0) {
+    if (AO_fetch_and_add1_acquire(&GC_mark_mutex_waitcnt) != 0) {
 #	ifdef LOCK_STATS
-          ++GC_block_count;
+          (void)AO_fetch_and_add1(&GC_block_count);
 #	endif
         if (WaitForSingleObject(mark_mutex_event, INFINITE) == WAIT_FAILED)
           ABORT("WaitForSingleObject() failed");
-      }
-#     ifdef LOCK_STATS
-        else {
-#	  ifdef MARKLOCK_USES_SPIN
-	    ++GC_spin_count;
-#	  else
-	    ++GC_unlocked_count;
-#	  endif
-	}
-#     endif
-  
-# ifdef MARKLOCK_USES_SPIN
     }
 #   ifdef LOCK_STATS
-      else ++GC_spin_count;
+        else {
+	  (void)AO_fetch_and_add1(&GC_unlocked_count);
+	}
 #   endif
-  }
-# ifdef LOCK_STATS
-    else ++GC_unlocked_count;
-# endif
-# endif
   
-  GC_ASSERT(GC_mark_lock_holder == NO_THREAD);
-# ifdef GC_ASSERTIONS
-    GC_mark_lock_holder = (unsigned long)GetCurrentThreadId();
-# endif
+    GC_ASSERT(GC_mark_lock_holder == NO_THREAD);
+#   ifdef GC_ASSERTIONS
+	GC_mark_lock_holder = (unsigned long)GetCurrentThreadId();
+#   endif
 }
 
 void GC_release_mark_lock(void)
@@ -1417,7 +1339,7 @@ void GC_release_mark_lock(void)
 	GC_mark_lock_holder = NO_THREAD;
 #   endif
     GC_ASSERT(GC_mark_mutex_waitcnt != 0);
-    if (AO_fetch_and_sub1_full(&GC_mark_mutex_waitcnt) > 1 &&
+    if (AO_fetch_and_sub1_release(&GC_mark_mutex_waitcnt) > 1 &&
 	 SetEvent(mark_mutex_event) == FALSE)
 	ABORT("SetEvent() failed");
 }
@@ -1487,15 +1409,13 @@ void GC_wait_marker(void)
 	GC_mark_lock_holder = NO_THREAD;
 #   endif
     
-    if ((waitcnt = GC_mark_mutex_waitcnt) > 1) {
+    /* FIXME: This looks dubious to me.  Is it really OK if	*/
+    /* GC_mark_mutex_waitcnt is decremented between the 	*/
+    /* following two lines?- HB					*/
+    if ((waitcnt = AO_load(&GC_mark_mutex_waitcnt)) > 1) {
 	(void)AO_fetch_and_sub1_full(&GC_mark_mutex_waitcnt);
     } else {
 	GC_ASSERT(waitcnt != 0);
-#	ifdef MARKLOCK_USES_SPIN
-	   /* Avoid spinning since GC_mark_mutex_waitcnt is guaranteed	*/
-	   /* to be non-zero till the end of this function.		*/
-           GC_spinning_disabled++;
-#	endif
     }
 
     /* The state of mark_cv is non-signaled here. */
@@ -1516,10 +1436,6 @@ void GC_wait_marker(void)
 	GC_ASSERT(GC_mark_lock_holder == NO_THREAD);
 #	ifdef GC_ASSERTIONS
 	    GC_mark_lock_holder = (unsigned long)GetCurrentThreadId();
-#	endif
-#	ifdef MARKLOCK_USES_SPIN
-	    /* Allow spinning now */
-	    GC_spinning_disabled--;
 #	endif
     }
 }

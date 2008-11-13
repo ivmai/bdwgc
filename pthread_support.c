@@ -1259,9 +1259,9 @@ volatile GC_bool GC_collecting = 0;
 
 /* #define LOCK_STATS */
 #ifdef LOCK_STATS
-  unsigned long GC_spin_count = 0;
-  unsigned long GC_block_count = 0;
-  unsigned long GC_unlocked_count = 0;
+  AO_t GC_spin_count = 0;
+  AO_t GC_block_count = 0;
+  AO_t GC_unlocked_count = 0;
 #endif
 
 STATIC void GC_generic_lock(pthread_mutex_t * lock)
@@ -1272,7 +1272,7 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
     
     if (0 == pthread_mutex_trylock(lock)) {
 #       ifdef LOCK_STATS
-	    ++GC_unlocked_count;
+	    (void)AO_fetch_and_add1(&GC_unlocked_count);
 #       endif
 	return;
     }
@@ -1283,7 +1283,7 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
         switch(pthread_mutex_trylock(lock)) {
 	    case 0:
 #		ifdef LOCK_STATS
-		    ++GC_spin_count;
+		    (void)AO_fetch_and_add1(&GC_spin_count);
 #		endif
 		return;
 	    case EBUSY:
@@ -1294,7 +1294,7 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
     }
 #endif /* !NO_PTHREAD_TRYLOCK */
 #   ifdef LOCK_STATS
-	++GC_block_count;
+	(void)AO_fetch_and_add1(&GC_block_count);
 #   endif
     pthread_mutex_lock(lock);
 }

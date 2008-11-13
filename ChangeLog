@@ -1,3 +1,9 @@
+2008-11-12  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Ivan Maidansky)
+	* win32_threads.c: Remove mark lock spinning.
+	* win32_threads.c, pthread_support.c: Update GC_unlocked_count,
+	GC_spin_count, and GC_block_count using atomic operations.
+	* tests/test.c: Declare n_tests as AO_t only if we have threads.
+
 2008-11-11  Hans Boehm <Hans.Boehm@hp.com>
 	(Really almost entirely Ivan Maidansky)
 	* win32_threads.c: Support PARALLEL_MARK.  Make printf arg

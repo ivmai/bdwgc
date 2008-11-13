@@ -879,7 +879,11 @@ void tree_test()
 #   endif
 }
 
-AO_t n_tests = 0;
+#ifdef THREADS
+  AO_t n_tests = 0;
+#else
+  unsigned n_tests = 0;
+#endif
 
 GC_word bm_huge[10] = {
     0xffffffff,
