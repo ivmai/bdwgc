@@ -1145,15 +1145,10 @@ WRAP_FUNC(pthread_detach)(pthread_t thread)
 
 GC_bool GC_in_thread_creation = FALSE;
 
-void * GC_start_routine(void * arg)
+static GC_thread do_register_thread(void *dummy_ptr, int flags)
 {
-    int dummy;
-    struct start_info * si = arg;
-    void * result;
     GC_thread me;
     pthread_t my_pthread;
-    void *(*start)(void *);
-    void *start_arg;
 
     my_pthread = pthread_self();
 #   ifdef DEBUG_THREADS
@@ -1170,13 +1165,13 @@ void * GC_start_routine(void * arg)
 #else
     me -> stop_info.stack_ptr = 0;
 #endif
-    me -> flags = si -> flags;
+    me -> flags = flags;
     /* me -> stack_end = GC_linux_stack_base(); -- currently (11/99)	*/
     /* doesn't work because the stack base in /proc/self/stat is the 	*/
     /* one for the main thread.  There is a strong argument that that's	*/
     /* a kernel bug, but a pervasive one.				*/
 #   ifdef STACK_GROWS_DOWN
-      me -> stack_end = (ptr_t)(((word)(&dummy) + (GC_page_size - 1))
+      me -> stack_end = (ptr_t)(((word)(dummy_ptr) + (GC_page_size - 1))
 		                & ~(GC_page_size - 1));
 #	  ifndef GC_DARWIN_THREADS
         me -> stop_info.stack_ptr = me -> stack_end - 0x10;
@@ -1184,7 +1179,7 @@ void * GC_start_routine(void * arg)
 	/* Needs to be plausible, since an asynchronous stack mark	*/
 	/* should not crash.						*/
 #   else
-      me -> stack_end = (ptr_t)((word)(&dummy) & ~(GC_page_size - 1));
+      me -> stack_end = (ptr_t)((word)(dummy_ptr) & ~(GC_page_size - 1));
       me -> stop_info.stack_ptr = me -> stack_end + 0x10;
 #   endif
     /* This is dubious, since we may be more than a page into the stack, */
@@ -1196,6 +1191,21 @@ void * GC_start_routine(void * arg)
       /* from /proc, but the hook to do so isn't there yet.		*/
 #   endif /* IA64 */
     UNLOCK();
+
+    return me;
+}
+
+void * GC_start_routine(void * arg)
+{
+    int dummy;
+    struct start_info * si = arg;
+    void * result;
+    GC_thread me;
+    void *(*start)(void *);
+    void *start_arg;
+
+    me = do_register_thread(&dummy, si -> flags);
+
     start = si -> start_routine;
 #   ifdef DEBUG_THREADS
 	GC_printf1("start_routine = 0x%lx\n", start);
@@ -1219,6 +1229,21 @@ void * GC_start_routine(void * arg)
     /* while a collection that thinks we're alive is trying to stop     */
     /* us.								*/
     return(result);
+}
+
+void *GC_thread_register_this(void *stack_bottom)
+{
+    GC_thread me;
+
+    me = do_register_thread(stack_bottom, DETACHED);
+
+#   if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
+ 	LOCK();
+        GC_init_thread_local(me);
+	UNLOCK();
+#   endif
+
+    return me;    
 }
 
 int
