@@ -1,3 +1,7 @@
+2008-12-01  Hans Boehm <Hans.Boehm@hp.com>
+	* reclaim.c: (GC_reclaim_block): Scan even nearly full blocks
+	if we are checking for leaks.
+
 2008-11-12  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Ivan Maidansky)
 	* win32_threads.c: Remove mark lock spinning.
 	* win32_threads.c, pthread_support.c: Update GC_unlocked_count,

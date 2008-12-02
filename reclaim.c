@@ -309,7 +309,7 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
         } else if (empty) {
           GC_bytes_found += HBLKSIZE;
           GC_freehblk(hbp);
-        } else if (TRUE != GC_block_nearly_full(hhdr)){
+        } else if (GC_find_leak || !GC_block_nearly_full(hhdr)){
           /* group of smaller objects, enqueue the real work */
           rlh = &(ok -> ok_reclaim_list[BYTES_TO_GRANULES(sz)]);
           hhdr -> hb_next = *rlh;
