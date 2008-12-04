@@ -74,7 +74,10 @@ STATIC void GC_print_source_ptr(ptr_t p)
 	}
     } else {
 	GC_err_printf("in object at ");
-	(*GC_print_heap_obj)(base);
+	/* FIXME: We can't call the debug version of GC_print_heap_obj	*/
+	/* (with PRINT_CALL_CHAIN) here because	the lock is held and	*/
+	/* the world is stopped.					*/
+	GC_default_print_heap_obj_proc(base);
     }
 }
 #endif
