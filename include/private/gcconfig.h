@@ -1931,7 +1931,7 @@
 #     define STACKBOTTOM ((ptr_t) 0x30000000)
 #     define USE_MMAP
 #     define USE_MMAP_ANON
-#     define USE_MUNMAP
+/*#     define USE_MUNMAP*/
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.  */
