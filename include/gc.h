@@ -291,7 +291,7 @@ GC_API void * GC_CALL GC_malloc_atomic_uncollectable(size_t size_in_bytes);
 /* Explicitly deallocate an object.  Dangerous if used incorrectly.     */
 /* Requires a pointer to the base of an object.				*/
 /* If the argument is stubborn, it should not be changeable when freed. */
-/* An object should not be enable for finalization when it is 		*/
+/* An object should not be enabled for finalization when it is		*/
 /* explicitly deallocated.						*/
 /* GC_free(0) is a no-op, as required by ANSI C for free.		*/
 GC_API void GC_CALL GC_free(void * object_addr);
@@ -806,7 +806,7 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 	/* be finalized.  Return the number of finalizers	*/
 	/* that were run.  Normally this is also called		*/
 	/* implicitly during some allocations.	If		*/
-	/* GC-finalize_on_demand is nonzero, it must be called	*/
+	/* GC_finalize_on_demand is nonzero, it must be called	*/
 	/* explicitly.						*/
 
 /* Explicitly tell the collector that an object is reachable	*/
