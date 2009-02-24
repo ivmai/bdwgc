@@ -287,7 +287,7 @@ STATIC void GC_null_finalize_mark_proc(ptr_t p)
 /* GC_unreachable_finalize_mark_proc is an alias for normal marking,	*/
 /* but it is explicitly tested for, and triggers different		*/
 /* behavior.  Objects registered in this way are not finalized		*/
-/* if they are reachable by other finalizable objects, eve if those	*/
+/* if they are reachable by other finalizable objects, even if those	*/
 /* other objects specify no ordering.					*/
 STATIC void GC_unreachable_finalize_mark_proc(ptr_t p)
 {

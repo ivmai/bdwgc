@@ -1,3 +1,6 @@
+2009-02-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+	* finalize.c: Fix typo in comment.
+
 2008-12-03  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
 	* blacklst.c (GC_print_source_pointer): Don't call GC_print_heap_obj
 	with lock.
