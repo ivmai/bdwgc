@@ -218,7 +218,7 @@ struct fake_vtable gcj_class_struct1 = { 0, sizeof(struct SEXPR)
 					    + sizeof(struct fake_vtable *) };
 			/* length based descriptor.	*/
 struct fake_vtable gcj_class_struct2 =
-				{ 0, (3l << (CPP_WORDSZ - 3)) | GC_DS_BITMAP};
+			{ 0, ((size_t)3 << (CPP_WORDSZ - 3)) | GC_DS_BITMAP};
 			/* Bitmap based descriptor.	*/
 
 struct GC_ms_entry * fake_gcj_mark_proc(word * addr,
@@ -475,12 +475,12 @@ void check_marks_int_list(sexpr x)
     	h = GC_CreateThread(NULL, 0, tiny_reverse_test, 0, 0, &thread_id);
         if (h == (HANDLE)NULL) {
             (void)GC_printf("Small thread creation failed %d\n",
-			    GetLastError());
+			    (int)GetLastError());
       	    FAIL;
         }
     	if (WaitForSingleObject(h, INFINITE) != WAIT_OBJECT_0) {
       	    (void)GC_printf("Small thread wait failed %d\n",
-			    GetLastError());
+			    (int)GetLastError());
       	    FAIL;
     	}
     }
@@ -1057,9 +1057,9 @@ void run_one_test()
     	GC_printf("GC_base(heap ptr) produced incorrect result\n");
 	FAIL;
       }
-      GC_PRE_INCR(x, 0);
-      GC_POST_INCR(x);
-      GC_POST_DECR(x);
+      (void)GC_PRE_INCR(x, 0);
+      (void)GC_POST_INCR(x);
+      (void)GC_POST_DECR(x);
       if (GC_base(x) != x) {
     	GC_printf("Bad INCR/DECR result\n");
 	FAIL;
@@ -1142,7 +1142,7 @@ void run_one_test()
 	 }
 #   ifdef GC_GCJ_SUPPORT
       GC_REGISTER_DISPLACEMENT(sizeof(struct fake_vtable *));
-      GC_init_gcj_malloc(0, (void *)fake_gcj_mark_proc);
+      GC_init_gcj_malloc(0, (void *)(GC_word)fake_gcj_mark_proc);
 #   endif
     /* Make sure that fn arguments are visible to the collector.	*/
       uniq(
@@ -1295,6 +1295,7 @@ void check_heap_stats()
         FAIL;
     }
     if (GC_get_heap_size() > max_heap_sz*n_tests) {
+	/* FIXME: is the condition correct?	*/
         (void)GC_printf("Unexpected heap growth - collector may be broken\n");
         FAIL;
     }
@@ -1507,12 +1508,12 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
 # ifdef MSWINCE
     win_created_h = CreateEvent(NULL, FALSE, FALSE, NULL);
     if (win_created_h == (HANDLE)NULL) {
-      (void)GC_printf("Event creation failed %\n", GetLastError());
+      (void)GC_printf("Event creation failed %d\n", (int)GetLastError());
       FAIL;
     }
     win_thr_h = GC_CreateThread(NULL, 0, thr_window, 0, 0, &thread_id);
     if (win_thr_h == (HANDLE)NULL) {
-      (void)GC_printf("Thread creation failed %d\n", GetLastError());
+      (void)GC_printf("Thread creation failed %d\n", (int)GetLastError());
       FAIL;
     }
     if (WaitForSingleObject(win_created_h, INFINITE) != WAIT_OBJECT_0)
@@ -1523,7 +1524,7 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
    for (i = 0; i < NTEST; i++) {
     h[i] = GC_CreateThread(NULL, 0, thr_run_one_test, 0, 0, &thread_id);
     if (h[i] == (HANDLE)NULL) {
-      (void)GC_printf("Thread creation failed %d\n", GetLastError());
+      (void)GC_printf("Thread creation failed %d\n", (int)GetLastError());
       FAIL;
     }
    }
@@ -1532,7 +1533,7 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
 # if NTEST > 0
    for (i = 0; i < NTEST; i++) {
     if (WaitForSingleObject(h[i], INFINITE) != WAIT_OBJECT_0) {
-      (void)GC_printf("Thread wait failed %d\n", GetLastError());
+      (void)GC_printf("Thread wait failed %d\n", (int)GetLastError());
       FAIL;
     }
    }
@@ -1657,7 +1658,7 @@ int main()
     check_heap_stats();
     (void)fflush(stdout);
     pthread_attr_destroy(&attr);
-    GC_printf("Completed %d collections\n", GC_gc_no);
+    GC_printf("Completed %u collections\n", (unsigned)GC_gc_no);
 #   ifdef PTW32_STATIC_LIB
 	pthread_win32_thread_detach_np ();
 	pthread_win32_process_detach_np ();

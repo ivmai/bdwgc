@@ -1,4 +1,12 @@
 2009-02-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+	* tests/test.c:
+	(gcj_class_struct2): Use cast instead of l suffix.
+	Cast GetLastError to int in various places.
+	Avoid unused result warning from incr/decr macros.
+	Add cast for fake_gcj_mark_proc.
+	Cast GC_gc_no to unsigned in printf.
+
+2009-02-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
 	* include/gc.h: Fix two typos in comments.
 
 2009-02-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
