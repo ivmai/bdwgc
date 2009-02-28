@@ -56,9 +56,6 @@
   typedef unsigned long GC_word;
   typedef long GC_signed_word;
 #else
-  /* Win64 isn't really supported yet, but this is the first step. And	*/
-  /* it might cause error messages to show up in more plausible places.	*/
-  /* This needs basetsd.h, which is included by windows.h.	 	*/
 #ifdef __int64
   typedef unsigned __int64 GC_word;
   typedef __int64 GC_signed_word;
@@ -274,9 +271,8 @@ GC_API void GC_CALL GC_init(void);
  * be reachable.  GC_malloc_uncollectable and GC_free called on the resulting
  * object implicitly update GC_non_gc_bytes appropriately.
  *
- * Note that the GC_malloc_stubborn support is stubbed out by default
- * starting in 6.0.  GC_malloc_stubborn is an alias for GC_malloc unless
- * the collector is built with STUBBORN_ALLOC defined.
+ * Note that the GC_malloc_stubborn support doesn't really
+ * exist anymore.  MANUAL_VDB provides comparable functionality.
  */
 GC_API void * GC_CALL GC_malloc(size_t size_in_bytes);
 GC_API void * GC_CALL GC_malloc_atomic(size_t size_in_bytes);

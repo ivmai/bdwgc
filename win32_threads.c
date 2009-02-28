@@ -944,36 +944,53 @@ STATIC void GC_push_stack_for(GC_thread thread)
 #       endif
       } /* ! current thread */
 
-      /* If got sp value seems to be correct (at least, less than the	*/
-      /* bottom of the stack) then do its further validation by quick	*/
-      /* probing the memory region at it.				*/
       /* Set stack_min to the lowest address in the thread stack, 	*/
+      /* or to an address in the thread stack no larger than sp,	*/
       /* taking advantage of the old value to avoid slow traversals	*/
       /* of large stacks.						*/
       if (thread -> last_stack_min == ADDR_LIMIT) {
       	stack_min = GC_get_stack_min(thread -> stack_base);
+        thread -> last_stack_min = stack_min;
       } else {
-#       ifdef MSWINCE
-	  stack_min = GC_get_stack_min(thread -> stack_base);
-#       else
-          if (GC_may_be_in_stack(thread -> last_stack_min)) {
-            stack_min = GC_get_stack_min(thread -> last_stack_min);
-	  } else {
+	if (sp < thread -> stack_base && sp >= thread -> last_stack_min) {
+	    stack_min = sp;
+	} else {
+#         ifdef MSWINCE
 	    stack_min = GC_get_stack_min(thread -> stack_base);
-	  }
-#	endif
+#         else
+            if (GC_may_be_in_stack(thread -> last_stack_min)) {
+              stack_min = GC_get_stack_min(thread -> last_stack_min);
+	    } else {
+	      /* Stack shrunk?  Is this possible? */
+	      stack_min = GC_get_stack_min(thread -> stack_base);
+	    }
+#	  endif
+          thread -> last_stack_min = stack_min;
+	}
       }
-      thread -> last_stack_min = stack_min;
+      GC_ASSERT(stack_min == GC_get_stack_min(thread -> stack_base)
+      		|| sp >= stack_min && stack_min < thread -> stack_base
+		   && stack_min > GC_get_stack_min(thread -> stack_base));
 
       if (sp >= stack_min && sp < thread->stack_base) {
 #       ifdef DEBUG_THREADS
-	  GC_printf("Pushing thread from %p to %p for 0x%x from 0x%x\n",
-		    sp, thread -> stack_base, (int)thread -> id, (int)me);
+	  GC_printf("Pushing stack for 0x%x from sp %p to %p from 0x%x\n",
+		    (int)thread -> id, sp, thread -> stack_base, (int)me);
 #       endif
         GC_push_all_stack(sp, thread->stack_base);
       } else {
-        WARN("Thread stack pointer 0x%lx out of range, pushing everything\n",
-	     (unsigned long)(size_t)sp);
+	/* If not current thread then it is possible for sp to point to	*/
+	/* the guarded (untouched yet) page just below the current	*/
+	/* stack_min of the thread.					*/
+	if (thread -> id == me || sp >= thread->stack_base
+		|| sp + GC_page_size < stack_min)
+	  WARN("Thread stack pointer 0x%lx out of range, pushing everything\n",
+		(unsigned long)(size_t)sp);
+#       ifdef DEBUG_THREADS
+	  GC_printf("Pushing stack for 0x%x from (min) %p to %p from 0x%x\n",
+		    (int)thread -> id, stack_min,
+		    thread -> stack_base, (int)me);
+#       endif
         GC_push_all_stack(stack_min, thread->stack_base);
       }
     } /* thread looks live */
@@ -1470,11 +1487,11 @@ STATIC void * GC_CALLBACK GC_win32_start_inner(struct GC_stack_base *sb,
     void * ret;
     thread_args *args = (thread_args *)arg;
 
+    GC_register_my_thread(sb); /* This waits for an in-progress GC. */
+
 #   if DEBUG_WIN32_THREADS
       GC_printf("thread 0x%x starting...\n", (unsigned)GetCurrentThreadId());
 #   endif
-
-    GC_register_my_thread(sb); /* This waits for an in-progress GC. */
 
     /* Clear the thread entry even if we exit with an exception.	*/
     /* This is probably pointless, since an uncaught exception is	*/
@@ -2128,6 +2145,9 @@ void GC_mark_thread_local_free_lists(void)
     
     for (i = 0; i < THREAD_TABLE_SZ; ++i) {
       for (p = GC_threads[i]; 0 != p; p = p -> next) {
+#       ifdef DEBUG_THREADS
+	  GC_printf("Marking thread locals for 0x%x\n", p -> id);
+#	endif
 	GC_mark_thread_local_fls_for(&(p->tlfs));
       }
     }

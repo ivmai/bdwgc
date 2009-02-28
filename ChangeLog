@@ -1,3 +1,11 @@
+2009-02-28  Hans Boehm <Hans.Boehm@hp.com> (With input from Ivan Maidansky)
+	* win32_threads.c (GC_push_stack_for): Yet another attempt
+	at the stack_min finding logic.  Try to clean up the existing code
+	while minimizing VirtualQuery calls.
+	(GC_win32_start_inner): Register thread before GC_printf.
+	Produce more output with DEBUG_THREADS.
+	*include/gc.h: Update obsolete comments.
+
 2009-02-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
 	* tests/test.c:
 	(gcj_class_struct2): Use cast instead of l suffix.
