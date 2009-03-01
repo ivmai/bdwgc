@@ -1,3 +1,10 @@
+2009-02-28  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+	* alloc.c (GC_try_to_collect): Remove duplicate initialization
+	check.
+	* malloc.c (GC_generic_malloc): Remove lw to eliminate single-
+	threaded warnings.
+	* mallocx.c (GC_generic_malloc_ignore_off_page): Ditto.
+
 2009-02-28  Hans Boehm <Hans.Boehm@hp.com> (Mostly Ivan Maidansky)
 	* allchblk.c, backgraph.c, dbg_mlc.c, dyn_load.c,
 	finalize.c, include/private/gc_pmark.h, malloc.c, mark.c,

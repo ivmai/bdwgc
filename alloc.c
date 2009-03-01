@@ -822,7 +822,6 @@ GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
     GC_INVOKE_FINALIZERS();
     LOCK();
     ENTER_GC();
-    if (!GC_is_initialized) GC_init_inner();
     /* Minimize junk left in my registers */
       GC_noop(0,0,0,0,0,0);
     result = (int)GC_try_to_collect_inner(stop_func);
