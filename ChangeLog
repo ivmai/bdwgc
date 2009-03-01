@@ -1,3 +1,7 @@
+2009-02-28  Hans Boehm <Hans.Boehm@hp.com> (Really Petr Krajca)
+	* configure.ac: Enable thread-local allocation for sparc-linux.
+	* configure: Regenerate.
+
 2009-02-28  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
 	* alloc.c (GC_try_to_collect): Remove duplicate initialization
 	check.
@@ -10,7 +14,7 @@
 	finalize.c, include/private/gc_pmark.h, malloc.c, mark.c,
 	os_dep.c, pthread_stop_world.c, pthread_support.c, reclaim.c,
 	thread_local_alloc.c.
-	* misc.s: Refine comment.
+	* misc.c: Refine comment.
 
 2009-02-28  Hans Boehm <Hans.Boehm@hp.com>
 	* os_dep.c: Define GC_GWW_BUF_LEN more intelligently.  Add FIXME
