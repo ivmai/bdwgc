@@ -193,8 +193,7 @@ GC_bool GC_has_other_debug_info(ptr_t p)
 	GC_err_printf("No debug info in object: Can't find reference\n");
 	goto out;
       }
-      GC_err_printf("Reachable via %d levels of pointers from ",
-		 (unsigned long)i);
+      GC_err_printf("Reachable via %d levels of pointers from ", i);
       switch(source) {
 	case GC_REFD_FROM_ROOT:
 	  GC_err_printf("root at %p\n\n", base);
@@ -417,8 +416,8 @@ STATIC void GC_print_smashed_obj(ptr_t p, ptr_t clobbered_addr)
     GC_err_printf("%p in or near object at %p(", clobbered_addr, p);
     if (clobbered_addr <= (ptr_t)(&(ohdr -> oh_sz))
         || ohdr -> oh_string == 0) {
-        GC_err_printf("<smashed>, appr. sz = %ld)\n",
-        	       (GC_size((ptr_t)ohdr) - DEBUG_BYTES));
+        GC_err_printf("<smashed>, appr. sz = %lu)\n",
+		      (unsigned long)(GC_size((ptr_t)ohdr) - DEBUG_BYTES));
     } else {
         if ((word)(ohdr -> oh_string) < HBLKSIZE) {
             GC_err_puts("(smashed string)");

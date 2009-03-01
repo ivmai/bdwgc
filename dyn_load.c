@@ -594,7 +594,7 @@ void GC_register_dynamic_libraries(void)
 #   endif /* SOLARISDL */
 
     if (fd < 0) {
-      sprintf(buf, "/proc/%d", getpid());
+      sprintf(buf, "/proc/%ld", (long)getpid());
 	/* The above generates a lint complaint, since pid_t varies.	*/
 	/* It's unclear how to improve this.				*/
       fd = open(buf, O_RDONLY);
@@ -613,7 +613,7 @@ void GC_register_dynamic_libraries(void)
 						(current_sz * sizeof(prmap_t)));
     }
     if (ioctl(fd, PIOCMAP, addr_map) < 0) {
-        GC_err_printf("fd = %d, errno = %d, needed_sz = %d, addr_map = 0x%X\n",
+        GC_err_printf("fd = %d, errno = %d, needed_sz = %d, addr_map = %p\n",
                         fd, errno, needed_sz, addr_map);
     	ABORT("/proc PIOCMAP ioctl failed");
     };

@@ -265,8 +265,9 @@ char * GC_get_maps(void)
 	    close(f);
 #	    ifdef THREADS
 	      if (maps_size > old_maps_size) {
-		GC_err_printf("Old maps size = %d, new maps size = %d\n",
-			      old_maps_size, maps_size);
+		GC_err_printf("Old maps size = %lu, new maps size = %lu\n",
+			      (unsigned long)old_maps_size,
+			      (unsigned long)maps_size);
 		ABORT("Unexpected asynchronous /proc/self/maps growth: "
 		      "Unregistered thread?");
 	      }
@@ -2228,7 +2229,9 @@ STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
 
 #ifdef GWW_VDB
 
-# define GC_GWW_BUF_LEN 1024
+# define GC_GWW_BUF_LEN (MAXHINCR * HBLKSIZE / 4096 /* X86 page size */)
+  /* Still susceptible to overflow, if there are very large allocations, */
+  /* and everything is dirty.						 */
   static PVOID gww_buf[GC_GWW_BUF_LEN];
 
 # ifdef MPROTECT_VDB
@@ -2315,6 +2318,9 @@ STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
           }
         }
       } while (count == GC_GWW_BUF_LEN);
+      /* FIXME: It's unclear from Microsoft's documentation if this loop  */
+      /* is useful.  We suspect the call just fails if the buffer fills	  */
+      /* up.  But that should still be handled correctly.		  */
     }
 
     GC_or_pages(GC_written_pages, GC_grungy_pages);
@@ -2527,8 +2533,7 @@ void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
 #   define PROTECT(addr, len) \
 	  if (!VirtualProtect((addr), (len), PAGE_EXECUTE_READ, \
 	  		      &protect_junk)) { \
-	    DWORD last_error = GetLastError(); \
-	    GC_printf("Last error code: %lx\n", last_error); \
+	    GC_printf("Last error code: %lx\n", (long)GetLastError()); \
 	    ABORT("VirtualProtect failed"); \
 	  }
 #   define UNPROTECT(addr, len) \
@@ -3171,7 +3176,7 @@ void GC_dirty_init(void)
 	    	      (unsigned long)
 	    	      		(GC_bytes_allocd + GC_bytes_allocd_before_gc));
     }
-    sprintf(buf, "/proc/%d", getpid());
+    sprintf(buf, "/proc/%ld", (long)getpid());
     fd = open(buf, O_RDONLY);
     if (fd < 0) {
     	ABORT("/proc open failed");

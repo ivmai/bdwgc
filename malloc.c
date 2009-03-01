@@ -401,7 +401,7 @@ GC_API void GC_CALL GC_free(void * p)
     if (p == 0) return;
     	/* Required by ANSI.  It's not my fault ...	*/
 #   ifdef LOG_ALLOCS
-      GC_err_printf("GC_free(%p): %d\n", p, GC_gc_no);
+      GC_err_printf("GC_free(%p): %lu\n", p, (unsigned long)GC_gc_no);
 #   endif
     h = HBLKPTR(p);
     hhdr = HDR(h);

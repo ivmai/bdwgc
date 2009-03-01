@@ -403,12 +403,11 @@ STATIC void GC_print_block_descr(struct hblk *h,
     unsigned n_marks = GC_n_set_marks(hhdr);
     
     if (hhdr -> hb_n_marks != n_marks) {
-      GC_printf("(%u:%u,%u!=%u)", hhdr -> hb_obj_kind,
-    			          bytes,
-    			          hhdr -> hb_n_marks, n_marks);
+      GC_printf("(%u:%u,%u!=%u)", hhdr -> hb_obj_kind, (unsigned)bytes,
+    			          (unsigned)hhdr -> hb_n_marks, n_marks);
     } else {
       GC_printf("(%u:%u,%u)", hhdr -> hb_obj_kind,
-    			      bytes, n_marks);
+    			      (unsigned)bytes, n_marks);
     }
     bytes += HBLKSIZE-1;
     bytes &= ~(HBLKSIZE-1);
@@ -442,10 +441,10 @@ void GC_print_free_list(int kind, size_t sz_in_granules)
     while (flh){
         struct hblk *block = HBLKPTR(flh);
         if (block != lastBlock){
-            GC_printf("\nIn heap block at 0x%x:\n\t", block);
+            GC_printf("\nIn heap block at %p:\n\t", block);
             lastBlock = block;
         }
-        GC_printf("%d: 0x%x;", ++n, flh);
+        GC_printf("%d: %p;", ++n, flh);
         flh = obj_link(flh);
     }
 }

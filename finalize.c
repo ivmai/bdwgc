@@ -167,7 +167,7 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
     		      &log_dl_table_size);
 	if (GC_print_stats) {
 	    GC_log_printf("Grew dl table to %u entries\n",
-	    	      (1 << log_dl_table_size));
+	    	      (1 << (unsigned)log_dl_table_size));
 	}
     }
     index = HASH2(link, log_dl_table_size);
@@ -325,7 +325,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
     		      &log_fo_table_size);
 	if (GC_print_stats) {
 	    GC_log_printf("Grew fo table to %u entries\n",
-	    	          (1 << log_fo_table_size));
+	    	          (1 << (unsigned)log_fo_table_size));
 	}
     }
     /* in the THREADS case signals are disabled and we hold allocation	*/
@@ -861,10 +861,10 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn,
 void GC_print_finalization_stats(void)
 {
     struct finalizable_object *fo = GC_finalize_now;
-    size_t ready = 0;
+    unsigned ready = 0;
 
     GC_printf("%u finalization table entries; %u disappearing links\n",
-	       GC_fo_entries, GC_dl_entries);
+	       (unsigned)GC_fo_entries, (unsigned)GC_dl_entries);
     for (; 0 != fo; fo = fo_next(fo)) ++ready;
     GC_printf("%u objects are eligible for immediate finalization\n", ready);
 }

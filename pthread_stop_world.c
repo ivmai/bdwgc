@@ -296,7 +296,7 @@ void GC_push_all_stacks(void)
 #	endif
 #	ifdef IA64
 #         if DEBUG_THREADS
-            GC_printf("Reg stack for thread 0x%x = [%lx,%lx)\n",
+            GC_printf("Reg stack for thread 0x%x = [%p,%p)\n",
     	              (unsigned)p -> id, bs_lo, bs_hi);
 #	  endif
           if (THREAD_EQUAL(p -> id, me)) {
@@ -310,7 +310,7 @@ void GC_push_all_stacks(void)
       }
     }
     if (GC_print_stats == VERBOSE) {
-	GC_log_printf("Pushed %d thread stacks\n", nthreads);
+	GC_log_printf("Pushed %d thread stacks\n", (int)nthreads);
     }
     if (!found_me && !GC_in_thread_creation)
       ABORT("Collecting from unknown thread.");

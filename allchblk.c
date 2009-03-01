@@ -117,7 +117,7 @@ void GC_print_hblkfreelist(void)
 		              (unsigned long)i);
 #     else
         if (0 != h) GC_printf("Free list %lu (Total size %lu):\n",
-		              i, (unsigned long)GC_free_bytes[i]);
+		              (long)i, (unsigned long)GC_free_bytes[i]);
 #     endif
       while (h != 0) {
         hhdr = HDR(h);
@@ -183,7 +183,7 @@ void GC_dump_regions(void)
 	    hhdr = HDR(p);
 	    GC_printf("\t%p ", p);
 	    if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-		GC_printf("Missing header!!(%d)\n", hhdr);
+		GC_printf("Missing header!!(%p)\n", hhdr);
 		p += HBLKSIZE;
 		continue;
 	    }

@@ -296,11 +296,13 @@ exit_label: ; \
     } \
     GC_ASSERT(hhdr == GC_find_header(base)); \
     GC_ASSERT(gran_displ % BYTES_TO_GRANULES(hhdr -> hb_sz) == 0); \
-    TRACE(source, GC_log_printf("GC:%d: passed validity tests\n",GC_gc_no)); \
+    TRACE(source, GC_log_printf("GC:%u: passed validity tests\n", \
+				(unsigned)GC_gc_no)); \
     SET_MARK_BIT_EXIT_IF_SET(hhdr, gran_displ, exit_label); \
-    TRACE(source, GC_log_printf("GC:%d: previously unmarked\n",GC_gc_no)); \
+    TRACE(source, GC_log_printf("GC:%u: previously unmarked\n", \
+				(unsigned)GC_gc_no)); \
     TRACE_TARGET(base, \
-	GC_log_printf("GC:%d: marking %p from %p instead\n", GC_gc_no, \
+	GC_log_printf("GC:%u: marking %p from %p instead\n", (unsigned)GC_gc_no, \
 		      base, source)); \
     INCR_MARKS(hhdr); \
     GC_STORE_BACK_PTR((ptr_t)source, base); \
@@ -352,11 +354,14 @@ exit_label: ; \
     /* May get here for pointer to start of block not at	*/ \
     /* beginning of object.  If so, it's valid, and we're fine. */ \
     GC_ASSERT(high_prod >= 0 && high_prod <= HBLK_OBJS(hhdr -> hb_sz)); \
-    TRACE(source, GC_log_printf("GC:%d: passed validity tests\n",GC_gc_no)); \
+    TRACE(source, GC_log_printf("GC:%u: passed validity tests\n", \
+				(unsigned)GC_gc_no)); \
     SET_MARK_BIT_EXIT_IF_SET(hhdr, high_prod, exit_label); \
-    TRACE(source, GC_log_printf("GC:%d: previously unmarked\n",GC_gc_no)); \
+    TRACE(source, GC_log_printf("GC:%u: previously unmarked\n", \
+				(unsigned)GC_gc_no)); \
     TRACE_TARGET(base, \
-	GC_log_printf("GC:%d: marking %p from %p instead\n", GC_gc_no, \
+	GC_log_printf("GC:%u: marking %p from %p instead\n",
+		      (unsigned)GC_gc_no, \
 		      base, source)); \
     INCR_MARKS(hhdr); \
     GC_STORE_BACK_PTR((ptr_t)source, base); \

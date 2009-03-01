@@ -298,7 +298,8 @@ void * GC_mark_thread(void * id)
 	my_mark_no = GC_mark_no;
     }
 #   ifdef DEBUG_THREADS
-	GC_printf("Starting mark helper for mark number %lu\n", my_mark_no);
+	GC_printf("Starting mark helper for mark number %lu\n",
+		(unsigned long)my_mark_no);
 #   endif
     GC_help_marker(my_mark_no);
   }
@@ -1061,7 +1062,7 @@ STATIC void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb,
 #   ifdef DEBUG_THREADS
         GC_printf("Starting thread 0x%x\n", (unsigned)my_pthread);
         GC_printf("pid = %ld\n", (long) getpid());
-        GC_printf("sp = 0x%lx\n", (long) &arg);
+        GC_printf("sp = %p\n", &arg);
 #   endif
     LOCK();
     me = GC_register_my_thread_inner(sb, my_pthread);
@@ -1069,7 +1070,7 @@ STATIC void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb,
     UNLOCK();
     start = si -> start_routine;
 #   ifdef DEBUG_THREADS
-	GC_printf("start_routine = %p\n", (void *)start);
+	GC_printf("start_routine = %p\n", (void *)(signed_word)start);
 #   endif
     start_arg = si -> arg;
     sem_post(&(si -> registered));	/* Last action on si.	*/
