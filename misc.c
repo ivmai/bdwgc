@@ -1032,7 +1032,12 @@ GC_API GC_warn_proc GC_CALL GC_set_warn_proc(GC_warn_proc p)
     GC_warn_proc result;
 
 #   ifdef GC_WIN32_THREADS
-      GC_ASSERT(GC_is_initialized);
+#     ifdef CYGWIN32
+	/* Need explicit GC_INIT call */
+        GC_ASSERT(GC_is_initialized);
+#     else
+	if (!GC_is_initialized) GC_init();
+#     endif
 #   endif
     LOCK();
     result = GC_current_warn_proc;

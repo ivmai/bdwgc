@@ -1,3 +1,7 @@
+2009-02-28  Hans Boehm <Hans.Boehm@hp.com>
+	* misc.c (GC_set_warn_proc): Implicitly intialize GC on
+	non-Cygwin win32.
+
 2009-02-28  Hans Boehm <Hans.Boehm@hp.com> (Really Petr Krajca)
 	* configure.ac: Enable thread-local allocation for sparc-linux.
 	* configure: Regenerate.
