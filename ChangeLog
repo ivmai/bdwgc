@@ -1,3 +1,7 @@
+2009-03-11  Hans Boehm <Hans.Boehm@hp.com>  (Really Ivan Maidanski)
+	* include/private/gc_pmark.h (PUSH_CONTENTS_HDR for
+	MARK_BIT_PER_OBJ): Add missing backslash before eoln.
+
 2009-02-28  Hans Boehm <Hans.Boehm@hp.com>
 	* misc.c (GC_set_warn_proc): Implicitly intialize GC on
 	non-Cygwin win32.

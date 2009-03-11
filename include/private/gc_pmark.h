@@ -360,7 +360,7 @@ exit_label: ; \
     TRACE(source, GC_log_printf("GC:%u: previously unmarked\n", \
 				(unsigned)GC_gc_no)); \
     TRACE_TARGET(base, \
-	GC_log_printf("GC:%u: marking %p from %p instead\n",
+	GC_log_printf("GC:%u: marking %p from %p instead\n", \
 		      (unsigned)GC_gc_no, \
 		      base, source)); \
     INCR_MARKS(hhdr); \
