@@ -1,3 +1,6 @@
+2009-03-16  Hans Boehm <Hans.Boehm@hp.com>
+	* os_dep.c (GC_linux_stack_base): Relax sanity test.
+
 2009-03-11  Hans Boehm <Hans.Boehm@hp.com>  (Really Ivan Maidanski)
 	* include/private/gc_pmark.h (PUSH_CONTENTS_HDR for
 	MARK_BIT_PER_OBJ): Add missing backslash before eoln.

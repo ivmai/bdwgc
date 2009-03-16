@@ -975,7 +975,7 @@ ptr_t GC_get_main_stack_base(void)
       c = stat_buf[buf_offset++];
     }
     close(f);
-    if (result < 0x10000000) ABORT("Absurd stack bottom value");
+    if (result < 0x100000) ABORT("Absurd stack bottom value");
     return (ptr_t)result;
   }
 
