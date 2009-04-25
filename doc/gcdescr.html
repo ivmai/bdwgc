@@ -112,8 +112,19 @@ is significantly complicated by black-listing issues
 <P>
 Small blocks are allocated in chunks of size <TT>HBLKSIZE</tt>.
 Each chunk is
-dedicated to only one object size and kind.  The allocator maintains
+dedicated to only one object size and kind.
+<P>
+The allocator maintains
 separate free lists for each size and kind of object.
+Associated with each kind is an array of free list pointers,
+with entry <TT>freelist[</tt><I>i</i><TT>]</tt> pointing to
+a free list of size <I>i</i> objects.
+In recent versions of the
+collector, index <TT>i</tt> is expressed in granules, which are the
+minimum allocatable unit, typically 8 or 16 bytes.
+The free lists themselves are
+linked through the first word in each object (see <TT>obj_link()</tt>
+macro).
 <P>
 Once a large block is split for use in smaller objects, it can only
 be used for objects of that size, unless the collector discovers a completely
@@ -131,7 +142,8 @@ the requested size, subject to alignment constraints.
 See <TT>GC_init_size_map</tt> for details.
 <P>
 The actual size rounding operation during small object allocation is
-implemented as a table lookup in <TT>GC_size_map</tt>.
+implemented as a table lookup in <TT>GC_size_map</tt> which maps
+a requested allocation size in bytes to a number of granules.
 <P>
 Both collector initialization and computation of allocated sizes are
 handled carefully so that they do not slow down the small object fast
@@ -564,7 +576,8 @@ Depending onthe configuration, "gcj" objects may also be included.
 <P>
 Thread-local free list entries contain either a pointer to the first
 element of a free list, or they contain a counter of the number of
-allocation "granules" allocated so far.  Initially they contain the
+allocation granules, corresponding to objects of this size,
+allocated so far.  Initially they contain the
 value one, i.e. a small counter value.
 <P>
 Thread-local allocation allocates directly through the global

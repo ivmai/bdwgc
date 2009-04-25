@@ -941,8 +941,8 @@ struct _GC_arrays {
 # endif
 
     size_t _size_map[MAXOBJBYTES+1];
-    	/* Number of words to allocate for a given allocation request in */
-    	/* bytes.							 */
+    	/* Number of granules to allocate when asked for a certain 	*/
+    	/* number of bytes.						*/
 
 # ifdef STUBBORN_ALLOC
     ptr_t _sobjfreelist[MAXOBJGRANULES+1];

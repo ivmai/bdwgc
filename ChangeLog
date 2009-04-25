@@ -1,3 +1,8 @@
+2009-04-24  Hans Boehm <Hans.Boehm@hp.com>
+	* doc/gcdescr.html: Improve description of object freelist
+	structure.
+	* include/private/gc_priv.h: Fix comment for _size_map.
+
 2009-03-16  Hans Boehm <Hans.Boehm@hp.com>
 	* os_dep.c (GC_linux_stack_base): Relax sanity test.
 
