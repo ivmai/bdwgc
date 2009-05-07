@@ -1,3 +1,7 @@
+2009-05-07  Hans Boehm <Hans.Boehm@hp.com> and Mark Sibly
+	* mach_dep.c: Don't use __builtin_unwind_init for register
+	state on PowerPC/Darwin.
+
 2009-04-24  Hans Boehm <Hans.Boehm@hp.com>
 	* doc/gcdescr.html: Improve description of object freelist
 	structure.
