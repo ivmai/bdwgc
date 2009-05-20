@@ -1,3 +1,7 @@
+2009-05-20  Hans Boehm <Hans.Boehm@hp.com> (really Ivan Maidanski)
+	* doc/README.win32: Add OpenWatcom warning.
+	* include/private/gcconfig.h: Really check it in.
+
 2009-05-19  Hans Boehm <Hans.Boehm@hp.com> (Mostly Ivan Maidanski, Dave Korn)
 	* os_dep.c (GC_get_stack_base, windows): Replace with Dave Korn's
 	code from gcc version.
@@ -5,7 +9,9 @@
 	GetWriteWatch-based virtual dirty bit implementation ("os_dep.c" file). 
 	* os_dep.c: Make non-win32 GC_write_fault_handler STATIC.
 	* mark.c (GC_noop): fix declaration definition mismatch for DMC.
-	* include/private/gcconfig.h: Remove special handling for Watcom
+	* include/private/gcconfig.h: Enable MPROTECT_VDB and GWW_VDB for
+	Watcom (Win32 only).  It works.
+
 	and GWW_VDB.  It works.
 
 2009-05-07  Hans Boehm <Hans.Boehm@hp.com> and Mark Sibly

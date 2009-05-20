@@ -1181,12 +1181,8 @@
 #	define OS_TYPE "MSWIN32"
 		/* STACKBOTTOM and DATASTART are handled specially in 	*/
 		/* os_dep.c.						*/
-#       if !defined(__WATCOMC__)
-#	  define MPROTECT_VDB
-	  /* We also avoided doing this in the past with GC_WIN32_THREADS */
-	  /* Hopefully that's fixed.					  */
-#         define GWW_VDB
-#	endif
+#	define MPROTECT_VDB
+#       define GWW_VDB
 #       define DATAEND  /* not needed */
 #   endif
 #   ifdef MSWINCE
@@ -1968,12 +1964,8 @@
 #	define OS_TYPE "MSWIN32"
 		/* STACKBOTTOM and DATASTART are handled specially in 	*/
 		/* os_dep.c.						*/
-#       if !defined(__WATCOMC__)
-#	  define MPROTECT_VDB
-	  /* We also avoided doing this in the past with GC_WIN32_THREADS */
-	  /* Hopefully that's fixed.					  */
-#         define GWW_VDB
-#	endif
+#	define MPROTECT_VDB
+#       define GWW_VDB
 #       define DATAEND  /* not needed */
 #   endif
 # endif
