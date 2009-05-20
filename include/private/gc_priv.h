@@ -318,8 +318,7 @@ void GC_print_callers(struct callinfo info[NFRAMES]);
  				   PCR_allSigsBlocked, \
  				   PCR_waitForever);
 # else
-#   if defined(GC_SOLARIS_THREADS) || defined(GC_WIN32_THREADS) \
-	|| defined(GC_PTHREADS)
+#   if defined(GC_WIN32_THREADS) || defined(GC_PTHREADS)
       void GC_stop_world();
       void GC_start_world();
 #     define STOP_WORLD() GC_stop_world()

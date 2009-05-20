@@ -1,3 +1,13 @@
+2009-05-19  Hans Boehm <Hans.Boehm@hp.com> (Mostly Ivan Maidanski, Dave Korn)
+	* os_dep.c (GC_get_stack_base, windows): Replace with Dave Korn's
+	code from gcc version.
+	* os_dep.c: make gc compilable (optionally) for Cygwin with
+	GetWriteWatch-based virtual dirty bit implementation ("os_dep.c" file). 
+	* os_dep.c: Make non-win32 GC_write_fault_handler STATIC.
+	* mark.c (GC_noop): fix declaration definition mismatch for DMC.
+	* include/private/gcconfig.h: Remove special handling for Watcom
+	and GWW_VDB.  It works.
+
 2009-05-07  Hans Boehm <Hans.Boehm@hp.com> and Mark Sibly
 	* mach_dep.c: Don't use __builtin_unwind_init for register
 	state on PowerPC/Darwin.

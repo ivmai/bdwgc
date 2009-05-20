@@ -621,14 +621,10 @@ word GC_page_size;
 #   endif
 # endif
 
-/* 
- * Find the base of the stack. 
- * Used only in single-threaded environment.
- * With threads, GC_mark_roots needs to know how to do this.
- * Called with allocator lock held.
- */
-# if defined(MSWIN32) || defined(MSWINCE) \
-       || (defined(CYGWIN32) && !defined(USE_MMAP))
+# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+
+#ifndef CYGWIN32
+
 # define is_writable(prot) ((prot) == PAGE_READWRITE \
 			    || (prot) == PAGE_WRITECOPY \
 			    || (prot) == PAGE_EXECUTE_READWRITE \
@@ -664,6 +660,20 @@ GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
     sb -> mem_base = trunc_sp + size;
     return GC_SUCCESS;
 }
+
+#else /* CYGWIN32 */
+  
+/* An alternate version for Cygwin (adapted from Dave Korn's	*/
+/* gcc version of boehm-gc).					*/
+  GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
+  {
+    extern void * _tlsbase __asm__ ("%fs:4");
+    sb -> mem_base = _tlsbase;
+    return GC_SUCCESS;
+  }
+  
+#endif /* CYGWIN32 */
+
 
 #define HAVE_GET_STACK_BASE
 
@@ -1006,7 +1016,7 @@ ptr_t GC_get_main_stack_base(void)
 
 #if !defined(BEOS) && !defined(AMIGA) && !defined(MSWIN32) \
     && !defined(MSWINCE) && !defined(OS2) && !defined(NOSYS) && !defined(ECOS) \
-    && (!defined(CYGWIN32) || defined(USE_MMAP))
+    && !defined(CYGWIN32)
 
 ptr_t GC_get_main_stack_base(void)
 {
@@ -1243,21 +1253,6 @@ void GC_register_data_segments(void)
 
 # else /* !OS2 */
 
-# if defined(MSWIN32) || defined(MSWINCE)
-
-# ifdef MSWIN32
-  /* Unfortunately, we have to handle win32s very differently from NT, 	*/
-  /* Since VirtualQuery has very different semantics.  In particular,	*/
-  /* under win32s a VirtualQuery call on an unmapped page returns an	*/
-  /* invalid result.  Under NT, GC_register_data_segments is a no-op	*/
-  /* and all real work is done by GC_register_dynamic_libraries.  Under	*/
-  /* win32s, we cannot find the data segments associated with dll's.	*/
-  /* We register the main data segment here.				*/
-  GC_bool GC_no_win32_dlls = FALSE;	 
-  	/* This used to be set for gcc, to avoid dealing with		*/
-  	/* the structured exception handling issues.  But we now have	*/
-  	/* assembly code to do that right.				*/
-
 # if defined(GWW_VDB)
 
 #   ifndef MEM_WRITE_WATCH
@@ -1334,6 +1329,21 @@ void GC_register_data_segments(void)
     }
 
 # endif /* GWW_VDB */
+
+# if defined(MSWIN32) || defined(MSWINCE)
+
+# ifdef MSWIN32
+  /* Unfortunately, we have to handle win32s very differently from NT, 	*/
+  /* Since VirtualQuery has very different semantics.  In particular,	*/
+  /* under win32s a VirtualQuery call on an unmapped page returns an	*/
+  /* invalid result.  Under NT, GC_register_data_segments is a no-op	*/
+  /* and all real work is done by GC_register_dynamic_libraries.  Under	*/
+  /* win32s, we cannot find the data segments associated with dll's.	*/
+  /* We register the main data segment here.				*/
+  GC_bool GC_no_win32_dlls = FALSE;
+  	/* This used to be set for gcc, to avoid dealing with		*/
+  	/* the structured exception handling issues.  But we now have	*/
+  	/* assembly code to do that right.				*/
 
   GC_bool GC_wnt = FALSE;
          /* This is a Windows NT derivative, i.e. NT, W2K, XP or later.  */
@@ -2667,7 +2677,7 @@ STATIC GC_bool GC_old_segv_handler_used_si;
 # else
 #   include <ucontext.h>
     /*ARGSUSED*/
-    void GC_write_fault_handler(int sig, siginfo_t *si, void *raw_sc)
+    STATIC void GC_write_fault_handler(int sig, siginfo_t *si, void *raw_sc)
 # endif /* MSWIN32 || MSWINCE */
 {
 #   if !defined(MSWIN32) && !defined(MSWINCE)

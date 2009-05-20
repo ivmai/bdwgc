@@ -28,7 +28,11 @@
 #ifdef __WATCOMC__
   void GC_noop(void *p, ...) {}
 #else
-  void GC_noop() {}
+# ifdef __DMC__
+    void GC_noop(...) {}
+# else
+    void GC_noop() {}
+# endif
 #endif
 
 /* Single argument version, robust against whole program analysis. */
