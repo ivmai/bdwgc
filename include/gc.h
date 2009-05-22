@@ -664,10 +664,14 @@ GC_API void GC_CALL GC_debug_register_finalizer
 	/* All but the last finalizer registered for an object  */
 	/* is ignored.						*/
 	/* Finalization may be removed by passing 0 as fn.	*/
-	/* Finalizers are implicitly unregistered just before   */
-	/* they are invoked.					*/
+	/* Finalizers are implicitly unregistered when they are	*/
+	/* enqueued for finalization (i.e. become ready to be	*/
+	/* finalized).						*/
 	/* The old finalizer and client data are stored in	*/
-	/* *ofn and *ocd.					*/ 
+	/* *ofn and *ocd.  (ofn and/or ocd may be NULL.		*/
+	/* The allocation lock is held while *ofn and *ocd are	*/
+	/* updated.  In case of error (no memory to register	*/
+	/* new finalizer), *ofn and *ocd remain unchanged.)	*/
 	/* Fn is never invoked on an accessible object,		*/
 	/* provided hidden pointers are converted to real 	*/
 	/* pointers only if the allocation lock is held, and	*/
@@ -677,8 +681,10 @@ GC_API void GC_CALL GC_debug_register_finalizer
 	/* a signal, the object may be left with no		*/
 	/* finalization, even if neither the old nor new	*/
 	/* finalizer were NULL.					*/
-	/* Obj should be the non-NULL starting address of an 	*/
-	/* object allocated by GC_malloc or friends.		*/
+	/* Obj should be the starting address of an object	*/
+	/* allocated by GC_malloc or friends. Obj may also be	*/
+	/* NULL or point to something outside GC heap (in this	*/
+	/* case, fn is ignored, *ofn and *ocd are set to NULL).	*/
 	/* Note that any garbage collectable object referenced	*/
 	/* by cd will be considered accessible until the	*/
 	/* finalizer is invoked.				*/
@@ -1061,7 +1067,8 @@ GC_API void GC_CALL GC_register_has_static_roots_callback
 #endif
   /*
    * All threads must be created using GC_CreateThread or GC_beginthreadex,
-   * or must explicitly call GC_register_my_thread,
+   * or must explicitly call GC_register_my_thread
+   * (and call GC_unregister_my_thread before thread termination),
    * so that they will be recorded in the thread table.
    * For backwards compatibility, it is possible to build the GC
    * with GC_DLL defined, and to call GC_use_DllMain().
@@ -1070,9 +1077,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback
    *
    * Currently the collector expects all threads to fall through and
    * terminate normally, or call GC_endthreadex() or GC_ExitThread,
-   * so that the thread is properly unregistered.  (An explicit call
-   * to GC_unregister_my_thread() should also work, but risks unregistering
-   * the thread twice.)
+   * so that the thread is properly unregistered.
    */
    GC_API HANDLE WINAPI GC_CreateThread(
       LPSECURITY_ATTRIBUTES lpThreadAttributes,

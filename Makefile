@@ -67,12 +67,8 @@ HOSTCFLAGS=$(CFLAGS)
 #   This causes the collector to assume that all inaccessible
 #   objects should have been explicitly deallocated, and reports exceptions.
 #   Finalization and the test program are not usable in this mode.
-# -DGC_SOLARIS_THREADS enables support for Solaris (thr_) threads.
-#   (Clients should also define GC_SOLARIS_THREADS and then include
-#   gc.h before performing thr_ or dl* or GC_ operations.)
+# -DGC_SOLARIS_THREADS enables support for Solaris pthreads.
 #   Must also define -D_REENTRANT.
-# -DGC_SOLARIS_PTHREADS enables support for Solaris pthreads.
-#   (Internally this define GC_SOLARIS_THREADS as well.)
 # -DGC_IRIX_THREADS enables support for Irix pthreads.  See README.irix.
 # -DGC_HPUX_THREADS enables support for HP/UX 11 pthreads.
 #   Also requires -D_REENTRANT or -D_POSIX_C_SOURCE=199506L. See README.hp.

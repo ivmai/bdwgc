@@ -1,3 +1,10 @@
+2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski, diff61)
+	* Makefile, Makefile.direct: GC_SOLAIS_PTHREADS was replaced
+	by GC_SOLARIS_THREADS.
+	* include/gc.h: Improve finalizer documentation.
+	* mips_sgi_mach_dep.s: Replace _MIPS_SIM_ABI32 with _ABIO32.
+	* pthread_stop_world.c, Makefile.dj: Fix typos.
+
 2009-05-21  Hans Boehm <Hans.Boehm@hp.com> 
 	* win32_threads.c (GC_new_thread): Make first_thread
 	visible to the whole file.
