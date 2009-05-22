@@ -1,4 +1,4 @@
-2009-05-21  Hans Boehm <Hans.Boehm@hp.com> (really Ivan Maidanski)
+2009-05-21  Hans Boehm <Hans.Boehm@hp.com> 
 	* win32_threads.c (GC_new_thread): Make first_thread
 	visible to the whole file.
 	(UNPROTECT): New macro.
