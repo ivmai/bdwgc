@@ -2594,13 +2594,13 @@ STATIC GC_bool GC_old_segv_handler_used_si;
 /* Contention should be very rare, so we do the minimum to handle it	*/
 /* correctly.								*/
 #ifdef AO_HAVE_test_and_set_acquire
-  static volatile AO_TS_t fault_handler_lock = 0;
+  volatile AO_TS_t GC_fault_handler_lock = 0;
   void async_set_pht_entry_from_index(volatile page_hash_table db, size_t index) {
-    while (AO_test_and_set_acquire(&fault_handler_lock) == AO_TS_SET) {}
+    while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {}
     /* Could also revert to set_pht_entry_from_index_safe if initial	*/
     /* GC_test_and_set fails.						*/
     set_pht_entry_from_index(db, index);
-    AO_CLEAR(&fault_handler_lock);
+    AO_CLEAR(&GC_fault_handler_lock);
   }
 #else /* !AO_have_test_and_set_acquire */
 # error No test_and_set operation: Introduces a race.
@@ -2804,9 +2804,13 @@ void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
     h_trunc = (struct hblk *)((word)h & ~(GC_page_size-1));
     h_end = (struct hblk *)(((word)(h + nblocks) + GC_page_size-1)
 	                    & ~(GC_page_size-1));
+    if (h_end == h_trunc + 1 &&
+        get_pht_entry_from_index(GC_dirty_pages, PHT_HASH(h_trunc))) {
+	/* already marked dirty, and hence unprotected. */
+	return;
+    }
     for (current = h_trunc; current < h_end; ++current) {
-        size_t index = PHT_HASH(current);
-            
+        size_t index = PHT_HASH(h_trunc);
         if (!is_ptrfree || current < h || current >= h + nblocks) {
             async_set_pht_entry_from_index(GC_dirty_pages, index);
         }

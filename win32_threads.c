@@ -279,6 +279,10 @@ GC_bool GC_started_thread_while_stopped(void)
 #endif
   STATIC GC_thread GC_threads[THREAD_TABLE_SZ];
   
+  /* It may not be safe to allocate when we register the first thread.	*/
+  /* Thus we allocated one statically.					*/
+  static struct GC_Thread_Rep first_thread;
+  static GC_bool first_thread_used = FALSE;
 
 /* Add a thread to GC_threads.  We assume it wasn't already there.	*/
 /* Caller holds allocation lock.					*/
@@ -287,9 +291,6 @@ STATIC GC_thread GC_new_thread(DWORD id)
 {
     word hv = ((word)id) % THREAD_TABLE_SZ;
     GC_thread result;
-    /* It may not be safe to allocate when we register the first thread. */
-    static struct GC_Thread_Rep first_thread;
-    static GC_bool first_thread_used = FALSE;
     
     GC_ASSERT(I_HOLD_LOCK());
     if (!first_thread_used) {
@@ -501,6 +502,22 @@ static GC_thread GC_lookup_thread(DWORD thread_id)
   }
 }
 
+/* Make sure thread descriptor t is not protected by the VDB		*/
+/* implementation.							*/
+/* Used to prevent write faults when the world is (partially) stopped,	*/
+/* since it may have been stopped with a system lock held, and that 	*/
+/* lock may be required for fault handling.				*/
+# if defined(MPROTECT_VDB) && !defined(MSWINCE)
+#    define UNPROTECT(t) \
+       if (GC_dirty_maintained && !GC_win32_dll_threads && \
+           t != &first_thread) { \
+         GC_ASSERT(SMALL_OBJ(GC_size(t))); \
+         GC_remove_protection(HBLKPTR(t), 1, FALSE); \
+       }
+# else
+#    define UNPROTECT(p)
+# endif
+
 /* If a thread has been joined, but we have not yet		*/
 /* been notified, then there may be more than one thread 	*/
 /* in the table with the same win32 id.				*/
@@ -709,6 +726,8 @@ void GC_push_thread_structures(void)
 # endif
 }
 
+extern volatile AO_TS_t GC_fault_handler_lock;  /* from os_dep.c */
+
 /* Suspend the given thread, if it's still active.	*/
 void GC_suspend(GC_thread t)
 {
@@ -723,6 +742,8 @@ void GC_suspend(GC_thread t)
     /* This reduces the probability of that event, though it still	*/
     /* appears there's a race here.					*/
     DWORD exitCode; 
+
+    UNPROTECT(t);
     if (GetExitCodeThread(t -> handle, &exitCode) &&
         exitCode != STILL_ACTIVE) {
 #     ifdef GC_PTHREADS
@@ -735,10 +756,16 @@ void GC_suspend(GC_thread t)
 #     endif
       return;
     }
+    /* Acquire the spin lock we use to update dirty bits.	*/
+    /* Threads shouldn't get stopped holding it.  But we may	*/
+    /* acquire and release it in the UNPROTECT call.		*/
+      while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {}
+
     if (SuspendThread(t -> handle) == (DWORD)-1)
       ABORT("SuspendThread failed");
 # endif
    t -> suspended = TRUE;
+   AO_CLEAR(&GC_fault_handler_lock);
 }
 
 /* Defined in misc.c */
@@ -829,6 +856,7 @@ void GC_start_world(void)
 	    && t -> id != thread_id) {
           if (ResumeThread(t -> handle) == (DWORD)-1)
 	    ABORT("ResumeThread failed");
+	  UNPROTECT(t);
           t -> suspended = FALSE;
         }
       }
@@ -950,6 +978,7 @@ STATIC void GC_push_stack_for(GC_thread thread)
       /* of large stacks.						*/
       if (thread -> last_stack_min == ADDR_LIMIT) {
       	stack_min = GC_get_stack_min(thread -> stack_base);
+        UNPROTECT(thread);
         thread -> last_stack_min = stack_min;
       } else {
 	if (sp < thread -> stack_base && sp >= thread -> last_stack_min) {
@@ -965,6 +994,7 @@ STATIC void GC_push_stack_for(GC_thread thread)
 	      stack_min = GC_get_stack_min(thread -> stack_base);
 	    }
 #	  endif
+          UNPROTECT(thread);
           thread -> last_stack_min = stack_min;
 	}
       }

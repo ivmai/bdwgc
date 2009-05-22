@@ -1,3 +1,14 @@
+2009-05-21  Hans Boehm <Hans.Boehm@hp.com> (really Ivan Maidanski)
+	* win32_threads.c (GC_new_thread): Make first_thread
+	visible to the whole file.
+	(UNPROTECT): New macro.
+	(GC_push_stack_for, GC_suspend, GC_start_world): unprotect
+	thread structures before writing.
+	(GC_suspend): Acquire GC_fault_handler_lock before suspending
+	thread.
+	* os_dep.c: export GC_fault_handler_lock.
+	(GC_remove_protection): Check if already unprotected.
+
 2009-05-20  Hans Boehm <Hans.Boehm@hp.com> (really Ivan Maidanski)
 	* doc/README.win32: Add OpenWatcom warning.
 	* include/private/gcconfig.h: Really check it in.
