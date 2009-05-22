@@ -375,6 +375,30 @@ GC_bool GC_register_main_static_data(void)
      && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
          || (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG))) 
 
+# ifdef PT_GNU_RELRO
+
+/* Instead of registering PT_LOAD sections directly, we keep them	*/
+/* in a temporary list, and filter them by excluding PT_GNU_RELRO	*/
+/* segments.  Processing PT_GNU_RELRO sections with 			*/
+/* GC_exclude_static_roots instead would be superficially cleaner.  But	*/
+/* it runs into trouble if a client registers an overlapping segment,	*/
+/* which unfortunately seems quite possible.				*/
+
+#define MAX_LOAD_SEGS MAX_ROOT_SETS
+
+static struct load_segment {
+  ptr_t start;
+  ptr_t end;
+  /* Room for a second segment if we remove a RELRO segment */
+  /* from the middle.					    */
+  ptr_t start2;
+  ptr_t end2;
+} load_segs[MAX_LOAD_SEGS];
+
+static int n_load_segs;
+
+# endif /* PT_GNU_RELRO */
+
 /* We have the header files for a glibc that includes dl_iterate_phdr.	*/
 /* It may still not be available in the library on the target system.   */
 /* Thus we also treat it as a weak symbol.				*/
@@ -390,8 +414,8 @@ static int GC_register_dynlib_callback(info, size, ptr)
      void * ptr;
 {
   const ElfW(Phdr) * p;
-  char * start;
-  register int i;
+  ptr_t start, end;
+  int i;
 
   /* Make sure struct dl_phdr_info is at least as big as we need.  */
   if (size < offsetof (struct dl_phdr_info, dlpi_phnum)
@@ -401,16 +425,55 @@ static int GC_register_dynlib_callback(info, size, ptr)
   p = info->dlpi_phdr;
   for( i = 0; i < (int)(info->dlpi_phnum); ((i++),(p++)) ) {
     switch( p->p_type ) {
+#     ifdef PT_GNU_RELRO
+        case PT_GNU_RELRO:
+  	/* This entry is known to be constant and will eventually be remapped
+	   read-only.  However, the address range covered by this entry is
+	   typically a subset of a previously encountered `LOAD' segment, so
+	   we need to exclude it.  */
+	{
+	    start = ((ptr_t)(p->p_vaddr)) + info->dlpi_addr;
+	    end = start + p->p_memsz;
+	    for (i = n_load_segs; --i >= 0; ) {
+	      if (start >= load_segs[i].start && start < load_segs[i].end) {
+		if (load_segs[i].start2 != 0) {
+		  WARN("More than one GNU_RELRO segment per load seg\n",0);
+		} else {
+		  GC_ASSERT(end <= load_segs[i].end);
+	          /* Remove from the existing load segment */
+		  load_segs[i].end2 = load_segs[i].end;
+		  load_segs[i].end = start;
+		  load_segs[i].start2 = end;
+		}
+	        break;
+	      }
+	      if (i == 0) WARN("Failed to find PT_GNU_RELRO segment"
+			       " inside PT_LOAD region", 0);
+	    }
+	}
+
+  	break;
+#     endif
+
       case PT_LOAD:
 	{
 	  if( !(p->p_flags & PF_W) ) break;
 	  start = ((char *)(p->p_vaddr)) + info->dlpi_addr;
+	  end = start + p->p_memsz;
 
 	  if (GC_has_static_roots
 	      && !GC_has_static_roots(info->dlpi_name, start, p->p_memsz))
 	    break;
-
-	  GC_add_roots_inner(start, start + p->p_memsz, TRUE);
+#         ifdef PT_GNU_RELRO
+	    if (n_load_segs >= MAX_LOAD_SEGS) ABORT("Too many PT_LOAD segs");
+	    load_segs[n_load_segs].start = start;
+	    load_segs[n_load_segs].end = end;
+	    load_segs[n_load_segs].start2 = 0;
+	    load_segs[n_load_segs].end2 = 0;
+	    ++n_load_segs;
+#	  else
+	    GC_add_roots_inner(start, end, TRUE);
+#         endif /* PT_GNU_RELRO */
 	}
       break;
       default:
@@ -430,8 +493,31 @@ GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 {
   if (dl_iterate_phdr) {
     int did_something = 0;
+
+#   ifdef PT_GNU_RELRO
+        static GC_bool excluded_segs = FALSE;
+        n_load_segs = 0;
+	if (!excluded_segs) {
+          GC_exclude_static_roots((ptr_t)load_segs,
+				  (ptr_t)load_segs + sizeof(load_segs));
+	  excluded_segs = TRUE;
+        }
+#   endif
     dl_iterate_phdr(GC_register_dynlib_callback, &did_something);
-    if (!did_something) {
+    if (did_something) {
+#     ifdef PT_GNU_RELRO
+	size_t i;
+
+	for (i = 0; i < n_load_segs; ++i) {
+	  if (load_segs[i].end > load_segs[i].start) {
+	    GC_add_roots_inner(load_segs[i].start, load_segs[i].end, TRUE);
+	  }
+	  if (load_segs[i].end2 > load_segs[i].start2) {
+	    GC_add_roots_inner(load_segs[i].start2, load_segs[i].end2, TRUE);
+	  }
+        }
+#     endif
+    } else {
 	/* dl_iterate_phdr may forget the static data segment in	*/
 	/* statically linked executables.				*/
 	GC_add_roots_inner(DATASTART, (char *)(DATAEND), TRUE);

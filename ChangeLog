@@ -1,3 +1,8 @@
+2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Largely from Ludovic Cortes)
+	* dyn_load.c (GC_register_dynlib_callback,
+	GC_register_dynamic_libraries_dl_iterate_phdr): Add support
+	for GNU_PT_RELRO relocations.
+
 2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski, diff61)
 	* Makefile, Makefile.direct: GC_SOLAIS_PTHREADS was replaced
 	by GC_SOLARIS_THREADS.
