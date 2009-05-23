@@ -1,3 +1,7 @@
+2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski, diff71)
+	* tests/test.c: Change gcj vtable decriptor type from size_t to
+	GC_word.
+
 2009-05-22  Hans Boehm <Hans.Boehm@hp.com>
 	* gcj_mlc.c: Add comment.
 	* tests/test.c: Change NTEST to NTHREADS.  Fork 5 threads by default.

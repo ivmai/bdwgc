@@ -217,14 +217,14 @@ sexpr cons (sexpr x, sexpr y)
 /* This assumes the default value of MARK_DESCR_OFFSET. */
 struct fake_vtable {
   void * dummy;		/* class pointer in real gcj.	*/
-  size_t descr;
+  GC_word descr;
 };
 
 struct fake_vtable gcj_class_struct1 = { 0, sizeof(struct SEXPR)
 					    + sizeof(struct fake_vtable *) };
 			/* length based descriptor.	*/
 struct fake_vtable gcj_class_struct2 =
-			{ 0, ((size_t)3 << (CPP_WORDSZ - 3)) | GC_DS_BITMAP};
+			{ 0, ((GC_word)3 << (CPP_WORDSZ - 3)) | GC_DS_BITMAP};
 			/* Bitmap based descriptor.	*/
 
 struct GC_ms_entry * fake_gcj_mark_proc(word * addr,
@@ -1017,7 +1017,7 @@ void run_one_test()
 #	ifdef LINT
 	    char *y = 0;
 #  	else
-	    char *y = (char *)(size_t)fail_proc1;
+	    char *y = (char *)(GC_word)fail_proc1;
 #	endif
 	CLOCK_TYPE typed_time;
 #   endif
