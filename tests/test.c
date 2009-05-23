@@ -20,6 +20,11 @@
 
 # undef GC_BUILD
 
+#ifndef NTHREADS /* Number of additional threads to fork. */
+#  define NTHREADS 5 /* excludes main thread, which also runs a test. */
+	/* Not respected by PCR test. */
+#endif
+
 #if (defined(DBG_HDRS_ALL) || defined(MAKE_BACK_GRAPH)) && !defined(GC_DEBUG)
 #  define GC_DEBUG
 #endif
@@ -73,7 +78,8 @@
 #  define GC_COND_INIT()
 #endif
 
-/* Allocation Statistics */
+/* Allocation Statistics.  Incremented without synchronization. */
+/* FIXME: We should be using synchronization.			*/
 int stubborn_count = 0;
 int uncollectable_count = 0;
 int collectable_count = 0;
@@ -665,7 +671,7 @@ void GC_CALLBACK finalizer(void * obj, void * client_data)
 
 size_t counter = 0;
 
-# define MAX_FINALIZED 8000
+# define MAX_FINALIZED (NTHREADS*4000)
 
 # if !defined(MACOS)
   GC_FAR GC_word live_indicators[MAX_FINALIZED] = {0};
@@ -879,11 +885,7 @@ void tree_test()
 #   endif
 }
 
-#ifdef THREADS
-  AO_t n_tests = 0;
-#else
-  unsigned n_tests = 0;
-#endif
+unsigned n_tests = 0;
 
 GC_word bm_huge[10] = {
     0xffffffff,
@@ -1187,11 +1189,18 @@ void run_one_test()
       GC_log_printf("-------------Finished tree_test at time %u (%p)\n",
 	  	      (unsigned) time_diff, &start_time);
     }
-#   ifdef THREADS
-      (void)AO_fetch_and_add1_full(&n_tests);
-#   else
+    /* Run reverse_test a second time, so we hopefully notice corruption. */
+      reverse_test();
+      if (GC_print_stats) {
+          GET_TIME(reverse_time);
+          time_diff = MS_TIME_DIFF(reverse_time, start_time);
+	  GC_log_printf("-------------Finished second reverse_test at time %u (%p)\n",
+	  		(unsigned) time_diff, &start_time);
+      }
+      LOCK();
+      /* AO_fetch_and_add1 is not always available.	*/
       n_tests++;
-#   endif
+      UNLOCK();
 #   if defined(THREADS) && defined(HANDLE_FORK)
       if (fork() == 0) {
 	GC_gcollect();
@@ -1214,7 +1223,11 @@ void check_heap_stats()
     int late_finalize_count = 0;
     
 #   ifdef VERY_SMALL_CONFIG
-    /* these are something of a guess */
+    /* The upper bounds are a guess, which has been empirically	*/
+    /* adjusted.  On low end uniprocessors with incremental GC	*/
+    /* these may be particularly dubious, since empirically the */
+    /* heap tends to grow largely as a result of the GC not	*/
+    /* getting enough cycles.					*/
     if (sizeof(char *) > 4) {
         max_heap_sz = 4500000;
     } else {
@@ -1224,7 +1237,7 @@ void check_heap_stats()
     if (sizeof(char *) > 4) {
         max_heap_sz = 19000000;
     } else {
-    	max_heap_sz = 11000000;
+    	max_heap_sz = 12000000;
     }
 #   endif
 #   ifdef GC_DEBUG
@@ -1478,16 +1491,14 @@ DWORD __stdcall thr_window(void *arg)
 }
 #endif
 
-#define NTEST 2
-
 # ifdef MSWINCE
 int APIENTRY GC_WinMain(HINSTANCE instance, HINSTANCE prev, LPWSTR cmd, int n)
 #   else
 int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
 # endif
 {
-# if NTEST > 0
-   HANDLE h[NTEST];
+# if NTHREADS > 0
+   HANDLE h[NTHREADS];
    int i;
 # endif
 # ifdef MSWINCE
@@ -1520,24 +1531,24 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
       FAIL;
     CloseHandle(win_created_h);
 # endif
-# if NTEST > 0
-   for (i = 0; i < NTEST; i++) {
+# if NTHREADS > 0
+   for (i = 0; i < NTHREADS; i++) {
     h[i] = GC_CreateThread(NULL, 0, thr_run_one_test, 0, 0, &thread_id);
     if (h[i] == (HANDLE)NULL) {
       (void)GC_printf("Thread creation failed %d\n", (int)GetLastError());
       FAIL;
     }
    }
-# endif /* NTEST > 0 */
+# endif /* NTHREADS > 0 */
   run_one_test();
-# if NTEST > 0
-   for (i = 0; i < NTEST; i++) {
+# if NTHREADS > 0
+   for (i = 0; i < NTHREADS; i++) {
     if (WaitForSingleObject(h[i], INFINITE) != WAIT_OBJECT_0) {
       (void)GC_printf("Thread wait failed %d\n", (int)GetLastError());
       FAIL;
     }
    }
-# endif /* NTEST > 0 */
+# endif /* NTHREADS > 0 */
 # ifdef MSWINCE
     PostMessage(win_handle, WM_CLOSE, 0, 0);
     if (WaitForSingleObject(win_thr_h, INFINITE) != WAIT_OBJECT_0)
@@ -1589,10 +1600,10 @@ void * thr_run_one_test(void * arg)
 
 int main()
 {
-    pthread_t th1;
-    pthread_t th2;
+    pthread_t th[NTHREADS];
     pthread_attr_t attr;
     int code;
+    int i;
 #   ifdef GC_IRIX_THREADS
 	/* Force a larger stack to be preallocated      */
 	/* Since the initial cant always grow later.	*/
@@ -1638,22 +1649,18 @@ int main()
         (void)GC_printf("Key creation failed %d\n", code);
     	FAIL;
     }
-    if ((code = pthread_create(&th1, &attr, thr_run_one_test, 0)) != 0) {
-    	(void)GC_printf("Thread 1 creation failed %d\n", code);
+    for (i = 0; i < NTHREADS; ++i) {
+      if ((code = pthread_create(th+i, &attr, thr_run_one_test, 0)) != 0) {
+    	(void)GC_printf("Thread %d creation failed %d\n", i, code);
     	FAIL;
-    }
-    if ((code = pthread_create(&th2, &attr, thr_run_one_test, 0)) != 0) {
-    	(void)GC_printf("Thread 2 creation failed %d\n", code);
-    	FAIL;
+      }
     }
     run_one_test();
-    if ((code = pthread_join(th1, 0)) != 0) {
-        (void)GC_printf("Thread 1 failed %d\n", code);
+    for (i = 0; i < NTHREADS; ++i) {
+      if ((code = pthread_join(th[i], 0)) != 0) {
+        (void)GC_printf("Thread %d failed %d\n", i, code);
         FAIL;
-    }
-    if (pthread_join(th2, 0) != 0) {
-        (void)GC_printf("Thread 2 failed %d\n", code);
-        FAIL;
+      }
     }
     check_heap_stats();
     (void)fflush(stdout);

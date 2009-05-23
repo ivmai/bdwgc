@@ -35,7 +35,7 @@
  *  2) FASTLOCK is not a significant win.
  */
 
-#include "private/gc_pmark.h"
+#include "private/gc_pmark.h"  /* includes gc_priv.h */
 #include "gc_gcj.h"
 #include "private/dbg_mlc.h"
 

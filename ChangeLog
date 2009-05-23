@@ -1,3 +1,9 @@
+2009-05-22  Hans Boehm <Hans.Boehm@hp.com>
+	* gcj_mlc.c: Add comment.
+	* tests/test.c: Change NTEST to NTHREADS.  Fork 5 threads by default.
+	Run reverse_test a second time in each thread.Add comments.
+	Dont rely on AO_fetch_and_add.
+
 2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Largely from Ludovic Cortes)
 	* dyn_load.c (GC_register_dynlib_callback,
 	GC_register_dynamic_libraries_dl_iterate_phdr): Add support
