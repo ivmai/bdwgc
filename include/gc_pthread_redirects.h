@@ -18,11 +18,16 @@
 # include <pthread.h>
 # include <signal.h>
 
+# ifndef GC_DARWIN_THREADS
+#   include <dlfcn.h>
+# endif
+
   int GC_pthread_create(pthread_t *new_thread,
                         const pthread_attr_t *attr,
 		        void *(*start_routine)(void *), void *arg);
 #ifndef GC_DARWIN_THREADS
-  int GC_pthread_sigmask(int how, const sigset_t *set, sigset_t *oset);
+    int GC_pthread_sigmask(int how, const sigset_t *set, sigset_t *oset);
+    void *GC_dlopen(const char *path, int mode);
 #endif
   int GC_pthread_join(pthread_t thread, void **retval);
   int GC_pthread_detach(pthread_t thread);
@@ -46,9 +51,12 @@
 #  undef pthread_sigmask
 # endif	 /* pthread_sigmask */
 # define pthread_sigmask GC_pthread_sigmask
+# ifdef dlopen
+#  undef dlopen
+# endif
 # define dlopen GC_dlopen
 #endif
 
-#endif /* GC_xxxxx_THREADS */
+#endif /* GC_PTHREADS && !GC_USE_LD_WRAP */
 
 #endif /* GC_PTHREAD_REDIRECTS_H */

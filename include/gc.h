@@ -1055,11 +1055,16 @@ GC_API void GC_CALL GC_register_has_static_roots_callback
 	&& !defined(__CYGWIN__) \
 	&& !defined(GC_PTHREADS)
 
+#ifndef GC_NO_THREAD_DECLS
+
 #ifdef __cplusplus
     }  /* Including windows.h in an extern "C" context no longer works. */
 #endif
 
-#ifndef GC_NO_THREAD_DECLS
+# if !defined(_WIN32_WCE)
+#   include <process.h>	/* For _beginthreadex, _endthreadex */
+# endif
+
 # include <windows.h>
 
 #ifdef __cplusplus

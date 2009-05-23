@@ -94,7 +94,9 @@
 #   define DEBUG_WIN32_THREADS 0
 # endif
 
-# include <process.h>  /* For _beginthreadex, _endthreadex */
+# ifndef MSWINCE
+#   include <process.h>  /* For _beginthreadex, _endthreadex */
+# endif
 
 #endif
 
@@ -300,12 +302,9 @@ STATIC GC_thread GC_new_thread(DWORD id)
         GC_ASSERT(!GC_win32_dll_threads);
         result = (struct GC_Thread_Rep *)
         	 GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
-#       ifdef GC_PTHREADS
-	  /* result can be NULL -> segfault */
-	  GC_ASSERT(result -> flags == 0);
-#       endif
+	/* result can be NULL */
+	if (result == 0) return(0);
     }
-    if (result == 0) return(0);
     /* result -> id = id; Done by caller.	*/
     result -> next = GC_threads[hv];
     GC_threads[hv] = result;
@@ -394,6 +393,8 @@ static GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
     GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
     me = GC_new_thread(thread_id);
     GC_in_thread_creation = FALSE;
+    if (me == 0)
+      ABORT("Failed to allocate memory for thread registering.");
   }
 # ifdef GC_PTHREADS
     /* me can be NULL -> segfault */
@@ -1599,6 +1600,8 @@ GC_API void WINAPI GC_ExitThread(DWORD dwExitCode)
   ExitThread(dwExitCode);
 }
 
+#ifndef MSWINCE
+
 GC_API GC_uintptr_t GC_CALL GC_beginthreadex(
     void *security, unsigned stack_size,
     unsigned ( __stdcall *start_address )( void * ),
@@ -1645,6 +1648,8 @@ GC_API void GC_CALL GC_endthreadex(unsigned retval)
   GC_unregister_my_thread();
   _endthreadex(retval);
 }
+
+#endif /* !MSWINCE */
 
 #endif /* !GC_PTHREADS */
 

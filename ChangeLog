@@ -1,3 +1,21 @@
+2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski, diff63,diff65)
+	* include/gc_pthread_redirects.h:
+		- dlfcn.h is included for dlopen() proto before undefining
+		"dlopen" (so, it's possible now to include dlfcn.h after
+		gc.h from user code);
+		- GC_dlopen() proto is added (except for Darwin as
+		it's missing there);
+		- "dlopen" is explicitly undefined (before its redefinition).
+	* include/gc.h:
+		- "process.h" is included besides "windows.h"
+		(for _beginthreadex/_endthreadex); win32 only.
+		- GC_NO_THREAD_DECLS is moved to the right place
+		(before closing "extern C").
+	* pthread_support.c: Fix out of memory handling for Thread_Reps.
+	* win32_threads.c: Don't include process.h on winCE,
+	improve out of memory handling for thread structures, dont
+	define GC_beginthreadex and GC_endthreadex for winCE.
+
 2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski, diff71)
 	* tests/test.c: Change gcj vtable decriptor type from size_t to
 	GC_word.

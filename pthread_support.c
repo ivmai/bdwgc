@@ -390,9 +390,8 @@ STATIC GC_thread GC_new_thread(pthread_t id)
     } else {
         result = (struct GC_Thread_Rep *)
         	 GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
-	GC_ASSERT(result -> flags == 0);
+	if (result == 0) return(0);
     }
-    if (result == 0) return(0);
     result -> id = id;
     result -> next = GC_threads[hv];
     GC_threads[hv] = result;
@@ -1013,6 +1012,8 @@ STATIC GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
     GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
     me = GC_new_thread(my_pthread);
     GC_in_thread_creation = FALSE;
+    if (me == 0)
+      ABORT("Failed to allocate memory for thread registering.");
 #   ifdef GC_DARWIN_THREADS
       me -> stop_info.mach_thread = mach_thread_self();
 #   else
