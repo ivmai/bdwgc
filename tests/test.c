@@ -885,7 +885,11 @@ void tree_test()
 #   endif
 }
 
-unsigned n_tests = 0;
+#if defined(THREADS) && defined(AO_HAVE_fetch_and_add1_full)
+  AO_t n_tests = 0; /* Updated by AO_fetch_and_add1_full(). */
+#else
+  unsigned n_tests = 0;
+#endif
 
 GC_word bm_huge[10] = {
     0xffffffff,
@@ -1197,10 +1201,16 @@ void run_one_test()
 	  GC_log_printf("-------------Finished second reverse_test at time %u (%p)\n",
 	  		(unsigned) time_diff, &start_time);
       }
+#   if defined(THREADS) && defined(AO_HAVE_fetch_and_add1_full)
+      /* Use AO_fetch_and_add1_full() if available.		*/
+      /* GC_allocate_ml may not always be visible outside GC.	*/
+      (void)AO_fetch_and_add1_full(&n_tests);
+#   else
       LOCK();
       /* AO_fetch_and_add1 is not always available.	*/
       n_tests++;
       UNLOCK();
+#   endif
 #   if defined(THREADS) && defined(HANDLE_FORK)
       if (fork() == 0) {
 	GC_gcollect();

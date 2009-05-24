@@ -1,3 +1,7 @@
+2009-05-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski, diff85)
+	* tests/test.c: Increment n_tests with fetch_and_add when possible,
+	avoiding need to export lock.
+
 2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski, diff63,diff65)
 	* include/gc_pthread_redirects.h:
 		- dlfcn.h is included for dlopen() proto before undefining
@@ -32,7 +36,7 @@
 	for GNU_PT_RELRO relocations.
 
 2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski, diff61)
-	* Makefile, Makefile.direct: GC_SOLAIS_PTHREADS was replaced
+	* Makefile, Makefile.direct: GC_SOLARIS_PTHREADS was replaced
 	by GC_SOLARIS_THREADS.
 	* include/gc.h: Improve finalizer documentation.
 	* mips_sgi_mach_dep.s: Replace _MIPS_SIM_ABI32 with _ABIO32.
