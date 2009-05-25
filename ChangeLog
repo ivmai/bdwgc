@@ -1,3 +1,7 @@
+2009-05-25  Hans Boehm <Hans.Boehm@hp.com> (Really Petter Urkedal)
+	* dyn_load.c (GC_register_dynlib_callback): Use new index j
+	instead of i in the inner loop.
+
 2009-05-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski, diff85)
 	* tests/test.c: Increment n_tests with fetch_and_add when possible,
 	avoiding need to export lock.

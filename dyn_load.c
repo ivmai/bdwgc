@@ -432,22 +432,24 @@ static int GC_register_dynlib_callback(info, size, ptr)
 	   typically a subset of a previously encountered `LOAD' segment, so
 	   we need to exclude it.  */
 	{
+	    int j;
+
 	    start = ((ptr_t)(p->p_vaddr)) + info->dlpi_addr;
 	    end = start + p->p_memsz;
-	    for (i = n_load_segs; --i >= 0; ) {
-	      if (start >= load_segs[i].start && start < load_segs[i].end) {
-		if (load_segs[i].start2 != 0) {
+	    for (j = n_load_segs; --j >= 0; ) {
+	      if (start >= load_segs[j].start && start < load_segs[j].end) {
+		if (load_segs[j].start2 != 0) {
 		  WARN("More than one GNU_RELRO segment per load seg\n",0);
 		} else {
-		  GC_ASSERT(end <= load_segs[i].end);
+		  GC_ASSERT(end <= load_segs[j].end);
 	          /* Remove from the existing load segment */
-		  load_segs[i].end2 = load_segs[i].end;
-		  load_segs[i].end = start;
-		  load_segs[i].start2 = end;
+		  load_segs[j].end2 = load_segs[j].end;
+		  load_segs[j].end = start;
+		  load_segs[j].start2 = end;
 		}
 	        break;
 	      }
-	      if (i == 0) WARN("Failed to find PT_GNU_RELRO segment"
+	      if (j == 0) WARN("Failed to find PT_GNU_RELRO segment"
 			       " inside PT_LOAD region", 0);
 	    }
 	}
