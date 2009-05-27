@@ -72,7 +72,8 @@
 
 /* Call GC_INIT only on platforms on which we think we really need it,	*/
 /* so that we can test automatic initialization on the rest.		*/
-#if defined(CYGWIN32) || defined (AIX) || defined(DARWIN)
+#if defined(CYGWIN32) || defined (AIX) || defined(DARWIN) \
+	|| defined(THREAD_LOCAL_ALLOC)
 #  define GC_COND_INIT() GC_INIT()
 #else
 #  define GC_COND_INIT()
@@ -459,7 +460,7 @@ void check_marks_int_list(sexpr x)
 }
 
 # if defined(GC_PTHREADS)
-    void fork_a_thread()
+    void fork_a_thread(void)
     {
       pthread_t t;
       int code;
@@ -474,7 +475,7 @@ void check_marks_int_list(sexpr x)
     }
 
 # elif defined(GC_WIN32_THREADS)
-    void fork_a_thread()
+    void fork_a_thread(void)
     {
   	DWORD thread_id;
 	HANDLE h;
@@ -491,15 +492,7 @@ void check_marks_int_list(sexpr x)
     	}
     }
 
-# else
-
-#   define fork_a_thread()
-
 # endif
-
-#else
-
-# define fork_a_thread()
 
 #endif 
 
@@ -514,7 +507,7 @@ struct {
  * Repeatedly reverse lists built out of very different sized cons cells.
  * Check that we didn't lose anything.
  */
-void reverse_test()
+void reverse_test(void)
 {
     int i;
     sexpr b;
@@ -592,7 +585,9 @@ void reverse_test()
     check_ints(b,1,50);
     check_ints(a,1,49);
     for (i = 0; i < 60; i++) {
-	if (i % 10 == 0) fork_a_thread();
+#	if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
+	    if (i % 10 == 0) fork_a_thread();
+#	endif
     	/* This maintains the invariant that a always points to a list of */
     	/* 49 integers.  Thus this is thread safe without locks,	  */
     	/* assuming atomic pointer assignments.				  */
@@ -621,7 +616,8 @@ void reverse_test()
 #   ifndef THREADS
 	a = 0;
 #   endif  
-    b = c = 0;
+    *(volatile void **)&b = 0;
+    *(volatile void **)&c = 0;
 }
 
 #undef a
@@ -794,7 +790,7 @@ void chktree(tn *t, int n)
 #if defined(GC_PTHREADS)
 pthread_key_t fl_key;
 
-void * alloc8bytes()
+void * alloc8bytes(void)
 {
 # if defined(SMALL_CONFIG) || defined(GC_DEBUG)
     collectable_count++;
@@ -857,7 +853,7 @@ void alloc_small(int n)
 #     define TREE_HEIGHT 16
 #   endif
 # endif
-void tree_test()
+void tree_test(void)
 {
     tn * root;
     int i;
@@ -872,8 +868,8 @@ void tree_test()
         FAIL;
     }
     dropped_something = 1;
-    GC_noop(root);	/* Root needs to remain live until	*/
-    			/* dropped_something is set.		*/
+    GC_noop1((word)root);	/* Root needs to remain live until	*/
+				/* dropped_something is set.		*/
     root = mktree(TREE_HEIGHT);
     chktree(root, TREE_HEIGHT);
     for (i = TREE_HEIGHT; i >= 0; i--) {
@@ -905,7 +901,7 @@ GC_word bm_huge[10] = {
 };
 
 /* A very simple test of explicitly typed allocation	*/
-void typed_test()
+void typed_test(void)
 {
     GC_word * old, * new;
     GC_word bm3 = 0x3;
@@ -977,7 +973,7 @@ void typed_test()
         new = (GC_word *)(old[1]);
     }
     GC_gcollect();
-    GC_noop(x);
+    GC_noop1((word)x);
 }
 
 int fail_count = 0;
@@ -1013,7 +1009,7 @@ static void uniq(void *p, ...) {
 #   define TEST_FAIL_COUNT(n) (fail_count >= (n))
 #endif
 
-void run_one_test()
+void run_one_test(void)
 {
 #   ifndef DBG_HDRS_ALL
 	char *x;
@@ -1225,12 +1221,14 @@ void run_one_test()
       GC_log_printf("Finished %p\n", &start_time);
 }
 
-void check_heap_stats()
+void check_heap_stats(void)
 {
     size_t max_heap_sz;
     int i;
     int still_live;
-    int late_finalize_count = 0;
+#   ifdef FINALIZE_ON_DEMAND
+	int late_finalize_count = 0;
+#   endif
     
 #   ifdef VERY_SMALL_CONFIG
     /* The upper bounds are a guess, which has been empirically	*/
@@ -1264,7 +1262,10 @@ void check_heap_stats()
       while (GC_collect_a_little()) { }
       for (i = 0; i < 16; i++) {
         GC_gcollect();
-        late_finalize_count += GC_invoke_finalizers();
+#   ifdef FINALIZE_ON_DEMAND
+	   late_finalize_count +=
+#   endif
+		GC_invoke_finalizers();
       }
     (void)GC_printf("Completed %u tests\n", (unsigned) n_tests);
     (void)GC_printf("Allocated %d collectable objects\n", collectable_count);
@@ -1356,19 +1357,10 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #if defined(MSWIN32) && !defined(__MINGW32__)
   int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPTSTR cmd, int n)
 #else
-  int main()
+  int main(void)
 #endif
 {
-#   if defined(DJGPP)
-	int dummy;
-#   endif
     n_tests = 0;
-    
-#   if defined(DJGPP)
-	/* No good way to determine stack base from library; do it */
-	/* manually on this platform.				   */
-    	GC_stackbottom = (void *)(&dummy);
-#   endif
 #   if defined(MACOS)
 	/* Make sure we have lots and lots of stack space. 	*/
 	SetMinimumStack(cMinStackSpace);
@@ -1572,7 +1564,7 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
 
 
 #ifdef PCR
-test()
+int test(void)
 {
     PCR_Th_T * th1;
     PCR_Th_T * th2;

@@ -1,3 +1,29 @@
+2009-05-27  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	(diff86_cvs, resembling diff28, diff32, diff33, diff38, diff68 partly)
+	* test.c (fork_a_thread, reverse_test, alloc8bytes, tree_test,
+        typed_test, run_one_test, check_heap_stats, main, test): Replace
+        all K&R-style function definitions with ANSI C ones.
+        * trace_test.c (main): Ditto.
+        * test.c (GC_COND_INIT): Define as GC_INIT() also in case of
+        THREAD_LOCAL_ALLOC.
+        * test.c (reverse_test): Call fork_a_thread() only if GC_PTHREADS
+        or GC_WIN32_THREADS; remove fork_a_thread() macros definition.
+        * test.c (reverse_test): Use "volatile" when clearing "b" and "c"
+        local variables (to suppress "assigned value is never used"
+        compiler warning).
+        * test.c (tree_test): Use public GC_noop1() instead of private
+        GC_noop().
+        * test.c (typed_test): Ditto.
+        * test.c (check_heap_stats): Define and assign value to
+        "late_finalize_count" local variable only if its value is used
+        (if FINALIZE_ON_DEMAND defined).
+        * test.c (main): Remove DJGPP-specific initialization of
+        GC_stackbottom (not needed anymore, handled in gcconfig.h).
+        * trace_test.c: Guard #define GC_DEBUG with #ifndef.
+        * trace_test.c: Include "gc_backptr.h".
+        * trace_test.c (main): Call GC_INIT().
+        * trace_test.c (main): Add "return 0" statement.
+
 2009-05-25  Hans Boehm <Hans.Boehm@hp.com> (Really Petter Urkedal)
 	* dyn_load.c (GC_register_dynlib_callback): Use new index j
 	instead of i in the inner loop.

@@ -1,6 +1,11 @@
 #include <stdio.h>
-#define GC_DEBUG
+
+#ifndef GC_DEBUG
+# define GC_DEBUG
+#endif
+
 #include "gc.h"
+#include "gc_backptr.h"
 
 struct treenode {
     struct treenode *x;
@@ -16,9 +21,10 @@ struct treenode * mktree(int i) {
   return r;
 }
 
-main()
+int main(void)
 {
   int i;
+  GC_INIT();
   for (i = 0; i < 10; ++i) {
     root[i] = mktree(12);
   }
@@ -26,4 +32,5 @@ main()
   GC_generate_random_backtrace();
   GC_generate_random_backtrace();
   GC_generate_random_backtrace();
+  return 0;
 }
