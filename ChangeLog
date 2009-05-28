@@ -1,4 +1,9 @@
 2009-05-27  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	(diff39)
+	* include/private/gcconfig.h: refine MINGW32 test.
+	* mark.c: Add win64/gcc tests.
+
+2009-05-27  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff86_cvs, resembling diff28, diff32, diff33, diff38, diff68 partly)
 	* test.c (fork_a_thread, reverse_test, alloc8bytes, tree_test,
         typed_test, run_one_test, check_heap_stats, main, test): Replace

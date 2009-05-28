@@ -400,7 +400,7 @@
 #   define CYGWIN32
 #   define mach_type_known
 # endif
-# if defined(__MINGW32__)
+# if defined(__MINGW32__) && !defined(mach_type_known)
 #   define I386
 #   define MSWIN32
 #   define mach_type_known

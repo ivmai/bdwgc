@@ -281,7 +281,8 @@ void GC_initiate_gc(void)
 
 static void alloc_mark_stack(size_t);
 
-# if defined(MSWIN32) || defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)
+# if defined(MSWIN32) && (!defined(__GNUC__) || !defined(_WIN64)) \
+	|| defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)
     /* Under rare conditions, we may end up marking from nonexistent memory. */
     /* Hence we need to be prepared to recover by running GC_mark_some	     */
     /* with a suitable handler in place.				     */
@@ -428,7 +429,7 @@ static void alloc_mark_stack(size_t);
 }
 
 
-#if defined(MSWIN32) && defined(__GNUC__)
+#if defined(MSWIN32) && defined(__GNUC__) && !defined(_WIN64)
 
     typedef struct {
       EXCEPTION_REGISTRATION ex_reg;
