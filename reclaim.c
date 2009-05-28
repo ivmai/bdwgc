@@ -22,7 +22,7 @@ signed_word GC_bytes_found = 0;
 			/* minus the number of bytes originally	   */
 			/* on free lists which we had to drop.	   */
 
-#if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+#if defined(PARALLEL_MARK)
   word GC_fl_builder_count = 0;
 	/* Number of threads currently building free lists without 	*/
 	/* holding GC lock.  It is not safe to collect if this is 	*/
@@ -477,7 +477,7 @@ void GC_start_reclaim(GC_bool report_if_found)
 {
     unsigned kind;
     
-#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+#   if defined(PARALLEL_MARK)
       GC_ASSERT(0 == GC_fl_builder_count);
 #   endif
     /* Reset in use counters.  GC_reclaim_block recomputes them. */
@@ -522,7 +522,7 @@ void GC_start_reclaim(GC_bool report_if_found)
     /* so that you can convince yourself that it really is very stupid.	*/
     GC_reclaim_all((GC_stop_func)0, FALSE);
 # endif
-# if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+# if defined(PARALLEL_MARK)
     GC_ASSERT(0 == GC_fl_builder_count);
 # endif
     

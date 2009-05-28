@@ -1963,7 +1963,7 @@ void GC_err_puts(const char *s);
 # define GC_STATIC_ASSERT(expr) (void)sizeof(char[(expr)? 1 : -1])
 #endif
 
-# if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+# if defined(PARALLEL_MARK)
     /* We need additional synchronization facilities from the thread	*/
     /* support.  We believe these are less performance critical		*/
     /* than the main garbage collector lock; standard pthreads-based	*/
@@ -1983,12 +1983,10 @@ void GC_err_puts(const char *s);
      extern void GC_acquire_mark_lock();
      extern void GC_release_mark_lock();
      extern void GC_notify_all_builder();
-     /* extern void GC_wait_builder(); */
      extern void GC_wait_for_reclaim();
 
      extern word GC_fl_builder_count;	/* Protected by mark lock.	*/
-# endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
-# ifdef PARALLEL_MARK
+
      extern void GC_notify_all_marker();
      extern void GC_wait_marker();
      extern word GC_mark_no;		/* Protected by mark lock.	*/

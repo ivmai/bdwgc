@@ -307,7 +307,7 @@ DCL_LOCK_STATE;
 	    GC_ASSERT(hhdr -> hb_sz == lb);
 	    hhdr -> hb_last_reclaimed = (unsigned short) GC_gc_no;
 #	    ifdef PARALLEL_MARK
-		{
+	      if (GC_parallel) {
 		  signed_word my_bytes_allocd_tmp = GC_bytes_allocd_tmp;
 
 		  GC_ASSERT(my_bytes_allocd_tmp >= 0);
@@ -320,11 +320,11 @@ DCL_LOCK_STATE;
 				(AO_t)(-my_bytes_allocd_tmp));
 		    GC_bytes_allocd += my_bytes_allocd_tmp;
 		  }
-		}
-		GC_acquire_mark_lock();
-		++ GC_fl_builder_count;
-		UNLOCK();
-		GC_release_mark_lock();
+		  GC_acquire_mark_lock();
+		  ++ GC_fl_builder_count;
+		  UNLOCK();
+		  GC_release_mark_lock();
+	      }
 #	    endif
 	    op = GC_reclaim_generic(hbp, hhdr, lb,
 				    ok -> ok_init, 0, &my_bytes_allocd);
@@ -335,30 +335,33 @@ DCL_LOCK_STATE;
 	      /* inaccurate.						*/
 	      GC_bytes_found += my_bytes_allocd;
 #	      ifdef PARALLEL_MARK
-		*result = op;
-		(void)AO_fetch_and_add(
+		if (GC_parallel) {
+		  *result = op;
+		  (void)AO_fetch_and_add(
 				(volatile AO_t *)(&GC_bytes_allocd_tmp),
 				(AO_t)(my_bytes_allocd));
+		  GC_acquire_mark_lock();
+		  -- GC_fl_builder_count;
+		  if (GC_fl_builder_count == 0) GC_notify_all_builder();
+		  GC_release_mark_lock();
+		  (void) GC_clear_stack(0);
+		  return;
+		}
+#	      endif
+	      GC_bytes_allocd += my_bytes_allocd;
+	      goto out;
+	    }
+#	    ifdef PARALLEL_MARK
+	      if (GC_parallel) {
 		GC_acquire_mark_lock();
 		-- GC_fl_builder_count;
 		if (GC_fl_builder_count == 0) GC_notify_all_builder();
 		GC_release_mark_lock();
-		(void) GC_clear_stack(0);
-		return;
-#	      else
-	        GC_bytes_allocd += my_bytes_allocd;
-	        goto out;
-#	      endif
-	    }
-#	    ifdef PARALLEL_MARK
-	      GC_acquire_mark_lock();
-	      -- GC_fl_builder_count;
-	      if (GC_fl_builder_count == 0) GC_notify_all_builder();
-	      GC_release_mark_lock();
-	      LOCK();
-	      /* GC lock is needed for reclaim list access.	We	*/
-	      /* must decrement fl_builder_count before reaquiring GC	*/
-	      /* lock.  Hopefully this path is rare.			*/
+		LOCK();
+		/* GC lock is needed for reclaim list access.	We	*/
+		/* must decrement fl_builder_count before reaquiring GC	*/
+		/* lock.  Hopefully this path is rare.			*/
+	      }
 #	    endif
     	}
     }
@@ -387,24 +390,26 @@ DCL_LOCK_STATE;
 	  if (IS_UNCOLLECTABLE(k)) GC_set_hdr_marks(HDR(h));
 	  GC_bytes_allocd += HBLKSIZE - HBLKSIZE % lb;
 #	  ifdef PARALLEL_MARK
-	    GC_acquire_mark_lock();
-	    ++ GC_fl_builder_count;
-	    UNLOCK();
-	    GC_release_mark_lock();
-#	  endif
+	    if (GC_parallel) {
+	      GC_acquire_mark_lock();
+	      ++ GC_fl_builder_count;
+	      UNLOCK();
+	      GC_release_mark_lock();
 
-	  op = GC_build_fl(h, lw, (ok -> ok_init || GC_debugging_started), 0);
-#	  ifdef PARALLEL_MARK
-	    *result = op;
-	    GC_acquire_mark_lock();
-	    -- GC_fl_builder_count;
-	    if (GC_fl_builder_count == 0) GC_notify_all_builder();
-	    GC_release_mark_lock();
-	    (void) GC_clear_stack(0);
-	    return;
-#	  else
-	    goto out;
+	      op = GC_build_fl(h, lw,
+			(ok -> ok_init || GC_debugging_started), 0);
+	    
+	      *result = op;
+	      GC_acquire_mark_lock();
+	      -- GC_fl_builder_count;
+	      if (GC_fl_builder_count == 0) GC_notify_all_builder();
+	      GC_release_mark_lock();
+	      (void) GC_clear_stack(0);
+	      return;
+	    }
 #	  endif
+	  op = GC_build_fl(h, lw, (ok -> ok_init || GC_debugging_started), 0);
+	  goto out;
 	}
     }
     

@@ -219,7 +219,7 @@ void GC_clear_mark_bit(ptr_t p)
       clear_mark_bit_from_hdr(hhdr, bit_no);
       n_marks = hhdr -> hb_n_marks - 1;
 #     ifdef PARALLEL_MARK
-        if (n_marks != 0)
+        if (n_marks != 0 || !GC_parallel)
           hhdr -> hb_n_marks = n_marks; 
         /* Don't decrement to zero.  The counts are approximate due to	*/
         /* concurrency issues, but we need to ensure that a count of 	*/
@@ -1316,7 +1316,7 @@ void GC_push_selected(ptr_t bottom, ptr_t top,
 #ifdef PARALLEL_MARK
     /* Break up root sections into page size chunks to better spread 	*/
     /* out work.							*/
-    GC_bool GC_true_func(struct hblk *h) { return TRUE; }
+    STATIC GC_bool GC_true_func(struct hblk *h) { return TRUE; }
 #   define GC_PUSH_ALL(b,t) GC_push_selected(b,t,GC_true_func,GC_push_all);
 #else
 #   define GC_PUSH_ALL(b,t) GC_push_all(b,t);

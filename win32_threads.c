@@ -785,9 +785,11 @@ void GC_stop_world(void)
 
   /* This code is the same as in pthread_stop_world.c */
 # ifdef PARALLEL_MARK
-    GC_acquire_mark_lock();
-    GC_ASSERT(GC_fl_builder_count == 0);
-    /* We should have previously waited for it to become zero. */
+    if (GC_parallel) {
+      GC_acquire_mark_lock();
+      GC_ASSERT(GC_fl_builder_count == 0);
+      /* We should have previously waited for it to become zero. */
+    }
 # endif /* PARALLEL_MARK */
 
   GC_please_stop = TRUE;
@@ -826,7 +828,8 @@ void GC_stop_world(void)
     LeaveCriticalSection(&GC_write_cs);
 # endif    
 # ifdef PARALLEL_MARK
-    GC_release_mark_lock();
+    if (GC_parallel)
+      GC_release_mark_lock();
 # endif
 }
 
@@ -1725,18 +1728,6 @@ void GC_thr_init(void) {
     GC_ASSERT(sb_result == GC_SUCCESS);
     
 #   ifdef PARALLEL_MARK
-#     ifndef GC_PTHREADS
-	/* Initialize Win32 event objects for parallel marking		*/
-	/* (used even if parallel marking is set disabled at startup).	*/
-	mark_mutex_event = CreateEventA(NULL /* attrs */,
-				FALSE /* isManualReset */,
-				FALSE /* initialState */, NULL /* name */);
-	builder_cv = CreateEventA(NULL /* attrs */, TRUE /* isManualReset */,
-			FALSE /* initialState */, NULL /* name */);
-	if (mark_mutex_event == (HANDLE)0 || builder_cv == (HANDLE)0)
-	  ABORT("CreateEvent() failed");
-#     endif
-
       /* Set GC_markers. */
       {
 	char * markers_string = GETENV("GC_MARKERS");
@@ -1787,10 +1778,17 @@ void GC_thr_init(void) {
 	  GC_markers = 1;
 	} else {
 #	  ifndef GC_PTHREADS
-	    /* Initialize mark_cv if it is really needed.	*/
+	    /* Initialize Win32 event objects for parallel marking.	*/
+	    mark_mutex_event = CreateEventA(NULL /* attrs */,
+				FALSE /* isManualReset */,
+				FALSE /* initialState */, NULL /* name */);
+	    builder_cv = CreateEventA(NULL /* attrs */,
+				TRUE /* isManualReset */,
+				FALSE /* initialState */, NULL /* name */);
 	    mark_cv = CreateEventA(NULL /* attrs */, TRUE /* isManualReset */,
 				FALSE /* initialState */, NULL /* name */);
-	    if (mark_cv == (HANDLE)0)
+	    if (mark_mutex_event == (HANDLE)0 || builder_cv == (HANDLE)0
+		|| mark_cv == (HANDLE)0)
 	      ABORT("CreateEvent() failed");
 #	  endif
 	  GC_parallel = TRUE;

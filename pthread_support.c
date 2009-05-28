@@ -272,9 +272,9 @@ void GC_mark_thread_local_free_lists(void)
 #   define MAX_MARKERS 16
 # endif
 
-static ptr_t marker_sp[MAX_MARKERS] = {0};
+static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
 #ifdef IA64
-  static ptr_t marker_bsp[MAX_MARKERS] = {0};
+  static ptr_t marker_bsp[MAX_MARKERS - 1] = {0};
 #endif
 
 void * GC_mark_thread(void * id)
@@ -505,7 +505,7 @@ GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
     
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef PARALLEL_MARK
-      for (i = 0; i < GC_markers; ++i) {
+      for (i = 0; i < GC_markers - 1; ++i) {
 	if (marker_sp[i] > lo & marker_sp[i] < hi) return TRUE;
 #       ifdef IA64
 	  if (marker_bsp[i] > lo & marker_bsp[i] < hi) return TRUE;
@@ -539,7 +539,7 @@ ptr_t GC_greatest_stack_base_below(ptr_t bound)
     
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef PARALLEL_MARK
-      for (i = 0; i < GC_markers; ++i) {
+      for (i = 0; i < GC_markers - 1; ++i) {
 	if (marker_sp[i] > result && marker_sp[i] < bound)
 	  result = marker_sp[i];
       }
@@ -639,20 +639,23 @@ STATIC void GC_fork_prepare_proc(void)
     /* Wait for an ongoing GC to finish, since we can't finish it in	*/
     /* the (one remaining thread in) the child.				*/
       LOCK();
-#     if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
-        GC_wait_for_reclaim();
+#     if defined(PARALLEL_MARK)
+	if (GC_parallel)
+          GC_wait_for_reclaim();
 #     endif
       GC_wait_for_gc_completion(TRUE);
-#     if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
-        GC_acquire_mark_lock();
+#     if defined(PARALLEL_MARK)
+	if (GC_parallel)
+          GC_acquire_mark_lock();
 #     endif
 }
 
 /* Called in parent after a fork()	*/
 STATIC void GC_fork_parent_proc(void)
 {
-#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
-      GC_release_mark_lock();
+#   if defined(PARALLEL_MARK)
+      if (GC_parallel)
+        GC_release_mark_lock();
 #   endif
     UNLOCK();
 }
@@ -661,8 +664,9 @@ STATIC void GC_fork_parent_proc(void)
 STATIC void GC_fork_child_proc(void)
 {
     /* Clean up the thread table, so that just our thread is left. */
-#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
-      GC_release_mark_lock();
+#   if defined(PARALLEL_MARK)
+      if (GC_parallel)
+        GC_release_mark_lock();
 #   endif
     GC_remove_all_threads_but_me();
 #   ifdef PARALLEL_MARK
@@ -1242,7 +1246,7 @@ volatile GC_bool GC_collecting = 0;
                         /* extended period.                             */
 
 #if (!defined(USE_SPIN_LOCK) && !defined(NO_PTHREAD_TRYLOCK)) \
-	|| defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+	|| defined(PARALLEL_MARK)
 /* If we don't want to use the below spinlock implementation, either	*/
 /* because we don't have a GC_test_and_set implementation, or because 	*/
 /* we don't want to risk sleeping, we can still try spinning on 	*/
@@ -1390,7 +1394,7 @@ void GC_lock(void)
 
 #endif /* !USE_SPINLOCK */
 
-#if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+#ifdef PARALLEL_MARK
 
 #ifdef GC_ASSERTIONS
   unsigned long GC_mark_lock_holder = NO_THREAD;
@@ -1472,10 +1476,6 @@ void GC_notify_all_builder(void)
 	ABORT("pthread_cond_broadcast failed");
     }
 }
-
-#endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
-
-#ifdef PARALLEL_MARK
 
 static pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
 

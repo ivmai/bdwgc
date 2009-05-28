@@ -1,4 +1,18 @@
 2009-05-27  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	(diff26)
+	* win32_threads.c: restructure parallel marking mutex intialization.
+	* win32_threads.c, alloc.c, darwin_stop_world.c, mallocx.c, mark.c,
+	pthread_stop_world.c, pthread_support.c: Add runtime conditions
+	on GC_parallel were appropriate.
+	* pthread_support.c: Condition marker_bsp on ia64.
+	(GC_segment_is_thread_stack): Fix loop upper bound.
+	* reclaim.c: Limit some assertions to PARALLEL_MARK.
+	* pthread_support.c: Don't acquire mark lock for thread-local
+	allocation.
+	* include/private/gc_priv.h: Don't define parallel mark sync
+	support just for THREAD_LOCAL_ALLOC.
+
+2009-05-27  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff39)
 	* include/private/gcconfig.h: refine MINGW32 test.
 	* mark.c: Add win64/gcc tests.

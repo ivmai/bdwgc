@@ -466,9 +466,11 @@ void GC_stop_world(void)
     /* required to acquire and release the GC lock before it starts,	*/
     /* and we have the lock.						*/
 #   ifdef PARALLEL_MARK
-      GC_acquire_mark_lock();
-      GC_ASSERT(GC_fl_builder_count == 0);
-      /* We should have previously waited for it to become zero. */
+      if (GC_parallel) {
+	GC_acquire_mark_lock();
+	GC_ASSERT(GC_fl_builder_count == 0);
+	/* We should have previously waited for it to become zero. */
+      }
 #   endif /* PARALLEL_MARK */
 
     /* Loop stopping threads until you have gone over the whole list
@@ -519,7 +521,8 @@ void GC_stop_world(void)
 #   endif
 
 #   ifdef PARALLEL_MARK
-      GC_release_mark_lock();
+      if (GC_parallel)
+	GC_release_mark_lock();
 #   endif
 #   if DEBUG_THREADS
       GC_printf("World stopped from 0x%lx\n", (unsigned long)my_thread);

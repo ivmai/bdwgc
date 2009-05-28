@@ -273,7 +273,8 @@ STATIC void GC_maybe_gc(void)
             return;
         } else {
 #   	  ifdef PARALLEL_MARK
-	    GC_wait_for_reclaim();
+	    if (GC_parallel)
+	      GC_wait_for_reclaim();
 #   	  endif
 	  if (GC_need_full_gc || n_partial_gcs >= GC_full_freq) {
 	    if (GC_print_stats) {
@@ -350,6 +351,7 @@ GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
     /* In the find_leak case, we have to finish to guarantee that 	*/
     /* previously unmarked objects are not reported as leaks.		*/
 #       ifdef PARALLEL_MARK
+	  if (GC_parallel)
 	    GC_wait_for_reclaim();
 #       endif
  	if ((GC_find_leak || stop_func != GC_never_stop_func)
@@ -417,7 +419,8 @@ void GC_collect_a_little_inner(int n)
         	    GC_save_callers(GC_last_stack);
 #     		endif
 #		ifdef PARALLEL_MARK
-		    GC_wait_for_reclaim();
+		    if (GC_parallel)
+		      GC_wait_for_reclaim();
 #		endif
 		if (GC_n_attempts < MAX_PRIOR_ATTEMPTS
 		    && GC_time_limit != GC_TIME_UNLIMITED) {
@@ -647,7 +650,7 @@ STATIC void GC_clear_fl_marks(ptr_t q)
       	  clear_mark_bit_from_hdr(hhdr, bit_no);
 #	  ifdef PARALLEL_MARK
 	    /* Appr. count, don't decrement to zero! */
-	    if (0 != n_marks) {
+	    if (0 != n_marks || !GC_parallel) {
               hhdr -> hb_n_marks = n_marks;
 	    }
 #	  else
