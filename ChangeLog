@@ -1,3 +1,7 @@
+2009-06-02  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	(adding last bit of diff86_cvs)
+	* tests/test.c (check_heap_stats): Avoid unbalanced brackets in ifdef.
+
 2009-05-27  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff26)
 	* win32_threads.c: restructure parallel marking mutex intialization.

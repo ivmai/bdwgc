@@ -1309,12 +1309,13 @@ void check_heap_stats(void)
     	           (GC_bytes_allocd + GC_bytes_allocd_before_gc));
     (void)GC_printf("Final heap size is %lu bytes\n",
     		    (unsigned long)GC_get_heap_size());
-    if (GC_bytes_allocd + GC_bytes_allocd_before_gc
+    if (GC_bytes_allocd + GC_bytes_allocd_before_gc < n_tests *
 #   ifdef VERY_SMALL_CONFIG
-        < 2700000*n_tests) {
+        2700000
 #   else
-        < 33500000*n_tests) {
+        33500000
 #   endif
+        ) {
         (void)GC_printf("Incorrect execution - missed some allocations\n");
         FAIL;
     }
