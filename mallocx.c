@@ -453,7 +453,6 @@ GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)
 	opp = &(GC_uobjfreelist[lg]);
 	LOCK();
         if( (op = *opp) != 0 ) {
-            /* See above comment on signals.	*/
             *opp = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
@@ -476,7 +475,7 @@ GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)
         if (0 == op) return(0);
 	
 	GC_ASSERT(((word)op & (HBLKSIZE - 1)) == 0); /* large block */
-	hhdr = HDR((struct hbklk *)op);
+	hhdr = HDR(op);
 	/* We don't need the lock here, since we have an undisguised 	*/
 	/* pointer.  We do need to hold the lock while we adjust	*/
 	/* mark bits.							*/
@@ -541,7 +540,6 @@ GC_API void * GC_CALL GC_malloc_atomic_uncollectable(size_t lb)
 	opp = &(GC_auobjfreelist[lg]);
 	LOCK();
         if( (op = *opp) != 0 ) {
-            /* See above comment on signals.	*/
             *opp = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
@@ -561,7 +559,7 @@ GC_API void * GC_CALL GC_malloc_atomic_uncollectable(size_t lb)
         if (0 == op) return(0);
 
 	GC_ASSERT(((word)op & (HBLKSIZE - 1)) == 0);
-	hhdr = HDR((struct hbklk *)op);
+	hhdr = HDR(op);
 	
 	LOCK();
 	set_mark_bit_from_hdr(hhdr, 0);	/* Only object.	*/

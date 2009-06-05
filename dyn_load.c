@@ -1239,7 +1239,7 @@ void GC_init_dyld() {
 #   endif
       
       if(!_dyld_bind_fully_image_containing_address((unsigned long*)GC_malloc))
-        GC_abort("_dyld_bind_fully_image_containing_address failed");
+        ABORT("_dyld_bind_fully_image_containing_address failed");
     }
 
 }

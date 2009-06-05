@@ -246,9 +246,6 @@ ptr_t GC_store_debug_info(ptr_t p, word sz, const char *string, word integer)
     register word * result = (word *)((oh *)p + 1);
     DCL_LOCK_STATE;
     
-    /* There is some argument that we should dissble signals here.	*/
-    /* But that's expensive.  And this way things should only appear	*/
-    /* inconsistent while we're in the handler.				*/
     LOCK();
     GC_ASSERT(GC_size(p) >= sizeof(oh) + sz);
     GC_ASSERT(!(SMALL_OBJ(sz) && CROSSES_HBLK(p, sz)));
@@ -278,9 +275,6 @@ STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz, char *string,
 {
     register word * result = (word *)((oh *)p + 1);
     
-    /* There is some argument that we should disable signals here.	*/
-    /* But that's expensive.  And this way things should only appear	*/
-    /* inconsistent while we're in the handler.				*/
     GC_ASSERT(GC_size(p) >= sizeof(oh) + sz);
     GC_ASSERT(!(SMALL_OBJ(sz) && CROSSES_HBLK(p, sz)));
 #   ifdef KEEP_BACK_PTRS
@@ -615,10 +609,12 @@ GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
     return GC_debug_malloc(lb, OPT_RA s, i);
 }
 
+/*ARGSUSED*/
 GC_API void GC_CALL GC_debug_change_stubborn(void *p)
 {
 }
 
+/*ARGSUSED*/
 GC_API void GC_CALL GC_debug_end_stubborn_change(void *p)
 {
 }
@@ -711,7 +707,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
         GC_err_printf(
-        	  "GC_debug_free called on pointer %p wo debugging info\n", p);
+        	 "GC_debug_free called on pointer %p w/o debugging info\n", p);
     } else {
 #     ifndef SHORT_DBG_HDRS
         clobbered = GC_check_annotated_obj((oh *)base);
@@ -790,7 +786,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
         GC_err_printf(
-        	"GC_debug_realloc called on pointer %p wo debugging info\n", p);
+              "GC_debug_realloc called on pointer %p w/o debugging info\n", p);
         return(GC_realloc(p, lb));
     }
     hhdr = HDR(base);
@@ -815,6 +811,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
 	break;
 #    endif
       default:
+        result = NULL; /* initialized to prevent warning. */
         GC_err_printf("GC_debug_realloc: encountered bad kind\n");
         ABORT("bad kind");
     }

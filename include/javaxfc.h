@@ -1,4 +1,4 @@
-# ifndef GC_H
+# ifndef _GC_H
 #   include "gc.h"
 # endif
 

@@ -594,7 +594,7 @@
  *    easily accomplished by introducing a new main program, setting
  *    GC_stackbottom to the address of a local variable, and then calling
  *    the original main program.  The new main program would read something
- *    like:
+ *    like (provided real_main() is not inlined by the compiler):
  *
  *		# include "gc_private.h"
  *
@@ -803,7 +803,7 @@
 #           define DYNAMIC_LOADING
 #       endif
         extern char etext[];
-        extern char * GC_FreeBSDGetDataStart();
+        ptr_t GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr);
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, &etext)
 #   endif
 #   ifdef NETBSD
@@ -1907,7 +1907,7 @@
 #	    define DYNAMIC_LOADING
 #	endif
 	extern char etext[];
-	extern char * GC_FreeBSDGetDataStart();
+        ptr_t GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr);
 #	define DATASTART GC_FreeBSDGetDataStart(0x1000, &etext)
 #   endif
 #   ifdef NETBSD
@@ -2267,7 +2267,7 @@
 # endif
 
 # if !defined(FIXUP_POINTER) && defined(POINTER_MASK)
-#   define FIXUP_POINTER(p) (p) = ((p) & (POINTER_MASK) << POINTER_SHIFT)
+#   define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
 # endif
 
 # if defined(FIXUP_POINTER)
@@ -2315,7 +2315,7 @@
 	/* does.							*/
 	struct hblk;	/* See gc_priv.h.	*/
 # if defined(PCR)
-    char * real_malloc();
+    char * real_malloc(size_t bytes);
 #   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)bytes + GC_page_size) \
 					  + GC_page_size-1)
 # elif defined(OS2)
@@ -2329,7 +2329,7 @@
 #   define GET_MEM(bytes) HBLKPTR((size_t) calloc(1, (size_t)bytes + GC_page_size) \
 					             + GC_page_size-1)
 # elif defined(MSWIN32)
-    extern ptr_t GC_win32_get_mem();
+    ptr_t GC_win32_get_mem(GC_word bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
 # elif defined(MACOS)
 #   if defined(USE_TEMPORARY_MEMORY)
@@ -2342,7 +2342,7 @@
 				NewPtrClear(bytes + GC_page_size) + GC_page_size-1)
 #   endif
 # elif defined(MSWINCE)
-    extern ptr_t GC_wince_get_mem();
+    ptr_t GC_wince_get_mem(GC_word bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
 # elif defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
     extern void *GC_amiga_get_mem(size_t size);
@@ -2350,7 +2350,7 @@
 			  GC_amiga_get_mem((size_t)bytes + GC_page_size) \
 			  + GC_page_size-1)
 # else
-    extern ptr_t GC_unix_get_mem();
+    ptr_t GC_unix_get_mem(GC_word bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
 # endif
 

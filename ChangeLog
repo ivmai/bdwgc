@@ -1,3 +1,52 @@
+2009-06-04  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	(diff89_cvs, resembling diff3, diff27, diff34, diff38, diff47, diff49,
+	diff59, diff60, diff66, diff67, diff68, diff69a, diff70, diff81
+	partly)
+        * dbg_mlc.c (GC_store_debug_info, GC_store_debug_info_inner): Remove
+        outdated comment about disabling signals.
+        * mallocx.c (GC_malloc_uncollectable,
+        GC_malloc_atomic_uncollectable): Ditto.
+        * os_dep.c: Ditto.
+        * dbg_mlc.c (GC_debug_change_stubborn, GC_debug_end_stubborn_change):
+        Add ARGSUSED tag.
+        * pthread_stop_world.c (GC_suspend_handler,
+        GC_suspend_handler_inner): Ditto.
+        * dbg_mlc.c (GC_debug_free, GC_debug_realloc): Fix printf message.
+        * dbg_mlc.c (GC_debug_realloc): Set "result" to NULL in the default
+        switch branch to suppress compiler warning.
+        * dyn_load.c (GC_init_dyld): Use ABORT() instead of GC_abort().
+        * include/private/darwin_semaphore.h (sem_init): Ditto.
+        * include/javaxfc.h: Replace "GC_H" with "_GC_H".
+        * include/private/dbg_mlc.h (GC_has_other_debug_info,
+        GC_store_debug_info): Replace K&R-style function prototypes with ANSI
+        C one.
+        * include/private/gcconfig.h (GC_FreeBSDGetDataStart, real_malloc,
+        GC_win32_get_mem, GC_wince_get_mem, GC_unix_get_mem): Ditto.
+        * include/private/pthread_support.h (GC_stop_init): Ditto.
+        * include/private/gcconfig.h: Refine comment about setting
+        GC_stackbottom.
+        * include/private/gcconfig.h (FIXUP_POINTER): Put parentheses in the
+        "right" places.
+        * include/private/pthread_support.h (GC_Thread_Rep): Refine comment
+        for "stack_end" field.
+        * mallocx.c (GC_malloc_uncollectable,
+        GC_malloc_atomic_uncollectable): Remove cast to undefined "hbklk".
+        * os_dep.c (GC_USE_MEM_TOP_DOWN): New macro (for setting
+        GC_mem_top_down to MEM_TOP_DOWN for debug purposes).
+        * os_dep.c (GC_gww_read_dirty, catch_exception_raise): Fix WARN()
+        format specifier (should be word-compliant, "%p" is used w/o "0x").
+        * pthread_stop_world.c (GC_suspend_handler_inner): Ditto.
+        * os_dep.c (GC_dirty_init): Append new-line to printf messages.
+        * os_dep.c (GC_mprotect_thread): Fix GC_err_printf message.
+        * os_dep.c (GC_save_callers): Change GC_ASSERT to GC_STATIC_ASSERT.
+        * pthread_stop_world.c (GC_retry_signals, GC_suspend_ack_sem): Define
+        as STATIC.
+        * pthread_stop_world.c (GC_push_all_stacks): Add assertion for that
+        "thread_blocked" is not set for the current thread.
+        * real_malloc.c: Add "extern GC_quiet" to suppress compiler warning.
+        * reclaim.c (GC_reclaim_all): Initialize "start_time" (to 0) to
+        suppress compiler warning.
+	
 2009-06-02  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(adding last bit of diff86_cvs)
 	* tests/test.c (check_heap_stats): Avoid unbalanced brackets in ifdef.

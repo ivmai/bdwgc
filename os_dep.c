@@ -1838,9 +1838,14 @@ SYSTEM_INFO GC_sysinfo;
 
 word GC_n_heap_bases = 0;
 
-DWORD GC_mem_top_down = 0; /* Change to MEM_TOP_DOWN  for better 64-bit */
+#ifdef GC_USE_MEM_TOP_DOWN
+  STATIC DWORD GC_mem_top_down = MEM_TOP_DOWN;
+			   /* Use GC_USE_MEM_TOP_DOWN for better 64-bit */
 			   /* testing.  Otherwise all addresses tend to */
 			   /* end up in first 4GB, hiding bugs.		*/
+#else
+  STATIC DWORD GC_mem_top_down = 0;
+#endif
 
 ptr_t GC_win32_get_mem(word bytes)
 {
@@ -2309,7 +2314,7 @@ STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
           if ( i != 0 && last_warned != start && warn_count++ < 5) {
             last_warned = start;
             WARN(
-              "GC_gww_read_dirty unexpectedly failed at %ld: "
+              "GC_gww_read_dirty unexpectedly failed at %p: "
               "Falling back to marking all pages dirty\n", start);
           }
           for (j = 0; j < nblocks; ++j) {
@@ -2364,8 +2369,7 @@ STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
 
 # ifdef DEFAULT_VDB
 
-/* All of the following assume the allocation lock is held, and	*/
-/* signals are disabled.					*/
+/* All of the following assume the allocation lock is held.	*/
 
 /* The client asserts that unallocated pages in the heap are never	*/
 /* written.								*/
@@ -2859,7 +2863,7 @@ void GC_dirty_init(void)
 	GC_old_segv_handler_used_si = FALSE;
       }
       if (GC_old_segv_handler == (SIG_HNDLR_PTR)SIG_IGN) {
-	GC_err_printf("Previously ignored segmentation violation!?");
+	GC_err_printf("Previously ignored segmentation violation!?\n");
 	GC_old_segv_handler = (SIG_HNDLR_PTR)SIG_DFL;
       }
       if (GC_old_segv_handler != (SIG_HNDLR_PTR)SIG_DFL) {
@@ -2877,7 +2881,7 @@ void GC_dirty_init(void)
 	GC_old_bus_handler_used_si = FALSE;
       }
       if (GC_old_bus_handler == (SIG_HNDLR_PTR)SIG_IGN) {
-	     GC_err_printf("Previously ignored bus error!?");
+	     GC_err_printf("Previously ignored bus error!?\n");
 	     GC_old_bus_handler = (SIG_HNDLR_PTR)SIG_DFL;
       }
       if (GC_old_bus_handler != (SIG_HNDLR_PTR)SIG_DFL) {
@@ -3578,7 +3582,7 @@ static void *GC_mprotect_thread(void *arg)
 	    /* This will fail if the thread dies, but the thread */
 	    /* shouldn't die... */
 #           ifdef BROKEN_EXCEPTION_HANDLING
-	      GC_err_printf("mach_msg failed with %d %s while sending"
+	      GC_err_printf("mach_msg failed with %d %s while sending "
 			    "exc reply\n", (int)r,mach_error_string(r));
 #           else
 	      ABORT("mach_msg failed while sending exception reply");
@@ -3845,7 +3849,7 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
 	}
 	if(++last_fault_count < 32) {
 	  if(last_fault_count == 1)
-	    WARN("Ignoring KERN_PROTECTION_FAILURE at %lx\n", (GC_word)addr);
+	    WARN("Ignoring KERN_PROTECTION_FAILURE at %p\n", addr);
 	  return KERN_SUCCESS;
 	}
 
@@ -4017,7 +4021,7 @@ void GC_save_callers (struct callinfo info[NFRAMES])
     }
     GC_in_save_callers = TRUE;
 # endif
-  GC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
+  GC_STATIC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
   npcs = backtrace((void **)tmp_info, NFRAMES + IGNORE_FRAMES);
   BCOPY(tmp_info+IGNORE_FRAMES, info, (npcs - IGNORE_FRAMES) * sizeof(void *));
   for (i = npcs - IGNORE_FRAMES; i < NFRAMES; ++i) info[i].ci_pc = 0;

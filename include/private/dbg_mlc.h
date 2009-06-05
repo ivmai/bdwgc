@@ -161,7 +161,7 @@ typedef struct {
 #ifdef SHORT_DBG_HDRS
 # define GC_has_other_debug_info(p) TRUE
 #else
-  GC_bool GC_has_other_debug_info(/* p */);
+  GC_bool GC_has_other_debug_info(ptr_t p);
 #endif
 
 #if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
@@ -173,6 +173,6 @@ typedef struct {
 
 /* Store debugging info into p.  Return displaced pointer. */
 /* Assumes we don't hold allocation lock.		   */
-ptr_t GC_store_debug_info(/* p, sz, string, integer */);
+ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str, word integer);
 
 #endif /* _DBG_MLC_H */

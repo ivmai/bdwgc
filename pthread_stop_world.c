@@ -75,9 +75,9 @@ volatile AO_t GC_world_is_stopped = FALSE;
 			/* stopped).					     */
 
 #ifdef GC_OSF1_THREADS
-  GC_bool GC_retry_signals = TRUE;
+  STATIC GC_bool GC_retry_signals = TRUE;
 #else
-  GC_bool GC_retry_signals = FALSE;
+  STATIC GC_bool GC_retry_signals = FALSE;
 #endif
 
 /*
@@ -104,19 +104,20 @@ volatile AO_t GC_world_is_stopped = FALSE;
 #  endif
 #endif
 
-sem_t GC_suspend_ack_sem;
+STATIC sem_t GC_suspend_ack_sem;
 
 #ifdef GC_NETBSD_THREADS
 # define GC_NETBSD_THREADS_WORKAROUND
   /* It seems to be necessary to wait until threads have restarted.	*/
   /* But it is unclear why that is the case.				*/
-  sem_t GC_restart_ack_sem;
+  STATIC sem_t GC_restart_ack_sem;
 #endif
 
 STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 
 #if defined(IA64) || defined(HP_PA) || defined(M68K)
 #ifdef SA_SIGINFO
+/*ARGSUSED*/
 STATIC void GC_suspend_handler(int sig, siginfo_t *info, void *context)
 #else
 STATIC void GC_suspend_handler(int sig)
@@ -144,6 +145,7 @@ STATIC void GC_suspend_handler(int sig)
 }
 #endif
 
+/*ARGSUSED*/
 STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 {
     int sig = (int)(word)sig_arg;
@@ -167,8 +169,8 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
     if (me -> stop_info.last_stop_count == my_stop_count) {
 	/* Duplicate signal.  OK if we are retrying.	*/
 	if (!GC_retry_signals) {
-	    WARN("Duplicate suspend signal in thread %lx\n",
-		 pthread_self());
+	    WARN("Duplicate suspend signal in thread %p\n",
+		 (word)pthread_self());
 	}
 	return;
     }
@@ -264,6 +266,7 @@ void GC_push_all_stacks(void)
         if (p -> flags & FINISHED) continue;
 	++nthreads;
         if (THREAD_EQUAL(p -> id, me)) {
+	    GC_ASSERT(!p->thread_blocked);
 #  	    ifdef SPARC
 	        lo = (ptr_t)GC_save_regs_in_stack();
 #  	    else

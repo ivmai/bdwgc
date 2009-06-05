@@ -49,7 +49,8 @@ typedef struct GC_Thread_Rep {
     				/* has set its sp value.  Thus it does	*/
     				/* not need to be sent a signal to stop	*/
     				/* it.					*/
-    ptr_t stack_end;		/* Cold end of the stack.		*/
+    ptr_t stack_end;		/* Cold end of the stack (except for	*/
+				/* main thread).			*/
 #   ifdef IA64
 	ptr_t backing_store_end;
 	ptr_t backing_store_ptr;
@@ -73,7 +74,7 @@ extern GC_bool GC_thr_initialized;
 
 GC_thread GC_lookup_thread(pthread_t id);
 
-void GC_stop_init();
+void GC_stop_init(void);
 
 extern GC_bool GC_in_thread_creation;
 	/* We may currently be in thread creation or destruction.	*/

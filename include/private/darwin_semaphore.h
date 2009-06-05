@@ -21,7 +21,7 @@ typedef struct {
 static int sem_init(sem_t *sem, int pshared, int value) {
     int ret;
     if(pshared)
-        GC_abort("sem_init with pshared set");
+        ABORT("sem_init with pshared set");
     sem->value = value;
     
     ret = pthread_mutex_init(&sem->mutex,NULL);
