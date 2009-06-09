@@ -1,3 +1,52 @@
+2009-06-08  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	(diff91_cvs: resembling diff3, diff27, diff33, diff45, diff47, diff49,
+	diff60, diff67, diff68 partly)
+	* alloc.c (GC_FULL_FREQ, GC_DONT_EXPAND, GC_FREE_SPACE_DIVISOR,
+        GC_TIME_LIMIT): New macros (used to control the default initial
+        values of GC_full_freq variable, GC_dont_expand,
+        GC_free_space_divisor, GC_time_limit respectively).
+        * include/private/gc_priv.h (TIME_LIMIT): Remove macro (replaced
+        with GC_TIME_LIMIT in alloc.c).
+        * alloc.c (GC_need_full_gc, GC_stopped_mark, GC_finish_collection):
+        Define as STATIC.
+        * mark_rts.c (GC_push_current_stack, GC_push_gc_structures): Ditto.
+        * include/private/gc_priv.h (GC_stopped_mark, GC_finish_collection):
+        Move the prototypes to alloc.c, make STATIC.
+        * include/private/gc_priv.h (GC_push_current_stack,
+        GC_push_gc_structures, GC_push_regs_and_stack): Remove prototypes
+        (move the comments to the places where these functions are defined).
+        * mach_dep.c (GC_push_regs_and_stack): Move to mark_rts.c and define
+        as STATIC.
+        * alloc.c (GC_timeout_stop_func, GC_stopped_mark,
+        GC_print_heap_sects): Convert a group of printf() calls into
+        a single one (for output atomicity).
+        * mark_rts.c (GC_print_static_roots): Ditto.
+        * alloc.c (GC_stopped_mark): Output blank line (when logging) for
+        convenience to delimit collections.
+        * alloc.c (GC_clear_a_few_frames): Rename NWORDS to CLEAR_NWORDS;
+        make "frames" local variable volatile (to prevent optimization).
+        * alloc.c (GC_try_to_collect_inner, GC_stopped_mark,
+        GC_finish_collection, GC_allocobj): Remove outdated comments about
+        disabling signals.
+        * include/private/gc_priv.h (GC_register_displacement_inner,
+        GC_gcollect_inner): Ditto.
+        * alloc.c (GC_try_to_collect_inner, GC_stopped_mark,
+        GC_finish_collection): Initialize "start_time" local variable (to 0)
+        to suppress compiler warning.
+        * mark_rts.c (GC_add_roots_inner): Ditto (for "old" variable).
+        * alloc.c (GC_RATE, MAX_PRIOR_ATTEMPTS): Guard with "ifndef".
+        * include/private/gc_priv.h (clock, GC_stop_world, GC_start_world,
+        GC_acquire_mark_lock, GC_release_mark_lock, GC_notify_all_builder,
+        GC_wait_for_reclaim, GC_notify_all_marker, GC_wait_marker): Replace
+        K&R-style function prototypes with ANSI C one.
+        * include/private/gc_priv.h (ABORT): Define as DebugBreak() for
+        Win32/WinCE if SMALL_CONFIG (the same as in GC_abort()).
+        * include/private/gc_priv.h (ROUNDED_UP_WORDS, abs): Remove unused
+        macros.
+        * include/private/gc_priv.h (GC_noop): Declare for Borland C the
+        same as for Watcom.
+        * mark_rts.c (GC_push_conditional_with_exclusions): Add ARGSUSED tag.
+
 2009-06-04  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff89_cvs, resembling diff3, diff27, diff34, diff38, diff47, diff49,
 	diff59, diff60, diff66, diff67, diff68, diff69a, diff70, diff81

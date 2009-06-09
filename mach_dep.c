@@ -241,11 +241,6 @@ void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
     GC_noop1((word)(&dummy));
 }
 
-void GC_push_regs_and_stack(ptr_t cold_gc_frame)
-{
-    GC_with_callee_saves_pushed(GC_push_current_stack, cold_gc_frame);
-}
-
 #if defined(ASM_CLEAR_CODE)
 # ifdef LINT
     /*ARGSUSED*/

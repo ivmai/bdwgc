@@ -46,14 +46,10 @@ void GC_print_static_roots(void)
     size_t total = 0;
     
     for (i = 0; i < n_root_sets; i++) {
-        GC_printf("From %p to %p ",
+        GC_printf("From %p to %p%s\n",
         	  GC_static_roots[i].r_start,
-        	  GC_static_roots[i].r_end);
-        if (GC_static_roots[i].r_tmp) {
-            GC_printf(" (temporary)\n");
-        } else {
-            GC_printf("\n");
-        }
+        	  GC_static_roots[i].r_end,
+		  GC_static_roots[i].r_tmp ? " (temporary)" : "");
         total += GC_static_roots[i].r_end - GC_static_roots[i].r_start;
     }
     GC_printf("Total size: %ld\n", (unsigned long) total);
@@ -172,7 +168,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
       /* takes to scan the roots.				*/
       {
         register int i;
-        
+        old = 0; /* initialized to prevent warning. */
         for (i = 0; i < n_root_sets; i++) {
             old = GC_static_roots + i;
             if (b <= old -> r_end && e >= old -> r_start) {
@@ -434,6 +430,7 @@ GC_API void GC_CALL GC_exclude_static_roots(void *start, void *finish)
 }
 
 /* Invoke push_conditional on ranges that are not excluded. */
+/*ARGSUSED*/
 STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
 						GC_bool all)
 {
@@ -451,6 +448,15 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
     }
 }
 
+  			/* Push enough of the current stack eagerly to	*/
+  			/* ensure that callee-save registers saved in	*/
+  			/* GC frames are scanned.			*/
+  			/* In the non-threads case, schedule entire	*/
+  			/* stack for scanning.				*/
+			/* The second argument is a pointer to the 	*/
+			/* (possibly null) thread context, for		*/
+			/* (currently hypothetical) more precise	*/
+			/* stack scanning.				*/
 /*
  * In the absence of threads, push the stack contents.
  * In the presence of threads, push enough of the current stack
@@ -459,7 +465,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
  * FIXME: Merge with per-thread stuff.
  */
 /*ARGSUSED*/
-void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
+STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
 {
 #   if defined(THREADS)
 	if (0 == cold_gc_frame) return;
@@ -509,11 +515,16 @@ void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
 
 void (*GC_push_typed_structures) (void) = NULL;
 
+			/* Push GC internal roots.  These are normally	*/
+			/* included in the static data segment, and 	*/
+			/* Thus implicitly pushed.  But we must do this	*/
+			/* explicitly if normal root processing is 	*/
+			/* disabled.					*/
 /*
  * Push GC internal roots.  Only called if there is some reason to believe
  * these would not otherwise get registered.
  */
-void GC_push_gc_structures(void)
+STATIC void GC_push_gc_structures(void)
 {
     GC_push_finalizer_structures();
 #   if defined(THREADS)
@@ -536,6 +547,11 @@ void GC_cond_register_dynamic_libraries(void)
 # else
     GC_no_dls = TRUE;
 # endif
+}
+
+STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
+{
+    GC_with_callee_saves_pushed(GC_push_current_stack, cold_gc_frame);
 }
 
 /*

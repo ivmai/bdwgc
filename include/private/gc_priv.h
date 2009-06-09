@@ -175,9 +175,6 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #   define MAXHINCR 4096
 # endif
 
-# define TIME_LIMIT 50	   /* We try to keep pause times from exceeding	 */
-			   /* this by much. In milliseconds.		 */
-
 # define BL_LIMIT GC_black_list_spacing
 			   /* If we need a block of N bytes, and we have */
 			   /* a block of N + BL_LIMIT bytes available, 	 */
@@ -247,7 +244,7 @@ void GC_print_callers(struct callinfo info[NFRAMES]);
 # else /* !MSWIN32, !MSWINCE, !BSD_TIME */
 #   include <time.h>
 #   if !defined(__STDC__) && defined(SPARC) && defined(SUNOS4)
-      clock_t clock();	/* Not in time.h, where it belongs	*/
+      clock_t clock(void);	/* Not in time.h, where it belongs	*/
 #   endif
 #   if defined(FREEBSD) && !defined(CLOCKS_PER_SEC)
 #     include <machine/limits.h>
@@ -319,8 +316,8 @@ void GC_print_callers(struct callinfo info[NFRAMES]);
  				   PCR_waitForever);
 # else
 #   if defined(GC_WIN32_THREADS) || defined(GC_PTHREADS)
-      void GC_stop_world();
-      void GC_start_world();
+      void GC_stop_world(void);
+      void GC_start_world(void);
 #     define STOP_WORLD() GC_stop_world()
 #     define START_WORLD() GC_start_world()
 #   else
@@ -334,7 +331,11 @@ void GC_print_callers(struct callinfo info[NFRAMES]);
 #   define ABORT(s) PCR_Base_Panic(s)
 # else
 #   ifdef SMALL_CONFIG
-#	define ABORT(msg) abort()
+#	if defined(MSWIN32) || defined(MSWINCE)
+#	    define ABORT(msg) DebugBreak()
+#	else
+#	    define ABORT(msg) abort()
+#	endif
 #   else
 	GC_API void GC_abort(const char * msg);
 #       define ABORT(msg) GC_abort(msg)
@@ -570,8 +571,6 @@ extern GC_warn_proc GC_current_warn_proc;
 # define HBLKDISPL(objptr) (((size_t) (objptr)) & (HBLKSIZE-1))
 
 /* Round up byte allocation requests to integral number of words, etc. */
-# define ROUNDED_UP_WORDS(n) \
-	BYTES_TO_WORDS((n) + (WORDS_TO_BYTES(1) - 1 + EXTRA_BYTES))
 # define ROUNDED_UP_GRANULES(n) \
 	BYTES_TO_GRANULES((n) + (GRANULE_BYTES - 1 + EXTRA_BYTES))
 # if MAX_EXTRA_BYTES == 0
@@ -891,7 +890,7 @@ struct _GC_arrays {
 	/* even though they are not useful to the client.	*/
   word _bytes_finalized;
   	/* Approximate number of bytes in objects (and headers)	*/
-  	/* That became ready for finalization in the last 	*/
+  	/* that became ready for finalization in the last 	*/
   	/* collection.						*/
   word _non_gc_bytes_at_gc;
   	/* Number of explicitly managed bytes of storage 	*/
@@ -1248,12 +1247,6 @@ extern long GC_large_alloc_warn_suppressed;
   extern GC_bool GC_world_stopped;
 #endif
 
-/* Operations */
-# ifndef abs
-#   define abs(x)  ((x) < 0? (-(x)) : (x))
-# endif
-
-
 /*  Marks are in a reserved area in                          */
 /*  each heap block.  Each word has one mark bit associated  */
 /*  with it. Only those corresponding to the beginning of an */
@@ -1381,16 +1374,6 @@ void GC_push_all_eager (ptr_t b, ptr_t t);
   /* stacks are scheduled for scanning in *GC_push_other_roots, which	*/
   /* is thread-package-specific.					*/
 #endif
-void GC_push_current_stack(ptr_t cold_gc_frame, void *context);
-  			/* Push enough of the current stack eagerly to	*/
-  			/* ensure that callee-save registers saved in	*/
-  			/* GC frames are scanned.			*/
-  			/* In the non-threads case, schedule entire	*/
-  			/* stack for scanning.				*/
-			/* The second argument is a pointer to the 	*/
-			/* (possibly null) thread context, for		*/
-			/* (currently hypothetical) more precise	*/
-			/* stack scanning.				*/
 void GC_push_roots(GC_bool all, ptr_t cold_gc_frame);
   			/* Push all or dirty roots.	*/
 extern void (*GC_push_other_roots)(void);
@@ -1400,12 +1383,7 @@ extern void (*GC_push_other_roots)(void);
   			/* predefined to be non-zero.  A client		*/
   			/* supplied replacement should also call the	*/
   			/* original function.				*/
-extern void GC_push_gc_structures(void);
-			/* Push GC internal roots.  These are normally	*/
-			/* included in the static data segment, and 	*/
-			/* Thus implicitly pushed.  But we must do this	*/
-			/* explicitly if normal root processing is 	*/
-			/* disabled.  Calls the following:		*/
+
 	extern void GC_push_finalizer_structures(void);
 	extern void GC_push_stubborn_structures (void);
 #	ifdef THREADS
@@ -1419,7 +1397,6 @@ extern void (*GC_start_call_back) (void);
   			/* Not called if 0.  Called with allocation 	*/
   			/* lock held.					*/
   			/* 0 by default.				*/
-void GC_push_regs_and_stack(ptr_t cold_gc_frame);
 
 void GC_push_regs(void);
 
@@ -1469,9 +1446,6 @@ struct hblk * GC_push_next_marked(struct hblk * h);
   		/* Ditto, but also mark from clean pages.	*/
 struct hblk * GC_push_next_marked_uncollectable(struct hblk * h);
   		/* Ditto, but mark only from uncollectable pages.	*/
-GC_bool GC_stopped_mark(GC_stop_func stop_func);
- 			/* Stop world and mark from all roots	*/
-  			/* and rescuers.			*/
 void GC_clear_hdr_marks(hdr * hhdr);
 				    /* Clear the mark bits in a header */
 void GC_set_hdr_marks(hdr * hhdr);
@@ -1574,8 +1548,7 @@ GC_bool GC_add_map_entry(size_t sz);
   				/* Return FALSE on failure.		*/
 void GC_register_displacement_inner(size_t offset);
   				/* Version of GC_register_displacement	*/
-  				/* that assumes lock is already held	*/
-  				/* and signals are already disabled.	*/
+  				/* that assumes lock is already held.	*/
 
 void GC_initialize_offsets(void);
 				/* Initialize GC_valid_offsets,		*/
@@ -1654,15 +1627,11 @@ GC_bool GC_CALLBACK GC_never_stop_func(void);
 GC_bool GC_try_to_collect_inner(GC_stop_func f);
 
 				/* Collect; caller must have acquired	*/
-				/* lock and disabled signals.		*/
-				/* Collection is aborted if f returns	*/
-				/* TRUE.  Returns TRUE if it completes	*/
-				/* successfully.			*/
+				/* lock.  Collection is aborted if f	*/
+				/* returns TRUE.  Returns TRUE if it	*/
+				/* completes successfully.		*/
 # define GC_gcollect_inner() \
 	(void) GC_try_to_collect_inner(GC_never_stop_func)
-void GC_finish_collection(void);
- 				/* Finish collection.  Mark bits are	*/
-  				/* consistent and lock is still held.	*/
 GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page);
   				/* Collect or expand heap in an attempt */
   				/* make the indicated number of free	*/
@@ -1913,7 +1882,7 @@ void GC_print_finalization_stats(void);
 #endif
 
 /* Make arguments appear live to compiler */
-# ifdef __WATCOMC__
+# if defined(__BORLANDC__) || defined(__WATCOMC__)
     void GC_noop(void*, ...);
 # else
 #   ifdef __DMC__
@@ -1980,15 +1949,15 @@ void GC_err_puts(const char *s);
     /* GC_notify_all_builder() is called when GC_fl_builder_count	*/
     /* reaches 0.							*/
 
-     extern void GC_acquire_mark_lock();
-     extern void GC_release_mark_lock();
-     extern void GC_notify_all_builder();
-     extern void GC_wait_for_reclaim();
+     void GC_acquire_mark_lock(void);
+     void GC_release_mark_lock(void);
+     void GC_notify_all_builder(void);
+     void GC_wait_for_reclaim(void);
 
      extern word GC_fl_builder_count;	/* Protected by mark lock.	*/
 
-     extern void GC_notify_all_marker();
-     extern void GC_wait_marker();
+     void GC_notify_all_marker(void);
+     void GC_wait_marker(void);
      extern word GC_mark_no;		/* Protected by mark lock.	*/
 
      extern void GC_help_marker(word my_mark_no);
