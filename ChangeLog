@@ -1,3 +1,12 @@
+2009-06-08  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski
+	and Zoltan Varga)
+        * darwin_stop_world.c (GC_push_all_stacks): Recognize ARM32.
+        * include/private/gc_priv.h (GC_THREAD_STATE_T): Define for ARM32
+        (Darwin only).
+        * include/private/gcconfig.h: Add machine-specific part for DARWIN.
+        * include/private/gcconfig.h (ARM32): Define config parameters for
+        DARWIN (iPhone).
+
 2009-06-08  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff91_cvs: resembling diff3, diff27, diff33, diff45, diff47, diff49,
 	diff60, diff67, diff68 partly)

@@ -177,8 +177,30 @@ void GC_push_all_stacks(void)
 	  GC_push_one(state . THREAD_FLD (r29));
 	  GC_push_one(state . THREAD_FLD (r30));
 	  GC_push_one(state . THREAD_FLD (r31));
+
+#	elif defined(ARM32)
+	  lo = (void*)state.__sp;
+
+	  GC_push_one(state.__r[0]);
+	  GC_push_one(state.__r[1]);
+	  GC_push_one(state.__r[2]);
+	  GC_push_one(state.__r[3]);
+	  GC_push_one(state.__r[4]);
+	  GC_push_one(state.__r[5]);
+	  GC_push_one(state.__r[6]);
+	  GC_push_one(state.__r[7]);
+	  GC_push_one(state.__r[8]);
+	  GC_push_one(state.__r[9]);
+	  GC_push_one(state.__r[10]);
+	  GC_push_one(state.__r[11]);
+	  GC_push_one(state.__r[12]);
+	  /* GC_push_one(state.__sp); */
+	  GC_push_one(state.__lr);
+	  GC_push_one(state.__pc);
+	  GC_push_one(state.__cpsr);
+
 #	else
-#	  error FIXME for non-x86 || ppc architectures
+#	  error FIXME for non-x86 || ppc || arm architectures
 #	endif
       } /* p != me */
       if(p->flags & MAIN_THREAD)
@@ -326,8 +348,38 @@ void GC_push_all_stacks(void)
 	GC_push_one(info . THREAD_FLD (fs));
 	GC_push_one(info . THREAD_FLD (gs));
 
+#      elif defined(ARM32)
+	GC_THREAD_STATE_T info;
+	mach_msg_type_number_t outCount = THREAD_STATE_MAX;
+	r = thread_get_state(thread, GC_MACH_THREAD_STATE, (natural_t *)&info,
+			     &outCount);
+	if(r != KERN_SUCCESS)
+	  ABORT("task_get_state failed");
+
+	hi = (ptr_t)FindTopOfStack(info . __sp);
+
+	lo = (void*)info.__sp;
+
+	GC_push_one(info.__r[0]);
+	GC_push_one(info.__r[1]);
+	GC_push_one(info.__r[2]);
+	GC_push_one(info.__r[3]);
+	GC_push_one(info.__r[4]);
+	GC_push_one(info.__r[5]);
+	GC_push_one(info.__r[6]);
+	GC_push_one(info.__r[7]);
+	GC_push_one(info.__r[8]);
+	GC_push_one(info.__r[9]);
+	GC_push_one(info.__r[10]);
+	GC_push_one(info.__r[11]);
+	GC_push_one(info.__r[12]);
+	/* GC_push_one(info.__sp); */
+	GC_push_one(info.__lr);
+	GC_push_one(info.__pc);
+	GC_push_one(info.__cpsr);
+
 #     else
-#	error FIXME for non-x86 || ppc architectures
+#	error FIXME for non-x86 || ppc || arm architectures
 #     endif
       }
 #     if DEBUG_THREADS
