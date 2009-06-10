@@ -41,6 +41,10 @@
 extern mark_proc GC_mark_procs[MAX_MARK_PROCS];
 */
 
+#ifndef MARK_DESCR_OFFSET
+#  define MARK_DESCR_OFFSET	sizeof(word)
+#endif
+
 /*
  * Mark descriptor stuff that should remain private for now, mostly
  * because it's hard to export WORDSZ without including gcconfig.h.
@@ -103,19 +107,9 @@ extern mse * GC_mark_stack;
      * of the University of Tokyo SGC in a less intrusive, though probably
      * also less performant, way.
      */
-    void GC_do_parallel_mark();
-		/* initiate parallel marking.	*/
 
-    extern GC_bool GC_help_wanted;	/* Protected by mark lock	*/
-    extern unsigned GC_helper_count;	/* Number of running helpers.	*/
-					/* Protected by mark lock	*/
-    extern unsigned GC_active_count;	/* Number of active helpers.	*/
-					/* Protected by mark lock	*/
-					/* May increase and decrease	*/
-					/* within each mark cycle.  But	*/
-					/* once it returns to 0, it	*/
-					/* stays zero for the cycle.	*/
-    /* GC_mark_stack_top is also protected by mark lock.	*/
+    /* GC_mark_stack_top is protected by mark lock.	*/
+
     /*
      * GC_notify_all_marker() is used when GC_help_wanted is first set,
      * when the last helper becomes inactive,
@@ -342,7 +336,7 @@ exit_label: ; \
 	  GC_ASSERT((ptr_t)(hhdr -> hb_block) < (ptr_t) current); \
 	} else { \
 	  /* Accurate enough if HBLKSIZE <= 2**15.	*/ \
-	  GC_ASSERT(HBLKSIZE <= (1 << 15)); \
+	  GC_STATIC_ASSERT(HBLKSIZE <= (1 << 15)); \
 	  size_t obj_displ = (((low_prod >> 16) + 1) * (hhdr -> hb_sz)) >> 16; \
 	  if (do_offset_check && !GC_valid_offsets[obj_displ]) { \
 	    GC_ADD_TO_BLACK_LIST_NORMAL(current, source); \

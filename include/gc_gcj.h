@@ -27,9 +27,6 @@
 
 #define GC_GCJ_H
 
-#ifndef MARK_DESCR_OFFSET
-#  define MARK_DESCR_OFFSET	sizeof(word)
-#endif
 	/* Gcj keeps GC descriptor as second word of vtable.	This	*/
 	/* probably needs to be adjusted for other clients.		*/
 	/* We currently assume that this offset is such that:		*/
@@ -42,6 +39,10 @@
 #ifndef _GC_H
 #   include "gc.h"
 #endif
+
+# ifdef __cplusplus
+    extern "C" {
+# endif
 
 /* The following allocators signal an out of memory condition with	*/
 /* return GC_oom_fn(bytes);						*/
@@ -90,6 +91,10 @@ GC_API int GC_gcj_debug_kind;
 #   define GC_GCJ_MALLOC(s,d) GC_gcj_malloc(s,d)
 #   define GC_GCJ_MALLOC_IGNORE_OFF_PAGE(s,d) \
 	GC_gcj_malloc_ignore_off_page(s,d)
+# endif
+
+# ifdef __cplusplus
+    }  /* end of extern "C" */
 # endif
 
 #endif /* GC_GCJ_H */

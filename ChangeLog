@@ -1,3 +1,59 @@
+2009-06-09  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	diff90_cvs (resembling diff28, diff30, diff32, diff34, diff47,
+	diff49, diff60, diff62, diff66, diff67, diff68, diff72 partly)
+
+        * finalize.c (finalization_mark_proc): Replace K&R-style declaration
+        with ANSI C one.
+        * finalize.c (GC_grow_table, GC_register_finalizer_inner,
+        GC_enqueue_all_finalizers): Remove outdated comments about disabling
+        signals.
+        * finalize.c (GC_general_register_disappearing_link): Fix assertion
+        to catch NULL "obj" value.
+        * finalize.c (GC_unregister_disappearing_link): Check "link"
+        alignment before gaining the lock.
+        * finalize.c (GC_finalize): Refine comment.
+        * finalize.c (GC_finalize): Fix WARN() format specifier (should be
+        word-complient, "%p" is used w/o "0x").
+        * finalize.c (GC_invoke_finalizers): Initialize "bytes_freed_before"
+        variable (to 0) to suppress compiler warning.
+        * include/gc_gcj.h (MARK_DESCR_OFFSET): Move to private/gc_pmark.h.
+        * include/gc_gcj.h: add "extern C" header and tail.
+        * include/private/gc_pmark.h: Remove GC_do_parallel_mark(),
+        GC_help_wanted, GC_helper_count, GC_active_count declarations (move
+        the comments to the place where these symbols are defined in mark.c).
+        * mark.c: Add STATIC GC_do_parallel_mark() declaration (for use by
+        GC_mark_some_inner, if PARALLEL_MARK only).
+        * mark.c (GC_mark_some_inner, GC_help_wanted, GC_helper_count,
+        GC_active_count, GC_do_parallel_mark): Define as STATIC.
+        * pthread_support.c (GC_mark_thread): Ditto.
+        * typd_mlc.c (GC_explicit_typing_initialized, GC_explicit_kind,
+        GC_array_kind, GC_ext_descriptors, GC_ed_size, GC_avail_descr,
+        GC_typed_mark_proc_index, GC_array_mark_proc_index, GC_eobjfreelist,
+        GC_arobjfreelist): Ditto.
+        * include/private/gc_pmark.h (PUSH_CONTENTS_HDR): Change GC_ASSERT
+        for HBLKSIZE to GC_STATIC_ASSERT.
+        * mark.c (GC_noop): Define for Borland C the same as for Watcom.
+        * mark.c (GC_noop, GC_mark_and_push): Add ARGSUSED tag.
+        * pthread_support.c (GC_do_blocking_inner): Ditto.
+        * mark.c (GC_mark_from): Initialize "limit" (to 0) in the default
+        switch branch to suppress compiler warning.
+        * mark.c (GC_return_mark_stack): Append new-line to printf message.
+        * mark.c: Remove unused GC_true_func(), GC_PUSH_ALL().
+        * pthread_support.c (GC_mark_thread): Add dummy "return 0" to
+        suppress compiler warning.
+        * pthread_support.c (start_mark_threads): Move the code limiting
+        "GC_markers" value (and printing a warning) to GC_thr_init().
+        * pthread_support.c (GC_thr_init): Silently limit "GC_markers" value
+        if based on the number of CPUs.
+        * pthread_support.c (GC_thr_init): Treat incorrect "GC_markers"
+        values as one.
+	* pthread_support.c (GC_register_my_thread_inner): Add a check for
+	"stack_end" is non-NULL (the same as in win32_threads.c).
+	* pthread_support.c (pthread_create): Call GC_oom_fn before giving up
+	with ENOMEM.
+	* thread_local_alloc.c (return_single_freelist): Convert "for" loop
+	to "while" one to suppress "possible extraneous ';'" warning.
+
 2009-06-08  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski
 	and Zoltan Varga)
         * darwin_stop_world.c (GC_push_all_stacks): Recognize ARM32.

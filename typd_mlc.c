@@ -41,12 +41,14 @@
 
 # define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
 
-GC_bool GC_explicit_typing_initialized = FALSE;
+STATIC GC_bool GC_explicit_typing_initialized = FALSE;
 
-int GC_explicit_kind;	/* Object kind for objects with indirect	*/
+STATIC int GC_explicit_kind;
+			/* Object kind for objects with indirect	*/
 			/* (possibly extended) descriptors.		*/
 
-int GC_array_kind;	/* Object kind for objects with complex		*/
+STATIC int GC_array_kind;
+			/* Object kind for objects with complex		*/
 			/* descriptors and GC_array_mark_proc.		*/
 
 /* Extended descriptors.  GC_typed_mark_proc understands these.	*/
@@ -86,16 +88,16 @@ typedef union ComplexDescriptor {
 } complex_descriptor;
 #define TAG ld.ld_tag
 
-ext_descr * GC_ext_descriptors;	/* Points to array of extended 	*/
-				/* descriptors.			*/
+STATIC ext_descr * GC_ext_descriptors;	/* Points to array of extended 	*/
+					/* descriptors.			*/
 
-size_t GC_ed_size = 0;	/* Current size of above arrays.	*/
+STATIC size_t GC_ed_size = 0;	/* Current size of above arrays.	*/
 # define ED_INITIAL_SIZE 100;
 
-size_t GC_avail_descr = 0;	/* Next available slot.		*/
+STATIC size_t GC_avail_descr = 0;	/* Next available slot.		*/
 
-int GC_typed_mark_proc_index;	/* Indices of my mark		*/
-int GC_array_mark_proc_index;	/* procedures.			*/
+STATIC int GC_typed_mark_proc_index;	/* Indices of my mark		*/
+STATIC int GC_array_mark_proc_index;	/* procedures.			*/
 
 static void GC_push_typed_structures_proc (void)
 {
@@ -330,9 +332,9 @@ complex_descriptor * GC_make_complex_array_descriptor(word nelements,
 }
 #endif
 
-ptr_t * GC_eobjfreelist;
+STATIC ptr_t * GC_eobjfreelist;
 
-ptr_t * GC_arobjfreelist;
+STATIC ptr_t * GC_arobjfreelist;
 
 STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
 				mse * mark_stack_limit, word env);

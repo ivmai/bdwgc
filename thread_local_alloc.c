@@ -40,8 +40,9 @@ static void return_single_freelist(void *fl, void **gfl)
     } else {
       GC_ASSERT(GC_size(fl) == GC_size(*gfl));
       /* Concatenate: */
-	for (qptr = &(obj_link(fl)), q = *qptr;
-	     (word)q >= HBLKSIZE; qptr = &(obj_link(q)), q = *qptr);
+	qptr = &(obj_link(fl));
+	while ((word)(q = *qptr) >= HBLKSIZE)
+	  qptr = &(obj_link(q));
 	GC_ASSERT(0 == q);
 	*qptr = *gfl;
 	*gfl = fl;

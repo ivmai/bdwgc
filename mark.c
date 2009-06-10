@@ -25,7 +25,8 @@
 
 /* We put this here to minimize the risk of inlining. */
 /*VARARGS*/
-#ifdef __WATCOMC__
+#if defined(__BORLANDC__) || defined(__WATCOMC__)
+  /*ARGSUSED*/
   void GC_noop(void *p, ...) {}
 #else
 # ifdef __DMC__
@@ -278,6 +279,9 @@ void GC_initiate_gc(void)
     scan_ptr = 0;
 }
 
+#ifdef PARALLEL_MARK
+    STATIC void GC_do_parallel_mark(void); /* initiate parallel marking. */
+#endif /* PARALLEL_MARK */
 
 static void alloc_mark_stack(size_t);
 
@@ -303,7 +307,7 @@ static void alloc_mark_stack(size_t);
   /* exception handler, in case Windows unmaps one of our root	*/
   /* segments.  See below.  In either case, we acquire the 	*/
   /* allocator lock long before we get here.			*/
-  GC_bool GC_mark_some_inner(ptr_t cold_gc_frame)
+  STATIC GC_bool GC_mark_some_inner(ptr_t cold_gc_frame)
 #else
   GC_bool GC_mark_some(ptr_t cold_gc_frame)
 #endif
@@ -771,6 +775,9 @@ mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
 	      continue;
 	  }
           goto retry;
+	default:
+	  /* Can't happen. */
+	  limit = 0; /* initialized to prevent warning. */
       }
     } else /* Small object with length descriptor */ {
       mark_stack_top--;
@@ -867,9 +874,16 @@ mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
 
 #ifdef PARALLEL_MARK
 
-GC_bool GC_help_wanted = FALSE;
-unsigned GC_helper_count = 0;
-unsigned GC_active_count = 0;
+STATIC GC_bool GC_help_wanted = FALSE;	/* Protected by mark lock	*/
+STATIC unsigned GC_helper_count = 0;	/* Number of running helpers.	*/
+					/* Protected by mark lock	*/
+STATIC unsigned GC_active_count = 0;	/* Number of active helpers.	*/
+					/* Protected by mark lock	*/
+					/* May increase and decrease	*/
+					/* within each mark cycle.  But	*/
+					/* once it returns to 0, it	*/
+					/* stays zero for the cycle.	*/
+
 word GC_mark_no = 0;
 
 #define LOCAL_MARK_STACK_SIZE HBLKSIZE
@@ -929,7 +943,7 @@ STATIC void GC_return_mark_stack(mse * low, mse * high)
     my_start = my_top + 1;
     if (my_start - GC_mark_stack + stack_size > GC_mark_stack_size) {
       if (GC_print_stats) {
-	  GC_log_printf("No room to copy back mark stack.");
+	  GC_log_printf("No room to copy back mark stack\n");
       }
       GC_mark_state = MS_INVALID;
       GC_mark_stack_too_small = TRUE;
@@ -1105,7 +1119,7 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
 /* We hold the GC lock, not the mark lock.	*/
 /* Currently runs until the mark stack is	*/
 /* empty.					*/
-void GC_do_parallel_mark(void)
+STATIC void GC_do_parallel_mark(void)
 {
     mse local_mark_stack[LOCAL_MARK_STACK_SIZE];
 
@@ -1313,16 +1327,6 @@ void GC_push_selected(ptr_t bottom, ptr_t top,
 
 # ifndef SMALL_CONFIG
 
-#ifdef PARALLEL_MARK
-    /* Break up root sections into page size chunks to better spread 	*/
-    /* out work.							*/
-    STATIC GC_bool GC_true_func(struct hblk *h) { return TRUE; }
-#   define GC_PUSH_ALL(b,t) GC_push_selected(b,t,GC_true_func,GC_push_all);
-#else
-#   define GC_PUSH_ALL(b,t) GC_push_all(b,t);
-#endif
-
-
 void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
 {
     if (all) {
@@ -1351,6 +1355,7 @@ void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
     GC_PUSH_ONE_STACK((ptr_t)p, MARKED_FROM_REGISTER);
 }
 
+/*ARGSUSED*/
 struct GC_ms_entry *GC_mark_and_push(void *obj,
 				     mse *mark_stack_ptr,
 				     mse *mark_stack_limit,

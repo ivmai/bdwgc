@@ -277,7 +277,7 @@ static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
   static ptr_t marker_bsp[MAX_MARKERS - 1] = {0};
 #endif
 
-void * GC_mark_thread(void * id)
+STATIC void * GC_mark_thread(void * id)
 {
   word my_mark_no = 0;
 
@@ -285,6 +285,9 @@ void * GC_mark_thread(void * id)
 # ifdef IA64
     marker_bsp[(word)id] = GC_save_regs_in_stack();
 # endif
+
+  if ((word)id == (word)-1) return 0; /* to make compiler happy */
+
   for (;; ++my_mark_no) {
     /* GC_mark_no is passed only to allow GC_help_marker to terminate	*/
     /* promptly.  This is important if it were called from the signal	*/
@@ -318,10 +321,6 @@ static void start_mark_threads(void)
     unsigned i;
     pthread_attr_t attr;
 
-    if (GC_markers > MAX_MARKERS) {
-	WARN("Limiting number of mark threads\n", 0);
-	GC_markers = MAX_MARKERS;
-    }
     if (0 != pthread_attr_init(&attr)) ABORT("pthread_attr_init failed");
 	
     if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
@@ -806,8 +805,14 @@ void GC_thr_init(void)
 	    char * markers_string = GETENV("GC_MARKERS");
 	    if (markers_string != NULL) {
 	      GC_markers = atoi(markers_string);
+	      if (GC_markers > MAX_MARKERS) {
+		WARN("Limiting number of mark threads\n", 0);
+		GC_markers = MAX_MARKERS;
+	      }
 	    } else {
 	      GC_markers = GC_nprocs;
+	      if (GC_markers >= MAX_MARKERS)
+		GC_markers = MAX_MARKERS; /* silently limit GC_markers value */
 	    }
           }
 #	endif
@@ -817,7 +822,7 @@ void GC_thr_init(void)
           GC_log_printf("Number of processors = %ld, "
 		 "number of marker threads = %ld\n", GC_nprocs, GC_markers);
       }
-      if (GC_markers == 1) {
+      if (GC_markers <= 1) {
 	GC_parallel = FALSE;
 	if (GC_print_stats) {
 	    GC_log_printf(
@@ -878,6 +883,7 @@ struct blocking_data {
     void *arg;
 };
 
+/*ARGSUSED*/
 static void GC_do_blocking_inner(ptr_t data, void * context) {
     struct blocking_data * d = (struct blocking_data *) data;
     GC_thread me;
@@ -1024,6 +1030,8 @@ STATIC GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
       me -> stop_info.stack_ptr = sb -> mem_base;
 #   endif
     me -> stack_end = sb -> mem_base;
+    if (me -> stack_end == NULL)
+      ABORT("Bad stack base in GC_register_my_thread");
 #   ifdef IA64
       me -> backing_store_end = sb -> reg_base;
 #   endif /* IA64 */
@@ -1143,7 +1151,9 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 						 NORMAL);
     UNLOCK();
     if (!parallel_initialized) GC_init_parallel();
-    if (0 == si) return(ENOMEM);
+    if (0 == si &&
+        (si = (struct start_info *)GC_oom_fn(sizeof(struct start_info))) == 0)
+      return(ENOMEM);
     sem_init(&(si -> registered), 0, 0);
     si -> start_routine = start_routine;
     si -> arg = arg;
