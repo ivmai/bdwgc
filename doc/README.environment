@@ -46,7 +46,7 @@ GC_NPROCS=<n> - Linux w/threads only.  Explicitly sets the number of processors
 		since the lock implementation will immediately yield without
 		first spinning.
 
-GC_MARKERS=<n> - Linux w/threads and parallel marker only.  Set the number
+GC_MARKERS=<n> - Only if compiled with PARALLEL_MARK.  Set the number
 		of marker threads.  This is normally set to the number of
 		processors.  It is safer to adjust GC_MARKERS than GC_NPROCS,
 		since GC_MARKERS has no impact on the lock implementation.
@@ -120,6 +120,9 @@ GC_PAUSE_TIME_TARGET - Set the desired garbage collector pause time in msecs.
 		     the collector is configured for parallel marking, and
 		     run on a multiprocessor, incremental collection should
 		     only be used with unlimited pause time.
+
+GC_FULL_FREQUENCY - Set the desired number of partial collections between full
+		  collections.  Matters only if	GC_incremental is set.
 
 GC_FREE_SPACE_DIVISOR - Set GC_free_space_divisor to the indicated value.
                       Setting it to larger values decreases space consumption

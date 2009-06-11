@@ -115,6 +115,7 @@ GC_API int GC_all_interior_pointers;
 			/* at least a byte to allow "off the end"	*/
 			/* pointer recognition.				*/
 			/* MUST BE 0 or 1.				*/
+GC_API int GC_CALL GC_set_all_interior_pointers(int);
 
 GC_API int GC_finalize_on_demand;
 			/* If nonzero, finalizers will only be run in 	*/
@@ -180,6 +181,7 @@ GC_API int GC_full_freq;    /* Number of partial collections between	*/
 			    /* blocks.  Values in the tens are now	*/
 			    /* perfectly reasonable, unlike for		*/
 			    /* earlier GC versions.			*/
+GC_API int GC_CALL GC_set_full_freq(int value);
 			
 GC_API GC_word GC_non_gc_bytes;
 			/* Bytes not considered candidates for collection. */
@@ -251,6 +253,7 @@ GC_API unsigned long GC_time_limit;
 				/* Setting GC_time_limit to this value	 */
 				/* will disable the "pause time exceeded"*/
 				/* tests.				 */
+GC_API unsigned long GC_CALL GC_set_time_limit(unsigned long value);
 
 /* Public procedures */
 
@@ -432,9 +435,9 @@ GC_API void GC_CALL GC_enable(void);
 /* Only the generational piece of this is	*/
 /* functional if GC_parallel is TRUE		*/
 /* or if GC_time_limit is GC_TIME_UNLIMITED.	*/
-/* Causes GC_local_gcj_malloc() to revert to	*/
-/* locked allocation.  Must be called 		*/
-/* before any GC_local_gcj_malloc() calls.	*/
+/* Causes thread-local variant of GC_gcj_malloc() to revert to	*/
+/* locked allocation.  Must be called before any such		*/
+/* GC_gcj_malloc() calls.					*/
 /* For best performance, should be called as early as possible.	*/
 /* On some platforms, calling it later may have adverse effects.*/
 /* Safe to call before GC_INIT().  Includes a GC_init() call.	*/
@@ -789,18 +792,18 @@ GC_API int GC_CALL GC_general_register_disappearing_link (void * * link,
 	/* This can be used to implement certain types of	*/
 	/* weak pointers.  Note however that this generally	*/
 	/* requires that the allocation lock is held (see	*/
-	/* GC_call_with_allock_lock() below) when the disguised	*/
+	/* GC_call_with_alloc_lock() below) when the disguised	*/
 	/* pointer is accessed.  Otherwise a strong pointer	*/
 	/* could be recreated between the time the collector    */
 	/* decides to reclaim the object and the link is	*/
 	/* cleared.						*/
 
 GC_API int GC_CALL GC_unregister_disappearing_link (void * * link);
-	/* Returns 0 if link was not actually registered.	*/
 	/* Undoes a registration by either of the above two	*/
-	/* routines.						*/
+	/* routines.  Returns 0 if link was not actually	*/
+	/* registered (otherwise returns 1).			*/
 
-/* Returns !=0  if GC_invoke_finalizers has something to do. 		*/
+/* Returns !=0 if GC_invoke_finalizers has something to do. 	*/
 GC_API int GC_CALL GC_should_invoke_finalizers(void);
 
 GC_API int GC_CALL GC_invoke_finalizers(void);
@@ -877,7 +880,7 @@ GC_API void * GC_CALL GC_call_with_alloc_lock (GC_fn_type fn,
 /* platforms this contains just a single address.			*/
 struct GC_stack_base {
 	void * mem_base;	/* Base of memory stack.	*/
-#	if defined(__ia64) || defined(__ia64__)
+#	if defined(__ia64) || defined(__ia64__) || defined(_M_IA64)
 	  void * reg_base;	/* Base of separate register stack.	*/
 #	endif
 };
@@ -968,6 +971,7 @@ GC_API void * GC_CALL GC_is_valid_displacement (void *	p);
 /* Explicitly dump the GC state.  This is most often called from the	*/
 /* debugger, or by setting the GC_DUMP_REGULARLY environment variable,	*/
 /* but it may be useful to call it from client code during debugging.	*/
+/* Defined only if the library has been compiled without NO_DEBUGGING.	*/
 GC_API void GC_CALL GC_dump(void);
 
 /* Safer, but slow, pointer addition.  Probably useful mainly with 	*/
@@ -1034,8 +1038,6 @@ GC_API void (GC_CALLBACK * GC_is_visible_print_proc) (void * p);
 /* This returns a list of objects, linked through their first		*/
 /* word.  Its use can greatly reduce lock contention problems, since	*/
 /* the allocation lock can be acquired and released many fewer times.	*/
-/* It is used internally by gc_local_alloc.h, which provides a simpler	*/
-/* programming interface on Linux.					*/
 GC_API void * GC_CALL GC_malloc_many(size_t lb);
 #define GC_NEXT(p) (*(void * *)(p)) 	/* Retrieve the next element	*/
 					/* in returned list.		*/

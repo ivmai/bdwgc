@@ -1,3 +1,47 @@
+2009-06-11  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	(diff92_cvs: resembling diff20, diff27, diff34, diff38, diff43, diff45,
+	diff46, diff56, diff60, diff62, diff74, diff75, diff81 partly)
+
+        * allchblk.c (GC_print_hblkfreelist, GC_dump_regions): Convert
+        a group of printf() calls into a single one (for output atomicity).
+        * include/gc.h (GC_set_all_interior_pointers, GC_set_full_freq,
+        GC_set_time_limit): New prototypes.
+        * misc.c (GC_set_all_interior_pointers, GC_set_full_freq,
+        GC_set_time_limit): New public setter/getter functions.
+        * include/gc.h: Fix (and remove outdated) comments for thread-local
+        allocation.
+        * include/gc.h: Fix typos in comments.
+        * misc.c (GC_init_inner, GC_printf): Ditto.
+        * include/gc.h (GC_unregister_disappearing_link): Refine comment.
+        * include/gc.h (GC_stack_base): Recognize _M_IA64 macro.
+        * misc.c (GC_stack_last_cleared, GC_min_sp, GC_high_water,
+        GC_bytes_allocd_at_reset, DEGRADE_RATE): Define only if THREADS.
+        * misc.c (GC_stack_last_cleared, GC_min_sp, GC_high_water,
+        GC_bytes_allocd_at_reset): Define as STATIC.
+        * misc.c (GC_get_heap_size, GC_get_free_bytes,
+        GC_get_bytes_since_gc, GC_get_total_bytes): Acquire the GC lock to
+        avoid data races.
+        * misc.c (GC_write_cs): Define only if THREADS (Win32/WinCE only).
+        * misc.c (GC_init_inner): Initialize GC_write_cs only if THREADS.
+        * misc.c (GC_init_inner): Use GC_INITIAL_HEAP_SIZE (if available) to
+        set the default initial value of initial_heap_sz.
+        * misc.c (GC_deinit): Destroy GC_write_cs only if THREADS.
+        * misc.c (GC_init_inner): Fix WARN() format specifier (should be
+        word-complient, "%p" is used w/o "0x").
+        * misc.c (GC_init_inner): Don't recognize "GC_PAUSE_TIME_TARGET"
+        environment variable if SMALL_CONFIG.
+        * misc.c (GC_init_inner): Recognize "GC_FULL_FREQUENCY" environment
+        variable to set initial GC_full_freq value (if not SMALL_CONFIG).
+        * doc/README.environment (GC_FULL_FREQUENCY): Add information.
+        * doc/README.environment (GC_MARKERS): Refine information.
+        * misc.c (GC_init_inner): Change GC_ASSERT to GC_STATIC_ASSERT where
+        possible.
+        * misc.c (IF_NEED_TO_LOCK): New macro (instead of GC_need_to_lock).
+        * misc.c (GC_write): Use IF_NEED_TO_LOCK for handling GC_write_cs.
+        * misc.c (GC_abort): Don't define if SMALL_CONFIG.
+        * misc.c (GC_abort): Directly use WRITE() instead of GC_err_printf()
+        (to prevent possible infinite recursion).
+
 2009-06-09  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	diff90_cvs (resembling diff28, diff30, diff32, diff34, diff47,
 	diff49, diff60, diff62, diff66, diff67, diff68, diff72 partly)

@@ -113,24 +113,19 @@ void GC_print_hblkfreelist(void)
     for (i = 0; i <= N_HBLK_FLS; ++i) {
       h = GC_hblkfreelist[i];
 #     ifdef USE_MUNMAP
-        if (0 != h) GC_printf("Free list %ld:\n",
-		              (unsigned long)i);
+        if (0 != h) GC_printf("Free list %u:\n", i);
 #     else
-        if (0 != h) GC_printf("Free list %lu (Total size %lu):\n",
-		              (long)i, (unsigned long)GC_free_bytes[i]);
+        if (0 != h) GC_printf("Free list %u (Total size %lu):\n",
+		              i, (unsigned long)GC_free_bytes[i]);
 #     endif
       while (h != 0) {
         hhdr = HDR(h);
         sz = hhdr -> hb_sz;
-    	GC_printf("\t%p size %lu ", h, (unsigned long)sz);
     	total_free += sz;
-        if (GC_is_black_listed(h, HBLKSIZE) != 0) {
-             GC_printf("start black listed\n");
-        } else if (GC_is_black_listed(h, hhdr -> hb_sz) != 0) {
-             GC_printf("partially black listed\n");
-        } else {
-             GC_printf("not black listed\n");
-        }
+    	GC_printf("\t%p size %lu %s black listed\n", h, (unsigned long)sz, 
+		GC_is_black_listed(h, HBLKSIZE) != 0 ? "start" :
+		GC_is_black_listed(h, hhdr -> hb_sz) != 0 ? "partially" :
+							"not");
         h = hhdr -> hb_next;
       }
     }
@@ -181,9 +176,8 @@ void GC_dump_regions(void)
 	GC_printf("***Section from %p to %p\n", start, end);
 	for (p = start; p < end;) {
 	    hhdr = HDR(p);
-	    GC_printf("\t%p ", p);
 	    if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-		GC_printf("Missing header!!(%p)\n", hhdr);
+		GC_printf("\t%p Missing header!!(%p)\n", p, hhdr);
 		p += HBLKSIZE;
 		continue;
 	    }
@@ -192,13 +186,9 @@ void GC_dump_regions(void)
 					divHBLKSZ(hhdr -> hb_sz));
 	        int actual_index;
 		
-		GC_printf("\tfree block of size 0x%lx bytes",
-			  (unsigned long)(hhdr -> hb_sz));
-	 	if (IS_MAPPED(hhdr)) {
-		    GC_printf("\n");
-		} else {
-		    GC_printf("(unmapped)\n");
-		}
+		GC_printf("\t%p\tfree block of size 0x%lx bytes%s\n", p,
+			  (unsigned long)(hhdr -> hb_sz),
+			  IS_MAPPED(hhdr) ? "" : " (unmapped)");
 		actual_index = free_list_index_of(hhdr);
 		if (-1 == actual_index) {
 		    GC_printf("\t\tBlock not on free list %d!!\n",
@@ -209,7 +199,7 @@ void GC_dump_regions(void)
 		}
 		p += hhdr -> hb_sz;
 	    } else {
-		GC_printf("\tused for blocks of size 0x%lx bytes\n",
+		GC_printf("\t%p\tused for blocks of size 0x%lx bytes\n", p,
 			  (unsigned long)(hhdr -> hb_sz));
 		p += HBLKSIZE * OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
 	    }
