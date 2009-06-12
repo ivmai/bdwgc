@@ -578,11 +578,7 @@ void GC_init_inner(void)
 #       ifndef ENABLE_TRACE
 	  WARN("Tracing not enabled: Ignoring GC_TRACE value\n", 0);
 #       else
-#	  ifdef STRTOULL
-	    word addr = (word)strtoull(addr_string, NULL, 16);
-#	  else
-	    word addr = (word)strtoul(addr_string, NULL, 16);
-#	  endif
+	  word addr = (word)STRTOULL(addr_string, NULL, 16);
 	  if (addr < 0x1000)
 	      WARN("Unlikely trace address: %p\n", addr);
 	  GC_trace_addr = (ptr_t)addr;
@@ -717,7 +713,7 @@ void GC_init_inner(void)
     {
 	char * sz_str = GETENV("GC_INITIAL_HEAP_SIZE");
 	if (sz_str != NULL) {
-	  initial_heap_sz = atoi(sz_str);
+	  initial_heap_sz = (word)STRTOULL(sz_str, NULL, 10);
 	  if (initial_heap_sz <= MINHINCR * HBLKSIZE) {
 	    WARN("Bad initial heap size %s - ignoring it.\n",
 		 sz_str);
@@ -728,7 +724,7 @@ void GC_init_inner(void)
     {
 	char * sz_str = GETENV("GC_MAXIMUM_HEAP_SIZE");
 	if (sz_str != NULL) {
-	  word max_heap_sz = (word)atol(sz_str);
+	  word max_heap_sz = (word)STRTOULL(sz_str, NULL, 10);
 	  if (max_heap_sz < initial_heap_sz * HBLKSIZE) {
 	    WARN("Bad maximum heap size %s - ignoring it.\n",
 		 sz_str);

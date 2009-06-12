@@ -1,3 +1,13 @@
+2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski and George Talbot)
+	(diff95_cvs)
+	* include/private/gcconfig.h (PLATFORM_ANDROID): New macro
+        recognized (for Linux on ARM32 without glibc).
+        * include/private/gcconfig.h (STRTOULL): Define for all targets
+        (define as "strtoul" for most targets except for LLP64/Win64).
+        * misc.c (GC_init_inner): Use STRTOULL instead of atoi/atol()
+        (cast the result to word type) to decode values of "GC_TRACE",
+        "GC_INITIAL_HEAP_SIZE", "GC_MAXIMUM_HEAP_SIZE" environment vars.
+
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really mostly George Talbot)
 	* include/gc_allocator.h: Add gc_allocator_ignore_off_page.
 	* tests/test_cpp.cc: Add call to gc_allocator_ignore_off_page.

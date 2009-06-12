@@ -1661,7 +1661,6 @@
 #       define CPP_WORDSZ 32   /* Is this possible?	*/
 #     endif
 #     define ALIGNMENT 8
-#     define STRTOULL _strtoui64
 #   endif
 # endif
 
@@ -1746,7 +1745,8 @@
 #       ifdef __ELF__
 #            define DYNAMIC_LOADING
 #	     include <features.h>
-#	     if defined(__GLIBC__) && __GLIBC__ >= 2
+#	     if defined(__GLIBC__) && __GLIBC__ >= 2 \
+		|| defined(PLATFORM_ANDROID)
 #		 define SEARCH_FOR_DATA_START
 #	     else
      	         extern char **__environ;
@@ -2221,6 +2221,17 @@
 
 # if defined(MSWINCE)
 #   define NO_GETENV
+# endif
+
+# ifndef STRTOULL
+#   if defined(_WIN64) && !defined(__GNUC__)
+#     define STRTOULL _strtoui64
+#   elif defined(_LLP64) || defined(__LLP64__) || defined(_WIN64)
+#     define STRTOULL strtoull
+#   else
+	/* strtoul() fits since sizeof(long) >= sizeof(word).		*/
+#     define STRTOULL strtoul
+#   endif
 # endif
 
 # if defined(SPARC)
