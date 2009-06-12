@@ -1103,11 +1103,9 @@ void run_one_test(void)
     		"GC_is_valid_displacement produced incorrect result\n");
 	FAIL;
       }
-#     if !defined(MSWIN32) && !defined(MSWINCE)
-        /* Harder to test under Windows without a gc.h declaration.  */
+#     if !defined(MSWINCE)
         {
 	  size_t i;
-	  extern void *GC_memalign();
 
 	  GC_malloc(17);
 	  for (i = sizeof(GC_word); i < 512; i *= 2) {
@@ -1518,7 +1516,7 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
     GC_enable_incremental();
 # endif
   InitializeCriticalSection(&incr_cs);
-  (void) GC_set_warn_proc(warn_proc);
+  GC_set_warn_proc(warn_proc);
 # ifdef MSWINCE
     win_created_h = CreateEvent(NULL, FALSE, FALSE, NULL);
     if (win_created_h == (HANDLE)NULL) {
@@ -1573,7 +1571,7 @@ int test(void)
 
     n_tests = 0;
     /* GC_enable_incremental(); */
-    (void) GC_set_warn_proc(warn_proc);
+    GC_set_warn_proc(warn_proc);
     th1 = PCR_Th_Fork(run_one_test, 0);
     th2 = PCR_Th_Fork(run_one_test, 0);
     run_one_test();
@@ -1601,7 +1599,7 @@ void * thr_run_one_test(void * arg)
 #  define GC_free GC_debug_free
 #endif
 
-int main()
+int main(void)
 {
     pthread_t th[NTHREADS];
     pthread_attr_t attr;
@@ -1647,7 +1645,7 @@ int main()
 #       endif
 #     endif
 #   endif
-    (void) GC_set_warn_proc(warn_proc);
+    GC_set_warn_proc(warn_proc);
     if ((code = pthread_key_create(&fl_key, 0)) != 0) {
         (void)GC_printf("Key creation failed %d\n", code);
     	FAIL;

@@ -1,3 +1,41 @@
+2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	(diff96_cvs, partly from diff45 and diff75)
+
+        * misc.c (GC_set_oom_fn, GC_set_all_interior_pointers,
+        GC_set_finalize_on_demand, GC_set_java_finalization,
+        GC_set_finalizer_notifier, GC_set_dont_expand, GC_set_full_freq,
+        GC_set_no_dls, GC_set_free_space_divisor, GC_set_max_retries,
+        GC_set_dont_precollect, GC_set_time_limit, GC_set_warn_proc):
+        Change return type to void (these API functions no longer return
+        the old value).
+        * include/gc.h: Ditto (for prototypes).
+        * tests/test.c (main, WinMain, test): Remove explicit cast to void
+        for GC_set_warn_proc().
+        * misc.c (GC_get_oom_fn, GC_get_all_interior_pointers,
+        GC_get_finalize_on_demand, GC_get_java_finalization,
+        GC_get_finalizer_notifier, GC_get_dont_expand, GC_get_full_freq,
+        GC_get_no_dls, GC_get_free_space_divisor, GC_get_max_retries,
+        GC_get_dont_precollect, GC_get_time_limit, GC_get_warn_proc): New
+        API functions (to get the current value of the corresponding R/W
+        public variables).
+        * include/gc.h: Ditto (for prototypes).
+        * include/gc.h (GC_set_warn_proc, GC_set_free_space_divisor):
+        Update the comment.
+        * misc.c (GC_ignore_warn_proc): New API call-back function.
+        * include/gc.h (GC_ignore_warn_proc): Ditto (for the prototype).
+        * misc.c (GC_set_find_leak, GC_get_find_leak, GC_set_non_gc_bytes,
+        GC_get_non_gc_bytes): New API setter and getter functions (for the
+        public GC_find_leak and GC_non_gc_bytes variables, respectively).
+        * include/gc.h: Ditto (for prototypes).
+        * include/gc.h (GC_memalign): Add proto to GC API.
+        * mallocx.c (GC_memalign): Use GC_API, GC_CALL for the definition.
+        * tests/test.c (run_one_test): Test GC_memalign() on Win32 too,
+        remove GC_memalign() proto.
+        * misc.c (GC_write): Use multi-byte (A) variants of Win32
+        GetModuleFileName() and CreateFile().
+ 	* tests/test.c (main): Replace K&R-style function definition with the
+ 	ANSI C one.
+
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski and George Talbot)
 	(diff95_cvs)
 	* include/private/gcconfig.h (PLATFORM_ANDROID): New macro

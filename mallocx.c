@@ -492,7 +492,7 @@ GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)
 /* Debug version is tricky and currently missing.	*/
 #include <limits.h>
 
-void * GC_memalign(size_t align, size_t lb) 
+GC_API void * GC_CALL GC_memalign(size_t align, size_t lb) 
 { 
     size_t new_lb;
     size_t offset;

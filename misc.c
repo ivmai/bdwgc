@@ -895,12 +895,12 @@ out:
 #         ifdef OLD_WIN32_LOG_FILE
 	    strcpy(logPath, LOG_FILE);
 #	  else
-	    GetModuleFileName(NULL, logPath, _MAX_PATH);
+	    GetModuleFileNameA(NULL, logPath, _MAX_PATH);
 	    strcat(logPath, ".log");
 #	  endif
 	  file_name = logPath;
 	}
-	GC_stdout = CreateFile(file_name, GENERIC_WRITE,
+	GC_stdout = CreateFileA(file_name, GENERIC_WRITE,
         		       FILE_SHARE_READ,
         		       NULL, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH,
         		       NULL); 
@@ -1067,10 +1067,18 @@ STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
 
 GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
 
-GC_API GC_warn_proc GC_CALL GC_set_warn_proc(GC_warn_proc p)
+/* This is recommended for production code (release). */
+GC_API void GC_CALLBACK GC_ignore_warn_proc(char *msg, GC_word arg)
 {
-    GC_warn_proc result;
+    if (GC_print_stats) {
+      /* Don't ignore warnings if stats printing is on. */
+      GC_default_warn_proc(msg, arg);
+    }
+}
 
+GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc p)
+{
+    GC_ASSERT(p != 0);
 #   ifdef GC_WIN32_THREADS
 #     ifdef CYGWIN32
 	/* Need explicit GC_INIT call */
@@ -1080,19 +1088,17 @@ GC_API GC_warn_proc GC_CALL GC_set_warn_proc(GC_warn_proc p)
 #     endif
 #   endif
     LOCK();
-    result = GC_current_warn_proc;
-    if (p != (GC_warn_proc)0)
-	GC_current_warn_proc = p;
+    GC_current_warn_proc = p;
     UNLOCK();
-    return(result);
 }
 
-GC_API GC_word GC_CALL GC_set_free_space_divisor (GC_word value)
+GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 {
-    GC_word old = GC_free_space_divisor;
-    if (value != ~(GC_word)0)
-	GC_free_space_divisor = value;
-    return old;
+    GC_warn_proc result;
+    LOCK();
+    result = GC_current_warn_proc;
+    UNLOCK();
+    return(result);
 }
 
 #if !defined(PCR) && !defined(SMALL_CONFIG)
@@ -1237,94 +1243,162 @@ GC_API int GC_CALL GC_get_parallel(void)
     return GC_parallel;
 }
 
-GC_API GC_oom_func GC_CALL GC_set_oom_fn(GC_oom_func fn)
+/* Setter and getter functions for the public R/W variables.	*/
+
+GC_API void GC_CALL GC_set_oom_fn(GC_oom_func fn)
 {
-    GC_oom_func ofn = GC_oom_fn;
-    if (fn != (GC_oom_func)0)
-	GC_oom_fn = fn;
-    return ofn;
+    GC_ASSERT(fn != 0);
+    GC_oom_fn = fn;
 }
 
-GC_API GC_finalizer_notifier_proc GC_CALL GC_set_finalizer_notifier(
-					GC_finalizer_notifier_proc fn)
+GC_API GC_oom_func GC_CALL GC_get_oom_fn(void)
 {
-    GC_finalizer_notifier_proc ofn = GC_finalizer_notifier;
-    if (fn != (GC_finalizer_notifier_proc)((signed_word)-1))
-	GC_finalizer_notifier = fn;
-    return ofn;
+    return GC_oom_fn;
 }
 
-GC_API int GC_CALL GC_set_all_interior_pointers(int value)
+GC_API void GC_CALL GC_set_finalizer_notifier(GC_finalizer_notifier_proc fn)
 {
-    int ovalue = GC_all_interior_pointers;
-    if (value != -1) {
-	GC_ASSERT(!GC_is_initialized || value == ovalue);
-	GC_ASSERT(value == 0 || value == 1);
-	GC_all_interior_pointers = value;
-    }
-    return ovalue;
+    GC_finalizer_notifier = fn;
 }
 
-GC_API int GC_CALL GC_set_finalize_on_demand(int value)
+GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void)
 {
-    int ovalue = GC_finalize_on_demand;
-    if (value != -1)
-	GC_finalize_on_demand = value;
-    return ovalue;
+    return GC_finalizer_notifier;
 }
 
-GC_API int GC_CALL GC_set_java_finalization(int value)
+GC_API void GC_CALL GC_set_find_leak(int value)
 {
-    int ovalue = GC_java_finalization;
-    if (value != -1)
-	GC_java_finalization = value;
-    return ovalue;
+    /* value is of boolean type. */
+    GC_find_leak = value;
 }
 
-GC_API int GC_CALL GC_set_dont_expand(int value)
+GC_API int GC_CALL GC_get_find_leak(void)
 {
-    int ovalue = GC_dont_expand;
-    if (value != -1)
-	GC_dont_expand = value;
-    return ovalue;
+    return GC_find_leak;
 }
 
-GC_API int GC_CALL GC_set_no_dls(int value)
+GC_API void GC_CALL GC_set_all_interior_pointers(int value)
 {
-    int ovalue = GC_no_dls;
-    if (value != -1)
-	GC_no_dls = value;
-    return ovalue;
+    GC_ASSERT(!GC_is_initialized || value == GC_all_interior_pointers);
+    GC_ASSERT(value == 0 || value == 1);
+    GC_all_interior_pointers = value;
 }
 
-GC_API GC_word GC_CALL GC_set_max_retries(GC_word value)
+GC_API int GC_CALL GC_get_all_interior_pointers(void)
 {
-    GC_word ovalue = GC_max_retries;
-    if (value != ~(GC_word)0)
-	GC_max_retries = value;
-    return ovalue;
+    return GC_all_interior_pointers;
 }
 
-GC_API int GC_CALL GC_set_dont_precollect(int value)
+GC_API void GC_CALL GC_set_finalize_on_demand(int value)
 {
-    int ovalue = GC_dont_precollect;
-    if (value != -1)
-	GC_dont_precollect = value;
-    return ovalue;
+    GC_ASSERT(value != -1);
+    /* value is of boolean type. */
+    GC_finalize_on_demand = value;
 }
 
-GC_API int GC_CALL GC_set_full_freq(int value)
+GC_API int GC_CALL GC_get_finalize_on_demand(void)
 {
-    int ovalue = GC_full_freq;
-    if (value != -1)
-	GC_full_freq = value;
-    return ovalue;
+    return GC_finalize_on_demand;
 }
 
-GC_API unsigned long GC_CALL GC_set_time_limit(unsigned long value)
+GC_API void GC_CALL GC_set_java_finalization(int value)
 {
-    unsigned long ovalue = GC_time_limit;
-    if (value != (unsigned long)-1L)
-	GC_time_limit = value;
-    return ovalue;
+    GC_ASSERT(value != -1);
+    /* value is of boolean type. */
+    GC_java_finalization = value;
+}
+
+GC_API int GC_CALL GC_get_java_finalization(void)
+{
+    return GC_java_finalization;
+}
+
+GC_API void GC_CALL GC_set_dont_expand(int value)
+{
+    GC_ASSERT(value != -1);
+    /* value is of boolean type. */
+    GC_dont_expand = value;
+}
+
+GC_API int GC_CALL GC_get_dont_expand(void)
+{
+    return GC_dont_expand;
+}
+
+GC_API void GC_CALL GC_set_no_dls(int value)
+{
+    GC_ASSERT(value != -1);
+    /* value is of boolean type. */
+    GC_no_dls = value;
+}
+
+GC_API int GC_CALL GC_get_no_dls(void)
+{
+    return GC_no_dls;
+}
+
+GC_API void GC_CALL GC_set_non_gc_bytes(GC_word value)
+{
+    GC_non_gc_bytes = value;
+}
+
+GC_API GC_word GC_CALL GC_get_non_gc_bytes(void)
+{
+    return GC_non_gc_bytes;
+}
+
+GC_API void GC_CALL GC_set_free_space_divisor(GC_word value)
+{
+    GC_ASSERT(value > 0);
+    GC_free_space_divisor = value;
+}
+
+GC_API GC_word GC_CALL GC_get_free_space_divisor(void)
+{
+    return GC_free_space_divisor;
+}
+
+GC_API void GC_CALL GC_set_max_retries(GC_word value)
+{
+    GC_ASSERT(value != ~(GC_word)0);
+    GC_max_retries = value;
+}
+
+GC_API GC_word GC_CALL GC_get_max_retries(void)
+{
+    return GC_max_retries;
+}
+
+GC_API void GC_CALL GC_set_dont_precollect(int value)
+{
+    GC_ASSERT(value != -1);
+    /* value is of boolean type. */
+    GC_dont_precollect = value;
+}
+
+GC_API int GC_CALL GC_get_dont_precollect(void)
+{
+    return GC_dont_precollect;
+}
+
+GC_API void GC_CALL GC_set_full_freq(int value)
+{
+    GC_ASSERT(value >= 0);
+    GC_full_freq = value;
+}
+
+GC_API int GC_CALL GC_get_full_freq(void)
+{
+    return GC_full_freq;
+}
+
+GC_API void GC_CALL GC_set_time_limit(unsigned long value)
+{
+    GC_ASSERT(value != (unsigned long)-1L);
+    GC_time_limit = value;
+}
+
+GC_API unsigned long GC_CALL GC_get_time_limit(void)
+{
+    return GC_time_limit;
 }

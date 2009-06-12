@@ -96,13 +96,16 @@ GC_API GC_oom_func GC_oom_fn;
 			/* If it returns, it must return 0 or a valid	*/
 			/* pointer to a previously allocated heap 	*/
 			/* object.					*/
-GC_API GC_oom_func GC_CALL GC_set_oom_fn(GC_oom_func);
+GC_API void GC_CALL GC_set_oom_fn(GC_oom_func);
+GC_API GC_oom_func GC_CALL GC_get_oom_fn(void);
 
 GC_API int GC_find_leak;
 			/* Do not actually garbage collect, but simply	*/
 			/* report inaccessible memory that was not	*/
 			/* deallocated with GC_free.  Initial value	*/
 			/* is determined by FIND_LEAK macro.		*/
+GC_API void GC_CALL GC_set_find_leak(int);
+GC_API int GC_CALL GC_get_find_leak(void);
 
 GC_API int GC_all_interior_pointers;
 			/* Arrange for pointers to object interiors to	*/
@@ -115,7 +118,8 @@ GC_API int GC_all_interior_pointers;
 			/* at least a byte to allow "off the end"	*/
 			/* pointer recognition.				*/
 			/* MUST BE 0 or 1.				*/
-GC_API int GC_CALL GC_set_all_interior_pointers(int);
+GC_API void GC_CALL GC_set_all_interior_pointers(int);
+GC_API int GC_CALL GC_get_all_interior_pointers(void);
 
 GC_API int GC_finalize_on_demand;
 			/* If nonzero, finalizers will only be run in 	*/
@@ -123,7 +127,8 @@ GC_API int GC_finalize_on_demand;
 			/* call.  The default is determined by whether	*/
 			/* the FINALIZE_ON_DEMAND macro is defined	*/
 			/* when the collector is built.			*/
-GC_API int GC_CALL GC_set_finalize_on_demand(int);
+GC_API void GC_CALL GC_set_finalize_on_demand(int);
+GC_API int GC_CALL GC_get_finalize_on_demand(void);
 
 GC_API int GC_java_finalization;
 			/* Mark objects reachable from finalizable 	*/
@@ -133,7 +138,8 @@ GC_API int GC_java_finalization;
 			/* determined by JAVA_FINALIZATION macro.	*/
 			/* Enables register_finalizer_unreachable to	*/
 			/* work correctly.				*/
-GC_API int GC_CALL GC_set_java_finalization(int);
+GC_API void GC_CALL GC_set_java_finalization(int);
+GC_API int GC_CALL GC_get_java_finalization(void);
 
 typedef void (GC_CALLBACK * GC_finalizer_notifier_proc)(void);
 GC_API GC_finalizer_notifier_proc GC_finalizer_notifier;
@@ -144,8 +150,8 @@ GC_API GC_finalizer_notifier_proc GC_finalizer_notifier;
 			/* Typically this will notify a finalization	*/
 			/* thread, which will call GC_invoke_finalizers */
 			/* in response.					*/
-GC_API GC_finalizer_notifier_proc GC_CALL GC_set_finalizer_notifier(
-					GC_finalizer_notifier_proc);
+GC_API void GC_CALL GC_set_finalizer_notifier(GC_finalizer_notifier_proc);
+GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void);
 
 GC_API int GC_dont_gc;	/* != 0 ==> Dont collect.  In versions 6.2a1+,	*/
 			/* this overrides explicit GC_gcollect() calls.	*/
@@ -159,7 +165,8 @@ GC_API int GC_dont_gc;	/* != 0 ==> Dont collect.  In versions 6.2a1+,	*/
 GC_API int GC_dont_expand;
 			/* Dont expand heap unless explicitly requested */
 			/* or forced to.				*/
-GC_API int GC_CALL GC_set_dont_expand(int);
+GC_API void GC_CALL GC_set_dont_expand(int);
+GC_API int GC_CALL GC_get_dont_expand(void);
 
 GC_API int GC_use_entire_heap;
 		/* Causes the non-incremental collector to use the	*/
@@ -181,13 +188,16 @@ GC_API int GC_full_freq;    /* Number of partial collections between	*/
 			    /* blocks.  Values in the tens are now	*/
 			    /* perfectly reasonable, unlike for		*/
 			    /* earlier GC versions.			*/
-GC_API int GC_CALL GC_set_full_freq(int value);
+GC_API void GC_CALL GC_set_full_freq(int);
+GC_API int GC_CALL GC_get_full_freq(void);
 			
 GC_API GC_word GC_non_gc_bytes;
 			/* Bytes not considered candidates for collection. */
 			/* Used only to control scheduling of collections. */
 			/* Updated by GC_malloc_uncollectable and GC_free. */
 			/* Wizards only.				   */
+GC_API void GC_CALL GC_set_non_gc_bytes(GC_word);
+GC_API GC_word GC_CALL GC_get_non_gc_bytes(void);
 
 GC_API int GC_no_dls;
 			/* Don't register dynamic library data segments. */
@@ -196,7 +206,8 @@ GC_API int GC_no_dls;
 			/* In Microsoft Windows environments, this will	 */
 			/* usually also prevent registration of the	 */
 			/* main data segment as part of the root set.	 */
-GC_API int GC_CALL GC_set_no_dls(int);
+GC_API void GC_CALL GC_set_no_dls(int);
+GC_API int GC_CALL GC_get_no_dls(void);
 
 GC_API GC_word GC_free_space_divisor;
 			/* We try to make sure that we allocate at 	*/
@@ -211,12 +222,15 @@ GC_API GC_word GC_free_space_divisor;
 			/* but more collection time.  Decreasing it	*/
 			/* will appreciably decrease collection time	*/
 			/* at the expense of space.			*/
+GC_API void GC_CALL GC_set_free_space_divisor(GC_word);
+GC_API GC_word GC_CALL GC_get_free_space_divisor(void);
 
 GC_API GC_word GC_max_retries;
 			/* The maximum number of GCs attempted before	*/
 			/* reporting out of memory after heap		*/
 			/* expansion fails.  Initially 0.		*/
-GC_API GC_word GC_CALL GC_set_max_retries(GC_word);
+GC_API void GC_CALL GC_set_max_retries(GC_word);
+GC_API GC_word GC_CALL GC_get_max_retries(void);
 			
 
 GC_API char *GC_stackbottom;    /* Cool end of user stack.		*/
@@ -238,7 +252,8 @@ GC_API int GC_dont_precollect;  /* Don't collect as part of 		*/
 				/* before the first collection.		*/
 				/* Interferes with blacklisting.	*/
 				/* Wizards only.			*/
-GC_API int GC_CALL GC_set_dont_precollect(int);
+GC_API void GC_CALL GC_set_dont_precollect(int);
+GC_API int GC_CALL GC_get_dont_precollect(void);
 
 GC_API unsigned long GC_time_limit;
 				/* If incremental collection is enabled, */
@@ -253,7 +268,8 @@ GC_API unsigned long GC_time_limit;
 				/* Setting GC_time_limit to this value	 */
 				/* will disable the "pause time exceeded"*/
 				/* tests.				 */
-GC_API unsigned long GC_CALL GC_set_time_limit(unsigned long value);
+GC_API void GC_CALL GC_set_time_limit(unsigned long);
+GC_API unsigned long GC_CALL GC_get_time_limit(void);
 
 /* Public procedures */
 
@@ -282,6 +298,9 @@ GC_API void * GC_CALL GC_malloc_atomic(size_t size_in_bytes);
 GC_API char * GC_CALL GC_strdup (const char *str);
 GC_API void * GC_CALL GC_malloc_uncollectable(size_t size_in_bytes);
 GC_API void * GC_CALL GC_malloc_stubborn(size_t size_in_bytes);
+
+/* GC_memalign() is not well tested.	*/
+GC_API void * GC_CALL GC_memalign(size_t align, size_t lb);
 
 /* The following is only defined if the library has been suitably	*/
 /* compiled:								*/
@@ -834,17 +853,15 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 /* GC_set_warn_proc can be used to redirect or filter warning messages.	*/
 /* p may not be a NULL pointer.						*/
 typedef void (GC_CALLBACK * GC_warn_proc) (char *msg, GC_word arg);
-GC_API GC_warn_proc GC_CALL GC_set_warn_proc(GC_warn_proc p);
-    /* Returns old warning procedure.			     */
-    /* With 0 argument, current warn_proc remains unchanged. */
-    /* (Only true for GC7.2+)				     */
+GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc p);
+/* GC_get_warn_proc returns the current warn_proc.			*/
+GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void);
 
-GC_API GC_word GC_CALL GC_set_free_space_divisor(GC_word value);
-    /* Set free_space_divisor.  See above for definition.	*/
-    /* Returns old value.					*/
-    /* With -1 argument, nothing is changed, but old value is	*/
-    /* returned.  (Only true for GC7.2+)		        */
-	
+    /* GC_ignore_warn_proc may be used as an argument for    */
+    /* GC_set_warn_proc() to suppress all warnings (unless   */
+    /* statistics printing is turned on).		     */
+GC_API void GC_CALLBACK GC_ignore_warn_proc(char *msg, GC_word arg);
+
 /* The following is intended to be used by a higher level	*/
 /* (e.g. Java-like) finalization facility.  It is expected	*/
 /* that finalization code will arrange for hidden pointers to	*/
