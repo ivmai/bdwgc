@@ -1412,7 +1412,7 @@ void GC_release_mark_lock(void)
 #   ifdef GC_ASSERTIONS
 	GC_mark_lock_holder = NO_THREAD;
 #   endif
-    GC_ASSERT(GC_load(&GC_mark_mutex_waitcnt) != 0);
+    GC_ASSERT(AO_load(&GC_mark_mutex_waitcnt) != 0);
     if (AO_fetch_and_sub1_release(&GC_mark_mutex_waitcnt) > 1 &&
 	 SetEvent(mark_mutex_event) == FALSE)
 	ABORT("SetEvent() failed");
