@@ -132,6 +132,8 @@
   /* "dynamic" option only to avoid multiple library versions.	*/
 #else
 # define GC_win32_dll_threads FALSE
+# undef MAX_THREADS
+# define MAX_THREADS 1 /* dll_thread_table[] is always empty.	*/
 #endif
 
 /* We have two versions of the thread table.  Which one	*/
@@ -163,10 +165,11 @@ void GC_init_parallel(void);
 		"thread registration.");
 	  /* Thread-local allocation really wants to lock at thread	*/
 	  /* entry and exit.						*/
+#     else
+	  GC_ASSERT(!parallel_initialized);
+	  GC_win32_dll_threads = TRUE;
+	  GC_init_parallel();
 #     endif
-      GC_ASSERT(!parallel_initialized);
-      GC_win32_dll_threads = TRUE;
-      GC_init_parallel();
   }
 #else
   GC_API void GC_CALL GC_use_DllMain(void)
@@ -204,6 +207,11 @@ struct GC_Thread_Rep {
 			/* !in_use ==> stack_base == 0	*/
   ptr_t last_stack_min;	/* Last known minimum (hottest) address */
   			/* in stack or ADDR_LIMIT if unset	*/
+# ifdef IA64
+    ptr_t backing_store_end;
+    ptr_t backing_store_ptr;
+# endif
+
   GC_bool suspended;
 
 # ifdef GC_PTHREADS
@@ -413,6 +421,9 @@ static GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
   }
   me -> last_stack_min = ADDR_LIMIT;
   me -> stack_base = sb -> mem_base;
+# ifdef IA64
+      me -> backing_store_end = sb -> reg_base;
+# endif
   /* Up until this point, GC_push_all_stacks considers this thread	*/
   /* invalid.								*/
   /* Up until this point, this entry is viewed as reserved but invalid	*/
@@ -534,7 +545,7 @@ STATIC void GC_delete_gc_thread(GC_vthread gc_id)
     /* This is intended to be lock-free.				*/
     /* It is either called synchronously from the thread being deleted,	*/
     /* or by the joining thread.					*/
-    /* In this branch asynchronosu changes to *gc_id are possible.	*/
+    /* In this branch asynchronous changes to *gc_id are possible.	*/
     gc_id -> stack_base = 0;
     gc_id -> id = 0;
 #   ifdef CYGWIN32
@@ -649,7 +660,7 @@ DWORD GC_pthread_map_cache[PTHREAD_MAP_SIZE];
 #define HASH(pthread_id) ((NUMERIC_THREAD_ID(pthread_id) >> 5) % PTHREAD_MAP_SIZE)
 	/* It appears pthread_t is really a pointer type ... */
 #define SET_PTHREAD_MAP_CACHE(pthread_id, win32_id) \
-	GC_pthread_map_cache[HASH(pthread_id)] = (win32_id);
+	(GC_pthread_map_cache[HASH(pthread_id)] = (win32_id))
 #define GET_PTHREAD_MAP_CACHE(pthread_id) \
 	GC_pthread_map_cache[HASH(pthread_id)]
 
@@ -727,10 +738,12 @@ void GC_push_thread_structures(void)
 # endif
 }
 
-extern volatile AO_TS_t GC_fault_handler_lock;  /* from os_dep.c */
+#if defined(MPROTECT_VDB) && !defined(MSWINCE)
+  extern volatile AO_TS_t GC_fault_handler_lock;  /* from os_dep.c */
+#endif
 
 /* Suspend the given thread, if it's still active.	*/
-void GC_suspend(GC_thread t)
+STATIC void GC_suspend(GC_thread t)
 {
 # ifdef MSWINCE
     /* SuspendThread will fail if thread is running kernel code */
@@ -757,16 +770,20 @@ void GC_suspend(GC_thread t)
 #     endif
       return;
     }
-    /* Acquire the spin lock we use to update dirty bits.	*/
-    /* Threads shouldn't get stopped holding it.  But we may	*/
-    /* acquire and release it in the UNPROTECT call.		*/
+#   if defined(MPROTECT_VDB) && !defined(MSWINCE)
+      /* Acquire the spin lock we use to update dirty bits.	*/
+      /* Threads shouldn't get stopped holding it.  But we may	*/
+      /* acquire and release it in the UNPROTECT call.		*/
       while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {}
+#   endif
 
     if (SuspendThread(t -> handle) == (DWORD)-1)
       ABORT("SuspendThread failed");
 # endif
    t -> suspended = TRUE;
-   AO_CLEAR(&GC_fault_handler_lock);
+#  if defined(MPROTECT_VDB) && !defined(MSWINCE)
+     AO_CLEAR(&GC_fault_handler_lock);
+#  endif
 }
 
 /* Defined in misc.c */
@@ -1018,8 +1035,8 @@ STATIC void GC_push_stack_for(GC_thread thread)
 	/* stack_min of the thread.					*/
 	if (thread -> id == me || sp >= thread->stack_base
 		|| sp + GC_page_size < stack_min)
-	  WARN("Thread stack pointer 0x%lx out of range, pushing everything\n",
-		(unsigned long)(size_t)sp);
+	  WARN("Thread stack pointer %p out of range, pushing everything\n",
+		sp);
 #       ifdef DEBUG_THREADS
 	  GC_printf("Pushing stack for 0x%x from (min) %p to %p from 0x%x\n",
 		    (int)thread -> id, stack_min,
@@ -1068,12 +1085,8 @@ void GC_push_all_stacks(void)
   }
 # ifndef SMALL_CONFIG
     if (GC_print_stats == VERBOSE) {
-      GC_log_printf("Pushed %d thread stacks ", nthreads);
-      if (GC_win32_dll_threads) {
-    	GC_log_printf("based on DllMain thread tracking\n");
-      } else {
-    	GC_log_printf("\n");
-      }
+      GC_log_printf("Pushed %d thread stacks%s\n", nthreads,
+	     GC_win32_dll_threads ? " based on DllMain thread tracking" : "");
 #     ifdef PARALLEL_MARK
 	/* FIXME: Should we scan marker threads here too? */
 #     endif
@@ -1096,6 +1109,9 @@ void GC_get_next_stack(char *start, char *limit,
     ptr_t *plast_stack_min = NULL;    /* Address of last_stack_min 	*/
     				      /* field for thread corresponding	*/
 				      /* to current_min.		*/
+    GC_thread thread = NULL;	      /* Either NULL or points to the	*/
+				      /* thread's hash table entry	*/
+				      /* containing *plast_stack_min.	*/
 
     /* First set current_min, ignoring limit. */
       if (GC_win32_dll_threads) {
@@ -1104,7 +1120,7 @@ void GC_get_next_stack(char *start, char *limit,
         for (i = 0; i <= my_max; i++) {
      	  ptr_t s = (ptr_t)(dll_thread_table[i].stack_base);
 
-	  if (0 != s && s > start && s < current_min) {
+	  if (s > start && s < current_min) {
 	    /* Update address of last_stack_min. */
 	    plast_stack_min = (ptr_t * /* no volatile */)
 	    			&dll_thread_table[i].last_stack_min;
@@ -1118,9 +1134,10 @@ void GC_get_next_stack(char *start, char *limit,
           for (t = GC_threads[i]; t != 0; t = t -> next) {
 	    ptr_t s = t -> stack_base;
 
-	    if (0 != s && s > start && s < current_min) {
+	    if (s > start && s < current_min) {
 	      /* Update address of last_stack_min. */
 	      plast_stack_min = &t -> last_stack_min;
+	      thread = t; /* Remember current thread to unprotect. */
 	      current_min = s;
 	    }
           }
@@ -1148,15 +1165,21 @@ void GC_get_next_stack(char *start, char *limit,
     /* Get the minimum address of the found stack by probing its memory	*/
     /* region starting from the last known minimum (if set).		*/
       if (*plast_stack_min == ADDR_LIMIT
-        || !GC_may_be_in_stack(*plast_stack_min)) {
+#	 ifndef MSWINCE
+	   || !GC_may_be_in_stack(*plast_stack_min)
+#	 endif
+         ) {
         /* Unsafe to start from last value.	*/
-        *lo = GC_get_stack_min(current_min-1);
+        *lo = GC_get_stack_min(current_min);
       } else {
         /* Use last value value to optimize search for min address */
     	*lo = GC_get_stack_min(*plast_stack_min);
       }
 
     /* Remember current stack_min value. */
+      if (thread != NULL) {
+	UNPROTECT(thread);
+      }
       *plast_stack_min = *lo;
 }
 
@@ -1349,7 +1372,7 @@ STATIC void start_mark_threads(void)
 }
 
 STATIC HANDLE mark_mutex_event = (HANDLE)0; /* Event with auto-reset. */
-volatile AO_t GC_mark_mutex_waitcnt = 0;	/* Number of waiters - 1; */
+volatile AO_t GC_mark_mutex_waitcnt = 0;	/* Number of waiters + 1; */
 					 	/* 0 - unlocked. */
 
 STATIC HANDLE builder_cv = (HANDLE)0; /* Event with manual reset */
@@ -1389,7 +1412,7 @@ void GC_release_mark_lock(void)
 #   ifdef GC_ASSERTIONS
 	GC_mark_lock_holder = NO_THREAD;
 #   endif
-    GC_ASSERT(GC_mark_mutex_waitcnt != 0);
+    GC_ASSERT(GC_load(&GC_mark_mutex_waitcnt) != 0);
     if (AO_fetch_and_sub1_release(&GC_mark_mutex_waitcnt) > 1 &&
 	 SetEvent(mark_mutex_event) == FALSE)
 	ABORT("SetEvent() failed");
@@ -1460,13 +1483,10 @@ void GC_wait_marker(void)
 	GC_mark_lock_holder = NO_THREAD;
 #   endif
     
-    /* FIXME: This looks dubious to me.  Is it really OK if	*/
-    /* GC_mark_mutex_waitcnt is decremented between the 	*/
-    /* following two lines?- HB					*/
     if ((waitcnt = AO_load(&GC_mark_mutex_waitcnt)) > 1) {
-	(void)AO_fetch_and_sub1_full(&GC_mark_mutex_waitcnt);
+	(void)AO_fetch_and_sub1_release(&GC_mark_mutex_waitcnt);
     } else {
-	GC_ASSERT(waitcnt != 0);
+	GC_ASSERT(AO_load(&GC_mark_mutex_waitcnt) != 0);
     }
 
     /* The state of mark_cv is non-signaled here. */
@@ -1533,7 +1553,7 @@ STATIC void * GC_CALLBACK GC_win32_start_inner(struct GC_stack_base *sb,
 #ifndef __GNUC__
     __try {
 #endif /* __GNUC__ */
-	ret = (void *)(size_t)args->start (args->param);
+	ret = (void *)(word)args->start (args->param);
 #ifndef __GNUC__
     } __finally {
 #endif /* __GNUC__ */
@@ -1552,7 +1572,7 @@ STATIC void * GC_CALLBACK GC_win32_start_inner(struct GC_stack_base *sb,
 
 DWORD WINAPI GC_win32_start(LPVOID arg)
 {
-    return (DWORD)(size_t)GC_call_with_stack_base(GC_win32_start_inner, arg);
+    return (DWORD)(word)GC_call_with_stack_base(GC_win32_start_inner, arg);
 }
 
 GC_API HANDLE WINAPI GC_CreateThread(

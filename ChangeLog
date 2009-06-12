@@ -1,3 +1,44 @@
+2009-06-11  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Ivan Maidanski)
+	(diff93_cvs: resembling diff27, diff30, diff43, diff44, diff66,
+	diff76, diff79, diff83 partly)
+
+        * win32_threads.c (MAX_THREADS): Define as 1 if GC_win32_dll_threads
+        is defined as FALSE (otherwise the size of dll_thread_table is near
+        200 KiB for 32-bit).
+        * win32_threads.c (GC_use_DllMain): Optimize for THREAD_LOCAL_ALLOC.
+        * win32_threads.c (GC_Thread_Rep): Add backing_store_end and
+        backing_store_ptr fields for IA64 support.
+        * win32_threads.c (GC_register_my_thread_inner): Set
+        backing_store_end field to reg_base value for IA64 (same as in
+        pthread_support.c).
+        * win32_threads.c (SET_PTHREAD_MAP_CACHE): Put parentheses in the
+        "right" places, remove ';'.
+        * win32_threads.c (GC_fault_handler_lock): Declare only
+        if MPROTECT_VDB (and not WinCE).
+        * win32_threads.c (GC_suspend): Acquire and release
+        GC_fault_handler_lock only if MPROTECT_VDB (and not WinCE).
+        * win32_threads.c (GC_suspend): Define as STATIC.
+        * win32_threads.c (GC_push_stack_for): Fix WARN() format specifier
+        (should be word-complient, "%p" is used w/o "0x"), don't cast sp.
+        * win32_threads.c (GC_push_all_stacks): Convert a group of printf()
+        calls into a single one (for output atomicity).
+        * win32_threads.c (GC_get_next_stack): Unprotect thread descriptor
+        before altering its last_stack_min ("thread" variable is added).
+        * win32_threads.c (GC_get_next_stack): Remove unnecessary checks for
+        "s" is non-NULL. 
+        * win32_threads.c (GC_get_next_stack): Don't call GC_may_be_in_stack
+        if WinCE.
+        * win32_threads.c (GC_get_next_stack): Pass current_min value to
+        GC_get_stack_min as-is (without -1).
+        * win32_threads.c (GC_wait_marker): Remove FIXME and use "release"
+        version of AO_fetch_and_sub1().
+        * win32_threads.c (GC_win32_start_inner, GC_win32_start): convert int
+        to pointer (and vice verse) thru word type to suppress warnings.
+	* win32_threads.c (GC_mark_mutex_waitcnt): Fix comment, always
+	access atomically.
+	* misc.c: Change GC_THREADS tests back to THREADS.
+
+
 2009-06-11  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff92_cvs: resembling diff20, diff27, diff34, diff38, diff43, diff45,
 	diff46, diff56, diff60, diff62, diff74, diff75, diff81 partly)

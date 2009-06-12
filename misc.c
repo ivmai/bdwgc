@@ -430,7 +430,7 @@ GC_API void GC_CALL GC_init(void)
     /* UNLOCK(); */
 }
 
-#if (defined(MSWIN32) || defined(MSWINCE)) && defined(GC_THREADS)
+#if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
     CRITICAL_SECTION GC_write_cs;
 #endif
 
@@ -518,7 +518,7 @@ void GC_init_inner(void)
   	  InitializeCriticalSection (&GC_allocate_ml);
       }
 #endif /* MSWIN32 */
-#   if (defined(MSWIN32) || defined(MSWINCE)) && defined(GC_THREADS)
+#   if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
       InitializeCriticalSection(&GC_write_cs);
 #   endif
 #   if (!defined(SMALL_CONFIG))
@@ -864,14 +864,14 @@ out:
 
   void GC_deinit(void)
   {
-#   ifdef GC_THREADS
+#   ifdef THREADS
       if (GC_is_initialized) {
   	DeleteCriticalSection(&GC_write_cs);
       }
 #   endif
   }
 
-#ifdef GC_THREADS
+#ifdef THREADS
 # ifdef PARALLEL_MARK
 #   define IF_NEED_TO_LOCK(x) if (GC_parallel || GC_need_to_lock) x
 # else
