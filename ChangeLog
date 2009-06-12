@@ -1,3 +1,8 @@
+2009-06-12  Hans Boehm <Hans.Boehm@hp.com>
+
+	* win32_threads.c (GC_unregister_my_thread): add false assertion
+	in unreachable code.
+
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 
 	diff97 (resembling diff43, diff51, diff67, diff76, diff83 partly)

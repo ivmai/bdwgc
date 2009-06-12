@@ -616,6 +616,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     if (GC_win32_dll_threads) {
 #     if defined(THREAD_LOCAL_ALLOC)
 	/* Can't happen: see GC_use_DllMain(). */
+	GC_ASSERT(FALSE);
 #     endif
       /* FIXME: Should we just ignore this? */
       GC_delete_thread(t);
