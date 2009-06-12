@@ -1080,6 +1080,9 @@ STATIC void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb,
     LOCK();
     me = GC_register_my_thread_inner(sb, my_pthread);
     me -> flags = si -> flags;
+#   if defined(THREAD_LOCAL_ALLOC)
+        GC_init_thread_local(&(me->tlfs));
+#   endif
     UNLOCK();
     start = si -> start_routine;
 #   ifdef DEBUG_THREADS
@@ -1089,11 +1092,6 @@ STATIC void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb,
     sem_post(&(si -> registered));	/* Last action on si.	*/
     					/* OK to deallocate.	*/
     pthread_cleanup_push(GC_thread_exit_proc, 0);
-#   if defined(THREAD_LOCAL_ALLOC)
- 	LOCK();
-        GC_init_thread_local(&(me->tlfs));
-	UNLOCK();
-#   endif
     result = (*start)(start_arg);
 #   if DEBUG_THREADS
         GC_printf("Finishing thread 0x%x\n", (unsigned)pthread_self());

@@ -42,14 +42,6 @@
 #ifdef GC_PTHREADS
 # include <errno.h>
 
-/* GC_DLL should not normally be defined, especially since we often do turn */
-/* on THREAD_LOCAL_ALLOC, which is currently incompatible. 		    */
-/* It might be possible to get GC_DLL and DllMain-based	thread registration */
-/* to work with Cygwin, but if you try you are on your own.		    */
-#ifdef GC_DLL
-# error GC_DLL untested with Cygwin
-#endif
-
  /* Cygwin-specific forward decls */
 # undef pthread_create 
 # undef pthread_sigmask 
@@ -100,7 +92,10 @@
 
 #endif
 
-#if defined(GC_DLL) && !defined(MSWINCE)
+/* DllMain-based thread registration is currently incompatible	*/
+/* with thread-local allocation, pthreads and WinCE.		*/
+#if defined(GC_DLL) && !defined(MSWINCE) \
+	&& !defined(THREAD_LOCAL_ALLOC) && !defined(GC_PTHREADS)
   static GC_bool GC_win32_dll_threads = FALSE;
   /* This code operates in two distinct modes, depending on	*/
   /* the setting of GC_win32_dll_threads.  If			*/
@@ -156,7 +151,10 @@ static GC_bool parallel_initialized = FALSE;
 
 void GC_init_parallel(void);
 
-#ifdef GC_DLL
+/* GC_use_DllMain() is currently incompatible with pthreads.		    */
+/* It might be possible to get GC_DLL and DllMain-based thread registration */
+/* to work with Cygwin, but if you try, you are on your own.		    */
+#if defined(GC_DLL) && !defined(GC_PTHREADS)
   /* Turn on GC_win32_dll_threads	*/
   GC_API void GC_CALL GC_use_DllMain(void)
   {
@@ -497,23 +495,6 @@ GC_thread GC_lookup_thread_inner(DWORD thread_id) {
   }
 }
 
-/* A version of the above that acquires the lock if necessary.  Note	*/
-/* that the identically named function for pthreads is different, and	*/
-/* just assumes we hold the lock.					*/
-/* Also used (for assertion checking only) from thread_local_alloc.c.	*/
-static GC_thread GC_lookup_thread(DWORD thread_id)
-{
-  if (GC_win32_dll_threads) {
-    return GC_lookup_thread_inner(thread_id);
-  } else {
-    GC_thread result;
-    LOCK();
-    result = GC_lookup_thread_inner(thread_id);
-    UNLOCK();
-    return result;
-  }
-}
-
 /* Make sure thread descriptor t is not protected by the VDB		*/
 /* implementation.							*/
 /* Used to prevent write faults when the world is (partially) stopped,	*/
@@ -616,13 +597,14 @@ STATIC void GC_delete_thread(DWORD id)
 GC_API int GC_CALL GC_register_my_thread(struct GC_stack_base *sb) {
   DWORD t = GetCurrentThreadId();
 
-  if (0 == GC_lookup_thread(t)) {
-    /* We lock here, since we want to wait for an ongoing GC.	*/
-    LOCK();
+  /* We lock here, since we want to wait for an ongoing GC.	*/
+  LOCK();
+  if (0 == GC_lookup_thread_inner(t)) {
     GC_register_my_thread_inner(sb, t);
     UNLOCK();
     return GC_SUCCESS;
   } else {
+    UNLOCK();
     return GC_DUPLICATE;
   }
 }
@@ -631,19 +613,20 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 {
     DWORD t = GetCurrentThreadId();
 
-#   if defined(THREAD_LOCAL_ALLOC)
-      LOCK();
-      {
-	GC_thread me = GC_lookup_thread_inner(t);
-        GC_destroy_thread_local(&(me->tlfs));
-      }
-      UNLOCK();
-#   endif
     if (GC_win32_dll_threads) {
-      /* Should we just ignore this? */
+#     if defined(THREAD_LOCAL_ALLOC)
+	/* Can't happen: see GC_use_DllMain(). */
+#     endif
+      /* FIXME: Should we just ignore this? */
       GC_delete_thread(t);
     } else {
       LOCK();
+#     if defined(THREAD_LOCAL_ALLOC)
+	{
+	  GC_thread me = GC_lookup_thread_inner(t);
+	  GC_destroy_thread_local(&(me->tlfs));
+	}
+#     endif
       GC_delete_thread(t);
       UNLOCK();
     }
@@ -1020,8 +1003,8 @@ STATIC void GC_push_stack_for(GC_thread thread)
 	}
       }
       GC_ASSERT(stack_min == GC_get_stack_min(thread -> stack_base)
-      		|| sp >= stack_min && stack_min < thread -> stack_base
-		   && stack_min > GC_get_stack_min(thread -> stack_base));
+      		|| (sp >= stack_min && stack_min < thread -> stack_base
+		   && stack_min > GC_get_stack_min(thread -> stack_base)));
 
       if (sp >= stack_min && sp < thread->stack_base) {
 #       ifdef DEBUG_THREADS
@@ -1087,14 +1070,34 @@ void GC_push_all_stacks(void)
     if (GC_print_stats == VERBOSE) {
       GC_log_printf("Pushed %d thread stacks%s\n", nthreads,
 	     GC_win32_dll_threads ? " based on DllMain thread tracking" : "");
-#     ifdef PARALLEL_MARK
-	/* FIXME: Should we scan marker threads here too? */
-#     endif
     }
 # endif
   if (!found_me && !GC_in_thread_creation)
     ABORT("Collecting from unknown thread.");
 }
+
+#ifdef PARALLEL_MARK
+
+# ifndef MAX_MARKERS
+#   define MAX_MARKERS 16
+# endif
+
+  extern long GC_markers;	/* Number of mark threads we would	*/
+				/* like to have.  Includes the 		*/
+				/* initiating thread.			*/
+
+  STATIC ptr_t marker_sp[MAX_MARKERS - 1]; /* The cold end of the stack	*/
+					   /* for markers.		*/
+# ifdef IA64
+    STATIC ptr_t marker_bsp[MAX_MARKERS - 1];
+# endif
+
+  STATIC ptr_t marker_last_stack_min[MAX_MARKERS - 1];
+				/* Last known minimum (hottest) address */
+    				/* in stack (or ADDR_LIMIT if unset)	*/
+    				/* for markers.				*/
+
+#endif
 
 /* Find stack with the lowest address which overlaps the 	*/
 /* interval [start, limit).					*/
@@ -1142,6 +1145,20 @@ void GC_get_next_stack(char *start, char *limit,
 	    }
           }
         }
+#	ifdef PARALLEL_MARK
+	  for (i = 0; i < GC_markers - 1; ++i) {
+	    ptr_t s = marker_sp[i];
+#	    ifdef IA64
+		/* FIXME: not implemented */
+#	    endif
+	    if (s > start && s < current_min) {
+	      GC_ASSERT(marker_last_stack_min[i] != NULL);
+	      plast_stack_min = &marker_last_stack_min[i];
+	      current_min = s;
+	      thread = NULL; /* Not a thread's hash table entry. */
+	    }
+	  }
+#	endif
       }
 
     *hi = current_min;
@@ -1185,12 +1202,7 @@ void GC_get_next_stack(char *start, char *limit,
 
 #ifdef PARALLEL_MARK
 
-# ifndef MAX_MARKERS
-#   define MAX_MARKERS 16
-# endif
-
   /* GC_mark_thread() is the same as in pthread_support.c	*/
-  /* except for unused marker_[b]sp.				*/
 #ifdef GC_PTHREADS
   STATIC void * GC_mark_thread(void * id)
 #else
@@ -1198,6 +1210,11 @@ void GC_get_next_stack(char *start, char *limit,
 #endif
 {
   word my_mark_no = 0;
+
+  marker_sp[(word)id] = GC_approx_sp();
+# ifdef IA64
+    marker_bsp[(word)id] = GC_save_regs_in_stack();
+# endif
 
   if ((word)id == (word)-1) return 0; /* to make compiler happy */
 
@@ -1214,10 +1231,6 @@ void GC_get_next_stack(char *start, char *limit,
     GC_help_marker(my_mark_no);
   }
 }
-
-extern long GC_markers;		/* Number of mark threads we would	*/
-				/* like to have.  Includes the 		*/
-				/* initiating thread.			*/
 
 #ifdef GC_ASSERTIONS
   unsigned long GC_mark_lock_holder = NO_THREAD;
@@ -1244,6 +1257,7 @@ STATIC void start_mark_threads(void)
 	ABORT("pthread_attr_setdetachstate failed");
 
     for (i = 0; i < GC_markers - 1; ++i) {
+      marker_last_stack_min[i] = ADDR_LIMIT;
       if (0 != pthread_create(&new_thread, &attr,
 			      GC_mark_thread, (void *)(word)i)) {
 	WARN("Marker thread creation failed, errno = %ld.\n",
@@ -1360,6 +1374,7 @@ STATIC void start_mark_threads(void)
       unsigned thread_id;
 
       for (i = 0; i < GC_markers - 1; ++i) {
+	marker_last_stack_min[i] = ADDR_LIMIT;
 	handle = _beginthreadex(NULL /* security_attr */, 0 /* stack_size */,
 			GC_mark_thread, (void *)(word)i, 0 /* flags */,
 			&thread_id);
@@ -1822,7 +1837,8 @@ void GC_thr_init(void) {
       }
 #   endif /* PARALLEL_MARK */
     
-    GC_register_my_thread(&sb);
+    GC_ASSERT(0 == GC_lookup_thread_inner(GC_main_thread));
+    GC_register_my_thread_inner(&sb, GC_main_thread);
 
 #   ifdef PARALLEL_MARK
       /* If we are using a parallel marker, actually start helper threads.  */
@@ -2162,7 +2178,7 @@ void GC_init_parallel(void)
     /* Initialize thread local free lists if used.	*/
 #   if defined(THREAD_LOCAL_ALLOC)
       LOCK();
-      GC_init_thread_local(&(GC_lookup_thread(GetCurrentThreadId())->tlfs));
+      GC_init_thread_local(&GC_lookup_thread_inner(GetCurrentThreadId())->tlfs);
       UNLOCK();
 #   endif
 }

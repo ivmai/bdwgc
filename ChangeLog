@@ -1,4 +1,41 @@
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+
+	diff97 (resembling diff43, diff51, diff67, diff76, diff83 partly)
+        * pthread_support.c (GC_inner_start_routine): Don't release the
+        GC lock between GC_register_my_thread_inner() and
+        GC_init_thread_local() calls (post the "registered" even after
+        calling GC_init_thread_local()).
+        * win32_threads.c (GC_register_my_thread, GC_unregister_my_thread):
+        Use GC_lookup_thread_inner() instead of GC_lookup_thread() and
+        acquire the GC lock only once.
+        * win32_threads.c (GC_thr_init): Call GC_register_my_thread_inner()
+        directly instead of GC_register_my_thread() since I_HOLD_LOCK
+        and our (main) thread is not registered yet (add assertion for it).
+        * win32_threads.c (GC_init_parallel): Call GC_lookup_thread_inner()
+        directly instead of GC_lookup_thread() (since I_HOLD_LOCK).
+        * win32_threads.c (GC_lookup_thread): Remove unused function.
+        * win32_threads.c: Remove "#error GC_DLL untested with Cygwin".
+        * win32_threads.c (GC_win32_dll_threads): Define as FALSE macro
+        also if THREAD_LOCAL_ALLOC or GC_PTHREADS.
+        * win32_threads.c (GC_use_DllMain): Call ABORT also if GC_PTHREADS
+        (for Cygwin).
+        * win32_threads.c (GC_push_stack_for): Add parentheses around "&&"
+        (inside GC_ASSERT) to prevent compiler warning.
+        * win32_threads.c (GC_push_all_stacks): Remove FIXME for
+        PARALLEL_MARK.
+        * win32_threads.c (MAX_MARKERS, GC_markers): Move the definitions
+        to a place before GC_get_next_stack().
+        * win32_threads.c (marker_sp, marker_bsp): New static arrays (same
+        as in pthread_support.c).
+        * win32_threads.c (marker_last_stack_min): New static arrays (the
+        same semantics as for last_stack_min of GC_Thread_Rep).
+        * win32_threads.c (GC_get_next_stack): Handle marker threads.
+        * win32_threads.c (GC_mark_thread): Save the current stack pointer
+        to marker_[b]sp.
+        * win32_threads.c (start_mark_threads): Initialize
+        marker_last_stack_min elements (to "unset" value).
+
+2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff96_cvs, partly from diff45 and diff75)
 
         * misc.c (GC_set_oom_fn, GC_set_all_interior_pointers,
