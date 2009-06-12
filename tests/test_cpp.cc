@@ -206,6 +206,7 @@ int APIENTRY WinMain(
     int i, iters, n;
 #   ifdef USE_STD_ALLOCATOR
       int *x = gc_allocator<int>().allocate(1);
+      int *xio = gc_allocator_ignore_off_page<int>().allocate(1);
       int **xptr = traceable_allocator<int *>().allocate(1);
 #   else 
 #     ifdef __GNUC__

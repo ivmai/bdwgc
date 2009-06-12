@@ -1,3 +1,7 @@
+2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really mostly George Talbot)
+	* include/gc_allocator.h: Add gc_allocator_ignore_off_page.
+	* tests/test_cpp.cc: Add call to gc_allocator_ignore_off_page.
+
 2009-06-11  Hans Boehm <Hans.Boehm@hp.com>
 	* win32_threads.c (GC_release_mark_lock): Correct misspelling of
 	AO_load in assertion.
