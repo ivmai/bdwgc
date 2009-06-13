@@ -407,21 +407,20 @@ STATIC void GC_print_smashed_obj(ptr_t p, ptr_t clobbered_addr)
     register oh * ohdr = (oh *)GC_base(p);
     
     GC_ASSERT(I_DONT_HOLD_LOCK());
-    GC_err_printf("%p in or near object at %p(", clobbered_addr, p);
     if (clobbered_addr <= (ptr_t)(&(ohdr -> oh_sz))
         || ohdr -> oh_string == 0) {
-        GC_err_printf("<smashed>, appr. sz = %lu)\n",
-		      (unsigned long)(GC_size((ptr_t)ohdr) - DEBUG_BYTES));
+	GC_err_printf(
+		"%p in or near object at %p(<smashed>, appr. sz = %lu)\n",
+		clobbered_addr, p,
+		(unsigned long)(GC_size((ptr_t)ohdr) - DEBUG_BYTES));
     } else {
-        if ((word)(ohdr -> oh_string) < HBLKSIZE) {
-            GC_err_puts("(smashed string)");
-        } else if (ohdr -> oh_string[0] == '\0') {
-            GC_err_puts("EMPTY(smashed?)");
-        } else {
-            GC_err_puts(ohdr -> oh_string);
-        }
-        GC_err_printf(":%ld, sz=%ld)\n", (unsigned long)(ohdr -> oh_int),
-        			          (unsigned long)(ohdr -> oh_sz));
+	GC_err_printf("%p in or near object at %p(%s:%lu, sz=%lu)\n",
+		clobbered_addr, p,
+		(word)(ohdr -> oh_string) < HBLKSIZE ? "(smashed string)" :
+		ohdr -> oh_string[0] == '\0' ? "EMPTY(smashed?)" :
+						ohdr -> oh_string,
+		(unsigned long)(ohdr -> oh_int),
+		(unsigned long)(ohdr -> oh_sz));
         PRINT_CALL_CHAIN(ohdr);
     }
 }

@@ -1352,7 +1352,7 @@ void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
   void GC_push_one(word p)
 # endif
 {
-    GC_PUSH_ONE_STACK((ptr_t)p, MARKED_FROM_REGISTER);
+    GC_PUSH_ONE_STACK(p, MARKED_FROM_REGISTER);
 }
 
 /*ARGSUSED*/
@@ -1491,7 +1491,7 @@ void GC_push_all_eager(ptr_t bottom, ptr_t top)
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
     register word *p;
-    register ptr_t q;
+    register word q;
     register word *lim;
     register ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
     register ptr_t least_ha = GC_least_plausible_heap_addr;
@@ -1503,8 +1503,8 @@ void GC_push_all_eager(ptr_t bottom, ptr_t top)
     /* to be valid.						*/
       lim = t - 1 /* longword */;
       for (p = b; p <= lim; p = (word *)(((ptr_t)p) + ALIGNMENT)) {
-	q = (ptr_t)(*p);
-	GC_PUSH_ONE_STACK((ptr_t)q, p);
+	q = *p;
+	GC_PUSH_ONE_STACK(q, p);
       }
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr
@@ -1568,25 +1568,25 @@ void GC_push_all_stack(ptr_t bottom, ptr_t top)
 # if GC_GRANULE_WORDS == 1
 #   define USE_PUSH_MARKED_ACCELERATORS
 #   define PUSH_GRANULE(q) \
-		{ ptr_t qcontents = (ptr_t)((q)[0]); \
+		{ word qcontents = (q)[0]; \
 	          GC_PUSH_ONE_HEAP(qcontents, (q)); }
 # elif GC_GRANULE_WORDS == 2
 #   define USE_PUSH_MARKED_ACCELERATORS
 #   define PUSH_GRANULE(q) \
-		{ ptr_t qcontents = (ptr_t)((q)[0]); \
+		{ word qcontents = (q)[0]; \
 	          GC_PUSH_ONE_HEAP(qcontents, (q)); \
-		  qcontents = (ptr_t)((q)[1]); \
+		  qcontents = (q)[1]; \
 	          GC_PUSH_ONE_HEAP(qcontents, (q)+1); }
 # elif GC_GRANULE_WORDS == 4
 #   define USE_PUSH_MARKED_ACCELERATORS
 #   define PUSH_GRANULE(q) \
-		{ ptr_t qcontents = (ptr_t)((q)[0]); \
+		{ word qcontents = (q)[0]; \
 	          GC_PUSH_ONE_HEAP(qcontents, (q)); \
-		  qcontents = (ptr_t)((q)[1]); \
+		  qcontents = (q)[1]; \
 	          GC_PUSH_ONE_HEAP(qcontents, (q)+1); \
-		  qcontents = (ptr_t)((q)[2]); \
+		  qcontents = (q)[2]; \
 	          GC_PUSH_ONE_HEAP(qcontents, (q)+2); \
-		  qcontents = (ptr_t)((q)[3]); \
+		  qcontents = (q)[3]; \
 	          GC_PUSH_ONE_HEAP(qcontents, (q)+3); }
 # endif
 #endif

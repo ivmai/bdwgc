@@ -7,7 +7,8 @@
 # endif
 
 /*
- * Invoke all remaining finalizers that haven't yet been run.
+ * Invoke all remaining finalizers that haven't yet been run, or
+ * repeatedly notify that there are finalizers to be run.
  * This is needed for strict compliance with the Java standard, 
  * which can make the runtime guarantee that all finalizers are run.
  * This is problematic for several reasons:

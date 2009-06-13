@@ -14,6 +14,8 @@
  */
 /* Boehm, July 31, 1995 5:02 pm PDT */
 
+#include "private/gc_pmark.h"  /* includes gc_priv.h */
+
 #ifdef GC_GCJ_SUPPORT
 
 /*
@@ -35,7 +37,6 @@
  *  2) FASTLOCK is not a significant win.
  */
 
-#include "private/gc_pmark.h"  /* includes gc_priv.h */
 #include "gc_gcj.h"
 #include "private/dbg_mlc.h"
 
@@ -208,6 +209,7 @@ GC_API void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
+/* There is no THREAD_LOCAL_ALLOC for GC_gcj_malloc_ignore_off_page().	*/
 GC_API void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
 				     void * ptr_to_struct_containing_descr) 
 {
@@ -223,22 +225,25 @@ GC_API void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
         if( (op = *opp) == 0 ) {
 	    maybe_finalize();
             op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_gcj_kind);
-	    /* lg = GC_size_map[lb]; */	/* May have been uninitialized.	*/
+	    if (0 == op) {
+		UNLOCK();
+		return(GC_oom_fn(lb));
+	    }
         } else {
             *opp = obj_link(op);
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
         }
-	*(void **)op = ptr_to_struct_containing_descr;
-	UNLOCK();
     } else {
 	LOCK();
 	maybe_finalize();
         op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_gcj_kind);
-        if (0 != op) {
-          *(void **)op = ptr_to_struct_containing_descr;
+	if (0 == op) {
+	    UNLOCK();
+	    return(GC_oom_fn(lb));
 	}
-        UNLOCK();
     }
+    *(void **)op = ptr_to_struct_containing_descr;
+    UNLOCK();
     return((void *) op);
 }
 

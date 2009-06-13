@@ -1,11 +1,48 @@
+2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Ivan Maidanski)
+	diff98_cvs(resembling diff3, diff27, diff59, diff61, diff66,
+	diff73 partly)
+
+        * dbg_mlc.c (GC_print_smashed_obj): Convert a group of printf()
+        calls into a single one (for output atomicity).
+        * typd_mlc.c (GC_calloc_explicitly_typed): Don't declare and use
+        GC_finalization_failures variable; check the result of
+        GC_general_register_disappearing_link() (for lack of memory)
+        instead.
+        * finalize.c (GC_finalization_failures): Remove unused global
+        variable.
+        * finalize.c (GC_general_register_disappearing_link,
+        GC_general_register_disappearing_link): Don't update the value of
+        GC_finalization_failures (since unused).
+        * include/private/gc_pmark.h (PUSH_ONE_CHECKED_STACK,
+        GC_PUSH_ONE_STACK, GC_PUSH_ONE_HEAP): The first parameter is of
+        word type now (as FIXUP_POINTER requires numeric argument).
+        * finalize.c (GC_ignore_self_finalize_mark_proc): GC_PUSH_ONE_HEAP
+        requires the first parameter of word type.
+        * mark.c (PUSH_GRANULE): Ditto.
+        * mark.c (GC_push_one, GC_push_all_eager): Ditto (for
+        GC_PUSH_ONE_STACK).
+        * finalize.c (GC_finalize_all): Call GC_invoke_finalizers() or
+	GC_finalizer_notifier directly, instead
+        of GC_INVOKE_FINALIZERS() to prevent infinite looping.
+	* include/javaxfc.h: Clarify GC_finalize_all comment.
+        * gcj_mlc.c: Include gc_pmark.h before "ifdef GC_GCJ_SUPPORT" (not
+        after) for configuration information.
+        * gcj_mlc.c (GC_gcj_malloc_ignore_off_page): Add comment.
+        * gcj_mlc.c (GC_gcj_malloc_ignore_off_page): Check "op" local
+        variable for NULL before dereferencing it, return GC_oom_fn() in
+        this case.
+        * typd_mlc.c (GC_malloc_explicitly_typed,
+        GC_malloc_explicitly_typed_ignore_off_page): Transform the code to
+        suppress compiler warning (for uninitialized "lg" variable).
+
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com>
 
 	* win32_threads.c (GC_unregister_my_thread): add false assertion
 	in unreachable code.
 
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	diff97_cvs (resembling diff43, diff51, diff67, diff76, diff83 partly)
 
-	diff97 (resembling diff43, diff51, diff67, diff76, diff83 partly)
         * pthread_support.c (GC_inner_start_routine): Don't release the
         GC lock between GC_register_my_thread_inner() and
         GC_init_thread_local() calls (post the "registered" even after

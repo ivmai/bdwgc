@@ -44,9 +44,6 @@ struct hash_chain_entry {
     struct hash_chain_entry * next;
 };
 
-unsigned GC_finalization_failures = 0;
-	/* Number of finalization requests that failed for lack of memory. */
-
 static struct disappearing_link {
     struct hash_chain_entry prolog;
 #   define dl_hidden_link prolog.hidden_key
@@ -189,7 +186,6 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
       new_dl = (struct disappearing_link *)
 	      GC_oom_fn(sizeof(struct disappearing_link));
       if (0 == new_dl) {
-	GC_finalization_failures++;
 	return(2);
       }
       /* It's not likely we'll make it here, but ... */
@@ -259,7 +255,8 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
 {
     hdr * hhdr = HDR(p);
     word descr = hhdr -> hb_descr;
-    ptr_t q, r;
+    ptr_t q;
+    word r;
     ptr_t scan_limit;
     ptr_t target_limit = p + hhdr -> hb_sz - 1;
     
@@ -269,8 +266,8 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
        scan_limit = target_limit + 1 - sizeof(word);
     }
     for (q = p; q <= scan_limit; q += ALIGNMENT) {
-    	r = *(ptr_t *)q;
-    	if (r < p || r > target_limit) {
+    	r = *(word *)q;
+    	if ((ptr_t)r < p || (ptr_t)r > target_limit) {
     	    GC_PUSH_ONE_HEAP(r, q);
     	}
     }
@@ -397,7 +394,6 @@ STATIC void GC_register_finalizer_inner(void * obj,
       new_fo = (struct finalizable_object *)
 	      GC_oom_fn(sizeof(struct finalizable_object));
       if (0 == new_fo) {
-	GC_finalization_failures++;
 	return;
       }
       /* It's not likely we'll make it here, but ... */
@@ -719,7 +715,13 @@ GC_API void GC_CALL GC_finalize_all(void)
     while (GC_fo_entries > 0) {
       GC_enqueue_all_finalizers();
       UNLOCK();
-      GC_INVOKE_FINALIZERS();
+      GC_invoke_finalizers();
+      if (GC_finalize_on_demand &&
+          GC_finalizer_notifier != (GC_finalizer_notifier_proc)0) {
+	GC_finalizer_notifier();
+      } else {
+	GC_invoke_finalizers();
+      }
       LOCK();
     }
     UNLOCK();

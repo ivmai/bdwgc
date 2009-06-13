@@ -609,13 +609,14 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t lb, GC_descr d)
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
             UNLOCK();
         }
+	((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
    } else {
        op = (ptr_t)GENERAL_MALLOC((word)lb, GC_explicit_kind);
-       if (op != NULL)
+       if (op != NULL) {
 	    lg = BYTES_TO_GRANULES(GC_size(op));
+	    ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
+       }
    }
-   if (op != NULL)
-       ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
    return((void *) op);
 }
 
@@ -635,6 +636,7 @@ DCL_LOCK_STATE;
         if( (op = *opp) == 0 ) {
             UNLOCK();
             op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
+	    if (0 == op) return 0;
 	    lg = GC_size_map[lb];	/* May have been uninitialized.	*/
         } else {
             *opp = obj_link(op);
@@ -642,13 +644,14 @@ DCL_LOCK_STATE;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
             UNLOCK();
         }
+	((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
    } else {
        op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
-       if (op != NULL)
+       if (op != NULL) {
          lg = BYTES_TO_WORDS(GC_size(op));
+	 ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
+       }
    }
-   if (op != NULL)
-       ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
    return((void *) op);
 }
 
@@ -712,18 +715,13 @@ DCL_LOCK_STATE;
        lp -> ld_descriptor = leaf.ld_descriptor;
        ((volatile word *)op)[GRANULES_TO_WORDS(lg) - 1] = (word)lp;
    } else {
-       extern unsigned GC_finalization_failures;
-       unsigned ff = GC_finalization_failures;
        size_t lw = GRANULES_TO_WORDS(lg);
        
        ((word *)op)[lw - 1] = (word)complex_descr;
        /* Make sure the descriptor is cleared once there is any danger	*/
        /* it may have been collected.					*/
-       (void)
-         GC_general_register_disappearing_link((void * *)
-         					  ((word *)op+lw-1),
-       					          (void *) op);
-       if (ff != GC_finalization_failures) {
+       if (GC_general_register_disappearing_link((void * *)((word *)op+lw-1),
+						 op) == 2) {
 	   /* Couldn't register it due to lack of memory.  Punt.	*/
 	   /* This will probably fail too, but gives the recovery code  */
 	   /* a chance.							*/

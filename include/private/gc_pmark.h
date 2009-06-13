@@ -365,10 +365,10 @@ exit_label: ; \
 
 #if defined(PRINT_BLACK_LIST) || defined(KEEP_BACK_PTRS)
 #   define PUSH_ONE_CHECKED_STACK(p, source) \
-	GC_mark_and_push_stack(p, (ptr_t)(source))
+	GC_mark_and_push_stack((ptr_t)(p), (ptr_t)(source))
 #else
 #   define PUSH_ONE_CHECKED_STACK(p, source) \
-	GC_mark_and_push_stack(p)
+	GC_mark_and_push_stack((ptr_t)(p))
 #endif
 
 /*
@@ -382,13 +382,13 @@ exit_label: ; \
 # if NEED_FIXUP_POINTER
     /* Try both the raw version and the fixed up one.	*/
 #   define GC_PUSH_ONE_STACK(p, source) \
-      if ((p) >= (ptr_t)GC_least_plausible_heap_addr 	\
-	 && (p) < (ptr_t)GC_greatest_plausible_heap_addr) {	\
+      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr 	\
+	 && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {	\
 	 PUSH_ONE_CHECKED_STACK(p, source);	\
       } \
       FIXUP_POINTER(p); \
-      if ((p) >= (ptr_t)GC_least_plausible_heap_addr 	\
-	 && (p) < (ptr_t)GC_greatest_plausible_heap_addr) {	\
+      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr 	\
+	 && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {	\
 	 PUSH_ONE_CHECKED_STACK(p, source);	\
       }
 # else /* !NEED_FIXUP_POINTER */
@@ -406,8 +406,8 @@ exit_label: ; \
  */
 # define GC_PUSH_ONE_HEAP(p,source) \
     FIXUP_POINTER(p); \
-    if ((p) >= (ptr_t)GC_least_plausible_heap_addr 	\
-	 && (p) < (ptr_t)GC_greatest_plausible_heap_addr) {	\
+    if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr 	\
+	 && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {	\
 	    GC_mark_stack_top = GC_mark_and_push( \
 			    (void *)(p), GC_mark_stack_top, \
 			    GC_mark_stack_limit, (void * *)(source)); \
