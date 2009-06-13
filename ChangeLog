@@ -1,6 +1,14 @@
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com>
 	
 	* include/gc_version.h, configure.ac, doc/README:
+	Change to version 7.2alpha3.
+	* configure: Regenerate.
+
+[7.2alpha2]
+
+2009-06-12  Hans Boehm <Hans.Boehm@hp.com>
+	
+	* include/gc_version.h, configure.ac, doc/README:
 	Change to version 7.2alpha2.
 	* configure: Regenerate.
 
