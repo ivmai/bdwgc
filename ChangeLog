@@ -1,3 +1,9 @@
+2009-06-12  Hans Boehm <Hans.Boehm@hp.com>
+	
+	* include/gc_version.h, configure.ac, doc/README:
+	Change to version 7.2alpha2.
+	* configure: Regenerate.
+
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Ivan Maidanski)
 	diff98_cvs(resembling diff3, diff27, diff59, diff61, diff66,
 	diff73 partly)
