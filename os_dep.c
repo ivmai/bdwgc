@@ -2639,6 +2639,11 @@ STATIC GC_bool GC_old_segv_handler_used_si;
 	set_pht_entry_from_index(db, index)
 #endif /* !THREADS */
 
+#ifdef CHECKSUMS
+  void GC_record_fault(struct hblk * h);
+	/* From checksums.c */
+#endif
+
 #if !defined(DARWIN)
 #   include <errno.h>
 #   if defined(FREEBSD)
@@ -2696,6 +2701,9 @@ STATIC GC_bool GC_old_segv_handler_used_si;
         register struct hblk * h =
         		(struct hblk *)((word)addr & ~(GC_page_size-1));
         GC_bool in_allocd_block;
+#	ifdef CHECKSUMS
+	  GC_record_fault(h);
+#	endif /* CHECKSUMS */
         
 #	ifdef SUNOS5SIGS
 	    /* Address is only within the correct physical page.	*/
@@ -2814,7 +2822,7 @@ void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
 	return;
     }
     for (current = h_trunc; current < h_end; ++current) {
-        size_t index = PHT_HASH(h_trunc);
+        size_t index = PHT_HASH(current);
         if (!is_ptrfree || current < h || current >= h + nblocks) {
             async_set_pht_entry_from_index(GC_dirty_pages, index);
         }

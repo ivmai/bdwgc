@@ -787,6 +787,9 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, GC_bool may_split)
 
     /* Notify virtual dirty bit implementation that we are about to write.  */
     /* Ensure that pointerfree objects are not protected if it's avoidable. */
+    /* This also ensures that newly allocated blocks are treated as dirty.  */
+    /* Necessary since we don't protect free blocks.			    */
+	GC_ASSERT((size_needed & (HBLKSIZE-1)) == 0);
     	GC_remove_protection(hbp, divHBLKSZ(size_needed),
 			     (hhdr -> hb_descr == 0) /* pointer-free */);
         

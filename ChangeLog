@@ -1,3 +1,13 @@
+2009-06-20  Hans Boehm <Hans.Boehm@hp.com>
+	
+	* allchblk.c (GC_allochblk_nth): Add assertion.
+	* checksums.c: Add GC_record_fault, GC_was_faulted,
+	CC_n_faulted_dirty_errors.
+	(GC_check_dirty): Remove register declarations, print
+	dirty bit errors on faulted pages.
+	* os_dep.c (GC_write_fault_handler): Call GC_record_fault().
+	* os_dep.c (GC_remove_protection): Compute index correctly.
+
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com>
 	
 	* include/gc_version.h, configure.ac, doc/README:
