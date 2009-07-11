@@ -716,12 +716,10 @@ GC_API void GC_CALL GC_finalize_all(void)
       GC_enqueue_all_finalizers();
       UNLOCK();
       GC_invoke_finalizers();
-      if (GC_finalize_on_demand &&
-          GC_finalizer_notifier != (GC_finalizer_notifier_proc)0) {
-	GC_finalizer_notifier();
-      } else {
-	GC_invoke_finalizers();
-      }
+      /* Running the finalizers in this thread is arguably not a good	*/
+      /* idea when we should be notifying another thread to run them.	*/
+      /* But otherwise we don't have a great way to wait for them to	*/
+      /* run.								*/
       LOCK();
     }
     UNLOCK();
