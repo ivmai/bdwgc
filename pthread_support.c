@@ -1038,10 +1038,21 @@ STATIC GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
     return me;
 }
 
+GC_API void GC_CALL GC_allow_register_threads(void)
+{
+    /* Check GC is initialized and the current thread is registered. */
+    GC_ASSERT(GC_lookup_thread(pthread_self()) != 0);
+
+    GC_need_to_lock = TRUE; /* We are multi-threaded now. */
+}
+
 GC_API int GC_CALL GC_register_my_thread(struct GC_stack_base *sb)
 {
     pthread_t my_pthread = pthread_self();
     GC_thread me;
+
+    if (GC_need_to_lock == FALSE)
+	ABORT("Threads explicit registering is not previously enabled");
 
     LOCK();
     me = GC_lookup_thread(my_pthread);

@@ -912,12 +912,21 @@ typedef void * (GC_CALLBACK * GC_stack_base_func)(struct GC_stack_base *sb,
 GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn,
 						void *arg);
 
+/* Explicitly enable GC_register_my_thread() invocation.		*/
+/* Done implicitly if a GC thread-creation function is called (or	*/
+/* DllMain-based thread registration is enabled).  Otherwise, it must	*/
+/* be called from the main (or any previously registered) thread	*/
+/* between the collector initialization and the first explicit		*/
+/* registering of a thread (it should be called as late as possible).	*/
+GC_API void GC_CALL GC_allow_register_threads(void);
+
 /* Register the current thread, with the indicated stack base, as	*/
 /* a new thread whose stack(s) should be traced by the GC.  If it 	*/
 /* is not implicitly called by the GC, this must be called before a	*/
 /* thread can allocate garbage collected memory, or assign pointers	*/
 /* to the garbage collected heap.  Once registered, a thread will be	*/
 /* stopped during garbage collections.					*/
+/* This call must be previously enabled (see above).			*/
 /* This should never be called from the main thread, where it is 	*/
 /* always done implicitly.  This is normally done implicitly if GC_	*/
 /* functions are called to create the thread, e.g. by defining		*/
@@ -933,9 +942,11 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn,
 #define GC_UNIMPLEMENTED 3	/* Not yet implemented on this platform. */
 GC_API int GC_CALL GC_register_my_thread(struct GC_stack_base *);
 
-/* Unregister the current thread.  The thread may no longer allocate	*/
-/* garbage collected memory or manipulate pointers to the		*/
-/* garbage collected heap after making this call.			*/
+/* Unregister the current thread.  Only an explicity registered thread	*/
+/* (i.e. for which GC_register_my_thread() returns GC_SUCCESS) is	*/
+/* allowed (and required) to call this function.  The thread may no	*/
+/* longer allocate garbage collected memory or manipulate pointers to	*/
+/* the garbage collected heap after making this call.			*/
 /* Specifically, if it wants to return or otherwise communicate a 	*/
 /* pointer to the garbage-collected heap to another thread, it must	*/
 /* do this before calling GC_unregister_my_thread, most probably	*/

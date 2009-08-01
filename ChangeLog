@@ -1,3 +1,15 @@
+2009-08-01  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	diff100_cvs (diff51 and diff55, partly)
+
+	* pthread_support.c (GC_allow_register_threads): New API function.
+        * win32_threads.c (GC_allow_register_threads): Ditto.
+        * include/gc.h (GC_allow_register_threads): New API prototype.
+        * include/gc.h (GC_register_my_thread, GC_unregister_my_thread):
+        Update the comments.
+        * pthread_support.c (GC_register_my_thread): Check the collector
+        is in the multi-threaded mode.
+        * win32_threads.c (GC_register_my_thread): Ditto.
+	
 2009-07-10  Hans Boehm <Hans.Boehm@hp.com>
 
 	* finalize.c (GC_finalize_all): Always call GC_invoke_finalizers
