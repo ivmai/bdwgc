@@ -2117,12 +2117,20 @@
 # endif
 
 # ifdef USE_MUNMAP
+    /* FIXME: Remove this undef if possible.	*/
 #   undef MPROTECT_VDB  /* Can't deal with address space holes. */
 # endif
 
 # if defined(PARALLEL_MARK)
-    /* FIXME: Should we undef it even in case of GWW_VDB? */
+    /* FIXME: Remove this undef if possible.	*/
 #   undef MPROTECT_VDB  /* For now.	*/
+# endif
+
+# if defined(MPROTECT_VDB) && defined(GC_PREFER_MPROTECT_VDB)
+    /* Choose MPROTECT_VDB manually (if multiple strategies available). */
+#   undef PCR_VDB
+#   undef PROC_VDB
+    /* #undef GWW_VDB - handled in os_dep.c */
 # endif
 
 # if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \

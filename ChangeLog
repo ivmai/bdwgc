@@ -1,3 +1,32 @@
+2009-08-07  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	diff111 (supersedes diff101_cvs which, in turn, resembles diff52, diff75, diff83 partly)
+
+	* Makefile.direct (MARK_BIT_PER_OBJ, PRINT_BLACK_LIST,
+	USE_PROC_FOR_LIBRARIES): Fix typo in the comments.
+	* Makefile.direct (USE_MMAP, USE_MUNMAP, THREAD_LOCAL_ALLOC,
+	PARALLEL_MARK, STATIC): Update the comments.
+	* include/private/gcconfig.h (GC_PREFER_MPROTECT_VDB): New macro
+	recognized (only if MPROTECT_VDB).
+	* Makefile.direct (DONT_USE_USER32_DLL, GC_PREFER_MPROTECT_VDB):
+	Add the comments for.
+	* os_dep.c (detect_GetWriteWatch): Recognize "GC_USE_GETWRITEWATCH"
+	environment variable (only if MPROTECT_VDB, if the variable is
+	unset when GC_PREFER_MPROTECT_VDB macro controls the strategy).
+	* doc/README.environment (GC_USE_GETWRITEWATCH): New variable.
+	* include/private/gcconfig.h (MPROTECT_VDB): Add FIXME for
+	USE_MUNMAP and PARALLEL_MARK cases (to relax the conditions in
+	the future).
+	* misc.c (GC_get_heap_size, GC_get_free_bytes): Ignore the memory
+	space returned to OS (GC_unmapped_bytes).
+	* include/gc.h (GC_get_heap_size, GC_get_free_bytes): Update the
+	comments.
+	* misc.c (GC_get_unmapped_bytes): New API function.
+	* include/gc.h (GC_get_unmapped_bytes): New API prototype.
+	* include/private/gc_priv.h (GC_unmapped_bytes): Define as 0 for
+	not USE_MUNMAP case.
+	* os_dep.c (GC_dirty_init): Move "ifdef GWW_VDB" block out of
+	"ifdef MSWIN32" one (for Cygwin).
+
 2009-08-01  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	diff100_cvs (diff51 and diff55, partly)
 

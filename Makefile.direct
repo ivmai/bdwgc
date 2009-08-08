@@ -169,7 +169,7 @@ HOSTCFLAGS=$(CFLAGS)
 #   cache footprint.  Normally it is best to let this decision be
 #   made automatically depending on platform.
 # -DMARK_BIT_PER_OBJ requests that a mark bit be allocated for each
-#   object instead of allocation granule.  The opposiet of
+#   object instead of allocation granule.  The opposite of
 #   MARK_BIT_PER_GRANULE.
 # -DHBLKSIZE=ddd, where ddd is a power of 2 between 512 and 16384, explicitly
 #   sets the heap block size.  Each heap block is devoted to a single size and
@@ -177,18 +177,18 @@ HOSTCFLAGS=$(CFLAGS)
 #   the most likely page size.  Otherwise large values result in more
 #   fragmentation, but generally better performance for large heaps.
 # -DUSE_MMAP use MMAP instead of sbrk to get new memory.
-#   Works for Solaris and Irix.
+#   Works for Linux, FreeBSD, Cygwin, Solaris and Irix.
 # -DUSE_MUNMAP causes memory to be returned to the OS under the right
-#   circumstances.  This currently disables VM-based incremental collection.
-#   This is currently experimental, and works only under some Unix,
-#   Linux and Windows versions.  Requires -DUSE_MMAP, even under Windows,
-#   where USE_MMAP doesn't do anything.
+#   circumstances.  This currently disables VM-based incremental collection
+#   (except for Win32 with GetWriteWatch available).
+#   Works under some Unix, Linux and Windows versions.
+#   Requires -DUSE_MMAP except for Windows.
 # -DMMAP_STACKS (for Solaris threads) Use mmap from /dev/zero rather than
 #   GC_scratch_alloc() to get stack memory.
 # -DPRINT_BLACK_LIST Whenever a black list entry is added, i.e. whenever
 #   the garbage collector detects a value that looks almost, but not quite,
 #   like a pointer, print both the address containing the value, and the
-#   value of the near-bogus-pointer.  Can be used to identifiy regions of
+#   value of the near-bogus-pointer.  Can be used to identify regions of
 #   memory that are likely to contribute misidentified pointers.
 # -DKEEP_BACK_PTRS Add code to save back pointers in debugging headers
 #   for objects allocated with the debugging allocator.  If all objects
@@ -254,8 +254,7 @@ HOSTCFLAGS=$(CFLAGS)
 # -DTHREAD_LOCAL_ALLOC defines GC_malloc(), GC_malloc_atomic()
 #   and GC_gcj_malloc() to use a per-thread set of free-lists.
 #   These then allocate  in a way that usually does not involve
-#   acquisition of a global lock.  Currently supported only on platforms
-#   such as Linux that use pthread_support.c.  Recommended for multiprocessors.
+#   acquisition of a global lock.  Recommended for multiprocessors.
 #   Requires explicit GC_INIT() call, unless REDIRECT_MALLOC is
 #   defined and GC_malloc is used first.
 # -DUSE_COMPILER_TLS causes thread local allocation to use compiler-supported
@@ -263,9 +262,7 @@ HOSTCFLAGS=$(CFLAGS)
 #   may help performance on recent Linux installations.  (It failed for
 #   me on RedHat 8, but appears to work on RedHat 9.)
 # -DPARALLEL_MARK allows the marker to run in multiple threads.  Recommended
-#   for multiprocessors.  Currently works only on some pthreads platforms,
-#   though support for other platforms should be fairly easy to add,
-#   if the thread implementation is otherwise supported.
+#   for multiprocessors.
 # -DNO_GETENV prevents the collector from looking at environment variables.
 #   These may otherwise alter its configuration, or turn off GC altogether.
 #   I don't know of a reason to disable this, except possibly if the
@@ -312,7 +309,7 @@ HOSTCFLAGS=$(CFLAGS)
 #   for applications that don't support proper stack unwinding.
 # -DUSE_PROC_FOR_LIBRARIES Causes the Linux collector to treat writable
 #   memory mappings (as reported by /proc) as roots, if it doesn't have
-#   otherinformation about them.  It no longer traverses dynamic loader
+#   other information about them.  It no longer traverses dynamic loader
 #   data structures to find dynamic library static data.  This may be
 #   required for applications that store pointers in mmapped segments without
 #   informaing the collector.  But it typically performs poorly, especially
@@ -324,9 +321,15 @@ HOSTCFLAGS=$(CFLAGS)
 #   happens implicitly on Darwin, Hurd, or ARM or MIPS hardware.
 #   It is explicitly needed for some old versions of FreeBSD.
 # -DSTATIC=static Causes various GC_ symbols that could logically be
-#   declared static to be declared.  Reduces the number of visible symbols,
-#   which is probably cleaner, but may make some kinds of debugging and
-#   profiling harder.
+#   declared static to be declared (this is the default if -DNO_DEBUGGING is
+#   specified).  Reduces the number of visible symbols (letting the optimizer
+#   do its work better), which is probably cleaner, but may make some kinds of
+#   debugging and profiling harder.
+# -DDONT_USE_USER32_DLL (Win32 only) Don't use "user32" DLL import library
+#   (containing MessageBox() entry); useful for a static GC library.
+# -DGC_PREFER_MPROTECT_VDB Choose MPROTECT_VDB manually in case of multiple
+#   virtual dirty bit strategies are implemented (at present useful on Win32
+#   to force MPROTECT_VDB strategy instead of the default GWW_VDB one).
 #
 
 CXXFLAGS= $(CFLAGS) 

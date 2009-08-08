@@ -422,12 +422,19 @@ typedef int (GC_CALLBACK * GC_stop_func)(void);
 GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func);
 
 /* Return the number of bytes in the heap.  Excludes collector private	*/
-/* data structures.  Includes empty blocks and fragmentation loss.	*/
-/* Includes some pages that were allocated but never written.		*/
+/* data structures.  Excludes the unmapped memory (retuned to the OS).	*/
+/* Includes empty blocks and fragmentation loss.  Includes some pages	*/
+/* that were allocated but never written.				*/
 GC_API size_t GC_CALL GC_get_heap_size(void);
 
-/* Return a lower bound on the number of free bytes in the heap.	*/
+/* Return a lower bound on the number of free bytes in the heap		*/
+/* (excluding the unmapped memory space).				*/
 GC_API size_t GC_CALL GC_get_free_bytes(void);
+
+/* Return the size (in bytes) of the unmapped memory (which is returned	*/
+/* to the OS but could be remapped back by the collector later unless	*/
+/* the OS runs out of system/virtual memory).				*/
+GC_API size_t GC_CALL GC_get_unmapped_bytes(void);
 
 /* Return the number of bytes allocated since the last collection.	*/
 GC_API size_t GC_CALL GC_get_bytes_since_gc(void);

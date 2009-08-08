@@ -1286,6 +1286,26 @@ void GC_register_data_segments(void)
       if (done)
         return;
 
+#     if defined(MPROTECT_VDB)
+	{
+	  char * str = GETENV("GC_USE_GETWRITEWATCH");
+#	  if defined(GC_PREFER_MPROTECT_VDB)
+	    if (str == NULL || (*str == '0' && *(str + 1) == '\0')) {
+	      /* GC_USE_GETWRITEWATCH is unset or set to "0".		*/
+	      done = TRUE; /* falling back to MPROTECT_VDB strategy.	*/
+	      /* This should work as if GWW_VDB is undefined. */
+	      return;
+	    }
+#	  else
+	    if (str != NULL && *str == '0' && *(str + 1) == '\0') {
+	      /* GC_USE_GETWRITEWATCH is set "0".			*/
+	      done = TRUE; /* falling back to MPROTECT_VDB strategy.	*/
+	      return;
+	    }
+#	  endif
+	}
+#     endif
+
       GetWriteWatch_func = (GetWriteWatch_type)
         GetProcAddress(GetModuleHandle("kernel32.dll"), "GetWriteWatch");
       if (GetWriteWatch_func != NULL) {
@@ -2045,6 +2065,7 @@ void GC_remap(ptr_t start, size_t bytes)
     ptr_t end_addr = GC_unmap_end(start, bytes);
     word len = end_addr - start_addr;
 
+    /* FIXME: Should we handle out-of-memory here? */
 #   if defined(MSWIN32) || defined(MSWINCE)
       ptr_t result;
 
@@ -2898,11 +2919,11 @@ void GC_dirty_init(void)
       }
 #   endif /* HPUX || LINUX || HURD || (FREEBSD && SUNOS5SIGS) */
 #   endif /* ! MS windows */
+#   if defined(GWW_VDB)
+      if (GC_gww_dirty_init())
+        return;
+#   endif
 #   if defined(MSWIN32)
-#     if defined(GWW_VDB)
-        if (GC_gww_dirty_init())
-          return;
-#     endif
       GC_old_segv_handler = SetUnhandledExceptionFilter(GC_write_fault_handler);
       if (GC_old_segv_handler != NULL) {
 	if (GC_print_stats)

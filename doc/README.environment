@@ -94,6 +94,14 @@ GC_RETRY_SIGNALS, GC_NO_RETRY_SIGNALS - Try to compensate for lost
 		     was turned into a runtime flag to enable last-minute
 		     work-arounds.
 
+GC_USE_GETWRITEWATCH=<n> - Only if MPROTECT_VDB and GWW_VDB are both defined
+		     (Win32 only).  Explicitly specify which strategy of
+		     keeping track of dirtied pages should be used.
+		     If n=0 then GetWriteWatch() is not used (falling back to
+		     protecting pages and catching memory faults strategy)
+		     else the collector tries to use GetWriteWatch-based
+		     strategy (GWW_VDB) first if available.
+
 GC_DISABLE_INCREMENTAL - Ignore runtime requests to enable incremental GC.
 		     Useful for debugging.
 
