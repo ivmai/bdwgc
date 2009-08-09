@@ -1095,6 +1095,8 @@ GC_API GC_FAR struct _GC_arrays GC_arrays;
 #endif
 # ifdef USE_MUNMAP
 #   define GC_unmapped_bytes GC_arrays._unmapped_bytes
+# else
+#   define GC_unmapped_bytes 0
 # endif
 # if defined(MSWIN32) || defined(MSWINCE)
 #   define GC_heap_bases GC_arrays._heap_bases

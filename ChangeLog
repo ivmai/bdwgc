@@ -1,3 +1,8 @@
+2009-08-08  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	(Mistakenly omitted from last check-in)
+	* include/private/gc_priv.h (GC_unmapped_bytes): Define as 0 for
+	not USE_MUNMAP case.
+
 2009-08-07  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	diff111 (supersedes diff101_cvs which, in turn, resembles diff52, diff75, diff83 partly)
 
@@ -22,8 +27,6 @@
 	comments.
 	* misc.c (GC_get_unmapped_bytes): New API function.
 	* include/gc.h (GC_get_unmapped_bytes): New API prototype.
-	* include/private/gc_priv.h (GC_unmapped_bytes): Define as 0 for
-	not USE_MUNMAP case.
 	* os_dep.c (GC_dirty_init): Move "ifdef GWW_VDB" block out of
 	"ifdef MSWIN32" one (for Cygwin).
 
