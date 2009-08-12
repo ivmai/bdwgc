@@ -1,3 +1,14 @@
+2009-08-11  Hans Boehm <Hans.Boehm@hp.com>
+	(Replacement for Ivan Maidanski's diff99_cvs.  Hopefully fixes
+	the same bugs, and then some.)
+
+	* allchblk.c (GC_merge_unmapped): Don't assume that adjacent
+	free blocks have different mapping status.  Correctly handle gap
+	between blocks.
+	(GC_split_block): Remove dead code setting hb_flags.  Add comment.
+	(GC_allochblk): Split blocks also in generational-only mode.
+	* os_dep.c (GC_unmap_gap): Dont really use munmap.
+
 2009-08-08  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(Mistakenly omitted from last check-in)
 	* include/private/gc_priv.h (GC_unmapped_bytes): Define as 0 for

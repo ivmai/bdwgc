@@ -431,27 +431,32 @@ void GC_merge_unmapped(void)
 	  if (0 != nexthdr && HBLK_IS_FREE(nexthdr)
 	      && (signed_word) (size + (nextsize = nexthdr->hb_sz)) > 0
 	         /* no pot. overflow */) {
-	    if (IS_MAPPED(hhdr)) {
-	      GC_ASSERT(!IS_MAPPED(nexthdr));
+	    /* Note that we usually try to avoid adjacent free blocks	*/
+	    /* that are either both mapped or both unmapped.  But that	*/
+	    /* isn't guaranteed to hold since we remap blocks when we	*/
+	    /* split them, and don't merge at that point.  It may also	*/
+	    /* not hold if the merged block would be too big.		*/
+	    if (IS_MAPPED(hhdr) && !IS_MAPPED(nexthdr)) {
 	      /* make both consistent, so that we can merge */
 	        if (size > nextsize) {
 		  GC_remap((ptr_t)next, nextsize);
 		} else {
 		  GC_unmap((ptr_t)h, size);
+		  GC_unmap_gap((ptr_t)h, size, (ptr_t)next, nextsize);
 		  hhdr -> hb_flags |= WAS_UNMAPPED;
 		}
-	    } else if (IS_MAPPED(nexthdr)) {
-	      GC_ASSERT(!IS_MAPPED(hhdr));
+	    } else if (IS_MAPPED(nexthdr) && !IS_MAPPED(hhdr)) {
 	      if (size > nextsize) {
 		GC_unmap((ptr_t)next, nextsize);
+		GC_unmap_gap((ptr_t)h, size, (ptr_t)next, nextsize);
 	      } else {
 		GC_remap((ptr_t)h, size);
 		hhdr -> hb_flags &= ~WAS_UNMAPPED;
 		hhdr -> hb_last_reclaimed = nexthdr -> hb_last_reclaimed;
 	      }
-	    } else {
+	    } else if (!IS_MAPPED(hhdr) && !IS_MAPPED(nexthdr)) {
 	      /* Unmap any gap in the middle */
-		GC_unmap_gap((ptr_t)h, size, (ptr_t)next, nexthdr -> hb_sz);
+		GC_unmap_gap((ptr_t)h, size, (ptr_t)next, nextsize);
 	    }
 	    /* If they are both unmapped, we merge, but leave unmapped. */
 	    GC_remove_from_fl(hhdr, i);
@@ -515,6 +520,8 @@ STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
  *
  * Nhdr is not completely filled in, since it is about to allocated.
  * It may in fact end up on the wrong free list for its size.
+ * That's not a disaster, since n is about to be allocated
+ * by our caller.
  * (Hence adding it to a free list is silly.  But this path is hopefully
  * rare enough that it doesn't matter.  The code is cleaner this way.)
  */
@@ -541,11 +548,6 @@ STATIC void GC_split_block(struct hblk *h, hdr *hhdr, struct hblk *n,
       }
       INCR_FREE_BYTES(index, -(signed_word)h_size);
       FREE_ASSERT(GC_free_bytes[index] > 0);
-#     ifdef GC_ASSERTIONS
-	nhdr -> hb_flags &= ~FREE_BLK;
-				/* Don't fail test for consecutive	*/
-				/* free blocks in GC_add_to_fl.		*/
-#     endif
 #   ifdef USE_MUNMAP
       hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
 #   endif
@@ -588,7 +590,7 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
     if (0 != result) return result;
     if (GC_use_entire_heap || GC_dont_gc
 	|| USED_HEAP_SIZE < GC_requested_heapsize
-        || TRUE_INCREMENTAL || !GC_should_collect()) {
+        || GC_incremental || !GC_should_collect()) {
 	/* Should use more of the heap, even if it requires splitting. */
 	split_limit = N_HBLK_FLS;
     } else {
