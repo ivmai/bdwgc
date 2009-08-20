@@ -1,3 +1,8 @@
+2009-08-19  Hans Boehm <Hans.Boehm@hp.com>
+
+	* include/gc_gcj.h (GC_init_gcj_malloc): Improve descriptive
+	comment.
+
 2009-08-11  Hans Boehm <Hans.Boehm@hp.com>
 	(Replacement for Ivan Maidanski's diff99_cvs.  Hopefully fixes
 	the same bugs, and then some.)

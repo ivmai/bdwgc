@@ -59,6 +59,14 @@
 /* detect the presence or absence of the debug header.			*/
 /* Mp is really of type mark_proc, as defined in gc_mark.h.  We don't 	*/
 /* want to include that here for namespace pollution reasons.		*/
+/* Passing in mp_index here instead of having GC_init_gcj_malloc()	*/
+/* internally call GC_new_proc() is quite ugly, but in typical usage	*/
+/* scenarios a compiler also has to know about mp_index, so		*/
+/* generating it dynamically is not acceptable.  Mp_index will		*/
+/* typically be an integer < RESERVED_MARK_PROCS, so that it doesn't	*/
+/* collide with GC_new_proc allocated indices.  If the application	*/
+/* needs no other reserved indices, zero				*/
+/* (GC_GCJ_RESERVED_MARK_PROC_INDEX in gc_mark.h) is an obvious choice.	*/ 
 GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
 				void * /* really mark_proc */mp);
 
