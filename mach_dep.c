@@ -159,11 +159,6 @@ void GC_push_regs()
 # undef HAVE_PUSH_REGS
 #endif
 
-#if !defined(HAVE_PUSH_REGS) && defined(UNIX_LIKE)
-# include <signal.h>
-# include <ucontext.h>
-#endif
-
 #if defined(UNIX_LIKE) && !defined(NO_GETCONTEXT) &&  \
 	(defined(DARWIN) || defined(HURD) || defined(ARM32) || defined(MIPS))
 #  define NO_GETCONTEXT
@@ -172,6 +167,14 @@ void GC_push_regs()
 #if defined(LINUX) && defined(SPARC) && !defined(NO_GETCONTEXT)
 #  define NO_GETCONTEXT
 #endif
+
+#if !defined(HAVE_PUSH_REGS) && defined(UNIX_LIKE)
+# include <signal.h>
+# ifndef NO_GETCONTEXT
+#   include <ucontext.h>
+# endif
+#endif
+
 /* Ensure that either registers are pushed, or callee-save registers	*/
 /* are somewhere on the stack, and then call fn(arg, ctxt).		*/
 /* ctxt is either a pointer to a ucontext_t we generated, or NULL.	*/

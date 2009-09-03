@@ -1,3 +1,8 @@
+2009-09-02  Hans Boehm <Hans.Boehm@hp.com> (with help from Victor Ivrii and
+					    others)	
+
+	* mach_dep.c: Don't include ucontext.h with NO_GETCONTEXT.
+
 2009-08-19  Hans Boehm <Hans.Boehm@hp.com>
 
 	* include/gc_gcj.h (GC_init_gcj_malloc): Improve descriptive
