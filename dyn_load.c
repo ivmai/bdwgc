@@ -374,6 +374,20 @@ GC_bool GC_register_main_static_data(void)
 # if (defined(LINUX) || defined (__GLIBC__)) /* Are others OK here, too? */ \
      && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
          || (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG))) 
+/* We have the header files for a glibc that includes dl_iterate_phdr.	*/
+/* It may still not be available in the library on the target system.   */
+/* Thus we also treat it as a weak symbol.				*/
+#define HAVE_DL_ITERATE_PHDR
+#pragma weak dl_iterate_phdr
+#endif
+
+# if (defined(FREEBSD) && __FreeBSD__ >= 7)
+/* On the FreeBSD system, any target system at major version 7 shall    */
+/* have dl_iterate_phdr; therefore, we need not make it weak as above.  */
+#define HAVE_DL_ITERATE_PHDR
+#endif
+
+#if defined(HAVE_DL_ITERATE_PHDR)
 
 # ifdef PT_GNU_RELRO
 
@@ -398,11 +412,6 @@ static struct load_segment {
 static int n_load_segs;
 
 # endif /* PT_GNU_RELRO */
-
-/* We have the header files for a glibc that includes dl_iterate_phdr.	*/
-/* It may still not be available in the library on the target system.   */
-/* Thus we also treat it as a weak symbol.				*/
-#define HAVE_DL_ITERATE_PHDR
 
 /* A user-supplied routine that is called to determine if a DSO must
    be scanned by the gc.  */
@@ -488,8 +497,6 @@ static int GC_register_dynlib_callback(info, size, ptr)
 }     
 
 /* Return TRUE if we succeed, FALSE if dl_iterate_phdr wasn't there. */
-
-#pragma weak dl_iterate_phdr
 
 GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 {

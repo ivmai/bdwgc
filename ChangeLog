@@ -1,3 +1,8 @@
+2009-09-03  Hans Boehm <Hans.Boehm@hp.com> (really Loren J. Rittle)
+
+	* dyn_load.c (HAVE_DL_ITERATE_PHDR): Break definition from use.
+	Define for FreeBSD 7.0+.
+	
 2009-09-02  Hans Boehm <Hans.Boehm@hp.com> (with help from Victor Ivrii and
 					    others)	
 
