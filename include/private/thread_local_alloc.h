@@ -113,10 +113,7 @@ typedef struct thread_local_freelists {
 #     define TLS_OUT_OF_INDEXES (DWORD)0xFFFFFFFF
 #   endif
 #   define GC_key_create(key, d)  \
-	((d) != 0? (ABORT("Destructor unsupported by TlsAlloc"),0) \
-	 	 : ((*(key) = TlsAlloc()) == TLS_OUT_OF_INDEXES? \
-		       (ABORT("Out of tls"), 0): \
-		       0))
+	((d) != 0 || (*(key) = TlsAlloc()) == TLS_OUT_OF_INDEXES ? -1 : 0)
 #   define GC_remove_specific(key)  /* No need for cleanup on thread exit. */
     	/* Need TlsFree on process exit/detach ? */
     typedef DWORD GC_key_t;

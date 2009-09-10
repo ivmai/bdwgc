@@ -283,11 +283,16 @@ void GC_initiate_gc(void)
 
 static void alloc_mark_stack(size_t);
 
-# if defined(MSWIN32) && (!defined(__GNUC__) || !defined(_WIN64)) \
+# if (defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__) \
+	|| defined(MSWIN32) && defined(I386) /* for Win98 */ \
 	|| defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)
     /* Under rare conditions, we may end up marking from nonexistent memory. */
     /* Hence we need to be prepared to recover by running GC_mark_some	     */
     /* with a suitable handler in place.				     */
+    /* FIXME: Should we really need it for WinCE?  If yes then		*/
+    /* WRAP_MARK_SOME should be also defined for CeGCC which requires	*/
+    /* CPU/OS-specific code in mark_ex_handler() and GC_mark_some()	*/
+    /* (for manual stack unwinding and exception handler installation).	*/
 #   define WRAP_MARK_SOME
 # endif
 
@@ -430,8 +435,9 @@ static void alloc_mark_stack(size_t);
     }
 }
 
+#ifdef WRAP_MARK_SOME
 
-#if defined(MSWIN32) && defined(__GNUC__) && !defined(_WIN64)
+# if (defined(MSWIN32) || defined(MSWINCE)) && defined(__GNUC__)
 
     typedef struct {
       EXCEPTION_REGISTRATION ex_reg;
@@ -474,12 +480,11 @@ static void alloc_mark_stack(size_t);
   /* unexpected thread start?					*/
 #endif
 
-# ifdef WRAP_MARK_SOME
   GC_bool GC_mark_some(ptr_t cold_gc_frame)
   {
       GC_bool ret_val;
 
-#   ifdef MSWIN32
+#   if defined(MSWIN32) || defined(MSWINCE)
 #    ifndef __GNUC__
       /* Windows 98 appears to asynchronously create and remove  */
       /* writable memory mappings, for reasons we haven't yet    */
@@ -488,8 +493,11 @@ static void alloc_mark_stack(size_t);
       /* address range that disappeared since we started the     */
       /* collection.  Thus we have to recover from faults here.  */
       /* This code does not appear to be necessary for Windows   */
-      /* 95/NT/2000. Note that this code should never generate   */
+      /* 95/NT/2000+. Note that this code should never generate  */
       /* an incremental GC write fault.                          */
+      /* This code seems to be necessary for WinCE (at least in	 */
+      /* the case we'd decide to add MEM_PRIVATE sections to	 */
+      /* data roots in GC_register_dynamic_libraries()).	 */
       /* It's conceivable that this is the same issue with	 */
       /* terminating threads that we see with Linux and		 */
       /* USE_PROC_FOR_LIBRARIES.				 */
@@ -540,9 +548,10 @@ static void alloc_mark_stack(size_t);
       /* thread that is in the process of exiting, and disappears	*/
       /* while we are marking it.  This seems extremely difficult to	*/
       /* avoid otherwise.						*/
-      if (GC_incremental)
-	      WARN("Incremental GC incompatible with /proc roots\n", 0);
+      if (GC_incremental) {
+	WARN("Incremental GC incompatible with /proc roots\n", 0);
       	/* I'm not sure if this could still work ...	*/
+      }
       GC_setup_temporary_fault_handler();
       if(SETJMP(GC_jmp_buf) != 0) goto handle_ex;
       ret_val = GC_mark_some_inner(cold_gc_frame);

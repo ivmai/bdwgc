@@ -18,12 +18,13 @@
 #include <stdio.h>
 #include <limits.h>
 #include <stdarg.h>
-#ifndef _WIN32_WCE
-#include <signal.h>
-#endif
 
 #define I_HIDE_POINTERS	/* To make GC_call_with_alloc_lock visible */
 #include "private/gc_pmark.h"
+
+#ifndef MSWINCE
+# include <signal.h>
+#endif
 
 #ifdef GC_SOLARIS_THREADS
 # include <sys/syscall.h>
@@ -540,17 +541,22 @@ void GC_init_inner(void)
 #     endif /* !MSWINCE */
   	/* else */ InitializeCriticalSection (&GC_allocate_ml);
       }
-#endif /* MSWIN32 */
+#   endif /* GC_WIN32_THREADS */
 #   if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
       InitializeCriticalSection(&GC_write_cs);
 #   endif
 #   if (!defined(SMALL_CONFIG))
-      if (0 != GETENV("GC_PRINT_STATS")) {
-        GC_print_stats = 1;
-      } 
-      if (0 != GETENV("GC_PRINT_VERBOSE_STATS")) {
-        GC_print_stats = VERBOSE;
-      } 
+#     ifdef GC_PRINT_VERBOSE_STATS
+        /* This is useful for debugging and profiling on platforms with	*/
+        /* missing getenv() (like WinCE).				*/
+	GC_print_stats = VERBOSE;
+#     else
+	if (0 != GETENV("GC_PRINT_VERBOSE_STATS")) {
+	  GC_print_stats = VERBOSE;
+	} else if (0 != GETENV("GC_PRINT_STATS")) {
+	  GC_print_stats = 1;
+	}
+#     endif
 #     if defined(UNIX_LIKE) || defined(CYGWIN32)
         {
 	  char * file_name = GETENV("GC_LOG_FILE");
@@ -732,8 +738,6 @@ void GC_init_inner(void)
     GC_STATIC_ASSERT((signed_word)(-1) < (signed_word)0);
 #   if !defined(SMALL_CONFIG)
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
-	/* This used to test for !GC_no_win32_dlls.  Why? */
-        GC_setpagesize();
 	/* For GWW_MPROTECT on Win32, this needs to happen before any	*/
 	/* heap memory is allocated.					*/
         GC_dirty_init();
@@ -887,8 +891,9 @@ out:
 
 
 #if defined(MSWIN32) || defined(MSWINCE)
-# if defined(_MSC_VER) && defined(_DEBUG)
-#  include <crtdbg.h>
+
+# if defined(_MSC_VER) && defined(_DEBUG) && !defined(MSWINCE)
+#   include <crtdbg.h>
 # endif
 
   STATIC HANDLE GC_stdout = 0;
@@ -910,6 +915,10 @@ out:
 # endif
 #else
 # define IF_NEED_TO_LOCK(x)
+#endif
+
+#ifndef _MAX_PATH
+# define _MAX_PATH MAX_PATH
 #endif
 
   STATIC HANDLE GC_CreateLogFile(void)
@@ -961,7 +970,19 @@ out:
       if (!tmp)
 	  DebugBreak();
 #     if defined(_MSC_VER) && defined(_DEBUG)
-	  _CrtDbgReport(_CRT_WARN, NULL, 0, NULL, "%.*s", len, buf);
+#	  ifdef MSWINCE
+	      /* There is no CrtDbgReport() in WinCE */
+	      {
+		  WCHAR wbuf[1024];
+		  /* Always use Unicode variant of OutputDebugString() */
+		  wbuf[MultiByteToWideChar(CP_ACP, 0 /* dwFlags */,
+				buf, len, wbuf,
+				sizeof(wbuf) / sizeof(wbuf[0]) - 1)] = 0;
+		  OutputDebugStringW(wbuf);
+	      }
+#	  else
+	      _CrtDbgReport(_CRT_WARN, NULL, 0, NULL, "%.*s", len, buf);
+#	  endif
 #     endif
       IF_NEED_TO_LOCK(LeaveCriticalSection(&GC_write_cs));
       return tmp ? (int)written : -1;

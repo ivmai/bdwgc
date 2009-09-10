@@ -69,7 +69,8 @@
 /* Determine the machine type: */
 # if defined(__arm__) || defined(__thumb__)
 #    define ARM32
-#    if !defined(LINUX) && !defined(NETBSD) && !defined(DARWIN)
+#    if !defined(LINUX) && !defined(NETBSD) && !defined(DARWIN) \
+	&& !defined(_WIN32) && !defined(__CEGCC__)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -366,7 +367,7 @@
     /* DGUX defined */
 #   define mach_type_known
 # endif
-# if defined(_WIN32_WCE)
+# if defined(_WIN32_WCE) || defined(__CEGCC__) || defined(__MINGW32CE__)
     /* SH3, SH4, MIPS already defined for corresponding architectures */
 #   if defined(SH3) || defined(SH4)
 #     define SH
@@ -1803,7 +1804,7 @@
 #   define DATAEND (ptr_t)(_end)
 # endif
 
-# ifdef SH
+# if defined(SH) && !defined(SH4)
 #   define MACH_TYPE "SH"
 #   define ALIGNMENT 4
 #   ifdef MSWINCE

@@ -1218,7 +1218,6 @@ extern word GC_page_size;
 # if defined(MSWIN32) || defined(MSWINCE)
   struct _SYSTEM_INFO;
   extern struct _SYSTEM_INFO GC_sysinfo;
-  extern word GC_n_heap_bases;	/* See GC_heap_bases.	*/
 # endif
 
 extern word GC_total_stack_black_listed;

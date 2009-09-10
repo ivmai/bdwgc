@@ -39,7 +39,7 @@
 #   include <stdlib.h>
 # endif
 # include <stdio.h>
-# ifdef _WIN32_WCE
+# if defined(_WIN32_WCE) && !defined(__GNUC__)
 #   include <winbase.h>
 /* #   define assert ASSERT */
 # else
@@ -444,6 +444,12 @@ void check_marks_int_list(sexpr x)
  */
 #ifdef THREADS
 
+# ifdef VERY_SMALL_CONFIG
+#   define TINY_REVERSE_UPPER_VALUE 4
+# else
+#   define TINY_REVERSE_UPPER_VALUE 10
+# endif
+
 # if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
     DWORD  __stdcall tiny_reverse_test(void * arg)
 # else
@@ -452,7 +458,8 @@ void check_marks_int_list(sexpr x)
 {
     int i;
     for (i = 0; i < 5; ++i) {
-      check_ints(reverse(reverse(ints(1,10))), 1, 10);
+      check_ints(reverse(reverse(ints(1, TINY_REVERSE_UPPER_VALUE))),
+		 1, TINY_REVERSE_UPPER_VALUE);
     }
     return 0;
 }

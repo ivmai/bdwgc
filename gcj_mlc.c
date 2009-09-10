@@ -64,7 +64,12 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
       return;
     }
     GC_gcj_malloc_initialized = TRUE;
-    ignore_gcj_info = (0 != GETENV("GC_IGNORE_GCJ_INFO"));
+#   ifdef GC_IGNORE_GCJ_INFO
+      /* This is useful for debugging on platforms with missing getenv(). */
+      ignore_gcj_info = 1;
+#   else
+      ignore_gcj_info = (0 != GETENV("GC_IGNORE_GCJ_INFO"));
+#   endif
     if (GC_print_stats && ignore_gcj_info) {
         GC_log_printf("Gcj-style type information is disabled!\n");
     }

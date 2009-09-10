@@ -36,7 +36,7 @@
 #endif
 
 #ifdef GC_PTHREADS
-# include <errno.h>
+# include <errno.h> /* for EAGAIN */
 
  /* Cygwin-specific forward decls */
 # undef pthread_create 
@@ -195,7 +195,19 @@ struct GC_Thread_Rep {
 # define in_use table_management.tm_in_use
 # define next table_management.tm_next
   DWORD id;
-  HANDLE handle;
+
+# ifdef MSWINCE
+    /* According to MSDN specs for WinCE targets:			*/
+    /* - DuplicateHandle() is not applicable to	thread handles; and	*/
+    /* - the value returned by GetCurrentThreadId() could be used as	*/
+    /* a "real" thread handle (for SuspendThread(), ResumeThread() and	*/
+    /* GetThreadContext()).						*/
+#   define THREAD_HANDLE(t) (HANDLE)(t)->id
+# else
+    HANDLE handle;
+#   define THREAD_HANDLE(t) (t)->handle
+# endif
+
   ptr_t stack_base;	/* The cold end of the stack.   */
 			/* 0 ==> entry not valid.	*/
 			/* !in_use ==> stack_base == 0	*/
@@ -415,23 +427,17 @@ static GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
     /* me can be NULL -> segfault */
     me -> pthread_id = pthread_self();
 # endif
-
-# if defined(DONT_IMPORT_GETCURTHREAD) && !defined(UNDER_CE)
-    /* This simplifies linking for some WinAPI systems (like WinCE).	*/
-#   undef GetCurrentThread
-#   define GetCurrentThread() (HANDLE)-2L /* "thread_self" pseudohandle */
-# endif
-
-  if (!DuplicateHandle(GetCurrentProcess(),
-                 	GetCurrentThread(),
+# ifndef MSWINCE
+    /* GetCurrentThread() returns a pseudohandle (a const value).	*/
+    if (!DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
 		        GetCurrentProcess(),
 		        (HANDLE*)&(me -> handle),
-		        0,
-		        0,
+			0 /* dwDesiredAccess */, FALSE /* bInheritHandle */,
 		        DUPLICATE_SAME_ACCESS)) {
 	GC_err_printf("Last error code: %d\n", (int)GetLastError());
 	ABORT("DuplicateHandle failed");
-  }
+    }
+# endif
   me -> last_stack_min = ADDR_LIMIT;
   me -> stack_base = sb -> mem_base;
 # ifdef IA64
@@ -550,7 +556,7 @@ unsigned *GC_check_finalizer_nested(void)
 /* Used to prevent write faults when the world is (partially) stopped,	*/
 /* since it may have been stopped with a system lock held, and that 	*/
 /* lock may be required for fault handling.				*/
-# if defined(MPROTECT_VDB) && !defined(MSWINCE)
+# if defined(MPROTECT_VDB)
 #    define UNPROTECT(t) \
        if (GC_dirty_maintained && !GC_win32_dll_threads && \
            t != &first_thread) { \
@@ -558,7 +564,7 @@ unsigned *GC_check_finalizer_nested(void)
          GC_remove_protection(HBLKPTR(t), 1, FALSE); \
        }
 # else
-#    define UNPROTECT(p)
+#    define UNPROTECT(t)
 # endif
 
 /* If a thread has been joined, but we have not yet		*/
@@ -571,7 +577,9 @@ unsigned *GC_check_finalizer_nested(void)
 /* thread being deleted.					*/
 STATIC void GC_delete_gc_thread(GC_vthread gc_id)
 {
-  CloseHandle(gc_id->handle);
+# ifndef MSWINCE
+    CloseHandle(gc_id->handle);
+# endif
 #ifndef GC_NO_DLLMAIN
   if (GC_win32_dll_threads) {
     /* This is intended to be lock-free.				*/
@@ -637,7 +645,9 @@ STATIC void GC_delete_thread(DWORD id)
         prev = p;
         p = p -> next;
     }
-    CloseHandle(p->handle);
+#   ifndef MSWINCE
+      CloseHandle(p->handle);
+#   endif
     if (prev == 0) {
         GC_threads[hv] = p -> next;
     } else {
@@ -796,7 +806,7 @@ void GC_push_thread_structures(void)
 # endif
 }
 
-#if defined(MPROTECT_VDB) && !defined(MSWINCE)
+#if defined(MPROTECT_VDB)
 # include "atomic_ops.h"
   extern volatile AO_TS_t GC_fault_handler_lock;  /* from os_dep.c */
 #endif
@@ -804,19 +814,16 @@ void GC_push_thread_structures(void)
 /* Suspend the given thread, if it's still active.	*/
 STATIC void GC_suspend(GC_thread t)
 {
-# ifdef MSWINCE
-    /* SuspendThread will fail if thread is running kernel code */
-      while (SuspendThread(t -> handle) == (DWORD)-1)
-	Sleep(10);
-# else
-    /* Apparently the Windows 95 GetOpenFileName call creates	*/
+# ifndef MSWINCE
+    /* Apparently the Windows 95 GetOpenFileName call creates		*/
     /* a thread that does not properly get cleaned up, and		*/
     /* SuspendThread on its descriptor may provoke a crash.		*/
     /* This reduces the probability of that event, though it still	*/
     /* appears there's a race here.					*/
     DWORD exitCode; 
-
-    UNPROTECT(t);
+# endif
+  UNPROTECT(t);
+# ifndef MSWINCE
     if (GetExitCodeThread(t -> handle, &exitCode) &&
         exitCode != STILL_ACTIVE) {
 #     ifdef GC_PTHREADS
@@ -829,20 +836,26 @@ STATIC void GC_suspend(GC_thread t)
 #     endif
       return;
     }
-#   if defined(MPROTECT_VDB) && !defined(MSWINCE)
-      /* Acquire the spin lock we use to update dirty bits.	*/
-      /* Threads shouldn't get stopped holding it.  But we may	*/
-      /* acquire and release it in the UNPROTECT call.		*/
-      while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {}
-#   endif
+# endif
+# if defined(MPROTECT_VDB)
+    /* Acquire the spin lock we use to update dirty bits.	*/
+    /* Threads shouldn't get stopped holding it.  But we may	*/
+    /* acquire and release it in the UNPROTECT call.		*/
+    while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {}
+# endif
 
+# ifdef MSWINCE
+    /* SuspendThread() will fail if thread is running kernel code.	*/
+    while (SuspendThread(THREAD_HANDLE(t)) == (DWORD)-1)
+      Sleep(10); /* in millis */
+# else
     if (SuspendThread(t -> handle) == (DWORD)-1)
       ABORT("SuspendThread failed");
+# endif /* !MSWINCE */
+  t -> suspended = TRUE;
+# if defined(MPROTECT_VDB)
+    AO_CLEAR(&GC_fault_handler_lock);
 # endif
-   t -> suspended = TRUE;
-#  if defined(MPROTECT_VDB) && !defined(MSWINCE)
-     AO_CLEAR(&GC_fault_handler_lock);
-#  endif
 }
 
 /* Defined in misc.c */
@@ -924,7 +937,7 @@ void GC_start_world(void)
       GC_thread t = (GC_thread)(dll_thread_table + i);
       if (t -> stack_base != 0 && t -> suspended
 	  && t -> id != thread_id) {
-        if (ResumeThread(t -> handle) == (DWORD)-1)
+        if (ResumeThread(THREAD_HANDLE(t)) == (DWORD)-1)
 	  ABORT("ResumeThread failed");
         t -> suspended = FALSE;
       }
@@ -937,7 +950,7 @@ void GC_start_world(void)
       for (t = GC_threads[i]; t != 0; t = t -> next) {
         if (t -> stack_base != 0 && t -> suspended
 	    && t -> id != thread_id) {
-          if (ResumeThread(t -> handle) == (DWORD)-1)
+          if (ResumeThread(THREAD_HANDLE(t)) == (DWORD)-1)
 	    ABORT("ResumeThread failed");
 	  UNPROTECT(t);
           t -> suspended = FALSE;
@@ -1009,7 +1022,7 @@ STATIC void GC_push_stack_for(GC_thread thread)
       } else {
         CONTEXT context;
         context.ContextFlags = CONTEXT_INTEGER|CONTEXT_CONTROL;
-        if (!GetThreadContext(thread -> handle, &context))
+        if (!GetThreadContext(THREAD_HANDLE(thread), &context))
 	  ABORT("GetThreadContext failed");
 
         /* Push all registers that might point into the heap.  Frame	*/
@@ -1283,8 +1296,13 @@ void GC_get_next_stack(char *start, char *limit,
 
 #ifdef PARALLEL_MARK
 
+#if defined(GC_PTHREADS) && !defined(GC_PTHREADS_PARAMARK)
+  /* Use pthread-based parallel mark implementation.	*/
+# define GC_PTHREADS_PARAMARK
+#endif
+
   /* GC_mark_thread() is the same as in pthread_support.c	*/
-#ifdef GC_PTHREADS
+#ifdef GC_PTHREADS_PARAMARK
   STATIC void * GC_mark_thread(void * id)
 #else
 # ifdef MSWINCE
@@ -1323,7 +1341,12 @@ void GC_get_next_stack(char *start, char *limit,
 
 /* GC_mark_threads[] is unused here unlike that in pthread_support.c */
 
-#ifdef GC_PTHREADS
+#ifdef GC_PTHREADS_PARAMARK
+# include <pthread.h>
+
+# ifndef NUMERIC_THREAD_ID
+#   define NUMERIC_THREAD_ID(id) (unsigned long)(id.p)
+# endif
 
 /* start_mark_threads() is the same as in pthread_support.c except for:	*/
 /* - GC_markers value is adjusted already;				*/
@@ -1332,7 +1355,7 @@ void GC_get_next_stack(char *start, char *limit,
 
 STATIC void start_mark_threads(void)
 {
-    unsigned i;
+    int i;
     pthread_attr_t attr;
     pthread_t new_thread;
 
@@ -1345,8 +1368,7 @@ STATIC void start_mark_threads(void)
       marker_last_stack_min[i] = ADDR_LIMIT;
       if (0 != pthread_create(&new_thread, &attr,
 			      GC_mark_thread, (void *)(word)i)) {
-	WARN("Marker thread creation failed, errno = %ld.\n",
-		/* (word) */ errno);
+	WARN("Marker thread creation failed.\n", 0);
       }
     }
     pthread_attr_destroy(&attr);
@@ -1450,7 +1472,7 @@ void GC_notify_all_marker(void)
     }
 }
 
-#else /* ! GC_PTHREADS */
+#else /* ! GC_PTHREADS_PARAMARK */
 
 # ifndef MARK_THREAD_STACK_SIZE
 #   define MARK_THREAD_STACK_SIZE 0	/* default value */
@@ -1474,18 +1496,22 @@ STATIC void start_mark_threads(void)
 	  handle = CreateThread(NULL /* lpsa */, MARK_THREAD_STACK_SIZE,
 				GC_mark_thread, (LPVOID)(word)i,
 				0 /* fdwCreate */, &thread_id);
-	  if (!handle || handle == (HANDLE)-1L)
+	  if (handle == NULL)
 	    WARN("Marker thread creation failed\n", 0);
+	  else {
+	    /* It's safe to detach the thread.	*/
+	    CloseHandle(handle);
+	  }
 #	else
 	  handle = _beginthreadex(NULL /* security_attr */,
 				MARK_THREAD_STACK_SIZE, GC_mark_thread,
 				(void *)(word)i, 0 /* flags */, &thread_id);
 	  if (!handle || handle == (GC_uintptr_t)-1L)
 	    WARN("Marker thread creation failed\n", 0);
+	  else { /* We may detach the thread (if handle is of HANDLE type) */
+	    /* CloseHandle((HANDLE)handle); */
+	  }
 #	endif
-	else { /* We may detach the thread (if handle is of HANDLE type) */
-	  /* CloseHandle((HANDLE)handle); */
-	}
       }
 }
 
@@ -1582,9 +1608,16 @@ void GC_notify_all_builder(void)
 
 STATIC HANDLE mark_cv = (HANDLE)0; /* Event with manual reset */
 
-typedef DWORD (WINAPI * SignalObjectAndWait_type)(
+#ifdef MSWINCE
+  /* SignalObjectAndWait() is missing in WinCE (for now), so you should	*/
+  /* supply its emulation (externally) to use this code.		*/
+  WINBASEAPI DWORD WINAPI SignalObjectAndWait(HANDLE, HANDLE, DWORD, BOOL);
+# define signalObjectAndWait_func SignalObjectAndWait
+#else
+  typedef DWORD (WINAPI * SignalObjectAndWait_type)(
 		HANDLE, HANDLE, DWORD, BOOL);
-STATIC SignalObjectAndWait_type signalObjectAndWait_func = 0;
+  STATIC SignalObjectAndWait_type signalObjectAndWait_func = 0;
+#endif
 
 void GC_wait_marker(void)
 {
@@ -1592,7 +1625,6 @@ void GC_wait_marker(void)
     /* from a while(check_cond) loop.				*/
     AO_t waitcnt;
     GC_ASSERT(mark_cv != 0);
-    GC_ASSERT(signalObjectAndWait_func != 0);
 
     /* We inline GC_release_mark_lock() to have atomic		*/
     /* unlock-and-wait action here.				*/
@@ -1608,7 +1640,7 @@ void GC_wait_marker(void)
     }
 
     /* The state of mark_cv is non-signaled here. */
-    if ((*signalObjectAndWait_func)(mark_mutex_event /* hObjectToSignal */,
+    if (signalObjectAndWait_func(mark_mutex_event /* hObjectToSignal */,
 				mark_cv /* hObjectToWaitOn */,
 				INFINITE /* timeout */,
 				FALSE /* isAlertable */) == WAIT_FAILED)
@@ -1639,7 +1671,7 @@ void GC_notify_all_marker(void)
 /* Defined in os_dep.c */
 extern GC_bool GC_wnt;
 
-#endif /* ! GC_PTHREADS */
+#endif /* ! GC_PTHREADS_PARAMARK */
 
 #endif /* PARALLEL_MARK */
 
@@ -1688,7 +1720,7 @@ STATIC void * GC_CALLBACK GC_win32_start_inner(struct GC_stack_base *sb,
     return ret;
 }
 
-DWORD WINAPI GC_win32_start(LPVOID arg)
+STATIC DWORD WINAPI GC_win32_start(LPVOID arg)
 {
     return (DWORD)(word)GC_call_with_stack_base(GC_win32_start_inner, arg);
 }
@@ -1794,7 +1826,7 @@ GC_API void GC_CALL GC_endthreadex(unsigned retval)
 
 #endif /* !GC_PTHREADS */
 
-#ifdef MSWINCE
+#if defined(MSWINCE) && !defined(GC_DLL)
 
 typedef struct {
     HINSTANCE hInstance;
@@ -1803,11 +1835,12 @@ typedef struct {
     int nShowCmd;
 } main_thread_args;
 
-DWORD WINAPI main_thread_start(LPVOID arg);
-
-# ifndef WINCE_MAIN_STACK_SIZE
-#   define WINCE_MAIN_STACK_SIZE 0	/* default value */
-# endif
+STATIC DWORD WINAPI main_thread_start(LPVOID arg)
+{
+    main_thread_args * args = (main_thread_args *) arg;
+    return (DWORD) GC_WinMain (args->hInstance, args->hPrevInstance,
+			       args->lpCmdLine, args->nShowCmd);
+}
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		   GC_WINMAIN_WINCE_LPTSTR lpCmdLine, int nShowCmd)
@@ -1824,29 +1857,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     GC_init();
 
     /* start the main thread */
-    thread_h = GC_CreateThread(NULL /* lpsa */, WINCE_MAIN_STACK_SIZE,
+    thread_h = GC_CreateThread(NULL /* lpsa */, 0 /* dwStackSize (ignored) */,
 			main_thread_start, &args, 0 /* fdwCreate */,
 			&thread_id);
 
     if (thread_h != NULL)
     {
-	WaitForSingleObject (thread_h, INFINITE);
+	if (WaitForSingleObject (thread_h, INFINITE) == WAIT_FAILED)
+	    ABORT("WaitForSingleObject(main_thread) failed");
 	GetExitCodeThread (thread_h, &exit_code);
 	CloseHandle (thread_h);
+    } else {
+	ABORT("GC_CreateThread(main_thread) failed");
     }
 
     GC_deinit();
     DeleteCriticalSection(&GC_allocate_ml);
 
     return (int) exit_code;
-}
-
-DWORD WINAPI main_thread_start(LPVOID arg)
-{
-    main_thread_args * args = (main_thread_args *) arg;
-
-    return (DWORD) GC_WinMain (args->hInstance, args->hPrevInstance,
-			       args->lpCmdLine, args->nShowCmd);
 }
 
 #endif /* MSWINCE */
@@ -1870,7 +1898,7 @@ void GC_thr_init(void) {
 	GC_get_stack_base(&sb);
     GC_ASSERT(sb_result == GC_SUCCESS);
     
-#   if defined(PARALLEL_MARK) && !defined(MSWINCE)
+#   if defined(PARALLEL_MARK)
       /* Set GC_markers. */
       {
 	char * markers_string = GETENV("GC_MARKERS");
@@ -1881,6 +1909,11 @@ void GC_thr_init(void) {
 	    GC_markers = MAX_MARKERS;
 	  }
 	} else {
+#	ifdef MSWINCE
+	  /* There is no GetProcessAffinityMask() in WinCE.	*/
+	  /* GC_sysinfo is already initialized.			*/
+	  GC_markers = GC_sysinfo.dwNumberOfProcessors;
+#	else
 #	  ifdef _WIN64
 	    DWORD_PTR procMask = 0;
 	    DWORD_PTR sysMask;
@@ -1897,6 +1930,12 @@ void GC_thr_init(void) {
 	    } while ((procMask &= procMask - 1) != 0);
 	  }
 	  GC_markers = ncpu;
+#	endif
+#	  ifdef GC_MIN_MARKERS
+	    /* This is primarily for testing on systems without getenv(). */
+	    if (GC_markers < GC_MIN_MARKERS)
+	      GC_markers = GC_MIN_MARKERS;
+#	  endif
 	  if (GC_markers >= MAX_MARKERS)
 	    GC_markers = MAX_MARKERS; /* silently limit GC_markers value */
 	}
@@ -1904,12 +1943,12 @@ void GC_thr_init(void) {
       
       /* Set GC_parallel. */
       {
-#	ifndef GC_PTHREADS
+#	if !defined(GC_PTHREADS_PARAMARK) && !defined(MSWINCE)
 	  HMODULE hK32;
 	  /* SignalObjectAndWait() API call works only under NT.	*/
 #	endif
 	if (GC_markers <= 1 || GC_win32_dll_threads
-#	    ifndef GC_PTHREADS
+#	    if !defined(GC_PTHREADS_PARAMARK) && !defined(MSWINCE)
 	      || GC_wnt == FALSE
 	      || (hK32 = GetModuleHandle(TEXT("kernel32.dll"))) == (HMODULE)0
 	      || (signalObjectAndWait_func = (SignalObjectAndWait_type)
@@ -1920,7 +1959,7 @@ void GC_thr_init(void) {
 	  GC_parallel = FALSE;
 	  GC_markers = 1;
 	} else {
-#	  ifndef GC_PTHREADS
+#	  ifndef GC_PTHREADS_PARAMARK
 	    /* Initialize Win32 event objects for parallel marking.	*/
 	    mark_mutex_event = CreateEvent(NULL /* attrs */,
 				FALSE /* isManualReset */,

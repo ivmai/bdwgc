@@ -1,5 +1,108 @@
 
 2009-09-10  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai120a.diff, ivmai120b.diff)
+
+	* Makefile.direct (GC_PTHREADS_PARAMARK, GC_IGNORE_GCJ_INFO,
+	GC_PRINT_VERBOSE_STATS, GC_DONT_EXPAND, GC_INITIAL_HEAP_SIZE,
+	GC_FREE_SPACE_DIVISOR, GC_TIME_LIMIT, GC_FULL_FREQ): Add the
+	comment for.
+	* misc.c (GC_init_inner): Recognize GC_PRINT_VERBOSE_STATS (new
+	macro).
+	* dyn_load.c (GC_wnt): Change definition to TRUE for WinCE; add
+	FIXME and the comment for WinCE.
+	* gcj_mlc.c (GC_init_gcj_malloc): Recognize GC_IGNORE_GCJ_INFO
+	(new macro).
+	* include/gc.h (GC_HAVE_BUILTIN_BACKTRACE): Don't define for VC++
+	WinCE (since backtrace() is unimplemented).
+	* include/private/gc_priv.h (GC_n_heap_bases): Remove declaration
+	(since static).
+	* os_dep.c (GC_n_heap_bases): Define as STATIC; move the
+	definition to be above GC_is_heap_base().
+	* include/private/gcconfig.h: Don't define NOSYS for WinCE on ARM
+	(both for MinGW and CeGCC toolchains).
+	* include/private/gcconfig.h: Recognize __CEGCC__ and
+	__MINGW32CE__ (as synonyms for __WIN32_WCE).
+	* include/private/gcconfig.h: If SH4 then don't set config
+	parameters for SH.
+	* include/private/thread_local_alloc.h (GC_key_create): Don't
+	abort on failures, just return -1 in these cases (this also
+	prevents compilation error for targets where ABORT is defined
+	indirectly as an inline assembler sequence).
+	* mark.c (WRAP_MARK_SOME): Also define for WinCE; add FIXME for
+	the GCC-based cross-compiler.
+	* mark.c (ext_ex_regn, mark_ex_handler): Don't define unless
+	WRAP_MARK_SOME is defined; define also for WinCE case; don't
+	check for _WIN64 (since WRAP_MARK_SOME is undefined for it).
+	* mark.c (GC_mark_some): Use __try/__except also for WinCE; update
+	the comment.
+	* misc.c: Include signal.h after gc_pmark.h included; check for
+	MSWINCE instead of _WIN32_WCE.
+	* misc.c (GC_init_inner): Remove duplicate GC_setpagesize() call.
+	* misc.c: Don't include <crtdbg.h> for WinCE targets.
+	* misc.c (GC_write): Define _MAX_PATH if undefined (workaround for
+	CeGCC toolchain).
+	* misc.c (GC_write): Use OutputDebugStringW() instead of
+	_CrtDbgReport() for WinCE targets.
+	* os_dep.c (GC_least_described_address): Define as STATIC.
+	* os_dep.c (GC_register_data_segments): Fix code indentation.
+	* os_dep.c (GC_wince_get_mem): Initialize "result" local variable
+	(to prevent a compiler warning).
+	* os_dep.c (GC_dirty_init): Add comment for WinCE target.
+	* tests/test.c: Don't include winbase.h directly if GCC for WinCE,
+	include assert.h instead.
+	* tests/test.c (tiny_reverse_test): Define and use
+	TINY_REVERSE_UPPER_VALUE macro (4 if VERY_SMALL_CONFIG else 10);
+	useful for WinCE.
+	* win32_threads.c (GC_Thread_Rep): Don't declare "handle" field
+	for WinCE (since thread Id is used as a "real" thread handle).
+	* win32_threads.c (THREAD_HANDLE): New macro.
+	* win32_threads.c (GC_register_my_thread_inner): Don't recognize
+	DONT_IMPORT_GETCURTHREAD anymore; don't record thread handle on
+	WinCE.
+	* Makefile.direct (DONT_IMPORT_GETCURTHREAD): Remove comment for.
+	* win32_threads.c (UNPROTECT, GC_fault_handler_lock): Don't check
+	for MSWINCE.
+	* win32_threads.c (GC_delete_gc_thread, GC_delete_thread): Don't
+	close thread handle on WinCE (since it's a thread Id).
+	* win32_threads.c (GC_suspend): Don't check for MSWINCE in the
+	MPROTECT-related code (for the case if MPROTECT_VDB would be
+	implemented for WinCE).
+	* win32_threads.c (GC_suspend, GC_start_world, GC_push_stack_for):
+	Use THREAD_HANDLE(t) to obtain thread handle.
+	* win32_threads.c (GC_PTHREADS_PARAMARK): New macro recognized;
+	implicitly define GC_PTHREADS_PARAMARK if GC_PTHREADS; include
+	pthread.h; define NUMERIC_THREAD_ID(id) if undefined yet; replace
+	GC_PTHREADS with GC_PTHREADS_PARAMARK where appropriate (for the
+	parallel mark support).
+	* win32_threads.c (start_mark_threads): Use int type for "i" local
+	variable (instead of "unsigned") to prevent a compiler warning.
+	* win32_threads.c (start_mark_threads): Don't check CreateThread()
+	result for -1; call CloseHandle() for the handle created by
+	CreateThread() (on WinCE); don't use errno (since errno.h is
+	missing on some targets like WinCE) when printing warning on a
+	marker thread creation failure.
+	* win32_threads.c (signalObjectAndWait_func): Define for WinCE.
+	* win32_threads.c (GC_wait_marker): Remove unnecessary assertion
+	for non-zero signalObjectAndWait_func (to make the code compilable
+	for WinCE).
+	* win32_threads.c (GC_thr_init): Allow PARALLEL_MARK for WinCE;
+	use GC_sysinfo to get processors count if WinCE; don't check for
+	SignalObjectAndWait() if WinCE; replace GC_PTHREADS with
+	GC_PTHREADS_PARAMARK.
+	* win32_threads.c (GC_thr_init): Recognize GC_MIN_MARKERS new
+	macro (useful for testing parallel marking on WinCE).
+	* win32_threads.c (GC_win32_start, main_thread_start): Define as
+	STATIC.
+	* win32_threads.c: Don't define main_thread_args,
+	main_thread_start(), WinMain() for WinCE if GC_DLL.
+	* win32_threads.c (WINCE_MAIN_STACK_SIZE): Remove useless macro
+	(since the stack size parameter is ignored on WinCE).
+	* win32_threads.c (main_thread_start): Remove forward declaration;
+	place its definition before WinMain() one.
+	* win32_threads.c (WinMain): Abort if GC_CreateThread() or
+	WaitForSingleObject() failed (for the main thread).
+
+2009-09-10  Ivan Maidanski <ivmai@mail.ru>
 	(diff118_cvs - superseding diff53)
 
 	* allchblk.c (MUNMAP_THRESHOLD): Move macro definition out of

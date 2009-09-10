@@ -860,7 +860,12 @@ void GC_register_dynamic_libraries(void)
 # endif /* DEBUG_VIRTUALQUERY */
 
 # ifdef MSWINCE
-#   define GC_wnt FALSE
+    /* FIXME: Should we really need to scan MEM_PRIVATE sections?	*/
+    /* For now, we don't add MEM_PRIVATE sections to the data roots for	*/
+    /* WinCE because otherwise SEGV fault sometimes happens to occur in	*/
+    /* GC_mark_from() (and, even if we use WRAP_MARK_SOME, WinCE prints	*/
+    /* a "Data Abort" message to the debugging console).		*/
+#   define GC_wnt TRUE
 # else
     extern GC_bool GC_wnt;	/* Is Windows NT derivative.	*/
   			  	/* Defined and set in os_dep.c.	*/

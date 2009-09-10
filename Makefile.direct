@@ -95,6 +95,8 @@ HOSTCFLAGS=$(CFLAGS)
 #   threads.
 # -DPTW32_STATIC_LIB causes the static version of the Mingw pthreads library
 #   to be used.  Requires -DGC_WIN32_PTHREADS.
+# -DGC_PTHREADS_PARAMARK causes pthread-based parallel mark implementation
+#   to be used even if GC_WIN32_PTHREADS is undefined.  (Useful for WinCE.)
 #   
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
 #   of objects to be recognized.  (See gc_priv.h for consequences.)
@@ -336,9 +338,21 @@ HOSTCFLAGS=$(CFLAGS)
 #   to force MPROTECT_VDB strategy instead of the default GWW_VDB one).
 # -DGC_NO_DLLMAIN (Win32+DLL only) Exclude DllMain-based thread registration
 #   support.
-# -DDONT_IMPORT_GETCURTHREAD (Win32 only) Use MS hard-coded thread-self
-#   pseudohandle value (-2) instead of linking (or binding) to a real
-#   GetCurrentThread() func; mostly useful on WinCE unless "UNDER_CE" mode.
+# -DGC_IGNORE_GCJ_INFO Disable GCJ-style type information (useful for
+#   debugging on WinCE).
+# -DGC_PRINT_VERBOSE_STATS Permanently turn on verbose logging (useful for
+#   debugging and profiling on WinCE).
+# -DGC_DONT_EXPAND Dont expand the heap unless explicitly requested or
+#   forced to.
+# -DGC_INITIAL_HEAP_SIZE=<value> Set the desired default initial heap size
+#   in bytes.
+# -DGC_FREE_SPACE_DIVISOR=<value> Set alternate default GC_free_space_divisor
+#   value.
+# -DGC_TIME_LIMIT=<milliseconds> Set alternate default GC_time_limit value
+#   (setting this to GC_TIME_UNLIMITED will essentially disable incremental
+#   collection while leaving generational collection enabled).
+# -DGC_FULL_FREQ=<value> Set alternate default number of partial collections
+#   between full collections (matters only if incremental collection is on).
 #
 
 CXXFLAGS= $(CFLAGS) 

@@ -1384,7 +1384,7 @@ void GC_register_data_segments(void)
   /* Return the smallest address a such that VirtualQuery		*/
   /* returns correct results for all addresses between a and start.	*/
   /* Assumes VirtualQuery returns correct information for start.	*/
-  ptr_t GC_least_described_address(ptr_t start)
+  STATIC ptr_t GC_least_described_address(ptr_t start)
   {  
     MEMORY_BASIC_INFORMATION buf;
     size_t result;
@@ -1477,6 +1477,8 @@ void GC_register_data_segments(void)
   }
 # endif /* REDIRECT_MALLOC */
   
+  STATIC word GC_n_heap_bases = 0;	/* See GC_heap_bases.	*/
+
   /* Is p the start of either the malloc heap, or of one of our */
   /* heap sections?						*/
   GC_bool GC_is_heap_base (ptr_t p)
@@ -1531,10 +1533,10 @@ void GC_register_data_segments(void)
   
   void GC_register_data_segments(void)
   {
-#     ifdef MSWIN32
+#   ifdef MSWIN32
       static char dummy;
       GC_register_root_section((ptr_t)(&dummy));
-#     endif
+#   endif
   }
 
 # else /* !OS2 && !Windows */
@@ -1859,8 +1861,6 @@ SYSTEM_INFO GC_sysinfo;
 #   define GLOBAL_ALLOC_TEST GC_no_win32_dlls
 # endif
 
-word GC_n_heap_bases = 0;
-
 #ifdef GC_USE_MEM_TOP_DOWN
   STATIC DWORD GC_mem_top_down = MEM_TOP_DOWN;
 			   /* Use GC_USE_MEM_TOP_DOWN for better 64-bit */
@@ -1929,11 +1929,9 @@ GC_API void GC_CALL GC_win32_free_heap(void)
 
 
 # ifdef MSWINCE
-word GC_n_heap_bases = 0;
-
 ptr_t GC_wince_get_mem(word bytes)
 {
-    ptr_t result;
+    ptr_t result = 0; /* initialized to prevent warning. */
     word i;
 
     /* Round up allocation size to multiple of page size */
@@ -2637,7 +2635,7 @@ STATIC GC_bool GC_old_segv_handler_used_si;
     set_pht_entry_from_index(db, index);
     AO_CLEAR(&GC_fault_handler_lock);
   }
-#else /* !AO_have_test_and_set_acquire */
+#else /* !AO_HAVE_test_and_set_acquire */
 # error No test_and_set operation: Introduces a race.
   /* THIS WOULD BE INCORRECT!						*/
   /* The dirty bit vector may be temporarily wrong,			*/
@@ -2941,6 +2939,9 @@ void GC_dirty_init(void)
       } else {
           GC_old_segv_handler = SIG_DFL;
       }
+#   elif defined(MSWINCE)
+      /* MPROTECT_VDB is unsupported for WinCE at present.	*/
+      /* FIXME: implement it (if possible). */
 #   endif
 }
 #endif /* !DARWIN */
