@@ -18,17 +18,21 @@
 # include <pthread.h>
 # include <signal.h>
 
-# ifndef GC_DARWIN_THREADS
+# if !defined(GC_DARWIN_THREADS)
 #   include <dlfcn.h>
+
+    GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
+				  sigset_t * /* oset */);
+    GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
+
+#   undef pthread_sigmask
+#   undef dlopen
+#   define pthread_sigmask GC_pthread_sigmask
+#   define dlopen GC_dlopen
 # endif
 
 GC_API int GC_pthread_create(pthread_t *, const pthread_attr_t *,
 			void *(*)(void *), void * /* arg */);
-#ifndef GC_DARWIN_THREADS
-  GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
-				sigset_t * /* oset */);
-  GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
-#endif
 GC_API int GC_pthread_join(pthread_t, void ** /* retval */);
 GC_API int GC_pthread_detach(pthread_t);
 
@@ -42,13 +46,6 @@ GC_API int GC_pthread_detach(pthread_t);
 #define pthread_create GC_pthread_create
 #define pthread_join GC_pthread_join
 #define pthread_detach GC_pthread_detach
-
-#ifndef GC_DARWIN_THREADS
-# undef pthread_sigmask
-# undef dlopen
-# define pthread_sigmask GC_pthread_sigmask
-# define dlopen GC_dlopen
-#endif
 
 #endif /* GC_PTHREADS && !GC_USE_LD_WRAP */
 

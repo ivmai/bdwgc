@@ -1,5 +1,21 @@
 
 2009-09-10  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai121.diff)
+
+	* include/gc.h: Recognize __CEGCC__ (as a synonym for _WIN32_WCE).
+	* include/gc_config_macros.h: Ditto.
+	* include/gc.h (GC_MAXIMUM_HEAP_SIZE): Recognize new macro.
+	* include/gc.h (GC_INIT_CONF_MAXIMUM_HEAP_SIZE): New macro (for
+	internal use).
+	* include/gc_config_macros.h: Always include stddef.h if GCC.
+	* include/gc_config_macros.h (GC_API): Define for CeGCC in the
+	same way as for MinGW.
+	* include/gc_config_macros.h (GC_API): Group the definition for
+	all cases together (check for GC_DLL only once).
+	* include/gc_pthread_redirects.h: Group non-Darwin code together.
+	* tests/test.c: Recognize GC_PRINT_VERBOSE_STATS (only if GC_DLL).
+
+2009-09-10  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai120a.diff, ivmai120b.diff)
 
 	* Makefile.direct (GC_PTHREADS_PARAMARK, GC_IGNORE_GCJ_INFO,

@@ -132,7 +132,7 @@
 #if defined(GC_THREADS) && !defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
     && (defined(_WIN32) || defined(_MSC_VER) || defined(__CYGWIN__) \
      || defined(__MINGW32__) || defined(__BORLANDC__) \
-     || defined(_WIN32_WCE))
+     || defined(_WIN32_WCE) || defined(__CEGCC__))
 # define GC_WIN32_THREADS
 # if defined(__CYGWIN__)
 #   define GC_PTHREADS
@@ -140,9 +140,9 @@
 #endif
 
 # define __GC
-# ifndef _WIN32_WCE
+# if !defined(_WIN32_WCE) || defined(__GNUC__)
 #   include <stddef.h>
-#   if defined(__MINGW32__)
+#   if defined(__MINGW32__) && !defined(_WIN32_WCE)
 #     include <stdint.h>
       /* We mention uintptr_t.					    */
       /* Perhaps this should be included in pure msft environments  */
@@ -163,37 +163,38 @@
 # define GC_DLL
 #endif
 
-#if defined(__MINGW32__) && defined(GC_DLL)
-# ifdef GC_BUILD
-#   define GC_API __declspec(dllexport)
-# else
-#   define GC_API __declspec(dllimport)
-# endif
-#endif
+#if defined(GC_DLL) && !defined(GC_API)
 
-#if (defined(__DMC__) || defined(_MSC_VER) || defined(__BORLANDC__) \
-	|| defined(__CYGWIN__)) && defined(GC_DLL)
-# ifdef GC_BUILD
-#   define GC_API extern __declspec(dllexport)
-# else
-#   define GC_API __declspec(dllimport)
-# endif
-#endif
+# if defined(__MINGW32__) || defined(__CEGCC__)
+#   ifdef GC_BUILD
+#     define GC_API __declspec(dllexport)
+#   else
+#     define GC_API __declspec(dllimport)
+#   endif
 
-#if defined(__WATCOMC__) && defined(GC_DLL)
-# ifdef GC_BUILD
-#   define GC_API extern __declspec(dllexport)
-# else
-#   define GC_API extern __declspec(dllimport)
-# endif
-#endif
+# elif defined(_MSC_VER) || defined(__DMC__) || defined(__BORLANDC__) \
+	|| defined(__CYGWIN__)
+#   ifdef GC_BUILD
+#     define GC_API extern __declspec(dllexport)
+#   else
+#     define GC_API __declspec(dllimport)
+#   endif
 
-#if defined(__GNUC__) && defined(GC_DLL) && !defined(GC_API)
-  /* Only matters if used in conjunction with -fvisibility=hidden option. */
-# if __GNUC__ >= 4 && defined(GC_BUILD)
-#   define GC_API extern __attribute__((__visibility__("default")))
+# elif defined(__WATCOMC__)
+#   ifdef GC_BUILD
+#     define GC_API extern __declspec(dllexport)
+#   else
+#     define GC_API extern __declspec(dllimport)
+#   endif
+
+# elif defined(__GNUC__)
+    /* Only matters if used in conjunction with -fvisibility=hidden option. */
+#   if __GNUC__ >= 4 && defined(GC_BUILD)
+#     define GC_API extern __attribute__((__visibility__("default")))
+#   endif
+
 # endif
-#endif
+#endif /* GC_DLL */
 
 #ifndef GC_API
 # define GC_API extern

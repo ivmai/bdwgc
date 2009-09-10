@@ -55,8 +55,12 @@
 # endif
 
 # ifdef GC_DLL
-#   define GC_print_stats 0	/* Not exported from DLL */
+#   ifdef GC_PRINT_VERBOSE_STATS
+#     define GC_print_stats VERBOSE
+#   else
+#     define GC_print_stats 0	/* Not exported from DLL */
 				/* Redefine to 1 to generate output. */
+#   endif
 # endif
 
 # ifdef PCR

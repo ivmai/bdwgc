@@ -1179,8 +1179,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 					GC_has_static_roots_func);
 
 #if defined(GC_WIN32_THREADS) && !defined(__CYGWIN32__) \
-	&& !defined(__CYGWIN__) \
-	&& !defined(GC_PTHREADS)
+	&& !defined(__CYGWIN__) && !defined(GC_PTHREADS)
 
 #ifndef GC_NO_THREAD_DECLS
 
@@ -1188,7 +1187,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
     }  /* Including windows.h in an extern "C" context no longer works. */
 #endif
 
-# if !defined(_WIN32_WCE)
+# if !defined(_WIN32_WCE) && !defined(__CEGCC__)
 #   include <process.h>	/* For _beginthreadex, _endthreadex */
 # endif
 
@@ -1220,7 +1219,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 
    GC_API void WINAPI GC_ExitThread(DWORD /* dwExitCode */);
 
-# if !defined(_WIN32_WCE)
+# if !defined(_WIN32_WCE) && !defined(__CEGCC__)
 
 #  if !defined(_UINTPTR_T) && !defined(_UINTPTR_T_DEFINED) \
         && !defined(UINTPTR_MAX)
@@ -1347,6 +1346,17 @@ GC_API void GC_CALL GC_use_DllMain(void);
 # define GC_INIT_CONF_TIME_LIMIT /* empty */
 #endif
 
+#ifdef GC_MAXIMUM_HEAP_SIZE
+  /* Limit the heap size to the desired value (useful for debugging).	*/
+  /* The limit could be overridden either at the program start-up by	*/
+  /* the similar environment variable or anytime later by the		*/
+  /* corresponding API function call.					*/
+# define GC_INIT_CONF_MAXIMUM_HEAP_SIZE \
+		GC_set_max_heap_size(GC_MAXIMUM_HEAP_SIZE)
+#else
+# define GC_INIT_CONF_MAXIMUM_HEAP_SIZE /* empty */
+#endif
+
 #ifdef GC_IGNORE_WARN
   /* Turn off all warnings at start-up (after GC initialization) */
 # define GC_INIT_CONF_IGNORE_WARN GC_set_warn_proc(GC_ignore_warn_proc)
@@ -1369,6 +1379,7 @@ GC_API void GC_CALL GC_use_DllMain(void);
 		    GC_INIT_CONF_FREE_SPACE_DIVISOR; \
 		    GC_INIT_CONF_FULL_FREQ; \
 		    GC_INIT_CONF_TIME_LIMIT; \
+		    GC_INIT_CONF_MAXIMUM_HEAP_SIZE; \
 		    GC_init(); /* real GC initialization */ \
 		    GC_INIT_CONF_ROOTS; /* post-init */ \
 		    GC_INIT_CONF_IGNORE_WARN; \
