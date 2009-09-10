@@ -1,5 +1,20 @@
 
 2009-09-10  Ivan Maidanski <ivmai@mail.ru>
+	(diff117)
+
+	* dbg_mlc.c (OFN_UNSET): New macro (to detect
+	GC_register_finalizer() failures).
+	* dbg_mlc.c (store_old): Add a check for register_finalizer()
+	failure caused by an out-of-memory event (leave *ofn and *ocd
+	unmodified in that case).
+	* dbg_mlc.c (GC_debug_register_finalizer,
+	GC_debug_register_finalizer_no_order,
+	GC_debug_register_finalizer_unreachable,
+	GC_debug_register_finalizer_ignore_self): Initialize my_old_fn
+	to OFN_UNSET; clear *ocd and *ofn for non-heap objects (the same
+	as in GC_register_finalizer_inner()).
+
+2009-09-10  Ivan Maidanski <ivmai@mail.ru>
 	(diff116a, diff116b, diff116c)
 
 	* Makefile.direct (GC_DLL): Add the comment for.

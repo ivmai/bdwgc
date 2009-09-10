@@ -952,12 +952,19 @@ void GC_CALLBACK GC_debug_invoke_finalizer(void * obj, void * data)
     (*(cl -> cl_fn))((void *)((char *)obj + sizeof(oh)), cl -> cl_data);
 } 
 
+/* Special finalizer_proc value to detect GC_register_finalizer() failure. */
+#define OFN_UNSET (GC_finalization_proc)(signed_word)-1
+
 /* Set ofn and ocd to reflect the values we got back.	*/
 static void store_old (void *obj, GC_finalization_proc my_old_fn,
 		       struct closure *my_old_cd, GC_finalization_proc *ofn,
 		       void **ocd)
 {
     if (0 != my_old_fn) {
+      if (my_old_fn == OFN_UNSET) {
+	/* register_finalizer() failed; (*ofn) and (*ocd) are unchanged. */
+	return;
+      }	
       if (my_old_fn != GC_debug_invoke_finalizer) {
         GC_err_printf("Debuggable object at %p had non-debug finalizer.\n",
 		      obj);
@@ -977,10 +984,15 @@ GC_API void GC_CALL GC_debug_register_finalizer(void * obj,
     					void * cd, GC_finalization_proc *ofn,
 					void * *ocd)
 {
-    GC_finalization_proc my_old_fn;
+    GC_finalization_proc my_old_fn = OFN_UNSET;
     void * my_old_cd;
     ptr_t base = GC_base(obj);
-    if (0 == base) return;
+    if (0 == base) {
+	/* We won't collect it, hence finalizer wouldn't be run. */
+	if (ocd) *ocd = 0;
+	if (ofn) *ofn = 0;
+	return;
+    }
     if ((ptr_t)obj - base != sizeof(oh)) {
         GC_err_printf(
 	    "GC_debug_register_finalizer called with non-base-pointer %p\n",
@@ -1000,10 +1012,15 @@ GC_API void GC_CALL GC_debug_register_finalizer_no_order
     				     void * cd, GC_finalization_proc *ofn,
 				     void * *ocd)
 {
-    GC_finalization_proc my_old_fn;
+    GC_finalization_proc my_old_fn = OFN_UNSET;
     void * my_old_cd;
     ptr_t base = GC_base(obj);
-    if (0 == base) return;
+    if (0 == base) {
+	/* We won't collect it, hence finalizer wouldn't be run. */
+	if (ocd) *ocd = 0;
+	if (ofn) *ofn = 0;
+	return;
+    }
     if ((ptr_t)obj - base != sizeof(oh)) {
         GC_err_printf(
 	  "GC_debug_register_finalizer_no_order called with "
@@ -1025,10 +1042,15 @@ GC_API void GC_CALL GC_debug_register_finalizer_unreachable
     				     void * cd, GC_finalization_proc *ofn,
 				     void * *ocd)
 {
-    GC_finalization_proc my_old_fn;
+    GC_finalization_proc my_old_fn = OFN_UNSET;
     void * my_old_cd;
     ptr_t base = GC_base(obj);
-    if (0 == base) return;
+    if (0 == base) {
+	/* We won't collect it, hence finalizer wouldn't be run. */
+	if (ocd) *ocd = 0;
+	if (ofn) *ofn = 0;
+	return;
+    }
     if ((ptr_t)obj - base != sizeof(oh)) {
         GC_err_printf(
 	    "GC_debug_register_finalizer_unreachable called with "
@@ -1050,10 +1072,15 @@ GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
     				     void * cd, GC_finalization_proc *ofn,
 				     void * *ocd)
 {
-    GC_finalization_proc my_old_fn;
+    GC_finalization_proc my_old_fn = OFN_UNSET;
     void * my_old_cd;
     ptr_t base = GC_base(obj);
-    if (0 == base) return;
+    if (0 == base) {
+	/* We won't collect it, hence finalizer wouldn't be run. */
+	if (ocd) *ocd = 0;
+	if (ofn) *ofn = 0;
+	return;
+    }
     if ((ptr_t)obj - base != sizeof(oh)) {
         GC_err_printf(
 	    "GC_debug_register_finalizer_ignore_self called with "
