@@ -451,7 +451,7 @@ STATIC void GC_delete_gc_thread(GC_thread gc_id)
 
 /* Return a GC_thread corresponding to a given pthread_t.	*/
 /* Returns 0 if it's not there.					*/
-/* Caller holds  allocation lock or otherwise inhibits 		*/
+/* Caller holds allocation lock or otherwise inhibits 		*/
 /* updates.							*/
 /* If there is more than one thread with the given id we 	*/
 /* return the most recent one.					*/
@@ -462,6 +462,33 @@ GC_thread GC_lookup_thread(pthread_t id)
     
     while (p != 0 && !THREAD_EQUAL(p -> id, id)) p = p -> next;
     return(p);
+}
+
+/* Called by GC_finalize() (in case of an allocation failure observed).	*/
+void GC_reset_finalizer_nested(void)
+{
+  GC_thread me = GC_lookup_thread(pthread_self());
+  me->finalizer_nested = 0;
+}
+
+/* Checks and updates the thread-local level of finalizers recursion.	*/
+/* Returns NULL if GC_invoke_finalizers() should not be called by the	*/
+/* collector (to minimize the risk of a deep finalizers recursion),	*/
+/* otherwise returns a pointer to the thread-local finalizer_nested.	*/
+/* Called by GC_notify_or_invoke_finalizers() only (the lock is held).	*/
+unsigned *GC_check_finalizer_nested(void)
+{
+  GC_thread me = GC_lookup_thread(pthread_self());
+  unsigned nesting_level = me->finalizer_nested;
+  if (nesting_level) {
+    /* We are inside another GC_invoke_finalizers().		*/
+    /* Skip some implicitly-called GC_invoke_finalizers()	*/
+    /* depending on the nesting (recursion) level.		*/
+    if (++me->finalizer_skipped < (1U << nesting_level)) return NULL;
+    me->finalizer_skipped = 0;
+  }
+  me->finalizer_nested = nesting_level + 1;
+  return &me->finalizer_nested;
 }
 
 #ifdef HANDLE_FORK

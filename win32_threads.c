@@ -210,6 +210,12 @@ struct GC_Thread_Rep {
     ptr_t backing_store_ptr;
 # endif
 
+  unsigned finalizer_nested;
+  unsigned finalizer_skipped;	/* Used by GC_check_finalizer_nested()	*/
+				/* to minimize the level of recursion	*/
+				/* when a client finalizer allocates	*/
+				/* memory (initially both are 0).	*/
+
   GC_bool suspended;
 
 # ifdef GC_PTHREADS
@@ -493,6 +499,35 @@ GC_thread GC_lookup_thread_inner(DWORD thread_id) {
     while (p != 0 && p -> id != thread_id) p = p -> next;
     return(p);
   }
+}
+
+/* Called by GC_finalize() (in case of an allocation failure observed).	*/
+/* GC_reset_finalizer_nested() is the same as in pthread_support.c.	*/
+void GC_reset_finalizer_nested(void)
+{
+  GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
+  me->finalizer_nested = 0;
+}
+
+/* Checks and updates the thread-local level of finalizers recursion.	*/
+/* Returns NULL if GC_invoke_finalizers() should not be called by the	*/
+/* collector (to minimize the risk of a deep finalizers recursion),	*/
+/* otherwise returns a pointer to the thread-local finalizer_nested.	*/
+/* Called by GC_notify_or_invoke_finalizers() only (the lock is held).	*/
+/* GC_check_finalizer_nested() is the same as in pthread_support.c.	*/
+unsigned *GC_check_finalizer_nested(void)
+{
+  GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
+  unsigned nesting_level = me->finalizer_nested;
+  if (nesting_level) {
+    /* We are inside another GC_invoke_finalizers().		*/
+    /* Skip some implicitly-called GC_invoke_finalizers()	*/
+    /* depending on the nesting (recursion) level.		*/
+    if (++me->finalizer_skipped < (1U << nesting_level)) return NULL;
+    me->finalizer_skipped = 0;
+  }
+  me->finalizer_nested = nesting_level + 1;
+  return &me->finalizer_nested;
 }
 
 /* Make sure thread descriptor t is not protected by the VDB		*/

@@ -62,6 +62,13 @@ typedef struct GC_Thread_Rep {
     				/* This is unfortunately also the	*/
     				/* reason we need to intercept join	*/
     				/* and detach.				*/
+
+    unsigned finalizer_nested;
+    unsigned finalizer_skipped;	/* Used by GC_check_finalizer_nested()	*/
+				/* to minimize the level of recursion	*/
+				/* when a client finalizer allocates	*/
+				/* memory (initially both are 0).	*/
+
 #   ifdef THREAD_LOCAL_ALLOC
         struct thread_local_freelists tlfs;
 #   endif

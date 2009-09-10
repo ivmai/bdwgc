@@ -1,5 +1,43 @@
 
 2009-09-10  Ivan Maidanski <ivmai@mail.ru>
+	(diff112)
+
+	* finalize.c (GC_fail_count): New external variable declaration.
+	* finalize.c (GC_reset_finalizer_nested,
+	GC_check_finalizer_nested): New function declarations (if THREADS
+	only).
+	* finalize.c (GC_finalizer_nested, GC_finalizer_skipped): New
+	static global variables (used internally by GC_finalize() and
+	GC_check_finalizer_nested()).
+	* finalize.c (GC_check_finalizer_nested): New static function
+	definition (only if not THREADS, used internally by
+	GC_notify_or_invoke_finalizers() to minimize the probability of
+	a deep recursion when a client finalizer tries to allocate GC
+	memory).
+	* finalize.c (GC_finalize): Reset GC_finalizer_nested value (or
+	call GC_reset_finalizer_nested()) if last heap expansion failed.
+	* finalize.c (GC_notify_or_invoke_finalizers): Access GC_gc_no,
+	GC_finalizer_now, GC_finalize_on_demand, GC_finalizer_notifier,
+	last_finalizer_notification variables holding the lock (to avoid
+	data races).
+	* finalize.c (GC_finalizer_notifier): Add comment.
+	* finalize.c (GC_notify_or_invoke_finalizers): Add "quick" check
+	for an empty finalization queue (only if THREADS and not
+	KEEP_BACK_PTRS/MAKE_BACK_GRAPH).
+	* finalize.c (GC_notify_or_invoke_finalizers): Call
+	GC_check_finalizer_nested() and skip GC_invoke_finalizers() call
+	if appropriate.
+	* include/private/pthread_support.h (GC_Thread_Rep): Add unsigned
+	finalizer_nested and finalizer_skipped fields (for internal use
+	by the multi-threaded GC_check_finalizer_nested()).
+	* win32_threads.c (GC_Thread_Rep): Ditto.
+	* pthread_support.c (GC_reset_finalizer_nested,
+	GC_check_finalizer_nested): New function definitions (the
+	multi-threaded variants of that in finalize.c).
+	* win32_threads.c (GC_reset_finalizer_nested,
+	GC_check_finalizer_nested): Ditto.
+
+2009-09-10  Ivan Maidanski <ivmai@mail.ru>
 	(diff103_cvs)
 
 	* alloc.c (GC_stopped_mark): Remove GC_log_printf("") (not needed

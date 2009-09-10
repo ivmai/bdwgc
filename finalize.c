@@ -480,6 +480,40 @@ void GC_dump_finalization(void)
 }
 #endif
 
+extern unsigned GC_fail_count;
+			/* How many consecutive GC/expansion failures?	*/
+			/* Reset by GC_allochblk(); defined in alloc.c.	*/
+
+#ifdef THREADS
+  /* Defined in pthread_support.c or win32_threads.c.  Called with the	*/
+  /* allocation lock held.						*/
+  void GC_reset_finalizer_nested(void);
+  unsigned *GC_check_finalizer_nested(void);
+#else
+  /* Global variables to minimize the level of recursion when a client	*/
+  /* finalizer allocates memory.					*/
+  STATIC unsigned GC_finalizer_nested = 0;
+  STATIC unsigned GC_finalizer_skipped = 0;
+
+  /* Checks and updates the level of finalizers recursion.		*/
+  /* Returns NULL if GC_invoke_finalizers() should not be called by the	*/
+  /* collector (to minimize the risk of a deep finalizers recursion),	*/
+  /* otherwise returns a pointer to GC_finalizer_nested.		*/
+  STATIC unsigned *GC_check_finalizer_nested(void)
+  {
+    unsigned nesting_level = GC_finalizer_nested;
+    if (nesting_level) {
+      /* We are inside another GC_invoke_finalizers().		*/
+      /* Skip some implicitly-called GC_invoke_finalizers()	*/
+      /* depending on the nesting (recursion) level.		*/
+      if (++GC_finalizer_skipped < (1U << nesting_level)) return NULL;
+      GC_finalizer_skipped = 0;
+    }
+    GC_finalizer_nested = nesting_level + 1;
+    return &GC_finalizer_nested;
+  }
+#endif /* THREADS */
+
 /* Called with held lock (but the world is running).			*/
 /* Cause disappearing links to disappear and unreachable objects to be	*/
 /* enqueued for finalization.						*/
@@ -644,6 +678,15 @@ void GC_finalize(void)
         }
       }
     }
+  if (GC_fail_count) {
+    /* Don't prevent running finalizers if there has been an allocation	*/
+    /* failure recently.						*/
+#   ifdef THREADS
+      GC_reset_finalizer_nested();
+#   else
+      GC_finalizer_nested = 0;
+#   endif
+  }
 }
 
 #ifndef JAVA_FINALIZATION_NOT_NEEDED
@@ -780,6 +823,7 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
     return count;
 }
 
+/* All accesses to it should be synchronized to avoid data races.	*/
 GC_finalizer_notifier_proc GC_finalizer_notifier =
 	(GC_finalizer_notifier_proc)0;
 
@@ -787,15 +831,21 @@ static GC_word last_finalizer_notification = 0;
 
 void GC_notify_or_invoke_finalizers(void)
 {
+    GC_finalizer_notifier_proc notifier_fn = 0;
+#   if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
+      static word last_back_trace_gc_no = 1;	/* Skip first one. */
+#   elif defined(THREADS)
+      /* Quick check (while unlocked) for an empty finalization queue.	*/
+      if (GC_finalize_now == 0) return;
+#   endif
+    LOCK();
+
     /* This is a convenient place to generate backtraces if appropriate, */
     /* since that code is not callable with the allocation lock.	 */
 #   if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
-      static word last_back_trace_gc_no = 1;	/* Skip first one. */
-
       if (GC_gc_no > last_back_trace_gc_no) {
 #	ifdef KEEP_BACK_PTRS
 	  long i;
-	  LOCK();
   	  /* Stops when GC_gc_no wraps; that's OK.	*/
 	  last_back_trace_gc_no = (word)(-1);  /* disable others. */
 	  for (i = 0; i < GC_backtraces; ++i) {
@@ -808,27 +858,43 @@ void GC_notify_or_invoke_finalizers(void)
 	      LOCK();
 	  }
 	  last_back_trace_gc_no = GC_gc_no;
-	  UNLOCK();
 #	endif
 #       ifdef MAKE_BACK_GRAPH
-	  if (GC_print_back_height)
+	  if (GC_print_back_height) {
+	    UNLOCK();
             GC_print_back_graph_stats();
+	    LOCK();
+	  }
 #	endif
       }
 #   endif
-    if (GC_finalize_now == 0) return;
+    if (GC_finalize_now == 0) {
+      UNLOCK();
+      return;
+    }
+
     if (!GC_finalize_on_demand) {
+      unsigned *pnested = GC_check_finalizer_nested();
+      UNLOCK();
+      /* Skip GC_invoke_finalizers() if nested */
+      if (pnested != NULL) {
 	(void) GC_invoke_finalizers();
+	*pnested = 0; /* Reset since no more finalizers. */
 #	ifndef THREADS
 	  GC_ASSERT(GC_finalize_now == 0);
 #	endif	/* Otherwise GC can run concurrently and add more */
-	return;
+      }
+      return;
     }
-    if (GC_finalizer_notifier != (GC_finalizer_notifier_proc)0
-	&& last_finalizer_notification != GC_gc_no) {
+
+    /* These variables require synchronization to avoid data races.	*/
+    if (last_finalizer_notification != GC_gc_no) {
 	last_finalizer_notification = GC_gc_no;
-	GC_finalizer_notifier();
+	notifier_fn = GC_finalizer_notifier;
     }
+    UNLOCK();
+    if (notifier_fn != 0)
+	(*notifier_fn)(); /* Invoke the notifier */
 }
 
 GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn,
