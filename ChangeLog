@@ -1,5 +1,61 @@
 
 2009-09-10  Ivan Maidanski <ivmai@mail.ru>
+	(diff113)
+	
+	* include/gc.h (GC_has_static_roots_func): New typedef (user filter
+	callback).
+	* include/gc.h (GC_register_has_static_roots_callback): Use
+	GC_has_static_roots_func type.
+	* dyn_load.c (GC_has_static_roots,
+	GC_register_has_static_roots_callback): Ditto.
+	* dyn_load.c (GC_has_static_roots,
+	GC_register_has_static_roots_callback): Define on all platforms.
+	* dyn_load.c (GC_register_dynlib_callback,
+	GC_register_dynamic_libraries, GC_init_dyld): Replace K&R-style
+	functions definition with the ANSI C one.
+	* dyn_load.c (GC_register_dynlib_callback): Use new local variable
+	"callback" (initialized from GC_has_static_roots) to minimize data
+	races.
+	* dyn_load.c (GC_register_dynamic_libraries_dl_iterate_phdr,
+	GC_cond_add_roots): Define as STATIC.
+	* mark_rts.c (GC_remove_roots_inner): Ditto.
+	* dyn_load.c (GC_dyld_image_add): Don't call GC_add_roots() for
+	sections smaller than pointer size (just to avoid acquiring the
+	lock unnecessarily).
+	* dyn_load.c (GC_dyld_name_for_hdr): Define unconditionally (not
+	only for DARWIN_DEBUG).
+	* dyn_load.c (GC_dyld_image_add): Replace GC_add_roots() call with
+	LOCK + GC_add_roots_inner() + UNLOCK.
+	* dyn_load.c (GC_dyld_image_add): Call GC_has_static_roots() user
+	callback (if set) holding the lock; if it returns 0 then don't call
+	GC_add_roots_inner() for that region.
+	* dyn_load.c (GC_register_has_static_roots_callback): Put
+	"callback" value to GC_has_static_roots on all platforms.
+	* dyn_load.c (GC_has_static_roots): Update the comments.
+	* include/gc.h (GC_exclude_static_roots, GC_add_roots,
+	GC_remove_roots, GC_register_has_static_roots_callback): Ditto.
+	* include/private/gc_priv.h (struct roots): Ditto.
+	* include/private/gc_priv.h (GC_remove_roots_inner): Move prototype
+	to mark_rts.c and declare it as STATIC.
+	* include/private/gc_priv.h (GC_exclude_static_roots_inner): New
+	prototype.
+	* dyn_load.c (GC_register_dynamic_libraries_dl_iterate_phdr): Use
+	GC_exclude_static_roots_inner() instead of GC_exclude_static_roots.
+	* misc.c (GC_init_inner): Ditto.
+	* mark_rts.c (GC_exclude_static_roots_inner): New function (move
+	all the code from GC_exclude_static_roots(); add the comment.
+	* mark_rts.c (GC_add_roots_inner, GC_exclude_static_roots_inner):
+	add alignment assertion for the lower bound; add assertion for the
+	lower bound to be less than the upper one.
+	* mark_rts.c (GC_add_roots_inner, GC_exclude_static_roots): Adjust
+	the upper bound (round down to be of a pointer-aligned value);
+	return in case of an empty range.
+	* mark_rts.c (GC_exclude_static_roots): Acquire the lock and call
+	GC_exclude_static_roots_inner().
+	* mark_rts.c (GC_remove_roots): Quickly check the bounds and return
+	in case of a do-nothing case (before acquiring the lock).
+
+2009-09-10  Ivan Maidanski <ivmai@mail.ru>
 	(diff112)
 
 	* finalize.c (GC_fail_count): New external variable declaration.

@@ -650,11 +650,11 @@ void GC_init_inner(void)
       GC_obj_kinds[NORMAL].ok_descriptor = ((word)(-ALIGNMENT) | GC_DS_LENGTH);
     }
     GC_setpagesize();
-    GC_exclude_static_roots(beginGC_arrays, endGC_arrays);
-    GC_exclude_static_roots(beginGC_obj_kinds, endGC_obj_kinds);
+    GC_exclude_static_roots_inner(beginGC_arrays, endGC_arrays);
+    GC_exclude_static_roots_inner(beginGC_obj_kinds, endGC_obj_kinds);
 #   ifdef SEPARATE_GLOBALS
-      GC_exclude_static_roots(beginGC_objfreelist, endGC_objfreelist);
-      GC_exclude_static_roots(beginGC_aobjfreelist, endGC_aobjfreelist);
+      GC_exclude_static_roots_inner(beginGC_objfreelist, endGC_objfreelist);
+      GC_exclude_static_roots_inner(beginGC_aobjfreelist, endGC_aobjfreelist);
 #   endif
 #   ifdef MSWIN32
  	GC_init_win32();

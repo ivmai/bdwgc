@@ -374,6 +374,8 @@ GC_API void GC_CALL GC_set_max_heap_size(GC_word n);
 /* need not be scanned.  This is sometimes important if the application */
 /* maps large read/write files into the address space, which could be	*/
 /* mistaken for dynamic library data segments on some systems.		*/
+/* The section (referred to by low_address) must be pointer-aligned.	*/
+/* low_address must not be greater than high_address_plus_1.		*/
 GC_API void GC_CALL GC_exclude_static_roots(void * low_address,
 				    void * high_address_plus_1);
 
@@ -381,10 +383,13 @@ GC_API void GC_CALL GC_exclude_static_roots(void * low_address,
 GC_API void GC_CALL GC_clear_roots(void);
 
 /* Add a root segment.  Wizards only. */
+/* The segment (referred to by low_address) must be pointer-aligned.	*/
+/* low_address must not be greater than high_address_plus_1.		*/
 GC_API void GC_CALL GC_add_roots(void * low_address,
 				void * high_address_plus_1);
 
 /* Remove a root segment.  Wizards only. */
+/* May be unimplemented on some platforms.	*/
 GC_API void GC_CALL GC_remove_roots(void * low_address,
 				void * high_address_plus_1);
 
@@ -1079,14 +1084,25 @@ GC_API void * GC_CALL GC_malloc_many(size_t lb);
 
 #endif /* THREADS */
 
-/* Register a callback to control the scanning of dynamic libraries.
-   When the GC scans the static data of a dynamic library, it will
-   first call a user-supplied routine with filename of the library and
-   the address and length of the memory region.  This routine should
-   return nonzero if that region should be scanned.  */
-GC_API void GC_CALL GC_register_has_static_roots_callback
-  (int (GC_CALLBACK * callback)(const char *, void *, size_t));
+/* A filter function to control the scanning of dynamic libraries.	*/
+/* If implemented, called by GC before registering a dynamic library	*/
+/* (discovered by GC) section as a static data root (called only as	*/
+/* a last reason not to register).  The filename of the library, the	*/
+/* address and the length of the memory region (section) are passed.	*/
+/* This routine should return nonzero if that region should be scanned.	*/
+/* Always called with the allocation lock held.  Depending on the	*/
+/* platform, might be called with the "world" stopped.			*/
+typedef int (GC_CALLBACK * GC_has_static_roots_func)(
+					const char * /* dlpi_name */,
+					void * /* section_start */,
+					size_t /* section_size */);
 
+/* Register a new callback (a user-supplied filter) to control the	*/
+/* scanning of dynamic libraries.  Replaces any previously registered	*/
+/* callback.  May be 0 (means no filtering).  May be unused on some	*/
+/* platforms (if the filtering is unimplemented or inappropriate).	*/
+GC_API void GC_CALL GC_register_has_static_roots_callback(
+					GC_has_static_roots_func);
 
 #if defined(GC_WIN32_THREADS) && !defined(__CYGWIN32__) \
 	&& !defined(__CYGWIN__) \

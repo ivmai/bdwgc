@@ -50,8 +50,15 @@
 #   undef GC_must_restore_redefined_dlopen
 # endif
 
+/* A user-supplied routine (custom filter) that might be called to	*/
+/* determine whether a DSO really needs to be scanned by the GC.	*/
+/* 0 means no filter installed.  May be unused on some platforms.	*/
+/* FIXME: Add filter support for more platforms.			*/
+STATIC GC_has_static_roots_func GC_has_static_roots = 0;
+
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE)) \
     && !defined(PCR)
+
 #if !defined(SOLARISDL) && !defined(IRIX5) && \
     !defined(MSWIN32) && !defined(MSWINCE) && \
     !(defined(ALPHA) && defined(OSF1)) && \
@@ -413,14 +420,8 @@ static int n_load_segs;
 
 # endif /* PT_GNU_RELRO */
 
-/* A user-supplied routine that is called to determine if a DSO must
-   be scanned by the gc.  */
-static int (GC_CALLBACK * GC_has_static_roots)(const char *, void *, size_t);
-
-static int GC_register_dynlib_callback(info, size, ptr)
-     struct dl_phdr_info * info;
-     size_t size;
-     void * ptr;
+static int GC_register_dynlib_callback(struct dl_phdr_info * info,
+					size_t size, void * ptr)
 {
   const ElfW(Phdr) * p;
   ptr_t start, end;
@@ -468,12 +469,12 @@ static int GC_register_dynlib_callback(info, size, ptr)
 
       case PT_LOAD:
 	{
+	  GC_has_static_roots_func callback = GC_has_static_roots;
 	  if( !(p->p_flags & PF_W) ) break;
 	  start = ((char *)(p->p_vaddr)) + info->dlpi_addr;
 	  end = start + p->p_memsz;
 
-	  if (GC_has_static_roots
-	      && !GC_has_static_roots(info->dlpi_name, start, p->p_memsz))
+	  if (callback != 0 && !callback(info->dlpi_name, start, p->p_memsz))
 	    break;
 #         ifdef PT_GNU_RELRO
 	    if (n_load_segs >= MAX_LOAD_SEGS) ABORT("Too many PT_LOAD segs");
@@ -498,7 +499,7 @@ static int GC_register_dynlib_callback(info, size, ptr)
 
 /* Return TRUE if we succeed, FALSE if dl_iterate_phdr wasn't there. */
 
-GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
+STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 {
   if (dl_iterate_phdr) {
     int did_something = 0;
@@ -507,8 +508,8 @@ GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
         static GC_bool excluded_segs = FALSE;
         n_load_segs = 0;
 	if (!excluded_segs) {
-          GC_exclude_static_roots((ptr_t)load_segs,
-				  (ptr_t)load_segs + sizeof(load_segs));
+          GC_exclude_static_roots_inner((ptr_t)load_segs,
+					(ptr_t)load_segs + sizeof(load_segs));
 	  excluded_segs = TRUE;
         }
 #   endif
@@ -797,7 +798,7 @@ void GC_register_dynamic_libraries(void)
     extern void GC_get_next_stack(char *start, char * limit, char **lo,
     				  char **hi);
 
-    void GC_cond_add_roots(char *base, char * limit)
+    STATIC void GC_cond_add_roots(char *base, char * limit)
     {
       char * curr_base = base;
       char * next_stack_lo;
@@ -814,7 +815,7 @@ void GC_register_dynamic_libraries(void)
       if (curr_base < limit) GC_add_roots_inner(curr_base, limit, TRUE);
     }
 # else
-    void GC_cond_add_roots(char *base, char * limit)
+    STATIC void GC_cond_add_roots(char *base, char * limit)
     {
       char dummy;
       char * stack_top
@@ -1034,7 +1035,7 @@ void GC_register_dynamic_libraries(void)
 extern char *sys_errlist[];
 extern int sys_nerr;
 
-void GC_register_dynamic_libraries()
+void GC_register_dynamic_libraries(void)
 {
   int status;
   int index = 1; /* Ordinal position in shared library search list */
@@ -1144,7 +1145,6 @@ const static struct {
         { SEG_DATA, SECT_COMMON }
 };
     
-#ifdef DARWIN_DEBUG
 static const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr) {
     unsigned long i,c;
     c = _dyld_image_count();
@@ -1152,25 +1152,37 @@ static const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr) {
         return _dyld_get_image_name(i);
     return NULL;
 }
-#endif
         
 /* This should never be called by a thread holding the lock */
 static void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr, intptr_t slide)
 {
     unsigned long start,end,i;
     const struct GC_MACH_SECTION *sec;
+    const char *name;
+    GC_has_static_roots_func callback = GC_has_static_roots;
+    DCL_LOCK_STATE;
     if (GC_no_dls) return;
+#   ifdef DARWIN_DEBUG
+      name = GC_dyld_name_for_hdr(hdr);
+#   else
+      name = callback != 0 ? GC_dyld_name_for_hdr(hdr) : NULL;
+#   endif
     for(i=0;i<sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]);i++) {
       sec = GC_GETSECTBYNAME(hdr, GC_dyld_sections[i].seg,
 			     GC_dyld_sections[i].sect);
-      if(sec == NULL || sec->size == 0) continue;
+      if(sec == NULL || sec->size < sizeof(word)) continue;
       start = slide + sec->addr;
       end = start + sec->size;
-#   ifdef DARWIN_DEBUG
-      GC_printf("Adding section at %p-%p (%lu bytes) from image %s\n",
-		start,end,sec->size,GC_dyld_name_for_hdr(hdr));
-#   endif
-      GC_add_roots((char*)start,(char*)end);
+      LOCK();
+      /* The user callback is called holding the lock	*/
+      if (callback == 0 || callback(name, (void*)start, (size_t)sec->size)) {
+#       ifdef DARWIN_DEBUG
+          GC_printf("Adding section at %p-%p (%lu bytes) from image %s\n",
+                    start,end,sec->size,name);
+#       endif
+        GC_add_roots_inner((ptr_t)start, (ptr_t)end, FALSE);
+      }
+      UNLOCK();
     }
 #   ifdef DARWIN_DEBUG
        GC_print_static_roots();
@@ -1200,7 +1212,7 @@ static void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
 #   endif
 }
 
-void GC_register_dynamic_libraries() {
+void GC_register_dynamic_libraries(void) {
     /* Currently does nothing. The callbacks are setup by GC_init_dyld() 
     The dyld library takes it from there. */
 }
@@ -1211,7 +1223,7 @@ void GC_register_dynamic_libraries() {
    This should be called BEFORE any thread in created and WITHOUT the
    allocation lock held. */
    
-void GC_init_dyld() {
+void GC_init_dyld(void) {
   static GC_bool initialized = FALSE;
   char *bind_fully_env = NULL;
   
@@ -1301,7 +1313,7 @@ void GC_register_dynamic_libraries(void)
 
 #else /* !PCR */
 
-void GC_register_dynamic_libraries(){}
+void GC_register_dynamic_libraries(void) {}
 
 #endif /* !PCR */
 
@@ -1315,13 +1327,11 @@ GC_bool GC_register_main_static_data(void)
   return TRUE;
 }
 
-/* Register a routine to filter dynamic library registration.  */
-GC_API void GC_CALL GC_register_has_static_roots_callback
-  (int (GC_CALLBACK * callback)(const char *, void *, size_t)) {
-# ifdef HAVE_DL_ITERATE_PHDR
-    GC_has_static_roots = callback;
-# endif
-}
-
 #endif /* HAVE_REGISTER_MAIN_STATIC_DATA */
 
+/* Register a routine to filter dynamic library registration.  */
+GC_API void GC_CALL GC_register_has_static_roots_callback(
+					GC_has_static_roots_func callback)
+{
+    GC_has_static_roots = callback;
+}

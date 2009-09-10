@@ -832,8 +832,8 @@ struct exclusion {
 /* Under Win32, we need to do a better job of filtering overlaps, so	*/
 /* we resort to sequential search, and pay the price.			*/
 struct roots {
-	ptr_t r_start;
-	ptr_t r_end;
+	ptr_t r_start;/* multiple of word size */
+	ptr_t r_end;  /* multiple of word size and greater than r_start */
 #	if !defined(MSWIN32) && !defined(MSWINCE)
 	  struct roots * r_next;
 #	endif
@@ -1470,7 +1470,7 @@ void GC_set_fl_marks(ptr_t p);
   				    /* set.  Abort if not.		*/
 #endif
 void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp);
-void GC_remove_roots_inner(ptr_t b, ptr_t e);
+void GC_exclude_static_roots_inner(void *start, void *finish);
 GC_bool GC_is_static_root(ptr_t p);
   		/* Is the address p in one of the registered static	*/
   		/* root sections?					*/

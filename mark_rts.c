@@ -158,6 +158,12 @@ GC_API void GC_CALL GC_add_roots(void *b, void *e)
 void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 {
     struct roots * old;
+
+    /* Adjust and check range boundaries for safety */
+    GC_ASSERT((word)b % sizeof(word) == 0);
+    e = (ptr_t)((word)e & ~(sizeof(word) - 1));
+    GC_ASSERT(b <= e);
+    if (b == e) return;  /* nothing to do? */
     
 #   if defined(MSWIN32) || defined(MSWINCE)
       /* Spend the time to ensure that there are no overlapping	*/
@@ -299,9 +305,16 @@ STATIC void GC_remove_tmp_roots(void)
 #endif
 
 #if !defined(MSWIN32) && !defined(MSWINCE)
+STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
+
 GC_API void GC_CALL GC_remove_roots(void *b, void *e)
 {
     DCL_LOCK_STATE;
+
+    /* Quick check whether has nothing to do */
+    if ((((word)b + (sizeof(word) - 1)) & ~(sizeof(word) - 1)) >=
+	((word)e & ~(sizeof(word) - 1)))
+      return;
     
     LOCK();
     GC_remove_roots_inner((ptr_t)b, (ptr_t)e);
@@ -309,7 +322,7 @@ GC_API void GC_CALL GC_remove_roots(void *b, void *e)
 }
 
 /* Should only be called when the lock is held */
-void GC_remove_roots_inner(ptr_t b, ptr_t e)
+STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
 {
     int i;
     for (i = 0; i < n_root_sets; ) {
@@ -396,10 +409,15 @@ STATIC struct exclusion * GC_next_exclusion(ptr_t start_addr)
     return GC_excl_table + low;
 }
 
-GC_API void GC_CALL GC_exclude_static_roots(void *start, void *finish)
+/* Should only be called when the lock is held.  The range boundaries	*/
+/* should be properly aligned and valid.				*/
+void GC_exclude_static_roots_inner(void *start, void *finish)
 {
     struct exclusion * next;
     size_t next_index, i;
+
+    GC_ASSERT((word)start % sizeof(word) == 0);
+    GC_ASSERT(start < finish);
 
     if (0 == GC_excl_table_entries) {
 	next = 0;
@@ -427,6 +445,20 @@ GC_API void GC_CALL GC_exclude_static_roots(void *start, void *finish)
     GC_excl_table[next_index].e_start = (ptr_t)start;
     GC_excl_table[next_index].e_end = (ptr_t)finish;
     ++GC_excl_table_entries;
+}
+
+GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
+{
+    DCL_LOCK_STATE;
+
+    /* Adjust the upper boundary for safety (round down) */
+    e = (void *)((word)e & ~(sizeof(word) - 1));
+
+    if (b == e) return;  /* nothing to exclude? */
+
+    LOCK();
+    GC_exclude_static_roots_inner(b, e);
+    UNLOCK();
 }
 
 /* Invoke push_conditional on ranges that are not excluded. */
