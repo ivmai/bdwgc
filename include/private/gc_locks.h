@@ -27,7 +27,10 @@
  * in assertions, and may return TRUE in the "dont know" case.
  */  
 # ifdef THREADS
-#  include <atomic_ops.h>
+
+#  if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
+#    include "atomic_ops.h"
+#  endif
 
    GC_API void GC_CALL GC_noop1(word);
 #  ifdef PCR
@@ -52,7 +55,7 @@
 #    include <windows.h>
 #    define NO_THREAD (DWORD)(-1)
      extern DWORD GC_lock_holder;
-     GC_API CRITICAL_SECTION GC_allocate_ml;
+     extern CRITICAL_SECTION GC_allocate_ml;
 #    ifdef GC_ASSERTIONS
 #        define UNCOND_LOCK() \
 		{ EnterCriticalSection(&GC_allocate_ml); \
@@ -192,7 +195,7 @@
 # endif /* !THREADS */
 
 #if defined(UNCOND_LOCK) && !defined(LOCK) 
-     GC_API GC_bool GC_need_to_lock;
+     extern GC_bool GC_need_to_lock;
      		/* At least two thread running; need to lock.	*/
 #    define LOCK() if (GC_need_to_lock) { UNCOND_LOCK(); }
 #    define UNLOCK() if (GC_need_to_lock) { UNCOND_UNLOCK(); }

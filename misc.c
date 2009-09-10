@@ -32,7 +32,6 @@
 # define WIN32_LEAN_AND_MEAN
 # define NOSERVICE
 # include <windows.h>
-# include <tchar.h>
 #endif
 
 #if defined(UNIX_LIKE) || defined(CYGWIN32)
@@ -523,8 +522,9 @@ void GC_init_inner(void)
 #   endif
 #   if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
       if (!GC_is_initialized) {
+#     ifndef MSWINCE
         BOOL (WINAPI *pfn) (LPCRITICAL_SECTION, DWORD) = NULL;
-        HMODULE hK32 = GetModuleHandleA("kernel32.dll");
+        HMODULE hK32 = GetModuleHandle(TEXT("kernel32.dll"));
         if (hK32)
   	  pfn = (BOOL (WINAPI *) (LPCRITICAL_SECTION, DWORD))
   		GetProcAddress (hK32,
@@ -532,7 +532,8 @@ void GC_init_inner(void)
         if (pfn)
             pfn(&GC_allocate_ml, 4000);
         else
-  	  InitializeCriticalSection (&GC_allocate_ml);
+#     endif /* !MSWINCE */
+  	/* else */ InitializeCriticalSection (&GC_allocate_ml);
       }
 #endif /* MSWIN32 */
 #   if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
@@ -869,9 +870,6 @@ out:
 # if defined(_MSC_VER) && defined(_DEBUG)
 #  include <crtdbg.h>
 # endif
-# ifdef OLD_WIN32_LOG_FILE
-#   define LOG_FILE _T("gc.log")
-# endif
 
   STATIC HANDLE GC_stdout = 0;
 
@@ -894,7 +892,37 @@ out:
 # define IF_NEED_TO_LOCK(x)
 #endif
 
-  int GC_write(const char *buf, size_t len)
+  STATIC HANDLE GC_CreateLogFile(void)
+  {
+#   if !defined(NO_GETENV) || !defined(OLD_WIN32_LOG_FILE)
+      TCHAR logPath[_MAX_PATH + sizeof(".log")];
+#   endif
+    /* Use GetEnvironmentVariable instead of GETENV() for unicode support. */
+#   ifndef NO_GETENV
+      if (GetEnvironmentVariable(TEXT("GC_LOG_FILE"), logPath,
+				_MAX_PATH + 1) - 1U >= (DWORD)_MAX_PATH)
+#   endif
+    {
+      /* Env var not found or its value too long.	*/
+#     ifdef OLD_WIN32_LOG_FILE
+	return CreateFile(TEXT("gc.log"), GENERIC_WRITE, FILE_SHARE_READ,
+			  NULL /* lpSecurityAttributes */, CREATE_ALWAYS,
+			  FILE_FLAG_WRITE_THROUGH, NULL /* hTemplateFile */);
+#     else
+	/* strcat/wcscat() are deprecated on WinCE, so use memcpy()	*/
+	memcpy(&logPath[GetModuleFileName(NULL /* hModule */, logPath,
+					  _MAX_PATH + 1)],
+	       TEXT(".log"), sizeof(TEXT(".log")));
+#     endif
+    }
+#   if !defined(NO_GETENV) || !defined(OLD_WIN32_LOG_FILE)
+      return CreateFile(logPath, GENERIC_WRITE, FILE_SHARE_READ,
+			NULL /* lpSecurityAttributes */, CREATE_ALWAYS,
+			FILE_FLAG_WRITE_THROUGH, NULL /* hTemplateFile */);
+#   endif
+  }
+
+  STATIC int GC_write(const char *buf, size_t len)
   {
       BOOL tmp;
       DWORD written;
@@ -905,22 +933,7 @@ out:
 	  IF_NEED_TO_LOCK(LeaveCriticalSection(&GC_write_cs));
 	  return -1;
       } else if (GC_stdout == 0) {
-	char * file_name = GETENV("GC_LOG_FILE");
-	char logPath[_MAX_PATH + 5];
-
-        if (0 == file_name) {
-#         ifdef OLD_WIN32_LOG_FILE
-	    strcpy(logPath, LOG_FILE);
-#	  else
-	    GetModuleFileNameA(NULL, logPath, _MAX_PATH);
-	    strcat(logPath, ".log");
-#	  endif
-	  file_name = logPath;
-	}
-	GC_stdout = CreateFileA(file_name, GENERIC_WRITE,
-        		       FILE_SHARE_READ,
-        		       NULL, CREATE_ALWAYS, FILE_FLAG_WRITE_THROUGH,
-        		       NULL); 
+	GC_stdout = GC_CreateLogFile();
     	if (GC_stdout == INVALID_HANDLE_VALUE)
 	    ABORT("Open of log file failed");
       }
@@ -967,7 +980,7 @@ STATIC int GC_tmp;  /* Should really be local ... */
 
 #if !defined(MSWIN32) && !defined(MSWINCE) && !defined(OS2) \
     && !defined(MACOS)  && !defined(ECOS) && !defined(NOSYS)
-int GC_write(int fd, const char *buf, size_t len)
+STATIC int GC_write(int fd, const char *buf, size_t len)
 {
      register int bytes_written = 0;
      register int result;
@@ -987,7 +1000,7 @@ int GC_write(int fd, const char *buf, size_t len)
 #endif /* UN*X */
 
 #ifdef ECOS
-int GC_write(int fd, const char *buf, size_t len)
+STATIC int GC_write(int fd, const char *buf, size_t len)
 {
   _Jv_diag_write (buf, len);
   return len;
@@ -995,7 +1008,7 @@ int GC_write(int fd, const char *buf, size_t len)
 #endif
 
 #ifdef NOSYS
-int GC_write(int fd, const char *buf, size_t len)
+STATIC int GC_write(int fd, const char *buf, size_t len)
 {
   /* No writing.  */
   return len;
@@ -1018,7 +1031,12 @@ int GC_write(int fd, const char *buf, size_t len)
 
 #define BUFSZ 1024
 #ifdef _MSC_VER
-# define vsnprintf _vsnprintf
+# ifdef MSWINCE
+    /* _vsnprintf is deprecated in WinCE */
+#   define vsnprintf StringCchVPrintfA
+# else
+#   define vsnprintf _vsnprintf
+# endif
 #endif
 /* A version of printf that is unlikely to call malloc, and is thus safer */
 /* to call from the collector in case malloc has been bound to GC_malloc. */
@@ -1121,15 +1139,30 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 #if !defined(PCR) && !defined(SMALL_CONFIG)
 void GC_abort(const char *msg)
 {
-#   if defined(MSWIN32) && !defined(DONT_USE_USER32_DLL)
-      (void) MessageBoxA(NULL, msg, "Fatal error in gc", MB_ICONERROR|MB_OK);
-#   else
+#   if defined(MSWIN32)
+#     ifndef DONT_USE_USER32_DLL
+	/* Use static binding to "user32.dll".	*/
+	(void)MessageBoxA(NULL, msg, "Fatal error in GC", MB_ICONERROR|MB_OK);
+#     else
+	/* This simplifies linking - resolve "MessageBoxA" at run-time.	*/
+	HINSTANCE hU32 = LoadLibrary(TEXT("user32.dll"));
+	if (hU32) {
+	  FARPROC pfn = GetProcAddress(hU32, "MessageBoxA");
+	  if (pfn)
+	    (void)(*(int (WINAPI *)(HWND, LPCSTR, LPCSTR, UINT))pfn)(
+				NULL /* hWnd */, msg, "Fatal error in GC",
+				MB_ICONERROR | MB_OK);
+	  (void)FreeLibrary(hU32);
+	}
+#     endif
+      /* Also duplicate msg to GC log file.	*/
+#   endif
       /* Avoid calling GC_err_printf() here, as GC_abort() could be	*/
       /* called from it.  Note 1: this is not an atomic output.		*/
       /* Note 2: possible write errors are ignored.			*/
       if (WRITE(GC_stderr, (void *)msg, strlen(msg)) >= 0)
 	(void)WRITE(GC_stderr, (void *)("\n"), 1);
-#   endif
+
     if (GETENV("GC_LOOP_ON_ABORT") != NULL) {
 	    /* In many cases it's easier to debug a running process.	*/
 	    /* It's arguably nicer to sleep, but that makes it harder	*/
@@ -1137,7 +1170,10 @@ void GC_abort(const char *msg)
 	    /* about threads.						*/
 	    for(;;) {}
     }
-#   if defined(MSWIN32) || defined(MSWINCE)
+#   if defined(MSWIN32) && defined(NO_DEBUGGING)
+	/* A more user-friendly abort after showing fatal message.	*/
+	_exit(-1); /* exit on error without running "at-exit" callbacks */
+#   elif defined(MSWIN32) || defined(MSWINCE)
 	DebugBreak();
 #   else
         (void) abort();

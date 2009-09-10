@@ -113,8 +113,6 @@ mse * GC_mark_stack_limit;
 size_t GC_mark_stack_size = 0;
  
 #ifdef PARALLEL_MARK
-# include "atomic_ops.h"
-
   mse * volatile GC_mark_stack_top;
   /* Updated only with mark lock held, but read asynchronously.	*/
   volatile AO_t GC_first_nonempty;
@@ -1640,7 +1638,7 @@ void GC_push_marked1(struct hblk *h, hdr *hhdr)
 }
 
 
-#ifndef UNALIGNED
+#ifndef UNALIGNED_PTRS
 
 /* Push all objects reachable from marked objects in the given block */
 /* of size 2 (granules) objects.				     */
@@ -1738,7 +1736,7 @@ void GC_push_marked4(struct hblk *h, hdr *hhdr)
 
 #endif /* GC_GRANULE_WORDS < 4 */
 
-#endif /* UNALIGNED */
+#endif /* UNALIGNED_PTRS */
 
 #endif /* USE_PUSH_MARKED_ACCELERATORS */
 
@@ -1769,7 +1767,7 @@ void GC_push_marked(struct hblk *h, hdr *hhdr)
      case 1:
        GC_push_marked1(h, hhdr);
        break;
-#    if !defined(UNALIGNED)
+#    if !defined(UNALIGNED_PTRS)
        case 2:
          GC_push_marked2(h, hhdr);
          break;

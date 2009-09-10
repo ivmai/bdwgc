@@ -26,7 +26,7 @@
 #include "gc_inline.h"
 
 
-# if defined USE_HPUX_TLS
+# if defined(USE_HPUX_TLS)
 #   error USE_HPUX_TLS macro was replaced by USE_COMPILER_TLS
 # endif
 
@@ -34,7 +34,8 @@
      !defined(USE_WIN32_COMPILER_TLS) && !defined(USE_COMPILER_TLS) && \
      !defined(USE_CUSTOM_SPECIFIC)
 #   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
-#     if defined(__GNUC__)  /* Fixed for versions past 2.95? */
+#     if defined(__GNUC__)  /* Fixed for versions past 2.95? */ \
+	 || defined(MSWINCE)
 #       define USE_WIN32_SPECIFIC
 #     else
 #       define USE_WIN32_COMPILER_TLS
@@ -107,6 +108,10 @@ typedef struct thread_local_freelists {
 #   define GC_getspecific TlsGetValue
 #   define GC_setspecific(key, v) !TlsSetValue(key, v)
     	/* We assume 0 == success, msft does the opposite.	*/
+#   ifndef TLS_OUT_OF_INDEXES
+      /* this is currently missing in WinCE */
+#     define TLS_OUT_OF_INDEXES (DWORD)0xFFFFFFFF
+#   endif
 #   define GC_key_create(key, d)  \
 	((d) != 0? (ABORT("Destructor unsupported by TlsAlloc"),0) \
 	 	 : ((*(key) = TlsAlloc()) == TLS_OUT_OF_INDEXES? \

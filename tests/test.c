@@ -37,7 +37,7 @@
 # include <stdio.h>
 # ifdef _WIN32_WCE
 #   include <winbase.h>
-#   define assert ASSERT
+/* #   define assert ASSERT */
 # else
 #   include <assert.h>        /* Not normally used, but handy for debugging. */
 # endif
@@ -130,14 +130,7 @@ int realloc_count = 0;
 # ifdef PCR
 #   define FAIL (void)abort()
 # else
-#   ifdef MSWINCE
-#     define FAIL DebugBreak()
-#   else
-#     ifdef SMALL_CONFIG
-	void GC_abort(const char * msg);
-#     endif
-#     define FAIL GC_abort("Test failed");
-#   endif
+#   define FAIL ABORT("Test failed")
 # endif
 
 #endif /* !AMIGA_FASTALLOC */
@@ -519,11 +512,11 @@ void reverse_test(void)
       /* Win32S only allows 128K stacks */
 #     define BIG 1000
 #   else
-#     if defined PCR
+#     if defined(PCR)
 	/* PCR default stack is 100K.  Stack frames are up to 120 bytes. */
 #	define BIG 700
 #     else
-#	if defined MSWINCE
+#	if defined(MSWINCE)
 	  /* WinCE only allows 64K stacks */
 #	  define BIG 500
 #	else
@@ -881,11 +874,7 @@ void tree_test(void)
 #   endif
 }
 
-#if defined(THREADS) && defined(AO_HAVE_fetch_and_add1_full)
-  AO_t n_tests = 0; /* Updated by AO_fetch_and_add1_full(). */
-#else
-  unsigned n_tests = 0;
-#endif
+unsigned n_tests = 0;
 
 GC_word bm_huge[10] = {
     0xffffffff,
@@ -1009,6 +998,12 @@ static void uniq(void *p, ...) {
 #   define TEST_FAIL_COUNT(n) (fail_count >= (n))
 #endif
 
+void * GC_CALLBACK inc_int_counter(void *pcounter)
+{
+ ++(*(int *)pcounter);
+ return NULL;
+}
+
 void run_one_test(void)
 {
 #   ifndef DBG_HDRS_ALL
@@ -1103,7 +1098,6 @@ void run_one_test(void)
     		"GC_is_valid_displacement produced incorrect result\n");
 	FAIL;
       }
-#     if !defined(MSWINCE)
         {
 	  size_t i;
 
@@ -1113,14 +1107,14 @@ void run_one_test(void)
 	    if (result % i != 0 || result == 0 || *(int *)result != 0) FAIL;
 	  } 
 	}
-#     endif
 #     ifndef ALL_INTERIOR_POINTERS
 #      if defined(RS6000) || defined(POWERPC)
-        if (!TEST_FAIL_COUNT(1)) {
+        if (!TEST_FAIL_COUNT(1))
 #      else
         if ((GC_all_interior_pointers && !TEST_FAIL_COUNT(1))
-	    || (!GC_all_interior_pointers && !TEST_FAIL_COUNT(2))) {
+	    || (!GC_all_interior_pointers && !TEST_FAIL_COUNT(2)))
 #      endif
+	{
     	  GC_printf("GC_is_valid_displacement produced wrong failure indication\n");
     	  FAIL;
         }
@@ -1195,16 +1189,9 @@ void run_one_test(void)
 	  GC_log_printf("-------------Finished second reverse_test at time %u (%p)\n",
 	  		(unsigned) time_diff, &start_time);
       }
-#   if defined(THREADS) && defined(AO_HAVE_fetch_and_add1_full)
-      /* Use AO_fetch_and_add1_full() if available.		*/
-      /* GC_allocate_ml may not always be visible outside GC.	*/
-      (void)AO_fetch_and_add1_full(&n_tests);
-#   else
-      LOCK();
-      /* AO_fetch_and_add1 is not always available.	*/
-      n_tests++;
-      UNLOCK();
-#   endif
+    /* GC_allocate_ml and GC_need_to_lock are no longer exported, and	*/
+    /* AO_fetch_and_add1() may be unavailable to update a counter.	*/
+    (void)GC_call_with_alloc_lock(inc_int_counter, &n_tests);
 #   if defined(THREADS) && defined(HANDLE_FORK)
       if (fork() == 0) {
 	GC_gcollect();
@@ -1234,17 +1221,17 @@ void check_heap_stats(void)
     /* these may be particularly dubious, since empirically the */
     /* heap tends to grow largely as a result of the GC not	*/
     /* getting enough cycles.					*/
-    if (sizeof(char *) > 4) {
+#     if CPP_WORDSZ == 64
         max_heap_sz = 4500000;
-    } else {
+#     else
     	max_heap_sz = 2800000;
-    }
+#     endif
 #   else
-    if (sizeof(char *) > 4) {
+#     if CPP_WORDSZ == 64
         max_heap_sz = 19000000;
-    } else {
+#     else
     	max_heap_sz = 12000000;
-    }
+#     endif
 #   endif
 #   ifdef GC_DEBUG
 	max_heap_sz *= 2;
@@ -1265,7 +1252,7 @@ void check_heap_stats(void)
 #   endif
 		GC_invoke_finalizers();
       }
-    (void)GC_printf("Completed %u tests\n", (unsigned) n_tests);
+    (void)GC_printf("Completed %u tests\n", n_tests);
     (void)GC_printf("Allocated %d collectable objects\n", collectable_count);
     (void)GC_printf("Allocated %d uncollectable objects\n",
 		    uncollectable_count);
@@ -1353,8 +1340,10 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #if !defined(PCR) \
     && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS) \
     || defined(LINT)
-#if defined(MSWIN32) && !defined(__MINGW32__)
-  int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPTSTR cmd, int n)
+#if defined(MSWINCE) && defined(UNDER_CE)
+  int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPWSTR cmd, int n)
+#elif defined(MSWIN32) && !defined(__MINGW32__) || defined(MSWINCE)
+  int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
 #else
   int main(void)
 #endif
@@ -1457,7 +1446,7 @@ DWORD __stdcall thr_window(void *arg)
     NULL,
     (HBRUSH)(COLOR_APPWORKSPACE+1),
     NULL,
-    L"GCtestWindow"
+    TEXT("GCtestWindow")
   };
   MSG msg;
 
@@ -1466,8 +1455,8 @@ DWORD __stdcall thr_window(void *arg)
 
   win_handle = CreateWindowEx(
     0,
-    L"GCtestWindow",
-    L"GCtest",
+    TEXT("GCtestWindow"),
+    TEXT("GCtest"),
     0,
     CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
     NULL,
@@ -1492,11 +1481,12 @@ DWORD __stdcall thr_window(void *arg)
 }
 #endif
 
-# ifdef MSWINCE
-int APIENTRY GC_WinMain(HINSTANCE instance, HINSTANCE prev, LPWSTR cmd, int n)
-#   else
-int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
-# endif
+#ifdef MSWINCE
+  int APIENTRY GC_WinMain(HINSTANCE instance, HINSTANCE prev,
+			  GC_WINMAIN_WINCE_LPTSTR cmd, int n)
+#else
+  int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
+#endif
 {
 # if NTHREADS > 0
    HANDLE h[NTHREADS];
@@ -1506,8 +1496,8 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
     HANDLE win_thr_h;
 # endif
   DWORD thread_id;
-
-# if defined(GC_DLL) && !defined(THREAD_LOCAL_ALLOC) && !defined(PARALLEL_MARK)
+# if defined(GC_DLL) && !defined(GC_NO_DLLMAIN) && !defined(MSWINCE) \
+	&& !defined(THREAD_LOCAL_ALLOC) && !defined(PARALLEL_MARK)
     GC_use_DllMain();  /* Test with implicit thread registration if possible. */
     GC_printf("Using DllMain to track threads\n");
 # endif

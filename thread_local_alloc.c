@@ -14,6 +14,10 @@
 
 # if defined(THREAD_LOCAL_ALLOC)
 
+#ifndef THREADS
+# error "invalid config - THREAD_LOCAL_ALLOC requires GC_THREADS"
+#endif
+
 #include "private/thread_local_alloc.h"
 #include "gc_inline.h"
 
@@ -214,6 +218,8 @@ GC_API void * GC_CALL GC_malloc_atomic(size_t bytes)
 }
 
 #ifdef GC_GCJ_SUPPORT
+
+#include "atomic_ops.h" /* for AO_compiler_barrier() */
 
 #include "include/gc_gcj.h"
 

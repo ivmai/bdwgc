@@ -15,7 +15,8 @@
  */
 
 # include "private/gc_priv.h"
-# ifdef THREADS
+
+# if defined(THREADS) && defined(MPROTECT_VDB)
 #   include "atomic_ops.h"
 # endif
 
@@ -1283,6 +1284,7 @@ void GC_register_data_segments(void)
     static void detect_GetWriteWatch(void)
     {
       static GC_bool done;
+      HMODULE hK32;
       if (done)
         return;
 
@@ -1306,9 +1308,10 @@ void GC_register_data_segments(void)
 	}
 #     endif
 
-      GetWriteWatch_func = (GetWriteWatch_type)
-        GetProcAddress(GetModuleHandle("kernel32.dll"), "GetWriteWatch");
-      if (GetWriteWatch_func != NULL) {
+      hK32 = GetModuleHandle(TEXT("kernel32.dll"));
+      if (hK32 != (HMODULE)0 &&
+          (GetWriteWatch_func = (GetWriteWatch_type)GetProcAddress(hK32,
+						"GetWriteWatch")) != NULL) {
         /* Also check whether VirtualAlloc accepts MEM_WRITE_WATCH,   */
         /* as some versions of kernel32.dll have one but not the      */
         /* other, making the feature completely broken.               */

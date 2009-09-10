@@ -962,7 +962,8 @@ GC_API int GC_CALL GC_register_my_thread(struct GC_stack_base *);
 /* Specifically, if it wants to return or otherwise communicate a 	*/
 /* pointer to the garbage-collected heap to another thread, it must	*/
 /* do this before calling GC_unregister_my_thread, most probably	*/
-/* by saving it in a global data structure.				*/
+/* by saving it in a global data structure.  Must not be called inside	*/
+/* a GC callback function (except for GC_call_with_stack_base() one).	*/
 GC_API int GC_CALL GC_unregister_my_thread(void);
 
 /* Attempt to fill in the GC_stack_base structure with the stack base	*/
@@ -1142,6 +1143,10 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
       DWORD dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress,
       LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId );
 
+   GC_API void WINAPI GC_ExitThread(DWORD /* dwExitCode */);
+
+# if !defined(_WIN32_WCE)
+
 #  if !defined(_UINTPTR_T) && !defined(_UINTPTR_T_DEFINED) \
         && !defined(UINTPTR_MAX)
      typedef GC_word GC_uintptr_t;
@@ -1156,21 +1161,22 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 
    GC_API void GC_CALL GC_endthreadex(unsigned retval);
 
-   GC_API void WINAPI GC_ExitThread(DWORD dwExitCode);
-
-# if defined(_WIN32_WCE)
-  /*
-   * win32_threads.c implements the real WinMain, which will start a new thread
-   * to call GC_WinMain after initializing the garbage collector.
-   */
-  GC_API int WINAPI GC_WinMain(
-      HINSTANCE hInstance,
-      HINSTANCE hPrevInstance,
-      LPWSTR lpCmdLine,
-      int nCmdShow );
-#  ifndef GC_BUILD
-#    define WinMain GC_WinMain
-#  endif
+# else
+    /* win32_threads.c implements the real WinMain, which will start	*/
+    /* a new thread to call GC_WinMain after initializing the garbage	*/
+    /* collector.							*/
+#   ifdef UNDER_CE
+#     define GC_WINMAIN_WINCE_LPTSTR LPWSTR
+#   else
+#     define GC_WINMAIN_WINCE_LPTSTR LPSTR
+#   endif
+    /* not exported (since defined outside GC by an application) */
+    int WINAPI GC_WinMain(
+		HINSTANCE /* hInstance */, HINSTANCE /* hPrevInstance */,
+		GC_WINMAIN_WINCE_LPTSTR /* lpCmdLine */, int /* nCmdShow */);
+#   ifndef GC_BUILD
+#     define WinMain GC_WinMain
+#   endif
 # endif /* defined(_WIN32_WCE) */
 #endif /* !GC_NO_THREAD_DECLS */
 

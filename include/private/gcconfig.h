@@ -374,7 +374,7 @@
 #   if defined(x86)
 #     define I386
 #   endif
-#   if defined(ARM)
+#   if defined(_M_ARM) || defined(ARM) || defined(_ARM_)
 #     define ARM32
 #   endif
 #   define MSWINCE
@@ -2100,6 +2100,10 @@
 	   -> bad word size
 # endif
 
+# ifndef ALIGNMENT
+    --> undefined ALIGNMENT
+# endif
+
 # ifdef PCR
 #   undef DYNAMIC_LOADING
 #   undef STACKBOTTOM
@@ -2211,7 +2215,8 @@
 # if defined(GC_GNU_THREADS) && !defined(HURD)
 	--> inconsistent configuration
 # endif
-# if defined(GC_WIN32_THREADS) && !defined(MSWIN32) && !defined(CYGWIN32)
+# if defined(GC_WIN32_THREADS) && !defined(MSWIN32) && !defined(CYGWIN32) \
+	&& !defined(MSWINCE)
 	--> inconsistent configuration
 # endif
 

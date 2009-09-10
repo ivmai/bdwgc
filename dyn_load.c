@@ -859,8 +859,12 @@ void GC_register_dynamic_libraries(void)
   }
 # endif /* DEBUG_VIRTUALQUERY */
 
-  extern GC_bool GC_wnt;  /* Is Windows NT derivative.		*/
-  			  /* Defined and set in os_dep.c.	*/
+# ifdef MSWINCE
+#   define GC_wnt FALSE
+# else
+    extern GC_bool GC_wnt;	/* Is Windows NT derivative.	*/
+  			  	/* Defined and set in os_dep.c.	*/
+# endif
 
   void GC_register_dynamic_libraries(void)
   {

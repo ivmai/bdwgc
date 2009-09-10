@@ -330,6 +330,11 @@ HOSTCFLAGS=$(CFLAGS)
 # -DGC_PREFER_MPROTECT_VDB Choose MPROTECT_VDB manually in case of multiple
 #   virtual dirty bit strategies are implemented (at present useful on Win32
 #   to force MPROTECT_VDB strategy instead of the default GWW_VDB one).
+# -DGC_NO_DLLMAIN (Win32+DLL only) Exclude DllMain-based thread registration
+#   support.
+# -DDONT_IMPORT_GETCURTHREAD (Win32 only) Use MS hard-coded thread-self
+#   pseudohandle value (-2) instead of linking (or binding) to a real
+#   GetCurrentThread() func; mostly useful on WinCE unless "UNDER_CE" mode.
 #
 
 CXXFLAGS= $(CFLAGS) 

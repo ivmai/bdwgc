@@ -1,5 +1,133 @@
 
 2009-09-10  Ivan Maidanski <ivmai@mail.ru>
+	(diff114a, diff114b, diff114c)
+
+	* dbg_mlc.c: Guard include <errno.h> with ifndef MSWINCE; include
+	"private/dbg_mlc.h" before it.
+	* malloc.c: Ditto.
+	* dbg_mlc.c (GC_debug_strdup): Use memcpy() instead of strcpy()
+	for WinCE (since deprecated); evaluate strlen() only once; don't
+	set errno for WinCE.
+	* malloc.c (GC_strdup): Ditto.
+	* dyn_load.c (GC_wnt): Define as macro (FALSE) for WinCE.
+	* include/gc.h (GC_unregister_my_thread): Refine the comment.
+	* include/gc.h (GC_uintptr_t, GC_beginthreadex, GC_endthreadex):
+	Don't declare for WinCE.
+	* include/gc.h (GC_WINMAIN_WINCE_LPTSTR): New macro (WinCE only).
+	* include/gc.h (GC_WinMain): Remove GC_API.
+	* include/gc.h (GC_WinMain): Use GC_WINMAIN_WINCE_LPTSTR for
+	lpCmdLine.
+	* tests/test.c (GC_WinMain): Ditto.
+	* win32_threads.c (main_thread_args, GC_WinMain): Ditto.
+	* include/gc_config_macros.h (ptrdiff_t): Guard with
+	ifndef _PTRDIFF_T_DEFINED; define _PTRDIFF_T_DEFINED macro.
+	* include/private/gc_locks.h: Guard include "atomic_ops.h" with
+	ifdef GC_PTHREADS (and not GC_WIN32_THREADS).
+	* mark.c: Include "atomic_ops.h" if PARALLEL_MARK.
+	* thread_local_alloc.c: Include "atomic_ops.h" if GC_GCJ_SUPPORT.
+	* win32_threads.c: Include "atomic_ops.h" if MPROTECT_VDB.
+	* include/private/gc_locks.h: Use include "atomic_ops.h" instead
+	of include <atomic_ops.h>.
+	* include/private/gc_priv.h: Ditto.
+	* include/private/gc_locks.h (GC_allocate_ml, GC_need_to_lock):
+	Don't export (replace GC_API to "extern").
+	* win32_threads.c (GC_allocate_ml): Don't export.
+	* include/private/gc_priv.h (DebugBreak): Define as macro for
+	WinCE (if not UNDER_CE and DebugBreak is not defined yet).
+	* include/private/gc_priv.h (UNALIGNED): Rename to UNALIGNED_PTRS
+	(since "UNALIGNED" is defined in winnt.h of WinCE).
+	* mark.c (UNALIGNED): Ditto.
+	* include/private/gcconfig.h (ARM32): Recognize _M_ARM and _ARM_.
+	* include/private/gcconfig.h (ALIGNMENT): Check always defined.
+	* include/private/gcconfig.h: Allow GC_WIN32_THREADS for WinCE.
+	* include/private/thread_local_alloc.h: Define USE_WIN32_SPECIFIC
+	for WinCE (since __declspec(thread) is unsupported).
+	* include/private/thread_local_alloc.h (TLS_OUT_OF_INDEXES):
+	Define for WinCE (if undefined).
+	* malloc.c (GC_malloc): Remove outdated comment about disabling
+	signals.
+	* misc.c: Don't include <tchar.h> (since not used anymore and may
+	break TEXT() macro defined in winnt.h).
+	* misc.c (GC_init_inner): Don't use GetModuleHandle() and
+	InitializeCriticalSectionAndSpinCount() for WinCE.
+	* misc.c (GC_init_inner): Replace GetModuleHandleA() with
+	GetModuleHandle() (and use TEXT() macro controlled by UNICODE).
+	* misc.c (LOG_FILE): Remove unused macro; don't use _T() macro.
+	* misc.c (GC_CreateLogFile): New static function (Win32/WinCE
+	only); move the code from GC_write(); replace GETENV() with
+	GetEnvironmentVariable(); replace CreateFileA() with
+	CreateFile(); use TEXT() macro (for Unicode support); replace
+	strcat() with memcpy() (since deprecated in WinCE).
+	* misc.c (GC_write): Define as STATIC.
+	* win32_threads.c (GC_attached_thread): Ditto.
+	* misc.c (GC_write): Use GC_CreateLogFile().
+	* misc.c: Define vsnprintf macro as StringCchVPrintfA for WinCE.
+	* misc.c (GC_abort): Try to invoke MessageBoxA() dynamically
+	(Win32 only) if DONT_USE_USER32_DLL is defined.
+	* misc.c (GC_abort): Duplicate msg to GC log file (for Win32 and
+	WinCE).
+	* misc.c (GC_abort): Use a more user-friendly abort if
+	NO_DEBUGGING (Win32 only).
+	* os_dep.c: Include "atomic_ops.h" only if MPROTECT_VDB (and
+	THREADS).
+	* os_dep.c (detect_GetWriteWatch): Use TEXT() for GetModuleHandle
+	(for Unicode support); check GetModuleHandle() result.
+	* tests/test.c: Don't define assert for WinCE (since may be
+	redefined by "assert.h" included from libatomic_ops).
+	* tests/test.c (FAIL): Define as ABORT for all targets (except
+	for PCR).
+	* tests/test.c (n_tests): Don't use AO_t.
+	* tests/test.c (check_heap_stats): Don't cast n_tests.
+	* tests/test.c (inc_int_counter): New function (for n_tests atomic
+	incrementation).
+	* tests/test.c (run_one_test): Test GC_memalign() for all targets.
+	* tests/test.c (run_one_test): Avoid unbalanced brackets in
+	#if-#else-#endif blocks.
+	* tests/test.c (run_one_test): Replace AO_fetch_and_add1() and
+	private LOCK/UNLOCK with GC_call_with_alloc_lock(inc_int_counter).
+	* tests/test.c (check_heap_stats): Replace
+	"if (sizeof(char *) > 4)" with "#if CPP_WORDSZ == 64" to suppress
+	"unreachable code" compiler warning.
+	* tests/test.c (WinMain): Set cmd type to LPWSTR (for WinCE
+	"UNDER_CE" mode); else use LPSTR type (for Win32 and WinCE).
+	* tests/test.c (thr_window): Replace "L" string prefix with
+	TEXT().
+	* thread_local_alloc.c: Check THREADS is defined (to prevent other
+	compiler errors and warnings otherwise).
+	* tests/test.c (WinMain): Recognize GC_NO_DLLMAIN macro (for
+	GC_use_DllMain()).
+	* Makefile.direct (GC_NO_DLLMAIN, DONT_IMPORT_GETCURTHREAD): Add
+	the comments for.
+	* win32_threads.c (GC_register_my_thread_inner): Recognize
+	DONT_IMPORT_GETCURTHREAD macro.
+	* win32_threads.c: Recognize GC_NO_DLLMAIN macro (to exclude
+	DllMain support if needed).
+	* win32_threads.c (GC_NO_DLLMAIN): Define implicitly if DllMain
+	thread registration is unsupported for a given configuration.
+	* win32_threads.c (GC_use_DllMain): Update the comment; refine
+	ABORT message.
+	* win32_threads.c (GC_use_DllMain,
+	GC_started_thread_while_stopped, GC_register_my_thread_inner,
+	GC_lookup_thread_inner, GC_delete_gc_thread,
+	GC_allow_register_threads, GC_lookup_pthread,
+	GC_push_thread_structures, GC_stop_world, GC_push_all_stacks):
+	Check for GC_NO_DLLMAIN.
+	* win32_threads.c (GC_Thread_Rep.tm_in_use, GC_attached_thread,
+	DllMain): Don't define if GC_NO_DLLMAIN.
+	* win32_threads.c (GC_stop_world): Declare "i" and "max" local
+	vars only if not GC_NO_DLLMAIN (to suppress compiler warning).
+	* win32_threads.c (GC_mark_thread, start_mark_threads): Use
+	CreateThread() instead of _beginthreadex() for WinCE.
+	* win32_threads.c (MARK_THREAD_STACK_SIZE, WINCE_MAIN_STACK_SIZE):
+	New macros defined (used by start_mark_threads(), WinMain()).
+	* win32_threads.c (GC_thr_init): Exclude parallel-specific code on
+	WinCE for now (since getenv(), GetProcessAffinityMask() and
+	SignalObjectAndWait() are missing on WinCE).
+	* win32_threads.c (GC_thr_init): replace GetModuleHandleA() with
+	GetModuleHandle(); replace CreateEventA() with CreateEvent(); use
+	TEXT() macro (for Unicode support).
+
+2009-09-10  Ivan Maidanski <ivmai@mail.ru>
 	(diff113)
 	
 	* include/gc.h (GC_has_static_roots_func): New typedef (user filter

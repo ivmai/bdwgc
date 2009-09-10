@@ -143,7 +143,11 @@
 # else /* ! _WIN32_WCE */
 /* Yet more kludges for WinCE */
 #   include <stdlib.h>		/* size_t is defined here */
-    typedef long ptrdiff_t;	/* ptrdiff_t is not defined */
+#   ifndef _PTRDIFF_T_DEFINED
+      /* ptrdiff_t is not defined */
+#     define _PTRDIFF_T_DEFINED
+      typedef long ptrdiff_t;
+#   endif
 # endif
 
 #if defined(_DLL) && !defined(GC_NOT_DLL) && !defined(GC_DLL)

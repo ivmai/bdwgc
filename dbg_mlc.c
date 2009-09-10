@@ -15,9 +15,12 @@
  * modified is included with the above copyright notice.
  */
 
-#include <errno.h>
-#include <string.h>
 #include "private/dbg_mlc.h"
+
+#ifndef MSWINCE
+# include <errno.h>
+#endif
+#include <string.h>
 
 void GC_default_print_heap_obj_proc(ptr_t p);
 GC_API void GC_CALL GC_register_finalizer_no_order
@@ -641,13 +644,22 @@ GC_API void * GC_CALL GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)
 GC_API char * GC_CALL GC_debug_strdup(const char *str, GC_EXTRA_PARAMS)
 {
     char *copy;
+    size_t lb;
     if (str == NULL) return NULL;
-    copy = GC_debug_malloc_atomic(strlen(str) + 1, OPT_RA s, i);
+    lb = strlen(str) + 1;
+    copy = GC_debug_malloc_atomic(lb, OPT_RA s, i);
     if (copy == NULL) {
-      errno = ENOMEM;
+#     ifndef MSWINCE
+	errno = ENOMEM;
+#     endif
       return NULL;
     }
-    strcpy(copy, str);
+#   ifndef MSWINCE
+      strcpy(copy, str);
+#   else
+      /* strcpy() is deprecated in WinCE */
+      memcpy(copy, str, lb);
+#   endif
     return copy;
 }
 

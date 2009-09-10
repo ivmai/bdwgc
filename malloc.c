@@ -13,10 +13,13 @@
  * modified is included with the above copyright notice.
  */
  
+#include "private/gc_priv.h"
+
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
-#include "private/gc_priv.h"
+#ifndef MSWINCE
+# include <errno.h>
+#endif
 
 extern void * GC_clear_stack(void *);	/* in misc.c, behaves like identity */
 void GC_extend_size_map(size_t);	/* in misc.c. */
@@ -236,13 +239,21 @@ void * GC_generic_malloc(size_t lb, int k)
 GC_API char * GC_CALL GC_strdup(const char *s)
 {
   char *copy;
-
+  size_t lb;
   if (s == NULL) return NULL;
-  if ((copy = GC_malloc_atomic(strlen(s) + 1)) == NULL) {
-    errno = ENOMEM;
+  lb = strlen(s) + 1;
+  if ((copy = GC_malloc_atomic(lb)) == NULL) {
+#   ifndef MSWINCE
+      errno = ENOMEM;
+#   endif
     return NULL;
   }
-  strcpy(copy, s);
+# ifndef MSWINCE
+    strcpy(copy, s);
+# else
+    /* strcpy() is deprecated in WinCE */
+    memcpy(copy, s, lb);
+# endif
   return copy;
 }
 
@@ -266,7 +277,6 @@ GC_API char * GC_CALL GC_strdup(const char *s)
             UNLOCK();
             return(GENERAL_MALLOC((word)lb, NORMAL));
         }
-        /* See above comment on signals.	*/
 	GC_ASSERT(0 == obj_link(op)
 		  || ((word)obj_link(op)
 		  	<= (word)GC_greatest_plausible_heap_addr

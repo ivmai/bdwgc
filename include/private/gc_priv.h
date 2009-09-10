@@ -334,6 +334,12 @@ void GC_print_callers(struct callinfo info[NFRAMES]);
 # ifdef PCR
 #   define ABORT(s) PCR_Base_Panic(s)
 # else
+#   if defined(MSWINCE) && !defined(UNDER_CE) && !defined(DebugBreak)
+      /* This simplifies linking for WinCE (and, probably, doesn't	*/
+      /* hurt debugging much); use -DDebugBreak=DebugBreak to override	*/
+      /* this behavior if really needed.				*/
+#     define DebugBreak() _exit(-1) /* there is no abort() in WinCE */
+#   endif
 #   ifdef SMALL_CONFIG
 #	if defined(MSWIN32) || defined(MSWINCE)
 #	    define ABORT(msg) DebugBreak()
@@ -444,7 +450,7 @@ extern GC_warn_proc GC_current_warn_proc;
 #  define LOGWL               ((word)5)    /* log[2] of CPP_WORDSZ */
 #  define modWORDSZ(n) ((n) & 0x1f)        /* n mod size of word	    */
 #  if ALIGNMENT != 4
-#	define UNALIGNED
+#	define UNALIGNED_PTRS
 #  endif
 #endif
 
@@ -454,7 +460,7 @@ extern GC_warn_proc GC_current_warn_proc;
 #  define LOGWL               ((word)6)    /* log[2] of CPP_WORDSZ */
 #  define modWORDSZ(n) ((n) & 0x3f)        /* n mod size of word	    */
 #  if ALIGNMENT != 8
-#	define UNALIGNED
+#	define UNALIGNED_PTRS
 #  endif
 #endif
 
@@ -682,7 +688,7 @@ typedef word page_hash_table[PHT_SIZE];
 # endif
 
 #ifdef PARALLEL_MARK
-# include <atomic_ops.h>
+# include "atomic_ops.h"
   typedef AO_t counter_t;
 #else
   typedef size_t counter_t;
