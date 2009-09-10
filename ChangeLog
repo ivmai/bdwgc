@@ -1,5 +1,39 @@
 
 2009-09-10  Ivan Maidanski <ivmai@mail.ru>
+	(diff115)
+
+	* finalize.c (GC_general_register_disappearing_link,
+	GC_register_finalizer_inner): Remove unnecessary "ifdef THREADS"
+	guard for LOCK/UNLOCK().
+	* finalize.c (GC_general_register_disappearing_link,
+	GC_register_finalizer_inner): Get GC_oom_fn value before releasing
+	the lock (to prevent data races).
+	* gcj_mlc.c (GC_gcj_malloc, GC_debug_gcj_malloc,
+	GC_gcj_malloc_ignore_off_page): Ditto.
+	* mallocx.c (GC_generic_malloc_ignore_off_page): Ditto.
+	* include/gc_inline.h (GC_FAST_MALLOC_GRANS): Use GC_get_oom_fn()
+	instead of GC_oom_fn (to prevent data races).
+	* malloc.c (GC_generic_malloc): Ditto.
+	* mallocx.c (GC_memalign): Ditto.
+	* pthread_support.c (pthread_create): Ditto.
+	* gcj_mlc.c (maybe_finalize): Acquire the lock before setting
+	last_finalized_no value to prevent data races.
+	* include/gc.h (GC_gc_no, GC_get_gc_no, GC_oom_fn, GC_set_oom_fn,
+	GC_set_find_leak, GC_set_finalize_on_demand,
+	GC_set_java_finalization, GC_set_finalizer_notifier,
+	GC_set_dont_expand, GC_set_full_freq, GC_set_non_gc_bytes,
+	GC_set_no_dls, GC_set_free_space_divisor, GC_set_max_retries,
+	GC_set_dont_precollect, GC_set_time_limit, GC_warn_proc): Refine
+	the comment.
+	* misc.c (GC_set_oom_fn): Ditto.
+	* include/gc.h (GC_general_register_disappearing_link): Refine the
+	comment (replace "soft" word with "weak").
+	* misc.c (GC_oom_fn, GC_get_gc_no, GC_get_parallel,
+	GC_set_finalizer_notifier, GC_set_find_leak): Add the comment.
+	* misc.c (GC_set_oom_fn, GC_get_oom_fn, GC_set_finalizer_notifier,
+	GC_get_finalizer_notifier): Use LOCK/UNLOCK to prevent data races.
+
+2009-09-10  Ivan Maidanski <ivmai@mail.ru>
 	(diff114a, diff114b, diff114c)
 
 	* dbg_mlc.c: Guard include <errno.h> with ifndef MSWINCE; include

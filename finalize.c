@@ -154,9 +154,7 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
     
     if (((word)link & (ALIGNMENT-1)) || link == NULL)
     	ABORT("Bad arg to GC_general_register_disappearing_link");
-#   ifdef THREADS
-    	LOCK();
-#   endif
+    LOCK();
     GC_ASSERT(obj != NULL && GC_base(obj) == obj);
     if (log_dl_table_size == -1
         || GC_dl_entries > ((word)1 << log_dl_table_size)) {
@@ -171,36 +169,29 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
     for (curr_dl = dl_head[index]; curr_dl != 0; curr_dl = dl_next(curr_dl)) {
         if (curr_dl -> dl_hidden_link == HIDE_POINTER(link)) {
             curr_dl -> dl_hidden_obj = HIDE_POINTER(obj);
-#	    ifdef THREADS
-                UNLOCK();
-#	    endif
+            UNLOCK();
             return(1);
         }
     }
     new_dl = (struct disappearing_link *)
     	GC_INTERNAL_MALLOC(sizeof(struct disappearing_link),NORMAL);
     if (0 == new_dl) {
-#     ifdef THREADS
-	UNLOCK();
-#     endif
+      GC_oom_func oom_fn = GC_oom_fn;
+      UNLOCK();
       new_dl = (struct disappearing_link *)
-	      GC_oom_fn(sizeof(struct disappearing_link));
+		(*oom_fn)(sizeof(struct disappearing_link));
       if (0 == new_dl) {
 	return(2);
       }
       /* It's not likely we'll make it here, but ... */
-#     ifdef THREADS
-	LOCK();
-#     endif
+      LOCK();
     }
     new_dl -> dl_hidden_obj = HIDE_POINTER(obj);
     new_dl -> dl_hidden_link = HIDE_POINTER(link);
     dl_set_next(new_dl, dl_head[index]);
     dl_head[index] = new_dl;
     GC_dl_entries++;
-#   ifdef THREADS
-        UNLOCK();
-#   endif
+    UNLOCK();
     return(0);
 }
 
@@ -308,11 +299,10 @@ STATIC void GC_register_finalizer_inner(void * obj,
     size_t index;
     struct finalizable_object *new_fo;
     hdr *hhdr;
+    GC_oom_func oom_fn;
     DCL_LOCK_STATE;
 
-#   ifdef THREADS
-	LOCK();
-#   endif
+    LOCK();
     if (log_fo_table_size == -1
         || GC_fo_entries > ((word)1 << log_fo_table_size)) {
     	GC_grow_table((struct hash_chain_entry ***)(&fo_head),
@@ -361,9 +351,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
                   fo_set_next(prev_fo, curr_fo);
                 }
             }
-#	    ifdef THREADS
-                UNLOCK();
-#	    endif
+	    UNLOCK();
             return;
         }
         prev_fo = curr_fo;
@@ -372,34 +360,27 @@ STATIC void GC_register_finalizer_inner(void * obj,
     if (ofn) *ofn = 0;
     if (ocd) *ocd = 0;
     if (fn == 0) {
-#	ifdef THREADS
-            UNLOCK();
-#	endif
+	UNLOCK();
         return;
     }
     GET_HDR(base, hhdr);
     if (0 == hhdr) {
       /* We won't collect it, hence finalizer wouldn't be run. */
-#     ifdef THREADS
-          UNLOCK();
-#     endif
+      UNLOCK();
       return;
     }
     new_fo = (struct finalizable_object *)
     	GC_INTERNAL_MALLOC(sizeof(struct finalizable_object),NORMAL);
     if (EXPECT(0 == new_fo, FALSE)) {
-#     ifdef THREADS
-	UNLOCK();
-#     endif
+      oom_fn = GC_oom_fn;
+      UNLOCK();
       new_fo = (struct finalizable_object *)
-	      GC_oom_fn(sizeof(struct finalizable_object));
+		(*oom_fn)(sizeof(struct finalizable_object));
       if (0 == new_fo) {
 	return;
       }
       /* It's not likely we'll make it here, but ... */
-#     ifdef THREADS
-	LOCK();
-#     endif
+      LOCK();
     }
     GC_ASSERT(GC_size(new_fo) >= sizeof(struct finalizable_object));
     new_fo -> fo_hidden_base = (word)HIDE_POINTER(base);
@@ -410,9 +391,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
     fo_set_next(new_fo, fo_head[index]);
     GC_fo_entries++;
     fo_head[index] = new_fo;
-#   ifdef THREADS
-        UNLOCK();
-#   endif
+    UNLOCK();
 }
 
 GC_API void GC_CALL GC_register_finalizer(void * obj,

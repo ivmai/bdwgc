@@ -193,7 +193,7 @@ void * GC_generic_malloc(size_t lb, int k)
         }
     }
     if (0 == result) {
-        return((*GC_oom_fn)(lb));
+        return((*GC_get_oom_fn())(lb));
     } else {
         return(result);
     }

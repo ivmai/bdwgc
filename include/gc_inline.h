@@ -78,7 +78,7 @@
 				       kind, my_fl); \
 		my_entry = *my_fl; \
                 if (my_entry == 0) { \
-		    result = GC_oom_fn((granules)*GC_GRANULE_BYTES); \
+		    result = (*GC_get_oom_fn())((granules)*GC_GRANULE_BYTES); \
 		    goto out; \
 		} \
 	    } \

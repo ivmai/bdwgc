@@ -127,6 +127,7 @@ STATIC void * GC_CALLBACK GC_default_oom_fn(size_t bytes_requested)
     return(0);
 }
 
+/* All accesses to it should be synchronized to avoid data races.	*/
 GC_oom_func GC_oom_fn = GC_default_oom_fn;
 
 /* Set things up so that GC_size_map[i] >= granules(i),		*/
@@ -1286,6 +1287,11 @@ GC_API void GC_CALL GC_dump(void)
 
 #endif /* NO_DEBUGGING */
 
+/* Getter functions for the public Read-only variables.			*/
+
+/* GC_get_gc_no() is unsynchronized and should be typically called	*/
+/* inside the context of GC_call_with_alloc_lock() to prevent data	*/
+/* races (on multiprocessors).						*/
 GC_API GC_word GC_CALL GC_get_gc_no(void)
 {
     return GC_gc_no;
@@ -1293,31 +1299,54 @@ GC_API GC_word GC_CALL GC_get_gc_no(void)
 
 GC_API int GC_CALL GC_get_parallel(void)
 {
+    /* GC_parallel is initialized at start-up.	*/
     return GC_parallel;
 }
 
-/* Setter and getter functions for the public R/W variables.	*/
+/* Setter and getter functions for the public R/W function variables.	*/
+/* These functions are synchronized (like GC_set_warn_proc() and	*/
+/* GC_get_warn_proc()).							*/
 
 GC_API void GC_CALL GC_set_oom_fn(GC_oom_func fn)
 {
     GC_ASSERT(fn != 0);
+    LOCK();
     GC_oom_fn = fn;
+    UNLOCK();
 }
 
 GC_API GC_oom_func GC_CALL GC_get_oom_fn(void)
 {
-    return GC_oom_fn;
+    GC_oom_func fn;
+    LOCK();
+    fn = GC_oom_fn;
+    UNLOCK();
+    return fn;
 }
 
 GC_API void GC_CALL GC_set_finalizer_notifier(GC_finalizer_notifier_proc fn)
 {
+    /* fn may be 0 (means no finalizer notifier). */
+    LOCK();
     GC_finalizer_notifier = fn;
+    UNLOCK();
 }
 
 GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void)
 {
-    return GC_finalizer_notifier;
+    GC_finalizer_notifier_proc fn;
+    LOCK();
+    fn = GC_finalizer_notifier;
+    UNLOCK();
+    return fn;
 }
+
+/* Setter and getter functions for the public numeric R/W variables.	*/
+/* It is safe to call these functions even before GC_INIT().		*/
+/* These functions are unsynchronized and should be typically called	*/
+/* inside the context of GC_call_with_alloc_lock() (if called after	*/
+/* GC_INIT()) to prevent data races (unless it is guaranteed the	*/
+/* collector is not multi-threaded at that execution point).		*/
 
 GC_API void GC_CALL GC_set_find_leak(int value)
 {

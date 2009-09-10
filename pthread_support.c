@@ -1188,7 +1188,8 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     UNLOCK();
     if (!parallel_initialized) GC_init_parallel();
     if (0 == si &&
-        (si = (struct start_info *)GC_oom_fn(sizeof(struct start_info))) == 0)
+        (si = (struct start_info *)
+		(*GC_get_oom_fn())(sizeof(struct start_info))) == 0)
       return(ENOMEM);
     sem_init(&(si -> registered), 0, 0);
     si -> start_routine = start_routine;

@@ -198,10 +198,12 @@ void * GC_generic_malloc_ignore_off_page(size_t lb, int k)
         }
     }
     GC_bytes_allocd += lb_rounded;
-    UNLOCK();
     if (0 == result) {
-        return((*GC_oom_fn)(lb));
+	GC_oom_func oom_fn = GC_oom_fn;
+	UNLOCK();
+	return((*oom_fn)(lb));
     } else {
+	UNLOCK();
     	if (init && !GC_debugging_started) {
 	    BZERO(result, n_blocks * HBLKSIZE);
         }
@@ -500,7 +502,9 @@ GC_API void * GC_CALL GC_memalign(size_t align, size_t lb)
 
     if (align <= GRANULE_BYTES) return GC_malloc(lb);
     if (align >= HBLKSIZE/2 || lb >= HBLKSIZE/2) {
-        if (align > HBLKSIZE) return GC_oom_fn(LONG_MAX-1024) /* Fail */;
+        if (align > HBLKSIZE) {
+	  return (*GC_get_oom_fn())(LONG_MAX-1024); /* Fail */
+	}
 	return GC_malloc(lb <= HBLKSIZE? HBLKSIZE : lb);
 	    /* Will be HBLKSIZE aligned.	*/
     }

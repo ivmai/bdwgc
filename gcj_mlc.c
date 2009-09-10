@@ -126,8 +126,8 @@ static void maybe_finalize(void)
    if (!GC_is_initialized) return;
    UNLOCK();
    GC_INVOKE_FINALIZERS();
-   last_finalized_no = GC_gc_no;
    LOCK();
+   last_finalized_no = GC_gc_no;
 }
 
 /* Allocate an object, clear it, and store the pointer to the	*/
@@ -154,8 +154,9 @@ static void maybe_finalize(void)
 	    maybe_finalize();
             op = (ptr_t)GENERAL_MALLOC((word)lb, GC_gcj_kind);
 	    if (0 == op) {
+		GC_oom_func oom_fn = GC_oom_fn;
 		UNLOCK();
-		return(GC_oom_fn(lb));
+		return((*oom_fn)(lb));
 	    }
         } else {
             *opp = obj_link(op);
@@ -169,8 +170,9 @@ static void maybe_finalize(void)
 	maybe_finalize();
 	op = (ptr_t)GENERAL_MALLOC((word)lb, GC_gcj_kind);
 	if (0 == op) {
+	    GC_oom_func oom_fn = GC_oom_fn;
 	    UNLOCK();
-	    return(GC_oom_fn(lb));
+	    return((*oom_fn)(lb));
 	}
 	*(void **)op = ptr_to_struct_containing_descr;
 	UNLOCK();
@@ -193,12 +195,13 @@ GC_API void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     maybe_finalize();
     result = GC_generic_malloc_inner(lb + DEBUG_BYTES, GC_gcj_debug_kind);
     if (result == 0) {
+	GC_oom_func oom_fn = GC_oom_fn;
 	UNLOCK();
         GC_err_printf("GC_debug_gcj_malloc(%ld, %p) returning NIL (",
         	      (unsigned long)lb, ptr_to_struct_containing_descr);
         GC_err_puts(s);
         GC_err_printf(":%d)\n", i);
-        return(GC_oom_fn(lb));
+        return((*oom_fn)(lb));
     }
     *((void **)((ptr_t)result + sizeof(oh))) = ptr_to_struct_containing_descr;
     UNLOCK();
@@ -226,8 +229,9 @@ GC_API void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
 	    maybe_finalize();
             op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_gcj_kind);
 	    if (0 == op) {
+		GC_oom_func oom_fn = GC_oom_fn;
 		UNLOCK();
-		return(GC_oom_fn(lb));
+		return((*oom_fn)(lb));
 	    }
         } else {
             *opp = obj_link(op);
@@ -238,8 +242,9 @@ GC_API void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
 	maybe_finalize();
         op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_gcj_kind);
 	if (0 == op) {
+	    GC_oom_func oom_fn = GC_oom_fn;
 	    UNLOCK();
-	    return(GC_oom_fn(lb));
+	    return((*oom_fn)(lb));
 	}
     }
     *(void **)op = ptr_to_struct_containing_descr;

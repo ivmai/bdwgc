@@ -66,12 +66,14 @@
 #endif
 
 /* Public read-only variables */
-/* Getter procedures are supplied in some cases and preferred for new	*/
-/* code.								*/
+/* The supplied getter functions are preferred for new code.		*/
 
 GC_API GC_word GC_gc_no;/* Counter incremented per collection.  	*/
 			/* Includes empty GCs at startup.		*/
 GC_API GC_word GC_CALL GC_get_gc_no(void);
+			/* GC_get_gc_no() uses no synchronization, so	*/
+			/* it requires GC_call_with_alloc_lock() to	*/
+			/* avoid data races on multiprocessors.		*/
 
 GC_API int GC_parallel;	/* GC is parallelized for performance on	*/
 			/* multiprocessors.  Currently set only		*/
@@ -86,16 +88,19 @@ GC_API int GC_CALL GC_get_parallel(void);
 			
 
 /* Public R/W variables */
+/* The supplied setter and getter functions are preferred for new code.	*/
 
 typedef void * (GC_CALLBACK * GC_oom_func)(size_t /* bytes_requested */);
 GC_API GC_oom_func GC_oom_fn;
 			/* When there is insufficient memory to satisfy */
 			/* an allocation request, we return		*/
-			/* (*GC_oom_fn)().  By default this just	*/
-			/* returns 0.					*/
+			/* (*GC_oom_fn)(size).  By default this just	*/
+			/* returns NULL.				*/
 			/* If it returns, it must return 0 or a valid	*/
 			/* pointer to a previously allocated heap 	*/
-			/* object.					*/
+			/* object.  GC_oom_fn must not be 0.		*/
+			/* Both the supplied setter and the getter	*/
+			/* acquire the GC lock (to avoid data races).	*/
 GC_API void GC_CALL GC_set_oom_fn(GC_oom_func);
 GC_API GC_oom_func GC_CALL GC_get_oom_fn(void);
 
@@ -104,6 +109,10 @@ GC_API int GC_find_leak;
 			/* report inaccessible memory that was not	*/
 			/* deallocated with GC_free.  Initial value	*/
 			/* is determined by FIND_LEAK macro.		*/
+			/* The setter and getter are unsynchronized, so	*/
+			/* GC_call_with_alloc_lock() is required to	*/
+			/* avoid data races (if the value is modified	*/
+			/* after the GC is put to multi-threaded mode).	*/
 GC_API void GC_CALL GC_set_find_leak(int);
 GC_API int GC_CALL GC_get_find_leak(void);
 
@@ -127,6 +136,10 @@ GC_API int GC_finalize_on_demand;
 			/* call.  The default is determined by whether	*/
 			/* the FINALIZE_ON_DEMAND macro is defined	*/
 			/* when the collector is built.			*/
+			/* The setter and getter are unsynchronized, so	*/
+			/* GC_call_with_alloc_lock() is required to	*/
+			/* avoid data races (if the value is modified	*/
+			/* after the GC is put to multi-threaded mode).	*/
 GC_API void GC_CALL GC_set_finalize_on_demand(int);
 GC_API int GC_CALL GC_get_finalize_on_demand(void);
 
@@ -138,6 +151,10 @@ GC_API int GC_java_finalization;
 			/* determined by JAVA_FINALIZATION macro.	*/
 			/* Enables register_finalizer_unreachable to	*/
 			/* work correctly.				*/
+			/* The setter and getter are unsynchronized, so	*/
+			/* GC_call_with_alloc_lock() is required to	*/
+			/* avoid data races (if the value is modified	*/
+			/* after the GC is put to multi-threaded mode).	*/
 GC_API void GC_CALL GC_set_java_finalization(int);
 GC_API int GC_CALL GC_get_java_finalization(void);
 
@@ -149,7 +166,9 @@ GC_API GC_finalizer_notifier_proc GC_finalizer_notifier;
 			/* GC_finalize_on_demand is set.		*/
 			/* Typically this will notify a finalization	*/
 			/* thread, which will call GC_invoke_finalizers */
-			/* in response.					*/
+			/* in response.	 May be 0 (means no notifier).	*/
+			/* Both the supplied setter and the getter	*/
+			/* acquire the GC lock (to avoid data races).	*/
 GC_API void GC_CALL GC_set_finalizer_notifier(GC_finalizer_notifier_proc);
 GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void);
 
@@ -165,6 +184,10 @@ GC_API int GC_dont_gc;	/* != 0 ==> Dont collect.  In versions 6.2a1+,	*/
 GC_API int GC_dont_expand;
 			/* Dont expand heap unless explicitly requested */
 			/* or forced to.				*/
+			/* The setter and getter are unsynchronized, so	*/
+			/* GC_call_with_alloc_lock() is required to	*/
+			/* avoid data races (if the value is modified	*/
+			/* after the GC is put to multi-threaded mode).	*/
 GC_API void GC_CALL GC_set_dont_expand(int);
 GC_API int GC_CALL GC_get_dont_expand(void);
 
@@ -188,6 +211,10 @@ GC_API int GC_full_freq;    /* Number of partial collections between	*/
 			    /* blocks.  Values in the tens are now	*/
 			    /* perfectly reasonable, unlike for		*/
 			    /* earlier GC versions.			*/
+			/* The setter and getter are unsynchronized, so	*/
+			/* GC_call_with_alloc_lock() is required to	*/
+			/* avoid data races (if the value is modified	*/
+			/* after the GC is put to multi-threaded mode).	*/
 GC_API void GC_CALL GC_set_full_freq(int);
 GC_API int GC_CALL GC_get_full_freq(void);
 			
@@ -196,6 +223,10 @@ GC_API GC_word GC_non_gc_bytes;
 			/* Used only to control scheduling of collections. */
 			/* Updated by GC_malloc_uncollectable and GC_free. */
 			/* Wizards only.				   */
+			/* The setter and getter are unsynchronized, so	   */
+			/* GC_call_with_alloc_lock() is required to	   */
+			/* avoid data races (if the value is modified	   */
+			/* after the GC is put to multi-threaded mode).	   */
 GC_API void GC_CALL GC_set_non_gc_bytes(GC_word);
 GC_API GC_word GC_CALL GC_get_non_gc_bytes(void);
 
@@ -206,6 +237,10 @@ GC_API int GC_no_dls;
 			/* In Microsoft Windows environments, this will	 */
 			/* usually also prevent registration of the	 */
 			/* main data segment as part of the root set.	 */
+			/* The setter and getter are unsynchronized, so	 */
+			/* GC_call_with_alloc_lock() is required to	 */
+			/* avoid data races (if the value is modified	 */
+			/* after the GC is put to multi-threaded mode).	 */
 GC_API void GC_CALL GC_set_no_dls(int);
 GC_API int GC_CALL GC_get_no_dls(void);
 
@@ -222,6 +257,10 @@ GC_API GC_word GC_free_space_divisor;
 			/* but more collection time.  Decreasing it	*/
 			/* will appreciably decrease collection time	*/
 			/* at the expense of space.			*/
+			/* The setter and getter are unsynchronized, so	*/
+			/* GC_call_with_alloc_lock() is required to	*/
+			/* avoid data races (if the value is modified	*/
+			/* after the GC is put to multi-threaded mode).	*/
 GC_API void GC_CALL GC_set_free_space_divisor(GC_word);
 GC_API GC_word GC_CALL GC_get_free_space_divisor(void);
 
@@ -229,6 +268,10 @@ GC_API GC_word GC_max_retries;
 			/* The maximum number of GCs attempted before	*/
 			/* reporting out of memory after heap		*/
 			/* expansion fails.  Initially 0.		*/
+			/* The setter and getter are unsynchronized, so	*/
+			/* GC_call_with_alloc_lock() is required to	*/
+			/* avoid data races (if the value is modified	*/
+			/* after the GC is put to multi-threaded mode).	*/
 GC_API void GC_CALL GC_set_max_retries(GC_word);
 GC_API GC_word GC_CALL GC_get_max_retries(void);
 			
@@ -252,6 +295,10 @@ GC_API int GC_dont_precollect;  /* Don't collect as part of 		*/
 				/* before the first collection.		*/
 				/* Interferes with blacklisting.	*/
 				/* Wizards only.			*/
+			/* The setter and getter are unsynchronized, so	*/
+			/* GC_call_with_alloc_lock() is required to	*/
+			/* avoid data races (if the value is modified	*/
+			/* after the GC is put to multi-threaded mode).	*/
 GC_API void GC_CALL GC_set_dont_precollect(int);
 GC_API int GC_CALL GC_get_dont_precollect(void);
 
@@ -268,6 +315,10 @@ GC_API unsigned long GC_time_limit;
 				/* Setting GC_time_limit to this value	 */
 				/* will disable the "pause time exceeded"*/
 				/* tests.				 */
+			/* The setter and getter are unsynchronized, so	 */
+			/* GC_call_with_alloc_lock() is required to	 */
+			/* avoid data races (if the value is modified	 */
+			/* after the GC is put to multi-threaded mode).	 */
 GC_API void GC_CALL GC_set_time_limit(unsigned long);
 GC_API unsigned long GC_CALL GC_get_time_limit(void);
 
@@ -808,20 +859,21 @@ GC_API int GC_CALL GC_general_register_disappearing_link (void * * link,
 	/* can be used to implement weak pointers easily and	*/
 	/* safely. Typically link will point to a location	*/
 	/* holding a disguised pointer to obj.  (A pointer 	*/
-	/* inside an "atomic" object is effectively  		*/
-	/* disguised.)   In this way soft			*/
-	/* pointers are broken before any object		*/
-	/* reachable from them are finalized.  Each link	*/
-	/* May be registered only once, i.e. with one obj	*/
-	/* value.  This was added after a long email discussion */
-	/* with John Ellis.					*/
-	/* Obj must be a pointer to the first word of an object */
-	/* we allocated.  It is unsafe to explicitly deallocate */
-	/* the object containing link.  Explicitly deallocating */
-	/* obj may or may not cause link to eventually be	*/
-	/* cleared.						*/
-	/* This can be used to implement certain types of	*/
-	/* weak pointers.  Note however that this generally	*/
+	/* inside an "atomic" object is effectively disguised.)	*/
+	/* In this way, weak pointers are broken before any	*/
+	/* object reachable from them gets finalized.		*/
+	/* Each link may be registered only with one obj value,	*/
+	/* i.e. all objects but the last one (link registered	*/
+	/* with) are ignored.  This was added after a long	*/
+	/* email discussion with John Ellis.			*/
+	/* link must be non-NULL (and be properly aligned).	*/
+	/* obj must be a pointer to the first word of an object */
+	/* allocated by GC_malloc or friends.  It is unsafe to	*/
+	/* explicitly deallocate the object containing link.	*/
+	/* Explicit deallocation of obj may or may not cause	*/
+	/* link to eventually be cleared.			*/
+	/* This function can be used to implement certain types	*/
+	/* of weak pointers.  Note, however, this generally	*/
 	/* requires that the allocation lock is held (see	*/
 	/* GC_call_with_alloc_lock() below) when the disguised	*/
 	/* pointer is accessed.  Otherwise a strong pointer	*/
@@ -863,7 +915,8 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 #endif
 
 /* GC_set_warn_proc can be used to redirect or filter warning messages.	*/
-/* p may not be a NULL pointer.						*/
+/* p may not be a NULL pointer.  Both the setter and the getter acquire	*/
+/* the GC lock (to avoid data races).					*/
 typedef void (GC_CALLBACK * GC_warn_proc) (char *msg, GC_word arg);
 GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc p);
 /* GC_get_warn_proc returns the current warn_proc.			*/
