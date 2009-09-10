@@ -136,6 +136,11 @@ GC_FREE_SPACE_DIVISOR - Set GC_free_space_divisor to the indicated value.
                       Setting it to larger values decreases space consumption
 		      and increases GC frequency.
 
+GC_UNMAP_THRESHOLD - Set the desired memory blocks unmapping threshold (the
+		   number of sequential garbage collections for which
+		   a candidate block for unmapping should remain free).  The
+		   special value "0" completely disables unmapping.
+
 GC_FIND_LEAK - Turns on GC_find_leak and thus leak detection.  Forces a
 	       collection at program termination to detect leaks that would
 	       otherwise occur after the last GC.

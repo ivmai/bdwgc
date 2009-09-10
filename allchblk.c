@@ -381,29 +381,31 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 
 #ifdef USE_MUNMAP
 
+#   ifndef MUNMAP_THRESHOLD
+#     define MUNMAP_THRESHOLD 6
+#   endif
+
+int GC_unmap_threshold = MUNMAP_THRESHOLD;
+
 /* Unmap blocks that haven't been recently touched.  This is the only way */
 /* way blocks are ever unmapped.					  */
 void GC_unmap_old(void)
 {
     struct hblk * h;
     hdr * hhdr;
-    word sz;
-    unsigned short last_rec, threshold;
     int i;
-#   ifndef MUNMAP_THRESHOLD
-#     define MUNMAP_THRESHOLD 6
-#   endif
+
+    if (GC_unmap_threshold == 0)
+      return; /* unmapping disabled */
     
     for (i = 0; i <= N_HBLK_FLS; ++i) {
       for (h = GC_hblkfreelist[i]; 0 != h; h = hhdr -> hb_next) {
         hhdr = HDR(h);
 	if (!IS_MAPPED(hhdr)) continue;
-	threshold = (unsigned short)(GC_gc_no - MUNMAP_THRESHOLD);
-	last_rec = hhdr -> hb_last_reclaimed;
-	if ((last_rec > GC_gc_no || last_rec < threshold)
-	    && threshold < GC_gc_no /* not recently wrapped */) {
-          sz = hhdr -> hb_sz;
-	  GC_unmap((ptr_t)h, sz);
+
+	if ((unsigned short)GC_gc_no - hhdr -> hb_last_reclaimed >
+		(unsigned short)GC_unmap_threshold) {
+	  GC_unmap((ptr_t)h, hhdr -> hb_sz);
 	  hhdr -> hb_flags |= WAS_UNMAPPED;
     	}
       }

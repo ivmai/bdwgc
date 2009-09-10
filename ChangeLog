@@ -1,5 +1,20 @@
 
 2009-09-10  Ivan Maidanski <ivmai@mail.ru>
+	(diff118_cvs - superseding diff53)
+
+	* allchblk.c (MUNMAP_THRESHOLD): Move macro definition out of
+	a function.
+	* allchblk.c (GC_unmap_threshold): New global variable definition
+	(initialized to MUNMAP_THRESHOLD).
+	* allchblk.c (GC_unmap_old): Use GC_unmap_threshold instead of
+	MUNMAP_THRESHOLD; skip unmapping if GC_unmap_threshold is 0.
+	* doc/README.environment (GC_UNMAP_THRESHOLD): Add information.
+	* misc.c (GC_unmap_threshold): New variable declaration.
+	* misc.c (GC_init_inner): Recognize "GC_UNMAP_THRESHOLD"
+	environment variable to set GC_unmap_threshold value (only if
+	USE_MUNMAP).
+
+2009-09-10  Ivan Maidanski <ivmai@mail.ru>
 	(diff117)
 
 	* dbg_mlc.c (OFN_UNSET): New macro (to detect
@@ -428,7 +443,8 @@
 	GC_check_finalizer_nested): Ditto.
 
 2009-09-10  Ivan Maidanski <ivmai@mail.ru>
-	(diff103_cvs)
+	(diff103_cvs - resembling diff78, diff88_cvs, diff99_cvs,
+	diff100_cvs, diff101_cvs, diff102_cvs)
 
 	* alloc.c (GC_stopped_mark): Remove GC_log_printf("") (not needed
 	anymore and GCC produces a warning for it).

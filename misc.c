@@ -498,6 +498,10 @@ static void maybe_install_looping_handler(void)
   void GC_thr_init(void);
 #endif
 
+#ifdef USE_MUNMAP
+  extern int GC_unmap_threshold;
+#endif
+
 void GC_init_inner(void)
 {
 #   if !defined(THREADS) && defined(GC_ASSERTIONS)
@@ -646,6 +650,21 @@ void GC_init_inner(void)
 	    GC_free_space_divisor = (GC_word)space_divisor;
 	}
     }
+#   ifdef USE_MUNMAP
+      {
+	char * string = GETENV("GC_UNMAP_THRESHOLD");
+	if (string != NULL) {
+	  if (*string == '0' && *(string + 1) == '\0') {
+	    /* "0" is used to disable unmapping. */
+	    GC_unmap_threshold = 0;
+	  } else {
+	    int unmap_threshold = atoi(string);
+	    if (unmap_threshold > 0)
+	      GC_unmap_threshold = unmap_threshold;
+	  }
+	}
+      }
+#   endif
     maybe_install_looping_handler();
     /* Adjust normal object descriptor for extra allocation.	*/
     if (ALIGNMENT > GC_DS_TAGS && EXTRA_BYTES != 0) {
