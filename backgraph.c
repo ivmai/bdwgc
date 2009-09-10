@@ -24,11 +24,12 @@
  * a growing space leak.
  */
 
+#include "private/dbg_mlc.h"
+
 #ifdef MAKE_BACK_GRAPH
 
 #define MAX_IN	10	/* Maximum in-degree we handle directly */
 
-#include "private/dbg_mlc.h"
 /* #include <unistd.h> */
 
 #if !defined(DBG_HDRS_ALL) || (ALIGNMENT != CPP_WORDSZ/8) /* || !defined(UNIX_LIKE) */

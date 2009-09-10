@@ -11,9 +11,10 @@
  * modified is included with the above copyright notice.
  */
 /* Boehm, March 29, 1995 12:51 pm PST */
-# ifdef CHECKSUMS
 
 # include "private/gc_priv.h"
+
+# ifdef CHECKSUMS
 
 /* This is debugging code intended to verify the results of dirty bit	*/
 /* computations. Works only in a single threaded environment.		*/

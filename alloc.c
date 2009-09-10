@@ -571,9 +571,6 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 	     "Collection %lu reclaimed %ld bytes ---> heapsize = %lu bytes\n",
 	     (unsigned long)(GC_gc_no - 1), (long)GC_bytes_found,
 	     (unsigned long)GC_heapsize);
-        /* Printf arguments may be pushed in funny places.  Clear the	*/
-        /* space.							*/
-      GC_log_printf("");
     }
 
     /* Check all debugged objects for consistency */
@@ -606,7 +603,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 	
 	GC_ASSERT(divisor != 0);
 	GC_log_printf(
-		"World-stopped marking took %lu msecs (%lu in average)\n",
+		"World-stopped marking took %lu msecs (%u in average)\n",
 		time_diff, total_time / divisor);
       }
 #   endif

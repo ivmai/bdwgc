@@ -1,3 +1,34 @@
+
+2009-09-10  Ivan Maidanski <ivmai@mail.ru>
+	(diff103_cvs)
+
+	* alloc.c (GC_stopped_mark): Remove GC_log_printf("") (not needed
+	anymore and GCC produces a warning for it).
+	* alloc.c (GC_stopped_mark): Adjust printf argument type
+	specifier.
+	* backgraph.c: Include dbg_mlc.h before ifdef MAKE_BACK_GRAPH (for
+	the case when the configuration information comes from aconfig
+	file).
+	* checksums.c: Ditto (for gc_priv.h and CHECKSUMS, respectively).
+	* include/gc_allocator.h (GC_ATTR_UNUSED): Use "__unused__"
+	keyword instead of "unused".
+	* include/gc_allocator.h: Fix typos in comments.
+	* thread_local_alloc.c: Ditto.
+	* include/javaxfc.h (GC_finalize_all): Update comment.
+	* include/private/gc_priv.h (GC_API_PRIV): New macro (defined as
+	GC_API and serves only as a marker for the private but exported
+	symbols used by test.c only).
+	* include/private/gc_priv.h (GC_abort, GC_arrays, GC_is_marked,
+	GC_printf, GC_err_printf, GC_log_printf): Replace GC_API decl with
+	GC_API_PRIV one.
+	* include/private/gc_priv.h (GC_fo_entries): Don't export it
+	outside a DLL.
+	* include/private/gc_priv.h (GC_ATTR_FORMAT_PRINTF): New macro
+	designated to check the arguments correctness of printf-like
+	functions (currently works only for GCC v3+).
+	* include/private/gc_priv.h (GC_printf, GC_err_printf,
+	GC_log_printf): Use GC_ATTR_FORMAT_PRINTF attribute.
+
 2009-09-03  Hans Boehm <Hans.Boehm@hp.com> (really Loren J. Rittle)
 
 	* dyn_load.c (HAVE_DL_ITERATE_PHDR): Break definition from use.

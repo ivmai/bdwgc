@@ -234,7 +234,7 @@ extern int GC_gcj_kind;
 /* the marker may run asynchronously, and may pick up the pointer to  	*/
 /* the next freelist entry (which it thinks is a vtable pointer), get	*/
 /* suspended for a while, and then see an allocated object instead	*/
-/* of the vtable.  This made be avoidable with either a handshake with	*/
+/* of the vtable.  This may be avoidable with either a handshake with	*/
 /* the collector or, probably more easily, by moving the free list	*/
 /* links to the second word of each object.  The latter isn't a		*/
 /* universal win, since on architecture like Itanium, nonzero offsets	*/

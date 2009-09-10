@@ -45,13 +45,13 @@
 #include <new> // for placement new
 
 #if defined(__GNUC__)
-#  define GC_ATTR_UNUSED __attribute__((unused))
+#  define GC_ATTR_UNUSED __attribute__((__unused__))
 #else
 #  define GC_ATTR_UNUSED
 #endif
 
 /* First some helpers to allow us to dispatch on whether or not a type
- * is known to be pointerfree.
+ * is known to be pointer-free.
  * These are private, except that the client may invoke the
  * GC_DECLARE_PTRFREE macro.
  */
@@ -81,8 +81,8 @@ GC_DECLARE_PTRFREE(double);
 GC_DECLARE_PTRFREE(long double);
 /* The client may want to add others.	*/
 
-// In the following GC_Tp is GC_true_type iff we are allocating a
-// pointerfree object.
+// In the following GC_Tp is GC_true_type if we are allocating a
+// pointer-free object.
 template <class GC_Tp>
 inline void * GC_selective_alloc(size_t n, GC_Tp, bool ignore_off_page) {
     return ignore_off_page?GC_MALLOC_IGNORE_OFF_PAGE(n):GC_MALLOC(n);

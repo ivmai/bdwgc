@@ -7,9 +7,9 @@
 # endif
 
 /*
- * Invoke all remaining finalizers that haven't yet been run, or
- * repeatedly notify that there are finalizers to be run.
- * This is needed for strict compliance with the Java standard, 
+ * Invoke all remaining finalizers that haven't yet been run.  (Since the
+ * notifier is not called, this should be called from a separate thread.)
+ * This function is needed for strict compliance with the Java standard,
  * which can make the runtime guarantee that all finalizers are run.
  * This is problematic for several reasons:
  * 1) It means that finalizers, and all methods called by them,

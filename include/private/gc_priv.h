@@ -85,6 +85,10 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 # define INLINE
 #endif /* __GNUC__ */
 
+#ifndef GC_API_PRIV
+# define GC_API_PRIV GC_API
+#endif
+
 # ifndef GC_LOCKS_H
 #   include "gc_locks.h"
 # endif
@@ -337,7 +341,7 @@ void GC_print_callers(struct callinfo info[NFRAMES]);
 #	    define ABORT(msg) abort()
 #	endif
 #   else
-	GC_API void GC_abort(const char * msg);
+	GC_API_PRIV void GC_abort(const char * msg);
 #       define ABORT(msg) GC_abort(msg)
 #   endif
 # endif
@@ -1047,7 +1051,7 @@ struct _GC_arrays {
 #endif
 };
 
-GC_API GC_FAR struct _GC_arrays GC_arrays; 
+GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays; 
 
 # ifndef SEPARATE_GLOBALS
 #   define GC_objfreelist GC_arrays._objfreelist
@@ -1185,7 +1189,7 @@ extern struct obj_kind {
 
 extern unsigned GC_n_kinds;
 
-GC_API word GC_fo_entries;
+extern word GC_fo_entries;
 
 extern word GC_n_heap_sects;	/* Number of separately added heap	*/
 				/* sections.				*/
@@ -1857,7 +1861,7 @@ void GC_remove_protection(struct hblk *h, word nblocks,
 void GC_dirty_init(void);
   
 /* Slow/general mark bit manipulation: */
-GC_API GC_bool GC_is_marked(ptr_t p);
+GC_API_PRIV GC_bool GC_is_marked(ptr_t p);
 void GC_clear_mark_bit(ptr_t p);
 void GC_set_mark_bit(ptr_t p);
   
@@ -1900,14 +1904,26 @@ void GC_print_finalization_stats(void);
 
 GC_API void GC_CALL GC_noop1(word);
 
+#ifndef GC_ATTR_FORMAT_PRINTF
+# if defined(__GNUC__) && __GNUC__ >= 3
+#   define GC_ATTR_FORMAT_PRINTF(spec_argnum, first_checked) \
+	__attribute__((__format__(__printf__, spec_argnum, first_checked)))
+# else
+#   define GC_ATTR_FORMAT_PRINTF(spec_argnum, first_checked)
+# endif
+#endif
+
 /* Logging and diagnostic output: 	*/
-GC_API void GC_printf (const char * format, ...);
+GC_API_PRIV void GC_printf(const char * format, ...)
+			GC_ATTR_FORMAT_PRINTF(1, 2);
 			/* A version of printf that doesn't allocate,	*/
 			/* 1K total output length.			*/
 			/* (We use sprintf.  Hopefully that doesn't	*/
 			/* allocate for long arguments.)  		*/
-GC_API void GC_err_printf(const char * format, ...);
-GC_API void GC_log_printf(const char * format, ...);
+GC_API_PRIV void GC_err_printf(const char * format, ...)
+			GC_ATTR_FORMAT_PRINTF(1, 2);
+GC_API_PRIV void GC_log_printf(const char * format, ...)
+			GC_ATTR_FORMAT_PRINTF(1, 2);
 void GC_err_puts(const char *s);
 			/* Write s to stderr, don't buffer, don't add	*/
 			/* newlines, don't ...				*/
