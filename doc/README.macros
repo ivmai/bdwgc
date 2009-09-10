@@ -14,7 +14,7 @@ In my opinion, it's still well worth it, for the same reason that we indent
 ordinary "if" statements.
 
 2) Whenever possible, tests are performed on the macros defined in gcconfig.h
-instead of directly testing patform-specific predefined macros.  This makes it
+instead of directly testing platform-specific predefined macros.  This makes it
 relatively easy to adapt to new compilers with a different set of predefined
 macros.  Currently these macros generally identify platforms instead of
 features.  In many cases, this is a mistake.
@@ -50,13 +50,15 @@ _MSC_VER	Expands to the Visual C++ compiler version.  Assumed to
 		not be defined for other compilers (at least if they behave
 		appreciably differently).
 
-_DLL		Defined by Visual C++ if dynamic libraries are being built
-		or used.  Used to test whether __declspec(dllimport) or
-		__declspec(dllexport) needs to be added to declarations
-		to support the case in which the collector is in a dll.
+_DLL		Defined by Visual C++ (and mingw-w64) if runtime dynamic
+		libraries are in use.  Used (only if none of GC_DLL,
+		GC_NOT_DLL, __GNUC__ are defined) to test whether
+		__declspec(dllimport) needs to be added to declarations
+		to support the case in which the collector is in a DLL.
 
-GC_DLL		User-settable macro that forces the effect of _DLL.  Set
-		by gc.h if _DLL is defined and GC_NOT_DLL is undefined.
+GC_DLL		Defined by user if dynamic libraries are being built
+		or used.  Also set by gc.h if _DLL is defined while
+		GC_NOT_DLL and __GNUC__ are both undefined.
 		This is the macro that is tested internally to determine
 		whether the GC is in its own dynamic library.  May need
 		to be set by clients before including gc.h.  Note that
@@ -66,14 +68,14 @@ GC_DLL		User-settable macro that forces the effect of _DLL.  Set
 		GC resides in a different DLL, its entry points should
 		be referenced accordingly, and precautions may need to
 		be taken to properly deal with statically allocated 
-		variables in the main program.  Used only for MS Windows.
+		variables in the main program.  Used for MS Windows.
+		Also used by GCC v4+ (only when the dynamic shared library
+		is being built) in conjunction with "-fvisibility=hidden"
+		option to hide internally used symbols.
 
-GC_NOT_DLL	User-settable macro that overrides _DLL, e.g. if dynamic
-		libraries are used, but the collector is in a static library.
-
-__STDC__	Assumed to be defined only by compilers that understand
-		prototypes and other C89 features.  Its value is generally
-		not used, since we are fine with most nonconforming extensions.
+GC_NOT_DLL	User-settable macro that overrides _DLL, e.g. if runtime
+		dynamic libraries are used, but the collector is in a static
+		library.
 
 SUNOS5SIGS	Solaris-like signal handling.  This is probably misnamed,
 		since it really doesn't guarantee much more than Posix.

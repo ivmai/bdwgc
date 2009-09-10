@@ -1354,7 +1354,7 @@ void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
 }
 
 /*ARGSUSED*/
-struct GC_ms_entry *GC_mark_and_push(void *obj,
+GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
 				     mse *mark_stack_ptr,
 				     mse *mark_stack_limit,
 				     void **src)

@@ -19,6 +19,14 @@
 # ifndef GC_PRIVATE_H
 # define GC_PRIVATE_H
 
+# ifdef HAVE_CONFIG_H
+#   include "config.h"
+# endif
+
+# ifndef GC_BUILD
+#   define GC_BUILD
+# endif
+
 # include <stdlib.h>
 # if !(defined( sony_news ) )
 #   include <stddef.h>
@@ -1744,8 +1752,8 @@ void GC_notify_or_invoke_finalizers(void);
 			/* finalizers to be run, and we haven't called	*/
 			/* this procedure yet this GC cycle.		*/
 
-GC_API void * GC_make_closure(GC_finalization_proc fn, void * data);
-GC_API void GC_CALLBACK GC_debug_invoke_finalizer(void * obj, void * data);
+void * GC_make_closure(GC_finalization_proc fn, void * data);
+void GC_CALLBACK GC_debug_invoke_finalizer(void * obj, void * data);
 			/* Auxiliary fns to make finalization work	*/
 			/* correctly with displaced pointers introduced	*/
 			/* by the debugging allocators.			*/
@@ -1902,9 +1910,9 @@ void GC_print_finalization_stats(void);
     void GC_noop(void*, ...);
 # else
 #   ifdef __DMC__
-      GC_API void GC_noop(...);
+      void GC_noop(...);
 #   else
-      GC_API void GC_noop();
+      void GC_noop();
 #   endif
 # endif
 

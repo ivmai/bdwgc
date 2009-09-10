@@ -223,13 +223,13 @@ GC_API void * GC_CALL GC_malloc_atomic_ignore_off_page(size_t lb)
 
 /* Increment GC_bytes_allocd from code that doesn't have direct access 	*/
 /* to GC_arrays.							*/
-void GC_incr_bytes_allocd(size_t n)
+GC_API void GC_CALL GC_incr_bytes_allocd(size_t n)
 {
     GC_bytes_allocd += n;
 }
 
 /* The same for GC_bytes_freed.				*/
-void GC_incr_bytes_freed(size_t n)
+GC_API void GC_CALL GC_incr_bytes_freed(size_t n)
 {
     GC_bytes_freed += n;
 }

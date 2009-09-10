@@ -1,5 +1,162 @@
 
 2009-09-10  Ivan Maidanski <ivmai@mail.ru>
+	(diff116a, diff116b, diff116c)
+
+	* Makefile.direct (GC_DLL): Add the comment for.
+	* doc/README.macros: Fix a typo.
+	* doc/README.macros (_DLL, GC_DLL, GC_NOT_DLL): Update info.
+	* doc/README.macros (__STDC__): Remove info.
+	* dbg_mlc.c (GC_get_back_ptr_info, GC_generate_random_heap_address,
+	GC_generate_random_valid_address, GC_print_backtrace,
+	GC_generate_random_backtrace, GC_register_describe_type_fn): Add
+	GC_API and GC_CALL to function definition.
+	* malloc.c (GC_generic_malloc): Ditto.
+	* mallocx.c (GC_incr_bytes_allocd, GC_incr_bytes_freed): Ditto.
+	* mark.c (GC_mark_and_push): Ditto.
+	* misc.c (GC_new_free_list_inner, GC_new_free_list,
+	GC_new_kind_inner, GC_new_kind, GC_new_proc_inner, GC_new_proc):
+	Ditto.
+	* include/gc_backptr.h (GC_get_back_ptr_info,
+	GC_generate_random_heap_address, GC_generate_random_valid_address,
+	GC_generate_random_backtrace, GC_print_backtrace): Add GC_API and
+	GC_CALL to function prototype.
+	* include/gc_mark.h (GC_mark_and_push, GC_new_free_list,
+	GC_new_free_list_inner, GC_new_kind, GC_new_kind_inner,
+	GC_new_proc, GC_new_proc_inner, GC_generic_malloc,
+	GC_register_describe_type_fn): Ditto.
+	* include/new_gc_alloc.h (GC_incr_bytes_allocd, GC_incr_mem_freed,
+	GC_generic_malloc_words_small): Ditto.
+	* gc_cpp.cc: Include "config.h" (if HAVE_CONFIG_H defined).
+	* include/private/gc_pmark.h: Ditto.
+	* include/private/gc_priv.h: Ditto.
+	* tests/test.c: Ditto.
+	* gc_cpp.cc: Define GC_BUILD.
+	* include/private/gc_pmark.h: Ditto.
+	* include/private/gc_priv.h: Ditto.
+	* gc_dlopen.c (WRAP_FUNC, REAL_FUNC): New macro.
+	* gc_dlopen.c (dlopen): Add GC_API to the wrapper function
+	definition.
+	* pthread_support.c (GC_pthread_create, GC_pthread_sigmask,
+	GC_pthread_join, GC_pthread_detach, pthread_sigmask, pthread_join,
+	pthread_detach, pthread_create): Ditto.
+	* win32_threads.c (GC_pthread_join, GC_pthread_create,
+	GC_pthread_sigmask, GC_pthread_detach): Ditto.
+	* gc_dlopen.c (dlopen): Use WRAP_FUNC and REAL_FUNC macros.
+	* include/gc_backptr.h: Include "gc.h".
+	* include/gc_backptr.h: Use extern "C" for the exported functions.
+	* include/gc_mark.h: Ditto.
+	* include/gc_config_macros.h (GC_THREADS): Define the macro if any
+	GC_XXX_THREADS is defined.
+	* include/gc_config_macros.h (_PTHREADS, _POSIX4A_DRAFT10_SOURCE):
+	Move the definitions below the place where GC_NETBSD_THREADS and
+	GC_DGUX386_THREADS are defined.
+	* include/gc_config_macros.h (GC_DLL): Don't define (even if _DLL
+	is defined) for GCC.
+	* include/gc_config_macros.h (GC_API): Define for Cygwin (in the
+	same way as for VC++); define for GCC v4+ (other than already
+	recognized MinGW/Cygwin) as a "default" visibility attribute if
+	GC_DLL is defined.
+	* include/gc_config_macros.h (GC_ATTR_MALLOC, GC_ATTR_ALLOC_SIZE):
+	New macro.
+	* include/gc.h (GC_malloc, GC_malloc_atomic, GC_strdup,
+	GC_malloc_uncollectable, GC_malloc_stubborn, GC_memalign,
+	GC_malloc_atomic_uncollectable, GC_malloc_ignore_off_page,
+	GC_malloc_atomic_ignore_off_page, GC_debug_malloc,
+	GC_debug_malloc_atomic,	GC_debug_strdup,
+	GC_debug_malloc_uncollectable, GC_debug_malloc_stubborn,
+	GC_debug_malloc_ignore_off_page,
+	GC_debug_malloc_atomic_ignore_off_page,
+	GC_debug_malloc_replacement): Add GC_ATTR_MALLOC attribute.
+	* include/gc_gcj.h (GC_gcj_malloc, GC_debug_gcj_malloc,
+	GC_gcj_malloc_ignore_off_page): Ditto.
+	* include/gc.h (GC_malloc, GC_malloc_atomic,
+	GC_malloc_uncollectable, GC_malloc_stubborn,
+	GC_malloc_atomic_uncollectable, GC_malloc_ignore_off_page,
+	GC_malloc_atomic_ignore_off_page, GC_debug_malloc,
+	GC_debug_malloc_atomic, GC_debug_malloc_uncollectable,
+	GC_debug_malloc_stubborn, GC_debug_malloc_ignore_off_page,
+	GC_debug_malloc_atomic_ignore_off_page,
+	GC_debug_malloc_replacement: Add GC_ATTR_ALLOC_SIZE attribute
+	(for the first argument).
+	* include/gc_gcj.h (GC_gcj_malloc, GC_debug_gcj_malloc,
+	GC_gcj_malloc_ignore_off_page): Ditto.
+	* include/gc.h (GC_memalign, GC_realloc, GC_debug_realloc,
+	GC_debug_realloc_replacement): Add GC_ATTR_ALLOC_SIZE attribute
+	(for the second argument).
+	* include/gc.h (GC_malloc, GC_malloc_atomic, GC_strdup,
+	GC_malloc_uncollectable, GC_malloc_stubborn, GC_memalign,
+	GC_malloc_atomic_uncollectable, GC_free, GC_base, GC_size,
+	GC_realloc, GC_expand_hp, GC_set_max_heap_size,
+	GC_exclude_static_roots, GC_add_roots, GC_remove_roots,
+	GC_register_displacement, GC_debug_register_displacement,
+	GC_try_to_collect, GC_malloc_ignore_off_page,
+	GC_malloc_atomic_ignore_off_page, GC_debug_malloc,
+	GC_debug_malloc_atomic, GC_debug_strdup,
+	GC_debug_malloc_uncollectable, GC_debug_malloc_stubborn,
+	GC_debug_malloc_ignore_off_page,
+	GC_debug_malloc_atomic_ignore_off_page, GC_debug_free,
+	GC_debug_realloc, GC_debug_malloc_replacement,
+	GC_debug_realloc_replacement, GC_finalization_proc,
+	GC_register_finalizer, GC_debug_register_finalizer,
+	GC_register_finalizer_ignore_self,
+	GC_debug_register_finalizer_ignore_self,
+	GC_register_finalizer_no_order,
+	GC_debug_register_finalizer_no_order,
+	GC_register_finalizer_unreachable,
+	GC_debug_register_finalizer_unreachable,
+	GC_register_disappearing_link,
+	GC_general_register_disappearing_link,
+	GC_unregister_disappearing_link, GC_noop1, GC_warn_proc,
+	GC_set_warn_proc, GC_ignore_warn_proc, GC_fn_type,
+	GC_call_with_alloc_lock, GC_stack_base_func,
+	GC_call_with_stack_base, GC_same_obj, GC_pre_incr, GC_post_incr,
+	GC_is_visible, GC_is_valid_displacement, GC_same_obj_print_proc,
+	GC_is_valid_displacement_print_proc, GC_is_visible_print_proc,
+	GC_malloc_many, GC_CreateThread, GC_beginthreadex,
+	GC_endthreadex): Comment out (or remove if single and meaningless)
+	function argument names (to avoid identifiers out of the name
+	space).
+	* include/gc_gcj.h (GC_init_gcj_malloc, GC_gcj_malloc,
+	GC_debug_gcj_malloc, GC_gcj_malloc_ignore_off_page): Ditto.
+	* include/gc.h (GC_try_to_collect): Update the comment.
+	* include/gc.h (GC_size, GC_register_my_thread): Add const
+	qualifier for the argument referent.
+	* misc.c (GC_size): Ditto.
+	* pthread_support.c (GC_register_my_thread_inner,
+	GC_register_my_thread): Ditto.
+	* win32_threads.c (GC_register_my_thread_inner,
+	GC_register_my_thread): Ditto.
+	* include/gc.h (GC_INIT_CONF_ROOTS): New macro for internal use
+	(define instead of GC_INIT() for Cygwin and AIX).
+	* include/gc.h (GC_DONT_EXPAND, GC_MAX_RETRIES,
+	GC_FREE_SPACE_DIVISOR, GC_FULL_FREQ, GC_TIME_LIMIT, GC_IGNORE_WARN,
+	GC_INITIAL_HEAP_SIZE): Recognize new macro.
+	* include/gc.h (GC_INIT_CONF_DONT_EXPAND, GC_INIT_CONF_MAX_RETRIES,
+	GC_INIT_CONF_FREE_SPACE_DIVISOR, GC_INIT_CONF_FULL_FREQ,
+	GC_INIT_CONF_TIME_LIMIT, GC_INIT_CONF_IGNORE_WARN,
+	GC_INIT_CONF_INITIAL_HEAP_SIZE): New macro for internal use.
+	* include/gc.h (GC_INIT): Use GC_INIT_CONF_XXX macros.
+	* include/gc_mark.h: Prefix GC_H with '_'.
+	* include/gc_mark.h (GC_least_plausible_heap_addr,
+	GC_greatest_plausible_heap_addr, GC_debug_header_size): Use GC_API
+	for the public variable declaration.
+	* include/new_gc_alloc.h (GC_objfreelist_ptr, GC_aobjfreelist_ptr,
+	GC_uobjfreelist_ptr, GC_auobjfreelist_ptr): Ditto.
+	* include/gc_pthread_redirects.h (GC_pthread_create,
+	GC_pthread_sigmask, GC_dlopen, GC_pthread_join, GC_pthread_detach):
+	Use GC_API for the wrapper prototype.
+	* include/gc_pthread_redirects.h (pthread_create, pthread_join,
+	pthread_detach, pthread_sigmask, dlopen): Undefine unconditionally
+	before redirecting.
+	* include/new_gc_alloc.h: Replace GC_incr_mem_freed() with
+	GC_incr_bytes_freed(); remove FIXME.
+	* include/private/gc_priv.h (GC_make_closure,
+	GC_debug_invoke_finalizer, GC_noop): Remove GC_API for the private
+	function.
+	* tests/test.c (GC_print_stats): Handle GC_DLL case regardless of
+	the target.
+
+2009-09-10  Ivan Maidanski <ivmai@mail.ru>
 	(diff115)
 
 	* finalize.c (GC_general_register_disappearing_link,

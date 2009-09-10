@@ -65,21 +65,21 @@
 #include <dlfcn.h>
 
 #ifdef GC_USE_LD_WRAP
-  void * __wrap_dlopen(const char *path, int mode)
+#   define WRAP_FUNC(f) __wrap_##f
+#   define REAL_FUNC(f) __real_##f
 #else
-  void * GC_dlopen(const char *path, int mode)
+#   define WRAP_FUNC(f) GC_##f
+#   define REAL_FUNC(f) f
 #endif
+
+GC_API void * WRAP_FUNC(dlopen)(const char *path, int mode)
 {
     void * result;
     
 #   ifndef USE_PROC_FOR_LIBRARIES
       disable_gc_for_dlopen();
 #   endif
-#   ifdef GC_USE_LD_WRAP
-      result = (void *)__real_dlopen(path, mode);
-#   else
-      result = dlopen(path, mode);
-#   endif
+    result = (void *)REAL_FUNC(dlopen)(path, mode);
 #   ifndef USE_PROC_FOR_LIBRARIES
       GC_enable(); /* undoes disable_gc_for_dlopen */
 #   endif

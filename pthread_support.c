@@ -154,17 +154,18 @@ unsigned long GC_lock_holder = NO_THREAD;
 /* Define GC_ functions as aliases for the plain ones, which will	*/
 /* be intercepted.  This allows files which include gc.h, and hence	*/
 /* generate references to the GC_ symbols, to see the right symbols.	*/
-      int GC_pthread_create(pthread_t * t, const pthread_attr_t * a,
+      GC_API int GC_pthread_create(pthread_t * t, const pthread_attr_t * a,
 		         void * (* fn)(void *), void * arg) {
 	  return pthread_create(t, a, fn, arg);
       }
-      int GC_pthread_sigmask(int how, const sigset_t *mask, sigset_t *old) {
+      GC_API int GC_pthread_sigmask(int how, const sigset_t *mask,
+				sigset_t *old) {
 	  return pthread_sigmask(how, mask, old);
       }
-      int GC_pthread_join(pthread_t t, void **res) {
+      GC_API int GC_pthread_join(pthread_t t, void **res) {
 	  return pthread_join(t, res);
       }
-      int GC_pthread_detach(pthread_t t) {
+      GC_API int GC_pthread_detach(pthread_t t) {
 	  return pthread_detach(t);
       }
 #endif /* Linker-based interception. */
@@ -888,7 +889,8 @@ void GC_init_parallel(void)
 
 
 #if !defined(GC_DARWIN_THREADS)
-int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set, sigset_t *oset)
+GC_API int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set,
+					sigset_t *oset)
 {
     sigset_t fudged_set;
     
@@ -984,7 +986,7 @@ STATIC void GC_thread_exit_proc(void *arg)
     GC_unregister_my_thread();
 }
 
-int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
+GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
 {
     int result;
     GC_thread thread_gc_id;
@@ -1016,8 +1018,7 @@ int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
     return result;
 }
 
-int
-WRAP_FUNC(pthread_detach)(pthread_t thread)
+GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
 {
     int result;
     GC_thread thread_gc_id;
@@ -1041,7 +1042,7 @@ WRAP_FUNC(pthread_detach)(pthread_t thread)
 
 GC_bool GC_in_thread_creation = FALSE;  /* Protected by allocation lock. */
 
-STATIC GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
+STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
 					     pthread_t my_pthread)
 {
     GC_thread me;
@@ -1073,7 +1074,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
     GC_need_to_lock = TRUE; /* We are multi-threaded now. */
 }
 
-GC_API int GC_CALL GC_register_my_thread(struct GC_stack_base *sb)
+GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 {
     pthread_t my_pthread = pthread_self();
     GC_thread me;
@@ -1165,8 +1166,7 @@ STATIC void * GC_start_routine(void * arg)
 #   endif
 }
 
-int
-WRAP_FUNC(pthread_create)(pthread_t *new_thread,
+GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 		  const pthread_attr_t *attr,
                   void *(*start_routine)(void *), void *arg)
 {

@@ -369,7 +369,7 @@ GC_API void * GC_CALL GC_base(void * p)
 /* Return the size of an object, given a pointer to its base.		*/
 /* (For small objects this also happens to work from interior pointers,	*/
 /* but that shouldn't be relied upon.)					*/
-GC_API size_t GC_CALL GC_size(void * p)
+GC_API size_t GC_CALL GC_size(const void * p)
 {
     hdr * hhdr = HDR(p);
     
@@ -1197,7 +1197,7 @@ GC_API void GC_CALL GC_disable(void)
 }
 
 /* Helper procedures for new kind creation.	*/
-void ** GC_new_free_list_inner(void)
+GC_API void ** GC_CALL GC_new_free_list_inner(void)
 {
     void *result = GC_INTERNAL_MALLOC((MAXOBJGRANULES+1)*sizeof(ptr_t),
 		    		      PTRFREE);
@@ -1206,7 +1206,7 @@ void ** GC_new_free_list_inner(void)
     return result;
 }
 
-void ** GC_new_free_list(void)
+GC_API void ** GC_CALL GC_new_free_list(void)
 {
     void *result;
     LOCK();
@@ -1215,7 +1215,8 @@ void ** GC_new_free_list(void)
     return result;
 }
 
-unsigned GC_new_kind_inner(void **fl, GC_word descr, int adjust, int clear)
+GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
+					int adjust, int clear)
 {
     unsigned result = GC_n_kinds++;
 
@@ -1228,7 +1229,8 @@ unsigned GC_new_kind_inner(void **fl, GC_word descr, int adjust, int clear)
     return result;
 }
 
-unsigned GC_new_kind(void **fl, GC_word descr, int adjust, int clear)
+GC_API unsigned GC_CALL GC_new_kind(void **fl, GC_word descr, int adjust,
+				    int clear)
 {
     unsigned result;
     LOCK();
@@ -1237,7 +1239,7 @@ unsigned GC_new_kind(void **fl, GC_word descr, int adjust, int clear)
     return result;
 }
 
-unsigned GC_new_proc_inner(GC_mark_proc proc)
+GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc proc)
 {
     unsigned result = GC_n_mark_procs++;
 
@@ -1246,7 +1248,7 @@ unsigned GC_new_proc_inner(GC_mark_proc proc)
     return result;
 }
 
-unsigned GC_new_proc(GC_mark_proc proc)
+GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc proc)
 {
     unsigned result;
     LOCK();

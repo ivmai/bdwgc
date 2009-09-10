@@ -343,7 +343,7 @@ GC_bool GC_in_thread_creation = FALSE;  /* Protected by allocation lock. */
  * If GC_win32_dll_threads is not set, we already hold the allocation lock,
  * except possibly during single-threaded start-up code.
  */
-static GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
+static GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
 					     DWORD thread_id)
 {
   GC_vthread me;
@@ -659,7 +659,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
   GC_need_to_lock = TRUE; /* We are multi-threaded now. */
 }
 
-GC_API int GC_CALL GC_register_my_thread(struct GC_stack_base *sb) {
+GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb) {
   DWORD t = GetCurrentThreadId();
 
   if (GC_need_to_lock == FALSE)
@@ -1962,7 +1962,7 @@ struct start_info {
     GC_bool detached;
 };
 
-int GC_pthread_join(pthread_t pthread_id, void **retval) {
+GC_API int GC_pthread_join(pthread_t pthread_id, void **retval) {
     int result;
     GC_thread joinee;
 
@@ -2018,8 +2018,7 @@ int GC_pthread_join(pthread_t pthread_id, void **retval) {
  * easily interceptible by us..
  *   so intercept pthread_create instead
  */
-int
-GC_pthread_create(pthread_t *new_thread,
+GC_API int GC_pthread_create(pthread_t *new_thread,
 		  const pthread_attr_t *attr,
                   void *(*start_routine)(void *), void *arg) {
     int result;
@@ -2153,13 +2152,13 @@ STATIC void GC_thread_exit_proc(void *arg)
 #ifndef GC_WIN32_PTHREADS
 /* win32 pthread does not support sigmask */
 /* nothing required here... */
-int GC_pthread_sigmask(int how, const sigset_t *set, sigset_t *oset) {
+GC_API int GC_pthread_sigmask(int how, const sigset_t *set, sigset_t *oset) {
   if (!parallel_initialized) GC_init_parallel();
   return pthread_sigmask(how, set, oset);
 }
 #endif
 
-int GC_pthread_detach(pthread_t thread)
+GC_API int GC_pthread_detach(pthread_t thread)
 {
     int result;
     GC_thread thread_gc_id;

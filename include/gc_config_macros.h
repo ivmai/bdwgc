@@ -40,12 +40,12 @@
 # define GC_USE_LD_WRAP
 #endif
 
-#if !defined(_PTHREADS) && defined(GC_NETBSD_THREADS)
-# define _PTHREADS
-#endif
-
-#if defined(GC_DGUX386_THREADS) && !defined(_POSIX4A_DRAFT10_SOURCE)
-# define _POSIX4A_DRAFT10_SOURCE 1
+#if !defined(GC_THREADS) && \
+	(defined(GC_SOLARIS_THREADS) || defined(GC_IRIX_THREADS) || \
+	defined(GC_DGUX386_THREADS) || defined(GC_AIX_THREADS) || \
+	defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) || \
+	defined(GC_LINUX_THREADS) || defined(GC_WIN32_THREADS))
+# define GC_THREADS
 #endif
 
 # if defined(GC_SOLARIS_THREADS) || defined(GC_FREEBSD_THREADS) || \
@@ -110,6 +110,14 @@
 # endif
 #endif /* GC_THREADS */
 
+#if !defined(_PTHREADS) && defined(GC_NETBSD_THREADS)
+# define _PTHREADS
+#endif
+
+#if defined(GC_DGUX386_THREADS) && !defined(_POSIX4A_DRAFT10_SOURCE)
+# define _POSIX4A_DRAFT10_SOURCE 1
+#endif
+
 #if !defined(_REENTRANT) && (defined(GC_SOLARIS_THREADS) \
 			     || defined(GC_HPUX_THREADS) \
 			     || defined(GC_AIX_THREADS) \
@@ -150,7 +158,8 @@
 #   endif
 # endif
 
-#if defined(_DLL) && !defined(GC_NOT_DLL) && !defined(GC_DLL)
+#if defined(_DLL) && !defined(GC_NOT_DLL) && !defined(GC_DLL) \
+	&& !defined(__GNUC__)
 # define GC_DLL
 #endif
 
@@ -162,8 +171,8 @@
 # endif
 #endif
 
-#if (defined(__DMC__) || defined(_MSC_VER) || defined(__BORLANDC__)) \
-    && defined(GC_DLL)
+#if (defined(__DMC__) || defined(_MSC_VER) || defined(__BORLANDC__) \
+	|| defined(__CYGWIN__)) && defined(GC_DLL)
 # ifdef GC_BUILD
 #   define GC_API extern __declspec(dllexport)
 # else
@@ -179,6 +188,13 @@
 # endif
 #endif
 
+#if defined(__GNUC__) && defined(GC_DLL) && !defined(GC_API)
+  /* Only matters if used in conjunction with -fvisibility=hidden option. */
+# if __GNUC__ >= 4 && defined(GC_BUILD)
+#   define GC_API extern __attribute__((__visibility__("default")))
+# endif
+#endif
+
 #ifndef GC_API
 # define GC_API extern
 #endif
@@ -189,4 +205,29 @@
 
 #ifndef GC_CALLBACK
 # define GC_CALLBACK GC_CALL
+#endif
+
+#ifndef GC_ATTR_MALLOC
+  /* 'malloc' attribute should be used for all malloc-like functions	*/
+  /* (to tell the compiler that a function may be treated as if any	*/
+  /* non-NULL pointer it returns cannot alias any other pointer valid	*/
+  /* when the function returns).  If the client code violates this rule	*/
+  /* by using custom GC_oom_func then define GC_OOM_FUNC_RETURNS_ALIAS.	*/
+# if !defined(GC_OOM_FUNC_RETURNS_ALIAS) && defined(__GNUC__) \
+	&& (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+#   define GC_ATTR_MALLOC __attribute__((__malloc__))
+# else
+#   define GC_ATTR_MALLOC
+# endif
+#endif
+
+#ifndef GC_ATTR_ALLOC_SIZE
+  /* 'alloc_size' attribute improves __builtin_object_size correctness.	*/
+  /* Only single-argument form of 'alloc_size' attribute is used.	*/
+# if defined(__GNUC__) && (__GNUC__ > 4 \
+	|| (__GNUC__ == 4 && __GNUC_MINOR__ >= 3 && !defined(__ICC)))
+#   define GC_ATTR_ALLOC_SIZE(argnum) __attribute__((__alloc_size__(argnum)))
+# else
+#   define GC_ATTR_ALLOC_SIZE(argnum)
+# endif
 #endif

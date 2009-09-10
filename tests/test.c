@@ -18,6 +18,10 @@
 /* GC.  It uses GC internals to allow more precise results	*/
 /* checking for some of the tests.				*/
 
+# ifdef HAVE_CONFIG_H
+#   include "config.h"
+# endif
+
 # undef GC_BUILD
 
 #ifndef NTHREADS /* Number of additional threads to fork. */
@@ -48,10 +52,11 @@
 
 # if defined(MSWIN32) || defined(MSWINCE)
 #   include <windows.h>
-#   ifdef GC_DLL
-#     define GC_print_stats 0   /* Not exported from DLL */
+# endif
+
+# ifdef GC_DLL
+#   define GC_print_stats 0	/* Not exported from DLL */
 				/* Redefine to 1 to generate output. */
-#   endif
 # endif
 
 # ifdef PCR

@@ -23,6 +23,14 @@ Authors: John R. Ellis and Jesse Hull
 
 **************************************************************************/
 
+# ifdef HAVE_CONFIG_H
+#   include "config.h"
+# endif
+
+# ifndef GC_BUILD
+#   define GC_BUILD
+# endif
+
 #include <gc_cpp.h>
 
 void* operator new( size_t size ) {

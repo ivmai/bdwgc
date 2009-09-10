@@ -325,6 +325,10 @@ HOSTCFLAGS=$(CFLAGS)
 #   specified).  Reduces the number of visible symbols (letting the optimizer
 #   do its work better), which is probably cleaner, but may make some kinds of
 #   debugging and profiling harder.
+# -DGC_DLL Build dynamic-link library (or dynamic shared object).
+#   For Unix this causes the exported symbols to have 'default' visibility
+#   (ignored unless GCC v4+, meaningful only if used together with
+#   GCC -fvisibility=hidden option).
 # -DDONT_USE_USER32_DLL (Win32 only) Don't use "user32" DLL import library
 #   (containing MessageBox() entry); useful for a static GC library.
 # -DGC_PREFER_MPROTECT_VDB Choose MPROTECT_VDB manually in case of multiple

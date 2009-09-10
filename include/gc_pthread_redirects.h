@@ -22,38 +22,31 @@
 #   include <dlfcn.h>
 # endif
 
-  int GC_pthread_create(pthread_t *new_thread,
-                        const pthread_attr_t *attr,
-		        void *(*start_routine)(void *), void *arg);
+GC_API int GC_pthread_create(pthread_t *, const pthread_attr_t *,
+			void *(*)(void *), void * /* arg */);
 #ifndef GC_DARWIN_THREADS
-    int GC_pthread_sigmask(int how, const sigset_t *set, sigset_t *oset);
-    void *GC_dlopen(const char *path, int mode);
+  GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
+				sigset_t * /* oset */);
+  GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
 #endif
-  int GC_pthread_join(pthread_t thread, void **retval);
-  int GC_pthread_detach(pthread_t thread);
+GC_API int GC_pthread_join(pthread_t, void ** /* retval */);
+GC_API int GC_pthread_detach(pthread_t);
 
-#if defined(GC_OSF1_THREADS) \
-    && defined(_PTHREAD_USE_MANGLED_NAMES_) && !defined(_PTHREAD_USE_PTDNAM_)
-/* Unless the compiler supports #pragma extern_prefix, the Tru64 UNIX
-   <pthread.h> redefines some POSIX thread functions to use mangled names.
-   If so, undef them before redefining. */
-# undef pthread_create
-# undef pthread_join
-# undef pthread_detach
-#endif
+/* Unless the compiler supports #pragma extern_prefix, the Tru64 UNIX	*/
+/* <pthread.h> redefines some POSIX thread functions to use mangled	*/
+/* names.  Anyway, it's safe to undef them before redefining.		*/
+#undef pthread_create
+#undef pthread_join
+#undef pthread_detach
 
-# define pthread_create GC_pthread_create
-# define pthread_join GC_pthread_join
-# define pthread_detach GC_pthread_detach
+#define pthread_create GC_pthread_create
+#define pthread_join GC_pthread_join
+#define pthread_detach GC_pthread_detach
 
 #ifndef GC_DARWIN_THREADS
-# ifdef pthread_sigmask
-#  undef pthread_sigmask
-# endif	 /* pthread_sigmask */
+# undef pthread_sigmask
+# undef dlopen
 # define pthread_sigmask GC_pthread_sigmask
-# ifdef dlopen
-#  undef dlopen
-# endif
 # define dlopen GC_dlopen
 #endif
 

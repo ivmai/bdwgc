@@ -150,7 +150,7 @@ void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
     return op;
 }
 
-void * GC_generic_malloc(size_t lb, int k)
+GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
 {
     void * result;
     DCL_LOCK_STATE;

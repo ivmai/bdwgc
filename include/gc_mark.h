@@ -25,8 +25,12 @@
 #ifndef GC_MARK_H
 # define GC_MARK_H
 
-# ifndef GC_H
+# ifndef _GC_H
 #   include "gc.h"
+# endif
+
+# ifdef __cplusplus
+    extern "C" {
 # endif
 
 /* A client supplied mark procedure.  Returns new mark stack pointer.	*/
@@ -106,8 +110,8 @@ typedef struct GC_ms_entry * (*GC_mark_proc) (
 			/* held.					*/
 #define GC_INDIR_PER_OBJ_BIAS 0x10
 			
-extern void * GC_least_plausible_heap_addr;
-extern void * GC_greatest_plausible_heap_addr;
+GC_API void * GC_least_plausible_heap_addr;
+GC_API void * GC_greatest_plausible_heap_addr;
 			/* Bounds on the heap.  Guaranteed valid	*/
 			/* Likely to include future heap expansion.	*/
 			/* Hence usually includes not-yet-mapped	*/
@@ -132,7 +136,7 @@ extern void * GC_greatest_plausible_heap_addr;
 /* which would tie the client code to a fixed collector version.)	*/
 /* Note that mark procedures should explicitly call FIXUP_POINTER()	*/
 /* if required.								*/
-struct GC_ms_entry *GC_mark_and_push(void * obj,
+GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void * obj,
 			  	     struct GC_ms_entry * mark_stack_ptr,
 		          	     struct GC_ms_entry * mark_stack_limit,
 				     void * *src);
@@ -143,7 +147,7 @@ struct GC_ms_entry *GC_mark_and_push(void * obj,
 	  GC_mark_and_push(obj, msp, lim, src) : \
 	  msp)
 
-extern size_t GC_debug_header_size;
+GC_API size_t GC_debug_header_size;
        /* The size of the header added to objects allocated through    */
        /* the GC_debug routines.                                       */
        /* Defined as a variable so that client mark procedures don't   */
@@ -155,22 +159,24 @@ extern size_t GC_debug_header_size;
 /* The _inner versions assume the caller holds the allocation lock.	*/
 
 /* Return a new free list array.	*/
-void ** GC_new_free_list(void);
-void ** GC_new_free_list_inner(void);
+GC_API void ** GC_CALL GC_new_free_list(void);
+GC_API void ** GC_CALL GC_new_free_list_inner(void);
 
 /* Return a new kind, as specified. */
-unsigned GC_new_kind(void **free_list, GC_word mark_descriptor_template,
-		int add_size_to_descriptor, int clear_new_objects);
+GC_API unsigned GC_CALL GC_new_kind(void **free_list,
+				GC_word mark_descriptor_template,
+				int add_size_to_descriptor,
+				int clear_new_objects);
 		/* The last two parameters must be zero or one. */
-unsigned GC_new_kind_inner(void **free_list,
+GC_API unsigned GC_CALL GC_new_kind_inner(void **free_list,
 		      GC_word mark_descriptor_template,
 		      int add_size_to_descriptor,
 		      int clear_new_objects);
 
 /* Return a new mark procedure identifier, suitable for use as	*/
 /* the first argument in GC_MAKE_PROC.				*/
-unsigned GC_new_proc(GC_mark_proc);
-unsigned GC_new_proc_inner(GC_mark_proc);
+GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc);
+GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc);
 
 /* Allocate an object of a given kind.  Note that in multithreaded	*/
 /* contexts, this is usually unsafe for kinds that have the descriptor	*/
@@ -178,7 +184,7 @@ unsigned GC_new_proc_inner(GC_mark_proc);
 /* the descriptor is not correct.  Even in the single-threaded case,	*/
 /* we need to be sure that cleared objects on a free list don't		*/
 /* cause a GC crash if they are accidentally traced.			*/
-void * GC_generic_malloc(size_t lb, int k);
+GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k);
 
 typedef void (GC_CALLBACK * GC_describe_type_fn) (void *p, char *out_buf);
 				/* A procedure which			*/
@@ -194,10 +200,15 @@ typedef void (GC_CALLBACK * GC_describe_type_fn) (void *p, char *out_buf);
 				/* global free list.			*/
 #	define GC_TYPE_DESCR_LEN 40
 
-void GC_CALL GC_register_describe_type_fn(int kind, GC_describe_type_fn knd);
+GC_API void GC_CALL GC_register_describe_type_fn(int kind,
+						GC_describe_type_fn knd);
 				/* Register a describe_type function	*/
 				/* to be used when printing objects	*/
 				/* of a particular kind.		*/
+
+# ifdef __cplusplus
+    }  /* end of extern "C" */
+# endif
 
 #endif  /* GC_MARK_H */
 

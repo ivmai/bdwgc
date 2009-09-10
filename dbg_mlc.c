@@ -94,7 +94,8 @@ GC_bool GC_has_other_debug_info(ptr_t p)
   /*   source is heap object ==> *base_p != 0, *offset_p = offset 	*/
   /*   Returns 1 on success, 0 if source couldn't be determined.	*/
   /* Dest can be any address within a heap object.			*/
-  GC_ref_kind GC_get_back_ptr_info(void *dest, void **base_p, size_t *offset_p)
+  GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void *dest, void **base_p,
+						size_t *offset_p)
   {
     oh * hdr = (oh *)GC_base(dest);
     ptr_t bp;
@@ -136,7 +137,7 @@ GC_bool GC_has_other_debug_info(ptr_t p)
   /* Generate a random heap address.		*/
   /* The resulting address is in the heap, but	*/
   /* not necessarily inside a valid object.	*/
-  void *GC_generate_random_heap_address(void)
+  GC_API void * GC_CALL GC_generate_random_heap_address(void)
   {
     size_t i;
     word heap_offset = RANDOM();
@@ -162,7 +163,7 @@ GC_bool GC_has_other_debug_info(ptr_t p)
   }
 
   /* Generate a random address inside a valid marked heap object. */
-  void *GC_generate_random_valid_address(void)
+  GC_API void * GC_CALL GC_generate_random_valid_address(void)
   {
     ptr_t result;
     ptr_t base;
@@ -176,7 +177,7 @@ GC_bool GC_has_other_debug_info(ptr_t p)
   }
 
   /* Print back trace for p */
-  void GC_print_backtrace(void *p)
+  GC_API void GC_CALL GC_print_backtrace(void *p)
   {
     void *current = p;
     int i;
@@ -232,7 +233,7 @@ GC_bool GC_has_other_debug_info(ptr_t p)
     GC_print_backtrace(current);
   }
     
-  void GC_generate_random_backtrace(void)
+  GC_API void GC_CALL GC_generate_random_backtrace(void)
   {
     GC_gcollect();
     GC_generate_random_backtrace_no_gc();
@@ -325,7 +326,8 @@ STATIC ptr_t GC_check_annotated_obj(oh *ohdr)
 
 static GC_describe_type_fn GC_describe_type_fns[MAXOBJKINDS] = {0};
 
-void GC_CALL GC_register_describe_type_fn(int kind, GC_describe_type_fn fn)
+GC_API void GC_CALL GC_register_describe_type_fn(int kind,
+						GC_describe_type_fn fn)
 {
   GC_describe_type_fns[kind] = fn;
 }

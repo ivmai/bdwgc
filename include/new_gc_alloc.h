@@ -83,15 +83,15 @@
 // This should eventually be factored out into another include file.
 
 extern "C" {
-    extern void ** const GC_objfreelist_ptr;
-    extern void ** const GC_aobjfreelist_ptr;
-    extern void ** const GC_uobjfreelist_ptr;
-    extern void ** const GC_auobjfreelist_ptr;
+    GC_API void ** const GC_objfreelist_ptr;
+    GC_API void ** const GC_aobjfreelist_ptr;
+    GC_API void ** const GC_uobjfreelist_ptr;
+    GC_API void ** const GC_auobjfreelist_ptr;
 
-    extern void GC_incr_bytes_allocd(size_t bytes);
-    extern void GC_incr_mem_freed(size_t words); /* FIXME: use bytes */
+    GC_API void GC_CALL GC_incr_bytes_allocd(size_t bytes);
+    GC_API void GC_CALL GC_incr_bytes_freed(size_t bytes);
 
-    extern char * GC_generic_malloc_words_small(size_t word, int kind);
+    GC_API char * GC_CALL GC_generic_malloc_words_small(size_t word, int kind);
     		/* FIXME: Doesn't exist anymore.	*/
 }
 
@@ -173,7 +173,7 @@ void * GC_aux_template<dummy>::GC_out_of_line_malloc(size_t nwords, int kind)
     GC_incr_bytes_allocd(GC_bytes_recently_allocd);
     GC_bytes_recently_allocd = 0;
 
-    GC_incr_mem_freed(GC_bytes_per_word(GC_bytes_recently_freed));
+    GC_incr_bytes_freed(GC_bytes_recently_freed);
     GC_bytes_recently_freed = 0;
 
     return GC_generic_malloc_words_small(nwords, kind);

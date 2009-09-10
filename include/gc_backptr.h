@@ -22,6 +22,15 @@
 
 #ifndef GC_BACKPTR_H
 #define GC_BACKPTR_H
+
+# ifndef _GC_H
+#   include "gc.h"
+# endif
+
+# ifdef __cplusplus
+    extern "C" {
+# endif
+
 /* Store information about the object referencing dest in *base_p     */
 /* and *offset_p.                                                     */
 /* If multiple objects or roots point to dest, the one reported	      */
@@ -40,26 +49,31 @@ typedef enum {  GC_UNREFERENCED, /* No reference info available.	*/
 		GC_FINALIZER_REFD /* Finalizable and hence accessible.  */
 } GC_ref_kind;
 
-GC_ref_kind GC_get_back_ptr_info(void *dest, void **base_p, size_t *offset_p);
+GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void *dest, void **base_p,
+						size_t *offset_p);
 
 /* Generate a random heap address.            */
 /* The resulting address is in the heap, but  */
 /* not necessarily inside a valid object.     */
-void * GC_generate_random_heap_address(void);
+GC_API void * GC_CALL GC_generate_random_heap_address(void);
 
 /* Generate a random address inside a valid marked heap object. */
-void * GC_generate_random_valid_address(void);
+GC_API void * GC_CALL GC_generate_random_valid_address(void);
 
 /* Force a garbage collection and generate a backtrace from a */
 /* random heap address.                                       */
 /* This uses the GC logging mechanism (GC_printf) to produce  */
 /* output.  It can often be called from a debugger.  The      */
 /* source in dbg_mlc.c also serves as a sample client.	      */
-void GC_generate_random_backtrace(void);
+GC_API void GC_CALL GC_generate_random_backtrace(void);
 
 /* Print a backtrace from a specific address.  Used by the 	*/
 /* above.  The client should call GC_gcollect() immediately	*/
 /* before invocation.						*/
-void GC_print_backtrace(void *);
+GC_API void GC_CALL GC_print_backtrace(void *);
+
+# ifdef __cplusplus
+    }  /* end of extern "C" */
+# endif
 
 #endif /* GC_BACKPTR_H */
