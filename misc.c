@@ -400,6 +400,18 @@ GC_API size_t GC_CALL GC_get_free_bytes(void)
     return value;
 }
 
+/* The _inner versions assume the caller holds the allocation lock.	*/
+/* Declared in gc_mark.h (where other public "inner" functions reside).	*/
+GC_API size_t GC_CALL GC_get_heap_size_inner(void)
+{
+    return (size_t)(GC_heapsize - GC_unmapped_bytes);
+}
+
+GC_API size_t GC_CALL GC_get_free_bytes_inner(void)
+{
+    return (size_t)(GC_large_free_bytes - GC_unmapped_bytes);
+}
+
 GC_API size_t GC_CALL GC_get_unmapped_bytes(void)
 {
 # ifdef USE_MUNMAP

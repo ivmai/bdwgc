@@ -1,4 +1,12 @@
 
+2009-09-14  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai133.diff)
+
+	* misc.c (GC_get_heap_size_inner, GC_get_free_bytes_inner): New
+	API function.
+	* include/gc_pmark.h (GC_get_heap_size_inner,
+	GC_get_free_bytes_inner): New function declaration.
+
 2009-09-10  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai121.diff)
 
