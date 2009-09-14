@@ -1180,13 +1180,13 @@ void GC_push_all_stacks(void)
 				/* like to have.  Includes the 		*/
 				/* initiating thread.			*/
 
-  STATIC ptr_t marker_sp[MAX_MARKERS - 1]; /* The cold end of the stack	*/
+  static ptr_t marker_sp[MAX_MARKERS - 1]; /* The cold end of the stack	*/
 					   /* for markers.		*/
 # ifdef IA64
-    STATIC ptr_t marker_bsp[MAX_MARKERS - 1];
+    static ptr_t marker_bsp[MAX_MARKERS - 1];
 # endif
 
-  STATIC ptr_t marker_last_stack_min[MAX_MARKERS - 1];
+  static ptr_t marker_last_stack_min[MAX_MARKERS - 1];
 				/* Last known minimum (hottest) address */
     				/* in stack (or ADDR_LIMIT if unset)	*/
     				/* for markers.				*/
@@ -1353,7 +1353,7 @@ void GC_get_next_stack(char *start, char *limit,
 /* - thread stack is assumed to be large enough; and			*/
 /* - statistics about the number of marker threads is already printed.	*/
 
-STATIC void start_mark_threads(void)
+static void start_mark_threads(void)
 {
     int i;
     pthread_attr_t attr;
@@ -1374,9 +1374,9 @@ STATIC void start_mark_threads(void)
     pthread_attr_destroy(&attr);
 }
 
-STATIC pthread_mutex_t mark_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t mark_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-STATIC pthread_cond_t builder_cv = PTHREAD_COND_INITIALIZER;
+static pthread_cond_t builder_cv = PTHREAD_COND_INITIALIZER;
 
 /* GC_acquire/release_mark_lock(), GC_wait_builder/marker(),		*/
 /* GC_wait_for_reclaim(), GC_notify_all_builder/marker() are the same	*/
@@ -1416,7 +1416,7 @@ void GC_release_mark_lock(void)
 /* 2) Partial free lists referenced only by locals may not be scanned 	*/
 /*    correctly, e.g. if they contain "pointer-free" objects, since the	*/
 /*    free-list link may be ignored.					*/
-/* STATIC */ void GC_wait_builder(void)
+STATIC void GC_wait_builder(void)
 {
     GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
 #   ifdef GC_ASSERTIONS
@@ -1448,7 +1448,7 @@ void GC_notify_all_builder(void)
     }
 }
 
-STATIC pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
+static pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
 
 void GC_wait_marker(void)
 {
@@ -1478,7 +1478,7 @@ void GC_notify_all_marker(void)
 #   define MARK_THREAD_STACK_SIZE 0	/* default value */
 # endif
 
-STATIC void start_mark_threads(void)
+static void start_mark_threads(void)
 {
       int i;
 #     ifdef MSWINCE
@@ -1515,11 +1515,11 @@ STATIC void start_mark_threads(void)
       }
 }
 
-STATIC HANDLE mark_mutex_event = (HANDLE)0; /* Event with auto-reset. */
+static HANDLE mark_mutex_event = (HANDLE)0; /* Event with auto-reset. */
 volatile AO_t GC_mark_mutex_waitcnt = 0;	/* Number of waiters + 1; */
 					 	/* 0 - unlocked. */
 
-STATIC HANDLE builder_cv = (HANDLE)0; /* Event with manual reset */
+static HANDLE builder_cv = (HANDLE)0; /* Event with manual reset */
 
 /* mark_mutex_event, builder_cv, mark_cv are initialized in GC_thr_init(). */
 
@@ -1606,7 +1606,7 @@ void GC_notify_all_builder(void)
 /* (otherwise we may loose a signal sent between decrementing		*/
 /* GC_mark_mutex_waitcnt and calling WaitForSingleObject()).		*/
 
-STATIC HANDLE mark_cv = (HANDLE)0; /* Event with manual reset */
+static HANDLE mark_cv = (HANDLE)0; /* Event with manual reset */
 
 #ifdef MSWINCE
   /* SignalObjectAndWait() is missing in WinCE (for now), so you should	*/
@@ -1616,7 +1616,7 @@ STATIC HANDLE mark_cv = (HANDLE)0; /* Event with manual reset */
 #else
   typedef DWORD (WINAPI * SignalObjectAndWait_type)(
 		HANDLE, HANDLE, DWORD, BOOL);
-  STATIC SignalObjectAndWait_type signalObjectAndWait_func = 0;
+  static SignalObjectAndWait_type signalObjectAndWait_func = 0;
 #endif
 
 void GC_wait_marker(void)
@@ -1835,7 +1835,7 @@ typedef struct {
     int nShowCmd;
 } main_thread_args;
 
-STATIC DWORD WINAPI main_thread_start(LPVOID arg)
+static DWORD WINAPI main_thread_start(LPVOID arg)
 {
     main_thread_args * args = (main_thread_args *) arg;
     return (DWORD) GC_WinMain (args->hInstance, args->hPrevInstance,

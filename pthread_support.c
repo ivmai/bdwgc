@@ -1492,7 +1492,7 @@ void GC_release_mark_lock(void)
 /* 2) Partial free lists referenced only by locals may not be scanned 	*/
 /*    correctly, e.g. if they contain "pointer-free" objects, since the	*/
 /*    free-list link may be ignored.					*/
-void GC_wait_builder(void)
+STATIC void GC_wait_builder(void)
 {
     GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
 #   ifdef GC_ASSERTIONS
