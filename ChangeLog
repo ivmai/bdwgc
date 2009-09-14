@@ -1,5 +1,15 @@
 
 2009-09-14  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai136v2.diff)
+
+	* Makefile.direct: Copy missing information for -DSHORT_DBG_HDRS
+	from Makefile.
+	* Makefile: Remove the information about "define arguments" (which
+	is incomplete and outdated compared to that in Makefile.direct);
+	add help reference to Makefile.direct.
+	* Makefile.dj: Ditto.
+
+2009-09-14  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai135.diff)
 
 	* alloc.c (world_stopped_total_time, world_stopped_total_divisor):

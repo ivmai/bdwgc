@@ -214,6 +214,8 @@ HOSTCFLAGS=$(CFLAGS)
 #   the GC_debug_ functions, or through the macros that expand to these,
 #   or by redirecting malloc to GC_debug_malloc_replacement.
 #   (Also eliminates the field for the requested object size.)
+#   Occasionally could be useful for debugging of client code.  Slows down the
+#   collector somewhat, but not drastically.
 # -DSAVE_CALL_COUNT=<n> Set the number of call frames saved with objects
 #   allocated through the debugging interface.  Affects the amount of
 #   information generated in leak reports.  Only matters on platforms
