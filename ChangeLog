@@ -1,3 +1,8 @@
+2009-09-15 Hans Boehm <Hans.Boehm@hp.com> (Mostly Juan Jose Garcia-Ripoll)
+	(Also similar to, but not the same as, Ivan's diff104_cvs)
+
+	* os_dep.c (GC_forward_exception): Fix logic in several places.
+	(OSX-specific)
 
 2009-09-15  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai137v2.diff)
