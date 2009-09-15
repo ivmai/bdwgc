@@ -1009,6 +1009,8 @@ struct _GC_arrays {
 # if defined(PROC_VDB) || defined(GWW_VDB)
     page_hash_table _written_pages;	/* Pages ever dirtied	*/
 # endif
+
+#ifndef MAX_HEAP_SECTS
 # ifdef LARGE_CONFIG
 #   if CPP_WORDSZ > 32
 #     define MAX_HEAP_SECTS 8192 	/* overflows at roughly 128 GB	   */
@@ -1026,6 +1028,8 @@ struct _GC_arrays {
 #     endif
 #   endif
 # endif
+#endif /* !MAX_HEAP_SECTS */
+
   struct HeapSect {
       ptr_t hs_start; size_t hs_bytes;
   } _heap_sects[MAX_HEAP_SECTS];	/* Heap segments potentially 	*/
