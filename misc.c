@@ -452,14 +452,6 @@ GC_bool GC_is_initialized = FALSE;
   extern void GC_init_parallel(void);
 # endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
 
-/* FIXME: The GC_init/GC_init_inner distinction should go away. */
-GC_API void GC_CALL GC_init(void)
-{
-    /* LOCK(); -- no longer does anything this early. */
-    GC_init_inner();
-    /* UNLOCK(); */
-}
-
 #if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
     CRITICAL_SECTION GC_write_cs;
 #endif
@@ -515,8 +507,9 @@ static void maybe_install_looping_handler(void)
   extern int GC_unmap_threshold;
 #endif
 
-void GC_init_inner(void)
+GC_API void GC_CALL GC_init(void)
 {
+    /* LOCK(); -- no longer does anything this early. */
 #   if !defined(THREADS) && defined(GC_ASSERTIONS)
         word dummy;
 #   endif
@@ -874,7 +867,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
     maybe_install_looping_handler();  /* Before write fault handler! */
     GC_incremental = TRUE;
     if (!GC_is_initialized) {
-        GC_init_inner();
+        GC_init();
     } else {
 	GC_dirty_init();
     }

@@ -663,7 +663,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
   GC_ASSERT(GC_lookup_thread_inner(GetCurrentThreadId()) != 0);
 
 # if !defined(GC_NO_DLLMAIN) && !defined(PARALLEL_MARK)
-    /* GC_init_parallel() is not called from GC_init_inner().	*/
+    /* GC_init() doesn't call GC_init_parallel() in this case.	*/
     parallel_initialized = TRUE;
 # endif
   GC_need_to_lock = TRUE; /* We are multi-threaded now. */

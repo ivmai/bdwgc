@@ -56,7 +56,7 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 /* PTRFREE */ { &GC_aobjfreelist[0], 0 /* filled in dynamically */,
 		0 | GC_DS_LENGTH, FALSE, FALSE },
 /* NORMAL  */ { &GC_objfreelist[0], 0,
-		0 | GC_DS_LENGTH,  /* Adjusted in GC_init_inner for EXTRA_BYTES */
+		0 | GC_DS_LENGTH,  /* Adjusted in GC_init for EXTRA_BYTES */
 		TRUE /* add length to descr */, TRUE },
 /* UNCOLLECTABLE */
 	      { &GC_uobjfreelist[0], 0,

@@ -288,7 +288,7 @@ DCL_LOCK_STATE;
     if (GC_have_errors) GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
     LOCK();
-    if (!GC_is_initialized) GC_init_inner();
+    if (!GC_is_initialized) GC_init();
     /* Do our share of marking work */
       if (GC_incremental && !GC_dont_gc) {
         ENTER_GC();

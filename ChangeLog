@@ -1,4 +1,18 @@
 2009-09-16  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai134.diff)
+
+	* alloc.c (GC_expand_hp): Replace GC_init_inner() call with
+	GC_init() one.
+	* malloc.c (GC_alloc_large, GC_generic_malloc_inner): Ditto.
+	* mallocx.c (GC_generic_malloc_many): Ditto.
+	* misc.c (GC_enable_incremental): Ditto.
+	* alloc.c (GC_expand_hp): Update the comment.
+	* mark.c (GC_obj_kinds): Ditto.
+	* win32_threads.c (GC_allow_register_threads): Ditto.
+	* private/gc_priv.h (GC_init_inner): Remove function declaration.
+	* misc.c (GC_init_inner): Replace with public GC_init().
+
+2009-09-16  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai126.diff)
 
 	* gcj_mlc.c (GC_gcj_fake_mark_proc): New static function.

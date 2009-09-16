@@ -1620,7 +1620,6 @@ void GC_freehblk(struct hblk * p);
   				/* as invalid.				*/
   				
 /*  Misc GC: */
-void GC_init_inner(void);
 GC_bool GC_expand_hp_inner(word n);
 void GC_start_reclaim(int abort_if_found);
   				/* Restore unmarked objects to free	*/

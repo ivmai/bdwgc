@@ -50,7 +50,7 @@ ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
     /* Round up to a multiple of a granule. */
       lb = (lb + GRANULE_BYTES - 1) & ~(GRANULE_BYTES - 1);
     n_blocks = OBJ_SZ_TO_BLOCKS(lb);
-    if (!GC_is_initialized) GC_init_inner();
+    if (!GC_is_initialized) GC_init();
     /* Do our share of marking work */
         if(GC_incremental && !GC_dont_gc)
 	    GC_collect_a_little_inner((int)n_blocks);
@@ -112,7 +112,7 @@ void * GC_generic_malloc_inner(size_t lb, int k)
 
         if( (op = *opp) == 0 ) {
 	    if (GC_size_map[lb] == 0) {
-	      if (!GC_is_initialized)  GC_init_inner();
+	      if (!GC_is_initialized) GC_init();
 	      if (GC_size_map[lb] == 0) GC_extend_size_map(lb);
 	      return(GC_generic_malloc_inner(lb, k));
 	    }

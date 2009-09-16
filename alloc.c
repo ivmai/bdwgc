@@ -1059,14 +1059,14 @@ GC_bool GC_expand_hp_inner(word n)
 }
 
 /* Really returns a bool, but it's externally visible, so that's clumsy. */
-/* Arguments is in bytes.						*/
+/* Arguments is in bytes.  Includes GC_init() call.			 */
 GC_API int GC_CALL GC_expand_hp(size_t bytes)
 {
     int result;
     DCL_LOCK_STATE;
     
     LOCK();
-    if (!GC_is_initialized) GC_init_inner();
+    if (!GC_is_initialized) GC_init();
     result = (int)GC_expand_hp_inner(divHBLKSZ((word)bytes));
     if (result) GC_requested_heapsize += bytes;
     UNLOCK();
