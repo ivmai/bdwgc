@@ -19,7 +19,7 @@
 /* checking for some of the tests.				*/
 
 # ifdef HAVE_CONFIG_H
-#   include "config.h"
+#   include "private/config.h"
 # endif
 
 # undef GC_BUILD

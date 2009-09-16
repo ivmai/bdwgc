@@ -20,7 +20,7 @@
 # define GC_PRIVATE_H
 
 # ifdef HAVE_CONFIG_H
-#   include "config.h"
+#   include "private/config.h"
 # endif
 
 # ifndef GC_BUILD

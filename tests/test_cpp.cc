@@ -24,6 +24,10 @@ few minutes to complete.
 
 ***************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+# include "private/config.h"
+#endif
+#undef GC_BUILD
 #include "gc_cpp.h"
 #include <stdio.h>
 #include <stdlib.h>

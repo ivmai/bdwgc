@@ -1,3 +1,14 @@
+2009-09-16  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+	(gc_config_h_6a.patch with a minor correction)
+
+	* include/private/gc_priv.h: Change include of config.h to
+	private/config.h.
+	* include/private/gc_pmark.h: Ditto.
+	* gc_cpp.cc: Ditto.
+	* tests/test.c: Ditto.
+	* tests/test_cpp.cc: Include private/config.h (if HAVE_CONFIG_H);
+	undefine GC_BUILD.
+
 2009-09-16  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai128.diff - superseding diff62, diff66 partly)
 
