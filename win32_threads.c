@@ -1375,6 +1375,10 @@ static void start_mark_threads(void)
       if (0 != pthread_create(&new_thread, &attr,
 			      GC_mark_thread, (void *)(word)i)) {
 	WARN("Marker thread creation failed.\n", 0);
+	/* Don't try to create other marker threads.	*/
+	GC_markers = i + 1;
+	if (i == 0) GC_parallel = FALSE;
+	break;
       }
     }
     pthread_attr_destroy(&attr);
@@ -1496,6 +1500,11 @@ void GC_notify_all_marker(void)
 #   define MARK_THREAD_STACK_SIZE 0	/* default value */
 # endif
 
+/* mark_mutex_event, builder_cv, mark_cv are initialized in GC_thr_init(). */
+static HANDLE mark_mutex_event = (HANDLE)0; /* Event with auto-reset.	*/
+static HANDLE builder_cv = (HANDLE)0; /* Event with manual reset.	*/
+static HANDLE mark_cv = (HANDLE)0; /* Event with manual reset.		*/
+
 static void start_mark_threads(void)
 {
       int i;
@@ -1527,9 +1536,12 @@ static void start_mark_threads(void)
 	  handle = CreateThread(NULL /* lpsa */, MARK_THREAD_STACK_SIZE,
 				GC_mark_thread, (LPVOID)(word)i,
 				0 /* fdwCreate */, &thread_id);
-	  if (handle == NULL)
+	  if (handle == NULL) {
 	    WARN("Marker thread creation failed\n", 0);
-	  else {
+	    /* The most probable failure reason is "not enough memory".	*/
+	    /* Don't try to create other marker threads.		*/
+	    break;
+	  } else {
 	    /* It's safe to detach the thread.	*/
 	    CloseHandle(handle);
 	  }
@@ -1537,16 +1549,33 @@ static void start_mark_threads(void)
 	  handle = _beginthreadex(NULL /* security_attr */,
 				MARK_THREAD_STACK_SIZE, GC_mark_thread,
 				(void *)(word)i, 0 /* flags */, &thread_id);
-	  if (!handle || handle == (GC_uintptr_t)-1L)
+	  if (!handle || handle == (GC_uintptr_t)-1L) {
 	    WARN("Marker thread creation failed\n", 0);
-	  else { /* We may detach the thread (if handle is of HANDLE type) */
+	    /* Don't try to create other marker threads.		*/
+	    break;
+	  } else {/* We may detach the thread (if handle is of HANDLE type) */
 	    /* CloseHandle((HANDLE)handle); */
 	  }
 #	endif
       }
+
+      /* Adjust GC_markers (and free unused resources) in case of failure. */
+#     ifdef DONT_USE_SIGNALANDWAIT
+        while ((int)GC_markers > i + 1) {
+          GC_markers--;
+          CloseHandle(GC_marker_cv[(int)GC_markers - 1]);
+        }
+#     else
+        GC_markers = i + 1;
+#     endif
+      if (i == 0) {
+        GC_parallel = FALSE;
+        CloseHandle(mark_cv);
+        CloseHandle(builder_cv);
+        CloseHandle(mark_mutex_event);
+      }
 }
 
-static HANDLE mark_mutex_event = (HANDLE)0; /* Event with auto-reset. */
 #ifdef DONT_USE_SIGNALANDWAIT
   STATIC /* volatile */ LONG GC_mark_mutex_state = 0;
 				/* Mutex state: 0 - unlocked,		*/
@@ -1557,10 +1586,6 @@ static HANDLE mark_mutex_event = (HANDLE)0; /* Event with auto-reset. */
   volatile AO_t GC_mark_mutex_waitcnt = 0;	/* Number of waiters + 1; */
 					 	/* 0 - unlocked. */
 #endif
-
-static HANDLE builder_cv = (HANDLE)0; /* Event with manual reset */
-
-/* mark_mutex_event, builder_cv, mark_cv are initialized in GC_thr_init(). */
 
 /* #define LOCK_STATS */
 #ifdef LOCK_STATS
@@ -1651,8 +1676,6 @@ void GC_notify_all_builder(void)
     if (SetEvent(builder_cv) == FALSE)
 	ABORT("SetEvent() failed");
 }
-
-static HANDLE mark_cv = (HANDLE)0; /* Event with manual reset */
 
 #ifdef DONT_USE_SIGNALANDWAIT
 
@@ -2078,10 +2101,6 @@ void GC_thr_init(void) {
 	  GC_time_limit = GC_TIME_UNLIMITED;
 	}
       }
-      
-      if (GC_print_stats) {
-	GC_log_printf("Number of marker threads = %ld\n", GC_markers);
-      }
 #   endif /* PARALLEL_MARK */
     
     GC_ASSERT(0 == GC_lookup_thread_inner(GC_main_thread));
@@ -2090,6 +2109,9 @@ void GC_thr_init(void) {
 #   ifdef PARALLEL_MARK
       /* If we are using a parallel marker, actually start helper threads.  */
       if (GC_parallel) start_mark_threads();
+      if (GC_print_stats) {
+        GC_log_printf("Started %ld marker threads\n", GC_markers - 1);
+      }
 #   endif
 }
 
