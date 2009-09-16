@@ -1,4 +1,13 @@
 2009-09-16  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai125.diff)
+
+	* os_dep.c (GC_wince_get_mem): If VirtualAlloc() returns NULL (due
+	to out of memory) then don't increment GC_n_heap_bases and don't
+	call VirtualAlloc() again (with MEM_COMMIT).
+	* os_dep.c (GC_remap): Abort with a more informatory message if
+	VirtualAlloc() fails due to out of memory; update FIXME.
+
+2009-09-16  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai132.diff - superseding diff41a, diff64, diff84 partly)
 
 	* Makefile: Fix typo for msvc_dbg.c.

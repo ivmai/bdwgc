@@ -1962,6 +1962,7 @@ ptr_t GC_wince_get_mem(word bytes)
     	    /* If I read the documentation correctly, this can	*/
     	    /* only happen if HBLKSIZE > 64k or not a power of 2.	*/
 	if (GC_n_heap_bases >= MAX_HEAP_SECTS) ABORT("Too many heap sections");
+	if (result == NULL) return NULL;
 	GC_heap_bases[GC_n_heap_bases] = result;
 	GC_heap_lengths[GC_n_heap_bases] = 0;
 	GC_n_heap_bases++;
@@ -2066,7 +2067,7 @@ void GC_remap(ptr_t start, size_t bytes)
     ptr_t end_addr = GC_unmap_end(start, bytes);
     word len = end_addr - start_addr;
 
-    /* FIXME: Should we handle out-of-memory here? */
+    /* FIXME: Handle out-of-memory correctly (at least for Win32)	*/
 #   if defined(MSWIN32) || defined(MSWINCE)
       ptr_t result;
 
@@ -2082,7 +2083,12 @@ void GC_remap(ptr_t start, size_t bytes)
 				MEM_COMMIT,
 				PAGE_EXECUTE_READWRITE);
 	  if (result != start_addr) {
-	      ABORT("VirtualAlloc remapping failed");
+	      if (GetLastError() == ERROR_NOT_ENOUGH_MEMORY ||
+	          GetLastError() == ERROR_OUTOFMEMORY) {
+	      	  ABORT("Not enough memory to process remapping");
+	      } else {
+	      	  ABORT("VirtualAlloc remapping failed");
+	      }
 	  }
 	  GC_unmapped_bytes -= alloc_len;
 	  start_addr += alloc_len;
