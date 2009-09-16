@@ -50,12 +50,25 @@ int GC_gcj_debug_kind;	/* The kind of objects that is always marked 	*/
 ptr_t * GC_gcjobjfreelist;
 ptr_t * GC_gcjdebugobjfreelist;
 
+/*ARGSUSED*/
+STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr,
+					struct GC_ms_entry *mark_stack_ptr,
+					struct GC_ms_entry *mark_stack_limit,
+					word env)
+{
+    ABORT("No client gcj mark proc is specified");
+    return mark_stack_ptr;
+}
+
 /* Caller does not hold allocation lock. */
 GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
 				void * /* really GC_mark_proc */mp)
 {
     GC_bool ignore_gcj_info;
     DCL_LOCK_STATE;
+
+    if (mp == 0)	/* In case GC_DS_PROC is unused.	*/
+      mp = (void *)(word)GC_gcj_fake_mark_proc;
 
     GC_init();	/* In case it's not already done.	*/
     LOCK();
