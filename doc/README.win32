@@ -201,10 +201,9 @@ enabled before any additional threads are created.
 
 Since 6.3alpha2, threads are also better supported in static library builds
 with Microsoft tools (use NT_STATIC_THREADS_MAKEFILE) and with the GNU
-tools.  In all cases,the collector must be built with GC_WIN32_THREADS
-defined, even if the Cygwin pthreads interface is used.
+tools.  The collector must be built with GC_THREADS defined.
 (NT_STATIC_THREADS_MAKEFILE does this implicitly.  Under Cygwin,
-./configure --enable-threads=posix defines GC_WIN32_THREADS.)
+./configure --enable-threads=posix should be used.)
 
 For the normal, non-dll-based thread tracking to work properly,
 threads should be created with GC_CreateThread or GC_beginthreadex,

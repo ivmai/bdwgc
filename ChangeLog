@@ -1,3 +1,11 @@
+2009-09-16  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai131.diff - superseding diff83, diff84 partly)
+
+	* doc/README.solaris2: Replace GC_SOLARIS_THREADS with GC_THREADS.
+	* doc/README.win32: Replace GC_WIN32_THREADS with GC_THREADS.
+	* doc/README.win64: Add info about mingw-w64; add note for VC++
+	warnings suppression.
+
 2009-09-15 Hans Boehm <Hans.Boehm@hp.com> (Mostly Juan Jose Garcia-Ripoll)
 	(Also similar to, but not the same as, Ivan's diff104_cvs)
 
