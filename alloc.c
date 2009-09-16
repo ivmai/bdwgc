@@ -832,6 +832,10 @@ STATIC void GC_finish_collection(void)
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
 	GET_TIME(done_time);
+
+	/* A convenient place to output finalization statistics. */
+	GC_print_finalization_stats();
+
 	GC_log_printf("Finalize + initiate sweep took %lu + %lu msecs\n",
 	              MS_TIME_DIFF(finalize_time,start_time),
 	              MS_TIME_DIFF(done_time,finalize_time));

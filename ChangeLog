@@ -1,4 +1,23 @@
 2009-09-16  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai127.diff - superseding diff49)
+
+	* alloc.c (GC_finish_collection): Call GC_print_finalization_stats
+	if GC_print_stats (after getting "done_time").
+	* finalize.c (GC_old_dl_entries): New static variable (only if not
+	SMALL_CONFIG).
+	* finalize.c (GC_finalize): Save current GC_dl_entries value (only
+	if not SMALL_CONFIG).
+	* finalize.c (GC_print_finalization_stats): Define if and only if
+	not SMALL_CONFIG; use GC_old_dl_entries value; use GC_log_printf()
+	instead of GC_printf(); use "%lu" (instead of "%u") print format
+	specifier; use unsigned long type for "ready" counter (for LP64
+	targets).
+	* misc.c (GC_dump): No longer call GC_print_finalization_stats()
+	here (since it is called from GC_finish_collection()).
+	* misc.c (STACKBASE): Remove unused macro undef (for NOSYS and
+	ECOS).
+
+2009-09-16  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai134.diff)
 
 	* alloc.c (GC_expand_hp): Replace GC_init_inner() call with

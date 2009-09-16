@@ -459,6 +459,10 @@ void GC_dump_finalization(void)
 }
 #endif
 
+#ifndef SMALL_CONFIG
+  STATIC word GC_old_dl_entries; /* for stats printing */
+#endif
+
 extern unsigned GC_fail_count;
 			/* How many consecutive GC/expansion failures?	*/
 			/* Reset by GC_allochblk(); defined in alloc.c.	*/
@@ -505,6 +509,11 @@ void GC_finalize(void)
     size_t dl_size = (log_dl_table_size == -1 ) ? 0 : (1 << log_dl_table_size);
     size_t fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
     
+#   ifndef SMALL_CONFIG
+      /* Save current GC_dl_entries value for stats printing */
+      GC_old_dl_entries = GC_dl_entries;
+#   endif
+
   /* Make disappearing links disappear */
     for (i = 0; i < dl_size; i++) {
       curr_dl = dl_head[i];
@@ -897,17 +906,20 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn,
     return(result);
 }
 
-#if !defined(NO_DEBUGGING)
+#ifndef SMALL_CONFIG
 
 void GC_print_finalization_stats(void)
 {
     struct finalizable_object *fo = GC_finalize_now;
-    unsigned ready = 0;
+    unsigned long ready = 0;
 
-    GC_printf("%u finalization table entries; %u disappearing links\n",
-	       (unsigned)GC_fo_entries, (unsigned)GC_dl_entries);
+    GC_log_printf(
+	"%lu finalization table entries; %lu disappearing links alive\n",
+	(unsigned long)GC_fo_entries, (unsigned long)GC_dl_entries);
     for (; 0 != fo; fo = fo_next(fo)) ++ready;
-    GC_printf("%u objects are eligible for immediate finalization\n", ready);
+    GC_log_printf("%lu objects are eligible for immediate finalization; "
+		  "%ld links cleared\n",
+		  ready, (long)GC_old_dl_entries - (long)GC_dl_entries);
 }
 
-#endif /* NO_DEBUGGING */
+#endif /* SMALL_CONFIG */

@@ -54,10 +54,6 @@
 /* For other platforms with threads, the lock and possibly		*/
 /* GC_lock_holder variables are defined in the thread support code.	*/
 
-#if defined(NOSYS) || defined(ECOS)
-#undef STACKBASE
-#endif
-
 /* Dont unnecessarily call GC_register_main_static_data() in case 	*/
 /* dyn_load.c isn't linked in.						*/
 #ifdef DYNAMIC_LOADING
@@ -1328,8 +1324,6 @@ GC_API void GC_CALL GC_dump(void)
     GC_print_hblkfreelist();
     GC_printf("\n***Blocks in use:\n");
     GC_print_block_list();
-    GC_printf("\n***Finalization statistics:\n");
-    GC_print_finalization_stats();
 }
 
 #endif /* NO_DEBUGGING */
