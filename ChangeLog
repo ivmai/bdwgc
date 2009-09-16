@@ -1,4 +1,10 @@
 2009-09-16  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai124.diff - superseding diff67 partly)
+
+	* alloc.c (GC_set_fl_marks, GC_clear_fl_marks): Transform loop to
+	suppress compiler "variable might be uninitialized" warnings.
+
+2009-09-16  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai138.diff)
 
 	* Makefile.direct (DONT_USE_SIGNALANDWAIT): Add the comment for.

@@ -613,24 +613,35 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 /* Set all mark bits for the free list whose first entry is q	*/
 void GC_set_fl_marks(ptr_t q)
 {
-   ptr_t p;
-   struct hblk * h, * last_h = 0;
-   hdr *hhdr;  /* gcc "might be uninitialized" warning is bogus. */
+   struct hblk *h, *last_h;
+   hdr *hhdr;
    IF_PER_OBJ(size_t sz;)
    unsigned bit_no;
 
-   for (p = q; p != 0; p = obj_link(p)){
-	h = HBLKPTR(p);
+   if (q != NULL) {
+     h = HBLKPTR(q);
+     last_h = h;
+     hhdr = HDR(h);
+     IF_PER_OBJ(sz = hhdr->hb_sz;)
+
+     for (;;) {
+	bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
+	if (!mark_bit_from_hdr(hhdr, bit_no)) {
+      	  set_mark_bit_from_hdr(hhdr, bit_no);
+          ++hhdr -> hb_n_marks;
+        }
+
+        q = obj_link(q);
+        if (q == NULL)
+          break;
+
+	h = HBLKPTR(q);
 	if (h != last_h) {
 	  last_h = h; 
 	  hhdr = HDR(h);
 	  IF_PER_OBJ(sz = hhdr->hb_sz;)
 	}
-	bit_no = MARK_BIT_NO((ptr_t)p - (ptr_t)h, sz);
-	if (!mark_bit_from_hdr(hhdr, bit_no)) {
-      	  set_mark_bit_from_hdr(hhdr, bit_no);
-          ++hhdr -> hb_n_marks;
-        }
+     }
    }
 }
 
@@ -654,20 +665,19 @@ void GC_check_fl_marks(ptr_t q)
 /* Decrement GC_bytes_found by number of bytes on free list.	*/
 STATIC void GC_clear_fl_marks(ptr_t q)
 {
-   ptr_t p;
-   struct hblk * h, * last_h = 0;
+   struct hblk *h, *last_h;
    hdr *hhdr;
    size_t sz;
    unsigned bit_no;
 
-   for (p = q; p != 0; p = obj_link(p)){
-	h = HBLKPTR(p);
-	if (h != last_h) {
-	  last_h = h; 
-	  hhdr = HDR(h);
-	  sz = hhdr->hb_sz;  /* Normally set only once. */
-	}
-	bit_no = MARK_BIT_NO((ptr_t)p - (ptr_t)h, sz);
+   if (q != NULL) {
+     h = HBLKPTR(q);
+     last_h = h;
+     hhdr = HDR(h);
+     sz = hhdr->hb_sz;  /* Normally set only once. */
+
+     for (;;) {
+	bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
 	if (mark_bit_from_hdr(hhdr, bit_no)) {
 	  size_t n_marks = hhdr -> hb_n_marks - 1;
       	  clear_mark_bit_from_hdr(hhdr, bit_no);
@@ -681,6 +691,18 @@ STATIC void GC_clear_fl_marks(ptr_t q)
 #	  endif
         }
 	GC_bytes_found -= sz;
+
+        q = obj_link(q);
+        if (q == NULL)
+          break;
+
+	h = HBLKPTR(q);
+	if (h != last_h) {
+	  last_h = h; 
+	  hhdr = HDR(h);
+	  sz = hhdr->hb_sz;
+	}
+     }
    }
 }
 
