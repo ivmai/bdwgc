@@ -170,7 +170,7 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
         if (curr_dl -> dl_hidden_link == HIDE_POINTER(link)) {
             curr_dl -> dl_hidden_obj = HIDE_POINTER(obj);
             UNLOCK();
-            return(1);
+            return GC_DUPLICATE;
         }
     }
     new_dl = (struct disappearing_link *)
@@ -181,10 +181,24 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
       new_dl = (struct disappearing_link *)
 		(*oom_fn)(sizeof(struct disappearing_link));
       if (0 == new_dl) {
-	return(2);
+	return GC_NO_MEMORY;
       }
       /* It's not likely we'll make it here, but ... */
       LOCK();
+      /* Recalculate index since the table may grow.	*/
+      index = HASH2(link, log_dl_table_size);
+      /* Check again that our disappearing link not in the table. */
+      for (curr_dl = dl_head[index]; curr_dl != 0; curr_dl = dl_next(curr_dl)) {
+	if (curr_dl -> dl_hidden_link == HIDE_POINTER(link)) {
+	  curr_dl -> dl_hidden_obj = HIDE_POINTER(obj);
+	  UNLOCK();
+#	  ifndef DBG_HDRS_ALL
+	    /* Free unused new_dl returned by GC_oom_fn() */
+	    GC_free((void *)new_dl);
+#	  endif
+	  return GC_DUPLICATE;
+	}
+      }
     }
     new_dl -> dl_hidden_obj = HIDE_POINTER(obj);
     new_dl -> dl_hidden_link = HIDE_POINTER(link);
@@ -192,7 +206,7 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
     dl_head[index] = new_dl;
     GC_dl_entries++;
     UNLOCK();
-    return(0);
+    return GC_SUCCESS;
 }
 
 GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
@@ -297,8 +311,8 @@ STATIC void GC_register_finalizer_inner(void * obj,
     ptr_t base;
     struct finalizable_object * curr_fo, * prev_fo;
     size_t index;
-    struct finalizable_object *new_fo;
-    hdr *hhdr;
+    struct finalizable_object *new_fo = 0;
+    hdr *hhdr = NULL; /* initialized to prevent warning. */
     GC_oom_func oom_fn;
     DCL_LOCK_STATE;
 
@@ -314,75 +328,93 @@ STATIC void GC_register_finalizer_inner(void * obj,
     }
     /* in the THREADS case we hold allocation lock.		*/
     base = (ptr_t)obj;
-    index = HASH2(base, log_fo_table_size);
-    prev_fo = 0; curr_fo = fo_head[index];
-    while (curr_fo != 0) {
-        GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
-        if (curr_fo -> fo_hidden_base == HIDE_POINTER(base)) {
-            /* Interruption by a signal in the middle of this	*/
-            /* should be safe.  The client may see only *ocd	*/
-            /* updated, but we'll declare that to be his	*/
-            /* problem.						*/
-            if (ocd) *ocd = (void *) (curr_fo -> fo_client_data);
-            if (ofn) *ofn = curr_fo -> fo_fn;
-            /* Delete the structure for base. */
-                if (prev_fo == 0) {
-                  fo_head[index] = fo_next(curr_fo);
-                } else {
-                  fo_set_next(prev_fo, fo_next(curr_fo));
-                }
-            if (fn == 0) {
-                GC_fo_entries--;
-                  /* May not happen if we get a signal.  But a high	*/
-                  /* estimate will only make the table larger than	*/
-                  /* necessary.						*/
-#		if !defined(THREADS) && !defined(DBG_HDRS_ALL)
-                  GC_free((void *)curr_fo);
-#		endif
-            } else {
-                curr_fo -> fo_fn = fn;
-                curr_fo -> fo_client_data = (ptr_t)cd;
-                curr_fo -> fo_mark_proc = mp;
-		/* Reinsert it.  We deleted it first to maintain	*/
-		/* consistency in the event of a signal.		*/
-		if (prev_fo == 0) {
-                  fo_head[index] = curr_fo;
-                } else {
-                  fo_set_next(prev_fo, curr_fo);
-                }
-            }
-	    UNLOCK();
-            return;
-        }
-        prev_fo = curr_fo;
-        curr_fo = fo_next(curr_fo);
-    }
-    if (ofn) *ofn = 0;
-    if (ocd) *ocd = 0;
-    if (fn == 0) {
+    for (;;) {
+      index = HASH2(base, log_fo_table_size);
+      prev_fo = 0; curr_fo = fo_head[index];
+      while (curr_fo != 0) {
+	GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
+	if (curr_fo -> fo_hidden_base == HIDE_POINTER(base)) {
+	  /* Interruption by a signal in the middle of this	*/
+	  /* should be safe.  The client may see only *ocd	*/
+	  /* updated, but we'll declare that to be his problem.	*/
+	  if (ocd) *ocd = (void *) (curr_fo -> fo_client_data);
+	  if (ofn) *ofn = curr_fo -> fo_fn;
+	  /* Delete the structure for base. */
+	  if (prev_fo == 0) {
+	    fo_head[index] = fo_next(curr_fo);
+	  } else {
+	    fo_set_next(prev_fo, fo_next(curr_fo));
+	  }
+	  if (fn == 0) {
+	    GC_fo_entries--;
+	    /* May not happen if we get a signal.  But a high	*/
+	    /* estimate will only make the table larger than	*/
+	    /* necessary.					*/
+#	    if !defined(THREADS) && !defined(DBG_HDRS_ALL)
+	      GC_free((void *)curr_fo);
+#	    endif
+	  } else {
+	    curr_fo -> fo_fn = fn;
+	    curr_fo -> fo_client_data = (ptr_t)cd;
+	    curr_fo -> fo_mark_proc = mp;
+	    /* Reinsert it.  We deleted it first to maintain	*/
+	    /* consistency in the event of a signal.		*/
+	    if (prev_fo == 0) {
+	      fo_head[index] = curr_fo;
+	    } else {
+	      fo_set_next(prev_fo, curr_fo);
+	    }
+	  }
+	  UNLOCK();
+#	  ifndef DBG_HDRS_ALL
+	    if (EXPECT(new_fo != 0, FALSE)) {
+	      /* Free unused new_fo returned by GC_oom_fn() */
+	      GC_free((void *)new_fo);
+	    }
+#	  endif
+	  return;
+	}
+	prev_fo = curr_fo;
+	curr_fo = fo_next(curr_fo);
+      }
+      if (EXPECT(new_fo != 0, FALSE)) {
+	/* new_fo is returned GC_oom_fn(), so fn != 0 and hhdr != 0.	*/
+        break;
+      }
+      if (fn == 0) {
+	if (ocd) *ocd = 0;
+	if (ofn) *ofn = 0;
 	UNLOCK();
-        return;
-    }
-    GET_HDR(base, hhdr);
-    if (0 == hhdr) {
-      /* We won't collect it, hence finalizer wouldn't be run. */
-      UNLOCK();
-      return;
-    }
-    new_fo = (struct finalizable_object *)
+	return;
+      }
+      GET_HDR(base, hhdr);
+      if (EXPECT(0 == hhdr, FALSE)) {
+	/* We won't collect it, hence finalizer wouldn't be run. */
+	if (ocd) *ocd = 0;
+	if (ofn) *ofn = 0;
+	UNLOCK();
+	return;
+      }
+      new_fo = (struct finalizable_object *)
     	GC_INTERNAL_MALLOC(sizeof(struct finalizable_object),NORMAL);
-    if (EXPECT(0 == new_fo, FALSE)) {
+      if (EXPECT(new_fo != 0, TRUE))
+	break;
       oom_fn = GC_oom_fn;
       UNLOCK();
       new_fo = (struct finalizable_object *)
 		(*oom_fn)(sizeof(struct finalizable_object));
       if (0 == new_fo) {
+	/* No enough memory.  *ocd and *ofn remains unchanged.	*/
 	return;
       }
       /* It's not likely we'll make it here, but ... */
       LOCK();
+      /* Recalculate index since the table may grow and		*/
+      /* check again that our finalizer is not in the table.	*/
     }
     GC_ASSERT(GC_size(new_fo) >= sizeof(struct finalizable_object));
+    if (ocd) *ocd = 0;
+    if (ofn) *ofn = 0;
     new_fo -> fo_hidden_base = (word)HIDE_POINTER(base);
     new_fo -> fo_fn = fn;
     new_fo -> fo_client_data = (ptr_t)cd;

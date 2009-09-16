@@ -721,7 +721,7 @@ DCL_LOCK_STATE;
        /* Make sure the descriptor is cleared once there is any danger	*/
        /* it may have been collected.					*/
        if (GC_general_register_disappearing_link((void * *)((word *)op+lw-1),
-						 op) == 2) {
+						 op) == GC_NO_MEMORY) {
 	   /* Couldn't register it due to lack of memory.  Punt.	*/
 	   /* This will probably fail too, but gives the recovery code  */
 	   /* a chance.							*/

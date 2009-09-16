@@ -845,6 +845,8 @@ GC_API void GC_CALL GC_debug_register_finalizer_unreachable(void * /* obj */,
 			GC_finalization_proc /* fn */, void * /* cd */,
 			GC_finalization_proc * /* ofn */, void ** /* ocd */);
 
+#define GC_NO_MEMORY 2	/* Failure due to lack of memory.	*/
+
 /* The following routine may be used to break cycles between	*/
 /* finalizable objects, thus causing cyclic finalizable		*/
 /* objects to be finalized in the correct order.  Standard	*/
@@ -867,9 +869,9 @@ GC_API int GC_CALL GC_register_disappearing_link(void ** /* link */);
 	/* There's an argument that an arbitrary action should  */
 	/* be allowed here, instead of just clearing a pointer. */
 	/* But this causes problems if that action alters, or 	*/
-	/* examines connectivity.				*/
-	/* Returns 1 if link was already registered, 0 if	*/
-	/* registration succeeded, 2 if it failed for lack of	*/
+	/* examines connectivity.  Returns GC_DUPLICATE if link	*/
+	/* was already registered, GC_SUCCESS if registration	*/
+	/* succeeded, GC_NO_MEMORY if it failed for lack of	*/
 	/* memory, and GC_oom_fn did not handle the problem.	*/
 	/* Only exists for backward compatibility.  See below:	*/
 	
@@ -900,7 +902,11 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
 	/* pointer is accessed.  Otherwise a strong pointer	*/
 	/* could be recreated between the time the collector    */
 	/* decides to reclaim the object and the link is	*/
-	/* cleared.						*/
+	/* cleared.  Returns GC_SUCCESS if registration		*/
+	/* succeeded (a new link is registered), GC_DUPLICATE	*/
+	/* if link was already registered (with some object),	*/
+	/* GC_NO_MEMORY if registration failed for lack of	*/
+	/* memory (and GC_oom_fn did not handle the problem).	*/
 
 GC_API int GC_CALL GC_unregister_disappearing_link(void ** /* link */);
 	/* Undoes a registration by either of the above two	*/

@@ -1,4 +1,25 @@
 2009-09-16  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai128.diff - superseding diff62, diff66 partly)
+
+	* finalize.c (GC_general_register_disappearing_link): Return
+	GC_SUCCESS, GC_DUPLICATE, GC_NO_MEMORY (instead of 0, 1 and 2,
+	respectively).
+	* include/gc.h (GC_NO_MEMORY): New macro (defined as 2).
+	* include/gc.h (GC_register_disappearing_link,
+	GC_general_register_disappearing_link): Update the comment.
+	* typd_mlc.c (GC_calloc_explicitly_typed): Use GC_NO_MEMORY macro.
+	* finalize.c (GC_general_register_disappearing_link,
+	GC_register_finalizer_inner): Recalculate the hash table index
+	after GC_oom_fn succeeded (since the table may grow while not
+	holding the lock) and check again that the entry is still not in
+	the table (free the unused entry otherwise unless DBG_HDRS_ALL).
+	* finalize.c (GC_register_finalizer_inner): Initialize "hhdr"
+	local variable (to prevent a compiler warning).
+	* finalize.c (GC_register_finalizer_inner): Don't modify the data
+	pointed by "ocd" and "ofn" in GC_register_finalizer_inner() failed
+	(due to out of memory).
+
+2009-09-16  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai124.diff - superseding diff67 partly)
 
 	* alloc.c (GC_set_fl_marks, GC_clear_fl_marks): Transform loop to
