@@ -1,3 +1,69 @@
+2009-09-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* ChangeLog: Remove trailing spaces at EOLn; insert blank lines
+	where missed.
+	* doc/README: Expand all tabs to spaces; remove trailing spaces at
+	EOLn; remove multiple trailing blank lines.
+	* doc/README.autoconf: Ditto.
+	* doc/README.DGUX386: Ditto.
+	* doc/README.environment: Ditto.
+	* doc/README.macros: Ditto.
+	* doc/README.win32: Ditto.
+	* tests/test.c: Ditto.
+	* tests/test_cpp.cc: Ditto.
+	* backgraph.c: Ditto.
+	* blacklst.c: Ditto.
+	* checksums.c: Ditto.
+	* darwin_stop_world.c: Ditto.
+	* dbg_mlc.c: Ditto.
+	* dyn_load.c: Ditto.
+	* finalize.c: Ditto.
+	* gc_dlopen.c: Ditto.
+	* gcj_mlc.c: Ditto.
+	* headers.c: Ditto.
+	* mach_dep.c: Ditto.
+	* malloc.c: Ditto.
+	* mallocx.c: Ditto.
+	* new_hblk.c: Ditto.
+	* obj_map.c: Ditto.
+	* ptr_chck.c: Ditto.
+	* real_malloc.c: Ditto.
+	* reclaim.c: Ditto.
+	* stubborn.c: Ditto.
+	* thread_local_alloc.c: Ditto.
+	* typd_mlc.c: Ditto.
+	* gc_cpp.cc: Ditto.
+	* include/gc_allocator.h: Ditto.
+	* include/gc_backptr.h: Ditto.
+	* include/gc_config_macros.h: Ditto.
+	* include/gc_cpp.h: Ditto.
+	* include/gc_gcj.h: Ditto.
+	* include/gc_inline.h: Ditto.
+	* include/gc_mark.h: Ditto.
+	* include/gc_pthread_redirects.h: Ditto.
+	* include/gc_typed.h: Ditto.
+	* include/gc_version.h: Ditto.
+	* include/javaxfc.h: Ditto.
+	* include/new_gc_alloc.h: Ditto.
+	* include/private/darwin_semaphore.h: Ditto.
+	* include/private/dbg_mlc.h: Ditto.
+	* include/private/gc_hdrs.h: Ditto.
+	* include/private/gc_locks.h: Ditto.
+	* include/private/gc_pmark.h: Ditto.
+	* include/private/gcconfig.h: Ditto.
+	* include/private/pthread_support.h: Ditto.
+	* include/private/thread_local_alloc.h: Ditto.	
+	* darwin_stop_world.c: Add copyright header.
+	* include/gc_backptr.h: Ditto.
+	* include/gc_config_macros.h: Ditto.
+	* include/gc_pthread_redirects.h: Ditto.
+	* include/gc_version.h: Ditto.
+	* include/javaxfc.h: Ditto.
+	* include/private/darwin_semaphore.h: Ditto.
+	* include/private/pthread_support.h: Ditto.
+	* gc_cpp.cc: Make copyright header uniform across the package.
+	* include/gc_cpp.h: Ditto.
+
 2009-09-16  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
 	(gc_config_h_6a.patch with a minor correction)
 
@@ -668,7 +734,7 @@
 
 2009-09-10  Ivan Maidanski <ivmai@mail.ru>
 	(diff113)
-	
+
 	* include/gc.h (GC_has_static_roots_func): New typedef (user filter
 	callback).
 	* include/gc.h (GC_register_has_static_roots_callback): Use
@@ -795,9 +861,9 @@
 
 	* dyn_load.c (HAVE_DL_ITERATE_PHDR): Break definition from use.
 	Define for FreeBSD 7.0+.
-	
+
 2009-09-02  Hans Boehm <Hans.Boehm@hp.com> (with help from Victor Ivrii and
-					    others)	
+	                                    others)
 
 	* mach_dep.c: Don't include ucontext.h with NO_GETCONTEXT.
 
@@ -819,11 +885,13 @@
 
 2009-08-08  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(Mistakenly omitted from last check-in)
+
 	* include/private/gc_priv.h (GC_unmapped_bytes): Define as 0 for
 	not USE_MUNMAP case.
 
 2009-08-07  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
-	diff111 (supersedes diff101_cvs which, in turn, resembles diff52, diff75, diff83 partly)
+	diff111 (supersedes diff101_cvs which, in turn, resembles diff52,
+	diff75, diff83 partly)
 
 	* Makefile.direct (MARK_BIT_PER_OBJ, PRINT_BLACK_LIST,
 	USE_PROC_FOR_LIBRARIES): Fix typo in the comments.
@@ -853,21 +921,21 @@
 	diff100_cvs (diff51 and diff55, partly)
 
 	* pthread_support.c (GC_allow_register_threads): New API function.
-        * win32_threads.c (GC_allow_register_threads): Ditto.
-        * include/gc.h (GC_allow_register_threads): New API prototype.
-        * include/gc.h (GC_register_my_thread, GC_unregister_my_thread):
-        Update the comments.
-        * pthread_support.c (GC_register_my_thread): Check the collector
-        is in the multi-threaded mode.
-        * win32_threads.c (GC_register_my_thread): Ditto.
-	
+	* win32_threads.c (GC_allow_register_threads): Ditto.
+	* include/gc.h (GC_allow_register_threads): New API prototype.
+	* include/gc.h (GC_register_my_thread, GC_unregister_my_thread):
+	Update the comments.
+	* pthread_support.c (GC_register_my_thread): Check the collector
+	is in the multi-threaded mode.
+	* win32_threads.c (GC_register_my_thread): Ditto.
+
 2009-07-10  Hans Boehm <Hans.Boehm@hp.com>
 
 	* finalize.c (GC_finalize_all): Always call GC_invoke_finalizers
 	instead, following Ivan's original patch.
 
 2009-06-20  Hans Boehm <Hans.Boehm@hp.com>
-	
+
 	* allchblk.c (GC_allochblk_nth): Add assertion.
 	* checksums.c: Add GC_record_fault, GC_was_faulted,
 	CC_n_faulted_dirty_errors.
@@ -877,7 +945,7 @@
 	* os_dep.c (GC_remove_protection): Compute index correctly.
 
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com>
-	
+
 	* include/gc_version.h, configure.ac, doc/README:
 	Change to version 7.2alpha3.
 	* configure: Regenerate.
@@ -885,7 +953,7 @@
 [7.2alpha2]
 
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com>
-	
+
 	* include/gc_version.h, configure.ac, doc/README:
 	Change to version 7.2alpha2.
 	* configure: Regenerate.
@@ -894,38 +962,38 @@
 	diff98_cvs(resembling diff3, diff27, diff59, diff61, diff66,
 	diff73 partly)
 
-        * dbg_mlc.c (GC_print_smashed_obj): Convert a group of printf()
-        calls into a single one (for output atomicity).
-        * typd_mlc.c (GC_calloc_explicitly_typed): Don't declare and use
-        GC_finalization_failures variable; check the result of
-        GC_general_register_disappearing_link() (for lack of memory)
-        instead.
-        * finalize.c (GC_finalization_failures): Remove unused global
-        variable.
-        * finalize.c (GC_general_register_disappearing_link,
-        GC_general_register_disappearing_link): Don't update the value of
-        GC_finalization_failures (since unused).
-        * include/private/gc_pmark.h (PUSH_ONE_CHECKED_STACK,
-        GC_PUSH_ONE_STACK, GC_PUSH_ONE_HEAP): The first parameter is of
-        word type now (as FIXUP_POINTER requires numeric argument).
-        * finalize.c (GC_ignore_self_finalize_mark_proc): GC_PUSH_ONE_HEAP
-        requires the first parameter of word type.
-        * mark.c (PUSH_GRANULE): Ditto.
-        * mark.c (GC_push_one, GC_push_all_eager): Ditto (for
-        GC_PUSH_ONE_STACK).
-        * finalize.c (GC_finalize_all): Call GC_invoke_finalizers() or
+	* dbg_mlc.c (GC_print_smashed_obj): Convert a group of printf()
+	calls into a single one (for output atomicity).
+	* typd_mlc.c (GC_calloc_explicitly_typed): Don't declare and use
+	GC_finalization_failures variable; check the result of
+	GC_general_register_disappearing_link() (for lack of memory)
+	instead.
+	* finalize.c (GC_finalization_failures): Remove unused global
+	variable.
+	* finalize.c (GC_general_register_disappearing_link,
+	GC_general_register_disappearing_link): Don't update the value of
+	GC_finalization_failures (since unused).
+	* include/private/gc_pmark.h (PUSH_ONE_CHECKED_STACK,
+	GC_PUSH_ONE_STACK, GC_PUSH_ONE_HEAP): The first parameter is of
+	word type now (as FIXUP_POINTER requires numeric argument).
+	* finalize.c (GC_ignore_self_finalize_mark_proc): GC_PUSH_ONE_HEAP
+	requires the first parameter of word type.
+	* mark.c (PUSH_GRANULE): Ditto.
+	* mark.c (GC_push_one, GC_push_all_eager): Ditto (for
+	GC_PUSH_ONE_STACK).
+	* finalize.c (GC_finalize_all): Call GC_invoke_finalizers() or
 	GC_finalizer_notifier directly, instead
-        of GC_INVOKE_FINALIZERS() to prevent infinite looping.
+	of GC_INVOKE_FINALIZERS() to prevent infinite looping.
 	* include/javaxfc.h: Clarify GC_finalize_all comment.
-        * gcj_mlc.c: Include gc_pmark.h before "ifdef GC_GCJ_SUPPORT" (not
-        after) for configuration information.
-        * gcj_mlc.c (GC_gcj_malloc_ignore_off_page): Add comment.
-        * gcj_mlc.c (GC_gcj_malloc_ignore_off_page): Check "op" local
-        variable for NULL before dereferencing it, return GC_oom_fn() in
-        this case.
-        * typd_mlc.c (GC_malloc_explicitly_typed,
-        GC_malloc_explicitly_typed_ignore_off_page): Transform the code to
-        suppress compiler warning (for uninitialized "lg" variable).
+	* gcj_mlc.c: Include gc_pmark.h before "ifdef GC_GCJ_SUPPORT" (not
+	after) for configuration information.
+	* gcj_mlc.c (GC_gcj_malloc_ignore_off_page): Add comment.
+	* gcj_mlc.c (GC_gcj_malloc_ignore_off_page): Check "op" local
+	variable for NULL before dereferencing it, return GC_oom_fn() in
+	this case.
+	* typd_mlc.c (GC_malloc_explicitly_typed,
+	GC_malloc_explicitly_typed_ignore_off_page): Transform the code to
+	suppress compiler warning (for uninitialized "lg" variable).
 
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com>
 
@@ -935,93 +1003,97 @@
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	diff97_cvs (resembling diff43, diff51, diff67, diff76, diff83 partly)
 
-        * pthread_support.c (GC_inner_start_routine): Don't release the
-        GC lock between GC_register_my_thread_inner() and
-        GC_init_thread_local() calls (post the "registered" even after
-        calling GC_init_thread_local()).
-        * win32_threads.c (GC_register_my_thread, GC_unregister_my_thread):
-        Use GC_lookup_thread_inner() instead of GC_lookup_thread() and
-        acquire the GC lock only once.
-        * win32_threads.c (GC_thr_init): Call GC_register_my_thread_inner()
-        directly instead of GC_register_my_thread() since I_HOLD_LOCK
-        and our (main) thread is not registered yet (add assertion for it).
-        * win32_threads.c (GC_init_parallel): Call GC_lookup_thread_inner()
-        directly instead of GC_lookup_thread() (since I_HOLD_LOCK).
-        * win32_threads.c (GC_lookup_thread): Remove unused function.
-        * win32_threads.c: Remove "#error GC_DLL untested with Cygwin".
-        * win32_threads.c (GC_win32_dll_threads): Define as FALSE macro
-        also if THREAD_LOCAL_ALLOC or GC_PTHREADS.
-        * win32_threads.c (GC_use_DllMain): Call ABORT also if GC_PTHREADS
-        (for Cygwin).
-        * win32_threads.c (GC_push_stack_for): Add parentheses around "&&"
-        (inside GC_ASSERT) to prevent compiler warning.
-        * win32_threads.c (GC_push_all_stacks): Remove FIXME for
-        PARALLEL_MARK.
-        * win32_threads.c (MAX_MARKERS, GC_markers): Move the definitions
-        to a place before GC_get_next_stack().
-        * win32_threads.c (marker_sp, marker_bsp): New static arrays (same
-        as in pthread_support.c).
-        * win32_threads.c (marker_last_stack_min): New static arrays (the
-        same semantics as for last_stack_min of GC_Thread_Rep).
-        * win32_threads.c (GC_get_next_stack): Handle marker threads.
-        * win32_threads.c (GC_mark_thread): Save the current stack pointer
-        to marker_[b]sp.
-        * win32_threads.c (start_mark_threads): Initialize
-        marker_last_stack_min elements (to "unset" value).
+	* pthread_support.c (GC_inner_start_routine): Don't release the
+	GC lock between GC_register_my_thread_inner() and
+	GC_init_thread_local() calls (post the "registered" even after
+	calling GC_init_thread_local()).
+	* win32_threads.c (GC_register_my_thread, GC_unregister_my_thread):
+	Use GC_lookup_thread_inner() instead of GC_lookup_thread() and
+	acquire the GC lock only once.
+	* win32_threads.c (GC_thr_init): Call GC_register_my_thread_inner()
+	directly instead of GC_register_my_thread() since I_HOLD_LOCK
+	and our (main) thread is not registered yet (add assertion for it).
+	* win32_threads.c (GC_init_parallel): Call GC_lookup_thread_inner()
+	directly instead of GC_lookup_thread() (since I_HOLD_LOCK).
+	* win32_threads.c (GC_lookup_thread): Remove unused function.
+	* win32_threads.c: Remove "#error GC_DLL untested with Cygwin".
+	* win32_threads.c (GC_win32_dll_threads): Define as FALSE macro
+	also if THREAD_LOCAL_ALLOC or GC_PTHREADS.
+	* win32_threads.c (GC_use_DllMain): Call ABORT also if GC_PTHREADS
+	(for Cygwin).
+	* win32_threads.c (GC_push_stack_for): Add parentheses around "&&"
+	(inside GC_ASSERT) to prevent compiler warning.
+	* win32_threads.c (GC_push_all_stacks): Remove FIXME for
+	PARALLEL_MARK.
+	* win32_threads.c (MAX_MARKERS, GC_markers): Move the definitions
+	to a place before GC_get_next_stack().
+	* win32_threads.c (marker_sp, marker_bsp): New static arrays (same
+	as in pthread_support.c).
+	* win32_threads.c (marker_last_stack_min): New static arrays (the
+	same semantics as for last_stack_min of GC_Thread_Rep).
+	* win32_threads.c (GC_get_next_stack): Handle marker threads.
+	* win32_threads.c (GC_mark_thread): Save the current stack pointer
+	to marker_[b]sp.
+	* win32_threads.c (start_mark_threads): Initialize
+	marker_last_stack_min elements (to "unset" value).
 
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff96_cvs, partly from diff45 and diff75)
 
-        * misc.c (GC_set_oom_fn, GC_set_all_interior_pointers,
-        GC_set_finalize_on_demand, GC_set_java_finalization,
-        GC_set_finalizer_notifier, GC_set_dont_expand, GC_set_full_freq,
-        GC_set_no_dls, GC_set_free_space_divisor, GC_set_max_retries,
-        GC_set_dont_precollect, GC_set_time_limit, GC_set_warn_proc):
-        Change return type to void (these API functions no longer return
-        the old value).
-        * include/gc.h: Ditto (for prototypes).
-        * tests/test.c (main, WinMain, test): Remove explicit cast to void
-        for GC_set_warn_proc().
-        * misc.c (GC_get_oom_fn, GC_get_all_interior_pointers,
-        GC_get_finalize_on_demand, GC_get_java_finalization,
-        GC_get_finalizer_notifier, GC_get_dont_expand, GC_get_full_freq,
-        GC_get_no_dls, GC_get_free_space_divisor, GC_get_max_retries,
-        GC_get_dont_precollect, GC_get_time_limit, GC_get_warn_proc): New
-        API functions (to get the current value of the corresponding R/W
-        public variables).
-        * include/gc.h: Ditto (for prototypes).
-        * include/gc.h (GC_set_warn_proc, GC_set_free_space_divisor):
-        Update the comment.
-        * misc.c (GC_ignore_warn_proc): New API call-back function.
-        * include/gc.h (GC_ignore_warn_proc): Ditto (for the prototype).
-        * misc.c (GC_set_find_leak, GC_get_find_leak, GC_set_non_gc_bytes,
-        GC_get_non_gc_bytes): New API setter and getter functions (for the
-        public GC_find_leak and GC_non_gc_bytes variables, respectively).
-        * include/gc.h: Ditto (for prototypes).
-        * include/gc.h (GC_memalign): Add proto to GC API.
-        * mallocx.c (GC_memalign): Use GC_API, GC_CALL for the definition.
-        * tests/test.c (run_one_test): Test GC_memalign() on Win32 too,
-        remove GC_memalign() proto.
-        * misc.c (GC_write): Use multi-byte (A) variants of Win32
-        GetModuleFileName() and CreateFile().
+	* misc.c (GC_set_oom_fn, GC_set_all_interior_pointers,
+	GC_set_finalize_on_demand, GC_set_java_finalization,
+	GC_set_finalizer_notifier, GC_set_dont_expand, GC_set_full_freq,
+	GC_set_no_dls, GC_set_free_space_divisor, GC_set_max_retries,
+	GC_set_dont_precollect, GC_set_time_limit, GC_set_warn_proc):
+	Change return type to void (these API functions no longer return
+	the old value).
+	* include/gc.h: Ditto (for prototypes).
+	* tests/test.c (main, WinMain, test): Remove explicit cast to void
+	for GC_set_warn_proc().
+	* misc.c (GC_get_oom_fn, GC_get_all_interior_pointers,
+	GC_get_finalize_on_demand, GC_get_java_finalization,
+	GC_get_finalizer_notifier, GC_get_dont_expand, GC_get_full_freq,
+	GC_get_no_dls, GC_get_free_space_divisor, GC_get_max_retries,
+	GC_get_dont_precollect, GC_get_time_limit, GC_get_warn_proc): New
+	API functions (to get the current value of the corresponding R/W
+	public variables).
+	* include/gc.h: Ditto (for prototypes).
+	* include/gc.h (GC_set_warn_proc, GC_set_free_space_divisor):
+	Update the comment.
+	* misc.c (GC_ignore_warn_proc): New API call-back function.
+	* include/gc.h (GC_ignore_warn_proc): Ditto (for the prototype).
+	* misc.c (GC_set_find_leak, GC_get_find_leak, GC_set_non_gc_bytes,
+	GC_get_non_gc_bytes): New API setter and getter functions (for the
+	public GC_find_leak and GC_non_gc_bytes variables, respectively).
+	* include/gc.h: Ditto (for prototypes).
+	* include/gc.h (GC_memalign): Add proto to GC API.
+	* mallocx.c (GC_memalign): Use GC_API, GC_CALL for the definition.
+	* tests/test.c (run_one_test): Test GC_memalign() on Win32 too,
+	remove GC_memalign() proto.
+	* misc.c (GC_write): Use multi-byte (A) variants of Win32
+	GetModuleFileName() and CreateFile().
  	* tests/test.c (main): Replace K&R-style function definition with the
  	ANSI C one.
 
-2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski and George Talbot)
+2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski and
+	                                    George Talbot)
 	(diff95_cvs)
+
 	* include/private/gcconfig.h (PLATFORM_ANDROID): New macro
-        recognized (for Linux on ARM32 without glibc).
-        * include/private/gcconfig.h (STRTOULL): Define for all targets
-        (define as "strtoul" for most targets except for LLP64/Win64).
-        * misc.c (GC_init_inner): Use STRTOULL instead of atoi/atol()
-        (cast the result to word type) to decode values of "GC_TRACE",
-        "GC_INITIAL_HEAP_SIZE", "GC_MAXIMUM_HEAP_SIZE" environment vars.
+	recognized (for Linux on ARM32 without glibc).
+	* include/private/gcconfig.h (STRTOULL): Define for all targets
+	(define as "strtoul" for most targets except for LLP64/Win64).
+	* misc.c (GC_init_inner): Use STRTOULL instead of atoi/atol()
+	(cast the result to word type) to decode values of "GC_TRACE",
+	"GC_INITIAL_HEAP_SIZE", "GC_MAXIMUM_HEAP_SIZE" environment vars.
 
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really mostly George Talbot)
+
 	* include/gc_allocator.h: Add gc_allocator_ignore_off_page.
 	* tests/test_cpp.cc: Add call to gc_allocator_ignore_off_page.
 
 2009-06-11  Hans Boehm <Hans.Boehm@hp.com>
+
 	* win32_threads.c (GC_release_mark_lock): Correct misspelling of
 	AO_load in assertion.
 
@@ -1029,38 +1101,38 @@
 	(diff93_cvs: resembling diff27, diff30, diff43, diff44, diff66,
 	diff76, diff79, diff83 partly)
 
-        * win32_threads.c (MAX_THREADS): Define as 1 if GC_win32_dll_threads
-        is defined as FALSE (otherwise the size of dll_thread_table is near
-        200 KiB for 32-bit).
-        * win32_threads.c (GC_use_DllMain): Optimize for THREAD_LOCAL_ALLOC.
-        * win32_threads.c (GC_Thread_Rep): Add backing_store_end and
-        backing_store_ptr fields for IA64 support.
-        * win32_threads.c (GC_register_my_thread_inner): Set
-        backing_store_end field to reg_base value for IA64 (same as in
-        pthread_support.c).
-        * win32_threads.c (SET_PTHREAD_MAP_CACHE): Put parentheses in the
-        "right" places, remove ';'.
-        * win32_threads.c (GC_fault_handler_lock): Declare only
-        if MPROTECT_VDB (and not WinCE).
-        * win32_threads.c (GC_suspend): Acquire and release
-        GC_fault_handler_lock only if MPROTECT_VDB (and not WinCE).
-        * win32_threads.c (GC_suspend): Define as STATIC.
-        * win32_threads.c (GC_push_stack_for): Fix WARN() format specifier
-        (should be word-complient, "%p" is used w/o "0x"), don't cast sp.
-        * win32_threads.c (GC_push_all_stacks): Convert a group of printf()
-        calls into a single one (for output atomicity).
-        * win32_threads.c (GC_get_next_stack): Unprotect thread descriptor
-        before altering its last_stack_min ("thread" variable is added).
-        * win32_threads.c (GC_get_next_stack): Remove unnecessary checks for
-        "s" is non-NULL. 
-        * win32_threads.c (GC_get_next_stack): Don't call GC_may_be_in_stack
-        if WinCE.
-        * win32_threads.c (GC_get_next_stack): Pass current_min value to
-        GC_get_stack_min as-is (without -1).
-        * win32_threads.c (GC_wait_marker): Remove FIXME and use "release"
-        version of AO_fetch_and_sub1().
-        * win32_threads.c (GC_win32_start_inner, GC_win32_start): convert int
-        to pointer (and vice verse) thru word type to suppress warnings.
+	* win32_threads.c (MAX_THREADS): Define as 1 if GC_win32_dll_threads
+	is defined as FALSE (otherwise the size of dll_thread_table is near
+	200 KiB for 32-bit).
+	* win32_threads.c (GC_use_DllMain): Optimize for THREAD_LOCAL_ALLOC.
+	* win32_threads.c (GC_Thread_Rep): Add backing_store_end and
+	backing_store_ptr fields for IA64 support.
+	* win32_threads.c (GC_register_my_thread_inner): Set
+	backing_store_end field to reg_base value for IA64 (same as in
+	pthread_support.c).
+	* win32_threads.c (SET_PTHREAD_MAP_CACHE): Put parentheses in the
+	"right" places, remove ';'.
+	* win32_threads.c (GC_fault_handler_lock): Declare only
+	if MPROTECT_VDB (and not WinCE).
+	* win32_threads.c (GC_suspend): Acquire and release
+	GC_fault_handler_lock only if MPROTECT_VDB (and not WinCE).
+	* win32_threads.c (GC_suspend): Define as STATIC.
+	* win32_threads.c (GC_push_stack_for): Fix WARN() format specifier
+	(should be word-complient, "%p" is used w/o "0x"), don't cast sp.
+	* win32_threads.c (GC_push_all_stacks): Convert a group of printf()
+	calls into a single one (for output atomicity).
+	* win32_threads.c (GC_get_next_stack): Unprotect thread descriptor
+	before altering its last_stack_min ("thread" variable is added).
+	* win32_threads.c (GC_get_next_stack): Remove unnecessary checks for
+	"s" is non-NULL.
+	* win32_threads.c (GC_get_next_stack): Don't call GC_may_be_in_stack
+	if WinCE.
+	* win32_threads.c (GC_get_next_stack): Pass current_min value to
+	GC_get_stack_min as-is (without -1).
+	* win32_threads.c (GC_wait_marker): Remove FIXME and use "release"
+	version of AO_fetch_and_sub1().
+	* win32_threads.c (GC_win32_start_inner, GC_win32_start): convert int
+	to pointer (and vice verse) thru word type to suppress warnings.
 	* win32_threads.c (GC_mark_mutex_waitcnt): Fix comment, always
 	access atomically.
 	* misc.c: Change GC_THREADS tests back to THREADS.
@@ -1070,95 +1142,95 @@
 	(diff92_cvs: resembling diff20, diff27, diff34, diff38, diff43, diff45,
 	diff46, diff56, diff60, diff62, diff74, diff75, diff81 partly)
 
-        * allchblk.c (GC_print_hblkfreelist, GC_dump_regions): Convert
-        a group of printf() calls into a single one (for output atomicity).
-        * include/gc.h (GC_set_all_interior_pointers, GC_set_full_freq,
-        GC_set_time_limit): New prototypes.
-        * misc.c (GC_set_all_interior_pointers, GC_set_full_freq,
-        GC_set_time_limit): New public setter/getter functions.
-        * include/gc.h: Fix (and remove outdated) comments for thread-local
-        allocation.
-        * include/gc.h: Fix typos in comments.
-        * misc.c (GC_init_inner, GC_printf): Ditto.
-        * include/gc.h (GC_unregister_disappearing_link): Refine comment.
-        * include/gc.h (GC_stack_base): Recognize _M_IA64 macro.
-        * misc.c (GC_stack_last_cleared, GC_min_sp, GC_high_water,
-        GC_bytes_allocd_at_reset, DEGRADE_RATE): Define only if THREADS.
-        * misc.c (GC_stack_last_cleared, GC_min_sp, GC_high_water,
-        GC_bytes_allocd_at_reset): Define as STATIC.
-        * misc.c (GC_get_heap_size, GC_get_free_bytes,
-        GC_get_bytes_since_gc, GC_get_total_bytes): Acquire the GC lock to
-        avoid data races.
-        * misc.c (GC_write_cs): Define only if THREADS (Win32/WinCE only).
-        * misc.c (GC_init_inner): Initialize GC_write_cs only if THREADS.
-        * misc.c (GC_init_inner): Use GC_INITIAL_HEAP_SIZE (if available) to
-        set the default initial value of initial_heap_sz.
-        * misc.c (GC_deinit): Destroy GC_write_cs only if THREADS.
-        * misc.c (GC_init_inner): Fix WARN() format specifier (should be
-        word-complient, "%p" is used w/o "0x").
-        * misc.c (GC_init_inner): Don't recognize "GC_PAUSE_TIME_TARGET"
-        environment variable if SMALL_CONFIG.
-        * misc.c (GC_init_inner): Recognize "GC_FULL_FREQUENCY" environment
-        variable to set initial GC_full_freq value (if not SMALL_CONFIG).
-        * doc/README.environment (GC_FULL_FREQUENCY): Add information.
-        * doc/README.environment (GC_MARKERS): Refine information.
-        * misc.c (GC_init_inner): Change GC_ASSERT to GC_STATIC_ASSERT where
-        possible.
-        * misc.c (IF_NEED_TO_LOCK): New macro (instead of GC_need_to_lock).
-        * misc.c (GC_write): Use IF_NEED_TO_LOCK for handling GC_write_cs.
-        * misc.c (GC_abort): Don't define if SMALL_CONFIG.
-        * misc.c (GC_abort): Directly use WRITE() instead of GC_err_printf()
-        (to prevent possible infinite recursion).
+	* allchblk.c (GC_print_hblkfreelist, GC_dump_regions): Convert
+	a group of printf() calls into a single one (for output atomicity).
+	* include/gc.h (GC_set_all_interior_pointers, GC_set_full_freq,
+	GC_set_time_limit): New prototypes.
+	* misc.c (GC_set_all_interior_pointers, GC_set_full_freq,
+	GC_set_time_limit): New public setter/getter functions.
+	* include/gc.h: Fix (and remove outdated) comments for thread-local
+	allocation.
+	* include/gc.h: Fix typos in comments.
+	* misc.c (GC_init_inner, GC_printf): Ditto.
+	* include/gc.h (GC_unregister_disappearing_link): Refine comment.
+	* include/gc.h (GC_stack_base): Recognize _M_IA64 macro.
+	* misc.c (GC_stack_last_cleared, GC_min_sp, GC_high_water,
+	GC_bytes_allocd_at_reset, DEGRADE_RATE): Define only if THREADS.
+	* misc.c (GC_stack_last_cleared, GC_min_sp, GC_high_water,
+	GC_bytes_allocd_at_reset): Define as STATIC.
+	* misc.c (GC_get_heap_size, GC_get_free_bytes,
+	GC_get_bytes_since_gc, GC_get_total_bytes): Acquire the GC lock to
+	avoid data races.
+	* misc.c (GC_write_cs): Define only if THREADS (Win32/WinCE only).
+	* misc.c (GC_init_inner): Initialize GC_write_cs only if THREADS.
+	* misc.c (GC_init_inner): Use GC_INITIAL_HEAP_SIZE (if available) to
+	set the default initial value of initial_heap_sz.
+	* misc.c (GC_deinit): Destroy GC_write_cs only if THREADS.
+	* misc.c (GC_init_inner): Fix WARN() format specifier (should be
+	word-complient, "%p" is used w/o "0x").
+	* misc.c (GC_init_inner): Don't recognize "GC_PAUSE_TIME_TARGET"
+	environment variable if SMALL_CONFIG.
+	* misc.c (GC_init_inner): Recognize "GC_FULL_FREQUENCY" environment
+	variable to set initial GC_full_freq value (if not SMALL_CONFIG).
+	* doc/README.environment (GC_FULL_FREQUENCY): Add information.
+	* doc/README.environment (GC_MARKERS): Refine information.
+	* misc.c (GC_init_inner): Change GC_ASSERT to GC_STATIC_ASSERT where
+	possible.
+	* misc.c (IF_NEED_TO_LOCK): New macro (instead of GC_need_to_lock).
+	* misc.c (GC_write): Use IF_NEED_TO_LOCK for handling GC_write_cs.
+	* misc.c (GC_abort): Don't define if SMALL_CONFIG.
+	* misc.c (GC_abort): Directly use WRITE() instead of GC_err_printf()
+	(to prevent possible infinite recursion).
 
 2009-06-09  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	diff90_cvs (resembling diff28, diff30, diff32, diff34, diff47,
 	diff49, diff60, diff62, diff66, diff67, diff68, diff72 partly)
 
-        * finalize.c (finalization_mark_proc): Replace K&R-style declaration
-        with ANSI C one.
-        * finalize.c (GC_grow_table, GC_register_finalizer_inner,
-        GC_enqueue_all_finalizers): Remove outdated comments about disabling
-        signals.
-        * finalize.c (GC_general_register_disappearing_link): Fix assertion
-        to catch NULL "obj" value.
-        * finalize.c (GC_unregister_disappearing_link): Check "link"
-        alignment before gaining the lock.
-        * finalize.c (GC_finalize): Refine comment.
-        * finalize.c (GC_finalize): Fix WARN() format specifier (should be
-        word-complient, "%p" is used w/o "0x").
-        * finalize.c (GC_invoke_finalizers): Initialize "bytes_freed_before"
-        variable (to 0) to suppress compiler warning.
-        * include/gc_gcj.h (MARK_DESCR_OFFSET): Move to private/gc_pmark.h.
-        * include/gc_gcj.h: add "extern C" header and tail.
-        * include/private/gc_pmark.h: Remove GC_do_parallel_mark(),
-        GC_help_wanted, GC_helper_count, GC_active_count declarations (move
-        the comments to the place where these symbols are defined in mark.c).
-        * mark.c: Add STATIC GC_do_parallel_mark() declaration (for use by
-        GC_mark_some_inner, if PARALLEL_MARK only).
-        * mark.c (GC_mark_some_inner, GC_help_wanted, GC_helper_count,
-        GC_active_count, GC_do_parallel_mark): Define as STATIC.
-        * pthread_support.c (GC_mark_thread): Ditto.
-        * typd_mlc.c (GC_explicit_typing_initialized, GC_explicit_kind,
-        GC_array_kind, GC_ext_descriptors, GC_ed_size, GC_avail_descr,
-        GC_typed_mark_proc_index, GC_array_mark_proc_index, GC_eobjfreelist,
-        GC_arobjfreelist): Ditto.
-        * include/private/gc_pmark.h (PUSH_CONTENTS_HDR): Change GC_ASSERT
-        for HBLKSIZE to GC_STATIC_ASSERT.
-        * mark.c (GC_noop): Define for Borland C the same as for Watcom.
-        * mark.c (GC_noop, GC_mark_and_push): Add ARGSUSED tag.
-        * pthread_support.c (GC_do_blocking_inner): Ditto.
-        * mark.c (GC_mark_from): Initialize "limit" (to 0) in the default
-        switch branch to suppress compiler warning.
-        * mark.c (GC_return_mark_stack): Append new-line to printf message.
-        * mark.c: Remove unused GC_true_func(), GC_PUSH_ALL().
-        * pthread_support.c (GC_mark_thread): Add dummy "return 0" to
-        suppress compiler warning.
-        * pthread_support.c (start_mark_threads): Move the code limiting
-        "GC_markers" value (and printing a warning) to GC_thr_init().
-        * pthread_support.c (GC_thr_init): Silently limit "GC_markers" value
-        if based on the number of CPUs.
-        * pthread_support.c (GC_thr_init): Treat incorrect "GC_markers"
-        values as one.
+	* finalize.c (finalization_mark_proc): Replace K&R-style declaration
+	with ANSI C one.
+	* finalize.c (GC_grow_table, GC_register_finalizer_inner,
+	GC_enqueue_all_finalizers): Remove outdated comments about disabling
+	signals.
+	* finalize.c (GC_general_register_disappearing_link): Fix assertion
+	to catch NULL "obj" value.
+	* finalize.c (GC_unregister_disappearing_link): Check "link"
+	alignment before gaining the lock.
+	* finalize.c (GC_finalize): Refine comment.
+	* finalize.c (GC_finalize): Fix WARN() format specifier (should be
+	word-complient, "%p" is used w/o "0x").
+	* finalize.c (GC_invoke_finalizers): Initialize "bytes_freed_before"
+	variable (to 0) to suppress compiler warning.
+	* include/gc_gcj.h (MARK_DESCR_OFFSET): Move to private/gc_pmark.h.
+	* include/gc_gcj.h: add "extern C" header and tail.
+	* include/private/gc_pmark.h: Remove GC_do_parallel_mark(),
+	GC_help_wanted, GC_helper_count, GC_active_count declarations (move
+	the comments to the place where these symbols are defined in mark.c).
+	* mark.c: Add STATIC GC_do_parallel_mark() declaration (for use by
+	GC_mark_some_inner, if PARALLEL_MARK only).
+	* mark.c (GC_mark_some_inner, GC_help_wanted, GC_helper_count,
+	GC_active_count, GC_do_parallel_mark): Define as STATIC.
+	* pthread_support.c (GC_mark_thread): Ditto.
+	* typd_mlc.c (GC_explicit_typing_initialized, GC_explicit_kind,
+	GC_array_kind, GC_ext_descriptors, GC_ed_size, GC_avail_descr,
+	GC_typed_mark_proc_index, GC_array_mark_proc_index, GC_eobjfreelist,
+	GC_arobjfreelist): Ditto.
+	* include/private/gc_pmark.h (PUSH_CONTENTS_HDR): Change GC_ASSERT
+	for HBLKSIZE to GC_STATIC_ASSERT.
+	* mark.c (GC_noop): Define for Borland C the same as for Watcom.
+	* mark.c (GC_noop, GC_mark_and_push): Add ARGSUSED tag.
+	* pthread_support.c (GC_do_blocking_inner): Ditto.
+	* mark.c (GC_mark_from): Initialize "limit" (to 0) in the default
+	switch branch to suppress compiler warning.
+	* mark.c (GC_return_mark_stack): Append new-line to printf message.
+	* mark.c: Remove unused GC_true_func(), GC_PUSH_ALL().
+	* pthread_support.c (GC_mark_thread): Add dummy "return 0" to
+	suppress compiler warning.
+	* pthread_support.c (start_mark_threads): Move the code limiting
+	"GC_markers" value (and printing a warning) to GC_thr_init().
+	* pthread_support.c (GC_thr_init): Silently limit "GC_markers" value
+	if based on the number of CPUs.
+	* pthread_support.c (GC_thr_init): Treat incorrect "GC_markers"
+	values as one.
 	* pthread_support.c (GC_register_my_thread_inner): Add a check for
 	"stack_end" is non-NULL (the same as in win32_threads.c).
 	* pthread_support.c (pthread_create): Call GC_oom_fn before giving up
@@ -1167,118 +1239,123 @@
 	to "while" one to suppress "possible extraneous ';'" warning.
 
 2009-06-08  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski
-	and Zoltan Varga)
-        * darwin_stop_world.c (GC_push_all_stacks): Recognize ARM32.
-        * include/private/gc_priv.h (GC_THREAD_STATE_T): Define for ARM32
-        (Darwin only).
-        * include/private/gcconfig.h: Add machine-specific part for DARWIN.
-        * include/private/gcconfig.h (ARM32): Define config parameters for
-        DARWIN (iPhone).
+	                                    and Zoltan Varga)
+
+	* darwin_stop_world.c (GC_push_all_stacks): Recognize ARM32.
+	* include/private/gc_priv.h (GC_THREAD_STATE_T): Define for ARM32
+	(Darwin only).
+	* include/private/gcconfig.h: Add machine-specific part for DARWIN.
+	* include/private/gcconfig.h (ARM32): Define config parameters for
+	DARWIN (iPhone).
 
 2009-06-08  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff91_cvs: resembling diff3, diff27, diff33, diff45, diff47, diff49,
 	diff60, diff67, diff68 partly)
+
 	* alloc.c (GC_FULL_FREQ, GC_DONT_EXPAND, GC_FREE_SPACE_DIVISOR,
-        GC_TIME_LIMIT): New macros (used to control the default initial
-        values of GC_full_freq variable, GC_dont_expand,
-        GC_free_space_divisor, GC_time_limit respectively).
-        * include/private/gc_priv.h (TIME_LIMIT): Remove macro (replaced
-        with GC_TIME_LIMIT in alloc.c).
-        * alloc.c (GC_need_full_gc, GC_stopped_mark, GC_finish_collection):
-        Define as STATIC.
-        * mark_rts.c (GC_push_current_stack, GC_push_gc_structures): Ditto.
-        * include/private/gc_priv.h (GC_stopped_mark, GC_finish_collection):
-        Move the prototypes to alloc.c, make STATIC.
-        * include/private/gc_priv.h (GC_push_current_stack,
-        GC_push_gc_structures, GC_push_regs_and_stack): Remove prototypes
-        (move the comments to the places where these functions are defined).
-        * mach_dep.c (GC_push_regs_and_stack): Move to mark_rts.c and define
-        as STATIC.
-        * alloc.c (GC_timeout_stop_func, GC_stopped_mark,
-        GC_print_heap_sects): Convert a group of printf() calls into
-        a single one (for output atomicity).
-        * mark_rts.c (GC_print_static_roots): Ditto.
-        * alloc.c (GC_stopped_mark): Output blank line (when logging) for
-        convenience to delimit collections.
-        * alloc.c (GC_clear_a_few_frames): Rename NWORDS to CLEAR_NWORDS;
-        make "frames" local variable volatile (to prevent optimization).
-        * alloc.c (GC_try_to_collect_inner, GC_stopped_mark,
-        GC_finish_collection, GC_allocobj): Remove outdated comments about
-        disabling signals.
-        * include/private/gc_priv.h (GC_register_displacement_inner,
-        GC_gcollect_inner): Ditto.
-        * alloc.c (GC_try_to_collect_inner, GC_stopped_mark,
-        GC_finish_collection): Initialize "start_time" local variable (to 0)
-        to suppress compiler warning.
-        * mark_rts.c (GC_add_roots_inner): Ditto (for "old" variable).
-        * alloc.c (GC_RATE, MAX_PRIOR_ATTEMPTS): Guard with "ifndef".
-        * include/private/gc_priv.h (clock, GC_stop_world, GC_start_world,
-        GC_acquire_mark_lock, GC_release_mark_lock, GC_notify_all_builder,
-        GC_wait_for_reclaim, GC_notify_all_marker, GC_wait_marker): Replace
-        K&R-style function prototypes with ANSI C one.
-        * include/private/gc_priv.h (ABORT): Define as DebugBreak() for
-        Win32/WinCE if SMALL_CONFIG (the same as in GC_abort()).
-        * include/private/gc_priv.h (ROUNDED_UP_WORDS, abs): Remove unused
-        macros.
-        * include/private/gc_priv.h (GC_noop): Declare for Borland C the
-        same as for Watcom.
-        * mark_rts.c (GC_push_conditional_with_exclusions): Add ARGSUSED tag.
+	GC_TIME_LIMIT): New macros (used to control the default initial
+	values of GC_full_freq variable, GC_dont_expand,
+	GC_free_space_divisor, GC_time_limit respectively).
+	* include/private/gc_priv.h (TIME_LIMIT): Remove macro (replaced
+	with GC_TIME_LIMIT in alloc.c).
+	* alloc.c (GC_need_full_gc, GC_stopped_mark, GC_finish_collection):
+	Define as STATIC.
+	* mark_rts.c (GC_push_current_stack, GC_push_gc_structures): Ditto.
+	* include/private/gc_priv.h (GC_stopped_mark, GC_finish_collection):
+	Move the prototypes to alloc.c, make STATIC.
+	* include/private/gc_priv.h (GC_push_current_stack,
+	GC_push_gc_structures, GC_push_regs_and_stack): Remove prototypes
+	(move the comments to the places where these functions are defined).
+	* mach_dep.c (GC_push_regs_and_stack): Move to mark_rts.c and define
+	as STATIC.
+	* alloc.c (GC_timeout_stop_func, GC_stopped_mark,
+	GC_print_heap_sects): Convert a group of printf() calls into
+	a single one (for output atomicity).
+	* mark_rts.c (GC_print_static_roots): Ditto.
+	* alloc.c (GC_stopped_mark): Output blank line (when logging) for
+	convenience to delimit collections.
+	* alloc.c (GC_clear_a_few_frames): Rename NWORDS to CLEAR_NWORDS;
+	make "frames" local variable volatile (to prevent optimization).
+	* alloc.c (GC_try_to_collect_inner, GC_stopped_mark,
+	GC_finish_collection, GC_allocobj): Remove outdated comments about
+	disabling signals.
+	* include/private/gc_priv.h (GC_register_displacement_inner,
+	GC_gcollect_inner): Ditto.
+	* alloc.c (GC_try_to_collect_inner, GC_stopped_mark,
+	GC_finish_collection): Initialize "start_time" local variable (to 0)
+	to suppress compiler warning.
+	* mark_rts.c (GC_add_roots_inner): Ditto (for "old" variable).
+	* alloc.c (GC_RATE, MAX_PRIOR_ATTEMPTS): Guard with "ifndef".
+	* include/private/gc_priv.h (clock, GC_stop_world, GC_start_world,
+	GC_acquire_mark_lock, GC_release_mark_lock, GC_notify_all_builder,
+	GC_wait_for_reclaim, GC_notify_all_marker, GC_wait_marker): Replace
+	K&R-style function prototypes with ANSI C one.
+	* include/private/gc_priv.h (ABORT): Define as DebugBreak() for
+	Win32/WinCE if SMALL_CONFIG (the same as in GC_abort()).
+	* include/private/gc_priv.h (ROUNDED_UP_WORDS, abs): Remove unused
+	macros.
+	* include/private/gc_priv.h (GC_noop): Declare for Borland C the
+	same as for Watcom.
+	* mark_rts.c (GC_push_conditional_with_exclusions): Add ARGSUSED tag.
 
 2009-06-04  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff89_cvs, resembling diff3, diff27, diff34, diff38, diff47, diff49,
 	diff59, diff60, diff66, diff67, diff68, diff69a, diff70, diff81
 	partly)
-        * dbg_mlc.c (GC_store_debug_info, GC_store_debug_info_inner): Remove
-        outdated comment about disabling signals.
-        * mallocx.c (GC_malloc_uncollectable,
-        GC_malloc_atomic_uncollectable): Ditto.
-        * os_dep.c: Ditto.
-        * dbg_mlc.c (GC_debug_change_stubborn, GC_debug_end_stubborn_change):
-        Add ARGSUSED tag.
-        * pthread_stop_world.c (GC_suspend_handler,
-        GC_suspend_handler_inner): Ditto.
-        * dbg_mlc.c (GC_debug_free, GC_debug_realloc): Fix printf message.
-        * dbg_mlc.c (GC_debug_realloc): Set "result" to NULL in the default
-        switch branch to suppress compiler warning.
-        * dyn_load.c (GC_init_dyld): Use ABORT() instead of GC_abort().
-        * include/private/darwin_semaphore.h (sem_init): Ditto.
-        * include/javaxfc.h: Replace "GC_H" with "_GC_H".
-        * include/private/dbg_mlc.h (GC_has_other_debug_info,
-        GC_store_debug_info): Replace K&R-style function prototypes with ANSI
-        C one.
-        * include/private/gcconfig.h (GC_FreeBSDGetDataStart, real_malloc,
-        GC_win32_get_mem, GC_wince_get_mem, GC_unix_get_mem): Ditto.
-        * include/private/pthread_support.h (GC_stop_init): Ditto.
-        * include/private/gcconfig.h: Refine comment about setting
-        GC_stackbottom.
-        * include/private/gcconfig.h (FIXUP_POINTER): Put parentheses in the
-        "right" places.
-        * include/private/pthread_support.h (GC_Thread_Rep): Refine comment
-        for "stack_end" field.
-        * mallocx.c (GC_malloc_uncollectable,
-        GC_malloc_atomic_uncollectable): Remove cast to undefined "hbklk".
-        * os_dep.c (GC_USE_MEM_TOP_DOWN): New macro (for setting
-        GC_mem_top_down to MEM_TOP_DOWN for debug purposes).
-        * os_dep.c (GC_gww_read_dirty, catch_exception_raise): Fix WARN()
-        format specifier (should be word-compliant, "%p" is used w/o "0x").
-        * pthread_stop_world.c (GC_suspend_handler_inner): Ditto.
-        * os_dep.c (GC_dirty_init): Append new-line to printf messages.
-        * os_dep.c (GC_mprotect_thread): Fix GC_err_printf message.
-        * os_dep.c (GC_save_callers): Change GC_ASSERT to GC_STATIC_ASSERT.
-        * pthread_stop_world.c (GC_retry_signals, GC_suspend_ack_sem): Define
-        as STATIC.
-        * pthread_stop_world.c (GC_push_all_stacks): Add assertion for that
-        "thread_blocked" is not set for the current thread.
-        * real_malloc.c: Add "extern GC_quiet" to suppress compiler warning.
-        * reclaim.c (GC_reclaim_all): Initialize "start_time" (to 0) to
-        suppress compiler warning.
-	
+
+	* dbg_mlc.c (GC_store_debug_info, GC_store_debug_info_inner): Remove
+	outdated comment about disabling signals.
+	* mallocx.c (GC_malloc_uncollectable,
+	GC_malloc_atomic_uncollectable): Ditto.
+	* os_dep.c: Ditto.
+	* dbg_mlc.c (GC_debug_change_stubborn, GC_debug_end_stubborn_change):
+	Add ARGSUSED tag.
+	* pthread_stop_world.c (GC_suspend_handler,
+	GC_suspend_handler_inner): Ditto.
+	* dbg_mlc.c (GC_debug_free, GC_debug_realloc): Fix printf message.
+	* dbg_mlc.c (GC_debug_realloc): Set "result" to NULL in the default
+	switch branch to suppress compiler warning.
+	* dyn_load.c (GC_init_dyld): Use ABORT() instead of GC_abort().
+	* include/private/darwin_semaphore.h (sem_init): Ditto.
+	* include/javaxfc.h: Replace "GC_H" with "_GC_H".
+	* include/private/dbg_mlc.h (GC_has_other_debug_info,
+	GC_store_debug_info): Replace K&R-style function prototypes with ANSI
+	C one.
+	* include/private/gcconfig.h (GC_FreeBSDGetDataStart, real_malloc,
+	GC_win32_get_mem, GC_wince_get_mem, GC_unix_get_mem): Ditto.
+	* include/private/pthread_support.h (GC_stop_init): Ditto.
+	* include/private/gcconfig.h: Refine comment about setting
+	GC_stackbottom.
+	* include/private/gcconfig.h (FIXUP_POINTER): Put parentheses in the
+	"right" places.
+	* include/private/pthread_support.h (GC_Thread_Rep): Refine comment
+	for "stack_end" field.
+	* mallocx.c (GC_malloc_uncollectable,
+	GC_malloc_atomic_uncollectable): Remove cast to undefined "hbklk".
+	* os_dep.c (GC_USE_MEM_TOP_DOWN): New macro (for setting
+	GC_mem_top_down to MEM_TOP_DOWN for debug purposes).
+	* os_dep.c (GC_gww_read_dirty, catch_exception_raise): Fix WARN()
+	format specifier (should be word-compliant, "%p" is used w/o "0x").
+	* pthread_stop_world.c (GC_suspend_handler_inner): Ditto.
+	* os_dep.c (GC_dirty_init): Append new-line to printf messages.
+	* os_dep.c (GC_mprotect_thread): Fix GC_err_printf message.
+	* os_dep.c (GC_save_callers): Change GC_ASSERT to GC_STATIC_ASSERT.
+	* pthread_stop_world.c (GC_retry_signals, GC_suspend_ack_sem): Define
+	as STATIC.
+	* pthread_stop_world.c (GC_push_all_stacks): Add assertion for that
+	"thread_blocked" is not set for the current thread.
+	* real_malloc.c: Add "extern GC_quiet" to suppress compiler warning.
+	* reclaim.c (GC_reclaim_all): Initialize "start_time" (to 0) to
+	suppress compiler warning.
+
 2009-06-02  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(adding last bit of diff86_cvs)
+
 	* tests/test.c (check_heap_stats): Avoid unbalanced brackets in ifdef.
 
 2009-05-27  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff26)
+
 	* win32_threads.c: restructure parallel marking mutex intialization.
 	* win32_threads.c, alloc.c, darwin_stop_world.c, mallocx.c, mark.c,
 	pthread_stop_world.c, pthread_support.c: Add runtime conditions
@@ -1293,44 +1370,51 @@
 
 2009-05-27  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff39)
+
 	* include/private/gcconfig.h: refine MINGW32 test.
 	* mark.c: Add win64/gcc tests.
 
 2009-05-27  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff86_cvs, resembling diff28, diff32, diff33, diff38, diff68 partly)
+
 	* test.c (fork_a_thread, reverse_test, alloc8bytes, tree_test,
-        typed_test, run_one_test, check_heap_stats, main, test): Replace
-        all K&R-style function definitions with ANSI C ones.
-        * trace_test.c (main): Ditto.
-        * test.c (GC_COND_INIT): Define as GC_INIT() also in case of
-        THREAD_LOCAL_ALLOC.
-        * test.c (reverse_test): Call fork_a_thread() only if GC_PTHREADS
-        or GC_WIN32_THREADS; remove fork_a_thread() macros definition.
-        * test.c (reverse_test): Use "volatile" when clearing "b" and "c"
-        local variables (to suppress "assigned value is never used"
-        compiler warning).
-        * test.c (tree_test): Use public GC_noop1() instead of private
-        GC_noop().
-        * test.c (typed_test): Ditto.
-        * test.c (check_heap_stats): Define and assign value to
-        "late_finalize_count" local variable only if its value is used
-        (if FINALIZE_ON_DEMAND defined).
-        * test.c (main): Remove DJGPP-specific initialization of
-        GC_stackbottom (not needed anymore, handled in gcconfig.h).
-        * trace_test.c: Guard #define GC_DEBUG with #ifndef.
-        * trace_test.c: Include "gc_backptr.h".
-        * trace_test.c (main): Call GC_INIT().
-        * trace_test.c (main): Add "return 0" statement.
+	typed_test, run_one_test, check_heap_stats, main, test): Replace
+	all K&R-style function definitions with ANSI C ones.
+	* trace_test.c (main): Ditto.
+	* test.c (GC_COND_INIT): Define as GC_INIT() also in case of
+	THREAD_LOCAL_ALLOC.
+	* test.c (reverse_test): Call fork_a_thread() only if GC_PTHREADS
+	or GC_WIN32_THREADS; remove fork_a_thread() macros definition.
+	* test.c (reverse_test): Use "volatile" when clearing "b" and "c"
+	local variables (to suppress "assigned value is never used"
+	compiler warning).
+	* test.c (tree_test): Use public GC_noop1() instead of private
+	GC_noop().
+	* test.c (typed_test): Ditto.
+	* test.c (check_heap_stats): Define and assign value to
+	"late_finalize_count" local variable only if its value is used
+	(if FINALIZE_ON_DEMAND defined).
+	* test.c (main): Remove DJGPP-specific initialization of
+	GC_stackbottom (not needed anymore, handled in gcconfig.h).
+	* trace_test.c: Guard #define GC_DEBUG with #ifndef.
+	* trace_test.c: Include "gc_backptr.h".
+	* trace_test.c (main): Call GC_INIT().
+	* trace_test.c (main): Add "return 0" statement.
 
 2009-05-25  Hans Boehm <Hans.Boehm@hp.com> (Really Petter Urkedal)
+
 	* dyn_load.c (GC_register_dynlib_callback): Use new index j
 	instead of i in the inner loop.
 
-2009-05-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski, diff85)
+2009-05-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	(diff85)
+
 	* tests/test.c: Increment n_tests with fetch_and_add when possible,
 	avoiding need to export lock.
 
-2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski, diff63,diff65)
+2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	(diff63,diff65)
+
 	* include/gc_pthread_redirects.h:
 		- dlfcn.h is included for dlopen() proto before undefining
 		"dlopen" (so, it's possible now to include dlfcn.h after
@@ -1348,29 +1432,36 @@
 	improve out of memory handling for thread structures, dont
 	define GC_beginthreadex and GC_endthreadex for winCE.
 
-2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski, diff71)
+2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski
+	(diff71)
+
 	* tests/test.c: Change gcj vtable decriptor type from size_t to
 	GC_word.
 
 2009-05-22  Hans Boehm <Hans.Boehm@hp.com>
+
 	* gcj_mlc.c: Add comment.
 	* tests/test.c: Change NTEST to NTHREADS.  Fork 5 threads by default.
 	Run reverse_test a second time in each thread.Add comments.
 	Dont rely on AO_fetch_and_add.
 
 2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Largely from Ludovic Cortes)
+
 	* dyn_load.c (GC_register_dynlib_callback,
 	GC_register_dynamic_libraries_dl_iterate_phdr): Add support
 	for GNU_PT_RELRO relocations.
 
-2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski, diff61)
+2009-05-22  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+	(diff61)
+
 	* Makefile, Makefile.direct: GC_SOLARIS_PTHREADS was replaced
 	by GC_SOLARIS_THREADS.
 	* include/gc.h: Improve finalizer documentation.
 	* mips_sgi_mach_dep.s: Replace _MIPS_SIM_ABI32 with _ABIO32.
 	* pthread_stop_world.c, Makefile.dj: Fix typos.
 
-2009-05-21  Hans Boehm <Hans.Boehm@hp.com> 
+2009-05-21  Hans Boehm <Hans.Boehm@hp.com>
+
 	* win32_threads.c (GC_new_thread): Make first_thread
 	visible to the whole file.
 	(UNPROTECT): New macro.
@@ -1382,46 +1473,53 @@
 	(GC_remove_protection): Check if already unprotected.
 
 2009-05-20  Hans Boehm <Hans.Boehm@hp.com> (really Ivan Maidanski)
+
 	* doc/README.win32: Add OpenWatcom warning.
 	* include/private/gcconfig.h: Really check it in.
 
 2009-05-19  Hans Boehm <Hans.Boehm@hp.com> (Mostly Ivan Maidanski, Dave Korn)
+
 	* os_dep.c (GC_get_stack_base, windows): Replace with Dave Korn's
 	code from gcc version.
 	* os_dep.c: make gc compilable (optionally) for Cygwin with
-	GetWriteWatch-based virtual dirty bit implementation ("os_dep.c" file). 
+	GetWriteWatch-based virtual dirty bit implementation ("os_dep.c" file).
 	* os_dep.c: Make non-win32 GC_write_fault_handler STATIC.
 	* mark.c (GC_noop): fix declaration definition mismatch for DMC.
 	* include/private/gcconfig.h: Enable MPROTECT_VDB and GWW_VDB for
 	Watcom (Win32 only).  It works.
 
-	and GWW_VDB.  It works.
+2009-05-07  Hans Boehm <Hans.Boehm@hp.com> (and Mark Sibly)
 
-2009-05-07  Hans Boehm <Hans.Boehm@hp.com> and Mark Sibly
 	* mach_dep.c: Don't use __builtin_unwind_init for register
 	state on PowerPC/Darwin.
 
 2009-04-24  Hans Boehm <Hans.Boehm@hp.com>
+
 	* doc/gcdescr.html: Improve description of object freelist
 	structure.
 	* include/private/gc_priv.h: Fix comment for _size_map.
 
 2009-03-16  Hans Boehm <Hans.Boehm@hp.com>
+
 	* os_dep.c (GC_linux_stack_base): Relax sanity test.
 
-2009-03-11  Hans Boehm <Hans.Boehm@hp.com>  (Really Ivan Maidanski)
+2009-03-11  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+
 	* include/private/gc_pmark.h (PUSH_CONTENTS_HDR for
 	MARK_BIT_PER_OBJ): Add missing backslash before eoln.
 
 2009-02-28  Hans Boehm <Hans.Boehm@hp.com>
+
 	* misc.c (GC_set_warn_proc): Implicitly intialize GC on
 	non-Cygwin win32.
 
 2009-02-28  Hans Boehm <Hans.Boehm@hp.com> (Really Petr Krajca)
+
 	* configure.ac: Enable thread-local allocation for sparc-linux.
 	* configure: Regenerate.
 
 2009-02-28  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+
 	* alloc.c (GC_try_to_collect): Remove duplicate initialization
 	check.
 	* malloc.c (GC_generic_malloc): Remove lw to eliminate single-
@@ -1429,6 +1527,7 @@
 	* mallocx.c (GC_generic_malloc_ignore_off_page): Ditto.
 
 2009-02-28  Hans Boehm <Hans.Boehm@hp.com> (Mostly Ivan Maidansky)
+
 	* allchblk.c, backgraph.c, dbg_mlc.c, dyn_load.c,
 	finalize.c, include/private/gc_pmark.h, malloc.c, mark.c,
 	os_dep.c, pthread_stop_world.c, pthread_support.c, reclaim.c,
@@ -1436,10 +1535,12 @@
 	* misc.c: Refine comment.
 
 2009-02-28  Hans Boehm <Hans.Boehm@hp.com>
+
 	* os_dep.c: Define GC_GWW_BUF_LEN more intelligently.  Add FIXME
 	comment.
 
 2009-02-28  Hans Boehm <Hans.Boehm@hp.com> (With input from Ivan Maidansky)
+
 	* win32_threads.c (GC_push_stack_for): Yet another attempt
 	at the stack_min finding logic.  Try to clean up the existing code
 	while minimizing VirtualQuery calls.
@@ -1448,6 +1549,7 @@
 	*include/gc.h: Update obsolete comments.
 
 2009-02-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+
 	* tests/test.c:
 	(gcj_class_struct2): Use cast instead of l suffix.
 	Cast GetLastError to int in various places.
@@ -1456,20 +1558,25 @@
 	Cast GC_gc_no to unsigned in printf.
 
 2009-02-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+
 	* include/gc.h: Fix two typos in comments.
 
 2009-02-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+
 	* finalize.c: Fix typo in comment.
 
 2008-12-03  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+
 	* blacklst.c (GC_print_source_pointer): Don't call GC_print_heap_obj
 	with lock.
 
 2008-12-01  Hans Boehm <Hans.Boehm@hp.com>
+
 	* reclaim.c: (GC_reclaim_block): Scan even nearly full blocks
 	if we are checking for leaks.
 
 2008-11-12  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Ivan Maidansky)
+
 	* win32_threads.c: Remove mark lock spinning.
 	* win32_threads.c, pthread_support.c: Update GC_unlocked_count,
 	GC_spin_count, and GC_block_count using atomic operations.
@@ -1477,6 +1584,7 @@
 
 2008-11-11  Hans Boehm <Hans.Boehm@hp.com>
 	(Really almost entirely Ivan Maidansky)
+
 	* win32_threads.c: Support PARALLEL_MARK.  Make printf arg
 	types agree with format specifiers.  Add missing copyright header.
 	Add STATIC for GC_threads.
@@ -1487,18 +1595,21 @@
 	with PARALLEL_MARK or THREAD_LOCAL_ALLOC.
 
 2008-11-10  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+
 	* alloc.c (GC_try_to_collect_inner): Don't print redundant
 	GC_bytes_allocd and GC_gc_no.
 	(GC_stopped_mark): Print average world stop time.
 	* include/private/gc_priv.h (MS_TIME_DIFF): Add cast.
 
 2008-11-10  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Ivan Maidansky)
+
 	* misc.c, doc/README.environment: Add support  for
 	GC_FREE_SPACE_DIVISOR and GC-disable-incremental.
 	* include/gc.h: Make GC_set_free_space_divisor correspond to
 	(somewhat unfortunate) reality.
 
 2008-11-07  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+
 	(Mostly improves LLP64 support.)
 	* backgraph.c, checksums.c, dbg_mlc.c, finalize.c, mark.c,
 	misc.c,	reclaim.c: Changed some int and long type to word or size_t
@@ -1526,13 +1637,16 @@
 	* mark.c (GC_check_dirty): Move declaration out of func body.
 
 2008-11-06  Hans Boehm <Hans.Boehm@hp.com>
+
 	* doc/gcinterface.html: Improve REDIRECT_MALLOC documentation.
 	* include/gc.h (GC_register_my_thread): Improve comment.
 
 2008-11-04  Hans Boehm <Hans.Boehm@hp.com>
+
 	* Makefile.direct: Add comment for -DCHECKSUMS.
 
 2008-10-27  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+
 	* thread_local_alloc.c, include/private/thread_local_alloc.h:
 	Fix typos in comments.
 	* finalize.c: Declare mark_procs and GC_register_finalizer_inner
@@ -1540,11 +1654,13 @@
 	* malloc.c (GC_free): Move size calculation below assertion.
 
 2008-10-27  Hans Boehm <Hans.Boehm@hp.com>
+
 	* win32_threads.c (GC_get_stack_min, GC_may_be_in_stack):
 	Add one entry VirtualQuery cache, I_HOLD_LOCK assertions.
 	(GC_push_stack_for, GC_get_next_stack) : Hopefully fix WINCE support.
 
-2008-10-27  Hans Boehm <Hans.Boehm@hp.com> (Thanks to Klaus Treichel.)
+2008-10-27  Hans Boehm <Hans.Boehm@hp.com> (Thanks to Klaus Treichel)
+
 	* finalize.c (GC_general_register_disappearing_link): Add
 	assertion.
 	* malloc.c (GC_generic_malloc): Round lb to granules, not words.
@@ -1552,20 +1668,24 @@
 	granules, not words.
 
 2008-10-27  Hans Boehm <Hans.Boehm@hp.com> (Really Rex Dieter and
-	Petr Krajca)
+	                                    Petr Krajca)
+
 	* mach_dep.c (NO_GETCONTEXT): Define for sparc linux.
 	* configure.ac: Define mach_dep for sparc-linux.
 	* configure: Regenerate.
 
 2008-10-25  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidansky)
+
 	* mark_rts.c (GC_approx_sp): Use volatile to avoid common
 	warning.
 
 2008-10-25  Hans Boehm <Hans.Boehm@hp.com>
+
 	* dyn_load.c (GC_cond_add_roots): Fix GC_get_next_stack argument
 	order.
 
 2008-10-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+
 	* alloc.c, dbg_mlc.c, dyn_load.c, finalize.c, gcj_mlc.c,
 	include/gc.h, include/gc_config_macros.h, include/gc_cpp.h,
 	include/gc_gcj.h, include/gc_mark.h, include/gc_typed.h,
@@ -1578,6 +1698,7 @@
 
 2008-10-24  Hans Boehm <Hans.Boehm@hp.com>
 	(Partially based loosely on patch from Ivan Maidanski)
+
 	* win32_threads.c (GC_may_be_in_stack): New.  (GC_Thread_Rep):
 	Add last_stack_min.  (GC_push_stack_for): Use last_stack_min.
 	(GC_get_next_stack): Add limit argument, use_last_stack_min.
@@ -1593,6 +1714,7 @@
 	* Makefile.in: Regenerate.
 
 2008-10-21  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+
 	* include/private/gc_locks.h, include/private/gc_pmark.h,
 	include/private/gc_priv.h, include/private/gcconfig.h,
 	mach_dep.c, mark_rts.c, misc.c, os_dep.c, pthread_stop_world.c,
@@ -1600,10 +1722,12 @@
 	Fix comments.
 
 2008-10-21  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+
 	* pthread_support.c: Comment out LOCK_STATS.
 	* include/gc.h: Fix comments.
 
 2008-10-20  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+
 	* misc.c (GC_init_inner): Enable GC_LOG_FILE on Cygwin.
 	* include/private/gcconfig.h: Consider USE_MMAP for Cygwin.
 	* os_dep.c (GC_get_main_stack_base): Use alternate definition
@@ -1611,11 +1735,13 @@
 	* include/private/gc_priv.h: Sometimes define SETJMP on Cygwin.
 
 2008-10-20  Hans Boehm <Hans.Boehm@hp.com>
+
 	* doc/README: Make it clearer when Makefile.direct is assumed.
 	* cord/cord.am: install include/cord.h.
 	* Makefile.in: Regenerate.
 
 2008-09-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+
 	* win32_threads.c (GC_pthread_join, GC_pthread_start_inner):
 	Remove unused variables.
 	* darwin_stop_world.c: Always declare GC_thr_init().
@@ -1625,6 +1751,7 @@
 	mark, USE_MARK_BITS version): Refer to correct parameter name.
 
 2008-09-24  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
+
 	* finalize.c (GC_general_register_disappearing_link): Remove
 	redundant code.
 	* gcj_mlc.c (GC_init_gcj_malloc): Add cast to signed.
@@ -1635,9 +1762,11 @@
 	defined for X86. (STATIC): Define as "static" with NO_DEBUGGING.
 
 2008-09-24  Hans Boehm <Hans.Boehm@hp.com>
+
 	* include/private/gc_priv.h: Update MAX_HEAP_SECTS.
 
 2008-09-10  Hans Boehm <Hans.Boehm@hp.com>
+
 	* dbg_mlc.c (GC_print_smashed_obj): Increase robustness with
 	smashed string, (GC_debug_free_inner): Mark as free.
 	* mallocx.c (GC_malloc_many): Always clear new block if
@@ -1650,16 +1779,19 @@
 	* tests/test.c: Don't define GC_DEBUG if already defined.
 
 2008-08-27  Hans Boehm <Hans.Boehm@hp.com>
+
 	* doc/simple_example.html: update --enable-full-debug reference,
 	Make HTML formatting standards compliant.
 	* doc/debugging.html, doc/leak.html: Fix HTML formatting bugs.
 	* doc/gcinterface.html: specify encoding.
 
 2008-08-27  Hans Boehm <Hans.Boehm@hp.com> (with help from Marco Maggi)
+
 	* doc/simple_example.html: Update thread-local allocation
 	description.
 
 2008-08-26  Hans Boehm <Hans.Boehm@hp.com> (with help from Marco Maggi)
+
 	* configure.ac: Check for gc-debug earlier; replace remaining
 	full-debug tests.
 	* configure: Regenerate.
@@ -1672,6 +1804,7 @@
 	* tests/test.c: Minimally test GC_..._INCR and friends.
 
 2008-08-21  Hans Boehm <Hans.Boehm@hp.com>
+
 	* mark.c: (GC_push_next_marked, GC_push_next_marked_dirty,
 	GC_push_next_marked_uncollectable): Never invoke GC_push_marked
 	on free hblk.
@@ -1684,13 +1817,16 @@
 	* include/private/gc_pmark.h: (PUSH_OBJ): Add assertion.
 
 2008-08-21  Hans Boehm <Hans.Boehm@hp.com>
+
 	* alloc.c, include/gc_mark.h, Makefile.direct: Improve comments.
 
 2008-08-01  Hans Boehm <Hans.Boehm@hp.com> (Really Klaus Treichel)
+
 	* configure.ac: Set win32_threads on MinGW.
 	* configure: Regenerate.
 
 2008-07-25  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Ivan Maidanski)
+
 	Ivan's description of the patch follows. Note that a few pieces like
 	the GC_malloc(0) patch, were not applied since an alternate had been
 	previously applied.  A few differed stylistically from the rest of
@@ -1700,28 +1836,28 @@
 	naming bugs (as a few did), where replaced by STATIC, which is
 	ignored by default.
 
-        - minor bug fixing (for FreeBSD, for THREAD_LOCAL_ALLOC and for
-	  GC_malloc(0));
-        - addition of missing getter/setter functions for public variables
-	  (may be useful if compiled as Win32 DLL);
-        - addition of missing GC_API for some exported functions;
-        - addition of missing "static" declarator for internal functions
-	   and variables (where possible);
-        - replacement of all remaining K&R-style definitions with ANSI
-	  C ones (__STDC__ macro is not used anymore);
-        - addition of some Win32 macro definitions (that may be missing in
-	  the standard headers supplied with a compiler) for GWW_VDB mode;
-        - elimination of most compiler warnings (except for
-	  "uninitialized data" warning);
-        - several typos correction;
-        - missing parenthesis addition in macros in some header files of
-	  "libatomic_ops" module.
+	- minor bug fixing (for FreeBSD, for THREAD_LOCAL_ALLOC and for
+	GC_malloc(0));
+	- addition of missing getter/setter functions for public variables
+	(may be useful if compiled as Win32 DLL);
+	- addition of missing GC_API for some exported functions;
+	- addition of missing "static" declarator for internal functions
+	and variables (where possible);
+	- replacement of all remaining K&R-style definitions with ANSI
+	C ones (__STDC__ macro is not used anymore);
+	- addition of some Win32 macro definitions (that may be missing in
+	the standard headers supplied with a compiler) for GWW_VDB mode;
+	- elimination of most compiler warnings (except for
+	"uninitialized data" warning);
+	- several typos correction;
+	- missing parenthesis addition in macros in some header files of
+	"libatomic_ops" module.
 
 	My highlights based on reading the patch:
 
 	* allchblk.c: Remove GC_freehblk_ptr decl.
 	Make free_list_index_of() static.
-	* include/gc.h: Use __int64 on win64, define GC_oom_func, 
+	* include/gc.h: Use __int64 on win64, define GC_oom_func,
 	GC_finalizer_notifier_proc, GC_finalizer_notifier_proc,
 	add getter and setters: GC_get_gc_no, GC_get_parallel,
 	GC_set_oom_fn, GC_set_finalize_on_demand,
@@ -1739,7 +1875,7 @@
 	blacklist printing.
 	* misc.c: Fix log file naming based on environment variable
 	for Windows.  Make GC_set_warn_proc and GC_set_free_space_divisor
-	just return current value with 0 argument.  Add DONT_USER_USER32_DLL.
+	just return current value with 0 argument.  Add DONT_USE_USER32_DLL.
 	Add various getters and setters as in gc.h.
 	* os_dep.c: Remove no longer used GC_disable/enable_signals
 	implementations.  (GC_get_stack_base): Add pthread_attr_destroy
@@ -1748,6 +1884,7 @@
 	call GC_init_thread_local.
 
 2008-07-21  Hans Boehm <Hans.Boehm@hp.com>
+
 	* Makefile.direct, mach_dep.c: Add support for NO_GETCONTEXT.
 	* mach_dep.c: Include signal.h.
 	* gc_priv.h: Factor out INLINE declaration.
@@ -1769,7 +1906,7 @@
 	* include/gc_inline.h: Fix comments.
 
 2008-05-03  Hans Boehm <Hans.Boehm@hp.com>
-	
+
 	* include/gc_version.h, configure.ac, doc/README:
 	Change to version 7.2alpha1.
 	* configure: Regenerate.
@@ -1777,7 +1914,7 @@
 [7.1]
 
 2008-05-03  Hans Boehm <Hans.Boehm@hp.com>
-	
+
 	* include/gc_version.h, configure.ac, doc/README:
 	Change to version 7.1.
 	* configure: Regenerate.
@@ -1898,13 +2035,13 @@
 	* include/private/gc_priv.h: Comment hb_sz range limit.
 
 2008-01-29  Hans Boehm <Hans.Boehm@hp.com>  (with help from Manuel Serrano)
-	
+
 	* mark.c (GC_push_next_marked): correct comment.
 	* Makefile.direct: document NO_PROC_STAT.
 	* include/private/gcconfig.h: Accomodate NO_PROC_STAT.
 
 2008-01-10  Hans Boehm <Hans.Boehm@hp.com>
-	
+
 	* include/gc_version.h, configure.ac, doc/README:
 	Change to version 7.1alpha3.
 	* configure: Regenerate.
@@ -1912,17 +2049,17 @@
 [7.1alpha2]
 
 2008-01-10  Hans Boehm <Hans.Boehm@hp.com>
-	
+
 	* include/gc_version.h, configure.ac, doc/README:
 	Change to version 7.1alpha2.
 	* configure: Regenerate.
 
 2008-01-10  Hans Boehm <Hans.Boehm@hp.com>
-	
+
 	* Makefile.am: Mention atomic_ops.c and atomic_ops_sysdeps.S
 	again.  Refer to build directory as ".".
 	* Makefile.in: Regenerate.
-	
+
 2008-01-10  Hans Boehm <Hans.Boehm@hp.com>
 
 	* configure.ac: Ignore --enable-parallel-mark on Darwin for now.
@@ -1953,7 +2090,7 @@
 2007-12-23  Hans Boehm <Hans.Boehm@hp.com>
 
 	* Makefile.am: Add NT_X64_THREADS_MAKEFILE.
- 
+
 2007-12-23  Hans Boehm <Hans.Boehm@hp.com> (Really mostly Friedrich Dominicus)
 
 	* NT_X64_STATIC_THREADS_MAKEFILE: Clean up obsolete comment.
@@ -1987,8 +2124,8 @@
 	GC_NO_THREAD_DECLS, don't test explicitly for GC_SOLARIS_THREADS.
 
 2007-12-20  Hans Boehm <Hans.Boehm@hp.com>
-	
-	* alloc.c: Deal correctly with address wrapping for 
+
+	* alloc.c: Deal correctly with address wrapping for
 	GC_greatest_plausible_heap_addr and GC_least_plausible_heap_addr.
 	* finalize.c, include/gc.h (GC_register_disappearing_link,
 	GC_register_finalizer_inner): Improve out-of-memory handling.
@@ -2012,7 +2149,7 @@
 	* allchblk.c, configure.ac (add --enable-munmap)
 	* configure: Regenerate.
 
-2007-12-10  Andreas Tobler  <a.tobler@schweiz.org>
+2007-12-10  Andreas Tobler <a.tobler@schweiz.org>
 
 	* dyn_load.c (GC_dyld_image_add): Remove ifdef clause and use the macro
 	GC_GETSECTBYNAME instead.
@@ -2048,7 +2185,7 @@
 	* Makefile.in: Regenerate.
 
 2007-08-15  Hans Boehm <Hans.Boehm@hp.com> (really Samuel Thibault)
-	
+
 	* pthread_support.c (GC_thr_init): Use sysconf(_SC_NPROCESSORS_ONLN)
 	for HURD.
 
@@ -2071,7 +2208,7 @@
 	No longer test for RS6000.
 
 2007-08-03  Hans Boehm <Hans.Boehm@hp.com>
-	
+
 	* alloc.c, backgraph.c, headers.c, include/private/gc_priv.h:
 	Maintain GC_our_memory and GC_n_memory.
 	* dbg_mlc.c (GC_print_smashed_obj): Improve message.
@@ -2121,12 +2258,12 @@
 	exist.
 
 2007-07-02  Hans Boehm <Hans.Boehm@hp.com>
-	
+
 	* version.h, configure.ac, doc/README: Change to version 7.1alpha1.
 	* configure: Regenerate.
 
 2007-07-02  Hans Boehm <Hans.Boehm@hp.com>
-	
+
 	* version.h, configure.ac, doc/README: Change to version 7.0.
 	* configure: Regenerate.
 
@@ -2147,7 +2284,7 @@
 
 	* backgraph.c (per_object_func): Make argument types consistent.
 	(GC_traverse_back_graph): Mark GC_deepest_obj.
-	
+
 2007-06-29  Hans Boehm <Hans.Boehm@hp.com>
 
 	* finalize.c (GC_finalize): Change dl_size and fo_size to size_t.
@@ -2230,7 +2367,7 @@
 	* msvc_dbg.c(GetModuleBase): Replace strcat with strcat_s.
 
 2007-06-06  Hans Boehm <Hans.Boehm@hp.com>
-	
+
 	* include/gc.h: (GC_word, GC_signed_word): Fix win64 definitions.
 	Don't include windows.h in an extern "C" context.
 	* include/private/gcconfig.h: Fix win64/X86_64 configuration.
@@ -2279,7 +2416,7 @@
 	* include/private/gc_locks.h: Format to 80 columns.
 
 2007-05-22  Hans Boehm <Hans.Boehm@hp.com>
-	
+
 	* malloc.c(GC_free): Ignore bad frees on MSWIN32 with REDIRECT_MALLOC.
 	* NT_MAKEFILE: msvc_dbg.h is in include/private.  Don't use cvars
 	rc.
@@ -2297,7 +2434,7 @@
 	* tests/thread_leak_test.c: Don't unconditionally define
 	GC_LINUX_THREADS.
 
-2007-05-21  Andreas Tobler  <a.tobler@schweiz.org>
+2007-05-21  Andreas Tobler <a.tobler@schweiz.org>
 
 	* Makefile.am: Remove extra_ldflags_libgc definition.
 	* Makefile.in: Regenerate.
@@ -2370,7 +2507,7 @@
 	* include/gc.h: Remove more SRC_M3 references.
 	* include/private/gcconfig.h: Remove still more SRC_M3 references.
 	GC_SOLARIS_THREADS no longer needs to be checked separately.
-	
+
 2007-05-08  Hans Boehm <Hans.Boehm@hp.com>
 
 	* thread_local_alloc.c, include/private/thread_local_alloc.h:
@@ -2409,7 +2546,7 @@
 	* win32_threads.c: Include stdint.h for Mingw.  Add GC_API for DllMain.
 	(GC_use_DllMain): Fix assertion.
 
-2007-02-14  Andreas Tobler  <a.tobler@schweiz.org>
+2007-02-14  Andreas Tobler <a.tobler@schweiz.org>
 
 	* configure.ac: Introduce extra_ldflags_libgc. Use it for Darwin.
 	* configure: Regenerate.
@@ -2419,11 +2556,11 @@
 	targets. Remove comments.
 	Prepare ppc64 support for Darwin.
 
-2007-01-29  Andreas Tobler  <a.tobler@schweiz.org>
+2007-01-29  Andreas Tobler <a.tobler@schweiz.org>
 
 	* darwin_stop_world.c: Clean up and reformat code.
 
-2007-01-28  Andreas Tobler  <a.tobler@schweiz.org>
+2007-01-28  Andreas Tobler <a.tobler@schweiz.org>
 
 	* darwin_stop_world.c (GC_push_all_stacks): Fix compiler warnings.
 	Make i unsigned.
@@ -2444,7 +2581,7 @@
 	* configure: Regenerate.
 	* README.changes: Point to ChangeLog.
 
-2007-01-25  Andreas Tobler  <a.tobler@schweiz.org>
+2007-01-25  Andreas Tobler <a.tobler@schweiz.org>
 
 	* darwin_stop_world.c: Move THREAD_FLD defines to ...
 	* include/private/gc_priv.h: ... here.
@@ -2452,13 +2589,13 @@
 	* os_dep.c (catch_exception_raise): Use THREAD_FLD for exc_state member
 	access.
 
-2007-01-18  Andreas Tobler  <a.tobler@schweiz.org>
+2007-01-18  Andreas Tobler <a.tobler@schweiz.org>
 
 	* os_dep.c (if defined(MPROTECT_VDB) && defined(DARWIN)): Clean up and
 	reformat code.
 	Correct email reference.
 
-2007-01-11  Andreas Tobler  <a.tobler@schweiz.org>
+2007-01-11  Andreas Tobler <a.tobler@schweiz.org>
 
 	* configure.ac (i?86*-*-darwin*): Replaced HAS_I386_THREAD_STATE_* with
 	HAS_X86_THREAD_STATE32_*.
@@ -2485,11 +2622,10 @@
 	X86_64 Darwin. Replaced old i386_EXCEPTION_STATE_* definition with
 	x86_EXCEPTION_STATE32_*. Add X86_64 for exc_state.faultvaddr.
 
-2007-01-09  Andreas Tobler  <a.tobler@schweiz.org>
+2007-01-09  Andreas Tobler <a.tobler@schweiz.org>
 
 	* libtool.m4: Update to version from libtool-1.5.22.
 	* ltmain.sh: Likewise.
 	* ChangeLog: Created.
 
 See doc/README.changes for earlier changes.
-

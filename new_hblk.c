@@ -13,8 +13,8 @@
  * modified is included with the above copyright notice.
  *
  * This file contains the functions:
- *	ptr_t GC_build_flXXX(h, old_fl)
- *	void GC_new_hblk(size)
+ *      ptr_t GC_build_flXXX(h, old_fl)
+ *      void GC_new_hblk(size)
  */
 /* Boehm, May 19, 1994 2:09 pm PDT */
 
@@ -32,7 +32,7 @@ STATIC ptr_t GC_build_fl_clear2(struct hblk *h, ptr_t ofl)
 {
     word * p = (word *)(h -> hb_body);
     word * lim = (word *)(h + 1);
-    
+
     p[0] = (word)ofl;
     p[1] = 0;
     p[2] = (word)p;
@@ -52,17 +52,17 @@ STATIC ptr_t GC_build_fl_clear4(struct hblk *h, ptr_t ofl)
 {
     word * p = (word *)(h -> hb_body);
     word * lim = (word *)(h + 1);
-    
+
     p[0] = (word)ofl;
     p[1] = 0;
     p[2] = 0;
     p[3] = 0;
     p += 4;
     for (; p < lim; p += 4) {
-	PREFETCH_FOR_WRITE((ptr_t)(p+64));
+        PREFETCH_FOR_WRITE((ptr_t)(p+64));
         p[0] = (word)(p-4);
         p[1] = 0;
-	CLEAR_DOUBLE(p+2);
+        CLEAR_DOUBLE(p+2);
     };
     return((ptr_t)(p-4));
 }
@@ -72,7 +72,7 @@ STATIC ptr_t GC_build_fl2(struct hblk *h, ptr_t ofl)
 {
     word * p = (word *)(h -> hb_body);
     word * lim = (word *)(h + 1);
-    
+
     p[0] = (word)ofl;
     p[2] = (word)p;
     p += 4;
@@ -88,12 +88,12 @@ STATIC ptr_t GC_build_fl4(struct hblk *h, ptr_t ofl)
 {
     word * p = (word *)(h -> hb_body);
     word * lim = (word *)(h + 1);
-    
+
     p[0] = (word)ofl;
     p[4] = (word)p;
     p += 8;
     for (; p < lim; p += 8) {
-	PREFETCH_FOR_WRITE((ptr_t)(p+64));
+        PREFETCH_FOR_WRITE((ptr_t)(p+64));
         p[0] = (word)(p-4);
         p[4] = (word)p;
     };
@@ -103,62 +103,62 @@ STATIC ptr_t GC_build_fl4(struct hblk *h, ptr_t ofl)
 #endif /* !SMALL_CONFIG */
 
 
-/* Build a free list for objects of size sz inside heap block h.	*/
-/* Clear objects inside h if clear is set.  Add list to the end of	*/
-/* the free list we build.  Return the new free list.			*/
-/* This could be called without the main GC lock, if we ensure that	*/
-/* there is no concurrent collection which might reclaim objects that	*/
-/* we have not yet allocated.						*/
+/* Build a free list for objects of size sz inside heap block h.        */
+/* Clear objects inside h if clear is set.  Add list to the end of      */
+/* the free list we build.  Return the new free list.                   */
+/* This could be called without the main GC lock, if we ensure that     */
+/* there is no concurrent collection which might reclaim objects that   */
+/* we have not yet allocated.                                           */
 ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear, ptr_t list)
 {
   word *p, *prev;
-  word *last_object;		/* points to last object in new hblk	*/
+  word *last_object;            /* points to last object in new hblk    */
 
-  /* Do a few prefetches here, just because its cheap.  	*/
-  /* If we were more serious about it, these should go inside	*/
-  /* the loops.  But write prefetches usually don't seem to	*/
-  /* matter much.						*/
+  /* Do a few prefetches here, just because its cheap.          */
+  /* If we were more serious about it, these should go inside   */
+  /* the loops.  But write prefetches usually don't seem to     */
+  /* matter much.                                               */
     PREFETCH_FOR_WRITE((ptr_t)h);
     PREFETCH_FOR_WRITE((ptr_t)h + 128);
     PREFETCH_FOR_WRITE((ptr_t)h + 256);
     PREFETCH_FOR_WRITE((ptr_t)h + 378);
-  /* Handle small objects sizes more efficiently.  For larger objects 	*/
-  /* the difference is less significant.				*/
+  /* Handle small objects sizes more efficiently.  For larger objects   */
+  /* the difference is less significant.                                */
 #  ifndef SMALL_CONFIG
     switch (sz) {
         case 2: if (clear) {
-        	    return GC_build_fl_clear2(h, list);
-        	} else {
-        	    return GC_build_fl2(h, list);
-        	}
+                    return GC_build_fl_clear2(h, list);
+                } else {
+                    return GC_build_fl2(h, list);
+                }
         case 4: if (clear) {
-        	    return GC_build_fl_clear4(h, list);
-        	} else {
-        	    return GC_build_fl4(h, list);
-        	}
+                    return GC_build_fl_clear4(h, list);
+                } else {
+                    return GC_build_fl4(h, list);
+                }
         default:
-        	break;
+                break;
     }
 #  endif /* !SMALL_CONFIG */
-    
+
   /* Clear the page if necessary. */
     if (clear) BZERO(h, HBLKSIZE);
-    
+
   /* Add objects to free list */
-    p = (word *)(h -> hb_body) + sz;	/* second object in *h	*/
-    prev = (word *)(h -> hb_body);       	/* One object behind p	*/
+    p = (word *)(h -> hb_body) + sz;    /* second object in *h  */
+    prev = (word *)(h -> hb_body);              /* One object behind p  */
     last_object = (word *)((char *)h + HBLKSIZE);
     last_object -= sz;
-			    /* Last place for last object to start */
+                            /* Last place for last object to start */
 
   /* make a list of all objects in *h with head as last object */
     while (p <= last_object) {
       /* current object's link points to last object */
         obj_link(p) = (ptr_t)prev;
-	prev = p;
-	p += sz;
+        prev = p;
+        p += sz;
     }
-    p -= sz;			/* p now points to last object */
+    p -= sz;                    /* p now points to last object */
 
   /*
    * put p (which is now head of list of objects in *h) as first
@@ -178,11 +178,11 @@ ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear, ptr_t list)
  */
 void GC_new_hblk(size_t gran, int kind)
 {
-  struct hblk *h;	/* the new heap block			*/
+  struct hblk *h;       /* the new heap block                   */
   GC_bool clear = GC_obj_kinds[kind].ok_init;
 
   GC_STATIC_ASSERT((sizeof (struct hblk)) == HBLKSIZE);
-  
+
   if (GC_debugging_started) clear = TRUE;
 
   /* Allocate a new heap block */
@@ -194,7 +194,6 @@ void GC_new_hblk(size_t gran, int kind)
 
   /* Build the free list */
       GC_obj_kinds[kind].ok_freelist[gran] =
-	GC_build_fl(h, GRANULES_TO_WORDS(gran), clear,
-		    GC_obj_kinds[kind].ok_freelist[gran]);
+        GC_build_fl(h, GRANULES_TO_WORDS(gran), clear,
+                    GC_obj_kinds[kind].ok_freelist[gran]);
 }
-

@@ -39,28 +39,28 @@
 
   GC_bool GC_collection_in_progress(void);
 
-  /* Make sure we're not in the middle of a collection, and make	*/
-  /* sure we don't start any.	Returns previous value of GC_dont_gc.	*/
-  /* This is invoked prior to a dlopen call to avoid synchronization	*/
-  /* issues.  We can't just acquire the allocation lock, since startup 	*/
-  /* code in dlopen may try to allocate.				*/
-  /* This solution risks heap growth in the presence of many dlopen	*/
-  /* calls in either a multithreaded environment, or if the library	*/
-  /* initialization code allocates substantial amounts of GC'ed memory.	*/
-  /* But I don't know of a better solution.				*/
+  /* Make sure we're not in the middle of a collection, and make        */
+  /* sure we don't start any.   Returns previous value of GC_dont_gc.   */
+  /* This is invoked prior to a dlopen call to avoid synchronization    */
+  /* issues.  We can't just acquire the allocation lock, since startup  */
+  /* code in dlopen may try to allocate.                                */
+  /* This solution risks heap growth in the presence of many dlopen     */
+  /* calls in either a multithreaded environment, or if the library     */
+  /* initialization code allocates substantial amounts of GC'ed memory. */
+  /* But I don't know of a better solution.                             */
   static void disable_gc_for_dlopen(void)
   {
     LOCK();
     while (GC_incremental && GC_collection_in_progress()) {
-	GC_collect_a_little_inner(1000);
+        GC_collect_a_little_inner(1000);
     }
     ++GC_dont_gc;
     UNLOCK();
   }
 
-  /* Redefine dlopen to guarantee mutual exclusion with	*/
-  /* GC_register_dynamic_libraries.			*/
-  /* Should probably happen for other operating	systems, too. */
+  /* Redefine dlopen to guarantee mutual exclusion with */
+  /* GC_register_dynamic_libraries.                     */
+  /* Should probably happen for other operating systems, too. */
 
 #include <dlfcn.h>
 
@@ -75,7 +75,7 @@
 GC_API void * WRAP_FUNC(dlopen)(const char *path, int mode)
 {
     void * result;
-    
+
 #   ifndef USE_PROC_FOR_LIBRARIES
       disable_gc_for_dlopen();
 #   endif
@@ -86,6 +86,3 @@ GC_API void * WRAP_FUNC(dlopen)(const char *path, int mode)
     return(result);
 }
 # endif  /* GC_PTHREADS || GC_SOLARIS_THREADS ... */
-
-
-

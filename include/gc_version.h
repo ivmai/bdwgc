@@ -1,6 +1,23 @@
-/* The version here should match that in configure/configure.ac	*/
-/* Eventually this one may become unnecessary.  For now we need	*/
-/* it to keep the old-style build process working.		*/
+/*
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
+ * Copyright (c) 2000-2009 by Hewlett-Packard Development Company.
+ * All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
+ */
+
+/* The version here should match that in configure/configure.ac */
+/* Eventually this one may become unnecessary.  For now we need */
+/* it to keep the old-style build process working.              */
 #define GC_TMP_VERSION_MAJOR 7
 #define GC_TMP_VERSION_MINOR 2
 #define GC_TMP_ALPHA_VERSION 3

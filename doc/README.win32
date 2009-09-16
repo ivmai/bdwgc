@@ -228,4 +228,3 @@ explicitly set GC_WIN32_PTHREADS.  Use -DPTW32_STATIC_LIB for the static
 threads library.  Note that the DEBUG_WIN32_PTHREADS support in
 win32_threads.c is currently broken and looking for someone to debug it.
 (This information and the port came from Romano Paolo Tenca).
-

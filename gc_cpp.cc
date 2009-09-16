@@ -1,15 +1,16 @@
+/*
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ *     Last modified on Sat Nov 19 19:31:14 PST 1994 by ellis
+ *
+ * Permission is hereby granted to copy this code for any purpose,
+ * provided the above notices are retained on all copies.
+ */
+
 /*************************************************************************
-Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
-OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-    Last modified on Sat Nov 19 19:31:14 PST 1994 by ellis
-                  on Sat Jun  8 15:10:00 PST 1994 by boehm
-
-Permission is hereby granted to copy this code for any purpose,
-provided the above notices are retained on all copies.
-
 This implementation module for gc_c++.h provides an implementation of
 the global operators "new" and "delete" that calls the Boehm
 allocator.  All objects allocated by this implementation will be
@@ -35,15 +36,15 @@ Authors: John R. Ellis and Jesse Hull
 
 void* operator new( size_t size ) {
     return GC_MALLOC_UNCOLLECTABLE( size );}
-  
+
 void operator delete( void* obj ) {
     GC_FREE( obj );}
-  
+
 #ifdef GC_OPERATOR_NEW_ARRAY
 
 void* operator new[]( size_t size ) {
     return GC_MALLOC_UNCOLLECTABLE( size );}
-  
+
 void operator delete[]( void* obj ) {
     GC_FREE( obj );}
 
@@ -53,14 +54,14 @@ void operator delete[]( void* obj ) {
 
 // This new operator is used by VC++ in case of Debug builds !
 void* operator new( size_t size,
-			  int ,//nBlockUse,
-			  const char * szFileName,
-			  int nLine )
+                          int ,//nBlockUse,
+                          const char * szFileName,
+                          int nLine )
 {
 #ifndef GC_DEBUG
-	return GC_malloc_uncollectable( size );
+        return GC_malloc_uncollectable( size );
 #else
-	return GC_debug_malloc_uncollectable(size, szFileName, nLine);
+        return GC_debug_malloc_uncollectable(size, szFileName, nLine);
 #endif
 }
 
@@ -73,4 +74,3 @@ void* operator new[](size_t size, int nBlockUse, const char* szFileName, int nLi
 #endif
 
 #endif /* _MSC_VER */
-

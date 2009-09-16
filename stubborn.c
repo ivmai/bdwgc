@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
@@ -18,10 +18,10 @@
 
 #if defined(MANUAL_VDB)
 /* Stubborn object (hard to change, nearly immutable) allocation. */
-/* This interface is deprecated.  We mostly emulate it using	  */
-/* MANUAL_VDB.  But that imposes the additional constraint that	  */
-/* written, but not yet GC_dirty()ed objects must be referenced	  */
-/* by a stack.							  */
+/* This interface is deprecated.  We mostly emulate it using      */
+/* MANUAL_VDB.  But that imposes the additional constraint that   */
+/* written, but not yet GC_dirty()ed objects must be referenced   */
+/* by a stack.                                                    */
 GC_API void * GC_CALL GC_malloc_stubborn(size_t lb)
 {
     return(GC_malloc(lb));

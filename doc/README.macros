@@ -1,7 +1,7 @@
 The collector uses a large amount of conditional compilation in order to
 deal with platform dependencies.  This violates a number of known coding
 standards.  On the other hand, it seems to be the only practical way to
-support this many platforms without excessive code duplication. 
+support this many platforms without excessive code duplication.
 
 A few guidelines have mostly been followed in order to keep this manageable:
 
@@ -24,71 +24,68 @@ either include/private/gcconfig.h or in Makefile.direct.  Here is an attempt
 at defining some of the remainder:  (Thanks to Walter Bright for suggesting
 this.  This is a work in progress)
 
-MACRO		EXPLANATION
------		-----------
+MACRO           EXPLANATION
+-----           -----------
 
-GC_DEBUG	Tested by gc.h.  Causes all-upper-case macros to
-		expand to calls to debug versions of collector routines.
+GC_DEBUG        Tested by gc.h.  Causes all-upper-case macros to
+                expand to calls to debug versions of collector routines.
 
 GC_NO_THREAD_REDIRECTS Tested by gc.h.  Prevents redirection of thread
-		creation routines etc. to GC_ versions.  Requires the
-		programmer to explicitly handle thread registration.
+                creation routines etc. to GC_ versions.  Requires the
+                programmer to explicitly handle thread registration.
 
 GC_NO_THREAD_DECLS Tested by gc.h. MS Windows only.  Do not declare
-		Windows thread creation routines and do not include windows.h.  
+                Windows thread creation routines and do not include windows.h.
 
-__DMC__	Always #define'd by the Digital Mars compiler. Expands
-		to the compiler version number in hex, i.e. 0x810 is
-		version 8.1b0
+__DMC__ Always #define'd by the Digital Mars compiler. Expands
+                to the compiler version number in hex, i.e. 0x810 is
+                version 8.1b0
 
 _ENABLE_ARRAYNEW
-		#define'd by the Digital Mars C++ compiler when
-		operator new[] and delete[] are separately
-		overloadable. Used in gc_cpp.h.
+                #define'd by the Digital Mars C++ compiler when
+                operator new[] and delete[] are separately
+                overloadable. Used in gc_cpp.h.
 
-_MSC_VER	Expands to the Visual C++ compiler version.  Assumed to
-		not be defined for other compilers (at least if they behave
-		appreciably differently).
+_MSC_VER        Expands to the Visual C++ compiler version.  Assumed to
+                not be defined for other compilers (at least if they behave
+                appreciably differently).
 
-_DLL		Defined by Visual C++ (and mingw-w64) if runtime dynamic
-		libraries are in use.  Used (only if none of GC_DLL,
-		GC_NOT_DLL, __GNUC__ are defined) to test whether
-		__declspec(dllimport) needs to be added to declarations
-		to support the case in which the collector is in a DLL.
+_DLL            Defined by Visual C++ (and mingw-w64) if runtime dynamic
+                libraries are in use.  Used (only if none of GC_DLL,
+                GC_NOT_DLL, __GNUC__ are defined) to test whether
+                __declspec(dllimport) needs to be added to declarations
+                to support the case in which the collector is in a DLL.
 
-GC_DLL		Defined by user if dynamic libraries are being built
-		or used.  Also set by gc.h if _DLL is defined while
-		GC_NOT_DLL and __GNUC__ are both undefined.
-		This is the macro that is tested internally to determine
-		whether the GC is in its own dynamic library.  May need
-		to be set by clients before including gc.h.  Note that
-		inside the GC implementation it indicates that the
-		collector is in its own dynamic library, should export
-		its symbols, etc.  But in clients it indicates that the
-		GC resides in a different DLL, its entry points should
-		be referenced accordingly, and precautions may need to
-		be taken to properly deal with statically allocated 
-		variables in the main program.  Used for MS Windows.
-		Also used by GCC v4+ (only when the dynamic shared library
-		is being built) in conjunction with "-fvisibility=hidden"
-		option to hide internally used symbols.
+GC_DLL          Defined by user if dynamic libraries are being built
+                or used.  Also set by gc.h if _DLL is defined while
+                GC_NOT_DLL and __GNUC__ are both undefined.
+                This is the macro that is tested internally to determine
+                whether the GC is in its own dynamic library.  May need
+                to be set by clients before including gc.h.  Note that
+                inside the GC implementation it indicates that the
+                collector is in its own dynamic library, should export
+                its symbols, etc.  But in clients it indicates that the
+                GC resides in a different DLL, its entry points should
+                be referenced accordingly, and precautions may need to
+                be taken to properly deal with statically allocated
+                variables in the main program.  Used for MS Windows.
+                Also used by GCC v4+ (only when the dynamic shared library
+                is being built) in conjunction with "-fvisibility=hidden"
+                option to hide internally used symbols.
 
-GC_NOT_DLL	User-settable macro that overrides _DLL, e.g. if runtime
-		dynamic libraries are used, but the collector is in a static
-		library.
+GC_NOT_DLL      User-settable macro that overrides _DLL, e.g. if runtime
+                dynamic libraries are used, but the collector is in a static
+                library.
 
-SUNOS5SIGS	Solaris-like signal handling.  This is probably misnamed,
-		since it really doesn't guarantee much more than Posix.
-		Currently set only for Solaris2.X, HPUX, and DRSNX.  Should
-		probably be set for some other platforms.
+SUNOS5SIGS      Solaris-like signal handling.  This is probably misnamed,
+                since it really doesn't guarantee much more than Posix.
+                Currently set only for Solaris2.X, HPUX, and DRSNX.  Should
+                probably be set for some other platforms.
 
-PCR		Set if the collector is being built as part of the Xerox
-		Portable Common Runtime.
+PCR             Set if the collector is being built as part of the Xerox
+                Portable Common Runtime.
 
 USE_COMPILER_TLS  Assume the existence of __thread-style thread-local
-		storage.  Set automatically for thread-local allocation with
-		the HP/UX vendor compiler.  Usable with gcc on sufficiently
-		up-to-date ELF platforms.
-
-
-
+                storage.  Set automatically for thread-local allocation with
+                the HP/UX vendor compiler.  Usable with gcc on sufficiently
+                up-to-date ELF platforms.

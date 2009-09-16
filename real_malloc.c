@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
@@ -31,8 +31,7 @@ void * real_malloc(size_t size)
 # else
 
 extern int GC_quiet;
-	/* ANSI C doesn't allow translation units to be empty.	*/
-	/* So we guarantee this one is nonempty.		*/
+        /* ANSI C doesn't allow translation units to be empty.  */
+        /* So we guarantee this one is nonempty.                */
 
 #endif /* PCR */
-

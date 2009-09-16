@@ -1,21 +1,23 @@
+/*
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to use or copy this program for any
+ * purpose, provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is
+ * granted, provided the above notices are retained, and a notice that
+ * the code was modified is included with the above copyright notice.
+ */
+
 #ifndef GC_CPP_H
 #define GC_CPP_H
-/****************************************************************************
-Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
- 
-THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
-OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
- 
-Permission is hereby granted to use or copy this program for any
-purpose, provided the above notices are retained on all copies.
-Permission to modify the code and to distribute modified code is
-granted, provided the above notices are retained, and a notice that
-the code was modified is included with the above copyright notice.
-****************************************************************************
 
+/****************************************************************************
 C++ Interface to the Boehm Collector
 
-    John R. Ellis and Jesse Hull 
+    John R. Ellis and Jesse Hull
 
 This interface provides access to the Boehm collector.  It provides
 basic facilities similar to those described in "Safe, Efficient
@@ -34,7 +36,7 @@ Objects allocated with the built-in "::operator new" are uncollectable.
 Objects derived from class "gc" are collectable.  For example:
 
     class A: public gc {...};
-    A* a = new A;       // a is collectable. 
+    A* a = new A;       // a is collectable.
 
 Collectable instances of non-class types can be allocated using the GC
 (or UseGC) placement:
@@ -149,9 +151,9 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 #if ! defined( GC_NO_OPERATOR_NEW_ARRAY ) \
     && !defined(_ENABLE_ARRAYNEW) /* Digimars */ \
     && (defined(__BORLANDC__) && (__BORLANDC__ < 0x450) \
-	|| (defined(__GNUC__) && \
-	    (__GNUC__ < 2 || __GNUC__ == 2 && __GNUC_MINOR__ < 6)) \
-	|| (defined(__WATCOMC__) && __WATCOMC__ < 1050))
+        || (defined(__GNUC__) && \
+            (__GNUC__ < 2 || __GNUC__ == 2 && __GNUC_MINOR__ < 6)) \
+        || (defined(__WATCOMC__) && __WATCOMC__ < 1050))
 #   define GC_NO_OPERATOR_NEW_ARRAY
 #endif
 
@@ -167,7 +169,7 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 
 enum GCPlacement {UseGC,
 #ifndef GC_NAME_CONFLICT
-		  GC=UseGC,
+                  GC=UseGC,
 #endif
                   NoGC, PointerFreeGC};
 
@@ -175,12 +177,12 @@ class gc {public:
     inline void* operator new( size_t size );
     inline void* operator new( size_t size, GCPlacement gcp );
     inline void* operator new( size_t size, void *p );
-    	/* Must be redefined here, since the other overloadings	*/
-    	/* hide the global definition.				*/
+        /* Must be redefined here, since the other overloadings */
+        /* hide the global definition.                          */
     inline void operator delete( void* obj );
 #   ifdef GC_PLACEMENT_DELETE
       inline void operator delete( void*, GCPlacement );
-      	/* called if construction fails.	*/
+        /* called if construction fails.        */
       inline void operator delete( void*, void* );
 #   endif
 
@@ -194,9 +196,9 @@ class gc {public:
       inline void operator delete[]( void*, void* );
 #   endif
 #endif /* GC_OPERATOR_NEW_ARRAY */
-    };    
+    };
     /*
-    Instances of classes derived from "gc" will be allocated in the 
+    Instances of classes derived from "gc" will be allocated in the
     collected heap by default, unless an explicit NoGC placement is
     specified. */
 
@@ -222,8 +224,8 @@ extern "C" {
 # pragma warning(disable:4291)
 #endif
 
-inline void* operator new( 
-    size_t size, 
+inline void* operator new(
+    size_t size,
     GCPlacement gcp,
     GCCleanUpFunc cleanup = 0,
     void* clientData = 0 );
@@ -250,11 +252,11 @@ inline void* operator new(
   *  undefined, which is what seems to happen on VC++ 6 for some reason
   *  if we define a multi-argument operator new[].
   *  There seems to be no way to redirect new in this environment without
-  *  including this everywhere. 
+  *  including this everywhere.
   */
 #if _MSC_VER > 1020
  void *operator new[]( size_t size );
- 
+
  void operator delete[](void* obj);
 #endif
 
@@ -264,16 +266,16 @@ inline void* operator new(
 
  // This new operator is used by VC++ in case of Debug builds !
  void* operator new(  size_t size,
-		      int ,//nBlockUse,
-		      const char * szFileName,
-		      int nLine );
+                      int ,//nBlockUse,
+                      const char * szFileName,
+                      int nLine );
 #endif /* _MSC_VER */
 
 
 #ifdef GC_OPERATOR_NEW_ARRAY
 
 inline void* operator new[](
-    size_t size, 
+    size_t size,
     GCPlacement gcp,
     GCCleanUpFunc cleanup = 0,
     void* clientData = 0 );
@@ -290,12 +292,12 @@ Inline implementation
 
 inline void* gc::operator new( size_t size ) {
     return GC_MALLOC( size );}
-    
+
 inline void* gc::operator new( size_t size, GCPlacement gcp ) {
-    if (gcp == UseGC) 
+    if (gcp == UseGC)
         return GC_MALLOC( size );
     else if (gcp == PointerFreeGC)
-	return GC_MALLOC_ATOMIC( size );
+        return GC_MALLOC_ATOMIC( size );
     else
         return GC_MALLOC_UNCOLLECTABLE( size );}
 
@@ -304,7 +306,7 @@ inline void* gc::operator new( size_t size, void *p ) {
 
 inline void gc::operator delete( void* obj ) {
     GC_FREE( obj );}
-    
+
 #ifdef GC_PLACEMENT_DELETE
   inline void gc::operator delete( void*, void* ) {}
 
@@ -317,7 +319,7 @@ inline void gc::operator delete( void* obj ) {
 
 inline void* gc::operator new[]( size_t size ) {
     return gc::operator new( size );}
-    
+
 inline void* gc::operator new[]( size_t size, GCPlacement gcp ) {
     return gc::operator new( size, gcp );}
 
@@ -334,7 +336,7 @@ inline void gc::operator delete[]( void* obj ) {
     gc::operator delete(p); }
 
 #endif
-    
+
 #endif /* GC_OPERATOR_NEW_ARRAY */
 
 
@@ -350,14 +352,14 @@ inline gc_cleanup::gc_cleanup() {
     void* base = GC_base( (void *) this );
     if (0 != base)  {
       // Don't call the debug version, since this is a real base address.
-      GC_register_finalizer_ignore_self( 
-        base, (GC_finalization_proc)cleanup, (void*) ((char*) this - (char*) base), 
+      GC_register_finalizer_ignore_self(
+        base, (GC_finalization_proc)cleanup, (void*) ((char*) this - (char*) base),
         &oldProc, &oldData );
       if (0 != oldProc) {
         GC_register_finalizer_ignore_self( base, oldProc, oldData, 0, 0 );}}}
 
-inline void* operator new( 
-    size_t size, 
+inline void* operator new(
+    size_t size,
     GCPlacement gcp,
     GCCleanUpFunc cleanup,
     void* clientData )
@@ -366,18 +368,18 @@ inline void* operator new(
 
     if (gcp == UseGC) {
         obj = GC_MALLOC( size );
-        if (cleanup != 0) 
-            GC_REGISTER_FINALIZER_IGNORE_SELF( 
+        if (cleanup != 0)
+            GC_REGISTER_FINALIZER_IGNORE_SELF(
                 obj, cleanup, clientData, 0, 0 );}
     else if (gcp == PointerFreeGC) {
         obj = GC_MALLOC_ATOMIC( size );}
     else {
         obj = GC_MALLOC_UNCOLLECTABLE( size );};
     return obj;}
-        
+
 # ifdef GC_PLACEMENT_DELETE
-inline void operator delete ( 
-    void *p, 
+inline void operator delete (
+    void *p,
     GCPlacement gcp,
     GCCleanUpFunc cleanup,
     void* clientData )
@@ -388,8 +390,8 @@ inline void operator delete (
 
 #ifdef GC_OPERATOR_NEW_ARRAY
 
-inline void* operator new[]( 
-    size_t size, 
+inline void* operator new[](
+    size_t size,
     GCPlacement gcp,
     GCCleanUpFunc cleanup,
     void* clientData )
@@ -398,6 +400,4 @@ inline void* operator new[](
 
 #endif /* GC_OPERATOR_NEW_ARRAY */
 
-
 #endif /* GC_CPP_H */
-

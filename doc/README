@@ -118,7 +118,7 @@ introduced leaks, the amount of unreclaimed memory typically stays
 bounded.
 
   In the following, an "object" is defined to be a region of memory allocated
-by the routines described below.  
+by the routines described below.
 
   Any objects not intended to be collected must be pointed to either
 from other such accessible objects, or from the registers,
@@ -219,7 +219,7 @@ use up to about 30MB of memory.  (The multi-threaded version will use more.
 to build and test the "cord" string library.)
 
   Makefile.direct will generate a library gc.a which you should link against.
-Typing "make cords" will add the cord library to gc.a.  
+Typing "make cords" will add the cord library to gc.a.
 
   The GNU style build process understands the usual targets.  "Make check"
 runs a number of tests.  "Make install" installs at least libgc, and libcord.
@@ -280,9 +280,9 @@ THE C INTERFACE TO THE ALLOCATOR
   The following routines are intended to be directly called by the user.
 Note that usually only GC_malloc is necessary.  GC_clear_roots and GC_add_roots
 calls may be required if the collector has to trace from nonstandard places
-(e.g. from dynamic library data areas on a machine on which the 
+(e.g. from dynamic library data areas on a machine on which the
 collector doesn't already understand them.)  On some machines, it may
-be desirable to set GC_stacktop to a good approximation of the stack base. 
+be desirable to set GC_stacktop to a good approximation of the stack base.
 (This enhances code portability on HP PA machines, since there is no
 good way for the collector to compute this value.)  Client code may include
 "gc.h", which defines all of the following, plus many others.
@@ -332,17 +332,17 @@ good way for the collector to compute this value.)  Client code may include
       program startup.)
 
 6)  GC_malloc_ignore_off_page(bytes)
-	- identical to GC_malloc, but the client promises to keep a pointer to
-	  the somewhere within the first 256 bytes of the object while it is
-	  live.  (This pointer should nortmally be declared volatile to prevent
-	  interference from compiler optimizations.)  This is the recommended
-	  way to allocate anything that is likely to be larger than 100Kbytes
-	  or so.  (GC_malloc may result in failure to reclaim such objects.)
+        - identical to GC_malloc, but the client promises to keep a pointer to
+          the somewhere within the first 256 bytes of the object while it is
+          live.  (This pointer should nortmally be declared volatile to prevent
+          interference from compiler optimizations.)  This is the recommended
+          way to allocate anything that is likely to be larger than 100Kbytes
+          or so.  (GC_malloc may result in failure to reclaim such objects.)
 
 7)  GC_set_warn_proc(proc)
-	- Can be used to redirect warnings from the collector.  Such warnings
-	  should be rare, and should not be ignored during code development.
-      
+        - Can be used to redirect warnings from the collector.  Such warnings
+          should be rare, and should not be ignored during code development.
+
 8) GC_enable_incremental()
     - Enables generational and incremental collection.  Useful for large
       heaps on machines that provide access to page dirty information.
@@ -354,7 +354,7 @@ good way for the collector to compute this value.)  Client code may include
 9) Several routines to allow for registration of finalization code.
    User supplied finalization code may be invoked when an object becomes
    unreachable.  To call (*f)(obj, x) when obj becomes inaccessible, use
-	GC_register_finalizer(obj, f, x, 0, 0);
+        GC_register_finalizer(obj, f, x, 0, 0);
    For more sophisticated uses, and for finalization ordering issues,
    see gc.h.
 
@@ -370,7 +370,7 @@ in excessive memory consumption.
 
   Some additional tuning is possible through the parameters defined
 near the top of gc_priv.h.
-  
+
   If only GC_malloc is intended to be used, it might be appropriate to define:
 
 #define malloc(n) GC_malloc(n)
@@ -477,7 +477,7 @@ in the header, see the definition of the type oh in debug_malloc.c)
 
 INCREMENTAL/GENERATIONAL COLLECTION:
 
-The collector normally interrupts client code for the duration of 
+The collector normally interrupts client code for the duration of
 a garbage collection mark phase.  This may be unacceptable if interactive
 response is needed for programs with large heaps.  The collector
 can also run in a "generational" mode, in which it usually attempts to
@@ -519,14 +519,14 @@ objects.  Stubborn objects are treated less efficiently than pointerfree
 A rough rule of thumb is that, in the absence of VM information, garbage
 collection pauses are proportional to the amount of pointerful storage
 plus the amount of modified "stubborn" storage that is reachable during
-the collection.  
+the collection.
 
 Initial allocation of stubborn objects takes longer than allocation
 of other objects, since other data structures need to be maintained.
 
 We recommend against random use of stubborn objects in client
 code, since bugs caused by inappropriate writes to stubborn objects
-are likely to be very infrequently observed and hard to trace.  
+are likely to be very infrequently observed and hard to trace.
 However, their use may be appropriate in a few carefully written
 library routines that do not make the objects themselves available
 for writing by client code.
@@ -553,4 +553,3 @@ may help in some cases.
   Please address bug reports to boehm@acm.org.  If you are
 contemplating a major addition, you might also send mail to ask whether
 it's already been done (or whether we tried and discarded it).
-
