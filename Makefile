@@ -144,7 +144,7 @@ OTHER_FILES= Makefile setjmp_t.c callprocs \
            Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
            add_gc_prefix.c gc_cpp.cpp \
-	   version.h AmigaOS.c mscvc_dbg.c include/private/msvc_dbg.h \
+           version.h AmigaOS.c msvc_dbg.c include/private/msvc_dbg.h \
 	   $(TESTS) $(GNU_BUILD_FILES) $(OTHER_MAKEFILES)
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \

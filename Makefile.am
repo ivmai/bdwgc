@@ -59,15 +59,15 @@ libgc_la_SOURCES = \
 # C Library: Architecture Dependent
 # ---------------------------------
 
-if PTHREADS
+if GC_PTHREADS
 libgc_la_SOURCES += pthread_support.c pthread_stop_world.c
 endif
 
-if DARWIN_THREADS
+if GC_DARWIN_THREADS
 libgc_la_SOURCES += darwin_stop_world.c
 endif
 
-if WIN32_THREADS
+if GC_WIN32_THREADS
 libgc_la_SOURCES += win32_threads.c
 endif
 

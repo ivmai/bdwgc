@@ -1,4 +1,38 @@
 2009-09-16  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai132.diff - superseding diff41a, diff64, diff84 partly)
+
+	* Makefile: Fix typo for msvc_dbg.c.
+	* Makefile.direct: Ditto.
+	* Makefile.am: Prefix PTHREADS, DARWIN_THREADS, WIN32_THREADS with
+	"GC_".
+	* Makefile.dj: Don't reference remove files (nursery.c,
+	gc_nursery.h, gc_copy_descr.h).
+	* NT_MAKEFILE: Don't define __STDC__ macro (no longer used).
+	* NT_STATIC_THREADS_MAKEFILE: Ditto.
+	* NT_THREADS_MAKEFILE: Ditto.
+	* NT_X64_STATIC_THREADS_MAKEFILE: Ditto.
+	* NT_X64_THREADS_MAKEFILE: Ditto.
+	* gc.mak: Ditto.
+	* NT_MAKEFILE: Remove unnecessary -DGC_BUILD (since it is always
+	defined in the source files).
+	* NT_THREADS_MAKEFILE: Ditto.
+	* NT_X64_THREADS_MAKEFILE: Ditto.
+	* gc.mak: Ditto.
+	* NT_X64_THREADS_MAKEFILE: Fix typo for -DGC_NOT_DLL.
+	* NT_STATIC_THREADS_MAKEFILE: Replace GC_WIN32_THREADS with
+	GC_THREADS.
+	* NT_THREADS_MAKEFILE: Ditto.
+	* NT_X64_STATIC_THREADS_MAKEFILE: Ditto.
+	* NT_X64_THREADS_MAKEFILE: Ditto.
+	* gc.mak: Ditto.
+	* NT_MAKEFILE: Define _CRT_SECURE_NO_DEPRECATE to suppress the
+	compiler warnings.
+	* NT_STATIC_THREADS_MAKEFILE: Ditto.
+	* NT_X64_STATIC_THREADS_MAKEFILE: Place -D_CRT_SECURE_NO_DEPRECATE
+	before "$*.C" (and "$*.CPP").
+	* NT_X64_THREADS_MAKEFILE: Ditto.
+
+2009-09-16  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai131.diff - superseding diff83, diff84 partly)
 
 	* doc/README.solaris2: Replace GC_SOLARIS_THREADS with GC_THREADS.

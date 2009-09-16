@@ -71,7 +71,7 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            add_gc_prefix.c README.solaris2 README.sgi README.hp README.uts \
 	   win32_threads.c NT_THREADS_MAKEFILE gc.mak README.dj Makefile.dj \
 	   README.alpha README.linux README.MacOSX Makefile.DLLs \
-	   WCC_MAKEFILE nursery.c include/gc_nursery.h include/gc_copy_descr.h
+	   WCC_MAKEFILE
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
 	$(srcdir)/include/ec.h $(srcdir)/include/private/cord_pos.h

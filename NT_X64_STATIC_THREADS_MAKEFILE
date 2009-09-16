@@ -24,13 +24,13 @@ OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_r
 all: gctest.exe cord\de.exe test_cpp.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(cvarsmt) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -D__STDC__ -DGC_NOT_DLL -DGC_WIN32_THREADS -DTHREAD_LOCAL_ALLOC $*.c /Fo$*.obj /wd4701 -D_CRT_SECURE_NO_DEPRECATE
+	$(cc) $(cdebug) $(cflags) $(cvarsmt) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -DGC_NOT_DLL -DGC_THREADS -DTHREAD_LOCAL_ALLOC -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4701
 # Disable "may not be initialized" warnings.  They're too approximate.
 # Disable crt security warnings, since unfortunately they warn about all sorts
 # of safe uses of strncpy.  It would be nice to leave the rest enabled.
 
 .cpp.obj:
-	$(cc) $(cdebug) $(cflags) $(cvarsmt) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -DGC_NOT_DLL $*.CPP -DGC_WIN32_THREADS -DTHREAD_LOCAL_ALLOC /Fo$*.obj -D_CRT_SECURE_NO_DEPRECATE
+	$(cc) $(cdebug) $(cflags) $(cvarsmt) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -DGC_NOT_DLL -DGC_THREADS -DTHREAD_LOCAL_ALLOC -D_CRT_SECURE_NO_DEPRECATE $*.CPP /Fo$*.obj
 
 $(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc_mark.h include\private\msvc_dbg.h
 
