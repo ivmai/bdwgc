@@ -1,4 +1,9 @@
 2009-09-16  Ivan Maidanski <ivmai@mail.ru>
+	
+	* Makefile.am: Back remove "GC_" prefix for PTHREADS,
+	DARWIN_THREADS, WIN32_THREADS (for configure.ac).
+
+2009-09-16  Ivan Maidanski <ivmai@mail.ru>
 
 	* ChangeLog: Remove trailing spaces at EOLn; insert blank lines
 	where missed.
