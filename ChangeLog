@@ -1,4 +1,32 @@
 2009-09-16  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai138.diff)
+
+	* Makefile.direct (DONT_USE_SIGNALANDWAIT): Add the comment for.
+	* win32_threads.c (DONT_USE_SIGNALANDWAIT): Always define for
+	WinCE.
+	* win32_threads.c (THREAD_HANDLE): Cast Id (of DWORD type) to
+	HANDLE thru word type (to avoid a compiler warning) for WinCE.
+	* win32_threads.c (GC_marker_cv, GC_marker_Id): New static array
+	(only if DONT_USE_SIGNALANDWAIT).
+	* win32_threads.c (start_mark_threads): Initialize GC_marker_Id
+	and GC_marker_cv for each helper thread (only if
+	DONT_USE_SIGNALANDWAIT).
+	* win32_threads.c (GC_mark_mutex_state): New static variable (only
+	if DONT_USE_SIGNALANDWAIT).
+	* win32_threads.c (GC_mark_mutex_waitcnt,
+	signalObjectAndWait_func): Don't define if DONT_USE_SIGNALANDWAIT.
+	* win32_threads.c (GC_acquire_mark_lock, GC_release_mark_lock):
+	Use InterlockedExchange() over GC_mark_mutex_state (instead of
+	AO_fetch_and_add()) if DONT_USE_SIGNALANDWAIT.
+	* win32_threads.c (GC_wait_marker, GC_notify_all_marker):
+	Implement wait/broadcast primitives using Win32 multiple events
+	(one for each marker thread) if DONT_USE_SIGNALANDWAIT (instead of
+	using Win32 SignalObjectAndWait).
+	* win32_threads.c (GC_thr_init): Don't declare hK32 local
+	variable, don't check for GC_wnt, and don't initialize
+	signalObjectAndWait_func if DONT_USE_SIGNALANDWAIT.
+
+2009-09-16  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai127.diff - superseding diff49)
 
 	* alloc.c (GC_finish_collection): Call GC_print_finalization_stats

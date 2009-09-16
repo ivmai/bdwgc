@@ -267,6 +267,12 @@ HOSTCFLAGS=$(CFLAGS)
 #   me on RedHat 8, but appears to work on RedHat 9.)
 # -DPARALLEL_MARK allows the marker to run in multiple threads.  Recommended
 #   for multiprocessors.
+# -DDONT_USE_SIGNALANDWAIT (Win32 only) Use an alternate implementation for
+#   marker threads (if PARALLEL_MARK defined) synchronization routines based
+#   on InterlockedExchange() (instead of AO_fetch_and_add()) and on multiple
+#   event objects (one per each marker instead of that based on Win32
+#   SignalObjectAndWait() using a single event object).  This is the default
+#   for WinCE.
 # -DNO_GETENV prevents the collector from looking at environment variables.
 #   These may otherwise alter its configuration, or turn off GC altogether.
 #   I don't know of a reason to disable this, except possibly if the
