@@ -1,4 +1,9 @@
 2009-09-17  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_collect_or_expand): Output heap size in WARN()
+	(before returning FALSE) for convenience.
+
+2009-09-17  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai139.diff)
 
 	* allchblk.c (GC_allochblk_nth): Use GC_PRIdPTR in WARN() format
