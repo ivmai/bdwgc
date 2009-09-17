@@ -169,8 +169,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
     if (me -> stop_info.last_stop_count == my_stop_count) {
 	/* Duplicate signal.  OK if we are retrying.	*/
 	if (!GC_retry_signals) {
-	    WARN("Duplicate suspend signal in thread %p\n",
-		 (word)pthread_self());
+	    WARN("Duplicate suspend signal in thread %p\n", pthread_self());
 	}
 	return;
     }

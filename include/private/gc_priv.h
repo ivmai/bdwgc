@@ -371,6 +371,26 @@ void GC_print_callers(struct callinfo info[NFRAMES]);
 # define WARN(msg,arg) (*GC_current_warn_proc)("GC Warning: " msg, (GC_word)(arg))
 extern GC_warn_proc GC_current_warn_proc;
 
+/* Print format type macro for signed_word.  Currently used for WARN()	*/
+/* only.  This could be of use on Win64 but commented out since Win64	*/
+/* is only a little-endian architecture (for now) and the WARN format	*/
+/* string is, possibly, processed on the client side, so non-standard	*/
+/* print type modifiers should be avoided (if possible).		*/
+#if defined(_MSC_VER) && defined(_WIN64) && !defined(GC_PRIdPTR)
+/* #define GC_PRIdPTR "I64d" */
+#endif
+
+#if !defined(GC_PRIdPTR) && (defined(_LLP64) || defined(__LLP64__) \
+        || defined(_WIN64))
+/* #include <inttypes.h> */
+/* #define GC_PRIdPTR PRIdPTR */
+#endif
+
+#ifndef GC_PRIdPTR
+  /* Assume sizeof(void *) == sizeof(long) (or a little-endian machine) */
+# define GC_PRIdPTR "ld"
+#endif
+
 /* Get environment entry */
 #if !defined(NO_GETENV)
 #   if defined(EMPTY_GETENV_RESULTS)

@@ -344,14 +344,19 @@ static void start_mark_threads(void)
 	}
       }
 #   endif /* HPUX || GC_DGUX386_THREADS */
-    if (GC_print_stats) {
-	GC_log_printf("Starting %ld marker threads\n", GC_markers - 1);
-    }
     for (i = 0; i < GC_markers - 1; ++i) {
       if (0 != PTHREAD_CREATE(GC_mark_threads + i, &attr,
 			      GC_mark_thread, (void *)(word)i)) {
-	WARN("Marker thread creation failed, errno = %ld.\n", errno);
+	WARN("Marker thread creation failed, errno = %" GC_PRIdPTR "\n",
+             errno);
+	/* Don't try to create other marker threads.	*/
+	GC_markers = i + 1;
+	if (i == 0) GC_parallel = FALSE;
+	break;
       }
+    }
+    if (GC_print_stats) {
+	GC_log_printf("Started %ld marker threads\n", GC_markers - 1);
     }
     pthread_attr_destroy(&attr);
 }
@@ -822,7 +827,7 @@ void GC_thr_init(void)
 #	endif
       }
       if (GC_nprocs <= 0) {
-	WARN("GC_get_nprocs() returned %ld\n", GC_nprocs);
+	WARN("GC_get_nprocs() returned %" GC_PRIdPTR "\n", GC_nprocs);
 	GC_nprocs = 2;
 #	ifdef PARALLEL_MARK
 	  GC_markers = 1;
