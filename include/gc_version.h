@@ -31,7 +31,7 @@
      GC_TMP_VERSION_MINOR != GC_VERSION_MINOR || \
      defined(GC_ALPHA_VERSION) != (GC_TMP_ALPHA_VERSION != GC_NOT_ALPHA) || \
      defined(GC_ALPHA_VERSION) && GC_TMP_ALPHA_VERSION != GC_ALPHA_VERSION
-#   error Inconsistent version info.  Check README, version.h, and configure.ac.
+#   error Inconsistent version info.  Check doc/README, include/gc_version.h, and configure.ac.
 # endif
 #else
 # define GC_VERSION_MAJOR GC_TMP_VERSION_MAJOR

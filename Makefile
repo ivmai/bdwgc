@@ -143,8 +143,8 @@ OTHER_FILES= Makefile setjmp_t.c callprocs \
            MacProjects.sit.hqx MacOS.c \
            Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-           add_gc_prefix.c gc_cpp.cpp \
-           version.h AmigaOS.c msvc_dbg.c include/private/msvc_dbg.h \
+           add_gc_prefix.c gc_cpp.cpp include/gc_version.h \
+           AmigaOS.c msvc_dbg.c include/private/msvc_dbg.h \
 	   $(TESTS) $(GNU_BUILD_FILES) $(OTHER_MAKEFILES)
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
@@ -336,7 +336,7 @@ mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
 #	Work-around for DEC optimizer tail recursion elimination bug.
 #  The ALPHA-specific line should be removed if gcc is used.
 
-alloc.o: version.h
+alloc.o: include/gc_version.h
 
 cord:
 	mkdir cord
@@ -409,10 +409,10 @@ KandRtest: setjmp_test gctest
 	./setjmp_test
 	./gctest
 
-add_gc_prefix: $(srcdir)/add_gc_prefix.c $(srcdir)/version.h
+add_gc_prefix: $(srcdir)/add_gc_prefix.c $(srcdir)/include/gc_version.h
 	$(CC) -o add_gc_prefix $(srcdir)/add_gc_prefix.c
 
-gcname: $(srcdir)/gcname.c $(srcdir)/version.h
+gcname: $(srcdir)/gcname.c $(srcdir)/include/gc_version.h
 	$(CC) -o gcname $(srcdir)/gcname.c
 
 #We assume this is being done from source directory.
