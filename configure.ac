@@ -22,7 +22,7 @@ AC_INIT(gc,7.2alpha3,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.44 $)
+AC_REVISION($Revision: 1.45 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -156,6 +156,9 @@ case "$THREADS" in
      *-*-cygwin*)
 	AC_DEFINE(GC_WIN32_THREADS)
 	AC_DEFINE(THREAD_LOCAL_ALLOC)
+	# Cygwin doesn't have a real libpthread, so Libtool can't link
+	# against it.
+	THREADDLLIBS=""
 	win32_threads=true
 	;;
      *-*-darwin*)
@@ -293,9 +296,10 @@ if test $compiler_xlc = yes -a "$powerpc_darwin" = true; then
 fi
 
 # We never want libdl on darwin. It is a fake libdl that just ends up making
-# dyld calls anyway
+# dyld calls anyway.  The same applies to Cygwin.
 case "$host" in
   *-*-darwin*) ;;
+  *-*-cygwin*) ;;
   *)
     AC_CHECK_LIB(dl, dlopen, THREADDLLIBS="$THREADDLLIBS -ldl")
     ;;
