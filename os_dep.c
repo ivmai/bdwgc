@@ -1351,6 +1351,8 @@ void GC_register_data_segments(void)
       done = TRUE;
     }
 
+# else /* !GWW_VDB */
+#   define GetWriteWatch_alloc_flag 0
 # endif /* GWW_VDB */
 
 # if defined(MSWIN32) || defined(MSWINCE)
@@ -1371,6 +1373,10 @@ void GC_register_data_segments(void)
   GC_bool GC_wnt = FALSE;
          /* This is a Windows NT derivative, i.e. NT, W2K, XP or later.  */
   
+# ifdef USE_MUNMAP
+    extern int GC_unmap_threshold; /* defined in allchblk.c     */
+# endif
+
   void GC_init_win32(void)
   {
     /* Set GC_wnt.							 */
@@ -1379,6 +1385,13 @@ void GC_register_data_segments(void)
     DWORD v = GetVersion();
     GC_wnt = !(v & 0x80000000);
     GC_no_win32_dlls |= ((!GC_wnt) && (v & 0xff) <= 3);
+#   ifdef USE_MUNMAP
+      if (GC_no_win32_dlls) {
+        /* Turn off unmapping for safety (since may not work well with  */
+        /* GlobalAlloc).                                                */
+        GC_unmap_threshold = 0;
+      }
+#   endif
   }
 
   /* Return the smallest address a such that VirtualQuery		*/
@@ -1889,15 +1902,25 @@ ptr_t GC_win32_get_mem(word bytes)
 	/* This wastes a small amount of memory, and risks	*/
 	/* increased fragmentation.  But better alternatives	*/
 	/* would require effort.				*/
+#       ifdef MPROTECT_VDB
+          /* We can't check for GC_incremental here (because    */
+          /* GC_enable_incremental() might be called some time  */
+          /* later after the GC initialization).                */
+#         ifdef GWW_VDB
+#           define VIRTUAL_ALLOC_PAD (GC_GWW_AVAILABLE() ? 0 : 1)
+#         else
+#           define VIRTUAL_ALLOC_PAD 1
+#         endif
+#       else
+#         define VIRTUAL_ALLOC_PAD 0
+#       endif
         /* Pass the MEM_WRITE_WATCH only if GetWriteWatch-based */
         /* VDBs are enabled and the GetWriteWatch function is   */
         /* available.  Otherwise we waste resources or possibly */
         /* cause VirtualAlloc to fail (observed in Windows 2000 */
         /* SP2).                                                */
-        result = (ptr_t) VirtualAlloc(NULL, bytes + 1,
-#                                     ifdef GWW_VDB
-                                        GetWriteWatch_alloc_flag |
-#                                     endif
+        result = (ptr_t) VirtualAlloc(NULL, bytes + VIRTUAL_ALLOC_PAD,
+                                      GetWriteWatch_alloc_flag |
     				      MEM_COMMIT | MEM_RESERVE
 				      | GC_mem_top_down,
     				      PAGE_EXECUTE_READWRITE);

@@ -2121,6 +2121,11 @@
 #   undef MPROTECT_VDB
 # endif
 
+# ifdef USE_GLOBAL_ALLOC
+    /* Cannot pass MEM_WRITE_WATCH to GlobalAlloc().    */
+#   undef GWW_VDB
+# endif
+
 # ifdef USE_MUNMAP
     /* FIXME: Remove this undef if possible.    */
 #   undef MPROTECT_VDB  /* Can't deal with address space holes. */

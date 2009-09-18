@@ -1,3 +1,18 @@
+2009-09-18  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai142.diff)
+
+	* include/private/gcconfig.h (GWW_VDB): Undefine if
+	USE_GLOBAL_ALLOC (since incompatible).
+	* os_dep.c (GetWriteWatch_alloc_flag): Define as 0 unless GWW_VDB
+	is defined.
+	* os_dep.c (GC_unmap_threshold): Declare (for use in
+	GC_init_win32) if USE_MUNMAP.
+	* os_dep.c (GC_init_win32): Turn off memory unmapping if
+	GlobalAlloc() is used.
+	* os_dep.c (GC_win32_get_mem): Define and use new
+	VIRTUAL_ALLOC_PAD macro; don't waste a extra memory page unless
+	MPROTECT_VDB is in use.
+
 2009-09-17  Ivan Maidanski <ivmai@mail.ru>
 
 	* Makefile: Replace "version.h" with "include/gc_version.h".
