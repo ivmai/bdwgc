@@ -1,3 +1,8 @@
+
+2009-09-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* NT_THREADS_MAKEFILE: Make it back equal to gc.mak.
+
 2009-09-18  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai142.diff)
 

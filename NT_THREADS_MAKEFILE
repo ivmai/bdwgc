@@ -119,8 +119,8 @@ CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /FR /YX /c
 CPP_PROJ=/nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D\
- "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D\
- "GC_THREADS" /FR"$(INTDIR)/" /Fp"$(INTDIR)/gc.pch" \
+ "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" \
+ /FR"$(INTDIR)/" /Fp"$(INTDIR)/gc.pch" \
  /Ilibatomic_ops-$(AO_VERSION)/src /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\Release/
 CPP_SBRS=.\Release/
