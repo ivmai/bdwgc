@@ -389,9 +389,9 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.S \
     sparc_mach_dep.S include/gc.h include/gc_typed.h include/gc_tiny_fl.h \
     include/gc_version.h include/private/gc_hdrs.h include/private/gc_priv.h \
     include/private/gcconfig.h include/private/gc_pmark.h \
-    include/gc_inline.h include/gc_mark.h \
-    threadlibs.c if_mach.c if_not_there.c gc_cpp.cc include/gc_cpp.h \
-    gcname.c include/weakpointer.h include/private/gc_locks.h \
+    include/gc_inline.h include/gc_mark.h extra/threadlibs.c \
+    extra/if_mach.c extra/if_not_there.c gc_cpp.cc include/gc_cpp.h \
+    extra/gcname.c include/weakpointer.h include/private/gc_locks.h \
     mips_ultrix_mach_dep.s \
     include/new_gc_alloc.h include/gc_allocator.h \
     include/javaxfc.h sparc_sunos4_mach_dep.s sparc_netbsd_mach_dep.s \
@@ -438,12 +438,12 @@ OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
 		 NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE \
 		 build_atomic_ops.sh build_atomic_ops.sh.cygwin 
 
-OTHER_FILES= Makefile setjmp_t.c callprocs \
-           MacProjects.sit.hqx MacOS.c \
+OTHER_FILES= Makefile extra/setjmp_t.c callprocs \
+           MacProjects.sit.hqx extra/MacOS.c \
            Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-           add_gc_prefix.c gc_cpp.cpp \
-           AmigaOS.c msvc_dbg.c include/private/msvc_dbg.h \
+           extra/add_gc_prefix.c gc_cpp.cpp \
+           extra/AmigaOS.c extra/msvc_dbg.c include/private/msvc_dbg.h \
 	   $(TESTS) $(GNU_BUILD_FILES) $(OTHER_MAKEFILES)
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
@@ -671,14 +671,14 @@ cord/de: $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(UTILS)
 	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
 	./if_not_there cord/de $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) `./threadlibs`
 
-if_mach: $(srcdir)/if_mach.c $(srcdir)/include/private/gcconfig.h
-	$(HOSTCC) $(HOSTCFLAGS) -o if_mach $(srcdir)/if_mach.c
+if_mach: $(srcdir)/extra/if_mach.c $(srcdir)/include/private/gcconfig.h
+	$(HOSTCC) $(HOSTCFLAGS) -o if_mach $(srcdir)/extra/if_mach.c
 
-threadlibs: $(srcdir)/threadlibs.c $(srcdir)/include/private/gcconfig.h Makefile
-	$(HOSTCC) $(HOSTCFLAGS) -o threadlibs $(srcdir)/threadlibs.c
+threadlibs: $(srcdir)/extra/threadlibs.c $(srcdir)/include/private/gcconfig.h Makefile
+	$(HOSTCC) $(HOSTCFLAGS) -o threadlibs $(srcdir)/extra/threadlibs.c
 
-if_not_there: $(srcdir)/if_not_there.c
-	$(HOSTCC) $(HOSTCFLAGS) -o if_not_there $(srcdir)/if_not_there.c
+if_not_there: $(srcdir)/extra/if_not_there.c
+	$(HOSTCC) $(HOSTCFLAGS) -o if_not_there $(srcdir)/extra/if_not_there.c
 
 clean: 
 	rm -f gc.a *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
@@ -696,8 +696,8 @@ gctest: tests/test.o gc.a $(UTILS)
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  Gctest may still work.
 # Try compiling setjmp_t.c unoptimized.
-setjmp_test: $(srcdir)/setjmp_t.c $(srcdir)/include/gc.h $(UTILS) $(AO_INSTALL_DIR)
-	$(CC) $(CFLAGS) -o setjmp_test $(srcdir)/setjmp_t.c
+setjmp_test: $(srcdir)/extra/setjmp_t.c $(srcdir)/include/gc.h $(UTILS) $(AO_INSTALL_DIR)
+	$(CC) $(CFLAGS) -o setjmp_test $(srcdir)/extra/setjmp_t.c
 
 test:  KandRtest cord/cordtest
 	cord/cordtest
@@ -707,11 +707,11 @@ KandRtest: setjmp_test gctest
 	./setjmp_test
 	./gctest
 
-add_gc_prefix: $(srcdir)/add_gc_prefix.c $(srcdir)/include/gc_version.h
-	$(CC) -o add_gc_prefix $(srcdir)/add_gc_prefix.c
+add_gc_prefix: $(srcdir)/extra/add_gc_prefix.c $(srcdir)/include/gc_version.h
+	$(CC) -o add_gc_prefix $(srcdir)/extra/add_gc_prefix.c
 
-gcname: $(srcdir)/gcname.c $(srcdir)/include/gc_version.h
-	$(CC) -o gcname $(srcdir)/gcname.c
+gcname: $(srcdir)/extra/gcname.c $(srcdir)/include/gc_version.h
+	$(CC) -o gcname $(srcdir)/extra/gcname.c
 
 #We assume this is being done from source directory.
 dist gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname

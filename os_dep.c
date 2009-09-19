@@ -77,7 +77,7 @@
 
 #ifdef AMIGA
 # define GC_AMIGA_DEF
-# include "AmigaOS.c"
+# include "extra/AmigaOS.c"
 # undef GC_AMIGA_DEF
 #endif
 
@@ -719,7 +719,7 @@ ptr_t GC_get_main_stack_base(void)
 
 # ifdef AMIGA
 #   define GC_AMIGA_SB
-#   include "AmigaOS.c"
+#   include "extra/AmigaOS.c"
 #   undef GC_AMIGA_SB
 # endif /* AMIGA */
 
@@ -1623,7 +1623,7 @@ ptr_t GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr)
 #ifdef AMIGA
 
 #  define GC_AMIGA_DS
-#  include "AmigaOS.c"
+#  include "extra/AmigaOS.c"
 #  undef GC_AMIGA_DS
 
 #else /* !OS2 && !Windows && !AMIGA */
@@ -1948,7 +1948,7 @@ GC_API void GC_CALL GC_win32_free_heap(void)
 
 #ifdef AMIGA
 # define GC_AMIGA_AM
-# include "AmigaOS.c"
+# include "extra/AmigaOS.c"
 # undef GC_AMIGA_AM
 #endif
 

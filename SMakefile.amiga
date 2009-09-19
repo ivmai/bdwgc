@@ -99,7 +99,7 @@ allchblk.o : allchblk.c $(INC)
 misc.o : misc.c $(INC)
 	$(CC) misc.c $(SCOPT)
 
-os_dep.o : os_dep.c $(INC) AmigaOS.c
+os_dep.o : os_dep.c $(INC) extra/AmigaOS.c
 	$(CC) os_dep.c $(SCOPT)
 
 mark_rts.o : mark_rts.c $(INC)
@@ -156,8 +156,8 @@ ptr_chck.o: ptr_chck.c $(INC)
 test.o : test.c $(INC)
 	$(CC) test.c $(SOPT)
 
-setjmp_t: setjmp_t.c gc.h
-   $(CC) setjmp_t.c $(SOPT)
+setjmp_t: extra/setjmp_t.c gc.h
+   $(CC) extra/setjmp_t.c $(SOPT)
 
 
 # cords:

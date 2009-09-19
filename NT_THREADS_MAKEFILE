@@ -1880,7 +1880,7 @@ NODEP_CPP_WIN32=\
 ################################################################################
 # Begin Source File
 
-SOURCE=.\msvc_dbg.c
+SOURCE=.\extra\msvc_dbg.c
 
 !IF  "$(CFG)" == "gc - Win32 Release"
 

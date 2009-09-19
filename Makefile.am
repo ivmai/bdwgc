@@ -170,13 +170,13 @@ EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE \
 
 # files used by makefiles other than Makefile.am
 #
-EXTRA_DIST += add_gc_prefix.c gcname.c if_mach.c if_not_there.c \
-    hpux_test_and_clear.s gc.mak MacOS.c \
-    MacProjects.sit.hqx mach_dep.c setjmp_t.c \
-    threadlibs.c AmigaOS.c \
+EXTRA_DIST += extra/add_gc_prefix.c extra/gcname.c extra/if_mach.c \
+    extra/if_not_there.c hpux_test_and_clear.s gc.mak extra/MacOS.c \
+    MacProjects.sit.hqx mach_dep.c extra/setjmp_t.c \
+    extra/threadlibs.c extra/AmigaOS.c \
     Mac_files/datastart.c Mac_files/dataend.c \
     Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-    include/private/msvc_dbg.h msvc_dbg.c
+    include/private/msvc_dbg.h extra/msvc_dbg.c
 
 # The libatomic_ops library.  This is not ideal, since we pick up junk from
 # there.  The hard-coded version number should also go.

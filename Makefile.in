@@ -468,12 +468,12 @@ EXTRA_DIST = gc_cpp.cpp README.QUICK BCC_MAKEFILE NT_MAKEFILE \
 	SMakefile.amiga WCC_MAKEFILE build_atomic_ops.sh \
 	build_atomic_ops.sh.cygwin NT_STATIC_THREADS_MAKEFILE \
 	NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE \
-	add_gc_prefix.c gcname.c if_mach.c if_not_there.c \
-	hpux_test_and_clear.s gc.mak MacOS.c MacProjects.sit.hqx \
-	mach_dep.c setjmp_t.c threadlibs.c AmigaOS.c \
-	Mac_files/datastart.c Mac_files/dataend.c \
+	extra/add_gc_prefix.c extra/gcname.c extra/if_mach.c \
+	extra/if_not_there.c hpux_test_and_clear.s gc.mak extra/MacOS.c \
+	MacProjects.sit.hqx mach_dep.c extra/setjmp_t.c extra/threadlibs.c \
+	extra/AmigaOS.c Mac_files/datastart.c Mac_files/dataend.c \
 	Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-	include/private/msvc_dbg.h msvc_dbg.c libatomic_ops-1.2 \
+	include/private/msvc_dbg.h extra/msvc_dbg.c libatomic_ops-1.2 \
 	libtool.m4 cord/cordbscs.c cord/cordtest.c cord/de.c \
 	cord/cordprnt.c cord/cordxtra.c cord/de_cmds.h cord/de_win.h \
 	cord/de_win.c cord/de_win.RC cord/de_win.ICO
