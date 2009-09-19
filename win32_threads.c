@@ -224,6 +224,18 @@ struct GC_Thread_Rep {
     ptr_t backing_store_ptr;
 # endif
 
+  ptr_t thread_blocked_sp;	/* Protected by GC lock.		*/
+				/* NULL value means thread unblocked.	*/
+				/* If set to non-NULL, thread will	*/
+				/* acquire GC lock before doing any	*/
+				/* pointer manipulations.  Thus it does	*/
+				/* not need to stop this thread.	*/
+
+  struct GC_activation_frame_s *activation_frame;
+			/* Points to the "frame" data held in stack by	*/
+			/* the innermost GC_call_with_gc_active() of	*/
+			/* this thread.  May be NULL.			*/
+
   unsigned finalizer_nested;
   unsigned finalizer_skipped;	/* Used by GC_check_finalizer_nested()	*/
 				/* to minimize the level of recursion	*/
@@ -339,8 +351,9 @@ STATIC GC_thread GC_new_thread(DWORD id)
     result -> next = GC_threads[hv];
     GC_threads[hv] = result;
 #   ifdef GC_PTHREADS
-      GC_ASSERT(result -> flags == 0 /* && result -> thread_blocked == 0 */);
+      GC_ASSERT(result -> flags == 0);
 #   endif
+    GC_ASSERT(result -> thread_blocked_sp == NULL);
     return(result);
 }
 
@@ -718,6 +731,82 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     return GC_SUCCESS;
 }
 
+/* Wrapper for functions that are likely to block for an appreciable	*/
+/* length of time.							*/
+
+/* GC_do_blocking_inner() is nearly the same as in pthread_support.c	*/
+/*ARGSUSED*/
+void GC_do_blocking_inner(ptr_t data, void * context) {
+    struct blocking_data * d = (struct blocking_data *) data;
+    DWORD t = GetCurrentThreadId();
+    GC_thread me;
+    LOCK();
+    me = GC_lookup_thread_inner(t);
+    GC_ASSERT(me -> thread_blocked_sp == NULL);
+#   ifdef IA64
+	me -> backing_store_ptr = GC_save_regs_in_stack();
+#   endif
+    me -> thread_blocked_sp = (ptr_t) &d; /* save approx. sp */
+    /* Save context here if we want to support precise stack marking */
+    UNLOCK();
+    d -> client_data = (d -> fn)(d -> client_data);
+    LOCK();   /* This will block if the world is stopped.	*/
+    me -> thread_blocked_sp = NULL;
+    UNLOCK();
+}
+
+/* GC_call_with_gc_active() has the opposite to GC_do_blocking()	*/
+/* functionality.  It might be called from a user function invoked by	*/
+/* GC_do_blocking() to temporarily back allow calling any GC function	*/
+/* and/or manipulating pointers to the garbage collected heap.		*/
+GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
+					void * client_data) {
+    struct GC_activation_frame_s frame;
+    GC_thread me;
+    LOCK();   /* This will block if the world is stopped.	*/
+    me = GC_lookup_thread_inner(GetCurrentThreadId());
+
+    /* Adjust our stack base value (this could happen unless	*/
+    /* GC_get_stack_base() was used which returned GC_SUCCESS).	*/
+    GC_ASSERT(me -> stack_base != NULL);
+    if (me -> stack_base < (ptr_t)(&frame))
+      me -> stack_base = (ptr_t)(&frame);
+
+    if (me -> thread_blocked_sp == NULL) {
+      /* We are not inside GC_do_blocking() - do nothing more.	*/
+      UNLOCK();
+      return fn(client_data);
+    }
+
+    /* Setup new "frame".	*/
+    frame.saved_stack_ptr = me -> thread_blocked_sp;
+#   ifdef IA64
+      /* This is the same as in GC_call_with_stack_base().	*/
+      frame.backing_store_end = GC_save_regs_in_stack();
+      /* Unnecessarily flushes register stack, 		*/
+      /* but that probably doesn't hurt.		*/
+      frame.saved_backing_store_ptr = me -> backing_store_ptr;
+#   endif
+    frame.prev = me -> activation_frame;
+    me -> thread_blocked_sp = NULL;
+    me -> activation_frame = &frame;
+    
+    UNLOCK();
+    client_data = fn(client_data);
+    GC_ASSERT(me -> thread_blocked_sp == NULL);
+    GC_ASSERT(me -> activation_frame == &frame);
+
+    /* Restore original "frame".	*/
+    LOCK();
+    me -> activation_frame = frame.prev;
+#   ifdef IA64
+      me -> backing_store_ptr = frame.saved_backing_store_ptr;
+#   endif
+    me -> thread_blocked_sp = frame.saved_stack_ptr;
+    UNLOCK();
+
+    return client_data; /* result */
+}
 
 #ifdef GC_PTHREADS
 
@@ -901,7 +990,7 @@ void GC_stop_world(void)
     my_max = (int)GC_get_max_thread_index();
     for (i = 0; i <= my_max; i++) {
       GC_vthread t = dll_thread_table + i;
-      if (t -> stack_base != 0
+      if (t -> stack_base != 0 && t -> thread_blocked_sp == NULL
 	  && t -> id != thread_id) {
 	  GC_suspend((GC_thread)t);
       }
@@ -914,7 +1003,7 @@ void GC_stop_world(void)
 
       for (i = 0; i < THREAD_TABLE_SZ; i++) {
         for (t = GC_threads[i]; t != 0; t = t -> next) {
-	  if (t -> stack_base != 0
+	  if (t -> stack_base != 0 && t -> thread_blocked_sp == NULL
 	  && !KNOWN_FINISHED(t)
 	  && t -> id != thread_id) {
 	    GC_suspend(t);
@@ -1023,9 +1112,14 @@ STATIC void GC_push_stack_for(GC_thread thread)
     DWORD me = GetCurrentThreadId();
 
     if (thread -> stack_base) {
+      struct GC_activation_frame_s *activation_frame =
+					thread -> activation_frame;
       if (thread -> id == me) {
+	GC_ASSERT(thread -> thread_blocked_sp == NULL);
 	sp = (ptr_t) &dummy;
-      } else {
+      } else if ((sp = thread -> thread_blocked_sp) == NULL) {
+		/* Use saved sp value for blocked threads.	*/
+	/* For unblocked threads call GetThreadContext().	*/
         CONTEXT context;
         context.ContextFlags = CONTEXT_INTEGER|CONTEXT_CONTROL;
         if (!GetThreadContext(THREAD_HANDLE(thread), &context))
@@ -1079,18 +1173,34 @@ STATIC void GC_push_stack_for(GC_thread thread)
       /* taking advantage of the old value to avoid slow traversals	*/
       /* of large stacks.						*/
       if (thread -> last_stack_min == ADDR_LIMIT) {
-      	stack_min = GC_get_stack_min(thread -> stack_base);
+      	stack_min = GC_get_stack_min(activation_frame != NULL ?
+			(ptr_t)activation_frame : thread -> stack_base);
         UNPROTECT(thread);
         thread -> last_stack_min = stack_min;
       } else {
+	/* First, adjust the latest known minimum stack address if we	*/
+	/* are inside GC_call_with_gc_active().				*/
+	if (activation_frame != NULL &&
+	    thread -> last_stack_min > (ptr_t)activation_frame) {
+          UNPROTECT(thread);
+	  thread -> last_stack_min = (ptr_t)activation_frame;
+	}
+
 	if (sp < thread -> stack_base && sp >= thread -> last_stack_min) {
 	    stack_min = sp;
 	} else {
 #         ifdef MSWINCE
-	    stack_min = GC_get_stack_min(thread -> stack_base);
+	    stack_min = GC_get_stack_min(activation_frame != NULL ?
+			  (ptr_t)activation_frame : thread -> stack_base);
 #         else
-            if (GC_may_be_in_stack(thread -> last_stack_min)) {
-              stack_min = GC_get_stack_min(thread -> last_stack_min);
+	    /* In the current thread it is always safe to use sp value.	*/
+	    if (GC_may_be_in_stack(thread -> id == me &&
+  				 sp < thread -> last_stack_min ?
+  				 sp : thread -> last_stack_min)) {
+	      stack_min = last_info.BaseAddress;
+	      /* Do not probe rest of the stack if sp is correct. */
+	      if (sp < stack_min || sp >= thread->stack_base)
+		stack_min = GC_get_stack_min(thread -> last_stack_min);
 	    } else {
 	      /* Stack shrunk?  Is this possible? */
 	      stack_min = GC_get_stack_min(thread -> stack_base);
@@ -1109,7 +1219,7 @@ STATIC void GC_push_stack_for(GC_thread thread)
 	  GC_printf("Pushing stack for 0x%x from sp %p to %p from 0x%x\n",
 		    (int)thread -> id, sp, thread -> stack_base, (int)me);
 #       endif
-        GC_push_all_stack(sp, thread->stack_base);
+	GC_push_all_stack_frames(sp, thread->stack_base, activation_frame);
       } else {
 	/* If not current thread then it is possible for sp to point to	*/
 	/* the guarded (untouched yet) page just below the current	*/
@@ -1123,6 +1233,7 @@ STATIC void GC_push_stack_for(GC_thread thread)
 		    (int)thread -> id, stack_min,
 		    thread -> stack_base, (int)me);
 #       endif
+	/* Push everything - ignore activation "frames" data.		*/
         GC_push_all_stack(stack_min, thread->stack_base);
       }
     } /* thread looks live */

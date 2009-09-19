@@ -290,24 +290,16 @@ void GC_push_all_stacks(void)
     	              (unsigned)(p -> id), lo, hi);
 #	endif
 	if (0 == lo) ABORT("GC_push_all_stacks: sp not set!\n");
-#       ifdef STACK_GROWS_UP
-	  /* We got them backwards! */
-          GC_push_all_stack(hi, lo);
-#       else
-          GC_push_all_stack(lo, hi);
-#	endif
+	GC_push_all_stack_frames(lo, hi, p -> activation_frame);
 #	ifdef IA64
 #         if DEBUG_THREADS
             GC_printf("Reg stack for thread 0x%x = [%p,%p)\n",
     	              (unsigned)p -> id, bs_lo, bs_hi);
 #	  endif
-          if (THREAD_EQUAL(p -> id, me)) {
-	    /* FIXME:  This may add an unbounded number of entries,	*/
-	    /* and hence overflow the mark stack, which is bad.		*/
-	    GC_push_all_eager(bs_lo, bs_hi);
-	  } else {
-	    GC_push_all_stack(bs_lo, bs_hi);
-	  }
+	  /* FIXME:  This (if p->id==me) may add an unbounded number of	*/
+	  /* entries, and hence overflow the mark stack, which is bad.	*/
+	  GC_push_all_register_frames(bs_lo, bs_hi,
+			THREAD_EQUAL(p -> id, me), p -> activation_frame);
 #	endif
       }
     }

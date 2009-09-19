@@ -69,12 +69,18 @@ typedef struct GC_Thread_Rep {
     ptr_t stack_end;            /* Cold end of the stack (except for    */
                                 /* main thread).                        */
 #   ifdef IA64
-	ptr_t backing_store_end;
-	ptr_t backing_store_ptr;
+        ptr_t backing_store_end;
+        ptr_t backing_store_ptr;
 #   endif
-    void * status;		/* The value returned from the thread.  */
-    				/* Used only to avoid premature 	*/
-				/* reclamation of any data it might 	*/
+
+    struct GC_activation_frame_s *activation_frame;
+                        /* Points to the "frame" data held in stack by  */
+                        /* the innermost GC_call_with_gc_active() of    */
+                        /* this thread.  May be NULL.                   */
+
+    void * status;              /* The value returned from the thread.  */
+                                /* Used only to avoid premature         */
+                                /* reclamation of any data it might     */
                                 /* reference.                           */
                                 /* This is unfortunately also the       */
                                 /* reason we need to intercept join     */

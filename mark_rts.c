@@ -480,6 +480,143 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
     }
 }
 
+#ifdef IA64
+/* Similar to GC_push_all_stack_frames() but for IA-64 registers store. */
+void GC_push_all_register_frames(ptr_t bs_lo, ptr_t bs_hi, int eager,
+			struct GC_activation_frame_s *activation_frame)
+{
+    while (activation_frame != NULL) {
+	ptr_t frame_bs_lo = activation_frame -> backing_store_end;
+	GC_ASSERT(frame_bs_lo <= bs_hi);
+	if (eager) {
+	    GC_push_all_eager(frame_bs_lo, bs_hi);
+	} else {
+	    GC_push_all_stack(frame_bs_lo, bs_hi);
+	}
+	bs_hi = activation_frame -> saved_backing_store_ptr;
+	activation_frame = activation_frame -> prev;
+    }
+    GC_ASSERT(bs_lo <= bs_hi);
+    if (eager) {
+	GC_push_all_eager(bs_lo, bs_hi);
+    } else {
+	GC_push_all_stack(bs_lo, bs_hi);
+    }
+}
+#endif /* IA64 */
+
+#ifdef THREADS
+
+void GC_push_all_stack_frames(ptr_t lo, ptr_t hi,
+			struct GC_activation_frame_s *activation_frame)
+{
+    while (activation_frame != NULL) {
+	GC_ASSERT(lo HOTTER_THAN (ptr_t)activation_frame);
+#	ifdef STACK_GROWS_UP
+	    GC_push_all_stack((ptr_t)activation_frame, lo);
+#	else /* STACK_GROWS_DOWN */
+	    GC_push_all_stack(lo, (ptr_t)activation_frame);
+#	endif
+	lo = activation_frame -> saved_stack_ptr;
+	GC_ASSERT(lo != NULL);
+	activation_frame = activation_frame -> prev;
+    }
+    GC_ASSERT(!(hi HOTTER_THAN lo));
+#   ifdef STACK_GROWS_UP
+	/* We got them backwards! */
+	GC_push_all_stack(hi, lo);
+#   else /* STACK_GROWS_DOWN */
+	GC_push_all_stack(lo, hi);
+#   endif
+}
+
+#else /* !THREADS */
+
+# ifdef TRACE_BUF
+    /* Defined in mark.c.	*/
+    void GC_add_trace_entry(char *kind, word arg1, word arg2);
+# endif
+
+			/* Similar to GC_push_all_eager, but only the	*/
+			/* part hotter than cold_gc_frame is scanned	*/
+			/* immediately.  Needed to ensure that callee-	*/
+			/* save registers are not missed.		*/
+/*
+ * A version of GC_push_all that treats all interior pointers as valid
+ * and scans part of the area immediately, to make sure that saved
+ * register values are not lost.
+ * Cold_gc_frame delimits the stack section that must be scanned
+ * eagerly.  A zero value indicates that no eager scanning is needed.
+ * We don't need to worry about the MANUAL_VDB case here, since this
+ * is only called in the single-threaded case.  We assume that we
+ * cannot collect between an assignment and the corresponding
+ * GC_dirty() call.
+ */
+STATIC void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
+						ptr_t cold_gc_frame)
+{
+  if (!NEED_FIXUP_POINTER && GC_all_interior_pointers) {
+    /* Push the hot end of the stack eagerly, so that register values   */
+    /* saved inside GC frames are marked before they disappear.		*/
+    /* The rest of the marking can be deferred until later.		*/
+    if (0 == cold_gc_frame) {
+	GC_push_all_stack(bottom, top);
+	return;
+    }
+    GC_ASSERT(bottom <= cold_gc_frame && cold_gc_frame <= top);
+#   ifdef STACK_GROWS_DOWN
+	GC_push_all(cold_gc_frame - sizeof(ptr_t), top);
+	GC_push_all_eager(bottom, cold_gc_frame);
+#   else /* STACK_GROWS_UP */
+	GC_push_all(bottom, cold_gc_frame + sizeof(ptr_t));
+	GC_push_all_eager(cold_gc_frame, top);
+#   endif /* STACK_GROWS_UP */
+  } else {
+    GC_push_all_eager(bottom, top);
+  }
+# ifdef TRACE_BUF
+      GC_add_trace_entry("GC_push_all_stack", bottom, top);
+# endif
+}
+
+/* Similar to GC_push_all_stack_frames() but also uses cold_gc_frame.	*/
+STATIC void GC_push_all_stack_part_eager_frames(ptr_t lo, ptr_t hi,
+	ptr_t cold_gc_frame, struct GC_activation_frame_s *activation_frame)
+{
+    GC_ASSERT(activation_frame == NULL || cold_gc_frame == NULL ||
+		cold_gc_frame HOTTER_THAN (ptr_t)activation_frame);
+
+    while (activation_frame != NULL) {
+	GC_ASSERT(lo HOTTER_THAN (ptr_t)activation_frame);
+#	ifdef STACK_GROWS_UP
+	    GC_push_all_stack_partially_eager((ptr_t)activation_frame, lo,
+						cold_gc_frame);
+#	else /* STACK_GROWS_DOWN */
+	    GC_push_all_stack_partially_eager(lo, (ptr_t)activation_frame,
+						cold_gc_frame);
+#	endif
+	lo = activation_frame -> saved_stack_ptr;
+	GC_ASSERT(lo != NULL);
+	activation_frame = activation_frame -> prev;
+	cold_gc_frame = NULL; /* Use at most once.	*/
+    }
+
+    GC_ASSERT(!(hi HOTTER_THAN lo));
+#   ifdef STACK_GROWS_UP
+	/* We got them backwards! */
+	GC_push_all_stack_partially_eager(hi, lo, cold_gc_frame);
+#   else /* STACK_GROWS_DOWN */
+	GC_push_all_stack_partially_eager(lo, hi, cold_gc_frame);
+#   endif
+}
+
+# ifdef IA64
+    extern word GC_save_regs_ret_val;
+			/* Previously set to backing store pointer.	*/
+# endif
+
+#endif /* !THREADS */
+
   			/* Push enough of the current stack eagerly to	*/
   			/* ensure that callee-save registers saved in	*/
   			/* GC frames are scanned.			*/
@@ -509,38 +646,34 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
 	  GC_push_all_eager( cold_gc_frame, GC_approx_sp() );
 #       endif
 #   else
-#   	ifdef STACK_GROWS_DOWN
-    	    GC_push_all_stack_partially_eager( GC_approx_sp(), GC_stackbottom,
-					       cold_gc_frame );
-#	    ifdef IA64
+	GC_push_all_stack_part_eager_frames(GC_approx_sp(), GC_stackbottom,
+					cold_gc_frame, GC_activation_frame);
+#	ifdef IA64
 	      /* We also need to push the register stack backing store. */
 	      /* This should really be done in the same way as the	*/
 	      /* regular stack.  For now we fudge it a bit.		*/
 	      /* Note that the backing store grows up, so we can't use	*/
 	      /* GC_push_all_stack_partially_eager.			*/
 	      {
-		extern word GC_save_regs_ret_val;
-			/* Previously set to backing store pointer.	*/
 		ptr_t bsp = (ptr_t) GC_save_regs_ret_val;
-	        ptr_t cold_gc_bs_pointer;
-		if (GC_all_interior_pointers) {
-	          cold_gc_bs_pointer = bsp - 2048;
-		  if (cold_gc_bs_pointer < BACKING_STORE_BASE) {
-		    cold_gc_bs_pointer = BACKING_STORE_BASE;
-		  } else {
-		    GC_push_all_stack(BACKING_STORE_BASE, cold_gc_bs_pointer);
-		  }
+	        ptr_t cold_gc_bs_pointer = bsp - 2048;
+		if (GC_all_interior_pointers &&
+		    cold_gc_bs_pointer > BACKING_STORE_BASE) {
+		  /* Adjust cold_gc_bs_pointer if below our innermost	*/
+		  /* "activation frame" in backing store.		*/
+		  if (GC_activation_frame != NULL && cold_gc_bs_pointer <
+				GC_activation_frame->backing_store_end)
+		    cold_gc_bs_pointer = GC_activation_frame->backing_store_end;
+		  GC_push_all_register_frames(BACKING_STORE_BASE,
+			cold_gc_bs_pointer, FALSE, GC_activation_frame);
+		  GC_push_all_eager(cold_gc_bs_pointer, bsp);
 		} else {
-		  cold_gc_bs_pointer = BACKING_STORE_BASE;
+		  GC_push_all_register_frames(BACKING_STORE_BASE, bsp,
+				TRUE /* eager */, GC_activation_frame);
 		}
-		GC_push_all_eager(cold_gc_bs_pointer, bsp);
 		/* All values should be sufficiently aligned that we	*/
 		/* dont have to worry about the boundary.		*/
 	      }
-#	    endif
-#       else
-	    GC_push_all_stack_partially_eager( GC_stackbottom, GC_approx_sp(),
-					       cold_gc_frame );
 #       endif
 #   endif /* !THREADS */
 }

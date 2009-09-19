@@ -1053,6 +1053,30 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *);
 /* a GC callback function (except for GC_call_with_stack_base() one).	*/
 GC_API int GC_CALL GC_unregister_my_thread(void);
 
+/* Wrapper for functions that are likely to block (or, at least, do not	*/
+/* allocate garbage collected memory and/or manipulate pointers to the	*/
+/* garbage collected heap) for an appreciable length of time.  While fn	*/
+/* is running, the collector is said to be in the "inactive" state for	*/
+/* the current thread (this means that the thread is not suspended and	*/
+/* the thread's stack frames "belonging" to the functions in the	*/
+/* "inactive" state are not scanned during garbage collections).  It is	*/
+/* allowed for fn to call GC_call_with_gc_active() (even recursively),	*/
+/* thus temporarily toggling the collector's state back to "active".	*/
+GC_API void * GC_CALL GC_do_blocking(GC_fn_type /* fn */,
+				     void * /* client_data */);
+
+/* Call a function switching to the "active" state of the collector for	*/
+/* the current thread (i.e. the user function is allowed to call any	*/
+/* GC function and/or manipulate pointers to the garbage collected	*/
+/* heap).  GC_call_with_gc_active() has the functionality opposite to	*/
+/* GC_do_blocking() one.  It is assumed that the collector is already	*/
+/* initialized and the current thread is registered.  fn may toggle	*/
+/* the collector thread's state temporarily to "inactive" one by using	*/
+/* GC_do_blocking.  GC_call_with_gc_active() often can be used to	*/
+/* provide a sufficiently accurate stack base.				*/
+GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type /* fn */,
+					void * /* client_data */);
+
 /* Attempt to fill in the GC_stack_base structure with the stack base	*/
 /* for this thread.  This appears to be required to implement anything	*/
 /* like the JNI AttachCurrentThread in an environment in which new	*/

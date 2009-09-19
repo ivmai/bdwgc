@@ -1,4 +1,78 @@
 2009-09-19  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai130a.diff, ivmai130b.diff - superseding diff44, diff69)
+
+	* include/gc.h (GC_do_blocking, GC_call_with_gc_active): New
+	function prototype.
+	* include/private/gc_priv.h (STOP_WORLD): Replace a no-op (for the
+	single-threaded case) with an assertion check for the state to be
+	not a "do-blocking" one.
+	* include/private/gc_priv.h (blocking_data): Move the structure
+	definition from pthread_support.c; change "fn" return type to void
+	pointer.
+	* include/private/gc_priv.h (GC_activation_frame_s): New structure
+	type.
+	* include/private/gc_priv.h (GC_push_all_stack_frames): New
+	function declaration (only if THREADS).
+	* include/private/gc_priv.h (GC_world_stopped): Don't declare
+	unless THREADS.
+	* include/private/gc_priv.h (GC_blocked_sp,
+	GC_activation_frame_s): New declaration (only if not THREADS).
+	* include/private/gc_priv.h (GC_push_all_register_frames): New
+	function declaration (only for IA-64).
+	* include/private/gc_priv.h (NURSERY, GC_push_proc): Remove
+	obsolete (unused) symbols.
+	* include/private/gc_priv.h (GC_push_all_stack_partially_eager):
+	Remove declaration (since it is static now).
+	* mark_rts.c (GC_push_all_stack_partially_eager): Move from mark.c
+	(for code locality) and make STATIC.
+	* mark_rts.c (GC_push_all_register_frames): New function (only for
+	IA-64).
+	* mark_rts.c (GC_push_all_stack_frames): New function (only if
+	THREADS).
+	* mark_rts.c (GC_add_trace_entry): New function prototype (used by
+	GC_push_all_stack_partially_eager(), only if TRACE_BUF).
+	* mark_rts.c (GC_push_all_stack_part_eager_frames): New function.
+	* mar_rts.c (GC_save_regs_ret_val): Move the declaration out of a
+	function body (only for IA-64).
+	* mark_rts.c (GC_push_current_stack): Call
+	GC_push_all_stack_part_eager_frames() instead of
+	GC_push_all_stack_partially_eager().
+	* mark_rts.c (GC_push_current_stack): Call
+	GC_push_all_register_frames() instead of GC_push_all_eager() for
+	IA-64 backing store.
+	* misc.c (GC_do_blocking_inner): Declare function (if THREADS
+	only).
+	* misc.c (GC_blocked_sp, GC_blocked_register_sp,
+	GC_activation_frame): New global variables (only if not THREADS).
+	* misc.c (GC_call_with_gc_active, GC_do_blocking_inner): New API
+	function (only if not THREADS).
+	* misc.c (GC_do_blocking): Move the function from
+	pthread_support.c.
+	* include/private/pthread_support.h (GC_Thread_Rep): Add
+	"activation_frame" field.
+	* pthread_stop_world.c (GC_push_all_stacks): Call
+	GC_push_all_stack_frames() and GC_push_all_register_frames instead
+	of GC_push_all_stack() and/or GC_push_all_eager(); don't check for
+	STACK_GROWS_UP here.
+	* pthread_support.c (GC_do_blocking_inner): Remove "static"; store
+	"fn" result back to "client_data" field.
+	* pthread_support.c (GC_call_with_gc_active): New API function.
+	* win32_threads.c (GC_call_with_gc_active): Ditto.
+	* win32_threads.c (GC_Thread_Rep): Add "thread_blocked_sp" and
+	"activation_frame" fields.
+	* win32_threads.c (GC_new_thread): Add assertion checking for
+	thread_blocked_sp is NULL.
+	* win32_threads.c (GC_do_blocking_inner): New function.
+	* win32_threads.c (GC_stop_world): Don't suspend a thread if its
+	thread_blocked_sp is non-NULL.
+	* win32_threads.c (GC_push_stack_for): Use thread
+	"activation_frame" (if non-NULL); use "thread_blocked_sp" if
+	non-NULL (instead of calling GetThreadContext()); "UNPROTECT" the
+	thread before modifying its last_stack_min; call
+	GC_push_all_stack_frames() instead of GC_push_all_stack(); update
+	the comments.
+
+2009-09-19  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai129.diff - superseding diff47)
 
 	* alloc.c (GC_default_stop_func): New static variable (initialized

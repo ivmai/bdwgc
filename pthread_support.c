@@ -912,13 +912,8 @@ GC_API int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set,
 /* Wrapper for functions that are likely to block for an appreciable	*/
 /* length of time.							*/
 
-struct blocking_data {
-    void (GC_CALLBACK *fn)(void *);
-    void *arg;
-};
-
 /*ARGSUSED*/
-static void GC_do_blocking_inner(ptr_t data, void * context) {
+void GC_do_blocking_inner(ptr_t data, void * context) {
     struct blocking_data * d = (struct blocking_data *) data;
     GC_thread me;
     LOCK();
@@ -935,20 +930,78 @@ static void GC_do_blocking_inner(ptr_t data, void * context) {
     me -> thread_blocked = TRUE;
     /* Save context here if we want to support precise stack marking */
     UNLOCK();
-    (d -> fn)(d -> arg);
+    d -> client_data = (d -> fn)(d -> client_data);
     LOCK();   /* This will block if the world is stopped.	*/
     me -> thread_blocked = FALSE;
     UNLOCK();
 }
 
-void GC_CALL GC_do_blocking(void (GC_CALLBACK *fn)(void *), void *arg) {
-    struct blocking_data my_data;
+/* GC_call_with_gc_active() has the opposite to GC_do_blocking()	*/
+/* functionality.  It might be called from a user function invoked by	*/
+/* GC_do_blocking() to temporarily back allow calling any GC function	*/
+/* and/or manipulating pointers to the garbage collected heap.		*/
+GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
+					void * client_data) {
+    struct GC_activation_frame_s frame;
+    GC_thread me;
+    LOCK();   /* This will block if the world is stopped.	*/
+    me = GC_lookup_thread(pthread_self());
 
-    my_data.fn = fn;
-    my_data.arg = arg;
-    GC_with_callee_saves_pushed(GC_do_blocking_inner, (ptr_t)(&my_data));
-}
+    /* Adjust our stack base value (this could happen unless	*/
+    /* GC_get_stack_base() was used which returned GC_SUCCESS).	*/
+    if ((me -> flags & MAIN_THREAD) == 0) {
+      GC_ASSERT(me -> stack_end != NULL);
+      if (me -> stack_end HOTTER_THAN (ptr_t)(&frame))
+	me -> stack_end = (ptr_t)(&frame);
+    } else {
+      /* The original stack. */
+      if (GC_stackbottom HOTTER_THAN (ptr_t)(&frame))
+	GC_stackbottom = (ptr_t)(&frame);
+    }
+
+    if (me -> thread_blocked == FALSE) {
+      /* We are not inside GC_do_blocking() - do nothing more.	*/
+      UNLOCK();
+      return fn(client_data);
+    }
+
+    /* Setup new "frame".	*/
+#   ifdef GC_DARWIN_THREADS
+      /* FIXME: Implement it for Darwin ("frames" are ignored at present). */
+#   else
+      frame.saved_stack_ptr = me -> stop_info.stack_ptr;
+#   endif
+#   ifdef IA64
+      /* This is the same as in GC_call_with_stack_base().	*/
+      frame.backing_store_end = GC_save_regs_in_stack();
+      /* Unnecessarily flushes register stack, 		*/
+      /* but that probably doesn't hurt.		*/
+      frame.saved_backing_store_ptr = me -> backing_store_ptr;
+#   endif
+    frame.prev = me -> activation_frame;
+    me -> thread_blocked = FALSE;
+    me -> activation_frame = &frame;
     
+    UNLOCK();
+    client_data = fn(client_data);
+    GC_ASSERT(me -> thread_blocked == FALSE);
+    GC_ASSERT(me -> activation_frame == &frame);
+
+    /* Restore original "frame".	*/
+    LOCK();
+    me -> activation_frame = frame.prev;
+#   ifdef IA64
+      me -> backing_store_ptr = frame.saved_backing_store_ptr;
+#   endif
+    me -> thread_blocked = TRUE;
+#   ifndef GC_DARWIN_THREADS
+      me -> stop_info.stack_ptr = frame.saved_stack_ptr;
+#   endif
+    UNLOCK();
+
+    return client_data; /* result */
+}
+
 struct start_info {
     void *(*start_routine)(void *);
     void *arg;

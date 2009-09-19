@@ -1517,46 +1517,6 @@ void GC_push_all_eager(ptr_t bottom, ptr_t top)
 #   undef GC_least_plausible_heap_addr
 }
 
-#ifndef THREADS
-/*
- * A version of GC_push_all that treats all interior pointers as valid
- * and scans part of the area immediately, to make sure that saved
- * register values are not lost.
- * Cold_gc_frame delimits the stack section that must be scanned
- * eagerly.  A zero value indicates that no eager scanning is needed.
- * We don't need to worry about the MANUAL_VDB case here, since this
- * is only called in the single-threaded case.  We assume that we
- * cannot collect between an assignment and the corresponding
- * GC_dirty() call.
- */
-void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
-				       ptr_t cold_gc_frame)
-{
-  if (!NEED_FIXUP_POINTER && GC_all_interior_pointers) {
-    /* Push the hot end of the stack eagerly, so that register values   */
-    /* saved inside GC frames are marked before they disappear.		*/
-    /* The rest of the marking can be deferred until later.		*/
-    if (0 == cold_gc_frame) {
-	GC_push_all_stack(bottom, top);
-	return;
-    }
-    GC_ASSERT(bottom <= cold_gc_frame && cold_gc_frame <= top);
-#   ifdef STACK_GROWS_DOWN
-	GC_push_all(cold_gc_frame - sizeof(ptr_t), top);
-	GC_push_all_eager(bottom, cold_gc_frame);
-#   else /* STACK_GROWS_UP */
-	GC_push_all(bottom, cold_gc_frame + sizeof(ptr_t));
-	GC_push_all_eager(cold_gc_frame, top);
-#   endif /* STACK_GROWS_UP */
-  } else {
-    GC_push_all_eager(bottom, top);
-  }
-# ifdef TRACE_BUF
-      GC_add_trace_entry("GC_push_all_stack", bottom, top);
-# endif
-}
-#endif /* !THREADS */
-
 void GC_push_all_stack(ptr_t bottom, ptr_t top)
 {
 # if defined(THREADS) && defined(MPROTECT_VDB)

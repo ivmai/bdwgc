@@ -333,7 +333,8 @@ void GC_print_callers(struct callinfo info[NFRAMES]);
 #     define STOP_WORLD() GC_stop_world()
 #     define START_WORLD() GC_start_world()
 #   else
-#     define STOP_WORLD()
+	/* Just do a sanity check: we are not inside GC_do_blocking().	*/
+#     define STOP_WORLD() GC_ASSERT(GC_blocked_sp == NULL)
 #     define START_WORLD()
 #   endif
 # endif
@@ -1290,8 +1291,41 @@ extern long GC_large_alloc_warn_interval;
 extern long GC_large_alloc_warn_suppressed;
 	/* Number of warnings suppressed so far.	*/
 
+/* This is used by GC_do_blocking[_inner]().		*/
+struct blocking_data {
+    GC_fn_type fn;
+    void * client_data; /* and result */
+};
+
+/* This is used by GC_call_with_gc_active(), GC_push_all_stack_frames(). */
+struct GC_activation_frame_s {
+  ptr_t saved_stack_ptr;
+#ifdef IA64
+    ptr_t saved_backing_store_ptr;
+    ptr_t backing_store_end;
+#endif
+  struct GC_activation_frame_s *prev;
+};
+
 #ifdef THREADS
+/* Process all activation "frames" - scan entire stack except for	*/
+/* frames belonging to the user functions invoked by GC_do_blocking().	*/
+void GC_push_all_stack_frames(ptr_t lo, ptr_t hi,
+			struct GC_activation_frame_s *activation_frame);
+
   extern GC_bool GC_world_stopped;
+#else
+  extern ptr_t GC_blocked_sp;
+  extern struct GC_activation_frame_s *GC_activation_frame;
+			/* Points to the "frame" data held in stack by	*/
+			/* the innermost GC_call_with_gc_active().	*/
+			/* NULL if no such "frame" active.		*/
+#endif /* !THREADS */
+
+#ifdef IA64
+  /* Similar to GC_push_all_stack_frames() but for IA-64 registers store. */
+  void GC_push_all_register_frames(ptr_t bs_lo, ptr_t bs_hi, int eager,
+			struct GC_activation_frame_s *activation_frame);
 #endif
 
 /*  Marks are in a reserved area in                          */
@@ -1407,20 +1441,13 @@ void GC_push_all_eager (ptr_t b, ptr_t t);
 				    /* ensures that stack is scanned	*/
 				    /* immediately, not just scheduled  */
 				    /* for scanning.			*/
-#ifndef THREADS
-  void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
-		  			 ptr_t cold_gc_frame);
-			/* Similar to GC_push_all_eager, but only the	*/
-			/* part hotter than cold_gc_frame is scanned	*/
-			/* immediately.  Needed to ensure that callee-	*/
-			/* save registers are not missed.		*/
-#else
+
   /* In the threads case, we push part of the current thread stack	*/
   /* with GC_push_all_eager when we push the registers.  This gets the  */
   /* callee-save registers that may disappear.  The remainder of the	*/
   /* stacks are scheduled for scanning in *GC_push_other_roots, which	*/
   /* is thread-package-specific.					*/
-#endif
+
 void GC_push_roots(GC_bool all, ptr_t cold_gc_frame);
   			/* Push all or dirty roots.	*/
 extern void (*GC_push_other_roots)(void);
@@ -1456,12 +1483,7 @@ void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
   ptr_t GC_save_regs_in_stack(void);
 # endif
 			/* Push register contents onto mark stack.	*/
-  			/* If NURSERY is defined, the default push	*/
-  			/* action can be overridden with GC_push_proc	*/
 
-# ifdef NURSERY
-    extern void (*GC_push_proc)(ptr_t);
-# endif
 # if defined(MSWIN32) || defined(MSWINCE)
   void __cdecl GC_push_one(word p);
 # else

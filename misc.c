@@ -1312,6 +1312,109 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
     return fn(&base, arg);
 }
 
+#ifdef THREADS
+
+/* Defined in pthread_support.c or win32_threads.c.	*/
+void GC_do_blocking_inner(ptr_t data, void * context);
+
+#else
+
+ptr_t GC_blocked_sp = NULL;
+	/* NULL value means we are not inside GC_do_blocking() call. */
+# ifdef IA64
+    STATIC ptr_t GC_blocked_register_sp = NULL;
+# endif
+
+struct GC_activation_frame_s *GC_activation_frame = NULL;
+
+/* This is nearly the same as in win32_threads.c	*/
+GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
+					void * client_data) {
+    struct GC_activation_frame_s frame;
+    GC_ASSERT(GC_is_initialized);
+
+    /* Adjust our stack base value (this could happen if	*/
+    /* GC_get_main_stack_base() is unimplemented or broken for	*/
+    /* the platform).						*/
+    if (GC_stackbottom HOTTER_THAN (ptr_t)(&frame))
+      GC_stackbottom = (ptr_t)(&frame);
+
+    if (GC_blocked_sp == NULL) {
+      /* We are not inside GC_do_blocking() - do nothing more.	*/
+      return fn(client_data);
+    }
+
+    /* Setup new "frame".	*/
+    frame.saved_stack_ptr = GC_blocked_sp;
+#   ifdef IA64
+      /* This is the same as in GC_call_with_stack_base().	*/
+      frame.backing_store_end = GC_save_regs_in_stack();
+      /* Unnecessarily flushes register stack, 		*/
+      /* but that probably doesn't hurt.		*/
+      frame.saved_backing_store_ptr = GC_blocked_register_sp;
+#   endif
+    frame.prev = GC_activation_frame;
+    GC_blocked_sp = NULL;
+    GC_activation_frame = &frame;
+    
+    client_data = fn(client_data);
+    GC_ASSERT(GC_blocked_sp == NULL);
+    GC_ASSERT(GC_activation_frame == &frame);
+
+    /* Restore original "frame".	*/
+    GC_activation_frame = frame.prev;
+#   ifdef IA64
+      GC_blocked_register_sp = frame.saved_backing_store_ptr;
+#   endif
+    GC_blocked_sp = frame.saved_stack_ptr;
+
+    return client_data; /* result */
+}
+
+/* This is nearly the same as in win32_threads.c	*/
+/*ARGSUSED*/
+STATIC void GC_do_blocking_inner(ptr_t data, void * context) {
+    struct blocking_data * d = (struct blocking_data *) data;
+    GC_ASSERT(GC_is_initialized);
+    GC_ASSERT(GC_blocked_sp == NULL);
+#   ifdef SPARC
+	GC_blocked_sp = GC_save_regs_in_stack();
+#   else
+	GC_blocked_sp = (ptr_t) &d; /* save approx. sp */
+#   endif
+#   ifdef IA64
+	GC_blocked_register_sp = GC_save_regs_in_stack();
+#   endif
+
+    d -> client_data = (d -> fn)(d -> client_data);
+
+#   ifdef SPARC
+	GC_ASSERT(GC_blocked_sp != NULL);
+#   else
+	GC_ASSERT(GC_blocked_sp == (ptr_t) &d);
+#   endif
+    GC_blocked_sp = NULL;
+}
+
+#endif /* !THREADS */
+
+/* Wrapper for functions that are likely to block (or, at least, do not	*/
+/* allocate garbage collected memory and/or manipulate pointers to the	*/
+/* garbage collected heap) for an appreciable length of time.		*/
+/* In the single threaded case, GC_do_blocking() (together		*/
+/* with GC_call_with_gc_active()) might be used to make stack scanning	*/
+/* more precise (i.e. scan only stack frames of functions that allocate	*/
+/* garbage collected memory and/or manipulate pointers to the garbage	*/
+/* collected heap).							*/
+GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data) {
+    struct blocking_data my_data;
+
+    my_data.fn = fn;
+    my_data.client_data = client_data;
+    GC_with_callee_saves_pushed(GC_do_blocking_inner, (ptr_t)(&my_data));
+    return my_data.client_data; /* result */
+}
+
 #if !defined(NO_DEBUGGING)
 
 GC_API void GC_CALL GC_dump(void)
