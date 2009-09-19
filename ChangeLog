@@ -1,3 +1,7 @@
+2009-09-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c (GC_get_stack_base): Add FIXME; add assertion for
+	GC_get_writable_length() result.
 
 2009-09-18  Ivan Maidanski <ivmai@mail.ru> (really Ludovic CourtXs)
 
