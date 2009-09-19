@@ -1,4 +1,16 @@
 2009-09-19  Ivan Maidanski <ivmai@mail.ru>
+	* allchblk.c: Expand all tabs to spaces; remove trailing spaces at
+	EOLn; remove multiple trailing blank lines.
+	* mark.c: Ditto.
+	* mark_rts.c: Ditto.
+	* pthread_stop_world.c: Ditto.
+	* win32_threads.c: Ditto.
+	* include/gc.h: Ditto.
+	* include/private/gc_priv.h: Ditto.
+	* pthread_stop_world.c: Add copyright header.
+	* include/gc.h: Reformat some comments.
+
+2009-09-19  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai130a.diff, ivmai130b.diff - superseding diff44, diff69)
 
 	* include/gc.h (GC_do_blocking, GC_call_with_gc_active): New
