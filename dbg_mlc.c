@@ -235,7 +235,11 @@ GC_bool GC_has_other_debug_info(ptr_t p)
 
   GC_API void GC_CALL GC_generate_random_backtrace(void)
   {
-    GC_gcollect();
+    if (GC_try_to_collect(GC_never_stop_func) == 0) {
+      GC_err_printf("Cannot generate a backtrace: "
+                    "garbage collection is disabled!\n");
+      return;
+    }
     GC_generate_random_backtrace_no_gc();
   }
 

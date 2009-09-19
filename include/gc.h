@@ -478,7 +478,8 @@ GC_API void GC_CALL GC_gcollect(void);
 /* than normal pause times for incremental collection.  However,        */
 /* aborted collections do no useful work; the next collection needs     */
 /* to start from the beginning.  stop_func must not be 0.               */
-/* Return 0 if the collection was aborted, 1 if it succeeded.           */
+/* GC_try_to_collect() returns 0 if the collection was aborted (or the  */
+/* collections are disabled), 1 if it succeeded.                        */
 typedef int (GC_CALLBACK * GC_stop_func)(void);
 GC_API int GC_CALL GC_try_to_collect(GC_stop_func /* stop_func */);
 

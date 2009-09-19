@@ -1690,8 +1690,8 @@ ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
                                 /* reclaimed bytes to *count.           */
 GC_bool GC_block_empty(hdr * hhdr);
                                 /* Block completely unmarked?   */
-GC_bool GC_CALLBACK GC_never_stop_func(void);
-                                /* Returns FALSE.               */
+int GC_CALLBACK GC_never_stop_func(void);
+                                /* Always returns 0 (FALSE).            */
 GC_bool GC_try_to_collect_inner(GC_stop_func f);
 
                                 /* Collect; caller must have acquired   */
