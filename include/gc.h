@@ -486,6 +486,12 @@ GC_API void GC_CALL GC_gcollect(void);
 typedef int (GC_CALLBACK * GC_stop_func)(void);
 GC_API int GC_CALL GC_try_to_collect(GC_stop_func /* stop_func */);
 
+/* Set and get the default stop_func.  The default stop_func is used by	*/
+/* GC_gcollect() and by implicitly trigged collections (except for the	*/
+/* case when handling out of memory).  Must not be 0.			*/
+GC_API void GC_CALL GC_set_stop_func(GC_stop_func /* stop_func */);
+GC_API GC_stop_func GC_CALL GC_get_stop_func(void);
+
 /* Return the number of bytes in the heap.  Excludes collector private	*/
 /* data structures.  Excludes the unmapped memory (retuned to the OS).	*/
 /* Includes empty blocks and fragmentation loss.  Includes some pages	*/

@@ -140,8 +140,27 @@ STATIC CLOCK_TYPE GC_start_time;/* Time at which we stopped world.	*/
 STATIC int GC_n_attempts = 0;	/* Number of attempts at finishing	*/
 				/* collection within GC_time_limit.	*/
 
+STATIC GC_stop_func GC_default_stop_func = GC_never_stop_func;
+
+GC_API void GC_CALL GC_set_stop_func(GC_stop_func stop_func)
+{
+  GC_ASSERT(stop_func != 0);
+  LOCK();
+  GC_default_stop_func = stop_func;
+  UNLOCK();
+}
+
+GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
+{
+  GC_stop_func stop_func;
+  LOCK();
+  stop_func = GC_default_stop_func;
+  UNLOCK();
+  return stop_func;
+}
+
 #if defined(SMALL_CONFIG) || defined(NO_CLOCK)
-#   define GC_timeout_stop_func GC_never_stop_func
+#   define GC_timeout_stop_func GC_default_stop_func
 #else
   STATIC int GC_CALLBACK GC_timeout_stop_func (void)
   {
@@ -149,6 +168,9 @@ STATIC int GC_n_attempts = 0;	/* Number of attempts at finishing	*/
     static unsigned count = 0;
     unsigned long time_diff;
     
+    if ((*GC_default_stop_func)())
+      return(1);
+
     if ((count++ & 3) != 0) return(0);
     GET_TIME(current_time);
     time_diff = MS_TIME_DIFF(current_time,GC_start_time);
@@ -290,7 +312,8 @@ STATIC void GC_maybe_gc(void)
     GC_ASSERT(I_HOLD_LOCK());
     if (GC_should_collect()) {
         if (!GC_incremental) {
-            GC_gcollect_inner();
+	    /* FIXME: If possible, GC_default_stop_func should be used here */
+            GC_try_to_collect_inner(GC_never_stop_func);
             n_partial_gcs = 0;
             return;
         } else {
@@ -321,6 +344,8 @@ STATIC void GC_maybe_gc(void)
 #	ifndef NO_CLOCK
           if (GC_time_limit != GC_TIME_UNLIMITED) { GET_TIME(GC_start_time); }
 #	endif
+	/* FIXME: If possible, GC_default_stop_func should be	*/
+	/* used instead of GC_never_stop_func here.		*/
         if (GC_stopped_mark(GC_time_limit == GC_TIME_UNLIMITED? 
 			    GC_never_stop_func : GC_timeout_stop_func)) {
 #           ifdef SAVE_CALL_CHAIN
@@ -459,6 +484,8 @@ void GC_collect_a_little_inner(int n)
 		    break;
 		  }
 		} else {
+		  /* FIXME: If possible, GC_default_stop_func should be	*/
+		  /* used here.						*/
 		  (void)GC_stopped_mark(GC_never_stop_func);
 		}
     	        GC_finish_collection();
@@ -891,7 +918,7 @@ GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
 
 GC_API void GC_CALL GC_gcollect(void)
 {
-    (void)GC_try_to_collect(GC_never_stop_func);
+    (void)GC_try_to_collect(GC_default_stop_func);
     if (GC_have_errors) GC_print_all_errors();
 }
 
@@ -1105,10 +1132,13 @@ unsigned GC_fail_count = 0;
 
 GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page)
 {
-    if (!GC_incremental && !GC_dont_gc &&
-	((GC_dont_expand && GC_bytes_allocd > 0) || GC_should_collect())) {
-      GC_gcollect_inner();
-    } else {
+    GC_bool gc_not_stopped = TRUE;
+    if (GC_incremental || GC_dont_gc ||
+	((!GC_dont_expand || GC_bytes_allocd == 0) && !GC_should_collect()) ||
+	(gc_not_stopped = GC_try_to_collect_inner(GC_bytes_allocd > 0 ?
+					GC_default_stop_func :
+					GC_never_stop_func)) == FALSE) {
+
       word blocks_to_get = GC_heapsize/(HBLKSIZE*GC_free_space_divisor)
       			   + needed_blocks;
       
@@ -1132,7 +1162,11 @@ GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page)
       }
       if (!GC_expand_hp_inner(blocks_to_get)
         && !GC_expand_hp_inner(needed_blocks)) {
-      	if (GC_fail_count++ < GC_max_retries) {
+        if (gc_not_stopped == FALSE) {
+	    /* Don't increment GC_fail_count here (and no warning).	*/
+	    GC_gcollect_inner();
+	    GC_ASSERT(GC_bytes_allocd == 0);
+	} else if (GC_fail_count++ < GC_max_retries) {
       	    WARN("Out of Memory!  Trying to continue ...\n", 0);
 	    GC_gcollect_inner();
 	} else {
