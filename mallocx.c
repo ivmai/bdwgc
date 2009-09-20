@@ -267,14 +267,14 @@ volatile signed_word GC_bytes_allocd_tmp = 0;
 /* Note that the client should usually clear the link field.            */
 void GC_generic_malloc_many(size_t lb, int k, void **result)
 {
-void *op;
-void *p;
-void **opp;
-size_t lw;      /* Length in words.     */
-size_t lg;      /* Length in granules.  */
-signed_word my_bytes_allocd = 0;
-struct obj_kind * ok = &(GC_obj_kinds[k]);
-DCL_LOCK_STATE;
+    void *op;
+    void *p;
+    void **opp;
+    size_t lw;      /* Length in words.     */
+    size_t lg;      /* Length in granules.  */
+    signed_word my_bytes_allocd = 0;
+    struct obj_kind * ok = &(GC_obj_kinds[k]);
+    DCL_LOCK_STATE;
 
     GC_ASSERT(lb != 0 && (lb & (GRANULE_BYTES-1)) == 0);
     if (!SMALL_OBJ(lb)) {

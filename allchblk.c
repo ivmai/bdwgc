@@ -821,10 +821,9 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, GC_bool may_split)
 void
 GC_freehblk(struct hblk *hbp)
 {
-struct hblk *next, *prev;
-hdr *hhdr, *prevhdr, *nexthdr;
-signed_word size;
-
+    struct hblk *next, *prev;
+    hdr *hhdr, *prevhdr, *nexthdr;
+    signed_word size;
 
     GET_HDR(hbp, hhdr);
     size = hhdr->hb_sz;

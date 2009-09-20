@@ -289,12 +289,11 @@ STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
           return(COMPLEX);
       }
     }
-    {
-        leaf -> ld_size = size;
-        leaf -> ld_nelements = nelements;
-        leaf -> ld_descriptor = descriptor;
-        return(LEAF);
-    }
+
+    leaf -> ld_size = size;
+    leaf -> ld_nelements = nelements;
+    leaf -> ld_descriptor = descriptor;
+    return(LEAF);
 }
 
 STATIC complex_descriptor *
@@ -623,10 +622,10 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t lb, GC_descr d)
 GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page(size_t lb,
                                                                 GC_descr d)
 {
-ptr_t op;
-ptr_t * opp;
-size_t lg;
-DCL_LOCK_STATE;
+    ptr_t op;
+    ptr_t * opp;
+    size_t lg;
+    DCL_LOCK_STATE;
 
     lb += TYPD_EXTRA_BYTES;
     if( SMALL_OBJ(lb) ) {
@@ -658,14 +657,14 @@ DCL_LOCK_STATE;
 GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t n, size_t lb,
                                                 GC_descr d)
 {
-ptr_t op;
-ptr_t * opp;
-size_t lg;
-GC_descr simple_descr;
-complex_descriptor *complex_descr;
-register int descr_type;
-struct LeafDescriptor leaf;
-DCL_LOCK_STATE;
+    ptr_t op;
+    ptr_t * opp;
+    size_t lg;
+    GC_descr simple_descr;
+    complex_descriptor *complex_descr;
+    register int descr_type;
+    struct LeafDescriptor leaf;
+    DCL_LOCK_STATE;
 
     descr_type = GC_make_array_descriptor((word)n, (word)lb, d,
                                           &simple_descr, &complex_descr, &leaf);
