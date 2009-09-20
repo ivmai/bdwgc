@@ -1,5 +1,11 @@
 2009-09-20  Ivan Maidanski <ivmai@mail.ru>
 
+	* configure.ac: Replace GC_WIN32_THREADS with GC_THREADS.
+	* configure.ac: Process enable_parallel_mark option for Cygwin and
+	Win32; define THREAD_LOCAL_ALLOC for Win32.
+
+2009-09-20  Ivan Maidanski <ivmai@mail.ru>
+
 	* include/private/gc_priv.h: Define AO_ASSUME_WINDOWS98 if
 	PARALLEL_MARK (required for VC++ x86).
 

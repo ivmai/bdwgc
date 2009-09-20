@@ -22,7 +22,7 @@ AC_INIT(gc,7.2alpha3,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.45 $)
+AC_REVISION($Revision: 1.46 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -154,7 +154,10 @@ case "$THREADS" in
 	AC_DEFINE(GC_IRIX_THREADS)
 	;;
      *-*-cygwin*)
-	AC_DEFINE(GC_WIN32_THREADS)
+	AC_DEFINE(GC_THREADS)
+        if test "${enable_parallel_mark}" = yes; then
+	  AC_DEFINE(PARALLEL_MARK)
+	fi
 	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	# Cygwin doesn't have a real libpthread, so Libtool can't link
 	# against it.
@@ -189,7 +192,11 @@ case "$THREADS" in
     esac
     ;;
  win32)
-    AC_DEFINE(GC_WIN32_THREADS)
+    AC_DEFINE(GC_THREADS)
+    if test "${enable_parallel_mark}" = yes; then
+      AC_DEFINE(PARALLEL_MARK)
+      AC_DEFINE(THREAD_LOCAL_ALLOC)
+    fi
     win32_threads=true
     dnl Wine getenv may not return NULL for missing entry
     AC_DEFINE(NO_GETENV)
