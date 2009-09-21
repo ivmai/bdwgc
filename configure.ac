@@ -22,7 +22,7 @@ AC_INIT(gc,7.2alpha3,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.46 $)
+AC_REVISION($Revision: 1.47 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
@@ -199,7 +199,7 @@ case "$THREADS" in
     fi
     win32_threads=true
     dnl Wine getenv may not return NULL for missing entry
-    AC_DEFINE(NO_GETENV)
+    AC_DEFINE(EMPTY_GETENV_RESULTS)
     ;;
  dgux386)
     THREADS=dgux386
