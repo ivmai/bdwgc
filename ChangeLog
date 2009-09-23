@@ -1,4 +1,32 @@
 2009-09-23  Ivan Maidanski <ivmai@mail.ru>
+	(ivmai150.diff)
+
+	* Makefile.direct (MUNMAP_THRESHOLD, GC_FORCE_UNMAP_ON_GCOLLECT):
+	Add the comment for.
+	* alloc.c (GC_unmap_threshold, GC_force_unmap_on_gcollect):
+	Declare external variable (only if USE_MUNMAP).
+	* alloc.c (GC_try_to_collect): Temporarily set GC_unmap_threshold
+	value to 1 if GC_force_unmap_on_gcollect and restore it before
+	unlocking (only if USE_MUNMAP).
+	* doc/README.environment (GC_FORCE_UNMAP_ON_GCOLLECT): Add
+	information for.
+	* include/gc.h (GC_set_force_unmap_on_gcollect,
+	GC_get_force_unmap_on_gcollect): New public function prototype.
+	* include/gc.h (GC_FORCE_UNMAP_ON_GCOLLECT): New macro is
+	recognized.
+	* misc.c (GC_FORCE_UNMAP_ON_GCOLLECT): Ditto.
+	* include/gc.h (GC_INIT_CONF_FORCE_UNMAP_ON_GCOLLECT): New
+	internal macro (used by GC_INIT only).
+	* misc.c (GC_force_unmap_on_gcollect): New global variable.
+	* misc.c (GC_init): Recognize new "GC_FORCE_UNMAP_ON_GCOLLECT"
+	environment variable (and set GC_force_unmap_on_gcollect).
+	* misc.c (GC_set_force_unmap_on_gcollect,
+	GC_get_force_unmap_on_gcollect): New public function.
+	* tests/test.c (window_proc): Call GC_set_force_unmap_on_gcollect
+	to force the mode on if WM_HIBERNATE; restore the mode after
+	GC_gcollect().
+
+2009-09-23  Ivan Maidanski <ivmai@mail.ru>
 
 	* Makefile.direct (LARGE_CONFIG): Update information.
 	* include/gc.h (GC_stop_func): Refine the comment.

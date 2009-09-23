@@ -186,6 +186,13 @@ HOSTCFLAGS=$(CFLAGS)
 #   (except for Win32 with GetWriteWatch available).
 #   Works under some Unix, Linux and Windows versions.
 #   Requires -DUSE_MMAP except for Windows.
+# -DMUNMAP_THRESHOLD=<value> Set the desired memory blocks unmapping threshold
+#   (the number of sequential garbage collections for which a candidate block
+#   for unmapping should remain free).
+# -DGC_FORCE_UNMAP_ON_GCOLLECT Set "unmap as much as possible on explicit GC"
+#   mode on by default.  The mode could be changed at run-time.  Has no effect
+#   unless unmapping is turned on.  Has no effect on implicitly-initiated
+#   garbage collections.
 # -DMMAP_STACKS (for Solaris threads) Use mmap from /dev/zero rather than
 #   GC_scratch_alloc() to get stack memory.
 # -DPRINT_BLACK_LIST Whenever a black list entry is added, i.e. whenever

@@ -1306,6 +1306,13 @@ GC_API void GC_CALL GC_use_DllMain(void);
 
 #endif /* defined(GC_WIN32_THREADS)  && !cygwin */
 
+/* Public setter and getter for switching "unmap as much as possible"   */
+/* mode on(1) and off(0).  Has no effect unless unmapping is turned on. */
+/* Has no effect on implicitly-initiated garbage collections.  Initial  */
+/* value is controlled by GC_FORCE_UNMAP_ON_GCOLLECT.                   */
+GC_API void GC_CALL GC_set_force_unmap_on_gcollect(int);
+GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
+
  /* Fully portable code should call GC_INIT() from the main program     */
  /* before making any other GC_ calls.  On most platforms this is a     */
  /* no-op and the collector self-initializes.  But a number of          */
@@ -1344,6 +1351,14 @@ GC_API void GC_CALL GC_use_DllMain(void);
 # define GC_INIT_CONF_DONT_EXPAND GC_set_dont_expand(1)
 #else
 # define GC_INIT_CONF_DONT_EXPAND /* empty */
+#endif
+
+#ifdef GC_FORCE_UNMAP_ON_GCOLLECT
+  /* Turn on "unmap as much as possible on explicit GC" mode at start-up */
+# define GC_INIT_CONF_FORCE_UNMAP_ON_GCOLLECT \
+                GC_set_force_unmap_on_gcollect(1)
+#else
+# define GC_INIT_CONF_FORCE_UNMAP_ON_GCOLLECT /* empty */
 #endif
 
 #ifdef GC_MAX_RETRIES
@@ -1404,6 +1419,7 @@ GC_API void GC_CALL GC_use_DllMain(void);
 #endif
 
 #define GC_INIT() { GC_INIT_CONF_DONT_EXPAND; /* pre-init */ \
+                    GC_INIT_CONF_FORCE_UNMAP_ON_GCOLLECT; \
                     GC_INIT_CONF_MAX_RETRIES; \
                     GC_INIT_CONF_FREE_SPACE_DIVISOR; \
                     GC_INIT_CONF_FULL_FREQ; \

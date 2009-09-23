@@ -892,10 +892,18 @@ STATIC void GC_finish_collection(void)
 #   endif
 }
 
+#ifdef USE_MUNMAP
+    extern int GC_unmap_threshold;      /* defined in allchblk.c        */
+    extern GC_bool GC_force_unmap_on_gcollect;  /* defined in misc.c    */
+#endif
+
 /* Externally callable routine to invoke full, stop-world collection */
 GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
 {
     int result;
+#   ifdef USE_MUNMAP
+      int old_unmap_threshold;
+#   endif
     DCL_LOCK_STATE;
     
     if (!GC_is_initialized) GC_init();
@@ -903,11 +911,19 @@ GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
     if (GC_debugging_started) GC_print_all_smashed();
     GC_INVOKE_FINALIZERS();
     LOCK();
+#   ifdef USE_MUNMAP
+      old_unmap_threshold = GC_unmap_threshold;
+      if (GC_force_unmap_on_gcollect && old_unmap_threshold > 0)
+        GC_unmap_threshold = 1; /* unmap as much as possible */
+#   endif
     ENTER_GC();
     /* Minimize junk left in my registers */
       GC_noop(0,0,0,0,0,0);
     result = (int)GC_try_to_collect_inner(stop_func);
     EXIT_GC();
+#   ifdef USE_MUNMAP
+      GC_unmap_threshold = old_unmap_threshold; /* restore */
+#   endif
     UNLOCK();
     if(result) {
         if (GC_debugging_started) GC_print_all_smashed();

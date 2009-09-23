@@ -112,6 +112,14 @@ GC_bool GC_print_back_height = 0;
   int GC_all_interior_pointers = 0;
 #endif
 
+#ifdef GC_FORCE_UNMAP_ON_GCOLLECT
+  /* Has no effect unless USE_MUNMAP.                           */
+  /* Has no effect on implicitly-initiated garbage collections. */
+  GC_bool GC_force_unmap_on_gcollect = TRUE;
+#else
+  GC_bool GC_force_unmap_on_gcollect = FALSE;
+#endif
+
 long GC_large_alloc_warn_interval = 5;
 	/* Interval between unsuppressed warnings.	*/
 
@@ -668,6 +676,17 @@ GC_API void GC_CALL GC_init(void)
 	    int unmap_threshold = atoi(string);
 	    if (unmap_threshold > 0)
 	      GC_unmap_threshold = unmap_threshold;
+	  }
+	}
+      }
+      {
+	char * string = GETENV("GC_FORCE_UNMAP_ON_GCOLLECT");
+	if (string != NULL) {
+	  if (*string == '0' && *(string + 1) == '\0') {
+	    /* "0" is used to turn off the mode. */
+            GC_force_unmap_on_gcollect = FALSE;
+	  } else {
+            GC_force_unmap_on_gcollect = TRUE;
 	  }
 	}
       }
@@ -1627,4 +1646,14 @@ GC_API void GC_CALL GC_set_time_limit(unsigned long value)
 GC_API unsigned long GC_CALL GC_get_time_limit(void)
 {
     return GC_time_limit;
+}
+
+GC_API void GC_CALL GC_set_force_unmap_on_gcollect(int value)
+{
+    GC_force_unmap_on_gcollect = (GC_bool)value;
+}
+
+GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void)
+{
+    return (int)GC_force_unmap_on_gcollect;
 }

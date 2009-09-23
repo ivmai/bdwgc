@@ -1431,10 +1431,15 @@ HWND win_handle;
 LRESULT CALLBACK window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
   LRESULT ret = 0;
+  int old_force_unmap;
   switch (uMsg) {
     case WM_HIBERNATE:
       GC_printf("Received WM_HIBERNATE, calling GC_gcollect\n");
+      /* Force "unmap as much memory as possible" mode. */
+      old_force_unmap = GC_get_force_unmap_on_gcollect();
+      GC_set_force_unmap_on_gcollect(1);
       GC_gcollect();
+      GC_set_force_unmap_on_gcollect(old_force_unmap); /* restore mode */
       break;
     case WM_CLOSE:
       GC_printf("Received WM_CLOSE, closing window\n");

@@ -141,6 +141,12 @@ GC_UNMAP_THRESHOLD - Set the desired memory blocks unmapping threshold (the
                    a candidate block for unmapping should remain free).  The
                    special value "0" completely disables unmapping.
 
+GC_FORCE_UNMAP_ON_GCOLLECT - Turn "unmap as much as possible on explicit GC"
+                mode on (overrides the default value).  Has no effect on
+                implicitly-initiated garbage collections.  Has no effect if
+                memory unmapping is disabled (or not compiled in) or if the
+                unmapping threshold is 1.
+
 GC_FIND_LEAK - Turns on GC_find_leak and thus leak detection.  Forces a
                collection at program termination to detect leaks that would
                otherwise occur after the last GC.
