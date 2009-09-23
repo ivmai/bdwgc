@@ -1,3 +1,8 @@
+2009-09-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.direct (LARGE_CONFIG): Update information.
+	* include/gc.h (GC_stop_func): Refine the comment.
+
 2009-09-21  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure.ac: Use EMPTY_GETENV_RESULTS instead of NO_GETENV for

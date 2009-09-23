@@ -106,8 +106,9 @@ HOSTCFLAGS=$(CFLAGS)
 #   usually causing it to use less space in such situations.
 #   Incremental collection no longer works in this case.
 # -DLARGE_CONFIG tunes the collector for unusually large heaps.
-#   Necessary for heaps larger than about 500 MB on most machines.
-#   Recommended for heaps larger than about 64 MB.
+#   Necessary for heaps larger than about 4 GiB on most (64-bit) machines.
+#   Recommended for heaps larger than about 500 MiB.  Not recommended for
+#   embedded systems.
 # -DDONT_ADD_BYTE_AT_END is meaningful only with -DALL_INTERIOR_POINTERS or
 #   GC_all_interior_pointers = 1.  Normally -DALL_INTERIOR_POINTERS
 #   causes all objects to be padded so that pointers just past the end of

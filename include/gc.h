@@ -472,7 +472,10 @@ GC_API void GC_CALL GC_gcollect(void);
 
 /* Trigger a full world-stopped collection.  Abort the collection if    */
 /* and when stop_func returns a nonzero value.  Stop_func will be       */
-/* called frequently, and should be reasonably fast.  This works even   */
+/* called frequently, and should be reasonably fast.  (stop_func is     */
+/* called with the allocation lock held and the world is stopped; it is */
+/* not allowed for stop_func to manipulate pointers to the garbage      */
+/* collected heap or call most of GC functions.)  This works even       */
 /* if virtual dirty bits, and hence incremental collection is not       */
 /* available for this architecture.  Collections can be aborted faster  */
 /* than normal pause times for incremental collection.  However,        */
