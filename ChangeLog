@@ -1,4 +1,11 @@
 2009-09-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c (start_mark_threads): Refine printed message.
+	* win32_threads.c (GC_thr_init): Ditto.
+	* win32_threads.c: Reformat some code pieces (wrap too long code
+	lines).
+
+2009-09-24  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai145.diff)
 
 	* Makefile.direct (GC_WINMAIN_REDIRECT): Add the comment for.

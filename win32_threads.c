@@ -357,7 +357,8 @@ STATIC GC_thread GC_new_thread(DWORD id)
     return(result);
 }
 
-extern LONG WINAPI GC_write_fault_handler(struct _EXCEPTION_POINTERS *exc_info);
+extern LONG WINAPI GC_write_fault_handler(
+                                struct _EXCEPTION_POINTERS *exc_info);
 
 #if defined(GWW_VDB) && defined(MPROTECT_VDB)
   extern GC_bool GC_gww_dirty_init(void);
@@ -814,7 +815,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 /* and win32 thread id.                                         */
 #define PTHREAD_MAP_SIZE 512
 DWORD GC_pthread_map_cache[PTHREAD_MAP_SIZE];
-#define HASH(pthread_id) ((NUMERIC_THREAD_ID(pthread_id) >> 5) % PTHREAD_MAP_SIZE)
+#define HASH(pthread_id) ((NUMERIC_THREAD_ID(pthread_id) >> 5) % \
+                          PTHREAD_MAP_SIZE)
         /* It appears pthread_t is really a pointer type ... */
 #define SET_PTHREAD_MAP_CACHE(pthread_id, win32_id) \
         (GC_pthread_map_cache[HASH(pthread_id)] = (win32_id))
@@ -962,7 +964,8 @@ void GC_stop_world(void)
 {
   DWORD thread_id = GetCurrentThreadId();
 
-  if (!GC_thr_initialized) ABORT("GC_stop_world() called before GC_thr_init()");
+  if (!GC_thr_initialized)
+    ABORT("GC_stop_world() called before GC_thr_init()");
   GC_ASSERT(I_HOLD_LOCK());
 
   /* This code is the same as in pthread_stop_world.c */
@@ -1139,7 +1142,8 @@ STATIC void GC_push_stack_for(GC_thread thread)
           PUSH4(R8, R9, R10, R11); PUSH4(R12, R13, R14, R15);
           sp = (ptr_t)context.Rsp;
 #       elif defined(ARM32)
-          PUSH4(R0,R1,R2,R3),PUSH4(R4,R5,R6,R7),PUSH4(R8,R9,R10,R11),PUSH1(R12);
+          PUSH4(R0,R1,R2,R3),PUSH4(R4,R5,R6,R7),PUSH4(R8,R9,R10,R11);
+          PUSH1(R12);
           sp = (ptr_t)context.Sp;
 #       elif defined(SHx)
           PUSH4(R0,R1,R2,R3), PUSH4(R4,R5,R6,R7), PUSH4(R8,R9,R10,R11);
@@ -1643,11 +1647,11 @@ static void start_mark_threads(void)
       for (i = 0; i < GC_markers - 1; ++i) {
         marker_last_stack_min[i] = ADDR_LIMIT;
 #       ifdef MSWINCE
-	  /* There is no _beginthreadex() in WinCE. */
-	  handle = CreateThread(NULL /* lpsa */,
+          /* There is no _beginthreadex() in WinCE. */
+          handle = CreateThread(NULL /* lpsa */,
                                 MARK_THREAD_STACK_SIZE /* ignored */,
-				GC_mark_thread, (LPVOID)(word)i,
-				0 /* fdwCreate */, &thread_id);
+                                GC_mark_thread, (LPVOID)(word)i,
+                                0 /* fdwCreate */, &thread_id);
           if (handle == NULL) {
             WARN("Marker thread creation failed\n", 0);
             /* The most probable failure reason is "not enough memory". */
@@ -2018,8 +2022,8 @@ GC_API GC_uintptr_t GC_CALL GC_beginthreadex(
     thread_args *args;
 
     if (!parallel_initialized) GC_init_parallel();
-                /* make sure GC is initialized (i.e. main thread is attached,
-                   tls initialized) */
+                /* make sure GC is initialized (i.e. main thread is     */
+                /* attached, tls initialized).                          */
 #   if DEBUG_WIN32_THREADS
       GC_printf("About to create a thread from 0x%x\n",
                 (unsigned)GetCurrentThreadId());
@@ -2089,11 +2093,11 @@ static DWORD WINAPI main_thread_start(LPVOID arg)
 }
 
 # ifndef WINMAIN_THREAD_STACK_SIZE
-#   define WINMAIN_THREAD_STACK_SIZE 0	/* default value */
+#   define WINMAIN_THREAD_STACK_SIZE 0  /* default value */
 # endif
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-		   WINMAIN_LPTSTR lpCmdLine, int nShowCmd)
+                   WINMAIN_LPTSTR lpCmdLine, int nShowCmd)
 {
     DWORD exit_code = 1;
 
@@ -2109,7 +2113,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     /* start the main thread */
     thread_h = GC_CreateThread(NULL /* lpsa */,
                         WINMAIN_THREAD_STACK_SIZE /* ignored on WinCE */,
-			main_thread_start, &args, 0 /* fdwCreate */,
+                        main_thread_start, &args, 0 /* fdwCreate */,
                         &thread_id);
 
     if (thread_h != NULL)
@@ -2242,7 +2246,7 @@ void GC_thr_init(void) {
       /* If we are using a parallel marker, actually start helper threads.  */
       if (GC_parallel) start_mark_threads();
       if (GC_print_stats) {
-        GC_log_printf("Started %ld marker threads\n", GC_markers - 1);
+        GC_log_printf("Started %ld mark helper threads\n", GC_markers - 1);
       }
 #   endif
 }
@@ -2318,7 +2322,7 @@ GC_API int GC_pthread_create(pthread_t *new_thread,
     struct start_info * si;
 
     if (!parallel_initialized) GC_init_parallel();
-                /* make sure GC is initialized (i.e. main thread is attached) */
+             /* make sure GC is initialized (i.e. main thread is attached) */
     if (GC_win32_dll_threads) {
       return pthread_create(new_thread, attr, start_routine, arg);
     }
@@ -2475,15 +2479,14 @@ GC_API int GC_pthread_detach(pthread_t thread)
 
 #else /* !GC_PTHREADS */
 
-/*
- * We avoid acquiring locks here, since this doesn't seem to be preemptible.
- * This may run with an uninitialized collector, in which case we don't do much.
- * This implies that no threads other than the main one should be created
- * with an uninitialized collector.  (The alternative of initializing
- * the collector here seems dangerous, since DllMain is limited in what it
- * can do.)
- */
 #ifndef GC_NO_DLLMAIN
+/* We avoid acquiring locks here, since this doesn't seem to be         */
+/* preemptible.  This may run with an uninitialized collector, in which */
+/* case we don't do much.  This implies that no threads other than the  */
+/* main one should be created with an uninitialized collector.  (The    */
+/* alternative of initializing the collector here seems dangerous,      */
+/* since DllMain is limited in what it can do.)                         */
+
 /*ARGSUSED*/
 BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
 {
@@ -2577,7 +2580,8 @@ void GC_init_parallel(void)
     /* Initialize thread local free lists if used.      */
 #   if defined(THREAD_LOCAL_ALLOC)
       LOCK();
-      GC_init_thread_local(&GC_lookup_thread_inner(GetCurrentThreadId())->tlfs);
+      GC_init_thread_local(
+                &GC_lookup_thread_inner(GetCurrentThreadId())->tlfs);
       UNLOCK();
 #   endif
 }

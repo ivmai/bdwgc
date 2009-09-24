@@ -356,7 +356,7 @@ static void start_mark_threads(void)
       }
     }
     if (GC_print_stats) {
-	GC_log_printf("Started %ld marker threads\n", GC_markers - 1);
+	GC_log_printf("Started %ld mark helper threads\n", GC_markers - 1);
     }
     pthread_attr_destroy(&attr);
 }
