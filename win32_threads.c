@@ -2092,6 +2092,11 @@ static DWORD WINAPI main_thread_start(LPVOID arg)
                                args->lpCmdLine, args->nShowCmd);
 }
 
+static void * GC_waitForSingleObjectInfinite(void * handle)
+{
+    return (void *)(word)WaitForSingleObject((HANDLE)handle, INFINITE);
+}
+
 # ifndef WINMAIN_THREAD_STACK_SIZE
 #   define WINMAIN_THREAD_STACK_SIZE 0  /* default value */
 # endif
@@ -2118,7 +2123,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     if (thread_h != NULL)
     {
-        if (WaitForSingleObject (thread_h, INFINITE) == WAIT_FAILED)
+        if ((DWORD)(word)GC_do_blocking(GC_waitForSingleObjectInfinite,
+                                        (void *)thread_h) == WAIT_FAILED)
             ABORT("WaitForSingleObject(main_thread) failed");
         GetExitCodeThread (thread_h, &exit_code);
         CloseHandle (thread_h);

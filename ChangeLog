@@ -1,5 +1,13 @@
 2009-09-24  Ivan Maidanski <ivmai@mail.ru>
 
+	* win32_threads.c (GC_waitForSingleObjectInfinite): New static
+	function (only if GC_WINMAIN_REDIRECT).
+	* win32_threads.c (WinMain): Call GC_waitForSingleObjectInfinite()
+	thru GC_do_blocking() instead of calling WaitForSingleObject()
+	directly.
+
+2009-09-24  Ivan Maidanski <ivmai@mail.ru>
+
 	* pthread_support.c (start_mark_threads): Refine printed message.
 	* win32_threads.c (GC_thr_init): Ditto.
 	* win32_threads.c: Reformat some code pieces (wrap too long code
@@ -322,7 +330,7 @@
 	adjusted) after start_mark_threads() call.
 
 2009-09-16  Ivan Maidanski <ivmai@mail.ru>
-	
+
 	* Makefile.am: Back remove "GC_" prefix for PTHREADS,
 	DARWIN_THREADS, WIN32_THREADS (for configure.ac).
 
@@ -380,7 +388,7 @@
 	* include/private/gc_pmark.h: Ditto.
 	* include/private/gcconfig.h: Ditto.
 	* include/private/pthread_support.h: Ditto.
-	* include/private/thread_local_alloc.h: Ditto.	
+	* include/private/thread_local_alloc.h: Ditto.
 	* darwin_stop_world.c: Add copyright header.
 	* include/gc_backptr.h: Ditto.
 	* include/gc_config_macros.h: Ditto.
