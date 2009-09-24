@@ -686,6 +686,7 @@ ptr_t GC_get_main_stack_base(void)
     struct GC_stack_base sb;
 
     GC_get_stack_base(&sb);
+    GC_ASSERT((void *)&sb HOTTER_THAN sb.mem_base);
     return (ptr_t)sb.mem_base;
 }
 

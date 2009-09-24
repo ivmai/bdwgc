@@ -1,3 +1,8 @@
+2009-09-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c (GC_get_main_stack_base): add assertion for mem_base
+	value returned by GC_get_stack_base().
+
 2009-09-23  Ivan Maidanski <ivmai@mail.ru>
 	(ivmai150.diff)
 
