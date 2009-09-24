@@ -82,7 +82,8 @@
 /* Call GC_INIT only on platforms on which we think we really need it,  */
 /* so that we can test automatic initialization on the rest.            */
 #if defined(CYGWIN32) || defined (AIX) || defined(DARWIN) \
-        || defined(THREAD_LOCAL_ALLOC)
+        || defined(THREAD_LOCAL_ALLOC) \
+        || (defined(MSWINCE) && !defined(GC_WINMAIN_REDIRECT))
 #  define GC_COND_INIT() GC_INIT()
 #else
 #  define GC_COND_INIT()
@@ -1352,14 +1353,18 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
     /*FAIL;*/
 }
 
+#if defined(MSWINCE) && defined(UNDER_CE)
+# define WINMAIN_LPTSTR LPWSTR
+#else
+# define WINMAIN_LPTSTR LPSTR
+#endif
 
 #if !defined(PCR) \
     && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS) \
     || defined(LINT)
-#if defined(MSWINCE) && defined(UNDER_CE)
-  int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPWSTR cmd, int n)
-#elif defined(MSWIN32) && !defined(__MINGW32__) || defined(MSWINCE)
-  int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
+#if defined(MSWIN32) && !defined(__MINGW32__) || defined(MSWINCE)
+  int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev,
+                       WINMAIN_LPTSTR cmd, int n)
 #else
   int main(void)
 #endif
@@ -1502,12 +1507,8 @@ DWORD __stdcall thr_window(void *arg)
 }
 #endif
 
-#ifdef MSWINCE
-  int APIENTRY GC_WinMain(HINSTANCE instance, HINSTANCE prev,
-                          GC_WINMAIN_WINCE_LPTSTR cmd, int n)
-#else
-  int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
-#endif
+int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev,
+                     WINMAIN_LPTSTR cmd, int n)
 {
 # if NTHREADS > 0
    HANDLE h[NTHREADS];

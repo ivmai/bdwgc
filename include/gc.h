@@ -1267,24 +1267,16 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 
    GC_API void GC_CALL GC_endthreadex(unsigned /* retval */);
 
-# else
-    /* win32_threads.c implements the real WinMain, which will start	*/
-    /* a new thread to call GC_WinMain after initializing the garbage	*/
-    /* collector.							*/
-#   ifdef UNDER_CE
-#     define GC_WINMAIN_WINCE_LPTSTR LPWSTR
-#   else
-#     define GC_WINMAIN_WINCE_LPTSTR LPSTR
-#   endif
-    /* not exported (since defined outside GC by an application) */
-    int WINAPI GC_WinMain(
-		HINSTANCE /* hInstance */, HINSTANCE /* hPrevInstance */,
-		GC_WINMAIN_WINCE_LPTSTR /* lpCmdLine */, int /* nCmdShow */);
-#   ifndef GC_BUILD
-#     define WinMain GC_WinMain
-#   endif
-# endif /* defined(_WIN32_WCE) */
+# endif /* !_WIN32_WCE */
+
 #endif /* !GC_NO_THREAD_DECLS */
+
+#ifdef GC_WINMAIN_REDIRECT
+  /* win32_threads.c implements the real WinMain(), which will start    */
+  /* a new thread to call GC_WinMain() after initializing the garbage   */
+  /* collector.                                                         */
+# define WinMain GC_WinMain
+#endif
 
   /*
    * Use implicit thread registration via DllMain.

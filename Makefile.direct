@@ -281,10 +281,15 @@ HOSTCFLAGS=$(CFLAGS)
 #   event objects (one per each marker instead of that based on Win32
 #   SignalObjectAndWait() using a single event object).  This is the default
 #   for WinCE.
+# -DGC_WINMAIN_REDIRECT (Win32 only) Redirect (rename) an application WinMain
+#   to GC_WinMain; implement the "real" WinMain which starts a new thread to
+#   call GC_WinMain after initializing the GC.  Useful for WinCE.
+#   Incompatible with GC_DLL.
 # -DNO_GETENV prevents the collector from looking at environment variables.
 #   These may otherwise alter its configuration, or turn off GC altogether.
 #   I don't know of a reason to disable this, except possibly if the
-#   resulting process runs as a privileged user?
+#   resulting process runs as a privileged user.  (This is on by default for
+#   WinCE.)
 # -DUSE_GLOBAL_ALLOC.  Win32 only.  Use GlobalAlloc instead of
 #   VirtualAlloc to allocate the heap.  May be needed to work around
 #   a Windows NT/2000 issue.  Incompatible with USE_MUNMAP.

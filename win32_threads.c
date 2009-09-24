@@ -1644,7 +1644,8 @@ static void start_mark_threads(void)
         marker_last_stack_min[i] = ADDR_LIMIT;
 #       ifdef MSWINCE
 	  /* There is no _beginthreadex() in WinCE. */
-	  handle = CreateThread(NULL /* lpsa */, MARK_THREAD_STACK_SIZE,
+	  handle = CreateThread(NULL /* lpsa */,
+                                MARK_THREAD_STACK_SIZE /* ignored */,
 				GC_mark_thread, (LPVOID)(word)i,
 				0 /* fdwCreate */, &thread_id);
           if (handle == NULL) {
@@ -2058,12 +2059,25 @@ GC_API void GC_CALL GC_endthreadex(unsigned retval)
 
 #endif /* !GC_PTHREADS */
 
-#if defined(MSWINCE) && !defined(GC_DLL)
+#ifdef GC_WINMAIN_REDIRECT
+/* This might be useful on WinCE.  Shouldn't be used with GC_DLL.       */
+
+# if defined(MSWINCE) && defined(UNDER_CE)
+#   define WINMAIN_LPTSTR LPWSTR
+# else
+#   define WINMAIN_LPTSTR LPSTR
+# endif
+
+/* This is defined in gc.h.                     */
+# undef WinMain
+
+/* Defined outside GC by an application.        */
+int WINAPI GC_WinMain(HINSTANCE, HINSTANCE, WINMAIN_LPTSTR, int);
 
 typedef struct {
     HINSTANCE hInstance;
     HINSTANCE hPrevInstance;
-    GC_WINMAIN_WINCE_LPTSTR lpCmdLine;
+    WINMAIN_LPTSTR lpCmdLine;
     int nShowCmd;
 } main_thread_args;
 
@@ -2074,8 +2088,12 @@ static DWORD WINAPI main_thread_start(LPVOID arg)
                                args->lpCmdLine, args->nShowCmd);
 }
 
+# ifndef WINMAIN_THREAD_STACK_SIZE
+#   define WINMAIN_THREAD_STACK_SIZE 0	/* default value */
+# endif
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-		   GC_WINMAIN_WINCE_LPTSTR lpCmdLine, int nShowCmd)
+		   WINMAIN_LPTSTR lpCmdLine, int nShowCmd)
 {
     DWORD exit_code = 1;
 
@@ -2086,10 +2104,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     DWORD thread_id;
 
     /* initialize everything */
-    GC_init();
+    GC_INIT();
 
     /* start the main thread */
-    thread_h = GC_CreateThread(NULL /* lpsa */, 0 /* dwStackSize (ignored) */,
+    thread_h = GC_CreateThread(NULL /* lpsa */,
+                        WINMAIN_THREAD_STACK_SIZE /* ignored on WinCE */,
 			main_thread_start, &args, 0 /* fdwCreate */,
                         &thread_id);
 
@@ -2103,13 +2122,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         ABORT("GC_CreateThread(main_thread) failed");
     }
 
-    GC_deinit();
-    DeleteCriticalSection(&GC_allocate_ml);
-
+#   ifdef MSWINCE
+        /* FIXME: Is this really obligatory on WinCE?   */
+        GC_deinit();
+        DeleteCriticalSection(&GC_allocate_ml);
+#   endif
     return (int) exit_code;
 }
 
-#endif /* MSWINCE */
+#endif /* GC_WINMAIN_REDIRECT */
 
 /* Called by GC_init() - we hold the allocation lock.   */
 void GC_thr_init(void) {
