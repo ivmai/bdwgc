@@ -1,5 +1,10 @@
 2009-09-25  Ivan Maidanski <ivmai@mail.ru>
 
+	* Makefile: Remove outdated file (Makefile.direct should be used
+	instead).
+
+2009-09-25  Ivan Maidanski <ivmai@mail.ru>
+
 	* win32_threads.c: Reformat the code (make indentation and
 	opening bracket style uniform across the file; wrap long code and
 	comment lines).
