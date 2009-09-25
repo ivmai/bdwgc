@@ -40,9 +40,9 @@ GC_API void GC_CALL GC_register_finalizer_no_order
 /* its part.                                                    */
 GC_bool GC_has_other_debug_info(ptr_t p)
 {
-    register oh * ohdr = (oh *)p;
-    register ptr_t body = (ptr_t)(ohdr + 1);
-    register word sz = GC_size((ptr_t) ohdr);
+    oh * ohdr = (oh *)p;
+    ptr_t body = (ptr_t)(ohdr + 1);
+    word sz = GC_size((ptr_t) ohdr);
 
     if (HBLKPTR((ptr_t)ohdr) != HBLKPTR((ptr_t)body)
         || sz < DEBUG_BYTES + EXTRA_BYTES) {
@@ -251,7 +251,7 @@ GC_bool GC_has_other_debug_info(ptr_t p)
 /* Assumes we don't hold allocation lock.                  */
 ptr_t GC_store_debug_info(ptr_t p, word sz, const char *string, word integer)
 {
-    register word * result = (word *)((oh *)p + 1);
+    word * result = (word *)((oh *)p + 1);
     DCL_LOCK_STATE;
 
     LOCK();
@@ -281,7 +281,7 @@ ptr_t GC_store_debug_info(ptr_t p, word sz, const char *string, word integer)
 STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz, char *string,
                                        word integer)
 {
-    register word * result = (word *)((oh *)p + 1);
+    word * result = (word *)((oh *)p + 1);
 
     GC_ASSERT(GC_size(p) >= sizeof(oh) + sz);
     GC_ASSERT(!(SMALL_OBJ(sz) && CROSSES_HBLK(p, sz)));
@@ -309,8 +309,8 @@ STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz, char *string,
 /* address.                                             */
 STATIC ptr_t GC_check_annotated_obj(oh *ohdr)
 {
-    register ptr_t body = (ptr_t)(ohdr + 1);
-    register word gc_sz = GC_size((ptr_t)ohdr);
+    ptr_t body = (ptr_t)(ohdr + 1);
+    word gc_sz = GC_size((ptr_t)ohdr);
     if (ohdr -> oh_sz + DEBUG_BYTES > gc_sz) {
         return((ptr_t)(&(ohdr -> oh_sz)));
     }
@@ -381,7 +381,7 @@ STATIC void GC_print_type(ptr_t p)
 
 void GC_print_obj(ptr_t p)
 {
-    register oh * ohdr = (oh *)GC_base(p);
+    oh * ohdr = (oh *)GC_base(p);
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
     GC_err_printf("%p (", ((ptr_t)ohdr + sizeof(oh)));
@@ -413,7 +413,7 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
 /* clobbered_addr.                                                      */
 STATIC void GC_print_smashed_obj(ptr_t p, ptr_t clobbered_addr)
 {
-    register oh * ohdr = (oh *)GC_base(p);
+    oh * ohdr = (oh *)GC_base(p);
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
     if (clobbered_addr <= (ptr_t)(&(ohdr -> oh_sz))
@@ -595,8 +595,8 @@ GC_API void GC_CALL GC_debug_change_stubborn(void *p)
 
 GC_API void GC_CALL GC_debug_end_stubborn_change(void *p)
 {
-    register void * q = GC_base(p);
-    register hdr * hhdr;
+    void * q = GC_base(p);
+    hdr * hhdr;
 
     if (q == 0) {
         GC_err_printf("Bad argument: %p to GC_debug_end_stubborn_change\n", p);
@@ -951,7 +951,7 @@ void * GC_make_closure(GC_finalization_proc fn, void * data)
 
 void GC_CALLBACK GC_debug_invoke_finalizer(void * obj, void * data)
 {
-    register struct closure * cl = (struct closure *) data;
+    struct closure * cl = (struct closure *) data;
 
     (*(cl -> cl_fn))((void *)((char *)obj + sizeof(oh)), cl -> cl_data);
 }

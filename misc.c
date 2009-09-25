@@ -1043,8 +1043,8 @@ STATIC int GC_tmp;  /* Should really be local ... */
     && !defined(MACOS)  && !defined(ECOS) && !defined(NOSYS)
 STATIC int GC_write(int fd, const char *buf, size_t len)
 {
-     register int bytes_written = 0;
-     register int result;
+     int bytes_written = 0;
+     int result;
      
      while (bytes_written < len) {
 #	ifdef GC_SOLARIS_THREADS

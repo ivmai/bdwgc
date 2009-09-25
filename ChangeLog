@@ -1,3 +1,24 @@
+2009-09-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* checksums.c (GC_checksum, GC_update_check_page): Remove
+	"register" keyword in local variable declarations (for the code
+	used only for debugging or which is not time-critical).
+	* dbg_mlc.c (GC_has_other_debug_info, GC_store_debug_info,
+	GC_store_debug_info_inner, GC_check_annotated_obj, GC_print_obj,
+	GC_print_smashed_obj, GC_debug_end_stubborn_change,
+	GC_debug_invoke_finalizer): Ditto.
+	* dyn_load.c (GC_register_dynamic_libraries): Ditto.
+	* mallocx.c (GC_realloc): Ditto.
+	* mark_rts.c (GC_print_static_roots, GC_is_static_root,
+	GC_clear_roots): Ditto.
+	* misc.c (GC_write): Ditto.
+	* os_dep.c (GC_print_callers): Ditto.
+	* dyn_load.c (GC_register_dynamic_libraries): Rename "i" local
+	variable to "j" for the nested loop (just not to hide the similar
+	variable in the outer one).
+	* mark_rts.c (GC_print_static_roots): Output an error message
+	using GC_err_printf() (instead of GC_printf()).
+
 2009-09-25  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
 
 	* configure.ac: Move include flag from ${INCLUDE} ...

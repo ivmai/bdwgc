@@ -4152,7 +4152,7 @@ void GC_save_callers (struct callinfo info[NFRAMES])
 /* Print info to stderr.  We do NOT hold the allocation lock */
 void GC_print_callers (struct callinfo info[NFRAMES])
 {
-    register int i;
+    int i;
     static int reentry_count = 0;
     GC_bool stop = FALSE;
 

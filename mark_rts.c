@@ -42,7 +42,7 @@ static int n_root_sets = 0;
 /* For debugging:       */
 void GC_print_static_roots(void)
 {
-    register int i;
+    int i;
     size_t total = 0;
 
     for (i = 0; i < n_root_sets; i++) {
@@ -54,8 +54,8 @@ void GC_print_static_roots(void)
     }
     GC_printf("Total size: %ld\n", (unsigned long) total);
     if (GC_root_size != total) {
-        GC_printf("GC_root_size incorrect: %ld!!\n",
-                  (unsigned long) GC_root_size);
+        GC_err_printf("GC_root_size incorrect: %ld!!\n",
+                      (long) GC_root_size);
     }
 }
 # endif /* NO_DEBUGGING */
@@ -66,8 +66,7 @@ void GC_print_static_roots(void)
 GC_bool GC_is_static_root(ptr_t p)
 {
     static int last_root_set = MAX_ROOT_SETS;
-    register int i;
-
+    int i;
 
     if (last_root_set < n_root_sets
         && p >= GC_static_roots[last_root_set].r_start
@@ -254,11 +253,10 @@ GC_API void GC_CALL GC_clear_roots (void)
     n_root_sets = 0;
     GC_root_size = 0;
 #   if !defined(MSWIN32) && !defined(MSWINCE)
-    {
-        register int i;
-
+      {
+        int i;
         for (i = 0; i < RT_SIZE; i++) GC_root_index[i] = 0;
-    }
+      }
 #   endif
     UNLOCK();
 }

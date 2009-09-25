@@ -188,7 +188,7 @@ void GC_register_dynamic_libraries(void)
         ElfW(Phdr) * p;
         unsigned long offset;
         char * start;
-        register int i;
+        int i;
 
         e = (ElfW(Ehdr) *) lm->l_addr;
         p = ((ElfW(Phdr) *)(((char *)(e)) + e->e_phoff));
@@ -626,7 +626,7 @@ void GC_register_dynamic_libraries(void)
         ElfW(Phdr) * p;
         unsigned long offset;
         char * start;
-        register int i;
+        int i;
 
         e = (ElfW(Ehdr) *) lm->l_addr;
         p = ((ElfW(Phdr) *)(((char *)(e)) + e->e_phoff));
@@ -752,10 +752,10 @@ void GC_register_dynamic_libraries(void)
                                         /* Known irrelevant map entries */
             static int n_irr = 0;
             struct stat buf;
-            register int i;
+            register int j;
 
-            for (i = 0; i < n_irr; i++) {
-                if (map_irr[i] == start) goto irrelevant;
+            for (j = 0; j < n_irr; j++) {
+                if (map_irr[j] == start) goto irrelevant;
             }
             arg = (caddr_t)start;
             obj = ioctl(fd, PIOCOPENM, &arg);

@@ -81,7 +81,7 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
 
     if (sz > MAXOBJBYTES) {
         /* Round it up to the next whole heap block */
-          register word descr;
+          word descr;
 
           sz = (sz+HBLKSIZE-1) & (~HBLKMASK);
           hhdr -> hb_sz = sz;

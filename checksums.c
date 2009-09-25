@@ -64,9 +64,9 @@ STATIC GC_bool GC_was_faulted(struct hblk *h)
 
 STATIC word GC_checksum(struct hblk *h)
 {
-    register word *p = (word *)h;
-    register word *lim = (word *)(h+1);
-    register word result = 0;
+    word *p = (word *)h;
+    word *lim = (word *)(h+1);
+    word result = 0;
 
     while (p < lim) {
         result += *p++;
@@ -100,7 +100,7 @@ int GC_n_dirty;
 STATIC void GC_update_check_page(struct hblk *h, int index)
 {
     page_entry *pe = GC_sums + index;
-    register hdr * hhdr = HDR(h);
+    hdr * hhdr = HDR(h);
     struct hblk *b;
 
     if (pe -> block != 0 && pe -> block != h + OFFSET) ABORT("goofed");
