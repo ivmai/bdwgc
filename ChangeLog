@@ -1,3 +1,11 @@
+2009-09-25  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+
+	* configure.ac: Move include flag from ${INCLUDE} ...
+	* Makefile.am: ... to AM_CPPFLAGS and also add the build directory.
+	* configure.ac: Call AM_CONFIG_HEADER([include/private/config.h]).
+	* configure.ac: Add documentation to all AC_DEFINE either directly
+	or using AH_TEMPLATE.
+
 2009-09-24  Ivan Maidanski <ivmai@mail.ru>
 
 	* win32_threads.c (GC_waitForSingleObjectInfinite): New static

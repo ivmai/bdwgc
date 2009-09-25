@@ -32,6 +32,8 @@
 # endif
 SUBDIRS =
 
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+
 # Initialize variables so that we can declare files locally.
 EXTRA_DIST = 
 lib_LTLIBRARIES =
