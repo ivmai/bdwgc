@@ -1,3 +1,8 @@
+2009-09-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (GC_use_DllMain): Refine (and reformat) the
+	comment.
+
 2009-09-25  Ivan Maidanski <ivmai@mail.ru> (really mostly Petter Urkedal)
 
 	* configure.ac: Add documentation to AC_DEFINE for GC_THREADS and

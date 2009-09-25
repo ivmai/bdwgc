@@ -1278,12 +1278,9 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 # define WinMain GC_WinMain
 #endif
 
-  /*
-   * Use implicit thread registration via DllMain.
-   * Must be called before GC_INIT and other GC routines.
-   * Should be avoided if GC_beginthreadex and friends can be called
-   * instead.
-   */
+/* Use implicit thread registration via DllMain.  Deprecated.  Must be  */
+/* called before GC_INIT() and other GC routines.  Should be avoided if */
+/* GC_beginthreadex() or GC_CreateThread() could be called instead.     */
 GC_API void GC_CALL GC_use_DllMain(void);
 
 # ifndef GC_NO_THREAD_REDIRECTS
