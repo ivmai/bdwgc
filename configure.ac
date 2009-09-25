@@ -22,7 +22,7 @@ AC_INIT(gc,7.2alpha3,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.48 $)
+AC_REVISION($Revision: 1.49 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_CONFIG_HEADER([include/private/config.h])
@@ -69,7 +69,7 @@ AC_ARG_ENABLE(parallel-mark,
 AC_ARG_ENABLE(cplusplus,
     [AC_HELP_STRING([--enable-cplusplus], [install C++ support])])
 
-dnl Features which may be selected in the folliwng thread-detection switch.
+dnl Features which may be selected in the following thread-detection switch.
 AH_TEMPLATE([PARALLEL_MARK], [Define to enable parallel marking.])
 AH_TEMPLATE([THREAD_LOCAL_ALLOC],
 	    [Define to enable thread-local allocation optimisation.])
@@ -77,6 +77,7 @@ AH_TEMPLATE([USE_COMPILER_TLS],
 	    [Define to use of compiler-support for thread-local variables.])
 
 dnl Thread selection macros.
+AH_TEMPLATE([GC_THREADS],	    [Define to support threads.])
 AH_TEMPLATE([GC_AIX_THREADS],       [Define to support IBM AIX threads.])
 AH_TEMPLATE([GC_DARWIN_THREADS],    [Define to support Darwin pthreads.])
 AH_TEMPLATE([GC_FREEBSD_THREADS],   [Define to support FreeBSD pthreads.])
@@ -222,8 +223,8 @@ case "$THREADS" in
       AC_DEFINE(THREAD_LOCAL_ALLOC)
     fi
     win32_threads=true
-    dnl Wine getenv may not return NULL for missing entry
-    AC_DEFINE(EMPTY_GETENV_RESULTS)
+    AC_DEFINE([EMPTY_GETENV_RESULTS], [1],
+	      [Wine getenv may not return NULL for missing entry])
     ;;
  dgux386)
     THREADS=dgux386

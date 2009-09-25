@@ -1,3 +1,10 @@
+2009-09-25  Ivan Maidanski <ivmai@mail.ru> (really mostly Petter Urkedal)
+
+	* configure.ac: Add documentation to AC_DEFINE for GC_THREADS and
+	EMPTY_GETENV_RESULTS.
+	* configure.ac: Fix a typo.
+	* Makefile.am: Ditto.
+
 2009-09-25  Ivan Maidanski <ivmai@mail.ru>
 
 	* checksums.c (GC_checksum, GC_update_check_page): Remove
