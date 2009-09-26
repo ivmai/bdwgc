@@ -1536,11 +1536,6 @@ void GC_exclude_static_roots_inner(void *start, void *finish);
 GC_bool GC_is_static_root(ptr_t p);
                 /* Is the address p in one of the registered static     */
                 /* root sections?                                       */
-# if defined(MSWIN32) || defined(_WIN32_WCE_EMULATION)
-GC_bool GC_is_tmp_root(ptr_t p);
-                /* Is the address p in one of the temporary static      */
-                /* root sections?                                       */
-# endif
 void GC_register_dynamic_libraries(void);
                 /* Add dynamic library data sections to the root set. */
 void GC_cond_register_dynamic_libraries(void);

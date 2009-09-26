@@ -1,5 +1,11 @@
 2009-09-26  Ivan Maidanski <ivmai@mail.ru>
 
+	* mark_rts.c (GC_is_tmp_root): Don't define unless NO_DEBUGGING;
+	update the comment.
+	* include/private/gc_priv.h (GC_is_tmp_root): Remove declaration.
+
+2009-09-26  Ivan Maidanski <ivmai@mail.ru>
+
 	* alloc.c: Expand all tabs to spaces; remove trailing spaces at
 	EOLn; remove multiple trailing blank lines.
 	* misc.c: Ditto.
