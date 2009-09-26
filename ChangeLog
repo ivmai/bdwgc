@@ -1,3 +1,19 @@
+2009-09-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.in: Regenerate (by autoreconf -vif).
+	* aclocal.m4: Ditto.
+	* compile: Ditto.
+	* config.guess: Ditto.
+	* config.sub: Ditto.
+	* configure: Ditto.
+	* depcomp: Ditto.
+	* install-sh: Ditto.
+	* ltmain.sh: Ditto.
+	* missing: Ditto.
+	* mkinstalldirs: Ditto.
+	* include/private/config.h.in: New file (generated).
+	* Makefile.direct: Remove references to acinclude.m4, libtool.m4.
+
 2009-09-26  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
 
 	* autogen.sh: Update.

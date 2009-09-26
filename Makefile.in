@@ -97,7 +97,7 @@ host_triplet = @host@
 target_triplet = @target@
 check_PROGRAMS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
 	smashtest$(EXEEXT) hugetest$(EXEEXT) $(am__EXEEXT_1) \
-	$(am__EXEEXT_2)
+	$(am__EXEEXT_2) $(am__EXEEXT_3)
 
 # C Library: Architecture Dependent
 # ---------------------------------
@@ -111,31 +111,29 @@ check_PROGRAMS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
 @CPLUSPLUS_TRUE@am__append_5 = include/gc_cpp.h include/gc_allocator.h
 DIST_COMMON = $(am__configure_deps) $(am__pkginclude_HEADERS_DIST) \
 	$(dist_noinst_HEADERS) $(dist_noinst_SCRIPTS) \
-	$(dist_pkgconfig_DATA) $(dist_pkgdata_DATA) $(include_HEADERS) \
-	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/bdw-gc.pc.in $(srcdir)/cord/cord.am \
-	$(srcdir)/doc/doc.am $(srcdir)/include/include.am \
-	$(srcdir)/tests/tests.am $(top_srcdir)/configure ChangeLog \
-	compile config.guess config.sub depcomp install-sh ltmain.sh \
-	missing mkinstalldirs
-
-#TESTS += tracetest$(EXEEXT)
-#check_PROGRAMS += tracetest
-#tracetest_SOURCES = tests/trace_test.c
-#tracetest_LDADD = $(test_ldadd)
-@THREADS_TRUE@am__append_6 = threadleaktest$(EXEEXT)
-@THREADS_TRUE@am__append_7 = threadleaktest
-@CPLUSPLUS_TRUE@am__append_8 = test_cpp$(EXEEXT)
-@CPLUSPLUS_TRUE@am__append_9 = test_cpp
+	$(dist_pkgdata_DATA) $(include_HEADERS) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in $(srcdir)/bdw-gc.pc.in \
+	$(srcdir)/cord/cord.am $(srcdir)/doc/doc.am \
+	$(srcdir)/include/include.am $(srcdir)/tests/tests.am \
+	$(top_srcdir)/configure \
+	$(top_srcdir)/include/private/config.h.in ChangeLog compile \
+	config.guess config.sub depcomp install-sh ltmain.sh missing \
+	mkinstalldirs
+@KEEP_BACK_PTRS_TRUE@am__append_6 = tracetest$(EXEEXT)
+@KEEP_BACK_PTRS_TRUE@am__append_7 = tracetest
+@THREADS_TRUE@am__append_8 = threadleaktest$(EXEEXT)
+@THREADS_TRUE@am__append_9 = threadleaktest
+@CPLUSPLUS_TRUE@am__append_10 = test_cpp$(EXEEXT)
+@CPLUSPLUS_TRUE@am__append_11 = test_cpp
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/libtool.m4 $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+CONFIG_HEADER = $(top_builddir)/include/private/config.h
 CONFIG_CLEAN_FILES = bdw-gc.pc
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -143,8 +141,8 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkgconfigdir)" \
-	"$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(includedir)" \
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkgdatadir)" \
+	"$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(includedir)" \
 	"$(DESTDIR)$(pkgincludedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
@@ -181,8 +179,9 @@ am__libgccpp_la_SOURCES_DIST = gc_cpp.cc
 @CPLUSPLUS_TRUE@am_libgccpp_la_OBJECTS = gc_cpp.lo
 libgccpp_la_OBJECTS = $(am_libgccpp_la_OBJECTS)
 @CPLUSPLUS_TRUE@am_libgccpp_la_rpath = -rpath $(libdir)
-@THREADS_TRUE@am__EXEEXT_1 = threadleaktest$(EXEEXT)
-@CPLUSPLUS_TRUE@am__EXEEXT_2 = test_cpp$(EXEEXT)
+@KEEP_BACK_PTRS_TRUE@am__EXEEXT_1 = tracetest$(EXEEXT)
+@THREADS_TRUE@am__EXEEXT_2 = threadleaktest$(EXEEXT)
+@CPLUSPLUS_TRUE@am__EXEEXT_3 = test_cpp$(EXEEXT)
 am_gctest_OBJECTS = tests/test.$(OBJEXT)
 gctest_OBJECTS = $(am_gctest_OBJECTS)
 am__DEPENDENCIES_2 = $(top_builddir)/libgc.la $(am__DEPENDENCIES_1)
@@ -211,6 +210,11 @@ am__threadleaktest_SOURCES_DIST = tests/thread_leak_test.c
 @THREADS_TRUE@	tests/thread_leak_test.$(OBJEXT)
 threadleaktest_OBJECTS = $(am_threadleaktest_OBJECTS)
 @THREADS_TRUE@threadleaktest_DEPENDENCIES = $(am__DEPENDENCIES_2)
+am__tracetest_SOURCES_DIST = tests/trace_test.c
+@KEEP_BACK_PTRS_TRUE@am_tracetest_OBJECTS =  \
+@KEEP_BACK_PTRS_TRUE@	tests/trace_test.$(OBJEXT)
+tracetest_OBJECTS = $(am_tracetest_OBJECTS)
+@KEEP_BACK_PTRS_TRUE@tracetest_DEPENDENCIES = $(am__DEPENDENCIES_2)
 SCRIPTS = $(dist_noinst_SCRIPTS)
 DEFAULT_INCLUDES = 
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -238,22 +242,24 @@ SOURCES = $(libcord_la_SOURCES) $(libgc_la_SOURCES) \
 	$(EXTRA_libgc_la_SOURCES) $(nodist_libgc_la_SOURCES) \
 	$(libgccpp_la_SOURCES) $(gctest_SOURCES) $(hugetest_SOURCES) \
 	$(leaktest_SOURCES) $(middletest_SOURCES) $(smashtest_SOURCES) \
-	$(test_cpp_SOURCES) $(threadleaktest_SOURCES)
+	$(test_cpp_SOURCES) $(threadleaktest_SOURCES) \
+	$(tracetest_SOURCES)
 DIST_SOURCES = $(libcord_la_SOURCES) $(am__libgc_la_SOURCES_DIST) \
 	$(EXTRA_libgc_la_SOURCES) $(am__libgccpp_la_SOURCES_DIST) \
 	$(gctest_SOURCES) $(hugetest_SOURCES) $(leaktest_SOURCES) \
 	$(middletest_SOURCES) $(smashtest_SOURCES) \
 	$(am__test_cpp_SOURCES_DIST) \
-	$(am__threadleaktest_SOURCES_DIST)
+	$(am__threadleaktest_SOURCES_DIST) \
+	$(am__tracetest_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
 	install-recursive installcheck-recursive installdirs-recursive \
 	pdf-recursive ps-recursive uninstall-info-recursive \
 	uninstall-recursive
-dist_pkgconfigDATA_INSTALL = $(INSTALL_DATA)
 dist_pkgdataDATA_INSTALL = $(INSTALL_DATA)
-DATA = $(dist_pkgconfig_DATA) $(dist_pkgdata_DATA)
+pkgconfigDATA_INSTALL = $(INSTALL_DATA)
+DATA = $(dist_pkgdata_DATA) $(pkgconfig_DATA)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 am__pkginclude_HEADERS_DIST = include/gc_cpp.h include/gc_allocator.h \
 	include/gc.h include/gc_typed.h include/gc_inline.h \
@@ -324,12 +330,13 @@ F77 = @F77@
 FFLAGS = @FFLAGS@
 GC_CFLAGS = @GC_CFLAGS@
 GC_VERSION = @GC_VERSION@
-GREP = @GREP@
 INCLUDES = @INCLUDES@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+KEEP_BACK_PTRS_FALSE = @KEEP_BACK_PTRS_FALSE@
+KEEP_BACK_PTRS_TRUE = @KEEP_BACK_PTRS_TRUE@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -353,6 +360,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PTHREADS_FALSE = @PTHREADS_FALSE@
 PTHREADS_TRUE = @PTHREADS_TRUE@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -367,9 +375,12 @@ USE_LIBDIR_TRUE = @USE_LIBDIR_TRUE@
 VERSION = @VERSION@
 WIN32_THREADS_FALSE = @WIN32_THREADS_FALSE@
 WIN32_THREADS_TRUE = @WIN32_THREADS_TRUE@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
+ac_ct_RANLIB = @ac_ct_RANLIB@
+ac_ct_STRIP = @ac_ct_STRIP@
 addlibs = @addlibs@
 addobjs = @addobjs@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
@@ -389,9 +400,6 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 datadir = @datadir@
-datarootdir = @datarootdir@
-docdir = @docdir@
-dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 extra_ldflags_libgc = @extra_ldflags_libgc@
 host = @host@
@@ -399,21 +407,17 @@ host_alias = @host_alias@
 host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
-htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
-localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
-pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
-psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
@@ -429,7 +433,7 @@ target_vendor = @target_vendor@
 # use the internal version.  This is done since libatomic_ops doesn't
 # use libtool, since it has no real use for it.  But that seems to make
 # it hard to use either the resulting object files or libraries.
-# Thus there seems too be no real reason to recusively build in the
+# Thus there seems too be no real reason to recursively build in the
 # libatomic_ops directory.
 # if USE_INTERNAL_LIBATOMICS_OPS
 # SUBDIRS = @maybe_libatomic_ops@
@@ -437,6 +441,7 @@ target_vendor = @target_vendor@
 # SUBDIRS =
 # endif
 SUBDIRS = 
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 
 # Initialize variables so that we can declare files locally.
 
@@ -459,9 +464,6 @@ SUBDIRS =
 
 # The libatomic_ops library.  This is not ideal, since we pick up junk from
 # there.  The hard-coded version number should also go.
-
-# :FIXME: why do we distribute this one???
-#
 EXTRA_DIST = gc_cpp.cpp README.QUICK BCC_MAKEFILE NT_MAKEFILE \
 	NT_THREADS_MAKEFILE OS2_MAKEFILE PCR-Makefile digimars.mak \
 	EMX_MAKEFILE Makefile.direct Makefile.dj Makefile.DLLs \
@@ -469,14 +471,15 @@ EXTRA_DIST = gc_cpp.cpp README.QUICK BCC_MAKEFILE NT_MAKEFILE \
 	build_atomic_ops.sh.cygwin NT_STATIC_THREADS_MAKEFILE \
 	NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE \
 	extra/add_gc_prefix.c extra/gcname.c extra/if_mach.c \
-	extra/if_not_there.c hpux_test_and_clear.s gc.mak extra/MacOS.c \
-	MacProjects.sit.hqx mach_dep.c extra/setjmp_t.c extra/threadlibs.c \
-	extra/AmigaOS.c Mac_files/datastart.c Mac_files/dataend.c \
-	Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-	include/private/msvc_dbg.h extra/msvc_dbg.c libatomic_ops-1.2 \
-	libtool.m4 cord/cordbscs.c cord/cordtest.c cord/de.c \
-	cord/cordprnt.c cord/cordxtra.c cord/de_cmds.h cord/de_win.h \
-	cord/de_win.c cord/de_win.RC cord/de_win.ICO
+	extra/if_not_there.c hpux_test_and_clear.s gc.mak \
+	extra/MacOS.c MacProjects.sit.hqx mach_dep.c extra/setjmp_t.c \
+	extra/threadlibs.c extra/AmigaOS.c Mac_files/datastart.c \
+	Mac_files/dataend.c Mac_files/MacOS_config.h \
+	Mac_files/MacOS_Test_config.h include/private/msvc_dbg.h \
+	extra/msvc_dbg.c libatomic_ops-1.2 cord/cordbscs.c \
+	cord/cordtest.c cord/de.c cord/cordprnt.c cord/cordxtra.c \
+	cord/de_cmds.h cord/de_win.h cord/de_win.c cord/de_win.RC \
+	cord/de_win.ICO
 
 # C Library
 # ---------
@@ -509,9 +512,9 @@ dist_noinst_HEADERS = include/private/gc_hdrs.h \
 	include/ec.h include/javaxfc.h
 TESTS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
 	smashtest$(EXEEXT) hugetest$(EXEEXT) $(am__append_6) \
-	$(am__append_8)
+	$(am__append_8) $(am__append_10)
 pkgconfigdir = $(libdir)/pkgconfig
-dist_pkgconfig_DATA = bdw-gc.pc
+pkgconfig_DATA = bdw-gc.pc
 libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
 	dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c malloc.c \
 	mallocx.c mark.c mark_rts.c misc.c new_hblk.c obj_map.c \
@@ -577,6 +580,8 @@ smashtest_SOURCES = tests/smash_test.c
 smashtest_LDADD = $(test_ldadd)
 hugetest_SOURCES = tests/huge_test.c
 hugetest_LDADD = $(test_ldadd)
+@KEEP_BACK_PTRS_TRUE@tracetest_SOURCES = tests/trace_test.c
+@KEEP_BACK_PTRS_TRUE@tracetest_LDADD = $(test_ldadd)
 @THREADS_TRUE@threadleaktest_SOURCES = tests/thread_leak_test.c
 @THREADS_TRUE@threadleaktest_LDADD = $(test_ldadd)
 @CPLUSPLUS_TRUE@test_cpp_SOURCES = tests/test_cpp.cc
@@ -659,6 +664,23 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+
+include/private/config.h: include/private/stamp-h1
+	@if test ! -f $@; then \
+	  rm -f include/private/stamp-h1; \
+	  $(MAKE) include/private/stamp-h1; \
+	else :; fi
+
+include/private/stamp-h1: $(top_srcdir)/include/private/config.h.in $(top_builddir)/config.status
+	@rm -f include/private/stamp-h1
+	cd $(top_builddir) && $(SHELL) ./config.status include/private/config.h
+$(top_srcdir)/include/private/config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps) 
+	cd $(top_srcdir) && $(AUTOHEADER)
+	rm -f include/private/stamp-h1
+	touch $@
+
+distclean-hdr:
+	-rm -f include/private/config.h include/private/stamp-h1
 bdw-gc.pc: $(top_builddir)/config.status $(srcdir)/bdw-gc.pc.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 install-libLTLIBRARIES: $(lib_LTLIBRARIES)
@@ -760,6 +782,11 @@ tests/thread_leak_test.$(OBJEXT): tests/$(am__dirstamp) \
 threadleaktest$(EXEEXT): $(threadleaktest_OBJECTS) $(threadleaktest_DEPENDENCIES) 
 	@rm -f threadleaktest$(EXEEXT)
 	$(LINK) $(threadleaktest_LDFLAGS) $(threadleaktest_OBJECTS) $(threadleaktest_LDADD) $(LIBS)
+tests/trace_test.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tracetest$(EXEEXT): $(tracetest_OBJECTS) $(tracetest_DEPENDENCIES) 
+	@rm -f tracetest$(EXEEXT)
+	$(LINK) $(tracetest_LDFLAGS) $(tracetest_OBJECTS) $(tracetest_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -782,6 +809,7 @@ mostlyclean-compile:
 	-rm -f tests/test.$(OBJEXT)
 	-rm -f tests/test_cpp.$(OBJEXT)
 	-rm -f tests/thread_leak_test.$(OBJEXT)
+	-rm -f tests/trace_test.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -830,6 +858,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_cpp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/thread_leak_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/trace_test.Po@am__quote@
 
 .S.o:
 	$(CCASCOMPILE) -c $<
@@ -901,23 +930,6 @@ clean-libtool:
 distclean-libtool:
 	-rm -f libtool
 uninstall-info-am:
-install-dist_pkgconfigDATA: $(dist_pkgconfig_DATA)
-	@$(NORMAL_INSTALL)
-	test -z "$(pkgconfigdir)" || $(mkdir_p) "$(DESTDIR)$(pkgconfigdir)"
-	@list='$(dist_pkgconfig_DATA)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f=$(am__strip_dir) \
-	  echo " $(dist_pkgconfigDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(pkgconfigdir)/$$f'"; \
-	  $(dist_pkgconfigDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(pkgconfigdir)/$$f"; \
-	done
-
-uninstall-dist_pkgconfigDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(dist_pkgconfig_DATA)'; for p in $$list; do \
-	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(pkgconfigdir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(pkgconfigdir)/$$f"; \
-	done
 install-dist_pkgdataDATA: $(dist_pkgdata_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(pkgdatadir)" || $(mkdir_p) "$(DESTDIR)$(pkgdatadir)"
@@ -934,6 +946,23 @@ uninstall-dist_pkgdataDATA:
 	  f=$(am__strip_dir) \
 	  echo " rm -f '$(DESTDIR)$(pkgdatadir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(pkgdatadir)/$$f"; \
+	done
+install-pkgconfigDATA: $(pkgconfig_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(pkgconfigdir)" || $(mkdir_p) "$(DESTDIR)$(pkgconfigdir)"
+	@list='$(pkgconfig_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(pkgconfigDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(pkgconfigdir)/$$f'"; \
+	  $(pkgconfigDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(pkgconfigdir)/$$f"; \
+	done
+
+uninstall-pkgconfigDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pkgconfig_DATA)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(pkgconfigdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(pkgconfigdir)/$$f"; \
 	done
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
@@ -1178,7 +1207,7 @@ check-TESTS: $(TESTS)
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/Mac_files $(distdir)/cord $(distdir)/doc $(distdir)/include $(distdir)/include/extra $(distdir)/include/private $(distdir)/tests
+	$(mkdir_p) $(distdir)/. $(distdir)/Mac_files $(distdir)/cord $(distdir)/doc $(distdir)/extra $(distdir)/include $(distdir)/include/extra $(distdir)/include/private $(distdir)/tests
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -1324,7 +1353,7 @@ check: check-recursive
 all-am: Makefile $(LTLIBRARIES) $(SCRIPTS) $(DATA) $(HEADERS)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(pkgincludedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(pkgincludedir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-recursive
@@ -1367,7 +1396,7 @@ distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR) cord/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-libtool distclean-tags
+	distclean-hdr distclean-libtool distclean-tags
 
 dvi: dvi-recursive
 
@@ -1379,8 +1408,8 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-dist_pkgconfigDATA install-dist_pkgdataDATA \
-	install-includeHEADERS install-pkgincludeHEADERS
+install-data-am: install-dist_pkgdataDATA install-includeHEADERS \
+	install-pkgconfigDATA install-pkgincludeHEADERS
 
 install-exec-am: install-libLTLIBRARIES
 
@@ -1410,9 +1439,9 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-dist_pkgconfigDATA uninstall-dist_pkgdataDATA \
-	uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLTLIBRARIES uninstall-pkgincludeHEADERS
+uninstall-am: uninstall-dist_pkgdataDATA uninstall-includeHEADERS \
+	uninstall-info-am uninstall-libLTLIBRARIES \
+	uninstall-pkgconfigDATA uninstall-pkgincludeHEADERS
 
 uninstall-info: uninstall-info-recursive
 
@@ -1421,21 +1450,22 @@ uninstall-info: uninstall-info-recursive
 	clean-libLTLIBRARIES clean-libtool clean-recursive ctags \
 	ctags-recursive dist dist-all dist-bzip2 dist-gzip dist-shar \
 	dist-tarZ dist-zip distcheck distclean distclean-compile \
-	distclean-generic distclean-libtool distclean-recursive \
-	distclean-tags distcleancheck distdir distuninstallcheck dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dist_pkgconfigDATA \
+	distclean-generic distclean-hdr distclean-libtool \
+	distclean-recursive distclean-tags distcleancheck distdir \
+	distuninstallcheck dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am \
 	install-dist_pkgdataDATA install-exec install-exec-am \
 	install-includeHEADERS install-info install-info-am \
-	install-libLTLIBRARIES install-man install-pkgincludeHEADERS \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool mostlyclean-recursive \
-	pdf pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
-	uninstall-dist_pkgconfigDATA uninstall-dist_pkgdataDATA \
-	uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLTLIBRARIES uninstall-pkgincludeHEADERS
+	install-libLTLIBRARIES install-man install-pkgconfigDATA \
+	install-pkgincludeHEADERS install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic maintainer-clean-recursive \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool mostlyclean-recursive pdf pdf-am ps ps-am \
+	tags tags-recursive uninstall uninstall-am \
+	uninstall-dist_pkgdataDATA uninstall-includeHEADERS \
+	uninstall-info-am uninstall-libLTLIBRARIES \
+	uninstall-pkgconfigDATA uninstall-pkgincludeHEADERS
 
 .s.lo:
 	$(LTCOMPILE) $(ASM_CPP_OPTIONS) -c $<

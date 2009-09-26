@@ -442,8 +442,8 @@ TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 	tests/leak_test.c tests/thread_leak_test.c tests/middle.c \
 	tests/smash_test.c tests/huge_test.c
 
-GNU_BUILD_FILES= configure.ac Makefile.am configure acinclude.m4 \
-		 libtool.m4 install-sh configure.host Makefile.in \
+GNU_BUILD_FILES= configure.ac Makefile.am configure \
+		 install-sh configure.host Makefile.in \
 		 aclocal.m4 config.sub config.guess \
 		 include/include.am doc/doc.am \
 		 ltmain.sh mkinstalldirs depcomp missing \
