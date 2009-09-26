@@ -1,12 +1,16 @@
 2009-09-26  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
 
+	* autogen.sh: Update.
+
+2009-09-26  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+
 	* Makefile.am: Don't add libtool.m4 to EXTRA_DIST.
-	* acinclude.m4: Place GC_SET_VERSION in [].
+	* acinclude.m4: Fix underquoting of GC_SET_VERSION.
 	* README.QUICK: Update information for Makefile.
-	* Makefile.am: Replace dist_pkgconfig_DATA with pkgconfig_DATA for
-	bdw-gc.pc.
-	* configure.ac: Enable tracetest.
-	* tests/tests.am: Ditto.
+	* Makefile.am: Do not distribute the substituted bdw-gc.pc.
+	* configure.ac: Add AM conditional analog to KEEP_BACK_PTRS.
+	* tests/tests.am: Use it here to conditionally enable tracetest
+	when possible.
 
 2009-09-26  Ivan Maidanski <ivmai@mail.ru>
 
