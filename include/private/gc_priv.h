@@ -1755,6 +1755,15 @@ ptr_t GC_allocobj(size_t sz, int kind);
                                 /* free list nonempty, and return its   */
                                 /* head.  Sz is in granules.            */
 
+void * GC_clear_stack(void *);  /* in misc.c, behaves like identity.    */
+
+/* We make the GC_clear_stack() call a tail one, hoping to get more of  */
+/* the stack.                                                           */
+#define GENERAL_MALLOC(lb,k) \
+    GC_clear_stack(GC_generic_malloc(lb, k))
+#define GENERAL_MALLOC_IOP(lb,k) \
+    GC_clear_stack(GC_generic_malloc_ignore_off_page(lb, k))
+
 /* Allocation routines that bypass the thread local cache.      */
 /* Used internally.                                             */
 #ifdef THREAD_LOCAL_ALLOC

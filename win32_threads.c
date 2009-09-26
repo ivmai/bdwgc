@@ -509,7 +509,7 @@ GC_INLINE LONG GC_get_max_thread_index(void)
 /* This version assumes that either GC_win32_dll_threads is set, or     */
 /* we hold the allocator lock.                                          */
 /* Also used (for assertion checking only) from thread_local_alloc.c.   */
-GC_thread GC_lookup_thread_inner(DWORD thread_id)
+STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
 {
 # ifndef GC_NO_DLLMAIN
     if (GC_win32_dll_threads) {
@@ -569,20 +569,35 @@ unsigned *GC_check_finalizer_nested(void)
   return &me->finalizer_nested;
 }
 
+#if defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)
+  /* This is called from thread-local GC_malloc(). */
+  GC_bool GC_is_thread_tsd_valid(void *tsd)
+  {
+    char *me;
+    LOCK();
+    me = (char *)GC_lookup_thread_inner(GetCurrentThreadId());
+    UNLOCK();
+    /* FIXME: We can check tsd more correctly (since now we have access */
+    /* to the right declarations).  This old algorithm (moved from      */
+    /* thread_local_alloc.c) checks only that it's close.               */
+    return((char *)tsd > me && (char *)tsd < me + 1000);
+  }
+#endif
+
 /* Make sure thread descriptor t is not protected by the VDB            */
 /* implementation.                                                      */
 /* Used to prevent write faults when the world is (partially) stopped,  */
 /* since it may have been stopped with a system lock held, and that     */
 /* lock may be required for fault handling.                             */
 #if defined(MPROTECT_VDB)
-# define UNPROTECT(t) \
+# define UNPROTECT_THREAD(t) \
     if (GC_dirty_maintained && !GC_win32_dll_threads && \
         t != &first_thread) { \
       GC_ASSERT(SMALL_OBJ(GC_size(t))); \
       GC_remove_protection(HBLKPTR(t), 1, FALSE); \
     }
 #else
-# define UNPROTECT(t)
+# define UNPROTECT_THREAD(t)
 #endif
 
 /* If a thread has been joined, but we have not yet             */
@@ -923,7 +938,7 @@ STATIC void GC_suspend(GC_thread t)
     /* appears there's a race here.                                     */
     DWORD exitCode;
 # endif
-  UNPROTECT(t);
+  UNPROTECT_THREAD(t);
 # ifndef MSWINCE
     if (GetExitCodeThread(t -> handle, &exitCode) &&
         exitCode != STILL_ACTIVE) {
@@ -941,7 +956,7 @@ STATIC void GC_suspend(GC_thread t)
 # if defined(MPROTECT_VDB)
     /* Acquire the spin lock we use to update dirty bits.       */
     /* Threads shouldn't get stopped holding it.  But we may    */
-    /* acquire and release it in the UNPROTECT call.            */
+    /* acquire and release it in the UNPROTECT_THREAD call.     */
     while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {
       /* empty */
     }
@@ -1054,7 +1069,7 @@ void GC_start_world(void)
             && t -> id != thread_id) {
           if (ResumeThread(THREAD_HANDLE(t)) == (DWORD)-1)
             ABORT("ResumeThread failed");
-          UNPROTECT(t);
+          UNPROTECT_THREAD(t);
           t -> suspended = FALSE;
         }
       }
@@ -1183,14 +1198,14 @@ STATIC void GC_push_stack_for(GC_thread thread)
     if (thread -> last_stack_min == ADDR_LIMIT) {
       stack_min = GC_get_stack_min(activation_frame != NULL ?
                         (ptr_t)activation_frame : thread -> stack_base);
-      UNPROTECT(thread);
+      UNPROTECT_THREAD(thread);
       thread -> last_stack_min = stack_min;
     } else {
       /* First, adjust the latest known minimum stack address if we     */
       /* are inside GC_call_with_gc_active().                           */
       if (activation_frame != NULL &&
           thread -> last_stack_min > (ptr_t)activation_frame) {
-        UNPROTECT(thread);
+        UNPROTECT_THREAD(thread);
         thread -> last_stack_min = (ptr_t)activation_frame;
       }
 
@@ -1214,7 +1229,7 @@ STATIC void GC_push_stack_for(GC_thread thread)
             stack_min = GC_get_stack_min(thread -> stack_base);
           }
 #       endif
-        UNPROTECT(thread);
+        UNPROTECT_THREAD(thread);
         thread -> last_stack_min = stack_min;
       }
     }
@@ -1414,7 +1429,7 @@ void GC_get_next_stack(char *start, char *limit,
 
   /* Remember current stack_min value. */
   if (thread != NULL) {
-    UNPROTECT(thread);
+    UNPROTECT_THREAD(thread);
   }
   *plast_stack_min = *lo;
 }

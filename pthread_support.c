@@ -497,6 +497,21 @@ unsigned *GC_check_finalizer_nested(void)
   return &me->finalizer_nested;
 }
 
+#if defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)
+  /* This is called from thread-local GC_malloc(). */
+  GC_bool GC_is_thread_tsd_valid(void *tsd)
+  {
+    char *me;
+    LOCK();
+    me = (char *)GC_lookup_thread(pthread_self());
+    UNLOCK();
+    /* FIXME: We can check tsd more correctly (since now we have access */
+    /* to the right declarations).  This old algorithm (moved from      */
+    /* thread_local_alloc.c) checks only that it's close.               */
+    return((char *)tsd > me && (char *)tsd < me + 1000);
+  }
+#endif
+
 #ifdef HANDLE_FORK
 /* Remove all entries from the GC_threads table, except the     */
 /* one for the current thread.  We need to do this in the child */

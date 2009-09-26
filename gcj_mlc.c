@@ -121,12 +121,10 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
     UNLOCK();
 }
 
-void * GC_clear_stack(void *);
+#define GENERAL_MALLOC_INNER(lb,k) \
+    GC_clear_stack(GC_generic_malloc_inner(lb, k))
 
-#define GENERAL_MALLOC(lb,k) \
-    GC_clear_stack(GC_generic_malloc_inner((word)lb, k))
-
-#define GENERAL_MALLOC_IOP(lb,k) \
+#define GENERAL_MALLOC_INNER_IOP(lb,k) \
     GC_clear_stack(GC_generic_malloc_inner_ignore_off_page(lb, k))
 
 /* We need a mechanism to release the lock and invoke finalizers.       */
@@ -170,7 +168,7 @@ static void maybe_finalize(void)
         op = *opp;
         if(EXPECT(op == 0, 0)) {
             maybe_finalize();
-            op = (ptr_t)GENERAL_MALLOC((word)lb, GC_gcj_kind);
+            op = (ptr_t)GENERAL_MALLOC_INNER((word)lb, GC_gcj_kind);
             if (0 == op) {
                 GC_oom_func oom_fn = GC_oom_fn;
                 UNLOCK();
@@ -186,7 +184,7 @@ static void maybe_finalize(void)
     } else {
         LOCK();
         maybe_finalize();
-        op = (ptr_t)GENERAL_MALLOC((word)lb, GC_gcj_kind);
+        op = (ptr_t)GENERAL_MALLOC_INNER((word)lb, GC_gcj_kind);
         if (0 == op) {
             GC_oom_func oom_fn = GC_oom_fn;
             UNLOCK();
@@ -245,7 +243,7 @@ GC_API void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
         LOCK();
         if( (op = *opp) == 0 ) {
             maybe_finalize();
-            op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_gcj_kind);
+            op = (ptr_t)GENERAL_MALLOC_INNER_IOP(lb, GC_gcj_kind);
             if (0 == op) {
                 GC_oom_func oom_fn = GC_oom_fn;
                 UNLOCK();
@@ -258,7 +256,7 @@ GC_API void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
     } else {
         LOCK();
         maybe_finalize();
-        op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_gcj_kind);
+        op = (ptr_t)GENERAL_MALLOC_INNER_IOP(lb, GC_gcj_kind);
         if (0 == op) {
             GC_oom_func oom_fn = GC_oom_fn;
             UNLOCK();

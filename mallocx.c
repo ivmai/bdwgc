@@ -24,8 +24,6 @@
 #include <stdio.h>
 #include "private/gc_priv.h"
 
-void * GC_clear_stack(void *);  /* in misc.c, behaves like identity */
-
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h        */
 /* or introducing dependencies on internal data structure layouts.       */

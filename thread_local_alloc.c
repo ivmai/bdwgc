@@ -111,7 +111,7 @@ void GC_init_thread_local(GC_tlfs p)
 }
 
 #ifdef GC_GCJ_SUPPORT
-  extern void ** GC_gcjobjfreelist;
+  extern ptr_t * GC_gcjobjfreelist;
 #endif
 
 /* We hold the allocator lock.  */
@@ -125,18 +125,13 @@ void GC_destroy_thread_local(GC_tlfs p)
     return_freelists(p -> ptrfree_freelists, GC_aobjfreelist);
     return_freelists(p -> normal_freelists, GC_objfreelist);
 #   ifdef GC_GCJ_SUPPORT
-        return_freelists(p -> gcj_freelists, GC_gcjobjfreelist);
+        return_freelists(p -> gcj_freelists, (void **)GC_gcjobjfreelist);
 #   endif
 }
 
-#if defined(GC_ASSERTIONS) && defined(GC_PTHREADS) && !defined(CYGWIN32) \
-    && !defined(GC_WIN32_PTHREADS)
-# include <pthread.h>
-  extern char * GC_lookup_thread(pthread_t id);
-#endif
-
-#if defined(GC_ASSERTIONS) && defined(GC_WIN32_THREADS)
-  void * /*GC_thread*/ GC_lookup_thread_inner(unsigned /*DWORD*/ thread_id);
+#ifdef GC_ASSERTIONS
+  /* Defined in pthread_support.c or win32_threads.c. */
+  GC_bool GC_is_thread_tsd_valid(void *tsd);
 #endif
 
 GC_API void * GC_CALL GC_malloc(size_t bytes)
@@ -163,20 +158,9 @@ GC_API void * GC_CALL GC_malloc(size_t bytes)
       }
 #   endif
     GC_ASSERT(GC_is_initialized);
-#   ifdef GC_ASSERTIONS
-      /* We can't check tsd correctly, since we don't have access to    */
-      /* the right declarations.  But we can check that it's close.     */
-      LOCK();
-      {
-#       if defined(GC_WIN32_THREADS)
-          char * me = (char *)GC_lookup_thread_inner(GetCurrentThreadId());
-#       else
-          char * me = GC_lookup_thread(pthread_self());
-#       endif
-        GC_ASSERT((char *)tsd > me && (char *)tsd < me + 1000);
-      }
-      UNLOCK();
-#   endif
+
+    GC_ASSERT(GC_is_thread_tsd_valid(tsd));
+
     tiny_fl = ((GC_tlfs)tsd) -> normal_freelists;
     GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, DIRECT_GRANULES,
                          NORMAL, GC_core_malloc(bytes), obj_link(result)=0);

@@ -1,5 +1,41 @@
 2009-09-26  Ivan Maidanski <ivmai@mail.ru>
 
+	* Makefile.direct: Document EMPTY_GETENV_RESULTS.
+	* gcj_mlc.c (GC_clear_stack): Remove declaration.
+	* malloc.c (GC_clear_stack): Ditto.
+	* mallocx.c (GC_clear_stack): Ditto.
+	* typd_mlc.c (GC_clear_stack): Ditto.
+	* gcj_mlc.c (GENERAL_MALLOC, GENERAL_MALLOC_IOP): Rename to
+	GENERAL_MALLOC_INNER and GENERAL_MALLOC_INNER_IOP, respectively;
+	remove "lb" unnecessary cast to word.
+	* include/private/gc_priv.h (GC_clear_stack): Add declaration.
+	* include/private/gc_priv.h (GENERAL_MALLOC, GENERAL_MALLOC_IOP):
+	Move common declaration from typd_mlc.c and malloc.c; remove
+	unnecessary result and "lb" parameter casts.
+	* include/private/thread_local_alloc.h: Guard against duplicate
+	header file inclusion.
+	* os_dep.c (USE_MUNMAP): Replace "-->" with an error directive for
+	the case when USE_MMAP is not defined.
+	* pthread_support.c (GC_is_thread_tsd_valid): New internal
+	function (only if GC_ASSERTIONS and THREAD_LOCAL_ALLOC); move the
+	code from thread-local GC_malloc(); add FIXME for the condition.
+	* win32_threads.c (GC_is_thread_tsd_valid): Ditto.
+	* thread_local_alloc.c (GC_gcjobjfreelist): Change the type (to
+	match that of its definition).
+	* thread_local_alloc.c (GC_destroy_thread_local): Add a cast for
+	GC_gcjobjfreelist.
+	* thread_local_alloc.c (GC_lookup_thread, GC_lookup_thread_inner):
+	Remove unused declaration; don't include pthread.h.
+	* thread_local_alloc.c (GC_is_thread_tsd_valid): New declaration
+	(only if GC_ASSERTIONS).
+	* thread_local_alloc.c (GC_malloc): Use GC_is_thread_tsd_valid()
+	instead of GC_lookup_thread().
+	* win32_threads.c (GC_lookup_thread_inner): Define as STATIC.
+	* win32_threads.c (UNPROTECT): Rename to UNPROTECT_THREAD (to have
+	id different from that in os_dep.c).
+
+2009-09-26  Ivan Maidanski <ivmai@mail.ru>
+
 	* allchblk.c (GC_enough_large_bytes_left): Replace "inline static"
 	with GC_INLINE.
 	* include/private/gc_priv.h (fixed_getenv): Ditto.

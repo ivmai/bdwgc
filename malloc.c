@@ -21,7 +21,6 @@
 # include <errno.h>
 #endif
 
-extern void * GC_clear_stack(void *);   /* in misc.c, behaves like identity */
 void GC_extend_size_map(size_t);        /* in misc.c. */
 
 /* Allocate reclaim list for kind:      */
@@ -198,12 +197,6 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
         return(result);
     }
 }
-
-
-#define GENERAL_MALLOC(lb,k) \
-    GC_clear_stack(GC_generic_malloc(lb, k))
-/* We make the GC_clear_stack_call a tail call, hoping to get more of   */
-/* the stack.                                                           */
 
 /* Allocate lb bytes of atomic (pointerfree) data */
 #ifdef THREAD_LOCAL_ALLOC

@@ -19,6 +19,9 @@
 /* implementation also exports GC_malloc and friends, which     */
 /* are declared in gc.h.                                        */
 
+#ifndef GC_THREAD_LOCAL_ALLOC_H
+#define GC_THREAD_LOCAL_ALLOC_H
+
 #include "private/gc_priv.h"
 
 #if defined(THREAD_LOCAL_ALLOC)
@@ -154,3 +157,5 @@ GC_key_t GC_thread_key;
 /* if necessary.                                                        */
 
 #endif /* THREAD_LOCAL_ALLOC */
+
+#endif /* GC_THREAD_LOCAL_ALLOC_H */

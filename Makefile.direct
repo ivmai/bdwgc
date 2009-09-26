@@ -290,6 +290,8 @@ HOSTCFLAGS=$(CFLAGS)
 #   I don't know of a reason to disable this, except possibly if the
 #   resulting process runs as a privileged user.  (This is on by default for
 #   WinCE.)
+# -DEMPTY_GETENV_RESULTS Define to workaround a reputed Wine bug in getenv
+#   (getenv() may return an empty string instead of NULL for a missing entry).
 # -DUSE_GLOBAL_ALLOC.  Win32 only.  Use GlobalAlloc instead of
 #   VirtualAlloc to allocate the heap.  May be needed to work around
 #   a Windows NT/2000 issue.  Incompatible with USE_MUNMAP.

@@ -577,14 +577,6 @@ GC_API GC_descr GC_CALL GC_make_descriptor(GC_bitmap bm, size_t len)
     }
 }
 
-void * GC_clear_stack(void *);
-
-#define GENERAL_MALLOC(lb,k) \
-    (void *)GC_clear_stack(GC_generic_malloc((word)lb, k))
-
-#define GENERAL_MALLOC_IOP(lb,k) \
-    (void *)GC_clear_stack(GC_generic_malloc_ignore_off_page(lb, k))
-
 GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t lb, GC_descr d)
 {
     ptr_t op;
