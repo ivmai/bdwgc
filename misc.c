@@ -62,6 +62,10 @@
 # define GC_REGISTER_MAIN_STATIC_DATA() TRUE
 #endif
 
+#ifdef NEED_CANCEL_DISABLE_COUNT
+  __thread unsigned char GC_cancel_disable_count = 0;
+#endif
+
 GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
 
 
@@ -523,9 +527,11 @@ GC_API void GC_CALL GC_init(void)
 #   else
 	word initial_heap_sz = (word)MINHINCR;
 #   endif
+    IF_CANCEL(int cancel_state;)
     
     if (GC_is_initialized) return;
 
+    DISABLE_CANCEL(cancel_state);
     /* Note that although we are nominally called with the */
     /* allocation lock held, the allocation lock is now	   */
     /* only really acquired once a second thread is forked.*/
@@ -536,7 +542,7 @@ GC_API void GC_CALL GC_init(void)
       GC_ASSERT(!GC_need_to_lock);
 #   endif
 #   if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
-      if (!GC_is_initialized) {
+     {
 #     ifndef MSWINCE
         BOOL (WINAPI *pfn) (LPCRITICAL_SECTION, DWORD) = NULL;
         HMODULE hK32 = GetModuleHandle(TEXT("kernel32.dll"));
@@ -549,7 +555,7 @@ GC_API void GC_CALL GC_init(void)
         else
 #     endif /* !MSWINCE */
   	/* else */ InitializeCriticalSection (&GC_allocate_ml);
-      }
+     }
 #   endif /* GC_WIN32_THREADS */
 #   if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
       InitializeCriticalSection(&GC_write_cs);
@@ -864,6 +870,7 @@ GC_API void GC_CALL GC_init(void)
         GC_init_dyld();
     }
 #   endif
+    RESTORE_CANCEL(cancel_state);
 }
 
 GC_API void GC_CALL GC_enable_incremental(void)
@@ -1045,7 +1052,9 @@ STATIC int GC_write(int fd, const char *buf, size_t len)
 {
      int bytes_written = 0;
      int result;
+     IF_CANCEL(int cancel_state;)
      
+     DISABLE_CANCEL(cancel_state);
      while (bytes_written < len) {
 #	ifdef GC_SOLARIS_THREADS
 	    result = syscall(SYS_write, fd, buf + bytes_written,
@@ -1053,9 +1062,13 @@ STATIC int GC_write(int fd, const char *buf, size_t len)
 #	else
      	    result = write(fd, buf + bytes_written, len - bytes_written);
 #	endif
-	if (-1 == result) return(result);
+	if (-1 == result) {
+            RESTORE_CANCEL(cancel_state);
+	    return(result);
+	}
 	bytes_written += result;
     }
+    RESTORE_CANCEL(cancel_state);
     return(bytes_written);
 }
 #endif /* UN*X */

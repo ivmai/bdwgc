@@ -169,11 +169,21 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
     int dummy;
     pthread_t my_thread = pthread_self();
     GC_thread me;
+    IF_CANCEL(int cancel_state;)
 
     AO_t my_stop_count = AO_load(&GC_stop_count);
 
     if (sig != SIG_SUSPEND) ABORT("Bad signal in suspend_handler");
 
+    DISABLE_CANCEL(cancel_state);
+        /* pthread_setcancelstate is not defined to be async-signal-safe. */
+        /* But the glibc version appears to be in the absence of          */
+        /* asynchronous cancellation.  And since this signal handler      */
+        /* to block on sigsuspend, which is both async-signal-safe        */
+        /* and a cancellation point, there seems to be no obvious way     */
+        /* out of it.  In fact, it looks to me like an async-signal-safe  */
+        /* cancellation point is inherently a problem, unless there is    */
+        /* some way to disable cancellation in the handler.               */
 #   if DEBUG_THREADS
       GC_printf("Suspending 0x%x\n", (unsigned)my_thread);
 #   endif
@@ -188,6 +198,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
         if (!GC_retry_signals) {
             WARN("Duplicate suspend signal in thread %p\n", pthread_self());
         }
+        RESTORE_CANCEL(cancel_state);
         return;
     }
 #   ifdef SPARC
@@ -230,6 +241,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 #   if DEBUG_THREADS
       GC_printf("Continuing 0x%x\n", (unsigned)my_thread);
 #   endif
+    RESTORE_CANCEL(cancel_state);
 }
 
 STATIC void GC_restart_handler(int sig)

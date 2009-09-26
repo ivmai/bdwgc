@@ -374,6 +374,12 @@ HOSTCFLAGS=$(CFLAGS)
 #   collection while leaving generational collection enabled).
 # -DGC_FULL_FREQ=<value> Set alternate default number of partial collections
 #   between full collections (matters only if incremental collection is on).
+# -DNO_CANCEL_SAFE (posix platforms with threads only) Don't bother trying
+#   to make the collector safe for thread cancellation; cancellation is
+#   not used.  (Note that if cancellation is used anyway, threads may end
+#   up getting cancelled in unexpected places.)  Even without this option,
+#   PTHREAD_CANCEL_ASYNCHRONOUS is never safe with the collector.  (We could
+#   argue about its safety without the collector.)
 #
 
 CXXFLAGS= $(CFLAGS) 

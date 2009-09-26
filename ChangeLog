@@ -1,3 +1,29 @@
+2009-09-25  Hans Boehm <Hans.Boehm@hp.com>
+
+	* include/private/gcconfig.h (CANCEL_SAFE, IF_CANCEL): new macros.
+	* include/private/gc_priv.h (DISABLE_CANCEL, RESTORE_CANCEL,
+	ASSERT_CANCEL_DISABLED): New macros.
+	* alloc.c (GC_maybe_gc): Assert cancellation disabled.
+	(GC_collect_a_little_inner,GC_try_to_collect, GC_collect_or_expand):
+	Disable cancellation.
+	(GC_add_to_our_memory): Check for overflow.
+	* misc.c (GC_cancel_disable_count): declare.
+	(GC_init, GC_write): Disable cancellation.
+	(GC_init): Remove redundant GC_is_initialized test.
+	* os_dep.c (GC_repeat_read): Assert cancellation disabled.
+	(GC_get_stack_base): Disable cancellation.
+	* pthread_stop_world.c (GC_suspend_handler_inner): Disable
+	cancellation.
+	* pthread_support.c (GC_mark_thread): Permanently disable
+	cancellation.
+	(GC_wait_for_gc_completion, GC_wait_builder, GC_wait_marker):
+	Assert cancellation disabled.
+	(fork handling): Disable cancellation, fix comment.
+	(GC_pthread_create): Disable cancellation.
+	(GC_unregister_my_thread): Disable cancellation.
+	* Makefile.direct: Document NO_CANCEL_SAFE.
+
+
 2009-09-25  Ivan Maidanski <ivmai@mail.ru>
 
 	* Makefile: Remove outdated file (Makefile.direct should be used

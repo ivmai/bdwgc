@@ -310,6 +310,7 @@ STATIC void GC_maybe_gc(void)
     static int n_partial_gcs = 0;
 
     GC_ASSERT(I_HOLD_LOCK());
+    ASSERT_CANCEL_DISABLED();
     if (GC_should_collect()) {
         if (!GC_incremental) {
 	    /* FIXME: If possible, GC_default_stop_func should be used here */
@@ -373,6 +374,7 @@ GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
       CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
       CLOCK_TYPE current_time;
 #   endif
+    ASSERT_CANCEL_DISABLED();
     if (GC_dont_gc) return FALSE;
     if (GC_incremental && GC_collection_in_progress()) {
       if (GC_print_stats) {
@@ -461,8 +463,10 @@ STATIC int GC_deficit = 0;/* The number of extra calls to GC_mark_some	*/
 void GC_collect_a_little_inner(int n)
 {
     int i;
-    
+    IF_CANCEL(int cancel_state;)
+
     if (GC_dont_gc) return;
+    DISABLE_CANCEL(cancel_state);
     if (GC_incremental && GC_collection_in_progress()) {
     	for (i = GC_deficit; i < GC_RATE*n; i++) {
     	    if (GC_mark_some((ptr_t)0)) {
@@ -497,6 +501,7 @@ void GC_collect_a_little_inner(int n)
     } else {
         GC_maybe_gc();
     }
+    RESTORE_CANCEL(cancel_state);
 }
 
 GC_API int GC_CALL GC_collect_a_little(void)
@@ -904,6 +909,7 @@ GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
 #   ifdef USE_MUNMAP
       int old_unmap_threshold;
 #   endif
+    IF_CANCEL(int cancel_state;)
     DCL_LOCK_STATE;
     
     if (!GC_is_initialized) GC_init();
@@ -911,6 +917,7 @@ GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
     if (GC_debugging_started) GC_print_all_smashed();
     GC_INVOKE_FINALIZERS();
     LOCK();
+    DISABLE_CANCEL(cancel_state);
 #   ifdef USE_MUNMAP
       old_unmap_threshold = GC_unmap_threshold;
       if (GC_force_unmap_on_gcollect && old_unmap_threshold > 0)
@@ -924,6 +931,7 @@ GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
 #   ifdef USE_MUNMAP
       GC_unmap_threshold = old_unmap_threshold; /* restore */
 #   endif
+    RESTORE_CANCEL(cancel_state);
     UNLOCK();
     if(result) {
         if (GC_debugging_started) GC_print_all_smashed();
@@ -951,6 +959,8 @@ word GC_n_heap_sects = 0;	/* Number of sections currently in heap. */
   void GC_add_to_our_memory(ptr_t p, size_t bytes)
   {
     if (0 == p) return;
+    if (GC_n_memory >= MAX_HEAP_SECTS)
+    	ABORT("Too many GC-allocated memory sections: Increase MAX_HEAP_SECTS");
     GC_our_memory[GC_n_memory].hs_start = p;
     GC_our_memory[GC_n_memory].hs_bytes = bytes;
     GC_n_memory++;
@@ -1149,6 +1159,9 @@ unsigned GC_fail_count = 0;
 GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page)
 {
     GC_bool gc_not_stopped = TRUE;
+    IF_CANCEL(int cancel_state;)
+
+    DISABLE_CANCEL(cancel_state);
     if (GC_incremental || GC_dont_gc ||
 	((!GC_dont_expand || GC_bytes_allocd == 0) && !GC_should_collect()) ||
 	(gc_not_stopped = GC_try_to_collect_inner(GC_bytes_allocd > 0 ?
@@ -1191,6 +1204,7 @@ GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page)
                    " Returning NIL!\n",
                    (GC_heapsize - GC_unmapped_bytes) >> 20);
 #	    endif
+	    RESTORE_CANCEL(cancel_state);
 	    return(FALSE);
 	}
       } else {
@@ -1199,6 +1213,7 @@ GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page)
 	  }
       }
     }
+    RESTORE_CANCEL(cancel_state);
     return(TRUE);
 }
 
