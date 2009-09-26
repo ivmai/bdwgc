@@ -44,7 +44,7 @@ check_PROGRAMS =
 TESTS =
 
 pkgconfigdir = $(libdir)/pkgconfig
-dist_pkgconfig_DATA = bdw-gc.pc
+pkgconfig_DATA = bdw-gc.pc
 
 # C Library
 # ---------
@@ -187,10 +187,6 @@ EXTRA_DIST += libatomic_ops-1.2
 # this is an auxiliary shell file used by Makefile and Makefile.direct
 #
 CONFIG_STATUS_DEPENDENCIES = $(srcdir)/configure.host
-
-# :FIXME: why do we distribute this one???
-#
-EXTRA_DIST += libtool.m4
 
 #
 # :GOTCHA: GNU make rule for making .s out of .S is flawed, 

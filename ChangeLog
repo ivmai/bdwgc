@@ -1,3 +1,13 @@
+2009-09-26  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+
+	* Makefile.am: Don't add libtool.m4 to EXTRA_DIST.
+	* acinclude.m4: Place GC_SET_VERSION in [].
+	* README.QUICK: Update information for Makefile.
+	* Makefile.am: Replace dist_pkgconfig_DATA with pkgconfig_DATA for
+	bdw-gc.pc.
+	* configure.ac: Enable tracetest.
+	* tests/tests.am: Ditto.
+
 2009-09-26  Ivan Maidanski <ivmai@mail.ru>
 
 	* dyn_load.c (GC_wnt): Update the comment.

@@ -46,10 +46,12 @@ check_PROGRAMS += hugetest
 hugetest_SOURCES = tests/huge_test.c
 hugetest_LDADD = $(test_ldadd)
 
-#TESTS += tracetest$(EXEEXT)
-#check_PROGRAMS += tracetest
-#tracetest_SOURCES = tests/trace_test.c
-#tracetest_LDADD = $(test_ldadd)
+if KEEP_BACK_PTRS
+TESTS += tracetest$(EXEEXT)
+check_PROGRAMS += tracetest
+tracetest_SOURCES = tests/trace_test.c
+tracetest_LDADD = $(test_ldadd)
+endif
 
 if THREADS
 TESTS += threadleaktest$(EXEEXT)

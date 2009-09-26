@@ -22,7 +22,7 @@ AC_INIT(gc,7.2alpha3,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.49 $)
+AC_REVISION($Revision: 1.50 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_CONFIG_HEADER([include/private/config.h])
@@ -574,6 +574,7 @@ AC_ARG_ENABLE(gc-debug,
     AC_MSG_WARN("Should define GC_DEBUG and use debug alloc. in clients.")
     AC_DEFINE([KEEP_BACK_PTRS], 1,
 	      [Define to save back-pointers in debugging headers.])
+    keep_back_ptrs=true
     AC_DEFINE([DBG_HDRS_ALL], 1,
 	      [Define to force debug headers on all objects.])
     case $host in
@@ -596,6 +597,7 @@ AC_ARG_ENABLE(gc-debug,
       ;;
     esac ]
   fi)
+AM_CONDITIONAL([KEEP_BACK_PTRS], [test x"$keep_back_ptrs" = xtrue])
 
 AC_ARG_ENABLE(java-finalization,
     [AC_HELP_STRING([--disable-java-finalization],

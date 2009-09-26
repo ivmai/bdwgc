@@ -28,7 +28,8 @@ INSTALLATION:
 Under UN*X, Linux:
 Alternative 1 (the old way): type "make test" in this directory.
 	Link against gc.a.  With the most recent GC distributions
-	you may have to copy Makefile.direct to Makefile first.
+	you may have to type "make -f Makefile.direct test" or
+	copy Makefile.direct to Makefile first.
 
 Alternative 2 (the new way): type
 	"./configure --prefix=<dir>; make; make check; make install".

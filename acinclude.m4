@@ -17,7 +17,7 @@
 # [0-9]+[.][0-9]+(alpha[0.9]+)? 
 # in lex syntax; if there is no alpha number, GC_ALPHA_VERSION is empty
 #
-AC_DEFUN(GC_SET_VERSION, [
+AC_DEFUN([GC_SET_VERSION], [
   AC_MSG_CHECKING(GC version numbers)
   GC_VERSION_MAJOR=`echo $PACKAGE_VERSION | sed 's/^\([[0-9]][[0-9]]*\)[[.]].*$/\1/g'`
   GC_VERSION_MINOR=`echo $PACKAGE_VERSION | sed 's/^[[^.]]*[[.]]\([[0-9]][[0-9]]*\).*$/\1/g'`
