@@ -2153,7 +2153,7 @@ extern void GC_reset_fault_handler(void);
 # if defined(CANCEL_SAFE)
 #   if defined(GC_ASSERTIONS) && (defined(USE_COMPILER_TLS) \
        || (defined(LINUX) && !defined(ARM32) \
-                  && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)) \
+                && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)) \
        || defined(HPUX) /* and probably others ... */))
       extern __thread unsigned char GC_cancel_disable_count;
 #     define NEED_CANCEL_DISABLE_COUNT
@@ -2173,7 +2173,7 @@ extern void GC_reset_fault_handler(void);
           pthread_setcancelstate(state, NULL); \
           DECR_CANCEL_DISABLE(); }
 # else /* !CANCEL_SAFE */
-#   define DISABLE_CANCEL(state) 
+#   define DISABLE_CANCEL(state)
 #   define RESTORE_CANCEL(state)
 #   define ASSERT_CANCEL_DISABLED()
 # endif /* !CANCEL_SAFE */

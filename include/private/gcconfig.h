@@ -2231,18 +2231,18 @@
 # endif
 
 # if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE)
-    /* Make the code cancellation-safe.  This basically means that we	*/
-    /* ensure that cancellation requests are ignored while we are in	*/
+    /* Make the code cancellation-safe.  This basically means that we   */
+    /* ensure that cancellation requests are ignored while we are in    */
     /* the collector.  This applies only to Posix deferred cancellation;*/
-    /* we don't handle Posix asynchronous cancellation.			*/
-    /* Note that this only works if pthread_setcancelstate is 		*/
-    /* async-signal-safe, at least in the absence of asynchronous	*/
-    /* cancellation.  This appears to be true for the glibc version, 	*/
-    /* though it is not documented.  Without that assumption, there	*/
-    /* seems to be no way to safely wait in a signal handler, which	*/
-    /* we need to do for thread suspension.				*/
+    /* we don't handle Posix asynchronous cancellation.                 */
+    /* Note that this only works if pthread_setcancelstate is           */
+    /* async-signal-safe, at least in the absence of asynchronous       */
+    /* cancellation.  This appears to be true for the glibc version,    */
+    /* though it is not documented.  Without that assumption, there     */
+    /* seems to be no way to safely wait in a signal handler, which     */
+    /* we need to do for thread suspension.                             */
     /* Also note that little other code appears to be cancellation-safe.*/
-    /* Hence it may make sense to turn this off for performance.	*/
+    /* Hence it may make sense to turn this off for performance.        */
 #   define CANCEL_SAFE
 #   define IF_CANCEL(x) x
 # else
