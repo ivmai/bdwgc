@@ -55,10 +55,7 @@ struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
   /* Is GC_large_allocd_bytes + the number of free bytes on lists       */
   /* n .. N_HBLK_FLS > GC_max_large_allocd_bytes.                       */
   /* If there is no such n, return 0.                                   */
-# ifdef __GNUC__
-  __inline__
-# endif
-  static int GC_enough_large_bytes_left(void)
+  GC_INLINE int GC_enough_large_bytes_left(void)
   {
     int n;
     word bytes = GC_large_allocd_bytes;

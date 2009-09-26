@@ -1044,12 +1044,12 @@ void GC_print_heap_sects(void)
 void * GC_least_plausible_heap_addr = (void *)ONES;
 void * GC_greatest_plausible_heap_addr = 0;
 
-static INLINE word GC_max(word x, word y)
+GC_INLINE word GC_max(word x, word y)
 {
     return(x > y? x : y);
 }
 
-static INLINE word GC_min(word x, word y)
+GC_INLINE word GC_min(word x, word y)
 {
     return(x < y? x : y);
 }

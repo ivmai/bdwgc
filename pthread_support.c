@@ -100,10 +100,6 @@ unsigned long GC_lock_holder = NO_THREAD;
   typedef unsigned int  sem_t;
 #endif /* GC_DGUX386_THREADS */
 
-#ifndef __GNUC__
-#   define __inline__
-#endif
-
 /* Undefine macros used to redirect pthread primitives. */
 # undef pthread_create
 # if !defined(GC_DARWIN_THREADS)

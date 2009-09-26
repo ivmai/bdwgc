@@ -1,5 +1,20 @@
 2009-09-26  Ivan Maidanski <ivmai@mail.ru>
 
+	* allchblk.c (GC_enough_large_bytes_left): Replace "inline static"
+	with GC_INLINE.
+	* include/private/gc_priv.h (fixed_getenv): Ditto.
+	* alloc.c (GC_max, GC_min): Replace "static INLINE" with
+	GC_INLINE.
+	* mark_rts.c (rt_hash): Ditto.
+	* win32_threads.c (GC_get_max_thread_index): Ditto.
+	* include/private/gc_priv.h (INLINE): Prefix with "GC_"; include
+	"static"; define for Sun CC; define for VC++ (and other
+	compilers).
+	* pthread_support.c: Don't define __inline__ for non-GNU compilers
+	(not needed anymore).
+
+2009-09-26  Ivan Maidanski <ivmai@mail.ru>
+
 	* NT_THREADS_MAKEFILE: Remove file (since it duplicates gc.mak).
 	* Makefile.in: Remove reference to NT_THREADS_MAKEFILE.
 	* Makefile.am: Ditto.

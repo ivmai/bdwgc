@@ -494,10 +494,7 @@ static GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
  * GC_max_thread_index may temporarily be larger than MAX_THREADS.
  * To avoid subscript errors, we check on access.
  */
-#ifdef __GNUC__
-  __inline__
-#endif
-STATIC LONG GC_get_max_thread_index(void)
+GC_INLINE LONG GC_get_max_thread_index(void)
 {
   LONG my_max = GC_max_thread_index;
 

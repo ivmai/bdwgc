@@ -90,11 +90,14 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define EXPECT(expr, outcome) (expr)
 #endif /* __GNUC__ */
 
-#if __GNUC__ >= 3
-# define INLINE inline
+#if defined(_MSC_VER) || defined(__INTEL_COMPILER) || defined(__DMC__) \
+        || defined(__WATCOMC__)
+# define GC_INLINE static __inline
+#elif (__GNUC__ >= 3) || defined(__sun)
+# define GC_INLINE static inline
 #else
-# define INLINE
-#endif /* __GNUC__ */
+# define GC_INLINE static
+#endif
 
 #ifndef GC_API_PRIV
 # define GC_API_PRIV GC_API
@@ -399,7 +402,7 @@ extern GC_warn_proc GC_current_warn_proc;
 #if !defined(NO_GETENV)
 #   if defined(EMPTY_GETENV_RESULTS)
         /* Workaround for a reputed Wine bug.   */
-        static inline char * fixed_getenv(const char *name)
+        GC_INLINE char * fixed_getenv(const char *name)
         {
           char * tmp = getenv(name);
           if (tmp == 0 || strlen(tmp) == 0)

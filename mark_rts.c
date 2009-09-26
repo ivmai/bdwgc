@@ -92,7 +92,7 @@ GC_bool GC_is_static_root(ptr_t p)
         -- really defined in gc_priv.h
 */
 
-static INLINE int rt_hash(ptr_t addr)
+GC_INLINE int rt_hash(ptr_t addr)
 {
     word result = (word) addr;
 #   if CPP_WORDSZ > 8*LOG_RT_SIZE
