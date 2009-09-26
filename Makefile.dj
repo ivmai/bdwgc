@@ -69,7 +69,7 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
            extra/add_gc_prefix.c README.solaris2 README.sgi README.hp \
-           README.uts win32_threads.c NT_THREADS_MAKEFILE gc.mak README.dj \
+           README.uts win32_threads.c gc.mak README.dj \
            Makefile.dj README.alpha README.linux README.MacOSX Makefile.DLLs \
 	   WCC_MAKEFILE
 

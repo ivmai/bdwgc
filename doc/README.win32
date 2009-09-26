@@ -186,7 +186,7 @@ to the collector DLL still exists, but requires that both
 We generally recommend avoiding this if possible, since it seems to
 be less than 100% reliable.
 
-Use NT_THREADS_MAKEFILE (a.k.a gc.mak) instead of NT_MAKEFILE
+Use gc.mak (a.k.a NT_THREADS_MAKEFILE) instead of NT_MAKEFILE
 to build a version that supports both kinds of thread tracking.
 To build the garbage collector
 test with VC++ from the command line, use

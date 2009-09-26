@@ -1,7 +1,7 @@
 # Makefile for Windows NT.  Assumes Microsoft compiler.
 # modified 2007 August by Friedrich Dominicus:
 #			- copied from NT_X64_STATIC_THREADS_MAKEFILES
-#                       - checked agaist NT_THREADS_MAKEFILE
+#                       - checked agaist gc.mak (NT_THREADS_MAKEFILE)
 #                       - added changes to integrate the tools
 #                       - currently just with debug information
 # problems can be sent to
