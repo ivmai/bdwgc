@@ -1,5 +1,12 @@
 2009-09-26  Ivan Maidanski <ivmai@mail.ru>
 
+	* dyn_load.c (GC_wnt): Update the comment.
+	* dyn_load.c (GC_register_dynamic_libraries): Add the comment for
+	_WIN32_WCE_EMULATION; recognize GC_REGISTER_MEM_PRIVATE (new
+	macro); call GC_is_heap_base() only if check for Type succeeded.
+
+2009-09-26  Ivan Maidanski <ivmai@mail.ru>
+
 	* mark_rts.c (GC_is_tmp_root): Don't define unless NO_DEBUGGING;
 	update the comment.
 	* include/private/gc_priv.h (GC_is_tmp_root): Remove declaration.

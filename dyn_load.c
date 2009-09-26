@@ -865,6 +865,7 @@ void GC_register_dynamic_libraries(void)
     /* WinCE because otherwise SEGV fault sometimes happens to occur in */
     /* GC_mark_from() (and, even if we use WRAP_MARK_SOME, WinCE prints */
     /* a "Data Abort" message to the debugging console).                */
+    /* To workaround that, use -DGC_REGISTER_MEM_PRIVATE.               */
 #   define GC_wnt TRUE
 # else
     extern GC_bool GC_wnt;      /* Is Windows NT derivative.    */
@@ -884,6 +885,7 @@ void GC_register_dynamic_libraries(void)
       if (GC_no_win32_dlls) return;
 #   endif
     base = limit = p = GC_sysinfo.lpMinimumApplicationAddress;
+    /* Note: -D_WIN32_WCE_EMULATION seems to be required for WinCE 6. */
 #   if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)
       /* Only the first 32 MB of address space belongs to the current process */
       while (p < (LPVOID)0x02000000) {
@@ -907,13 +909,18 @@ void GC_register_dynamic_libraries(void)
             if (buf.State == MEM_COMMIT
                 && (protect == PAGE_EXECUTE_READWRITE
                     || protect == PAGE_READWRITE)
-                && !GC_is_heap_base(buf.AllocationBase)
-                /* There is some evidence that we cannot always
-                 * ignore MEM_PRIVATE sections under Windows ME
-                 * and predecessors.  Hence we now also check for
-                 * that case.   */
-                && (buf.Type == MEM_IMAGE ||
-                    (!GC_wnt && buf.Type == MEM_PRIVATE))) {
+                && (buf.Type == MEM_IMAGE
+#                   ifdef GC_REGISTER_MEM_PRIVATE
+                      || (protect == PAGE_READWRITE && buf.Type == MEM_PRIVATE)
+#                   else
+                      /* There is some evidence that we cannot always   */
+                      /* ignore MEM_PRIVATE sections under Windows ME   */
+                      /* and predecessors.  Hence we now also check for */
+                      /* that case.                                     */
+                      || (!GC_wnt && buf.Type == MEM_PRIVATE)
+#                   endif
+                   )
+                && !GC_is_heap_base(buf.AllocationBase)) {
 #               ifdef DEBUG_VIRTUALQUERY
                   GC_dump_meminfo(&buf);
 #               endif
