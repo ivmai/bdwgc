@@ -11,8 +11,10 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:04 pm PDT */
 
+# ifdef HAVE_CONFIG_H
+#   include "private/config.h"
+# endif
 
 # ifdef PCR
 /*

@@ -1,5 +1,9 @@
 2009-09-27  Ivan Maidanski <ivmai@mail.ru>
 
+	* real_malloc.c: Include private/config.h if HAVE_CONFIG_H.
+
+2009-09-27  Ivan Maidanski <ivmai@mail.ru>
+
 	* allchblk.c (GC_hblkfreelist): Define as STATIC.
 	* blacklst.c (GC_total_stack_black_listed): Ditto.
 	* include/private/gc_priv.h (GC_hblkfreelist, GC_stopped_mark,
