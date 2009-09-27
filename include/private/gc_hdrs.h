@@ -57,8 +57,8 @@ typedef struct hblkhdr hdr;
 /* #define COUNT_HDR_CACHE_HITS  */
 
 # ifdef COUNT_HDR_CACHE_HITS
-    extern word GC_hdr_cache_hits;
-    extern word GC_hdr_cache_misses;
+    word GC_hdr_cache_hits;
+    word GC_hdr_cache_misses;
 #   define HC_HIT() ++GC_hdr_cache_hits
 #   define HC_MISS() ++GC_hdr_cache_misses
 # else
@@ -132,7 +132,7 @@ typedef struct bi {
 # endif
 } bottom_index;
 
-/* extern bottom_index GC_all_nils; - really part of GC_arrays */
+/* bottom_index GC_all_nils; - really part of GC_arrays */
 
 /* extern bottom_index * GC_top_index []; - really part of GC_arrays */
                                 /* Each entry points to a bottom_index. */

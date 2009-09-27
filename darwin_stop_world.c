@@ -511,6 +511,10 @@ STATIC int GC_suspend_thread_list(thread_act_array_t act_list, int count,
   return changed;
 }
 
+#ifdef MPROTECT_VDB
+  void GC_mprotect_stop(void);
+  void GC_mprotect_resume(void);
+#endif
 
 /* Caller holds allocation lock.        */
 void GC_stop_world(void)
@@ -584,7 +588,6 @@ void GC_stop_world(void)
 
 #   ifdef MPROTECT_VDB
       if(GC_incremental) {
-        extern void GC_mprotect_stop();
         GC_mprotect_stop();
       }
 #   endif
@@ -620,7 +623,6 @@ void GC_start_world(void)
 
 #   ifdef MPROTECT_VDB
       if(GC_incremental) {
-        extern void GC_mprotect_resume();
         GC_mprotect_resume();
       }
 #   endif

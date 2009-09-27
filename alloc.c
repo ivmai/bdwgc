@@ -76,11 +76,8 @@ int GC_full_freq = GC_FULL_FREQ;
 STATIC GC_bool GC_need_full_gc = FALSE;
                            /* Need full GC do to heap growth.   */
 
-#ifdef THREADS
+#ifdef THREAD_LOCAL_ALLOC
   GC_bool GC_world_stopped = FALSE;
-# define IF_THREADS(x) x
-#else
-# define IF_THREADS(x)
 #endif
 
 STATIC word GC_used_heap_size_after_full = 0;
@@ -105,8 +102,8 @@ unsigned GC_version = ((GC_VERSION_MAJOR << 16) | (GC_VERSION_MINOR << 8) | GC_T
 
 /* some more variables */
 
-extern signed_word GC_bytes_found; /* Number of reclaimed bytes         */
-                                  /* after garbage collection           */
+signed_word GC_bytes_found;     /* Number of reclaimed bytes    */
+                                /* after garbage collection     */
 
 #ifdef GC_DONT_EXPAND
   GC_bool GC_dont_expand = TRUE;
@@ -120,7 +117,7 @@ extern signed_word GC_bytes_found; /* Number of reclaimed bytes         */
 
 word GC_free_space_divisor = GC_FREE_SPACE_DIVISOR;
 
-extern GC_bool GC_collection_in_progress(void);
+GC_bool GC_collection_in_progress(void);
                 /* Collection is in progress, or was abandoned. */
 
 int GC_CALLBACK GC_never_stop_func (void) { return(0); }
@@ -565,7 +562,9 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   endif
 
     STOP_WORLD();
-    IF_THREADS(GC_world_stopped = TRUE);
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_world_stopped = TRUE;
+#   endif
     if (GC_print_stats) {
         /* Output blank line for convenience here */
         GC_log_printf(
@@ -590,7 +589,9 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
                                 "%u iterations\n", i);
                     }
                     GC_deficit = i; /* Give the mutator a chance. */
-                    IF_THREADS(GC_world_stopped = FALSE);
+#                   ifdef THREAD_LOCAL_ALLOC
+                      GC_world_stopped = FALSE;
+#                   endif
                     START_WORLD();
                     return(FALSE);
             }
@@ -610,7 +611,9 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
             (*GC_check_heap)();
         }
 
-    IF_THREADS(GC_world_stopped = FALSE);
+#   ifdef THREAD_LOCAL_ALLOC
+      GC_world_stopped = FALSE;
+#   endif
     START_WORLD();
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
@@ -739,7 +742,7 @@ STATIC void GC_clear_fl_marks(ptr_t q)
 }
 
 #if defined(GC_ASSERTIONS) && defined(THREADS) && defined(THREAD_LOCAL_ALLOC)
-extern void GC_check_tls(void);
+void GC_check_tls(void);
 #endif
 
 #ifdef MAKE_BACK_GRAPH
@@ -898,8 +901,8 @@ STATIC void GC_finish_collection(void)
 }
 
 #ifdef USE_MUNMAP
-    extern int GC_unmap_threshold;      /* defined in allchblk.c        */
-    extern GC_bool GC_force_unmap_on_gcollect;  /* defined in misc.c    */
+    int GC_unmap_threshold;     /* defined in allchblk.c        */
+    GC_bool GC_force_unmap_on_gcollect; /* defined in misc.c    */
 #endif
 
 /* Externally callable routine to invoke full, stop-world collection */

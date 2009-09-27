@@ -322,7 +322,7 @@ void * malloc(size_t lb)
   static ptr_t GC_libpthread_end = 0;
   static ptr_t GC_libld_start = 0;
   static ptr_t GC_libld_end = 0;
-  extern GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp);
+  GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp);
         /* From os_dep.c */
 
   STATIC void GC_init_lib_bounds(void)

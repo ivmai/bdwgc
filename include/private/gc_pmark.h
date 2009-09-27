@@ -46,7 +46,7 @@
 /* The real declarations of the following is in gc_priv.h, so that      */
 /* we can avoid scanning the following table.                           */
 /*
-extern mark_proc GC_mark_procs[MAX_MARK_PROCS];
+mark_proc GC_mark_procs[MAX_MARK_PROCS];
 */
 
 #ifndef MARK_DESCR_OFFSET
@@ -66,7 +66,7 @@ extern mark_proc GC_mark_procs[MAX_MARK_PROCS];
         (((word)1 << (WORDSZ - GC_DS_TAG_BITS - GC_LOG_MAX_MARK_PROCS)) - 1)
 
 
-extern unsigned GC_n_mark_procs;
+unsigned GC_n_mark_procs;
 
 /* Number of mark stack entries to discard on overflow. */
 #define GC_MARK_STACK_DISCARDS (INITIAL_MARK_STACK_SIZE/8)
@@ -77,17 +77,17 @@ typedef struct GC_ms_entry {
                         /* as described in gc_mark.h.                   */
 } mse;
 
-extern size_t GC_mark_stack_size;
+size_t GC_mark_stack_size;
 
-extern mse * GC_mark_stack_limit;
+mse * GC_mark_stack_limit;
 
 #ifdef PARALLEL_MARK
-  extern mse * volatile GC_mark_stack_top;
+  mse * volatile GC_mark_stack_top;
 #else
-  extern mse * GC_mark_stack_top;
+  mse * GC_mark_stack_top;
 #endif
 
-extern mse * GC_mark_stack;
+mse * GC_mark_stack;
 
 #ifdef PARALLEL_MARK
     /*
@@ -451,7 +451,7 @@ mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
     } \
 }
 
-extern GC_bool GC_mark_stack_too_small;
+GC_bool GC_mark_stack_too_small;
                                 /* We need a larger mark stack.  May be */
                                 /* set by client supplied mark routines.*/
 
@@ -495,6 +495,6 @@ typedef int mark_state_t;       /* Current state of marking, as follows:*/
 
 # define MS_INVALID 5           /* I may not hold.                      */
 
-extern mark_state_t GC_mark_state;
+mark_state_t GC_mark_state;
 
 #endif  /* GC_PMARK_H */

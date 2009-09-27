@@ -46,7 +46,8 @@ STATIC word * GC_incomplete_normal_bl;
 STATIC word * GC_old_stack_bl;
 STATIC word * GC_incomplete_stack_bl;
 
-word GC_total_stack_black_listed;
+STATIC word GC_total_stack_black_listed;
+                        /* Number of bytes on stack blacklist.  */
 
 word GC_black_list_spacing = MINHINCR*HBLKSIZE;  /* Initial rough guess */
 

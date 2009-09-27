@@ -111,7 +111,7 @@ void GC_init_thread_local(GC_tlfs p)
 }
 
 #ifdef GC_GCJ_SUPPORT
-  extern ptr_t * GC_gcjobjfreelist;
+  ptr_t * GC_gcjobjfreelist;
 #endif
 
 /* We hold the allocator lock.  */
@@ -208,10 +208,10 @@ GC_API void * GC_CALL GC_malloc_atomic(size_t bytes)
 #include "include/gc_gcj.h"
 
 #ifdef GC_ASSERTIONS
-  extern GC_bool GC_gcj_malloc_initialized;
+  GC_bool GC_gcj_malloc_initialized;
 #endif
 
-extern int GC_gcj_kind;
+int GC_gcj_kind;
 
 /* Gcj-style allocation without locks is extremely tricky.  The         */
 /* fundamental issue is that we may end up marking a free list, which   */

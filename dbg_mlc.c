@@ -769,7 +769,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
 
 #ifdef THREADS
 
-extern void GC_free_inner(void * p);
+void GC_free_inner(void * p);
 
 /* Used internally; we assume it's called correctly.    */
 void GC_debug_free_inner(void * p)

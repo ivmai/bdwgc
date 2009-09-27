@@ -231,7 +231,7 @@ void GC_register_dynamic_libraries(void)
 
 #define MAPS_BUF_SIZE (32*1024)
 
-extern ssize_t GC_repeat_read(int fd, char *buf, size_t count);
+ssize_t GC_repeat_read(int fd, char *buf, size_t count);
         /* Repeatedly read until buffer is filled, or EOF is encountered */
         /* Defined in os_dep.c.                                          */
 
@@ -663,7 +663,7 @@ void GC_register_dynamic_libraries(void)
 # define IRIX6
 #endif
 
-extern void * GC_roots_present(ptr_t);
+void * GC_roots_present(ptr_t);
         /* The type is a lie, since the real type doesn't make sense here, */
         /* and we only test for NULL.                                      */
 
@@ -792,11 +792,10 @@ void GC_register_dynamic_libraries(void)
   /* We traverse the entire address space and register all segments     */
   /* that could possibly have been written to.                          */
 
-  extern GC_bool GC_is_heap_base (ptr_t p);
+  GC_bool GC_is_heap_base(ptr_t p);
 
 # ifdef GC_WIN32_THREADS
-    extern void GC_get_next_stack(char *start, char * limit, char **lo,
-                                  char **hi);
+    void GC_get_next_stack(char *start, char * limit, char **lo, char **hi);
 
     STATIC void GC_cond_add_roots(char *base, char * limit)
     {
@@ -830,18 +829,18 @@ void GC_register_dynamic_libraries(void)
 # endif
 
 # ifdef MSWINCE
-  /* Do we need to separately register the main static data segment? */
-  GC_bool GC_register_main_static_data(void)
-  {
-    return FALSE;
-  }
+    /* Do we need to separately register the main static data segment? */
+    GC_bool GC_register_main_static_data(void)
+    {
+      return FALSE;
+    }
 # else /* win32 */
-  extern GC_bool GC_no_win32_dlls;
+    GC_bool GC_no_win32_dlls;
 
-  GC_bool GC_register_main_static_data(void)
-  {
-    return GC_no_win32_dlls;
-  }
+    GC_bool GC_register_main_static_data(void)
+    {
+      return GC_no_win32_dlls;
+    }
 # endif /* win32 */
 
 # define HAVE_REGISTER_MAIN_STATIC_DATA
@@ -868,8 +867,8 @@ void GC_register_dynamic_libraries(void)
     /* To workaround that, use -DGC_REGISTER_MEM_PRIVATE.               */
 #   define GC_wnt TRUE
 # else
-    extern GC_bool GC_wnt;      /* Is Windows NT derivative.    */
-                                /* Defined and set in os_dep.c. */
+    GC_bool GC_wnt;     /* Is Windows NT derivative.    */
+                        /* Defined and set in os_dep.c. */
 # endif
 
   void GC_register_dynamic_libraries(void)

@@ -251,7 +251,7 @@ void GC_clear_marks(void)
 }
 
 #ifdef CHECKSUMS
-extern void GC_check_dirty(void);
+  void GC_check_dirty(void);
 #endif
 
 /* Initiate a garbage collection.  Initiates a full collection if the   */
@@ -473,7 +473,7 @@ static void alloc_mark_stack(size_t);
 # endif /* __GNUC__  && MSWIN32 */
 
 #ifdef GC_WIN32_THREADS
-  extern GC_bool GC_started_thread_while_stopped(void);
+  GC_bool GC_started_thread_while_stopped(void);
   /* In win32_threads.c.  Did we invalidate mark phase with an  */
   /* unexpected thread start?                                   */
 #endif

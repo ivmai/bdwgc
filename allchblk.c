@@ -44,7 +44,11 @@ GC_bool GC_use_entire_heap = 0;
 # define N_HBLK_FLS (HUGE_THRESHOLD - UNIQUE_THRESHOLD)/FL_COMPRESSION \
                                  + UNIQUE_THRESHOLD
 
-struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
+STATIC struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
+                                /* List of completely empty heap blocks */
+                                /* Linked through hb_next field of      */
+                                /* header structure associated with     */
+                                /* block.                               */
 
 #ifndef USE_MUNMAP
 
@@ -623,6 +627,9 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
     }
     return 0;
 }
+
+unsigned GC_fail_count; /* defined in alloc.c */
+
 /*
  * The same, but with search restricted to nth free list.
  * Flags is IGNORE_OFF_PAGE or zero.
@@ -796,11 +803,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, GC_bool may_split)
 
     /* We just successfully allocated a block.  Restart count of        */
     /* consecutive failures.                                            */
-    {
-        extern unsigned GC_fail_count;
-
-        GC_fail_count = 0;
-    }
+    GC_fail_count = 0;
 
     GC_large_free_bytes -= size_needed;
 

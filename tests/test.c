@@ -99,7 +99,7 @@ int realloc_count = 0;
 
 #if defined(GC_AMIGA_FASTALLOC) && defined(AMIGA)
 
-  extern void GC_amiga_free_all_mem(void);
+  void GC_amiga_free_all_mem(void);
   void Amiga_Fail(void){GC_amiga_free_all_mem();abort();}
 # define FAIL (void)Amiga_Fail()
   void *GC_amiga_gctest_malloc_explicitly_typed(size_t lb, GC_descr d){

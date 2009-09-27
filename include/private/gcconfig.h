@@ -902,7 +902,7 @@
 #       define OS_TYPE "SOLARIS"
         extern int _etext[];
         extern int _end[];
-        extern ptr_t GC_SysVGetDataStart(size_t, ptr_t);
+        ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
 #       define DATAEND (ptr_t)(_end)
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
@@ -938,7 +938,7 @@
 #   endif
 #   ifdef DRSNX
 #       define OS_TYPE "DRSNX"
-        extern ptr_t GC_SysVGetDataStart(size_t, ptr_t);
+        ptr_t GC_SysVGetDataStart(size_t, ptr_t);
         extern int etext[];
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)etext)
 #       define MPROTECT_VDB
@@ -956,7 +956,7 @@
       extern int _etext[];
 #     define DATAEND (ptr_t)(_end)
 #     define SVR4
-      extern ptr_t GC_SysVGetDataStart(size_t, ptr_t);
+      ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #     ifdef __arch64__
 #       define DATASTART GC_SysVGetDataStart(0x100000, (ptr_t)_etext)
 #     else
@@ -1028,7 +1028,7 @@
 #   ifdef SOLARIS
 #       define OS_TYPE "SOLARIS"
         extern int _etext[], _end[];
-        extern ptr_t GC_SysVGetDataStart(size_t, ptr_t);
+        ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
 #       define DATAEND (ptr_t)(_end)
 /*      # define STACKBOTTOM ((ptr_t)(_start)) worked through 2.7,      */
@@ -1076,7 +1076,7 @@
 #   ifdef DGUX
 #       define OS_TYPE "DGUX"
         extern int _etext, _end;
-        extern ptr_t GC_SysVGetDataStart(size_t, ptr_t);
+        ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)(&_etext))
 #       define DATAEND (ptr_t)(&_end)
 #       define STACK_GROWS_DOWN
@@ -1232,7 +1232,7 @@
 #           define DYNAMIC_LOADING
 #       endif
         extern char etext[];
-        extern char * GC_FreeBSDGetDataStart(size_t, ptr_t);
+        char * GC_FreeBSDGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #   endif
 #   ifdef NETBSD
@@ -1599,7 +1599,7 @@
         /* address minus one page.                                      */
 #       define BACKING_STORE_DISPLACEMENT 0x1000000
 #       define BACKING_STORE_ALIGNMENT 0x1000
-        extern ptr_t GC_register_stackbottom;
+        ptr_t GC_register_stackbottom;
 #       define BACKING_STORE_BASE GC_register_stackbottom
         /* Known to be wrong for recent HP/UX versions!!!       */
 #   endif
@@ -1617,7 +1617,7 @@
         /* constants:                                           */
 #       define BACKING_STORE_ALIGNMENT 0x100000
 #       define BACKING_STORE_DISPLACEMENT 0x80000000
-        extern ptr_t GC_register_stackbottom;
+        ptr_t GC_register_stackbottom;
 #       define BACKING_STORE_BASE GC_register_stackbottom
 #       define SEARCH_FOR_DATA_START
 #       ifdef __GNUC__
@@ -1675,7 +1675,7 @@
 #   endif
 #   ifdef  DGUX
 #       define OS_TYPE "DGUX"
-        extern ptr_t GC_SysVGetDataStart(size_t, ptr_t);
+        ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)etext)
 #   endif
 #   define STACKBOTTOM ((char*)0xf0000000) /* determined empirically */
@@ -1691,7 +1691,7 @@
         extern int etext[];
         extern int _etext[];
         extern int _end[];
-        extern ptr_t GC_SysVGetDataStart(size_t, ptr_t);
+        ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
 #       define DATAEND (ptr_t)(_end)
 #       define HEURISTIC2
@@ -1942,7 +1942,7 @@
 #       define OS_TYPE "SOLARIS"
 #       define ELF_CLASS ELFCLASS64
         extern int _etext[], _end[];
-        extern ptr_t GC_SysVGetDataStart(size_t, ptr_t);
+        ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
 #       define DATAEND (ptr_t)(_end)
 /*      # define STACKBOTTOM ((ptr_t)(_start)) worked through 2.7,      */
@@ -2400,7 +2400,7 @@
 #   define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
 # elif defined(MACOS)
 #   if defined(USE_TEMPORARY_MEMORY)
-      extern Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory);
+      Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory);
 #     define GET_MEM(bytes) HBLKPTR( \
                             GC_MacTemporaryNewPtr(bytes + GC_page_size, true) \
                             + GC_page_size-1)
@@ -2412,7 +2412,7 @@
     ptr_t GC_wince_get_mem(GC_word bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
 # elif defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
-    extern void *GC_amiga_get_mem(size_t size);
+    void *GC_amiga_get_mem(size_t size);
 #   define GET_MEM(bytes) HBLKPTR((size_t) \
                           GC_amiga_get_mem((size_t)bytes + GC_page_size) \
                           + GC_page_size-1)

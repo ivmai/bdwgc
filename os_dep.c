@@ -1387,7 +1387,7 @@ void GC_register_data_segments(void)
          /* This is a Windows NT derivative, i.e. NT, W2K, XP or later.  */
 
 # ifdef USE_MUNMAP
-    extern int GC_unmap_threshold; /* defined in allchblk.c     */
+    int GC_unmap_threshold; /* defined in allchblk.c */
 # endif
 
   void GC_init_win32(void)
@@ -2221,19 +2221,16 @@ PCR_ERes GC_push_old_obj(void *p, size_t size, PCR_Any data)
     return(PCR_ERes_okay);
 }
 
+struct PCR_MM_ProcsRep * GC_old_allocator;
 
 void GC_default_push_other_roots(void)
 {
     /* Traverse data allocated by previous memory managers.             */
-        {
-          extern struct PCR_MM_ProcsRep * GC_old_allocator;
-
           if ((*(GC_old_allocator->mmp_enumerate))(PCR_Bool_false,
                                                    GC_push_old_obj, 0)
               != PCR_ERes_okay) {
               ABORT("Old object enumeration failed");
           }
-        }
     /* Traverse all thread stacks. */
         if (PCR_ERes_IsErr(
                 PCR_ThCtl_ApplyToAllOtherThreads(GC_push_thread_stack,0))
@@ -2247,7 +2244,7 @@ void GC_default_push_other_roots(void)
 
 # if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
 
-extern void GC_push_all_stacks(void);
+void GC_push_all_stacks(void);
 
 STATIC void GC_default_push_other_roots(void)
 {
@@ -3469,7 +3466,7 @@ void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
 #include <mach/task.h>
 #include <pthread.h>
 
-extern void GC_darwin_register_mach_handler_thread(mach_port_t);
+void GC_darwin_register_mach_handler_thread(mach_port_t);
 
 /* These are not defined in any header, although they are documented */
 extern boolean_t

@@ -238,7 +238,7 @@ void GC_extend_size_map(size_t i)
 # define CLEAR_SIZE 213  /* Granularity for GC_clear_stack_inner */
 
 #if defined(ASM_CLEAR_CODE)
-  extern void *GC_clear_stack_inner(void *, ptr_t);
+  void *GC_clear_stack_inner(void *, ptr_t);
 #else
 /* Clear the stack up to about limit.  Return arg. */
 /*ARGSUSED*/
@@ -457,7 +457,7 @@ GC_API size_t GC_CALL GC_get_total_bytes(void)
 GC_bool GC_is_initialized = FALSE;
 
 # if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
-  extern void GC_init_parallel(void);
+    void GC_init_parallel(void);
 # endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
 
 #if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
@@ -465,10 +465,10 @@ GC_bool GC_is_initialized = FALSE;
 #endif
 
 #ifdef MSWIN32
-    extern void GC_init_win32(void);
+    void GC_init_win32(void);
 #endif
 
-extern void GC_setpagesize(void);
+void GC_setpagesize(void);
 
 STATIC void GC_exit_check(void)
 {
@@ -476,12 +476,12 @@ STATIC void GC_exit_check(void)
 }
 
 #ifdef SEARCH_FOR_DATA_START
-  extern void GC_init_linux_data_start(void);
+  void GC_init_linux_data_start(void);
 #endif
 
 #ifdef UNIX_LIKE
 
-extern void GC_set_and_save_fault_handler(void (*handler)(int));
+void GC_set_and_save_fault_handler(void (*handler)(int));
 
 static void looping_handler(int sig)
 {
@@ -512,7 +512,16 @@ static void maybe_install_looping_handler(void)
 #endif
 
 #ifdef USE_MUNMAP
-  extern int GC_unmap_threshold;
+  int GC_unmap_threshold;
+#endif
+
+#ifdef LINT
+  int GC_read(void);
+  void GC_register_finalizer_no_order(void);
+#endif
+
+#if defined(DYNAMIC_LOADING) && defined(DARWIN)
+  void GC_init_dyld(void);
 #endif
 
 GC_API void GC_CALL GC_init(void)
@@ -838,9 +847,6 @@ GC_API void GC_CALL GC_init(void)
 #   ifdef LINT
       {
           extern char * GC_copyright[];
-          extern int GC_read();
-          extern void GC_register_finalizer_no_order();
-
           GC_noop(GC_copyright, GC_find_header,
                   GC_push_one, GC_call_with_alloc_lock, GC_read,
                   GC_dont_expand,
@@ -857,18 +863,13 @@ GC_API void GC_CALL GC_init(void)
         /* Make sure marker threads are started and thread local */
         /* allocation is initialized, in case we didn't get      */
         /* called from GC_init_parallel();                       */
-        {
-          GC_init_parallel();
-        }
+        GC_init_parallel();
 #   endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
 
 #   if defined(DYNAMIC_LOADING) && defined(DARWIN)
-    {
-        /* This must be called WITHOUT the allocation lock held
-        and before any threads are created */
-        extern void GC_init_dyld();
+        /* This must be called WITHOUT the allocation lock held */
+        /* and before any threads are created.                  */
         GC_init_dyld();
-    }
 #   endif
     RESTORE_CANCEL(cancel_state);
 }
@@ -1211,6 +1212,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 }
 
 #if !defined(PCR) && !defined(SMALL_CONFIG)
+/* Abort the program with a message. msg must not be NULL. */
 void GC_abort(const char *msg)
 {
 #   if defined(MSWIN32)
@@ -1245,7 +1247,8 @@ void GC_abort(const char *msg)
             for(;;) {}
     }
 #   if defined(MSWIN32) && defined(NO_DEBUGGING)
-        /* A more user-friendly abort after showing fatal message.      */
+      /* A more user-friendly abort after showing fatal message.        */
+      if (msg) /* to suppress compiler warnings in ABORT callers. */
         _exit(-1); /* exit on error without running "at-exit" callbacks */
 #   elif defined(MSWIN32) || defined(MSWINCE)
         DebugBreak();

@@ -36,7 +36,7 @@
 #  ifdef PCR
 #    include <base/PCR_Base.h>
 #    include <th/PCR_Th.h>
-     extern PCR_Th_ML GC_allocate_ml;
+     PCR_Th_ML GC_allocate_ml;
 #    define DCL_LOCK_STATE \
          PCR_ERes GC_fastLockRes; PCR_sigset_t GC_old_sig_mask
 #    define UNCOND_LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml)
@@ -54,8 +54,8 @@
 #  if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS)
 #    include <windows.h>
 #    define NO_THREAD (DWORD)(-1)
-     extern DWORD GC_lock_holder;
-     extern CRITICAL_SECTION GC_allocate_ml;
+     DWORD GC_lock_holder;
+     CRITICAL_SECTION GC_allocate_ml;
 #    ifdef GC_ASSERTIONS
 #        define UNCOND_LOCK() \
                 { EnterCriticalSection(&GC_allocate_ml); \
@@ -114,8 +114,8 @@
       /* and sleeping for fixed periods are likely to result in         */
       /* significant wasted time.  We thus rely mostly on queued locks. */
 #     define USE_SPIN_LOCK
-      extern volatile AO_TS_t GC_allocate_lock;
-      extern void GC_lock(void);
+      volatile AO_TS_t GC_allocate_lock;
+      void GC_lock(void);
         /* Allocation lock holder.  Only set if acquired by client through */
         /* GC_call_with_alloc_lock.                                        */
 #     ifdef GC_ASSERTIONS
@@ -140,7 +140,7 @@
 #    endif /* THREAD_LOCAL_ALLOC || USE_PTHREAD_LOCK */
 #    ifdef USE_PTHREAD_LOCKS
 #      include <pthread.h>
-       extern pthread_mutex_t GC_allocate_ml;
+       pthread_mutex_t GC_allocate_ml;
 #      ifdef GC_ASSERTIONS
 #        define UNCOND_LOCK() \
                 { GC_lock(); \
@@ -171,13 +171,13 @@
                 (!GC_need_to_lock \
                  || GC_lock_holder != NUMERIC_THREAD_ID(pthread_self()))
 #    endif
-     extern volatile GC_bool GC_collecting;
+     volatile GC_bool GC_collecting;
 #    define ENTER_GC() GC_collecting = 1;
 #    define EXIT_GC() GC_collecting = 0;
-     extern void GC_lock(void);
-     extern unsigned long GC_lock_holder;
+     void GC_lock(void);
+     unsigned long GC_lock_holder;
 #    ifdef GC_ASSERTIONS
-      extern unsigned long GC_mark_lock_holder;
+       unsigned long GC_mark_lock_holder;
 #    endif
 #  endif /* GC_PTHREADS with linux_threads.c implementation */
 
@@ -195,7 +195,7 @@
 # endif /* !THREADS */
 
 #if defined(UNCOND_LOCK) && !defined(LOCK)
-     extern GC_bool GC_need_to_lock;
+     GC_bool GC_need_to_lock;
                 /* At least two thread running; need to lock.   */
 #    define LOCK() if (GC_need_to_lock) { UNCOND_LOCK(); }
 #    define UNLOCK() if (GC_need_to_lock) { UNCOND_UNLOCK(); }

@@ -495,7 +495,7 @@ void GC_dump_finalization(void)
   STATIC word GC_old_dl_entries; /* for stats printing */
 #endif
 
-extern unsigned GC_fail_count;
+unsigned GC_fail_count;
                         /* How many consecutive GC/expansion failures?  */
                         /* Reset by GC_allochblk(); defined in alloc.c. */
 

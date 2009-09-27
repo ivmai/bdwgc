@@ -309,7 +309,7 @@ STATIC void * GC_mark_thread(void * id)
   }
 }
 
-extern long GC_markers;         /* Number of mark threads we would      */
+long GC_markers;                /* Number of mark threads we would      */
                                 /* like to have.  Includes the          */
                                 /* initiating thread.                   */
 
@@ -643,7 +643,7 @@ STATIC int GC_get_nprocs(void)
 /* If wait_for_all is true, then we exit with the GC lock held and no   */
 /* collection in progress; otherwise we just wait for the current GC    */
 /* to finish.                                                           */
-extern GC_bool GC_collection_in_progress(void);
+GC_bool GC_collection_in_progress(void);
 STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
     GC_ASSERT(I_HOLD_LOCK());
