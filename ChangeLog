@@ -1,5 +1,18 @@
 2009-09-27  Ivan Maidanski <ivmai@mail.ru>
 
+	* include/private/gc_locks.h (GC_allocate_ml, GC_lock_holder,
+	GC_collecting, GC_mark_lock_holder, GC_need_to_lock): Use "extern"
+	(for the global variable declaration) again.
+	* include/private/gc_pmark.h (GC_n_mark_procs, GC_mark_stack_size,
+	GC_mark_stack_limit, GC_mark_stack_top, GC_mark_stack,
+	GC_mark_stack_too_small, GC_mark_state): Ditto.
+	* include/private/gcconfig.h (GC_register_stackbottom): Ditto.
+	* include/private/pthread_support.h (GC_threads,
+	GC_thr_initialized, GC_in_thread_creation): Ditto.
+	* include/private/gc_priv.h: Ditto (for all global variables).
+
+2009-09-27  Ivan Maidanski <ivmai@mail.ru>
+
 	* real_malloc.c: Include private/config.h if HAVE_CONFIG_H.
 
 2009-09-27  Ivan Maidanski <ivmai@mail.ru>

@@ -98,15 +98,15 @@ typedef struct GC_Thread_Rep {
 } * GC_thread;
 
 # define THREAD_TABLE_SZ 256    /* Must be power of 2   */
-volatile GC_thread GC_threads[THREAD_TABLE_SZ];
+extern volatile GC_thread GC_threads[THREAD_TABLE_SZ];
 
-GC_bool GC_thr_initialized;
+extern GC_bool GC_thr_initialized;
 
 GC_thread GC_lookup_thread(pthread_t id);
 
 void GC_stop_init(void);
 
-GC_bool GC_in_thread_creation;
+extern GC_bool GC_in_thread_creation;
         /* We may currently be in thread creation or destruction.       */
         /* Only set to TRUE while allocation lock is held.              */
         /* When set, it is OK to run GC from unknown thread.            */

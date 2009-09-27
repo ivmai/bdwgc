@@ -1599,7 +1599,7 @@
         /* address minus one page.                                      */
 #       define BACKING_STORE_DISPLACEMENT 0x1000000
 #       define BACKING_STORE_ALIGNMENT 0x1000
-        ptr_t GC_register_stackbottom;
+        extern ptr_t GC_register_stackbottom;
 #       define BACKING_STORE_BASE GC_register_stackbottom
         /* Known to be wrong for recent HP/UX versions!!!       */
 #   endif
@@ -1617,7 +1617,7 @@
         /* constants:                                           */
 #       define BACKING_STORE_ALIGNMENT 0x100000
 #       define BACKING_STORE_DISPLACEMENT 0x80000000
-        ptr_t GC_register_stackbottom;
+        extern ptr_t GC_register_stackbottom;
 #       define BACKING_STORE_BASE GC_register_stackbottom
 #       define SEARCH_FOR_DATA_START
 #       ifdef __GNUC__
@@ -1647,7 +1647,7 @@
               __lfetch(__lfhint_nta,  (x))
 #           define CLEAR_DOUBLE(x) \
               __stf_spill((void *)(x), 0)
-#         endif // __INTEL_COMPILER
+#         endif /* __INTEL_COMPILER */
 #       endif
 #   endif
 #   ifdef MSWIN32
