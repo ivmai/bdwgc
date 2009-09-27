@@ -1,3 +1,15 @@
+2009-09-27  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c (GC_get_stack_min, GC_push_stack_for,
+	GC_get_next_stack): Recognize _WIN32_WCE_EMULATION macro (used for
+	WinCE emulation and for custom WinCE 6 devices); add the comment.
+	* win32_threads.c (GC_get_stack_min): Cast pointer to word instead
+	of DWORD.
+	* win32_threads.c (GC_get_next_stack): Don't use and maintain the
+	latest known stack_min value for WinCE (if GC_get_stack_min is
+	defined as a macro); update the comments.
+	* win32_threads.c (GC_wnt): Don't declare for WinCE.
+
 2009-09-26  Ivan Maidanski <ivmai@mail.ru>
 
 	* Makefile.direct: Document EMPTY_GETENV_RESULTS.
