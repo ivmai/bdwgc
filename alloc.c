@@ -92,13 +92,17 @@ char * GC_copyright[] =
 "See source code for details." };
 
 /* Version macros are now defined in gc_version.h, which is included by */
-/* gc.h, which is included by gc_priv.h".                               */
-
+/* gc.h, which is included by gc_priv.h.                                */
 #ifndef GC_NO_VERSION_VAR
+  const unsigned GC_version = ((GC_VERSION_MAJOR << 16) |
+                        (GC_VERSION_MINOR << 8) | GC_TMP_ALPHA_VERSION);
+#endif
 
-unsigned GC_version = ((GC_VERSION_MAJOR << 16) | (GC_VERSION_MINOR << 8) | GC_TMP_ALPHA_VERSION);
-
-#endif /* GC_NO_VERSION_VAR */
+GC_API unsigned GC_CALL GC_get_version(void)
+{
+  return (GC_VERSION_MAJOR << 16) | (GC_VERSION_MINOR << 8) |
+          GC_TMP_ALPHA_VERSION;
+}
 
 /* some more variables */
 

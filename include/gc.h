@@ -35,8 +35,8 @@
         /* Define version numbers here to allow test on build machine   */
         /* for cross-builds.  Note that this defines the header         */
         /* version number, which may or may not match that of the       */
-        /* dynamic library.  The GC_version variable can be used        */
-        /* to obtain the latter.                                        */
+        /* dynamic library.  GC_get_version() can be used to obtain     */
+        /* the latter.                                                  */
 
 # include "gc_config_macros.h"
 
@@ -64,6 +64,10 @@
   typedef long long GC_signed_word;
 #endif
 #endif
+
+/* Get the GC library version. The returned value is in the form:       */
+/* ((version_major<<16) | (version_minor<<8) | alpha_version).          */
+GC_API unsigned GC_CALL GC_get_version(void);
 
 /* Public read-only variables */
 /* The supplied getter functions are preferred for new code.            */

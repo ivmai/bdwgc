@@ -1,3 +1,10 @@
+2009-09-28  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_version): Add "const" keyword.
+	* alloc.c (GC_get_version): New public function.
+	* include/gc.h (GC_get_version): New function declaration; update
+	the comment for the GC version.
+
 2009-09-27  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/private/gc_locks.h (GC_allocate_ml, GC_lock_holder,
@@ -1766,7 +1773,7 @@
 	* win32_threads.c (GC_wait_marker): Remove FIXME and use "release"
 	version of AO_fetch_and_sub1().
 	* win32_threads.c (GC_win32_start_inner, GC_win32_start): convert int
-	to pointer (and vice verse) thru word type to suppress warnings.
+	to pointer (and vice versa) thru word type to suppress warnings.
 	* win32_threads.c (GC_mark_mutex_waitcnt): Fix comment, always
 	access atomically.
 	* misc.c: Change GC_THREADS tests back to THREADS.
