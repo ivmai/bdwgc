@@ -1,3 +1,7 @@
+2009-09-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* libatomic_ops: Rename from "libatomic_ops-1.2".
+
 2009-09-28  Ivan Maidanski <ivmai@mail.ru>
 
 	* alloc.c (GC_version): Add "const" keyword.
