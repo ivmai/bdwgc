@@ -463,23 +463,22 @@ AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 #
 
 # The libatomic_ops library.  This is not ideal, since we pick up junk from
-# there.  The hard-coded version number should also go.
+# there.
 EXTRA_DIST = gc_cpp.cpp README.QUICK BCC_MAKEFILE NT_MAKEFILE \
-	OS2_MAKEFILE PCR-Makefile digimars.mak \
-	EMX_MAKEFILE Makefile.direct Makefile.dj Makefile.DLLs \
-	SMakefile.amiga WCC_MAKEFILE build_atomic_ops.sh \
-	build_atomic_ops.sh.cygwin NT_STATIC_THREADS_MAKEFILE \
-	NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE \
-	extra/add_gc_prefix.c extra/gcname.c extra/if_mach.c \
-	extra/if_not_there.c hpux_test_and_clear.s gc.mak \
-	extra/MacOS.c MacProjects.sit.hqx mach_dep.c extra/setjmp_t.c \
-	extra/threadlibs.c extra/AmigaOS.c Mac_files/datastart.c \
-	Mac_files/dataend.c Mac_files/MacOS_config.h \
-	Mac_files/MacOS_Test_config.h include/private/msvc_dbg.h \
-	extra/msvc_dbg.c libatomic_ops-1.2 cord/cordbscs.c \
-	cord/cordtest.c cord/de.c cord/cordprnt.c cord/cordxtra.c \
-	cord/de_cmds.h cord/de_win.h cord/de_win.c cord/de_win.RC \
-	cord/de_win.ICO
+	OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE \
+	Makefile.direct Makefile.dj Makefile.DLLs SMakefile.amiga \
+	WCC_MAKEFILE build_atomic_ops.sh build_atomic_ops.sh.cygwin \
+	NT_STATIC_THREADS_MAKEFILE NT_X64_STATIC_THREADS_MAKEFILE \
+	NT_X64_THREADS_MAKEFILE extra/add_gc_prefix.c extra/gcname.c \
+	extra/if_mach.c extra/if_not_there.c hpux_test_and_clear.s \
+	gc.mak extra/MacOS.c MacProjects.sit.hqx mach_dep.c \
+	extra/setjmp_t.c extra/threadlibs.c extra/AmigaOS.c \
+	Mac_files/datastart.c Mac_files/dataend.c \
+	Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
+	include/private/msvc_dbg.h extra/msvc_dbg.c libatomic_ops \
+	cord/cordbscs.c cord/cordtest.c cord/de.c cord/cordprnt.c \
+	cord/cordxtra.c cord/de_cmds.h cord/de_win.h cord/de_win.c \
+	cord/de_win.RC cord/de_win.ICO
 
 # C Library
 # ---------

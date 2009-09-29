@@ -181,8 +181,8 @@ EXTRA_DIST += extra/add_gc_prefix.c extra/gcname.c extra/if_mach.c \
     include/private/msvc_dbg.h extra/msvc_dbg.c
 
 # The libatomic_ops library.  This is not ideal, since we pick up junk from
-# there.  The hard-coded version number should also go.
-EXTRA_DIST += libatomic_ops-1.2
+# there.
+EXTRA_DIST += libatomic_ops
 
 # this is an auxiliary shell file used by Makefile and Makefile.direct
 #

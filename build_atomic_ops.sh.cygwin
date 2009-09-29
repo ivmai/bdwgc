@@ -6,7 +6,7 @@ mkdir libatomic_ops-install
 P=`pwd`
 Q=`mktemp -d`
 ln -s "$P" $Q/dir
-cd $Q/dir/libatomic_ops-*[0-9]
+cd $Q/dir/libatomic_ops
 ./configure --prefix=$Q/dir/libatomic_ops-install
 $MAKE CC=$CC install
 cd /

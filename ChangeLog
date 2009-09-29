@@ -1,5 +1,19 @@
 2009-09-29  Ivan Maidanski <ivmai@mail.ru>
 
+	* Makefile.am: Strip version suffix for libatomic_ops directory.
+	* build_atomic_ops.sh: Ditto.
+	* build_atomic_ops.sh.cygwin: Ditto.
+	* configure_atomic_ops.sh: Ditto.
+	* Makefile.direct: Remove AO_VERSION definition; strip version
+	suffix for libatomic_ops directory.
+	* NT_STATIC_THREADS_MAKEFILE: Ditto.
+	* NT_X64_STATIC_THREADS_MAKEFILE: Ditto.
+	* NT_X64_THREADS_MAKEFILE: Ditto.
+	* gc.mak: Ditto.
+	* Makefile.in: Regenerate.
+
+2009-09-29  Ivan Maidanski <ivmai@mail.ru>
+
 	* libatomic_ops: Rename from "libatomic_ops-1.2".
 
 2009-09-28  Ivan Maidanski <ivmai@mail.ru>

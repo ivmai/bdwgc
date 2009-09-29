@@ -32,8 +32,7 @@ VPATH= $(srcdir)
 
 # Atomic_ops installation directory.  If this doesn't exist, we create
 # it from the included libatomic_ops distribution.
-AO_VERSION=1.2
-AO_SRC_DIR=$(srcdir)/libatomic_ops-$(AO_VERSION)
+AO_SRC_DIR=$(srcdir)/libatomic_ops
 AO_INSTALL_DIR=$(srcdir)/libatomic_ops-install
 
 CFLAGS= -O -I$(srcdir)/include -I$(AO_INSTALL_DIR)/include -DATOMIC_UNCOLLECTABLE -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS
@@ -740,16 +739,16 @@ dist gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
 	cp Makefile.direct Makefile
 	CC=$(CC) ./configure_atomic_ops.sh
 	cd $(AO_SRC_DIR); $(MAKE) dist
-	if test $(srcdir)/libatomic_ops-$(AO_VERSION) = $(AO_SRC_DIR); \
+	if test $(srcdir)/libatomic_ops = $(AO_SRC_DIR); \
 	then \
 	  mv $(AO_SRC_DIR) $(AO_SRC_DIR).bak ; \
-	  tar xvfz $(AO_SRC_DIR).bak/libatomic_ops-$(AO_VERSION).tar.gz ; \
+	  tar xvfz $(AO_SRC_DIR).bak/libatomic_ops.tar.gz ; \
 	else \
-	  tar xvfz $(AO_SRC_DIR)/libatomic_ops-$(AO_VERSION).tar.gz ; \
+	  tar xvfz $(AO_SRC_DIR)/libatomic_ops.tar.gz ; \
 	fi
 	rm -f `./gcname`
 	ln -s . `./gcname`
-	./add_gc_prefix $(SRCS) $(DOC_FILES) $(OTHER_FILES) libatomic_ops-$(AO_VERSION) > /tmp/gc.tar-files
+	./add_gc_prefix $(SRCS) $(DOC_FILES) $(OTHER_FILES) libatomic_ops > /tmp/gc.tar-files
 	tar cvfh gc.tar `cat /tmp/gc.tar-files`
 	cp gc.tar `./gcname`.tar
 	gzip `./gcname`.tar
