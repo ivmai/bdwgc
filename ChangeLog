@@ -1,3 +1,7 @@
+2009-09-30  Ivan Maidanski <ivmai@mail.ru> (really Hans Boehm)
+
+	* os_dep.c (PROTECT, UNPROTECT): Use distinct ABORT messages.
+
 2009-09-30  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
 
 	* configure.ac: Rewrite the tests for external or internal

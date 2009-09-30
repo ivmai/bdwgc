@@ -2598,12 +2598,12 @@ void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
 #   define PROTECT(addr,len) \
         if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
                 FALSE,VM_PROT_READ) != KERN_SUCCESS) { \
-            ABORT("vm_portect failed"); \
+            ABORT("vm_protect (PROTECT) failed"); \
         }
 #   define UNPROTECT(addr,len) \
         if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
                 FALSE,VM_PROT_READ|VM_PROT_WRITE) != KERN_SUCCESS) { \
-            ABORT("vm_portect failed"); \
+            ABORT("vm_protect (UNPROTECT) failed"); \
         }
 # else
 
