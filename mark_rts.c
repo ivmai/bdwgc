@@ -332,8 +332,7 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
 }
 #endif /* !defined(MSWIN32) && !defined(MSWINCE) */
 
-#if (defined(MSWIN32) || defined(_WIN32_WCE_EMULATION)) \
-        && !defined(NO_DEBUGGING)
+#if (defined(MSWIN32) || defined(MSWINCE)) && !defined(NO_DEBUGGING)
 /* Not used at present (except for, may be, debugging purpose).         */
 /* Workaround for the OS mapping and unmapping behind our back:         */
 /* Is the address p in one of the temporary static root sections?       */
@@ -355,7 +354,7 @@ GC_bool GC_is_tmp_root(ptr_t p)
     }
     return(FALSE);
 }
-#endif /* MSWIN32 || _WIN32_WCE_EMULATION */
+#endif /* MSWIN32 || MSWINCE */
 
 ptr_t GC_approx_sp(void)
 {

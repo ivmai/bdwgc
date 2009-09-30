@@ -1,5 +1,15 @@
 2009-09-30  Ivan Maidanski <ivmai@mail.ru>
 
+	* Makefile.direct: Remove trailing spaces at EOLn.
+	* Makefile.direct: Document GC_REGISTER_MEM_PRIVATE.
+	* mark_rts.c (GC_is_tmp_root): Define also for WinCE unless
+	NO_DEBUGGING (that is, replace _WIN32_WCE_EMULATION with MSWINCE).
+	* os_dep.c (GC_sysinfo): Remove explicit global variable
+	initialization to "{0}" (revert back the previous change) since it
+	might produce a warning.
+
+2009-09-30  Ivan Maidanski <ivmai@mail.ru>
+
 	* allchblk.c (GC_large_alloc_warn_interval): Move declaration from
 	gc_priv.h.
 	* allchblk.c (GC_large_alloc_warn_suppressed): Move definition

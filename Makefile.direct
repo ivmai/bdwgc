@@ -6,10 +6,10 @@
 # c++ - adds C++ interface to library
 # cords - adds cords (heavyweight strings) to library
 # test - prints porting information, then builds basic version of gc.a,
-#      	 and runs some tests of collector and cords.  Does not add cords or
-#	 c++ interface to gc.a
+#        and runs some tests of collector and cords.  Does not add cords or
+#        c++ interface to gc.a
 # cord/de - builds dumb editor based on cords.
-ABI_FLAG= 
+ABI_FLAG=
 # ABI_FLAG should be the cc flag that specifies the ABI.  On most
 # platforms this will be the empty string.  Possible values:
 # +DD64 for 64-bit executable on HP/UX.
@@ -96,7 +96,7 @@ HOSTCFLAGS=$(CFLAGS)
 #   to be used.  Requires -DGC_WIN32_PTHREADS.
 # -DGC_PTHREADS_PARAMARK causes pthread-based parallel mark implementation
 #   to be used even if GC_WIN32_PTHREADS is undefined.  (Useful for WinCE.)
-#   
+#
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
 #   of objects to be recognized.  (See gc_priv.h for consequences.)
 #   Alternatively, GC_all_interior_pointers can be set at process
@@ -284,6 +284,10 @@ HOSTCFLAGS=$(CFLAGS)
 #   to GC_WinMain; implement the "real" WinMain which starts a new thread to
 #   call GC_WinMain after initializing the GC.  Useful for WinCE.
 #   Incompatible with GC_DLL.
+# -DGC_REGISTER_MEM_PRIVATE (Win32 only) Force to register MEM_PRIVATE R/W
+#   sections as data roots.  Might be needed for some WinCE 6.0+ custom
+#   builds.  (May result in numerous "Data Abort" messages logged to WinCE
+#   debugging console.)  Incompatible with GCC toolchains for WinCE.
 # -DNO_GETENV prevents the collector from looking at environment variables.
 #   These may otherwise alter its configuration, or turn off GC altogether.
 #   I don't know of a reason to disable this, except possibly if the
@@ -383,7 +387,7 @@ HOSTCFLAGS=$(CFLAGS)
 #   argue about its safety without the collector.)
 #
 
-CXXFLAGS= $(CFLAGS) 
+CXXFLAGS= $(CFLAGS)
 AR= ar
 RANLIB= ranlib
 
@@ -456,7 +460,7 @@ OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE gc.mak \
 		 PCR-Makefile SMakefile.amiga Makefile.DLLs \
 		 digimars.mak Makefile.direct NT_STATIC_THREADS_MAKEFILE \
 		 NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE \
-		 build_atomic_ops.sh build_atomic_ops.sh.cygwin 
+		 build_atomic_ops.sh build_atomic_ops.sh.cygwin
 
 OTHER_FILES= Makefile extra/setjmp_t.c callprocs \
            MacProjects.sit.hqx extra/MacOS.c \
@@ -489,7 +493,7 @@ all: gc.a gctest
 
 # if AO_INSTALL_DIR doesn't exist, we assume that it is pointing to
 # the default location, and we need to build
-$(AO_INSTALL_DIR): 
+$(AO_INSTALL_DIR):
 	CC=$(CC) MAKE=$(MAKE) $(srcdir)/build_atomic_ops.sh
 
 LEAKFLAGS=$(CFLAGS) -DFIND_LEAK
@@ -700,10 +704,10 @@ threadlibs: $(srcdir)/extra/threadlibs.c $(srcdir)/include/private/gcconfig.h Ma
 if_not_there: $(srcdir)/extra/if_not_there.c
 	$(HOSTCC) $(HOSTCFLAGS) -o if_not_there $(srcdir)/extra/if_not_there.c
 
-clean: 
+clean:
 	rm -f gc.a *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
 	      setjmp_test  mon.out gmon.out a.out core if_not_there if_mach \
-	      threadlibs $(CORD_OBJS) cord/cordtest cord/de 
+	      threadlibs $(CORD_OBJS) cord/cordtest cord/de
 	-rm -f *~
 
 gctest: tests/test.o gc.a $(UTILS)

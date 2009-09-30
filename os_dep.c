@@ -1873,7 +1873,7 @@ void * os2_alloc(size_t bytes)
 
 
 # if defined(MSWIN32) || defined(MSWINCE)
-SYSTEM_INFO GC_sysinfo = {0};
+    SYSTEM_INFO GC_sysinfo;
 # endif
 
 # ifdef MSWIN32
