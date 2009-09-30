@@ -450,7 +450,7 @@ static ptr_t backing_store_base_from_proc(void)
 # endif /* LINUX */
   extern int _end[];
 
-  ptr_t GC_data_start;
+  ptr_t GC_data_start = NULL;
 
   ptr_t GC_find_limit(ptr_t, GC_bool);
 
@@ -503,7 +503,7 @@ static void *tiny_sbrk(ptrdiff_t increment)
 # endif /* ECOS */
 
 #if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__)
-  ptr_t GC_data_start;
+  ptr_t GC_data_start = NULL;
   ptr_t GC_find_limit(ptr_t, GC_bool);
   extern char **environ;
 
@@ -599,28 +599,25 @@ struct o32_obj {
 # endif /* OS/2 */
 
 /* Find the page size */
-word GC_page_size;
+word GC_page_size = 0;
 
 # if defined(MSWIN32) || defined(MSWINCE)
-  void GC_setpagesize(void)
-  {
-    GetSystemInfo(&GC_sysinfo);
-    GC_page_size = GC_sysinfo.dwPageSize;
-  }
+    void GC_setpagesize(void)
+    {
+      GetSystemInfo(&GC_sysinfo);
+      GC_page_size = GC_sysinfo.dwPageSize;
+    }
 
 # else
-#   if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(USE_MMAP)
-        void GC_setpagesize(void)
-        {
-            GC_page_size = GETPAGESIZE();
-        }
-#   else
+    void GC_setpagesize(void)
+    {
+#     if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(USE_MMAP)
+        GC_page_size = GETPAGESIZE();
+#     else
         /* It's acceptable to fake it. */
-        void GC_setpagesize(void)
-        {
-            GC_page_size = HBLKSIZE;
-        }
-#   endif
+        GC_page_size = HBLKSIZE;
+#     endif
+    }
 # endif
 
 # if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
@@ -1751,7 +1748,7 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
       }
 #   endif
 
-    if (bytes & (GC_page_size -1)) ABORT("Bad GET_MEM arg");
+    if (bytes & (GC_page_size - 1)) ABORT("Bad GET_MEM arg");
     result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
                   GC_MMAP_FLAGS | OPT_MAP_ANON, zero_fd, 0/* offset */);
     if (result == MAP_FAILED) return(0);
@@ -1876,7 +1873,7 @@ void * os2_alloc(size_t bytes)
 
 
 # if defined(MSWIN32) || defined(MSWINCE)
-SYSTEM_INFO GC_sysinfo;
+SYSTEM_INFO GC_sysinfo = {0};
 # endif
 
 # ifdef MSWIN32
@@ -2221,7 +2218,7 @@ PCR_ERes GC_push_old_obj(void *p, size_t size, PCR_Any data)
     return(PCR_ERes_okay);
 }
 
-struct PCR_MM_ProcsRep * GC_old_allocator;
+struct PCR_MM_ProcsRep * GC_old_allocator; /* defined in pcr_interface.c */
 
 void GC_default_push_other_roots(void)
 {
@@ -2258,7 +2255,7 @@ void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
 #endif /* THREADS */
 
 /*
- * Routines for accessing dirty  bits on virtual pages.
+ * Routines for accessing dirty bits on virtual pages.
  * There are six ways to maintain this information:
  * DEFAULT_VDB: A simple dummy implementation that treats every page
  *              as possibly dirty.  This makes incremental collection
@@ -2648,12 +2645,12 @@ void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
 #endif
 
 #ifndef DARWIN
-STATIC SIG_HNDLR_PTR GC_old_segv_handler;
+STATIC SIG_HNDLR_PTR GC_old_segv_handler = 0;
                         /* Also old MSWIN32 ACCESS_VIOLATION filter */
 #if !defined(MSWIN32) && !defined(MSWINCE)
-STATIC SIG_HNDLR_PTR GC_old_bus_handler;
-STATIC GC_bool GC_old_bus_handler_used_si;
-STATIC GC_bool GC_old_segv_handler_used_si;
+STATIC SIG_HNDLR_PTR GC_old_bus_handler = 0;
+STATIC GC_bool GC_old_bus_handler_used_si = FALSE;
+STATIC GC_bool GC_old_segv_handler_used_si = FALSE;
 #endif
 #endif /* !DARWIN */
 
@@ -3253,9 +3250,9 @@ GC_bool GC_page_was_ever_dirty(struct hblk *h)
 
 #define INITIAL_BUF_SZ 16384
 STATIC word GC_proc_buf_size = INITIAL_BUF_SZ;
-STATIC char *GC_proc_buf;
+STATIC char *GC_proc_buf = NULL;
 
-STATIC int GC_proc_fd;
+STATIC int GC_proc_fd = 0;
 
 void GC_dirty_init(void)
 {
@@ -3388,9 +3385,10 @@ GC_bool GC_page_was_ever_dirty(struct hblk *h)
 
 # define NPAGES (32*1024)       /* 128 MB */
 
-PCR_VD_DB  GC_grungy_bits[NPAGES];
+PCR_VD_DB GC_grungy_bits[NPAGES];
 
-ptr_t GC_vd_base;       /* Address corresponding to GC_grungy_bits[0]   */
+STATIC ptr_t GC_vd_base = NULL;
+                        /* Address corresponding to GC_grungy_bits[0]   */
                         /* HBLKSIZE aligned.                            */
 
 void GC_dirty_init(void)
@@ -3517,7 +3515,7 @@ typedef enum {
 } GC_mprotect_state_t;
 
 /* FIXME: 1 and 2 seem to be safe to use in the msgh_id field,
-   but it isn't  documented. Use the source and see if they
+   but it isn't documented. Use the source and see if they
    should be ok. */
 #define ID_STOP 1
 #define ID_RESUME 2
@@ -3527,7 +3525,7 @@ typedef enum {
 
 #if defined(THREADS)
 
-GC_mprotect_state_t GC_mprotect_state;
+static GC_mprotect_state_t GC_mprotect_state;
 
 /* The following should ONLY be called when the world is stopped  */
 static void GC_mprotect_thread_notify(mach_msg_id_t id)
@@ -4305,8 +4303,6 @@ void GC_print_callers (struct callinfo info[NFRAMES])
 }
 
 #endif /* NEED_CALLINFO */
-
-
 
 #if defined(LINUX) && defined(__ELF__) && !defined(SMALL_CONFIG)
 

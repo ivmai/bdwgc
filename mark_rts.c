@@ -132,9 +132,6 @@ static void add_roots_to_index(struct roots *p)
 
 # endif
 
-
-
-
 word GC_root_size = 0;
 
 GC_API void GC_CALL GC_add_roots(void *b, void *e)
@@ -611,7 +608,7 @@ STATIC void GC_push_all_stack_part_eager_frames(ptr_t lo, ptr_t hi,
 }
 
 # ifdef IA64
-    word GC_save_regs_ret_val;
+    ptr_t GC_save_regs_ret_val; /* defined in mach_dep.c. */
                         /* Previously set to backing store pointer.     */
 # endif
 
@@ -655,7 +652,7 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
               /* Note that the backing store grows up, so we can't use  */
               /* GC_push_all_stack_partially_eager.                     */
               {
-                ptr_t bsp = (ptr_t) GC_save_regs_ret_val;
+                ptr_t bsp = GC_save_regs_ret_val;
                 ptr_t cold_gc_bs_pointer = bsp - 2048;
                 if (GC_all_interior_pointers &&
                     cold_gc_bs_pointer > BACKING_STORE_BASE) {
@@ -678,7 +675,7 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
 #   endif /* !THREADS */
 }
 
-void (*GC_push_typed_structures) (void) = NULL;
+void (*GC_push_typed_structures) (void) = 0;
 
                         /* Push GC internal roots.  These are normally  */
                         /* included in the static data segment, and     */

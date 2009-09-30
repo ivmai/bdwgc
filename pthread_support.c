@@ -97,7 +97,7 @@ unsigned long GC_lock_holder = NO_THREAD;
 # include <sys/dg_sys_info.h>
 # include <sys/_int_psem.h>
   /* sem_t is an uint in DG/UX */
-  typedef unsigned int  sem_t;
+  typedef unsigned int sem_t;
 #endif /* GC_DGUX386_THREADS */
 
 /* Undefine macros used to redirect pthread primitives. */
@@ -309,11 +309,11 @@ STATIC void * GC_mark_thread(void * id)
   }
 }
 
-long GC_markers;                /* Number of mark threads we would      */
-                                /* like to have.  Includes the          */
-                                /* initiating thread.                   */
+long GC_markers;        /* Number of mark threads we would like to      */
+                        /* have.  Includes the initiating thread.       */
+                        /* Defined in mark.c.                           */
 
-pthread_t GC_mark_threads[MAX_MARKERS];
+STATIC pthread_t GC_mark_threads[MAX_MARKERS];
 
 #define PTHREAD_CREATE REAL_FUNC(pthread_create)
 
@@ -772,7 +772,7 @@ static int get_ncpu(void)
 #endif  /* GC_NETBSD_THREADS */
 
 # if defined(GC_LINUX_THREADS) && defined(INCLUDE_LINUX_THREAD_DESCR)
-__thread int dummy_thread_local;
+__thread int GC_dummy_thread_local;
 # endif
 
 /* We hold the allocation lock. */
@@ -797,7 +797,7 @@ void GC_thr_init(void)
       /* locals for the main thread, except for those allocated         */
       /* in response to dlopen calls.                                   */
         {
-          ptr_t thread_local_addr = (ptr_t)(&dummy_thread_local);
+          ptr_t thread_local_addr = (ptr_t)(&GC_dummy_thread_local);
           ptr_t main_thread_start, main_thread_end;
           if (!GC_enclosing_mapping(thread_local_addr, &main_thread_start,
                                     &main_thread_end)) {

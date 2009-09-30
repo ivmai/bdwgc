@@ -33,10 +33,11 @@ typedef struct {
                                 /* to hide it from collector.           */
 } page_entry;
 
-page_entry GC_sums [NSUMS];
+page_entry GC_sums[NSUMS];
 
-STATIC word GC_faulted[NSUMS];  /* Record of pages on which we saw a write */
-                                /* fault.                                  */
+STATIC word GC_faulted[NSUMS] = { 0 };
+                /* Record of pages on which we saw a write fault.       */
+
 STATIC size_t GC_n_faulted = 0;
 
 void GC_record_fault(struct hblk * h)
@@ -91,11 +92,11 @@ STATIC GC_bool GC_on_free_list(struct hblk *h)
 }
 # endif
 
-int GC_n_dirty_errors;
-int GC_n_faulted_dirty_errors;
-int GC_n_changed_errors;
-int GC_n_clean;
-int GC_n_dirty;
+int GC_n_dirty_errors = 0;
+int GC_n_faulted_dirty_errors = 0;
+int GC_n_changed_errors = 0;
+int GC_n_clean = 0;
+int GC_n_dirty = 0;
 
 STATIC void GC_update_check_page(struct hblk *h, int index)
 {
@@ -144,7 +145,7 @@ STATIC void GC_update_check_page(struct hblk *h, int index)
     pe -> block = h + OFFSET;
 }
 
-word GC_bytes_in_used_blocks;
+word GC_bytes_in_used_blocks = 0;
 
 /*ARGSUSED*/
 STATIC void GC_add_block(struct hblk *h, word dummy)

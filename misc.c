@@ -72,10 +72,10 @@ GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
 GC_bool GC_debugging_started = FALSE;
         /* defined here so we don't have to load debug_malloc.o */
 
-void (*GC_check_heap) (void) = (void (*) (void))0;
-void (*GC_print_all_smashed) (void) = (void (*) (void))0;
+void (*GC_check_heap) (void) = 0;
+void (*GC_print_all_smashed) (void) = 0;
 
-void (*GC_start_call_back) (void) = (void (*) (void))0;
+void (*GC_start_call_back) (void) = 0;
 
 ptr_t GC_stackbottom = 0;
 
@@ -124,11 +124,11 @@ GC_bool GC_print_back_height = 0;
   GC_bool GC_force_unmap_on_gcollect = FALSE;
 #endif
 
-long GC_large_alloc_warn_interval = 5;
+#ifndef GC_LARGE_ALLOC_WARN_INTERVAL
+# define GC_LARGE_ALLOC_WARN_INTERVAL 5
+#endif
+long GC_large_alloc_warn_interval = GC_LARGE_ALLOC_WARN_INTERVAL;
         /* Interval between unsuppressed warnings.      */
-
-long GC_large_alloc_warn_suppressed = 0;
-        /* Number of warnings suppressed so far.        */
 
 /*ARGSUSED*/
 STATIC void * GC_CALLBACK GC_default_oom_fn(size_t bytes_requested)
@@ -226,12 +226,13 @@ void GC_extend_size_map(size_t i)
 #   define SMALL_CLEAR_SIZE 256 /* Clear this much every time.          */
 # else
   STATIC word GC_stack_last_cleared = 0; /* GC_no when we last did this */
-  STATIC ptr_t GC_min_sp; /* Coolest stack pointer value from which     */
-                          /* we've already cleared the stack.           */
-  STATIC ptr_t GC_high_water;
+  STATIC ptr_t GC_min_sp = NULL;
+                        /* Coolest stack pointer value from which       */
+                        /* we've already cleared the stack.             */
+  STATIC ptr_t GC_high_water = NULL;
                         /* "hottest" stack pointer value we have seen   */
                         /* recently.  Degrades over time.               */
-  STATIC word GC_bytes_allocd_at_reset;
+  STATIC word GC_bytes_allocd_at_reset = 0;
 #   define DEGRADE_RATE 50
 # endif
 
@@ -512,7 +513,7 @@ static void maybe_install_looping_handler(void)
 #endif
 
 #ifdef USE_MUNMAP
-  int GC_unmap_threshold;
+  int GC_unmap_threshold; /* defined in allchblk.c */
 #endif
 
 #ifdef LINT
@@ -1022,7 +1023,7 @@ out:
 STATIC FILE * GC_stdout = NULL;
 STATIC FILE * GC_stderr = NULL;
 STATIC FILE * GC_log = NULL;
-STATIC int GC_tmp;  /* Should really be local ... */
+static int GC_tmp;  /* Should really be local ... */
 
   STATIC void GC_set_files(void)
   {

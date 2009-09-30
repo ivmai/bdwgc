@@ -145,7 +145,7 @@ GC_API int GC_CALL GC_register_disappearing_link(void * * link)
 }
 
 GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
-                                                        void * obj)
+                                                         void * obj)
 {
     struct disappearing_link *curr_dl;
     size_t index;
@@ -295,8 +295,6 @@ STATIC void GC_unreachable_finalize_mark_proc(ptr_t p)
 {
     GC_normal_finalize_mark_proc(p);
 }
-
-
 
 /* Register a finalization function.  See gc.h for details.     */
 /* The last parameter is a procedure that determines            */
@@ -492,7 +490,7 @@ void GC_dump_finalization(void)
 #endif
 
 #ifndef SMALL_CONFIG
-  STATIC word GC_old_dl_entries; /* for stats printing */
+  STATIC word GC_old_dl_entries = 0; /* for stats printing */
 #endif
 
 unsigned GC_fail_count;

@@ -43,11 +43,11 @@
 
 STATIC GC_bool GC_explicit_typing_initialized = FALSE;
 
-STATIC int GC_explicit_kind;
+STATIC int GC_explicit_kind = 0;
                         /* Object kind for objects with indirect        */
                         /* (possibly extended) descriptors.             */
 
-STATIC int GC_array_kind;
+STATIC int GC_array_kind = 0;
                         /* Object kind for objects with complex         */
                         /* descriptors and GC_array_mark_proc.          */
 
@@ -88,7 +88,8 @@ typedef union ComplexDescriptor {
 } complex_descriptor;
 #define TAG ld.ld_tag
 
-STATIC ext_descr * GC_ext_descriptors;  /* Points to array of extended  */
+STATIC ext_descr * GC_ext_descriptors = NULL;
+                                        /* Points to array of extended  */
                                         /* descriptors.                 */
 
 STATIC size_t GC_ed_size = 0;   /* Current size of above arrays.        */
@@ -96,8 +97,8 @@ STATIC size_t GC_ed_size = 0;   /* Current size of above arrays.        */
 
 STATIC size_t GC_avail_descr = 0;       /* Next available slot.         */
 
-STATIC int GC_typed_mark_proc_index;    /* Indices of my mark           */
-STATIC int GC_array_mark_proc_index;    /* procedures.                  */
+STATIC int GC_typed_mark_proc_index = 0; /* Indices of my mark          */
+STATIC int GC_array_mark_proc_index = 0; /* procedures.                 */
 
 static void GC_push_typed_structures_proc (void)
 {
@@ -162,7 +163,7 @@ STATIC signed_word GC_add_ext_descriptor(GC_bitmap bm, word nbits)
 }
 
 /* Table of bitmap descriptors for n word long all pointer objects.     */
-GC_descr GC_bm_table[WORDSZ/2];
+STATIC GC_descr GC_bm_table[WORDSZ/2];
 
 /* Return a descriptor for the concatenation of 2 nwords long objects,  */
 /* each of which is described by descriptor.                            */
@@ -316,7 +317,7 @@ GC_make_sequence_descriptor(complex_descriptor *first,
 
 #ifdef UNDEFINED
 complex_descriptor * GC_make_complex_array_descriptor(word nelements,
-                                                      complex_descriptor *descr)
+                                                complex_descriptor *descr)
 {
     struct ComplexArrayDescriptor * result =
         (struct ComplexArrayDescriptor *)
@@ -331,9 +332,9 @@ complex_descriptor * GC_make_complex_array_descriptor(word nelements,
 }
 #endif
 
-STATIC ptr_t * GC_eobjfreelist;
+STATIC ptr_t * GC_eobjfreelist = NULL;
 
-STATIC ptr_t * GC_arobjfreelist;
+STATIC ptr_t * GC_arobjfreelist = NULL;
 
 STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
                                 mse * mark_stack_limit, word env);
@@ -612,7 +613,7 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t lb, GC_descr d)
 }
 
 GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page(size_t lb,
-                                                                GC_descr d)
+                                                                 GC_descr d)
 {
     ptr_t op;
     ptr_t * opp;
@@ -647,7 +648,7 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page(size_t lb,
 }
 
 GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t n, size_t lb,
-                                                GC_descr d)
+                                                 GC_descr d)
 {
     ptr_t op;
     ptr_t * opp;

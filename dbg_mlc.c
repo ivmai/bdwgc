@@ -377,8 +377,6 @@ STATIC void GC_print_type(ptr_t p)
     }
 }
 
-
-
 void GC_print_obj(ptr_t p)
 {
     oh * ohdr = (oh *)GC_base(p);
@@ -844,7 +842,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
 #   endif
     if (old_sz < copy_sz) copy_sz = old_sz;
     if (result == 0) return(0);
-    BCOPY(p, result,  copy_sz);
+    BCOPY(p, result, copy_sz);
     GC_debug_free(p);
     return(result);
 }
@@ -856,8 +854,8 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
 /* We put them here instead of in GC_arrays, since it may be useful to  */
 /* be able to look at them with the debugger.                           */
 #define MAX_SMASHED 20
-ptr_t GC_smashed[MAX_SMASHED];
-unsigned GC_n_smashed = 0;
+STATIC ptr_t GC_smashed[MAX_SMASHED] = {0};
+STATIC unsigned GC_n_smashed = 0;
 
 STATIC void GC_add_smashed(ptr_t smashed)
 {

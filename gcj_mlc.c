@@ -42,13 +42,14 @@
 
 GC_bool GC_gcj_malloc_initialized = FALSE;
 
-int GC_gcj_kind;        /* Object kind for objects with descriptors     */
+int GC_gcj_kind = 0;    /* Object kind for objects with descriptors     */
                         /* in "vtable".                                 */
-int GC_gcj_debug_kind;  /* The kind of objects that is always marked    */
+int GC_gcj_debug_kind = 0;
+                        /* The kind of objects that is always marked    */
                         /* with a mark proc call.                       */
 
-ptr_t * GC_gcjobjfreelist;
-ptr_t * GC_gcjdebugobjfreelist;
+ptr_t * GC_gcjobjfreelist = NULL;
+STATIC ptr_t * GC_gcjdebugobjfreelist = NULL;
 
 /*ARGSUSED*/
 STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr,
@@ -62,7 +63,7 @@ STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr,
 
 /* Caller does not hold allocation lock. */
 GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
-                                void * /* really GC_mark_proc */mp)
+                                       void * /* really GC_mark_proc */mp)
 {
     GC_bool ignore_gcj_info;
     DCL_LOCK_STATE;
@@ -153,7 +154,7 @@ static void maybe_finalize(void)
   void * GC_core_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr)
 #else
   GC_API void * GC_CALL GC_gcj_malloc(size_t lb,
-                                void * ptr_to_struct_containing_descr)
+                                      void * ptr_to_struct_containing_descr)
 #endif
 {
     ptr_t op;

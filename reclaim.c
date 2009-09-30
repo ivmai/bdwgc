@@ -33,7 +33,7 @@ signed_word GC_bytes_found = 0;
 /* cycle, since the routine for printing objects needs to run outside   */
 /* the collector, e.g. without the allocation lock.                     */
 #define MAX_LEAKED 40
-ptr_t GC_leaked[MAX_LEAKED];
+STATIC ptr_t GC_leaked[MAX_LEAKED] = { NULL };
 STATIC unsigned GC_n_leaked = 0;
 
 GC_bool GC_have_errors = FALSE;

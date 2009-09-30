@@ -15,7 +15,6 @@
  *
  */
 
-
 # include "private/gc_priv.h"
 
 # include <stdio.h>
@@ -107,7 +106,8 @@ GC_API unsigned GC_CALL GC_get_version(void)
 /* some more variables */
 
 signed_word GC_bytes_found;     /* Number of reclaimed bytes    */
-                                /* after garbage collection     */
+                                /* after garbage collection;    */
+                                /* defined in reclaim.c.        */
 
 #ifdef GC_DONT_EXPAND
   GC_bool GC_dont_expand = TRUE;
@@ -134,7 +134,8 @@ int GC_CALLBACK GC_never_stop_func (void) { return(0); }
 unsigned long GC_time_limit = GC_TIME_LIMIT;
 
 #ifndef NO_CLOCK
-STATIC CLOCK_TYPE GC_start_time;/* Time at which we stopped world.      */
+STATIC CLOCK_TYPE GC_start_time = 0;
+                                /* Time at which we stopped world.      */
                                 /* used only in GC_timeout_stop_func.   */
 #endif
 
@@ -437,8 +438,6 @@ GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 #   endif
     return(TRUE);
 }
-
-
 
 /*
  * Perform n units of garbage collection work.  A unit is intended to touch

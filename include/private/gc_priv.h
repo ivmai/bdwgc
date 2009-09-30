@@ -275,7 +275,7 @@ void GC_print_callers(struct callinfo info[NFRAMES]);
  * CLOCKS_PER_SEC be defined.  But at least under SunOS4.1.1, it isn't.
  * Also note that the combination of ANSI C and POSIX is incredibly gross
  * here. The type clock_t is used by both clock() and times().  But on
- * some machines these use different notions of a clock tick,  CLOCKS_PER_SEC
+ * some machines these use different notions of a clock tick, CLOCKS_PER_SEC
  * seems to apply only to clock.  Hence we use it here.  On many machines,
  * including SunOS, clock actually uses units of microseconds (which are
  * not really clock ticks).
@@ -689,7 +689,6 @@ typedef word page_hash_table[PHT_SIZE];
 /* This sets (many) extra bits.                                         */
 # define set_pht_entry_from_index_safe(bl, index) \
                 (bl)[divWORDSZ(index)] = ONES
-
 
 
 /********************************************/
@@ -1281,12 +1280,6 @@ extern GC_bool GC_dirty_maintained;
 extern word GC_root_size; /* Total size of registered root sections.    */
 
 extern GC_bool GC_debugging_started; /* GC_debug_malloc has been called */
-
-extern long GC_large_alloc_warn_interval;
-        /* Interval between unsuppressed warnings.      */
-
-extern long GC_large_alloc_warn_suppressed;
-        /* Number of warnings suppressed so far.        */
 
 /* This is used by GC_do_blocking[_inner]().            */
 struct blocking_data {

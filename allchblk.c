@@ -630,6 +630,11 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
 
 unsigned GC_fail_count; /* defined in alloc.c */
 
+long GC_large_alloc_warn_interval; /* defined in misc.c */
+
+STATIC long GC_large_alloc_warn_suppressed = 0;
+                        /* Number of warnings suppressed so far.        */
+
 /*
  * The same, but with search restricted to nth free list.
  * Flags is IGNORE_OFF_PAGE or zero.

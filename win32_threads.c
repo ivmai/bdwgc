@@ -775,7 +775,7 @@ void GC_do_blocking_inner(ptr_t data, void * context)
 /* GC_do_blocking() to temporarily back allow calling any GC function   */
 /* and/or manipulating pointers to the garbage collected heap.          */
 GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
-                                        void * client_data)
+                                             void * client_data)
 {
   struct GC_activation_frame_s frame;
   GC_thread me;
@@ -829,7 +829,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   /* A quick-and-dirty cache of the mapping between pthread_t   */
   /* and win32 thread id.                                       */
 # define PTHREAD_MAP_SIZE 512
-  DWORD GC_pthread_map_cache[PTHREAD_MAP_SIZE];
+  DWORD GC_pthread_map_cache[PTHREAD_MAP_SIZE] = {0};
 # define HASH(pthread_id) ((NUMERIC_THREAD_ID(pthread_id) >> 5) % \
                            PTHREAD_MAP_SIZE)
         /* It appears pthread_t is really a pointer type ... */
@@ -1314,9 +1314,9 @@ void GC_push_all_stacks(void)
 #   define MAX_MARKERS 16
 # endif
 
-  long GC_markers;              /* Number of mark threads we would      */
-                                /* like to have.  Includes the          */
-                                /* initiating thread.                   */
+  long GC_markers;      /* Number of mark threads we would like to      */
+                        /* have.  Includes the initiating thread.       */
+                        /* Defined in mark.c.                           */
 
   static ptr_t marker_sp[MAX_MARKERS - 1]; /* The cold end of the stack */
                                            /* for markers.              */
@@ -1616,11 +1616,11 @@ void GC_get_next_stack(char *start, char *limit,
 # else /* ! GC_PTHREADS_PARAMARK */
 
 #   ifdef DONT_USE_SIGNALANDWAIT
-      STATIC HANDLE GC_marker_cv[MAX_MARKERS - 1];
+      STATIC HANDLE GC_marker_cv[MAX_MARKERS - 1] = {0};
                         /* Events with manual reset (one for each       */
                         /* mark helper).                                */
 
-      STATIC DWORD GC_marker_Id[MAX_MARKERS - 1];
+      STATIC DWORD GC_marker_Id[MAX_MARKERS - 1] = {0};
                         /* This table is used for mapping helper        */
                         /* threads ID to mark helper index (linear      */
                         /* search is used since the mapping contains    */
@@ -1854,7 +1854,7 @@ void GC_get_next_stack(char *start, char *limit,
       /* a signal loosing between checking for a particular condition   */
       /* and calling WaitForSingleObject.  So, we use PulseEvent() and  */
       /* NT SignalObjectAndWait() (which atomically sets mutex event to */
-      /* signaled state and starts waiting on  condvar).  A special     */
+      /* signaled state and starts waiting on condvar).  A special      */
       /* case here is GC_mark_mutex_waitcnt == 1 (i.e. nobody waits for */
       /* mark lock at this moment) - we don't change it (otherwise we   */
       /* may loose a signal sent between decrementing                   */
@@ -2152,7 +2152,6 @@ void GC_get_next_stack(char *start, char *limit,
     }
 
 #   ifdef MSWINCE
-      /* FIXME: Is this really obligatory on WinCE?   */
       GC_deinit();
       DeleteCriticalSection(&GC_allocate_ml);
 #   endif

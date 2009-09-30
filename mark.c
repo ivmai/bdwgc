@@ -101,17 +101,18 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
  * need to be marked from.
  */
 
-STATIC word GC_n_rescuing_pages;/* Number of dirty pages we marked from */
+STATIC word GC_n_rescuing_pages = 0;
+                                /* Number of dirty pages we marked from */
                                 /* excludes ptrfree pages, etc.         */
 
-mse * GC_mark_stack;
+mse * GC_mark_stack = NULL;
 
-mse * GC_mark_stack_limit;
+mse * GC_mark_stack_limit = NULL;
 
 size_t GC_mark_stack_size = 0;
 
 #ifdef PARALLEL_MARK
-  mse * volatile GC_mark_stack_top;
+  mse * volatile GC_mark_stack_top = NULL;
   /* Updated only with mark lock held, but read asynchronously. */
   volatile AO_t GC_first_nonempty;
         /* Lowest entry on mark stack   */
@@ -119,7 +120,7 @@ size_t GC_mark_stack_size = 0;
         /* Updated only by initiating   */
         /* thread.                      */
 #else
-  mse * GC_mark_stack_top;
+  mse * GC_mark_stack_top = NULL;
 #endif
 
 static struct hblk * scan_ptr;

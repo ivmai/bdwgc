@@ -82,7 +82,7 @@ STATIC void GC_remove_allowed_signals(sigset_t *set)
 
 static sigset_t suspend_handler_mask;
 
-volatile AO_t GC_stop_count;
+volatile AO_t GC_stop_count = 0;
                         /* Incremented at the beginning of GC_stop_world. */
 
 volatile AO_t GC_world_is_stopped = FALSE;
@@ -343,7 +343,7 @@ void GC_push_all_stacks(void)
 /* debug that, we save the ids of the stopping thread. */
 #if DEBUG_THREADS
 pthread_t GC_stopping_thread;
-int GC_stopping_pid;
+int GC_stopping_pid = 0;
 #endif
 
 /* We hold the allocation lock.  Suspend all threads that might */
@@ -523,7 +523,8 @@ void GC_start_world(void)
 #    endif
 }
 
-void GC_stop_init(void) {
+void GC_stop_init(void)
+{
     struct sigaction act;
 
     if (sem_init(&GC_suspend_ack_sem, 0, 0) != 0)

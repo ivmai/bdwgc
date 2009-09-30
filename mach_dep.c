@@ -64,8 +64,8 @@ asm static void PushMacRegisters()
 
 # if defined(SPARC) || defined(IA64)
     /* Value returned from register flushing routine; either sp (SPARC) */
-    /* or ar.bsp (IA64)                                                 */
-    ptr_t GC_save_regs_ret_val;
+    /* or ar.bsp (IA64).                                                */
+    ptr_t GC_save_regs_ret_val = NULL;
 # endif
 
 /* Routine to mark from registers that are preserved by the C compiler. */

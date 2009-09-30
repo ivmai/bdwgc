@@ -111,7 +111,7 @@ void GC_init_thread_local(GC_tlfs p)
 }
 
 #ifdef GC_GCJ_SUPPORT
-  ptr_t * GC_gcjobjfreelist;
+  ptr_t * GC_gcjobjfreelist; /* defined in gcj_mlc.c. */
 #endif
 
 /* We hold the allocator lock.  */
@@ -208,10 +208,10 @@ GC_API void * GC_CALL GC_malloc_atomic(size_t bytes)
 #include "include/gc_gcj.h"
 
 #ifdef GC_ASSERTIONS
-  GC_bool GC_gcj_malloc_initialized;
+  GC_bool GC_gcj_malloc_initialized; /* defined in gcj_mlc.c. */
 #endif
 
-int GC_gcj_kind;
+int GC_gcj_kind; /* defined in gcj_mlc.c. */
 
 /* Gcj-style allocation without locks is extremely tricky.  The         */
 /* fundamental issue is that we may end up marking a free list, which   */
@@ -234,7 +234,7 @@ int GC_gcj_kind;
 /* Unlike the other thread local allocation calls, we assume that the   */
 /* collector has been explicitly initialized.                           */
 GC_API void * GC_CALL GC_gcj_malloc(size_t bytes,
-                            void * ptr_to_struct_containing_descr)
+                                    void * ptr_to_struct_containing_descr)
 {
   if (GC_EXPECT(GC_incremental, 0)) {
     return GC_core_gcj_malloc(bytes, ptr_to_struct_containing_descr);

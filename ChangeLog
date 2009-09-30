@@ -1,3 +1,69 @@
+2009-09-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* allchblk.c (GC_large_alloc_warn_interval): Move declaration from
+	gc_priv.h.
+	* allchblk.c (GC_large_alloc_warn_suppressed): Move definition
+	from misc.c; define as STATIC.
+	* include/private/gc_priv.h (GC_large_alloc_warn_interval,
+	GC_large_alloc_warn_suppressed): Remove declaration.
+	* alloc.c (GC_bytes_found): Add "defined in" comment.
+	* mallocx.c (GC_bytes_found): Ditto.
+	* misc.c (GC_unmap_threshold): Ditto.
+	* os_dep.c (GC_old_allocator): Ditto.
+	* pthread_support.c (GC_markers): Ditto.
+	* thread_local_alloc.c (GC_gcjobjfreelist,
+	GC_gcj_malloc_initialized, GC_gcj_kind): Ditto.
+	* win32_threads.c (GC_markers): Ditto.
+	* alloc.c (GC_start_time): Explicitly initialize to 0 or NULL (to
+	be distinctive from a variable declaration).
+	* backgraph.c (GC_max_height, GC_deepest_obj): Ditto.
+	* blacklst.c (GC_old_normal_bl, GC_incomplete_normal_bl,
+	GC_old_stack_bl, GC_incomplete_stack_bl): Ditto.
+	* checksums.c (GC_faulted, GC_n_dirty_errors,
+	GC_n_faulted_dirty_errors, GC_n_changed_errors, GC_n_clean,
+	GC_n_dirty, GC_bytes_in_used_blocks): Ditto.
+	* dbg_mlc.c (GC_smashed): Ditto.
+	* finalize.c (GC_old_dl_entries): Ditto.
+	* gcj_mlc.c (GC_gcj_kind, GC_gcj_debug_kind, GC_gcjobjfreelist,
+	GC_gcjdebugobjfreelist): Ditto.
+	* mach_dep.c (GC_save_regs_ret_val): Ditto.
+	* mark.c (GC_n_rescuing_pages, GC_mark_stack, GC_mark_stack_limit,
+	GC_mark_stack_top): Ditto.
+	* misc.c (GC_min_sp, GC_high_water, GC_bytes_allocd_at_reset):
+	Ditto.
+	* os_dep.c (GC_data_start, GC_page_size, GC_sysinfo,
+	GC_old_segv_handler, GC_old_bus_handler,
+	GC_old_bus_handler_used_si, GC_old_segv_handler_used_si,
+	GC_proc_buf, GC_proc_fd, GC_vd_base): Ditto.
+	* pthread_stop_world.c (GC_stop_count, GC_stopping_pid): Ditto.
+	* reclaim.c (GC_leaked): Ditto.
+	* typd_mlc.c (GC_explicit_kind, GC_array_kind, GC_ext_descriptors,
+	GC_typed_mark_proc_index, GC_array_mark_proc_index,
+	GC_eobjfreelist, GC_arobjfreelist): Ditto.
+	* win32_threads.c (GC_pthread_map_cache, GC_marker_cv,
+	GC_marker_Id): Ditto.
+	* dbg_mlc.c (GC_smashed, GC_n_smashed): Define as STATIC.
+	* gcj_mlc.c (GC_gcjdebugobjfreelist): Ditto.
+	* os_dep.c (GC_vd_base): Ditto.
+	* pthread_support.c (GC_mark_threads): Ditto.
+	* reclaim.c (GC_leaked): Ditto.
+	* typd_mlc.c (GC_bm_table): Ditto.
+	* mark_rts.c (GC_save_regs_ret_val): Change declaration type to
+	that of definition; add "defined in" comment.
+	* mark_rts.c (GC_push_current_stack): Remove unnecessary cast for
+	GC_save_regs_ret_val.
+	* misc.c (GC_check_heap, GC_print_all_smashed,
+	GC_start_call_back): Remove unnecessary cast (of 0).
+	* misc.c (GC_LARGE_ALLOC_WARN_INTERVAL): New tuning macro.
+	* misc.c (GC_large_alloc_warn_interval): Initialize to
+	GC_LARGE_ALLOC_WARN_INTERVAL value.
+	* misc.c (GC_tmp): Change to "static".
+	* os_dep.c (GC_setpagesize): Reformat the code (collapse multiple
+	function definitions).
+	* os_dep.c (GC_mprotect_state): Define as static.
+	* pthread_support.c (dummy_thread_local): Prefix with "GC_".
+	* win32_threads.c (WinMain): Remove FIXME for WinCE.
+
 2009-09-30  Ivan Maidanski <ivmai@mail.ru> (really Hans Boehm)
 
 	* os_dep.c (PROTECT, UNPROTECT): Use distinct ABORT messages.
