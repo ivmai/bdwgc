@@ -1,3 +1,16 @@
+2009-09-30  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+
+	* configure.ac: Rewrite the tests for external or internal
+	libatomic_ops.
+	* configure.ac: In particular, drop the symbolic links. Add option
+	--with-libatomic-ops for forced selection.
+	* Makefile.am: Adjust the path of source files from libatomic_ops
+	to not use the links.
+	* Makefile.am (libgc_la_LIBADD): Add $(ATOMIC_OPS_LIBS). This will
+	be empty if we use the bundled AO sources.
+	* configure: Regenerate.
+	* Makefile.in: Ditto.
+
 2009-09-29  Ivan Maidanski <ivmai@mail.ru>
 
 	* Makefile.am: Strip version suffix for libatomic_ops directory.

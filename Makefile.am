@@ -33,6 +33,10 @@
 SUBDIRS =
 
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+if USE_INTERNAL_LIBATOMIC_OPS
+AM_CPPFLAGS += -I$(top_builddir)/libatomic_ops/src \
+	       -I$(top_srcdir)/libatomic_ops/src
+endif
 
 # Initialize variables so that we can declare files locally.
 EXTRA_DIST = 
@@ -74,16 +78,16 @@ libgc_la_SOURCES += win32_threads.c
 endif
 
 if USE_INTERNAL_LIBATOMIC_OPS 	 
-nodist_libgc_la_SOURCES = ./atomic_ops.c 	 
+nodist_libgc_la_SOURCES = libatomic_ops/src/atomic_ops.c
 endif 	 
   	 
 if NEED_ATOMIC_OPS_ASM 	 
-nodist_libgc_la_SOURCES = ./atomic_ops_sysdeps.S 	 
+nodist_libgc_la_SOURCES = libatomic_ops/src/atomic_ops_sysdeps.S
 endif
 
 # Include THREADDLLIBS here to ensure that the correct versions of
 # linuxthread semaphore functions get linked:
-libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS)
+libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS) $(ATOMIC_OPS_LIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info 1:3:0 -no-undefined
 
