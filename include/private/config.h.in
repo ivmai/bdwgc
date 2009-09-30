@@ -24,6 +24,9 @@
 /* Define to support IBM AIX threads. */
 #undef GC_AIX_THREADS
 
+/* The alpha version number, if applicable. */
+#undef GC_ALPHA_VERSION
+
 /* Define to enable internal debug assertions. */
 #undef GC_ASSERTIONS
 
@@ -68,6 +71,12 @@
 
 /* See Makefile.direct. */
 #undef GC_USE_DLOPEN_WRAP
+
+/* The major version number of this GC release. */
+#undef GC_VERSION_MAJOR
+
+/* The minor version number of this GC release. */
+#undef GC_VERSION_MINOR
 
 /* Define to support win32 threads. */
 #undef GC_WIN32_THREADS

@@ -1,5 +1,13 @@
 2009-09-30  Ivan Maidanski <ivmai@mail.ru>
 
+	* configure: Regenerate (by autoreconf -vif, deleting libtool.m4
+	first).
+	* Makefile.in: Ditto.
+	* aclocal.m4: Ditto.
+	* include/private/config.h.in: Ditto.
+
+2009-09-30  Ivan Maidanski <ivmai@mail.ru>
+
 	* Makefile.direct: Remove trailing spaces at EOLn.
 	* Makefile.direct: Document GC_REGISTER_MEM_PRIVATE.
 	* mark_rts.c (GC_is_tmp_root): Define also for WinCE unless
