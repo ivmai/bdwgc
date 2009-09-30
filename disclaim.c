@@ -1,8 +1,6 @@
-#ifdef ENABLE_DISCLAIM
-
-#include "gc_disclaim.h"
 #include "private/gc_priv.h"
 #include "private/thread_local_alloc.h"
+#include "gc_disclaim.h"
 
 
 /* Low level interface for reclaim callbacks. */
@@ -59,7 +57,7 @@ done:
     UNLOCK();
 }
 
-ptr_t GC_clear_stack();
+void * GC_clear_stack();
 
 #ifdef THREAD_LOCAL_ALLOC
   void * GC_core_finalized_malloc(size_t lb, struct GC_finalizer_closure *fclos)
@@ -132,8 +130,6 @@ void * GC_finalized_malloc(size_t client_lb, struct GC_finalizer_closure *fclos)
     return (void **)result + 1;
 }
 #endif
-
-#endif /* ENABLE_DISCLAIM */
 
 /* [1] The disclaim function may be passed fragments from the free-list, on
  * which it should not run finalization.  To recognize this case, we use
