@@ -144,6 +144,10 @@
 /* Define to optimize for large heaps or root sets */
 #undef LARGE_CONFIG
 
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
+
 /* See Makefile.direct. */
 #undef MAKE_BACK_GRAPH
 
@@ -177,6 +181,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
