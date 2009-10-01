@@ -1,3 +1,24 @@
+2009-10-01  Ivan Maidanski <ivmai@mail.ru> (really mostly Andreas Tobler)
+
+	* allchblk.c (GC_fail_count, GC_large_alloc_warn_interval): Add
+	"extern" keyword to a global variable declaration (some compilers
+	require it).
+	* alloc.c (GC_bytes_found, GC_unmap_threshold,
+	GC_force_unmap_on_gcollect): Ditto.
+	* dyn_load.c (GC_no_win32_dlls, GC_wnt): Ditto.
+	* finalize.c (GC_fail_count): Ditto.
+	* include/private/gc_hdrs.h (GC_hdr_cache_hits,
+	GC_hdr_cache_misses): Ditto.
+	* mallocx.c (GC_bytes_found): Ditto.
+	* mark_rts.c (GC_save_regs_ret_val, GC_world_stopped): Ditto.
+	* misc.c (GC_unmap_threshold): Ditto.
+	* os_dep.c (GC_unmap_threshold, GC_old_allocator): Ditto.
+	* pthread_support.c (GC_markers): Ditto.
+	* thread_local_alloc.c (GC_gcjobjfreelist,
+	GC_gcj_malloc_initialized, GC_gcj_kind): Ditto.
+	* win32_threads.c (GC_fault_handler_lock, GC_write_cs,
+	GC_dont_query_stack_min, GC_markers, GC_wnt): Ditto.
+
 2009-10-01  Ivan Maidanski <ivmai@mail.ru>
 
 	* Makefile.in: Regenerate (by autoreconf -vif, deleting libtool.m4

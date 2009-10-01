@@ -234,7 +234,8 @@ GC_API void GC_CALL GC_incr_bytes_freed(size_t n)
 
 #if defined(THREADS)
 
-signed_word GC_bytes_found; /* protected by GC lock; defined in reclaim.c */
+extern signed_word GC_bytes_found;
+                        /* protected by GC lock; defined in reclaim.c.  */
 
 #ifdef PARALLEL_MARK
 volatile signed_word GC_bytes_allocd_tmp = 0;

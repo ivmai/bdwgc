@@ -628,9 +628,9 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
     return 0;
 }
 
-unsigned GC_fail_count; /* defined in alloc.c */
+extern unsigned GC_fail_count; /* defined in alloc.c */
 
-long GC_large_alloc_warn_interval; /* defined in misc.c */
+extern long GC_large_alloc_warn_interval; /* defined in misc.c */
 
 STATIC long GC_large_alloc_warn_suppressed = 0;
                         /* Number of warnings suppressed so far.        */

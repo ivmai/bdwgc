@@ -105,7 +105,8 @@ GC_API unsigned GC_CALL GC_get_version(void)
 
 /* some more variables */
 
-signed_word GC_bytes_found;     /* Number of reclaimed bytes    */
+extern signed_word GC_bytes_found;
+                                /* Number of reclaimed bytes    */
                                 /* after garbage collection;    */
                                 /* defined in reclaim.c.        */
 
@@ -904,8 +905,8 @@ STATIC void GC_finish_collection(void)
 }
 
 #ifdef USE_MUNMAP
-    int GC_unmap_threshold;     /* defined in allchblk.c        */
-    GC_bool GC_force_unmap_on_gcollect; /* defined in misc.c    */
+    extern int GC_unmap_threshold;      /* defined in allchblk.c        */
+    extern GC_bool GC_force_unmap_on_gcollect;  /* defined in misc.c    */
 #endif
 
 /* Externally callable routine to invoke full, stop-world collection */

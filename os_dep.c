@@ -1415,7 +1415,7 @@ void GC_register_data_segments(void)
          /* This is a Windows NT derivative, i.e. NT, W2K, XP or later.  */
 
 # ifdef USE_MUNMAP
-    int GC_unmap_threshold; /* defined in allchblk.c */
+    extern int GC_unmap_threshold; /* defined in allchblk.c */
 # endif
 
   void GC_init_win32(void)
@@ -2249,7 +2249,8 @@ PCR_ERes GC_push_old_obj(void *p, size_t size, PCR_Any data)
     return(PCR_ERes_okay);
 }
 
-struct PCR_MM_ProcsRep * GC_old_allocator; /* defined in pcr_interface.c */
+extern struct PCR_MM_ProcsRep * GC_old_allocator;
+                                        /* defined in pcr_interface.c.  */
 
 void GC_default_push_other_roots(void)
 {

@@ -513,7 +513,7 @@ static void maybe_install_looping_handler(void)
 #endif
 
 #ifdef USE_MUNMAP
-  int GC_unmap_threshold; /* defined in allchblk.c */
+  extern int GC_unmap_threshold; /* defined in allchblk.c */
 #endif
 
 #ifdef LINT

@@ -835,7 +835,7 @@ void GC_register_dynamic_libraries(void)
       return FALSE;
     }
 # else /* win32 */
-    GC_bool GC_no_win32_dlls;
+    extern GC_bool GC_no_win32_dlls; /* defined in os_dep.c */
 
     GC_bool GC_register_main_static_data(void)
     {
@@ -867,8 +867,8 @@ void GC_register_dynamic_libraries(void)
     /* To workaround that, use -DGC_REGISTER_MEM_PRIVATE.               */
 #   define GC_wnt TRUE
 # else
-    GC_bool GC_wnt;     /* Is Windows NT derivative.    */
-                        /* Defined and set in os_dep.c. */
+    extern GC_bool GC_wnt;      /* Is Windows NT derivative.    */
+                                /* Defined and set in os_dep.c. */
 # endif
 
   void GC_register_dynamic_libraries(void)

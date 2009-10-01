@@ -57,8 +57,8 @@ typedef struct hblkhdr hdr;
 /* #define COUNT_HDR_CACHE_HITS  */
 
 # ifdef COUNT_HDR_CACHE_HITS
-    word GC_hdr_cache_hits;
-    word GC_hdr_cache_misses;
+    extern word GC_hdr_cache_hits;
+    extern word GC_hdr_cache_misses;
 #   define HC_HIT() ++GC_hdr_cache_hits
 #   define HC_MISS() ++GC_hdr_cache_misses
 # else

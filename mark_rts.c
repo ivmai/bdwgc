@@ -607,7 +607,7 @@ STATIC void GC_push_all_stack_part_eager_frames(ptr_t lo, ptr_t hi,
 }
 
 # ifdef IA64
-    ptr_t GC_save_regs_ret_val; /* defined in mach_dep.c. */
+    extern ptr_t GC_save_regs_ret_val; /* defined in mach_dep.c. */
                         /* Previously set to backing store pointer.     */
 # endif
 
@@ -716,7 +716,7 @@ STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
 }
 
 #ifdef THREAD_LOCAL_ALLOC
-  GC_bool GC_world_stopped; /* defined in alloc.c */
+  extern GC_bool GC_world_stopped; /* defined in alloc.c */
 #endif
 
 /*

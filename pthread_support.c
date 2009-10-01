@@ -309,7 +309,7 @@ STATIC void * GC_mark_thread(void * id)
   }
 }
 
-long GC_markers;        /* Number of mark threads we would like to      */
+extern long GC_markers; /* Number of mark threads we would like to      */
                         /* have.  Includes the initiating thread.       */
                         /* Defined in mark.c.                           */
 
