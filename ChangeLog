@@ -1,5 +1,15 @@
 2009-10-01  Ivan Maidanski <ivmai@mail.ru>
 
+	* tests/huge_test.c: Define GC_IGNORE_WARN (if not defined) to
+	suppress misleading GC "Out of Memory!" warning printed on every
+	GC_MALLOC(LONG_MAX) call.
+	* tests/huge_test.c: Include "gc.h" instead of <gc.h>.
+	* tests/huge_test.c (main): Replace K&R-style function definition
+	with the ANSI C one.
+	* tests/huge_test.c: Expand all tabs to spaces.
+
+2009-10-01  Ivan Maidanski <ivmai@mail.ru>
+
 	* dyn_load.c (GC_register_dynamic_libraries): Always use
 	lpMaximumApplicationAddress value for WinCE (even for old
 	versions).
