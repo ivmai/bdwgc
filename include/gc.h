@@ -1179,8 +1179,7 @@ GC_API void (GC_CALLBACK * GC_is_visible_print_proc)(void *);
 /* For pthread support, we generally need to intercept a number of      */
 /* thread library calls.  We do that here by macro defining them.       */
 
-#if !defined(GC_USE_LD_WRAP) && !defined(GC_NO_THREAD_REDIRECTS) \
-    && defined(GC_PTHREADS)
+#ifdef GC_PTHREADS
 # include "gc_pthread_redirects.h"
 #endif
 

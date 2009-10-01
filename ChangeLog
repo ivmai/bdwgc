@@ -1,3 +1,16 @@
+2009-10-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* gc_dlopen.c (GC_dlopen): Add function redirector (only if
+	GC_USE_LD_WRAP).
+	* include/gc.h: Include "gc_pthread_redirects.h" even if
+	GC_USE_LD_WRAP or GC_NO_THREAD_REDIRECTS.
+	* include/gc_pthread_redirects.h (GC_PTHREAD_REDIRECTS_H): Don't
+	define and check for (since included only from gc.h).
+	* include/gc_pthread_redirects.h: Declare "GC_" symbols even if
+	GC_USE_LD_WRAP or GC_NO_THREAD_REDIRECTS.
+	* include/gc_pthread_redirects.h: Include signal.h only to get
+	sigset_t definition.
+
 2009-09-30  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure: Regenerate (by autoreconf -vif, deleting libtool.m4

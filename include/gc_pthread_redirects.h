@@ -18,52 +18,50 @@
 /* Our pthread support normally needs to intercept a number of thread   */
 /* calls.  We arrange to do that here, if appropriate.                  */
 
-#ifndef GC_PTHREAD_REDIRECTS_H
+/* Included from gc.h only.  Included only if GC_PTHREADS.              */
 
-#define GC_PTHREAD_REDIRECTS_H
+/* We need to intercept calls to many of the threads primitives, so     */
+/* that we can locate thread stacks and stop the world.                 */
+/* Note also that the collector cannot always see thread specific data. */
+/* Thread specific data should generally consist of pointers to         */
+/* uncollectable objects (allocated with GC_malloc_uncollectable,       */
+/* not the system malloc), which are deallocated using the destructor   */
+/* facility in thr_keycreate.  Alternatively, keep a redundant pointer  */
+/* to thread specific data on the thread stack.                         */
 
-#if !defined(GC_USE_LD_WRAP) && defined(GC_PTHREADS)
-/* We need to intercept calls to many of the threads primitives, so      */
-/* that we can locate thread stacks and stop the world.                  */
-/* Note also that the collector cannot always see thread specific data.  */
-/* Thread specific data should generally consist of pointers to          */
-/* uncollectable objects (allocated with GC_malloc_uncollectable,        */
-/* not the system malloc), which are deallocated using the destructor    */
-/* facility in thr_keycreate.  Alternatively, keep a redundant pointer   */
-/* to thread specific data on the thread stack.                          */
+#include <pthread.h>
 
-# include <pthread.h>
+#ifndef GC_DARWIN_THREADS
 # include <signal.h>
+# include <dlfcn.h>
 
-# if !defined(GC_DARWIN_THREADS)
-#   include <dlfcn.h>
+  GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
+                                sigset_t * /* oset */);
+  GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
+#endif
 
-    GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
-                                  sigset_t * /* oset */);
-    GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
+GC_API int GC_pthread_create(pthread_t *, const pthread_attr_t *,
+                             void *(*)(void *), void * /* arg */);
+GC_API int GC_pthread_join(pthread_t, void ** /* retval */);
+GC_API int GC_pthread_detach(pthread_t);
 
+#if !defined(GC_NO_THREAD_REDIRECTS) && !defined(GC_USE_LD_WRAP)
+  /* Unless the compiler supports #pragma extern_prefix, the Tru64    */
+  /* UNIX <pthread.h> redefines some POSIX thread functions to use    */
+  /* mangled names.  Anyway, it's safe to undef them before           */
+  /* redefining.                                                      */
+# undef pthread_create
+# undef pthread_join
+# undef pthread_detach
+
+# define pthread_create GC_pthread_create
+# define pthread_join GC_pthread_join
+# define pthread_detach GC_pthread_detach
+
+# ifndef GC_DARWIN_THREADS
 #   undef pthread_sigmask
 #   undef dlopen
 #   define pthread_sigmask GC_pthread_sigmask
 #   define dlopen GC_dlopen
 # endif
-
-GC_API int GC_pthread_create(pthread_t *, const pthread_attr_t *,
-                        void *(*)(void *), void * /* arg */);
-GC_API int GC_pthread_join(pthread_t, void ** /* retval */);
-GC_API int GC_pthread_detach(pthread_t);
-
-/* Unless the compiler supports #pragma extern_prefix, the Tru64 UNIX   */
-/* <pthread.h> redefines some POSIX thread functions to use mangled     */
-/* names.  Anyway, it's safe to undef them before redefining.           */
-#undef pthread_create
-#undef pthread_join
-#undef pthread_detach
-
-#define pthread_create GC_pthread_create
-#define pthread_join GC_pthread_join
-#define pthread_detach GC_pthread_detach
-
-#endif /* GC_PTHREADS && !GC_USE_LD_WRAP */
-
-#endif /* GC_PTHREAD_REDIRECTS_H */
+#endif /* !GC_NO_THREAD_REDIRECTS */
