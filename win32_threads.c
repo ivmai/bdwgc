@@ -894,22 +894,20 @@ void GC_push_thread_structures(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
 # ifndef GC_NO_DLLMAIN
-   if (GC_win32_dll_threads) {
-     /* Unlike the other threads implementations, the thread table here */
-     /* contains no pointers to the collectable heap.  Thus we have     */
-     /* no private structures we need to preserve.                      */
-#    ifdef GC_PTHREADS
-       {
-         int i; /* pthreads may keep a pointer in the thread exit value */
-         LONG my_max = GC_get_max_thread_index();
+    if (GC_win32_dll_threads) {
+      /* Unlike the other threads implementations, the thread table here */
+      /* contains no pointers to the collectable heap.  Thus we have     */
+      /* no private structures we need to preserve.                      */
+#     ifdef GC_PTHREADS
+        int i; /* pthreads may keep a pointer in the thread exit value */
+        LONG my_max = GC_get_max_thread_index();
 
-         for (i = 0; i <= my_max; i++)
-           if (dll_thread_table[i].in_use)
-             GC_push_all((ptr_t)&(dll_thread_table[i].status),
-                         (ptr_t)(&(dll_thread_table[i].status)+1));
-       }
-#    endif
-   } else
+        for (i = 0; i <= my_max; i++)
+          if (dll_thread_table[i].in_use)
+            GC_push_all((ptr_t)&(dll_thread_table[i].status),
+                        (ptr_t)(&(dll_thread_table[i].status)+1));
+#     endif
+    } else
 # endif
   /* else */ {
     GC_push_all((ptr_t)(GC_threads), (ptr_t)(GC_threads)+sizeof(GC_threads));
@@ -1076,54 +1074,60 @@ void GC_start_world(void)
   GC_please_stop = FALSE;
 }
 
-/* Note: -D_WIN32_WCE_EMULATION might to be required for WinCE 6.      */
-#if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)
-  /* The VirtualQuery calls below won't work properly on WinCE, but     */
-  /* since each stack is restricted to an aligned 64K region of         */
-  /* virtual memory we can just take the next lowest multiple of 64K.   */
-# define GC_get_stack_min(s) (ptr_t)(((word)(s) - 1) & ~(word)0xFFFF)
-#else
+#ifdef MSWINCE
+  GC_bool GC_dont_query_stack_min; /* defined and set in os_dep.c */
 
-  /* A cache holding the results of the recent VirtualQuery call.       */
-  /* Protected by the allocation lock.                                  */
-  static ptr_t last_address = 0;
-  static MEMORY_BASIC_INFORMATION last_info;
-
-  /* Probe stack memory region (starting at "s") to find out its        */
-  /* lowest address (i.e. stack top).                                   */
-  /* S must be a mapped address inside the region, NOT the first        */
-  /* unmapped address.                                                  */
-  static ptr_t GC_get_stack_min(ptr_t s)
-  {
-    ptr_t bottom;
-
-    GC_ASSERT(I_HOLD_LOCK());
-    if (s != last_address) {
-      VirtualQuery(s, &last_info, sizeof(last_info));
-      last_address = s;
-    }
-    do {
-      bottom = last_info.BaseAddress;
-      VirtualQuery(bottom - 1, &last_info, sizeof(last_info));
-      last_address = bottom - 1;
-    } while ((last_info.Protect & PAGE_READWRITE)
-             && !(last_info.Protect & PAGE_GUARD));
-    return(bottom);
-  }
-
-  /* Return true if the page at s has protections appropriate   */
-  /* for a stack page.                                          */
-  static GC_bool GC_may_be_in_stack(ptr_t s)
-  {
-    GC_ASSERT(I_HOLD_LOCK());
-    if (s != last_address) {
-      VirtualQuery(s, &last_info, sizeof(last_info));
-      last_address = s;
-    }
-    return (last_info.Protect & PAGE_READWRITE)
-            && !(last_info.Protect & PAGE_GUARD);
-  }
+  /* The VirtualQuery calls below won't work properly on some old WinCE */
+  /* versions, but since each stack is restricted to an aligned 64 KiB  */
+  /* region of virtual memory we can just take the next lowest multiple */
+  /* of 64 KiB.  The result of this macro must not be used as its       */
+  /* argument later and must not be used as the lower bound for sp      */
+  /* check (since the stack may be bigger than 64 KiB).                 */
+# define GC_wince_evaluate_stack_min(s) \
+                        (ptr_t)(((word)(s) - 1) & ~(word)0xFFFF)
+#elif defined(GC_ASSERTIONS)
+# define GC_dont_query_stack_min FALSE
 #endif
+
+/* A cache holding the results of the recent VirtualQuery call. */
+/* Protected by the allocation lock.                            */
+static ptr_t last_address = 0;
+static MEMORY_BASIC_INFORMATION last_info;
+
+/* Probe stack memory region (starting at "s") to find out its  */
+/* lowest address (i.e. stack top).                             */
+/* S must be a mapped address inside the region, NOT the first  */
+/* unmapped address.                                            */
+static ptr_t GC_get_stack_min(ptr_t s)
+{
+  ptr_t bottom;
+
+  GC_ASSERT(I_HOLD_LOCK());
+  if (s != last_address) {
+    VirtualQuery(s, &last_info, sizeof(last_info));
+    last_address = s;
+  }
+  do {
+    bottom = last_info.BaseAddress;
+    VirtualQuery(bottom - 1, &last_info, sizeof(last_info));
+    last_address = bottom - 1;
+  } while ((last_info.Protect & PAGE_READWRITE)
+           && !(last_info.Protect & PAGE_GUARD));
+  return(bottom);
+}
+
+/* Return true if the page at s has protections appropriate     */
+/* for a stack page.                                            */
+static GC_bool GC_may_be_in_stack(ptr_t s)
+{
+  GC_ASSERT(I_HOLD_LOCK());
+  if (s != last_address) {
+    VirtualQuery(s, &last_info, sizeof(last_info));
+    last_address = s;
+  }
+  return (last_info.Protect & PAGE_READWRITE)
+          && !(last_info.Protect & PAGE_GUARD);
+}
 
 STATIC void GC_push_stack_for(GC_thread thread)
 {
@@ -1194,10 +1198,19 @@ STATIC void GC_push_stack_for(GC_thread thread)
     /* taking advantage of the old value to avoid slow traversals       */
     /* of large stacks.                                                 */
     if (thread -> last_stack_min == ADDR_LIMIT) {
-      stack_min = GC_get_stack_min(activation_frame != NULL ?
+#     ifdef MSWINCE
+        if (GC_dont_query_stack_min) {
+          stack_min = GC_wince_evaluate_stack_min(activation_frame != NULL ?
                         (ptr_t)activation_frame : thread -> stack_base);
-      UNPROTECT_THREAD(thread);
-      thread -> last_stack_min = stack_min;
+          /* Keep last_stack_min value unmodified. */
+        } else
+#     endif
+      /* else */ {
+        stack_min = GC_get_stack_min(activation_frame != NULL ?
+                        (ptr_t)activation_frame : thread -> stack_base);
+        UNPROTECT_THREAD(thread);
+        thread -> last_stack_min = stack_min;
+      }
     } else {
       /* First, adjust the latest known minimum stack address if we     */
       /* are inside GC_call_with_gc_active().                           */
@@ -1210,28 +1223,25 @@ STATIC void GC_push_stack_for(GC_thread thread)
       if (sp < thread -> stack_base && sp >= thread -> last_stack_min) {
         stack_min = sp;
       } else {
-#       if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)
-          stack_min = GC_get_stack_min(activation_frame != NULL ?
-                        (ptr_t)activation_frame : thread -> stack_base);
-#       else
-          /* In the current thread it is always safe to use sp value. */
-          if (GC_may_be_in_stack(thread -> id == me &&
-                                 sp < thread -> last_stack_min ?
-                                 sp : thread -> last_stack_min)) {
-            stack_min = last_info.BaseAddress;
-            /* Do not probe rest of the stack if sp is correct. */
-            if (sp < stack_min || sp >= thread->stack_base)
-              stack_min = GC_get_stack_min(thread -> last_stack_min);
-          } else {
-            /* Stack shrunk?  Is this possible? */
-            stack_min = GC_get_stack_min(thread -> stack_base);
-          }
-#       endif
+        /* In the current thread it is always safe to use sp value. */
+        if (GC_may_be_in_stack(thread -> id == me &&
+                               sp < thread -> last_stack_min ?
+                               sp : thread -> last_stack_min)) {
+          stack_min = last_info.BaseAddress;
+          /* Do not probe rest of the stack if sp is correct. */
+          if (sp < stack_min || sp >= thread->stack_base)
+            stack_min = GC_get_stack_min(thread -> last_stack_min);
+        } else {
+          /* Stack shrunk?  Is this possible? */
+          stack_min = GC_get_stack_min(thread -> stack_base);
+        }
         UNPROTECT_THREAD(thread);
         thread -> last_stack_min = stack_min;
       }
     }
-    GC_ASSERT(stack_min == GC_get_stack_min(thread -> stack_base)
+
+    GC_ASSERT(GC_dont_query_stack_min
+              || stack_min == GC_get_stack_min(thread -> stack_base)
               || (sp >= stack_min && stack_min < thread -> stack_base
                   && stack_min > GC_get_stack_min(thread -> stack_base)));
 
@@ -1400,35 +1410,38 @@ void GC_get_next_stack(char *start, char *limit,
   }
 
   GC_ASSERT(current_min > start);
-# if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)
-    /* No need to maintain the latest known stack_min. */
-    *lo = GC_get_stack_min(current_min);
-# else
-    if (current_min > limit && !GC_may_be_in_stack(limit)) {
-      /* Skip the rest since the memory region at limit address is      */
-      /* not a stack (so the lowest address of the found stack would    */
-      /* be above the limit value anyway).                              */
-      *lo = ADDR_LIMIT;
+# ifdef MSWINCE
+    if (GC_dont_query_stack_min) {
+      *lo = GC_wince_evaluate_stack_min(current_min);
+      /* Keep last_stack_min value unmodified. */
       return;
     }
-
-    /* Get the minimum address of the found stack by probing its memory */
-    /* region starting from the recent known minimum (if set).          */
-    if (*plast_stack_min == ADDR_LIMIT
-        || !GC_may_be_in_stack(*plast_stack_min)) {
-      /* Unsafe to start from last_stack_min value. */
-      *lo = GC_get_stack_min(current_min);
-    } else {
-      /* Use the recent value to optimize search for min address. */
-      *lo = GC_get_stack_min(*plast_stack_min);
-    }
-
-    /* Remember current stack_min value. */
-    if (thread != NULL) {
-      UNPROTECT_THREAD(thread);
-    }
-    *plast_stack_min = *lo;
 # endif
+
+  if (current_min > limit && !GC_may_be_in_stack(limit)) {
+    /* Skip the rest since the memory region at limit address is        */
+    /* not a stack (so the lowest address of the found stack would      */
+    /* be above the limit value anyway).                                */
+    *lo = ADDR_LIMIT;
+    return;
+  }
+
+  /* Get the minimum address of the found stack by probing its memory   */
+  /* region starting from the recent known minimum (if set).            */
+  if (*plast_stack_min == ADDR_LIMIT
+      || !GC_may_be_in_stack(*plast_stack_min)) {
+    /* Unsafe to start from last_stack_min value. */
+    *lo = GC_get_stack_min(current_min);
+  } else {
+    /* Use the recent value to optimize search for min address. */
+    *lo = GC_get_stack_min(*plast_stack_min);
+  }
+
+  /* Remember current stack_min value. */
+  if (thread != NULL) {
+    UNPROTECT_THREAD(thread);
+  }
+  *plast_stack_min = *lo;
 }
 
 #ifdef PARALLEL_MARK

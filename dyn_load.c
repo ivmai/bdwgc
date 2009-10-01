@@ -884,22 +884,17 @@ void GC_register_dynamic_libraries(void)
       if (GC_no_win32_dlls) return;
 #   endif
     base = limit = p = GC_sysinfo.lpMinimumApplicationAddress;
-    /* Note: -D_WIN32_WCE_EMULATION seems to be required for WinCE 6. */
-#   if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)
-      /* Only the first 32 MB of address space belongs to the current process */
-      while (p < (LPVOID)0x02000000) {
+    while (p < GC_sysinfo.lpMaximumApplicationAddress) {
         result = VirtualQuery(p, &buf, sizeof(buf));
-        if (result == 0) {
+#       ifdef MSWINCE
+          if (result == 0) {
             /* Page is free; advance to the next possible allocation base */
             new_limit = (char *)
                 (((DWORD) p + GC_sysinfo.dwAllocationGranularity)
                  & ~(GC_sysinfo.dwAllocationGranularity-1));
-        } else
-#   else
-      while (p < GC_sysinfo.lpMaximumApplicationAddress) {
-        result = VirtualQuery(p, &buf, sizeof(buf));
-#   endif
-        {
+          } else
+#       endif
+        /* else */ {
             if (result != sizeof(buf)) {
                 ABORT("Weird VirtualQuery result");
             }

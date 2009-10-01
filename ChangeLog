@@ -1,5 +1,27 @@
 2009-10-01  Ivan Maidanski <ivmai@mail.ru>
 
+	* dyn_load.c (GC_register_dynamic_libraries): Always use
+	lpMaximumApplicationAddress value for WinCE (even for old
+	versions).
+	* os_dep.c (VER_PLATFORM_WIN32_CE): Define if not in winbase.h.
+	* os_dep.c (GC_dont_query_stack_min): New global variable (only if
+	WinCE and THREADS).
+	* os_dep.c (GC_setpagesize): Adjust lpMaximumApplicationAddress
+	for WinCE (prior to version 6) if not _WIN32_WCE_EMULATION; set
+	GC_dont_query_stack_min for older WinCE (prior to version 5).
+	* win32_threads.c (GC_dont_query_stack_min): Declare.
+	* win32_threads.c (GC_get_stack_min): Rename the macro to
+	GC_wince_evaluate_stack_min for WinCE; update the comment.
+	* win32_threads.c (GC_push_stack_for, GC_get_next_stack): Use
+	GC_wince_evaluate_stack_min() instead of GC_get_stack_min() for
+	WinCE and don't update thread's last_stack_min value (only if
+	GC_dont_query_stack_min).
+	* win32_threads.c (GC_push_stack_for): Skip assertion for WinCE if
+	GC_dont_query_stack_min (since the evaluated stack_min value may
+	be incorrect if the stack is bigger than 64 KiB).
+
+2009-10-01  Ivan Maidanski <ivmai@mail.ru>
+
 	* gc_dlopen.c (GC_dlopen): Add function redirector (only if
 	GC_USE_LD_WRAP).
 	* include/gc.h: Include "gc_pthread_redirects.h" even if

@@ -602,10 +602,41 @@ struct o32_obj {
 word GC_page_size = 0;
 
 # if defined(MSWIN32) || defined(MSWINCE)
+
+#   ifndef VER_PLATFORM_WIN32_CE
+#     define VER_PLATFORM_WIN32_CE 3
+#   endif
+
+#   if defined(MSWINCE) && defined(THREADS)
+      GC_bool GC_dont_query_stack_min = FALSE;
+#   endif
+
     void GC_setpagesize(void)
     {
       GetSystemInfo(&GC_sysinfo);
       GC_page_size = GC_sysinfo.dwPageSize;
+#     if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)
+        {
+          OSVERSIONINFO verInfo;
+          /* Check the current WinCE version. */
+          verInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+          if (!GetVersionEx(&verInfo))
+            ABORT("GetVersionEx failed");
+          if (verInfo.dwPlatformId == VER_PLATFORM_WIN32_CE &&
+              verInfo.dwMajorVersion < 6) {
+            /* Only the first 32 MB of address space belongs to the     */
+            /* current process (unless WinCE 6.0+ or emulation).        */
+            GC_sysinfo.lpMaximumApplicationAddress = (LPVOID)((word)32 << 20);
+#           ifdef THREADS
+              /* On some old WinCE versions, it's observed that         */
+              /* VirtualQuery calls don't work properly when used to    */
+              /* get thread current stack committed minimum.            */
+              if (verInfo.dwMajorVersion < 5)
+                GC_dont_query_stack_min = TRUE;
+#           endif
+          }
+        }
+#     endif
     }
 
 # else
@@ -2590,7 +2621,7 @@ void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
 # ifdef DARWIN
     /* Using vm_protect (mach syscall) over mprotect (BSD syscall) seems to
        decrease the likelihood of some of the problems described below. */
-    #include <mach/vm_map.h>
+#   include <mach/vm_map.h>
     static mach_port_t GC_task_self;
 #   define PROTECT(addr,len) \
         if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
