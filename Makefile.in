@@ -147,9 +147,8 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkgdatadir)" \
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libcord_la_DEPENDENCIES = $(top_builddir)/libgc.la
-am__dirstamp = $(am__leading_dot)dirstamp
-am_libcord_la_OBJECTS = cord/cordbscs.lo cord/cordprnt.lo \
-	cord/cordtest.lo cord/cordxtra.lo
+am_libcord_la_OBJECTS = cordbscs.lo cordprnt.lo cordtest.lo \
+	cordxtra.lo
 libcord_la_OBJECTS = $(am_libcord_la_OBJECTS)
 libcord_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -173,8 +172,9 @@ am_libgc_la_OBJECTS = allchblk.lo alloc.lo blacklst.lo checksums.lo \
 	real_malloc.lo reclaim.lo specific.lo stubborn.lo typd_mlc.lo \
 	backgraph.lo thread_local_alloc.lo $(am__objects_1) \
 	$(am__objects_2) $(am__objects_3)
-@NEED_ATOMIC_OPS_ASM_FALSE@@USE_INTERNAL_LIBATOMIC_OPS_TRUE@nodist_libgc_la_OBJECTS = libatomic_ops/src/atomic_ops.lo
-@NEED_ATOMIC_OPS_ASM_TRUE@nodist_libgc_la_OBJECTS = libatomic_ops/src/atomic_ops_sysdeps.lo
+@NEED_ATOMIC_OPS_ASM_FALSE@@USE_INTERNAL_LIBATOMIC_OPS_TRUE@nodist_libgc_la_OBJECTS = atomic_ops.lo
+@NEED_ATOMIC_OPS_ASM_TRUE@nodist_libgc_la_OBJECTS =  \
+@NEED_ATOMIC_OPS_ASM_TRUE@	atomic_ops_sysdeps.lo
 libgc_la_OBJECTS = $(am_libgc_la_OBJECTS) $(nodist_libgc_la_OBJECTS)
 libgc_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(libgc_la_LDFLAGS) \
@@ -190,23 +190,23 @@ libgccpp_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 @KEEP_BACK_PTRS_TRUE@am__EXEEXT_1 = tracetest$(EXEEXT)
 @THREADS_TRUE@am__EXEEXT_2 = threadleaktest$(EXEEXT)
 @CPLUSPLUS_TRUE@am__EXEEXT_3 = test_cpp$(EXEEXT)
-am_gctest_OBJECTS = tests/test.$(OBJEXT)
+am_gctest_OBJECTS = test.$(OBJEXT)
 gctest_OBJECTS = $(am_gctest_OBJECTS)
 am__DEPENDENCIES_2 = $(top_builddir)/libgc.la $(am__DEPENDENCIES_1)
-am_hugetest_OBJECTS = tests/huge_test.$(OBJEXT)
+am_hugetest_OBJECTS = huge_test.$(OBJEXT)
 hugetest_OBJECTS = $(am_hugetest_OBJECTS)
 hugetest_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_leaktest_OBJECTS = tests/leak_test.$(OBJEXT)
+am_leaktest_OBJECTS = leak_test.$(OBJEXT)
 leaktest_OBJECTS = $(am_leaktest_OBJECTS)
 leaktest_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_middletest_OBJECTS = tests/middle.$(OBJEXT)
+am_middletest_OBJECTS = middle.$(OBJEXT)
 middletest_OBJECTS = $(am_middletest_OBJECTS)
 middletest_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_smashtest_OBJECTS = tests/smash_test.$(OBJEXT)
+am_smashtest_OBJECTS = smash_test.$(OBJEXT)
 smashtest_OBJECTS = $(am_smashtest_OBJECTS)
 smashtest_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am__test_cpp_SOURCES_DIST = tests/test_cpp.cc
-@CPLUSPLUS_TRUE@am_test_cpp_OBJECTS = tests/test_cpp.$(OBJEXT)
+@CPLUSPLUS_TRUE@am_test_cpp_OBJECTS = test_cpp.$(OBJEXT)
 test_cpp_OBJECTS = $(am_test_cpp_OBJECTS)
 @AVOID_CPP_LIB_FALSE@@CPLUSPLUS_TRUE@test_cpp_DEPENDENCIES =  \
 @AVOID_CPP_LIB_FALSE@@CPLUSPLUS_TRUE@	libgccpp.la \
@@ -214,13 +214,11 @@ test_cpp_OBJECTS = $(am_test_cpp_OBJECTS)
 @AVOID_CPP_LIB_TRUE@@CPLUSPLUS_TRUE@test_cpp_DEPENDENCIES = gc_cpp.o \
 @AVOID_CPP_LIB_TRUE@@CPLUSPLUS_TRUE@	$(am__DEPENDENCIES_2)
 am__threadleaktest_SOURCES_DIST = tests/thread_leak_test.c
-@THREADS_TRUE@am_threadleaktest_OBJECTS =  \
-@THREADS_TRUE@	tests/thread_leak_test.$(OBJEXT)
+@THREADS_TRUE@am_threadleaktest_OBJECTS = thread_leak_test.$(OBJEXT)
 threadleaktest_OBJECTS = $(am_threadleaktest_OBJECTS)
 @THREADS_TRUE@threadleaktest_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am__tracetest_SOURCES_DIST = tests/trace_test.c
-@KEEP_BACK_PTRS_TRUE@am_tracetest_OBJECTS =  \
-@KEEP_BACK_PTRS_TRUE@	tests/trace_test.$(OBJEXT)
+@KEEP_BACK_PTRS_TRUE@am_tracetest_OBJECTS = trace_test.$(OBJEXT)
 tracetest_OBJECTS = $(am_tracetest_OBJECTS)
 @KEEP_BACK_PTRS_TRUE@tracetest_DEPENDENCIES = $(am__DEPENDENCIES_2)
 SCRIPTS = $(dist_noinst_SCRIPTS)
@@ -718,29 +716,8 @@ clean-libLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-cord/$(am__dirstamp):
-	@$(MKDIR_P) cord
-	@: > cord/$(am__dirstamp)
-cord/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) cord/$(DEPDIR)
-	@: > cord/$(DEPDIR)/$(am__dirstamp)
-cord/cordbscs.lo: cord/$(am__dirstamp) cord/$(DEPDIR)/$(am__dirstamp)
-cord/cordprnt.lo: cord/$(am__dirstamp) cord/$(DEPDIR)/$(am__dirstamp)
-cord/cordtest.lo: cord/$(am__dirstamp) cord/$(DEPDIR)/$(am__dirstamp)
-cord/cordxtra.lo: cord/$(am__dirstamp) cord/$(DEPDIR)/$(am__dirstamp)
 libcord.la: $(libcord_la_OBJECTS) $(libcord_la_DEPENDENCIES) 
 	$(libcord_la_LINK) -rpath $(libdir) $(libcord_la_OBJECTS) $(libcord_la_LIBADD) $(LIBS)
-libatomic_ops/src/$(am__dirstamp):
-	@$(MKDIR_P) libatomic_ops/src
-	@: > libatomic_ops/src/$(am__dirstamp)
-libatomic_ops/src/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) libatomic_ops/src/$(DEPDIR)
-	@: > libatomic_ops/src/$(DEPDIR)/$(am__dirstamp)
-libatomic_ops/src/atomic_ops_sysdeps.lo:  \
-	libatomic_ops/src/$(am__dirstamp) \
-	libatomic_ops/src/$(DEPDIR)/$(am__dirstamp)
-libatomic_ops/src/atomic_ops.lo: libatomic_ops/src/$(am__dirstamp) \
-	libatomic_ops/src/$(DEPDIR)/$(am__dirstamp)
 libgc.la: $(libgc_la_OBJECTS) $(libgc_la_DEPENDENCIES) 
 	$(libgc_la_LINK) -rpath $(libdir) $(libgc_la_OBJECTS) $(libgc_la_LIBADD) $(LIBS)
 libgccpp.la: $(libgccpp_la_OBJECTS) $(libgccpp_la_DEPENDENCIES) 
@@ -752,75 +729,33 @@ clean-checkPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-tests/$(am__dirstamp):
-	@$(MKDIR_P) tests
-	@: > tests/$(am__dirstamp)
-tests/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) tests/$(DEPDIR)
-	@: > tests/$(DEPDIR)/$(am__dirstamp)
-tests/test.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
 gctest$(EXEEXT): $(gctest_OBJECTS) $(gctest_DEPENDENCIES) 
 	@rm -f gctest$(EXEEXT)
 	$(LINK) $(gctest_OBJECTS) $(gctest_LDADD) $(LIBS)
-tests/huge_test.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
 hugetest$(EXEEXT): $(hugetest_OBJECTS) $(hugetest_DEPENDENCIES) 
 	@rm -f hugetest$(EXEEXT)
 	$(LINK) $(hugetest_OBJECTS) $(hugetest_LDADD) $(LIBS)
-tests/leak_test.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
 leaktest$(EXEEXT): $(leaktest_OBJECTS) $(leaktest_DEPENDENCIES) 
 	@rm -f leaktest$(EXEEXT)
 	$(LINK) $(leaktest_OBJECTS) $(leaktest_LDADD) $(LIBS)
-tests/middle.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
 middletest$(EXEEXT): $(middletest_OBJECTS) $(middletest_DEPENDENCIES) 
 	@rm -f middletest$(EXEEXT)
 	$(LINK) $(middletest_OBJECTS) $(middletest_LDADD) $(LIBS)
-tests/smash_test.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
 smashtest$(EXEEXT): $(smashtest_OBJECTS) $(smashtest_DEPENDENCIES) 
 	@rm -f smashtest$(EXEEXT)
 	$(LINK) $(smashtest_OBJECTS) $(smashtest_LDADD) $(LIBS)
-tests/test_cpp.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
 test_cpp$(EXEEXT): $(test_cpp_OBJECTS) $(test_cpp_DEPENDENCIES) 
 	@rm -f test_cpp$(EXEEXT)
 	$(CXXLINK) $(test_cpp_OBJECTS) $(test_cpp_LDADD) $(LIBS)
-tests/thread_leak_test.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
 threadleaktest$(EXEEXT): $(threadleaktest_OBJECTS) $(threadleaktest_DEPENDENCIES) 
 	@rm -f threadleaktest$(EXEEXT)
 	$(LINK) $(threadleaktest_OBJECTS) $(threadleaktest_LDADD) $(LIBS)
-tests/trace_test.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
 tracetest$(EXEEXT): $(tracetest_OBJECTS) $(tracetest_DEPENDENCIES) 
 	@rm -f tracetest$(EXEEXT)
 	$(LINK) $(tracetest_OBJECTS) $(tracetest_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f cord/cordbscs.$(OBJEXT)
-	-rm -f cord/cordbscs.lo
-	-rm -f cord/cordprnt.$(OBJEXT)
-	-rm -f cord/cordprnt.lo
-	-rm -f cord/cordtest.$(OBJEXT)
-	-rm -f cord/cordtest.lo
-	-rm -f cord/cordxtra.$(OBJEXT)
-	-rm -f cord/cordxtra.lo
-	-rm -f libatomic_ops/src/atomic_ops.$(OBJEXT)
-	-rm -f libatomic_ops/src/atomic_ops.lo
-	-rm -f libatomic_ops/src/atomic_ops_sysdeps.$(OBJEXT)
-	-rm -f libatomic_ops/src/atomic_ops_sysdeps.lo
-	-rm -f tests/huge_test.$(OBJEXT)
-	-rm -f tests/leak_test.$(OBJEXT)
-	-rm -f tests/middle.$(OBJEXT)
-	-rm -f tests/smash_test.$(OBJEXT)
-	-rm -f tests/test.$(OBJEXT)
-	-rm -f tests/test_cpp.$(OBJEXT)
-	-rm -f tests/thread_leak_test.$(OBJEXT)
-	-rm -f tests/trace_test.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -828,9 +763,15 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allchblk.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alpha_mach_dep.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atomic_ops.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atomic_ops_sysdeps.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/backgraph.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blacklst.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checksums.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cordbscs.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cordprnt.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cordtest.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cordxtra.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/darwin_stop_world.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbg_mlc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dyn_load.Plo@am__quote@
@@ -839,10 +780,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gc_dlopen.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcj_mlc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/headers.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/huge_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/leak_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/malloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mallocx.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mark.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mark_rts.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/middle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/misc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/new_hblk.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/obj_map.Plo@am__quote@
@@ -853,90 +797,227 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ptr_chck.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/real_malloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reclaim.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smash_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparc_mach_dep.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/specific.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stubborn.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_cpp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/thread_leak_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/thread_local_alloc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trace_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/typd_mlc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win32_threads.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@cord/$(DEPDIR)/cordbscs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@cord/$(DEPDIR)/cordprnt.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@cord/$(DEPDIR)/cordtest.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@cord/$(DEPDIR)/cordxtra.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@libatomic_ops/src/$(DEPDIR)/atomic_ops.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@libatomic_ops/src/$(DEPDIR)/atomic_ops_sysdeps.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/huge_test.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/leak_test.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/middle.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/smash_test.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_cpp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/thread_leak_test.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/trace_test.Po@am__quote@
 
 .S.o:
-@am__fastdepCCAS_TRUE@	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-@am__fastdepCCAS_TRUE@	$(CPPASCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCCAS_TRUE@	mv -f $$depbase.Tpo $$depbase.Po
+@am__fastdepCCAS_TRUE@	$(CPPASCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCCAS_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
 @AMDEP_TRUE@@am__fastdepCCAS_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCCAS_FALSE@	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCCAS_FALSE@	$(CPPASCOMPILE) -c -o $@ $<
 
 .S.obj:
-@am__fastdepCCAS_TRUE@	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
-@am__fastdepCCAS_TRUE@	$(CPPASCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
-@am__fastdepCCAS_TRUE@	mv -f $$depbase.Tpo $$depbase.Po
+@am__fastdepCCAS_TRUE@	$(CPPASCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCCAS_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
 @AMDEP_TRUE@@am__fastdepCCAS_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCCAS_FALSE@	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCCAS_FALSE@	$(CPPASCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
+atomic_ops_sysdeps.lo: libatomic_ops/src/atomic_ops_sysdeps.S
+@am__fastdepCCAS_TRUE@	$(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CCASFLAGS) $(CCASFLAGS) -MT atomic_ops_sysdeps.lo -MD -MP -MF $(DEPDIR)/atomic_ops_sysdeps.Tpo -c -o atomic_ops_sysdeps.lo `test -f 'libatomic_ops/src/atomic_ops_sysdeps.S' || echo '$(srcdir)/'`libatomic_ops/src/atomic_ops_sysdeps.S
+@am__fastdepCCAS_TRUE@	mv -f $(DEPDIR)/atomic_ops_sysdeps.Tpo $(DEPDIR)/atomic_ops_sysdeps.Plo
+@AMDEP_TRUE@@am__fastdepCCAS_FALSE@	source='libatomic_ops/src/atomic_ops_sysdeps.S' object='atomic_ops_sysdeps.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCCAS_FALSE@	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCCAS_FALSE@	$(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CCASFLAGS) $(CCASFLAGS) -c -o atomic_ops_sysdeps.lo `test -f 'libatomic_ops/src/atomic_ops_sysdeps.S' || echo '$(srcdir)/'`libatomic_ops/src/atomic_ops_sysdeps.S
+
 .c.o:
-@am__fastdepCC_TRUE@	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCC_TRUE@	mv -f $$depbase.Tpo $$depbase.Po
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ $<
+@am__fastdepCC_FALSE@	$(COMPILE) -c $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
-@am__fastdepCC_TRUE@	mv -f $$depbase.Tpo $$depbase.Po
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
 .c.lo:
-@am__fastdepCC_TRUE@	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
-@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCC_TRUE@	mv -f $$depbase.Tpo $$depbase.Plo
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
+cordbscs.lo: cord/cordbscs.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cordbscs.lo -MD -MP -MF $(DEPDIR)/cordbscs.Tpo -c -o cordbscs.lo `test -f 'cord/cordbscs.c' || echo '$(srcdir)/'`cord/cordbscs.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cordbscs.Tpo $(DEPDIR)/cordbscs.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cord/cordbscs.c' object='cordbscs.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cordbscs.lo `test -f 'cord/cordbscs.c' || echo '$(srcdir)/'`cord/cordbscs.c
+
+cordprnt.lo: cord/cordprnt.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cordprnt.lo -MD -MP -MF $(DEPDIR)/cordprnt.Tpo -c -o cordprnt.lo `test -f 'cord/cordprnt.c' || echo '$(srcdir)/'`cord/cordprnt.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cordprnt.Tpo $(DEPDIR)/cordprnt.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cord/cordprnt.c' object='cordprnt.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cordprnt.lo `test -f 'cord/cordprnt.c' || echo '$(srcdir)/'`cord/cordprnt.c
+
+cordtest.lo: cord/cordtest.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cordtest.lo -MD -MP -MF $(DEPDIR)/cordtest.Tpo -c -o cordtest.lo `test -f 'cord/cordtest.c' || echo '$(srcdir)/'`cord/cordtest.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cordtest.Tpo $(DEPDIR)/cordtest.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cord/cordtest.c' object='cordtest.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cordtest.lo `test -f 'cord/cordtest.c' || echo '$(srcdir)/'`cord/cordtest.c
+
+cordxtra.lo: cord/cordxtra.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cordxtra.lo -MD -MP -MF $(DEPDIR)/cordxtra.Tpo -c -o cordxtra.lo `test -f 'cord/cordxtra.c' || echo '$(srcdir)/'`cord/cordxtra.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cordxtra.Tpo $(DEPDIR)/cordxtra.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cord/cordxtra.c' object='cordxtra.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cordxtra.lo `test -f 'cord/cordxtra.c' || echo '$(srcdir)/'`cord/cordxtra.c
+
+atomic_ops.lo: libatomic_ops/src/atomic_ops.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT atomic_ops.lo -MD -MP -MF $(DEPDIR)/atomic_ops.Tpo -c -o atomic_ops.lo `test -f 'libatomic_ops/src/atomic_ops.c' || echo '$(srcdir)/'`libatomic_ops/src/atomic_ops.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/atomic_ops.Tpo $(DEPDIR)/atomic_ops.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='libatomic_ops/src/atomic_ops.c' object='atomic_ops.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o atomic_ops.lo `test -f 'libatomic_ops/src/atomic_ops.c' || echo '$(srcdir)/'`libatomic_ops/src/atomic_ops.c
+
+test.o: tests/test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test.o -MD -MP -MF $(DEPDIR)/test.Tpo -c -o test.o `test -f 'tests/test.c' || echo '$(srcdir)/'`tests/test.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/test.Tpo $(DEPDIR)/test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/test.c' object='test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test.o `test -f 'tests/test.c' || echo '$(srcdir)/'`tests/test.c
+
+test.obj: tests/test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test.obj -MD -MP -MF $(DEPDIR)/test.Tpo -c -o test.obj `if test -f 'tests/test.c'; then $(CYGPATH_W) 'tests/test.c'; else $(CYGPATH_W) '$(srcdir)/tests/test.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/test.Tpo $(DEPDIR)/test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/test.c' object='test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test.obj `if test -f 'tests/test.c'; then $(CYGPATH_W) 'tests/test.c'; else $(CYGPATH_W) '$(srcdir)/tests/test.c'; fi`
+
+huge_test.o: tests/huge_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT huge_test.o -MD -MP -MF $(DEPDIR)/huge_test.Tpo -c -o huge_test.o `test -f 'tests/huge_test.c' || echo '$(srcdir)/'`tests/huge_test.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/huge_test.Tpo $(DEPDIR)/huge_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/huge_test.c' object='huge_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o huge_test.o `test -f 'tests/huge_test.c' || echo '$(srcdir)/'`tests/huge_test.c
+
+huge_test.obj: tests/huge_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT huge_test.obj -MD -MP -MF $(DEPDIR)/huge_test.Tpo -c -o huge_test.obj `if test -f 'tests/huge_test.c'; then $(CYGPATH_W) 'tests/huge_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/huge_test.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/huge_test.Tpo $(DEPDIR)/huge_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/huge_test.c' object='huge_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o huge_test.obj `if test -f 'tests/huge_test.c'; then $(CYGPATH_W) 'tests/huge_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/huge_test.c'; fi`
+
+leak_test.o: tests/leak_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT leak_test.o -MD -MP -MF $(DEPDIR)/leak_test.Tpo -c -o leak_test.o `test -f 'tests/leak_test.c' || echo '$(srcdir)/'`tests/leak_test.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/leak_test.Tpo $(DEPDIR)/leak_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/leak_test.c' object='leak_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o leak_test.o `test -f 'tests/leak_test.c' || echo '$(srcdir)/'`tests/leak_test.c
+
+leak_test.obj: tests/leak_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT leak_test.obj -MD -MP -MF $(DEPDIR)/leak_test.Tpo -c -o leak_test.obj `if test -f 'tests/leak_test.c'; then $(CYGPATH_W) 'tests/leak_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/leak_test.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/leak_test.Tpo $(DEPDIR)/leak_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/leak_test.c' object='leak_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o leak_test.obj `if test -f 'tests/leak_test.c'; then $(CYGPATH_W) 'tests/leak_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/leak_test.c'; fi`
+
+middle.o: tests/middle.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT middle.o -MD -MP -MF $(DEPDIR)/middle.Tpo -c -o middle.o `test -f 'tests/middle.c' || echo '$(srcdir)/'`tests/middle.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/middle.Tpo $(DEPDIR)/middle.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/middle.c' object='middle.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o middle.o `test -f 'tests/middle.c' || echo '$(srcdir)/'`tests/middle.c
+
+middle.obj: tests/middle.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT middle.obj -MD -MP -MF $(DEPDIR)/middle.Tpo -c -o middle.obj `if test -f 'tests/middle.c'; then $(CYGPATH_W) 'tests/middle.c'; else $(CYGPATH_W) '$(srcdir)/tests/middle.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/middle.Tpo $(DEPDIR)/middle.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/middle.c' object='middle.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o middle.obj `if test -f 'tests/middle.c'; then $(CYGPATH_W) 'tests/middle.c'; else $(CYGPATH_W) '$(srcdir)/tests/middle.c'; fi`
+
+smash_test.o: tests/smash_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT smash_test.o -MD -MP -MF $(DEPDIR)/smash_test.Tpo -c -o smash_test.o `test -f 'tests/smash_test.c' || echo '$(srcdir)/'`tests/smash_test.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/smash_test.Tpo $(DEPDIR)/smash_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/smash_test.c' object='smash_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o smash_test.o `test -f 'tests/smash_test.c' || echo '$(srcdir)/'`tests/smash_test.c
+
+smash_test.obj: tests/smash_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT smash_test.obj -MD -MP -MF $(DEPDIR)/smash_test.Tpo -c -o smash_test.obj `if test -f 'tests/smash_test.c'; then $(CYGPATH_W) 'tests/smash_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/smash_test.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/smash_test.Tpo $(DEPDIR)/smash_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/smash_test.c' object='smash_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o smash_test.obj `if test -f 'tests/smash_test.c'; then $(CYGPATH_W) 'tests/smash_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/smash_test.c'; fi`
+
+thread_leak_test.o: tests/thread_leak_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT thread_leak_test.o -MD -MP -MF $(DEPDIR)/thread_leak_test.Tpo -c -o thread_leak_test.o `test -f 'tests/thread_leak_test.c' || echo '$(srcdir)/'`tests/thread_leak_test.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/thread_leak_test.Tpo $(DEPDIR)/thread_leak_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/thread_leak_test.c' object='thread_leak_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o thread_leak_test.o `test -f 'tests/thread_leak_test.c' || echo '$(srcdir)/'`tests/thread_leak_test.c
+
+thread_leak_test.obj: tests/thread_leak_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT thread_leak_test.obj -MD -MP -MF $(DEPDIR)/thread_leak_test.Tpo -c -o thread_leak_test.obj `if test -f 'tests/thread_leak_test.c'; then $(CYGPATH_W) 'tests/thread_leak_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/thread_leak_test.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/thread_leak_test.Tpo $(DEPDIR)/thread_leak_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/thread_leak_test.c' object='thread_leak_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o thread_leak_test.obj `if test -f 'tests/thread_leak_test.c'; then $(CYGPATH_W) 'tests/thread_leak_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/thread_leak_test.c'; fi`
+
+trace_test.o: tests/trace_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT trace_test.o -MD -MP -MF $(DEPDIR)/trace_test.Tpo -c -o trace_test.o `test -f 'tests/trace_test.c' || echo '$(srcdir)/'`tests/trace_test.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/trace_test.Tpo $(DEPDIR)/trace_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/trace_test.c' object='trace_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o trace_test.o `test -f 'tests/trace_test.c' || echo '$(srcdir)/'`tests/trace_test.c
+
+trace_test.obj: tests/trace_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT trace_test.obj -MD -MP -MF $(DEPDIR)/trace_test.Tpo -c -o trace_test.obj `if test -f 'tests/trace_test.c'; then $(CYGPATH_W) 'tests/trace_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/trace_test.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/trace_test.Tpo $(DEPDIR)/trace_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/trace_test.c' object='trace_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o trace_test.obj `if test -f 'tests/trace_test.c'; then $(CYGPATH_W) 'tests/trace_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/trace_test.c'; fi`
+
 .cc.o:
-@am__fastdepCXX_TRUE@	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCXX_TRUE@	mv -f $$depbase.Tpo $$depbase.Po
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
 
 .cc.obj:
-@am__fastdepCXX_TRUE@	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
-@am__fastdepCXX_TRUE@	mv -f $$depbase.Tpo $$depbase.Po
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .cc.lo:
-@am__fastdepCXX_TRUE@	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
-@am__fastdepCXX_TRUE@	$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCXX_TRUE@	mv -f $$depbase.Tpo $$depbase.Plo
+@am__fastdepCXX_TRUE@	$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+test_cpp.o: tests/test_cpp.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_cpp.o -MD -MP -MF $(DEPDIR)/test_cpp.Tpo -c -o test_cpp.o `test -f 'tests/test_cpp.cc' || echo '$(srcdir)/'`tests/test_cpp.cc
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_cpp.Tpo $(DEPDIR)/test_cpp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/test_cpp.cc' object='test_cpp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_cpp.o `test -f 'tests/test_cpp.cc' || echo '$(srcdir)/'`tests/test_cpp.cc
+
+test_cpp.obj: tests/test_cpp.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_cpp.obj -MD -MP -MF $(DEPDIR)/test_cpp.Tpo -c -o test_cpp.obj `if test -f 'tests/test_cpp.cc'; then $(CYGPATH_W) 'tests/test_cpp.cc'; else $(CYGPATH_W) '$(srcdir)/tests/test_cpp.cc'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_cpp.Tpo $(DEPDIR)/test_cpp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tests/test_cpp.cc' object='test_cpp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_cpp.obj `if test -f 'tests/test_cpp.cc'; then $(CYGPATH_W) 'tests/test_cpp.cc'; else $(CYGPATH_W) '$(srcdir)/tests/test_cpp.cc'; fi`
 
 .s.o:
 	$(CCASCOMPILE) -c -o $@ $<
@@ -949,8 +1030,6 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
-	-rm -rf cord/.libs cord/_libs
-	-rm -rf libatomic_ops/src/.libs libatomic_ops/src/_libs
 
 distclean-libtool:
 	-rm -f libtool config.lt
@@ -1417,12 +1496,6 @@ clean-generic:
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
-	-rm -f cord/$(DEPDIR)/$(am__dirstamp)
-	-rm -f cord/$(am__dirstamp)
-	-rm -f libatomic_ops/src/$(DEPDIR)/$(am__dirstamp)
-	-rm -f libatomic_ops/src/$(am__dirstamp)
-	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
-	-rm -f tests/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -1434,7 +1507,7 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libLTLIBRARIES \
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf ./$(DEPDIR) cord/$(DEPDIR) libatomic_ops/src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -1471,7 +1544,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf ./$(DEPDIR) cord/$(DEPDIR) libatomic_ops/src/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

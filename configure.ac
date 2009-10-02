@@ -1,8 +1,8 @@
 # Copyright (c) 1999-2001 by Red Hat, Inc. All rights reserved.
-# 
+#
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
-# 
+#
 # Permission is hereby granted to use or copy this program
 # for any purpose,  provided the above notices are retained on all copies.
 # Permission to modify the code and to distribute modified code is granted,
@@ -17,14 +17,14 @@ dnl Process this file with autoconf to produce configure.
 # Initialization
 # ==============
 
-AC_INIT(gc,7.2alpha3,Hans.Boehm@hp.com) 
+AC_INIT(gc,7.2alpha3,Hans.Boehm@hp.com)
     ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
 AC_CONFIG_SRCDIR(gcj_mlc.c)
-AC_CANONICAL_TARGET 
+AC_CANONICAL_TARGET
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.51 $)
+AC_REVISION($Revision: 1.52 $)
 GC_SET_VERSION
-AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
+AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
 AM_CONFIG_HEADER([include/private/config.h])
 AM_MAINTAINER_MODE
 
@@ -262,7 +262,7 @@ AM_CONDITIONAL(PTHREADS, test x$THREADS = xposix)
 AM_CONDITIONAL(DARWIN_THREADS, test x$darwin_threads = xtrue)
 AM_CONDITIONAL(WIN32_THREADS, test x$win32_threads = xtrue)
 
-case "$host" in 
+case "$host" in
    powerpc-*-darwin*)
       powerpc_darwin=true
       ;;
@@ -408,7 +408,7 @@ AC_MSG_RESULT($enable_shared)
 
 # Configuration of machine-dependent code
 #
-AC_MSG_CHECKING(which machine-dependent code should be used) 
+AC_MSG_CHECKING(which machine-dependent code should be used)
 machdep=
 case "$host" in
  alpha-*-openbsd*)
@@ -431,8 +431,8 @@ case "$host" in
     ;;
  mips-nec-sysv*|mips-unknown-sysv*)
     ;;
- mips*-*-linux*) 
-    ;; 
+ mips*-*-linux*)
+    ;;
  mips-*-*)
     machdep="mach_dep.lo"
     dnl AC_DEFINE(NO_EXECUTE_PERMISSION)
