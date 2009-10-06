@@ -647,14 +647,14 @@ GC_API void * GC_CALL GC_debug_malloc_atomic(size_t /* size_in_bytes */,
                         GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
 GC_API char * GC_CALL GC_debug_strdup(const char *,
                                       GC_EXTRA_PARAMS) GC_ATTR_MALLOC;
-GC_API void * GC_CALL GC_debug_malloc_uncollectable
-                        (size_t /* size_in_bytes */, GC_EXTRA_PARAMS)
+GC_API void * GC_CALL GC_debug_malloc_uncollectable(
+                        size_t /* size_in_bytes */, GC_EXTRA_PARAMS)
                         GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
 GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t /* size_in_bytes */,
                                                GC_EXTRA_PARAMS)
                         GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
-GC_API void * GC_CALL GC_debug_malloc_ignore_off_page
-        (size_t /* size_in_bytes */, GC_EXTRA_PARAMS)
+GC_API void * GC_CALL GC_debug_malloc_ignore_off_page(
+                        size_t /* size_in_bytes */, GC_EXTRA_PARAMS)
                         GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
 GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(
                         size_t /* size_in_bytes */, GC_EXTRA_PARAMS)
@@ -882,7 +882,7 @@ GC_API int GC_CALL GC_register_disappearing_link(void ** /* link */);
         /* Only exists for backward compatibility.  See below:  */
 
 GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
-                                                        void * /* obj */);
+                                                         void * /* obj */);
         /* A slight generalization of the above. *link is       */
         /* cleared when obj first becomes inaccessible.  This   */
         /* can be used to implement weak pointers easily and    */
@@ -1011,6 +1011,16 @@ typedef void * (GC_CALLBACK * GC_stack_base_func)(
 GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
                                               void * /* arg */);
 
+#define GC_SUCCESS 0
+#define GC_DUPLICATE 1          /* Was already registered.              */
+#define GC_NO_THREADS 2         /* No thread support in GC.             */
+        /* GC_NO_THREADS is not returned by any GC func anymore.        */
+#define GC_UNIMPLEMENTED 3 /* Not yet implemented on this platform.     */
+
+/* GC_allow_register_threads(), GC_register_my_thread() and             */
+/* GC_unregister_my_thread() are exported only if the library has been  */
+/* compiled with threads support (GC_THREADS).                          */
+
 /* Explicitly enable GC_register_my_thread() invocation.                */
 /* Done implicitly if a GC thread-creation function is called (or       */
 /* DllMain-based thread registration is enabled).  Otherwise, it must   */
@@ -1035,11 +1045,6 @@ GC_API void GC_CALL GC_allow_register_threads(void);
 /* thread registration enabled.  Except in this latter case, explicit   */
 /* calls are normally required for threads created by third-party       */
 /* libraries.                                                           */
-#define GC_SUCCESS 0
-#define GC_DUPLICATE 1         /* Was already registered.               */
-#define GC_NO_THREADS 2        /* No thread support in GC.              */
-    /* GC_NO_THREADS is not returned by any GC func anymore.            */
-#define GC_UNIMPLEMENTED 3     /* Not yet implemented on this platform. */
 GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *);
 
 /* Unregister the current thread.  Only an explicity registered thread  */
@@ -1170,22 +1175,19 @@ GC_API void (GC_CALLBACK * GC_same_obj_print_proc)(void * /* p */,
 GC_API void (GC_CALLBACK * GC_is_valid_displacement_print_proc)(void *);
 GC_API void (GC_CALLBACK * GC_is_visible_print_proc)(void *);
 
-/* For pthread support, we generally need to intercept a number of      */
-/* thread library calls.  We do that here by macro defining them.       */
-
 #ifdef GC_PTHREADS
+  /* For pthread support, we generally need to intercept a number of    */
+  /* thread library calls.  We do that here by macro defining them.     */
 # include "gc_pthread_redirects.h"
 #endif
 
-#if defined(PCR) || defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
-  /* Any flavor of threads. */
-  /* This returns a list of objects, linked through their first         */
-  /* word.  Its use can greatly reduce lock contention problems, since  */
-  /* the allocation lock can be acquired and released many fewer times. */
-  GC_API void * GC_CALL GC_malloc_many(size_t /* lb */);
-# define GC_NEXT(p) (*(void * *)(p))    /* Retrieve the next element    */
+/* This returns a list of objects, linked through their first word.     */
+/* Its use can greatly reduce lock contention problems, since the       */
+/* allocation lock can be acquired and released many fewer times.       */
+/* Exported only if the library has been compiled with threads support. */
+GC_API void * GC_CALL GC_malloc_many(size_t /* lb */);
+#define GC_NEXT(p) (*(void * *)(p))     /* Retrieve the next element    */
                                         /* in returned list.            */
-#endif
 
 /* A filter function to control the scanning of dynamic libraries.      */
 /* If implemented, called by GC before registering a dynamic library    */
@@ -1207,8 +1209,7 @@ typedef int (GC_CALLBACK * GC_has_static_roots_func)(
 GC_API void GC_CALL GC_register_has_static_roots_callback(
                                         GC_has_static_roots_func);
 
-#if defined(GC_WIN32_THREADS) && !defined(__CYGWIN32__) \
-        && !defined(__CYGWIN__) && !defined(GC_PTHREADS)
+#if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
 
 # ifndef GC_NO_THREAD_DECLS
 
@@ -1284,7 +1285,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 #   define _beginthreadex GC_beginthreadex
 #   undef _endthreadex
 #   define _endthreadex GC_endthreadex
-/* #   define _beginthread { > "Please use _beginthreadex instead of _beginthread" < } */
+/* #define _beginthread { > "Please use _beginthreadex instead of _beginthread" < } */
 # endif /* !GC_NO_THREAD_REDIRECTS */
 
 #endif /* GC_WIN32_THREADS */
@@ -1408,8 +1409,8 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
                     GC_INIT_CONF_IGNORE_WARN; \
                     GC_INIT_CONF_INITIAL_HEAP_SIZE; }
 
-  /* win32S may not free all resources on process exit.         */
-  /* This explicitly deallocates the heap.                      */
+/* win32S may not free all resources on process exit.   */
+/* This explicitly deallocates the heap.                */
 GC_API void GC_CALL GC_win32_free_heap(void);
 
 #if defined(_AMIGA) && !defined(GC_AMIGA_MAKINGLIB)
