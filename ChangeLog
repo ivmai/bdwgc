@@ -1,5 +1,11 @@
 2009-10-06  Ivan Maidanski <ivmai@mail.ru>
 
+	* include/gc_config_macros.h: Use old behavior for FreeBSD and
+	NetBSD platform detection code (check that other GC_xxx_THREADS
+	are undefined); add FIXME.
+
+2009-10-06  Ivan Maidanski <ivmai@mail.ru>
+
 	* include/gc_config_macros.h: Rearrange the platform detection
 	code (GC_WIN32_PTHREADS implies GC_WIN32_THREADS; define
 	GC_THREADS first if GC_XXX_THREADS already set; define proper

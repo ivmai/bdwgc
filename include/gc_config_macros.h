@@ -89,15 +89,17 @@
      || defined(sun) && (defined(i386) || defined(__i386__) \
                          || defined(__amd64__))
 #   define GC_SOLARIS_THREADS
-# endif
-# if defined(__APPLE__) && defined(__MACH__)
+# elif defined(__APPLE__) && defined(__MACH__)
 #   define GC_DARWIN_THREADS
-# endif
-# if defined(__FreeBSD__) || defined(__DragonFly__)
-#   define GC_FREEBSD_THREADS
-# endif
-# if defined(__NetBSD__)
-#   define GC_NETBSD_THREADS
+# elif !defined(GC_LINUX_THREADS) && !defined(GC_HPUX_THREADS) \
+       && !defined(GC_OSF1_THREADS) && !defined(GC_IRIX_THREADS)
+    /* FIXME: Should we really need for FreeBSD and NetBSD to check     */
+    /* that no other GC_xxx_THREADS macro is set?                       */
+#   if defined(__FreeBSD__) || defined(__DragonFly__)
+#     define GC_FREEBSD_THREADS
+#   elif defined(__NetBSD__)
+#     define GC_NETBSD_THREADS
+#   endif
 # endif
 # if defined(DGUX) && (defined(i386) || defined(__i386__))
 #   define GC_DGUX386_THREADS
