@@ -912,7 +912,7 @@ STATIC void GC_finish_collection(void)
 STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
                                          GC_bool force_unmap)
 {
-    int result;
+    GC_bool result;
 #   ifdef USE_MUNMAP
       int old_unmap_threshold;
 #   endif
@@ -934,14 +934,14 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
     ENTER_GC();
     /* Minimize junk left in my registers */
       GC_noop(0,0,0,0,0,0);
-    result = (int)GC_try_to_collect_inner(stop_func);
+    result = GC_try_to_collect_inner(stop_func);
     EXIT_GC();
 #   ifdef USE_MUNMAP
       GC_unmap_threshold = old_unmap_threshold; /* restore */
 #   endif
     RESTORE_CANCEL(cancel_state);
     UNLOCK();
-    if(result) {
+    if (result) {
         if (GC_debugging_started) GC_print_all_smashed();
         GC_INVOKE_FINALIZERS();
     }
