@@ -1,3 +1,11 @@
+2009-10-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h: Reformat the code (make the indentation style
+	uniform across the file).
+	* include/gc.h (GC_SOLARIS_THREADS): Don't check for.
+	* include/gc.h (GC_MIN, GC_MAX): Don't define.
+	* mallocx.c (GC_malloc_many): Add comment to #endif.
+
 2009-10-02  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
 
 	* configure.ac: Drop the subdir-objects Automake option, since

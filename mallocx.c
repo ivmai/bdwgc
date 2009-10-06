@@ -436,7 +436,7 @@ GC_API void * GC_CALL GC_malloc_many(size_t lb)
 
 /* Note that the "atomic" version of this would be unsafe, since the    */
 /* links would not be seen by the collector.                            */
-# endif
+#endif /* THREADS */
 
 /* Allocate lb bytes of pointerful, traced, but not collectable data */
 GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)
