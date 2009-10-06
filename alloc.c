@@ -909,8 +909,8 @@ STATIC void GC_finish_collection(void)
     extern GC_bool GC_force_unmap_on_gcollect;  /* defined in misc.c    */
 #endif
 
-/* Externally callable routine to invoke full, stop-world collection */
-GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
+STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
+                                         GC_bool force_unmap)
 {
     int result;
 #   ifdef USE_MUNMAP
@@ -927,7 +927,8 @@ GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
     DISABLE_CANCEL(cancel_state);
 #   ifdef USE_MUNMAP
       old_unmap_threshold = GC_unmap_threshold;
-      if (GC_force_unmap_on_gcollect && old_unmap_threshold > 0)
+      if (force_unmap ||
+          (GC_force_unmap_on_gcollect && old_unmap_threshold > 0))
         GC_unmap_threshold = 1; /* unmap as much as possible */
 #   endif
     ENTER_GC();
@@ -947,10 +948,21 @@ GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
     return(result);
 }
 
+/* Externally callable routines to invoke full, stop-the-world collection. */
+GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
+{
+    return (int)GC_try_to_collect_general(stop_func, FALSE);
+}
+
 GC_API void GC_CALL GC_gcollect(void)
 {
-    (void)GC_try_to_collect(GC_default_stop_func);
+    (void)GC_try_to_collect_general(GC_default_stop_func, FALSE);
     if (GC_have_errors) GC_print_all_errors();
+}
+
+GC_API void GC_CALL GC_gcollect_and_unmap(void)
+{
+    (void)GC_try_to_collect_general(GC_never_stop_func, TRUE);
 }
 
 word GC_n_heap_sects = 0;       /* Number of sections currently in heap. */

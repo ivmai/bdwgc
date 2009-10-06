@@ -473,6 +473,13 @@ GC_API void GC_CALL GC_debug_register_displacement(size_t /* n */);
 /* Explicitly trigger a full, world-stop collection.    */
 GC_API void GC_CALL GC_gcollect(void);
 
+/* Same as above but ignores the default stop_func setting and tries to */
+/* unmap as much memory as possible (regardless of the corresponding    */
+/* switch setting).  The recommended usage: on receiving a system       */
+/* low-memory event; before retrying a system call failed because of    */
+/* the system is running out of resources.                              */
+GC_API void GC_CALL GC_gcollect_and_unmap(void);
+
 /* Trigger a full world-stopped collection.  Abort the collection if    */
 /* and when stop_func returns a nonzero value.  Stop_func will be       */
 /* called frequently, and should be reasonably fast.  (stop_func is     */
