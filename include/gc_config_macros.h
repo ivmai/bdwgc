@@ -33,10 +33,8 @@
 #if defined(IRIX_THREADS)
 # define GC_IRIX_THREADS
 #endif
-#if defined(DGUX_THREADS)
-# if !defined(GC_DGUX386_THREADS)
-#  define GC_DGUX386_THREADS
-# endif
+#if defined(DGUX_THREADS) && !defined(GC_DGUX386_THREADS)
+# define GC_DGUX386_THREADS
 #endif
 #if defined(AIX_THREADS)
 # define GC_AIX_THREADS
@@ -57,75 +55,71 @@
 # define GC_USE_LD_WRAP
 #endif
 
-#if !defined(GC_THREADS) && \
-        (defined(GC_SOLARIS_THREADS) || defined(GC_IRIX_THREADS) || \
-        defined(GC_DGUX386_THREADS) || defined(GC_AIX_THREADS) || \
-        defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) || \
-        defined(GC_LINUX_THREADS) || defined(GC_WIN32_THREADS))
+#if defined(GC_WIN32_PTHREADS) && !defined(GC_WIN32_THREADS)
+  /* Using pthreads-w32 library. */
+# define GC_WIN32_THREADS
+#endif
+
+#if (defined(GC_AIX_THREADS) || defined(GC_DARWIN_THREADS) \
+     || defined(GC_DGUX386_THREADS) || defined(GC_FREEBSD_THREADS) \
+     || defined(GC_GNU_THREADS) || defined(GC_HPUX_THREADS) \
+     || defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) \
+     || defined(GC_NETBSD_THREADS) || defined(GC_OSF1_THREADS) \
+     || defined(GC_SOLARIS_THREADS) || defined(GC_WIN32_THREADS)) \
+    && !defined(GC_THREADS)
 # define GC_THREADS
 #endif
 
-# if defined(GC_SOLARIS_THREADS) || defined(GC_FREEBSD_THREADS) || \
-        defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) || \
-        defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) || \
-        defined(GC_DGUX386_THREADS) || defined(GC_DARWIN_THREADS) || \
-        defined(GC_AIX_THREADS) || defined(GC_NETBSD_THREADS) || \
-        (defined(GC_WIN32_THREADS) && defined(__CYGWIN32__)) || \
-        defined(GC_GNU_THREADS)
-#   define GC_PTHREADS
-# endif
-
-#if defined(GC_WIN32_PTHREADS)
-#   define GC_WIN32_THREADS
-#   define GC_PTHREADS
-#endif
-
-#if defined(GC_THREADS) && !defined(GC_PTHREADS)
+#ifdef GC_THREADS
 # if defined(__linux__)
 #   define GC_LINUX_THREADS
-#   define GC_PTHREADS
 # endif
 # if !defined(__linux__) && (defined(_PA_RISC1_1) || defined(_PA_RISC2_0) \
-                         || defined(hppa) || defined(__HPPA)) \
-                         || (defined(__ia64) && defined(_HPUX_SOURCE))
+                             || defined(hppa) || defined(__HPPA)) \
+     || (defined(__ia64) && defined(_HPUX_SOURCE))
 #   define GC_HPUX_THREADS
-#   define GC_PTHREADS
 # endif
 # if !defined(__linux__) && (defined(__alpha) || defined(__alpha__))
 #   define GC_OSF1_THREADS
-#   define GC_PTHREADS
 # endif
 # if defined(__mips) && !defined(__linux__)
 #   define GC_IRIX_THREADS
-#   define GC_PTHREADS
 # endif
 # if defined(__sparc) && !defined(__linux__) \
      || defined(sun) && (defined(i386) || defined(__i386__) \
-                        || defined(__amd64__))
+                         || defined(__amd64__))
 #   define GC_SOLARIS_THREADS
-#   define GC_PTHREADS
 # endif
 # if defined(__APPLE__) && defined(__MACH__)
 #   define GC_DARWIN_THREADS
-#   define GC_PTHREADS
 # endif
-# if !defined(GC_PTHREADS) && (defined(__FreeBSD__) || defined(__DragonFly__))
+# if defined(__FreeBSD__) || defined(__DragonFly__)
 #   define GC_FREEBSD_THREADS
-#   define GC_PTHREADS
 # endif
-# if !defined(GC_PTHREADS) && defined(__NetBSD__)
+# if defined(__NetBSD__)
 #   define GC_NETBSD_THREADS
-#   define GC_PTHREADS
 # endif
 # if defined(DGUX) && (defined(i386) || defined(__i386__))
 #   define GC_DGUX386_THREADS
-#   define GC_PTHREADS
 # endif
 # if defined(_AIX)
 #   define GC_AIX_THREADS
-#   define GC_PTHREADS
+# endif
+# if (defined(_WIN32) || defined(_MSC_VER) || defined(__BORLANDC__) \
+      || defined(__CYGWIN32__) || defined(__CYGWIN__) || defined(__CEGCC__) \
+      || defined(_WIN32_WCE) || defined(__MINGW32__)) \
+     && !defined(GC_WIN32_THREADS)
+    /* Either posix or native Win32 threads. */
+#   define GC_WIN32_THREADS
 # endif
 #endif /* GC_THREADS */
+
+#undef GC_PTHREADS
+#if (!defined(GC_WIN32_THREADS) || defined(GC_WIN32_PTHREADS) \
+     || defined(__CYGWIN32__) || defined(__CYGWIN__)) && defined(GC_THREADS)
+  /* Posix threads. */
+# define GC_PTHREADS
+#endif
 
 #if !defined(_PTHREADS) && defined(GC_NETBSD_THREADS)
 # define _PTHREADS
@@ -135,45 +129,30 @@
 # define _POSIX4A_DRAFT10_SOURCE 1
 #endif
 
-#if !defined(_REENTRANT) && (defined(GC_SOLARIS_THREADS) \
-                             || defined(GC_HPUX_THREADS) \
-                             || defined(GC_AIX_THREADS) \
-                             || defined(GC_LINUX_THREADS) \
-                             || defined(GC_NETBSD_THREADS) \
-                             || defined(GC_GNU_THREADS))
+#if !defined(_REENTRANT) && defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
+  /* Better late than never.  This fails if system headers that depend  */
+  /* on this were previously included.                                  */
 # define _REENTRANT
-        /* Better late than never.  This fails if system headers that   */
-        /* depend on this were previously included.                     */
 #endif
 
-#if defined(GC_THREADS) && !defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
-    && (defined(_WIN32) || defined(_MSC_VER) || defined(__CYGWIN__) \
-     || defined(__MINGW32__) || defined(__BORLANDC__) \
-     || defined(_WIN32_WCE) || defined(__CEGCC__))
-# define GC_WIN32_THREADS
-# if defined(__CYGWIN__)
-#   define GC_PTHREADS
+#define __GC
+#if !defined(_WIN32_WCE) || defined(__GNUC__)
+# include <stddef.h>
+# if defined(__MINGW32__) && !defined(_WIN32_WCE)
+#   include <stdint.h>
+    /* We mention uintptr_t.                                            */
+    /* Perhaps this should be included in pure msft environments        */
+    /* as well?                                                         */
+# endif
+#else /* ! _WIN32_WCE */
+  /* Yet more kludges for WinCE */
+# include <stdlib.h> /* size_t is defined here */
+# ifndef _PTRDIFF_T_DEFINED
+    /* ptrdiff_t is not defined */
+#   define _PTRDIFF_T_DEFINED
+    typedef long ptrdiff_t;
 # endif
 #endif
-
-# define __GC
-# if !defined(_WIN32_WCE) || defined(__GNUC__)
-#   include <stddef.h>
-#   if defined(__MINGW32__) && !defined(_WIN32_WCE)
-#     include <stdint.h>
-      /* We mention uintptr_t.                                      */
-      /* Perhaps this should be included in pure msft environments  */
-      /* as well?                                                   */
-#   endif
-# else /* ! _WIN32_WCE */
-/* Yet more kludges for WinCE */
-#   include <stdlib.h>          /* size_t is defined here */
-#   ifndef _PTRDIFF_T_DEFINED
-      /* ptrdiff_t is not defined */
-#     define _PTRDIFF_T_DEFINED
-      typedef long ptrdiff_t;
-#   endif
-# endif
 
 #if defined(_DLL) && !defined(GC_NOT_DLL) && !defined(GC_DLL) \
         && !defined(__GNUC__)
