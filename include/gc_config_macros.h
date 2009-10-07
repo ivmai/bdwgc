@@ -60,17 +60,16 @@
 # define GC_WIN32_THREADS
 #endif
 
-#if (defined(GC_AIX_THREADS) || defined(GC_DARWIN_THREADS) \
-     || defined(GC_DGUX386_THREADS) || defined(GC_FREEBSD_THREADS) \
-     || defined(GC_GNU_THREADS) || defined(GC_HPUX_THREADS) \
-     || defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) \
-     || defined(GC_NETBSD_THREADS) || defined(GC_OSF1_THREADS) \
-     || defined(GC_SOLARIS_THREADS) || defined(GC_WIN32_THREADS)) \
-    && !defined(GC_THREADS)
-# define GC_THREADS
-#endif
-
-#ifdef GC_THREADS
+#if defined(GC_AIX_THREADS) || defined(GC_DARWIN_THREADS) \
+    || defined(GC_DGUX386_THREADS) || defined(GC_FREEBSD_THREADS) \
+    || defined(GC_GNU_THREADS) || defined(GC_HPUX_THREADS) \
+    || defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) \
+    || defined(GC_NETBSD_THREADS) || defined(GC_OSF1_THREADS) \
+    || defined(GC_SOLARIS_THREADS) || defined(GC_WIN32_THREADS)
+# ifndef GC_THREADS
+#   define GC_THREADS
+# endif
+#elif defined(GC_THREADS)
 # if defined(__linux__)
 #   define GC_LINUX_THREADS
 # endif
