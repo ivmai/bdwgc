@@ -1,5 +1,13 @@
 2009-10-07  Ivan Maidanski <ivmai@mail.ru>
 
+	* doc/README.win32: Replace ".exe.log" to ".gc.log".
+	* doc/README.win64: Ditto.
+	* doc/README.win64: Fix a typo.
+	* misc.c (GC_CreateLogFile): Strip executable file extension for
+	the log file; use ".gc.log" extension (instead of ".log").
+
+2009-10-07  Ivan Maidanski <ivmai@mail.ru>
+
 	* include/gc_config_macros.h: Avoid the redefinition of
 	GC_xxx_THREADS macros.
 

@@ -953,7 +953,7 @@ out:
   STATIC HANDLE GC_CreateLogFile(void)
   {
 #   if !defined(NO_GETENV) || !defined(OLD_WIN32_LOG_FILE)
-      TCHAR logPath[_MAX_PATH + sizeof(".log")];
+      TCHAR logPath[_MAX_PATH + 0x10]; /* buffer for path + ext */
 #   endif
     /* Use GetEnvironmentVariable instead of GETENV() for unicode support. */
 #   ifndef NO_GETENV
@@ -967,10 +967,14 @@ out:
                           NULL /* lpSecurityAttributes */, CREATE_ALWAYS,
                           FILE_FLAG_WRITE_THROUGH, NULL /* hTemplateFile */);
 #     else
+        int len = (int)GetModuleFileName(NULL /* hModule */, logPath,
+                                         _MAX_PATH + 1);
+        /* If GetModuleFileName() has failed then len is 0. */
+        if (len > 4 && logPath[len - 4] == (TCHAR)'.') {
+          len -= 4; /* strip executable file extension */
+        }
         /* strcat/wcscat() are deprecated on WinCE, so use memcpy()     */
-        memcpy(&logPath[GetModuleFileName(NULL /* hModule */, logPath,
-                                          _MAX_PATH + 1)],
-               TEXT(".log"), sizeof(TEXT(".log")));
+        memcpy(&logPath[len], TEXT(".gc.log"), sizeof(TEXT(".gc.log")));
 #     endif
     }
 #   if !defined(NO_GETENV) || !defined(OLD_WIN32_LOG_FILE)
