@@ -980,7 +980,10 @@ out:
 #   if !defined(NO_GETENV) || !defined(OLD_WIN32_LOG_FILE)
       return CreateFile(logPath, GENERIC_WRITE, FILE_SHARE_READ,
                         NULL /* lpSecurityAttributes */, CREATE_ALWAYS,
-                        FILE_FLAG_WRITE_THROUGH, NULL /* hTemplateFile */);
+                        GC_print_stats == VERBOSE ? FILE_ATTRIBUTE_NORMAL :
+                            /* immediately flush writes unless very verbose */
+                            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH,
+                        NULL /* hTemplateFile */);
 #   endif
   }
 

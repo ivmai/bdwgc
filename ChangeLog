@@ -1,5 +1,10 @@
 2009-10-07  Ivan Maidanski <ivmai@mail.ru>
 
+	* misc.c (GC_CreateLogFile): Use FILE_ATTRIBUTE_NORMAL for
+	CreateFile(); don't immediately flush every write if very verbose.
+
+2009-10-07  Ivan Maidanski <ivmai@mail.ru>
+
 	* doc/README.win32: Replace ".exe.log" to ".gc.log".
 	* doc/README.win64: Ditto.
 	* doc/README.win64: Fix a typo.
