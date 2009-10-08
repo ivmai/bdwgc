@@ -144,6 +144,7 @@ STATIC int GC_n_attempts = 0;   /* Number of attempts at finishing      */
                                 /* collection within GC_time_limit.     */
 
 STATIC GC_stop_func GC_default_stop_func = GC_never_stop_func;
+                                /* accessed holding the lock.           */
 
 GC_API void GC_CALL GC_set_stop_func(GC_stop_func stop_func)
 {
@@ -909,6 +910,7 @@ STATIC void GC_finish_collection(void)
     extern GC_bool GC_force_unmap_on_gcollect;  /* defined in misc.c    */
 #endif
 
+/* If stop_func == 0 then GC_default_stop_func is used instead.         */
 STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
                                          GC_bool force_unmap)
 {
@@ -920,7 +922,6 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
     DCL_LOCK_STATE;
 
     if (!GC_is_initialized) GC_init();
-    GC_ASSERT(stop_func != 0);
     if (GC_debugging_started) GC_print_all_smashed();
     GC_INVOKE_FINALIZERS();
     LOCK();
@@ -934,7 +935,8 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
     ENTER_GC();
     /* Minimize junk left in my registers */
       GC_noop(0,0,0,0,0,0);
-    result = GC_try_to_collect_inner(stop_func);
+    result = GC_try_to_collect_inner(stop_func != 0 ? stop_func :
+                                     GC_default_stop_func);
     EXIT_GC();
 #   ifdef USE_MUNMAP
       GC_unmap_threshold = old_unmap_threshold; /* restore */
@@ -951,12 +953,15 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
 /* Externally callable routines to invoke full, stop-the-world collection. */
 GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
 {
+    GC_ASSERT(stop_func != 0);
     return (int)GC_try_to_collect_general(stop_func, FALSE);
 }
 
 GC_API void GC_CALL GC_gcollect(void)
 {
-    (void)GC_try_to_collect_general(GC_default_stop_func, FALSE);
+    /* 0 is passed as stop_func to get GC_default_stop_func value       */
+    /* while holding the allocation lock (to prevent data races).       */
+    (void)GC_try_to_collect_general(0, FALSE);
     if (GC_have_errors) GC_print_all_errors();
 }
 

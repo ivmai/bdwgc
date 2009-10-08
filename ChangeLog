@@ -1,5 +1,16 @@
 2009-10-08  Ivan Maidanski <ivmai@mail.ru>
 
+	* alloc.c (GC_default_stop_func, GC_try_to_collect_general,
+	GC_gcollect): Add the comment.
+	* alloc.c (GC_try_to_collect_general): Move the assertion on
+	stop_func != 0 to GC_try_to_collect().
+	* alloc.c (GC_try_to_collect_general): If stop_func == 0 then use
+	GC_default_stop_func instead (holding the lock).
+	* alloc.c (GC_gcollect): Pass 0 as stop_func instead of
+	GC_default_stop_func (to prevent data races).
+
+2009-10-08  Ivan Maidanski <ivmai@mail.ru>
+
 	* Makefile.direct: Move "define arguments" documentation to
 	doc/README.macros; add reference to doc/README.macros.
 	* Makefile.dj: Change the documentation reference to
