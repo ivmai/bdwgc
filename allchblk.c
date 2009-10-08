@@ -879,7 +879,7 @@ GC_freehblk(struct hblk *hbp)
         }
       }
     /* FIXME: It is not clear we really always want to do these merges  */
-    /* with -DUSE_MUNMAP, since it updates ages and hence prevents      */
+    /* with USE_MUNMAP, since it updates ages and hence prevents        */
     /* unmapping.                                                       */
 
     GC_large_free_bytes += size;

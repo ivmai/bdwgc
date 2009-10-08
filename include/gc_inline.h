@@ -20,7 +20,7 @@
 /* such a byte has been added, and hence does not trace the last word   */
 /* in the resulting object.                                             */
 /* This is not an issue if the collector is compiled with               */
-/* -DDONT_ADD_BYTE_AT_END, or if GC_all_interior_pointers is not set.   */
+/* DONT_ADD_BYTE_AT_END, or if GC_all_interior_pointers is not set.     */
 /* This interface is most useful for compilers that generate C.         */
 /* It is also used internally for thread-local allocation.              */
 /* Manual use is hereby discouraged.                                    */

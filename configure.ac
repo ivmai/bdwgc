@@ -22,7 +22,7 @@ AC_INIT(gc,7.2alpha3,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.52 $)
+AC_REVISION($Revision: 1.53 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
 AM_CONFIG_HEADER([include/private/config.h])
@@ -133,7 +133,7 @@ case "$THREADS" in
 	AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
 	THREADDLLIBS="-lpthread -lrt"
 	# HPUX needs REENTRANT for the _r calls.
-	AC_DEFINE(_REENTRANT, 1, [Required define if using POSIX threads])
+	AC_DEFINE(_REENTRANT, 1, [Required define if using POSIX threads.])
 	;;
      *-*-hpux10*)
 	AC_MSG_WARN("Only HP-UX 11 POSIX threads are supported.")
@@ -224,7 +224,7 @@ case "$THREADS" in
     fi
     win32_threads=true
     AC_DEFINE([EMPTY_GETENV_RESULTS], [1],
-	      [Wine getenv may not return NULL for missing entry])
+	      [Wine getenv may not return NULL for missing entry.])
     ;;
  dgux386)
     THREADS=dgux386
@@ -326,7 +326,7 @@ AC_MSG_RESULT($compiler_xlc)
 AM_CONDITIONAL(COMPILER_XLC,test $compiler_xlc = yes)
 if test $compiler_xlc = yes -a "$powerpc_darwin" = true; then
   # the darwin stack-frame-walking code is completely broken on xlc
-  AC_DEFINE([DARWIN_DONT_PARSE_STACK], 1, [See Makefile.direct])
+  AC_DEFINE([DARWIN_DONT_PARSE_STACK], 1, [See doc/README.macros.])
 fi
 
 # We never want libdl on darwin. It is a fake libdl that just ends up making
@@ -421,7 +421,8 @@ case "$host" in
     machdep="mach_dep.lo"
     ;;
  i?86-*-solaris2.[[89]] | i?86-*-solaris2.1?)
-    AC_DEFINE([SOLARIS25_PROC_VDB_BUG_FIXED], 1, [See gcconfig.h])
+    AC_DEFINE([SOLARIS25_PROC_VDB_BUG_FIXED], 1,
+	      [See the comment in gcconfig.h.])
     ;;
  mipstx39-*-elf*)
     machdep="mach_dep.lo"
@@ -554,7 +555,7 @@ AC_ARG_ENABLE(gcj-support,
 AM_CONDITIONAL(ENABLE_GCJ_SUPPORT,
     [test x"$enable_gcj_support" != xno])
 if test x"$enable_gcj_support" != xno; then
-    AC_DEFINE(GC_GCJ_SUPPORT, 1, [Define to include support for gcj])
+    AC_DEFINE(GC_GCJ_SUPPORT, 1, [Define to include support for gcj.])
 fi
 
 dnl Debugging
@@ -562,7 +563,7 @@ dnl ---------
 
 AH_TEMPLATE([GC_HAVE_BUILTIN_BACKTRACE],
 	    [Define if backtrace information is supported.])
-AH_TEMPLATE([MAKE_BACK_GRAPH], [See Makefile.direct.])
+AH_TEMPLATE([MAKE_BACK_GRAPH], [See doc/README.macros.])
 AH_TEMPLATE([SAVE_CALL_COUNT],
 	    [The number of caller frames saved when allocating with the
 	     debugging API.])
@@ -603,7 +604,7 @@ AC_ARG_ENABLE(java-finalization,
     [AC_HELP_STRING([--disable-java-finalization],
 	[Disable support for java finalization.])])
 if test x"$enable_java_finalization" != xno; then
-    AC_DEFINE([JAVA_FINALIZATION], 1, [See Makefile.direct.])
+    AC_DEFINE([JAVA_FINALIZATION], 1, [See doc/README.macros.])
 fi
 
 AC_ARG_ENABLE(atomic-uncollectable,
@@ -629,7 +630,7 @@ if test "${enable_redirect_malloc}" = yes; then
     else
 	AC_DEFINE(REDIRECT_MALLOC, GC_malloc)
     fi
-    AC_DEFINE([GC_USE_DLOPEN_WRAP], 1, [See Makefile.direct.])
+    AC_DEFINE([GC_USE_DLOPEN_WRAP], 1, [See doc/README.macros.])
 fi
 
 AC_ARG_ENABLE(large-config,
@@ -637,7 +638,7 @@ AC_ARG_ENABLE(large-config,
 	[Optimize for large (> 100 MB) heap or root set])])
 
 if test "${enable_large_config}" = yes; then
-    AC_DEFINE(LARGE_CONFIG, 1, [Define to optimize for large heaps or root sets])
+    AC_DEFINE(LARGE_CONFIG, 1, [Define to optimize for large heaps or root sets.])
 fi
 
 dnl This is something of a hack.  When cross-compiling we turn off
@@ -675,8 +676,8 @@ if test "${enable_munmap}" != ""; then
     AC_DEFINE([USE_MMAP], 1,
 	      [Define to use mmap instead of sbrk to expand the heap.])
     AC_DEFINE([USE_MUNMAP], 1,
-	      [Define to return memory to OS with munmap calls.
-	       See Makefile.direct.])
+	      [Define to return memory to OS with munmap calls
+	       (see doc/README.macros).])
     if test "${MUNMAP_THRESHOLD}" = "yes"; then
       MUNMAP_THRESHOLD=6
     fi

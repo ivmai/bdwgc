@@ -6,7 +6,7 @@
 /* Define to enable atomic uncollectible allocation. */
 #undef ATOMIC_UNCOLLECTABLE
 
-/* See Makefile.direct */
+/* See doc/README.macros. */
 #undef DARWIN_DONT_PARSE_STACK
 
 /* Define to force debug headers on all objects. */
@@ -18,7 +18,7 @@
 /* Define to enable eCos target support. */
 #undef ECOS
 
-/* Wine getenv may not return NULL for missing entry */
+/* Wine getenv may not return NULL for missing entry. */
 #undef EMPTY_GETENV_RESULTS
 
 /* Define to support IBM AIX threads. */
@@ -39,7 +39,7 @@
 /* Define to support FreeBSD pthreads. */
 #undef GC_FREEBSD_THREADS
 
-/* Define to include support for gcj */
+/* Define to include support for gcj. */
 #undef GC_GCJ_SUPPORT
 
 /* Define to support GNU pthreads. */
@@ -69,7 +69,7 @@
 /* Define to support threads. */
 #undef GC_THREADS
 
-/* See Makefile.direct. */
+/* See doc/README.macros. */
 #undef GC_USE_DLOPEN_WRAP
 
 /* The major version number of this GC release. */
@@ -135,20 +135,20 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* See Makefile.direct. */
+/* See doc/README.macros. */
 #undef JAVA_FINALIZATION
 
 /* Define to save back-pointers in debugging headers. */
 #undef KEEP_BACK_PTRS
 
-/* Define to optimize for large heaps or root sets */
+/* Define to optimize for large heaps or root sets. */
 #undef LARGE_CONFIG
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR
 
-/* See Makefile.direct. */
+/* See doc/README.macros. */
 #undef MAKE_BACK_GRAPH
 
 /* Number of GC cycles to wait before unmapping an unused block. */
@@ -207,7 +207,7 @@
 /* Define to tune the collector for small heap sizes. */
 #undef SMALL_CONFIG
 
-/* See gcconfig.h */
+/* See the comment in gcconfig.h. */
 #undef SOLARIS25_PROC_VDB_BUG_FIXED
 
 /* Define to 1 if you have the ANSI C header files. */
@@ -225,7 +225,7 @@
 /* Define to use mmap instead of sbrk to expand the heap. */
 #undef USE_MMAP
 
-/* Define to return memory to OS with munmap calls. See Makefile.direct. */
+/* Define to return memory to OS with munmap calls (see doc/README.macros). */
 #undef USE_MUNMAP
 
 /* Version number of package */
@@ -237,5 +237,5 @@
 /* Indicates the use of pthreads (NetBSD). */
 #undef _PTHREADS
 
-/* Required define if using POSIX threads */
+/* Required define if using POSIX threads. */
 #undef _REENTRANT

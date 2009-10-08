@@ -1,3 +1,22 @@
+2009-10-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.direct: Move "define arguments" documentation to
+	doc/README.macros; add reference to doc/README.macros.
+	* Makefile.dj: Change the documentation reference to
+	doc/README.macros.
+	* README.QUICK: Ditto.
+	* configure.ac: Ditto.
+	* allchblk.c: Remove unnecessary "-D" from the comment.
+	* doc/README.macros: Ditto.
+	* README.environment: Ditto.
+	* include/gc.h: Ditto.
+	* include/gc_inline.h: Ditto.
+	* include/private/gcconfig.h: Ditto.
+	* README.QUICK: Fix a typo.
+	* README.QUICK: Expand all tabs to spaces.
+	* configure: Regenerate.
+	* include/private/config.h.in: Ditto.
+
 2009-10-07  Ivan Maidanski <ivmai@mail.ru>
 
 	* misc.c (GC_CreateLogFile): Use FILE_ATTRIBUTE_NORMAL for

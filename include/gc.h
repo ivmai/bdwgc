@@ -81,7 +81,7 @@ GC_API GC_word GC_CALL GC_get_gc_no(void);
 GC_API int GC_parallel; /* GC is parallelized for performance on        */
                         /* multiprocessors.  Currently set only         */
                         /* implicitly if collector is built with        */
-                        /* -DPARALLEL_MARK and if either:               */
+                        /* PARALLEL_MARK defined and if either:         */
                         /*  Env variable GC_NPROC is set to > 1, or     */
                         /*  GC_NPROC is not set and this is an MP.      */
                         /* If GC_parallel is set, incremental           */
@@ -122,9 +122,9 @@ GC_API int GC_CALL GC_get_find_leak(void);
 GC_API int GC_all_interior_pointers;
                         /* Arrange for pointers to object interiors to  */
                         /* be recognized as valid.  May not be changed  */
-                        /* after GC initialization.                     */
-                        /* Initial value is determined by               */
-                        /* -DALL_INTERIOR_POINTERS.                     */
+                        /* after GC initialization.  The initial value  */
+                        /* depends on whether the GC is built with      */
+                        /* ALL_INTERIOR_POINTERS macro defined or not.  */
                         /* Unless DONT_ADD_BYTE_AT_END is defined, this */
                         /* also affects whether sizes are increased by  */
                         /* at least a byte to allow "off the end"       */

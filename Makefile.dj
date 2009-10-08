@@ -29,7 +29,7 @@ VPATH= $(srcdir)
 
 CFLAGS= -gstabs+ -O2 -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION
 
-# Look into Makefile.direct for the description of the "define arguments"
+# Look into doc/README.macros for the description of the "define arguments"
 # influencing the collector configuration.
 
 CXXFLAGS= $(CFLAGS) -DGC_OPERATOR_NEW_ARRAY
@@ -232,7 +232,7 @@ if_not_there$(EXE_SUFFIX): $(srcdir)/extra/if_not_there.c
 
 # Clean removes *.o several times,
 # because as the first one doesn't seem to get them all!
-clean: 
+clean:
 	rm -f gc.a *.o
 	rm -f *.o
 	rm -f *.o
@@ -306,4 +306,3 @@ SYM_PREFIX-libgc=GC
 
 # Uncomment the following line to build a GNU win32 DLL
 # include Makefile.DLLs
-

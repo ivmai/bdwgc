@@ -15,7 +15,7 @@ GC_LOOP_ON_ABORT - Causes the collector abort routine to enter a tight loop.
                    result in an infinite loop in a handler, allowing
                    similar debugging techniques.
 
-GC_PRINT_STATS - Turn on GC logging.  Not functional with -DSMALL_CONFIG.
+GC_PRINT_STATS - Turn on GC logging.  Not functional with SMALL_CONFIG.
 
 GC_LOG_FILE - The name of the log file.  Stderr by default.
 

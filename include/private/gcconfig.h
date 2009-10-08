@@ -2372,7 +2372,7 @@
         /* Note that sbrk()-like allocation is preferred, since it      */
         /* usually makes it possible to merge consecutively allocated   */
         /* chunks.  It also avoids unintended recursion with            */
-        /* -DREDIRECT_MALLOC.                                           */
+        /* REDIRECT_MALLOC macro defined.                               */
         /* GET_MEM() returns a HLKSIZE aligned chunk.                   */
         /* 0 is taken to mean failure.                                  */
         /* In the case os USE_MMAP, the argument must also be a         */
