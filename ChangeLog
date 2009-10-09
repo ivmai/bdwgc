@@ -1,3 +1,15 @@
+2009-10-09  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_start_call_back): Move the variable definition from
+	misc.c.
+	* include/private/gc_priv.h (GC_start_call_back): Remove the
+	declaration.
+	* alloc.c (GC_notify_full_gc): Remove unnecessary cast of 0.
+	* alloc.c (GC_try_to_collect_inner): Also call stop_func at the
+	beginning of the function.
+	* include/gc.h (GC_try_to_collect): Refine the comment about
+	stop_func.
+
 2009-10-08  Ivan Maidanski <ivmai@mail.ru>
 
 	* alloc.c (GC_default_stop_func, GC_try_to_collect_general,

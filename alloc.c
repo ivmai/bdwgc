@@ -291,10 +291,14 @@ GC_bool GC_should_collect(void)
            || GC_heapsize >= GC_collect_at_heapsize);
 }
 
+/* STATIC */ void (*GC_start_call_back) (void) = 0;
+                        /* Called at start of full collections.         */
+                        /* Not called if 0.  Called with the allocation */
+                        /* lock held.  Not used by GC itself.           */
 
 STATIC void GC_notify_full_gc(void)
 {
-    if (GC_start_call_back != (void (*) (void))0) {
+    if (GC_start_call_back != 0) {
         (*GC_start_call_back)();
     }
 }
@@ -379,7 +383,7 @@ GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
       CLOCK_TYPE current_time;
 #   endif
     ASSERT_CANCEL_DISABLED();
-    if (GC_dont_gc) return FALSE;
+    if (GC_dont_gc || (*stop_func)()) return FALSE;
     if (GC_incremental && GC_collection_in_progress()) {
       if (GC_print_stats) {
         GC_log_printf(
@@ -387,7 +391,7 @@ GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
       }
       /* Just finish collection already in progress.    */
         while(GC_collection_in_progress()) {
-            if (stop_func()) return(FALSE);
+            if ((*stop_func)()) return(FALSE);
             GC_collect_a_little_inner(1);
         }
     }

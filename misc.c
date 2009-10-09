@@ -75,8 +75,6 @@ GC_bool GC_debugging_started = FALSE;
 void (*GC_check_heap) (void) = 0;
 void (*GC_print_all_smashed) (void) = 0;
 
-void (*GC_start_call_back) (void) = 0;
-
 ptr_t GC_stackbottom = 0;
 
 #ifdef IA64
