@@ -1675,12 +1675,6 @@ GC_bool GC_try_to_collect_inner(GC_stop_func f);
                                 /* completes successfully.              */
 # define GC_gcollect_inner() \
         (void) GC_try_to_collect_inner(GC_never_stop_func)
-GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page);
-                                /* Collect or expand heap in an attempt */
-                                /* make the indicated number of free    */
-                                /* blocks available.  Should be called  */
-                                /* until the blocks are available or    */
-                                /* until it fails by returning FALSE.   */
 
 extern GC_bool GC_is_initialized; /* GC_init() has been run. */
 

@@ -1,5 +1,18 @@
 2009-10-09  Ivan Maidanski <ivmai@mail.ru>
 
+	* alloc.c (GC_collect_or_expand): Add "retry" argument; add the
+	comments; don't use "default" stop_func on a retry if
+	GC_dont_expand.
+	* alloc.c (GC_collect_or_expand): Reformat the code (make the
+	indentation style uniform across the function).
+	* alloc.c (GC_allocobj): Pass "retry" argument to
+	GC_collect_or_expand().
+	* malloc.c (GC_alloc_large): Ditto.
+	* include/private/gc_priv.h (GC_collect_or_expand): Move the
+	declaration to malloc.c; add "retry" argument.
+
+2009-10-09  Ivan Maidanski <ivmai@mail.ru>
+
 	* alloc.c (GC_start_call_back): Move the variable definition from
 	misc.c.
 	* include/private/gc_priv.h (GC_start_call_back): Remove the

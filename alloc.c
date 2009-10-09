@@ -1184,62 +1184,74 @@ unsigned GC_fail_count = 0;
                         /* How many consecutive GC/expansion failures?  */
                         /* Reset by GC_allochblk.                       */
 
-GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page)
+/* Collect or expand heap in an attempt make the indicated number of    */
+/* free blocks available.  Should be called until the blocks are        */
+/* available (seting retry value to TRUE unless this is the first call  */
+/* in a loop) or until it fails by returning FALSE.                     */
+GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page,
+                             GC_bool retry)
 {
     GC_bool gc_not_stopped = TRUE;
+    word blocks_to_get;
     IF_CANCEL(int cancel_state;)
 
     DISABLE_CANCEL(cancel_state);
-    if (GC_incremental || GC_dont_gc ||
-        ((!GC_dont_expand || GC_bytes_allocd == 0) && !GC_should_collect()) ||
-        (gc_not_stopped = GC_try_to_collect_inner(GC_bytes_allocd > 0 ?
-                                        GC_default_stop_func :
-                                        GC_never_stop_func)) == FALSE) {
-
-      word blocks_to_get = GC_heapsize/(HBLKSIZE*GC_free_space_divisor)
-                           + needed_blocks;
-
-      if (blocks_to_get > MAXHINCR) {
-          word slop;
-
-          /* Get the minimum required to make it likely that we         */
-          /* can satisfy the current request in the presence of black-  */
-          /* listing.  This will probably be more than MAXHINCR.        */
-          if (ignore_off_page) {
-              slop = 4;
-          } else {
-              slop = 2*divHBLKSZ(BL_LIMIT);
-              if (slop > needed_blocks) slop = needed_blocks;
-          }
-          if (needed_blocks + slop > MAXHINCR) {
-              blocks_to_get = needed_blocks + slop;
-          } else {
-              blocks_to_get = MAXHINCR;
-          }
+    if (!GC_incremental && !GC_dont_gc &&
+        ((GC_dont_expand && GC_bytes_allocd > 0) || GC_should_collect())) {
+      /* Try to do a full collection using 'default' stop_func (unless  */
+      /* nothing has been allocated since the latest collection or heap */
+      /* expansion is disabled).                                        */
+      gc_not_stopped = GC_try_to_collect_inner(
+                        GC_bytes_allocd > 0 && (!GC_dont_expand || !retry) ?
+                        GC_default_stop_func : GC_never_stop_func);
+      if (gc_not_stopped == TRUE || !retry) {
+        /* Either the collection hasn't been aborted or this is the     */
+        /* first attempt (in a loop).                                   */
+        RESTORE_CANCEL(cancel_state);
+        return(TRUE);
       }
-      if (!GC_expand_hp_inner(blocks_to_get)
-        && !GC_expand_hp_inner(needed_blocks)) {
-        if (gc_not_stopped == FALSE) {
-            /* Don't increment GC_fail_count here (and no warning).     */
-            GC_gcollect_inner();
-            GC_ASSERT(GC_bytes_allocd == 0);
-        } else if (GC_fail_count++ < GC_max_retries) {
-            WARN("Out of Memory!  Trying to continue ...\n", 0);
-            GC_gcollect_inner();
-        } else {
-#           if !defined(AMIGA) || !defined(GC_AMIGA_FASTALLOC)
-              WARN("Out of Memory! Heap size: %" GC_PRIdPTR " MiB."
-                   " Returning NIL!\n",
-                   (GC_heapsize - GC_unmapped_bytes) >> 20);
-#           endif
-            RESTORE_CANCEL(cancel_state);
-            return(FALSE);
-        }
+    }
+
+    blocks_to_get = GC_heapsize/(HBLKSIZE*GC_free_space_divisor)
+                        + needed_blocks;
+    if (blocks_to_get > MAXHINCR) {
+      word slop;
+
+      /* Get the minimum required to make it likely that we can satisfy */
+      /* the current request in the presence of black-listing.          */
+      /* This will probably be more than MAXHINCR.                      */
+      if (ignore_off_page) {
+        slop = 4;
       } else {
-          if (GC_fail_count && GC_print_stats) {
-              GC_printf("Memory available again ...\n");
-          }
+        slop = 2 * divHBLKSZ(BL_LIMIT);
+        if (slop > needed_blocks) slop = needed_blocks;
       }
+      if (needed_blocks + slop > MAXHINCR) {
+        blocks_to_get = needed_blocks + slop;
+      } else {
+        blocks_to_get = MAXHINCR;
+      }
+    }
+
+    if (!GC_expand_hp_inner(blocks_to_get)
+        && !GC_expand_hp_inner(needed_blocks)) {
+      if (gc_not_stopped == FALSE) {
+        /* Don't increment GC_fail_count here (and no warning).     */
+        GC_gcollect_inner();
+        GC_ASSERT(GC_bytes_allocd == 0);
+      } else if (GC_fail_count++ < GC_max_retries) {
+        WARN("Out of Memory!  Trying to continue ...\n", 0);
+        GC_gcollect_inner();
+      } else {
+#       if !defined(AMIGA) || !defined(GC_AMIGA_FASTALLOC)
+          WARN("Out of Memory! Heap size: %" GC_PRIdPTR " MiB."
+               " Returning NIL!\n", (GC_heapsize - GC_unmapped_bytes) >> 20);
+#       endif
+        RESTORE_CANCEL(cancel_state);
+        return(FALSE);
+      }
+    } else if (GC_fail_count && GC_print_stats) {
+      GC_printf("Memory available again ...\n");
     }
     RESTORE_CANCEL(cancel_state);
     return(TRUE);
@@ -1255,6 +1267,7 @@ ptr_t GC_allocobj(size_t gran, int kind)
 {
     void ** flh = &(GC_obj_kinds[kind].ok_freelist[gran]);
     GC_bool tried_minor = FALSE;
+    GC_bool retry = FALSE;
 
     if (gran == 0) return(0);
 
@@ -1271,14 +1284,15 @@ ptr_t GC_allocobj(size_t gran, int kind)
       if (*flh == 0) {
         ENTER_GC();
         if (GC_incremental && GC_time_limit == GC_TIME_UNLIMITED
-            && ! tried_minor ) {
-            GC_collect_a_little_inner(1);
-            tried_minor = TRUE;
+            && !tried_minor) {
+         GC_collect_a_little_inner(1);
+         tried_minor = TRUE;
         } else {
-          if (!GC_collect_or_expand((word)1,FALSE)) {
+          if (!GC_collect_or_expand(1, FALSE, retry)) {
             EXIT_GC();
             return(0);
           }
+          retry = TRUE;
         }
         EXIT_GC();
       }

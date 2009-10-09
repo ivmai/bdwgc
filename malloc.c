@@ -35,6 +35,9 @@ STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
     return(TRUE);
 }
 
+GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page,
+                             GC_bool retry); /* from alloc.c */
+
 /* Allocate a large block of size lb bytes.     */
 /* The block is not cleared.                    */
 /* Flags is 0 or IGNORE_OFF_PAGE.               */
@@ -45,13 +48,14 @@ ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
     struct hblk * h;
     word n_blocks;
     ptr_t result;
+    GC_bool retry = FALSE;
 
     /* Round up to a multiple of a granule. */
       lb = (lb + GRANULE_BYTES - 1) & ~(GRANULE_BYTES - 1);
     n_blocks = OBJ_SZ_TO_BLOCKS(lb);
     if (!GC_is_initialized) GC_init();
     /* Do our share of marking work */
-        if(GC_incremental && !GC_dont_gc)
+        if (GC_incremental && !GC_dont_gc)
             GC_collect_a_little_inner((int)n_blocks);
     h = GC_allochblk(lb, k, flags);
 #   ifdef USE_MUNMAP
@@ -60,8 +64,9 @@ ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
             h = GC_allochblk(lb, k, flags);
         }
 #   endif
-    while (0 == h && GC_collect_or_expand(n_blocks, (flags != 0))) {
+    while (0 == h && GC_collect_or_expand(n_blocks, flags != 0, retry)) {
         h = GC_allochblk(lb, k, flags);
+        retry = TRUE;
     }
     if (h == 0) {
         result = 0;
