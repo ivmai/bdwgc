@@ -1234,6 +1234,13 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
       extern "C" {
 #   endif
 
+#   ifdef GC_UNDERSCORE_STDCALL
+      /* Explicitly prefix exported/imported WINAPI (__stdcall) symbols */
+      /* with '_' (underscore).  Might be useful if MinGW/x86 is used.  */
+#     define GC_CreateThread _GC_CreateThread
+#     define GC_ExitThread _GC_ExitThread
+#   endif
+
     /* All threads must be created using GC_CreateThread or             */
     /* GC_beginthreadex, or must explicitly call GC_register_my_thread  */
     /* (and call GC_unregister_my_thread before thread termination), so */

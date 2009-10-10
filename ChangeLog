@@ -1,3 +1,9 @@
+2009-10-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (GC_UNDERSCORE_STDCALL): Recognize new macro;
+	prefix GC_CreateThread and GC_ExitThread with '_' if defined.
+	* doc/README.macros (GC_UNDERSCORE_STDCALL): Document.
+
 2009-10-09  Ivan Maidanski <ivmai@mail.ru>
 
 	* alloc.c (GC_collect_or_expand): Add "retry" argument; add the

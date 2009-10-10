@@ -30,12 +30,17 @@ MACRO           EXPLANATION
 GC_DEBUG        Tested by gc.h.  Causes all-upper-case macros to
                 expand to calls to debug versions of collector routines.
 
-GC_NO_THREAD_REDIRECTS Tested by gc.h.  Prevents redirection of thread
+GC_NO_THREAD_REDIRECTS  Tested by gc.h.  Prevents redirection of thread
                 creation routines etc. to GC_ versions.  Requires the
                 programmer to explicitly handle thread registration.
 
-GC_NO_THREAD_DECLS Tested by gc.h. MS Windows only.  Do not declare
+GC_NO_THREAD_DECLS      Tested by gc.h.  MS Windows only.  Do not declare
                 Windows thread creation routines and do not include windows.h.
+
+GC_UNDERSCORE_STDCALL   Tested by gc.h.  Explicitly prefix exported/imported
+                WINAPI (__stdcall) symbols with '_' (underscore).  Could be
+                used with MinGW (for x86) compiler (in conjunction with
+                GC_DLL) to follow MS conventions for __stdcall symbols naming.
 
 _ENABLE_ARRAYNEW
                 #define'd by the Digital Mars C++ compiler when
