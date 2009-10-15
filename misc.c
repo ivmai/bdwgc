@@ -950,13 +950,13 @@ out:
 
   STATIC HANDLE GC_CreateLogFile(void)
   {
-#   if !defined(NO_GETENV) || !defined(OLD_WIN32_LOG_FILE)
+#   if !defined(NO_GETENV_WIN32) || !defined(OLD_WIN32_LOG_FILE)
       TCHAR logPath[_MAX_PATH + 0x10]; /* buffer for path + ext */
 #   endif
     /* Use GetEnvironmentVariable instead of GETENV() for unicode support. */
-#   ifndef NO_GETENV
+#   ifndef NO_GETENV_WIN32
       if (GetEnvironmentVariable(TEXT("GC_LOG_FILE"), logPath,
-                                _MAX_PATH + 1) - 1U >= (DWORD)_MAX_PATH)
+                                 _MAX_PATH + 1) - 1U >= (DWORD)_MAX_PATH)
 #   endif
     {
       /* Env var not found or its value too long.       */
@@ -975,7 +975,7 @@ out:
         memcpy(&logPath[len], TEXT(".gc.log"), sizeof(TEXT(".gc.log")));
 #     endif
     }
-#   if !defined(NO_GETENV) || !defined(OLD_WIN32_LOG_FILE)
+#   if !defined(NO_GETENV_WIN32) || !defined(OLD_WIN32_LOG_FILE)
       return CreateFile(logPath, GENERIC_WRITE, FILE_SHARE_READ,
                         NULL /* lpSecurityAttributes */, CREATE_ALWAYS,
                         GC_print_stats == VERBOSE ? FILE_ATTRIBUTE_NORMAL :

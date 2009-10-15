@@ -1,3 +1,14 @@
+2009-10-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h: Recognize __i386__ if WinCE (for
+	x86mingw32ce toolchain).
+	* include/private/gcconfig.h (NO_GETENV): Don't define for CeGCC
+	toolchain (or if already defined).
+	* include/private/gcconfig.h (NO_GETENV_WIN32): New macro (always
+	defined for WinCE or if NO_GETENV is defined).
+	* misc.c (GC_CreateLogFile): Use NO_GETENV_WIN32 macro instead of
+	NO_GETENV one.
+
 2009-10-15  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
 
 	* configure.ac: Add AC_CONFIG_MACRO_DIR([m4]).

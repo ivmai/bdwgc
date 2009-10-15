@@ -372,7 +372,7 @@
 #   if defined(SH3) || defined(SH4)
 #     define SH
 #   endif
-#   if defined(x86)
+#   if defined(x86) || defined(__i386__)
 #     define I386
 #   endif
 #   if defined(_M_ARM) || defined(ARM) || defined(_ARM_)
@@ -2257,8 +2257,12 @@
 #   endif
 # endif
 
-# if defined(MSWINCE)
+# if defined(MSWINCE) && !defined(__CEGCC__) && !defined(NO_GETENV)
 #   define NO_GETENV
+# endif
+
+# if (defined(NO_GETENV) || defined(MSWINCE)) && !defined(NO_GETENV_WIN32)
+#   define NO_GETENV_WIN32
 # endif
 
 # ifndef STRTOULL
