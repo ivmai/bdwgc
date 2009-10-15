@@ -1,5 +1,12 @@
 2009-10-15  Ivan Maidanski <ivmai@mail.ru>
 
+	* include/private/gcconfig.h: Define DebugBreak() as _exit(-1) for
+	x86mingw32ce toolchain to workaround the incorrect DebugBreak()
+	declaration in winbase.h (the workaround would turn into a no-op
+	when DebugBreak() will be defined as a macro in the toolchain).
+
+2009-10-15  Ivan Maidanski <ivmai@mail.ru>
+
 	* include/private/gcconfig.h: Recognize __i386__ if WinCE (for
 	x86mingw32ce toolchain).
 	* include/private/gcconfig.h (NO_GETENV): Don't define for CeGCC
