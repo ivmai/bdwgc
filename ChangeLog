@@ -1,3 +1,15 @@
+2009-10-15  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+
+	* acinclude.m4: Rename to m4/gc_set_version.m4.
+	* aclocal.m4: Regenerate.
+	* configure: Ditto.
+	* Makefile.in: Ditto.
+	* m4/libtool.m4: Delete the file.
+	* m4/lt~obsolete.m4: Ditto.
+	* m4/ltoptions.m4: Ditto.
+	* m4/ltsugar.m4: Ditto.
+	* m4/ltversion.m4: Ditto.
+
 2009-10-15  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/private/gcconfig.h: Define DebugBreak() as _exit(-1) for
