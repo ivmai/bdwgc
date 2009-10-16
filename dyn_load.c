@@ -1155,10 +1155,12 @@ const static struct {
         { SEG_DATA, SECT_COMMON }
 };
 
-static const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr) {
-    unsigned long i,c;
+static const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr)
+{
+    unsigned long i, c;
     c = _dyld_image_count();
-    for(i=0;i<c;i++) if(_dyld_get_image_header(i) == hdr)
+    for (i = 0; i < c; i++)
+      if ((const struct GC_MACH_HEADER *)_dyld_get_image_header(i) == hdr)
         return _dyld_get_image_name(i);
     return NULL;
 }
@@ -1235,7 +1237,6 @@ void GC_register_dynamic_libraries(void) {
 
 void GC_init_dyld(void) {
   static GC_bool initialized = FALSE;
-  char *bind_fully_env = NULL;
 
   if(initialized) return;
 
@@ -1244,29 +1245,28 @@ void GC_init_dyld(void) {
 #   endif
 
   /* Apple's Documentation:
-     When you call _dyld_register_func_for_add_image, the dynamic linker runtime
-     calls the specified callback (func) once for each of the images that is
-     currently loaded into the program. When a new image is added to the program,
-     your callback is called again with the mach_header for the new image, and the
-     virtual memory slide amount of the new image.
+     When you call _dyld_register_func_for_add_image, the dynamic linker
+     runtime calls the specified callback (func) once for each of the images
+     that is currently loaded into the program. When a new image is added to
+     the program, your callback is called again with the mach_header for the
+     new image, and the virtual memory slide amount of the new image.
 
      This WILL properly register already linked libraries and libraries
-     linked in the future
+     linked in the future.
   */
 
-    _dyld_register_func_for_add_image(GC_dyld_image_add);
-    _dyld_register_func_for_remove_image(GC_dyld_image_remove);
+    _dyld_register_func_for_add_image(
+              (void (*)(struct mach_header *, intptr_t))GC_dyld_image_add);
+    _dyld_register_func_for_remove_image(
+              (void (*)(struct mach_header *, intptr_t))GC_dyld_image_remove);
 
     /* Set this early to avoid reentrancy issues. */
     initialized = TRUE;
 
-    bind_fully_env = getenv("DYLD_BIND_AT_LAUNCH");
-
-    if (bind_fully_env == NULL) {
-#   ifdef DARWIN_DEBUG
-      GC_printf("Forcing full bind of GC code...\n");
-#   endif
-
+    if (GETENV("DYLD_BIND_AT_LAUNCH") == 0) {
+#     ifdef DARWIN_DEBUG
+        GC_printf("Forcing full bind of GC code...\n");
+#     endif
       if(!_dyld_bind_fully_image_containing_address((unsigned long*)GC_malloc))
         ABORT("_dyld_bind_fully_image_containing_address failed");
     }

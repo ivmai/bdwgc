@@ -1,3 +1,14 @@
+2009-10-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_finish_collection): Replace getenv() with GETENV().
+	* dyn_load.c (GC_init_dyld): Ditto.
+	* os_dep.c (GC_print_callers): Ditto.
+	* dyn_load.c (GC_dyld_name_for_hdr): Cast _dyld_get_image_name()
+	result (since it's always of "struct mach_header" type).
+	* dyn_load.c (GC_init_dyld): Cast GC_dyld_image_add and
+	GC_dyld_image_remove (to always have the first argument of
+	"struct mach_header" pointer type).
+
 2009-10-16  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
 
 	* configure.ac: Add threads support for OpenBSD case (threads may

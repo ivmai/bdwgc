@@ -4273,7 +4273,7 @@ void GC_print_callers (struct callinfo info[NFRAMES])
                 /* isn't time critical.                                 */
                 sprintf(cmd_buf, "/usr/bin/addr2line -f -e %s 0x%lx", exe_name,
                                  (unsigned long)info[i].ci_pc);
-                old_preload = getenv ("LD_PRELOAD");
+                old_preload = GETENV("LD_PRELOAD");
                 if (0 != old_preload) {
                   if (strlen (old_preload) >= PRELOAD_SZ) {
                     will_fail = TRUE;

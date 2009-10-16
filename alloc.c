@@ -782,7 +782,7 @@ STATIC void GC_finish_collection(void)
 
     GC_bytes_found = 0;
 #   if defined(LINUX) && defined(__ELF__) && !defined(SMALL_CONFIG)
-        if (getenv("GC_PRINT_ADDRESS_MAP") != 0) {
+        if (GETENV("GC_PRINT_ADDRESS_MAP") != 0) {
           GC_print_address_map();
         }
 #   endif
