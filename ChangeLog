@@ -1,3 +1,9 @@
+2009-10-16  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+
+	* configure.ac: Add threads support for OpenBSD case (threads may
+	not work correctly for it).
+	* configure: Regenerate.
+
 2009-10-15  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
 
 	* acinclude.m4: Rename to m4/gc_set_version.m4.
