@@ -40,6 +40,9 @@
 # endif
 #endif
 
+/* It's safe to call original pthread_sigmask() here. */
+#undef pthread_sigmask
+
 void GC_print_sig_mask(void)
 {
     sigset_t blocked;

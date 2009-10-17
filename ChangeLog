@@ -1,5 +1,18 @@
 2009-10-17  Ivan Maidanski <ivmai@mail.ru>
 
+	* pthread_stop_world.c (pthread_sigmask): Undefine before using
+	in GC_print_sig_mask() (only if DEBUG_THREADS); add the comment.
+	* win32_threads.c (dlopen, _beginthread): Don't undefine (since
+	neither redirected nor used here).
+	* win32_threads.c (GC_Thread_Rep): Rename "table_management" to
+	"tm" for short; remove "tm_" prefix.
+	* win32_threads.c (in_use, next): Don't define the macros; use
+	tm.in_use and tm.next fields, respectively (to ease debugging).
+	* win32_threads.c (HASH): Rename to PTHREAD_MAP_HASH (to have
+	unique name across the project).
+
+2009-10-17  Ivan Maidanski <ivmai@mail.ru>
+
 	* include/private/gc_priv.h (I_HIDE_POINTERS): Define before gc.h
 	inclusion.
 	* include/private/gc_pmark.h (I_HIDE_POINTERS): Define if gc.h is

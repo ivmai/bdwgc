@@ -43,7 +43,6 @@
 # undef pthread_sigmask
 # undef pthread_join
 # undef pthread_detach
-# undef dlopen
 
 # ifdef DEBUG_THREADS
 #   ifdef CYGWIN32
@@ -75,7 +74,7 @@
 # undef ExitThread
 # undef _beginthreadex
 # undef _endthreadex
-# undef _beginthread
+
 # ifdef DEBUG_THREADS
 #   define DEBUG_WIN32_THREADS 1
 # else
@@ -180,13 +179,13 @@ STATIC DWORD GC_main_thread = 0;
 struct GC_Thread_Rep {
   union {
 #   ifndef GC_NO_DLLMAIN
-      AO_t tm_in_use;   /* Updated without lock.                */
+      AO_t in_use;   /* Updated without lock.                */
                         /* We assert that unused                */
                         /* entries have invalid ids of          */
                         /* zero and zero stack fields.          */
                         /* Used only with GC_win32_dll_threads. */
 #   endif
-    struct GC_Thread_Rep * tm_next;
+    struct GC_Thread_Rep * next;
                         /* Hash table link without              */
                         /* GC_win32_dll_threads.                */
                         /* More recently allocated threads      */
@@ -194,9 +193,7 @@ struct GC_Thread_Rep {
                         /* first.  (All but the first are       */
                         /* guaranteed to be dead, but we may    */
                         /* not yet have registered the join.)   */
-  } table_management;
-# define in_use table_management.tm_in_use
-# define next table_management.tm_next
+  } tm; /* table_management */
   DWORD id;
 
 # ifdef MSWINCE
@@ -345,7 +342,7 @@ STATIC GC_thread GC_new_thread(DWORD id)
     if (result == 0) return(0);
   }
   /* result -> id = id; Done by caller.       */
-  result -> next = GC_threads[hv];
+  result -> tm.next = GC_threads[hv];
   GC_threads[hv] = result;
 # ifdef GC_PTHREADS
     GC_ASSERT(result -> flags == 0);
@@ -404,7 +401,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
       /* variants.                                                      */
                   /* cast away volatile qualifier */
       for (i = 0;
-           InterlockedExchange((void*)&dll_thread_table[i].in_use, 1) != 0;
+           InterlockedExchange((void*)&dll_thread_table[i].tm.in_use, 1) != 0;
            i++) {
         /* Compare-and-swap would make this cleaner, but that's not     */
         /* supported before Windows 98 and NT 4.0.  In Windows 2000,    */
@@ -515,7 +512,7 @@ STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
       int i;
       LONG my_max = GC_get_max_thread_index();
       for (i = 0; i <= my_max &&
-                  (!AO_load_acquire(&dll_thread_table[i].in_use)
+                  (!AO_load_acquire(&dll_thread_table[i].tm.in_use)
                   || dll_thread_table[i].id != thread_id);
            /* Must still be in_use, since nobody else can store our     */
            /* thread_id.                                                */
@@ -534,7 +531,7 @@ STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
     register GC_thread p = GC_threads[hv];
 
     GC_ASSERT(I_HOLD_LOCK());
-    while (p != 0 && p -> id != thread_id) p = p -> next;
+    while (p != 0 && p -> id != thread_id) p = p -> tm.next;
     return(p);
   }
 }
@@ -626,7 +623,7 @@ STATIC void GC_delete_gc_thread(GC_vthread gc_id)
 #     ifdef GC_WIN32_PTHREADS
         gc_id -> pthread_id.p = NULL;
 #     endif /* GC_WIN32_PTHREADS */
-      AO_store_release(&(gc_id->in_use), FALSE);
+      AO_store_release(&gc_id->tm.in_use, FALSE);
     } else
 # endif
   /* else */ {
@@ -640,12 +637,12 @@ STATIC void GC_delete_gc_thread(GC_vthread gc_id)
     GC_ASSERT(I_HOLD_LOCK());
     while (p != gc_nvid) {
       prev = p;
-      p = p -> next;
+      p = p -> tm.next;
     }
     if (prev == 0) {
-      GC_threads[hv] = p -> next;
+      GC_threads[hv] = p -> tm.next;
     } else {
-      prev -> next = p -> next;
+      prev -> tm.next = p -> tm.next;
     }
     GC_INTERNAL_FREE(p);
   }
@@ -675,15 +672,15 @@ STATIC void GC_delete_thread(DWORD id)
     GC_ASSERT(I_HOLD_LOCK());
     while (p -> id != id) {
       prev = p;
-      p = p -> next;
+      p = p -> tm.next;
     }
 #   ifndef MSWINCE
       CloseHandle(p->handle);
 #   endif
     if (prev == 0) {
-      GC_threads[hv] = p -> next;
+      GC_threads[hv] = p -> tm.next;
     } else {
-      prev -> next = p -> next;
+      prev -> tm.next = p -> tm.next;
     }
     GC_INTERNAL_FREE(p);
   }
@@ -830,13 +827,13 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   /* and win32 thread id.                                       */
 # define PTHREAD_MAP_SIZE 512
   DWORD GC_pthread_map_cache[PTHREAD_MAP_SIZE] = {0};
-# define HASH(pthread_id) ((NUMERIC_THREAD_ID(pthread_id) >> 5) % \
-                           PTHREAD_MAP_SIZE)
+# define PTHREAD_MAP_HASH(pthread_id) \
+                ((NUMERIC_THREAD_ID(pthread_id) >> 5) % PTHREAD_MAP_SIZE)
         /* It appears pthread_t is really a pointer type ... */
 # define SET_PTHREAD_MAP_CACHE(pthread_id, win32_id) \
-          (GC_pthread_map_cache[HASH(pthread_id)] = (win32_id))
+          (GC_pthread_map_cache[PTHREAD_MAP_HASH(pthread_id)] = (win32_id))
 # define GET_PTHREAD_MAP_CACHE(pthread_id) \
-          GC_pthread_map_cache[HASH(pthread_id)]
+          GC_pthread_map_cache[PTHREAD_MAP_HASH(pthread_id)]
 
   /* Return a GC_thread corresponding to a given pthread_t.     */
   /* Returns 0 if it's not there.                               */
@@ -852,7 +849,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
         LONG my_max = GC_get_max_thread_index();
 
         for (i = 0; i <= my_max &&
-                    (!AO_load_acquire(&dll_thread_table[i].in_use)
+                    (!AO_load_acquire(&dll_thread_table[i].tm.in_use)
                     || THREAD_EQUAL(dll_thread_table[i].pthread_id, id));
                     /* Must still be in_use, since nobody else can      */
                     /* store our thread_id.                             */
@@ -871,12 +868,12 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       GC_thread p;
 
       LOCK();
-      for (p = GC_threads[hv_guess]; 0 != p; p = p -> next) {
+      for (p = GC_threads[hv_guess]; 0 != p; p = p -> tm.next) {
         if (THREAD_EQUAL(p -> pthread_id, id))
           goto foundit;
       }
       for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
-        for (p = GC_threads[hv]; 0 != p; p = p -> next) {
+        for (p = GC_threads[hv]; 0 != p; p = p -> tm.next) {
           if (THREAD_EQUAL(p -> pthread_id, id))
             goto foundit;
         }
@@ -903,7 +900,7 @@ void GC_push_thread_structures(void)
         LONG my_max = GC_get_max_thread_index();
 
         for (i = 0; i <= my_max; i++)
-          if (dll_thread_table[i].in_use)
+          if (dll_thread_table[i].tm.in_use)
             GC_push_all((ptr_t)&(dll_thread_table[i].status),
                         (ptr_t)(&(dll_thread_table[i].status)+1));
 #     endif
@@ -1021,7 +1018,7 @@ void GC_stop_world(void)
     int i;
 
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
-      for (t = GC_threads[i]; t != 0; t = t -> next) {
+      for (t = GC_threads[i]; t != 0; t = t -> tm.next) {
         if (t -> stack_base != 0 && t -> thread_blocked_sp == NULL
             && !KNOWN_FINISHED(t) && t -> id != thread_id) {
           GC_suspend(t);
@@ -1060,7 +1057,7 @@ void GC_start_world(void)
     int i;
 
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
-      for (t = GC_threads[i]; t != 0; t = t -> next) {
+      for (t = GC_threads[i]; t != 0; t = t -> tm.next) {
         if (t -> stack_base != 0 && t -> suspended
             && t -> id != thread_id) {
           if (ResumeThread(THREAD_HANDLE(t)) == (DWORD)-1)
@@ -1285,7 +1282,7 @@ void GC_push_all_stacks(void)
 
       for (i = 0; i <= my_max; i++) {
         GC_thread t = (GC_thread)(dll_thread_table + i);
-        if (t -> in_use) {
+        if (t -> tm.in_use) {
 #         ifndef SMALL_CONFIG
             ++nthreads;
 #         endif
@@ -1300,7 +1297,7 @@ void GC_push_all_stacks(void)
     int i;
 
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
-      for (t = GC_threads[i]; t != 0; t = t -> next) {
+      for (t = GC_threads[i]; t != 0; t = t -> tm.next) {
 #       ifndef SMALL_CONFIG
           ++nthreads;
 #       endif
@@ -1378,7 +1375,7 @@ void GC_get_next_stack(char *start, char *limit,
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       GC_thread t;
 
-      for (t = GC_threads[i]; t != 0; t = t -> next) {
+      for (t = GC_threads[i]; t != 0; t = t -> tm.next) {
         ptr_t s = t -> stack_base;
 
         if (s > start && s < current_min) {
@@ -2580,7 +2577,7 @@ void GC_thr_init(void)
           if (!GC_win32_dll_threads) return TRUE;
           my_max = (int)GC_get_max_thread_index();
           for (i = 0; i <= my_max; ++i) {
-           if (AO_load(&(dll_thread_table[i].in_use)))
+           if (AO_load(&(dll_thread_table[i].tm.in_use)))
              GC_delete_gc_thread(dll_thread_table + i);
           }
 
@@ -2653,7 +2650,7 @@ void GC_init_parallel(void)
     GC_thread p;
 
     for (i = 0; i < THREAD_TABLE_SZ; ++i) {
-      for (p = GC_threads[i]; 0 != p; p = p -> next) {
+      for (p = GC_threads[i]; 0 != p; p = p -> tm.next) {
 #       ifdef DEBUG_THREADS
           GC_printf("Marking thread locals for 0x%x\n", p -> id);
 #       endif
@@ -2675,7 +2672,7 @@ void GC_init_parallel(void)
         GC_thread p;
 
         for (i = 0; i < THREAD_TABLE_SZ; ++i) {
-          for (p = GC_threads[i]; 0 != p; p = p -> next) {
+          for (p = GC_threads[i]; 0 != p; p = p -> tm.next) {
             GC_check_tls_for(&(p->tlfs));
           }
         }
