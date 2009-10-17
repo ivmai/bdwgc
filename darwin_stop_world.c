@@ -224,7 +224,7 @@ void GC_push_all_stacks(void)
         hi = GC_stackbottom;
       else
         hi = p->stack_end;
-#     if DEBUG_THREADS
+#     ifdef DEBUG_THREADS
         GC_printf("Darwin: Stack for thread 0x%lx = [%lx,%lx)\n",
                   (unsigned long) p -> id, (unsigned long) lo,
                   (unsigned long) hi);
@@ -399,7 +399,7 @@ void GC_push_all_stacks(void)
 #       error FIXME for non-x86 || ppc || arm architectures
 #     endif
       }
-#     if DEBUG_THREADS
+#     ifdef DEBUG_THREADS
         GC_printf("Darwin: Stack for thread 0x%lx = [%p,%p)\n",
                   (unsigned long) thread, lo, hi);
 #     endif
@@ -440,7 +440,7 @@ STATIC int GC_suspend_thread_list(thread_act_array_t act_list, int count,
 
   for(i = 0; i < count; i++) {
     thread_act_t thread = act_list[i];
-#   if DEBUG_THREADS
+#   ifdef DEBUG_THREADS
       GC_printf("Attempting to suspend thread %p\n", thread);
 #   endif
     /* find the current thread in the old list */
@@ -478,7 +478,7 @@ STATIC int GC_suspend_thread_list(thread_act_array_t act_list, int count,
         }
         continue;
       }
-#     if DEBUG_THREADS
+#     ifdef DEBUG_THREADS
         GC_printf("Thread state for 0x%lx = %d\n", (unsigned long)thread,
                   info.run_state);
 #     endif
@@ -489,7 +489,7 @@ STATIC int GC_suspend_thread_list(thread_act_array_t act_list, int count,
       if (info.suspend_count)
         continue;
 
-#     if DEBUG_THREADS
+#     ifdef DEBUG_THREADS
         GC_printf("Suspending 0x%lx\n", (unsigned long)thread);
 #     endif
       /* Suspend the thread */
@@ -526,7 +526,7 @@ void GC_stop_world(void)
     thread_act_array_t act_list, prev_list;
     mach_msg_type_number_t listcount, prevcount;
 
-#   if DEBUG_THREADS
+#   ifdef DEBUG_THREADS
       GC_printf("Stopping the world from 0x%lx\n",
                 (unsigned long)mach_thread_self());
 #   endif
@@ -596,7 +596,7 @@ void GC_stop_world(void)
       if (GC_parallel)
         GC_release_mark_lock();
 #   endif
-#   if DEBUG_THREADS
+#   ifdef DEBUG_THREADS
       GC_printf("World stopped from 0x%lx\n", (unsigned long)my_thread);
 #   endif
 
@@ -617,7 +617,7 @@ void GC_start_world(void)
   struct thread_basic_info info;
   mach_msg_type_number_t outCount = THREAD_INFO_MAX;
 
-#   if DEBUG_THREADS
+#   ifdef DEBUG_THREADS
       GC_printf("World starting\n");
 #   endif
 
@@ -637,7 +637,7 @@ void GC_start_world(void)
         for(j = 0; j < GC_mach_threads_count; j++) {
           if (thread == GC_mach_threads[j].thread) {
             if (GC_mach_threads[j].already_suspended) {
-#             if DEBUG_THREADS
+#             ifdef DEBUG_THREADS
                 GC_printf("Not resuming already suspended thread %p\n", thread);
 #             endif
               continue;
@@ -646,7 +646,7 @@ void GC_start_world(void)
                                       (thread_info_t)&info, &outCount);
             if(kern_result != KERN_SUCCESS)
               ABORT("thread_info failed");
-#           if DEBUG_THREADS
+#           ifdef DEBUG_THREADS
               GC_printf("Thread state for 0x%lx = %d\n", (unsigned long)thread,
                          info.run_state);
               GC_printf("Resuming 0x%lx\n", (unsigned long)thread);
@@ -664,7 +664,7 @@ void GC_start_world(void)
                   sizeof(thread_t) * listcount);
 
     mach_port_deallocate(my_task, my_thread);
-#   if DEBUG_THREADS
+#   ifdef DEBUG_THREADS
       GC_printf("World started\n");
 #   endif
 }

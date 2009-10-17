@@ -13,6 +13,9 @@
  * modified is included with the above copyright notice.
  */
 
+#ifndef GC_INLINE_H
+#define GC_INLINE_H
+
 /* WARNING:                                                             */
 /* Note that for these routines, it is the clients responsibility to    */
 /* add the extra byte at the end to deal with one-past-the-end pointers.*/
@@ -120,7 +123,6 @@
                          (void)0 /* no initialization */); \
 }
 
-
 /* And once more for two word initialized objects: */
 # define GC_CONS(result, first, second, tiny_fl) \
 {       \
@@ -130,3 +132,5 @@
                          *(void **)result = (void *)(first)); \
     ((void **)(result))[1] = (void *)(second);  \
 }
+
+#endif /* !GC_INLINE_H */

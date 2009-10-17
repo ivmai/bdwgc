@@ -43,7 +43,7 @@
 
 /*#define DEBUG_THREADS 1*/
 
-# include "private/pthread_support.h"
+#include "private/pthread_support.h"
 
 # if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
@@ -310,7 +310,7 @@ STATIC void * GC_mark_thread(void * id)
         my_mark_no = GC_mark_no;
     }
 #   ifdef DEBUG_THREADS
-        GC_printf("Starting mark helper for mark number %lu\n",
+      GC_printf("Starting mark helper for mark number %lu\n",
                 (unsigned long)my_mark_no);
 #   endif
     GC_help_marker(my_mark_no);
@@ -761,7 +761,7 @@ STATIC int GC_get_nprocs(void)
       numCpus = pm_sysinfo.idle_vp_count;
 
 #  ifdef DEBUG_THREADS
-    GC_printf("Number of active CPUs in this system: %d\n", numCpus);
+     GC_printf("Number of active CPUs in this system: %d\n", numCpus);
 #  endif
     return(numCpus);
 }
@@ -1195,7 +1195,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 }
 
 STATIC void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb,
-                                                void * arg)
+                                                 void * arg)
 {
     struct start_info * si = arg;
     void * result;
@@ -1226,7 +1226,7 @@ STATIC void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb,
                                         /* OK to deallocate.    */
     pthread_cleanup_push(GC_thread_exit_proc, 0);
     result = (*start)(start_arg);
-#   if DEBUG_THREADS
+#   ifdef DEBUG_THREADS
         GC_printf("Finishing thread 0x%x\n", (unsigned)pthread_self());
 #   endif
     me -> status = result;

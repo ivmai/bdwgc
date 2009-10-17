@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include "atomic_ops.h"
 
-#if DEBUG_THREADS
+#ifdef DEBUG_THREADS
 
 #ifndef NSIG
 # if defined(MAXSIG)
@@ -54,7 +54,7 @@ void GC_print_sig_mask(void)
     GC_printf("\n");
 }
 
-#endif
+#endif /* DEBUG_THREADS */
 
 /* Remove the signals that we want to allow in thread stopping  */
 /* handler from a set.                                          */
@@ -184,7 +184,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
         /* out of it.  In fact, it looks to me like an async-signal-safe  */
         /* cancellation point is inherently a problem, unless there is    */
         /* some way to disable cancellation in the handler.               */
-#   if DEBUG_THREADS
+#   ifdef DEBUG_THREADS
       GC_printf("Suspending 0x%x\n", (unsigned)my_thread);
 #   endif
 
@@ -238,7 +238,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
     /* Simply dropping the sigsuspend call should be safe, but is unlikely  */
     /* to be efficient.                                                     */
 
-#   if DEBUG_THREADS
+#   ifdef DEBUG_THREADS
       GC_printf("Continuing 0x%x\n", (unsigned)my_thread);
 #   endif
     RESTORE_CANCEL(cancel_state);
@@ -260,7 +260,7 @@ STATIC void GC_restart_handler(int sig)
     ** will thus not interrupt the sigsuspend() above.
     */
 
-#   if DEBUG_THREADS
+#   ifdef DEBUG_THREADS
       GC_printf("In GC_restart_handler for 0x%x\n", (unsigned)pthread_self());
 #   endif
 }
@@ -286,8 +286,8 @@ void GC_push_all_stacks(void)
     pthread_t me = pthread_self();
 
     if (!GC_thr_initialized) GC_thr_init();
-#   if DEBUG_THREADS
-        GC_printf("Pushing stacks from thread 0x%x\n", (unsigned) me);
+#   ifdef DEBUG_THREADS
+      GC_printf("Pushing stacks from thread 0x%x\n", (unsigned) me);
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
@@ -314,14 +314,14 @@ void GC_push_all_stacks(void)
             hi = GC_stackbottom;
             IF_IA64(bs_lo = BACKING_STORE_BASE;)
         }
-#       if DEBUG_THREADS
-            GC_printf("Stack for thread 0x%x = [%p,%p)\n",
-                      (unsigned)(p -> id), lo, hi);
+#       ifdef DEBUG_THREADS
+          GC_printf("Stack for thread 0x%x = [%p,%p)\n",
+                    (unsigned)(p -> id), lo, hi);
 #       endif
         if (0 == lo) ABORT("GC_push_all_stacks: sp not set!\n");
         GC_push_all_stack_frames(lo, hi, p -> activation_frame);
 #       ifdef IA64
-#         if DEBUG_THREADS
+#         ifdef DEBUG_THREADS
             GC_printf("Reg stack for thread 0x%x = [%p,%p)\n",
                       (unsigned)p -> id, bs_lo, bs_hi);
 #         endif
@@ -341,9 +341,9 @@ void GC_push_all_stacks(void)
 
 /* There seems to be a very rare thread stopping problem.  To help us  */
 /* debug that, we save the ids of the stopping thread. */
-#if DEBUG_THREADS
-pthread_t GC_stopping_thread;
-int GC_stopping_pid = 0;
+#ifdef DEBUG_THREADS
+  pthread_t GC_stopping_thread;
+  int GC_stopping_pid = 0;
 #endif
 
 /* We hold the allocation lock.  Suspend all threads that might */
@@ -357,7 +357,7 @@ STATIC int GC_suspend_all(void)
     int result;
     pthread_t my_thread = pthread_self();
 
-#   if DEBUG_THREADS
+#   ifdef DEBUG_THREADS
       GC_stopping_thread = my_thread;
       GC_stopping_pid = getpid();
 #   endif
@@ -368,7 +368,7 @@ STATIC int GC_suspend_all(void)
             if (p -> stop_info.last_stop_count == GC_stop_count) continue;
             if (p -> thread_blocked) /* Will wait */ continue;
             n_live_threads++;
-#           if DEBUG_THREADS
+#           ifdef DEBUG_THREADS
               GC_printf("Sending suspend signal to 0x%x\n",
                         (unsigned)(p -> id));
 #           endif
@@ -397,7 +397,7 @@ void GC_stop_world(void)
     int code;
 
     GC_ASSERT(I_HOLD_LOCK());
-#   if DEBUG_THREADS
+#   ifdef DEBUG_THREADS
       GC_printf("Stopping the world from 0x%x\n", (unsigned)pthread_self());
 #   endif
 
@@ -460,7 +460,7 @@ void GC_stop_world(void)
       if (GC_parallel)
         GC_release_mark_lock();
 #   endif
-#   if DEBUG_THREADS
+#   ifdef DEBUG_THREADS
       GC_printf("World stopped from 0x%x\n", (unsigned)pthread_self());
       GC_stopping_thread = 0;
 #   endif
@@ -479,7 +479,7 @@ void GC_start_world(void)
       int code;
 #   endif
 
-#   if DEBUG_THREADS
+#   ifdef DEBUG_THREADS
       GC_printf("World starting\n");
 #   endif
 
@@ -490,7 +490,7 @@ void GC_start_world(void)
             if (p -> flags & FINISHED) continue;
             if (p -> thread_blocked) continue;
             n_live_threads++;
-#           if DEBUG_THREADS
+#           ifdef DEBUG_THREADS
               GC_printf("Sending restart signal to 0x%x\n",
                         (unsigned)(p -> id));
 #           endif
@@ -518,8 +518,8 @@ void GC_start_world(void)
                 ABORT("sem_wait() for restart handler failed");
             }
 #    endif
-#    if DEBUG_THREADS
-      GC_printf("World started\n");
+#    ifdef DEBUG_THREADS
+       GC_printf("World started\n");
 #    endif
 }
 

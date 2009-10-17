@@ -167,7 +167,7 @@ static void pop_in_progress(ptr_t p)
 
 #define GET_OH_BG_PTR(p) \
                 (ptr_t)REVEAL_POINTER(((oh *)(p)) -> oh_bg_ptr)
-#define SET_OH_BG_PTR(p,q) (((oh *)(p)) -> oh_bg_ptr) = HIDE_POINTER(q)
+#define SET_OH_BG_PTR(p,q) (((oh *)(p)) -> oh_bg_ptr = HIDE_POINTER(q))
 
 /* Execute s once for each predecessor q of p in the points-to graph.   */
 /* s should be a bracketed statement.  We declare q.                    */
