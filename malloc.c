@@ -323,10 +323,10 @@ void * malloc(size_t lb)
   }
 
 #if defined(GC_LINUX_THREADS) /* && !defined(USE_PROC_FOR_LIBRARIES) */
-  static ptr_t GC_libpthread_start = 0;
-  static ptr_t GC_libpthread_end = 0;
-  static ptr_t GC_libld_start = 0;
-  static ptr_t GC_libld_end = 0;
+  STATIC ptr_t GC_libpthread_start = 0;
+  STATIC ptr_t GC_libpthread_end = 0;
+  STATIC ptr_t GC_libld_start = 0;
+  STATIC ptr_t GC_libld_end = 0;
   GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp);
         /* From os_dep.c */
 

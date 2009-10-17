@@ -412,11 +412,11 @@ void GC_push_all_stacks(void)
 }
 #endif /* !DARWIN_DONT_PARSE_STACK */
 
-static mach_port_t GC_mach_handler_thread;
-static int GC_use_mach_handler_thread = 0;
+STATIC mach_port_t GC_mach_handler_thread = 0;
+STATIC int GC_use_mach_handler_thread = 0;
 
 static struct GC_mach_thread GC_mach_threads[THREAD_TABLE_SZ];
-static int GC_mach_threads_count;
+STATIC int GC_mach_threads_count = 0;
 
 void GC_stop_init(void)
 {

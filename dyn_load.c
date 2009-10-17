@@ -122,7 +122,7 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
     Elf32_Dyn _DYNAMIC;
 #endif
 
-static struct link_map *
+STATIC struct link_map *
 GC_FirstDLOpenedLinkMap(void)
 {
     extern ElfW(Dyn) _DYNAMIC;
@@ -420,8 +420,8 @@ static int n_load_segs;
 
 # endif /* PT_GNU_RELRO */
 
-static int GC_register_dynlib_callback(struct dl_phdr_info * info,
-                                        size_t size, void * ptr)
+STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
+                                       size_t size, void * ptr)
 {
   const ElfW(Phdr) * p;
   ptr_t start, end;
@@ -584,7 +584,7 @@ GC_bool GC_register_main_static_data(void)
 #endif
 extern ElfW(Dyn) _DYNAMIC[];
 
-static struct link_map *
+STATIC struct link_map *
 GC_FirstDLOpenedLinkMap(void)
 {
     ElfW(Dyn) *dp;
@@ -1145,7 +1145,7 @@ void GC_register_dynamic_libraries(void)
 
 /*#define DARWIN_DEBUG*/
 
-const static struct {
+STATIC const struct {
         const char *seg;
         const char *sect;
 } GC_dyld_sections[] = {
@@ -1154,7 +1154,7 @@ const static struct {
         { SEG_DATA, SECT_COMMON }
 };
 
-static const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr)
+STATIC const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr)
 {
     unsigned long i, c;
     c = _dyld_image_count();
@@ -1165,7 +1165,7 @@ static const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr)
 }
 
 /* This should never be called by a thread holding the lock */
-static void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr, intptr_t slide)
+STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr, intptr_t slide)
 {
     unsigned long start,end,i;
     const struct GC_MACH_SECTION *sec;
@@ -1201,7 +1201,7 @@ static void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr, intptr_t slide)
 }
 
 /* This should never be called by a thread holding the lock */
-static void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
+STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
                                  intptr_t slide)
 {
     unsigned long start,end,i;

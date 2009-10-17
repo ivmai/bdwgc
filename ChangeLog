@@ -1,5 +1,44 @@
 2009-10-17  Ivan Maidanski <ivmai@mail.ru>
 
+	* alloc.c (GC_copyright): Define as const.
+	* alloc.c (GC_collect_at_heapsize): Replace "static" with "STATIC"
+	(since the name starts with "GC_" prefix).
+	* dbg_mlc.c (GC_describe_type_fns): Ditto.
+	* dyn_load.c (GC_FirstDLOpenedLinkMap,
+	GC_register_dynlib_callback, GC_dyld_sections,
+	GC_dyld_name_for_hdr, GC_dyld_image_add, GC_dyld_image_remove):
+	Ditto.
+	* malloc.c (GC_libpthread_start, GC_libpthread_end,
+	GC_libld_start, GC_libld_end): Ditto.
+	* mark_rts.c (GC_remove_root_at_pos, GC_rebuild_root_index):
+	Ditto.
+	* os_dep.c (GC_gww_read_dirty, GC_gww_page_was_dirty,
+	GC_gww_page_was_ever_dirty, GC_mprotect_thread_notify,
+	GC_mprotect_thread_reply, GC_mprotect_thread, GC_darwin_sigbus,
+	GC_forward_exception): Ditto.
+	* pthread_support.c (GC_syms_initialized): Ditto.
+	* typd_mlc.c (GC_push_typed_structures_proc): Ditto.
+	* win32_threads.c (GC_win32_dll_threads,
+	GC_register_my_thread_inner, GC_lookup_pthread, GC_get_stack_min,
+	GC_waitForSingleObjectInfinite): Ditto.
+	* darwin_stop_world.c (GC_use_mach_handler_thread,
+	GC_use_mach_handler_thread, GC_mach_threads_count): Replace
+	"static" with "STATIC" and add zero initializer.
+	* os_dep.c (GC_task_self, GC_ports, GC_mprotect_state,
+	GC_sigbus_count): Ditto.
+	* headers.c (free_hdr): Replace "static" with GC_INLINE.
+	* misc.c (GC_tmp): Rename static variable to fwrite_gc_res.
+	* os_dep.c (memory): Rename static variable to ecos_gc_memory.
+	* os_dep.c (async_set_pht_entry_from_index): Make static (for
+	MPROTECT_VDB case).
+	* pthread_support.c (GC_real_pthread_create,
+	GC_real_pthread_sigmask, GC_real_pthread_join,
+	GC_real_pthread_detach, GC_init_real_syms): Use REAL_FUNC() macro
+	for static GC_real_XXX symbols.
+	* win32_threads.c (GC_may_be_in_stack): Remove "GC_" prefix.
+
+2009-10-17  Ivan Maidanski <ivmai@mail.ru>
+
 	* alloc.c (GC_never_stop_func, GC_check_fl_marks,
 	GC_finish_collection): Reformat the code (make opening bracket
 	style uniform across the file).

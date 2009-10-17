@@ -100,9 +100,10 @@ STATIC size_t GC_avail_descr = 0;       /* Next available slot.         */
 STATIC int GC_typed_mark_proc_index = 0; /* Indices of my mark          */
 STATIC int GC_array_mark_proc_index = 0; /* procedures.                 */
 
-static void GC_push_typed_structures_proc (void)
+STATIC void GC_push_typed_structures_proc(void)
 {
-  GC_push_all((ptr_t)&GC_ext_descriptors, (ptr_t)&GC_ext_descriptors + sizeof(word));
+  GC_push_all((ptr_t)&GC_ext_descriptors,
+              (ptr_t)&GC_ext_descriptors + sizeof(word));
 }
 
 /* Add a multiword bitmap to GC_ext_descriptors arrays.  Return */

@@ -240,7 +240,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 
 static GC_bool roots_were_cleared = FALSE;
 
-GC_API void GC_CALL GC_clear_roots (void)
+GC_API void GC_CALL GC_clear_roots(void)
 {
     DCL_LOCK_STATE;
 
@@ -259,7 +259,7 @@ GC_API void GC_CALL GC_clear_roots (void)
 }
 
 /* Internal use only; lock held.        */
-static void GC_remove_root_at_pos(int i)
+STATIC void GC_remove_root_at_pos(int i)
 {
     GC_root_size -= (GC_static_roots[i].r_end - GC_static_roots[i].r_start);
     GC_static_roots[i].r_start = GC_static_roots[n_root_sets-1].r_start;
@@ -269,14 +269,14 @@ static void GC_remove_root_at_pos(int i)
 }
 
 #if !defined(MSWIN32) && !defined(MSWINCE)
-static void GC_rebuild_root_index(void)
-{
+  STATIC void GC_rebuild_root_index(void)
+  {
     int i;
 
     for (i = 0; i < RT_SIZE; i++) GC_root_index[i] = 0;
     for (i = 0; i < n_root_sets; i++)
         add_roots_to_index(GC_static_roots + i);
-}
+  }
 #endif
 
 #if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \

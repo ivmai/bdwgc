@@ -100,7 +100,7 @@
         && !defined(THREAD_LOCAL_ALLOC) && !defined(GC_PTHREADS)
 # include "atomic_ops.h"
 
-  static GC_bool GC_win32_dll_threads = FALSE;
+  STATIC GC_bool GC_win32_dll_threads = FALSE;
   /* This code operates in two distinct modes, depending on     */
   /* the setting of GC_win32_dll_threads.  If                   */
   /* GC_win32_dll_threads is set, all threads in the process    */
@@ -371,7 +371,7 @@ GC_bool GC_in_thread_creation = FALSE;  /* Protected by allocation lock. */
  * If GC_win32_dll_threads is not set, we already hold the allocation lock,
  * except possibly during single-threaded start-up code.
  */
-static GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
+STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                                              DWORD thread_id)
 {
   GC_vthread me;
@@ -844,7 +844,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   /* have not yet terminated or are still joinable, and         */
   /* cannot be concurrently terminated.                         */
   /* Assumes we do NOT hold the allocation lock.                */
-  static GC_thread GC_lookup_pthread(pthread_t id)
+  STATIC GC_thread GC_lookup_pthread(pthread_t id)
   {
 #   ifndef GC_NO_DLLMAIN
       if (GC_win32_dll_threads) {
@@ -1099,7 +1099,7 @@ static MEMORY_BASIC_INFORMATION last_info;
 /* lowest address (i.e. stack top).                             */
 /* S must be a mapped address inside the region, NOT the first  */
 /* unmapped address.                                            */
-static ptr_t GC_get_stack_min(ptr_t s)
+STATIC ptr_t GC_get_stack_min(ptr_t s)
 {
   ptr_t bottom;
 
@@ -1119,7 +1119,7 @@ static ptr_t GC_get_stack_min(ptr_t s)
 
 /* Return true if the page at s has protections appropriate     */
 /* for a stack page.                                            */
-static GC_bool GC_may_be_in_stack(ptr_t s)
+static GC_bool may_be_in_stack(ptr_t s)
 {
   GC_ASSERT(I_HOLD_LOCK());
   if (s != last_address) {
@@ -1225,9 +1225,9 @@ STATIC void GC_push_stack_for(GC_thread thread)
         stack_min = sp;
       } else {
         /* In the current thread it is always safe to use sp value. */
-        if (GC_may_be_in_stack(thread -> id == me &&
-                               sp < thread -> last_stack_min ?
-                               sp : thread -> last_stack_min)) {
+        if (may_be_in_stack(thread -> id == me &&
+                            sp < thread -> last_stack_min ?
+                            sp : thread -> last_stack_min)) {
           stack_min = last_info.BaseAddress;
           /* Do not probe rest of the stack if sp is correct. */
           if (sp < stack_min || sp >= thread->stack_base)
@@ -1420,7 +1420,7 @@ void GC_get_next_stack(char *start, char *limit,
     }
 # endif
 
-  if (current_min > limit && !GC_may_be_in_stack(limit)) {
+  if (current_min > limit && !may_be_in_stack(limit)) {
     /* Skip the rest since the memory region at limit address is        */
     /* not a stack (so the lowest address of the found stack would      */
     /* be above the limit value anyway).                                */
@@ -1431,7 +1431,7 @@ void GC_get_next_stack(char *start, char *limit,
   /* Get the minimum address of the found stack by probing its memory   */
   /* region starting from the recent known minimum (if set).            */
   if (*plast_stack_min == ADDR_LIMIT
-      || !GC_may_be_in_stack(*plast_stack_min)) {
+      || !may_be_in_stack(*plast_stack_min)) {
     /* Unsafe to start from last_stack_min value. */
     *lo = GC_get_stack_min(current_min);
   } else {
@@ -2126,7 +2126,7 @@ void GC_get_next_stack(char *start, char *limit,
                              args->lpCmdLine, args->nShowCmd);
   }
 
-  static void * GC_waitForSingleObjectInfinite(void * handle)
+  STATIC void * GC_waitForSingleObjectInfinite(void * handle)
   {
     return (void *)(word)WaitForSingleObject((HANDLE)handle, INFINITE);
   }

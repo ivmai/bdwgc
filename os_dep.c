@@ -482,8 +482,8 @@ static ptr_t backing_store_base_from_proc(void)
 /* compatible with ECOS early releases.  Later releases use a more      */
 /* sophisticated means of allocating memory than this simple static     */
 /* allocator, but this method is at least bound to work.                */
-static char memory[ECOS_GC_MEMORY_SIZE];
-static char *brk = memory;
+static char ecos_gc_memory[ECOS_GC_MEMORY_SIZE];
+static char *brk = ecos_gc_memory;
 
 static void *tiny_sbrk(ptrdiff_t increment)
 {
@@ -491,7 +491,7 @@ static void *tiny_sbrk(ptrdiff_t increment)
 
   brk += increment;
 
-  if (brk >  memory + sizeof memory)
+  if (brk > ecos_gc_memory + sizeof(ecos_gc_memory))
     {
       brk -= increment;
       return NULL;
@@ -2362,7 +2362,7 @@ STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
 # endif
 
 # ifdef MPROTECT_VDB
-    static void GC_gww_read_dirty(void)
+    STATIC void GC_gww_read_dirty(void)
 # else
     void GC_read_dirty(void)
 # endif
@@ -2440,7 +2440,7 @@ STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
   }
 
 # ifdef MPROTECT_VDB
-    static GC_bool GC_gww_page_was_dirty(struct hblk * h)
+    STATIC GC_bool GC_gww_page_was_dirty(struct hblk * h)
 # else
     GC_bool GC_page_was_dirty(struct hblk * h)
 # endif
@@ -2450,7 +2450,7 @@ STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
   }
 
 # ifdef MPROTECT_VDB
-    static GC_bool GC_gww_page_was_ever_dirty(struct hblk * h)
+    STATIC GC_bool GC_gww_page_was_ever_dirty(struct hblk * h)
 # else
     GC_bool GC_page_was_ever_dirty(struct hblk * h)
 # endif
@@ -2625,7 +2625,7 @@ void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
     /* Using vm_protect (mach syscall) over mprotect (BSD syscall) seems to
        decrease the likelihood of some of the problems described below. */
 #   include <mach/vm_map.h>
-    static mach_port_t GC_task_self;
+    STATIC mach_port_t GC_task_self = 0;
 #   define PROTECT(addr,len) \
         if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
                 FALSE,VM_PROT_READ) != KERN_SUCCESS) { \
@@ -2698,8 +2698,12 @@ STATIC GC_bool GC_old_segv_handler_used_si = FALSE;
 /* correctly.                                                           */
 #ifdef AO_HAVE_test_and_set_acquire
   volatile AO_TS_t GC_fault_handler_lock = 0;
-  void async_set_pht_entry_from_index(volatile page_hash_table db, size_t index) {
-    while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {}
+  static void async_set_pht_entry_from_index(volatile page_hash_table db,
+                                             size_t index)
+  {
+    while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {
+      /* empty */
+    }
     /* Could also revert to set_pht_entry_from_index_safe if initial    */
     /* GC_test_and_set fails.                                           */
     set_pht_entry_from_index(db, index);
@@ -2716,7 +2720,9 @@ STATIC GC_bool GC_old_segv_handler_used_si = FALSE;
   /* leave it this way while we think of something better, or support   */
   /* GC_test_and_set on the remaining platforms.                        */
   static volatile word currently_updating = 0;
-  void async_set_pht_entry_from_index(volatile page_hash_table db, size_t index) {
+  static void async_set_pht_entry_from_index(volatile page_hash_table db,
+                                             size_t index)
+  {
     unsigned int update_dummy;
     currently_updating = (word)(&update_dummy);
     set_pht_entry_from_index(db, index);
@@ -3533,12 +3539,12 @@ static struct {
     thread_state_flavor_t flavors[MAX_EXCEPTION_PORTS];
 } GC_old_exc_ports;
 
-static struct {
+STATIC struct {
     mach_port_t exception;
-#if defined(THREADS)
-    mach_port_t reply;
-#endif
-} GC_ports;
+#   if defined(THREADS)
+      mach_port_t reply;
+#   endif
+} GC_ports = {0};
 
 typedef struct {
     mach_msg_header_t head;
@@ -3559,10 +3565,10 @@ typedef enum {
 
 #if defined(THREADS)
 
-static GC_mprotect_state_t GC_mprotect_state;
+STATIC GC_mprotect_state_t GC_mprotect_state = 0;
 
 /* The following should ONLY be called when the world is stopped  */
-static void GC_mprotect_thread_notify(mach_msg_id_t id)
+STATIC void GC_mprotect_thread_notify(mach_msg_id_t id)
 {
 
   struct {
@@ -3588,9 +3594,8 @@ static void GC_mprotect_thread_notify(mach_msg_id_t id)
 }
 
 /* Should only be called by the mprotect thread */
-static void GC_mprotect_thread_reply(void)
+STATIC void GC_mprotect_thread_reply(void)
 {
-
   GC_msg_t msg;
   mach_msg_return_t r;
   /* remote, local */
@@ -3620,7 +3625,7 @@ void GC_mprotect_resume(void)
 #define GC_mprotect_state GC_MP_NORMAL
 #endif
 
-static void *GC_mprotect_thread(void *arg)
+STATIC void *GC_mprotect_thread(void *arg)
 {
   mach_msg_return_t r;
   /* These two structures contain some private kernel data. We don't need to
@@ -3713,9 +3718,9 @@ static void *GC_mprotect_thread(void *arg)
 
 /* Updates to this aren't atomic, but the SIGBUSs seem pretty rare.
    Even if this doesn't get updated property, it isn't really a problem */
-static int GC_sigbus_count;
+STATIC int GC_sigbus_count = 0;
 
-static void GC_darwin_sigbus(int num, siginfo_t *sip, void *context)
+STATIC void GC_darwin_sigbus(int num, siginfo_t *sip, void *context)
 {
   if(num != SIGBUS)
     ABORT("Got a non-sigbus signal in the sigbus handler");
@@ -3815,7 +3820,7 @@ void GC_dirty_init(void)
 /* The source code for Apple's GDB was used as a reference for the exception
    forwarding code. This code is similar to be GDB code only because there is
    only one way to do it. */
-static kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
+STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
                                           exception_type_t exception,
                                           exception_data_t data,
                                           mach_msg_type_number_t data_count)

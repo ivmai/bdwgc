@@ -329,7 +329,7 @@ STATIC ptr_t GC_check_annotated_obj(oh *ohdr)
 }
 #endif /* !SHORT_DBG_HDRS */
 
-static GC_describe_type_fn GC_describe_type_fns[MAXOBJKINDS] = {0};
+STATIC GC_describe_type_fn GC_describe_type_fns[MAXOBJKINDS] = {0};
 
 GC_API void GC_CALL GC_register_describe_type_fn(int kind,
                                                  GC_describe_type_fn fn)

@@ -129,13 +129,13 @@ unsigned long GC_lock_holder = NO_THREAD;
       /* FIXME: Needs work for DARWIN and True64 (OSF1) */
       typedef int (* GC_pthread_create_t)(pthread_t *, const pthread_attr_t *,
                                           void * (*)(void *), void *);
-      static GC_pthread_create_t GC_real_pthread_create;
+      static GC_pthread_create_t REAL_FUNC(pthread_create);
       typedef int (* GC_pthread_sigmask_t)(int, const sigset_t *, sigset_t *);
-      static GC_pthread_sigmask_t GC_real_pthread_sigmask;
+      static GC_pthread_sigmask_t REAL_FUNC(pthread_sigmask);
       typedef int (* GC_pthread_join_t)(pthread_t, void **);
-      static GC_pthread_join_t GC_real_pthread_join;
+      static GC_pthread_join_t REAL_FUNC(pthread_join);
       typedef int (* GC_pthread_detach_t)(pthread_t);
-      static GC_pthread_detach_t GC_real_pthread_detach;
+      static GC_pthread_detach_t REAL_FUNC(pthread_detach);
 #   else
 #     define WRAP_FUNC(f) GC_##f
 #     if !defined(GC_DGUX386_THREADS)
@@ -174,7 +174,7 @@ unsigned long GC_lock_holder = NO_THREAD;
 #endif /* Linker-based interception. */
 
 #ifdef GC_USE_DLOPEN_WRAP
-  static GC_bool GC_syms_initialized = FALSE;
+  STATIC GC_bool GC_syms_initialized = FALSE;
 
   STATIC void GC_init_real_syms(void)
   {
@@ -199,13 +199,13 @@ unsigned long GC_lock_holder = NO_THREAD;
       }
       if (NULL == dl_handle) ABORT("Couldn't open libpthread\n");
 #   endif
-    GC_real_pthread_create = (GC_pthread_create_t)
+    REAL_FUNC(pthread_create) = (GC_pthread_create_t)
                                 dlsym(dl_handle, "pthread_create");
-    GC_real_pthread_sigmask = (GC_pthread_sigmask_t)
+    REAL_FUNC(pthread_sigmask) = (GC_pthread_sigmask_t)
                                 dlsym(dl_handle, "pthread_sigmask");
-    GC_real_pthread_join = (GC_pthread_join_t)
+    REAL_FUNC(pthread_join) = (GC_pthread_join_t)
                                 dlsym(dl_handle, "pthread_join");
-    GC_real_pthread_detach = (GC_pthread_detach_t)
+    REAL_FUNC(pthread_detach) = (GC_pthread_detach_t)
                                 dlsym(dl_handle, "pthread_detach");
     GC_syms_initialized = TRUE;
   }

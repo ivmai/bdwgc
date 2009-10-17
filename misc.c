@@ -845,7 +845,7 @@ GC_API void GC_CALL GC_init(void)
     /* Convince lint that some things are used */
 #   ifdef LINT
       {
-          extern char * GC_copyright[];
+          extern char * const GC_copyright[];
           GC_noop(GC_copyright, GC_find_header,
                   GC_push_one, GC_call_with_alloc_lock, GC_read,
                   GC_dont_expand,
@@ -1028,7 +1028,6 @@ out:
 STATIC FILE * GC_stdout = NULL;
 STATIC FILE * GC_stderr = NULL;
 STATIC FILE * GC_log = NULL;
-static int GC_tmp;  /* Should really be local ... */
 
   STATIC void GC_set_files(void)
   {
@@ -1102,9 +1101,10 @@ STATIC int GC_write(int fd, const char *buf, size_t len)
 #   define WRITE(f, buf, len) GC_write(buf, len)
 #else
 #   if defined(OS2) || defined(MACOS)
+    static int fwrite_gc_res; /* Should really be local ... */
 #   define WRITE(f, buf, len) (GC_set_files(), \
-                               GC_tmp = fwrite((buf), 1, (len), (f)), \
-                               fflush(f), GC_tmp)
+                               fwrite_gc_res = fwrite((buf), 1, (len), (f)), \
+                               fflush(f), fwrite_gc_res)
 #   else
 #     define WRITE(f, buf, len) GC_write((f), (buf), (len))
 #   endif

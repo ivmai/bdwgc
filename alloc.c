@@ -81,7 +81,7 @@ STATIC GC_bool GC_need_full_gc = FALSE;
 
 STATIC word GC_used_heap_size_after_full = 0;
 
-char * GC_copyright[] =
+char * const GC_copyright[] =
 {"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
 "Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved. ",
 "Copyright (c) 1996-1998 by Silicon Graphics.  All rights reserved. ",
@@ -279,7 +279,7 @@ STATIC void GC_clear_a_few_frames(void)
 
 /* Heap size at which we need a collection to avoid expanding past      */
 /* limits used by blacklisting.                                         */
-static word GC_collect_at_heapsize = (word)(-1);
+STATIC word GC_collect_at_heapsize = (word)(-1);
 
 /* Have we allocated enough to amortize a collection? */
 GC_bool GC_should_collect(void)

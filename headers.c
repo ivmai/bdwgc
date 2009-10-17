@@ -178,7 +178,7 @@ static hdr * alloc_hdr(void)
     return(result);
 }
 
-static void free_hdr(hdr * hhdr)
+GC_INLINE void free_hdr(hdr * hhdr)
 {
     hhdr -> hb_next = (struct hblk *) hdr_free_list;
     hdr_free_list = hhdr;
