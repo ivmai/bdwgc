@@ -14,12 +14,10 @@
  */
 /* Boehm, July 31, 1995 5:02 pm PDT */
 
-
 #include <stdio.h>
 #include <limits.h>
 #include <stdarg.h>
 
-#define I_HIDE_POINTERS /* To make GC_call_with_alloc_lock visible */
 #include "private/gc_pmark.h"
 
 #ifndef MSWINCE

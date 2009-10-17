@@ -18,9 +18,6 @@
 /*
  * Declarations of mark stack.  Needed by marker and client supplied mark
  * routines.  Transitively include gc_priv.h.
- * (Note that gc_priv.h should not be included before this, since this
- * includes dbg_mlc.h, which wants to include gc_priv.h AFTER defining
- * I_HIDE_POINTERS.)
  */
 #ifndef GC_PMARK_H
 # define GC_PMARK_H
@@ -37,6 +34,9 @@
 #   include "dbg_mlc.h"
 # endif
 # ifndef GC_MARK_H
+#   ifndef _GC_H
+#     define I_HIDE_POINTERS /* to get HIDE_POINTER() and friends */
+#   endif
 #   include "../gc_mark.h"
 # endif
 # ifndef GC_PRIVATE_H

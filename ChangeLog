@@ -1,5 +1,19 @@
 2009-10-17  Ivan Maidanski <ivmai@mail.ru>
 
+	* include/private/gc_priv.h (I_HIDE_POINTERS): Define before gc.h
+	inclusion.
+	* include/private/gc_pmark.h (I_HIDE_POINTERS): Define if gc.h is
+	not included yet.
+	* finalize.c (I_HIDE_POINTERS): Don't define.
+	* include/private/dbg_mlc.h (I_HIDE_POINTERS): Ditto.
+	* misc.c (I_HIDE_POINTERS): Ditto.
+	* include/private/dbg_mlc.h (HIDE_POINTER, REVEAL_POINTER,
+	GC_hidden_pointer): Don't define if HIDE_POINTER is undefined.
+	* include/private/gc_pmark.h: Remove the comment about gc_priv.h
+	inclusion order.
+
+2009-10-17  Ivan Maidanski <ivmai@mail.ru>
+
 	* dyn_load.c: Include gc_priv.h before using configuration
 	information (MACOS).
 	* dyn_load.c (GC_must_restore_redefined_dlopen): Rename to

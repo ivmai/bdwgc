@@ -23,23 +23,12 @@
  */
 
 #ifndef _DBG_MLC_H
-
 #define _DBG_MLC_H
 
-# define I_HIDE_POINTERS
 # include "gc_priv.h"
 # ifdef KEEP_BACK_PTRS
 #   include "gc_backptr.h"
 # endif
-
-#ifndef HIDE_POINTER
-  /* Gc.h was previously included, and hence the I_HIDE_POINTERS        */
-  /* definition had no effect.  Repeat the gc.h definitions here to     */
-  /* get them anyway.                                                   */
-    typedef GC_word GC_hidden_pointer;
-#   define HIDE_POINTER(p) (~(GC_hidden_pointer)(p))
-#   define REVEAL_POINTER(p) ((void *)(HIDE_POINTER(p)))
-#endif /* HIDE_POINTER */
 
 # define START_FLAG ((word)0xfedcedcb)
 # define END_FLAG ((word)0xbcdecdef)

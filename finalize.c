@@ -14,8 +14,8 @@
  * modified is included with the above copyright notice.
  */
 /* Boehm, February 1, 1996 1:19 pm PST */
-# define I_HIDE_POINTERS
-# include "private/gc_pmark.h"
+
+#include "private/gc_pmark.h"
 
 # ifdef FINALIZE_ON_DEMAND
     int GC_finalize_on_demand = 1;
