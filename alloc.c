@@ -125,7 +125,10 @@ word GC_free_space_divisor = GC_FREE_SPACE_DIVISOR;
 GC_bool GC_collection_in_progress(void);
                 /* Collection is in progress, or was abandoned. */
 
-int GC_CALLBACK GC_never_stop_func (void) { return(0); }
+int GC_CALLBACK GC_never_stop_func(void)
+{
+  return(0);
+}
 
 #ifndef GC_TIME_LIMIT
 # define GC_TIME_LIMIT 50  /* We try to keep pause times from exceeding  */
@@ -695,12 +698,11 @@ void GC_set_fl_marks(ptr_t q)
 void GC_check_fl_marks(ptr_t q)
 {
    ptr_t p;
-
-   for (p = q; p != 0; p = obj_link(p)){
-        if (!GC_is_marked(p)) {
-            GC_err_printf("Unmarked object %p on list %p\n", p, q);
-            ABORT("Unmarked local free list entry.");
-        }
+   for (p = q; p != 0; p = obj_link(p)) {
+       if (!GC_is_marked(p)) {
+           GC_err_printf("Unmarked object %p on list %p\n", p, q);
+           ABORT("Unmarked local free list entry.");
+       }
    }
 }
 #endif
@@ -859,7 +861,7 @@ STATIC void GC_finish_collection(void)
                         (unsigned long)GC_composite_in_use,
                         (unsigned long)GC_atomic_in_use);
         }
-        if (GC_is_full_gc)  {
+        if (GC_is_full_gc) {
             GC_used_heap_size_after_full = USED_HEAP_SIZE;
             GC_need_full_gc = FALSE;
         } else {

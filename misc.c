@@ -485,7 +485,7 @@ void GC_set_and_save_fault_handler(void (*handler)(int));
 static void looping_handler(int sig)
 {
     GC_err_printf("Caught signal %d: looping in handler\n", sig);
-    for(;;);
+    for (;;) {}
 }
 
 static GC_bool installed_looping_handler = FALSE;
@@ -1370,7 +1370,8 @@ struct GC_activation_frame_s *GC_activation_frame = NULL;
 
 /* This is nearly the same as in win32_threads.c        */
 GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
-                                        void * client_data) {
+                                             void * client_data)
+{
     struct GC_activation_frame_s frame;
     GC_ASSERT(GC_is_initialized);
 
@@ -1414,7 +1415,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
 /* This is nearly the same as in win32_threads.c        */
 /*ARGSUSED*/
-STATIC void GC_do_blocking_inner(ptr_t data, void * context) {
+STATIC void GC_do_blocking_inner(ptr_t data, void * context)
+{
     struct blocking_data * d = (struct blocking_data *) data;
     GC_ASSERT(GC_is_initialized);
     GC_ASSERT(GC_blocked_sp == NULL);
@@ -1447,7 +1449,8 @@ STATIC void GC_do_blocking_inner(ptr_t data, void * context) {
 /* more precise (i.e. scan only stack frames of functions that allocate */
 /* garbage collected memory and/or manipulate pointers to the garbage   */
 /* collected heap).                                                     */
-GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data) {
+GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
+{
     struct blocking_data my_data;
 
     my_data.fn = fn;

@@ -279,9 +279,7 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
 }
 
 /*ARGSUSED*/
-STATIC void GC_null_finalize_mark_proc(ptr_t p)
-{
-}
+STATIC void GC_null_finalize_mark_proc(ptr_t p) {}
 
 /* Possible finalization_marker procedures.  Note that mark stack       */
 /* overflow is handled by the caller, and is not a disaster.            */
@@ -916,7 +914,7 @@ void GC_notify_or_invoke_finalizers(void)
 }
 
 GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn,
-                                        void * client_data)
+                                              void * client_data)
 {
     void * result;
     DCL_LOCK_STATE;

@@ -1584,7 +1584,7 @@ void GC_push_marked1(struct hblk *h, hdr *hhdr)
     plim = (word *)(((word)h) + HBLKSIZE);
 
     /* go through all words in block */
-        while( p < plim )  {
+        while (p < plim) {
             mark_word = *mark_word_addr++;
             q = p;
             while(mark_word != 0) {
@@ -1632,7 +1632,7 @@ void GC_push_marked2(struct hblk *h, hdr *hhdr)
     plim = (word *)(((word)h) + HBLKSIZE);
 
     /* go through all words in block */
-        while( p < plim )  {
+        while (p < plim) {
             mark_word = *mark_word_addr++;
             q = p;
             while(mark_word != 0) {
@@ -1680,7 +1680,7 @@ void GC_push_marked4(struct hblk *h, hdr *hhdr)
     plim = (word *)(((word)h) + HBLKSIZE);
 
     /* go through all words in block */
-        while( p < plim )  {
+        while (p < plim) {
             mark_word = *mark_word_addr++;
             q = p;
             while(mark_word != 0) {

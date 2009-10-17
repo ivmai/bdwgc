@@ -84,7 +84,8 @@ GC_bool GC_has_other_debug_info(ptr_t p)
     }
   }
 
-  void GC_marked_for_finalization(ptr_t dest) {
+  void GC_marked_for_finalization(ptr_t dest)
+  {
     GC_store_back_pointer(MARKED_FOR_FINALIZATION, dest);
   }
 
@@ -331,7 +332,7 @@ STATIC ptr_t GC_check_annotated_obj(oh *ohdr)
 static GC_describe_type_fn GC_describe_type_fns[MAXOBJKINDS] = {0};
 
 GC_API void GC_CALL GC_register_describe_type_fn(int kind,
-                                                GC_describe_type_fn fn)
+                                                 GC_describe_type_fn fn)
 {
   GC_describe_type_fns[kind] = fn;
 }
@@ -481,7 +482,7 @@ GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
 }
 
 GC_API void * GC_CALL GC_debug_malloc_ignore_off_page(size_t lb,
-                                                GC_EXTRA_PARAMS)
+                                                      GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc_ignore_off_page(lb + DEBUG_BYTES);
 
@@ -500,7 +501,7 @@ GC_API void * GC_CALL GC_debug_malloc_ignore_off_page(size_t lb,
 }
 
 GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
-                                                        GC_EXTRA_PARAMS)
+                                                             GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc_atomic_ignore_off_page(lb + DEBUG_BYTES);
 
@@ -958,9 +959,9 @@ void GC_CALLBACK GC_debug_invoke_finalizer(void * obj, void * data)
 #define OFN_UNSET (GC_finalization_proc)(signed_word)-1
 
 /* Set ofn and ocd to reflect the values we got back.   */
-static void store_old (void *obj, GC_finalization_proc my_old_fn,
-                       struct closure *my_old_cd, GC_finalization_proc *ofn,
-                       void **ocd)
+static void store_old(void *obj, GC_finalization_proc my_old_fn,
+                      struct closure *my_old_cd, GC_finalization_proc *ofn,
+                      void **ocd)
 {
     if (0 != my_old_fn) {
       if (my_old_fn == OFN_UNSET) {

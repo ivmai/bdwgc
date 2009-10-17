@@ -151,17 +151,24 @@ unsigned long GC_lock_holder = NO_THREAD;
 /* be intercepted.  This allows files which include gc.h, and hence     */
 /* generate references to the GC_ symbols, to see the right symbols.    */
       GC_API int GC_pthread_create(pthread_t * t, const pthread_attr_t * a,
-                         void * (* fn)(void *), void * arg) {
+                                   void * (* fn)(void *), void * arg)
+      {
           return pthread_create(t, a, fn, arg);
       }
+
       GC_API int GC_pthread_sigmask(int how, const sigset_t *mask,
-                                sigset_t *old) {
+                                    sigset_t *old)
+      {
           return pthread_sigmask(how, mask, old);
       }
-      GC_API int GC_pthread_join(pthread_t t, void **res) {
+
+      GC_API int GC_pthread_join(pthread_t t, void **res)
+      {
           return pthread_join(t, res);
       }
-      GC_API int GC_pthread_detach(pthread_t t) {
+
+      GC_API int GC_pthread_detach(pthread_t t)
+      {
           return pthread_detach(t);
       }
 #endif /* Linker-based interception. */
@@ -245,7 +252,8 @@ void GC_mark_thread_local_free_lists(void)
 #   endif
     /* Check that all thread-local free-lists are completely marked.    */
     /* also check that thread-specific-data structures are marked.      */
-    void GC_check_tls(void) {
+    void GC_check_tls(void)
+    {
         int i;
         GC_thread p;
 
@@ -918,7 +926,7 @@ void GC_init_parallel(void)
 
 #if !defined(GC_DARWIN_THREADS)
 GC_API int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set,
-                                        sigset_t *oset)
+                                      sigset_t *oset)
 {
     sigset_t fudged_set;
 
@@ -936,7 +944,8 @@ GC_API int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set,
 /* length of time.                                                      */
 
 /*ARGSUSED*/
-void GC_do_blocking_inner(ptr_t data, void * context) {
+void GC_do_blocking_inner(ptr_t data, void * context)
+{
     struct blocking_data * d = (struct blocking_data *) data;
     GC_thread me;
     LOCK();
@@ -964,7 +973,8 @@ void GC_do_blocking_inner(ptr_t data, void * context) {
 /* GC_do_blocking() to temporarily back allow calling any GC function   */
 /* and/or manipulating pointers to the garbage collected heap.          */
 GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
-                                        void * client_data) {
+                                             void * client_data)
+{
     struct GC_activation_frame_s frame;
     GC_thread me;
     LOCK();   /* This will block if the world is stopped.       */

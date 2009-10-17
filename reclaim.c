@@ -124,7 +124,7 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, size_t sz,
     plim = (word *)(hbp->hb_body + HBLKSIZE - sz);
 
     /* go through all words in block */
-        while( p <= plim )  {
+        while (p <= plim) {
             if( mark_bit_from_hdr(hhdr, bit_no) ) {
                 p = (word *)((ptr_t)p + sz);
             } else {
@@ -169,7 +169,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
     plim = (word *)((ptr_t)hbp + HBLKSIZE - sz);
 
     /* go through all words in block */
-        while( p <= plim )  {
+        while (p <= plim) {
             if( !mark_bit_from_hdr(hhdr, bit_no) ) {
                 n_bytes_found += sz;
                 /* object is available - put on list */
@@ -194,7 +194,7 @@ STATIC void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
     plim = p + HBLKSIZE - sz;
 
     /* go through all words in block */
-        while( p <= plim )  {
+        while (p <= plim) {
             if( !mark_bit_from_hdr(hhdr, bit_no) ) {
                 GC_add_leaked(p);
             }
@@ -309,7 +309,7 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
         } else if (empty) {
           GC_bytes_found += HBLKSIZE;
           GC_freehblk(hbp);
-        } else if (GC_find_leak || !GC_block_nearly_full(hhdr)){
+        } else if (GC_find_leak || !GC_block_nearly_full(hhdr)) {
           /* group of smaller objects, enqueue the real work */
           rlh = &(ok -> ok_reclaim_list[BYTES_TO_GRANULES(sz)]);
           hhdr -> hb_next = *rlh;
@@ -438,9 +438,9 @@ void GC_print_free_list(int kind, size_t sz_in_granules)
     struct hblk *lastBlock = 0;
     int n = 0;
 
-    while (flh){
+    while (flh) {
         struct hblk *block = HBLKPTR(flh);
-        if (block != lastBlock){
+        if (block != lastBlock) {
             GC_printf("\nIn heap block at %p:\n\t", block);
             lastBlock = block;
         }

@@ -722,12 +722,13 @@ ptr_t GC_get_main_stack_base(void)
 # endif /* MS Windows */
 
 # ifdef BEOS
-# include <kernel/OS.h>
-ptr_t GC_get_main_stack_base(void){
-        thread_info th;
-        get_thread_info(find_thread(NULL),&th);
-        return th.stack_end;
-}
+#   include <kernel/OS.h>
+    ptr_t GC_get_main_stack_base(void)
+    {
+      thread_info th;
+      get_thread_info(find_thread(NULL),&th);
+      return th.stack_end;
+    }
 # endif /* BEOS */
 
 
@@ -2444,7 +2445,8 @@ STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
     GC_bool GC_page_was_dirty(struct hblk * h)
 # endif
   {
-    return HDR(h) == 0 || get_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
+    return HDR(h) == 0 ||
+            get_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
   }
 
 # ifdef MPROTECT_VDB
@@ -2453,13 +2455,14 @@ STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
     GC_bool GC_page_was_ever_dirty(struct hblk * h)
 # endif
   {
-    return HDR(h) == 0 || get_pht_entry_from_index(GC_written_pages, PHT_HASH(h));
+    return HDR(h) == 0 ||
+            get_pht_entry_from_index(GC_written_pages, PHT_HASH(h));
   }
 
 # ifndef MPROTECT_VDB
     /*ARGSUSED*/
-    void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
-    {}
+    void GC_remove_protection(struct hblk *h, word nblocks,
+                              GC_bool is_ptrfree) {}
 # endif
 
 # endif /* GWW_VDB */
@@ -2481,8 +2484,7 @@ void GC_dirty_init(void)
 
 /* Retrieve system dirty bits for heap to a local buffer.       */
 /* Restore the systems notion of which pages are dirty.         */
-void GC_read_dirty(void)
-{}
+void GC_read_dirty(void) {}
 
 /* Is the HBLKSIZE sized page at h marked dirty in the local buffer?    */
 /* If the actual page size is different, this returns TRUE if any       */
@@ -2733,7 +2735,7 @@ STATIC GC_bool GC_old_segv_handler_used_si = FALSE;
 #endif /* !AO_HAVE_test_and_set_acquire */
 #else /* !THREADS */
 # define async_set_pht_entry_from_index(db, index) \
-        set_pht_entry_from_index(db, index)
+                        set_pht_entry_from_index(db, index)
 #endif /* !THREADS */
 
 #ifdef CHECKSUMS
@@ -3373,7 +3375,7 @@ void GC_read_dirty(void)
             limit = vaddr + ps * np;
             bufp += sizeof (struct prasmap);
             for (current_addr = vaddr;
-                 current_addr < limit; current_addr += ps){
+                 current_addr < limit; current_addr += ps) {
                 if ((*bufp++) & PG_MODIFIED) {
                     register struct hblk * h = (struct hblk *) current_addr;
 
@@ -3872,7 +3874,7 @@ static kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 #define FWD() GC_forward_exception(thread, task, exception, code, code_count)
 
 /* This violates the namespace rules but there isn't anything that can be done
-   about it. The exception handling stuff is hard coded to call this */
+   about it.  The exception handling stuff is hard coded to call this. */
 kern_return_t
 catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
                       mach_port_t task, exception_type_t exception,

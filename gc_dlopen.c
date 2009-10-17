@@ -90,7 +90,8 @@ GC_API void * WRAP_FUNC(dlopen)(const char *path, int mode)
   /* Define GC_ function as an alias for the plain one, which will be   */
   /* intercepted.  This allows files which include gc.h, and hence      */
   /* generate references to the GC_ symbol, to see the right symbol.    */
-  GC_API int GC_dlopen(const char *path, int mode) {
+  GC_API int GC_dlopen(const char *path, int mode)
+  {
     return dlopen(path, mode);
   }
 #endif /* Linker-based interception. */

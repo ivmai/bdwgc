@@ -245,8 +245,8 @@ static void add_edge(ptr_t p, ptr_t q)
     ensure_struct(q);
     old_back_ptr = GET_OH_BG_PTR(q);
     be = (back_edges *)((word)old_back_ptr & ~FLAG_MANY);
-    for (i = be -> n_edges, be_cont = be; i > MAX_IN;
-        be_cont = be_cont -> cont, i -= MAX_IN) {}
+    for (i = be -> n_edges, be_cont = be; i > MAX_IN; i -= MAX_IN)
+        be_cont = be_cont -> cont;
     if (i == MAX_IN) {
         be_cont -> cont = new_back_edges();
         be_cont = be_cont -> cont;

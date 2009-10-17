@@ -1,3 +1,27 @@
+2009-10-17  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_never_stop_func, GC_check_fl_marks,
+	GC_finish_collection): Reformat the code (make opening bracket
+	style uniform across the file).
+	* allchblk.c (GC_allochblk): Ditto.
+	* backgraph.c (add_edge): Ditto.
+	* dbg_mlc.c (GC_marked_for_finalization): Ditto.
+	* dyn_load.c (GC_register_dynamic_libraries, GC_init_dyld): Ditto.
+	* finalize.c (GC_null_finalize_mark_proc): Ditto.
+	* gc_dlopen.c (GC_dlopen): Ditto.
+	* mark.c (GC_push_marked1, GC_push_marked2, GC_push_marked4):
+	Ditto.
+	* misc.c (looping_handler, GC_call_with_gc_active,
+	GC_do_blocking_inner, GC_do_blocking): Ditto.
+	* os_dep.c (GC_get_main_stack_base, GC_read_dirty): Ditto.
+	* pthread_support.c (GC_pthread_create, GC_pthread_sigmask,
+	GC_pthread_join, GC_pthread_detach, GC_check_tls,
+	GC_do_blocking_inner, GC_call_with_gc_active): Ditto.
+	* reclaim.c (GC_reclaim_clear, GC_reclaim_block,
+	GC_print_free_list): Ditto.
+	* os_dep.c (GC_page_was_dirty, GC_page_was_ever_dirty,
+	GC_remove_protection): Reformat the code (wrap long lines).
+
 2009-10-16  Ivan Maidanski <ivmai@mail.ru>
 
 	* alloc.c (GC_finish_collection): Replace getenv() with GETENV().

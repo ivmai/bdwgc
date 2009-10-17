@@ -612,7 +612,6 @@ void GC_register_dynamic_libraries(void)
 {
   struct link_map *lm;
 
-
 # ifdef HAVE_DL_ITERATE_PHDR
     if (GC_register_dynamic_libraries_dl_iterate_phdr()) {
         return;
@@ -1224,7 +1223,8 @@ static void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
 #   endif
 }
 
-void GC_register_dynamic_libraries(void) {
+void GC_register_dynamic_libraries(void)
+{
     /* Currently does nothing. The callbacks are setup by GC_init_dyld()
     The dyld library takes it from there. */
 }
@@ -1235,7 +1235,8 @@ void GC_register_dynamic_libraries(void) {
    This should be called BEFORE any thread in created and WITHOUT the
    allocation lock held. */
 
-void GC_init_dyld(void) {
+void GC_init_dyld(void)
+{
   static GC_bool initialized = FALSE;
 
   if(initialized) return;
@@ -1319,7 +1320,6 @@ void GC_register_dynamic_libraries(void)
           }
         }
 }
-
 
 #else /* !PCR */
 

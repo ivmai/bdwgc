@@ -601,7 +601,7 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
         /* avoid splitting, since that might require remapping */
         split_limit = 0;
 #     else
-        if (GC_finalizer_bytes_freed > (GC_heapsize >> 4))  {
+        if (GC_finalizer_bytes_freed > (GC_heapsize >> 4)) {
           /* If we are deallocating lots of memory from         */
           /* finalizers, fail and collect sooner rather         */
           /* than later.                                        */
