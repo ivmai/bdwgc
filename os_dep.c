@@ -756,7 +756,7 @@ ptr_t GC_get_main_stack_base(void)
 
 # if defined(NEED_FIND_LIMIT) || defined(UNIX_LIKE)
 
-    typedef void (*handler)(int);
+    typedef void (*GC_fault_handler_t)(int);
 
 #   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
     || defined(HURD) || defined(NETBSD)
@@ -766,10 +766,10 @@ ptr_t GC_get_main_stack_base(void)
             static struct sigaction old_bus_act;
 #       endif
 #   else
-        static handler old_segv_handler, old_bus_handler;
+        static GC_fault_handler_t old_segv_handler, old_bus_handler;
 #   endif
 
-    void GC_set_and_save_fault_handler(handler h)
+    void GC_set_and_save_fault_handler(GC_fault_handler_t h)
     {
 #       if defined(SUNOS5SIGS) || defined(IRIX5)  \
         || defined(OSF1) || defined(HURD) || defined(NETBSD)
@@ -966,8 +966,11 @@ ptr_t GC_get_main_stack_base(void)
     /* We read the stack base value from /proc/self/stat.  We do this   */
     /* using direct I/O system calls in order to avoid calling malloc   */
     /* in case REDIRECT_MALLOC is defined.                              */
-#   define STAT_BUF_SIZE 4096
-#   define STAT_READ read
+#   ifndef STAT_READ
+      /* Also defined in pthread_support.c. */
+#     define STAT_BUF_SIZE 4096
+#     define STAT_READ read
+#   endif
           /* Should probably call the real read, if read is wrapped.    */
     char stat_buf[STAT_BUF_SIZE];
     int f;
@@ -4027,7 +4030,6 @@ catch_exception_raise_state_identity(mach_port_name_t exception_port,
   return(KERN_INVALID_ARGUMENT);
 }
 
-
 #endif /* DARWIN && MPROTECT_VDB */
 
 # ifndef HAVE_INCREMENTAL_PROTECTION_NEEDS
@@ -4036,6 +4038,11 @@ catch_exception_raise_state_identity(mach_port_name_t exception_port,
     return GC_PROTECTS_NONE;
   }
 # endif /* !HAVE_INCREMENTAL_PROTECTION_NEEDS */
+
+#ifdef ECOS
+  /* Undo sbrk() redirection. */
+# undef sbrk
+#endif
 
 /*
  * Call stack save code for debugging.

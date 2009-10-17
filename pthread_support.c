@@ -617,8 +617,11 @@ STATIC int GC_get_nprocs(void)
     /* Should be "return sysconf(_SC_NPROCESSORS_ONLN);" but that       */
     /* appears to be buggy in many cases.                               */
     /* We look for lines "cpu<n>" in /proc/stat.                        */
-#   define STAT_BUF_SIZE 4096
-#   define STAT_READ read
+#   ifndef STAT_READ
+      /* Also defined in os_dep.c. */
+#     define STAT_BUF_SIZE 4096
+#     define STAT_READ read
+#   endif
         /* If read is wrapped, this may need to be redefined to call    */
         /* the real one.                                                */
     char stat_buf[STAT_BUF_SIZE];

@@ -443,7 +443,6 @@ static void alloc_mark_stack(size_t);
       void *alt_path;
     } ext_ex_regn;
 
-
     static EXCEPTION_DISPOSITION mark_ex_handler(
         struct _EXCEPTION_RECORD *ex_rec,
         void *est_frame,
@@ -1440,6 +1439,7 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
     /* FIXME: We should probably add a header word to address   */
     /* this.                                                    */
 }
+# undef source
 
 # ifdef TRACE_BUF
 

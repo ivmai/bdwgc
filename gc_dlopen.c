@@ -28,6 +28,7 @@
 # if (defined(GC_PTHREADS) && !defined(GC_DARWIN_THREADS)) && !defined(GC_WIN32_PTHREADS)\
       || defined(GC_SOLARIS_THREADS)
 
+# undef GC_MUST_RESTORE_REDEFINED_DLOPEN
 # if defined(dlopen) && !defined(GC_USE_LD_WRAP)
     /* To support various threads pkgs, gc.h interposes on dlopen by     */
     /* defining "dlopen" to be "GC_dlopen", which is implemented below.  */
@@ -35,6 +36,7 @@
     /* real system dlopen() in their implementation. We first remove     */
     /* gc.h's dlopen definition and restore it later, after GC_dlopen(). */
 #   undef dlopen
+#   define GC_MUST_RESTORE_REDEFINED_DLOPEN
 # endif
 
   GC_bool GC_collection_in_progress(void);
@@ -64,22 +66,23 @@
 
 #include <dlfcn.h>
 
+/* This is similar to WRAP/REAL_FUNC() in pthread_support.c. */
 #ifdef GC_USE_LD_WRAP
-#   define WRAP_FUNC(f) __wrap_##f
-#   define REAL_FUNC(f) __real_##f
+#   define WRAP_DLFUNC(f) __wrap_##f
+#   define REAL_DLFUNC(f) __real_##f
 #else
-#   define WRAP_FUNC(f) GC_##f
-#   define REAL_FUNC(f) f
+#   define WRAP_DLFUNC(f) GC_##f
+#   define REAL_DLFUNC(f) f
 #endif
 
-GC_API void * WRAP_FUNC(dlopen)(const char *path, int mode)
+GC_API void * WRAP_DLFUNC(dlopen)(const char *path, int mode)
 {
     void * result;
 
 #   ifndef USE_PROC_FOR_LIBRARIES
       disable_gc_for_dlopen();
 #   endif
-    result = (void *)REAL_FUNC(dlopen)(path, mode);
+    result = (void *)REAL_DLFUNC(dlopen)(path, mode);
 #   ifndef USE_PROC_FOR_LIBRARIES
       GC_enable(); /* undoes disable_gc_for_dlopen */
 #   endif
@@ -96,4 +99,8 @@ GC_API void * WRAP_FUNC(dlopen)(const char *path, int mode)
   }
 #endif /* Linker-based interception. */
 
-# endif  /* GC_PTHREADS || GC_SOLARIS_THREADS ... */
+# ifdef GC_MUST_RESTORE_REDEFINED_DLOPEN
+#   define dlopen GC_dlopen
+# endif
+
+#endif  /* GC_PTHREADS || GC_SOLARIS_THREADS ... */

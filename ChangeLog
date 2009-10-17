@@ -1,5 +1,24 @@
 2009-10-17  Ivan Maidanski <ivmai@mail.ru>
 
+	* gc_dlopen.c (GC_MUST_RESTORE_REDEFINED_DLOPEN): Define if dlopen
+	redirection is turned off; turn it on later when dlopen real
+	symbol is no longer needed (according to the comment and the same
+	as in dyn_load.c).
+	* gc_dlopen.c (WRAP_FUNC, REAL_FUNC): Rename to WRAP_DLFUNC and
+	REAL_DLFUNC, respectively (to have unique names since the
+	definitions may differ from that of the similar ones in
+	pthread_support.c).
+	* mark.c (source): Undefine the macro when no longer needed.
+	* os_dep.c (handler): Rename the type to GC_fault_handler_t (to
+	have the unique name across the project).
+	* os_dep.c (STAT_BUF_SIZE, STAT_READ); Guard with ifndef; add the
+	comment.
+	* pthread_support.c (STAT_BUF_SIZE, STAT_READ): Ditto.
+	* os_dep.c (sbrk): Undo sbrk() redirection (for ECOS) when no
+	longer needed.
+
+2009-10-17  Ivan Maidanski <ivmai@mail.ru>
+
 	* pthread_stop_world.c (pthread_sigmask): Undefine before using
 	in GC_print_sig_mask() (only if DEBUG_THREADS); add the comment.
 	* win32_threads.c (dlopen, _beginthread): Don't undefine (since
