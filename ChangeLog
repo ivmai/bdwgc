@@ -1,5 +1,12 @@
 2009-10-17  Ivan Maidanski <ivmai@mail.ru>
 
+	* dyn_load.c: Include gc_priv.h before using configuration
+	information (MACOS).
+	* dyn_load.c (GC_must_restore_redefined_dlopen): Rename to
+	GC_MUST_RESTORE_REDEFINED_DLOPEN.
+
+2009-10-17  Ivan Maidanski <ivmai@mail.ru>
+
 	* backgraph.c (SET_OH_BG_PTR): Place outermost parenthesis
 	properly.
 	* darwin_stop_world.c: Replace "if DEBUG_THREADS" with

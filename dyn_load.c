@@ -26,17 +26,20 @@
  * None of this is safe with dlclose and incremental collection.
  * But then not much of anything is safe in the presence of dlclose.
  */
+#include "private/gc_priv.h"
+
 #if (defined(__linux__) || defined(__GLIBC__) || defined(__GNU__)) \
      && !defined(_GNU_SOURCE)
     /* Can't test LINUX, since this must be defined before other includes */
 #   define _GNU_SOURCE
 #endif
+
 #if !defined(MACOS) && !defined(_WIN32_WCE)
 #  include <sys/types.h>
 #endif
-#include "private/gc_priv.h"
 
 /* BTL: avoid circular redefinition of dlopen if GC_SOLARIS_THREADS defined */
+# undef GC_MUST_RESTORE_REDEFINED_DLOPEN
 # if (defined(GC_PTHREADS) || defined(GC_SOLARIS_THREADS)) \
       && defined(dlopen) && !defined(GC_USE_LD_WRAP)
     /* To support threads in Solaris, gc.h interposes on dlopen by       */
@@ -45,9 +48,7 @@
     /* real system dlopen() in their implementation. We first remove     */
     /* gc.h's dlopen definition and restore it later, after GC_dlopen(). */
 #   undef dlopen
-#   define GC_must_restore_redefined_dlopen
-# else
-#   undef GC_must_restore_redefined_dlopen
+#   define GC_MUST_RESTORE_REDEFINED_DLOPEN
 # endif
 
 /* A user-supplied routine (custom filter) that might be called to      */
@@ -165,7 +166,7 @@ GC_FirstDLOpenedLinkMap(void)
 #endif /* SOLARISDL ... */
 
 /* BTL: added to fix circular dlopen definition if GC_SOLARIS_THREADS defined */
-# if defined(GC_must_restore_redefined_dlopen)
+# ifdef GC_MUST_RESTORE_REDEFINED_DLOPEN
 #   define dlopen GC_dlopen
 # endif
 
