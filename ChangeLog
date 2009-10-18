@@ -1,3 +1,8 @@
+2009-10-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c (GC_USE_LD_WRAP): Fix a typo (swapped 'L' and
+	'D') in the name.
+
 2009-10-17  Ivan Maidanski <ivmai@mail.ru>
 
 	* gc_dlopen.c (GC_MUST_RESTORE_REDEFINED_DLOPEN): Define if dlopen

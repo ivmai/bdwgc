@@ -146,7 +146,7 @@ unsigned long GC_lock_holder = NO_THREAD;
 #   endif
 #endif
 
-#if defined(GC_USE_DL_WRAP) || defined(GC_USE_DLOPEN_WRAP)
+#if defined(GC_USE_LD_WRAP) || defined(GC_USE_DLOPEN_WRAP)
 /* Define GC_ functions as aliases for the plain ones, which will       */
 /* be intercepted.  This allows files which include gc.h, and hence     */
 /* generate references to the GC_ symbols, to see the right symbols.    */
