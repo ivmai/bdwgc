@@ -1,5 +1,21 @@
 2009-10-18  Ivan Maidanski <ivmai@mail.ru>
 
+	* backgraph.c (GC_quiet): Remove the declaration (not needed
+	anymore since gc_priv.h is always included).
+	* checksums.c (GC_quiet): Ditto.
+	* gcj_mlc.c (GC_quiet): Ditto.
+	* headers.c (GC_hdr_cache_hits, GC_hdr_cache_misses): Add the
+	comment.
+	* include/private/gc_hdrs.h (GC_hdr_cache_hits,
+	GC_hdr_cache_misses): Ditto.
+	* mark.c (GC_first_nonempty): Make the volatile variable STATIC.
+	* pthread_stop_world.c (GC_stop_count, GC_world_is_stopped):
+	Ditto.
+	* win32_threads.c (GC_please_stop, GC_max_thread_index,
+	GC_mark_mutex_waitcnt): Ditto.
+
+2009-10-18  Ivan Maidanski <ivmai@mail.ru>
+
 	* pthread_support.c (GC_USE_LD_WRAP): Fix a typo (swapped 'L' and
 	'D') in the name.
 

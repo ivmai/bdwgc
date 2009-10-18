@@ -269,9 +269,4 @@ GC_API void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
     return((void *) op);
 }
 
-#else
-
-extern int GC_quiet;
-        /* ANSI C doesn't allow translation units to be empty.  */
-
 #endif  /* GC_GCJ_SUPPORT */

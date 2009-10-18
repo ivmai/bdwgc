@@ -185,6 +185,7 @@ GC_INLINE void free_hdr(hdr * hhdr)
 }
 
 #ifdef COUNT_HDR_CACHE_HITS
+  /* Used for debugging/profiling (the symbols are externally visible). */
   word GC_hdr_cache_hits = 0;
   word GC_hdr_cache_misses = 0;
 #endif

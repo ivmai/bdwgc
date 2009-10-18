@@ -261,7 +261,7 @@ typedef volatile struct GC_Thread_Rep * GC_vthread;
  * volatiles.  This code should consistently use atomic_ops.
  */
 
-volatile GC_bool GC_please_stop = FALSE;
+STATIC volatile GC_bool GC_please_stop = FALSE;
 
 /*
  * We track thread attachments while the world is supposed to be stopped.
@@ -305,7 +305,7 @@ GC_bool GC_started_thread_while_stopped(void)
 /* since we look them up with sequential search.                */
 volatile struct GC_Thread_Rep dll_thread_table[MAX_THREADS];
 
-volatile LONG GC_max_thread_index = 0;
+STATIC volatile LONG GC_max_thread_index = 0;
                         /* Largest index in dll_thread_table    */
                         /* that was ever used.                  */
 
@@ -1727,8 +1727,8 @@ void GC_get_next_stack(char *start, char *limit,
                                 /* -1 - locked and waiters may exist.   */
                                 /* Accessed by InterlockedExchange().   */
 #   else
-      volatile AO_t GC_mark_mutex_waitcnt = 0; /* Number of waiters + 1; */
-                                               /* 0 - unlocked.          */
+      STATIC volatile AO_t GC_mark_mutex_waitcnt = 0;
+                                /* Number of waiters + 1; 0 - unlocked. */
 #   endif
 
     /* #define LOCK_STATS */

@@ -12,9 +12,9 @@
  */
 /* Boehm, March 29, 1995 12:51 pm PST */
 
-# include "private/gc_priv.h"
+#include "private/gc_priv.h"
 
-# ifdef CHECKSUMS
+#ifdef CHECKSUMS
 
 /* This is debugging code intended to verify the results of dirty bit   */
 /* computations. Works only in a single threaded environment.           */
@@ -222,10 +222,4 @@ out:
     GC_n_faulted = 0;
 }
 
-# else
-
-extern int GC_quiet;
-        /* ANSI C doesn't allow translation units to be empty.  */
-        /* So we guarantee this one is nonempty.                */
-
-# endif /* CHECKSUMS */
+#endif /* CHECKSUMS */

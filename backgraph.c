@@ -476,9 +476,4 @@ void GC_print_back_graph_stats(void)
   GC_deepest_obj = 0;
 }
 
-#else  /* !MAKE_BACK_GRAPH */
-
-extern int GC_quiet;
-        /* ANSI C doesn't allow translation units to be empty.  */
-
 #endif /* !MAKE_BACK_GRAPH */

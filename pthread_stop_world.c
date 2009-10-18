@@ -85,10 +85,10 @@ STATIC void GC_remove_allowed_signals(sigset_t *set)
 
 static sigset_t suspend_handler_mask;
 
-volatile AO_t GC_stop_count = 0;
+STATIC volatile AO_t GC_stop_count = 0;
                         /* Incremented at the beginning of GC_stop_world. */
 
-volatile AO_t GC_world_is_stopped = FALSE;
+STATIC volatile AO_t GC_world_is_stopped = FALSE;
                         /* FALSE ==> it is safe for threads to restart, i.e. */
                         /* they will see another suspend signal before they  */
                         /* are expected to stop (unless they have voluntarily */

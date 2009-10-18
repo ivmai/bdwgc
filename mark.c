@@ -114,7 +114,7 @@ size_t GC_mark_stack_size = 0;
 #ifdef PARALLEL_MARK
   mse * volatile GC_mark_stack_top = NULL;
   /* Updated only with mark lock held, but read asynchronously. */
-  volatile AO_t GC_first_nonempty;
+  STATIC volatile AO_t GC_first_nonempty = 0;
         /* Lowest entry on mark stack   */
         /* that may be nonempty.        */
         /* Updated only by initiating   */
