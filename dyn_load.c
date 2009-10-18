@@ -828,20 +828,15 @@ void GC_register_dynamic_libraries(void)
     }
 # endif
 
+GC_bool GC_register_main_static_data(void)
+{
 # ifdef MSWINCE
     /* Do we need to separately register the main static data segment? */
-    GC_bool GC_register_main_static_data(void)
-    {
-      return FALSE;
-    }
-# else /* win32 */
-    extern GC_bool GC_no_win32_dlls; /* defined in os_dep.c */
-
-    GC_bool GC_register_main_static_data(void)
-    {
-      return GC_no_win32_dlls;
-    }
-# endif /* win32 */
+    return FALSE;
+# else
+    return GC_no_win32_dlls;
+# endif
+}
 
 # define HAVE_REGISTER_MAIN_STATIC_DATA
 
@@ -866,9 +861,6 @@ void GC_register_dynamic_libraries(void)
     /* a "Data Abort" message to the debugging console).                */
     /* To workaround that, use -DGC_REGISTER_MEM_PRIVATE.               */
 #   define GC_wnt TRUE
-# else
-    extern GC_bool GC_wnt;      /* Is Windows NT derivative.    */
-                                /* Defined and set in os_dep.c. */
 # endif
 
   void GC_register_dynamic_libraries(void)

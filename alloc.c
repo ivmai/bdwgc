@@ -81,6 +81,7 @@ STATIC GC_bool GC_need_full_gc = FALSE;
 
 STATIC word GC_used_heap_size_after_full = 0;
 
+/* GC_copyright symbol is externally visible. */
 char * const GC_copyright[] =
 {"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
 "Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved. ",
@@ -104,11 +105,6 @@ GC_API unsigned GC_CALL GC_get_version(void)
 }
 
 /* some more variables */
-
-extern signed_word GC_bytes_found;
-                                /* Number of reclaimed bytes    */
-                                /* after garbage collection;    */
-                                /* defined in reclaim.c.        */
 
 #ifdef GC_DONT_EXPAND
   GC_bool GC_dont_expand = TRUE;
@@ -910,11 +906,6 @@ STATIC void GC_finish_collection(void)
       }
 #   endif
 }
-
-#ifdef USE_MUNMAP
-    extern int GC_unmap_threshold;      /* defined in allchblk.c        */
-    extern GC_bool GC_force_unmap_on_gcollect;  /* defined in misc.c    */
-#endif
 
 /* If stop_func == 0 then GC_default_stop_func is used instead.         */
 STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,

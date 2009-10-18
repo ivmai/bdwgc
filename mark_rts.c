@@ -606,11 +606,6 @@ STATIC void GC_push_all_stack_part_eager_frames(ptr_t lo, ptr_t hi,
 #   endif
 }
 
-# ifdef IA64
-    extern ptr_t GC_save_regs_ret_val; /* defined in mach_dep.c. */
-                        /* Previously set to backing store pointer.     */
-# endif
-
 #endif /* !THREADS */
 
                         /* Push enough of the current stack eagerly to  */
@@ -714,10 +709,6 @@ STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
 {
     GC_with_callee_saves_pushed(GC_push_current_stack, cold_gc_frame);
 }
-
-#ifdef THREAD_LOCAL_ALLOC
-  extern GC_bool GC_world_stopped; /* defined in alloc.c */
-#endif
 
 /*
  * Call the mark routines (GC_tl_push for a single pointer, GC_push_conditional

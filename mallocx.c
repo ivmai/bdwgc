@@ -234,11 +234,8 @@ GC_API void GC_CALL GC_incr_bytes_freed(size_t n)
 
 #if defined(THREADS)
 
-extern signed_word GC_bytes_found;
-                        /* protected by GC lock; defined in reclaim.c.  */
-
-#ifdef PARALLEL_MARK
-volatile signed_word GC_bytes_allocd_tmp = 0;
+# ifdef PARALLEL_MARK
+    STATIC volatile signed_word GC_bytes_allocd_tmp = 0;
                         /* Number of bytes of memory allocated since    */
                         /* we released the GC lock.  Instead of         */
                         /* reacquiring the GC lock just to add this in, */
@@ -246,8 +243,8 @@ volatile signed_word GC_bytes_allocd_tmp = 0;
                         /* the lock.  (Atomically adding it doesn't     */
                         /* work, since we would have to atomically      */
                         /* update it in GC_malloc, which is too         */
-                        /* expensive.)                                   */
-#endif /* PARALLEL_MARK */
+                        /* expensive.)                                  */
+# endif /* PARALLEL_MARK */
 
 /* Return a list of 1 or more objects of the indicated size, linked     */
 /* through the first word in the object.  This has the advantage that   */

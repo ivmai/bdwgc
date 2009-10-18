@@ -1418,10 +1418,6 @@ void GC_register_data_segments(void)
   GC_bool GC_wnt = FALSE;
          /* This is a Windows NT derivative, i.e. NT, W2K, XP or later.  */
 
-# ifdef USE_MUNMAP
-    extern int GC_unmap_threshold; /* defined in allchblk.c */
-# endif
-
   void GC_init_win32(void)
   {
     /* Set GC_wnt.                                                       */

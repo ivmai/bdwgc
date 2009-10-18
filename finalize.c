@@ -82,7 +82,7 @@ STATIC struct finalizable_object * GC_finalize_now = 0;
 
 static signed_word log_fo_table_size = -1;
 
-word GC_fo_entries = 0;
+word GC_fo_entries = 0; /* used also in extra/MacOS.c */
 
 void GC_push_finalizer_structures(void)
 {
@@ -490,10 +490,6 @@ void GC_dump_finalization(void)
 #ifndef SMALL_CONFIG
   STATIC word GC_old_dl_entries = 0; /* for stats printing */
 #endif
-
-extern unsigned GC_fail_count;
-                        /* How many consecutive GC/expansion failures?  */
-                        /* Reset by GC_allochblk(); defined in alloc.c. */
 
 #ifdef THREADS
   /* Defined in pthread_support.c or win32_threads.c.  Called with the  */

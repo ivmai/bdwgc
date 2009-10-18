@@ -918,7 +918,6 @@ void GC_push_thread_structures(void)
 
 #if defined(MPROTECT_VDB)
 # include "atomic_ops.h"
-  extern volatile AO_TS_t GC_fault_handler_lock; /* defined in os_dep.c */
 #endif
 
 /* Suspend the given thread, if it's still active.      */
@@ -969,10 +968,6 @@ STATIC void GC_suspend(GC_thread t)
     AO_CLEAR(&GC_fault_handler_lock);
 # endif
 }
-
-#ifndef CYGWIN32
-  extern CRITICAL_SECTION GC_write_cs; /* defined in misc.c */
-#endif
 
 void GC_stop_world(void)
 {
@@ -1072,9 +1067,6 @@ void GC_start_world(void)
 }
 
 #ifdef MSWINCE
-  extern GC_bool GC_dont_query_stack_min;
-                                /* Defined and set in os_dep.c.         */
-
   /* The VirtualQuery calls below won't work properly on some old WinCE */
   /* versions, but since each stack is restricted to an aligned 64 KiB  */
   /* region of virtual memory we can just take the next lowest multiple */
@@ -1321,11 +1313,6 @@ void GC_push_all_stacks(void)
 # ifndef MAX_MARKERS
 #   define MAX_MARKERS 16
 # endif
-
-  extern long GC_markers;
-                        /* Number of mark threads we would like to      */
-                        /* have.  Includes the initiating thread.       */
-                        /* Defined in mark.c.                           */
 
   static ptr_t marker_sp[MAX_MARKERS - 1]; /* The cold end of the stack */
                                            /* for markers.              */
@@ -1934,10 +1921,6 @@ void GC_get_next_stack(char *start, char *limit,
       }
 
 #   endif /* !DONT_USE_SIGNALANDWAIT */
-
-#   ifndef MSWINCE
-      extern GC_bool GC_wnt; /* defined in os_dep.c */
-#   endif
 
 # endif /* ! GC_PTHREADS_PARAMARK */
 

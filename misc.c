@@ -83,7 +83,7 @@ GC_bool GC_dont_gc = 0;
 
 GC_bool GC_dont_precollect = 0;
 
-GC_bool GC_quiet = 0;
+GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
 
 #ifndef SMALL_CONFIG
   GC_bool GC_print_stats = 0;
@@ -506,10 +506,6 @@ static void maybe_install_looping_handler(void)
 
 #if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
   void GC_thr_init(void);
-#endif
-
-#ifdef USE_MUNMAP
-  extern int GC_unmap_threshold; /* defined in allchblk.c */
 #endif
 
 #ifdef LINT

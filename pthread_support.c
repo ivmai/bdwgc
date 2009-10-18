@@ -317,10 +317,6 @@ STATIC void * GC_mark_thread(void * id)
   }
 }
 
-extern long GC_markers; /* Number of mark threads we would like to      */
-                        /* have.  Includes the initiating thread.       */
-                        /* Defined in mark.c.                           */
-
 STATIC pthread_t GC_mark_threads[MAX_MARKERS];
 
 #define PTHREAD_CREATE REAL_FUNC(pthread_create)
@@ -373,7 +369,7 @@ static void start_mark_threads(void)
 
 GC_bool GC_thr_initialized = FALSE;
 
-volatile GC_thread GC_threads[THREAD_TABLE_SZ];
+volatile GC_thread GC_threads[THREAD_TABLE_SZ] = {0};
 
 void GC_push_thread_structures(void)
 {
@@ -1462,7 +1458,6 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
 /* but until the POSIX scheduling mess gets straightened out ...  */
 
 volatile AO_TS_t GC_allocate_lock = 0;
-
 
 void GC_lock(void)
 {

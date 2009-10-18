@@ -15,7 +15,6 @@
  * modified is included with the above copyright notice.
  */
 
-
 # ifndef GC_PRIVATE_H
 # define GC_PRIVATE_H
 
@@ -76,13 +75,34 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
                         /* byte displacements and which can be used     */
                         /* for address comparisons.                     */
 
-# ifndef GCCONFIG_H
-#   include "gcconfig.h"
-# endif
+#ifndef GCCONFIG_H
+# include "gcconfig.h"
+#endif
 
-# ifndef HEADERS_H
-#   include "gc_hdrs.h"
+#ifndef GC_EXTERN
+  /* Used only for the GC-scope variables (prefixed with "GC_")         */
+  /* declared in the header files.  Must not be used for thread-local   */
+  /* variables.  Must not be used in gcconfig.h.  Shouldn't be used for */
+  /* the debugging-only or profiling-only variables.  Currently, not    */
+  /* used for the variables accessed from the "dated" source files      */
+  /* (pcr_interface.c, specific.c/h, and in the "extra" folder).        */
+# if defined(GC_DLL) && defined(__GNUC__) && !defined(MSWIN32) \
+        && !defined(MSWINCE)
+#   if __GNUC__ >= 4
+      /* See the corresponding GC_API definition. */
+#     define GC_EXTERN extern __attribute__((__visibility__("hidden")))
+#   else
+      /* The attribute is unsupported. */
+#     define GC_EXTERN extern
+#   endif
+# else
+#   define GC_EXTERN extern
 # endif
+#endif
+
+#ifndef HEADERS_H
+# include "gc_hdrs.h"
+#endif
 
 #if __GNUC__ >= 3
 # define EXPECT(expr, outcome) __builtin_expect(expr,outcome)
@@ -376,8 +396,9 @@ void GC_print_callers(struct callinfo info[NFRAMES]);
 # endif
 
 /* Print warning message, e.g. almost out of memory.    */
-# define WARN(msg,arg) (*GC_current_warn_proc)("GC Warning: " msg, (GC_word)(arg))
-extern GC_warn_proc GC_current_warn_proc;
+#define WARN(msg, arg) (*GC_current_warn_proc)("GC Warning: " msg, \
+                                               (GC_word)(arg))
+GC_EXTERN GC_warn_proc GC_current_warn_proc;
 
 /* Print format type macro for signed_word.  Currently used for WARN()  */
 /* only.  This could be of use on Win64 but commented out since Win64   */
@@ -1180,7 +1201,7 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 /* Object kinds: */
 # define MAXOBJKINDS 16
 
-extern struct obj_kind {
+GC_EXTERN struct obj_kind {
    void **ok_freelist;  /* Array of free listheaders for this kind of object */
                         /* Point either to GC_arrays or to storage allocated */
                         /* with GC_scratch_alloc.                            */
@@ -1206,14 +1227,14 @@ extern struct obj_kind {
 /* introduce maintenance problems.                                      */
 
 #ifdef SEPARATE_GLOBALS
-  extern word GC_bytes_allocd;
+  GC_EXTERN word GC_bytes_allocd;
         /* Number of words allocated during this collection cycle */
-  extern ptr_t GC_objfreelist[MAXOBJGRANULES+1];
+  GC_EXTERN ptr_t GC_objfreelist[MAXOBJGRANULES+1];
                           /* free list for NORMAL objects */
 # define beginGC_objfreelist ((ptr_t)(&GC_objfreelist))
 # define endGC_objfreelist (beginGC_objfreelist + sizeof(GC_objfreelist))
 
-  extern ptr_t GC_aobjfreelist[MAXOBJGRANULES+1];
+  GC_EXTERN ptr_t GC_aobjfreelist[MAXOBJGRANULES+1];
                           /* free list for atomic (PTRFREE) objs        */
 # define beginGC_aobjfreelist ((ptr_t)(&GC_aobjfreelist))
 # define endGC_aobjfreelist (beginGC_aobjfreelist + sizeof(GC_aobjfreelist))
@@ -1232,37 +1253,35 @@ extern struct obj_kind {
 #   define IS_UNCOLLECTABLE(k) ((k) == UNCOLLECTABLE)
 # endif
 
-extern unsigned GC_n_kinds;
+GC_EXTERN unsigned GC_n_kinds;
 
-extern word GC_fo_entries;
-
-extern word GC_n_heap_sects;    /* Number of separately added heap      */
+GC_EXTERN word GC_n_heap_sects; /* Number of separately added heap      */
                                 /* sections.                            */
 
 #ifdef USE_PROC_FOR_LIBRARIES
-  extern word GC_n_memory;      /* Number of GET_MEM allocated memory   */
+  GC_EXTERN word GC_n_memory;   /* Number of GET_MEM allocated memory   */
                                 /* sections.                            */
 #endif
 
-extern word GC_page_size;
+GC_EXTERN word GC_page_size;
 
 #if defined(MSWIN32) || defined(MSWINCE)
   struct _SYSTEM_INFO;
-  extern struct _SYSTEM_INFO GC_sysinfo;
+  GC_EXTERN struct _SYSTEM_INFO GC_sysinfo;
 #endif
 
-extern word GC_black_list_spacing;
+GC_EXTERN word GC_black_list_spacing;
                         /* Average number of bytes between blacklisted  */
                         /* blocks. Approximate.                         */
                         /* Counts only blocks that are                  */
                         /* "stack-blacklisted", i.e. that are           */
                         /* problematic in the interior of an object.    */
 
-extern GC_bool GC_objects_are_marked;   /* There are marked objects in  */
-                                        /* the heap.                    */
+GC_EXTERN GC_bool GC_objects_are_marked; /* There are marked objects in */
+                                         /* the heap.                   */
 
 #ifndef SMALL_CONFIG
-  extern GC_bool GC_incremental;
+  GC_EXTERN GC_bool GC_incremental;
                         /* Using incremental/generational collection. */
 # define TRUE_INCREMENTAL \
         (GC_incremental && GC_time_limit != GC_TIME_UNLIMITED)
@@ -1273,14 +1292,15 @@ extern GC_bool GC_objects_are_marked;   /* There are marked objects in  */
 # define TRUE_INCREMENTAL FALSE
 #endif
 
-extern GC_bool GC_dirty_maintained;
+GC_EXTERN GC_bool GC_dirty_maintained;
                                 /* Dirty bits are being maintained,     */
                                 /* either for incremental collection,   */
                                 /* or to limit the root set.            */
 
-extern word GC_root_size; /* Total size of registered root sections.    */
+GC_EXTERN word GC_root_size; /* Total size of registered root sections. */
 
-extern GC_bool GC_debugging_started; /* GC_debug_malloc has been called */
+GC_EXTERN GC_bool GC_debugging_started;
+                                /* GC_debug_malloc has been called.     */
 
 /* This is used by GC_do_blocking[_inner]().            */
 struct blocking_data {
@@ -1304,8 +1324,8 @@ struct GC_activation_frame_s {
   void GC_push_all_stack_frames(ptr_t lo, ptr_t hi,
                         struct GC_activation_frame_s *activation_frame);
 #else
-  extern ptr_t GC_blocked_sp;
-  extern struct GC_activation_frame_s *GC_activation_frame;
+  GC_EXTERN ptr_t GC_blocked_sp;
+  GC_EXTERN struct GC_activation_frame_s *GC_activation_frame;
                         /* Points to the "frame" data held in stack by  */
                         /* the innermost GC_call_with_gc_active().      */
                         /* NULL if no such "frame" active.              */
@@ -1439,7 +1459,7 @@ void GC_push_all_eager(ptr_t b, ptr_t t);
 
 void GC_push_roots(GC_bool all, ptr_t cold_gc_frame);
                         /* Push all or dirty roots.     */
-extern void (*GC_push_other_roots)(void);
+GC_EXTERN void (*GC_push_other_roots)(void);
                         /* Push system or application specific roots    */
                         /* onto the mark stack.  In some environments   */
                         /* (e.g. threads environments) this is          */
@@ -1451,7 +1471,7 @@ void GC_push_finalizer_structures(void);
 #ifdef THREADS
   void GC_push_thread_structures(void);
 #endif
-extern void (*GC_push_typed_structures)(void);
+GC_EXTERN void (*GC_push_typed_structures)(void);
                         /* A pointer such that we can avoid linking in  */
                         /* the typed allocation support if unused.      */
 
@@ -1677,7 +1697,7 @@ GC_bool GC_try_to_collect_inner(GC_stop_func f);
 # define GC_gcollect_inner() \
         (void) GC_try_to_collect_inner(GC_never_stop_func)
 
-extern GC_bool GC_is_initialized; /* GC_init() has been run. */
+GC_EXTERN GC_bool GC_is_initialized; /* GC_init() has been run. */
 
 #if defined(MSWIN32) || defined(MSWINCE)
   void GC_deinit(void);
@@ -1796,17 +1816,17 @@ void GC_print_obj(ptr_t p);
                         /* P points to somewhere inside an object with  */
                         /* debugging info.  Print a human readable      */
                         /* description of the object to stderr.         */
-extern void (*GC_check_heap)(void);
+GC_EXTERN void (*GC_check_heap)(void);
                         /* Check that all objects in the heap with      */
                         /* debugging info are intact.                   */
                         /* Add any that are not to GC_smashed list.     */
-extern void (*GC_print_all_smashed)(void);
+GC_EXTERN void (*GC_print_all_smashed)(void);
                         /* Print GC_smashed if it's not empty.          */
                         /* Clear GC_smashed list.                       */
 void GC_print_all_errors(void);
                         /* Print smashed and leaked objects, if any.    */
                         /* Clear the lists of such objects.             */
-extern void (*GC_print_heap_obj)(ptr_t p);
+GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
                         /* If possible print s followed by a more       */
                         /* detailed description of the object           */
                         /* referred to by p.                            */
@@ -1815,33 +1835,35 @@ extern void (*GC_print_heap_obj)(ptr_t p);
                         /* Print an address map of the process.         */
 #endif
 
-extern GC_bool GC_have_errors;  /* We saw a smashed or leaked object.   */
-                                /* Call error printing routine          */
-                                /* occasionally.                        */
+GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
+                                  /* Call error printing routine        */
+                                  /* occasionally.                      */
 
 #ifndef SMALL_CONFIG
+  /* GC_print_stats should be visible outside the GC in some cases.     */
   extern int GC_print_stats;    /* Nonzero generates basic GC log.      */
                                 /* VERBOSE generates add'l messages.    */
 #else
 # define GC_print_stats 0
-   /* Will this keep the message character strings from the executable? */
-   /* It should ...                                                     */
+  /* Will this remove the message character strings from the executable? */
+  /* With a particular level of optimizations, it should...              */
 #endif
 #define VERBOSE 2
 
 #ifndef NO_DEBUGGING
-  extern GC_bool GC_dump_regularly; /* Generate regular debugging dumps */
+  GC_EXTERN GC_bool GC_dump_regularly;
+                                /* Generate regular debugging dumps.    */
 # define COND_DUMP if (GC_dump_regularly) GC_dump();
 #else
 # define COND_DUMP
 #endif
 
 #ifdef KEEP_BACK_PTRS
-  extern long GC_backtraces;
+  GC_EXTERN long GC_backtraces;
   void GC_generate_random_backtrace_no_gc(void);
 #endif
 
-extern GC_bool GC_print_back_height;
+GC_EXTERN GC_bool GC_print_back_height;
 
 #ifdef MAKE_BACK_GRAPH
   void GC_print_back_graph_stats(void);
@@ -1969,6 +1991,55 @@ void GC_err_puts(const char *s);
                         /* newlines, don't ...                          */
 #endif
 
+GC_EXTERN unsigned GC_fail_count;
+                        /* How many consecutive GC/expansion failures?  */
+                        /* Reset by GC_allochblk(); defined in alloc.c. */
+
+GC_EXTERN long GC_large_alloc_warn_interval; /* defined in misc.c */
+
+GC_EXTERN signed_word GC_bytes_found;
+                /* Number of reclaimed bytes after garbage collection;  */
+                /* protected by GC lock; defined in reclaim.c.          */
+
+#ifdef USE_MUNMAP
+  GC_EXTERN int GC_unmap_threshold; /* defined in allchblk.c */
+  GC_EXTERN GC_bool GC_force_unmap_on_gcollect; /* defined in misc.c */
+#endif
+
+#ifdef MSWIN32
+  GC_EXTERN GC_bool GC_no_win32_dlls; /* defined in os_dep.c */
+  GC_EXTERN GC_bool GC_wnt;     /* Is Windows NT derivative;    */
+                                /* defined and set in os_dep.c. */
+#endif
+
+#ifdef THREADS
+  GC_EXTERN long GC_markers;    /* Number of mark threads we would like */
+                                /* to have.  Includes the initiating    */
+                                /* thread.  Defined in mark.c.          */
+# if defined(MSWIN32) || defined(MSWINCE)
+    GC_EXTERN CRITICAL_SECTION GC_write_cs; /* defined in misc.c */
+# endif
+# ifdef MPROTECT_VDB
+    GC_EXTERN volatile AO_TS_t GC_fault_handler_lock;
+                                        /* defined in os_dep.c */
+# endif
+# ifdef MSWINCE
+    GC_EXTERN GC_bool GC_dont_query_stack_min;
+                                /* Defined and set in os_dep.c.         */
+# endif
+#elif defined(IA64)
+  GC_EXTERN ptr_t GC_save_regs_ret_val; /* defined in mach_dep.c. */
+                        /* Previously set to backing store pointer.     */
+#endif /* !THREADS */
+
+#ifdef THREAD_LOCAL_ALLOC
+  GC_EXTERN GC_bool GC_world_stopped; /* defined in alloc.c */
+#endif
+
+#ifdef GC_GCJ_SUPPORT
+  GC_EXTERN GC_bool GC_gcj_malloc_initialized; /* defined in gcj_mlc.c */
+  GC_EXTERN ptr_t * GC_gcjobjfreelist;
+#endif
 
 # ifdef GC_ASSERTIONS
 #       define GC_ASSERT(expr) if(!(expr)) {\
@@ -2011,11 +2082,11 @@ void GC_err_puts(const char *s);
      void GC_notify_all_builder(void);
      void GC_wait_for_reclaim(void);
 
-     extern word GC_fl_builder_count;   /* Protected by mark lock.      */
+     GC_EXTERN word GC_fl_builder_count;   /* Protected by mark lock.   */
 
      void GC_notify_all_marker(void);
      void GC_wait_marker(void);
-     extern word GC_mark_no;            /* Protected by mark lock.      */
+     GC_EXTERN word GC_mark_no;            /* Protected by mark lock.   */
 
      void GC_help_marker(word my_mark_no);
                 /* Try to help out parallel marker for mark cycle       */

@@ -1,5 +1,43 @@
 2009-10-18  Ivan Maidanski <ivmai@mail.ru>
 
+	* allchblk.c (GC_fail_count, GC_large_alloc_warn_interval): Move
+	the variable declaration to gc_priv.h.
+	* alloc.c (GC_bytes_found, GC_unmap_threshold,
+	GC_force_unmap_on_gcollect): Ditto.
+	* dyn_load.c (GC_no_win32_dlls, GC_wnt): Ditto.
+	* finalize.c (GC_fail_count): Ditto.
+	* include/private/gc_locks.h (GC_allocate_ml, GC_lock_holder,
+	GC_collecting, GC_mark_lock_holder, GC_need_to_lock): Ditto.
+	* include/private/gc_pmark.h (GC_n_mark_procs, GC_mark_stack_size,
+	GC_mark_stack_limit, GC_mark_stack_top, GC_mark_stack,
+	GC_mark_stack_too_small, GC_mark_state): Ditto.
+	* include/private/pthread_support.h (GC_threads,
+	GC_thr_initialized, GC_in_thread_creation): Ditto.
+	* mallocx.c (GC_bytes_found): Ditto.
+	* mark_rts.c (GC_save_regs_ret_val, GC_world_stopped): Ditto.
+	* misc.c (GC_unmap_threshold): Ditto.
+	* os_dep.c (GC_unmap_threshold): Ditto.
+	* pthread_support.c (GC_markers): Ditto.
+	* thread_local_alloc.c (GC_gcjobjfreelist,
+	GC_gcj_malloc_initialized, GC_gcj_kind): Ditto.
+	* win32_threads.c (GC_fault_handler_lock, GC_write_cs,
+	GC_dont_query_stack_min, GC_markers, GC_wnt): Ditto.
+	* include/private/gc_priv.h (GC_EXTERN): New macro (used mostly as
+	a tag for now); defined after "gcconfig.h" inclusion.
+	* include/private/gc_priv.h: Use GC_EXTERN instead of "extern"
+	keyword for most global variables.
+	* alloc.c (GC_copyright): Add the comment about the symbol
+	visibility.
+	* finalize.c (GC_fo_entries): Ditto.
+	* include/private/gc_priv.h (GC_print_stats): Ditto.
+	* misc.c (GC_quiet): Ditto.
+	* mallocx.c (GC_bytes_allocd_tmp): Make the volatile variable
+	STATIC.
+	* pthread_support.c (GC_threads): Add explicit zero initializer
+	(to make the variable definition differ from the declaration).
+
+2009-10-18  Ivan Maidanski <ivmai@mail.ru>
+
 	* backgraph.c (GC_quiet): Remove the declaration (not needed
 	anymore since gc_priv.h is always included).
 	* checksums.c (GC_quiet): Ditto.
