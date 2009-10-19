@@ -86,6 +86,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* the debugging-only or profiling-only variables.  Currently, not    */
   /* used for the variables accessed from the "dated" source files      */
   /* (pcr_interface.c, specific.c/h, and in the "extra" folder).        */
+  /* The corresponding variable definition must start with GC_INNER.    */
 # if defined(GC_DLL) && defined(__GNUC__) && !defined(MSWIN32) \
         && !defined(MSWINCE)
 #   if __GNUC__ >= 4
@@ -98,6 +99,12 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # else
 #   define GC_EXTERN extern
 # endif
+#endif
+
+#ifndef GC_INNER
+  /* This tagging macro must be used at the start of every variable     */
+  /* definition which is declared with GC_EXTERN.                       */
+# define GC_INNER /* empty */
 #endif
 
 #ifndef HEADERS_H

@@ -26,6 +26,10 @@
 /* This file is not well tested (for now). */
 
 
+#define GC_INNER STATIC
+#define GC_EXTERN GC_INNER
+                /* STATIC is defined in gcconfig.h. */
+
 /* Small files go first... */
 #include "../backgraph.c"
 #include "../blacklst.c"

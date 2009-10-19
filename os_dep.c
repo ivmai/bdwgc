@@ -599,7 +599,7 @@ struct o32_obj {
 # endif /* OS/2 */
 
 /* Find the page size */
-word GC_page_size = 0;
+GC_INNER word GC_page_size = 0;
 
 # if defined(MSWIN32) || defined(MSWINCE)
 
@@ -608,7 +608,7 @@ word GC_page_size = 0;
 #   endif
 
 #   if defined(MSWINCE) && defined(THREADS)
-      GC_bool GC_dont_query_stack_min = FALSE;
+      GC_INNER GC_bool GC_dont_query_stack_min = FALSE;
 #   endif
 
     void GC_setpagesize(void)
@@ -1410,19 +1410,18 @@ void GC_register_data_segments(void)
   /* and all real work is done by GC_register_dynamic_libraries.  Under */
   /* win32s, we cannot find the data segments associated with dll's.    */
   /* We register the main data segment here.                            */
-  GC_bool GC_no_win32_dlls = FALSE;
+  GC_INNER GC_bool GC_no_win32_dlls = FALSE;
         /* This used to be set for gcc, to avoid dealing with           */
         /* the structured exception handling issues.  But we now have   */
         /* assembly code to do that right.                              */
 
-  GC_bool GC_wnt = FALSE;
-         /* This is a Windows NT derivative, i.e. NT, W2K, XP or later.  */
+  GC_INNER GC_bool GC_wnt = FALSE;
+         /* This is a Windows NT derivative, i.e. NT, W2K, XP or later. */
 
   void GC_init_win32(void)
   {
-    /* Set GC_wnt.                                                       */
-    /* If we're running under win32s, assume that no DLLs will be loaded */
-    /* I doubt anyone still runs win32s, but ...                         */
+    /* Set GC_wnt.  If we're running under win32s, assume that no DLLs  */
+    /* will be loaded.  I doubt anyone still runs win32s, but...        */
     DWORD v = GetVersion();
     GC_wnt = !(v & 0x80000000);
     GC_no_win32_dlls |= ((!GC_wnt) && (v & 0xff) <= 3);
@@ -1904,7 +1903,7 @@ void * os2_alloc(size_t bytes)
 
 
 # if defined(MSWIN32) || defined(MSWINCE)
-    SYSTEM_INFO GC_sysinfo;
+    GC_INNER SYSTEM_INFO GC_sysinfo;
 # endif
 
 # ifdef MSWIN32
@@ -2124,7 +2123,6 @@ void GC_unmap(ptr_t start, size_t bytes)
 #   endif
 }
 
-
 void GC_remap(ptr_t start, size_t bytes)
 {
     ptr_t start_addr = GC_unmap_start(start, bytes);
@@ -2225,7 +2223,7 @@ void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2, size_t bytes2)
 /* environment, this is also responsible for marking from       */
 /* thread stacks.                                               */
 #ifndef THREADS
-void (*GC_push_other_roots)(void) = 0;
+  GC_INNER void (*GC_push_other_roots)(void) = 0;
 #else /* THREADS */
 
 # ifdef PCR
@@ -2282,7 +2280,7 @@ STATIC void GC_default_push_other_roots(void)
 
 # endif /* GC_WIN32_THREADS || GC_PTHREADS */
 
-void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
+  GC_INNER void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
 
 #endif /* THREADS */
 
@@ -2325,7 +2323,7 @@ void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
  *              are running on Windows 95, Windows 2000 or earlier),
  *              MPROTECT_VDB may be defined as a fallback strategy.
  */
-GC_bool GC_dirty_maintained = FALSE;
+GC_INNER GC_bool GC_dirty_maintained = FALSE;
 
 #if defined(PROC_VDB) || defined(GWW_VDB)
 
@@ -2696,7 +2694,7 @@ STATIC GC_bool GC_old_segv_handler_used_si = FALSE;
 /* Contention should be very rare, so we do the minimum to handle it    */
 /* correctly.                                                           */
 #ifdef AO_HAVE_test_and_set_acquire
-  volatile AO_TS_t GC_fault_handler_lock = 0;
+  GC_INNER volatile AO_TS_t GC_fault_handler_lock = 0;
   static void async_set_pht_entry_from_index(volatile page_hash_table db,
                                              size_t index)
   {

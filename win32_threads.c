@@ -27,12 +27,12 @@
 
 /* Allocation lock declarations.        */
 #if !defined(USE_PTHREAD_LOCKS)
-  CRITICAL_SECTION GC_allocate_ml;
-  DWORD GC_lock_holder = NO_THREAD;
+  GC_INNER CRITICAL_SECTION GC_allocate_ml;
+  GC_INNER DWORD GC_lock_holder = NO_THREAD;
         /* Thread id for current holder of allocation lock */
 #else
-  pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
-  unsigned long GC_lock_holder = NO_THREAD;
+  GC_INNER pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
+  GC_INNER unsigned long GC_lock_holder = NO_THREAD;
 #endif
 
 #ifdef GC_PTHREADS
@@ -151,7 +151,7 @@ typedef LONG * IE_t;
 
 STATIC GC_bool GC_thr_initialized = FALSE;
 
-GC_bool GC_need_to_lock = FALSE;
+GC_INNER GC_bool GC_need_to_lock = FALSE;
 
 static GC_bool parallel_initialized = FALSE;
 
@@ -1473,7 +1473,7 @@ void GC_get_next_stack(char *start, char *limit,
   }
 
 # ifdef GC_ASSERTIONS
-    unsigned long GC_mark_lock_holder = NO_THREAD;
+    GC_INNER unsigned long GC_mark_lock_holder = NO_THREAD;
 # endif
 
   /* GC_mark_threads[] is unused here unlike that in pthread_support.c  */
@@ -2608,7 +2608,7 @@ void GC_init_parallel(void)
   /* Pthread_mutex_try_lock may not win here,   */
   /* due to builtin support for spinning first? */
 
-  volatile GC_bool GC_collecting = 0;
+  GC_INNER volatile GC_bool GC_collecting = 0;
                         /* A hint that we're in the collector and       */
                         /* holding the allocation lock for an           */
                         /* extended period.                             */

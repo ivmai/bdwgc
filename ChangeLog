@@ -1,5 +1,41 @@
 2009-10-19  Ivan Maidanski <ivmai@mail.ru>
 
+	* include/private/gc_priv.h (GC_INNER): New macro (for GC-scope
+	variable definitions).
+	* include/private/gc_priv.h (GC_EXTERN): Update the comment.
+	* allchblk.c (GC_unmap_threshold): Define as GC_INNER.
+	* alloc.c (GC_incremental, GC_world_stopped, GC_n_heap_sects,
+	GC_n_memory, GC_fail_count): Ditto.
+	* blacklst.c (GC_black_list_spacing, GC_print_heap_obj): Ditto.
+	* gcj_mlc.c (GC_gcj_malloc_initialized, GC_gcjobjfreelist): Ditto.
+	* mach_dep.c (GC_save_regs_ret_val): Ditto.
+	* mark.c (GC_n_mark_procs, GC_obj_kinds, GC_n_kinds,
+	GC_mark_stack, GC_mark_stack_limit, GC_mark_stack_size,
+	GC_mark_stack_top, GC_mark_state, GC_mark_stack_too_small,
+	GC_mark_no, GC_markers): Ditto.
+	* mark_rts.c (GC_root_size, GC_push_typed_structures): Ditto.
+	* misc.c (GC_allocate_ml, GC_debugging_started, GC_check_heap,
+	GC_print_all_smashed, GC_print_back_height, GC_dump_regularly,
+	GC_backtraces, GC_force_unmap_on_gcollect,
+	GC_large_alloc_warn_interval, GC_is_initialized, GC_write_cs,
+	GC_current_warn_proc, GC_blocked_sp, GC_activation_frame): Ditto.
+	* os_dep.c (GC_page_size, GC_dont_query_stack_min,
+	GC_no_win32_dlls, GC_wnt, GC_sysinfo, GC_push_other_roots,
+	GC_dirty_maintained, GC_fault_handler_lock): Ditto.
+	* pthread_support.c (GC_allocate_ml, GC_lock_holder,
+	GC_need_to_lock, GC_thr_initialized, GC_threads,
+	GC_in_thread_creation, GC_collecting, GC_allocate_lock,
+	GC_mark_lock_holder): Ditto.
+	* reclaim.c (GC_bytes_found, GC_fl_builder_count, GC_have_errors):
+	Ditto.
+	* win32_threads.c (GC_allocate_ml, GC_lock_holder,
+	GC_need_to_lock, GC_mark_lock_holder, GC_collecting): Ditto.
+	* extra/gc.c (GC_INNER, GC_EXTERN): Define as STATIC.
+	* mach_dep.c (GC_with_callee_saves_pushed): Remove redundant {}.
+	* os_dep.c (GC_init_win32): Reformat the comment.
+
+2009-10-19  Ivan Maidanski <ivmai@mail.ru>
+
 	* include/private/gc_priv.h (GC_bytes_allocd, GC_objfreelist,
 	GC_aobjfreelist): Replace GC_EXTERN to extern for SEPARATE_GLOBALS
 	case (since they are not defined inside GC at present).

@@ -44,13 +44,13 @@ GC_API void GC_CALL GC_noop1(word x)
 
 /* mark_proc GC_mark_procs[MAX_MARK_PROCS] = {0} -- declared in gc_priv.h */
 
-unsigned GC_n_mark_procs = GC_RESERVED_MARK_PROCS;
+GC_INNER unsigned GC_n_mark_procs = GC_RESERVED_MARK_PROCS;
 
 /* Initialize GC_obj_kinds properly and standard free lists properly.   */
 /* This must be done statically since they may be accessed before       */
 /* GC_init is called.                                                   */
 /* It's done here, since we need to deal with mark descriptors.         */
-struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
+GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 /* PTRFREE */ { &GC_aobjfreelist[0], 0 /* filled in dynamically */,
                 0 | GC_DS_LENGTH, FALSE, FALSE },
 /* NORMAL  */ { &GC_objfreelist[0], 0,
@@ -84,7 +84,7 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 #   endif
 # endif
 
-unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
+GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
 
 # ifndef INITIAL_MARK_STACK_SIZE
 #   define INITIAL_MARK_STACK_SIZE (1*HBLKSIZE)
@@ -106,12 +106,12 @@ STATIC word GC_n_rescuing_pages = 0;
                                 /* Number of dirty pages we marked from */
                                 /* excludes ptrfree pages, etc.         */
 
-mse * GC_mark_stack = NULL;
-mse * GC_mark_stack_limit = NULL;
-size_t GC_mark_stack_size = 0;
+GC_INNER mse * GC_mark_stack = NULL;
+GC_INNER mse * GC_mark_stack_limit = NULL;
+GC_INNER size_t GC_mark_stack_size = 0;
 
 #ifdef PARALLEL_MARK
-  mse * volatile GC_mark_stack_top = NULL;
+  GC_INNER mse * volatile GC_mark_stack_top = NULL;
         /* Updated only with mark lock held, but read asynchronously.   */
   STATIC volatile AO_t GC_first_nonempty = 0;
         /* Lowest entry on mark stack   */
@@ -119,12 +119,12 @@ size_t GC_mark_stack_size = 0;
         /* Updated only by initiating   */
         /* thread.                      */
 #else
-  mse * GC_mark_stack_top = NULL;
+  GC_INNER mse * GC_mark_stack_top = NULL;
 #endif
 
-mark_state_t GC_mark_state = MS_NONE;
+GC_INNER mark_state_t GC_mark_state = MS_NONE;
 
-GC_bool GC_mark_stack_too_small = FALSE;
+GC_INNER GC_bool GC_mark_stack_too_small = FALSE;
 
 static struct hblk * scan_ptr;
 
@@ -888,7 +888,7 @@ STATIC unsigned GC_active_count = 0;    /* Number of active helpers.    */
                                         /* once it returns to 0, it     */
                                         /* stays zero for the cycle.    */
 
-word GC_mark_no = 0;
+GC_INNER word GC_mark_no = 0;
 
 #define LOCAL_MARK_STACK_SIZE HBLKSIZE
         /* Under normal circumstances, this is big enough to guarantee  */
@@ -1011,7 +1011,7 @@ STATIC void GC_do_local_mark(mse *local_mark_stack, mse *local_top)
 
 #define ENTRIES_TO_GET 5
 
-long GC_markers = 2;            /* Normally changed by thread-library-  */
+GC_INNER long GC_markers = 2;   /* Normally changed by thread-library-  */
                                 /* -specific code.                      */
 
 /* Mark using the local mark stack until the global mark stack is empty */

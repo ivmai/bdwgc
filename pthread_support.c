@@ -83,13 +83,13 @@
 #if defined(GC_NETBSD_THREADS)
 # include <sys/param.h>
 # include <sys/sysctl.h>
-#endif        /* GC_NETBSD_THREADS */
+#endif /* GC_NETBSD_THREADS */
 
 /* Allocator lock definitions.          */
 #if !defined(USE_SPIN_LOCK)
-  pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
+  GC_INNER pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
 #endif
-unsigned long GC_lock_holder = NO_THREAD;
+GC_INNER unsigned long GC_lock_holder = NO_THREAD;
                 /* Used only for assertions, and to prevent      */
                 /* recursive reentry in the system call wrapper. */
 
@@ -219,7 +219,7 @@ void GC_thr_init(void);
 
 static GC_bool parallel_initialized = FALSE;
 
-GC_bool GC_need_to_lock = FALSE;
+GC_INNER GC_bool GC_need_to_lock = FALSE;
 
 void GC_init_parallel(void);
 
@@ -367,9 +367,9 @@ static void start_mark_threads(void)
 
 #endif /* PARALLEL_MARK */
 
-GC_bool GC_thr_initialized = FALSE;
+GC_INNER GC_bool GC_thr_initialized = FALSE;
 
-volatile GC_thread GC_threads[THREAD_TABLE_SZ] = {0};
+GC_INNER volatile GC_thread GC_threads[THREAD_TABLE_SZ] = {0};
 
 void GC_push_thread_structures(void)
 {
@@ -1133,7 +1133,8 @@ GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
     return result;
 }
 
-GC_bool GC_in_thread_creation = FALSE;  /* Protected by allocation lock. */
+GC_INNER GC_bool GC_in_thread_creation = FALSE;
+                                /* Protected by allocation lock. */
 
 STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                                              pthread_t my_pthread)
@@ -1384,7 +1385,7 @@ STATIC void GC_pause(void)
 #define SPIN_MAX 128    /* Maximum number of calls to GC_pause before   */
                         /* give up.                                     */
 
-volatile GC_bool GC_collecting = 0;
+GC_INNER volatile GC_bool GC_collecting = 0;
                         /* A hint that we're in the collector and       */
                         /* holding the allocation lock for an           */
                         /* extended period.                             */
@@ -1457,7 +1458,7 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
 /* as STL alloc.h.  This isn't really the right way to do this.   */
 /* but until the POSIX scheduling mess gets straightened out ...  */
 
-volatile AO_TS_t GC_allocate_lock = 0;
+GC_INNER volatile AO_TS_t GC_allocate_lock = 0;
 
 void GC_lock(void)
 {
@@ -1540,7 +1541,7 @@ void GC_lock(void)
 #ifdef PARALLEL_MARK
 
 #ifdef GC_ASSERTIONS
-  unsigned long GC_mark_lock_holder = NO_THREAD;
+  GC_INNER unsigned long GC_mark_lock_holder = NO_THREAD;
 #endif
 
 #if 0

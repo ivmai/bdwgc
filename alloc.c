@@ -59,7 +59,7 @@ word GC_non_gc_bytes = 0;  /* Number of bytes not intended to be collected */
 word GC_gc_no = 0;
 
 #ifndef SMALL_CONFIG
-  int GC_incremental = 0;  /* By default, stop the world.       */
+  GC_INNER int GC_incremental = 0;      /* By default, stop the world.  */
 #endif
 
 int GC_parallel = FALSE;   /* By default, parallel GC is off.   */
@@ -76,7 +76,7 @@ STATIC GC_bool GC_need_full_gc = FALSE;
                            /* Need full GC do to heap growth.   */
 
 #ifdef THREAD_LOCAL_ALLOC
-  GC_bool GC_world_stopped = FALSE;
+  GC_INNER GC_bool GC_world_stopped = FALSE;
 #endif
 
 STATIC word GC_used_heap_size_after_full = 0;
@@ -967,11 +967,12 @@ GC_API void GC_CALL GC_gcollect_and_unmap(void)
     (void)GC_try_to_collect_general(GC_never_stop_func, TRUE);
 }
 
-word GC_n_heap_sects = 0;       /* Number of sections currently in heap. */
+GC_INNER word GC_n_heap_sects = 0;
+                        /* Number of sections currently in heap. */
 
 #ifdef USE_PROC_FOR_LIBRARIES
-  word GC_n_memory = 0;         /* Number of GET_MEM allocated memory   */
-                                /* sections.                            */
+  GC_INNER word GC_n_memory = 0;
+                        /* Number of GET_MEM allocated memory sections. */
 #endif
 
 #ifdef USE_PROC_FOR_LIBRARIES
@@ -1173,7 +1174,7 @@ GC_API int GC_CALL GC_expand_hp(size_t bytes)
     return(result);
 }
 
-unsigned GC_fail_count = 0;
+GC_INNER unsigned GC_fail_count = 0;
                         /* How many consecutive GC/expansion failures?  */
                         /* Reset by GC_allochblk.                       */
 

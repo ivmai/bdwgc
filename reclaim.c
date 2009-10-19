@@ -17,13 +17,13 @@
 #include <stdio.h>
 #include "private/gc_priv.h"
 
-signed_word GC_bytes_found = 0;
+GC_INNER signed_word GC_bytes_found = 0;
                         /* Number of bytes of memory reclaimed     */
                         /* minus the number of bytes originally    */
                         /* on free lists which we had to drop.     */
 
 #if defined(PARALLEL_MARK)
-  word GC_fl_builder_count = 0;
+  GC_INNER word GC_fl_builder_count = 0;
         /* Number of threads currently building free lists without      */
         /* holding GC lock.  It is not safe to collect if this is       */
         /* nonzero.                                                     */
@@ -36,7 +36,7 @@ signed_word GC_bytes_found = 0;
 STATIC ptr_t GC_leaked[MAX_LEAKED] = { NULL };
 STATIC unsigned GC_n_leaked = 0;
 
-GC_bool GC_have_errors = FALSE;
+GC_INNER GC_bool GC_have_errors = FALSE;
 
 STATIC void GC_add_leaked(ptr_t leaked)
 {

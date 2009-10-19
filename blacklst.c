@@ -49,7 +49,8 @@ STATIC word * GC_incomplete_stack_bl = NULL;
 STATIC word GC_total_stack_black_listed = 0;
                         /* Number of bytes on stack blacklist.  */
 
-word GC_black_list_spacing = MINHINCR*HBLKSIZE;  /* Initial rough guess */
+GC_INNER word GC_black_list_spacing = MINHINCR * HBLKSIZE;
+                        /* Initial rough guess. */
 
 void GC_clear_bl(word *);
 
@@ -61,7 +62,7 @@ void GC_default_print_heap_obj_proc(ptr_t p)
                   (unsigned long)GC_size(base));
 }
 
-void (*GC_print_heap_obj) (ptr_t p) = GC_default_print_heap_obj_proc;
+GC_INNER void (*GC_print_heap_obj)(ptr_t p) = GC_default_print_heap_obj_proc;
 
 #ifdef PRINT_BLACK_LIST
 STATIC void GC_print_source_ptr(ptr_t p)

@@ -45,7 +45,7 @@
 
 #if defined(THREADS) && defined(PCR)
 # include "il/PCR_IL.h"
-  PCR_Th_ML GC_allocate_ml;
+  GC_INNER PCR_Th_ML GC_allocate_ml;
 #endif
 /* For other platforms with threads, the lock and possibly              */
 /* GC_lock_holder variables are defined in the thread support code.     */
@@ -65,11 +65,11 @@
 GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
 
 
-GC_bool GC_debugging_started = FALSE;
+GC_INNER GC_bool GC_debugging_started = FALSE;
         /* defined here so we don't have to load debug_malloc.o */
 
-void (*GC_check_heap) (void) = 0;
-void (*GC_print_all_smashed) (void) = 0;
+GC_INNER void (*GC_check_heap)(void) = 0;
+GC_INNER void (*GC_print_all_smashed)(void) = 0;
 
 ptr_t GC_stackbottom = 0;
 
@@ -87,15 +87,16 @@ GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
   GC_bool GC_print_stats = 0;
 #endif
 
-GC_bool GC_print_back_height = 0;
+GC_INNER GC_bool GC_print_back_height = 0;
 
 #ifndef NO_DEBUGGING
-  GC_bool GC_dump_regularly = 0;  /* Generate regular debugging dumps. */
+  GC_INNER GC_bool GC_dump_regularly = 0;
+                                /* Generate regular debugging dumps. */
 #endif
 
 #ifdef KEEP_BACK_PTRS
-  long GC_backtraces = 0;       /* Number of random backtraces to       */
-                                /* generate for each GC.                */
+  GC_INNER long GC_backtraces = 0;
+                /* Number of random backtraces to generate for each GC. */
 #endif
 
 #ifdef FIND_LEAK
@@ -113,16 +114,16 @@ GC_bool GC_print_back_height = 0;
 #ifdef GC_FORCE_UNMAP_ON_GCOLLECT
   /* Has no effect unless USE_MUNMAP.                           */
   /* Has no effect on implicitly-initiated garbage collections. */
-  GC_bool GC_force_unmap_on_gcollect = TRUE;
+  GC_INNER GC_bool GC_force_unmap_on_gcollect = TRUE;
 #else
-  GC_bool GC_force_unmap_on_gcollect = FALSE;
+  GC_INNER GC_bool GC_force_unmap_on_gcollect = FALSE;
 #endif
 
 #ifndef GC_LARGE_ALLOC_WARN_INTERVAL
 # define GC_LARGE_ALLOC_WARN_INTERVAL 5
 #endif
-long GC_large_alloc_warn_interval = GC_LARGE_ALLOC_WARN_INTERVAL;
-        /* Interval between unsuppressed warnings.      */
+GC_INNER long GC_large_alloc_warn_interval = GC_LARGE_ALLOC_WARN_INTERVAL;
+                        /* Interval between unsuppressed warnings.      */
 
 /*ARGSUSED*/
 STATIC void * GC_CALLBACK GC_default_oom_fn(size_t bytes_requested)
@@ -449,14 +450,14 @@ GC_API size_t GC_CALL GC_get_total_bytes(void)
     return value;
 }
 
-GC_bool GC_is_initialized = FALSE;
+GC_INNER GC_bool GC_is_initialized = FALSE;
 
 # if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
     void GC_init_parallel(void);
 # endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
 
 #if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
-    CRITICAL_SECTION GC_write_cs;
+    GC_INNER CRITICAL_SECTION GC_write_cs;
 #endif
 
 #ifdef MSWIN32
@@ -1180,7 +1181,7 @@ STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
     GC_err_printf(msg, arg);
 }
 
-GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
+GC_INNER GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
 
 /* This is recommended for production code (release). */
 GC_API void GC_CALLBACK GC_ignore_warn_proc(char *msg, GC_word arg)
@@ -1359,13 +1360,13 @@ void GC_do_blocking_inner(ptr_t data, void * context);
 
 #else
 
-ptr_t GC_blocked_sp = NULL;
+GC_INNER ptr_t GC_blocked_sp = NULL;
         /* NULL value means we are not inside GC_do_blocking() call. */
 # ifdef IA64
     STATIC ptr_t GC_blocked_register_sp = NULL;
 # endif
 
-struct GC_activation_frame_s *GC_activation_frame = NULL;
+GC_INNER struct GC_activation_frame_s *GC_activation_frame = NULL;
 
 /* This is nearly the same as in win32_threads.c        */
 GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,

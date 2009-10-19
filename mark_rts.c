@@ -132,7 +132,7 @@ GC_INLINE void add_roots_to_index(struct roots *p)
 
 # endif
 
-word GC_root_size = 0;
+GC_INNER word GC_root_size = 0;
 
 GC_API void GC_CALL GC_add_roots(void *b, void *e)
 {
@@ -669,7 +669,7 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
 #   endif /* !THREADS */
 }
 
-void (*GC_push_typed_structures) (void) = 0;
+GC_INNER void (*GC_push_typed_structures)(void) = 0;
 
                         /* Push GC internal roots.  These are normally  */
                         /* included in the static data segment, and     */

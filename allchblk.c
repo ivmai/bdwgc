@@ -386,7 +386,7 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 #     define MUNMAP_THRESHOLD 6
 #   endif
 
-int GC_unmap_threshold = MUNMAP_THRESHOLD;
+GC_INNER int GC_unmap_threshold = MUNMAP_THRESHOLD;
 
 /* Unmap blocks that haven't been recently touched.  This is the only way */
 /* way blocks are ever unmapped.                                          */
