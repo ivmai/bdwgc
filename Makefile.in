@@ -15,10 +15,10 @@
 @SET_MAKE@
 
 # Copyright (c) 1999-2001 by Red Hat, Inc. All rights reserved.
-# 
+#
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
-# 
+#
 # Permission is hereby granted to use or copy this program
 # for any purpose,  provided the above notices are retained on all copies.
 # Permission to modify the code and to distribute modified code is granted,
@@ -479,10 +479,10 @@ EXTRA_DIST = gc_cpp.cpp README.QUICK BCC_MAKEFILE NT_MAKEFILE \
 	Makefile.direct Makefile.dj Makefile.DLLs SMakefile.amiga \
 	WCC_MAKEFILE build_atomic_ops.sh build_atomic_ops.sh.cygwin \
 	NT_STATIC_THREADS_MAKEFILE NT_X64_STATIC_THREADS_MAKEFILE \
-	NT_X64_THREADS_MAKEFILE extra/add_gc_prefix.c extra/gcname.c \
-	extra/if_mach.c extra/if_not_there.c hpux_test_and_clear.s \
-	gc.mak extra/MacOS.c MacProjects.sit.hqx mach_dep.c \
-	extra/setjmp_t.c extra/threadlibs.c extra/AmigaOS.c \
+	NT_X64_THREADS_MAKEFILE extra/add_gc_prefix.c extra/gc.c \
+	extra/gcname.c extra/if_mach.c extra/if_not_there.c \
+	hpux_test_and_clear.s gc.mak extra/MacOS.c MacProjects.sit.hqx \
+	mach_dep.c extra/setjmp_t.c extra/threadlibs.c extra/AmigaOS.c \
 	Mac_files/datastart.c Mac_files/dataend.c \
 	Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
 	include/private/msvc_dbg.h extra/msvc_dbg.c libatomic_ops \
@@ -1601,7 +1601,7 @@ uninstall-am: uninstall-dist_pkgdataDATA uninstall-includeHEADERS \
 	$(LTCOMPILE) $(ASM_CPP_OPTIONS) -c $<
 
 #
-# :GOTCHA: GNU make rule for making .s out of .S is flawed, 
+# :GOTCHA: GNU make rule for making .s out of .S is flawed,
 # it will not remove dest if building fails
 .S.s:
 	if $(CPP) $< >$@ ; then :; else rm -f $@; fi

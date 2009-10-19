@@ -1,5 +1,12 @@
 2009-10-19  Ivan Maidanski <ivmai@mail.ru>
 
+	* extra/gc.c: New file.
+	* Makefile.am (EXTRA_DIST): Add "extra/gc.c".
+	* configure: Regenerate.
+	* Makefile.in: Ditto.
+
+2009-10-19  Ivan Maidanski <ivmai@mail.ru>
+
 	* misc.c (GC_log): Remove the declaration; move the definition (to
 	the place where it is used); make STATIC.
 	* misc.c (GC_init): Use GC_err_printf() instead of GC_log_printf()
