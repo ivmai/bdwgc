@@ -37,8 +37,6 @@
 # include <fcntl.h>
 # include <sys/types.h>
 # include <sys/stat.h>
-
-  int GC_log;  /* Forward decl, so we can set it.       */
 #endif
 
 #ifdef NONSTOP
@@ -517,6 +515,10 @@ static void maybe_install_looping_handler(void)
   void GC_init_dyld(void);
 #endif
 
+#if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
+  STATIC int GC_log = 2;
+#endif
+
 GC_API void GC_CALL GC_init(void)
 {
     /* LOCK(); -- no longer does anything this early. */
@@ -580,7 +582,7 @@ GC_API void GC_CALL GC_init(void)
           if (0 != file_name) {
             int log_d = open(file_name, O_CREAT|O_WRONLY|O_APPEND, 0666);
             if (log_d < 0) {
-              GC_log_printf("Failed to open %s as log file\n", file_name);
+              GC_err_printf("Failed to open %s as log file\n", file_name);
             } else {
               GC_log = log_d;
             }
@@ -991,8 +993,12 @@ out:
           return -1;
       } else if (GC_stdout == 0) {
         GC_stdout = GC_CreateLogFile();
-        if (GC_stdout == INVALID_HANDLE_VALUE)
+        /* Ignore open log failure if the collector is built with       */
+        /* print_stats always set on.                                   */
+#       ifndef GC_PRINT_VERBOSE_STATS
+          if (GC_stdout == INVALID_HANDLE_VALUE)
             ABORT("Open of log file failed");
+#       endif
       }
       tmp = WriteFile(GC_stdout, buf, (DWORD)len, &written, NULL);
       if (!tmp)
@@ -1040,7 +1046,6 @@ STATIC FILE * GC_log = NULL;
 #if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
   STATIC int GC_stdout = 1;
   STATIC int GC_stderr = 2;
-  int GC_log = 2;
 # if !defined(AMIGA)
 #   include <unistd.h>
 # endif

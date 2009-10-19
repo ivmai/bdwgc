@@ -1,3 +1,12 @@
+2009-10-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c (GC_log): Remove the declaration; move the definition (to
+	the place where it is used); make STATIC.
+	* misc.c (GC_init): Use GC_err_printf() instead of GC_log_printf()
+	to print open log failure.
+	* misc.c (GC_write): Don't abort on open log failure if the GC is
+	compiled with GC_PRINT_VERBOSE_STATS (useful for WinCE).
+
 2009-10-19  Ivan Maidanski <ivmai@mail.ru> (really Andreas Tobler)
 
 	* include/private/gcconfig.h (USE_MMAP): Guard with ifndef.
