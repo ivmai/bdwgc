@@ -32,7 +32,7 @@ Authors: John R. Ellis and Jesse Hull
 #   define GC_BUILD
 # endif
 
-#include <gc_cpp.h>
+#include "gc_cpp.h"
 
 void* operator new( size_t size ) {
     return GC_MALLOC_UNCOLLECTABLE( size );}
