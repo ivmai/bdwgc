@@ -295,7 +295,7 @@ GC_bool GC_should_collect(void)
                         /* Not called if 0.  Called with the allocation */
                         /* lock held.  Not used by GC itself.           */
 
-STATIC void GC_notify_full_gc(void)
+GC_INLINE void GC_notify_full_gc(void)
 {
     if (GC_start_call_back != 0) {
         (*GC_start_call_back)();

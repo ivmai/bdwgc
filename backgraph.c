@@ -159,7 +159,7 @@ static GC_bool is_in_progress(ptr_t p)
   return FALSE;
 }
 
-static void pop_in_progress(ptr_t p)
+GC_INLINE void pop_in_progress(ptr_t p)
 {
   --n_in_progress;
   GC_ASSERT(in_progress_space[n_in_progress] == p);
@@ -280,7 +280,7 @@ static void per_object_helper(struct hblk *h, word fn)
   } while (i + (int)sz <= BYTES_TO_WORDS(HBLKSIZE));
 }
 
-void GC_apply_to_each_object(per_object_func f)
+GC_INLINE void GC_apply_to_each_object(per_object_func f)
 {
   GC_apply_to_all_blocks(per_object_helper, (word)f);
 }

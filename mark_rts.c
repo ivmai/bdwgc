@@ -122,7 +122,7 @@ struct roots * GC_roots_present(ptr_t b)
 }
 
 /* Add the given root structure to the index. */
-static void add_roots_to_index(struct roots *p)
+GC_INLINE void add_roots_to_index(struct roots *p)
 {
     int h = rt_hash(p -> r_start);
 

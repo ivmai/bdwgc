@@ -1,5 +1,12 @@
 2009-10-19  Ivan Maidanski <ivmai@mail.ru>
 
+	* alloc.c (GC_notify_full_gc): Use GC_INLINE for a tiny static
+	function.
+	* backgraph.c (pop_in_progress, GC_apply_to_each_object): Ditto.
+	* mark_rts.c (add_roots_to_index): Ditto.
+
+2009-10-19  Ivan Maidanski <ivmai@mail.ru>
+
 	* extra/gc.c: New file.
 	* Makefile.am (EXTRA_DIST): Add "extra/gc.c".
 	* configure: Regenerate.
