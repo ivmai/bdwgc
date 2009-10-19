@@ -785,7 +785,9 @@
          These aren't used when dyld support is enabled (it is by default) */
 #     define DATASTART ((ptr_t) get_etext())
 #     define DATAEND    ((ptr_t) get_end())
-#     define USE_MMAP
+#     ifndef USE_MMAP
+#       define USE_MMAP
+#     endif
 #     define USE_MMAP_ANON
 #     ifdef GC_DARWIN_THREADS
 #       define MPROTECT_VDB
@@ -844,7 +846,9 @@
 #       define CPP_WORDSZ 32
 #       define STACKBOTTOM ((ptr_t)((ulong)&errno))
 #     endif
-#     define USE_MMAP
+#     ifndef USE_MMAP
+#       define USE_MMAP
+#     endif
 #     define USE_MMAP_ANON
         /* From AIX linker man page:
         _text Specifies the first location of the program.
@@ -910,7 +914,7 @@
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
 #       define DATAEND (ptr_t)(_end)
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
-#           define USE_MMAP
+#         define USE_MMAP
             /* Otherwise we now use calloc.  Mmap may result in the     */
             /* heap interleaved with thread stacks, which can result in */
             /* excessive blacklisting.  Sbrk is unusable since it       */
@@ -1049,7 +1053,7 @@
 #       endif
 #       define DYNAMIC_LOADING
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
-#           define USE_MMAP
+#         define USE_MMAP
             /* Otherwise we now use calloc.  Mmap may result in the     */
             /* heap interleaved with thread stacks, which can result in */
             /* excessive blacklisting.  Sbrk is unusable since it       */
@@ -1090,7 +1094,7 @@
 #       define DYNAMIC_LOADING
 #       ifndef USE_MMAP
 #         define USE_MMAP
-#       endif /* USE_MMAP */
+#       endif
 #       define MAP_FAILED (void *) ((word)-1)
 #       ifdef USE_MMAP
 #         define HEAP_START (ptr_t)0x40000000
@@ -1299,7 +1303,9 @@
 #     define DATASTART ((ptr_t) get_etext())
 #     define DATAEND    ((ptr_t) get_end())
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
-#     define USE_MMAP
+#     ifndef USE_MMAP
+#       define USE_MMAP
+#     endif
 #     define USE_MMAP_ANON
 #     ifdef GC_DARWIN_THREADS
 #       define MPROTECT_VDB
@@ -1783,7 +1789,9 @@
 #     define DATAEND    ((ptr_t) get_end())
 /* #define STACKBOTTOM ((ptr_t) 0x30000000) */ /* FIXME: Is this needed? */
 #     define HEURISTIC1
-#     define USE_MMAP
+#     ifndef USE_MMAP
+#       define USE_MMAP
+#     endif
 #     define USE_MMAP_ANON
 #   endif
 #   ifdef NOSYS
@@ -1900,7 +1908,9 @@
 #     define DATASTART ((ptr_t) get_etext())
 #     define DATAEND    ((ptr_t) get_end())
 #     define STACKBOTTOM ((ptr_t) 0x7fff5fc00000)
-#     define USE_MMAP
+#     ifndef USE_MMAP
+#       define USE_MMAP
+#     endif
 #     define USE_MMAP_ANON
 #     ifdef GC_DARWIN_THREADS
 #       define MPROTECT_VDB
@@ -1971,7 +1981,7 @@
 #       endif
 #       define DYNAMIC_LOADING
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
-#           define USE_MMAP
+#         define USE_MMAP
             /* Otherwise we now use calloc.  Mmap may result in the     */
             /* heap interleaved with thread stacks, which can result in */
             /* excessive blacklisting.  Sbrk is unusable since it       */

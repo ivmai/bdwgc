@@ -1,3 +1,7 @@
+2009-10-19  Ivan Maidanski <ivmai@mail.ru> (really Andreas Tobler)
+
+	* include/private/gcconfig.h (USE_MMAP): Guard with ifndef.
+
 2009-10-18  Ivan Maidanski <ivmai@mail.ru>
 
 	* allchblk.c (GC_fail_count, GC_large_alloc_warn_interval): Move
