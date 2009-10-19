@@ -149,7 +149,7 @@
 /* this better.                                                 */
 typedef LONG * IE_t;
 
-GC_bool GC_thr_initialized = FALSE;
+STATIC GC_bool GC_thr_initialized = FALSE;
 
 GC_bool GC_need_to_lock = FALSE;
 
@@ -359,7 +359,8 @@ LONG WINAPI GC_write_fault_handler(struct _EXCEPTION_POINTERS *exc_info);
   /* may be called repeatedly.                                          */
 #endif
 
-GC_bool GC_in_thread_creation = FALSE;  /* Protected by allocation lock. */
+STATIC GC_bool GC_in_thread_creation = FALSE;
+                                /* Protected by allocation lock. */
 
 /*
  * This may be called from DllMain, and hence operates under unusual
@@ -1487,8 +1488,7 @@ void GC_get_next_stack(char *start, char *limit,
     /* start_mark_threads() is the same as in pthread_support.c except for: */
     /* - GC_markers value is adjusted already;                              */
     /* - thread stack is assumed to be large enough; and                    */
-    /* - statistics about the number of marker threads is already printed.  */
-
+    /* - statistics about the number of marker threads is printed outside.  */
     static void start_mark_threads(void)
     {
       int i;

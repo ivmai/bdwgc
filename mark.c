@@ -72,18 +72,19 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 
 # ifdef ATOMIC_UNCOLLECTABLE
 #   ifdef STUBBORN_ALLOC
-      unsigned GC_n_kinds = 5;
+#     define GC_N_KINDS_INITIAL_VALUE 5
 #   else
-      unsigned GC_n_kinds = 4;
+#     define GC_N_KINDS_INITIAL_VALUE 4
 #   endif
 # else
 #   ifdef STUBBORN_ALLOC
-      unsigned GC_n_kinds = 4;
+#     define GC_N_KINDS_INITIAL_VALUE 4
 #   else
-      unsigned GC_n_kinds = 3;
+#     define GC_N_KINDS_INITIAL_VALUE 3
 #   endif
 # endif
 
+unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
 
 # ifndef INITIAL_MARK_STACK_SIZE
 #   define INITIAL_MARK_STACK_SIZE (1*HBLKSIZE)
@@ -106,14 +107,12 @@ STATIC word GC_n_rescuing_pages = 0;
                                 /* excludes ptrfree pages, etc.         */
 
 mse * GC_mark_stack = NULL;
-
 mse * GC_mark_stack_limit = NULL;
-
 size_t GC_mark_stack_size = 0;
 
 #ifdef PARALLEL_MARK
   mse * volatile GC_mark_stack_top = NULL;
-  /* Updated only with mark lock held, but read asynchronously. */
+        /* Updated only with mark lock held, but read asynchronously.   */
   STATIC volatile AO_t GC_first_nonempty = 0;
         /* Lowest entry on mark stack   */
         /* that may be nonempty.        */
@@ -123,14 +122,14 @@ size_t GC_mark_stack_size = 0;
   mse * GC_mark_stack_top = NULL;
 #endif
 
-static struct hblk * scan_ptr;
-
 mark_state_t GC_mark_state = MS_NONE;
 
 GC_bool GC_mark_stack_too_small = FALSE;
 
-GC_bool GC_objects_are_marked = FALSE;  /* Are there collectable marked */
-                                        /* objects in the heap?         */
+static struct hblk * scan_ptr;
+
+STATIC GC_bool GC_objects_are_marked = FALSE;
+                /* Are there collectable marked objects in the heap?    */
 
 /* Is a collection in progress?  Note that this can return true in the  */
 /* nonincremental case, if a collection has been abandoned and the      */

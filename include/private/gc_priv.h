@@ -1227,14 +1227,14 @@ GC_EXTERN struct obj_kind {
 /* introduce maintenance problems.                                      */
 
 #ifdef SEPARATE_GLOBALS
-  GC_EXTERN word GC_bytes_allocd;
+  extern word GC_bytes_allocd;
         /* Number of words allocated during this collection cycle */
-  GC_EXTERN ptr_t GC_objfreelist[MAXOBJGRANULES+1];
+  extern ptr_t GC_objfreelist[MAXOBJGRANULES+1];
                           /* free list for NORMAL objects */
 # define beginGC_objfreelist ((ptr_t)(&GC_objfreelist))
 # define endGC_objfreelist (beginGC_objfreelist + sizeof(GC_objfreelist))
 
-  GC_EXTERN ptr_t GC_aobjfreelist[MAXOBJGRANULES+1];
+  extern ptr_t GC_aobjfreelist[MAXOBJGRANULES+1];
                           /* free list for atomic (PTRFREE) objs        */
 # define beginGC_aobjfreelist ((ptr_t)(&GC_aobjfreelist))
 # define endGC_aobjfreelist (beginGC_aobjfreelist + sizeof(GC_aobjfreelist))
@@ -1276,9 +1276,6 @@ GC_EXTERN word GC_black_list_spacing;
                         /* Counts only blocks that are                  */
                         /* "stack-blacklisted", i.e. that are           */
                         /* problematic in the interior of an object.    */
-
-GC_EXTERN GC_bool GC_objects_are_marked; /* There are marked objects in */
-                                         /* the heap.                   */
 
 #ifndef SMALL_CONFIG
   GC_EXTERN GC_bool GC_incremental;
