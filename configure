@@ -785,6 +785,8 @@ AVOID_CPP_LIB_FALSE
 AVOID_CPP_LIB_TRUE
 COMPILER_XLC_FALSE
 COMPILER_XLC_TRUE
+OPENBSD_THREADS_FALSE
+OPENBSD_THREADS_TRUE
 WIN32_THREADS_FALSE
 WIN32_THREADS_TRUE
 DARWIN_THREADS_FALSE
@@ -5027,6 +5029,7 @@ fi
 
 
 
+
 THREADDLLIBS=
 need_atomic_ops_asm=false
 ## Libraries needed to support dynamic loading and/or threads.
@@ -5089,6 +5092,13 @@ $as_echo "#define _REENTRANT 1" >>confdefs.h
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Only HP-UX 11 POSIX threads are supported.\"" >&5
 $as_echo "$as_me: WARNING: \"Only HP-UX 11 POSIX threads are supported.\"" >&2;}
 	;;
+     *-*-openbsd*)
+        $as_echo "#define GC_OPENBSD_THREADS 1" >>confdefs.h
+
+        THREADDLLIBS=-pthread
+        INCLUDES="$INCLUDES -pthread"
+        openbsd_threads=true
+        ;;
      *-*-freebsd*)
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"FreeBSD does not yet fully support threads with Boehm GC.\"" >&5
 $as_echo "$as_me: WARNING: \"FreeBSD does not yet fully support threads with Boehm GC.\"" >&2;}
@@ -5096,13 +5106,6 @@ $as_echo "$as_me: WARNING: \"FreeBSD does not yet fully support threads with Boe
 
 	INCLUDES="$INCLUDES -pthread"
       	;;
-     *-*-openbsd*)
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: OpenBSD does not yet fully support threads with Boehm GC." >&5
-$as_echo "$as_me: WARNING: OpenBSD does not yet fully support threads with Boehm GC." >&2;}
-	$as_echo "#define GC_FREEBSD_THREADS 1" >>confdefs.h
-
-	INCLUDES="$INCLUDES -pthread"
-	;;
      *-*-kfreebsd*-gnu)
 	$as_echo "#define GC_FREEBSD_THREADS 1" >>confdefs.h
 
@@ -5284,6 +5287,14 @@ fi
 else
   WIN32_THREADS_TRUE='#'
   WIN32_THREADS_FALSE=
+fi
+
+ if test x$openbsd_threads = xtrue; then
+  OPENBSD_THREADS_TRUE=
+  OPENBSD_THREADS_FALSE='#'
+else
+  OPENBSD_THREADS_TRUE='#'
+  OPENBSD_THREADS_FALSE=
 fi
 
 
@@ -5618,6 +5629,9 @@ $as_echo "#define SOLARIS25_PROC_VDB_BUG_FIXED 1" >>confdefs.h
     machdep="mach_dep.lo sparc_netbsd_mach_dep.lo"
     ;;
  sparc64-*-netbsd*)
+    machdep="mach_dep.lo sparc_mach_dep.lo"
+    ;;
+ sparc*-*-openbsd*)
     machdep="mach_dep.lo sparc_mach_dep.lo"
     ;;
  sparc-sun-solaris2.3)
@@ -6252,13 +6266,13 @@ if test "${lt_cv_nm_interface+set}" = set; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:6255: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:6269: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:6258: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:6272: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:6261: output\"" >&5)
+  (eval echo "\"\$as_me:6275: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -7355,7 +7369,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 7358 "configure"' > conftest.$ac_ext
+  echo '#line 7372 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -9066,11 +9080,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9069: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9083: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9073: \$? = $ac_status" >&5
+   echo "$as_me:9087: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9384,11 +9398,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9387: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9401: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9391: \$? = $ac_status" >&5
+   echo "$as_me:9405: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9489,11 +9503,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9492: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9506: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9496: \$? = $ac_status" >&5
+   echo "$as_me:9510: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9544,11 +9558,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9547: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9561: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9551: \$? = $ac_status" >&5
+   echo "$as_me:9565: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11894,7 +11908,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11897 "configure"
+#line 11911 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11994,7 +12008,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11997 "configure"
+#line 12011 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13933,11 +13947,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13936: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13950: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13940: \$? = $ac_status" >&5
+   echo "$as_me:13954: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14032,11 +14046,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14035: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14049: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14039: \$? = $ac_status" >&5
+   echo "$as_me:14053: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14084,11 +14098,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14087: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14101: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14091: \$? = $ac_status" >&5
+   echo "$as_me:14105: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15556,6 +15570,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${WIN32_THREADS_TRUE}" && test -z "${WIN32_THREADS_FALSE}"; then
   as_fn_error "conditional \"WIN32_THREADS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${OPENBSD_THREADS_TRUE}" && test -z "${OPENBSD_THREADS_FALSE}"; then
+  as_fn_error "conditional \"OPENBSD_THREADS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${COMPILER_XLC_TRUE}" && test -z "${COMPILER_XLC_FALSE}"; then

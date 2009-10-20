@@ -159,13 +159,14 @@ void GC_push_regs()
 # undef HAVE_PUSH_REGS
 #endif
 
-#if defined(UNIX_LIKE) && !defined(NO_GETCONTEXT) &&  \
-        (defined(DARWIN) || defined(HURD) || defined(ARM32) || defined(MIPS))
-#  define NO_GETCONTEXT
+#if defined(UNIX_LIKE) && !defined(NO_GETCONTEXT) && \
+        (defined(DARWIN) || defined(HURD) || defined(OPENBSD) \
+         || defined(ARM32) || defined(MIPS))
+# define NO_GETCONTEXT
 #endif
 
 #if defined(LINUX) && defined(SPARC) && !defined(NO_GETCONTEXT)
-#  define NO_GETCONTEXT
+# define NO_GETCONTEXT
 #endif
 
 #if !defined(HAVE_PUSH_REGS) && defined(UNIX_LIKE)
@@ -178,8 +179,7 @@ void GC_push_regs()
 /* Ensure that either registers are pushed, or callee-save registers    */
 /* are somewhere on the stack, and then call fn(arg, ctxt).             */
 /* ctxt is either a pointer to a ucontext_t we generated, or NULL.      */
-void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
-                                 ptr_t arg)
+void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *), ptr_t arg)
 {
     word dummy;
     void * context = 0;

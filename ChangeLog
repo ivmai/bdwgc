@@ -1,3 +1,53 @@
+2009-10-20  Ivan Maidanski <ivmai@mail.ru> (really mostly OpenBSD contributors)
+
+	* configure.ac (openbsd): Define GC_OPENBSD_THREADS.
+	* configure.ac: Add AM_CONDITIONAL(OPENBSD_THREADS).
+	* configure.ac: Add sparc-openbsd case.
+	* doc/README.macros (GC_NETBSD_THREADS, GC_OPENBSD_THREADS):
+	Document.
+	* tests/test.c (main): Handle OpenBSD case.
+	* extra/threadlibs.c: Add the copyright header; expand all tabs to
+	spaces; remove trailing spaces at EOLn.
+	* include/private/pthread_stop_world.h: Ditto.
+	* extra/threadlibs.c (main): Replace K&R-style function definition
+	with the ANSI C one.
+	* extra/threadlibs.c (main): Handle GC_OPENBSD_THREADS case.
+	* dyn_load.c (OPENBSD): Recognize (similar to NETBSD).
+	* include/gc_config_macros.h (GC_SOLARIS_THREADS): Recognize;
+	define it for OpenBSD.
+	* include/gc_pthread_redirects.h (GC_pthread_sigmask,
+	pthread_sigmask): Don't declare and redefine for OpenBSD.
+	* include/private/gcconfig.h: Handle OpenBSD (on arm, sh, i386,
+	amd64, powerpc).
+	* mach_dep.c (NO_GETCONTEXT): Ditto.
+	* include/private/pthread_stop_world.h (thread_stop_info): Don't
+	define last_stop_count field if OpenBSD.
+	* misc.c (GC_init_dyld): Add declaration (if NetBSD).
+	* misc.c (GC_init): Don't call GC_init_netbsd_elf() for OpenBSD.
+	* os_dep.c (GC_init_netbsd_elf): Don't define for OpenBSD.
+	* os_dep.c (old_segv_act, GC_jmp_buf_openbsd): New static variable
+	(only if OpenBSD).
+	* os_dep.c (GC_fault_handler_openbsd, GC_find_limit_openbsd,
+	GC_skip_hole_openbsd): New static function (only if OpenBSD).
+	* os_dep.c (GC_get_stack_base, GC_get_main_stack_base,
+	GC_register_data_segments): Define specially for OpenBSD case.
+	* os_dep.c (GC_fault_handler_lock): Initialize to
+	AO_TS_INITIALIZER (instead of 0).
+	* pthread_support.c (GC_allocate_lock): Ditto.
+	* pthread_stop_world.c (NSIG, GC_print_sig_mask,
+	GC_remove_allowed_signals, suspend_handler_mask, GC_stop_count,
+	GC_world_is_stopped, GC_retry_signals, SIG_THR_RESTART,
+	GC_suspend_ack_sem, GC_suspend_handler_inner, GC_suspend_handler,
+	GC_restart_handler): Don't define and use if OpenBSD.
+	* pthread_stop_world.c (GC_suspend_all, GC_stop_world,
+	GC_start_world): Handle OpenBSD case.
+	* pthread_stop_world.c (GC_stop_init): Define as empty if OpenBSD.
+	* pthread_support.c (pthread_sigmask): Don't undefine the macro and
+	don't define the wrapper function if OpenBSD.
+	* pthread_support.c (GC_thr_init): Handle OpenBSD case.
+	* configure: Regenerate.
+	* include/private/config.h.in: Ditto.
+
 2009-10-20  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
 
 	* dyn_load.c: Move the inclusion of private/gc_priv.h below

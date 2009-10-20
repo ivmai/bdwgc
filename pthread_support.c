@@ -102,7 +102,7 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
 
 /* Undefine macros used to redirect pthread primitives. */
 # undef pthread_create
-# if !defined(GC_DARWIN_THREADS)
+# if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_THREADS)
 #   undef pthread_sigmask
 # endif
 # undef pthread_join
@@ -846,6 +846,10 @@ void GC_thr_init(void)
 #       if defined(GC_NETBSD_THREADS)
           GC_nprocs = get_ncpu();
 #       endif
+#       if defined(GC_OPENBSD_THREADS)
+          /* FIXME: Implement real "get_ncpu". */
+          GC_nprocs = 2;
+#       endif
 #       if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS)
           int ncpus = 1;
           size_t len = sizeof(ncpus);
@@ -922,11 +926,10 @@ void GC_init_parallel(void)
 #   endif
 }
 
-
-#if !defined(GC_DARWIN_THREADS)
-GC_API int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set,
-                                      sigset_t *oset)
-{
+#if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_THREADS)
+  GC_API int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set,
+                                        sigset_t *oset)
+  {
     sigset_t fudged_set;
 
     INIT_REAL_SYMS();
@@ -936,7 +939,7 @@ GC_API int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set,
         set = &fudged_set;
     }
     return(REAL_FUNC(pthread_sigmask)(how, set, oset));
-}
+  }
 #endif /* !GC_DARWIN_THREADS */
 
 /* Wrapper for functions that are likely to block for an appreciable    */
@@ -1458,7 +1461,7 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
 /* as STL alloc.h.  This isn't really the right way to do this.   */
 /* but until the POSIX scheduling mess gets straightened out ...  */
 
-GC_INNER volatile AO_TS_t GC_allocate_lock = 0;
+GC_INNER volatile AO_TS_t GC_allocate_lock = AO_TS_INITIALIZER;
 
 void GC_lock(void)
 {

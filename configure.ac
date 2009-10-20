@@ -23,7 +23,7 @@ AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.55 $)
+AC_REVISION($Revision: 1.56 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
 AM_CONFIG_HEADER([include/private/config.h])
@@ -87,6 +87,7 @@ AH_TEMPLATE([GC_HPUX_THREADS],      [Define to support HP/UX 11 pthreads.])
 AH_TEMPLATE([GC_IRIX_THREADS],      [Define to support Irix pthreads.])
 AH_TEMPLATE([GC_LINUX_THREADS],     [Define to support pthreads on Linux.])
 AH_TEMPLATE([GC_NETBSD_THREADS],    [Define to support NetBSD pthreads.])
+AH_TEMPLATE([GC_OPENBSD_THREADS],   [Define to support OpenBSD pthreads.])
 AH_TEMPLATE([GC_OSF1_THREADS],      [Define to support Tru64 pthreads.])
 AH_TEMPLATE([GC_SOLARIS_THREADS],   [Define to support Solaris pthreads.])
 AH_TEMPLATE([GC_WIN32_THREADS],     [Define to support win32 threads.])
@@ -139,16 +140,17 @@ case "$THREADS" in
      *-*-hpux10*)
 	AC_MSG_WARN("Only HP-UX 11 POSIX threads are supported.")
 	;;
+     *-*-openbsd*)
+        AC_DEFINE(GC_OPENBSD_THREADS)
+        THREADDLLIBS=-pthread
+        INCLUDES="$INCLUDES -pthread"
+        openbsd_threads=true
+        ;;
      *-*-freebsd*)
 	AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
 	AC_DEFINE(GC_FREEBSD_THREADS)
 	INCLUDES="$INCLUDES -pthread"
       	;;
-     *-*-openbsd*)
-	AC_MSG_WARN([OpenBSD does not yet fully support threads with Boehm GC.])
-	AC_DEFINE([GC_FREEBSD_THREADS])
-	INCLUDES="$INCLUDES -pthread"
-	;;
      *-*-kfreebsd*-gnu)
 	AC_DEFINE(GC_FREEBSD_THREADS)
 	INCLUDES="$INCLUDES -pthread"
@@ -267,6 +269,7 @@ AM_CONDITIONAL(THREADS, test x$THREADS != xnone)
 AM_CONDITIONAL(PTHREADS, test x$THREADS = xposix)
 AM_CONDITIONAL(DARWIN_THREADS, test x$darwin_threads = xtrue)
 AM_CONDITIONAL(WIN32_THREADS, test x$win32_threads = xtrue)
+AM_CONDITIONAL(OPENBSD_THREADS, test x$openbsd_threads = xtrue)
 
 case "$host" in
    powerpc-*-darwin*)
@@ -453,6 +456,9 @@ case "$host" in
     machdep="mach_dep.lo sparc_netbsd_mach_dep.lo"
     ;;
  sparc64-*-netbsd*)
+    machdep="mach_dep.lo sparc_mach_dep.lo"
+    ;;
+ sparc*-*-openbsd*)
     machdep="mach_dep.lo sparc_mach_dep.lo"
     ;;
  sparc-sun-solaris2.3)

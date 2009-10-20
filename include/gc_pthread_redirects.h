@@ -35,8 +35,10 @@
 # include <signal.h>
 # include <dlfcn.h>
 
-  GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
-                                sigset_t * /* oset */);
+# ifndef GC_OPENBSD_THREADS
+    GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
+                                  sigset_t * /* oset */);
+# endif
   GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
 #endif
 
@@ -59,9 +61,11 @@ GC_API int GC_pthread_detach(pthread_t);
 # define pthread_detach GC_pthread_detach
 
 # ifndef GC_DARWIN_THREADS
-#   undef pthread_sigmask
+#   ifndef GC_OPENBSD_THREADS
+#     undef pthread_sigmask
+#     define pthread_sigmask GC_pthread_sigmask
+#   endif
 #   undef dlopen
-#   define pthread_sigmask GC_pthread_sigmask
 #   define dlopen GC_dlopen
 # endif
 #endif /* !GC_NO_THREAD_REDIRECTS */

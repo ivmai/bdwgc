@@ -502,7 +502,7 @@ static void *tiny_sbrk(ptrdiff_t increment)
 #define sbrk tiny_sbrk
 # endif /* ECOS */
 
-#if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__)
+#if defined(NETBSD) && defined(__ELF__)
   ptr_t GC_data_start = NULL;
   ptr_t GC_find_limit(ptr_t, GC_bool);
   extern char **environ;
@@ -514,6 +514,99 @@ static void *tiny_sbrk(ptrdiff_t increment)
     GC_data_start = GC_find_limit((ptr_t)&environ, FALSE);
   }
 #endif
+
+#ifdef OPENBSD
+  static struct sigaction old_segv_act;
+  STATIC sigjmp_buf GC_jmp_buf_openbsd;
+
+# ifdef THREADS
+#   include <sys/syscall.h>
+    extern sigset_t __syscall(quad_t, ...);
+# endif
+
+  /* Dont use GC_find_limit() because siglongjmp() outside of the       */
+  /* signal handler by-passes our userland pthreads lib, leaving        */
+  /* SIGSEGV and SIGPROF masked.  Instead, use this custom one that     */
+  /* works-around the issues.                                           */
+
+  /*ARGSUSED*/
+  STATIC void GC_fault_handler_openbsd(int sig)
+  {
+     siglongjmp(GC_jmp_buf_openbsd, 1);
+  }
+
+  /* Return the first non-addressible location > p or bound.    */
+  /* Requires the allocation lock.                              */
+  STATIC ptr_t GC_find_limit_openbsd(ptr_t p, ptr_t bound)
+  {
+    static volatile ptr_t result;
+             /* Safer if static, since otherwise it may not be  */
+             /* preserved across the longjmp.  Can safely be    */
+             /* static since it's only called with the          */
+             /* allocation lock held.                           */
+
+    struct sigaction act;
+    size_t pgsz = (size_t)sysconf(_SC_PAGESIZE);
+    GC_ASSERT(I_HOLD_LOCK());
+
+    act.sa_handler = GC_fault_handler_openbsd;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = SA_NODEFER | SA_RESTART;
+    sigaction(SIGSEGV, &act, &old_segv_act);
+
+    if (sigsetjmp(GC_jmp_buf_openbsd, 1) == 0) {
+      result = (ptr_t)((word)p & ~(pgsz-1));
+      for (;;) {
+        result += pgsz;
+        if (result >= bound) {
+          result = bound;
+          break;
+        }
+        GC_noop1((word)(*result));
+      }
+    }
+
+#   ifdef THREADS
+      /* Due to the siglongjump we need to manually unmask SIGPROF. */
+      __syscall(SYS_sigprocmask, SIG_UNBLOCK, sigmask(SIGPROF));
+#   endif
+
+    sigaction(SIGSEGV, &old_segv_act, 0);
+    return(result);
+  }
+
+  /* Return first addressable location > p or bound.    */
+  /* Requires the allocation lock.                      */
+  STATIC ptr_t GC_skip_hole_openbsd(ptr_t p, ptr_t bound)
+  {
+    static volatile ptr_t result;
+    static volatile int firstpass;
+
+    struct sigaction act;
+    size_t pgsz = (size_t)sysconf(_SC_PAGESIZE);
+    GC_ASSERT(I_HOLD_LOCK());
+
+    act.sa_handler = GC_fault_handler_openbsd;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = SA_NODEFER | SA_RESTART;
+    sigaction(SIGSEGV, &act, &old_segv_act);
+
+    firstpass = 1;
+    result = (ptr_t)((word)p & ~(pgsz-1));
+    if (sigsetjmp(GC_jmp_buf_openbsd, 1) != 0 || firstpass) {
+      firstpass = 0;
+      result += pgsz;
+      if (result >= bound) {
+        result = bound;
+      } else {
+        GC_noop1((word)(*result));
+      }
+    }
+
+    sigaction(SIGSEGV, &old_segv_act, 0);
+    return(result);
+  }
+#endif /* OPENBSD */
 
 # ifdef OS2
 
@@ -706,14 +799,12 @@ GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
 
 #endif /* CYGWIN32 */
 
-
-#define HAVE_GET_STACK_BASE
+# define HAVE_GET_STACK_BASE
 
 /* This is always called from the main thread.  */
 ptr_t GC_get_main_stack_base(void)
 {
     struct GC_stack_base sb;
-
     GC_get_stack_base(&sb);
     GC_ASSERT((void *)&sb HOTTER_THAN sb.mem_base);
     return (ptr_t)sb.mem_base;
@@ -1053,7 +1144,7 @@ ptr_t GC_get_main_stack_base(void)
 
 #if !defined(BEOS) && !defined(AMIGA) && !defined(MSWIN32) \
     && !defined(MSWINCE) && !defined(OS2) && !defined(NOSYS) && !defined(ECOS) \
-    && !defined(CYGWIN32)
+    && !defined(CYGWIN32) && !defined(GC_OPENBSD_THREADS)
 
 ptr_t GC_get_main_stack_base(void)
 {
@@ -1164,9 +1255,37 @@ GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
     return GC_SUCCESS;
 }
 
-#define HAVE_GET_STACK_BASE
+# define HAVE_GET_STACK_BASE
 
 #endif /* GC_LINUX_THREADS */
+
+#ifdef GC_OPENBSD_THREADS
+
+# include <sys/signal.h>
+# include <pthread.h>
+# include <pthread_np.h>
+
+  /* Find the stack using pthread_stackseg_np(). */
+  int GC_get_stack_base(struct GC_stack_base *sb)
+  {
+    stack_t stack;
+    pthread_stackseg_np(pthread_self(), &stack);
+    sb->mem_base = stack.ss_sp;
+    return GC_SUCCESS;
+  }
+
+# define HAVE_GET_STACK_BASE
+
+  /* This is always called from the main thread. */
+  ptr_t GC_get_main_stack_base(void)
+  {
+    struct GC_stack_base sb;
+    GC_get_stack_base(&sb);
+    GC_ASSERT((void *)&sb HOTTER_THAN sb.mem_base);
+    return (ptr_t)sb.mem_base;
+  }
+
+#endif /* GC_OPENBSD_THREADS */
 
 #ifndef HAVE_GET_STACK_BASE
 /* Retrieve stack base.                                         */
@@ -1664,7 +1783,26 @@ ptr_t GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr)
 #  include "extra/AmigaOS.c"
 #  undef GC_AMIGA_DS
 
-#else /* !OS2 && !Windows && !AMIGA */
+#elif defined(OPENBSD)
+
+/* Depending on arch alignment, there can be multiple holes     */
+/* between DATASTART and DATAEND.  Scan in DATASTART .. DATAEND */
+/* and register each region.                                    */
+void GC_register_data_segments(void)
+{
+  ptr_t region_start = DATASTART;
+  ptr_t region_end;
+
+  for (;;) {
+    region_end = GC_find_limit_openbsd(region_start, DATAEND);
+    GC_add_roots_inner(region_start, region_end, FALSE);
+    if (region_end >= DATAEND)
+      break;
+    region_start = GC_skip_hole_openbsd(region_end, DATAEND);
+  }
+}
+
+# else /* !OS2 && !Windows && !AMIGA && !OPENBSD */
 
 void GC_register_data_segments(void)
 {
@@ -2694,7 +2832,7 @@ STATIC GC_bool GC_old_segv_handler_used_si = FALSE;
 /* Contention should be very rare, so we do the minimum to handle it    */
 /* correctly.                                                           */
 #ifdef AO_HAVE_test_and_set_acquire
-  GC_INNER volatile AO_TS_t GC_fault_handler_lock = 0;
+  GC_INNER volatile AO_TS_t GC_fault_handler_lock = AO_TS_INITIALIZER;
   static void async_set_pht_entry_from_index(volatile page_hash_table db,
                                              size_t index)
   {

@@ -20,6 +20,8 @@
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) && \
     !defined(GC_DARWIN_THREADS)
 
+#ifndef GC_OPENBSD_THREADS
+
 #include <signal.h>
 #include <semaphore.h>
 #include <errno.h>
@@ -268,6 +270,8 @@ STATIC void GC_restart_handler(int sig)
 #   endif
 }
 
+#endif /* !GC_OPENBSD_THREADS */
+
 void GC_thr_init(void);
 
 # ifdef IA64
@@ -357,7 +361,9 @@ STATIC int GC_suspend_all(void)
     int n_live_threads = 0;
     int i;
     GC_thread p;
-    int result;
+#   ifndef GC_OPENBSD_THREADS
+      int result;
+#   endif
     pthread_t my_thread = pthread_self();
 
 #   ifdef DEBUG_THREADS
@@ -368,16 +374,29 @@ STATIC int GC_suspend_all(void)
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (!THREAD_EQUAL(p -> id, my_thread)) {
             if (p -> flags & FINISHED) continue;
-            if (p -> stop_info.last_stop_count == GC_stop_count) continue;
             if (p -> thread_blocked) /* Will wait */ continue;
-            n_live_threads++;
+#           ifndef GC_OPENBSD_THREADS
+              if (p -> stop_info.last_stop_count == GC_stop_count) continue;
+              n_live_threads++;
+#           endif
 #           ifdef DEBUG_THREADS
               GC_printf("Sending suspend signal to 0x%x\n",
                         (unsigned)(p -> id));
 #           endif
 
-            result = pthread_kill(p -> id, SIG_SUSPEND);
-            switch(result) {
+#           ifdef GC_OPENBSD_THREADS
+              if (pthread_suspend_np(p -> id) != 0)
+                ABORT("pthread_suspend_np failed");
+              /* This will only work for userland pthreads.  It will    */
+              /* fail badly on rthreads.  Perhaps we should consider    */
+              /* a pthread_sp_np() function that returns the stack      */
+              /* pointer for a suspended thread and implement in both   */
+              /* pthreads and rthreads.                                 */
+              p -> stop_info.stack_ptr =
+                        *(ptr_t *)((char *)p -> id + UTHREAD_SP_OFFSET);
+#           else
+              result = pthread_kill(p -> id, SIG_SUSPEND);
+              switch(result) {
                 case ESRCH:
                     /* Not really there anymore.  Possible? */
                     n_live_threads--;
@@ -386,7 +405,8 @@ STATIC int GC_suspend_all(void)
                     break;
                 default:
                     ABORT("pthread_kill failed");
-            }
+              }
+#           endif
         }
       }
     }
@@ -396,8 +416,10 @@ STATIC int GC_suspend_all(void)
 void GC_stop_world(void)
 {
     int i;
-    int n_live_threads;
-    int code;
+#   ifndef GC_OPENBSD_THREADS
+      int n_live_threads;
+      int code;
+#   endif
 
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef DEBUG_THREADS
@@ -415,6 +437,10 @@ void GC_stop_world(void)
         /* We should have previously waited for it to become zero. */
       }
 #   endif /* PARALLEL_MARK */
+
+# ifdef GC_OPENBSD_THREADS
+    (void)GC_suspend_all();
+# else
     AO_store(&GC_stop_count, GC_stop_count+1);
         /* Only concurrent reads are possible. */
     AO_store_release(&GC_world_is_stopped, TRUE);
@@ -459,6 +485,8 @@ void GC_stop_world(void)
               ABORT("sem_wait for handler failed");
           }
     }
+# endif
+
 #   ifdef PARALLEL_MARK
       if (GC_parallel)
         GC_release_mark_lock();
@@ -476,8 +504,10 @@ void GC_start_world(void)
     pthread_t my_thread = pthread_self();
     register int i;
     register GC_thread p;
-    register int n_live_threads = 0;
-    register int result;
+#   ifndef GC_OPENBSD_THREADS
+      register int n_live_threads = 0;
+      register int result;
+#   endif
 #   ifdef GC_NETBSD_THREADS_WORKAROUND
       int code;
 #   endif
@@ -486,18 +516,26 @@ void GC_start_world(void)
       GC_printf("World starting\n");
 #   endif
 
-    AO_store(&GC_world_is_stopped, FALSE);
+#   ifndef GC_OPENBSD_THREADS
+      AO_store(&GC_world_is_stopped, FALSE);
+#   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (!THREAD_EQUAL(p -> id, my_thread)) {
             if (p -> flags & FINISHED) continue;
             if (p -> thread_blocked) continue;
-            n_live_threads++;
+#           ifndef GC_OPENBSD_THREADS
+              n_live_threads++;
+#           endif
 #           ifdef DEBUG_THREADS
               GC_printf("Sending restart signal to 0x%x\n",
                         (unsigned)(p -> id));
 #           endif
 
+#         ifdef GC_OPENBSD_THREADS
+            if (pthread_resume_np(p -> id) != 0)
+              ABORT("pthread_kill failed");
+#         else
             result = pthread_kill(p -> id, SIG_THR_RESTART);
             switch(result) {
                 case ESRCH:
@@ -509,6 +547,7 @@ void GC_start_world(void)
                 default:
                     ABORT("pthread_kill failed");
             }
+#         endif
         }
       }
     }
@@ -528,6 +567,7 @@ void GC_start_world(void)
 
 void GC_stop_init(void)
 {
+# ifndef GC_OPENBSD_THREADS
     struct sigaction act;
 
     if (sem_init(&GC_suspend_ack_sem, 0, 0) != 0)
@@ -581,6 +621,7 @@ void GC_stop_init(void)
       if (GC_print_stats && GC_retry_signals) {
           GC_log_printf("Will retry suspend signal if necessary.\n");
       }
+# endif /* !GC_OPENBSD_THREADS */
 }
 
 #endif

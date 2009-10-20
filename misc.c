@@ -516,6 +516,10 @@ static void maybe_install_looping_handler(void)
   void GC_init_dyld(void);
 #endif
 
+#if defined(NETBSD) && defined(__ELF__)
+  void GC_init_netbsd_elf(void);
+#endif
+
 #if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
   STATIC int GC_log = 2;
 #endif
@@ -726,7 +730,7 @@ GC_API void GC_CALL GC_init(void)
 #   if defined(SEARCH_FOR_DATA_START)
         GC_init_linux_data_start();
 #   endif
-#   if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__)
+#   if defined(NETBSD) && defined(__ELF__)
         GC_init_netbsd_elf();
 #   endif
 #   if !defined(THREADS) || defined(GC_PTHREADS) || defined(GC_WIN32_THREADS) \

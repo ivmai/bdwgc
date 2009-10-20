@@ -64,8 +64,9 @@
     || defined(GC_DGUX386_THREADS) || defined(GC_FREEBSD_THREADS) \
     || defined(GC_GNU_THREADS) || defined(GC_HPUX_THREADS) \
     || defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) \
-    || defined(GC_NETBSD_THREADS) || defined(GC_OSF1_THREADS) \
-    || defined(GC_SOLARIS_THREADS) || defined(GC_WIN32_THREADS)
+    || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS) \
+    || defined(GC_OSF1_THREADS) || defined(GC_SOLARIS_THREADS) \
+    || defined(GC_WIN32_THREADS)
 # ifndef GC_THREADS
 #   define GC_THREADS
 # endif
@@ -90,6 +91,8 @@
 #   define GC_SOLARIS_THREADS
 # elif defined(__APPLE__) && defined(__MACH__)
 #   define GC_DARWIN_THREADS
+# elif defined(__OpenBSD__)
+#   define GC_OPENBSD_THREADS
 # elif !defined(GC_LINUX_THREADS) && !defined(GC_HPUX_THREADS) \
        && !defined(GC_OSF1_THREADS) && !defined(GC_IRIX_THREADS)
     /* FIXME: Should we really need for FreeBSD and NetBSD to check     */

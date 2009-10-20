@@ -118,6 +118,10 @@ GC_OSF1_THREADS         Enables support for Tru64 pthreads.
 GC_FREEBSD_THREADS      Enables support for FreeBSD pthreads.
   Appeared to run into some underlying thread problems.
 
+GC_NETBSD_THREADS       Enables support for NetBSD pthreads.
+
+GC_OPENBSD_THREADS      Enables support for OpenBSD pthreads.
+
 GC_DARWIN_THREADS       Enables support for Mac OS X pthreads.
 
 GC_AIX_THREADS  Enables support for IBM AIX threads.

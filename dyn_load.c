@@ -67,6 +67,7 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
     !defined(HPUX) && !(defined(LINUX) && defined(__ELF__)) && \
     !defined(AIX) && !defined(SCO_ELF) && !defined(DGUX) && \
     !(defined(FREEBSD) && defined(__ELF__)) && \
+    !(defined(OPENBSD) && (defined(__ELF__) || defined(M68K))) && \
     !(defined(NETBSD) && defined(__ELF__)) && !defined(HURD) && \
     !defined(DARWIN) && !defined(CYGWIN32)
  --> We only know how to find data segments of dynamic libraries for the
@@ -86,12 +87,15 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #   define ELFSIZE ARCH_ELFSIZE
 #endif
 
-#if defined(LINUX) && defined(__ELF__) || defined(SCO_ELF) || \
-    (defined(FREEBSD) && defined(__ELF__)) || defined(DGUX) || \
-    (defined(NETBSD) && defined(__ELF__)) || defined(HURD)
-#   include <stddef.h>
+#if defined(SCO_ELF) || defined(DGUX) || defined(HURD) \
+    || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
+                             || defined(NETBSD) || defined(OPENBSD)))
+# include <stddef.h>
+# if !defined(OPENBSD)
+    /* FIXME: Why we exclude it for OpenBSD? */
 #   include <elf.h>
-#   include <link.h>
+# endif
+# include <link.h>
 #endif
 
 /* Newer versions of GNU/Linux define this macro.  We
@@ -103,7 +107,7 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #      else
 #        define ElfW(type) Elf64_##type
 #      endif
-#    elif defined(NETBSD)
+#    elif defined(NETBSD) || defined(OPENBSD)
 #      if ELFSIZE == 32
 #        define ElfW(type) Elf32_##type
 #      else
@@ -218,10 +222,9 @@ void GC_register_dynamic_libraries(void)
 # endif /* !USE_PROC ... */
 # endif /* SOLARISDL */
 
-#if defined(LINUX) && defined(__ELF__) || defined(SCO_ELF) || \
-    (defined(FREEBSD) && defined(__ELF__)) || defined(DGUX) || \
-    (defined(NETBSD) && defined(__ELF__)) || defined(HURD)
-
+#if defined(SCO_ELF) || defined(DGUX) || defined(HURD) \
+    || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
+                             || defined(NETBSD) || defined(OPENBSD)))
 
 #ifdef USE_PROC_FOR_LIBRARIES
 
@@ -562,7 +565,7 @@ GC_bool GC_register_main_static_data(void)
 /* This doesn't necessarily work in all cases, e.g. with preloaded
  * dynamic libraries.                                           */
 
-#if defined(NETBSD)
+#if defined(NETBSD) || defined(OPENBSD)
 #  include <sys/exec_elf.h>
 /* for compatibility with 1.4.x */
 #  ifndef DT_DEBUG

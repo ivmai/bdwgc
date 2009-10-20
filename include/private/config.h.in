@@ -60,6 +60,9 @@
 /* Define to support NetBSD pthreads. */
 #undef GC_NETBSD_THREADS
 
+/* Define to support OpenBSD pthreads. */
+#undef GC_OPENBSD_THREADS
+
 /* Define to support Tru64 pthreads. */
 #undef GC_OSF1_THREADS
 
