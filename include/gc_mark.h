@@ -23,15 +23,15 @@
  * collector in subtle ways by using this functionality.
  */
 #ifndef GC_MARK_H
-# define GC_MARK_H
+#define GC_MARK_H
 
-# ifndef _GC_H
-#   include "gc.h"
-# endif
+#ifndef GC_H
+# include "gc.h"
+#endif
 
-# ifdef __cplusplus
-    extern "C" {
-# endif
+#ifdef __cplusplus
+  extern "C" {
+#endif
 
 /* A client supplied mark procedure.  Returns new mark stack pointer.   */
 /* Primary effect should be to push new entries on the mark stack.      */
@@ -55,20 +55,21 @@
 /* free list link field in the first word.  Thus mark procedures may    */
 /* not count on the presence of a type descriptor, and must handle this */
 /* case correctly somehow.                                              */
-# define GC_PROC_BYTES 100
+#define GC_PROC_BYTES 100
 struct GC_ms_entry;
-typedef struct GC_ms_entry * (*GC_mark_proc) (
-                GC_word * addr, struct GC_ms_entry * mark_stack_ptr,
-                struct GC_ms_entry * mark_stack_limit, GC_word env);
+typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
+                                struct GC_ms_entry * /* mark_stack_ptr */,
+                                struct GC_ms_entry * /* mark_stack_limit */,
+                                GC_word /* env */);
 
-# define GC_LOG_MAX_MARK_PROCS 6
-# define GC_MAX_MARK_PROCS (1 << GC_LOG_MAX_MARK_PROCS)
+#define GC_LOG_MAX_MARK_PROCS 6
+#define GC_MAX_MARK_PROCS (1 << GC_LOG_MAX_MARK_PROCS)
 
 /* In a few cases it's necessary to assign statically known indices to  */
 /* certain mark procs.  Thus we reserve a few for well known clients.   */
 /* (This is necessary if mark descriptors are compiler generated.)      */
 #define GC_RESERVED_MARK_PROCS 8
-#   define GC_GCJ_RESERVED_MARK_PROC_INDEX 0
+#define GC_GCJ_RESERVED_MARK_PROC_INDEX 0
 
 /* Object descriptors on mark stack or in objects.  Low order two       */
 /* bits are tags distinguishing among the following 4 possibilities     */
@@ -90,7 +91,7 @@ typedef struct GC_ms_entry * (*GC_mark_proc) (
                         /* pushed on the mark stack by invoking         */
                         /* PROC(descr).  ENV(descr) is passed as the    */
                         /* last argument.                               */
-#   define GC_MAKE_PROC(proc_index, env) \
+#define GC_MAKE_PROC(proc_index, env) \
             (((((env) << GC_LOG_MAX_MARK_PROCS) \
                | (proc_index)) << GC_DS_TAG_BITS) | GC_DS_PROC)
 #define GC_DS_PER_OBJECT 3  /* The real descriptor is at the            */
@@ -136,16 +137,15 @@ GC_API void * GC_greatest_plausible_heap_addr;
 /* which would tie the client code to a fixed collector version.)       */
 /* Note that mark procedures should explicitly call FIXUP_POINTER()     */
 /* if required.                                                         */
-GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void * obj,
-                                     struct GC_ms_entry * mark_stack_ptr,
-                                     struct GC_ms_entry * mark_stack_limit,
-                                     void * *src);
+GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void * /* obj */,
+                                struct GC_ms_entry * /* mark_stack_ptr */,
+                                struct GC_ms_entry * /* mark_stack_limit */,
+                                void ** /* src */);
 
 #define GC_MARK_AND_PUSH(obj, msp, lim, src) \
-        (((GC_word)obj >= (GC_word)GC_least_plausible_heap_addr && \
-          (GC_word)obj <= (GC_word)GC_greatest_plausible_heap_addr)? \
-          GC_mark_and_push(obj, msp, lim, src) : \
-          msp)
+          ((GC_word)(obj) >= (GC_word)GC_least_plausible_heap_addr && \
+           (GC_word)(obj) <= (GC_word)GC_greatest_plausible_heap_addr ? \
+           GC_mark_and_push(obj, msp, lim, src) : (msp))
 
 GC_API size_t GC_debug_header_size;
        /* The size of the header added to objects allocated through    */
@@ -163,15 +163,15 @@ GC_API void ** GC_CALL GC_new_free_list(void);
 GC_API void ** GC_CALL GC_new_free_list_inner(void);
 
 /* Return a new kind, as specified. */
-GC_API unsigned GC_CALL GC_new_kind(void **free_list,
-                                GC_word mark_descriptor_template,
-                                int add_size_to_descriptor,
-                                int clear_new_objects);
+GC_API unsigned GC_CALL GC_new_kind(void ** /* free_list */,
+                                    GC_word /* mark_descriptor_template */,
+                                    int /* add_size_to_descriptor */,
+                                    int /* clear_new_objects */);
                 /* The last two parameters must be zero or one. */
-GC_API unsigned GC_CALL GC_new_kind_inner(void **free_list,
-                      GC_word mark_descriptor_template,
-                      int add_size_to_descriptor,
-                      int clear_new_objects);
+GC_API unsigned GC_CALL GC_new_kind_inner(void ** /* free_list */,
+                                    GC_word /* mark_descriptor_template */,
+                                    int /* add_size_to_descriptor */,
+                                    int /* clear_new_objects */);
 
 /* Return a new mark procedure identifier, suitable for use as  */
 /* the first argument in GC_MAKE_PROC.                          */
@@ -184,9 +184,10 @@ GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc);
 /* the descriptor is not correct.  Even in the single-threaded case,    */
 /* we need to be sure that cleared objects on a free list don't         */
 /* cause a GC crash if they are accidentally traced.                    */
-GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k);
+GC_API void * GC_CALL GC_generic_malloc(size_t /* lb */, int /* k */);
 
-typedef void (GC_CALLBACK * GC_describe_type_fn) (void *p, char *out_buf);
+typedef void (GC_CALLBACK * GC_describe_type_fn)(void * /* p */,
+                                                 char * /* out_buf */);
                                 /* A procedure which                    */
                                 /* produces a human-readable            */
                                 /* description of the "type" of object  */
@@ -198,10 +199,10 @@ typedef void (GC_CALLBACK * GC_describe_type_fn) (void *p, char *out_buf);
                                 /* as possible, though we do avoid      */
                                 /* invoking them on objects on the      */
                                 /* global free list.                    */
-#       define GC_TYPE_DESCR_LEN 40
+#define GC_TYPE_DESCR_LEN 40
 
-GC_API void GC_CALL GC_register_describe_type_fn(int kind,
-                                                GC_describe_type_fn knd);
+GC_API void GC_CALL GC_register_describe_type_fn(int /* kind */,
+                                                 GC_describe_type_fn);
                                 /* Register a describe_type function    */
                                 /* to be used when printing objects     */
                                 /* of a particular kind.                */
@@ -210,8 +211,8 @@ GC_API void GC_CALL GC_register_describe_type_fn(int kind,
 GC_API size_t GC_CALL GC_get_heap_size_inner(void);
 GC_API size_t GC_CALL GC_get_free_bytes_inner(void);
 
-# ifdef __cplusplus
-    }  /* end of extern "C" */
-# endif
+#ifdef __cplusplus
+  } /* end of extern "C" */
+#endif
 
-#endif  /* GC_MARK_H */
+#endif /* GC_MARK_H */

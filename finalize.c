@@ -121,7 +121,7 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
     for (i = 0; i < old_size; i++) {
       p = (*table)[i];
       while (p != 0) {
-        ptr_t real_key = (ptr_t)REVEAL_POINTER(p -> hidden_key);
+        ptr_t real_key = GC_REVEAL_POINTER(p -> hidden_key);
         struct hash_chain_entry *next = p -> next;
         size_t new_hash = HASH3(real_key, new_size, log_new_size);
 
@@ -167,8 +167,8 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
     }
     index = HASH2(link, log_dl_table_size);
     for (curr_dl = dl_head[index]; curr_dl != 0; curr_dl = dl_next(curr_dl)) {
-        if (curr_dl -> dl_hidden_link == HIDE_POINTER(link)) {
-            curr_dl -> dl_hidden_obj = HIDE_POINTER(obj);
+        if (curr_dl -> dl_hidden_link == GC_HIDE_POINTER(link)) {
+            curr_dl -> dl_hidden_obj = GC_HIDE_POINTER(obj);
             UNLOCK();
             return GC_DUPLICATE;
         }
@@ -188,9 +188,10 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
       /* Recalculate index since the table may grow.    */
       index = HASH2(link, log_dl_table_size);
       /* Check again that our disappearing link not in the table. */
-      for (curr_dl = dl_head[index]; curr_dl != 0; curr_dl = dl_next(curr_dl)) {
-        if (curr_dl -> dl_hidden_link == HIDE_POINTER(link)) {
-          curr_dl -> dl_hidden_obj = HIDE_POINTER(obj);
+      for (curr_dl = dl_head[index]; curr_dl != 0;
+           curr_dl = dl_next(curr_dl)) {
+        if (curr_dl -> dl_hidden_link == GC_HIDE_POINTER(link)) {
+          curr_dl -> dl_hidden_obj = GC_HIDE_POINTER(obj);
           UNLOCK();
 #         ifndef DBG_HDRS_ALL
             /* Free unused new_dl returned by GC_oom_fn() */
@@ -200,8 +201,8 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
         }
       }
     }
-    new_dl -> dl_hidden_obj = HIDE_POINTER(obj);
-    new_dl -> dl_hidden_link = HIDE_POINTER(link);
+    new_dl -> dl_hidden_obj = GC_HIDE_POINTER(obj);
+    new_dl -> dl_hidden_link = GC_HIDE_POINTER(link);
     dl_set_next(new_dl, dl_head[index]);
     dl_head[index] = new_dl;
     GC_dl_entries++;
@@ -221,7 +222,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     index = HASH2(link, log_dl_table_size);
     prev_dl = 0; curr_dl = dl_head[index];
     while (curr_dl != 0) {
-        if (curr_dl -> dl_hidden_link == HIDE_POINTER(link)) {
+        if (curr_dl -> dl_hidden_link == GC_HIDE_POINTER(link)) {
             if (prev_dl == 0) {
                 dl_head[index] = dl_next(curr_dl);
             } else {
@@ -329,7 +330,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
       prev_fo = 0; curr_fo = fo_head[index];
       while (curr_fo != 0) {
         GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
-        if (curr_fo -> fo_hidden_base == HIDE_POINTER(base)) {
+        if (curr_fo -> fo_hidden_base == GC_HIDE_POINTER(base)) {
           /* Interruption by a signal in the middle of this     */
           /* should be safe.  The client may see only *ocd      */
           /* updated, but we'll declare that to be his problem. */
@@ -411,7 +412,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
     GC_ASSERT(GC_size(new_fo) >= sizeof(struct finalizable_object));
     if (ocd) *ocd = 0;
     if (ofn) *ofn = 0;
-    new_fo -> fo_hidden_base = (word)HIDE_POINTER(base);
+    new_fo -> fo_hidden_base = GC_HIDE_POINTER(base);
     new_fo -> fo_fn = fn;
     new_fo -> fo_client_data = (ptr_t)cd;
     new_fo -> fo_object_size = hhdr -> hb_sz;
@@ -472,15 +473,15 @@ void GC_dump_finalization(void)
     GC_printf("Disappearing links:\n");
     for (i = 0; i < dl_size; i++) {
       for (curr_dl = dl_head[i]; curr_dl != 0; curr_dl = dl_next(curr_dl)) {
-        real_ptr = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_obj);
-        real_link = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_link);
+        real_ptr = GC_REVEAL_POINTER(curr_dl -> dl_hidden_obj);
+        real_link = GC_REVEAL_POINTER(curr_dl -> dl_hidden_link);
         GC_printf("Object: %p, Link:%p\n", real_ptr, real_link);
       }
     }
     GC_printf("Finalizers:\n");
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
-        real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
+        real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
         GC_printf("Finalizable object: %p\n", real_ptr);
       }
     }
@@ -543,8 +544,8 @@ void GC_finalize(void)
       curr_dl = dl_head[i];
       prev_dl = 0;
       while (curr_dl != 0) {
-        real_ptr = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_obj);
-        real_link = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_link);
+        real_ptr = GC_REVEAL_POINTER(curr_dl -> dl_hidden_obj);
+        real_link = GC_REVEAL_POINTER(curr_dl -> dl_hidden_link);
         if (!GC_is_marked(real_ptr)) {
             *(word *)real_link = 0;
             next_dl = dl_next(curr_dl);
@@ -568,7 +569,7 @@ void GC_finalize(void)
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
         GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
-        real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
+        real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
             GC_MARKED_FOR_FINALIZATION(real_ptr);
             GC_MARK_FO(real_ptr, curr_fo -> fo_mark_proc);
@@ -585,7 +586,7 @@ void GC_finalize(void)
       curr_fo = fo_head[i];
       prev_fo = 0;
       while (curr_fo != 0) {
-        real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
+        real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
             if (!GC_java_finalization) {
               GC_set_mark_bit(real_ptr);
@@ -604,7 +605,7 @@ void GC_finalize(void)
               /* unhide object pointer so any future collections will   */
               /* see it.                                                */
               curr_fo -> fo_hidden_base =
-                        (word) REVEAL_POINTER(curr_fo -> fo_hidden_base);
+                        (word)GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
               GC_bytes_finalized +=
                         curr_fo -> fo_object_size
                         + sizeof(struct finalizable_object);
@@ -651,9 +652,9 @@ void GC_finalize(void)
                 fo_set_next(prev_fo, next_fo);
 
               curr_fo -> fo_hidden_base =
-                        (word) HIDE_POINTER(curr_fo -> fo_hidden_base);
+                                GC_HIDE_POINTER(curr_fo -> fo_hidden_base);
               GC_bytes_finalized -=
-                        curr_fo -> fo_object_size + sizeof(struct finalizable_object);
+                  curr_fo->fo_object_size + sizeof(struct finalizable_object);
 
               i = HASH2(real_ptr, log_fo_table_size);
               fo_set_next (curr_fo, fo_head[i]);
@@ -673,7 +674,7 @@ void GC_finalize(void)
       curr_dl = dl_head[i];
       prev_dl = 0;
       while (curr_dl != 0) {
-        real_link = GC_base((ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_link));
+        real_link = GC_base(GC_REVEAL_POINTER(curr_dl -> dl_hidden_link));
         if (real_link != 0 && !GC_is_marked(real_link)) {
             next_dl = dl_next(curr_dl);
             if (prev_dl == 0) {
@@ -717,7 +718,7 @@ STATIC void GC_enqueue_all_finalizers(void)
         curr_fo = fo_head[i];
         prev_fo = 0;
       while (curr_fo != 0) {
-          real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
+          real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
           GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
           GC_set_mark_bit(real_ptr);
 
@@ -737,8 +738,7 @@ STATIC void GC_enqueue_all_finalizers(void)
           /* unhide object pointer so any future collections will       */
           /* see it.                                            */
           curr_fo -> fo_hidden_base =
-                        (word) REVEAL_POINTER(curr_fo -> fo_hidden_base);
-
+                        (word)GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
           GC_bytes_finalized +=
                 curr_fo -> fo_object_size + sizeof(struct finalizable_object);
           curr_fo = next_fo;

@@ -20,28 +20,30 @@
  * routines.  Transitively include gc_priv.h.
  */
 #ifndef GC_PMARK_H
-# define GC_PMARK_H
+#define GC_PMARK_H
 
-# ifdef HAVE_CONFIG_H
-#   include "private/config.h"
-# endif
+#ifdef HAVE_CONFIG_H
+# include "private/config.h"
+#endif
 
-# ifndef GC_BUILD
-#   define GC_BUILD
-# endif
+#ifndef GC_BUILD
+# define GC_BUILD
+#endif
 
-# if defined(KEEP_BACK_PTRS) || defined(PRINT_BLACK_LIST)
-#   include "dbg_mlc.h"
+#if defined(KEEP_BACK_PTRS) || defined(PRINT_BLACK_LIST)
+# include "dbg_mlc.h"
+#endif
+
+#ifndef GC_MARK_H
+# ifndef GC_H
+#   define GC_I_HIDE_POINTERS /* to get GC_HIDE_POINTER() and friends */
 # endif
-# ifndef GC_MARK_H
-#   ifndef _GC_H
-#     define I_HIDE_POINTERS /* to get HIDE_POINTER() and friends */
-#   endif
-#   include "../gc_mark.h"
-# endif
-# ifndef GC_PRIVATE_H
-#   include "gc_priv.h"
-# endif
+# include "../gc_mark.h"
+#endif
+
+#ifndef GC_PRIVATE_H
+# include "gc_priv.h"
+#endif
 
 /* The real declarations of the following is in gc_priv.h, so that      */
 /* we can avoid scanning the following table.                           */
@@ -50,20 +52,20 @@ mark_proc GC_mark_procs[MAX_MARK_PROCS];
 */
 
 #ifndef MARK_DESCR_OFFSET
-#  define MARK_DESCR_OFFSET     sizeof(word)
+# define MARK_DESCR_OFFSET sizeof(word)
 #endif
 
 /*
  * Mark descriptor stuff that should remain private for now, mostly
  * because it's hard to export WORDSZ without including gcconfig.h.
  */
-# define BITMAP_BITS (WORDSZ - GC_DS_TAG_BITS)
-# define PROC(descr) \
-        (GC_mark_procs[((descr) >> GC_DS_TAG_BITS) & (GC_MAX_MARK_PROCS-1)])
-# define ENV(descr) \
-        ((descr) >> (GC_DS_TAG_BITS + GC_LOG_MAX_MARK_PROCS))
-# define MAX_ENV \
-        (((word)1 << (WORDSZ - GC_DS_TAG_BITS - GC_LOG_MAX_MARK_PROCS)) - 1)
+#define BITMAP_BITS (WORDSZ - GC_DS_TAG_BITS)
+#define PROC(descr) \
+      (GC_mark_procs[((descr) >> GC_DS_TAG_BITS) & (GC_MAX_MARK_PROCS-1)])
+#define ENV(descr) \
+      ((descr) >> (GC_DS_TAG_BITS + GC_LOG_MAX_MARK_PROCS))
+#define MAX_ENV \
+      (((word)1 << (WORDSZ - GC_DS_TAG_BITS - GC_LOG_MAX_MARK_PROCS)) - 1)
 
 GC_EXTERN unsigned GC_n_mark_procs;
 
@@ -71,7 +73,7 @@ GC_EXTERN unsigned GC_n_mark_procs;
 #define GC_MARK_STACK_DISCARDS (INITIAL_MARK_STACK_SIZE/8)
 
 typedef struct GC_ms_entry {
-    ptr_t mse_start;   /* First word of object, word aligned  */
+    ptr_t mse_start;    /* First word of object, word aligned.  */
     GC_word mse_descr;  /* Descriptor; low order two bits are tags,     */
                         /* as described in gc_mark.h.                   */
 } mse;
@@ -135,7 +137,7 @@ mse * GC_signal_mark_stack_overflow(mse *msp);
 
 /* Push the object obj with corresponding heap block header hhdr onto   */
 /* the mark stack.                                                      */
-# define PUSH_OBJ(obj, hhdr, mark_stack_top, mark_stack_limit) \
+#define PUSH_OBJ(obj, hhdr, mark_stack_top, mark_stack_limit) \
 { \
     register word _descr = (hhdr) -> hb_descr; \
         \
@@ -154,8 +156,8 @@ mse * GC_signal_mark_stack_overflow(mse *msp);
 /* ptr to a currently unmarked object.  Mark it.                        */
 /* If we assumed a standard-conforming compiler, we could probably      */
 /* generate the exit_label transparently.                               */
-# define PUSH_CONTENTS(current, mark_stack_top, mark_stack_limit, \
-                       source, exit_label) \
+#define PUSH_CONTENTS(current, mark_stack_top, mark_stack_limit, \
+                      source, exit_label) \
 { \
     hdr * my_hhdr; \
  \
@@ -167,11 +169,11 @@ exit_label: ; \
 
 /* Set mark bit, exit if it was already set.    */
 
-# ifdef USE_MARK_BITS
-#   ifdef PARALLEL_MARK
-      /* The following may fail to exit even if the bit was already set.    */
-      /* For our uses, that's benign:                                       */
-#     define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
+#ifdef USE_MARK_BITS
+# ifdef PARALLEL_MARK
+    /* The following may fail to exit even if the bit was already set.  */
+    /* For our uses, that's benign:                                     */
+#   define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
         { \
           if (!(*(addr) & (bits))) { \
             AO_or((AO_t *)(addr), (bits)); \
@@ -179,37 +181,36 @@ exit_label: ; \
             goto exit_label; \
           } \
         }
-#   else
-#     define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
+# else
+#   define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
         { \
            word old = *(addr); \
            word my_bits = (bits); \
            if (old & my_bits) goto exit_label; \
            *(addr) = (old | my_bits); \
          }
-#   endif /* !PARALLEL_MARK */
-#   define SET_MARK_BIT_EXIT_IF_SET(hhdr,bit_no,exit_label) \
+# endif /* !PARALLEL_MARK */
+# define SET_MARK_BIT_EXIT_IF_SET(hhdr,bit_no,exit_label) \
     { \
         word * mark_word_addr = hhdr -> hb_marks + divWORDSZ(bit_no); \
       \
         OR_WORD_EXIT_IF_SET(mark_word_addr, (word)1 << modWORDSZ(bit_no), \
                             exit_label); \
     }
-# endif
+#endif
 
-
-# if defined(I386) && defined(__GNUC__)
-#  define LONG_MULT(hprod, lprod, x, y) { \
+#if defined(I386) && defined(__GNUC__)
+# define LONG_MULT(hprod, lprod, x, y) { \
         asm("mull %2" : "=a"(lprod), "=d"(hprod) : "g"(y), "0"(x)); \
-   }
-# else /* No in-line X86 assembly code */
-#  define LONG_MULT(hprod, lprod, x, y) { \
+  }
+#else /* No in-line X86 assembly code */
+# define LONG_MULT(hprod, lprod, x, y) { \
         unsigned long long prod = (unsigned long long)x \
                                   * (unsigned long long)y; \
         hprod = prod >> 32;  \
         lprod = (unsigned32)prod;  \
-   }
-# endif
+  }
+#endif
 
 #ifdef USE_MARK_BYTES
   /* There is a race here, and we may set                               */
@@ -241,6 +242,7 @@ exit_label: ; \
 # define TRACE(source, cmd)
 # define TRACE_TARGET(source, cmd)
 #endif
+
 /* If the mark bit corresponding to current is not set, set it, and     */
 /* push the contents of the object on the mark stack.  Current points   */
 /* to the beginning of the object.  We rely on the fact that the        */
@@ -371,10 +373,10 @@ exit_label: ; \
 #endif /* MARK_BIT_PER_OBJ */
 
 #if defined(PRINT_BLACK_LIST) || defined(KEEP_BACK_PTRS)
-#   define PUSH_ONE_CHECKED_STACK(p, source) \
+# define PUSH_ONE_CHECKED_STACK(p, source) \
         GC_mark_and_push_stack((ptr_t)(p), (ptr_t)(source))
 #else
-#   define PUSH_ONE_CHECKED_STACK(p, source) \
+# define PUSH_ONE_CHECKED_STACK(p, source) \
         GC_mark_and_push_stack((ptr_t)(p))
 #endif
 
@@ -386,9 +388,9 @@ exit_label: ; \
  * if the mark stack overflows.
  */
 
-# if NEED_FIXUP_POINTER
+#if NEED_FIXUP_POINTER
     /* Try both the raw version and the fixed up one.   */
-#   define GC_PUSH_ONE_STACK(p, source) \
+# define GC_PUSH_ONE_STACK(p, source) \
       if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr     \
          && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {      \
          PUSH_ONE_CHECKED_STACK(p, source);     \
@@ -398,20 +400,20 @@ exit_label: ; \
          && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {      \
          PUSH_ONE_CHECKED_STACK(p, source);     \
       }
-# else /* !NEED_FIXUP_POINTER */
-#   define GC_PUSH_ONE_STACK(p, source) \
+#else /* !NEED_FIXUP_POINTER */
+# define GC_PUSH_ONE_STACK(p, source) \
       if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr     \
          && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {      \
          PUSH_ONE_CHECKED_STACK(p, source);     \
       }
-# endif
+#endif
 
 
 /*
  * As above, but interior pointer recognition as for
  * normal heap pointers.
  */
-# define GC_PUSH_ONE_HEAP(p,source) \
+#define GC_PUSH_ONE_HEAP(p,source) \
     FIXUP_POINTER(p); \
     if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr       \
          && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {      \
@@ -440,7 +442,7 @@ mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
  * mutator needs the allocation lock to reveal hidden pointers.
  * FIXME: Why do we need the GC_mark_state test below?
  */
-# define GC_MARK_FO(real_ptr, mark_proc) \
+#define GC_MARK_FO(real_ptr, mark_proc) \
 { \
     (*(mark_proc))(real_ptr); \
     while (!GC_mark_stack_empty()) MARK_FROM_MARK_STACK(); \
@@ -470,29 +472,28 @@ typedef int mark_state_t;       /* Current state of marking, as follows:*/
                                 /* or a pointer to q appears in a range */
                                 /* on the mark stack.                   */
 
-# define MS_NONE 0              /* No marking in progress. I holds.     */
+#define MS_NONE 0               /* No marking in progress. I holds.     */
                                 /* Mark stack is empty.                 */
 
-# define MS_PUSH_RESCUERS 1     /* Rescuing objects are currently       */
+#define MS_PUSH_RESCUERS 1      /* Rescuing objects are currently       */
                                 /* being pushed.  I holds, except       */
                                 /* that grungy roots may point to       */
                                 /* unmarked objects, as may marked      */
                                 /* grungy objects above scan_ptr.       */
 
-# define MS_PUSH_UNCOLLECTABLE 2
-                                /* I holds, except that marked          */
+#define MS_PUSH_UNCOLLECTABLE 2 /* I holds, except that marked          */
                                 /* uncollectable objects above scan_ptr */
                                 /* may point to unmarked objects.       */
                                 /* Roots may point to unmarked objects  */
 
-# define MS_ROOTS_PUSHED 3      /* I holds, mark stack may be nonempty  */
+#define MS_ROOTS_PUSHED 3       /* I holds, mark stack may be nonempty  */
 
-# define MS_PARTIALLY_INVALID 4 /* I may not hold, e.g. because of M.S. */
+#define MS_PARTIALLY_INVALID 4  /* I may not hold, e.g. because of M.S. */
                                 /* overflow.  However marked heap       */
                                 /* objects below scan_ptr point to      */
                                 /* marked or stacked objects.           */
 
-# define MS_INVALID 5           /* I may not hold.                      */
+#define MS_INVALID 5            /* I may not hold.                      */
 
 GC_EXTERN mark_state_t GC_mark_state;
 

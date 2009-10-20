@@ -21,33 +21,35 @@
  * of the collector, and is not linked in unless referenced.
  * This does not currently support GC_DEBUG in any interesting way.
  */
-/* Boehm, May 19, 1994 2:13 pm PDT */
 
-#ifndef _GC_TYPED_H
-# define _GC_TYPED_H
-# ifndef _GC_H
-#   include "gc.h"
-# endif
+#ifndef GC_TYPED_H
+#define GC_TYPED_H
+
+#ifndef GC_H
+# include "gc.h"
+#endif
 
 #ifdef __cplusplus
   extern "C" {
 #endif
+
 typedef GC_word * GC_bitmap;
         /* The least significant bit of the first word is one if        */
         /* the first word in the object may be a pointer.               */
 
-# define GC_WORDSZ (8*sizeof(GC_word))
-# define GC_get_bit(bm, index) \
-                (((bm)[index/GC_WORDSZ] >> (index%GC_WORDSZ)) & 1)
-# define GC_set_bit(bm, index) \
-                (bm)[index/GC_WORDSZ] |= ((GC_word)1 << (index%GC_WORDSZ))
-# define GC_WORD_OFFSET(t, f) (offsetof(t,f)/sizeof(GC_word))
-# define GC_WORD_LEN(t) (sizeof(t)/ sizeof(GC_word))
-# define GC_BITMAP_SIZE(t) ((GC_WORD_LEN(t) + GC_WORDSZ-1)/GC_WORDSZ)
+#define GC_WORDSZ (8 * sizeof(GC_word))
+#define GC_get_bit(bm, index) \
+                (((bm)[index / GC_WORDSZ] >> (index % GC_WORDSZ)) & 1)
+#define GC_set_bit(bm, index) \
+                (bm)[index / GC_WORDSZ] |= ((GC_word)1 << (index % GC_WORDSZ))
+#define GC_WORD_OFFSET(t, f) (offsetof(t,f) / sizeof(GC_word))
+#define GC_WORD_LEN(t) (sizeof(t) / sizeof(GC_word))
+#define GC_BITMAP_SIZE(t) ((GC_WORD_LEN(t) + GC_WORDSZ - 1) / GC_WORDSZ)
 
 typedef GC_word GC_descr;
 
-GC_API GC_descr GC_CALL GC_make_descriptor(GC_bitmap bm, size_t len);
+GC_API GC_descr GC_CALL GC_make_descriptor(GC_bitmap /* bm */,
+                                           size_t /* len */);
                 /* Return a type descriptor for the object whose layout */
                 /* is described by the argument.                        */
                 /* The least significant bit of the first word is one   */
@@ -74,18 +76,19 @@ GC_API GC_descr GC_CALL GC_make_descriptor(GC_bitmap bm, size_t len);
 /* ...                                                                  */
 /* T_descr = GC_make_descriptor(T_bitmap, GC_WORD_LEN(T));              */
 
-GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t size_in_bytes,
-                                                GC_descr d);
+GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t /* size_in_bytes */,
+                                                 GC_descr /* d */);
                 /* Allocate an object whose layout is described by d.   */
                 /* The resulting object MAY NOT BE PASSED TO REALLOC.   */
                 /* The returned object is cleared.                      */
 
-GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page
-                        (size_t size_in_bytes, GC_descr d);
+GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page(
+                                        size_t /* size_in_bytes */,
+                                        GC_descr /* d */);
 
-GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t nelements,
-                                         size_t element_size_in_bytes,
-                                         GC_descr d);
+GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t /* nelements */,
+                                        size_t /* element_size_in_bytes */,
+                                        GC_descr /* d */);
         /* Allocate an array of nelements elements, each of the */
         /* given size, and with the given descriptor.           */
         /* The element size must be a multiple of the byte      */
@@ -95,17 +98,17 @@ GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t nelements,
         /* Returned object is cleared.                          */
 
 #ifdef GC_DEBUG
-#   define GC_MALLOC_EXPLICITLY_TYPED(bytes, d) GC_MALLOC(bytes)
-#   define GC_CALLOC_EXPLICITLY_TYPED(n, bytes, d) GC_MALLOC(n*bytes)
+# define GC_MALLOC_EXPLICITLY_TYPED(bytes, d) GC_MALLOC(bytes)
+# define GC_CALLOC_EXPLICITLY_TYPED(n, bytes, d) GC_MALLOC(n * bytes)
 #else
-#  define GC_MALLOC_EXPLICITLY_TYPED(bytes, d) \
-        GC_malloc_explicitly_typed(bytes, d)
-#  define GC_CALLOC_EXPLICITLY_TYPED(n, bytes, d) \
-        GC_calloc_explicitly_typed(n, bytes, d)
-#endif /* !GC_DEBUG */
+# define GC_MALLOC_EXPLICITLY_TYPED(bytes, d) \
+                        GC_malloc_explicitly_typed(bytes, d)
+# define GC_CALLOC_EXPLICITLY_TYPED(n, bytes, d) \
+                        GC_calloc_explicitly_typed(n, bytes, d)
+#endif
 
 #ifdef __cplusplus
   } /* matches extern "C" */
 #endif
 
-#endif /* _GC_TYPED_H */
+#endif /* GC_TYPED_H */

@@ -71,8 +71,6 @@
 # define simple_alloc __simple_alloc
 #endif
 
-
-
 #define GC_ALLOC_H
 
 #include <stddef.h>
@@ -351,45 +349,46 @@ typedef traceable_alloc_template < 0 > traceable_alloc;
 // even approximate that.  The following approximation should work for
 // SGI compilers, and recent versions of g++.
 
-# define __GC_SPECIALIZE(T,alloc) \
-class simple_alloc<T, alloc> { \
-public: \
+// GC_SPECIALIZE() is used internally.
+#define GC_SPECIALIZE(T,alloc) \
+  class simple_alloc<T, alloc> { \
+  public: \
     static T *allocate(size_t n) \
         { return 0 == n? 0 : \
-                         reinterpret_cast<T*>(alloc::ptr_free_allocate(n * sizeof (T))); } \
+            reinterpret_cast<T*>(alloc::ptr_free_allocate(n * sizeof(T))); } \
     static T *allocate(void) \
-        { return reinterpret_cast<T*>(alloc::ptr_free_allocate(sizeof (T))); } \
+        { return reinterpret_cast<T*>(alloc::ptr_free_allocate(sizeof(T))); } \
     static void deallocate(T *p, size_t n) \
-        { if (0 != n) alloc::ptr_free_deallocate(p, n * sizeof (T)); } \
+        { if (0 != n) alloc::ptr_free_deallocate(p, n * sizeof(T)); } \
     static void deallocate(T *p) \
-        { alloc::ptr_free_deallocate(p, sizeof (T)); } \
-};
+        { alloc::ptr_free_deallocate(p, sizeof(T)); } \
+  };
 
 __STL_BEGIN_NAMESPACE
 
-__GC_SPECIALIZE(char, gc_alloc)
-__GC_SPECIALIZE(int, gc_alloc)
-__GC_SPECIALIZE(unsigned, gc_alloc)
-__GC_SPECIALIZE(float, gc_alloc)
-__GC_SPECIALIZE(double, gc_alloc)
+GC_SPECIALIZE(char, gc_alloc)
+GC_SPECIALIZE(int, gc_alloc)
+GC_SPECIALIZE(unsigned, gc_alloc)
+GC_SPECIALIZE(float, gc_alloc)
+GC_SPECIALIZE(double, gc_alloc)
 
-__GC_SPECIALIZE(char, traceable_alloc)
-__GC_SPECIALIZE(int, traceable_alloc)
-__GC_SPECIALIZE(unsigned, traceable_alloc)
-__GC_SPECIALIZE(float, traceable_alloc)
-__GC_SPECIALIZE(double, traceable_alloc)
+GC_SPECIALIZE(char, traceable_alloc)
+GC_SPECIALIZE(int, traceable_alloc)
+GC_SPECIALIZE(unsigned, traceable_alloc)
+GC_SPECIALIZE(float, traceable_alloc)
+GC_SPECIALIZE(double, traceable_alloc)
 
-__GC_SPECIALIZE(char, single_client_gc_alloc)
-__GC_SPECIALIZE(int, single_client_gc_alloc)
-__GC_SPECIALIZE(unsigned, single_client_gc_alloc)
-__GC_SPECIALIZE(float, single_client_gc_alloc)
-__GC_SPECIALIZE(double, single_client_gc_alloc)
+GC_SPECIALIZE(char, single_client_gc_alloc)
+GC_SPECIALIZE(int, single_client_gc_alloc)
+GC_SPECIALIZE(unsigned, single_client_gc_alloc)
+GC_SPECIALIZE(float, single_client_gc_alloc)
+GC_SPECIALIZE(double, single_client_gc_alloc)
 
-__GC_SPECIALIZE(char, single_client_traceable_alloc)
-__GC_SPECIALIZE(int, single_client_traceable_alloc)
-__GC_SPECIALIZE(unsigned, single_client_traceable_alloc)
-__GC_SPECIALIZE(float, single_client_traceable_alloc)
-__GC_SPECIALIZE(double, single_client_traceable_alloc)
+GC_SPECIALIZE(char, single_client_traceable_alloc)
+GC_SPECIALIZE(int, single_client_traceable_alloc)
+GC_SPECIALIZE(unsigned, single_client_traceable_alloc)
+GC_SPECIALIZE(float, single_client_traceable_alloc)
+GC_SPECIALIZE(double, single_client_traceable_alloc)
 
 __STL_END_NAMESPACE
 

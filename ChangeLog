@@ -1,3 +1,38 @@
+2009-10-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (REVEAL_POINTER): Remove redundant parentheses.
+	* include/gc.h (GC_HIDE_POINTER, GC_REVEAL_POINTER): New macros
+	(only if GC_I_HIDE_POINTERS).
+	* backgraph.c (GET_OH_BG_PTR): Prefix REVEAL_POINTER() with "GC_".
+	* dbg_mlc.c (GC_get_back_ptr_info): Ditto.
+	* finalize.c (GC_grow_table, GC_dump_finalization, GC_finalize,
+	GC_enqueue_all_finalizers): Ditto.
+	* backgraph.c (SET_OH_BG_PTR): Prefix HIDE_POINTER() with "GC_".
+	* finalize.c (GC_general_register_disappearing_link,
+	GC_unregister_disappearing_link, GC_register_finalizer_inner,
+	GC_finalize): Ditto.
+	* include/private/dbg_mlc.h (HIDE_BACK_PTR): Ditto.
+	* include/private/dbg_mlc.h (GC_I_HIDE_POINTERS): Define instead
+	of I_HIDE_POINTERS.
+	* include/private/gc_priv.h (GC_I_HIDE_POINTERS): Ditto.
+	* include/gc.h (_GC_H): Strip leading underscore.
+	* include/gc_backptr.h (_GC_H): Ditto.
+	* include/gc_gcj.h (_GC_H): Ditto.
+	* include/gc_mark.h (_GC_H): Ditto.
+	* include/gc_typed.h (_GC_TYPED_H, _GC_H): Ditto.
+	* include/javaxfc.h (_GC_H): Ditto.
+	* include/new_gc_alloc.h (__GC_SPECIALIZE): Ditto.
+	* include/private/dbg_mlc.h (_GC_H): Ditto.
+	* include/private/gc_priv.h (_GC_H): Ditto.
+	* include/gc_backptr.h: Reformat the code (adjust indentation,
+	comment out function parameter names).
+	* include/gc_gcj.h: Ditto.
+	* include/gc_mark.h: Ditto.
+	* include/gc_typed.h: Ditto.
+	* include/javaxfc.h: Ditto.
+	* include/private/dbg_mlc.h: Ditto.
+	* include/private/gc_priv.h: Ditto.
+
 2009-10-19  Ivan Maidanski <ivmai@mail.ru>
 
 	* gc_cpp.cc: Include "gc_cpp.h" instead of <gc_cpp.h>.

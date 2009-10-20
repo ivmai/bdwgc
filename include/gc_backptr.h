@@ -40,13 +40,13 @@
 #ifndef GC_BACKPTR_H
 #define GC_BACKPTR_H
 
-# ifndef _GC_H
-#   include "gc.h"
-# endif
+#ifndef GC_H
+# include "gc.h"
+#endif
 
-# ifdef __cplusplus
-    extern "C" {
-# endif
+#ifdef __cplusplus
+  extern "C" {
+#endif
 
 /* Store information about the object referencing dest in *base_p     */
 /* and *offset_p.                                                     */
@@ -57,17 +57,19 @@
 /*   source is heap object ==> *base_p != 0, *offset_p = offset       */
 /*   Returns 1 on success, 0 if source couldn't be determined.        */
 /* Dest can be any address within a heap object.                      */
-typedef enum {  GC_UNREFERENCED, /* No reference info available.        */
-                GC_NO_SPACE,    /* Dest not allocated with debug alloc  */
-                GC_REFD_FROM_ROOT, /* Referenced directly by root *base_p */
-                GC_REFD_FROM_REG,  /* Referenced from a register, i.e.  */
-                                   /* a root without an address.        */
-                GC_REFD_FROM_HEAP, /* Referenced from another heap obj. */
-                GC_FINALIZER_REFD /* Finalizable and hence accessible.  */
+typedef enum {
+    GC_UNREFERENCED,    /* No reference info available.         */
+    GC_NO_SPACE,        /* Dest not allocated with debug alloc. */
+    GC_REFD_FROM_ROOT,  /* Referenced directly by root *base_p. */
+    GC_REFD_FROM_REG,   /* Referenced from a register, i.e.     */
+                        /* a root without an address.           */
+    GC_REFD_FROM_HEAP,  /* Referenced from another heap obj.    */
+    GC_FINALIZER_REFD   /* Finalizable and hence accessible.    */
 } GC_ref_kind;
 
-GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void *dest, void **base_p,
-                                                size_t *offset_p);
+GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void * /* dest */,
+                                                void ** /* base_p */,
+                                                size_t * /* offset_p */);
 
 /* Generate a random heap address.            */
 /* The resulting address is in the heap, but  */
@@ -77,11 +79,11 @@ GC_API void * GC_CALL GC_generate_random_heap_address(void);
 /* Generate a random address inside a valid marked heap object. */
 GC_API void * GC_CALL GC_generate_random_valid_address(void);
 
-/* Force a garbage collection and generate a backtrace from a */
-/* random heap address.                                       */
-/* This uses the GC logging mechanism (GC_printf) to produce  */
-/* output.  It can often be called from a debugger.  The      */
-/* source in dbg_mlc.c also serves as a sample client.        */
+/* Force a garbage collection and generate a backtrace from a   */
+/* random heap address.                                         */
+/* This uses the GC logging mechanism (GC_printf) to produce    */
+/* output.  It can often be called from a debugger.  The        */
+/* source in dbg_mlc.c also serves as a sample client.          */
 GC_API void GC_CALL GC_generate_random_backtrace(void);
 
 /* Print a backtrace from a specific address.  Used by the      */
@@ -89,8 +91,8 @@ GC_API void GC_CALL GC_generate_random_backtrace(void);
 /* before invocation.                                           */
 GC_API void GC_CALL GC_print_backtrace(void *);
 
-# ifdef __cplusplus
-    }  /* end of extern "C" */
-# endif
+#ifdef __cplusplus
+  } /* end of extern "C" */
+#endif
 
 #endif /* GC_BACKPTR_H */

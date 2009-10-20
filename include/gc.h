@@ -27,8 +27,8 @@
  * problems.
  */
 
-#ifndef _GC_H
-#define _GC_H
+#ifndef GC_H
+#define GC_H
 
 #include "gc_version.h"
         /* Define version numbers here to allow test on build machine   */
@@ -979,11 +979,18 @@ GC_API void GC_CALLBACK GC_ignore_warn_proc(char *, GC_word);
 #if defined(I_HIDE_POINTERS) || defined(GC_I_HIDE_POINTERS)
   typedef GC_word GC_hidden_pointer;
 # define HIDE_POINTER(p) (~(GC_hidden_pointer)(p))
-# define REVEAL_POINTER(p) ((void *)(HIDE_POINTER(p)))
+# define REVEAL_POINTER(p) ((void *)HIDE_POINTER(p))
   /* Converting a hidden pointer to a real pointer requires verifying   */
   /* that the object still exists.  This involves acquiring the         */
   /* allocator lock to avoid a race with the collector.                 */
 #endif /* I_HIDE_POINTERS */
+
+/* The GC-prefixed symbols are preferred for new code (I_HIDE_POINTERS, */
+/* HIDE_POINTER and REVEAL_POINTER remain for compatibility).           */
+#ifdef GC_I_HIDE_POINTERS
+# define GC_HIDE_POINTER(p) HIDE_POINTER(p)
+# define GC_REVEAL_POINTER(p) REVEAL_POINTER(p)
+#endif
 
 typedef void * (GC_CALLBACK * GC_fn_type)(void * /* client_data */);
 GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type /* fn */,
@@ -1441,4 +1448,4 @@ GC_API void GC_CALL GC_win32_free_heap(void);
   }  /* end of extern "C" */
 #endif
 
-#endif /* _GC_H */
+#endif /* GC_H */

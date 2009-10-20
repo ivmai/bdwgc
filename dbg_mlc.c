@@ -102,7 +102,7 @@ GC_bool GC_has_other_debug_info(ptr_t p)
     ptr_t bp;
     ptr_t bp_base;
     if (!GC_HAS_DEBUG_INFO((ptr_t) hdr)) return GC_NO_SPACE;
-    bp = REVEAL_POINTER(hdr -> oh_back_ptr);
+    bp = GC_REVEAL_POINTER(hdr -> oh_back_ptr);
     if (MARKED_FOR_FINALIZATION == bp) return GC_FINALIZER_REFD;
     if (MARKED_FROM_REGISTER == bp) return GC_REFD_FROM_REG;
     if (NOT_MARKED == bp) return GC_UNREFERENCED;

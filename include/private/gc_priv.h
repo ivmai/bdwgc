@@ -15,52 +15,52 @@
  * modified is included with the above copyright notice.
  */
 
-# ifndef GC_PRIVATE_H
-# define GC_PRIVATE_H
+#ifndef GC_PRIVATE_H
+#define GC_PRIVATE_H
 
-# ifdef HAVE_CONFIG_H
-#   include "private/config.h"
-# endif
+#ifdef HAVE_CONFIG_H
+# include "private/config.h"
+#endif
 
-# ifndef GC_BUILD
-#   define GC_BUILD
-# endif
+#ifndef GC_BUILD
+# define GC_BUILD
+#endif
 
-# include <stdlib.h>
-# if !(defined( sony_news ) )
-#   include <stddef.h>
-# endif
+#include <stdlib.h>
+#if !defined(sony_news)
+# include <stddef.h>
+#endif
 
 #ifdef DGUX
-#   include <sys/types.h>
-#   include <sys/time.h>
-#   include <sys/resource.h>
+# include <sys/types.h>
+# include <sys/time.h>
+# include <sys/resource.h>
 #endif /* DGUX */
 
 #ifdef BSD_TIME
-#   include <sys/types.h>
-#   include <sys/time.h>
-#   include <sys/resource.h>
+# include <sys/types.h>
+# include <sys/time.h>
+# include <sys/resource.h>
 #endif /* BSD_TIME */
 
 #ifdef PARALLEL_MARK
-#   define AO_REQUIRE_CAS
-#   if !defined(__GNUC__) && !defined(AO_ASSUME_WINDOWS98)
-#     define AO_ASSUME_WINDOWS98
-#   endif
+# define AO_REQUIRE_CAS
+# if !defined(__GNUC__) && !defined(AO_ASSUME_WINDOWS98)
+#   define AO_ASSUME_WINDOWS98
+# endif
 #endif
 
-#ifndef _GC_H
-#   define I_HIDE_POINTERS /* to get HIDE_POINTER() and friends */
-#   include "../gc.h"
+#ifndef GC_H
+# define GC_I_HIDE_POINTERS /* to get GC_HIDE_POINTER() and friends */
+# include "../gc.h"
 #endif
 
 #ifndef GC_TINY_FL_H
-#   include "../gc_tiny_fl.h"
+# include "../gc_tiny_fl.h"
 #endif
 
 #ifndef GC_MARK_H
-#   include "../gc_mark.h"
+# include "../gc_mark.h"
 #endif
 
 typedef GC_word word;
@@ -68,8 +68,8 @@ typedef GC_signed_word signed_word;
 typedef unsigned int unsigned32;
 
 typedef int GC_bool;
-# define TRUE 1
-# define FALSE 0
+#define TRUE 1
+#define FALSE 0
 
 typedef char * ptr_t;   /* A generic pointer to which we can add        */
                         /* byte displacements and which can be used     */
@@ -131,9 +131,9 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define GC_API_PRIV GC_API
 #endif
 
-# ifndef GC_LOCKS_H
-#   include "gc_locks.h"
-# endif
+#ifndef GC_LOCKS_H
+# include "gc_locks.h"
+#endif
 
 # ifdef STACK_GROWS_DOWN
 #   define COOLER_THAN >

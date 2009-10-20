@@ -24,7 +24,6 @@
  */
 
 #ifndef GC_GCJ_H
-
 #define GC_GCJ_H
 
         /* Gcj keeps GC descriptor as second word of vtable.    This    */
@@ -36,13 +35,13 @@
         /* These assumptions allow objects on the free list to be       */
         /* marked normally.                                             */
 
-#ifndef _GC_H
-#   include "gc.h"
+#ifndef GC_H
+# include "gc.h"
 #endif
 
-# ifdef __cplusplus
-    extern "C" {
-# endif
+#ifdef __cplusplus
+  extern "C" {
+#endif
 
 /* The following allocators signal an out of memory condition with      */
 /* return GC_oom_fn(bytes);                                             */
@@ -95,17 +94,16 @@ GC_API int GC_gcj_kind;
 
 GC_API int GC_gcj_debug_kind;
 
-# ifdef GC_DEBUG
-#   define GC_GCJ_MALLOC(s,d) GC_debug_gcj_malloc(s,d,GC_EXTRAS)
-#   define GC_GCJ_MALLOC_IGNORE_OFF_PAGE(s,d) GC_debug_gcj_malloc(s,d,GC_EXTRAS)
-# else
-#   define GC_GCJ_MALLOC(s,d) GC_gcj_malloc(s,d)
-#   define GC_GCJ_MALLOC_IGNORE_OFF_PAGE(s,d) \
-        GC_gcj_malloc_ignore_off_page(s,d)
-# endif
+#ifdef GC_DEBUG
+# define GC_GCJ_MALLOC(s,d) GC_debug_gcj_malloc(s,d,GC_EXTRAS)
+# define GC_GCJ_MALLOC_IGNORE_OFF_PAGE(s,d) GC_debug_gcj_malloc(s,d,GC_EXTRAS)
+#else
+# define GC_GCJ_MALLOC(s,d) GC_gcj_malloc(s,d)
+# define GC_GCJ_MALLOC_IGNORE_OFF_PAGE(s,d) GC_gcj_malloc_ignore_off_page(s,d)
+#endif
 
-# ifdef __cplusplus
-    }  /* end of extern "C" */
-# endif
+#ifdef __cplusplus
+  } /* end of extern "C" */
+#endif
 
 #endif /* GC_GCJ_H */

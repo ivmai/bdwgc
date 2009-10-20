@@ -15,13 +15,13 @@
  * modified is included with the above copyright notice.
  */
 
-# ifndef _GC_H
-#   include "gc.h"
-# endif
+#ifndef GC_H
+# include "gc.h"
+#endif
 
-# ifdef __cplusplus
-    extern "C" {
-# endif
+#ifdef __cplusplus
+  extern "C" {
+#endif
 
 /*
  * Invoke all remaining finalizers that haven't yet been run.  (Since the
@@ -40,6 +40,6 @@
  */
 GC_API void GC_CALL GC_finalize_all(void);
 
-# ifdef __cplusplus
-    }  /* end of extern "C" */
-# endif
+#ifdef __cplusplus
+  } /* end of extern "C" */
+#endif
