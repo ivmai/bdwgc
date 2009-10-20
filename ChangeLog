@@ -1,3 +1,8 @@
+2009-10-20  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+
+	* dyn_load.c: Move the inclusion of private/gc_priv.h below
+	definition of a feature macro (_GNU_SOURCE).
+
 2009-10-20  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/gc.h (REVEAL_POINTER): Remove redundant parentheses.

@@ -26,16 +26,17 @@
  * None of this is safe with dlclose and incremental collection.
  * But then not much of anything is safe in the presence of dlclose.
  */
-#include "private/gc_priv.h"
 
 #if (defined(__linux__) || defined(__GLIBC__) || defined(__GNU__)) \
      && !defined(_GNU_SOURCE)
     /* Can't test LINUX, since this must be defined before other includes */
-#   define _GNU_SOURCE
+# define _GNU_SOURCE
 #endif
 
+#include "private/gc_priv.h"
+
 #if !defined(MACOS) && !defined(_WIN32_WCE)
-#  include <sys/types.h>
+# include <sys/types.h>
 #endif
 
 /* BTL: avoid circular redefinition of dlopen if GC_SOLARIS_THREADS defined */
