@@ -11,8 +11,10 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-# include <stdio.h>
-# include "private/gc_priv.h"
+
+#include "private/gc_priv.h"
+
+#include <stdio.h>
 
 /* Data structure for list of root sets.                                */
 /* We keep a hash table, so that we can filter out duplicate additions. */
@@ -35,13 +37,12 @@ struct roots GC_static_roots[MAX_ROOT_SETS];
 int GC_no_dls = 0;      /* Register dynamic library data segments.      */
 
 static int n_root_sets = 0;
-
         /* GC_static_roots[0..n_root_sets) contains the valid root sets. */
 
-# if !defined(NO_DEBUGGING)
-/* For debugging:       */
-void GC_print_static_roots(void)
-{
+#if !defined(NO_DEBUGGING)
+  /* For debugging:     */
+  void GC_print_static_roots(void)
+  {
     int i;
     size_t total = 0;
 
@@ -57,12 +58,11 @@ void GC_print_static_roots(void)
         GC_err_printf("GC_root_size incorrect: %ld!!\n",
                       (long) GC_root_size);
     }
-}
-# endif /* NO_DEBUGGING */
+  }
+#endif /* !NO_DEBUGGING */
 
 /* Primarily for debugging support:     */
-/* Is the address p in one of the registered static                     */
-/* root sections?                                                       */
+/* Is the address p in one of the registered static root sections?      */
 GC_bool GC_is_static_root(ptr_t p)
 {
     static int last_root_set = MAX_ROOT_SETS;
@@ -654,7 +654,8 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
                   /* "activation frame" in backing store.               */
                   if (GC_activation_frame != NULL && cold_gc_bs_pointer <
                                 GC_activation_frame->backing_store_end)
-                    cold_gc_bs_pointer = GC_activation_frame->backing_store_end;
+                    cold_gc_bs_pointer =
+                                GC_activation_frame->backing_store_end;
                   GC_push_all_register_frames(BACKING_STORE_BASE,
                         cold_gc_bs_pointer, FALSE, GC_activation_frame);
                   GC_push_all_eager(cold_gc_bs_pointer, bsp);

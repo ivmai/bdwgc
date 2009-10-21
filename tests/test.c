@@ -24,13 +24,15 @@
 
 # undef GC_BUILD
 
+#if (defined(DBG_HDRS_ALL) || defined(MAKE_BACK_GRAPH)) && !defined(GC_DEBUG)
+#  define GC_DEBUG
+#endif
+
+#include "gc.h"
+
 #ifndef NTHREADS /* Number of additional threads to fork. */
 #  define NTHREADS 5 /* excludes main thread, which also runs a test. */
         /* Not respected by PCR test. */
-#endif
-
-#if (defined(DBG_HDRS_ALL) || defined(MAKE_BACK_GRAPH)) && !defined(GC_DEBUG)
-#  define GC_DEBUG
 #endif
 
 # if defined(mips) && defined(SYSTYPE_BSD43)
@@ -45,7 +47,7 @@
 # else
 #   include <assert.h>        /* Not normally used, but handy for debugging. */
 # endif
-# include "gc.h"
+
 # include "gc_typed.h"
 # include "private/gc_priv.h"   /* For output, locking, MIN_WORDS,      */
                                 /* and some statistics, and gcconfig.h. */

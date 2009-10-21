@@ -11,16 +11,17 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
+ */
+
+#include "private/gc_priv.h"
+
+/*
  * This file contains the functions:
  *      ptr_t GC_build_flXXX(h, old_fl)
  *      void GC_new_hblk(size)
  */
-/* Boehm, May 19, 1994 2:09 pm PDT */
 
-
-# include <stdio.h>
-# include "private/gc_priv.h"
+#include <stdio.h>
 
 #ifndef SMALL_CONFIG
 /*

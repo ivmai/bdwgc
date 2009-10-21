@@ -14,8 +14,9 @@
  * modified is included with the above copyright notice.
  */
 
-#include <stdio.h>
 #include "private/gc_priv.h"
+
+#include <stdio.h>
 
 GC_INNER signed_word GC_bytes_found = 0;
                         /* Number of bytes of memory reclaimed     */

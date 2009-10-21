@@ -1,3 +1,46 @@
+2009-10-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* allchblk.c (DEBUG): Remove macro (since unused).
+	* allchblk.c: Include private/gc_priv.h before other includes and
+	definitions.
+	* alloc.c: Ditto.
+	* gc_dlopen.c: Ditto.
+	* headers.c: Ditto.
+	* mallocx.c: Ditto.
+	* mark_rts.c: Ditto.
+	* new_hblk.c: Ditto.
+	* reclaim.c: Ditto.
+	* mark.c: Include private/gc_pmark.h before other includes.
+	* misc.c: Ditto.
+	* dyn_load.c (_GNU_SOURCE): Move the definition to gc_priv.h.
+	* pthread_support.c (_USING_POSIX4A_DRAFT10): Ditto.
+	* pthread_support.c (_POSIX4A_DRAFT10_SOURCE): Remove (since
+	already defined in gc_config_macros.h).
+	* dyn_load.c (GC_init_dyld): Remove parameter cast for
+	_dyld_register_func_for_add_image() and
+	_dyld_register_func_for_remove_image(); add the comment about
+	possible warnings; add FIXME for the deprecated
+	_dyld_bind_fully_image_containing_address().
+	* include/private/gc_priv.h: Include gc.h before the standard
+	headers inclusion.
+	* tests/test.c: Ditto.
+	* include/private/gcconfig.h (DebugBreak): Update the comment.
+	* typd_mlc.c (ED_INITIAL_SIZE): Remove ';'.
+	* alloc.c: Reformat the code (partly adjust indentation).
+	* backgraph.c: Ditto.
+	* blacklst.c: Ditto.
+	* checksums.c: Ditto.
+	* finalize.c: Ditto.
+	* gcj_mlc.c: Ditto.
+	* mach_dep.c: Ditto.
+	* mark_rts.c: Ditto.
+	* obj_map.c: Ditto.
+	* os_dep.c: Ditto.
+	* ptr_chck.c: Ditto.
+	* stubborn.c: Ditto.
+	* thread_local_alloc.c: Ditto.
+	* typd_mlc.c: Ditto.
+
 2009-10-20  Ivan Maidanski <ivmai@mail.ru> (really mostly OpenBSD contributors)
 
 	* configure.ac (openbsd): Define GC_OPENBSD_THREADS.

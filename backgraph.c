@@ -12,6 +12,8 @@
  *
  */
 
+#include "private/dbg_mlc.h"
+
 /*
  * This implements a full, though not well-tuned, representation of the
  * backwards points-to graph.  This is used to test for non-GC-robust
@@ -23,8 +25,6 @@
  * doesn't introduce a space leak, then such nodes can't contribute to
  * a growing space leak.
  */
-
-#include "private/dbg_mlc.h"
 
 #ifdef MAKE_BACK_GRAPH
 

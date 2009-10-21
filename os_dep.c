@@ -14,55 +14,56 @@
  * modified is included with the above copyright notice.
  */
 
-# include "private/gc_priv.h"
+#include "private/gc_priv.h"
 
-# if defined(THREADS) && defined(MPROTECT_VDB)
-#   include "atomic_ops.h"
-# endif
+#if defined(THREADS) && defined(MPROTECT_VDB)
+# include "atomic_ops.h"
+#endif
 
-# if defined(LINUX) && !defined(POWERPC)
-#   include <linux/version.h>
-#   if (LINUX_VERSION_CODE <= 0x10400)
-      /* Ugly hack to get struct sigcontext_struct definition.  Required      */
-      /* for some early 1.3.X releases.  Will hopefully go away soon. */
-      /* in some later Linux releases, asm/sigcontext.h may have to   */
-      /* be included instead.                                         */
-#     define __KERNEL__
-#     include <asm/signal.h>
-#     undef __KERNEL__
-#   else
-      /* Kernels prior to 2.1.1 defined struct sigcontext_struct instead of */
-      /* struct sigcontext.  libc6 (glibc2) uses "struct sigcontext" in     */
-      /* prototypes, so we have to include the top-level sigcontext.h to    */
-      /* make sure the former gets defined to be the latter if appropriate. */
-#     include <features.h>
-#     if 2 <= __GLIBC__
-#       if 2 == __GLIBC__ && 0 == __GLIBC_MINOR__
-          /* glibc 2.1 no longer has sigcontext.h.  But signal.h        */
-          /* has the right declaration for glibc 2.1.                   */
-#         include <sigcontext.h>
-#       endif /* 0 == __GLIBC_MINOR__ */
-#     else /* not 2 <= __GLIBC__ */
-        /* libc5 doesn't have <sigcontext.h>: go directly with the kernel   */
-        /* one.  Check LINUX_VERSION_CODE to see which we should reference. */
-#       include <asm/sigcontext.h>
-#     endif /* 2 <= __GLIBC__ */
-#   endif
-# endif
-# if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS) \
-    && !defined(MSWINCE)
-#   include <sys/types.h>
-#   if !defined(MSWIN32)
-#       include <unistd.h>
-#   endif
-# endif
-
-# include <stdio.h>
-# if defined(MSWINCE)
-#   define SIGSEGV 0 /* value is irrelevant */
+#if defined(LINUX) && !defined(POWERPC)
+# include <linux/version.h>
+# if (LINUX_VERSION_CODE <= 0x10400)
+    /* Ugly hack to get struct sigcontext_struct definition.  Required      */
+    /* for some early 1.3.X releases.  Will hopefully go away soon. */
+    /* in some later Linux releases, asm/sigcontext.h may have to   */
+    /* be included instead.                                         */
+#   define __KERNEL__
+#   include <asm/signal.h>
+#   undef __KERNEL__
 # else
-#   include <signal.h>
+    /* Kernels prior to 2.1.1 defined struct sigcontext_struct instead of */
+    /* struct sigcontext.  libc6 (glibc2) uses "struct sigcontext" in     */
+    /* prototypes, so we have to include the top-level sigcontext.h to    */
+    /* make sure the former gets defined to be the latter if appropriate. */
+#   include <features.h>
+#   if 2 <= __GLIBC__
+#     if 2 == __GLIBC__ && 0 == __GLIBC_MINOR__
+        /* glibc 2.1 no longer has sigcontext.h.  But signal.h        */
+        /* has the right declaration for glibc 2.1.                   */
+#       include <sigcontext.h>
+#     endif /* 0 == __GLIBC_MINOR__ */
+#   else /* not 2 <= __GLIBC__ */
+      /* libc5 doesn't have <sigcontext.h>: go directly with the kernel   */
+      /* one.  Check LINUX_VERSION_CODE to see which we should reference. */
+#     include <asm/sigcontext.h>
+#   endif /* 2 <= __GLIBC__ */
 # endif
+#endif
+
+#if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS) \
+    && !defined(MSWINCE)
+# include <sys/types.h>
+# if !defined(MSWIN32)
+#   include <unistd.h>
+# endif
+#endif
+
+#include <stdio.h>
+#if defined(MSWINCE)
+# define SIGSEGV 0 /* value is irrelevant */
+#else
+# include <signal.h>
+#endif
 
 #if defined(UNIX_LIKE) || defined(CYGWIN32)
 # include <fcntl.h>
@@ -115,8 +116,8 @@
 #endif
 
 #ifdef DARWIN
-/* for get_etext and friends */
-#include <mach-o/getsect.h>
+  /* for get_etext and friends */
+# include <mach-o/getsect.h>
 #endif
 
 #ifdef DJGPP
@@ -137,15 +138,15 @@
 # define OPT_PROT_EXEC 0
 #endif
 
-#if defined(LINUX) && \
-    (defined(USE_PROC_FOR_LIBRARIES) || defined(IA64) || !defined(SMALL_CONFIG))
+#if defined(LINUX) && (defined(USE_PROC_FOR_LIBRARIES) || defined(IA64) \
+                       || !defined(SMALL_CONFIG))
 # define NEED_PROC_MAPS
 #endif
 
 #ifdef NEED_PROC_MAPS
-/* We need to parse /proc/self/maps, either to find dynamic libraries,  */
-/* and/or to find the register backing store base (IA64).  Do it once   */
-/* here.                                                                */
+/* We need to parse /proc/self/maps, either to find dynamic libraries, */
+/* and/or to find the register backing store base (IA64).  Do it once  */
+/* here.                                                               */
 
 #define READ read
 
@@ -167,11 +168,11 @@ ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 }
 
 #ifdef THREADS
-/* Determine the length of a file by incrementally reading it into a    */
-/* This would be silly to use on a file supporting lseek, but Linux     */
-/* /proc files usually do not.                                          */
-STATIC size_t GC_get_file_len(int f)
-{
+  /* Determine the length of a file by incrementally reading it into a  */
+  /* This would be silly to use on a file supporting lseek, but Linux   */
+  /* /proc files usually do not.                                        */
+  STATIC size_t GC_get_file_len(int f)
+  {
     size_t total = 0;
     ssize_t result;
 #   define GET_FILE_LEN_BUF_SZ 500
@@ -183,16 +184,16 @@ STATIC size_t GC_get_file_len(int f)
         total += result;
     } while (result > 0);
     return total;
-}
+  }
 
-STATIC size_t GC_get_maps_len(void)
-{
+  STATIC size_t GC_get_maps_len(void)
+  {
     int f = open("/proc/self/maps", O_RDONLY);
     size_t result = GC_get_file_len(f);
     close(f);
     return result;
-}
-#endif
+  }
+#endif /* THREADS */
 
 /*
  * Copy the contents of /proc/self/maps to a buffer in our address space.

@@ -10,7 +10,6 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, March 29, 1995 12:51 pm PST */
 
 #include "private/gc_priv.h"
 
@@ -21,9 +20,9 @@
 /* We assume that stubborn objects are changed only when they are       */
 /* enabled for writing.  (Certain kinds of writing are actually         */
 /* safe under other conditions.)                                        */
-# define NSUMS 10000
+#define NSUMS 10000
 
-# define OFFSET 0x10000
+#define OFFSET 0x10000
 
 typedef struct {
         GC_bool new_valid;
@@ -75,11 +74,11 @@ STATIC word GC_checksum(struct hblk *h)
     return(result | 0x80000000 /* doesn't look like pointer */);
 }
 
-# ifdef STUBBORN_ALLOC
-/* Check whether a stubborn object from the given block appears on      */
-/* the appropriate free list.                                           */
-STATIC GC_bool GC_on_free_list(struct hblk *h)
-{
+#ifdef STUBBORN_ALLOC
+  /* Check whether a stubborn object from the given block appears on    */
+  /* the appropriate free list.                                         */
+  STATIC GC_bool GC_on_free_list(struct hblk *h)
+  {
     hdr * hhdr = HDR(h);
     size_t sz = BYTES_TO_WORDS(hhdr -> hb_sz);
     ptr_t p;
@@ -89,8 +88,8 @@ STATIC GC_bool GC_on_free_list(struct hblk *h)
         if (HBLKPTR(p) == h) return(TRUE);
     }
     return(FALSE);
-}
-# endif
+  }
+#endif
 
 int GC_n_dirty_errors = 0;
 int GC_n_faulted_dirty_errors = 0;
@@ -212,7 +211,7 @@ out:
                   (unsigned long)GC_n_changed_errors);
         GC_printf("These may be benign (provoked by nonpointer changes)\n");
 #       ifdef THREADS
-            GC_printf(
+          GC_printf(
             "Also expect 1 per thread currently allocating a stubborn obj.\n");
 #       endif
     }

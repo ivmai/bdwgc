@@ -12,7 +12,6 @@
  * modified is included with the above copyright notice.
  *
  */
-/* Boehm, July 31, 1995 5:02 pm PDT */
 
 #include "private/gc_pmark.h"  /* includes gc_priv.h */
 

@@ -13,13 +13,13 @@
  * modified is included with the above copyright notice.
  */
 
+#include "private/gc_priv.h"
+
 /* Routines for maintaining maps describing heap block
  * layouts for various object sizes.  Allows fast pointer validity checks
  * and fast location of object start locations on machines (such as SPARC)
  * with slow division.
  */
-
-# include "private/gc_priv.h"
 
 /* Consider pointers that are offset bytes displaced from the beginning */
 /* of an object to be valid.                                            */
@@ -45,11 +45,11 @@ void GC_register_displacement_inner(size_t offset)
 }
 
 #ifdef MARK_BIT_PER_GRANULE
-/* Add a heap block map for objects of size granules to obj_map.        */
-/* Return FALSE on failure.                                             */
-/* A size of 0 granules is used for large objects.                      */
-GC_bool GC_add_map_entry(size_t granules)
-{
+  /* Add a heap block map for objects of size granules to obj_map.      */
+  /* Return FALSE on failure.                                           */
+  /* A size of 0 granules is used for large objects.                    */
+  GC_bool GC_add_map_entry(size_t granules)
+  {
     unsigned displ;
     short * new_map;
 
@@ -73,17 +73,18 @@ GC_bool GC_add_map_entry(size_t granules)
     }
     GC_obj_map[granules] = new_map;
     return(TRUE);
-}
+  }
 #endif
-
-static GC_bool offsets_initialized = FALSE;
 
 void GC_initialize_offsets(void)
 {
+    static GC_bool offsets_initialized = FALSE;
+
     if (!offsets_initialized) {
       int i;
       if (GC_all_interior_pointers) {
-        for (i = 0; i < VALID_OFFSET_SZ; ++i) GC_valid_offsets[i] = TRUE;
+        for (i = 0; i < VALID_OFFSET_SZ; ++i)
+          GC_valid_offsets[i] = TRUE;
       }
       offsets_initialized = TRUE;
     }

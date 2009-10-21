@@ -15,6 +15,8 @@
  * Heavily modified by Hans Boehm and others
  */
 
+#include "private/gc_priv.h"
+
 /*
  * This is incredibly OS specific code for tracking down data sections in
  * dynamic libraries.  There appears to be no way of doing this quickly
@@ -26,14 +28,6 @@
  * None of this is safe with dlclose and incremental collection.
  * But then not much of anything is safe in the presence of dlclose.
  */
-
-#if (defined(__linux__) || defined(__GLIBC__) || defined(__GNU__)) \
-     && !defined(_GNU_SOURCE)
-    /* Can't test LINUX, since this must be defined before other includes */
-# define _GNU_SOURCE
-#endif
-
-#include "private/gc_priv.h"
 
 #if !defined(MACOS) && !defined(_WIN32_WCE)
 # include <sys/types.h>
@@ -1253,10 +1247,12 @@ void GC_init_dyld(void)
      linked in the future.
   */
 
-    _dyld_register_func_for_add_image(
-              (void (*)(struct mach_header *, intptr_t))GC_dyld_image_add);
-    _dyld_register_func_for_remove_image(
-              (void (*)(struct mach_header *, intptr_t))GC_dyld_image_remove);
+    _dyld_register_func_for_add_image(GC_dyld_image_add);
+    _dyld_register_func_for_remove_image(GC_dyld_image_remove);
+        /* Ignore 2 compiler warnings here: passing argument 1 of       */
+        /* '_dyld_register_func_for_add/remove_image' from incompatible */
+        /* pointer type.                                                */
+
 
     /* Set this early to avoid reentrancy issues. */
     initialized = TRUE;
@@ -1265,6 +1261,7 @@ void GC_init_dyld(void)
 #     ifdef DARWIN_DEBUG
         GC_printf("Forcing full bind of GC code...\n");
 #     endif
+      /* FIXME: '_dyld_bind_fully_image_containing_address' is deprecated. */
       if(!_dyld_bind_fully_image_containing_address((unsigned long*)GC_malloc))
         ABORT("_dyld_bind_fully_image_containing_address failed");
     }

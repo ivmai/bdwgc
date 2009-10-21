@@ -13,6 +13,8 @@
  * modified is included with the above copyright notice.
  */
 
+#include "private/gc_priv.h"
+
 /*
  * This implements:
  * 1. allocation of heap block headers
@@ -21,8 +23,6 @@
  * Access speed is crucial.  We implement an index structure based on a 2
  * level tree.
  */
-
-# include "private/gc_priv.h"
 
 STATIC bottom_index * GC_all_bottom_indices = 0;
                                 /* Pointer to first (lowest addr) */

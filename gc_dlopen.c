@@ -16,14 +16,14 @@
  * Heavily modified by Hans Boehm and others
  */
 
+#include "private/gc_priv.h"
+
 /*
  * This used to be in dyn_load.c.  It was extracted into a separate file
  * to avoid having to link against libdl.{a,so} if the client doesn't call
  * dlopen.  Of course this fails if the collector is in a dynamic
  * library. -HB
  */
-
-#include "private/gc_priv.h"
 
 # if (defined(GC_PTHREADS) && !defined(GC_DARWIN_THREADS)) && !defined(GC_WIN32_PTHREADS)\
       || defined(GC_SOLARIS_THREADS)

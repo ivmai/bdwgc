@@ -13,6 +13,9 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
+
+#include "private/pthread_support.h"
+
 /*
  * Support code originally for LinuxThreads, the clone()-based kernel
  * thread package for Linux which is included in libc6.
@@ -41,19 +44,9 @@
  * + #  define GC_LOCK_TAKEN GC_allocate_lock
  */
 
+#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
+
 /*#define DEBUG_THREADS 1*/
-
-#include "private/pthread_support.h"
-
-# if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
-
-# if defined(GC_DGUX386_THREADS) && !defined(_POSIX4A_DRAFT10_SOURCE)
-#   define _POSIX4A_DRAFT10_SOURCE 1
-# endif
-
-# if defined(GC_DGUX386_THREADS) && !defined(_USING_POSIX4A_DRAFT10)
-#   define _USING_POSIX4A_DRAFT10 1
-# endif
 
 # include <stdlib.h>
 # include <pthread.h>
@@ -1652,4 +1645,4 @@ void GC_notify_all_marker(void)
 
 #endif /* PARALLEL_MARK */
 
-# endif /* GC_LINUX_THREADS and friends */
+#endif /* GC_LINUX_THREADS and friends */

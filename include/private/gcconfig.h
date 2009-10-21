@@ -394,7 +394,8 @@
 #   if defined(x86) || defined(__i386__)
 #     define I386
 #     if defined(__MINGW32CE__) && !defined(DebugBreak)
-        /* x86mingw32ce toolchain doesn't have proper DebugBreak() now. */
+        /* A workaround for x86mingw32ce toolchain (if it is still      */
+        /* declaring DebugBreak() instead of defining it as a macro).   */
 #       define DebugBreak() _exit(-1)
 #     endif
 #   endif

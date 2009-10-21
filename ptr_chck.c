@@ -11,12 +11,12 @@
  * modified is included with the above copyright notice.
  */
 
+#include "private/gc_pmark.h"
+
 /*
  * These are checking routines calls to which could be inserted by a
  * preprocessor to validate C pointer arithmetic.
  */
-
-#include "private/gc_pmark.h"
 
 STATIC void GC_CALLBACK GC_default_same_obj_print_proc(void * p, void * q)
 {
@@ -254,7 +254,6 @@ fail:
     (*GC_is_visible_print_proc)((ptr_t)p);
     return(p);
 }
-
 
 GC_API void * GC_CALL GC_pre_incr (void **p, ptrdiff_t how_much)
 {

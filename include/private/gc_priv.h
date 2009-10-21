@@ -26,6 +26,22 @@
 # define GC_BUILD
 #endif
 
+#if (defined(__linux__) || defined(__GLIBC__) || defined(__GNU__)) \
+    && !defined(_GNU_SOURCE)
+  /* Can't test LINUX, since this must be defined before other includes. */
+# define _GNU_SOURCE
+#endif
+
+#if (defined(DGUX) && defined(GC_THREADS) || defined(DGUX386_THREADS) \
+     || defined(GC_DGUX386_THREADS)) && !defined(_USING_POSIX4A_DRAFT10)
+# define _USING_POSIX4A_DRAFT10 1
+#endif
+
+#ifndef GC_H
+# define GC_I_HIDE_POINTERS /* to get GC_HIDE_POINTER() and friends */
+# include "../gc.h"
+#endif
+
 #include <stdlib.h>
 #if !defined(sony_news)
 # include <stddef.h>
@@ -48,11 +64,6 @@
 # if !defined(__GNUC__) && !defined(AO_ASSUME_WINDOWS98)
 #   define AO_ASSUME_WINDOWS98
 # endif
-#endif
-
-#ifndef GC_H
-# define GC_I_HIDE_POINTERS /* to get GC_HIDE_POINTER() and friends */
-# include "../gc.h"
 #endif
 
 #ifndef GC_TINY_FL_H

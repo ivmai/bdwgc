@@ -10,9 +10,10 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
+
 #include "private/gc_priv.h"
 
-# if defined(THREAD_LOCAL_ALLOC)
+#if defined(THREAD_LOCAL_ALLOC)
 
 #ifndef THREADS
 # error "invalid config - THREAD_LOCAL_ALLOC requires GC_THREADS"
@@ -21,7 +22,7 @@
 #include "private/thread_local_alloc.h"
 #include "gc_inline.h"
 
-# include <stdlib.h>
+#include <stdlib.h>
 
 #if defined(USE_COMPILER_TLS)
   __thread
@@ -199,9 +200,9 @@ GC_API void * GC_CALL GC_malloc_atomic(size_t bytes)
 
 #ifdef GC_GCJ_SUPPORT
 
-#include "atomic_ops.h" /* for AO_compiler_barrier() */
+# include "atomic_ops.h" /* for AO_compiler_barrier() */
 
-#include "include/gc_gcj.h"
+# include "include/gc_gcj.h"
 
 /* Gcj-style allocation without locks is extremely tricky.  The         */
 /* fundamental issue is that we may end up marking a free list, which   */
@@ -307,4 +308,4 @@ void GC_mark_thread_local_fls_for(GC_tlfs p)
     }
 #endif /* GC_ASSERTIONS */
 
-# endif /* THREAD_LOCAL_ALLOC */
+#endif /* THREAD_LOCAL_ALLOC */

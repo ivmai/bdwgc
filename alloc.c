@@ -15,13 +15,13 @@
  *
  */
 
-# include "private/gc_priv.h"
+#include "private/gc_priv.h"
 
-# include <stdio.h>
-# if !defined(MACOS) && !defined(MSWINCE)
-#   include <signal.h>
-#   include <sys/types.h>
-# endif
+#include <stdio.h>
+#if !defined(MACOS) && !defined(MSWINCE)
+# include <signal.h>
+# include <sys/types.h>
+#endif
 
 /*
  * Separate free lists are maintained for different sized objects
@@ -134,7 +134,7 @@ int GC_CALLBACK GC_never_stop_func(void)
 unsigned long GC_time_limit = GC_TIME_LIMIT;
 
 #ifndef NO_CLOCK
-STATIC CLOCK_TYPE GC_start_time = 0;
+  STATIC CLOCK_TYPE GC_start_time = 0;
                                 /* Time at which we stopped world.      */
                                 /* used only in GC_timeout_stop_func.   */
 #endif
@@ -163,7 +163,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
 }
 
 #if defined(SMALL_CONFIG) || defined(NO_CLOCK)
-#   define GC_timeout_stop_func GC_default_stop_func
+# define GC_timeout_stop_func GC_default_stop_func
 #else
   STATIC int GC_CALLBACK GC_timeout_stop_func (void)
   {
@@ -522,9 +522,10 @@ GC_API int GC_CALL GC_collect_a_little(void)
     return(result);
 }
 
-# if !defined(REDIRECT_MALLOC) && (defined(MSWIN32) || defined(MSWINCE))
+#if !defined(REDIRECT_MALLOC) && (defined(MSWIN32) || defined(MSWINCE))
   void GC_add_current_malloc_heap(void);
-# endif
+#endif
+
 #ifdef MAKE_BACK_GRAPH
   void GC_build_back_graph(void);
 #endif
@@ -689,10 +690,10 @@ void GC_set_fl_marks(ptr_t q)
 }
 
 #ifdef GC_ASSERTIONS
-/* Check that all mark bits for the free list whose first entry is q    */
-/* are set.                                                             */
-void GC_check_fl_marks(ptr_t q)
-{
+  /* Check that all mark bits for the free list whose first entry is q  */
+  /* are set.                                                           */
+  void GC_check_fl_marks(ptr_t q)
+  {
    ptr_t p;
    for (p = q; p != 0; p = obj_link(p)) {
        if (!GC_is_marked(p)) {
@@ -700,7 +701,7 @@ void GC_check_fl_marks(ptr_t q)
            ABORT("Unmarked local free list entry.");
        }
    }
-}
+  }
 #endif
 
 /* Clear all mark bits for the free list whose first entry is q */
@@ -749,11 +750,11 @@ STATIC void GC_clear_fl_marks(ptr_t q)
 }
 
 #if defined(GC_ASSERTIONS) && defined(THREADS) && defined(THREAD_LOCAL_ALLOC)
-void GC_check_tls(void);
+  void GC_check_tls(void);
 #endif
 
 #ifdef MAKE_BACK_GRAPH
-void GC_traverse_back_graph(void);
+  void GC_traverse_back_graph(void);
 #endif
 
 /* Finish up a collection.  Assumes mark bits are consistent, lock is   */
@@ -988,6 +989,7 @@ GC_INNER word GC_n_heap_sects = 0;
     GC_n_memory++;
   }
 #endif
+
 /*
  * Use the chunk of memory starting at p of size bytes as part of the heap.
  * Assumes p is HBLKSIZE aligned, and bytes is a multiple of HBLKSIZE.
@@ -1041,9 +1043,9 @@ void GC_add_to_heap(struct hblk *p, size_t bytes)
     }
 }
 
-# if !defined(NO_DEBUGGING)
-void GC_print_heap_sects(void)
-{
+#if !defined(NO_DEBUGGING)
+  void GC_print_heap_sects(void)
+  {
     unsigned i;
 
     GC_printf("Total heap size: %lu\n", (unsigned long) GC_heapsize);
@@ -1060,8 +1062,8 @@ void GC_print_heap_sects(void)
                   i, start, start + len,
                   (unsigned long)nbl, (unsigned long)(len/HBLKSIZE));
     }
-}
-# endif
+  }
+#endif
 
 void * GC_least_plausible_heap_addr = (void *)ONES;
 void * GC_greatest_plausible_heap_addr = 0;

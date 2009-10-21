@@ -14,6 +14,8 @@
  * modified is included with the above copyright notice.
  */
 
+#include "private/gc_priv.h"
+
 /*
  * These are extra allocation routines which are likely to be less
  * frequently used than those in malloc.c.  They are separate in the
@@ -22,7 +24,6 @@
  */
 
 #include <stdio.h>
-#include "private/gc_priv.h"
 
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h        */

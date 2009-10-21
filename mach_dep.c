@@ -11,21 +11,24 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, November 17, 1995 12:13 pm PST */
-# include "private/gc_priv.h"
-# include <stdio.h>
-# include <setjmp.h>
-# if defined(OS2) || defined(CX_UX)
-#   define _setjmp(b) setjmp(b)
-#   define _longjmp(b,v) longjmp(b,v)
+
+#include "private/gc_priv.h"
+
+#include <stdio.h>
+#include <setjmp.h>
+
+#if defined(OS2) || defined(CX_UX)
+# define _setjmp(b) setjmp(b)
+# define _longjmp(b,v) longjmp(b,v)
+#endif
+
+#ifdef AMIGA
+# ifndef __GNUC__
+#   include <dos.h>
+# else
+#   include <machine/reg.h>
 # endif
-# ifdef AMIGA
-#   ifndef __GNUC__
-#     include <dos.h>
-#   else
-#     include <machine/reg.h>
-#   endif
-# endif
+#endif
 
 #if defined(__MWERKS__) && !defined(POWERPC)
 

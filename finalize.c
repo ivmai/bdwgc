@@ -13,30 +13,29 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, February 1, 1996 1:19 pm PST */
 
 #include "private/gc_pmark.h"
 
-# ifdef FINALIZE_ON_DEMAND
-    int GC_finalize_on_demand = 1;
-# else
-    int GC_finalize_on_demand = 0;
-# endif
+#ifdef FINALIZE_ON_DEMAND
+  int GC_finalize_on_demand = 1;
+#else
+  int GC_finalize_on_demand = 0;
+#endif
 
-# ifdef JAVA_FINALIZATION
-    int GC_java_finalization = 1;
-# else
-    int GC_java_finalization = 0;
-# endif
+#ifdef JAVA_FINALIZATION
+  int GC_java_finalization = 1;
+#else
+  int GC_java_finalization = 0;
+#endif
 
 /* Type of mark procedure used for marking from finalizable object.     */
 /* This procedure normally does not mark the object, only its           */
 /* descendents.                                                         */
 typedef void (* finalization_mark_proc)(ptr_t /* finalizable_obj_ptr */);
 
-# define HASH3(addr,size,log_size) \
-    ((((word)(addr) >> 3) ^ ((word)(addr) >> (3+(log_size)))) \
-    & ((size) - 1))
+#define HASH3(addr,size,log_size) \
+        ((((word)(addr) >> 3) ^ ((word)(addr) >> (3 + (log_size)))) \
+         & ((size) - 1))
 #define HASH2(addr,log_size) HASH3(addr, 1 << log_size, log_size)
 
 struct hash_chain_entry {
@@ -49,7 +48,7 @@ static struct disappearing_link {
 #   define dl_hidden_link prolog.hidden_key
                                 /* Field to be cleared.         */
 #   define dl_next(x) (struct disappearing_link *)((x) -> prolog.next)
-#   define dl_set_next(x,y) (x) -> prolog.next = (struct hash_chain_entry *)(y)
+#   define dl_set_next(x,y) (x)->prolog.next = (struct hash_chain_entry *)(y)
 
     word dl_hidden_obj;         /* Pointer to object base       */
 } **dl_head = 0;
@@ -70,7 +69,7 @@ static struct finalizable_object {
                                 /* No longer hidden once object */
                                 /* is on finalize_now queue.    */
 #   define fo_next(x) (struct finalizable_object *)((x) -> prolog.next)
-#   define fo_set_next(x,y) (x) -> prolog.next = (struct hash_chain_entry *)(y)
+#   define fo_set_next(x,y) (x)->prolog.next = (struct hash_chain_entry *)(y)
     GC_finalization_proc fo_fn; /* Finalizer.                   */
     ptr_t fo_client_data;
     word fo_object_size;        /* In bytes.                    */
@@ -461,8 +460,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 }
 
 #ifndef NO_DEBUGGING
-void GC_dump_finalization(void)
-{
+  void GC_dump_finalization(void)
+  {
     struct disappearing_link * curr_dl;
     struct finalizable_object * curr_fo;
     ptr_t real_ptr, real_link;
@@ -485,7 +484,7 @@ void GC_dump_finalization(void)
         GC_printf("Finalizable object: %p\n", real_ptr);
       }
     }
-}
+  }
 #endif
 
 #ifndef SMALL_CONFIG
@@ -704,9 +703,9 @@ void GC_finalize(void)
 
 #ifndef JAVA_FINALIZATION_NOT_NEEDED
 
-/* Enqueue all remaining finalizers to be run - Assumes lock is held.   */
-STATIC void GC_enqueue_all_finalizers(void)
-{
+  /* Enqueue all remaining finalizers to be run - Assumes lock is held. */
+  STATIC void GC_enqueue_all_finalizers(void)
+  {
     struct finalizable_object * curr_fo, * prev_fo, * next_fo;
     ptr_t real_ptr;
     register int i;
@@ -746,24 +745,24 @@ STATIC void GC_enqueue_all_finalizers(void)
     }
 
     return;
-}
+  }
 
-/* Invoke all remaining finalizers that haven't yet been run.
- * This is needed for strict compliance with the Java standard,
- * which can make the runtime guarantee that all finalizers are run.
- * Unfortunately, the Java standard implies we have to keep running
- * finalizers until there are no more left, a potential infinite loop.
- * YUCK.
- * Note that this is even more dangerous than the usual Java
- * finalizers, in that objects reachable from static variables
- * may have been finalized when these finalizers are run.
- * Finalizers run at this point must be prepared to deal with a
- * mostly broken world.
- * This routine is externally callable, so is called without
- * the allocation lock.
- */
-GC_API void GC_CALL GC_finalize_all(void)
-{
+  /* Invoke all remaining finalizers that haven't yet been run.
+   * This is needed for strict compliance with the Java standard,
+   * which can make the runtime guarantee that all finalizers are run.
+   * Unfortunately, the Java standard implies we have to keep running
+   * finalizers until there are no more left, a potential infinite loop.
+   * YUCK.
+   * Note that this is even more dangerous than the usual Java
+   * finalizers, in that objects reachable from static variables
+   * may have been finalized when these finalizers are run.
+   * Finalizers run at this point must be prepared to deal with a
+   * mostly broken world.
+   * This routine is externally callable, so is called without
+   * the allocation lock.
+   */
+  GC_API void GC_CALL GC_finalize_all(void)
+  {
     DCL_LOCK_STATE;
 
     LOCK();
@@ -778,8 +777,9 @@ GC_API void GC_CALL GC_finalize_all(void)
       LOCK();
     }
     UNLOCK();
-}
-#endif
+  }
+
+#endif /* !JAVA_FINALIZATION_NOT_NEEDED */
 
 /* Returns true if it is worth calling GC_invoke_finalizers. (Useful if */
 /* finalizers can only be called from some kind of `safe state' and     */
@@ -931,9 +931,8 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn,
 }
 
 #ifndef SMALL_CONFIG
-
-void GC_print_finalization_stats(void)
-{
+  void GC_print_finalization_stats(void)
+  {
     struct finalizable_object *fo = GC_finalize_now;
     unsigned long ready = 0;
 
@@ -944,6 +943,5 @@ void GC_print_finalization_stats(void)
     GC_log_printf("%lu objects are eligible for immediate finalization; "
                   "%ld links cleared\n",
                   ready, (long)GC_old_dl_entries - (long)GC_dl_entries);
-}
-
+  }
 #endif /* SMALL_CONFIG */

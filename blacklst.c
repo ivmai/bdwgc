@@ -11,8 +11,8 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, August 9, 1995 6:09 pm PDT */
-# include "private/gc_priv.h"
+
+#include "private/gc_priv.h"
 
 /*
  * We maintain several hash tables of hblks that have had false hits.

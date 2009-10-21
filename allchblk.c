@@ -14,9 +14,9 @@
  * modified is included with the above copyright notice.
  */
 
-/* #define DEBUG */
-#include <stdio.h>
 #include "private/gc_priv.h"
+
+#include <stdio.h>
 
 GC_bool GC_use_entire_heap = 0;
 

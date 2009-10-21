@@ -13,6 +13,7 @@
  *
  */
 
+#include "private/gc_pmark.h"
 
 /*
  * Some simple primitives for allocation with explicit type information.
@@ -36,10 +37,9 @@
  * since they are not accessible through the current interface.
  */
 
-#include "private/gc_pmark.h"
 #include "gc_typed.h"
 
-# define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
+#define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
 
 STATIC GC_bool GC_explicit_typing_initialized = FALSE;
 
@@ -93,7 +93,7 @@ STATIC ext_descr * GC_ext_descriptors = NULL;
                                         /* descriptors.                 */
 
 STATIC size_t GC_ed_size = 0;   /* Current size of above arrays.        */
-# define ED_INITIAL_SIZE 100;
+#define ED_INITIAL_SIZE 100
 
 STATIC size_t GC_avail_descr = 0;       /* Next available slot.         */
 
@@ -199,10 +199,10 @@ GC_make_sequence_descriptor(complex_descriptor *first,
 /* The implementation knows that GC_DS_LENGTH is 0.             */
 /* *leaf, *complex_d, and *simple_d may be used as temporaries  */
 /* during the construction.                                     */
-# define COMPLEX 2
-# define LEAF 1
-# define SIMPLE 0
-# define NO_MEM (-1)
+#define COMPLEX 2
+#define LEAF    1
+#define SIMPLE  0
+#define NO_MEM  (-1)
 STATIC int GC_make_array_descriptor(size_t nelements, size_t size,
                                     GC_descr descriptor, GC_descr *simple_d,
                                     complex_descriptor **complex_d,
@@ -317,9 +317,9 @@ GC_make_sequence_descriptor(complex_descriptor *first,
 }
 
 #ifdef UNDEFINED
-complex_descriptor * GC_make_complex_array_descriptor(word nelements,
+  complex_descriptor * GC_make_complex_array_descriptor(word nelements,
                                                 complex_descriptor *descr)
-{
+  {
     struct ComplexArrayDescriptor * result =
         (struct ComplexArrayDescriptor *)
                 GC_malloc(sizeof(struct ComplexArrayDescriptor));
@@ -330,7 +330,7 @@ complex_descriptor * GC_make_complex_array_descriptor(word nelements,
         result -> ad_element_descr = descr;
     }
     return((complex_descriptor *)result);
-}
+  }
 #endif
 
 STATIC ptr_t * GC_eobjfreelist = NULL;
