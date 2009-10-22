@@ -393,11 +393,6 @@
 #   endif
 #   if defined(x86) || defined(__i386__)
 #     define I386
-#     if defined(__MINGW32CE__) && !defined(DebugBreak)
-        /* A workaround for x86mingw32ce toolchain (if it is still      */
-        /* declaring DebugBreak() instead of defining it as a macro).   */
-#       define DebugBreak() _exit(-1)
-#     endif
 #   endif
 #   if defined(_M_ARM) || defined(ARM) || defined(_ARM_)
 #     define ARM32

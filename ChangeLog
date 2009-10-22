@@ -1,5 +1,10 @@
 2009-10-22  Ivan Maidanski <ivmai@mail.ru>
 
+	* include/private/gcconfig.h: Move DebugBreak() workaround (for
+	x86mingw32ce toolchain) to gc_priv.h (after windows.h inclusion).
+
+2009-10-22  Ivan Maidanski <ivmai@mail.ru>
+
 	* allchblk.c (GC_unmap_old, GC_merge_unmapped, GC_allochblk,
 	GC_freehblk): Use GC_INNER for the function definition.
 	* alloc.c (GC_never_stop_func, GC_should_collect,

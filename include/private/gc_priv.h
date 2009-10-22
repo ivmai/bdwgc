@@ -388,10 +388,13 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # ifdef PCR
 #   define ABORT(s) PCR_Base_Panic(s)
 # else
-#   if defined(MSWINCE) && !defined(UNDER_CE) && !defined(DebugBreak)
+#   if defined(MSWINCE) && !defined(DebugBreak) \
+       && (!defined(UNDER_CE) || (defined(__MINGW32CE__) && !defined(ARM32)))
       /* This simplifies linking for WinCE (and, probably, doesn't      */
       /* hurt debugging much); use -DDebugBreak=DebugBreak to override  */
-      /* this behavior if really needed.                                */
+      /* this behavior if really needed.  This is also a workaround for */
+      /* x86mingw32ce toolchain (if it is still declaring DebugBreak()  */
+      /* instead of defining it as a macro).                            */
 #     define DebugBreak() _exit(-1) /* there is no abort() in WinCE */
 #   endif
 #   ifdef SMALL_CONFIG
