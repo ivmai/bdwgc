@@ -25,8 +25,8 @@
  * library. -HB
  */
 
-# if (defined(GC_PTHREADS) && !defined(GC_DARWIN_THREADS)) && !defined(GC_WIN32_PTHREADS)\
-      || defined(GC_SOLARIS_THREADS)
+# if defined(GC_PTHREADS) && !defined(GC_DARWIN_THREADS) \
+     && !defined(GC_WIN32_PTHREADS)
 
 # undef GC_MUST_RESTORE_REDEFINED_DLOPEN
 # if defined(dlopen) && !defined(GC_USE_LD_WRAP)
@@ -38,8 +38,6 @@
 #   undef dlopen
 #   define GC_MUST_RESTORE_REDEFINED_DLOPEN
 # endif
-
-  GC_bool GC_collection_in_progress(void);
 
   /* Make sure we're not in the middle of a collection, and make        */
   /* sure we don't start any.   Returns previous value of GC_dont_gc.   */
@@ -103,4 +101,4 @@ GC_API void * WRAP_DLFUNC(dlopen)(const char *path, int mode)
 #   define dlopen GC_dlopen
 # endif
 
-#endif  /* GC_PTHREADS || GC_SOLARIS_THREADS ... */
+#endif  /* GC_PTHREADS */

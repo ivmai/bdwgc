@@ -21,7 +21,7 @@
 # include <errno.h>
 #endif
 
-void GC_extend_size_map(size_t);        /* in misc.c. */
+void GC_extend_size_map(size_t); /* in misc.c. */
 
 /* Allocate reclaim list for kind:      */
 /* Return TRUE on success               */
@@ -82,11 +82,10 @@ ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
     return result;
 }
 
-
 /* Allocate a large block of size lb bytes.  Clear if appropriate.      */
 /* We hold the allocation lock.                                         */
 /* EXTRA_BYTES were already added to lb.                                */
-ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
+STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
 {
     ptr_t result = GC_alloc_large(lb, k, flags);
     word n_blocks = OBJ_SZ_TO_BLOCKS(lb);
@@ -302,10 +301,10 @@ GC_API char * GC_CALL GC_strdup(const char *s)
 #   define RA
 # endif
 # define GC_debug_malloc_replacement(lb) \
-        GC_debug_malloc(lb, RA "unknown", 0)
+                        GC_debug_malloc(lb, RA "unknown", 0)
 
 void * malloc(size_t lb)
-  {
+{
     /* It might help to manually inline the GC_malloc call here.        */
     /* But any decent compiler should reduce the extra procedure call   */
     /* to at most a jump instruction in this case.                      */
@@ -320,7 +319,7 @@ void * malloc(size_t lb)
       if (!GC_is_initialized) return sbrk(lb);
 #   endif /* I386 && GC_SOLARIS_THREADS */
     return((void *)REDIRECT_MALLOC(lb));
-  }
+}
 
 #if defined(GC_LINUX_THREADS) /* && !defined(USE_PROC_FOR_LIBRARIES) */
   STATIC ptr_t GC_libpthread_start = 0;
@@ -328,7 +327,7 @@ void * malloc(size_t lb)
   STATIC ptr_t GC_libld_start = 0;
   STATIC ptr_t GC_libld_end = 0;
   GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp);
-        /* From os_dep.c */
+                                                /* From os_dep.c */
 
   STATIC void GC_init_lib_bounds(void)
   {
@@ -457,8 +456,8 @@ GC_API void GC_CALL GC_free(void * p)
 /* Only used for internally allocated objects, so we can take some      */
 /* shortcuts.                                                           */
 #ifdef THREADS
-void GC_free_inner(void * p)
-{
+  void GC_free_inner(void * p)
+  {
     struct hblk *h;
     hdr *hhdr;
     size_t sz; /* bytes */
@@ -492,13 +491,14 @@ void GC_free_inner(void * p)
         }
         GC_freehblk(h);
     }
-}
+  }
 #endif /* THREADS */
 
-# if defined(REDIRECT_MALLOC) && !defined(REDIRECT_FREE)
-#   define REDIRECT_FREE GC_free
-# endif
-# ifdef REDIRECT_FREE
+#if defined(REDIRECT_MALLOC) && !defined(REDIRECT_FREE)
+# define REDIRECT_FREE GC_free
+#endif
+
+#ifdef REDIRECT_FREE
   void free(void * p)
   {
 #   if defined(GC_LINUX_THREADS) && !defined(USE_PROC_FOR_LIBRARIES)
@@ -520,4 +520,4 @@ void GC_free_inner(void * p)
       REDIRECT_FREE(p);
 #   endif
   }
-# endif  /* REDIRECT_MALLOC */
+#endif /* REDIRECT_FREE */

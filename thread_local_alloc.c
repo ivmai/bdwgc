@@ -20,7 +20,6 @@
 #endif
 
 #include "private/thread_local_alloc.h"
-#include "gc_inline.h"
 
 #include <stdlib.h>
 

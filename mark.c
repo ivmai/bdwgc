@@ -280,6 +280,18 @@ void GC_initiate_gc(void)
     STATIC void GC_do_parallel_mark(void); /* initiate parallel marking. */
 #endif /* PARALLEL_MARK */
 
+#ifdef SMALL_CONFIG
+# define GC_push_next_marked_dirty(h) GC_push_next_marked(h)
+#else
+  STATIC struct hblk * GC_push_next_marked_dirty(struct hblk *h);
+                /* Invoke GC_push_marked on next dirty block above h.   */
+                /* Return a pointer just past the end of this block.    */
+#endif /* !SMALL_CONFIG */
+STATIC struct hblk * GC_push_next_marked(struct hblk *h);
+                /* Ditto, but also mark from clean pages.       */
+STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h);
+                /* Ditto, but mark only from uncollectable pages.       */
+
 static void alloc_mark_stack(size_t);
 
 # if (defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__) \
@@ -472,7 +484,7 @@ static void alloc_mark_stack(size_t);
     }
 # endif /* __GNUC__  && MSWIN32 */
 
-#ifdef GC_WIN32_THREADS
+#if defined(GC_WIN32_THREADS) && !defined(__GNUC__)
   GC_bool GC_started_thread_while_stopped(void);
   /* In win32_threads.c.  Did we invalidate mark phase with an  */
   /* unexpected thread start?                                   */
@@ -576,7 +588,6 @@ handle_ex:
   }
 #endif /* WRAP_MARK_SOME */
 
-
 GC_bool GC_mark_stack_empty(void)
 {
     return(GC_mark_stack_top < GC_mark_stack);
@@ -630,11 +641,11 @@ mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
   GC_objects_are_marked = TRUE;
   INIT_HDR_CACHE;
 # ifdef OS2 /* Use untweaked version to circumvent compiler problem */
-  while (mark_stack_top >= mark_stack && credit >= 0) {
+    while (mark_stack_top >= mark_stack && credit >= 0)
 # else
-  while ((((ptr_t)mark_stack_top - (ptr_t)mark_stack) | credit)
-        >= 0) {
+    while ((((ptr_t)mark_stack_top - (ptr_t)mark_stack) | credit) >= 0)
 # endif
+  {
     current_p = mark_stack_top -> mse_start;
     descr = mark_stack_top -> mse_descr;
   retry:
@@ -1277,20 +1288,22 @@ void GC_push_all(ptr_t bottom, ptr_t top)
     GC_mark_stack_top -> mse_descr = length;
 }
 
-/*
- * Analogous to the above, but push only those pages h with dirty_fn(h) != 0.
- * We use push_fn to actually push the block.
- * Used both to selectively push dirty pages, or to push a block
- * in piecemeal fashion, to allow for more marking concurrency.
- * Will not overflow mark stack if push_fn pushes a small fixed number
- * of entries.  (This is invoked only if push_fn pushes a single entry,
- * or if it marks each object before pushing it, thus ensuring progress
- * in the event of a stack overflow.)
- */
-void GC_push_selected(ptr_t bottom, ptr_t top,
-                      int (*dirty_fn) (struct hblk *),
-                      void (*push_fn) (ptr_t, ptr_t))
-{
+#ifndef SMALL_CONFIG
+
+  /*
+   * Analogous to the above, but push only those pages h with
+   * dirty_fn(h) != 0.  We use push_fn to actually push the block.
+   * Used both to selectively push dirty pages, or to push a block
+   * in piecemeal fashion, to allow for more marking concurrency.
+   * Will not overflow mark stack if push_fn pushes a small fixed number
+   * of entries.  (This is invoked only if push_fn pushes a single entry,
+   * or if it marks each object before pushing it, thus ensuring progress
+   * in the event of a stack overflow.)
+   */
+  STATIC void GC_push_selected(ptr_t bottom, ptr_t top,
+                               int (*dirty_fn)(struct hblk *),
+                               void (*push_fn)(ptr_t, ptr_t))
+  {
     struct hblk * h;
 
     bottom = (ptr_t)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
@@ -1328,17 +1341,21 @@ void GC_push_selected(ptr_t bottom, ptr_t top,
     if (GC_mark_stack_top >= GC_mark_stack_limit) {
         ABORT("unexpected mark stack overflow");
     }
-}
+  }
 
-# ifndef SMALL_CONFIG
+# ifdef PROC_VDB
+    GC_bool GC_page_was_ever_dirty(struct hblk *h);
+                        /* Could the page contain valid heap pointers?  */
+# endif
 
-void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
-{
+  void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
+  {
     if (all) {
       if (GC_dirty_maintained) {
 #       ifdef PROC_VDB
             /* Pages that were never dirtied cannot contain pointers    */
-            GC_push_selected(bottom, top, GC_page_was_ever_dirty, GC_push_all);
+            GC_push_selected(bottom, top, GC_page_was_ever_dirty,
+                             GC_push_all);
 #       else
             GC_push_all(bottom, top);
 #       endif
@@ -1348,23 +1365,23 @@ void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
     } else {
         GC_push_selected(bottom, top, GC_page_was_dirty, GC_push_all);
     }
-}
-#endif
+  }
+#endif /* !SMALL_CONFIG */
 
-# if defined(MSWIN32) || defined(MSWINCE)
+#if defined(MSWIN32) || defined(MSWINCE)
   void __cdecl GC_push_one(word p)
-# else
+#else
   void GC_push_one(word p)
-# endif
+#endif
 {
     GC_PUSH_ONE_STACK(p, MARKED_FROM_REGISTER);
 }
 
 /*ARGSUSED*/
 GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
-                                     mse *mark_stack_ptr,
-                                     mse *mark_stack_limit,
-                                     void **src)
+                                                mse *mark_stack_ptr,
+                                                mse *mark_stack_limit,
+                                                void **src)
 {
     hdr * hhdr;
 
@@ -1560,7 +1577,7 @@ void GC_push_all_stack(ptr_t bottom, ptr_t top)
 #ifdef USE_PUSH_MARKED_ACCELERATORS
 /* Push all objects reachable from marked objects in the given block */
 /* containing objects of size 1 granule.                             */
-void GC_push_marked1(struct hblk *h, hdr *hhdr)
+STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
 {
     word * mark_word_addr = &(hhdr->hb_marks[0]);
     word *p;
@@ -1610,7 +1627,7 @@ void GC_push_marked1(struct hblk *h, hdr *hhdr)
 
 /* Push all objects reachable from marked objects in the given block */
 /* of size 2 (granules) objects.                                     */
-void GC_push_marked2(struct hblk *h, hdr *hhdr)
+STATIC void GC_push_marked2(struct hblk *h, hdr *hhdr)
 {
     word * mark_word_addr = &(hhdr->hb_marks[0]);
     word *p;
@@ -1659,7 +1676,7 @@ void GC_push_marked2(struct hblk *h, hdr *hhdr)
 /* of size 4 (granules) objects.                                     */
 /* There is a risk of mark stack overflow here.  But we handle that. */
 /* And only unmarked objects get pushed, so it's not very likely.    */
-void GC_push_marked4(struct hblk *h, hdr *hhdr)
+STATIC void GC_push_marked4(struct hblk *h, hdr *hhdr)
 {
     word * mark_word_addr = &(hhdr->hb_marks[0]);
     word *p;
@@ -1709,7 +1726,7 @@ void GC_push_marked4(struct hblk *h, hdr *hhdr)
 #endif /* USE_PUSH_MARKED_ACCELERATORS */
 
 /* Push all objects reachable from marked objects in the given block */
-void GC_push_marked(struct hblk *h, hdr *hhdr)
+STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 {
     size_t sz = hhdr -> hb_sz;
     word descr = hhdr -> hb_descr;
@@ -1780,7 +1797,7 @@ STATIC GC_bool GC_block_was_dirty(struct hblk *h, hdr *hhdr)
 
 /* Similar to GC_push_marked, but skip over unallocated blocks  */
 /* and return address of next plausible block.                  */
-struct hblk * GC_push_next_marked(struct hblk *h)
+STATIC struct hblk * GC_push_next_marked(struct hblk *h)
 {
     hdr * hhdr = HDR(h);
 
@@ -1794,9 +1811,9 @@ struct hblk * GC_push_next_marked(struct hblk *h)
 }
 
 #ifndef SMALL_CONFIG
-/* Identical to above, but mark only from dirty pages   */
-struct hblk * GC_push_next_marked_dirty(struct hblk *h)
-{
+  /* Identical to above, but mark only from dirty pages   */
+  STATIC struct hblk * GC_push_next_marked_dirty(struct hblk *h)
+  {
     hdr * hhdr = HDR(h);
 
     if (!GC_dirty_maintained) { ABORT("dirty bits not set up"); }
@@ -1823,12 +1840,12 @@ struct hblk * GC_push_next_marked_dirty(struct hblk *h)
     }
     GC_push_marked(h, hhdr);
     return(h + OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz));
-}
+  }
 #endif
 
 /* Similar to above, but for uncollectable pages.  Needed since we      */
 /* do not clear marks for such pages, even for full collections.        */
-struct hblk * GC_push_next_marked_uncollectable(struct hblk *h)
+STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h)
 {
     hdr * hhdr = HDR(h);
 

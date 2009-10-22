@@ -79,15 +79,16 @@ asm static void PushMacRegisters()
 #undef HAVE_PUSH_REGS
 
 #if defined(USE_ASM_PUSH_REGS)
-#  define HAVE_PUSH_REGS
+# define HAVE_PUSH_REGS
 #else  /* No asm implementation */
-void GC_push_regs()
-{
-#       if defined(M68K) && defined(AMIGA)
+
+# if defined(M68K) && defined(AMIGA)
+    STATIC void GC_push_regs(void)
+    {
          /*  AMIGA - could be replaced by generic code                  */
          /* a0, a1, d0 and d1 are caller save */
 
-#        ifdef __GNUC__
+#       ifdef __GNUC__
           asm("subq.w &0x4,%sp");       /* allocate word on top of stack */
 
           asm("mov.l %a2,(%sp)"); asm("jsr _GC_push_one");
@@ -104,12 +105,11 @@ void GC_push_regs()
           asm("mov.l %d7,(%sp)"); asm("jsr _GC_push_one");
 
           asm("addq.w &0x4,%sp");       /* put stack back where it was  */
-#         define HAVE_PUSH_REGS
-#        else /* !__GNUC__ */
+#       else /* !__GNUC__ */
           GC_push_one(getreg(REG_A2));
           GC_push_one(getreg(REG_A3));
 #         ifndef __SASC
-              /* Can probably be changed to #if 0 -Kjetil M. (a4=globals)*/
+            /* Can probably be changed to #if 0 -Kjetil M. (a4=globals) */
             GC_push_one(getreg(REG_A4));
 #         endif
           GC_push_one(getreg(REG_A5));
@@ -121,17 +121,20 @@ void GC_push_regs()
           GC_push_one(getreg(REG_D5));
           GC_push_one(getreg(REG_D6));
           GC_push_one(getreg(REG_D7));
-#         define HAVE_PUSH_REGS
-#        endif /* !__GNUC__ */
-#       endif /* AMIGA */
+#       endif /* !__GNUC__ */
+    }
+#   define HAVE_PUSH_REGS
 
-#       if defined(M68K) && defined(MACOS)
-#       if defined(THINK_C)
-#         define PushMacReg(reg) \
+# elif defined(M68K) && defined(MACOS)
+
+#   if defined(THINK_C)
+#     define PushMacReg(reg) \
               move.l  reg,(sp) \
               jsr             GC_push_one
+      STATIC void GC_push_regs(void)
+      {
           asm {
-              sub.w   #4,sp                   ; reserve space for one parameter.
+              sub.w   #4,sp          ; reserve space for one parameter.
               PushMacReg(a2);
               PushMacReg(a3);
               PushMacReg(a4);
@@ -142,17 +145,20 @@ void GC_push_regs()
               PushMacReg(d5);
               PushMacReg(d6);
               PushMacReg(d7);
-              add.w   #4,sp                   ; fix stack.
+              add.w   #4,sp          ; fix stack.
           }
-#         define HAVE_PUSH_REGS
-#         undef PushMacReg
-#       endif /* THINK_C */
-#       if defined(__MWERKS__)
+      }
+#     define HAVE_PUSH_REGS
+#     undef PushMacReg
+#   elif defined(__MWERKS__)
+      STATIC void GC_push_regs(void)
+      {
           PushMacRegisters();
-#         define HAVE_PUSH_REGS
-#       endif   /* __MWERKS__ */
-#   endif       /* MACOS */
-}
+      }
+#     define HAVE_PUSH_REGS
+#   endif /* __MWERKS__ */
+# endif /* MACOS */
+
 #endif /* !USE_ASM_PUSH_REGS */
 
 #if defined(HAVE_PUSH_REGS) && defined(THREADS)
@@ -236,8 +242,8 @@ void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *), ptr_t arg)
           /* _setjmp won't, but is less portable.               */
 #       endif
 #   endif /* !HAVE_PUSH_REGS ... */
-    /* FIXME: context here is sometimes just zero.  At the moment the callees   */
-    /* don't really need it.                                                    */
+    /* FIXME: context here is sometimes just zero.  At the moment the   */
+    /* callees don't really need it.                                    */
     fn(arg, context);
     /* Strongly discourage the compiler from treating the above */
     /* as a tail-call, since that would pop the register        */
@@ -248,9 +254,10 @@ void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *), ptr_t arg)
 #if defined(ASM_CLEAR_CODE)
 # ifdef LINT
     /*ARGSUSED*/
-    ptr_t GC_clear_stack_inner(arg, limit)
-    ptr_t arg; word limit;
-    { return(arg); }
+    ptr_t GC_clear_stack_inner(ptr_t arg, word limit)
+    {
+      return(arg);
+    }
     /* The real version is in a .S file */
 # endif
 #endif /* ASM_CLEAR_CODE */

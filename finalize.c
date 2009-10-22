@@ -743,8 +743,6 @@ void GC_finalize(void)
           curr_fo = next_fo;
         }
     }
-
-    return;
   }
 
   /* Invoke all remaining finalizers that haven't yet been run.

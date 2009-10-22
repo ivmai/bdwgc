@@ -44,7 +44,7 @@
  */
 
 /*
- *  The allocator uses GC_allochblk to allocate large chunks of objects.
+ * The allocator uses GC_allochblk to allocate large chunks of objects.
  * These chunks all start on addresses which are multiples of
  * HBLKSZ.   Each allocated chunk has an associated header,
  * which can be located quickly based on the address of the chunk.
@@ -117,9 +117,6 @@ GC_API unsigned GC_CALL GC_get_version(void)
 #endif
 
 word GC_free_space_divisor = GC_FREE_SPACE_DIVISOR;
-
-GC_bool GC_collection_in_progress(void);
-                /* Collection is in progress, or was abandoned. */
 
 int GC_CALLBACK GC_never_stop_func(void)
 {
@@ -1281,8 +1278,8 @@ ptr_t GC_allocobj(size_t gran, int kind)
         ENTER_GC();
         if (GC_incremental && GC_time_limit == GC_TIME_UNLIMITED
             && !tried_minor) {
-         GC_collect_a_little_inner(1);
-         tried_minor = TRUE;
+          GC_collect_a_little_inner(1);
+          tried_minor = TRUE;
         } else {
           if (!GC_collect_or_expand(1, FALSE, retry)) {
             EXIT_GC();

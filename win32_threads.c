@@ -155,8 +155,6 @@ GC_INNER GC_bool GC_need_to_lock = FALSE;
 
 static GC_bool parallel_initialized = FALSE;
 
-void GC_init_parallel(void);
-
 /* GC_use_DllMain() is currently incompatible with pthreads and WinCE.  */
 /* It might be possible to get DllMain-based thread registration to     */
 /* work with Cygwin, but if you try, you are on your own.               */
@@ -274,24 +272,26 @@ STATIC volatile GC_bool GC_please_stop = FALSE;
   STATIC AO_t GC_attached_thread = FALSE;
 #endif
 
-/* Return TRUE if an thread was attached since we last asked or */
-/* since GC_attached_thread was explicitly reset.               */
-GC_bool GC_started_thread_while_stopped(void)
-{
-#ifndef GC_NO_DLLMAIN
-  AO_t result;
+#if !defined(__GNUC__)
+  /* Return TRUE if an thread was attached since we last asked or */
+  /* since GC_attached_thread was explicitly reset.               */
+  GC_bool GC_started_thread_while_stopped(void)
+  {
+#   ifndef GC_NO_DLLMAIN
+      AO_t result;
 
-  if (GC_win32_dll_threads) {
-    AO_nop_full();      /* Prior heap reads need to complete earlier. */
-    result = AO_load(&GC_attached_thread);
-    if (result) {
-      AO_store(&GC_attached_thread, FALSE);
-    }
-    return ((GC_bool)result);
+      if (GC_win32_dll_threads) {
+        AO_nop_full();  /* Prior heap reads need to complete earlier. */
+        result = AO_load(&GC_attached_thread);
+        if (result) {
+          AO_store(&GC_attached_thread, FALSE);
+        }
+        return ((GC_bool)result);
+      }
+#   endif
+    return FALSE;
   }
-#endif
-  return FALSE;
-}
+#endif /* !__GNUC__ */
 
 /* Thread table used if GC_win32_dll_threads is set.    */
 /* This is a fixed size array.                          */
@@ -351,7 +351,10 @@ STATIC GC_thread GC_new_thread(DWORD id)
   return(result);
 }
 
-LONG WINAPI GC_write_fault_handler(struct _EXCEPTION_POINTERS *exc_info);
+#ifdef MPROTECT_VDB
+  LONG WINAPI GC_write_fault_handler(
+                                struct _EXCEPTION_POINTERS *exc_info);
+#endif
 
 #if defined(GWW_VDB) && defined(MPROTECT_VDB)
   GC_bool GC_gww_dirty_init(void);
@@ -917,10 +920,6 @@ void GC_push_thread_structures(void)
 # endif
 }
 
-#if defined(MPROTECT_VDB)
-# include "atomic_ops.h"
-#endif
-
 /* Suspend the given thread, if it's still active.      */
 STATIC void GC_suspend(GC_thread t)
 {
@@ -1334,7 +1333,7 @@ void GC_push_all_stacks(void)
 /* is found, both *hi and *lo will be set to an address         */
 /* higher than limit.                                           */
 void GC_get_next_stack(char *start, char *limit,
-                       char **lo, char **hi)
+                                char **lo, char **hi)
 {
   int i;
   char * current_min = ADDR_LIMIT;  /* Least in-range stack base      */

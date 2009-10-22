@@ -38,6 +38,16 @@
 # define GC_EXPECT(expr, outcome) (expr)
 #endif /* __GNUC__ */
 
+#ifndef GC_ASSERT
+# define GC_ASSERT(expr) /* empty */
+#endif
+
+/* Store a pointer to a list of newly allocated objects of kind k and   */
+/* size lb in *result.  The caller must make sure that *result is       */
+/* traced even if objects are ptrfree.                                  */
+GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
+                                           void ** /* result */);
+
 /* The ultimately general inline allocation macro.  Allocate an object  */
 /* of size granules, putting the resulting pointer in result.  Tiny_fl  */
 /* is a "tiny" free list array, which will be used first, if the size   */
@@ -77,7 +87,7 @@
             } else { \
                 /* Large counter or NULL */ \
                 GC_generic_malloc_many(((granules) == 0? GC_GRANULE_BYTES : \
-                                          GC_RAW_BYTES_FROM_INDEX(granules)), \
+                                        GC_RAW_BYTES_FROM_INDEX(granules)), \
                                        kind, my_fl); \
                 my_entry = *my_fl; \
                 if (my_entry == 0) { \

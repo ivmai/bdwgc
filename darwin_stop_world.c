@@ -39,58 +39,6 @@
 # endif
 #endif
 
-typedef struct StackFrame {
-  unsigned long savedSP;
-  unsigned long savedCR;
-  unsigned long savedLR;
-  unsigned long reserved[2];
-  unsigned long savedRTOC;
-} StackFrame;
-
-unsigned long FindTopOfStack(unsigned long stack_start)
-{
-  StackFrame    *frame;
-
-  if (stack_start == 0) {
-# ifdef POWERPC
-#   if CPP_WORDSZ == 32
-      __asm__ volatile("lwz     %0,0(r1)" : "=r" (frame));
-#   else
-      __asm__ volatile("ld      %0,0(r1)" : "=r" (frame));
-#   endif
-# endif
-  } else {
-    frame = (StackFrame *)stack_start;
-  }
-
-# ifdef DEBUG_THREADS
-    /* GC_printf("FindTopOfStack start at sp = %p\n", frame); */
-# endif
-  do {
-    if (frame->savedSP == 0)
-      break;
-    /* if there are no more stack frames, stop */
-
-    frame = (StackFrame*)frame->savedSP;
-
-    /* we do these next two checks after going to the next frame
-       because the LR for the first stack frame in the loop
-       is not set up on purpose, so we shouldn't check it. */
-    if ((frame->savedLR & ~3) == 0)
-      break; /* if the next LR is bogus, stop */
-    if ((~(frame->savedLR) & ~3) == 0)
-      break; /* ditto */
-  } while (1);
-
-# ifdef DEBUG_THREADS
-    /* GC_printf("FindTopOfStack finish at sp = %p\n", frame); */
-# endif
-
-  return (unsigned long)frame;
-}
-
-void GC_thr_init(void);
-
 #ifdef DARWIN_DONT_PARSE_STACK
 
 void GC_push_all_stacks(void)
@@ -235,6 +183,55 @@ void GC_push_all_stacks(void)
 }
 
 #else /* !DARWIN_DONT_PARSE_STACK; Use FindTopOfStack() */
+
+typedef struct StackFrame {
+  unsigned long savedSP;
+  unsigned long savedCR;
+  unsigned long savedLR;
+  unsigned long reserved[2];
+  unsigned long savedRTOC;
+} StackFrame;
+
+static unsigned long FindTopOfStack(unsigned long stack_start)
+{
+  StackFrame    *frame;
+
+  if (stack_start == 0) {
+# ifdef POWERPC
+#   if CPP_WORDSZ == 32
+      __asm__ volatile("lwz     %0,0(r1)" : "=r" (frame));
+#   else
+      __asm__ volatile("ld      %0,0(r1)" : "=r" (frame));
+#   endif
+# endif
+  } else {
+    frame = (StackFrame *)stack_start;
+  }
+
+# ifdef DEBUG_THREADS
+    /* GC_printf("FindTopOfStack start at sp = %p\n", frame); */
+# endif
+  do {
+    if (frame->savedSP == 0)
+      break;
+    /* if there are no more stack frames, stop */
+
+    frame = (StackFrame*)frame->savedSP;
+
+    /* we do these next two checks after going to the next frame
+       because the LR for the first stack frame in the loop
+       is not set up on purpose, so we shouldn't check it. */
+    if ((frame->savedLR & ~3) == 0)
+      break; /* if the next LR is bogus, stop */
+    if ((~(frame->savedLR) & ~3) == 0)
+      break; /* ditto */
+  } while (1);
+
+# ifdef DEBUG_THREADS
+    /* GC_printf("FindTopOfStack finish at sp = %p\n", frame); */
+# endif
+  return (unsigned long)frame;
+}
 
 void GC_push_all_stacks(void)
 {

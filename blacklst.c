@@ -52,12 +52,11 @@ STATIC word GC_total_stack_black_listed = 0;
 GC_INNER word GC_black_list_spacing = MINHINCR * HBLKSIZE;
                         /* Initial rough guess. */
 
-void GC_clear_bl(word *);
+STATIC void GC_clear_bl(word *);
 
 void GC_default_print_heap_obj_proc(ptr_t p)
 {
     ptr_t base = GC_base(p);
-
     GC_err_printf("start: %p, appr. length: %ld", base,
                   (unsigned long)GC_size(base));
 }
@@ -109,12 +108,12 @@ void GC_bl_init(void)
     GC_clear_bl(GC_incomplete_stack_bl);
 }
 
-void GC_clear_bl(word *doomed)
+STATIC void GC_clear_bl(word *doomed)
 {
     BZERO(doomed, sizeof(page_hash_table));
 }
 
-void GC_copy_bl(word *old, word *new)
+STATIC void GC_copy_bl(word *old, word *new)
 {
     BCOPY(old, new, sizeof(page_hash_table));
 }
@@ -237,7 +236,7 @@ struct hblk * GC_is_black_listed(struct hblk *h, word len)
       }
     }
 
-    for (i = 0; ; ) {
+    for (i = 0;;) {
         if (GC_old_stack_bl[divWORDSZ(index)] == 0
             && GC_incomplete_stack_bl[divWORDSZ(index)] == 0) {
             /* An easy case */
@@ -255,11 +254,11 @@ struct hblk * GC_is_black_listed(struct hblk *h, word len)
     return(0);
 }
 
-
 /* Return the number of blacklisted blocks in a given range.    */
 /* Used only for statistical purposes.                          */
 /* Looks only at the GC_incomplete_stack_bl.                    */
-word GC_number_stack_black_listed(struct hblk *start, struct hblk *endp1)
+STATIC word GC_number_stack_black_listed(struct hblk *start,
+                                         struct hblk *endp1)
 {
     register struct hblk * h;
     word result = 0;
@@ -271,7 +270,6 @@ word GC_number_stack_black_listed(struct hblk *start, struct hblk *endp1)
     }
     return(result);
 }
-
 
 /* Return the total number of (stack) black-listed bytes. */
 static word total_stack_black_listed(void)

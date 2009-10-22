@@ -139,10 +139,10 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 
 #if defined(IA64) || defined(HP_PA) || defined(M68K)
 #ifdef SA_SIGINFO
-/*ARGSUSED*/
-STATIC void GC_suspend_handler(int sig, siginfo_t *info, void *context)
+  /*ARGSUSED*/
+  STATIC void GC_suspend_handler(int sig, siginfo_t *info, void *context)
 #else
-STATIC void GC_suspend_handler(int sig)
+  STATIC void GC_suspend_handler(int sig)
 #endif
 {
   int old_errno = errno;
@@ -153,9 +153,9 @@ STATIC void GC_suspend_handler(int sig)
 /* We believe that in all other cases the full context is already       */
 /* in the signal handler frame.                                         */
 #ifdef SA_SIGINFO
-STATIC void GC_suspend_handler(int sig, siginfo_t *info, void *context)
+  STATIC void GC_suspend_handler(int sig, siginfo_t *info, void *context)
 #else
-STATIC void GC_suspend_handler(int sig)
+  STATIC void GC_suspend_handler(int sig)
 #endif
 {
   int old_errno = errno;
@@ -271,8 +271,6 @@ STATIC void GC_restart_handler(int sig)
 }
 
 #endif /* !GC_OPENBSD_THREADS */
-
-void GC_thr_init(void);
 
 # ifdef IA64
 #   define IF_IA64(x) x
@@ -589,16 +587,16 @@ void GC_stop_init(void)
     /* SIG_THR_RESTART is set in the resulting mask.            */
     /* It is unmasked by the handler when necessary.            */
 #   ifdef SA_SIGINFO
-    act.sa_sigaction = GC_suspend_handler;
+      act.sa_sigaction = GC_suspend_handler;
 #   else
-    act.sa_handler = GC_suspend_handler;
+      act.sa_handler = GC_suspend_handler;
 #   endif
     if (sigaction(SIG_SUSPEND, &act, NULL) != 0) {
         ABORT("Cannot set SIG_SUSPEND handler");
     }
 
 #   ifdef SA_SIGINFO
-    act.sa_flags &= ~ SA_SIGINFO;
+      act.sa_flags &= ~ SA_SIGINFO;
 #   endif
     act.sa_handler = GC_restart_handler;
     if (sigaction(SIG_THR_RESTART, &act, NULL) != 0) {

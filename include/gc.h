@@ -175,7 +175,7 @@ GC_API GC_finalizer_notifier_proc GC_finalizer_notifier;
 GC_API void GC_CALL GC_set_finalizer_notifier(GC_finalizer_notifier_proc);
 GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void);
 
-GC_API int GC_dont_gc;  /* != 0 ==> Dont collect.  In versions 6.2a1+,  */
+GC_API int GC_dont_gc;  /* != 0 ==> Don't collect.  In versions 6.2a1+, */
                         /* this overrides explicit GC_gcollect() calls. */
                         /* Used as a counter, so that nested enabling   */
                         /* and disabling work correctly.  Should        */
@@ -185,9 +185,9 @@ GC_API int GC_dont_gc;  /* != 0 ==> Dont collect.  In versions 6.2a1+,  */
                         /* deprecated.                                  */
 
 GC_API int GC_dont_expand;
-                        /* Dont expand heap unless explicitly requested */
-                        /* or forced to.                                */
-                        /* The setter and getter are unsynchronized, so */
+                        /* Don't expand the heap unless explicitly      */
+                        /* requested or forced to.  The setter and      */
+                        /* getter are unsynchronized, so                */
                         /* GC_call_with_alloc_lock() is required to     */
                         /* avoid data races (if the value is modified   */
                         /* after the GC is put to multi-threaded mode). */

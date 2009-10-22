@@ -23,23 +23,23 @@
 #include <string.h>
 
 void GC_default_print_heap_obj_proc(ptr_t p);
-GC_API void GC_CALL GC_register_finalizer_no_order
-        (void * obj, GC_finalization_proc fn, void * cd,
-         GC_finalization_proc *ofn, void * *ocd);
 
+GC_API void GC_CALL GC_register_finalizer_no_order(void * obj,
+                                GC_finalization_proc fn, void * cd,
+                                GC_finalization_proc *ofn, void * *ocd);
 
 #ifndef SHORT_DBG_HDRS
-/* Check whether object with base pointer p has debugging info  */
-/* p is assumed to point to a legitimate object in our part     */
-/* of the heap.                                                 */
-/* This excludes the check as to whether the back pointer is    */
-/* odd, which is added by the GC_HAS_DEBUG_INFO macro.          */
-/* Note that if DBG_HDRS_ALL is set, uncollectable objects      */
-/* on free lists may not have debug information set.  Thus it's */
-/* not always safe to return TRUE, even if the client does      */
-/* its part.                                                    */
-GC_bool GC_has_other_debug_info(ptr_t p)
-{
+  /* Check whether object with base pointer p has debugging info  */
+  /* p is assumed to point to a legitimate object in our part     */
+  /* of the heap.                                                 */
+  /* This excludes the check as to whether the back pointer is    */
+  /* odd, which is added by the GC_HAS_DEBUG_INFO macro.          */
+  /* Note that if DBG_HDRS_ALL is set, uncollectable objects      */
+  /* on free lists may not have debug information set.  Thus it's */
+  /* not always safe to return TRUE, even if the client does      */
+  /* its part.                                                    */
+  GC_bool GC_has_other_debug_info(ptr_t p)
+  {
     oh * ohdr = (oh *)p;
     ptr_t body = (ptr_t)(ohdr + 1);
     word sz = GC_size((ptr_t) ohdr);
@@ -57,7 +57,7 @@ GC_bool GC_has_other_debug_info(ptr_t p)
         return(TRUE);
     }
     return(FALSE);
-}
+  }
 #endif
 
 #ifdef KEEP_BACK_PTRS
@@ -305,11 +305,11 @@ STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz, char *string,
 #endif
 
 #ifndef SHORT_DBG_HDRS
-/* Check the object with debugging info at ohdr         */
-/* return NIL if it's OK.  Else return clobbered        */
-/* address.                                             */
-STATIC ptr_t GC_check_annotated_obj(oh *ohdr)
-{
+  /* Check the object with debugging info at ohdr       */
+  /* return NIL if it's OK.  Else return clobbered      */
+  /* address.                                           */
+  STATIC ptr_t GC_check_annotated_obj(oh *ohdr)
+  {
     ptr_t body = (ptr_t)(ohdr + 1);
     word gc_sz = GC_size((ptr_t)ohdr);
     if (ohdr -> oh_sz + DEBUG_BYTES > gc_sz) {
@@ -323,10 +323,10 @@ STATIC ptr_t GC_check_annotated_obj(oh *ohdr)
     }
     if (((word *)body)[SIMPLE_ROUNDED_UP_WORDS(ohdr -> oh_sz)]
         != (END_FLAG ^ (word)body)) {
-        return((ptr_t)((word *)body + SIMPLE_ROUNDED_UP_WORDS(ohdr -> oh_sz)));
+        return((ptr_t)((word *)body + SIMPLE_ROUNDED_UP_WORDS(ohdr->oh_sz)));
     }
     return(0);
-}
+  }
 #endif /* !SHORT_DBG_HDRS */
 
 STATIC GC_describe_type_fn GC_describe_type_fns[MAXOBJKINDS] = {0};
@@ -378,7 +378,9 @@ STATIC void GC_print_type(ptr_t p)
     }
 }
 
-void GC_print_obj(ptr_t p)
+/* Print a human-readable description of the object to stderr. p points */
+/* to somewhere inside an object with the debugging info.               */
+STATIC void GC_print_obj(ptr_t p)
 {
     oh * ohdr = (oh *)GC_base(p);
 
@@ -407,11 +409,11 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
 }
 
 #ifndef SHORT_DBG_HDRS
-/* Use GC_err_printf and friends to print a description of the object   */
-/* whose client-visible address is p, and which was smashed at          */
-/* clobbered_addr.                                                      */
-STATIC void GC_print_smashed_obj(ptr_t p, ptr_t clobbered_addr)
-{
+  /* Use GC_err_printf and friends to print a description of the object */
+  /* whose client-visible address is p, and which was smashed at        */
+  /* clobbered_addr.                                                    */
+  STATIC void GC_print_smashed_obj(ptr_t p, ptr_t clobbered_addr)
+  {
     oh * ohdr = (oh *)GC_base(p);
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
@@ -431,7 +433,7 @@ STATIC void GC_print_smashed_obj(ptr_t p, ptr_t clobbered_addr)
                 (unsigned long)(ohdr -> oh_sz));
         PRINT_CALL_CHAIN(ohdr);
     }
-}
+  }
 #endif
 
 #ifndef SHORT_DBG_HDRS
@@ -519,15 +521,15 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
 }
 
-# ifdef DBG_HDRS_ALL
-/*
- * An allocation function for internal use.
- * Normally internally allocated objects do not have debug information.
- * But in this case, we need to make sure that all objects have debug
- * headers.
- * We assume debugging was started in collector initialization,
- * and we already hold the GC lock.
- */
+#ifdef DBG_HDRS_ALL
+  /*
+   * An allocation function for internal use.
+   * Normally internally allocated objects do not have debug information.
+   * But in this case, we need to make sure that all objects have debug
+   * headers.
+   * We assume debugging was started in collector initialization,
+   * and we already hold the GC lock.
+   */
   void * GC_debug_generic_malloc_inner(size_t lb, int k)
   {
     void * result = GC_generic_malloc_inner(lb + DEBUG_BYTES, k);
@@ -554,7 +556,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
     ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
     return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", (word)0));
   }
-# endif
+#endif
 
 #ifdef STUBBORN_ALLOC
 GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
@@ -617,14 +619,10 @@ GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
 }
 
 /*ARGSUSED*/
-GC_API void GC_CALL GC_debug_change_stubborn(void *p)
-{
-}
+GC_API void GC_CALL GC_debug_change_stubborn(void *p) {}
 
 /*ARGSUSED*/
-GC_API void GC_CALL GC_debug_end_stubborn_change(void *p)
-{
-}
+GC_API void GC_CALL GC_debug_end_stubborn_change(void *p) {}
 
 #endif /* !STUBBORN_ALLOC */
 
@@ -687,8 +685,8 @@ GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb, GC_EXTRA_PARAMS)
 }
 
 #ifdef ATOMIC_UNCOLLECTABLE
-void * GC_debug_malloc_atomic_uncollectable(size_t lb, GC_EXTRA_PARAMS)
-{
+  void * GC_debug_malloc_atomic_uncollectable(size_t lb, GC_EXTRA_PARAMS)
+  {
     void * result =
         GC_malloc_atomic_uncollectable(lb + UNCOLLECTABLE_DEBUG_BYTES);
 
@@ -705,7 +703,7 @@ void * GC_debug_malloc_atomic_uncollectable(size_t lb, GC_EXTRA_PARAMS)
     }
     ADD_CALL_CHAIN(result, ra);
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
-}
+  }
 #endif /* ATOMIC_UNCOLLECTABLE */
 
 GC_API void GC_CALL GC_debug_free(void * p)
@@ -766,13 +764,10 @@ GC_API void GC_CALL GC_debug_free(void * p)
     } /* !GC_find_leak */
 }
 
-#ifdef THREADS
-
-void GC_free_inner(void * p);
-
-/* Used internally; we assume it's called correctly.    */
-void GC_debug_free_inner(void * p)
-{
+#if defined(THREADS) && defined(DBG_HDRS_ALL)
+  /* Used internally; we assume it's called correctly.    */
+  void GC_debug_free_inner(void * p)
+  {
     ptr_t base = GC_base(p);
     GC_ASSERT((ptr_t)p - (ptr_t)base == sizeof(oh));
 #   ifndef SHORT_DBG_HDRS
@@ -780,7 +775,7 @@ void GC_debug_free_inner(void * p)
         ((oh *)base) -> oh_sz = GC_size(base);
 #   endif
     GC_free_inner(base);
-}
+  }
 #endif
 
 GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
@@ -914,7 +909,6 @@ STATIC void GC_check_heap_block(struct hblk *hbp, word dummy)
         }
 }
 
-
 /* This assumes that all accessible objects are marked, and that        */
 /* I hold the allocation lock.  Normally called by collector.           */
 STATIC void GC_check_heap_proc(void)
@@ -933,7 +927,7 @@ struct closure {
     void * cl_data;
 };
 
-void * GC_make_closure(GC_finalization_proc fn, void * data)
+STATIC void * GC_make_closure(GC_finalization_proc fn, void * data)
 {
     struct closure * result =
 #   ifdef DBG_HDRS_ALL
@@ -948,10 +942,11 @@ void * GC_make_closure(GC_finalization_proc fn, void * data)
     return((void *)result);
 }
 
-void GC_CALLBACK GC_debug_invoke_finalizer(void * obj, void * data)
+/* An auxiliary fns to make finalization work correctly with displaced  */
+/* pointers introduced by the debugging allocators.                     */
+STATIC void GC_CALLBACK GC_debug_invoke_finalizer(void * obj, void * data)
 {
     struct closure * cl = (struct closure *) data;
-
     (*(cl -> cl_fn))((void *)((char *)obj + sizeof(oh)), cl -> cl_data);
 }
 
@@ -1093,8 +1088,8 @@ GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
       GC_register_finalizer_ignore_self(base, 0, 0, &my_old_fn, &my_old_cd);
     } else {
       GC_register_finalizer_ignore_self(base, GC_debug_invoke_finalizer,
-                                     GC_make_closure(fn,cd), &my_old_fn,
-                                     &my_old_cd);
+                                        GC_make_closure(fn,cd), &my_old_fn,
+                                        &my_old_cd);
     }
     store_old(obj, my_old_fn, (struct closure *)my_old_cd, ofn, ocd);
 }

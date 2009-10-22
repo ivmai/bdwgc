@@ -208,13 +208,9 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
 # define INIT_REAL_SYMS()
 #endif
 
-void GC_thr_init(void);
-
 static GC_bool parallel_initialized = FALSE;
 
 GC_INNER GC_bool GC_need_to_lock = FALSE;
-
-void GC_init_parallel(void);
 
 STATIC long GC_nprocs = 1;
                         /* Number of processors.  We may not have       */
@@ -542,8 +538,8 @@ STATIC void GC_remove_all_threads_but_me(void)
 #endif /* HANDLE_FORK */
 
 #ifdef USE_PROC_FOR_LIBRARIES
-GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
-{
+  GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
+  {
     int i;
     GC_thread p;
 
@@ -568,15 +564,15 @@ GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
       }
     }
     return FALSE;
-}
+  }
 #endif /* USE_PROC_FOR_LIBRARIES */
 
 #ifdef IA64
-/* Find the largest stack_base smaller than bound.  May be used */
-/* to find the boundary between a register stack and adjacent   */
-/* immediately preceding memory stack.                          */
-ptr_t GC_greatest_stack_base_below(ptr_t bound)
-{
+  /* Find the largest stack_base smaller than bound.  May be used       */
+  /* to find the boundary between a register stack and adjacent         */
+  /* immediately preceding memory stack.                                */
+  ptr_t GC_greatest_stack_base_below(ptr_t bound)
+  {
     int i;
     GC_thread p;
     ptr_t result = 0;
@@ -596,13 +592,13 @@ ptr_t GC_greatest_stack_base_below(ptr_t bound)
       }
     }
     return result;
-}
+  }
 #endif /* IA64 */
 
 #ifdef GC_LINUX_THREADS
-/* Return the number of processors, or i<= 0 if it can't be determined. */
-STATIC int GC_get_nprocs(void)
-{
+  /* Return the number of processors, or i<= 0 if it can't be determined. */
+  STATIC int GC_get_nprocs(void)
+  {
     /* Should be "return sysconf(_SC_NPROCESSORS_ONLN);" but that       */
     /* appears to be buggy in many cases.                               */
     /* We look for lines "cpu<n>" in /proc/stat.                        */
@@ -635,7 +631,7 @@ STATIC int GC_get_nprocs(void)
     }
     close(f);
     return result;
-}
+  }
 #endif /* GC_LINUX_THREADS */
 
 /* We hold the GC lock.  Wait until an in-progress GC has finished.     */
@@ -643,7 +639,6 @@ STATIC int GC_get_nprocs(void)
 /* If wait_for_all is true, then we exit with the GC lock held and no   */
 /* collection in progress; otherwise we just wait for the current GC    */
 /* to finish.                                                           */
-GC_bool GC_collection_in_progress(void);
 STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
     GC_ASSERT(I_HOLD_LOCK());
@@ -735,9 +730,9 @@ STATIC void GC_fork_child_proc(void)
 #endif /* HANDLE_FORK */
 
 #if defined(GC_DGUX386_THREADS)
-/* Return the number of processors, or i<= 0 if it can't be determined. */
-STATIC int GC_get_nprocs(void)
-{
+  /* Return the number of processors, or i<= 0 if it can't be determined. */
+  STATIC int GC_get_nprocs(void)
+  {
     /* <takis@XFree86.Org> */
     int numCpus;
     struct dg_sys_info_pm_info pm_sysinfo;
@@ -756,24 +751,24 @@ STATIC int GC_get_nprocs(void)
      GC_printf("Number of active CPUs in this system: %d\n", numCpus);
 #  endif
     return(numCpus);
-}
+  }
 #endif /* GC_DGUX386_THREADS */
 
 #if defined(GC_NETBSD_THREADS)
-static int get_ncpu(void)
-{
+  static int get_ncpu(void)
+  {
     int mib[] = {CTL_HW,HW_NCPU};
     int res;
     size_t len = sizeof(res);
 
     sysctl(mib, sizeof(mib)/sizeof(int), &res, &len, NULL, 0);
     return res;
-}
+  }
 #endif  /* GC_NETBSD_THREADS */
 
-# if defined(GC_LINUX_THREADS) && defined(INCLUDE_LINUX_THREAD_DESCR)
-__thread int GC_dummy_thread_local;
-# endif
+#if defined(GC_LINUX_THREADS) && defined(INCLUDE_LINUX_THREAD_DESCR)
+  __thread int GC_dummy_thread_local;
+#endif
 
 /* We hold the allocation lock. */
 void GC_thr_init(void)

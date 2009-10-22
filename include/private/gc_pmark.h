@@ -129,10 +129,6 @@ GC_EXTERN mse * GC_mark_stack;
      */
 #endif /* PARALLEL_MARK */
 
-/* Return a pointer to within 1st page of object.       */
-/* Set *new_hdr_p to corr. hdr.                         */
-ptr_t GC_find_start(ptr_t current, hdr *hhdr, hdr **new_hdr_p);
-
 mse * GC_signal_mark_stack_overflow(mse *msp);
 
 /* Push the object obj with corresponding heap block header hhdr onto   */
@@ -275,7 +271,6 @@ exit_label: ; \
             GC_ASSERT(obj_displ < hhdr -> hb_sz); \
             /* Must be in all_interior_pointer case, not first block */ \
             /* already did validity check on cache miss.             */ \
-            ; \
           } else { \
             if (do_offset_check && !GC_valid_offsets[obj_displ]) { \
               GC_ADD_TO_BLACK_LIST_NORMAL(current, source); \
@@ -305,8 +300,8 @@ exit_label: ; \
     TRACE(source, GC_log_printf("GC:%u: previously unmarked\n", \
                                 (unsigned)GC_gc_no)); \
     TRACE_TARGET(base, \
-        GC_log_printf("GC:%u: marking %p from %p instead\n", (unsigned)GC_gc_no, \
-                      base, source)); \
+        GC_log_printf("GC:%u: marking %p from %p instead\n", \
+                      (unsigned)GC_gc_no, base, source)); \
     INCR_MARKS(hhdr); \
     GC_STORE_BACK_PTR((ptr_t)source, base); \
     PUSH_OBJ(base, hhdr, mark_stack_top, mark_stack_limit); \
@@ -333,7 +328,6 @@ exit_label: ; \
             GC_ASSERT(obj_displ < hhdr -> hb_sz); \
             /* Must be in all_interior_pointer case, not first block */ \
             /* already did validity check on cache miss.             */ \
-            ; \
           } else { \
             if (do_offset_check && !GC_valid_offsets[obj_displ]) { \
               GC_ADD_TO_BLACK_LIST_NORMAL(current, source); \
@@ -346,7 +340,7 @@ exit_label: ; \
         } else { \
           /* Accurate enough if HBLKSIZE <= 2**15.      */ \
           GC_STATIC_ASSERT(HBLKSIZE <= (1 << 15)); \
-          size_t obj_displ = (((low_prod >> 16) + 1) * (hhdr -> hb_sz)) >> 16; \
+          size_t obj_displ = (((low_prod >> 16) + 1) * (hhdr->hb_sz)) >> 16; \
           if (do_offset_check && !GC_valid_offsets[obj_displ]) { \
             GC_ADD_TO_BLACK_LIST_NORMAL(current, source); \
             goto exit_label; \

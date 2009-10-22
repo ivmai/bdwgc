@@ -130,7 +130,7 @@ GC_FirstDLOpenedLinkMap(void)
     struct r_debug *r;
     static struct link_map * cachedResult = 0;
     static ElfW(Dyn) *dynStructureAddr = 0;
-                        /* BTL: added to avoid Solaris 5.3 ld.so _DYNAMIC bug */
+                /* BTL: added to avoid Solaris 5.3 ld.so _DYNAMIC bug   */
 
 #   ifdef SUNOS53_SHARED_LIB
         /* BTL: Avoid the Solaris 5.3 bug that _DYNAMIC isn't being set */
@@ -230,15 +230,10 @@ void GC_register_dynamic_libraries(void)
 
 #define MAPS_BUF_SIZE (32*1024)
 
-ssize_t GC_repeat_read(int fd, char *buf, size_t count);
-        /* Repeatedly read until buffer is filled, or EOF is encountered */
-        /* Defined in os_dep.c.                                          */
-
 char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
-                         char **prot, unsigned int *maj_dev,
-                         char **mapping_name);
-char *GC_get_maps(void);
-        /* From os_dep.c        */
+                                  char **prot, unsigned int *maj_dev,
+                                  char **mapping_name);
+char *GC_get_maps(void); /* from os_dep.c */
 
 /* Sort an array of HeapSects by start address.                         */
 /* Unfortunately at least some versions of                              */
@@ -270,6 +265,10 @@ static void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
     }
 }
 
+#ifdef THREADS
+  GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi);
+#endif
+
 STATIC word GC_register_map_entries(char *maps)
 {
     char *prot;
@@ -288,7 +287,8 @@ STATIC word GC_register_map_entries(char *maps)
                   + GC_our_memory[GC_n_memory-1].hs_bytes;
 
     for (;;) {
-        buf_ptr = GC_parse_map_entry(buf_ptr, &start, &end, &prot, &maj_dev, 0);
+        buf_ptr = GC_parse_map_entry(buf_ptr, &start, &end, &prot,
+                                     &maj_dev, 0);
         if (buf_ptr == NULL) return 1;
         if (prot[1] == 'w') {
             /* This is a writable mapping.  Add it to           */
@@ -329,7 +329,7 @@ STATIC word GC_register_map_entries(char *maps)
               GC_add_roots_inner((char *)start, (char *)end, TRUE);
               continue;
             }
-            /* Add sections that dont belong to us. */
+            /* Add sections that don't belong to us. */
               i = 0;
               while (GC_our_memory[i].hs_start + GC_our_memory[i].hs_bytes
                      < start)
@@ -606,7 +606,6 @@ GC_FirstDLOpenedLinkMap(void)
     return cachedResult;
 }
 
-
 void GC_register_dynamic_libraries(void)
 {
   struct link_map *lm;
@@ -665,7 +664,6 @@ void * GC_roots_present(ptr_t);
         /* The type is a lie, since the real type doesn't make sense here, */
         /* and we only test for NULL.                                      */
 
-
 /* We use /proc to track down all parts of the address space that are   */
 /* mapped by the process, and throw out regions we know we shouldn't    */
 /* worry about.  This may also work under other SVR4 variants.          */
@@ -703,8 +701,8 @@ void GC_register_dynamic_libraries(void)
     if (needed_sz >= current_sz) {
         current_sz = needed_sz * 2 + 1;
                         /* Expansion, plus room for 0 record */
-        addr_map = (prmap_t *)GC_scratch_alloc((word)
-                                                (current_sz * sizeof(prmap_t)));
+        addr_map = (prmap_t *)GC_scratch_alloc(
+                                (word)current_sz * sizeof(prmap_t));
     }
     if (ioctl(fd, PIOCMAP, addr_map) < 0) {
         GC_err_printf("fd = %d, errno = %d, needed_sz = %d, addr_map = %p\n",
@@ -772,8 +770,8 @@ void GC_register_dynamic_libraries(void)
         GC_add_roots_inner(start, limit, TRUE);
       irrelevant: ;
     }
-    /* Dont keep cached descriptor, for now.  Some kernels don't like us */
-    /* to keep a /proc file descriptor around during kill -9.            */
+    /* Don't keep cached descriptor, for now.  Some kernels don't like us */
+    /* to keep a /proc file descriptor around during kill -9.             */
         if (close(fd) < 0) ABORT("Couldnt close /proc file");
         fd = -1;
 }
@@ -826,17 +824,19 @@ void GC_register_dynamic_libraries(void)
     }
 # endif
 
-GC_bool GC_register_main_static_data(void)
-{
-# ifdef MSWINCE
-    /* Do we need to separately register the main static data segment? */
-    return FALSE;
-# else
-    return GC_no_win32_dlls;
-# endif
-}
+#ifdef DYNAMIC_LOADING
+  GC_bool GC_register_main_static_data(void)
+  {
+#   ifdef MSWINCE
+      /* Do we need to separately register the main static data segment? */
+      return FALSE;
+#   else
+      return GC_no_win32_dlls;
+#   endif
+  }
+#endif /* DYNAMIC_LOADING */
 
-# define HAVE_REGISTER_MAIN_STATIC_DATA
+#define HAVE_REGISTER_MAIN_STATIC_DATA
 
 # ifdef DEBUG_VIRTUALQUERY
   void GC_dump_meminfo(MEMORY_BASIC_INFORMATION *buf)
@@ -1090,11 +1090,11 @@ void GC_register_dynamic_libraries(void)
 #endif /* HPUX */
 
 #ifdef AIX
-#pragma alloca
-#include <sys/ldr.h>
-#include <sys/errno.h>
-void GC_register_dynamic_libraries(void)
-{
+# pragma alloca
+# include <sys/ldr.h>
+# include <sys/errno.h>
+  void GC_register_dynamic_libraries(void)
+  {
         int len;
         char *ldibuf;
         int ldibuflen;
@@ -1119,7 +1119,7 @@ void GC_register_dynamic_libraries(void)
                                 TRUE);
                 ldi = len ? (struct ld_info *)((char *)ldi + len) : 0;
         }
-}
+  }
 #endif /* AIX */
 
 #ifdef DARWIN
@@ -1281,12 +1281,12 @@ GC_bool GC_register_main_static_data(void)
 
 #ifdef PCR
 
-#   include "il/PCR_IL.h"
-#   include "th/PCR_ThCtl.h"
-#   include "mm/PCR_MM.h"
+# include "il/PCR_IL.h"
+# include "th/PCR_ThCtl.h"
+# include "mm/PCR_MM.h"
 
-void GC_register_dynamic_libraries(void)
-{
+  void GC_register_dynamic_libraries(void)
+  {
     /* Add new static data areas of dynamically loaded modules. */
         {
           PCR_IL_LoadedFile * p = PCR_IL_GetLastLoadedFile();
@@ -1313,7 +1313,7 @@ void GC_register_dynamic_libraries(void)
             }
           }
         }
-}
+  }
 
 #else /* !PCR */
 
@@ -1324,13 +1324,11 @@ void GC_register_dynamic_libraries(void) {}
 #endif /* !DYNAMIC_LOADING */
 
 #ifndef HAVE_REGISTER_MAIN_STATIC_DATA
-
-/* Do we need to separately register the main static data segment? */
-GC_bool GC_register_main_static_data(void)
-{
-  return TRUE;
-}
-
+  /* Do we need to separately register the main static data segment? */
+  GC_bool GC_register_main_static_data(void)
+  {
+    return TRUE;
+  }
 #endif /* HAVE_REGISTER_MAIN_STATIC_DATA */
 
 /* Register a routine to filter dynamic library registration.  */

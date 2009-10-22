@@ -49,11 +49,14 @@
 /* For other platforms with threads, the lock and possibly              */
 /* GC_lock_holder variables are defined in the thread support code.     */
 
-/* Dont unnecessarily call GC_register_main_static_data() in case       */
-/* dyn_load.c isn't linked in.                                          */
 #ifdef DYNAMIC_LOADING
+  /* We need to register the main data segment.  Returns  TRUE unless   */
+  /* this is done implicitly as part of dynamic library registration.   */
+  GC_bool GC_register_main_static_data(void);
 # define GC_REGISTER_MAIN_STATIC_DATA() GC_register_main_static_data()
 #else
+  /* Don't unnecessarily call GC_register_main_static_data() in case    */
+  /* dyn_load.c isn't linked in.                                        */
 # define GC_REGISTER_MAIN_STATIC_DATA() TRUE
 #endif
 
@@ -62,7 +65,6 @@
 #endif
 
 GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
-
 
 GC_INNER GC_bool GC_debugging_started = FALSE;
         /* defined here so we don't have to load debug_malloc.o */
@@ -235,10 +237,10 @@ void GC_extend_size_map(size_t i)
 #if defined(ASM_CLEAR_CODE)
   void *GC_clear_stack_inner(void *, ptr_t);
 #else
-/* Clear the stack up to about limit.  Return arg. */
-/*ARGSUSED*/
-void * GC_clear_stack_inner(void *arg, ptr_t limit)
-{
+  /* Clear the stack up to about limit.  Return arg. */
+  /*ARGSUSED*/
+  STATIC void * GC_clear_stack_inner(void *arg, ptr_t limit)
+  {
     word dummy[CLEAR_SIZE];
 
     BZERO(dummy, CLEAR_SIZE*sizeof(word));
@@ -249,7 +251,7 @@ void * GC_clear_stack_inner(void *arg, ptr_t limit)
     /* call is not recognized as dead code.                             */
     GC_noop1((word)dummy);
     return(arg);
-}
+  }
 #endif
 
 /* Clear some of the inaccessible part of the stack.  Returns its       */
@@ -451,10 +453,6 @@ GC_API size_t GC_CALL GC_get_total_bytes(void)
 
 GC_INNER GC_bool GC_is_initialized = FALSE;
 
-# if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
-    void GC_init_parallel(void);
-# endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
-
 #if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
     GC_INNER CRITICAL_SECTION GC_write_cs;
 #endif
@@ -476,39 +474,28 @@ STATIC void GC_exit_check(void)
 
 #ifdef UNIX_LIKE
 
-void GC_set_and_save_fault_handler(void (*handler)(int));
+  void GC_set_and_save_fault_handler(void (*handler)(int));
 
-static void looping_handler(int sig)
-{
+  static void looping_handler(int sig)
+  {
     GC_err_printf("Caught signal %d: looping in handler\n", sig);
     for (;;) {}
-}
+  }
 
-static GC_bool installed_looping_handler = FALSE;
+  static GC_bool installed_looping_handler = FALSE;
 
-static void maybe_install_looping_handler(void)
-{
+  static void maybe_install_looping_handler(void)
+  {
     /* Install looping handler before the write fault handler, so we    */
     /* handle write faults correctly.                                   */
-      if (!installed_looping_handler && 0 != GETENV("GC_LOOP_ON_ABORT")) {
-        GC_set_and_save_fault_handler(looping_handler);
-        installed_looping_handler = TRUE;
-      }
-}
+    if (!installed_looping_handler && 0 != GETENV("GC_LOOP_ON_ABORT")) {
+      GC_set_and_save_fault_handler(looping_handler);
+      installed_looping_handler = TRUE;
+    }
+  }
 
 #else /* !UNIX_LIKE */
-
 # define maybe_install_looping_handler()
-
-#endif
-
-#if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
-  void GC_thr_init(void);
-#endif
-
-#ifdef LINT
-  int GC_read(void);
-  void GC_register_finalizer_no_order(void);
 #endif
 
 #if defined(DYNAMIC_LOADING) && defined(DARWIN)
@@ -846,9 +833,8 @@ GC_API void GC_CALL GC_init(void)
 #   ifdef LINT
       {
           extern char * const GC_copyright[];
-          GC_noop(GC_copyright, GC_find_header,
-                  GC_push_one, GC_call_with_alloc_lock, GC_read,
-                  GC_dont_expand,
+          GC_noop(GC_copyright, GC_find_header, GC_push_one,
+                  GC_call_with_alloc_lock, GC_dont_expand,
 #                 ifndef NO_DEBUGGING
                     GC_dump,
 #                 endif
@@ -861,7 +847,7 @@ GC_API void GC_CALL GC_init(void)
 #   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
         /* Make sure marker threads are started and thread local */
         /* allocation is initialized, in case we didn't get      */
-        /* called from GC_init_parallel();                       */
+        /* called from GC_init_parallel.                         */
         GC_init_parallel();
 #   endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
 
@@ -1026,12 +1012,12 @@ out:
       return tmp ? (int)written : -1;
   }
 
-#endif
+#endif /* MSWIN32 */
 
 #if defined(OS2) || defined(MACOS)
-STATIC FILE * GC_stdout = NULL;
-STATIC FILE * GC_stderr = NULL;
-STATIC FILE * GC_log = NULL;
+  STATIC FILE * GC_stdout = NULL;
+  STATIC FILE * GC_stderr = NULL;
+  STATIC FILE * GC_log = NULL;
 
   STATIC void GC_set_files(void)
   {
@@ -1091,11 +1077,11 @@ STATIC int GC_write(int fd, const char *buf, size_t len)
 #endif
 
 #ifdef NOSYS
-STATIC int GC_write(int fd, const char *buf, size_t len)
-{
-  /* No writing.  */
-  return len;
-}
+  STATIC int GC_write(int fd, const char *buf, size_t len)
+  {
+    /* No writing.  */
+    return len;
+  }
 #endif
 
 
@@ -1138,7 +1124,8 @@ void GC_printf(const char *format, ...)
     (void) vsnprintf(buf, BUFSZ, format, args);
     va_end(args);
     if (buf[BUFSZ] != 0x15) ABORT("GC_printf clobbered stack");
-    if (WRITE(GC_stdout, buf, strlen(buf)) < 0) ABORT("write to stdout failed");
+    if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
+      ABORT("write to stdout failed");
 }
 
 void GC_err_printf(const char *format, ...)
@@ -1151,7 +1138,8 @@ void GC_err_printf(const char *format, ...)
     (void) vsnprintf(buf, BUFSZ, format, args);
     va_end(args);
     if (buf[BUFSZ] != 0x15) ABORT("GC_printf clobbered stack");
-    if (WRITE(GC_stderr, buf, strlen(buf)) < 0) ABORT("write to stderr failed");
+    if (WRITE(GC_stderr, buf, strlen(buf)) < 0)
+      ABORT("write to stderr failed");
 }
 
 void GC_log_printf(const char *format, ...)
@@ -1164,7 +1152,8 @@ void GC_log_printf(const char *format, ...)
     (void) vsnprintf(buf, BUFSZ, format, args);
     va_end(args);
     if (buf[BUFSZ] != 0x15) ABORT("GC_printf clobbered stack");
-    if (WRITE(GC_log, buf, strlen(buf)) < 0) ABORT("write to log failed");
+    if (WRITE(GC_log, buf, strlen(buf)) < 0)
+      ABORT("write to log failed");
 }
 
 void GC_err_puts(const char *s)
@@ -1173,10 +1162,10 @@ void GC_err_puts(const char *s)
 }
 
 #if defined(LINUX) && !defined(SMALL_CONFIG)
-void GC_err_write(const char *buf, size_t len)
-{
+  void GC_err_write(const char *buf, size_t len)
+  {
     if (WRITE(GC_stderr, buf, len) < 0) ABORT("write to stderr failed");
-}
+  }
 #endif
 
 STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
@@ -1221,9 +1210,9 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 }
 
 #if !defined(PCR) && !defined(SMALL_CONFIG)
-/* Abort the program with a message. msg must not be NULL. */
-void GC_abort(const char *msg)
-{
+  /* Abort the program with a message. msg must not be NULL. */
+  void GC_abort(const char *msg)
+  {
 #   if defined(MSWIN32)
 #     ifndef DONT_USE_USER32_DLL
         /* Use static binding to "user32.dll".  */
@@ -1264,7 +1253,7 @@ void GC_abort(const char *msg)
 #   else
         (void) abort();
 #   endif
-}
+  }
 #endif
 
 GC_API void GC_CALL GC_enable(void)
@@ -1358,8 +1347,8 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 
 #ifdef THREADS
 
-/* Defined in pthread_support.c or win32_threads.c.     */
-void GC_do_blocking_inner(ptr_t data, void * context);
+  /* Defined in pthread_support.c or win32_threads.c.     */
+  void GC_do_blocking_inner(ptr_t data, void * context);
 
 #else
 
@@ -1463,9 +1452,8 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 }
 
 #if !defined(NO_DEBUGGING)
-
-GC_API void GC_CALL GC_dump(void)
-{
+  GC_API void GC_CALL GC_dump(void)
+  {
     GC_printf("***Static roots:\n");
     GC_print_static_roots();
     GC_printf("\n***Heap sections:\n");
@@ -1474,9 +1462,8 @@ GC_API void GC_CALL GC_dump(void)
     GC_print_hblkfreelist();
     GC_printf("\n***Blocks in use:\n");
     GC_print_block_list();
-}
-
-#endif /* NO_DEBUGGING */
+  }
+#endif /* !NO_DEBUGGING */
 
 /* Getter functions for the public Read-only variables.                 */
 

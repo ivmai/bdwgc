@@ -24,9 +24,9 @@
 struct roots {
         ptr_t r_start;
         ptr_t r_end;
- #      if !defined(MSWIN32) && !defined(MSWINCE)
+#       if !defined(MSWIN32) && !defined(MSWINCE)
           struct roots * r_next;
- #      endif
+#       endif
         GC_bool r_tmp;
                 -- Delete before registering new dynamic libraries
 };
@@ -61,10 +61,11 @@ static int n_root_sets = 0;
   }
 #endif /* !NO_DEBUGGING */
 
-/* Primarily for debugging support:     */
-/* Is the address p in one of the registered static root sections?      */
-GC_bool GC_is_static_root(ptr_t p)
-{
+#ifndef THREADS
+  /* Primarily for debugging support:     */
+  /* Is the address p in one of the registered static root sections?      */
+  GC_bool GC_is_static_root(ptr_t p)
+  {
     static int last_root_set = MAX_ROOT_SETS;
     int i;
 
@@ -79,7 +80,8 @@ GC_bool GC_is_static_root(ptr_t p)
         }
     }
     return(FALSE);
-}
+  }
+#endif /* !THREADS */
 
 #if !defined(MSWIN32) && !defined(MSWINCE)
 /*
@@ -92,8 +94,8 @@ GC_bool GC_is_static_root(ptr_t p)
         -- really defined in gc_priv.h
 */
 
-GC_INLINE int rt_hash(ptr_t addr)
-{
+  GC_INLINE int rt_hash(ptr_t addr)
+  {
     word result = (word) addr;
 #   if CPP_WORDSZ > 8*LOG_RT_SIZE
         result ^= result >> 8*LOG_RT_SIZE;
@@ -105,12 +107,12 @@ GC_INLINE int rt_hash(ptr_t addr)
     result ^= result >> LOG_RT_SIZE;
     result &= (RT_SIZE-1);
     return(result);
-}
+  }
 
-/* Is a range starting at b already in the table? If so return a        */
-/* pointer to it, else NIL.                                             */
-struct roots * GC_roots_present(ptr_t b)
-{
+  /* Is a range starting at b already in the table? If so return a        */
+  /* pointer to it, else NIL.                                             */
+  struct roots * GC_roots_present(ptr_t b)
+  {
     int h = rt_hash(b);
     struct roots *p = GC_root_index[h];
 
@@ -119,18 +121,17 @@ struct roots * GC_roots_present(ptr_t b)
         p = p -> r_next;
     }
     return(FALSE);
-}
+  }
 
-/* Add the given root structure to the index. */
-GC_INLINE void add_roots_to_index(struct roots *p)
-{
+  /* Add the given root structure to the index. */
+  GC_INLINE void add_roots_to_index(struct roots *p)
+  {
     int h = rt_hash(p -> r_start);
 
     p -> r_next = GC_root_index[h];
     GC_root_index[h] = p;
-}
-
-# endif
+  }
+#endif /* !MSWIN32 */
 
 GC_INNER word GC_root_size = 0;
 
@@ -300,10 +301,10 @@ STATIC void GC_remove_tmp_roots(void)
 #endif
 
 #if !defined(MSWIN32) && !defined(MSWINCE)
-STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
+  STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
 
-GC_API void GC_CALL GC_remove_roots(void *b, void *e)
-{
+  GC_API void GC_CALL GC_remove_roots(void *b, void *e)
+  {
     DCL_LOCK_STATE;
 
     /* Quick check whether has nothing to do */
@@ -314,11 +315,11 @@ GC_API void GC_CALL GC_remove_roots(void *b, void *e)
     LOCK();
     GC_remove_roots_inner((ptr_t)b, (ptr_t)e);
     UNLOCK();
-}
+  }
 
-/* Should only be called when the lock is held */
-STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
-{
+  /* Should only be called when the lock is held */
+  STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
+  {
     int i;
     for (i = 0; i < n_root_sets; ) {
         if (GC_static_roots[i].r_start >= b
@@ -329,15 +330,15 @@ STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
         }
     }
     GC_rebuild_root_index();
-}
+  }
 #endif /* !defined(MSWIN32) && !defined(MSWINCE) */
 
 #if (defined(MSWIN32) || defined(MSWINCE)) && !defined(NO_DEBUGGING)
-/* Not used at present (except for, may be, debugging purpose).         */
-/* Workaround for the OS mapping and unmapping behind our back:         */
-/* Is the address p in one of the temporary static root sections?       */
-GC_bool GC_is_tmp_root(ptr_t p)
-{
+  /* Not used at present (except for, may be, debugging purpose).       */
+  /* Workaround for the OS mapping and unmapping behind our back:       */
+  /* Is the address p in one of the temporary static root sections?     */
+  GC_bool GC_is_tmp_root(ptr_t p)
+  {
     static int last_root_set = MAX_ROOT_SETS;
     register int i;
 
@@ -353,7 +354,7 @@ GC_bool GC_is_tmp_root(ptr_t p)
         }
     }
     return(FALSE);
-}
+  }
 #endif /* MSWIN32 || MSWINCE */
 
 ptr_t GC_approx_sp(void)
@@ -363,7 +364,6 @@ ptr_t GC_approx_sp(void)
                 /* Also force stack to grow if necessary. Otherwise the */
                 /* later accesses might cause the kernel to think we're */
                 /* doing something wrong.                               */
-
     return((ptr_t)sp);
 }
 
@@ -477,10 +477,10 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
 }
 
 #ifdef IA64
-/* Similar to GC_push_all_stack_frames() but for IA-64 registers store. */
-void GC_push_all_register_frames(ptr_t bs_lo, ptr_t bs_hi, int eager,
-                        struct GC_activation_frame_s *activation_frame)
-{
+  /* Similar to GC_push_all_stack_frames() but for IA-64 registers store. */
+  void GC_push_all_register_frames(ptr_t bs_lo, ptr_t bs_hi,
+                    int eager, struct GC_activation_frame_s *activation_frame)
+  {
     while (activation_frame != NULL) {
         ptr_t frame_bs_lo = activation_frame -> backing_store_end;
         GC_ASSERT(frame_bs_lo <= bs_hi);
@@ -498,7 +498,7 @@ void GC_push_all_register_frames(ptr_t bs_lo, ptr_t bs_hi, int eager,
     } else {
         GC_push_all_stack(bs_lo, bs_hi);
     }
-}
+  }
 #endif /* IA64 */
 
 #ifdef THREADS
@@ -549,7 +549,7 @@ void GC_push_all_stack_frames(ptr_t lo, ptr_t hi,
  * GC_dirty() call.
  */
 STATIC void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
-                                                ptr_t cold_gc_frame)
+                                              ptr_t cold_gc_frame)
 {
   if (!NEED_FIXUP_POINTER && GC_all_interior_pointers) {
     /* Push the hot end of the stack eagerly, so that register values   */
@@ -634,7 +634,7 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
           /* For IA64, the register stack backing store is handled      */
           /* in the thread-specific code.                               */
 #       else
-          GC_push_all_eager( cold_gc_frame, GC_approx_sp() );
+          GC_push_all_eager(cold_gc_frame, GC_approx_sp());
 #       endif
 #   else
         GC_push_all_stack_part_eager_frames(GC_approx_sp(), GC_stackbottom,
@@ -664,7 +664,7 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
                                 TRUE /* eager */, GC_activation_frame);
                 }
                 /* All values should be sufficiently aligned that we    */
-                /* dont have to worry about the boundary.               */
+                /* don't have to worry about the boundary.              */
               }
 #       endif
 #   endif /* !THREADS */

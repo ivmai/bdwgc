@@ -58,7 +58,6 @@ STATIC void * GC_generic_or_special_malloc(size_t lb, int knd)
     }
 }
 
-
 /* Change the size of the block pointed to by p to contain at least   */
 /* lb bytes.  The object may be (and quite likely will be) moved.     */
 /* The kind (e.g. atomic) is the same as that of the old.             */
@@ -262,7 +261,7 @@ GC_API void GC_CALL GC_incr_bytes_freed(size_t n)
 /* since the collector would not retain the entire list if it were      */
 /* invoked just as we were returning.                                   */
 /* Note that the client should usually clear the link field.            */
-void GC_generic_malloc_many(size_t lb, int k, void **result)
+GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
 {
     void *op;
     void *p;
@@ -522,12 +521,12 @@ GC_API void * GC_CALL GC_memalign(size_t align, size_t lb)
     return result;
 }
 
-# ifdef ATOMIC_UNCOLLECTABLE
-/* Allocate lb bytes of pointerfree, untraced, uncollectable data       */
-/* This is normally roughly equivalent to the system malloc.            */
-/* But it may be useful if malloc is redefined.                         */
-GC_API void * GC_CALL GC_malloc_atomic_uncollectable(size_t lb)
-{
+#ifdef ATOMIC_UNCOLLECTABLE
+  /* Allocate lb bytes of pointerfree, untraced, uncollectable data     */
+  /* This is normally roughly equivalent to the system malloc.          */
+  /* But it may be useful if malloc is redefined.                       */
+  GC_API void * GC_CALL GC_malloc_atomic_uncollectable(size_t lb)
+  {
     void *op;
     void **opp;
     size_t lg;
@@ -569,6 +568,5 @@ GC_API void * GC_CALL GC_malloc_atomic_uncollectable(size_t lb)
         UNLOCK();
         return((void *) op);
     }
-}
-
+  }
 #endif /* ATOMIC_UNCOLLECTABLE */
