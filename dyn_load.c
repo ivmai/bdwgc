@@ -176,7 +176,7 @@ GC_FirstDLOpenedLinkMap(void)
 # endif
 
 # ifndef USE_PROC_FOR_LIBRARIES
-void GC_register_dynamic_libraries(void)
+GC_INNER void GC_register_dynamic_libraries(void)
 {
   struct link_map *lm = GC_FirstDLOpenedLinkMap();
 
@@ -230,10 +230,10 @@ void GC_register_dynamic_libraries(void)
 
 #define MAPS_BUF_SIZE (32*1024)
 
-char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
+GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
                                   char **prot, unsigned int *maj_dev,
                                   char **mapping_name);
-char *GC_get_maps(void); /* from os_dep.c */
+GC_INNER char *GC_get_maps(void); /* from os_dep.c */
 
 /* Sort an array of HeapSects by start address.                         */
 /* Unfortunately at least some versions of                              */
@@ -266,7 +266,7 @@ static void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
 }
 
 #ifdef THREADS
-  GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi);
+  GC_INNER GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi);
 #endif
 
 STATIC word GC_register_map_entries(char *maps)
@@ -356,14 +356,14 @@ STATIC word GC_register_map_entries(char *maps)
     return 1;
 }
 
-void GC_register_dynamic_libraries(void)
+GC_INNER void GC_register_dynamic_libraries(void)
 {
     if (!GC_register_map_entries(GC_get_maps()))
         ABORT("Failed to read /proc for library registration.");
 }
 
 /* We now take care of the main data segment ourselves: */
-GC_bool GC_register_main_static_data(void)
+GC_INNER GC_bool GC_register_main_static_data(void)
 {
     return FALSE;
 }
@@ -542,7 +542,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 }
 
 /* Do we need to separately register the main static data segment? */
-GC_bool GC_register_main_static_data(void)
+GC_INNER GC_bool GC_register_main_static_data(void)
 {
   return (dl_iterate_phdr == 0);
 }
@@ -606,7 +606,7 @@ GC_FirstDLOpenedLinkMap(void)
     return cachedResult;
 }
 
-void GC_register_dynamic_libraries(void)
+GC_INNER void GC_register_dynamic_libraries(void)
 {
   struct link_map *lm;
 
@@ -660,14 +660,14 @@ void GC_register_dynamic_libraries(void)
 # define IRIX6
 #endif
 
-void * GC_roots_present(ptr_t);
+GC_INNER void * GC_roots_present(ptr_t);
         /* The type is a lie, since the real type doesn't make sense here, */
         /* and we only test for NULL.                                      */
 
 /* We use /proc to track down all parts of the address space that are   */
 /* mapped by the process, and throw out regions we know we shouldn't    */
 /* worry about.  This may also work under other SVR4 variants.          */
-void GC_register_dynamic_libraries(void)
+GC_INNER void GC_register_dynamic_libraries(void)
 {
     static int fd = -1;
     char buf[30];
@@ -788,10 +788,11 @@ void GC_register_dynamic_libraries(void)
   /* We traverse the entire address space and register all segments     */
   /* that could possibly have been written to.                          */
 
-  GC_bool GC_is_heap_base(ptr_t p);
+  GC_INNER GC_bool GC_is_heap_base(ptr_t p);
 
 # ifdef GC_WIN32_THREADS
-    void GC_get_next_stack(char *start, char * limit, char **lo, char **hi);
+    GC_INNER void GC_get_next_stack(char *start, char * limit, char **lo,
+                                    char **hi);
 
     STATIC void GC_cond_add_roots(char *base, char * limit)
     {
@@ -825,7 +826,8 @@ void GC_register_dynamic_libraries(void)
 # endif
 
 #ifdef DYNAMIC_LOADING
-  GC_bool GC_register_main_static_data(void)
+  /* GC_register_main_static_data is not needed unless DYNAMIC_LOADING. */
+  GC_INNER GC_bool GC_register_main_static_data(void)
   {
 #   ifdef MSWINCE
       /* Do we need to separately register the main static data segment? */
@@ -861,7 +863,7 @@ void GC_register_dynamic_libraries(void)
 #   define GC_wnt TRUE
 # endif
 
-  void GC_register_dynamic_libraries(void)
+  GC_INNER void GC_register_dynamic_libraries(void)
   {
     MEMORY_BASIC_INFORMATION buf;
     size_t result;
@@ -927,7 +929,7 @@ void GC_register_dynamic_libraries(void)
 
 #include <loader.h>
 
-void GC_register_dynamic_libraries(void)
+GC_INNER void GC_register_dynamic_libraries(void)
 {
   int status;
   ldr_process_t mypid;
@@ -1035,7 +1037,7 @@ void GC_register_dynamic_libraries(void)
 extern char *sys_errlist[];
 extern int sys_nerr;
 
-void GC_register_dynamic_libraries(void)
+GC_INNER void GC_register_dynamic_libraries(void)
 {
   int status;
   int index = 1; /* Ordinal position in shared library search list */
@@ -1093,7 +1095,7 @@ void GC_register_dynamic_libraries(void)
 # pragma alloca
 # include <sys/ldr.h>
 # include <sys/errno.h>
-  void GC_register_dynamic_libraries(void)
+  GC_INNER void GC_register_dynamic_libraries(void)
   {
         int len;
         char *ldibuf;
@@ -1214,7 +1216,7 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
 #   endif
 }
 
-void GC_register_dynamic_libraries(void)
+GC_INNER void GC_register_dynamic_libraries(void)
 {
     /* Currently does nothing. The callbacks are setup by GC_init_dyld()
     The dyld library takes it from there. */
@@ -1226,7 +1228,7 @@ void GC_register_dynamic_libraries(void)
    This should be called BEFORE any thread in created and WITHOUT the
    allocation lock held. */
 
-void GC_init_dyld(void)
+GC_INNER void GC_init_dyld(void)
 {
   static GC_bool initialized = FALSE;
 
@@ -1269,7 +1271,7 @@ void GC_init_dyld(void)
 }
 
 #define HAVE_REGISTER_MAIN_STATIC_DATA
-GC_bool GC_register_main_static_data(void)
+GC_INNER GC_bool GC_register_main_static_data(void)
 {
   /* Already done through dyld callbacks */
   return FALSE;
@@ -1285,7 +1287,7 @@ GC_bool GC_register_main_static_data(void)
 # include "th/PCR_ThCtl.h"
 # include "mm/PCR_MM.h"
 
-  void GC_register_dynamic_libraries(void)
+  GC_INNER void GC_register_dynamic_libraries(void)
   {
     /* Add new static data areas of dynamically loaded modules. */
         {
@@ -1317,7 +1319,7 @@ GC_bool GC_register_main_static_data(void)
 
 #else /* !PCR */
 
-void GC_register_dynamic_libraries(void) {}
+GC_INNER void GC_register_dynamic_libraries(void) {}
 
 #endif /* !PCR */
 
@@ -1325,7 +1327,7 @@ void GC_register_dynamic_libraries(void) {}
 
 #ifndef HAVE_REGISTER_MAIN_STATIC_DATA
   /* Do we need to separately register the main static data segment? */
-  GC_bool GC_register_main_static_data(void)
+  GC_INNER GC_bool GC_register_main_static_data(void)
   {
     return TRUE;
   }

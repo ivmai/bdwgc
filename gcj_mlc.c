@@ -151,7 +151,8 @@ static void maybe_finalize(void)
 /* type structure (vtable in gcj).                              */
 /* This adds a byte at the end of the object if GC_malloc would.*/
 #ifdef THREAD_LOCAL_ALLOC
-  void * GC_core_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr)
+  GC_INNER void * GC_core_gcj_malloc(size_t lb,
+                                     void * ptr_to_struct_containing_descr)
 #else
   GC_API void * GC_CALL GC_gcj_malloc(size_t lb,
                                       void * ptr_to_struct_containing_descr)
@@ -197,7 +198,7 @@ static void maybe_finalize(void)
     return((void *) op);
 }
 
-void GC_start_debugging(void);
+GC_INNER void GC_start_debugging(void);
 
 /* Similar to GC_gcj_malloc, but add debug info.  This is allocated     */
 /* with GC_gcj_debug_kind.                                              */

@@ -83,7 +83,7 @@ static signed_word log_fo_table_size = -1;
 
 word GC_fo_entries = 0; /* used also in extra/MacOS.c */
 
-void GC_push_finalizer_structures(void)
+GC_INNER void GC_push_finalizer_structures(void)
 {
     GC_push_all((ptr_t)(&dl_head), (ptr_t)(&dl_head) + sizeof(word));
     GC_push_all((ptr_t)(&fo_head), (ptr_t)(&fo_head) + sizeof(word));
@@ -494,8 +494,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 #ifdef THREADS
   /* Defined in pthread_support.c or win32_threads.c.  Called with the  */
   /* allocation lock held.                                              */
-  void GC_reset_finalizer_nested(void);
-  unsigned *GC_check_finalizer_nested(void);
+  GC_INNER void GC_reset_finalizer_nested(void);
+  GC_INNER unsigned *GC_check_finalizer_nested(void);
 #else
   /* Global variables to minimize the level of recursion when a client  */
   /* finalizer allocates memory.                                        */
@@ -524,7 +524,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 /* Called with held lock (but the world is running).                    */
 /* Cause disappearing links to disappear and unreachable objects to be  */
 /* enqueued for finalization.                                           */
-void GC_finalize(void)
+GC_INNER void GC_finalize(void)
 {
     struct disappearing_link * curr_dl, * prev_dl, * next_dl;
     struct finalizable_object * curr_fo, * prev_fo, * next_fo;
@@ -839,7 +839,7 @@ GC_finalizer_notifier_proc GC_finalizer_notifier =
 
 static GC_word last_finalizer_notification = 0;
 
-void GC_notify_or_invoke_finalizers(void)
+GC_INNER void GC_notify_or_invoke_finalizers(void)
 {
     GC_finalizer_notifier_proc notifier_fn = 0;
 #   if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
@@ -929,7 +929,7 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn,
 }
 
 #ifndef SMALL_CONFIG
-  void GC_print_finalization_stats(void)
+  GC_INNER void GC_print_finalization_stats(void)
   {
     struct finalizable_object *fo = GC_finalize_now;
     unsigned long ready = 0;

@@ -222,7 +222,7 @@ STATIC long GC_nprocs = 1;
 /* list links wouldn't otherwise be found.  We also set them in the     */
 /* normal free lists, since that involves touching less memory than if  */
 /* we scanned them normally.                                            */
-void GC_mark_thread_local_free_lists(void)
+GC_INNER void GC_mark_thread_local_free_lists(void)
 {
     int i;
     GC_thread p;
@@ -454,7 +454,7 @@ STATIC void GC_delete_gc_thread(GC_thread gc_id)
 /* updates.                                                     */
 /* If there is more than one thread with the given id we        */
 /* return the most recent one.                                  */
-GC_thread GC_lookup_thread(pthread_t id)
+GC_INNER GC_thread GC_lookup_thread(pthread_t id)
 {
     int hv = NUMERIC_THREAD_ID(id) % THREAD_TABLE_SZ;
     register GC_thread p = GC_threads[hv];
@@ -464,7 +464,7 @@ GC_thread GC_lookup_thread(pthread_t id)
 }
 
 /* Called by GC_finalize() (in case of an allocation failure observed). */
-void GC_reset_finalizer_nested(void)
+GC_INNER void GC_reset_finalizer_nested(void)
 {
   GC_thread me = GC_lookup_thread(pthread_self());
   me->finalizer_nested = 0;
@@ -475,7 +475,7 @@ void GC_reset_finalizer_nested(void)
 /* collector (to minimize the risk of a deep finalizers recursion),     */
 /* otherwise returns a pointer to the thread-local finalizer_nested.    */
 /* Called by GC_notify_or_invoke_finalizers() only (the lock is held).  */
-unsigned *GC_check_finalizer_nested(void)
+GC_INNER unsigned *GC_check_finalizer_nested(void)
 {
   GC_thread me = GC_lookup_thread(pthread_self());
   unsigned nesting_level = me->finalizer_nested;
@@ -538,7 +538,7 @@ STATIC void GC_remove_all_threads_but_me(void)
 #endif /* HANDLE_FORK */
 
 #ifdef USE_PROC_FOR_LIBRARIES
-  GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
+  GC_INNER GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
   {
     int i;
     GC_thread p;
@@ -571,7 +571,7 @@ STATIC void GC_remove_all_threads_but_me(void)
   /* Find the largest stack_base smaller than bound.  May be used       */
   /* to find the boundary between a register stack and adjacent         */
   /* immediately preceding memory stack.                                */
-  ptr_t GC_greatest_stack_base_below(ptr_t bound)
+  GC_INNER ptr_t GC_greatest_stack_base_below(ptr_t bound)
   {
     int i;
     GC_thread p;
@@ -771,7 +771,7 @@ STATIC void GC_fork_child_proc(void)
 #endif
 
 /* We hold the allocation lock. */
-void GC_thr_init(void)
+GC_INNER void GC_thr_init(void)
 {
 #   ifndef GC_DARWIN_THREADS
         int dummy;
@@ -899,7 +899,7 @@ void GC_thr_init(void)
 /* Called without allocation lock.                      */
 /* Must be called before a second thread is created.    */
 /* Did we say it's called without the allocation lock?  */
-void GC_init_parallel(void)
+GC_INNER void GC_init_parallel(void)
 {
     if (parallel_initialized) return;
     parallel_initialized = TRUE;
@@ -934,7 +934,7 @@ void GC_init_parallel(void)
 /* length of time.                                                      */
 
 /*ARGSUSED*/
-void GC_do_blocking_inner(ptr_t data, void * context)
+GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
 {
     struct blocking_data * d = (struct blocking_data *) data;
     GC_thread me;
@@ -1451,7 +1451,7 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
 
 GC_INNER volatile AO_TS_t GC_allocate_lock = AO_TS_INITIALIZER;
 
-void GC_lock(void)
+GC_INNER void GC_lock(void)
 {
 #   define low_spin_max 30  /* spin cycles if we suspect uniprocessor */
 #   define high_spin_max SPIN_MAX /* spin cycles for multiprocessor */
@@ -1514,7 +1514,7 @@ yield:
 }
 
 #else  /* !USE_SPINLOCK */
-void GC_lock(void)
+GC_INNER void GC_lock(void)
 {
 #ifndef NO_PTHREAD_TRYLOCK
     if (1 == GC_nprocs || GC_collecting) {
@@ -1551,7 +1551,7 @@ void GC_lock(void)
 
 static pthread_cond_t builder_cv = PTHREAD_COND_INITIALIZER;
 
-void GC_acquire_mark_lock(void)
+GC_INNER void GC_acquire_mark_lock(void)
 {
 /*
     if (pthread_mutex_lock(&mark_mutex) != 0) {
@@ -1564,7 +1564,7 @@ void GC_acquire_mark_lock(void)
 #   endif
 }
 
-void GC_release_mark_lock(void)
+GC_INNER void GC_release_mark_lock(void)
 {
     GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
 #   ifdef GC_ASSERTIONS
@@ -1596,7 +1596,7 @@ STATIC void GC_wait_builder(void)
 #   endif
 }
 
-void GC_wait_for_reclaim(void)
+GC_INNER void GC_wait_for_reclaim(void)
 {
     GC_acquire_mark_lock();
     while (GC_fl_builder_count > 0) {
@@ -1605,7 +1605,7 @@ void GC_wait_for_reclaim(void)
     GC_release_mark_lock();
 }
 
-void GC_notify_all_builder(void)
+GC_INNER void GC_notify_all_builder(void)
 {
     GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
     if (pthread_cond_broadcast(&builder_cv) != 0) {
@@ -1615,7 +1615,7 @@ void GC_notify_all_builder(void)
 
 static pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
 
-void GC_wait_marker(void)
+GC_INNER void GC_wait_marker(void)
 {
     GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
     ASSERT_CANCEL_DISABLED();
@@ -1631,7 +1631,7 @@ void GC_wait_marker(void)
 #   endif
 }
 
-void GC_notify_all_marker(void)
+GC_INNER void GC_notify_all_marker(void)
 {
     if (pthread_cond_broadcast(&mark_cv) != 0) {
         ABORT("pthread_cond_broadcast failed");

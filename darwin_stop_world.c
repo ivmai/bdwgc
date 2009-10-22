@@ -41,7 +41,7 @@
 
 #ifdef DARWIN_DONT_PARSE_STACK
 
-void GC_push_all_stacks(void)
+GC_INNER void GC_push_all_stacks(void)
 {
   int i;
   kern_return_t r;
@@ -233,7 +233,7 @@ static unsigned long FindTopOfStack(unsigned long stack_start)
   return (unsigned long)frame;
 }
 
-void GC_push_all_stacks(void)
+GC_INNER void GC_push_all_stacks(void)
 {
   unsigned int i;
   task_t my_task;
@@ -415,7 +415,7 @@ STATIC int GC_use_mach_handler_thread = 0;
 static struct GC_mach_thread GC_mach_threads[THREAD_TABLE_SZ];
 STATIC int GC_mach_threads_count = 0;
 
-void GC_stop_init(void)
+GC_INNER void GC_stop_init(void)
 {
   int i;
 
@@ -509,12 +509,12 @@ STATIC int GC_suspend_thread_list(thread_act_array_t act_list, int count,
 }
 
 #ifdef MPROTECT_VDB
-  void GC_mprotect_stop(void);
-  void GC_mprotect_resume(void);
+  GC_INNER void GC_mprotect_stop(void);
+  GC_INNER void GC_mprotect_resume(void);
 #endif
 
 /* Caller holds allocation lock.        */
-void GC_stop_world(void)
+GC_INNER void GC_stop_world(void)
 {
     unsigned int i, changes;
     task_t my_task = current_task();
@@ -602,7 +602,7 @@ void GC_stop_world(void)
 
 /* Caller holds allocation lock, and has held it continuously since     */
 /* the world stopped.                                                   */
-void GC_start_world(void)
+GC_INNER void GC_start_world(void)
 {
   task_t my_task = current_task();
   mach_port_t my_thread = mach_thread_self();

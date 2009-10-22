@@ -102,9 +102,9 @@ GC_EXTERN volatile GC_thread GC_threads[THREAD_TABLE_SZ];
 
 GC_EXTERN GC_bool GC_thr_initialized;
 
-GC_thread GC_lookup_thread(pthread_t id);
+GC_INNER GC_thread GC_lookup_thread(pthread_t id);
 
-void GC_stop_init(void);
+GC_INNER void GC_stop_init(void);
 
 GC_EXTERN GC_bool GC_in_thread_creation;
         /* We may currently be in thread creation or destruction.       */

@@ -86,11 +86,12 @@ typedef struct hblkhdr hdr;
 # define HCE_HDR(h) ((hce) -> hce_hdr)
 
 #ifdef PRINT_BLACK_LIST
-  hdr * GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce, ptr_t source);
+  GC_INNER hdr * GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce,
+                                      ptr_t source);
 # define HEADER_CACHE_MISS(p, hce, source) \
           GC_header_cache_miss(p, hce, source)
 #else
-  hdr * GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce);
+  GC_INNER hdr * GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce);
 # define HEADER_CACHE_MISS(p, hce, source) GC_header_cache_miss(p, hce)
 #endif
 

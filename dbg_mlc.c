@@ -22,7 +22,7 @@
 #endif
 #include <string.h>
 
-void GC_default_print_heap_obj_proc(ptr_t p);
+GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
 
 GC_API void GC_CALL GC_register_finalizer_no_order(void * obj,
                                 GC_finalization_proc fn, void * cd,
@@ -38,7 +38,7 @@ GC_API void GC_CALL GC_register_finalizer_no_order(void * obj,
   /* on free lists may not have debug information set.  Thus it's */
   /* not always safe to return TRUE, even if the client does      */
   /* its part.                                                    */
-  GC_bool GC_has_other_debug_info(ptr_t p)
+  GC_INNER GC_bool GC_has_other_debug_info(ptr_t p)
   {
     oh * ohdr = (oh *)p;
     ptr_t body = (ptr_t)(ohdr + 1);
@@ -77,14 +77,14 @@ GC_API void GC_CALL GC_register_finalizer_no_order(void * obj,
   /* small, and this shouldn't be used in production code.                 */
   /* We assume that dest is the real base pointer.  Source will usually    */
   /* be a pointer to the interior of an object.                            */
-  void GC_store_back_pointer(ptr_t source, ptr_t dest)
+  GC_INNER void GC_store_back_pointer(ptr_t source, ptr_t dest)
   {
     if (GC_HAS_DEBUG_INFO(dest)) {
       ((oh *)dest) -> oh_back_ptr = HIDE_BACK_PTR(source);
     }
   }
 
-  void GC_marked_for_finalization(ptr_t dest)
+  GC_INNER void GC_marked_for_finalization(ptr_t dest)
   {
     GC_store_back_pointer(MARKED_FOR_FINALIZATION, dest);
   }
@@ -226,7 +226,7 @@ GC_API void GC_CALL GC_register_finalizer_no_order(void * obj,
 
   /* Force a garbage collection and generate a backtrace from a */
   /* random heap address.                                       */
-  void GC_generate_random_backtrace_no_gc(void)
+  GC_INNER void GC_generate_random_backtrace_no_gc(void)
   {
     void * current;
     current = GC_generate_random_valid_address();
@@ -250,7 +250,8 @@ GC_API void GC_CALL GC_register_finalizer_no_order(void * obj,
         (((word)(p + sizeof(oh) + sz - 1) ^ (word)p) >= HBLKSIZE)
 /* Store debugging info into p.  Return displaced pointer. */
 /* Assumes we don't hold allocation lock.                  */
-ptr_t GC_store_debug_info(ptr_t p, word sz, const char *string, word integer)
+GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *string,
+                                   word integer)
 {
     word * result = (word *)((oh *)p + 1);
     DCL_LOCK_STATE;
@@ -443,7 +444,7 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
   STATIC void GC_do_nothing(void) {}
 #endif
 
-void GC_start_debugging(void)
+GC_INNER void GC_start_debugging(void)
 {
 #   ifndef SHORT_DBG_HDRS
       GC_check_heap = GC_check_heap_proc;
@@ -530,7 +531,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
    * We assume debugging was started in collector initialization,
    * and we already hold the GC lock.
    */
-  void * GC_debug_generic_malloc_inner(size_t lb, int k)
+  GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k)
   {
     void * result = GC_generic_malloc_inner(lb + DEBUG_BYTES, k);
 
@@ -543,7 +544,8 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
     return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", (word)0));
   }
 
-  void * GC_debug_generic_malloc_inner_ignore_off_page(size_t lb, int k)
+  GC_INNER void * GC_debug_generic_malloc_inner_ignore_off_page(size_t lb,
+                                                                int k)
   {
     void * result = GC_generic_malloc_inner_ignore_off_page(
                                                 lb + DEBUG_BYTES, k);
@@ -666,7 +668,8 @@ GC_API char * GC_CALL GC_debug_strdup(const char *str, GC_EXTRA_PARAMS)
     return copy;
 }
 
-GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb, GC_EXTRA_PARAMS)
+GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
+                                                    GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc_uncollectable(lb + UNCOLLECTABLE_DEBUG_BYTES);
 
@@ -766,7 +769,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
 
 #if defined(THREADS) && defined(DBG_HDRS_ALL)
   /* Used internally; we assume it's called correctly.    */
-  void GC_debug_free_inner(void * p)
+  GC_INNER void GC_debug_free_inner(void * p)
   {
     ptr_t base = GC_base(p);
     GC_ASSERT((ptr_t)p - (ptr_t)base == sizeof(oh));

@@ -162,7 +162,7 @@ void * realloc(void * p, size_t lb)
 /* Allocate memory such that only pointers to near the          */
 /* beginning of the object are considered.                      */
 /* We avoid holding allocation lock while we clear memory.      */
-void * GC_generic_malloc_ignore_off_page(size_t lb, int k)
+GC_INNER void * GC_generic_malloc_ignore_off_page(size_t lb, int k)
 {
     void *result;
     size_t lg;

@@ -279,7 +279,7 @@ STATIC void GC_restart_handler(int sig)
 # endif
 /* We hold allocation lock.  Should do exactly the right thing if the   */
 /* world is stopped.  Should not fail if it isn't.                      */
-void GC_push_all_stacks(void)
+GC_INNER void GC_push_all_stacks(void)
 {
     GC_bool found_me = FALSE;
     size_t nthreads = 0;
@@ -411,7 +411,7 @@ STATIC int GC_suspend_all(void)
     return n_live_threads;
 }
 
-void GC_stop_world(void)
+GC_INNER void GC_stop_world(void)
 {
     int i;
 #   ifndef GC_OPENBSD_THREADS
@@ -497,7 +497,7 @@ void GC_stop_world(void)
 
 /* Caller holds allocation lock, and has held it continuously since     */
 /* the world stopped.                                                   */
-void GC_start_world(void)
+GC_INNER void GC_start_world(void)
 {
     pthread_t my_thread = pthread_self();
     register int i;
@@ -563,7 +563,7 @@ void GC_start_world(void)
 #    endif
 }
 
-void GC_stop_init(void)
+GC_INNER void GC_stop_init(void)
 {
 # ifndef GC_OPENBSD_THREADS
     struct sigaction act;

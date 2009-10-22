@@ -64,7 +64,7 @@ static int n_root_sets = 0;
 #ifndef THREADS
   /* Primarily for debugging support:     */
   /* Is the address p in one of the registered static root sections?      */
-  GC_bool GC_is_static_root(ptr_t p)
+  GC_INNER GC_bool GC_is_static_root(ptr_t p)
   {
     static int last_root_set = MAX_ROOT_SETS;
     int i;
@@ -111,7 +111,7 @@ static int n_root_sets = 0;
 
   /* Is a range starting at b already in the table? If so return a        */
   /* pointer to it, else NIL.                                             */
-  struct roots * GC_roots_present(ptr_t b)
+  GC_INNER struct roots * GC_roots_present(ptr_t b)
   {
     int h = rt_hash(b);
     struct roots *p = GC_root_index[h];
@@ -357,7 +357,7 @@ STATIC void GC_remove_tmp_roots(void)
   }
 #endif /* MSWIN32 || MSWINCE */
 
-ptr_t GC_approx_sp(void)
+GC_INNER ptr_t GC_approx_sp(void)
 {
     volatile word sp;
     sp = (word)&sp;
@@ -407,7 +407,7 @@ STATIC struct exclusion * GC_next_exclusion(ptr_t start_addr)
 
 /* Should only be called when the lock is held.  The range boundaries   */
 /* should be properly aligned and valid.                                */
-void GC_exclude_static_roots_inner(void *start, void *finish)
+GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
 {
     struct exclusion * next;
     size_t next_index, i;
@@ -478,7 +478,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
 
 #ifdef IA64
   /* Similar to GC_push_all_stack_frames() but for IA-64 registers store. */
-  void GC_push_all_register_frames(ptr_t bs_lo, ptr_t bs_hi,
+  GC_INNER void GC_push_all_register_frames(ptr_t bs_lo, ptr_t bs_hi,
                     int eager, struct GC_activation_frame_s *activation_frame)
   {
     while (activation_frame != NULL) {
@@ -503,7 +503,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
 
 #ifdef THREADS
 
-void GC_push_all_stack_frames(ptr_t lo, ptr_t hi,
+GC_INNER void GC_push_all_stack_frames(ptr_t lo, ptr_t hi,
                         struct GC_activation_frame_s *activation_frame)
 {
     while (activation_frame != NULL) {
@@ -692,10 +692,10 @@ STATIC void GC_push_gc_structures(void)
 }
 
 #ifdef THREAD_LOCAL_ALLOC
-  void GC_mark_thread_local_free_lists(void);
+  GC_INNER void GC_mark_thread_local_free_lists(void);
 #endif
 
-void GC_cond_register_dynamic_libraries(void)
+GC_INNER void GC_cond_register_dynamic_libraries(void)
 {
 # if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
      || defined(PCR)
@@ -720,7 +720,7 @@ STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
  * A zero value indicates that it's OK to miss some
  * register values.
  */
-void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
+GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
 {
     int i;
     unsigned kind;

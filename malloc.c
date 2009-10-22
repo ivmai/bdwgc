@@ -21,7 +21,7 @@
 # include <errno.h>
 #endif
 
-void GC_extend_size_map(size_t); /* in misc.c. */
+GC_INNER void GC_extend_size_map(size_t); /* in misc.c */
 
 /* Allocate reclaim list for kind:      */
 /* Return TRUE on success               */
@@ -35,15 +35,16 @@ STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
     return(TRUE);
 }
 
-GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page,
-                             GC_bool retry); /* from alloc.c */
+GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
+                                      GC_bool ignore_off_page,
+                                      GC_bool retry); /* from alloc.c */
 
 /* Allocate a large block of size lb bytes.     */
 /* The block is not cleared.                    */
 /* Flags is 0 or IGNORE_OFF_PAGE.               */
 /* We hold the allocation lock.                 */
 /* EXTRA_BYTES were already added to lb.        */
-ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
+GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
 {
     struct hblk * h;
     word n_blocks;
@@ -104,7 +105,7 @@ STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
 /* require special handling on allocation.      */
 /* First a version that assumes we already      */
 /* hold lock:                                   */
-void * GC_generic_malloc_inner(size_t lb, int k)
+GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 {
     void *op;
 
@@ -140,7 +141,7 @@ out:
 /* Allocate a composite object of size n bytes.  The caller guarantees  */
 /* that pointers past the first page are not relevant.  Caller holds    */
 /* allocation lock.                                                     */
-void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
+GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
 {
     word lb_adjusted;
     void * op;
@@ -204,7 +205,7 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
 
 /* Allocate lb bytes of atomic (pointerfree) data */
 #ifdef THREAD_LOCAL_ALLOC
-  void * GC_core_malloc_atomic(size_t lb)
+  GC_INNER void * GC_core_malloc_atomic(size_t lb)
 #else
   GC_API void * GC_CALL GC_malloc_atomic(size_t lb)
 #endif
@@ -256,7 +257,7 @@ GC_API char * GC_CALL GC_strdup(const char *s)
 
 /* Allocate lb bytes of composite (pointerful) data */
 #ifdef THREAD_LOCAL_ALLOC
-  void * GC_core_malloc(size_t lb)
+  GC_INNER void * GC_core_malloc(size_t lb)
 #else
   GC_API void * GC_CALL GC_malloc(size_t lb)
 #endif
@@ -326,7 +327,7 @@ void * malloc(size_t lb)
   STATIC ptr_t GC_libpthread_end = 0;
   STATIC ptr_t GC_libld_start = 0;
   STATIC ptr_t GC_libld_end = 0;
-  GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp);
+  GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp);
                                                 /* From os_dep.c */
 
   STATIC void GC_init_lib_bounds(void)
@@ -456,7 +457,7 @@ GC_API void GC_CALL GC_free(void * p)
 /* Only used for internally allocated objects, so we can take some      */
 /* shortcuts.                                                           */
 #ifdef THREADS
-  void GC_free_inner(void * p)
+  GC_INNER void GC_free_inner(void * p)
   {
     struct hblk *h;
     hdr *hhdr;

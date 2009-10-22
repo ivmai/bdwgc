@@ -78,7 +78,7 @@ static void return_freelists(void **fl, void **gfl)
 
 /* Each thread structure must be initialized.   */
 /* This call must be made from the new thread.  */
-void GC_init_thread_local(GC_tlfs p)
+GC_INNER void GC_init_thread_local(GC_tlfs p)
 {
     int i;
 
@@ -111,7 +111,7 @@ void GC_init_thread_local(GC_tlfs p)
 }
 
 /* We hold the allocator lock.  */
-void GC_destroy_thread_local(GC_tlfs p)
+GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 {
     /* We currently only do this from the thread itself or from */
     /* the fork handler for a child process.                    */
@@ -268,7 +268,7 @@ GC_API void * GC_CALL GC_gcj_malloc(size_t bytes,
 /* free lists explicitly, since the link field is often         */
 /* invisible to the marker.  It knows how to find all threads;  */
 /* we take care of an individual thread freelist structure.     */
-void GC_mark_thread_local_fls_for(GC_tlfs p)
+GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
 {
     ptr_t q;
     int j;

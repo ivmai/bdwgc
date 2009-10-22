@@ -135,13 +135,13 @@ STATIC GC_bool GC_objects_are_marked = FALSE;
 /* Is a collection in progress?  Note that this can return true in the  */
 /* nonincremental case, if a collection has been abandoned and the      */
 /* mark state is now MS_INVALID.                                        */
-GC_bool GC_collection_in_progress(void)
+GC_INNER GC_bool GC_collection_in_progress(void)
 {
     return(GC_mark_state != MS_NONE);
 }
 
 /* clear all mark bits in the header */
-void GC_clear_hdr_marks(hdr *hhdr)
+GC_INNER void GC_clear_hdr_marks(hdr *hhdr)
 {
     size_t last_bit = FINAL_MARK_BIT(hhdr -> hb_sz);
 
@@ -156,7 +156,7 @@ void GC_clear_hdr_marks(hdr *hhdr)
 }
 
 /* Set all mark bits in the header.  Used for uncollectable blocks. */
-void GC_set_hdr_marks(hdr *hhdr)
+GC_INNER void GC_set_hdr_marks(hdr *hhdr)
 {
     unsigned i;
     size_t sz = hhdr -> hb_sz;
@@ -194,7 +194,7 @@ static void clear_marks_for_block(struct hblk *h, word dummy)
 }
 
 /* Slow but general routines for setting/clearing/asking about mark bits */
-void GC_set_mark_bit(ptr_t p)
+GC_INNER void GC_set_mark_bit(ptr_t p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
@@ -206,7 +206,7 @@ void GC_set_mark_bit(ptr_t p)
     }
 }
 
-void GC_clear_mark_bit(ptr_t p)
+GC_INNER void GC_clear_mark_bit(ptr_t p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
@@ -243,7 +243,7 @@ GC_bool GC_is_marked(ptr_t p)
  * the marker invariant, and sets GC_mark_state to reflect this.
  * (This implicitly starts marking to reestablish the invariant.)
  */
-void GC_clear_marks(void)
+GC_INNER void GC_clear_marks(void)
 {
     GC_apply_to_all_blocks(clear_marks_for_block, (word)0);
     GC_objects_are_marked = FALSE;
@@ -257,7 +257,7 @@ void GC_clear_marks(void)
 
 /* Initiate a garbage collection.  Initiates a full collection if the   */
 /* mark state is invalid.                                               */
-void GC_initiate_gc(void)
+GC_INNER void GC_initiate_gc(void)
 {
     if (GC_dirty_maintained) GC_read_dirty();
 #   ifdef STUBBORN_ALLOC
@@ -323,7 +323,7 @@ static void alloc_mark_stack(size_t);
   /* allocator lock long before we get here.                    */
   STATIC GC_bool GC_mark_some_inner(ptr_t cold_gc_frame)
 #else
-  GC_bool GC_mark_some(ptr_t cold_gc_frame)
+  GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame)
 #endif
 {
     switch(GC_mark_state) {
@@ -490,7 +490,7 @@ static void alloc_mark_stack(size_t);
   /* unexpected thread start?                                   */
 #endif
 
-  GC_bool GC_mark_some(ptr_t cold_gc_frame)
+  GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame)
   {
       GC_bool ret_val;
 
@@ -588,18 +588,18 @@ handle_ex:
   }
 #endif /* WRAP_MARK_SOME */
 
-GC_bool GC_mark_stack_empty(void)
+GC_INNER GC_bool GC_mark_stack_empty(void)
 {
     return(GC_mark_stack_top < GC_mark_stack);
 }
 
-void GC_invalidate_mark_state(void)
+GC_INNER void GC_invalidate_mark_state(void)
 {
     GC_mark_state = MS_INVALID;
     GC_mark_stack_top = GC_mark_stack-1;
 }
 
-mse * GC_signal_mark_stack_overflow(mse *msp)
+GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp)
 {
     GC_mark_state = MS_INVALID;
     GC_mark_stack_too_small = TRUE;
@@ -624,7 +624,8 @@ mse * GC_signal_mark_stack_overflow(mse *msp)
  * encoding, we optionally maintain a cache for the block address to
  * header mapping, we prefetch when an object is "grayed", etc.
  */
-mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack, mse *mark_stack_limit)
+GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
+                            mse *mark_stack_limit)
 {
   signed_word credit = HBLKSIZE;  /* Remaining credit for marking work  */
   ptr_t current_p;      /* Pointer to current candidate ptr.    */
@@ -1173,7 +1174,7 @@ STATIC void GC_do_parallel_mark(void)
 
 /* Try to help out the marker, if it's running.         */
 /* We do not hold the GC lock, but the requestor does.  */
-void GC_help_marker(word my_mark_no)
+GC_INNER void GC_help_marker(word my_mark_no)
 {
     mse local_mark_stack[LOCAL_MARK_STACK_SIZE];
     unsigned my_id;
@@ -1256,7 +1257,7 @@ static void alloc_mark_stack(size_t n)
     GC_mark_stack_top = GC_mark_stack-1;
 }
 
-void GC_mark_init(void)
+GC_INNER void GC_mark_init(void)
 {
     alloc_mark_stack(INITIAL_MARK_STACK_SIZE);
 }
@@ -1268,7 +1269,7 @@ void GC_mark_init(void)
  * Should only be used if there is no possibility of mark stack
  * overflow.
  */
-void GC_push_all(ptr_t bottom, ptr_t top)
+GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
 {
     register word length;
 
@@ -1344,11 +1345,11 @@ void GC_push_all(ptr_t bottom, ptr_t top)
   }
 
 # ifdef PROC_VDB
-    GC_bool GC_page_was_ever_dirty(struct hblk *h);
+    GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h);
                         /* Could the page contain valid heap pointers?  */
 # endif
 
-  void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
+  GC_INNER void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
   {
     if (all) {
       if (GC_dirty_maintained) {
@@ -1418,9 +1419,9 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
 /* Mark bits are NOT atomically updated.  Thus this must be the */
 /* only thread setting them.                                    */
 # if defined(PRINT_BLACK_LIST) || defined(KEEP_BACK_PTRS)
-    void GC_mark_and_push_stack(ptr_t p, ptr_t source)
+    GC_INNER void GC_mark_and_push_stack(ptr_t p, ptr_t source)
 # else
-    void GC_mark_and_push_stack(ptr_t p)
+    GC_INNER void GC_mark_and_push_stack(ptr_t p)
 #   define source ((ptr_t)0)
 # endif
 {
@@ -1509,7 +1510,7 @@ void GC_print_trace(word gc_no, GC_bool lock)
  * and scans the entire region immediately, in case the contents
  * change.
  */
-void GC_push_all_eager(ptr_t bottom, ptr_t top)
+GC_INNER void GC_push_all_eager(ptr_t bottom, ptr_t top)
 {
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
@@ -1533,7 +1534,7 @@ void GC_push_all_eager(ptr_t bottom, ptr_t top)
 #   undef GC_least_plausible_heap_addr
 }
 
-void GC_push_all_stack(ptr_t bottom, ptr_t top)
+GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 {
 # if defined(THREADS) && defined(MPROTECT_VDB)
     GC_push_all_eager(bottom, top);

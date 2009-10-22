@@ -49,11 +49,11 @@ STATIC void GC_add_leaked(ptr_t leaked)
     }
 }
 
-static GC_bool printing_errors = FALSE;
-/* Print all objects on the list after printing any smashed objs.       */
+/* Print all objects on the list after printing any smashed objects.    */
 /* Clear both lists.                                                    */
-void GC_print_all_errors (void)
+GC_INNER void GC_print_all_errors(void)
 {
+    static GC_bool printing_errors = FALSE;
     unsigned i;
 
     LOCK();
@@ -86,14 +86,9 @@ void GC_print_all_errors (void)
  *
  */
 
-
-/*
- * Test whether a block is completely empty, i.e. contains no marked
- * objects.  This does not require the block to be in physical
- * memory.
- */
-
-GC_bool GC_block_empty(hdr *hhdr)
+/* Test whether a block is completely empty, i.e. contains no marked    */
+/* objects.  This does not require the block to be in physical memory.  */
+GC_INNER GC_bool GC_block_empty(hdr *hhdr)
 {
     return (hhdr -> hb_n_marks == 0);
 }
@@ -210,8 +205,9 @@ STATIC void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
  * Also called directly from GC_malloc_many.
  * Sz is now in bytes.
  */
-ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
-                         GC_bool init, ptr_t list, signed_word *count)
+GC_INNER ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
+                                  GC_bool init, ptr_t list,
+                                  signed_word *count)
 {
     ptr_t result;
 
@@ -450,7 +446,7 @@ void GC_print_free_list(int kind, size_t sz_in_granules)
     }
 }
 
-#endif /* NO_DEBUGGING */
+#endif /* !NO_DEBUGGING */
 
 /*
  * Clear all obj_link pointers in the list of free objects *flp.
@@ -474,7 +470,7 @@ STATIC void GC_clear_fl_links(void **flp)
  * Perform GC_reclaim_block on the entire heap, after first clearing
  * small object free lists (if we are not just looking for leaks).
  */
-void GC_start_reclaim(GC_bool report_if_found)
+GC_INNER void GC_start_reclaim(GC_bool report_if_found)
 {
     unsigned kind;
 
@@ -534,7 +530,7 @@ void GC_start_reclaim(GC_bool report_if_found)
  * appropriate free list is nonempty, or there are no more blocks to
  * sweep.
  */
-void GC_continue_reclaim(size_t sz /* granules */, int kind)
+GC_INNER void GC_continue_reclaim(size_t sz /* granules */, int kind)
 {
     hdr * hhdr;
     struct hblk * hbp;
@@ -561,7 +557,7 @@ void GC_continue_reclaim(size_t sz /* granules */, int kind)
  * recently reclaimed, and discard the rest.
  * Stop_func may be 0.
  */
-GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
+GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
 {
     word sz;
     unsigned kind;

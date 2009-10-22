@@ -129,7 +129,7 @@ GC_EXTERN mse * GC_mark_stack;
      */
 #endif /* PARALLEL_MARK */
 
-mse * GC_signal_mark_stack_overflow(mse *msp);
+GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 
 /* Push the object obj with corresponding heap block header hhdr onto   */
 /* the mark stack.                                                      */
@@ -420,7 +420,7 @@ exit_label: ; \
 /* mark stack entry bottom (incl.).  Stop after performing      */
 /* about one page worth of work.  Return the new mark stack     */
 /* top entry.                                                   */
-mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
+GC_INNER mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
 
 #define MARK_FROM_MARK_STACK() \
         GC_mark_stack_top = GC_mark_from(GC_mark_stack_top, \

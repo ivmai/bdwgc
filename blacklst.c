@@ -54,7 +54,7 @@ GC_INNER word GC_black_list_spacing = MINHINCR * HBLKSIZE;
 
 STATIC void GC_clear_bl(word *);
 
-void GC_default_print_heap_obj_proc(ptr_t p)
+GC_INNER void GC_default_print_heap_obj_proc(ptr_t p)
 {
     ptr_t base = GC_base(p);
     GC_err_printf("start: %p, appr. length: %ld", base,
@@ -83,7 +83,7 @@ STATIC void GC_print_source_ptr(ptr_t p)
 }
 #endif
 
-void GC_bl_init(void)
+GC_INNER void GC_bl_init(void)
 {
     if (!GC_all_interior_pointers) {
       GC_old_normal_bl = (word *)
@@ -122,7 +122,7 @@ static word total_stack_black_listed(void);
 
 /* Signal the completion of a collection.  Turn the incomplete black    */
 /* lists into new black lists, etc.                                     */
-void GC_promote_black_lists(void)
+GC_INNER void GC_promote_black_lists(void)
 {
     word * very_old_normal_bl = GC_old_normal_bl;
     word * very_old_stack_bl = GC_old_stack_bl;
@@ -155,7 +155,7 @@ void GC_promote_black_lists(void)
     }
 }
 
-void GC_unpromote_black_lists(void)
+GC_INNER void GC_unpromote_black_lists(void)
 {
     if (!GC_all_interior_pointers) {
       GC_copy_bl(GC_old_normal_bl, GC_incomplete_normal_bl);
@@ -167,9 +167,9 @@ void GC_unpromote_black_lists(void)
 /* the plausible heap bounds.                                   */
 /* Add it to the normal incomplete black list if appropriate.   */
 #ifdef PRINT_BLACK_LIST
-  void GC_add_to_black_list_normal(word p, ptr_t source)
+  GC_INNER void GC_add_to_black_list_normal(word p, ptr_t source)
 #else
-  void GC_add_to_black_list_normal(word p)
+  GC_INNER void GC_add_to_black_list_normal(word p)
 #endif
 {
     if (!(GC_modws_valid_offsets[p & (sizeof(word)-1)])) return;
@@ -194,9 +194,9 @@ void GC_unpromote_black_lists(void)
 
 /* And the same for false pointers from the stack. */
 #ifdef PRINT_BLACK_LIST
-  void GC_add_to_black_list_stack(word p, ptr_t source)
+  GC_INNER void GC_add_to_black_list_stack(word p, ptr_t source)
 #else
-  void GC_add_to_black_list_stack(word p)
+  GC_INNER void GC_add_to_black_list_stack(word p)
 #endif
 {
     word index = PHT_HASH((word)p);
@@ -223,7 +223,7 @@ void GC_unpromote_black_lists(void)
  * If (h,len) is not black listed, return 0.
  * Knows about the structure of the black list hash tables.
  */
-struct hblk * GC_is_black_listed(struct hblk *h, word len)
+GC_INNER struct hblk * GC_is_black_listed(struct hblk *h, word len)
 {
     word index = PHT_HASH((word)h);
     word i;

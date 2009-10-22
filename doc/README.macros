@@ -67,8 +67,7 @@ GC_DLL          Defined by user if dynamic libraries are being built
                 be taken to properly deal with statically allocated
                 variables in the main program.  Used for MS Windows.
                 Also used by GCC v4+ (only when the dynamic shared library
-                is being built) in conjunction with "-fvisibility=hidden"
-                option to hide internally used symbols.
+                is being built) to hide internally used symbols.
 
 GC_NOT_DLL      User-settable macro that overrides _DLL, e.g. if runtime
                 dynamic libraries are used, but the collector is in a static
@@ -452,8 +451,7 @@ STATIC=static   Causes various GC_ symbols that could logically be declared
 
 GC_DLL  Build dynamic-link library (or dynamic shared object).  For Unix this
   causes the exported symbols to have 'default' visibility (ignored unless
-  GCC v4+, meaningful only if used together with GCC -fvisibility=hidden
-  option).
+  GCC v4+) and the internal ones to have 'hidden' visibility.
 
 DONT_USE_USER32_DLL (Win32 only)        Don't use "user32" DLL import library
   (containing MessageBox() entry); useful for a static GC library.
@@ -471,7 +469,7 @@ GC_IGNORE_GCJ_INFO      Disable GCJ-style type information (useful for
 GC_PRINT_VERBOSE_STATS  Permanently turn on verbose logging (useful for
   debugging and profiling on WinCE).
 
-GC_DONT_EXPAND  Dont expand the heap unless explicitly requested or forced to.
+GC_DONT_EXPAND  Don't expand the heap unless explicitly requested or forced to.
 
 GC_INITIAL_HEAP_SIZE=<value>    Set the desired default initial heap size
   in bytes.

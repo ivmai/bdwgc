@@ -33,7 +33,7 @@ STATIC bottom_index * GC_all_bottom_indices_end = 0;
                                 /* bottom_index.                  */
 
 /* Non-macro version of header location routine */
-hdr * GC_find_header(ptr_t h)
+GC_INNER hdr * GC_find_header(ptr_t h)
 {
 #   ifdef HASH_TL
         hdr * result;
@@ -51,10 +51,11 @@ hdr * GC_find_header(ptr_t h)
 /* of an object unless both GC_all_interior_pointers is set     */
 /* and p is in fact a valid object pointer.                     */
 /* Never returns a pointer to a free hblk.                      */
+GC_INNER hdr *
 #ifdef PRINT_BLACK_LIST
-  hdr * GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce, ptr_t source)
+  GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce, ptr_t source)
 #else
-  hdr * GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce)
+  GC_header_cache_miss(ptr_t p, hdr_cache_entry *hce)
 #endif
 {
   hdr *hhdr;
@@ -114,7 +115,7 @@ static ptr_t scratch_free_ptr = 0;
 /* GC_scratch_last_end_ptr is end point of last obtained scratch area.  */
 /* GC_scratch_end_ptr is end point of current scratch area.             */
 
-ptr_t GC_scratch_alloc(size_t bytes)
+GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
 {
     register ptr_t result = scratch_free_ptr;
 
@@ -190,7 +191,7 @@ GC_INLINE void free_hdr(hdr * hhdr)
   word GC_hdr_cache_misses = 0;
 #endif
 
-void GC_init_headers(void)
+GC_INNER void GC_init_headers(void)
 {
     register unsigned i;
 
@@ -254,7 +255,7 @@ static GC_bool get_index(word addr)
 /* Install a header for block h.        */
 /* The header is uninitialized.         */
 /* Returns the header or 0 on failure.  */
-struct hblkhdr * GC_install_header(struct hblk *h)
+GC_INNER struct hblkhdr * GC_install_header(struct hblk *h)
 {
     hdr * result;
 
@@ -268,7 +269,7 @@ struct hblkhdr * GC_install_header(struct hblk *h)
 }
 
 /* Set up forwarding counts for block h of size sz */
-GC_bool GC_install_counts(struct hblk *h, size_t sz/* bytes */)
+GC_INNER GC_bool GC_install_counts(struct hblk *h, size_t sz/* bytes */)
 {
     struct hblk * hbp;
     word i;
@@ -285,20 +286,18 @@ GC_bool GC_install_counts(struct hblk *h, size_t sz/* bytes */)
 }
 
 /* Remove the header for block h */
-void GC_remove_header(struct hblk *h)
+GC_INNER void GC_remove_header(struct hblk *h)
 {
-    hdr ** ha;
-
+    hdr **ha;
     GET_HDR_ADDR(h, ha);
     free_hdr(*ha);
     *ha = 0;
 }
 
 /* Remove forwarding counts for h */
-void GC_remove_counts(struct hblk *h, size_t sz/* bytes */)
+GC_INNER void GC_remove_counts(struct hblk *h, size_t sz/* bytes */)
 {
     register struct hblk * hbp;
-
     for (hbp = h+1; (char *)hbp < (char *)h + sz; hbp += 1) {
         SET_HDR(hbp, 0);
     }
@@ -334,7 +333,7 @@ void GC_apply_to_all_blocks(void (*fn)(struct hblk *h, word client_data),
 
 /* Get the next valid block whose address is at least h */
 /* Return 0 if there is none.                           */
-struct hblk * GC_next_used_block(struct hblk *h)
+GC_INNER struct hblk * GC_next_used_block(struct hblk *h)
 {
     register bottom_index * bi;
     register word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
@@ -370,7 +369,7 @@ struct hblk * GC_next_used_block(struct hblk *h)
 /* Get the last (highest address) block whose address is        */
 /* at most h.  Return 0 if there is none.                       */
 /* Unlike the above, this may return a free block.              */
-struct hblk * GC_prev_block(struct hblk *h)
+GC_INNER struct hblk * GC_prev_block(struct hblk *h)
 {
     register bottom_index * bi;
     register signed_word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);

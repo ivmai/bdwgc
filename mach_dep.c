@@ -188,7 +188,8 @@ asm static void PushMacRegisters()
 /* Ensure that either registers are pushed, or callee-save registers    */
 /* are somewhere on the stack, and then call fn(arg, ctxt).             */
 /* ctxt is either a pointer to a ucontext_t we generated, or NULL.      */
-void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *), ptr_t arg)
+GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
+                                          ptr_t arg)
 {
     word dummy;
     void * context = 0;

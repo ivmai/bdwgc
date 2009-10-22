@@ -52,7 +52,7 @@
 #ifdef DYNAMIC_LOADING
   /* We need to register the main data segment.  Returns  TRUE unless   */
   /* this is done implicitly as part of dynamic library registration.   */
-  GC_bool GC_register_main_static_data(void);
+  GC_INNER GC_bool GC_register_main_static_data(void);
 # define GC_REGISTER_MAIN_STATIC_DATA() GC_register_main_static_data()
 #else
   /* Don't unnecessarily call GC_register_main_static_data() in case    */
@@ -161,7 +161,7 @@ STATIC void GC_init_size_map(void)
 /* We assume the ith entry is currently 0.                              */
 /* Note that a filled in section of the array ending at n always    */
 /* has length at least n/4.                                             */
-void GC_extend_size_map(size_t i)
+GC_INNER void GC_extend_size_map(size_t i)
 {
     size_t orig_granule_sz = ROUNDED_UP_GRANULES(i);
     size_t granule_sz = orig_granule_sz;
@@ -257,7 +257,7 @@ void GC_extend_size_map(size_t i)
 /* Clear some of the inaccessible part of the stack.  Returns its       */
 /* argument, so it can be used in a tail call position, hence clearing  */
 /* another frame.                                                       */
-void * GC_clear_stack(void *arg)
+GC_INNER void * GC_clear_stack(void *arg)
 {
     ptr_t sp = GC_approx_sp();  /* Hotter than actual sp */
 #   ifdef THREADS
@@ -458,10 +458,10 @@ GC_INNER GC_bool GC_is_initialized = FALSE;
 #endif
 
 #ifdef MSWIN32
-    void GC_init_win32(void);
+    GC_INNER void GC_init_win32(void);
 #endif
 
-void GC_setpagesize(void);
+GC_INNER void GC_setpagesize(void);
 
 STATIC void GC_exit_check(void)
 {
@@ -469,12 +469,12 @@ STATIC void GC_exit_check(void)
 }
 
 #ifdef SEARCH_FOR_DATA_START
-  void GC_init_linux_data_start(void);
+  GC_INNER void GC_init_linux_data_start(void);
 #endif
 
 #ifdef UNIX_LIKE
 
-  void GC_set_and_save_fault_handler(void (*handler)(int));
+  GC_INNER void GC_set_and_save_fault_handler(void (*handler)(int));
 
   static void looping_handler(int sig)
   {
@@ -499,11 +499,11 @@ STATIC void GC_exit_check(void)
 #endif
 
 #if defined(DYNAMIC_LOADING) && defined(DARWIN)
-  void GC_init_dyld(void);
+  GC_INNER void GC_init_dyld(void);
 #endif
 
 #if defined(NETBSD) && defined(__ELF__)
-  void GC_init_netbsd_elf(void);
+  GC_INNER void GC_init_netbsd_elf(void);
 #endif
 
 #if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
@@ -1162,7 +1162,7 @@ void GC_err_puts(const char *s)
 }
 
 #if defined(LINUX) && !defined(SMALL_CONFIG)
-  void GC_err_write(const char *buf, size_t len)
+  GC_INNER void GC_err_write(const char *buf, size_t len)
   {
     if (WRITE(GC_stderr, buf, len) < 0) ABORT("write to stderr failed");
   }
@@ -1348,7 +1348,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 #ifdef THREADS
 
   /* Defined in pthread_support.c or win32_threads.c.     */
-  void GC_do_blocking_inner(ptr_t data, void * context);
+  GC_INNER void GC_do_blocking_inner(ptr_t data, void * context);
 
 #else
 

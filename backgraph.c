@@ -231,8 +231,8 @@ static void add_edge(ptr_t p, ptr_t q)
 
     GC_ASSERT(p == GC_base(p) && q == GC_base(q));
     if (!GC_HAS_DEBUG_INFO(q) || !GC_HAS_DEBUG_INFO(p)) {
-      /* This is really a misinterpreted free list link, since we saw */
-      /* a pointer to a free list.  Dont overwrite it!                */
+      /* This is really a misinterpreted free list link, since we saw   */
+      /* a pointer to a free list.  Don't overwrite it!                 */
       return;
     }
     if (0 == old_back_ptr) {
@@ -344,7 +344,7 @@ static void add_back_edges(ptr_t p, size_t n_bytes, word gc_descr)
 
 /* Rebuild the representation of the backward reachability graph.       */
 /* Does not examine mark bits.  Can be called before GC.                */
-void GC_build_back_graph(void)
+GC_INNER void GC_build_back_graph(void)
 {
   GC_apply_to_each_object(add_back_edges);
 }
@@ -450,7 +450,7 @@ static void update_max_height(ptr_t p, size_t n_bytes, word gc_descr)
 
 STATIC word GC_max_max_height = 0;
 
-void GC_traverse_back_graph(void)
+GC_INNER void GC_traverse_back_graph(void)
 {
   GC_max_height = 0;
   GC_apply_to_each_object(update_max_height);
@@ -476,4 +476,4 @@ void GC_print_back_graph_stats(void)
   GC_deepest_obj = 0;
 }
 
-#endif /* !MAKE_BACK_GRAPH */
+#endif /* MAKE_BACK_GRAPH */

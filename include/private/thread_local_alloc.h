@@ -28,7 +28,6 @@
 
 #include "gc_inline.h"
 
-
 # if defined(USE_HPUX_TLS)
 #   error USE_HPUX_TLS macro was replaced by USE_COMPILER_TLS
 # endif
@@ -130,17 +129,17 @@ typedef struct thread_local_freelists {
 /* Each thread structure must be initialized.   */
 /* This call must be made from the new thread.  */
 /* Caller holds allocation lock.                */
-void GC_init_thread_local(GC_tlfs p);
+GC_INNER void GC_init_thread_local(GC_tlfs p);
 
 /* Called when a thread is unregistered, or exits.      */
 /* We hold the allocator lock.                          */
-void GC_destroy_thread_local(GC_tlfs p);
+GC_INNER void GC_destroy_thread_local(GC_tlfs p);
 
 /* The thread support layer must arrange to mark thread-local   */
 /* free lists explicitly, since the link field is often         */
 /* invisible to the marker.  It knows how to find all threads;  */
 /* we take care of an individual thread freelist structure.     */
-void GC_mark_thread_local_fls_for(GC_tlfs p);
+GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p);
 
 extern
 #if defined(USE_COMPILER_TLS)

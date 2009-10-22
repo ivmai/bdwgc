@@ -110,7 +110,8 @@ STATIC ptr_t GC_build_fl4(struct hblk *h, ptr_t ofl)
 /* This could be called without the main GC lock, if we ensure that     */
 /* there is no concurrent collection which might reclaim objects that   */
 /* we have not yet allocated.                                           */
-ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear, ptr_t list)
+GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
+                           ptr_t list)
 {
   word *p, *prev;
   word *last_object;            /* points to last object in new hblk    */
@@ -126,7 +127,7 @@ ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear, ptr_t list)
   /* Handle small objects sizes more efficiently.  For larger objects   */
   /* the difference is less significant.                                */
 #  ifndef SMALL_CONFIG
-    switch (sz) {
+     switch (sz) {
         case 2: if (clear) {
                     return GC_build_fl_clear2(h, list);
                 } else {
@@ -139,7 +140,7 @@ ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear, ptr_t list)
                 }
         default:
                 break;
-    }
+     }
 #  endif /* !SMALL_CONFIG */
 
   /* Clear the page if necessary. */
@@ -177,7 +178,7 @@ ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear, ptr_t list)
  * Set all mark bits if objects are uncollectable.
  * Will fail to do anything if we are out of memory.
  */
-void GC_new_hblk(size_t gran, int kind)
+GC_INNER void GC_new_hblk(size_t gran, int kind)
 {
   struct hblk *h;       /* the new heap block                   */
   GC_bool clear = GC_obj_kinds[kind].ok_init;

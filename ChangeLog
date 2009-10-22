@@ -1,5 +1,125 @@
 2009-10-22  Ivan Maidanski <ivmai@mail.ru>
 
+	* allchblk.c (GC_unmap_old, GC_merge_unmapped, GC_allochblk,
+	GC_freehblk): Use GC_INNER for the function definition.
+	* alloc.c (GC_never_stop_func, GC_should_collect,
+	GC_try_to_collect_inner, GC_collect_a_little_inner,
+	GC_set_fl_marks, GC_add_to_our_memory, GC_add_to_heap,
+	GC_expand_hp_inner, GC_collect_or_expand, GC_allocobj): Ditto.
+	* backgraph.c (GC_build_back_graph, GC_traverse_back_graph):
+	Ditto.
+	* blacklst.c (GC_default_print_heap_obj_proc, GC_bl_init,
+	GC_promote_black_lists, GC_unpromote_black_lists,
+	GC_add_to_black_list_normal, GC_add_to_black_list_stack,
+	GC_is_black_listed): Ditto.
+	* darwin_stop_world.c (GC_push_all_stacks, GC_push_all_stacks,
+	GC_stop_init, GC_stop_world, GC_start_world): Ditto.
+	* dbg_mlc.c (GC_has_other_debug_info, GC_store_back_pointer,
+	GC_marked_for_finalization, GC_generate_random_backtrace_no_gc,
+	GC_store_debug_info, GC_start_debugging,
+	GC_debug_generic_malloc_inner,
+	GC_debug_generic_malloc_inner_ignore_off_page,
+	GC_debug_malloc_uncollectable, GC_debug_free_inner): Ditto.
+	* dyn_load.c (GC_register_dynamic_libraries,
+	GC_register_main_static_data, GC_init_dyld): Ditto.
+	* finalize.c (GC_push_finalizer_structures, GC_finalize,
+	GC_notify_or_invoke_finalizers, GC_print_finalization_stats):
+	Ditto.
+	* gcj_mlc.c (GC_core_gcj_malloc): Ditto.
+	* headers.c (GC_find_header, GC_header_cache_miss,
+	GC_scratch_alloc, GC_init_headers, GC_install_header,
+	GC_install_counts, GC_remove_header, GC_remove_counts,
+	GC_next_used_block, GC_prev_block): Ditto.
+	* mach_dep.c (GC_with_callee_saves_pushed): Ditto.
+	* malloc.c (GC_collect_or_expand, GC_alloc_large,
+	GC_generic_malloc_inner, GC_generic_malloc_inner_ignore_off_page,
+	GC_core_malloc_atomic, GC_core_malloc, GC_free_inner): Ditto.
+	* mallocx.c (GC_generic_malloc_ignore_off_page): Ditto.
+	* mark.c (GC_collection_in_progress, GC_clear_hdr_marks,
+	GC_set_hdr_marks, GC_set_mark_bit, GC_clear_mark_bit,
+	GC_clear_marks, GC_initiate_gc, GC_mark_some,
+	GC_mark_stack_empty, GC_invalidate_mark_state,
+	GC_signal_mark_stack_overflow, GC_mark_from, GC_help_marker,
+	GC_mark_init, GC_push_all, GC_push_conditional,
+	GC_mark_and_push_stack, GC_push_all_eager, GC_push_all_stack):
+	Ditto.
+	* mark_rts.c (GC_is_static_root, GC_roots_present, GC_approx_sp,
+	GC_exclude_static_roots_inner, GC_push_all_register_frames,
+	GC_push_all_stack_frames, GC_cond_register_dynamic_libraries,
+	GC_push_roots): Ditto.
+	* misc.c (GC_extend_size_map, GC_clear_stack, GC_err_write):
+	Ditto.
+	* new_hblk.c (GC_build_fl, GC_new_hblk): Ditto.
+	* obj_map.c (GC_register_displacement_inner, GC_add_map_entry,
+	GC_initialize_offsets): Ditto.
+	* os_dep.c (GC_get_maps, GC_parse_map_entry, GC_text_mapping,
+	GC_init_linux_data_start, GC_init_netbsd_elf, GC_setpagesize,
+	GC_set_and_save_fault_handler, GC_setup_temporary_fault_handler,
+	GC_reset_fault_handler, GC_get_register_stack_base, GC_init_win32,
+	GC_add_current_malloc_heap, GC_is_heap_base, GC_unmap, GC_remap,
+	GC_unmap_gap, GC_push_all_stacks, GC_gww_dirty_init,
+	GC_dirty_init, GC_read_dirty, GC_page_was_dirty,
+	GC_page_was_ever_dirty, GC_remove_protection,
+	GC_write_fault_handler, GC_mprotect_stop, GC_mprotect_resume,
+	GC_save_callers, GC_print_callers): Ditto.
+	* pthread_stop_world.c (GC_push_all_stacks, GC_stop_world,
+	GC_start_world, GC_stop_init): Ditto.
+	* pthread_support.c (GC_mark_thread_local_free_lists,
+	GC_lookup_thread, GC_reset_finalizer_nested,
+	GC_check_finalizer_nested, GC_segment_is_thread_stack,
+	GC_greatest_stack_base_below, GC_thr_init, GC_init_parallel,
+	GC_do_blocking_inner, GC_lock, GC_acquire_mark_lock,
+	GC_release_mark_lock, GC_wait_for_reclaim, GC_notify_all_builder,
+	GC_wait_marker, GC_notify_all_marker): Ditto.
+	* reclaim.c (GC_print_all_errors, GC_block_empty,
+	GC_reclaim_generic, GC_start_reclaim, GC_continue_reclaim,
+	GC_reclaim_all): Ditto.
+	* thread_local_alloc.c (GC_init_thread_local,
+	GC_destroy_thread_local, GC_mark_thread_local_fls_for): Ditto.
+	* win32_threads.c (GC_reset_finalizer_nested,
+	GC_check_finalizer_nested, GC_do_blocking_inner, GC_stop_world,
+	GC_start_world, GC_push_all_stacks, GC_get_next_stack,
+	GC_acquire_mark_lock, GC_release_mark_lock, GC_wait_for_reclaim,
+	GC_notify_all_builder, GC_wait_marker, GC_notify_all_marker,
+	GC_thr_init, GC_init_parallel, GC_lock,
+	GC_mark_thread_local_free_lists): Ditto.
+	* alloc.c (GC_add_current_malloc_heap, GC_build_back_graph,
+	GC_traverse_back_graph): Use GC_INNER for the function prototype.
+	* darwin_stop_world.c (GC_mprotect_stop, GC_mprotect_resume):
+	Ditto.
+	* dbg_mlc.c (GC_default_print_heap_obj_proc): Ditto.
+	* dyn_load.c (GC_parse_map_entry, GC_get_maps,
+	GC_segment_is_thread_stack, GC_roots_present, GC_is_heap_base,
+	GC_get_next_stack): Ditto.
+	* finalize.c (GC_reset_finalizer_nested,
+	GC_check_finalizer_nested): Ditto.
+	* gcj_mlc.c (GC_start_debugging): Ditto.
+	* include/private/dbg_mlc.h (GC_save_callers, GC_print_callers,
+	GC_has_other_debug_info, GC_store_debug_info): Ditto.
+	* include/private/gc_hdrs.h (GC_header_cache_miss): Ditto.
+	* include/private/gc_locks.h (GC_lock): Ditto.
+	* include/private/gc_pmark.h (GC_signal_mark_stack_overflow,
+	GC_mark_from): Ditto.
+	* include/private/pthread_support.h (GC_lookup_thread,
+	GC_stop_init): Ditto.
+	* include/private/thread_local_alloc.h (GC_init_thread_local,
+	GC_destroy_thread_local, GC_mark_thread_local_fls_for): Ditto.
+	* malloc.c (GC_extend_size_map, GC_text_mapping): Ditto.
+	* mark.c (GC_page_was_ever_dirty): Ditto.
+	* mark_rts.c (GC_mark_thread_local_free_lists): Ditto.
+	* misc.c (GC_register_main_static_data, GC_init_win32,
+	GC_setpagesize, GC_init_linux_data_start,
+	GC_set_and_save_fault_handler, GC_init_dyld, GC_init_netbsd_elf,
+	GC_do_blocking_inner): Ditto.
+	* os_dep.c (GC_greatest_stack_base_below): Ditto.
+	* win32_threads.c (GC_write_fault_handler, GC_gww_dirty_init):
+	Ditto.
+	* include/private/gc_priv.h: Ditto (for most prototypes).
+	* include/private/gc_priv.h (GC_INNER): Update the comment.
+	* doc/README.macros (GC_DLL): Update.
+
+2009-10-22  Ivan Maidanski <ivmai@mail.ru>
+
 	* alloc.c (GC_collection_in_progress): Move the prototype to
 	gc_priv.h.
 	* gc_dlopen.c (GC_collection_in_progress): Ditto.

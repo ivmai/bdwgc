@@ -267,7 +267,7 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
 #   endif /* MARK_BIT_PER_GRANULE */
 
     /* Clear mark bits */
-      GC_clear_hdr_marks(hhdr);
+    GC_clear_hdr_marks(hhdr);
 
     hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
     return(TRUE);
@@ -390,7 +390,7 @@ GC_INNER int GC_unmap_threshold = MUNMAP_THRESHOLD;
 
 /* Unmap blocks that haven't been recently touched.  This is the only way */
 /* way blocks are ever unmapped.                                          */
-void GC_unmap_old(void)
+GC_INNER void GC_unmap_old(void)
 {
     struct hblk * h;
     hdr * hhdr;
@@ -416,7 +416,7 @@ void GC_unmap_old(void)
 /* Merge all unmapped blocks that are adjacent to other free            */
 /* blocks.  This may involve remapping, since all blocks are either     */
 /* fully mapped or fully unmapped.                                      */
-void GC_merge_unmapped(void)
+GC_INNER void GC_merge_unmapped(void)
 {
     struct hblk * h, *next;
     hdr * hhdr, *nexthdr;
@@ -572,7 +572,7 @@ GC_allochblk_nth(size_t sz/* bytes */, int kind, unsigned flags, int n,
  *
  * The client is responsible for clearing the block, if necessary.
  */
-struct hblk *
+GC_INNER struct hblk *
 GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
 {
     word blocks;
@@ -638,7 +638,8 @@ STATIC long GC_large_alloc_warn_suppressed = 0;
  * The may_split flag indicates whether it's OK to split larger blocks.
  */
 STATIC struct hblk *
-GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, GC_bool may_split)
+GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
+                 GC_bool may_split)
 {
     struct hblk *hbp;
     hdr * hhdr;         /* Header corr. to hbp */
@@ -819,8 +820,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, GC_bool may_split)
  *
  * All mark words are assumed to be cleared.
  */
-void
-GC_freehblk(struct hblk *hbp)
+GC_INNER void GC_freehblk(struct hblk *hbp)
 {
     struct hblk *next, *prev;
     hdr *hhdr, *prevhdr, *nexthdr;
@@ -832,7 +832,7 @@ GC_freehblk(struct hblk *hbp)
     if (size <= 0)
       ABORT("Deallocating excessively large block.  Too large an allocation?");
       /* Probably possible if we try to allocate more than half the address */
-      /* space at once.  If we dont catch it here, strange things happen    */
+      /* space at once.  If we don't catch it here, strange things happen   */
       /* later.                                                             */
     GC_remove_counts(hbp, (word)size);
     hhdr->hb_sz = size;

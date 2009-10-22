@@ -24,7 +24,7 @@
  * DCL_LOCK_STATE declares any local variables needed by LOCK and UNLOCK.
  *
  * Note that I_HOLD_LOCK and I_DONT_HOLD_LOCK are used only positively
- * in assertions, and may return TRUE in the "dont know" case.
+ * in assertions, and may return TRUE in the "don't know" case.
  */
 # ifdef THREADS
 
@@ -115,7 +115,7 @@
       /* significant wasted time.  We thus rely mostly on queued locks. */
 #     define USE_SPIN_LOCK
       GC_EXTERN volatile AO_TS_t GC_allocate_lock;
-      void GC_lock(void);
+      GC_INNER void GC_lock(void);
         /* Allocation lock holder.  Only set if acquired by client through */
         /* GC_call_with_alloc_lock.                                        */
 #     ifdef GC_ASSERTIONS
@@ -174,7 +174,7 @@
      GC_EXTERN volatile GC_bool GC_collecting;
 #    define ENTER_GC() GC_collecting = 1;
 #    define EXIT_GC() GC_collecting = 0;
-     void GC_lock(void);
+     GC_INNER void GC_lock(void);
      GC_EXTERN unsigned long GC_lock_holder;
 #    ifdef GC_ASSERTIONS
        GC_EXTERN unsigned long GC_mark_lock_holder;

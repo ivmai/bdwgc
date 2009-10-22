@@ -123,13 +123,13 @@ typedef struct {
 /* to stderr.  It requires that we do not hold the lock.        */
 #if defined(SAVE_CALL_CHAIN)
     struct callinfo;
-    void GC_save_callers(struct callinfo info[NFRAMES]);
-    void GC_print_callers(struct callinfo info[NFRAMES]);
+    GC_INNER void GC_save_callers(struct callinfo info[NFRAMES]);
+    GC_INNER void GC_print_callers(struct callinfo info[NFRAMES]);
 #   define ADD_CALL_CHAIN(base, ra) GC_save_callers(((oh *)(base)) -> oh_ci)
 #   define PRINT_CALL_CHAIN(base) GC_print_callers(((oh *)(base)) -> oh_ci)
 #elif defined(GC_ADD_CALLER)
     struct callinfo;
-    void GC_print_callers(struct callinfo info[NFRAMES]);
+    GC_INNER void GC_print_callers(struct callinfo info[NFRAMES]);
 #   define ADD_CALL_CHAIN(base, ra) ((oh *)(base)) -> oh_ci[0].ci_pc = (ra)
 #   define PRINT_CALL_CHAIN(base) GC_print_callers(((oh *)(base)) -> oh_ci)
 #else
@@ -150,7 +150,7 @@ typedef struct {
 #ifdef SHORT_DBG_HDRS
 # define GC_has_other_debug_info(p) TRUE
 #else
-  GC_bool GC_has_other_debug_info(ptr_t p);
+  GC_INNER GC_bool GC_has_other_debug_info(ptr_t p);
 #endif
 
 #if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
@@ -162,6 +162,7 @@ typedef struct {
 
 /* Store debugging info into p.  Return displaced pointer. */
 /* Assumes we don't hold allocation lock.                  */
-ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str, word integer);
+GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
+                                   word integer);
 
 #endif /* _DBG_MLC_H */

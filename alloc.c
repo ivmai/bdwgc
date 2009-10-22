@@ -118,7 +118,7 @@ GC_API unsigned GC_CALL GC_get_version(void)
 
 word GC_free_space_divisor = GC_FREE_SPACE_DIVISOR;
 
-int GC_CALLBACK GC_never_stop_func(void)
+GC_INNER int GC_CALLBACK GC_never_stop_func(void)
 {
   return(0);
 }
@@ -275,7 +275,7 @@ STATIC void GC_clear_a_few_frames(void)
 STATIC word GC_collect_at_heapsize = (word)(-1);
 
 /* Have we allocated enough to amortize a collection? */
-GC_bool GC_should_collect(void)
+GC_INNER GC_bool GC_should_collect(void)
 {
     static word last_min_bytes_allocd;
     static word last_gc_no;
@@ -372,7 +372,7 @@ STATIC void GC_maybe_gc(void)
  * not GC_never_stop_func then abort if stop_func returns TRUE.
  * Return TRUE if we successfully completed the collection.
  */
-GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
+GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 {
 #   ifndef SMALL_CONFIG
       CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
@@ -462,7 +462,7 @@ GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 STATIC int GC_deficit = 0;/* The number of extra calls to GC_mark_some  */
                           /* that we have made.                         */
 
-void GC_collect_a_little_inner(int n)
+GC_INNER void GC_collect_a_little_inner(int n)
 {
     int i;
     IF_CANCEL(int cancel_state;)
@@ -520,11 +520,11 @@ GC_API int GC_CALL GC_collect_a_little(void)
 }
 
 #if !defined(REDIRECT_MALLOC) && (defined(MSWIN32) || defined(MSWINCE))
-  void GC_add_current_malloc_heap(void);
+  GC_INNER void GC_add_current_malloc_heap(void);
 #endif
 
 #ifdef MAKE_BACK_GRAPH
-  void GC_build_back_graph(void);
+  GC_INNER void GC_build_back_graph(void);
 #endif
 
 #ifndef SMALL_CONFIG
@@ -652,7 +652,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 }
 
 /* Set all mark bits for the free list whose first entry is q   */
-void GC_set_fl_marks(ptr_t q)
+GC_INNER void GC_set_fl_marks(ptr_t q)
 {
    struct hblk *h, *last_h;
    hdr *hhdr;
@@ -751,7 +751,7 @@ STATIC void GC_clear_fl_marks(ptr_t q)
 #endif
 
 #ifdef MAKE_BACK_GRAPH
-  void GC_traverse_back_graph(void);
+  GC_INNER void GC_traverse_back_graph(void);
 #endif
 
 /* Finish up a collection.  Assumes mark bits are consistent, lock is   */
@@ -976,7 +976,7 @@ GC_INNER word GC_n_heap_sects = 0;
 #ifdef USE_PROC_FOR_LIBRARIES
   /* Add HBLKSIZE aligned, GET_MEM-generated block to GC_our_memory. */
   /* Defined to do nothing if USE_PROC_FOR_LIBRARIES not set.       */
-  void GC_add_to_our_memory(ptr_t p, size_t bytes)
+  GC_INNER void GC_add_to_our_memory(ptr_t p, size_t bytes)
   {
     if (0 == p) return;
     if (GC_n_memory >= MAX_HEAP_SECTS)
@@ -991,7 +991,7 @@ GC_INNER word GC_n_heap_sects = 0;
  * Use the chunk of memory starting at p of size bytes as part of the heap.
  * Assumes p is HBLKSIZE aligned, and bytes is a multiple of HBLKSIZE.
  */
-void GC_add_to_heap(struct hblk *p, size_t bytes)
+GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
 {
     hdr * phdr;
     word endp;
@@ -1089,7 +1089,7 @@ GC_word GC_max_retries = 0;
  * Tiny values of n are rounded up.
  * Returns FALSE on failure.
  */
-GC_bool GC_expand_hp_inner(word n)
+GC_INNER GC_bool GC_expand_hp_inner(word n)
 {
     word bytes;
     struct hblk * space;
@@ -1181,8 +1181,9 @@ GC_INNER unsigned GC_fail_count = 0;
 /* free blocks available.  Should be called until the blocks are        */
 /* available (seting retry value to TRUE unless this is the first call  */
 /* in a loop) or until it fails by returning FALSE.                     */
-GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page,
-                             GC_bool retry)
+GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
+                                      GC_bool ignore_off_page,
+                                      GC_bool retry)
 {
     GC_bool gc_not_stopped = TRUE;
     word blocks_to_get;
@@ -1256,7 +1257,7 @@ GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page,
  * The object MUST BE REMOVED FROM THE FREE LIST BY THE CALLER.
  * Assumes we hold the allocator lock.
  */
-ptr_t GC_allocobj(size_t gran, int kind)
+GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
 {
     void ** flh = &(GC_obj_kinds[kind].ok_freelist[gran]);
     GC_bool tried_minor = FALSE;

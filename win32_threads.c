@@ -352,12 +352,12 @@ STATIC GC_thread GC_new_thread(DWORD id)
 }
 
 #ifdef MPROTECT_VDB
-  LONG WINAPI GC_write_fault_handler(
+  GC_INNER LONG WINAPI GC_write_fault_handler(
                                 struct _EXCEPTION_POINTERS *exc_info);
 #endif
 
 #if defined(GWW_VDB) && defined(MPROTECT_VDB)
-  GC_bool GC_gww_dirty_init(void);
+  GC_INNER GC_bool GC_gww_dirty_init(void);
   /* Defined in os_dep.c.  Returns TRUE if GetWriteWatch is available.  */
   /* may be called repeatedly.                                          */
 #endif
@@ -542,7 +542,7 @@ STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
 
 /* Called by GC_finalize() (in case of an allocation failure observed). */
 /* GC_reset_finalizer_nested() is the same as in pthread_support.c.     */
-void GC_reset_finalizer_nested(void)
+GC_INNER void GC_reset_finalizer_nested(void)
 {
   GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
   me->finalizer_nested = 0;
@@ -554,7 +554,7 @@ void GC_reset_finalizer_nested(void)
 /* otherwise returns a pointer to the thread-local finalizer_nested.    */
 /* Called by GC_notify_or_invoke_finalizers() only (the lock is held).  */
 /* GC_check_finalizer_nested() is the same as in pthread_support.c.     */
-unsigned *GC_check_finalizer_nested(void)
+GC_INNER unsigned *GC_check_finalizer_nested(void)
 {
   GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
   unsigned nesting_level = me->finalizer_nested;
@@ -751,7 +751,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 
 /* GC_do_blocking_inner() is nearly the same as in pthread_support.c    */
 /*ARGSUSED*/
-void GC_do_blocking_inner(ptr_t data, void * context)
+GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
 {
   struct blocking_data * d = (struct blocking_data *) data;
   DWORD t = GetCurrentThreadId();
@@ -969,7 +969,7 @@ STATIC void GC_suspend(GC_thread t)
 # endif
 }
 
-void GC_stop_world(void)
+GC_INNER void GC_stop_world(void)
 {
   DWORD thread_id = GetCurrentThreadId();
 
@@ -1030,7 +1030,7 @@ void GC_stop_world(void)
 # endif
 }
 
-void GC_start_world(void)
+GC_INNER void GC_start_world(void)
 {
   DWORD thread_id = GetCurrentThreadId();
   int i;
@@ -1260,7 +1260,7 @@ STATIC void GC_push_stack_for(GC_thread thread)
   } /* thread looks live */
 }
 
-void GC_push_all_stacks(void)
+GC_INNER void GC_push_all_stacks(void)
 {
   DWORD me = GetCurrentThreadId();
   GC_bool found_me = FALSE;
@@ -1332,7 +1332,7 @@ void GC_push_all_stacks(void)
 /* Return stack bounds in *lo and *hi.  If no such stack        */
 /* is found, both *hi and *lo will be set to an address         */
 /* higher than limit.                                           */
-void GC_get_next_stack(char *start, char *limit,
+GC_INNER void GC_get_next_stack(char *start, char *limit,
                                 char **lo, char **hi)
 {
   int i;
@@ -1525,7 +1525,7 @@ void GC_get_next_stack(char *start, char *limit,
       AO_t GC_block_count = 0;
 #   endif
 
-    void GC_acquire_mark_lock(void)
+    GC_INNER void GC_acquire_mark_lock(void)
     {
       if (pthread_mutex_lock(&mark_mutex) != 0) {
         ABORT("pthread_mutex_lock failed");
@@ -1539,7 +1539,7 @@ void GC_get_next_stack(char *start, char *limit,
 #     endif
     }
 
-    void GC_release_mark_lock(void)
+    GC_INNER void GC_release_mark_lock(void)
     {
       GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
 #     ifdef GC_ASSERTIONS
@@ -1570,7 +1570,7 @@ void GC_get_next_stack(char *start, char *limit,
 #     endif
     }
 
-    void GC_wait_for_reclaim(void)
+    GC_INNER void GC_wait_for_reclaim(void)
     {
       GC_acquire_mark_lock();
       while (GC_fl_builder_count > 0) {
@@ -1579,7 +1579,7 @@ void GC_get_next_stack(char *start, char *limit,
       GC_release_mark_lock();
     }
 
-    void GC_notify_all_builder(void)
+    GC_INNER void GC_notify_all_builder(void)
     {
       GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
       if (pthread_cond_broadcast(&builder_cv) != 0) {
@@ -1589,7 +1589,7 @@ void GC_get_next_stack(char *start, char *limit,
 
     static pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
 
-    void GC_wait_marker(void)
+    GC_INNER void GC_wait_marker(void)
     {
       GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
 #     ifdef GC_ASSERTIONS
@@ -1604,7 +1604,7 @@ void GC_get_next_stack(char *start, char *limit,
 #     endif
     }
 
-    void GC_notify_all_marker(void)
+    GC_INNER void GC_notify_all_marker(void)
     {
       if (pthread_cond_broadcast(&mark_cv) != 0) {
         ABORT("pthread_cond_broadcast failed");
@@ -1723,7 +1723,7 @@ void GC_get_next_stack(char *start, char *limit,
       AO_t GC_unlocked_count = 0;
 #   endif
 
-    void GC_acquire_mark_lock(void)
+    GC_INNER void GC_acquire_mark_lock(void)
     {
 #     ifdef DONT_USE_SIGNALANDWAIT
         if (InterlockedExchange(&GC_mark_mutex_state, 1 /* locked */) != 0)
@@ -1756,7 +1756,7 @@ void GC_get_next_stack(char *start, char *limit,
 #     endif
     }
 
-    void GC_release_mark_lock(void)
+    GC_INNER void GC_release_mark_lock(void)
     {
       GC_ASSERT(GC_mark_lock_holder == (unsigned long)GetCurrentThreadId());
 #     ifdef GC_ASSERTIONS
@@ -1782,7 +1782,7 @@ void GC_get_next_stack(char *start, char *limit,
     /* mark_mutex and the checked condition (GC_fl_builder_count == 0)    */
     /* is the only one for which broadcasting on builder_cv is performed. */
 
-    void GC_wait_for_reclaim(void)
+    GC_INNER void GC_wait_for_reclaim(void)
     {
       GC_ASSERT(builder_cv != 0);
       for (;;) {
@@ -1798,7 +1798,7 @@ void GC_get_next_stack(char *start, char *limit,
       GC_release_mark_lock();
     }
 
-    void GC_notify_all_builder(void)
+    GC_INNER void GC_notify_all_builder(void)
     {
       GC_ASSERT(GC_mark_lock_holder == (unsigned long)GetCurrentThreadId());
       GC_ASSERT(builder_cv != 0);
@@ -1811,7 +1811,7 @@ void GC_get_next_stack(char *start, char *limit,
 
       /* mark_cv is used (for waiting) by a non-helper thread.  */
 
-      void GC_wait_marker(void)
+      GC_INNER void GC_wait_marker(void)
       {
         HANDLE event = mark_cv;
         DWORD id = GetCurrentThreadId();
@@ -1831,7 +1831,7 @@ void GC_get_next_stack(char *start, char *limit,
         GC_acquire_mark_lock();
       }
 
-      void GC_notify_all_marker(void)
+      GC_INNER void GC_notify_all_marker(void)
       {
         DWORD id = GetCurrentThreadId();
         int i = (int)GC_markers - 1;
@@ -1870,7 +1870,7 @@ void GC_get_next_stack(char *start, char *limit,
         static SignalObjectAndWait_type signalObjectAndWait_func = 0;
 #     endif
 
-      void GC_wait_marker(void)
+      GC_INNER void GC_wait_marker(void)
       {
         /* Here we assume that GC_wait_marker() is always called        */
         /* from a while(check_cond) loop.                               */
@@ -1912,7 +1912,7 @@ void GC_get_next_stack(char *start, char *limit,
         }
       }
 
-      void GC_notify_all_marker(void)
+      GC_INNER void GC_notify_all_marker(void)
       {
         GC_ASSERT(mark_cv != 0);
         if (PulseEvent(mark_cv) == FALSE)
@@ -2154,7 +2154,7 @@ void GC_get_next_stack(char *start, char *limit,
 #endif /* GC_WINMAIN_REDIRECT */
 
 /* Called by GC_init() - we hold the allocation lock.   */
-void GC_thr_init(void)
+GC_INNER void GC_thr_init(void)
 {
   struct GC_stack_base sb;
 # ifdef GC_ASSERTIONS
@@ -2579,7 +2579,7 @@ void GC_thr_init(void)
 /* may require allocation.                              */
 /* Called without allocation lock.                      */
 /* Must be called before a second thread is created.    */
-void GC_init_parallel(void)
+GC_INNER void GC_init_parallel(void)
 {
   if (parallel_initialized) return;
   parallel_initialized = TRUE;
@@ -2612,7 +2612,7 @@ void GC_init_parallel(void)
                         /* holding the allocation lock for an           */
                         /* extended period.                             */
 
-  void GC_lock(void)
+  GC_INNER void GC_lock(void)
   {
     pthread_mutex_lock(&GC_allocate_ml);
   }
@@ -2626,7 +2626,7 @@ void GC_init_parallel(void)
   /* list links wouldn't otherwise be found.  We also set them in the     */
   /* normal free lists, since that involves touching less memory than if  */
   /* we scanned them normally.                                            */
-  void GC_mark_thread_local_free_lists(void)
+  GC_INNER void GC_mark_thread_local_free_lists(void)
   {
     int i;
     GC_thread p;
