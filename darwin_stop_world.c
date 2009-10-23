@@ -666,7 +666,7 @@ GC_INNER void GC_start_world(void)
 #   endif
 }
 
-void GC_darwin_register_mach_handler_thread(mach_port_t thread)
+GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread)
 {
   GC_mach_handler_thread = thread;
   GC_use_mach_handler_thread = 1;

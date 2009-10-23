@@ -1,3 +1,16 @@
+2009-10-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c (GC_darwin_register_mach_handler_thread):
+	Use GC_INNER for the function definition.
+	* include/private/darwin_stop_world.h
+	(GC_darwin_register_mach_handler_thread): Remove the prototype.
+	* include/private/darwin_stop_world.h: Add copyright header.
+	* os_dep.c (GC_darwin_register_mach_handler_thread): Use GC_INNER
+	for the function prototype.
+	* include/private/gc_priv.h (NDEBUG): Explicitly define if
+	NO_DEBUGGING and not GC_ASSERTIONS (before the standard headers
+	inclusion).
+
 2009-10-22  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/private/gcconfig.h: Move DebugBreak() workaround (for

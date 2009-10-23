@@ -3628,8 +3628,6 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #include <mach/task.h>
 #include <pthread.h>
 
-void GC_darwin_register_mach_handler_thread(mach_port_t);
-
 /* These are not defined in any header, although they are documented */
 extern boolean_t
 exc_server(mach_msg_header_t *, mach_msg_header_t *);
@@ -3748,6 +3746,8 @@ GC_INNER void GC_mprotect_resume(void)
 /* The compiler should optimize away any GC_mprotect_state computations */
 #define GC_mprotect_state GC_MP_NORMAL
 #endif
+
+GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread);
 
 STATIC void *GC_mprotect_thread(void *arg)
 {

@@ -37,6 +37,11 @@
 # define _USING_POSIX4A_DRAFT10 1
 #endif
 
+# if defined(NO_DEBUGGING) && !defined(GC_ASSERTIONS) && !defined(NDEBUG)
+    /* To turn off assertion checking (in atomic_ops.h). */
+#   define NDEBUG 1
+# endif
+
 #ifndef GC_H
 # define GC_I_HIDE_POINTERS /* to get GC_HIDE_POINTER() and friends */
 # include "../gc.h"
