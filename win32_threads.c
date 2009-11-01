@@ -64,12 +64,6 @@
 
 #else
 
-# ifdef DEBUG_THREADS
-#   define DEBUG_WIN32_THREADS 1
-# else
-#   define DEBUG_WIN32_THREADS 0
-# endif
-
 # undef CreateThread
 # undef ExitThread
 # undef _beginthreadex
@@ -89,6 +83,7 @@
 #   endif
 # else
 #   include <process.h>  /* For _beginthreadex, _endthreadex */
+#   include <errno.h> /* for errno, EAGAIN */
 # endif
 
 #endif
@@ -1939,13 +1934,16 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                                                  void *arg)
   {
     void * ret;
-    thread_args *args = (thread_args *)arg;
+    LPTHREAD_START_ROUTINE start = ((thread_args *)arg)->start;
+    LPVOID param = ((thread_args *)arg)->param;
 
     GC_register_my_thread(sb); /* This waits for an in-progress GC.     */
 
 #   if DEBUG_WIN32_THREADS
       GC_printf("thread 0x%x starting...\n", (unsigned)GetCurrentThreadId());
 #   endif
+
+    GC_free(arg);
 
     /* Clear the thread entry even if we exit with an exception.        */
     /* This is probably pointless, since an uncaught exception is       */
@@ -1954,14 +1952,13 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       __try
 #   endif
     {
-      ret = (void *)(word)args->start(args->param);
+      ret = (void *)(word)(*start)(param);
     }
 #   ifndef __GNUC__
       __finally
 #   endif
     {
       GC_unregister_my_thread();
-      GC_free(args);
     }
 
 #   if DEBUG_WIN32_THREADS
@@ -2047,10 +2044,14 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                               arglist, initflag, thrdaddr);
       } else {
         args = GC_malloc_uncollectable(sizeof(thread_args));
-          /* Handed off to and deallocated by child thread.       */
+                /* Handed off to and deallocated by child thread.       */
         if (0 == args) {
-          SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-          return (GC_uintptr_t)(-1L);
+          /* MSDN docs say _beginthreadex() returns 0 on error and sets */
+          /* errno to either EAGAIN (too many threads) or EINVAL (the   */
+          /* argument is invalid or the stack size is incorrect), so we */
+          /* set errno to EAGAIN on "not enough memory".                */
+          errno = EAGAIN;
+          return 0;
         }
 
         /* set up thread arguments */

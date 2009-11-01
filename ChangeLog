@@ -1,3 +1,21 @@
+2009-11-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (min_bytes_allocd): Use GC_stackbottom value to compute
+	stack_size even if THREADS.
+	* doc/README.macros (DEBUG_THREADS): Document.
+	* pthread_support.c (DEBUG_THREADS): Remove the commented out
+	definition.
+	* win32_threads.c (DEBUG_WIN32_THREADS): Remove duplicate
+	definition.
+	* win32_threads.c: Include errno.h (except for WinCE).
+	* win32_threads.c (GC_win32_start_inner): Copy "start" and "param"
+	to local variables, and free "arg" parameter before "start"
+	invocation.
+	* win32_threads.c (GC_beginthreadex): Set errno to EAGAIN on error
+	(instead of calling SetLastError(ERROR_NOT_ENOUGH_MEMORY)).
+	* win32_threads.c (GC_beginthreadex): Return 0 on error (instead
+	of -1).
+
 2009-10-23  Ivan Maidanski <ivmai@mail.ru>
 
 	* darwin_stop_world.c (GC_darwin_register_mach_handler_thread):
@@ -4075,7 +4093,7 @@
 	* cord/cord.am, tests/tests.am: Add better library dependencies.
 	Remove now unnecessary dependencies.
 	* Makefile.in: Regenerate.
-	* include/gc.h (GC_begin_thread_ex, GC_endthreadex, GC_ExitThread):
+	* include/gc.h (GC_beginthreadex, GC_endthreadex, GC_ExitThread):
 	Move to define on all Windows platforms.  (_beginthread): define
 	to generate error if used.
 

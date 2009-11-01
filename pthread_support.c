@@ -46,8 +46,6 @@
 
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
-/*#define DEBUG_THREADS 1*/
-
 # include <stdlib.h>
 # include <pthread.h>
 # include <sched.h>

@@ -205,6 +205,9 @@ IGNORE_FREE     Turns calls to free into a no-op.  Only useful with
 NO_DEBUGGING    Removes GC_dump and the debugging routines it calls.
   Reduces code size slightly at the expense of debuggability.
 
+DEBUG_THREADS   Turn on printing additional thread-support debugging
+  information.
+
 JAVA_FINALIZATION       Makes it somewhat safer to finalize objects out of
   order by specifying a nonstandard finalization mark procedure  (see
   finalize.c).  Objects reachable from finalizable objects will be marked
