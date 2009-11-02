@@ -480,20 +480,16 @@ GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp)
 /* sophisticated means of allocating memory than this simple static     */
 /* allocator, but this method is at least bound to work.                */
 static char ecos_gc_memory[ECOS_GC_MEMORY_SIZE];
-static char *brk = ecos_gc_memory;
+static char *ecos_gc_brk = ecos_gc_memory;
 
 static void *tiny_sbrk(ptrdiff_t increment)
 {
-  void *p = brk;
-
-  brk += increment;
-
-  if (brk > ecos_gc_memory + sizeof(ecos_gc_memory))
-    {
-      brk -= increment;
-      return NULL;
-    }
-
+  void *p = ecos_gc_brk;
+  ecos_gc_brk += increment;
+  if (ecos_gc_brk > ecos_gc_memory + sizeof(ecos_gc_memory)) {
+    ecos_gc_brk -= increment;
+    return NULL;
+  }
   return p;
 }
 #define sbrk tiny_sbrk
