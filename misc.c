@@ -1069,11 +1069,12 @@ STATIC int GC_write(int fd, const char *buf, size_t len)
 #endif /* UN*X */
 
 #ifdef ECOS
-STATIC int GC_write(int fd, const char *buf, size_t len)
-{
-  _Jv_diag_write (buf, len);
-  return len;
-}
+  STATIC int GC_write(int fd, const char *buf, size_t len)
+  {
+    /* FIXME: This seems to be defined nowhere at present. */
+    /* _Jv_diag_write(buf, len); */
+    return len;
+  }
 #endif
 
 #ifdef NOSYS

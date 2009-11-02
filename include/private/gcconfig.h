@@ -2264,6 +2264,10 @@
 #   define PCR_VDB
 # endif
 
+# if !defined(STACKBOTTOM) && (defined(ECOS) || defined(NOSYS))
+#   error --> undefined STACKBOTTOM
+# endif
+
 # ifdef SMALL_CONFIG
         /* Presumably not worth the space it takes. */
 #   undef PROC_VDB
