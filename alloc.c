@@ -190,9 +190,13 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
 /* collections to amortize the collection cost.                         */
 static word min_bytes_allocd(void)
 {
-    int dummy;
-    signed_word stack_size = (ptr_t)(&dummy) - GC_stackbottom;
-
+#   ifdef THREADS
+        /* We punt, for now. */
+        signed_word stack_size = 10000;
+#   else
+        int dummy;
+        signed_word stack_size = (ptr_t)(&dummy) - GC_stackbottom;
+#   endif
     word total_root_size;           /* includes double stack size,      */
                                     /* since the stack is expensive     */
                                     /* to scan.                         */
@@ -200,14 +204,6 @@ static word min_bytes_allocd(void)
                                 /* during normal GC.                    */
 
     if (stack_size < 0) stack_size = -stack_size;
-
-#   ifdef THREADS
-      if (GC_need_to_lock) {
-        /* We are multi-threaded. */
-        if (stack_size < 10000) stack_size = 10000; /* We punt, for now. */
-      }
-#   endif
-
     total_root_size = 2 * stack_size + GC_root_size;
     scan_size = 2 * GC_composite_in_use + GC_atomic_in_use/4
                 + total_root_size;
