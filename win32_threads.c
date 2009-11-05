@@ -1114,145 +1114,143 @@ static GC_bool may_be_in_stack(ptr_t s)
           && !(last_info.Protect & PAGE_GUARD);
 }
 
-STATIC void GC_push_stack_for(GC_thread thread)
+STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
 {
   int dummy;
   ptr_t sp, stack_min;
-  DWORD me = GetCurrentThreadId();
 
-  if (thread -> stack_base) {
-    struct GC_activation_frame_s *activation_frame =
-                                        thread -> activation_frame;
-    if (thread -> id == me) {
-      GC_ASSERT(thread -> thread_blocked_sp == NULL);
-      sp = (ptr_t) &dummy;
-    } else if ((sp = thread -> thread_blocked_sp) == NULL) {
-                /* Use saved sp value for blocked threads.      */
-      /* For unblocked threads call GetThreadContext().         */
-      CONTEXT context;
-      context.ContextFlags = CONTEXT_INTEGER|CONTEXT_CONTROL;
-      if (!GetThreadContext(THREAD_HANDLE(thread), &context))
-        ABORT("GetThreadContext failed");
+  struct GC_activation_frame_s *activation_frame =
+                                      thread -> activation_frame;
+  if (thread -> id == me) {
+    GC_ASSERT(thread -> thread_blocked_sp == NULL);
+    sp = (ptr_t) &dummy;
+  } else if ((sp = thread -> thread_blocked_sp) == NULL) {
+              /* Use saved sp value for blocked threads. */
+    /* For unblocked threads call GetThreadContext().   */
+    CONTEXT context;
+    context.ContextFlags = CONTEXT_INTEGER|CONTEXT_CONTROL;
+    if (!GetThreadContext(THREAD_HANDLE(thread), &context))
+      ABORT("GetThreadContext failed");
 
-      /* Push all registers that might point into the heap.  Frame      */
-      /* pointer registers are included in case client code was         */
-      /* compiled with the 'omit frame pointer' optimisation.           */
-#     define PUSH1(reg) GC_push_one((word)context.reg)
-#     define PUSH2(r1,r2) PUSH1(r1), PUSH1(r2)
-#     define PUSH4(r1,r2,r3,r4) PUSH2(r1,r2), PUSH2(r3,r4)
-#     if defined(I386)
-        PUSH4(Edi,Esi,Ebx,Edx), PUSH2(Ecx,Eax), PUSH1(Ebp);
-        sp = (ptr_t)context.Esp;
-#     elif defined(X86_64)
-        PUSH4(Rax,Rcx,Rdx,Rbx); PUSH2(Rbp, Rsi); PUSH1(Rdi);
-        PUSH4(R8, R9, R10, R11); PUSH4(R12, R13, R14, R15);
-        sp = (ptr_t)context.Rsp;
-#     elif defined(ARM32)
-        PUSH4(R0,R1,R2,R3),PUSH4(R4,R5,R6,R7),PUSH4(R8,R9,R10,R11);
-        PUSH1(R12);
-        sp = (ptr_t)context.Sp;
-#     elif defined(SHx)
-        PUSH4(R0,R1,R2,R3), PUSH4(R4,R5,R6,R7), PUSH4(R8,R9,R10,R11);
-        PUSH2(R12,R13), PUSH1(R14);
-        sp = (ptr_t)context.R15;
-#     elif defined(MIPS)
-        PUSH4(IntAt,IntV0,IntV1,IntA0), PUSH4(IntA1,IntA2,IntA3,IntT0);
-        PUSH4(IntT1,IntT2,IntT3,IntT4), PUSH4(IntT5,IntT6,IntT7,IntS0);
-        PUSH4(IntS1,IntS2,IntS3,IntS4), PUSH4(IntS5,IntS6,IntS7,IntT8);
-        PUSH4(IntT9,IntK0,IntK1,IntS8);
-        sp = (ptr_t)context.IntSp;
-#     elif defined(PPC)
-        PUSH4(Gpr0, Gpr3, Gpr4, Gpr5),  PUSH4(Gpr6, Gpr7, Gpr8, Gpr9);
-        PUSH4(Gpr10,Gpr11,Gpr12,Gpr14), PUSH4(Gpr15,Gpr16,Gpr17,Gpr18);
-        PUSH4(Gpr19,Gpr20,Gpr21,Gpr22), PUSH4(Gpr23,Gpr24,Gpr25,Gpr26);
-        PUSH4(Gpr27,Gpr28,Gpr29,Gpr30), PUSH1(Gpr31);
-        sp = (ptr_t)context.Gpr1;
-#     elif defined(ALPHA)
-        PUSH4(IntV0,IntT0,IntT1,IntT2), PUSH4(IntT3,IntT4,IntT5,IntT6);
-        PUSH4(IntT7,IntS0,IntS1,IntS2), PUSH4(IntS3,IntS4,IntS5,IntFp);
-        PUSH4(IntA0,IntA1,IntA2,IntA3), PUSH4(IntA4,IntA5,IntT8,IntT9);
-        PUSH4(IntT10,IntT11,IntT12,IntAt);
-        sp = (ptr_t)context.IntSp;
-#     else
-#       error "architecture is not supported"
-#     endif
-    } /* ! current thread */
+    /* Push all registers that might point into the heap.  Frame        */
+    /* pointer registers are included in case client code was           */
+    /* compiled with the 'omit frame pointer' optimisation.             */
+#   define PUSH1(reg) GC_push_one((word)context.reg)
+#   define PUSH2(r1,r2) PUSH1(r1), PUSH1(r2)
+#   define PUSH4(r1,r2,r3,r4) PUSH2(r1,r2), PUSH2(r3,r4)
+#   if defined(I386)
+      PUSH4(Edi,Esi,Ebx,Edx), PUSH2(Ecx,Eax), PUSH1(Ebp);
+      sp = (ptr_t)context.Esp;
+#   elif defined(X86_64)
+      PUSH4(Rax,Rcx,Rdx,Rbx); PUSH2(Rbp, Rsi); PUSH1(Rdi);
+      PUSH4(R8, R9, R10, R11); PUSH4(R12, R13, R14, R15);
+      sp = (ptr_t)context.Rsp;
+#   elif defined(ARM32)
+      PUSH4(R0,R1,R2,R3),PUSH4(R4,R5,R6,R7),PUSH4(R8,R9,R10,R11);
+      PUSH1(R12);
+      sp = (ptr_t)context.Sp;
+#   elif defined(SHx)
+      PUSH4(R0,R1,R2,R3), PUSH4(R4,R5,R6,R7), PUSH4(R8,R9,R10,R11);
+      PUSH2(R12,R13), PUSH1(R14);
+      sp = (ptr_t)context.R15;
+#   elif defined(MIPS)
+      PUSH4(IntAt,IntV0,IntV1,IntA0), PUSH4(IntA1,IntA2,IntA3,IntT0);
+      PUSH4(IntT1,IntT2,IntT3,IntT4), PUSH4(IntT5,IntT6,IntT7,IntS0);
+      PUSH4(IntS1,IntS2,IntS3,IntS4), PUSH4(IntS5,IntS6,IntS7,IntT8);
+      PUSH4(IntT9,IntK0,IntK1,IntS8);
+      sp = (ptr_t)context.IntSp;
+#   elif defined(PPC)
+      PUSH4(Gpr0, Gpr3, Gpr4, Gpr5),  PUSH4(Gpr6, Gpr7, Gpr8, Gpr9);
+      PUSH4(Gpr10,Gpr11,Gpr12,Gpr14), PUSH4(Gpr15,Gpr16,Gpr17,Gpr18);
+      PUSH4(Gpr19,Gpr20,Gpr21,Gpr22), PUSH4(Gpr23,Gpr24,Gpr25,Gpr26);
+      PUSH4(Gpr27,Gpr28,Gpr29,Gpr30), PUSH1(Gpr31);
+      sp = (ptr_t)context.Gpr1;
+#   elif defined(ALPHA)
+      PUSH4(IntV0,IntT0,IntT1,IntT2), PUSH4(IntT3,IntT4,IntT5,IntT6);
+      PUSH4(IntT7,IntS0,IntS1,IntS2), PUSH4(IntS3,IntS4,IntS5,IntFp);
+      PUSH4(IntA0,IntA1,IntA2,IntA3), PUSH4(IntA4,IntA5,IntT8,IntT9);
+      PUSH4(IntT10,IntT11,IntT12,IntAt);
+      sp = (ptr_t)context.IntSp;
+#   else
+#     error "architecture is not supported"
+#   endif
+  } /* ! current thread */
 
-    /* Set stack_min to the lowest address in the thread stack,         */
-    /* or to an address in the thread stack no larger than sp,          */
-    /* taking advantage of the old value to avoid slow traversals       */
-    /* of large stacks.                                                 */
-    if (thread -> last_stack_min == ADDR_LIMIT) {
-#     ifdef MSWINCE
-        if (GC_dont_query_stack_min) {
-          stack_min = GC_wince_evaluate_stack_min(activation_frame != NULL ?
-                        (ptr_t)activation_frame : thread -> stack_base);
-          /* Keep last_stack_min value unmodified. */
-        } else
-#     endif
-      /* else */ {
-        stack_min = GC_get_stack_min(activation_frame != NULL ?
-                        (ptr_t)activation_frame : thread -> stack_base);
-        UNPROTECT_THREAD(thread);
-        thread -> last_stack_min = stack_min;
-      }
+  /* Set stack_min to the lowest address in the thread stack,   */
+  /* or to an address in the thread stack no larger than sp,    */
+  /* taking advantage of the old value to avoid slow traversals */
+  /* of large stacks.                                           */
+  if (thread -> last_stack_min == ADDR_LIMIT) {
+#   ifdef MSWINCE
+      if (GC_dont_query_stack_min) {
+        stack_min = GC_wince_evaluate_stack_min(activation_frame != NULL ?
+                      (ptr_t)activation_frame : thread -> stack_base);
+        /* Keep last_stack_min value unmodified. */
+      } else
+#   endif
+    /* else */ {
+      stack_min = GC_get_stack_min(activation_frame != NULL ?
+                      (ptr_t)activation_frame : thread -> stack_base);
+      UNPROTECT_THREAD(thread);
+      thread -> last_stack_min = stack_min;
+    }
+  } else {
+    /* First, adjust the latest known minimum stack address if we       */
+    /* are inside GC_call_with_gc_active().                             */
+    if (activation_frame != NULL &&
+        thread -> last_stack_min > (ptr_t)activation_frame) {
+      UNPROTECT_THREAD(thread);
+      thread -> last_stack_min = (ptr_t)activation_frame;
+    }
+
+    if (sp < thread -> stack_base && sp >= thread -> last_stack_min) {
+      stack_min = sp;
     } else {
-      /* First, adjust the latest known minimum stack address if we     */
-      /* are inside GC_call_with_gc_active().                           */
-      if (activation_frame != NULL &&
-          thread -> last_stack_min > (ptr_t)activation_frame) {
-        UNPROTECT_THREAD(thread);
-        thread -> last_stack_min = (ptr_t)activation_frame;
-      }
-
-      if (sp < thread -> stack_base && sp >= thread -> last_stack_min) {
-        stack_min = sp;
+      /* In the current thread it is always safe to use sp value.       */
+      if (may_be_in_stack(thread -> id == me &&
+                          sp < thread -> last_stack_min ?
+                          sp : thread -> last_stack_min)) {
+        stack_min = last_info.BaseAddress;
+        /* Do not probe rest of the stack if sp is correct. */
+        if (sp < stack_min || sp >= thread->stack_base)
+          stack_min = GC_get_stack_min(thread -> last_stack_min);
       } else {
-        /* In the current thread it is always safe to use sp value. */
-        if (may_be_in_stack(thread -> id == me &&
-                            sp < thread -> last_stack_min ?
-                            sp : thread -> last_stack_min)) {
-          stack_min = last_info.BaseAddress;
-          /* Do not probe rest of the stack if sp is correct. */
-          if (sp < stack_min || sp >= thread->stack_base)
-            stack_min = GC_get_stack_min(thread -> last_stack_min);
-        } else {
-          /* Stack shrunk?  Is this possible? */
-          stack_min = GC_get_stack_min(thread -> stack_base);
-        }
-        UNPROTECT_THREAD(thread);
-        thread -> last_stack_min = stack_min;
+        /* Stack shrunk?  Is this possible? */
+        stack_min = GC_get_stack_min(thread -> stack_base);
       }
+      UNPROTECT_THREAD(thread);
+      thread -> last_stack_min = stack_min;
     }
+  }
 
-    GC_ASSERT(GC_dont_query_stack_min
-              || stack_min == GC_get_stack_min(thread -> stack_base)
-              || (sp >= stack_min && stack_min < thread -> stack_base
-                  && stack_min > GC_get_stack_min(thread -> stack_base)));
+  GC_ASSERT(GC_dont_query_stack_min
+            || stack_min == GC_get_stack_min(thread -> stack_base)
+            || (sp >= stack_min && stack_min < thread -> stack_base
+                && stack_min > GC_get_stack_min(thread -> stack_base)));
 
-    if (sp >= stack_min && sp < thread->stack_base) {
-#       ifdef DEBUG_THREADS
-          GC_printf("Pushing stack for 0x%x from sp %p to %p from 0x%x\n",
-                    (int)thread -> id, sp, thread -> stack_base, (int)me);
-#       endif
-      GC_push_all_stack_frames(sp, thread->stack_base, activation_frame);
-    } else {
-      /* If not current thread then it is possible for sp to point to   */
-      /* the guarded (untouched yet) page just below the current        */
-      /* stack_min of the thread.                                       */
-      if (thread -> id == me || sp >= thread->stack_base
-          || sp + GC_page_size < stack_min)
-        WARN("Thread stack pointer %p out of range, pushing everything\n",
-             sp);
-#     ifdef DEBUG_THREADS
-        GC_printf("Pushing stack for 0x%x from (min) %p to %p from 0x%x\n",
-                  (int)thread -> id, stack_min,
-                  thread -> stack_base, (int)me);
-#     endif
-      /* Push everything - ignore activation "frames" data.             */
-      GC_push_all_stack(stack_min, thread->stack_base);
-    }
-  } /* thread looks live */
+  if (sp >= stack_min && sp < thread->stack_base) {
+#   ifdef DEBUG_THREADS
+      GC_printf("Pushing stack for 0x%x from sp %p to %p from 0x%x\n",
+                (int)thread -> id, sp, thread -> stack_base, (int)me);
+#   endif
+    GC_push_all_stack_frames(sp, thread->stack_base, activation_frame);
+  } else {
+    /* If not current thread then it is possible for sp to point to     */
+    /* the guarded (untouched yet) page just below the current          */
+    /* stack_min of the thread.                                         */
+    if (thread -> id == me || sp >= thread->stack_base
+        || sp + GC_page_size < stack_min)
+      WARN("Thread stack pointer %p out of range, pushing everything\n",
+           sp);
+#   ifdef DEBUG_THREADS
+      GC_printf("Pushing stack for 0x%x from (min) %p to %p from 0x%x\n",
+                (int)thread -> id, stack_min,
+                thread -> stack_base, (int)me);
+#   endif
+    /* Push everything - ignore activation "frames" data.       */
+    GC_push_all_stack(stack_min, thread->stack_base);
+  }
+  return thread->stack_base - sp; /* stack grows down */
 }
 
 GC_INNER void GC_push_all_stacks(void)
@@ -1262,6 +1260,7 @@ GC_INNER void GC_push_all_stacks(void)
 # ifndef SMALL_CONFIG
     unsigned nthreads = 0;
 # endif
+  word total_size = 0;
 # ifndef GC_NO_DLLMAIN
     if (GC_win32_dll_threads) {
       int i;
@@ -1269,27 +1268,28 @@ GC_INNER void GC_push_all_stacks(void)
 
       for (i = 0; i <= my_max; i++) {
         GC_thread t = (GC_thread)(dll_thread_table + i);
-        if (t -> tm.in_use) {
+        if (t -> tm.in_use && t -> stack_base) {
 #         ifndef SMALL_CONFIG
             ++nthreads;
 #         endif
-          GC_push_stack_for(t);
+          total_size += GC_push_stack_for(t, me);
           if (t -> id == me) found_me = TRUE;
         }
       }
     } else
 # endif
   /* else */ {
-    GC_thread t;
     int i;
-
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
+      GC_thread t;
       for (t = GC_threads[i]; t != 0; t = t -> tm.next) {
-#       ifndef SMALL_CONFIG
-          ++nthreads;
-#       endif
-        if (!KNOWN_FINISHED(t)) GC_push_stack_for(t);
-        if (t -> id == me) found_me = TRUE;
+        if (!KNOWN_FINISHED(t) && t -> stack_base) {
+#         ifndef SMALL_CONFIG
+            ++nthreads;
+#         endif
+          total_size += GC_push_stack_for(t, me);
+          if (t -> id == me) found_me = TRUE;
+        }
       }
     }
   }
@@ -1301,6 +1301,7 @@ GC_INNER void GC_push_all_stacks(void)
 # endif
   if (!found_me && !GC_in_thread_creation)
     ABORT("Collecting from unknown thread.");
+  GC_total_stacksize = total_size;
 }
 
 #ifdef PARALLEL_MARK

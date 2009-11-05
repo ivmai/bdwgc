@@ -1,5 +1,28 @@
 2009-11-05  Ivan Maidanski <ivmai@mail.ru>
 
+	* include/private/gc_priv.h (GC_total_stacksize): New variable
+	declaration (only if THREADS).
+	* alloc.c (GC_total_stacksize): New variable (only if THREADS).
+	* alloc.c (min_bytes_allocd): Calculate stack_size using
+	GC_stackbottom only in the single-threaded case; otherwise use
+	GC_total_stacksize; print GC_total_stacksize value if
+	DEBUG_THREADS.
+	* darwin_stop_world.c (GC_push_all_stacks): Use "%p" printf type
+	specifier for lo/hi values (instead of "%lx").
+	* darwin_stop_world.c (GC_push_all_stacks): Use
+	GC_push_all_stack_frames() instead of GC_push_all_stack().
+	* darwin_stop_world.c (GC_push_all_stacks): Recalculate
+	GC_total_stacksize value.
+	* pthread_stop_world.c (GC_push_all_stacks): Ditto.
+	* win32_threads.c (GC_push_all_stacks): Ditto.
+	* win32_threads.c (GC_push_stack_for): Pass "me" argument; return
+	stack size; don't check for non-zero value of thread->stack_base.
+	* win32_threads.c (GC_push_all_stacks): Don't call
+	GC_push_stack_for() and don't check for "t->id == me" if
+	thread->stack_base is zero.
+
+2009-11-05  Ivan Maidanski <ivmai@mail.ru>
+
 	* dyn_load.c (GC_dump_meminfo): Prefix "%lx" printf type specifier
 	with "0x".
 	* os_dep.c (PROTECT): Ditto.

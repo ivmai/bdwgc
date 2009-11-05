@@ -48,6 +48,7 @@ GC_INNER void GC_push_all_stacks(void)
   GC_thread p;
   pthread_t me;
   ptr_t lo, hi;
+  word total_size = 0;
   GC_THREAD_STATE_T state;
   /* MACHINE_THREAD_STATE_COUNT doesn't seem to be defined everywhere.  */
   /* Hence we use our own version.                                      */
@@ -173,13 +174,14 @@ GC_INNER void GC_push_all_stacks(void)
       else
         hi = p->stack_end;
 #     ifdef DEBUG_THREADS
-        GC_printf("Darwin: Stack for thread 0x%lx = [%lx,%lx)\n",
-                  (unsigned long) p -> id, (unsigned long) lo,
-                  (unsigned long) hi);
+        GC_printf("Darwin: Stack for thread 0x%lx = [%p,%p)\n",
+                  (unsigned long) p -> id, lo, hi);
 #     endif
-      GC_push_all_stack(lo, hi);
+      GC_push_all_stack_frames(lo, hi, p -> activation_frame);
+      total_size += hi - lo; /* lo <= hi */
     } /* for(p=GC_threads[i]...) */
   } /* for(i=0;i<THREAD_TABLE_SZ...) */
+  GC_total_stacksize = total_size;
 }
 
 #else /* !DARWIN_DONT_PARSE_STACK; Use FindTopOfStack() */
@@ -240,6 +242,7 @@ GC_INNER void GC_push_all_stacks(void)
   kern_return_t r;
   mach_port_t me;
   ptr_t lo, hi;
+  word total_size = 0;
   thread_act_array_t act_list = 0;
   mach_msg_type_number_t listcount = 0;
 
@@ -400,12 +403,15 @@ GC_INNER void GC_push_all_stacks(void)
         GC_printf("Darwin: Stack for thread 0x%lx = [%p,%p)\n",
                   (unsigned long) thread, lo, hi);
 #     endif
+      /* FIXME: use GC_push_all_stack_frames. */
       GC_push_all_stack(lo, hi);
       mach_port_deallocate(my_task, thread);
-    } /* for(p=GC_threads[i]...) */
+      total_size += hi - lo; /* lo <= hi */
+    } /* for(i=0; ...) */
     vm_deallocate(my_task, (vm_address_t)act_list,
                   sizeof(thread_t) * listcount);
     mach_port_deallocate(my_task, me);
+    GC_total_stacksize = total_size;
 }
 #endif /* !DARWIN_DONT_PARSE_STACK */
 

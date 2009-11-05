@@ -186,26 +186,40 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
   }
 #endif /* !SMALL_CONFIG */
 
+#ifdef THREADS
+  GC_INNER word GC_total_stacksize = 0; /* updated on every push_all_stacks */
+#endif
+
 /* Return the minimum number of words that must be allocated between    */
 /* collections to amortize the collection cost.                         */
 static word min_bytes_allocd(void)
 {
-#   ifdef THREADS
-        /* We punt, for now. */
-        signed_word stack_size = 10000;
+    int dummy; /* GC_stackbottom is used only for a single-threaded case. */
+#   ifdef STACK_GROWS_UP
+      word stack_size = (ptr_t)(&dummy) - GC_stackbottom;
 #   else
-        int dummy;
-        signed_word stack_size = (ptr_t)(&dummy) - GC_stackbottom;
+      word stack_size = GC_stackbottom - (ptr_t)(&dummy);
 #   endif
-    word total_root_size;           /* includes double stack size,      */
-                                    /* since the stack is expensive     */
-                                    /* to scan.                         */
+
+    word total_root_size;       /* includes double stack size,  */
+                                /* since the stack is expensive */
+                                /* to scan.                     */
     word scan_size;             /* Estimate of memory to be scanned     */
                                 /* during normal GC.                    */
 
-    if (stack_size < 0) stack_size = -stack_size;
+#   ifdef THREADS
+      if (GC_need_to_lock) {
+        /* We are multi-threaded... */
+        stack_size = GC_total_stacksize;
+        /* For now, we just use the value computed during the latest GC. */
+#       ifdef DEBUG_THREADS
+          GC_printf("Total stacks size: %lu\n", (unsigned long)stack_size);
+#       endif
+      }
+#   endif
+
     total_root_size = 2 * stack_size + GC_root_size;
-    scan_size = 2 * GC_composite_in_use + GC_atomic_in_use/4
+    scan_size = 2 * GC_composite_in_use + GC_atomic_in_use / 4
                 + total_root_size;
     if (TRUE_INCREMENTAL) {
         return scan_size / (2 * GC_free_space_divisor);

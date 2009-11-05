@@ -289,6 +289,7 @@ GC_INNER void GC_push_all_stacks(void)
     /* On IA64, we also need to scan the register backing store. */
     IF_IA64(ptr_t bs_lo; ptr_t bs_hi;)
     pthread_t me = pthread_self();
+    word total_size = 0;
 
     if (!GC_thr_initialized) GC_thr_init();
 #   ifdef DEBUG_THREADS
@@ -325,6 +326,11 @@ GC_INNER void GC_push_all_stacks(void)
 #       endif
         if (0 == lo) ABORT("GC_push_all_stacks: sp not set!\n");
         GC_push_all_stack_frames(lo, hi, p -> activation_frame);
+#       ifdef STACK_GROWS_UP
+          total_size += lo - hi;
+#       else
+          total_size += hi - lo; /* lo <= hi */
+#       endif
 #       ifdef IA64
 #         ifdef DEBUG_THREADS
             GC_printf("Reg stack for thread 0x%x = [%p,%p)\n",
@@ -334,6 +340,7 @@ GC_INNER void GC_push_all_stacks(void)
           /* entries, and hence overflow the mark stack, which is bad.  */
           GC_push_all_register_frames(bs_lo, bs_hi,
                         THREAD_EQUAL(p -> id, me), p -> activation_frame);
+          total_size += bs_hi - bs_lo; /* bs_lo <= bs_hi */
 #       endif
       }
     }
@@ -342,6 +349,7 @@ GC_INNER void GC_push_all_stacks(void)
     }
     if (!found_me && !GC_in_thread_creation)
       ABORT("Collecting from unknown thread.");
+    GC_total_stacksize = total_size;
 }
 
 /* There seems to be a very rare thread stopping problem.  To help us  */

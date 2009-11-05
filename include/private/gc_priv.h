@@ -1348,6 +1348,7 @@ struct GC_activation_frame_s {
 /* frames belonging to the user functions invoked by GC_do_blocking().  */
   GC_INNER void GC_push_all_stack_frames(ptr_t lo, ptr_t hi,
                         struct GC_activation_frame_s *activation_frame);
+  GC_EXTERN word GC_total_stacksize; /* updated on every push_all_stacks */
 #else
   GC_EXTERN ptr_t GC_blocked_sp;
   GC_EXTERN struct GC_activation_frame_s *GC_activation_frame;
