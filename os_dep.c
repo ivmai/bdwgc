@@ -3029,6 +3029,8 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
  * shortly.  Ensure that all pages containing any part of the n hblks
  * starting at h are no longer protected.  If is_ptrfree is false,
  * also ensure that they will subsequently appear to be dirty.
+ * Not allowed to call GC_printf (and the friends) here, see Win32
+ * GC_stop_world() for the information.
  */
 GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
                                    GC_bool is_ptrfree)

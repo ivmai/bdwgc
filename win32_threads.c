@@ -249,12 +249,13 @@ struct GC_Thread_Rep {
 typedef struct GC_Thread_Rep * GC_thread;
 typedef volatile struct GC_Thread_Rep * GC_vthread;
 
-/*
- * We assumed that volatile ==> memory ordering, at least among
- * volatiles.  This code should consistently use atomic_ops.
- */
-
-STATIC volatile GC_bool GC_please_stop = FALSE;
+#ifndef GC_NO_DLLMAIN
+  /* We assumed that volatile ==> memory ordering, at least among       */
+  /* volatiles.  This code should consistently use atomic_ops.          */
+  STATIC volatile GC_bool GC_please_stop = FALSE;
+#elif defined(GC_ASSERTIONS)
+  STATIC GC_bool GC_please_stop = FALSE;
+#endif
 
 /*
  * We track thread attachments while the world is supposed to be stopped.
@@ -492,8 +493,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
 GC_INLINE LONG GC_get_max_thread_index(void)
 {
   LONG my_max = GC_max_thread_index;
-
-  if (my_max >= MAX_THREADS) return MAX_THREADS-1;
+  if (my_max >= MAX_THREADS) return MAX_THREADS - 1;
   return my_max;
 }
 
@@ -614,6 +614,8 @@ STATIC void GC_delete_gc_thread(GC_vthread gc_id)
       /* It is either called synchronously from the thread being        */
       /* deleted, or by the joining thread.                             */
       /* In this branch asynchronous changes to *gc_id are possible.    */
+      /* It's not allowed to call GC_printf (and the friends) here,     */
+      /* see GC_stop_world() for the information.                       */
       gc_id -> stack_base = 0;
       gc_id -> id = 0;
 #     ifdef CYGWIN32
@@ -981,9 +983,16 @@ GC_INNER void GC_stop_world(void)
     }
 # endif /* PARALLEL_MARK */
 
-  GC_please_stop = TRUE;
+# if !defined(GC_NO_DLLMAIN) || defined(GC_ASSERTIONS)
+    GC_please_stop = TRUE;
+# endif
 # ifndef CYGWIN32
     EnterCriticalSection(&GC_write_cs);
+    /* It's not allowed to call GC_printf() (and friends) here down to  */
+    /* LeaveCriticalSection (same applies recursively to                */
+    /* GC_get_max_thread_index(), GC_suspend(), GC_delete_gc_thread()   */
+    /* (only if GC_win32_dll_threads), GC_size() and                    */
+    /* GC_remove_protection()).                                         */
 # endif
 # ifndef GC_NO_DLLMAIN
     if (GC_win32_dll_threads) {
@@ -1058,7 +1067,9 @@ GC_INNER void GC_start_world(void)
       }
     }
   }
-  GC_please_stop = FALSE;
+# if !defined(GC_NO_DLLMAIN) || defined(GC_ASSERTIONS)
+    GC_please_stop = FALSE;
+# endif
 }
 
 #ifdef MSWINCE
