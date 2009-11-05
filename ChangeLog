@@ -1,5 +1,10 @@
 2009-11-05  Ivan Maidanski <ivmai@mail.ru>
 
+	* pthread_support.c (GC_inner_start_routine): Join 3 sequential
+	GC_printf() calls into a single one (for DEBUG_THREADS).
+
+2009-11-05  Ivan Maidanski <ivmai@mail.ru>
+
 	* include/private/gc_priv.h (GC_total_stacksize): New variable
 	declaration (only if THREADS).
 	* alloc.c (GC_total_stacksize): New variable (only if THREADS).

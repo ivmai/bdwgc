@@ -1195,9 +1195,8 @@ STATIC void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb,
 
     my_pthread = pthread_self();
 #   ifdef DEBUG_THREADS
-        GC_printf("Starting thread 0x%x\n", (unsigned)my_pthread);
-        GC_printf("pid = %ld\n", (long) getpid());
-        GC_printf("sp = %p\n", &arg);
+        GC_printf("Starting thread 0x%x, pid = %ld, sp = %p\n",
+                  (unsigned)my_pthread, (long) getpid(), &arg);
 #   endif
     LOCK();
     me = GC_register_my_thread_inner(sb, my_pthread);
