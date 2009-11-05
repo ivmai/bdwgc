@@ -1,3 +1,9 @@
+2009-11-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c (check_heap_stats): Take into account the unmapped
+	memory size when checking for "Unexpected heap growth"; remove
+	FIXME.
+
 2009-11-03  Hans Boehm <Hans.Boehm@hp.com>
 
 	* alloc.c: Revert last change.

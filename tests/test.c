@@ -1323,8 +1323,7 @@ void check_heap_stats(void)
         (void)GC_printf("Incorrect execution - missed some allocations\n");
         FAIL;
     }
-    if (GC_get_heap_size() > max_heap_sz*n_tests) {
-        /* FIXME: is the condition correct?     */
+    if (GC_get_heap_size() + GC_get_unmapped_bytes() > max_heap_sz*n_tests) {
         (void)GC_printf("Unexpected heap growth - collector may be broken\n");
         FAIL;
     }
