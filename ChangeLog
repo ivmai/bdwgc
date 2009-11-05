@@ -1,5 +1,13 @@
 2009-11-05  Ivan Maidanski <ivmai@mail.ru>
 
+	* dyn_load.c (GC_dump_meminfo): Prefix "%lx" printf type specifier
+	with "0x".
+	* os_dep.c (PROTECT): Ditto.
+	* win32_threads.c (GC_mark_thread_local_free_lists): Cast p->id to
+	int (to match printf type specifier).
+
+2009-11-05  Ivan Maidanski <ivmai@mail.ru>
+
 	* tests/test.c (check_heap_stats): Take into account the unmapped
 	memory size when checking for "Unexpected heap growth"; remove
 	FIXME.

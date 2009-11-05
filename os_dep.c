@@ -2767,7 +2767,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #   define PROTECT(addr, len) \
           if (!VirtualProtect((addr), (len), PAGE_EXECUTE_READ, \
                               &protect_junk)) { \
-            GC_printf("Last error code: %lx\n", (long)GetLastError()); \
+            GC_printf("Last error code: 0x%lx\n", (long)GetLastError()); \
             ABORT("VirtualProtect failed"); \
           }
 #   define UNPROTECT(addr, len) \

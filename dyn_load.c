@@ -843,13 +843,12 @@ GC_INNER void GC_register_dynamic_libraries(void)
 # ifdef DEBUG_VIRTUALQUERY
   void GC_dump_meminfo(MEMORY_BASIC_INFORMATION *buf)
   {
-    GC_printf("BaseAddress = %lx, AllocationBase = %lx, RegionSize = %lx(%lu)\n",
-               buf -> BaseAddress, buf -> AllocationBase, buf -> RegionSize,
-               buf -> RegionSize);
-    GC_printf("\tAllocationProtect = %lx, State = %lx, Protect = %lx, "
-               "Type = %lx\n",
-               buf -> AllocationProtect, buf -> State, buf -> Protect,
-               buf -> Type);
+    GC_printf("BaseAddress = 0x%lx, AllocationBase = 0x%lx,"
+              " RegionSize = 0x%lx(%lu)\n", buf -> BaseAddress,
+              buf -> AllocationBase, buf -> RegionSize, buf -> RegionSize);
+    GC_printf("\tAllocationProtect = 0x%lx, State = 0x%lx, Protect = 0x%lx, "
+              "Type = 0x%lx\n", buf -> AllocationProtect, buf -> State,
+              buf -> Protect, buf -> Type);
   }
 # endif /* DEBUG_VIRTUALQUERY */
 
