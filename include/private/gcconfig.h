@@ -2268,10 +2268,16 @@
 #   error --> undefined STACKBOTTOM
 # endif
 
-# ifdef SMALL_CONFIG
+# if defined(SMALL_CONFIG) && !defined(GC_DISABLE_INCREMENTAL)
         /* Presumably not worth the space it takes. */
-#   undef PROC_VDB
+#   define GC_DISABLE_INCREMENTAL
+# endif
+
+# ifdef GC_DISABLE_INCREMENTAL
+#   undef GWW_VDB
 #   undef MPROTECT_VDB
+#   undef PCR_VDB
+#   undef PROC_VDB
 # endif
 
 # ifdef USE_GLOBAL_ALLOC

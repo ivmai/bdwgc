@@ -58,7 +58,7 @@ word GC_non_gc_bytes = 0;  /* Number of bytes not intended to be collected */
 
 word GC_gc_no = 0;
 
-#ifndef SMALL_CONFIG
+#ifndef GC_DISABLE_INCREMENTAL
   GC_INNER int GC_incremental = 0;      /* By default, stop the world.  */
 #endif
 
@@ -159,7 +159,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
   return stop_func;
 }
 
-#if defined(SMALL_CONFIG) || defined(NO_CLOCK)
+#if defined(GC_DISABLE_INCREMENTAL) || defined(NO_CLOCK)
 # define GC_timeout_stop_func GC_default_stop_func
 #else
   STATIC int GC_CALLBACK GC_timeout_stop_func (void)
@@ -184,7 +184,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
     }
     return(0);
   }
-#endif /* !SMALL_CONFIG */
+#endif /* !GC_DISABLE_INCREMENTAL */
 
 #ifdef THREADS
   GC_INNER word GC_total_stacksize = 0; /* updated on every push_all_stacks */

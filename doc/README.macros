@@ -149,6 +149,13 @@ SMALL_CONFIG    Tries to tune the collector for small heap sizes,
   usually causing it to use less space in such situations.
   Incremental collection no longer works in this case.
 
+GC_DISABLE_INCREMENTAL  Turn off the incremental collection support.
+
+NO_INCREMENTAL  Causes the gctest program to not invoke the incremental
+  collector.  This has no impact on the generated library, only on the test
+  program.  (This is often useful for debugging failures unrelated to
+  incremental GC.)
+
 LARGE_CONFIG    Tunes the collector for unusually large heaps.
   Necessary for heaps larger than about 4 GiB on most (64-bit) machines.
   Recommended for heaps larger than about 500 MiB.  Not recommended for
@@ -404,11 +411,6 @@ TEST_WITH_SYSTEM_MALLOC         Causes gctest to allocate (and leak) large
   set and collected heap to grow significantly if malloc'ed memory is somehow
   getting traced by the collector.  This has no impact on the generated
   library; it only affects the test.
-
-NO_INCREMENTAL  Causes the gctest program to not invoke the incremental
-  collector.  This has no impact on the generated library, only on the test
-  program.  (This is often useful for debugging failures unrelated to
-  incremental GC.)
 
 POINTER_MASK=<0x...>    Causes candidate pointers to be AND'ed with the given
   mask before being considered.  If either this or the following macro is

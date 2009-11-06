@@ -559,7 +559,7 @@ GC_API void GC_CALL GC_init(void)
 #   if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
       InitializeCriticalSection(&GC_write_cs);
 #   endif
-#   if (!defined(SMALL_CONFIG))
+#   ifndef SMALL_CONFIG
 #     ifdef GC_PRINT_VERBOSE_STATS
         /* This is useful for debugging and profiling on platforms with */
         /* missing getenv() (like WinCE).                               */
@@ -584,7 +584,7 @@ GC_API void GC_CALL GC_init(void)
           }
         }
 #     endif
-#   endif
+#   endif /* !SMALL_CONFIG */
 #   ifndef NO_DEBUGGING
       if (0 != GETENV("GC_DUMP_REGULARLY")) {
         GC_dump_regularly = 1;
@@ -628,7 +628,7 @@ GC_API void GC_CALL GC_init(void)
 #       endif
       }
     }
-#   ifndef SMALL_CONFIG
+#   ifndef GC_DISABLE_INCREMENTAL
       {
         char * time_limit_string = GETENV("GC_PAUSE_TIME_TARGET");
         if (0 != time_limit_string) {
@@ -641,6 +641,8 @@ GC_API void GC_CALL GC_init(void)
           }
         }
       }
+#   endif
+#   ifndef SMALL_CONFIG
       {
         char * full_freq_string = GETENV("GC_FULL_FREQUENCY");
         if (full_freq_string != NULL) {
@@ -761,7 +763,7 @@ GC_API void GC_CALL GC_init(void)
         /* Ptr_t comparisons should behave as unsigned comparisons.     */
 #   endif
     GC_STATIC_ASSERT((signed_word)(-1) < (signed_word)0);
-#   if !defined(SMALL_CONFIG)
+#   ifndef GC_DISABLE_INCREMENTAL
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
         /* For GWW_MPROTECT on Win32, this needs to happen before any   */
         /* heap memory is allocated.                                    */
@@ -769,7 +771,7 @@ GC_API void GC_CALL GC_init(void)
         GC_ASSERT(GC_bytes_allocd == 0)
         GC_incremental = TRUE;
       }
-#   endif /* !SMALL_CONFIG */
+#   endif
 
     /* Add initial guess of root sets.  Do this first, since sbrk(0)    */
     /* might be used.                                                   */
@@ -865,45 +867,40 @@ GC_API void GC_CALL GC_init(void)
 
 GC_API void GC_CALL GC_enable_incremental(void)
 {
-# if !defined(SMALL_CONFIG) && !defined(KEEP_BACK_PTRS)
-  /* If we are keeping back pointers, the GC itself dirties all */
-  /* pages on which objects have been marked, making            */
-  /* incremental GC pointless.                                  */
-  if (!GC_find_leak && 0 == GETENV("GC_DISABLE_INCREMENTAL")) {
+# if !defined(GC_DISABLE_INCREMENTAL) && !defined(KEEP_BACK_PTRS)
     DCL_LOCK_STATE;
-
-    LOCK();
-    if (GC_incremental) goto out;
-    GC_setpagesize();
-    /* if (GC_no_win32_dlls) goto out; Should be win32S test? */
-    maybe_install_looping_handler();  /* Before write fault handler! */
-    GC_incremental = TRUE;
-    if (!GC_is_initialized) {
-        GC_init();
-    } else {
-        GC_dirty_init();
+    /* If we are keeping back pointers, the GC itself dirties all */
+    /* pages on which objects have been marked, making            */
+    /* incremental GC pointless.                                  */
+    if (!GC_find_leak && 0 == GETENV("GC_DISABLE_INCREMENTAL")) {
+      LOCK();
+      if (!GC_incremental) {
+        GC_setpagesize();
+        /* if (GC_no_win32_dlls) goto out; Should be win32S test? */
+        maybe_install_looping_handler(); /* Before write fault handler! */
+        GC_incremental = TRUE;
+        if (!GC_is_initialized) {
+          GC_init();
+        } else {
+          GC_dirty_init();
+        }
+        if (GC_dirty_maintained && !GC_dont_gc) {
+                                /* Can't easily do it if GC_dont_gc.    */
+          if (GC_bytes_allocd > 0) {
+            /* There may be unmarked reachable objects. */
+            GC_gcollect_inner();
+          }
+            /* else we're OK in assuming everything's   */
+            /* clean since nothing can point to an      */
+            /* unmarked object.                         */
+          GC_read_dirty();
+        }
+      }
+      UNLOCK();
+      return;
     }
-    if (!GC_dirty_maintained) goto out;
-    if (GC_dont_gc) {
-        /* Can't easily do it. */
-        UNLOCK();
-        return;
-    }
-    if (GC_bytes_allocd > 0) {
-        /* There may be unmarked reachable objects      */
-        GC_gcollect_inner();
-    }   /* else we're OK in assuming everything's       */
-        /* clean since nothing can point to an          */
-        /* unmarked object.                             */
-    GC_read_dirty();
-out:
-    UNLOCK();
-  } else {
-    GC_init();
-  }
-# else
-    GC_init();
 # endif
+  GC_init();
 }
 
 
@@ -1262,7 +1259,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
         (void) abort();
 #   endif
   }
-#endif
+#endif /* !SMALL_CONFIG */
 
 GC_API void GC_CALL GC_enable(void)
 {

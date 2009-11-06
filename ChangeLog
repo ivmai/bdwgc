@@ -1,5 +1,21 @@
 2009-11-06  Ivan Maidanski <ivmai@mail.ru>
 
+	* doc/README.macros (GC_DISABLE_INCREMENTAL): Document.
+	* include/private/gcconfig.h (GC_DISABLE_INCREMENTAL): Recognize
+	new macro; implicitly define it if SMALL_CONFIG.
+	* alloc.c (GC_incremental, GC_timeout_stop_func): Check for
+	GC_DISABLE_INCREMENTAL instead of SMALL_CONFIG.
+	* include/private/gc_priv.h (GC_incremental, TRUE_INCREMENTAL,
+	GC_push_conditional): Ditto.
+	* mark.c (GC_push_next_marked_dirty, GC_push_selected,
+	GC_push_conditional, GC_block_was_dirty): Ditto.
+	* misc.c (GC_enable_incremental): Ditto.
+	* misc.c (GC_init): Ditto (for "GC_PAUSE_TIME_TARGET" and
+	"GC_ENABLE_INCREMENTAL" environment variables).
+	* misc.c (GC_enable_incremental): Reformat the code.
+
+2009-11-06  Ivan Maidanski <ivmai@mail.ru>
+
 	* dyn_load.c (WIN32_LEAN_AND_MEAN): Guard with ifndef.
 	* misc.c (WIN32_LEAN_AND_MEAN): Ditto.
 	* os_dep.c (WIN32_LEAN_AND_MEAN): Ditto.

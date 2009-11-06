@@ -1305,17 +1305,17 @@ GC_EXTERN word GC_black_list_spacing;
                         /* "stack-blacklisted", i.e. that are           */
                         /* problematic in the interior of an object.    */
 
-#ifndef SMALL_CONFIG
+#ifdef GC_DISABLE_INCREMENTAL
+# define GC_incremental FALSE
+                        /* Hopefully allow optimizer to remove some code. */
+# define TRUE_INCREMENTAL FALSE
+#else
   GC_EXTERN GC_bool GC_incremental;
                         /* Using incremental/generational collection. */
 # define TRUE_INCREMENTAL \
         (GC_incremental && GC_time_limit != GC_TIME_UNLIMITED)
         /* True incremental, not just generational, mode */
-#else
-# define GC_incremental FALSE
-                        /* Hopefully allow optimizer to remove some code. */
-# define TRUE_INCREMENTAL FALSE
-#endif
+#endif /* !GC_DISABLE_INCREMENTAL */
 
 GC_EXTERN GC_bool GC_dirty_maintained;
                                 /* Dirty bits are being maintained,     */
@@ -1460,7 +1460,7 @@ GC_INNER GC_bool GC_collection_in_progress(void);
 GC_INNER void GC_push_all(ptr_t bottom, ptr_t top);
                                 /* Push everything in a range           */
                                 /* onto mark stack.                     */
-#ifndef SMALL_CONFIG
+#ifndef GC_DISABLE_INCREMENTAL
   GC_INNER void GC_push_conditional(ptr_t b, ptr_t t, GC_bool all);
 #else
 # define GC_push_conditional(b, t, all) GC_push_all(b, t)

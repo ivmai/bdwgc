@@ -280,13 +280,13 @@ GC_INNER void GC_initiate_gc(void)
     STATIC void GC_do_parallel_mark(void); /* initiate parallel marking. */
 #endif /* PARALLEL_MARK */
 
-#ifdef SMALL_CONFIG
+#ifdef GC_DISABLE_INCREMENTAL
 # define GC_push_next_marked_dirty(h) GC_push_next_marked(h)
 #else
   STATIC struct hblk * GC_push_next_marked_dirty(struct hblk *h);
                 /* Invoke GC_push_marked on next dirty block above h.   */
                 /* Return a pointer just past the end of this block.    */
-#endif /* !SMALL_CONFIG */
+#endif /* !GC_DISABLE_INCREMENTAL */
 STATIC struct hblk * GC_push_next_marked(struct hblk *h);
                 /* Ditto, but also mark from clean pages.       */
 STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h);
@@ -1289,7 +1289,7 @@ GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
     GC_mark_stack_top -> mse_descr = length;
 }
 
-#ifndef SMALL_CONFIG
+#ifndef GC_DISABLE_INCREMENTAL
 
   /*
    * Analogous to the above, but push only those pages h with
@@ -1367,7 +1367,7 @@ GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
         GC_push_selected(bottom, top, GC_page_was_dirty, GC_push_all);
     }
   }
-#endif /* !SMALL_CONFIG */
+#endif /* !GC_DISABLE_INCREMENTAL */
 
 #if defined(MSWIN32) || defined(MSWINCE)
   void __cdecl GC_push_one(word p)
@@ -1777,10 +1777,10 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     }
 }
 
-#ifndef SMALL_CONFIG
-/* Test whether any page in the given block is dirty    */
-STATIC GC_bool GC_block_was_dirty(struct hblk *h, hdr *hhdr)
-{
+#ifndef GC_DISABLE_INCREMENTAL
+  /* Test whether any page in the given block is dirty.   */
+  STATIC GC_bool GC_block_was_dirty(struct hblk *h, hdr *hhdr)
+  {
     size_t sz = hhdr -> hb_sz;
 
     if (sz <= MAXOBJBYTES) {
@@ -1793,8 +1793,8 @@ STATIC GC_bool GC_block_was_dirty(struct hblk *h, hdr *hhdr)
          }
          return(FALSE);
     }
-}
-#endif /* SMALL_CONFIG */
+  }
+#endif /* GC_DISABLE_INCREMENTAL */
 
 /* Similar to GC_push_marked, but skip over unallocated blocks  */
 /* and return address of next plausible block.                  */
@@ -1811,7 +1811,7 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
     return(h + OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz));
 }
 
-#ifndef SMALL_CONFIG
+#ifndef GC_DISABLE_INCREMENTAL
   /* Identical to above, but mark only from dirty pages   */
   STATIC struct hblk * GC_push_next_marked_dirty(struct hblk *h)
   {
@@ -1842,7 +1842,7 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
     GC_push_marked(h, hhdr);
     return(h + OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz));
   }
-#endif
+#endif /* !GC_DISABLE_INCREMENTAL */
 
 /* Similar to above, but for uncollectable pages.  Needed since we      */
 /* do not clear marks for such pages, even for full collections.        */
