@@ -33,7 +33,7 @@
 /* #include <unistd.h> */
 
 #if !defined(DBG_HDRS_ALL) || (ALIGNMENT != CPP_WORDSZ/8) /* || !defined(UNIX_LIKE) */
-# error Configuration doesn't support MAKE_BACK_GRAPH
+# error The configuration does not support MAKE_BACK_GRAPH
 #endif
 
 /* We store single back pointers directly in the object's oh_bg_ptr field. */

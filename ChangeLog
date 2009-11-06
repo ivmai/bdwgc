@@ -1,5 +1,9 @@
 2009-11-06  Ivan Maidanski <ivmai@mail.ru>
 
+	* backgraph.c: Remove apostrophe char from "#error".
+
+2009-11-06  Ivan Maidanski <ivmai@mail.ru>
+
 	* doc/README.macros (GC_DISABLE_INCREMENTAL): Document.
 	* include/private/gcconfig.h (GC_DISABLE_INCREMENTAL): Recognize
 	new macro; implicitly define it if SMALL_CONFIG.
