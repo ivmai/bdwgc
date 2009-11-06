@@ -978,6 +978,9 @@ out:
       if (len == 0)
           return 0;
       IF_NEED_TO_LOCK(EnterCriticalSection(&GC_write_cs));
+#     ifdef THREADS
+        GC_ASSERT(!GC_write_disabled);
+#     endif
       if (GC_stdout == INVALID_HANDLE_VALUE) {
           IF_NEED_TO_LOCK(LeaveCriticalSection(&GC_write_cs));
           return -1;

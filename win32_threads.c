@@ -966,6 +966,11 @@ STATIC void GC_suspend(GC_thread t)
 # endif
 }
 
+#if defined(GC_ASSERTIONS) && !defined(CYGWIN32)
+  GC_INNER GC_bool GC_write_disabled = FALSE;
+                /* TRUE only if GC_stop_world() acquired GC_write_cs.   */
+#endif
+
 GC_INNER void GC_stop_world(void)
 {
   DWORD thread_id = GetCurrentThreadId();
@@ -987,12 +992,16 @@ GC_INNER void GC_stop_world(void)
     GC_please_stop = TRUE;
 # endif
 # ifndef CYGWIN32
+    GC_ASSERT(!GC_write_disabled);
     EnterCriticalSection(&GC_write_cs);
     /* It's not allowed to call GC_printf() (and friends) here down to  */
     /* LeaveCriticalSection (same applies recursively to                */
     /* GC_get_max_thread_index(), GC_suspend(), GC_delete_gc_thread()   */
     /* (only if GC_win32_dll_threads), GC_size() and                    */
     /* GC_remove_protection()).                                         */
+#   ifdef GC_ASSERTIONS
+      GC_write_disabled = TRUE;
+#   endif
 # endif
 # ifndef GC_NO_DLLMAIN
     if (GC_win32_dll_threads) {
@@ -1026,6 +1035,9 @@ GC_INNER void GC_stop_world(void)
     }
   }
 # ifndef CYGWIN32
+#   ifdef GC_ASSERTIONS
+      GC_write_disabled = FALSE;
+#   endif
     LeaveCriticalSection(&GC_write_cs);
 # endif
 # ifdef PARALLEL_MARK

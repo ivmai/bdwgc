@@ -1,3 +1,14 @@
+2009-11-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (GC_write_disabled): New variable
+	declaration (only if GC_ASSERTIONS and Win32 threads).
+	* misc.c (GC_write): Add assertion for GC_write_disabled value is
+	not on (only if THREADS).
+	* win32_threads.c (GC_write_disabled): New variable (only if
+	GC_ASSERTIONS and not Cygwin).
+	* win32_threads.c (GC_stop_world): Set and clear GC_write_disabled
+	(while holding GC_write_cs).
+
 2009-11-05  Ivan Maidanski <ivmai@mail.ru>
 
 	* win32_threads.c (GC_please_stop): If DllMain-based thread
@@ -7,7 +18,7 @@
 	* win32_threads.c (GC_stop_world): Add the comment for GC_printf()
 	usage (while holding GC_write_cs).
 	* win32_threads.c (GC_delete_gc_thread): Ditto.
-	* os_depc.c (GC_remove_protection): Ditto.
+	* os_dep.c (GC_remove_protection): Ditto.
 
 2009-11-05  Ivan Maidanski <ivmai@mail.ru>
 
