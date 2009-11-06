@@ -33,16 +33,16 @@
 /* #include <unistd.h> */
 
 #if !defined(DBG_HDRS_ALL) || (ALIGNMENT != CPP_WORDSZ/8) /* || !defined(UNIX_LIKE) */
-# error Configuration doesnt support MAKE_BACK_GRAPH
+# error Configuration doesn't support MAKE_BACK_GRAPH
 #endif
 
-/* We store single back pointers directly in the object's oh_bg_ptr field.   */
-/* If there is more than one ptr to an object, we store q | FLAG_MANY,       */
-/* where q is a pointer to a back_edges object.                              */
-/* Every once in a while we use a back_edges object even for a single        */
-/* pointer, since we need the other fields in the back_edges structure to    */
-/* be present in some fraction of the objects.  Otherwise we get serious     */
-/* performance issues.                                                       */
+/* We store single back pointers directly in the object's oh_bg_ptr field. */
+/* If there is more than one ptr to an object, we store q | FLAG_MANY,     */
+/* where q is a pointer to a back_edges object.                            */
+/* Every once in a while we use a back_edges object even for a single      */
+/* pointer, since we need the other fields in the back_edges structure to  */
+/* be present in some fraction of the objects.  Otherwise we get serious   */
+/* performance issues.                                                     */
 #define FLAG_MANY 2
 
 typedef struct back_edges_struct {
@@ -360,9 +360,9 @@ static word backwards_height(ptr_t p)
 
   if (0 == back_ptr) return 1;
   if (!((word)back_ptr & FLAG_MANY)) {
-    if (is_in_progress(p)) return 0;  /* DFS back edge, i.e. we followed  */
-                                      /* an edge to an object already     */
-                                      /* on our stack: ignore             */
+    if (is_in_progress(p)) return 0; /* DFS back edge, i.e. we followed */
+                                     /* an edge to an object already    */
+                                     /* on our stack: ignore            */
     push_in_progress(p);
     result = backwards_height(back_ptr)+1;
     pop_in_progress(p);

@@ -1077,7 +1077,7 @@ GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
     LOCK();
     thread_gc_id = GC_lookup_thread(thread);
     /* This is guaranteed to be the intended one, since the thread id   */
-    /* cant have been recycled by pthreads.                             */
+    /* can't have been recycled by pthreads.                            */
     UNLOCK();
     result = REAL_FUNC(pthread_join)(thread, retval);
 # if defined (GC_FREEBSD_THREADS)

@@ -752,7 +752,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
                           (void) setup_header(
                                   hhdr, h,
                                   HBLKSIZE,
-                                  PTRFREE, 0); /* Cant fail */
+                                  PTRFREE, 0); /* Can't fail */
                           if (GC_debugging_started) {
                             BZERO(h, HBLKSIZE);
                           }

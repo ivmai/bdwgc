@@ -1614,8 +1614,8 @@ int main(void)
     int i;
 #   ifdef GC_IRIX_THREADS
         /* Force a larger stack to be preallocated      */
-        /* Since the initial cant always grow later.    */
-        *((volatile char *)&code - 1024*1024) = 0;      /* Require 1 Mb */
+        /* Since the initial can't always grow later.   */
+        *((volatile char *)&code - 1024*1024) = 0;      /* Require 1 MB */
 #   endif /* GC_IRIX_THREADS */
 #   if defined(GC_HPUX_THREADS)
         /* Default stack size is too small, especially with the 64 bit ABI */

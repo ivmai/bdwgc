@@ -1,5 +1,18 @@
 2009-11-06  Ivan Maidanski <ivmai@mail.ru>
 
+	* dyn_load.c (WIN32_LEAN_AND_MEAN): Guard with ifndef.
+	* misc.c (WIN32_LEAN_AND_MEAN): Ditto.
+	* os_dep.c (WIN32_LEAN_AND_MEAN): Ditto.
+	* allchblk.c (GC_allochblk_nth): Fix a minor typo (don't/doesn't)
+	in a comment.
+	* backgraph.c: Ditto.
+	* dyn_load.c (GC_register_dynamic_libraries): Ditto.
+	* extra/threadlibs.c (main): Ditto.
+	* pthread_support.c (pthread_join): Ditto.
+	* tests/test.c (main): Ditto.
+
+2009-11-06  Ivan Maidanski <ivmai@mail.ru>
+
 	* mach_dep.c (GC_push_regs): Remove STATIC (just to catch
 	a duplicate symbol definition linker error).
 	* misc.c (GC_clear_stack_inner): Ditto.

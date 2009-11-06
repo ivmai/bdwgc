@@ -772,7 +772,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
     }
     /* Don't keep cached descriptor, for now.  Some kernels don't like us */
     /* to keep a /proc file descriptor around during kill -9.             */
-        if (close(fd) < 0) ABORT("Couldnt close /proc file");
+        if (close(fd) < 0) ABORT("Couldn't close /proc file");
         fd = -1;
 }
 
@@ -780,7 +780,9 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 # if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 
-# define WIN32_LEAN_AND_MEAN
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
 # define NOSERVICE
 # include <windows.h>
 # include <stdlib.h>
