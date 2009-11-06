@@ -1,5 +1,14 @@
 2009-11-06  Ivan Maidanski <ivmai@mail.ru>
 
+	* mach_dep.c (GC_push_regs): Remove STATIC (just to catch
+	a duplicate symbol definition linker error).
+	* misc.c (GC_clear_stack_inner): Ditto.
+	* sparc_mach_dep.S (GC_push_regs): Comment out the reference.
+	* sparc_mach_dep.S: Remove trailing spaces at EOLn; remove
+	multiple trailing blank lines.
+
+2009-11-06  Ivan Maidanski <ivmai@mail.ru>
+
 	* include/private/gc_priv.h (GC_write_disabled): New variable
 	declaration (only if GC_ASSERTIONS and Win32 threads).
 	* misc.c (GC_write): Add assertion for GC_write_disabled value is

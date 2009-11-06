@@ -83,7 +83,10 @@ asm static void PushMacRegisters()
 #else  /* No asm implementation */
 
 # if defined(M68K) && defined(AMIGA)
-    STATIC void GC_push_regs(void)
+    /* This function is not static because it could also be             */
+    /* errorneously defined in .S file, so this error would be caught   */
+    /* by the linker.                                                   */
+    void GC_push_regs(void)
     {
          /*  AMIGA - could be replaced by generic code                  */
          /* a0, a1, d0 and d1 are caller save */
@@ -131,7 +134,7 @@ asm static void PushMacRegisters()
 #     define PushMacReg(reg) \
               move.l  reg,(sp) \
               jsr             GC_push_one
-      STATIC void GC_push_regs(void)
+      void GC_push_regs(void)
       {
           asm {
               sub.w   #4,sp          ; reserve space for one parameter.
@@ -151,7 +154,7 @@ asm static void PushMacRegisters()
 #     define HAVE_PUSH_REGS
 #     undef PushMacReg
 #   elif defined(__MWERKS__)
-      STATIC void GC_push_regs(void)
+      void GC_push_regs(void)
       {
           PushMacRegisters();
       }

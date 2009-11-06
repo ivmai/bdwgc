@@ -237,9 +237,11 @@ GC_INNER void GC_extend_size_map(size_t i)
 #if defined(ASM_CLEAR_CODE)
   void *GC_clear_stack_inner(void *, ptr_t);
 #else
-  /* Clear the stack up to about limit.  Return arg. */
+  /* Clear the stack up to about limit.  Return arg.  This function is  */
+  /* not static because it could also be errorneously defined in .S     */
+  /* file, so this error would be caught by the linker.                 */
   /*ARGSUSED*/
-  STATIC void * GC_clear_stack_inner(void *arg, ptr_t limit)
+  void * GC_clear_stack_inner(void *arg, ptr_t limit)
   {
     word dummy[CLEAR_SIZE];
 
