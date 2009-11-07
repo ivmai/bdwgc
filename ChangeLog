@@ -1,3 +1,7 @@
+2009-11-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c (THREAD_TABLE_SZ): Make the const value prime.
+
 2009-11-06  Ivan Maidanski <ivmai@mail.ru>
 
 	* backgraph.c: Remove apostrophe char from "#error".

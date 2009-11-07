@@ -309,7 +309,7 @@ STATIC volatile LONG GC_max_thread_index = 0;
 /* This is a chained hash table, with much of the code borrowed */
 /* From the Posix implementation.                               */
 #ifndef THREAD_TABLE_SZ
-# define THREAD_TABLE_SZ 256    /* Must be power of 2   */
+# define THREAD_TABLE_SZ 257    /* Should be prime.     */
 #endif
 STATIC GC_thread GC_threads[THREAD_TABLE_SZ];
 
