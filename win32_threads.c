@@ -309,8 +309,9 @@ STATIC volatile LONG GC_max_thread_index = 0;
 /* This is a chained hash table, with much of the code borrowed */
 /* From the Posix implementation.                               */
 #ifndef THREAD_TABLE_SZ
-# define THREAD_TABLE_SZ 257    /* Should be prime.     */
+# define THREAD_TABLE_SZ 256    /* Power of 2 (for speed). */
 #endif
+#define THREAD_TABLE_INDEX(id) (((word)(id) >> 2) % THREAD_TABLE_SZ)
 STATIC GC_thread GC_threads[THREAD_TABLE_SZ];
 
 /* It may not be safe to allocate when we register the first thread.    */
@@ -323,7 +324,7 @@ static GC_bool first_thread_used = FALSE;
 /* Unlike the pthreads version, the id field is set by the caller.      */
 STATIC GC_thread GC_new_thread(DWORD id)
 {
-  word hv = ((word)id) % THREAD_TABLE_SZ;
+  word hv = THREAD_TABLE_INDEX(id);
   GC_thread result;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -526,7 +527,7 @@ STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
     }
 # endif
   {
-    word hv = ((word)thread_id) % THREAD_TABLE_SZ;
+    word hv = THREAD_TABLE_INDEX(thread_id);
     register GC_thread p = GC_threads[hv];
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -631,7 +632,7 @@ STATIC void GC_delete_gc_thread(GC_vthread gc_id)
     /* Cast away volatile qualifier, since we have lock. */
     GC_thread gc_nvid = (GC_thread)gc_id;
     DWORD id = gc_nvid -> id;
-    word hv = ((word)id) % THREAD_TABLE_SZ;
+    word hv = THREAD_TABLE_INDEX(id);
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
 
@@ -666,7 +667,7 @@ STATIC void GC_delete_thread(DWORD id)
       GC_delete_gc_thread(t);
     }
   } else {
-    word hv = ((word)id) % THREAD_TABLE_SZ;
+    word hv = THREAD_TABLE_INDEX(id);
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
 
@@ -828,13 +829,13 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   /* and win32 thread id.                                       */
 # define PTHREAD_MAP_SIZE 512
   DWORD GC_pthread_map_cache[PTHREAD_MAP_SIZE] = {0};
-# define PTHREAD_MAP_HASH(pthread_id) \
+# define PTHREAD_MAP_INDEX(pthread_id) \
                 ((NUMERIC_THREAD_ID(pthread_id) >> 5) % PTHREAD_MAP_SIZE)
         /* It appears pthread_t is really a pointer type ... */
 # define SET_PTHREAD_MAP_CACHE(pthread_id, win32_id) \
-          (GC_pthread_map_cache[PTHREAD_MAP_HASH(pthread_id)] = (win32_id))
+          (GC_pthread_map_cache[PTHREAD_MAP_INDEX(pthread_id)] = (win32_id))
 # define GET_PTHREAD_MAP_CACHE(pthread_id) \
-          GC_pthread_map_cache[PTHREAD_MAP_HASH(pthread_id)]
+          GC_pthread_map_cache[PTHREAD_MAP_INDEX(pthread_id)]
 
   /* Return a GC_thread corresponding to a given pthread_t.     */
   /* Returns 0 if it's not there.                               */
@@ -864,7 +865,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     {
       /* We first try the cache.  If that fails, we use a very slow     */
       /* approach.                                                      */
-      int hv_guess = GET_PTHREAD_MAP_CACHE(id) % THREAD_TABLE_SZ;
+      word hv_guess = THREAD_TABLE_INDEX(GET_PTHREAD_MAP_CACHE(id));
       int hv;
       GC_thread p;
 
