@@ -1424,18 +1424,13 @@ void GC_register_data_segments(void)
 #     define WRITE_WATCH_FLAG_RESET 1
 #   endif
 
-#   if !defined(_BASETSD_H_) && !defined(_BASETSD_H)
-#     ifdef _WIN64
-        typedef unsigned __int64 ULONG_PTR;
-#     else
-        typedef unsigned long ULONG_PTR;
-#     endif
-      typedef ULONG_PTR SIZE_T;
-      typedef ULONG_PTR * PULONG_PTR;
-#   endif
+    /* Since we can't easily check whether ULONG_PTR and SIZE_T are     */
+    /* defined in Win32 basetsd.h, we define own ULONG_PTR.             */
+#   define GC_ULONG_PTR word
 
     typedef UINT (WINAPI * GetWriteWatch_type)(
-      DWORD, PVOID, SIZE_T, PVOID*, PULONG_PTR, PULONG);
+                                DWORD, PVOID, GC_ULONG_PTR /* SIZE_T */,
+                                PVOID *, GC_ULONG_PTR *, PULONG);
     static GetWriteWatch_type GetWriteWatch_func;
     static DWORD GetWriteWatch_alloc_flag;
 
@@ -1480,7 +1475,7 @@ void GC_register_data_segments(void)
                                     PAGE_READWRITE);
         if (page != NULL) {
           PVOID pages[16];
-          ULONG_PTR count = 16;
+          GC_ULONG_PTR count = 16;
           DWORD page_size;
           /* Check that it actually works.  In spite of some            */
           /* documentation it actually seems to exist on W2K.           */
@@ -2500,7 +2495,7 @@ STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
     BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
 
     for (i = 0; i != GC_n_heap_sects; ++i) {
-      ULONG_PTR count;
+      GC_ULONG_PTR count;
 
       do {
         PVOID * pages, * pages_end;

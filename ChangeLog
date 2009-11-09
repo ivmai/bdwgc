@@ -1,3 +1,11 @@
+2009-11-09  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c (SIZE_T, PULONG_PTR): Remove.
+	* os_dep.c (ULONG_PTR): Replace with GC_ULONG_PTR (defined as GC
+	"word"); add the comment.
+	* os_dep.c (GetWriteWatch_type, detect_GetWriteWatch,
+	GC_gww_read_dirty): Prefix ULONG_PTR with "GC_".
+
 2009-11-07  Ivan Maidanski <ivmai@mail.ru>
 
 	* win32_threads.c (THREAD_TABLE_SZ): Change back to a power-of-two
