@@ -1,3 +1,7 @@
+2009-11-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* sparc_mach_dep.S (GC_push_regs): Remove the reference.
+
 2009-11-09  Ivan Maidanski <ivmai@mail.ru>
 
 	* os_dep.c (SIZE_T, PULONG_PTR): Remove.
