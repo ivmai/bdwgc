@@ -1,3 +1,8 @@
+2009-11-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (min_bytes_allocd): Multiply GC_free_space_divisor by
+	two if GC_incremental (instead of TRUE_INCREMENTAL).
+
 2009-11-10  Ivan Maidanski <ivmai@mail.ru>
 
 	* sparc_mach_dep.S (GC_push_regs): Remove the reference.

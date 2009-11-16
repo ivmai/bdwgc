@@ -221,7 +221,7 @@ static word min_bytes_allocd(void)
     total_root_size = 2 * stack_size + GC_root_size;
     scan_size = 2 * GC_composite_in_use + GC_atomic_in_use / 4
                 + total_root_size;
-    if (TRUE_INCREMENTAL) {
+    if (GC_incremental) {
         return scan_size / (2 * GC_free_space_divisor);
     } else {
         return scan_size / GC_free_space_divisor;
