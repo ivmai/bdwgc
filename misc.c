@@ -455,6 +455,17 @@ GC_API size_t GC_CALL GC_get_total_bytes(void)
     return value;
 }
 
+#ifdef THREADS
+  GC_API int GC_CALL GC_get_suspend_signal(void)
+  {
+#   ifdef SIG_SUSPEND
+      return SIG_SUSPEND;
+#   else
+      return -1;
+#   endif
+  }
+#endif /* THREADS */
+
 GC_INNER GC_bool GC_is_initialized = FALSE;
 
 #if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)

@@ -524,6 +524,11 @@ GC_API size_t GC_CALL GC_get_bytes_since_gc(void);
 /* Never decreases, except due to wrapping.                             */
 GC_API size_t GC_CALL GC_get_total_bytes(void);
 
+/* Return the signal number used by the garbage collector to suspend    */
+/* threads on POSIX systems.  Return -1 otherwise.  Exported only if    */
+/* the library has been compiled with threads support (GC_THREADS).     */
+GC_API int GC_CALL GC_get_suspend_signal(void);
+
 /* Disable garbage collection.  Even GC_gcollect calls will be          */
 /* ineffective.                                                         */
 GC_API void GC_CALL GC_disable(void);
