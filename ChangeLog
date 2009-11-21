@@ -1,3 +1,8 @@
+2009-11-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (AC_CONFIG_COMMANDS): Quote srcdir value.
+	* configure: Regenerate.
+
 2009-11-18  Ivan Maidanski <ivmai@mail.ru> (really mostly Zoltan Varga)
 
 	* include/gc.h (GC_get_suspend_signal): New function declaration.
