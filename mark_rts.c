@@ -365,6 +365,8 @@ GC_INNER ptr_t GC_approx_sp(void)
                 /* later accesses might cause the kernel to think we're */
                 /* doing something wrong.                               */
     return((ptr_t)sp);
+                /* GNU C: alternatively, we may return the value of     */
+                /*__builtin_frame_address(0).                           */
 }
 
 /*

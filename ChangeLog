@@ -1,5 +1,9 @@
 2009-12-04  Ivan Maidanski <ivmai@mail.ru>
 
+	* mark_rts.c (GC_approx_sp): Add a comment (for GCC).
+
+2009-12-04  Ivan Maidanski <ivmai@mail.ru>
+
 	* include/gc_version.h, configure.ac, doc/README: Change to
 	version 7.2alpha5.
 	* configure: Regenerate.
