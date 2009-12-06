@@ -838,9 +838,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
       return GC_no_win32_dlls;
 #   endif
   }
+# define HAVE_REGISTER_MAIN_STATIC_DATA
 #endif /* DYNAMIC_LOADING */
-
-#define HAVE_REGISTER_MAIN_STATIC_DATA
 
 # ifdef DEBUG_VIRTUALQUERY
   void GC_dump_meminfo(MEMORY_BASIC_INFORMATION *buf)
@@ -1280,9 +1279,7 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 
 #endif /* DARWIN */
 
-#else /* !DYNAMIC_LOADING */
-
-#ifdef PCR
+#elif defined(PCR)
 
 # include "il/PCR_IL.h"
 # include "th/PCR_ThCtl.h"
@@ -1318,15 +1315,9 @@ GC_INNER GC_bool GC_register_main_static_data(void)
         }
   }
 
-#else /* !PCR */
+#endif /* PCR && !DYNAMIC_LOADING && !MSWIN32 */
 
-GC_INNER void GC_register_dynamic_libraries(void) {}
-
-#endif /* !PCR */
-
-#endif /* !DYNAMIC_LOADING */
-
-#ifndef HAVE_REGISTER_MAIN_STATIC_DATA
+#if !defined(HAVE_REGISTER_MAIN_STATIC_DATA) && defined(DYNAMIC_LOADING)
   /* Do we need to separately register the main static data segment? */
   GC_INNER GC_bool GC_register_main_static_data(void)
   {

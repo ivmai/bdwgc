@@ -1545,8 +1545,11 @@ GC_INNER void GC_set_fl_marks(ptr_t p);
 #endif
 void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp);
 GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish);
-GC_INNER void GC_register_dynamic_libraries(void);
+#if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
+     || defined(PCR)
+  GC_INNER void GC_register_dynamic_libraries(void);
                 /* Add dynamic library data sections to the root set. */
+#endif
 GC_INNER void GC_cond_register_dynamic_libraries(void);
                 /* Remove and reregister dynamic libraries if we're     */
                 /* configured to do that at each GC.                    */
