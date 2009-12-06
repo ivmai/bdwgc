@@ -1,5 +1,10 @@
 2009-12-06  Ivan Maidanski <ivmai@mail.ru>
 
+	* win32_threads.c (GC_get_next_stack): Don't define for Cygwin
+	(since unused for now).
+
+2009-12-06  Ivan Maidanski <ivmai@mail.ru>
+
 	* dyn_load.c (HAVE_REGISTER_MAIN_STATIC_DATA): Don't define unless
 	GC_register_main_static_data() is defined.
 	* dyn_load.c (GC_register_dynamic_libraries): Define only if used
