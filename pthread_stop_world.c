@@ -324,7 +324,7 @@ GC_INNER void GC_push_all_stacks(void)
           GC_printf("Stack for thread 0x%x = [%p,%p)\n",
                     (unsigned)(p -> id), lo, hi);
 #       endif
-        if (0 == lo) ABORT("GC_push_all_stacks: sp not set!\n");
+        if (0 == lo) ABORT("GC_push_all_stacks: sp not set!");
         GC_push_all_stack_frames(lo, hi, p -> activation_frame);
 #       ifdef STACK_GROWS_UP
           total_size += lo - hi;

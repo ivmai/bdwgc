@@ -828,7 +828,7 @@ ptr_t GC_get_main_stack_base(void)
 
     if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
         GC_err_printf("DosGetInfoBlocks failed\n");
-        ABORT("DosGetInfoBlocks failed\n");
+        ABORT("DosGetInfoBlocks failed");
     }
     return((ptr_t)(ptib -> tib_pstacklimit));
 }
@@ -1339,18 +1339,18 @@ void GC_register_data_segments(void)
 
     if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
         GC_err_printf("DosGetInfoBlocks failed\n");
-        ABORT("DosGetInfoBlocks failed\n");
+        ABORT("DosGetInfoBlocks failed");
     }
     module_handle = ppib -> pib_hmte;
     if (DosQueryModuleName(module_handle, PBUFSIZ, path) != NO_ERROR) {
         GC_err_printf("DosQueryModuleName failed\n");
-        ABORT("DosGetInfoBlocks failed\n");
+        ABORT("DosGetInfoBlocks failed");
     }
     myexefile = fopen(path, "rb");
     if (myexefile == 0) {
         GC_err_puts("Couldn't open executable ");
         GC_err_puts(path); GC_err_puts("\n");
-        ABORT("Failed to open executable\n");
+        ABORT("Failed to open executable");
     }
     if (fread((char *)(&hdrdos), 1, sizeof hdrdos, myexefile) < sizeof hdrdos) {
         GC_err_puts("Couldn't read MSDOS header from ");

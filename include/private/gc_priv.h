@@ -447,22 +447,21 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #endif
 
 /* Get environment entry */
-#if !defined(NO_GETENV)
-#   if defined(EMPTY_GETENV_RESULTS)
-        /* Workaround for a reputed Wine bug.   */
-        GC_INLINE char * fixed_getenv(const char *name)
-        {
-          char * tmp = getenv(name);
-          if (tmp == 0 || strlen(tmp) == 0)
-            return 0;
-          return tmp;
-        }
-#       define GETENV(name) fixed_getenv(name)
-#   else
-#       define GETENV(name) getenv(name)
-#   endif
+#ifdef GC_READ_ENV_FILE
+  GC_INNER char * GC_envfile_getenv(const char *name);
+# define GETENV(name) GC_envfile_getenv(name)
+#elif defined(NO_GETENV)
+# define GETENV(name) NULL
+#elif defined(EMPTY_GETENV_RESULTS)
+  /* Workaround for a reputed Wine bug.   */
+  GC_INLINE char * fixed_getenv(const char *name)
+  {
+    char *value = getenv(name);
+    return value != NULL && *value != '\0' ? value : NULL;
+  }
+# define GETENV(name) fixed_getenv(name)
 #else
-#   define GETENV(name) 0
+# define GETENV(name) getenv(name)
 #endif
 
 #if defined(DARWIN)

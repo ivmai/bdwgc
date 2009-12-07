@@ -466,6 +466,106 @@ GC_API size_t GC_CALL GC_get_total_bytes(void)
   }
 #endif /* THREADS */
 
+#ifdef GC_READ_ENV_FILE
+  /* This works for Win32/WinCE for now.  Really useful only for WinCE. */
+  STATIC char *GC_envfile_content = NULL;
+                        /* The content of the GC "env" file with CR and */
+                        /* LF replaced to '\0'.  NULL if the file is    */
+                        /* missing or empty.  Otherwise, always ends    */
+                        /* with '\0'.                                   */
+  STATIC unsigned GC_envfile_length = 0;
+                        /* Length of GC_envfile_content (if non-NULL).  */
+
+# ifndef GC_ENVFILE_MAXLEN
+#   define GC_ENVFILE_MAXLEN 0x4000
+# endif
+
+  /* The routine initializes GC_envfile_content from the GC "env" file. */
+  STATIC void GC_envfile_init(void)
+  {
+#   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+      HANDLE hFile;
+      char *content;
+      unsigned ofs;
+      unsigned len;
+      DWORD nBytesRead;
+      TCHAR path[_MAX_PATH + 0x10]; /* buffer for path + ext */
+      len = (unsigned)GetModuleFileName(NULL /* hModule */, path,
+                                        _MAX_PATH + 1);
+      /* If GetModuleFileName() has failed then len is 0. */
+      if (len > 4 && path[len - 4] == (TCHAR)'.') {
+        len -= 4; /* strip executable file extension */
+      }
+      memcpy(&path[len], TEXT(".gc.env"), sizeof(TEXT(".gc.env")));
+      hFile = CreateFile(path, GENERIC_READ,
+                         FILE_SHARE_READ | FILE_SHARE_WRITE,
+                         NULL /* lpSecurityAttributes */, OPEN_EXISTING,
+                         FILE_ATTRIBUTE_NORMAL, NULL /* hTemplateFile */);
+      if (hFile == INVALID_HANDLE_VALUE)
+        return; /* the file is absent or the operation is failed */
+      len = (unsigned)GetFileSize(hFile, NULL);
+      if (len <= 1 || len >= GC_ENVFILE_MAXLEN) {
+        CloseHandle(hFile);
+        return; /* invalid file length - ignoring the file content */
+      }
+      /* At this execution point, GC_setpagesize() and GC_init_win32()  */
+      /* must already be called (for GET_MEM() to work correctly).      */
+      content = (char *)GET_MEM(len + 1);
+      if (content == NULL) {
+        CloseHandle(hFile);
+        return; /* allocation failure */
+      }
+      ofs = 0;
+      nBytesRead = (DWORD)-1L;
+          /* Last ReadFile() call should clear nBytesRead on success. */
+      while (ReadFile(hFile, content + ofs, len - ofs + 1, &nBytesRead,
+                      NULL /* lpOverlapped */) && nBytesRead != 0) {
+        if ((ofs += nBytesRead) > len)
+          break;
+      }
+      CloseHandle(hFile);
+      if (ofs != len || nBytesRead != 0)
+        return; /* read operation is failed - ignoring the file content */
+      content[ofs] = '\0';
+      while (ofs-- > 0) {
+       if (content[ofs] == '\r' || content[ofs] == '\n')
+         content[ofs] = '\0';
+      }
+      GC_envfile_length = len + 1;
+      GC_envfile_content = content;
+#   endif
+  }
+
+  /* This routine scans GC_envfile_content for the specified            */
+  /* environment variable (and returns its value if found).             */
+  GC_INNER char * GC_envfile_getenv(const char *name)
+  {
+    char *p;
+    char *end_of_content;
+    unsigned namelen;
+#   ifndef NO_GETENV
+      p = getenv(name); /* try the standard getenv() first */
+      if (p != NULL)
+        return *p != '\0' ? p : NULL;
+#   endif
+    p = GC_envfile_content;
+    if (p == NULL)
+      return NULL; /* "env" file is absent (or empty) */
+    namelen = strlen(name);
+    if (namelen == 0) /* a sanity check */
+      return NULL;
+    for (end_of_content = p + GC_envfile_length;
+         p != end_of_content; p += strlen(p) + 1) {
+      if (strncmp(p, name, namelen) == 0 && *(p += namelen) == '=') {
+        p++; /* the match is found; skip '=' */
+        return *p != '\0' ? p : NULL;
+      }
+      /* If not matching then skip to the next line. */
+    }
+    return NULL; /* no match found */
+  }
+#endif /* GC_READ_ENV_FILE */
+
 GC_INNER GC_bool GC_is_initialized = FALSE;
 
 #if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
@@ -569,6 +669,13 @@ GC_API void GC_CALL GC_init(void)
 #   endif /* GC_WIN32_THREADS */
 #   if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
       InitializeCriticalSection(&GC_write_cs);
+#   endif
+    GC_setpagesize();
+#   ifdef MSWIN32
+      GC_init_win32();
+#   endif
+#   ifdef GC_READ_ENV_FILE
+      GC_envfile_init();
 #   endif
 #   ifndef SMALL_CONFIG
 #     ifdef GC_PRINT_VERBOSE_STATS
@@ -714,15 +821,11 @@ GC_API void GC_CALL GC_init(void)
     if (ALIGNMENT > GC_DS_TAGS && EXTRA_BYTES != 0) {
       GC_obj_kinds[NORMAL].ok_descriptor = ((word)(-ALIGNMENT) | GC_DS_LENGTH);
     }
-    GC_setpagesize();
     GC_exclude_static_roots_inner(beginGC_arrays, endGC_arrays);
     GC_exclude_static_roots_inner(beginGC_obj_kinds, endGC_obj_kinds);
 #   ifdef SEPARATE_GLOBALS
       GC_exclude_static_roots_inner(beginGC_objfreelist, endGC_objfreelist);
       GC_exclude_static_roots_inner(beginGC_aobjfreelist, endGC_aobjfreelist);
-#   endif
-#   ifdef MSWIN32
-        GC_init_win32();
 #   endif
 #   if defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS)
         WARN("USE_PROC_FOR_LIBRARIES + GC_LINUX_THREADS performs poorly.\n", 0);
@@ -829,9 +932,9 @@ GC_API void GC_CALL GC_init(void)
 #   ifdef PCR
       if (PCR_IL_Lock(PCR_Bool_false, PCR_allSigsBlocked, PCR_waitForever)
           != PCR_ERes_okay) {
-          ABORT("Can't lock load state\n");
+          ABORT("Can't lock load state");
       } else if (PCR_IL_Unlock() != PCR_ERes_okay) {
-          ABORT("Can't unlock load state\n");
+          ABORT("Can't unlock load state");
       }
       PCR_IL_Unlock();
       GC_pcr_install();
@@ -1260,12 +1363,16 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
             /* about threads.                                           */
             for(;;) {}
     }
+    if (!msg) return; /* to suppress compiler warnings in ABORT callers. */
 #   if defined(MSWIN32) && defined(NO_DEBUGGING)
       /* A more user-friendly abort after showing fatal message.        */
-      if (msg) /* to suppress compiler warnings in ABORT callers. */
         _exit(-1); /* exit on error without running "at-exit" callbacks */
+#   elif defined(MSWINCE) && defined(NO_DEBUGGING)
+        ExitProcess(-1);
 #   elif defined(MSWIN32) || defined(MSWINCE)
         DebugBreak();
+                /* Note that on a WinCE box, this could be silently     */
+                /* ignored (i.e., the program is not aborted).          */
 #   else
         (void) abort();
 #   endif

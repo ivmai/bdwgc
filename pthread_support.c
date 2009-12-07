@@ -188,7 +188,7 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
         namebuf[len] = '\0';
         dl_handle = dlopen(namebuf, RTLD_LAZY);
       }
-      if (NULL == dl_handle) ABORT("Couldn't open libpthread\n");
+      if (NULL == dl_handle) ABORT("Couldn't open libpthread");
 #   endif
     REAL_FUNC(pthread_create) = (GC_pthread_create_t)
                                 dlsym(dl_handle, "pthread_create");
@@ -328,10 +328,10 @@ static void start_mark_threads(void)
         int code;
 
         if (pthread_attr_getstacksize(&attr, &old_size) != 0)
-          ABORT("pthread_attr_getstacksize failed\n");
+          ABORT("pthread_attr_getstacksize failed");
         if (old_size < MIN_STACK_SIZE) {
           if (pthread_attr_setstacksize(&attr, MIN_STACK_SIZE) != 0)
-                  ABORT("pthread_attr_setstacksize failed\n");
+                  ABORT("pthread_attr_setstacksize failed");
         }
       }
 #   endif /* HPUX || GC_DGUX386_THREADS */

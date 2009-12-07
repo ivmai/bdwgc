@@ -389,12 +389,19 @@ NO_GETENV       Prevents the collector from looking at environment variables.
 EMPTY_GETENV_RESULTS    Define to workaround a reputed Wine bug in getenv
   (getenv() may return an empty string instead of NULL for a missing entry).
 
+GC_READ_ENV_FILE (win32 only)   Read environment variables from the GC "env"
+  file (named as the program name plus ".gc.env" extension).  Useful for WinCE
+  targets (which have no getenv()).  In the file, every variable is specified
+  in a separate line and the format is as "<name>=<value>" (without spaces).
+  A comment line may start with any character except for the Latin letters,
+  the digits and the underscore ('_').  The file encoding is Latin-1.
+
 USE_GLOBAL_ALLOC (Win32 only)   Use GlobalAlloc() instead of VirtualAlloc()
   to allocate the heap.  May be needed to work around a Windows NT/2000 issue.
   Incompatible with USE_MUNMAP.  See README.win32 for details.
 
 MAKE_BACK_GRAPH         Enable GC_PRINT_BACK_HEIGHT environment variable.
-  See README.environment for details.  Experimental. Limited platform
+  See README.environment for details.  Experimental.  Limited platform
   support.  Implies DBG_HDRS_ALL.  All allocation should be done using
   the debug interface.
 

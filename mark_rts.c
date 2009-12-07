@@ -226,7 +226,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
       }
 #   endif
     if (n_root_sets == MAX_ROOT_SETS) {
-        ABORT("Too many root sets\n");
+        ABORT("Too many root sets");
     }
     GC_static_roots[n_root_sets].r_start = (ptr_t)b;
     GC_static_roots[n_root_sets].r_end = (ptr_t)e;
