@@ -519,7 +519,7 @@ struct {
  * Repeatedly reverse lists built out of very different sized cons cells.
  * Check that we didn't lose anything.
  */
-void reverse_test(void)
+void *GC_CALLBACK reverse_test_inner(void *data)
 {
     int i;
     sexpr b;
@@ -527,7 +527,13 @@ void reverse_test(void)
     sexpr d;
     sexpr e;
     sexpr *f, *g, *h;
-#   if defined(MSWIN32) || defined(MACOS)
+
+    if (data == 0) {
+      /* This stack frame is not guaranteed to be scanned. */
+      return GC_call_with_gc_active(reverse_test_inner, (void*)(word)1);
+    }
+
+#   if /*defined(MSWIN32) ||*/ defined(MACOS)
       /* Win32S only allows 128K stacks */
 #     define BIG 1000
 #   else
@@ -630,6 +636,13 @@ void reverse_test(void)
 #   endif
     *(volatile void **)&b = 0;
     *(volatile void **)&c = 0;
+    return 0;
+}
+
+void reverse_test(void)
+{
+    /* Test GC_do_blocking/GC_call_with_gc_active. */
+    (void)GC_do_blocking(reverse_test_inner, 0);
 }
 
 #undef a
