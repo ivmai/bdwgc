@@ -2278,6 +2278,7 @@
 #   undef MPROTECT_VDB
 #   undef PCR_VDB
 #   undef PROC_VDB
+#   undef CHECKSUMS
 # endif
 
 # ifdef USE_GLOBAL_ALLOC
@@ -2303,7 +2304,7 @@
 # endif
 
 # if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
-    && !defined(GWW_VDB)
+    && !defined(GWW_VDB) && !defined(GC_DISABLE_INCREMENTAL)
 #   define DEFAULT_VDB
 # endif
 

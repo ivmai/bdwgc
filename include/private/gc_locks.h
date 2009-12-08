@@ -176,7 +176,7 @@
 #    define EXIT_GC() GC_collecting = 0;
      GC_INNER void GC_lock(void);
      GC_EXTERN unsigned long GC_lock_holder;
-#    ifdef GC_ASSERTIONS
+#    if defined(GC_ASSERTIONS) && defined(PARALLEL_MARK)
        GC_EXTERN unsigned long GC_mark_lock_holder;
 #    endif
 #  endif /* GC_PTHREADS with linux_threads.c implementation */

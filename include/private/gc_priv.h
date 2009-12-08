@@ -1316,11 +1316,6 @@ GC_EXTERN word GC_black_list_spacing;
         /* True incremental, not just generational, mode */
 #endif /* !GC_DISABLE_INCREMENTAL */
 
-GC_EXTERN GC_bool GC_dirty_maintained;
-                                /* Dirty bits are being maintained,     */
-                                /* either for incremental collection,   */
-                                /* or to limit the root set.            */
-
 GC_EXTERN word GC_root_size; /* Total size of registered root sections. */
 
 GC_EXTERN GC_bool GC_debugging_started;
@@ -1901,19 +1896,26 @@ GC_EXTERN GC_bool GC_print_back_height;
                              size_t bytes2);
 #endif
 
-/* Virtual dirty bit implementation:            */
-/* Each implementation exports the following:   */
-GC_INNER void GC_read_dirty(void);
+#ifndef GC_DISABLE_INCREMENTAL
+  GC_EXTERN GC_bool GC_dirty_maintained;
+                                /* Dirty bits are being maintained,     */
+                                /* either for incremental collection,   */
+                                /* or to limit the root set.            */
+
+  /* Virtual dirty bit implementation:            */
+  /* Each implementation exports the following:   */
+  GC_INNER void GC_read_dirty(void);
                         /* Retrieve dirty bits. */
-GC_INNER GC_bool GC_page_was_dirty(struct hblk *h);
+  GC_INNER GC_bool GC_page_was_dirty(struct hblk *h);
                         /* Read retrieved dirty bits.   */
-GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
+  GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
                                    GC_bool pointerfree);
                         /* h is about to be written or allocated.  Ensure   */
                         /* that it's not write protected by the virtual     */
                         /* dirty bit implementation.                        */
 
-GC_INNER void GC_dirty_init(void);
+  GC_INNER void GC_dirty_init(void);
+#endif /* !GC_DISABLE_INCREMENTAL */
 
 /* Slow/general mark bit manipulation: */
 GC_API_PRIV GC_bool GC_is_marked(ptr_t p);
@@ -1933,7 +1935,9 @@ void GC_print_block_list(void);
 void GC_print_hblkfreelist(void);
 void GC_print_heap_sects(void);
 void GC_print_static_roots(void);
-GC_INNER void GC_print_finalization_stats(void);
+#ifndef SMALL_CONFIG
+  GC_INNER void GC_print_finalization_stats(void);
+#endif
 /* void GC_dump(void); - declared in gc.h */
 
 #ifdef KEEP_BACK_PTRS
@@ -2104,7 +2108,7 @@ GC_EXTERN signed_word GC_bytes_found;
 # if defined(GC_PTHREADS)
   /* We define the thread suspension signal here, so that we can refer  */
   /* to it in the dirty bit implementation, if necessary.  Ideally we   */
-  /* would allocate a (real-time ?) signal using the standard mechanism.*/
+  /* would allocate a (real-time?) signal using the standard mechanism. */
   /* unfortunately, there is no standard mechanism.  (There is one      */
   /* in Linux glibc, but it's not exported.)  Thus we continue to use   */
   /* the same hard-coded signals we've always used.                     */

@@ -2449,7 +2449,9 @@ STATIC void GC_default_push_other_roots(void)
  *              are running on Windows 95, Windows 2000 or earlier),
  *              MPROTECT_VDB may be defined as a fallback strategy.
  */
-GC_INNER GC_bool GC_dirty_maintained = FALSE;
+#ifndef GC_DISABLE_INCREMENTAL
+  GC_INNER GC_bool GC_dirty_maintained = FALSE;
+#endif
 
 #if defined(PROC_VDB) || defined(GWW_VDB)
 
@@ -2572,7 +2574,7 @@ STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
             get_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
   }
 
-#if 0
+#ifdef CHECKSUMS
   /* Used only if PROC_VDB. */
 # ifdef MPROTECT_VDB
     STATIC GC_bool GC_gww_page_was_ever_dirty(struct hblk * h)
@@ -2583,7 +2585,7 @@ STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
     return HDR(h) == 0 ||
             get_pht_entry_from_index(GC_written_pages, PHT_HASH(h));
   }
-#endif
+#endif /* CHECKSUMS */
 
 # ifndef MPROTECT_VDB
     /*ARGSUSED*/
@@ -2629,14 +2631,14 @@ GC_INNER GC_bool GC_page_was_dirty(struct hblk *h)
  * versions are adequate.
  */
 
-#if 0
-/* Could any valid GC heap pointer ever have been written to this page? */
-/*ARGSUSED*/
-GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
-{
+#ifdef CHECKSUMS
+  /* Could any valid GC heap pointer ever have been written to this page? */
+  /*ARGSUSED*/
+  GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
+  {
     return(TRUE);
-}
-#endif
+  }
+#endif /* CHECKSUMS */
 
 /* A call that:                                         */
 /* I) hints that [h, h+nblocks) is about to be written. */
@@ -2694,6 +2696,16 @@ void GC_dirty(ptr_t p)
 /*ARGSUSED*/
 GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
                                    GC_bool is_ptrfree) {}
+
+#ifdef CHECKSUMS
+  /* Could any valid GC heap pointer ever have been written to this page? */
+  /*ARGSUSED*/
+  GC_bool GC_page_was_ever_dirty(struct hblk *h)
+  {
+    /* FIXME - implement me.    */
+    return(TRUE);
+  }
+#endif /* CHECKSUMS */
 
 # endif /* MANUAL_VDB */
 
@@ -2863,8 +2875,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #endif /* !THREADS */
 
 #ifdef CHECKSUMS
-  void GC_record_fault(struct hblk * h);
-        /* From checksums.c */
+  void GC_record_fault(struct hblk * h); /* from checksums.c */
 #endif
 
 #if !defined(DARWIN)
@@ -2927,7 +2938,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
         GC_bool in_allocd_block;
 #       ifdef CHECKSUMS
           GC_record_fault(h);
-#       endif /* CHECKSUMS */
+#       endif
 
 #       ifdef SUNOS5SIGS
             /* Address is only within the correct physical page.        */
@@ -3375,17 +3386,19 @@ ssize_t read(int fd, void *buf, size_t nbyte)
     /* actually calls.                                                  */
 #endif
 
-/*ARGSUSED*/
-GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
-{
+#endif /* 0 */
+
+#ifdef CHECKSUMS
+  /*ARGSUSED*/
+  GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
+  {
 #   if defined(GWW_VDB)
       if (GC_GWW_AVAILABLE())
         return GC_gww_page_was_ever_dirty(h);
 #   endif
     return(TRUE);
-}
-
-#endif /* 0 */
+  }
+#endif /* CHECKSUMS */
 
 # endif /* MPROTECT_VDB */
 

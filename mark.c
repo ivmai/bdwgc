@@ -259,7 +259,9 @@ GC_INNER void GC_clear_marks(void)
 /* mark state is invalid.                                               */
 GC_INNER void GC_initiate_gc(void)
 {
-    if (GC_dirty_maintained) GC_read_dirty();
+#   ifndef GC_DISABLE_INCREMENTAL
+        if (GC_dirty_maintained) GC_read_dirty();
+#   endif
 #   ifdef STUBBORN_ALLOC
         GC_read_changed();
 #   endif

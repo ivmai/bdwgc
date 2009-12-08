@@ -97,6 +97,8 @@ int GC_n_changed_errors = 0;
 int GC_n_clean = 0;
 int GC_n_dirty = 0;
 
+GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk * h);
+
 STATIC void GC_update_check_page(struct hblk *h, int index)
 {
     page_entry *pe = GC_sums + index;

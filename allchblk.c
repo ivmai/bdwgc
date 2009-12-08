@@ -794,15 +794,16 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
             GC_remove_counts(hbp, (word)size_needed);
             return(0); /* ditto */
         }
-
-    /* Notify virtual dirty bit implementation that we are about to write.  */
-    /* Ensure that pointerfree objects are not protected if it's avoidable. */
-    /* This also ensures that newly allocated blocks are treated as dirty.  */
-    /* Necessary since we don't protect free blocks.                        */
+#   ifndef GC_DISABLE_INCREMENTAL
+        /* Notify virtual dirty bit implementation that we are about to */
+        /* write.  Ensure that pointerfree objects are not protected if */
+        /* it's avoidable.  This also ensures that newly allocated      */
+        /* blocks are treated as dirty.  Necessary since we don't       */
+        /* protect free blocks.                                         */
         GC_ASSERT((size_needed & (HBLKSIZE-1)) == 0);
         GC_remove_protection(hbp, divHBLKSZ(size_needed),
                              (hhdr -> hb_descr == 0) /* pointer-free */);
-
+#   endif
     /* We just successfully allocated a block.  Restart count of        */
     /* consecutive failures.                                            */
     GC_fail_count = 0;

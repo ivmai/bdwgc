@@ -1,5 +1,28 @@
 2009-12-08  Ivan Maidanski <ivmai@mail.ru>
 
+	* allchblk.c (GC_allochblk_nth): Don't call GC_remove_protection()
+	if GC_DISABLE_INCREMENTAL.
+	* reclaim.c (GC_reclaim_generic): Ditto.
+	* checksums.c (GC_page_was_ever_dirty): Add prototype.
+	* include/private/gc_locks.h (GC_mark_lock_holder): Don't declare
+	unless PARALLEL_MARK.
+	* include/private/gc_priv.h (GC_dirty_maintained,
+	GC_page_was_dirty, GC_remove_protection, GC_dirty_init): Don't
+	declare if GC_DISABLE_INCREMENTAL.
+	* include/private/gc_priv.h (GC_print_finalization_stats): Don't
+	declare if SMALL_CONFIG.
+	* include/private/gcconfig.h (CHECKSUMS): Explicitly undefine if
+	GC_DISABLE_INCREMENTAL (since nothing to check).
+	* include/private/gcconfig.h (DEFAULT_VDB): Don't define if
+	GC_DISABLE_INCREMENTAL.
+	* os_dep.c (GC_dirty_maintained): Ditto.
+	* mark.c (GC_initiate_gc): Don't call GC_read_dirty() if
+	GC_DISABLE_INCREMENTAL.
+	* os_dep.c (GC_gww_page_was_ever_dirty, GC_page_was_ever_dirty):
+	Uncomment; define only if CHECKSUMS.
+
+2009-12-08  Ivan Maidanski <ivmai@mail.ru>
+
 	* darwin_stop_world.c (GC_push_all_stacks): Fix a bug (call
 	GC_push_all_stack() instead of GC_push_all_stack_frames()).
 	* include/private/gc_priv.h (GC_push_all_stack_frames,

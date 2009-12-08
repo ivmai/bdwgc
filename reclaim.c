@@ -212,7 +212,9 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
     ptr_t result;
 
     GC_ASSERT(GC_find_header((ptr_t)hbp) == hhdr);
-    GC_remove_protection(hbp, 1, (hhdr)->hb_descr == 0 /* Pointer-free? */);
+#   ifndef GC_DISABLE_INCREMENTAL
+      GC_remove_protection(hbp, 1, (hhdr)->hb_descr == 0 /* Pointer-free? */);
+#   endif
     if (init || GC_debugging_started) {
       result = GC_reclaim_clear(hbp, hhdr, sz, list, count);
     } else {
