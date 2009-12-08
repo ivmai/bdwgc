@@ -1,3 +1,24 @@
+2009-12-08  Ivan Maidanski <ivmai@mail.ru> (really mostly Hans Boehm)
+
+	* darwin_stop_world.c (GC_push_all_stacks): Rename
+	activation_frame to traced_stack_sect.
+	* include/private/gc_priv.h (GC_push_all_stack_frames,
+	GC_push_all_register_frames): Ditto.
+	* include/private/pthread_support.h (GC_Thread_Rep): Ditto.
+	* mark_rts.c (GC_push_all_register_frames,
+	GC_push_all_stack_frames, GC_push_all_stack_part_eager_frames,
+	GC_push_current_stack): Ditto.
+	* pthread_stop_world.c (GC_push_all_stacks): Ditto.
+	* pthread_support.c (GC_call_with_gc_active): Ditto.
+	* win32_threads.c (GC_Thread_Rep, GC_call_with_gc_active,
+	GC_push_stack_for): Ditto.
+	* include/private/gc_priv.h (GC_activation_frame_s): Rename to
+	GC_traced_stack_sect_s.
+	* include/private/gc_priv.h (GC_activation_frame): Rename to
+	GC_traced_stack_sect.
+	* misc.c (GC_activation_frame, GC_call_with_gc_active): Ditto.
+	* doc/README.macros (UNICODE): Document.
+
 2009-12-07  Ivan Maidanski <ivmai@mail.ru>
 
 	* doc/README.macros (GC_READ_ENV_FILE): Document (new macro).

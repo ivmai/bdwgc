@@ -481,18 +481,18 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
 #ifdef IA64
   /* Similar to GC_push_all_stack_frames() but for IA-64 registers store. */
   GC_INNER void GC_push_all_register_frames(ptr_t bs_lo, ptr_t bs_hi,
-                    int eager, struct GC_activation_frame_s *activation_frame)
+                  int eager, struct GC_traced_stack_sect_s *traced_stack_sect)
   {
-    while (activation_frame != NULL) {
-        ptr_t frame_bs_lo = activation_frame -> backing_store_end;
+    while (traced_stack_sect != NULL) {
+        ptr_t frame_bs_lo = traced_stack_sect -> backing_store_end;
         GC_ASSERT(frame_bs_lo <= bs_hi);
         if (eager) {
             GC_push_all_eager(frame_bs_lo, bs_hi);
         } else {
             GC_push_all_stack(frame_bs_lo, bs_hi);
         }
-        bs_hi = activation_frame -> saved_backing_store_ptr;
-        activation_frame = activation_frame -> prev;
+        bs_hi = traced_stack_sect -> saved_backing_store_ptr;
+        traced_stack_sect = traced_stack_sect -> prev;
     }
     GC_ASSERT(bs_lo <= bs_hi);
     if (eager) {
@@ -506,18 +506,18 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
 #ifdef THREADS
 
 GC_INNER void GC_push_all_stack_frames(ptr_t lo, ptr_t hi,
-                        struct GC_activation_frame_s *activation_frame)
+                        struct GC_traced_stack_sect_s *traced_stack_sect)
 {
-    while (activation_frame != NULL) {
-        GC_ASSERT(lo HOTTER_THAN (ptr_t)activation_frame);
+    while (traced_stack_sect != NULL) {
+        GC_ASSERT(lo HOTTER_THAN (ptr_t)traced_stack_sect);
 #       ifdef STACK_GROWS_UP
-            GC_push_all_stack((ptr_t)activation_frame, lo);
+            GC_push_all_stack((ptr_t)traced_stack_sect, lo);
 #       else /* STACK_GROWS_DOWN */
-            GC_push_all_stack(lo, (ptr_t)activation_frame);
+            GC_push_all_stack(lo, (ptr_t)traced_stack_sect);
 #       endif
-        lo = activation_frame -> saved_stack_ptr;
+        lo = traced_stack_sect -> saved_stack_ptr;
         GC_ASSERT(lo != NULL);
-        activation_frame = activation_frame -> prev;
+        traced_stack_sect = traced_stack_sect -> prev;
     }
     GC_ASSERT(!(hi HOTTER_THAN lo));
 #   ifdef STACK_GROWS_UP
@@ -579,23 +579,23 @@ STATIC void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
 
 /* Similar to GC_push_all_stack_frames() but also uses cold_gc_frame.   */
 STATIC void GC_push_all_stack_part_eager_frames(ptr_t lo, ptr_t hi,
-        ptr_t cold_gc_frame, struct GC_activation_frame_s *activation_frame)
+        ptr_t cold_gc_frame, struct GC_traced_stack_sect_s *traced_stack_sect)
 {
-    GC_ASSERT(activation_frame == NULL || cold_gc_frame == NULL ||
-                cold_gc_frame HOTTER_THAN (ptr_t)activation_frame);
+    GC_ASSERT(traced_stack_sect == NULL || cold_gc_frame == NULL ||
+                cold_gc_frame HOTTER_THAN (ptr_t)traced_stack_sect);
 
-    while (activation_frame != NULL) {
-        GC_ASSERT(lo HOTTER_THAN (ptr_t)activation_frame);
+    while (traced_stack_sect != NULL) {
+        GC_ASSERT(lo HOTTER_THAN (ptr_t)traced_stack_sect);
 #       ifdef STACK_GROWS_UP
-            GC_push_all_stack_partially_eager((ptr_t)activation_frame, lo,
-                                                cold_gc_frame);
+            GC_push_all_stack_partially_eager((ptr_t)traced_stack_sect, lo,
+                                              cold_gc_frame);
 #       else /* STACK_GROWS_DOWN */
-            GC_push_all_stack_partially_eager(lo, (ptr_t)activation_frame,
-                                                cold_gc_frame);
+            GC_push_all_stack_partially_eager(lo, (ptr_t)traced_stack_sect,
+                                              cold_gc_frame);
 #       endif
-        lo = activation_frame -> saved_stack_ptr;
+        lo = traced_stack_sect -> saved_stack_ptr;
         GC_ASSERT(lo != NULL);
-        activation_frame = activation_frame -> prev;
+        traced_stack_sect = traced_stack_sect -> prev;
         cold_gc_frame = NULL; /* Use at most once.      */
     }
 
@@ -640,7 +640,7 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
 #       endif
 #   else
         GC_push_all_stack_part_eager_frames(GC_approx_sp(), GC_stackbottom,
-                                        cold_gc_frame, GC_activation_frame);
+                                        cold_gc_frame, GC_traced_stack_sect);
 #       ifdef IA64
               /* We also need to push the register stack backing store. */
               /* This should really be done in the same way as the      */
@@ -653,17 +653,17 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
                 if (GC_all_interior_pointers &&
                     cold_gc_bs_pointer > BACKING_STORE_BASE) {
                   /* Adjust cold_gc_bs_pointer if below our innermost   */
-                  /* "activation frame" in backing store.               */
-                  if (GC_activation_frame != NULL && cold_gc_bs_pointer <
-                                GC_activation_frame->backing_store_end)
+                  /* "traced stack section" in backing store.           */
+                  if (GC_traced_stack_sect != NULL && cold_gc_bs_pointer <
+                                GC_traced_stack_sect->backing_store_end)
                     cold_gc_bs_pointer =
-                                GC_activation_frame->backing_store_end;
+                                GC_traced_stack_sect->backing_store_end;
                   GC_push_all_register_frames(BACKING_STORE_BASE,
-                        cold_gc_bs_pointer, FALSE, GC_activation_frame);
+                        cold_gc_bs_pointer, FALSE, GC_traced_stack_sect);
                   GC_push_all_eager(cold_gc_bs_pointer, bsp);
                 } else {
                   GC_push_all_register_frames(BACKING_STORE_BASE, bsp,
-                                TRUE /* eager */, GC_activation_frame);
+                                TRUE /* eager */, GC_traced_stack_sect);
                 }
                 /* All values should be sufficiently aligned that we    */
                 /* don't have to worry about the boundary.              */

@@ -1333,24 +1333,24 @@ struct blocking_data {
 };
 
 /* This is used by GC_call_with_gc_active(), GC_push_all_stack_frames(). */
-struct GC_activation_frame_s {
+struct GC_traced_stack_sect_s {
   ptr_t saved_stack_ptr;
 #ifdef IA64
     ptr_t saved_backing_store_ptr;
     ptr_t backing_store_end;
 #endif
-  struct GC_activation_frame_s *prev;
+  struct GC_traced_stack_sect_s *prev;
 };
 
 #ifdef THREADS
-/* Process all activation "frames" - scan entire stack except for       */
+/* Process all "traced stack sections" - scan entire stack except for   */
 /* frames belonging to the user functions invoked by GC_do_blocking().  */
   GC_INNER void GC_push_all_stack_frames(ptr_t lo, ptr_t hi,
-                        struct GC_activation_frame_s *activation_frame);
+                        struct GC_traced_stack_sect_s *traced_stack_sect);
   GC_EXTERN word GC_total_stacksize; /* updated on every push_all_stacks */
 #else
   GC_EXTERN ptr_t GC_blocked_sp;
-  GC_EXTERN struct GC_activation_frame_s *GC_activation_frame;
+  GC_EXTERN struct GC_traced_stack_sect_s *GC_traced_stack_sect;
                         /* Points to the "frame" data held in stack by  */
                         /* the innermost GC_call_with_gc_active().      */
                         /* NULL if no such "frame" active.              */
@@ -1359,7 +1359,7 @@ struct GC_activation_frame_s {
 #ifdef IA64
   /* Similar to GC_push_all_stack_frames() but for IA-64 registers store. */
   GC_INNER void GC_push_all_register_frames(ptr_t bs_lo, ptr_t bs_hi,
-                   int eager, struct GC_activation_frame_s *activation_frame);
+                  int eager, struct GC_traced_stack_sect_s *traced_stack_sect);
 #endif
 
 /*  Marks are in a reserved area in                          */

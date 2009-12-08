@@ -128,7 +128,7 @@ GC_AIX_THREADS  Enables support for IBM AIX threads.
 GC_DGUX386_THREADS      Enables support for DB/UX on I386 threads.
   See README.DGUX386.  (Probably has not been tested recently.)
 
-GC_WIN32_THREADS        Enables support for win32 threads.  That makes sense
+GC_WIN32_THREADS        Enables support for Win32 threads.  That makes sense
   for this Makefile only under Cygwin.
 
 GC_WIN32_PTHREADS       Enables support for Ming32 pthreads.  This cannot be
@@ -193,7 +193,7 @@ REDIRECT_MALLOC=<X>     Causes malloc to be defined as alias for X.
   you don't want to (or can't) look at.  It may not work for
   existing code, but it often does.  Neither works on all platforms,
   since some ports use malloc or calloc to obtain system memory.
-  (Probably works for UNIX, and win32.)  If you build with DBG_HDRS_ALL,
+  (Probably works for UNIX, and Win32.)  If you build with DBG_HDRS_ALL,
   you should only use GC_debug_malloc_replacement as a malloc
   replacement.
 
@@ -389,7 +389,7 @@ NO_GETENV       Prevents the collector from looking at environment variables.
 EMPTY_GETENV_RESULTS    Define to workaround a reputed Wine bug in getenv
   (getenv() may return an empty string instead of NULL for a missing entry).
 
-GC_READ_ENV_FILE (win32 only)   Read environment variables from the GC "env"
+GC_READ_ENV_FILE (Win32 only)   Read environment variables from the GC "env"
   file (named as the program name plus ".gc.env" extension).  Useful for WinCE
   targets (which have no getenv()).  In the file, every variable is specified
   in a separate line and the format is as "<name>=<value>" (without spaces).
@@ -502,3 +502,6 @@ NO_CANCEL_SAFE (Posix platforms with threads only)      Don't bother trying
   getting cancelled in unexpected places.)  Even without this option,
   PTHREAD_CANCEL_ASYNCHRONOUS is never safe with the collector.  (We could
   argue about its safety without the collector.)
+
+UNICODE (Win32 only)    Use the Unicode variant ('W') of the Win32 API instead
+  of ANSI/ASCII one ('A').  Useful for WinCE.

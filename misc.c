@@ -1481,13 +1481,13 @@ GC_INNER ptr_t GC_blocked_sp = NULL;
     STATIC ptr_t GC_blocked_register_sp = NULL;
 # endif
 
-GC_INNER struct GC_activation_frame_s *GC_activation_frame = NULL;
+GC_INNER struct GC_traced_stack_sect_s *GC_traced_stack_sect = NULL;
 
 /* This is nearly the same as in win32_threads.c        */
 GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
                                              void * client_data)
 {
-    struct GC_activation_frame_s frame;
+    struct GC_traced_stack_sect_s frame;
     GC_ASSERT(GC_is_initialized);
 
     /* Adjust our stack base value (this could happen if        */
@@ -1510,16 +1510,16 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       /* but that probably doesn't hurt.                */
       frame.saved_backing_store_ptr = GC_blocked_register_sp;
 #   endif
-    frame.prev = GC_activation_frame;
+    frame.prev = GC_traced_stack_sect;
     GC_blocked_sp = NULL;
-    GC_activation_frame = &frame;
+    GC_traced_stack_sect = &frame;
 
     client_data = fn(client_data);
     GC_ASSERT(GC_blocked_sp == NULL);
-    GC_ASSERT(GC_activation_frame == &frame);
+    GC_ASSERT(GC_traced_stack_sect == &frame);
 
     /* Restore original "frame".        */
-    GC_activation_frame = frame.prev;
+    GC_traced_stack_sect = frame.prev;
 #   ifdef IA64
       GC_blocked_register_sp = frame.saved_backing_store_ptr;
 #   endif

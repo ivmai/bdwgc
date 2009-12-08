@@ -218,7 +218,7 @@ struct GC_Thread_Rep {
                                 /* pointer manipulations.  Thus it does */
                                 /* not need to stop this thread.        */
 
-  struct GC_activation_frame_s *activation_frame;
+  struct GC_traced_stack_sect_s *traced_stack_sect;
                         /* Points to the "frame" data held in stack by  */
                         /* the innermost GC_call_with_gc_active() of    */
                         /* this thread.  May be NULL.                   */
@@ -776,7 +776,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
 GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
                                              void * client_data)
 {
-  struct GC_activation_frame_s frame;
+  struct GC_traced_stack_sect_s frame;
   GC_thread me;
   LOCK();   /* This will block if the world is stopped.         */
   me = GC_lookup_thread_inner(GetCurrentThreadId());
@@ -802,18 +802,18 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     /* but that probably doesn't hurt.          */
     frame.saved_backing_store_ptr = me -> backing_store_ptr;
 # endif
-  frame.prev = me -> activation_frame;
+  frame.prev = me -> traced_stack_sect;
   me -> thread_blocked_sp = NULL;
-  me -> activation_frame = &frame;
+  me -> traced_stack_sect = &frame;
 
   UNLOCK();
   client_data = fn(client_data);
   GC_ASSERT(me -> thread_blocked_sp == NULL);
-  GC_ASSERT(me -> activation_frame == &frame);
+  GC_ASSERT(me -> traced_stack_sect == &frame);
 
   /* Restore original "frame".  */
   LOCK();
-  me -> activation_frame = frame.prev;
+  me -> traced_stack_sect = frame.prev;
 # ifdef IA64
     me -> backing_store_ptr = frame.saved_backing_store_ptr;
 # endif
@@ -1143,8 +1143,8 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
   int dummy;
   ptr_t sp, stack_min;
 
-  struct GC_activation_frame_s *activation_frame =
-                                      thread -> activation_frame;
+  struct GC_traced_stack_sect_s *traced_stack_sect =
+                                      thread -> traced_stack_sect;
   if (thread -> id == me) {
     GC_ASSERT(thread -> thread_blocked_sp == NULL);
     sp = (ptr_t) &dummy;
@@ -1207,24 +1207,24 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
   if (thread -> last_stack_min == ADDR_LIMIT) {
 #   ifdef MSWINCE
       if (GC_dont_query_stack_min) {
-        stack_min = GC_wince_evaluate_stack_min(activation_frame != NULL ?
-                      (ptr_t)activation_frame : thread -> stack_base);
+        stack_min = GC_wince_evaluate_stack_min(traced_stack_sect != NULL ?
+                      (ptr_t)traced_stack_sect : thread -> stack_base);
         /* Keep last_stack_min value unmodified. */
       } else
 #   endif
     /* else */ {
-      stack_min = GC_get_stack_min(activation_frame != NULL ?
-                      (ptr_t)activation_frame : thread -> stack_base);
+      stack_min = GC_get_stack_min(traced_stack_sect != NULL ?
+                      (ptr_t)traced_stack_sect : thread -> stack_base);
       UNPROTECT_THREAD(thread);
       thread -> last_stack_min = stack_min;
     }
   } else {
     /* First, adjust the latest known minimum stack address if we       */
     /* are inside GC_call_with_gc_active().                             */
-    if (activation_frame != NULL &&
-        thread -> last_stack_min > (ptr_t)activation_frame) {
+    if (traced_stack_sect != NULL &&
+        thread -> last_stack_min > (ptr_t)traced_stack_sect) {
       UNPROTECT_THREAD(thread);
-      thread -> last_stack_min = (ptr_t)activation_frame;
+      thread -> last_stack_min = (ptr_t)traced_stack_sect;
     }
 
     if (sp < thread -> stack_base && sp >= thread -> last_stack_min) {
@@ -1257,7 +1257,7 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
       GC_printf("Pushing stack for 0x%x from sp %p to %p from 0x%x\n",
                 (int)thread -> id, sp, thread -> stack_base, (int)me);
 #   endif
-    GC_push_all_stack_frames(sp, thread->stack_base, activation_frame);
+    GC_push_all_stack_frames(sp, thread->stack_base, traced_stack_sect);
   } else {
     /* If not current thread then it is possible for sp to point to     */
     /* the guarded (untouched yet) page just below the current          */
@@ -1271,7 +1271,7 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
                 (int)thread -> id, stack_min,
                 thread -> stack_base, (int)me);
 #   endif
-    /* Push everything - ignore activation "frames" data.       */
+    /* Push everything - ignore "traced stack section" data.            */
     GC_push_all_stack(stack_min, thread->stack_base);
   }
   return thread->stack_base - sp; /* stack grows down */

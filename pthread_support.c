@@ -963,7 +963,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
 GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
                                              void * client_data)
 {
-    struct GC_activation_frame_s frame;
+    struct GC_traced_stack_sect_s frame;
     GC_thread me;
     LOCK();   /* This will block if the world is stopped.       */
     me = GC_lookup_thread(pthread_self());
@@ -999,18 +999,18 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       /* but that probably doesn't hurt.                */
       frame.saved_backing_store_ptr = me -> backing_store_ptr;
 #   endif
-    frame.prev = me -> activation_frame;
+    frame.prev = me -> traced_stack_sect;
     me -> thread_blocked = FALSE;
-    me -> activation_frame = &frame;
+    me -> traced_stack_sect = &frame;
 
     UNLOCK();
     client_data = fn(client_data);
     GC_ASSERT(me -> thread_blocked == FALSE);
-    GC_ASSERT(me -> activation_frame == &frame);
+    GC_ASSERT(me -> traced_stack_sect == &frame);
 
     /* Restore original "frame".        */
     LOCK();
-    me -> activation_frame = frame.prev;
+    me -> traced_stack_sect = frame.prev;
 #   ifdef IA64
       me -> backing_store_ptr = frame.saved_backing_store_ptr;
 #   endif

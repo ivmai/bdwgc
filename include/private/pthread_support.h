@@ -73,7 +73,7 @@ typedef struct GC_Thread_Rep {
         ptr_t backing_store_ptr;
 #   endif
 
-    struct GC_activation_frame_s *activation_frame;
+    struct GC_traced_stack_sect_s *traced_stack_sect;
                         /* Points to the "frame" data held in stack by  */
                         /* the innermost GC_call_with_gc_active() of    */
                         /* this thread.  May be NULL.                   */
