@@ -39,10 +39,9 @@
 /* Machine specific parts contributed by various people.  See README file. */
 
 /* First a unified test for Linux: */
-# if defined(linux) || defined(__linux__)
-#  ifndef LINUX
-#    define LINUX
-#  endif
+# if (defined(linux) || defined(__linux__) || defined(PLATFORM_ANDROID)) \
+     && !defined(LINUX)
+#   define LINUX
 # endif
 
 /* And one for NetBSD: */
@@ -1173,7 +1172,8 @@
 #              define DATASTART ((ptr_t)((((word) (_etext)) + 0xfff) & ~0xfff))
 #            endif
 #            include <features.h>
-#            if defined(__GLIBC__) && __GLIBC__ >= 2
+#            if defined(__GLIBC__) && __GLIBC__ >= 2 \
+                || defined(PLATFORM_ANDROID)
 #                define SEARCH_FOR_DATA_START
 #            else
                  extern char **__environ;
@@ -2268,6 +2268,10 @@
 #   error --> undefined STACKBOTTOM
 # endif
 
+# ifdef IGNORE_DYNAMIC_LOADING
+#   undef DYNAMIC_LOADING
+# endif
+
 # if defined(SMALL_CONFIG) && !defined(GC_DISABLE_INCREMENTAL)
         /* Presumably not worth the space it takes. */
 #   define GC_DISABLE_INCREMENTAL
@@ -2390,7 +2394,8 @@
 #   define THREADS
 # endif
 
-# if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE)
+# if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE) \
+     && !defined(PLATFORM_ANDROID)
     /* Make the code cancellation-safe.  This basically means that we   */
     /* ensure that cancellation requests are ignored while we are in    */
     /* the collector.  This applies only to Posix deferred cancellation;*/
@@ -2404,6 +2409,9 @@
     /* Also note that little other code appears to be cancellation-safe.*/
     /* Hence it may make sense to turn this off for performance.        */
 #   define CANCEL_SAFE
+# endif
+
+# ifdef CANCEL_SAFE
 #   define IF_CANCEL(x) x
 # else
 #   define IF_CANCEL(x)

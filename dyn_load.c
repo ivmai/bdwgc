@@ -85,11 +85,19 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
     || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
                              || defined(NETBSD) || defined(OPENBSD)))
 # include <stddef.h>
-# if !defined(OPENBSD)
+# if !defined(OPENBSD) && !defined(PLATFORM_ANDROID)
     /* FIXME: Why we exclude it for OpenBSD? */
+    /* Exclude Android because linker.h below includes its own version. */
 #   include <elf.h>
 # endif
-# include <link.h>
+# ifdef PLATFORM_ANDROID
+    /* The header file is in bionics/linker. */
+    /* If you don't need the "dynamic loading" feature, you may build   */
+    /* the collector with -D IGNORE_DYNAMIC_LOADING.                    */
+#   include <linker.h>
+# else
+#   include <link.h>
+# endif
 #endif
 
 /* Newer versions of GNU/Linux define this macro.  We
@@ -571,10 +579,13 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 #  ifndef PF_W
 #  define PF_W         2
 #  endif
-#else
+#elif !defined(PLATFORM_ANDROID)
 #  include <elf.h>
 #endif
-#include <link.h>
+
+#ifndef PLATFORM_ANDROID
+# include <link.h>
+#endif
 
 # endif
 
