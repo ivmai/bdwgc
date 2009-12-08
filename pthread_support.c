@@ -963,7 +963,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
 GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
                                              void * client_data)
 {
-    struct GC_traced_stack_sect_s frame;
+    struct GC_traced_stack_sect_s stacksect;
     GC_thread me;
     LOCK();   /* This will block if the world is stopped.       */
     me = GC_lookup_thread(pthread_self());
@@ -972,12 +972,12 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     /* GC_get_stack_base() was used which returned GC_SUCCESS). */
     if ((me -> flags & MAIN_THREAD) == 0) {
       GC_ASSERT(me -> stack_end != NULL);
-      if (me -> stack_end HOTTER_THAN (ptr_t)(&frame))
-        me -> stack_end = (ptr_t)(&frame);
+      if (me -> stack_end HOTTER_THAN (ptr_t)(&stacksect))
+        me -> stack_end = (ptr_t)(&stacksect);
     } else {
       /* The original stack. */
-      if (GC_stackbottom HOTTER_THAN (ptr_t)(&frame))
-        GC_stackbottom = (ptr_t)(&frame);
+      if (GC_stackbottom HOTTER_THAN (ptr_t)(&stacksect))
+        GC_stackbottom = (ptr_t)(&stacksect);
     }
 
     if (me -> thread_blocked == FALSE) {
@@ -986,37 +986,37 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       return fn(client_data);
     }
 
-    /* Setup new "frame".       */
+    /* Setup new "stack section".       */
 #   ifdef GC_DARWIN_THREADS
-      /* FIXME: Implement it for Darwin ("frames" are ignored at present). */
+      /* FIXME: Implement it (and GC_do_blocking_inner) for Darwin. */
 #   else
-      frame.saved_stack_ptr = me -> stop_info.stack_ptr;
+      stacksect.saved_stack_ptr = me -> stop_info.stack_ptr;
 #   endif
 #   ifdef IA64
       /* This is the same as in GC_call_with_stack_base().      */
-      frame.backing_store_end = GC_save_regs_in_stack();
+      stacksect.backing_store_end = GC_save_regs_in_stack();
       /* Unnecessarily flushes register stack,          */
       /* but that probably doesn't hurt.                */
-      frame.saved_backing_store_ptr = me -> backing_store_ptr;
+      stacksect.saved_backing_store_ptr = me -> backing_store_ptr;
 #   endif
-    frame.prev = me -> traced_stack_sect;
+    stacksect.prev = me -> traced_stack_sect;
     me -> thread_blocked = FALSE;
-    me -> traced_stack_sect = &frame;
+    me -> traced_stack_sect = &stacksect;
 
     UNLOCK();
     client_data = fn(client_data);
     GC_ASSERT(me -> thread_blocked == FALSE);
-    GC_ASSERT(me -> traced_stack_sect == &frame);
+    GC_ASSERT(me -> traced_stack_sect == &stacksect);
 
-    /* Restore original "frame".        */
+    /* Restore original "stack section".        */
     LOCK();
-    me -> traced_stack_sect = frame.prev;
+    me -> traced_stack_sect = stacksect.prev;
 #   ifdef IA64
-      me -> backing_store_ptr = frame.saved_backing_store_ptr;
+      me -> backing_store_ptr = stacksect.saved_backing_store_ptr;
 #   endif
     me -> thread_blocked = TRUE;
 #   ifndef GC_DARWIN_THREADS
-      me -> stop_info.stack_ptr = frame.saved_stack_ptr;
+      me -> stop_info.stack_ptr = stacksect.saved_stack_ptr;
 #   endif
     UNLOCK();
 

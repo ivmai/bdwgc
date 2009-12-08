@@ -479,8 +479,8 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
 }
 
 #ifdef IA64
-  /* Similar to GC_push_all_stack_frames() but for IA-64 registers store. */
-  GC_INNER void GC_push_all_register_frames(ptr_t bs_lo, ptr_t bs_hi,
+  /* Similar to GC_push_all_stack_sections() but for IA-64 registers store. */
+  GC_INNER void GC_push_all_register_sections(ptr_t bs_lo, ptr_t bs_hi,
                   int eager, struct GC_traced_stack_sect_s *traced_stack_sect)
   {
     while (traced_stack_sect != NULL) {
@@ -505,7 +505,7 @@ STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
 
 #ifdef THREADS
 
-GC_INNER void GC_push_all_stack_frames(ptr_t lo, ptr_t hi,
+GC_INNER void GC_push_all_stack_sections(ptr_t lo, ptr_t hi,
                         struct GC_traced_stack_sect_s *traced_stack_sect)
 {
     while (traced_stack_sect != NULL) {
@@ -577,8 +577,8 @@ STATIC void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
 # endif
 }
 
-/* Similar to GC_push_all_stack_frames() but also uses cold_gc_frame.   */
-STATIC void GC_push_all_stack_part_eager_frames(ptr_t lo, ptr_t hi,
+/* Similar to GC_push_all_stack_sections() but also uses cold_gc_frame. */
+STATIC void GC_push_all_stack_part_eager_sections(ptr_t lo, ptr_t hi,
         ptr_t cold_gc_frame, struct GC_traced_stack_sect_s *traced_stack_sect)
 {
     GC_ASSERT(traced_stack_sect == NULL || cold_gc_frame == NULL ||
@@ -639,7 +639,7 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
           GC_push_all_eager(cold_gc_frame, GC_approx_sp());
 #       endif
 #   else
-        GC_push_all_stack_part_eager_frames(GC_approx_sp(), GC_stackbottom,
+        GC_push_all_stack_part_eager_sections(GC_approx_sp(), GC_stackbottom,
                                         cold_gc_frame, GC_traced_stack_sect);
 #       ifdef IA64
               /* We also need to push the register stack backing store. */
@@ -658,11 +658,11 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
                                 GC_traced_stack_sect->backing_store_end)
                     cold_gc_bs_pointer =
                                 GC_traced_stack_sect->backing_store_end;
-                  GC_push_all_register_frames(BACKING_STORE_BASE,
+                  GC_push_all_register_sections(BACKING_STORE_BASE,
                         cold_gc_bs_pointer, FALSE, GC_traced_stack_sect);
                   GC_push_all_eager(cold_gc_bs_pointer, bsp);
                 } else {
-                  GC_push_all_register_frames(BACKING_STORE_BASE, bsp,
+                  GC_push_all_register_sections(BACKING_STORE_BASE, bsp,
                                 TRUE /* eager */, GC_traced_stack_sect);
                 }
                 /* All values should be sufficiently aligned that we    */

@@ -177,7 +177,10 @@ GC_INNER void GC_push_all_stacks(void)
         GC_printf("Darwin: Stack for thread 0x%lx = [%p,%p)\n",
                   (unsigned long) p -> id, lo, hi);
 #     endif
-      GC_push_all_stack_frames(lo, hi, p -> traced_stack_sect);
+      /* FIXME: It is impossible to use GC_push_all_stack_sections()    */
+      /* here while GC_do_blocking_inner() and GC_call_with_gc_active() */
+      /* contain unimplemented code for Darwin.                         */
+      GC_push_all_stack(lo, hi);
       total_size += hi - lo; /* lo <= hi */
     } /* for(p=GC_threads[i]...) */
   } /* for(i=0;i<THREAD_TABLE_SZ...) */
@@ -403,7 +406,7 @@ GC_INNER void GC_push_all_stacks(void)
         GC_printf("Darwin: Stack for thread 0x%lx = [%p,%p)\n",
                   (unsigned long) thread, lo, hi);
 #     endif
-      /* FIXME: use GC_push_all_stack_frames. */
+      /* FIXME: use GC_push_all_stack_sections. */
       GC_push_all_stack(lo, hi);
       mach_port_deallocate(my_task, thread);
       total_size += hi - lo; /* lo <= hi */

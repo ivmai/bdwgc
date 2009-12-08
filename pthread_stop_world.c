@@ -325,7 +325,7 @@ GC_INNER void GC_push_all_stacks(void)
                     (unsigned)(p -> id), lo, hi);
 #       endif
         if (0 == lo) ABORT("GC_push_all_stacks: sp not set!");
-        GC_push_all_stack_frames(lo, hi, p -> traced_stack_sect);
+        GC_push_all_stack_sections(lo, hi, p -> traced_stack_sect);
 #       ifdef STACK_GROWS_UP
           total_size += lo - hi;
 #       else
@@ -338,8 +338,9 @@ GC_INNER void GC_push_all_stacks(void)
 #         endif
           /* FIXME:  This (if p->id==me) may add an unbounded number of */
           /* entries, and hence overflow the mark stack, which is bad.  */
-          GC_push_all_register_frames(bs_lo, bs_hi, THREAD_EQUAL(p -> id, me),
-                                      p -> traced_stack_sect);
+          GC_push_all_register_sections(bs_lo, bs_hi,
+                                        THREAD_EQUAL(p -> id, me),
+                                        p -> traced_stack_sect);
           total_size += bs_hi - bs_lo; /* bs_lo <= bs_hi */
 #       endif
       }

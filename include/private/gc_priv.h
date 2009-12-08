@@ -1332,7 +1332,7 @@ struct blocking_data {
     void * client_data; /* and result */
 };
 
-/* This is used by GC_call_with_gc_active(), GC_push_all_stack_frames(). */
+/* This is used by GC_call_with_gc_active(), GC_push_all_stack_sections(). */
 struct GC_traced_stack_sect_s {
   ptr_t saved_stack_ptr;
 #ifdef IA64
@@ -1345,7 +1345,7 @@ struct GC_traced_stack_sect_s {
 #ifdef THREADS
 /* Process all "traced stack sections" - scan entire stack except for   */
 /* frames belonging to the user functions invoked by GC_do_blocking().  */
-  GC_INNER void GC_push_all_stack_frames(ptr_t lo, ptr_t hi,
+  GC_INNER void GC_push_all_stack_sections(ptr_t lo, ptr_t hi,
                         struct GC_traced_stack_sect_s *traced_stack_sect);
   GC_EXTERN word GC_total_stacksize; /* updated on every push_all_stacks */
 #else
@@ -1357,8 +1357,8 @@ struct GC_traced_stack_sect_s {
 #endif /* !THREADS */
 
 #ifdef IA64
-  /* Similar to GC_push_all_stack_frames() but for IA-64 registers store. */
-  GC_INNER void GC_push_all_register_frames(ptr_t bs_lo, ptr_t bs_hi,
+  /* Similar to GC_push_all_stack_sections() but for IA-64 registers store. */
+  GC_INNER void GC_push_all_register_sections(ptr_t bs_lo, ptr_t bs_hi,
                   int eager, struct GC_traced_stack_sect_s *traced_stack_sect);
 #endif
 

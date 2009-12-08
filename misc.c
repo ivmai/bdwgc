@@ -1487,43 +1487,43 @@ GC_INNER struct GC_traced_stack_sect_s *GC_traced_stack_sect = NULL;
 GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
                                              void * client_data)
 {
-    struct GC_traced_stack_sect_s frame;
+    struct GC_traced_stack_sect_s stacksect;
     GC_ASSERT(GC_is_initialized);
 
     /* Adjust our stack base value (this could happen if        */
     /* GC_get_main_stack_base() is unimplemented or broken for  */
     /* the platform).                                           */
-    if (GC_stackbottom HOTTER_THAN (ptr_t)(&frame))
-      GC_stackbottom = (ptr_t)(&frame);
+    if (GC_stackbottom HOTTER_THAN (ptr_t)(&stacksect))
+      GC_stackbottom = (ptr_t)(&stacksect);
 
     if (GC_blocked_sp == NULL) {
       /* We are not inside GC_do_blocking() - do nothing more.  */
       return fn(client_data);
     }
 
-    /* Setup new "frame".       */
-    frame.saved_stack_ptr = GC_blocked_sp;
+    /* Setup new "stack section".       */
+    stacksect.saved_stack_ptr = GC_blocked_sp;
 #   ifdef IA64
       /* This is the same as in GC_call_with_stack_base().      */
-      frame.backing_store_end = GC_save_regs_in_stack();
+      stacksect.backing_store_end = GC_save_regs_in_stack();
       /* Unnecessarily flushes register stack,          */
       /* but that probably doesn't hurt.                */
-      frame.saved_backing_store_ptr = GC_blocked_register_sp;
+      stacksect.saved_backing_store_ptr = GC_blocked_register_sp;
 #   endif
-    frame.prev = GC_traced_stack_sect;
+    stacksect.prev = GC_traced_stack_sect;
     GC_blocked_sp = NULL;
-    GC_traced_stack_sect = &frame;
+    GC_traced_stack_sect = &stacksect;
 
     client_data = fn(client_data);
     GC_ASSERT(GC_blocked_sp == NULL);
-    GC_ASSERT(GC_traced_stack_sect == &frame);
+    GC_ASSERT(GC_traced_stack_sect == &stacksect);
 
-    /* Restore original "frame".        */
-    GC_traced_stack_sect = frame.prev;
+    /* Restore original "stack section".        */
+    GC_traced_stack_sect = stacksect.prev;
 #   ifdef IA64
-      GC_blocked_register_sp = frame.saved_backing_store_ptr;
+      GC_blocked_register_sp = stacksect.saved_backing_store_ptr;
 #   endif
-    GC_blocked_sp = frame.saved_stack_ptr;
+    GC_blocked_sp = stacksect.saved_stack_ptr;
 
     return client_data; /* result */
 }

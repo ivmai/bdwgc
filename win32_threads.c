@@ -219,9 +219,10 @@ struct GC_Thread_Rep {
                                 /* not need to stop this thread.        */
 
   struct GC_traced_stack_sect_s *traced_stack_sect;
-                        /* Points to the "frame" data held in stack by  */
-                        /* the innermost GC_call_with_gc_active() of    */
-                        /* this thread.  May be NULL.                   */
+                                /* Points to the "stack section" data   */
+                                /* held in stack by the innermost       */
+                                /* GC_call_with_gc_active() of this     */
+                                /* thread.  May be NULL.                */
 
   unsigned finalizer_nested;
   unsigned finalizer_skipped;   /* Used by GC_check_finalizer_nested()  */
@@ -776,7 +777,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
 GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
                                              void * client_data)
 {
-  struct GC_traced_stack_sect_s frame;
+  struct GC_traced_stack_sect_s stacksect;
   GC_thread me;
   LOCK();   /* This will block if the world is stopped.         */
   me = GC_lookup_thread_inner(GetCurrentThreadId());
@@ -784,8 +785,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   /* Adjust our stack base value (this could happen unless      */
   /* GC_get_stack_base() was used which returned GC_SUCCESS).   */
   GC_ASSERT(me -> stack_base != NULL);
-  if (me -> stack_base < (ptr_t)(&frame))
-    me -> stack_base = (ptr_t)(&frame);
+  if (me -> stack_base < (ptr_t)(&stacksect))
+    me -> stack_base = (ptr_t)(&stacksect);
 
   if (me -> thread_blocked_sp == NULL) {
     /* We are not inside GC_do_blocking() - do nothing more.    */
@@ -793,31 +794,31 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     return fn(client_data);
   }
 
-  /* Setup new "frame".       */
-  frame.saved_stack_ptr = me -> thread_blocked_sp;
+  /* Setup new "stack section". */
+  stacksect.saved_stack_ptr = me -> thread_blocked_sp;
 # ifdef IA64
     /* This is the same as in GC_call_with_stack_base().        */
-    frame.backing_store_end = GC_save_regs_in_stack();
+    stacksect.backing_store_end = GC_save_regs_in_stack();
     /* Unnecessarily flushes register stack,    */
     /* but that probably doesn't hurt.          */
-    frame.saved_backing_store_ptr = me -> backing_store_ptr;
+    stacksect.saved_backing_store_ptr = me -> backing_store_ptr;
 # endif
-  frame.prev = me -> traced_stack_sect;
+  stacksect.prev = me -> traced_stack_sect;
   me -> thread_blocked_sp = NULL;
-  me -> traced_stack_sect = &frame;
+  me -> traced_stack_sect = &stacksect;
 
   UNLOCK();
   client_data = fn(client_data);
   GC_ASSERT(me -> thread_blocked_sp == NULL);
-  GC_ASSERT(me -> traced_stack_sect == &frame);
+  GC_ASSERT(me -> traced_stack_sect == &stacksect);
 
-  /* Restore original "frame".  */
+  /* Restore original "stack section".  */
   LOCK();
-  me -> traced_stack_sect = frame.prev;
+  me -> traced_stack_sect = stacksect.prev;
 # ifdef IA64
-    me -> backing_store_ptr = frame.saved_backing_store_ptr;
+    me -> backing_store_ptr = stacksect.saved_backing_store_ptr;
 # endif
-  me -> thread_blocked_sp = frame.saved_stack_ptr;
+  me -> thread_blocked_sp = stacksect.saved_stack_ptr;
   UNLOCK();
 
   return client_data; /* result */
@@ -1257,7 +1258,7 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
       GC_printf("Pushing stack for 0x%x from sp %p to %p from 0x%x\n",
                 (int)thread -> id, sp, thread -> stack_base, (int)me);
 #   endif
-    GC_push_all_stack_frames(sp, thread->stack_base, traced_stack_sect);
+    GC_push_all_stack_sections(sp, thread->stack_base, traced_stack_sect);
   } else {
     /* If not current thread then it is possible for sp to point to     */
     /* the guarded (untouched yet) page just below the current          */
