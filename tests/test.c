@@ -1532,7 +1532,7 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev,
     GC_printf("Using DllMain to track threads\n");
 # endif
   GC_COND_INIT();
-# ifndef NO_INCREMENTAL
+# if !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL)
     GC_enable_incremental();
 # endif
   InitializeCriticalSection(&incr_cs);
@@ -1650,8 +1650,7 @@ int main(void)
         pthread_attr_setstacksize(&attr, 1000000);
 #   endif
     n_tests = 0;
-#   if (defined(MPROTECT_VDB)) \
-            && !defined(PARALLEL_MARK) &&!defined(REDIRECT_MALLOC) \
+#   if (defined(MPROTECT_VDB)) && !defined(REDIRECT_MALLOC) \
             && !defined(MAKE_BACK_GRAPH) && !defined(USE_PROC_FOR_LIBRARIES) \
             && !defined(NO_INCREMENTAL)
         GC_enable_incremental();
