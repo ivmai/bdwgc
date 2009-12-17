@@ -2122,7 +2122,7 @@ GC_EXTERN signed_word GC_bytes_found;
        /* Linuxthreads itself uses SIGUSR1 and SIGUSR2.                 */
 #      define SIG_SUSPEND SIGPWR
 #    endif
-#   else  /* !GC_LINUX_THREADS */
+#   elif !defined(GC_OPENBSD_THREADS) && !defined(GC_DARWIN_THREADS)
 #     if defined(_SIGRTMIN)
 #       define SIG_SUSPEND _SIGRTMIN + 6
 #     else
