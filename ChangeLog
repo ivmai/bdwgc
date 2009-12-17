@@ -1,3 +1,7 @@
+2009-12-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h: Recognize _M_X64 (as an alias for _AMD64_).
+
 2009-12-10  Hans-J. Boehm <Hans.Boehm@hp.com>
 
 	* test.c (main, WinMain): Consistently don't invoke

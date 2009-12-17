@@ -607,8 +607,9 @@ GC_API void * GC_CALL GC_malloc_atomic_ignore_off_page(size_t /* lb */)
 #endif
 
 #if defined(_MSC_VER) && _MSC_VER >= 1200 /* version 12.0+ (MSVC 6.0+) */ \
-        && !defined(_AMD64_) && !defined(GC_HAVE_NO_BUILTIN_BACKTRACE) \
-        && !defined(_WIN32_WCE) && !defined(GC_HAVE_BUILTIN_BACKTRACE)
+        && !defined(_AMD64_) && !defined(_M_X64) && !defined(_WIN32_WCE) \
+        && !defined(GC_HAVE_NO_BUILTIN_BACKTRACE) \
+        && !defined(GC_HAVE_BUILTIN_BACKTRACE)
 # define GC_HAVE_BUILTIN_BACKTRACE
 #endif
 
