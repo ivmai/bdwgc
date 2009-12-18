@@ -1067,13 +1067,14 @@ GC_API void GC_CALL GC_allow_register_threads(void);
 /* libraries.                                                           */
 GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *);
 
-/* Unregister the current thread.  Only an explicity registered thread  */
+/* Unregister the current thread.  Only an explicitly registered thread */
 /* (i.e. for which GC_register_my_thread() returns GC_SUCCESS) is       */
-/* allowed (and required) to call this function.  The thread may no     */
-/* longer allocate garbage collected memory or manipulate pointers to   */
-/* the garbage collected heap after making this call.                   */
-/* Specifically, if it wants to return or otherwise communicate a       */
-/* pointer to the garbage-collected heap to another thread, it must     */
+/* allowed (and required) to call this function.  (As a special         */
+/* exception, it is also allowed to once unregister the main thread.)   */
+/* The thread may no longer allocate garbage collected memory or        */
+/* manipulate pointers to the garbage collected heap after making this  */
+/* call.  Specifically, if it wants to return or otherwise communicate  */
+/* a pointer to the garbage-collected heap to another thread, it must   */
 /* do this before calling GC_unregister_my_thread, most probably        */
 /* by saving it in a global data structure.  Must not be called inside  */
 /* a GC callback function (except for GC_call_with_stack_base() one).   */

@@ -442,6 +442,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
 # ifdef GC_PTHREADS
     /* me can be NULL -> segfault */
     me -> pthread_id = pthread_self();
+    me -> flags = DETACHED; /* cleared in GC_pthread_start_inner if needed */
 # endif
 # ifndef MSWINCE
     /* GetCurrentThread() returns a pseudohandle (a const value).       */
@@ -652,11 +653,11 @@ STATIC void GC_delete_gc_thread(GC_vthread gc_id)
 }
 
 /* Delete a thread from GC_threads.  We assume it is there.     */
-/* (The code intentionally traps if it wasn't.)                 */
-/* Assumes we hold the allocation lock unless                   */
-/* GC_win32_dll_threads is set.                                 */
-/* If GC_win32_dll_threads is set it should be called from the  */
-/* thread being deleted.                                        */
+/* (The code intentionally traps if it wasn't.)  Assumes we     */
+/* hold the allocation lock unless GC_win32_dll_threads is set. */
+/* If GC_win32_dll_threads is set then it should be called from */
+/* the thread being deleted.  It is also safe to delete the     */
+/* main thread (unless GC_win32_dll_threads).                   */
 STATIC void GC_delete_thread(DWORD id)
 {
   if (GC_win32_dll_threads) {
@@ -685,7 +686,9 @@ STATIC void GC_delete_thread(DWORD id)
     } else {
       prev -> tm.next = p -> tm.next;
     }
-    GC_INTERNAL_FREE(p);
+    if (p != &first_thread) {
+      GC_INTERNAL_FREE(p);
+    }
   }
 }
 
@@ -723,7 +726,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
   DWORD t = GetCurrentThreadId();
-
+  /* FIXME: is GC_wait_for_gc_completion(FALSE) needed here? */
   if (GC_win32_dll_threads) {
 #   if defined(THREAD_LOCAL_ALLOC)
       /* Can't happen: see GC_use_DllMain(). */
@@ -2433,12 +2436,12 @@ GC_INNER void GC_thr_init(void)
     /* we don't need to hold the allocation lock during pthread_create. */
     me = GC_register_my_thread_inner(sb, thread_id);
     SET_PTHREAD_MAP_CACHE(pthread_id, thread_id);
+    me -> pthread_id = pthread_id;
+    if (!si->detached) me -> flags &= ~DETACHED;
     UNLOCK();
 
     start = si -> start_routine;
     start_arg = si -> arg;
-    if (si-> detached) me -> flags |= DETACHED;
-    me -> pthread_id = pthread_id;
 
     GC_free(si); /* was allocated uncollectable */
 

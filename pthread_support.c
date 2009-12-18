@@ -397,6 +397,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
 
 /* Delete a thread from GC_threads.  We assume it is there.     */
 /* (The code intentionally traps if it wasn't.)                 */
+/* It is safe to delete the main thread.                        */
 STATIC void GC_delete_thread(pthread_t id)
 {
     int hv = NUMERIC_THREAD_ID(id) % THREAD_TABLE_SZ;
@@ -413,10 +414,12 @@ STATIC void GC_delete_thread(pthread_t id)
     } else {
         prev -> next = p -> next;
     }
-#   ifdef GC_DARWIN_THREADS
+    if (p != &first_thread) {
+#     ifdef GC_DARWIN_THREADS
         mach_port_deallocate(mach_task_self(), p->stop_info.mach_thread);
-#   endif
-    GC_INTERNAL_FREE(p);
+#     endif
+      GC_INTERNAL_FREE(p);
+    }
 }
 
 /* If a thread has been joined, but we have not yet             */
@@ -1042,6 +1045,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     /* complete before we remove this thread.                   */
     GC_wait_for_gc_completion(FALSE);
     me = GC_lookup_thread(pthread_self());
+    GC_ASSERT(!(me -> flags & FINISHED));
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_destroy_thread_local(&(me->tlfs));
 #   endif

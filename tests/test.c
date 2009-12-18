@@ -1340,6 +1340,9 @@ void check_heap_stats(void)
         (void)GC_printf("Unexpected heap growth - collector may be broken\n");
         FAIL;
     }
+#   ifdef THREADS
+      GC_unregister_my_thread(); /* just to check it works (for main) */
+#   endif
     (void)GC_printf("Collector appears to work\n");
 }
 

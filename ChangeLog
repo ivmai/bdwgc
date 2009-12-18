@@ -1,9 +1,28 @@
-2009-12-07  Ivan Maidanski <ivmai@mail.ru> (with input from Andy Wingo)
+2009-12-18  Ivan Maidanski <ivmai@mail.ru> (with input from
+	                                    Jean-Claude Beaudoin)
+
+	* include/gc.h (GC_unregister_my_thread): Fix a typo; update the
+	comment.
+	* pthread_support.c (GC_delete_thread): Allow to delete the main
+	thread (don't call GC_INTERNAL_FREE for it); update the comment.
+	* win32_threads.c (GC_delete_thread): Ditto.
+	* pthread_support.c (GC_unregister_my_thread): Add an assertion
+	for FINISHED flag is unset.
+	* tests/test.c (check_heap_stats): Test the main thread
+	unregistering (only if THREADS).
+	* win32_threads.c (GC_register_my_thread_inner): Set flags to
+	DETACHED (only if GC_PTHREADS).
+	* win32_threads.c (GC_unregister_my_thread): Add FIXME (for
+	GC_wait_for_gc_completion).
+	* win32_threads.c (GC_pthread_start_inner): Clear flags detached
+	state if needed; set pthread_id and flags while holding the lock.
+
+2009-12-17  Ivan Maidanski <ivmai@mail.ru> (with input from Andy Wingo)
 
 	* include/private/gc_priv.h (SIG_SUSPEND): Don't define for
 	OpenBSD and Darwin.
 
-2009-12-07  Ivan Maidanski <ivmai@mail.ru>
+2009-12-17  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/gc.h: Recognize _M_X64 (as an alias for _AMD64_).
 
