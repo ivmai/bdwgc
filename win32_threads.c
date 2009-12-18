@@ -442,7 +442,6 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
 # ifdef GC_PTHREADS
     /* me can be NULL -> segfault */
     me -> pthread_id = pthread_self();
-    me -> flags = DETACHED; /* cleared in GC_pthread_start_inner if needed */
 # endif
 # ifndef MSWINCE
     /* GetCurrentThread() returns a pseudohandle (a const value).       */
@@ -2437,7 +2436,7 @@ GC_INNER void GC_thr_init(void)
     me = GC_register_my_thread_inner(sb, thread_id);
     SET_PTHREAD_MAP_CACHE(pthread_id, thread_id);
     me -> pthread_id = pthread_id;
-    if (!si->detached) me -> flags &= ~DETACHED;
+    if (si->detached) me -> flags |= DETACHED;
     UNLOCK();
 
     start = si -> start_routine;

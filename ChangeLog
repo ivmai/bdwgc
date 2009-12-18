@@ -1,3 +1,10 @@
+2009-12-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c (GC_register_my_thread_inner,
+	GC_pthread_start_inner): Undo the previous commit changes for
+	the thread flags and DETACHED state (since the state is only
+	tested in GC_thread_exit_proc).
+
 2009-12-18  Ivan Maidanski <ivmai@mail.ru> (with input from
 	                                    Jean-Claude Beaudoin)
 
