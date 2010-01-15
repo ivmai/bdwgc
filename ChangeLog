@@ -1,3 +1,10 @@
+2010-01-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_cpp.h (GC_PLACEMENT_DELETE): Define for Embarcadero
+	(formerly known as Borland) C++ compiler v6.21+.
+	* include/gc_cpp.h (GC_NO_OPERATOR_NEW_ARRAY): Define for ancient
+	VC++ compilers.
+
 2009-12-18  Ivan Maidanski <ivmai@mail.ru>
 
 	* win32_threads.c (GC_register_my_thread_inner,

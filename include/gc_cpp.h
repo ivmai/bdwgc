@@ -153,6 +153,7 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
     && (defined(__BORLANDC__) && (__BORLANDC__ < 0x450) \
         || (defined(__GNUC__) && \
             (__GNUC__ < 2 || __GNUC__ == 2 && __GNUC_MINOR__ < 6)) \
+        || (defined(_MSC_VER) && _MSC_VER <= 1020) \
         || (defined(__WATCOMC__) && __WATCOMC__ < 1050))
 #   define GC_NO_OPERATOR_NEW_ARRAY
 #endif
@@ -161,7 +162,7 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 #   define GC_OPERATOR_NEW_ARRAY
 #endif
 
-#if    ! defined ( __BORLANDC__ )  /* Confuses the Borland compiler. */ \
+#if (!defined(__BORLANDC__) || __BORLANDC__ > 0x0620) \
     && ! defined ( __sgi ) && ! defined( __WATCOMC__ ) \
     && (!defined(_MSC_VER) || _MSC_VER > 1020)
 #  define GC_PLACEMENT_DELETE
