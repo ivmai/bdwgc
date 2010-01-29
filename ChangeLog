@@ -1,3 +1,18 @@
+2010-01-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.in: Regenerate (by autoreconf -vif using
+	libtool-2.2.6b, automake-1.11.1, autoconf-2.65).
+	* aclocal.m4: Ditto.
+	* compile: Ditto.
+	* config.guess: Ditto.
+	* config.sub: Ditto.
+	* configure: Ditto.
+	* depcomp: Ditto.
+	* install-sh: Ditto.
+	* ltmain.sh: Ditto.
+	* missing: Ditto.
+	* mkinstalldirs: Ditto.
+
 2010-01-15  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/gc_cpp.h (GC_PLACEMENT_DELETE): Define for Embarcadero
