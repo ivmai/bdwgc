@@ -1,3 +1,7 @@
+2010-02-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* ChangeLog: Fix some typos.
+
 2010-01-29  Ivan Maidanski <ivmai@mail.ru>
 
 	* Makefile.in: Regenerate (by autoreconf -vif using
@@ -3185,7 +3189,7 @@
 	GC_fault_handler_lock only if MPROTECT_VDB (and not WinCE).
 	* win32_threads.c (GC_suspend): Define as STATIC.
 	* win32_threads.c (GC_push_stack_for): Fix WARN() format specifier
-	(should be word-complient, "%p" is used w/o "0x"), don't cast sp.
+	(should be word-compliant, "%p" is used w/o "0x"), don't cast sp.
 	* win32_threads.c (GC_push_all_stacks): Convert a group of printf()
 	calls into a single one (for output atomicity).
 	* win32_threads.c (GC_get_next_stack): Unprotect thread descriptor
@@ -3234,7 +3238,7 @@
 	set the default initial value of initial_heap_sz.
 	* misc.c (GC_deinit): Destroy GC_write_cs only if THREADS.
 	* misc.c (GC_init_inner): Fix WARN() format specifier (should be
-	word-complient, "%p" is used w/o "0x").
+	word-compliant, "%p" is used w/o "0x").
 	* misc.c (GC_init_inner): Don't recognize "GC_PAUSE_TIME_TARGET"
 	environment variable if SMALL_CONFIG.
 	* misc.c (GC_init_inner): Recognize "GC_FULL_FREQUENCY" environment
@@ -3264,7 +3268,7 @@
 	alignment before gaining the lock.
 	* finalize.c (GC_finalize): Refine comment.
 	* finalize.c (GC_finalize): Fix WARN() format specifier (should be
-	word-complient, "%p" is used w/o "0x").
+	word-compliant, "%p" is used w/o "0x").
 	* finalize.c (GC_invoke_finalizers): Initialize "bytes_freed_before"
 	variable (to 0) to suppress compiler warning.
 	* include/gc_gcj.h (MARK_DESCR_OFFSET): Move to private/gc_pmark.h.
@@ -3423,7 +3427,7 @@
 2009-05-27  Hans Boehm <Hans.Boehm@hp.com> (Really Ivan Maidanski)
 	(diff26)
 
-	* win32_threads.c: restructure parallel marking mutex intialization.
+	* win32_threads.c: restructure parallel marking mutex initialization.
 	* win32_threads.c, alloc.c, darwin_stop_world.c, mallocx.c, mark.c,
 	pthread_stop_world.c, pthread_support.c: Add runtime conditions
 	on GC_parallel were appropriate.
@@ -4032,7 +4036,7 @@
 
 2008-02-20  Hans Boehm <Hans.Boehm@hp.com>
 
-	* include/private/gcconfig.h: Add misssing FREEBSD macro
+	* include/private/gcconfig.h: Add missing FREEBSD macro
 	consistency test.
 
 2008-02-20  Hans Boehm <Hans.Boehm@hp.com>
