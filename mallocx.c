@@ -232,8 +232,6 @@ GC_API void GC_CALL GC_incr_bytes_freed(size_t n)
     GC_bytes_freed += n;
 }
 
-#if defined(THREADS)
-
 # ifdef PARALLEL_MARK
     STATIC volatile signed_word GC_bytes_allocd_tmp = 0;
                         /* Number of bytes of memory allocated since    */
@@ -422,18 +420,16 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     (void) GC_clear_stack(0);
 }
 
+/* Note that the "atomic" version of this would be unsafe, since the    */
+/* links would not be seen by the collector.                            */
 GC_API void * GC_CALL GC_malloc_many(size_t lb)
 {
     void *result;
-    GC_generic_malloc_many(((lb + EXTRA_BYTES + GRANULE_BYTES-1)
-                           & ~(GRANULE_BYTES-1)),
+    GC_generic_malloc_many((lb + EXTRA_BYTES + GRANULE_BYTES-1)
+                           & ~(GRANULE_BYTES-1),
                            NORMAL, &result);
     return result;
 }
-
-/* Note that the "atomic" version of this would be unsafe, since the    */
-/* links would not be seen by the collector.                            */
-#endif /* THREADS */
 
 /* Allocate lb bytes of pointerful, traced, but not collectable data */
 GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)

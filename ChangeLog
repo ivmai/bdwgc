@@ -1,3 +1,9 @@
+2010-02-04  Ivan Maidanski <ivmai@mail.ru>
+
+	* mallocx.c (GC_generic_malloc_many, GC_malloc_many): Define even
+	if THREADS is undefined.
+	* include/gc.h (GC_malloc_many): Update the comment.
+
 2010-02-03  Ivan Maidanski <ivmai@mail.ru>
 
 	* ChangeLog: Fix some typos.
