@@ -1,3 +1,12 @@
+2010-02-15  Ivan Maidanski <ivmai@mail.ru> (really Alexandr Shadchin)
+
+	* pthread_support.c: Include <sys/param.h> and <sys/sysctl.h> for
+	OpenBSD.
+	* pthread_support.c (get_ncpu): Define also for Darwin, NetBSD and
+	OpenBSD.
+	* pthread_support.c (GC_thr_init): Use get_ncpu() for Darwin,
+	NetBSD and OpenBSD.
+
 2010-02-04  Ivan Maidanski <ivmai@mail.ru>
 
 	* mallocx.c (GC_generic_malloc_many, GC_malloc_many): Define even

@@ -71,7 +71,7 @@
 # include <sys/sysctl.h>
 #endif /* GC_DARWIN_THREADS */
 
-#if defined(GC_NETBSD_THREADS)
+#if defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS)
 # include <sys/param.h>
 # include <sys/sysctl.h>
 #endif /* GC_NETBSD_THREADS */
@@ -755,7 +755,8 @@ STATIC void GC_fork_child_proc(void)
   }
 #endif /* GC_DGUX386_THREADS */
 
-#if defined(GC_NETBSD_THREADS)
+#if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS) \
+    || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS)
   static int get_ncpu(void)
   {
     int mib[] = {CTL_HW,HW_NCPU};
@@ -832,18 +833,9 @@ GC_INNER void GC_thr_init(void)
           GC_nprocs = sysconf(_SC_NPROC_ONLN);
           if (GC_nprocs <= 0) GC_nprocs = 1;
 #       endif
-#       if defined(GC_NETBSD_THREADS)
+#       if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS) \
+           || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS)
           GC_nprocs = get_ncpu();
-#       endif
-#       if defined(GC_OPENBSD_THREADS)
-          /* FIXME: Implement real "get_ncpu". */
-          GC_nprocs = 2;
-#       endif
-#       if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS)
-          int ncpus = 1;
-          size_t len = sizeof(ncpus);
-          sysctl((int[2]) {CTL_HW, HW_NCPU}, 2, &ncpus, &len, NULL, 0);
-          GC_nprocs = ncpus;
 #       endif
 #       if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
           GC_nprocs = GC_get_nprocs();
