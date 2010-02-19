@@ -23,7 +23,7 @@ AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.59 $)
+AC_REVISION($Revision: 1.60 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
 AM_CONFIG_HEADER([include/private/config.h])
@@ -275,54 +275,6 @@ case "$host" in
    powerpc-*-darwin*)
       powerpc_darwin=true
       ;;
-esac
-
-# Darwin needs a few extra special tests to deal with variation in the
-# system headers.
-case "$host" in
-  powerpc*-*-darwin*)
-    AC_CHECK_MEMBER(ppc_thread_state_t.r0,
-      AC_DEFINE(HAS_PPC_THREAD_STATE_R0,1,
-	[ppc_thread_state_t has field r0]),,
-      [#include <mach/thread_status.h>])
-    AC_CHECK_MEMBER(ppc_thread_state_t.__r0,
-      AC_DEFINE(HAS_PPC_THREAD_STATE___R0,1,dnl
-	[ppc_thread_state_t has field __r0]),,
-      [#include <mach/thread_status.h>])
-    AC_CHECK_MEMBER(ppc_thread_state64_t.r0,
-      AC_DEFINE(HAS_PPC_THREAD_STATE64_R0,1,dnl
-	[ppc_thread_state64_t has field r0]),,
-      [#include <mach/thread_status.h>])
-    AC_CHECK_MEMBER(ppc_thread_state64_t.__r0,
-      AC_DEFINE(HAS_PPC_THREAD_STATE64___R0,1,dnl
-	[ppc_thread_state64_t has field __r0]),,
-      [#include <mach/thread_status.h>])
-    ;;
-  i?86*-*-darwin*)
-    AC_CHECK_MEMBER(x86_thread_state32_t.eax,
-      AC_DEFINE(HAS_X86_THREAD_STATE32_EAX,1,dnl
-	[x86_thread_state32_t has field eax]),,
-      [#include <sys/cdefs.h>
-      #include <mach/thread_status.h>])
-    AC_CHECK_MEMBER(x86_thread_state32_t.__eax,
-      AC_DEFINE(HAS_X86_THREAD_STATE32___EAX,1,dnl
-	[x86_thread_state32_t has field __eax]),,
-      [#include <sys/cdefs.h>
-      #include <mach/thread_status.h>])
-    ;;
-  x86_64-*-darwin*)
-    AC_CHECK_MEMBER(x86_thread_state64_t.rax,
-      AC_DEFINE(HAS_X86_THREAD_STATE64_RAX,1,dnl
-	[x86_thread_state64_t has field rax]),,
-      [#include <sys/cdefs.h>
-      #include <mach/thread_status.h>])
-    AC_CHECK_MEMBER(x86_thread_state64_t.__rax,
-      AC_DEFINE(HAS_X86_THREAD_STATE64___RAX,1,dnl
-	[x86_thread_state64_t has field __rax]),,
-      [#include <sys/cdefs.h>
-      #include <mach/thread_status.h>])
-     ;;
-  *) ;;
 esac
 
 AC_MSG_CHECKING(for xlc)

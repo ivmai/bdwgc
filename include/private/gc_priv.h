@@ -510,10 +510,7 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
    The structure has changed its definition in different Darwin versions.
    This now defaults to the (older) names without __, thus hopefully,
    not breaking any existing Makefile.direct builds.  */
-#       if defined (HAS_PPC_THREAD_STATE___R0) \
-          || defined (HAS_PPC_THREAD_STATE64___R0) \
-          || defined (HAS_X86_THREAD_STATE32___EAX) \
-          || defined (HAS_X86_THREAD_STATE64___RAX)
+#       if __DARWIN_UNIX03
 #         define THREAD_FLD(x) __ ## x
 #       else
 #         define THREAD_FLD(x) x
