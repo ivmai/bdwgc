@@ -17,6 +17,10 @@ ADD_DEFINITIONS("-D_CRT_SECURE_NO_DEPRECATE
                  -DGC_BUILD
 ")
 
+IF(APPLE)
+    SET(CMAKE_OSX_ARCHITECTURES "ppc;i386;x86_64" CACHE STRING "Build architectures for Mac OS X" FORCE)
+ENDIF(APPLE)
+
 #LIBATOMIC #TODO
 #ADD_LIBRARY(atomic_ops STATIC )
 #SET_TARGET_PROPERTIES(atomic_ops PROPERTIES COMPILE_FLAGS -DNO_DEBUGGING)
@@ -25,8 +29,13 @@ ADD_DEFINITIONS("-D_CRT_SECURE_NO_DEPRECATE
 #LIBGC
 
 INCLUDE_DIRECTORIES(include)
-INCLUDE_DIRECTORIES(libatomic_ops\src)
+INCLUDE_DIRECTORIES(libatomic_ops/src)
 
+SET(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
+        mark_rts.c headers.c mark.c obj_map.c blacklst.c finalize.c
+        new_hblk.c dbg_mlc.c malloc.c stubborn.c dyn_load.c
+        typd_mlc.c ptr_chck.c gc_cpp.cc mallocx.c checksums.c
+        thread_local_alloc.c)
 SET(LIBS)
 OPTION(enable_threads "TODO" NO)
 IF(enable_threads)
@@ -57,6 +66,7 @@ MESSAGE("HOST = ${HOST}")
 #Thread Detection. Relying on cmake for lib an includes.
 #TODO check cmake detection
 IF(CMAKE_USE_PTHREADS_INIT)
+        SET(SRC ${SRC} pthread_support.c pthread_stop_world.c)
         IF( "HOST" MATCHES x86-.*-linux.*|ia64-.*-linux.*|i586-.*-linux.*|i686-.*-linux.*|x86_64-.*-linux.*|alpha-.*-linux.*|sparc.*-.*-linux.*)
                 ADD_DEFINITIONS("-DGC_LINUX_THREADS")
                 ADD_DEFINITIONS("-D_REENTRANT")
@@ -143,6 +153,7 @@ IF(CMAKE_USE_PTHREADS_INIT)
                 ADD_DEFINITIONS("-DGC_DARWIN_THREADS")
                 ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
                 MESSAGE("Explicit GC_INIT() calls may be required.")
+                SET(SRC ${SRC} darwin_stop_world.c)
                 # Parallel-mark is currently unreliable on Darwin; ignore request
                 #IF (${enable_parallel_mark})
                 #       ADD_DEFINITIONS("-DPARALLEL_MARK")
@@ -174,6 +185,7 @@ IF(CMAKE_USE_WIN32_THREADS_INIT)
                 ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
         ENDIF()
         ADD_DEFINITIONS("-DEMPTY_GETENV_RESULTS") #TODO test
+        SET(SRC ${SRC} win32_threads.c)
 ENDIF(CMAKE_USE_WIN32_THREADS_INIT)
 
 OPTION(enable_gcj_support "Support for gcj" NO)
@@ -182,11 +194,6 @@ IF(enable_gcj_support)
         ADD_DEFINITIONS("-DGC_GCJ_SUPPORT")
 ENDIF(enable_gcj_support)
 
-SET(SRC alloc.c reclaim.c allchblk.c misc.c mach_dep.c os_dep.c
-        mark_rts.c headers.c mark.c obj_map.c blacklst.c finalize.c
-        new_hblk.c dbg_mlc.c malloc.c stubborn.c dyn_load.c
-        typd_mlc.c ptr_chck.c gc_cpp.cc mallocx.c checksums.c
-        win32_threads.c)
 
 ADD_LIBRARY(          gc-lib   STATIC      ${SRC})
 SET_TARGET_PROPERTIES(gc-lib   PROPERTIES

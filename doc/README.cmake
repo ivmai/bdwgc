@@ -5,6 +5,8 @@ CMAKE
 Win32 binaries (both 32- and 64-bit) can be built using CMake.  CMake is an
 open-source tool like automake - it generates makefiles.
 
+Some preliminary work has been done to make this work on other platforms, but
+the support is not yet complete.
 
 CMake will generate:
 
@@ -33,6 +35,12 @@ BUILD PROCESS
    eg.
       > cmake -G "Visual Studio 8 2005"
    use the gc.sln file genereated by cmake to build gc
+ . you can also run cmake from a build directory to build outside of
+   the source tree. Just specify the path to the source tree:
+   eg.
+      > mkdir build
+      > cd build
+      > cmake .. -G "Visual Studio 8 2005"
 
 
 INPUT
