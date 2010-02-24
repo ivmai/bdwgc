@@ -1,5 +1,9 @@
 2010-02-24  Ivan Maidanski <ivmai@mail.ru> (really Bruce Mitchener)
 
+	* doc/README.darwin: Update.
+
+2010-02-24  Ivan Maidanski <ivmai@mail.ru> (really Bruce Mitchener)
+
 	* CMakeLists.txt: Adjust INCLUDE_DIRECTORIES and SRC (to make it
 	usable on Mac OS X).
 	* doc/README.cmake: Update.
