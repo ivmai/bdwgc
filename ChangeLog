@@ -1,3 +1,8 @@
+2010-02-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* CMakeLists.txt: Change copyright header.
+	* tests/CMakeLists.txt: Ditto.
+
 2010-02-24  Ivan Maidanski <ivmai@mail.ru> (really Bruce Mitchener)
 
 	* doc/README.darwin: Update.
