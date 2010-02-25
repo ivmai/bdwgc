@@ -1,0 +1,15 @@
+*.lo
+.libs
+Makefile
+bdw-gc.pc
+config.log
+config.status
+gctest
+hugetest
+leaktest
+libcord.la
+libgc.la
+libtool
+middletest
+smashtest
+threadleaktest

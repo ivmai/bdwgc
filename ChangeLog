@@ -1,3 +1,8 @@
+2010-02-25  Ivan Maidanski <ivmai@mail.ru> (really Bruce Mitchener)
+
+	* .cvsignore: New file.
+	* include/private/.cvsignore: Ditto.
+
 2010-02-24  Ivan Maidanski <ivmai@mail.ru>
 
 	* CMakeLists.txt: Change copyright header.
