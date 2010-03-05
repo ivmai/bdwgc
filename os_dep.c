@@ -1299,6 +1299,9 @@ GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
 #   ifdef NEED_FIND_LIMIT
       int dummy;
       IF_CANCEL(int cancel_state;)
+      DCL_LOCK_STATE;
+
+      LOCK();
       DISABLE_CANCEL(cancel_state);  /* May be unnecessary? */
 #     ifdef STACK_GROWS_DOWN
         b -> mem_base = GC_find_limit((ptr_t)(&dummy), TRUE);
@@ -1309,6 +1312,7 @@ GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
         b -> mem_base = GC_find_limit(&dummy, FALSE);
 #     endif
       RESTORE_CANCEL(cancel_state);
+      UNLOCK();
       return GC_SUCCESS;
 #   else
       return GC_UNIMPLEMENTED;
@@ -1716,7 +1720,7 @@ ptr_t GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
                       & ~((word)max_page_size - 1));
     word page_offset = (text_end & ((word)max_page_size - 1));
     volatile char * result = (char *)(next_page + page_offset);
-    /* Note that this isnt equivalent to just adding            */
+    /* Note that this isn't equivalent to just adding           */
     /* max_page_size to &etext if &etext is at a page boundary  */
 
     GC_setup_temporary_fault_handler();

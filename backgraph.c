@@ -176,7 +176,7 @@ GC_INLINE void pop_in_progress(ptr_t p)
     ptr_t q = GET_OH_BG_PTR(p); \
     if (!((word)q & FLAG_MANY)) { \
       if (q && !((word)q & 1)) s \
-              /* !((word)q & 1) checks for a misnterpreted freelist link */ \
+              /* !((word)q & 1) checks for a misinterpreted freelist link */ \
     } else { \
       back_edges *orig_be_ = (back_edges *)((word)q & ~FLAG_MANY); \
       back_edges *be_ = orig_be_; \
