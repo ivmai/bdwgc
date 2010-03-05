@@ -1490,6 +1490,7 @@ void GC_print_trace(word gc_no, GC_bool lock)
 {
     int i;
     struct trace_entry *p;
+    DCL_LOCK_STATE;
 
     if (lock) LOCK();
     for (i = GC_trace_buf_ptr-1; i != GC_trace_buf_ptr; i--) {

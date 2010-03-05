@@ -144,6 +144,7 @@ STATIC GC_stop_func GC_default_stop_func = GC_never_stop_func;
 
 GC_API void GC_CALL GC_set_stop_func(GC_stop_func stop_func)
 {
+  DCL_LOCK_STATE;
   GC_ASSERT(stop_func != 0);
   LOCK();
   GC_default_stop_func = stop_func;
@@ -153,6 +154,7 @@ GC_API void GC_CALL GC_set_stop_func(GC_stop_func stop_func)
 GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
 {
   GC_stop_func stop_func;
+  DCL_LOCK_STATE;
   LOCK();
   stop_func = GC_default_stop_func;
   UNLOCK();

@@ -55,6 +55,7 @@ GC_INNER void GC_print_all_errors(void)
 {
     static GC_bool printing_errors = FALSE;
     unsigned i;
+    DCL_LOCK_STATE;
 
     LOCK();
     if (printing_errors) {

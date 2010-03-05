@@ -496,6 +496,8 @@ GC_INNER unsigned *GC_check_finalizer_nested(void)
   GC_bool GC_is_thread_tsd_valid(void *tsd)
   {
     char *me;
+    DCL_LOCK_STATE;
+
     LOCK();
     me = (char *)GC_lookup_thread(pthread_self());
     UNLOCK();
@@ -642,6 +644,7 @@ STATIC void GC_remove_all_threads_but_me(void)
 /* to finish.                                                           */
 STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
+    DCL_LOCK_STATE;
     GC_ASSERT(I_HOLD_LOCK());
     ASSERT_CANCEL_DISABLED();
     if (GC_incremental && GC_collection_in_progress()) {
@@ -894,6 +897,9 @@ GC_INNER void GC_thr_init(void)
 /* Did we say it's called without the allocation lock?  */
 GC_INNER void GC_init_parallel(void)
 {
+#   if defined(THREAD_LOCAL_ALLOC)
+      DCL_LOCK_STATE;
+#   endif
     if (parallel_initialized) return;
     parallel_initialized = TRUE;
 
@@ -931,6 +937,8 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
 {
     struct blocking_data * d = (struct blocking_data *) data;
     GC_thread me;
+    DCL_LOCK_STATE;
+
     LOCK();
     me = GC_lookup_thread(pthread_self());
     GC_ASSERT(!(me -> thread_blocked));
@@ -960,6 +968,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 {
     struct GC_traced_stack_sect_s stacksect;
     GC_thread me;
+    DCL_LOCK_STATE;
+
     LOCK();   /* This will block if the world is stopped.       */
     me = GC_lookup_thread(pthread_self());
 
@@ -1030,6 +1040,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 {
     GC_thread me;
     IF_CANCEL(int cancel_state;)
+    DCL_LOCK_STATE;
 
     LOCK();
     DISABLE_CANCEL(cancel_state);
@@ -1068,6 +1079,7 @@ GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
 {
     int result;
     GC_thread thread_gc_id;
+    DCL_LOCK_STATE;
 
     INIT_REAL_SYMS();
     LOCK();
@@ -1100,6 +1112,7 @@ GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
 {
     int result;
     GC_thread thread_gc_id;
+    DCL_LOCK_STATE;
 
     INIT_REAL_SYMS();
     LOCK();
@@ -1157,6 +1170,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 {
     pthread_t my_pthread = pthread_self();
     GC_thread me;
+    DCL_LOCK_STATE;
 
     if (GC_need_to_lock == FALSE)
         ABORT("Threads explicit registering is not previously enabled");
@@ -1188,6 +1202,7 @@ STATIC void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb,
     pthread_t my_pthread;
     void *(*start)(void *);
     void *start_arg;
+    DCL_LOCK_STATE;
 
     my_pthread = pthread_self();
 #   ifdef DEBUG_THREADS
@@ -1252,6 +1267,7 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     int detachstate;
     word my_flags = 0;
     struct start_info * si;
+    DCL_LOCK_STATE;
         /* This is otherwise saved only in an area mmapped by the thread */
         /* library, which isn't visible to the collector.                */
 

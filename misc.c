@@ -1305,6 +1305,7 @@ GC_API void GC_CALLBACK GC_ignore_warn_proc(char *msg, GC_word arg)
 
 GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc p)
 {
+    DCL_LOCK_STATE;
     GC_ASSERT(p != 0);
 #   ifdef GC_WIN32_THREADS
 #     ifdef CYGWIN32
@@ -1322,6 +1323,7 @@ GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc p)
 GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 {
     GC_warn_proc result;
+    DCL_LOCK_STATE;
     LOCK();
     result = GC_current_warn_proc;
     UNLOCK();
@@ -1381,6 +1383,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 
 GC_API void GC_CALL GC_enable(void)
 {
+    DCL_LOCK_STATE;
     LOCK();
     GC_dont_gc--;
     UNLOCK();
@@ -1388,6 +1391,7 @@ GC_API void GC_CALL GC_enable(void)
 
 GC_API void GC_CALL GC_disable(void)
 {
+    DCL_LOCK_STATE;
     LOCK();
     GC_dont_gc++;
     UNLOCK();
@@ -1406,6 +1410,7 @@ GC_API void ** GC_CALL GC_new_free_list_inner(void)
 GC_API void ** GC_CALL GC_new_free_list(void)
 {
     void *result;
+    DCL_LOCK_STATE;
     LOCK();
     result = GC_new_free_list_inner();
     UNLOCK();
@@ -1430,6 +1435,7 @@ GC_API unsigned GC_CALL GC_new_kind(void **fl, GC_word descr, int adjust,
                                     int clear)
 {
     unsigned result;
+    DCL_LOCK_STATE;
     LOCK();
     result = GC_new_kind_inner(fl, descr, adjust, clear);
     UNLOCK();
@@ -1448,6 +1454,7 @@ GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc proc)
 GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc proc)
 {
     unsigned result;
+    DCL_LOCK_STATE;
     LOCK();
     result = GC_new_proc_inner(proc);
     UNLOCK();
@@ -1611,6 +1618,7 @@ GC_API int GC_CALL GC_get_parallel(void)
 GC_API void GC_CALL GC_set_oom_fn(GC_oom_func fn)
 {
     GC_ASSERT(fn != 0);
+    DCL_LOCK_STATE;
     LOCK();
     GC_oom_fn = fn;
     UNLOCK();
@@ -1619,6 +1627,7 @@ GC_API void GC_CALL GC_set_oom_fn(GC_oom_func fn)
 GC_API GC_oom_func GC_CALL GC_get_oom_fn(void)
 {
     GC_oom_func fn;
+    DCL_LOCK_STATE;
     LOCK();
     fn = GC_oom_fn;
     UNLOCK();
@@ -1628,6 +1637,7 @@ GC_API GC_oom_func GC_CALL GC_get_oom_fn(void)
 GC_API void GC_CALL GC_set_finalizer_notifier(GC_finalizer_notifier_proc fn)
 {
     /* fn may be 0 (means no finalizer notifier). */
+    DCL_LOCK_STATE;
     LOCK();
     GC_finalizer_notifier = fn;
     UNLOCK();
@@ -1636,6 +1646,7 @@ GC_API void GC_CALL GC_set_finalizer_notifier(GC_finalizer_notifier_proc fn)
 GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void)
 {
     GC_finalizer_notifier_proc fn;
+    DCL_LOCK_STATE;
     LOCK();
     fn = GC_finalizer_notifier;
     UNLOCK();

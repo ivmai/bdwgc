@@ -138,6 +138,7 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
 static void maybe_finalize(void)
 {
    static word last_finalized_no = 0;
+   DCL_LOCK_STATE;
 
    if (GC_gc_no == last_finalized_no) return;
    if (!GC_is_initialized) return;
@@ -206,6 +207,7 @@ GC_API void * GC_CALL GC_debug_gcj_malloc(size_t lb,
                 void * ptr_to_struct_containing_descr, GC_EXTRA_PARAMS)
 {
     void * result;
+    DCL_LOCK_STATE;
 
     /* We're careful to avoid extra calls, which could           */
     /* confuse the backtrace.                                   */

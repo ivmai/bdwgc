@@ -1211,6 +1211,9 @@ GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
 {
     pthread_attr_t attr;
     size_t size;
+#   ifdef IA64
+      DCL_LOCK_STATE;
+#   endif
 
     if (pthread_getattr_np(pthread_self(), &attr) != 0) {
         WARN("pthread_getattr_np failed\n", 0);
@@ -4335,6 +4338,7 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
     int i;
     static int reentry_count = 0;
     GC_bool stop = FALSE;
+    DCL_LOCK_STATE;
 
     /* FIXME: This should probably use a different lock, so that we     */
     /* become callable with or without the allocation lock.             */

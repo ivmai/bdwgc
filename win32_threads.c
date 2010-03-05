@@ -571,6 +571,8 @@ GC_INNER unsigned *GC_check_finalizer_nested(void)
   GC_bool GC_is_thread_tsd_valid(void *tsd)
   {
     char *me;
+    DCL_LOCK_STATE;
+
     LOCK();
     me = (char *)GC_lookup_thread_inner(GetCurrentThreadId());
     UNLOCK();
@@ -706,6 +708,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
 GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 {
   DWORD t = GetCurrentThreadId();
+  DCL_LOCK_STATE;
 
   if (GC_need_to_lock == FALSE)
     ABORT("Threads explicit registering is not previously enabled");
@@ -725,6 +728,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
   DWORD t = GetCurrentThreadId();
+  DCL_LOCK_STATE;
+
   /* FIXME: is GC_wait_for_gc_completion(FALSE) needed here? */
   if (GC_win32_dll_threads) {
 #   if defined(THREAD_LOCAL_ALLOC)
@@ -757,6 +762,8 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
   struct blocking_data * d = (struct blocking_data *) data;
   DWORD t = GetCurrentThreadId();
   GC_thread me;
+  DCL_LOCK_STATE;
+
   LOCK();
   me = GC_lookup_thread_inner(t);
   GC_ASSERT(me -> thread_blocked_sp == NULL);
@@ -781,6 +788,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 {
   struct GC_traced_stack_sect_s stacksect;
   GC_thread me;
+  DCL_LOCK_STATE;
+
   LOCK();   /* This will block if the world is stopped.         */
   me = GC_lookup_thread_inner(GetCurrentThreadId());
 
@@ -871,6 +880,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       word hv_guess = THREAD_TABLE_INDEX(GET_PTHREAD_MAP_CACHE(id));
       int hv;
       GC_thread p;
+      DCL_LOCK_STATE;
 
       LOCK();
       for (p = GC_threads[hv_guess]; 0 != p; p = p -> tm.next) {
@@ -2342,6 +2352,8 @@ GC_INNER void GC_thr_init(void)
 #   endif
 
     if (!GC_win32_dll_threads) {
+      DCL_LOCK_STATE;
+
       LOCK();
       GC_delete_gc_thread(joinee);
       UNLOCK();
@@ -2415,6 +2427,7 @@ GC_INNER void GC_thr_init(void)
     DWORD thread_id = GetCurrentThreadId();
     pthread_t pthread_id = pthread_self();
     GC_thread me;
+    DCL_LOCK_STATE;
 
 #   if DEBUG_CYGWIN_THREADS
       GC_printf("thread 0x%x(0x%x) starting...\n",(int)pthread_id,
@@ -2468,6 +2481,7 @@ GC_INNER void GC_thr_init(void)
   STATIC void GC_thread_exit_proc(void *arg)
   {
     GC_thread me = (GC_thread)arg;
+    DCL_LOCK_STATE;
 
     GC_ASSERT(!GC_win32_dll_threads);
 #   if DEBUG_CYGWIN_THREADS
@@ -2507,6 +2521,7 @@ GC_INNER void GC_thr_init(void)
   {
     int result;
     GC_thread thread_gc_id;
+    DCL_LOCK_STATE;
 
     if (!parallel_initialized) GC_init_parallel();
     LOCK();
@@ -2612,6 +2627,10 @@ GC_INNER void GC_thr_init(void)
 /* Must be called before a second thread is created.    */
 GC_INNER void GC_init_parallel(void)
 {
+# if defined(THREAD_LOCAL_ALLOC)
+    DCL_LOCK_STATE;
+# endif
+
   if (parallel_initialized) return;
   parallel_initialized = TRUE;
   /* GC_init() calls us back, so set flag first.      */

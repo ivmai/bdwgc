@@ -50,6 +50,7 @@
   /* But I don't know of a better solution.                             */
   static void disable_gc_for_dlopen(void)
   {
+    DCL_LOCK_STATE;
     LOCK();
     while (GC_incremental && GC_collection_in_progress()) {
         GC_collect_a_little_inner(1000);

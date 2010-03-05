@@ -844,7 +844,11 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
     GC_finalizer_notifier_proc notifier_fn = 0;
 #   if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
       static word last_back_trace_gc_no = 1;    /* Skip first one. */
-#   elif defined(THREADS)
+#   endif
+    DCL_LOCK_STATE;
+
+#   if defined(THREADS) && !defined(KEEP_BACK_PTRS) \
+       && !defined(MAKE_BACK_GRAPH)
       /* Quick check (while unlocked) for an empty finalization queue.  */
       if (GC_finalize_now == 0) return;
 #   endif

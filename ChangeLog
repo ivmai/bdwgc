@@ -1,3 +1,28 @@
+2010-03-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_set_stop_func, GC_get_stop_func): Add
+	DCL_LOCK_STATE.
+	* finalize.c (GC_notify_or_invoke_finalizers): Ditto.
+	* gc_dlopen.c (disable_gc_for_dlopen): Ditto.
+	* gcj_mlc.c (maybe_finalize, GC_debug_gcj_malloc): Ditto.
+	* mark.c (GC_print_trace): Ditto.
+	* misc.c (GC_set_warn_proc, GC_get_warn_proc, GC_enable,
+	GC_disable, GC_new_free_list, GC_new_kind, GC_new_proc,
+	GC_set_oom_fn, GC_get_oom_fn, GC_set_finalizer_notifier,
+	GC_get_finalizer_notifier): Ditto.
+	* os_dep.c (GC_get_stack_base, GC_print_callers): Ditto.
+	* pthread_support.c (GC_is_thread_tsd_valid,
+	GC_wait_for_gc_completion, GC_init_parallel, GC_do_blocking_inner,
+	GC_call_with_gc_active, GC_unregister_my_thread, pthread_join,
+	pthread_detach, GC_register_my_thread, GC_inner_start_routine,
+	pthread_create): Ditto.
+	* reclaim.c (GC_print_all_errors): Ditto.
+	* win32_threads.c (GC_is_thread_tsd_valid, GC_register_my_thread,
+	GC_unregister_my_thread, GC_do_blocking_inner,
+	GC_call_with_gc_active, GC_lookup_pthread, GC_pthread_join,
+	GC_pthread_start_inner, GC_thread_exit_proc, GC_pthread_detach,
+	GC_init_parallel): Ditto.
+
 2010-02-25  Ivan Maidanski <ivmai@mail.ru> (really Bruce Mitchener)
 
 	* .cvsignore: New file.
