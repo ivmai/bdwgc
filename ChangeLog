@@ -1,3 +1,10 @@
+2010-03-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.macros (USE_GET_STACKBASE_FOR_MAIN): Document.
+	* os_dep.c (GC_get_main_stack_base): Recognize
+	USE_GET_STACKBASE_FOR_MAIN (only if THREADS and LINUX_STACKBOTTOM)
+	and use GC_get_stack_base() in this case.
+
 2010-03-05  Ivan Maidanski <ivmai@mail.ru> (really Burkhard Linke)
 
 	* os_dep.c (GC_get_stack_base): Add LOCK/UNLOCK() (since
