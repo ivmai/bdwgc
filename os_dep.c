@@ -1165,9 +1165,22 @@ ptr_t GC_get_main_stack_base(void)
 #       ifdef LINUX_STACKBOTTOM
 #          if defined(THREADS) && defined(USE_GET_STACKBASE_FOR_MAIN)
              {
-               struct GC_stack_base sb;
-               if (GC_get_stack_base(&sb) == GC_SUCCESS)
-                 return (ptr_t)sb.mem_base;
+               pthread_attr_t attr;
+               void *stackaddr;
+               size_t size;
+               if (pthread_getattr_np(pthread_self(), &attr) == 0) {
+                 if (pthread_attr_getstack(&attr, &stackaddr, &size) == 0
+                     && stackaddr != NULL) {
+                   pthread_attr_destroy(&attr);
+#                  ifdef STACK_GROWS_DOWN
+                     stackaddr = (char *)stackaddr + size;
+#                  endif
+                   return (ptr_t)stackaddr;
+                 }
+                 pthread_attr_destroy(&attr);
+               }
+               WARN("pthread_getattr_np/pthread_attr_getstack failed"
+                    " for main thread\n", 0);
              }
 #          endif
            result = GC_linux_stack_base();
