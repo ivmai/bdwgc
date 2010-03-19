@@ -690,7 +690,7 @@ struct o32_obj {
 /* Find the page size */
 GC_INNER word GC_page_size = 0;
 
-# if defined(MSWIN32) || defined(MSWINCE)
+# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 
 #   ifndef VER_PLATFORM_WIN32_CE
 #     define VER_PLATFORM_WIN32_CE 3
@@ -1537,7 +1537,7 @@ void GC_register_data_segments(void)
 #   define GetWriteWatch_alloc_flag 0
 # endif /* GWW_VDB */
 
-# if defined(MSWIN32) || defined(MSWINCE)
+# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 
 # ifdef MSWIN32
   /* Unfortunately, we have to handle win32s very differently from NT,  */
@@ -1593,7 +1593,7 @@ void GC_register_data_segments(void)
     }
     return p;
   }
-# endif
+# endif /* MSWIN32 */
 
 # ifndef REDIRECT_MALLOC
   /* We maintain a linked list of AllocationBase values that we know    */
@@ -1624,6 +1624,9 @@ void GC_register_data_segments(void)
     return FALSE;
   }
 
+  STATIC size_t GC_max_root_size = 100000; /* Appr. largest root size. */
+
+# ifndef CYGWIN32
   STATIC void *GC_get_allocation_base(void *p)
   {
     MEMORY_BASIC_INFORMATION buf;
@@ -1633,8 +1636,6 @@ void GC_register_data_segments(void)
     }
     return buf.AllocationBase;
   }
-
-  STATIC size_t GC_max_root_size = 100000;      /* Appr. largest root size.     */
 
   GC_INNER void GC_add_current_malloc_heap(void)
   {
@@ -1665,7 +1666,9 @@ void GC_register_data_segments(void)
     new_l -> next = GC_malloc_heap_l;
     GC_malloc_heap_l = new_l;
   }
-# endif /* REDIRECT_MALLOC */
+# endif /* !CYGWIN32 */
+
+# endif /* !REDIRECT_MALLOC */
 
   STATIC word GC_n_heap_bases = 0;      /* See GC_heap_bases.   */
 
@@ -1684,7 +1687,7 @@ void GC_register_data_segments(void)
      return FALSE;
   }
 
-# ifdef MSWIN32
+#ifdef MSWIN32
   STATIC void GC_register_root_section(ptr_t static_root)
   {
       MEMORY_BASIC_INFORMATION buf;
@@ -1717,7 +1720,7 @@ void GC_register_data_segments(void)
       }
       if (base != limit) GC_add_roots_inner(base, limit, FALSE);
   }
-#endif
+#endif /* MSWIN32 */
 
   void GC_register_data_segments(void)
   {
@@ -2053,12 +2056,11 @@ void * os2_alloc(size_t bytes)
 
 # endif /* OS2 */
 
-
-# if defined(MSWIN32) || defined(MSWINCE)
+# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
     GC_INNER SYSTEM_INFO GC_sysinfo;
 # endif
 
-# ifdef MSWIN32
+#ifdef MSWIN32
 
 # ifdef USE_GLOBAL_ALLOC
 #   define GLOBAL_ALLOC_TEST 1
@@ -2066,19 +2068,26 @@ void * os2_alloc(size_t bytes)
 #   define GLOBAL_ALLOC_TEST GC_no_win32_dlls
 # endif
 
-#ifdef GC_USE_MEM_TOP_DOWN
-  STATIC DWORD GC_mem_top_down = MEM_TOP_DOWN;
+# ifdef GC_USE_MEM_TOP_DOWN
+    STATIC DWORD GC_mem_top_down = MEM_TOP_DOWN;
                            /* Use GC_USE_MEM_TOP_DOWN for better 64-bit */
                            /* testing.  Otherwise all addresses tend to */
                            /* end up in first 4GB, hiding bugs.         */
-#else
-  STATIC DWORD GC_mem_top_down = 0;
-#endif
+# else
+    STATIC DWORD GC_mem_top_down = 0;
+# endif
+
+#endif /* MSWIN32 */
+
+#if defined(MSWIN32) || defined(CYGWIN32)
 
 ptr_t GC_win32_get_mem(word bytes)
 {
     ptr_t result;
 
+# ifdef CYGWIN32
+    result = GC_unix_get_mem (bytes);
+# else
     if (GLOBAL_ALLOC_TEST) {
         /* VirtualAlloc doesn't like PAGE_EXECUTE_READWRITE.    */
         /* There are also unconfirmed rumors of other           */
@@ -2117,6 +2126,7 @@ ptr_t GC_win32_get_mem(word bytes)
                                       | GC_mem_top_down,
                                       PAGE_EXECUTE_READWRITE);
     }
+# endif /* !CYGWIN32 */
     if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
         /* If I read the documentation correctly, this can      */
         /* only happen if HBLKSIZE > 64k or not a power of 2.   */
@@ -2127,14 +2137,17 @@ ptr_t GC_win32_get_mem(word bytes)
 
 GC_API void GC_CALL GC_win32_free_heap(void)
 {
+# ifndef CYGWIN32
     if (GC_no_win32_dlls) {
         while (GC_n_heap_bases > 0) {
             GlobalFree (GC_heap_bases[--GC_n_heap_bases]);
             GC_heap_bases[GC_n_heap_bases] = 0;
         }
     }
-}
 # endif
+}
+
+#endif /* MSWIN32 || CYGWIN32 */
 
 #ifdef AMIGA
 # define GC_AMIGA_AM

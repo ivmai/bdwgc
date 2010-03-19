@@ -1,3 +1,51 @@
+2010-03-19  Ivan Maidanski <ivmai@mail.ru> (really Dave Korn)
+
+	* dyn_load.c (GC_get_next_stack, GC_cond_add_roots): Define for
+	Cygwin as well as other win32 targets.
+	* dyn_load.c (GC_wnt): Define to constant true.
+	* dyn_load.c (GC_register_dynamic_libraries): Define for Cygwin as
+	well as other win32 targets.
+	* mark_rts.c (rt_hash, GC_roots_present, add_roots_to_index):
+	Don't define for Cygwin, as on other win32.
+	* mark_rts.c (GC_add_roots_inner, GC_clear_roots): Handle on
+	Cygwin as for other win32 targets.
+	* mark_rts.c (GC_rebuild_root_index): Don't declare on Cygwin, as
+	other win32.
+	* mark_rts.c (GC_remove_tmp_roots): Do declare on Cygwin as on
+	other win32.
+	* mark_rts.c (GC_remove_roots, GC_remove_roots_inner): Don't
+	declare on Cygwin as on other win32.
+	* mark_rts.c (GC_is_tmp_root): Do declare on Cygwin when
+	!NO_DEBUGGING, as on other win32 targets.
+	* mark_rts.c (GC_cond_register_dynamic_libraries): Handle on
+	Cygwin as for other win32 targets.
+	* os_dep.c (GC_setpagesize): Handle on Cygwin as on other win32.
+	* os_dep.c (GC_get_main_stack_base): Don't declare on Cygwin, as
+	other win32.
+	* os_dep.c (GC_sysinfo): Declare on Cygwin, as other win32.
+	* os_dep.c (GC_win32_get_mem): Declare on Cygwin, as on other
+	Win32, but call GC_unix_get_mem instead of GlobalAlloc.
+	* os_dep.c (GC_win32_free_heap): Declare on Cygwin (as empty).
+	* ptr_chck.c (GC_is_visible): Register dynamic libraries on Cygwin
+	as on other win32 platforms.
+	* win32_threads.c (GC_get_next_stack): Define on Cygwin as well as
+	for dynamic loading targets.
+	* include/private/gc_priv.h (GC_INNER): Don't try to use
+	visibility on Cygwin which does not support it.
+	* include/private/gc_priv.h (struct roots): Don't declare r_next
+	member on Cygwin as on other windows hosts.
+	* include/private/gc_priv.h (LOG_RT_SIZE, RT_SIZE): Don't define
+	likewise.
+	* include/private/gc_priv.h (struct _GC_arrays): Do declare
+	_heap_bases[] member and don't declare _root_index likewise.
+	* include/private/gc_priv.h (GC_heap_bases): Do define likewise.
+	* include/private/gc_priv.h (_SYSTEM_INFO): Do forward-declare
+	likewise.
+	* include/private/gc_priv.h (GC_sysinfo): Do declare extern
+	likewise.
+	* include/private/gcconfig.h (GC_win32_get_mem, GET_MEM): Do
+	prototype on Cygwin as other win32 platforms.
+
 2010-03-13  Ivan Maidanski <ivmai@mail.ru>
 
 	* os_dep.c (GC_get_main_stack_base): Use pthread_getattr_np() and

@@ -24,7 +24,7 @@
 struct roots {
         ptr_t r_start;
         ptr_t r_end;
-#       if !defined(MSWIN32) && !defined(MSWINCE)
+#       if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
           struct roots * r_next;
 #       endif
         GC_bool r_tmp;
@@ -83,7 +83,7 @@ static int n_root_sets = 0;
   }
 #endif /* !THREADS */
 
-#if !defined(MSWIN32) && !defined(MSWINCE)
+#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
 /*
 #   define LOG_RT_SIZE 6
 #   define RT_SIZE (1 << LOG_RT_SIZE)  -- Power of 2, may be != MAX_ROOT_SETS
@@ -131,7 +131,7 @@ static int n_root_sets = 0;
     p -> r_next = GC_root_index[h];
     GC_root_index[h] = p;
   }
-#endif /* !MSWIN32 */
+#endif /* !MSWIN32 && !MSWINCE && !CYGWIN32 */
 
 GC_INNER word GC_root_size = 0;
 
@@ -162,7 +162,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
     GC_ASSERT(b <= e);
     if (b == e) return;  /* nothing to do? */
 
-#   if defined(MSWIN32) || defined(MSWINCE)
+#   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
       /* Spend the time to ensure that there are no overlapping */
       /* or adjacent intervals.                                 */
       /* This could be done faster with e.g. a                  */
@@ -231,7 +231,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
     GC_static_roots[n_root_sets].r_start = (ptr_t)b;
     GC_static_roots[n_root_sets].r_end = (ptr_t)e;
     GC_static_roots[n_root_sets].r_tmp = tmp;
-#   if !defined(MSWIN32) && !defined(MSWINCE)
+#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
       GC_static_roots[n_root_sets].r_next = 0;
       add_roots_to_index(GC_static_roots + n_root_sets);
 #   endif
@@ -250,7 +250,7 @@ GC_API void GC_CALL GC_clear_roots(void)
     roots_were_cleared = TRUE;
     n_root_sets = 0;
     GC_root_size = 0;
-#   if !defined(MSWIN32) && !defined(MSWINCE)
+#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
       {
         int i;
         for (i = 0; i < RT_SIZE; i++) GC_root_index[i] = 0;
@@ -269,7 +269,7 @@ STATIC void GC_remove_root_at_pos(int i)
     n_root_sets--;
 }
 
-#if !defined(MSWIN32) && !defined(MSWINCE)
+#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
   STATIC void GC_rebuild_root_index(void)
   {
     int i;
@@ -281,7 +281,7 @@ STATIC void GC_remove_root_at_pos(int i)
 #endif
 
 #if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
-     || defined(PCR)
+     || defined(PCR) || defined(CYGWIN32)
 /* Internal use only; lock held.        */
 STATIC void GC_remove_tmp_roots(void)
 {
@@ -294,13 +294,13 @@ STATIC void GC_remove_tmp_roots(void)
             i++;
         }
     }
-#   if !defined(MSWIN32) && !defined(MSWINCE)
+#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
       GC_rebuild_root_index();
 #   endif
 }
 #endif
 
-#if !defined(MSWIN32) && !defined(MSWINCE)
+#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
   STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e);
 
   GC_API void GC_CALL GC_remove_roots(void *b, void *e)
@@ -331,9 +331,10 @@ STATIC void GC_remove_tmp_roots(void)
     }
     GC_rebuild_root_index();
   }
-#endif /* !defined(MSWIN32) && !defined(MSWINCE) */
+#endif /* !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) */
 
-#if (defined(MSWIN32) || defined(MSWINCE)) && !defined(NO_DEBUGGING)
+#if (defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)) \
+    && !defined(NO_DEBUGGING)
   /* Not used at present (except for, may be, debugging purpose).       */
   /* Workaround for the OS mapping and unmapping behind our back:       */
   /* Is the address p in one of the temporary static root sections?     */
@@ -355,7 +356,7 @@ STATIC void GC_remove_tmp_roots(void)
     }
     return(FALSE);
   }
-#endif /* MSWIN32 || MSWINCE */
+#endif /* MSWIN32 || MSWINCE || CYGWIN32 */
 
 GC_INNER ptr_t GC_approx_sp(void)
 {
@@ -700,7 +701,7 @@ STATIC void GC_push_gc_structures(void)
 GC_INNER void GC_cond_register_dynamic_libraries(void)
 {
 # if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
-     || defined(PCR)
+     || defined(CYGWIN32) || defined(PCR)
     GC_remove_tmp_roots();
     if (!GC_no_dls) GC_register_dynamic_libraries();
 # else

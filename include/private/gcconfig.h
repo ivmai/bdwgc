@@ -2567,7 +2567,7 @@
                  (defined(SOLARIS) && !defined(USE_MMAP))
 #   define GET_MEM(bytes) HBLKPTR((size_t) calloc(1, (size_t)bytes + GC_page_size) \
                                                      + GC_page_size-1)
-# elif defined(MSWIN32)
+# elif defined(MSWIN32) || defined(CYGWIN32)
     ptr_t GC_win32_get_mem(GC_word bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
 # elif defined(MACOS)

@@ -1360,7 +1360,7 @@ GC_INNER void GC_push_all_stacks(void)
 
 #endif
 
-#if !defined(CYGWIN32) || defined(DYNAMIC_LOADING)
+#if defined(DYNAMIC_LOADING) || defined(CYGWIN32)
 /* Find stack with the lowest address which overlaps the        */
 /* interval [start, limit).                                     */
 /* Return stack bounds in *lo and *hi.  If no such stack        */
@@ -1463,7 +1463,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
   }
   *plast_stack_min = *lo;
 }
-#endif /* !CYGWIN32 || DYNAMIC_LOADING */
+#endif /* DYNAMIC_LOADING || CYGWIN32 */
 
 #ifdef PARALLEL_MARK
 

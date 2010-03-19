@@ -52,11 +52,11 @@
 /* FIXME: Add filter support for more platforms.                        */
 STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
-#if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE)) \
-    && !defined(PCR)
+#if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
+    || defined(CYGWIN32)) && !defined(PCR)
 
 #if !defined(SOLARISDL) && !defined(IRIX5) && \
-    !defined(MSWIN32) && !defined(MSWINCE) && \
+    !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) && \
     !(defined(ALPHA) && defined(OSF1)) && \
     !defined(HPUX) && !(defined(LINUX) && defined(__ELF__)) && \
     !defined(AIX) && !defined(SCO_ELF) && !defined(DGUX) && \
@@ -842,7 +842,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
   /* GC_register_main_static_data is not needed unless DYNAMIC_LOADING. */
   GC_INNER GC_bool GC_register_main_static_data(void)
   {
-#   ifdef MSWINCE
+#   if defined(MSWINCE) || defined(CYGWIN32)
       /* Do we need to separately register the main static data segment? */
       return FALSE;
 #   else
@@ -864,7 +864,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
   }
 # endif /* DEBUG_VIRTUALQUERY */
 
-# ifdef MSWINCE
+# if defined(MSWINCE) || defined(CYGWIN32)
     /* FIXME: Should we really need to scan MEM_PRIVATE sections?       */
     /* For now, we don't add MEM_PRIVATE sections to the data roots for */
     /* WinCE because otherwise SEGV fault sometimes happens to occur in */
