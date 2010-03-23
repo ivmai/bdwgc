@@ -13,3 +13,4 @@ libtool
 middletest
 smashtest
 threadleaktest
+libstaticrootslib.la

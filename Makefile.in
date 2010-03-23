@@ -97,8 +97,8 @@ target_triplet = @target@
 @USE_INTERNAL_LIBATOMIC_OPS_TRUE@	       -I$(top_srcdir)/libatomic_ops/src
 
 check_PROGRAMS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
-	smashtest$(EXEEXT) hugetest$(EXEEXT) $(am__EXEEXT_1) \
-	$(am__EXEEXT_2) $(am__EXEEXT_3)
+	smashtest$(EXEEXT) hugetest$(EXEEXT) staticrootstest$(EXEEXT) \
+	$(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
 
 # C Library: Architecture Dependent
 # ---------------------------------
@@ -206,12 +206,17 @@ libgccpp_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(libgccpp_la_LDFLAGS) $(LDFLAGS) -o $@
 @CPLUSPLUS_TRUE@am_libgccpp_la_rpath = -rpath $(libdir)
+am__DEPENDENCIES_2 = $(top_builddir)/libgc.la $(am__DEPENDENCIES_1)
+am_libstaticrootslib_la_OBJECTS = staticrootslib.lo
+libstaticrootslib_la_OBJECTS = $(am_libstaticrootslib_la_OBJECTS)
+libstaticrootslib_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(libstaticrootslib_la_LDFLAGS) $(LDFLAGS) -o $@
 @KEEP_BACK_PTRS_TRUE@am__EXEEXT_1 = tracetest$(EXEEXT)
 @THREADS_TRUE@am__EXEEXT_2 = threadleaktest$(EXEEXT)
 @CPLUSPLUS_TRUE@am__EXEEXT_3 = test_cpp$(EXEEXT)
 am_gctest_OBJECTS = test.$(OBJEXT)
 gctest_OBJECTS = $(am_gctest_OBJECTS)
-am__DEPENDENCIES_2 = $(top_builddir)/libgc.la $(am__DEPENDENCIES_1)
 am_hugetest_OBJECTS = huge_test.$(OBJEXT)
 hugetest_OBJECTS = $(am_hugetest_OBJECTS)
 hugetest_DEPENDENCIES = $(am__DEPENDENCIES_2)
@@ -224,6 +229,10 @@ middletest_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_smashtest_OBJECTS = smash_test.$(OBJEXT)
 smashtest_OBJECTS = $(am_smashtest_OBJECTS)
 smashtest_DEPENDENCIES = $(am__DEPENDENCIES_2)
+am_staticrootstest_OBJECTS = staticrootstest.$(OBJEXT)
+staticrootstest_OBJECTS = $(am_staticrootstest_OBJECTS)
+staticrootstest_DEPENDENCIES = $(am__DEPENDENCIES_2) \
+	libstaticrootslib.la
 am__test_cpp_SOURCES_DIST = tests/test_cpp.cc
 @CPLUSPLUS_TRUE@am_test_cpp_OBJECTS = test_cpp.$(OBJEXT)
 test_cpp_OBJECTS = $(am_test_cpp_OBJECTS)
@@ -273,14 +282,16 @@ LTCCASCOMPILE = $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=compile $(CCAS) $(AM_CCASFLAGS) $(CCASFLAGS)
 SOURCES = $(libcord_la_SOURCES) $(libgc_la_SOURCES) \
 	$(EXTRA_libgc_la_SOURCES) $(nodist_libgc_la_SOURCES) \
-	$(libgccpp_la_SOURCES) $(gctest_SOURCES) $(hugetest_SOURCES) \
-	$(leaktest_SOURCES) $(middletest_SOURCES) $(smashtest_SOURCES) \
-	$(test_cpp_SOURCES) $(threadleaktest_SOURCES) \
-	$(tracetest_SOURCES)
-DIST_SOURCES = $(libcord_la_SOURCES) $(am__libgc_la_SOURCES_DIST) \
-	$(EXTRA_libgc_la_SOURCES) $(am__libgccpp_la_SOURCES_DIST) \
+	$(libgccpp_la_SOURCES) $(libstaticrootslib_la_SOURCES) \
 	$(gctest_SOURCES) $(hugetest_SOURCES) $(leaktest_SOURCES) \
 	$(middletest_SOURCES) $(smashtest_SOURCES) \
+	$(staticrootstest_SOURCES) $(test_cpp_SOURCES) \
+	$(threadleaktest_SOURCES) $(tracetest_SOURCES)
+DIST_SOURCES = $(libcord_la_SOURCES) $(am__libgc_la_SOURCES_DIST) \
+	$(EXTRA_libgc_la_SOURCES) $(am__libgccpp_la_SOURCES_DIST) \
+	$(libstaticrootslib_la_SOURCES) $(gctest_SOURCES) \
+	$(hugetest_SOURCES) $(leaktest_SOURCES) $(middletest_SOURCES) \
+	$(smashtest_SOURCES) $(staticrootstest_SOURCES) \
 	$(am__test_cpp_SOURCES_DIST) \
 	$(am__threadleaktest_SOURCES_DIST) \
 	$(am__tracetest_SOURCES_DIST)
@@ -567,9 +578,10 @@ dist_noinst_HEADERS = include/private/gc_hdrs.h \
 	include/private/darwin_stop_world.h \
 	include/private/thread_local_alloc.h include/cord.h \
 	include/ec.h include/javaxfc.h
+check_LTLIBRARIES = libstaticrootslib.la
 TESTS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
-	smashtest$(EXEEXT) hugetest$(EXEEXT) $(am__append_7) \
-	$(am__append_9) $(am__append_11)
+	smashtest$(EXEEXT) hugetest$(EXEEXT) staticrootstest$(EXEEXT) \
+	$(am__append_7) $(am__append_9) $(am__append_11)
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = bdw-gc.pc
 libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
@@ -637,6 +649,12 @@ smashtest_SOURCES = tests/smash_test.c
 smashtest_LDADD = $(test_ldadd)
 hugetest_SOURCES = tests/huge_test.c
 hugetest_LDADD = $(test_ldadd)
+staticrootstest_SOURCES = tests/staticrootstest.c
+staticrootstest_LDADD = $(test_ldadd) libstaticrootslib.la
+libstaticrootslib_la_SOURCES = tests/staticrootslib.c
+libstaticrootslib_la_LIBADD = $(test_ldadd)
+libstaticrootslib_la_LDFLAGS = -version-info 1:3:0 -no-undefined -rpath /nowhere
+libstaticrootslib_la_DEPENDENCIES = $(top_builddir)/libgc.la
 @KEEP_BACK_PTRS_TRUE@tracetest_SOURCES = tests/trace_test.c
 @KEEP_BACK_PTRS_TRUE@tracetest_LDADD = $(test_ldadd)
 @THREADS_TRUE@threadleaktest_SOURCES = tests/thread_leak_test.c
@@ -741,6 +759,15 @@ distclean-hdr:
 	-rm -f include/private/config.h include/private/stamp-h1
 bdw-gc.pc: $(top_builddir)/config.status $(srcdir)/bdw-gc.pc.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
+
+clean-checkLTLIBRARIES:
+	-test -z "$(check_LTLIBRARIES)" || rm -f $(check_LTLIBRARIES)
+	@list='$(check_LTLIBRARIES)'; for p in $$list; do \
+	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
+	  test "$$dir" != "$$p" || dir=.; \
+	  echo "rm -f \"$${dir}/so_locations\""; \
+	  rm -f "$${dir}/so_locations"; \
+	done
 install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
@@ -778,6 +805,8 @@ libgc.la: $(libgc_la_OBJECTS) $(libgc_la_DEPENDENCIES)
 	$(libgc_la_LINK) -rpath $(libdir) $(libgc_la_OBJECTS) $(libgc_la_LIBADD) $(LIBS)
 libgccpp.la: $(libgccpp_la_OBJECTS) $(libgccpp_la_DEPENDENCIES) 
 	$(libgccpp_la_LINK) $(am_libgccpp_la_rpath) $(libgccpp_la_OBJECTS) $(libgccpp_la_LIBADD) $(LIBS)
+libstaticrootslib.la: $(libstaticrootslib_la_OBJECTS) $(libstaticrootslib_la_DEPENDENCIES) 
+	$(libstaticrootslib_la_LINK)  $(libstaticrootslib_la_OBJECTS) $(libstaticrootslib_la_LIBADD) $(LIBS)
 
 clean-checkPROGRAMS:
 	@list='$(check_PROGRAMS)'; test -n "$$list" || exit 0; \
@@ -802,6 +831,9 @@ middletest$(EXEEXT): $(middletest_OBJECTS) $(middletest_DEPENDENCIES)
 smashtest$(EXEEXT): $(smashtest_OBJECTS) $(smashtest_DEPENDENCIES) 
 	@rm -f smashtest$(EXEEXT)
 	$(LINK) $(smashtest_OBJECTS) $(smashtest_LDADD) $(LIBS)
+staticrootstest$(EXEEXT): $(staticrootstest_OBJECTS) $(staticrootstest_DEPENDENCIES) 
+	@rm -f staticrootstest$(EXEEXT)
+	$(LINK) $(staticrootstest_OBJECTS) $(staticrootstest_LDADD) $(LIBS)
 test_cpp$(EXEEXT): $(test_cpp_OBJECTS) $(test_cpp_DEPENDENCIES) 
 	@rm -f test_cpp$(EXEEXT)
 	$(CXXLINK) $(test_cpp_OBJECTS) $(test_cpp_LDADD) $(LIBS)
@@ -858,6 +890,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smash_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparc_mach_dep.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/specific.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/staticrootslib.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/staticrootstest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stubborn.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_cpp.Po@am__quote@
@@ -944,6 +978,13 @@ atomic_ops.lo: libatomic_ops/src/atomic_ops.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o atomic_ops.lo `test -f 'libatomic_ops/src/atomic_ops.c' || echo '$(srcdir)/'`libatomic_ops/src/atomic_ops.c
 
+staticrootslib.lo: tests/staticrootslib.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT staticrootslib.lo -MD -MP -MF $(DEPDIR)/staticrootslib.Tpo -c -o staticrootslib.lo `test -f 'tests/staticrootslib.c' || echo '$(srcdir)/'`tests/staticrootslib.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/staticrootslib.Tpo $(DEPDIR)/staticrootslib.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/staticrootslib.c' object='staticrootslib.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o staticrootslib.lo `test -f 'tests/staticrootslib.c' || echo '$(srcdir)/'`tests/staticrootslib.c
+
 test.o: tests/test.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test.o -MD -MP -MF $(DEPDIR)/test.Tpo -c -o test.o `test -f 'tests/test.c' || echo '$(srcdir)/'`tests/test.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/test.Tpo $(DEPDIR)/test.Po
@@ -1013,6 +1054,20 @@ smash_test.obj: tests/smash_test.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/smash_test.c' object='smash_test.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o smash_test.obj `if test -f 'tests/smash_test.c'; then $(CYGPATH_W) 'tests/smash_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/smash_test.c'; fi`
+
+staticrootstest.o: tests/staticrootstest.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT staticrootstest.o -MD -MP -MF $(DEPDIR)/staticrootstest.Tpo -c -o staticrootstest.o `test -f 'tests/staticrootstest.c' || echo '$(srcdir)/'`tests/staticrootstest.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/staticrootstest.Tpo $(DEPDIR)/staticrootstest.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/staticrootstest.c' object='staticrootstest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o staticrootstest.o `test -f 'tests/staticrootstest.c' || echo '$(srcdir)/'`tests/staticrootstest.c
+
+staticrootstest.obj: tests/staticrootstest.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT staticrootstest.obj -MD -MP -MF $(DEPDIR)/staticrootstest.Tpo -c -o staticrootstest.obj `if test -f 'tests/staticrootstest.c'; then $(CYGPATH_W) 'tests/staticrootstest.c'; else $(CYGPATH_W) '$(srcdir)/tests/staticrootstest.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/staticrootstest.Tpo $(DEPDIR)/staticrootstest.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/staticrootstest.c' object='staticrootstest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o staticrootstest.obj `if test -f 'tests/staticrootstest.c'; then $(CYGPATH_W) 'tests/staticrootstest.c'; else $(CYGPATH_W) '$(srcdir)/tests/staticrootstest.c'; fi`
 
 thread_leak_test.o: tests/thread_leak_test.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT thread_leak_test.o -MD -MP -MF $(DEPDIR)/thread_leak_test.Tpo -c -o thread_leak_test.o `test -f 'tests/thread_leak_test.c' || echo '$(srcdir)/'`tests/thread_leak_test.c
@@ -1575,7 +1630,7 @@ distcleancheck: distclean
 	       $(distcleancheck_listfiles) ; \
 	       exit 1; } >&2
 check-am: all-am
-	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
+	$(MAKE) $(AM_MAKEFLAGS) $(check_LTLIBRARIES) $(check_PROGRAMS)
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-recursive
 all-am: Makefile $(LTLIBRARIES) $(SCRIPTS) $(DATA) $(HEADERS)
@@ -1611,8 +1666,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-checkPROGRAMS clean-generic clean-libLTLIBRARIES \
-	clean-libtool mostlyclean-am
+clean-am: clean-checkLTLIBRARIES clean-checkPROGRAMS clean-generic \
+	clean-libLTLIBRARIES clean-libtool mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
@@ -1691,26 +1746,26 @@ uninstall-am: uninstall-dist_pkgdataDATA uninstall-includeHEADERS \
 
 .PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
 	all all-am am--refresh check check-TESTS check-am clean \
-	clean-checkPROGRAMS clean-generic clean-libLTLIBRARIES \
-	clean-libtool ctags ctags-recursive dist dist-all dist-bzip2 \
-	dist-gzip dist-lzma dist-shar dist-tarZ dist-xz dist-zip \
-	distcheck distclean distclean-compile distclean-generic \
-	distclean-hdr distclean-libtool distclean-tags distcleancheck \
-	distdir distuninstallcheck dvi dvi-am html html-am info \
-	info-am install install-am install-data install-data-am \
-	install-dist_pkgdataDATA install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-includeHEADERS install-info install-info-am \
-	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
-	install-pkgconfigDATA install-pkgincludeHEADERS install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-recursive uninstall uninstall-am \
-	uninstall-dist_pkgdataDATA uninstall-includeHEADERS \
-	uninstall-libLTLIBRARIES uninstall-pkgconfigDATA \
-	uninstall-pkgincludeHEADERS
+	clean-checkLTLIBRARIES clean-checkPROGRAMS clean-generic \
+	clean-libLTLIBRARIES clean-libtool ctags ctags-recursive dist \
+	dist-all dist-bzip2 dist-gzip dist-lzma dist-shar dist-tarZ \
+	dist-xz dist-zip distcheck distclean distclean-compile \
+	distclean-generic distclean-hdr distclean-libtool \
+	distclean-tags distcleancheck distdir distuninstallcheck dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dist_pkgdataDATA \
+	install-dvi install-dvi-am install-exec install-exec-am \
+	install-html install-html-am install-includeHEADERS \
+	install-info install-info-am install-libLTLIBRARIES \
+	install-man install-pdf install-pdf-am install-pkgconfigDATA \
+	install-pkgincludeHEADERS install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-recursive \
+	uninstall uninstall-am uninstall-dist_pkgdataDATA \
+	uninstall-includeHEADERS uninstall-libLTLIBRARIES \
+	uninstall-pkgconfigDATA uninstall-pkgincludeHEADERS
 
 .s.lo:
 	$(LTCOMPILE) $(ASM_CPP_OPTIONS) -c $<

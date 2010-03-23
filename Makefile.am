@@ -46,6 +46,7 @@ include_HEADERS =
 pkginclude_HEADERS =
 dist_noinst_HEADERS =
 check_PROGRAMS =
+check_LTLIBRARIES =
 TESTS =
 
 pkgconfigdir = $(libdir)/pkgconfig

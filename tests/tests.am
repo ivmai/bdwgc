@@ -10,11 +10,10 @@
 # modified is included with the above copyright notice.
 
 
-## FIXME: trace_test doesn't work on macosx 10.3 
+## FIXME: trace_test doesn't work on macosx 10.3
 ## gcc -g -O2 -o .libs/tracetest trace_test.o  ../.libs/libgc.dylib -lpthread
 ## ld: Undefined symbols:
 ## _GC_generate_random_backtrace
-
 
 # Common libs to _LDADD for all tests.
 test_ldadd = $(top_builddir)/libgc.la $(EXTRA_TEST_LIBS)
@@ -46,6 +45,16 @@ check_PROGRAMS += hugetest
 hugetest_SOURCES = tests/huge_test.c
 hugetest_LDADD = $(test_ldadd)
 
+TESTS += staticrootstest$(EXEEXT)
+check_PROGRAMS += staticrootstest
+staticrootstest_SOURCES = tests/staticrootstest.c
+staticrootstest_LDADD = $(test_ldadd) libstaticrootslib.la
+check_LTLIBRARIES += libstaticrootslib.la
+libstaticrootslib_la_SOURCES = tests/staticrootslib.c
+libstaticrootslib_la_LIBADD = $(test_ldadd)
+libstaticrootslib_la_LDFLAGS = -version-info 1:3:0 -no-undefined -rpath /nowhere
+libstaticrootslib_la_DEPENDENCIES = $(top_builddir)/libgc.la
+
 if KEEP_BACK_PTRS
 TESTS += tracetest$(EXEEXT)
 check_PROGRAMS += tracetest
@@ -70,4 +79,3 @@ else
 test_cpp_LDADD = libgccpp.la $(test_ldadd)
 endif
 endif
-
