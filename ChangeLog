@@ -1,3 +1,9 @@
+2010-03-26  Ivan Maidanski <ivmai@mail.ru> (really Hans Boehm)
+
+	* alloc.c (GC_maybe_gc): Move GC_notify_full_gc() call upper to
+	be just before GC_clear_marks() call.
+	* include/gc_mark.h (GC_start_callback_proc): Refine the comment.
+
 2010-03-23  Ivan Maidanski <ivmai@mail.ru> (really Dave Korn)
 
 	* Makefile.am (check_LTLIBRARIES): Initialise to empty.

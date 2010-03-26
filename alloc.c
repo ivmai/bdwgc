@@ -369,9 +369,9 @@ STATIC void GC_maybe_gc(void)
             }
             GC_promote_black_lists();
             (void)GC_reclaim_all((GC_stop_func)0, TRUE);
+            GC_notify_full_gc();
             GC_clear_marks();
             n_partial_gcs = 0;
-            GC_notify_full_gc();
             GC_is_full_gc = TRUE;
           } else {
             n_partial_gcs++;
