@@ -49,7 +49,7 @@ client code should include gc_cpp.h.
 For historical reasons,
 the collector test program "gctest" is linked as a GUI application,
 but does not open any windows.  Its output appears in the file
-"gc.log".  It may be started from the file manager.  The hour glass
+"gctest.gc.log".  It may be started from the file manager.  The hour glass
 cursor may appear as long as it's running.  If it is started from the
 command line, it will usually run in the background.  Wait a few
 minutes (a few seconds on a modern machine) before you check the output.

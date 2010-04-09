@@ -1,3 +1,30 @@
+2010-04-09  Ivan Maidanski <ivmai@mail.ru>
+
+	* NT_MAKEFILE: Remove the comment about DLL and Win32S.
+	* NT_STATIC_THREADS_MAKEFILE: Ditto.
+	* NT_X64_STATIC_THREADS_MAKEFILE: Ditto.
+	* NT_MAKEFILE: Add ".SUFFIXES" directive (to handle gc_cpp.cc
+	properly on VS 2005+).
+	* NT_MAKEFILE: Update GC log file name in comments.
+	* NT_STATIC_THREADS_MAKEFILE: Ditto.
+	* NT_X64_STATIC_THREADS_MAKEFILE: Ditto.
+	* NT_X64_THREADS_MAKEFILE: Ditto.
+	* doc/README.win32: Ditto.
+	* NT_MAKEFILE: Remove ":full" for "-debug" option (since no
+	longer supported by VS).
+	* NT_STATIC_THREADS_MAKEFILE: Ditto.
+	* NT_MAKEFILE: Commented out copying of gc_cpp.cc to gc_cpp.cpp.
+	* NT_STATIC_THREADS_MAKEFILE: Ditto.
+	* NT_X64_STATIC_THREADS_MAKEFILE: Ditto.
+	* NT_X64_THREADS_MAKEFILE: Ditto.
+	* NT_STATIC_THREADS_MAKEFILE: Add -D PARALLEL_MARK option.
+	* NT_STATIC_THREADS_MAKEFILE: Increase stack size for gctest.exe.
+	* NT_X64_STATIC_THREADS_MAKEFILE: Remove "-stack" option (use the
+	default stack size limit).
+	* NT_X64_THREADS_MAKEFILE: Rename "gc64_dll.dll" to "gc64.dll".
+	* win32_threads.c (GC_get_next_stack): Always define (since it is
+	also used for Cygwin now).
+
 2010-03-26  Ivan Maidanski <ivmai@mail.ru> (really Hans Boehm)
 
 	* alloc.c (GC_maybe_gc): Move GC_notify_full_gc() call upper to
