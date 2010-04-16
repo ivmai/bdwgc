@@ -2681,10 +2681,12 @@ GC_INNER void GC_init_parallel(void)
 
     for (i = 0; i < THREAD_TABLE_SZ; ++i) {
       for (p = GC_threads[i]; 0 != p; p = p -> tm.next) {
-#       ifdef DEBUG_THREADS
-          GC_printf("Marking thread locals for 0x%x\n", (int)p -> id);
-#       endif
-        GC_mark_thread_local_fls_for(&(p->tlfs));
+        if (!KNOWN_FINISHED(p)) {
+#         ifdef DEBUG_THREADS
+            GC_printf("Marking thread locals for 0x%x\n", (int)p -> id);
+#         endif
+          GC_mark_thread_local_fls_for(&(p->tlfs));
+        }
       }
     }
   }
@@ -2703,7 +2705,8 @@ GC_INNER void GC_init_parallel(void)
 
         for (i = 0; i < THREAD_TABLE_SZ; ++i) {
           for (p = GC_threads[i]; 0 != p; p = p -> tm.next) {
-            GC_check_tls_for(&(p->tlfs));
+            if (!KNOWN_FINISHED(p))
+              GC_check_tls_for(&(p->tlfs));
           }
         }
 #       if defined(USE_CUSTOM_SPECIFIC)

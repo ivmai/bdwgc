@@ -227,7 +227,8 @@ GC_INNER void GC_mark_thread_local_free_lists(void)
 
     for (i = 0; i < THREAD_TABLE_SZ; ++i) {
       for (p = GC_threads[i]; 0 != p; p = p -> next) {
-        GC_mark_thread_local_fls_for(&(p->tlfs));
+        if (!(p -> flags & FINISHED))
+          GC_mark_thread_local_fls_for(&(p->tlfs));
       }
     }
 }
@@ -238,7 +239,7 @@ GC_INNER void GC_mark_thread_local_free_lists(void)
       void GC_check_tsd_marks(tsd *key);
 #   endif
     /* Check that all thread-local free-lists are completely marked.    */
-    /* also check that thread-specific-data structures are marked.      */
+    /* Also check that thread-specific-data structures are marked.      */
     void GC_check_tls(void)
     {
         int i;
@@ -246,7 +247,8 @@ GC_INNER void GC_mark_thread_local_free_lists(void)
 
         for (i = 0; i < THREAD_TABLE_SZ; ++i) {
           for (p = GC_threads[i]; 0 != p; p = p -> next) {
-            GC_check_tls_for(&(p->tlfs));
+            if (!(p -> flags & FINISHED))
+              GC_check_tls_for(&(p->tlfs));
           }
         }
 #       if defined(USE_CUSTOM_SPECIFIC)
