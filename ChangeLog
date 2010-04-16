@@ -1,3 +1,10 @@
+2010-04-16  Ivan Maidanski <ivmai@mail.ru> (mostly really Louis Zhuang)
+
+	* os_dep.c (GC_get_stack_base, GC_get_main_stack_base): New
+	Solaris-specific implementation (based on thr_stksegment).
+	* os_dep.c (stackbase_main_self, stackbase_main_ss_sp): New static
+	variable used by the Solaris-specific GC_get_stack_base().
+
 2010-04-16  Ivan Maidanski <ivmai@mail.ru> (mostly really NIIBE Yutaka)
 
 	* pthread_support.c (GC_mark_thread_local_free_lists,

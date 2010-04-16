@@ -1140,7 +1140,8 @@ ptr_t GC_get_main_stack_base(void)
 
 #if !defined(BEOS) && !defined(AMIGA) && !defined(MSWIN32) \
     && !defined(MSWINCE) && !defined(OS2) && !defined(NOSYS) && !defined(ECOS) \
-    && !defined(CYGWIN32) && !defined(GC_OPENBSD_THREADS)
+    && !defined(CYGWIN32) && !defined(GC_OPENBSD_THREADS) \
+    && (!defined(GC_SOLARIS_THREADS) || defined(_STRICT_STDC))
 
 ptr_t GC_get_main_stack_base(void)
 {
@@ -1305,6 +1306,69 @@ GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
   }
 
 #endif /* GC_OPENBSD_THREADS */
+
+#if defined(GC_SOLARIS_THREADS) && !defined(_STRICT_STDC)
+
+# include <thread.h>
+# include <signal.h>
+# include <pthread.h>
+
+  /* These variables are used to cache ss_sp value for the primordial   */
+  /* thread (it's better not to call thr_stksegment() twice for this    */
+  /* thread - see JDK bug #4352906).                                    */
+  static pthread_t stackbase_main_self = 0;
+                        /* 0 means stackbase_main_ss_sp value is unset. */
+  static void *stackbase_main_ss_sp = NULL;
+
+  GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
+  {
+    stack_t s;
+    pthread_t self = pthread_self();
+    if (self == stackbase_main_self)
+      {
+        /* If the client calls GC_get_stack_base() from the main thread */
+        /* then just return the cached value.                           */
+        b -> mem_base = stackbase_main_ss_sp;
+        GC_ASSERT(b -> mem_base != NULL);
+        return GC_SUCCESS;
+      }
+
+    if (thr_stksegment(&s)) {
+      /* According to the manual, the only failure error code returned  */
+      /* is EAGAIN meaning "the information is not available due to the */
+      /* thread is not yet completely initialized or it is an internal  */
+      /* thread" - this shouldn't happen here.                          */
+      ABORT("thr_stksegment failed");
+    }
+    /* s.ss_sp holds the pointer to the stack bottom. */
+    GC_ASSERT((void *)&s HOTTER_THAN s.ss_sp);
+
+    if (!stackbase_main_self)
+      {
+        /* Cache the stack base value for the primordial thread (this   */
+        /* is done during GC_init, so there is no race).                */
+        stackbase_main_ss_sp = s.ss_sp;
+        stackbase_main_self = self;
+      }
+
+    b -> mem_base = s.ss_sp;
+    return GC_SUCCESS;
+  }
+
+# define HAVE_GET_STACK_BASE
+
+  /* This is always called from the main thread.  The above             */
+  /* implementation of GC_get_stack_base() requires the latter to be    */
+  /* first called from GC_get_main_stack_base() (to cache the proper    */
+  /* ss_sp value).                                                      */
+  ptr_t GC_get_main_stack_base(void)
+  {
+    struct GC_stack_base sb;
+    GC_get_stack_base(&sb);
+    return (ptr_t)sb.mem_base;
+  }
+
+#endif /* GC_SOLARIS_THREADS */
 
 #ifndef HAVE_GET_STACK_BASE
 /* Retrieve stack base.                                         */
