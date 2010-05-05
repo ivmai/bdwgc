@@ -1,3 +1,10 @@
+2010-05-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (GC_find_leak, GC_finalize_on_demand,
+	GC_java_finalization, GC_dont_expand, GC_no_dls,
+	GC_dont_precollect): Simplify the comment (remove the information
+	about data races since the value is boolean).
+
 2010-04-16  Ivan Maidanski <ivmai@mail.ru> (mostly really Louis Zhuang)
 
 	* os_dep.c (GC_get_stack_base, GC_get_main_stack_base): New

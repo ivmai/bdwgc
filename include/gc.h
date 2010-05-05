@@ -112,10 +112,8 @@ GC_API int GC_find_leak;
                         /* report inaccessible memory that was not      */
                         /* deallocated with GC_free.  Initial value     */
                         /* is determined by FIND_LEAK macro.            */
-                        /* The setter and getter are unsynchronized, so */
-                        /* GC_call_with_alloc_lock() is required to     */
-                        /* avoid data races (if the value is modified   */
-                        /* after the GC is put to multi-threaded mode). */
+                        /* The value should not typically be modified   */
+                        /* after GC initialization.                     */
 GC_API void GC_CALL GC_set_find_leak(int);
 GC_API int GC_CALL GC_get_find_leak(void);
 
@@ -139,10 +137,7 @@ GC_API int GC_finalize_on_demand;
                         /* call.  The default is determined by whether  */
                         /* the FINALIZE_ON_DEMAND macro is defined      */
                         /* when the collector is built.                 */
-                        /* The setter and getter are unsynchronized, so */
-                        /* GC_call_with_alloc_lock() is required to     */
-                        /* avoid data races (if the value is modified   */
-                        /* after the GC is put to multi-threaded mode). */
+                        /* The setter and getter are unsynchronized.    */
 GC_API void GC_CALL GC_set_finalize_on_demand(int);
 GC_API int GC_CALL GC_get_finalize_on_demand(void);
 
@@ -154,10 +149,7 @@ GC_API int GC_java_finalization;
                         /* determined by JAVA_FINALIZATION macro.       */
                         /* Enables register_finalizer_unreachable to    */
                         /* work correctly.                              */
-                        /* The setter and getter are unsynchronized, so */
-                        /* GC_call_with_alloc_lock() is required to     */
-                        /* avoid data races (if the value is modified   */
-                        /* after the GC is put to multi-threaded mode). */
+                        /* The setter and getter are unsynchronized.    */
 GC_API void GC_CALL GC_set_java_finalization(int);
 GC_API int GC_CALL GC_get_java_finalization(void);
 
@@ -187,10 +179,7 @@ GC_API int GC_dont_gc;  /* != 0 ==> Don't collect.  In versions 6.2a1+, */
 GC_API int GC_dont_expand;
                         /* Don't expand the heap unless explicitly      */
                         /* requested or forced to.  The setter and      */
-                        /* getter are unsynchronized, so                */
-                        /* GC_call_with_alloc_lock() is required to     */
-                        /* avoid data races (if the value is modified   */
-                        /* after the GC is put to multi-threaded mode). */
+                        /* getter are unsynchronized.                   */
 GC_API void GC_CALL GC_set_dont_expand(int);
 GC_API int GC_CALL GC_get_dont_expand(void);
 
@@ -241,10 +230,7 @@ GC_API int GC_no_dls;
                         /* In Microsoft Windows environments, this will  */
                         /* usually also prevent registration of the      */
                         /* main data segment as part of the root set.    */
-                        /* The setter and getter are unsynchronized, so  */
-                        /* GC_call_with_alloc_lock() is required to      */
-                        /* avoid data races (if the value is modified    */
-                        /* after the GC is put to multi-threaded mode).  */
+                        /* The setter and getter are unsynchronized.     */
 GC_API void GC_CALL GC_set_no_dls(int);
 GC_API int GC_CALL GC_get_no_dls(void);
 
@@ -292,17 +278,13 @@ GC_API char *GC_stackbottom;    /* Cool end of user stack.              */
                                 /* cold end of the stack for the        */
                                 /* primordial thread.                   */
 
-GC_API int GC_dont_precollect;  /* Don't collect as part of             */
+GC_API int GC_dont_precollect;  /* Don't collect as part of GC          */
                                 /* initialization.  Should be set only  */
                                 /* if the client wants a chance to      */
                                 /* manually initialize the root set     */
                                 /* before the first collection.         */
                                 /* Interferes with blacklisting.        */
                                 /* Wizards only.                        */
-                        /* The setter and getter are unsynchronized, so */
-                        /* GC_call_with_alloc_lock() is required to     */
-                        /* avoid data races (if the value is modified   */
-                        /* after the GC is put to multi-threaded mode). */
 GC_API void GC_CALL GC_set_dont_precollect(int);
 GC_API int GC_CALL GC_get_dont_precollect(void);
 
