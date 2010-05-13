@@ -1,3 +1,14 @@
+2010-05-13  Ivan Maidanski <ivmai@mail.ru> (mostly really Uros Bizjak)
+
+	* tests/leak_test.c (main): Explicitly define as returning int
+	(to prevent a spurious test failure on some Linux/alpha targets).
+	* tests/thread_leak_test.c (main): Ditto.
+	* tests/thread_leak_test.c: Initialize GC_find_leak in the main
+	thread (before GC_INIT) only.
+	* tests/leak_test.c (main): Use GC_set_find_leak() instead of
+	accessing GC_find_leak directly.
+	* tests/thread_leak_test.c (main): Ditto.
+
 2010-05-05  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/gc.h (GC_find_leak, GC_finalize_on_demand,

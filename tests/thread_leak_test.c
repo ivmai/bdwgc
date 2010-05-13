@@ -8,8 +8,6 @@
 void * test(void * arg) {
     int *p[10];
     int i;
-    GC_find_leak = 1; /* for new collect versions not compiled  */
-    /* with -DFIND_LEAK.                                        */
     for (i = 0; i < 10; ++i) {
         p[i] = malloc(sizeof(int)+i);
     }
@@ -18,23 +16,24 @@ void * test(void * arg) {
         free(p[i]);
     }
     return 0;
-}       
+}
 
 #define NTHREADS 5
 
-main() {
+int main(void) {
     int i;
     pthread_t t[NTHREADS];
     int code;
-
+    GC_set_find_leak(1); /* for new collect versions not compiled       */
+                         /* with -DFIND_LEAK.                           */
     GC_INIT();
     for (i = 0; i < NTHREADS; ++i) {
-	if ((code = pthread_create(t + i, 0, test, 0)) != 0) {
-    	    printf("Thread creation failed %d\n", code);
+        if ((code = pthread_create(t + i, 0, test, 0)) != 0) {
+            printf("Thread creation failed %d\n", code);
         }
     }
     for (i = 0; i < NTHREADS; ++i) {
-	if ((code = pthread_join(t[i], 0)) != 0) {
+        if ((code = pthread_join(t[i], 0)) != 0) {
             printf("Thread join failed %lu\n", code);
         }
     }
