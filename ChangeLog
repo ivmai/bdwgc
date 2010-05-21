@@ -1,3 +1,12 @@
+2010-05-21  Ivan Maidanski <ivmai@mail.ru> (really Bradley Smith and
+                                            Stefano Rivera)
+
+	* mach_dep.c (NO_GETCONTEXT): Also define if AVR32.
+	* include/private/gcconfig.h (AVR32): New macro (also define the
+	supplementary macros for the target).
+	* include/private/thread_local_alloc (USE_COMPILER_TLS): Don't
+	define for AVR32.
+
 2010-05-13  Ivan Maidanski <ivmai@mail.ru> (mostly really Uros Bizjak)
 
 	* tests/leak_test.c (main): Explicitly define as returning int

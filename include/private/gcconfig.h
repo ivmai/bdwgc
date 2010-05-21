@@ -281,6 +281,10 @@
 #    define SH
 #    define mach_type_known
 # endif
+# if defined(LINUX) && defined(__avr32__)
+#    define AVR32
+#    define mach_type_known
+# endif
 # if defined(LINUX) && defined(__m32r__)
 #    define M32R
 #    define mach_type_known
@@ -1963,6 +1967,19 @@
 #   define OS_TYPE "MSWINCE"
 #   define ALIGNMENT 4
 #   define DATAEND /* not needed */
+# endif
+
+# ifdef AVR32
+#   define MACH_TYPE "AVR32"
+#   define CPP_WORDSZ 32
+#   define ALIGNMENT 4
+#   define OS_TYPE "LINUX"
+#   define DYNAMIC_LOADING
+#   define LINUX_STACKBOTTOM
+#   define USE_GENERIC_PUSH_REGS
+#   define SEARCH_FOR_DATA_START
+    extern int _end[];
+#   define DATAEND (_end)
 # endif
 
 # ifdef M32R

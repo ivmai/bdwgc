@@ -173,7 +173,7 @@ asm static void PushMacRegisters()
 
 #if defined(UNIX_LIKE) && !defined(NO_GETCONTEXT) && \
         (defined(DARWIN) || defined(HURD) || defined(OPENBSD) \
-         || defined(ARM32) || defined(MIPS))
+         || defined(ARM32) || defined(MIPS) || defined(AVR32))
 # define NO_GETCONTEXT
 #endif
 
