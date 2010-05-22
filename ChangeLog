@@ -1,5 +1,10 @@
 2010-05-22  Ivan Maidanski <ivmai@mail.ru>
 
+	* Makefile.in: Regenerate.
+	* configure: Ditto.
+
+2010-05-22  Ivan Maidanski <ivmai@mail.ru>
+
 	* Makefile.am (EXTRA_DIST): Add "CMakeLists.txt" and
 	"tests/CMakeLists.txt".
 	* doc/doc.am (dist_pkgdata_DATA): Add "doc/README.cmake".
