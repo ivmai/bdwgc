@@ -174,7 +174,7 @@ EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
     Makefile.direct Makefile.dj	Makefile.DLLs SMakefile.amiga \
     WCC_MAKEFILE build_atomic_ops.sh build_atomic_ops.sh.cygwin \
     NT_STATIC_THREADS_MAKEFILE NT_X64_STATIC_THREADS_MAKEFILE \
-    NT_X64_THREADS_MAKEFILE
+    NT_X64_THREADS_MAKEFILE CMakeLists.txt tests/CMakeLists.txt
 
 # files used by makefiles other than Makefile.am
 #
