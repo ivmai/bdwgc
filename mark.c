@@ -1763,9 +1763,15 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 }
 
 #ifdef MARK_UNCONDITIONALLY
-/* Mark all objects which have not been reclaimed according to the convension
- * that the first word is odd for live objects.  This is used optionally to
- * guard the contents of objects passed to reclaim notifiers. */
+/* Unconditionally mark from all objects which have not been reclaimed. */
+/* This is useful in order to retain pointes which are reachable from   */
+/* the disclaim notifiers.                                              */
+/*                                                                      */
+/* To determine whether an object has been reclaimed, we require that   */
+/* any live object has a non-zero as one of the two lowest bits of the  */
+/* first word.  On the other hand, a reclaimed object is a members of   */
+/* free-lists, and thus contains a word-aligned next-pointer as the     */
+/* first word.                                                          */
 void GC_push_unconditionally(struct hblk *h, hdr *hhdr)
 {
     int sz = hhdr -> hb_sz;
