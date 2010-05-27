@@ -17,30 +17,29 @@
 
 #include "gc.h"
 
-/* Register a function notifier_proc which will be called on each	*/
-/* object of the given kind before it is reclaimed.  If notifier_proc	*/
-/* returns non-zero, the collector will not reclaim the object on this	*/
-/* GC cycle.  Objects reachable from proc will be protected from	*/
-/* collection if mark_from_all=1, but at the expense that long chains	*/
-/* of objects will take many cycles to reclaim.				*/
-/* Not available if configured with --disable-disclaim.			*/
+/* Register "proc" to be called on each object of "kind" ready to be    */
+/* reclaimed.  If "proc" returns non-zero, the collector will not       */
+/* reclaim the object on this GC cycle.  Objects reachable from "proc"  */
+/* will be protected from collection if "mark_from_all" is non-zero,    */
+/* but at the expense that long chains of objects will take many cycles */
+/* to reclaim.                                                          */
 int GC_register_disclaim_proc(int kind,
 			      int (*proc)(void *obj, void *cd), void *cd,
 			      int mark_from_all);
 
-/* The finalizer closure used by GC_finalized_malloc.			*/
+/* The finalizer closure used by GC_finalized_malloc.                   */
 struct GC_finalizer_closure {
     void (*proc)(void *obj, void *cd);
     void *cd;
 };
 
-/* Allocate size bytes which is finalized with fc.  This uses a 	*/
-/* dedicated object kind with the disclaim mechanism for maximum.  It	*/
-/* is more efficient than GC_register_finalizer and friends.  You need	*/
-/* to call GC_init_finalized_malloc before using this.			*/
+/* Allocate "size" bytes which is finalized by "fc".  This uses a       */
+/* dedicated object kind with a disclaim procedure, and is more         */
+/* efficient than GC_register_finalizer and friends.  You need to call  */
+/* GC_init_finalized_malloc before using this.                          */
 GC_API void *GC_finalized_malloc(size_t size, struct GC_finalizer_closure *fc);
 
-/* Prepare the object kind used for GC_finalized_malloc.		*/
+/* Prepare the object kind used for GC_finalized_malloc.                */
 GC_API void GC_init_finalized_malloc(void);
 
 #endif
