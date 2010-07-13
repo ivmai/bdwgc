@@ -40,14 +40,13 @@
 # endif
 
   /* Make sure we're not in the middle of a collection, and make        */
-  /* sure we don't start any.   Returns previous value of GC_dont_gc.   */
+  /* sure we don't start any.                                           */
   /* This is invoked prior to a dlopen call to avoid synchronization    */
   /* issues.  We can't just acquire the allocation lock, since startup  */
-  /* code in dlopen may try to allocate.                                */
-  /* This solution risks heap growth in the presence of many dlopen     */
-  /* calls in either a multithreaded environment, or if the library     */
+  /* code in dlopen may try to allocate.  This solution risks heap      */
+  /* growth (or, even, heap overflow) in the presence of many dlopen    */
+  /* calls in either a multi-threaded environment, or if the library    */
   /* initialization code allocates substantial amounts of GC'ed memory. */
-  /* But I don't know of a better solution.                             */
   static void disable_gc_for_dlopen(void)
   {
     DCL_LOCK_STATE;
@@ -79,6 +78,8 @@ GC_API void * WRAP_DLFUNC(dlopen)(const char *path, int mode)
     void * result;
 
 #   ifndef USE_PROC_FOR_LIBRARIES
+      /* Disable collections.  This solution risks heap growth (or,     */
+      /* even, heap overflow) but there seems no better solutions.      */
       disable_gc_for_dlopen();
 #   endif
     result = (void *)REAL_DLFUNC(dlopen)(path, mode);

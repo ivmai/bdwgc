@@ -4,6 +4,7 @@
  * Copyright 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright 1999 by Hewlett-Packard Company.  All rights reserved.
  * Copyright (C) 2007 Free Software Foundation, Inc
+ * Copyright (c) 2000-2010 by Hewlett-Packard Development Company.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -523,7 +524,7 @@ GC_API void GC_CALL GC_enable(void);
 /* Enable incremental/generational collection.  Not advisable unless    */
 /* dirty bits are available or most heap objects are pointer-free       */
 /* (atomic) or immutable.  Don't use in leak finding mode.  Ignored if  */
-/* GC_dont_gc is true.  Only the generational piece of this is          */
+/* GC_dont_gc is non-zero.  Only the generational piece of this is      */
 /* functional if GC_parallel is TRUE or if GC_time_limit is             */
 /* GC_TIME_UNLIMITED.  Causes thread-local variant of GC_gcj_malloc()   */
 /* to revert to locked allocation.  Must be called before any such      */
@@ -1253,7 +1254,13 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
                 LPVOID /* lpParameter */, DWORD /* dwCreationFlags */,
                 LPDWORD /* lpThreadId */);
 
-    GC_API void WINAPI GC_ExitThread(DWORD /* dwExitCode */);
+#   ifndef DECLSPEC_NORETURN
+      /* Typically defined in winnt.h. */
+#     define DECLSPEC_NORETURN /* empty */
+#   endif
+
+    GC_API DECLSPEC_NORETURN void WINAPI GC_ExitThread(
+                                                DWORD /* dwExitCode */);
 
 #   if !defined(_WIN32_WCE) && !defined(__CEGCC__)
 #     if !defined(_UINTPTR_T) && !defined(_UINTPTR_T_DEFINED) \
@@ -1269,6 +1276,8 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
                         void * /* arglist */, unsigned /* initflag */,
                         unsigned * /* thrdaddr */);
 
+      /* Note: _endthreadex() is not currently marked as no-return in   */
+      /* VC++ and MinGW headers, so we don't mark it neither.           */
       GC_API void GC_CALL GC_endthreadex(unsigned /* retval */);
 #   endif /* !_WIN32_WCE */
 

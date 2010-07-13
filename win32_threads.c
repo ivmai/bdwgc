@@ -2052,7 +2052,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     }
   }
 
-  GC_API void WINAPI GC_ExitThread(DWORD dwExitCode)
+  GC_API DECLSPEC_NORETURN void WINAPI GC_ExitThread(DWORD dwExitCode)
   {
     GC_unregister_my_thread();
     ExitThread(dwExitCode);
