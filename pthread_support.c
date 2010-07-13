@@ -109,6 +109,13 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
 #ifdef GC_USE_LD_WRAP
 #   define WRAP_FUNC(f) __wrap_##f
 #   define REAL_FUNC(f) __real_##f
+    int REAL_FUNC(pthread_create)(pthread_t *, const pthread_attr_t *,
+                                  void *(*start_routine)(void *), void *);
+    int REAL_FUNC(pthread_join)(pthread_t, void **);
+    int REAL_FUNC(pthread_detach)(pthread_t);
+#   if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_THREADS)
+      int REAL_FUNC(pthread_sigmask)(int, const sigset_t *, sigset_t *);
+#   endif
 #else
 #   ifdef GC_USE_DLOPEN_WRAP
 #     include <dlfcn.h>
@@ -170,11 +177,13 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
   STATIC void GC_init_real_syms(void)
   {
     void *dl_handle;
-#   define LIBPTHREAD_NAME "libpthread.so.0"
-#   define LIBPTHREAD_NAME_LEN 16 /* incl. trailing 0 */
-    size_t len = LIBPTHREAD_NAME_LEN - 1;
-    char namebuf[LIBPTHREAD_NAME_LEN];
-    static char *libpthread_name = LIBPTHREAD_NAME;
+#   ifndef RTLD_NEXT
+#     define LIBPTHREAD_NAME "libpthread.so.0"
+#     define LIBPTHREAD_NAME_LEN 16 /* incl. trailing 0 */
+      size_t len = LIBPTHREAD_NAME_LEN - 1;
+      char namebuf[LIBPTHREAD_NAME_LEN];
+      static char *libpthread_name = LIBPTHREAD_NAME;
+#   endif
 
     if (GC_syms_initialized) return;
 #   ifdef RTLD_NEXT

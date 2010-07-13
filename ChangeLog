@@ -1,5 +1,17 @@
 2010-07-13  Ivan Maidanski <ivmai@mail.ru>
 
+	* gc_dlopen.c (dlopen): Prototype REAL_DLFUNC if GC_USE_LD_WRAP.
+	* pthread_support.c (pthread_create, pthread_join, pthread_detach,
+	pthread_sigmask): Ditto.
+	* gc_dlopen.c (dlopen): Remove cast (redundant since the prototype
+	is added).
+	* gc_dlopen.c (GC_dlopen): Fix return type.
+	* pthread_support.c (GC_init_real_syms): Don't define
+	LIBPTHREAD_NAME, LIBPTHREAD_NAME_LEN, len, namebuf and
+	libpthread_name if RTLD_NEXT.
+
+2010-07-13  Ivan Maidanski <ivmai@mail.ru>
+
 	* gc_dlopen.c (disable_gc_for_dlopen): Update the comment.
 	* gc_dlopen.c (dlopen): Ditto.
 	* include/gc.h: Update copyright header.

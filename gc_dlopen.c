@@ -68,6 +68,7 @@
 #ifdef GC_USE_LD_WRAP
 #   define WRAP_DLFUNC(f) __wrap_##f
 #   define REAL_DLFUNC(f) __real_##f
+    void * REAL_DLFUNC(dlopen)(const char *, int);
 #else
 #   define WRAP_DLFUNC(f) GC_##f
 #   define REAL_DLFUNC(f) f
@@ -82,7 +83,7 @@ GC_API void * WRAP_DLFUNC(dlopen)(const char *path, int mode)
       /* even, heap overflow) but there seems no better solutions.      */
       disable_gc_for_dlopen();
 #   endif
-    result = (void *)REAL_DLFUNC(dlopen)(path, mode);
+    result = REAL_DLFUNC(dlopen)(path, mode);
 #   ifndef USE_PROC_FOR_LIBRARIES
       GC_enable(); /* undoes disable_gc_for_dlopen */
 #   endif
@@ -93,7 +94,7 @@ GC_API void * WRAP_DLFUNC(dlopen)(const char *path, int mode)
   /* Define GC_ function as an alias for the plain one, which will be   */
   /* intercepted.  This allows files which include gc.h, and hence      */
   /* generate references to the GC_ symbol, to see the right symbol.    */
-  GC_API int GC_dlopen(const char *path, int mode)
+  GC_API void *GC_dlopen(const char *path, int mode)
   {
     return dlopen(path, mode);
   }
