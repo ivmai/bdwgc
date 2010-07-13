@@ -278,17 +278,48 @@ inline void* operator new( size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
   *  There seems to be no way to redirect new in this environment without
   *  including this everywhere.
   */
-# if _MSC_VER > 1020
-    void *operator new[]( size_t size );
-    void operator delete[]( void* obj );
-# endif
+#if _MSC_VER > 1020
+inline void *operator new[]( size_t size ){
+    return GC_MALLOC_UNCOLLECTABLE( size );}
 
-  void* operator new( size_t size );
-  void operator delete( void* obj );
+inline void operator delete[]( void* obj ) {
+    GC_FREE( obj );}
 
-  // This new operator is used by VC++ in case of Debug builds !
-  void* operator new( size_t size, int /* nBlockUse */,
-                     const char * szFileName, int nLine );
+#endif
+
+
+// void* operator new( size_t size);
+// void operator delete(void* obj);
+
+    // MOVED HERE FROM gc_hpp.cc!
+    inline void* operator new(size_t size)
+    {
+        return GC_MALLOC_UNCOLLECTABLE(size);
+    }
+
+    inline void operator delete(void* obj)
+    {
+        GC_FREE(obj);
+    }
+
+
+ // This new operator is used by VC++ in case of Debug builds !
+ inline void* operator new(  size_t size,
+                      int ,//nBlockUse,
+                      const char * szFileName,
+                      int nLine )
+    {
+#ifndef GC_DEBUG
+            return GC_malloc_uncollectable( size );
+#else
+            return GC_debug_malloc_uncollectable(size, szFileName, nLine);
+#endif
+    }
+inline void* operator new[](size_t size, int nBlockUse, const char* szFileName, int nLine)
+{
+    return operator new(size, nBlockUse, szFileName, nLine);
+}
+
 #endif /* _MSC_VER */
 
 #ifdef GC_OPERATOR_NEW_ARRAY
