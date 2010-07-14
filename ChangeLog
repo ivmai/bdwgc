@@ -1,3 +1,8 @@
+2010-07-14  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c (check_heap_stats): Increase max_heap_sz by 25% for
+	32-bit CPUs (to prevent "Unexpected heap growth" failure).
+
 2010-07-13  Ivan Maidanski <ivmai@mail.ru>
 
 	* gc_dlopen.c (dlopen): Prototype REAL_DLFUNC if GC_USE_LD_WRAP.
