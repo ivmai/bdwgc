@@ -1,3 +1,9 @@
+2010-07-28  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c (check_heap_stats): Increase max_heap_sz by 20% for
+	64-bit CPUs (to prevent "Unexpected heap growth" failure on Win64,
+	at least).
+
 2010-07-14  Ivan Maidanski <ivmai@mail.ru>
 
 	* tests/test.c (check_heap_stats): Increase max_heap_sz by 25% for
