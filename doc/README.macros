@@ -172,7 +172,8 @@ NO_EXECUTE_PERMISSION   May cause some or all of the heap to not
   have execute permission, i.e. it may be impossible to execute
   code from the heap.  Currently this only affects the incremental
   collector on UNIX machines.  It may greatly improve its performance,
-  since this may avoid some expensive cache synchronization.
+  since this may avoid some expensive cache synchronization.  Alternatively,
+  GC_set_pages_executable can be called at the process initialization time.
 
 GC_NO_OPERATOR_NEW_ARRAY        Declares that the C++ compiler does not
   support the  new syntax "operator new[]" for allocating and deleting arrays.

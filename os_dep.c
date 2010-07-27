@@ -131,10 +131,12 @@
 #endif
 
 #if !defined(NO_EXECUTE_PERMISSION)
-# define OPT_PROT_EXEC PROT_EXEC
+  static GC_bool pages_executable = TRUE;
 #else
-# define OPT_PROT_EXEC 0
+  static GC_bool pages_executable = FALSE;
 #endif
+#define IGNORE_PAGES_EXECUTABLE 1
+                        /* Undefined on pages_executable real use.      */
 
 #if defined(LINUX) && (defined(USE_PROC_FOR_LIBRARIES) || defined(IA64) \
                        || !defined(SMALL_CONFIG))
@@ -2002,8 +2004,11 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
 #   endif
 
     if (bytes & (GC_page_size - 1)) ABORT("Bad GET_MEM arg");
-    result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
+    result = mmap(last_addr, bytes, (PROT_READ | PROT_WRITE)
+                                    | (pages_executable ? PROT_EXEC : 0),
                   GC_MMAP_FLAGS | OPT_MAP_ANON, zero_fd, 0/* offset */);
+#   undef IGNORE_PAGES_EXECUTABLE
+
     if (result == MAP_FAILED) return(0);
     last_addr = (ptr_t)result + bytes + GC_page_size - 1;
     last_addr = (ptr_t)((word)last_addr & ~(GC_page_size - 1));
@@ -2185,10 +2190,12 @@ ptr_t GC_win32_get_mem(word bytes)
         /* cause VirtualAlloc to fail (observed in Windows 2000 */
         /* SP2).                                                */
         result = (ptr_t) VirtualAlloc(NULL, bytes + VIRTUAL_ALLOC_PAD,
-                                      GetWriteWatch_alloc_flag |
-                                      MEM_COMMIT | MEM_RESERVE
-                                      | GC_mem_top_down,
-                                      PAGE_EXECUTE_READWRITE);
+                                GetWriteWatch_alloc_flag
+                                | (MEM_COMMIT | MEM_RESERVE)
+                                | GC_mem_top_down,
+                                pages_executable ? PAGE_EXECUTE_READWRITE :
+                                                   PAGE_READWRITE);
+#       undef IGNORE_PAGES_EXECUTABLE
     }
 # endif /* !CYGWIN32 */
     if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
@@ -2248,8 +2255,9 @@ GC_API void GC_CALL GC_win32_free_heap(void)
         /* never spans regions.  It seems to be OK for a VirtualFree         */
         /* argument to span regions, so we should be OK for now.             */
         result = (ptr_t) VirtualAlloc(NULL, res_bytes,
-                                      MEM_RESERVE | MEM_TOP_DOWN,
-                                      PAGE_EXECUTE_READWRITE);
+                                MEM_RESERVE | MEM_TOP_DOWN,
+                                pages_executable ? PAGE_EXECUTE_READWRITE :
+                                                   PAGE_READWRITE);
         if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
             /* If I read the documentation correctly, this can  */
             /* only happen if HBLKSIZE > 64k or not a power of 2.       */
@@ -2261,9 +2269,11 @@ GC_API void GC_CALL GC_win32_free_heap(void)
     }
 
     /* Commit pages */
-    result = (ptr_t) VirtualAlloc(result, bytes,
-                                  MEM_COMMIT,
-                                  PAGE_EXECUTE_READWRITE);
+    result = (ptr_t) VirtualAlloc(result, bytes, MEM_COMMIT,
+                                  pages_executable ? PAGE_EXECUTE_READWRITE :
+                                                     PAGE_READWRITE);
+#   undef IGNORE_PAGES_EXECUTABLE
+
     if (result != NULL) {
         if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
         GC_heap_lengths[i] += bytes;
@@ -2370,9 +2380,9 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
               != sizeof(mem_info))
               ABORT("Weird VirtualQuery result");
           alloc_len = (len < mem_info.RegionSize) ? len : mem_info.RegionSize;
-          result = VirtualAlloc(start_addr, alloc_len,
-                                MEM_COMMIT,
-                                PAGE_EXECUTE_READWRITE);
+          result = VirtualAlloc(start_addr, alloc_len, MEM_COMMIT,
+                                pages_executable ? PAGE_EXECUTE_READWRITE :
+                                                   PAGE_READWRITE);
           if (result != start_addr) {
               if (GetLastError() == ERROR_NOT_ENOUGH_MEMORY ||
                   GetLastError() == ERROR_OUTOFMEMORY) {
@@ -2390,8 +2400,10 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
       int result;
 
       if (0 == start_addr) return;
-      result = mprotect(start_addr, len,
-                        PROT_READ | PROT_WRITE | OPT_PROT_EXEC);
+      result = mprotect(start_addr, len, (PROT_READ | PROT_WRITE)
+                                         | (pages_executable ? PROT_EXEC : 0));
+#     undef IGNORE_PAGES_EXECUTABLE
+
       if (result != 0) {
           GC_err_printf(
                 "Mprotect failed at %p (length %ld) with errno %d\n",
@@ -2844,14 +2856,17 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 
 #   define PROTECT(addr, len) \
           if (mprotect((caddr_t)(addr), (size_t)(len), \
-                       PROT_READ | OPT_PROT_EXEC) < 0) { \
+                       PROT_READ \
+                       | (pages_executable ? PROT_EXEC : 0)) < 0) { \
             ABORT("mprotect failed"); \
           }
 #   define UNPROTECT(addr, len) \
           if (mprotect((caddr_t)(addr), (size_t)(len), \
-                       PROT_WRITE | PROT_READ | OPT_PROT_EXEC ) < 0) { \
+                       (PROT_READ | PROT_WRITE) \
+                       | (pages_executable ? PROT_EXEC : 0)) < 0) { \
             ABORT("un-mprotect failed"); \
           }
+#   undef IGNORE_PAGES_EXECUTABLE
 
 # else
 
@@ -2878,13 +2893,17 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 
     static DWORD protect_junk;
 #   define PROTECT(addr, len) \
-          if (!VirtualProtect((addr), (len), PAGE_EXECUTE_READ, \
+          if (!VirtualProtect((addr), (len), \
+                              pages_executable ? PAGE_EXECUTE_READ : \
+                                                 PAGE_READONLY, \
                               &protect_junk)) { \
             GC_printf("Last error code: 0x%lx\n", (long)GetLastError()); \
             ABORT("VirtualProtect failed"); \
           }
 #   define UNPROTECT(addr, len) \
-          if (!VirtualProtect((addr), (len), PAGE_EXECUTE_READWRITE, \
+          if (!VirtualProtect((addr), (len), \
+                              pages_executable ? PAGE_EXECUTE_READWRITE : \
+                                                 PAGE_READWRITE, \
                               &protect_junk)) { \
             ABORT("un-VirtualProtect failed"); \
           }
@@ -4277,6 +4296,27 @@ catch_exception_raise_state_identity(mach_port_name_t exception_port,
 # undef sbrk
 #endif
 
+/* If value is non-zero then allocate executable memory.        */
+GC_API void GC_CALL GC_set_pages_executable(int value)
+{
+  GC_ASSERT(!GC_is_initialized);
+  /* Even if IGNORE_PAGES_EXECUTABLE is defined, pages_executable is    */
+  /* touched here to prevent a compiler warning.                        */
+  pages_executable = (GC_bool)(value != 0);
+}
+
+/* Returns non-zero if the GC-allocated memory is executable.   */
+/* GC_get_pages_executable is defined after all the places      */
+/* where GC_get_pages_executable is undefined.                  */
+GC_API int GC_CALL GC_get_pages_executable(void)
+{
+# ifdef IGNORE_PAGES_EXECUTABLE
+    return 1;   /* Always allocate executable memory. */
+# else
+    return (int)pages_executable;
+# endif
+}
+
 /*
  * Call stack save code for debugging.
  * Should probably be in mach_dep.c, but that requires reorganization.
@@ -4324,7 +4364,7 @@ catch_exception_raise_state_identity(mach_port_name_t exception_port,
 #  endif
 #endif /* SPARC */
 
-#ifdef  NEED_CALLINFO
+#ifdef NEED_CALLINFO
 /* Fill in the pc and argument information for up to NFRAMES of my      */
 /* callers.  Ignore my frame and my callers frame.                      */
 
@@ -4602,4 +4642,4 @@ void GC_print_address_map(void)
     GC_err_printf("---------- End address map ----------\n");
 }
 
-#endif
+#endif /* LINUX && ELF */

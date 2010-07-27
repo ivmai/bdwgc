@@ -23,7 +23,7 @@ AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.60 $)
+AC_REVISION($Revision: 1.61 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
 AM_CONFIG_HEADER([include/private/config.h])
@@ -501,9 +501,9 @@ case "$host" in
 esac
 
 dnl Include defines that have become de facto standard.
-dnl ALL_INTERIOR_POINTERS can be overridden in startup code.
+dnl ALL_INTERIOR_POINTERS and NO_EXECUTE_PERMISSION can be overridden in the startup code.
 AC_DEFINE([NO_EXECUTE_PERMISSION], [1],
-	  [Define to allow the collector to disable execute permission of heap objects.])
+	  [Define to make the collector not allocate executable memory by default.])
 AC_DEFINE([ALL_INTERIOR_POINTERS], [1],
 	  [Define to recognise all pointers to the interior of objects.])
 

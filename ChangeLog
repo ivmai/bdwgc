@@ -1,3 +1,25 @@
+2010-07-28  Ivan Maidanski <ivmai@mail.ru> (mostly really Noah Lavine)
+
+	* configure.ac (NO_EXECUTE_PERMISSION): Add comment.
+	* doc/README.macros (NO_EXECUTE_PERMISSION): Update the
+	documentation.
+	* include/gc.h (GC_set_pages_executable, GC_get_pages_executable):
+	New API function declaration.
+	* include/gc.h (GC_ignore_warn_proc): Reformat the comment.
+	* os_dep.c (OPT_PROT_EXEC): Remove (superseded by
+	pages_executable).
+	* os_dep.c (pages_executable): New static variable.
+	* os_dep.c (IGNORE_PAGES_EXECUTABLE): New macro (used by
+	GC_get_pages_executable only).
+	* os_dep.c (GC_unix_mmap_get_mem, GC_remap, PROTECT, UNPROTECT):
+	Replace OPT_PROT_EXEC with pages_executable.
+	* os_dep.c (GC_unix_mmap_get_mem, GC_remap, GC_win32_get_mem,
+	GC_wince_get_mem, UNPROTECT): Undefine IGNORE_PAGES_EXECUTABLE.
+	* os_dep.c (GC_win32_get_mem, GC_wince_get_mem, GC_remap, PROTECT,
+	UNPROTECT): Use PAGE_EXECUTE_... only if pages_executable is on.
+	* os_dep.c (GC_set_pages_executable, GC_get_pages_executable): New
+	API function definition.
+
 2010-07-28  Ivan Maidanski <ivmai@mail.ru>
 
 	* tests/test.c (check_heap_stats): Increase max_heap_sz by 20% for

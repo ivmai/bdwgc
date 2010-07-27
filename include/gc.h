@@ -311,6 +311,21 @@ GC_API unsigned long GC_CALL GC_get_time_limit(void);
 
 /* Public procedures */
 
+/* Set whether the GC will allocate executable memory pages or not.     */
+/* A non-zero argument instructs the collector to allocate memory with  */
+/* the executable flag on.  Must be called before the collector is      */
+/* initialized.  May have no effect on some platforms.  The default     */
+/* value is controlled by NO_EXECUTE_PERMISSION macro (if present then  */
+/* the flag is off).  Portable clients should have                      */
+/* GC_set_pages_executable(1) call (before GC_INIT) provided they are   */
+/* going to execute code on any of the GC-allocated memory objects.     */
+GC_API void GC_CALL GC_set_pages_executable(int);
+
+/* Returns non-zero value if the GC is set to the allocate-executable   */
+/* mode.  The mode could be changed by GC_set_pages_executable() unless */
+/* the latter has no effect on the platform.                            */
+GC_API int GC_CALL GC_get_pages_executable(void);
+
 /* Initialize the collector.  Portable clients should call GC_INIT()    */
 /* from the main program instead.                                       */
 GC_API void GC_CALL GC_init(void);
@@ -952,9 +967,8 @@ GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc /* p */);
 /* GC_get_warn_proc returns the current warn_proc.                      */
 GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void);
 
-    /* GC_ignore_warn_proc may be used as an argument for       */
-    /* GC_set_warn_proc() to suppress all warnings (unless      */
-    /* statistics printing is turned on).                       */
+/* GC_ignore_warn_proc may be used as an argument for GC_set_warn_proc  */
+/* to suppress all warnings (unless statistics printing is turned on).  */
 GC_API void GC_CALLBACK GC_ignore_warn_proc(char *, GC_word);
 
 /* The following is intended to be used by a higher level       */
@@ -1315,13 +1329,13 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 GC_API void GC_CALL GC_set_force_unmap_on_gcollect(int);
 GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 
- /* Fully portable code should call GC_INIT() from the main program     */
- /* before making any other GC_ calls.  On most platforms this is a     */
- /* no-op and the collector self-initializes.  But a number of          */
- /* platforms make that too hard.                                       */
- /* A GC_INIT call is required if the collector is built with           */
- /* THREAD_LOCAL_ALLOC defined and the initial allocation call is not   */
- /* to GC_malloc() or GC_malloc_atomic().                               */
+/* Fully portable code should call GC_INIT() from the main program      */
+/* before making any other GC_ calls.  On most platforms this is a      */
+/* no-op and the collector self-initializes.  But a number of           */
+/* platforms make that too hard.                                        */
+/* A GC_INIT call is required if the collector is built with            */
+/* THREAD_LOCAL_ALLOC defined and the initial allocation call is not    */
+/* to GC_malloc() or GC_malloc_atomic().                                */
 
 #ifdef __CYGWIN32__
   /* Similarly gnu-win32 DLLs need explicit initialization from the     */
