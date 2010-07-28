@@ -1,3 +1,23 @@
+2010-07-29  Ivan Maidanski <ivmai@mail.ru> (with input from NIIBE Yutaka)
+
+	* pthread_start.c: New file.
+	* CMakeLists.txt (SRC): Add pthread_start.c.
+	* Makefile.am (libgc_la_SOURCES): Ditto.
+	* Makefile.direct (CSRCS): Ditto.
+	* Makefile.direct (OBJS): Add pthread_start.obj.
+	* extra/gc.c: Add a comment; include pthread_start.c.
+	* pthread_support.c (start_info): Move the struct definition down
+	closer to its usage.
+	* pthread_support.c (GC_thread_exit_proc): Replace STATIC with
+	GC_INNER.
+	* pthread_support.c (GC_inner_start_routine): Move to the
+	definition to pthread_start.c; leave only the prototype; remove
+	STATIC.
+	* pthread_support.c (GC_start_rtn_prepare_thread): New function
+	(contains parts of the original GC_inner_start_routine).
+	* Makefile.in: Regenerate.
+	* configure: Ditto.
+
 2010-07-28  Ivan Maidanski <ivmai@mail.ru> (mostly really Noah Lavine)
 
 	* configure.ac (NO_EXECUTE_PERMISSION): Add comment.

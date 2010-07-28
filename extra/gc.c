@@ -23,6 +23,10 @@
 /* compiler options (GCC) to use are:                                   */
 /* -O3 -fno-strict-aliasing -march=native -Wall -fprofile-generate/use  */
 
+/* Warning: GCC for Linux (for C++ clients only): Use -fexceptions both */
+/* for GC and the client otherwise GC_thread_exit_proc() is not         */
+/* guaranteed to be invoked (see the comments in pthread_start.c).      */
+
 /* This file is not well tested (for now). */
 
 
@@ -66,5 +70,7 @@
 #include "../pthread_support.c"
 #include "../specific.c"
 #include "../win32_threads.c"
+
+#include "../pthread_start.c"
 
 /* real_malloc.c, extra/MacOS.c, extra/msvc_dbg.c are not included. */

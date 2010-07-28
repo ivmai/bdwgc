@@ -68,7 +68,7 @@ libgc_la_SOURCES = \
 # ---------------------------------
 
 if PTHREADS
-libgc_la_SOURCES += pthread_support.c pthread_stop_world.c
+libgc_la_SOURCES += pthread_start.c pthread_support.c pthread_stop_world.c
 endif
 
 if DARWIN_THREADS

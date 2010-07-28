@@ -1039,14 +1039,6 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     return client_data; /* result */
 }
 
-struct start_info {
-    void *(*start_routine)(void *);
-    void *arg;
-    word flags;
-    sem_t registered;           /* 1 ==> in our thread table, but       */
-                                /* parent hasn't yet noticed.           */
-};
-
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
     GC_thread me;
@@ -1081,7 +1073,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 /* results in at most a tiny one-time leak.  And        */
 /* linuxthreads doesn't reclaim the main threads        */
 /* resources or id anyway.                              */
-STATIC void GC_thread_exit_proc(void *arg)
+GC_INNER void GC_thread_exit_proc(void *arg)
 {
     GC_unregister_my_thread();
 }
@@ -1204,15 +1196,24 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     }
 }
 
-STATIC void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb,
-                                                 void * arg)
+struct start_info {
+    void *(*start_routine)(void *);
+    void *arg;
+    word flags;
+    sem_t registered;           /* 1 ==> in our thread table, but       */
+                                /* parent hasn't yet noticed.           */
+};
+
+/* Called from GC_inner_start_routine().  Defined in this file to       */
+/* minimize the number of include files in pthread_start.c (because     */
+/* sem_t and sem_post() are not used that file directly).               */
+GC_INNER void * GC_start_rtn_prepare_thread(void *(**pstart)(void *),
+                                        void **pstart_arg,
+                                        struct GC_stack_base *sb, void *arg)
 {
     struct start_info * si = arg;
-    void * result;
     GC_thread me;
     pthread_t my_pthread;
-    void *(*start)(void *);
-    void *start_arg;
     DCL_LOCK_STATE;
 
     my_pthread = pthread_self();
@@ -1227,25 +1228,18 @@ STATIC void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb,
         GC_init_thread_local(&(me->tlfs));
 #   endif
     UNLOCK();
-    start = si -> start_routine;
+    *pstart = si -> start_routine;
 #   ifdef DEBUG_THREADS
-        GC_printf("start_routine = %p\n", (void *)(signed_word)start);
+        GC_printf("start_routine = %p\n", (void *)(signed_word)(*pstart));
 #   endif
-    start_arg = si -> arg;
+    *pstart_arg = si -> arg;
     sem_post(&(si -> registered));      /* Last action on si.   */
                                         /* OK to deallocate.    */
-    pthread_cleanup_push(GC_thread_exit_proc, 0);
-    result = (*start)(start_arg);
-#   ifdef DEBUG_THREADS
-        GC_printf("Finishing thread 0x%x\n", (unsigned)pthread_self());
-#   endif
-    me -> status = result;
-    pthread_cleanup_pop(1);
-    /* Cleanup acquires lock, ensuring that we can't exit               */
-    /* while a collection that thinks we're alive is trying to stop     */
-    /* us.                                                              */
-    return(result);
+    return me;
 }
+
+void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb, void *arg);
+                                        /* defined in pthread_start.c   */
 
 STATIC void * GC_start_routine(void * arg)
 {
