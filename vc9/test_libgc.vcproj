@@ -12,6 +12,9 @@
         <Platform
             Name="Win32"
         />
+        <Platform
+            Name="x64"
+        />
     </Platforms>
     <ToolFiles>
     </ToolFiles>
@@ -97,6 +100,129 @@
             />
             <Tool
                 Name="VCMIDLTool"
+            />
+            <Tool
+                Name="VCCLCompilerTool"
+                PreprocessorDefinitions="_WINDOWS"
+            />
+            <Tool
+                Name="VCManagedResourceCompilerTool"
+            />
+            <Tool
+                Name="VCResourceCompilerTool"
+            />
+            <Tool
+                Name="VCPreLinkEventTool"
+            />
+            <Tool
+                Name="VCLinkerTool"
+                SubSystem="2"
+            />
+            <Tool
+                Name="VCALinkTool"
+            />
+            <Tool
+                Name="VCManifestTool"
+            />
+            <Tool
+                Name="VCXDCMakeTool"
+            />
+            <Tool
+                Name="VCBscMakeTool"
+            />
+            <Tool
+                Name="VCFxCopTool"
+            />
+            <Tool
+                Name="VCAppVerifierTool"
+            />
+            <Tool
+                Name="VCPostBuildEventTool"
+            />
+        </Configuration>
+        <Configuration
+            Name="Debug|x64"
+            ConfigurationType="1"
+            InheritedPropertySheets="$(solutiondir)/$(solutionname)_$(platformname).$(configurationname).vsprops"
+            CharacterSet="0"
+            >
+            <Tool
+                Name="VCPreBuildEventTool"
+            />
+            <Tool
+                Name="VCCustomBuildTool"
+            />
+            <Tool
+                Name="VCXMLDataGeneratorTool"
+            />
+            <Tool
+                Name="VCWebServiceProxyGeneratorTool"
+            />
+            <Tool
+                Name="VCMIDLTool"
+                TargetEnvironment="3"
+            />
+            <Tool
+                Name="VCCLCompilerTool"
+                PreprocessorDefinitions="_WINDOWS"
+            />
+            <Tool
+                Name="VCManagedResourceCompilerTool"
+            />
+            <Tool
+                Name="VCResourceCompilerTool"
+            />
+            <Tool
+                Name="VCPreLinkEventTool"
+            />
+            <Tool
+                Name="VCLinkerTool"
+                SubSystem="2"
+            />
+            <Tool
+                Name="VCALinkTool"
+            />
+            <Tool
+                Name="VCManifestTool"
+            />
+            <Tool
+                Name="VCXDCMakeTool"
+            />
+            <Tool
+                Name="VCBscMakeTool"
+            />
+            <Tool
+                Name="VCFxCopTool"
+            />
+            <Tool
+                Name="VCAppVerifierTool"
+            />
+            <Tool
+                Name="VCPostBuildEventTool"
+            />
+        </Configuration>
+        <Configuration
+            Name="Release|x64"
+            ConfigurationType="1"
+            InheritedPropertySheets="$(solutiondir)/$(solutionname)_$(platformname).$(configurationname).vsprops"
+            CharacterSet="0"
+            WholeProgramOptimization="0"
+            >
+            <Tool
+                Name="VCPreBuildEventTool"
+            />
+            <Tool
+                Name="VCCustomBuildTool"
+            />
+            <Tool
+                Name="VCXMLDataGeneratorTool"
+            />
+            <Tool
+                Name="VCWebServiceProxyGeneratorTool"
+            />
+            <Tool
+                Name="VCMIDLTool"
+                TargetEnvironment="3"
             />
             <Tool
                 Name="VCCLCompilerTool"
