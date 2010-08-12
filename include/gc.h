@@ -715,7 +715,7 @@ GC_API void * GC_CALL GC_debug_realloc_replacement(void * /* object_addr */,
       GC_debug_register_finalizer_no_order(p, f, d, of, od)
 # define GC_REGISTER_FINALIZER_UNREACHABLE(p, f, d, of, od) \
       GC_debug_register_finalizer_unreachable(p, f, d, of, od)
-# define GC_MALLOC_STUBBORN(sz) GC_debug_malloc_stubborn(sz, GC_EXTRAS);
+# define GC_MALLOC_STUBBORN(sz) GC_debug_malloc_stubborn(sz, GC_EXTRAS)
 # define GC_CHANGE_STUBBORN(p) GC_debug_change_stubborn(p)
 # define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
 # define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
@@ -952,10 +952,10 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 /* settings.                                                    */
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 # define GC_reachable_here(ptr) \
-  __asm__ volatile(" " : : "X"(ptr) : "memory");
+                __asm__ __volatile__(" " : : "X"(ptr) : "memory")
 #else
   GC_API void GC_CALL GC_noop1(GC_word);
-# define GC_reachable_here(ptr) GC_noop1((GC_word)(ptr));
+# define GC_reachable_here(ptr) GC_noop1((GC_word)(ptr))
 #endif
 
 /* GC_set_warn_proc can be used to redirect or filter warning messages. */

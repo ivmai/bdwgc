@@ -1,3 +1,11 @@
+2010-08-12  Ivan Maidanski <ivmai@mail.ru> (mostly really Mike Gran)
+
+	* include/gc.h (GC_MALLOC_STUBBORN): Remove trailing ';' in the
+	macro definition.
+	* include/gc.h (GC_reachable_here): Ditto.
+	* include/gc.h (GC_reachable_here): Prefix and postfix "volatile"
+	with double '_'.
+
 2010-07-29  Ivan Maidanski <ivmai@mail.ru> (with input from NIIBE Yutaka)
 
 	* pthread_start.c: New file.
