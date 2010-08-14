@@ -2,7 +2,7 @@
  * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
- * Copyright (c) 2000-2009 by Hewlett-Packard Development Company.
+ * Copyright (c) 2000-2010 by Hewlett-Packard Development Company.
  * All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
@@ -23,10 +23,10 @@
 int main(void)
 {
 #   if defined(GC_USE_LD_WRAP)
-        printf("-Wl,--wrap -Wl,dlopen "
+        printf("-Wl,--wrap -Wl,read -Wl,--wrap -Wl,dlopen "
                "-Wl,--wrap -Wl,pthread_create -Wl,--wrap -Wl,pthread_join "
-               "-Wl,--wrap -Wl,pthread_detach "
-               "-Wl,--wrap -Wl,pthread_sigmask -Wl,--wrap -Wl,sleep\n");
+               "-Wl,--wrap -Wl,pthread_detach -Wl,--wrap -Wl,pthread_sigmask "
+               "-Wl,--wrap -Wl,pthread_exit -Wl,--wrap -Wl,pthread_cancel\n");
 #   endif
 #   if defined(GC_LINUX_THREADS) || defined(GC_IRIX_THREADS) \
         || defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS) \

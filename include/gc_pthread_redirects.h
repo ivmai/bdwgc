@@ -2,7 +2,7 @@
  * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
- * Copyright (c) 2000-2009 by Hewlett-Packard Development Company.
+ * Copyright (c) 2000-2010 by Hewlett-Packard Development Company.
  * All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
@@ -19,6 +19,7 @@
 /* calls.  We arrange to do that here, if appropriate.                  */
 
 /* Included from gc.h only.  Included only if GC_PTHREADS.              */
+#if defined(GC_H) && defined(GC_PTHREADS)
 
 /* We need to intercept calls to many of the threads primitives, so     */
 /* that we can locate thread stacks and stop the world.                 */
@@ -47,11 +48,27 @@ GC_API int GC_pthread_create(pthread_t *, const pthread_attr_t *,
 GC_API int GC_pthread_join(pthread_t, void ** /* retval */);
 GC_API int GC_pthread_detach(pthread_t);
 
+#if !defined(GC_PTHREAD_EXIT_ATTRIBUTE) \
+        && (defined(GC_LINUX_THREADS) || defined(GC_SOLARIS_THREADS))
+  /* Intercept pthread_cancel and pthread_exit on Linux and Solaris.    */
+# if defined(__GNUC__) /* since GCC v2.7 */
+#   define GC_PTHREAD_EXIT_ATTRIBUTE __attribute__((__noreturn__))
+# elif defined(__NORETURN) /* used in Solaris */
+#   define GC_PTHREAD_EXIT_ATTRIBUTE __NORETURN
+# else
+#   define GC_PTHREAD_EXIT_ATTRIBUTE /* empty */
+# endif
+#endif
+
+#ifdef GC_PTHREAD_EXIT_ATTRIBUTE
+  GC_API int GC_pthread_cancel(pthread_t);
+  GC_API void GC_pthread_exit(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
+#endif
+
 #if !defined(GC_NO_THREAD_REDIRECTS) && !defined(GC_USE_LD_WRAP)
-  /* Unless the compiler supports #pragma extern_prefix, the Tru64    */
-  /* UNIX <pthread.h> redefines some POSIX thread functions to use    */
-  /* mangled names.  Anyway, it's safe to undef them before           */
-  /* redefining.                                                      */
+  /* Unless the compiler supports #pragma extern_prefix, the Tru64      */
+  /* UNIX <pthread.h> redefines some POSIX thread functions to use      */
+  /* mangled names.  Anyway, it's safe to undef them before redefining. */
 # undef pthread_create
 # undef pthread_join
 # undef pthread_detach
@@ -68,4 +85,13 @@ GC_API int GC_pthread_detach(pthread_t);
 #   undef dlopen
 #   define dlopen GC_dlopen
 # endif
+
+# ifdef GC_PTHREAD_EXIT_ATTRIBUTE
+#   undef pthread_cancel
+#   define pthread_cancel GC_pthread_cancel
+#   undef pthread_exit
+#   define pthread_exit GC_pthread_exit
+# endif
 #endif /* !GC_NO_THREAD_REDIRECTS */
+
+#endif /* GC_PTHREADS */

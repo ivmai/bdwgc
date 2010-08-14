@@ -59,6 +59,9 @@ typedef struct GC_Thread_Rep {
                                 /* it unregisters itself, since it      */
                                 /* may not return a GC pointer.         */
 #       define MAIN_THREAD 4    /* True for the original thread only.   */
+#       define DISABLED_GC 8    /* Collections are disabled while the   */
+                                /* thread is exiting.                   */
+
     short thread_blocked;       /* Protected by GC lock.                */
                                 /* Treated as a boolean value.  If set, */
                                 /* thread will acquire GC lock before   */
