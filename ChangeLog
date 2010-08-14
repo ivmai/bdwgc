@@ -1,5 +1,17 @@
 2010-08-14  Ivan Maidanski <ivmai@mail.ru>
 
+	* os_dep.c (os2_alloc): Don't set PAG_EXECUTE unless
+	pages_executable is on.
+	* os_dep.c (os2_alloc): Add FIXME (for recursion).
+	* os_dep.c (UNPROTECT): Abort with a more informative message if
+	pages_executable is on ("mprotect" case).
+	* os_dep.c (PROTECT, UNPROTECT): Set VM_PROT_EXEC if
+	pages_executable is on (Darwin case).
+	* pthread_support.c (GC_init_real_syms): Abort with an informative
+	message if libgc is linked after libpthread.
+
+2010-08-14  Ivan Maidanski <ivmai@mail.ru>
+
 	* dyn_load.c (GC_register_dynlib_callback): Adjust "start" pointer
 	for 64-bit targets.
 	* pthread_support.c (start_mark_threads): Expand PTHREAD_CREATE

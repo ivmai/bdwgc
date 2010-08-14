@@ -2114,11 +2114,13 @@ void * os2_alloc(size_t bytes)
 {
     void * result;
 
-    if (DosAllocMem(&result, bytes, PAG_EXECUTE | PAG_READ |
-                                    PAG_WRITE | PAG_COMMIT)
+    if (DosAllocMem(&result, bytes, (PAG_READ | PAG_WRITE | PAG_COMMIT)
+                                    | (pages_executable ? PAG_EXECUTE : 0))
                     != NO_ERROR) {
         return(0);
     }
+    /* FIXME: What's the purpose of this recursion?  (Probably, if      */
+    /* DosAllocMem returns memory at 0 address then just retry once.)   */
     if (result == 0) return(os2_alloc(bytes));
     return(result);
 }
@@ -2864,7 +2866,9 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
           if (mprotect((caddr_t)(addr), (size_t)(len), \
                        (PROT_READ | PROT_WRITE) \
                        | (pages_executable ? PROT_EXEC : 0)) < 0) { \
-            ABORT("un-mprotect failed"); \
+            ABORT(pages_executable ? "un-mprotect executable page" \
+                                     " failed (probably disabled by OS)" : \
+                                "un-mprotect failed"); \
           }
 #   undef IGNORE_PAGES_EXECUTABLE
 
@@ -2877,12 +2881,14 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
     STATIC mach_port_t GC_task_self = 0;
 #   define PROTECT(addr,len) \
         if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
-                FALSE,VM_PROT_READ) != KERN_SUCCESS) { \
+                FALSE, VM_PROT_READ \
+                | (pages_executable ? VM_PROT_EXEC : 0)) != KERN_SUCCESS) { \
             ABORT("vm_protect (PROTECT) failed"); \
         }
 #   define UNPROTECT(addr,len) \
         if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
-                FALSE,VM_PROT_READ|VM_PROT_WRITE) != KERN_SUCCESS) { \
+                FALSE, (VM_PROT_READ | VM_PROT_WRITE) \
+                | (pages_executable ? VM_PROT_EXEC : 0)) != KERN_SUCCESS) { \
             ABORT("vm_protect (UNPROTECT) failed"); \
         }
 # else

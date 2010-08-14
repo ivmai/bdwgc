@@ -231,6 +231,11 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
 #   endif
     REAL_FUNC(pthread_create) = (GC_pthread_create_t)
                                 dlsym(dl_handle, "pthread_create");
+#   ifdef RTLD_NEXT
+      if (REAL_FUNC(pthread_create) == 0)
+        ABORT("pthread_create not found"
+              " (probably -lgc is specified after -lpthread)");
+#   endif
     REAL_FUNC(pthread_sigmask) = (GC_pthread_sigmask_t)
                                 dlsym(dl_handle, "pthread_sigmask");
     REAL_FUNC(pthread_join) = (GC_pthread_join_t)
