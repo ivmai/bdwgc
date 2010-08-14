@@ -139,8 +139,7 @@
 /* Disable debugging, like GC_dump and its callees. */
 #undef NO_DEBUGGING
 
-/* Define to allow the collector to disable execute permission of heap
-   objects. */
+/* Define to make the collector not allocate executable memory by default. */
 #undef NO_EXECUTE_PERMISSION
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
