@@ -353,12 +353,13 @@ STATIC void * GC_mark_thread(void * id)
 
 STATIC pthread_t GC_mark_threads[MAX_MARKERS];
 
-#define PTHREAD_CREATE REAL_FUNC(pthread_create)
-
 static void start_mark_threads(void)
 {
     unsigned i;
     pthread_attr_t attr;
+
+    GC_ASSERT(I_DONT_HOLD_LOCK());
+    INIT_REAL_SYMS(); /* for pthread_create */
 
     if (0 != pthread_attr_init(&attr)) ABORT("pthread_attr_init failed");
 
@@ -383,7 +384,7 @@ static void start_mark_threads(void)
       }
 #   endif /* HPUX || GC_DGUX386_THREADS */
     for (i = 0; i < GC_markers - 1; ++i) {
-      if (0 != PTHREAD_CREATE(GC_mark_threads + i, &attr,
+      if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
         WARN("Marker thread creation failed, errno = %" GC_PRIdPTR "\n",
              errno);

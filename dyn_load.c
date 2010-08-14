@@ -485,6 +485,10 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
             break;
 #         ifdef PT_GNU_RELRO
             if (n_load_segs >= MAX_LOAD_SEGS) ABORT("Too many PT_LOAD segs");
+#           if CPP_WORDSZ == 64
+              /* start pointer value may require aligning */
+              start = (ptr_t)((word)start & ~(sizeof(word) - 1));
+#           endif
             load_segs[n_load_segs].start = start;
             load_segs[n_load_segs].end = end;
             load_segs[n_load_segs].start2 = 0;
