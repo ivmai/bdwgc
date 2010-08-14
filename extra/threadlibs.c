@@ -23,7 +23,7 @@
 int main(void)
 {
 #   if defined(GC_USE_LD_WRAP)
-        printf("-Wl,--wrap -Wl,read -Wl,--wrap -Wl,dlopen "
+        printf("-Wl,--wrap -Wl,dlopen "
                "-Wl,--wrap -Wl,pthread_create -Wl,--wrap -Wl,pthread_join "
                "-Wl,--wrap -Wl,pthread_detach -Wl,--wrap -Wl,pthread_sigmask "
                "-Wl,--wrap -Wl,pthread_exit -Wl,--wrap -Wl,pthread_cancel\n");

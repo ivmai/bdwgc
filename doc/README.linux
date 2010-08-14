@@ -37,14 +37,14 @@ To use threads, you need to abide by the following requirements:
 3b) A new alternative to (3a) is to build the collector and compile GC clients
    with -DGC_USE_LD_WRAP, and to link the final program with
 
-   (for ld) --wrap read --wrap dlopen --wrap pthread_create \
+   (for ld) --wrap dlopen --wrap pthread_create \
             --wrap pthread_join --wrap pthread_detach \
             --wrap pthread_sigmask --wrap pthread_exit --wrap pthread_cancel
 
-   (for gcc) -Wl,--wrap -Wl,read -Wl,--wrap -Wl,dlopen -Wl,--wrap \
-             -Wl,pthread_create -Wl,--wrap -Wl,pthread_join -Wl,--wrap \
-             -Wl,pthread_detach -Wl,--wrap -Wl,pthread_sigmask \
-             -Wl,--wrap -Wl,pthread_exit -Wl,--wrap -Wl,pthread_cancel
+   (for gcc) -Wl,--wrap -Wl,dlopen -Wl,--wrap -Wl,pthread_create \
+             -Wl,--wrap -Wl,pthread_join -Wl,--wrap -Wl,pthread_detach \
+             -Wl,--wrap -Wl,pthread_sigmask -Wl,--wrap -Wl,pthread_exit \
+             -Wl,--wrap -Wl,pthread_cancel
 
    In any case, _REENTRANT should be defined during compilation.
 

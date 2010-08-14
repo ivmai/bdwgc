@@ -1,3 +1,9 @@
+2010-08-14  Ivan Maidanski <ivmai@mail.ru>
+	* extra/threadlibs.c (main): Remove --wrap for "read" (since not
+	wrapped anymore).
+	* doc/README.linux (GC_USE_LD_WRAP): Ditto.
+	* os_dep.c (__wrap_read): Ditto (in the comment).
+
 2010-08-14  Ivan Maidanski <ivmai@mail.ru> (with help from Hans Boehm)
 
 	* include/gc_pthread_redirects.h: Test GC_PTHREADS and GC_H at the

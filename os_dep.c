@@ -3489,8 +3489,6 @@ ssize_t read(int fd, void *buf, size_t nbyte)
 
 #if defined(GC_USE_LD_WRAP) && !defined(THREADS)
     /* We use the GNU ld call wrapping facility.                        */
-    /* This requires that the linker be invoked with "--wrap read".     */
-    /* This can be done by passing -Wl,"--wrap read" to gcc.            */
     /* I'm not sure that this actually wraps whatever version of read   */
     /* is called by stdio.  That code also mentions __read.             */
 #   include <unistd.h>
