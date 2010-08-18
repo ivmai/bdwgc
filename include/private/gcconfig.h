@@ -841,7 +841,15 @@
 #     define DYNAMIC_LOADING
 #   endif
 #   ifdef FREEBSD
-#       define ALIGNMENT 4
+#       if defined(__powerpc64__)
+#           define ALIGNMENT 8
+#           define CPP_WORDSZ 64
+#           ifndef HBLKSIZE
+#               define HBLKSIZE 4096
+#           endif
+#       else
+#           define ALIGNMENT 4
+#       endif
 #       define OS_TYPE "FREEBSD"
 #       ifndef GC_FREEBSD_THREADS
 #           define MPROTECT_VDB
