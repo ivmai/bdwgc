@@ -2881,14 +2881,16 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
     STATIC mach_port_t GC_task_self = 0;
 #   define PROTECT(addr,len) \
         if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
-                FALSE, VM_PROT_READ \
-                | (pages_executable ? VM_PROT_EXEC : 0)) != KERN_SUCCESS) { \
+                      FALSE, VM_PROT_READ \
+                             | (pages_executable ? VM_PROT_EXECUTE : 0)) \
+                != KERN_SUCCESS) { \
             ABORT("vm_protect (PROTECT) failed"); \
         }
 #   define UNPROTECT(addr,len) \
         if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
-                FALSE, (VM_PROT_READ | VM_PROT_WRITE) \
-                | (pages_executable ? VM_PROT_EXEC : 0)) != KERN_SUCCESS) { \
+                      FALSE, (VM_PROT_READ | VM_PROT_WRITE) \
+                             | (pages_executable ? VM_PROT_EXECUTE : 0)) \
+                != KERN_SUCCESS) { \
             ABORT("vm_protect (UNPROTECT) failed"); \
         }
 # else

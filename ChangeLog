@@ -1,3 +1,8 @@
+2010-08-18  Ivan Maidanski <ivmai@mail.ru> (with help from Andreas Tobler)
+
+	* os_dep.c (PROTECT, UNPROTECT): Correct VM_PROT_EXEC to
+	VM_PROT_EXECUTE.
+
 2010-08-14  Ivan Maidanski <ivmai@mail.ru>
 
 	* aclocal.m4: Regenerate (by autoreconf -vif using autoconf-2.67,
