@@ -28,6 +28,11 @@
  * problems.
  */
 
+// help debug mixed up preproc symbols
+#if (defined(WIN64) && !defined(_WIN64))
+#pragma message("Warning: Expecting _WIN64 for x64 targets! Notice the leading underscore!")
+#endif
+
 #ifndef GC_H
 #define GC_H
 
