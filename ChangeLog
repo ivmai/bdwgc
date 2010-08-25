@@ -1,3 +1,7 @@
+2010-08-25  Ivan Maidanski <ivmai@mail.ru> (with help from Hans Boehm)
+
+	* dyn_load.c (GC_register_dynlib_callback): Add FIXME.
+
 2010-08-18  Ivan Maidanski <ivmai@mail.ru> (really Andreas Tobler)
 
 	* include/private/gcconfig.h: Add support for FreeBSD on ppc64.
