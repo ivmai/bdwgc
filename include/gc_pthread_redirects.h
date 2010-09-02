@@ -32,7 +32,7 @@
 
 #include <pthread.h>
 
-#ifndef GC_DARWIN_THREADS
+#if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_PTHREADS)
 # include <signal.h>
 # include <dlfcn.h>
 
@@ -77,7 +77,7 @@ GC_API int GC_pthread_detach(pthread_t);
 # define pthread_join GC_pthread_join
 # define pthread_detach GC_pthread_detach
 
-# ifndef GC_DARWIN_THREADS
+# if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_PTHREADS)
 #   ifndef GC_OPENBSD_THREADS
 #     undef pthread_sigmask
 #     define pthread_sigmask GC_pthread_sigmask
