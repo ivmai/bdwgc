@@ -437,7 +437,7 @@ ENABLE_TRACE    Enables the GC_TRACE=addr environment setting to do its job.
 
 DARWIN_DONT_PARSE_STACK         Causes the Darwin port to discover thread
   stack bounds in the same way as other pthread ports, without trying to
-  walk the frames onthe stack.  This is recommended only as a fallback for
+  walk the frames on the stack.  This is recommended only as a fallback for
   applications that don't support proper stack unwinding.
 
 USE_PROC_FOR_LIBRARIES  Causes the Linux collector to treat writable

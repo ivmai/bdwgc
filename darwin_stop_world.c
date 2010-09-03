@@ -2,7 +2,7 @@
  * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
- * Copyright (c) 2000-2009 by Hewlett-Packard Development Company.
+ * Copyright (c) 2000-2010 by Hewlett-Packard Development Company.
  * All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
@@ -419,7 +419,7 @@ GC_INNER void GC_push_all_stacks(void)
 #endif /* !DARWIN_DONT_PARSE_STACK */
 
 STATIC mach_port_t GC_mach_handler_thread = 0;
-STATIC int GC_use_mach_handler_thread = 0;
+STATIC GC_bool GC_use_mach_handler_thread = FALSE;
 
 static struct GC_mach_thread GC_mach_threads[THREAD_TABLE_SZ];
 STATIC int GC_mach_threads_count = 0;
@@ -466,10 +466,8 @@ STATIC int GC_suspend_thread_list(thread_act_array_t act_list, int count,
       changed = 1;
     }
 
-    if (thread != my_thread
-        && (!GC_use_mach_handler_thread
-            || (GC_use_mach_handler_thread
-                && GC_mach_handler_thread != thread))) {
+    if (thread != my_thread && (!GC_use_mach_handler_thread
+                                || GC_mach_handler_thread != thread)) {
       struct thread_basic_info info;
       mach_msg_type_number_t outCount = THREAD_INFO_MAX;
       kern_return_t kern_result = thread_info(thread, THREAD_BASIC_INFO,
@@ -636,15 +634,14 @@ GC_INNER void GC_start_world(void)
     kern_result = task_threads(my_task, &act_list, &listcount);
     for(i = 0; i < listcount; i++) {
       thread_act_t thread = act_list[i];
-      if (thread != my_thread
-          && (!GC_use_mach_handler_thread
-              || (GC_use_mach_handler_thread
-                  && GC_mach_handler_thread != thread))) {
+      if (thread != my_thread && (!GC_use_mach_handler_thread
+                                  || GC_mach_handler_thread != thread)) {
         for(j = 0; j < GC_mach_threads_count; j++) {
           if (thread == GC_mach_threads[j].thread) {
             if (GC_mach_threads[j].already_suspended) {
 #             ifdef DEBUG_THREADS
-                GC_printf("Not resuming already suspended thread %p\n", thread);
+                GC_printf("Not resuming already suspended thread %p\n",
+                        thread);
 #             endif
               continue;
             }
@@ -653,8 +650,8 @@ GC_INNER void GC_start_world(void)
             if(kern_result != KERN_SUCCESS)
               ABORT("thread_info failed");
 #           ifdef DEBUG_THREADS
-              GC_printf("Thread state for 0x%lx = %d\n", (unsigned long)thread,
-                         info.run_state);
+              GC_printf("Thread state for 0x%lx = %d\n",
+                        (unsigned long)thread, info.run_state);
               GC_printf("Resuming 0x%lx\n", (unsigned long)thread);
 #           endif
             /* Resume the thread */
@@ -678,7 +675,7 @@ GC_INNER void GC_start_world(void)
 GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread)
 {
   GC_mach_handler_thread = thread;
-  GC_use_mach_handler_thread = 1;
+  GC_use_mach_handler_thread = TRUE;
 }
 
 #endif
