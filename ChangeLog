@@ -1,5 +1,16 @@
 2010-09-04  Ivan Maidanski <ivmai@mail.ru>
 
+	* darwin_stop_world.c (FindTopOfStack): Simplify condition
+	expressions.
+	* darwin_stop_world.c (GC_push_all_stacks): Merge two variants
+	of this function (DARWIN_DONT_PARSE_STACK).
+	* darwin_stop_world.c (GC_push_all_stacks): Add a check for our
+	thread is found (same as in pthread_stop_world.c).
+	* darwin_stop_world.c (GC_push_all_stacks): Print the number of
+	scanned threads if verbose (same as in pthread_stop_world.c).
+
+2010-09-04  Ivan Maidanski <ivmai@mail.ru>
+
 	* darwin_stop_world.c (GC_push_all_stacks): Reset
 	thread_state_count value before every thread_get_state call;
 	refine the comment for thread_state_count.

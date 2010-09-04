@@ -39,158 +39,7 @@
 # endif
 #endif
 
-#ifdef DARWIN_DONT_PARSE_STACK
-
-GC_INNER void GC_push_all_stacks(void)
-{
-  int i;
-  kern_return_t r;
-  GC_thread p;
-  pthread_t me;
-  ptr_t lo, hi;
-  word total_size = 0;
-  GC_THREAD_STATE_T state;
-
-  me = pthread_self();
-  if (!GC_thr_initialized)
-    GC_thr_init();
-
-  for(i = 0; i < THREAD_TABLE_SZ; i++) {
-    for(p = GC_threads[i]; p != 0; p = p->next) {
-      if(p->flags & FINISHED) continue;
-      if(pthread_equal(p->id, me)) {
-        lo = GC_approx_sp();
-      } else {
-        /* MACHINE_THREAD_STATE_COUNT does not seem to be defined       */
-        /* everywhere.  Hence we use our own version.  Alternatively,   */
-        /* we could use THREAD_STATE_MAX (but seems to be not optimal). */
-        mach_msg_type_number_t thread_state_count = GC_MACH_THREAD_STATE_COUNT;
-        /* Get the thread state (registers, etc) */
-        r = thread_get_state(p->stop_info.mach_thread, GC_MACH_THREAD_STATE,
-                             (natural_t*)&state, &thread_state_count);
-
-#       ifdef DEBUG_THREADS
-          GC_printf("thread_get_state return value = %d\n", r);
-#       endif
-
-        if(r != KERN_SUCCESS)
-          ABORT("thread_get_state failed");
-
-#       if defined(I386)
-          lo = (void*)state . THREAD_FLD (esp);
-
-          GC_push_one(state . THREAD_FLD (eax));
-          GC_push_one(state . THREAD_FLD (ebx));
-          GC_push_one(state . THREAD_FLD (ecx));
-          GC_push_one(state . THREAD_FLD (edx));
-          GC_push_one(state . THREAD_FLD (edi));
-          GC_push_one(state . THREAD_FLD (esi));
-          GC_push_one(state . THREAD_FLD (ebp));
-
-#       elif defined(X86_64)
-          lo = (void*)state . THREAD_FLD (rsp);
-
-          GC_push_one(state . THREAD_FLD (rax));
-          GC_push_one(state . THREAD_FLD (rbx));
-          GC_push_one(state . THREAD_FLD (rcx));
-          GC_push_one(state . THREAD_FLD (rdx));
-          GC_push_one(state . THREAD_FLD (rdi));
-          GC_push_one(state . THREAD_FLD (rsi));
-          GC_push_one(state . THREAD_FLD (rbp));
-          /* GC_push_one(state . THREAD_FLD (rsp)); */
-          GC_push_one(state . THREAD_FLD (r8));
-          GC_push_one(state . THREAD_FLD (r9));
-          GC_push_one(state . THREAD_FLD (r10));
-          GC_push_one(state . THREAD_FLD (r11));
-          GC_push_one(state . THREAD_FLD (r12));
-          GC_push_one(state . THREAD_FLD (r13));
-          GC_push_one(state . THREAD_FLD (r14));
-          GC_push_one(state . THREAD_FLD (r15));
-          /* GC_push_one(state . THREAD_FLD (rip));
-          GC_push_one(state . THREAD_FLD (rflags));
-          GC_push_one(state . THREAD_FLD (cs));
-          GC_push_one(state . THREAD_FLD (fs));
-          GC_push_one(state . THREAD_FLD (gs)); */
-
-#       elif defined(POWERPC)
-          lo = (void*)(state . THREAD_FLD (r1) - PPC_RED_ZONE_SIZE);
-
-          GC_push_one(state . THREAD_FLD (r0));
-          GC_push_one(state . THREAD_FLD (r2));
-          GC_push_one(state . THREAD_FLD (r3));
-          GC_push_one(state . THREAD_FLD (r4));
-          GC_push_one(state . THREAD_FLD (r5));
-          GC_push_one(state . THREAD_FLD (r6));
-          GC_push_one(state . THREAD_FLD (r7));
-          GC_push_one(state . THREAD_FLD (r8));
-          GC_push_one(state . THREAD_FLD (r9));
-          GC_push_one(state . THREAD_FLD (r10));
-          GC_push_one(state . THREAD_FLD (r11));
-          GC_push_one(state . THREAD_FLD (r12));
-          GC_push_one(state . THREAD_FLD (r13));
-          GC_push_one(state . THREAD_FLD (r14));
-          GC_push_one(state . THREAD_FLD (r15));
-          GC_push_one(state . THREAD_FLD (r16));
-          GC_push_one(state . THREAD_FLD (r17));
-          GC_push_one(state . THREAD_FLD (r18));
-          GC_push_one(state . THREAD_FLD (r19));
-          GC_push_one(state . THREAD_FLD (r20));
-          GC_push_one(state . THREAD_FLD (r21));
-          GC_push_one(state . THREAD_FLD (r22));
-          GC_push_one(state . THREAD_FLD (r23));
-          GC_push_one(state . THREAD_FLD (r24));
-          GC_push_one(state . THREAD_FLD (r25));
-          GC_push_one(state . THREAD_FLD (r26));
-          GC_push_one(state . THREAD_FLD (r27));
-          GC_push_one(state . THREAD_FLD (r28));
-          GC_push_one(state . THREAD_FLD (r29));
-          GC_push_one(state . THREAD_FLD (r30));
-          GC_push_one(state . THREAD_FLD (r31));
-
-#       elif defined(ARM32)
-          lo = (void*)state.__sp;
-
-          GC_push_one(state.__r[0]);
-          GC_push_one(state.__r[1]);
-          GC_push_one(state.__r[2]);
-          GC_push_one(state.__r[3]);
-          GC_push_one(state.__r[4]);
-          GC_push_one(state.__r[5]);
-          GC_push_one(state.__r[6]);
-          GC_push_one(state.__r[7]);
-          GC_push_one(state.__r[8]);
-          GC_push_one(state.__r[9]);
-          GC_push_one(state.__r[10]);
-          GC_push_one(state.__r[11]);
-          GC_push_one(state.__r[12]);
-          /* GC_push_one(state.__sp); */
-          GC_push_one(state.__lr);
-          /* GC_push_one(state.__pc); */
-          GC_push_one(state.__cpsr);
-
-#       else
-#         error FIXME for non-x86 || ppc || arm architectures
-#       endif
-      } /* p != me */
-      if(p->flags & MAIN_THREAD)
-        hi = GC_stackbottom;
-      else
-        hi = p->stack_end;
-#     ifdef DEBUG_THREADS
-        GC_printf("Darwin: Stack for thread 0x%lx = [%p,%p)\n",
-                  (unsigned long) p -> id, lo, hi);
-#     endif
-      /* FIXME: It is impossible to use GC_push_all_stack_sections()    */
-      /* here while GC_do_blocking_inner() and GC_call_with_gc_active() */
-      /* contain unimplemented code for Darwin.                         */
-      GC_push_all_stack(lo, hi);
-      total_size += hi - lo; /* lo <= hi */
-    } /* for(p=GC_threads[i]...) */
-  } /* for(i=0;i<THREAD_TABLE_SZ...) */
-  GC_total_stacksize = total_size;
-}
-
-#else /* !DARWIN_DONT_PARSE_STACK; Use FindTopOfStack() */
+#ifndef DARWIN_DONT_PARSE_STACK
 
 typedef struct StackFrame {
   unsigned long savedSP;
@@ -219,9 +68,7 @@ static unsigned long FindTopOfStack(unsigned long stack_start)
 # ifdef DEBUG_THREADS
     /* GC_printf("FindTopOfStack start at sp = %p\n", frame); */
 # endif
-  do {
-    if (frame->savedSP == 0)
-      break;
+  while (frame->savedSP != 0) {
     /* if there are no more stack frames, stop */
 
     frame = (StackFrame*)frame->savedSP;
@@ -229,195 +76,220 @@ static unsigned long FindTopOfStack(unsigned long stack_start)
     /* we do these next two checks after going to the next frame
        because the LR for the first stack frame in the loop
        is not set up on purpose, so we shouldn't check it. */
-    if ((frame->savedLR & ~3) == 0)
+    if ((frame->savedLR & ~0x3) == 0 || (frame->savedLR & ~0x3) == ~0x3)
       break; /* if the next LR is bogus, stop */
-    if ((~(frame->savedLR) & ~3) == 0)
-      break; /* ditto */
-  } while (1);
-
+  }
 # ifdef DEBUG_THREADS
     /* GC_printf("FindTopOfStack finish at sp = %p\n", frame); */
 # endif
   return (unsigned long)frame;
 }
 
+#endif /* !DARWIN_DONT_PARSE_STACK */
+
 GC_INNER void GC_push_all_stacks(void)
 {
-  unsigned int i;
-  task_t my_task;
+  int i;
   kern_return_t r;
-  mach_port_t me;
   ptr_t lo, hi;
   word total_size = 0;
-  thread_act_array_t act_list = 0;
-  mach_msg_type_number_t listcount = 0;
+  mach_port_t me = mach_thread_self();
+  GC_bool found_me = FALSE;
+  int nthreads = 0;
+# ifndef DARWIN_DONT_PARSE_STACK
+    task_t my_task;
+    thread_act_array_t act_list = 0;
+    mach_msg_type_number_t listcount = 0;
+# endif
 
-  me = mach_thread_self();
   if (!GC_thr_initialized)
     GC_thr_init();
 
-  my_task = current_task();
-  r = task_threads(my_task, &act_list, &listcount);
-  if(r != KERN_SUCCESS)
-    ABORT("task_threads failed");
-  for(i = 0; i < listcount; i++) {
-    thread_act_t thread = act_list[i];
-    if (thread == me) {
-      lo = GC_approx_sp();
-      hi = (ptr_t)FindTopOfStack(0);
-    } else {
-#     if defined(POWERPC)
-        GC_THREAD_STATE_T info;
-        mach_msg_type_number_t outCount = GC_MACH_THREAD_STATE_COUNT;
-        r = thread_get_state(thread, GC_MACH_THREAD_STATE, (natural_t *)&info,
-                             &outCount);
-        if(r != KERN_SUCCESS)
-          ABORT("task_get_state failed");
+# ifdef DARWIN_DONT_PARSE_STACK
+    for (i = 0; i < THREAD_TABLE_SZ; i++)
+# else
+    my_task = current_task();
+    r = task_threads(my_task, &act_list, &listcount);
+    if (r != KERN_SUCCESS)
+      ABORT("task_threads failed");
 
-        lo = (void*)(info . THREAD_FLD (r1) - PPC_RED_ZONE_SIZE);
-        hi = (ptr_t)FindTopOfStack(info . THREAD_FLD (r1));
-
-        GC_push_one(info . THREAD_FLD (r0));
-        GC_push_one(info . THREAD_FLD (r2));
-        GC_push_one(info . THREAD_FLD (r3));
-        GC_push_one(info . THREAD_FLD (r4));
-        GC_push_one(info . THREAD_FLD (r5));
-        GC_push_one(info . THREAD_FLD (r6));
-        GC_push_one(info . THREAD_FLD (r7));
-        GC_push_one(info . THREAD_FLD (r8));
-        GC_push_one(info . THREAD_FLD (r9));
-        GC_push_one(info . THREAD_FLD (r10));
-        GC_push_one(info . THREAD_FLD (r11));
-        GC_push_one(info . THREAD_FLD (r12));
-        GC_push_one(info . THREAD_FLD (r13));
-        GC_push_one(info . THREAD_FLD (r14));
-        GC_push_one(info . THREAD_FLD (r15));
-        GC_push_one(info . THREAD_FLD (r16));
-        GC_push_one(info . THREAD_FLD (r17));
-        GC_push_one(info . THREAD_FLD (r18));
-        GC_push_one(info . THREAD_FLD (r19));
-        GC_push_one(info . THREAD_FLD (r20));
-        GC_push_one(info . THREAD_FLD (r21));
-        GC_push_one(info . THREAD_FLD (r22));
-        GC_push_one(info . THREAD_FLD (r23));
-        GC_push_one(info . THREAD_FLD (r24));
-        GC_push_one(info . THREAD_FLD (r25));
-        GC_push_one(info . THREAD_FLD (r26));
-        GC_push_one(info . THREAD_FLD (r27));
-        GC_push_one(info . THREAD_FLD (r28));
-        GC_push_one(info . THREAD_FLD (r29));
-        GC_push_one(info . THREAD_FLD (r30));
-        GC_push_one(info . THREAD_FLD (r31));
-
-#     elif defined(I386)
-        GC_THREAD_STATE_T info;
-        mach_msg_type_number_t outCount = GC_MACH_THREAD_STATE_COUNT;
-        r = thread_get_state(thread, GC_MACH_THREAD_STATE, (natural_t *)&info,
-                             &outCount);
-        if(r != KERN_SUCCESS)
-          ABORT("task_get_state failed");
-
-        lo = (void*)info . THREAD_FLD (esp);
-        hi = (ptr_t)FindTopOfStack(info . THREAD_FLD (esp));
-
-        GC_push_one(info . THREAD_FLD (eax));
-        GC_push_one(info . THREAD_FLD (ebx));
-        GC_push_one(info . THREAD_FLD (ecx));
-        GC_push_one(info . THREAD_FLD (edx));
-        GC_push_one(info . THREAD_FLD (edi));
-        GC_push_one(info . THREAD_FLD (esi));
-        GC_push_one(info . THREAD_FLD (ebp));
-        /* GC_push_one(info . THREAD_FLD (esp)); */
-        /* GC_push_one(info . THREAD_FLD (ss));
-        GC_push_one(info . THREAD_FLD (eip));
-        GC_push_one(info . THREAD_FLD (cs));
-        GC_push_one(info . THREAD_FLD (ds));
-        GC_push_one(info . THREAD_FLD (es));
-        GC_push_one(info . THREAD_FLD (fs));
-        GC_push_one(info . THREAD_FLD (gs)); */
-
-#     elif defined(X86_64)
-        GC_THREAD_STATE_T info;
-        mach_msg_type_number_t outCount = GC_MACH_THREAD_STATE_COUNT;
-        r = thread_get_state(thread, GC_MACH_THREAD_STATE, (natural_t *)&info,
-                             &outCount);
-        if(r != KERN_SUCCESS)
-          ABORT("task_get_state failed");
-
-        lo = (void*)info . THREAD_FLD (rsp);
-        hi = (ptr_t)FindTopOfStack(info . THREAD_FLD (rsp));
-
-        GC_push_one(info . THREAD_FLD (rax));
-        GC_push_one(info . THREAD_FLD (rbx));
-        GC_push_one(info . THREAD_FLD (rcx));
-        GC_push_one(info . THREAD_FLD (rdx));
-        GC_push_one(info . THREAD_FLD (rdi));
-        GC_push_one(info . THREAD_FLD (rsi));
-        GC_push_one(info . THREAD_FLD (rbp));
-        /* GC_push_one(info . THREAD_FLD (rsp)); */
-        GC_push_one(info . THREAD_FLD (r8));
-        GC_push_one(info . THREAD_FLD (r9));
-        GC_push_one(info . THREAD_FLD (r10));
-        GC_push_one(info . THREAD_FLD (r11));
-        GC_push_one(info . THREAD_FLD (r12));
-        GC_push_one(info . THREAD_FLD (r13));
-        GC_push_one(info . THREAD_FLD (r14));
-        GC_push_one(info . THREAD_FLD (r15));
-        /* GC_push_one(info . THREAD_FLD (rip));
-        GC_push_one(info . THREAD_FLD (rflags));
-        GC_push_one(info . THREAD_FLD (cs));
-        GC_push_one(info . THREAD_FLD (fs));
-        GC_push_one(info . THREAD_FLD (gs)); */
-
-#      elif defined(ARM32)
-        GC_THREAD_STATE_T info;
-        mach_msg_type_number_t outCount = GC_MACH_THREAD_STATE_COUNT;
-        r = thread_get_state(thread, GC_MACH_THREAD_STATE, (natural_t *)&info,
-                             &outCount);
-        if(r != KERN_SUCCESS)
-          ABORT("task_get_state failed");
-
-        hi = (ptr_t)FindTopOfStack(info . __sp);
-
-        lo = (void*)info.__sp;
-
-        GC_push_one(info.__r[0]);
-        GC_push_one(info.__r[1]);
-        GC_push_one(info.__r[2]);
-        GC_push_one(info.__r[3]);
-        GC_push_one(info.__r[4]);
-        GC_push_one(info.__r[5]);
-        GC_push_one(info.__r[6]);
-        GC_push_one(info.__r[7]);
-        GC_push_one(info.__r[8]);
-        GC_push_one(info.__r[9]);
-        GC_push_one(info.__r[10]);
-        GC_push_one(info.__r[11]);
-        GC_push_one(info.__r[12]);
-        /* GC_push_one(info.__sp); */
-        GC_push_one(info.__lr);
-        /* GC_push_one(info.__pc); */
-        GC_push_one(info.__cpsr);
-
+    for (i = 0; i < (int)listcount; i++)
+# endif
+  {
+#   ifdef DARWIN_DONT_PARSE_STACK
+      GC_thread p;
+      for (p = GC_threads[i]; p != 0; p = p->next)
+#   endif
+    {
+#     ifdef DARWIN_DONT_PARSE_STACK
+        thread_act_t thread = p->stop_info.mach_thread;
+        if (p->flags & FINISHED) continue;
 #     else
-#       error FIXME for non-x86 || ppc || arm architectures
+        thread_act_t thread = act_list[i];
 #     endif
-      }
+      nthreads++;
+      if (thread == me) {
+        lo = GC_approx_sp();
+#       ifndef DARWIN_DONT_PARSE_STACK
+          hi = (ptr_t)FindTopOfStack(0);
+#       endif
+        found_me = TRUE;
+      } else {
+        /* MACHINE_THREAD_STATE_COUNT does not seem to be defined       */
+        /* everywhere.  Hence we use our own version.  Alternatively,   */
+        /* we could use THREAD_STATE_MAX (but seems to be not optimal). */
+        mach_msg_type_number_t thread_state_count = GC_MACH_THREAD_STATE_COUNT;
+        GC_THREAD_STATE_T state;
+
+        /* Get the thread state (registers, etc) */
+        r = thread_get_state(thread, GC_MACH_THREAD_STATE,
+                             (natural_t *)&state, &thread_state_count);
+#       ifdef DEBUG_THREADS
+          GC_printf("thread_get_state return value = %d\n", r);
+#       endif
+        if (r != KERN_SUCCESS)
+          ABORT("thread_get_state failed");
+
+#       if defined(I386)
+          lo = (void *)state.THREAD_FLD(esp);
+#         ifndef DARWIN_DONT_PARSE_STACK
+            hi = (ptr_t)FindTopOfStack(state.THREAD_FLD(esp));
+#         endif
+          GC_push_one(state.THREAD_FLD(eax));
+          GC_push_one(state.THREAD_FLD(ebx));
+          GC_push_one(state.THREAD_FLD(ecx));
+          GC_push_one(state.THREAD_FLD(edx));
+          GC_push_one(state.THREAD_FLD(edi));
+          GC_push_one(state.THREAD_FLD(esi));
+          GC_push_one(state.THREAD_FLD(ebp));
+          /* GC_push_one(state.THREAD_FLD(esp)); */
+          /* GC_push_one(state.THREAD_FLD(ss));
+          GC_push_one(state.THREAD_FLD(eip));
+          GC_push_one(state.THREAD_FLD(cs));
+          GC_push_one(state.THREAD_FLD(ds));
+          GC_push_one(state.THREAD_FLD(es));
+          GC_push_one(state.THREAD_FLD(fs));
+          GC_push_one(state.THREAD_FLD(gs)); */
+
+#       elif defined(X86_64)
+          lo = (void *)state.THREAD_FLD(rsp);
+#         ifndef DARWIN_DONT_PARSE_STACK
+            hi = (ptr_t)FindTopOfStack(state.THREAD_FLD(rsp));
+#         endif
+          GC_push_one(state.THREAD_FLD(rax));
+          GC_push_one(state.THREAD_FLD(rbx));
+          GC_push_one(state.THREAD_FLD(rcx));
+          GC_push_one(state.THREAD_FLD(rdx));
+          GC_push_one(state.THREAD_FLD(rdi));
+          GC_push_one(state.THREAD_FLD(rsi));
+          GC_push_one(state.THREAD_FLD(rbp));
+          /* GC_push_one(state.THREAD_FLD(rsp)); */
+          GC_push_one(state.THREAD_FLD(r8));
+          GC_push_one(state.THREAD_FLD(r9));
+          GC_push_one(state.THREAD_FLD(r10));
+          GC_push_one(state.THREAD_FLD(r11));
+          GC_push_one(state.THREAD_FLD(r12));
+          GC_push_one(state.THREAD_FLD(r13));
+          GC_push_one(state.THREAD_FLD(r14));
+          GC_push_one(state.THREAD_FLD(r15));
+          /* GC_push_one(state.THREAD_FLD(rip));
+          GC_push_one(state.THREAD_FLD(rflags));
+          GC_push_one(state.THREAD_FLD(cs));
+          GC_push_one(state.THREAD_FLD(fs));
+          GC_push_one(state.THREAD_FLD(gs)); */
+
+#       elif defined(POWERPC)
+          lo = (void *)(state.THREAD_FLD(r1) - PPC_RED_ZONE_SIZE);
+#         ifndef DARWIN_DONT_PARSE_STACK
+            hi = (ptr_t)FindTopOfStack(state.THREAD_FLD(r1));
+#         endif
+          GC_push_one(state.THREAD_FLD(r0));
+          GC_push_one(state.THREAD_FLD(r2));
+          GC_push_one(state.THREAD_FLD(r3));
+          GC_push_one(state.THREAD_FLD(r4));
+          GC_push_one(state.THREAD_FLD(r5));
+          GC_push_one(state.THREAD_FLD(r6));
+          GC_push_one(state.THREAD_FLD(r7));
+          GC_push_one(state.THREAD_FLD(r8));
+          GC_push_one(state.THREAD_FLD(r9));
+          GC_push_one(state.THREAD_FLD(r10));
+          GC_push_one(state.THREAD_FLD(r11));
+          GC_push_one(state.THREAD_FLD(r12));
+          GC_push_one(state.THREAD_FLD(r13));
+          GC_push_one(state.THREAD_FLD(r14));
+          GC_push_one(state.THREAD_FLD(r15));
+          GC_push_one(state.THREAD_FLD(r16));
+          GC_push_one(state.THREAD_FLD(r17));
+          GC_push_one(state.THREAD_FLD(r18));
+          GC_push_one(state.THREAD_FLD(r19));
+          GC_push_one(state.THREAD_FLD(r20));
+          GC_push_one(state.THREAD_FLD(r21));
+          GC_push_one(state.THREAD_FLD(r22));
+          GC_push_one(state.THREAD_FLD(r23));
+          GC_push_one(state.THREAD_FLD(r24));
+          GC_push_one(state.THREAD_FLD(r25));
+          GC_push_one(state.THREAD_FLD(r26));
+          GC_push_one(state.THREAD_FLD(r27));
+          GC_push_one(state.THREAD_FLD(r28));
+          GC_push_one(state.THREAD_FLD(r29));
+          GC_push_one(state.THREAD_FLD(r30));
+          GC_push_one(state.THREAD_FLD(r31));
+
+#       elif defined(ARM32)
+          lo = (void *)state.__sp;
+#         ifndef DARWIN_DONT_PARSE_STACK
+            hi = (ptr_t)FindTopOfStack(state.__sp);
+#         endif
+          GC_push_one(state.__r[0]);
+          GC_push_one(state.__r[1]);
+          GC_push_one(state.__r[2]);
+          GC_push_one(state.__r[3]);
+          GC_push_one(state.__r[4]);
+          GC_push_one(state.__r[5]);
+          GC_push_one(state.__r[6]);
+          GC_push_one(state.__r[7]);
+          GC_push_one(state.__r[8]);
+          GC_push_one(state.__r[9]);
+          GC_push_one(state.__r[10]);
+          GC_push_one(state.__r[11]);
+          GC_push_one(state.__r[12]);
+          /* GC_push_one(state.__sp); */
+          GC_push_one(state.__lr);
+          /* GC_push_one(state.__pc); */
+          GC_push_one(state.__cpsr);
+
+#       else
+#         error FIXME for non-x86 || ppc || arm architectures
+#       endif
+      } /* thread != me */
+#     ifdef DARWIN_DONT_PARSE_STACK
+        hi = (p->flags & MAIN_THREAD) != 0 ? GC_stackbottom : p->stack_end;
+#     endif
 #     ifdef DEBUG_THREADS
         GC_printf("Darwin: Stack for thread 0x%lx = [%p,%p)\n",
                   (unsigned long) thread, lo, hi);
 #     endif
-      /* FIXME: use GC_push_all_stack_sections. */
+      /* FIXME: It is impossible to use GC_push_all_stack_sections()    */
+      /* here while GC_do_blocking_inner() and GC_call_with_gc_active() */
+      /* contain unimplemented code for Darwin.                         */
       GC_push_all_stack(lo, hi);
-      mach_port_deallocate(my_task, thread);
+#     ifndef DARWIN_DONT_PARSE_STACK
+        mach_port_deallocate(my_task, thread);
+#     endif
       total_size += hi - lo; /* lo <= hi */
-    } /* for(i=0; ...) */
+    }
+  } /* for (i=0; ...) */
+# ifndef DARWIN_DONT_PARSE_STACK
     vm_deallocate(my_task, (vm_address_t)act_list,
                   sizeof(thread_t) * listcount);
     mach_port_deallocate(my_task, me);
-    GC_total_stacksize = total_size;
+# endif
+  if (GC_print_stats == VERBOSE)
+    GC_log_printf("Pushed %d thread stacks\n", nthreads);
+  if (!found_me && !GC_in_thread_creation)
+    ABORT("Collecting from unknown thread.");
+  GC_total_stacksize = total_size;
 }
-#endif /* !DARWIN_DONT_PARSE_STACK */
 
 STATIC mach_port_t GC_mach_handler_thread = 0;
 STATIC GC_bool GC_use_mach_handler_thread = FALSE;
@@ -474,7 +346,7 @@ STATIC int GC_suspend_thread_list(thread_act_array_t act_list, int count,
       kern_return_t kern_result = thread_info(thread, THREAD_BASIC_INFO,
                                 (thread_info_t)&info, &outCount);
       if(kern_result != KERN_SUCCESS) {
-        /* the thread may have quit since the thread_threads () call
+        /* the thread may have quit since the thread_threads() call
          * we mark already_suspended so it's not dealt with anymore later
          */
         if (!found) {
@@ -500,7 +372,7 @@ STATIC int GC_suspend_thread_list(thread_act_array_t act_list, int count,
       /* Suspend the thread */
       kern_result = thread_suspend(thread);
       if(kern_result != KERN_SUCCESS) {
-        /* the thread may have quit since the thread_threads () call
+        /* the thread may have quit since the thread_threads() call
          * we mark already_suspended so it's not dealt with anymore later
          */
         if (!found) {
@@ -612,15 +484,15 @@ GC_INNER void GC_stop_world(void)
 /* the world stopped.                                                   */
 GC_INNER void GC_start_world(void)
 {
-  task_t my_task = current_task();
-  mach_port_t my_thread = mach_thread_self();
-  unsigned int i;
-  int j;
-  kern_return_t kern_result;
-  thread_act_array_t act_list;
-  mach_msg_type_number_t listcount;
-  struct thread_basic_info info;
-  mach_msg_type_number_t outCount = THREAD_INFO_MAX;
+    task_t my_task = current_task();
+    mach_port_t my_thread = mach_thread_self();
+    unsigned int i;
+    int j;
+    kern_return_t kern_result;
+    thread_act_array_t act_list;
+    mach_msg_type_number_t listcount;
+    struct thread_basic_info info;
+    mach_msg_type_number_t outCount = THREAD_INFO_MAX;
 
 #   ifdef DEBUG_THREADS
       GC_printf("World starting\n");
