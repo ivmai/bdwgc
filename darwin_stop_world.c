@@ -50,9 +50,6 @@ GC_INNER void GC_push_all_stacks(void)
   ptr_t lo, hi;
   word total_size = 0;
   GC_THREAD_STATE_T state;
-  /* MACHINE_THREAD_STATE_COUNT doesn't seem to be defined everywhere.  */
-  /* Hence we use our own version.                                      */
-  mach_msg_type_number_t thread_state_count = GC_MACH_THREAD_STATE_COUNT;
 
   me = pthread_self();
   if (!GC_thr_initialized)
@@ -64,6 +61,10 @@ GC_INNER void GC_push_all_stacks(void)
       if(pthread_equal(p->id, me)) {
         lo = GC_approx_sp();
       } else {
+        /* MACHINE_THREAD_STATE_COUNT does not seem to be defined       */
+        /* everywhere.  Hence we use our own version.  Alternatively,   */
+        /* we could use THREAD_STATE_MAX (but seems to be not optimal). */
+        mach_msg_type_number_t thread_state_count = GC_MACH_THREAD_STATE_COUNT;
         /* Get the thread state (registers, etc) */
         r = thread_get_state(p->stop_info.mach_thread, GC_MACH_THREAD_STATE,
                              (natural_t*)&state, &thread_state_count);
@@ -77,6 +78,7 @@ GC_INNER void GC_push_all_stacks(void)
 
 #       if defined(I386)
           lo = (void*)state . THREAD_FLD (esp);
+
           GC_push_one(state . THREAD_FLD (eax));
           GC_push_one(state . THREAD_FLD (ebx));
           GC_push_one(state . THREAD_FLD (ecx));
@@ -87,6 +89,7 @@ GC_INNER void GC_push_all_stacks(void)
 
 #       elif defined(X86_64)
           lo = (void*)state . THREAD_FLD (rsp);
+
           GC_push_one(state . THREAD_FLD (rax));
           GC_push_one(state . THREAD_FLD (rbx));
           GC_push_one(state . THREAD_FLD (rcx));
@@ -94,7 +97,7 @@ GC_INNER void GC_push_all_stacks(void)
           GC_push_one(state . THREAD_FLD (rdi));
           GC_push_one(state . THREAD_FLD (rsi));
           GC_push_one(state . THREAD_FLD (rbp));
-          GC_push_one(state . THREAD_FLD (rsp));
+          /* GC_push_one(state . THREAD_FLD (rsp)); */
           GC_push_one(state . THREAD_FLD (r8));
           GC_push_one(state . THREAD_FLD (r9));
           GC_push_one(state . THREAD_FLD (r10));
@@ -103,11 +106,11 @@ GC_INNER void GC_push_all_stacks(void)
           GC_push_one(state . THREAD_FLD (r13));
           GC_push_one(state . THREAD_FLD (r14));
           GC_push_one(state . THREAD_FLD (r15));
-          GC_push_one(state . THREAD_FLD (rip));
+          /* GC_push_one(state . THREAD_FLD (rip));
           GC_push_one(state . THREAD_FLD (rflags));
           GC_push_one(state . THREAD_FLD (cs));
           GC_push_one(state . THREAD_FLD (fs));
-          GC_push_one(state . THREAD_FLD (gs));
+          GC_push_one(state . THREAD_FLD (gs)); */
 
 #       elif defined(POWERPC)
           lo = (void*)(state . THREAD_FLD (r1) - PPC_RED_ZONE_SIZE);
@@ -162,7 +165,7 @@ GC_INNER void GC_push_all_stacks(void)
           GC_push_one(state.__r[12]);
           /* GC_push_one(state.__sp); */
           GC_push_one(state.__lr);
-          GC_push_one(state.__pc);
+          /* GC_push_one(state.__pc); */
           GC_push_one(state.__cpsr);
 
 #       else
@@ -265,7 +268,7 @@ GC_INNER void GC_push_all_stacks(void)
     } else {
 #     if defined(POWERPC)
         GC_THREAD_STATE_T info;
-        mach_msg_type_number_t outCount = THREAD_STATE_MAX;
+        mach_msg_type_number_t outCount = GC_MACH_THREAD_STATE_COUNT;
         r = thread_get_state(thread, GC_MACH_THREAD_STATE, (natural_t *)&info,
                              &outCount);
         if(r != KERN_SUCCESS)
@@ -307,10 +310,8 @@ GC_INNER void GC_push_all_stacks(void)
         GC_push_one(info . THREAD_FLD (r31));
 
 #     elif defined(I386)
-        /* FIXME: Remove after testing: */
-        WARN("This is completely untested and likely will not work\n", 0);
         GC_THREAD_STATE_T info;
-        mach_msg_type_number_t outCount = THREAD_STATE_MAX;
+        mach_msg_type_number_t outCount = GC_MACH_THREAD_STATE_COUNT;
         r = thread_get_state(thread, GC_MACH_THREAD_STATE, (natural_t *)&info,
                              &outCount);
         if(r != KERN_SUCCESS)
@@ -325,19 +326,19 @@ GC_INNER void GC_push_all_stacks(void)
         GC_push_one(info . THREAD_FLD (edx));
         GC_push_one(info . THREAD_FLD (edi));
         GC_push_one(info . THREAD_FLD (esi));
-        /* GC_push_one(info . THREAD_FLD (ebp));  */
-        /* GC_push_one(info . THREAD_FLD (esp));  */
-        GC_push_one(info . THREAD_FLD (ss));
+        GC_push_one(info . THREAD_FLD (ebp));
+        /* GC_push_one(info . THREAD_FLD (esp)); */
+        /* GC_push_one(info . THREAD_FLD (ss));
         GC_push_one(info . THREAD_FLD (eip));
         GC_push_one(info . THREAD_FLD (cs));
         GC_push_one(info . THREAD_FLD (ds));
         GC_push_one(info . THREAD_FLD (es));
         GC_push_one(info . THREAD_FLD (fs));
-        GC_push_one(info . THREAD_FLD (gs));
+        GC_push_one(info . THREAD_FLD (gs)); */
 
 #     elif defined(X86_64)
         GC_THREAD_STATE_T info;
-        mach_msg_type_number_t outCount = THREAD_STATE_MAX;
+        mach_msg_type_number_t outCount = GC_MACH_THREAD_STATE_COUNT;
         r = thread_get_state(thread, GC_MACH_THREAD_STATE, (natural_t *)&info,
                              &outCount);
         if(r != KERN_SUCCESS)
@@ -353,7 +354,7 @@ GC_INNER void GC_push_all_stacks(void)
         GC_push_one(info . THREAD_FLD (rdi));
         GC_push_one(info . THREAD_FLD (rsi));
         GC_push_one(info . THREAD_FLD (rbp));
-        GC_push_one(info . THREAD_FLD (rsp));
+        /* GC_push_one(info . THREAD_FLD (rsp)); */
         GC_push_one(info . THREAD_FLD (r8));
         GC_push_one(info . THREAD_FLD (r9));
         GC_push_one(info . THREAD_FLD (r10));
@@ -362,15 +363,15 @@ GC_INNER void GC_push_all_stacks(void)
         GC_push_one(info . THREAD_FLD (r13));
         GC_push_one(info . THREAD_FLD (r14));
         GC_push_one(info . THREAD_FLD (r15));
-        GC_push_one(info . THREAD_FLD (rip));
+        /* GC_push_one(info . THREAD_FLD (rip));
         GC_push_one(info . THREAD_FLD (rflags));
         GC_push_one(info . THREAD_FLD (cs));
         GC_push_one(info . THREAD_FLD (fs));
-        GC_push_one(info . THREAD_FLD (gs));
+        GC_push_one(info . THREAD_FLD (gs)); */
 
 #      elif defined(ARM32)
         GC_THREAD_STATE_T info;
-        mach_msg_type_number_t outCount = THREAD_STATE_MAX;
+        mach_msg_type_number_t outCount = GC_MACH_THREAD_STATE_COUNT;
         r = thread_get_state(thread, GC_MACH_THREAD_STATE, (natural_t *)&info,
                              &outCount);
         if(r != KERN_SUCCESS)
@@ -395,7 +396,7 @@ GC_INNER void GC_push_all_stacks(void)
         GC_push_one(info.__r[12]);
         /* GC_push_one(info.__sp); */
         GC_push_one(info.__lr);
-        GC_push_one(info.__pc);
+        /* GC_push_one(info.__pc); */
         GC_push_one(info.__cpsr);
 
 #     else

@@ -1,3 +1,16 @@
+2010-09-04  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c (GC_push_all_stacks): Reset
+	thread_state_count value before every thread_get_state call;
+	refine the comment for thread_state_count.
+	* darwin_stop_world.c (GC_push_all_stacks): Ignore rsp, rip/eip,
+	rflags, cs, fs, gs, ss, ds, es, __pc registers; uncomment ebp
+	register pushing.
+	* darwin_stop_world.c (GC_push_all_stacks): Set outCount to
+	GC_MACH_THREAD_STATE_COUNT (instead of THREAD_STATE_MAX).
+	* darwin_stop_world.c (GC_push_all_stacks): Remove FIXME and WARN
+	for i386.
+
 2010-09-03  Ivan Maidanski <ivmai@mail.ru>
 
 	* doc/README.macros (DARWIN_DONT_PARSE_STACK): Fix a typo.
