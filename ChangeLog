@@ -1,3 +1,12 @@
+2010-09-11  Ivan Maidanski <ivmai@mail.ru> (really Ludovic Courtes)
+
+	* configure.ac: Use `AC_C_INLINE'.
+	* include/private/gc_priv.h (GC_INLINE): Use "inline" keyword
+	(determined by configure AC_C_INLINE) if HAVE_CONFIG_H is defined.
+	* configure.ac: Expand all tabs to spaces.
+	* configure: Regenerate.
+	* include/private/config.h.in: Ditto.
+
 2010-09-11  Ivan Maidanski <ivmai@mail.ru>
 
 	* dyn_load.c (DL_ITERATE_PHDR_STRONG): New macro (define for

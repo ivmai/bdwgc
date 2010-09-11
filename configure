@@ -4920,8 +4920,8 @@ fi
 if test "${enable_parallel_mark+set}" = set; then :
   enableval=$enable_parallel_mark; case "$THREADS" in
       no | none | single)
-	as_fn_error $? "Parallel mark requires --enable-threads=x spec" "$LINENO" 5
-	;;
+        as_fn_error $? "Parallel mark requires --enable-threads=x spec" "$LINENO" 5
+        ;;
     esac
 
 fi
@@ -4954,6 +4954,50 @@ fi
 
 
 
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inline" >&5
+$as_echo_n "checking for inline... " >&6; }
+if test "${ac_cv_c_inline+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_cv_c_inline=no
+for ac_kw in inline __inline__ __inline; do
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#ifndef __cplusplus
+typedef int foo_t;
+static $ac_kw foo_t static_foo () {return 0; }
+$ac_kw foo_t foo () {return 0; }
+#endif
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_c_inline=$ac_kw
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  test "$ac_cv_c_inline" != no && break
+done
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_inline" >&5
+$as_echo "$ac_cv_c_inline" >&6; }
+
+case $ac_cv_c_inline in
+  inline | yes) ;;
+  *)
+    case $ac_cv_c_inline in
+      no) ac_val=;;
+      *) ac_val=$ac_cv_c_inline;;
+    esac
+    cat >>confdefs.h <<_ACEOF
+#ifndef __cplusplus
+#define inline $ac_val
+#endif
+_ACEOF
+    ;;
+esac
+
+
 THREADDLLIBS=
 need_atomic_ops_asm=false
 ## Libraries needed to support dynamic loading and/or threads.
@@ -4966,56 +5010,56 @@ case "$THREADS" in
     THREADDLLIBS=-lpthread
     case "$host" in
      x86-*-linux* | ia64-*-linux* | i586-*-linux* | i686-*-linux* | x86_64-*-linux* | alpha-*-linux* | sparc*-*-linux*)
-	$as_echo "#define GC_LINUX_THREADS 1" >>confdefs.h
+        $as_echo "#define GC_LINUX_THREADS 1" >>confdefs.h
 
-	$as_echo "#define _REENTRANT 1" >>confdefs.h
+        $as_echo "#define _REENTRANT 1" >>confdefs.h
 
         if test "${enable_parallel_mark}" = yes; then
-	  $as_echo "#define PARALLEL_MARK 1" >>confdefs.h
+          $as_echo "#define PARALLEL_MARK 1" >>confdefs.h
 
-	fi
-	$as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
+        fi
+        $as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&5
 $as_echo "$as_me: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&2;};
-	;;
+        ;;
      *-*-linux*)
-	$as_echo "#define GC_LINUX_THREADS 1" >>confdefs.h
+        $as_echo "#define GC_LINUX_THREADS 1" >>confdefs.h
 
-	$as_echo "#define _REENTRANT 1" >>confdefs.h
+        $as_echo "#define _REENTRANT 1" >>confdefs.h
 
-	;;
+        ;;
      *-*-aix*)
-	$as_echo "#define GC_AIX_THREADS 1" >>confdefs.h
+        $as_echo "#define GC_AIX_THREADS 1" >>confdefs.h
 
-	$as_echo "#define _REENTRANT 1" >>confdefs.h
+        $as_echo "#define _REENTRANT 1" >>confdefs.h
 
-	;;
+        ;;
      *-*-hpux11*)
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Only HP/UX 11 POSIX threads are supported.\"" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Only HP/UX 11 POSIX threads are supported.\"" >&5
 $as_echo "$as_me: WARNING: \"Only HP/UX 11 POSIX threads are supported.\"" >&2;}
-	$as_echo "#define GC_HPUX_THREADS 1" >>confdefs.h
+        $as_echo "#define GC_HPUX_THREADS 1" >>confdefs.h
 
-	$as_echo "#define _POSIX_C_SOURCE 199506L" >>confdefs.h
+        $as_echo "#define _POSIX_C_SOURCE 199506L" >>confdefs.h
 
-	if test "${enable_parallel_mark}" = yes; then
-	  $as_echo "#define PARALLEL_MARK 1" >>confdefs.h
+        if test "${enable_parallel_mark}" = yes; then
+          $as_echo "#define PARALLEL_MARK 1" >>confdefs.h
 
-	fi
-	$as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
+        fi
+        $as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&5
 $as_echo "$as_me: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&2;};
-	THREADDLLIBS="-lpthread -lrt"
-	# HPUX needs REENTRANT for the _r calls.
+        THREADDLLIBS="-lpthread -lrt"
+        # HPUX needs REENTRANT for the _r calls.
 
 $as_echo "#define _REENTRANT 1" >>confdefs.h
 
-	;;
+        ;;
      *-*-hpux10*)
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Only HP-UX 11 POSIX threads are supported.\"" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Only HP-UX 11 POSIX threads are supported.\"" >&5
 $as_echo "$as_me: WARNING: \"Only HP-UX 11 POSIX threads are supported.\"" >&2;}
-	;;
+        ;;
      *-*-openbsd*)
         $as_echo "#define GC_OPENBSD_THREADS 1" >>confdefs.h
 
@@ -5024,108 +5068,108 @@ $as_echo "$as_me: WARNING: \"Only HP-UX 11 POSIX threads are supported.\"" >&2;}
         openbsd_threads=true
         ;;
      *-*-freebsd*)
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"FreeBSD does not yet fully support threads with Boehm GC.\"" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"FreeBSD does not yet fully support threads with Boehm GC.\"" >&5
 $as_echo "$as_me: WARNING: \"FreeBSD does not yet fully support threads with Boehm GC.\"" >&2;}
-	$as_echo "#define GC_FREEBSD_THREADS 1" >>confdefs.h
+        $as_echo "#define GC_FREEBSD_THREADS 1" >>confdefs.h
 
-	INCLUDES="$INCLUDES -pthread"
-      	;;
+        INCLUDES="$INCLUDES -pthread"
+        ;;
      *-*-kfreebsd*-gnu)
-	$as_echo "#define GC_FREEBSD_THREADS 1" >>confdefs.h
+        $as_echo "#define GC_FREEBSD_THREADS 1" >>confdefs.h
 
-	INCLUDES="$INCLUDES -pthread"
-	THREADDLLIBS=-pthread
-	$as_echo "#define _REENTRANT 1" >>confdefs.h
+        INCLUDES="$INCLUDES -pthread"
+        THREADDLLIBS=-pthread
+        $as_echo "#define _REENTRANT 1" >>confdefs.h
 
         if test "${enable_parallel_mark}" = yes; then
-	  $as_echo "#define PARALLEL_MARK 1" >>confdefs.h
+          $as_echo "#define PARALLEL_MARK 1" >>confdefs.h
 
-	fi
-	$as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
+        fi
+        $as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
 
-	$as_echo "#define USE_COMPILER_TLS 1" >>confdefs.h
+        $as_echo "#define USE_COMPILER_TLS 1" >>confdefs.h
 
-      	;;
+        ;;
      *-*-gnu*)
-	$as_echo "#define GC_GNU_THREADS 1" >>confdefs.h
+        $as_echo "#define GC_GNU_THREADS 1" >>confdefs.h
 
-	$as_echo "#define _REENTRANT 1" >>confdefs.h
+        $as_echo "#define _REENTRANT 1" >>confdefs.h
 
-	$as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
+        $as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
 
-	;;
+        ;;
      *-*-netbsd*)
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Only on NetBSD 2.0 or later.\"" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Only on NetBSD 2.0 or later.\"" >&5
 $as_echo "$as_me: WARNING: \"Only on NetBSD 2.0 or later.\"" >&2;}
-	$as_echo "#define GC_NETBSD_THREADS 1" >>confdefs.h
+        $as_echo "#define GC_NETBSD_THREADS 1" >>confdefs.h
 
-	$as_echo "#define _REENTRANT 1" >>confdefs.h
+        $as_echo "#define _REENTRANT 1" >>confdefs.h
 
-	$as_echo "#define _PTHREADS 1" >>confdefs.h
+        $as_echo "#define _PTHREADS 1" >>confdefs.h
 
-	THREADDLLIBS="-lpthread -lrt"
-	;;
+        THREADDLLIBS="-lpthread -lrt"
+        ;;
      *-*-solaris*)
-	$as_echo "#define GC_SOLARIS_THREADS 1" >>confdefs.h
+        $as_echo "#define GC_SOLARIS_THREADS 1" >>confdefs.h
 
-	$as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
+        $as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
 
-	THREADDLLIBS="-lpthread -lrt"
-	if test "$GCC" != yes; then
+        THREADDLLIBS="-lpthread -lrt"
+        if test "$GCC" != yes; then
           CFLAGS="$CFLAGS -O"
           need_atomic_ops_asm=true
         fi
-	;;
+        ;;
      *-*-irix*)
-	$as_echo "#define GC_IRIX_THREADS 1" >>confdefs.h
+        $as_echo "#define GC_IRIX_THREADS 1" >>confdefs.h
 
-	;;
+        ;;
      *-*-cygwin*)
-	$as_echo "#define GC_THREADS 1" >>confdefs.h
+        $as_echo "#define GC_THREADS 1" >>confdefs.h
 
         if test "${enable_parallel_mark}" = yes; then
-	  $as_echo "#define PARALLEL_MARK 1" >>confdefs.h
+          $as_echo "#define PARALLEL_MARK 1" >>confdefs.h
 
-	fi
-	$as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
+        fi
+        $as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
 
-	# Cygwin doesn't have a real libpthread, so Libtool can't link
-	# against it.
-	THREADDLLIBS=""
-	win32_threads=true
-	;;
+        # Cygwin doesn't have a real libpthread, so Libtool can't link
+        # against it.
+        THREADDLLIBS=""
+        win32_threads=true
+        ;;
      *-*-darwin*)
-	$as_echo "#define GC_DARWIN_THREADS 1" >>confdefs.h
+        $as_echo "#define GC_DARWIN_THREADS 1" >>confdefs.h
 
-	$as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
+        $as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&5
 $as_echo "$as_me: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&2;};
-	# Parallel-mark is currently unreliable on Darwin; ignore request
-	# if test "${enable_parallel_mark}" = yes; then
-	#   AC_DEFINE(PARALLEL_MARK)
-	# fi
-	darwin_threads=true
-	;;
+        # Parallel-mark is currently unreliable on Darwin; ignore request
+        # if test "${enable_parallel_mark}" = yes; then
+        #   AC_DEFINE(PARALLEL_MARK)
+        # fi
+        darwin_threads=true
+        ;;
      *-*-osf*)
-	$as_echo "#define GC_OSF1_THREADS 1" >>confdefs.h
+        $as_echo "#define GC_OSF1_THREADS 1" >>confdefs.h
 
         if test "${enable_parallel_mark}" = yes; then
-	  $as_echo "#define PARALLEL_MARK 1" >>confdefs.h
+          $as_echo "#define PARALLEL_MARK 1" >>confdefs.h
 
-	  $as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
+          $as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
 
-	  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&5
 $as_echo "$as_me: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&2;};
-	  # May want to enable it in other cases, too.
-	  # Measurements havent yet been done.
-	fi
-	INCLUDES="$INCLUDES -pthread"
-	THREADDLLIBS="-lpthread -lrt"
-	;;
+          # May want to enable it in other cases, too.
+          # Measurements havent yet been done.
+        fi
+        INCLUDES="$INCLUDES -pthread"
+        THREADDLLIBS="-lpthread -lrt"
+        ;;
       *)
-	as_fn_error $? "\"Pthreads not supported by the GC on this platform.\"" "$LINENO" 5
-	;;
+        as_fn_error $? "\"Pthreads not supported by the GC on this platform.\"" "$LINENO" 5
+        ;;
     esac
     ;;
  win32)
@@ -5230,7 +5274,6 @@ esac
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xlc" >&5
 $as_echo_n "checking for xlc... " >&6; }
-
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -15360,13 +15403,13 @@ case "$host" in
 $as_echo "yes" >&6; }
        new_CFLAGS=
        for i in $CFLAGS; do
-	  case "$i" in
-	   -O*)
-	      ;;
-	   *)
-	      new_CFLAGS="$new_CFLAGS $i"
-	      ;;
-	  esac
+          case "$i" in
+           -O*)
+              ;;
+           *)
+              new_CFLAGS="$new_CFLAGS $i"
+              ;;
+          esac
        done
        CFLAGS="$new_CFLAGS"
     else
@@ -15424,9 +15467,9 @@ $as_echo "#define DBG_HDRS_ALL 1" >>confdefs.h
 
     case $host in
       ia64-*-linux* )
-	$as_echo "#define MAKE_BACK_GRAPH 1" >>confdefs.h
+        $as_echo "#define MAKE_BACK_GRAPH 1" >>confdefs.h
 
-	$as_echo "#define SAVE_CALL_COUNT 8" >>confdefs.h
+        $as_echo "#define SAVE_CALL_COUNT 8" >>confdefs.h
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for backtrace in -lunwind" >&5
 $as_echo_n "checking for backtrace in -lunwind... " >&6; }
@@ -15466,25 +15509,25 @@ fi
 $as_echo "$ac_cv_lib_unwind_backtrace" >&6; }
 if test "x$ac_cv_lib_unwind_backtrace" = x""yes; then :
 
-	  $as_echo "#define GC_HAVE_BUILTIN_BACKTRACE 1" >>confdefs.h
+          $as_echo "#define GC_HAVE_BUILTIN_BACKTRACE 1" >>confdefs.h
 
-	  UNWINDLIBS=-lunwind
-	  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Client code may need to link against libunwind.\"" >&5
+          UNWINDLIBS=-lunwind
+          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Client code may need to link against libunwind.\"" >&5
 $as_echo "$as_me: WARNING: \"Client code may need to link against libunwind.\"" >&2;}
 
 fi
 
       ;;
       x86-*-linux* | i586-*-linux* | i686-*-linux* | x86_64-*-linux* )
-	$as_echo "#define MAKE_BACK_GRAPH 1" >>confdefs.h
+        $as_echo "#define MAKE_BACK_GRAPH 1" >>confdefs.h
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Client must not use -fomit-frame-pointer.\"" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Client must not use -fomit-frame-pointer.\"" >&5
 $as_echo "$as_me: WARNING: \"Client must not use -fomit-frame-pointer.\"" >&2;}
-	$as_echo "#define SAVE_CALL_COUNT 8" >>confdefs.h
+        $as_echo "#define SAVE_CALL_COUNT 8" >>confdefs.h
 
       ;;
       i345686-*-dgux*)
-	$as_echo "#define MAKE_BACK_GRAPH 1" >>confdefs.h
+        $as_echo "#define MAKE_BACK_GRAPH 1" >>confdefs.h
 
       ;;
     esac
@@ -15540,7 +15583,7 @@ $as_echo "#define REDIRECT_REALLOC GC_debug_realloc_replacement" >>confdefs.h
 $as_echo "#define REDIRECT_FREE GC_debug_free" >>confdefs.h
 
     else
-	$as_echo "#define REDIRECT_MALLOC GC_malloc" >>confdefs.h
+        $as_echo "#define REDIRECT_MALLOC GC_malloc" >>confdefs.h
 
     fi
 
@@ -15648,7 +15691,7 @@ else
    if test x"$with_libatomic_ops" != xcheck; then :
   as_fn_error $? "A pre-installed libatomic_ops was not found." "$LINENO" 5
 fi
-	with_libatomic_ops=no
+        with_libatomic_ops=no
 fi
 
 
