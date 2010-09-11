@@ -861,8 +861,8 @@
 #           define DYNAMIC_LOADING
 #       endif
         extern char etext[];
-        ptr_t GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr);
-#       define DATASTART GC_FreeBSDGetDataStart(0x1000, &etext)
+        ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
+#       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #   endif
 #   ifdef NETBSD
 #     define ALIGNMENT 4
@@ -2100,8 +2100,8 @@
 #           define DYNAMIC_LOADING
 #       endif
         extern char etext[];
-        ptr_t GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr);
-#       define DATASTART GC_FreeBSDGetDataStart(0x1000, &etext)
+        ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
+#       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #   endif
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"

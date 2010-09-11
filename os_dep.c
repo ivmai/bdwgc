@@ -3013,7 +3013,8 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #   include <errno.h>
 #   if defined(FREEBSD)
 #     define SIG_OK TRUE
-#     define CODE_OK (si -> si_code == BUS_PAGE_FAULT)
+#     define CODE_OK (si -> si_code == BUS_PAGE_FAULT \
+                      || si -> si_code == 2 /* experimentally determined */)
 #   elif defined(OSF1)
 #     define SIG_OK (sig == SIGSEGV)
 #     define CODE_OK (si -> si_code == 2 /* experimentally determined */)
@@ -3031,11 +3032,11 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
         /* architectures.                                               */
 #   elif defined(HPUX)
 #     define SIG_OK (sig == SIGSEGV || sig == SIGBUS)
-#     define CODE_OK (si -> si_code == SEGV_ACCERR) \
-                     || (si -> si_code == BUS_ADRERR) \
-                     || (si -> si_code == BUS_UNKNOWN) \
-                     || (si -> si_code == SEGV_UNKNOWN) \
-                     || (si -> si_code == BUS_OBJERR)
+#     define CODE_OK (si -> si_code == SEGV_ACCERR \
+                      || si -> si_code == BUS_ADRERR \
+                      || si -> si_code == BUS_UNKNOWN \
+                      || si -> si_code == SEGV_UNKNOWN \
+                      || si -> si_code == BUS_OBJERR)
 #   elif defined(SUNOS5SIGS)
 #     define SIG_OK (sig == SIGSEGV)
 #     define CODE_OK (si -> si_code == SEGV_ACCERR)

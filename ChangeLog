@@ -1,3 +1,20 @@
+2010-09-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* dyn_load.c (DL_ITERATE_PHDR_STRONG): New macro (define for
+	FreeBSD).
+	* dyn_load.c (GC_register_main_static_data): Move the definition
+	above GC_register_dynamic_libraries_dl_iterate_phdr one (FreeBSD
+	case); unconditionally return FALSE if DL_ITERATE_PHDR_STRONG.
+	* dyn_load.c (GC_register_dynamic_libraries_dl_iterate_phdr): Test
+	GC_register_main_static_data() result (instead of direct testing
+	of dl_iterate_phdr (to prevent a compiler warning).
+	* os_dep.c (CODE_OK): Test si_code also for the value of 2
+	(FreeBSD case; required for FreeBSD v7+).
+	* os_dep.c (CODE_OK): Properly use parentheses (HPUX case).
+	* include/private/gcconfig.h (DATASTART): Cast etext argument in
+	GC_FreeBSDGetDataStart() call; remove unnecessary "&" (FreeBSD
+	case).
+
 2010-09-09  Ivan Maidanski <ivmai@mail.ru> (with input from Ludovic Courtes)
 
 	* include/private/specific.h (quick_thread_id): Define thru
