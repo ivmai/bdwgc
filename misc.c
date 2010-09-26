@@ -1605,11 +1605,13 @@ GC_API GC_word GC_CALL GC_get_gc_no(void)
     return GC_gc_no;
 }
 
-GC_API int GC_CALL GC_get_parallel(void)
-{
+#ifdef THREADS
+  GC_API int GC_CALL GC_get_parallel(void)
+  {
     /* GC_parallel is initialized at start-up.  */
     return GC_parallel;
-}
+  }
+#endif
 
 /* Setter and getter functions for the public R/W function variables.   */
 /* These functions are synchronized (like GC_set_warn_proc() and        */

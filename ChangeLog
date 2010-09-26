@@ -1,3 +1,13 @@
+2010-09-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_parallel): Define only if THREADS.
+	* misc.c (GC_get_parallel): Ditto.
+	* include/gc.h (GC_parallel, GC_get_parallel,
+	GC_get_suspend_signal, GC_allow_register_threads,
+	GC_register_my_thread, GC_unregister_my_thread): Define only if
+	GC_THREADS.
+	* include/gc.h (GC_get_heap_size): Fix a typo in a comment.
+
 2010-09-11  Ivan Maidanski <ivmai@mail.ru> (really Ludovic Courtes)
 
 	* configure.ac: Use `AC_C_INLINE'.

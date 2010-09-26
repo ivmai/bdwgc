@@ -62,7 +62,9 @@ word GC_gc_no = 0;
   GC_INNER int GC_incremental = 0;      /* By default, stop the world.  */
 #endif
 
-int GC_parallel = FALSE;   /* By default, parallel GC is off.   */
+#ifdef THREADS
+  int GC_parallel = FALSE;      /* By default, parallel GC is off.      */
+#endif
 
 #ifndef GC_FULL_FREQ
 # define GC_FULL_FREQ 19   /* Every 20th collection is a full   */

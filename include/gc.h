@@ -79,7 +79,9 @@ GC_API GC_word GC_CALL GC_get_gc_no(void);
                         /* it requires GC_call_with_alloc_lock() to     */
                         /* avoid data races on multiprocessors.         */
 
-GC_API int GC_parallel; /* GC is parallelized for performance on        */
+#ifdef GC_THREADS
+  GC_API int GC_parallel;
+                        /* GC is parallelized for performance on        */
                         /* multiprocessors.  Currently set only         */
                         /* implicitly if collector is built with        */
                         /* PARALLEL_MARK defined and if either:         */
@@ -88,7 +90,8 @@ GC_API int GC_parallel; /* GC is parallelized for performance on        */
                         /* If GC_parallel is set, incremental           */
                         /* collection is only partially functional,     */
                         /* and may not be desirable.                    */
-GC_API int GC_CALL GC_get_parallel(void);
+  GC_API int GC_CALL GC_get_parallel(void);
+#endif
 
 
 /* Public R/W variables */
@@ -275,7 +278,7 @@ GC_API char *GC_stackbottom;    /* Cool end of user stack.              */
                                 /* confuse debuggers.  Otherwise the    */
                                 /* collector attempts to set it         */
                                 /* automatically.                       */
-                                /* For multithreaded code, this is the  */
+                                /* For multi-threaded code, this is the */
                                 /* cold end of the stack for the        */
                                 /* primordial thread.                   */
 
@@ -501,7 +504,7 @@ GC_API void GC_CALL GC_set_stop_func(GC_stop_func /* stop_func */);
 GC_API GC_stop_func GC_CALL GC_get_stop_func(void);
 
 /* Return the number of bytes in the heap.  Excludes collector private  */
-/* data structures.  Excludes the unmapped memory (retuned to the OS).  */
+/* data structures.  Excludes the unmapped memory (returned to the OS). */
 /* Includes empty blocks and fragmentation loss.  Includes some pages   */
 /* that were allocated but never written.                               */
 GC_API size_t GC_CALL GC_get_heap_size(void);
@@ -521,11 +524,6 @@ GC_API size_t GC_CALL GC_get_bytes_since_gc(void);
 /* Return the total number of bytes allocated in this process.          */
 /* Never decreases, except due to wrapping.                             */
 GC_API size_t GC_CALL GC_get_total_bytes(void);
-
-/* Return the signal number used by the garbage collector to suspend    */
-/* threads on POSIX systems.  Return -1 otherwise.  Exported only if    */
-/* the library has been compiled with threads support (GC_THREADS).     */
-GC_API int GC_CALL GC_get_suspend_signal(void);
 
 /* Disable garbage collection.  Even GC_gcollect calls will be          */
 /* ineffective.                                                         */
@@ -977,7 +975,7 @@ GC_API void GC_CALLBACK GC_ignore_warn_proc(char *, GC_word);
 /* disappear.  Otherwise objects can be accessed after they     */
 /* have been collected.                                         */
 /* Note that putting pointers in atomic objects or in           */
-/* nonpointer slots of "typed" objects is equivalent to         */
+/* non-pointer slots of "typed" objects is equivalent to        */
 /* disguising them in this way, and may have other advantages.  */
 #if defined(I_HIDE_POINTERS) || defined(GC_I_HIDE_POINTERS)
   typedef GC_word GC_hidden_pointer;
@@ -1031,51 +1029,54 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
 #define GC_SUCCESS 0
 #define GC_DUPLICATE 1          /* Was already registered.              */
 #define GC_NO_THREADS 2         /* No thread support in GC.             */
-        /* GC_NO_THREADS is not returned by any GC func anymore.        */
+        /* GC_NO_THREADS is not returned by any GC function anymore.    */
 #define GC_UNIMPLEMENTED 3 /* Not yet implemented on this platform.     */
 
-/* GC_allow_register_threads(), GC_register_my_thread() and             */
-/* GC_unregister_my_thread() are exported only if the library has been  */
-/* compiled with threads support (GC_THREADS).                          */
+#ifdef GC_THREADS
+  /* Return the signal number (constant) used by the garbage collector  */
+  /* to suspend threads on POSIX systems.  Return -1 otherwise.         */
+  GC_API int GC_CALL GC_get_suspend_signal(void);
 
-/* Explicitly enable GC_register_my_thread() invocation.                */
-/* Done implicitly if a GC thread-creation function is called (or       */
-/* DllMain-based thread registration is enabled).  Otherwise, it must   */
-/* be called from the main (or any previously registered) thread        */
-/* between the collector initialization and the first explicit          */
-/* registering of a thread (it should be called as late as possible).   */
-GC_API void GC_CALL GC_allow_register_threads(void);
+  /* Explicitly enable GC_register_my_thread() invocation.              */
+  /* Done implicitly if a GC thread-creation function is called (or     */
+  /* implicit thread registration is activated).  Otherwise, it must    */
+  /* be called from the main (or any previously registered) thread      */
+  /* between the collector initialization and the first explicit        */
+  /* registering of a thread (it should be called as late as possible). */
+  GC_API void GC_CALL GC_allow_register_threads(void);
 
-/* Register the current thread, with the indicated stack base, as       */
-/* a new thread whose stack(s) should be traced by the GC.  If it       */
-/* is not implicitly called by the GC, this must be called before a     */
-/* thread can allocate garbage collected memory, or assign pointers     */
-/* to the garbage collected heap.  Once registered, a thread will be    */
-/* stopped during garbage collections.                                  */
-/* This call must be previously enabled (see above).                    */
-/* This should never be called from the main thread, where it is        */
-/* always done implicitly.  This is normally done implicitly if GC_     */
-/* functions are called to create the thread, e.g. by defining          */
-/* GC_THREADS and including gc.h (which redefines some system           */
-/* functions) before calling the system thread creation function.       */
-/* It is also always done implicitly under win32 with DllMain-based     */
-/* thread registration enabled.  Except in this latter case, explicit   */
-/* calls are normally required for threads created by third-party       */
-/* libraries.                                                           */
-GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *);
+  /* Register the current thread, with the indicated stack base, as     */
+  /* a new thread whose stack(s) should be traced by the GC.  If it     */
+  /* is not implicitly called by the GC, this must be called before a   */
+  /* thread can allocate garbage collected memory, or assign pointers   */
+  /* to the garbage collected heap.  Once registered, a thread will be  */
+  /* stopped during garbage collections.                                */
+  /* This call must be previously enabled (see above).                  */
+  /* This should never be called from the main thread, where it is      */
+  /* always done implicitly.  This is normally done implicitly if GC_   */
+  /* functions are called to create the thread, e.g. by including gc.h  */
+  /* (which redefines some system functions) before calling the system  */
+  /* thread creation function.                                          */
+  /* It is also always done implicitly on some platforms if             */
+  /* GC_use_DllMain() is called at start-up.  Except for the            */
+  /* latter case, the explicit call is normally required for threads    */
+  /* created by third-party libraries.                                  */
+  GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *);
 
-/* Unregister the current thread.  Only an explicitly registered thread */
-/* (i.e. for which GC_register_my_thread() returns GC_SUCCESS) is       */
-/* allowed (and required) to call this function.  (As a special         */
-/* exception, it is also allowed to once unregister the main thread.)   */
-/* The thread may no longer allocate garbage collected memory or        */
-/* manipulate pointers to the garbage collected heap after making this  */
-/* call.  Specifically, if it wants to return or otherwise communicate  */
-/* a pointer to the garbage-collected heap to another thread, it must   */
-/* do this before calling GC_unregister_my_thread, most probably        */
-/* by saving it in a global data structure.  Must not be called inside  */
-/* a GC callback function (except for GC_call_with_stack_base() one).   */
-GC_API int GC_CALL GC_unregister_my_thread(void);
+  /* Unregister the current thread.  Only an explicitly registered      */
+  /* thread (i.e. for which GC_register_my_thread() returns GC_SUCCESS) */
+  /* is allowed (and required) to call this function.  (As a special    */
+  /* exception, it is also allowed to once unregister the main thread.) */
+  /* The thread may no longer allocate garbage collected memory or      */
+  /* manipulate pointers to the garbage collected heap after making     */
+  /* this call.  Specifically, if it wants to return or otherwise       */
+  /* communicate a pointer to the garbage-collected heap to another     */
+  /* thread, it must do this before calling GC_unregister_my_thread,    */
+  /* most probably by saving it in a global data structure.  Must not   */
+  /* be called inside a GC callback function (except for                */
+  /* GC_call_with_stack_base() one).                                    */
+  GC_API int GC_CALL GC_unregister_my_thread(void);
+#endif /* GC_THREADS */
 
 /* Wrapper for functions that are likely to block (or, at least, do not */
 /* allocate garbage collected memory and/or manipulate pointers to the  */
@@ -1134,7 +1135,7 @@ GC_API void * GC_CALL GC_post_incr(void **, ptrdiff_t /* how_much */);
 /* in hard cases.  (This is intended for debugging use with             */
 /* untyped allocations.  The idea is that it should be possible, though */
 /* slow, to add such a call to all indirect pointer stores.)            */
-/* Currently useless for multithreaded worlds.                          */
+/* Currently useless for multi-threaded worlds.                         */
 GC_API void * GC_CALL GC_is_visible(void * /* p */);
 
 /* Check that if p is a pointer to a heap page, then it points to       */
@@ -1347,7 +1348,7 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
                      (void *)_data_end__ : (void *)_bss_end__)
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND); \
                                  GC_gcollect() /* For blacklisting. */
-        /* Required at least if GC is in dll.  And doesn't hurt. */
+        /* Required at least if GC is in a DLL.  And doesn't hurt. */
 #elif defined(_AIX)
   extern int _data[], _end[];
 # define GC_DATASTART ((void *)((ulong)_data))
