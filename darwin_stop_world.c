@@ -294,97 +294,123 @@ GC_INNER void GC_push_all_stacks(void)
 STATIC mach_port_t GC_mach_handler_thread = 0;
 STATIC GC_bool GC_use_mach_handler_thread = FALSE;
 
-static struct GC_mach_thread GC_mach_threads[THREAD_TABLE_SZ];
+#ifndef GC_MAX_MACH_THREADS
+# define GC_MAX_MACH_THREADS THREAD_TABLE_SZ
+#endif
+static struct GC_mach_thread GC_mach_threads[GC_MAX_MACH_THREADS];
 STATIC int GC_mach_threads_count = 0;
+/* FIXME: it is better to implement GC_mach_threads as a hash set.  */
 
 GC_INNER void GC_stop_init(void)
 {
   int i;
-
-  for (i = 0; i < THREAD_TABLE_SZ; i++) {
+  for (i = 0; i < GC_MAX_MACH_THREADS; i++) {
     GC_mach_threads[i].thread = 0;
-    GC_mach_threads[i].already_suspended = 0;
+    GC_mach_threads[i].already_suspended = FALSE;
   }
   GC_mach_threads_count = 0;
 }
 
+#ifdef PARALLEL_MARK
+  GC_INNER GC_bool GC_is_mach_marker(mach_port_t thread);
+#endif
+
 /* returns true if there's a thread in act_list that wasn't in old_list */
-STATIC int GC_suspend_thread_list(thread_act_array_t act_list, int count,
-                                  thread_act_array_t old_list, int old_count)
+STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
+                                      thread_act_array_t old_list,
+                                      int old_count, mach_port_t my_thread)
 {
-  mach_port_t my_thread = mach_thread_self();
-  int i, j;
+  int i;
+  int j = -1;
+  GC_bool changed = FALSE;
 
-  int changed = 0;
-
-  for(i = 0; i < count; i++) {
+  for (i = 0; i < count; i++) {
     thread_act_t thread = act_list[i];
+    GC_bool found;
+    struct thread_basic_info info;
+    mach_msg_type_number_t outCount;
+    kern_return_t kern_result;
+
+    if (thread == my_thread || (GC_mach_handler_thread == thread
+                                && GC_use_mach_handler_thread)) {
+      /* Don't add our and the handler threads. */
+      continue;
+    }
+#   ifdef PARALLEL_MARK
+      if (GC_is_mach_marker(thread))
+        continue; /* ignore the parallel marker threads */
+#   endif
+
 #   ifdef DEBUG_THREADS
-      GC_printf("Attempting to suspend thread %p\n", thread);
+      GC_printf("Attempting to suspend thread 0x%lx\n",
+                (unsigned long)thread);
 #   endif
     /* find the current thread in the old list */
-    int found = 0;
-    for(j = 0; j < old_count; j++) {
-      thread_act_t old_thread = old_list[j];
-      if (old_thread == thread) {
-        found = 1;
-        break;
-      }
-    }
-    if (!found) {
-      /* add it to the GC_mach_threads list */
-      GC_mach_threads[GC_mach_threads_count].thread = thread;
-      /* default is not suspended */
-      GC_mach_threads[GC_mach_threads_count].already_suspended = 0;
-      changed = 1;
-    }
+    found = FALSE;
+    {
+      int last_found = j; /* remember the previous found thread index */
 
-    if (thread != my_thread && (!GC_use_mach_handler_thread
-                                || GC_mach_handler_thread != thread)) {
-      struct thread_basic_info info;
-      mach_msg_type_number_t outCount = THREAD_INFO_MAX;
-      kern_return_t kern_result = thread_info(thread, THREAD_BASIC_INFO,
-                                (thread_info_t)&info, &outCount);
-      if(kern_result != KERN_SUCCESS) {
-        /* the thread may have quit since the thread_threads() call
-         * we mark already_suspended so it's not dealt with anymore later
-         */
-        if (!found) {
-          GC_mach_threads[GC_mach_threads_count].already_suspended = TRUE;
-          GC_mach_threads_count++;
+      /* Search for the thread starting from the last found one first.  */
+      while (++j < old_count)
+        if (old_list[j] == thread) {
+          found = TRUE;
+          break;
         }
-        continue;
-      }
-#     ifdef DEBUG_THREADS
-        GC_printf("Thread state for 0x%lx = %d\n", (unsigned long)thread,
-                  info.run_state);
-#     endif
       if (!found) {
-        GC_mach_threads[GC_mach_threads_count].already_suspended
-          = info.suspend_count;
-      }
-      if (info.suspend_count)
-        continue;
+        /* If not found, search in the rest (beginning) of the list.    */
+        for (j = 0; j < last_found; j++)
+          if (old_list[j] == thread) {
+            found = TRUE;
+            break;
+          }
 
-#     ifdef DEBUG_THREADS
-        GC_printf("Suspending 0x%lx\n", (unsigned long)thread);
-#     endif
-      /* Suspend the thread */
-      kern_result = thread_suspend(thread);
-      if(kern_result != KERN_SUCCESS) {
-        /* the thread may have quit since the thread_threads() call
-         * we mark already_suspended so it's not dealt with anymore later
-         */
         if (!found) {
-          GC_mach_threads[GC_mach_threads_count].already_suspended = TRUE;
-          GC_mach_threads_count++;
+          /* add it to the GC_mach_threads list */
+          if (GC_mach_threads_count == GC_MAX_MACH_THREADS)
+            ABORT("too many threads");
+          GC_mach_threads[GC_mach_threads_count].thread = thread;
+          /* default is not suspended */
+          GC_mach_threads[GC_mach_threads_count].already_suspended = FALSE;
+          changed = TRUE;
         }
-        continue;
       }
     }
-    if (!found) GC_mach_threads_count++;
+
+    outCount = THREAD_INFO_MAX;
+    kern_result = thread_info(thread, THREAD_BASIC_INFO,
+                              (thread_info_t)&info, &outCount);
+    if (kern_result != KERN_SUCCESS) {
+      /* The thread may have quit since the thread_threads() call we  */
+      /* mark already suspended so it's not dealt with anymore later. */
+      if (!found)
+        GC_mach_threads[GC_mach_threads_count++].already_suspended = TRUE;
+      continue;
+    }
+#   ifdef DEBUG_THREADS
+      GC_printf("Thread state for 0x%lx = %d\n", (unsigned long)thread,
+                info.run_state);
+#   endif
+    if (info.suspend_count != 0) {
+      /* thread is already suspended. */
+      if (!found)
+        GC_mach_threads[GC_mach_threads_count++].already_suspended = TRUE;
+      continue;
+    }
+
+#   ifdef DEBUG_THREADS
+      GC_printf("Suspending 0x%lx\n", (unsigned long)thread);
+#   endif
+    kern_result = thread_suspend(thread);
+    if (kern_result != KERN_SUCCESS) {
+      /* The thread may have quit since the thread_threads() call we  */
+      /* mark already suspended so it's not dealt with anymore later. */
+      if (!found)
+        GC_mach_threads[GC_mach_threads_count++].already_suspended = TRUE;
+      continue;
+    }
+    if (!found)
+      GC_mach_threads_count++;
   }
-  mach_port_deallocate(current_task(), my_thread);
   return changed;
 }
 
@@ -396,7 +422,8 @@ STATIC int GC_suspend_thread_list(thread_act_array_t act_list, int count,
 /* Caller holds allocation lock.        */
 GC_INNER void GC_stop_world(void)
 {
-    unsigned int i, changes;
+    unsigned i;
+    GC_bool changed;
     task_t my_task = current_task();
     mach_port_t my_thread = mach_thread_self();
     kern_return_t kern_result;
@@ -404,17 +431,17 @@ GC_INNER void GC_stop_world(void)
     mach_msg_type_number_t listcount, prevcount;
 
 #   ifdef DEBUG_THREADS
-      GC_printf("Stopping the world from 0x%lx\n",
+      GC_printf("Stopping the world from thread 0x%lx\n",
                 (unsigned long)mach_thread_self());
 #   endif
 
     /* clear out the mach threads list table */
     GC_stop_init();
 
-    /* Make sure all free list construction has stopped before we start. */
-    /* No new construction can start, since free list construction is   */
-    /* required to acquire and release the GC lock before it starts,    */
-    /* and we have the lock.                                            */
+    /* Make sure all free list construction has stopped before we       */
+    /* start.  No new construction can start, since free list           */
+    /* construction is required to acquire and release the GC lock      */
+    /* before it starts, and we have the lock.                          */
 #   ifdef PARALLEL_MARK
       if (GC_parallel) {
         GC_acquire_mark_lock();
@@ -423,41 +450,39 @@ GC_INNER void GC_stop_world(void)
       }
 #   endif /* PARALLEL_MARK */
 
-    /* Loop stopping threads until you have gone over the whole list
-       twice without a new one appearing. thread_create() won't
-       return (and thus the thread stop) until the new thread
-       exists, so there is no window whereby you could stop a
-       thread, recognise it is stopped, but then have a new thread
-       it created before stopping show up later.
-    */
+    /* Loop stopping threads until you have gone over the whole list    */
+    /* twice without a new one appearing.  thread_create() won't return */
+    /* (and thus the thread stop) until the new thread exists, so there */
+    /* is no window whereby you could stop a thread, recognize it is    */
+    /* stopped, but then have a new thread it created before stopping   */
+    /* show up later.                                                   */
 
-    /* FIXME: This seems to erroneously stop the parallel marker threads? */
-
-    changes = 1;
+    changed = TRUE;
     prev_list = NULL;
     prevcount = 0;
     do {
-      int result;
       kern_result = task_threads(my_task, &act_list, &listcount);
 
-      if(kern_result == KERN_SUCCESS) {
-        result = GC_suspend_thread_list(act_list, listcount, prev_list,
-                                        prevcount);
-        changes = result;
+      if (kern_result == KERN_SUCCESS) {
+        changed = GC_suspend_thread_list(act_list, listcount, prev_list,
+                                         prevcount, my_thread);
 
-        if(prev_list != NULL) {
-          for(i = 0; i < prevcount; i++)
+        if (prev_list != NULL) {
+          for (i = 0; i < prevcount; i++)
             mach_port_deallocate(my_task, prev_list[i]);
 
           vm_deallocate(my_task, (vm_address_t)prev_list,
                         sizeof(thread_t) * prevcount);
         }
+
+        /* Repeat while having changes. */
         prev_list = act_list;
         prevcount = listcount;
       }
-    } while (changes);
+    } while (changed);
+
     GC_ASSERT(prev_list != 0);
-    for(i = 0; i < prevcount; i++)
+    for (i = 0; i < prevcount; i++)
       mach_port_deallocate(my_task, prev_list[i]);
 
     vm_deallocate(my_task, (vm_address_t)act_list,
@@ -473,10 +498,10 @@ GC_INNER void GC_stop_world(void)
       if (GC_parallel)
         GC_release_mark_lock();
 #   endif
+
 #   ifdef DEBUG_THREADS
       GC_printf("World stopped from 0x%lx\n", (unsigned long)my_thread);
 #   endif
-
     mach_port_deallocate(my_task, my_thread);
 }
 
@@ -485,14 +510,11 @@ GC_INNER void GC_stop_world(void)
 GC_INNER void GC_start_world(void)
 {
     task_t my_task = current_task();
-    mach_port_t my_thread = mach_thread_self();
-    unsigned int i;
-    int j;
+    unsigned i;
+    int j = GC_mach_threads_count;
     kern_return_t kern_result;
     thread_act_array_t act_list;
     mach_msg_type_number_t listcount;
-    struct thread_basic_info info;
-    mach_msg_type_number_t outCount = THREAD_INFO_MAX;
 
 #   ifdef DEBUG_THREADS
       GC_printf("World starting\n");
@@ -505,41 +527,59 @@ GC_INNER void GC_start_world(void)
 #   endif
 
     kern_result = task_threads(my_task, &act_list, &listcount);
-    for(i = 0; i < listcount; i++) {
+    for (i = 0; i < listcount; i++) {
       thread_act_t thread = act_list[i];
-      if (thread != my_thread && (!GC_use_mach_handler_thread
-                                  || GC_mach_handler_thread != thread)) {
-        for(j = 0; j < GC_mach_threads_count; j++) {
-          if (thread == GC_mach_threads[j].thread) {
-            if (GC_mach_threads[j].already_suspended) {
-#             ifdef DEBUG_THREADS
-                GC_printf("Not resuming already suspended thread %p\n",
-                        thread);
-#             endif
-              continue;
-            }
-            kern_result = thread_info(thread, THREAD_BASIC_INFO,
-                                      (thread_info_t)&info, &outCount);
-            if(kern_result != KERN_SUCCESS)
-              ABORT("thread_info failed");
-#           ifdef DEBUG_THREADS
-              GC_printf("Thread state for 0x%lx = %d\n",
-                        (unsigned long)thread, info.run_state);
-              GC_printf("Resuming 0x%lx\n", (unsigned long)thread);
-#           endif
-            /* Resume the thread */
-            kern_result = thread_resume(thread);
-            if(kern_result != KERN_SUCCESS)
-              ABORT("thread_resume failed");
-          }
+      int last_found = j;        /* The thread index found during the   */
+                                 /* previous iteration (count value     */
+                                 /* means no thread found yet).         */
+
+      /* Search for the thread starting from the last found one first.  */
+      while (++j < GC_mach_threads_count) {
+        if (GC_mach_threads[j].thread == thread)
+          break;
+      }
+      if (j >= GC_mach_threads_count) {
+        /* If not found, search in the rest (beginning) of the list.    */
+        for (j = 0; j < last_found; j++) {
+          if (GC_mach_threads[j].thread == thread)
+            break;
         }
       }
+
+      if (j != last_found) {
+        /* The thread is found in GC_mach_threads.      */
+        if (GC_mach_threads[j].already_suspended) {
+#         ifdef DEBUG_THREADS
+            GC_printf("Not resuming already suspended thread 0x%lx\n",
+                      (unsigned long)thread);
+#         endif
+        } else {
+
+#         if defined(DEBUG_THREADS) || defined(GC_ASSERTIONS)
+            struct thread_basic_info info;
+            mach_msg_type_number_t outCount = THREAD_INFO_MAX;
+            kern_result = thread_info(thread, THREAD_BASIC_INFO,
+                                      (thread_info_t)&info, &outCount);
+            if (kern_result != KERN_SUCCESS)
+              ABORT("thread_info failed");
+#         endif
+#         ifdef DEBUG_THREADS
+            GC_printf("Resuming thread 0x%lx with state %d\n",
+                      (unsigned long)thread, info.run_state);
+#         endif
+
+          /* Resume the thread */
+          kern_result = thread_resume(thread);
+          if (kern_result != KERN_SUCCESS)
+            ABORT("thread_resume failed");
+        }
+      }
+
       mach_port_deallocate(my_task, thread);
     }
     vm_deallocate(my_task, (vm_address_t)act_list,
                   sizeof(thread_t) * listcount);
 
-    mach_port_deallocate(my_task, my_thread);
 #   ifdef DEBUG_THREADS
       GC_printf("World started\n");
 #   endif
@@ -551,4 +591,4 @@ GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread)
   GC_use_mach_handler_thread = TRUE;
 }
 
-#endif
+#endif /* GC_DARWIN_THREADS */

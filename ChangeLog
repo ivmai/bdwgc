@@ -1,3 +1,37 @@
+2010-09-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c (GC_MAX_MACH_THREADS): New macro.
+	* darwin_stop_world.c (GC_mach_threads, GC_stop_init): Use
+	GC_MAX_MACH_THREADS instead of THREAD_TABLE_SZ.
+	* darwin_stop_world.c (GC_mach_threads): Add FIXME.
+	* darwin_stop_world.c (GC_stop_init, GC_suspend_thread_list,
+	GC_stop_world): Use FALSE and TRUE for already_suspended field and
+	"changed", "found" variables.
+	* darwin_stop_world.c (GC_is_mach_marker): New prototype (only if
+	PARALLEL_MARK).
+	* darwin_stop_world.c (GC_suspend_thread_list): Change return type
+	to GC_bool; change type of "changed", "found" to GC_bool; make
+	"my_thread" as an argument (instead of acquiring/deallocating it
+	locally); do not add my_thread, GC_mach_handler_thread and marker
+	threads to GC_mach_threads table; check for overflow of
+	GC_mach_threads table; increase GC_mach_threads_count if "found"
+	is true and info.suspend_count is non-zero.
+	* darwin_stop_world.c (GC_suspend_thread_list, GC_start_world):
+	Adjust "thread" format specifiers for GC_printf(); search thread
+	in "old_list" starting from the previous found one.
+	* darwin_stop_world.c (GC_stop_world): Rename "changes" to
+	"changed" local variable; remove "result" variable; adjust
+	GC_printf debugging message.
+	* darwin_stop_world.c (GC_start_world): Do not check for
+	my_thread and GC_use_mach_handler_thread (since they are not added
+	to GC_mach_threads table); call thread_info() only if
+	DEBUG_THREADS or GC_ASSERTIONS.
+	* pthread_support.c (marker_mach_threads): New static variable (if
+	Darwin).
+	* pthread_support.c (GC_is_mach_marker): New function (if Darwin).
+	* pthread_support.c (GC_mark_thread): Fill in marker_mach_threads
+	table (if Darwin).
+
 2010-09-26  Ivan Maidanski <ivmai@mail.ru>
 
 	* alloc.c (GC_parallel): Define only if THREADS.

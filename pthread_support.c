@@ -321,6 +321,21 @@ static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
   static ptr_t marker_bsp[MAX_MARKERS - 1] = {0};
 #endif
 
+#ifdef GC_DARWIN_THREADS
+  static mach_port_t marker_mach_threads[MAX_MARKERS - 1] = {0};
+
+  /* Used only by GC_suspend_thread_list().     */
+  GC_INNER GC_bool GC_is_mach_marker(mach_port_t thread)
+  {
+    int i;
+    for (i = 0; i < GC_markers - 1; i++) {
+      if (marker_mach_threads[i] == thread)
+        return TRUE;
+    }
+    return FALSE;
+  }
+#endif /* GC_DARWIN_THREADS */
+
 STATIC void * GC_mark_thread(void * id)
 {
   word my_mark_no = 0;
@@ -333,6 +348,9 @@ STATIC void * GC_mark_thread(void * id)
 # ifdef IA64
     marker_bsp[(word)id] = GC_save_regs_in_stack();
 # endif
+#ifdef GC_DARWIN_THREADS
+    marker_mach_threads[(word)id] = mach_thread_self();
+#endif
 
   if ((word)id == (word)-1) return 0; /* to make compiler happy */
 
