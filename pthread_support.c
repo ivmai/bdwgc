@@ -348,9 +348,9 @@ STATIC void * GC_mark_thread(void * id)
 # ifdef IA64
     marker_bsp[(word)id] = GC_save_regs_in_stack();
 # endif
-#ifdef GC_DARWIN_THREADS
+# ifdef GC_DARWIN_THREADS
     marker_mach_threads[(word)id] = mach_thread_self();
-#endif
+# endif
 
   if ((word)id == (word)-1) return 0; /* to make compiler happy */
 
@@ -840,7 +840,7 @@ STATIC void GC_fork_child_proc(void)
     sysctl(mib, sizeof(mib)/sizeof(int), &res, &len, NULL, 0);
     return res;
   }
-#endif  /* GC_NETBSD_THREADS */
+#endif  /* GC_DARWIN_THREADS || ... */
 
 #if defined(GC_LINUX_THREADS) && defined(INCLUDE_LINUX_THREAD_DESCR)
   __thread int GC_dummy_thread_local;
@@ -849,10 +849,7 @@ STATIC void GC_fork_child_proc(void)
 /* We hold the allocation lock. */
 GC_INNER void GC_thr_init(void)
 {
-#   ifndef GC_DARWIN_THREADS
-        int dummy;
-#   endif
-    GC_thread t;
+    int dummy;
 
     if (GC_thr_initialized) return;
     GC_thr_initialized = TRUE;
@@ -878,13 +875,14 @@ GC_INNER void GC_thr_init(void)
         }
 #   endif
     /* Add the initial thread, so we can stop it.       */
-      t = GC_new_thread(pthread_self());
+    {
+      GC_thread t = GC_new_thread(pthread_self());
 #     ifdef GC_DARWIN_THREADS
-         t -> stop_info.mach_thread = mach_thread_self();
-#     else
-         t -> stop_info.stack_ptr = (ptr_t)(&dummy);
+        t -> stop_info.mach_thread = mach_thread_self();
 #     endif
+      t -> stop_info.stack_ptr = (ptr_t)(&dummy);
       t -> flags = DETACHED | MAIN_THREAD;
+    }
 
     GC_stop_init();
 
@@ -998,7 +996,7 @@ GC_INNER void GC_init_parallel(void)
     }
     return(REAL_FUNC(pthread_sigmask)(how, set, oset));
   }
-#endif /* !GC_DARWIN_THREADS */
+#endif /* !GC_DARWIN_THREADS && !GC_OPENBSD_THREADS */
 
 /* Wrapper for functions that are likely to block for an appreciable    */
 /* length of time.                                                      */
@@ -1015,7 +1013,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
     GC_ASSERT(!(me -> thread_blocked));
 #   ifdef SPARC
         me -> stop_info.stack_ptr = GC_save_regs_in_stack();
-#   elif !defined(GC_DARWIN_THREADS)
+#   else
         me -> stop_info.stack_ptr = GC_approx_sp();
 #   endif
 #   ifdef IA64
@@ -1063,11 +1061,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     }
 
     /* Setup new "stack section".       */
-#   ifdef GC_DARWIN_THREADS
-      /* FIXME: Implement it (and GC_do_blocking_inner) for Darwin. */
-#   else
-      stacksect.saved_stack_ptr = me -> stop_info.stack_ptr;
-#   endif
+    stacksect.saved_stack_ptr = me -> stop_info.stack_ptr;
 #   ifdef IA64
       /* This is the same as in GC_call_with_stack_base().      */
       stacksect.backing_store_end = GC_save_regs_in_stack();
@@ -1091,9 +1085,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       me -> backing_store_ptr = stacksect.saved_backing_store_ptr;
 #   endif
     me -> thread_blocked = TRUE;
-#   ifndef GC_DARWIN_THREADS
-      me -> stop_info.stack_ptr = stacksect.saved_stack_ptr;
-#   endif
+    me -> stop_info.stack_ptr = stacksect.saved_stack_ptr;
     UNLOCK();
 
     return client_data; /* result */
@@ -1270,9 +1262,8 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
       ABORT("Failed to allocate memory for thread registering.");
 #   ifdef GC_DARWIN_THREADS
       me -> stop_info.mach_thread = mach_thread_self();
-#   else
-      me -> stop_info.stack_ptr = sb -> mem_base;
 #   endif
+    me -> stop_info.stack_ptr = sb -> mem_base;
     me -> stack_end = sb -> mem_base;
     if (me -> stack_end == NULL)
       ABORT("Bad stack base in GC_register_my_thread");

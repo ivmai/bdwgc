@@ -1,3 +1,20 @@
+2010-09-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c (GC_query_task_threads): New variable (or
+	macro).
+	* darwin_stop_world.c (GC_push_all_stacks): Use
+	GC_query_task_threads (to choose between algorithms based on
+	kernel task_threads and based on GC_threads table); update FIXME;
+	remove commented out GC_push_one statements.
+	* pthread_support.c (GC_thr_init, GC_do_blocking_inner,
+	GC_call_with_gc_active, GC_register_my_thread_inner): Initialize
+	stack_ptr field for all platforms.
+	* pthread_support.c (GC_call_with_gc_active): Initialize
+	saved_stack_ptr field for all platforms.
+	* include/private/darwin_stop_world.h (thread_stop_info): Add
+	stack_ptr field; change type of already_suspended from int to
+	GC_bool.
+
 2010-09-29  Ivan Maidanski <ivmai@mail.ru>
 
 	* darwin_stop_world.c (GC_MAX_MACH_THREADS): New macro.

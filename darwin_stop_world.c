@@ -87,6 +87,16 @@ static unsigned long FindTopOfStack(unsigned long stack_start)
 
 #endif /* !DARWIN_DONT_PARSE_STACK */
 
+/* GC_query_task_threads controls whether to obtain the list of */
+/* the threads from the kernel or to use GC_threads table.      */
+#ifdef DARWIN_DONT_PARSE_STACK
+# define GC_query_task_threads FALSE
+#else
+  /* FIXME: use STATIC; initialize to false, add setter function. */
+  /* FIXME: use it in GC_stop_world and GC_start_world. */
+  GC_bool GC_query_task_threads = TRUE;
+#endif
+
 GC_INNER void GC_push_all_stacks(void)
 {
   int i;
@@ -96,45 +106,44 @@ GC_INNER void GC_push_all_stacks(void)
   mach_port_t me = mach_thread_self();
   GC_bool found_me = FALSE;
   int nthreads = 0;
-# ifndef DARWIN_DONT_PARSE_STACK
-    task_t my_task;
-    thread_act_array_t act_list = 0;
-    mach_msg_type_number_t listcount = 0;
-# endif
+  mach_msg_type_number_t listcount = (mach_msg_type_number_t)THREAD_TABLE_SZ;
+  task_t my_task = 0; /* initialized to prevent a warning */
+  thread_act_array_t act_list = 0;
 
   if (!GC_thr_initialized)
     GC_thr_init();
 
-# ifdef DARWIN_DONT_PARSE_STACK
-    for (i = 0; i < THREAD_TABLE_SZ; i++)
-# else
+  if (GC_query_task_threads) {
+    /* Obtain the list of the threads from the kernel.  */
     my_task = current_task();
     r = task_threads(my_task, &act_list, &listcount);
     if (r != KERN_SUCCESS)
       ABORT("task_threads failed");
+  }
 
-    for (i = 0; i < (int)listcount; i++)
-# endif
-  {
-#   ifdef DARWIN_DONT_PARSE_STACK
-      GC_thread p;
-      for (p = GC_threads[i]; p != 0; p = p->next)
-#   endif
-    {
-#     ifdef DARWIN_DONT_PARSE_STACK
-        thread_act_t thread = p->stop_info.mach_thread;
+  for (i = 0; i < (int)listcount; i++) {
+    GC_thread p = GC_query_task_threads ? 0 : GC_threads[i];
+    for (;; p = p->next) {
+      thread_act_t thread;
+      if (GC_query_task_threads) {
+        thread = act_list[i];
+      } else {
+        if (p == 0) break;
         if (p->flags & FINISHED) continue;
-#     else
-        thread_act_t thread = act_list[i];
-#     endif
+        thread = p->stop_info.mach_thread;
+      }
+
       nthreads++;
       if (thread == me) {
+        /* FIXME: check thread not blocked */
         lo = GC_approx_sp();
 #       ifndef DARWIN_DONT_PARSE_STACK
           hi = (ptr_t)FindTopOfStack(0);
 #       endif
         found_me = TRUE;
       } else {
+        /* FIXME: if blocked then use stop_info.stack_ptr for lo */
+
         /* MACHINE_THREAD_STATE_COUNT does not seem to be defined       */
         /* everywhere.  Hence we use our own version.  Alternatively,   */
         /* we could use THREAD_STATE_MAX (but seems to be not optimal). */
@@ -162,14 +171,6 @@ GC_INNER void GC_push_all_stacks(void)
           GC_push_one(state.THREAD_FLD(edi));
           GC_push_one(state.THREAD_FLD(esi));
           GC_push_one(state.THREAD_FLD(ebp));
-          /* GC_push_one(state.THREAD_FLD(esp)); */
-          /* GC_push_one(state.THREAD_FLD(ss));
-          GC_push_one(state.THREAD_FLD(eip));
-          GC_push_one(state.THREAD_FLD(cs));
-          GC_push_one(state.THREAD_FLD(ds));
-          GC_push_one(state.THREAD_FLD(es));
-          GC_push_one(state.THREAD_FLD(fs));
-          GC_push_one(state.THREAD_FLD(gs)); */
 
 #       elif defined(X86_64)
           lo = (void *)state.THREAD_FLD(rsp);
@@ -192,11 +193,6 @@ GC_INNER void GC_push_all_stacks(void)
           GC_push_one(state.THREAD_FLD(r13));
           GC_push_one(state.THREAD_FLD(r14));
           GC_push_one(state.THREAD_FLD(r15));
-          /* GC_push_one(state.THREAD_FLD(rip));
-          GC_push_one(state.THREAD_FLD(rflags));
-          GC_push_one(state.THREAD_FLD(cs));
-          GC_push_one(state.THREAD_FLD(fs));
-          GC_push_one(state.THREAD_FLD(gs)); */
 
 #       elif defined(POWERPC)
           lo = (void *)(state.THREAD_FLD(r1) - PPC_RED_ZONE_SIZE);
@@ -269,21 +265,22 @@ GC_INNER void GC_push_all_stacks(void)
         GC_printf("Darwin: Stack for thread 0x%lx = [%p,%p)\n",
                   (unsigned long) thread, lo, hi);
 #     endif
-      /* FIXME: It is impossible to use GC_push_all_stack_sections()    */
-      /* here while GC_do_blocking_inner() and GC_call_with_gc_active() */
-      /* contain unimplemented code for Darwin.                         */
+      /* FIXME: use GC_push_all_stack_sections */
       GC_push_all_stack(lo, hi);
-#     ifndef DARWIN_DONT_PARSE_STACK
-        mach_port_deallocate(my_task, thread);
-#     endif
       total_size += hi - lo; /* lo <= hi */
-    }
+      if (GC_query_task_threads) {
+        mach_port_deallocate(my_task, thread);
+        break;
+      }
+    } /* for (p) */
   } /* for (i=0; ...) */
-# ifndef DARWIN_DONT_PARSE_STACK
+
+  if (GC_query_task_threads) {
+    mach_port_deallocate(my_task, me);
     vm_deallocate(my_task, (vm_address_t)act_list,
                   sizeof(thread_t) * listcount);
-    mach_port_deallocate(my_task, me);
-# endif
+  }
+
   if (GC_print_stats == VERBOSE)
     GC_log_printf("Pushed %d thread stacks\n", nthreads);
   if (!found_me && !GC_in_thread_creation)
