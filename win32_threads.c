@@ -224,24 +224,26 @@ struct GC_Thread_Rep {
                                 /* GC_call_with_gc_active() of this     */
                                 /* thread.  May be NULL.                */
 
-  unsigned finalizer_nested;
-  unsigned finalizer_skipped;   /* Used by GC_check_finalizer_nested()  */
+  unsigned short finalizer_skipped;
+  unsigned char finalizer_nested;
+                                /* Used by GC_check_finalizer_nested()  */
                                 /* to minimize the level of recursion   */
                                 /* when a client finalizer allocates    */
                                 /* memory (initially both are 0).       */
 
-  GC_bool suspended;
+  unsigned char suspended; /* really of GC_bool type */
 
 # ifdef GC_PTHREADS
-    void *status; /* hold exit value until join in case it's a pointer */
-    pthread_t pthread_id;
-    short flags;                /* Protected by GC lock.                */
+    unsigned char flags;        /* Protected by GC lock.                */
 #   define FINISHED 1           /* Thread has exited.                   */
 #   define DETACHED 2           /* Thread is intended to be detached.   */
 #   define KNOWN_FINISHED(t) (((t) -> flags) & FINISHED)
+    pthread_t pthread_id;
+    void *status;  /* hold exit value until join in case it's a pointer */
 # else
 #   define KNOWN_FINISHED(t) 0
 # endif
+
 # ifdef THREAD_LOCAL_ALLOC
     struct thread_local_freelists tlfs;
 # endif
@@ -551,7 +553,7 @@ GC_INNER void GC_reset_finalizer_nested(void)
 /* otherwise returns a pointer to the thread-local finalizer_nested.    */
 /* Called by GC_notify_or_invoke_finalizers() only (the lock is held).  */
 /* GC_check_finalizer_nested() is the same as in pthread_support.c.     */
-GC_INNER unsigned *GC_check_finalizer_nested(void)
+GC_INNER unsigned char *GC_check_finalizer_nested(void)
 {
   GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
   unsigned nesting_level = me->finalizer_nested;
@@ -562,7 +564,7 @@ GC_INNER unsigned *GC_check_finalizer_nested(void)
     if (++me->finalizer_skipped < (1U << nesting_level)) return NULL;
     me->finalizer_skipped = 0;
   }
-  me->finalizer_nested = nesting_level + 1;
+  me->finalizer_nested = (unsigned char)(nesting_level + 1);
   return &me->finalizer_nested;
 }
 
@@ -974,7 +976,7 @@ STATIC void GC_suspend(GC_thread t)
     if (SuspendThread(t -> handle) == (DWORD)-1)
       ABORT("SuspendThread failed");
 # endif /* !MSWINCE */
-  t -> suspended = TRUE;
+  t -> suspended = (unsigned char)TRUE;
 # if defined(MPROTECT_VDB)
     AO_CLEAR(&GC_fault_handler_lock);
 # endif

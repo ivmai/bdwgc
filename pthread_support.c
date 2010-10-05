@@ -547,7 +547,7 @@ GC_INNER void GC_reset_finalizer_nested(void)
 /* collector (to minimize the risk of a deep finalizers recursion),     */
 /* otherwise returns a pointer to the thread-local finalizer_nested.    */
 /* Called by GC_notify_or_invoke_finalizers() only (the lock is held).  */
-GC_INNER unsigned *GC_check_finalizer_nested(void)
+GC_INNER unsigned char *GC_check_finalizer_nested(void)
 {
   GC_thread me = GC_lookup_thread(pthread_self());
   unsigned nesting_level = me->finalizer_nested;
@@ -558,7 +558,7 @@ GC_INNER unsigned *GC_check_finalizer_nested(void)
     if (++me->finalizer_skipped < (1U << nesting_level)) return NULL;
     me->finalizer_skipped = 0;
   }
-  me->finalizer_nested = nesting_level + 1;
+  me->finalizer_nested = (unsigned char)(nesting_level + 1);
   return &me->finalizer_nested;
 }
 
@@ -1019,7 +1019,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
 #   ifdef IA64
         me -> backing_store_ptr = GC_save_regs_in_stack();
 #   endif
-    me -> thread_blocked = TRUE;
+    me -> thread_blocked = (unsigned char)TRUE;
     /* Save context here if we want to support precise stack marking */
     UNLOCK();
     d -> client_data = (d -> fn)(d -> client_data);
@@ -1054,7 +1054,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
         GC_stackbottom = (ptr_t)(&stacksect);
     }
 
-    if (me -> thread_blocked == FALSE) {
+    if (!me->thread_blocked) {
       /* We are not inside GC_do_blocking() - do nothing more.  */
       UNLOCK();
       return fn(client_data);
@@ -1084,7 +1084,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 #   ifdef IA64
       me -> backing_store_ptr = stacksect.saved_backing_store_ptr;
 #   endif
-    me -> thread_blocked = TRUE;
+    me -> thread_blocked = (unsigned char)TRUE;
     me -> stop_info.stack_ptr = stacksect.saved_stack_ptr;
     UNLOCK();
 

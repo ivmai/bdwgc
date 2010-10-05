@@ -495,18 +495,18 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
   /* Defined in pthread_support.c or win32_threads.c.  Called with the  */
   /* allocation lock held.                                              */
   GC_INNER void GC_reset_finalizer_nested(void);
-  GC_INNER unsigned *GC_check_finalizer_nested(void);
+  GC_INNER unsigned char *GC_check_finalizer_nested(void);
 #else
   /* Global variables to minimize the level of recursion when a client  */
   /* finalizer allocates memory.                                        */
-  STATIC unsigned GC_finalizer_nested = 0;
+  STATIC unsigned char GC_finalizer_nested = 0;
   STATIC unsigned GC_finalizer_skipped = 0;
 
   /* Checks and updates the level of finalizers recursion.              */
   /* Returns NULL if GC_invoke_finalizers() should not be called by the */
   /* collector (to minimize the risk of a deep finalizers recursion),   */
   /* otherwise returns a pointer to GC_finalizer_nested.                */
-  STATIC unsigned *GC_check_finalizer_nested(void)
+  STATIC unsigned char *GC_check_finalizer_nested(void)
   {
     unsigned nesting_level = GC_finalizer_nested;
     if (nesting_level) {
@@ -516,7 +516,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
       if (++GC_finalizer_skipped < (1U << nesting_level)) return NULL;
       GC_finalizer_skipped = 0;
     }
-    GC_finalizer_nested = nesting_level + 1;
+    GC_finalizer_nested = (unsigned char)(nesting_level + 1);
     return &GC_finalizer_nested;
   }
 #endif /* THREADS */
@@ -888,7 +888,7 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
     }
 
     if (!GC_finalize_on_demand) {
-      unsigned *pnested = GC_check_finalizer_nested();
+      unsigned char *pnested = GC_check_finalizer_nested();
       UNLOCK();
       /* Skip GC_invoke_finalizers() if nested */
       if (pnested != NULL) {

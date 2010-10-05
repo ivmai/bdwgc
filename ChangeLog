@@ -1,3 +1,28 @@
+2010-10-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* finalize.c (GC_check_finalizer_nested): Change return type to
+	char pointer (instead of int pointer); use explicit cast for
+	GC_finalizer_nested assignment.
+	* pthread_support.c (GC_check_finalizer_nested): Ditto.
+	* win32_threads.c (GC_check_finalizer_nested): Ditto.
+	* finalize.c (GC_finalizer_nested): Change type to unsigned char.
+	* finalize.c (GC_notify_or_invoke_finalizers): Change type of
+	"pnested" local variable to char pointer.
+	* pthread_support.c (GC_do_blocking_inner,
+	GC_call_with_gc_active): Use explicit cast for "thread_blocked"
+	field assignment.
+	* win32_threads.c (GC_lookup_pthread): Use explicit cast for
+	"suspended" field assignment.
+	* win32_threads.c (GC_Thread_Rep): Use short type for
+	finalizer_skipped; use char type for finalizer_nested and flags
+	fields and reorder some fields (to minimize GC_Thread_Rep
+	structure size).
+	* include/private/pthread_support.h (GC_Thread_Rep): Ditto.
+	* win32_threads.c (GC_Thread_Rep): Use char type for suspended
+	field (instead of GC_bool).
+	* include/private/pthread_support.h (GC_Thread_Rep): Use char type
+	for thread_blocked field (instead of short).
+
 2010-09-30  Ivan Maidanski <ivmai@mail.ru>
 
 	* darwin_stop_world.c (GC_query_task_threads): New variable (or

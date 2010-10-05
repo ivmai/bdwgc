@@ -49,7 +49,7 @@ typedef struct GC_Thread_Rep {
     /* Extra bookkeeping information the stopping code uses */
     struct thread_stop_info stop_info;
 
-    short flags;
+    unsigned char flags;
 #       define FINISHED 1       /* Thread has exited.   */
 #       define DETACHED 2       /* Thread is treated as detached.       */
                                 /* Thread may really be detached, or    */
@@ -62,13 +62,22 @@ typedef struct GC_Thread_Rep {
 #       define DISABLED_GC 8    /* Collections are disabled while the   */
                                 /* thread is exiting.                   */
 
-    short thread_blocked;       /* Protected by GC lock.                */
+    unsigned char thread_blocked;
+                                /* Protected by GC lock.                */
                                 /* Treated as a boolean value.  If set, */
                                 /* thread will acquire GC lock before   */
                                 /* doing any pointer manipulations, and */
                                 /* has set its sp value.  Thus it does  */
                                 /* not need to be sent a signal to stop */
                                 /* it.                                  */
+
+    unsigned short finalizer_skipped;
+    unsigned char finalizer_nested;
+                                /* Used by GC_check_finalizer_nested()  */
+                                /* to minimize the level of recursion   */
+                                /* when a client finalizer allocates    */
+                                /* memory (initially both are 0).       */
+
     ptr_t stack_end;            /* Cold end of the stack (except for    */
                                 /* main thread).                        */
 #   ifdef IA64
@@ -88,12 +97,6 @@ typedef struct GC_Thread_Rep {
                                 /* This is unfortunately also the       */
                                 /* reason we need to intercept join     */
                                 /* and detach.                          */
-
-    unsigned finalizer_nested;
-    unsigned finalizer_skipped; /* Used by GC_check_finalizer_nested()  */
-                                /* to minimize the level of recursion   */
-                                /* when a client finalizer allocates    */
-                                /* memory (initially both are 0).       */
 
 #   ifdef THREAD_LOCAL_ALLOC
         struct thread_local_freelists tlfs;
