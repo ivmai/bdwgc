@@ -49,9 +49,9 @@ typedef struct StackFrame {
   unsigned long savedRTOC;
 } StackFrame;
 
-static unsigned long FindTopOfStack(unsigned long stack_start)
+GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
 {
-  StackFrame    *frame;
+  StackFrame *frame;
 
   if (stack_start == 0) {
 # ifdef POWERPC
@@ -82,7 +82,7 @@ static unsigned long FindTopOfStack(unsigned long stack_start)
 # ifdef DEBUG_THREADS
     /* GC_printf("FindTopOfStack finish at sp = %p\n", frame); */
 # endif
-  return (unsigned long)frame;
+  return (ptr_t)frame;
 }
 
 #endif /* !DARWIN_DONT_PARSE_STACK */
@@ -122,28 +122,36 @@ GC_INNER void GC_push_all_stacks(void)
   }
 
   for (i = 0; i < (int)listcount; i++) {
-    GC_thread p = GC_query_task_threads ? 0 : GC_threads[i];
+    GC_thread p = GC_query_task_threads ? NULL : GC_threads[i];
     for (;; p = p->next) {
       thread_act_t thread;
+      GC_bool thread_blocked;
       if (GC_query_task_threads) {
         thread = act_list[i];
+        thread_blocked = FALSE;
       } else {
-        if (p == 0) break;
+        if (p == NULL) break;
         if (p->flags & FINISHED) continue;
         thread = p->stop_info.mach_thread;
+        thread_blocked = (GC_bool)p->thread_blocked;
       }
 
       nthreads++;
       if (thread == me) {
-        /* FIXME: check thread not blocked */
+        GC_ASSERT(!thread_blocked);
         lo = GC_approx_sp();
 #       ifndef DARWIN_DONT_PARSE_STACK
-          hi = (ptr_t)FindTopOfStack(0);
+          hi = GC_FindTopOfStack(0);
 #       endif
         found_me = TRUE;
-      } else {
-        /* FIXME: if blocked then use stop_info.stack_ptr for lo */
 
+      } else if (thread_blocked) {
+        lo = p->stop_info.stack_ptr;
+#       ifndef DARWIN_DONT_PARSE_STACK
+          hi = p->topOfStack;
+#       endif
+
+      } else {
         /* MACHINE_THREAD_STATE_COUNT does not seem to be defined       */
         /* everywhere.  Hence we use our own version.  Alternatively,   */
         /* we could use THREAD_STATE_MAX (but seems to be not optimal). */
@@ -162,7 +170,7 @@ GC_INNER void GC_push_all_stacks(void)
 #       if defined(I386)
           lo = (void *)state.THREAD_FLD(esp);
 #         ifndef DARWIN_DONT_PARSE_STACK
-            hi = (ptr_t)FindTopOfStack(state.THREAD_FLD(esp));
+            hi = GC_FindTopOfStack(state.THREAD_FLD(esp));
 #         endif
           GC_push_one(state.THREAD_FLD(eax));
           GC_push_one(state.THREAD_FLD(ebx));
@@ -175,7 +183,7 @@ GC_INNER void GC_push_all_stacks(void)
 #       elif defined(X86_64)
           lo = (void *)state.THREAD_FLD(rsp);
 #         ifndef DARWIN_DONT_PARSE_STACK
-            hi = (ptr_t)FindTopOfStack(state.THREAD_FLD(rsp));
+            hi = GC_FindTopOfStack(state.THREAD_FLD(rsp));
 #         endif
           GC_push_one(state.THREAD_FLD(rax));
           GC_push_one(state.THREAD_FLD(rbx));
@@ -197,7 +205,7 @@ GC_INNER void GC_push_all_stacks(void)
 #       elif defined(POWERPC)
           lo = (void *)(state.THREAD_FLD(r1) - PPC_RED_ZONE_SIZE);
 #         ifndef DARWIN_DONT_PARSE_STACK
-            hi = (ptr_t)FindTopOfStack(state.THREAD_FLD(r1));
+            hi = GC_FindTopOfStack(state.THREAD_FLD(r1));
 #         endif
           GC_push_one(state.THREAD_FLD(r0));
           GC_push_one(state.THREAD_FLD(r2));
@@ -234,7 +242,7 @@ GC_INNER void GC_push_all_stacks(void)
 #       elif defined(ARM32)
           lo = (void *)state.__sp;
 #         ifndef DARWIN_DONT_PARSE_STACK
-            hi = (ptr_t)FindTopOfStack(state.__sp);
+            hi = GC_FindTopOfStack(state.__sp);
 #         endif
           GC_push_one(state.__r[0]);
           GC_push_one(state.__r[1]);
@@ -258,20 +266,22 @@ GC_INNER void GC_push_all_stacks(void)
 #         error FIXME for non-x86 || ppc || arm architectures
 #       endif
       } /* thread != me */
+
 #     ifdef DARWIN_DONT_PARSE_STACK
+        /* p is non-NULL since GC_query_task_threads is FALSE */
         hi = (p->flags & MAIN_THREAD) != 0 ? GC_stackbottom : p->stack_end;
 #     endif
 #     ifdef DEBUG_THREADS
         GC_printf("Darwin: Stack for thread 0x%lx = [%p,%p)\n",
                   (unsigned long) thread, lo, hi);
 #     endif
-      /* FIXME: use GC_push_all_stack_sections */
-      GC_push_all_stack(lo, hi);
       total_size += hi - lo; /* lo <= hi */
       if (GC_query_task_threads) {
+        GC_push_all_stack(lo, hi);
         mach_port_deallocate(my_task, thread);
         break;
       }
+      GC_push_all_stack_sections(lo, hi, p->traced_stack_sect);
     } /* for (p) */
   } /* for (i=0; ...) */
 

@@ -998,6 +998,10 @@ GC_INNER void GC_init_parallel(void)
   }
 #endif /* !GC_DARWIN_THREADS && !GC_OPENBSD_THREADS */
 
+#if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
+  GC_INNER ptr_t GC_FindTopOfStack(unsigned long);
+#endif
+
 /* Wrapper for functions that are likely to block for an appreciable    */
 /* length of time.                                                      */
 
@@ -1006,18 +1010,32 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
 {
     struct blocking_data * d = (struct blocking_data *) data;
     GC_thread me;
+#   if defined(SPARC) || defined(IA64)
+        ptr_t stack_ptr = GC_save_regs_in_stack();
+#   endif
+#   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
+        GC_bool topOfStackUnset = FALSE;
+#   endif
     DCL_LOCK_STATE;
 
     LOCK();
     me = GC_lookup_thread(pthread_self());
     GC_ASSERT(!(me -> thread_blocked));
 #   ifdef SPARC
-        me -> stop_info.stack_ptr = GC_save_regs_in_stack();
+        me -> stop_info.stack_ptr = stack_ptr;
 #   else
         me -> stop_info.stack_ptr = GC_approx_sp();
 #   endif
+#   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
+        if (me -> topOfStack == NULL) {
+            /* GC_do_blocking_inner is not called recursively,  */
+            /* so topOfStack should be computed now.            */
+            topOfStackUnset = TRUE;
+            me -> topOfStack = GC_FindTopOfStack(0);
+        }
+#   endif
 #   ifdef IA64
-        me -> backing_store_ptr = GC_save_regs_in_stack();
+        me -> backing_store_ptr = stack_ptr;
 #   endif
     me -> thread_blocked = (unsigned char)TRUE;
     /* Save context here if we want to support precise stack marking */
@@ -1025,6 +1043,10 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
     d -> client_data = (d -> fn)(d -> client_data);
     LOCK();   /* This will block if the world is stopped.       */
     me -> thread_blocked = FALSE;
+#   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
+        if (topOfStackUnset)
+            me -> topOfStack = NULL; /* make topOfStack unset again */
+#   endif
     UNLOCK();
 }
 

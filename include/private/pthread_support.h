@@ -67,7 +67,7 @@ typedef struct GC_Thread_Rep {
                                 /* Treated as a boolean value.  If set, */
                                 /* thread will acquire GC lock before   */
                                 /* doing any pointer manipulations, and */
-                                /* has set its sp value.  Thus it does  */
+                                /* has set its SP value.  Thus it does  */
                                 /* not need to be sent a signal to stop */
                                 /* it.                                  */
 
@@ -80,6 +80,11 @@ typedef struct GC_Thread_Rep {
 
     ptr_t stack_end;            /* Cold end of the stack (except for    */
                                 /* main thread).                        */
+#   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
+      ptr_t topOfStack;         /* Result of GC_FindTopOfStack(0);      */
+                                /* valid only if the thread is blocked; */
+                                /* non-NULL value means already set.    */
+#   endif
 #   ifdef IA64
         ptr_t backing_store_end;
         ptr_t backing_store_ptr;

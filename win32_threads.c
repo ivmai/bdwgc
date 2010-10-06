@@ -764,13 +764,16 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
   struct blocking_data * d = (struct blocking_data *) data;
   DWORD t = GetCurrentThreadId();
   GC_thread me;
+# ifdef IA64
+    ptr_t stack_ptr = GC_save_regs_in_stack();
+# endif
   DCL_LOCK_STATE;
 
   LOCK();
   me = GC_lookup_thread_inner(t);
   GC_ASSERT(me -> thread_blocked_sp == NULL);
 # ifdef IA64
-    me -> backing_store_ptr = GC_save_regs_in_stack();
+    me -> backing_store_ptr = stack_ptr;
 # endif
   me -> thread_blocked_sp = (ptr_t) &d; /* save approx. sp */
   /* Save context here if we want to support precise stack marking */

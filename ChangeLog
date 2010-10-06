@@ -1,3 +1,23 @@
+2010-10-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c (FindTopOfStack): Change return type to
+	ptr_t (from long); make GC_INNER; add GC_ prefix.
+	* darwin_stop_world.c (GC_push_all_stacks): Add thread_blocked
+	local variable (initialized from the corresponding GC_thread
+	field unless GC_query_task_threads); add assertion that our
+	thread is not blocked; prefix FindTopOfStack with GC_ and remove
+	no longer needed cast to ptr_t of the result; handle thread
+	blocked case (and remove FIXME); use GC_push_all_stack_sections
+	unless GC_query_task_threads (and remove FIXME).
+	* pthread_support.c (GC_FindTopOfStack): Declare (if needed).
+	* pthread_support.c (GC_do_blocking_inner): Call
+	GC_save_regs_in_stack (if needed) before acquiring the lock.
+	* win32_threads.c (GC_do_blocking_inner): Ditto.
+	* pthread_support.c (GC_do_blocking_inner): Set/clear topOfStack
+	field of GC_thread (Darwin only).
+	* include/private/pthread_support.h (GC_thread): Add topOfStack
+	field for Darwin (unless DARWIN_DONT_PARSE_STACK).
+
 2010-10-05  Ivan Maidanski <ivmai@mail.ru>
 
 	* finalize.c (GC_check_finalizer_nested): Change return type to
