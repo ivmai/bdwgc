@@ -512,6 +512,27 @@ GC_INNER void GC_stop_world(void)
     mach_port_deallocate(my_task, my_thread);
 }
 
+GC_INLINE void GC_thread_resume(thread_act_t thread)
+{
+  kern_return_t kern_result;
+# if defined(DEBUG_THREADS) || defined(GC_ASSERTIONS)
+    struct thread_basic_info info;
+    mach_msg_type_number_t outCount = THREAD_INFO_MAX;
+    kern_result = thread_info(thread, THREAD_BASIC_INFO,
+                              (thread_info_t)&info, &outCount);
+    if (kern_result != KERN_SUCCESS)
+      ABORT("thread_info failed");
+# endif
+# ifdef DEBUG_THREADS
+    GC_printf("Resuming thread 0x%lx with state %d\n",
+              (unsigned long)thread, info.run_state);
+# endif
+  /* Resume the thread */
+  kern_result = thread_resume(thread);
+  if (kern_result != KERN_SUCCESS)
+    ABORT("thread_resume failed");
+}
+
 /* Caller holds allocation lock, and has held it continuously since     */
 /* the world stopped.                                                   */
 GC_INNER void GC_start_world(void)
@@ -534,6 +555,9 @@ GC_INNER void GC_start_world(void)
 #   endif
 
     kern_result = task_threads(my_task, &act_list, &listcount);
+    if (kern_result != KERN_SUCCESS)
+      ABORT("task_threads failed");
+
     for (i = 0; i < listcount; i++) {
       thread_act_t thread = act_list[i];
       int last_found = j;        /* The thread index found during the   */
@@ -561,24 +585,7 @@ GC_INNER void GC_start_world(void)
                       (unsigned long)thread);
 #         endif
         } else {
-
-#         if defined(DEBUG_THREADS) || defined(GC_ASSERTIONS)
-            struct thread_basic_info info;
-            mach_msg_type_number_t outCount = THREAD_INFO_MAX;
-            kern_result = thread_info(thread, THREAD_BASIC_INFO,
-                                      (thread_info_t)&info, &outCount);
-            if (kern_result != KERN_SUCCESS)
-              ABORT("thread_info failed");
-#         endif
-#         ifdef DEBUG_THREADS
-            GC_printf("Resuming thread 0x%lx with state %d\n",
-                      (unsigned long)thread, info.run_state);
-#         endif
-
-          /* Resume the thread */
-          kern_result = thread_resume(thread);
-          if (kern_result != KERN_SUCCESS)
-            ABORT("thread_resume failed");
+          GC_thread_resume(thread);
         }
       }
 

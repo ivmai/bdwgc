@@ -1671,6 +1671,9 @@ void GC_register_data_segments(void)
   /* the malloc heap with HeapWalk on the default heap.  But that       */
   /* apparently works only for NT-based Windows.                        */
 
+  STATIC size_t GC_max_root_size = 100000; /* Appr. largest root size. */
+
+# ifndef CYGWIN32
   /* In the long run, a better data structure would also be nice ...    */
   STATIC struct GC_malloc_heap_list {
     void * allocation_base;
@@ -1690,9 +1693,6 @@ void GC_register_data_segments(void)
     return FALSE;
   }
 
-  STATIC size_t GC_max_root_size = 100000; /* Appr. largest root size. */
-
-# ifndef CYGWIN32
   STATIC void *GC_get_allocation_base(void *p)
   {
     MEMORY_BASIC_INFORMATION buf;
@@ -1715,14 +1715,18 @@ void GC_register_data_segments(void)
         size_t req_size = 10000;
         do {
           void *p = malloc(req_size);
-          if (0 == p) { free(new_l); return; }
+          if (0 == p) {
+            free(new_l);
+            return;
+          }
           candidate = GC_get_allocation_base(p);
           free(p);
           req_size *= 2;
         } while (GC_is_malloc_heap_base(candidate)
                  && req_size < GC_max_root_size/10 && req_size < 500000);
         if (GC_is_malloc_heap_base(candidate)) {
-          free(new_l); return;
+          free(new_l);
+          return;
         }
     }
     if (GC_print_stats)
@@ -1745,7 +1749,9 @@ void GC_register_data_segments(void)
      unsigned i;
 #    ifndef REDIRECT_MALLOC
        if (GC_root_size > GC_max_root_size) GC_max_root_size = GC_root_size;
-       if (GC_is_malloc_heap_base(p)) return TRUE;
+#      ifndef CYGWIN32
+         if (GC_is_malloc_heap_base(p)) return TRUE;
+#      endif
 #    endif
      for (i = 0; i < GC_n_heap_bases; i++) {
          if (GC_heap_bases[i] == p) return TRUE;

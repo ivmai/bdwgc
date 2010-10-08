@@ -1,3 +1,14 @@
+2010-10-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c (GC_thread_resume): New inline function
+	(move code from GC_thread_resume).
+	* darwin_stop_world.c (GC_start_world): Check result of
+	task_threads(); call GC_thread_resume().
+	* os_dep.c (GC_malloc_heap_l, GC_is_malloc_heap_base): Define
+	only if not CYGWIN32.
+	* os_dep.c (GC_is_heap_base): Call GC_is_malloc_heap_base() only
+	if not CYGWIN32.
+
 2010-10-06  Ivan Maidanski <ivmai@mail.ru>
 
 	* darwin_stop_world.c (FindTopOfStack): Change return type to
