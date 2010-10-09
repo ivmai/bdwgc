@@ -1067,7 +1067,9 @@ GC_INNER void GC_stop_world(void)
 
 GC_INNER void GC_start_world(void)
 {
-  DWORD thread_id = GetCurrentThreadId();
+# ifdef GC_ASSERTIONS
+    DWORD thread_id = GetCurrentThreadId();
+# endif
   int i;
 
   GC_ASSERT(I_HOLD_LOCK());
@@ -1075,8 +1077,8 @@ GC_INNER void GC_start_world(void)
     LONG my_max = GC_get_max_thread_index();
     for (i = 0; i <= my_max; i++) {
       GC_thread t = (GC_thread)(dll_thread_table + i);
-      if (t -> stack_base != 0 && t -> suspended
-          && t -> id != thread_id) {
+      if (t -> suspended) {
+        GC_ASSERT(t -> stack_base != 0 && t -> id != thread_id);
         if (ResumeThread(THREAD_HANDLE(t)) == (DWORD)-1)
           ABORT("ResumeThread failed");
         t -> suspended = FALSE;
@@ -1088,8 +1090,8 @@ GC_INNER void GC_start_world(void)
 
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (t = GC_threads[i]; t != 0; t = t -> tm.next) {
-        if (t -> stack_base != 0 && t -> suspended
-            && t -> id != thread_id) {
+        if (t -> suspended) {
+          GC_ASSERT(t -> stack_base != 0 && t -> id != thread_id);
           if (ResumeThread(THREAD_HANDLE(t)) == (DWORD)-1)
             ABORT("ResumeThread failed");
           UNPROTECT_THREAD(t);

@@ -1,3 +1,13 @@
+2010-10-09  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c (GC_mach_thread): Move from
+	darwin_stop_world.h.
+	* include/private/darwin_stop_world.h (GC_mach_thread): Remove.
+	* win32_threads.c (GC_start_world): Define "thread_id" local
+	variable only if GC_ASSERTIONS; decide whether to resume a thread
+	based on its "suspended" field value; assert that suspended thread
+	stack_base is non-zero and the thread is not our one.
+
 2010-10-08  Ivan Maidanski <ivmai@mail.ru>
 
 	* darwin_stop_world.c (GC_thread_resume): New inline function

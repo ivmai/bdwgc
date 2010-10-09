@@ -304,6 +304,12 @@ STATIC GC_bool GC_use_mach_handler_thread = FALSE;
 #ifndef GC_MAX_MACH_THREADS
 # define GC_MAX_MACH_THREADS THREAD_TABLE_SZ
 #endif
+
+struct GC_mach_thread {
+  thread_act_t thread;
+  GC_bool already_suspended;
+};
+
 static struct GC_mach_thread GC_mach_threads[GC_MAX_MACH_THREADS];
 STATIC int GC_mach_threads_count = 0;
 /* FIXME: it is better to implement GC_mach_threads as a hash set.  */

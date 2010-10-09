@@ -30,9 +30,4 @@ struct thread_stop_info {
   ptr_t stack_ptr; /* Valid only when stopped.  */
 };
 
-struct GC_mach_thread {
-  thread_act_t thread;
-  GC_bool already_suspended;
-};
-
 #endif
