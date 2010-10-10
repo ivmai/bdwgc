@@ -19,7 +19,7 @@
 
 /* This probably needs more porting work to ppc64. */
 
-# if defined(GC_DARWIN_THREADS)
+#if defined(GC_DARWIN_THREADS)
 
 /* From "Inside Mac OS X - Mach-O Runtime Architecture" published by Apple
    Page 49:
@@ -100,10 +100,10 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
 GC_INNER void GC_push_all_stacks(void)
 {
   int i;
-  kern_return_t r;
+  kern_return_t kern_return;
   ptr_t lo, hi;
   word total_size = 0;
-  mach_port_t me = mach_thread_self();
+  mach_port_t my_thread = mach_thread_self();
   GC_bool found_me = FALSE;
   int nthreads = 0;
   mach_msg_type_number_t listcount = (mach_msg_type_number_t)THREAD_TABLE_SZ;
@@ -116,8 +116,8 @@ GC_INNER void GC_push_all_stacks(void)
   if (GC_query_task_threads) {
     /* Obtain the list of the threads from the kernel.  */
     my_task = current_task();
-    r = task_threads(my_task, &act_list, &listcount);
-    if (r != KERN_SUCCESS)
+    kern_return = task_threads(my_task, &act_list, &listcount);
+    if (kern_return != KERN_SUCCESS)
       ABORT("task_threads failed");
   }
 
@@ -137,7 +137,7 @@ GC_INNER void GC_push_all_stacks(void)
       }
 
       nthreads++;
-      if (thread == me) {
+      if (thread == my_thread) {
         GC_ASSERT(!thread_blocked);
         lo = GC_approx_sp();
 #       ifndef DARWIN_DONT_PARSE_STACK
@@ -159,12 +159,13 @@ GC_INNER void GC_push_all_stacks(void)
         GC_THREAD_STATE_T state;
 
         /* Get the thread state (registers, etc) */
-        r = thread_get_state(thread, GC_MACH_THREAD_STATE,
-                             (natural_t *)&state, &thread_state_count);
+        kern_return = thread_get_state(thread, GC_MACH_THREAD_STATE,
+                                       (natural_t *)&state,
+                                       &thread_state_count);
 #       ifdef DEBUG_THREADS
-          GC_printf("thread_get_state return value = %d\n", r);
+          GC_printf("thread_get_state return value = %d\n", kern_return);
 #       endif
-        if (r != KERN_SUCCESS)
+        if (kern_return != KERN_SUCCESS)
           ABORT("thread_get_state failed");
 
 #       if defined(I386)
@@ -265,7 +266,7 @@ GC_INNER void GC_push_all_stacks(void)
 #       else
 #         error FIXME for non-x86 || ppc || arm architectures
 #       endif
-      } /* thread != me */
+      } /* thread != my_thread */
 
 #     ifdef DARWIN_DONT_PARSE_STACK
         /* p is non-NULL since GC_query_task_threads is FALSE */
@@ -286,10 +287,10 @@ GC_INNER void GC_push_all_stacks(void)
   } /* for (i=0; ...) */
 
   if (GC_query_task_threads) {
-    mach_port_deallocate(my_task, me);
     vm_deallocate(my_task, (vm_address_t)act_list,
                   sizeof(thread_t) * listcount);
   }
+  mach_port_deallocate(my_task, my_thread);
 
   if (GC_print_stats == VERBOSE)
     GC_log_printf("Pushed %d thread stacks\n", nthreads);
@@ -445,7 +446,7 @@ GC_INNER void GC_stop_world(void)
 
 #   ifdef DEBUG_THREADS
       GC_printf("Stopping the world from thread 0x%lx\n",
-                (unsigned long)mach_thread_self());
+                (unsigned long)my_thread);
 #   endif
 
     /* clear out the mach threads list table */

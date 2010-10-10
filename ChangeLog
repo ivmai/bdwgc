@@ -1,3 +1,11 @@
+2010-10-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c (GC_push_all_stacks): Rename "r", "me" local
+	variables to "kern_return" and "my_thread" ones, respectively;
+	call mach_port_deallocate() unconditionally.
+	* darwin_stop_world.c (GC_stop_world): Don't call mach_thread_self
+	if DEBUG_THREADS.
+
 2010-10-09  Ivan Maidanski <ivmai@mail.ru>
 
 	* darwin_stop_world.c (GC_mach_thread): Move from
