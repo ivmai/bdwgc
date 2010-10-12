@@ -879,8 +879,9 @@ GC_INNER void GC_thr_init(void)
       GC_thread t = GC_new_thread(pthread_self());
 #     ifdef GC_DARWIN_THREADS
         t -> stop_info.mach_thread = mach_thread_self();
+#     else
+        t -> stop_info.stack_ptr = (ptr_t)(&dummy);
 #     endif
-      t -> stop_info.stack_ptr = (ptr_t)(&dummy);
       t -> flags = DETACHED | MAIN_THREAD;
     }
 
@@ -1284,8 +1285,9 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
       ABORT("Failed to allocate memory for thread registering.");
 #   ifdef GC_DARWIN_THREADS
       me -> stop_info.mach_thread = mach_thread_self();
+#   else
+      me -> stop_info.stack_ptr = sb -> mem_base;
 #   endif
-    me -> stop_info.stack_ptr = sb -> mem_base;
     me -> stack_end = sb -> mem_base;
     if (me -> stack_end == NULL)
       ABORT("Bad stack base in GC_register_my_thread");

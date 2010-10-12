@@ -1,3 +1,10 @@
+2010-10-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c (GC_push_all_stacks): Fix "my_task" local
+	variable initialization (always call current_task()).
+	* pthread_support.c (GC_thr_init, GC_register_my_thread_inner):
+	Don't set thread's stop_info.stack_ptr value for Darwin.
+
 2010-10-10  Ivan Maidanski <ivmai@mail.ru>
 
 	* darwin_stop_world.c (GC_push_all_stacks): Rename "r", "me" local
@@ -3448,7 +3455,8 @@
 	* win32_threads.c (GC_Thread_Rep.tm_in_use, GC_attached_thread,
 	DllMain): Don't define if GC_NO_DLLMAIN.
 	* win32_threads.c (GC_stop_world): Declare "i" and "max" local
-	vars only if not GC_NO_DLLMAIN (to suppress compiler warning).
+	variables only if not GC_NO_DLLMAIN (to suppress compiler
+	warning).
 	* win32_threads.c (GC_mark_thread, start_mark_threads): Use
 	CreateThread() instead of _beginthreadex() for WinCE.
 	* win32_threads.c (MARK_THREAD_STACK_SIZE, WINCE_MAIN_STACK_SIZE):
@@ -3813,7 +3821,8 @@
 	(define as "strtoul" for most targets except for LLP64/Win64).
 	* misc.c (GC_init_inner): Use STRTOULL instead of atoi/atol()
 	(cast the result to word type) to decode values of "GC_TRACE",
-	"GC_INITIAL_HEAP_SIZE", "GC_MAXIMUM_HEAP_SIZE" environment vars.
+	"GC_INITIAL_HEAP_SIZE", "GC_MAXIMUM_HEAP_SIZE" environment
+	variables.
 
 2009-06-12  Hans Boehm <Hans.Boehm@hp.com> (Really mostly George Talbot)
 
@@ -4350,7 +4359,7 @@
 	corresponding compiler warning.
 	* ptr_chck.c (GC_is_visible): cast int const to word type to
 	prevent left shift overflow.
-	* os_dep.c: change the type of GC_mem_top_down global var
+	* os_dep.c: change the type of GC_mem_top_down global variable
 	(containing a flag) to DWORD.
 	* include/gc_config_macros.h: define GC_SOLARIS_THREADS if GC_THREADS
 	is defined on SunOS x86_64.
@@ -4361,7 +4370,8 @@
 	* backgraph.c: cast GC_gc_no value to unsigned short when
 	assigned/compared to height_gc_no field of back_edges.
 	* os_dep.c (GC_remove_protection): Add ARGSUSED.
-	* win32_threads.c (GC_thread_exit_proc): Remove unused local var.
+	* win32_threads.c (GC_thread_exit_proc): Remove unused local
+	variable.
 	* mark.c (GC_check_dirty): Move declaration out of func body.
 
 2008-11-06  Hans Boehm <Hans.Boehm@hp.com>

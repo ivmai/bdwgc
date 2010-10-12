@@ -102,12 +102,12 @@ GC_INNER void GC_push_all_stacks(void)
   int i;
   kern_return_t kern_return;
   ptr_t lo, hi;
-  word total_size = 0;
+  task_t my_task = current_task();
   mach_port_t my_thread = mach_thread_self();
   GC_bool found_me = FALSE;
   int nthreads = 0;
+  word total_size = 0;
   mach_msg_type_number_t listcount = (mach_msg_type_number_t)THREAD_TABLE_SZ;
-  task_t my_task = 0; /* initialized to prevent a warning */
   thread_act_array_t act_list = 0;
 
   if (!GC_thr_initialized)
@@ -115,7 +115,6 @@ GC_INNER void GC_push_all_stacks(void)
 
   if (GC_query_task_threads) {
     /* Obtain the list of the threads from the kernel.  */
-    my_task = current_task();
     kern_return = task_threads(my_task, &act_list, &listcount);
     if (kern_return != KERN_SUCCESS)
       ABORT("task_threads failed");

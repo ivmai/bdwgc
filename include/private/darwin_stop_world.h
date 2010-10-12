@@ -27,7 +27,7 @@
 
 struct thread_stop_info {
   mach_port_t mach_thread;
-  ptr_t stack_ptr; /* Valid only when stopped.  */
+  ptr_t stack_ptr; /* Valid only when thread is in a "blocked" state.   */
 };
 
 #endif
