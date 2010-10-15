@@ -325,7 +325,7 @@ static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
   static mach_port_t marker_mach_threads[MAX_MARKERS - 1] = {0};
 
   /* Used only by GC_suspend_thread_list().     */
-  GC_INNER GC_bool GC_is_mach_marker(mach_port_t thread)
+  GC_INNER GC_bool GC_is_mach_marker(thread_act_t thread)
   {
     int i;
     for (i = 0; i < GC_markers - 1; i++) {

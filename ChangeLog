@@ -1,9 +1,22 @@
+2010-10-14  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c (GC_stack_range_for): New static function
+	(move the code from GC_push_all_stacks).
+	* darwin_stop_world.c (GC_push_all_stacks): Call
+	GC_stack_range_for(); rename kern_return local variable to
+	kern_result.
+	* darwin_stop_world.c (GC_is_mach_marker): Change argument type
+	from mach_port_t to thread_act_t.
+	* pthread_support.c (GC_is_mach_marker): Ditto.
+
 2010-10-12  Ivan Maidanski <ivmai@mail.ru>
 
 	* darwin_stop_world.c (GC_push_all_stacks): Fix "my_task" local
 	variable initialization (always call current_task()).
 	* pthread_support.c (GC_thr_init, GC_register_my_thread_inner):
 	Don't set thread's stop_info.stack_ptr value for Darwin.
+	* include/private/darwin_stop_world.h (thread_stop_info): Update
+	the comment for stack_ptr.
 
 2010-10-10  Ivan Maidanski <ivmai@mail.ru>
 
