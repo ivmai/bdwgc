@@ -846,6 +846,10 @@ STATIC void GC_fork_child_proc(void)
   __thread int GC_dummy_thread_local;
 #endif
 
+#ifndef GC_DARWIN_THREADS
+  GC_INNER void GC_stop_init(void); /* defined in pthread_stop_world.c */
+#endif
+
 /* We hold the allocation lock. */
 GC_INNER void GC_thr_init(void)
 {
@@ -885,7 +889,9 @@ GC_INNER void GC_thr_init(void)
       t -> flags = DETACHED | MAIN_THREAD;
     }
 
-    GC_stop_init();
+#   ifndef GC_DARWIN_THREADS
+      GC_stop_init();
+#   endif
 
     /* Set GC_nprocs.  */
       {

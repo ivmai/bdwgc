@@ -318,19 +318,9 @@ struct GC_mach_thread {
   GC_bool already_suspended;
 };
 
-static struct GC_mach_thread GC_mach_threads[GC_MAX_MACH_THREADS];
+struct GC_mach_thread GC_mach_threads[GC_MAX_MACH_THREADS];
 STATIC int GC_mach_threads_count = 0;
 /* FIXME: it is better to implement GC_mach_threads as a hash set.  */
-
-GC_INNER void GC_stop_init(void)
-{
-  int i;
-  for (i = 0; i < GC_MAX_MACH_THREADS; i++) {
-    GC_mach_threads[i].thread = 0;
-    GC_mach_threads[i].already_suspended = FALSE;
-  }
-  GC_mach_threads_count = 0;
-}
 
 #ifdef PARALLEL_MARK
     GC_INNER GC_bool GC_is_mach_marker(thread_act_t thread);
@@ -451,13 +441,14 @@ GC_INNER void GC_stop_world(void)
     thread_act_array_t act_list, prev_list;
     mach_msg_type_number_t listcount, prevcount;
 
-#   ifdef DEBUG_THREADS
-      GC_printf("Stopping the world from thread 0x%lx\n",
-                (unsigned long)my_thread);
-#   endif
-
-    /* clear out the mach threads list table */
-    GC_stop_init();
+# ifdef DEBUG_THREADS
+    GC_printf("Stopping the world from thread 0x%lx\n",
+              (unsigned long)my_thread);
+# endif
+  /* Clear out the mach threads list table.  We do not need to really   */
+  /* clear GC_mach_threads[] as it is used only in the range from 0 to  */
+  /* GC_mach_threads_count-1, inclusive.                                */
+  GC_mach_threads_count = 0;
 
     /* Make sure all free list construction has stopped before we       */
     /* start.  No new construction can start, since free list           */

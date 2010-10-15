@@ -1,3 +1,15 @@
+2010-10-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c (GC_mach_threads): Remove static qualifier.
+	* darwin_stop_world.c (GC_stop_init): Remove (as we do not need to
+	really clear GC_mach_threads[]).
+	* darwin_stop_world.c (GC_stop_world): Reset GC_mach_threads_count
+	(instead of calling GC_stop_init).
+	* include/private/pthread_support.h (GC_stop_init): Remove proto.
+	* pthread_support.c (GC_stop_init): Add proto (unless Darwin).
+	* pthread_support.c (GC_thr_init): Don't call GC_stop_init() if
+	GC_DARWIN_THREADS.
+
 2010-10-14  Ivan Maidanski <ivmai@mail.ru>
 
 	* darwin_stop_world.c (GC_stack_range_for): New static function
