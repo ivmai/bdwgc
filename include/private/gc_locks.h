@@ -180,7 +180,7 @@
        GC_EXTERN unsigned long GC_mark_lock_holder;
 #    endif
 #  endif /* GC_PTHREADS with linux_threads.c implementation */
-
+   GC_EXTERN GC_bool GC_need_to_lock;
 
 # else /* !THREADS */
 #   define LOCK()
@@ -195,7 +195,6 @@
 # endif /* !THREADS */
 
 #if defined(UNCOND_LOCK) && !defined(LOCK)
-     GC_EXTERN GC_bool GC_need_to_lock;
                 /* At least two thread running; need to lock.   */
 #    define LOCK() if (GC_need_to_lock) { UNCOND_LOCK(); }
 #    define UNLOCK() if (GC_need_to_lock) { UNCOND_UNLOCK(); }

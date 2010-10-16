@@ -321,7 +321,7 @@ static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
   static ptr_t marker_bsp[MAX_MARKERS - 1] = {0};
 #endif
 
-#ifdef GC_DARWIN_THREADS
+#if defined(GC_DARWIN_THREADS) && !defined(DARWIN_SUSPEND_GC_THREADS)
   static mach_port_t marker_mach_threads[MAX_MARKERS - 1] = {0};
 
   /* Used only by GC_suspend_thread_list().     */
@@ -348,7 +348,7 @@ STATIC void * GC_mark_thread(void * id)
 # ifdef IA64
     marker_bsp[(word)id] = GC_save_regs_in_stack();
 # endif
-# ifdef GC_DARWIN_THREADS
+# if defined(GC_DARWIN_THREADS) && !defined(DARWIN_SUSPEND_GC_THREADS)
     marker_mach_threads[(word)id] = mach_thread_self();
 # endif
 

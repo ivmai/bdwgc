@@ -1,3 +1,32 @@
+2010-10-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* darwin_stop_world.c (DARWIN_SUSPEND_GC_THREADS,
+	DARWIN_QUERY_TASK_THREADS): New macro recognized.
+	* darwin_stop_world.c (GC_query_task_threads): add STATIC;
+	initialize to false; define as macro if DARWIN_SUSPEND_GC_THREADS
+	or DARWIN_QUERY_TASK_THREADS; remove FIXME.
+	* darwin_stop_world.c (GC_use_threads_discovery): New function
+	(for setting GC_query_task_threads value).
+	* darwin_stop_world.c (GC_mach_handler_thread,
+	GC_use_mach_handler_thread, GC_mach_thread, GC_MAX_MACH_THREADS,
+	GC_mach_threads, GC_mach_threads_count, GC_suspend_thread_list,
+	GC_darwin_register_mach_handler_thread): Define only if not
+	DARWIN_SUSPEND_GC_THREADS.
+	* darwin_stop_world.c (GC_stop_world, GC_start_world): Exclude
+	the code for GC_query_task_threads case from compilation unless
+	DARWIN_SUSPEND_GC_THREADS.
+	* os_dep.c (GC_darwin_register_mach_handler_thread): Declared only
+	if Darwin threads and not DARWIN_SUSPEND_GC_THREADS.
+	* os_dep.c (GC_mprotect_thread): Call
+	GC_darwin_register_mach_handler_thread only if THREADS and not
+	DARWIN_SUSPEND_GC_THREADS.
+	* pthread_support.c (marker_mach_threads): Don't define if
+	DARWIN_SUSPEND_GC_THREADS.
+	* pthread_support.c (GC_mark_thread): Don't fill in
+	marker_mach_threads if DARWIN_SUSPEND_GC_THREADS.
+	* include/private/gc_locks.h (GC_need_to_lock): Always declare for
+	THREADS case.
+
 2010-10-15  Ivan Maidanski <ivmai@mail.ru>
 
 	* darwin_stop_world.c (GC_query_task_threads): Don't define to

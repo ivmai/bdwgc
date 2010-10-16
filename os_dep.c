@@ -3886,12 +3886,14 @@ GC_INNER void GC_mprotect_resume(void)
   GC_mprotect_thread_notify(ID_RESUME);
 }
 
+# ifndef DARWIN_SUSPEND_GC_THREADS
+    GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread);
+# endif
+
 #else /* !THREADS */
 /* The compiler should optimize away any GC_mprotect_state computations */
-#define GC_mprotect_state GC_MP_NORMAL
+# define GC_mprotect_state GC_MP_NORMAL
 #endif
-
-GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread);
 
 STATIC void *GC_mprotect_thread(void *arg)
 {
@@ -3908,10 +3910,11 @@ STATIC void *GC_mprotect_thread(void *arg)
     mach_msg_body_t msgh_body;
     char data[1024];
   } msg;
-
   mach_msg_id_t id;
 
-  GC_darwin_register_mach_handler_thread(mach_thread_self());
+# if defined(THREADS) && !defined(DARWIN_SUSPEND_GC_THREADS)
+    GC_darwin_register_mach_handler_thread(mach_thread_self());
+# endif
 
   for(;;) {
     r = mach_msg(&msg.head, MACH_RCV_MSG | MACH_RCV_LARGE |

@@ -87,10 +87,31 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
 
 #endif /* !DARWIN_DONT_PARSE_STACK */
 
+#define DARWIN_QUERY_TASK_THREADS 1 /* FIXME: Remove this. */
+
 /* GC_query_task_threads controls whether to obtain the list of */
 /* the threads from the kernel or to use GC_threads table.      */
-  /* FIXME: use STATIC; initialize to false, add setter function. */
-  GC_bool GC_query_task_threads = FALSE;
+#ifdef DARWIN_SUSPEND_GC_THREADS
+# define GC_query_task_threads FALSE
+#elif defined(DARWIN_QUERY_TASK_THREADS)
+# define GC_query_task_threads TRUE
+#else
+  STATIC GC_bool GC_query_task_threads = FALSE;
+#endif /* !DARWIN_SUSPEND_GC_THREADS */
+
+/* FIXME: add GC_API and declare in gc.h; add comment; document macros */
+void GC_CALL GC_use_threads_discovery(void)
+{
+# if defined(DARWIN_SUSPEND_GC_THREADS) || defined(DARWIN_DONT_PARSE_STACK)
+    ABORT("Darwin task-threads-based stop and push unsupported");
+# else
+    GC_ASSERT(!GC_need_to_lock);
+#   ifndef DARWIN_QUERY_TASK_THREADS
+      GC_query_task_threads = TRUE;
+#   endif
+    GC_init_parallel(); /* just to be consistent with Win32 one */
+# endif
+}
 
 /* Evaluates the stack range for a given thread.  Returns the lower     */
 /* bound and sets *phi to the upper one.                                */
@@ -278,7 +299,7 @@ GC_INNER void GC_push_all_stacks(void)
       vm_deallocate(my_task, (vm_address_t)act_list,
                     sizeof(thread_t) * listcount);
     } else
-# endif
+# endif /* !DARWIN_DONT_PARSE_STACK */
   /* else */ {
     for (i = 0; i < (int)listcount; i++) {
       GC_thread p;
@@ -305,25 +326,33 @@ GC_INNER void GC_push_all_stacks(void)
   GC_total_stacksize = total_size;
 }
 
-STATIC mach_port_t GC_mach_handler_thread = 0;
-STATIC GC_bool GC_use_mach_handler_thread = FALSE;
+#ifndef DARWIN_SUSPEND_GC_THREADS
 
-#ifndef GC_MAX_MACH_THREADS
-# define GC_MAX_MACH_THREADS THREAD_TABLE_SZ
-#endif
+  STATIC mach_port_t GC_mach_handler_thread = 0;
+  STATIC GC_bool GC_use_mach_handler_thread = FALSE;
 
-struct GC_mach_thread {
-  thread_act_t thread;
-  GC_bool already_suspended;
-};
+  GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread)
+  {
+    GC_mach_handler_thread = thread;
+    GC_use_mach_handler_thread = TRUE;
+  }
 
-struct GC_mach_thread GC_mach_threads[GC_MAX_MACH_THREADS];
-STATIC int GC_mach_threads_count = 0;
-/* FIXME: it is better to implement GC_mach_threads as a hash set.  */
+# ifndef GC_MAX_MACH_THREADS
+#   define GC_MAX_MACH_THREADS THREAD_TABLE_SZ
+# endif
 
-#ifdef PARALLEL_MARK
+  struct GC_mach_thread {
+    thread_act_t thread;
+    GC_bool already_suspended;
+  };
+
+  struct GC_mach_thread GC_mach_threads[GC_MAX_MACH_THREADS];
+  STATIC int GC_mach_threads_count = 0;
+  /* FIXME: it is better to implement GC_mach_threads as a hash set.  */
+
+# ifdef PARALLEL_MARK
     GC_INNER GC_bool GC_is_mach_marker(thread_act_t thread);
-#endif
+# endif
 
 /* returns true if there's a thread in act_list that wasn't in old_list */
 STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
@@ -424,6 +453,8 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
   return changed;
 }
 
+#endif /* !DARWIN_SUSPEND_GC_THREADS */
+
 #ifdef MPROTECT_VDB
   GC_INNER void GC_mprotect_stop(void);
   GC_INNER void GC_mprotect_resume(void);
@@ -459,6 +490,7 @@ GC_INNER void GC_stop_world(void)
 # endif /* PARALLEL_MARK */
 
   if (GC_query_task_threads) {
+#   ifndef DARWIN_SUSPEND_GC_THREADS
       GC_bool changed;
       thread_act_array_t act_list, prev_list;
       mach_msg_type_number_t listcount, prevcount;
@@ -498,6 +530,7 @@ GC_INNER void GC_stop_world(void)
         mach_port_deallocate(my_task, prev_list[i]);
       vm_deallocate(my_task, (vm_address_t)act_list,
                     sizeof(thread_t) * listcount);
+#   endif /* !DARWIN_SUSPEND_GC_THREADS */
 
   } else {
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
@@ -568,6 +601,7 @@ GC_INNER void GC_start_world(void)
 # endif
 
   if (GC_query_task_threads) {
+#   ifndef DARWIN_SUSPEND_GC_THREADS
       int j = GC_mach_threads_count;
       kern_return_t kern_result;
       thread_act_array_t act_list;
@@ -612,6 +646,7 @@ GC_INNER void GC_start_world(void)
       }
       vm_deallocate(my_task, (vm_address_t)act_list,
                     sizeof(thread_t) * listcount);
+#   endif /* !DARWIN_SUSPEND_GC_THREADS */
 
   } else {
     mach_port_t my_thread = mach_thread_self();
@@ -631,12 +666,6 @@ GC_INNER void GC_start_world(void)
 # ifdef DEBUG_THREADS
     GC_printf("World started\n");
 # endif
-}
-
-GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread)
-{
-  GC_mach_handler_thread = thread;
-  GC_use_mach_handler_thread = TRUE;
 }
 
 #endif /* GC_DARWIN_THREADS */
