@@ -50,7 +50,7 @@
 
 # include "gc_typed.h"
 # include "private/gc_priv.h"   /* For output, locking, MIN_WORDS,      */
-                                /* and some statistics, and gcconfig.h. */
+                                /* some statistics and gcconfig.h.      */
 
 # if defined(MSWIN32) || defined(MSWINCE)
 #   include <windows.h>
@@ -1529,9 +1529,11 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev,
     HANDLE win_thr_h;
 # endif
   DWORD thread_id;
-# if defined(GC_DLL) && !defined(GC_NO_DLLMAIN) && !defined(MSWINCE) \
-        && !defined(THREAD_LOCAL_ALLOC) && !defined(PARALLEL_MARK)
-    GC_use_DllMain();  /* Test with implicit thread registration if possible. */
+# if defined(GC_DLL) && !defined(GC_NO_THREADS_DISCOVERY) \
+        && !defined(MSWINCE) && !defined(THREAD_LOCAL_ALLOC) \
+        && !defined(PARALLEL_MARK)
+    GC_use_threads_discovery();
+                /* Test with implicit thread registration if possible. */
     GC_printf("Using DllMain to track threads\n");
 # endif
   GC_COND_INIT();
@@ -1643,6 +1645,12 @@ int main(void)
 #   ifdef PTW32_STATIC_LIB
         pthread_win32_process_attach_np ();
         pthread_win32_thread_attach_np ();
+#   endif
+#   if defined(GC_DARWIN_THREADS) && !defined(GC_NO_THREADS_DISCOVERY) \
+        && !defined(DARWIN_DONT_PARSE_STACK) && !defined(THREAD_LOCAL_ALLOC)
+      /* Test with the Darwin implicit thread registration. */
+      GC_use_threads_discovery();
+      GC_printf("Using Darwin task-threads-based world stop and push\n");
 #   endif
     GC_COND_INIT();
 

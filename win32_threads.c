@@ -90,14 +90,13 @@
 
 /* DllMain-based thread registration is currently incompatible  */
 /* with thread-local allocation, pthreads and WinCE.            */
-#if defined(GC_DLL) && !defined(GC_NO_DLLMAIN) && !defined(MSWINCE) \
+#if defined(GC_DLL) && !defined(GC_NO_THREADS_DISCOVERY) && !defined(MSWINCE) \
         && !defined(THREAD_LOCAL_ALLOC) && !defined(GC_PTHREADS)
 # include "atomic_ops.h"
 
-  STATIC GC_bool GC_win32_dll_threads = FALSE;
   /* This code operates in two distinct modes, depending on     */
-  /* the setting of GC_win32_dll_threads.  If                   */
-  /* GC_win32_dll_threads is set, all threads in the process    */
+  /* the setting of GC_win32_dll_threads.                       */
+  /* If GC_win32_dll_threads is set, all threads in the process */
   /* are implicitly registered with the GC by DllMain.          */
   /* No explicit registration is required, and attempts at      */
   /* explicit registration are ignored.  This mode is           */
@@ -105,8 +104,22 @@
   /* In this mode access to the thread table is lock-free.      */
   /* Hence there is a static limit on the number of threads.    */
 
-  /* If GC_win32_dll_threads is FALSE, or the collector is      */
-  /* built without GC_DLL defined, things operate in a way      */
+# ifdef GC_DISCOVER_TASK_THREADS
+    /* GC_DISCOVER_TASK_THREADS should be used if DllMain-based */
+    /* thread registration is required but it is impossible to  */
+    /* call GC_use_threads_discovery before other GC routines.  */
+#   define GC_win32_dll_threads TRUE
+# else
+    STATIC GC_bool GC_win32_dll_threads = FALSE;
+    /* GC_win32_dll_threads must be set (if needed) at the      */
+    /* application initialization time, i.e. before any         */
+    /* collector or thread calls.  We make it a "dynamic"       */
+    /* option only to avoid multiple library versions.          */
+# endif
+
+#else
+  /* If GC_win32_dll_threads is FALSE (or the collector is      */
+  /* built without GC_DLL defined), things operate in a way     */
   /* that is very similar to Posix platforms, and new threads   */
   /* must be registered with the collector, e.g. by using       */
   /* preprocessor-based interception of the thread primitives.  */
@@ -119,18 +132,13 @@
   /* the basic collector rely on such facilities, but an        */
   /* optional package that intercepts thread calls this way     */
   /* would probably be nice.                                    */
-
-  /* GC_win32_dll_threads must be set at initialization time,   */
-  /* i.e. before any collector or thread calls.  We make it a   */
-  /* "dynamic" option only to avoid multiple library versions.  */
-#else
-# ifndef GC_NO_DLLMAIN
-#   define GC_NO_DLLMAIN
+# ifndef GC_NO_THREADS_DISCOVERY
+#   define GC_NO_THREADS_DISCOVERY
 # endif
 # define GC_win32_dll_threads FALSE
 # undef MAX_THREADS
 # define MAX_THREADS 1 /* dll_thread_table[] is always empty.   */
-#endif
+#endif /* GC_NO_THREADS_DISCOVERY */
 
 /* We have two versions of the thread table.  Which one */
 /* we us depends on whether or not GC_win32_dll_threads */
@@ -150,17 +158,20 @@ GC_INNER GC_bool GC_need_to_lock = FALSE;
 
 static GC_bool parallel_initialized = FALSE;
 
-/* GC_use_DllMain() is currently incompatible with pthreads and WinCE.  */
-/* It might be possible to get DllMain-based thread registration to     */
-/* work with Cygwin, but if you try, you are on your own.               */
-GC_API void GC_CALL GC_use_DllMain(void)
+/* GC_use_threads_discovery() is currently incompatible with pthreads   */
+/* and WinCE.  It might be possible to get DllMain-based thread         */
+/* registration to work with Cygwin, but if you try it then you are on  */
+/* your own.                                                            */
+GC_API void GC_CALL GC_use_threads_discovery(void)
 {
-# ifdef GC_NO_DLLMAIN
+# ifdef GC_NO_THREADS_DISCOVERY
     ABORT("GC DllMain-based thread registration unsupported");
 # else
     /* Turn on GC_win32_dll_threads. */
     GC_ASSERT(!parallel_initialized);
-    GC_win32_dll_threads = TRUE;
+#   ifndef GC_DISCOVER_TASK_THREADS
+      GC_win32_dll_threads = TRUE;
+#   endif
     GC_init_parallel();
 # endif
 }
@@ -171,8 +182,8 @@ STATIC DWORD GC_main_thread = 0;
 
 struct GC_Thread_Rep {
   union {
-#   ifndef GC_NO_DLLMAIN
-      AO_t in_use;   /* Updated without lock.                */
+#   ifndef GC_NO_THREADS_DISCOVERY
+      AO_t in_use;      /* Updated without lock.                */
                         /* We assert that unused                */
                         /* entries have invalid ids of          */
                         /* zero and zero stack fields.          */
@@ -252,7 +263,7 @@ struct GC_Thread_Rep {
 typedef struct GC_Thread_Rep * GC_thread;
 typedef volatile struct GC_Thread_Rep * GC_vthread;
 
-#ifndef GC_NO_DLLMAIN
+#ifndef GC_NO_THREADS_DISCOVERY
   /* We assumed that volatile ==> memory ordering, at least among       */
   /* volatiles.  This code should consistently use atomic_ops.          */
   STATIC volatile GC_bool GC_please_stop = FALSE;
@@ -267,7 +278,7 @@ typedef volatile struct GC_Thread_Rep * GC_vthread;
  * If we notice this in the middle of marking.
  */
 
-#ifndef GC_NO_DLLMAIN
+#ifndef GC_NO_THREADS_DISCOVERY
   STATIC AO_t GC_attached_thread = FALSE;
 #endif
 
@@ -276,7 +287,7 @@ typedef volatile struct GC_Thread_Rep * GC_vthread;
   /* since GC_attached_thread was explicitly reset.               */
   GC_bool GC_started_thread_while_stopped(void)
   {
-#   ifndef GC_NO_DLLMAIN
+#   ifndef GC_NO_THREADS_DISCOVERY
       AO_t result;
 
       if (GC_win32_dll_threads) {
@@ -284,8 +295,8 @@ typedef volatile struct GC_Thread_Rep * GC_vthread;
         result = AO_load(&GC_attached_thread);
         if (result) {
           AO_store(&GC_attached_thread, FALSE);
+          return TRUE;
         }
-        return ((GC_bool)result);
       }
 #   endif
     return FALSE;
@@ -365,13 +376,11 @@ STATIC GC_thread GC_new_thread(DWORD id)
 STATIC GC_bool GC_in_thread_creation = FALSE;
                                 /* Protected by allocation lock. */
 
-/*
- * This may be called from DllMain, and hence operates under unusual
- * constraints.  In particular, it must be lock-free if GC_win32_dll_threads
- * is set.  Always called from the thread being added.
- * If GC_win32_dll_threads is not set, we already hold the allocation lock,
- * except possibly during single-threaded start-up code.
- */
+/* This may be called from DllMain, and hence operates under unusual    */
+/* constraints.  In particular, it must be lock-free if                 */
+/* GC_win32_dll_threads is set.  Always called from the thread being    */
+/* added.  If GC_win32_dll_threads is not set, we already hold the      */
+/* allocation lock except possibly during single-threaded startup code. */
 STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                                              DWORD thread_id)
 {
@@ -389,7 +398,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
 #   endif
 # endif
 
-# ifndef GC_NO_DLLMAIN
+# ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
       int i;
       /* It appears to be unsafe to acquire a lock here, since this     */
@@ -471,7 +480,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
 # endif
   if (me -> stack_base == NULL)
     ABORT("Bad stack base in GC_register_my_thread_inner");
-# ifndef GC_NO_DLLMAIN
+# ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
       if (GC_please_stop) {
         AO_store(&GC_attached_thread, TRUE);
@@ -510,7 +519,7 @@ GC_INLINE LONG GC_get_max_thread_index(void)
 /* Also used (for assertion checking only) from thread_local_alloc.c.   */
 STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
 {
-# ifndef GC_NO_DLLMAIN
+# ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
       int i;
       LONG my_max = GC_get_max_thread_index();
@@ -522,14 +531,10 @@ STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
            i++) {
         /* empty */
       }
-      if (i > my_max) {
-        return 0;
-      } else {
-        return (GC_thread)(dll_thread_table + i);
-      }
-    }
+      return i <= my_max ? (GC_thread)(dll_thread_table + i) : NULL;
+    } else
 # endif
-  {
+  /* else */ {
     word hv = THREAD_TABLE_INDEX(thread_id);
     register GC_thread p = GC_threads[hv];
 
@@ -592,8 +597,8 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
 /* lock may be required for fault handling.                             */
 #if defined(MPROTECT_VDB)
 # define UNPROTECT_THREAD(t) \
-    if (GC_dirty_maintained && !GC_win32_dll_threads && \
-        t != &first_thread) { \
+    if (!GC_win32_dll_threads && GC_dirty_maintained \
+        && t != &first_thread) { \
       GC_ASSERT(SMALL_OBJ(GC_size(t))); \
       GC_remove_protection(HBLKPTR(t), 1, FALSE); \
     }
@@ -614,7 +619,7 @@ STATIC void GC_delete_gc_thread(GC_vthread gc_id)
 # ifndef MSWINCE
     CloseHandle(gc_id->handle);
 # endif
-# ifndef GC_NO_DLLMAIN
+# ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
       /* This is intended to be lock-free.                              */
       /* It is either called synchronously from the thread being        */
@@ -700,7 +705,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
   /* Check GC is initialized and the current thread is registered. */
   GC_ASSERT(GC_lookup_thread_inner(GetCurrentThreadId()) != 0);
 
-# if !defined(GC_NO_DLLMAIN) && !defined(PARALLEL_MARK)
+# if !defined(GC_NO_THREADS_DISCOVERY) && !defined(PARALLEL_MARK)
     /* GC_init() doesn't call GC_init_parallel() in this case.  */
     parallel_initialized = TRUE;
 # endif
@@ -729,18 +734,19 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
-  DWORD t = GetCurrentThreadId();
   DCL_LOCK_STATE;
 
   /* FIXME: is GC_wait_for_gc_completion(FALSE) needed here? */
   if (GC_win32_dll_threads) {
 #   if defined(THREAD_LOCAL_ALLOC)
-      /* Can't happen: see GC_use_DllMain(). */
+      /* Can't happen: see GC_use_threads_discovery(). */
       GC_ASSERT(FALSE);
+#   else
+      /* FIXME: Should we just ignore this? */
+      GC_delete_thread(GetCurrentThreadId());
 #   endif
-    /* FIXME: Should we just ignore this? */
-    GC_delete_thread(t);
   } else {
+    DWORD t = GetCurrentThreadId();
     LOCK();
 #   if defined(THREAD_LOCAL_ALLOC)
       {
@@ -862,7 +868,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   /* Assumes we do NOT hold the allocation lock.                */
   STATIC GC_thread GC_lookup_pthread(pthread_t id)
   {
-#   ifndef GC_NO_DLLMAIN
+#   ifndef GC_NO_THREADS_DISCOVERY
       if (GC_win32_dll_threads) {
         int i;
         LONG my_max = GC_get_max_thread_index();
@@ -875,11 +881,10 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
              i++) {
           /* empty */
         }
-        if (i > my_max) return 0;
-        return (GC_thread)(dll_thread_table + i);
-      }
+        return i <= my_max ? (GC_thread)(dll_thread_table + i) : NULL;
+      } else
 #   endif
-    {
+    /* else */ {
       /* We first try the cache.  If that fails, we use a very slow     */
       /* approach.                                                      */
       word hv_guess = THREAD_TABLE_INDEX(GET_PTHREAD_MAP_CACHE(id));
@@ -910,7 +915,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 void GC_push_thread_structures(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
-# ifndef GC_NO_DLLMAIN
+# ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
       /* Unlike the other threads implementations, the thread table here */
       /* contains no pointers to the collectable heap.  Thus we have     */
@@ -1007,7 +1012,7 @@ GC_INNER void GC_stop_world(void)
     }
 # endif /* PARALLEL_MARK */
 
-# if !defined(GC_NO_DLLMAIN) || defined(GC_ASSERTIONS)
+# if !defined(GC_NO_THREADS_DISCOVERY) || defined(GC_ASSERTIONS)
     GC_please_stop = TRUE;
 # endif
 # ifndef CYGWIN32
@@ -1022,7 +1027,7 @@ GC_INNER void GC_stop_world(void)
       GC_write_disabled = TRUE;
 #   endif
 # endif
-# ifndef GC_NO_DLLMAIN
+# ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
       int i;
       int my_max;
@@ -1100,7 +1105,7 @@ GC_INNER void GC_start_world(void)
       }
     }
   }
-# if !defined(GC_NO_DLLMAIN) || defined(GC_ASSERTIONS)
+# if !defined(GC_NO_THREADS_DISCOVERY) || defined(GC_ASSERTIONS)
     GC_please_stop = FALSE;
 # endif
 }
@@ -1305,7 +1310,7 @@ GC_INNER void GC_push_all_stacks(void)
     unsigned nthreads = 0;
 # endif
   word total_size = 0;
-# ifndef GC_NO_DLLMAIN
+# ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
       int i;
       LONG my_max = GC_get_max_thread_index();
@@ -2269,7 +2274,7 @@ GC_INNER void GC_thr_init(void)
         HMODULE hK32;
         /* SignalObjectAndWait() API call works only under NT.          */
 #     endif
-      if (GC_markers <= 1 || GC_win32_dll_threads
+      if (GC_win32_dll_threads || GC_markers <= 1
 #         if !defined(GC_PTHREADS_PARAMARK) && !defined(MSWINCE) \
                 && !defined(DONT_USE_SIGNALANDWAIT)
             || GC_wnt == FALSE
@@ -2362,7 +2367,7 @@ GC_INNER void GC_thr_init(void)
       LOCK();
       GC_delete_gc_thread(joinee);
       UNLOCK();
-    } /* otherwise dllmain handles it.  */
+    } /* otherwise DllMain handles it.  */
 
 #   if DEBUG_CYGWIN_THREADS
       GC_printf("thread 0x%x(0x%x) completed join with thread 0x%x.\n",
@@ -2383,43 +2388,43 @@ GC_INNER void GC_thr_init(void)
                                const pthread_attr_t *attr,
                                void *(*start_routine)(void *), void *arg)
   {
-    int result;
-    struct start_info * si;
-
     if (!parallel_initialized) GC_init_parallel();
              /* make sure GC is initialized (i.e. main thread is attached) */
     if (GC_win32_dll_threads) {
       return pthread_create(new_thread, attr, start_routine, arg);
+    } else {
+      int result;
+      struct start_info * si;
+
+      /* This is otherwise saved only in an area mmapped by the thread  */
+      /* library, which isn't visible to the collector.                 */
+      si = GC_malloc_uncollectable(sizeof(struct start_info));
+      if (0 == si) return(EAGAIN);
+
+      si -> start_routine = start_routine;
+      si -> arg = arg;
+      if (attr != 0 &&
+          pthread_attr_getdetachstate(attr, &si->detached)
+          == PTHREAD_CREATE_DETACHED) {
+        si->detached = TRUE;
+      }
+
+#     if DEBUG_CYGWIN_THREADS
+        GC_printf("About to create a thread from 0x%x(0x%x)\n",
+                  (int)pthread_self(), (int)GetCurrentThreadId);
+#     endif
+#     if DEBUG_WIN32_PTHREADS
+        GC_printf("About to create a thread from 0x%x(0x%x)\n",
+                  (int)(pthread_self()).p, (int)GetCurrentThreadId());
+#     endif
+      GC_need_to_lock = TRUE;
+      result = pthread_create(new_thread, attr, GC_pthread_start, si);
+
+      if (result) { /* failure */
+          GC_free(si);
+      }
+      return(result);
     }
-
-    /* This is otherwise saved only in an area mmapped by the thread */
-    /* library, which isn't visible to the collector.            */
-    si = GC_malloc_uncollectable(sizeof(struct start_info));
-    if (0 == si) return(EAGAIN);
-
-    si -> start_routine = start_routine;
-    si -> arg = arg;
-    if (attr != 0 &&
-        pthread_attr_getdetachstate(attr, &si->detached)
-        == PTHREAD_CREATE_DETACHED) {
-      si->detached = TRUE;
-    }
-
-#   if DEBUG_CYGWIN_THREADS
-      GC_printf("About to create a thread from 0x%x(0x%x)\n",
-                (int)pthread_self(), (int)GetCurrentThreadId);
-#   endif
-#   if DEBUG_WIN32_PTHREADS
-      GC_printf("About to create a thread from 0x%x(0x%x)\n",
-                (int)(pthread_self()).p, (int)GetCurrentThreadId());
-#   endif
-    GC_need_to_lock = TRUE;
-    result = pthread_create(new_thread, attr, GC_pthread_start, si);
-
-    if (result) { /* failure */
-        GC_free(si);
-    }
-    return(result);
   }
 
   STATIC void * GC_CALLBACK GC_pthread_start_inner(struct GC_stack_base *sb,
@@ -2547,7 +2552,7 @@ GC_INNER void GC_thr_init(void)
 
 #else /* !GC_PTHREADS */
 
-# ifndef GC_NO_DLLMAIN
+# ifndef GC_NO_THREADS_DISCOVERY
     /* We avoid acquiring locks here, since this doesn't seem to be     */
     /* preemptible.  This may run with an uninitialized collector, in   */
     /* which case we don't do much.  This implies that no threads other */
@@ -2565,7 +2570,7 @@ GC_INNER void GC_thr_init(void)
 #     endif
       static int entry_count = 0;
 
-      if (parallel_initialized && !GC_win32_dll_threads) return TRUE;
+      if (!GC_win32_dll_threads && parallel_initialized) return TRUE;
 
       switch (reason) {
        case DLL_THREAD_ATTACH:
@@ -2598,31 +2603,28 @@ GC_INNER void GC_thr_init(void)
        case DLL_THREAD_DETACH:
         /* We are hopefully running in the context of the exiting thread. */
         GC_ASSERT(parallel_initialized);
-        if (!GC_win32_dll_threads) return TRUE;
-        GC_delete_thread(GetCurrentThreadId());
+        if (GC_win32_dll_threads) {
+          GC_delete_thread(GetCurrentThreadId());
+        }
         break;
 
        case DLL_PROCESS_DETACH:
-        {
+        if (GC_win32_dll_threads) {
           int i;
-          int my_max;
+          int my_max = (int)GC_get_max_thread_index();
 
-          if (!GC_win32_dll_threads) return TRUE;
-          my_max = (int)GC_get_max_thread_index();
           for (i = 0; i <= my_max; ++i) {
            if (AO_load(&(dll_thread_table[i].tm.in_use)))
              GC_delete_gc_thread(dll_thread_table + i);
           }
-
           GC_deinit();
           DeleteCriticalSection(&GC_allocate_ml);
         }
         break;
-
       }
       return TRUE;
     }
-# endif /* !GC_NO_DLLMAIN */
+# endif /* !GC_NO_THREADS_DISCOVERY */
 
 #endif /* !GC_PTHREADS */
 

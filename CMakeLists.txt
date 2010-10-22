@@ -167,10 +167,9 @@ IF(CMAKE_USE_PTHREADS_INIT)
                 ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
                 MESSAGE("Explicit GC_INIT() calls may be required.")
                 SET(SRC ${SRC} darwin_stop_world.c)
-                # Parallel-mark is currently unreliable on Darwin; ignore request
-                #IF (${enable_parallel_mark})
-                #       ADD_DEFINITIONS("-DPARALLEL_MARK")
-                #ENDIF()
+                IF (${enable_parallel_mark})
+                       ADD_DEFINITIONS("-DPARALLEL_MARK")
+                ENDIF()
                 #TODO
                 #darwin_threads=true
         ENDIF()

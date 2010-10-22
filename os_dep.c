@@ -3886,7 +3886,7 @@ GC_INNER void GC_mprotect_resume(void)
   GC_mprotect_thread_notify(ID_RESUME);
 }
 
-# ifndef DARWIN_SUSPEND_GC_THREADS
+# ifndef GC_NO_THREADS_DISCOVERY
     GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread);
 # endif
 
@@ -3912,7 +3912,7 @@ STATIC void *GC_mprotect_thread(void *arg)
   } msg;
   mach_msg_id_t id;
 
-# if defined(THREADS) && !defined(DARWIN_SUSPEND_GC_THREADS)
+# if defined(THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
     GC_darwin_register_mach_handler_thread(mach_thread_self());
 # endif
 
