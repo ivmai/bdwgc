@@ -34,7 +34,7 @@ int main(void) {
     }
     for (i = 0; i < NTHREADS; ++i) {
         if ((code = pthread_join(t[i], 0)) != 0) {
-            printf("Thread join failed %lu\n", code);
+            printf("Thread join failed %d\n", code);
         }
     }
     CHECK_LEAKS();

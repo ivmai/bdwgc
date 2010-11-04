@@ -1,3 +1,8 @@
+2010-11-04  Ivan Maidanski  <ivmai@mail.ru>
+
+	* tests/staticrootstest.c: Include string.h for memset() prototype.
+	* tests/thread_leak_test.c (main): Fix printf() format specifiers.
+
 2010-10-22  Ivan Maidanski <ivmai@mail.ru>
 
 	* CMakeLists.txt: Check enable_parallel_mark on Darwin.

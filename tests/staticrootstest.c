@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <string.h>
 
 #ifndef GC_DEBUG
 # define GC_DEBUG
