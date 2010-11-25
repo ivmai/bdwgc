@@ -2157,11 +2157,15 @@
 #       define OS_TYPE "MSWIN32"
                 /* STACKBOTTOM and DATASTART are handled specially in   */
                 /* os_dep.c.                                            */
-#       define MPROTECT_VDB
+#       if !defined(__GNUC__) || defined(__INTEL_COMPILER)
+          /* GCC does not currently support SetUnhandledExceptionFilter */
+          /* (does not generate SEH unwinding information) on x64.      */
+#         define MPROTECT_VDB
+#       endif
 #       define GWW_VDB
 #       define DATAEND  /* not needed */
 #   endif
-# endif
+# endif /* X86_64 */
 
 #if defined(LINUX_STACKBOTTOM) && defined(NO_PROC_STAT) \
     && !defined(USE_LIBC_PRIVATES)

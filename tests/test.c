@@ -1404,6 +1404,8 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #     else
 #       ifdef PROC_VDB
           GC_printf("Reading dirty bits from /proc\n");
+#       elif defined(GWW_VDB)
+          GC_printf("Using GetWriteWatch-based implementation\n");
 #       else
           GC_printf("Using DEFAULT_VDB dirty bit implementation\n");
 #       endif
