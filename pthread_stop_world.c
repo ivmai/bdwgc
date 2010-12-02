@@ -562,8 +562,8 @@ GC_INNER void GC_start_world(void)
       for (i = 0; i < n_live_threads; i++)
         while (0 != (code = sem_wait(&GC_restart_ack_sem)))
             if (errno != EINTR) {
-                GC_err_printf("sem_wait() returned %d\n",
-                               code);
+                if (GC_print_stats)
+                  GC_printf("sem_wait() returned %d\n", code);
                 ABORT("sem_wait() for restart handler failed");
             }
 #    endif

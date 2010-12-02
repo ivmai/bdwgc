@@ -987,20 +987,20 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
       /* Check status AFTER checking moduleid because */
       /* of a bug in the non-shared ldr_next_module stub */
-        if (status != 0 ) {
-            GC_printf("dynamic_load: status = %d\n", status);
-            {
+        if (status != 0) {
+            if (GC_print_stats) {
                 extern char *sys_errlist[];
                 extern int sys_nerr;
                 extern int errno;
+                GC_printf("dynamic_load: status = %d\n", status);
                 if (errno <= sys_nerr) {
                     GC_printf("dynamic_load: %s\n", sys_errlist[errno]);
-               } else {
-                    GC_printf("dynamic_load: %d\n", errno);
+                } else {
+                    GC_printf("dynamic_load: err_code = %d\n", errno);
                 }
-        }
+            }
             ABORT("ldr_next_module failed");
-         }
+        }
 
       /* Get the module information */
         status = ldr_inq_module(mypid, moduleid, &moduleinfo,
@@ -1083,14 +1083,16 @@ GC_INNER void GC_register_dynamic_libraries(void)
            break;
 #        else
           if (errno == EINVAL) {
-              break; /* Moved past end of shared library list --> finished */
+            break; /* Moved past end of shared library list --> finished */
           } else {
+            if (GC_print_stats) {
               if (errno <= sys_nerr) {
-                    GC_printf("dynamic_load: %s\n", sys_errlist[errno]);
+                GC_printf("dynamic_load: %s\n", sys_errlist[errno]);
               } else {
-                    GC_printf("dynamic_load: %d\n", errno);
+                GC_printf("dynamic_load: err_code = %d\n", errno);
               }
-              ABORT("shl_get failed");
+            }
+            ABORT("shl_get failed");
           }
 #        endif
         }

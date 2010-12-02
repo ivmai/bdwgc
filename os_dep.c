@@ -268,11 +268,12 @@ GC_INNER char * GC_get_maps(void)
             close(f);
 #           ifdef THREADS
               if (maps_size > old_maps_size) {
-                GC_err_printf("Old maps size = %lu, new maps size = %lu\n",
-                              (unsigned long)old_maps_size,
-                              (unsigned long)maps_size);
+                if (GC_print_stats)
+                  GC_printf("Unexpected maps size growth from %lu to %lu\n",
+                            (unsigned long)old_maps_size,
+                            (unsigned long)maps_size);
                 ABORT("Unexpected asynchronous /proc/self/maps growth: "
-                      "Unregistered thread?");
+                      "unregistered thread?");
               }
 #           endif
         } while (maps_size >= maps_buf_sz || maps_size < old_maps_size);
@@ -829,7 +830,6 @@ ptr_t GC_get_main_stack_base(void)
     PPIB ppib;
 
     if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
-        GC_err_printf("DosGetInfoBlocks failed\n");
         ABORT("DosGetInfoBlocks failed");
     }
     return((ptr_t)(ptib -> tib_pstacklimit));
@@ -1431,7 +1431,6 @@ void GC_register_data_segments(void)
 
 
     if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
-        GC_err_printf("DosGetInfoBlocks failed\n");
         ABORT("DosGetInfoBlocks failed");
     }
     module_handle = ppib -> pib_hmte;
@@ -1441,56 +1440,88 @@ void GC_register_data_segments(void)
     }
     myexefile = fopen(path, "rb");
     if (myexefile == 0) {
-        GC_err_puts("Couldn't open executable ");
-        GC_err_puts(path); GC_err_puts("\n");
+        if (GC_print_stats) {
+            GC_err_puts("Couldn't open executable ");
+            GC_err_puts(path);
+            GC_err_puts("\n");
+        }
         ABORT("Failed to open executable");
     }
-    if (fread((char *)(&hdrdos), 1, sizeof hdrdos, myexefile) < sizeof hdrdos) {
-        GC_err_puts("Couldn't read MSDOS header from ");
-        GC_err_puts(path); GC_err_puts("\n");
+    if (fread((char *)(&hdrdos), 1, sizeof(hdrdos), myexefile)
+          < sizeof(hdrdos)) {
+        if (GC_print_stats) {
+            GC_err_puts("Couldn't read MSDOS header from ");
+            GC_err_puts(path);
+            GC_err_puts("\n");
+        }
         ABORT("Couldn't read MSDOS header");
     }
     if (E_MAGIC(hdrdos) != EMAGIC) {
-        GC_err_puts("Executable has wrong DOS magic number: ");
-        GC_err_puts(path); GC_err_puts("\n");
+        if (GC_print_stats) {
+            GC_err_puts("Executable has wrong DOS magic number: ");
+            GC_err_puts(path);
+            GC_err_puts("\n");
+        }
         ABORT("Bad DOS magic number");
     }
     if (fseek(myexefile, E_LFANEW(hdrdos), SEEK_SET) != 0) {
-        GC_err_puts("Seek to new header failed in ");
-        GC_err_puts(path); GC_err_puts("\n");
+        if (GC_print_stats) {
+            GC_err_puts("Seek to new header failed in ");
+            GC_err_puts(path);
+            GC_err_puts("\n");
+        }
         ABORT("Bad DOS magic number");
     }
-    if (fread((char *)(&hdr386), 1, sizeof hdr386, myexefile) < sizeof hdr386) {
-        GC_err_puts("Couldn't read MSDOS header from ");
-        GC_err_puts(path); GC_err_puts("\n");
+    if (fread((char *)(&hdr386), 1, sizeof(hdr386), myexefile)
+          < sizeof(hdr386)) {
+        if (GC_print_stats) {
+            GC_err_puts("Couldn't read MSDOS header from ");
+            GC_err_puts(path);
+            GC_err_puts("\n");
+        }
         ABORT("Couldn't read OS/2 header");
     }
     if (E32_MAGIC1(hdr386) != E32MAGIC1 || E32_MAGIC2(hdr386) != E32MAGIC2) {
-        GC_err_puts("Executable has wrong OS/2 magic number:");
-        GC_err_puts(path); GC_err_puts("\n");
+        if (GC_print_stats) {
+            GC_err_puts("Executable has wrong OS/2 magic number: ");
+            GC_err_puts(path);
+            GC_err_puts("\n");
+        }
         ABORT("Bad OS/2 magic number");
     }
-    if ( E32_BORDER(hdr386) != E32LEBO || E32_WORDER(hdr386) != E32LEWO) {
-        GC_err_puts("Executable %s has wrong byte order: ");
-        GC_err_puts(path); GC_err_puts("\n");
+    if (E32_BORDER(hdr386) != E32LEBO || E32_WORDER(hdr386) != E32LEWO) {
+        if (GC_print_stats) {
+            GC_err_puts("Executable has wrong byte order: ");
+            GC_err_puts(path);
+            GC_err_puts("\n");
+        }
         ABORT("Bad byte order");
     }
-    if ( E32_CPU(hdr386) == E32CPU286) {
-        GC_err_puts("GC can't handle 80286 executables: ");
-        GC_err_puts(path); GC_err_puts("\n");
-        EXIT();
+    if (E32_CPU(hdr386) == E32CPU286) {
+        if (GC_print_stats) {
+            GC_err_puts("GC can't handle 80286 executables: ");
+            GC_err_puts(path);
+            GC_err_puts("\n");
+        }
+        ABORT("Intel 80286 executables are unsupported");
     }
     if (fseek(myexefile, E_LFANEW(hdrdos) + E32_OBJTAB(hdr386),
               SEEK_SET) != 0) {
-        GC_err_puts("Seek to object table failed: ");
-        GC_err_puts(path); GC_err_puts("\n");
+        if (GC_print_stats) {
+            GC_err_puts("Seek to object table failed: ");
+            GC_err_puts(path);
+            GC_err_puts("\n");
+        }
         ABORT("Seek to object table failed");
     }
     for (nsegs = E32_OBJCNT(hdr386); nsegs > 0; nsegs--) {
       int flags;
-      if (fread((char *)(&seg), 1, sizeof seg, myexefile) < sizeof seg) {
-        GC_err_puts("Couldn't read obj table entry from ");
-        GC_err_puts(path); GC_err_puts("\n");
+      if (fread((char *)(&seg), 1, sizeof(seg), myexefile) < sizeof(seg)) {
+        if (GC_print_stats) {
+            GC_err_puts("Couldn't read obj table entry from ");
+            GC_err_puts(path);
+            GC_err_puts("\n");
+        }
         ABORT("Couldn't read obj table entry");
       }
       flags = O32_FLAGS(seg);
@@ -2364,7 +2395,8 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
         result = mmap(start_addr, len, PROT_NONE,
                       MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
                       zero_fd, 0/* offset */);
-        if (result != (void *)start_addr) ABORT("mmap(...PROT_NONE...) failed");
+        if (result != (void *)start_addr)
+          ABORT("mmap(PROT_NONE) failed");
       }
       GC_unmapped_bytes += len;
 #   endif
@@ -2413,10 +2445,10 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
 #     undef IGNORE_PAGES_EXECUTABLE
 
       if (result != 0) {
-          GC_err_printf(
-                "Mprotect failed at %p (length %ld) with errno %d\n",
-                start_addr, (unsigned long)len, errno);
-          ABORT("Mprotect remapping failed");
+        if (GC_print_stats)
+          GC_printf("Mprotect failed at %p (length %lu) with errno %d\n",
+                    start_addr, (unsigned long)len, errno);
+        ABORT("Mprotect remapping failed");
       }
       GC_unmapped_bytes -= len;
 #   endif
@@ -2461,7 +2493,8 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
         result = mmap(start_addr, len, PROT_NONE,
                       MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
                       zero_fd, 0/* offset */);
-        if (result != (void *)start_addr) ABORT("mmap(...PROT_NONE...) failed");
+        if (result != (void *)start_addr)
+          ABORT("mmap(PROT_NONE) failed");
       }
       GC_unmapped_bytes += len;
 #   endif
@@ -2911,7 +2944,8 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
                               pages_executable ? PAGE_EXECUTE_READ : \
                                                  PAGE_READONLY, \
                               &protect_junk)) { \
-            GC_printf("Last error code: 0x%lx\n", (long)GetLastError()); \
+            if (GC_print_stats) \
+              GC_printf("Last error code: 0x%lx\n", (long)GetLastError()); \
             ABORT("VirtualProtect failed"); \
           }
 #   define UNPROTECT(addr, len) \
@@ -3113,7 +3147,8 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 
             if (old_handler == (SIG_HNDLR_PTR)SIG_DFL) {
 #               if !defined(MSWIN32) && !defined(MSWINCE)
-                    GC_err_printf("Segfault at %p\n", addr);
+                    if (GC_print_stats)
+                        GC_printf("Unexpected segfault at %p\n", addr);
                     ABORT("Unexpected bus error or segmentation fault");
 #               else
                     return(EXCEPTION_CONTINUE_SEARCH);
@@ -3164,7 +3199,8 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #if defined(MSWIN32) || defined(MSWINCE)
     return EXCEPTION_CONTINUE_SEARCH;
 #else
-    GC_err_printf("Segfault at %p\n", addr);
+    if (GC_print_stats)
+        GC_printf("Unexpected segfault at %p\n", addr);
     ABORT("Unexpected bus error or segmentation fault");
 #endif
 }
@@ -3226,7 +3262,6 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
                 "Initializing mprotect virtual dirty bit implementation\n");
     GC_dirty_maintained = TRUE;
     if (GC_page_size % HBLKSIZE != 0) {
-        GC_err_printf("Page size not multiple of HBLKSIZE\n");
         ABORT("Page size not multiple of HBLKSIZE");
     }
 #   if !defined(MSWIN32) && !defined(MSWINCE)
@@ -3247,7 +3282,8 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
         GC_old_segv_handler_used_si = FALSE;
       }
       if (GC_old_segv_handler == (SIG_HNDLR_PTR)SIG_IGN) {
-        GC_err_printf("Previously ignored segmentation violation!?\n");
+        if (GC_print_stats)
+          GC_err_printf("Previously ignored segmentation violation!?\n");
         GC_old_segv_handler = (SIG_HNDLR_PTR)SIG_DFL;
       }
       if (GC_old_segv_handler != (SIG_HNDLR_PTR)SIG_DFL) {
@@ -3265,8 +3301,9 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
         GC_old_bus_handler_used_si = FALSE;
       }
       if (GC_old_bus_handler == (SIG_HNDLR_PTR)SIG_IGN) {
-             GC_err_printf("Previously ignored bus error!?\n");
-             GC_old_bus_handler = (SIG_HNDLR_PTR)SIG_DFL;
+        if (GC_print_stats)
+          GC_err_printf("Previously ignored bus error!?\n");
+        GC_old_bus_handler = (SIG_HNDLR_PTR)SIG_DFL;
       }
       if (GC_old_bus_handler != (SIG_HNDLR_PTR)SIG_DFL) {
         if (GC_print_stats == VERBOSE)
@@ -3937,9 +3974,10 @@ STATIC void *GC_mprotect_thread(void *arg)
       }
 #   endif /* THREADS */
 
-    if(r != MACH_MSG_SUCCESS) {
-      GC_err_printf("mach_msg failed with %d %s\n", (int)r,
-                    mach_error_string(r));
+    if (r != MACH_MSG_SUCCESS) {
+      if (GC_print_stats)
+        GC_printf("mach_msg failed with code %d: %s\n", (int)r,
+                  mach_error_string(r));
       ABORT("mach_msg failed");
     }
 
@@ -3970,7 +4008,7 @@ STATIC void *GC_mprotect_thread(void *arg)
             /* shouldn't die... */
 #           ifdef BROKEN_EXCEPTION_HANDLING
               GC_err_printf("mach_msg failed with %d %s while sending "
-                            "exc reply\n", (int)r,mach_error_string(r));
+                            "exc reply\n", (int)r, mach_error_string(r));
 #           else
               ABORT("mach_msg failed while sending exception reply");
 #           endif
@@ -4025,7 +4063,6 @@ GC_INNER void GC_dirty_init(void)
 # endif
   GC_dirty_maintained = TRUE;
   if (GC_page_size % HBLKSIZE != 0) {
-    GC_err_printf("Page size not multiple of HBLKSIZE\n");
     ABORT("Page size not multiple of HBLKSIZE");
   }
 
@@ -4188,7 +4225,7 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
   if(exception != EXC_BAD_ACCESS || code[0] != KERN_PROTECTION_FAILURE) {
 #   ifdef DEBUG_EXCEPTION_HANDLING
       /* We aren't interested, pass it on to the old handler */
-      GC_printf("Exception: 0x%x Code: 0x%x 0x%x in catch....\n", exception,
+      GC_printf("Exception: 0x%x Code: 0x%x 0x%x in catch...\n", exception,
                 code_count > 0 ? code[0] : -1, code_count > 1 ? code[1] : -1);
 #   endif
     return FWD();
@@ -4236,11 +4273,11 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
           return KERN_SUCCESS;
         }
 
-        GC_err_printf("Unexpected KERN_PROTECTION_FAILURE at %p\n",addr);
+        GC_err_printf("Unexpected KERN_PROTECTION_FAILURE at %p\n"
+                      "Aborting...\n", addr);
         /* Can't pass it along to the signal handler because that is
            ignoring SIGBUS signals. We also shouldn't call ABORT here as
            signals don't always work too well from the exception handler. */
-        GC_err_printf("Aborting\n");
         exit(EXIT_FAILURE);
 #     else /* BROKEN_EXCEPTION_HANDLING */
         /* Pass it along to the next exception handler
@@ -4267,7 +4304,7 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
          will just fault again once it resumes */
     } else {
       /* Shouldn't happen, i don't think */
-      GC_printf("KERN_PROTECTION_FAILURE while world is stopped\n");
+      GC_err_printf("KERN_PROTECTION_FAILURE while world is stopped\n");
       return FWD();
     }
     return KERN_SUCCESS;

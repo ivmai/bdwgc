@@ -1,3 +1,26 @@
+2010-12-02  Ivan Maidanski  <ivmai@mail.ru>
+
+	* allchblk.c (GC_freehblk): Print extended error message (done via
+	GC_printf() before aborting with a short message) only if
+	GC_print_stats.
+	* dyn_load.c (GC_register_dynamic_libraries): Ditto.
+	* os_dep.c (GC_get_maps, GC_register_data_segments, GC_remap,
+	PROTECT, GC_write_fault_handler, GC_mprotect_thread): Ditto.
+	* pthread_stop_world.c (GC_start_world): Ditto.
+	* win32_threads.c (GC_register_my_thread_inner): Ditto.
+	* os_dep.c (GC_get_main_stack_base, GC_register_data_segments,
+	GC_dirty_init): Remove redundant print of an error message before
+	aborting with the same message.
+	* os_dep.c (GC_register_data_segments): Remove format specifier
+	from the string passed to GC_err_puts(); use ABORT instead of EXIT
+	(if invalid executable type).
+	* os_dep.c (GC_remap): Adjust printf format specifier (for long
+	type).
+	* os_dep.c (GC_dirty_init): Print a message about SIG_IGN detected
+	(for SIGSEGV/BUS) only if GC_print_stats.
+	* os_dep.c (catch_exception_raise): Join 2 adjucent GC_err_printf
+	calls.
+
 2010-11-25  Ivan Maidanski  <ivmai@mail.ru>
 
 	* tests/test.c (main): Print the relevant message if GWW_VDB.
