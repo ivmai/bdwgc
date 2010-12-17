@@ -187,7 +187,7 @@ case "$THREADS" in
         AC_DEFINE(THREAD_LOCAL_ALLOC)
         AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
         ;;
-     *-*-linux*)
+     *-*-linux* | *-*-nacl*)
         AC_DEFINE(GC_LINUX_THREADS)
         AC_DEFINE(_REENTRANT)
         ;;
@@ -606,6 +606,9 @@ case "$host" in
     ;;
  ia64-*-*)
     machdep="ia64_save_regs_in_stack.lo"
+    ;;
+ *-*-nacl*)
+    AC_DEFINE(NO_EXECUTE_PERMISSION)
     ;;
 esac
 AC_MSG_RESULT($machdep)
