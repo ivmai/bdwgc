@@ -44,12 +44,17 @@
 # include <floss.h>
 #endif
 
-#if defined(THREADS) && defined(PCR)
-# include "il/PCR_IL.h"
-  GC_INNER PCR_Th_ML GC_allocate_ml;
-#endif
-/* For other platforms with threads, the lock and possibly              */
-/* GC_lock_holder variables are defined in the thread support code.     */
+#ifdef THREADS
+# ifdef PCR
+#   include "il/PCR_IL.h"
+    GC_INNER PCR_Th_ML GC_allocate_ml;
+# elif defined(SN_TARGET_PS3)
+#   include <pthread.h>
+    GC_INNER pthread_mutex_t GC_allocate_ml;
+# endif
+  /* For other platforms with threads, the lock and possibly            */
+  /* GC_lock_holder variables are defined in the thread support code.   */
+#endif /* THREADS */
 
 #ifdef DYNAMIC_LOADING
   /* We need to register the main data segment.  Returns  TRUE unless   */
@@ -631,7 +636,6 @@ GC_API void GC_CALL GC_init(void)
 #   if !defined(THREADS) && defined(GC_ASSERTIONS)
         word dummy;
 #   endif
-
 #   ifdef GC_INITIAL_HEAP_SIZE
         word initial_heap_sz = divHBLKSZ(GC_INITIAL_HEAP_SIZE);
 #   else
@@ -650,7 +654,15 @@ GC_API void GC_CALL GC_init(void)
     /* in fact safely initialize them here.                */
 #   ifdef THREADS
       GC_ASSERT(!GC_need_to_lock);
-#   endif
+#     ifdef SN_TARGET_PS3
+        {
+          pthread_mutexattr_t mattr;
+          pthread_mutexattr_init(&mattr);
+          pthread_mutex_init(&GC_allocate_ml, &mattr);
+          pthread_mutexattr_destroy(&mattr);
+        }
+#     endif
+#   endif /* THREADS */
 #   if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
      {
 #     ifndef MSWINCE

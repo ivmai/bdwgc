@@ -55,7 +55,7 @@
 #endif
 
 #include <stdio.h>
-#if defined(MSWINCE)
+#if defined(MSWINCE) || defined(SN_TARGET_PS3)
 # define SIGSEGV 0 /* value is irrelevant */
 #else
 # include <signal.h>
@@ -1993,9 +1993,9 @@ void GC_register_data_segments(void)
  * Auxiliary routines for obtaining memory from OS.
  */
 
-# if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
-        && !defined(MSWIN32) && !defined(MSWINCE) \
-        && !defined(MACOS) && !defined(DOS4GW) && !defined(NONSTOP)
+# if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MSWIN32) \
+     && !defined(MSWINCE) && !defined(MACOS) && !defined(DOS4GW) \
+     && !defined(NONSTOP) && !defined(SN_TARGET_PS3)
 
 # define SBRK_ARG_T ptrdiff_t
 
@@ -2562,6 +2562,18 @@ STATIC void GC_default_push_other_roots(void)
 }
 
 # endif /* GC_WIN32_THREADS || GC_PTHREADS */
+
+# ifdef SN_TARGET_PS3
+    STATIC void GC_default_push_other_roots(void)
+    {
+      ABORT("GC_default_push_other_roots is not implemented\n");
+    }
+
+    void GC_push_thread_structures(void)
+    {
+      ABORT("GC_push_thread_structures is not implemented\n");
+    }
+# endif /* SN_TARGET_PS3 */
 
   GC_INNER void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
 

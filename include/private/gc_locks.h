@@ -73,6 +73,11 @@
                            || GC_lock_holder == GetCurrentThreadId())
 #    define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
                            || GC_lock_holder != GetCurrentThreadId())
+#  elif defined(SN_TARGET_PS3)
+#    include <pthread.h>
+     GC_EXTERN pthread_mutex_t GC_allocate_ml;
+#    define LOCK() pthread_mutex_lock(&GC_allocate_ml)
+#    define UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
 #  elif defined(GC_PTHREADS)
 #    include <pthread.h>
 

@@ -875,6 +875,16 @@
 #     define DATASTART GC_data_start
 #     define DYNAMIC_LOADING
 #   endif
+#   ifdef SN_TARGET_PS3
+#     define NO_GETENV
+#     define CPP_WORDSZ 32
+#     define ALIGNMENT 4
+      extern int _end [];
+      extern int __bss_start;
+#     define DATAEND (ptr_t)(_end)
+#     define DATASTART (ptr_t)(__bss_start)
+#     define STACKBOTTOM ((ptr_t)ps3_get_stack_bottom())
+#   endif
 #   ifdef AIX
 #     define OS_TYPE "AIX"
 #     undef ALIGNMENT /* in case it's defined   */
@@ -2422,7 +2432,8 @@
         --> inconsistent configuration
 # endif
 
-# if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS)
+# if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS) \
+        || defined(SN_TARGET_PS3)
 #   define THREADS
 # endif
 
@@ -2620,6 +2631,9 @@
 #   define GET_MEM(bytes) HBLKPTR((size_t) \
                           GC_amiga_get_mem((size_t)bytes + GC_page_size) \
                           + GC_page_size-1)
+# elif defined(SN_TARGET_PS3)
+    void *ps3_get_mem(size_t size);
+#   define GET_MEM(bytes) (struct hblk*)ps3_get_mem(bytes)
 # else
     ptr_t GC_unix_get_mem(GC_word bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)

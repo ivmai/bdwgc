@@ -1,3 +1,19 @@
+2010-12-26  Ivan Maidanski  <ivmai@mail.ru> (mostly really Miguel de Icaza)
+
+	* misc.c (GC_allocate_ml): Define global variable if SN_TARGET_PS3.
+	* misc.c (GC_init): Initialize GC_allocate_ml if SN_TARGET_PS3.
+	* os_dep.c (SIGSEGV): Define to dummy zero if SN_TARGET_PS3.
+	* os_dep.c (GC_unix_mmap_get_mem): Don't define if SN_TARGET_PS3.
+	* os_dep.c (GC_default_push_other_roots,
+	GC_push_thread_structures): Define for SN_TARGET_PS3.
+	* include/private/gc_locks.h (GC_allocate_ml, LOCK, UNLOCK): Define
+	for SN_TARGET_PS3.
+	* include/private/gcconfig.h (SN_TARGET_PS3): Recognize new macro
+	(Sony PS/3 target).
+	* include/private/gcconfig.h (THREADS): Define unconditionally if
+	SN_TARGET_PS3.
+	* include/private/gcconfig.h (GET_MEM): Define for SN_TARGET_PS3.
+
 2010-12-26  Ivan Maidanski  <ivmai@mail.ru>
 
 	* alloc.c (GC_collect_or_expand): Replace NIL with NULL in message.
