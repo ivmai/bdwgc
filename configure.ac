@@ -23,7 +23,7 @@ AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.63 $)
+AC_REVISION($Revision: 1.64 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
 AM_CONFIG_HEADER([include/private/config.h])
@@ -108,7 +108,7 @@ case "$THREADS" in
     ;;
  posix | pthreads)
     THREADS=posix
-    THREADDLLIBS=-lpthread
+    AC_CHECK_LIB(pthread, pthread_self, THREADDLLIBS="-lpthread",,)
     case "$host" in
      x86-*-linux* | ia64-*-linux* | i586-*-linux* | i686-*-linux* | x86_64-*-linux* | alpha-*-linux* | sparc*-*-linux*)
         AC_DEFINE(GC_LINUX_THREADS)

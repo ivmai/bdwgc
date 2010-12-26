@@ -322,7 +322,7 @@
 #   if defined(__ppc__)  || defined(__ppc64__)
 #    define POWERPC
 #    define mach_type_known
-#   elif defined(__x86_64__)
+#   elif defined(__x86_64__) || defined(__x86_64)
 #    define X86_64
 #    define mach_type_known
 #   elif defined(__i386__)
@@ -711,6 +711,9 @@
 #            if defined(__GLIBC__)&& __GLIBC__>=2
 #              define SEARCH_FOR_DATA_START
 #            else /* !GLIBC2 */
+#              ifdef PLATFORM_ANDROID
+#                define __environ environ
+#              endif
                extern char **__environ;
 #              define DATASTART ((ptr_t)(&__environ))
                              /* hideous kludge: __environ is the first */
@@ -1378,7 +1381,7 @@
 #     define GETPAGESIZE() getpagesize()
       /* There seems to be some issues with trylock hanging on darwin. This
          should be looked into some more */
-#      define NO_PTHREAD_TRYLOCK
+#     define NO_PTHREAD_TRYLOCK
 #   endif /* DARWIN */
 # endif
 

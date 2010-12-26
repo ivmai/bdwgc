@@ -1,3 +1,24 @@
+2010-12-26  Ivan Maidanski  <ivmai@mail.ru> (mostly really Geoff Norton
+                                             and Jonathan Pryor)
+
+	* configure.ac: Use AC_CHECK_LIB() to check for pthread instead of
+	just blindly linking to -lpthread, as Android includes pthread
+	support within libc and does not provide a separate libpthread.
+	* dyn_load.c (GC_register_dynamic_libraries): Skip current link map
+	entry if l_addr is NULL (Android/bionic only).
+	* pthread_stop_world.c (android_thread_kill): New internal function
+	(Android only).
+	* pthread_stop_world.c (GC_suspend_all, GC_start_world): Call
+	android_thread_kill (based on tkill) instead of pthread_kill on
+	Android (since pthread_kill cannot be used safely on the platform).
+	* pthread_support.c (GC_new_thread): Store thread Id (obtained from
+	gettid) for use by android_thread_kill (Android only).
+	* include/private/pthread_support.h (GC_Thread_Rep): Add kernel_id
+	structure member (Android only).
+	* include/private/gcconfig.h: Recognize __x86_64 macro as a synonym
+	of __x86_64__ (Darwin); define __environ macro (Android on M68K).
+	* configure: Regenerate.
+
 2010-12-02  Ivan Maidanski  <ivmai@mail.ru>
 
 	* allchblk.c (GC_freehblk): Print extended error message (done via
