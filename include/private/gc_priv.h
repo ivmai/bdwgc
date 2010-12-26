@@ -1045,7 +1045,7 @@ struct _GC_arrays {
                           /* free list for immutable objects    */
 # ifdef MARK_BIT_PER_GRANULE
     short * _obj_map[MAXOBJGRANULES+1];
-                       /* If not NIL, then a pointer to a map of valid  */
+                       /* If not NULL, then a pointer to a map of valid */
                        /* object addresses.                             */
                        /* _obj_map[sz_in_granules][i] is                */
                        /* i % sz_in_granules.                           */

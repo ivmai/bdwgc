@@ -307,7 +307,7 @@ STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz, char *string,
 
 #ifndef SHORT_DBG_HDRS
   /* Check the object with debugging info at ohdr       */
-  /* return NIL if it's OK.  Else return clobbered      */
+  /* return NULL if it's OK.  Else return clobbered     */
   /* address.                                           */
   STATIC ptr_t GC_check_annotated_obj(oh *ohdr)
   {
@@ -471,7 +471,7 @@ GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
     void * result = GC_malloc(lb + DEBUG_BYTES);
 
     if (result == 0) {
-        GC_err_printf("GC_debug_malloc(%lu) returning NIL (",
+        GC_err_printf("GC_debug_malloc(%lu) returning NULL (",
                       (unsigned long) lb);
         GC_err_puts(s);
         GC_err_printf(":%ld)\n", (unsigned long)i);
@@ -490,7 +490,7 @@ GC_API void * GC_CALL GC_debug_malloc_ignore_off_page(size_t lb,
     void * result = GC_malloc_ignore_off_page(lb + DEBUG_BYTES);
 
     if (result == 0) {
-        GC_err_printf("GC_debug_malloc_ignore_off_page(%lu) returning NIL (",
+        GC_err_printf("GC_debug_malloc_ignore_off_page(%lu) returning NULL (",
                        (unsigned long) lb);
         GC_err_puts(s);
         GC_err_printf(":%lu)\n", (unsigned long)i);
@@ -510,7 +510,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
 
     if (result == 0) {
         GC_err_printf("GC_debug_malloc_atomic_ignore_off_page(%lu)"
-                       " returning NIL (", (unsigned long) lb);
+                       " returning NULL (", (unsigned long) lb);
         GC_err_puts(s);
         GC_err_printf(":%lu)\n", (unsigned long)i);
         return(0);
@@ -536,7 +536,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
     void * result = GC_generic_malloc_inner(lb + DEBUG_BYTES, k);
 
     if (result == 0) {
-        GC_err_printf("GC internal allocation (%lu bytes) returning NIL\n",
+        GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
         return(0);
     }
@@ -551,7 +551,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
                                                 lb + DEBUG_BYTES, k);
 
     if (result == 0) {
-        GC_err_printf("GC internal allocation (%lu bytes) returning NIL\n",
+        GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
         return(0);
     }
@@ -566,7 +566,7 @@ GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
     void * result = GC_malloc_stubborn(lb + DEBUG_BYTES);
 
     if (result == 0) {
-        GC_err_printf("GC_debug_malloc(%lu) returning NIL (",
+        GC_err_printf("GC_debug_malloc(%lu) returning NULL (",
                       (unsigned long) lb);
         GC_err_puts(s);
         GC_err_printf(":%lu)\n", (unsigned long)i);
@@ -633,7 +633,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)
     void * result = GC_malloc_atomic(lb + DEBUG_BYTES);
 
     if (result == 0) {
-        GC_err_printf("GC_debug_malloc_atomic(%lu) returning NIL (",
+        GC_err_printf("GC_debug_malloc_atomic(%lu) returning NULL (",
                       (unsigned long) lb);
         GC_err_puts(s);
         GC_err_printf(":%lu)\n", (unsigned long)i);
@@ -674,7 +674,7 @@ GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
     void * result = GC_malloc_uncollectable(lb + UNCOLLECTABLE_DEBUG_BYTES);
 
     if (result == 0) {
-        GC_err_printf("GC_debug_malloc_uncollectable(%lu) returning NIL (",
+        GC_err_printf("GC_debug_malloc_uncollectable(%lu) returning NULL (",
                       (unsigned long) lb);
         GC_err_puts(s);
         GC_err_printf(":%lu)\n", (unsigned long)i);
@@ -695,7 +695,7 @@ GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
 
     if (result == 0) {
         GC_err_printf(
-                "GC_debug_malloc_atomic_uncollectable(%lu) returning NIL (",
+                "GC_debug_malloc_atomic_uncollectable(%lu) returning NULL (",
                 (unsigned long) lb);
         GC_err_puts(s);
         GC_err_printf(":%lu)\n", (unsigned long)i);

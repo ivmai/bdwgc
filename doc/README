@@ -440,8 +440,7 @@ collector is invoked while the object is live.  The first deallocation
 of an object will clear the debugging info associated with an
 object, so accidentally repeated calls to GC_debug_free will report the
 deallocation of an object without debugging information.  Out of
-memory errors will be reported to stderr, in addition to returning
-NIL.
+memory errors will be reported to stderr, in addition to returning NULL.
 
   GC_debug_malloc checking  during garbage collection is enabled
 with the first call to GC_debug_malloc.  This will result in some

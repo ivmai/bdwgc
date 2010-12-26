@@ -1275,7 +1275,7 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
       } else {
 #       if !defined(AMIGA) || !defined(GC_AMIGA_FASTALLOC)
           WARN("Out of Memory! Heap size: %" GC_PRIdPTR " MiB."
-               " Returning NIL!\n", (GC_heapsize - GC_unmapped_bytes) >> 20);
+               " Returning NULL!\n", (GC_heapsize - GC_unmapped_bytes) >> 20);
 #       endif
         RESTORE_CANCEL(cancel_state);
         return(FALSE);

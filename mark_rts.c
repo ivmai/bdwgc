@@ -109,8 +109,8 @@ static int n_root_sets = 0;
     return(result);
   }
 
-  /* Is a range starting at b already in the table? If so return a        */
-  /* pointer to it, else NIL.                                             */
+  /* Is a range starting at b already in the table? If so return a      */
+  /* pointer to it, else NULL.                                          */
   GC_INNER struct roots * GC_roots_present(ptr_t b)
   {
     int h = rt_hash(b);

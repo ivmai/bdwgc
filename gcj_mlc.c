@@ -217,7 +217,7 @@ GC_API void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     if (result == 0) {
         GC_oom_func oom_fn = GC_oom_fn;
         UNLOCK();
-        GC_err_printf("GC_debug_gcj_malloc(%ld, %p) returning NIL (",
+        GC_err_printf("GC_debug_gcj_malloc(%ld, %p) returning NULL (",
                       (unsigned long)lb, ptr_to_struct_containing_descr);
         GC_err_puts(s);
         GC_err_printf(":%d)\n", i);

@@ -162,7 +162,7 @@ GC_FirstDLOpenedLinkMap(void)
             if( tag == DT_DEBUG ) {
                 struct link_map *lm
                         = ((struct r_debug *)(dp->d_un.d_ptr))->r_map;
-                if( lm != 0 ) cachedResult = lm->l_next; /* might be NIL */
+                if( lm != 0 ) cachedResult = lm->l_next; /* might be NULL */
                 break;
             }
         }
@@ -628,7 +628,7 @@ GC_FirstDLOpenedLinkMap(void)
             if( tag == DT_DEBUG ) {
                 struct link_map *lm
                         = ((struct r_debug *)(dp->d_un.d_ptr))->r_map;
-                if( lm != 0 ) cachedResult = lm->l_next; /* might be NIL */
+                if( lm != 0 ) cachedResult = lm->l_next; /* might be NULL */
                 break;
             }
         }

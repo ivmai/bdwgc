@@ -194,7 +194,7 @@ typedef struct bi {
 # endif
 
 /* Is the result a forwarding address to someplace closer to the        */
-/* beginning of the block or NIL?                                       */
+/* beginning of the block or NULL?                                      */
 # define IS_FORWARDING_ADDR_OR_NIL(hhdr) ((size_t) (hhdr) <= MAX_JUMP)
 
 /* Get an HBLKSIZE aligned address closer to the beginning of the block */
