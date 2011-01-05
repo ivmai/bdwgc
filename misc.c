@@ -1171,10 +1171,21 @@ GC_API void GC_CALL GC_enable_incremental(void)
 # endif
 #endif
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(OS2) \
-    && !defined(MACOS)  && !defined(ECOS) && !defined(NOSYS)
-STATIC int GC_write(int fd, const char *buf, size_t len)
-{
+#if defined(ECOS) || defined(NOSYS)
+  STATIC int GC_write(int fd, const char *buf, size_t len)
+  {
+#   ifdef ECOS
+      /* FIXME: This seems to be defined nowhere at present.    */
+      /* _Jv_diag_write(buf, len); */
+#   else
+      /* No writing.    */
+#   endif
+    return len;
+  }
+#elif !defined(MSWIN32) && !defined(MSWINCE) && !defined(OS2) \
+      && !defined(MACOS)
+  STATIC int GC_write(int fd, const char *buf, size_t len)
+  {
      int bytes_written = 0;
      int result;
      IF_CANCEL(int cancel_state;)
@@ -1195,26 +1206,8 @@ STATIC int GC_write(int fd, const char *buf, size_t len)
     }
     RESTORE_CANCEL(cancel_state);
     return(bytes_written);
-}
+  }
 #endif /* UN*X */
-
-#ifdef ECOS
-  STATIC int GC_write(int fd, const char *buf, size_t len)
-  {
-    /* FIXME: This seems to be defined nowhere at present. */
-    /* _Jv_diag_write(buf, len); */
-    return len;
-  }
-#endif
-
-#ifdef NOSYS
-  STATIC int GC_write(int fd, const char *buf, size_t len)
-  {
-    /* No writing.  */
-    return len;
-  }
-#endif
-
 
 #if defined(MSWIN32) || defined(MSWINCE)
     /* FIXME: This is pretty ugly ... */

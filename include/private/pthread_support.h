@@ -18,9 +18,9 @@
 #ifndef GC_PTHREAD_SUPPORT_H
 #define GC_PTHREAD_SUPPORT_H
 
-# include "private/gc_priv.h"
+#include "private/gc_priv.h"
 
-# if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
+#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
 #if defined(GC_DARWIN_THREADS)
 # include "private/darwin_stop_world.h"
@@ -123,5 +123,6 @@ GC_EXTERN GC_bool GC_in_thread_creation;
         /* Only set to TRUE while allocation lock is held.              */
         /* When set, it is OK to run GC from unknown thread.            */
 
-#endif /* GC_PTHREADS && !GC_SOLARIS_THREADS.... etc */
+#endif /* GC_PTHREADS && !GC_WIN32_THREADS */
+
 #endif /* GC_PTHREAD_SUPPORT_H */

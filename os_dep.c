@@ -382,39 +382,39 @@ GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
 }
 
 #if defined(REDIRECT_MALLOC)
-/* Find the text(code) mapping for the library whose name, after        */
-/* stripping the directory part, starts with nm.                        */
-GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp)
-{
-  size_t nm_len = strlen(nm);
-  char *prot;
-  char *map_path;
-  ptr_t my_start, my_end;
-  unsigned int maj_dev;
-  char *maps = GC_get_maps();
-  char *buf_ptr = maps;
+  /* Find the text(code) mapping for the library whose name, after      */
+  /* stripping the directory part, starts with nm.                      */
+  GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp)
+  {
+    size_t nm_len = strlen(nm);
+    char *prot;
+    char *map_path;
+    ptr_t my_start, my_end;
+    unsigned int maj_dev;
+    char *maps = GC_get_maps();
+    char *buf_ptr = maps;
 
-  if (0 == maps) return(FALSE);
-  for (;;) {
-    buf_ptr = GC_parse_map_entry(buf_ptr, &my_start, &my_end,
-                                 &prot, &maj_dev, &map_path);
+    if (0 == maps) return(FALSE);
+    for (;;) {
+      buf_ptr = GC_parse_map_entry(buf_ptr, &my_start, &my_end,
+                                   &prot, &maj_dev, &map_path);
 
-    if (buf_ptr == NULL) return FALSE;
-    if (prot[0] == 'r' && prot[1] == '-' && prot[2] == 'x') {
-        char *p = map_path;
-        /* Set p to point just past last slash, if any. */
-          while (*p != '\0' && *p != '\n' && *p != ' ' && *p != '\t') ++p;
-          while (*p != '/' && p >= map_path) --p;
-          ++p;
-        if (strncmp(nm, p, nm_len) == 0) {
-          *startp = my_start;
-          *endp = my_end;
-          return TRUE;
-        }
+      if (buf_ptr == NULL) return FALSE;
+      if (prot[0] == 'r' && prot[1] == '-' && prot[2] == 'x') {
+          char *p = map_path;
+          /* Set p to point just past last slash, if any. */
+            while (*p != '\0' && *p != '\n' && *p != ' ' && *p != '\t') ++p;
+            while (*p != '/' && p >= map_path) --p;
+            ++p;
+          if (strncmp(nm, p, nm_len) == 0) {
+            *startp = my_start;
+            *endp = my_end;
+            return TRUE;
+          }
+      }
     }
+    return FALSE;
   }
-  return FALSE;
-}
 #endif /* REDIRECT_MALLOC */
 
 #ifdef IA64
@@ -474,31 +474,31 @@ GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp)
   }
 #endif
 
-# ifdef ECOS
+#ifdef ECOS
 
 # ifndef ECOS_GC_MEMORY_SIZE
-# define ECOS_GC_MEMORY_SIZE (448 * 1024)
+#   define ECOS_GC_MEMORY_SIZE (448 * 1024)
 # endif /* ECOS_GC_MEMORY_SIZE */
 
-/* FIXME: This is a simple way of allocating memory which is            */
-/* compatible with ECOS early releases.  Later releases use a more      */
-/* sophisticated means of allocating memory than this simple static     */
-/* allocator, but this method is at least bound to work.                */
-static char ecos_gc_memory[ECOS_GC_MEMORY_SIZE];
-static char *ecos_gc_brk = ecos_gc_memory;
+  /* FIXME: This is a simple way of allocating memory which is          */
+  /* compatible with ECOS early releases.  Later releases use a more    */
+  /* sophisticated means of allocating memory than this simple static   */
+  /* allocator, but this method is at least bound to work.              */
+  static char ecos_gc_memory[ECOS_GC_MEMORY_SIZE];
+  static char *ecos_gc_brk = ecos_gc_memory;
 
-static void *tiny_sbrk(ptrdiff_t increment)
-{
-  void *p = ecos_gc_brk;
-  ecos_gc_brk += increment;
-  if (ecos_gc_brk > ecos_gc_memory + sizeof(ecos_gc_memory)) {
-    ecos_gc_brk -= increment;
-    return NULL;
+  static void *tiny_sbrk(ptrdiff_t increment)
+  {
+    void *p = ecos_gc_brk;
+    ecos_gc_brk += increment;
+    if (ecos_gc_brk > ecos_gc_memory + sizeof(ecos_gc_memory)) {
+      ecos_gc_brk -= increment;
+      return NULL;
+    }
+    return p;
   }
-  return p;
-}
-#define sbrk tiny_sbrk
-# endif /* ECOS */
+# define sbrk tiny_sbrk
+#endif /* ECOS */
 
 #if defined(NETBSD) && defined(__ELF__)
   ptr_t GC_data_start = NULL;
@@ -512,7 +512,7 @@ static void *tiny_sbrk(ptrdiff_t increment)
         /* some versions.                                               */
     GC_data_start = GC_find_limit((ptr_t)&environ, FALSE);
   }
-#endif
+#endif /* NETBSD */
 
 #ifdef OPENBSD
   static struct sigaction old_segv_act;
@@ -743,99 +743,94 @@ GC_INNER word GC_page_size = 0;
     }
 # endif
 
-# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+#if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 
-#ifndef CYGWIN32
+# ifndef CYGWIN32
 
-# define is_writable(prot) ((prot) == PAGE_READWRITE \
+#   define is_writable(prot) ((prot) == PAGE_READWRITE \
                             || (prot) == PAGE_WRITECOPY \
                             || (prot) == PAGE_EXECUTE_READWRITE \
                             || (prot) == PAGE_EXECUTE_WRITECOPY)
-/* Return the number of bytes that are writable starting at p.  */
-/* The pointer p is assumed to be page aligned.                 */
-/* If base is not 0, *base becomes the beginning of the         */
-/* allocation region containing p.                              */
-STATIC word GC_get_writable_length(ptr_t p, ptr_t *base)
-{
-    MEMORY_BASIC_INFORMATION buf;
-    word result;
-    word protect;
+    /* Return the number of bytes that are writable starting at p.      */
+    /* The pointer p is assumed to be page aligned.                     */
+    /* If base is not 0, *base becomes the beginning of the             */
+    /* allocation region containing p.                                  */
+    STATIC word GC_get_writable_length(ptr_t p, ptr_t *base)
+    {
+      MEMORY_BASIC_INFORMATION buf;
+      word result;
+      word protect;
 
-    result = VirtualQuery(p, &buf, sizeof(buf));
-    if (result != sizeof(buf)) ABORT("Weird VirtualQuery result");
-    if (base != 0) *base = (ptr_t)(buf.AllocationBase);
-    protect = (buf.Protect & ~(PAGE_GUARD | PAGE_NOCACHE));
-    if (!is_writable(protect)) {
+      result = VirtualQuery(p, &buf, sizeof(buf));
+      if (result != sizeof(buf)) ABORT("Weird VirtualQuery result");
+      if (base != 0) *base = (ptr_t)(buf.AllocationBase);
+      protect = (buf.Protect & ~(PAGE_GUARD | PAGE_NOCACHE));
+      if (!is_writable(protect)) {
         return(0);
+      }
+      if (buf.State != MEM_COMMIT) return(0);
+      return(buf.RegionSize);
     }
-    if (buf.State != MEM_COMMIT) return(0);
-    return(buf.RegionSize);
-}
 
-GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
-{
-    int dummy;
-    ptr_t sp = (ptr_t)(&dummy);
-    ptr_t trunc_sp = (ptr_t)((word)sp & ~(GC_page_size - 1));
-    /* FIXME: This won't work if called from a deeply recursive */
-    /* client code (and the committed stack space has grown).   */
-    word size = GC_get_writable_length(trunc_sp, 0);
-    GC_ASSERT(size != 0);
-    sb -> mem_base = trunc_sp + size;
-    return GC_SUCCESS;
-}
+    GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
+    {
+      int dummy;
+      ptr_t sp = (ptr_t)(&dummy);
+      ptr_t trunc_sp = (ptr_t)((word)sp & ~(GC_page_size - 1));
+      /* FIXME: This won't work if called from a deeply recursive       */
+      /* client code (and the committed stack space has grown).         */
+      word size = GC_get_writable_length(trunc_sp, 0);
+      GC_ASSERT(size != 0);
+      sb -> mem_base = trunc_sp + size;
+      return GC_SUCCESS;
+    }
 
-#else /* CYGWIN32 */
+# else /* CYGWIN32 */
 
-/* An alternate version for Cygwin (adapted from Dave Korn's    */
-/* gcc version of boehm-gc).                                    */
-  GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
-  {
-    extern void * _tlsbase __asm__ ("%fs:4");
-    sb -> mem_base = _tlsbase;
-    return GC_SUCCESS;
-  }
-
-#endif /* CYGWIN32 */
+    /* An alternate version for Cygwin (adapted from Dave Korn's        */
+    /* gcc version of boehm-gc).                                        */
+    GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
+    {
+      extern void * _tlsbase __asm__ ("%fs:4");
+      sb -> mem_base = _tlsbase;
+      return GC_SUCCESS;
+    }
+# endif /* CYGWIN32 */
 
 # define HAVE_GET_STACK_BASE
 
-/* This is always called from the main thread.  */
-ptr_t GC_get_main_stack_base(void)
-{
+  /* This is always called from the main thread.  */
+  ptr_t GC_get_main_stack_base(void)
+  {
     struct GC_stack_base sb;
     GC_get_stack_base(&sb);
     GC_ASSERT((void *)&sb HOTTER_THAN sb.mem_base);
     return (ptr_t)sb.mem_base;
-}
+  }
+#endif /* MS Windows */
 
-# endif /* MS Windows */
+#ifdef BEOS
+# include <kernel/OS.h>
+  ptr_t GC_get_main_stack_base(void)
+  {
+    thread_info th;
+    get_thread_info(find_thread(NULL),&th);
+    return th.stack_end;
+  }
+#endif /* BEOS */
 
-# ifdef BEOS
-#   include <kernel/OS.h>
-    ptr_t GC_get_main_stack_base(void)
-    {
-      thread_info th;
-      get_thread_info(find_thread(NULL),&th);
-      return th.stack_end;
-    }
-# endif /* BEOS */
-
-
-# ifdef OS2
-
-ptr_t GC_get_main_stack_base(void)
-{
+#ifdef OS2
+  ptr_t GC_get_main_stack_base(void)
+  {
     PTIB ptib;
     PPIB ppib;
 
     if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
-        ABORT("DosGetInfoBlocks failed");
+      ABORT("DosGetInfoBlocks failed");
     }
     return((ptr_t)(ptib -> tib_pstacklimit));
-}
-
-# endif /* OS2 */
+  }
+#endif /* OS2 */
 
 # ifdef AMIGA
 #   define GC_AMIGA_SB
@@ -848,10 +843,10 @@ ptr_t GC_get_main_stack_base(void)
     typedef void (*GC_fault_handler_t)(int);
 
 #   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
-    || defined(HURD) || defined(NETBSD)
+       || defined(HURD) || defined(NETBSD)
         static struct sigaction old_segv_act;
 #       if defined(_sigargs) /* !Irix6.x */ || defined(HPUX) \
-        || defined(HURD) || defined(NETBSD) || defined(FREEBSD)
+           || defined(HURD) || defined(NETBSD) || defined(FREEBSD)
             static struct sigaction old_bus_act;
 #       endif
 #   else
@@ -861,7 +856,7 @@ ptr_t GC_get_main_stack_base(void)
     GC_INNER void GC_set_and_save_fault_handler(GC_fault_handler_t h)
     {
 #       if defined(SUNOS5SIGS) || defined(IRIX5)  \
-        || defined(OSF1) || defined(HURD) || defined(NETBSD)
+           || defined(OSF1) || defined(HURD) || defined(NETBSD)
           struct sigaction      act;
 
           act.sa_handler        = h;
@@ -874,20 +869,20 @@ ptr_t GC_get_main_stack_base(void)
 
           (void) sigemptyset(&act.sa_mask);
 #         ifdef GC_IRIX_THREADS
-                /* Older versions have a bug related to retrieving and  */
-                /* and setting a handler at the same time.              */
-                (void) sigaction(SIGSEGV, 0, &old_segv_act);
-                (void) sigaction(SIGSEGV, &act, 0);
+            /* Older versions have a bug related to retrieving and  */
+            /* and setting a handler at the same time.              */
+            (void) sigaction(SIGSEGV, 0, &old_segv_act);
+            (void) sigaction(SIGSEGV, &act, 0);
 #         else
-                (void) sigaction(SIGSEGV, &act, &old_segv_act);
-#               if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
-                   || defined(HPUX) || defined(HURD) || defined(NETBSD) \
-                   || defined(FREEBSD)
-                    /* Under Irix 5.x or HP/UX, we may get SIGBUS.      */
-                    /* Pthreads doesn't exist under Irix 5.x, so we     */
-                    /* don't have to worry in the threads case.         */
-                    (void) sigaction(SIGBUS, &act, &old_bus_act);
-#               endif
+            (void) sigaction(SIGSEGV, &act, &old_segv_act);
+#           if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
+               || defined(HPUX) || defined(HURD) || defined(NETBSD) \
+               || defined(FREEBSD)
+              /* Under Irix 5.x or HP/UX, we may get SIGBUS.      */
+              /* Pthreads doesn't exist under Irix 5.x, so we     */
+              /* don't have to worry in the threads case.         */
+              (void) sigaction(SIGBUS, &act, &old_bus_act);
+#           endif
 #         endif /* GC_IRIX_THREADS */
 #       else
           old_segv_handler = signal(SIGSEGV, h);
@@ -975,13 +970,6 @@ ptr_t GC_get_main_stack_base(void)
         return GC_find_limit_with_bound(p, up, up ? (ptr_t)(word)(-1) : 0);
     }
 # endif
-
-#if defined(ECOS) || defined(NOSYS)
-  ptr_t GC_get_main_stack_base(void)
-  {
-    return STACKBOTTOM;
-  }
-#endif
 
 #ifdef HPUX_STACKBOTTOM
 
@@ -1119,12 +1107,12 @@ ptr_t GC_get_main_stack_base(void)
 
 #ifdef FREEBSD_STACKBOTTOM
 
-/* This uses an undocumented sysctl call, but at least one expert       */
-/* believes it will stay.                                               */
+  /* This uses an undocumented sysctl call, but at least one expert     */
+  /* believes it will stay.                                             */
 
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/sysctl.h>
+# include <unistd.h>
+# include <sys/types.h>
+# include <sys/sysctl.h>
 
   STATIC ptr_t GC_freebsd_stack_base(void)
   {
@@ -1137,101 +1125,100 @@ ptr_t GC_get_main_stack_base(void)
 
     return base;
   }
-
 #endif /* FREEBSD_STACKBOTTOM */
 
-#if !defined(BEOS) && !defined(AMIGA) && !defined(MSWIN32) \
-    && !defined(MSWINCE) && !defined(OS2) && !defined(NOSYS) && !defined(ECOS) \
-    && !defined(CYGWIN32) && !defined(GC_OPENBSD_THREADS) \
-    && (!defined(GC_SOLARIS_THREADS) || defined(_STRICT_STDC))
-
-ptr_t GC_get_main_stack_base(void)
-{
-#   ifdef STACKBOTTOM
-        return(STACKBOTTOM);
-#   else
-#       if defined(HEURISTIC1) || defined(HEURISTIC2)
-          word dummy;
-#       endif
-        ptr_t result;
-#       define STACKBOTTOM_ALIGNMENT_M1 ((word)STACK_GRAN - 1)
-#       ifdef HEURISTIC1
-#          ifdef STACK_GROWS_DOWN
-             result = (ptr_t)((((word)(&dummy))
-                               + STACKBOTTOM_ALIGNMENT_M1)
-                              & ~STACKBOTTOM_ALIGNMENT_M1);
-#          else
-             result = (ptr_t)(((word)(&dummy))
-                              & ~STACKBOTTOM_ALIGNMENT_M1);
-#          endif
-#       endif /* HEURISTIC1 */
-#       ifdef LINUX_STACKBOTTOM
-#          if defined(THREADS) && defined(USE_GET_STACKBASE_FOR_MAIN)
-             {
-               pthread_attr_t attr;
-               void *stackaddr;
-               size_t size;
-               if (pthread_getattr_np(pthread_self(), &attr) == 0) {
-                 if (pthread_attr_getstack(&attr, &stackaddr, &size) == 0
-                     && stackaddr != NULL) {
-                   pthread_attr_destroy(&attr);
-#                  ifdef STACK_GROWS_DOWN
-                     stackaddr = (char *)stackaddr + size;
-#                  endif
-                   return (ptr_t)stackaddr;
-                 }
-                 pthread_attr_destroy(&attr);
-               }
-               WARN("pthread_getattr_np/pthread_attr_getstack failed"
-                    " for main thread\n", 0);
-             }
-#          endif
-           result = GC_linux_stack_base();
-#       endif
-#       ifdef FREEBSD_STACKBOTTOM
-           result = GC_freebsd_stack_base();
-#       endif
-#       ifdef HEURISTIC2
+#if defined(ECOS) || defined(NOSYS)
+  ptr_t GC_get_main_stack_base(void)
+  {
+    return STACKBOTTOM;
+  }
+#elif !defined(BEOS) && !defined(AMIGA) && !defined(OS2) \
+      && !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
+      && !defined(GC_OPENBSD_THREADS) \
+      && (!defined(GC_SOLARIS_THREADS) || defined(_STRICT_STDC))
+  ptr_t GC_get_main_stack_base(void)
+  {
+#   ifndef STACKBOTTOM
+      ptr_t result; /* also used as "dummy" to get the approx. sp value */
+#   endif
+#   if defined(GC_LINUX_THREADS) && defined(USE_GET_STACKBASE_FOR_MAIN)
+      {
+        pthread_attr_t attr;
+        void *stackaddr;
+        size_t size;
+        if (pthread_getattr_np(pthread_self(), &attr) == 0) {
+          if (pthread_attr_getstack(&attr, &stackaddr, &size) == 0
+              && stackaddr != NULL) {
+            pthread_attr_destroy(&attr);
 #           ifdef STACK_GROWS_DOWN
-                result = GC_find_limit((ptr_t)(&dummy), TRUE);
-#               ifdef HEURISTIC2_LIMIT
-                    if (result > HEURISTIC2_LIMIT
-                        && (ptr_t)(&dummy) < HEURISTIC2_LIMIT) {
-                            result = HEURISTIC2_LIMIT;
-                    }
-#               endif
-#           else
-                result = GC_find_limit((ptr_t)(&dummy), FALSE);
-#               ifdef HEURISTIC2_LIMIT
-                    if (result < HEURISTIC2_LIMIT
-                        && (ptr_t)(&dummy) > HEURISTIC2_LIMIT) {
-                            result = HEURISTIC2_LIMIT;
-                    }
-#               endif
+              stackaddr = (char *)stackaddr + size;
 #           endif
-
-#       endif /* HEURISTIC2 */
+            return (ptr_t)stackaddr;
+          }
+          pthread_attr_destroy(&attr);
+        }
+        WARN("pthread_getattr_np or pthread_attr_getstack failed"
+             " for main thread\n", 0);
+      }
+#   endif
+#   ifdef STACKBOTTOM
+      return(STACKBOTTOM);
+#   else
+#     define STACKBOTTOM_ALIGNMENT_M1 ((word)STACK_GRAN - 1)
+#     ifdef HEURISTIC1
 #       ifdef STACK_GROWS_DOWN
-            if (result == 0) result = (ptr_t)(signed_word)(-sizeof(ptr_t));
+          result = (ptr_t)((((word)(&result)) + STACKBOTTOM_ALIGNMENT_M1)
+                           & ~STACKBOTTOM_ALIGNMENT_M1);
+#       else
+          result = (ptr_t)(((word)(&result)) & ~STACKBOTTOM_ALIGNMENT_M1);
 #       endif
-        return(result);
-#   endif /* STACKBOTTOM */
-}
-
-# endif /* ! AMIGA, !OS 2, ! MS Windows, !BEOS, !NOSYS, !ECOS */
+#     endif /* HEURISTIC1 */
+#     ifdef LINUX_STACKBOTTOM
+         result = GC_linux_stack_base();
+#     endif
+#     ifdef FREEBSD_STACKBOTTOM
+         result = GC_freebsd_stack_base();
+#     endif
+#     ifdef HEURISTIC2
+#       ifdef STACK_GROWS_DOWN
+          result = GC_find_limit((ptr_t)(&result), TRUE);
+#         ifdef HEURISTIC2_LIMIT
+            if (result > HEURISTIC2_LIMIT
+                && (ptr_t)(&result) < HEURISTIC2_LIMIT) {
+              result = HEURISTIC2_LIMIT;
+            }
+#         endif
+#       else
+          result = GC_find_limit((ptr_t)(&result), FALSE);
+#         ifdef HEURISTIC2_LIMIT
+            if (result < HEURISTIC2_LIMIT
+                && (ptr_t)(&result) > HEURISTIC2_LIMIT) {
+              result = HEURISTIC2_LIMIT;
+            }
+#         endif
+#       endif
+#     endif /* HEURISTIC2 */
+#     ifdef STACK_GROWS_DOWN
+        if (result == 0)
+          result = (ptr_t)(signed_word)(-sizeof(ptr_t));
+#     endif
+      return(result);
+#   endif
+  }
+#endif /* !AMIGA, !BEOS, !OPENBSD, !OS2, !Windows */
 
 #if defined(GC_LINUX_THREADS) && !defined(HAVE_GET_STACK_BASE)
 
-#include <pthread.h>
-/* extern int pthread_getattr_np(pthread_t, pthread_attr_t *); */
+# include <pthread.h>
+  /* extern int pthread_getattr_np(pthread_t, pthread_attr_t *); */
 
-#ifdef IA64
-  GC_INNER ptr_t GC_greatest_stack_base_below(ptr_t bound);
+# ifdef IA64
+    GC_INNER ptr_t GC_greatest_stack_base_below(ptr_t bound);
                                 /* From pthread_support.c */
-#endif
+# endif
 
-GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
-{
+  GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
+  {
     pthread_attr_t attr;
     size_t size;
 #   ifdef IA64
@@ -1275,10 +1262,9 @@ GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
       UNLOCK();
 #   endif
     return GC_SUCCESS;
-}
+  }
 
 # define HAVE_GET_STACK_BASE
-
 #endif /* GC_LINUX_THREADS */
 
 #ifdef GC_OPENBSD_THREADS
@@ -1306,7 +1292,6 @@ GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
     GC_ASSERT((void *)&sb HOTTER_THAN sb.mem_base);
     return (ptr_t)sb.mem_base;
   }
-
 #endif /* GC_OPENBSD_THREADS */
 
 #if defined(GC_SOLARIS_THREADS) && !defined(_STRICT_STDC)
@@ -1369,19 +1354,18 @@ GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
     GC_get_stack_base(&sb);
     return (ptr_t)sb.mem_base;
   }
-
 #endif /* GC_SOLARIS_THREADS */
 
 #ifndef HAVE_GET_STACK_BASE
-/* Retrieve stack base.                                         */
-/* Using the GC_find_limit version is risky.                    */
-/* On IA64, for example, there is no guard page between the     */
-/* stack of one thread and the register backing store of the    */
-/* next.  Thus this is likely to identify way too large a       */
-/* "stack" and thus at least result in disastrous performance.  */
-/* FIXME - Implement better strategies here.                    */
-GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
-{
+  /* Retrieve stack base.                                               */
+  /* Using the GC_find_limit version is risky.                          */
+  /* On IA64, for example, there is no guard page between the           */
+  /* stack of one thread and the register backing store of the          */
+  /* next.  Thus this is likely to identify way too large a             */
+  /* "stack" and thus at least result in disastrous performance.        */
+  /* FIXME - Implement better strategies here.                          */
+  GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
+  {
 #   ifdef NEED_FIND_LIMIT
       int dummy;
       IF_CANCEL(int cancel_state;)
@@ -1403,8 +1387,8 @@ GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
 #   else
       return GC_UNIMPLEMENTED;
 #   endif
-}
-#endif
+  }
+#endif /* !HAVE_GET_STACK_BASE */
 
 /*
  * Register static data segment(s) as roots.

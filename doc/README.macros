@@ -519,6 +519,8 @@ UNICODE (Win32 only)    Use the Unicode variant ('W') of the Win32 API instead
 
 PLATFORM_ANDROID        Compile for Android NDK platform.
 
+SN_TARGET_PS3           Compile for Sony PS/3.
+
 USE_GET_STACKBASE_FOR_MAIN (Linux only)  Use pthread_attr_getstack() instead
 of __libc_stack_end for getting the primordial thread stack base (useful if
 the client modifies the program's address space).

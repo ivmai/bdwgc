@@ -1,3 +1,17 @@
+2011-01-05  Ivan Maidanski  <ivmai@mail.ru>
+
+	* misc.c (GC_write): Replace multiple "ifdef/endif" with "elif"
+	(for ECOS and NOSYS).
+	* os_dep.c (GC_get_main_stack_base): Ditto.
+	* os_dep.c (GC_get_main_stack_base): Check
+	USE_GET_STACKBASE_FOR_MAIN macro before checking STACKBOTTOM one;
+	remove "dummy" variable (use result one instead); reformat the
+	code.
+	* doc/README.macros (SN_TARGET_PS3): Document.
+	* extra/threadlibs.c (main): Don't output "-lpthread" (and "-ldl")
+	for Android.
+	* include/private/pthread_support.h: Fix comment for "endif".
+
 2010-12-26  Ivan Maidanski  <ivmai@mail.ru> (mostly really Miguel de Icaza)
 
 	* misc.c (GC_allocate_ml): Define global variable if SN_TARGET_PS3.
