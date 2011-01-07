@@ -3334,12 +3334,11 @@ GC_API int GC_CALL GC_incremental_protection_needs(void)
         return GC_PROTECTS_POINTER_HEAP | GC_PROTECTS_PTRFREE_HEAP;
     }
 }
-
 #define HAVE_INCREMENTAL_PROTECTION_NEEDS
 
 #define IS_PTRFREE(hhdr) ((hhdr)->hb_descr == 0)
-
 #define PAGE_ALIGNED(x) !((word)(x) & (GC_page_size - 1))
+
 STATIC void GC_protect_heap(void)
 {
     ptr_t start;
@@ -3849,7 +3848,9 @@ typedef struct {
 } GC_msg_t;
 
 typedef enum {
-    GC_MP_NORMAL, GC_MP_DISCARDING, GC_MP_STOPPED
+    GC_MP_NORMAL,
+    GC_MP_DISCARDING,
+    GC_MP_STOPPED
 } GC_mprotect_state_t;
 
 /* FIXME: 1 and 2 seem to be safe to use in the msgh_id field,
@@ -4182,8 +4183,40 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 
 #define FWD() GC_forward_exception(thread, task, exception, code, code_count)
 
-/* This violates the namespace rules but there isn't anything that can be done
-   about it.  The exception handling stuff is hard coded to call this. */
+#ifdef ARM32
+# define DARWIN_EXC_STATE         ARM_EXCEPTION_STATE
+# define DARWIN_EXC_STATE_COUNT   ARM_EXCEPTION_STATE_COUNT
+# define DARWIN_EXC_STATE_T       arm_exception_state_t
+# define DARWIN_EXC_STATE_DAR     THREAD_FLD(far)
+#elif defined(POWERPC)
+# if CPP_WORDSZ == 32
+#   define DARWIN_EXC_STATE       PPC_EXCEPTION_STATE
+#   define DARWIN_EXC_STATE_COUNT PPC_EXCEPTION_STATE_COUNT
+#   define DARWIN_EXC_STATE_T     ppc_exception_state_t
+# else
+#   define DARWIN_EXC_STATE       PPC_EXCEPTION_STATE64
+#   define DARWIN_EXC_STATE_COUNT PPC_EXCEPTION_STATE64_COUNT
+#   define DARWIN_EXC_STATE_T     ppc_exception_state64_t
+# endif
+# define DARWIN_EXC_STATE_DAR     THREAD_FLD(dar)
+#elif defined(I386) || defined(X86_64)
+# if CPP_WORDSZ == 32
+#   define DARWIN_EXC_STATE       x86_EXCEPTION_STATE32
+#   define DARWIN_EXC_STATE_COUNT x86_EXCEPTION_STATE32_COUNT
+#   define DARWIN_EXC_STATE_T     x86_exception_state32_t
+# else
+#   define DARWIN_EXC_STATE       x86_EXCEPTION_STATE64
+#   define DARWIN_EXC_STATE_COUNT x86_EXCEPTION_STATE64_COUNT
+#   define DARWIN_EXC_STATE_T     x86_exception_state64_t
+# endif
+# define DARWIN_EXC_STATE_DAR     THREAD_FLD(faultvaddr)
+#else
+# error FIXME for non-arm/ppc/x86 darwin
+#endif
+
+/* This violates the namespace rules but there isn't anything that can  */
+/* be done about it.  The exception handling stuff is hard coded to     */
+/* call this.                                                           */
 kern_return_t
 catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
                       mach_port_t task, exception_type_t exception,
@@ -4193,30 +4226,9 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
   char *addr;
   struct hblk *h;
   unsigned int i;
-# if defined(POWERPC)
-#   if CPP_WORDSZ == 32
-      thread_state_flavor_t flavor = PPC_EXCEPTION_STATE;
-      mach_msg_type_number_t exc_state_count = PPC_EXCEPTION_STATE_COUNT;
-      ppc_exception_state_t exc_state;
-#   else
-      thread_state_flavor_t flavor = PPC_EXCEPTION_STATE64;
-      mach_msg_type_number_t exc_state_count = PPC_EXCEPTION_STATE64_COUNT;
-      ppc_exception_state64_t exc_state;
-#   endif
-# elif defined(I386) || defined(X86_64)
-#   if CPP_WORDSZ == 32
-      thread_state_flavor_t flavor = x86_EXCEPTION_STATE32;
-      mach_msg_type_number_t exc_state_count = x86_EXCEPTION_STATE32_COUNT;
-      x86_exception_state32_t exc_state;
-#   else
-      thread_state_flavor_t flavor = x86_EXCEPTION_STATE64;
-      mach_msg_type_number_t exc_state_count = x86_EXCEPTION_STATE64_COUNT;
-      x86_exception_state64_t exc_state;
-#   endif
-# else
-#   error FIXME for non-ppc/x86 darwin
-# endif
-
+  thread_state_flavor_t flavor = DARWIN_EXC_STATE;
+  mach_msg_type_number_t exc_state_count = DARWIN_EXC_STATE_COUNT;
+  DARWIN_EXC_STATE_T exc_state;
 
   if(exception != EXC_BAD_ACCESS || code[0] != KERN_PROTECTION_FAILURE) {
 #   ifdef DEBUG_EXCEPTION_HANDLING
@@ -4240,70 +4252,63 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
 #   endif
   }
 
-    /* This is the address that caused the fault */
-# if defined(POWERPC)
-    addr = (char*) exc_state. THREAD_FLD(dar);
-# elif defined (I386) || defined (X86_64)
-    addr = (char*) exc_state. THREAD_FLD(faultvaddr);
-# else
-#   error FIXME for non POWERPC/I386
+  /* This is the address that caused the fault */
+  addr = (char*) exc_state.DARWIN_EXC_STATE_DAR;
+  if ((HDR(addr)) == 0) {
+    /* Ugh... just like the SIGBUS problem above, it seems we get a bogus
+       KERN_PROTECTION_FAILURE every once and a while. We wait till we get
+       a bunch in a row before doing anything about it. If a "real" fault
+       ever occurs it'll just keep faulting over and over and we'll hit
+       the limit pretty quickly. */
+#   ifdef BROKEN_EXCEPTION_HANDLING
+      static char *last_fault;
+      static int last_fault_count;
+
+      if(addr != last_fault) {
+        last_fault = addr;
+        last_fault_count = 0;
+      }
+      if(++last_fault_count < 32) {
+        if(last_fault_count == 1)
+          WARN("Ignoring KERN_PROTECTION_FAILURE at %p\n", addr);
+        return KERN_SUCCESS;
+      }
+
+      GC_err_printf("Unexpected KERN_PROTECTION_FAILURE at %p\n"
+                    "Aborting...\n", addr);
+      /* Can't pass it along to the signal handler because that is
+         ignoring SIGBUS signals. We also shouldn't call ABORT here as
+         signals don't always work too well from the exception handler. */
+      exit(EXIT_FAILURE);
+#   else /* BROKEN_EXCEPTION_HANDLING */
+      /* Pass it along to the next exception handler
+         (which should call SIGBUS/SIGSEGV) */
+      return FWD();
+#   endif /* !BROKEN_EXCEPTION_HANDLING */
+  }
+
+# ifdef BROKEN_EXCEPTION_HANDLING
+    /* Reset the number of consecutive SIGBUSs */
+    GC_sigbus_count = 0;
 # endif
 
-    if((HDR(addr)) == 0) {
-      /* Ugh... just like the SIGBUS problem above, it seems we get a bogus
-         KERN_PROTECTION_FAILURE every once and a while. We wait till we get
-         a bunch in a row before doing anything about it. If a "real" fault
-         ever occurs it'll just keep faulting over and over and we'll hit
-         the limit pretty quickly. */
-#     ifdef BROKEN_EXCEPTION_HANDLING
-        static char *last_fault;
-        static int last_fault_count;
-
-        if(addr != last_fault) {
-          last_fault = addr;
-          last_fault_count = 0;
-        }
-        if(++last_fault_count < 32) {
-          if(last_fault_count == 1)
-            WARN("Ignoring KERN_PROTECTION_FAILURE at %p\n", addr);
-          return KERN_SUCCESS;
-        }
-
-        GC_err_printf("Unexpected KERN_PROTECTION_FAILURE at %p\n"
-                      "Aborting...\n", addr);
-        /* Can't pass it along to the signal handler because that is
-           ignoring SIGBUS signals. We also shouldn't call ABORT here as
-           signals don't always work too well from the exception handler. */
-        exit(EXIT_FAILURE);
-#     else /* BROKEN_EXCEPTION_HANDLING */
-        /* Pass it along to the next exception handler
-           (which should call SIGBUS/SIGSEGV) */
-        return FWD();
-#     endif /* !BROKEN_EXCEPTION_HANDLING */
+  if(GC_mprotect_state == GC_MP_NORMAL) { /* common case */
+    h = (struct hblk*)((word)addr & ~(GC_page_size-1));
+    UNPROTECT(h, GC_page_size);
+    for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
+      register int index = PHT_HASH(h+i);
+      async_set_pht_entry_from_index(GC_dirty_pages, index);
     }
-
-#   ifdef BROKEN_EXCEPTION_HANDLING
-      /* Reset the number of consecutive SIGBUSs */
-      GC_sigbus_count = 0;
-#   endif
-
-    if(GC_mprotect_state == GC_MP_NORMAL) { /* common case */
-      h = (struct hblk*)((word)addr & ~(GC_page_size-1));
-      UNPROTECT(h, GC_page_size);
-      for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
-        register int index = PHT_HASH(h+i);
-        async_set_pht_entry_from_index(GC_dirty_pages, index);
-      }
-    } else if(GC_mprotect_state == GC_MP_DISCARDING) {
-      /* Lie to the thread for now. No sense UNPROTECT()ing the memory
-         when we're just going to PROTECT() it again later. The thread
-         will just fault again once it resumes */
-    } else {
-      /* Shouldn't happen, i don't think */
-      GC_err_printf("KERN_PROTECTION_FAILURE while world is stopped\n");
-      return FWD();
-    }
-    return KERN_SUCCESS;
+  } else if(GC_mprotect_state == GC_MP_DISCARDING) {
+    /* Lie to the thread for now. No sense UNPROTECT()ing the memory
+       when we're just going to PROTECT() it again later. The thread
+       will just fault again once it resumes */
+  } else {
+    /* Shouldn't happen, i don't think */
+    GC_err_printf("KERN_PROTECTION_FAILURE while world is stopped\n");
+    return FWD();
+  }
+  return KERN_SUCCESS;
 }
 #undef FWD
 
@@ -4333,12 +4338,12 @@ catch_exception_raise_state_identity(mach_port_name_t exception_port,
 
 #endif /* DARWIN && MPROTECT_VDB */
 
-# ifndef HAVE_INCREMENTAL_PROTECTION_NEEDS
+#ifndef HAVE_INCREMENTAL_PROTECTION_NEEDS
   GC_API int GC_CALL GC_incremental_protection_needs(void)
   {
     return GC_PROTECTS_NONE;
   }
-# endif /* !HAVE_INCREMENTAL_PROTECTION_NEEDS */
+#endif /* !HAVE_INCREMENTAL_PROTECTION_NEEDS */
 
 #ifdef ECOS
   /* Undo sbrk() redirection. */

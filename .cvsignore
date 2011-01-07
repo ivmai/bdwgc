@@ -9,8 +9,9 @@ hugetest
 leaktest
 libcord.la
 libgc.la
+libstaticrootslib.la
 libtool
 middletest
 smashtest
+staticrootstest
 threadleaktest
-libstaticrootslib.la

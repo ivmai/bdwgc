@@ -23,8 +23,7 @@
  */
 
 #ifndef GCCONFIG_H
-
-# define GCCONFIG_H
+#define GCCONFIG_H
 
 # ifndef GC_PRIVATE_H
     /* Fake ptr_t declaration, just to avoid compilation errors.        */
@@ -811,9 +810,7 @@
 #       define USE_MMAP
 #     endif
 #     define USE_MMAP_ANON
-#     ifdef GC_DARWIN_THREADS
-#       define MPROTECT_VDB
-#     endif
+#     define MPROTECT_VDB
 #     include <unistd.h>
 #     define GETPAGESIZE() getpagesize()
 #     if defined(USE_PPC_PREFETCH) && defined(__GNUC__)
@@ -888,11 +885,9 @@
 #   ifdef AIX
 #     define OS_TYPE "AIX"
 #     undef ALIGNMENT /* in case it's defined   */
-#     ifdef IA64
-#       undef IA64
-          /* DOB: some AIX installs stupidly define IA64 in */
-          /* /usr/include/sys/systemcfg.h                   */
-#     endif
+#     undef IA64
+      /* DOB: some AIX installs stupidly define IA64 in */
+      /* /usr/include/sys/systemcfg.h                   */
 #     ifdef __64BIT__
 #       define ALIGNMENT 8
 #       define CPP_WORDSZ 64
@@ -1163,9 +1158,9 @@
 #       define MAP_FAILED (void *) ((word)-1)
 #       ifdef USE_MMAP
 #         define HEAP_START (ptr_t)0x40000000
-#       else /* USE_MMAP */
+#       else
 #         define HEAP_START DATAEND
-#       endif /* USE_MMAP */
+#       endif
 #   endif /* DGUX */
 
 #   ifdef LINUX
@@ -1247,7 +1242,6 @@
 #       define DATAEND   ((ptr_t)GC_DATAEND)
 #       undef STACK_GRAN
 #       define STACK_GRAN 0x10000
-#       define HEURISTIC1
 #       ifdef USE_MMAP
 #         define NEED_FIND_LIMIT
 #         define USE_MMAP_ANON
@@ -1384,9 +1378,7 @@
 #       define USE_MMAP
 #     endif
 #     define USE_MMAP_ANON
-#     ifdef GC_DARWIN_THREADS
-#       define MPROTECT_VDB
-#     endif
+#     define MPROTECT_VDB
 #     include <unistd.h>
 #     define GETPAGESIZE() getpagesize()
       /* There seems to be some issues with trylock hanging on darwin. This
@@ -1900,12 +1892,12 @@
 #     define OS_TYPE "DARWIN"
 #     define DATASTART ((ptr_t) get_etext())
 #     define DATAEND    ((ptr_t) get_end())
-/* #define STACKBOTTOM ((ptr_t) 0x30000000) */ /* FIXME: Is this needed? */
-#     define HEURISTIC1
+#     define STACKBOTTOM ((ptr_t) 0x30000000)
 #     ifndef USE_MMAP
 #       define USE_MMAP
 #     endif
 #     define USE_MMAP_ANON
+#     define MPROTECT_VDB
 #   endif
 #   ifdef OPENBSD
 #     define ALIGNMENT 4
@@ -2085,9 +2077,7 @@
 #       define USE_MMAP
 #     endif
 #     define USE_MMAP_ANON
-#     ifdef GC_DARWIN_THREADS
-#       define MPROTECT_VDB
-#     endif
+#     define MPROTECT_VDB
 #     include <unistd.h>
 #     define GETPAGESIZE() getpagesize()
       /* There seems to be some issues with trylock hanging on darwin. This
@@ -2609,7 +2599,7 @@
                  (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) || \
                  (defined(SOLARIS) && !defined(USE_MMAP))
 #   define GET_MEM(bytes) HBLKPTR((size_t) calloc(1, (size_t)bytes + GC_page_size) \
-                                                     + GC_page_size-1)
+                                  + GC_page_size-1)
 # elif defined(MSWIN32) || defined(CYGWIN32)
     ptr_t GC_win32_get_mem(GC_word bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
@@ -2620,8 +2610,8 @@
                             GC_MacTemporaryNewPtr(bytes + GC_page_size, true) \
                             + GC_page_size-1)
 #   else
-#     define GET_MEM(bytes) HBLKPTR( \
-                                NewPtrClear(bytes + GC_page_size) + GC_page_size-1)
+#     define GET_MEM(bytes) HBLKPTR(NewPtrClear(bytes + GC_page_size) \
+                                    + GC_page_size-1)
 #   endif
 # elif defined(MSWINCE)
     ptr_t GC_wince_get_mem(GC_word bytes);
@@ -2638,7 +2628,6 @@
     ptr_t GC_unix_get_mem(GC_word bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
 # endif
-
 #endif /* GC_PRIVATE_H */
 
-# endif /* GCCONFIG_H */
+#endif /* GCCONFIG_H */

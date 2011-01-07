@@ -856,118 +856,119 @@ STATIC void GC_fork_child_proc(void)
 /* We hold the allocation lock. */
 GC_INNER void GC_thr_init(void)
 {
+# ifndef GC_DARWIN_THREADS
     int dummy;
+# endif
+  if (GC_thr_initialized) return;
+  GC_thr_initialized = TRUE;
 
-    if (GC_thr_initialized) return;
-    GC_thr_initialized = TRUE;
-
-#   ifdef HANDLE_FORK
-      /* Prepare for a possible fork.   */
-        pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
-                       GC_fork_child_proc);
-#   endif /* HANDLE_FORK */
-#   if defined(INCLUDE_LINUX_THREAD_DESCR)
-      /* Explicitly register the region including the address           */
-      /* of a thread local variable.  This should include thread        */
-      /* locals for the main thread, except for those allocated         */
-      /* in response to dlopen calls.                                   */
-        {
-          ptr_t thread_local_addr = (ptr_t)(&GC_dummy_thread_local);
-          ptr_t main_thread_start, main_thread_end;
-          if (!GC_enclosing_mapping(thread_local_addr, &main_thread_start,
-                                    &main_thread_end)) {
-            ABORT("Failed to find mapping for main thread thread locals");
-          }
-          GC_add_roots_inner(main_thread_start, main_thread_end, FALSE);
-        }
-#   endif
-    /* Add the initial thread, so we can stop it.       */
+# ifdef HANDLE_FORK
+    /* Prepare for a possible fork.     */
+    pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
+                   GC_fork_child_proc);
+# endif
+# ifdef INCLUDE_LINUX_THREAD_DESCR
+    /* Explicitly register the region including the address     */
+    /* of a thread local variable.  This should include thread  */
+    /* locals for the main thread, except for those allocated   */
+    /* in response to dlopen calls.                             */
     {
-      GC_thread t = GC_new_thread(pthread_self());
-#     ifdef GC_DARWIN_THREADS
-        t -> stop_info.mach_thread = mach_thread_self();
-#     else
-        t -> stop_info.stack_ptr = (ptr_t)(&dummy);
-#     endif
-      t -> flags = DETACHED | MAIN_THREAD;
+      ptr_t thread_local_addr = (ptr_t)(&GC_dummy_thread_local);
+      ptr_t main_thread_start, main_thread_end;
+      if (!GC_enclosing_mapping(thread_local_addr, &main_thread_start,
+                                &main_thread_end)) {
+        ABORT("Failed to find mapping for main thread thread locals");
+      }
+      GC_add_roots_inner(main_thread_start, main_thread_end, FALSE);
     }
-
-#   ifndef GC_DARWIN_THREADS
-      GC_stop_init();
+# endif
+  /* Add the initial thread, so we can stop it. */
+  {
+    GC_thread t = GC_new_thread(pthread_self());
+#   ifdef GC_DARWIN_THREADS
+      t -> stop_info.mach_thread = mach_thread_self();
+#   else
+      t -> stop_info.stack_ptr = (ptr_t)(&dummy);
 #   endif
+    t -> flags = DETACHED | MAIN_THREAD;
+  }
 
-    /* Set GC_nprocs.  */
-      {
-        char * nprocs_string = GETENV("GC_NPROCS");
-        GC_nprocs = -1;
-        if (nprocs_string != NULL) GC_nprocs = atoi(nprocs_string);
-      }
-      if (GC_nprocs <= 0) {
-#       if defined(GC_HPUX_THREADS)
-          GC_nprocs = pthread_num_processors_np();
-#       endif
-#       if defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
-           || defined(GC_SOLARIS_THREADS) || defined(GC_GNU_THREADS)
-          GC_nprocs = sysconf(_SC_NPROCESSORS_ONLN);
-          if (GC_nprocs <= 0) GC_nprocs = 1;
-#       endif
-#       if defined(GC_IRIX_THREADS)
-          GC_nprocs = sysconf(_SC_NPROC_ONLN);
-          if (GC_nprocs <= 0) GC_nprocs = 1;
-#       endif
-#       if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS) \
-           || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS)
-          GC_nprocs = get_ncpu();
-#       endif
-#       if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
-          GC_nprocs = GC_get_nprocs();
-#       endif
-      }
-      if (GC_nprocs <= 0) {
-        WARN("GC_get_nprocs() returned %" GC_PRIdPTR "\n", GC_nprocs);
-        GC_nprocs = 2;
-#       ifdef PARALLEL_MARK
-          GC_markers = 1;
-#       endif
-      } else {
-#       ifdef PARALLEL_MARK
-          {
-            char * markers_string = GETENV("GC_MARKERS");
-            if (markers_string != NULL) {
-              GC_markers = atoi(markers_string);
-              if (GC_markers > MAX_MARKERS) {
-                WARN("Limiting number of mark threads\n", 0);
-                GC_markers = MAX_MARKERS;
-              }
-            } else {
-              GC_markers = GC_nprocs;
-              if (GC_markers >= MAX_MARKERS)
-                GC_markers = MAX_MARKERS; /* silently limit GC_markers value */
-            }
-          }
-#       endif
-      }
+# ifndef GC_DARWIN_THREADS
+    GC_stop_init();
+# endif
+
+  /* Set GC_nprocs.     */
+  {
+    char * nprocs_string = GETENV("GC_NPROCS");
+    GC_nprocs = -1;
+    if (nprocs_string != NULL) GC_nprocs = atoi(nprocs_string);
+  }
+  if (GC_nprocs <= 0) {
+#   if defined(GC_HPUX_THREADS)
+      GC_nprocs = pthread_num_processors_np();
+#   endif
+#   if defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
+       || defined(GC_SOLARIS_THREADS) || defined(GC_GNU_THREADS)
+      GC_nprocs = sysconf(_SC_NPROCESSORS_ONLN);
+      if (GC_nprocs <= 0) GC_nprocs = 1;
+#   endif
+#   if defined(GC_IRIX_THREADS)
+      GC_nprocs = sysconf(_SC_NPROC_ONLN);
+      if (GC_nprocs <= 0) GC_nprocs = 1;
+#   endif
+#   if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS) \
+       || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS)
+      GC_nprocs = get_ncpu();
+#   endif
+#   if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
+      GC_nprocs = GC_get_nprocs();
+#   endif
+  }
+  if (GC_nprocs <= 0) {
+    WARN("GC_get_nprocs() returned %" GC_PRIdPTR "\n", GC_nprocs);
+    GC_nprocs = 2;
 #   ifdef PARALLEL_MARK
-      if (GC_print_stats) {
-          GC_log_printf("Number of processors = %ld, "
-                 "number of marker threads = %ld\n", GC_nprocs, GC_markers);
-      }
-      if (GC_markers <= 1) {
-        GC_parallel = FALSE;
-        if (GC_print_stats) {
-            GC_log_printf(
-                "Single marker thread, turning off parallel marking\n");
-        }
-      } else {
-        GC_parallel = TRUE;
-        /* Disable true incremental collection, but generational is OK. */
-        GC_time_limit = GC_TIME_UNLIMITED;
-      }
-      /* If we are using a parallel marker, actually start helper threads.  */
-        if (GC_parallel) start_mark_threads();
+      GC_markers = 1;
 #   endif
+  } else {
+#  ifdef PARALLEL_MARK
+     {
+       char * markers_string = GETENV("GC_MARKERS");
+       if (markers_string != NULL) {
+         GC_markers = atoi(markers_string);
+         if (GC_markers > MAX_MARKERS) {
+           WARN("Limiting number of mark threads\n", 0);
+           GC_markers = MAX_MARKERS;
+         }
+       } else {
+         GC_markers = GC_nprocs;
+         if (GC_markers >= MAX_MARKERS)
+           GC_markers = MAX_MARKERS; /* silently limit GC_markers value */
+       }
+     }
+#   endif
+  }
+# ifdef PARALLEL_MARK
+    if (GC_print_stats) {
+      GC_log_printf("Number of processors = %ld, "
+                "number of marker threads = %ld\n", GC_nprocs, GC_markers);
+    }
+    if (GC_markers <= 1) {
+      GC_parallel = FALSE;
+      if (GC_print_stats) {
+        GC_log_printf("Single marker thread, turning off parallel marking\n");
+      }
+    } else {
+      GC_parallel = TRUE;
+      /* Disable true incremental collection, but generational is OK.   */
+      GC_time_limit = GC_TIME_UNLIMITED;
+    }
+    /* If we are using a parallel marker, actually start helper threads. */
+    if (GC_parallel) {
+      start_mark_threads();
+    }
+# endif
 }
-
 
 /* Perform all initializations, including those that    */
 /* may require allocation.                              */

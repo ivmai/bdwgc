@@ -328,14 +328,16 @@ GC_INNER void GC_push_all_stacks(void)
 
 #ifndef GC_NO_THREADS_DISCOVERY
 
-  STATIC mach_port_t GC_mach_handler_thread = 0;
-  STATIC GC_bool GC_use_mach_handler_thread = FALSE;
+# ifdef MPROTECT_VDB
+    STATIC mach_port_t GC_mach_handler_thread = 0;
+    STATIC GC_bool GC_use_mach_handler_thread = FALSE;
 
-  GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread)
-  {
-    GC_mach_handler_thread = thread;
-    GC_use_mach_handler_thread = TRUE;
-  }
+    GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread)
+    {
+      GC_mach_handler_thread = thread;
+      GC_use_mach_handler_thread = TRUE;
+    }
+# endif /* MPROTECT_VDB */
 
 # ifndef GC_MAX_MACH_THREADS
 #   define GC_MAX_MACH_THREADS THREAD_TABLE_SZ
@@ -370,8 +372,11 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
     mach_msg_type_number_t outCount;
     kern_return_t kern_result;
 
-    if (thread == my_thread || (GC_mach_handler_thread == thread
-                                && GC_use_mach_handler_thread)) {
+    if (thread == my_thread
+#       ifdef MPROTECT_VDB
+          || (GC_mach_handler_thread == thread && GC_use_mach_handler_thread)
+#       endif
+        ) {
       /* Don't add our and the handler threads. */
       continue;
     }
@@ -472,11 +477,6 @@ GC_INNER void GC_stop_world(void)
     GC_printf("Stopping the world from thread 0x%lx\n",
               (unsigned long)my_thread);
 # endif
-  /* Clear out the mach threads list table.  We do not need to really   */
-  /* clear GC_mach_threads[] as it is used only in the range from 0 to  */
-  /* GC_mach_threads_count-1, inclusive.                                */
-  GC_mach_threads_count = 0;
-
 # ifdef PARALLEL_MARK
     if (GC_parallel) {
       /* Make sure all free list construction has stopped before we     */
@@ -494,6 +494,11 @@ GC_INNER void GC_stop_world(void)
       GC_bool changed;
       thread_act_array_t act_list, prev_list;
       mach_msg_type_number_t listcount, prevcount;
+
+      /* Clear out the mach threads list table.  We do not need to      */
+      /* really clear GC_mach_threads[] as it is used only in the range */
+      /* from 0 to GC_mach_threads_count-1, inclusive.                  */
+      GC_mach_threads_count = 0;
 
       /* Loop stopping threads until you have gone over the whole list  */
       /* twice without a new one appearing.  thread_create() won't      */

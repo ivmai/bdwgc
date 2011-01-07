@@ -1,3 +1,35 @@
+2011-01-07  Ivan Maidanski  <ivmai@mail.ru>
+
+	* .cvsignore: Add more auto-generated files.
+	* include/private/.cvsignore: Ditto.
+	* darwin_stop_world.c (GC_mach_handler_thread,
+	GC_use_mach_handler_thread,
+	GC_darwin_register_mach_handler_thread): Define only if
+	MPROTECT_VDB.
+	* darwin_stop_world.c (GC_suspend_thread_list): Use
+	GC_mach_handler_thread and GC_use_mach_handler_thread only if
+	MPROTECT_VDB.
+	* darwin_stop_world.c (GC_stop_world): Reset GC_mach_threads_count
+	only if defined (i.e. unless GC_NO_THREADS_DISCOVERY).
+	* misc.c (GC_init): Fix comment for GWW_VDB.
+	* os_dep.c (GC_mprotect_state_t): Reformat the code.
+	* os_dep.c (DARWIN_EXC_STATE, DARWIN_EXC_STATE_COUNT,
+	DARWIN_EXC_STATE_T, DARWIN_EXC_STATE_DAR): New macros.
+	* os_dep.c (catch_exception_raise): Use DARWIN_EXC_STATE,
+	DARWIN_EXC_STATE_COUNT, DARWIN_EXC_STATE_T, DARWIN_EXC_STATE_DAR;
+	reformat the comment.
+	* pthread_support.c (GC_thr_init): Define "dummy" local variable
+	only unless GC_DARWIN_THREADS; reformat the code.
+	* include/private/gcconfig.h (MPROTECT_VDB): Define for Darwin
+	even in the single-threaded mode; define for iPhone/iPad.
+	* include/private/gcconfig.h (IA64): Remove unnecessary "ifdef"
+	around "undef".
+	* include/private/gcconfig.h (HEURISTIC1): Remove unused for
+	Cygwin.
+	* include/private/gcconfig.h (STACKBOTTOM): Use fixed address for
+	Darwin/arm (instead of HEURISTIC1).
+	* include/private/gcconfig.h (GET_MEM): Reformat the code.
+
 2011-01-05  Ivan Maidanski  <ivmai@mail.ru>
 
 	* misc.c (GC_write): Replace multiple "ifdef/endif" with "elif"

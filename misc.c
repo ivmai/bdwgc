@@ -891,7 +891,7 @@ GC_API void GC_CALL GC_init(void)
     GC_STATIC_ASSERT((signed_word)(-1) < (signed_word)0);
 #   ifndef GC_DISABLE_INCREMENTAL
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
-        /* For GWW_MPROTECT on Win32, this needs to happen before any   */
+        /* For GWW_VDB on Win32, this needs to happen before any        */
         /* heap memory is allocated.                                    */
         GC_dirty_init();
         GC_ASSERT(GC_bytes_allocd == 0)
