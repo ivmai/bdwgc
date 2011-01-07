@@ -1,5 +1,15 @@
 2011-01-07  Ivan Maidanski  <ivmai@mail.ru>
 
+	* include/private/gc_priv.h (THREAD_FLD, MAX_HEAP_SECTS,
+	_GC_arrays, GC_push_all_stack_sections, PRINT_BLACK_LIST,
+	GC_add_to_black_list_stack, GC_ASSERT, SIG_SUSPEND,
+	NEED_FIND_LIMIT): Reformat the code and comments for.
+	* include/private/gc_priv.h (_GC_arrays): Move the conditional
+	macro definitions (shortcuts for GC_arrays members) into the
+	structure body.
+
+2011-01-07  Ivan Maidanski  <ivmai@mail.ru>
+
 	* .cvsignore: Add more auto-generated files.
 	* include/private/.cvsignore: Ditto.
 	* darwin_stop_world.c (GC_mach_handler_thread,
