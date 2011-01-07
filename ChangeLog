@@ -1,6 +1,8 @@
 2011-01-07  Ivan Maidanski  <ivmai@mail.ru>
 
 	* gc_dlopen.c: Reformat the comments and adjust code indentation.
+	* include/private/gcconfig.h (DYNAMIC_LOADING): Fix filename in
+	the comment.
 
 2011-01-07  Ivan Maidanski  <ivmai@mail.ru>
 
