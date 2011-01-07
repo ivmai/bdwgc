@@ -648,7 +648,7 @@
  * The first and second one may be combined, in which case a runtime
  * selection will be made, based on GetWriteWatch availability.
  *
- * An architecture may define DYNAMIC_LOADING if dynamic_load.c
+ * An architecture may define DYNAMIC_LOADING if dyn_load.c
  * defined GC_register_dynamic_libraries() for the architecture.
  *
  * An architecture may define PREFETCH(x) to preload the cache with *x.

@@ -1,5 +1,9 @@
 2011-01-07  Ivan Maidanski  <ivmai@mail.ru>
 
+	* gc_dlopen.c: Reformat the comments and adjust code indentation.
+
+2011-01-07  Ivan Maidanski  <ivmai@mail.ru>
+
 	* include/private/gc_priv.h (THREAD_FLD, MAX_HEAP_SECTS,
 	_GC_arrays, GC_push_all_stack_sections, PRINT_BLACK_LIST,
 	GC_add_to_black_list_stack, GC_ASSERT, SIG_SUSPEND,
