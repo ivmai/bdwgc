@@ -1,3 +1,8 @@
+2011-01-12  Ivan Maidanski  <ivmai@mail.ru>
+
+	* include/private/gcconfig.h (PARALLEL_MARK): Do not make it cause
+	MPROTECT_VDB undefining.
+
 2011-01-07  Ivan Maidanski  <ivmai@mail.ru>
 
 	* gc_dlopen.c: Reformat the comments and adjust code indentation.

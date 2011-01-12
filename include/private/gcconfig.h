@@ -2327,10 +2327,7 @@
 #   undef MPROTECT_VDB  /* Can't deal with address space holes. */
 # endif
 
-# if defined(PARALLEL_MARK)
-    /* FIXME: Remove this undef if possible.    */
-#   undef MPROTECT_VDB  /* For now.     */
-# endif
+/* PARALLEL_MARK does not cause undef MPROTECT_VDB any longer.  */
 
 # if defined(MPROTECT_VDB) && defined(GC_PREFER_MPROTECT_VDB)
     /* Choose MPROTECT_VDB manually (if multiple strategies available). */
