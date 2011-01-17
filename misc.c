@@ -827,6 +827,17 @@ GC_API void GC_CALL GC_init(void)
           }
         }
       }
+      {
+        char * string = GETENV("GC_USE_ENTIRE_HEAP");
+        if (string != NULL) {
+          if (*string == '0' && *(string + 1) == '\0') {
+            /* "0" is used to turn off the mode. */
+            GC_use_entire_heap = FALSE;
+          } else {
+            GC_use_entire_heap = TRUE;
+          }
+        }
+      }
 #   endif
     maybe_install_looping_handler();
     /* Adjust normal object descriptor for extra allocation.    */

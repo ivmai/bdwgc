@@ -18,7 +18,11 @@
 
 #include <stdio.h>
 
-GC_bool GC_use_entire_heap = 0;
+#ifdef GC_USE_ENTIRE_HEAP
+  int GC_use_entire_heap = TRUE;
+#else
+  int GC_use_entire_heap = FALSE;
+#endif
 
 /*
  * Free heap blocks are kept on one of several free lists,

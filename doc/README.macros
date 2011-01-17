@@ -494,6 +494,13 @@ GC_PRINT_VERBOSE_STATS  Permanently turn on verbose logging (useful for
 
 GC_DONT_EXPAND  Don't expand the heap unless explicitly requested or forced to.
 
+GC_USE_ENTIRE_HEAP      Causes the non-incremental collector to use the
+  entire heap before collecting.  This sometimes results in more large block
+  fragmentation, since very large blocks will tend to get broken up during
+  each GC cycle.  It is likely to result in a larger working set, but lower
+  collection frequencies, and hence fewer instructions executed in the
+  collector.  This macro controls only the default GC_use_entire_heap value.
+
 GC_INITIAL_HEAP_SIZE=<value>    Set the desired default initial heap size
   in bytes.
 

@@ -1,3 +1,13 @@
+2011-01-17  Ivan Maidanski  <ivmai@mail.ru>
+
+	* allchblk.c (GC_use_entire_heap): Change type to int (as declared
+	in gc.h); set the default value depending on new GC_USE_ENTIRE_HEAP
+	macro.
+	* misc.c (GC_init): Test GC_USE_ENTIRE_HEAP environment variable to
+	alter the default value of GC_use_entire_heap.
+	* doc/README.environment (GC_USE_ENTIRE_HEAP): Document.
+	* doc/README.macros (GC_USE_ENTIRE_HEAP): Ditto.
+
 2011-01-12  Ivan Maidanski  <ivmai@mail.ru>
 
 	* include/private/gcconfig.h (PARALLEL_MARK): Do not make it cause
