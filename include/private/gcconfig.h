@@ -707,7 +707,7 @@
 #       ifdef __ELF__
 #            define DYNAMIC_LOADING
 #            include <features.h>
-#            if defined(__GLIBC__)&& __GLIBC__>=2
+#            if defined(__GLIBC__) && __GLIBC__ >= 2
 #              define SEARCH_FOR_DATA_START
 #            else /* !GLIBC2 */
 #              ifdef PLATFORM_ANDROID
@@ -2062,6 +2062,12 @@
 #       if defined(__GNUC__) && __GNUC__ >= 3
 #           define PREFETCH(x) __builtin_prefetch((x), 0, 0)
 #           define PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
+#       endif
+#       if defined(__GLIBC__)
+          /* At present, there's a bug in GLibc getcontext() on         */
+          /* Linux/x64 (it clears FPU exception mask).  We define this  */
+          /* macro to workaround it.                                    */
+#         define GETCONTEXT_FPU_EXCMASK_BUG
 #       endif
 #   endif
 #   ifdef DARWIN

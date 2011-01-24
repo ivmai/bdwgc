@@ -56,9 +56,9 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
   if (stack_start == 0) {
 # ifdef POWERPC
 #   if CPP_WORDSZ == 32
-      __asm__ volatile("lwz     %0,0(r1)" : "=r" (frame));
+      __asm__ __volatile__ ("lwz %0,0(r1)" : "=r" (frame));
 #   else
-      __asm__ volatile("ld      %0,0(r1)" : "=r" (frame));
+      __asm__ __volatile__ ("ld %0,0(r1)" : "=r" (frame));
 #   endif
 # endif
   } else {

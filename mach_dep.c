@@ -185,8 +185,11 @@ asm static void PushMacRegisters()
 # include <signal.h>
 # ifndef NO_GETCONTEXT
 #   include <ucontext.h>
+#   ifdef GETCONTEXT_FPU_EXCMASK_BUG
+#     include <fenv.h>
+#   endif
 # endif
-#endif
+#endif /* !HAVE_PUSH_REGS */
 
 /* Ensure that either registers are pushed, or callee-save registers    */
 /* are somewhere on the stack, and then call fn(arg, ctxt).             */
@@ -204,8 +207,41 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
       /* ARM and MIPS Linux often doesn't support a real     */
       /* getcontext().                                       */
       ucontext_t ctxt;
+#     ifdef GETCONTEXT_FPU_EXCMASK_BUG
+        /* Workaround a bug (clearing the FPU exception mask) in        */
+        /* getcontext on Linux/x86_64.                                  */
+#       ifdef X86_64
+          /* We inline fegetexcept and feenableexcept here just not to  */
+          /* force the client application to use -lm linker option.     */
+          unsigned short except_mask;
+          __asm__ __volatile__ ("fstcw %0" : "=m" (*&except_mask));
+          except_mask &= FE_ALL_EXCEPT;
+#       else
+          int except_mask = fegetexcept();
+#       endif
+#     endif
       if (getcontext(&ctxt) < 0)
-        ABORT ("Getcontext failed: Use another register retrieval method?");
+        ABORT ("getcontext failed: Use another register retrieval method?");
+#     ifdef GETCONTEXT_FPU_EXCMASK_BUG
+#       ifdef X86_64
+          {
+            unsigned short new_exc;
+            unsigned int new_exc_sse;
+            /* Get the current control word of the x87 FPU.     */
+            __asm__ __volatile__ ("fstcw %0" : "=m" (*&new_exc));
+            new_exc &= except_mask;
+            __asm__ __volatile__ ("fldcw %0" : : "m" (*&new_exc));
+            /* And now the same for the SSE MXCSR register. */
+            __asm__ __volatile__ ("stmxcsr %0" : "=m" (*&new_exc_sse));
+            /* The SSE exception masks are shifted by 7 bits. */
+            new_exc_sse &= except_mask << 7;
+            __asm__ __volatile__ ("ldmxcsr %0" : : "m" (*&new_exc_sse));
+          }
+#       else /* !X86_64 */
+          if (feenableexcept(except_mask) < 0)
+            ABORT("feenableexcept failed");
+#       endif
+#     endif
       context = &ctxt;
 #     if defined(SPARC) || defined(IA64)
         /* On a register window machine, we need to save register       */
