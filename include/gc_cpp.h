@@ -179,13 +179,16 @@ namespace boehmgc
 {
 #endif
 
-enum GCPlacement {
+enum GCPlacement
+{
   UseGC,
 # ifndef GC_NAME_CONFLICT
     GC=UseGC,
 # endif
   NoGC,
-  PointerFreeGC
+  PointerFreeGC,
+  PointerFreeNoGC,
+  NoGCPointerFree = PointerFreeNoGC
 };
 
 class gc {
@@ -310,13 +313,20 @@ inline void* gc::operator new( size_t size ) {
     return GC_MALLOC( size );
 }
 
-inline void* gc::operator new( size_t size, GCPlacement gcp ) {
-    if (gcp == UseGC)
-        return GC_MALLOC( size );
-    else if (gcp == PointerFreeGC)
-        return GC_MALLOC_ATOMIC( size );
-    else
-        return GC_MALLOC_UNCOLLECTABLE( size );
+inline void* gc::operator new( size_t size, GCPlacement gcp )
+{
+    switch (gcp)
+    {
+        case UseGC:
+            return GC_MALLOC( size );
+        case PointerFreeGC:
+            return GC_MALLOC_ATOMIC( size );
+        case PointerFreeNoGC:
+            return GC_MALLOC_ATOMIC_UNCOLLECTABLE( size );
+        case NoGC:
+        default:
+            return GC_MALLOC_UNCOLLECTABLE( size );
+    }
 }
 
 inline void* gc::operator new( size_t /* size */, void *p ) {
@@ -394,16 +404,28 @@ inline void* operator new( size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 {
     void* obj;
 
-    if (gcp == GC_NS_QUALIFY(UseGC)) {
+    if (gcp == GC_NS_QUALIFY(UseGC))
+    {
         obj = GC_MALLOC( size );
         if (cleanup != 0)
-            GC_REGISTER_FINALIZER_IGNORE_SELF( obj, cleanup, clientData,
-                                              0, 0 );
-    } else if (gcp == GC_NS_QUALIFY(PointerFreeGC)) {
+            GC_REGISTER_FINALIZER_IGNORE_SELF(
+                obj, cleanup, clientData, 0, 0 );
+    }
+    else
+    if (gcp == GC_NS_QUALIFY(PointerFreeGC))
+    {
         obj = GC_MALLOC_ATOMIC( size );
-    } else {
+    }
+    else
+    if (gcp == GC_NS_QUALIFY(PointerFreeNoGC))
+    {
+        obj = GC_MALLOC_ATOMIC_UNCOLLECTABLE( size );
+    }
+    else
+    {
         obj = GC_MALLOC_UNCOLLECTABLE( size );
-    };
+    }
+
     return obj;
 }
 
