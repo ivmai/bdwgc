@@ -5598,7 +5598,7 @@ value, would be negative.
 
 * mark.c (GC_push_next_marked): correct comment.
 * Makefile.direct: document NO_PROC_STAT.
-* include/private/gcconfig.h: Accomodate NO_PROC_STAT.
+* include/private/gcconfig.h: Accommodate NO_PROC_STAT.
 
 
 == [7.1alpha2] 2008-01-10 ==
@@ -5690,7 +5690,7 @@ for HURD.
 * dbg_mlc.c: Use random() on all glibc systems.
 * mach_dep.c (GC_with_callee_saves_pushed): Don't use getcontext() on
 HURD.  Add comment.
-* pthread_stop_world.c (GC_suspend_handler, GC_stop_init): Accomodate
+* pthread_stop_world.c (GC_suspend_handler, GC_stop_init): Accommodate
 systems without SA_SIGINFO.
 
 * include/gc.h (GC_PTR_STORE): Fix non-DEBUG parentheses.
@@ -5826,7 +5826,7 @@ GC_WIN32_PTHREADS.  Define USE_PTHREAD_LOCKS only if we have
 pthreads.
 
 * gc_dlopen.c, thread_local_alloc.c, threadlibs.c, win32_threads.c,
-tests/test.c: Accomodate GC_WIN32_PTHREADS.
+tests/test.c: Accommodate GC_WIN32_PTHREADS.
 * include/gc.h: Don't include windows.h for GC_WIN32_PTHREADS.
 * include/gc_config_macros.h: Define both PTHREADS and
 GC_WIN32_THREADS.
