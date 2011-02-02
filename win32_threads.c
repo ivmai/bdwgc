@@ -2420,7 +2420,7 @@ GC_INNER void GC_thr_init(void)
   }
 
   /* Cygwin-pthreads calls CreateThread internally, but it's not easily */
-  /* interceptible by us..., so intercept pthread_create instead.       */
+  /* interceptable by us..., so intercept pthread_create instead.       */
   GC_API int GC_pthread_create(pthread_t *new_thread,
                                GC_PTHREAD_CREATE_CONST pthread_attr_t *attr,
                                void *(*start_routine)(void *), void *arg)
