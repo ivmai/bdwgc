@@ -211,11 +211,10 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
         /* Workaround a bug (clearing the FPU exception mask) in        */
         /* getcontext on Linux/x86_64.                                  */
 #       ifdef X86_64
-          /* We inline fegetexcept and feenableexcept here just not to  */
-          /* force the client application to use -lm linker option.     */
-          unsigned short except_mask;
-          __asm__ __volatile__ ("fstcw %0" : "=m" (*&except_mask));
-          except_mask &= FE_ALL_EXCEPT;
+          /* We manipulate FPU control word here just not to force the  */
+          /* client application to use -lm linker option.               */
+          unsigned short old_fcw;
+          __asm__ __volatile__ ("fstcw %0" : "=m" (*&old_fcw));
 #       else
           int except_mask = fegetexcept();
 #       endif
@@ -224,18 +223,14 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
         ABORT ("getcontext failed: Use another register retrieval method?");
 #     ifdef GETCONTEXT_FPU_EXCMASK_BUG
 #       ifdef X86_64
+          __asm__ __volatile__ ("fldcw %0" : : "m" (*&old_fcw));
           {
-            unsigned short new_exc;
-            unsigned int new_exc_sse;
-            /* Get the current control word of the x87 FPU.     */
-            __asm__ __volatile__ ("fstcw %0" : "=m" (*&new_exc));
-            new_exc &= except_mask;
-            __asm__ __volatile__ ("fldcw %0" : : "m" (*&new_exc));
-            /* And now the same for the SSE MXCSR register. */
-            __asm__ __volatile__ ("stmxcsr %0" : "=m" (*&new_exc_sse));
-            /* The SSE exception masks are shifted by 7 bits. */
-            new_exc_sse &= except_mask << 7;
-            __asm__ __volatile__ ("ldmxcsr %0" : : "m" (*&new_exc_sse));
+            unsigned mxcsr;
+            /* And now correct the exception mask in SSE MXCSR. */
+            __asm__ __volatile__ ("stmxcsr %0" : "=m" (*&mxcsr));
+            mxcsr = (mxcsr & ~(ALL_EXCEPT << 7)) |
+                        ((old_fcw & ALL_EXCEPT) << 7);
+            __asm__ __volatile__ ("ldmxcsr %0" : : "m" (*&mxcsr));
           }
 #       else /* !X86_64 */
           if (feenableexcept(except_mask) < 0)

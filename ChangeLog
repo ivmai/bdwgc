@@ -1,3 +1,9 @@
+2011-02-09  Ivan Maidanski  <ivmai@mail.ru> (mostly Jean-Claude Beaudoin)
+
+	* mach_dep.c (GC_with_callee_saves_pushed): Fix and improve code
+	introduced by the previous patch (if GETCONTEXT_FPU_EXCMASK_BUG
+	and X86_64).
+
 2011-01-22  Ivan Maidanski  <ivmai@mail.ru> (mostly Jean-Claude Beaudoin)
 
 	* darwin_stop_world.c (GC_FindTopOfStack): Prefix and suffix
