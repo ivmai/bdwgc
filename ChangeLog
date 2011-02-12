@@ -1,5 +1,24 @@
 2011-02-10  Ivan Maidanski  <ivmai@mail.ru>
 
+	* dyn_load.c (GC_register_map_entries,
+	GC_register_dynamic_libraries_dl_iterate_phdr): Calculate
+	DATASTART only once if DATASTART_IS_FUNC.
+	* dyn_load.c (GC_register_dynamic_libraries_dl_iterate_phdr):
+	Calculate DATAEND only once if DATAEND_IS_FUNC.
+	* dyn_load.c: Add comment to some endif; realign some code.
+	* dyn_load.c (GC_init_dyld): Don't use
+	_dyld_bind_fully_image_containing_address if
+	NO_DYLD_BIND_FULLY_IMAGE defined; add FIXME.
+	* include/private/gcconfig.h (GC_data_start, GC_find_limit):
+	Declare if used by DATASTART/DATAEND, respectively.
+	* include/private/gcconfig.h (DATASTART_IS_FUNC, DATAEND_IS_FUNC):
+	Define if DATASTART/DATAEND is a function, respectively.
+	* include/private/gcconfig.h (GETPAGESIZE, NO_PTHREAD_TRYLOCK,
+	NO_DYLD_BIND_FULLY_IMAGE): Define for Darwin/arm as well; include
+	unistd.h.
+
+2011-02-10  Ivan Maidanski  <ivmai@mail.ru>
+
 	* os_dep.c (GC_setpagesize, GC_task_self, PROTECT, UNPROTECT):
 	Reorder to remove redundant ifdef for Win32.
 	* os_dep.c: Add comment to some endif.

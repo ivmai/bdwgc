@@ -682,6 +682,7 @@
 #       define OS_TYPE "OPENBSD"
 #       define HEURISTIC2
 #       ifdef __ELF__
+          extern ptr_t GC_data_start;
 #         define DATASTART GC_data_start
 #         define DYNAMIC_LOADING
 #       else
@@ -693,6 +694,7 @@
 #       define OS_TYPE "NETBSD"
 #       define HEURISTIC2
 #       ifdef __ELF__
+          extern ptr_t GC_data_start;
 #         define DATASTART GC_data_start
 #         define DYNAMIC_LOADING
 #       else
@@ -751,6 +753,7 @@
 #   ifdef NEXT
 #       define OS_TYPE "NEXT"
 #       define DATASTART ((ptr_t) get_etext())
+#       define DATASTART_IS_FUNC
 #       define STACKBOTTOM ((ptr_t) 0x4000000)
 #       define DATAEND  /* not needed */
 #   endif
@@ -805,7 +808,7 @@
       /* XXX: see get_end(3), get_etext() and get_end() should not be used.
          These aren't used when dyld support is enabled (it is by default) */
 #     define DATASTART ((ptr_t) get_etext())
-#     define DATAEND    ((ptr_t) get_end())
+#     define DATAEND   ((ptr_t) get_end())
 #     ifndef USE_MMAP
 #       define USE_MMAP
 #     endif
@@ -863,12 +866,14 @@
         extern char etext[];
         ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
+#       define DATASTART_IS_FUNC
 #   endif
 #   ifdef NETBSD
 #     define ALIGNMENT 4
 #     define OS_TYPE "NETBSD"
 #     define HEURISTIC2
       extern char etext[];
+      extern ptr_t GC_data_start;
 #     define DATASTART GC_data_start
 #     define DYNAMIC_LOADING
 #   endif
@@ -963,6 +968,7 @@
         extern int _end[];
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
+#       define DATASTART_IS_FUNC
 #       define DATAEND (ptr_t)(_end)
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
 #         define USE_MMAP
@@ -1000,6 +1006,7 @@
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
         extern int etext[];
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)etext)
+#       define DATASTART_IS_FUNC
 #       define MPROTECT_VDB
 #       define STACKBOTTOM ((ptr_t) 0xdfff0000)
 #       define DYNAMIC_LOADING
@@ -1021,6 +1028,7 @@
 #     else
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
 #     endif
+#     define DATASTART_IS_FUNC
 #     define LINUX_STACKBOTTOM
 #   endif
 #   ifdef OPENBSD
@@ -1042,6 +1050,7 @@
 #     define OS_TYPE "NETBSD"
 #     define HEURISTIC2
 #     ifdef __ELF__
+        extern ptr_t GC_data_start;
 #       define DATASTART GC_data_start
 #       define DYNAMIC_LOADING
 #     else
@@ -1062,7 +1071,9 @@
         extern char end[];
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
+        ptr_t GC_find_limit(ptr_t, GC_bool);
 #       define DATAEND (GC_find_limit (DATASTART, TRUE))
+#       define DATAEND_IS_FUNC
 #       define DATASTART2 ((ptr_t)(&edata))
 #       define DATAEND2 ((ptr_t)(&end))
 #   endif
@@ -1098,6 +1109,7 @@
         extern int _etext[], _end[];
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
+#       define DATASTART_IS_FUNC
 #       define DATAEND (ptr_t)(_end)
 /*      # define STACKBOTTOM ((ptr_t)(_start)) worked through 2.7,      */
 /*      but reportedly breaks under 2.8.  It appears that the stack     */
@@ -1146,6 +1158,7 @@
         extern int _etext, _end;
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)(&_etext))
+#       define DATASTART_IS_FUNC
 #       define DATAEND (ptr_t)(&_end)
 #       define STACK_GROWS_DOWN
 #       define HEURISTIC2
@@ -1314,6 +1327,7 @@
         extern char etext[];
         char * GC_FreeBSDGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
+#       define DATASTART_IS_FUNC
 #   endif
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
@@ -1335,6 +1349,7 @@
 #   ifdef NEXT
 #       define OS_TYPE "NEXT"
 #       define DATASTART ((ptr_t) get_etext())
+#       define DATASTART_IS_FUNC
 #       define STACKBOTTOM ((ptr_t)0xc0000000)
 #       define DATAEND  /* not needed */
 #   endif
@@ -1372,7 +1387,7 @@
       /* XXX: see get_end(3), get_etext() and get_end() should not be used.
          These aren't used when dyld support is enabled (it is by default) */
 #     define DATASTART ((ptr_t) get_etext())
-#     define DATAEND    ((ptr_t) get_end())
+#     define DATAEND   ((ptr_t) get_end())
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
 #     ifndef USE_MMAP
 #       define USE_MMAP
@@ -1482,6 +1497,7 @@
 #     define HEURISTIC2
 #     ifdef __ELF__
         extern int etext[];
+        extern ptr_t GC_data_start;
 #       define DATASTART GC_data_start
 #       define NEED_FIND_LIMIT
 #       define DYNAMIC_LOADING
@@ -1600,6 +1616,7 @@
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
 #       define HEURISTIC2
+        extern ptr_t GC_data_start;
 #       define DATASTART GC_data_start
 #       define ELFCLASS32 32
 #       define ELFCLASS64 64
@@ -1637,7 +1654,9 @@
         extern char end[];
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
+        ptr_t GC_find_limit(ptr_t, GC_bool);
 #       define DATAEND (GC_find_limit (DATASTART, TRUE))
+#       define DATAEND_IS_FUNC
 #       define DATASTART2 ((ptr_t)(&edata))
 #       define DATAEND2 ((ptr_t)(&end))
 #   endif
@@ -1792,6 +1811,7 @@
 #       define OS_TYPE "DGUX"
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)etext)
+#       define DATASTART_IS_FUNC
 #   endif
 #   define STACKBOTTOM ((char*)0xf0000000) /* determined empirically */
 # endif
@@ -1808,6 +1828,7 @@
         extern int _end[];
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
+#       define DATASTART_IS_FUNC
 #       define DATAEND (ptr_t)(_end)
 #       define HEURISTIC2
 #   endif
@@ -1846,6 +1867,7 @@
 #       define OS_TYPE "NETBSD"
 #       define HEURISTIC2
 #       ifdef __ELF__
+           extern ptr_t GC_data_start;
 #          define DATASTART GC_data_start
 #          define DYNAMIC_LOADING
 #       else
@@ -1890,14 +1912,21 @@
 #   ifdef DARWIN
       /* iPhone */
 #     define OS_TYPE "DARWIN"
+#     define DYNAMIC_LOADING
 #     define DATASTART ((ptr_t) get_etext())
-#     define DATAEND    ((ptr_t) get_end())
+#     define DATAEND   ((ptr_t) get_end())
 #     define STACKBOTTOM ((ptr_t) 0x30000000)
 #     ifndef USE_MMAP
 #       define USE_MMAP
 #     endif
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
+#     include <unistd.h>
+#     define GETPAGESIZE() getpagesize()
+      /* FIXME: There seems to be some issues with trylock hanging on   */
+      /* darwin. This should be looked into some more.                  */
+#     define NO_PTHREAD_TRYLOCK
+#     define NO_DYLD_BIND_FULLY_IMAGE
 #   endif
 #   ifdef OPENBSD
 #     define ALIGNMENT 4
@@ -1955,6 +1984,7 @@
 #   ifdef NETBSD
 #      define OS_TYPE "NETBSD"
 #      define HEURISTIC2
+       extern ptr_t GC_data_start;
 #      define DATASTART GC_data_start
 #      define DYNAMIC_LOADING
 #   endif
@@ -2077,7 +2107,7 @@
       /* XXX: see get_end(3), get_etext() and get_end() should not be used.
          These aren't used when dyld support is enabled (it is by default) */
 #     define DATASTART ((ptr_t) get_etext())
-#     define DATAEND    ((ptr_t) get_end())
+#     define DATAEND   ((ptr_t) get_end())
 #     define STACKBOTTOM ((ptr_t) 0x7fff5fc00000)
 #     ifndef USE_MMAP
 #       define USE_MMAP
@@ -2111,6 +2141,7 @@
         extern char etext[];
         ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
+#       define DATASTART_IS_FUNC
 #   endif
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
@@ -2127,6 +2158,7 @@
         extern int _etext[], _end[];
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
+#       define DATASTART_IS_FUNC
 #       define DATAEND (ptr_t)(_end)
 /*      # define STACKBOTTOM ((ptr_t)(_start)) worked through 2.7,      */
 /*      but reportedly breaks under 2.8.  It appears that the stack     */

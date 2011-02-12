@@ -290,7 +290,19 @@ STATIC word GC_register_map_entries(char *maps)
     unsigned int maj_dev;
     ptr_t least_ha, greatest_ha;
     unsigned i;
-    ptr_t datastart = (ptr_t)(DATASTART);
+    ptr_t datastart;
+
+#   ifdef DATASTART_IS_FUNC
+      static ptr_t datastart_cached = (ptr_t)(word)-1;
+
+      /* Evaluate DATASTART only once.  */
+      if (datastart_cached == (ptr_t)(word)-1) {
+        datastart_cached = (ptr_t)(DATASTART);
+      }
+      datastart = datastart_cached;
+#   else
+      datastart = (ptr_t)(DATASTART);
+#   endif
 
     GC_ASSERT(I_HOLD_LOCK());
     sort_heap_sects(GC_our_memory, GC_n_memory);
@@ -382,34 +394,32 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 
 # define HAVE_REGISTER_MAIN_STATIC_DATA
 
-#endif /* USE_PROC_FOR_LIBRARIES */
+#else /* !USE_PROC_FOR_LIBRARIES */
 
-#if !defined(USE_PROC_FOR_LIBRARIES)
 /* The following is the preferred way to walk dynamic libraries */
 /* For glibc 2.2.4+.  Unfortunately, it doesn't work for older  */
 /* versions.  Thanks to Jakub Jelinek for most of the code.     */
 
-# if (defined(LINUX) || defined (__GLIBC__)) /* Are others OK here, too? */ \
+#if (defined(LINUX) || defined (__GLIBC__)) /* Are others OK here, too? */ \
      && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
          || (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG)))
 /* We have the header files for a glibc that includes dl_iterate_phdr.  */
 /* It may still not be available in the library on the target system.   */
 /* Thus we also treat it as a weak symbol.                              */
-#define HAVE_DL_ITERATE_PHDR
-#pragma weak dl_iterate_phdr
+# define HAVE_DL_ITERATE_PHDR
+# pragma weak dl_iterate_phdr
 #endif
 
-# if (defined(FREEBSD) && __FreeBSD__ >= 7)
-/* On the FreeBSD system, any target system at major version 7 shall    */
-/* have dl_iterate_phdr; therefore, we need not make it weak as above.  */
-#define HAVE_DL_ITERATE_PHDR
-#define DL_ITERATE_PHDR_STRONG
+#if (defined(FREEBSD) && __FreeBSD__ >= 7)
+  /* On the FreeBSD system, any target system at major version 7 shall   */
+  /* have dl_iterate_phdr; therefore, we need not make it weak as above. */
+# define HAVE_DL_ITERATE_PHDR
+# define DL_ITERATE_PHDR_STRONG
 #endif
 
 #if defined(HAVE_DL_ITERATE_PHDR)
 
 # ifdef PT_GNU_RELRO
-
 /* Instead of registering PT_LOAD sections directly, we keep them       */
 /* in a temporary list, and filter them by excluding PT_GNU_RELRO       */
 /* segments.  Processing PT_GNU_RELRO sections with                     */
@@ -417,19 +427,18 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 /* it runs into trouble if a client registers an overlapping segment,   */
 /* which unfortunately seems quite possible.                            */
 
-#define MAX_LOAD_SEGS MAX_ROOT_SETS
+#   define MAX_LOAD_SEGS MAX_ROOT_SETS
 
-static struct load_segment {
-  ptr_t start;
-  ptr_t end;
-  /* Room for a second segment if we remove a RELRO segment */
-  /* from the middle.                                       */
-  ptr_t start2;
-  ptr_t end2;
-} load_segs[MAX_LOAD_SEGS];
+    static struct load_segment {
+      ptr_t start;
+      ptr_t end;
+      /* Room for a second segment if we remove a RELRO segment */
+      /* from the middle.                                       */
+      ptr_t start2;
+      ptr_t end2;
+    } load_segs[MAX_LOAD_SEGS];
 
-static int n_load_segs;
-
+    static int n_load_segs;
 # endif /* PT_GNU_RELRO */
 
 STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
@@ -564,9 +573,35 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
       }
 #   endif
   } else {
+      char *datastart;
+      char *dataend;
+#     ifdef DATASTART_IS_FUNC
+        static ptr_t datastart_cached = (ptr_t)(word)-1;
+
+        /* Evaluate DATASTART only once.  */
+        if (datastart_cached == (ptr_t)(word)-1) {
+          datastart_cached = (ptr_t)(DATASTART);
+        }
+        datastart = (char *)datastart_cached;
+#     else
+        datastart = DATASTART;
+#     endif
+#     ifdef DATAEND_IS_FUNC
+        {
+          static ptr_t dataend_cached = 0;
+          /* Evaluate DATAEND only once. */
+          if (dataend_cached == 0) {
+            dataend_cached = (ptr_t)(DATAEND);
+          }
+          dataend = (char *)dataend_cached;
+        }
+#     else
+        dataend = DATAEND;
+#     endif
+
       /* dl_iterate_phdr may forget the static data segment in  */
       /* statically linked executables.                         */
-      GC_add_roots_inner(DATASTART, (char *)(DATAEND), TRUE);
+      GC_add_roots_inner(datastart, dataend, TRUE);
 #     if defined(DATASTART2)
         GC_add_roots_inner(DATASTART2, (char *)(DATAEND2), TRUE);
 #     endif
@@ -574,9 +609,9 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
   return TRUE;
 }
 
-#define HAVE_REGISTER_MAIN_STATIC_DATA
+# define HAVE_REGISTER_MAIN_STATIC_DATA
 
-# else /* !LINUX || version(glibc) < 2.2.4 */
+#else /* !HAVE_DL_ITERATE_PHDR */
 
 /* Dynamic loading code for Linux running ELF. Somewhat tested on
  * Linux/x86, untested but hopefully should work on Linux/Alpha.
@@ -586,27 +621,27 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 /* This doesn't necessarily work in all cases, e.g. with preloaded
  * dynamic libraries.                                           */
 
-#if defined(NETBSD) || defined(OPENBSD)
-#  include <sys/exec_elf.h>
-/* for compatibility with 1.4.x */
-#  ifndef DT_DEBUG
-#  define DT_DEBUG     21
-#  endif
-#  ifndef PT_LOAD
-#  define PT_LOAD      1
-#  endif
-#  ifndef PF_W
-#  define PF_W         2
-#  endif
-#elif !defined(PLATFORM_ANDROID)
+# if defined(NETBSD) || defined(OPENBSD)
+#   include <sys/exec_elf.h>
+   /* for compatibility with 1.4.x */
+#   ifndef DT_DEBUG
+#     define DT_DEBUG   21
+#   endif
+#   ifndef PT_LOAD
+#     define PT_LOAD    1
+#   endif
+#   ifndef PF_W
+#     define PF_W       2
+#   endif
+# elif !defined(PLATFORM_ANDROID)
 #  include <elf.h>
-#endif
-
-#ifndef PLATFORM_ANDROID
-# include <link.h>
-#endif
-
 # endif
+
+# ifndef PLATFORM_ANDROID
+#   include <link.h>
+# endif
+
+#endif /* !HAVE_DL_ITERATE_PHDR */
 
 #ifdef __GNUC__
 # pragma weak _DYNAMIC
@@ -1268,11 +1303,11 @@ GC_INNER void GC_init_dyld(void)
 {
   static GC_bool initialized = FALSE;
 
-  if(initialized) return;
+  if (initialized) return;
 
-#   ifdef DARWIN_DEBUG
-      GC_printf("Registering dyld callbacks...\n");
-#   endif
+# ifdef DARWIN_DEBUG
+    GC_printf("Registering dyld callbacks...\n");
+# endif
 
   /* Apple's Documentation:
      When you call _dyld_register_func_for_add_image, the dynamic linker
@@ -1285,25 +1320,33 @@ GC_INNER void GC_init_dyld(void)
      linked in the future.
   */
 
-    _dyld_register_func_for_add_image(GC_dyld_image_add);
-    _dyld_register_func_for_remove_image(GC_dyld_image_remove);
-        /* Ignore 2 compiler warnings here: passing argument 1 of       */
-        /* '_dyld_register_func_for_add/remove_image' from incompatible */
-        /* pointer type.                                                */
+  _dyld_register_func_for_add_image(GC_dyld_image_add);
+  _dyld_register_func_for_remove_image(GC_dyld_image_remove);
+      /* Ignore 2 compiler warnings here: passing argument 1 of       */
+      /* '_dyld_register_func_for_add/remove_image' from incompatible */
+      /* pointer type.                                                */
 
+  /* Set this early to avoid reentrancy issues. */
+  initialized = TRUE;
 
-    /* Set this early to avoid reentrancy issues. */
-    initialized = TRUE;
-
+# ifdef NO_DYLD_BIND_FULLY_IMAGE
+    /* FIXME: What should we do in this case?   */
+# else
+    /* When the environment variable is set, the dynamic linker binds   */
+    /* all undefined symbols the application needs at launch time.      */
+    /* This includes function symbols that are normally bound lazily at */
+    /* the time of their first invocation.                              */
     if (GETENV("DYLD_BIND_AT_LAUNCH") == 0) {
+      /* The environment variable is unset, so we should bind manually. */
 #     ifdef DARWIN_DEBUG
         GC_printf("Forcing full bind of GC code...\n");
 #     endif
       /* FIXME: '_dyld_bind_fully_image_containing_address' is deprecated. */
-      if(!_dyld_bind_fully_image_containing_address((unsigned long*)GC_malloc))
-        ABORT("_dyld_bind_fully_image_containing_address failed");
+        if (!_dyld_bind_fully_image_containing_address(
+                                                  (unsigned long *)GC_malloc))
+          ABORT("_dyld_bind_fully_image_containing_address failed");
     }
-
+# endif
 }
 
 #define HAVE_REGISTER_MAIN_STATIC_DATA
@@ -1324,33 +1367,30 @@ GC_INNER GC_bool GC_register_main_static_data(void)
   GC_INNER void GC_register_dynamic_libraries(void)
   {
     /* Add new static data areas of dynamically loaded modules. */
-        {
-          PCR_IL_LoadedFile * p = PCR_IL_GetLastLoadedFile();
-          PCR_IL_LoadedSegment * q;
+    PCR_IL_LoadedFile * p = PCR_IL_GetLastLoadedFile();
+    PCR_IL_LoadedSegment * q;
 
-          /* Skip uncommitted files */
-          while (p != NIL && !(p -> lf_commitPoint)) {
-              /* The loading of this file has not yet been committed    */
-              /* Hence its description could be inconsistent.           */
-              /* Furthermore, it hasn't yet been run.  Hence its data   */
-              /* segments can't possibly reference heap allocated       */
-              /* objects.                                               */
-              p = p -> lf_prev;
-          }
-          for (; p != NIL; p = p -> lf_prev) {
-            for (q = p -> lf_ls; q != NIL; q = q -> ls_next) {
-              if ((q -> ls_flags & PCR_IL_SegFlags_Traced_MASK)
-                  == PCR_IL_SegFlags_Traced_on) {
-                GC_add_roots_inner
-                        ((char *)(q -> ls_addr),
-                         (char *)(q -> ls_addr) + q -> ls_bytes,
-                         TRUE);
-              }
-            }
-          }
+    /* Skip uncommitted files */
+    while (p != NIL && !(p -> lf_commitPoint)) {
+        /* The loading of this file has not yet been committed    */
+        /* Hence its description could be inconsistent.           */
+        /* Furthermore, it hasn't yet been run.  Hence its data   */
+        /* segments can't possibly reference heap allocated       */
+        /* objects.                                               */
+        p = p -> lf_prev;
+    }
+    for (; p != NIL; p = p -> lf_prev) {
+      for (q = p -> lf_ls; q != NIL; q = q -> ls_next) {
+        if ((q -> ls_flags & PCR_IL_SegFlags_Traced_MASK)
+            == PCR_IL_SegFlags_Traced_on) {
+          GC_add_roots_inner
+                  ((char *)(q -> ls_addr),
+                   (char *)(q -> ls_addr) + q -> ls_bytes,
+                   TRUE);
         }
+      }
+    }
   }
-
 #endif /* PCR && !DYNAMIC_LOADING && !MSWIN32 */
 
 #if !defined(HAVE_REGISTER_MAIN_STATIC_DATA) && defined(DYNAMIC_LOADING)
