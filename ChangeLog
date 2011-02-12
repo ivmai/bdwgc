@@ -1,3 +1,14 @@
+2011-02-10  Ivan Maidanski  <ivmai@mail.ru> (with input from Dimitry Andric)
+
+	* os_dep.c: Don't include signal.h for GC_write_fault_handler on
+	Win32.
+	* os_dep.c (SIG_OK): Don't return true unless SIGSEGV or SIGBUS on
+	FreeBSD.
+	* os_dep.c (CODE_OK): Use SEGV_ACCERR on FreeBSD (define
+	SEGV_ACCERR for older FreeBSD releases).
+	* os_dep.c (SIG_OK, CODE_OK, GC_write_fault_handler): Reformat the
+	code.
+
 2011-02-10  Ivan Maidanski  <ivmai@mail.ru>
 
 	* dyn_load.c (GC_register_map_entries,

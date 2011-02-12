@@ -3050,53 +3050,53 @@ STATIC void GC_default_push_other_roots(void)
   void GC_record_fault(struct hblk * h); /* from checksums.c */
 #endif
 
-#if !defined(DARWIN)
+#ifndef DARWIN
+
+# if !defined(MSWIN32) && !defined(MSWINCE)
 #   include <errno.h>
-#   if defined(FREEBSD)
-#     define SIG_OK TRUE /* sig == SIGSEGV */
-#     define CODE_OK (si -> si_code == BUS_PAGE_FAULT \
-          || si -> si_code == 2 /* experimentally determined (SEGV_ACCERR) */)
-#   elif defined(OSF1)
+#   if defined(FREEBSD) || defined(HURD) || defined(HPUX)
+#     define SIG_OK (sig == SIGBUS || sig == SIGSEGV)
+#   else
 #     define SIG_OK (sig == SIGSEGV)
+#   endif
+#   if defined(FREEBSD)
+#     ifndef SEGV_ACCERR
+#       define SEGV_ACCERR 2
+#     endif
+#     define CODE_OK (si -> si_code == BUS_PAGE_FAULT \
+          || si -> si_code == SEGV_ACCERR)
+#   elif defined(OSF1)
 #     define CODE_OK (si -> si_code == 2 /* experimentally determined */)
 #   elif defined(IRIX5)
-#     define SIG_OK (sig == SIGSEGV)
 #     define CODE_OK (si -> si_code == EACCES)
 #   elif defined(HURD)
-#     define SIG_OK (sig == SIGBUS || sig == SIGSEGV)
-#     define CODE_OK  TRUE
-#   elif defined(LINUX)
-#     define SIG_OK (sig == SIGSEGV)
 #     define CODE_OK TRUE
-        /* Empirically c.trapno == 14, on IA32, but is that useful?     */
-        /* Should probably consider alignment issues on other           */
-        /* architectures.                                               */
+#   elif defined(LINUX)
+#     define CODE_OK TRUE
+      /* Empirically c.trapno == 14, on IA32, but is that useful?       */
+      /* Should probably consider alignment issues on other             */
+      /* architectures.                                                 */
 #   elif defined(HPUX)
-#     define SIG_OK (sig == SIGSEGV || sig == SIGBUS)
 #     define CODE_OK (si -> si_code == SEGV_ACCERR \
                       || si -> si_code == BUS_ADRERR \
                       || si -> si_code == BUS_UNKNOWN \
                       || si -> si_code == SEGV_UNKNOWN \
                       || si -> si_code == BUS_OBJERR)
 #   elif defined(SUNOS5SIGS)
-#     define SIG_OK (sig == SIGSEGV)
 #     define CODE_OK (si -> si_code == SEGV_ACCERR)
-#   elif defined(MSWIN32) || defined(MSWINCE)
-#     define SIG_OK (exc_info -> ExceptionRecord -> ExceptionCode \
-                     == STATUS_ACCESS_VIOLATION)
-#     define CODE_OK (exc_info -> ExceptionRecord -> ExceptionInformation[0] \
-                      == 1) /* Write fault */
 #   endif
-
-# if defined(MSWIN32) || defined(MSWINCE)
-    GC_INNER LONG WINAPI GC_write_fault_handler(
-                                struct _EXCEPTION_POINTERS *exc_info)
-# else
 #   include <ucontext.h>
     /*ARGSUSED*/
     STATIC void GC_write_fault_handler(int sig, siginfo_t *si, void *raw_sc)
+# else
+#   define SIG_OK (exc_info -> ExceptionRecord -> ExceptionCode \
+                     == STATUS_ACCESS_VIOLATION)
+#   define CODE_OK (exc_info -> ExceptionRecord -> ExceptionInformation[0] \
+                      == 1) /* Write fault */
+    GC_INNER LONG WINAPI GC_write_fault_handler(
+                                struct _EXCEPTION_POINTERS *exc_info)
 # endif /* MSWIN32 || MSWINCE */
-{
+  {
 #   if !defined(MSWIN32) && !defined(MSWINCE)
         char *addr = si -> si_addr;
 #   else
@@ -3197,14 +3197,14 @@ STATIC void GC_default_push_other_roots(void)
             return;
 #       endif
     }
-#if defined(MSWIN32) || defined(MSWINCE)
-    return EXCEPTION_CONTINUE_SEARCH;
-#else
-    if (GC_print_stats)
+#   if defined(MSWIN32) || defined(MSWINCE)
+      return EXCEPTION_CONTINUE_SEARCH;
+#   else
+      if (GC_print_stats)
         GC_printf("Unexpected segfault at %p\n", addr);
-    ABORT("Unexpected bus error or segmentation fault");
-#endif
-}
+      ABORT("Unexpected bus error or segmentation fault");
+#   endif
+  }
 #endif /* !DARWIN */
 
 /*
