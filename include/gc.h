@@ -1436,6 +1436,9 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 # define GC_INIT_CONF_INITIAL_HEAP_SIZE /* empty */
 #endif
 
+/* Portable clients should call this at the program start-up.  More     */
+/* over, some platforms require this call to be done strictly from the  */
+/* primordial thread.                                                   */
 #define GC_INIT() { GC_INIT_CONF_DONT_EXPAND; /* pre-init */ \
                     GC_INIT_CONF_FORCE_UNMAP_ON_GCOLLECT; \
                     GC_INIT_CONF_MAX_RETRIES; \

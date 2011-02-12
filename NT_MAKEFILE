@@ -18,7 +18,7 @@ all: gctest.exe cord\de.exe test_cpp.exe
 	$(cc) $(cdebug) $(cflags) $(cvars) -Iinclude -DALL_INTERIOR_POINTERS -DGC_NOT_DLL -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj
 
 .cpp.obj:
-	$(cc) $(cdebug) $(cflags) $(cvars) -Iinclude -DALL_INTERIOR_POINTERS -DGC_NOT_DLL $*.CPP /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(cvars) -Iinclude -DALL_INTERIOR_POINTERS -DGC_NOT_DLL -D_CRT_SECURE_NO_DEPRECATE $*.CPP /Fo$*.obj
 
 $(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc_mark.h include\private\msvc_dbg.h
 

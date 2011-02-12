@@ -1284,6 +1284,10 @@ void check_heap_stats(void)
 #   endif
                 GC_invoke_finalizers();
       }
+      if (GC_print_stats) {
+          GC_log_printf("Primordial thread stack bottom: %p\n",
+                        GC_stackbottom);
+      }
     (void)GC_printf("Completed %u tests\n", n_tests);
     (void)GC_printf("Allocated %d collectable objects\n", collectable_count);
     (void)GC_printf("Allocated %d uncollectable objects\n",
