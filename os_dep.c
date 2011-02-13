@@ -2068,13 +2068,11 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
 # endif  /* MMAP_SUPPORTED */
 
 #if defined(USE_MMAP)
-
-ptr_t GC_unix_get_mem(word bytes)
-{
+  ptr_t GC_unix_get_mem(word bytes)
+  {
     return GC_unix_mmap_get_mem(bytes);
-}
-
-#else /* Not USE_MMAP */
+  }
+#else /* !USE_MMAP */
 
 STATIC ptr_t GC_unix_sbrk_get_mem(word bytes)
 {
@@ -2117,10 +2115,10 @@ STATIC ptr_t GC_unix_sbrk_get_mem(word bytes)
   return(result);
 }
 
-#if defined(MMAP_SUPPORTED)
-  /* By default, we try both sbrk and mmap, in that order. */
-  ptr_t GC_unix_get_mem(word bytes)
-  {
+ptr_t GC_unix_get_mem(word bytes)
+{
+# if defined(MMAP_SUPPORTED)
+    /* By default, we try both sbrk and mmap, in that order.    */
     static GC_bool sbrk_failed = FALSE;
     ptr_t result = 0;
 
@@ -2130,19 +2128,16 @@ STATIC ptr_t GC_unix_sbrk_get_mem(word bytes)
         result = GC_unix_mmap_get_mem(bytes);
     }
     if (0 == result) {
-        /* Try sbrk again, in case sbrk memory became available. */
+        /* Try sbrk again, in case sbrk memory became available.        */
         result = GC_unix_sbrk_get_mem(bytes);
     }
     return result;
-  }
-#else /* !MMAP_SUPPORTED */
-  ptr_t GC_unix_get_mem(word bytes)
-  {
+# else /* !MMAP_SUPPORTED */
     return GC_unix_sbrk_get_mem(bytes);
-  }
-#endif
+# endif
+}
 
-#endif /* Not USE_MMAP */
+#endif /* !USE_MMAP */
 
 # endif /* UN*X */
 
@@ -2189,13 +2184,12 @@ void * os2_alloc(size_t bytes)
 #endif /* MSWIN32 */
 
 #if defined(MSWIN32) || defined(CYGWIN32)
-
-ptr_t GC_win32_get_mem(word bytes)
-{
+  ptr_t GC_win32_get_mem(word bytes)
+  {
     ptr_t result;
 
 # ifdef CYGWIN32
-    result = GC_unix_get_mem (bytes);
+    result = GC_unix_get_mem(bytes);
 # else
     if (GLOBAL_ALLOC_TEST) {
         /* VirtualAlloc doesn't like PAGE_EXECUTE_READWRITE.    */
@@ -2244,20 +2238,19 @@ ptr_t GC_win32_get_mem(word bytes)
     if (GC_n_heap_bases >= MAX_HEAP_SECTS) ABORT("Too many heap sections");
     if (0 != result) GC_heap_bases[GC_n_heap_bases++] = result;
     return(result);
-}
+  }
 
-GC_API void GC_CALL GC_win32_free_heap(void)
-{
-# ifndef CYGWIN32
-    if (GC_no_win32_dlls) {
+  GC_API void GC_CALL GC_win32_free_heap(void)
+  {
+#   ifndef CYGWIN32
+      if (GC_no_win32_dlls) {
         while (GC_n_heap_bases > 0) {
-            GlobalFree (GC_heap_bases[--GC_n_heap_bases]);
-            GC_heap_bases[GC_n_heap_bases] = 0;
+          GlobalFree (GC_heap_bases[--GC_n_heap_bases]);
+          GC_heap_bases[GC_n_heap_bases] = 0;
         }
-    }
-# endif
-}
-
+      }
+#   endif
+  }
 #endif /* MSWIN32 || CYGWIN32 */
 
 #ifdef AMIGA
@@ -3831,22 +3824,60 @@ exception_raise_state_identity(mach_port_t, mach_port_t, mach_port_t,
                                thread_state_t, mach_msg_type_number_t,
                                thread_state_t, mach_msg_type_number_t*);
 
+GC_API_OSCALL kern_return_t
+catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
+                      mach_port_t task, exception_type_t exception,
+                      exception_data_t code, mach_msg_type_number_t code_count);
+
+/* These should never be called, but just in case...  */
+GC_API_OSCALL kern_return_t
+catch_exception_raise_state(mach_port_name_t exception_port, int exception,
+                            exception_data_t code,
+                            mach_msg_type_number_t codeCnt, int flavor,
+                            thread_state_t old_state, int old_stateCnt,
+                            thread_state_t new_state, int new_stateCnt)
+{
+  ABORT("catch_exception_raise_state");
+  return(KERN_INVALID_ARGUMENT);
+}
+
+GC_API_OSCALL kern_return_t
+catch_exception_raise_state_identity(mach_port_name_t exception_port,
+                                     mach_port_t thread, mach_port_t task,
+                                     int exception, exception_data_t code,
+                                     mach_msg_type_number_t codeCnt, int flavor,
+                                     thread_state_t old_state, int old_stateCnt,
+                                     thread_state_t new_state, int new_stateCnt)
+{
+  ABORT("catch_exception_raise_state_identity");
+  return(KERN_INVALID_ARGUMENT);
+}
+
 #define MAX_EXCEPTION_PORTS 16
 
 static struct {
-    mach_msg_type_number_t count;
-    exception_mask_t      masks[MAX_EXCEPTION_PORTS];
-    exception_handler_t   ports[MAX_EXCEPTION_PORTS];
-    exception_behavior_t  behaviors[MAX_EXCEPTION_PORTS];
-    thread_state_flavor_t flavors[MAX_EXCEPTION_PORTS];
+  mach_msg_type_number_t count;
+  exception_mask_t      masks[MAX_EXCEPTION_PORTS];
+  exception_handler_t   ports[MAX_EXCEPTION_PORTS];
+  exception_behavior_t  behaviors[MAX_EXCEPTION_PORTS];
+  thread_state_flavor_t flavors[MAX_EXCEPTION_PORTS];
 } GC_old_exc_ports;
 
 STATIC struct {
-    mach_port_t exception;
-#   if defined(THREADS)
-      mach_port_t reply;
-#   endif
-} GC_ports = {0};
+  void (*volatile os_callback[3])(void);
+  mach_port_t exception;
+# if defined(THREADS)
+    mach_port_t reply;
+# endif
+} GC_ports = {
+  {
+    /* This is to prevent stripping these routines as dead.     */
+    (void (*)(void))catch_exception_raise,
+    (void (*)(void))catch_exception_raise_state,
+    (void (*)(void))catch_exception_raise_state_identity
+  },
+  0
+};
 
 typedef struct {
     mach_msg_header_t head;
@@ -4104,7 +4135,7 @@ GC_INNER void GC_dirty_init(void)
 
 # undef pthread_create
   /* This will call the real pthread function, not our wrapper */
-  if(pthread_create(&thread, &attr, GC_mprotect_thread, NULL) != 0)
+  if (pthread_create(&thread, &attr, GC_mprotect_thread, NULL) != 0)
     ABORT("pthread_create failed");
   pthread_attr_destroy(&attr);
 
@@ -4115,14 +4146,14 @@ GC_INNER void GC_dirty_init(void)
       sa.sa_handler = (SIG_HNDLR_PTR)GC_darwin_sigbus;
       sigemptyset(&sa.sa_mask);
       sa.sa_flags = SA_RESTART|SA_SIGINFO;
-      if(sigaction(SIGBUS, &sa, &oldsa) < 0)
+      if (sigaction(SIGBUS, &sa, &oldsa) < 0)
         ABORT("sigaction");
       if ((SIG_HNDLR_PTR)oldsa.sa_handler != SIG_DFL) {
         if (GC_print_stats == VERBOSE)
           GC_err_printf("Replaced other SIGBUS handler\n");
       }
     }
-#  endif /* BROKEN_EXCEPTION_HANDLING  */
+# endif /* BROKEN_EXCEPTION_HANDLING  */
 }
 
 /* The source code for Apple's GDB was used as a reference for the exception
@@ -4180,7 +4211,6 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
     if (r != KERN_SUCCESS)
       ABORT("thread_set_state failed in forward_exception");
   }
-
   return r;
 }
 
@@ -4221,7 +4251,7 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 /* be done about it.  The exception handling stuff is hard coded to     */
 /* call this.  catch_exception_raise, catch_exception_raise_state and   */
 /* and catch_exception_raise_state_identity are called from OS.         */
-kern_return_t
+GC_API_OSCALL kern_return_t
 catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
                       mach_port_t task, exception_type_t exception,
                       exception_data_t code, mach_msg_type_number_t code_count)
@@ -4303,7 +4333,7 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
       register int index = PHT_HASH(h+i);
       async_set_pht_entry_from_index(GC_dirty_pages, index);
     }
-  } else if(GC_mprotect_state == GC_MP_DISCARDING) {
+  } else if (GC_mprotect_state == GC_MP_DISCARDING) {
     /* Lie to the thread for now. No sense UNPROTECT()ing the memory
        when we're just going to PROTECT() it again later. The thread
        will just fault again once it resumes */
@@ -4316,29 +4346,13 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
 }
 #undef FWD
 
-/* These should never be called, but just in case...  */
-kern_return_t
-catch_exception_raise_state(mach_port_name_t exception_port, int exception,
-                            exception_data_t code,
-                            mach_msg_type_number_t codeCnt, int flavor,
-                            thread_state_t old_state, int old_stateCnt,
-                            thread_state_t new_state, int new_stateCnt)
-{
-  ABORT("catch_exception_raise_state");
-  return(KERN_INVALID_ARGUMENT);
-}
-
-kern_return_t
-catch_exception_raise_state_identity(mach_port_name_t exception_port,
-                                     mach_port_t thread, mach_port_t task,
-                                     int exception, exception_data_t code,
-                                     mach_msg_type_number_t codeCnt, int flavor,
-                                     thread_state_t old_state, int old_stateCnt,
-                                     thread_state_t new_state, int new_stateCnt)
-{
-  ABORT("catch_exception_raise_state_identity");
-  return(KERN_INVALID_ARGUMENT);
-}
+#ifndef NO_DESC_CATCH_EXCEPTION_RAISE
+  /* These symbols should have REFERENCED_DYNAMICALLY (0x10) bit set to */
+  /* let strip know they are not to be stripped.                        */
+  __asm__(".desc _catch_exception_raise, 0x10");
+  __asm__(".desc _catch_exception_raise_state, 0x10");
+  __asm__(".desc _catch_exception_raise_state_identity, 0x10");
+#endif
 
 #endif /* DARWIN && MPROTECT_VDB */
 

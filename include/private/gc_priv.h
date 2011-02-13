@@ -149,6 +149,21 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define GC_INLINE static
 #endif
 
+#ifndef GC_API_OSCALL
+  /* This is used to identify GC routines called by name from OS.       */
+# if defined(__GNUC__)
+#   if __GNUC__ >= 4
+      /* Same as GC_API if GC_DLL.      */
+#     define GC_API_OSCALL extern __attribute__((__visibility__("default")))
+#   else
+      /* The attribute is unsupported.  */
+#     define GC_API_OSCALL extern
+#   endif
+# else
+#   define GC_API_OSCALL GC_API
+# endif
+#endif
+
 #ifndef GC_API_PRIV
 # define GC_API_PRIV GC_API
 #endif

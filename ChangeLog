@@ -1,3 +1,26 @@
+2011-02-13  Ivan Maidanski  <ivmai@mail.ru>
+
+	* mark.c (GC_mark_some): Prefix and suffix "asm" and "volatile"
+	keywords with double underscore.
+	* os_dep.c (GC_unix_get_mem): Reformat the code.
+	* os_dep.c (catch_exception_raise, catch_exception_raise_state,
+	catch_exception_raise_state_identity): Add GC_API_OSCALL to
+	function definition.
+	* os_dep.c (catch_exception_raise_state,
+	catch_exception_raise_state_identity): Move definition to be
+	before GC_ports.
+	* os_dep.c (catch_exception_raise): Declare to have the symbol
+	defined before GC_ports.
+	* os_dep.c (GC_ports): Store references to catch_exception_raise,
+	catch_exception_raise_state, catch_exception_raise_state_identity
+	(to prevent stripping these symbols as dead).
+	* os_dep.c (catch_exception_raise, catch_exception_raise_state,
+	catch_exception_raise_state_identity): Mark these symbols as
+	"referenced dynamically" via an assembler directive (unless
+	NO_DESC_CATCH_EXCEPTION_RAISE).
+	* include/private/gc_priv.h (GC_API_OSCALL): New macro (defined
+	similar to GC_API but as if GC_DLL is always defined).
+
 2011-02-10  Ivan Maidanski  <ivmai@mail.ru> (with input from Dimitry Andric)
 
 	* os_dep.c: Don't include signal.h for GC_write_fault_handler on

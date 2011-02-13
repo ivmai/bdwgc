@@ -541,8 +541,8 @@ static void alloc_mark_stack(size_t);
 
       er.alt_path = &&handle_ex;
       er.ex_reg.handler = mark_ex_handler;
-      asm volatile ("movl %%fs:0, %0" : "=r" (er.ex_reg.prev));
-      asm volatile ("movl %0, %%fs:0" : : "r" (&er));
+      __asm__ __volatile__ ("movl %%fs:0, %0" : "=r" (er.ex_reg.prev));
+      __asm__ __volatile__ ("movl %0, %%fs:0" : : "r" (&er));
       ret_val = GC_mark_some_inner(cold_gc_frame);
       /* Prevent GCC from considering the following code unreachable */
       /* and thus eliminating it.                                    */
@@ -550,7 +550,7 @@ static void alloc_mark_stack(size_t);
           goto handle_ex;
     rm_handler:
       /* Uninstall the exception handler */
-      asm volatile ("mov %0, %%fs:0" : : "r" (er.ex_reg.prev));
+      __asm__ __volatile__ ("mov %0, %%fs:0" : : "r" (er.ex_reg.prev));
       return ret_val;
 
 #    endif /* __GNUC__ */
