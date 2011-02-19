@@ -228,8 +228,8 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
             unsigned mxcsr;
             /* And now correct the exception mask in SSE MXCSR. */
             __asm__ __volatile__ ("stmxcsr %0" : "=m" (*&mxcsr));
-            mxcsr = (mxcsr & ~(ALL_EXCEPT << 7)) |
-                        ((old_fcw & ALL_EXCEPT) << 7);
+            mxcsr = (mxcsr & ~(FE_ALL_EXCEPT << 7)) |
+                        ((old_fcw & FE_ALL_EXCEPT) << 7);
             __asm__ __volatile__ ("ldmxcsr %0" : : "m" (*&mxcsr));
           }
 #       else /* !X86_64 */

@@ -1,3 +1,15 @@
+2011-02-19  Ivan Maidanski  <ivmai@mail.ru>
+
+	* aclocal.m4: Regenerate (by autoreconf -vif using autoconf-2.68,
+	automake-1.11.1 and libtool-2.4).
+	* configure: Ditto.
+	* ltmain.sh: Ditto.
+	* makefile.in: Ditto.
+	* m4/libtool.m4: Ditto.
+	* m4/ltversion.m4: Ditto.
+	* mach_dep.c (GC_with_callee_saves_pushed): Fix FE_ALL_EXCEPT
+	macro.
+
 2011-02-13  Ivan Maidanski  <ivmai@mail.ru>
 
 	* mark.c (GC_mark_some): Prefix and suffix "asm" and "volatile"
