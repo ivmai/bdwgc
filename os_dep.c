@@ -61,7 +61,7 @@
 # include <signal.h>
 #endif
 
-#if defined(UNIX_LIKE) || defined(CYGWIN32)
+#if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(NACL)
 # include <fcntl.h>
 #endif
 
@@ -1143,7 +1143,7 @@ GC_INNER word GC_page_size = 0;
   ptr_t GC_get_main_stack_base(void)
   {
     ptr_t result; /* also used as "dummy" to get the approx. sp value */
-#   if defined(LINUX) && defined(USE_GET_STACKBASE_FOR_MAIN)
+#   if defined(LINUX) && defined(USE_GET_STACKBASE_FOR_MAIN) && !defined(NACL)
       pthread_attr_t attr;
       void *stackaddr;
       size_t size;
@@ -1208,7 +1208,8 @@ GC_INNER word GC_page_size = 0;
   }
 #endif /* !AMIGA, !BEOS, !OPENBSD, !OS2, !Windows */
 
-#if defined(GC_LINUX_THREADS) && !defined(HAVE_GET_STACK_BASE)
+#if defined(GC_LINUX_THREADS) && !defined(HAVE_GET_STACK_BASE) \
+    && !defined(NACL)
 
 # include <pthread.h>
   /* extern int pthread_getattr_np(pthread_t, pthread_attr_t *); */
@@ -2432,10 +2433,24 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
 #   else
       /* It was already remapped with PROT_NONE. */
       int result;
-
       if (0 == start_addr) return;
-      result = mprotect(start_addr, len, (PROT_READ | PROT_WRITE)
-                                         | (pages_executable ? PROT_EXEC : 0));
+
+#     ifndef NACL
+        result = mprotect(start_addr, len, (PROT_READ | PROT_WRITE)
+                                        | (pages_executable ? PROT_EXEC : 0));
+#     else
+        {
+          /* NaCl does not expose mprotect, but mmap should work fine.  */
+          void *mmap_result = mmap(start_addr, len, (PROT_READ | PROT_WRITE)
+                                         | (pages_executable ? PROT_EXEC : 0),
+                                   MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
+                                   zero_fd, 0 /* offset */);
+          if (mmap_result != (void *)start_addr)
+            ABORT("mmap as mprotect failed");
+          /* Fake the return value as if mprotect succeeded.    */
+          result = 0;
+        }
+#     endif /* NACL */
 #     undef IGNORE_PAGES_EXECUTABLE
 
       if (result != 0) {

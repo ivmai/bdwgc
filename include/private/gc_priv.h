@@ -2086,32 +2086,30 @@ GC_EXTERN signed_word GC_bytes_found;
               /* some other reason.                                     */
 #endif /* PARALLEL_MARK */
 
-#if defined(GC_PTHREADS)
+#if defined(GC_PTHREADS) && !defined(NACL) && !defined(SIG_SUSPEND)
   /* We define the thread suspension signal here, so that we can refer  */
   /* to it in the dirty bit implementation, if necessary.  Ideally we   */
   /* would allocate a (real-time?) signal using the standard mechanism. */
   /* unfortunately, there is no standard mechanism.  (There is one      */
   /* in Linux glibc, but it's not exported.)  Thus we continue to use   */
   /* the same hard-coded signals we've always used.                     */
-# if !defined(SIG_SUSPEND)
-#   if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
-#     if defined(SPARC) && !defined(SIGPWR)
-        /* SPARC/Linux doesn't properly define SIGPWR in <signal.h>.    */
-        /* It is aliased to SIGLOST in asm/signal.h, though.            */
-#       define SIG_SUSPEND SIGLOST
-#     else
-        /* Linuxthreads itself uses SIGUSR1 and SIGUSR2.                */
-#       define SIG_SUSPEND SIGPWR
-#     endif
-#   elif !defined(GC_OPENBSD_THREADS) && !defined(GC_DARWIN_THREADS)
-#     if defined(_SIGRTMIN)
-#       define SIG_SUSPEND _SIGRTMIN + 6
-#     else
-#       define SIG_SUSPEND SIGRTMIN + 6
-#     endif
+# if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
+#   if defined(SPARC) && !defined(SIGPWR)
+      /* SPARC/Linux doesn't properly define SIGPWR in <signal.h>.      */
+      /* It is aliased to SIGLOST in asm/signal.h, though.              */
+#     define SIG_SUSPEND SIGLOST
+#   else
+      /* Linuxthreads itself uses SIGUSR1 and SIGUSR2.                  */
+#     define SIG_SUSPEND SIGPWR
 #   endif
-# endif /* !SIG_SUSPEND */
-#endif /* GC_PTHREADS */
+# elif !defined(GC_OPENBSD_THREADS) && !defined(GC_DARWIN_THREADS)
+#   if defined(_SIGRTMIN)
+#     define SIG_SUSPEND _SIGRTMIN + 6
+#   else
+#     define SIG_SUSPEND SIGRTMIN + 6
+#   endif
+# endif
+#endif /* GC_PTHREADS && !SIG_SUSPEND */
 
 /* Some macros for setjmp that works across signal handlers     */
 /* were possible, and a couple of routines to facilitate        */

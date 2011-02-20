@@ -591,7 +591,9 @@ GC_API void * GC_CALL GC_malloc_atomic_ignore_off_page(size_t /* lb */)
 #endif
 
 #if defined(__linux__) || defined(__GLIBC__)
-# include <features.h>
+# if !defined(__native_client__)
+#   include <features.h>
+# endif
 # if (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1 || __GLIBC__ > 2) \
         && !defined(__ia64__) && !defined(__UCLIBC__) \
         && !defined(GC_HAVE_BUILTIN_BACKTRACE)

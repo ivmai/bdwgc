@@ -93,11 +93,14 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
 
 /* Undefine macros used to redirect pthread primitives. */
 # undef pthread_create
-# if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_THREADS)
+# if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_THREADS) \
+     && !defined(NACL)
 #   undef pthread_sigmask
 # endif
 # ifdef GC_PTHREAD_EXIT_ATTRIBUTE
-#   undef pthread_cancel
+#   ifndef NACL
+#     undef pthread_cancel
+#   endif
 #   undef pthread_exit
 # endif
 # undef pthread_join
@@ -109,7 +112,9 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
 #   define pthread_join __pthread_join
 #   define pthread_detach __pthread_detach
 #   ifdef GC_PTHREAD_EXIT_ATTRIBUTE
-#     define pthread_cancel __pthread_cancel
+#     ifndef NACL
+#       define pthread_cancel __pthread_cancel
+#     endif
 #     define pthread_exit __pthread_exit
 #   endif
 # endif
@@ -117,15 +122,19 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
 #ifdef GC_USE_LD_WRAP
 #   define WRAP_FUNC(f) __wrap_##f
 #   define REAL_FUNC(f) __real_##f
-    int REAL_FUNC(pthread_create)(pthread_t *, const pthread_attr_t *,
+    int REAL_FUNC(pthread_create)(pthread_t *,
+                                  GC_PTHREAD_CONST pthread_attr_t *,
                                   void *(*start_routine)(void *), void *);
     int REAL_FUNC(pthread_join)(pthread_t, void **);
     int REAL_FUNC(pthread_detach)(pthread_t);
-#   if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_THREADS)
+#   if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_THREADS) \
+       && !defined(NACL)
       int REAL_FUNC(pthread_sigmask)(int, const sigset_t *, sigset_t *);
 #   endif
 #   ifdef GC_PTHREAD_EXIT_ATTRIBUTE
-      int REAL_FUNC(pthread_cancel)(pthread_t);
+#     ifndef NACL
+        int REAL_FUNC(pthread_cancel)(pthread_t);
+#     endif
       void REAL_FUNC(pthread_exit)(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
 #   endif
 #else
@@ -137,7 +146,8 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
       /* In that way plain calls work, as do calls from files that      */
       /* included gc.h, wich redefined f to GC_f.                       */
       /* FIXME: Needs work for DARWIN and True64 (OSF1) */
-      typedef int (* GC_pthread_create_t)(pthread_t *, const pthread_attr_t *,
+      typedef int (* GC_pthread_create_t)(pthread_t *,
+                                          GC_PTHREAD_CONST pthread_attr_t *,
                                           void * (*)(void *), void *);
       static GC_pthread_create_t REAL_FUNC(pthread_create);
       typedef int (* GC_pthread_sigmask_t)(int, const sigset_t *, sigset_t *);
@@ -147,8 +157,10 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
       typedef int (* GC_pthread_detach_t)(pthread_t);
       static GC_pthread_detach_t REAL_FUNC(pthread_detach);
 #     ifdef GC_PTHREAD_EXIT_ATTRIBUTE
-        typedef int (* GC_pthread_cancel_t)(pthread_t);
-        static GC_pthread_cancel_t REAL_FUNC(pthread_cancel);
+#       ifndef NACL
+          typedef int (* GC_pthread_cancel_t)(pthread_t);
+          static GC_pthread_cancel_t REAL_FUNC(pthread_cancel);
+#       endif
         typedef void (* GC_pthread_exit_t)(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
         static GC_pthread_exit_t REAL_FUNC(pthread_exit);
 #     endif
@@ -163,10 +175,11 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
 #endif
 
 #if defined(GC_USE_LD_WRAP) || defined(GC_USE_DLOPEN_WRAP)
-/* Define GC_ functions as aliases for the plain ones, which will       */
-/* be intercepted.  This allows files which include gc.h, and hence     */
-/* generate references to the GC_ symbols, to see the right symbols.    */
-      GC_API int GC_pthread_create(pthread_t * t, const pthread_attr_t * a,
+  /* Define GC_ functions as aliases for the plain ones, which will     */
+  /* be intercepted.  This allows files which include gc.h, and hence   */
+  /* generate references to the GC_ symbols, to see the right symbols.  */
+      GC_API int GC_pthread_create(pthread_t * t,
+                                   GC_PTHREAD_CONST pthread_attr_t * a,
                                    void * (* fn)(void *), void * arg)
       {
           return pthread_create(t, a, fn, arg);
@@ -189,10 +202,12 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
       }
 
 #     ifdef GC_PTHREAD_EXIT_ATTRIBUTE
-        GC_API int GC_pthread_cancel(pthread_t t)
-        {
-          return pthread_cancel(t);
-        }
+#       ifndef NACL
+          GC_API int GC_pthread_cancel(pthread_t t)
+          {
+            return pthread_cancel(t);
+          }
+#       endif /* !NACL */
 
         GC_API GC_PTHREAD_EXIT_ATTRIBUTE void GC_pthread_exit(void *retval)
         {
@@ -243,8 +258,10 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
     REAL_FUNC(pthread_detach) = (GC_pthread_detach_t)
                                 dlsym(dl_handle, "pthread_detach");
 #   ifdef GC_PTHREAD_EXIT_ATTRIBUTE
-      REAL_FUNC(pthread_cancel) = (GC_pthread_cancel_t)
+#     ifndef NACL
+        REAL_FUNC(pthread_cancel) = (GC_pthread_cancel_t)
                                     dlsym(dl_handle, "pthread_cancel");
+#     endif
       REAL_FUNC(pthread_exit) = (GC_pthread_exit_t)
                                   dlsym(dl_handle, "pthread_exit");
 #   endif
@@ -442,6 +459,11 @@ void GC_push_thread_structures(void)
 /* It may not be safe to allocate when we register the first thread.    */
 static struct GC_Thread_Rep first_thread;
 
+#ifdef NACL
+  GC_INNER void GC_nacl_initialize_gc_thread(void);
+  GC_INNER void GC_nacl_shutdown_gc_thread(void);
+#endif
+
 /* Add a thread to GC_threads.  We assume it wasn't already there.      */
 /* Caller holds allocation lock.                                        */
 STATIC GC_thread GC_new_thread(pthread_t id)
@@ -465,6 +487,10 @@ STATIC GC_thread GC_new_thread(pthread_t id)
 #   endif
     result -> next = GC_threads[hv];
     GC_threads[hv] = result;
+#   ifdef NACL
+      GC_nacl_gc_thread_self = result;
+      GC_nacl_initialize_gc_thread();
+#   endif
     GC_ASSERT(result -> flags == 0 && result -> thread_blocked == 0);
     return(result);
 }
@@ -477,6 +503,11 @@ STATIC void GC_delete_thread(pthread_t id)
     int hv = NUMERIC_THREAD_ID(id) % THREAD_TABLE_SZ;
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
+
+#   ifdef NACL
+      GC_nacl_shutdown_gc_thread();
+      GC_nacl_gc_thread_self = NULL;
+#   endif
 
     GC_ASSERT(I_HOLD_LOCK());
     while (!THREAD_EQUAL(p -> id, id)) {
@@ -672,44 +703,44 @@ STATIC void GC_remove_all_threads_but_me(void)
   }
 #endif /* IA64 */
 
-#ifdef GC_LINUX_THREADS
+#if defined(GC_LINUX_THREADS) && !defined(NACL)
   /* Return the number of processors, or i<= 0 if it can't be determined. */
   STATIC int GC_get_nprocs(void)
   {
-    /* Should be "return sysconf(_SC_NPROCESSORS_ONLN);" but that       */
-    /* appears to be buggy in many cases.                               */
-    /* We look for lines "cpu<n>" in /proc/stat.                        */
+    /* Should be "return sysconf(_SC_NPROCESSORS_ONLN);" but that     */
+    /* appears to be buggy in many cases.                             */
+    /* We look for lines "cpu<n>" in /proc/stat.                      */
 #   ifndef STAT_READ
       /* Also defined in os_dep.c. */
 #     define STAT_BUF_SIZE 4096
 #     define STAT_READ read
 #   endif
-        /* If read is wrapped, this may need to be redefined to call    */
-        /* the real one.                                                */
+    /* If read is wrapped, this may need to be redefined to call      */
+    /* the real one.                                                  */
     char stat_buf[STAT_BUF_SIZE];
     int f;
     word result = 1;
-        /* Some old kernels only have a single "cpu nnnn ..."   */
-        /* entry in /proc/stat.  We identify those as           */
-        /* uniprocessors.                                       */
+    /* Some old kernels only have a single "cpu nnnn ..."     */
+    /* entry in /proc/stat.  We identify those as             */
+    /* uniprocessors.                                         */
     size_t i, len = 0;
 
     f = open("/proc/stat", O_RDONLY);
     if (f < 0 || (len = STAT_READ(f, stat_buf, STAT_BUF_SIZE)) < 100) {
-        WARN("Couldn't read /proc/stat\n", 0);
-        return -1;
+      WARN("Couldn't read /proc/stat\n", 0);
+      return -1;
     }
     for (i = 0; i < len - 100; ++i) {
-        if (stat_buf[i] == '\n' && stat_buf[i+1] == 'c'
-            && stat_buf[i+2] == 'p' && stat_buf[i+3] == 'u') {
-            int cpu_no = atoi(stat_buf + i + 4);
-            if (cpu_no >= result) result = cpu_no + 1;
-        }
+      if (stat_buf[i] == '\n' && stat_buf[i+1] == 'c'
+          && stat_buf[i+2] == 'p' && stat_buf[i+3] == 'u') {
+        int cpu_no = atoi(stat_buf + i + 4);
+        if (cpu_no >= result) result = cpu_no + 1;
+      }
     }
     close(f);
     return result;
   }
-#endif /* GC_LINUX_THREADS */
+#endif /* GC_LINUX_THREADS && !NACL */
 
 /* We hold the GC lock.  Wait until an in-progress GC has finished.     */
 /* Repeatedly RELEASES GC LOCK in order to wait.                        */
@@ -906,21 +937,18 @@ GC_INNER void GC_thr_init(void)
   if (GC_nprocs <= 0) {
 #   if defined(GC_HPUX_THREADS)
       GC_nprocs = pthread_num_processors_np();
-#   endif
-#   if defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
-       || defined(GC_SOLARIS_THREADS) || defined(GC_GNU_THREADS)
+#   elif defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
+         || defined(GC_SOLARIS_THREADS) || defined(GC_GNU_THREADS) \
+         || defined(NACL)
       GC_nprocs = sysconf(_SC_NPROCESSORS_ONLN);
       if (GC_nprocs <= 0) GC_nprocs = 1;
-#   endif
-#   if defined(GC_IRIX_THREADS)
+#   elif defined(GC_IRIX_THREADS)
       GC_nprocs = sysconf(_SC_NPROC_ONLN);
       if (GC_nprocs <= 0) GC_nprocs = 1;
-#   endif
-#   if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS) \
-       || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS)
+#   elif defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS) \
+         || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS)
       GC_nprocs = get_ncpu();
-#   endif
-#   if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
+#   elif defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
       GC_nprocs = GC_get_nprocs();
 #   endif
   }
@@ -993,7 +1021,8 @@ GC_INNER void GC_init_parallel(void)
 #   endif
 }
 
-#if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_THREADS)
+#if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_THREADS) \
+    && !defined(NACL)
   GC_API int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set,
                                         sigset_t *oset)
   {
@@ -1007,7 +1036,7 @@ GC_INNER void GC_init_parallel(void)
     }
     return(REAL_FUNC(pthread_sigmask)(how, set, oset));
   }
-#endif /* !GC_DARWIN_THREADS && !GC_OPENBSD_THREADS */
+#endif /* !GC_DARWIN_THREADS && !GC_OPENBSD_THREADS && !NACL */
 
 #if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
   GC_INNER ptr_t GC_FindTopOfStack(unsigned long);
@@ -1237,28 +1266,31 @@ GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
   /* really have an option in that the process is not in a fully        */
   /* functional state while a thread is exiting.                        */
 
-  GC_API int WRAP_FUNC(pthread_cancel)(pthread_t thread)
-  {
-#   ifdef CANCEL_SAFE
-      GC_thread thread_gc_id;
-      DCL_LOCK_STATE;
-#   endif
+# ifndef NACL
+    GC_API int WRAP_FUNC(pthread_cancel)(pthread_t thread)
+    {
+#     ifdef CANCEL_SAFE
+        GC_thread thread_gc_id;
+        DCL_LOCK_STATE;
+#     endif
 
-    INIT_REAL_SYMS();
-#   ifdef CANCEL_SAFE
-      LOCK();
-      thread_gc_id = GC_lookup_thread(thread);
-      /* We test DISABLED_GC because pthread_exit could be called at    */
-      /* the same time.  (If thread_gc_id is NULL then pthread_cancel   */
-      /* should return ESRCH.)                                          */
-      if (thread_gc_id != 0 && (thread_gc_id -> flags & DISABLED_GC) == 0) {
-        thread_gc_id -> flags |= DISABLED_GC;
-        GC_dont_gc++;
-      }
-      UNLOCK();
-#   endif
-    return REAL_FUNC(pthread_cancel)(thread);
-  }
+      INIT_REAL_SYMS();
+#     ifdef CANCEL_SAFE
+        LOCK();
+        thread_gc_id = GC_lookup_thread(thread);
+        /* We test DISABLED_GC because pthread_exit could be called at  */
+        /* the same time.  (If thread_gc_id is NULL then pthread_cancel */
+        /* should return ESRCH.)                                        */
+        if (thread_gc_id != 0
+            && (thread_gc_id -> flags & DISABLED_GC) == 0) {
+          thread_gc_id -> flags |= DISABLED_GC;
+          GC_dont_gc++;
+        }
+        UNLOCK();
+#     endif
+      return REAL_FUNC(pthread_cancel)(thread);
+    }
+# endif /* !NACL */
 
   GC_API GC_PTHREAD_EXIT_ATTRIBUTE void WRAP_FUNC(pthread_exit)(void *retval)
   {
@@ -1275,6 +1307,12 @@ GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
       GC_dont_gc++;
     }
     UNLOCK();
+
+#   ifdef NACL
+      /* Native Client doesn't support pthread cleanup functions, */
+      /* so cleanup the thread here.                              */
+      GC_thread_exit_proc(0);
+#   endif
 
     REAL_FUNC(pthread_exit)(retval);
   }
@@ -1411,8 +1449,8 @@ STATIC void * GC_start_routine(void * arg)
 }
 
 GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
-                  const pthread_attr_t *attr,
-                  void *(*start_routine)(void *), void *arg)
+                     GC_PTHREAD_CONST pthread_attr_t *attr,
+                     void *(*start_routine)(void *), void *arg)
 {
     int result;
     int detachstate;

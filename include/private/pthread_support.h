@@ -123,6 +123,10 @@ GC_EXTERN GC_bool GC_in_thread_creation;
         /* Only set to TRUE while allocation lock is held.              */
         /* When set, it is OK to run GC from unknown thread.            */
 
+# ifdef NACL
+    GC_EXTERN __thread GC_thread GC_nacl_gc_thread_self;
+# endif
+
 #endif /* GC_PTHREADS && !GC_WIN32_THREADS */
 
 #endif /* GC_PTHREAD_SUPPORT_H */

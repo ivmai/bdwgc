@@ -32,7 +32,8 @@
 
 #include <pthread.h>
 
-#if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_PTHREADS)
+#if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_PTHREADS) \
+    && !defined(__native_client__)
 # include <signal.h>
 # include <dlfcn.h>
 
@@ -41,9 +42,13 @@
                                   sigset_t * /* oset */);
 # endif
   GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
+#endif /* !GC_DARWIN_THREADS */
+
+#ifndef GC_PTHREAD_CONST
+# define GC_PTHREAD_CONST const
 #endif
 
-GC_API int GC_pthread_create(pthread_t *, const pthread_attr_t *,
+GC_API int GC_pthread_create(pthread_t *, GC_PTHREAD_CONST pthread_attr_t *,
                              void *(*)(void *), void * /* arg */);
 GC_API int GC_pthread_join(pthread_t, void ** /* retval */);
 GC_API int GC_pthread_detach(pthread_t);
@@ -61,7 +66,9 @@ GC_API int GC_pthread_detach(pthread_t);
 #endif
 
 #ifdef GC_PTHREAD_EXIT_ATTRIBUTE
-  GC_API int GC_pthread_cancel(pthread_t);
+# if !defined(__native_client__)
+    GC_API int GC_pthread_cancel(pthread_t);
+# endif
   GC_API void GC_pthread_exit(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
 #endif
 
@@ -77,7 +84,8 @@ GC_API int GC_pthread_detach(pthread_t);
 # define pthread_join GC_pthread_join
 # define pthread_detach GC_pthread_detach
 
-# if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_PTHREADS)
+# if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_PTHREADS) \
+     && !defined(__native_client__)
 #   ifndef GC_OPENBSD_THREADS
 #     undef pthread_sigmask
 #     define pthread_sigmask GC_pthread_sigmask
@@ -87,8 +95,10 @@ GC_API int GC_pthread_detach(pthread_t);
 # endif
 
 # ifdef GC_PTHREAD_EXIT_ATTRIBUTE
-#   undef pthread_cancel
-#   define pthread_cancel GC_pthread_cancel
+#   if !defined(__native_client__)
+#     undef pthread_cancel
+#     define pthread_cancel GC_pthread_cancel
+#   endif
 #   undef pthread_exit
 #   define pthread_exit GC_pthread_exit
 # endif

@@ -24,7 +24,7 @@
 /* a dynamic library. -HB                                               */
 
 #if defined(GC_PTHREADS) && !defined(GC_DARWIN_THREADS) \
-    && !defined(GC_WIN32_PTHREADS)
+    && !defined(GC_WIN32_PTHREADS) && !defined(NACL)
 
 #undef GC_MUST_RESTORE_REDEFINED_DLOPEN
 #if defined(dlopen) && !defined(GC_USE_LD_WRAP)

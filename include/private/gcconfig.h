@@ -39,7 +39,7 @@
 
 /* First a unified test for Linux: */
 # if (defined(linux) || defined(__linux__) || defined(PLATFORM_ANDROID)) \
-     && !defined(LINUX)
+     && !defined(LINUX) && !defined(__native_client__)
 #   define LINUX
 # endif
 
@@ -65,6 +65,11 @@
 # endif
 
 /* Determine the machine type: */
+# if defined(__native_client__)
+#    define NACL
+#    define I386
+#    define mach_type_known
+# endif
 # if defined(__arm__) || defined(__thumb__)
 #    define ARM32
 #    if !defined(LINUX) && !defined(NETBSD) && !defined(OPENBSD) \
@@ -1175,6 +1180,21 @@
 #         define HEAP_START DATAEND
 #       endif
 #   endif /* DGUX */
+
+#   ifdef NACL
+#      define OS_TYPE "NACL"
+       extern int etext[];
+#      define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
+       extern int _end[];
+#      define DATAEND (_end)
+#      undef STACK_GRAN
+#      define STACK_GRAN 0x10000
+#      define HEURISTIC1
+#      define GETPAGESIZE() 65536
+#      ifndef MAX_NACL_GC_THREADS
+#        define MAX_NACL_GC_THREADS 1024
+#      endif
+#   endif /* NACL */
 
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
@@ -2310,9 +2330,8 @@
 
 # if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
             || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
-            || defined(DGUX) || defined(BSD) \
-            || defined(AIX) || defined(DARWIN) || defined(OSF1) \
-            || defined(HURD)
+            || defined(DGUX) || defined(BSD) || defined(HURD) \
+            || defined(AIX) || defined(DARWIN) || defined(OSF1)
 #   define UNIX_LIKE   /* Basic Unix-like system calls work.    */
 # endif
 
@@ -2431,7 +2450,7 @@
 # if defined(GC_IRIX_THREADS) && !defined(IRIX5)
         --> inconsistent configuration
 # endif
-# if defined(GC_LINUX_THREADS) && !defined(LINUX)
+# if defined(GC_LINUX_THREADS) && !defined(LINUX) && !defined(NACL)
         --> inconsistent configuration
 # endif
 # if defined(GC_NETBSD_THREADS) && !defined(NETBSD)
