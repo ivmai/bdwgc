@@ -231,9 +231,10 @@ GC_API int GC_no_dls;
                         /* Don't register dynamic library data segments. */
                         /* Wizards only.  Should be used only if the     */
                         /* application explicitly registers all roots.   */
-                        /* In Microsoft Windows environments, this will  */
-                        /* usually also prevent registration of the      */
-                        /* main data segment as part of the root set.    */
+                        /* (In some environments like Microsoft Windows  */
+                        /* and Apple's Darwin, this may also prevent     */
+                        /* registration of the main data segment as part */
+                        /* of the root set.)                             */
                         /* The setter and getter are unsynchronized.     */
 GC_API void GC_CALL GC_set_no_dls(int);
 GC_API int GC_CALL GC_get_no_dls(void);

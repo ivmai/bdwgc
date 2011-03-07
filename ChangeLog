@@ -1,5 +1,12 @@
 2011-03-07  Ivan Maidanski  <ivmai@mail.ru>
 
+	* dyn_load.c (GC_init_dyld): Do not invoke
+	_dyld_bind_fully_image_containing_address() if GC_no_dls (as it is
+	not required to register the main data segment in that case).
+	* include/gc.h (GC_no_dls): Adjust the comment.
+
+2011-03-07  Ivan Maidanski  <ivmai@mail.ru>
+
 	* dyn_load.c (GC_MUST_RESTORE_REDEFINED_DLOPEN): Test
 	GC_NO_DLOPEN.
 	* gc_dlopen.c: Ditto.

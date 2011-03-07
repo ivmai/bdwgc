@@ -1332,6 +1332,8 @@ GC_INNER void GC_init_dyld(void)
 # ifdef NO_DYLD_BIND_FULLY_IMAGE
     /* FIXME: What should we do in this case?   */
 # else
+    if (GC_no_dls) return; /* skip main data segment registration */
+
     /* When the environment variable is set, the dynamic linker binds   */
     /* all undefined symbols the application needs at launch time.      */
     /* This includes function symbols that are normally bound lazily at */
@@ -1342,9 +1344,9 @@ GC_INNER void GC_init_dyld(void)
         GC_printf("Forcing full bind of GC code...\n");
 #     endif
       /* FIXME: '_dyld_bind_fully_image_containing_address' is deprecated. */
-        if (!_dyld_bind_fully_image_containing_address(
+      if (!_dyld_bind_fully_image_containing_address(
                                                   (unsigned long *)GC_malloc))
-          ABORT("_dyld_bind_fully_image_containing_address failed");
+        ABORT("_dyld_bind_fully_image_containing_address failed");
     }
 # endif
 }
