@@ -15,13 +15,12 @@
  * modified is included with the above copyright notice.
  */
 
-/*
- * This should never be included directly.  It is included only from gc.h.
- * We separate it only to make gc.h more suitable as documentation.
- *
- * Some tests for old macros.  These violate our namespace rules and will
- * disappear shortly.  Use the GC_ names.
- */
+/* This should never be included directly; it is included only from gc.h. */
+/* We separate it only to make gc.h more suitable as documentation.       */
+#if defined(GC_H)
+
+/* Some tests for old macros.  These violate our namespace rules and    */
+/* will disappear shortly.  Use the GC_ names.                          */
 #if defined(SOLARIS_THREADS) || defined(_SOLARIS_THREADS) \
     || defined(_SOLARIS_PTHREADS) || defined(GC_SOLARIS_PTHREADS)
   /* We no longer support old style Solaris threads.            */
@@ -148,15 +147,15 @@
     /* Perhaps this should be included in pure msft environments        */
     /* as well?                                                         */
 # endif
-#else /* ! _WIN32_WCE */
-  /* Yet more kludges for WinCE */
+#else /* _WIN32_WCE */
+  /* Yet more kludges for WinCE.        */
 # include <stdlib.h> /* size_t is defined here */
 # ifndef _PTRDIFF_T_DEFINED
     /* ptrdiff_t is not defined */
 #   define _PTRDIFF_T_DEFINED
     typedef long ptrdiff_t;
 # endif
-#endif
+#endif /* _WIN32_WCE */
 
 #if defined(_DLL) && !defined(GC_NOT_DLL) && !defined(GC_DLL) \
         && !defined(__GNUC__)
@@ -192,7 +191,6 @@
 #   if __GNUC__ >= 4 && defined(GC_BUILD)
 #     define GC_API extern __attribute__((__visibility__("default")))
 #   endif
-
 # endif
 #endif /* GC_DLL */
 
@@ -231,4 +229,61 @@
 # else
 #   define GC_ATTR_ALLOC_SIZE(argnum)
 # endif
+#endif
+
+#if defined(__sgi) && !defined(__GNUC__) && _COMPILER_VERSION >= 720
+# define GC_ADD_CALLER
+# define GC_RETURN_ADDR (GC_word)__return_address
+#endif
+
+#if defined(__linux__) || defined(__GLIBC__)
+# if !defined(__native_client__)
+#   include <features.h>
+# endif
+# if (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1 || __GLIBC__ > 2) \
+        && !defined(__ia64__) && !defined(__UCLIBC__) \
+        && !defined(GC_HAVE_BUILTIN_BACKTRACE)
+#   define GC_HAVE_BUILTIN_BACKTRACE
+# endif
+# if defined(__i386__) || defined(__x86_64__)
+#   define GC_CAN_SAVE_CALL_STACKS
+# endif
+#endif /* GLIBC */
+
+#if defined(_MSC_VER) && _MSC_VER >= 1200 /* version 12.0+ (MSVC 6.0+) */ \
+        && !defined(_AMD64_) && !defined(_M_X64) && !defined(_WIN32_WCE) \
+        && !defined(GC_HAVE_NO_BUILTIN_BACKTRACE) \
+        && !defined(GC_HAVE_BUILTIN_BACKTRACE)
+# define GC_HAVE_BUILTIN_BACKTRACE
+#endif
+
+#if defined(GC_HAVE_BUILTIN_BACKTRACE) && !defined(GC_CAN_SAVE_CALL_STACKS)
+# define GC_CAN_SAVE_CALL_STACKS
+#endif
+
+#if defined(__sparc__)
+# define GC_CAN_SAVE_CALL_STACKS
+#endif
+
+/* If we're on an a platform on which we can't save call stacks, but    */
+/* gcc is normally used, we go ahead and define GC_ADD_CALLER.          */
+/* We make this decision independent of whether gcc is actually being   */
+/* used, in order to keep the interface consistent, and allow mixing    */
+/* of compilers.                                                        */
+/* This may also be desirable if it is possible but expensive to        */
+/* retrieve the call chain.                                             */
+#if (defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) \
+     || defined(__FreeBSD__) || defined(__DragonFly__)) \
+    && !defined(GC_CAN_SAVE_CALL_STACKS)
+# define GC_ADD_CALLER
+# if __GNUC__ >= 3 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
+    /* gcc knows how to retrieve return address, but we don't know */
+    /* how to generate call stacks.                                */
+#   define GC_RETURN_ADDR (GC_word)__builtin_return_address(0)
+# else
+    /* Just pass 0 for gcc compatibility. */
+#   define GC_RETURN_ADDR 0
+# endif
+#endif /* !GC_CAN_SAVE_CALL_STACKS */
+
 #endif

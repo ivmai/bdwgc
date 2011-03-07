@@ -15,6 +15,9 @@
  * modified is included with the above copyright notice.
  */
 
+/* This should never be included directly; it is included only from gc.h. */
+#if defined(GC_H)
+
 /* The version here should match that in configure/configure.ac */
 /* Eventually this one may become unnecessary.  For now we need */
 /* it to keep the old-style build process working.              */
@@ -23,18 +26,20 @@
 #define GC_TMP_ALPHA_VERSION 5
 
 #ifndef GC_NOT_ALPHA
-#   define GC_NOT_ALPHA 0xff
+# define GC_NOT_ALPHA 0xff
 #endif
 
-#if defined(GC_VERSION_MAJOR)
-# if GC_TMP_VERSION_MAJOR != GC_VERSION_MAJOR || \
-     GC_TMP_VERSION_MINOR != GC_VERSION_MINOR || \
-     defined(GC_ALPHA_VERSION) != (GC_TMP_ALPHA_VERSION != GC_NOT_ALPHA) || \
-     defined(GC_ALPHA_VERSION) && GC_TMP_ALPHA_VERSION != GC_ALPHA_VERSION
+#ifdef GC_VERSION_MAJOR
+# if GC_TMP_VERSION_MAJOR != GC_VERSION_MAJOR \
+     || GC_TMP_VERSION_MINOR != GC_VERSION_MINOR \
+     || defined(GC_ALPHA_VERSION) != (GC_TMP_ALPHA_VERSION != GC_NOT_ALPHA) \
+     || (defined(GC_ALPHA_VERSION) && GC_TMP_ALPHA_VERSION != GC_ALPHA_VERSION)
 #   error Inconsistent version info.  Check doc/README, include/gc_version.h, and configure.ac.
 # endif
 #else
 # define GC_VERSION_MAJOR GC_TMP_VERSION_MAJOR
 # define GC_VERSION_MINOR GC_TMP_VERSION_MINOR
 # define GC_ALPHA_VERSION GC_TMP_ALPHA_VERSION
+#endif /* !GC_VERSION_MAJOR */
+
 #endif

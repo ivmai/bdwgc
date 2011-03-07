@@ -1,3 +1,14 @@
+2011-03-07  Ivan Maidanski
+
+	* include/gc.h (GC_ADD_CALLER, GC_RETURN_ADDR,
+	GC_HAVE_BUILTIN_BACKTRACE, GC_CAN_SAVE_CALL_STACKS): Move
+	definition to gc_config_macros.h file.
+	* include/gc_config_macros.h: Check the file is included from gc.h
+	file.
+	* include/gc_version.h: Ditto.
+	* include/gc_config_macros.h: Reformat comments.
+	* include/gc_version.h: Reformat code.
+
 2011-02-20  Ivan Maidanski  <ivmai@mail.ru> (mostly really Elijah Taylor)
 
 	* gc_dlopen.c: Empty unit for NaCl.
