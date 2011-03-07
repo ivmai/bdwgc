@@ -22,9 +22,7 @@
 /* file to avoid having to link against libdl.{a,so} if the client      */
 /* doesn't call dlopen.  Of course this fails if the collector is in    */
 /* a dynamic library. -HB                                               */
-
-#if defined(GC_PTHREADS) && !defined(GC_DARWIN_THREADS) \
-    && !defined(GC_WIN32_PTHREADS) && !defined(NACL)
+#if defined(GC_PTHREADS) && !defined(GC_NO_DLOPEN)
 
 #undef GC_MUST_RESTORE_REDEFINED_DLOPEN
 #if defined(dlopen) && !defined(GC_USE_LD_WRAP)
@@ -59,8 +57,6 @@ static void disable_gc_for_dlopen(void)
 /* Redefine dlopen to guarantee mutual exclusion with           */
 /* GC_register_dynamic_libraries.  Should probably happen for   */
 /* other operating systems, too.                                */
-
-#include <dlfcn.h>
 
 /* This is similar to WRAP/REAL_FUNC() in pthread_support.c.    */
 #ifdef GC_USE_LD_WRAP
@@ -102,4 +98,4 @@ GC_API void * WRAP_DLFUNC(dlopen)(const char *path, int mode)
 # define dlopen GC_dlopen
 #endif
 
-#endif  /* GC_PTHREADS */
+#endif  /* GC_PTHREADS && !GC_NO_DLOPEN */

@@ -32,28 +32,48 @@
 
 #include <pthread.h>
 
-#if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_PTHREADS) \
-    && !defined(__native_client__)
-# include <signal.h>
-# include <dlfcn.h>
-
-# ifndef GC_OPENBSD_THREADS
-    GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
-                                  sigset_t * /* oset */);
-# endif
-  GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
-#endif /* !GC_DARWIN_THREADS */
-
-#ifndef GC_PTHREAD_CONST
-# define GC_PTHREAD_CONST const
+#if (defined(GC_DARWIN_THREADS) || defined(GC_WIN32_PTHREADS) \
+     || defined(__native_client__)) && !defined(GC_NO_DLOPEN)
+  /* Either there is no dlopen() or we do not need to intercept it.     */
+# define GC_NO_DLOPEN
 #endif
 
-GC_API int GC_pthread_create(pthread_t *, GC_PTHREAD_CONST pthread_attr_t *,
+#if (defined(GC_DARWIN_THREADS) || defined(GC_WIN32_PTHREADS) \
+     || defined(GC_OPENBSD_THREADS) || defined(__native_client__)) \
+    && !defined(GC_NO_PTHREAD_SIGMASK)
+  /* Either there is no pthread_sigmask() or no need to intercept it.   */
+# define GC_NO_PTHREAD_SIGMASK
+#endif
+
+#if defined(__native_client__) && !defined(GC_PTHREAD_CREATE_CONST)
+  /* At present, NaCl pthread_create() prototype does not have "const"  */
+  /* for "attr" argument.                                               */
+# define GC_PTHREAD_CREATE_CONST /* empty */
+#endif
+
+#ifndef GC_NO_DLOPEN
+# include <dlfcn.h>
+  GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
+#endif /* !GC_NO_DLOPEN */
+
+#ifndef GC_NO_PTHREAD_SIGMASK
+# include <signal.h>
+  GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
+                                sigset_t * /* oset */);
+#endif /* !GC_NO_PTHREAD_SIGMASK */
+
+#ifndef GC_PTHREAD_CREATE_CONST
+  /* This is used for pthread_create() only.    */
+# define GC_PTHREAD_CREATE_CONST const
+#endif
+
+GC_API int GC_pthread_create(pthread_t *,
+                             GC_PTHREAD_CREATE_CONST pthread_attr_t *,
                              void *(*)(void *), void * /* arg */);
 GC_API int GC_pthread_join(pthread_t, void ** /* retval */);
 GC_API int GC_pthread_detach(pthread_t);
 
-#if !defined(GC_PTHREAD_EXIT_ATTRIBUTE) \
+#if !defined(GC_PTHREAD_EXIT_ATTRIBUTE) && !defined(PLATFORM_ANDROID) \
         && (defined(GC_LINUX_THREADS) || defined(GC_SOLARIS_THREADS))
   /* Intercept pthread_cancel and pthread_exit on Linux and Solaris.    */
 # if defined(__GNUC__) /* since GCC v2.7 */
@@ -84,12 +104,12 @@ GC_API int GC_pthread_detach(pthread_t);
 # define pthread_join GC_pthread_join
 # define pthread_detach GC_pthread_detach
 
-# if !defined(GC_DARWIN_THREADS) && !defined(GC_WIN32_PTHREADS) \
-     && !defined(__native_client__)
-#   ifndef GC_OPENBSD_THREADS
-#     undef pthread_sigmask
-#     define pthread_sigmask GC_pthread_sigmask
-#   endif
+# ifndef GC_NO_PTHREAD_SIGMASK
+#   undef pthread_sigmask
+#   define pthread_sigmask GC_pthread_sigmask
+# endif
+
+# ifndef GC_NO_DLOPEN
 #   undef dlopen
 #   define dlopen GC_dlopen
 # endif

@@ -34,17 +34,17 @@
 #endif
 
 /* BTL: avoid circular redefinition of dlopen if GC_SOLARIS_THREADS defined */
-# undef GC_MUST_RESTORE_REDEFINED_DLOPEN
-# if (defined(GC_PTHREADS) || defined(GC_SOLARIS_THREADS)) \
-      && defined(dlopen) && !defined(GC_USE_LD_WRAP)
-    /* To support threads in Solaris, gc.h interposes on dlopen by       */
-    /* defining "dlopen" to be "GC_dlopen", which is implemented below.  */
-    /* However, both GC_FirstDLOpenedLinkMap() and GC_dlopen() use the   */
-    /* real system dlopen() in their implementation. We first remove     */
-    /* gc.h's dlopen definition and restore it later, after GC_dlopen(). */
-#   undef dlopen
-#   define GC_MUST_RESTORE_REDEFINED_DLOPEN
-# endif
+#undef GC_MUST_RESTORE_REDEFINED_DLOPEN
+#if defined(GC_PTHREADS) && !defined(GC_NO_DLOPEN) \
+    && !defined(GC_NO_THREAD_REDIRECTS) && !defined(GC_USE_LD_WRAP)
+  /* To support threads in Solaris, gc.h interposes on dlopen by        */
+  /* defining "dlopen" to be "GC_dlopen", which is implemented below.   */
+  /* However, both GC_FirstDLOpenedLinkMap() and GC_dlopen() use the    */
+  /* real system dlopen() in their implementation. We first remove      */
+  /* gc.h's dlopen definition and restore it later, after GC_dlopen().  */
+# undef dlopen
+# define GC_MUST_RESTORE_REDEFINED_DLOPEN
+#endif /* !GC_NO_DLOPEN */
 
 /* A user-supplied routine (custom filter) that might be called to      */
 /* determine whether a DSO really needs to be scanned by the GC.        */

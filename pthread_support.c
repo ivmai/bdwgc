@@ -93,8 +93,7 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
 
 /* Undefine macros used to redirect pthread primitives. */
 # undef pthread_create
-# if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_THREADS) \
-     && !defined(NACL)
+# ifndef GC_NO_PTHREAD_SIGMASK
 #   undef pthread_sigmask
 # endif
 # ifdef GC_PTHREAD_EXIT_ATTRIBUTE
@@ -123,12 +122,11 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
 #   define WRAP_FUNC(f) __wrap_##f
 #   define REAL_FUNC(f) __real_##f
     int REAL_FUNC(pthread_create)(pthread_t *,
-                                  GC_PTHREAD_CONST pthread_attr_t *,
+                                  GC_PTHREAD_CREATE_CONST pthread_attr_t *,
                                   void *(*start_routine)(void *), void *);
     int REAL_FUNC(pthread_join)(pthread_t, void **);
     int REAL_FUNC(pthread_detach)(pthread_t);
-#   if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_THREADS) \
-       && !defined(NACL)
+#   ifndef GC_NO_PTHREAD_SIGMASK
       int REAL_FUNC(pthread_sigmask)(int, const sigset_t *, sigset_t *);
 #   endif
 #   ifdef GC_PTHREAD_EXIT_ATTRIBUTE
@@ -147,11 +145,14 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
       /* included gc.h, wich redefined f to GC_f.                       */
       /* FIXME: Needs work for DARWIN and True64 (OSF1) */
       typedef int (* GC_pthread_create_t)(pthread_t *,
-                                          GC_PTHREAD_CONST pthread_attr_t *,
-                                          void * (*)(void *), void *);
+                                    GC_PTHREAD_CREATE_CONST pthread_attr_t *,
+                                    void * (*)(void *), void *);
       static GC_pthread_create_t REAL_FUNC(pthread_create);
-      typedef int (* GC_pthread_sigmask_t)(int, const sigset_t *, sigset_t *);
-      static GC_pthread_sigmask_t REAL_FUNC(pthread_sigmask);
+#     ifndef GC_NO_PTHREAD_SIGMASK
+        typedef int (* GC_pthread_sigmask_t)(int, const sigset_t *,
+                                             sigset_t *);
+        static GC_pthread_sigmask_t REAL_FUNC(pthread_sigmask);
+#     endif
       typedef int (* GC_pthread_join_t)(pthread_t, void **);
       static GC_pthread_join_t REAL_FUNC(pthread_join);
       typedef int (* GC_pthread_detach_t)(pthread_t);
@@ -179,17 +180,19 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
   /* be intercepted.  This allows files which include gc.h, and hence   */
   /* generate references to the GC_ symbols, to see the right symbols.  */
       GC_API int GC_pthread_create(pthread_t * t,
-                                   GC_PTHREAD_CONST pthread_attr_t * a,
+                                   GC_PTHREAD_CREATE_CONST pthread_attr_t *a,
                                    void * (* fn)(void *), void * arg)
       {
           return pthread_create(t, a, fn, arg);
       }
 
-      GC_API int GC_pthread_sigmask(int how, const sigset_t *mask,
-                                    sigset_t *old)
-      {
+#     ifndef GC_NO_PTHREAD_SIGMASK
+        GC_API int GC_pthread_sigmask(int how, const sigset_t *mask,
+                                      sigset_t *old)
+        {
           return pthread_sigmask(how, mask, old);
-      }
+        }
+#     endif /* !GC_NO_PTHREAD_SIGMASK */
 
       GC_API int GC_pthread_join(pthread_t t, void **res)
       {
@@ -251,8 +254,10 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
         ABORT("pthread_create not found"
               " (probably -lgc is specified after -lpthread)");
 #   endif
-    REAL_FUNC(pthread_sigmask) = (GC_pthread_sigmask_t)
+#   ifndef GC_NO_PTHREAD_SIGMASK
+      REAL_FUNC(pthread_sigmask) = (GC_pthread_sigmask_t)
                                 dlsym(dl_handle, "pthread_sigmask");
+#   endif
     REAL_FUNC(pthread_join) = (GC_pthread_join_t)
                                 dlsym(dl_handle, "pthread_join");
     REAL_FUNC(pthread_detach) = (GC_pthread_detach_t)
@@ -1021,8 +1026,7 @@ GC_INNER void GC_init_parallel(void)
 #   endif
 }
 
-#if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_THREADS) \
-    && !defined(NACL)
+#ifndef GC_NO_PTHREAD_SIGMASK
   GC_API int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set,
                                         sigset_t *oset)
   {
@@ -1036,7 +1040,7 @@ GC_INNER void GC_init_parallel(void)
     }
     return(REAL_FUNC(pthread_sigmask)(how, set, oset));
   }
-#endif /* !GC_DARWIN_THREADS && !GC_OPENBSD_THREADS && !NACL */
+#endif /* !GC_NO_PTHREAD_SIGMASK */
 
 #if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
   GC_INNER ptr_t GC_FindTopOfStack(unsigned long);
@@ -1449,7 +1453,7 @@ STATIC void * GC_start_routine(void * arg)
 }
 
 GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
-                     GC_PTHREAD_CONST pthread_attr_t *attr,
+                     GC_PTHREAD_CREATE_CONST pthread_attr_t *attr,
                      void *(*start_routine)(void *), void *arg)
 {
     int result;

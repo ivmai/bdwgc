@@ -1,4 +1,32 @@
-2011-03-07  Ivan Maidanski
+2011-03-07  Ivan Maidanski  <ivmai@mail.ru>
+
+	* dyn_load.c (GC_MUST_RESTORE_REDEFINED_DLOPEN): Test
+	GC_NO_DLOPEN.
+	* gc_dlopen.c: Ditto.
+	* include/gc_pthread_redirects.h (GC_dlopen, dlopen): Ditto.
+	* gc_dlopen.c: Don't include dlfcn.h (as it is included in
+	gc_pthread_redirects.h).
+	* pthread_support.c (pthread_sigmask, GC_pthread_sigmask_t,
+	GC_pthread_sigmask): Test GC_NO_PTHREAD_SIGMASK (instead of
+	GC_DARWIN_THREADS, GC_OPENBSD_THREADS and NACL).
+	* include/gc_pthread_redirects.h (GC_pthread_sigmask,
+	pthread_sigmask): Ditto.
+	* win32_threads.c (pthread_sigmask, GC_pthread_sigmask): Test
+	GC_NO_PTHREAD_SIGMASK (instead of GC_WIN32_PTHREADS); reformat the
+	comment.
+	* pthread_support.c (pthread_create, GC_pthread_create_t,
+	GC_pthread_create): Rename GC_PTHREAD_CONST to
+	GC_PTHREAD_CREATE_CONST.
+	* win32_threads.c (GC_pthread_create): Ditto.
+	* include/gc_pthread_redirects.h: Ditto.
+	* include/gc_pthread_redirects.h (GC_NO_DLOPEN,
+	GC_NO_PTHREAD_SIGMASK): New macro defined.
+	* include/gc_pthread_redirects.h (GC_PTHREAD_CREATE_CONST): Set to
+	empty for NaCl.
+	* include/gc_pthread_redirects.h (GC_PTHREAD_EXIT_ATTRIBUTE): Do
+	not define for Android (as CANCEL_SAFE is not defined).
+
+2011-03-07  Ivan Maidanski  <ivmai@mail.ru>
 
 	* include/gc.h (GC_ADD_CALLER, GC_RETURN_ADDR,
 	GC_HAVE_BUILTIN_BACKTRACE, GC_CAN_SAVE_CALL_STACKS): Move
