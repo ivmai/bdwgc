@@ -277,13 +277,60 @@
     && !defined(GC_CAN_SAVE_CALL_STACKS)
 # define GC_ADD_CALLER
 # if __GNUC__ >= 3 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
-    /* gcc knows how to retrieve return address, but we don't know */
-    /* how to generate call stacks.                                */
+    /* gcc knows how to retrieve return address, but we don't know      */
+    /* how to generate call stacks.                                     */
 #   define GC_RETURN_ADDR (GC_word)__builtin_return_address(0)
 # else
-    /* Just pass 0 for gcc compatibility. */
+    /* Just pass 0 for gcc compatibility.       */
 #   define GC_RETURN_ADDR 0
 # endif
 #endif /* !GC_CAN_SAVE_CALL_STACKS */
+
+#ifdef GC_PTHREADS
+
+# if (defined(GC_DARWIN_THREADS) || defined(GC_WIN32_PTHREADS) \
+      || defined(__native_client__)) && !defined(GC_NO_DLOPEN)
+    /* Either there is no dlopen() or we do not need to intercept it.   */
+#   define GC_NO_DLOPEN
+# endif
+
+# if (defined(GC_DARWIN_THREADS) || defined(GC_WIN32_PTHREADS) \
+      || defined(GC_OPENBSD_THREADS) || defined(__native_client__)) \
+     && !defined(GC_NO_PTHREAD_SIGMASK)
+    /* Either there is no pthread_sigmask() or no need to intercept it. */
+#   define GC_NO_PTHREAD_SIGMASK
+# endif
+
+# if defined(__native_client__)
+    /* At present, NaCl pthread_create() prototype does not have        */
+    /* "const" for its "attr" argument; also, NaCl pthread_exit() one   */
+    /* does not have "noreturn" attribute.                              */
+#   ifndef GC_PTHREAD_CREATE_CONST
+#     define GC_PTHREAD_CREATE_CONST /* empty */
+#   endif
+#   ifndef GC_PTHREAD_EXIT_ATTRIBUTE
+#     define GC_PTHREAD_EXIT_ATTRIBUTE /* empty */
+#   endif
+# endif
+
+# if !defined(GC_PTHREAD_EXIT_ATTRIBUTE) && !defined(PLATFORM_ANDROID) \
+     && (defined(GC_LINUX_THREADS) || defined(GC_SOLARIS_THREADS))
+    /* Intercept pthread_exit on Linux and Solaris.     */
+#   if defined(__GNUC__) /* since GCC v2.7 */
+#     define GC_PTHREAD_EXIT_ATTRIBUTE __attribute__((__noreturn__))
+#   elif defined(__NORETURN) /* used in Solaris */
+#     define GC_PTHREAD_EXIT_ATTRIBUTE __NORETURN
+#   else
+#     define GC_PTHREAD_EXIT_ATTRIBUTE /* empty */
+#   endif
+# endif
+
+# if (!defined(GC_PTHREAD_EXIT_ATTRIBUTE) || defined(__native_client__)) \
+     && !defined(GC_NO_PTHREAD_CANCEL)
+    /* Either there is no pthread_cancel() or no need to intercept it.  */
+#   define GC_NO_PTHREAD_CANCEL
+# endif
+
+#endif /* GC_PTHREADS */
 
 #endif

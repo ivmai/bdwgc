@@ -32,31 +32,6 @@
 
 #include <pthread.h>
 
-#if (defined(GC_DARWIN_THREADS) || defined(GC_WIN32_PTHREADS) \
-     || defined(__native_client__)) && !defined(GC_NO_DLOPEN)
-  /* Either there is no dlopen() or we do not need to intercept it.     */
-# define GC_NO_DLOPEN
-#endif
-
-#if (defined(GC_DARWIN_THREADS) || defined(GC_WIN32_PTHREADS) \
-     || defined(GC_OPENBSD_THREADS) || defined(__native_client__)) \
-    && !defined(GC_NO_PTHREAD_SIGMASK)
-  /* Either there is no pthread_sigmask() or no need to intercept it.   */
-# define GC_NO_PTHREAD_SIGMASK
-#endif
-
-#if defined(__native_client__)
-  /* At present, NaCl pthread_create() prototype does not have "const"  */
-  /* for its "attr" argument; also, NaCl pthread_exit() one does not    */
-  /* have "noreturn" attribute.                                         */
-# ifndef GC_PTHREAD_CREATE_CONST
-#   define GC_PTHREAD_CREATE_CONST /* empty */
-# endif
-# ifndef GC_PTHREAD_EXIT_ATTRIBUTE
-#   define GC_PTHREAD_EXIT_ATTRIBUTE /* empty */
-# endif
-#endif
-
 #ifndef GC_NO_DLOPEN
 # include <dlfcn.h>
   GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
@@ -78,24 +53,6 @@ GC_API int GC_pthread_create(pthread_t *,
                              void *(*)(void *), void * /* arg */);
 GC_API int GC_pthread_join(pthread_t, void ** /* retval */);
 GC_API int GC_pthread_detach(pthread_t);
-
-#if !defined(GC_PTHREAD_EXIT_ATTRIBUTE) && !defined(PLATFORM_ANDROID) \
-        && (defined(GC_LINUX_THREADS) || defined(GC_SOLARIS_THREADS))
-  /* Intercept pthread_exit on Linux and Solaris.       */
-# if defined(__GNUC__) /* since GCC v2.7 */
-#   define GC_PTHREAD_EXIT_ATTRIBUTE __attribute__((__noreturn__))
-# elif defined(__NORETURN) /* used in Solaris */
-#   define GC_PTHREAD_EXIT_ATTRIBUTE __NORETURN
-# else
-#   define GC_PTHREAD_EXIT_ATTRIBUTE /* empty */
-# endif
-#endif
-
-#if (!defined(GC_PTHREAD_EXIT_ATTRIBUTE) || defined(__native_client__)) \
-    && !defined(GC_NO_PTHREAD_CANCEL)
-  /* Either there is no pthread_cancel() or no need to intercept it.    */
-# define GC_NO_PTHREAD_CANCEL
-#endif
 
 #ifndef GC_NO_PTHREAD_CANCEL
   GC_API int GC_pthread_cancel(pthread_t);

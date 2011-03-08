@@ -1,5 +1,12 @@
 2011-03-08  Ivan Maidanski  <ivmai@mail.ru>
 
+	* include/gc_pthread_redirects.h (GC_NO_DLOPEN,
+	GC_NO_PTHREAD_SIGMASK, GC_PTHREAD_CREATE_CONST,
+	GC_PTHREAD_EXIT_ATTRIBUTE, GC_NO_PTHREAD_CANCEL): Move the
+	definition to gc_config_macros.
+
+2011-03-08  Ivan Maidanski  <ivmai@mail.ru>
+
 	* pthread_support.c (pthread_cancel, GC_pthread_cancel_t,
 	GC_pthread_cancel): Test GC_NO_PTHREAD_CANCEL (instead of NACL and
 	GC_PTHREAD_EXIT_ATTRIBUTE).
