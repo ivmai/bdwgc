@@ -261,10 +261,12 @@ GC_INNER struct hblkhdr * GC_install_header(struct hblk *h)
 
     if (!get_index((word) h)) return(0);
     result = alloc_hdr();
-    SET_HDR(h, result);
-#   ifdef USE_MUNMAP
+    if (result) {
+      SET_HDR(h, result);
+#     ifdef USE_MUNMAP
         result -> hb_last_reclaimed = (unsigned short)GC_gc_no;
-#   endif
+#     endif
+    }
     return(result);
 }
 

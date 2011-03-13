@@ -1500,12 +1500,11 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
   {
     word my_mark_no = 0;
 
+    if ((word)id == (word)-1) return 0; /* to make compiler happy */
     marker_sp[(word)id] = GC_approx_sp();
 #   ifdef IA64
       marker_bsp[(word)id] = GC_save_regs_in_stack();
 #   endif
-
-    if ((word)id == (word)-1) return 0; /* to make compiler happy */
 
     for (;; ++my_mark_no) {
       if (my_mark_no - GC_mark_no > (word)2) {

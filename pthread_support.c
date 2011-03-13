@@ -363,6 +363,7 @@ STATIC void * GC_mark_thread(void * id)
   word my_mark_no = 0;
   IF_CANCEL(int cancel_state;)
 
+  if ((word)id == (word)-1) return 0; /* to make compiler happy */
   DISABLE_CANCEL(cancel_state);
                          /* Mark threads are not cancellable; they      */
                          /* should be invisible to client.              */
@@ -373,8 +374,6 @@ STATIC void * GC_mark_thread(void * id)
 # if defined(GC_DARWIN_THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
     marker_mach_threads[(word)id] = mach_thread_self();
 # endif
-
-  if ((word)id == (word)-1) return 0; /* to make compiler happy */
 
   for (;; ++my_mark_no) {
     /* GC_mark_no is passed only to allow GC_help_marker to terminate   */
@@ -921,6 +920,8 @@ GC_INNER void GC_thr_init(void)
   /* Add the initial thread, so we can stop it. */
   {
     GC_thread t = GC_new_thread(pthread_self());
+    if (t == NULL)
+      ABORT("Failed to allocate memory for the initial thread.");
 #   ifdef GC_DARWIN_THREADS
       t -> stop_info.mach_thread = mach_thread_self();
 #   else

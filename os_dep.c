@@ -189,7 +189,9 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
   STATIC size_t GC_get_maps_len(void)
   {
     int f = open("/proc/self/maps", O_RDONLY);
-    size_t result = GC_get_file_len(f);
+    size_t result;
+    if (f < 0) return 0; /* treat missing file as empty */
+    result = GC_get_file_len(f);
     close(f);
     return result;
   }
@@ -227,9 +229,9 @@ GC_INNER char * GC_get_maps(void)
     /* This only matters with threads enabled, and if we use    */
     /* this to locate roots (not the default).                  */
 
-    /* Determine the initial size of /proc/self/maps.           */
-    /* Note that lseek doesn't work, at least as of 2.6.15.     */
 #   ifdef THREADS
+        /* Determine the initial size of /proc/self/maps.       */
+        /* Note that lseek doesn't work, at least as of 2.6.15. */
         maps_size = GC_get_maps_len();
         if (0 == maps_size) return 0;
 #   else

@@ -1,5 +1,25 @@
 2011-03-13  Ivan Maidanski  <ivmai@mail.ru>
 
+	* dbg_mlc.c (GC_make_closure): Fix SEGV in case GC_malloc returns
+	NULL.
+	* dbg_mlc.c (GC_debug_register_finalizer,
+	GC_debug_register_finalizer_no_order,
+	GC_debug_register_finalizer_unreachable,
+	GC_debug_register_finalizer_ignore_self): Handle out of memory
+	case properly (similar to GC_register_finalizer_inner).
+	* headers.c (GC_install_header): Handle the case when alloc_hdr()
+	returns NULL.
+	* os_dep.c (GC_get_maps_len): Defend against missing "maps" file.
+	* pthread_support.c (GC_mark_thread): Place a dummy return
+	statement (which uses "id" argument) before the actual use of "id"
+	as an array index (to suppress a warning produced by some static
+	code analysis tools).
+	* win32_threads.c (GC_mark_thread): Ditto.
+	* pthread_support.c (GC_thr_init): Abort (with the appropriate
+	message) if out of memory.
+
+2011-03-13  Ivan Maidanski  <ivmai@mail.ru>
+
 	* finalize.c (GC_register_finalizer_inner): Fix a typo in a
 	comment.
 	*include/private/gcconfig.h (STACKBOTTOM): Ditto.

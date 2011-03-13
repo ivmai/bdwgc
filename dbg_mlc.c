@@ -96,7 +96,7 @@ GC_API void GC_CALL GC_register_finalizer_no_order(void * obj,
   /*   Returns 1 on success, 0 if source couldn't be determined.        */
   /* Dest can be any address within a heap object.                      */
   GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void *dest, void **base_p,
-                                                size_t *offset_p)
+                                                  size_t *offset_p)
   {
     oh * hdr = (oh *)GC_base(dest);
     ptr_t bp;
@@ -774,8 +774,8 @@ GC_API void GC_CALL GC_debug_free(void * p)
     ptr_t base = GC_base(p);
     GC_ASSERT((ptr_t)p - (ptr_t)base == sizeof(oh));
 #   ifndef SHORT_DBG_HDRS
-    /* Invalidate size */
-        ((oh *)base) -> oh_sz = GC_size(base);
+      /* Invalidate size */
+      ((oh *)base) -> oh_sz = GC_size(base);
 #   endif
     GC_free_inner(base);
   }
@@ -939,9 +939,10 @@ STATIC void * GC_make_closure(GC_finalization_proc fn, void * data)
 #   else
       (struct closure *) GC_malloc(sizeof (struct closure));
 #   endif
-
-    result -> cl_fn = fn;
-    result -> cl_data = data;
+    if (result != 0) {
+      result -> cl_fn = fn;
+      result -> cl_data = data;
+    }
     return((void *)result);
 }
 
@@ -1002,8 +1003,10 @@ GC_API void GC_CALL GC_debug_register_finalizer(void * obj,
     if (0 == fn) {
       GC_register_finalizer(base, 0, 0, &my_old_fn, &my_old_cd);
     } else {
+      cd = GC_make_closure(fn, cd);
+      if (cd == 0) return; /* out of memory */
       GC_register_finalizer(base, GC_debug_invoke_finalizer,
-                            GC_make_closure(fn,cd), &my_old_fn, &my_old_cd);
+                            cd, &my_old_fn, &my_old_cd);
     }
     store_old(obj, my_old_fn, (struct closure *)my_old_cd, ofn, ocd);
 }
@@ -1031,9 +1034,10 @@ GC_API void GC_CALL GC_debug_register_finalizer_no_order
     if (0 == fn) {
       GC_register_finalizer_no_order(base, 0, 0, &my_old_fn, &my_old_cd);
     } else {
+      cd = GC_make_closure(fn, cd);
+      if (cd == 0) return; /* out of memory */
       GC_register_finalizer_no_order(base, GC_debug_invoke_finalizer,
-                                     GC_make_closure(fn,cd), &my_old_fn,
-                                     &my_old_cd);
+                                     cd, &my_old_fn, &my_old_cd);
     }
     store_old(obj, my_old_fn, (struct closure *)my_old_cd, ofn, ocd);
 }
@@ -1061,9 +1065,10 @@ GC_API void GC_CALL GC_debug_register_finalizer_unreachable
     if (0 == fn) {
       GC_register_finalizer_unreachable(base, 0, 0, &my_old_fn, &my_old_cd);
     } else {
+      cd = GC_make_closure(fn, cd);
+      if (cd == 0) return; /* out of memory */
       GC_register_finalizer_unreachable(base, GC_debug_invoke_finalizer,
-                                        GC_make_closure(fn,cd), &my_old_fn,
-                                        &my_old_cd);
+                                        cd, &my_old_fn, &my_old_cd);
     }
     store_old(obj, my_old_fn, (struct closure *)my_old_cd, ofn, ocd);
 }
@@ -1090,9 +1095,10 @@ GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
     if (0 == fn) {
       GC_register_finalizer_ignore_self(base, 0, 0, &my_old_fn, &my_old_cd);
     } else {
+      cd = GC_make_closure(fn, cd);
+      if (cd == 0) return; /* out of memory */
       GC_register_finalizer_ignore_self(base, GC_debug_invoke_finalizer,
-                                        GC_make_closure(fn,cd), &my_old_fn,
-                                        &my_old_cd);
+                                        cd, &my_old_fn, &my_old_cd);
     }
     store_old(obj, my_old_fn, (struct closure *)my_old_cd, ofn, ocd);
 }
