@@ -1601,6 +1601,7 @@ GC_INNER volatile GC_bool GC_collecting = 0;
 /* explicitly sleep.                                                    */
 
 /* #define LOCK_STATS */
+/* Note that LOCK_STATS requires AO_HAVE_test_and_set.  */
 #ifdef LOCK_STATS
   AO_t GC_spin_count = 0;
   AO_t GC_block_count = 0;

@@ -182,7 +182,7 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
           } else {
 #           ifdef THREADS
               /* Clear any memory that might be used for GC descriptors */
-              /* before we release the lock.                          */
+              /* before we release the lock.                            */
                 ((word *)result)[0] = 0;
                 ((word *)result)[1] = 0;
                 ((word *)result)[GRANULES_TO_WORDS(lg)-1] = 0;
@@ -219,7 +219,7 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
         lg = GC_size_map[lb];
         opp = &(GC_aobjfreelist[lg]);
         LOCK();
-        if( EXPECT((op = *opp) == 0, 0) ) {
+        if (EXPECT((op = *opp) == 0, FALSE)) {
             UNLOCK();
             return(GENERAL_MALLOC((word)lb, PTRFREE));
         }
@@ -271,9 +271,9 @@ GC_API char * GC_CALL GC_strdup(const char *s)
         lg = GC_size_map[lb];
         opp = (void **)&(GC_objfreelist[lg]);
         LOCK();
-        if( EXPECT((op = *opp) == 0, 0) ) {
+        if (EXPECT((op = *opp) == 0, FALSE)) {
             UNLOCK();
-            return(GENERAL_MALLOC((word)lb, NORMAL));
+            return (GENERAL_MALLOC((word)lb, NORMAL));
         }
         GC_ASSERT(0 == obj_link(op)
                   || ((word)obj_link(op)
@@ -426,7 +426,7 @@ GC_API void GC_CALL GC_free(void * p)
     ngranules = BYTES_TO_GRANULES(sz);
     knd = hhdr -> hb_obj_kind;
     ok = &GC_obj_kinds[knd];
-    if (EXPECT((ngranules <= MAXOBJGRANULES), 1)) {
+    if (EXPECT(ngranules <= MAXOBJGRANULES, TRUE)) {
         LOCK();
         GC_bytes_freed += sz;
         if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;

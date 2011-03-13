@@ -169,7 +169,7 @@ static void maybe_finalize(void)
         opp = &(GC_gcjobjfreelist[lg]);
         LOCK();
         op = *opp;
-        if(EXPECT(op == 0, 0)) {
+        if(EXPECT(op == 0, FALSE)) {
             maybe_finalize();
             op = (ptr_t)GENERAL_MALLOC_INNER((word)lb, GC_gcj_kind);
             if (0 == op) {

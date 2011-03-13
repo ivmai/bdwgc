@@ -685,11 +685,11 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # define ROUNDED_UP_GRANULES(n) \
         BYTES_TO_GRANULES((n) + (GRANULE_BYTES - 1 + EXTRA_BYTES))
 # if MAX_EXTRA_BYTES == 0
-#  define SMALL_OBJ(bytes) EXPECT((bytes) <= (MAXOBJBYTES), 1)
+#  define SMALL_OBJ(bytes) EXPECT((bytes) <= (MAXOBJBYTES), TRUE)
 # else
 #  define SMALL_OBJ(bytes) \
-            (EXPECT((bytes) <= (MAXOBJBYTES - MAX_EXTRA_BYTES), 1) || \
-             (bytes) <= (MAXOBJBYTES - EXTRA_BYTES))
+            (EXPECT((bytes) <= (MAXOBJBYTES - MAX_EXTRA_BYTES), TRUE) \
+             || (bytes) <= MAXOBJBYTES - EXTRA_BYTES)
         /* This really just tests bytes <= MAXOBJBYTES - EXTRA_BYTES.   */
         /* But we try to avoid looking up EXTRA_BYTES.                  */
 # endif

@@ -374,7 +374,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
         curr_fo = fo_next(curr_fo);
       }
       if (EXPECT(new_fo != 0, FALSE)) {
-        /* new_fo is returned GC_oom_fn(), so fn != 0 and hhdr != 0.    */
+        /* new_fo is returned by GC_oom_fn(), so fn != 0 and hhdr != 0. */
         break;
       }
       if (fn == 0) {

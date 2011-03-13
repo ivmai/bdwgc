@@ -104,7 +104,7 @@ typedef struct hblkhdr hdr;
 # define HC_GET_HDR(p, hhdr, source, exit_label) \
         { \
           hdr_cache_entry * hce = HCE(p); \
-          if (EXPECT(HCE_VALID_FOR(hce, p), 1)) { \
+          if (EXPECT(HCE_VALID_FOR(hce, p), TRUE)) { \
             HC_HIT(); \
             hhdr = hce -> hce_hdr; \
           } else { \
