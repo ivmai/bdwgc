@@ -101,6 +101,13 @@ GC_API void GC_CALL GC_register_finalizer_no_order(void * obj,
     oh * hdr = (oh *)GC_base(dest);
     ptr_t bp;
     ptr_t bp_base;
+
+#   ifdef LINT2
+      /* Explicitly instruct the code analysis tool that                */
+      /* GC_get_back_ptr_info is not expected to be called with an      */
+      /* incorrect "dest" value.                                        */
+      if (!hdr) ABORT("Invalid GC_get_back_ptr_info argument");
+#   endif
     if (!GC_HAS_DEBUG_INFO((ptr_t) hdr)) return GC_NO_SPACE;
     bp = GC_REVEAL_POINTER(hdr -> oh_back_ptr);
     if (MARKED_FOR_FINALIZATION == bp) return GC_FINALIZER_REFD;
@@ -386,6 +393,9 @@ STATIC void GC_print_obj(ptr_t p)
     oh * ohdr = (oh *)GC_base(p);
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
+#   ifdef LINT2
+      if (!ohdr) ABORT("Invalid GC_print_obj argument");
+#   endif
     GC_err_printf("%p (", ((ptr_t)ohdr + sizeof(oh)));
     GC_err_puts(ohdr -> oh_string);
 #   ifdef SHORT_DBG_HDRS
@@ -418,6 +428,9 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
     oh * ohdr = (oh *)GC_base(p);
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
+#   ifdef LINT2
+      if (!ohdr) ABORT("Invalid GC_print_smashed_obj argument");
+#   endif
     if (clobbered_addr <= (ptr_t)(&(ohdr -> oh_sz))
         || ohdr -> oh_string == 0) {
         GC_err_printf(
@@ -773,6 +786,9 @@ GC_API void GC_CALL GC_debug_free(void * p)
   {
     ptr_t base = GC_base(p);
     GC_ASSERT((ptr_t)p - (ptr_t)base == sizeof(oh));
+#   ifdef LINT2
+      if (!base) ABORT("Invalid GC_debug_free_inner argument");
+#   endif
 #   ifndef SHORT_DBG_HDRS
       /* Invalidate size */
       ((oh *)base) -> oh_sz = GC_size(base);

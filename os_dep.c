@@ -1046,9 +1046,8 @@ GC_INNER word GC_page_size = 0;
           /* Should probably call the real read, if read is wrapped.    */
     char stat_buf[STAT_BUF_SIZE];
     int f;
-    char c;
-    word result = 0;
-    size_t i, buf_offset = 0;
+    word result;
+    size_t i, buf_offset = 0, len;
 
     /* First try the easy way.  This should work for glibc 2.2  */
     /* This fails in a prelinked ("prelink" command) executable */
@@ -1077,24 +1076,37 @@ GC_INNER word GC_page_size = 0;
       }
 #   endif
     f = open("/proc/self/stat", O_RDONLY);
-    if (f < 0 || STAT_READ(f, stat_buf, STAT_BUF_SIZE) < 2 * STAT_SKIP) {
+    if (f < 0
+        || (int)(len = (size_t)STAT_READ(f, stat_buf, STAT_BUF_SIZE))
+            < 2 * STAT_SKIP) {
         ABORT("Couldn't read /proc/self/stat");
     }
-    c = stat_buf[buf_offset++];
+    close(f);
+
     /* Skip the required number of fields.  This number is hopefully    */
     /* constant across all Linux implementations.                       */
-      for (i = 0; i < STAT_SKIP; ++i) {
-        while (isspace(c)) c = stat_buf[buf_offset++];
-        while (!isspace(c)) c = stat_buf[buf_offset++];
+    for (i = 0; i < STAT_SKIP; ++i) {
+      while (buf_offset < len && isspace(stat_buf[buf_offset++])) {
+        /* empty */
       }
-    while (isspace(c)) c = stat_buf[buf_offset++];
-    while (isdigit(c)) {
-      result *= 10;
-      result += c - '0';
-      c = stat_buf[buf_offset++];
+      while (buf_offset < len && !isspace(stat_buf[buf_offset++])) {
+        /* empty */
+      }
     }
-    close(f);
-    if (result < 0x100000) ABORT("Absurd stack bottom value");
+    /* Skip spaces.     */
+    while (buf_offset < len && isspace(stat_buf[buf_offset])) {
+      buf_offset++;
+    }
+    /* Find the end of the number and cut the buffer there.     */
+    for (i = 0; buf_offset + i < len; i++) {
+      if (!isdigit(stat_buf[buf_offset + i])) break;
+    }
+    if (buf_offset + i >= len) ABORT("Could not parse /proc/self/stat");
+    stat_buf[buf_offset + i] = '\0';
+
+    result = (word)STRTOULL(&stat_buf[buf_offset], NULL, 10);
+    if (result < 0x100000 || (result & (sizeof(word) - 1)) != 0)
+      ABORT("Absurd stack bottom value");
     return (ptr_t)result;
   }
 

@@ -130,7 +130,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # include "gc_hdrs.h"
 #endif
 
-#if __GNUC__ >= 3
+#if __GNUC__ >= 3 && !defined(LINT2)
 # define EXPECT(expr, outcome) __builtin_expect(expr,outcome)
   /* Equivalent to (expr), but predict that usually (expr)==outcome. */
 #else
@@ -241,7 +241,13 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #define GC_INVOKE_FINALIZERS() GC_notify_or_invoke_finalizers()
 
 #if !defined(DONT_ADD_BYTE_AT_END)
-# define EXTRA_BYTES GC_all_interior_pointers
+# ifdef LINT2
+    /* Explicitly instruct the code analysis tool that                  */
+    /* GC_all_interior_pointers is assumed to have only 0 or 1 value.   */
+#   define EXTRA_BYTES (GC_all_interior_pointers? 1 : 0)
+# else
+#   define EXTRA_BYTES GC_all_interior_pointers
+# endif
 # define MAX_EXTRA_BYTES 1
 #else
 # define EXTRA_BYTES 0
