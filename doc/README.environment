@@ -17,9 +17,11 @@ GC_LOOP_ON_ABORT - Causes the collector abort routine to enter a tight loop.
 
 GC_PRINT_STATS - Turn on GC logging.  Not functional with SMALL_CONFIG.
 
-GC_LOG_FILE - The name of the log file.  Stderr by default.
+GC_LOG_FILE - The name of the log file.  Stderr by default.  Not functional
+              with SMALL_CONFIG.
 
-GC_PRINT_VERBOSE_STATS - Turn on even more logging.
+GC_PRINT_VERBOSE_STATS - Turn on even more logging.  Not functional with
+                         SMALL_CONFIG.
 
 GC_DUMP_REGULARLY - Generate a GC debugging dump GC_dump() on startup
                     and during every collection.  Very verbose.  Useful
@@ -130,7 +132,8 @@ GC_PAUSE_TIME_TARGET - Set the desired garbage collector pause time in msecs.
                      only be used with unlimited pause time.
 
 GC_FULL_FREQUENCY - Set the desired number of partial collections between full
-                  collections.  Matters only if GC_incremental is set.
+                    collections.  Matters only if GC_incremental is set.
+                    Not functional with SMALL_CONFIG.
 
 GC_FREE_SPACE_DIVISOR - Set GC_free_space_divisor to the indicated value.
                       Setting it to larger values decreases space consumption

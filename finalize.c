@@ -946,4 +946,4 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn,
                   "%ld links cleared\n",
                   ready, (long)GC_old_dl_entries - (long)GC_dl_entries);
   }
-#endif /* SMALL_CONFIG */
+#endif /* !SMALL_CONFIG */

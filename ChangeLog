@@ -1,3 +1,21 @@
+2011-03-15  Ivan Maidanski  <ivmai@mail.ru>
+
+	* alloc.c (GC_finish_collection): Replace "#else #ifdef" with
+	"#elif".
+	* include/private/gc_priv.h (CPP_LOG_HBLKSIZE, LOG_PHT_ENTRIES,
+	MAX_ROOT_SETS, MAX_HEAP_SECTS): Ditto.
+	* alloc.c (GC_expand_hp_inner): Check for GC_collect_at_heapsize
+	overflow even if not LARGE_CONFIG.
+	* dbg_mlc.c (GC_check_heap_proc): Check "oh" size even if
+	SMALL_CONFIG.
+	* finalize.c (GC_print_finalization_stats): Fix "#endif" comment.
+	* new_hblk.c (GC_build_fl_clear2, GC_build_fl_clear4, GC_build_fl2,
+	GC_build_fl4): Reformat the comment; adjust code indentation.
+	* new_hblk.c (GC_build_fl): Fix indentation.
+	* include/private/gc_hdrs.h: Ditto.
+	* doc/README.environment (GC_LOG_FILE, GC_PRINT_VERBOSE_STATS,
+	GC_FULL_FREQUENCY): Refine the documentation.
+
 2011-03-13  Ivan Maidanski  <ivmai@mail.ru>
 
 	* extra/msvc_dbg.c: Test _MSC_VER macro; include "gc.h" (for

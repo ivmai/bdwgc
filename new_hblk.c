@@ -24,13 +24,11 @@
 #include <stdio.h>
 
 #ifndef SMALL_CONFIG
-/*
- * Build a free list for size 2 (words) cleared objects inside hblk h.
- * Set the last link to
- * be ofl.  Return a pointer tpo the first free list entry.
- */
-STATIC ptr_t GC_build_fl_clear2(struct hblk *h, ptr_t ofl)
-{
+  /* Build a free list for size 2 (words) cleared objects inside        */
+  /* hblk h.  Set the last link to be ofl.  Return a pointer tpo the    */
+  /* first free list entry.                                             */
+  STATIC ptr_t GC_build_fl_clear2(struct hblk *h, ptr_t ofl)
+  {
     word * p = (word *)(h -> hb_body);
     word * lim = (word *)(h + 1);
 
@@ -46,11 +44,11 @@ STATIC ptr_t GC_build_fl_clear2(struct hblk *h, ptr_t ofl)
         p[3] = 0;
     };
     return((ptr_t)(p-2));
-}
+  }
 
-/* The same for size 4 cleared objects */
-STATIC ptr_t GC_build_fl_clear4(struct hblk *h, ptr_t ofl)
-{
+  /* The same for size 4 cleared objects.       */
+  STATIC ptr_t GC_build_fl_clear4(struct hblk *h, ptr_t ofl)
+  {
     word * p = (word *)(h -> hb_body);
     word * lim = (word *)(h + 1);
 
@@ -66,11 +64,11 @@ STATIC ptr_t GC_build_fl_clear4(struct hblk *h, ptr_t ofl)
         CLEAR_DOUBLE(p+2);
     };
     return((ptr_t)(p-4));
-}
+  }
 
-/* The same for size 2 uncleared objects */
-STATIC ptr_t GC_build_fl2(struct hblk *h, ptr_t ofl)
-{
+  /* The same for size 2 uncleared objects.     */
+  STATIC ptr_t GC_build_fl2(struct hblk *h, ptr_t ofl)
+  {
     word * p = (word *)(h -> hb_body);
     word * lim = (word *)(h + 1);
 
@@ -82,11 +80,11 @@ STATIC ptr_t GC_build_fl2(struct hblk *h, ptr_t ofl)
         p[2] = (word)p;
     };
     return((ptr_t)(p-2));
-}
+  }
 
-/* The same for size 4 uncleared objects */
-STATIC ptr_t GC_build_fl4(struct hblk *h, ptr_t ofl)
-{
+  /* The same for size 4 uncleared objects.     */
+  STATIC ptr_t GC_build_fl4(struct hblk *h, ptr_t ofl)
+  {
     word * p = (word *)(h -> hb_body);
     word * lim = (word *)(h + 1);
 
@@ -99,10 +97,8 @@ STATIC ptr_t GC_build_fl4(struct hblk *h, ptr_t ofl)
         p[4] = (word)p;
     };
     return((ptr_t)(p-4));
-}
-
+  }
 #endif /* !SMALL_CONFIG */
-
 
 /* Build a free list for objects of size sz inside heap block h.        */
 /* Clear objects inside h if clear is set.  Add list to the end of      */
@@ -124,10 +120,10 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
     PREFETCH_FOR_WRITE((ptr_t)h + 128);
     PREFETCH_FOR_WRITE((ptr_t)h + 256);
     PREFETCH_FOR_WRITE((ptr_t)h + 378);
-  /* Handle small objects sizes more efficiently.  For larger objects   */
-  /* the difference is less significant.                                */
-#  ifndef SMALL_CONFIG
-     switch (sz) {
+# ifndef SMALL_CONFIG
+    /* Handle small objects sizes more efficiently.  For larger objects */
+    /* the difference is less significant.                              */
+    switch (sz) {
         case 2: if (clear) {
                     return GC_build_fl_clear2(h, list);
                 } else {
@@ -140,8 +136,8 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
                 }
         default:
                 break;
-     }
-#  endif /* !SMALL_CONFIG */
+    }
+# endif /* !SMALL_CONFIG */
 
   /* Clear the page if necessary. */
     if (clear) BZERO(h, HBLKSIZE);
@@ -169,7 +165,6 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
       obj_link(h -> hb_body) = list;
       return ((ptr_t)p);
 }
-
 
 /*
  * Allocate a new heapblock for small objects of size gran granules.

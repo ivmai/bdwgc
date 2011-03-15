@@ -932,11 +932,9 @@ STATIC void GC_check_heap_block(struct hblk *hbp, word dummy)
 /* I hold the allocation lock.  Normally called by collector.           */
 STATIC void GC_check_heap_proc(void)
 {
-#   ifndef SMALL_CONFIG
-      GC_STATIC_ASSERT((sizeof(oh) & (GRANULE_BYTES - 1)) == 0);
-      /* FIXME: Should we check for twice that alignment?       */
-#   endif
-    GC_apply_to_all_blocks(GC_check_heap_block, (word)0);
+  GC_STATIC_ASSERT((sizeof(oh) & (GRANULE_BYTES - 1)) == 0);
+  /* FIXME: Should we check for twice that alignment?   */
+  GC_apply_to_all_blocks(GC_check_heap_block, (word)0);
 }
 
 #endif /* !SHORT_DBG_HDRS */

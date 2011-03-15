@@ -851,11 +851,9 @@ STATIC void GC_finish_collection(void)
     if (GC_print_back_height) {
 #     ifdef MAKE_BACK_GRAPH
         GC_traverse_back_graph();
-#     else
-#       ifndef SMALL_CONFIG
-          GC_err_printf("Back height not available: "
-                        "Rebuild collector with -DMAKE_BACK_GRAPH\n");
-#       endif
+#     elif !defined(SMALL_CONFIG)
+        GC_err_printf("Back height not available: "
+                      "Rebuild collector with -DMAKE_BACK_GRAPH\n");
 #     endif
     }
 
@@ -1187,10 +1185,8 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     /* Force GC before we are likely to allocate past expansion_slop */
       GC_collect_at_heapsize =
          GC_heapsize + expansion_slop - 2*MAXHINCR*HBLKSIZE;
-#     if defined(LARGE_CONFIG)
-        if (GC_collect_at_heapsize < GC_heapsize /* wrapped */)
+      if (GC_collect_at_heapsize < GC_heapsize /* wrapped */)
          GC_collect_at_heapsize = (word)(-1);
-#     endif
     return(TRUE);
 }
 
