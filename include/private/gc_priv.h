@@ -620,12 +620,14 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 /*   Alpha: Seems to be used with 8K pages.                     */
 /*   SMALL_CONFIG: Want less block-level fragmentation.         */
 #ifndef HBLKSIZE
-# ifdef SMALL_CONFIG
-#   define CPP_LOG_HBLKSIZE 10
-# elif defined(ALPHA)
-#   define CPP_LOG_HBLKSIZE 13
+# if defined(LARGE_CONFIG) || !defined(SMALL_CONFIG)
+#   ifdef ALPHA
+#     define CPP_LOG_HBLKSIZE 13
+#   else
+#     define CPP_LOG_HBLKSIZE 12
+#   endif
 # else
-#   define CPP_LOG_HBLKSIZE 12
+#   define CPP_LOG_HBLKSIZE 10
 # endif
 #else
 # if HBLKSIZE == 512

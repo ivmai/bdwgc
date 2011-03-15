@@ -41,11 +41,11 @@ typedef struct hblkhdr hdr;
 #endif
 
 /* Define appropriate out-degrees for each of the two tree levels       */
-#ifdef SMALL_CONFIG
+#if defined(LARGE_CONFIG) || !defined(SMALL_CONFIG)
+# define LOG_BOTTOM_SZ 10
+#else
 # define LOG_BOTTOM_SZ 11
         /* Keep top index size reasonable with smaller blocks.  */
-#else
-# define LOG_BOTTOM_SZ 10
 #endif
 #define BOTTOM_SZ (1 << LOG_BOTTOM_SZ)
 

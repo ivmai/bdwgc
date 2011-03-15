@@ -146,8 +146,10 @@ ALL_INTERIOR_POINTERS   Allows all pointers to the interior of objects to be
   GC_all_interior_pointers can be set at process initialization time.
 
 SMALL_CONFIG    Tries to tune the collector for small heap sizes,
-  usually causing it to use less space in such situations.
-  Incremental collection no longer works in this case.
+  usually causing it to use less space in such situations.  Incremental
+  collection no longer works in this case.  Also, removes some
+  statistic-printing code.  Turns off some optimization algorithms (like data
+  prefetching in the mark routine).
 
 GC_DISABLE_INCREMENTAL  Turn off the incremental collection support.
 
@@ -159,7 +161,9 @@ NO_INCREMENTAL  Causes the gctest program to not invoke the incremental
 LARGE_CONFIG    Tunes the collector for unusually large heaps.
   Necessary for heaps larger than about 4 GiB on most (64-bit) machines.
   Recommended for heaps larger than about 500 MiB.  Not recommended for
-  embedded systems.
+  embedded systems.  Could be used in conjunction with SMALL_CONFIG to
+  generate smaller code (by disabling incremental collection support,
+  statistic printing and some optimization algorithms).
 
 DONT_ADD_BYTE_AT_END    Meaningful only with ALL_INTERIOR_POINTERS or
   GC_all_interior_pointers = 1.  Normally ALL_INTERIOR_POINTERS
