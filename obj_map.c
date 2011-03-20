@@ -78,14 +78,9 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
 
 GC_INNER void GC_initialize_offsets(void)
 {
-    static GC_bool offsets_initialized = FALSE;
-
-    if (!offsets_initialized) {
-      int i;
-      if (GC_all_interior_pointers) {
-        for (i = 0; i < VALID_OFFSET_SZ; ++i)
-          GC_valid_offsets[i] = TRUE;
-      }
-      offsets_initialized = TRUE;
-    }
+  int i;
+  if (GC_all_interior_pointers) {
+    for (i = 0; i < VALID_OFFSET_SZ; ++i)
+      GC_valid_offsets[i] = TRUE;
+  }
 }

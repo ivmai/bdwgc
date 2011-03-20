@@ -1593,11 +1593,6 @@ GC_INNER void GC_register_displacement_inner(size_t offset);
                                 /* Version of GC_register_displacement  */
                                 /* that assumes lock is already held.   */
 
-GC_INNER void GC_initialize_offsets(void);
-                                /* Initialize GC_valid_offsets,         */
-                                /* depending on current                 */
-                                /* GC_all_interior_pointers settings.   */
-
 /*  hblk allocation: */
 GC_INNER void GC_new_hblk(size_t size_in_granules, int kind);
                                 /* Allocate a new heap block, and build */

@@ -820,22 +820,20 @@ STATIC void GC_finish_collection(void)
 #   endif
     COND_DUMP;
     if (GC_find_leak) {
-      /* Mark all objects on the free list.  All objects should be */
-      /* marked when we're done.                                   */
-        {
-          word size;            /* current object size          */
-          unsigned kind;
-          ptr_t q;
+      /* Mark all objects on the free list.  All objects should be      */
+      /* marked when we're done.                                        */
+      word size;        /* current object size  */
+      unsigned kind;
+      ptr_t q;
 
-          for (kind = 0; kind < GC_n_kinds; kind++) {
-            for (size = 1; size <= MAXOBJGRANULES; size++) {
-              q = GC_obj_kinds[kind].ok_freelist[size];
-              if (q != 0) GC_set_fl_marks(q);
-            }
-          }
+      for (kind = 0; kind < GC_n_kinds; kind++) {
+        for (size = 1; size <= MAXOBJGRANULES; size++) {
+          q = GC_obj_kinds[kind].ok_freelist[size];
+          if (q != 0) GC_set_fl_marks(q);
         }
-        GC_start_reclaim(TRUE);
-          /* The above just checks; it doesn't really reclaim anything. */
+      }
+      GC_start_reclaim(TRUE);
+        /* The above just checks; it doesn't really reclaim anything.   */
     }
 
     GC_finalize();
@@ -863,40 +861,38 @@ STATIC void GC_finish_collection(void)
     /* Note that composite objects on free list are cleared.             */
     /* Thus accidentally marking a free list is not a problem;  only     */
     /* objects on the list itself will be marked, and that's fixed here. */
-      {
-        word size;              /* current object size          */
-        ptr_t q;        /* pointer to current object    */
-        unsigned kind;
+    {
+      word size;        /* current object size          */
+      ptr_t q;          /* pointer to current object    */
+      unsigned kind;
 
-        for (kind = 0; kind < GC_n_kinds; kind++) {
-          for (size = 1; size <= MAXOBJGRANULES; size++) {
-            q = GC_obj_kinds[kind].ok_freelist[size];
-            if (q != 0) GC_clear_fl_marks(q);
-          }
+      for (kind = 0; kind < GC_n_kinds; kind++) {
+        for (size = 1; size <= MAXOBJGRANULES; size++) {
+          q = GC_obj_kinds[kind].ok_freelist[size];
+          if (q != 0) GC_clear_fl_marks(q);
         }
       }
-
+    }
 
     if (GC_print_stats == VERBOSE)
         GC_log_printf("Bytes recovered before sweep - f.l. count = %ld\n",
                   (long)GC_bytes_found);
 
     /* Reconstruct free lists to contain everything not marked */
-        GC_start_reclaim(FALSE);
-        if (GC_print_stats) {
-          GC_log_printf("Heap contains %lu pointer-containing "
-                        "+ %lu pointer-free reachable bytes\n",
-                        (unsigned long)GC_composite_in_use,
-                        (unsigned long)GC_atomic_in_use);
-        }
-        if (GC_is_full_gc) {
-            GC_used_heap_size_after_full = USED_HEAP_SIZE;
-            GC_need_full_gc = FALSE;
-        } else {
-            GC_need_full_gc =
-                 USED_HEAP_SIZE - GC_used_heap_size_after_full
-                 > min_bytes_allocd();
-        }
+    GC_start_reclaim(FALSE);
+    if (GC_print_stats) {
+      GC_log_printf("Heap contains %lu pointer-containing "
+                    "+ %lu pointer-free reachable bytes\n",
+                    (unsigned long)GC_composite_in_use,
+                    (unsigned long)GC_atomic_in_use);
+    }
+    if (GC_is_full_gc) {
+        GC_used_heap_size_after_full = USED_HEAP_SIZE;
+        GC_need_full_gc = FALSE;
+    } else {
+        GC_need_full_gc = USED_HEAP_SIZE - GC_used_heap_size_after_full
+                            > min_bytes_allocd();
+    }
 
     if (GC_print_stats == VERBOSE) {
 #       ifdef USE_MUNMAP
@@ -912,14 +908,14 @@ STATIC void GC_finish_collection(void)
     }
 
     /* Reset or increment counters for next cycle */
-      GC_n_attempts = 0;
-      GC_is_full_gc = FALSE;
-      GC_bytes_allocd_before_gc += GC_bytes_allocd;
-      GC_non_gc_bytes_at_gc = GC_non_gc_bytes;
-      GC_bytes_allocd = 0;
-      GC_bytes_dropped = 0;
-      GC_bytes_freed = 0;
-      GC_finalizer_bytes_freed = 0;
+    GC_n_attempts = 0;
+    GC_is_full_gc = FALSE;
+    GC_bytes_allocd_before_gc += GC_bytes_allocd;
+    GC_non_gc_bytes_at_gc = GC_non_gc_bytes;
+    GC_bytes_allocd = 0;
+    GC_bytes_dropped = 0;
+    GC_bytes_freed = 0;
+    GC_finalizer_bytes_freed = 0;
 
 #   ifdef USE_MUNMAP
       GC_unmap_old();

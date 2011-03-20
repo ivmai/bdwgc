@@ -630,21 +630,24 @@ STATIC void GC_exit_check(void)
   STATIC int GC_log = 2;
 #endif
 
+GC_INNER void GC_initialize_offsets(void);      /* defined in obj_map.c */
+
 GC_API void GC_CALL GC_init(void)
 {
     /* LOCK(); -- no longer does anything this early. */
 #   if !defined(THREADS) && defined(GC_ASSERTIONS)
         word dummy;
 #   endif
-#   ifdef GC_INITIAL_HEAP_SIZE
-        word initial_heap_sz = divHBLKSZ(GC_INITIAL_HEAP_SIZE);
-#   else
-        word initial_heap_sz = (word)MINHINCR;
-#   endif
+    word initial_heap_sz;
     IF_CANCEL(int cancel_state;)
 
     if (GC_is_initialized) return;
 
+#   ifdef GC_INITIAL_HEAP_SIZE
+      initial_heap_sz = divHBLKSZ(GC_INITIAL_HEAP_SIZE);
+#   else
+      initial_heap_sz = (word)MINHINCR;
+#   endif
     DISABLE_CANCEL(cancel_state);
     /* Note that although we are nominally called with the */
     /* allocation lock held, the allocation lock is now    */
