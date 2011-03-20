@@ -83,23 +83,28 @@ STATIC void GC_print_source_ptr(ptr_t p)
 }
 #endif
 
+GC_INNER void GC_bl_init_no_interiors(void)
+{
+  if (GC_incomplete_normal_bl == 0) {
+    GC_old_normal_bl = (word *)GC_scratch_alloc(sizeof(page_hash_table));
+    GC_incomplete_normal_bl = (word *)GC_scratch_alloc(
+                                                  sizeof(page_hash_table));
+    if (GC_old_normal_bl == 0 || GC_incomplete_normal_bl == 0) {
+      GC_err_printf("Insufficient memory for black list\n");
+      EXIT();
+    }
+    GC_clear_bl(GC_old_normal_bl);
+    GC_clear_bl(GC_incomplete_normal_bl);
+  }
+}
+
 GC_INNER void GC_bl_init(void)
 {
     if (!GC_all_interior_pointers) {
-      GC_old_normal_bl = (word *)
-                         GC_scratch_alloc((word)(sizeof (page_hash_table)));
-      GC_incomplete_normal_bl = (word *)GC_scratch_alloc
-                                        ((word)(sizeof(page_hash_table)));
-      if (GC_old_normal_bl == 0 || GC_incomplete_normal_bl == 0) {
-        GC_err_printf("Insufficient memory for black list\n");
-        EXIT();
-      }
-      GC_clear_bl(GC_old_normal_bl);
-      GC_clear_bl(GC_incomplete_normal_bl);
+      GC_bl_init_no_interiors();
     }
-    GC_old_stack_bl = (word *)GC_scratch_alloc((word)(sizeof(page_hash_table)));
-    GC_incomplete_stack_bl = (word *)GC_scratch_alloc
-                                        ((word)(sizeof(page_hash_table)));
+    GC_old_stack_bl = (word *)GC_scratch_alloc(sizeof(page_hash_table));
+    GC_incomplete_stack_bl = (word *)GC_scratch_alloc(sizeof(page_hash_table));
     if (GC_old_stack_bl == 0 || GC_incomplete_stack_bl == 0) {
         GC_err_printf("Insufficient memory for black list\n");
         EXIT();

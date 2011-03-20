@@ -1539,7 +1539,6 @@ void GC_register_data_segments(void);
 #endif
 
 /* Black listing: */
-GC_INNER void GC_bl_init(void);
 #ifdef PRINT_BLACK_LIST
   GC_INNER void GC_add_to_black_list_normal(word p, ptr_t source);
                         /* Register bits as a possible future false     */

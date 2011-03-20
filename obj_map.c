@@ -82,5 +82,9 @@ GC_INNER void GC_initialize_offsets(void)
   if (GC_all_interior_pointers) {
     for (i = 0; i < VALID_OFFSET_SZ; ++i)
       GC_valid_offsets[i] = TRUE;
+  } else {
+    BZERO(GC_valid_offsets, sizeof(GC_valid_offsets));
+    for (i = 0; i < sizeof(word); ++i)
+      GC_modws_valid_offsets[i] = FALSE;
   }
 }

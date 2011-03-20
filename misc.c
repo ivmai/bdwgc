@@ -631,6 +631,7 @@ STATIC void GC_exit_check(void)
 #endif
 
 GC_INNER void GC_initialize_offsets(void);      /* defined in obj_map.c */
+GC_INNER void GC_bl_init(void); /* defined in blacklst.c */
 
 GC_API void GC_CALL GC_init(void)
 {
@@ -946,7 +947,8 @@ GC_API void GC_CALL GC_init(void)
         GC_err_printf("Can't start up: not enough memory\n");
         EXIT();
     }
-    GC_initialize_offsets();
+    if (GC_all_interior_pointers)
+      GC_initialize_offsets();
     GC_register_displacement_inner(0L);
 #   if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC)
       if (!GC_all_interior_pointers) {
@@ -1694,11 +1696,23 @@ GC_API int GC_CALL GC_get_find_leak(void)
     return GC_find_leak;
 }
 
+GC_INNER void GC_bl_init_no_interiors(void);    /* defined in blacklst.c */
+
 GC_API void GC_CALL GC_set_all_interior_pointers(int value)
 {
-    GC_ASSERT(!GC_is_initialized || value == GC_all_interior_pointers);
-    GC_ASSERT(value == 0 || value == 1);
-    GC_all_interior_pointers = value;
+    DCL_LOCK_STATE;
+
+    GC_all_interior_pointers = value ? 1 : 0;
+    if (GC_is_initialized) {
+      /* It is not recommended to change GC_all_interior_pointers value */
+      /* after GC is initialized but it seems GC could work correctly   */
+      /* even after switching the mode.                                 */
+      LOCK();
+      GC_initialize_offsets(); /* NOTE: this resets manual offsets as well */
+      if (!GC_all_interior_pointers)
+        GC_bl_init_no_interiors();
+      UNLOCK();
+    }
 }
 
 GC_API int GC_CALL GC_get_all_interior_pointers(void)
