@@ -1,3 +1,12 @@
+2011-03-22  Ivan Maidanski  <ivmai@mail.ru>
+
+	* misc.c (GC_abort): Use _exit() (instead of DebugBreak) on Win32 when
+	doing code static analysis (to inform the tool that the function is
+	a no-return one).
+	* os_dep.c (GC_linux_stack_base): Remove a duplicate validation of the
+	length of "stat" file; use signed int type for "i", "buf_offset" and
+	"len" local variables (since read() may return -1).
+
 2011-03-20  Ivan Maidanski  <ivmai@mail.ru>
 
 	* blacklst.c (GC_bl_init_no_interiors): New function (the code

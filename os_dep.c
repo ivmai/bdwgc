@@ -1047,7 +1047,7 @@ GC_INNER word GC_page_size = 0;
     char stat_buf[STAT_BUF_SIZE];
     int f;
     word result;
-    size_t i, buf_offset = 0, len;
+    int i, buf_offset = 0, len;
 
     /* First try the easy way.  This should work for glibc 2.2  */
     /* This fails in a prelinked ("prelink" command) executable */
@@ -1076,11 +1076,9 @@ GC_INNER word GC_page_size = 0;
       }
 #   endif
     f = open("/proc/self/stat", O_RDONLY);
-    if (f < 0
-        || (int)(len = (size_t)STAT_READ(f, stat_buf, STAT_BUF_SIZE))
-            < 2 * STAT_SKIP) {
-        ABORT("Couldn't read /proc/self/stat");
-    }
+    if (f < 0)
+      ABORT("Couldn't read /proc/self/stat");
+    len = STAT_READ(f, stat_buf, STAT_BUF_SIZE);
     close(f);
 
     /* Skip the required number of fields.  This number is hopefully    */

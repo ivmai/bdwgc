@@ -1389,7 +1389,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 #   ifndef LINT2
       if (!msg) return; /* to suppress compiler warnings in ABORT callers. */
 #   endif
-#   if defined(MSWIN32) && defined(NO_DEBUGGING)
+#   if defined(MSWIN32) && (defined(NO_DEBUGGING) || defined(LINT2))
       /* A more user-friendly abort after showing fatal message.        */
         _exit(-1); /* exit on error without running "at-exit" callbacks */
 #   elif defined(MSWINCE) && defined(NO_DEBUGGING)
