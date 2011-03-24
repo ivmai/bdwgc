@@ -42,69 +42,8 @@
             />
             <Tool
                 Name="VCCLCompilerTool"
-                PreprocessorDefinitions="GC_BUILD;_DLL"
-                UsePrecompiledHeader="0"
-            />
-            <Tool
-                Name="VCManagedResourceCompilerTool"
-            />
-            <Tool
-                Name="VCResourceCompilerTool"
-            />
-            <Tool
-                Name="VCPreLinkEventTool"
-            />
-            <Tool
-                Name="VCLinkerTool"
-                SubSystem="2"
-            />
-            <Tool
-                Name="VCALinkTool"
-            />
-            <Tool
-                Name="VCManifestTool"
-            />
-            <Tool
-                Name="VCXDCMakeTool"
-            />
-            <Tool
-                Name="VCBscMakeTool"
-            />
-            <Tool
-                Name="VCFxCopTool"
-            />
-            <Tool
-                Name="VCAppVerifierTool"
-            />
-            <Tool
-                Name="VCPostBuildEventTool"
-            />
-        </Configuration>
-        <Configuration
-            Name="Release|Win32"
-            ConfigurationType="2"
-            InheritedPropertySheets="$(solutiondir)/$(solutionname)_$(platformname).$(configurationname).vsprops"
-            CharacterSet="0"
-            WholeProgramOptimization="0"
-            >
-            <Tool
-                Name="VCPreBuildEventTool"
-            />
-            <Tool
-                Name="VCCustomBuildTool"
-            />
-            <Tool
-                Name="VCXMLDataGeneratorTool"
-            />
-            <Tool
-                Name="VCWebServiceProxyGeneratorTool"
-            />
-            <Tool
-                Name="VCMIDLTool"
-            />
-            <Tool
-                Name="VCCLCompilerTool"
-                PreprocessorDefinitions="GC_BUILD;_DLL"
+                AdditionalIncludeDirectories="../libatomic_ops/src/"
+                PreprocessorDefinitions="GC_BUILD"
                 UsePrecompiledHeader="0"
             />
             <Tool
@@ -166,7 +105,71 @@
             />
             <Tool
                 Name="VCCLCompilerTool"
-                PreprocessorDefinitions="GC_BUILD;_DLL"
+                AdditionalIncludeDirectories="../libatomic_ops/src/"
+                PreprocessorDefinitions="GC_BUILD"
+                UsePrecompiledHeader="0"
+            />
+            <Tool
+                Name="VCManagedResourceCompilerTool"
+            />
+            <Tool
+                Name="VCResourceCompilerTool"
+            />
+            <Tool
+                Name="VCPreLinkEventTool"
+            />
+            <Tool
+                Name="VCLinkerTool"
+                SubSystem="2"
+            />
+            <Tool
+                Name="VCALinkTool"
+            />
+            <Tool
+                Name="VCManifestTool"
+            />
+            <Tool
+                Name="VCXDCMakeTool"
+            />
+            <Tool
+                Name="VCBscMakeTool"
+            />
+            <Tool
+                Name="VCFxCopTool"
+            />
+            <Tool
+                Name="VCAppVerifierTool"
+            />
+            <Tool
+                Name="VCPostBuildEventTool"
+            />
+        </Configuration>
+        <Configuration
+            Name="Release|Win32"
+            ConfigurationType="2"
+            InheritedPropertySheets="$(solutiondir)/$(solutionname)_$(platformname).$(configurationname).vsprops"
+            CharacterSet="0"
+            WholeProgramOptimization="0"
+            >
+            <Tool
+                Name="VCPreBuildEventTool"
+            />
+            <Tool
+                Name="VCCustomBuildTool"
+            />
+            <Tool
+                Name="VCXMLDataGeneratorTool"
+            />
+            <Tool
+                Name="VCWebServiceProxyGeneratorTool"
+            />
+            <Tool
+                Name="VCMIDLTool"
+            />
+            <Tool
+                Name="VCCLCompilerTool"
+                AdditionalIncludeDirectories="../libatomic_ops/src/"
+                PreprocessorDefinitions="GC_BUILD"
                 UsePrecompiledHeader="0"
             />
             <Tool
@@ -229,7 +232,8 @@
             />
             <Tool
                 Name="VCCLCompilerTool"
-                PreprocessorDefinitions="GC_BUILD;_DLL"
+                AdditionalIncludeDirectories="../libatomic_ops/src/"
+                PreprocessorDefinitions="GC_BUILD"
                 UsePrecompiledHeader="0"
             />
             <Tool
@@ -320,7 +324,7 @@
                     />
                 </FileConfiguration>
                 <FileConfiguration
-                    Name="Release|Win32"
+                    Name="Debug|x64"
                     ExcludedFromBuild="true"
                     >
                     <Tool
@@ -328,7 +332,7 @@
                     />
                 </FileConfiguration>
                 <FileConfiguration
-                    Name="Debug|x64"
+                    Name="Release|Win32"
                     ExcludedFromBuild="true"
                     >
                     <Tool
@@ -356,7 +360,7 @@
                     />
                 </FileConfiguration>
                 <FileConfiguration
-                    Name="Release|Win32"
+                    Name="Debug|x64"
                     ExcludedFromBuild="true"
                     >
                     <Tool
@@ -364,7 +368,7 @@
                     />
                 </FileConfiguration>
                 <FileConfiguration
-                    Name="Debug|x64"
+                    Name="Release|Win32"
                     ExcludedFromBuild="true"
                     >
                     <Tool
@@ -472,6 +476,10 @@
             </File>
             <File
                 RelativePath="..\include\gc_cpp.h"
+                >
+            </File>
+            <File
+                RelativePath="..\include\gc_typed.h"
                 >
             </File>
         </Filter>
