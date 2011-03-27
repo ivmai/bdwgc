@@ -1,3 +1,52 @@
+2011-03-27  Ivan Maidanski  <ivmai@mail.ru>
+
+	* dbg_mlc.c (GC_debug_strdup, GC_debug_free): Output a portability
+	warning if the argument is NULL and GC is in leaks detection mode.
+	* dbg_mlc.c (GC_debug_strndup, GC_debug_wcsdup): New public
+	function definition.
+	* malloc.c (GC_strndup, GC_wcsdup, strndup): Ditto.
+	* mallocx.c (GC_posix_memalign): Ditto.
+	* malloc.c (strdup): Fix string size value; rename "len" to "lb".
+	* mallocx.c: Include errno.h unless WinCE (otherwise include
+	windows.h for Win32 error constants).
+	* win32_threads.c: Define WIN32_LEAN_AND_MEAN and NOSERVICE before
+	windows.h inclusion.
+	* misc.c (GC_init): Register at-exit callback if GC_find_leak
+	(even if GC_FIND_LEAK macro is unset).
+	* pthread_stop_world.c (NACL_STORE_REGS,
+	__nacl_suspend_thread_if_needed, GC_nacl_initialize_gc_thread):
+	Use BCOPY() instead of memcpy().
+	* pthread_support.c (GC_init_real_syms): Ditto.
+	* doc/README: Update year in copyright.
+	* include/gc.h: Ditto.
+	* doc/README.macros (GC_DEBUG_REPLACEMENT, GC_REQUIRE_WCSDUP):
+	Document new macro.
+	* doc/README.macros (REDIRECT_MALLOC): Update documentation.
+	* include/gc.h (GC_strndup, GC_posix_memalign, GC_debug_strndup):
+	New API function prototype.
+	* include/gc.h (GC_MALLOC, GC_REALLOC): Redirect to
+	GC_debug_malloc/realloc_replacement() if GC_DEBUG_REPLACEMENT.
+	* include/gc.h (GC_STRDUP): Remove redundant parentheses.
+	* include/leak_detector.h (realloc, strdup): Ditto.
+	* include/gc.h (GC_STRNDUP): New API macro.
+	* include/gc.h (GC_NEW, GC_NEW_ATOMIC, GC_NEW_STUBBORN,
+	GC_NEW_UNCOLLECTABLE): Add missing parentheses.
+	* include/gc.h (GC_wcsdup, GC_debug_wcsdup): New API function
+	prototype (only if GC_REQUIRE_WCSDUP).
+	* include/gc.h (GC_WCSDUP): New API macro (only if
+	GC_REQUIRE_WCSDUP).
+	* include/leak_detector.h: Add copyright header; add usage
+	comment; include stdlib.h and string.h after gc.h (unless
+	GC_DONT_INCLUDE_STDLIB).
+	* include/leak_detector.h (malloc, calloc, free, realloc):
+	Undefine symbol before its redefinition.
+	* include/leak_detector.h (strndup, memalign, posix_memalign):
+	Redefine to the corresponding GC function.
+	* include/leak_detector.h (wcsdup): Redefine to GC_WCSDUP (only
+	if GC_REQUIRE_WCSDUP).
+	* include/leak_detector.h (CHECK_LEAKS): Add comment; don't define
+	the macro if already defined.
+
 2011-03-22  Ivan Maidanski  <ivmai@mail.ru>
 
 	* misc.c (GC_abort): Use _exit() (instead of DebugBreak) on Win32 when

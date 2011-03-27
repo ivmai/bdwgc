@@ -241,7 +241,7 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
       if (NULL == dl_handle) {
         while (isdigit(libpthread_name[len-1])) --len;
         if (libpthread_name[len-1] == '.') --len;
-        memcpy(namebuf, libpthread_name, len);
+        BCOPY(libpthread_name, namebuf, len);
         namebuf[len] = '\0';
         dl_handle = dlopen(namebuf, RTLD_LAZY);
       }

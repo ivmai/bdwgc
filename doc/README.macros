@@ -30,6 +30,9 @@ MACRO           EXPLANATION
 GC_DEBUG        Tested by gc.h.  Causes all-upper-case macros to
                 expand to calls to debug versions of collector routines.
 
+GC_DEBUG_REPLACEMENT    Tested by gc.h. Causes GC_MALLOC/REALLOC() to be
+                defined as GC_debug_malloc/realloc_replacement().
+
 GC_NO_THREAD_REDIRECTS  Tested by gc.h.  Prevents redirection of thread
                 creation routines etc. to GC_ versions.  Requires the
                 programmer to explicitly handle thread registration.
@@ -72,6 +75,9 @@ GC_DLL          Defined by user if dynamic libraries are being built
 GC_NOT_DLL      User-settable macro that overrides _DLL, e.g. if runtime
                 dynamic libraries are used, but the collector is in a static
                 library.  Tested by gc_config_macros.h.
+
+GC_REQUIRE_WCSDUP       Force GC to export GC_wcsdup() (the Unicode version
+                of GC_strdup); could be useful in the leak-finding mode.
 
 
 These define arguments influence the collector configuration:
@@ -188,7 +194,7 @@ GC_NO_OPERATOR_NEW_ARRAY        Declares that the C++ compiler does not
 REDIRECT_MALLOC=<X>     Causes malloc to be defined as alias for X.
   Unless the following macros are defined, realloc is also redirected
   to GC_realloc, and free is redirected to GC_free.
-  Calloc and strdup are redefined in terms of the new malloc.  X should
+  Calloc and str[n]dup are redefined in terms of the new malloc.  X should
   be either GC_malloc or GC_malloc_uncollectable, or
   GC_debug_malloc_replacement.  (The latter invokes GC_debug_malloc
   with dummy source location information, but still results in

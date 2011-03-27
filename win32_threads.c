@@ -19,6 +19,10 @@
 
 #if defined(GC_WIN32_THREADS)
 
+#ifndef WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN 1
+#endif
+#define NOSERVICE
 #include <windows.h>
 
 #ifdef THREAD_LOCAL_ALLOC

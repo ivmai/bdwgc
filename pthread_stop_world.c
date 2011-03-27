@@ -594,9 +594,9 @@ GC_INNER void GC_stop_world(void)
           __asm__ __volatile__ ("push %r15"); \
           __asm__ __volatile__ ("mov %%esp, %0" \
                     : "=m" (GC_nacl_gc_thread_self->stop_info.stack_ptr)); \
-          memcpy(GC_nacl_gc_thread_self->stop_info.reg_storage, \
-                 GC_nacl_gc_thread_self->stop_info.stack_ptr, \
-                 NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t)); \
+          BCOPY(GC_nacl_gc_thread_self->stop_info.stack_ptr, \
+                GC_nacl_gc_thread_self->stop_info.reg_storage, \
+                NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t)); \
           __asm__ __volatile__ ("naclasp $48, %r15"); \
         } while (0)
 # elif defined(__i386__)
@@ -608,9 +608,9 @@ GC_INNER void GC_stop_world(void)
           __asm__ __volatile__ ("push %edi"); \
           __asm__ __volatile__ ("mov %%esp, %0" \
                     : "=m" (GC_nacl_gc_thread_self->stop_info.stack_ptr)); \
-           memcpy(GC_nacl_gc_thread_self->stop_info.reg_storage, \
-                  GC_nacl_gc_thread_self->stop_info.stack_ptr, \
-                  NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t));\
+          BCOPY(GC_nacl_gc_thread_self->stop_info.stack_ptr, \
+                GC_nacl_gc_thread_self->stop_info.reg_storage, \
+                NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t));\
           __asm__ __volatile__ ("add $16, %esp"); \
         } while (0)
 # else
@@ -655,8 +655,8 @@ GC_INNER void GC_stop_world(void)
       GC_nacl_thread_parked[GC_nacl_thread_idx] = 0;
 
       /* Clear out the reg storage for next suspend.    */
-      memset(GC_nacl_gc_thread_self->stop_info.reg_storage, 0,
-             NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t));
+      BZERO(GC_nacl_gc_thread_self->stop_info.reg_storage,
+            NACL_GC_REG_STORAGE_SIZE * sizeof(ptr_t));
     }
   }
 
@@ -678,8 +678,8 @@ GC_INNER void GC_stop_world(void)
     int i;
     pthread_mutex_lock(&GC_nacl_thread_alloc_lock);
     if (!GC_nacl_thread_parking_inited) {
-      memset(GC_nacl_thread_parked, 0, sizeof(GC_nacl_thread_parked));
-      memset(GC_nacl_thread_used, 0, sizeof(GC_nacl_thread_used));
+      BZERO(GC_nacl_thread_parked, sizeof(GC_nacl_thread_parked));
+      BZERO(GC_nacl_thread_used, sizeof(GC_nacl_thread_used));
       GC_nacl_thread_parking_inited = TRUE;
     }
     GC_ASSERT(GC_nacl_num_gc_threads <= MAX_NACL_GC_THREADS);

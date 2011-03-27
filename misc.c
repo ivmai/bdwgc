@@ -735,7 +735,6 @@ GC_API void GC_CALL GC_init(void)
 #   endif
     if (0 != GETENV("GC_FIND_LEAK")) {
       GC_find_leak = 1;
-      atexit(GC_exit_check);
     }
     if (0 != GETENV("GC_ALL_INTERIOR_POINTERS")) {
       GC_all_interior_pointers = 1;
@@ -989,6 +988,12 @@ GC_API void GC_CALL GC_init(void)
                   GC_register_finalizer_no_order);
       }
 #   endif
+
+    if (GC_find_leak) {
+      /* This is to give us at least one chance to detect leaks.        */
+      /* This may report some very benign leaks, but ...                */
+      atexit(GC_exit_check);
+    }
 
     /* The rest of this again assumes we don't really hold      */
     /* the allocation lock.                                     */

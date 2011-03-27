@@ -661,25 +661,66 @@ GC_API void * GC_CALL GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)
 
 GC_API char * GC_CALL GC_debug_strdup(const char *str, GC_EXTRA_PARAMS)
 {
-    char *copy;
-    size_t lb;
-    if (str == NULL) return NULL;
-    lb = strlen(str) + 1;
-    copy = GC_debug_malloc_atomic(lb, OPT_RA s, i);
+  char *copy;
+  size_t lb;
+  if (str == NULL) {
+    if (GC_find_leak)
+      WARN("strdup(NULL) behavior is undefined\n", 0);
+    return NULL;
+  }
+  lb = strlen(str) + 1;
+  copy = GC_debug_malloc_atomic(lb, OPT_RA s, i);
+  if (copy == NULL) {
+#   ifndef MSWINCE
+      errno = ENOMEM;
+#   endif
+    return NULL;
+  }
+# ifndef MSWINCE
+    strcpy(copy, str);
+# else
+    /* strcpy() is deprecated in WinCE */
+    memcpy(copy, str, lb);
+# endif
+  return copy;
+}
+
+GC_API char * GC_CALL GC_debug_strndup(const char *str, size_t size,
+                                       GC_EXTRA_PARAMS)
+{
+  char *copy;
+  size_t len = strlen(str); /* str is expected to be non-NULL  */
+  if (len > size)
+    len = size;
+  copy = GC_debug_malloc_atomic(len + 1, OPT_RA s, i);
+  if (copy == NULL) {
+#   ifndef MSWINCE
+      errno = ENOMEM;
+#   endif
+    return NULL;
+  }
+  BCOPY(str, copy, len);
+  copy[len] = '\0';
+  return copy;
+}
+
+#ifdef GC_REQUIRE_WCSDUP
+# include <wchar.h> /* for wcslen() */
+
+  GC_API wchar_t * GC_CALL GC_debug_wcsdup(const wchar_t *str, GC_EXTRA_PARAMS)
+  {
+    size_t lb = (wcslen(str) + 1) * sizeof(wchar_t);
+    wchar_t *copy = GC_debug_malloc_atomic(lb, OPT_RA s, i);
     if (copy == NULL) {
 #     ifndef MSWINCE
         errno = ENOMEM;
 #     endif
       return NULL;
     }
-#   ifndef MSWINCE
-      strcpy(copy, str);
-#   else
-      /* strcpy() is deprecated in WinCE */
-      memcpy(copy, str, lb);
-#   endif
+    BCOPY(str, copy, lb);
     return copy;
-}
+  }
+#endif /* GC_REQUIRE_WCSDUP */
 
 GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
                                                     GC_EXTRA_PARAMS)
@@ -729,7 +770,11 @@ GC_API void GC_CALL GC_debug_free(void * p)
       ptr_t clobbered;
 #   endif
 
-    if (0 == p) return;
+    if (0 == p) {
+      if (GC_find_leak)
+        WARN("free(NULL) is non-portable\n", 0);
+      return;
+    }
     base = GC_base(p);
     if (base == 0) {
         GC_err_printf("Attempt to free invalid pointer %p\n", p);

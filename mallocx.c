@@ -25,6 +25,16 @@
 
 #include <stdio.h>
 
+#ifdef MSWINCE
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
+# include <windows.h>
+#else
+# include <errno.h>
+#endif
+
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h        */
 /* or introducing dependencies on internal data structure layouts.       */
@@ -515,6 +525,28 @@ GC_API void * GC_CALL GC_memalign(size_t align, size_t lb)
     result = (void *) ((ptr_t)result + offset);
     GC_ASSERT((word)result % align == 0);
     return result;
+}
+
+/* This one exists largerly to redirect posix_memalign for leaks finding. */
+GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
+{
+  /* Check alignment properly.  */
+  if (((align - 1) & align) != 0 || align < sizeof(void *)) {
+#   ifdef MSWINCE
+      return ERROR_INVALID_PARAMETER;
+#   else
+      return EINVAL;
+#   endif
+  }
+
+  if ((*memptr = GC_memalign(align, lb)) == NULL) {
+#   ifdef MSWINCE
+      return ERROR_NOT_ENOUGH_MEMORY;
+#   else
+      return ENOMEM;
+#   endif
+  }
+  return 0;
 }
 
 #ifdef ATOMIC_UNCOLLECTABLE

@@ -4,7 +4,7 @@
  * Copyright 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright 1999 by Hewlett-Packard Company.  All rights reserved.
  * Copyright (C) 2007 Free Software Foundation, Inc
- * Copyright (c) 2000-2010 by Hewlett-Packard Development Company.
+ * Copyright (c) 2000-2011 by Hewlett-Packard Development Company.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -352,6 +352,7 @@ GC_API void * GC_CALL GC_malloc(size_t /* size_in_bytes */)
 GC_API void * GC_CALL GC_malloc_atomic(size_t /* size_in_bytes */)
                         GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
 GC_API char * GC_CALL GC_strdup(const char *) GC_ATTR_MALLOC;
+GC_API char * GC_CALL GC_strndup(const char *, size_t) GC_ATTR_MALLOC;
 GC_API void * GC_CALL GC_malloc_uncollectable(size_t /* size_in_bytes */)
                         GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
 GC_API void * GC_CALL GC_malloc_stubborn(size_t /* size_in_bytes */)
@@ -360,6 +361,8 @@ GC_API void * GC_CALL GC_malloc_stubborn(size_t /* size_in_bytes */)
 /* GC_memalign() is not well tested.                                    */
 GC_API void * GC_CALL GC_memalign(size_t /* align */, size_t /* lb */)
                         GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(2);
+GC_API int GC_CALL GC_posix_memalign(void ** /* memptr */, size_t /* align */,
+                        size_t /* lb */);
 
 /* The following is only defined if the library has been suitably       */
 /* compiled:                                                            */
@@ -604,6 +607,8 @@ GC_API void * GC_CALL GC_debug_malloc_atomic(size_t /* size_in_bytes */,
                         GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
 GC_API char * GC_CALL GC_debug_strdup(const char *,
                                       GC_EXTRA_PARAMS) GC_ATTR_MALLOC;
+GC_API char * GC_CALL GC_debug_strndup(const char *, size_t,
+                                       GC_EXTRA_PARAMS) GC_ATTR_MALLOC;
 GC_API void * GC_CALL GC_debug_malloc_uncollectable(
                         size_t /* size_in_bytes */, GC_EXTRA_PARAMS)
                         GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
@@ -641,17 +646,27 @@ GC_API void * GC_CALL GC_debug_realloc_replacement(void * /* object_addr */,
                                                    size_t /* size_in_bytes */)
                         /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2);
 
-#ifdef GC_DEBUG
+#ifdef GC_DEBUG_REPLACEMENT
+# define GC_MALLOC(sz) GC_debug_malloc_replacement(sz)
+# define GC_REALLOC(old, sz) GC_debug_realloc_replacement(old, sz)
+#elif defined(GC_DEBUG)
 # define GC_MALLOC(sz) GC_debug_malloc(sz, GC_EXTRAS)
+# define GC_REALLOC(old, sz) GC_debug_realloc(old, sz, GC_EXTRAS)
+#else
+# define GC_MALLOC(sz) GC_malloc(sz)
+# define GC_REALLOC(old, sz) GC_realloc(old, sz)
+#endif /* !GC_DEBUG_REPLACEMENT && !GC_DEBUG */
+
+#ifdef GC_DEBUG
 # define GC_MALLOC_ATOMIC(sz) GC_debug_malloc_atomic(sz, GC_EXTRAS)
-# define GC_STRDUP(s) GC_debug_strdup((s), GC_EXTRAS)
+# define GC_STRDUP(s) GC_debug_strdup(s, GC_EXTRAS)
+# define GC_STRNDUP(s, sz) GC_debug_strndup(s, sz, GC_EXTRAS)
 # define GC_MALLOC_UNCOLLECTABLE(sz) \
                         GC_debug_malloc_uncollectable(sz, GC_EXTRAS)
 # define GC_MALLOC_IGNORE_OFF_PAGE(sz) \
                         GC_debug_malloc_ignore_off_page(sz, GC_EXTRAS)
 # define GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(sz) \
                         GC_debug_malloc_atomic_ignore_off_page(sz, GC_EXTRAS)
-# define GC_REALLOC(old, sz) GC_debug_realloc(old, sz, GC_EXTRAS)
 # define GC_FREE(p) GC_debug_free(p)
 # define GC_REGISTER_FINALIZER(p, f, d, of, od) \
       GC_debug_register_finalizer(p, f, d, of, od)
@@ -668,15 +683,14 @@ GC_API void * GC_CALL GC_debug_realloc_replacement(void * /* object_addr */,
       GC_general_register_disappearing_link(link, GC_base(obj))
 # define GC_REGISTER_DISPLACEMENT(n) GC_debug_register_displacement(n)
 #else
-# define GC_MALLOC(sz) GC_malloc(sz)
 # define GC_MALLOC_ATOMIC(sz) GC_malloc_atomic(sz)
 # define GC_STRDUP(s) GC_strdup(s)
+# define GC_STRNDUP(s, sz) GC_strndup(s, sz)
 # define GC_MALLOC_UNCOLLECTABLE(sz) GC_malloc_uncollectable(sz)
 # define GC_MALLOC_IGNORE_OFF_PAGE(sz) \
                         GC_malloc_ignore_off_page(sz)
 # define GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(sz) \
                         GC_malloc_atomic_ignore_off_page(sz)
-# define GC_REALLOC(old, sz) GC_realloc(old, sz)
 # define GC_FREE(p) GC_free(p)
 # define GC_REGISTER_FINALIZER(p, f, d, of, od) \
       GC_register_finalizer(p, f, d, of, od)
@@ -692,16 +706,29 @@ GC_API void * GC_CALL GC_debug_realloc_replacement(void * /* object_addr */,
 # define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
       GC_general_register_disappearing_link(link, obj)
 # define GC_REGISTER_DISPLACEMENT(n) GC_register_displacement(n)
-#endif
+#endif /* !GC_DEBUG */
 
 /* The following are included because they are often convenient, and    */
 /* reduce the chance for a misspecified size argument.  But calls may   */
 /* expand to something syntactically incorrect if t is a complicated    */
 /* type expression.                                                     */
-#define GC_NEW(t) (t *)GC_MALLOC(sizeof (t))
-#define GC_NEW_ATOMIC(t) (t *)GC_MALLOC_ATOMIC(sizeof (t))
-#define GC_NEW_STUBBORN(t) (t *)GC_MALLOC_STUBBORN(sizeof (t))
-#define GC_NEW_UNCOLLECTABLE(t) (t *)GC_MALLOC_UNCOLLECTABLE(sizeof (t))
+#define GC_NEW(t)               ((t*)GC_MALLOC(sizeof(t)))
+#define GC_NEW_ATOMIC(t)        ((t*)GC_MALLOC_ATOMIC(sizeof(t)))
+#define GC_NEW_STUBBORN(t)      ((t*)GC_MALLOC_STUBBORN(sizeof(t)))
+#define GC_NEW_UNCOLLECTABLE(t) ((t*)GC_MALLOC_UNCOLLECTABLE(sizeof(t)))
+
+#ifdef GC_REQUIRE_WCSDUP
+  /* This might be unavailable on some targets (or not needed). */
+  /* wchar_t should be defined in stddef.h */
+  GC_API wchar_t * GC_CALL GC_wcsdup(const wchar_t *) GC_ATTR_MALLOC;
+  GC_API wchar_t * GC_CALL GC_debug_wcsdup(const wchar_t *,
+                                           GC_EXTRA_PARAMS) GC_ATTR_MALLOC;
+# ifdef GC_DEBUG
+#   define GC_WCSDUP(s) GC_debug_wcsdup(s, GC_EXTRAS)
+# else
+#   define GC_WCSDUP(s) GC_wcsdup(s)
+# endif
+#endif /* GC_REQUIRE_WCSDUP */
 
 /* Finalization.  Some of these primitives are grossly unsafe.          */
 /* The idea is to make them both cheap, and sufficient to build         */
