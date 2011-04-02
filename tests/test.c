@@ -588,9 +588,11 @@ void *GC_CALLBACK reverse_test_inner(void *data)
       for (i = 0; i < 10; i++) {
         (void)ints(1, BIG);
       }
-    /* Superficially test interior pointer recognition on stack */
+#   ifdef ALL_INTERIOR_POINTERS
+      /* Superficially test interior pointer recognition on stack       */
       c = (sexpr)((char *)c + sizeof(char *));
       d = (sexpr)((char *)d + sizeof(char *));
+#   endif
 
     GC_FREE((void *)e);
 
@@ -1143,8 +1145,7 @@ void run_one_test(void)
 #      if defined(RS6000) || defined(POWERPC)
         if (!TEST_FAIL_COUNT(1))
 #      else
-        if ((GC_all_interior_pointers && !TEST_FAIL_COUNT(1))
-            || (!GC_all_interior_pointers && !TEST_FAIL_COUNT(2)))
+        if (!TEST_FAIL_COUNT(GC_get_all_interior_pointers() ? 1 : 2))
 #      endif
         {
           GC_printf("GC_is_valid_displacement produced wrong failure indication\n");
@@ -1326,11 +1327,10 @@ void check_heap_stats(void)
         }
     }
     (void)GC_printf("Total number of bytes allocated is %lu\n",
-                (unsigned long)
-                   (GC_bytes_allocd + GC_bytes_allocd_before_gc));
+                    (unsigned long)GC_get_total_bytes());
     (void)GC_printf("Final heap size is %lu bytes\n",
                     (unsigned long)GC_get_heap_size());
-    if (GC_bytes_allocd + GC_bytes_allocd_before_gc < n_tests *
+    if (GC_get_total_bytes() < n_tests *
 #   ifdef VERY_SMALL_CONFIG
         2700000
 #   else
@@ -1703,7 +1703,7 @@ int main(void)
     check_heap_stats();
     (void)fflush(stdout);
     pthread_attr_destroy(&attr);
-    GC_printf("Completed %u collections\n", (unsigned)GC_gc_no);
+    GC_printf("Completed %u collections\n", (unsigned)GC_get_gc_no());
 #   ifdef PTW32_STATIC_LIB
         pthread_win32_thread_detach_np ();
         pthread_win32_process_detach_np ();
