@@ -120,7 +120,7 @@ void GC_print_hblkfreelist(void)
 #     ifdef USE_MUNMAP
         if (0 != h) GC_printf("Free list %u:\n", i);
 #     else
-        if (0 != h) GC_printf("Free list %u (Total size %lu):\n",
+        if (0 != h) GC_printf("Free list %u (total size %lu):\n",
                               i, (unsigned long)GC_free_bytes[i]);
 #     endif
       while (h != 0) {

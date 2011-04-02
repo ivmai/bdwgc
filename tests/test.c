@@ -1217,10 +1217,11 @@ void run_one_test(void)
     /* Run reverse_test a second time, so we hopefully notice corruption. */
       reverse_test();
       if (GC_print_stats) {
-          GET_TIME(reverse_time);
-          time_diff = MS_TIME_DIFF(reverse_time, start_time);
-          GC_log_printf("-------------Finished second reverse_test at time %u (%p)\n",
-                        (unsigned) time_diff, &start_time);
+        GET_TIME(reverse_time);
+        time_diff = MS_TIME_DIFF(reverse_time, start_time);
+        GC_log_printf(
+                "-------------Finished second reverse_test at time %u (%p)\n",
+                (unsigned)time_diff, &start_time);
       }
     /* GC_allocate_ml and GC_need_to_lock are no longer exported, and   */
     /* AO_fetch_and_add1() may be unavailable to update a counter.      */

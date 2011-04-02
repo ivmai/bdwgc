@@ -1951,12 +1951,6 @@ void GC_err_puts(const char *s);
                         /* Write s to stderr, don't buffer, don't add   */
                         /* newlines, don't ...                          */
 
-#if defined(LINUX) && !defined(SMALL_CONFIG)
-  GC_INNER void GC_err_write(const char *buf, size_t len);
-                        /* Write buf to stderr, don't buffer, don't add */
-                        /* newlines, don't ...                          */
-#endif
-
 GC_EXTERN unsigned GC_fail_count;
                         /* How many consecutive GC/expansion failures?  */
                         /* Reset by GC_allochblk(); defined in alloc.c. */

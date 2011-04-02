@@ -2469,7 +2469,7 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
         if (GC_print_stats)
           GC_printf("Mprotect failed at %p (length %lu) with errno %d\n",
                     start_addr, (unsigned long)len, errno);
-        ABORT("Mprotect remapping failed");
+        ABORT("mprotect remapping failed");
       }
       GC_unmapped_bytes -= len;
 #   endif
@@ -2565,8 +2565,8 @@ STATIC void GC_default_push_other_roots(void)
     /* Traverse all thread stacks. */
         if (PCR_ERes_IsErr(
                 PCR_ThCtl_ApplyToAllOtherThreads(GC_push_thread_stack,0))
-              || PCR_ERes_IsErr(GC_push_thread_stack(PCR_Th_CurrThread(), 0))) {
-              ABORT("Thread stack marking failed\n");
+            || PCR_ERes_IsErr(GC_push_thread_stack(PCR_Th_CurrThread(), 0))) {
+          ABORT("Thread stack marking failed");
         }
 }
 
@@ -2587,12 +2587,12 @@ STATIC void GC_default_push_other_roots(void)
 # ifdef SN_TARGET_PS3
     STATIC void GC_default_push_other_roots(void)
     {
-      ABORT("GC_default_push_other_roots is not implemented\n");
+      ABORT("GC_default_push_other_roots is not implemented");
     }
 
     void GC_push_thread_structures(void)
     {
-      ABORT("GC_push_thread_structures is not implemented\n");
+      ABORT("GC_push_thread_structures is not implemented");
     }
 # endif /* SN_TARGET_PS3 */
 
@@ -2924,14 +2924,14 @@ STATIC void GC_default_push_other_roots(void)
                       FALSE, VM_PROT_READ \
                              | (pages_executable ? VM_PROT_EXECUTE : 0)) \
                 != KERN_SUCCESS) { \
-            ABORT("vm_protect (PROTECT) failed"); \
+            ABORT("vm_protect(PROTECT) failed"); \
         }
 #   define UNPROTECT(addr,len) \
         if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
                       FALSE, (VM_PROT_READ | VM_PROT_WRITE) \
                              | (pages_executable ? VM_PROT_EXECUTE : 0)) \
                 != KERN_SUCCESS) { \
-            ABORT("vm_protect (UNPROTECT) failed"); \
+            ABORT("vm_protect(UNPROTECT) failed"); \
         }
 
 # elif !defined(MSWIN32) && !defined(MSWINCE)
@@ -3631,7 +3631,8 @@ GC_INNER void GC_dirty_init(void)
     if (GC_bytes_allocd != 0 || GC_bytes_allocd_before_gc != 0) {
         register int i;
 
-        for (i = 0; i < PHT_SIZE; i++) GC_written_pages[i] = (word)(-1);
+        for (i = 0; i < PHT_SIZE; i++)
+          GC_written_pages[i] = (word)(-1);
         if (GC_print_stats == VERBOSE)
             GC_log_printf(
                       "Allocated bytes:%lu:all pages may have been written\n",
@@ -3673,58 +3674,60 @@ GC_INNER void GC_read_dirty(void)
 
     bufp = GC_proc_buf;
     if (READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
+        /* Retry with larger buffer.    */
+        word new_size = 2 * GC_proc_buf_size;
+        char *new_buf;
+
         if (GC_print_stats)
             GC_log_printf("/proc read failed: GC_proc_buf_size = %lu\n",
                           (unsigned long)GC_proc_buf_size);
-        {
-            /* Retry with larger buffer. */
-            word new_size = 2 * GC_proc_buf_size;
-            char * new_buf = GC_scratch_alloc(new_size);
 
-            if (new_buf != 0) {
-                GC_proc_buf = bufp = new_buf;
-                GC_proc_buf_size = new_size;
-            }
-            if (READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
-                WARN("Insufficient space for /proc read\n", 0);
-                /* Punt:        */
-                memset(GC_grungy_pages, 0xff, sizeof (page_hash_table));
-                memset(GC_written_pages, 0xff, sizeof(page_hash_table));
-                return;
-            }
+        new_buf = GC_scratch_alloc(new_size);
+        if (new_buf != 0) {
+            GC_proc_buf = bufp = new_buf;
+            GC_proc_buf_size = new_size;
+        }
+        if (READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
+            WARN("Insufficient space for /proc read\n", 0);
+            /* Punt:        */
+            memset(GC_grungy_pages, 0xff, sizeof (page_hash_table));
+            memset(GC_written_pages, 0xff, sizeof(page_hash_table));
+            return;
         }
     }
-    /* Copy dirty bits into GC_grungy_pages */
-        nmaps = ((struct prpageheader *)bufp) -> pr_nmap;
-        /* printf( "nmaps = %d, PG_REFERENCED = %d, PG_MODIFIED = %d\n",
-                     nmaps, PG_REFERENCED, PG_MODIFIED); */
-        bufp = bufp + sizeof(struct prpageheader);
-        for (i = 0; i < nmaps; i++) {
-            map = (struct prasmap *)bufp;
-            vaddr = (ptr_t)(map -> pr_vaddr);
-            ps = map -> pr_pagesize;
-            np = map -> pr_npage;
-            /* printf("vaddr = 0x%X, ps = 0x%X, np = 0x%X\n", vaddr, ps, np); */
-            limit = vaddr + ps * np;
-            bufp += sizeof (struct prasmap);
-            for (current_addr = vaddr;
-                 current_addr < limit; current_addr += ps) {
-                if ((*bufp++) & PG_MODIFIED) {
-                    register struct hblk * h = (struct hblk *) current_addr;
 
-                    while ((ptr_t)h < current_addr + ps) {
-                        register word index = PHT_HASH(h);
+    /* Copy dirty bits into GC_grungy_pages     */
+    nmaps = ((struct prpageheader *)bufp) -> pr_nmap;
+    /* printf( "nmaps = %d, PG_REFERENCED = %d, PG_MODIFIED = %d\n",
+                 nmaps, PG_REFERENCED, PG_MODIFIED); */
+    bufp = bufp + sizeof(struct prpageheader);
+    for (i = 0; i < nmaps; i++) {
+        map = (struct prasmap *)bufp;
+        vaddr = (ptr_t)(map -> pr_vaddr);
+        ps = map -> pr_pagesize;
+        np = map -> pr_npage;
+        /* printf("vaddr = 0x%X, ps = 0x%X, np = 0x%X\n", vaddr, ps, np); */
+        limit = vaddr + ps * np;
+        bufp += sizeof (struct prasmap);
+        for (current_addr = vaddr;
+             current_addr < limit; current_addr += ps) {
+            if ((*bufp++) & PG_MODIFIED) {
+                register struct hblk * h = (struct hblk *) current_addr;
 
-                        set_pht_entry_from_index(GC_grungy_pages, index);
-                        h++;
-                    }
+                while ((ptr_t)h < current_addr + ps) {
+                    register word index = PHT_HASH(h);
+
+                    set_pht_entry_from_index(GC_grungy_pages, index);
+                    h++;
                 }
             }
-            bufp += sizeof(long) - 1;
-            bufp = (char *)((unsigned long)bufp & ~(sizeof(long)-1));
         }
+        bufp += sizeof(long) - 1;
+        bufp = (char *)((unsigned long)bufp & ~(sizeof(long)-1));
+    }
+
     /* Update GC_written_pages. */
-        GC_or_pages(GC_written_pages, GC_grungy_pages);
+    GC_or_pages(GC_written_pages, GC_grungy_pages);
 }
 
 #undef READ
@@ -3766,7 +3769,7 @@ GC_INNER void GC_dirty_init(void)
     }
     if (PCR_VD_Start(HBLKSIZE, GC_vd_base, NPAGES*HBLKSIZE)
         != PCR_ERes_okay) {
-        ABORT("dirty bit initialization failed");
+        ABORT("Dirty bit initialization failed");
     }
 }
 
@@ -3785,7 +3788,7 @@ GC_INNER void GC_read_dirty(void)
 
     if (PCR_VD_Clear(GC_vd_base, NPAGES*HBLKSIZE, GC_grungy_bits)
         != PCR_ERes_okay) {
-        ABORT("dirty bit read failed");
+        ABORT("Dirty bit read failed");
     }
 }
 
@@ -3864,7 +3867,7 @@ catch_exception_raise_state(mach_port_name_t exception_port, int exception,
                             thread_state_t old_state, int old_stateCnt,
                             thread_state_t new_state, int new_stateCnt)
 {
-  ABORT("catch_exception_raise_state");
+  ABORT("Unexpected catch_exception_raise_state invocation");
   return(KERN_INVALID_ARGUMENT);
 }
 
@@ -3876,7 +3879,7 @@ catch_exception_raise_state_identity(mach_port_name_t exception_port,
                                      thread_state_t old_state, int old_stateCnt,
                                      thread_state_t new_state, int new_stateCnt)
 {
-  ABORT("catch_exception_raise_state_identity");
+  ABORT("Unexpected catch_exception_raise_state_identity invocation");
   return(KERN_INVALID_ARGUMENT);
 }
 
@@ -3950,7 +3953,7 @@ typedef enum {
     if (r != MACH_MSG_SUCCESS)
       ABORT("mach_msg failed in GC_mprotect_thread_notify");
     if (buf.msg.head.msgh_id != ID_ACK)
-      ABORT("invalid ack in GC_mprotect_thread_notify");
+      ABORT("Invalid ack in GC_mprotect_thread_notify");
   }
 
   /* Should only be called by the mprotect thread */
@@ -4028,7 +4031,7 @@ STATIC void *GC_mprotect_thread(void *arg)
           continue;
         }
         if(r == MACH_MSG_SUCCESS && (id == ID_STOP || id == ID_RESUME))
-          ABORT("out of order mprotect thread request");
+          ABORT("Out of order mprotect thread request");
       }
 #   endif /* THREADS */
 
@@ -4113,8 +4116,8 @@ GC_INNER void GC_dirty_init(void)
   exception_mask_t mask;
 
   if (GC_print_stats == VERBOSE)
-    GC_log_printf("Initializing mach/darwin mprotect virtual dirty bit "
-                  "implementation\n");
+    GC_log_printf(
+      "Initializing mach/darwin mprotect virtual dirty bit implementation\n");
 # ifdef BROKEN_EXCEPTION_HANDLING
     WARN("Enabling workarounds for various darwin "
          "exception handling bugs.\n", 0);
@@ -4174,7 +4177,7 @@ GC_INNER void GC_dirty_init(void)
       sigemptyset(&sa.sa_mask);
       sa.sa_flags = SA_RESTART|SA_SIGINFO;
       if (sigaction(SIGBUS, &sa, &oldsa) < 0)
-        ABORT("sigaction");
+        ABORT("sigaction failed");
       if ((SIG_HNDLR_PTR)oldsa.sa_handler != SIG_DFL) {
         if (GC_print_stats == VERBOSE)
           GC_err_printf("Replaced other SIGBUS handler\n");
@@ -4335,8 +4338,8 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
         return KERN_SUCCESS;
       }
 
-      GC_err_printf("Unexpected KERN_PROTECTION_FAILURE at %p\n"
-                    "Aborting...\n", addr);
+      GC_err_printf(
+        "Unexpected KERN_PROTECTION_FAILURE at %p; aborting...\n", addr);
       /* Can't pass it along to the signal handler because that is
          ignoring SIGBUS signals. We also shouldn't call ABORT here as
          signals don't always work too well from the exception handler. */
@@ -4724,21 +4727,12 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
 #endif /* NEED_CALLINFO */
 
 #if defined(LINUX) && defined(__ELF__) && !defined(SMALL_CONFIG)
-
-/* Dump /proc/self/maps to GC_stderr, to enable looking up names for
-   addresses in FIND_LEAK output. */
-
-static word dump_maps(char *maps)
-{
-    GC_err_write(maps, strlen(maps));
-    return 1;
-}
-
-void GC_print_address_map(void)
-{
+  /* Dump /proc/self/maps to GC_stderr, to enable looking up names for  */
+  /* addresses in FIND_LEAK output.                                     */
+  void GC_print_address_map(void)
+  {
     GC_err_printf("---------- Begin address map ----------\n");
-    dump_maps(GC_get_maps());
+    GC_err_puts(GC_get_maps());
     GC_err_printf("---------- End address map ----------\n");
-}
-
+  }
 #endif /* LINUX && ELF */

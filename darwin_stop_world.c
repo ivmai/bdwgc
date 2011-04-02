@@ -322,7 +322,7 @@ GC_INNER void GC_push_all_stacks(void)
   if (GC_print_stats == VERBOSE)
     GC_log_printf("Pushed %d thread stacks\n", nthreads);
   if (!found_me && !GC_in_thread_creation)
-    ABORT("Collecting from unknown thread.");
+    ABORT("Collecting from unknown thread");
   GC_total_stacksize = total_size;
 }
 
@@ -411,7 +411,7 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
         if (!found) {
           /* add it to the GC_mach_threads list */
           if (GC_mach_threads_count == GC_MAX_MACH_THREADS)
-            ABORT("too many threads");
+            ABORT("Too many threads");
           GC_mach_threads[GC_mach_threads_count].thread = thread;
           /* default is not suspended */
           GC_mach_threads[GC_mach_threads_count].already_suspended = FALSE;

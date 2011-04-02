@@ -65,7 +65,7 @@ int GC_nacl_thread_used[MAX_NACL_GC_THREADS];
     int i;
 
     if (pthread_sigmask(SIG_BLOCK, NULL, &blocked) != 0)
-        ABORT("pthread_sigmask");
+        ABORT("pthread_sigmask failed");
     GC_printf("Blocked: ");
     for (i = 1; i < NSIG; i++) {
         if (sigismember(&blocked, i)) { GC_printf("%d ", i); }
@@ -361,7 +361,7 @@ GC_INNER void GC_push_all_stacks(void)
         GC_log_printf("Pushed %d thread stacks\n", (int)nthreads);
     }
     if (!found_me && !GC_in_thread_creation)
-      ABORT("Collecting from unknown thread.");
+      ABORT("Collecting from unknown thread");
     GC_total_stacksize = total_size;
 }
 
@@ -543,8 +543,7 @@ GC_INNER void GC_stop_world(void)
           int newly_sent = GC_suspend_all();
 
           if (GC_print_stats) {
-            GC_log_printf("Resent %d signals after timeout\n",
-                          newly_sent);
+            GC_log_printf("Resent %d signals after timeout\n", newly_sent);
           }
           sem_getvalue(&GC_suspend_ack_sem, &ack_count);
           if (newly_sent < n_live_threads - ack_count) {
@@ -840,7 +839,7 @@ GC_INNER void GC_stop_init(void)
         GC_retry_signals = FALSE;
     }
     if (GC_print_stats && GC_retry_signals) {
-        GC_log_printf("Will retry suspend signal if necessary.\n");
+        GC_log_printf("Will retry suspend signal if necessary\n");
     }
 # endif /* !GC_OPENBSD_THREADS && !NACL */
 }

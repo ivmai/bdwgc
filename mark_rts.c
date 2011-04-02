@@ -426,7 +426,7 @@ GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
     if (0 != next) {
       if ((word)(next -> e_start) < (word) finish) {
         /* incomplete error check. */
-        ABORT("exclusion ranges overlap");
+        ABORT("Exclusion ranges overlap");
       }
       if ((word)(next -> e_start) == (word) finish) {
         /* extend old range backwards   */

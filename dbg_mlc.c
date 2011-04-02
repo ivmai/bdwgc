@@ -380,7 +380,7 @@ STATIC void GC_print_type(ptr_t p)
             GC_err_puts("STUBBORN");
             break;
           default:
-            GC_err_printf("kind %d, descr 0x%lx", kind,
+            GC_err_printf("kind=%d descr=0x%lx", kind,
                           (unsigned long)(hhdr -> hb_descr));
         }
     }
@@ -778,7 +778,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
     base = GC_base(p);
     if (base == 0) {
         GC_err_printf("Attempt to free invalid pointer %p\n", p);
-        ABORT("free(invalid pointer)");
+        ABORT("Invalid pointer passed to free()");
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
         GC_err_printf(
@@ -857,7 +857,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
     base = GC_base(p);
     if (base == 0) {
         GC_err_printf("Attempt to reallocate invalid pointer %p\n", p);
-        ABORT("realloc(invalid pointer)");
+        ABORT("Invalid pointer passed to realloc()");
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
         GC_err_printf(
@@ -888,7 +888,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
       default:
         result = NULL; /* initialized to prevent warning. */
         GC_err_printf("GC_debug_realloc: encountered bad kind\n");
-        ABORT("bad kind");
+        ABORT("Bad kind");
     }
 #   ifdef SHORT_DBG_HDRS
       old_sz = GC_size(base) - sizeof(oh);
@@ -1027,7 +1027,7 @@ static void store_old(void *obj, GC_finalization_proc my_old_fn,
         return;
       }
       if (my_old_fn != GC_debug_invoke_finalizer) {
-        GC_err_printf("Debuggable object at %p had non-debug finalizer.\n",
+        GC_err_printf("Debuggable object at %p had a non-debug finalizer\n",
                       obj);
         /* This should probably be fatal. */
       } else {

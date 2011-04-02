@@ -214,7 +214,7 @@ out:
         GC_printf("These may be benign (provoked by nonpointer changes)\n");
 #       ifdef THREADS
           GC_printf(
-            "Also expect 1 per thread currently allocating a stubborn obj.\n");
+            "Also expect 1 per thread currently allocating a stubborn obj\n");
 #       endif
     }
     for (i = 0; i < GC_n_faulted; ++i) {

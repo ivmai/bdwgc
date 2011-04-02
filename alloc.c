@@ -731,7 +731,7 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
    for (p = q; p != 0; p = obj_link(p)) {
        if (!GC_is_marked(p)) {
            GC_err_printf("Unmarked object %p on list %p\n", p, q);
-           ABORT("Unmarked local free list entry.");
+           ABORT("Unmarked local free list entry");
        }
    }
   }
@@ -1149,9 +1149,8 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
         return(FALSE);
     }
     if (GC_print_stats) {
-        GC_log_printf("Increasing heap size by %lu after %lu allocated bytes\n",
-                      (unsigned long)bytes,
-                      (unsigned long)GC_bytes_allocd);
+      GC_log_printf("Increasing heap size by %lu after %lu allocated bytes\n",
+                    (unsigned long)bytes, (unsigned long)GC_bytes_allocd);
     }
     /* Adjust heap limits generously for blacklisting to work better.   */
     /* GC_add_to_heap performs minimal adjustment needed for            */
@@ -1273,7 +1272,7 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
         return(FALSE);
       }
     } else if (GC_fail_count && GC_print_stats) {
-      GC_printf("Memory available again ...\n");
+      GC_printf("Memory available again...\n");
     }
     RESTORE_CANCEL(cancel_state);
     return(TRUE);

@@ -98,7 +98,7 @@ static back_edges * new_back_edges(void)
     return result;
   }
   if (GC_n_back_edge_structs >= MAX_BACK_EDGE_STRUCTS - 1) {
-    ABORT("needed too much space for back edges: adjust "
+    ABORT("Needed too much space for back edges: adjust "
           "MAX_BACK_EDGE_STRUCTS");
   }
   return back_edge_space + (GC_n_back_edge_structs++);

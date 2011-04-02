@@ -358,8 +358,7 @@ exit_label: ; \
                                 (unsigned)GC_gc_no)); \
     TRACE_TARGET(base, \
         GC_log_printf("GC:%u: marking %p from %p instead\n", \
-                      (unsigned)GC_gc_no, \
-                      base, source)); \
+                      (unsigned)GC_gc_no, base, source)); \
     INCR_MARKS(hhdr); \
     GC_STORE_BACK_PTR((ptr_t)source, base); \
     PUSH_OBJ(base, hhdr, mark_stack_top, mark_stack_limit); \

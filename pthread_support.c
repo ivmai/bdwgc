@@ -423,7 +423,7 @@ static void start_mark_threads(void)
           ABORT("pthread_attr_getstacksize failed");
         if (old_size < MIN_STACK_SIZE) {
           if (pthread_attr_setstacksize(&attr, MIN_STACK_SIZE) != 0)
-                  ABORT("pthread_attr_setstacksize failed");
+            ABORT("pthread_attr_setstacksize failed");
         }
       }
 #   endif /* HPUX || GC_DGUX386_THREADS */
@@ -921,7 +921,7 @@ GC_INNER void GC_thr_init(void)
   {
     GC_thread t = GC_new_thread(pthread_self());
     if (t == NULL)
-      ABORT("Failed to allocate memory for the initial thread.");
+      ABORT("Failed to allocate memory for the initial thread");
 #   ifdef GC_DARWIN_THREADS
       t -> stop_info.mach_thread = mach_thread_self();
 #   else
@@ -1334,7 +1334,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
     me = GC_new_thread(my_pthread);
     GC_in_thread_creation = FALSE;
     if (me == 0)
-      ABORT("Failed to allocate memory for thread registering.");
+      ABORT("Failed to allocate memory for thread registering");
 #   ifdef GC_DARWIN_THREADS
       me -> stop_info.mach_thread = mach_thread_self();
 #   else
@@ -1442,7 +1442,7 @@ STATIC void * GC_start_routine(void * arg)
         GC_disable();
 #     endif
       if (GC_get_stack_base(&sb) != GC_SUCCESS)
-        ABORT("Failed to get thread stack base.");
+        ABORT("Failed to get thread stack base");
 #     ifdef REDIRECT_MALLOC
         GC_enable();
 #     endif

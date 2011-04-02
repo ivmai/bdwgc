@@ -924,8 +924,7 @@ GC_API void GC_CALL GC_init(void)
         if (sz_str != NULL) {
           initial_heap_sz = (word)STRTOULL(sz_str, NULL, 10);
           if (initial_heap_sz <= MINHINCR * HBLKSIZE) {
-            WARN("Bad initial heap size %s - ignoring it.\n",
-                 sz_str);
+            WARN("Bad initial heap size %s - ignoring it.\n", sz_str);
           }
           initial_heap_sz = divHBLKSZ(initial_heap_sz);
         }
@@ -935,8 +934,7 @@ GC_API void GC_CALL GC_init(void)
         if (sz_str != NULL) {
           word max_heap_sz = (word)STRTOULL(sz_str, NULL, 10);
           if (max_heap_sz < initial_heap_sz * HBLKSIZE) {
-            WARN("Bad maximum heap size %s - ignoring it.\n",
-                 sz_str);
+            WARN("Bad maximum heap size %s - ignoring it.\n", sz_str);
           }
           if (0 == GC_max_retries) GC_max_retries = 2;
           GC_set_max_heap_size(max_heap_sz);
@@ -1301,17 +1299,11 @@ void GC_log_printf(const char *format, ...)
       ABORT("write to log failed");
 }
 
+/* This is equivalent to GC_err_printf("%s",s). */
 void GC_err_puts(const char *s)
 {
     if (WRITE(GC_stderr, s, strlen(s)) < 0) ABORT("write to stderr failed");
 }
-
-#if defined(LINUX) && !defined(SMALL_CONFIG)
-  GC_INNER void GC_err_write(const char *buf, size_t len)
-  {
-    if (WRITE(GC_stderr, buf, len) < 0) ABORT("write to stderr failed");
-  }
-#endif
 
 STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
 {

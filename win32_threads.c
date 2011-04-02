@@ -431,7 +431,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
         /* FIXME: We should eventually declare Win95 dead and use AO_   */
         /* primitives here.                                             */
         if (i == MAX_THREADS - 1)
-          ABORT("too many threads");
+          ABORT("Too many threads");
       }
       /* Update GC_max_thread_index if necessary.  The following is     */
       /* safe, and unlike CompareExchange-based solutions seems to work */
@@ -455,7 +455,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
     me = GC_new_thread(thread_id);
     GC_in_thread_creation = FALSE;
     if (me == 0)
-      ABORT("Failed to allocate memory for thread registering.");
+      ABORT("Failed to allocate memory for thread registering");
   }
 # ifdef GC_PTHREADS
     /* me can be NULL -> segfault */
@@ -1358,7 +1358,7 @@ GC_INNER void GC_push_all_stacks(void)
     }
 # endif
   if (!found_me && !GC_in_thread_creation)
-    ABORT("Collecting from unknown thread.");
+    ABORT("Collecting from unknown thread");
   GC_total_stacksize = total_size;
 }
 
@@ -2020,7 +2020,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     }
 
 #   if DEBUG_WIN32_THREADS
-      GC_printf("thread 0x%x returned from start routine.\n",
+      GC_printf("thread 0x%x returned from start routine\n",
                 (unsigned)GetCurrentThreadId());
 #   endif
     return ret;
@@ -2342,12 +2342,12 @@ GC_INNER void GC_thr_init(void)
     GC_thread joinee;
 
 #   if DEBUG_CYGWIN_THREADS
-      GC_printf("thread 0x%x(0x%x) is joining thread 0x%x.\n",
+      GC_printf("thread 0x%x(0x%x) is joining thread 0x%x\n",
                 (int)pthread_self(), (int)GetCurrentThreadId(),
                 (int)pthread_id);
 #   endif
 #   if DEBUG_WIN32_PTHREADS
-      GC_printf("thread 0x%x(0x%x) is joining thread 0x%x.\n",
+      GC_printf("thread 0x%x(0x%x) is joining thread 0x%x\n",
                 (int)(pthread_self()).p, (int)GetCurrentThreadId(),
                 pthread_id.p);
 #   endif
@@ -2378,12 +2378,12 @@ GC_INNER void GC_thr_init(void)
     } /* otherwise DllMain handles it.  */
 
 #   if DEBUG_CYGWIN_THREADS
-      GC_printf("thread 0x%x(0x%x) completed join with thread 0x%x.\n",
+      GC_printf("thread 0x%x(0x%x) completed join with thread 0x%x\n",
                 (int)pthread_self(), (int)GetCurrentThreadId(),
                 (int)pthread_id);
 #   endif
 #   if DEBUG_WIN32_PTHREADS
-      GC_printf("thread 0x%x(0x%x) completed join with thread 0x%x.\n",
+      GC_printf("thread 0x%x(0x%x) completed join with thread 0x%x\n",
                 (int)(pthread_self()).p, (int)GetCurrentThreadId(),
                 pthread_id.p);
 #   endif
@@ -2481,11 +2481,11 @@ GC_INNER void GC_thr_init(void)
     pthread_cleanup_pop(1);
 
 #   if DEBUG_CYGWIN_THREADS
-      GC_printf("thread 0x%x(0x%x) returned from start routine.\n",
+      GC_printf("thread 0x%x(0x%x) returned from start routine\n",
                 (int)pthread_self(),(int)GetCurrentThreadId());
 #   endif
 #   if DEBUG_WIN32_PTHREADS
-      GC_printf("thread 0x%x(0x%x) returned from start routine.\n",
+      GC_printf("thread 0x%x(0x%x) returned from start routine\n",
                 (int)(pthread_self()).p, (int)GetCurrentThreadId());
 #   endif
     return(result);
@@ -2503,11 +2503,11 @@ GC_INNER void GC_thr_init(void)
 
     GC_ASSERT(!GC_win32_dll_threads);
 #   if DEBUG_CYGWIN_THREADS
-      GC_printf("thread 0x%x(0x%x) called pthread_exit().\n",
+      GC_printf("thread 0x%x(0x%x) called pthread_exit()\n",
                 (int)pthread_self(),(int)GetCurrentThreadId());
 #   endif
 #   if DEBUG_WIN32_PTHREADS
-      GC_printf("thread 0x%x(0x%x) called pthread_exit().\n",
+      GC_printf("thread 0x%x(0x%x) called pthread_exit()\n",
                 (int)(pthread_self()).p,(int)GetCurrentThreadId());
 #   endif
 
