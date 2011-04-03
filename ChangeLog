@@ -1,3 +1,11 @@
+2011-04-03  Ivan Maidanski  <ivmai@mail.ru>
+
+	* tests/test.c (cons, small_cons, gcj_cons, check_ints,
+	check_uncollectable_ints, print_int_list, check_marks_int_list,
+	fork_a_thread, finalizer, mktree, chktree, alloc8bytes,
+	alloc_small, tree_test, typed_test, check_heap_stats, WinMain,
+	test, main): Remove unnecessary casts of GC_printf calls to void.
+
 2011-04-02  Ivan Maidanski  <ivmai@mail.ru>
 
 	* allchblk.c (GC_print_hblkfreelist): Adjust (make uniform across
