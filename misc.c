@@ -1048,14 +1048,13 @@ GC_API void GC_CALL GC_enable_incremental(void)
   GC_init();
 }
 
-
 #if defined(MSWIN32) || defined(MSWINCE)
 
 # if defined(_MSC_VER) && defined(_DEBUG) && !defined(MSWINCE)
 #   include <crtdbg.h>
 # endif
 
-  STATIC HANDLE GC_stdout = 0;
+  STATIC HANDLE GC_log = 0;
 
   void GC_deinit(void)
   {
@@ -1066,19 +1065,19 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #   endif
   }
 
-#ifdef THREADS
-# ifdef PARALLEL_MARK
-#   define IF_NEED_TO_LOCK(x) if (GC_parallel || GC_need_to_lock) x
+# ifdef THREADS
+#   ifdef PARALLEL_MARK
+#     define IF_NEED_TO_LOCK(x) if (GC_parallel || GC_need_to_lock) x
+#   else
+#     define IF_NEED_TO_LOCK(x) if (GC_need_to_lock) x
+#   endif
 # else
-#   define IF_NEED_TO_LOCK(x) if (GC_need_to_lock) x
-# endif
-#else
-# define IF_NEED_TO_LOCK(x)
-#endif
+#   define IF_NEED_TO_LOCK(x)
+# endif /* !THREADS */
 
-#ifndef _MAX_PATH
-# define _MAX_PATH MAX_PATH
-#endif
+# ifndef _MAX_PATH
+#   define _MAX_PATH MAX_PATH
+# endif
 
   STATIC HANDLE GC_CreateLogFile(void)
   {
@@ -1127,19 +1126,19 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #     ifdef THREADS
         GC_ASSERT(!GC_write_disabled);
 #     endif
-      if (GC_stdout == INVALID_HANDLE_VALUE) {
+      if (GC_log == INVALID_HANDLE_VALUE) {
           IF_NEED_TO_LOCK(LeaveCriticalSection(&GC_write_cs));
           return -1;
-      } else if (GC_stdout == 0) {
-        GC_stdout = GC_CreateLogFile();
+      } else if (GC_log == 0) {
+        GC_log = GC_CreateLogFile();
         /* Ignore open log failure if the collector is built with       */
         /* print_stats always set on.                                   */
 #       ifndef GC_PRINT_VERBOSE_STATS
-          if (GC_stdout == INVALID_HANDLE_VALUE)
+          if (GC_log == INVALID_HANDLE_VALUE)
             ABORT("Open of log file failed");
 #       endif
       }
-      tmp = WriteFile(GC_stdout, buf, (DWORD)len, &written, NULL);
+      tmp = WriteFile(GC_log, buf, (DWORD)len, &written, NULL);
       if (!tmp)
           DebugBreak();
 #     if defined(_MSC_VER) && defined(_DEBUG)
@@ -1161,86 +1160,81 @@ GC_API void GC_CALL GC_enable_incremental(void)
       return tmp ? (int)written : -1;
   }
 
-#endif /* MSWIN32 */
+  /* FIXME: This is pretty ugly ... */
+# define WRITE(f, buf, len) GC_write(buf, len)
 
-#if defined(OS2) || defined(MACOS)
+#elif defined(OS2) || defined(MACOS)
   STATIC FILE * GC_stdout = NULL;
   STATIC FILE * GC_stderr = NULL;
   STATIC FILE * GC_log = NULL;
 
+  /* Initialize GC_log (and the friends) passed to GC_write().  */
   STATIC void GC_set_files(void)
   {
-      if (GC_stdout == NULL) {
-        GC_stdout = stdout;
+    if (GC_stdout == NULL) {
+      GC_stdout = stdout;
     }
     if (GC_stderr == NULL) {
-        GC_stderr = stderr;
+      GC_stderr = stderr;
     }
     if (GC_log == NULL) {
-        GC_log = stderr;
+      GC_log = stderr;
     }
   }
-#endif
 
-#if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
+  GC_INLINE int GC_write(FILE *f, const char *buf, size_t len)
+  {
+    int res = fwrite(buf, 1, len, f);
+    fflush(f);
+    return res;
+  }
+
+# define WRITE(f, buf, len) (GC_set_files(), GC_write(f, buf, len))
+
+#else
   STATIC int GC_stdout = 1;
   STATIC int GC_stderr = 2;
+  /* GC_log is defined above.   */
 # if !defined(AMIGA)
 #   include <unistd.h>
 # endif
-#endif
 
-#if defined(ECOS) || defined(NOSYS)
   STATIC int GC_write(int fd, const char *buf, size_t len)
   {
-#   ifdef ECOS
-      /* FIXME: This seems to be defined nowhere at present.    */
-      /* _Jv_diag_write(buf, len); */
+#   if defined(ECOS) || defined(NOSYS)
+#     ifdef ECOS
+        /* FIXME: This seems to be defined nowhere at present.  */
+        /* _Jv_diag_write(buf, len); */
+#     else
+        /* No writing.  */
+#     endif
+      return len;
 #   else
-      /* No writing.    */
-#   endif
-    return len;
-  }
-#elif !defined(MSWIN32) && !defined(MSWINCE) && !defined(OS2) \
-      && !defined(MACOS)
-  STATIC int GC_write(int fd, const char *buf, size_t len)
-  {
-     int bytes_written = 0;
-     int result;
-     IF_CANCEL(int cancel_state;)
+      int bytes_written = 0;
+      int result;
+      IF_CANCEL(int cancel_state;)
 
-     DISABLE_CANCEL(cancel_state);
-     while (bytes_written < len) {
-#       ifdef GC_SOLARIS_THREADS
-            result = syscall(SYS_write, fd, buf + bytes_written,
-                                            len - bytes_written);
-#       else
-            result = write(fd, buf + bytes_written, len - bytes_written);
-#       endif
-        if (-1 == result) {
-            RESTORE_CANCEL(cancel_state);
-            return(result);
-        }
-        bytes_written += result;
-    }
-    RESTORE_CANCEL(cancel_state);
-    return(bytes_written);
-  }
-#endif /* UN*X */
-
-#if defined(MSWIN32) || defined(MSWINCE)
-    /* FIXME: This is pretty ugly ... */
-#   define WRITE(f, buf, len) GC_write(buf, len)
-#else
-#   if defined(OS2) || defined(MACOS)
-    static int fwrite_gc_res; /* Should really be local ... */
-#   define WRITE(f, buf, len) (GC_set_files(), \
-                               fwrite_gc_res = fwrite((buf), 1, (len), (f)), \
-                               fflush(f), fwrite_gc_res)
-#   else
-#     define WRITE(f, buf, len) GC_write((f), (buf), (len))
+      DISABLE_CANCEL(cancel_state);
+      while (bytes_written < len) {
+#        ifdef GC_SOLARIS_THREADS
+             result = syscall(SYS_write, fd, buf + bytes_written,
+                                             len - bytes_written);
+#        else
+             result = write(fd, buf + bytes_written, len - bytes_written);
+#        endif
+         if (-1 == result) {
+             RESTORE_CANCEL(cancel_state);
+             return(result);
+         }
+         bytes_written += result;
+      }
+      RESTORE_CANCEL(cancel_state);
+      return(bytes_written);
 #   endif
-#endif
+  }
+
+# define WRITE(f, buf, len) GC_write(f, buf, len)
+#endif /* !MSWIN32 && !OS2 && !MACOS */
 
 #define BUFSZ 1024
 #ifdef _MSC_VER
@@ -1261,8 +1255,8 @@ void GC_printf(const char *format, ...)
     va_list args;
     char buf[BUFSZ+1];
 
-    va_start(args, format);
     if (GC_quiet) return;
+    va_start(args, format);
     buf[BUFSZ] = 0x15;
     (void) vsnprintf(buf, BUFSZ, format, args);
     va_end(args);

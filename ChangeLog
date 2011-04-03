@@ -1,5 +1,14 @@
 2011-04-03  Ivan Maidanski  <ivmai@mail.ru>
 
+	* misc.c (GC_stdout, GC_write): Rename GC_stdout to GC_log (Win32
+	only).
+	* misc.c (GC_write): Add for MacOS (and OS/2); change WRITE()
+	accordingly.
+	* misc.c (GC_write): Reformat code (Unix only).
+	* misc.c (GC_printf): Check GC_quiet before va_start().
+
+2011-04-03  Ivan Maidanski  <ivmai@mail.ru>
+
 	* allchblk.c (GC_freehblk): Use GC_log_printf instead of GC_printf
 	inside "if (GC_print_stats)" branch.
 	* alloc.c (GC_collect_or_expand): Ditto.
