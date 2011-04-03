@@ -998,6 +998,10 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 #include <loader.h>
 
+extern char *sys_errlist[];
+extern int sys_nerr;
+extern int errno;
+
 GC_INNER void GC_register_dynamic_libraries(void)
 {
   int status;
@@ -1031,18 +1035,15 @@ GC_INNER void GC_register_dynamic_libraries(void)
       /* Check status AFTER checking moduleid because */
       /* of a bug in the non-shared ldr_next_module stub */
         if (status != 0) {
-            if (GC_print_stats) {
-                extern char *sys_errlist[];
-                extern int sys_nerr;
-                extern int errno;
-                GC_printf("dynamic_load: status = %d\n", status);
-                if (errno <= sys_nerr) {
-                    GC_printf("dynamic_load: %s\n", sys_errlist[errno]);
-                } else {
-                    GC_printf("dynamic_load: err_code = %d\n", errno);
-                }
+          if (GC_print_stats) {
+            GC_log_printf("dynamic_load: status = %d\n", status);
+            if (errno < sys_nerr) {
+              GC_log_printf("dynamic_load: %s\n", sys_errlist[errno]);
+            } else {
+              GC_log_printf("dynamic_load: err_code = %d\n", errno);
             }
-            ABORT("ldr_next_module failed");
+          }
+          ABORT("ldr_next_module failed");
         }
 
       /* Get the module information */
@@ -1056,11 +1057,11 @@ GC_INNER void GC_register_dynamic_libraries(void)
               continue;    /* skip the main module */
 
 #     ifdef DL_VERBOSE
-          GC_printf("---Module---\n");
-          GC_printf("Module ID            = %16ld\n", moduleinfo.lmi_modid);
-          GC_printf("Count of regions     = %16d\n", moduleinfo.lmi_nregion);
-          GC_printf("flags for module     = %16lx\n", moduleinfo.lmi_flags);
-          GC_printf("pathname of module   = \"%s\"\n", moduleinfo.lmi_name);
+        GC_log_printf("---Module---\n");
+        GC_log_printf("Module ID\t = %16ld\n", moduleinfo.lmi_modid);
+        GC_log_printf("Count of regions = %16d\n", moduleinfo.lmi_nregion);
+        GC_log_printf("flags for module = %16lx\n", moduleinfo.lmi_flags);
+        GC_log_printf("module pathname\t = \"%s\"\n", moduleinfo.lmi_name);
 #     endif
 
       /* For each region in this module */
@@ -1077,21 +1078,21 @@ GC_INNER void GC_register_dynamic_libraries(void)
                 continue;
 
 #         ifdef DL_VERBOSE
-              GC_printf("--- Region ---\n");
-              GC_printf("Region number    = %16ld\n",
-                        regioninfo.lri_region_no);
-              GC_printf("Protection flags = %016x\n",  regioninfo.lri_prot);
-              GC_printf("Virtual address  = %16p\n",   regioninfo.lri_vaddr);
-              GC_printf("Mapped address   = %16p\n",   regioninfo.lri_mapaddr);
-              GC_printf("Region size      = %16ld\n",  regioninfo.lri_size);
-              GC_printf("Region name      = \"%s\"\n", regioninfo.lri_name);
+            GC_log_printf("--- Region ---\n");
+            GC_log_printf("Region number\t = %16ld\n",
+                          regioninfo.lri_region_no);
+            GC_log_printf("Protection flags = %016x\n", regioninfo.lri_prot);
+            GC_log_printf("Virtual address\t = %16p\n", regioninfo.lri_vaddr);
+            GC_log_printf("Mapped address\t = %16p\n",
+                          regioninfo.lri_mapaddr);
+            GC_log_printf("Region size\t = %16ld\n", regioninfo.lri_size);
+            GC_log_printf("Region name\t = \"%s\"\n", regioninfo.lri_name);
 #         endif
 
           /* register region as a garbage collection root */
-            GC_add_roots_inner (
-                (char *)regioninfo.lri_mapaddr,
-                (char *)regioninfo.lri_mapaddr + regioninfo.lri_size,
-                TRUE);
+          GC_add_roots_inner((char *)regioninfo.lri_mapaddr,
+                        (char *)regioninfo.lri_mapaddr + regioninfo.lri_size,
+                        TRUE);
 
         }
     }
@@ -1129,10 +1130,10 @@ GC_INNER void GC_register_dynamic_libraries(void)
             break; /* Moved past end of shared library list --> finished */
           } else {
             if (GC_print_stats) {
-              if (errno <= sys_nerr) {
-                GC_printf("dynamic_load: %s\n", sys_errlist[errno]);
+              if (errno < sys_nerr) {
+                GC_log_printf("dynamic_load: %s\n", sys_errlist[errno]);
               } else {
-                GC_printf("dynamic_load: err_code = %d\n", errno);
+                GC_log_printf("dynamic_load: err_code = %d\n", errno);
               }
             }
             ABORT("shl_get failed");
@@ -1141,16 +1142,16 @@ GC_INNER void GC_register_dynamic_libraries(void)
         }
 
 #     ifdef DL_VERBOSE
-          GC_printf("---Shared library---\n");
-          GC_printf("\tfilename        = \"%s\"\n", shl_desc->filename);
-          GC_printf("\tindex           = %d\n", index);
-          GC_printf("\thandle          = %08x\n",
-                                        (unsigned long) shl_desc->handle);
-          GC_printf("\ttext seg. start = %08x\n", shl_desc->tstart);
-          GC_printf("\ttext seg. end   = %08x\n", shl_desc->tend);
-          GC_printf("\tdata seg. start = %08x\n", shl_desc->dstart);
-          GC_printf("\tdata seg. end   = %08x\n", shl_desc->dend);
-          GC_printf("\tref. count      = %lu\n", shl_desc->ref_count);
+        GC_log_printf("---Shared library---\n");
+        GC_log_printf("\tfilename\t= \"%s\"\n", shl_desc->filename);
+        GC_log_printf("\tindex\t\t= %d\n", index);
+        GC_log_printf("\thandle\t\t= %08x\n",
+                      (unsigned long) shl_desc->handle);
+        GC_log_printf("\ttext seg.start\t= %08x\n", shl_desc->tstart);
+        GC_log_printf("\ttext seg.end\t= %08x\n", shl_desc->tend);
+        GC_log_printf("\tdata seg.start\t= %08x\n", shl_desc->dstart);
+        GC_log_printf("\tdata seg.end\t= %08x\n", shl_desc->dend);
+        GC_log_printf("\tref.count\t= %lu\n", shl_desc->ref_count);
 #     endif
 
       /* register shared library's data segment as a garbage collection root */
@@ -1252,8 +1253,8 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr, intptr_t slide)
       /* The user callback is called holding the lock   */
       if (callback == 0 || callback(name, (void*)start, (size_t)sec->size)) {
 #       ifdef DARWIN_DEBUG
-          GC_printf("Adding section at %p-%p (%lu bytes) from image %s\n",
-                    start,end,sec->size,name);
+          GC_log_printf("Adding section at %p-%p (%lu bytes) from image %s\n",
+                        start, end, sec->size, name);
 #       endif
         GC_add_roots_inner((ptr_t)start, (ptr_t)end, FALSE);
       }
@@ -1277,8 +1278,8 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
       start = slide + sec->addr;
       end = start + sec->size;
 #   ifdef DARWIN_DEBUG
-      GC_printf("Removing section at %p-%p (%lu bytes) from image %s\n",
-                start,end,sec->size,GC_dyld_name_for_hdr(hdr));
+      GC_log_printf("Removing section at %p-%p (%lu bytes) from image %s\n",
+                    start, end, sec->size, GC_dyld_name_for_hdr(hdr));
 #   endif
       GC_remove_roots((char*)start,(char*)end);
     }
@@ -1306,7 +1307,7 @@ GC_INNER void GC_init_dyld(void)
   if (initialized) return;
 
 # ifdef DARWIN_DEBUG
-    GC_printf("Registering dyld callbacks...\n");
+    GC_log_printf("Registering dyld callbacks...\n");
 # endif
 
   /* Apple's Documentation:
@@ -1341,7 +1342,7 @@ GC_INNER void GC_init_dyld(void)
     if (GETENV("DYLD_BIND_AT_LAUNCH") == 0) {
       /* The environment variable is unset, so we should bind manually. */
 #     ifdef DARWIN_DEBUG
-        GC_printf("Forcing full bind of GC code...\n");
+        GC_log_printf("Forcing full bind of GC code...\n");
 #     endif
       /* FIXME: '_dyld_bind_fully_image_containing_address' is deprecated. */
       if (!_dyld_bind_fully_image_containing_address(

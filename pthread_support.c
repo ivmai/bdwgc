@@ -388,8 +388,8 @@ STATIC void * GC_mark_thread(void * id)
         my_mark_no = GC_mark_no;
     }
 #   ifdef DEBUG_THREADS
-      GC_printf("Starting mark helper for mark number %lu\n",
-                (unsigned long)my_mark_no);
+      GC_log_printf("Starting mark helper for mark number %lu\n",
+                    (unsigned long)my_mark_no);
 #   endif
     GC_help_marker(my_mark_no);
   }
@@ -439,7 +439,7 @@ static void start_mark_threads(void)
       }
     }
     if (GC_print_stats) {
-        GC_log_printf("Started %ld mark helper threads\n", GC_markers - 1);
+      GC_log_printf("Started %ld mark helper threads\n", GC_markers - 1);
     }
     pthread_attr_destroy(&attr);
 }
@@ -861,7 +861,7 @@ STATIC void GC_fork_child_proc(void)
       numCpus = pm_sysinfo.idle_vp_count;
 
 #  ifdef DEBUG_THREADS
-     GC_printf("Number of active CPUs in this system: %d\n", numCpus);
+     GC_log_printf("Number of active CPUs in this system: %d\n", numCpus);
 #  endif
     return(numCpus);
   }
@@ -984,8 +984,9 @@ GC_INNER void GC_thr_init(void)
   }
 # ifdef PARALLEL_MARK
     if (GC_print_stats) {
-      GC_log_printf("Number of processors = %ld, "
-                "number of marker threads = %ld\n", GC_nprocs, GC_markers);
+      GC_log_printf(
+        "Number of processors = %ld, number of marker threads = %ld\n",
+        GC_nprocs, GC_markers);
     }
     if (GC_markers <= 1) {
       GC_parallel = FALSE;
@@ -1406,8 +1407,8 @@ GC_INNER void * GC_start_rtn_prepare_thread(void *(**pstart)(void *),
 
     my_pthread = pthread_self();
 #   ifdef DEBUG_THREADS
-        GC_printf("Starting thread 0x%x, pid = %ld, sp = %p\n",
-                  (unsigned)my_pthread, (long) getpid(), &arg);
+      GC_log_printf("Starting thread 0x%x, pid = %ld, sp = %p\n",
+                    (unsigned)my_pthread, (long)getpid(), &arg);
 #   endif
     LOCK();
     me = GC_register_my_thread_inner(sb, my_pthread);
@@ -1418,7 +1419,7 @@ GC_INNER void * GC_start_rtn_prepare_thread(void *(**pstart)(void *),
     UNLOCK();
     *pstart = si -> start_routine;
 #   ifdef DEBUG_THREADS
-        GC_printf("start_routine = %p\n", (void *)(signed_word)(*pstart));
+      GC_log_printf("start_routine = %p\n", (void *)(signed_word)(*pstart));
 #   endif
     *pstart_arg = si -> arg;
     sem_post(&(si -> registered));      /* Last action on si.   */
@@ -1523,15 +1524,15 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     si -> flags = my_flags;
     UNLOCK();
 #   ifdef DEBUG_THREADS
-        GC_printf("About to start new thread from thread 0x%x\n",
-                  (unsigned)pthread_self());
+      GC_log_printf("About to start new thread from thread 0x%x\n",
+                    (unsigned)pthread_self());
 #   endif
     GC_need_to_lock = TRUE;
 
     result = REAL_FUNC(pthread_create)(new_thread, attr, GC_start_routine, si);
 
 #   ifdef DEBUG_THREADS
-        GC_printf("Started thread 0x%x\n", (unsigned)(*new_thread));
+      GC_log_printf("Started thread 0x%x\n", (unsigned)(*new_thread));
 #   endif
     /* Wait until child has been added to the thread table.             */
     /* This also ensures that we hold onto si until the child is done   */

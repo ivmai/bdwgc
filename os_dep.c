@@ -271,9 +271,10 @@ GC_INNER char * GC_get_maps(void)
 #           ifdef THREADS
               if (maps_size > old_maps_size) {
                 if (GC_print_stats)
-                  GC_printf("Unexpected maps size growth from %lu to %lu\n",
-                            (unsigned long)old_maps_size,
-                            (unsigned long)maps_size);
+                  GC_log_printf(
+                        "Unexpected maps size growth from %lu to %lu\n",
+                        (unsigned long)old_maps_size,
+                        (unsigned long)maps_size);
                 ABORT("Unexpected asynchronous /proc/self/maps growth: "
                       "unregistered thread?");
               }
@@ -425,7 +426,7 @@ GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
     ptr_t my_start, my_end;
     if (!GC_enclosing_mapping(GC_save_regs_in_stack(), &my_start, &my_end)) {
         if (GC_print_stats) {
-            GC_log_printf("Failed to find backing store base from /proc\n");
+          GC_log_printf("Failed to find backing store base from /proc\n");
         }
         return 0;
     }
@@ -1775,8 +1776,8 @@ void GC_register_data_segments(void)
         }
     }
     if (GC_print_stats)
-          GC_log_printf("Found new system malloc AllocationBase at %p\n",
-                        candidate);
+      GC_log_printf("Found new system malloc AllocationBase at %p\n",
+                    candidate);
     new_l -> allocation_base = candidate;
     new_l -> next = GC_malloc_heap_l;
     GC_malloc_heap_l = new_l;
@@ -2467,8 +2468,8 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
 
       if (result != 0) {
         if (GC_print_stats)
-          GC_printf("Mprotect failed at %p (length %lu) with errno %d\n",
-                    start_addr, (unsigned long)len, errno);
+          GC_log_printf("Mprotect failed at %p (length %lu) with errno %d\n",
+                        start_addr, (unsigned long)len, errno);
         ABORT("mprotect remapping failed");
       }
       GC_unmapped_bytes -= len;
@@ -2940,19 +2941,19 @@ STATIC void GC_default_push_other_roots(void)
 #   include <sys/syscall.h>
 
 #   define PROTECT(addr, len) \
-          if (mprotect((caddr_t)(addr), (size_t)(len), \
-                       PROT_READ \
-                       | (pages_executable ? PROT_EXEC : 0)) < 0) { \
-            ABORT("mprotect failed"); \
-          }
+        if (mprotect((caddr_t)(addr), (size_t)(len), \
+                     PROT_READ \
+                     | (pages_executable ? PROT_EXEC : 0)) < 0) { \
+          ABORT("mprotect failed"); \
+        }
 #   define UNPROTECT(addr, len) \
-          if (mprotect((caddr_t)(addr), (size_t)(len), \
-                       (PROT_READ | PROT_WRITE) \
-                       | (pages_executable ? PROT_EXEC : 0)) < 0) { \
-            ABORT(pages_executable ? "un-mprotect executable page" \
-                                     " failed (probably disabled by OS)" : \
-                                "un-mprotect failed"); \
-          }
+        if (mprotect((caddr_t)(addr), (size_t)(len), \
+                     (PROT_READ | PROT_WRITE) \
+                     | (pages_executable ? PROT_EXEC : 0)) < 0) { \
+          ABORT(pages_executable ? "un-mprotect executable page" \
+                                   " failed (probably disabled by OS)" : \
+                              "un-mprotect failed"); \
+        }
 #   undef IGNORE_PAGES_EXECUTABLE
 
 # else /* MSWIN32 */
@@ -2962,21 +2963,21 @@ STATIC void GC_default_push_other_roots(void)
 
     static DWORD protect_junk;
 #   define PROTECT(addr, len) \
-          if (!VirtualProtect((addr), (len), \
-                              pages_executable ? PAGE_EXECUTE_READ : \
-                                                 PAGE_READONLY, \
-                              &protect_junk)) { \
-            if (GC_print_stats) \
-              GC_printf("Last error code: 0x%lx\n", (long)GetLastError()); \
-            ABORT("VirtualProtect failed"); \
-          }
+        if (!VirtualProtect((addr), (len), \
+                            pages_executable ? PAGE_EXECUTE_READ : \
+                                               PAGE_READONLY, \
+                            &protect_junk)) { \
+          if (GC_print_stats) \
+            GC_log_printf("Last error code: 0x%lx\n", (long)GetLastError()); \
+          ABORT("VirtualProtect failed"); \
+        }
 #   define UNPROTECT(addr, len) \
-          if (!VirtualProtect((addr), (len), \
-                              pages_executable ? PAGE_EXECUTE_READWRITE : \
-                                                 PAGE_READWRITE, \
-                              &protect_junk)) { \
-            ABORT("un-VirtualProtect failed"); \
-          }
+        if (!VirtualProtect((addr), (len), \
+                            pages_executable ? PAGE_EXECUTE_READWRITE : \
+                                               PAGE_READWRITE, \
+                            &protect_junk)) { \
+          ABORT("un-VirtualProtect failed"); \
+        }
 # endif /* MSWIN32 || MSWINCE || DARWIN */
 
 # if defined(MSWIN32)
@@ -3169,7 +3170,7 @@ STATIC void GC_default_push_other_roots(void)
             if (old_handler == (SIG_HNDLR_PTR)SIG_DFL) {
 #               if !defined(MSWIN32) && !defined(MSWINCE)
                     if (GC_print_stats)
-                        GC_printf("Unexpected segfault at %p\n", addr);
+                      GC_log_printf("Unexpected segfault at %p\n", addr);
                     ABORT("Unexpected bus error or segmentation fault");
 #               else
                     return(EXCEPTION_CONTINUE_SEARCH);
@@ -3221,7 +3222,7 @@ STATIC void GC_default_push_other_roots(void)
       return EXCEPTION_CONTINUE_SEARCH;
 #   else
       if (GC_print_stats)
-        GC_printf("Unexpected segfault at %p\n", addr);
+        GC_log_printf("Unexpected segfault at %p\n", addr);
       ABORT("Unexpected bus error or segmentation fault");
 #   endif
   }
@@ -3279,7 +3280,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #     endif /* SIG_SUSPEND */
 #   endif
     if (GC_print_stats == VERBOSE)
-        GC_log_printf(
+      GC_log_printf(
                 "Initializing mprotect virtual dirty bit implementation\n");
     GC_dirty_maintained = TRUE;
     if (GC_page_size % HBLKSIZE != 0) {
@@ -3629,15 +3630,13 @@ GC_INNER void GC_dirty_init(void)
 
     GC_dirty_maintained = TRUE;
     if (GC_bytes_allocd != 0 || GC_bytes_allocd_before_gc != 0) {
-        register int i;
-
-        for (i = 0; i < PHT_SIZE; i++)
-          GC_written_pages[i] = (word)(-1);
-        if (GC_print_stats == VERBOSE)
-            GC_log_printf(
-                      "Allocated bytes:%lu:all pages may have been written\n",
-                      (unsigned long)
-                                (GC_bytes_allocd + GC_bytes_allocd_before_gc));
+      register int i;
+      for (i = 0; i < PHT_SIZE; i++)
+        GC_written_pages[i] = (word)(-1);
+      if (GC_print_stats == VERBOSE)
+        GC_log_printf("Allocated bytes:%lu:all pages may have been written\n",
+                      (unsigned long)(GC_bytes_allocd
+                                      + GC_bytes_allocd_before_gc));
     }
     sprintf(buf, "/proc/%ld", (long)getpid());
     fd = open(buf, O_RDONLY);
@@ -3679,8 +3678,8 @@ GC_INNER void GC_read_dirty(void)
         char *new_buf;
 
         if (GC_print_stats)
-            GC_log_printf("/proc read failed: GC_proc_buf_size = %lu\n",
-                          (unsigned long)GC_proc_buf_size);
+          GC_log_printf("/proc read failed: GC_proc_buf_size = %lu\n",
+                        (unsigned long)GC_proc_buf_size);
 
         new_buf = GC_scratch_alloc(new_size);
         if (new_buf != 0) {
@@ -4037,8 +4036,8 @@ STATIC void *GC_mprotect_thread(void *arg)
 
     if (r != MACH_MSG_SUCCESS) {
       if (GC_print_stats)
-        GC_printf("mach_msg failed with code %d: %s\n", (int)r,
-                  mach_error_string(r));
+        GC_log_printf("mach_msg failed with code %d: %s\n", (int)r,
+                      mach_error_string(r));
       ABORT("mach_msg failed");
     }
 
@@ -4297,8 +4296,9 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
   if (exception != EXC_BAD_ACCESS || code[0] != KERN_PROTECTION_FAILURE) {
 #   ifdef DEBUG_EXCEPTION_HANDLING
       /* We aren't interested, pass it on to the old handler */
-      GC_printf("Exception: 0x%x Code: 0x%x 0x%x in catch...\n", exception,
-                code_count > 0 ? code[0] : -1, code_count > 1 ? code[1] : -1);
+      GC_log_printf("Exception: 0x%x Code: 0x%x 0x%x in catch...\n",
+                    exception, code_count > 0 ? code[0] : -1,
+                    code_count > 1 ? code[1] : -1);
 #   endif
     return FWD();
   }

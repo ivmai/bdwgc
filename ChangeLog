@@ -1,5 +1,46 @@
 2011-04-03  Ivan Maidanski  <ivmai@mail.ru>
 
+	* allchblk.c (GC_freehblk): Use GC_log_printf instead of GC_printf
+	inside "if (GC_print_stats)" branch.
+	* alloc.c (GC_collect_or_expand): Ditto.
+	* dyn_load.c (GC_register_dynamic_libraries): Ditto.
+	* headers.c (GC_scratch_alloc): Ditto.
+	* os_dep.c (GC_get_maps, GC_remap, PROTECT,
+	GC_write_fault_handler, GC_dirty_init, GC_mprotect_thread): Ditto.
+	* alloc.c (min_bytes_allocd): Use GC_log_printf instead of
+	GC_printf for DEBUG_THREADS output.
+	* darwin_stop_world.c (GC_stack_range_for, GC_suspend_thread_list,
+	GC_stop_world, GC_thread_resume, GC_start_world): Ditto.
+	* pthread_start.c (GC_inner_start_routine): Ditto.
+	* pthread_stop_world.c (GC_suspend_handler, GC_restart_handler,
+	GC_push_all_stacks, GC_suspend_all, GC_stop_world,
+	GC_start_world): Ditto.
+	* pthread_support.c (GC_mark_thread, GC_get_nprocs,
+	GC_start_rtn_prepare_thread, pthread_create): Ditto.
+	* alloc.c (GC_adj_bytes_allocd, GC_maybe_gc, GC_stopped_mark,
+	GC_finish_collection): Reformat code.
+	* pthread_stop_world.c (GC_print_sig_mask): Ditto.
+	* pthread_support.c (GC_thr_init): Ditto.
+	* checksums.c (GC_update_check_page): Use GC_printf() instead of
+	GC_err_printf() for error printing.
+	* checksums.c (GC_check_blocks, GC_check_dirty): Use GC_log_printf
+	instead of GC_printf for logging purposes.
+	* dyn_load.c (sys_errlist, sys_nerr, errno): Move declaration of
+	external variable outside from GC_register_dynamic_libraries.
+	* dyn_load.c (GC_register_dynamic_libraries): Don't use
+	sys_errlist value if errno equals to sys_nerr.
+	* dyn_load.c (GC_register_dynamic_libraries): Use GC_log_printf
+	instead of GC_printf for DL_VERBOSE output.
+	* dyn_load.c (GC_dyld_image_add, GC_dyld_image_remove,
+	GC_init_dyld): Use GC_log_printf instead of GC_printf for
+	DARWIN_DEBUG output.
+	* os_dep.c (catch_exception_raise): Use GC_log_printf
+	instead of GC_printf for DEBUG_EXCEPTION_HANDLING output.
+	* reclaim.c (GC_print_free_list): Move "n" increment out of
+	GC_printf() call.
+
+2011-04-03  Ivan Maidanski  <ivmai@mail.ru>
+
 	* win32_threads.c (DEBUG_CYGWIN_THREADS, DEBUG_WIN32_PTHREADS,
 	DEBUG_WIN32_THREADS): Remove.
 	* win32_threads.c (GC_register_my_thread_inner,

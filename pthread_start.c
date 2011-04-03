@@ -60,7 +60,7 @@ void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb, void *arg)
 # endif
   result = (*start)(start_arg);
 # ifdef DEBUG_THREADS
-    GC_printf("Finishing thread 0x%x\n", (unsigned)pthread_self());
+    GC_log_printf("Finishing thread 0x%x\n", (unsigned)pthread_self());
 # endif
   me -> status = result;
 # ifndef NACL

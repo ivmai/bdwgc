@@ -145,7 +145,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
                                    (natural_t *)&state,
                                    &thread_state_count);
 #   ifdef DEBUG_THREADS
-      GC_printf("thread_get_state return value = %d\n", kern_result);
+      GC_log_printf("thread_get_state returns value = %d\n", kern_result);
 #   endif
     if (kern_result != KERN_SUCCESS)
       ABORT("thread_get_state failed");
@@ -255,8 +255,8 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
     *phi = (p->flags & MAIN_THREAD) != 0 ? GC_stackbottom : p->stack_end;
 # endif
 # ifdef DEBUG_THREADS
-    GC_printf("Darwin: Stack for thread 0x%lx = [%p,%p)\n",
-              (unsigned long) thread, lo, *phi);
+    GC_log_printf("Darwin: Stack for thread 0x%lx = [%p,%p)\n",
+                  (unsigned long)thread, lo, *phi);
 # endif
   return lo;
 }
@@ -386,8 +386,8 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
 #   endif
 
 #   ifdef DEBUG_THREADS
-      GC_printf("Attempting to suspend thread 0x%lx\n",
-                (unsigned long)thread);
+      GC_log_printf("Attempting to suspend thread 0x%lx\n",
+                    (unsigned long)thread);
 #   endif
     /* find the current thread in the old list */
     found = FALSE;
@@ -431,8 +431,8 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
       continue;
     }
 #   ifdef DEBUG_THREADS
-      GC_printf("Thread state for 0x%lx = %d\n", (unsigned long)thread,
-                info.run_state);
+      GC_log_printf("Thread state for 0x%lx = %d\n", (unsigned long)thread,
+                    info.run_state);
 #   endif
     if (info.suspend_count != 0) {
       /* thread is already suspended. */
@@ -442,7 +442,7 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
     }
 
 #   ifdef DEBUG_THREADS
-      GC_printf("Suspending 0x%lx\n", (unsigned long)thread);
+      GC_log_printf("Suspending 0x%lx\n", (unsigned long)thread);
 #   endif
     kern_result = thread_suspend(thread);
     if (kern_result != KERN_SUCCESS) {
@@ -474,8 +474,8 @@ GC_INNER void GC_stop_world(void)
   kern_return_t kern_result;
 
 # ifdef DEBUG_THREADS
-    GC_printf("Stopping the world from thread 0x%lx\n",
-              (unsigned long)my_thread);
+    GC_log_printf("Stopping the world from thread 0x%lx\n",
+                  (unsigned long)my_thread);
 # endif
 # ifdef PARALLEL_MARK
     if (GC_parallel) {
@@ -564,7 +564,7 @@ GC_INNER void GC_stop_world(void)
 # endif
 
 # ifdef DEBUG_THREADS
-    GC_printf("World stopped from 0x%lx\n", (unsigned long)my_thread);
+    GC_log_printf("World stopped from 0x%lx\n", (unsigned long)my_thread);
 # endif
   mach_port_deallocate(my_task, my_thread);
 }
@@ -581,8 +581,8 @@ GC_INLINE void GC_thread_resume(thread_act_t thread)
       ABORT("thread_info failed");
 # endif
 # ifdef DEBUG_THREADS
-    GC_printf("Resuming thread 0x%lx with state %d\n",
-              (unsigned long)thread, info.run_state);
+    GC_log_printf("Resuming thread 0x%lx with state %d\n",
+                  (unsigned long)thread, info.run_state);
 # endif
   /* Resume the thread */
   kern_result = thread_resume(thread);
@@ -597,7 +597,7 @@ GC_INNER void GC_start_world(void)
   task_t my_task = current_task();
   int i;
 # ifdef DEBUG_THREADS
-    GC_printf("World starting\n");
+    GC_log_printf("World starting\n");
 # endif
 # ifdef MPROTECT_VDB
     if(GC_incremental) {
@@ -639,8 +639,8 @@ GC_INNER void GC_start_world(void)
           /* The thread is found in GC_mach_threads.      */
           if (GC_mach_threads[j].already_suspended) {
 #           ifdef DEBUG_THREADS
-              GC_printf("Not resuming already suspended thread 0x%lx\n",
-                        (unsigned long)thread);
+              GC_log_printf("Not resuming already suspended thread 0x%lx\n",
+                            (unsigned long)thread);
 #           endif
           } else {
             GC_thread_resume(thread);
@@ -669,7 +669,7 @@ GC_INNER void GC_start_world(void)
   }
 
 # ifdef DEBUG_THREADS
-    GC_printf("World started\n");
+    GC_log_printf("World started\n");
 # endif
 }
 

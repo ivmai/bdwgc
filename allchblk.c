@@ -848,7 +848,7 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
     /* Check for duplicate deallocation in the easy case */
       if (HBLK_IS_FREE(hhdr)) {
         if (GC_print_stats)
-          GC_printf("Duplicate large block deallocation of %p\n", hbp);
+          GC_log_printf("Duplicate large block deallocation of %p\n", hbp);
         ABORT("Duplicate large block deallocation");
       }
 
