@@ -51,19 +51,6 @@
 #   undef pthread_sigmask
 # endif
 
-# ifdef DEBUG_THREADS
-#   ifdef CYGWIN32
-#     define DEBUG_CYGWIN_THREADS 1
-#     define DEBUG_WIN32_PTHREADS 0
-#   else
-#     define DEBUG_WIN32_PTHREADS 1
-#     define DEBUG_CYGWIN_THREADS 0
-#   endif
-# else
-#   define DEBUG_CYGWIN_THREADS 0
-#   define DEBUG_WIN32_PTHREADS 0
-# endif
-
   STATIC void * GC_pthread_start(void * arg);
   STATIC void GC_thread_exit_proc(void *arg);
 
@@ -75,12 +62,6 @@
 # undef ExitThread
 # undef _beginthreadex
 # undef _endthreadex
-
-# ifdef DEBUG_THREADS
-#   define DEBUG_WIN32_THREADS 1
-# else
-#   define DEBUG_WIN32_THREADS 0
-# endif
 
 # ifdef MSWINCE
     /* Force DONT_USE_SIGNALANDWAIT implementation of PARALLEL_MARK     */
@@ -469,8 +450,8 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                         0 /* dwDesiredAccess */, FALSE /* bInheritHandle */,
                         DUPLICATE_SAME_ACCESS)) {
         if (GC_print_stats)
-          GC_printf("DuplicateHandle failed with error code: %d\n",
-                    (int)GetLastError());
+          GC_log_printf("DuplicateHandle failed with error code: %d\n",
+                        (int)GetLastError());
         ABORT("DuplicateHandle failed");
     }
 # endif
@@ -615,6 +596,12 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
 # define UNPROTECT_THREAD(t)
 #endif
 
+#ifdef CYGWIN32
+# define GC_PTHREAD_PTRVAL(pthread_id) pthread_id
+#elif defined(GC_WIN32_PTHREADS)
+# define GC_PTHREAD_PTRVAL(pthread_id) pthread_id.p
+#endif
+
 /* If a thread has been joined, but we have not yet             */
 /* been notified, then there may be more than one thread        */
 /* in the table with the same win32 id.                         */
@@ -638,12 +625,9 @@ STATIC void GC_delete_gc_thread(GC_vthread gc_id)
       /* see GC_stop_world() for the information.                       */
       gc_id -> stack_base = 0;
       gc_id -> id = 0;
-#     ifdef CYGWIN32
-        gc_id -> pthread_id = 0;
-#     endif /* CYGWIN32 */
-#     ifdef GC_WIN32_PTHREADS
-        gc_id -> pthread_id.p = NULL;
-#     endif /* GC_WIN32_PTHREADS */
+#     ifdef GC_PTHREADS
+        GC_PTHREAD_PTRVAL(gc_id->pthread_id) = 0;
+#     endif
       AO_store_release(&gc_id->tm.in_use, FALSE);
     } else
 # endif
@@ -1288,8 +1272,8 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
 
   if (sp >= stack_min && sp < thread->stack_base) {
 #   ifdef DEBUG_THREADS
-      GC_printf("Pushing stack for 0x%x from sp %p to %p from 0x%x\n",
-                (int)thread -> id, sp, thread -> stack_base, (int)me);
+      GC_log_printf("Pushing stack for 0x%x from sp %p to %p from 0x%x\n",
+                    (int)thread -> id, sp, thread -> stack_base, (int)me);
 #   endif
     GC_push_all_stack_sections(sp, thread->stack_base, traced_stack_sect);
   } else {
@@ -1301,9 +1285,8 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
       WARN("Thread stack pointer %p out of range, pushing everything\n",
            sp);
 #   ifdef DEBUG_THREADS
-      GC_printf("Pushing stack for 0x%x from (min) %p to %p from 0x%x\n",
-                (int)thread -> id, stack_min,
-                thread -> stack_base, (int)me);
+      GC_log_printf("Pushing stack for 0x%x from (min) %p to %p from 0x%x\n",
+                    (int)thread->id, stack_min, thread->stack_base, (int)me);
 #   endif
     /* Push everything - ignore "traced stack section" data.            */
     GC_push_all_stack(stack_min, thread->stack_base);
@@ -1517,8 +1500,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         my_mark_no = GC_mark_no;
       }
 #     ifdef DEBUG_THREADS
-        GC_printf("Starting mark helper for mark number %lu\n",
-                  (unsigned long)my_mark_no);
+        GC_log_printf("Starting mark helper for mark number %lu\n",
+                      (unsigned long)my_mark_no);
 #     endif
       GC_help_marker(my_mark_no);
     }
@@ -1534,7 +1517,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #   include <pthread.h>
 
 #   ifndef NUMERIC_THREAD_ID
-#     define NUMERIC_THREAD_ID(id) (unsigned long)(id.p)
+#     define NUMERIC_THREAD_ID(id) (unsigned long)GC_PTHREAD_PTRVAL(id)
 #   endif
 
     /* start_mark_threads() is the same as in pthread_support.c except for: */
@@ -1997,8 +1980,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
     GC_register_my_thread(sb); /* This waits for an in-progress GC.     */
 
-#   if DEBUG_WIN32_THREADS
-      GC_printf("thread 0x%x starting...\n", (unsigned)GetCurrentThreadId());
+#   ifdef DEBUG_THREADS
+      GC_log_printf("thread 0x%lx starting...\n",
+                    (long)GetCurrentThreadId());
 #   endif
 
     GC_free(arg);
@@ -2019,9 +2003,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       GC_unregister_my_thread();
     }
 
-#   if DEBUG_WIN32_THREADS
-      GC_printf("thread 0x%x returned from start routine\n",
-                (unsigned)GetCurrentThreadId());
+#   ifdef DEBUG_THREADS
+      GC_log_printf("thread 0x%lx returned from start routine\n",
+                    (long)GetCurrentThreadId());
 #   endif
     return ret;
   }
@@ -2045,9 +2029,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                 /* make sure GC is initialized (i.e. main thread is     */
                 /* attached, tls initialized).                          */
 
-#   if DEBUG_WIN32_THREADS
-      GC_printf("About to create a thread from 0x%x\n",
-                (unsigned)GetCurrentThreadId());
+#   ifdef DEBUG_THREADS
+      GC_log_printf("About to create a thread from 0x%lx\n",
+                    (long)GetCurrentThreadId());
 #   endif
     if (GC_win32_dll_threads) {
       return CreateThread(lpThreadAttributes, dwStackSize, lpStartAddress,
@@ -2092,9 +2076,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       if (!parallel_initialized) GC_init_parallel();
                 /* make sure GC is initialized (i.e. main thread is     */
                 /* attached, tls initialized).                          */
-#     if DEBUG_WIN32_THREADS
-        GC_printf("About to create a thread from 0x%x\n",
-                  (unsigned)GetCurrentThreadId());
+#     ifdef DEBUG_THREADS
+        GC_log_printf("About to create a thread from 0x%lx\n",
+                      (long)GetCurrentThreadId());
 #     endif
 
       if (GC_win32_dll_threads) {
@@ -2341,15 +2325,10 @@ GC_INNER void GC_thr_init(void)
     int result;
     GC_thread joinee;
 
-#   if DEBUG_CYGWIN_THREADS
-      GC_printf("thread 0x%x(0x%x) is joining thread 0x%x\n",
-                (int)pthread_self(), (int)GetCurrentThreadId(),
-                (int)pthread_id);
-#   endif
-#   if DEBUG_WIN32_PTHREADS
-      GC_printf("thread 0x%x(0x%x) is joining thread 0x%x\n",
-                (int)(pthread_self()).p, (int)GetCurrentThreadId(),
-                pthread_id.p);
+#   ifdef DEBUG_THREADS
+      GC_log_printf("thread %p(0x%lx) is joining thread %p\n",
+                    GC_PTHREAD_PTRVAL(pthread_self()),
+                    (long)GetCurrentThreadId(), GC_PTHREAD_PTRVAL(pthread_id));
 #   endif
 
     if (!parallel_initialized) GC_init_parallel();
@@ -2377,15 +2356,10 @@ GC_INNER void GC_thr_init(void)
       UNLOCK();
     } /* otherwise DllMain handles it.  */
 
-#   if DEBUG_CYGWIN_THREADS
-      GC_printf("thread 0x%x(0x%x) completed join with thread 0x%x\n",
-                (int)pthread_self(), (int)GetCurrentThreadId(),
-                (int)pthread_id);
-#   endif
-#   if DEBUG_WIN32_PTHREADS
-      GC_printf("thread 0x%x(0x%x) completed join with thread 0x%x\n",
-                (int)(pthread_self()).p, (int)GetCurrentThreadId(),
-                pthread_id.p);
+#   ifdef DEBUG_THREADS
+      GC_log_printf("thread %p(0x%lx) completed join with thread %p\n",
+                    GC_PTHREAD_PTRVAL(pthread_self()),
+                    (long)GetCurrentThreadId(), GC_PTHREAD_PTRVAL(pthread_id));
 #   endif
     return result;
   }
@@ -2417,13 +2391,10 @@ GC_INNER void GC_thr_init(void)
         si->detached = TRUE;
       }
 
-#     if DEBUG_CYGWIN_THREADS
-        GC_printf("About to create a thread from 0x%x(0x%x)\n",
-                  (int)pthread_self(), (int)GetCurrentThreadId);
-#     endif
-#     if DEBUG_WIN32_PTHREADS
-        GC_printf("About to create a thread from 0x%x(0x%x)\n",
-                  (int)(pthread_self()).p, (int)GetCurrentThreadId());
+#     ifdef DEBUG_THREADS
+        GC_log_printf("About to create a thread from %p(0x%lx)\n",
+                      GC_PTHREAD_PTRVAL(pthread_self()),
+                      (long)GetCurrentThreadId());
 #     endif
       GC_need_to_lock = TRUE;
       result = pthread_create(new_thread, attr, GC_pthread_start, si);
@@ -2447,13 +2418,9 @@ GC_INNER void GC_thr_init(void)
     GC_thread me;
     DCL_LOCK_STATE;
 
-#   if DEBUG_CYGWIN_THREADS
-      GC_printf("thread 0x%x(0x%x) starting...\n",(int)pthread_id,
-                                                  (int)thread_id);
-#   endif
-#   if DEBUG_WIN32_PTHREADS
-      GC_printf("thread 0x%x(0x%x) starting...\n",(int) pthread_id.p,
-                                                  (int)thread_id);
+#   ifdef DEBUG_THREADS
+      GC_log_printf("thread %p(0x%x) starting...\n",
+                    GC_PTHREAD_PTRVAL(pthread_id), (int)thread_id);
 #   endif
 
     GC_ASSERT(!GC_win32_dll_threads);
@@ -2480,13 +2447,10 @@ GC_INNER void GC_thr_init(void)
     me -> status = result;
     pthread_cleanup_pop(1);
 
-#   if DEBUG_CYGWIN_THREADS
-      GC_printf("thread 0x%x(0x%x) returned from start routine\n",
-                (int)pthread_self(),(int)GetCurrentThreadId());
-#   endif
-#   if DEBUG_WIN32_PTHREADS
-      GC_printf("thread 0x%x(0x%x) returned from start routine\n",
-                (int)(pthread_self()).p, (int)GetCurrentThreadId());
+#   ifdef DEBUG_THREADS
+      GC_log_printf("thread %p(0x%lx) returned from start routine\n",
+                    GC_PTHREAD_PTRVAL(pthread_self()),
+                    (long)GetCurrentThreadId());
 #   endif
     return(result);
   }
@@ -2502,13 +2466,10 @@ GC_INNER void GC_thr_init(void)
     DCL_LOCK_STATE;
 
     GC_ASSERT(!GC_win32_dll_threads);
-#   if DEBUG_CYGWIN_THREADS
-      GC_printf("thread 0x%x(0x%x) called pthread_exit()\n",
-                (int)pthread_self(),(int)GetCurrentThreadId());
-#   endif
-#   if DEBUG_WIN32_PTHREADS
-      GC_printf("thread 0x%x(0x%x) called pthread_exit()\n",
-                (int)(pthread_self()).p,(int)GetCurrentThreadId());
+#   ifdef DEBUG_THREADS
+      GC_log_printf("thread %p(0x%lx) called pthread_exit()\n",
+                    GC_PTHREAD_PTRVAL(pthread_self()),
+                    (long)GetCurrentThreadId());
 #   endif
 
     LOCK();
@@ -2700,7 +2661,7 @@ GC_INNER void GC_init_parallel(void)
       for (p = GC_threads[i]; 0 != p; p = p -> tm.next) {
         if (!KNOWN_FINISHED(p)) {
 #         ifdef DEBUG_THREADS
-            GC_printf("Marking thread locals for 0x%x\n", (int)p -> id);
+            GC_log_printf("Marking thread locals for 0x%x\n", (int)p -> id);
 #         endif
           GC_mark_thread_local_fls_for(&(p->tlfs));
         }
