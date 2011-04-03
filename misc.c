@@ -627,7 +627,9 @@ STATIC void GC_exit_check(void)
 #endif
 
 #if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
-  STATIC int GC_log = 2;
+  STATIC int GC_stdout = 1;
+  STATIC int GC_stderr = 2;
+  STATIC int GC_log = 2; /* stderr */
 #endif
 
 GC_INNER void GC_initialize_offsets(void);      /* defined in obj_map.c */
@@ -713,7 +715,23 @@ GC_API void GC_CALL GC_init(void)
             if (log_d < 0) {
               GC_err_printf("Failed to open %s as log file\n", file_name);
             } else {
+              char *str;
               GC_log = log_d;
+              str = GETENV("GC_ONLY_LOG_TO_FILE");
+#             ifdef GC_ONLY_LOG_TO_FILE
+                /* The similar environment variable set to "0"  */
+                /* overrides the effect of the macro defined.   */
+                if (str != NULL && *str == '0' && *(str + 1) == '\0')
+#             else
+                /* Otherwise setting the environment variable   */
+                /* to anything other than "0" will prevent from */
+                /* redirecting stdout/err to the log file.      */
+                if (str == NULL || (*str == '0' && *(str + 1) == '\0'))
+#             endif
+              {
+                GC_stdout = log_d;
+                GC_stderr = log_d;
+              }
             }
           }
         }
@@ -1192,9 +1210,6 @@ GC_API void GC_CALL GC_enable_incremental(void)
 # define WRITE(f, buf, len) (GC_set_files(), GC_write(f, buf, len))
 
 #else
-  STATIC int GC_stdout = 1;
-  STATIC int GC_stderr = 2;
-  /* GC_log is defined above.   */
 # if !defined(AMIGA)
 #   include <unistd.h>
 # endif

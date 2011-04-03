@@ -20,6 +20,10 @@ GC_PRINT_STATS - Turn on GC logging.  Not functional with SMALL_CONFIG.
 GC_LOG_FILE - The name of the log file.  Stderr by default.  Not functional
               with SMALL_CONFIG.
 
+GC_ONLY_LOG_TO_FILE - Turns off redirection of GC stdout and stderr to the log
+                      file specified by GC_LOG_FILE.  Has no effect unless
+                      GC_LOG_FILE is set.  Not functional with SMALL_CONFIG.
+
 GC_PRINT_VERBOSE_STATS - Turn on even more logging.  Not functional with
                          SMALL_CONFIG.
 

@@ -1,5 +1,16 @@
 2011-04-03  Ivan Maidanski  <ivmai@mail.ru>
 
+	* misc.c (GC_stdout, GC_stderr): Move the definition to the place
+	where GC_log is defined (Unix only).
+	* misc.c (GC_init): Recognize "GC_ONLY_LOG_TO_FILE" environment
+	variable and the similar macro; redirect GC_stdout and GC_stderr
+	to GC_log if "GC_LOG_FILE" environment variable is set unless
+	prohibited by GC_ONLY_LOG_TO_FILE (Unix only).
+	* doc/README.environment (GC_ONLY_LOG_TO_FILE): Document.
+	* doc/README.macros (GC_ONLY_LOG_TO_FILE): Ditto.
+
+2011-04-03  Ivan Maidanski  <ivmai@mail.ru>
+
 	* misc.c (GC_stdout, GC_write): Rename GC_stdout to GC_log (Win32
 	only).
 	* misc.c (GC_write): Add for MacOS (and OS/2); change WRITE()
