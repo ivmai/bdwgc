@@ -585,14 +585,12 @@ void *GC_CALLBACK reverse_test_inner(void *data)
       h[1999] = ints(1,200);
 #   endif
     /* Try to force some collections and reuse of small list elements */
-      for (i = 0; i < 10; i++) {
-        (void)ints(1, BIG);
-      }
-#   ifdef ALL_INTERIOR_POINTERS
-      /* Superficially test interior pointer recognition on stack       */
-      c = (sexpr)((char *)c + sizeof(char *));
-      d = (sexpr)((char *)d + sizeof(char *));
-#   endif
+    for (i = 0; i < 10; i++) {
+      (void)ints(1, BIG);
+    }
+    /* Superficially test interior pointer recognition on stack */
+    c = (sexpr)((char *)c + sizeof(char *));
+    d = (sexpr)((char *)d + sizeof(char *));
 
     GC_FREE((void *)e);
 
@@ -623,8 +621,11 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     }
     check_ints(a,1,49);
     check_ints(b,1,50);
+
+    /* Restore c and d values. */
     c = (sexpr)((char *)c - sizeof(char *));
     d = (sexpr)((char *)d - sizeof(char *));
+
     check_ints(c,1,BIG);
     check_uncollectable_ints(d, 1, 100);
     check_ints(f[5], 1,17);

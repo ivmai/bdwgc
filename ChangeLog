@@ -1,3 +1,10 @@
+2011-04-04  Ivan Maidanski  <ivmai@mail.ru>
+
+	* tests/test.c (reverse_test_inner): Undo one of the previous
+	patches which shifts "c" and "d" pointers only if
+	ALL_INTERIOR_POINTERS (since interior pointers are always
+	recognized in stacks).
+
 2011-04-03  Ivan Maidanski  <ivmai@mail.ru>
 
 	* misc.c (GC_stdout, GC_stderr): Move the definition to the place
