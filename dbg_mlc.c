@@ -571,11 +571,11 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
     ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
     return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", (word)0));
   }
-#endif
+#endif /* DBG_HDRS_ALL */
 
 #ifdef STUBBORN_ALLOC
-GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
-{
+  GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
+  {
     void * result = GC_malloc_stubborn(lb + DEBUG_BYTES);
 
     if (result == 0) {
@@ -590,10 +590,10 @@ GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
     }
     ADD_CALL_CHAIN(result, ra);
     return (GC_store_debug_info(result, (word)lb, s, (word)i));
-}
+  }
 
-GC_API void GC_CALL GC_debug_change_stubborn(void *p)
-{
+  GC_API void GC_CALL GC_debug_change_stubborn(void *p)
+  {
     void * q = GC_base(p);
     hdr * hhdr;
 
@@ -607,10 +607,10 @@ GC_API void GC_CALL GC_debug_change_stubborn(void *p)
         ABORT("GC_debug_change_stubborn: arg not stubborn");
     }
     GC_change_stubborn(q);
-}
+  }
 
-GC_API void GC_CALL GC_debug_end_stubborn_change(void *p)
-{
+  GC_API void GC_CALL GC_debug_end_stubborn_change(void *p)
+  {
     void * q = GC_base(p);
     hdr * hhdr;
 
@@ -624,21 +624,20 @@ GC_API void GC_CALL GC_debug_end_stubborn_change(void *p)
         ABORT("GC_debug_end_stubborn_change: arg not stubborn");
     }
     GC_end_stubborn_change(q);
-}
+  }
 
 #else /* !STUBBORN_ALLOC */
 
-GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
-{
+  GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
+  {
     return GC_debug_malloc(lb, OPT_RA s, i);
-}
+  }
 
-/*ARGSUSED*/
-GC_API void GC_CALL GC_debug_change_stubborn(void *p) {}
+  /*ARGSUSED*/
+  GC_API void GC_CALL GC_debug_change_stubborn(void *p) {}
 
-/*ARGSUSED*/
-GC_API void GC_CALL GC_debug_end_stubborn_change(void *p) {}
-
+  /*ARGSUSED*/
+  GC_API void GC_CALL GC_debug_end_stubborn_change(void *p) {}
 #endif /* !STUBBORN_ALLOC */
 
 GC_API void * GC_CALL GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)
@@ -742,7 +741,8 @@ GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
 }
 
 #ifdef ATOMIC_UNCOLLECTABLE
-  void * GC_debug_malloc_atomic_uncollectable(size_t lb, GC_EXTRA_PARAMS)
+  GC_API void * GC_CALL GC_debug_malloc_atomic_uncollectable(size_t lb,
+                                                             GC_EXTRA_PARAMS)
   {
     void * result =
         GC_malloc_atomic_uncollectable(lb + UNCOLLECTABLE_DEBUG_BYTES);
@@ -913,13 +913,16 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
 /* always print them nicely with the allocation lock held.              */
 /* We put them here instead of in GC_arrays, since it may be useful to  */
 /* be able to look at them with the debugger.                           */
-#define MAX_SMASHED 20
+#ifndef MAX_SMASHED
+# define MAX_SMASHED 20
+#endif
 STATIC ptr_t GC_smashed[MAX_SMASHED] = {0};
 STATIC unsigned GC_n_smashed = 0;
 
 STATIC void GC_add_smashed(ptr_t smashed)
 {
     GC_ASSERT(GC_is_marked(GC_base(smashed)));
+    /* FIXME: Prevent adding an object while printing smashed list.     */
     GC_smashed[GC_n_smashed] = smashed;
     if (GC_n_smashed < MAX_SMASHED - 1) ++GC_n_smashed;
       /* In case of overflow, we keep the first MAX_SMASHED-1   */

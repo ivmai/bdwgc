@@ -33,7 +33,9 @@ GC_INNER signed_word GC_bytes_found = 0;
 /* We defer printing of leaked objects until we're done with the GC     */
 /* cycle, since the routine for printing objects needs to run outside   */
 /* the collector, e.g. without the allocation lock.                     */
-#define MAX_LEAKED 40
+#ifndef MAX_LEAKED
+# define MAX_LEAKED 40
+#endif
 STATIC ptr_t GC_leaked[MAX_LEAKED] = { NULL };
 STATIC unsigned GC_n_leaked = 0;
 
@@ -41,16 +43,17 @@ GC_INNER GC_bool GC_have_errors = FALSE;
 
 STATIC void GC_add_leaked(ptr_t leaked)
 {
+    GC_have_errors = TRUE;
+    /* FIXME: Prevent adding an object while printing leaked ones.      */
     if (GC_n_leaked < MAX_LEAKED) {
-      GC_have_errors = TRUE;
       GC_leaked[GC_n_leaked++] = leaked;
       /* Make sure it's not reclaimed this cycle */
-        GC_set_mark_bit(leaked);
+      GC_set_mark_bit(leaked);
     }
 }
 
 /* Print all objects on the list after printing any smashed objects.    */
-/* Clear both lists.                                                    */
+/* Clear both lists.  Called without the allocation lock held.          */
 GC_INNER void GC_print_all_errors(void)
 {
     static GC_bool printing_errors = FALSE;

@@ -416,6 +416,10 @@ MAKE_BACK_GRAPH         Enable GC_PRINT_BACK_HEIGHT environment variable.
   support.  Implies DBG_HDRS_ALL.  All allocation should be done using
   the debug interface.
 
+GC_PRINT_BACK_HEIGHT    Permanently turn on back-height printing mode
+  (useful when NO_GETENV).  See the similar environment variable description
+  in README.environment.  Requires MAKE_BACK_GRAPH defined.
+
 STUBBORN_ALLOC  Allows allocation of "hard to change" objects, and thus
   makes incremental collection easier.  Was enabled by default until 6.0.
   Rarely used, to my knowledge.

@@ -76,9 +76,6 @@ GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
 GC_INNER GC_bool GC_debugging_started = FALSE;
         /* defined here so we don't have to load debug_malloc.o */
 
-GC_INNER void (*GC_check_heap)(void) = 0;
-GC_INNER void (*GC_print_all_smashed)(void) = 0;
-
 ptr_t GC_stackbottom = 0;
 
 #ifdef IA64
@@ -95,10 +92,14 @@ GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
   GC_bool GC_print_stats = 0;
 #endif
 
-GC_INNER GC_bool GC_print_back_height = 0;
+#ifdef GC_PRINT_BACK_HEIGHT
+  GC_INNER GC_bool GC_print_back_height = TRUE;
+#else
+  GC_INNER GC_bool GC_print_back_height = FALSE;
+#endif
 
 #ifndef NO_DEBUGGING
-  GC_INNER GC_bool GC_dump_regularly = 0;
+  GC_INNER GC_bool GC_dump_regularly = FALSE;
                                 /* Generate regular debugging dumps. */
 #endif
 
@@ -739,7 +740,7 @@ GC_API void GC_CALL GC_init(void)
 #   endif /* !SMALL_CONFIG */
 #   ifndef NO_DEBUGGING
       if (0 != GETENV("GC_DUMP_REGULARLY")) {
-        GC_dump_regularly = 1;
+        GC_dump_regularly = TRUE;
       }
 #   endif
 #   ifdef KEEP_BACK_PTRS
@@ -761,7 +762,7 @@ GC_API void GC_CALL GC_init(void)
       GC_dont_gc = 1;
     }
     if (0 != GETENV("GC_PRINT_BACK_HEIGHT")) {
-      GC_print_back_height = 1;
+      GC_print_back_height = TRUE;
     }
     if (0 != GETENV("GC_NO_BLACKLIST_WARNING")) {
       GC_large_alloc_warn_interval = LONG_MAX;

@@ -541,6 +541,9 @@ GC_INNER void GC_collect_a_little_inner(int n)
     RESTORE_CANCEL(cancel_state);
 }
 
+GC_INNER void (*GC_check_heap)(void) = 0;
+GC_INNER void (*GC_print_all_smashed)(void) = 0;
+
 GC_API int GC_CALL GC_collect_a_little(void)
 {
     int result;

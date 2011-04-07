@@ -364,12 +364,6 @@ GC_API void * GC_CALL GC_memalign(size_t /* align */, size_t /* lb */)
 GC_API int GC_CALL GC_posix_memalign(void ** /* memptr */, size_t /* align */,
                         size_t /* lb */);
 
-/* The following is only defined if the library has been suitably       */
-/* compiled:                                                            */
-GC_API void * GC_CALL GC_malloc_atomic_uncollectable(
-                                                size_t /* size_in_bytes */)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
-
 /* Explicitly deallocate an object.  Dangerous if used incorrectly.     */
 /* Requires a pointer to the base of an object.                         */
 /* If the argument is stubborn, it should not be changeable when freed. */
@@ -597,6 +591,15 @@ GC_API void * GC_CALL GC_malloc_atomic_ignore_off_page(size_t /* lb */)
 # define GC_EXTRA_PARAMS const char * s, int i
 #endif
 
+/* The following is only defined if the library has been suitably       */
+/* compiled:                                                            */
+GC_API void * GC_CALL GC_malloc_atomic_uncollectable(
+                                                size_t /* size_in_bytes */)
+                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
+GC_API void * GC_CALL GC_debug_malloc_atomic_uncollectable(size_t,
+                                                           GC_EXTRA_PARAMS)
+                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
+
 /* Debugging (annotated) allocation.  GC_gcollect will check            */
 /* objects allocated in this way for overwrites, etc.                   */
 GC_API void * GC_CALL GC_debug_malloc(size_t /* size_in_bytes */,
@@ -661,6 +664,8 @@ GC_API void * GC_CALL GC_debug_realloc_replacement(void * /* object_addr */,
 # define GC_MALLOC_ATOMIC(sz) GC_debug_malloc_atomic(sz, GC_EXTRAS)
 # define GC_STRDUP(s) GC_debug_strdup(s, GC_EXTRAS)
 # define GC_STRNDUP(s, sz) GC_debug_strndup(s, sz, GC_EXTRAS)
+# define GC_MALLOC_ATOMIC_UNCOLLECTABLE(sz) \
+                        GC_debug_malloc_atomic_uncollectable(sz, GC_EXTRAS)
 # define GC_MALLOC_UNCOLLECTABLE(sz) \
                         GC_debug_malloc_uncollectable(sz, GC_EXTRAS)
 # define GC_MALLOC_IGNORE_OFF_PAGE(sz) \
@@ -686,6 +691,7 @@ GC_API void * GC_CALL GC_debug_realloc_replacement(void * /* object_addr */,
 # define GC_MALLOC_ATOMIC(sz) GC_malloc_atomic(sz)
 # define GC_STRDUP(s) GC_strdup(s)
 # define GC_STRNDUP(s, sz) GC_strndup(s, sz)
+# define GC_MALLOC_ATOMIC_UNCOLLECTABLE(sz) GC_malloc_atomic_uncollectable(sz)
 # define GC_MALLOC_UNCOLLECTABLE(sz) GC_malloc_uncollectable(sz)
 # define GC_MALLOC_IGNORE_OFF_PAGE(sz) \
                         GC_malloc_ignore_off_page(sz)
