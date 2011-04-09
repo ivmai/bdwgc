@@ -160,9 +160,4 @@ typedef struct {
 # define GC_HAS_DEBUG_INFO(p) GC_has_other_debug_info(p)
 #endif
 
-/* Store debugging info into p.  Return displaced pointer. */
-/* Assumes we don't hold allocation lock.                  */
-GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
-                                   word integer);
-
 #endif /* _DBG_MLC_H */

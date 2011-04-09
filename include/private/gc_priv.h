@@ -399,7 +399,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #     define START_WORLD() \
         PCR_ThCtl_SetExclusiveMode(PCR_ThCtl_ExclusiveMode_null, \
                                    PCR_allSigsBlocked, \
-                                   PCR_waitForever);
+                                   PCR_waitForever)
 # else
 #   if defined(GC_WIN32_THREADS) || defined(GC_PTHREADS)
       GC_INNER void GC_stop_world(void);
@@ -1709,6 +1709,12 @@ GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
 GC_INNER void * GC_clear_stack(void *);
                                 /* in misc.c, behaves like identity.    */
 
+#ifdef GC_ADD_CALLER
+# define GC_DBG_RA GC_RETURN_ADDR,
+#else
+# define GC_DBG_RA /* empty */
+#endif
+
 /* We make the GC_clear_stack() call a tail one, hoping to get more of  */
 /* the stack.                                                           */
 #define GENERAL_MALLOC(lb,k) \
@@ -1805,9 +1811,9 @@ GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
 #ifndef NO_DEBUGGING
   GC_EXTERN GC_bool GC_dump_regularly;
                                 /* Generate regular debugging dumps.    */
-# define COND_DUMP if (GC_dump_regularly) GC_dump();
+# define COND_DUMP if (GC_dump_regularly) GC_dump()
 #else
-# define COND_DUMP
+# define COND_DUMP /* empty */
 #endif
 
 #ifdef KEEP_BACK_PTRS

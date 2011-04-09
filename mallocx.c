@@ -24,6 +24,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #ifdef MSWINCE
 # ifndef WIN32_LEAN_AND_MEAN
@@ -152,13 +153,9 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
 # ifdef REDIRECT_REALLOC
 
 /* As with malloc, avoid two levels of extra calls here.        */
-# ifdef GC_ADD_CALLER
-#   define RA GC_RETURN_ADDR,
-# else
-#   define RA
-# endif
+
 # define GC_debug_realloc_replacement(p, lb) \
-        GC_debug_realloc(p, lb, RA "unknown", 0)
+        GC_debug_realloc(p, lb, GC_DBG_RA "unknown", 0)
 
 void * realloc(void * p, size_t lb)
   {
@@ -598,3 +595,62 @@ GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
     }
   }
 #endif /* ATOMIC_UNCOLLECTABLE */
+
+/* provide a version of strdup() that uses the collector to allocate the
+   copy of the string */
+GC_API char * GC_CALL GC_strdup(const char *s)
+{
+  char *copy;
+  size_t lb;
+  if (s == NULL) return NULL;
+  lb = strlen(s) + 1;
+  if ((copy = GC_malloc_atomic(lb)) == NULL) {
+#   ifndef MSWINCE
+      errno = ENOMEM;
+#   endif
+    return NULL;
+  }
+# ifndef MSWINCE
+    strcpy(copy, s);
+# else
+    /* strcpy() is deprecated in WinCE */
+    memcpy(copy, s, lb);
+# endif
+  return copy;
+}
+
+GC_API char * GC_CALL GC_strndup(const char *str, size_t size)
+{
+  char *copy;
+  size_t len = strlen(str); /* str is expected to be non-NULL  */
+  if (len > size)
+    len = size;
+  copy = GC_malloc_atomic(len + 1);
+  if (copy == NULL) {
+#   ifndef MSWINCE
+      errno = ENOMEM;
+#   endif
+    return NULL;
+  }
+  BCOPY(str, copy, len);
+  copy[len] = '\0';
+  return copy;
+}
+
+#ifdef GC_REQUIRE_WCSDUP
+# include <wchar.h> /* for wcslen() */
+
+  GC_API wchar_t * GC_CALL GC_wcsdup(const wchar_t *str)
+  {
+    size_t lb = (wcslen(str) + 1) * sizeof(wchar_t);
+    wchar_t *copy = GC_malloc_atomic(lb);
+    if (copy == NULL) {
+#     ifndef MSWINCE
+        errno = ENOMEM;
+#     endif
+      return NULL;
+    }
+    BCOPY(str, copy, lb);
+    return copy;
+  }
+#endif /* GC_REQUIRE_WCSDUP */

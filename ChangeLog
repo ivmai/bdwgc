@@ -1,3 +1,26 @@
+2011-04-09  Ivan Maidanski  <ivmai@mail.ru>
+
+	* dbg_mlc.c (GC_register_finalizer_no_order): Remove redundant
+	declaration.
+	* dbg_mlc.c (GC_debug_malloc_replacement,
+	GC_debug_realloc_replacement): Rename RA to GC_DBG_RA.
+	* malloc.c (GC_debug_malloc_replacement): Ditto.
+	* mallocx.c (GC_debug_realloc_replacement): Ditto.
+	* dbg_mlc.c (GC_store_debug_info): Move proto from dbg_mlc.h.
+	* malloc.c (GC_strdup, GC_strndup, GC_wcsdup): Move to mallocx.c.
+	* malloc.c: Include errno.h only REDIRECT_MALLOC; remove redundant
+	includes of string.h.
+	* mallocx.c: Include string.h (for GC_strdup).
+	* include/private/dbg_mlc.h (GC_store_debug_info): Move declaration
+	to dbg_mlc.c.
+	* include/private/gc_locks.h (UNCOND_LOCK, UNCOND_UNLOCK): Remove
+	redundant trailing ';'.
+	* include/private/gc_priv.h (START_WORLD, COND_DUMP): Ditto.
+	* include/private/gc_locks.h (LOCK, UNLOCK): Place opening '{'
+	properly.
+	* include/private/gc_priv.h (GC_DBG_RA): Move from dbg_mlc.c,
+	malloc.c, mallocx.c.
+
 2011-04-07  Ivan Maidanski  <ivmai@mail.ru>
 
 	* alloc.c (GC_check_heap, GC_print_all_smashed): Move the

@@ -24,10 +24,6 @@
 
 GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
 
-GC_API void GC_CALL GC_register_finalizer_no_order(void * obj,
-                                GC_finalization_proc fn, void * cd,
-                                GC_finalization_proc *ofn, void * *ocd);
-
 #ifndef SHORT_DBG_HDRS
   /* Check whether object with base pointer p has debugging info  */
   /* p is assumed to point to a legitimate object in our part     */
@@ -58,7 +54,7 @@ GC_API void GC_CALL GC_register_finalizer_no_order(void * obj,
     }
     return(FALSE);
   }
-#endif
+#endif /* !SHORT_DBG_HDRS */
 
 #ifdef KEEP_BACK_PTRS
 
@@ -459,16 +455,16 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
 
 GC_INNER void GC_start_debugging(void)
 {
-#   ifndef SHORT_DBG_HDRS
-      GC_check_heap = GC_check_heap_proc;
-      GC_print_all_smashed = GC_print_all_smashed_proc;
-#   else
-      GC_check_heap = GC_do_nothing;
-      GC_print_all_smashed = GC_do_nothing;
-#   endif
-    GC_print_heap_obj = GC_debug_print_heap_obj_proc;
-    GC_debugging_started = TRUE;
-    GC_register_displacement((word)sizeof(oh));
+# ifndef SHORT_DBG_HDRS
+    GC_check_heap = GC_check_heap_proc;
+    GC_print_all_smashed = GC_print_all_smashed_proc;
+# else
+    GC_check_heap = GC_do_nothing;
+    GC_print_all_smashed = GC_do_nothing;
+# endif
+  GC_print_heap_obj = GC_debug_print_heap_obj_proc;
+  GC_debugging_started = TRUE;
+  GC_register_displacement((word)sizeof(oh));
 }
 
 size_t GC_debug_header_size = sizeof(oh);
@@ -1165,18 +1161,12 @@ GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
     store_old(obj, my_old_fn, (struct closure *)my_old_cd, ofn, ocd);
 }
 
-#ifdef GC_ADD_CALLER
-# define RA GC_RETURN_ADDR,
-#else
-# define RA
-#endif
-
 GC_API void * GC_CALL GC_debug_malloc_replacement(size_t lb)
 {
-    return GC_debug_malloc(lb, RA "unknown", 0);
+    return GC_debug_malloc(lb, GC_DBG_RA "unknown", 0);
 }
 
 GC_API void * GC_CALL GC_debug_realloc_replacement(void *p, size_t lb)
 {
-    return GC_debug_realloc(p, lb, RA "unknown", 0);
+    return GC_debug_realloc(p, lb, GC_DBG_RA "unknown", 0);
 }
