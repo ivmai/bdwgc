@@ -1,5 +1,12 @@
 2011-04-09  Ivan Maidanski  <ivmai@mail.ru>
 
+	* os_dep.c (GC_unix_sbrk_get_mem, GC_unix_get_mem): Don't define
+	for RTEMS.
+	* include/private/gcconfig.h (RTEMS): Add support for.
+	* include/private/gcconfig.h (GET_MEM): Use calloc() for RTEMS.
+
+2011-04-09  Ivan Maidanski  <ivmai@mail.ru>
+
 	* mallocx.c (GC_malloc_uncollectable): Move to malloc.c (since
 	it is used internally in some places).
 

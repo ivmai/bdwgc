@@ -2010,7 +2010,7 @@ void GC_register_data_segments(void)
 
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MSWIN32) \
      && !defined(MSWINCE) && !defined(MACOS) && !defined(DOS4GW) \
-     && !defined(NONSTOP) && !defined(SN_TARGET_PS3)
+     && !defined(NONSTOP) && !defined(SN_TARGET_PS3) && !defined(RTEMS)
 
 # define SBRK_ARG_T ptrdiff_t
 

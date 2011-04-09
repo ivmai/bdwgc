@@ -338,6 +338,11 @@
 #    define DARWIN_DONT_PARSE_STACK
 #   endif
 # endif
+# if defined(__rtems__) && (defined(i386) || defined(__i386__))
+#   define I386
+#   define RTEMS
+#   define mach_type_known
+# endif
 # if defined(NeXT) && defined(mc68000)
 #   define M68K
 #   define NEXT
@@ -1372,6 +1377,13 @@
 #       define DATASTART_IS_FUNC
 #       define STACKBOTTOM ((ptr_t)0xc0000000)
 #       define DATAEND  /* not needed */
+#   endif
+#   ifdef RTEMS
+#       define OS_TYPE "RTEMS"
+        extern int etext[];
+#       define DATASTART ((ptr_t)((((word) (etext)) + 0xfffff) & ~0xfffff))
+#       define DATAENT   ((ptr_t)(DATASTART + 0xfffff))
+#       define STACKBOTTOM ((ptr_t) 0x03fff000)
 #   endif
 #   ifdef DOS4GW
 #     define OS_TYPE "DOS4GW"
@@ -2649,11 +2661,12 @@
 #   define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc((size_t)bytes \
                                             + GC_page_size) \
                                             + GC_page_size-1)
-# elif defined(NEXT) || defined(DOS4GW) || defined(NONSTOP) || \
-                 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) || \
-                 (defined(SOLARIS) && !defined(USE_MMAP))
-#   define GET_MEM(bytes) HBLKPTR((size_t) calloc(1, (size_t)bytes + GC_page_size) \
-                                  + GC_page_size-1)
+# elif defined(NEXT) || defined(DOS4GW) || defined(NONSTOP) \
+        || (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) \
+        || (defined(SOLARIS) && !defined(USE_MMAP)) || defined(RTEMS)
+#   define GET_MEM(bytes) HBLKPTR((size_t)calloc(1, \
+                                              (size_t)bytes + GC_page_size) \
+                                  + GC_page_size - 1)
 # elif defined(MSWIN32) || defined(CYGWIN32)
     ptr_t GC_win32_get_mem(GC_word bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
