@@ -81,23 +81,27 @@ GC_REQUIRE_WCSDUP       Force GC to export GC_wcsdup() (the Unicode version
 
 
 These define arguments influence the collector configuration:
-FIND_LEAK causes GC_find_leak to be initially set.
-  This causes the collector to assume that all inaccessible
-  objects should have been explicitly deallocated, and reports exceptions.
-  Finalization and the test program are not usable in this mode.
+
+FIND_LEAK 	Causes GC_find_leak to be initially set.  This causes the
+  collector to assume that all inaccessible objects should have been
+  explicitly deallocated, and reports exceptions.  Finalization and the test
+  program are not usable in this mode.
+
+GC_ABORT_ON_LEAK	Causes the application to be terminated once leaked or
+  smashed (corrupted on use-after-free) objects are found (after printing the
+  information about that objects).
 
 SUNOS5SIGS      Solaris-like signal handling.  This is probably misnamed,
-                since it really doesn't guarantee much more than Posix.
-                Currently set only for Solaris2.X, HPUX, and DRSNX.  Should
-                probably be set for some other platforms.
+  since it really doesn't guarantee much more than POSIX.  Currently set only
+  for Solaris2.X, HPUX, and DRSNX.  Should probably be set for some other
+  platforms.
 
-PCR             Set if the collector is being built as part of the Xerox
-                Portable Common Runtime.
+PCR	Set if the collector is being built as part of the Xerox Portable
+  Common Runtime.
 
-USE_COMPILER_TLS  Assume the existence of __thread-style thread-local
-                storage.  Set automatically for thread-local allocation with
-                the HP/UX vendor compiler.  Usable with gcc on sufficiently
-                up-to-date ELF platforms.
+USE_COMPILER_TLS  Assume the existence of __thread-style thread-local storage.
+  Set automatically for thread-local allocation with the HP/UX vendor
+  compiler.  Usable with gcc on sufficiently up-to-date ELF platforms.
 
 IMPORTANT: Any of the _THREADS options must normally also be defined in
   the client before including gc.h.  This redefines thread primitives to

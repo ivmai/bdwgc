@@ -1,5 +1,15 @@
 2011-04-09  Ivan Maidanski  <ivmai@mail.ru>
 
+	* reclaim.c (GC_print_all_errors): Recognize new GC_ABORT_ON_LEAK
+	macro and environment variable; abort if any error has been
+	printed provided the environment variable (or macro) is set.
+	* doc/README.environment (GC_ABORT_ON_LEAK): Document.
+	* doc/README.macros (GC_ABORT_ON_LEAK): Ditto.
+	* doc/README.macros (FIND_LEAK, SUNOS5SIGS, PCR,
+	USE_COMPILER_TLS): Reformat the text.
+
+2011-04-09  Ivan Maidanski  <ivmai@mail.ru>
+
 	* os_dep.c (GC_unix_sbrk_get_mem, GC_unix_get_mem): Don't define
 	for RTEMS.
 	* include/private/gcconfig.h (RTEMS): Add support for.

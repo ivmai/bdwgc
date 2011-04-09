@@ -158,6 +158,9 @@ GC_FIND_LEAK - Turns on GC_find_leak and thus leak detection.  Forces a
                collection at program termination to detect leaks that would
                otherwise occur after the last GC.
 
+GC_ABORT_ON_LEAK - Causes the application to be terminated once leaked or
+                   smashed objects are found.
+
 GC_ALL_INTERIOR_POINTERS - Turns on GC_all_interior_pointers and thus interior
                            pointer recognition.
 
