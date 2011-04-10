@@ -1,3 +1,8 @@
+2011-04-10  Ivan Maidanski  <ivmai@mail.ru> (mostly really Iain Sandoe)
+
+	* tests/test.c (reverse_test):  Modify count (BIG) for
+	ppc64-darwin.
+
 2011-04-09  Ivan Maidanski  <ivmai@mail.ru>
 
 	* reclaim.c (GC_print_all_errors): Recognize new GC_ABORT_ON_LEAK
@@ -8,7 +13,7 @@
 	* doc/README.macros (FIND_LEAK, SUNOS5SIGS, PCR,
 	USE_COMPILER_TLS): Reformat the text.
 
-2011-04-09  Ivan Maidanski  <ivmai@mail.ru>
+2011-04-09  Ivan Maidanski  <ivmai@mail.ru> (really Jie Liu)
 
 	* os_dep.c (GC_unix_sbrk_get_mem, GC_unix_get_mem): Don't define
 	for RTEMS.

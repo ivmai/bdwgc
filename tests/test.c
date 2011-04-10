@@ -536,23 +536,19 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #   if /*defined(MSWIN32) ||*/ defined(MACOS)
       /* Win32S only allows 128K stacks */
 #     define BIG 1000
+#   elif defined(PCR)
+      /* PCR default stack is 100K.  Stack frames are up to 120 bytes. */
+#     define BIG 700
+#   elif defined(MSWINCE)
+      /* WinCE only allows 64K stacks */
+#     define BIG 500
+#   elif defined(OSF1)
+      /* OSF has limited stack space by default, and large frames. */
+#     define BIG 200
+#   elif defined(__MACH__) && defined(__ppc64__)
+#     define BIG 2500
 #   else
-#     if defined(PCR)
-        /* PCR default stack is 100K.  Stack frames are up to 120 bytes. */
-#       define BIG 700
-#     else
-#       if defined(MSWINCE)
-          /* WinCE only allows 64K stacks */
-#         define BIG 500
-#       else
-#         if defined(OSF1)
-            /* OSF has limited stack space by default, and large frames. */
-#           define BIG 200
-#         else
-#           define BIG 4500
-#         endif
-#       endif
-#     endif
+#     define BIG 4500
 #   endif
 
     A.dummy = 17;
