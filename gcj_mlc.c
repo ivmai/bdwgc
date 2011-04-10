@@ -39,7 +39,12 @@
 #include "gc_gcj.h"
 #include "private/dbg_mlc.h"
 
-GC_INNER GC_bool GC_gcj_malloc_initialized = FALSE;
+#ifdef GC_ASSERTIONS
+  GC_INNER /* variable is also used in thread_local_alloc.c */
+#else
+  STATIC
+#endif
+GC_bool GC_gcj_malloc_initialized = FALSE;
 
 int GC_gcj_kind = 0;    /* Object kind for objects with descriptors     */
                         /* in "vtable".                                 */

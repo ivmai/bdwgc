@@ -53,7 +53,7 @@ typedef struct GC_Thread_Rep {
     struct thread_stop_info stop_info;
 
     unsigned char flags;
-#       define FINISHED 1       /* Thread has exited.   */
+#       define FINISHED 1       /* Thread has exited.                   */
 #       define DETACHED 2       /* Thread is treated as detached.       */
                                 /* Thread may really be detached, or    */
                                 /* it may have have been explicitly     */
@@ -62,7 +62,10 @@ typedef struct GC_Thread_Rep {
                                 /* it unregisters itself, since it      */
                                 /* may not return a GC pointer.         */
 #       define MAIN_THREAD 4    /* True for the original thread only.   */
-#       define DISABLED_GC 8    /* Collections are disabled while the   */
+#       define SUSPENDED_EXT 8  /* Thread was suspended externally      */
+                                /* (this is not used by the unmodified  */
+                                /* GC itself at present).               */
+#       define DISABLED_GC 0x10 /* Collections are disabled while the   */
                                 /* thread is exiting.                   */
 
     unsigned char thread_blocked;

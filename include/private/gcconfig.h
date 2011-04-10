@@ -1380,6 +1380,7 @@
 #   endif
 #   ifdef RTEMS
 #       define OS_TYPE "RTEMS"
+#       include <sys/unistd.h>
         extern int etext[];
 #       define DATASTART ((ptr_t)((((word) (etext)) + 0xfffff) & ~0xfffff))
 #       define DATAENT   ((ptr_t)(DATASTART + 0xfffff))
@@ -1741,7 +1742,7 @@
 #         define ALIGNMENT 4
 #       else
 #         ifndef _LP64
-                ---> unknown ABI
+#           error --> unknown ABI
 #         endif
 #         define CPP_WORDSZ 64
             /* Requires 16 byte alignment for malloc */
@@ -2282,358 +2283,356 @@
 #   define USE_PROC_FOR_LIBRARIES
 #endif
 
-# ifndef STACK_GROWS_UP
-#   define STACK_GROWS_DOWN
-# endif
+#ifndef STACK_GROWS_UP
+# define STACK_GROWS_DOWN
+#endif
 
-# ifndef CPP_WORDSZ
-#   define CPP_WORDSZ 32
-# endif
+#ifndef CPP_WORDSZ
+# define CPP_WORDSZ 32
+#endif
 
-# ifndef OS_TYPE
-#   define OS_TYPE ""
-# endif
+#ifndef OS_TYPE
+# define OS_TYPE ""
+#endif
 
-# ifndef DATAEND
-    extern int end[];
-#   define DATAEND (ptr_t)(end)
-# endif
+#ifndef DATAEND
+  extern int end[];
+# define DATAEND (ptr_t)(end)
+#endif
 
-# if defined(SVR4) && !defined(GETPAGESIZE)
-#    include <unistd.h>
-#    define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
-# endif
+#if defined(SVR4) && !defined(GETPAGESIZE)
+# include <unistd.h>
+# define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
+#endif
 
-# ifndef GETPAGESIZE
-#   if defined(SOLARIS) || defined(IRIX5) || defined(LINUX) \
-       || defined(NETBSD) || defined(FREEBSD) || defined(HPUX)
-#       include <unistd.h>
-#   endif
-#   define GETPAGESIZE() getpagesize()
+#ifndef GETPAGESIZE
+# if defined(SOLARIS) || defined(IRIX5) || defined(LINUX) \
+     || defined(NETBSD) || defined(FREEBSD) || defined(HPUX)
+#   include <unistd.h>
 # endif
+# define GETPAGESIZE() getpagesize()
+#endif
 
-# if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
-            /* OS has SVR4 generic features.            */
-            /* Probably others also qualify.            */
-#   define SVR4
-# endif
+#if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
+        /* OS has SVR4 generic features.        */
+        /* Probably others also qualify.        */
+# define SVR4
+#endif
 
-# if defined(SOLARIS) || defined(DRSNX)
-            /* OS has SOLARIS style semi-undocumented interface */
-            /* to dynamic loader.                               */
-#   define SOLARISDL
-            /* OS has SOLARIS style signal handlers.            */
-#   define SUNOS5SIGS
-# endif
+#if defined(SOLARIS) || defined(DRSNX)
+        /* OS has SOLARIS style semi-undocumented interface     */
+        /* to dynamic loader.                                   */
+# define SOLARISDL
+        /* OS has SOLARIS style signal handlers.        */
+# define SUNOS5SIGS
+#endif
 
-# if defined(HPUX)
-#   define SUNOS5SIGS
-# endif
+#if defined(HPUX)
+# define SUNOS5SIGS
+#endif
 
-# if defined(FREEBSD) && \
-     (defined(__DragonFly__) || __FreeBSD__ >= 4 || (__FreeBSD_kernel__ >= 4))
-#   define SUNOS5SIGS
-# endif
+#if defined(FREEBSD) && (defined(__DragonFly__) || __FreeBSD__ >= 4 \
+                         || (__FreeBSD_kernel__ >= 4))
+# define SUNOS5SIGS
+#endif
 
-# ifdef GC_NETBSD_THREADS
-#   define SIGRTMIN 33
-#   define SIGRTMAX 63
-# endif
+#ifdef GC_NETBSD_THREADS
+# define SIGRTMIN 33
+# define SIGRTMAX 63
+#endif
 
-# if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
-            || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
-            || defined(DGUX) || defined(BSD) || defined(HURD) \
-            || defined(AIX) || defined(DARWIN) || defined(OSF1)
-#   define UNIX_LIKE   /* Basic Unix-like system calls work.    */
-# endif
+#if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
+    || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
+    || defined(DGUX) || defined(BSD) || defined(HURD) \
+    || defined(AIX) || defined(DARWIN) || defined(OSF1)
+# define UNIX_LIKE      /* Basic Unix-like system calls work.   */
+#endif
 
-# if CPP_WORDSZ != 32 && CPP_WORDSZ != 64
-           -> bad word size
-# endif
+#if CPP_WORDSZ != 32 && CPP_WORDSZ != 64
+# error --> bad word size
+#endif
 
-# ifndef ALIGNMENT
-    --> undefined ALIGNMENT
-# endif
+#ifndef ALIGNMENT
+# error --> undefined ALIGNMENT
+#endif
 
-# ifdef PCR
-#   undef DYNAMIC_LOADING
-#   undef STACKBOTTOM
-#   undef HEURISTIC1
-#   undef HEURISTIC2
-#   undef PROC_VDB
-#   undef MPROTECT_VDB
-#   define PCR_VDB
-# endif
+#ifdef PCR
+# undef DYNAMIC_LOADING
+# undef STACKBOTTOM
+# undef HEURISTIC1
+# undef HEURISTIC2
+# undef PROC_VDB
+# undef MPROTECT_VDB
+# define PCR_VDB
+#endif
 
-# if !defined(STACKBOTTOM) && (defined(ECOS) || defined(NOSYS))
-#   error --> undefined STACKBOTTOM
-# endif
+#if !defined(STACKBOTTOM) && (defined(ECOS) || defined(NOSYS))
+# error --> undefined STACKBOTTOM
+#endif
 
-# ifdef IGNORE_DYNAMIC_LOADING
-#   undef DYNAMIC_LOADING
-# endif
+#ifdef IGNORE_DYNAMIC_LOADING
+# undef DYNAMIC_LOADING
+#endif
 
-# if defined(SMALL_CONFIG) && !defined(GC_DISABLE_INCREMENTAL)
-        /* Presumably not worth the space it takes. */
-#   define GC_DISABLE_INCREMENTAL
-# endif
+#if defined(SMALL_CONFIG) && !defined(GC_DISABLE_INCREMENTAL)
+  /* Presumably not worth the space it takes.   */
+# define GC_DISABLE_INCREMENTAL
+#endif
 
-# ifdef GC_DISABLE_INCREMENTAL
-#   undef GWW_VDB
-#   undef MPROTECT_VDB
-#   undef PCR_VDB
-#   undef PROC_VDB
-#   undef CHECKSUMS
-# endif
+#ifdef GC_DISABLE_INCREMENTAL
+# undef GWW_VDB
+# undef MPROTECT_VDB
+# undef PCR_VDB
+# undef PROC_VDB
+# undef CHECKSUMS
+#endif
 
-# ifdef USE_GLOBAL_ALLOC
-    /* Cannot pass MEM_WRITE_WATCH to GlobalAlloc().    */
-#   undef GWW_VDB
-# endif
+#ifdef USE_GLOBAL_ALLOC
+  /* Cannot pass MEM_WRITE_WATCH to GlobalAlloc().      */
+# undef GWW_VDB
+#endif
 
-# ifdef USE_MUNMAP
-    /* FIXME: Remove this undef if possible.    */
-#   undef MPROTECT_VDB  /* Can't deal with address space holes. */
-# endif
+#ifdef USE_MUNMAP
+  /* FIXME: Remove this undef if possible.      */
+# undef MPROTECT_VDB  /* Can't deal with address space holes.   */
+#endif
 
 /* PARALLEL_MARK does not cause undef MPROTECT_VDB any longer.  */
 
-# if defined(MPROTECT_VDB) && defined(GC_PREFER_MPROTECT_VDB)
-    /* Choose MPROTECT_VDB manually (if multiple strategies available). */
-#   undef PCR_VDB
-#   undef PROC_VDB
-    /* #undef GWW_VDB - handled in os_dep.c */
-# endif
+#if defined(MPROTECT_VDB) && defined(GC_PREFER_MPROTECT_VDB)
+  /* Choose MPROTECT_VDB manually (if multiple strategies available).   */
+# undef PCR_VDB
+# undef PROC_VDB
+  /* #undef GWW_VDB - handled in os_dep.c       */
+#endif
 
-# if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
+#if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
     && !defined(GWW_VDB) && !defined(GC_DISABLE_INCREMENTAL)
-#   define DEFAULT_VDB
-# endif
+# define DEFAULT_VDB
+#endif
 
-# ifndef PREFETCH
-#   define PREFETCH(x)
-#   define NO_PREFETCH
-# endif
+#ifndef PREFETCH
+# define PREFETCH(x)
+# define NO_PREFETCH
+#endif
 
-# ifndef PREFETCH_FOR_WRITE
-#   define PREFETCH_FOR_WRITE(x)
-#   define NO_PREFETCH_FOR_WRITE
-# endif
+#ifndef PREFETCH_FOR_WRITE
+# define PREFETCH_FOR_WRITE(x)
+# define NO_PREFETCH_FOR_WRITE
+#endif
 
-# ifndef CACHE_LINE_SIZE
-#   define CACHE_LINE_SIZE 32   /* Wild guess   */
-# endif
+#ifndef CACHE_LINE_SIZE
+# define CACHE_LINE_SIZE 32     /* Wild guess   */
+#endif
 
-# ifndef STATIC
-#   ifndef NO_DEBUGGING
-#     define STATIC /* ignore to aid profiling and possibly debugging */
-#   else
-#     define STATIC static
-#   endif
-# endif
-
-# if defined(LINUX) || defined(HURD) || defined(__GLIBC__)
-#   define REGISTER_LIBRARIES_EARLY
-    /* We sometimes use dl_iterate_phdr, which may acquire an internal  */
-    /* lock.  This isn't safe after the world has stopped.  So we must  */
-    /* call GC_register_dynamic_libraries before stopping the world.    */
-    /* For performance reasons, this may be beneficial on other         */
-    /* platforms as well, though it should be avoided in win32.         */
-# endif /* LINUX */
-
-# if defined(SEARCH_FOR_DATA_START)
-    extern ptr_t GC_data_start;
-#   define DATASTART GC_data_start
-# endif
-
-# ifndef CLEAR_DOUBLE
-#   define CLEAR_DOUBLE(x) \
-                ((word*)x)[0] = 0; \
-                ((word*)x)[1] = 0;
-# endif /* CLEAR_DOUBLE */
-
-# if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC) \
-     && !defined(INCLUDE_LINUX_THREAD_DESCR)
-    /* Will not work, since libc and the dynamic loader use thread      */
-    /* locals, sometimes as the only reference.                         */
-#   define INCLUDE_LINUX_THREAD_DESCR
-# endif
-
-# if defined(GC_IRIX_THREADS) && !defined(IRIX5)
-        --> inconsistent configuration
-# endif
-# if defined(GC_LINUX_THREADS) && !defined(LINUX) && !defined(NACL)
-        --> inconsistent configuration
-# endif
-# if defined(GC_NETBSD_THREADS) && !defined(NETBSD)
-        --> inconsistent configuration
-# endif
-# if defined(GC_FREEBSD_THREADS) && !defined(FREEBSD)
-        --> inconsistent configuration
-# endif
-# if defined(GC_SOLARIS_THREADS) && !defined(SOLARIS)
-        --> inconsistent configuration
-# endif
-# if defined(GC_HPUX_THREADS) && !defined(HPUX)
-        --> inconsistent configuration
-# endif
-# if defined(GC_AIX_THREADS) && !defined(_AIX)
-        --> inconsistent configuration
-# endif
-# if defined(GC_GNU_THREADS) && !defined(HURD)
-        --> inconsistent configuration
-# endif
-# if defined(GC_WIN32_THREADS) && !defined(MSWIN32) && !defined(CYGWIN32) \
-        && !defined(MSWINCE)
-        --> inconsistent configuration
-# endif
-
-# if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS) \
-        || defined(SN_TARGET_PS3)
-#   define THREADS
-# endif
-
-# if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE) \
-     && !defined(PLATFORM_ANDROID)
-    /* Make the code cancellation-safe.  This basically means that we   */
-    /* ensure that cancellation requests are ignored while we are in    */
-    /* the collector.  This applies only to Posix deferred cancellation;*/
-    /* we don't handle Posix asynchronous cancellation.                 */
-    /* Note that this only works if pthread_setcancelstate is           */
-    /* async-signal-safe, at least in the absence of asynchronous       */
-    /* cancellation.  This appears to be true for the glibc version,    */
-    /* though it is not documented.  Without that assumption, there     */
-    /* seems to be no way to safely wait in a signal handler, which     */
-    /* we need to do for thread suspension.                             */
-    /* Also note that little other code appears to be cancellation-safe.*/
-    /* Hence it may make sense to turn this off for performance.        */
-#   define CANCEL_SAFE
-# endif
-
-# ifdef CANCEL_SAFE
-#   define IF_CANCEL(x) x
+#ifndef STATIC
+# ifndef NO_DEBUGGING
+#   define STATIC /* ignore to aid profiling and possibly debugging     */
 # else
-#   define IF_CANCEL(x)
+#   define STATIC static
 # endif
+#endif
 
-# if !defined(USE_MARK_BITS) && !defined(USE_MARK_BYTES)
-#   if defined(THREADS) && defined(PARALLEL_MARK)
-#     define USE_MARK_BYTES
-#   else
-#     define USE_MARK_BITS
-#   endif
+#if defined(LINUX) || defined(HURD) || defined(__GLIBC__)
+# define REGISTER_LIBRARIES_EARLY
+  /* We sometimes use dl_iterate_phdr, which may acquire an internal    */
+  /* lock.  This isn't safe after the world has stopped.  So we must    */
+  /* call GC_register_dynamic_libraries before stopping the world.      */
+  /* For performance reasons, this may be beneficial on other           */
+  /* platforms as well, though it should be avoided in win32.           */
+#endif /* LINUX */
+
+#if defined(SEARCH_FOR_DATA_START)
+  extern ptr_t GC_data_start;
+# define DATASTART GC_data_start
+#endif
+
+#ifndef CLEAR_DOUBLE
+# define CLEAR_DOUBLE(x) (((word*)(x))[0] = 0, ((word*)(x))[1] = 0)
+#endif
+
+#if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC) \
+    && !defined(INCLUDE_LINUX_THREAD_DESCR)
+  /* Will not work, since libc and the dynamic loader use thread        */
+  /* locals, sometimes as the only reference.                           */
+# define INCLUDE_LINUX_THREAD_DESCR
+#endif
+
+#if defined(GC_IRIX_THREADS) && !defined(IRIX5)
+# error --> inconsistent configuration
+#endif
+#if defined(GC_LINUX_THREADS) && !defined(LINUX) && !defined(NACL)
+# error --> inconsistent configuration
+#endif
+#if defined(GC_NETBSD_THREADS) && !defined(NETBSD)
+# error --> inconsistent configuration
+#endif
+#if defined(GC_FREEBSD_THREADS) && !defined(FREEBSD)
+# error --> inconsistent configuration
+#endif
+#if defined(GC_SOLARIS_THREADS) && !defined(SOLARIS)
+# error --> inconsistent configuration
+#endif
+#if defined(GC_HPUX_THREADS) && !defined(HPUX)
+# error --> inconsistent configuration
+#endif
+#if defined(GC_AIX_THREADS) && !defined(_AIX)
+# error --> inconsistent configuration
+#endif
+#if defined(GC_GNU_THREADS) && !defined(HURD)
+# error --> inconsistent configuration
+#endif
+#if defined(GC_WIN32_THREADS) && !defined(MSWIN32) && !defined(CYGWIN32) \
+    && !defined(MSWINCE)
+# error --> inconsistent configuration
+#endif
+
+#if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS) \
+    || defined(SN_TARGET_PS3)
+# define THREADS
+#endif
+
+#if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE) \
+    && !defined(PLATFORM_ANDROID)
+  /* Make the code cancellation-safe.  This basically means that we     */
+  /* ensure that cancellation requests are ignored while we are in      */
+  /* the collector.  This applies only to Posix deferred cancellation;  */
+  /* we don't handle Posix asynchronous cancellation.                   */
+  /* Note that this only works if pthread_setcancelstate is             */
+  /* async-signal-safe, at least in the absence of asynchronous         */
+  /* cancellation.  This appears to be true for the glibc version,      */
+  /* though it is not documented.  Without that assumption, there       */
+  /* seems to be no way to safely wait in a signal handler, which       */
+  /* we need to do for thread suspension.                               */
+  /* Also note that little other code appears to be cancellation-safe.  */
+  /* Hence it may make sense to turn this off for performance.          */
+# define CANCEL_SAFE
+#endif
+
+#ifdef CANCEL_SAFE
+# define IF_CANCEL(x) x
+#else
+# define IF_CANCEL(x) /* empty */
+#endif
+
+#if !defined(USE_MARK_BITS) && !defined(USE_MARK_BYTES)
+# if defined(THREADS) && defined(PARALLEL_MARK)
+#   define USE_MARK_BYTES
+# else
+#   define USE_MARK_BITS
 # endif
+#endif
 
-# if defined(MSWINCE) && !defined(__CEGCC__) && !defined(NO_GETENV)
-#   define NO_GETENV
+#if defined(MSWINCE) && !defined(__CEGCC__) && !defined(NO_GETENV)
+# define NO_GETENV
+#endif
+
+#if (defined(NO_GETENV) || defined(MSWINCE)) && !defined(NO_GETENV_WIN32)
+# define NO_GETENV_WIN32
+#endif
+
+#ifndef STRTOULL
+# if defined(_WIN64) && !defined(__GNUC__)
+#   define STRTOULL _strtoui64
+# elif defined(_LLP64) || defined(__LLP64__) || defined(_WIN64)
+#   define STRTOULL strtoull
+# else
+    /* strtoul() fits since sizeof(long) >= sizeof(word).       */
+#   define STRTOULL strtoul
 # endif
+#endif
 
-# if (defined(NO_GETENV) || defined(MSWINCE)) && !defined(NO_GETENV_WIN32)
-#   define NO_GETENV_WIN32
-# endif
+#if defined(SPARC)
+# define ASM_CLEAR_CODE /* Stack clearing is crucial, and we    */
+                        /* include assembly code to do it well. */
+#endif
 
-# ifndef STRTOULL
-#   if defined(_WIN64) && !defined(__GNUC__)
-#     define STRTOULL _strtoui64
-#   elif defined(_LLP64) || defined(__LLP64__) || defined(_WIN64)
-#     define STRTOULL strtoull
-#   else
-        /* strtoul() fits since sizeof(long) >= sizeof(word).           */
-#     define STRTOULL strtoul
-#   endif
-# endif
-
-# if defined(SPARC)
-#   define ASM_CLEAR_CODE       /* Stack clearing is crucial, and we    */
-                                /* include assembly code to do it well. */
-# endif
-
-  /* Can we save call chain in objects for debugging?                   */
-  /* SET NFRAMES (# of saved frames) and NARGS (#of args for each       */
-  /* frame) to reasonable values for the platform.                      */
-  /* Set SAVE_CALL_CHAIN if we can.  SAVE_CALL_COUNT can be specified   */
-  /* at build time, though we feel free to adjust it slightly.          */
-  /* Define NEED_CALLINFO if we either save the call stack or           */
-  /* GC_ADD_CALLER is defined.                                          */
-  /* GC_CAN_SAVE_CALL_STACKS is set in gc.h.                            */
-
+/* Can we save call chain in objects for debugging?                     */
+/* SET NFRAMES (# of saved frames) and NARGS (#of args for each         */
+/* frame) to reasonable values for the platform.                        */
+/* Set SAVE_CALL_CHAIN if we can.  SAVE_CALL_COUNT can be specified     */
+/* at build time, though we feel free to adjust it slightly.            */
+/* Define NEED_CALLINFO if we either save the call stack or             */
+/* GC_ADD_CALLER is defined.                                            */
+/* GC_CAN_SAVE_CALL_STACKS is set in gc.h.                              */
 #if defined(SPARC)
 # define CAN_SAVE_CALL_ARGS
 #endif
-#if (defined(I386) || defined(X86_64)) && (defined(LINUX) || defined(__GLIBC__))
-            /* SAVE_CALL_CHAIN is supported if the code is compiled to save     */
-            /* frame pointers by default, i.e. no -fomit-frame-pointer flag.    */
+#if (defined(I386) || defined(X86_64)) \
+    && (defined(LINUX) || defined(__GLIBC__))
+  /* SAVE_CALL_CHAIN is supported if the code is compiled to save       */
+  /* frame pointers by default, i.e. no -fomit-frame-pointer flag.      */
 # define CAN_SAVE_CALL_ARGS
 #endif
 
-# if defined(SAVE_CALL_COUNT) && !defined(GC_ADD_CALLER) \
-             && defined(GC_CAN_SAVE_CALL_STACKS)
-#   define SAVE_CALL_CHAIN
-# endif
-# ifdef SAVE_CALL_CHAIN
-#   if defined(SAVE_CALL_NARGS) && defined(CAN_SAVE_CALL_ARGS)
-#     define NARGS SAVE_CALL_NARGS
-#   else
-#     define NARGS 0    /* Number of arguments to save for each call.   */
-#   endif
-# endif
-# ifdef SAVE_CALL_CHAIN
-#   ifndef SAVE_CALL_COUNT
-#     define NFRAMES 6  /* Number of frames to save. Even for           */
-                        /* alignment reasons.                           */
-#   else
-#     define NFRAMES ((SAVE_CALL_COUNT + 1) & ~1)
-#   endif
-#   define NEED_CALLINFO
-# endif /* SAVE_CALL_CHAIN */
-# ifdef GC_ADD_CALLER
-#   define NFRAMES 1
-#   define NARGS 0
-#   define NEED_CALLINFO
-# endif
-
-# if defined(MAKE_BACK_GRAPH) && !defined(DBG_HDRS_ALL)
-#   define DBG_HDRS_ALL
-# endif
-
-# if defined(POINTER_MASK) && !defined(POINTER_SHIFT)
-#   define POINTER_SHIFT 0
-# endif
-
-# if defined(POINTER_SHIFT) && !defined(POINTER_MASK)
-#   define POINTER_MASK ((GC_word)(-1))
-# endif
-
-# if !defined(FIXUP_POINTER) && defined(POINTER_MASK)
-#   define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
-# endif
-
-# if defined(FIXUP_POINTER)
-#   define NEED_FIXUP_POINTER 1
+#if defined(SAVE_CALL_COUNT) && !defined(GC_ADD_CALLER) \
+    && defined(GC_CAN_SAVE_CALL_STACKS)
+# define SAVE_CALL_CHAIN
+#endif
+#ifdef SAVE_CALL_CHAIN
+# if defined(SAVE_CALL_NARGS) && defined(CAN_SAVE_CALL_ARGS)
+#   define NARGS SAVE_CALL_NARGS
 # else
-#   define NEED_FIXUP_POINTER 0
-#   define FIXUP_POINTER(p)
+#   define NARGS 0      /* Number of arguments to save for each call.   */
 # endif
+#endif
+#ifdef SAVE_CALL_CHAIN
+# ifndef SAVE_CALL_COUNT
+#   define NFRAMES 6    /* Number of frames to save. Even for   */
+                        /* alignment reasons.                   */
+# else
+#   define NFRAMES ((SAVE_CALL_COUNT + 1) & ~1)
+# endif
+# define NEED_CALLINFO
+#endif /* SAVE_CALL_CHAIN */
+#ifdef GC_ADD_CALLER
+# define NFRAMES 1
+# define NARGS 0
+# define NEED_CALLINFO
+#endif
 
-# if !defined(MARK_BIT_PER_GRANULE) && !defined(MARK_BIT_PER_OBJ)
-#   define MARK_BIT_PER_GRANULE /* Usually faster */
-# endif
+#if defined(MAKE_BACK_GRAPH) && !defined(DBG_HDRS_ALL)
+# define DBG_HDRS_ALL
+#endif
+
+#if defined(POINTER_MASK) && !defined(POINTER_SHIFT)
+# define POINTER_SHIFT 0
+#endif
+
+#if defined(POINTER_SHIFT) && !defined(POINTER_MASK)
+# define POINTER_MASK ((GC_word)(-1))
+#endif
+
+#if !defined(FIXUP_POINTER) && defined(POINTER_MASK)
+# define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
+#endif
+
+#if defined(FIXUP_POINTER)
+# define NEED_FIXUP_POINTER 1
+#else
+# define NEED_FIXUP_POINTER 0
+# define FIXUP_POINTER(p)
+#endif
+
+#if !defined(MARK_BIT_PER_GRANULE) && !defined(MARK_BIT_PER_OBJ)
+# define MARK_BIT_PER_GRANULE   /* Usually faster       */
+#endif
 
 /* Some static sanity tests.    */
-# if defined(MARK_BIT_PER_GRANULE) && defined(MARK_BIT_PER_OBJ)
-#   error Define only one of MARK_BIT_PER_GRANULE and MARK_BIT_PER_OBJ.
-# endif
+#if defined(MARK_BIT_PER_GRANULE) && defined(MARK_BIT_PER_OBJ)
+# error Define only one of MARK_BIT_PER_GRANULE and MARK_BIT_PER_OBJ.
+#endif
 
-# if defined(STACK_GROWS_UP) && defined(STACK_GROWS_DOWN)
-#   error "Only one of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd."
-# endif
-# if !defined(STACK_GROWS_UP) && !defined(STACK_GROWS_DOWN)
-#   error "One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd."
-# endif
+#if defined(STACK_GROWS_UP) && defined(STACK_GROWS_DOWN)
+# error "Only one of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd."
+#endif
+#if !defined(STACK_GROWS_UP) && !defined(STACK_GROWS_DOWN)
+# error "One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd."
+#endif
 
-# if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX)
-#   error "REDIRECT_MALLOC with THREADS works at most on Linux."
-# endif
+#if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX)
+# error "REDIRECT_MALLOC with THREADS works at most on Linux."
+#endif
 
 #ifdef GC_PRIVATE_H
         /* This relies on some type definitions from gc_priv.h, from    */

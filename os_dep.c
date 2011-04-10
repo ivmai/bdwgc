@@ -2257,13 +2257,18 @@ void * os2_alloc(size_t bytes)
   GC_API void GC_CALL GC_win32_free_heap(void)
   {
 #   ifndef CYGWIN32
-      if (GC_no_win32_dlls) {
-        while (GC_n_heap_bases > 0) {
-          GlobalFree (GC_heap_bases[--GC_n_heap_bases]);
-          GC_heap_bases[GC_n_heap_bases] = 0;
-        }
-      }
+      if (GC_no_win32_dlls)
 #   endif
+    {
+      while (GC_n_heap_bases-- > 0) {
+#       ifdef CYGWIN32
+          /* FIXME: Is it ok to use non-GC free() here? */
+#       else
+          GlobalFree(GC_heap_bases[GC_n_heap_bases]);
+#       endif
+        GC_heap_bases[GC_n_heap_bases] = 0;
+      }
+    }
   }
 #endif /* MSWIN32 || CYGWIN32 */
 
