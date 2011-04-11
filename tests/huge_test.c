@@ -14,7 +14,7 @@
 
 /*
  * Check that very large allocation requests fail.  "Success" would usually
- * indicate that the the size was somehow converted to a negative
+ * indicate that the size was somehow converted to a negative
  * number.  Clients shouldn't do this, but we should fail in the
  * expected manner.
  */

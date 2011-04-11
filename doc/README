@@ -129,7 +129,7 @@ ALL_INTERIOR_POINTERS defined, or GC_all_interior_pointers is otherwise
 set, as is now the default.
 
 Compiling without ALL_INTERIOR_POINTERS may reduce accidental retention
-of garbage objects, by requiring pointers from the heap to to the beginning
+of garbage objects, by requiring pointers from the heap to the beginning
 of an object.  But this no longer appears to be a significant
 issue for most programs occupying a small fraction of the possible
 address space.

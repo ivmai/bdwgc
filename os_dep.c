@@ -2707,7 +2707,7 @@ STATIC void GC_default_push_other_roots(void)
         * the underlying memory was not allocated with the appropriate
         * flag.  This is common if GC_enable_incremental is called
         * shortly after GC initialization.  To avoid modifying the
-        * interface, we silently work around such a failure, it it only
+        * interface, we silently work around such a failure, it only
         * affects the initial (small) heap allocation.
         * If there are more dirty
         * pages than will fit in the buffer, this is not treated as a
@@ -4467,7 +4467,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 #    include <sys/frame.h>
 #  endif
 #  if NARGS > 6
-#    error We only know how to to get the first 6 arguments
+#    error We only know how to get the first 6 arguments
 #  endif
 #endif /* SPARC */
 
