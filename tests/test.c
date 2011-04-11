@@ -539,7 +539,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #   elif defined(PCR)
       /* PCR default stack is 100K.  Stack frames are up to 120 bytes. */
 #     define BIG 700
-#   elif defined(MSWINCE)
+#   elif defined(MSWINCE) || defined(RTEMS)
       /* WinCE only allows 64K stacks */
 #     define BIG 500
 #   elif defined(OSF1)
@@ -1377,12 +1377,21 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 # define WINMAIN_LPTSTR LPSTR
 #endif
 
-#if !defined(PCR) \
-    && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS) \
+#if !defined(PCR) && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS) \
     || defined(LINT)
 #if defined(MSWIN32) && !defined(__MINGW32__) || defined(MSWINCE)
   int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev,
                        WINMAIN_LPTSTR cmd, int n)
+#elif defined(RTEMS)
+# include <bsp.h>
+# define CONFIGURE_APPLICATION_DOES_NOT_NEED_CLOCK_DRIVER
+# define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
+# define CONFIGURE_RTEMS_INIT_TASKS_TABLE
+# define CONFIGURE_MAXIMUM_TASKS 1
+# define CONFIGURE_INIT
+# define CONFIGURE_INIT_TASK_STACK_SIZE (64*1024)
+# include <rtems/confdefs.h>
+  rtems_task Init(rtems_task_argument ignord)
 #else
   int main(void)
 #endif

@@ -1,3 +1,12 @@
+2011-04-11  Ivan Maidanski  <ivmai@mail.ru> (really Jie Liu)
+
+	* mach_dep.c (NO_GETCONTEXT); Define for RTEMS.
+	* mach_dep.c (GC_with_callee_saves_pushed): Don't call
+	__builtin_unwind_init() for RTEMS; use setjmp() without the
+	leading underscore (for RTEMS).
+	* tests/test.c (BIG): Use smaller value for RTEMS.
+	* tests/test.c (main): Customize for RTEMS.
+
 2011-04-11  Ivan Maidanski  <ivmai@mail.ru> (mostly really Jim Meyering)
 
 	* configure.host: Remove doubled words in comments.
