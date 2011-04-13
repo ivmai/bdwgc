@@ -1,3 +1,15 @@
+2011-04-13  Ivan Maidanski  <ivmai@mail.ru>
+
+	* dbg_mlc.c (GC_generate_random_backtrace_no_gc): Fix a message
+	typo.
+	* dbg_mlc.c (GC_debug_malloc): Add a comment (about zero size).
+	* dbg_mlc.c (GC_debug_generic_malloc_inner): Reformat the comment.
+	* dbg_mlc.c (GC_strdup): Call GC_err_printf instead of WARN (in
+	case of NULL argument).
+	* dbg_mlc.c (GC_free): In case of NULL argument, just return
+	(without any warning printed); eliminate "uncollectable" local
+	variable.
+
 2011-04-13  Ivan Maidanski  <ivmai@mail.ru> (mostly really Rainer Orth)
 
 	* configure.ac (THREADDLLIBS): Use alternate thread library on

@@ -233,7 +233,7 @@ GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
   {
     void * current;
     current = GC_generate_random_valid_address();
-    GC_printf("\n****Chose address %p in object\n", current);
+    GC_printf("\n****Chosen address %p in object\n", current);
     GC_print_backtrace(current);
   }
 
@@ -477,7 +477,11 @@ GC_API void GC_CALL GC_debug_register_displacement(size_t offset)
 
 GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
 {
-    void * result = GC_malloc(lb + DEBUG_BYTES);
+    void * result;
+    /* Note that according to malloc() specification, if size is 0 then */
+    /* malloc() returns either NULL, or a unique pointer value that can */
+    /* later be successfully passed to free(). We always do the latter. */
+    result = GC_malloc(lb + DEBUG_BYTES);
 
     if (result == 0) {
         GC_err_printf("GC_debug_malloc(%lu) returning NULL (",
@@ -519,7 +523,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
 
     if (result == 0) {
         GC_err_printf("GC_debug_malloc_atomic_ignore_off_page(%lu)"
-                       " returning NULL (", (unsigned long) lb);
+                      " returning NULL (", (unsigned long)lb);
         GC_err_puts(s);
         GC_err_printf(":%lu)\n", (unsigned long)i);
         return(0);
@@ -532,14 +536,11 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
 }
 
 #ifdef DBG_HDRS_ALL
-  /*
-   * An allocation function for internal use.
-   * Normally internally allocated objects do not have debug information.
-   * But in this case, we need to make sure that all objects have debug
-   * headers.
-   * We assume debugging was started in collector initialization,
-   * and we already hold the GC lock.
-   */
+  /* An allocation function for internal use.  Normally internally      */
+  /* allocated objects do not have debug information.  But in this      */
+  /* case, we need to make sure that all objects have debug headers.    */
+  /* We assume debugging was started in collector initialization, and   */
+  /* we already hold the GC lock.                                       */
   GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k)
   {
     void * result = GC_generic_malloc_inner(lb + DEBUG_BYTES, k);
@@ -660,9 +661,10 @@ GC_API char * GC_CALL GC_debug_strdup(const char *str, GC_EXTRA_PARAMS)
   size_t lb;
   if (str == NULL) {
     if (GC_find_leak)
-      WARN("strdup(NULL) behavior is undefined\n", 0);
+      GC_err_printf("strdup(NULL) behavior is undefined\n");
     return NULL;
   }
+
   lb = strlen(str) + 1;
   copy = GC_debug_malloc_atomic(lb, OPT_RA s, i);
   if (copy == NULL) {
@@ -765,12 +767,8 @@ GC_API void GC_CALL GC_debug_free(void * p)
 #   ifndef SHORT_DBG_HDRS
       ptr_t clobbered;
 #   endif
+    if (0 == p) return;
 
-    if (0 == p) {
-      if (GC_find_leak)
-        WARN("free(NULL) is non-portable\n", 0);
-      return;
-    }
     base = GC_base(p);
     if (base == 0) {
         GC_err_printf("Attempt to free invalid pointer %p\n", p);
@@ -799,18 +797,12 @@ GC_API void GC_CALL GC_debug_free(void * p)
         GC_free(base);
     } else {
         hdr * hhdr = HDR(p);
-        GC_bool uncollectable = FALSE;
-
-        if (hhdr ->  hb_obj_kind == UNCOLLECTABLE) {
-            uncollectable = TRUE;
-        }
-#       ifdef ATOMIC_UNCOLLECTABLE
-            if (hhdr ->  hb_obj_kind == AUNCOLLECTABLE) {
-                    uncollectable = TRUE;
-            }
-#       endif
-        if (uncollectable) {
-            GC_free(base);
+        if (hhdr -> hb_obj_kind == UNCOLLECTABLE
+#           ifdef ATOMIC_UNCOLLECTABLE
+              || hhdr -> hb_obj_kind == AUNCOLLECTABLE
+#           endif
+            ) {
+          GC_free(base);
         } else {
             size_t i;
             size_t obj_sz = BYTES_TO_WORDS(hhdr -> hb_sz - sizeof(oh));
@@ -845,11 +837,11 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
       ptr_t clobbered;
 #   endif
     void * result;
-    size_t copy_sz = lb;
     size_t old_sz;
     hdr * hhdr;
+    if (p == 0)
+      return(GC_debug_malloc(lb, OPT_RA s, i));
 
-    if (p == 0) return(GC_debug_malloc(lb, OPT_RA s, i));
     base = GC_base(p);
     if (base == 0) {
         GC_err_printf("Attempt to reallocate invalid pointer %p\n", p);
@@ -886,6 +878,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
         GC_err_printf("GC_debug_realloc: encountered bad kind\n");
         ABORT("Bad kind");
     }
+
 #   ifdef SHORT_DBG_HDRS
       old_sz = GC_size(base) - sizeof(oh);
 #   else
@@ -896,10 +889,11 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
       }
       old_sz = ((oh *)base) -> oh_sz;
 #   endif
-    if (old_sz < copy_sz) copy_sz = old_sz;
-    if (result == 0) return(0);
-    BCOPY(p, result, copy_sz);
-    GC_debug_free(p);
+
+    if (result != NULL) {
+      BCOPY(p, result, old_sz < lb ? old_sz : lb);
+      GC_debug_free(p);
+    }
     return(result);
 }
 
@@ -960,16 +954,16 @@ STATIC void GC_check_heap_block(struct hblk *hbp, word dummy)
         plim = hbp->hb_body + HBLKSIZE - sz;
     }
     /* go through all words in block */
-        while( p <= plim ) {
-            if( mark_bit_from_hdr(hhdr, bit_no)
-                && GC_HAS_DEBUG_INFO((ptr_t)p)) {
-                ptr_t clobbered = GC_check_annotated_obj((oh *)p);
+    while( p <= plim ) {
+        if( mark_bit_from_hdr(hhdr, bit_no)
+            && GC_HAS_DEBUG_INFO((ptr_t)p)) {
+            ptr_t clobbered = GC_check_annotated_obj((oh *)p);
 
-                if (clobbered != 0) GC_add_smashed(clobbered);
-            }
-            bit_no += MARK_BIT_OFFSET(sz);
-            p += sz;
+            if (clobbered != 0) GC_add_smashed(clobbered);
         }
+        bit_no += MARK_BIT_OFFSET(sz);
+        p += sz;
+    }
 }
 
 /* This assumes that all accessible objects are marked, and that        */
