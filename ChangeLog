@@ -1,3 +1,12 @@
+2011-04-13  Ivan Maidanski  <ivmai@mail.ru> (mostly really Rainer Orth)
+
+	* configure.ac (THREADDLLIBS): Use alternate thread library on
+	Solaris 8.
+	* configure.ac (need_atomic_ops_asm): Set to true only for Sparc
+	Solaris.
+	* configure.ac: Don't use libdl on mips-sgi-irix6.
+	* configure: Regenerate.
+
 2011-04-11  Ivan Maidanski  <ivmai@mail.ru> (really Jie Liu)
 
 	* mach_dep.c (NO_GETCONTEXT); Define for RTEMS.
