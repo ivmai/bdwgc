@@ -82,12 +82,12 @@ GC_REQUIRE_WCSDUP       Force GC to export GC_wcsdup() (the Unicode version
 
 These define arguments influence the collector configuration:
 
-FIND_LEAK 	Causes GC_find_leak to be initially set.  This causes the
+FIND_LEAK       Causes GC_find_leak to be initially set.  This causes the
   collector to assume that all inaccessible objects should have been
   explicitly deallocated, and reports exceptions.  Finalization and the test
   program are not usable in this mode.
 
-GC_ABORT_ON_LEAK	Causes the application to be terminated once leaked or
+GC_ABORT_ON_LEAK        Causes the application to be terminated once leaked or
   smashed (corrupted on use-after-free) objects are found (after printing the
   information about that objects).
 
@@ -96,7 +96,7 @@ SUNOS5SIGS      Solaris-like signal handling.  This is probably misnamed,
   for Solaris2.X, HPUX, and DRSNX.  Should probably be set for some other
   platforms.
 
-PCR	Set if the collector is being built as part of the Xerox Portable
+PCR     Set if the collector is being built as part of the Xerox Portable
   Common Runtime.
 
 USE_COMPILER_TLS  Assume the existence of __thread-style thread-local storage.
@@ -551,6 +551,6 @@ PLATFORM_ANDROID        Compile for Android NDK platform.
 SN_TARGET_PS3           Compile for Sony PS/3.
 
 USE_GET_STACKBASE_FOR_MAIN (Linux only)  Use pthread_attr_getstack() instead
-of __libc_stack_end (or instead of any hard-coded value) for getting the
-primordial thread stack base (useful if the client modifies the program's
-address space).
+  of __libc_stack_end (or instead of any hard-coded value) for getting the
+  primordial thread stack base (useful if the client modifies the program's
+  address space).

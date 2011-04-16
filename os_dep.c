@@ -1156,7 +1156,8 @@ GC_INNER word GC_page_size = 0;
   ptr_t GC_get_main_stack_base(void)
   {
     ptr_t result; /* also used as "dummy" to get the approx. sp value */
-#   if defined(LINUX) && defined(USE_GET_STACKBASE_FOR_MAIN) && !defined(NACL)
+#   if defined(LINUX) && !defined(NACL) \
+       && (defined(USE_GET_STACKBASE_FOR_MAIN) || defined(THREADS))
       pthread_attr_t attr;
       void *stackaddr;
       size_t size;
@@ -1221,8 +1222,7 @@ GC_INNER word GC_page_size = 0;
   }
 #endif /* !AMIGA, !BEOS, !OPENBSD, !OS2, !Windows */
 
-#if defined(GC_LINUX_THREADS) && !defined(HAVE_GET_STACK_BASE) \
-    && !defined(NACL)
+#if defined(GC_LINUX_THREADS) && !defined(NACL)
 
 # include <pthread.h>
   /* extern int pthread_getattr_np(pthread_t, pthread_attr_t *); */
