@@ -1355,16 +1355,15 @@ struct GC_traced_stack_sect_s {
 
 #ifdef USE_MARK_BYTES
 # define mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[n])
-# define set_mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[n]) = 1
-# define clear_mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[n]) = 0
+# define set_mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[n] = 1)
+# define clear_mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[n] = 0)
 #else /* !USE_MARK_BYTES */
-# define mark_bit_from_hdr(hhdr,n) (((hhdr)->hb_marks[divWORDSZ(n)] \
-                            >> (modWORDSZ(n))) & (word)1)
+# define mark_bit_from_hdr(hhdr,n) \
+              (((hhdr)->hb_marks[divWORDSZ(n)] >> (modWORDSZ(n))) & (word)1)
 # define set_mark_bit_from_hdr(hhdr,n) \
-                            OR_WORD((hhdr)->hb_marks+divWORDSZ(n), \
-                                    (word)1 << modWORDSZ(n))
-# define clear_mark_bit_from_hdr(hhdr,n) (hhdr)->hb_marks[divWORDSZ(n)] \
-                                &= ~((word)1 << modWORDSZ(n))
+              OR_WORD((hhdr)->hb_marks+divWORDSZ(n), (word)1 << modWORDSZ(n))
+# define clear_mark_bit_from_hdr(hhdr,n) \
+              ((hhdr)->hb_marks[divWORDSZ(n)] &= ~((word)1 << modWORDSZ(n)))
 #endif /* !USE_MARK_BYTES */
 
 #ifdef MARK_BIT_PER_OBJ
@@ -1381,8 +1380,8 @@ struct GC_traced_stack_sect_s {
 #  define MARK_BIT_OFFSET(sz) BYTES_TO_GRANULES(sz)
 #  define IF_PER_OBJ(x)
 #  define FINAL_MARK_BIT(sz) \
-        ((sz) > MAXOBJBYTES? MARK_BITS_PER_HBLK \
-                        : BYTES_TO_GRANULES((sz) * HBLK_OBJS(sz)))
+              ((sz) > MAXOBJBYTES ? MARK_BITS_PER_HBLK \
+                                : BYTES_TO_GRANULES((sz) * HBLK_OBJS(sz)))
 #endif
 
 /* Important internal collector routines */
@@ -1628,7 +1627,7 @@ GC_INNER void GC_freehblk(struct hblk * p);
 
 /*  Misc GC: */
 GC_INNER GC_bool GC_expand_hp_inner(word n);
-GC_INNER void GC_start_reclaim(int abort_if_found);
+GC_INNER void GC_start_reclaim(GC_bool abort_if_found);
                                 /* Restore unmarked objects to free     */
                                 /* lists, or (if abort_if_found is      */
                                 /* TRUE) report them.                   */

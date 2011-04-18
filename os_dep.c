@@ -1361,7 +1361,7 @@ GC_INNER word GC_page_size = 0;
     /* s.ss_sp holds the pointer to the stack bottom. */
     GC_ASSERT((void *)&s HOTTER_THAN s.ss_sp);
 
-    if (!stackbase_main_self)
+    if (!stackbase_main_self && thr_main() != 0)
       {
         /* Cache the stack base value for the primordial thread (this   */
         /* is done during GC_init, so there is no race).                */

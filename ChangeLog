@@ -1,3 +1,25 @@
+2011-04-18  Ivan Maidanski  <ivmai@mail.ru>
+
+	* dbg_mlc.c (GC_store_debug_info_inner): Always define; add
+	"const" to its string argument.
+	* dbg_mlc.c (GC_store_debug_info): Call GC_store_debug_info_inner.
+	* dbg_mlc.c (GC_debug_free): Set GC_have_errors in case of
+	smashed or previously deallocated found.
+	* dbg_mlc.c (GC_check_heap_block): Replace while loop with a for
+	one.
+	* reclaim.c (GC_reclaim_check): Ditto.
+	* dbg_mlc.c (GC_check_heap_proc): Remove redundant cast to word.
+	* os_dep.c (GC_get_stack_base): Don't initialize
+	stackbase_main_self/ss_sp on Solaris if thr_main() is zero (thus
+	calling GC_INIT() from a non-primordial thread is possible now).
+	* reclaim.c (GC_add_leaked): Turn into an inline one.
+	* reclaim.c (GC_reclaim_small_nonempty_block):
+	Change report_if_found type from int/word to boolean.
+	* include/private/gc_priv.h (GC_start_reclaim): Ditto.
+	* include/private/gc_priv.h (set_mark_bit_from_hdr,
+	clear_mark_bit_from_hdr): Place closing parenthesis properly;
+	reformat the code.
+
 2011-04-16  Ivan Maidanski  <ivmai@mail.ru>
 
 	* os_dep.c (GC_get_main_stack_base): Try to use

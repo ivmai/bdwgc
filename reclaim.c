@@ -41,7 +41,7 @@ STATIC unsigned GC_n_leaked = 0;
 
 GC_INNER GC_bool GC_have_errors = FALSE;
 
-STATIC void GC_add_leaked(ptr_t leaked)
+GC_INLINE void GC_add_leaked(ptr_t leaked)
 {
     GC_have_errors = TRUE;
     /* FIXME: Prevent adding an object while printing leaked ones.      */
@@ -204,23 +204,19 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
 /* Don't really reclaim objects, just check for unmarked ones: */
 STATIC void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
 {
-    word bit_no = 0;
+    word bit_no;
     ptr_t p, plim;
-
     GC_ASSERT(sz == hhdr -> hb_sz);
-    p = hbp->hb_body;
-    plim = p + HBLKSIZE - sz;
 
     /* go through all words in block */
-        while (p <= plim) {
-            if( !mark_bit_from_hdr(hhdr, bit_no) ) {
-                GC_add_leaked(p);
-            }
-            p += sz;
-            bit_no += MARK_BIT_OFFSET(sz);
-        }
+    p = hbp->hb_body;
+    plim = p + HBLKSIZE - sz;
+    for (bit_no = 0; p <= plim; p += sz, bit_no += MARK_BIT_OFFSET(sz)) {
+      if (!mark_bit_from_hdr(hhdr, bit_no)) {
+        GC_add_leaked(p);
+      }
+    }
 }
-
 
 /*
  * Generic procedure to rebuild a free list in hbp.
@@ -254,7 +250,7 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
  * caller should perform that check.
  */
 STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp,
-                                            int report_if_found)
+                                            GC_bool report_if_found)
 {
     hdr *hhdr = HDR(hbp);
     size_t sz = hhdr -> hb_sz;
@@ -326,7 +322,7 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
           GC_atomic_in_use += sz * hhdr -> hb_n_marks;
         }
         if (report_if_found) {
-          GC_reclaim_small_nonempty_block(hbp, (int)report_if_found);
+          GC_reclaim_small_nonempty_block(hbp, (GC_bool)report_if_found);
         } else if (empty) {
           GC_bytes_found += HBLKSIZE;
           GC_freehblk(hbp);

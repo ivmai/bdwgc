@@ -251,39 +251,10 @@ GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
 
 # define CROSSES_HBLK(p, sz) \
         (((word)(p + sizeof(oh) + sz - 1) ^ (word)p) >= HBLKSIZE)
-/* Store debugging info into p.  Return displaced pointer. */
-/* Assumes we don't hold allocation lock.                  */
-GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *string,
-                                   word integer)
-{
-    word * result = (word *)((oh *)p + 1);
-    DCL_LOCK_STATE;
 
-    LOCK();
-    GC_ASSERT(GC_size(p) >= sizeof(oh) + sz);
-    GC_ASSERT(!(SMALL_OBJ(sz) && CROSSES_HBLK(p, sz)));
-#   ifdef KEEP_BACK_PTRS
-      ((oh *)p) -> oh_back_ptr = HIDE_BACK_PTR(NOT_MARKED);
-#   endif
-#   ifdef MAKE_BACK_GRAPH
-      ((oh *)p) -> oh_bg_ptr = HIDE_BACK_PTR((ptr_t)0);
-#   endif
-    ((oh *)p) -> oh_string = string;
-    ((oh *)p) -> oh_int = integer;
-#   ifndef SHORT_DBG_HDRS
-      ((oh *)p) -> oh_sz = sz;
-      ((oh *)p) -> oh_sf = START_FLAG ^ (word)result;
-      ((word *)p)[BYTES_TO_WORDS(GC_size(p))-1] =
-         result[SIMPLE_ROUNDED_UP_WORDS(sz)] = END_FLAG ^ (word)result;
-#   endif
-    UNLOCK();
-    return((ptr_t)result);
-}
-
-#ifdef DBG_HDRS_ALL
 /* Store debugging info into p.  Return displaced pointer.         */
 /* This version assumes we do hold the allocation lock.            */
-STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz, char *string,
+STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz, const char *string,
                                        word integer)
 {
     word * result = (word *)((oh *)p + 1);
@@ -306,7 +277,18 @@ STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz, char *string,
 #   endif
     return((ptr_t)result);
 }
-#endif
+
+GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *string,
+                                   word integer)
+{
+    ptr_t result;
+    DCL_LOCK_STATE;
+
+    LOCK();
+    result = GC_store_debug_info_inner(p, sz, string, integer);
+    UNLOCK();
+    return result;
+}
 
 #ifndef SHORT_DBG_HDRS
   /* Check the object with debugging info at ohdr       */
@@ -764,9 +746,6 @@ GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
 GC_API void GC_CALL GC_debug_free(void * p)
 {
     ptr_t base;
-#   ifndef SHORT_DBG_HDRS
-      ptr_t clobbered;
-#   endif
     if (0 == p) return;
 
     base = GC_base(p);
@@ -776,18 +755,19 @@ GC_API void GC_CALL GC_debug_free(void * p)
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
         GC_err_printf(
-                 "GC_debug_free called on pointer %p w/o debugging info\n", p);
+               "GC_debug_free called on pointer %p w/o debugging info\n", p);
     } else {
 #     ifndef SHORT_DBG_HDRS
-        clobbered = GC_check_annotated_obj((oh *)base);
+        ptr_t clobbered = GC_check_annotated_obj((oh *)base);
         if (clobbered != 0) {
           if (((oh *)base) -> oh_sz == GC_size(base)) {
             GC_err_printf(
-                  "GC_debug_free: found previously deallocated (?) object at ");
+               "GC_debug_free: found previously deallocated (?) object at ");
           } else {
             GC_err_printf("GC_debug_free: found smashed location at ");
           }
           GC_print_smashed_obj(p, clobbered);
+          GC_have_errors = TRUE;
         }
         /* Invalidate size */
         ((oh *)base) -> oh_sz = GC_size(base);
@@ -886,6 +866,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
       if (clobbered != 0) {
         GC_err_printf("GC_debug_realloc: found smashed location at ");
         GC_print_smashed_obj(p, clobbered);
+        GC_have_errors = TRUE;
       }
       old_sz = ((oh *)base) -> oh_sz;
 #   endif
@@ -947,22 +928,18 @@ STATIC void GC_check_heap_block(struct hblk *hbp, word dummy)
     char *p, *plim;
 
     p = hbp->hb_body;
-    bit_no = 0;
     if (sz > MAXOBJBYTES) {
-        plim = p;
+      plim = p;
     } else {
-        plim = hbp->hb_body + HBLKSIZE - sz;
+      plim = hbp->hb_body + HBLKSIZE - sz;
     }
     /* go through all words in block */
-    while( p <= plim ) {
-        if( mark_bit_from_hdr(hhdr, bit_no)
-            && GC_HAS_DEBUG_INFO((ptr_t)p)) {
-            ptr_t clobbered = GC_check_annotated_obj((oh *)p);
-
-            if (clobbered != 0) GC_add_smashed(clobbered);
-        }
-        bit_no += MARK_BIT_OFFSET(sz);
-        p += sz;
+    for (bit_no = 0; p <= plim; bit_no += MARK_BIT_OFFSET(sz), p += sz) {
+      if (mark_bit_from_hdr(hhdr, bit_no) && GC_HAS_DEBUG_INFO((ptr_t)p)) {
+        ptr_t clobbered = GC_check_annotated_obj((oh *)p);
+        if (clobbered != 0)
+          GC_add_smashed(clobbered);
+      }
     }
 }
 
@@ -972,7 +949,7 @@ STATIC void GC_check_heap_proc(void)
 {
   GC_STATIC_ASSERT((sizeof(oh) & (GRANULE_BYTES - 1)) == 0);
   /* FIXME: Should we check for twice that alignment?   */
-  GC_apply_to_all_blocks(GC_check_heap_block, (word)0);
+  GC_apply_to_all_blocks(GC_check_heap_block, 0);
 }
 
 #endif /* !SHORT_DBG_HDRS */
