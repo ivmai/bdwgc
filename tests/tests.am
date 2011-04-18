@@ -67,6 +67,11 @@ TESTS += threadleaktest$(EXEEXT)
 check_PROGRAMS += threadleaktest
 threadleaktest_SOURCES = tests/thread_leak_test.c
 threadleaktest_LDADD = $(test_ldadd)
+
+TESTS += initsecondarythread$(EXEEXT)
+check_PROGRAMS += initsecondarythread
+initsecondarythread_SOURCES = tests/initsecondarythread.c
+initsecondarythread_LDADD = $(test_ldadd)
 endif
 
 if CPLUSPLUS

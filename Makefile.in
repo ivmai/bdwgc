@@ -121,8 +121,9 @@ DIST_COMMON = $(am__configure_deps) $(am__pkginclude_HEADERS_DIST) \
 	mkinstalldirs
 @KEEP_BACK_PTRS_TRUE@am__append_7 = tracetest$(EXEEXT)
 @KEEP_BACK_PTRS_TRUE@am__append_8 = tracetest
-@THREADS_TRUE@am__append_9 = threadleaktest$(EXEEXT)
-@THREADS_TRUE@am__append_10 = threadleaktest
+@THREADS_TRUE@am__append_9 = threadleaktest$(EXEEXT) \
+@THREADS_TRUE@	initsecondarythread$(EXEEXT)
+@THREADS_TRUE@am__append_10 = threadleaktest initsecondarythread
 @CPLUSPLUS_TRUE@am__append_11 = test_cpp$(EXEEXT)
 @CPLUSPLUS_TRUE@am__append_12 = test_cpp
 subdir = .
@@ -213,13 +214,20 @@ libstaticrootslib_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(libstaticrootslib_la_LDFLAGS) $(LDFLAGS) -o $@
 @KEEP_BACK_PTRS_TRUE@am__EXEEXT_1 = tracetest$(EXEEXT)
-@THREADS_TRUE@am__EXEEXT_2 = threadleaktest$(EXEEXT)
+@THREADS_TRUE@am__EXEEXT_2 = threadleaktest$(EXEEXT) \
+@THREADS_TRUE@	initsecondarythread$(EXEEXT)
 @CPLUSPLUS_TRUE@am__EXEEXT_3 = test_cpp$(EXEEXT)
 am_gctest_OBJECTS = test.$(OBJEXT)
 gctest_OBJECTS = $(am_gctest_OBJECTS)
 am_hugetest_OBJECTS = huge_test.$(OBJEXT)
 hugetest_OBJECTS = $(am_hugetest_OBJECTS)
 hugetest_DEPENDENCIES = $(am__DEPENDENCIES_2)
+am__initsecondarythread_SOURCES_DIST = tests/initsecondarythread.c
+@THREADS_TRUE@am_initsecondarythread_OBJECTS =  \
+@THREADS_TRUE@	initsecondarythread.$(OBJEXT)
+initsecondarythread_OBJECTS = $(am_initsecondarythread_OBJECTS)
+@THREADS_TRUE@initsecondarythread_DEPENDENCIES =  \
+@THREADS_TRUE@	$(am__DEPENDENCIES_2)
 am_leaktest_OBJECTS = leak_test.$(OBJEXT)
 leaktest_OBJECTS = $(am_leaktest_OBJECTS)
 leaktest_DEPENDENCIES = $(am__DEPENDENCIES_2)
@@ -283,16 +291,17 @@ LTCCASCOMPILE = $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 SOURCES = $(libcord_la_SOURCES) $(libgc_la_SOURCES) \
 	$(EXTRA_libgc_la_SOURCES) $(nodist_libgc_la_SOURCES) \
 	$(libgccpp_la_SOURCES) $(libstaticrootslib_la_SOURCES) \
-	$(gctest_SOURCES) $(hugetest_SOURCES) $(leaktest_SOURCES) \
+	$(gctest_SOURCES) $(hugetest_SOURCES) \
+	$(initsecondarythread_SOURCES) $(leaktest_SOURCES) \
 	$(middletest_SOURCES) $(smashtest_SOURCES) \
 	$(staticrootstest_SOURCES) $(test_cpp_SOURCES) \
 	$(threadleaktest_SOURCES) $(tracetest_SOURCES)
 DIST_SOURCES = $(libcord_la_SOURCES) $(am__libgc_la_SOURCES_DIST) \
 	$(EXTRA_libgc_la_SOURCES) $(am__libgccpp_la_SOURCES_DIST) \
 	$(libstaticrootslib_la_SOURCES) $(gctest_SOURCES) \
-	$(hugetest_SOURCES) $(leaktest_SOURCES) $(middletest_SOURCES) \
-	$(smashtest_SOURCES) $(staticrootstest_SOURCES) \
-	$(am__test_cpp_SOURCES_DIST) \
+	$(hugetest_SOURCES) $(am__initsecondarythread_SOURCES_DIST) \
+	$(leaktest_SOURCES) $(middletest_SOURCES) $(smashtest_SOURCES) \
+	$(staticrootstest_SOURCES) $(am__test_cpp_SOURCES_DIST) \
 	$(am__threadleaktest_SOURCES_DIST) \
 	$(am__tracetest_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -662,6 +671,8 @@ libstaticrootslib_la_DEPENDENCIES = $(top_builddir)/libgc.la
 @KEEP_BACK_PTRS_TRUE@tracetest_LDADD = $(test_ldadd)
 @THREADS_TRUE@threadleaktest_SOURCES = tests/thread_leak_test.c
 @THREADS_TRUE@threadleaktest_LDADD = $(test_ldadd)
+@THREADS_TRUE@initsecondarythread_SOURCES = tests/initsecondarythread.c
+@THREADS_TRUE@initsecondarythread_LDADD = $(test_ldadd)
 @CPLUSPLUS_TRUE@test_cpp_SOURCES = tests/test_cpp.cc
 @AVOID_CPP_LIB_FALSE@@CPLUSPLUS_TRUE@test_cpp_LDADD = libgccpp.la $(test_ldadd)
 @AVOID_CPP_LIB_TRUE@@CPLUSPLUS_TRUE@test_cpp_LDADD = gc_cpp.o $(test_ldadd)
@@ -826,6 +837,9 @@ gctest$(EXEEXT): $(gctest_OBJECTS) $(gctest_DEPENDENCIES)
 hugetest$(EXEEXT): $(hugetest_OBJECTS) $(hugetest_DEPENDENCIES) 
 	@rm -f hugetest$(EXEEXT)
 	$(LINK) $(hugetest_OBJECTS) $(hugetest_LDADD) $(LIBS)
+initsecondarythread$(EXEEXT): $(initsecondarythread_OBJECTS) $(initsecondarythread_DEPENDENCIES) 
+	@rm -f initsecondarythread$(EXEEXT)
+	$(LINK) $(initsecondarythread_OBJECTS) $(initsecondarythread_LDADD) $(LIBS)
 leaktest$(EXEEXT): $(leaktest_OBJECTS) $(leaktest_DEPENDENCIES) 
 	@rm -f leaktest$(EXEEXT)
 	$(LINK) $(leaktest_OBJECTS) $(leaktest_LDADD) $(LIBS)
@@ -875,6 +889,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcj_mlc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/headers.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/huge_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/initsecondarythread.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/leak_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/malloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mallocx.Plo@am__quote@
@@ -1017,6 +1032,20 @@ huge_test.obj: tests/huge_test.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/huge_test.c' object='huge_test.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o huge_test.obj `if test -f 'tests/huge_test.c'; then $(CYGPATH_W) 'tests/huge_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/huge_test.c'; fi`
+
+initsecondarythread.o: tests/initsecondarythread.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT initsecondarythread.o -MD -MP -MF $(DEPDIR)/initsecondarythread.Tpo -c -o initsecondarythread.o `test -f 'tests/initsecondarythread.c' || echo '$(srcdir)/'`tests/initsecondarythread.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/initsecondarythread.Tpo $(DEPDIR)/initsecondarythread.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/initsecondarythread.c' object='initsecondarythread.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o initsecondarythread.o `test -f 'tests/initsecondarythread.c' || echo '$(srcdir)/'`tests/initsecondarythread.c
+
+initsecondarythread.obj: tests/initsecondarythread.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT initsecondarythread.obj -MD -MP -MF $(DEPDIR)/initsecondarythread.Tpo -c -o initsecondarythread.obj `if test -f 'tests/initsecondarythread.c'; then $(CYGPATH_W) 'tests/initsecondarythread.c'; else $(CYGPATH_W) '$(srcdir)/tests/initsecondarythread.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/initsecondarythread.Tpo $(DEPDIR)/initsecondarythread.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/initsecondarythread.c' object='initsecondarythread.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o initsecondarythread.obj `if test -f 'tests/initsecondarythread.c'; then $(CYGPATH_W) 'tests/initsecondarythread.c'; else $(CYGPATH_W) '$(srcdir)/tests/initsecondarythread.c'; fi`
 
 leak_test.o: tests/leak_test.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT leak_test.o -MD -MP -MF $(DEPDIR)/leak_test.Tpo -c -o leak_test.o `test -f 'tests/leak_test.c' || echo '$(srcdir)/'`tests/leak_test.c
