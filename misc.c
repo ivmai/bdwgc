@@ -633,6 +633,14 @@ STATIC void GC_exit_check(void)
   STATIC int GC_log = 2; /* stderr */
 #endif
 
+STATIC word GC_parse_mem_size_arg(const char *str)
+{
+  char *endptr;
+  word result = (word)STRTOULL(str, &endptr, 10);
+  /* TODO: allow 'k', 'M', 'G' suffix */
+  return result;
+}
+
 GC_INNER void GC_initialize_offsets(void);      /* defined in obj_map.c */
 GC_INNER void GC_bl_init(void); /* defined in blacklst.c */
 
@@ -941,7 +949,7 @@ GC_API void GC_CALL GC_init(void)
     {
         char * sz_str = GETENV("GC_INITIAL_HEAP_SIZE");
         if (sz_str != NULL) {
-          initial_heap_sz = (word)STRTOULL(sz_str, NULL, 10);
+          initial_heap_sz = GC_parse_mem_size_arg(sz_str);
           if (initial_heap_sz <= MINHINCR * HBLKSIZE) {
             WARN("Bad initial heap size %s - ignoring it.\n", sz_str);
           }
@@ -951,7 +959,7 @@ GC_API void GC_CALL GC_init(void)
     {
         char * sz_str = GETENV("GC_MAXIMUM_HEAP_SIZE");
         if (sz_str != NULL) {
-          word max_heap_sz = (word)STRTOULL(sz_str, NULL, 10);
+          word max_heap_sz = GC_parse_mem_size_arg(sz_str);
           if (max_heap_sz < initial_heap_sz * HBLKSIZE) {
             WARN("Bad maximum heap size %s - ignoring it.\n", sz_str);
           }

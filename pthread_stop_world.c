@@ -375,6 +375,8 @@ GC_INNER void GC_push_all_stacks(void)
 #endif
 
 #ifdef PLATFORM_ANDROID
+  extern int tkill(pid_t tid, int sig); /* from sys/linux-unistd.h */
+
   static int android_thread_kill(pid_t tid, int sig)
   {
     int ret;

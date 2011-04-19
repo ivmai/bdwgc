@@ -1,5 +1,11 @@
 2011-04-19  Ivan Maidanski  <ivmai@mail.ru>
 
+	* misc.c (GC_parse_mem_size_arg): New function.
+	* misc.c (GC_init): Use GC_parse_mem_size_arg().
+	* pthread_stop_world.c (tkill): Declare for Android.
+
+2011-04-19  Ivan Maidanski  <ivmai@mail.ru>
+
 	* include/private/gc_priv.h (_GNU_SOURCE): Include features.h
 	first (except for NaCl) and then define the macro to 1 if not yet.
 
