@@ -27,12 +27,17 @@ few minutes to complete.
 #ifdef HAVE_CONFIG_H
 # include "private/config.h"
 #endif
+
 #undef GC_BUILD
+
 #include "gc_cpp.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #define USE_STD_ALLOCATOR
+
 #ifdef USE_STD_ALLOCATOR
 #   include "gc_allocator.h"
 #elif __GNUC__
@@ -40,6 +45,7 @@ few minutes to complete.
 #else
 #   include "gc_alloc.h"
 #endif
+
 extern "C" {
 # include "private/gcconfig.h"
   GC_API void GC_printf(const char *format, ...);
@@ -47,16 +53,17 @@ extern "C" {
   /* Don't include gc_priv.h, since that may include Windows system     */
   /* header files that don't take kindly to this context.               */
 }
+
 #ifdef MSWIN32
-#   include <windows.h>
-#endif
-#ifdef GC_NAME_CONFLICT
-#   define USE_GC UseGC
-    struct foo * GC;
-#else
-#   define USE_GC GC
+# include <windows.h>
 #endif
 
+#ifdef GC_NAME_CONFLICT
+# define USE_GC UseGC
+  struct foo * GC;
+#else
+# define USE_GC GC
+#endif
 
 #define my_assert( e ) \
     if (! (e)) { \
@@ -180,7 +187,6 @@ GC_word Disguise( void* p ) {
 void* Undisguise( GC_word i ) {
     return (void*) ~ i;}
 
-
 #ifdef MSWIN32
 int APIENTRY WinMain(
     HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int cmdShow )
@@ -188,29 +194,25 @@ int APIENTRY WinMain(
     int argc;
     char* argv[ 3 ];
 
-    for (argc = 1; argc < sizeof( argv ) / sizeof( argv[ 0 ] ); argc++) {
+    for (argc = 1; argc < (int)(sizeof(argv) / sizeof(argv[0])); argc++) {
         argv[ argc ] = strtok( argc == 1 ? cmd : 0, " \t" );
         if (0 == argv[ argc ]) break;}
-
+#elif defined(MACOS)
+  int main() {
+    char* argv_[] = {"test_cpp", "10"}; // MacOS doesn't have a commandline
+    argv = argv_;
+    argc = sizeof(argv_)/sizeof(argv_[0]);
 #else
-# ifdef MACOS
-    int main() {
-# else
-    int main( int argc, char* argv[] ) {
-# endif
+  int main( int argc, char* argv[] ) {
 #endif
 
-   GC_INIT();
+    GC_INIT();
 
-#  if defined(MACOS)                        // MacOS
-    char* argv_[] = {"test_cpp", "10"};     //   doesn't
-    argv = argv_;                           //     have a
-    argc = sizeof(argv_)/sizeof(argv_[0]);  //       commandline
-#  endif
     int i, iters, n;
 #   ifdef USE_STD_ALLOCATOR
       int *x = gc_allocator<int>().allocate(1);
-      int *xio = gc_allocator_ignore_off_page<int>().allocate(1);
+      int *xio;
+      xio = gc_allocator_ignore_off_page<int>().allocate(1);
       int **xptr = traceable_allocator<int *>().allocate(1);
 #   else
 #     ifdef __GNUC__
@@ -237,7 +239,7 @@ int APIENTRY WinMain(
         GC_word as[ 1000 ];
         GC_word bs[ 1000 ];
         for (i = 0; i < 1000; i++) {
-            as[ i ] = Disguise( new (NoGC) A( i ) );
+            as[ i ] = Disguise( new (NoGC ) A( i ) );
             bs[ i ] = Disguise( new (NoGC) B( i ) );}
 
             /* Allocate a fair number of finalizable Cs, Ds, and Fs.
@@ -245,15 +247,18 @@ int APIENTRY WinMain(
         for (i = 0; i < 1000; i++) {
             C* c = new C( 2 );
             C c1( 2 );           /* stack allocation should work too */
-            D* d = ::new (USE_GC, D::CleanUp, (void*)(GC_word)i) D( i );
-            F* f = new F;
+            D* d;
+            F* f;
+            d = ::new (USE_GC, D::CleanUp, (void*)(GC_word)i) D( i );
+            f = new F;
             if (0 == i % 10) delete c;}
 
             /* Allocate a very large number of collectable As and Bs and
             drop the references to them immediately, forcing many
             collections. */
         for (i = 0; i < 1000000; i++) {
-            A* a = new (USE_GC) A( i );
+            A* a;
+            a = new (USE_GC) A( i );
             B* b = new B( i );
             b = new (USE_GC) B( i );
             if (0 == i % 10) {
@@ -278,7 +283,6 @@ int APIENTRY WinMain(
 #           ifdef FINALIZE_ON_DEMAND
                  GC_invoke_finalizers();
 #           endif
-
             }
 
             /* Make sure most of the finalizable Cs, Ds, and Fs have
@@ -292,4 +296,6 @@ int APIENTRY WinMain(
 #   endif
     my_assert (29 == x[0]);
     GC_printf( "The test appears to have succeeded.\n" );
-    return( 0 );}
+    return( 0 );
+}
+

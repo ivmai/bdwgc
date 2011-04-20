@@ -636,8 +636,34 @@ STATIC void GC_exit_check(void)
 STATIC word GC_parse_mem_size_arg(const char *str)
 {
   char *endptr;
-  word result = (word)STRTOULL(str, &endptr, 10);
-  /* TODO: allow 'k', 'M', 'G' suffix */
+  word result = 0; /* bad value */
+  char ch;
+
+  if (*str != '\0') {
+    result = (word)STRTOULL(str, &endptr, 10);
+    ch = *endptr;
+    if (ch != '\0') {
+      if (*(endptr + 1) != '\0')
+        return 0;
+      /* Allow k, M or G suffix. */
+      switch (ch) {
+      case 'K':
+      case 'k':
+        result <<= 10;
+        break;
+      case 'M':
+      case 'm':
+        result <<= 20;
+        break;
+      case 'G':
+      case 'g':
+        result <<= 30;
+        break;
+      default:
+        result = 0;
+      }
+    }
+  }
   return result;
 }
 
