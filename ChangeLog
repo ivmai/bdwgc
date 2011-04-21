@@ -1,5 +1,11 @@
 2011-04-21  Ivan Maidanski  <ivmai@mail.ru>
 
+	* include/private/gc_priv.h (_GNU_SOURCE): Revert one of the
+	recent patches regarding this macro as the macro should be set
+	(to 1) before including any other system header.
+
+2011-04-21  Ivan Maidanski  <ivmai@mail.ru>
+
 	* doc/README.environment (GC_INITIAL_HEAP_SIZE,
 	GC_MAXIMUM_HEAP_SIZE): Update.
 
