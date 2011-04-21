@@ -1,3 +1,8 @@
+2011-04-21  Ivan Maidanski  <ivmai@mail.ru>
+
+	* doc/README.environment (GC_INITIAL_HEAP_SIZE,
+	GC_MAXIMUM_HEAP_SIZE): Update.
+
 2011-04-20  Ivan Maidanski  <ivmai@mail.ru>
 
 	* misc.c (GC_parse_mem_size_arg): Allow 'k', 'M', 'G' suffixes in

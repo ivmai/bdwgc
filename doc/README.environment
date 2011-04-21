@@ -1,15 +1,17 @@
-The garbage collector looks at a number of environment variables which are
-then used to affect its operation.  These are examined only on Un*x-like
-platforms and win32.
+The garbage collector looks at a number of environment variables which are,
+then, used to affect its operation.
 
 GC_INITIAL_HEAP_SIZE=<bytes> -  Initial heap size in bytes.  May speed up
-                                process start-up.
+                                process start-up.  Optionally, may be
+                                specified with a multiplier ('k', 'M' or 'G')
+                                suffix.
 
-GC_MAXIMUM_HEAP_SIZE=<bytes> - Maximum collected heap size.
+GC_MAXIMUM_HEAP_SIZE=<bytes> - Maximum collected heap size.  Allows
+                               a multiplier suffix.
 
 GC_LOOP_ON_ABORT - Causes the collector abort routine to enter a tight loop.
                    This may make it easier to debug, such a process, especially
-                   for multithreaded platforms that don't produce usable core
+                   for multi-threaded platforms that don't produce usable core
                    files, or if a core file would be too large.  On some
                    platforms, this also causes SIGSEGV to be caught and
                    result in an infinite loop in a handler, allowing
@@ -32,7 +34,7 @@ GC_DUMP_REGULARLY - Generate a GC debugging dump GC_dump() on startup
                     if you have a bug to report, but please include only the
                     last complete dump.
 
-GC_BACKTRACES=<n> - Generate n random backtraces (for heap profiling) after
+GC_BACKTRACES=<n> - Generate n random back-traces (for heap profiling) after
                     each GC.  Collector must have been built with
                     KEEP_BACK_PTRS.  This won't generate useful output unless
                     most objects in the heap were allocated through debug
@@ -74,7 +76,7 @@ GC_IGNORE_GCJ_INFO - Ignore the type descriptors implicitly supplied by
                      descriptor generation problems, and possibly for
                      temporarily working around such problems.  It forces a
                      fully conservative scan of all heap objects except
-                     those known to be pointerfree, and may thus have other
+                     those known to be pointer-free, and may thus have other
                      adverse effects.
 
 GC_PRINT_BACK_HEIGHT - Print max length of chain through unreachable objects
@@ -118,10 +120,10 @@ other means, but this may help with debugging and testing:
 GC_ENABLE_INCREMENTAL - Turn on incremental collection at startup.  Note that,
                      depending on platform and collector configuration, this
                      may involve write protecting pieces of the heap to
-                     track modifications.  These pieces may include pointerfree
-                     objects or not.  Although this is intended to be
-                     transparent, it may cause unintended system call failures.
-                     Use with caution.
+                     track modifications.  These pieces may include
+                     pointer-free objects or not.  Although this is intended
+                     to be transparent, it may cause unintended system call
+                     failures.  Use with caution.
 
 GC_PAUSE_TIME_TARGET - Set the desired garbage collector pause time in msecs.
                      This only has an effect if incremental collection is
