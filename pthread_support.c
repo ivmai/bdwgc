@@ -708,7 +708,7 @@ STATIC void GC_remove_all_threads_but_me(void)
 #endif /* IA64 */
 
 #if defined(GC_LINUX_THREADS) && !defined(NACL)
-  /* Return the number of processors, or i<= 0 if it can't be determined. */
+  /* Return the number of processors. */
   STATIC int GC_get_nprocs(void)
   {
     /* Should be "return sysconf(_SC_NPROCESSORS_ONLN);" but that     */
@@ -732,16 +732,18 @@ STATIC void GC_remove_all_threads_but_me(void)
     f = open("/proc/stat", O_RDONLY);
     if (f < 0 || (len = STAT_READ(f, stat_buf, STAT_BUF_SIZE)) < 100) {
       WARN("Couldn't read /proc/stat\n", 0);
-      return -1;
+      return 1; /* assume an uniprocessor */
     }
+    close(f);
+
     for (i = 0; i < len - 100; ++i) {
       if (stat_buf[i] == '\n' && stat_buf[i+1] == 'c'
           && stat_buf[i+2] == 'p' && stat_buf[i+3] == 'u') {
-        int cpu_no = atoi(stat_buf + i + 4);
-        if (cpu_no >= result) result = cpu_no + 1;
+        int cpu_no = atoi(&stat_buf[i + 4]);
+        if (cpu_no >= result)
+          result = cpu_no + 1;
       }
     }
-    close(f);
     return result;
   }
 #endif /* GC_LINUX_THREADS && !NACL */
@@ -849,7 +851,7 @@ STATIC void GC_fork_child_proc(void)
     /* <takis@XFree86.Org> */
     int numCpus;
     struct dg_sys_info_pm_info pm_sysinfo;
-    int status =0;
+    int status = 0;
 
     status = dg_sys_info((long int *) &pm_sysinfo,
         DG_SYS_INFO_PM_INFO_TYPE, DG_SYS_INFO_PM_CURRENT_VERSION);
@@ -945,7 +947,7 @@ GC_INNER void GC_thr_init(void)
       GC_nprocs = pthread_num_processors_np();
 #   elif defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
          || defined(GC_SOLARIS_THREADS) || defined(GC_GNU_THREADS) \
-         || defined(NACL)
+         || defined(PLATFORM_ANDROID) || defined(NACL)
       GC_nprocs = sysconf(_SC_NPROCESSORS_ONLN);
       if (GC_nprocs <= 0) GC_nprocs = 1;
 #   elif defined(GC_IRIX_THREADS)
@@ -960,7 +962,7 @@ GC_INNER void GC_thr_init(void)
   }
   if (GC_nprocs <= 0) {
     WARN("GC_get_nprocs() returned %" GC_PRIdPTR "\n", GC_nprocs);
-    GC_nprocs = 2;
+    GC_nprocs = 2; /* assume dual-core */
 #   ifdef PARALLEL_MARK
       GC_markers = 1;
 #   endif
@@ -1844,4 +1846,4 @@ GC_INNER void GC_notify_all_marker(void)
 
 #endif /* PARALLEL_MARK */
 
-#endif /* GC_LINUX_THREADS and friends */
+#endif /* GC_PTHREADS */

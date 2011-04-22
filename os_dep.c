@@ -1222,7 +1222,7 @@ GC_INNER word GC_page_size = 0;
   }
 #endif /* !AMIGA, !BEOS, !OPENBSD, !OS2, !Windows */
 
-#if defined(GC_LINUX_THREADS) && !defined(NACL)
+#if (defined(GC_LINUX_THREADS) || defined(PLATFORM_ANDROID)) && !defined(NACL)
 
 # include <pthread.h>
   /* extern int pthread_getattr_np(pthread_t, pthread_attr_t *); */
