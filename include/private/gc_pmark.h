@@ -189,20 +189,20 @@ exit_label: ; \
 # define SET_MARK_BIT_EXIT_IF_SET(hhdr,bit_no,exit_label) \
     { \
         word * mark_word_addr = hhdr -> hb_marks + divWORDSZ(bit_no); \
-      \
         OR_WORD_EXIT_IF_SET(mark_word_addr, (word)1 << modWORDSZ(bit_no), \
                             exit_label); \
     }
-#endif
+#endif /* USE_MARK_BITS */
 
 #if defined(I386) && defined(__GNUC__)
 # define LONG_MULT(hprod, lprod, x, y) { \
-        asm("mull %2" : "=a"(lprod), "=d"(hprod) : "g"(y), "0"(x)); \
+        __asm__ __volatile__("mull %2" : "=a"(lprod), "=d"(hprod) \
+                             : "g"(y), "0"(x)); \
   }
 #else /* No in-line X86 assembly code */
 # define LONG_MULT(hprod, lprod, x, y) { \
-        unsigned long long prod = (unsigned long long)x \
-                                  * (unsigned long long)y; \
+        unsigned long long prod = (unsigned long long)(x) \
+                                  * (unsigned long long)(y); \
         hprod = prod >> 32;  \
         lprod = (unsigned32)prod;  \
   }
@@ -216,7 +216,6 @@ exit_label: ; \
     { \
         char * mark_byte_addr = (char *)hhdr -> hb_marks + (bit_no); \
         char mark_byte = *mark_byte_addr; \
-          \
         if (mark_byte) goto exit_label; \
         *mark_byte_addr = 1;  \
     }

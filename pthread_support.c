@@ -727,13 +727,14 @@ STATIC void GC_remove_all_threads_but_me(void)
     /* Some old kernels only have a single "cpu nnnn ..."     */
     /* entry in /proc/stat.  We identify those as             */
     /* uniprocessors.                                         */
-    size_t i, len = 0;
+    int i, len;
 
     f = open("/proc/stat", O_RDONLY);
-    if (f < 0 || (len = STAT_READ(f, stat_buf, STAT_BUF_SIZE)) < 100) {
+    if (f < 0) {
       WARN("Couldn't read /proc/stat\n", 0);
       return 1; /* assume an uniprocessor */
     }
+    len = STAT_READ(f, stat_buf, STAT_BUF_SIZE);
     close(f);
 
     for (i = 0; i < len - 100; ++i) {

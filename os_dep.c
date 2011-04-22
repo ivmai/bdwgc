@@ -264,10 +264,13 @@ GC_INNER char * GC_get_maps(void)
             maps_size = 0;
             do {
                 result = GC_repeat_read(f, maps_buf, maps_buf_sz-1);
-                if (result <= 0) return 0;
+                if (result <= 0)
+                  break;
                 maps_size += result;
             } while (result == maps_buf_sz-1);
             close(f);
+            if (result <= 0)
+              return 0;
 #           ifdef THREADS
               if (maps_size > old_maps_size) {
                 if (GC_print_stats)
@@ -3662,7 +3665,7 @@ GC_INNER void GC_dirty_init(void)
 GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
                                    GC_bool is_ptrfree) {}
 
-# define READ(fd,buf,nbytes) read(fd, buf, nbytes)
+#define READ read
 
 GC_INNER void GC_read_dirty(void)
 {

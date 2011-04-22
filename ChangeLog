@@ -1,5 +1,21 @@
 2011-04-22  Ivan Maidanski  <ivmai@mail.ru>
 
+	* os_dep.c (GC_get_maps): Always close the file.
+	* pthread_support.c (GC_get_nprocs): Ditto.
+	* os_dep.c (READ): Define similarly across the file (without
+	parameters).
+	* pthread_support.c (GC_get_nprocs): Use signed int type for "i"
+	and "len" local variables (since read() may return -1).
+	* include/private/gc_pmark.h (LONG_MULT): Add prefix/suffix
+	double underscore; add "volatile" for asm.
+	* include/private/gc_pmark.h (LONG_MULT): Add missing
+	parentheses.
+	* include/private/gc_priv.h (OR_WORD): Ditto.
+	* include/private/gc_priv.h (OR_WORD): Remove unnecessary brackets
+	and ';' symbol.
+
+2011-04-22  Ivan Maidanski  <ivmai@mail.ru>
+
 	* os_dep.c (GC_get_stack_base): Implement for Android (same as
 	for Linux).
 	* pthread_support.c (GC_get_nprocs): Return 1 (instead of -1) if
