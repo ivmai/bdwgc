@@ -144,14 +144,8 @@ GC_INNER GC_bool GC_collection_in_progress(void)
 GC_INNER void GC_clear_hdr_marks(hdr *hhdr)
 {
     size_t last_bit = FINAL_MARK_BIT(hhdr -> hb_sz);
-
-#   ifdef USE_MARK_BYTES
-      BZERO(hhdr -> hb_marks, MARK_BITS_SZ);
-      hhdr -> hb_marks[last_bit] = 1;
-#   else
-      BZERO(hhdr -> hb_marks, MARK_BITS_SZ*sizeof(word));
-      set_mark_bit_from_hdr(hhdr, last_bit);
-#   endif
+    BZERO(hhdr -> hb_marks, sizeof(hhdr->hb_marks));
+    set_mark_bit_from_hdr(hhdr, last_bit);
     hhdr -> hb_n_marks = 0;
 }
 
@@ -1570,7 +1564,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
                   qcontents = (q)[3]; \
                   GC_PUSH_ONE_HEAP(qcontents, (q)+3); }
 # endif
-#endif
+#endif /* !USE_MARK_BYTES && MARK_BIT_PER_GRANULE */
 
 #ifdef USE_PUSH_MARKED_ACCELERATORS
 /* Push all objects reachable from marked objects in the given block */

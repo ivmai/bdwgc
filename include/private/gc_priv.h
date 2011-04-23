@@ -172,6 +172,8 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # include "gc_locks.h"
 #endif
 
+#define ONES ((word)(signed_word)(-1))
+
 # ifdef STACK_GROWS_DOWN
 #   define COOLER_THAN >
 #   define HOTTER_THAN <
@@ -579,7 +581,6 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #define WORDSZ ((word)CPP_WORDSZ)
 #define SIGNB  ((word)1 << (WORDSZ-1))
 #define BYTES_PER_WORD      ((word)(sizeof (word)))
-#define ONES                ((word)(signed_word)(-1))
 #define divWORDSZ(n) ((n) >> LOGWL)     /* divide n by size of word */
 
 #if GRANULE_BYTES == 8
@@ -768,17 +769,6 @@ typedef word page_hash_table[PHT_SIZE];
            /* initial group of mark bits, and it is safe     */
            /* to allocate smaller header for large objects.  */
 
-# ifdef USE_MARK_BYTES
-#   define MARK_BITS_SZ (MARK_BITS_PER_HBLK + 1)
-        /* Unlike the other case, this is in units of bytes.            */
-        /* Since we force doubleword alignment, we need at most one     */
-        /* mark bit per 2 words.  But we do allocate and set one        */
-        /* extra mark bit to avoid an explicit check for the            */
-        /* partial object at the end of each block.                     */
-# else
-#   define MARK_BITS_SZ (MARK_BITS_PER_HBLK/CPP_WORDSZ + 1)
-# endif
-
 #ifdef PARALLEL_MARK
 # include "atomic_ops.h"
   typedef AO_t counter_t;
@@ -860,6 +850,12 @@ struct hblkhdr {
                                 /* Without parallel marking, the count  */
                                 /* is accurate.                         */
 #   ifdef USE_MARK_BYTES
+#     define MARK_BITS_SZ (MARK_BITS_PER_HBLK + 1)
+        /* Unlike the other case, this is in units of bytes.            */
+        /* Since we force doubleword alignment, we need at most one     */
+        /* mark bit per 2 words.  But we do allocate and set one        */
+        /* extra mark bit to avoid an explicit check for the            */
+        /* partial object at the end of each block.                     */
       union {
         char _hb_marks[MARK_BITS_SZ];
                             /* The i'th byte is 1 if the object         */
@@ -872,6 +868,7 @@ struct hblkhdr {
       } _mark_byte_union;
 #     define hb_marks _mark_byte_union._hb_marks
 #   else
+#     define MARK_BITS_SZ (MARK_BITS_PER_HBLK/CPP_WORDSZ + 1)
       word hb_marks[MARK_BITS_SZ];
 #   endif /* !USE_MARK_BYTES */
 };
@@ -1335,14 +1332,6 @@ struct GC_traced_stack_sect_s {
 /*  with it. Only those corresponding to the beginning of an */
 /*  object are used.                                         */
 
-/* Set mark bit correctly, even if mark bits may be concurrently        */
-/* accessed.                                                            */
-#ifdef PARALLEL_MARK
-# define OR_WORD(addr, bits) AO_or((volatile AO_t *)(addr), (AO_t)(bits))
-#else
-# define OR_WORD(addr, bits) (void)(*(addr) |= (bits))
-#endif
-
 /* Mark bit operations */
 
 /*
@@ -1357,6 +1346,14 @@ struct GC_traced_stack_sect_s {
 # define set_mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[n] = 1)
 # define clear_mark_bit_from_hdr(hhdr,n) ((hhdr)->hb_marks[n] = 0)
 #else
+/* Set mark bit correctly, even if mark bits may be concurrently        */
+/* accessed.                                                            */
+# ifdef PARALLEL_MARK
+    /* This is used only if we explicitly set USE_MARK_BITS.    */
+#   define OR_WORD(addr, bits) AO_or((volatile AO_t *)(addr), (AO_t)(bits))
+# else
+#   define OR_WORD(addr, bits) (void)(*(addr) |= (bits))
+# endif
 # define mark_bit_from_hdr(hhdr,n) \
               (((hhdr)->hb_marks[divWORDSZ(n)] >> modWORDSZ(n)) & (word)1)
 # define set_mark_bit_from_hdr(hhdr,n) \

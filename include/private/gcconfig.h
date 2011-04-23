@@ -1576,15 +1576,8 @@
 #     define ALIGNMENT 4
 #   endif
 #   if !defined(GC_HPUX_THREADS) && !defined(GC_LINUX_THREADS) \
-       && !defined(OPENBSD)
-#     ifndef LINUX /* For now. */
-#       define MPROTECT_VDB
-#     endif
-#   else
-#     ifdef PARALLEL_MARK
-#       define USE_MARK_BYTES
-                /* Minimize compare-and-swap usage.             */
-#     endif
+       && !defined(OPENBSD) && !defined(LINUX) /* For now. */
+#     define MPROTECT_VDB
 #   endif
 #   define STACK_GROWS_UP
 #   ifdef HPUX
@@ -2515,12 +2508,10 @@
 # define IF_CANCEL(x) /* empty */
 #endif
 
-#if !defined(USE_MARK_BITS) && !defined(USE_MARK_BYTES)
-# if defined(THREADS) && defined(PARALLEL_MARK)
-#   define USE_MARK_BYTES
-# else
-#   define USE_MARK_BITS
-# endif
+#if !defined(USE_MARK_BITS) && !defined(USE_MARK_BYTES) \
+    && defined(PARALLEL_MARK)
+   /* Minimize compare-and-swap usage.  */
+#  define USE_MARK_BYTES
 #endif
 
 #if defined(MSWINCE) && !defined(__CEGCC__) && !defined(NO_GETENV)

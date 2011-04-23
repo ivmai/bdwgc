@@ -112,7 +112,7 @@ int main(void)
     printf("\tUsing one mark ");
 #   if defined(USE_MARK_BYTES)
       printf("byte");
-#   elif defined(USE_MARK_BITS)
+#   else
       printf("bit");
 #   endif
     printf(" per ");

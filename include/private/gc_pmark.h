@@ -164,9 +164,19 @@ exit_label: ; \
 }
 
 /* Set mark bit, exit if it was already set.    */
-
-#ifdef USE_MARK_BITS
+#ifdef USE_MARK_BYTES
+  /* There is a race here, and we may set                               */
+  /* the bit twice in the concurrent case.  This can result in the      */
+  /* object being pushed twice.  But that's only a performance issue.   */
+# define SET_MARK_BIT_EXIT_IF_SET(hhdr,bit_no,exit_label) \
+    { \
+        char * mark_byte_addr = (char *)hhdr -> hb_marks + (bit_no); \
+        if (*mark_byte_addr) goto exit_label; \
+        *mark_byte_addr = 1;  \
+    }
+#else
 # ifdef PARALLEL_MARK
+    /* This is used only if we explicitly set USE_MARK_BITS.            */
     /* The following may fail to exit even if the bit was already set.  */
     /* For our uses, that's benign:                                     */
 #   define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
@@ -192,40 +202,13 @@ exit_label: ; \
         OR_WORD_EXIT_IF_SET(mark_word_addr, (word)1 << modWORDSZ(bit_no), \
                             exit_label); \
     }
-#endif /* USE_MARK_BITS */
-
-#if defined(I386) && defined(__GNUC__)
-# define LONG_MULT(hprod, lprod, x, y) { \
-        __asm__ __volatile__("mull %2" : "=a"(lprod), "=d"(hprod) \
-                             : "g"(y), "0"(x)); \
-  }
-#else /* No in-line X86 assembly code */
-# define LONG_MULT(hprod, lprod, x, y) { \
-        unsigned long long prod = (unsigned long long)(x) \
-                                  * (unsigned long long)(y); \
-        hprod = prod >> 32;  \
-        lprod = (unsigned32)prod;  \
-  }
-#endif
-
-#ifdef USE_MARK_BYTES
-  /* There is a race here, and we may set                               */
-  /* the bit twice in the concurrent case.  This can result in the      */
-  /* object being pushed twice.  But that's only a performance issue.   */
-# define SET_MARK_BIT_EXIT_IF_SET(hhdr,bit_no,exit_label) \
-    { \
-        char * mark_byte_addr = (char *)hhdr -> hb_marks + (bit_no); \
-        char mark_byte = *mark_byte_addr; \
-        if (mark_byte) goto exit_label; \
-        *mark_byte_addr = 1;  \
-    }
-#endif /* USE_MARK_BYTES */
+#endif /* !USE_MARK_BYTES */
 
 #ifdef PARALLEL_MARK
 # define INCR_MARKS(hhdr) \
-        AO_store(&(hhdr -> hb_n_marks), AO_load(&(hhdr -> hb_n_marks))+1);
+                AO_store(&hhdr->hb_n_marks, AO_load(&hhdr->hb_n_marks) + 1)
 #else
-# define INCR_MARKS(hhdr) ++(hhdr -> hb_n_marks)
+# define INCR_MARKS(hhdr) (void)(++hhdr->hb_n_marks)
 #endif
 
 #ifdef ENABLE_TRACE
@@ -237,6 +220,20 @@ exit_label: ; \
 # define TRACE(source, cmd)
 # define TRACE_TARGET(source, cmd)
 #endif
+
+#if defined(I386) && defined(__GNUC__)
+# define LONG_MULT(hprod, lprod, x, y) { \
+        __asm__ __volatile__("mull %2" : "=a"(lprod), "=d"(hprod) \
+                             : "g"(y), "0"(x)); \
+  }
+#else
+# define LONG_MULT(hprod, lprod, x, y) { \
+        unsigned long long prod = (unsigned long long)(x) \
+                                  * (unsigned long long)(y); \
+        hprod = prod >> 32;  \
+        lprod = (unsigned32)prod;  \
+  }
+#endif /* !I386 */
 
 /* If the mark bit corresponding to current is not set, set it, and     */
 /* push the contents of the object on the mark stack.  Current points   */
