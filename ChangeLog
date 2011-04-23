@@ -1,5 +1,18 @@
 2011-04-23  Ivan Maidanski  <ivmai@mail.ru>
 
+	* include/private/gc_locks.h (WIN32_LEAN_AND_MEAN, NOSERVICE):
+	Define before including windows.h.
+	* include/private/gc_priv.h (WIN32_LEAN_AND_MEAN, NOSERVICE):
+	Ditto.
+	* include/private/thread_local_alloc.h (WIN32_LEAN_AND_MEAN,
+	NOSERVICE): Ditto.
+	* include/private/gc_priv.h (CLOCKS_PER_SEC): Reformat the
+	comment.
+	* include/private/gc_priv.h (MS_TIME_DIFF): Avoid floating-point
+	arithmetics; add a comment.
+
+2011-04-23  Ivan Maidanski  <ivmai@mail.ru>
+
 	* mark.c (GC_clear_hdr_marks): Don't test USE_MARK_BYTES.
 	* extra/setjmp_t.c (main): Don't test USE_MARK_BITS.
 	* include/private/gc_pmark.h (SET_MARK_BIT_EXIT_IF_SET): Ditto.

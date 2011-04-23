@@ -312,51 +312,54 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 /*********************************/
 
 #ifdef BSD_TIME
-#   undef CLOCK_TYPE
-#   undef GET_TIME
-#   undef MS_TIME_DIFF
-#   define CLOCK_TYPE struct timeval
-#   define GET_TIME(x) { struct rusage rusage; \
-                         getrusage (RUSAGE_SELF,  &rusage); \
-                         x = rusage.ru_utime; }
-#   define MS_TIME_DIFF(a,b) \
-                ((unsigned long)((double) (a.tv_sec - b.tv_sec) * 1000.0 \
-                               + (double) (a.tv_usec - b.tv_usec) / 1000.0))
-#else /* !BSD_TIME */
-# if defined(MSWIN32) || defined(MSWINCE)
-#   include <windows.h>
-#   include <winbase.h>
-#   define CLOCK_TYPE DWORD
-#   define GET_TIME(x) x = GetTickCount()
-#   define MS_TIME_DIFF(a,b) ((long)((a)-(b)))
-# else /* !MSWIN32, !MSWINCE, !BSD_TIME */
-#   include <time.h>
-#   if !defined(__STDC__) && defined(SPARC) && defined(SUNOS4)
-      clock_t clock(void);      /* Not in time.h, where it belongs      */
-#   endif
-#   if defined(FREEBSD) && !defined(CLOCKS_PER_SEC)
-#     include <machine/limits.h>
-#     define CLOCKS_PER_SEC CLK_TCK
-#   endif
-#   if !defined(CLOCKS_PER_SEC)
-#     define CLOCKS_PER_SEC 1000000
-/*
- * This is technically a bug in the implementation.  ANSI requires that
- * CLOCKS_PER_SEC be defined.  But at least under SunOS4.1.1, it isn't.
- * Also note that the combination of ANSI C and POSIX is incredibly gross
- * here. The type clock_t is used by both clock() and times().  But on
- * some machines these use different notions of a clock tick, CLOCKS_PER_SEC
- * seems to apply only to clock.  Hence we use it here.  On many machines,
- * including SunOS, clock actually uses units of microseconds (which are
- * not really clock ticks).
- */
-#   endif
-#   define CLOCK_TYPE clock_t
-#   define GET_TIME(x) x = clock()
-#   define MS_TIME_DIFF(a,b) ((unsigned long) \
-                (1000.0*(double)((a)-(b))/(double)CLOCKS_PER_SEC))
-# endif /* !MSWIN32 */
-#endif /* !BSD_TIME */
+# undef CLOCK_TYPE
+# undef GET_TIME
+# undef MS_TIME_DIFF
+# define CLOCK_TYPE struct timeval
+# define GET_TIME(x) { struct rusage rusage; \
+                       getrusage (RUSAGE_SELF,  &rusage); \
+                       x = rusage.ru_utime; }
+# define MS_TIME_DIFF(a,b) ((unsigned long)(a.tv_sec - b.tv_sec) * 1000 \
+                            + (unsigned long)(a.tv_usec - b.tv_usec) / 1000)
+#elif defined(MSWIN32) || defined(MSWINCE)
+# ifndef WIN32_LEAN_AND_MEAN
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# define NOSERVICE
+# include <windows.h>
+# include <winbase.h>
+# define CLOCK_TYPE DWORD
+# define GET_TIME(x) x = GetTickCount()
+# define MS_TIME_DIFF(a,b) ((long)((a)-(b)))
+#else /* !MSWIN32, !MSWINCE, !BSD_TIME */
+# include <time.h>
+# if !defined(__STDC__) && defined(SPARC) && defined(SUNOS4)
+    clock_t clock(void);        /* Not in time.h, where it belongs      */
+# endif
+# if defined(FREEBSD) && !defined(CLOCKS_PER_SEC)
+#   include <machine/limits.h>
+#   define CLOCKS_PER_SEC CLK_TCK
+# endif
+# if !defined(CLOCKS_PER_SEC)
+#   define CLOCKS_PER_SEC 1000000
+    /* This is technically a bug in the implementation.                 */
+    /* ANSI requires that CLOCKS_PER_SEC be defined.  But at least      */
+    /* under SunOS 4.1.1, it isn't.  Also note that the combination of  */
+    /* ANSI C and POSIX is incredibly gross here.  The type clock_t     */
+    /* is used by both clock() and times().  But on some machines       */
+    /* these use different notions of a clock tick, CLOCKS_PER_SEC      */
+    /* seems to apply only to clock.  Hence we use it here.  On many    */
+    /* machines, including SunOS, clock actually uses units of          */
+    /* microseconds (which are not really clock ticks).                 */
+# endif
+# define CLOCK_TYPE clock_t
+# define GET_TIME(x) x = clock()
+# define MS_TIME_DIFF(a,b) (CLOCKS_PER_SEC % 1000 == 0 ? \
+        (unsigned long)((a) - (b)) / (unsigned long)(CLOCKS_PER_SEC / 1000) \
+        : ((unsigned long)((a) - (b)) * 1000) / (unsigned long)CLOCKS_PER_SEC)
+  /* Avoid using double type since some targets (like ARM) might        */
+  /* require -lm option for double-to-long conversion.                  */
+#endif /* !BSD_TIME && !MSWIN32 */
 
 /* We use bzero and bcopy internally.  They may not be available.       */
 # if defined(SPARC) && defined(SUNOS4)
@@ -852,7 +855,7 @@ struct hblkhdr {
 #   ifdef USE_MARK_BYTES
 #     define MARK_BITS_SZ (MARK_BITS_PER_HBLK + 1)
         /* Unlike the other case, this is in units of bytes.            */
-        /* Since we force doubleword alignment, we need at most one     */
+        /* Since we force double-word alignment, we need at most one    */
         /* mark bit per 2 words.  But we do allocate and set one        */
         /* extra mark bit to avoid an explicit check for the            */
         /* partial object at the end of each block.                     */

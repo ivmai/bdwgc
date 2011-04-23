@@ -52,6 +52,10 @@
 #  endif
 
 #  if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS)
+#    ifndef WIN32_LEAN_AND_MEAN
+#      define WIN32_LEAN_AND_MEAN 1
+#    endif
+#    define NOSERVICE
 #    include <windows.h>
 #    define NO_THREAD (DWORD)(-1)
      GC_EXTERN DWORD GC_lock_holder;
