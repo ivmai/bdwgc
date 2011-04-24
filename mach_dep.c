@@ -171,14 +171,6 @@ asm static void PushMacRegisters()
 # undef HAVE_PUSH_REGS
 #endif
 
-#if ((defined(UNIX_LIKE) && (defined(DARWIN) || defined(HURD) \
-                             || defined(OPENBSD) || defined(ARM32) \
-                             || defined(MIPS) || defined(AVR32))) \
-     || (defined(LINUX) && defined(SPARC)) \
-     || (defined(RTEMS) && defined(I386))) && !defined(NO_GETCONTEXT)
-# define NO_GETCONTEXT
-#endif
-
 #if !defined(HAVE_PUSH_REGS) && defined(UNIX_LIKE)
 # include <signal.h>
 # ifndef NO_GETCONTEXT

@@ -801,6 +801,7 @@ GC_INNER word GC_page_size = 0;
   {
 #   if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(USE_MMAP)
       GC_page_size = GETPAGESIZE();
+      if (!GC_page_size) ABORT("getpagesize() failed");
 #   else
       /* It's acceptable to fake it.    */
       GC_page_size = HBLKSIZE;
@@ -3114,7 +3115,9 @@ STATIC void GC_default_push_other_roots(void)
 #   elif defined(SUNOS5SIGS)
 #     define CODE_OK (si -> si_code == SEGV_ACCERR)
 #   endif
-#   include <ucontext.h>
+#   ifndef NO_GETCONTEXT
+#     include <ucontext.h>
+#   endif
     /*ARGSUSED*/
     STATIC void GC_write_fault_handler(int sig, siginfo_t *si, void *raw_sc)
 # else

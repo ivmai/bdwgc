@@ -2293,7 +2293,7 @@
 # define DATAEND (ptr_t)(end)
 #endif
 
-#if defined(SVR4) && !defined(GETPAGESIZE)
+#if (defined(SVR4) || defined(PLATFORM_ANDROID)) && !defined(GETPAGESIZE)
 # include <unistd.h>
 # define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
 #endif
@@ -2402,6 +2402,14 @@
 #if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
     && !defined(GWW_VDB) && !defined(GC_DISABLE_INCREMENTAL)
 # define DEFAULT_VDB
+#endif
+
+#if ((defined(UNIX_LIKE) && (defined(DARWIN) || defined(HURD) \
+                             || defined(OPENBSD) || defined(ARM32) \
+                             || defined(MIPS) || defined(AVR32))) \
+     || (defined(LINUX) && defined(SPARC)) \
+     || (defined(RTEMS) && defined(I386))) && !defined(NO_GETCONTEXT)
+# define NO_GETCONTEXT
 #endif
 
 #ifndef PREFETCH

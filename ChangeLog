@@ -1,3 +1,11 @@
+2011-04-24  Ivan Maidanski  <ivmai@mail.ru>
+
+	* mach_dep.c (NO_GETCONTEXT): Move to gcconfig.h.
+	* os_dep.c (GC_write_fault_handler): Don't include ucontext.h if
+	NO_GETCONTEXT.
+	* include/private/gcconfig.h (GETPAGESIZE): Define as a sysconf
+	call for Android.
+
 2011-04-23  Ivan Maidanski  <ivmai@mail.ru>
 
 	* include/private/gc_locks.h (WIN32_LEAN_AND_MEAN, NOSERVICE):
