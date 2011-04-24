@@ -1,5 +1,13 @@
 2011-04-24  Ivan Maidanski  <ivmai@mail.ru>
 
+	* pthread_support.c (GC_get_nprocs): Don't define for Android.
+	* pthread_support.c (GC_dummy_thread_local): Don't test
+	GC_LINUX_THREADS.
+	* include/gc_config_macros.h (GC_ADD_CALLER, GC_RETURN_ADDR):
+	Define for Android.
+
+2011-04-24  Ivan Maidanski  <ivmai@mail.ru>
+
 	* mach_dep.c (NO_GETCONTEXT): Move to gcconfig.h.
 	* os_dep.c (GC_write_fault_handler): Don't include ucontext.h if
 	NO_GETCONTEXT.

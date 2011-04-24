@@ -707,7 +707,7 @@ STATIC void GC_remove_all_threads_but_me(void)
   }
 #endif /* IA64 */
 
-#if defined(GC_LINUX_THREADS) && !defined(NACL)
+#if defined(GC_LINUX_THREADS) && !defined(PLATFORM_ANDROID) && !defined(NACL)
   /* Return the number of processors. */
   STATIC int GC_get_nprocs(void)
   {
@@ -883,7 +883,7 @@ STATIC void GC_fork_child_proc(void)
   }
 #endif  /* GC_DARWIN_THREADS || ... */
 
-#if defined(GC_LINUX_THREADS) && defined(INCLUDE_LINUX_THREAD_DESCR)
+#ifdef INCLUDE_LINUX_THREAD_DESCR
   __thread int GC_dummy_thread_local;
 #endif
 
