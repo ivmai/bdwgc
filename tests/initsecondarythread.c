@@ -28,16 +28,28 @@
 
 static void *thread(void *arg)
 {
- GC_INIT ();
- GC_MALLOC (123);
- GC_MALLOC (12345);
- return NULL;
+  GC_INIT();
+  GC_MALLOC(123);
+  GC_MALLOC(12345);
+  return NULL;
 }
+
+#include "private/gcconfig.h"
 
 int main(void)
 {
- pthread_t t;
- pthread_create (&t, NULL, thread, NULL);
- pthread_join (t, NULL);
- return 0;
+  pthread_t t;
+# if !(defined(BEOS) || defined(MSWIN32) || defined(MSWINCE) \
+       || defined(CYGWIN32) || defined(GC_OPENBSD_THREADS) \
+       || (defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP)) \
+       || (defined(LINUX) && !defined(NACL)) \
+       || (defined(GC_SOLARIS_THREADS) && !defined(_STRICT_STDC)) \
+       || (!defined(STACKBOTTOM) && (defined(HEURISTIC1) \
+          || (!defined(LINUX_STACKBOTTOM) && !defined(FREEBSD_STACKBOTTOM)))))
+    /* GC_INIT() must be called from main thread only. */
+    GC_INIT();
+# endif
+  pthread_create (&t, NULL, thread, NULL);
+  pthread_join (t, NULL);
+  return 0;
 }

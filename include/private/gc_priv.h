@@ -2097,6 +2097,10 @@ GC_EXTERN signed_word GC_bytes_found;
 # endif
 #endif /* GC_PTHREADS && !SIG_SUSPEND */
 
+#if defined(GC_PTHREADS) && !defined(GC_SEM_INIT_PSHARED)
+# define GC_SEM_INIT_PSHARED 0
+#endif
+
 /* Some macros for setjmp that works across signal handlers     */
 /* were possible, and a couple of routines to facilitate        */
 /* catching accesses to bad addresses when that's               */

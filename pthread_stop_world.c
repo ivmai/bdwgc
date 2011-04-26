@@ -129,7 +129,8 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
  */
 
 #ifndef SIG_THR_RESTART
-#  if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) || defined(GC_NETBSD_THREADS)
+#  if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) \
+      || defined(GC_NETBSD_THREADS)
 #    ifdef _SIGRTMIN
 #      define SIG_THR_RESTART _SIGRTMIN + 5
 #    else
@@ -794,10 +795,10 @@ GC_INNER void GC_stop_init(void)
 # if !defined(GC_OPENBSD_THREADS) && !defined(NACL)
     struct sigaction act;
 
-    if (sem_init(&GC_suspend_ack_sem, 0, 0) != 0)
+    if (sem_init(&GC_suspend_ack_sem, GC_SEM_INIT_PSHARED, 0) != 0)
         ABORT("sem_init failed");
 #   ifdef GC_NETBSD_THREADS_WORKAROUND
-      if (sem_init(&GC_restart_ack_sem, 0, 0) != 0)
+      if (sem_init(&GC_restart_ack_sem, GC_SEM_INIT_PSHARED, 0) != 0)
         ABORT("sem_init failed");
 #   endif
 

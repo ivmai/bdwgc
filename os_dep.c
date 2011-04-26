@@ -1038,7 +1038,7 @@ GC_INNER word GC_page_size = 0;
     }
 # endif /* IA64 */
 
-  STATIC ptr_t GC_linux_stack_base(void)
+  STATIC ptr_t GC_linux_main_stack_base(void)
   {
     /* We read the stack base value from /proc/self/stat.  We do this   */
     /* using direct I/O system calls in order to avoid calling malloc   */
@@ -1124,15 +1124,13 @@ GC_INNER word GC_page_size = 0;
 # include <sys/types.h>
 # include <sys/sysctl.h>
 
-  STATIC ptr_t GC_freebsd_stack_base(void)
+  STATIC ptr_t GC_freebsd_main_stack_base(void)
   {
     int nm[2] = {CTL_KERN, KERN_USRSTACK};
     ptr_t base;
     size_t len = sizeof(ptr_t);
     int r = sysctl(nm, 2, &base, &len, NULL, 0);
-
-    if (r) ABORT("Error getting stack base");
-
+    if (r) ABORT("Error getting main stack base");
     return base;
   }
 #endif /* FREEBSD_STACKBOTTOM */
@@ -1192,10 +1190,10 @@ GC_INNER word GC_page_size = 0;
 #       endif
 #     endif /* HEURISTIC1 */
 #     ifdef LINUX_STACKBOTTOM
-         result = GC_linux_stack_base();
+         result = GC_linux_main_stack_base();
 #     endif
 #     ifdef FREEBSD_STACKBOTTOM
-         result = GC_freebsd_stack_base();
+         result = GC_freebsd_main_stack_base();
 #     endif
 #     ifdef HEURISTIC2
 #       ifdef STACK_GROWS_DOWN

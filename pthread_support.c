@@ -1482,7 +1482,9 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
         (si = (struct start_info *)
                 (*GC_get_oom_fn())(sizeof(struct start_info))) == 0)
       return(ENOMEM);
-    sem_init(&(si -> registered), 0, 0);
+    if (sem_init(&(si -> registered), GC_SEM_INIT_PSHARED, 0) != 0)
+      ABORT("sem_init failed");
+
     si -> start_routine = start_routine;
     si -> arg = arg;
     LOCK();
