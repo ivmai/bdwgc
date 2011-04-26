@@ -20,7 +20,9 @@
 #include <stdio.h>
 #if !defined(MACOS) && !defined(MSWINCE)
 # include <signal.h>
-# include <sys/types.h>
+# if !defined(__CC_ARM)
+#   include <sys/types.h>
+# endif
 #endif
 
 /*

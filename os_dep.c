@@ -47,7 +47,7 @@
 #endif
 
 #if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS) \
-    && !defined(MSWINCE)
+    && !defined(MSWINCE) && !defined(__CC_ARM)
 # include <sys/types.h>
 # if !defined(MSWIN32)
 #   include <unistd.h>
@@ -131,12 +131,12 @@
 #endif
 
 #if !defined(NO_EXECUTE_PERMISSION)
-  static GC_bool pages_executable = TRUE;
+  STATIC GC_bool GC_pages_executable = TRUE;
 #else
-  static GC_bool pages_executable = FALSE;
+  STATIC GC_bool GC_pages_executable = FALSE;
 #endif
 #define IGNORE_PAGES_EXECUTABLE 1
-                        /* Undefined on pages_executable real use.      */
+                        /* Undefined on GC_pages_executable real use.  */
 
 #if defined(LINUX) && (defined(USE_PROC_FOR_LIBRARIES) || defined(IA64) \
                        || !defined(SMALL_CONFIG))
@@ -2014,7 +2014,8 @@ void GC_register_data_segments(void)
 
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MSWIN32) \
      && !defined(MSWINCE) && !defined(MACOS) && !defined(DOS4GW) \
-     && !defined(NONSTOP) && !defined(SN_TARGET_PS3) && !defined(RTEMS)
+     && !defined(NONSTOP) && !defined(SN_TARGET_PS3) && !defined(RTEMS) \
+     && !defined(__CC_ARM)
 
 # define SBRK_ARG_T ptrdiff_t
 
@@ -2061,7 +2062,7 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
 
     if (bytes & (GC_page_size - 1)) ABORT("Bad GET_MEM arg");
     result = mmap(last_addr, bytes, (PROT_READ | PROT_WRITE)
-                                    | (pages_executable ? PROT_EXEC : 0),
+                                    | (GC_pages_executable ? PROT_EXEC : 0),
                   GC_MMAP_FLAGS | OPT_MAP_ANON, zero_fd, 0/* offset */);
 #   undef IGNORE_PAGES_EXECUTABLE
 
@@ -2166,7 +2167,7 @@ void * os2_alloc(size_t bytes)
     void * result;
 
     if (DosAllocMem(&result, bytes, (PAG_READ | PAG_WRITE | PAG_COMMIT)
-                                    | (pages_executable ? PAG_EXECUTE : 0))
+                                    | (GC_pages_executable ? PAG_EXECUTE : 0))
                     != NO_ERROR) {
         return(0);
     }
@@ -2245,8 +2246,8 @@ void * os2_alloc(size_t bytes)
                                 GetWriteWatch_alloc_flag
                                 | (MEM_COMMIT | MEM_RESERVE)
                                 | GC_mem_top_down,
-                                pages_executable ? PAGE_EXECUTE_READWRITE :
-                                                   PAGE_READWRITE);
+                                GC_pages_executable ? PAGE_EXECUTE_READWRITE :
+                                                      PAGE_READWRITE);
 #       undef IGNORE_PAGES_EXECUTABLE
     }
 # endif /* !CYGWIN32 */
@@ -2312,8 +2313,8 @@ void * os2_alloc(size_t bytes)
         /* argument to span regions, so we should be OK for now.             */
         result = (ptr_t) VirtualAlloc(NULL, res_bytes,
                                 MEM_RESERVE | MEM_TOP_DOWN,
-                                pages_executable ? PAGE_EXECUTE_READWRITE :
-                                                   PAGE_READWRITE);
+                                GC_pages_executable ? PAGE_EXECUTE_READWRITE :
+                                                      PAGE_READWRITE);
         if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
             /* If I read the documentation correctly, this can  */
             /* only happen if HBLKSIZE > 64k or not a power of 2.       */
@@ -2326,8 +2327,8 @@ void * os2_alloc(size_t bytes)
 
     /* Commit pages */
     result = (ptr_t) VirtualAlloc(result, bytes, MEM_COMMIT,
-                                  pages_executable ? PAGE_EXECUTE_READWRITE :
-                                                     PAGE_READWRITE);
+                              GC_pages_executable ? PAGE_EXECUTE_READWRITE :
+                                                    PAGE_READWRITE);
 #   undef IGNORE_PAGES_EXECUTABLE
 
     if (result != NULL) {
@@ -2438,8 +2439,8 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
               ABORT("Weird VirtualQuery result");
           alloc_len = (len < mem_info.RegionSize) ? len : mem_info.RegionSize;
           result = VirtualAlloc(start_addr, alloc_len, MEM_COMMIT,
-                                pages_executable ? PAGE_EXECUTE_READWRITE :
-                                                   PAGE_READWRITE);
+                                GC_pages_executable ? PAGE_EXECUTE_READWRITE :
+                                                      PAGE_READWRITE);
           if (result != start_addr) {
               if (GetLastError() == ERROR_NOT_ENOUGH_MEMORY ||
                   GetLastError() == ERROR_OUTOFMEMORY) {
@@ -2459,12 +2460,12 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
 
 #     ifndef NACL
         result = mprotect(start_addr, len, (PROT_READ | PROT_WRITE)
-                                        | (pages_executable ? PROT_EXEC : 0));
+                                    | (GC_pages_executable ? PROT_EXEC : 0));
 #     else
         {
           /* NaCl does not expose mprotect, but mmap should work fine.  */
           void *mmap_result = mmap(start_addr, len, (PROT_READ | PROT_WRITE)
-                                         | (pages_executable ? PROT_EXEC : 0),
+                                    | (GC_pages_executable ? PROT_EXEC : 0),
                                    MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
                                    zero_fd, 0 /* offset */);
           if (mmap_result != (void *)start_addr)
@@ -2932,14 +2933,14 @@ STATIC void GC_default_push_other_roots(void)
 #   define PROTECT(addr,len) \
         if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
                       FALSE, VM_PROT_READ \
-                             | (pages_executable ? VM_PROT_EXECUTE : 0)) \
+                             | (GC_pages_executable ? VM_PROT_EXECUTE : 0)) \
                 != KERN_SUCCESS) { \
             ABORT("vm_protect(PROTECT) failed"); \
         }
 #   define UNPROTECT(addr,len) \
         if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
                       FALSE, (VM_PROT_READ | VM_PROT_WRITE) \
-                             | (pages_executable ? VM_PROT_EXECUTE : 0)) \
+                             | (GC_pages_executable ? VM_PROT_EXECUTE : 0)) \
                 != KERN_SUCCESS) { \
             ABORT("vm_protect(UNPROTECT) failed"); \
         }
@@ -2952,15 +2953,15 @@ STATIC void GC_default_push_other_roots(void)
 #   define PROTECT(addr, len) \
         if (mprotect((caddr_t)(addr), (size_t)(len), \
                      PROT_READ \
-                     | (pages_executable ? PROT_EXEC : 0)) < 0) { \
+                     | (GC_pages_executable ? PROT_EXEC : 0)) < 0) { \
           ABORT("mprotect failed"); \
         }
 #   define UNPROTECT(addr, len) \
         if (mprotect((caddr_t)(addr), (size_t)(len), \
                      (PROT_READ | PROT_WRITE) \
-                     | (pages_executable ? PROT_EXEC : 0)) < 0) { \
-          ABORT(pages_executable ? "un-mprotect executable page" \
-                                   " failed (probably disabled by OS)" : \
+                     | (GC_pages_executable ? PROT_EXEC : 0)) < 0) { \
+          ABORT(GC_pages_executable ? "un-mprotect executable page" \
+                                      " failed (probably disabled by OS)" : \
                               "un-mprotect failed"); \
         }
 #   undef IGNORE_PAGES_EXECUTABLE
@@ -2973,8 +2974,8 @@ STATIC void GC_default_push_other_roots(void)
     static DWORD protect_junk;
 #   define PROTECT(addr, len) \
         if (!VirtualProtect((addr), (len), \
-                            pages_executable ? PAGE_EXECUTE_READ : \
-                                               PAGE_READONLY, \
+                            GC_pages_executable ? PAGE_EXECUTE_READ : \
+                                                  PAGE_READONLY, \
                             &protect_junk)) { \
           if (GC_print_stats) \
             GC_log_printf("Last error code: 0x%lx\n", (long)GetLastError()); \
@@ -2982,8 +2983,8 @@ STATIC void GC_default_push_other_roots(void)
         }
 #   define UNPROTECT(addr, len) \
         if (!VirtualProtect((addr), (len), \
-                            pages_executable ? PAGE_EXECUTE_READWRITE : \
-                                               PAGE_READWRITE, \
+                            GC_pages_executable ? PAGE_EXECUTE_READWRITE : \
+                                                  PAGE_READWRITE, \
                             &protect_junk)) { \
           ABORT("un-VirtualProtect failed"); \
         }
@@ -4413,9 +4414,9 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
 GC_API void GC_CALL GC_set_pages_executable(int value)
 {
   GC_ASSERT(!GC_is_initialized);
-  /* Even if IGNORE_PAGES_EXECUTABLE is defined, pages_executable is    */
+  /* Even if IGNORE_PAGES_EXECUTABLE is defined, GC_pages_executable is */
   /* touched here to prevent a compiler warning.                        */
-  pages_executable = (GC_bool)(value != 0);
+  GC_pages_executable = (GC_bool)(value != 0);
 }
 
 /* Returns non-zero if the GC-allocated memory is executable.   */
@@ -4426,7 +4427,7 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 # ifdef IGNORE_PAGES_EXECUTABLE
     return 1;   /* Always allocate executable memory. */
 # else
-    return (int)pages_executable;
+    return (int)GC_pages_executable;
 # endif
 }
 

@@ -70,7 +70,7 @@
 #    define I386
 #    define mach_type_known
 # endif
-# if defined(__arm__) || defined(__thumb__)
+# if defined(__arm) || defined(__arm__) || defined(__thumb__)
 #    define ARM32
 #    if !defined(LINUX) && !defined(NETBSD) && !defined(OPENBSD) \
         && !defined(DARWIN) && !defined(_WIN32) && !defined(__CEGCC__)
@@ -186,8 +186,8 @@
 #   define mach_type_known
 # endif
 # if defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
-     && !defined(__OpenBSD__) && !defined(__NetBSD__) && !defined(__FreeBSD__) \
-     && !defined(__DragonFly__)
+     && !defined(__OpenBSD__) && !defined(__NetBSD__) \
+     && !defined(__FreeBSD__) && !defined(__DragonFly__)
 #   define SPARC
 #   define DRSNX
 #   define mach_type_known
@@ -250,7 +250,7 @@
 #    define IA64
 #    define mach_type_known
 # endif
-# if defined(LINUX) && defined(__arm__)
+# if defined(LINUX) && (defined(__arm) || defined(__arm__))
 #    define ARM32
 #    define mach_type_known
 # endif
@@ -265,20 +265,12 @@
 #    define POWERPC
 #    define mach_type_known
 # endif
-# if defined(FREEBSD) && (defined(powerpc) || defined(__powerpc__))
-#    define POWERPC
-#    define mach_type_known
-# endif
 # if defined(LINUX) && defined(__mc68000__)
 #    define M68K
 #    define mach_type_known
 # endif
 # if defined(LINUX) && (defined(sparc) || defined(__sparc__))
 #    define SPARC
-#    define mach_type_known
-# endif
-# if defined(LINUX) && defined(__arm__)
-#    define ARM32
 #    define mach_type_known
 # endif
 # if defined(LINUX) && defined(__sh__)
@@ -293,9 +285,14 @@
 #    define M32R
 #    define mach_type_known
 # endif
+# if defined(FREEBSD) && (defined(powerpc) || defined(__powerpc__))
+#    define POWERPC
+#    define mach_type_known
+# endif
 # if defined(__alpha) || defined(__alpha__)
 #   define ALPHA
-#   if !defined(LINUX) && !defined(NETBSD) && !defined(OPENBSD) && !defined(FREEBSD)
+#   if !defined(LINUX) && !defined(NETBSD) && !defined(OPENBSD) \
+       && !defined(FREEBSD)
 #     define OSF1       /* a.k.a Digital Unix */
 #   endif
 #   define mach_type_known
@@ -2652,18 +2649,18 @@
         struct hblk;    /* See gc_priv.h.       */
 # if defined(PCR)
     char * real_malloc(size_t bytes);
-#   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)bytes + GC_page_size) \
+#   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)(bytes) + GC_page_size) \
                                           + GC_page_size-1)
 # elif defined(OS2)
     void * os2_alloc(size_t bytes);
-#   define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc((size_t)bytes \
-                                            + GC_page_size) \
-                                            + GC_page_size-1)
+#   define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc((size_t)(bytes) \
+                                            + GC_page_size) + GC_page_size-1)
 # elif defined(NEXT) || defined(DOS4GW) || defined(NONSTOP) \
         || (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) \
-        || (defined(SOLARIS) && !defined(USE_MMAP)) || defined(RTEMS)
+        || (defined(SOLARIS) && !defined(USE_MMAP)) || defined(RTEMS) \
+        || defined(__CC_ARM)
 #   define GET_MEM(bytes) HBLKPTR((size_t)calloc(1, \
-                                              (size_t)bytes + GC_page_size) \
+                                            (size_t)(bytes) + GC_page_size) \
                                   + GC_page_size - 1)
 # elif defined(MSWIN32) || defined(CYGWIN32)
     ptr_t GC_win32_get_mem(GC_word bytes);
@@ -2672,10 +2669,10 @@
 #   if defined(USE_TEMPORARY_MEMORY)
       Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory);
 #     define GET_MEM(bytes) HBLKPTR( \
-                            GC_MacTemporaryNewPtr(bytes + GC_page_size, true) \
-                            + GC_page_size-1)
+                        GC_MacTemporaryNewPtr((bytes) + GC_page_size, true) \
+                        + GC_page_size-1)
 #   else
-#     define GET_MEM(bytes) HBLKPTR(NewPtrClear(bytes + GC_page_size) \
+#     define GET_MEM(bytes) HBLKPTR(NewPtrClear((bytes) + GC_page_size) \
                                     + GC_page_size-1)
 #   endif
 # elif defined(MSWINCE)
@@ -2684,7 +2681,7 @@
 # elif defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
     void *GC_amiga_get_mem(size_t size);
 #   define GET_MEM(bytes) HBLKPTR((size_t) \
-                          GC_amiga_get_mem((size_t)bytes + GC_page_size) \
+                          GC_amiga_get_mem((size_t)(bytes) + GC_page_size) \
                           + GC_page_size-1)
 # elif defined(SN_TARGET_PS3)
     void *ps3_get_mem(size_t size);

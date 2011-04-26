@@ -24,7 +24,7 @@
 
 /* We put this here to minimize the risk of inlining. */
 /*VARARGS*/
-#if defined(__BORLANDC__) || defined(__WATCOMC__)
+#if defined(__BORLANDC__) || defined(__WATCOMC__) || defined(__CC_ARM)
   /*ARGSUSED*/
   void GC_noop(void *p, ...) {}
 #else

@@ -1,3 +1,25 @@
+2011-04-26  Ivan Maidanski  <ivmai@mail.ru>
+
+	* alloc.c: Don't include sys/types.h for ArmCC.
+	* dyn_load.c: Ditto.
+	* os_dep.c: Ditto.
+	* mach_dep.c (_setjmp, _longjmp): Redirect to setjmp/longjmp for
+	ArmCC.
+	* mark.c (GC_noop): Define specially for ArmCC.
+	* include/private/gc_priv.h (GC_noop): Ditto.
+	* misc.c (GC_init): Don't test pointers comparison for ArmCC.
+	* misc.c: Don't include unistd.h for ArmCC.
+	* os_dep.c (pages_executable): Rename to GC_pages_executable;
+	make STATIC.
+	* os_dep.c (GC_unix_mmap_get_mem): Don't define for ArmCC.
+	* ptr_chck.c (GC_is_visible): Explicitly cast
+	(GC_DS_PER_OBJECT-GC_INDIR_PER_OBJ_BIAS) to word (to suppress
+	a compiler warning).
+	* include/private/gcconfig.h: Recognize __arm.
+	* include/private/gcconfig.h (HBLKPTR): Define for ArmCC.
+	* include/private/gcconfig.h (HBLKPTR): Add parentheses for
+	"bytes" argument.
+
 2011-04-24  Ivan Maidanski  <ivmai@mail.ru>
 
 	* pthread_support.c (GC_get_nprocs): Don't define for Android.

@@ -951,9 +951,9 @@ GC_API void GC_CALL GC_init(void)
       GC_STATIC_ASSERT((word)(-1) > (word)0);
       /* word should be unsigned */
 #   endif
-#   if !defined(__BORLANDC__) /* Workaround for Borland C */
-        GC_STATIC_ASSERT((ptr_t)(word)(-1) > (ptr_t)0);
-        /* Ptr_t comparisons should behave as unsigned comparisons.     */
+#   if !defined(__BORLANDC__) && !defined(__CC_ARM) /* Workaround */
+      GC_STATIC_ASSERT((ptr_t)(word)(-1) > (ptr_t)0);
+      /* Ptr_t comparisons should behave as unsigned comparisons.       */
 #   endif
     GC_STATIC_ASSERT((signed_word)(-1) < (signed_word)0);
 #   ifndef GC_DISABLE_INCREMENTAL
@@ -1245,7 +1245,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
 # define WRITE(f, buf, len) (GC_set_files(), GC_write(f, buf, len))
 
 #else
-# if !defined(AMIGA)
+# if !defined(AMIGA) && !defined(__CC_ARM)
 #   include <unistd.h>
 # endif
 

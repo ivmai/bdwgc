@@ -242,7 +242,7 @@ GC_API void * GC_CALL GC_is_visible(void *p)
                     } else {
                       ptr_t type_descr = *(ptr_t *)base;
                       descr = *(word *)(type_descr
-                              - (descr - (GC_DS_PER_OBJECT
+                              - (descr - (word)(GC_DS_PER_OBJECT
                                           - GC_INDIR_PER_OBJ_BIAS)));
                     }
                     goto retry;

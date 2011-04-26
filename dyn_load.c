@@ -29,7 +29,7 @@
  * But then not much of anything is safe in the presence of dlclose.
  */
 
-#if !defined(MACOS) && !defined(_WIN32_WCE)
+#if !defined(MACOS) && !defined(_WIN32_WCE) && !defined(__CC_ARM)
 # include <sys/types.h>
 #endif
 

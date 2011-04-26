@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <setjmp.h>
 
-#if defined(OS2) || defined(CX_UX)
+#if defined(OS2) || defined(CX_UX) || defined(__CC_ARM)
 # define _setjmp(b) setjmp(b)
 # define _longjmp(b,v) longjmp(b,v)
 #endif
