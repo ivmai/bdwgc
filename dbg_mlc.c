@@ -268,7 +268,7 @@ STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz, const char *string,
       ((oh *)p) -> oh_bg_ptr = HIDE_BACK_PTR((ptr_t)0);
 #   endif
     ((oh *)p) -> oh_string = string;
-    ((oh *)p) -> oh_int = linenum;
+    ((oh *)p) -> oh_int = (word)linenum;
 #   ifndef SHORT_DBG_HDRS
       ((oh *)p) -> oh_sz = sz;
       ((oh *)p) -> oh_sf = START_FLAG ^ (word)result;
@@ -291,8 +291,8 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *string,
 }
 
 #ifndef SHORT_DBG_HDRS
-  /* Check the object with debugging info at ohdr       */
-  /* return NULL if it's OK.  Else return clobbered     */
+  /* Check the object with debugging info at ohdr.      */
+  /* Return NULL if it's OK.  Else return clobbered     */
   /* address.                                           */
   STATIC ptr_t GC_check_annotated_obj(oh *ohdr)
   {
@@ -403,7 +403,8 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
   /* Use GC_err_printf and friends to print a description of the object */
   /* whose client-visible address is p, and which was smashed at        */
   /* clobbered_addr.                                                    */
-  STATIC void GC_print_smashed_obj(ptr_t p, ptr_t clobbered_addr)
+  STATIC void GC_print_smashed_obj(const char *msg, ptr_t p,
+                                   ptr_t clobbered_addr)
   {
     oh * ohdr = (oh *)GC_base(p);
 
@@ -414,12 +415,12 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
     if (clobbered_addr <= (ptr_t)(&(ohdr -> oh_sz))
         || ohdr -> oh_string == 0) {
         GC_err_printf(
-                "%p in or near object at %p(<smashed>, appr. sz = %lu)\n",
-                clobbered_addr, p,
+                "%s %p in or near object at %p(<smashed>, appr. sz = %lu)\n",
+                msg, clobbered_addr, p,
                 (unsigned long)(GC_size((ptr_t)ohdr) - DEBUG_BYTES));
     } else {
-        GC_err_printf("%p in or near object at %p (%s:%d, sz=%lu)\n",
-                clobbered_addr, p,
+        GC_err_printf("%s %p in or near object at %p (%s:%d, sz=%lu)\n",
+                msg, clobbered_addr, p,
                 (word)(ohdr -> oh_string) < HBLKSIZE ? "(smashed string)" :
                 ohdr -> oh_string[0] == '\0' ? "EMPTY(smashed?)" :
                                                 ohdr -> oh_string,
@@ -751,46 +752,44 @@ GC_API void GC_CALL GC_debug_free(void * p)
 
     base = GC_base(p);
     if (base == 0) {
-        GC_err_printf("Attempt to free invalid pointer %p\n", p);
-        ABORT("Invalid pointer passed to free()");
+      GC_err_printf("Attempt to free invalid pointer %p\n", p);
+      ABORT("Invalid pointer passed to free()");
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
-        GC_err_printf(
+      GC_err_printf(
                "GC_debug_free called on pointer %p w/o debugging info\n", p);
     } else {
 #     ifndef SHORT_DBG_HDRS
         ptr_t clobbered = GC_check_annotated_obj((oh *)base);
+        word sz = GC_size(base);
         if (clobbered != 0) {
-          if (((oh *)base) -> oh_sz == GC_size(base)) {
-            GC_err_printf(
-               "GC_debug_free: found previously deallocated (?) object at ");
-          } else {
-            GC_err_printf("GC_debug_free: found smashed location at ");
-          }
-          GC_print_smashed_obj(p, clobbered);
+          GC_print_smashed_obj(((oh *)base) -> oh_sz == sz ?
+                "GC_debug_free: found previously deallocated (?) object at" :
+                "GC_debug_free: found smashed location at",
+                               p, clobbered);
           GC_have_errors = TRUE;
         }
         /* Invalidate size */
-        ((oh *)base) -> oh_sz = GC_size(base);
+        ((oh *)base) -> oh_sz = sz;
 #     endif /* SHORT_DBG_HDRS */
     }
     if (GC_find_leak) {
-        GC_free(base);
+      GC_free(base);
     } else {
-        hdr * hhdr = HDR(p);
-        if (hhdr -> hb_obj_kind == UNCOLLECTABLE
-#           ifdef ATOMIC_UNCOLLECTABLE
-              || hhdr -> hb_obj_kind == AUNCOLLECTABLE
-#           endif
-            ) {
-          GC_free(base);
-        } else {
-            size_t i;
-            size_t obj_sz = BYTES_TO_WORDS(hhdr -> hb_sz - sizeof(oh));
+      hdr * hhdr = HDR(p);
+      if (hhdr -> hb_obj_kind == UNCOLLECTABLE
+#         ifdef ATOMIC_UNCOLLECTABLE
+            || hhdr -> hb_obj_kind == AUNCOLLECTABLE
+#         endif
+          ) {
+        GC_free(base);
+      } else {
+        size_t i;
+        size_t obj_sz = BYTES_TO_WORDS(hhdr -> hb_sz - sizeof(oh));
 
-            for (i = 0; i < obj_sz; ++i) ((word *)p)[i] = 0xdeadbeef;
-            GC_ASSERT((word *)p + i == (word *)(base + hhdr -> hb_sz));
-        }
+        for (i = 0; i < obj_sz; ++i) ((word *)p)[i] = 0xdeadbeef;
+        GC_ASSERT((word *)p + i == (word *)(base + hhdr -> hb_sz));
+      }
     } /* !GC_find_leak */
 }
 
@@ -814,11 +813,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
 GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
 {
     void * base;
-#   ifndef SHORT_DBG_HDRS
-      ptr_t clobbered;
-#   endif
     void * result;
-    size_t old_sz;
     hdr * hhdr;
     if (p == 0)
       return(GC_debug_malloc(lb, OPT_RA s, i));
@@ -860,19 +855,13 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
         ABORT("Bad kind");
     }
 
-#   ifdef SHORT_DBG_HDRS
-      old_sz = GC_size(base) - sizeof(oh);
-#   else
-      clobbered = GC_check_annotated_obj((oh *)base);
-      if (clobbered != 0) {
-        GC_err_printf("GC_debug_realloc: found smashed location at ");
-        GC_print_smashed_obj(p, clobbered);
-        GC_have_errors = TRUE;
-      }
-      old_sz = ((oh *)base) -> oh_sz;
-#   endif
-
     if (result != NULL) {
+      size_t old_sz;
+#     ifdef SHORT_DBG_HDRS
+        old_sz = GC_size(base) - sizeof(oh);
+#     else
+        old_sz = ((oh *)base) -> oh_sz;
+#     endif
       BCOPY(p, result, old_sz < lb ? old_sz : lb);
       GC_debug_free(p);
     }
@@ -911,7 +900,7 @@ STATIC void GC_print_all_smashed_proc(void)
     if (GC_n_smashed == 0) return;
     GC_err_printf("GC_check_heap_block: found smashed heap objects:\n");
     for (i = 0; i < GC_n_smashed; ++i) {
-        GC_print_smashed_obj((ptr_t)GC_base(GC_smashed[i]) + sizeof(oh),
+        GC_print_smashed_obj("", (ptr_t)GC_base(GC_smashed[i]) + sizeof(oh),
                              GC_smashed[i]);
         GC_smashed[i] = 0;
     }
