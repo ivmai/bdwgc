@@ -255,7 +255,7 @@ GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
 /* Store debugging info into p.  Return displaced pointer.         */
 /* This version assumes we do hold the allocation lock.            */
 STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz, const char *string,
-                                       word integer)
+                                       int linenum)
 {
     word * result = (word *)((oh *)p + 1);
 
@@ -268,7 +268,7 @@ STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz, const char *string,
       ((oh *)p) -> oh_bg_ptr = HIDE_BACK_PTR((ptr_t)0);
 #   endif
     ((oh *)p) -> oh_string = string;
-    ((oh *)p) -> oh_int = integer;
+    ((oh *)p) -> oh_int = linenum;
 #   ifndef SHORT_DBG_HDRS
       ((oh *)p) -> oh_sz = sz;
       ((oh *)p) -> oh_sf = START_FLAG ^ (word)result;
@@ -279,13 +279,13 @@ STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz, const char *string,
 }
 
 GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *string,
-                                   word integer)
+                                   int linenum)
 {
     ptr_t result;
     DCL_LOCK_STATE;
 
     LOCK();
-    result = GC_store_debug_info_inner(p, sz, string, integer);
+    result = GC_store_debug_info_inner(p, sz, string, linenum);
     UNLOCK();
     return result;
 }
@@ -364,6 +364,8 @@ STATIC void GC_print_type(ptr_t p)
     }
 }
 
+#define GET_OH_LINENUM(ohdr) ((int)(ohdr)->oh_int)
+
 /* Print a human-readable description of the object to stderr. p points */
 /* to somewhere inside an object with the debugging info.               */
 STATIC void GC_print_obj(ptr_t p)
@@ -377,10 +379,10 @@ STATIC void GC_print_obj(ptr_t p)
     GC_err_printf("%p (", ((ptr_t)ohdr + sizeof(oh)));
     GC_err_puts(ohdr -> oh_string);
 #   ifdef SHORT_DBG_HDRS
-      GC_err_printf(":%ld, ", (unsigned long)(ohdr -> oh_int));
+      GC_err_printf(":%d, ", GET_OH_LINENUM(ohdr));
 #   else
-      GC_err_printf(":%ld, sz=%ld, ", (unsigned long)(ohdr -> oh_int),
-                                        (unsigned long)(ohdr -> oh_sz));
+      GC_err_printf(":%d, sz=%lu, ",
+                    GET_OH_LINENUM(ohdr), (unsigned long)(ohdr -> oh_sz));
 #   endif
     GC_print_type((ptr_t)(ohdr + 1));
     GC_err_puts(")\n");
@@ -416,13 +418,12 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
                 clobbered_addr, p,
                 (unsigned long)(GC_size((ptr_t)ohdr) - DEBUG_BYTES));
     } else {
-        GC_err_printf("%p in or near object at %p(%s:%lu, sz=%lu)\n",
+        GC_err_printf("%p in or near object at %p (%s:%d, sz=%lu)\n",
                 clobbered_addr, p,
                 (word)(ohdr -> oh_string) < HBLKSIZE ? "(smashed string)" :
                 ohdr -> oh_string[0] == '\0' ? "EMPTY(smashed?)" :
                                                 ohdr -> oh_string,
-                (unsigned long)(ohdr -> oh_int),
-                (unsigned long)(ohdr -> oh_sz));
+                GET_OH_LINENUM(ohdr), (unsigned long)(ohdr -> oh_sz));
         PRINT_CALL_CHAIN(ohdr);
     }
   }
@@ -476,7 +477,7 @@ GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
         GC_start_debugging();
     }
     ADD_CALL_CHAIN(result, ra);
-    return (GC_store_debug_info(result, (word)lb, s, (word)i));
+    return (GC_store_debug_info(result, (word)lb, s, i));
 }
 
 GC_API void * GC_CALL GC_debug_malloc_ignore_off_page(size_t lb,
@@ -495,7 +496,7 @@ GC_API void * GC_CALL GC_debug_malloc_ignore_off_page(size_t lb,
         GC_start_debugging();
     }
     ADD_CALL_CHAIN(result, ra);
-    return (GC_store_debug_info(result, (word)lb, s, (word)i));
+    return (GC_store_debug_info(result, (word)lb, s, i));
 }
 
 GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
@@ -514,7 +515,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
         GC_start_debugging();
     }
     ADD_CALL_CHAIN(result, ra);
-    return (GC_store_debug_info(result, (word)lb, s, (word)i));
+    return (GC_store_debug_info(result, (word)lb, s, i));
 }
 
 #ifdef DBG_HDRS_ALL
@@ -533,7 +534,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
         return(0);
     }
     ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
-    return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", (word)0));
+    return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0));
   }
 
   GC_INNER void * GC_debug_generic_malloc_inner_ignore_off_page(size_t lb,
@@ -548,7 +549,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
         return(0);
     }
     ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
-    return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", (word)0));
+    return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0));
   }
 #endif /* DBG_HDRS_ALL */
 
@@ -568,7 +569,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
         GC_start_debugging();
     }
     ADD_CALL_CHAIN(result, ra);
-    return (GC_store_debug_info(result, (word)lb, s, (word)i));
+    return (GC_store_debug_info(result, (word)lb, s, i));
   }
 
   GC_API void GC_CALL GC_debug_change_stubborn(void *p)
@@ -634,7 +635,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)
         GC_start_debugging();
     }
     ADD_CALL_CHAIN(result, ra);
-    return (GC_store_debug_info(result, (word)lb, s, (word)i));
+    return (GC_store_debug_info(result, (word)lb, s, i));
 }
 
 GC_API char * GC_CALL GC_debug_strdup(const char *str, GC_EXTRA_PARAMS)
@@ -717,7 +718,7 @@ GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
         GC_start_debugging();
     }
     ADD_CALL_CHAIN(result, ra);
-    return (GC_store_debug_info(result, (word)lb, s, (word)i));
+    return (GC_store_debug_info(result, (word)lb, s, i));
 }
 
 #ifdef ATOMIC_UNCOLLECTABLE
@@ -739,7 +740,7 @@ GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
         GC_start_debugging();
     }
     ADD_CALL_CHAIN(result, ra);
-    return (GC_store_debug_info(result, (word)lb, s, (word)i));
+    return (GC_store_debug_info(result, (word)lb, s, i));
   }
 #endif /* ATOMIC_UNCOLLECTABLE */
 

@@ -1,3 +1,22 @@
+2011-05-03  Ivan Maidanski  <ivmai@mail.ru>
+
+	* dbg_mlc.c (GC_store_debug_info_inner, GC_store_debug_info):
+	Rename "integer" argument to "linenum"; change the type of the
+	argument to int.
+	* gcj_mlc.c (GC_store_debug_info): Ditto.
+	* dbg_mlc.c (GET_OH_LINENUM): New macro.
+	* dbg_mlc.c (GC_print_obj, GC_print_smashed_obj): Use
+	GET_OH_LINENUM; adjust print format specifier.
+	* dbg_mlc.c (GC_debug_malloc, GC_debug_malloc_ignore_off_page,
+	GC_debug_malloc_atomic_ignore_off_page,
+	GC_debug_generic_malloc_inner,
+	GC_debug_generic_malloc_inner_ignore_off_page,
+	GC_debug_malloc_stubborn, GC_debug_malloc_atomic,
+	GC_debug_malloc_uncollectable,
+	GC_debug_malloc_atomic_uncollectable): Remove unnecessary cast of
+	"i".
+	* gcj_mlc.c (GC_debug_gcj_malloc): Ditto.
+
 2011-04-26  Ivan Maidanski  <ivmai@mail.ru>
 
 	* .cvsignore (initsecondarythread, test_cpp): Add.
