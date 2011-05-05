@@ -25,7 +25,7 @@
 GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
 
 #ifndef SHORT_DBG_HDRS
-  /* Check whether object with base pointer p has debugging info  */
+  /* Check whether object with base pointer p has debugging info. */
   /* p is assumed to point to a legitimate object in our part     */
   /* of the heap.                                                 */
   /* This excludes the check as to whether the back pointer is    */
@@ -745,6 +745,14 @@ GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
   }
 #endif /* ATOMIC_UNCOLLECTABLE */
 
+#ifndef GC_FREED_MEM_MARKER
+# if CPP_WORDSZ == 32
+#   define GC_FREED_MEM_MARKER 0xdeadbeef
+# else
+#   define GC_FREED_MEM_MARKER GC_WORD_C(0xEFBEADDEdeadbeef)
+# endif
+#endif
+
 GC_API void GC_CALL GC_debug_free(void * p)
 {
     ptr_t base;
@@ -787,7 +795,8 @@ GC_API void GC_CALL GC_debug_free(void * p)
         size_t i;
         size_t obj_sz = BYTES_TO_WORDS(hhdr -> hb_sz - sizeof(oh));
 
-        for (i = 0; i < obj_sz; ++i) ((word *)p)[i] = 0xdeadbeef;
+        for (i = 0; i < obj_sz; ++i)
+          ((word *)p)[i] = GC_FREED_MEM_MARKER;
         GC_ASSERT((word *)p + i == (word *)(base + hhdr -> hb_sz));
       }
     } /* !GC_find_leak */
@@ -870,10 +879,10 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
 
 #ifndef SHORT_DBG_HDRS
 
-/* List of smashed objects.  We defer printing these, since we can't    */
-/* always print them nicely with the allocation lock held.              */
-/* We put them here instead of in GC_arrays, since it may be useful to  */
-/* be able to look at them with the debugger.                           */
+/* List of smashed (clobbered) locations.  We defer printing these,     */
+/* since we can't always print them nicely with the allocation lock     */
+/* held.  We put them here instead of in GC_arrays, since it may be     */
+/* useful to be able to look at them with the debugger.                 */
 #ifndef MAX_SMASHED
 # define MAX_SMASHED 20
 #endif

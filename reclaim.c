@@ -254,8 +254,7 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp,
 {
     hdr *hhdr = HDR(hbp);
     size_t sz = hhdr -> hb_sz;
-    int kind = hhdr -> hb_obj_kind;
-    struct obj_kind * ok = &GC_obj_kinds[kind];
+    struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
     void **flh = &(ok -> ok_freelist[BYTES_TO_GRANULES(sz)]);
 
     hhdr -> hb_last_reclaimed = (unsigned short) GC_gc_no;
@@ -263,8 +262,7 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp,
     if (report_if_found) {
         GC_reclaim_check(hbp, hhdr, sz);
     } else {
-        *flh = GC_reclaim_generic(hbp, hhdr, sz,
-                                  ok -> ok_init,
+        *flh = GC_reclaim_generic(hbp, hhdr, sz, ok -> ok_init,
                                   *flh, &GC_bytes_found);
     }
 }
@@ -322,7 +320,7 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
           GC_atomic_in_use += sz * hhdr -> hb_n_marks;
         }
         if (report_if_found) {
-          GC_reclaim_small_nonempty_block(hbp, (GC_bool)report_if_found);
+          GC_reclaim_small_nonempty_block(hbp, TRUE /* report_if_found */);
         } else if (empty) {
           GC_bytes_found += HBLKSIZE;
           GC_freehblk(hbp);

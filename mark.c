@@ -1292,7 +1292,7 @@ GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
    * in the event of a stack overflow.)
    */
   STATIC void GC_push_selected(ptr_t bottom, ptr_t top,
-                               int (*dirty_fn)(struct hblk *),
+                               GC_bool (*dirty_fn)(struct hblk *),
                                void (*push_fn)(ptr_t, ptr_t))
   {
     struct hblk * h;

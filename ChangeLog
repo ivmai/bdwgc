@@ -1,3 +1,20 @@
+2011-05-05  Ivan Maidanski  <ivmai@mail.ru>
+
+	* dbg_mlc.c (GC_has_other_debug_info): Fix punctuation in the
+	comment.
+	* dbg_mlc.c (GC_FREED_MEM_MARKER): New macro.
+	* dbg_mlc.c (GC_debug_free): Use GC_FREED_MEM_MARKER.
+	* dbg_mlc.c (GC_smashed): Refine documentation.
+	* mark.c (GC_push_selected): Change dirty_fn return type to
+	GC_bool.
+	* os_dep.c (GC_page_was_ever_dirty): Make GC_INNER.
+	* reclaim.c (GC_reclaim_small_nonempty_block): Remove "kind"
+	local  variable.
+	* reclaim.c (GC_reclaim_block): Pass true constant to
+	GC_reclaim_small_nonempty_block (instead of report_if_found).
+	* doc/README.autoconf: Update; fix a typo.
+	* include/private/gcconfig.h (GC_WORD_C): New macro.
+
 2011-05-03  Ivan Maidanski  <ivmai@mail.ru>
 
 	* dbg_mlc.c (GC_store_debug_info_inner): Cast "linenum".

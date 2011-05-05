@@ -1,4 +1,4 @@
-As of GC6.0alpha8, we attempt to support GNU-style builds based on automake,
+Starting from GC v6.0, we support GNU-style builds based on automake,
 autoconf and libtool.  This is based almost entirely on Tom Tromey's work
 with gcj.
 
@@ -36,7 +36,7 @@ as well as the sources needed to regenerate the derived files.  (If I missed
 some, please let me know.)
 
 Note that the distribution comes with a "Makefile" which will be overwritten
-by "configure" with one that is not at all equiavelent to the original.  The
+by "configure" with one that is not at all equivalent to the original.  The
 distribution contains a copy of the original "Makefile" in "Makefile.direct".
 
 Important options to configure:
@@ -48,7 +48,7 @@ Important options to configure:
   --enable-threads=TYPE   choose threading package
   --enable-parallel-mark  parallelize marking and free list construction
   --enable-gc-debug (--enable-full-debug before about 7.0)
-                          include full support for pointer backtracing etc.
+                          include full support for pointer back-tracing etc.
 
 
 Unless --prefix is set (or --exec-prefix or one of the more obscure options),

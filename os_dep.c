@@ -2894,7 +2894,7 @@ STATIC void GC_default_push_other_roots(void)
 # ifdef CHECKSUMS
     /* Could any valid GC heap pointer ever have been written to this page? */
     /*ARGSUSED*/
-    GC_bool GC_page_was_ever_dirty(struct hblk *h)
+    GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
     {
       /* FIXME - implement me.  */
       return(TRUE);

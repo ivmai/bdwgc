@@ -2536,7 +2536,17 @@
     /* strtoul() fits since sizeof(long) >= sizeof(word).       */
 #   define STRTOULL strtoul
 # endif
-#endif
+#endif /* !STRTOULL */
+
+#ifndef GC_WORD_C
+# if defined(_WIN64) && !defined(__GNUC__)
+#   define GC_WORD_C(val) val##ui64
+# elif defined(_LLP64) || defined(__LLP64__) || defined(_WIN64)
+#   define GC_WORD_C(val) val##ULL
+# else
+#   define GC_WORD_C(val) ((word)val##UL)
+# endif
+#endif /* !GC_WORD_C */
 
 #if defined(SPARC)
 # define ASM_CLEAR_CODE /* Stack clearing is crucial, and we    */
