@@ -41,8 +41,17 @@ STATIC unsigned GC_n_leaked = 0;
 
 GC_INNER GC_bool GC_have_errors = FALSE;
 
+#ifndef SHORT_DBG_HDRS
+  GC_INNER GC_bool GC_check_leaked(ptr_t base); /* from dbg_mlc.c */
+#endif
+
 GC_INLINE void GC_add_leaked(ptr_t leaked)
 {
+#  ifndef SHORT_DBG_HDRS
+     if (GC_findleak_delay_free && !GC_check_leaked(leaked))
+       return;
+#  endif
+
     GC_have_errors = TRUE;
     /* FIXME: Prevent adding an object while printing leaked ones.      */
     if (GC_n_leaked < MAX_LEAKED) {

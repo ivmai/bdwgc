@@ -1790,6 +1790,13 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
                         /* Print an address map of the process.         */
 #endif
 
+#ifndef SHORT_DBG_HDRS
+  GC_EXTERN GC_bool GC_findleak_delay_free;
+                        /* Do not immediately deallocate object on      */
+                        /* free() in the leak-finding mode, just mark   */
+                        /* it as freed (and deallocate it after GC).    */
+#endif
+
 GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
                                   /* Call error printing routine        */
                                   /* occasionally.  It is ok to read it */

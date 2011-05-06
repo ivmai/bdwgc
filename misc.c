@@ -114,6 +114,14 @@ GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
   int GC_find_leak = 0;
 #endif
 
+#ifndef SHORT_DBG_HDRS
+# ifdef GC_FINDLEAK_DELAY_FREE
+    GC_INNER GC_bool GC_findleak_delay_free = TRUE;
+# else
+    GC_INNER GC_bool GC_findleak_delay_free = FALSE;
+# endif
+#endif /* !SHORT_DBG_HDRS */
+
 #ifdef ALL_INTERIOR_POINTERS
   int GC_all_interior_pointers = 1;
 #else
@@ -789,6 +797,11 @@ GC_API void GC_CALL GC_init(void)
     if (0 != GETENV("GC_FIND_LEAK")) {
       GC_find_leak = 1;
     }
+#   ifndef SHORT_DBG_HDRS
+      if (0 != GETENV("GC_FINDLEAK_DELAY_FREE")) {
+        GC_findleak_delay_free = TRUE;
+      }
+#   endif
     if (0 != GETENV("GC_ALL_INTERIOR_POINTERS")) {
       GC_all_interior_pointers = 1;
     }

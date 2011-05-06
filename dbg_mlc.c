@@ -32,27 +32,27 @@ GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
   /* odd, which is added by the GC_HAS_DEBUG_INFO macro.          */
   /* Note that if DBG_HDRS_ALL is set, uncollectable objects      */
   /* on free lists may not have debug information set.  Thus it's */
-  /* not always safe to return TRUE, even if the client does      */
-  /* its part.                                                    */
-  GC_INNER GC_bool GC_has_other_debug_info(ptr_t p)
+  /* not always safe to return TRUE (1), even if the client does  */
+  /* its part.  Return -1 if the object with debug info has been  */
+  /* marked as deallocated.                                       */
+  GC_INNER int GC_has_other_debug_info(ptr_t p)
   {
-    oh * ohdr = (oh *)p;
-    ptr_t body = (ptr_t)(ohdr + 1);
-    word sz = GC_size((ptr_t) ohdr);
+    ptr_t body = (ptr_t)((oh *)p + 1);
+    word sz = GC_size(p);
 
-    if (HBLKPTR((ptr_t)ohdr) != HBLKPTR((ptr_t)body)
+    if (HBLKPTR(p) != HBLKPTR((ptr_t)body)
         || sz < DEBUG_BYTES + EXTRA_BYTES) {
-        return(FALSE);
+      return 0;
     }
-    if (ohdr -> oh_sz == sz) {
-        /* Object may have had debug info, but has been deallocated     */
-        return(FALSE);
+    if (((oh *)p) -> oh_sf != (START_FLAG ^ (word)body)
+        && ((word *)p)[BYTES_TO_WORDS(sz)-1] != (END_FLAG ^ (word)body)) {
+      return 0;
     }
-    if (ohdr -> oh_sf == (START_FLAG ^ (word)body)) return(TRUE);
-    if (((word *)ohdr)[BYTES_TO_WORDS(sz)-1] == (END_FLAG ^ (word)body)) {
-        return(TRUE);
+    if (((oh *)p)->oh_sz == sz) {
+      /* Object may have had debug info, but has been deallocated     */
+      return -1;
     }
-    return(FALSE);
+    return 1;
   }
 #endif /* !SHORT_DBG_HDRS */
 
@@ -771,17 +771,26 @@ GC_API void GC_CALL GC_debug_free(void * p)
         ptr_t clobbered = GC_check_annotated_obj((oh *)base);
         word sz = GC_size(base);
         if (clobbered != 0) {
-          GC_print_smashed_obj(((oh *)base) -> oh_sz == sz ?
-                "GC_debug_free: found previously deallocated (?) object at" :
-                "GC_debug_free: found smashed location at",
-                               p, clobbered);
           GC_have_errors = TRUE;
+          if (((oh *)base) -> oh_sz == sz) {
+            GC_print_smashed_obj(
+                  "GC_debug_free: found previously deallocated (?) object at",
+                  p, clobbered);
+            return; /* ignore double free */
+          } else {
+            GC_print_smashed_obj("GC_debug_free: found smashed location at",
+                                 p, clobbered);
+          }
         }
-        /* Invalidate size */
+        /* Invalidate size (mark the object as deallocated) */
         ((oh *)base) -> oh_sz = sz;
 #     endif /* SHORT_DBG_HDRS */
     }
-    if (GC_find_leak) {
+    if (GC_find_leak
+#       ifndef SHORT_DBG_HDRS
+          && ((ptr_t)p - (ptr_t)base != sizeof(oh) || !GC_findleak_delay_free)
+#       endif
+        ) {
       GC_free(base);
     } else {
       hdr * hhdr = HDR(p);
@@ -914,6 +923,7 @@ STATIC void GC_print_all_smashed_proc(void)
         GC_smashed[i] = 0;
     }
     GC_n_smashed = 0;
+    GC_err_printf("\n");
 }
 
 /* Check all marked objects in the given block for validity     */
@@ -949,6 +959,32 @@ STATIC void GC_check_heap_proc(void)
   GC_STATIC_ASSERT((sizeof(oh) & (GRANULE_BYTES - 1)) == 0);
   /* FIXME: Should we check for twice that alignment?   */
   GC_apply_to_all_blocks(GC_check_heap_block, 0);
+}
+
+GC_INNER GC_bool GC_check_leaked(ptr_t base)
+{
+  size_t i;
+  size_t obj_sz;
+  word *p;
+
+  if (
+#     if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
+        (*(word *)base & 1) != 0 &&
+#     endif
+      GC_has_other_debug_info(base) >= 0)
+    return TRUE; /* object has leaked */
+
+  /* Validate freed object's content. */
+  p = (word *)(base + sizeof(oh));
+  obj_sz = BYTES_TO_WORDS(HDR(base)->hb_sz - sizeof(oh));
+  for (i = 0; i < obj_sz; ++i)
+    if (p[i] != GC_FREED_MEM_MARKER) {
+        GC_set_mark_bit(base); /* do not reclaim it in this cycle */
+        GC_add_smashed((ptr_t)(&p[i])); /* alter-after-free detected */
+        break; /* don't report any other smashed locations in the object */
+    }
+
+  return FALSE; /* GC_debug_free() has been called */
 }
 
 #endif /* !SHORT_DBG_HDRS */

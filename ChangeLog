@@ -1,3 +1,37 @@
+2011-05-06  Ivan Maidanski  <ivmai@mail.ru>
+
+	* dbg_mlc.c (GC_has_other_debug_info): Change return type to int;
+	return -1 if the object has (or had) debugging info but was
+	marked deallocated.
+	* include/private/dbg_mlc.h (GC_has_other_debug_info): Ditto.
+	* dbg_mlc.c (GC_has_other_debug_info): Update documentation;
+	remove "ohdr" local variable.
+	* dbg_mlc.c (GC_debug_free): Don't call GC_free if the object has
+	probably been deallocated.
+	* dbg_mlc.c (GC_debug_free): Don't actually free the object even
+	in the leak-finding mode if GC_findleak_delay_free.
+	* dbg_mlc.c (GC_print_all_smashed_proc): Print a trailing blank
+	line.
+	* dbg_mlc.c (GC_check_leaked): New function (only unless
+	SHORT_DBG_HDRS).
+	* doc/README.environment (GC_FINDLEAK_DELAY_FREE): Document.
+	* doc/README.macros (GC_FINDLEAK_DELAY_FREE): Ditto.
+	* include/private/dbg_mlc.h (START_FLAG, END_FLAG): Use GC_WORD_C
+	on 64-bit architectures.
+	* include/private/dbg_mlc.h (NOT_MARKED): Remove redundant
+	parentheses.
+	* include/private/dbg_mlc.h (GC_HAS_DEBUG_INFO): Update (due to
+	GC_has_other_debug_info change).
+	* include/private/gc_priv.h (GC_findleak_delay_free): New global
+	variable declaration (unless SHORT_DBG_HDRS).
+	* misc.c (GC_findleak_delay_free): New global variable; recognize
+	GC_FINDLEAK_DELAY_FREE.
+	* misc.c (GC_init): Recognize GC_FINDLEAK_DELAY_FREE environment
+	variable (unless SHORT_DBG_HDRS).
+	* reclaim.c (GC_check_leaked): Declare (unless SHORT_DBG_HDRS).
+	* reclaim.c (GC_add_leaked): Don't add the object to leaked list
+	if marked as deallocated.
+
 2011-05-05  Ivan Maidanski  <ivmai@mail.ru>
 
 	* dbg_mlc.c (GC_has_other_debug_info): Fix punctuation in the
