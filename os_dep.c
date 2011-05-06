@@ -3150,6 +3150,7 @@ STATIC void GC_default_push_other_roots(void)
             for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
               if (HDR(h+i) != 0) {
                 in_allocd_block = TRUE;
+                break;
               }
             }
 #       else
