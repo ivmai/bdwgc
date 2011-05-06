@@ -1,5 +1,11 @@
 2011-05-06  Ivan Maidanski  <ivmai@mail.ru>
 
+	* cord/cordxtra.c (CORD_from_file_lazy_inner): Suppress
+	"unused result" compiler warning for fread().
+	* cord/cordxtra.c: Expand all tabs to spaces.
+
+2011-05-06  Ivan Maidanski  <ivmai@mail.ru>
+
 	* os_dep.c (GC_write_fault_handler): Break when in_allocd_block
 	is set to true.
 
