@@ -1,3 +1,8 @@
+2011-05-07  Ivan Maidanski  <ivmai@mail.ru> (really Thorsten Glaser)
+
+	* include/private/gcconfig.h (NO_GETCONTEXT): Do not use
+	getcontext(2) on m68k because it is not implemented there.
+
 2011-05-07  Ivan Maidanski  <ivmai@mail.ru>
 
 	* alloc.c (GC_clear_a_few_frames): Use BZERO().
