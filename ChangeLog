@@ -1,3 +1,7 @@
+2011-05-07  Ivan Maidanski  <ivmai@mail.ru>
+
+	* include/private/gcconfig.h (NO_GETCONTEXT): Add missing ')'.
+
 2011-05-07  Ivan Maidanski  <ivmai@mail.ru> (really Thorsten Glaser)
 
 	* include/private/gcconfig.h (NO_GETCONTEXT): Do not use
