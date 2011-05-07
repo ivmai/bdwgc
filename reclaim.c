@@ -511,8 +511,6 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
       for (kind = 0; kind < GC_n_kinds; kind++) {
         void **fop;
         void **lim;
-        struct hblk ** rlp;
-        struct hblk ** rlim;
         struct hblk ** rlist = GC_obj_kinds[kind].ok_reclaim_list;
         GC_bool should_clobber = (GC_obj_kinds[kind].ok_descriptor != 0);
 
@@ -530,10 +528,7 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
             }
         } /* otherwise free list objects are marked,    */
           /* and its safe to leave them                 */
-        rlim = rlist + MAXOBJGRANULES+1;
-        for( rlp = rlist; rlp < rlim; rlp++ ) {
-            *rlp = 0;
-        }
+        BZERO(rlist, (MAXOBJGRANULES + 1) * sizeof(void *));
       }
 
 

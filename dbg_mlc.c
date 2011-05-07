@@ -171,13 +171,11 @@ GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
   {
     ptr_t result;
     ptr_t base;
-    for (;;) {
-        result = GC_generate_random_heap_address();
-        base = GC_base(result);
-        if (0 == base) continue;
-        if (!GC_is_marked(base)) continue;
-        return result;
-    }
+    do {
+      result = GC_generate_random_heap_address();
+      base = GC_base(result);
+    } while (base == 0 || !GC_is_marked(base));
+    return result;
   }
 
   /* Print back trace for p */

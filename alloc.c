@@ -285,9 +285,7 @@ STATIC void GC_clear_a_few_frames(void)
 #     define CLEAR_NWORDS 64
 #   endif
     volatile word frames[CLEAR_NWORDS];
-    int i;
-
-    for (i = 0; i < CLEAR_NWORDS; i++) frames[i] = 0;
+    BZERO((word *)frames, CLEAR_NWORDS * sizeof(word));
 }
 
 /* Heap size at which we need a collection to avoid expanding past      */

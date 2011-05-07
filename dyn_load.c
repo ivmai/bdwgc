@@ -189,9 +189,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
   struct link_map *lm = GC_FirstDLOpenedLinkMap();
 
 
-  for (lm = GC_FirstDLOpenedLinkMap();
-       lm != (struct link_map *) 0;  lm = lm->l_next)
-    {
+  for (lm = GC_FirstDLOpenedLinkMap(); lm != 0; lm = lm->l_next) {
         ElfW(Ehdr) * e;
         ElfW(Phdr) * p;
         unsigned long offset;
@@ -205,7 +203,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #       endif
         p = ((ElfW(Phdr) *)(((char *)(e)) + e->e_phoff));
         offset = ((unsigned long)(lm->l_addr));
-        for( i = 0; i < (int)(e->e_phnum); ((i++),(p++)) ) {
+        for( i = 0; i < (int)e->e_phnum; i++, p++ ) {
           switch( p->p_type ) {
             case PT_LOAD:
               {
@@ -454,7 +452,7 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
     return -1;
 
   p = info->dlpi_phdr;
-  for( i = 0; i < (int)(info->dlpi_phnum); ((i++),(p++)) ) {
+  for( i = 0; i < (int)info->dlpi_phnum; i++, p++ ) {
     switch( p->p_type ) {
 #     ifdef PT_GNU_RELRO
         case PT_GNU_RELRO:
@@ -681,8 +679,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
     }
 # endif
   lm = GC_FirstDLOpenedLinkMap();
-  for (lm = GC_FirstDLOpenedLinkMap();
-       lm != (struct link_map *) 0;  lm = lm->l_next)
+  for (lm = GC_FirstDLOpenedLinkMap(); lm != 0;  lm = lm->l_next)
     {
         ElfW(Ehdr) * e;
         ElfW(Phdr) * p;
@@ -697,7 +694,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #       endif
         p = ((ElfW(Phdr) *)(((char *)(e)) + e->e_phoff));
         offset = ((unsigned long)(lm->l_addr));
-        for( i = 0; i < (int)(e->e_phnum); ((i++),(p++)) ) {
+        for( i = 0; i < (int)e->e_phnum; i++, p++ ) {
           switch( p->p_type ) {
             case PT_LOAD:
               {
@@ -1066,7 +1063,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
       /* For each region in this module */
         for (region = 0; region < moduleinfo.lmi_nregion; region++) {
-
           /* Get the region information */
             status = ldr_inq_region(mypid, moduleid, region, &regioninfo,
                                     regioninfosize, &regionreturnsize);
@@ -1471,10 +1467,8 @@ GC_INNER GC_bool GC_register_main_static_data(void)
       for (q = p -> lf_ls; q != NIL; q = q -> ls_next) {
         if ((q -> ls_flags & PCR_IL_SegFlags_Traced_MASK)
             == PCR_IL_SegFlags_Traced_on) {
-          GC_add_roots_inner
-                  ((char *)(q -> ls_addr),
-                   (char *)(q -> ls_addr) + q -> ls_bytes,
-                   TRUE);
+          GC_add_roots_inner((char *)(q -> ls_addr),
+                             (char *)(q -> ls_addr) + q -> ls_bytes, TRUE);
         }
       }
     }

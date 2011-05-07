@@ -251,10 +251,7 @@ GC_API void GC_CALL GC_clear_roots(void)
     n_root_sets = 0;
     GC_root_size = 0;
 #   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
-      {
-        int i;
-        for (i = 0; i < RT_SIZE; i++) GC_root_index[i] = 0;
-      }
+      BZERO(GC_root_index, RT_SIZE * sizeof(void *));
 #   endif
     UNLOCK();
 }
@@ -273,8 +270,7 @@ STATIC void GC_remove_root_at_pos(int i)
   STATIC void GC_rebuild_root_index(void)
   {
     int i;
-
-    for (i = 0; i < RT_SIZE; i++) GC_root_index[i] = 0;
+    BZERO(GC_root_index, RT_SIZE * sizeof(void *));
     for (i = 0; i < n_root_sets; i++)
         add_roots_to_index(GC_static_roots + i);
   }
