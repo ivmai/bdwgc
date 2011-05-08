@@ -1,3 +1,10 @@
+2011-05-08  Ivan Maidanski  <ivmai@mail.ru>
+
+	* include/gc_inline.h (GC_MALLOC_WORDS, GC_CONS): Add missing
+	parentheses.
+	* include/gc_typed.h (GC_get_bit, GC_set_bit,
+	GC_CALLOC_EXPLICITLY_TYPED): Ditto.
+
 2011-05-07  Ivan Maidanski  <ivmai@mail.ru>
 
 	* include/private/gcconfig.h (NO_GETCONTEXT): Add missing ')'.

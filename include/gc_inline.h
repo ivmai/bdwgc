@@ -122,7 +122,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
     GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
                          NORMAL, GC_malloc(grans*GC_GRANULE_BYTES), \
-                         *(void **)result = 0); \
+                         *(void **)(result) = 0); \
 }
 
 # define GC_MALLOC_ATOMIC_WORDS(result,n,tiny_fl) \
@@ -139,7 +139,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(2); \
     GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
                          NORMAL, GC_malloc(grans*GC_GRANULE_BYTES), \
-                         *(void **)result = (void *)(first)); \
+                         *(void **)(result) = (void *)(first)); \
     ((void **)(result))[1] = (void *)(second);  \
 }
 

@@ -39,9 +39,9 @@ typedef GC_word * GC_bitmap;
 
 #define GC_WORDSZ (8 * sizeof(GC_word))
 #define GC_get_bit(bm, index) \
-                (((bm)[index / GC_WORDSZ] >> (index % GC_WORDSZ)) & 1)
+            (((bm)[(index) / GC_WORDSZ] >> ((index) % GC_WORDSZ)) & 1)
 #define GC_set_bit(bm, index) \
-                (bm)[index / GC_WORDSZ] |= ((GC_word)1 << (index % GC_WORDSZ))
+            ((bm)[(index) / GC_WORDSZ] |= (GC_word)1 << ((index) % GC_WORDSZ))
 #define GC_WORD_OFFSET(t, f) (offsetof(t,f) / sizeof(GC_word))
 #define GC_WORD_LEN(t) (sizeof(t) / sizeof(GC_word))
 #define GC_BITMAP_SIZE(t) ((GC_WORD_LEN(t) + GC_WORDSZ - 1) / GC_WORDSZ)
@@ -99,7 +99,7 @@ GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t /* nelements */,
 
 #ifdef GC_DEBUG
 # define GC_MALLOC_EXPLICITLY_TYPED(bytes, d) GC_MALLOC(bytes)
-# define GC_CALLOC_EXPLICITLY_TYPED(n, bytes, d) GC_MALLOC(n * bytes)
+# define GC_CALLOC_EXPLICITLY_TYPED(n, bytes, d) GC_MALLOC((n) * (bytes))
 #else
 # define GC_MALLOC_EXPLICITLY_TYPED(bytes, d) \
                         GC_malloc_explicitly_typed(bytes, d)
