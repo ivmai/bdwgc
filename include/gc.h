@@ -1051,6 +1051,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* GC_use_threads_discovery() is called at start-up.  Except for the  */
   /* latter case, the explicit call is normally required for threads    */
   /* created by third-party libraries.                                  */
+  /* A manually registered thread requires manual unregistering.        */
   GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *);
 
   /* Unregister the current thread.  Only an explicitly registered      */
