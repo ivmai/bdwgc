@@ -43,7 +43,6 @@
 # endif
 
 #ifndef GC_H
-# define GC_I_HIDE_POINTERS /* to get GC_HIDE_POINTER() and friends */
 # include "../gc.h"
 #endif
 

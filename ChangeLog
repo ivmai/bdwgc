@@ -1,5 +1,15 @@
 2011-05-10  Ivan Maidanski  <ivmai@mail.ru>
 
+	* include/gc.h (GC_HIDE_POINTER, GC_REVEAL_POINTER): Define
+	unconditionally (do not test GC_I_HIDE_POINTERS); update the
+	comment.
+	* include/gc.h (HIDE_POINTER, REVEAL_POINTER): Define as alias to
+	GC_HIDE/REVEAL_POINTER, respectively.
+	* include/private/gc_pmark.h (GC_I_HIDE_POINTERS): Do not define.
+	* include/private/gc_priv.h (GC_I_HIDE_POINTERS): Ditto.
+
+2011-05-10  Ivan Maidanski  <ivmai@mail.ru>
+
 	* include/gc.h (GC_register_my_thread): Refine the comment.
 
 2011-05-08  Ivan Maidanski  <ivmai@mail.ru>
