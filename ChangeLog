@@ -1,5 +1,12 @@
 2011-05-10  Ivan Maidanski  <ivmai@mail.ru>
 
+	* thread_local_alloc.c (GC_malloc, GC_malloc_atomic): Join
+	adjacent "#ifdef".
+	* thread_local_alloc.c (GC_malloc_atomic): Call
+	GC_core_malloc_atomic (instead of GC_core_malloc).
+
+2011-05-10  Ivan Maidanski  <ivmai@mail.ru>
+
 	* pthread_start.c (GC_start_rtn_prepare_thread): Change return
 	type to GC_thread.
 	* pthread_start.c (GC_inner_start_routine): Pass the current
@@ -1236,7 +1243,7 @@
 	type).
 	* os_dep.c (GC_dirty_init): Print a message about SIG_IGN detected
 	(for SIGSEGV/BUS) only if GC_print_stats.
-	* os_dep.c (catch_exception_raise): Join 2 adjucent GC_err_printf
+	* os_dep.c (catch_exception_raise): Join 2 adjacent GC_err_printf
 	calls.
 
 2010-11-25  Ivan Maidanski  <ivmai@mail.ru>
