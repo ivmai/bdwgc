@@ -1164,16 +1164,20 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
+    pthread_t self = pthread_self();
     GC_thread me;
     IF_CANCEL(int cancel_state;)
     DCL_LOCK_STATE;
 
+#   ifdef DEBUG_THREADS
+      GC_log_printf("Unregistering thread 0x%x\n", (unsigned)self);
+#   endif
     LOCK();
     DISABLE_CANCEL(cancel_state);
     /* Wait for any GC that may be marking from our stack to    */
     /* complete before we remove this thread.                   */
     GC_wait_for_gc_completion(FALSE);
-    me = GC_lookup_thread(pthread_self());
+    me = GC_lookup_thread(self);
     GC_ASSERT(!(me -> flags & FINISHED));
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_destroy_thread_local(&(me->tlfs));
@@ -1186,7 +1190,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
       }
 #   endif
     if (me -> flags & DETACHED) {
-        GC_delete_thread(pthread_self());
+        GC_delete_thread(self);
     } else {
         me -> flags |= FINISHED;
     }
@@ -1363,7 +1367,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
 
 GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 {
-    pthread_t my_pthread = pthread_self();
+    pthread_t self = pthread_self();
     GC_thread me;
     DCL_LOCK_STATE;
 
@@ -1371,9 +1375,9 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
         ABORT("Threads explicit registering is not previously enabled");
 
     LOCK();
-    me = GC_lookup_thread(my_pthread);
+    me = GC_lookup_thread(self);
     if (0 == me) {
-        me = GC_register_my_thread_inner(sb, my_pthread);
+        me = GC_register_my_thread_inner(sb, self);
         me -> flags |= DETACHED;
           /* Treat as detached, since we do not need to worry about     */
           /* pointer results.                                           */
@@ -1404,17 +1408,16 @@ GC_INNER void * GC_start_rtn_prepare_thread(void *(**pstart)(void *),
                                         struct GC_stack_base *sb, void *arg)
 {
     struct start_info * si = arg;
+    pthread_t self = pthread_self();
     GC_thread me;
-    pthread_t my_pthread;
     DCL_LOCK_STATE;
 
-    my_pthread = pthread_self();
 #   ifdef DEBUG_THREADS
       GC_log_printf("Starting thread 0x%x, pid = %ld, sp = %p\n",
-                    (unsigned)my_pthread, (long)getpid(), &arg);
+                    (unsigned)self, (long)getpid(), &arg);
 #   endif
     LOCK();
-    me = GC_register_my_thread_inner(sb, my_pthread);
+    me = GC_register_my_thread_inner(sb, self);
     me -> flags = si -> flags;
 #   if defined(THREAD_LOCAL_ALLOC)
         GC_init_thread_local(&(me->tlfs));

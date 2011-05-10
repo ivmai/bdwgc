@@ -729,6 +729,10 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 {
   DCL_LOCK_STATE;
 
+# ifdef DEBUG_THREADS
+    GC_log_printf("Unregistering thread 0x%lx\n", (long)GetCurrentThreadId());
+# endif
+
   /* FIXME: is GC_wait_for_gc_completion(FALSE) needed here? */
   if (GC_win32_dll_threads) {
 #   if defined(THREAD_LOCAL_ALLOC)
@@ -2448,9 +2452,8 @@ GC_INNER void GC_thr_init(void)
     pthread_cleanup_pop(1);
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("thread %p(0x%lx) returned from start routine\n",
-                    GC_PTHREAD_PTRVAL(pthread_self()),
-                    (long)GetCurrentThreadId());
+      GC_log_printf("thread %p(0x%x) returned from start routine\n",
+                    GC_PTHREAD_PTRVAL(pthread_id), (int)thread_id);
 #   endif
     return(result);
   }
