@@ -297,18 +297,18 @@ GC_INNER void GC_push_all_stacks(void)
     ptr_t lo, hi;
     /* On IA64, we also need to scan the register backing store. */
     IF_IA64(ptr_t bs_lo; ptr_t bs_hi;)
-    pthread_t me = pthread_self();
+    pthread_t self = pthread_self();
     word total_size = 0;
 
     if (!GC_thr_initialized) GC_thr_init();
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Pushing stacks from thread 0x%x\n", (unsigned)me);
+      GC_log_printf("Pushing stacks from thread 0x%x\n", (unsigned)self);
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (p -> flags & FINISHED) continue;
         ++nthreads;
-        if (THREAD_EQUAL(p -> id, me)) {
+        if (THREAD_EQUAL(p -> id, self)) {
             GC_ASSERT(!p->thread_blocked);
 #           ifdef SPARC
                 lo = (ptr_t)GC_save_regs_in_stack();
@@ -351,10 +351,10 @@ GC_INNER void GC_push_all_stacks(void)
             GC_log_printf("Reg stack for thread 0x%x = [%p,%p)\n",
                           (unsigned)p -> id, bs_lo, bs_hi);
 #         endif
-          /* FIXME:  This (if p->id==me) may add an unbounded number of */
-          /* entries, and hence overflow the mark stack, which is bad.  */
+          /* FIXME: This (if p->id==self) may add an unbounded number of */
+          /* entries, and hence overflow the mark stack, which is bad.   */
           GC_push_all_register_sections(bs_lo, bs_hi,
-                                        THREAD_EQUAL(p -> id, me),
+                                        THREAD_EQUAL(p -> id, self),
                                         p -> traced_stack_sect);
           total_size += bs_hi - bs_lo; /* bs_lo <= bs_hi */
 #       endif
@@ -406,15 +406,15 @@ STATIC int GC_suspend_all(void)
 #   ifndef GC_OPENBSD_THREADS
       int result;
 #   endif
-    pthread_t my_thread = pthread_self();
+    pthread_t self = pthread_self();
 
 #   ifdef DEBUG_THREADS
-      GC_stopping_thread = my_thread;
+      GC_stopping_thread = self;
       GC_stopping_pid = getpid();
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
-        if (!THREAD_EQUAL(p -> id, my_thread)) {
+        if (!THREAD_EQUAL(p -> id, self)) {
             if (p -> flags & FINISHED) continue;
             if (p -> thread_blocked) /* Will wait */ continue;
 #           ifndef GC_OPENBSD_THREADS
@@ -716,7 +716,7 @@ GC_INNER void GC_stop_world(void)
 GC_INNER void GC_start_world(void)
 {
 # ifndef NACL
-    pthread_t my_thread = pthread_self();
+    pthread_t self = pthread_self();
     register int i;
     register GC_thread p;
 #   ifndef GC_OPENBSD_THREADS
@@ -736,7 +736,7 @@ GC_INNER void GC_start_world(void)
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
-        if (!THREAD_EQUAL(p -> id, my_thread)) {
+        if (!THREAD_EQUAL(p -> id, self)) {
             if (p -> flags & FINISHED) continue;
             if (p -> thread_blocked) continue;
 #           ifndef GC_OPENBSD_THREADS

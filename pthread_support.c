@@ -1162,22 +1162,11 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     return client_data; /* result */
 }
 
-GC_API int GC_CALL GC_unregister_my_thread(void)
+STATIC void GC_unregister_my_thread_inner(GC_thread me)
 {
-    pthread_t self = pthread_self();
-    GC_thread me;
-    IF_CANCEL(int cancel_state;)
-    DCL_LOCK_STATE;
-
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Unregistering thread 0x%x\n", (unsigned)self);
+      GC_log_printf("Unregistering thread 0x%x\n", (unsigned)pthread_self());
 #   endif
-    LOCK();
-    DISABLE_CANCEL(cancel_state);
-    /* Wait for any GC that may be marking from our stack to    */
-    /* complete before we remove this thread.                   */
-    GC_wait_for_gc_completion(FALSE);
-    me = GC_lookup_thread(self);
     GC_ASSERT(!(me -> flags & FINISHED));
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_destroy_thread_local(&(me->tlfs));
@@ -1190,13 +1179,27 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
       }
 #   endif
     if (me -> flags & DETACHED) {
-        GC_delete_thread(self);
+        GC_delete_thread(pthread_self());
     } else {
         me -> flags |= FINISHED;
     }
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_remove_specific(GC_thread_key);
 #   endif
+}
+
+GC_API int GC_CALL GC_unregister_my_thread(void)
+{
+    pthread_t self = pthread_self();
+    IF_CANCEL(int cancel_state;)
+    DCL_LOCK_STATE;
+
+    LOCK();
+    DISABLE_CANCEL(cancel_state);
+    /* Wait for any GC that may be marking from our stack to    */
+    /* complete before we remove this thread.                   */
+    GC_wait_for_gc_completion(FALSE);
+    GC_unregister_my_thread_inner(GC_lookup_thread(self));
     RESTORE_CANCEL(cancel_state);
     UNLOCK();
     return GC_SUCCESS;
@@ -1209,7 +1212,15 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 /* resources or id anyway.                              */
 GC_INNER void GC_thread_exit_proc(void *arg)
 {
-    GC_unregister_my_thread();
+    IF_CANCEL(int cancel_state;)
+    DCL_LOCK_STATE;
+
+    LOCK();
+    DISABLE_CANCEL(cancel_state);
+    GC_wait_for_gc_completion(FALSE);
+    GC_unregister_my_thread_inner((GC_thread)arg);
+    RESTORE_CANCEL(cancel_state);
+    UNLOCK();
 }
 
 GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
@@ -1403,7 +1414,7 @@ struct start_info {
 /* Called from GC_inner_start_routine().  Defined in this file to       */
 /* minimize the number of include files in pthread_start.c (because     */
 /* sem_t and sem_post() are not used that file directly).               */
-GC_INNER void * GC_start_rtn_prepare_thread(void *(**pstart)(void *),
+GC_INNER GC_thread GC_start_rtn_prepare_thread(void *(**pstart)(void *),
                                         void **pstart_arg,
                                         struct GC_stack_base *sb, void *arg)
 {

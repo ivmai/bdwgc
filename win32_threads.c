@@ -707,7 +707,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
 
 GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 {
-  DWORD t = GetCurrentThreadId();
+  DWORD thread_id = GetCurrentThreadId();
   DCL_LOCK_STATE;
 
   if (GC_need_to_lock == FALSE)
@@ -715,8 +715,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 
   /* We lock here, since we want to wait for an ongoing GC.     */
   LOCK();
-  if (0 == GC_lookup_thread_inner(t)) {
-    GC_register_my_thread_inner(sb, t);
+  if (0 == GC_lookup_thread_inner(thread_id)) {
+    GC_register_my_thread_inner(sb, thread_id);
     UNLOCK();
     return GC_SUCCESS;
   } else {
@@ -743,15 +743,15 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
       GC_delete_thread(GetCurrentThreadId());
 #   endif
   } else {
-    DWORD t = GetCurrentThreadId();
+    DWORD thread_id = GetCurrentThreadId();
     LOCK();
 #   if defined(THREAD_LOCAL_ALLOC)
       {
-        GC_thread me = GC_lookup_thread_inner(t);
+        GC_thread me = GC_lookup_thread_inner(thread_id);
         GC_destroy_thread_local(&(me->tlfs));
       }
 #   endif
-    GC_delete_thread(t);
+    GC_delete_thread(thread_id);
     UNLOCK();
   }
   return GC_SUCCESS;
@@ -765,7 +765,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
 {
   struct blocking_data * d = (struct blocking_data *) data;
-  DWORD t = GetCurrentThreadId();
+  DWORD thread_id = GetCurrentThreadId();
   GC_thread me;
 # ifdef IA64
     ptr_t stack_ptr = GC_save_regs_in_stack();
@@ -773,7 +773,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
   DCL_LOCK_STATE;
 
   LOCK();
-  me = GC_lookup_thread_inner(t);
+  me = GC_lookup_thread_inner(thread_id);
   GC_ASSERT(me -> thread_blocked_sp == NULL);
 # ifdef IA64
     me -> backing_store_ptr = stack_ptr;
@@ -1300,7 +1300,7 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
 
 GC_INNER void GC_push_all_stacks(void)
 {
-  DWORD me = GetCurrentThreadId();
+  DWORD thread_id = GetCurrentThreadId();
   GC_bool found_me = FALSE;
 # ifndef SMALL_CONFIG
     unsigned nthreads = 0;
@@ -1317,8 +1317,8 @@ GC_INNER void GC_push_all_stacks(void)
 #         ifndef SMALL_CONFIG
             ++nthreads;
 #         endif
-          total_size += GC_push_stack_for(t, me);
-          if (t -> id == me) found_me = TRUE;
+          total_size += GC_push_stack_for(t, thread_id);
+          if (t -> id == thread_id) found_me = TRUE;
         }
       }
     } else
@@ -1332,8 +1332,8 @@ GC_INNER void GC_push_all_stacks(void)
 #         ifndef SMALL_CONFIG
             ++nthreads;
 #         endif
-          total_size += GC_push_stack_for(t, me);
-          if (t -> id == me) found_me = TRUE;
+          total_size += GC_push_stack_for(t, thread_id);
+          if (t -> id == thread_id) found_me = TRUE;
         }
       }
     }
@@ -1854,10 +1854,10 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       GC_INNER void GC_wait_marker(void)
       {
         HANDLE event = mark_cv;
-        DWORD id = GetCurrentThreadId();
+        DWORD thread_id = GetCurrentThreadId();
         int i = (int)GC_markers - 1;
         while (i-- > 0) {
-          if (GC_marker_Id[i] == id) {
+          if (GC_marker_Id[i] == thread_id) {
             event = GC_marker_cv[i];
             break;
           }
@@ -1873,11 +1873,11 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
       GC_INNER void GC_notify_all_marker(void)
       {
-        DWORD id = GetCurrentThreadId();
+        DWORD thread_id = GetCurrentThreadId();
         int i = (int)GC_markers - 1;
         while (i-- > 0) {
           /* Notify every marker ignoring self (for efficiency).  */
-          if (SetEvent(GC_marker_Id[i] != id ? GC_marker_cv[i] :
+          if (SetEvent(GC_marker_Id[i] != thread_id ? GC_marker_cv[i] :
                        mark_cv) == FALSE)
             ABORT("SetEvent() failed");
         }
@@ -1985,8 +1985,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     GC_register_my_thread(sb); /* This waits for an in-progress GC.     */
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("thread 0x%lx starting...\n",
-                    (long)GetCurrentThreadId());
+      GC_log_printf("thread 0x%lx starting...\n", (long)GetCurrentThreadId());
 #   endif
 
     GC_free(arg);
