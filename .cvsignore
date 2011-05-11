@@ -15,5 +15,6 @@ libtool
 middletest
 smashtest
 staticrootstest
+threadkey_test
 threadleaktest
 test_cpp

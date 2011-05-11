@@ -68,6 +68,11 @@ check_PROGRAMS += threadleaktest
 threadleaktest_SOURCES = tests/thread_leak_test.c
 threadleaktest_LDADD = $(test_ldadd)
 
+TESTS += threadkey_test$(EXEEXT)
+check_PROGRAMS += threadkey_test
+threadkey_test_SOURCES = tests/threadkey_test.c
+threadkey_test_LDADD = $(test_ldadd)
+
 TESTS += initsecondarythread$(EXEEXT)
 check_PROGRAMS += initsecondarythread
 initsecondarythread_SOURCES = tests/initsecondarythread.c

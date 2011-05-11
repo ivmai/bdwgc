@@ -122,8 +122,10 @@ DIST_COMMON = $(am__configure_deps) $(am__pkginclude_HEADERS_DIST) \
 @KEEP_BACK_PTRS_TRUE@am__append_7 = tracetest$(EXEEXT)
 @KEEP_BACK_PTRS_TRUE@am__append_8 = tracetest
 @THREADS_TRUE@am__append_9 = threadleaktest$(EXEEXT) \
+@THREADS_TRUE@	threadkey_test$(EXEEXT) \
 @THREADS_TRUE@	initsecondarythread$(EXEEXT)
-@THREADS_TRUE@am__append_10 = threadleaktest initsecondarythread
+@THREADS_TRUE@am__append_10 = threadleaktest threadkey_test \
+@THREADS_TRUE@	initsecondarythread
 @CPLUSPLUS_TRUE@am__append_11 = test_cpp$(EXEEXT)
 @CPLUSPLUS_TRUE@am__append_12 = test_cpp
 subdir = .
@@ -215,6 +217,7 @@ libstaticrootslib_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(libstaticrootslib_la_LDFLAGS) $(LDFLAGS) -o $@
 @KEEP_BACK_PTRS_TRUE@am__EXEEXT_1 = tracetest$(EXEEXT)
 @THREADS_TRUE@am__EXEEXT_2 = threadleaktest$(EXEEXT) \
+@THREADS_TRUE@	threadkey_test$(EXEEXT) \
 @THREADS_TRUE@	initsecondarythread$(EXEEXT)
 @CPLUSPLUS_TRUE@am__EXEEXT_3 = test_cpp$(EXEEXT)
 am_gctest_OBJECTS = test.$(OBJEXT)
@@ -249,6 +252,10 @@ test_cpp_OBJECTS = $(am_test_cpp_OBJECTS)
 @AVOID_CPP_LIB_FALSE@@CPLUSPLUS_TRUE@	$(am__DEPENDENCIES_2)
 @AVOID_CPP_LIB_TRUE@@CPLUSPLUS_TRUE@test_cpp_DEPENDENCIES = gc_cpp.o \
 @AVOID_CPP_LIB_TRUE@@CPLUSPLUS_TRUE@	$(am__DEPENDENCIES_2)
+am__threadkey_test_SOURCES_DIST = tests/threadkey_test.c
+@THREADS_TRUE@am_threadkey_test_OBJECTS = threadkey_test.$(OBJEXT)
+threadkey_test_OBJECTS = $(am_threadkey_test_OBJECTS)
+@THREADS_TRUE@threadkey_test_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am__threadleaktest_SOURCES_DIST = tests/thread_leak_test.c
 @THREADS_TRUE@am_threadleaktest_OBJECTS = thread_leak_test.$(OBJEXT)
 threadleaktest_OBJECTS = $(am_threadleaktest_OBJECTS)
@@ -295,13 +302,15 @@ SOURCES = $(libcord_la_SOURCES) $(libgc_la_SOURCES) \
 	$(initsecondarythread_SOURCES) $(leaktest_SOURCES) \
 	$(middletest_SOURCES) $(smashtest_SOURCES) \
 	$(staticrootstest_SOURCES) $(test_cpp_SOURCES) \
-	$(threadleaktest_SOURCES) $(tracetest_SOURCES)
+	$(threadkey_test_SOURCES) $(threadleaktest_SOURCES) \
+	$(tracetest_SOURCES)
 DIST_SOURCES = $(libcord_la_SOURCES) $(am__libgc_la_SOURCES_DIST) \
 	$(EXTRA_libgc_la_SOURCES) $(am__libgccpp_la_SOURCES_DIST) \
 	$(libstaticrootslib_la_SOURCES) $(gctest_SOURCES) \
 	$(hugetest_SOURCES) $(am__initsecondarythread_SOURCES_DIST) \
 	$(leaktest_SOURCES) $(middletest_SOURCES) $(smashtest_SOURCES) \
 	$(staticrootstest_SOURCES) $(am__test_cpp_SOURCES_DIST) \
+	$(am__threadkey_test_SOURCES_DIST) \
 	$(am__threadleaktest_SOURCES_DIST) \
 	$(am__tracetest_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -671,6 +680,8 @@ libstaticrootslib_la_DEPENDENCIES = $(top_builddir)/libgc.la
 @KEEP_BACK_PTRS_TRUE@tracetest_LDADD = $(test_ldadd)
 @THREADS_TRUE@threadleaktest_SOURCES = tests/thread_leak_test.c
 @THREADS_TRUE@threadleaktest_LDADD = $(test_ldadd)
+@THREADS_TRUE@threadkey_test_SOURCES = tests/threadkey_test.c
+@THREADS_TRUE@threadkey_test_LDADD = $(test_ldadd)
 @THREADS_TRUE@initsecondarythread_SOURCES = tests/initsecondarythread.c
 @THREADS_TRUE@initsecondarythread_LDADD = $(test_ldadd)
 @CPLUSPLUS_TRUE@test_cpp_SOURCES = tests/test_cpp.cc
@@ -855,6 +866,9 @@ staticrootstest$(EXEEXT): $(staticrootstest_OBJECTS) $(staticrootstest_DEPENDENC
 test_cpp$(EXEEXT): $(test_cpp_OBJECTS) $(test_cpp_DEPENDENCIES) 
 	@rm -f test_cpp$(EXEEXT)
 	$(CXXLINK) $(test_cpp_OBJECTS) $(test_cpp_LDADD) $(LIBS)
+threadkey_test$(EXEEXT): $(threadkey_test_OBJECTS) $(threadkey_test_DEPENDENCIES) 
+	@rm -f threadkey_test$(EXEEXT)
+	$(LINK) $(threadkey_test_OBJECTS) $(threadkey_test_LDADD) $(LIBS)
 threadleaktest$(EXEEXT): $(threadleaktest_OBJECTS) $(threadleaktest_DEPENDENCIES) 
 	@rm -f threadleaktest$(EXEEXT)
 	$(LINK) $(threadleaktest_OBJECTS) $(threadleaktest_LDADD) $(LIBS)
@@ -917,6 +931,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_cpp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/thread_leak_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/thread_local_alloc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/threadkey_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trace_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/typd_mlc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win32_threads.Plo@am__quote@
@@ -1102,6 +1117,20 @@ staticrootstest.obj: tests/staticrootstest.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/staticrootstest.c' object='staticrootstest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o staticrootstest.obj `if test -f 'tests/staticrootstest.c'; then $(CYGPATH_W) 'tests/staticrootstest.c'; else $(CYGPATH_W) '$(srcdir)/tests/staticrootstest.c'; fi`
+
+threadkey_test.o: tests/threadkey_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT threadkey_test.o -MD -MP -MF $(DEPDIR)/threadkey_test.Tpo -c -o threadkey_test.o `test -f 'tests/threadkey_test.c' || echo '$(srcdir)/'`tests/threadkey_test.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/threadkey_test.Tpo $(DEPDIR)/threadkey_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/threadkey_test.c' object='threadkey_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o threadkey_test.o `test -f 'tests/threadkey_test.c' || echo '$(srcdir)/'`tests/threadkey_test.c
+
+threadkey_test.obj: tests/threadkey_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT threadkey_test.obj -MD -MP -MF $(DEPDIR)/threadkey_test.Tpo -c -o threadkey_test.obj `if test -f 'tests/threadkey_test.c'; then $(CYGPATH_W) 'tests/threadkey_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/threadkey_test.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/threadkey_test.Tpo $(DEPDIR)/threadkey_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/threadkey_test.c' object='threadkey_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o threadkey_test.obj `if test -f 'tests/threadkey_test.c'; then $(CYGPATH_W) 'tests/threadkey_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/threadkey_test.c'; fi`
 
 thread_leak_test.o: tests/thread_leak_test.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT thread_leak_test.o -MD -MP -MF $(DEPDIR)/thread_leak_test.Tpo -c -o thread_leak_test.o `test -f 'tests/thread_leak_test.c' || echo '$(srcdir)/'`tests/thread_leak_test.c
