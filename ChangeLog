@@ -1,5 +1,29 @@
 2011-05-11  Ivan Maidanski  <ivmai@mail.ru>
 
+	* backgraph.c (add_edge): Recognize DEBUG_PRINT_BIG_N_EDGES macro.
+	* os_dep.c (GC_set_and_save_fault_handler): Recognize
+	SIGACTION_FLAGS_NODEFER_HACK macro.
+	* pthread_support.c (mark_mutex): Recognize GLIBC_2_1_MUTEX_HACK
+	macro.
+	* pthread_support.c (GC_acquire_mark_lock): Remove commented out
+	code.
+	* include/gc_inline.h (GC_MALLOC_WORDS, GC_MALLOC_ATOMIC_WORDS,
+	GC_CONS): Remove trailing space (before back-slash).
+	* include/private/gc_hdrs.h (GET_BI, GET_HDR_ADDR): Ditto.
+	* include/private/gc_pmark.h (PUSH_OBJ, PUSH_CONTENTS,
+	SET_MARK_BIT_EXIT_IF_SET, LONG_MULT, PUSH_CONTENTS_HDR,
+	GC_PUSH_ONE_STACK, GC_PUSH_ONE_HEAP): Ditto.
+	* include/private/thread_local_alloc.h (GC_key_create): Ditto.
+	* include/private/gc_priv.h (SUNOS5SIGS): Don't include
+	sys/siginfo.h on Linux.
+	* include/private/gcconfig.h: Reformat comments (and some code).
+	* include/private/gcconfig.h (FORCE_WRITE_PREFETCH): New macro
+	recognized, force PREFETCH_FOR_WRITE to be defined on x86.
+	* include/private/gcconfig.h (USE_HPUX_FIXED_STACKBOTTOM): New
+	macro recognized (for HP/UX).
+
+2011-05-11  Ivan Maidanski  <ivmai@mail.ru>
+
 	* os_dep.c (GC_gww_page_was_ever_dirty): Fix comment (for
 	GWW_VDB).
 	* os_dep.c (GC_dirty_init): Use memset() for GC_written_pages

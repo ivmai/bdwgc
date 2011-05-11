@@ -118,7 +118,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
 /* free list array.  For single-threaded applications, this may be      */
 /* a global array.                                                      */
 # define GC_MALLOC_WORDS(result,n,tiny_fl) \
-{       \
+{ \
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
     GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
                          NORMAL, GC_malloc(grans*GC_GRANULE_BYTES), \
@@ -126,7 +126,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
 }
 
 # define GC_MALLOC_ATOMIC_WORDS(result,n,tiny_fl) \
-{       \
+{ \
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
     GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
                          PTRFREE, GC_malloc_atomic(grans*GC_GRANULE_BYTES), \
@@ -135,12 +135,12 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
 
 /* And once more for two word initialized objects: */
 # define GC_CONS(result, first, second, tiny_fl) \
-{       \
+{ \
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(2); \
     GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
                          NORMAL, GC_malloc(grans*GC_GRANULE_BYTES), \
                          *(void **)(result) = (void *)(first)); \
-    ((void **)(result))[1] = (void *)(second);  \
+    ((void **)(result))[1] = (void *)(second); \
 }
 
 #endif /* !GC_INLINE_H */

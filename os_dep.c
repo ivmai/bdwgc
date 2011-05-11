@@ -855,16 +855,17 @@ GC_INNER word GC_page_size = 0;
 
     GC_INNER void GC_set_and_save_fault_handler(GC_fault_handler_t h)
     {
-#       if defined(SUNOS5SIGS) || defined(IRIX5)  \
+#       if defined(SUNOS5SIGS) || defined(IRIX5) \
            || defined(OSF1) || defined(HURD) || defined(NETBSD)
-          struct sigaction      act;
+          struct sigaction act;
 
-          act.sa_handler        = h;
-#         if 0 /* Was necessary for Solaris 2.3 and very temporary      */
-               /* NetBSD bugs.                                          */
-            act.sa_flags          = SA_RESTART | SA_NODEFER;
+          act.sa_handler = h;
+#         ifdef SIGACTION_FLAGS_NODEFER_HACK
+            /* Was necessary for Solaris 2.3 and very temporary */
+            /* NetBSD bugs.                                     */
+            act.sa_flags = SA_RESTART | SA_NODEFER;
 #         else
-            act.sa_flags          = SA_RESTART;
+            act.sa_flags = SA_RESTART;
 #         endif
 
           (void) sigemptyset(&act.sa_mask);
@@ -893,8 +894,8 @@ GC_INNER word GC_page_size = 0;
     }
 # endif /* NEED_FIND_LIMIT || UNIX_LIKE */
 
-# if defined(NEED_FIND_LIMIT) || \
-     defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)
+# if defined(NEED_FIND_LIMIT) \
+     || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))
   /* Some tools to implement HEURISTIC2 */
 #   define MIN_PAGE_SIZE 256    /* Smallest conceivable page size, bytes */
 

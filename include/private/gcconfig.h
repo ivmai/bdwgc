@@ -54,8 +54,8 @@
 # endif
 
 /* And one for FreeBSD: */
-# if (defined(__FreeBSD__) || defined(__DragonFly__) || \
-      defined(__FreeBSD_kernel__)) && !defined(FREEBSD)
+# if (defined(__FreeBSD__) || defined(__DragonFly__) \
+      || defined(__FreeBSD_kernel__)) && !defined(FREEBSD)
 #    define FREEBSD
 # endif
 
@@ -260,8 +260,8 @@
 #    endif
 #    define mach_type_known
 # endif
-# if defined(LINUX) && (defined(powerpc) || defined(__powerpc__) || \
-                        defined(powerpc64) || defined(__powerpc64__))
+# if defined(LINUX) && (defined(powerpc) || defined(__powerpc__) \
+                        || defined(powerpc64) || defined(__powerpc64__))
 #    define POWERPC
 #    define mach_type_known
 # endif
@@ -671,11 +671,10 @@
  * allocation.
  */
 
-/* If we are using a recent version of gcc, we can use __builtin_unwind_init()
- * to push the relevant registers onto the stack.
- */
-# if defined(__GNUC__) && ((__GNUC__ >= 3) || \
-                           (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)) \
+/* If we are using a recent version of gcc, we can use                    */
+/* __builtin_unwind_init() to push the relevant registers onto the stack. */
+# if defined(__GNUC__) && ((__GNUC__ >= 3) \
+                           || (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)) \
                        && !defined(__INTEL_COMPILER) && !defined(__PATHCC__)
 #   define HAVE_BUILTIN_UNWIND_INIT
 # endif
@@ -752,7 +751,7 @@
 #     include <LowMem.h>
 #     endif
 #     define OS_TYPE "MACOS"
-                        /* see os_dep.c for details of global data segments. */
+                /* see os_dep.c for details of global data segments. */
 #     define STACKBOTTOM ((ptr_t) LMGetCurStackBase())
 #     define DATAEND    /* not needed */
 #     define GETPAGESIZE() 4096
@@ -812,8 +811,8 @@
 #       define ALIGNMENT 4
 #       define STACKBOTTOM ((ptr_t) 0xc0000000)
 #     endif
-      /* XXX: see get_end(3), get_etext() and get_end() should not be used.
-         These aren't used when dyld support is enabled (it is by default) */
+      /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
+      /* These aren't used when dyld support is enabled (it is by default). */
 #     define DATASTART ((ptr_t) get_etext())
 #     define DATAEND   ((ptr_t) get_end())
 #     ifndef USE_MMAP
@@ -830,8 +829,8 @@
 #       define PREFETCH_FOR_WRITE(x) \
           __asm__ __volatile__ ("dcbtst 0,%0" : : "r" ((const void *) (x)))
 #     endif
-      /* There seems to be some issues with trylock hanging on darwin. This
-         should be looked into some more */
+      /* There seems to be some issues with trylock hanging on darwin.  */
+      /* This should be looked into some more.                          */
 #     define NO_PTHREAD_TRYLOCK
 #   endif
 #   ifdef OPENBSD
@@ -1249,26 +1248,26 @@
 #            define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
 #       endif
 #       ifdef USE_I686_PREFETCH
-          /* FIXME: Thus should use __builtin_prefetch, but we'll leave that    */
-          /* for the next rtelease.                                             */
+          /* FIXME: Thus should use __builtin_prefetch, but we'll leave that */
+          /* for the next rtelease.                                          */
 #         define PREFETCH(x) \
-            __asm__ __volatile__ ("     prefetchnta     %0": : "m"(*(char *)(x)))
-            /* Empirically prefetcht0 is much more effective at reducing        */
-            /* cache miss stalls for the targeted load instructions.  But it    */
-            /* seems to interfere enough with other cache traffic that the net  */
-            /* result is worse than prefetchnta.                                */
-#         if 0
-            /* Using prefetches for write seems to have a slight negative       */
-            /* impact on performance, at least for a PIII/500.                  */
+            __asm__ __volatile__ ("prefetchnta %0" : : "m"(*(char *)(x)))
+            /* Empirically prefetcht0 is much more effective at reducing     */
+            /* cache miss stalls for the targeted load instructions.  But it */
+            /* seems to interfere enough with other cache traffic that the   */
+            /* net result is worse than prefetchnta.                         */
+#         ifdef FORCE_WRITE_PREFETCH
+            /* Using prefetches for write seems to have a slight negative    */
+            /* impact on performance, at least for a PIII/500.               */
 #           define PREFETCH_FOR_WRITE(x) \
-              __asm__ __volatile__ ("   prefetcht0      %0": : "m"(*(char *)(x)))
+              __asm__ __volatile__ ("prefetcht0 %0" : : "m"(*(char *)(x)))
 #         endif
 #       endif
 #       ifdef USE_3DNOW_PREFETCH
 #         define PREFETCH(x) \
-            __asm__ __volatile__ ("     prefetch        %0": : "m"(*(char *)(x)))
+            __asm__ __volatile__ ("prefetch %0" : : "m"(*(char *)(x)))
 #         define PREFETCH_FOR_WRITE(x) \
-            __asm__ __volatile__ ("     prefetchw       %0": : "m"(*(char *)(x)))
+            __asm__ __volatile__ ("prefetchw %0" : : "m"(*(char *)(x)))
 #       endif
 #   endif
 #   ifdef CYGWIN32
@@ -1308,8 +1307,7 @@
         extern int _stklen;
         extern int __djgpp_stack_limit;
 #       define DATASTART ((ptr_t)((((word) (etext)) + 0x1ff) & ~0x1ff))
-/* #       define STACKBOTTOM ((ptr_t)((word) _stubinfo + _stubinfo->size \
-                                                     + _stklen)) */
+/* #define STACKBOTTOM ((ptr_t)((word)_stubinfo+_stubinfo->size+_stklen)) */
 #       define STACKBOTTOM ((ptr_t)((word) __djgpp_stack_limit + _stklen))
                 /* This may not be right.  */
 #   endif
@@ -1388,9 +1386,9 @@
       extern long __nullarea;
       extern char _end;
       extern char *_STACKTOP;
-      /* Depending on calling conventions Watcom C either precedes
-         or does not precedes with underscore names of C-variables.
-         Make sure startup code variables always have the same names.  */
+      /* Depending on calling conventions Watcom C either precedes      */
+      /* or does not precedes with underscore names of C-variables.     */
+      /* Make sure startup code variables always have the same names.   */
       #pragma aux __nullarea "*";
       #pragma aux _end "*";
 #     define STACKBOTTOM ((ptr_t) _STACKTOP)
@@ -1414,8 +1412,8 @@
 #     define OS_TYPE "DARWIN"
 #     define DARWIN_DONT_PARSE_STACK
 #     define DYNAMIC_LOADING
-      /* XXX: see get_end(3), get_etext() and get_end() should not be used.
-         These aren't used when dyld support is enabled (it is by default) */
+      /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
+      /* These aren't used when dyld support is enabled (it is by default). */
 #     define DATASTART ((ptr_t) get_etext())
 #     define DATAEND   ((ptr_t) get_end())
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
@@ -1426,8 +1424,8 @@
 #     define MPROTECT_VDB
 #     include <unistd.h>
 #     define GETPAGESIZE() getpagesize()
-      /* There seems to be some issues with trylock hanging on darwin. This
-         should be looked into some more */
+      /* There seems to be some issues with trylock hanging on darwin.  */
+      /* This should be looked into some more.                          */
 #     define NO_PTHREAD_TRYLOCK
 #   endif /* DARWIN */
 # endif
@@ -1581,7 +1579,7 @@
 #     define OS_TYPE "HPUX"
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
-#     if 0
+#     ifdef USE_HPUX_FIXED_STACKBOTTOM
         /* The following appears to work for 7xx systems running HP/UX  */
         /* 9.xx Furthermore, it might result in much faster             */
         /* collections than HEURISTIC2, which may involve scanning      */
@@ -2127,8 +2125,8 @@
 #     define OS_TYPE "DARWIN"
 #     define DARWIN_DONT_PARSE_STACK
 #     define DYNAMIC_LOADING
-      /* XXX: see get_end(3), get_etext() and get_end() should not be used.
-         These aren't used when dyld support is enabled (it is by default) */
+      /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
+      /* These aren't used when dyld support is enabled (it is by default)  */
 #     define DATASTART ((ptr_t) get_etext())
 #     define DATAEND   ((ptr_t) get_end())
 #     define STACKBOTTOM ((ptr_t) 0x7fff5fc00000)
@@ -2139,8 +2137,8 @@
 #     define MPROTECT_VDB
 #     include <unistd.h>
 #     define GETPAGESIZE() getpagesize()
-      /* There seems to be some issues with trylock hanging on darwin. This
-         should be looked into some more */
+      /* There seems to be some issues with trylock hanging on darwin.  */
+      /* This should be looked into some more.                          */
 #     define NO_PTHREAD_TRYLOCK
 #   endif
 #   ifdef FREEBSD

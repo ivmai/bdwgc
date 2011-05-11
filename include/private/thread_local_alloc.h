@@ -116,7 +116,7 @@ typedef struct thread_local_freelists {
       /* this is currently missing in WinCE */
 #     define TLS_OUT_OF_INDEXES (DWORD)0xFFFFFFFF
 #   endif
-#   define GC_key_create(key, d)  \
+#   define GC_key_create(key, d) \
         ((d) != 0 || (*(key) = TlsAlloc()) == TLS_OUT_OF_INDEXES ? -1 : 0)
         /* Need TlsFree on process exit/detach ? */
     typedef DWORD GC_key_t;

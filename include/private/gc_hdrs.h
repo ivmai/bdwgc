@@ -176,7 +176,6 @@ typedef struct bi {
           register word hi = \
               (word)(p) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE); \
           register bottom_index * _bi = GC_top_index[TL_HASH(hi)]; \
-          \
           while (_bi -> key != hi && _bi != GC_all_nils) \
               _bi = _bi -> hash_link; \
           (bottom_indx) = _bi; \
@@ -184,8 +183,7 @@ typedef struct bi {
 # define GET_HDR_ADDR(p, ha) \
       { \
           register bottom_index * bi; \
-          \
-          GET_BI(p, bi);      \
+          GET_BI(p, bi); \
           (ha) = &(HDR_FROM_BI(bi, p)); \
       }
 # define GET_HDR(p, hhdr) { register hdr ** _ha; GET_HDR_ADDR(p, _ha); \

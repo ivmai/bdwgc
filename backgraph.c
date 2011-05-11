@@ -254,14 +254,12 @@ static void add_edge(ptr_t p, ptr_t q)
     }
     be_cont -> edges[i] = p;
     be -> n_edges++;
-    if (be -> n_edges == 100) {
-#       if 0
-          if (GC_print_stats) {
-            GC_err_printf("The following object has in-degree >= 100:\n");
-            GC_print_heap_obj(q);
-          }
-#       endif
-    }
+#   ifdef DEBUG_PRINT_BIG_N_EDGES
+      if (GC_print_stats == VERBOSE && be -> n_edges == 100) {
+        GC_err_printf("The following object has big in-degree:\n");
+        GC_print_heap_obj(q);
+      }
+#   endif
 }
 
 typedef void (*per_object_func)(ptr_t p, size_t n_bytes, word gc_descr);

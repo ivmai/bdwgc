@@ -133,7 +133,6 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 #define PUSH_OBJ(obj, hhdr, mark_stack_top, mark_stack_limit) \
 { \
     register word _descr = (hhdr) -> hb_descr; \
-        \
     GC_ASSERT(!HBLK_IS_FREE(hhdr)); \
     if (_descr != 0) { \
         mark_stack_top++; \
@@ -153,10 +152,9 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
                       source, exit_label) \
 { \
     hdr * my_hhdr; \
- \
     HC_GET_HDR(current, my_hhdr, source, exit_label); \
     PUSH_CONTENTS_HDR(current, mark_stack_top, mark_stack_limit, \
-                  source, exit_label, my_hhdr, TRUE);   \
+                  source, exit_label, my_hhdr, TRUE); \
 exit_label: ; \
 }
 
@@ -169,7 +167,7 @@ exit_label: ; \
     { \
         char * mark_byte_addr = (char *)hhdr -> hb_marks + (bit_no); \
         if (*mark_byte_addr) goto exit_label; \
-        *mark_byte_addr = 1;  \
+        *mark_byte_addr = 1; \
     }
 #else
 # ifdef PARALLEL_MARK
@@ -227,8 +225,8 @@ exit_label: ; \
 # define LONG_MULT(hprod, lprod, x, y) { \
         unsigned long long prod = (unsigned long long)(x) \
                                   * (unsigned long long)(y); \
-        hprod = prod >> 32;  \
-        lprod = (unsigned32)prod;  \
+        hprod = prod >> 32; \
+        lprod = (unsigned32)prod; \
   }
 #endif /* !I386 */
 
@@ -250,16 +248,16 @@ exit_label: ; \
     /* first block, then we are in the all_interior_pointers case, and  */ \
     /* it is safe to use any displacement value.                        */ \
     size_t gran_displ = BYTES_TO_GRANULES(displ); \
-    size_t gran_offset = hhdr -> hb_map[gran_displ];    \
+    size_t gran_offset = hhdr -> hb_map[gran_displ]; \
     size_t byte_offset = displ & (GRANULE_BYTES - 1); \
-    ptr_t base = current;  \
+    ptr_t base = current; \
     /* The following always fails for large block references. */ \
     if (EXPECT((gran_offset | byte_offset) != 0, FALSE))  { \
         if (hhdr -> hb_large_block) { \
           /* gran_offset is bogus.      */ \
           size_t obj_displ; \
           base = (ptr_t)(hhdr -> hb_block); \
-          obj_displ = (ptr_t)(current) - base;  \
+          obj_displ = (ptr_t)(current) - base; \
           if (obj_displ != displ) { \
             GC_ASSERT(obj_displ < hhdr -> hb_sz); \
             /* Must be in all_interior_pointer case, not first block */ \
@@ -308,7 +306,7 @@ exit_label: ; \
     size_t displ = HBLKDISPL(current); /* Displacement in block; in bytes. */\
     unsigned32 low_prod, high_prod; \
     unsigned32 inv_sz = hhdr -> hb_inv_sz; \
-    ptr_t base = current;  \
+    ptr_t base = current; \
     LONG_MULT(high_prod, low_prod, displ, inv_sz); \
     /* product is > and within sz_in_bytes of displ * sz_in_bytes * 2**32 */ \
     if (EXPECT(low_prod >> 16 != 0, FALSE))  { \
@@ -316,7 +314,7 @@ exit_label: ; \
         if (inv_sz == LARGE_INV_SZ) { \
           size_t obj_displ; \
           base = (ptr_t)(hhdr -> hb_block); \
-          obj_displ = (ptr_t)(current) - base;  \
+          obj_displ = (ptr_t)(current) - base; \
           if (obj_displ != displ) { \
             GC_ASSERT(obj_displ < hhdr -> hb_sz); \
             /* Must be in all_interior_pointer case, not first block */ \
@@ -377,20 +375,20 @@ exit_label: ; \
 #if NEED_FIXUP_POINTER
     /* Try both the raw version and the fixed up one.   */
 # define GC_PUSH_ONE_STACK(p, source) \
-      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr     \
-         && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {      \
-         PUSH_ONE_CHECKED_STACK(p, source);     \
+      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr \
+          && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) { \
+         PUSH_ONE_CHECKED_STACK(p, source); \
       } \
       FIXUP_POINTER(p); \
-      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr     \
-         && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {      \
-         PUSH_ONE_CHECKED_STACK(p, source);     \
+      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr \
+          && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) { \
+         PUSH_ONE_CHECKED_STACK(p, source); \
       }
 #else /* !NEED_FIXUP_POINTER */
 # define GC_PUSH_ONE_STACK(p, source) \
-      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr     \
-         && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {      \
-         PUSH_ONE_CHECKED_STACK(p, source);     \
+      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr \
+          && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) { \
+         PUSH_ONE_CHECKED_STACK(p, source); \
       }
 #endif
 
@@ -401,9 +399,9 @@ exit_label: ; \
  */
 #define GC_PUSH_ONE_HEAP(p,source) \
     FIXUP_POINTER(p); \
-    if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr       \
-         && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) {      \
-            GC_mark_stack_top = GC_mark_and_push( \
+    if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr \
+         && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) { \
+      GC_mark_stack_top = GC_mark_and_push( \
                             (void *)(p), GC_mark_stack_top, \
                             GC_mark_stack_limit, (void * *)(source)); \
     }

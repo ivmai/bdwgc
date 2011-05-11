@@ -2113,7 +2113,7 @@ GC_EXTERN signed_word GC_bytes_found;
 /* possible/needed.                                             */
 #if defined(UNIX_LIKE) || (defined(NEED_FIND_LIMIT) && defined(CYGWIN32))
 # include <setjmp.h>
-# if defined(SUNOS5SIGS) && !defined(FREEBSD)
+# if defined(SUNOS5SIGS) && !defined(FREEBSD) && !defined(LINUX)
 #  include <sys/siginfo.h>
 # endif
   /* Define SETJMP and friends to be the version that restores  */

@@ -1767,7 +1767,7 @@ GC_INNER void GC_lock(void)
   GC_INNER unsigned long GC_mark_lock_holder = NO_THREAD;
 #endif
 
-#if 0
+#ifdef GLIBC_2_1_MUTEX_HACK
   /* Ugly workaround for a linux threads bug in the final versions      */
   /* of glibc2.1.  Pthread_mutex_trylock sets the mutex owner           */
   /* field even when it fails to acquire the mutex.  This causes        */
@@ -1785,11 +1785,6 @@ static pthread_cond_t builder_cv = PTHREAD_COND_INITIALIZER;
 
 GC_INNER void GC_acquire_mark_lock(void)
 {
-/*
-    if (pthread_mutex_lock(&mark_mutex) != 0) {
-        ABORT("pthread_mutex_lock failed");
-    }
-*/
     GC_generic_lock(&mark_mutex);
 #   ifdef GC_ASSERTIONS
         GC_mark_lock_holder = NUMERIC_THREAD_ID(pthread_self());
