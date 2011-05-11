@@ -1,3 +1,10 @@
+2011-05-11  Ivan Maidanski  <ivmai@mail.ru>
+
+	* os_dep.c (GC_gww_page_was_ever_dirty): Fix comment (for
+	GWW_VDB).
+	* os_dep.c (GC_dirty_init): Use memset() for GC_written_pages
+	resetting (for PROC_VDB).
+
 2011-05-11  Ivan Maidanski  <ivmai@mail.ru> (mostly really Ludovic Courtes)
 
 	* tests/threadkey_test.c: New file.

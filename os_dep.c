@@ -2772,7 +2772,7 @@ STATIC void GC_default_push_other_roots(void)
   }
 
 # ifdef CHECKSUMS
-    /* Used only if PROC_VDB. */
+    /* Used only if GWW_VDB. */
 #   ifdef MPROTECT_VDB
       STATIC GC_bool GC_gww_page_was_ever_dirty(struct hblk * h)
 #   else
@@ -3641,9 +3641,7 @@ GC_INNER void GC_dirty_init(void)
 
     GC_dirty_maintained = TRUE;
     if (GC_bytes_allocd != 0 || GC_bytes_allocd_before_gc != 0) {
-      register int i;
-      for (i = 0; i < PHT_SIZE; i++)
-        GC_written_pages[i] = (word)(-1);
+      memset(GC_written_pages, 0xff, sizeof(page_hash_table));
       if (GC_print_stats == VERBOSE)
         GC_log_printf("Allocated bytes:%lu:all pages may have been written\n",
                       (unsigned long)(GC_bytes_allocd
