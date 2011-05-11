@@ -288,12 +288,12 @@ STATIC long GC_nprocs = 1;
                         /* a guess as any ...                           */
 
 #ifdef THREAD_LOCAL_ALLOC
-/* We must explicitly mark ptrfree and gcj free lists, since the free   */
-/* list links wouldn't otherwise be found.  We also set them in the     */
-/* normal free lists, since that involves touching less memory than if  */
-/* we scanned them normally.                                            */
-GC_INNER void GC_mark_thread_local_free_lists(void)
-{
+  /* We must explicitly mark ptrfree and gcj free lists, since the free */
+  /* list links wouldn't otherwise be found.  We also set them in the   */
+  /* normal free lists, since that involves touching less memory than   */
+  /* if we scanned them normally.                                       */
+  GC_INNER void GC_mark_thread_local_free_lists(void)
+  {
     int i;
     GC_thread p;
 
@@ -303,9 +303,9 @@ GC_INNER void GC_mark_thread_local_free_lists(void)
           GC_mark_thread_local_fls_for(&(p->tlfs));
       }
     }
-}
+  }
 
-#if defined(GC_ASSERTIONS)
+# if defined(GC_ASSERTIONS)
     void GC_check_tls_for(GC_tlfs p);
 #   if defined(USE_CUSTOM_SPECIFIC)
       void GC_check_tsd_marks(tsd *key);
@@ -328,9 +328,8 @@ GC_INNER void GC_mark_thread_local_free_lists(void)
             GC_check_tsd_marks(GC_thread_key);
 #       endif
     }
-#endif /* GC_ASSERTIONS */
-
-#endif /* Thread_local_alloc */
+# endif /* GC_ASSERTIONS */
+#endif /* THREAD_LOCAL_ALLOC */
 
 #ifdef PARALLEL_MARK
 
@@ -456,7 +455,7 @@ void GC_push_thread_structures(void)
     GC_push_all((ptr_t)(GC_threads), (ptr_t)(GC_threads)+sizeof(GC_threads));
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_push_all((ptr_t)(&GC_thread_key),
-          (ptr_t)(&GC_thread_key)+sizeof(&GC_thread_key));
+                  (ptr_t)(&GC_thread_key) + sizeof(&GC_thread_key));
 #   endif
 }
 
@@ -615,7 +614,7 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
     /* thread_local_alloc.c) checks only that it's close.               */
     return((char *)tsd > me && (char *)tsd < me + 1000);
   }
-#endif
+#endif /* GC_ASSERTIONS && THREAD_LOCAL_ALLOC */
 
 #ifdef HANDLE_FORK
 /* Remove all entries from the GC_threads table, except the     */
@@ -640,7 +639,7 @@ STATIC void GC_remove_all_threads_but_me(void)
             if (!(p -> flags & FINISHED)) {
               GC_destroy_thread_local(&(p->tlfs));
             }
-#         endif /* THREAD_LOCAL_ALLOC */
+#         endif
           if (p != &first_thread) GC_INTERNAL_FREE(p);
         }
       }
@@ -1440,7 +1439,7 @@ GC_INNER GC_thread GC_start_rtn_prepare_thread(void *(**pstart)(void *),
     me = GC_register_my_thread_inner(sb, self);
     me -> flags = si -> flags;
 #   if defined(THREAD_LOCAL_ALLOC)
-        GC_init_thread_local(&(me->tlfs));
+      GC_init_thread_local(&(me->tlfs));
 #   endif
     UNLOCK();
     *pstart = si -> start_routine;

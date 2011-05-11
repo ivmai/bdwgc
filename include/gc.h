@@ -1443,11 +1443,6 @@ GC_API void GC_CALL GC_win32_free_heap(void);
 # include "gc_amiga_redirects.h"
 #endif
 
-  /*
-   * GC_REDIRECT_TO_LOCAL is now redundant;
-   * that's the default with THREAD_LOCAL_ALLOC.
-   */
-
 #ifdef __cplusplus
   }  /* end of extern "C" */
 #endif
