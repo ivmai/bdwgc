@@ -1,3 +1,21 @@
+2011-05-11  Ivan Maidanski  <ivmai@mail.ru>
+
+	* pthread_support.c (GC_unregister_my_thread_inner): Don't call
+	GC_remove_specific.
+	* include/private/thread_local_alloc.h (GC_remove_specific):
+	Remove (since it is empty for all targets).
+	* pthread_support.c (GC_record_stack_base): New inline function.
+	* win32_threads.c (GC_record_stack_base): Ditto.
+	* pthread_support.c (GC_register_my_thread_inner): Invoke
+	GC_record_stack_base.
+	* win32_threads.c (GC_register_my_thread_inner): Ditto.
+	* pthread_support.c (GC_register_my_thread): If thread is FINISHED
+	then call GC_record_stack_base, clear FINISHED, initialize
+	thread-local list and return success.
+	* win32_threads.c (GC_register_my_thread): Ditto.
+	* include/gc.h (GC_register_my_thread): Update documentation.
+	* include/private/thread_local_alloc.h (GC_thread_key): Ditto.
+
 2011-05-10  Ivan Maidanski  <ivmai@mail.ru>
 
 	* thread_local_alloc.c (GC_malloc, GC_malloc_atomic): Join

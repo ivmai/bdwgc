@@ -97,13 +97,11 @@ typedef struct thread_local_freelists {
 #   define GC_getspecific pthread_getspecific
 #   define GC_setspecific pthread_setspecific
 #   define GC_key_create pthread_key_create
-#   define GC_remove_specific(key)  /* No need for cleanup on exit. */
     typedef pthread_key_t GC_key_t;
 # elif defined(USE_COMPILER_TLS) || defined(USE_WIN32_COMPILER_TLS)
 #   define GC_getspecific(x) (x)
 #   define GC_setspecific(key, v) ((key) = (v), 0)
 #   define GC_key_create(key, d) 0
-#   define GC_remove_specific(key)  /* No need for cleanup on exit. */
     typedef void * GC_key_t;
 # elif defined(USE_WIN32_SPECIFIC)
 #   ifndef WIN32_LEAN_AND_MEAN
@@ -120,7 +118,6 @@ typedef struct thread_local_freelists {
 #   endif
 #   define GC_key_create(key, d)  \
         ((d) != 0 || (*(key) = TlsAlloc()) == TLS_OUT_OF_INDEXES ? -1 : 0)
-#   define GC_remove_specific(key)  /* No need for cleanup on thread exit. */
         /* Need TlsFree on process exit/detach ? */
     typedef DWORD GC_key_t;
 # elif defined(USE_CUSTOM_SPECIFIC)
@@ -152,12 +149,9 @@ extern
   __declspec(thread)
 #endif
 GC_key_t GC_thread_key;
-
-/* This is set up by the thread_local_alloc implementation.  But the    */
-/* thread support layer calls GC_remove_specific(GC_thread_key)         */
-/* before a thread exits.                                               */
-/* And the thread support layer makes sure that GC_thread_key is traced,*/
-/* if necessary.                                                        */
+/* This is set up by the thread_local_alloc implementation.  No need    */
+/* for cleanup on thread exit.  But the thread support layer makes sure */
+/* that GC_thread_key is traced, if necessary.                          */
 
 #endif /* THREAD_LOCAL_ALLOC */
 

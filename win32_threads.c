@@ -364,6 +364,17 @@ STATIC GC_thread GC_new_thread(DWORD id)
 STATIC GC_bool GC_in_thread_creation = FALSE;
                                 /* Protected by allocation lock. */
 
+GC_INLINE void GC_record_stack_base(GC_vthread me,
+                                    const struct GC_stack_base *sb)
+{
+  me -> stack_base = sb -> mem_base;
+# ifdef IA64
+    me -> backing_store_end = sb -> reg_base;
+# endif
+  if (me -> stack_base == NULL)
+    ABORT("Bad stack base in GC_register_my_thread");
+}
+
 /* This may be called from DllMain, and hence operates under unusual    */
 /* constraints.  In particular, it must be lock-free if                 */
 /* GC_win32_dll_threads is set.  Always called from the thread being    */
@@ -456,10 +467,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
     }
 # endif
   me -> last_stack_min = ADDR_LIMIT;
-  me -> stack_base = sb -> mem_base;
-# ifdef IA64
-    me -> backing_store_end = sb -> reg_base;
-# endif
+  GC_record_stack_base(me, sb);
   /* Up until this point, GC_push_all_stacks considers this thread      */
   /* invalid.                                                           */
   /* Up until this point, this entry is viewed as reserved but invalid  */
@@ -468,8 +476,6 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
 # if defined(THREAD_LOCAL_ALLOC)
     GC_init_thread_local((GC_tlfs)(&(me->tlfs)));
 # endif
-  if (me -> stack_base == NULL)
-    ABORT("Bad stack base in GC_register_my_thread_inner");
 # ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
       if (GC_please_stop) {
@@ -707,6 +713,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
 
 GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 {
+  GC_thread me;
   DWORD thread_id = GetCurrentThreadId();
   DCL_LOCK_STATE;
 
@@ -715,11 +722,27 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 
   /* We lock here, since we want to wait for an ongoing GC.     */
   LOCK();
-  if (0 == GC_lookup_thread_inner(thread_id)) {
+  me = GC_lookup_thread_inner(thread_id);
+  if (me == 0) {
     GC_register_my_thread_inner(sb, thread_id);
+#   ifdef GC_PTHREADS
+      me -> flags |= DETACHED;
+#   endif
     UNLOCK();
     return GC_SUCCESS;
-  } else {
+  } else
+#   ifdef GC_PTHREADS
+      /* else */ if ((me -> flags & FINISHED) != 0) {
+        GC_record_stack_base(me, sb);
+        me -> flags = (me -> flags & ~FINISHED) | DETACHED;
+#       ifdef THREAD_LOCAL_ALLOC
+          GC_init_thread_local((GC_tlfs)(&me->tlfs));
+#       endif
+        UNLOCK();
+        return GC_SUCCESS;
+      } else
+#   endif
+  /* else */ {
     UNLOCK();
     return GC_DUPLICATE;
   }

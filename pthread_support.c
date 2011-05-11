@@ -1183,9 +1183,6 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
     } else {
         me -> flags |= FINISHED;
     }
-#   if defined(THREAD_LOCAL_ALLOC)
-      GC_remove_specific(GC_thread_key);
-#   endif
 }
 
 GC_API int GC_CALL GC_unregister_my_thread(void)
@@ -1344,6 +1341,20 @@ GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
 GC_INNER GC_bool GC_in_thread_creation = FALSE;
                                 /* Protected by allocation lock. */
 
+GC_INLINE void GC_record_stack_base(GC_thread me,
+                                    const struct GC_stack_base *sb)
+{
+#   ifndef GC_DARWIN_THREADS
+      me -> stop_info.stack_ptr = sb -> mem_base;
+#   endif
+    me -> stack_end = sb -> mem_base;
+    if (me -> stack_end == NULL)
+      ABORT("Bad stack base in GC_register_my_thread");
+#   ifdef IA64
+      me -> backing_store_end = sb -> reg_base;
+#   endif
+}
+
 STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                                              pthread_t my_pthread)
 {
@@ -1356,15 +1367,8 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
       ABORT("Failed to allocate memory for thread registering");
 #   ifdef GC_DARWIN_THREADS
       me -> stop_info.mach_thread = mach_thread_self();
-#   else
-      me -> stop_info.stack_ptr = sb -> mem_base;
 #   endif
-    me -> stack_end = sb -> mem_base;
-    if (me -> stack_end == NULL)
-      ABORT("Bad stack base in GC_register_my_thread");
-#   ifdef IA64
-      me -> backing_store_end = sb -> reg_base;
-#   endif /* IA64 */
+    GC_record_stack_base(me, sb);
     return me;
 }
 
@@ -1387,8 +1391,13 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 
     LOCK();
     me = GC_lookup_thread(self);
-    if (0 == me) {
-        me = GC_register_my_thread_inner(sb, self);
+    if (0 == me || (me -> flags & FINISHED) != 0) {
+        if (me == 0) {
+          me = GC_register_my_thread_inner(sb, self);
+        } else {
+          GC_record_stack_base(me, sb);
+          me -> flags &= ~FINISHED;
+        }
         me -> flags |= DETACHED;
           /* Treat as detached, since we do not need to worry about     */
           /* pointer results.                                           */
