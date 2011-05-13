@@ -1,5 +1,11 @@
 2011-05-13  Ivan Maidanski  <ivmai@mail.ru>
 
+	* tests/threadkey_test.c (key_once, main): Work around for Solaris
+	PTHREAD_ONCE_INIT.
+	* tests/threadkey_test.c (LIMIT): Use smaller value for Solaris.
+
+2011-05-13  Ivan Maidanski  <ivmai@mail.ru>
+
 	* dyn_load.c (GC_FirstDLOpenedLinkMap): Remove unused "r" local
 	variable.
 	* pthread_support.c (GC_unregister_my_thread_inner): Revert back

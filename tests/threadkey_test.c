@@ -10,7 +10,12 @@
 #include <pthread.h>
 
 pthread_key_t key;
-pthread_once_t key_once = PTHREAD_ONCE_INIT;
+
+#ifdef GC_SOLARIS_THREADS
+  /* pthread_once_t key_once = { PTHREAD_ONCE_INIT }; */
+#else
+  pthread_once_t key_once = PTHREAD_ONCE_INIT;
+#endif
 
 void * entry (void *arg)
 {
@@ -41,7 +46,11 @@ void make_key (void)
 }
 
 #ifndef LIMIT
-# define LIMIT 50
+# ifdef GC_SOLARIS_THREADS
+#   define LIMIT 40
+# else
+#   define LIMIT 50
+# endif
 #endif
 
 int main (void)
@@ -49,13 +58,14 @@ int main (void)
   int i;
   GC_INIT ();
 
-  pthread_once (&key_once, make_key);
-
-  for (i = 0; i < LIMIT; i++)
-    {
-      pthread_t t;
-      GC_pthread_create (&t, NULL, entry, NULL);
-    }
-
+# ifdef GC_SOLARIS_THREADS
+    pthread_key_create (&key, on_thread_exit);
+# else
+    pthread_once (&key_once, make_key);
+# endif
+  for (i = 0; i < LIMIT; i++) {
+    pthread_t t;
+    GC_pthread_create (&t, NULL, entry, NULL);
+  }
   return 0;
 }
