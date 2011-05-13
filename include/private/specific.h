@@ -51,8 +51,8 @@ typedef struct thread_specific_entry {
 
 /* Return the "quick thread id".  Default version.  Assumes page size,  */
 /* or at least thread stack separation, is at least 4K.                 */
-/* Must be defined so that it never returns 0.  (Page 0 can't really    */
-/* be part of any stack, since that would make 0 a valid stack pointer.)*/
+/* Must be defined so that it never returns 0.  (Page 0 can't really be */
+/* part of any stack, since that would make 0 a valid stack pointer.)   */
 #define quick_thread_id() (((unsigned long)GC_approx_sp()) >> 12)
 
 #define INVALID_QTID ((unsigned long)0)
@@ -67,11 +67,9 @@ typedef struct thread_specific_data {
 
 typedef tsd * PREFIXED(key_t);
 
-extern int PREFIXED(key_create) (tsd ** key_ptr, void (* destructor)(void *));
-
-extern int PREFIXED(setspecific) (tsd * key, void * value);
-
-extern void PREFIXED(remove_specific) (tsd * key);
+int PREFIXED(key_create) (tsd ** key_ptr, void (* destructor)(void *));
+int PREFIXED(setspecific) (tsd * key, void * value);
+void PREFIXED(remove_specific) (tsd * key);
 
 /* An internal version of getspecific that assumes a cache miss.        */
 void * PREFIXED(slow_getspecific) (tsd * key, unsigned long qtid,
@@ -80,7 +78,7 @@ void * PREFIXED(slow_getspecific) (tsd * key, unsigned long qtid,
 /* GC_INLINE is defined in gc_priv.h. */
 GC_INLINE void * PREFIXED(getspecific) (tsd * key)
 {
-    long qtid = quick_thread_id();
+    unsigned long qtid = quick_thread_id();
     unsigned hash_val = CACHE_HASH(qtid);
     tse * volatile * entry_ptr = key -> cache + hash_val;
     tse * entry = *entry_ptr;   /* Must be loaded only once.    */

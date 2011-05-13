@@ -1,3 +1,19 @@
+2011-05-13  Ivan Maidanski  <ivmai@mail.ru>
+
+	* dyn_load.c (GC_FirstDLOpenedLinkMap): Remove unused "r" local
+	variable.
+	* pthread_support.c (GC_unregister_my_thread_inner): Revert back
+	GC_remove_specific invocation; add a comment.
+	* include/private/thread_local_alloc.h (GC_remove_specific):
+	Revert back.
+	* specific.c: Expand all tabs to spaces.
+	* specific.c (slow_getspecific): Cast qtid to AO_t.
+	* include/private/specific.h (quick_thread_id): Reformat comment.
+	* include/private/specific.h (key_create, setspecific,
+	remove_specific): Remove "extern" keyword.
+	* include/private/specific.h (getspecific): Change type of "qtid"
+	local variable to unsigned long.
+
 2011-05-11  Ivan Maidanski  <ivmai@mail.ru>
 
 	* pthread_support.c (GC_check_tls): Fix "#endif" comment.

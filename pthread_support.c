@@ -1182,6 +1182,10 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
     } else {
         me -> flags |= FINISHED;
     }
+#   if defined(THREAD_LOCAL_ALLOC)
+      /* It is required to call remove_specific defined in specific.c. */
+      GC_remove_specific(GC_thread_key);
+#   endif
 }
 
 GC_API int GC_CALL GC_unregister_my_thread(void)

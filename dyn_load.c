@@ -135,7 +135,6 @@ GC_FirstDLOpenedLinkMap(void)
 {
     extern ElfW(Dyn) _DYNAMIC;
     ElfW(Dyn) *dp;
-    struct r_debug *r;
     static struct link_map * cachedResult = 0;
     static ElfW(Dyn) *dynStructureAddr = 0;
                 /* BTL: added to avoid Solaris 5.3 ld.so _DYNAMIC bug   */
