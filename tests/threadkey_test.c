@@ -46,11 +46,7 @@ void make_key (void)
 }
 
 #ifndef LIMIT
-# ifdef GC_SOLARIS_THREADS
-#   define LIMIT 40
-# else
-#   define LIMIT 50
-# endif
+# define LIMIT 30
 #endif
 
 int main (void)
