@@ -178,15 +178,13 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 /*ARGSUSED*/
 STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 {
-  int sig = (int)(word)sig_arg;
-  int dummy;
-  pthread_t my_thread = pthread_self();
+  pthread_t self = pthread_self();
   GC_thread me;
   IF_CANCEL(int cancel_state;)
-
   AO_t my_stop_count = AO_load(&GC_stop_count);
 
-  if (sig != SIG_SUSPEND) ABORT("Bad signal in suspend_handler");
+  if ((signed_word)sig_arg != SIG_SUSPEND)
+    ABORT("Bad signal in suspend_handler");
 
   DISABLE_CANCEL(cancel_state);
       /* pthread_setcancelstate is not defined to be async-signal-safe. */
@@ -198,10 +196,10 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
       /* cancellation point is inherently a problem, unless there is    */
       /* some way to disable cancellation in the handler.               */
 # ifdef DEBUG_THREADS
-    GC_log_printf("Suspending 0x%x\n", (unsigned)my_thread);
+    GC_log_printf("Suspending 0x%x\n", (unsigned)self);
 # endif
 
-  me = GC_lookup_thread(my_thread);
+  me = GC_lookup_thread(self);
   /* The lookup here is safe, since I'm doing this on behalf    */
   /* of a thread which holds the allocation lock in order       */
   /* to stop the world.  Thus concurrent modification of the    */
@@ -209,7 +207,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
   if (me -> stop_info.last_stop_count == my_stop_count) {
       /* Duplicate signal.  OK if we are retrying.      */
       if (!GC_retry_signals) {
-          WARN("Duplicate suspend signal in thread %p\n", pthread_self());
+          WARN("Duplicate suspend signal in thread %p\n", self);
       }
       RESTORE_CANCEL(cancel_state);
       return;
@@ -217,7 +215,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 # ifdef SPARC
       me -> stop_info.stack_ptr = GC_save_regs_in_stack();
 # else
-      me -> stop_info.stack_ptr = (ptr_t)(&dummy);
+      me -> stop_info.stack_ptr = (ptr_t)(&me);
 # endif
 # ifdef IA64
       me -> backing_store_ptr = GC_save_regs_in_stack();
@@ -252,7 +250,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
   /* unlikely to be efficient.                                          */
 
 # ifdef DEBUG_THREADS
-    GC_log_printf("Continuing 0x%x\n", (unsigned)my_thread);
+    GC_log_printf("Continuing 0x%x\n", (unsigned)self);
 # endif
   RESTORE_CANCEL(cancel_state);
 }

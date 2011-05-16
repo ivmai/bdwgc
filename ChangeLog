@@ -1,3 +1,8 @@
+2011-05-16  Ivan Maidanski  <ivmai@mail.ru>
+
+	* pthread_stop_world.c (GC_suspend_handler_inner): Remove "dummy",
+	"sig" local variables; rename my_thread local variable to "self".
+
 2011-05-13  Ivan Maidanski  <ivmai@mail.ru>
 
 	* tests/threadkey_test.c (LIMIT): Use smaller value (don't create
