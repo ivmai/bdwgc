@@ -43,6 +43,9 @@ int GC_nacl_thread_used[MAX_NACL_GC_THREADS];
 #include <unistd.h>
 #include "atomic_ops.h"
 
+/* It's safe to call original pthread_sigmask() here.   */
+#undef pthread_sigmask
+
 #ifdef DEBUG_THREADS
 # ifndef NSIG
 #   if defined(MAXSIG)
@@ -55,9 +58,6 @@ int GC_nacl_thread_used[MAX_NACL_GC_THREADS];
       --> please fix it
 #   endif
 # endif /* NSIG */
-
-  /* It's safe to call original pthread_sigmask() here. */
-# undef pthread_sigmask
 
   void GC_print_sig_mask(void)
   {
@@ -140,6 +140,20 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
 #   define SIG_THR_RESTART SIGXCPU
 #  endif
 #endif
+
+#ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
+  /* Some targets (eg., Solaris) might require this to be called when   */
+  /* doing thread registering from the thread destructor.               */
+  GC_INNER void GC_unblock_gc_signals(void)
+  {
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIG_SUSPEND);
+    sigaddset(&set, SIG_THR_RESTART);
+    if (pthread_sigmask(SIG_UNBLOCK, &set, NULL) != 0)
+      ABORT("pthread_sigmask failed");
+  }
+#endif /* GC_EXPLICIT_SIGNALS_UNBLOCK */
 
 STATIC sem_t GC_suspend_ack_sem;
 
@@ -769,13 +783,15 @@ GC_INNER void GC_start_world(void)
       }
     }
 #   ifdef GC_NETBSD_THREADS_WORKAROUND
-      for (i = 0; i < n_live_threads; i++)
-        while (0 != (code = sem_wait(&GC_restart_ack_sem)))
-            if (errno != EINTR) {
-                if (GC_print_stats)
-                  GC_log_printf("sem_wait() returned %d\n", code);
-                ABORT("sem_wait() for restart handler failed");
-            }
+      for (i = 0; i < n_live_threads; i++) {
+        while (0 != (code = sem_wait(&GC_restart_ack_sem))) {
+          if (errno != EINTR) {
+            if (GC_print_stats)
+              GC_log_printf("sem_wait() returned %d\n", code);
+            ABORT("sem_wait() for restart handler failed");
+          }
+        }
+      }
 #   endif
 #   ifdef DEBUG_THREADS
       GC_log_printf("World started\n");

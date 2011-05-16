@@ -1,5 +1,18 @@
 2011-05-16  Ivan Maidanski  <ivmai@mail.ru>
 
+	* pthread_stop_world.c (pthread_sigmask): Undefine even if not
+	DEBUG_THREADS.
+	* pthread_stop_world.c (GC_unblock_gc_signals): New function (only
+	if GC_EXPLICIT_SIGNALS_UNBLOCK).
+	* pthread_support.c (GC_unblock_gc_signals): New prototype.
+	* pthread_support.c (GC_register_my_thread_inner,
+	GC_register_my_thread): Call GC_unblock_gc_signals (only if
+	GC_EXPLICIT_SIGNALS_UNBLOCK); add comment.
+	* include/private/gcconfig.h (GC_EXPLICIT_SIGNALS_UNBLOCK): New
+	macro.
+
+2011-05-16  Ivan Maidanski  <ivmai@mail.ru>
+
 	* pthread_stop_world.c (GC_suspend_handler_inner): Remove "dummy",
 	"sig" local variables; rename my_thread local variable to "self".
 

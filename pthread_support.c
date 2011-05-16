@@ -1358,6 +1358,10 @@ GC_INLINE void GC_record_stack_base(GC_thread me,
 #   endif
 }
 
+#ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
+  GC_INNER void GC_unblock_gc_signals(void); /* from pthread_stop_world.c */
+#endif
+
 STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                                              pthread_t my_pthread)
 {
@@ -1372,6 +1376,11 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
       me -> stop_info.mach_thread = mach_thread_self();
 #   endif
     GC_record_stack_base(me, sb);
+#   ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
+      /* Since this could be executed from a detached thread    */
+      /* destructor, our signals might already be blocked.      */
+      GC_unblock_gc_signals();
+#   endif
     return me;
 }
 
@@ -1398,8 +1407,15 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
         if (me == 0) {
           me = GC_register_my_thread_inner(sb, self);
         } else {
+          /* This code is executed when a thread is registered from the */
+          /* client thread key destructor.                              */
           GC_record_stack_base(me, sb);
           me -> flags &= ~FINISHED;
+#         ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
+            /* Since this could be executed from a thread destructor,   */
+            /* our signals might be blocked.                            */
+            GC_unblock_gc_signals();
+#         endif
         }
         me -> flags |= DETACHED;
           /* Treat as detached, since we do not need to worry about     */
