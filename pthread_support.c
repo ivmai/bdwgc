@@ -534,15 +534,15 @@ STATIC void GC_delete_thread(pthread_t id)
 /* been notified, then there may be more than one thread        */
 /* in the table with the same pthread id.                       */
 /* This is OK, but we need a way to delete a specific one.      */
-STATIC void GC_delete_gc_thread(GC_thread gc_id)
+STATIC void GC_delete_gc_thread(GC_thread t)
 {
-    pthread_t id = gc_id -> id;
+    pthread_t id = t -> id;
     int hv = NUMERIC_THREAD_ID(id) % THREAD_TABLE_SZ;
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
 
     GC_ASSERT(I_HOLD_LOCK());
-    while (p != gc_id) {
+    while (p != t) {
         prev = p;
         p = p -> next;
     }
@@ -1226,12 +1226,12 @@ GC_INNER void GC_thread_exit_proc(void *arg)
 GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
 {
     int result;
-    GC_thread thread_gc_id;
+    GC_thread t;
     DCL_LOCK_STATE;
 
     INIT_REAL_SYMS();
     LOCK();
-    thread_gc_id = GC_lookup_thread(thread);
+    t = GC_lookup_thread(thread);
     /* This is guaranteed to be the intended one, since the thread id   */
     /* can't have been recycled by pthreads.                            */
     UNLOCK();
@@ -1250,7 +1250,7 @@ GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
     if (result == 0) {
         LOCK();
         /* Here the pthread thread id may have been recycled. */
-        GC_delete_gc_thread(thread_gc_id);
+        GC_delete_gc_thread(t);
         UNLOCK();
     }
     return result;
@@ -1259,20 +1259,20 @@ GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
 GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
 {
     int result;
-    GC_thread thread_gc_id;
+    GC_thread t;
     DCL_LOCK_STATE;
 
     INIT_REAL_SYMS();
     LOCK();
-    thread_gc_id = GC_lookup_thread(thread);
+    t = GC_lookup_thread(thread);
     UNLOCK();
     result = REAL_FUNC(pthread_detach)(thread);
     if (result == 0) {
       LOCK();
-      thread_gc_id -> flags |= DETACHED;
+      t -> flags |= DETACHED;
       /* Here the pthread thread id may have been recycled. */
-      if (thread_gc_id -> flags & FINISHED) {
-        GC_delete_gc_thread(thread_gc_id);
+      if ((t -> flags & FINISHED) != 0) {
+        GC_delete_gc_thread(t);
       }
       UNLOCK();
     }
@@ -1292,20 +1292,19 @@ GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
   GC_API int WRAP_FUNC(pthread_cancel)(pthread_t thread)
   {
 #   ifdef CANCEL_SAFE
-      GC_thread thread_gc_id;
+      GC_thread t;
       DCL_LOCK_STATE;
 #   endif
 
     INIT_REAL_SYMS();
 #   ifdef CANCEL_SAFE
       LOCK();
-      thread_gc_id = GC_lookup_thread(thread);
+      t = GC_lookup_thread(thread);
       /* We test DISABLED_GC because pthread_exit could be called at    */
-      /* the same time.  (If thread_gc_id is NULL then pthread_cancel   */
-      /* should return ESRCH.)                                          */
-      if (thread_gc_id != 0
-          && (thread_gc_id -> flags & DISABLED_GC) == 0) {
-        thread_gc_id -> flags |= DISABLED_GC;
+      /* the same time.  (If t is NULL then pthread_cancel should       */
+      /* return ESRCH.)                                                 */
+      if (t != NULL && (t -> flags & DISABLED_GC) == 0) {
+        t -> flags |= DISABLED_GC;
         GC_dont_gc++;
       }
       UNLOCK();

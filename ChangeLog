@@ -1,3 +1,16 @@
+2011-05-17  Ivan Maidanski  <ivmai@mail.ru>
+
+	* pthread_support.c (GC_delete_gc_thread): Rename "gc_id" local
+	variable to "t".
+	* win32_threads.c (GC_delete_gc_thread): Ditto.
+	* pthread_support.c (pthread_join, pthread_detach,
+	pthread_cancel): Rename "thread_gc_id" local variable to "t".
+	* win32_threads.c (GC_pthread_detach): Ditto.
+	* win32_threads.c (GC_delete_gc_thread): Remove "gc_nvid" local
+	variable.
+	* win32_threads.c (GC_pthread_join): Rename "joinee" local
+	variable to "t".
+
 2011-05-16  Ivan Maidanski  <ivmai@mail.ru>
 
 	* pthread_stop_world.c (pthread_sigmask): Undefine even if not

@@ -616,37 +616,36 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
 /* GC_win32_dll_threads is set.                                 */
 /* If GC_win32_dll_threads is set it should be called from the  */
 /* thread being deleted.                                        */
-STATIC void GC_delete_gc_thread(GC_vthread gc_id)
+STATIC void GC_delete_gc_thread(GC_vthread t)
 {
 # ifndef MSWINCE
-    CloseHandle(gc_id->handle);
+    CloseHandle(t->handle);
 # endif
 # ifndef GC_NO_THREADS_DISCOVERY
     if (GC_win32_dll_threads) {
       /* This is intended to be lock-free.                              */
       /* It is either called synchronously from the thread being        */
       /* deleted, or by the joining thread.                             */
-      /* In this branch asynchronous changes to *gc_id are possible.    */
+      /* In this branch asynchronous changes to (*t) are possible.      */
       /* It's not allowed to call GC_printf (and the friends) here,     */
       /* see GC_stop_world() for the information.                       */
-      gc_id -> stack_base = 0;
-      gc_id -> id = 0;
+      t -> stack_base = 0;
+      t -> id = 0;
 #     ifdef GC_PTHREADS
-        GC_PTHREAD_PTRVAL(gc_id->pthread_id) = 0;
+        GC_PTHREAD_PTRVAL(t->pthread_id) = 0;
 #     endif
-      AO_store_release(&gc_id->tm.in_use, FALSE);
+      AO_store_release(&t->tm.in_use, FALSE);
     } else
 # endif
   /* else */ {
-    /* Cast away volatile qualifier, since we have lock. */
-    GC_thread gc_nvid = (GC_thread)gc_id;
-    DWORD id = gc_nvid -> id;
+    DWORD id = ((GC_thread)t) -> id;
+                /* Cast away volatile qualifier, since we have lock.    */
     word hv = THREAD_TABLE_INDEX(id);
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
 
     GC_ASSERT(I_HOLD_LOCK());
-    while (p != gc_nvid) {
+    while (p != (GC_thread)t) {
       prev = p;
       p = p -> tm.next;
     }
@@ -2349,7 +2348,7 @@ GC_INNER void GC_thr_init(void)
   GC_API int GC_pthread_join(pthread_t pthread_id, void **retval)
   {
     int result;
-    GC_thread joinee;
+    GC_thread t;
 
 #   ifdef DEBUG_THREADS
       GC_log_printf("thread %p(0x%lx) is joining thread %p\n",
@@ -2364,21 +2363,22 @@ GC_INNER void GC_thr_init(void)
     /* FIXME: It would be better if this worked more like        */
     /* pthread_support.c.                                        */
 #   ifndef GC_WIN32_PTHREADS
-      while ((joinee = GC_lookup_pthread(pthread_id)) == 0) Sleep(10);
+      while ((t = GC_lookup_pthread(pthread_id)) == 0)
+        Sleep(10);
 #   endif
 
     result = pthread_join(pthread_id, retval);
 
 #   ifdef GC_WIN32_PTHREADS
       /* win32_pthreads id are unique */
-      joinee = GC_lookup_pthread(pthread_id);
+      t = GC_lookup_pthread(pthread_id);
 #   endif
 
     if (!GC_win32_dll_threads) {
       DCL_LOCK_STATE;
 
       LOCK();
-      GC_delete_gc_thread(joinee);
+      GC_delete_gc_thread(t);
       UNLOCK();
     } /* otherwise DllMain handles it.  */
 
@@ -2524,20 +2524,20 @@ GC_INNER void GC_thr_init(void)
   GC_API int GC_pthread_detach(pthread_t thread)
   {
     int result;
-    GC_thread thread_gc_id;
+    GC_thread t;
     DCL_LOCK_STATE;
 
     if (!parallel_initialized) GC_init_parallel();
     LOCK();
-    thread_gc_id = GC_lookup_pthread(thread);
+    t = GC_lookup_pthread(thread);
     UNLOCK();
     result = pthread_detach(thread);
     if (result == 0) {
       LOCK();
-      thread_gc_id -> flags |= DETACHED;
+      t -> flags |= DETACHED;
       /* Here the pthread thread id may have been recycled. */
-      if (thread_gc_id -> flags & FINISHED) {
-        GC_delete_gc_thread(thread_gc_id);
+      if ((t -> flags & FINISHED) != 0) {
+        GC_delete_gc_thread(t);
       }
       UNLOCK();
     }
