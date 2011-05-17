@@ -61,7 +61,10 @@ int main (void)
 # endif
   for (i = 0; i < LIMIT; i++) {
     pthread_t t;
-    GC_pthread_create (&t, NULL, entry, NULL);
+    void *res;
+    if (GC_pthread_create (&t, NULL, entry, NULL) == 0
+        && (i & 1) != 0)
+      GC_pthread_join (t, &res);
   }
   return 0;
 }

@@ -1250,6 +1250,7 @@ GC_API int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
     if (result == 0) {
         LOCK();
         /* Here the pthread thread id may have been recycled. */
+        GC_ASSERT((t -> flags & FINISHED) != 0);
         GC_delete_gc_thread(t);
         UNLOCK();
     }
@@ -1402,23 +1403,26 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 
     LOCK();
     me = GC_lookup_thread(self);
-    if (0 == me || (me -> flags & FINISHED) != 0) {
-        if (me == 0) {
-          me = GC_register_my_thread_inner(sb, self);
-        } else {
-          /* This code is executed when a thread is registered from the */
-          /* client thread key destructor.                              */
-          GC_record_stack_base(me, sb);
-          me -> flags &= ~FINISHED;
-#         ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
-            /* Since this could be executed from a thread destructor,   */
-            /* our signals might be blocked.                            */
-            GC_unblock_gc_signals();
-#         endif
-        }
+    if (0 == me) {
+        me = GC_register_my_thread_inner(sb, self);
         me -> flags |= DETACHED;
           /* Treat as detached, since we do not need to worry about     */
           /* pointer results.                                           */
+#       if defined(THREAD_LOCAL_ALLOC)
+          GC_init_thread_local(&(me->tlfs));
+#       endif
+        UNLOCK();
+        return GC_SUCCESS;
+    } else if ((me -> flags & FINISHED) != 0) {
+        /* This code is executed when a thread is registered from the   */
+        /* client thread key destructor.                                */
+        GC_record_stack_base(me, sb);
+        me -> flags &= ~FINISHED; /* but not DETACHED */
+#       ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
+          /* Since this could be executed from a thread destructor,     */
+          /* our signals might be blocked.                              */
+          GC_unblock_gc_signals();
+#       endif
 #       if defined(THREAD_LOCAL_ALLOC)
           GC_init_thread_local(&(me->tlfs));
 #       endif

@@ -733,7 +733,7 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
 #   ifdef GC_PTHREADS
       /* else */ if ((me -> flags & FINISHED) != 0) {
         GC_record_stack_base(me, sb);
-        me -> flags = (me -> flags & ~FINISHED) | DETACHED;
+        me -> flags &= ~FINISHED; /* but not DETACHED */
 #       ifdef THREAD_LOCAL_ALLOC
           GC_init_thread_local((GC_tlfs)(&me->tlfs));
 #       endif
@@ -761,19 +761,34 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
       /* Can't happen: see GC_use_threads_discovery(). */
       GC_ASSERT(FALSE);
 #   else
+#     ifdef GC_PTHREADS
+        /* FIXME: If not DETACHED then just set FINISHED. */
+#     endif
       /* FIXME: Should we just ignore this? */
       GC_delete_thread(GetCurrentThreadId());
 #   endif
   } else {
-    DWORD thread_id = GetCurrentThreadId();
-    LOCK();
-#   if defined(THREAD_LOCAL_ALLOC)
-      {
-        GC_thread me = GC_lookup_thread_inner(thread_id);
-        GC_destroy_thread_local(&(me->tlfs));
-      }
+#   if defined(THREAD_LOCAL_ALLOC) || defined(GC_PTHREADS)
+      GC_thread me;
 #   endif
-    GC_delete_thread(thread_id);
+    DWORD thread_id = GetCurrentThreadId();
+
+    LOCK();
+#   if defined(THREAD_LOCAL_ALLOC) || defined(GC_PTHREADS)
+      me = GC_lookup_thread_inner(thread_id);
+      GC_ASSERT(!(me -> flags & FINISHED));
+#   endif
+#   if defined(THREAD_LOCAL_ALLOC)
+      GC_destroy_thread_local(&(me->tlfs));
+#   endif
+#   ifdef GC_PTHREADS
+      if ((me -> flags & DETACHED) == 0) {
+        me -> flags |= FINISHED;
+      } else
+#   endif
+    /* else */ {
+      GC_delete_thread(thread_id);
+    }
     UNLOCK();
   }
   return GC_SUCCESS;
