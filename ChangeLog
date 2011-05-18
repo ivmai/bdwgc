@@ -1,5 +1,10 @@
 2011-05-18  Ivan Maidanski  <ivmai@mail.ru>
 
+	* include/private/gcconfig.h (MPROTECT_VDB): Enable for Solaris in
+	single-threaded environment.
+
+2011-05-18  Ivan Maidanski  <ivmai@mail.ru>
+
 	* include/private/gcconfig.h (MPROTECT_VDB): Undefine if PROC_VDB.
 	* tests/test.c (NUMBER_ROUND_UP): New macro.
 	* tests/test.c (check_heap_stats): Round up total expected heap

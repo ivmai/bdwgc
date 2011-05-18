@@ -1129,6 +1129,9 @@
 #       ifdef SOLARIS25_PROC_VDB_BUG_FIXED
 #         define PROC_VDB
 #       endif
+#       ifndef GC_THREADS
+#         define MPROTECT_VDB
+#       endif
 #       define DYNAMIC_LOADING
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
 #         define USE_MMAP
@@ -2200,6 +2203,9 @@
 /* It appears to be fixed in 2.8 and 2.9.                               */
 #       ifdef SOLARIS25_PROC_VDB_BUG_FIXED
 #         define PROC_VDB
+#       endif
+#       ifndef GC_THREADS
+#         define MPROTECT_VDB
 #       endif
 #       define DYNAMIC_LOADING
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
