@@ -1236,6 +1236,8 @@ void run_one_test(void)
       GC_log_printf("Finished %p\n", &start_time);
 }
 
+#define NUMBER_ROUND_UP(v, bound) ((((v) + (bound) - 1) / (bound)) * (bound))
+
 void check_heap_stats(void)
 {
     size_t max_heap_sz;
@@ -1271,6 +1273,10 @@ void check_heap_stats(void)
                 max_heap_sz += max_heap_sz * SAVE_CALL_COUNT/4;
 #           endif
 #       endif
+#   endif
+    max_heap_sz *= n_tests;
+#   ifdef USE_MMAP
+      max_heap_sz = NUMBER_ROUND_UP(max_heap_sz, 4 * 1024 * 1024);
 #   endif
     /* Garbage collect repeatedly so that all inaccessible objects      */
     /* can be finalized.                                                */
@@ -1337,8 +1343,11 @@ void check_heap_stats(void)
       GC_printf("Incorrect execution - missed some allocations\n");
       FAIL;
     }
-    if (GC_get_heap_size() + GC_get_unmapped_bytes() > max_heap_sz*n_tests) {
-        GC_printf("Unexpected heap growth - collector may be broken\n");
+    if (GC_get_heap_size() + GC_get_unmapped_bytes() > max_heap_sz) {
+        GC_printf("Unexpected heap growth - collector may be broken"
+                  " (heapsize: %lu, expected: %u)\n",
+            (unsigned long)(GC_get_heap_size() + GC_get_unmapped_bytes()),
+            max_heap_sz);
         FAIL;
     }
 #   ifdef THREADS

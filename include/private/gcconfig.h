@@ -2399,6 +2399,11 @@
   /* #undef GWW_VDB - handled in os_dep.c       */
 #endif
 
+#ifdef PROC_VDB
+  /* Multi-VDB mode is not implemented. */
+# undef MPROTECT_VDB
+#endif
+
 #if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
     && !defined(GWW_VDB) && !defined(GC_DISABLE_INCREMENTAL)
 # define DEFAULT_VDB

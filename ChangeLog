@@ -1,5 +1,14 @@
 2011-05-18  Ivan Maidanski  <ivmai@mail.ru>
 
+	* include/private/gcconfig.h (MPROTECT_VDB): Undefine if PROC_VDB.
+	* tests/test.c (NUMBER_ROUND_UP): New macro.
+	* tests/test.c (check_heap_stats): Round up total expected heap
+	size to the nearest 4 MiB bound.
+	* tests/test.c (check_heap_stats): Print the current and expected
+	heap sizes in case of failure.
+
+2011-05-18  Ivan Maidanski  <ivmai@mail.ru>
+
 	* checksums.c (GC_check_blocks, GC_check_dirty): Do log printing
 	only if GC_print_stats; print errors using GC_err_printf.
 	* checksums.c (GC_check_blocks): Join adjacent printf() calls into
