@@ -1380,9 +1380,11 @@
 #       define OS_TYPE "RTEMS"
 #       include <sys/unistd.h>
         extern int etext[];
-#       define DATASTART ((ptr_t)((((word) (etext)) + 0xfffff) & ~0xfffff))
-#       define DATAENT   ((ptr_t)(DATASTART + 0xfffff))
-#       define STACKBOTTOM ((ptr_t) 0x03fff000)
+        extern int end[];
+        extern void *InitStackBottom;
+#       define DATASTART ((ptr_t)etext)
+#       define DATAEND ((ptr_t)end)
+#       define STACKBOTTOM ((ptr_t)InitStackBottom)
 #   endif
 #   ifdef DOS4GW
 #     define OS_TYPE "DOS4GW"
