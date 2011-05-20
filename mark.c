@@ -1281,53 +1281,50 @@ GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
 
 #ifndef GC_DISABLE_INCREMENTAL
 
-  /*
-   * Analogous to the above, but push only those pages h with
-   * dirty_fn(h) != 0.  We use push_fn to actually push the block.
-   * Used both to selectively push dirty pages, or to push a block
-   * in piecemeal fashion, to allow for more marking concurrency.
-   * Will not overflow mark stack if push_fn pushes a small fixed number
-   * of entries.  (This is invoked only if push_fn pushes a single entry,
-   * or if it marks each object before pushing it, thus ensuring progress
-   * in the event of a stack overflow.)
-   */
+  /* Analogous to the above, but push only those pages h with           */
+  /* dirty_fn(h) != 0.  We use GC_push_all to actually push the block.  */
+  /* Used both to selectively push dirty pages, or to push a block in   */
+  /* piecemeal fashion, to allow for more marking concurrency.          */
+  /* Will not overflow mark stack if GC_push_all pushes a small fixed   */
+  /* number of entries.  (This is invoked only if GC_push_all pushes    */
+  /* a single entry, or if it marks each object before pushing it, thus */
+  /* ensuring progress in the event of a stack overflow.)               */
   STATIC void GC_push_selected(ptr_t bottom, ptr_t top,
-                               GC_bool (*dirty_fn)(struct hblk *),
-                               void (*push_fn)(ptr_t, ptr_t))
+                               GC_bool (*dirty_fn)(struct hblk *))
   {
     struct hblk * h;
 
     bottom = (ptr_t)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     top = (ptr_t)(((word) top) & ~(ALIGNMENT-1));
-
     if (top == 0 || bottom == top) return;
+
     h = HBLKPTR(bottom + HBLKSIZE);
     if (top <= (ptr_t) h) {
         if ((*dirty_fn)(h-1)) {
-            (*push_fn)(bottom, top);
+            GC_push_all(bottom, top);
         }
         return;
     }
     if ((*dirty_fn)(h-1)) {
-        (*push_fn)(bottom, (ptr_t)h);
+        GC_push_all(bottom, (ptr_t)h);
     }
+
     while ((ptr_t)(h+1) <= top) {
         if ((*dirty_fn)(h)) {
             if ((word)(GC_mark_stack_top - GC_mark_stack)
                 > 3 * GC_mark_stack_size / 4) {
                 /* Danger of mark stack overflow */
-                (*push_fn)((ptr_t)h, top);
+                GC_push_all((ptr_t)h, top);
                 return;
             } else {
-                (*push_fn)((ptr_t)h, (ptr_t)(h+1));
+                GC_push_all((ptr_t)h, (ptr_t)(h+1));
             }
         }
         h++;
     }
-    if ((ptr_t)h != top) {
-        if ((*dirty_fn)(h)) {
-            (*push_fn)((ptr_t)h, top);
-        }
+
+    if ((ptr_t)h != top && (*dirty_fn)(h)) {
+       GC_push_all((ptr_t)h, top);
     }
     if (GC_mark_stack_top >= GC_mark_stack_limit) {
         ABORT("Unexpected mark stack overflow");
@@ -1341,20 +1338,18 @@ GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
 
   GC_INNER void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
   {
-    if (all) {
-      if (GC_dirty_maintained) {
-#       ifdef PROC_VDB
-            /* Pages that were never dirtied cannot contain pointers    */
-            GC_push_selected(bottom, top, GC_page_was_ever_dirty,
-                             GC_push_all);
-#       else
-            GC_push_all(bottom, top);
-#       endif
-      } else {
+    if (!all) {
+      GC_push_selected(bottom, top, GC_page_was_dirty);
+    } else {
+#     ifdef PROC_VDB
+        if (GC_dirty_maintained) {
+          /* Pages that were never dirtied cannot contain pointers.     */
+          GC_push_selected(bottom, top, GC_page_was_ever_dirty);
+        } else
+#     endif
+      /* else */ {
         GC_push_all(bottom, top);
       }
-    } else {
-        GC_push_selected(bottom, top, GC_page_was_dirty, GC_push_all);
     }
   }
 #endif /* !GC_DISABLE_INCREMENTAL */
