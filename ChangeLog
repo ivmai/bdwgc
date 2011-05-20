@@ -1,3 +1,7 @@
+2011-05-20  Ivan Maidanski  <ivmai@mail.ru>
+
+	* doc/README.solaris2: Update.
+
 2011-05-19  Ivan Maidanski  <ivmai@mail.ru> (really Jie Liu)
 
 	* include/private/gcconfig.h (end, InitStackBottom): Declare
