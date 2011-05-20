@@ -1557,11 +1557,9 @@ void GC_register_data_segments(void)
 # else /* !OS2 */
 
 # if defined(GWW_VDB)
-
 #   ifndef MEM_WRITE_WATCH
 #     define MEM_WRITE_WATCH 0x200000
 #   endif
-
 #   ifndef WRITE_WATCH_FLAG_RESET
 #     define WRITE_WATCH_FLAG_RESET 1
 #   endif
@@ -1648,9 +1646,9 @@ void GC_register_data_segments(void)
       done = TRUE;
     }
 
-# else /* !GWW_VDB */
+# else
 #   define GetWriteWatch_alloc_flag 0
-# endif /* GWW_VDB */
+# endif /* !GWW_VDB */
 
 # if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 
@@ -2607,7 +2605,6 @@ STATIC void GC_default_push_other_roots(void)
 # endif /* SN_TARGET_PS3 */
 
   GC_INNER void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
-
 #endif /* THREADS */
 
 /*
@@ -2658,9 +2655,45 @@ STATIC void GC_default_push_other_roots(void)
   STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
   {
     register int i;
-
     for (i = 0; i < PHT_SIZE; i++) pht1[i] |= pht2[i];
   }
+
+# ifdef MPROTECT_VDB
+    STATIC GC_bool GC_gww_page_was_dirty(struct hblk * h)
+# else
+    GC_INNER GC_bool GC_page_was_dirty(struct hblk * h)
+# endif
+  {
+    register word index;
+    if (HDR(h) == 0)
+      return TRUE;
+    index = PHT_HASH(h);
+    return get_pht_entry_from_index(GC_grungy_pages, index);
+  }
+
+# if defined(CHECKSUMS) || defined(PROC_VDB)
+    /* Used only if GWW_VDB. */
+#   ifdef MPROTECT_VDB
+      STATIC GC_bool GC_gww_page_was_ever_dirty(struct hblk * h)
+#   else
+      GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk * h)
+#   endif
+    {
+      register word index;
+      if (HDR(h) == 0)
+        return TRUE;
+      index = PHT_HASH(h);
+      return get_pht_entry_from_index(GC_written_pages, index);
+    }
+# endif /* CHECKSUMS || PROC_VDB */
+
+# ifndef MPROTECT_VDB
+    /* Ignore write hints.  They don't help us here.    */
+    /*ARGSUSED*/
+    GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
+                                       GC_bool is_ptrfree) {}
+# endif
+
 #endif /* PROC_VDB || GWW_VDB */
 
 #ifdef GWW_VDB
@@ -2682,7 +2715,7 @@ STATIC void GC_default_push_other_roots(void)
       detect_GetWriteWatch();
       GC_dirty_maintained = GC_GWW_AVAILABLE();
     }
-# endif
+# endif /* !MPROTECT_VDB */
 
 # ifdef MPROTECT_VDB
     STATIC void GC_gww_read_dirty(void)
@@ -2761,40 +2794,9 @@ STATIC void GC_default_push_other_roots(void)
 
     GC_or_pages(GC_written_pages, GC_grungy_pages);
   }
-
-# ifdef MPROTECT_VDB
-    STATIC GC_bool GC_gww_page_was_dirty(struct hblk * h)
-# else
-    GC_INNER GC_bool GC_page_was_dirty(struct hblk * h)
-# endif
-  {
-    return HDR(h) == 0 ||
-            get_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
-  }
-
-# ifdef CHECKSUMS
-    /* Used only if GWW_VDB. */
-#   ifdef MPROTECT_VDB
-      STATIC GC_bool GC_gww_page_was_ever_dirty(struct hblk * h)
-#   else
-      GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk * h)
-#   endif
-    {
-      return HDR(h) == 0 ||
-              get_pht_entry_from_index(GC_written_pages, PHT_HASH(h));
-    }
-# endif /* CHECKSUMS */
-
-# ifndef MPROTECT_VDB
-    /*ARGSUSED*/
-    GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
-                                       GC_bool is_ptrfree) {}
-# endif
-
 #endif /* GWW_VDB */
 
 #ifdef DEFAULT_VDB
-
   /* All of the following assume the allocation lock is held.   */
 
   /* The client asserts that unallocated pages in the heap are never    */
@@ -2847,17 +2849,15 @@ STATIC void GC_default_push_other_roots(void)
   /*ARGSUSED*/
   GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
                                      GC_bool is_ptrfree) {}
-
 #endif /* DEFAULT_VDB */
 
 #ifdef MANUAL_VDB
-
   /* Initialize virtual dirty bit implementation.       */
   GC_INNER void GC_dirty_init(void)
   {
     if (GC_print_stats == VERBOSE)
       GC_log_printf("Initializing MANUAL_VDB...\n");
-    /* GC_dirty_pages and GC_grungy_pages are already cleared. */
+    /* GC_dirty_pages and GC_grungy_pages are already cleared.  */
     GC_dirty_maintained = TRUE;
   }
 
@@ -2904,9 +2904,7 @@ STATIC void GC_default_push_other_roots(void)
 
 #endif /* MANUAL_VDB */
 
-
 #ifdef MPROTECT_VDB
-
   /* See DEFAULT_VDB for interface descriptions.        */
 
   /*
@@ -3591,25 +3589,23 @@ ssize_t read(int fd, void *buf, size_t nbyte)
     /* We should probably also do this for __read, or whatever stdio    */
     /* actually calls.                                                  */
 #endif
-
 #endif /* 0 */
 
-#ifdef CHECKSUMS
-  /*ARGSUSED*/
-  GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
-  {
-#   if defined(GWW_VDB)
-      if (GC_GWW_AVAILABLE())
-        return GC_gww_page_was_ever_dirty(h);
-#   endif
-    return(TRUE);
-  }
-#endif /* CHECKSUMS */
+# ifdef CHECKSUMS
+    /*ARGSUSED*/
+    GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
+    {
+#     if defined(GWW_VDB)
+        if (GC_GWW_AVAILABLE())
+          return GC_gww_page_was_ever_dirty(h);
+#     endif
+      return(TRUE);
+    }
+# endif /* CHECKSUMS */
 
-# endif /* MPROTECT_VDB */
+#endif /* MPROTECT_VDB */
 
-# ifdef PROC_VDB
-
+#ifdef PROC_VDB
 /*
  * See DEFAULT_VDB for interface descriptions.
  */
@@ -3621,19 +3617,18 @@ ssize_t read(int fd, void *buf, size_t nbyte)
  * address space), but it avoids intercepting system calls.
  */
 
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/signal.h>
-#include <sys/fault.h>
-#include <sys/syscall.h>
-#include <sys/procfs.h>
-#include <sys/stat.h>
+# include <errno.h>
+# include <sys/types.h>
+# include <sys/signal.h>
+# include <sys/fault.h>
+# include <sys/syscall.h>
+# include <sys/procfs.h>
+# include <sys/stat.h>
 
-#define INITIAL_BUF_SZ 16384
-STATIC word GC_proc_buf_size = INITIAL_BUF_SZ;
-STATIC char *GC_proc_buf = NULL;
-
-STATIC int GC_proc_fd = 0;
+# define INITIAL_BUF_SZ 16384
+  STATIC word GC_proc_buf_size = INITIAL_BUF_SZ;
+  STATIC char *GC_proc_buf = NULL;
+  STATIC int GC_proc_fd = 0;
 
 GC_INNER void GC_dirty_init(void)
 {
@@ -3662,12 +3657,7 @@ GC_INNER void GC_dirty_init(void)
     GC_proc_buf = GC_scratch_alloc(GC_proc_buf_size);
 }
 
-/* Ignore write hints. They don't help us here. */
-/*ARGSUSED*/
-GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
-                                   GC_bool is_ptrfree) {}
-
-#define READ read
+# define READ read
 
 GC_INNER void GC_read_dirty(void)
 {
@@ -3739,24 +3729,10 @@ GC_INNER void GC_read_dirty(void)
     GC_or_pages(GC_written_pages, GC_grungy_pages);
 }
 
-#undef READ
+# undef READ
+#endif /* PROC_VDB */
 
-GC_INNER GC_bool GC_page_was_dirty(struct hblk *h)
-{
-    register word index = PHT_HASH(h);
-    return get_pht_entry_from_index(GC_grungy_pages, index);
-}
-
-GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
-{
-    register word index = PHT_HASH(h);
-    return get_pht_entry_from_index(GC_written_pages, index);
-}
-
-# endif /* PROC_VDB */
-
-
-# ifdef PCR_VDB
+#ifdef PCR_VDB
 
 # include "vd/PCR_VD.h"
 
@@ -3817,7 +3793,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
     PCR_VD_WriteProtectEnable(h, nblocks*HBLKSIZE);
 }
 
-# endif /* PCR_VDB */
+#endif /* PCR_VDB */
 
 #if defined(MPROTECT_VDB) && defined(DARWIN)
 /* The following sources were used as a "reference" for this exception
@@ -3998,10 +3974,10 @@ typedef enum {
     GC_INNER void GC_darwin_register_mach_handler_thread(mach_port_t thread);
 # endif
 
-#else /* !THREADS */
+#else
   /* The compiler should optimize away any GC_mprotect_state computations */
 # define GC_mprotect_state GC_MP_NORMAL
-#endif
+#endif /* !THREADS */
 
 STATIC void *GC_mprotect_thread(void *arg)
 {

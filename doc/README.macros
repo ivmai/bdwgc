@@ -506,8 +506,9 @@ DONT_USE_USER32_DLL (Win32 only)        Don't use "user32" DLL import library
   (containing MessageBox() entry); useful for a static GC library.
 
 GC_PREFER_MPROTECT_VDB  Choose MPROTECT_VDB manually in case of multiple
-  virtual dirty bit strategies are implemented (at present useful on Win32
-  to force MPROTECT_VDB strategy instead of the default GWW_VDB one).
+  virtual dirty bit strategies are implemented (at present useful on Win32 and
+  Solaris to force MPROTECT_VDB strategy instead of the default GWW_VDB or
+  PROC_VDB ones).
 
 GC_IGNORE_GCJ_INFO      Disable GCJ-style type information (useful for
   debugging on WinCE).

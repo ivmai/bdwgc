@@ -1198,12 +1198,12 @@ static void alloc_mark_stack(size_t n)
 #   ifdef GWW_VDB
       /* Don't recycle a stack segment obtained with the wrong flags.   */
       /* Win32 GetWriteWatch requires the right kind of memory.         */
-      static GC_bool GC_incremental_at_stack_alloc = 0;
+      static GC_bool GC_incremental_at_stack_alloc = FALSE;
       GC_bool recycle_old = (!GC_incremental || GC_incremental_at_stack_alloc);
 
       GC_incremental_at_stack_alloc = GC_incremental;
 #   else
-#     define recycle_old 1
+#     define recycle_old TRUE
 #   endif
 
     GC_mark_stack_too_small = FALSE;
