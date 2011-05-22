@@ -1,3 +1,14 @@
+2011-05-22  Ivan Maidanski  <ivmai@mail.ru>
+
+	* os_dep.c (GC_get_main_stack_base): Convert to GC_get_stack_base
+	for BeOS and OS/2; define HAVE_GET_STACK_BASE.
+	* os_dep.c (GET_MAIN_STACKBASE_SPECIAL): Define when a specific
+	GC_get_main_stack_base implementation is defined.
+	* os_dep.c (GC_get_main_stack_base): Define that based on
+	GC_get_stack_base() in a single place (only if
+	GET_MAIN_STACKBASE_SPECIAL is unset); check GC_get_stack_base()
+	result.
+
 2011-05-20  Ivan Maidanski  <ivmai@mail.ru>
 
 	* mark.c (GC_push_selected): Remove "push_fn" argument (use

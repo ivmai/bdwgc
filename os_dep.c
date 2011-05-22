@@ -774,7 +774,6 @@ GC_INNER word GC_page_size = 0;
       sb -> mem_base = trunc_sp + size;
       return GC_SUCCESS;
     }
-
 # else /* CYGWIN32 */
     /* An alternate version for Cygwin (adapted from Dave Korn's        */
     /* gcc version of boehm-gc).                                        */
@@ -786,15 +785,6 @@ GC_INNER word GC_page_size = 0;
     }
 # endif /* CYGWIN32 */
 # define HAVE_GET_STACK_BASE
-
-  /* This is always called from the main thread.        */
-  ptr_t GC_get_main_stack_base(void)
-  {
-    struct GC_stack_base sb;
-    GC_get_stack_base(&sb);
-    GC_ASSERT((void *)&sb HOTTER_THAN sb.mem_base);
-    return (ptr_t)sb.mem_base;
-  }
 
 #else /* !MSWIN32 */
   GC_INNER void GC_setpagesize(void)
@@ -811,25 +801,29 @@ GC_INNER word GC_page_size = 0;
 
 #ifdef BEOS
 # include <kernel/OS.h>
-  ptr_t GC_get_main_stack_base(void)
+
+  GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
   {
     thread_info th;
     get_thread_info(find_thread(NULL),&th);
-    return th.stack_end;
+    sb->mem_base = th.stack_end;
+    return GC_SUCCESS;
   }
+# define HAVE_GET_STACK_BASE
 #endif /* BEOS */
 
 #ifdef OS2
-  ptr_t GC_get_main_stack_base(void)
+  GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
   {
-    PTIB ptib;
+    PTIB ptib; /* thread information block */
     PPIB ppib;
-
     if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
       ABORT("DosGetInfoBlocks failed");
     }
-    return((ptr_t)(ptib -> tib_pstacklimit));
+    sb->mem_base = ptib->tib_pstacklimit;
+    return GC_SUCCESS;
   }
+# define HAVE_GET_STACK_BASE
 #endif /* OS2 */
 
 # ifdef AMIGA
@@ -1113,11 +1107,9 @@ GC_INNER word GC_page_size = 0;
       ABORT("Absurd stack bottom value");
     return (ptr_t)result;
   }
-
 #endif /* LINUX_STACKBOTTOM */
 
 #ifdef FREEBSD_STACKBOTTOM
-
   /* This uses an undocumented sysctl call, but at least one expert     */
   /* believes it will stay.                                             */
 
@@ -1141,6 +1133,7 @@ GC_INNER word GC_page_size = 0;
   {
     return STACKBOTTOM;
   }
+# define GET_MAIN_STACKBASE_SPECIAL
 #elif !defined(BEOS) && !defined(AMIGA) && !defined(OS2) \
       && !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
       && !defined(GC_OPENBSD_THREADS) \
@@ -1223,6 +1216,7 @@ GC_INNER word GC_page_size = 0;
     GC_ASSERT((ptr_t)(&result) HOTTER_THAN result);
     return(result);
   }
+# define GET_MAIN_STACKBASE_SPECIAL
 #endif /* !AMIGA, !BEOS, !OPENBSD, !OS2, !Windows */
 
 #if (defined(GC_LINUX_THREADS) || defined(PLATFORM_ANDROID)) && !defined(NACL)
@@ -1281,7 +1275,6 @@ GC_INNER word GC_page_size = 0;
 #   endif
     return GC_SUCCESS;
   }
-
 # define HAVE_GET_STACK_BASE
 #endif /* GC_LINUX_THREADS */
 
@@ -1315,17 +1308,7 @@ GC_INNER word GC_page_size = 0;
     sb->mem_base = stack.ss_sp;
     return GC_SUCCESS;
   }
-
 # define HAVE_GET_STACK_BASE
-
-  /* This is always called from the main thread. */
-  ptr_t GC_get_main_stack_base(void)
-  {
-    struct GC_stack_base sb;
-    GC_get_stack_base(&sb);
-    GC_ASSERT((void *)&sb HOTTER_THAN sb.mem_base);
-    return (ptr_t)sb.mem_base;
-  }
 #endif /* GC_OPENBSD_THREADS */
 
 #if defined(GC_SOLARIS_THREADS) && !defined(_STRICT_STDC)
@@ -1375,19 +1358,7 @@ GC_INNER word GC_page_size = 0;
     b -> mem_base = s.ss_sp;
     return GC_SUCCESS;
   }
-
 # define HAVE_GET_STACK_BASE
-
-  /* This is always called from the main thread.  The above             */
-  /* implementation of GC_get_stack_base() requires the latter to be    */
-  /* first called from GC_get_main_stack_base() (to cache the proper    */
-  /* ss_sp value).                                                      */
-  ptr_t GC_get_main_stack_base(void)
-  {
-    struct GC_stack_base sb;
-    GC_get_stack_base(&sb);
-    return (ptr_t)sb.mem_base;
-  }
 #endif /* GC_SOLARIS_THREADS */
 
 #ifndef HAVE_GET_STACK_BASE
@@ -1423,6 +1394,18 @@ GC_INNER word GC_page_size = 0;
 #   endif
   }
 #endif /* !HAVE_GET_STACK_BASE */
+
+#ifndef GET_MAIN_STACKBASE_SPECIAL
+  /* This is always called from the main thread.  Default implementation. */
+  ptr_t GC_get_main_stack_base(void)
+  {
+    struct GC_stack_base sb;
+    if (GC_get_stack_base(&sb) != GC_SUCCESS)
+      ABORT("GC_get_stack_base failed");
+    GC_ASSERT((void *)&sb HOTTER_THAN sb.mem_base);
+    return (ptr_t)sb.mem_base;
+  }
+#endif /* !GET_MAIN_STACKBASE_SPECIAL */
 
 /*
  * Register static data segment(s) as roots.
