@@ -1,9 +1,14 @@
 2011-05-23  Ivan Maidanski  <ivmai@mail.ru>
 
+	* tests/threadkey_test.c (SKIP_THREADKEY_TEST): Skip the test if
+	defined; explicitly define for some targets.
+
+2011-05-23  Ivan Maidanski  <ivmai@mail.ru>
+
 	* mark.c (GC_dirty): Add prototype (only if MANUAL_VDB).
 	* stubborn.c (GC_dirty): Ditto.
 	* include/private/gcconfig.h (GWW_VDB, MPROTECT_VDB, PCR_VDB,
-        PROC_VDB): Undefine if MANUAL_VDB.
+	PROC_VDB): Undefine if MANUAL_VDB.
 	* include/private/gcconfig.h (DEFAULT_VDB): Don't define if
 	MANUAL_VDB.
 	* os_dep.c (async_set_pht_entry_from_index): Define for
@@ -23,7 +28,7 @@
 	(for PROC_VDB only); print errors via GC_err_printf; rename "ps"
 	and "np" local variables to npages and pagesize, respectively;
 	remove "current_addr" local variable.
-	* os_dep.c: Refprmat comments.
+	* os_dep.c: Reformat comments.
 
 2011-05-22  Ivan Maidanski  <ivmai@mail.ru>
 

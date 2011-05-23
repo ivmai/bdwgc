@@ -7,6 +7,23 @@
 
 #include "gc.h"
 
+#if (!defined(GC_PTHREADS) || defined(GC_SOLARIS_THREADS) \
+     || defined(__native_client__)) && !defined(SKIP_THREADKEY_TEST)
+  /* FIXME: Skip this test on Solaris for now.  The test may fail on    */
+  /* other targets as well.  Currently, tested only on Linux, Cygwin    */
+  /* and Darwin.                                                        */
+# define SKIP_THREADKEY_TEST
+#endif
+
+#ifdef SKIP_THREADKEY_TEST
+
+int main (void)
+{
+  return 0;
+}
+
+#else
+
 #include <pthread.h>
 
 pthread_key_t key;
@@ -68,3 +85,5 @@ int main (void)
   }
   return 0;
 }
+
+#endif
