@@ -2850,6 +2850,9 @@ STATIC void GC_default_push_other_roots(void)
     return(HDR(h) == 0 || get_pht_entry_from_index(GC_grungy_pages, index));
   }
 
+# define async_set_pht_entry_from_index(db, index) \
+                        set_pht_entry_from_index(db, index) /* for now */
+
   /* Mark the page containing p as dirty.  Logically, this dirties the  */
   /* entire object.                                                     */
   void GC_dirty(ptr_t p)
@@ -3600,7 +3603,6 @@ GC_INNER void GC_dirty_init(void)
     int fd;
     char buf[30];
 
-    GC_dirty_maintained = TRUE;
     if (GC_bytes_allocd != 0 || GC_bytes_allocd_before_gc != 0) {
       memset(GC_written_pages, 0xff, sizeof(page_hash_table));
       if (GC_print_stats == VERBOSE)
@@ -3608,6 +3610,7 @@ GC_INNER void GC_dirty_init(void)
                       (unsigned long)(GC_bytes_allocd
                                       + GC_bytes_allocd_before_gc));
     }
+
     sprintf(buf, "/proc/%ld", (long)getpid());
     fd = open(buf, O_RDONLY);
     if (fd < 0) {
@@ -3617,8 +3620,11 @@ GC_INNER void GC_dirty_init(void)
     close(fd);
     syscall(SYS_fcntl, GC_proc_fd, F_SETFD, FD_CLOEXEC);
     if (GC_proc_fd < 0) {
-        ABORT("/proc ioctl failed");
+        WARN("/proc ioctl(PIOCOPENPD) failed", 0);
+        return;
     }
+
+    GC_dirty_maintained = TRUE;
     GC_proc_buf = GC_scratch_alloc(GC_proc_buf_size);
 }
 

@@ -2380,11 +2380,14 @@
 # define GC_DISABLE_INCREMENTAL
 #endif
 
-#ifdef GC_DISABLE_INCREMENTAL
+#if defined(GC_DISABLE_INCREMENTAL) || defined(MANUAL_VDB)
 # undef GWW_VDB
 # undef MPROTECT_VDB
 # undef PCR_VDB
 # undef PROC_VDB
+#endif
+
+#ifdef GC_DISABLE_INCREMENTAL
 # undef CHECKSUMS
 #endif
 
@@ -2413,7 +2416,8 @@
 #endif
 
 #if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
-    && !defined(GWW_VDB) && !defined(GC_DISABLE_INCREMENTAL)
+    && !defined(GWW_VDB) && !defined(MANUAL_VDB) \
+    && !defined(GC_DISABLE_INCREMENTAL)
 # define DEFAULT_VDB
 #endif
 
