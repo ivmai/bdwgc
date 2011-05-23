@@ -1,5 +1,10 @@
 2011-05-23  Ivan Maidanski  <ivmai@mail.ru>
 
+	* include/private/gc_priv.h (GC_ASSERT): Use "%d" (instead of %ld)
+	for line number printing.
+
+2011-05-23  Ivan Maidanski  <ivmai@mail.ru>
+
 	* os_dep.c (GC_read_dirty): Add debug logging if DEBUG_DIRTY_BITS
 	(for PROC_VDB only); print errors via GC_err_printf; rename "ps"
 	and "np" local variables to npages and pagesize, respectively;

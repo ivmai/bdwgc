@@ -2020,8 +2020,8 @@ GC_EXTERN signed_word GC_bytes_found;
 #ifdef GC_ASSERTIONS
 #  define GC_ASSERT(expr) \
                 if (!(expr)) { \
-                  GC_err_printf("Assertion failure: %s:%ld\n", \
-                                __FILE__, (unsigned long)__LINE__); \
+                  GC_err_printf("Assertion failure: %s:%d\n", \
+                                __FILE__, __LINE__); \
                   ABORT("assertion failure"); \
                 }
 #else
