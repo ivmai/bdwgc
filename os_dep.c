@@ -19,10 +19,10 @@
 #if defined(LINUX) && !defined(POWERPC)
 # include <linux/version.h>
 # if (LINUX_VERSION_CODE <= 0x10400)
-    /* Ugly hack to get struct sigcontext_struct definition.  Required      */
-    /* for some early 1.3.X releases.  Will hopefully go away soon. */
-    /* in some later Linux releases, asm/sigcontext.h may have to   */
-    /* be included instead.                                         */
+    /* Ugly hack to get struct sigcontext_struct definition.  Required  */
+    /* for some early 1.3.X releases.  Will hopefully go away soon.     */
+    /* in some later Linux releases, asm/sigcontext.h may have to       */
+    /* be included instead.                                             */
 #   define __KERNEL__
 #   include <asm/signal.h>
 #   undef __KERNEL__
@@ -34,8 +34,8 @@
 #   include <features.h>
 #   if 2 <= __GLIBC__
 #     if 2 == __GLIBC__ && 0 == __GLIBC_MINOR__
-        /* glibc 2.1 no longer has sigcontext.h.  But signal.h        */
-        /* has the right declaration for glibc 2.1.                   */
+        /* glibc 2.1 no longer has sigcontext.h.  But signal.h          */
+        /* has the right declaration for glibc 2.1.                     */
 #       include <sigcontext.h>
 #     endif /* 0 == __GLIBC_MINOR__ */
 #   else /* not 2 <= __GLIBC__ */
@@ -136,7 +136,7 @@
   STATIC GC_bool GC_pages_executable = FALSE;
 #endif
 #define IGNORE_PAGES_EXECUTABLE 1
-                        /* Undefined on GC_pages_executable real use.  */
+                        /* Undefined on GC_pages_executable real use.   */
 
 #if defined(LINUX) && (defined(USE_PROC_FOR_LIBRARIES) || defined(IA64) \
                        || !defined(SMALL_CONFIG))
@@ -144,9 +144,9 @@
 #endif
 
 #ifdef NEED_PROC_MAPS
-/* We need to parse /proc/self/maps, either to find dynamic libraries, */
-/* and/or to find the register backing store base (IA64).  Do it once  */
-/* here.                                                               */
+/* We need to parse /proc/self/maps, either to find dynamic libraries,  */
+/* and/or to find the register backing store base (IA64).  Do it once   */
+/* here.                                                                */
 
 #define READ read
 
@@ -197,12 +197,10 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
   }
 #endif /* THREADS */
 
-/*
- * Copy the contents of /proc/self/maps to a buffer in our address space.
- * Return the address of the buffer, or zero on failure.
- * This code could be simplified if we could determine its size
- * ahead of time.
- */
+/* Copy the contents of /proc/self/maps to a buffer in our address      */
+/* space.  Return the address of the buffer, or zero on failure.        */
+/* This code could be simplified if we could determine its size ahead   */
+/* of time.                                                             */
 GC_INNER char * GC_get_maps(void)
 {
     int f;
@@ -243,7 +241,7 @@ GC_INNER char * GC_get_maps(void)
     /* thus can't use stdio.                                    */
         do {
             while (maps_size >= maps_buf_sz) {
-              /* Grow only by powers of 2, since we leak "too small" buffers. */
+              /* Grow only by powers of 2, since we leak "too small" buffers.*/
               while (maps_size >= maps_buf_sz) maps_buf_sz *= 2;
               maps_buf = GC_scratch_alloc(maps_buf_sz);
 #             ifdef THREADS
@@ -283,10 +281,10 @@ GC_INNER char * GC_get_maps(void)
               }
 #           endif
         } while (maps_size >= maps_buf_sz || maps_size < old_maps_size);
-                /* In the single-threaded case, the second clause is false.     */
+                /* In the single-threaded case, the second clause is false. */
         maps_buf[maps_size] = '\0';
 
-    /* Apply fn to result. */
+        /* Apply fn to result.  */
         return maps_buf;
 }
 
@@ -304,12 +302,10 @@ GC_INNER char * GC_get_maps(void)
  *  anywhere, which is safer anyway.
  */
 
-/*
- * Assign various fields of the first line in buf_ptr to *start, *end,
- * *prot, *maj_dev and *mapping_name.  Mapping_name may be NULL.
- * *prot and *mapping_name are assigned pointers into the original
- * buffer.
- */
+/* Assign various fields of the first line in buf_ptr to (*start),      */
+/* (*end), (*prot), (*maj_dev) and (*mapping_name).  mapping_name may   */
+/* be NULL. (*prot) and (*mapping_name) are assigned pointers into the  */
+/* original buffer.                                                     */
 GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
                                   char **prot, unsigned int *maj_dev,
                                   char **mapping_name)
@@ -572,7 +568,7 @@ GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
     }
 
 #   ifdef THREADS
-      /* Due to the siglongjump we need to manually unmask SIGPROF. */
+      /* Due to the siglongjump we need to manually unmask SIGPROF.     */
       __syscall(SYS_sigprocmask, SIG_UNBLOCK, sigmask(SIGPROF));
 #   endif
 
@@ -864,8 +860,8 @@ GC_INNER word GC_page_size = 0;
 
           (void) sigemptyset(&act.sa_mask);
 #         ifdef GC_IRIX_THREADS
-            /* Older versions have a bug related to retrieving and  */
-            /* and setting a handler at the same time.              */
+            /* Older versions have a bug related to retrieving and      */
+            /* and setting a handler at the same time.                  */
             (void) sigaction(SIGSEGV, 0, &old_segv_act);
             (void) sigaction(SIGSEGV, &act, 0);
 #         else
@@ -873,9 +869,9 @@ GC_INNER word GC_page_size = 0;
 #           if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
                || defined(HPUX) || defined(HURD) || defined(NETBSD) \
                || defined(FREEBSD)
-              /* Under Irix 5.x or HP/UX, we may get SIGBUS.      */
-              /* Pthreads doesn't exist under Irix 5.x, so we     */
-              /* don't have to worry in the threads case.         */
+              /* Under Irix 5.x or HP/UX, we may get SIGBUS.    */
+              /* Pthreads doesn't exist under Irix 5.x, so we   */
+              /* don't have to worry in the threads case.       */
               (void) sigaction(SIGBUS, &act, &old_bus_act);
 #           endif
 #         endif /* GC_IRIX_THREADS */
@@ -901,8 +897,8 @@ GC_INNER word GC_page_size = 0;
 
     GC_INNER void GC_setup_temporary_fault_handler(void)
     {
-        /* Handler is process-wide, so this should only happen in */
-        /* one thread at a time.                                  */
+        /* Handler is process-wide, so this should only happen in       */
+        /* one thread at a time.                                        */
         GC_ASSERT(I_HOLD_LOCK());
         GC_set_and_save_fault_handler(GC_fault_handler);
     }
@@ -1407,14 +1403,10 @@ GC_INNER word GC_page_size = 0;
   }
 #endif /* !GET_MAIN_STACKBASE_SPECIAL */
 
-/*
- * Register static data segment(s) as roots.
- * If more data segments are added later then they need to be registered
- * add that point (as we do with SunOS dynamic loading),
- * or GC_mark_roots needs to check for them (as we do with PCR).
- * Called with allocator lock held.
- */
-
+/* Register static data segment(s) as roots.  If more data segments are */
+/* added later then they need to be registered at that point (as we do  */
+/* with SunOS dynamic loading), or GC_mark_roots needs to check for     */
+/* them (as we do with PCR).  Called with allocator lock held.          */
 # ifdef OS2
 
 void GC_register_data_segments(void)
@@ -1701,7 +1693,7 @@ void GC_register_data_segments(void)
   /* the malloc heap with HeapWalk on the default heap.  But that       */
   /* apparently works only for NT-based Windows.                        */
 
-  STATIC size_t GC_max_root_size = 100000; /* Appr. largest root size. */
+  STATIC size_t GC_max_root_size = 100000; /* Appr. largest root size.  */
 
 # ifndef CYGWIN32
   /* In the long run, a better data structure would also be nice ...    */
@@ -2055,7 +2047,7 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
         /* usable by arbitrary C code, since one-past-end pointers      */
         /* don't work, so we discard it and try again.                  */
         munmap(result, (size_t)(-GC_page_size) - (size_t)result);
-                        /* Leave last page mapped, so we can't repeat. */
+                        /* Leave last page mapped, so we can't repeat.  */
         return GC_unix_mmap_get_mem(bytes);
       }
 #   else
@@ -2719,23 +2711,20 @@ STATIC void GC_default_push_other_roots(void)
 
         pages = gww_buf;
         count = GC_GWW_BUF_LEN;
-        /*
-        * GetWriteWatch is documented as returning non-zero when it fails,
-        * but the documentation doesn't explicitly say why it would fail or
-        * what its behaviour will be if it fails.
-        * It does appear to fail, at least on recent W2K instances, if
-        * the underlying memory was not allocated with the appropriate
-        * flag.  This is common if GC_enable_incremental is called
-        * shortly after GC initialization.  To avoid modifying the
-        * interface, we silently work around such a failure, it only
-        * affects the initial (small) heap allocation.
-        * If there are more dirty
-        * pages than will fit in the buffer, this is not treated as a
-        * failure; we must check the page count in the loop condition.
-        * Since each partial call will reset the status of some
-        * pages, this should eventually terminate even in the overflow
-        * case.
-        */
+        /* GetWriteWatch is documented as returning non-zero when it    */
+        /* fails, but the documentation doesn't explicitly say why it   */
+        /* would fail or what its behaviour will be if it fails.        */
+        /* It does appear to fail, at least on recent W2K instances, if */
+        /* the underlying memory was not allocated with the appropriate */
+        /* flag.  This is common if GC_enable_incremental is called     */
+        /* shortly after GC initialization.  To avoid modifying the     */
+        /* interface, we silently work around such a failure, it only   */
+        /* affects the initial (small) heap allocation. If there are    */
+        /* more dirty pages than will fit in the buffer, this is not    */
+        /* treated as a failure; we must check the page count in the    */
+        /* loop condition. Since each partial call will reset the       */
+        /* status of some pages, this should eventually terminate even  */
+        /* in the overflow case.                                        */
         if (GetWriteWatch_func(WRITE_WATCH_FLAG_RESET,
                                GC_heap_sects[i].hs_start,
                                GC_heap_sects[i].hs_bytes,
@@ -2759,7 +2748,7 @@ STATIC void GC_default_push_other_roots(void)
               set_pht_entry_from_index(GC_grungy_pages, hash);
           }
           count = 1;  /* Done with this section. */
-        } else /* succeeded */{
+        } else /* succeeded */ {
           pages_end = pages + count;
           while (pages != pages_end) {
             struct hblk * h = (struct hblk *) *pages++;
@@ -2770,9 +2759,9 @@ STATIC void GC_default_push_other_roots(void)
           }
         }
       } while (count == GC_GWW_BUF_LEN);
-      /* FIXME: It's unclear from Microsoft's documentation if this loop  */
-      /* is useful.  We suspect the call just fails if the buffer fills   */
-      /* up.  But that should still be handled correctly.                 */
+      /* FIXME: It's unclear from Microsoft's documentation if this loop */
+      /* is useful.  We suspect the call just fails if the buffer fills  */
+      /* up.  But that should still be handled correctly.                */
     }
 
     GC_or_pages(GC_written_pages, GC_grungy_pages);
@@ -2807,12 +2796,10 @@ STATIC void GC_default_push_other_roots(void)
     return(TRUE);
   }
 
-  /*
-   * The following two routines are typically less crucial.  They matter
-   * most with large dynamic libraries, or if we can't accurately identify
-   * stacks, e.g. under Solaris 2.X.  Otherwise the following default
-   * versions are adequate.
-   */
+  /* The following two routines are typically less crucial.             */
+  /* They matter most with large dynamic libraries, or if we can't      */
+  /* accurately identify stacks, e.g. under Solaris 2.X.  Otherwise the */
+  /* following default versions are adequate.                           */
 # ifdef CHECKSUMS
     /* Could any valid GC heap pointer ever have been written to this page? */
     /*ARGSUSED*/
@@ -3221,14 +3208,12 @@ STATIC void GC_default_push_other_roots(void)
   }
 #endif /* !DARWIN */
 
-/*
- * We hold the allocation lock.  We expect block h to be written
- * shortly.  Ensure that all pages containing any part of the n hblks
- * starting at h are no longer protected.  If is_ptrfree is false,
- * also ensure that they will subsequently appear to be dirty.
- * Not allowed to call GC_printf (and the friends) here, see Win32
- * GC_stop_world() for the information.
- */
+/* We hold the allocation lock.  We expect block h to be written        */
+/* shortly.  Ensure that all pages containing any part of the n hblks   */
+/* starting at h are no longer protected.  If is_ptrfree is false, also */
+/* ensure that they will subsequently appear to be dirty.  Not allowed  */
+/* to call GC_printf (and the friends) here, see Win32 GC_stop_world()  */
+/* for the information.                                                 */
 GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
                                    GC_bool is_ptrfree)
 {
@@ -3589,16 +3574,13 @@ ssize_t read(int fd, void *buf, size_t nbyte)
 #endif /* MPROTECT_VDB */
 
 #ifdef PROC_VDB
-/*
- * See DEFAULT_VDB for interface descriptions.
- */
+/* See DEFAULT_VDB for interface descriptions.  */
 
-/*
- * This implementation assumes a Solaris 2.X like /proc pseudo-file-system
- * from which we can read page modified bits.  This facility is far from
- * optimal (e.g. we would like to get the info for only some of the
- * address space), but it avoids intercepting system calls.
- */
+/* This implementation assumes a Solaris 2.X like /proc                 */
+/* pseudo-file-system from which we can read page modified bits.  This  */
+/* facility is far from optimal (e.g. we would like to get the info for */
+/* only some of the address space), but it avoids intercepting system   */
+/* calls.                                                               */
 
 # include <errno.h>
 # include <sys/types.h>
@@ -3644,24 +3626,22 @@ GC_INNER void GC_dirty_init(void)
 
 GC_INNER void GC_read_dirty(void)
 {
-    unsigned long ps, np;
     int nmaps;
-    ptr_t vaddr;
+    unsigned long npages;
+    unsigned pagesize;
+    ptr_t vaddr, limit;
     struct prasmap * map;
     char * bufp;
-    ptr_t current_addr, limit;
     int i;
 
-    BZERO(GC_grungy_pages, (sizeof GC_grungy_pages));
-
+    BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
     bufp = GC_proc_buf;
     if (READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
         /* Retry with larger buffer.    */
         word new_size = 2 * GC_proc_buf_size;
         char *new_buf;
-
         if (GC_print_stats)
-          GC_log_printf("/proc read failed: GC_proc_buf_size = %lu\n",
+          GC_err_printf("/proc read failed: GC_proc_buf_size = %lu\n",
                         (unsigned long)GC_proc_buf_size);
 
         new_buf = GC_scratch_alloc(new_size);
@@ -3680,33 +3660,43 @@ GC_INNER void GC_read_dirty(void)
 
     /* Copy dirty bits into GC_grungy_pages     */
     nmaps = ((struct prpageheader *)bufp) -> pr_nmap;
-    /* printf( "nmaps = %d, PG_REFERENCED = %d, PG_MODIFIED = %d\n",
-                 nmaps, PG_REFERENCED, PG_MODIFIED); */
-    bufp = bufp + sizeof(struct prpageheader);
+#   ifdef DEBUG_DIRTY_BITS
+      GC_log_printf("Proc VDB read: pr_nmap= %u, pr_npage= %lu\n",
+                    nmaps, ((struct prpageheader *)bufp)->pr_npage);
+
+#   endif
+    bufp += sizeof(struct prpageheader);
     for (i = 0; i < nmaps; i++) {
         map = (struct prasmap *)bufp;
         vaddr = (ptr_t)(map -> pr_vaddr);
-        ps = map -> pr_pagesize;
-        np = map -> pr_npage;
-        /* printf("vaddr = 0x%X, ps = 0x%X, np = 0x%X\n", vaddr, ps, np); */
-        limit = vaddr + ps * np;
-        bufp += sizeof (struct prasmap);
-        for (current_addr = vaddr;
-             current_addr < limit; current_addr += ps) {
+        npages = map -> pr_npage;
+        pagesize = map -> pr_pagesize;
+#       ifdef DEBUG_DIRTY_BITS
+          GC_log_printf(
+                "pr_vaddr= %p, npage= %lu, mflags= 0x%x, pagesize= 0x%x\n",
+                vaddr, npages, map->pr_mflags, pagesize);
+#       endif
+
+        bufp += sizeof(struct prasmap);
+        limit = vaddr + pagesize * npages;
+        for (; vaddr < limit; vaddr += pagesize) {
             if ((*bufp++) & PG_MODIFIED) {
-                register struct hblk * h = (struct hblk *) current_addr;
-
-                while ((ptr_t)h < current_addr + ps) {
+                register struct hblk * h;
+                ptr_t next_vaddr = vaddr + pagesize;
+#               ifdef DEBUG_DIRTY_BITS
+                  GC_log_printf("dirty page at: %p\n", vaddr);
+#               endif
+                for (h = (struct hblk *)vaddr; (ptr_t)h < next_vaddr; h++) {
                     register word index = PHT_HASH(h);
-
                     set_pht_entry_from_index(GC_grungy_pages, index);
-                    h++;
                 }
             }
         }
-        bufp += sizeof(long) - 1;
-        bufp = (char *)((unsigned long)bufp & ~(sizeof(long)-1));
+        bufp = (char *)(((word)bufp + (sizeof(long)-1)) & ~(sizeof(long)-1));
     }
+#   ifdef DEBUG_DIRTY_BITS
+      GC_log_printf("Proc VDB read done.\n");
+#   endif
 
     /* Update GC_written_pages. */
     GC_or_pages(GC_written_pages, GC_grungy_pages);
@@ -3965,9 +3955,9 @@ typedef enum {
 STATIC void *GC_mprotect_thread(void *arg)
 {
   mach_msg_return_t r;
-  /* These two structures contain some private kernel data. We don't need to
-     access any of it so we don't bother defining a proper struct. The
-     correct definitions are in the xnu source code. */
+  /* These two structures contain some private kernel data.  We don't   */
+  /* need to access any of it so we don't bother defining a proper      */
+  /* struct.  The correct definitions are in the xnu source code.       */
   struct {
     mach_msg_header_t head;
     char data[256];
@@ -4154,9 +4144,9 @@ GC_INNER void GC_dirty_init(void)
 # endif /* BROKEN_EXCEPTION_HANDLING  */
 }
 
-/* The source code for Apple's GDB was used as a reference for the exception
-   forwarding code. This code is similar to be GDB code only because there is
-   only one way to do it. */
+/* The source code for Apple's GDB was used as a reference for the      */
+/* exception forwarding code.  This code is similar to be GDB code only */
+/* because there is only one way to do it.                              */
 STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
                                           exception_type_t exception,
                                           exception_data_t data,
@@ -4275,8 +4265,8 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
   r = thread_get_state(thread, flavor, (natural_t*)&exc_state,
                        &exc_state_count);
   if(r != KERN_SUCCESS) {
-    /* The thread is supposed to be suspended while the exception handler
-       is called. This shouldn't fail. */
+    /* The thread is supposed to be suspended while the exception       */
+    /* handler is called.  This shouldn't fail.                         */
 #   ifdef BROKEN_EXCEPTION_HANDLING
       GC_err_printf("thread_get_state failed in catch_exception_raise\n");
       return KERN_SUCCESS;
@@ -4288,11 +4278,11 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
   /* This is the address that caused the fault */
   addr = (char*) exc_state.DARWIN_EXC_STATE_DAR;
   if (HDR(addr) == 0) {
-    /* Ugh... just like the SIGBUS problem above, it seems we get a bogus
-       KERN_PROTECTION_FAILURE every once and a while. We wait till we get
-       a bunch in a row before doing anything about it. If a "real" fault
-       ever occurs it'll just keep faulting over and over and we'll hit
-       the limit pretty quickly. */
+    /* Ugh... just like the SIGBUS problem above, it seems we get       */
+    /* a bogus KERN_PROTECTION_FAILURE every once and a while.  We wait */
+    /* till we get a bunch in a row before doing anything about it.     */
+    /* If a "real" fault ever occurs it'll just keep faulting over and  */
+    /* over and we'll hit the limit pretty quickly.                     */
 #   ifdef BROKEN_EXCEPTION_HANDLING
       static char *last_fault;
       static int last_fault_count;
@@ -4309,9 +4299,9 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
 
       GC_err_printf(
         "Unexpected KERN_PROTECTION_FAILURE at %p; aborting...\n", addr);
-      /* Can't pass it along to the signal handler because that is
-         ignoring SIGBUS signals. We also shouldn't call ABORT here as
-         signals don't always work too well from the exception handler. */
+      /* Can't pass it along to the signal handler because that is      */
+      /* ignoring SIGBUS signals.  We also shouldn't call ABORT here as */
+      /* signals don't always work too well from the exception handler. */
       exit(EXIT_FAILURE);
 #   else /* BROKEN_EXCEPTION_HANDLING */
       /* Pass it along to the next exception handler
@@ -4388,10 +4378,8 @@ GC_API int GC_CALL GC_get_pages_executable(void)
 # endif
 }
 
-/*
- * Call stack save code for debugging.
- * Should probably be in mach_dep.c, but that requires reorganization.
- */
+/* Call stack save code for debugging.  Should probably be in           */
+/* mach_dep.c, but that requires reorganization.                        */
 
 /* I suspect the following works for most X86 *nix variants, so         */
 /* long as the frame pointer is explicitly stored.  In the case of gcc, */

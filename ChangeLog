@@ -1,3 +1,11 @@
+2011-05-23  Ivan Maidanski  <ivmai@mail.ru>
+
+	* os_dep.c (GC_read_dirty): Add debug logging if DEBUG_DIRTY_BITS
+	(for PROC_VDB only); print errors via GC_err_printf; rename "ps"
+	and "np" local variables to npages and pagesize, respectively;
+	remove "current_addr" local variable.
+	* os_dep.c: Refprmat comments.
+
 2011-05-22  Ivan Maidanski  <ivmai@mail.ru>
 
 	* os_dep.c (GC_get_main_stack_base): Convert to GC_get_stack_base
