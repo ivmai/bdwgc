@@ -1,3 +1,9 @@
+2011-05-30  Ivan Maidanski  <ivmai@mail.ru>
+
+	* configure.ac (SOLARIS25_PROC_VDB_BUG_FIXED): Don't define for
+	Solaris/x86 2.10+.
+	* configure: Regenerate.
+
 2011-05-23  Ivan Maidanski  <ivmai@mail.ru>
 
 	* tests/threadkey_test.c (SKIP_THREADKEY_TEST): Skip the test if
