@@ -776,7 +776,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     LOCK();
 #   if defined(THREAD_LOCAL_ALLOC) || defined(GC_PTHREADS)
       me = GC_lookup_thread_inner(thread_id);
-      GC_ASSERT(!(me -> flags & FINISHED));
+      GC_ASSERT(!KNOWN_FINISHED(me));
 #   endif
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_destroy_thread_local(&(me->tlfs));

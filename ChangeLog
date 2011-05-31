@@ -1,5 +1,12 @@
 2011-05-31  Ivan Maidanski  <ivmai@mail.ru>
 
+	* win32_threads.c (GC_unregister_my_thread): Use KNOWN_FINISHED()
+	instead of FINISHED macro.
+	* tests/test.c (check_heap_stats): Round up max_heap_sz value for
+	Win32 (same as for USE_MMAP).
+
+2011-05-31  Ivan Maidanski  <ivmai@mail.ru>
+
 	* tests/test.c (check_heap_stats): Adjust printf format specifier
 	for max_heap_sz; cast max_heap_sz accordingly.
 

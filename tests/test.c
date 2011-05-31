@@ -1275,7 +1275,7 @@ void check_heap_stats(void)
 #       endif
 #   endif
     max_heap_sz *= n_tests;
-#   ifdef USE_MMAP
+#   if defined(USE_MMAP) || defined(MSWIN32)
       max_heap_sz = NUMBER_ROUND_UP(max_heap_sz, 4 * 1024 * 1024);
 #   endif
     /* Garbage collect repeatedly so that all inaccessible objects      */
