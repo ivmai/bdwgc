@@ -1345,9 +1345,9 @@ void check_heap_stats(void)
     }
     if (GC_get_heap_size() + GC_get_unmapped_bytes() > max_heap_sz) {
         GC_printf("Unexpected heap growth - collector may be broken"
-                  " (heapsize: %lu, expected: %u)\n",
+                  " (heapsize: %lu, expected: %lu)\n",
             (unsigned long)(GC_get_heap_size() + GC_get_unmapped_bytes()),
-            max_heap_sz);
+            (unsigned long)max_heap_sz);
         FAIL;
     }
 #   ifdef THREADS

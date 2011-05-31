@@ -1,3 +1,8 @@
+2011-05-31  Ivan Maidanski  <ivmai@mail.ru>
+
+	* tests/test.c (check_heap_stats): Adjust printf format specifier
+	for max_heap_sz; cast max_heap_sz accordingly.
+
 2011-05-30  Ivan Maidanski  <ivmai@mail.ru>
 
 	* doc/README.solaris2: Add note.
