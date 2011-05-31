@@ -1,5 +1,14 @@
 2011-05-31  Ivan Maidanski  <ivmai@mail.ru>
 
+	* NT_STATIC_THREADS_MAKEFILE (.cpp.obj): Remove duplicate .cpp
+	filename passed.
+	* NT_X64_THREADS_MAKEFILE (.cpp.obj): Use lowercase file
+	extension.
+	* NT_X64_STATIC_THREADS_MAKEFILE (.cpp.obj): Ditto.
+	* NT_MAKEFILE (.cpp.obj): Ditto.
+
+2011-05-31  Ivan Maidanski  <ivmai@mail.ru>
+
 	* alloc.c (GC_add_current_malloc_heap, GC_build_back_graph,
 	GC_traverse_back_graph): Move prototype to gc_priv.h.
 	* checksums.c (GC_page_was_ever_dirty): Ditto.

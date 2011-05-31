@@ -28,7 +28,7 @@ all: gctest.exe cord\de.exe test_cpp.exe
 # of safe uses of strncpy.  It would be nice to leave the rest enabled.
 
 .cpp.obj:
-	$(cc) $(cdebug) $(cflags) $(cvarsmt) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -DGC_NOT_DLL -DGC_THREADS -DTHREAD_LOCAL_ALLOC -D_CRT_SECURE_NO_DEPRECATE $*.CPP /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(cvarsmt) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -DGC_NOT_DLL -DGC_THREADS -DTHREAD_LOCAL_ALLOC -D_CRT_SECURE_NO_DEPRECATE $*.cpp /Fo$*.obj
 
 $(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc_mark.h include\private\msvc_dbg.h
 
