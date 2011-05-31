@@ -30,4 +30,17 @@ struct thread_stop_info {
   ptr_t stack_ptr; /* Valid only when thread is in a "blocked" state.   */
 };
 
+#ifndef DARWIN_DONT_PARSE_STACK
+  GC_INNER ptr_t GC_FindTopOfStack(unsigned long);
+#endif
+
+#ifdef MPROTECT_VDB
+  GC_INNER void GC_mprotect_stop(void);
+  GC_INNER void GC_mprotect_resume(void);
+#endif
+
+#if defined(PARALLEL_MARK) && !defined(GC_NO_THREADS_DISCOVERY)
+  GC_INNER GC_bool GC_is_mach_marker(thread_act_t);
+#endif
+
 #endif

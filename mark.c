@@ -1331,11 +1331,6 @@ GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
     }
   }
 
-# ifdef PROC_VDB
-    GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h);
-                        /* Could the page contain valid heap pointers?  */
-# endif
-
   GC_INNER void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
   {
     if (!all) {

@@ -557,14 +557,6 @@ GC_API int GC_CALL GC_collect_a_little(void)
     return(result);
 }
 
-#if !defined(REDIRECT_MALLOC) && (defined(MSWIN32) || defined(MSWINCE))
-  GC_INNER void GC_add_current_malloc_heap(void);
-#endif
-
-#ifdef MAKE_BACK_GRAPH
-  GC_INNER void GC_build_back_graph(void);
-#endif
-
 #ifndef SMALL_CONFIG
   /* Variables for world-stop average delay time statistic computation. */
   /* "divisor" is incremented every world-stop and halved when reached  */
@@ -786,10 +778,6 @@ STATIC void GC_clear_fl_marks(ptr_t q)
 
 #if defined(GC_ASSERTIONS) && defined(THREADS) && defined(THREAD_LOCAL_ALLOC)
   void GC_check_tls(void);
-#endif
-
-#ifdef MAKE_BACK_GRAPH
-  GC_INNER void GC_traverse_back_graph(void);
 #endif
 
 /* Finish up a collection.  Assumes mark bits are consistent, lock is   */

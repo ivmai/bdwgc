@@ -59,7 +59,6 @@
 #ifdef DYNAMIC_LOADING
   /* We need to register the main data segment.  Returns  TRUE unless   */
   /* this is done implicitly as part of dynamic library registration.   */
-  GC_INNER GC_bool GC_register_main_static_data(void);
 # define GC_REGISTER_MAIN_STATIC_DATA() GC_register_main_static_data()
 #else
   /* Don't unnecessarily call GC_register_main_static_data() in case    */
@@ -586,25 +585,12 @@ GC_INNER GC_bool GC_is_initialized = FALSE;
     GC_INNER CRITICAL_SECTION GC_write_cs;
 #endif
 
-#ifdef MSWIN32
-    GC_INNER void GC_init_win32(void);
-#endif
-
-GC_INNER void GC_setpagesize(void);
-
 STATIC void GC_exit_check(void)
 {
    GC_gcollect();
 }
 
-#ifdef SEARCH_FOR_DATA_START
-  GC_INNER void GC_init_linux_data_start(void);
-#endif
-
 #ifdef UNIX_LIKE
-
-  GC_INNER void GC_set_and_save_fault_handler(void (*handler)(int));
-
   static void looping_handler(int sig)
   {
     GC_err_printf("Caught signal %d: looping in handler\n", sig);
@@ -625,14 +611,6 @@ STATIC void GC_exit_check(void)
 
 #else /* !UNIX_LIKE */
 # define maybe_install_looping_handler()
-#endif
-
-#if defined(DYNAMIC_LOADING) && defined(DARWIN)
-  GC_INNER void GC_init_dyld(void);
-#endif
-
-#if defined(NETBSD) && defined(__ELF__)
-  GC_INNER void GC_init_netbsd_elf(void);
 #endif
 
 #if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
@@ -674,9 +652,6 @@ STATIC word GC_parse_mem_size_arg(const char *str)
   }
   return result;
 }
-
-GC_INNER void GC_initialize_offsets(void);      /* defined in obj_map.c */
-GC_INNER void GC_bl_init(void); /* defined in blacklst.c */
 
 GC_API void GC_CALL GC_init(void)
 {
@@ -1556,12 +1531,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
     return fn(&base, arg);
 }
 
-#ifdef THREADS
-
-  /* Defined in pthread_support.c or win32_threads.c.     */
-  GC_INNER void GC_do_blocking_inner(ptr_t data, void * context);
-
-#else
+#ifndef THREADS
 
 GC_INNER ptr_t GC_blocked_sp = NULL;
         /* NULL value means we are not inside GC_do_blocking() call. */
@@ -1753,8 +1723,6 @@ GC_API int GC_CALL GC_get_find_leak(void)
 {
     return GC_find_leak;
 }
-
-GC_INNER void GC_bl_init_no_interiors(void);    /* defined in blacklst.c */
 
 GC_API void GC_CALL GC_set_all_interior_pointers(int value)
 {

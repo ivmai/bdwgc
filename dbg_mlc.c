@@ -22,8 +22,6 @@
 #endif
 #include <string.h>
 
-GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
-
 #ifndef SHORT_DBG_HDRS
   /* Check whether object with base pointer p has debugging info. */
   /* p is assumed to point to a legitimate object in our part     */

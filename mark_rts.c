@@ -111,7 +111,7 @@ static int n_root_sets = 0;
 
   /* Is a range starting at b already in the table? If so return a      */
   /* pointer to it, else NULL.                                          */
-  GC_INNER struct roots * GC_roots_present(ptr_t b)
+  GC_INNER void * GC_roots_present(ptr_t b)
   {
     int h = rt_hash(b);
     struct roots *p = GC_root_index[h];
@@ -120,7 +120,7 @@ static int n_root_sets = 0;
         if (p -> r_start == (ptr_t)b) return(p);
         p = p -> r_next;
     }
-    return(FALSE);
+    return NULL;
   }
 
   /* Add the given root structure to the index. */
@@ -216,7 +216,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
         }
       }
 #   else
-      old = GC_roots_present(b);
+      old = (struct roots *)GC_roots_present(b);
       if (old != 0) {
         if (e <= old -> r_end) /* already there */ return;
         /* else extend */
@@ -689,10 +689,6 @@ STATIC void GC_push_gc_structures(void)
     if( GC_push_typed_structures )
       GC_push_typed_structures();
 }
-
-#ifdef THREAD_LOCAL_ALLOC
-  GC_INNER void GC_mark_thread_local_free_lists(void);
-#endif
 
 GC_INNER void GC_cond_register_dynamic_libraries(void)
 {

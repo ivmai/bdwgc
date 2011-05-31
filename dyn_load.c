@@ -239,11 +239,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 #define MAPS_BUF_SIZE (32*1024)
 
-GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
-                                  char **prot, unsigned int *maj_dev,
-                                  char **mapping_name);
-GC_INNER char *GC_get_maps(void); /* from os_dep.c */
-
 /* Sort an array of HeapSects by start address.                         */
 /* Unfortunately at least some versions of                              */
 /* Linux qsort end up calling malloc by way of sysconf, and hence can't */
@@ -273,10 +268,6 @@ static void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
       ++nsorted;
     }
 }
-
-#ifdef THREADS
-  GC_INNER GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi);
-#endif
 
 STATIC word GC_register_map_entries(char *maps)
 {
@@ -725,10 +716,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
 # define IRIX6
 #endif
 
-GC_INNER void * GC_roots_present(ptr_t);
-        /* The type is a lie, since the real type doesn't make sense here, */
-        /* and we only test for NULL.                                      */
-
 /* We use /proc to track down all parts of the address space that are   */
 /* mapped by the process, and throw out regions we know we shouldn't    */
 /* worry about.  This may also work under other SVR4 variants.          */
@@ -854,15 +841,9 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
   /* We traverse the entire address space and register all segments     */
   /* that could possibly have been written to.                          */
-
-  GC_INNER GC_bool GC_is_heap_base(ptr_t p);
-
-# ifdef GC_WIN32_THREADS
-    GC_INNER void GC_get_next_stack(char *start, char * limit, char **lo,
-                                    char **hi);
-
-    STATIC void GC_cond_add_roots(char *base, char * limit)
-    {
+  STATIC void GC_cond_add_roots(char *base, char * limit)
+  {
+#   ifdef GC_WIN32_THREADS
       char * curr_base = base;
       char * next_stack_lo;
       char * next_stack_hi;
@@ -876,10 +857,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
           curr_base = next_stack_hi;
       }
       if (curr_base < limit) GC_add_roots_inner(curr_base, limit, TRUE);
-    }
-# else
-    STATIC void GC_cond_add_roots(char *base, char * limit)
-    {
+#   else
       char dummy;
       char * stack_top
          = (char *) ((word)(&dummy) & ~(GC_sysinfo.dwAllocationGranularity-1));
@@ -889,8 +867,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
           return;
       }
       GC_add_roots_inner(base, limit, TRUE);
-    }
-# endif
+#   endif
+  }
 
 #ifdef DYNAMIC_LOADING
   /* GC_register_main_static_data is not needed unless DYNAMIC_LOADING. */

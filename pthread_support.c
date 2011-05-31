@@ -462,11 +462,6 @@ void GC_push_thread_structures(void)
 /* It may not be safe to allocate when we register the first thread.    */
 static struct GC_Thread_Rep first_thread;
 
-#ifdef NACL
-  GC_INNER void GC_nacl_initialize_gc_thread(void);
-  GC_INNER void GC_nacl_shutdown_gc_thread(void);
-#endif
-
 /* Add a thread to GC_threads.  We assume it wasn't already there.      */
 /* Caller holds allocation lock.                                        */
 STATIC GC_thread GC_new_thread(pthread_t id)
@@ -886,10 +881,6 @@ STATIC void GC_fork_child_proc(void)
   __thread int GC_dummy_thread_local;
 #endif
 
-#ifndef GC_DARWIN_THREADS
-  GC_INNER void GC_stop_init(void); /* defined in pthread_stop_world.c */
-#endif
-
 /* We hold the allocation lock. */
 GC_INNER void GC_thr_init(void)
 {
@@ -1045,10 +1036,6 @@ GC_INNER void GC_init_parallel(void)
     return(REAL_FUNC(pthread_sigmask)(how, set, oset));
   }
 #endif /* !GC_NO_PTHREAD_SIGMASK */
-
-#if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
-  GC_INNER ptr_t GC_FindTopOfStack(unsigned long);
-#endif
 
 /* Wrapper for functions that are likely to block for an appreciable    */
 /* length of time.                                                      */
@@ -1357,10 +1344,6 @@ GC_INLINE void GC_record_stack_base(GC_thread me,
       me -> backing_store_end = sb -> reg_base;
 #   endif
 }
-
-#ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
-  GC_INNER void GC_unblock_gc_signals(void); /* from pthread_stop_world.c */
-#endif
 
 STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                                              pthread_t my_pthread)

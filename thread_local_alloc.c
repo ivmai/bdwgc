@@ -284,7 +284,7 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
 }
 
 #if defined(GC_ASSERTIONS)
-    /* Check that all thread-local free-lists in p are completely marked.       */
+    /* Check that all thread-local free-lists in p are completely marked. */
     void GC_check_tls_for(GC_tlfs p)
     {
         ptr_t q;

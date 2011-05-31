@@ -30,7 +30,7 @@
 
 #ifdef THREAD_LOCAL_ALLOC
 # include "thread_local_alloc.h"
-#endif /* THREAD_LOCAL_ALLOC */
+#endif
 
 /* We use the allocation lock to protect thread-related data structures. */
 
@@ -126,9 +126,20 @@ GC_EXTERN GC_bool GC_in_thread_creation;
         /* Only set to TRUE while allocation lock is held.              */
         /* When set, it is OK to run GC from unknown thread.            */
 
-# ifdef NACL
-    GC_EXTERN __thread GC_thread GC_nacl_gc_thread_self;
-# endif
+#ifdef NACL
+  GC_EXTERN __thread GC_thread GC_nacl_gc_thread_self;
+  GC_INNER void GC_nacl_initialize_gc_thread(void);
+  GC_INNER void GC_nacl_shutdown_gc_thread(void);
+#endif
+
+#ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
+  GC_INNER void GC_unblock_gc_signals(void);
+#endif
+
+GC_INNER GC_thread GC_start_rtn_prepare_thread(void *(**pstart)(void *),
+                                        void **pstart_arg,
+                                        struct GC_stack_base *sb, void *arg);
+GC_INNER void GC_thread_exit_proc(void *);
 
 #endif /* GC_PTHREADS && !GC_WIN32_THREADS */
 

@@ -350,17 +350,6 @@ STATIC GC_thread GC_new_thread(DWORD id)
   return(result);
 }
 
-#ifdef MPROTECT_VDB
-  GC_INNER LONG WINAPI GC_write_fault_handler(
-                                struct _EXCEPTION_POINTERS *exc_info);
-#endif
-
-#if defined(GWW_VDB) && defined(MPROTECT_VDB)
-  GC_INNER GC_bool GC_gww_dirty_init(void);
-  /* Defined in os_dep.c.  Returns TRUE if GetWriteWatch is available.  */
-  /* may be called repeatedly.                                          */
-#endif
-
 STATIC GC_bool GC_in_thread_creation = FALSE;
                                 /* Protected by allocation lock. */
 
@@ -389,12 +378,12 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
   /* documentation.  There is empirical evidence that it        */
   /* isn't.             - HB                                    */
 # if defined(MPROTECT_VDB)
-#   if defined(GWW_VDB)
-      if (GC_incremental && !GC_gww_dirty_init())
-        SetUnhandledExceptionFilter(GC_write_fault_handler);
-#   else
-      if (GC_incremental) SetUnhandledExceptionFilter(GC_write_fault_handler);
-#   endif
+    if (GC_incremental
+#       ifdef GWW_VDB
+          && !GC_gww_dirty_init()
+#       endif
+        )
+      GC_set_write_fault_handler();
 # endif
 
 # ifndef GC_NO_THREADS_DISCOVERY
@@ -1403,7 +1392,7 @@ GC_INNER void GC_push_all_stacks(void)
                                 /* in stack (or ADDR_LIMIT if unset)    */
                                 /* for markers.                         */
 
-#endif
+#endif /* PARALLEL_MARK */
 
 /* Find stack with the lowest address which overlaps the        */
 /* interval [start, limit).                                     */

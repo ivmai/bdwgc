@@ -39,4 +39,6 @@ struct thread_stop_info {
 #   endif
 };
 
+GC_INNER void GC_stop_init(void);
+
 #endif

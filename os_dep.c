@@ -138,11 +138,6 @@
 #define IGNORE_PAGES_EXECUTABLE 1
                         /* Undefined on GC_pages_executable real use.   */
 
-#if defined(LINUX) && (defined(USE_PROC_FOR_LIBRARIES) || defined(IA64) \
-                       || !defined(SMALL_CONFIG))
-# define NEED_PROC_MAPS
-#endif
-
 #ifdef NEED_PROC_MAPS
 /* We need to parse /proc/self/maps, either to find dynamic libraries,  */
 /* and/or to find the register backing store base (IA64).  Do it once   */
@@ -474,7 +469,7 @@ GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
 #   endif /* LINUX */
     GC_data_start = GC_find_limit((ptr_t)(_end), FALSE);
   }
-#endif
+#endif /* SEARCH_FOR_DATA_START */
 
 #ifdef ECOS
 
@@ -1219,11 +1214,6 @@ GC_INNER word GC_page_size = 0;
 
 # include <pthread.h>
   /* extern int pthread_getattr_np(pthread_t, pthread_attr_t *); */
-
-# ifdef IA64
-    GC_INNER ptr_t GC_greatest_stack_base_below(ptr_t bound);
-                                /* From pthread_support.c */
-# endif
 
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
   {
@@ -2555,16 +2545,11 @@ STATIC void GC_default_push_other_roots(void)
 
 # endif /* PCR */
 
-
 # if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
-
-GC_INNER void GC_push_all_stacks(void);
-
-STATIC void GC_default_push_other_roots(void)
-{
-    GC_push_all_stacks();
-}
-
+    STATIC void GC_default_push_other_roots(void)
+    {
+      GC_push_all_stacks();
+    }
 # endif /* GC_WIN32_THREADS || GC_PTHREADS */
 
 # ifdef SN_TARGET_PS3
@@ -3096,7 +3081,7 @@ STATIC void GC_default_push_other_roots(void)
                      == STATUS_ACCESS_VIOLATION)
 #   define CODE_OK (exc_info -> ExceptionRecord -> ExceptionInformation[0] \
                       == 1) /* Write fault */
-    GC_INNER LONG WINAPI GC_write_fault_handler(
+    STATIC LONG WINAPI GC_write_fault_handler(
                                 struct _EXCEPTION_POINTERS *exc_info)
 # endif /* MSWIN32 || MSWINCE */
   {
@@ -3209,6 +3194,13 @@ STATIC void GC_default_push_other_roots(void)
       ABORT("Unexpected bus error or segmentation fault");
 #   endif
   }
+
+# ifdef GC_WIN32_THREADS
+    GC_INNER void GC_set_write_fault_handler(void)
+    {
+      SetUnhandledExceptionFilter(GC_write_fault_handler);
+    }
+# endif
 #endif /* !DARWIN */
 
 /* We hold the allocation lock.  We expect block h to be written        */

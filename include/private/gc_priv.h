@@ -1267,7 +1267,9 @@ GC_EXTERN word GC_page_size;
 #if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
   struct _SYSTEM_INFO;
   GC_EXTERN struct _SYSTEM_INFO GC_sysinfo;
+  GC_INNER GC_bool GC_is_heap_base(ptr_t p);
 #endif
+
 
 GC_EXTERN word GC_black_list_spacing;
                         /* Average number of bytes between blacklisted  */
@@ -1794,6 +1796,7 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
                         /* Do not immediately deallocate object on      */
                         /* free() in the leak-finding mode, just mark   */
                         /* it as freed (and deallocate it after GC).    */
+  GC_INNER GC_bool GC_check_leaked(ptr_t base); /* from dbg_mlc.c */
 #endif
 
 GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
@@ -2008,6 +2011,7 @@ GC_EXTERN signed_word GC_bytes_found;
 
 #ifdef THREAD_LOCAL_ALLOC
   GC_EXTERN GC_bool GC_world_stopped; /* defined in alloc.c */
+  GC_INNER void GC_mark_thread_local_free_lists(void);
 #endif
 
 #ifdef GC_GCJ_SUPPORT
@@ -2015,6 +2019,106 @@ GC_EXTERN signed_word GC_bytes_found;
     GC_EXTERN GC_bool GC_gcj_malloc_initialized; /* defined in gcj_mlc.c */
 # endif
   GC_EXTERN ptr_t * GC_gcjobjfreelist;
+#endif
+
+#if defined(GWW_VDB) && defined(MPROTECT_VDB)
+  GC_INNER GC_bool GC_gww_dirty_init(void);
+  /* Defined in os_dep.c.  Returns TRUE if GetWriteWatch is available.  */
+  /* May be called repeatedly.                                          */
+#endif
+
+#if defined(CHECKSUMS) || defined(PROC_VDB)
+  GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk * h);
+                        /* Could the page contain valid heap pointers?  */
+#endif
+
+GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
+
+GC_INNER void GC_extend_size_map(size_t); /* in misc.c */
+
+GC_INNER void GC_setpagesize(void);
+
+GC_INNER void GC_initialize_offsets(void);      /* defined in obj_map.c */
+
+GC_INNER void GC_bl_init(void);
+GC_INNER void GC_bl_init_no_interiors(void);    /* defined in blacklst.c */
+
+GC_INNER void GC_start_debugging(void); /* defined in dbg_mlc.c */
+
+/* Store debugging info into p.  Return displaced pointer.      */
+/* Assumes we don't hold allocation lock.                       */
+GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
+                                   int linenum);
+
+#ifdef REDIRECT_MALLOC
+# ifdef GC_LINUX_THREADS
+    GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp);
+                                                /* from os_dep.c */
+# endif
+#elif defined(MSWIN32) || defined(MSWINCE)
+  GC_INNER void GC_add_current_malloc_heap(void);
+#endif /* !REDIRECT_MALLOC */
+
+#ifdef MAKE_BACK_GRAPH
+  GC_INNER void GC_build_back_graph(void);
+  GC_INNER void GC_traverse_back_graph(void);
+#endif
+
+#ifdef MSWIN32
+  GC_INNER void GC_init_win32(void);
+#endif
+
+#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+  GC_INNER void * GC_roots_present(ptr_t);
+        /* The type is a lie, since the real type doesn't make sense here, */
+        /* and we only test for NULL.                                      */
+#endif
+
+#ifdef GC_WIN32_THREADS
+  GC_INNER void GC_get_next_stack(char *start, char * limit, char **lo,
+                                  char **hi);
+# ifdef MPROTECT_VDB
+    GC_INNER void GC_set_write_fault_handler(void);
+# endif
+#endif /* GC_WIN32_THREADS */
+
+#ifdef THREADS
+  GC_INNER void GC_reset_finalizer_nested(void);
+  GC_INNER unsigned char *GC_check_finalizer_nested(void);
+  GC_INNER void GC_do_blocking_inner(ptr_t data, void * context);
+  GC_INNER void GC_push_all_stacks(void);
+# ifdef USE_PROC_FOR_LIBRARIES
+    GC_INNER GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi);
+# endif
+# ifdef IA64
+    GC_INNER ptr_t GC_greatest_stack_base_below(ptr_t bound);
+# endif
+#endif /* THREADS */
+
+#ifdef DYNAMIC_LOADING
+  GC_INNER GC_bool GC_register_main_static_data(void);
+# ifdef DARWIN
+    GC_INNER void GC_init_dyld(void);
+# endif
+#endif /* DYNAMIC_LOADING */
+
+#ifdef SEARCH_FOR_DATA_START
+  GC_INNER void GC_init_linux_data_start(void);
+#endif
+
+#if defined(NETBSD) && defined(__ELF__)
+  GC_INNER void GC_init_netbsd_elf(void);
+#endif
+
+#ifdef UNIX_LIKE
+  GC_INNER void GC_set_and_save_fault_handler(void (*handler)(int));
+#endif
+
+#ifdef NEED_PROC_MAPS
+  GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
+                                    char **prot, unsigned int *maj_dev,
+                                    char **mapping_name);
+  GC_INNER char *GC_get_maps(void); /* from os_dep.c */
 #endif
 
 #ifdef GC_ASSERTIONS

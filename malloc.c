@@ -18,8 +18,6 @@
 #include <stdio.h>
 #include <string.h>
 
-GC_INNER void GC_extend_size_map(size_t); /* in misc.c */
-
 /* Allocate reclaim list for kind:      */
 /* Return TRUE on success               */
 STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
@@ -352,8 +350,6 @@ void * malloc(size_t lb)
   STATIC ptr_t GC_libpthread_end = 0;
   STATIC ptr_t GC_libld_start = 0;
   STATIC ptr_t GC_libld_end = 0;
-  GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp);
-                                                /* From os_dep.c */
 
   STATIC void GC_init_lib_bounds(void)
   {

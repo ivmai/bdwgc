@@ -352,10 +352,6 @@ GC_INNER void GC_push_all_stacks(void)
   STATIC int GC_mach_threads_count = 0;
   /* FIXME: it is better to implement GC_mach_threads as a hash set.  */
 
-# ifdef PARALLEL_MARK
-    GC_INNER GC_bool GC_is_mach_marker(thread_act_t thread);
-# endif
-
 /* returns true if there's a thread in act_list that wasn't in old_list */
 STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
                                       thread_act_array_t old_list,
@@ -459,11 +455,6 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
 }
 
 #endif /* !GC_NO_THREADS_DISCOVERY */
-
-#ifdef MPROTECT_VDB
-  GC_INNER void GC_mprotect_stop(void);
-  GC_INNER void GC_mprotect_resume(void);
-#endif
 
 /* Caller holds allocation lock.        */
 GC_INNER void GC_stop_world(void)

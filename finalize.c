@@ -485,18 +485,13 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
       }
     }
   }
-#endif
+#endif /* !NO_DEBUGGING */
 
 #ifndef SMALL_CONFIG
   STATIC word GC_old_dl_entries = 0; /* for stats printing */
 #endif
 
-#ifdef THREADS
-  /* Defined in pthread_support.c or win32_threads.c.  Called with the  */
-  /* allocation lock held.                                              */
-  GC_INNER void GC_reset_finalizer_nested(void);
-  GC_INNER unsigned char *GC_check_finalizer_nested(void);
-#else
+#ifndef THREADS
   /* Global variables to minimize the level of recursion when a client  */
   /* finalizer allocates memory.                                        */
   STATIC unsigned char GC_finalizer_nested = 0;

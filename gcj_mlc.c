@@ -204,13 +204,6 @@ static void maybe_finalize(void)
     return((void *) op);
 }
 
-GC_INNER void GC_start_debugging(void); /* defined in dbg_mlc.c */
-
-/* Store debugging info into p.  Return displaced pointer.      */
-/* Assumes we don't hold allocation lock.                       */
-GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
-                                   int linenum);
-
 /* Similar to GC_gcj_malloc, but add debug info.  This is allocated     */
 /* with GC_gcj_debug_kind.                                              */
 GC_API void * GC_CALL GC_debug_gcj_malloc(size_t lb,

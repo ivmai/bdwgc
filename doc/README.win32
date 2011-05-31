@@ -107,6 +107,12 @@ version, change the line near the top.  By default, it does not
 require the assembler.  If you do have the assembler, I recommend
 removing the -DUSE_GENERIC.
 
+Digital Mars compiler
+---------------------
+
+Same as MS Visual C++ but might require
+-DAO_OLD_STYLE_INTERLOCKED_COMPARE_EXCHANGE option to compile with the
+parallel marker enabled.
 
 Watcom compiler
 ---------------

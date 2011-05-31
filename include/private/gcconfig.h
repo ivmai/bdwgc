@@ -2451,6 +2451,11 @@
 # endif
 #endif
 
+#if defined(LINUX) && (defined(USE_PROC_FOR_LIBRARIES) || defined(IA64) \
+                       || !defined(SMALL_CONFIG))
+# define NEED_PROC_MAPS
+#endif
+
 #if defined(LINUX) || defined(HURD) || defined(__GLIBC__)
 # define REGISTER_LIBRARIES_EARLY
   /* We sometimes use dl_iterate_phdr, which may acquire an internal    */

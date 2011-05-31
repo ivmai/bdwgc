@@ -41,12 +41,6 @@
 #include <pthread.h>
 #include <sched.h>
 
-GC_INNER GC_thread GC_start_rtn_prepare_thread(void *(**pstart)(void *),
-                                        void **pstart_arg,
-                                        struct GC_stack_base *sb, void *arg);
-GC_INNER void GC_thread_exit_proc(void *arg);
-                                        /* defined in pthread_support.c */
-
 /* Invoked from GC_start_routine(). */
 void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb, void *arg)
 {
