@@ -1,5 +1,9 @@
 2011-05-31  Ivan Maidanski  <ivmai@mail.ru>
 
+	* misc.c (vsnprintf): Redirect to vsprintf() if NO_VSNPRINTF.
+
+2011-05-31  Ivan Maidanski  <ivmai@mail.ru>
+
 	* win32_threads.c (GC_unregister_my_thread): Use KNOWN_FINISHED()
 	instead of FINISHED macro.
 	* tests/test.c (check_heap_stats): Round up max_heap_sz value for
