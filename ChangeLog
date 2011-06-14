@@ -2,6 +2,14 @@
 
 2011-06-14  Ivan Maidanski  <ivmai@mail.ru>
 
+	* configure_atomic_ops.sh: Remove.
+	* Makefile.direct (dist gc.tar): Remove configure_atomic_ops.sh.
+	* Makefile.am (EXTRA_DIST): Add autogen.sh.
+	* Makefile.in: Regenerate.
+	* configure: Ditto.
+
+2011-06-14  Ivan Maidanski  <ivmai@mail.ru>
+
 	* include/gc_version.h, configure.ac, doc/README: Change to
 	version 7.2alpha6.
 	* configure: Regenerate.

@@ -418,7 +418,6 @@ gcname: $(srcdir)/extra/gcname.c $(srcdir)/include/gc_version.h
 dist gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
 	cp Makefile Makefile.old
 	cp Makefile.direct Makefile
-	CC=$(CC) ./configure_atomic_ops.sh
 	cd $(AO_SRC_DIR); $(MAKE) dist
 	if test $(srcdir)/libatomic_ops = $(AO_SRC_DIR); \
 	then \
