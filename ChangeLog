@@ -1,3 +1,9 @@
+2011-06-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_version.h, configure.ac, doc/README: Change to
+	version 7.2alpha7.
+	* configure: Regenerate.
+
 [7.2alpha6]
 
 2011-06-14  Ivan Maidanski  <ivmai@mail.ru>
