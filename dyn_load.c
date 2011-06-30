@@ -273,7 +273,6 @@ STATIC word GC_register_map_entries(char *maps)
 {
     char *prot;
     char *buf_ptr = maps;
-    int count;
     ptr_t start, end;
     unsigned int maj_dev;
     ptr_t least_ha, greatest_ha;

@@ -36,11 +36,10 @@
 #endif
 
 /* Single argument version, robust against whole program analysis. */
+volatile word GC_noop_sink;
 GC_API void GC_CALL GC_noop1(word x)
 {
-    static volatile word sink;
-
-    sink = x;
+    GC_noop_sink = x;
 }
 
 /* mark_proc GC_mark_procs[MAX_MARK_PROCS] = {0} -- declared in gc_priv.h */

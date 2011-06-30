@@ -382,7 +382,7 @@ void * calloc(size_t n, size_t lb)
             GC_init_lib_bounds();
             lib_bounds_set = TRUE;
           }
-          if (caller >= GC_libpthread_start && caller < GC_libpthread_end
+          if ((caller >= GC_libpthread_start && caller < GC_libpthread_end)
               || (caller >= GC_libld_start && caller < GC_libld_end))
             return GC_malloc_uncollectable(n*lb);
           /* The two ranges are actually usually adjacent, so there may */
