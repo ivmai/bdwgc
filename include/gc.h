@@ -717,7 +717,8 @@ GC_API void * GC_CALL GC_debug_realloc_replacement(void * /* object_addr */,
 /* The following are included because they are often convenient, and    */
 /* reduce the chance for a misspecified size argument.  But calls may   */
 /* expand to something syntactically incorrect if t is a complicated    */
-/* type expression.                                                     */
+/* type expression.  Note that, unlike C++ new operator, these ones     */
+/* may return NULL (if out of memory).                                  */
 #define GC_NEW(t)               ((t*)GC_MALLOC(sizeof(t)))
 #define GC_NEW_ATOMIC(t)        ((t*)GC_MALLOC_ATOMIC(sizeof(t)))
 #define GC_NEW_STUBBORN(t)      ((t*)GC_MALLOC_STUBBORN(sizeof(t)))

@@ -1,3 +1,12 @@
+2011-06-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c (GC_segment_is_thread_stack): Replace '&'
+	operator with '&&' one in conditional expressions.
+	* specific.c (remove_specific): Dereference "entry" local variable
+	only if it is non-NULL.
+	* include/gc.h (GC_NEW): Refine the comment (about the returned
+	value).
+
 2011-06-15  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/gc_version.h, configure.ac, doc/README: Change to

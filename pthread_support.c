@@ -652,9 +652,9 @@ STATIC void GC_remove_all_threads_but_me(void)
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef PARALLEL_MARK
       for (i = 0; i < GC_markers - 1; ++i) {
-        if (marker_sp[i] > lo & marker_sp[i] < hi) return TRUE;
+        if (marker_sp[i] > lo && marker_sp[i] < hi) return TRUE;
 #       ifdef IA64
-          if (marker_bsp[i] > lo & marker_bsp[i] < hi) return TRUE;
+          if (marker_bsp[i] > lo && marker_bsp[i] < hi) return TRUE;
 #       endif
       }
 #   endif
