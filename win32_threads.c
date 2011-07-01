@@ -529,11 +529,19 @@ STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
   }
 }
 
+#ifdef LINT2
+# define CHECK_LOOKUP_MY_THREAD(me) \
+        if (!(me)) ABORT("GC_lookup_thread_inner(GetCurrentThreadId) failed")
+#else
+# define CHECK_LOOKUP_MY_THREAD(me) /* empty */
+#endif
+
 /* Called by GC_finalize() (in case of an allocation failure observed). */
 /* GC_reset_finalizer_nested() is the same as in pthread_support.c.     */
 GC_INNER void GC_reset_finalizer_nested(void)
 {
   GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
+  CHECK_LOOKUP_MY_THREAD(me);
   me->finalizer_nested = 0;
 }
 
@@ -546,7 +554,9 @@ GC_INNER void GC_reset_finalizer_nested(void)
 GC_INNER unsigned char *GC_check_finalizer_nested(void)
 {
   GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
-  unsigned nesting_level = me->finalizer_nested;
+  unsigned nesting_level;
+  CHECK_LOOKUP_MY_THREAD(me);
+  nesting_level = me->finalizer_nested;
   if (nesting_level) {
     /* We are inside another GC_invoke_finalizers().            */
     /* Skip some implicitly-called GC_invoke_finalizers()       */
@@ -765,6 +775,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     LOCK();
 #   if defined(THREAD_LOCAL_ALLOC) || defined(GC_PTHREADS)
       me = GC_lookup_thread_inner(thread_id);
+      CHECK_LOOKUP_MY_THREAD(me);
       GC_ASSERT(!KNOWN_FINISHED(me));
 #   endif
 #   if defined(THREAD_LOCAL_ALLOC)
@@ -800,6 +811,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
 
   LOCK();
   me = GC_lookup_thread_inner(thread_id);
+  CHECK_LOOKUP_MY_THREAD(me);
   GC_ASSERT(me -> thread_blocked_sp == NULL);
 # ifdef IA64
     me -> backing_store_ptr = stack_ptr;
@@ -826,7 +838,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
   LOCK();   /* This will block if the world is stopped.         */
   me = GC_lookup_thread_inner(GetCurrentThreadId());
-
+  CHECK_LOOKUP_MY_THREAD(me);
   /* Adjust our stack base value (this could happen unless      */
   /* GC_get_stack_base() was used which returned GC_SUCCESS).   */
   GC_ASSERT(me -> stack_base != NULL);
@@ -1462,7 +1474,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       return;
   }
 
-  GC_ASSERT(current_min > start);
+  GC_ASSERT(current_min > start && plast_stack_min != NULL);
 # ifdef MSWINCE
     if (GC_dont_query_stack_min) {
       *lo = GC_wince_evaluate_stack_min(current_min);
@@ -2633,6 +2645,7 @@ GC_INNER void GC_thr_init(void)
 GC_INNER void GC_init_parallel(void)
 {
 # if defined(THREAD_LOCAL_ALLOC)
+    GC_thread me;
     DCL_LOCK_STATE;
 # endif
 
@@ -2651,8 +2664,9 @@ GC_INNER void GC_init_parallel(void)
   /* Initialize thread local free lists if used.        */
 # if defined(THREAD_LOCAL_ALLOC)
     LOCK();
-    GC_init_thread_local(
-                &GC_lookup_thread_inner(GetCurrentThreadId())->tlfs);
+    me = GC_lookup_thread_inner(GetCurrentThreadId());
+    CHECK_LOOKUP_MY_THREAD(me);
+    GC_init_thread_local(&me->tlfs);
     UNLOCK();
 # endif
 }

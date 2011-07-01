@@ -81,15 +81,29 @@
 
 # include <stdarg.h>
 
+#define CHECH_GCLIB_VERSION \
+            if (GC_get_version() != ((GC_VERSION_MAJOR<<16) \
+                                    | (GC_VERSION_MINOR<<8) \
+                                    | GC_ALPHA_VERSION)) { \
+              GC_printf("libgc version mismatch\n"); \
+              exit(1); \
+            }
+
 /* Call GC_INIT only on platforms on which we think we really need it,  */
 /* so that we can test automatic initialization on the rest.            */
 #if defined(CYGWIN32) || defined (AIX) || defined(DARWIN) \
         || defined(THREAD_LOCAL_ALLOC) \
         || (defined(MSWINCE) && !defined(GC_WINMAIN_REDIRECT))
-#  define GC_COND_INIT() GC_INIT()
+#  define GC_COND_INIT() GC_INIT(); CHECH_GCLIB_VERSION
 #else
-#  define GC_COND_INIT()
+#  define GC_COND_INIT() CHECH_GCLIB_VERSION
 #endif
+
+#define CHECK_OUT_OF_MEMORY(p) \
+            if ((p) == NULL) { \
+              GC_printf("Out of memory\n"); \
+              exit(1); \
+            }
 
 /* Allocation Statistics.  Incremented without synchronization. */
 /* FIXME: We should be using synchronization.                   */
@@ -139,7 +153,7 @@ int realloc_count = 0;
 
 #else /* !AMIGA_FASTALLOC */
 
-# ifdef PCR
+# if defined(PCR) || defined(LINT2)
 #   define FAIL (void)abort()
 # else
 #   define FAIL ABORT("Test failed")
@@ -186,10 +200,7 @@ sexpr cons (sexpr x, sexpr y)
 
     stubborn_count++;
     r = (sexpr) GC_MALLOC_STUBBORN(sizeof(struct SEXPR) + my_extra);
-    if (r == 0) {
-        GC_printf("Out of memory\n");
-        exit(1);
-    }
+    CHECK_OUT_OF_MEMORY(r);
     for (p = (int *)r;
          ((char *)p) < ((char *)r) + my_extra + sizeof(struct SEXPR); p++) {
         if (*p) {
@@ -262,10 +273,7 @@ sexpr small_cons (sexpr x, sexpr y)
 
     collectable_count++;
     r = (sexpr) GC_MALLOC(sizeof(struct SEXPR));
-    if (r == 0) {
-        GC_printf("Out of memory\n");
-        exit(1);
-    }
+    CHECK_OUT_OF_MEMORY(r);
     r -> sexpr_car = x;
     r -> sexpr_cdr = y;
     return(r);
@@ -277,10 +285,7 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
 
     uncollectable_count++;
     r = (sexpr) GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR));
-    if (r == 0) {
-        GC_printf("Out of memory\n");
-        exit(1);
-    }
+    CHECK_OUT_OF_MEMORY(r);
     r -> sexpr_car = x;
     r -> sexpr_cdr = (sexpr)(~(GC_word)y);
     return(r);
@@ -297,10 +302,7 @@ sexpr gcj_cons(sexpr x, sexpr y)
     r = (GC_word *) GC_GCJ_MALLOC(sizeof(struct SEXPR)
                                   + sizeof(struct fake_vtable*),
                                    &gcj_class_struct2);
-    if (r == 0) {
-        GC_printf("Out of memory\n");
-        exit(1);
-    }
+    CHECK_OUT_OF_MEMORY(r);
     result = (sexpr)(r + 1);
     result -> sexpr_car = x;
     result -> sexpr_cdr = y;
@@ -562,16 +564,19 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     f = (sexpr *)GC_MALLOC(4 * sizeof(sexpr));
     realloc_count++;
     f = (sexpr *)GC_REALLOC((void *)f, 6 * sizeof(sexpr));
+    CHECK_OUT_OF_MEMORY(f);
     f[5] = ints(1,17);
     collectable_count++;
     g = (sexpr *)GC_MALLOC(513 * sizeof(sexpr));
     realloc_count++;
     g = (sexpr *)GC_REALLOC((void *)g, 800 * sizeof(sexpr));
+    CHECK_OUT_OF_MEMORY(g);
     g[799] = ints(1,18);
     collectable_count++;
     h = (sexpr *)GC_MALLOC(1025 * sizeof(sexpr));
     realloc_count++;
     h = (sexpr *)GC_REALLOC((void *)h, 2000 * sizeof(sexpr));
+    CHECK_OUT_OF_MEMORY(h);
 #   ifdef GC_GCJ_SUPPORT
       h[1999] = gcj_ints(1,200);
       for (i = 0; i < 51; ++i)
@@ -709,19 +714,14 @@ tn * mktree(int n)
     collectable_count++;
 #   if defined(MACOS)
         /* get around static data limitations. */
-        if (!live_indicators)
-                live_indicators =
-                    (GC_word*)NewPtrClear(MAX_FINALIZED * sizeof(GC_word));
         if (!live_indicators) {
-          GC_printf("Out of memory\n");
-          exit(1);
+          live_indicators =
+                    (GC_word*)NewPtrClear(MAX_FINALIZED * sizeof(GC_word));
+          CHECK_OUT_OF_MEMORY(live_indicators);
         }
 #   endif
     if (n == 0) return(0);
-    if (result == 0) {
-        GC_printf("Out of memory\n");
-        exit(1);
-    }
+    CHECK_OUT_OF_MEMORY(result);
     result -> level = n;
     result -> lchild = mktree(n-1);
     result -> rchild = mktree(n-1);
@@ -827,6 +827,7 @@ void * alloc8bytes(void)
     if (my_free_list_ptr == 0) {
         uncollectable_count++;
         my_free_list_ptr = GC_NEW_UNCOLLECTABLE(void *);
+        CHECK_OUT_OF_MEMORY(my_free_list_ptr);
         if (pthread_setspecific(fl_key, my_free_list_ptr) != 0) {
             GC_printf("pthread_setspecific failed\n");
             FAIL;
@@ -835,10 +836,7 @@ void * alloc8bytes(void)
     my_free_list = *my_free_list_ptr;
     if (my_free_list == 0) {
         my_free_list = GC_malloc_many(8);
-        if (my_free_list == 0) {
-            GC_printf("alloc8bytes out of memory\n");
-            FAIL;
-        }
+        CHECK_OUT_OF_MEMORY(my_free_list);
     }
     *my_free_list_ptr = GC_NEXT(my_free_list);
     GC_NEXT(my_free_list) = 0;
@@ -942,6 +940,7 @@ void typed_test(void)
     for (i = 0; i < 4000; i++) {
         collectable_count++;
         new = (GC_word *) GC_malloc_explicitly_typed(4 * sizeof(GC_word), d1);
+        CHECK_OUT_OF_MEMORY(new);
         if (0 != new[0] || 0 != new[1]) {
             GC_printf("Bad initialization by GC_malloc_explicitly_typed\n");
             FAIL;
@@ -951,17 +950,20 @@ void typed_test(void)
         old = new;
         collectable_count++;
         new = (GC_word *) GC_malloc_explicitly_typed(4 * sizeof(GC_word), d2);
+        CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
         collectable_count++;
         new = (GC_word *) GC_malloc_explicitly_typed(33 * sizeof(GC_word), d3);
+        CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
         collectable_count++;
         new = (GC_word *) GC_calloc_explicitly_typed(4, 2 * sizeof(GC_word),
                                                      d1);
+        CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
@@ -973,11 +975,12 @@ void typed_test(void)
           new = (GC_word *) GC_calloc_explicitly_typed(1001,
                                                        3 * sizeof(GC_word),
                                                        d2);
-          if (0 != new[0] || 0 != new[1]) {
+          if (new && (0 != new[0] || 0 != new[1])) {
             GC_printf("Bad initialization by GC_malloc_explicitly_typed\n");
             FAIL;
           }
         }
+        CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
@@ -1151,8 +1154,14 @@ void run_one_test(void)
 #   endif /* DBG_HDRS_ALL */
     /* Test floating point alignment */
         collectable_count += 2;
-        *(double *)GC_MALLOC(sizeof(double)) = 1.0;
-        *(double *)GC_MALLOC(sizeof(double)) = 1.0;
+        {
+          double *dp = GC_MALLOC(sizeof(double));
+          CHECK_OUT_OF_MEMORY(dp);
+          *dp = 1.0;
+          dp = GC_MALLOC(sizeof(double));
+          CHECK_OUT_OF_MEMORY(dp);
+          *dp = 1.0;
+        }
     /* Test size 0 allocation a bit more */
         {
            size_t i;

@@ -431,7 +431,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #     define DebugBreak() _exit(-1) /* there is no abort() in WinCE */
 #   endif
 #   ifdef SMALL_CONFIG
-#       if defined(MSWIN32) || defined(MSWINCE)
+#       if (defined(MSWIN32) && !defined(LINT2)) || defined(MSWINCE)
 #           define ABORT(msg) DebugBreak()
 #       else
 #           define ABORT(msg) abort()

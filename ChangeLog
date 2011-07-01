@@ -1,3 +1,35 @@
+2011-07-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c (CHECK_LOOKUP_MY_THREAD): New macro definition.
+	* win32_threads.c (GC_reset_finalizer_nested,
+	GC_check_finalizer_nested, GC_unregister_my_thread,
+	GC_do_blocking_inner, GC_call_with_gc_active, GC_init_parallel):
+	Insert CHECK_LOOKUP_MY_THREAD before dereferencing thread
+	descriptor pointer (to instruct a LINT-like tool that it is ok to
+	dereference the pointer).
+	* win32_threads.c (GC_get_next_stack): Assert plast_stack_min is
+	non-NULL if current_min is not ADDR_LIMIT (for a LINT-like tool).
+	* win32_threads.c (GC_init_parallel): Define and use "me" local
+	variable.
+	* cord/cordtest.c (test_basics): Test CORD_substr() result is
+	non-NULL.
+	* cord/cordtest.c (test_extras): Test fopen() result is non-NULL.
+	* cord/cordtest.c (test_basics, test_extras, test_printf, main):
+	Replace the K&R-style function definition with the ANSI C one.
+	* cord/cordtest.c: Expand all tabs to spaces; remove
+	trailing spaces at EOLn.
+	* include/private/gc_priv.h (ABORT): Define as abort() when
+	checking the code with a LINT-like tool (Win32 only).
+	* tests/test.c (FAIL): Ditto.
+	* tests/test.c (CHECH_GCLIB_VERSION): New macro (to check that the
+	version of libgc.so used at runtime matches that at compile time).
+	* tests/test.c (GC_COND_INIT): Use CHECH_GCLIB_VERSION.
+	* tests/test.c (CHECK_OUT_OF_MEMORY): New macro (to test malloc
+	result for out of memory).
+	* tests/test.c (cons, small_cons, small_cons_uncollectable,
+	gcj_cons, reverse_test_inner, mktree, alloc8bytes, typed_test,
+	run_one_test): Use CHECK_OUT_OF_MEMORY.
+
 2011-06-30  Ivan Maidanski <ivmai@mail.ru>
 
 	* dyn_load.c (GC_register_map_entries): Remove "count" local
