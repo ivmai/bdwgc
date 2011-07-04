@@ -878,7 +878,6 @@
 #     define ALIGNMENT 4
 #     define OS_TYPE "NETBSD"
 #     define HEURISTIC2
-      extern char etext[];
       extern ptr_t GC_data_start;
 #     define DATASTART GC_data_start
 #     define DYNAMIC_LOADING
@@ -1529,7 +1528,6 @@
 #     define ALIGNMENT 4
 #     define HEURISTIC2
 #     ifdef __ELF__
-        extern int etext[];
         extern ptr_t GC_data_start;
 #       define DATASTART GC_data_start
 #       define NEED_FIND_LIMIT
@@ -2171,12 +2169,14 @@
 #   endif
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-#       endif
 #       define HEURISTIC2
-        extern char etext[];
-#       define SEARCH_FOR_DATA_START
+#       ifdef __ELF__
+            extern ptr_t GC_data_start;
+#           define DATASTART GC_data_start
+#           define DYNAMIC_LOADING
+#       else
+#           define SEARCH_FOR_DATA_START
+#       endif
 #   endif
 #   ifdef SOLARIS
 #       define OS_TYPE "SOLARIS"

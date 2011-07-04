@@ -1,3 +1,12 @@
+2011-07-04  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h (etext): Don't define if unused
+	(NetBSD).
+	* include/private/gcconfig.h (GC_data_start, DATASTART): Define
+	for NetBSD/amd64 if ELF.
+	* include/private/gcconfig.h (SEARCH_FOR_DATA_START): Don't define
+	for NetBSD/amd64 if ELF.
+
 2011-07-04  Ivan Maidanski <ivmai@mail.ru> (mostly really Andy Wingo)
 
 	* configure.ac (GC_THREADS): Refine the comment.
