@@ -69,7 +69,7 @@
 /* Define to support Solaris pthreads. */
 #undef GC_SOLARIS_THREADS
 
-/* Define to support threads. */
+/* Define to support platform-specific threads. */
 #undef GC_THREADS
 
 /* See doc/README.macros. */
@@ -81,7 +81,10 @@
 /* The minor version number of this GC release. */
 #undef GC_VERSION_MINOR
 
-/* Define to support win32 threads. */
+/* Define to support win32-pthreads. */
+#undef GC_WIN32_PTHREADS
+
+/* Define to support Win32 threads. */
 #undef GC_WIN32_THREADS
 
 /* Define to 1 if you have the <dlfcn.h> header file. */

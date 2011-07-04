@@ -23,7 +23,7 @@ AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
 AC_PREREQ(2.64)
-AC_REVISION($Revision: 1.68 $)
+AC_REVISION($Revision: 1.69 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
 AM_CONFIG_HEADER([include/private/config.h])
@@ -78,7 +78,8 @@ AH_TEMPLATE([USE_COMPILER_TLS],
             [Define to use of compiler-support for thread-local variables.])
 
 dnl Thread selection macros.
-AH_TEMPLATE([GC_THREADS],           [Define to support threads.])
+AH_TEMPLATE([GC_THREADS],           [Define to support platform-specific \
+                                     threads.])
 AH_TEMPLATE([GC_AIX_THREADS],       [Define to support IBM AIX threads.])
 AH_TEMPLATE([GC_DARWIN_THREADS],    [Define to support Darwin pthreads.])
 AH_TEMPLATE([GC_FREEBSD_THREADS],   [Define to support FreeBSD pthreads.])
@@ -90,7 +91,8 @@ AH_TEMPLATE([GC_NETBSD_THREADS],    [Define to support NetBSD pthreads.])
 AH_TEMPLATE([GC_OPENBSD_THREADS],   [Define to support OpenBSD pthreads.])
 AH_TEMPLATE([GC_OSF1_THREADS],      [Define to support Tru64 pthreads.])
 AH_TEMPLATE([GC_SOLARIS_THREADS],   [Define to support Solaris pthreads.])
-AH_TEMPLATE([GC_WIN32_THREADS],     [Define to support win32 threads.])
+AH_TEMPLATE([GC_WIN32_THREADS],     [Define to support Win32 threads.])
+AH_TEMPLATE([GC_WIN32_PTHREADS],    [Define to support win32-pthreads.])
 
 dnl System header feature requests.
 AH_TEMPLATE([_POSIX_C_SOURCE], [The POSIX feature macro.])
@@ -110,7 +112,8 @@ case "$THREADS" in
     THREADS=posix
     AC_CHECK_LIB(pthread, pthread_self, THREADDLLIBS="-lpthread",,)
     case "$host" in
-     x86-*-linux* | ia64-*-linux* | i586-*-linux* | i686-*-linux* | x86_64-*-linux* | alpha-*-linux* | sparc*-*-linux*)
+     x86-*-linux* | ia64-*-linux* | i586-*-linux* | i686-*-linux* \
+     | x86_64-*-linux* | alpha-*-linux* | sparc*-*-linux*)
         AC_DEFINE(GC_LINUX_THREADS)
         AC_DEFINE(_REENTRANT)
         if test "${enable_parallel_mark}" = yes; then
@@ -190,7 +193,7 @@ case "$THREADS" in
         AC_DEFINE(GC_IRIX_THREADS)
         ;;
      *-*-cygwin*)
-        AC_DEFINE(GC_THREADS)
+        AC_DEFINE(GC_WIN32_THREADS)
         if test "${enable_parallel_mark}" = yes; then
           AC_DEFINE(PARALLEL_MARK)
         fi
@@ -199,6 +202,15 @@ case "$THREADS" in
         # against it.
         THREADDLLIBS=""
         win32_threads=true
+        ;;
+     *-*-mingw*)
+        AC_DEFINE(GC_WIN32_PTHREADS)
+        # Using win32-pthreads
+        if test "${enable_parallel_mark}" = yes; then
+          AC_DEFINE(PARALLEL_MARK)
+        fi
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
+        THREADDLLIBS="-lpthread"
         ;;
      *-*-darwin*)
         AC_DEFINE(GC_DARWIN_THREADS)
@@ -236,7 +248,7 @@ case "$THREADS" in
     esac
     ;;
  win32)
-    AC_DEFINE(GC_THREADS)
+    AC_DEFINE(GC_WIN32_THREADS)
     if test "${enable_parallel_mark}" = yes; then
       AC_DEFINE(PARALLEL_MARK)
       AC_DEFINE(THREAD_LOCAL_ALLOC)
@@ -248,7 +260,7 @@ case "$THREADS" in
  dgux386)
     THREADS=dgux386
     AC_MSG_RESULT($THREADDLLIBS)
-    # Use pthread GCC  switch
+    # Use pthread GCC switch
     THREADDLLIBS=-pthread
     if test "${enable_parallel_mark}" = yes; then
         AC_DEFINE(PARALLEL_MARK)

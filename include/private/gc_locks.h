@@ -99,20 +99,15 @@
 #      define THREAD_EQUAL(id1, id2) ((id1) == (id2))
 #      define NUMERIC_THREAD_ID_UNIQUE
 #    else
-#      if defined(GC_WIN32_PTHREADS)
-#        define NUMERIC_THREAD_ID(id) ((unsigned long)(id.p))
-         /* Using documented internal details of win32_pthread library. */
-         /* Faster than pthread_equal(). Should not change with         */
-         /* future versions of win32_pthread library.                   */
-#        define THREAD_EQUAL(id1, id2) ((id1.p == id2.p) && (id1.x == id2.x))
-#        undef NUMERIC_THREAD_ID_UNIQUE
-#      else
-         /* Generic definitions that always work, but will result in    */
-         /* poor performance and weak assertion checking.               */
-#        define NUMERIC_THREAD_ID(id) 1l
-#        define THREAD_EQUAL(id1, id2) pthread_equal(id1, id2)
-#        undef NUMERIC_THREAD_ID_UNIQUE
-#      endif
+#      define NUMERIC_THREAD_ID(id) ((unsigned long)(id.p))
+       /* Using documented internal details of win32-pthread library.   */
+       /* Faster than pthread_equal(). Should not change with           */
+       /* future versions of win32-pthread library.                     */
+#      define THREAD_EQUAL(id1, id2) ((id1.p == id2.p) && (id1.x == id2.x))
+#      undef NUMERIC_THREAD_ID_UNIQUE
+       /* Generic definitions based on pthread_equal() always work but  */
+       /* will result in poor performance (as NUMERIC_THREAD_ID is      */
+       /* defined to just a constant) and weak assertion checking.      */
 #    endif
 #    define NO_THREAD ((unsigned long)(-1l))
                 /* != NUMERIC_THREAD_ID(pthread_self()) for any thread */

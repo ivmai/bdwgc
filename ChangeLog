@@ -1,3 +1,15 @@
+2011-07-04  Ivan Maidanski <ivmai@mail.ru> (mostly really Andy Wingo)
+
+	* configure.ac (GC_THREADS): Refine the comment.
+	* configure.ac (GC_WIN32_PTHREADS): Add template.
+	* configure.ac (cygwin, win32): Define GC_WIN32_THREADS instead of
+	GC_THREADS.
+	* configure.ac (pthreads): Add mingw target (GC_WIN32_PTHREADS).
+	* configure: Regenerate.
+	* include/private/config.h.in: Ditto.
+	* include/private/gc_locks.h (GC_WIN32_PTHREADS): Remove nested
+	test for the macro; add comment.
+
 2011-07-01  Ivan Maidanski <ivmai@mail.ru>
 
 	* win32_threads.c (CHECK_LOOKUP_MY_THREAD): New macro definition.
