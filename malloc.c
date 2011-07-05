@@ -354,6 +354,7 @@ void * malloc(size_t lb)
   STATIC void GC_init_lib_bounds(void)
   {
     if (GC_libpthread_start != 0) return;
+    GC_init(); /* if not called yet */
     if (!GC_text_mapping("libpthread-",
                          &GC_libpthread_start, &GC_libpthread_end)) {
         WARN("Failed to find libpthread.so text mapping: Expect crash\n", 0);

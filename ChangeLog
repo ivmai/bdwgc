@@ -1,5 +1,15 @@
 2011-07-05  Ivan Maidanski <ivmai@mail.ru>
 
+	* malloc.c (GC_init_lib_bounds): Call GC_init (to ensure GC is
+	initialized before doing GC_text_mapping).
+	* misc.c (GC_init): Add a check for GC_init recursion in case of
+	malloc is redirected (abort with the corresponding message).
+	* pthread.c (GC_thr_init): Place GC_add_roots_inner call into
+	"else" branch to prevent "local variable might be uninitialized"
+	compiler warning; add comment.
+
+2011-07-05  Ivan Maidanski <ivmai@mail.ru>
+
 	* dyn_load.c (GC_register_dynamic_libraries): Remove duplicate
 	call of GC_FirstDLOpenedLinkMap (twice).
 	* dyn_load.c (GC_register_main_static_data): Add comment.

@@ -906,8 +906,10 @@ GC_INNER void GC_thr_init(void)
       if (!GC_enclosing_mapping(thread_local_addr, &main_thread_start,
                                 &main_thread_end)) {
         ABORT("Failed to find mapping for main thread thread locals");
+      } else {
+        /* main_thread_start and main_thread_end are initialized.       */
+        GC_add_roots_inner(main_thread_start, main_thread_end, FALSE);
       }
-      GC_add_roots_inner(main_thread_start, main_thread_end, FALSE);
     }
 # endif
   /* Add the initial thread, so we can stop it. */

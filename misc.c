@@ -663,6 +663,14 @@ GC_API void GC_CALL GC_init(void)
     IF_CANCEL(int cancel_state;)
 
     if (GC_is_initialized) return;
+#   ifdef REDIRECT_MALLOC
+      {
+        static GC_bool init_started = FALSE;
+        if (init_started)
+          ABORT("Redirected malloc() called during GC init");
+        init_started = TRUE;
+      }
+#   endif
 
 #   ifdef GC_INITIAL_HEAP_SIZE
       initial_heap_sz = divHBLKSZ(GC_INITIAL_HEAP_SIZE);
