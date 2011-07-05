@@ -185,8 +185,7 @@ GC_FirstDLOpenedLinkMap(void)
 # ifndef USE_PROC_FOR_LIBRARIES
 GC_INNER void GC_register_dynamic_libraries(void)
 {
-  struct link_map *lm = GC_FirstDLOpenedLinkMap();
-
+  struct link_map *lm;
 
   for (lm = GC_FirstDLOpenedLinkMap(); lm != 0; lm = lm->l_next) {
         ElfW(Ehdr) * e;
@@ -521,7 +520,7 @@ GC_INNER GC_bool GC_register_main_static_data(void)
     /* zero (otherwise a compiler might issue a warning).               */
     return FALSE;
 # else
-    return (dl_iterate_phdr == 0);
+    return (dl_iterate_phdr == 0); /* implicit conversion to function ptr */
 # endif
 }
 
@@ -667,8 +666,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
         return;
     }
 # endif
-  lm = GC_FirstDLOpenedLinkMap();
-  for (lm = GC_FirstDLOpenedLinkMap(); lm != 0;  lm = lm->l_next)
+  for (lm = GC_FirstDLOpenedLinkMap(); lm != 0; lm = lm->l_next)
     {
         ElfW(Ehdr) * e;
         ElfW(Phdr) * p;
