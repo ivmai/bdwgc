@@ -1,5 +1,19 @@
 2011-07-05  Ivan Maidanski <ivmai@mail.ru>
 
+	* misc.c (GC_init): Use HOTTER_THAN (instead of STACK_GROWS_DOWN)
+	for GC_stackbottom assertion.
+	* os_dep.c (GC_enclosing_mapping): Define only if IA64 or
+	INCLUDE_LINUX_THREAD_DESCR; make GC_INNER.
+	* pthread_support.c (GC_enclosing_mapping): Declare (only if
+	INCLUDE_LINUX_THREAD_DESCR).
+	* os_dep.c (GC_get_main_stack_base): Don't call pthread_getattr_np
+	if REDIRECT_MALLOC as the former is observed to call redirected
+	malloc (while GC is not initialized yet) on some Linux platforms.
+	* include/private/gc_priv.h (MAX_HEAP_SECTS): Don't use a smaller
+	value for SMALL_CONFIG if USE_PROC_FOR_LIBRARIES defined.
+
+2011-07-05  Ivan Maidanski <ivmai@mail.ru>
+
 	* malloc.c (GC_init_lib_bounds): Call GC_init (to ensure GC is
 	initialized before doing GC_text_mapping).
 	* misc.c (GC_init): Add a check for GC_init recursion in case of

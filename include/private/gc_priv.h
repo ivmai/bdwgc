@@ -952,7 +952,7 @@ struct roots {
 #   else
 #     define MAX_HEAP_SECTS 768         /* Separately added heap sections. */
 #   endif
-# elif defined(SMALL_CONFIG)
+# elif defined(SMALL_CONFIG) && !defined(USE_PROC_FOR_LIBRARIES)
 #   define MAX_HEAP_SECTS 128           /* Roughly 256MB (128*2048*1K)  */
 # elif CPP_WORDSZ > 32
 #   define MAX_HEAP_SECTS 1024          /* Roughly 8GB                  */

@@ -879,6 +879,8 @@ STATIC void GC_fork_child_proc(void)
 
 #ifdef INCLUDE_LINUX_THREAD_DESCR
   __thread int GC_dummy_thread_local;
+  GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr,
+                                        ptr_t *startp, ptr_t *endp);
 #endif
 
 /* We hold the allocation lock. */

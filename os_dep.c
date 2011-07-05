@@ -349,34 +349,37 @@ GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
     return p;
 }
 
-/* Try to read the backing store base from /proc/self/maps.             */
-/* Return the bounds of the writable mapping with a 0 major device,     */
-/* which includes the address passed as data.                           */
-/* Return FALSE if there is no such mapping.                            */
-GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
-{
-  char *prot;
-  ptr_t my_start, my_end;
-  unsigned int maj_dev;
-  char *maps = GC_get_maps();
-  char *buf_ptr = maps;
+#if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)
+  /* Try to read the backing store base from /proc/self/maps.           */
+  /* Return the bounds of the writable mapping with a 0 major device,   */
+  /* which includes the address passed as data.                         */
+  /* Return FALSE if there is no such mapping.                          */
+  GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp,
+                                        ptr_t *endp)
+  {
+    char *prot;
+    ptr_t my_start, my_end;
+    unsigned int maj_dev;
+    char *maps = GC_get_maps();
+    char *buf_ptr = maps;
 
-  if (0 == maps) return(FALSE);
-  for (;;) {
-    buf_ptr = GC_parse_map_entry(buf_ptr, &my_start, &my_end,
-                                 &prot, &maj_dev, 0);
+    if (0 == maps) return(FALSE);
+    for (;;) {
+      buf_ptr = GC_parse_map_entry(buf_ptr, &my_start, &my_end,
+                                   &prot, &maj_dev, 0);
 
-    if (buf_ptr == NULL) return FALSE;
-    if (prot[1] == 'w' && maj_dev == 0) {
-        if (my_end > addr && my_start <= addr) {
-          *startp = my_start;
-          *endp = my_end;
-          return TRUE;
-        }
+      if (buf_ptr == NULL) return FALSE;
+      if (prot[1] == 'w' && maj_dev == 0) {
+          if (my_end > addr && my_start <= addr) {
+            *startp = my_start;
+            *endp = my_end;
+            return TRUE;
+          }
+      }
     }
+    return FALSE;
   }
-  return FALSE;
-}
+#endif /* IA64 || INCLUDE_LINUX_THREAD_DESCR */
 
 #if defined(REDIRECT_MALLOC)
   /* Find the text(code) mapping for the library whose name, after      */
@@ -1144,7 +1147,8 @@ GC_INNER word GC_page_size = 0;
   {
     ptr_t result; /* also used as "dummy" to get the approx. sp value */
 #   if defined(LINUX) && !defined(NACL) \
-       && (defined(USE_GET_STACKBASE_FOR_MAIN) || defined(THREADS))
+       && (defined(USE_GET_STACKBASE_FOR_MAIN) \
+           || (defined(THREADS) && !defined(REDIRECT_MALLOC)))
       pthread_attr_t attr;
       void *stackaddr;
       size_t size;

@@ -914,8 +914,8 @@ GC_API void GC_CALL GC_init(void)
 #   if defined(NETBSD) && defined(__ELF__)
         GC_init_netbsd_elf();
 #   endif
-#   if !defined(THREADS) || defined(GC_PTHREADS) || defined(GC_WIN32_THREADS) \
-        || defined(GC_SOLARIS_THREADS)
+#   if !defined(THREADS) || defined(GC_PTHREADS) \
+        || defined(GC_WIN32_THREADS) || defined(GC_SOLARIS_THREADS)
       if (GC_stackbottom == 0) {
         GC_stackbottom = GC_get_main_stack_base();
 #       if (defined(LINUX) || defined(HPUX)) && defined(IA64)
@@ -937,11 +937,7 @@ GC_API void GC_CALL GC_init(void)
     GC_STATIC_ASSERT(sizeof (signed_word) == sizeof(word));
     GC_STATIC_ASSERT(sizeof (struct hblk) == HBLKSIZE);
 #   ifndef THREADS
-#     ifdef STACK_GROWS_DOWN
-        GC_ASSERT((word)(&dummy) <= (word)GC_stackbottom);
-#     else
-        GC_ASSERT((word)(&dummy) >= (word)GC_stackbottom);
-#     endif
+      GC_ASSERT(!((word)GC_stackbottom HOTTER_THAN (word)(&dummy)));
 #   endif
 #   if !defined(_AUX_SOURCE) || defined(__GNUC__)
       GC_STATIC_ASSERT((word)(-1) > (word)0);
