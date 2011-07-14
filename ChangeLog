@@ -1,5 +1,9 @@
 2011-07-14  Ivan Maidanski <ivmai@mail.ru>
 
+	* .cvsignore: Add more auto-generated files.
+
+2011-07-14  Ivan Maidanski <ivmai@mail.ru>
+
 	* new_hblk.c (GC_build_fl): Adjust "h" local variable cast type
 	when setting obj_link (to prevent compiler warning); reformat the
 	comment.
