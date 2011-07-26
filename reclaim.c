@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, April 18, 1995 1:59 pm PDT */
+/* Boehm, February 15, 1996 2:41 pm PST */
 
 #include <stdio.h>
 #include "gc_priv.h"
@@ -441,11 +441,13 @@ int abort_if_found;		/* Abort if a reclaimable object is found */
     register word sz;		/* size of objects in current block	*/
     register struct obj_kind * ok;
     register ptr_t * flh;
+    register int kind;
     
     hhdr = HDR(hbp);
     sz = hhdr -> hb_sz;
     hhdr -> hb_last_reclaimed = (unsigned short) GC_gc_no;
-    ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
+    kind = hhdr -> hb_obj_kind;
+    ok = &GC_obj_kinds[kind];
     flh = &(ok -> ok_freelist[sz]);
     GC_write_hint(hbp);
 
@@ -484,6 +486,7 @@ int abort_if_found;		/* Abort if a reclaimable object is found */
             break;
       }
     } 
+    if (IS_UNCOLLECTABLE(kind)) GC_set_hdr_marks(hhdr);
 }
 
 /*
@@ -536,8 +539,8 @@ word abort_if_found;		/* Abort if a reclaimable object is found */
 /* Routines to gather and print heap block info 	*/
 /* intended for debugging.  Otherwise should be called	*/
 /* with lock.						*/
-static number_of_blocks;
-static total_bytes;
+static size_t number_of_blocks;
+static size_t total_bytes;
 
 /* Number of set bits in a word.  Not performance critical.	*/
 static int set_bits(n)
@@ -572,7 +575,7 @@ struct hblk *h;
 word dummy;
 {
     register hdr * hhdr = HDR(h);
-    register bytes = WORDS_TO_BYTES(hhdr -> hb_sz);
+    register size_t bytes = WORDS_TO_BYTES(hhdr -> hb_sz);
     
     GC_printf3("(%lu:%lu,%lu)", (unsigned long)(hhdr -> hb_obj_kind),
     			        (unsigned long)bytes,
@@ -664,15 +667,17 @@ int kind;
 }
 
 /*
- * Reclaim all blocks that have been recently reclaimed.
- * Clear lists of blocks waiting to be reclaimed.
- * Must be done before clearing mark bits with the world running,
- * since otherwise a subsequent reclamation of block would see
- * the wrong mark bits.  (Alternatively, GC_reclaim_all
- * may be used.)
- * SHOULD PROBABLY BE INCREMENTAL
+ * Reclaim all small blocks waiting to be reclaimed.
+ * Abort and return FALSE when/if (*stop_func)() returns TRUE.
+ * If this returns TRUE, then it's safe to restart the world
+ * with incorrectly cleared mark bits.
+ * If ignore_old is TRUE, then reclain only blocks that have been 
+ * recently reclaimed, and discard the rest.
+ * Stop_func may be 0.
  */
-void GC_reclaim_or_delete_all()
+bool GC_reclaim_all(stop_func, ignore_old)
+GC_stop_func stop_func;
+bool ignore_old;
 {
     register word sz;
     register int kind;
@@ -695,58 +700,17 @@ void GC_reclaim_or_delete_all()
     	for (sz = 1; sz <= MAXOBJSZ; sz++) {
     	    rlh = rlp + sz;
     	    while ((hbp = *rlh) != 0) {
+    	        if (stop_func != (GC_stop_func)0 && (*stop_func)()) {
+    	            return(FALSE);
+    	        }
         	hhdr = HDR(hbp);
         	*rlh = hhdr -> hb_next;
-        	if (hhdr -> hb_last_reclaimed == GC_gc_no - 1) {
+        	if (!ignore_old || hhdr -> hb_last_reclaimed == GC_gc_no - 1) {
         	    /* It's likely we'll need it this time, too	*/
         	    /* It's been touched recently, so this	*/
         	    /* shouldn't trigger paging.		*/
         	    GC_reclaim_small_nonempty_block(hbp, FALSE);
         	}
-            }
-        }
-    }
-#   ifdef PRINTTIMES
-	GET_TIME(done_time);
-	GC_printf1("Disposing of reclaim lists took %lu msecs\n",
-	           MS_TIME_DIFF(done_time,start_time));
-#   endif
-}
-
-/*
- * Reclaim all small blocks waiting to be reclaimed.
- * Abort and return FALSE when/if (*stop_func)() returns TRUE.
- * If this returns TRUE, then it's safe to restart the world
- * with incorrectly cleared mark bits.
- */
-bool GC_reclaim_all(stop_func)
-GC_stop_func stop_func;
-{
-    register word sz;
-    register int kind;
-    register hdr * hhdr;
-    register struct hblk * hbp;
-    register struct obj_kind * ok;
-    struct hblk ** rlp;
-    struct hblk ** rlh;
-#   ifdef PRINTTIMES
-	CLOCK_TYPE start_time;
-	CLOCK_TYPE done_time;
-	
-	GET_TIME(start_time);
-#   endif
-    
-    for (kind = 0; kind < GC_n_kinds; kind++) {
-    	ok = &(GC_obj_kinds[kind]);
-    	rlp = ok -> ok_reclaim_list;
-    	if (rlp == 0) continue;
-    	for (sz = 1; sz <= MAXOBJSZ; sz++) {
-    	    rlh = rlp + sz;
-    	    while ((hbp = *rlh) != 0) {
-    	        if ((*stop_func)()) return(FALSE);
-        	hhdr = HDR(hbp);
-        	*rlh = hhdr -> hb_next;
-        	GC_reclaim_small_nonempty_block(hbp, FALSE);
             }
         }
     }

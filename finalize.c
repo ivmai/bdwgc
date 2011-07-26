@@ -461,7 +461,6 @@ finalization_mark_proc * mp;
     				ocd, GC_null_finalize_mark_proc);
 }
 
-
 /* Called with world stopped.  Cause disappearing links to disappear,	*/
 /* and invoke finalizers.						*/
 void GC_finalize()
@@ -506,24 +505,11 @@ void GC_finalize()
       for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
         real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
-            (*(curr_fo -> fo_mark_proc))(real_ptr);
-            while (!GC_mark_stack_empty()) GC_mark_from_mark_stack();
-            if (GC_mark_state != MS_NONE) {
-                /* Mark stack overflowed. Very unlikely. */
-#		ifdef PRINTSTATS
-		    if (GC_mark_state != MS_INVALID) ABORT("Bad mark state");
-		    GC_printf0("Mark stack overflowed in finalization!!\n");
-#		endif
-		/* Make mark bits consistent again.  Forget about	*/
-		/* finalizing this object for now.			*/
-		    GC_set_mark_bit(real_ptr);
-		    while (!GC_mark_some());
-            }
+            GC_MARK_FO(real_ptr, curr_fo -> fo_mark_proc);
             if (GC_is_marked(real_ptr)) {
                 WARN("Finalization cycle involving %lx\n", real_ptr);
             }
         }
-        
       }
     }
   /* Enqueue for finalization all objects that are still		*/
@@ -535,7 +521,9 @@ void GC_finalize()
       while (curr_fo != 0) {
         real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
+#         ifndef JAVA_FINALIZATION
             GC_set_mark_bit(real_ptr);
+#         endif
             /* Delete from hash table */
               next_fo = fo_next(curr_fo);
               if (prev_fo == 0) {
@@ -566,6 +554,22 @@ void GC_finalize()
         }
       }
     }
+
+# ifdef JAVA_FINALIZATION
+  /* make sure we mark everything reachable from objects finalized
+     using the no_order mark_proc */
+    for (curr_fo = GC_finalize_now; 
+	 curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
+	real_ptr = (ptr_t)curr_fo -> fo_hidden_base;
+	if (!GC_is_marked(real_ptr)) {
+	    if (curr_fo -> fo_mark_proc == GC_null_finalize_mark_proc) {
+	        GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
+	    }
+	    GC_set_mark_bit(real_ptr);
+	}
+    }
+# endif
+
   /* Remove dangling disappearing links. */
     for (i = 0; i < dl_size; i++) {
       curr_dl = dl_head[i];
@@ -589,6 +593,82 @@ void GC_finalize()
       }
     }
 }
+
+#ifdef JAVA_FINALIZATION
+
+/* Enqueue all remaining finalizers to be run - Assumes lock is
+ * held, and signals are disabled */
+void GC_enqueue_all_finalizers()
+{
+    struct finalizable_object * curr_fo, * prev_fo, * next_fo;
+    ptr_t real_ptr, real_link;
+    register int i;
+    int fo_size;
+    
+    fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
+    GC_words_finalized = 0;
+    for (i = 0; i < fo_size; i++) {
+        curr_fo = fo_head[i];
+        prev_fo = 0;
+      while (curr_fo != 0) {
+          real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
+          GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
+          GC_set_mark_bit(real_ptr);
+ 
+          /* Delete from hash table */
+          next_fo = fo_next(curr_fo);
+          if (prev_fo == 0) {
+              fo_head[i] = next_fo;
+          } else {
+              fo_set_next(prev_fo, next_fo);
+          }
+          GC_fo_entries--;
+
+          /* Add to list of objects awaiting finalization.	*/
+          fo_set_next(curr_fo, GC_finalize_now);
+          GC_finalize_now = curr_fo;
+
+          /* unhide object pointer so any future collections will	*/
+          /* see it.						*/
+          curr_fo -> fo_hidden_base = 
+        		(word) REVEAL_POINTER(curr_fo -> fo_hidden_base);
+
+          GC_words_finalized +=
+           	ALIGNED_WORDS(curr_fo -> fo_object_size)
+        		+ ALIGNED_WORDS(sizeof(struct finalizable_object));
+          curr_fo = next_fo;
+        }
+    }
+
+    return;
+}
+
+/* Invoke all remaining finalizers that haven't yet been run. 
+ * This is needed for strict compliance with the Java standard, 
+ * which can make the runtime guarantee that all finalizers are run.
+ * Unfortunately, the Java standard implies we have to keep running
+ * finalizers until there are no more left, a potential infinite loop.
+ * YUCK.  * This routine is externally callable, so is called without 
+ * the allocation lock 
+ */
+void GC_finalize_all()
+{
+    DCL_LOCK_STATE;
+
+    DISABLE_SIGNALS();
+    LOCK();
+    while (GC_fo_entries > 0) {
+      GC_enqueue_all_finalizers();
+      UNLOCK();
+      ENABLE_SIGNALS();
+      GC_invoke_finalizers();
+      DISABLE_SIGNALS();
+      LOCK();
+    }
+    UNLOCK();
+    ENABLE_SIGNALS();
+}
+#endif
 
 /* Invoke finalizers for all objects that are ready to be finalized.	*/
 /* Should be called without allocation lock.				*/
@@ -639,12 +719,13 @@ void GC_invoke_finalizers()
 #   ifdef THREADS
       DISABLE_SIGNALS();
       LOCK();
+      SET_LOCK_HOLDER();
 #   endif
     result = (*fn)(client_data);
 #   ifdef THREADS
+      UNSET_LOCK_HOLDER();
       UNLOCK();
       ENABLE_SIGNALS();
 #   endif
     return(result);
 }
-

@@ -497,13 +497,18 @@ void do_command(int c)
      	    invalidate_map(line);
      	    break;
      	  case WRITE:
-    	    if ((out = fopen(arg_file_name, "wb")) == NULL
-  	        || CORD_put(current, out) == EOF) {
-        	de_error("Write failed\n");
-        	need_redisplay = ALL;
-            } else {
-                fclose(out);
-            }
+	    {
+  		CORD name = CORD_cat(CORD_from_char_star(arg_file_name),
+				     ".new");
+
+    	        if ((out = fopen(CORD_to_const_char_star(name), "wb")) == NULL
+  	            || CORD_put(current, out) == EOF) {
+        	    de_error("Write failed\n");
+        	    need_redisplay = ALL;
+                } else {
+                    fclose(out);
+                }
+	    }
             break;
      	  default:
      	    {
@@ -590,7 +595,8 @@ done:
 usage:
     fprintf(stderr, "Usage: %s file\n", argv[0]);
     fprintf(stderr, "Cursor keys: ^B(left) ^F(right) ^P(up) ^N(down)\n");
-    fprintf(stderr, "Undo: ^U    Write: ^W   Quit:^D  Repeat count: ^R[n]\n");
+    fprintf(stderr, "Undo: ^U    Write to <file>.new: ^W");
+    fprintf(stderr, "Quit:^D  Repeat count: ^R[n]\n");
     fprintf(stderr, "Top: ^T   Locate (search, find): ^L text ^L\n");
     exit(1);
 }

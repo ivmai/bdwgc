@@ -1,0 +1,19 @@
+[Partially supplied by Xiaokun Zhu <xiaokun@aero.gla.ac.uk>]
+
+There is no caddr_t in djgpp 2.01 so the following declaration was added to
+os_dep.c. It may need to be removed for other versions.
+
+	typedef caddr_t long unsigned int;
+
+
+Use Makefile.dj to compile it :
+
+	C> make -f Makefile.dj test
+
+
+!!! setjmp_t.exe works fine.
+!!! gctest.exe works fine.
+!!! cordtest.exe fail.
+!!! test_cpp.exe works fine.
+
+In some cases it may be necessary to explicitly set GC_stackbottom.

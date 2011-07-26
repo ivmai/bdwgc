@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, February 9, 1996 11:41 am PST */
+/* Boehm, February 16, 1996 2:30 pm PST */
  
 
 # ifndef GC_PRIVATE_H
@@ -49,10 +49,18 @@ typedef GC_signed_word signed_word;
 #   include "gc_hdrs.h"
 # endif
 
-# if !defined(bool)
+# if !defined(bool) && !defined(__cplusplus)
     typedef int bool;
-    /* This is problematic with C++ implementations that define bool. */
-    /* But those usually treat it correctly as an empty declaration.  */
+    /* This is problematic with C++ implementations that do not define bool. */
+    /* By now they should.						     */
+# else
+#   if defined(_SGI_SOURCE) && !defined(_BOOL)
+	typedef int bool;
+#   endif
+#   if defined(__cplusplus) && defined(_MSC_VER) && _MSC_VER <= 1020
+	/* Visual C++ 4.2 does not have bool type. */
+        typedef int bool;
+#   endif
 # endif
 # define TRUE 1
 # define FALSE 0
@@ -68,11 +76,13 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #       include <stddef.h>
 #   endif
 #   define VOLATILE volatile
+#   define CONST const
 #else
 #   ifdef MSWIN32
 #   	include <stdlib.h>
 #   endif
 #   define VOLATILE
+#   define CONST
 #endif
 
 #ifdef AMIGA
@@ -159,27 +169,6 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 
 #if defined(PRINTSTATS) && !defined(GATHERSTATS)
 #   define GATHERSTATS
-#endif
-
-# if defined(SOLARIS_THREADS) && !defined(SUNOS5) \
-	|| (defined(DEC_PTHREADS) && !defined(ALPHA))
---> inconsistent configuration
-# endif
-# if defined(PCR) || defined(SRC_M3) || defined(SOLARIS_THREADS) \
-	|| defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
-#   define THREADS
-# endif
-
-#if defined(SPARC)
-#   define ALIGN_DOUBLE  /* Align objects of size > 1 word on 2 word   */
-			 /* boundaries.  Wasteful of memory, but       */
-			 /* apparently required by SPARC architecture. */
-#   define ASM_CLEAR_CODE	/* Stack clearing is crucial, and we 	*/
-				/* include assembly code to do it well.	*/
-#endif
-
-#ifdef HP_PA
-#   define ALIGN_DOUBLE
 #endif
 
 #define MERGE_SIZES /* Round up some object sizes, so that fewer distinct */
@@ -422,21 +411,70 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #    define LOCK() mutex_lock(&GC_allocate_ml);
 #    define UNLOCK() mutex_unlock(&GC_allocate_ml);
 #  endif
-#  ifdef DEC_PTHREADS
-     extern pthread_mutex_t GC_allocate_ml;
-     extern int GC_pt_init_ok;
-#    define LOCK() {if (!GC_pt_init_ok) GC_init(); pthread_mutex_lock(&GC_allocate_ml);}
-#    define UNLOCK() if (GC_pt_init_ok) pthread_mutex_unlock(&GC_allocate_ml)
+#  ifdef IRIX_THREADS
+#    include <pthread.h>
+#    include <mutex.h>
+
+#    if __mips < 3 || !(defined (_ABIN32) || defined(_ABI64))
+#         define __test_and_set(l,v) test_and_set(l,v)
+#    endif
+     extern unsigned long GC_allocate_lock;
+	/* This is not a mutex because mutexes that obey the (optional) 	*/
+	/* POSIX scheduling rules are subject to convoys in high contention	*/
+	/* applications.  This is basically a spin lock.			*/
+     extern pthread_t GC_lock_holder;
+     extern void GC_lock(void);
+	/* Allocation lock holder.  Only set if acquired by client through */
+	/* GC_call_with_alloc_lock.					   */
+#    define SET_LOCK_HOLDER() GC_lock_holder = pthread_self()
+#    define NO_THREAD (pthread_t)(-1)
+#    define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
+#    define I_HOLD_LOCK() (pthread_equal(GC_lock_holder, pthread_self()))
+#    ifdef UNDEFINED
+#    	define LOCK() pthread_mutex_lock(&GC_allocate_ml)
+#    	define UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
+#    else
+#	define LOCK() { if (__test_and_set(&GC_allocate_lock, 1)) GC_lock(); }
+#       if __mips >= 3 && (defined (_ABIN32) || defined(_ABI64))
+#	    define UNLOCK() __lock_release(lock)
+#	else
+#           define UNLOCK() GC_allocate_lock = 0
+#	endif
+#    endif
+     extern bool GC_collecting;
+#    define ENTER_GC() \
+		{ \
+		    GC_collecting = 1; \
+		}
+#    define EXIT_GC() GC_collecting = 0;
 #  endif
-#  ifdef MIT_PTHREADS
-     extern pthread_mutex_t GC_allocate_ml;
-     extern int GC_pt_init_ok;
-#    define LOCK() if (GC_pt_init_ok) pthread_mutex_lock(&GC_allocate_ml)
-#    define UNLOCK() if (GC_pt_init_ok) pthread_mutex_unlock(&GC_allocate_ml)
+#  ifdef WIN32_THREADS
+#    include <windows.h>
+     GC_API CRITICAL_SECTION GC_allocate_ml;
+#    define LOCK() EnterCriticalSection(&GC_allocate_ml);
+#    define UNLOCK() LeaveCriticalSection(&GC_allocate_ml);
+#  endif
+#  ifndef SET_LOCK_HOLDER
+#      define SET_LOCK_HOLDER()
+#      define UNSET_LOCK_HOLDER()
+#      define I_HOLD_LOCK() FALSE
+		/* Used on platforms were locks can be reacquired,	*/
+		/* so it doesn't matter if we lie.			*/
 #  endif
 # else
 #    define LOCK()
 #    define UNLOCK()
+# endif
+# ifndef SET_LOCK_HOLDER
+#   define SET_LOCK_HOLDER()
+#   define UNSET_LOCK_HOLDER()
+#   define I_HOLD_LOCK() FALSE
+		/* Used on platforms were locks can be reacquired,	*/
+		/* so it doesn't matter if we lie.			*/
+# endif
+# ifndef ENTER_GC
+#   define ENTER_GC()
+#   define EXIT_GC()
 # endif
 
 # ifndef DCL_LOCK_STATE
@@ -462,8 +500,7 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 # else
 #   if defined(SRC_M3) || defined(AMIGA) || defined(SOLARIS_THREADS) \
 	|| defined(MSWIN32) || defined(MACOS) || defined(DJGPP) \
-	|| defined(NO_SIGNALS) \
-        || defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
+	|| defined(NO_SIGNALS) || defined(IRIX_THREADS)
 			/* Also useful for debugging.		*/
 	/* Should probably use thr_sigsetmask for SOLARIS_THREADS. */
 #     define DISABLE_SIGNALS()
@@ -490,22 +527,14 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
  				   PCR_allSigsBlocked, \
  				   PCR_waitForever);
 # else
-#   ifdef SOLARIS_THREADS
+#   if defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || defined(IRIX_THREADS)
+      void GC_stop_world();
+      void GC_start_world();
 #     define STOP_WORLD() GC_stop_world()
 #     define START_WORLD() GC_start_world()
 #   else
-#     ifdef DEC_PTHREADS
-#       define STOP_WORLD() GC_pt_stop_world()
-#       define START_WORLD() GC_pt_start_world()
-#     else
-#       ifdef MIT_PTHREADS
-#         define STOP_WORLD() GC_pt_stop_world()
-#         define START_WORLD() GC_pt_start_world()
-#       else
-#         define STOP_WORLD()
-#         define START_WORLD()
-#       endif
-#     endif
+#     define STOP_WORLD()
+#     define START_WORLD()
 #   endif
 # endif
 
@@ -516,7 +545,7 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #   ifdef SMALL_CONFIG
 #	define ABORT(msg) abort();
 #   else
-	void GC_abort();
+	GC_API void GC_abort();
 #       define ABORT(msg) GC_abort(msg);
 #   endif
 # endif
@@ -789,6 +818,13 @@ struct _GC_arrays {
 
   ptr_t _uobjfreelist[MAXOBJSZ+1];
 			  /* uncollectable but traced objs 	*/
+			  /* objects on this and auobjfreelist  */
+			  /* are always marked, except during   */
+			  /* garbage collections.		*/
+# ifdef ATOMIC_UNCOLLECTABLE
+    ptr_t _auobjfreelist[MAXOBJSZ+1];
+# endif
+			  /* uncollectable but traced objs 	*/
 
 # ifdef GATHERSTATS
     word _composite_in_use;
@@ -896,11 +932,14 @@ struct _GC_arrays {
 #endif
 };
 
-extern GC_FAR struct _GC_arrays GC_arrays; 
+GC_API GC_FAR struct _GC_arrays GC_arrays; 
 
 # define GC_objfreelist GC_arrays._objfreelist
 # define GC_aobjfreelist GC_arrays._aobjfreelist
 # define GC_uobjfreelist GC_arrays._uobjfreelist
+# ifdef ATOMIC_UNCOLLECTABLE
+#   define GC_auobjfreelist GC_arrays._auobjfreelist
+# endif
 # define GC_sobjfreelist GC_arrays._sobjfreelist
 # define GC_valid_offsets GC_arrays._valid_offsets
 # define GC_modws_valid_offsets GC_arrays._modws_valid_offsets
@@ -940,6 +979,7 @@ extern GC_FAR struct _GC_arrays GC_arrays;
 # define beginGC_arrays ((ptr_t)(&GC_arrays))
 # define endGC_arrays (((ptr_t)(&GC_arrays)) + (sizeof GC_arrays))
 
+GC_API word GC_fo_entries;
 
 # define MAXOBJKINDS 16
 
@@ -963,7 +1003,14 @@ extern struct obj_kind {
 # define PTRFREE 0
 # define NORMAL  1
 # define UNCOLLECTABLE 2
-# define STUBBORN 3
+# ifdef ATOMIC_UNCOLLECTABLE
+#   define AUNCOLLECTABLE 3
+#   define STUBBORN 4
+#   define IS_UNCOLLECTABLE(k) (((k) & ~1) == UNCOLLECTABLE)
+# else
+#   define STUBBORN 3
+#   define IS_UNCOLLECTABLE(k) ((k) == UNCOLLECTABLE)
+# endif
 
 extern int GC_n_kinds;
 
@@ -1066,8 +1113,10 @@ bool GC_mark_some();	/* Perform about one pages worth of marking	*/
 			/* work of whatever kind is needed.  Returns	*/
 			/* quickly if no collection is in progress.	*/
 			/* Return TRUE if mark phase finished.		*/
-void GC_initiate_full();	/* initiate full collection.		*/
-void GC_initiate_partial();	/* initiate partial collection.		*/			
+void GC_initiate_gc();		/* initiate collection.			*/
+				/* If the mark state is invalid, this	*/
+				/* becomes full colleection.  Otherwise */
+				/* it's partial.			*/
 void GC_push_all(/*b,t*/);	/* Push everything in a range 		*/
 				/* onto mark stack.			*/
 void GC_push_dirty(/*b,t*/);      /* Push all possibly changed	 	*/
@@ -1113,6 +1162,7 @@ struct hblk * GC_push_next_marked_uncollectable(/* h */);
 bool GC_stopped_mark(); /* Stop world and mark from all roots	*/
 			/* and rescuers.			*/
 void GC_clear_hdr_marks(/* hhdr */);  /* Clear the mark bits in a header */
+void GC_set_hdr_marks(/* hhdr */);  /* Set the mark bits in a header */
 void GC_add_roots_inner();
 bool GC_is_static_root(/* ptr_t p */);
 		/* Is the address p in one of the registered static	*/
@@ -1242,7 +1292,7 @@ ptr_t GC_generic_malloc(/* bytes, kind */);
 				/* to the collector.			*/
 ptr_t GC_generic_malloc_inner(/* bytes, kind */);
 				/* Ditto, but I already hold lock, etc.	*/
-ptr_t GC_generic_malloc_words_small(/*words, kind*/);
+ptr_t GC_generic_malloc_words_small GC_PROTO((size_t words, int kind));
 				/* As above, but size in units of words */
 				/* Bypasses MERGE_SIZES.  Assumes	*/
 				/* words <= MAXOBJSZ.			*/
@@ -1324,10 +1374,11 @@ void GC_print_static_roots();
 void GC_dump();
 
 /* Make arguments appear live to compiler */
-void GC_noop();
+GC_API void GC_noop();
+void GC_noop1(/* word arg */);
 
 /* Logging and diagnostic output: 	*/
-void GC_printf GC_PROTO((char * format, long, long, long, long, long, long));
+GC_API void GC_printf GC_PROTO((char * format, long, long, long, long, long, long));
 			/* A version of printf that doesn't allocate,	*/
 			/* is restricted to long arguments, and		*/
 			/* (unfortunately) doesn't use varargs for	*/

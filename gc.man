@@ -1,4 +1,4 @@
-.TH GC_MALLOC 1L "20 April 1994"
+.TH GC_MALLOC 1L "12 February 1996"
 .SH NAME
 GC_malloc, GC_malloc_atomic, GC_free, GC_realloc, GC_enable_incremental, GC_register_finalizer, GC_malloc_ignore_off_page, GC_malloc_atomic_ignore_off_page, GC_set_warn_proc \- Garbage collecting malloc replacement
 .SH SYNOPSIS

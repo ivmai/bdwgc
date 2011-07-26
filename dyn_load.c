@@ -45,9 +45,9 @@
 # endif
 
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32)) && !defined(PCR)
-#if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && !defined(MSWIN32) && !defined(ALPHA) && !defined(HP_PA)
- --> We only know how to find data segments of dynamic libraries under SunOS,
- --> IRIX5, DRSNX and Win32.  Additional SVR4 variants might not be too
+#if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && !defined(MSWIN32) && !(defined(ALPHA) && defined(OSF1)) &&!defined(HP_PA) && (!defined(LINUX) && !defined(__ELF__))
+ --> We only know how to find data segments of dynamic libraries for the
+ --> above.  Additional SVR4 variants might not be too
  --> hard to add.
 #endif
 
@@ -158,8 +158,7 @@ static ptr_t GC_first_common()
 
 # if defined(SUNOS4) || defined(SUNOS5DL)
 /* Add dynamic library data sections to the root set.		*/
-# if !defined(PCR) && !defined(SOLARIS_THREADS) && defined(THREADS) \
-	&& !defined(MIT_PTHREADS) && !defined(DEC_PTHREADS)
+# if !defined(PCR) && !defined(SOLARIS_THREADS) && defined(THREADS)
 #   ifndef SRC_M3
 	--> fix mutual exclusion with dlopen
 #   endif  /* We assume M3 programs don't call dlopen for now */
@@ -252,16 +251,95 @@ void GC_register_dynamic_libraries()
 
 # endif /* SUNOS */
 
+#if defined(LINUX) && defined(__ELF__)
+
+/* Dynamic loading code for Linux running ELF. Somewhat tested on
+ * Linux/x86, untested but hopefully should work on Linux/Alpha. 
+ * This code was derived from the Solaris/ELF support. Thanks to
+ * whatever kind soul wrote that.  - Patrick Bridges */
+
+#include <elf.h>
+#include <link.h>
+
+/* Newer versions of Linux/Alpha and Linux/x86 define this macro.  We
+ * define it for those older versions that don't.  */
+#  ifndef ElfW
+#    if ELF_CLASS == ELFCLASS32
+#      define ElfW(type) Elf32_##type
+#    else
+#      define ElfW(type) Elf64_##type
+#    endif
+#  endif
+
+static struct link_map *
+GC_FirstDLOpenedLinkMap()
+{
+    extern ElfW(Dyn) _DYNAMIC[];
+    ElfW(Dyn) *dp;
+    struct r_debug *r;
+    static struct link_map *cachedResult = 0;
+
+    if( cachedResult == 0 ) {
+        int tag;
+        for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {
+            if( tag == DT_DEBUG ) {
+                struct link_map *lm
+                        = ((struct r_debug *)(dp->d_un.d_ptr))->r_map;
+                if( lm != 0 ) cachedResult = lm->l_next; /* might be NIL */
+                break;
+            }
+        }
+    }
+    return cachedResult;
+}
+
+
+void GC_register_dynamic_libraries()
+{
+  struct link_map *lm = GC_FirstDLOpenedLinkMap();
+  
+
+  for (lm = GC_FirstDLOpenedLinkMap();
+       lm != (struct link_map *) 0;  lm = lm->l_next)
+    {
+	ElfW(Ehdr) * e;
+        ElfW(Phdr) * p;
+        unsigned long offset;
+        char * start;
+        register int i;
+        
+	e = (ElfW(Ehdr) *) lm->l_addr;
+        p = ((ElfW(Phdr) *)(((char *)(e)) + e->e_phoff));
+        offset = ((unsigned long)(lm->l_addr));
+        for( i = 0; i < (int)(e->e_phnum); ((i++),(p++)) ) {
+          switch( p->p_type ) {
+            case PT_LOAD:
+              {
+                if( !(p->p_flags & PF_W) ) break;
+                start = ((char *)(p->p_vaddr)) + offset;
+                GC_add_roots_inner(start, start + p->p_memsz, TRUE);
+              }
+              break;
+            default:
+              break;
+          }
+	}
+    }
+}
+
+#endif
+
 #ifdef IRIX5
 
 #include <sys/procfs.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <elf.h>
+#include <errno.h>
 
 extern void * GC_roots_present();
 
-extern ptr_t GC_scratch_end_ptr;   /* End of GC_scratch_alloc arena	*/
+extern ptr_t GC_scratch_last_end_ptr; /* End of GC_scratch_alloc arena	*/
 
 /* We use /proc to track down all parts of the address space that are	*/
 /* mapped by the process, and throw out regions we know we shouldn't	*/
@@ -277,7 +355,8 @@ void GC_register_dynamic_libraries()
     register long flags;
     register ptr_t start;
     register ptr_t limit;
-    ptr_t heap_end = (ptr_t)DATASTART;
+    ptr_t heap_start = (ptr_t)HEAP_START;
+    ptr_t heap_end = heap_start;
 
     if (fd < 0) {
       sprintf(buf, "/proc/%d", getpid());
@@ -287,6 +366,7 @@ void GC_register_dynamic_libraries()
       }
     }
     if (ioctl(fd, PIOCNMAP, &needed_sz) < 0) {
+	GC_err_printf2("fd = %d, errno = %d\n", fd, errno);
     	ABORT("/proc PIOCNMAP ioctl failed");
     }
     if (needed_sz >= current_sz) {
@@ -295,12 +375,13 @@ void GC_register_dynamic_libraries()
         addr_map = (prmap_t *)GC_scratch_alloc(current_sz * sizeof(prmap_t));
     }
     if (ioctl(fd, PIOCMAP, addr_map) < 0) {
+	GC_err_printf2("fd = %d, errno = %d\n", fd, errno);
     	ABORT("/proc PIOCMAP ioctl failed");
     };
     if (GC_n_heap_sects > 0) {
     	heap_end = GC_heap_sects[GC_n_heap_sects-1].hs_start
     			+ GC_heap_sects[GC_n_heap_sects-1].hs_bytes;
-    	if (heap_end < GC_scratch_end_ptr) heap_end = GC_scratch_end_ptr; 
+    	if (heap_end < GC_scratch_last_end_ptr) heap_end = GC_scratch_last_end_ptr; 
     }
     for (i = 0; i < needed_sz; i++) {
         flags = addr_map[i].pr_mflags;
@@ -313,7 +394,7 @@ void GC_register_dynamic_libraries()
           /* This makes no sense to me.	- HB				*/
         start = (ptr_t)(addr_map[i].pr_vaddr);
         if (GC_roots_present(start)) goto irrelevant;
-        if (start < heap_end && start >= (ptr_t)DATASTART)
+        if (start < heap_end && start >= heap_start)
         	goto irrelevant;
         limit = start + addr_map[i].pr_size;
 	if (addr_map[i].pr_off == 0 && strncmp(start, ELFMAG, 4) == 0) {
@@ -347,6 +428,10 @@ void GC_register_dynamic_libraries()
         GC_add_roots_inner(start, limit, TRUE);
       irrelevant: ;
     }
+    /* Dont keep cached descriptor, for now.  Some kernels don't like us */
+    /* to keep a /proc file descriptor around during kill -9.		 */
+    	if (close(fd) < 0) ABORT("Couldnt close /proc file");
+	fd = -1;
 }
 
 #endif  /* IRIX5 */
@@ -363,6 +448,10 @@ void GC_register_dynamic_libraries()
   DWORD GC_allocation_granularity;
   
   extern bool GC_is_heap_base (ptr_t p);
+
+# ifdef WIN32_THREADS
+    extern void GC_get_next_stack(char *start, char **lo, char **hi);
+# endif
   
   void GC_cond_add_roots(char *base, char * limit)
   {
@@ -370,11 +459,27 @@ void GC_register_dynamic_libraries()
     char * stack_top
            = (char *) ((word)(&dummy) & ~(GC_allocation_granularity-1));
     if (base == limit) return;
-    if (limit > stack_top && base < GC_stackbottom) {
-    	/* Part of the stack; ignore it. */
-    	return;
+#   ifdef WIN32_THREADS
+    {
+        char * curr_base = base;
+	char * next_stack_lo;
+	char * next_stack_hi;
+	
+	for(;;) {
+	    GC_get_next_stack(curr_base, &next_stack_lo, &next_stack_hi);
+	    if (next_stack_lo >= limit) break;
+	    GC_add_roots_inner(curr_base, next_stack_lo, TRUE);
+	    curr_base = next_stack_hi;
+	}
+	if (curr_base < limit) GC_add_roots_inner(curr_base, limit);
     }
-    GC_add_roots_inner(base, limit, TRUE);
+#   else
+        if (limit > stack_top && base < GC_stackbottom) {
+    	    /* Part of the stack; ignore it. */
+    	    return;
+        }
+        GC_add_roots_inner(base, limit, TRUE);
+#   endif
   }
   
   extern bool GC_win32s;
@@ -420,7 +525,7 @@ void GC_register_dynamic_libraries()
 
 #endif /* MSWIN32 */
 
-#if defined(ALPHA)
+#if defined(ALPHA) && defined(OSF1)
 
 #include <loader.h>
 
@@ -527,13 +632,10 @@ void GC_register_dynamic_libraries()
 #if defined(HP_PA)
 
 #include <dl.h>
-#include <errno.h>
 
-#ifndef MIT_PTHREADS
 extern int errno;
 extern char *sys_errlist[];
 extern int sys_nerr;
-#endif
 
 void GC_register_dynamic_libraries()
 {
@@ -556,7 +658,7 @@ void GC_register_dynamic_libraries()
                     GC_printf1("dynamic_load: %s\n", (long) sys_errlist[errno]);
               } else {
                     GC_printf1("dynamic_load: %d\n", (long) errno);
-              }
+	      }
               ABORT("shl_get failed");
           }
         }
@@ -566,7 +668,7 @@ void GC_register_dynamic_libraries()
           GC_printf1("\tfilename        = \"%s\"\n", shl_desc->filename);
           GC_printf1("\tindex           = %d\n", index);
           GC_printf1("\thandle          = %08x\n",
-                                        (unsigned long) shl_desc->handle);
+					(unsigned long) shl_desc->handle);
           GC_printf1("\ttext seg. start = %08x\n", shl_desc->tstart);
           GC_printf1("\ttext seg. end   = %08x\n", shl_desc->tend);
           GC_printf1("\tdata seg. start = %08x\n", shl_desc->dstart);
@@ -576,86 +678,12 @@ void GC_register_dynamic_libraries()
 
       /* register shared library's data segment as a garbage collection root */
         GC_add_roots_inner((char *) shl_desc->dstart,
-                           (char *) shl_desc->dend, TRUE);
+			   (char *) shl_desc->dend, TRUE);
 
         index++;
     }
 }
 #endif /* HP_PA */
-
-
-#if defined(MIT_PTHREADS) || defined(DEC_PTHREADS)
-#ifdef HP_PA
-
-  /* We're going to protect the lot, since there is evidence    */
-  /* that dlopen() isn't the only place where things can break. */
-
-#undef shl_load
-#undef shl_findsym
-#undef shl_unload
-
-# define GC_DL_DEF(RTYPE, PROTO, FUNC) RTYPE PROTO \
-   { RTYPE result; pthread_mutex_lock(&GC_allocate_ml);  result= FUNC; \
-     pthread_mutex_unlock(&GC_allocate_ml); return (result); }
-GC_DL_DEF(shl_t, GC_shl_load(const char *path, int flags, long address), shl_load(path, flags, address))
-GC_DL_DEF(int  , GC_shl_findsym(shl_t *handle, const char *sym, short type, void *value),
-                                                      shl_findsym(handle, sym, type, value))
-GC_DL_DEF(int  , GC_shl_unload(shl_t handle), shl_unload(handle))
-
-  /* unfortunately, MIT PThreads and dynamic loading on HPUX
-     causes programs to hang (not just for the GC);
-     we keep everything in but define some null-op stubs;
-     makes it easier to fix when pthreads is fixed */
-
-  shl_t shl_load(const char *path, int flags, long address)
-  {
-   return NULL;
-  }
-
-  int shl_findsym(shl_t *handle, const char *symname, short type, void *value)
-  {
-   return -1;
-  }
-
-  int shl_unload(shl_t handle)
-  {
-   return -1;
-  }
-
-  int shl_get(int index, struct shl_descriptor **desc)
-  {
-   errno = EINVAL;
-   return -1;
-  }
-
-# define shl_load    GC_shl_load
-# define shl_findsym GC_shl_findsym
-# define shl_unload  GC_shl_unload
-
-#else
-  /* We're going to protect the lot, since there is evidence    */
-  /* that dlopen() isn't the only place where things can break. */
-
-#undef dlopen
-#undef dlsym
-#undef dlclose
-#undef dlerror
-
-# define GC_DL_DEF(RTYPE, PROTO, FUNC) RTYPE PROTO \
-   { RTYPE result; pthread_mutex_lock(&GC_allocate_ml);  result= FUNC; \
-     pthread_mutex_unlock(&GC_allocate_ml); return (result); }
-GC_DL_DEF(void *, GC_dlopen(const char *path, int mode), dlopen(path, mode))
-GC_DL_DEF(void *, GC_dlsym(void *handle, const char *symbol),
-                                                      dlsym(handle, symbol))
-GC_DL_DEF(int   , GC_dlclose(void *handle), dlclose(handle))
-GC_DL_DEF(char *, GC_dlerror(), dlerror())
-
-# define dlopen  GC_dlopen
-# define dlsym   GC_dlsym
-# define dlclose GC_dlclose
-# define dlerror GC_dlerror
-#endif
-#endif /* PTHREADS */
 
 
 #else /* !DYNAMIC_LOADING */

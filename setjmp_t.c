@@ -36,7 +36,7 @@ getpagesize()
 }
 #endif
 
-#if defined(SUNOS5) || defined(DRSNX)
+#if defined(SVR4)
 #include <unistd.h>
 int
 getpagesize()

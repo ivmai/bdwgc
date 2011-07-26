@@ -356,6 +356,21 @@ GC_PTR p;
     }
 #   ifdef FIND_LEAK
         GC_free(base);
+#   else
+	{
+	    register hdr * hhdr = HDR(p);
+	    bool uncollectable = FALSE;
+
+	    if (hhdr ->  hb_obj_kind == UNCOLLECTABLE) {
+		uncollectable = TRUE;
+	    }
+#	    ifdef ATOMIC_UNCOLLECTABLE
+		if (hhdr ->  hb_obj_kind == AUNCOLLECTABLE) {
+		    uncollectable = TRUE;
+		}
+#	    endif
+	    if (uncollectable) GC_free(base);
+	}
 #   endif
 }
 
@@ -401,6 +416,9 @@ GC_PTR p;
       case PTRFREE:
         result = GC_debug_malloc_atomic(lb, s, i);
         break;
+      case UNCOLLECTABLE:
+	result = GC_debug_malloc_uncollectable(lb, s, i);
+ 	break;
       default:
         GC_err_printf0("GC_debug_realloc: encountered bad kind\n");
         ABORT("bad kind");
@@ -497,3 +515,51 @@ struct closure {
     (*(cl -> cl_fn))((GC_PTR)((char *)obj + sizeof(oh)), cl -> cl_data);
 } 
 
+
+# ifdef __STDC__
+    void GC_debug_register_finalizer(GC_PTR obj, GC_finalization_proc fn,
+    				     GC_PTR cd, GC_finalization_proc *ofn,
+				     GC_PTR *ocd)
+# else
+    void GC_debug_register_finalizer(obj, fn, cd, ofn, ocd)
+    GC_PTR obj;
+    GC_finalization_proc fn;
+    GC_PTR cd;
+    GC_finalization_proc *ofn;
+    GC_PTR *ocd;
+# endif
+{
+    ptr_t base = GC_base(obj);
+    if (0 == base || (ptr_t)obj - base != sizeof(oh)) {
+        GC_err_printf1(
+	    "GC_register_finalizer called with non-base-pointer 0x%lx\n",
+	    obj);
+    }
+    GC_register_finalizer(base, GC_debug_invoke_finalizer,
+    			  GC_make_closure(fn,cd), ofn, ocd);
+}
+
+# ifdef __STDC__
+    void GC_debug_register_finalizer_ignore_self
+    				    (GC_PTR obj, GC_finalization_proc fn,
+    				     GC_PTR cd, GC_finalization_proc *ofn,
+				     GC_PTR *ocd)
+# else
+    void GC_debug_register_finalizer_ignore_self
+    				    (obj, fn, cd, ofn, ocd)
+    GC_PTR obj;
+    GC_finalization_proc fn;
+    GC_PTR cd;
+    GC_finalization_proc *ofn;
+    GC_PTR *ocd;
+# endif
+{
+    ptr_t base = GC_base(obj);
+    if (0 == base || (ptr_t)obj - base != sizeof(oh)) {
+        GC_err_printf1(
+	    "GC_register_finalizer_ignore_self called with non-base-pointer 0x%lx\n",
+	    obj);
+    }
+    GC_register_finalizer_ignore_self(base, GC_debug_invoke_finalizer,
+    			  	      GC_make_closure(fn,cd), ofn, ocd);
+}

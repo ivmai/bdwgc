@@ -39,12 +39,18 @@
 #	ifdef SOLARIS_THREADS
 	  mutex_t GC_allocate_ml;	/* Implicitly initialized.	*/
 #	else
-#         if defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
-            pthread_mutex_t GC_allocate_ml;
-            int GC_pt_init_ok= 0;
-#         else
-          --> declare allocator lock here
-#         endif
+#          ifdef WIN32_THREADS
+	      GC_API CRITICAL_SECTION GC_allocate_ml;
+#          else
+#             ifdef IRIX_THREADS
+#		ifdef UNDEFINED
+		    pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
+#		endif
+	        pthread_t GC_lock_holder = NO_THREAD;
+#	      else
+	        --> declare allocator lock here
+#	      endif
+#	   endif
 #	endif
 #     endif
 #   endif
@@ -63,6 +69,14 @@ ptr_t GC_stackbottom = 0;
 bool GC_dont_gc = 0;
 
 bool GC_quiet = 0;
+
+/*ARGSUSED*/
+void * GC_default_oom_fn GC_PROTO((size_t bytes_requested))
+{
+    return(0);
+}
+
+void * (*GC_oom_fn) GC_PROTO((size_t bytes_requested)) = GC_default_oom_fn;
 
 extern signed_word GC_mem_found;
 
@@ -208,7 +222,7 @@ word limit;
     }
     /* Make sure the recursive call is not a tail call, and the bzero	*/
     /* call is not recognized as dead code.				*/
-    GC_noop(dummy);
+    GC_noop1((word)dummy);
     return(arg);
 }
 #endif
@@ -222,9 +236,10 @@ ptr_t GC_clear_stack(arg)
 ptr_t arg;
 {
     register word sp = (word)GC_approx_sp();  /* Hotter than actual sp */
-    register word limit;
 #   ifdef THREADS
         word dummy[CLEAR_SIZE];;
+#   else
+    	register word limit;
 #   endif
     
 #   define SLOP 400
@@ -294,12 +309,9 @@ ptr_t arg;
     register word limit;
     
     r = (word)p;
+    if (!GC_is_initialized) return 0;
     h = HBLKPTR(r);
     GET_BI(r, bi);
-    if (bi == 0) {
-        /* Collector uninitialized. Nothing allocated yet. */
-        return(0);
-    }
     candidate_hdr = HDR_FROM_BI(bi, r);
     if (candidate_hdr == 0) return(0);
     /* If it's a pointer to the middle of a large object, move it	*/
@@ -381,17 +393,6 @@ void GC_init()
 {
     DCL_LOCK_STATE;
     
-# ifdef DEC_PTHREADS
-    /* initialise the DECthreads support */
-    {
-      pthread_mutexattr_t attr;
-      pthread_mutexattr_create(&attr);
-      pthread_mutexattr_setkind_np(&attr, MUTEX_RECURSIVE_NP);
-      pthread_mutex_init(&GC_allocate_ml, attr);
-      GC_pt_init();
-    }
-# endif
-
     DISABLE_SIGNALS();
     LOCK();
     GC_init_inner();
@@ -404,32 +405,29 @@ void GC_init()
     extern void GC_init_win32();
 #endif
 
+#if defined(SOLARIS_THREADS) || defined(IRIX_THREADS)
+    extern void GC_thr_init();
+#endif
+
 void GC_init_inner()
 {
-    word dummy;
+#   ifndef THREADS
+        word dummy;
+#   endif
     
     if (GC_is_initialized) return;
-#ifdef MIT_PTHREADS
-    /* We need to beat the GC to initialisation, so that it doesn't
-       hang when it first tries to use the allocator lock. */
-    {
-      pthread_mutexattr_t attr;
-      extern void *pthread_initial;
-      if (!pthread_initial) pthread_init();
-      pthread_mutexattr_init(&attr);
-      pthread_mutexattr_settype(&attr, PTHREAD_MUTEXTYPE_RECURSIVE);
-      pthread_mutex_init(&GC_allocate_ml, &attr);
-      if (!GC_pt_init_ok) GC_pt_init();  /* faut eviter cela... */
-    }
-#endif
 #   ifdef MSWIN32
  	GC_init_win32();
 #   endif
 #   ifdef SOLARIS_THREADS
+	GC_thr_init();
 	/* We need dirty bits in order to find live stack sections.	*/
         GC_dirty_init();
 #   endif
-#   if !defined(THREADS) || defined(SOLARIS_THREADS)
+#   ifdef IRIX_THREADS
+	GC_thr_init();
+#   endif
+#   if !defined(THREADS) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || defined(IRIX_THREADS)
       if (GC_stackbottom == 0) {
 	GC_stackbottom = GC_get_stack_base();
       }
@@ -542,8 +540,6 @@ void GC_init_inner()
 
 void GC_enable_incremental GC_PROTO(())
 {
-  /* this is broken under DECthreads */
-#ifndef DEC_PTHREADS
     DCL_LOCK_STATE;
     
 # ifndef FIND_LEAK
@@ -582,7 +578,6 @@ out:
     UNLOCK();
     ENABLE_SIGNALS();
 # endif
-#endif /* DEC_PTHREADS */
 }
 
 

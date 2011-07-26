@@ -12,7 +12,7 @@
  *
  * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
-/* Boehm, October 4, 1994 5:34 pm PDT */
+/* Boehm, October 5, 1995 4:20 pm PDT */
  
 /*
  * Cords are immutable character strings.  A number of operations
@@ -200,7 +200,7 @@ extern void (* CORD_oom_fn)(void);
 void CORD_dump(CORD x);
 
 /* The following could easily be implemented by the client.  They are	*/
-/* provided in cord_xtra.c for convenience.				*/
+/* provided in cordxtra.c for convenience.				*/
 
 /* Concatenate a character to the end of a cord.	*/
 CORD CORD_cat_char(CORD x, char c);
@@ -259,6 +259,10 @@ CORD CORD_from_file_lazy(FILE * f);
 /* Turn a cord into a C string.	The result shares no structure with	*/
 /* x, and is thus modifiable.						*/
 char * CORD_to_char_star(CORD x);
+
+/* Turn a C string into a CORD.  The C string is copied, and so may	*/
+/* subsequently be modified.						*/
+CORD CORD_from_char_star(const char *s);
 
 /* Identical to the above, but the result may share structure with	*/
 /* the argument and is thus not modifiable.				*/

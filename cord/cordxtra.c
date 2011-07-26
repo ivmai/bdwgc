@@ -224,11 +224,23 @@ int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
 char * CORD_to_char_star(CORD x)
 {
     register size_t len = CORD_len(x);
-    char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
+    char * result = GC_MALLOC_ATOMIC(len + 1);
     
     if (result == 0) OUT_OF_MEMORY;
     CORD_fill_buf(x, 0, len, result);
     result[len] = '\0';
+    return(result);
+}
+
+CORD CORD_from_char_star(const char *s)
+{
+    char * result;
+    size_t len = strlen(s);
+
+    if (0 == len) return(CORD_EMPTY);
+    result = GC_MALLOC_ATOMIC(len + 1);
+    if (result == 0) OUT_OF_MEMORY;
+    memcpy(result, s, len+1);
     return(result);
 }
 

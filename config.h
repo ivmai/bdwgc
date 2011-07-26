@@ -1,6 +1,7 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -11,7 +12,6 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, December 7, 1995 10:03 am PST */
  
 #ifndef CONFIG_H
 
@@ -53,7 +53,7 @@
 #	define ULTRIX
 #    else
 #	if defined(_SYSTYPE_SVR4) || defined(SYSTYPE_SVR4) || defined(__SYSTYPE_SVR4__)
-#	  define IRIX5
+#	  define IRIX5   /* or IRIX 6.X */
 #	else
 #	  define RISCOS  /* or IRIX 4.X */
 #	endif
@@ -119,8 +119,13 @@
 #    define LINUX
 #    define mach_type_known
 # endif
-# if defined(__alpha)
+# if defined(__alpha) || defined(__alpha__)
 #   define ALPHA
+#   if defined(linux) || defined(__linux__)
+#     define LINUX
+#   else
+#     define OSF1	/* a.k.a Digital Unix */
+#   endif
 #   define mach_type_known
 # endif
 # if defined(_AMIGA)
@@ -188,10 +193,19 @@
 #   define DJGPP  /* MSDOS running the DJGPP port of GCC */
 #   define mach_type_known
 # endif
+# if defined(__CYGWIN32__)
+#   define I386
+#   define CYGWIN32
+#   define mach_type_known
+# endif
 # if defined(__BORLANDC__)
 #   define I386
 #   define MSWIN32
 #   define mach_type_known
+# endif
+# if defined(_UTS) && !defined(mach_type_known)
+#   define S370
+#   define UTS4
 # endif
 
 /* Feel free to add more clauses here */
@@ -225,9 +239,12 @@
 		    /*		   SPARC      ==> SPARC under SunOS	*/
 		    /*			(SUNOS4, SUNOS5,		*/
 		    /*			 DRSNX variants)		*/
-		    /* 		   ALPHA      ==> DEC Alpha OSF/1	*/
+		    /* 		   ALPHA      ==> DEC Alpha 		*/
+		    /*			(OSF1 and LINUX variants)	*/
 		    /* 		   M88K       ==> Motorola 88XX0        */
 		    /* 		        (CX_UX and DGUX)		*/
+		    /* 		   S370	      ==> 370-like machine	*/
+		    /* 			running Amdahl UTS4		*/
 
 
 /*
@@ -249,7 +266,12 @@
  *
  * DATASTART is the beginning of the data segment.
  * On UNIX systems, the collector will scan the area between DATASTART
- * and &end for root pointers.
+ * and DATAEND for root pointers.
+ *
+ * DATAEND, if not &end.
+ *
+ * ALIGN_DOUBLE of GC_malloc should return blocks aligned to twice
+ * the pointer size.
  *
  * STACKBOTTOM is the cool end of the stack, which is usually the
  * highest address in the stack.
@@ -417,6 +439,7 @@
 # ifdef SPARC
 #   define MACH_TYPE "SPARC"
 #   define ALIGNMENT 4	/* Required by hardware	*/
+#   define ALIGN_DOUBLE
     extern int etext;
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
@@ -491,6 +514,16 @@
 #       define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
 #	define STACKBOTTOM ((ptr_t)0xc0000000)
 #	define MPROTECT_VDB
+#       ifdef __ELF__
+#            define DYNAMIC_LOADING
+#       endif
+#   endif
+#   ifdef CYGWIN32
+#       define OS_TYPE "CYGWIN32"
+        extern int _bss_start__;
+#       define DATASTART       ((ptr_t)&_bss_start__)
+        extern int _data_end__;
+#       define DATAEND          ((ptr_t)&_data_end__)
 #   endif
 #   ifdef OS2
 #	define OS_TYPE "OS2"
@@ -511,6 +544,7 @@
         extern int etext;
 #       define DATASTART ((ptr_t)(&etext))
 #       define STACKBOTTOM ((ptr_t)0x00080000)
+		/* This may not be right.  It's rumored to vary. */
 #   endif
 #   ifdef FREEBSD
 #	define OS_TYPE "FREEBSD"
@@ -553,25 +587,49 @@
 
 # ifdef MIPS
 #   define MACH_TYPE "MIPS"
-#   define ALIGNMENT 4	/* Required by hardware	*/
-#   define DATASTART 0x10000000
+#   ifndef IRIX5
+#     define DATASTART (ptr_t)0x10000000
 			      /* Could probably be slightly higher since */
-			      /* startup code allocates lots of junk     */
+			      /* startup code allocates lots of stuff.   */
+#   else
+      extern int _fdata;
+#     define DATASTART ((ptr_t)(&_fdata))
+#     ifdef USE_MMAP
+#         define HEAP_START (ptr_t)0x40000000
+#     else
+#	  define HEAP_START DATASTART
+#     endif
+			      /* Lowest plausible heap address.		*/
+			      /* In the MMAP case, we map there.	*/
+			      /* In either case it is used to identify	*/
+			      /* heap sections so they're not 		*/
+			      /* considered as roots.			*/
+#   endif /* IRIX5 */
 #   define HEURISTIC2
+/* #   define STACKBOTTOM ((ptr_t)0x7fff8000)  sometimes also works.  */
 #   ifdef ULTRIX
 #	define OS_TYPE "ULTRIX"
+#       define ALIGNMENT 4
 #   endif
 #   ifdef RISCOS
 #	define OS_TYPE "RISCOS"
+#   	define ALIGNMENT 4  /* Required by hardware */
 #   endif
 #   ifdef IRIX5
 #	define OS_TYPE "IRIX5"
-#	define MPROTECT_VDB
-		/* The above is dubious.  Mprotect and signals do work,	*/
-		/* and dirty bits are implemented under IRIX5.  But,	*/
-		/* at least under IRIX5.2, mprotect seems to be so	*/
-		/* slow relative to the hardware that incremental	*/
-		/* collection is likely to be rarely useful.		*/
+#       ifndef IRIX_THREADS
+#	    define MPROTECT_VDB
+#       endif
+#       ifdef _MIPS_SZPTR
+#	  define CPP_WORDSZ _MIPS_SZPTR
+#	  define ALIGNMENT (_MIPS_SZPTR/8)
+#	  if CPP_WORDSZ != 64
+#	    define ALIGN_DOUBLE
+#	  endif
+#	else
+#         define ALIGNMENT 4
+#	  define ALIGN_DOUBLE
+#	endif
 #	define DYNAMIC_LOADING
 #   endif
 # endif
@@ -589,6 +647,7 @@
 # ifdef HP_PA
 #   define MACH_TYPE "HP_PA"
 #   define ALIGNMENT 4
+#   define ALIGN_DOUBLE
     extern int __data_start;
 #   define DATASTART ((ptr_t)(&__data_start))
 #   if 0
@@ -610,23 +669,46 @@
 # ifdef ALPHA
 #   define MACH_TYPE "ALPHA"
 #   define ALIGNMENT 8
-#   define DATASTART ((ptr_t) 0x140000000)
-#   ifndef DEC_PTHREADS
-#     define HEURISTIC2
+#   ifdef OSF1
+#	define OS_TYPE "OSF1"
+#   	define DATASTART ((ptr_t) 0x140000000)
+#   	define HEURISTIC2
 	/* Normally HEURISTIC2 is too conervative, since		*/
 	/* the text segment immediately follows the stack.		*/
 	/* Hence we give an upper pound.				*/
-      extern __start;
-#     define HEURISTIC2_LIMIT ((ptr_t)((word)(&__start) & ~(getpagesize()-1)))
+    	extern __start;
+#   	define HEURISTIC2_LIMIT ((ptr_t)((word)(&__start) & ~(getpagesize()-1)))
+#   	define CPP_WORDSZ 64
+#   	define MPROTECT_VDB
+#   	define DYNAMIC_LOADING
 #   endif
-#   define CPP_WORDSZ 64
-#   define MPROTECT_VDB
-#   define DYNAMIC_LOADING
+#   ifdef LINUX
+#       define OS_TYPE "LINUX"
+#       define CPP_WORDSZ 64
+#       define STACKBOTTOM ((ptr_t) 0x120000000)
+#       ifdef __ELF__
+            extern int __data_start;
+#           define DATASTART &__data_start
+#           define DYNAMIC_LOADING
+#       else
+#           define DATASTART ((ptr_t) 0x140000000)
+#       endif
+	extern int _end;
+#	define DATAEND (&_end)
+#       ifdef __ELF__
+#           define DYNAMIC_LOADING
+#       endif
+	/* As of 1.3.90, I couldn't find a way to retrieve the correct	*/
+	/* fault address from a signal handler.				*/
+	/* Hence MPROTECT_VDB is broken.				*/
+#   endif
 # endif
 
 # ifdef M88K
 #   define MACH_TYPE "M88K"
 #   define ALIGNMENT 4
+#   define ALIGN_DOUBLE
+    extern int etext;
 #   ifdef CX_UX
 #       define DATASTART ((((word)&etext + 0x3fffff) & ~0x3fffff) + 0x10000)
 #   endif
@@ -635,6 +717,19 @@
 #       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &etext)
 #   endif
 #   define STACKBOTTOM ((char*)0xf0000000) /* determined empirically */
+# endif
+
+# ifdef S370
+#   define MACH_TYPE "S370"
+#   define OS_TYPE "UTS4"
+#   define ALIGNMENT 4	/* Required by hardware	*/
+    extern int etext;
+	extern int _etext;
+	extern int _end;
+	extern char * GC_SysVGetDataStart();
+#       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &_etext)
+#	define DATAEND (&_end)
+#	define HEURISTIC2
 # endif
 
 # ifndef STACK_GROWS_UP
@@ -654,7 +749,7 @@
 #   define DATAEND (&end)
 # endif
 
-# if defined(SUNOS5) || defined(DRSNX)
+# if defined(SUNOS5) || defined(DRSNX) || defined(UTS4)
     /* OS has SVR4 generic features.  Probably others also qualify.	*/
 #   define SVR4
 # endif
@@ -697,8 +792,20 @@
 #   define DEFAULT_VDB
 # endif
 
+# if defined(IRIX_THREADS) && !defined(IRIX5)
+--> inconsistent configuration
+# endif
+# if defined(SOLARIS_THREADS) && !defined(SUNOS5)
+--> inconsistent configuration
+# endif
+# if defined(PCR) || defined(SRC_M3) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || defined(IRIX_THREADS)
+#   define THREADS
+# endif
+
 # if defined(SPARC)
 #   define SAVE_CALL_CHAIN
+#   define ASM_CLEAR_CODE	/* Stack clearing is crucial, and we 	*/
+				/* include assembly code to do it well.	*/
 # endif
 
 # endif

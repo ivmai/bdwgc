@@ -163,7 +163,7 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 	          continue;
 	      }
 	    }
-	    if ( kind != UNCOLLECTABLE &&
+	    if ( !IS_UNCOLLECTABLE(kind) &&
 	         (kind != PTRFREE || size_needed > MAX_BLACK_LIST_ALLOC)) {
 	      struct hblk * lasthbp = hbp;
 	      ptr_t search_end = (ptr_t)hbp + size_avail - size_needed;

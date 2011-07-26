@@ -275,18 +275,23 @@ static void restart_all_lwps()
     if (i >= MAX_LWPS) ABORT("Too many lwps");
 }
 
+bool GC_multithreaded = 0;
 
 void GC_stop_world()
 {
     preempt_off();
-    stop_all_lwps();
+    if (GC_multithreaded)
+        stop_all_lwps();
 }
 
 void GC_start_world()
 {
-    restart_all_lwps();
+    if (GC_multithreaded)
+        restart_all_lwps();
     preempt_on();
 }
+
+void GC_thr_init();
 
 bool GC_thr_initialized = FALSE;
 
@@ -364,7 +369,7 @@ void GC_old_stacks_are_fresh()
     register struct hblk * h;
     int dummy;
     
-    if (!GC_thr_initialized) GC_thr_init();
+    GC_thr_init();
     for (i = 0, sz= GC_min_stack_sz; i < N_FREE_LISTS;
          i++, sz *= 2) {
          for (p = GC_stack_free_lists[i]; p != 0; p = *(ptr_t *)p) {
@@ -511,7 +516,7 @@ void GC_push_all_stacks()
       } else { \
         GC_push_all_stack((bottom), (top)); \
       }
-    if (!GC_thr_initialized) GC_thr_init();
+    GC_thr_init();
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (p -> stack_size != 0) {
@@ -557,6 +562,7 @@ void * GC_thr_daemon(void * dummy)
             UNLOCK();
     	} else {
     	    t = GC_lookup_thread(departed);
+	    GC_multithreaded--;
     	    if (!(t -> flags & CLIENT_OWNS_STACK)) {
     	    	GC_stack_free(t -> stack, t -> stack_size);
     	    }
@@ -574,10 +580,11 @@ void * GC_thr_daemon(void * dummy)
 }
 
 /* We hold the allocation lock.	*/
-GC_thr_init()
+void GC_thr_init()
 {
     GC_thread t;
 
+    if (GC_thr_initialized) return;
     GC_thr_initialized = TRUE;
     GC_min_stack_sz = ((thr_min_stack() + 128*1024 + HBLKSIZE-1)
     		       & ~(HBLKSIZE - 1));
@@ -587,7 +594,7 @@ GC_thr_init()
     /* Add the initial thread, so we can stop it.	*/
       t = GC_new_thread(thr_self());
       t -> stack_size = 0;
-      t -> flags = DETACHED;
+      t -> flags = DETACHED | CLIENT_OWNS_STACK;
     if (thr_create(0 /* stack */, 0 /* stack_size */, GC_thr_daemon,
     		   0 /* arg */, THR_DETACHED | THR_DAEMON,
     		   0 /* thread_id */) != 0) {
@@ -698,7 +705,8 @@ GC_thr_create(void *stack_base, size_t stack_size,
     void * stack = stack_base;
    
     LOCK();
-    if (!GC_thr_initialized) GC_thr_init();
+    GC_thr_init();
+    GC_multithreaded++;
     if (stack == 0) {
      	if (stack_size == 0) stack_size = GC_min_stack_sz;
      	stack = (void *)GC_stack_alloc(&stack_size);
@@ -721,8 +729,11 @@ GC_thr_create(void *stack_base, size_t stack_size,
         t -> stack_size = stack_size;
         if (new_thread != 0) *new_thread = my_new_thread;
         cond_signal(&GC_create_cv);
-    } else if (!(my_flags & CLIENT_OWNS_STACK)) {
-      	GC_stack_free(stack, stack_size);
+    } else {
+	GC_multithreaded--;
+        if (!(my_flags & CLIENT_OWNS_STACK)) {
+      	    GC_stack_free(stack, stack_size);
+	}
     }        
     UNLOCK();  
     return(result);

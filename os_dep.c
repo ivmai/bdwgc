@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, February 7, 1996 11:09 am PST */
+/* Boehm, March 8, 1996 12:00 pm PST */
 
 # include "gc_priv.h"
 # ifdef LINUX
@@ -19,11 +19,7 @@
     /* in some later Linux releases, asm/sigcontext.h may have to	*/
     /* be included instead.						*/
 #   define __KERNEL__
-#   ifndef MIT_PTHREADS
-#     include <asm/signal.h>
-#   else
-#     include <asm/sigcontext.h>
-#   endif
+#   include <asm/signal.h>
 #   undef __KERNEL__
 # endif
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS)
@@ -39,29 +35,16 @@
 #   define NEED_FIND_LIMIT
 # endif
 
+# if defined(IRIX_THREADS)
+#   define NEED_FIND_LIMIT
+# endif
+
 # if (defined(SUNOS4) & defined(DYNAMIC_LOADING)) && !defined(PCR)
 #   define NEED_FIND_LIMIT
 # endif
 
 # if (defined(SVR4) || defined(AUX) || defined(DGUX)) && !defined(PCR)
 #   define NEED_FIND_LIMIT
-# endif
-
-# if defined(MIT_PTHREADS)
-#   define NEED_FIND_LIMIT
-#   if defined (ALPHA)
-      extern void (*signal(int sig, void (*function)(int)))(int);
-      /* Get a definition for struct sigcontext, which the pthreads    */
-      /* headers fail to define.  Temporarily define _KERNEL to avoid  */
-      /* a redefinition of sig_atomic_t.                               */
-#     define _KERNEL
-#     include <machine/signal.h>
-#     undef _KERNEL
-#   endif
-    /* Provide the usual definition for signal(), which the pthreads  */
-    /* headers again fail to define.  (This may be an incorrect       */
-    /* assumption on some architectures!)                             */
-    extern void (*signal(int sig, void (*function)(int)))(int);
 # endif
 
 #ifdef NEED_FIND_LIMIT
@@ -91,6 +74,11 @@
 
 #ifdef IRIX5
 # include <sys/uio.h>
+# include <sys/types.h>
+# include <sys/mman.h>
+# include <sys/stat.h>
+# include <fcntl.h>
+# include <malloc.h>	/* for locking */
 #endif
 
 #ifdef SUNOS5SIGS
@@ -102,10 +90,22 @@
 # define jmp_buf sigjmp_buf
 #endif
 
+#ifdef DJGPP
+  /* Apparently necessary for djgpp 2.01.  May casuse problems with	*/
+  /* other versions.							*/
+  typedef caddr_t long unsigned int;
+#endif
+
 #ifdef PCR
 # include "il/PCR_IL.h"
 # include "th/PCR_ThCtl.h"
 # include "mm/PCR_MM.h"
+#endif
+
+#if defined(PROT_EXEC) && !defined(NO_EXECUTE_PERMISSION)
+# define OPT_PROT_EXEC PROT_EXEC
+#else
+# define OPT_PROT_EXEC 0
 #endif
 
 # ifdef OS2
@@ -214,7 +214,7 @@ void GC_enable_signals(void)
 #  if !defined(PCR) && !defined(AMIGA) && !defined(MSWIN32) \
       && !defined(MACOS) && !defined(DJGPP)
 
-#   ifdef sigmask
+#   if defined(sigmask) && !defined(UTS4)
 	/* Use the traditional BSD interface */
 #	define SIGSET_T int
 #	define SIG_DEL(set, signal) (set) &= ~(sigmask(signal))
@@ -417,7 +417,7 @@ ptr_t GC_get_stack_base()
         static handler old_segv_handler, old_bus_handler;
 #   endif
     
-    GC_setup_temporary_fault_handler()
+    void GC_setup_temporary_fault_handler()
     {
 #	ifdef SUNOS5SIGS
 	  struct sigaction	act;
@@ -440,7 +440,7 @@ ptr_t GC_get_stack_base()
 #	endif
     }
     
-    GC_reset_fault_handler()
+    void GC_reset_fault_handler()
     {
 #       ifdef SUNOS5SIGS
 	  (void) sigaction(SIGSEGV, &oldact, 0);
@@ -475,7 +475,7 @@ ptr_t GC_get_stack_base()
  	        } else {
 		    result -= MIN_PAGE_SIZE;
  	        }
-		GC_noop(*result);
+		GC_noop1((word)(*result));
 	    }
 	}
 	GC_reset_fault_handler();
@@ -860,10 +860,18 @@ void GC_register_data_segments()
 			   (ptr_t)LMGetCurrentA5(), FALSE);
 #   else
 #     if defined(__MWERKS__)
-	extern long __datastart, __dataend;
-	GC_add_roots_inner((ptr_t)&__datastart, (ptr_t)&__dataend, FALSE);
-#     endif
-#   endif
+#       if !__POWERPC__
+	  extern void* GC_MacGetDataStart(void);
+	  /* globals begin above stack and end at a5. */
+	  GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
+          		     (ptr_t)LMGetCurrentA5(), FALSE);
+#       else
+	  extern char __data_start__[], __data_end__[];
+	  GC_add_roots_inner((ptr_t)&__data_start__,
+	  		     (ptr_t)&__data_end__, FALSE);
+#       endif /* __POWERPC__ */
+#     endif /* __MWERKS__ */
+#   endif /* !THINK_C */
     }
 #   endif /* MACOS */
 
@@ -882,11 +890,9 @@ void GC_register_data_segments()
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
 	&& !defined(MSWIN32) && !defined(MACOS)
 
-#  if !defined(DEC_PTHREADS)
 extern caddr_t sbrk();
-#  endif
 # ifdef __STDC__
-#   define SBRK_ARG_T size_t
+#   define SBRK_ARG_T ptrdiff_t
 # else
 #   define SBRK_ARG_T int
 # endif
@@ -903,6 +909,7 @@ word bytes;
     SBRK_ARG_T lsbs = (word)cur_brk & (HBLKSIZE-1);
     static caddr_t my_brk_val = 0;
     
+    if ((SBRK_ARG_T)bytes < 0) return(0); /* too big */
     if (lsbs != 0) {
         if(sbrk(HBLKSIZE - lsbs) == (caddr_t)(-1)) return(0);
     }
@@ -919,24 +926,64 @@ word bytes;
     return((ptr_t)result);
 }
 
-#else
+#else  /* Not RS6000 */
+
+#if defined(USE_MMAP)
+/* Tested only under IRIX5 */
+
 ptr_t GC_unix_get_mem(bytes)
 word bytes;
 {
+    static bool initialized = FALSE;
+    static int fd;
+    void *result;
+    static ptr_t last_addr = HEAP_START;
+    static size_t page_size;
+
+    if (!initialized) {
+	fd = open("/dev/zero", O_RDONLY);
+	page_size = getpagesize();
+	initialized = TRUE;
+    }
+    result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
+		  MAP_PRIVATE | MAP_FIXED, fd, 0/* offset */);
+    if (result == MAP_FAILED) return(0);
+    last_addr = (ptr_t)result + bytes + page_size - 1;
+    last_addr = (ptr_t)((word)last_addr & ~(page_size - 1));
+    return((ptr_t)result);
+}
+
+#else /* Not RS6000, USE_MMAP */
+ptr_t GC_unix_get_mem(bytes)
+word bytes;
+{
+  caddr_t result;
+# ifdef IRIX5
+    /* Bare sbrk isn't thread safe.  Play by malloc rules.	*/
+    /* The equivalent may be needed on other systems as well. 	*/
+    __LOCK_MALLOC();
+# endif
+  {
     caddr_t cur_brk = sbrk(0);
-    caddr_t result;
     SBRK_ARG_T lsbs = (word)cur_brk & (HBLKSIZE-1);
     
+    if ((SBRK_ARG_T)bytes < 0) return(0); /* too big */
     if (lsbs != 0) {
         if(sbrk(HBLKSIZE - lsbs) == (caddr_t)(-1)) return(0);
     }
     result = sbrk((SBRK_ARG_T)bytes);
-    if (result == (caddr_t)(-1)) return(0);
-    return((ptr_t)result);
-}
-#endif
-
+    if (result == (caddr_t)(-1)) result = 0;
+  }
+# ifdef IRIX5
+    __UNLOCK_MALLOC();
 # endif
+  return((ptr_t)result);
+}
+
+#endif /* Not USE_MMAP */
+#endif /* Not RS6000 */
+
+# endif /* UN*X */
 
 # ifdef OS2
 
@@ -1100,21 +1147,16 @@ void GC_default_push_other_roots()
 
 # endif /* SRC_M3 */
 
-# ifdef SOLARIS_THREADS
+# if defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || defined(IRIX_THREADS)
+
+extern void GC_push_all_stacks();
 
 void GC_default_push_other_roots()
 {
     GC_push_all_stacks();
 }
 
-# endif /* SOLARIS_THREADS */
-
-# if defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
-void GC_default_push_other_roots()
-{
-  GC_pt_push_all_stacks();
-}
-# endif
+# endif /* SOLARIS_THREADS || ... */
 
 void (*GC_push_other_roots)() = GC_default_push_other_roots;
 
@@ -1154,6 +1196,7 @@ bool GC_dirty_maintained = FALSE;
 /* Initialize virtual dirty bit implementation.			*/
 void GC_dirty_init()
 {
+    GC_dirty_maintained = TRUE;
 }
 
 /* Retrieve system dirty bits for heap to a local buffer.	*/
@@ -1232,12 +1275,12 @@ struct hblk *h;
 
 #   define PROTECT(addr, len) \
     	  if (mprotect((caddr_t)(addr), (int)(len), \
-    	      	       PROT_READ | PROT_EXEC) < 0) { \
+    	      	       PROT_READ | OPT_PROT_EXEC) < 0) { \
     	    ABORT("mprotect failed"); \
     	  }
 #   define UNPROTECT(addr, len) \
     	  if (mprotect((caddr_t)(addr), (int)(len), \
-    	  	       PROT_WRITE | PROT_READ | PROT_EXEC) < 0) { \
+    	  	       PROT_WRITE | PROT_READ | OPT_PROT_EXEC ) < 0) { \
     	    ABORT("un-mprotect failed"); \
     	  }
     	  
@@ -1277,22 +1320,18 @@ word addr;
     for (i = 0; i < GC_n_heap_sects; i++) {
     	start = (word) GC_heap_sects[i].hs_start;
     	end = start + (word)GC_heap_sects[i].hs_bytes;
-        if (addr < start && addr >= (start & ~mask)
-            || addr >= end && addr < ((end + mask) & ~mask)) {
+        if (addr < ((start + mask) & ~mask) && addr >= (start & ~mask)
+            || addr >= (end & ~mask) && addr < ((end + mask) & ~mask)) {
             return(TRUE);
         }
     }
     return(FALSE);
 }
 
-#if defined(SUNOS4) && defined(MIT_PTHREADS)
-#  include <vm/faultcode.h>
-#endif
-
 #if defined(SUNOS4) || defined(FREEBSD)
     typedef void (* SIG_PF)();
 #endif
-#if defined(SUNOS5SIGS) || defined(ALPHA) /* OSF1 */ || defined(LINUX)
+#if defined(SUNOS5SIGS) || defined(OSF1) || defined(LINUX)
     typedef void (* SIG_PF)(int);
 #endif
 #if defined(MSWIN32)
@@ -1301,7 +1340,7 @@ word addr;
 #   define SIG_DFL (LPTOP_LEVEL_EXCEPTION_FILTER) (-1)
 #endif
 
-#if defined(IRIX5) || defined(ALPHA) /* OSF1 */
+#if defined(IRIX5) || defined(OSF1)
     typedef void (* REAL_SIG_PF)(int, int, struct sigcontext *);
 #endif
 #if defined(SUNOS5SIGS)
@@ -1331,11 +1370,11 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #     define CODE_OK (code == BUS_PAGE_FAULT)
 #   endif
 # endif
-# if defined(IRIX5) || defined(ALPHA) /* OSF1 */
+# if defined(IRIX5) || defined(OSF1)
 #   include <errno.h>
     void GC_write_fault_handler(int sig, int code, struct sigcontext *scp)
 #   define SIG_OK (sig == SIGSEGV)
-#   ifdef ALPHA
+#   ifdef OSF1
 #     define CODE_OK (code == 2 /* experimentally determined */)
 #   endif
 #   ifdef IRIX5
@@ -1367,14 +1406,18 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #   ifdef IRIX5
 	char * addr = (char *) (scp -> sc_badvaddr);
 #   endif
-#   ifdef ALPHA
+#   if defined(OSF1) && defined(ALPHA)
 	char * addr = (char *) (scp -> sc_traparg_a0);
 #   endif
 #   ifdef SUNOS5SIGS
 	char * addr = (char *) (scp -> si_addr);
 #   endif
 #   ifdef LINUX
+#     ifdef I386
 	char * addr = (char *) (sc.cr2);
+#     else
+        char * addr = /* As of 1.3.90 there seemed to be no way to do this. */;
+#     endif
 #   endif
 #   if defined(MSWIN32)
 	char * addr = (char *) (exc_info -> ExceptionRecord
@@ -1385,8 +1428,20 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
     if (SIG_OK && CODE_OK) {
         register struct hblk * h =
         		(struct hblk *)((word)addr & ~(GC_page_size-1));
+        bool in_allocd_block;
         
-        if (HDR(addr) == 0 && !GC_just_outside_heap((word)addr)) {
+#	ifdef SUNOS5SIGS
+	    /* Address is only within the correct physical page.	*/
+	    in_allocd_block = FALSE;
+            for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
+              if (HDR(h+i) != 0) {
+                in_allocd_block = TRUE;
+              }
+            }
+#	else
+	    in_allocd_block = (HDR(addr) != 0);
+#	endif
+        if (!in_allocd_block && !GC_just_outside_heap((word)addr)) {
             SIG_PF old_handler;
             
             if (sig == SIGSEGV) {
@@ -1413,7 +1468,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 		    (*(REAL_SIG_PF)old_handler) (sig, sc);
 		    return;
 #		endif
-#		if defined (IRIX5) || defined(ALPHA)
+#		if defined (IRIX5) || defined(OSF1)
 		    (*(REAL_SIG_PF)old_handler) (sig, code, scp);
 		    return;
 #		endif
@@ -1428,7 +1483,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
             set_pht_entry_from_index(GC_dirty_pages, index);
         }
         UNPROTECT(h, GC_page_size);
-#	if defined(IRIX5) || defined(ALPHA) || defined(LINUX)
+#	if defined(IRIX5) || defined(OSF1) || defined(LINUX)
 	    /* These reset the signal handler each time by default. */
 	    signal(SIGSEGV, (SIG_PF) GC_write_fault_handler);
 #	endif
@@ -1440,10 +1495,17 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 	    return;
 #	endif
     }
-
+#ifdef MSWIN32
+    return EXCEPTION_CONTINUE_SEARCH;
+#else
     ABORT("Unexpected bus error or segmentation fault");
+#endif
 }
 
+/*
+ * We hold the allocation lock.  We expect block h to be written
+ * shortly.
+ */
 void GC_write_hint(h)
 struct hblk *h;
 {
@@ -1467,7 +1529,7 @@ struct hblk *h;
     }
 }
 
-#if defined(SUNOS5) || defined(DRSNX)
+#if defined(SVR4)
 #include <unistd.h>
 int
 GC_getpagesize()
@@ -1511,7 +1573,7 @@ void GC_dirty_init()
 #	endif
       }
 #   endif
-#   if defined(IRIX5) || defined(ALPHA) || defined(SUNOS4) || defined(LINUX)
+#   if defined(IRIX5) || defined(OSF1) || defined(SUNOS4) || defined(LINUX)
       GC_old_segv_handler = signal(SIGSEGV, (SIG_PF)GC_write_fault_handler);
       if (GC_old_segv_handler == SIG_IGN) {
         GC_err_printf0("Previously ignored segmentation violation!?");
@@ -1572,15 +1634,8 @@ void GC_protect_heap()
     }
 }
 
-# ifdef THREADS
-  /* HJB say that this bug manifests itself once in a lifetime, so let's
-     take the risk... */
-#  if !defined(DEC_PTHREADS) && !defined(MIT_PTHREADS)
---> The following is broken.  We can lose dirty bits.  We would need
---> the signal handler to cooperate, as in PCR.
-#  endif
-# endif
-
+/* We assume that either the world is stopped or its OK to lose dirty	*/
+/* bits while this is happenning (as in GC_enable_incremental).		*/
 void GC_read_dirty()
 {
     BCOPY((word *)GC_dirty_pages, GC_grungy_pages,
@@ -1598,26 +1653,22 @@ struct hblk * h;
 }
 
 /*
- * If this code needed to be thread-safe, the following would need to
- * acquire and release the allocation lock.  This is tricky, since e.g.
- * the cord package issues a read while it already holds the allocation lock.
+ * Acquiring the allocation lock here is dangerous, since this
+ * can be called from within GC_call_with_alloc_lock, and the cord
+ * package does so.  On systems that allow nested lock acquisition, this
+ * happens to work.
+ * On other systems, SET_LOCK_HOLDER and friends must be suitably defined.
  */
  
-# if defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
-void GC_begin_syscall() { LOCK(); }
-void GC_end_syscall() { UNLOCK(); }
-# else
-#  ifdef THREADS
-	--> fix this
-#  endif
 void GC_begin_syscall()
 {
+    if (!I_HOLD_LOCK()) LOCK();
 }
 
 void GC_end_syscall()
 {
+    if (!I_HOLD_LOCK()) UNLOCK();
 }
-# endif
 
 void GC_unprotect_range(addr, len)
 ptr_t addr;
@@ -1650,29 +1701,14 @@ word len;
 /* Replacement for UNIX system call.	 */
 /* Other calls that write to the heap	 */
 /* should be handled similarly.		 */
-# if !defined(LINT)
-#  if defined(MIT_PTHREADS)
-  /* read() is defined in libpthread.a, so we can't redefine it here. */
-  ssize_t GC_read(fd, buf, nbyte)
-#  else
-#   if defined(__GNUC__)
-  ssize_t read(fd, buf, nbyte)
-#   else
+# ifndef LINT
   int read(fd, buf, nbyte)
-#   endif
-#  endif
 # else
   int GC_read(fd, buf, nbyte)
 # endif
-# if defined(MIT_PTHREADS) || defined(DEC_PTHREADS)
-int fd;
-void *buf;
-size_t nbyte;
-# else
 int fd;
 char *buf;
 int nbyte;
-# endif
 {
     int result;
     

@@ -23,6 +23,15 @@
 /*VARARGS*/
 void GC_noop() {}
 
+/* Single argument version, robust against whole program analysis. */
+void GC_noop1(x)
+word x;
+{
+    static VOLATILE word sink;
+
+    sink = x;
+}
+
 mark_proc GC_mark_procs[MAX_MARK_PROCS] = {0};
 word GC_n_mark_procs = 0;
 
@@ -43,16 +52,29 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 /* UNCOLLECTABLE */
 	      { &GC_uobjfreelist[0], 0,
 		0 | DS_LENGTH, TRUE /* add length to descr */, TRUE },
+# ifdef ATOMIC_UNCOLLECTABLE
+   /* AUNCOLLECTABLE */
+	      { &GC_auobjfreelist[0], 0,
+		0 | DS_LENGTH, FALSE /* add length to descr */, FALSE },
+# endif
 # ifdef STUBBORN_ALLOC
 /*STUBBORN*/ { &GC_sobjfreelist[0], 0,
 		0 | DS_LENGTH, TRUE /* add length to descr */, TRUE },
 # endif
 };
 
-# ifdef STUBBORN_ALLOC
-  int GC_n_kinds = 4;
+# ifdef ATOMIC_UNCOLLECTABLE
+#   ifdef STUBBORN_ALLOC
+      int GC_n_kinds = 5;
+#   else
+      int GC_n_kinds = 4;
+#   endif
 # else
-  int GC_n_kinds = 3;
+#   ifdef STUBBORN_ALLOC
+      int GC_n_kinds = 4;
+#   else
+      int GC_n_kinds = 3;
+#   endif
 # endif
 
 
@@ -96,6 +118,17 @@ register hdr * hhdr;
     BZERO(hhdr -> hb_marks, MARK_BITS_SZ*sizeof(word));
 }
 
+/* Set all mark bits in the header.  Used for uncollectable blocks. */
+void GC_set_hdr_marks(hhdr)
+register hdr * hhdr;
+{
+    register int i;
+
+    for (i = 0; i < MARK_BITS_SZ; ++i) {
+    	hhdr -> hb_marks[i] = ONES;
+    }
+}
+
 /*
  * Clear all mark bits associated with block h.
  */
@@ -106,7 +139,7 @@ word dummy;
 {
     register hdr * hhdr = HDR(h);
     
-    if (hhdr -> hb_obj_kind == UNCOLLECTABLE) return;
+    if (IS_UNCOLLECTABLE(hhdr -> hb_obj_kind)) return;
         /* Mark bit for these is cleared only once the object is 	*/
         /* explicitly deallocated.  This either frees the block, or	*/
         /* the bit is cleared once the object is on the free list.	*/
@@ -148,7 +181,7 @@ ptr_t p;
 /*
  * Clear mark bits in all allocated heap blocks.  This invalidates
  * the marker invariant, and sets GC_mark_state to reflect this.
- * (This implicitly starts marking to reestablish the
+ * (This implicitly starts marking to reestablish the invariant.)
  */
 void GC_clear_marks()
 {
@@ -164,36 +197,10 @@ void GC_clear_marks()
 
 }
 
-/* Initiate full marking.	*/
-void GC_initiate_full()
-{
-#   ifdef PRINTSTATS
-	GC_printf2("***>Full mark for collection %lu after %ld allocd bytes\n",
-		  (unsigned long) GC_gc_no+1,
-	   	  (long)WORDS_TO_BYTES(GC_words_allocd));
-#   endif
-    GC_promote_black_lists();
-    GC_reclaim_or_delete_all();
-    GC_clear_marks();
-    GC_read_dirty();
-#   ifdef STUBBORN_ALLOC
-    	GC_read_changed();
-#   endif
-#   ifdef CHECKSUMS
-	{
-	    extern void GC_check_dirty();
-	    
-	    GC_check_dirty();
-	}
-#   endif
-#   ifdef GATHERSTATS
-	GC_n_rescuing_pages = 0;
-#   endif
-}
-
-/* Initiate partial marking.	*/
+/* Initiate a garbage collection.  Initiates a full collection if the	*/
+/* mark	state is invalid.						*/
 /*ARGSUSED*/
-void GC_initiate_partial()
+void GC_initiate_gc()
 {
     if (GC_dirty_maintained) GC_read_dirty();
 #   ifdef STUBBORN_ALLOC
@@ -411,8 +418,8 @@ void GC_mark_from_mark_stack()
   	>= 0) {
 # endif
     current_p = GC_mark_stack_top_reg -> mse_start;
+  retry:
     descr = GC_mark_stack_top_reg -> mse_descr;
-  retry:  
     if (descr & ((~(WORDS_TO_BYTES(SPLIT_RANGE_WORDS) - 1)) | DS_TAGS)) {
       word tag = descr & DS_TAGS;
       
@@ -455,7 +462,8 @@ void GC_mark_from_mark_stack()
               	    mark_stack_limit, ENV(descr));
           continue;
         case DS_PER_OBJECT:
-          descr = *(word *)((ptr_t)current_p + descr - tag);
+          GC_mark_stack_top_reg -> mse_descr =
+			*(word *)((ptr_t)current_p + descr - tag);
           goto retry;
       }
     } else {

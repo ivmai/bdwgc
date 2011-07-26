@@ -16,6 +16,7 @@ char ** envp;
         return(0);
     }
     execvp(argv[2], argv+2);
+    exit(1);
     
 Usage:
     fprintf(stderr, "Usage: %s file_name command\n", argv[0]);
