@@ -36,11 +36,19 @@
 #endif
 
 #if defined(_MSC_VER) && defined(_DLL)
-#ifdef GC_BUILD
-#define GC_API __declspec(dllexport)
-#else
-#define GC_API __declspec(dllimport)
+# ifdef GC_BUILD
+#   define GC_API __declspec(dllexport)
+# else
+#   define GC_API __declspec(dllimport)
+# endif
 #endif
+
+#if defined(__WATCOMC__) && defined(GC_DLL)
+# ifdef GC_BUILD
+#   define GC_API extern __declspec(dllexport)
+# else
+#   define GC_API extern __declspec(dllimport)
+# endif
 #endif
 
 #ifndef GC_API
@@ -126,7 +134,19 @@ GC_API GC_word GC_max_retries;
 			/* reporting out of memory after heap		*/
 			/* expansion fails.  Initially 0.		*/
 			
-			
+
+GC_API char *GC_stackbottom;	/* Cool end of user stack.		*/
+				/* May be set in the client prior to	*/
+				/* calling any GC_ routines.  This	*/
+				/* avoids some overhead, and 		*/
+				/* potentially some signals that can 	*/
+				/* confuse debuggers.  Otherwise the	*/
+				/* collector attempts to set it 	*/
+				/* automatically.			*/
+				/* For multithreaded code, this is the	*/
+				/* cold end of the stack for the	*/
+				/* primordial thread.			*/
+				
 /* Public procedures */
 /*
  * general purpose allocation routines, with roughly malloc calling conv.
@@ -193,8 +213,8 @@ GC_API size_t GC_size GC_PROTO((GC_PTR object_addr));
 /* If the argument is stubborn, the result will have changes enabled.	*/
 /* It is an error to have changes enabled for the original object.	*/
 /* Follows ANSI comventions for NULL old_object.			*/
-GC_API GC_PTR GC_realloc GC_PROTO((GC_PTR old_object,
-				   size_t new_size_in_bytes));
+GC_API GC_PTR GC_realloc
+	GC_PROTO((GC_PTR old_object, size_t new_size_in_bytes));
 				   
 /* Explicitly increase the heap size.	*/
 /* Returns 0 on failure, 1 on success.  */
@@ -293,37 +313,48 @@ GC_API int GC_collect_a_little GC_PROTO((void));
 GC_API GC_PTR GC_malloc_ignore_off_page GC_PROTO((size_t lb));
 GC_API GC_PTR GC_malloc_atomic_ignore_off_page GC_PROTO((size_t lb));
 
+#if defined(__sgi) && !defined(__GNUC__) && _COMPILER_VERSION >= 720
+#   define GC_ADD_CALLER
+#   define GC_RETURN_ADDR (GC_word)__return_address
+#endif
+
+#ifdef GC_ADD_CALLER
+#  define GC_EXTRAS GC_RETURN_ADDR, __FILE__, __LINE__
+#  define GC_EXTRA_PARAMS GC_word ra, char * descr_string, int descr_int
+#else
+#  define GC_EXTRAS __FILE__, __LINE__
+#  define GC_EXTRA_PARAMS char * descr_string, int descr_int
+#endif
+
 /* Debugging (annotated) allocation.  GC_gcollect will check 		*/
 /* objects allocated in this way for overwrites, etc.			*/
 GC_API GC_PTR GC_debug_malloc
-	GC_PROTO((size_t size_in_bytes, char * descr_string, int descr_int));
+	GC_PROTO((size_t size_in_bytes, GC_EXTRA_PARAMS));
 GC_API GC_PTR GC_debug_malloc_atomic
-	GC_PROTO((size_t size_in_bytes, char * descr_string, int descr_int));
+	GC_PROTO((size_t size_in_bytes, GC_EXTRA_PARAMS));
 GC_API GC_PTR GC_debug_malloc_uncollectable
-	GC_PROTO((size_t size_in_bytes, char * descr_string, int descr_int));
+	GC_PROTO((size_t size_in_bytes, GC_EXTRA_PARAMS));
 GC_API GC_PTR GC_debug_malloc_stubborn
-	GC_PROTO((size_t size_in_bytes, char * descr_string, int descr_int));
+	GC_PROTO((size_t size_in_bytes, GC_EXTRA_PARAMS));
 GC_API void GC_debug_free GC_PROTO((GC_PTR object_addr));
 GC_API GC_PTR GC_debug_realloc
 	GC_PROTO((GC_PTR old_object, size_t new_size_in_bytes,
-  		  char * descr_string, int descr_int));
+  		  GC_EXTRA_PARAMS));
   			 	 
 GC_API void GC_debug_change_stubborn GC_PROTO((GC_PTR));
 GC_API void GC_debug_end_stubborn_change GC_PROTO((GC_PTR));
 # ifdef GC_DEBUG
-#   define GC_MALLOC(sz) GC_debug_malloc(sz, __FILE__, __LINE__)
-#   define GC_MALLOC_ATOMIC(sz) GC_debug_malloc_atomic(sz, __FILE__, __LINE__)
+#   define GC_MALLOC(sz) GC_debug_malloc(sz, GC_EXTRAS)
+#   define GC_MALLOC_ATOMIC(sz) GC_debug_malloc_atomic(sz, GC_EXTRAS)
 #   define GC_MALLOC_UNCOLLECTABLE(sz) GC_debug_malloc_uncollectable(sz, \
-							__FILE__, __LINE__)
-#   define GC_REALLOC(old, sz) GC_debug_realloc(old, sz, __FILE__, \
-							       __LINE__)
+							GC_EXTRAS)
+#   define GC_REALLOC(old, sz) GC_debug_realloc(old, sz, GC_EXTRAS)
 #   define GC_FREE(p) GC_debug_free(p)
 #   define GC_REGISTER_FINALIZER(p, f, d, of, od) \
 	GC_debug_register_finalizer(p, f, d, of, od)
 #   define GC_REGISTER_FINALIZER_IGNORE_SELF(p, f, d, of, od) \
 	GC_debug_register_finalizer_ignore_self(p, f, d, of, od)
-#   define GC_MALLOC_STUBBORN(sz) GC_debug_malloc_stubborn(sz, __FILE__, \
-							       __LINE__)
+#   define GC_MALLOC_STUBBORN(sz) GC_debug_malloc_stubborn(sz, GC_EXTRAS);
 #   define GC_CHANGE_STUBBORN(p) GC_debug_change_stubborn(p)
 #   define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
 #   define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
@@ -473,6 +504,14 @@ GC_API int GC_unregister_disappearing_link GC_PROTO((GC_PTR * /* link */));
 GC_API GC_PTR GC_make_closure GC_PROTO((GC_finalization_proc fn, GC_PTR data));
 GC_API void GC_debug_invoke_finalizer GC_PROTO((GC_PTR obj, GC_PTR data));
 
+GC_API int GC_invoke_finalizers GC_PROTO((void));
+	/* Run finalizers for all objects that are ready to	*/
+	/* be finalized.  Return the number of finalizers	*/
+	/* that were run.  Normally this is also called		*/
+	/* implicitly during some allocations.	If		*/
+	/* FINALIZE_ON_DEMAND is defined, it must be called	*/
+	/* explicitly.						*/
+
 /* GC_set_warn_proc can be used to redirect or filter warning messages.	*/
 /* p may not be a NULL pointer.						*/
 typedef void (*GC_warn_proc) GC_PROTO((char *msg, GC_word arg));
@@ -585,6 +624,10 @@ GC_API void (*GC_is_valid_displacement_print_proc)
 GC_API void (*GC_is_visible_print_proc)
 	GC_PROTO((GC_PTR p));
 
+#if defined(_SOLARIS_PTHREADS) && !defined(SOLARIS_THREADS)
+#   define SOLARIS_THREADS
+#endif
+
 #ifdef SOLARIS_THREADS
 /* We need to intercept calls to many of the threads primitives, so 	*/
 /* that we can locate thread stacks and stop the world.			*/
@@ -624,7 +667,7 @@ GC_API void (*GC_is_visible_print_proc)
 # endif /* SOLARIS_THREADS */
 
 
-#ifdef IRIX_THREADS
+#if defined(IRIX_THREADS) || defined(LINUX_THREADS)
 /* We treat these similarly. */
 # include <pthread.h>
 # include <signal.h>
@@ -639,9 +682,12 @@ GC_API void (*GC_is_visible_print_proc)
 # define pthread_sigmask GC_pthread_sigmask
 # define pthread_join GC_pthread_join
 
-#endif /* IRIX_THREADS */
+#endif /* IRIX_THREADS || LINUX_THREADS */
 
-#if defined(SOLARIS_THREADS) || defined(IRIX_THREADS)
+# if defined(PCR) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || \
+	defined(IRIX_THREADS) || defined(LINUX_THREADS) || \
+	defined(IRIX_JDK_THREADS)
+   	/* Any flavor of threads except SRC_M3.	*/
 /* This returns a list of objects, linked through their first		*/
 /* word.  Its use can greatly reduce lock contention problems, since	*/
 /* the allocation lock can be acquired and released many fewer times.	*/
@@ -650,7 +696,7 @@ GC_PTR GC_malloc_many(size_t lb);
 					/* in returned list.		*/
 extern void GC_thr_init();	/* Needed for Solaris/X86	*/
 
-#endif /* SOLARIS_THREADS */
+#endif /* THREADS && !SRC_M3 */
 
 /*
  * If you are planning on putting
@@ -672,12 +718,11 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
 # endif
 #endif
 
-#ifdef __WATCOMC__
-  /* Ivan Demakov: Programs compiled by Watcom C with -5r option
-   * crash without this declaration
-   * HB: Could this go into gc_priv.h?
-   */
-  void GC_noop(void*, ...);
+#if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \
+     || defined(_WIN32)
+  /* win32S may not free all resources on process exit.  */
+  /* This explicitly deallocates the heap.		 */
+    GC_API void GC_win32_free_heap ();
 #endif
 
 #ifdef __cplusplus

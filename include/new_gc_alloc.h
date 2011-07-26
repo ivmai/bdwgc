@@ -12,53 +12,47 @@
  */
 
 //
-// This is a C++ header file that is intended to replace the SGI STL
-// alloc.h.
+// This is a revision of gc_alloc.h for SGI STL versions > 3.0
+// Unlike earlier versions, it supplements the standard "alloc.h"
+// instead of replacing it.
+//
+// This is sloppy about variable names used in header files.
+// It also doesn't yet understand the new header file names or
+// namespaces.
 //
 // This assumes the collector has been compiled with -DATOMIC_UNCOLLECTABLE
 // and -DALL_INTERIOR_POINTERS.  We also recommend
 // -DREDIRECT_MALLOC=GC_uncollectable_malloc.
 //
-// Some of this could be faster in the explicit deallocation case.  In particular,
-// we spend too much time clearing objects on the free lists.  That could be avoided.
+// Some of this could be faster in the explicit deallocation case.
+// In particular, we spend too much time clearing objects on the
+// free lists.  That could be avoided.
 //
 // This uses template classes with static members, and hence does not work
 // with g++ 2.7.2 and earlier.
 //
-
-#include "gc.h"
+// Unlike its predecessor, this one simply defines
+// 	gc_alloc
+//	single_client_gc_alloc
+//	traceable_alloc
+//	single_client_traceable_alloc
+//
+// It does not redefine alloc.  Nor does it change the default allocator,
+// though the user may wish to do so.  (The argument against changing
+// the default allocator is that it may introduce subtle link compatibility
+// problems.  The argument for changing it is that the usual default
+// allocator is usually a very bad choice for a garbage collected environment.)
+//
 
 #ifndef GC_ALLOC_H
 
-#define GC_ALLOC_H
-#define __ALLOC_H	// Prevent inclusion of the default version.  Ugly.
-#define __SGI_STL_ALLOC_H
-#define __SGI_STL_INTERNAL_ALLOC_H
+#include "gc.h"
+#include <alloc.h>
 
-#ifndef __ALLOC
-#   define __ALLOC alloc
-#endif
+#define GC_ALLOC_H
 
 #include <stddef.h>
 #include <string.h>
-
-// The following is just replicated from the conventional SGI alloc.h:
-
-template<class T, class alloc>
-class simple_alloc {
-
-public:
-    static T *allocate(size_t n)
-                { return 0 == n? 0 : (T*) alloc::allocate(n * sizeof (T)); }
-    static T *allocate(void)
-                { return (T*) alloc::allocate(sizeof (T)); }
-    static void deallocate(T *p, size_t n)
-                { if (0 != n) alloc::deallocate(p, n * sizeof (T)); }
-    static void deallocate(T *p)
-                { alloc::deallocate(p, sizeof (T)); }
-};
-
-#include "gc.h"
 
 // The following need to match collector data structures.
 // We can't include gc_priv.h, since that pulls in way too much stuff.
@@ -236,7 +230,7 @@ typedef single_client_gc_alloc_template<0> single_client_gc_alloc;
 
 // Once more, for uncollectable objects.
 template <int dummy>
-class single_client_alloc_template {
+class single_client_traceable_alloc_template {
     public:
      	static void * allocate(size_t n)
         {
@@ -298,7 +292,7 @@ class single_client_alloc_template {
 	}
 };
 
-typedef single_client_alloc_template<0> single_client_alloc;
+typedef single_client_traceable_alloc_template<0> single_client_traceable_alloc;
 
 template < int dummy >
 class gc_alloc_template {
@@ -313,7 +307,7 @@ class gc_alloc_template {
 typedef gc_alloc_template < 0 > gc_alloc;
 
 template < int dummy >
-class alloc_template {
+class traceable_alloc_template {
     public:
      	static void * allocate(size_t n) { return GC_malloc_uncollectable(n); }
      	static void * ptr_free_allocate(size_t n)
@@ -322,7 +316,7 @@ class alloc_template {
 	static void ptr_free_deallocate(void *p, size_t) { GC_free(p); }
 };
 
-typedef alloc_template < 0 > alloc;
+typedef traceable_alloc_template < 0 > traceable_alloc;
 
 #ifdef _SGI_SOURCE
 
@@ -351,11 +345,11 @@ __GC_SPECIALIZE(unsigned, gc_alloc)
 __GC_SPECIALIZE(float, gc_alloc)
 __GC_SPECIALIZE(double, gc_alloc)
 
-__GC_SPECIALIZE(char, alloc)
-__GC_SPECIALIZE(int, alloc)
-__GC_SPECIALIZE(unsigned, alloc)
-__GC_SPECIALIZE(float, alloc)
-__GC_SPECIALIZE(double, alloc)
+__GC_SPECIALIZE(char, traceable_alloc)
+__GC_SPECIALIZE(int, traceable_alloc)
+__GC_SPECIALIZE(unsigned, traceable_alloc)
+__GC_SPECIALIZE(float, traceable_alloc)
+__GC_SPECIALIZE(double, traceable_alloc)
 
 __GC_SPECIALIZE(char, single_client_gc_alloc)
 __GC_SPECIALIZE(int, single_client_gc_alloc)
@@ -363,15 +357,97 @@ __GC_SPECIALIZE(unsigned, single_client_gc_alloc)
 __GC_SPECIALIZE(float, single_client_gc_alloc)
 __GC_SPECIALIZE(double, single_client_gc_alloc)
 
-__GC_SPECIALIZE(char, single_client_alloc)
-__GC_SPECIALIZE(int, single_client_alloc)
-__GC_SPECIALIZE(unsigned, single_client_alloc)
-__GC_SPECIALIZE(float, single_client_alloc)
-__GC_SPECIALIZE(double, single_client_alloc)
+__GC_SPECIALIZE(char, single_client_traceable_alloc)
+__GC_SPECIALIZE(int, single_client_traceable_alloc)
+__GC_SPECIALIZE(unsigned, single_client_traceable_alloc)
+__GC_SPECIALIZE(float, single_client_traceable_alloc)
+__GC_SPECIALIZE(double, single_client_traceable_alloc)
 
 #ifdef __STL_USE_STD_ALLOCATORS
 
-???copy stuff from stl_alloc.h or remove it to a different file ???
+__STL_BEGIN_NAMESPACE
+
+template <class _T>
+struct _Alloc_traits<_T, gc_alloc >
+{
+  static const bool _S_instanceless = true;
+  typedef simple_alloc<_T, gc_alloc > _Alloc_type;
+  typedef __allocator<_T, gc_alloc > allocator_type;
+};
+
+inline bool operator==(const gc_alloc&,
+                       const gc_alloc&)
+{
+  return true;
+}
+
+inline bool operator!=(const gc_alloc&,
+                       const gc_alloc&)
+{
+  return false;
+}
+
+template <class _T>
+struct _Alloc_traits<_T, single_client_gc_alloc >
+{
+  static const bool _S_instanceless = true;
+  typedef simple_alloc<_T, single_client_gc_alloc > _Alloc_type;
+  typedef __allocator<_T, single_client_gc_alloc > allocator_type;
+};
+
+inline bool operator==(const single_client_gc_alloc&,
+                       const single_client_gc_alloc&)
+{
+  return true;
+}
+
+inline bool operator!=(const single_client_gc_alloc&,
+                       const single_client_gc_alloc&)
+{
+  return false;
+}
+
+template <class _T>
+struct _Alloc_traits<_T, traceable_alloc >
+{
+  static const bool _S_instanceless = true;
+  typedef simple_alloc<_T, traceable_alloc > _Alloc_type;
+  typedef __allocator<_T, traceable_alloc > allocator_type;
+};
+
+inline bool operator==(const traceable_alloc&,
+                       const traceable_alloc&)
+{
+  return true;
+}
+
+inline bool operator!=(const traceable_alloc&,
+                       const traceable_alloc&)
+{
+  return false;
+}
+
+template <class _T>
+struct _Alloc_traits<_T, single_client_traceable_alloc >
+{
+  static const bool _S_instanceless = true;
+  typedef simple_alloc<_T, single_client_traceable_alloc > _Alloc_type;
+  typedef __allocator<_T, single_client_traceable_alloc > allocator_type;
+};
+
+inline bool operator==(const single_client_traceable_alloc&,
+                       const single_client_traceable_alloc&)
+{
+  return true;
+}
+
+inline bool operator!=(const single_client_traceable_alloc&,
+                       const single_client_traceable_alloc&)
+{
+  return false;
+}
+
+__STL_END_NAMESPACE
 
 #endif /* __STL_USE_STD_ALLOCATORS */
 

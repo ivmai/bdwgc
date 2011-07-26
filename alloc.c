@@ -1,6 +1,7 @@
 /*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1998 by Silicon Graphics.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -12,7 +13,6 @@
  * modified is included with the above copyright notice.
  *
  */
-/* Boehm, February 16, 1996 2:26 pm PST */
 
 
 # include "gc_priv.h"
@@ -58,7 +58,9 @@ word GC_non_gc_bytes = 0;  /* Number of bytes not intended to be collected */
 
 word GC_gc_no = 0;
 
-int GC_incremental = 0;    /* By default, stop the world.	*/
+#ifndef SMALL_CONFIG
+  int GC_incremental = 0;    /* By default, stop the world.	*/
+#endif
 
 int GC_full_freq = 4;	   /* Every 5th collection is a full	*/
 			   /* collection.			*/
@@ -66,7 +68,7 @@ int GC_full_freq = 4;	   /* Every 5th collection is a full	*/
 char * GC_copyright[] =
 {"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
 "Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved. ",
-"Copyright (c) 1996-1997 by Silicon Graphics.  All rights reserved. ",
+"Copyright (c) 1996-1998 by Silicon Graphics.  All rights reserved. ",
 "THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY",
 " EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.",
 "See source code for details." };
@@ -78,18 +80,25 @@ char * GC_copyright[] =
 extern signed_word GC_mem_found;  /* Number of reclaimed longwords	*/
 				  /* after garbage collection      	*/
 
-bool GC_dont_expand = 0;
+GC_bool GC_dont_expand = 0;
 
 word GC_free_space_divisor = 4;
 
-extern bool GC_collection_in_progress();
+extern GC_bool GC_collection_in_progress();
 
 int GC_never_stop_func GC_PROTO((void)) { return(0); }
 
-CLOCK_TYPE GC_start_time;
+CLOCK_TYPE GC_start_time;  	/* Time at which we stopped world.	*/
+				/* used only in GC_timeout_stop_func.	*/
 
-int GC_timeout_stop_func GC_PROTO((void))
-{
+int GC_n_attempts = 0;		/* Number of attempts at finishing	*/
+				/* collection within TIME_LIMIT		*/
+
+#ifdef SMALL_CONFIG
+#   define GC_timeout_stop_func GC_never_stop_func
+#else
+  int GC_timeout_stop_func GC_PROTO((void))
+  {
     CLOCK_TYPE current_time;
     static unsigned count = 0;
     unsigned long time_diff;
@@ -100,12 +109,14 @@ int GC_timeout_stop_func GC_PROTO((void))
     if (time_diff >= TIME_LIMIT) {
 #   	ifdef PRINTSTATS
 	    GC_printf0("Abandoning stopped marking after ");
-	    GC_printf1("%lu msecs\n", (unsigned long)time_diff);
+	    GC_printf1("%lu msecs", (unsigned long)time_diff);
+	    GC_printf1("(attempt %d)\n", (unsigned long) GC_n_attempts);
 #	endif
     	return(1);
     }
     return(0);
-}
+  }
+#endif /* !SMALL_CONFIG */
 
 /* Return the minimum number of words that must be allocated between	*/
 /* collections to amortize the collection cost.				*/
@@ -189,7 +200,7 @@ void GC_clear_a_few_frames()
 }
 
 /* Have we allocated enough to amortize a collection? */
-bool GC_should_collect()
+GC_bool GC_should_collect()
 {
     return(GC_adj_words_allocd() >= min_words_allocd());
 }
@@ -210,6 +221,8 @@ void GC_notify_full_gc()
 void GC_maybe_gc()
 {
     static int n_partial_gcs = 0;
+    GC_bool is_full_gc = FALSE;
+
     if (GC_should_collect()) {
         if (!GC_incremental) {
 	    GC_notify_full_gc();
@@ -228,6 +241,7 @@ void GC_maybe_gc()
 	    GC_clear_marks();
             n_partial_gcs = 0;
 	    GC_notify_full_gc();
+ 	    is_full_gc = TRUE;
         } else {
             n_partial_gcs++;
         }
@@ -240,7 +254,12 @@ void GC_maybe_gc()
                 GC_save_callers(GC_last_stack);
 #           endif
             GC_finish_collection();
-        }
+        } else {
+	    if (!is_full_gc) {
+		/* Count this as the first attempt */
+	        GC_n_attempts++;
+	    }
+	}
     }
 }
 
@@ -249,7 +268,7 @@ void GC_maybe_gc()
  * Stop the world garbage collection.  Assumes lock held, signals disabled.
  * If stop_func is not GC_never_stop_func, then abort if stop_func returns TRUE.
  */
-bool GC_try_to_collect_inner(stop_func)
+GC_bool GC_try_to_collect_inner(stop_func)
 GC_stop_func stop_func;
 {
     if (GC_collection_in_progress()) {
@@ -302,13 +321,20 @@ GC_stop_func stop_func;
 
 /*
  * Perform n units of garbage collection work.  A unit is intended to touch
- * roughly a GC_RATE pages.  Every once in a while, we do more than that.
+ * roughly GC_RATE pages.  Every once in a while, we do more than that.
+ * This needa to be a fairly large number with our current incremental
+ * GC strategy, since otherwise we allocate too much during GC, and the
+ * cleanup gets expensive.
  */
-# define GC_RATE 8
+# define GC_RATE 10 
+# define MAX_PRIOR_ATTEMPTS 1
+ 	/* Maximum number of prior attempts at world stop marking	*/
+ 	/* A value of 1 means that we finish the seconf time, no matter */
+ 	/* how long it takes.  Doesn't count the initial root scan	*/
+ 	/* for a full GC.						*/
 
 int GC_deficit = 0;	/* The number of extra calls to GC_mark_some	*/
 			/* that we have made.				*/
-			/* Negative values are equivalent to 0.		*/
 
 void GC_collect_a_little_inner(n)
 int n;
@@ -322,12 +348,21 @@ int n;
 #     		ifdef SAVE_CALL_CHAIN
         	    GC_save_callers(GC_last_stack);
 #     		endif
-		(void) GC_stopped_mark(GC_never_stop_func);
+		if (GC_n_attempts < MAX_PRIOR_ATTEMPTS) {
+		  GET_TIME(GC_start_time);
+		  if (!GC_stopped_mark(GC_timeout_stop_func)) {
+		    GC_n_attempts++;
+		    break;
+		  }
+		} else {
+		  (void)GC_stopped_mark(GC_never_stop_func);
+		}
     	        GC_finish_collection();
     	        break;
     	    }
     	}
     	if (GC_deficit > 0) GC_deficit -= GC_RATE*n;
+	if (GC_deficit < 0) GC_deficit = 0;
     } else {
         GC_maybe_gc();
     }
@@ -355,7 +390,7 @@ int GC_collect_a_little GC_PROTO(())
  * Otherwise we may fail and return FALSE if this takes too long.
  * Increment GC_gc_no if we succeed.
  */
-bool GC_stopped_mark(stop_func)
+GC_bool GC_stopped_mark(stop_func)
 GC_stop_func stop_func;
 {
     register int i;
@@ -522,6 +557,7 @@ void GC_finish_collection()
 	           (unsigned long)WORDS_TO_BYTES(GC_composite_in_use));
 #   endif
 
+      GC_n_attempts = 0;
     /* Reset or increment counters for next cycle */
       GC_words_allocd_before_gc += GC_words_allocd;
       GC_non_gc_bytes_at_gc = GC_non_gc_bytes;
@@ -548,7 +584,7 @@ void GC_finish_collection()
     int result;
     DCL_LOCK_STATE;
     
-    GC_invoke_finalizers();
+    GC_INVOKE_FINALIZERS();
     DISABLE_SIGNALS();
     LOCK();
     ENTER_GC();
@@ -559,7 +595,7 @@ void GC_finish_collection()
     EXIT_GC();
     UNLOCK();
     ENABLE_SIGNALS();
-    if(result) GC_invoke_finalizers();
+    if(result) GC_INVOKE_FINALIZERS();
     return(result);
 }
 
@@ -609,6 +645,27 @@ word bytes;
         GC_greatest_plausible_heap_addr = (ptr_t)p + bytes;
     }
 }
+
+#ifdef PRESERVE_LAST
+
+GC_bool GC_protect_last_block = FALSE;
+
+GC_bool GC_in_last_heap_sect(p)
+ptr_t p;
+{
+    struct HeapSect * last_heap_sect;
+    ptr_t start;
+    ptr_t end;
+
+    if (!GC_protect_last_block) return FALSE;
+    last_heap_sect = &(GC_heap_sects[GC_n_heap_sects-1]);
+    start = last_heap_sect -> hs_start;
+    if (p < start) return FALSE;
+    end = start + last_heap_sect -> hs_bytes;
+    if (p >= end) return FALSE;
+    return TRUE;
+}
+#endif
 
 # if !defined(NO_DEBUGGING)
 void GC_print_heap_sects()
@@ -667,7 +724,7 @@ GC_word GC_max_retries = 0;
  * Tiny values of n are rounded up.
  * Returns FALSE on failure.
  */
-bool GC_expand_hp_inner(n)
+GC_bool GC_expand_hp_inner(n)
 word n;
 {
     word bytes;
@@ -740,6 +797,9 @@ word n;
     LOCK();
     if (!GC_is_initialized) GC_init_inner();
     result = (int)GC_expand_hp_inner(divHBLKSZ((word)bytes));
+#   ifdef PRESERVE_LAST
+	if (result) GC_protect_last_block = FALSE;
+#   endif
     UNLOCK();
     ENABLE_SIGNALS();
     return(result);
@@ -749,9 +809,9 @@ unsigned GC_fail_count = 0;
 			/* How many consecutive GC/expansion failures?	*/
 			/* Reset by GC_allochblk.			*/
 
-bool GC_collect_or_expand(needed_blocks, ignore_off_page)
+GC_bool GC_collect_or_expand(needed_blocks, ignore_off_page)
 word needed_blocks;
-bool ignore_off_page;
+GC_bool ignore_off_page;
 {
     
     if (!GC_incremental && !GC_dont_gc && GC_should_collect()) {
@@ -786,10 +846,18 @@ bool ignore_off_page;
 	    WARN("Out of Memory!  Returning NIL!\n", 0);
 	    return(FALSE);
 	}
-      } else if (GC_fail_count) {
+      } else {
 #	  ifdef PRINTSTATS
-	    GC_printf0("Memory available again ...\n");
+            if (GC_fail_count) {
+	      GC_printf0("Memory available again ...\n");
+	    }
 #	  endif
+#         ifdef PRESERVE_LAST
+	    if (needed_blocks > 1) GC_protect_last_block = TRUE;
+		/* We were forced to expand the heap as the result	*/
+		/* of a large block allocation.  Avoid breaking up	*/
+		/* new block into small pieces.				*/
+#         endif
       }
     }
     return(TRUE);

@@ -46,7 +46,7 @@
 #   define EXTRA_BYTES (sizeof(word))
 # endif
 
-bool GC_explicit_typing_initialized = FALSE;
+GC_bool GC_explicit_typing_initialized = FALSE;
 
 int GC_explicit_kind;	/* Object kind for objects with indirect	*/
 			/* (possibly extended) descriptors.		*/
@@ -59,7 +59,7 @@ int GC_array_kind;	/* Object kind for objects with complex		*/
 /* can be described by a BITMAP_BITS sized bitmap.		*/
 typedef struct {
 	word ed_bitmap;	/* lsb corresponds to first word.	*/
-	bool ed_continued;	/* next entry is continuation.	*/
+	GC_bool ed_continued;	/* next entry is continuation.	*/
 } ext_descr;
 
 /* Array descriptors.  GC_array_mark_proc understands these.	*/
@@ -430,7 +430,8 @@ word env;
     	if (bm & 1) {
     	    current = *current_p;
     	    if ((ptr_t)current >= least_ha && (ptr_t)current <= greatest_ha) {
-    	        PUSH_CONTENTS(current, mark_stack_ptr, mark_stack_limit);
+    	        PUSH_CONTENTS(current, mark_stack_ptr,
+			      mark_stack_limit, current_p, exit1);
     	    }
     	}
     }
@@ -590,7 +591,7 @@ word env;
     if (last_set_bit < 0) return(0 /* no pointers */);
 #   if ALIGNMENT == CPP_WORDSZ/8
     {
-      register bool all_bits_set = TRUE;
+      register GC_bool all_bits_set = TRUE;
       for (i = 0; i < last_set_bit; i++) {
     	if (!GC_get_bit(bm, i)) {
     	    all_bits_set = FALSE;

@@ -36,6 +36,8 @@
 # define _CLASSIC_XOPEN_TYPES
 # include <unistd.h>
 # include <errno.h>
+# include "solaris_threads.h"
+# include <stdio.h>
 
 #undef pthread_join
 #undef pthread_create
@@ -44,7 +46,7 @@ pthread_cond_t GC_prom_join_cv;		/* Broadcast when any thread terminates	*/
 pthread_cond_t GC_create_cv;		/* Signalled when a new undetached	*/
 				/* thread starts.			*/
 				
-extern bool GC_multithreaded;
+extern GC_bool GC_multithreaded;
 
 /* We use the allocation lock to protect thread-related data structures. */
 
@@ -163,7 +165,7 @@ GC_pthread_create(pthread_t *new_thread,
 # else
 
 #ifndef LINT
-  int GC_no_sunOS_threads;
+  int GC_no_sunOS_pthreads;
 #endif
 
 # endif /* SOLARIS_THREADS */

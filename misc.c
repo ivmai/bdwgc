@@ -42,7 +42,8 @@
 #          ifdef WIN32_THREADS
 	      GC_API CRITICAL_SECTION GC_allocate_ml;
 #          else
-#             ifdef IRIX_THREADS
+#             if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
+		 || defined(IRIX_JDK_THREADS)
 #		ifdef UNDEFINED
 		    pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
 #		endif
@@ -59,7 +60,7 @@
 GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
 
 
-bool GC_debugging_started = FALSE;
+GC_bool GC_debugging_started = FALSE;
 	/* defined here so we don't have to load debug_malloc.o */
 
 void (*GC_check_heap)() = (void (*)())0;
@@ -68,9 +69,9 @@ void (*GC_start_call_back)() = (void (*)())0;
 
 ptr_t GC_stackbottom = 0;
 
-bool GC_dont_gc = 0;
+GC_bool GC_dont_gc = 0;
 
-bool GC_quiet = 0;
+GC_bool GC_quiet = 0;
 
 /*ARGSUSED*/
 GC_PTR GC_default_oom_fn GC_PROTO((size_t bytes_requested))
@@ -232,8 +233,6 @@ word limit;
 }
 #endif
 
-extern ptr_t GC_approx_sp();	/* in mark_rts.c */
-
 /* Clear some of the inaccessible part of the stack.  Returns its	*/
 /* argument, so it can be used in a tail call position, hence clearing  */
 /* another frame.							*/
@@ -330,8 +329,7 @@ ptr_t arg;
     /* Make sure r points to the beginning of the object */
 	r &= ~(WORDS_TO_BYTES(1) - 1);
         {
-	    register int offset =
-	        	(char *)r - (char *)(HBLKPTR(r)) - HDR_BYTES;
+	    register int offset = (char *)r - (char *)(HBLKPTR(r));
 	    register signed_word sz = candidate_hdr -> hb_sz;
 	    
 #	    ifdef ALL_INTERIOR_POINTERS
@@ -392,11 +390,7 @@ size_t GC_get_bytes_since_gc GC_PROTO(())
     return ((size_t) WORDS_TO_BYTES(GC_words_allocd));
 }
 
-bool GC_is_initialized = FALSE;
-
-#if defined(SOLARIS_THREADS) || defined(IRIX_THREADS)
-    extern void GC_thr_init();
-#endif
+GC_bool GC_is_initialized = FALSE;
 
 void GC_init()
 {
@@ -424,22 +418,32 @@ void GC_init_inner()
     
     if (GC_is_initialized) return;
     GC_setpagesize();
-    GC_exclude_static_roots(beginGC_arrays, endGC_arrays);
+    GC_exclude_static_roots(beginGC_arrays, end_gc_area);
+#   ifdef PRINTSTATS
+	if ((ptr_t)endGC_arrays != (ptr_t)(&GC_obj_kinds)) {
+	    GC_printf0("Reordering linker, didn't exclude obj_kinds\n");
+	}
+#   endif
 #   ifdef MSWIN32
  	GC_init_win32();
 #   endif
 #   if defined(LINUX) && defined(POWERPC)
 	GC_init_linuxppc();
 #   endif
+#   if defined(LINUX) && defined(SPARC)
+	GC_init_linuxsparc();
+#   endif
 #   ifdef SOLARIS_THREADS
 	GC_thr_init();
 	/* We need dirty bits in order to find live stack sections.	*/
         GC_dirty_init();
 #   endif
-#   ifdef IRIX_THREADS
-	GC_thr_init();
+#   if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
+       || defined(IRIX_JDK_THREADS)
+        GC_thr_init();
 #   endif
-#   if !defined(THREADS) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || defined(IRIX_THREADS)
+#   if !defined(THREADS) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) \
+       || defined(IRIX_THREADS) || defined(LINUX_THREADS)
       if (GC_stackbottom == 0) {
 	GC_stackbottom = GC_get_stack_base();
       }
@@ -554,16 +558,16 @@ void GC_init_inner()
 
 void GC_enable_incremental GC_PROTO(())
 {
+# if  !defined(FIND_LEAK) && !defined(SMALL_CONFIG)
     DCL_LOCK_STATE;
     
-# ifndef FIND_LEAK
     DISABLE_SIGNALS();
     LOCK();
     if (GC_incremental) goto out;
     GC_setpagesize();
 #   ifdef MSWIN32
       {
-        extern bool GC_is_win32s();
+        extern GC_bool GC_is_win32s();
 
 	/* VirtualProtect is not functional under win32s.	*/
 	if (GC_is_win32s()) goto out;
@@ -756,6 +760,39 @@ char * msg;
     (void) abort();
 }
 #endif
+
+#ifdef NEED_CALLINFO
+
+void GC_print_callers (info)
+struct callinfo info[NFRAMES];
+{
+    register int i;
+    
+#   if NFRAMES == 1
+      GC_err_printf0("\tCaller at allocation:\n");
+#   else
+      GC_err_printf0("\tCall chain at allocation:\n");
+#   endif
+    for (i = 0; i < NFRAMES; i++) {
+     	if (info[i].ci_pc == 0) break;
+#	if NARGS > 0
+	{
+	  int j;
+
+     	  GC_err_printf0("\t\targs: ");
+     	  for (j = 0; j < NARGS; j++) {
+     	    if (j != 0) GC_err_printf0(", ");
+     	    GC_err_printf2("%d (0x%X)", ~(info[i].ci_arg[j]),
+     	    				~(info[i].ci_arg[j]));
+     	  }
+	  GC_err_printf0("\n");
+	}
+# 	endif
+     	GC_err_printf1("\t\t##PC##= 0x%X\n", info[i].ci_pc);
+    }
+}
+
+#endif /* SAVE_CALL_CHAIN */
 
 # ifdef SRC_M3
 void GC_enable()

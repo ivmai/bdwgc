@@ -648,8 +648,9 @@ void GC_enqueue_all_finalizers()
  * which can make the runtime guarantee that all finalizers are run.
  * Unfortunately, the Java standard implies we have to keep running
  * finalizers until there are no more left, a potential infinite loop.
- * YUCK.  * This routine is externally callable, so is called without 
- * the allocation lock 
+ * YUCK.
+ * This routine is externally callable, so is called without 
+ * the allocation lock. 
  */
 void GC_finalize_all()
 {
@@ -661,7 +662,7 @@ void GC_finalize_all()
       GC_enqueue_all_finalizers();
       UNLOCK();
       ENABLE_SIGNALS();
-      GC_invoke_finalizers();
+      GC_INVOKE_FINALIZERS();
       DISABLE_SIGNALS();
       LOCK();
     }
@@ -672,9 +673,10 @@ void GC_finalize_all()
 
 /* Invoke finalizers for all objects that are ready to be finalized.	*/
 /* Should be called without allocation lock.				*/
-void GC_invoke_finalizers()
+int GC_invoke_finalizers()
 {
     register struct finalizable_object * curr_fo;
+    register int count = 0;
     DCL_LOCK_STATE;
     
     while (GC_finalize_now != 0) {
@@ -695,6 +697,7 @@ void GC_invoke_finalizers()
     	(*(curr_fo -> fo_fn))((ptr_t)(curr_fo -> fo_hidden_base),
     			      curr_fo -> fo_client_data);
     	curr_fo -> fo_client_data = 0;
+	++count;
 #	ifdef UNDEFINED
 	    /* This is probably a bad idea.  It throws off accounting if */
 	    /* nearly all objects are finalizable.  O.w. it shouldn't	 */
@@ -702,6 +705,7 @@ void GC_invoke_finalizers()
     	    GC_free((GC_PTR)curr_fo);
 #	endif
     }
+    return count;
 }
 
 # ifdef __STDC__

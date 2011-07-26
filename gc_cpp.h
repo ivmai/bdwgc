@@ -133,7 +133,8 @@ uses explicit invocation.
 #endif
 
 #if ! defined( OPERATOR_NEW_ARRAY ) \
-    && (__BORLANDC__ >= 0x450 || (__GNUC__ >= 2 && __GNUC_MINOR__ >= 6))
+    && (__BORLANDC__ >= 0x450 || (__GNUC__ >= 2 && __GNUC_MINOR__ >= 6) \
+        || __WATCOMC__ >= 1050)
 #   define OPERATOR_NEW_ARRAY
 #endif
 
