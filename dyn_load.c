@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1997 by Silicon Graphics.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -13,7 +14,6 @@
  * Original author: Bill Janssen
  * Heavily modified by Hans Boehm and others
  */
-/* Boehm, September 21, 1995 5:57 pm PDT */
 
 /*
  * This is incredibly OS specific code for tracking down data sections in
@@ -45,7 +45,10 @@
 # endif
 
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32)) && !defined(PCR)
-#if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && !defined(MSWIN32) && !(defined(ALPHA) && defined(OSF1)) &&!defined(HP_PA) && (!defined(LINUX) && !defined(__ELF__))
+#if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && \
+    !defined(MSWIN32) && !(defined(ALPHA) && defined(OSF1)) && \
+    !defined(HP_PA) && (!defined(LINUX) && !defined(__ELF__)) && \
+    !defined(RS6000)
  --> We only know how to find data segments of dynamic libraries for the
  --> above.  Additional SVR4 variants might not be too
  --> hard to add.
@@ -68,7 +71,7 @@
 #endif
 
 
-#ifdef SUNOS5DL
+#if defined(SUNOS5DL) && !defined(USE_PROC_FOR_LIBRARIES)
 
 #ifdef LINT
     Elf32_Dyn _DYNAMIC;
@@ -114,9 +117,9 @@ GC_FirstDLOpenedLinkMap()
     return cachedResult;
 }
 
-#endif
+#endif /* SUNOS5DL ... */
 
-#ifdef SUNOS4
+#if defined(SUNOS4) && !defined(USE_PROC_FOR_LIBRARIES)
 
 #ifdef LINT
     struct link_dynamic _DYNAMIC;
@@ -154,7 +157,7 @@ static ptr_t GC_first_common()
     return(result);
 }
 
-#endif
+#endif  /* SUNOS4 ... */
 
 # if defined(SUNOS4) || defined(SUNOS5DL)
 /* Add dynamic library data sections to the root set.		*/
@@ -171,23 +174,28 @@ static ptr_t GC_first_common()
   /* and friends.					*/
 # include <thread.h>
 # include <synch.h>
-  
+
 void * GC_dlopen(const char *path, int mode)
 {
     void * result;
     
-    mutex_lock(&GC_allocate_ml);
+#   ifndef USE_PROC_FOR_LIBRARIES
+      mutex_lock(&GC_allocate_ml);
+#   endif
     result = dlopen(path, mode);
-    mutex_unlock(&GC_allocate_ml);
+#   ifndef USE_PROC_FOR_LIBRARIES
+      mutex_unlock(&GC_allocate_ml);
+#   endif
     return(result);
 }
-# endif
+# endif  /* SOLARIS_THREADS */
 
 /* BTL: added to fix circular dlopen definition if SOLARIS_THREADS defined */
 # if defined(GC_must_restore_redefined_dlopen)
 #   define dlopen GC_dlopen
 # endif
 
+# ifndef USE_PROC_FOR_LIBRARIES
 void GC_register_dynamic_libraries()
 {
   struct link_map *lm = GC_FirstDLOpenedLinkMap();
@@ -249,6 +257,7 @@ void GC_register_dynamic_libraries()
 #   endif
 }
 
+# endif /* !USE_PROC ... */
 # endif /* SUNOS */
 
 #if defined(LINUX) && defined(__ELF__)
@@ -264,7 +273,7 @@ void GC_register_dynamic_libraries()
 /* Newer versions of Linux/Alpha and Linux/x86 define this macro.  We
  * define it for those older versions that don't.  */
 #  ifndef ElfW
-#    if ELF_CLASS == ELFCLASS32
+#    if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
 #      define ElfW(type) Elf32_##type
 #    else
 #      define ElfW(type) Elf64_##type
@@ -279,6 +288,9 @@ GC_FirstDLOpenedLinkMap()
     struct r_debug *r;
     static struct link_map *cachedResult = 0;
 
+    if( _DYNAMIC == 0) {
+        return(0);
+    }
     if( cachedResult == 0 ) {
         int tag;
         for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {
@@ -329,7 +341,7 @@ void GC_register_dynamic_libraries()
 
 #endif
 
-#ifdef IRIX5
+#if defined(IRIX5) || defined(USE_PROC_FOR_LIBRARIES)
 
 #include <sys/procfs.h>
 #include <sys/stat.h>
@@ -358,6 +370,10 @@ void GC_register_dynamic_libraries()
     ptr_t heap_start = (ptr_t)HEAP_START;
     ptr_t heap_end = heap_start;
 
+#   ifdef SUNOS5DL
+#     define MA_PHYS 0
+#   endif /* SUNOS5DL */
+
     if (fd < 0) {
       sprintf(buf, "/proc/%d", getpid());
       fd = open(buf, O_RDONLY);
@@ -375,7 +391,8 @@ void GC_register_dynamic_libraries()
         addr_map = (prmap_t *)GC_scratch_alloc(current_sz * sizeof(prmap_t));
     }
     if (ioctl(fd, PIOCMAP, addr_map) < 0) {
-	GC_err_printf2("fd = %d, errno = %d\n", fd, errno);
+        GC_err_printf4("fd = %d, errno = %d, needed_sz = %d, addr_map = 0x%X\n",
+                        fd, errno, needed_sz, addr_map);
     	ABORT("/proc PIOCMAP ioctl failed");
     };
     if (GC_n_heap_sects > 0) {
@@ -396,6 +413,10 @@ void GC_register_dynamic_libraries()
         if (GC_roots_present(start)) goto irrelevant;
         if (start < heap_end && start >= heap_start)
         	goto irrelevant;
+#	ifdef MMAP_STACKS
+	  if (GC_is_thread_stack(start)) goto irrelevant;
+#	endif /* MMAP_STACKS */
+
         limit = start + addr_map[i].pr_size;
 	if (addr_map[i].pr_off == 0 && strncmp(start, ELFMAG, 4) == 0) {
 	    /* Discard text segments, i.e. 0-offset mappings against	*/
@@ -434,7 +455,7 @@ void GC_register_dynamic_libraries()
 	fd = -1;
 }
 
-#endif  /* IRIX5 */
+# endif /* USE_PROC || IRIX5 */
 
 # ifdef MSWIN32
 
@@ -471,7 +492,7 @@ void GC_register_dynamic_libraries()
 	    GC_add_roots_inner(curr_base, next_stack_lo, TRUE);
 	    curr_base = next_stack_hi;
 	}
-	if (curr_base < limit) GC_add_roots_inner(curr_base, limit);
+	if (curr_base < limit) GC_add_roots_inner(curr_base, limit, TRUE);
     }
 #   else
         if (limit > stack_top && base < GC_stackbottom) {
@@ -631,6 +652,7 @@ void GC_register_dynamic_libraries()
 
 #if defined(HP_PA)
 
+#include <errno.h>
 #include <dl.h>
 
 extern int errno;
@@ -684,6 +706,40 @@ void GC_register_dynamic_libraries()
     }
 }
 #endif /* HP_PA */
+
+#ifdef RS6000
+#pragma alloca
+#include <sys/ldr.h>
+#include <sys/errno.h>
+void GC_register_dynamic_libraries()
+{
+	int len;
+	char *ldibuf;
+	int ldibuflen;
+	struct ld_info *ldi;
+
+	ldibuf = alloca(ldibuflen = 8192);
+
+	while ( (len = loadquery(L_GETINFO,ldibuf,ldibuflen)) < 0) {
+		if (errno != ENOMEM) {
+			ABORT("loadquery failed");
+		}
+		ldibuf = alloca(ldibuflen *= 2);
+	}
+
+	ldi = (struct ld_info *)ldibuf;
+	while (ldi) {
+		len = ldi->ldinfo_next;
+		GC_add_roots_inner(
+				ldi->ldinfo_dataorg,
+				(unsigned long)ldi->ldinfo_dataorg
+			        + ldi->ldinfo_datasize,
+				TRUE);
+		ldi = len ? (struct ld_info *)((char *)ldi + len) : 0;
+	}
+}
+#endif /* RS6000 */
+
 
 
 #else /* !DYNAMIC_LOADING */

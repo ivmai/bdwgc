@@ -1,0 +1,7 @@
+See README.alpha for Linux on DEC AXP info.  This file applies to
+Linux/Intel.
+
+Incremental GC is supported.
+
+Dynamic libraries are supported on an ELF system.  A static executable
+should be linked with the gcc option "-Wl,-defsym,_DYNAMIC=0".

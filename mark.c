@@ -78,9 +78,11 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 # endif
 
 
-# define INITIAL_MARK_STACK_SIZE (1*HBLKSIZE)
+# ifndef INITIAL_MARK_STACK_SIZE
+#   define INITIAL_MARK_STACK_SIZE (1*HBLKSIZE)
 		/* INITIAL_MARK_STACK_SIZE * sizeof(mse) should be a 	*/
 		/* multiple of HBLKSIZE.				*/
+# endif
 
 /*
  * Limits of stack for GC_mark routine.
@@ -494,17 +496,14 @@ word n;
     GC_mark_stack_too_small = FALSE;
     if (GC_mark_stack_size != 0) {
         if (new_stack != 0) {
-          word displ = HBLKDISPL(GC_mark_stack);
+          word displ = (word)GC_mark_stack & (GC_page_size - 1);
           word size = GC_mark_stack_size * sizeof(struct ms_entry);
           
           /* Recycle old space */
-            if (displ == 0) {
-              GC_add_to_heap((struct hblk *)GC_mark_stack, size);
-	    } else {
+	      if (0 != displ) displ = GC_page_size - displ;
+	      size = (size - displ) & ~(GC_page_size - 1);
 	      GC_add_to_heap((struct hblk *)
-	      			((word)GC_mark_stack - displ + HBLKSIZE),
-	      		     size - HBLKSIZE);
-	    }
+	      			((word)GC_mark_stack + displ), size);
           GC_mark_stack = new_stack;
           GC_mark_stack_size = n;
 #	  ifdef PRINTSTATS
@@ -620,6 +619,7 @@ void (*push_fn)(/* ptr_t bottom, ptr_t top */);
 void GC_push_conditional(bottom, top, all)
 ptr_t bottom;
 ptr_t top;
+int all;
 {
     if (all) {
       if (GC_dirty_maintained) {
@@ -934,7 +934,12 @@ register hdr * hhdr;
     register mse * mark_stack_limit = &(GC_mark_stack[GC_mark_stack_size]);
     
     /* Some quick shortcuts: */
-        if (hhdr -> hb_obj_kind == PTRFREE) return;
+	{ 
+	    struct obj_kind *ok = &(GC_obj_kinds[hhdr -> hb_obj_kind]);
+	    if ((0 | DS_LENGTH) == ok -> ok_descriptor
+		&& FALSE == ok -> ok_relocate_descr)
+		return;
+	}
         if (GC_block_empty(hhdr)/* nothing marked */) return;
 #   ifdef GATHERSTATS
         GC_n_rescuing_pages++;

@@ -11,7 +11,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.11 of a conservative garbage collector for C and C++.
+This is version 4.12 of a conservative garbage collector for C and C++.
 
 HISTORY -
 
@@ -213,28 +213,14 @@ include subdirectory.  (Normally this is just gc.h.  "Make cords" adds
 "cord.h" and "ec.h".)
 
   The collector currently is designed to run essentially unmodified on
-at least the following machines (most or all of the system names mentioned are
-trademarks of their respective holders):
-
-	    SGI workstations under IRIX 4, 5, & 6
-	    Intel 386 or 486 under most operating systems, but not MSDOS.
-	    	(Win32S is somewhat supported, so it is marginally possible to
-	    	build applications for Windows 3.1.  DOS + djgpp should also
-		work.)
-	    Sun 3
-	    Sun 4 under SunOS 4.X or Solaris2.X (with or without threads)
-	    Vax under 4.3BSD, Ultrix
-	    IBM PC/RT  (Berkeley UNIX)
-	    IBM RS/6000
-	    HP9000/300
-	    HP9000/700
-	    DECstations under Ultrix
-	    DEC Alpha running OSF/1
-	    Sony News
-	    Apple Macintosh under A/UX or MacOS
-	    Commodore Amiga
-	    NeXT machines
-	    Some more obscure and/or obsolete systems ...
+machines that use a flat 32-bit or 64-bit address space.
+That includes the vast majority of Workstations and X86 (X >= 3) PCs.
+(The list here was deleted because it was getting too long and constantly
+out of date.)
+  It does NOT run under plain 16-bit DOS or Windows 3.X.  There are however
+various packages (e.g. win32s, djgpp) that allow flat 32-bit address
+applications to run under those systemsif the have at least an 80386 processor,
+and several of those are compatible with the collector.
 
   In a few cases (Amiga, OS/2, Win32, MacOS) a separate makefile
 or equivalent is supplied.  Many of these have separate README.system
@@ -1249,5 +1235,107 @@ Since 4.10:
    Patrick Bridges.)
  - Changed the Borland cc configuration so that the assembler is not
    required.
- - Fixed a bug in the C++ test that casued it to fail in 64-bit
+ - Fixed a bug in the C++ test that caused it to fail in 64-bit
    environments.
+
+Since 4.11:
+ - Fixed ElfW definition in dyn_load.c. (Thanks to Fergus Henderson.)
+   This prevented the dynamic library support from compiling on some
+   older ELF Linux systems.
+ - Fixed UTS4 port (which I apparently mangled during the integration)
+   (Thanks to again to Alistair Crooks.)
+ - "Make C++" failed on Suns with SC4.0, due to a problem with "bool".
+   Fixed in gc_priv.h.
+ - Added more pieces for GNU win32.  (Thanks to Timothy N. Newsham.)
+   The current state of things should suffice for at least some
+   applications.
+ - Changed the out of memory retry count handling as suggested by
+   Kenjiro Taura.  (This matters only if GC_max_retries > 0, which
+   is no longer the default.)
+ - If a /proc read failed repeatedly, GC_written_pages was not updated
+   correctly.  (Thanks to Peter Chubb for diagnosing this.)
+ - Under unlikely circumstances, the allocator could infinite loop in
+   an out of memory situation.  (Thanks again to Kenjiro Taura for
+   identifying the problem and supplying a fix.)
+ - Fixed a syntactic error in the DJGPP code.  (Thanks to Fergus
+   Henderson for finding this by inspection.)  Also fixed a test program
+   problem with DJGPP (Thanks to Peter Monks.)
+ - Atomic uncollectable objects were not treated correctly by the
+   incremental collector.  This resulted in weird log statistics and
+   occasional performance problems.  (Thanks to Peter Chubb for pointing
+   this out.)
+ - Fixed some problems resulting from compilers that dont define
+   __STDC__.  In this case void * and char * were used inconsistently
+   in some cases.  (Void * should not have been used at all.  If
+   you have an ANSI superset compiler that does not define __STDC__,
+   please compile with -D__STDC__=0. Thanks to Manuel Serrano and others
+   for pointing out the problem.)
+ - Fixed a compilation problem on Irix with -n32 and -DIRIX_THREADS.
+   Also fixed some other IRIX_THREADS problems which may or may not have
+   had observable symptoms.
+ - Fixed an HP PA compilation problem in dyn_load.c.  (Thanks to
+   Philippe Queinnec.)
+ - SEGV fault handlers sometimes did not get reset correctly.  (Thanks
+   to David Pickens.)
+ - Added a fix for SOLARIS_THREADS on Intel.  (Thanks again to David
+   Pickens.)  This probably needs more work to become functional.
+ - Fixed struct sigcontext_struct in os_dep.c for compilation under
+   Linux 2.1.X.	(Thanks to Fergus Henderson.)
+ - Changed the DJGPP STACKBOTTOM and DATASTART values to those suggested
+   by Kristian Kristensen.  These may still not be right, but it is
+   it is likely to work more often than what was there before.  They may
+   even be exactly right.
+ - Added a #include <string.h> to test_cpp.cc.  This appears to help
+   with HP/UX and gcc.  (Thanks to assar@sics.se.)
+ - Version 4.11 failed to run in incremental mode on recent 64-bit Irix
+   kernels.  This was a problem related to page unaligned heap segments.
+   Changed the code to page align heap sections on all platforms.
+   (I had mistakenly identified this as a kernel problem earlier.
+   It was not.)
+ - Version 4.11 did not make allocated storage executable, except on
+   one or two platforms, due to a bug in a #if test.  (Thanks to Dave
+   Grove for pointing this out.)
+ - Added sparc_sunos4_mach_dep.s to support Sun's compilers under SunOS4.
+ - Added GC_exclude_static_roots.
+ - Fixed the object size mapping algorithm.  This shouldn't matter,
+   but the old code was ugly.
+ - Heap checking code could die if one of the allocated objects was
+   larger than its base address.  (Unsigned underflow problem.  Thanks
+   to Clay Spence for isolating the problem.)
+ - Added RS6000 (AIX) dynamic library support and fixed STACK_BOTTOM.
+   (Thanks to Fred Stearns.)
+ - Added Fergus Henderson's patches for improved robustness with large
+   heaps and lots of blacklisting.
+ - Added Peter Chubb's changes to support Solaris Pthreads, to support
+   MMAP allocation in Solaris, to allow Solaris to find dynamic libraries
+   through /proc, to add malloc_typed_ignore_off_page, and a few other
+   minor features and bug fixes.
+ - The Solaris 2 port should not use sbrk.  I received confirmation from
+   Sun that the use of sbrk and malloc in the same program is not
+   supported.  The collector now defines USE_MMAP by default on Solaris.
+ - Replaced the djgpp makefile with Gary Leavens' version.
+ - Fixed MSWIN32 detection test.
+ - Added Fergus Henderson's patches to allow putting the collector into
+   a DLL under GNU win32.
+ - Added Ivan V. Demakov's port to Watcom C on X86.
+ - Added Ian Piumarta's Linux/PowerPC port.
+ - On Brian Burton's suggestion added PointerFreeGC to the placement
+   options in gc_cpp.h.  This is of course unsafe, and may be controversial.
+   On the other hand, it seems to be needed often enough that it's worth
+   adding as a standard facility.
+
+To do:
+ - Very large root set sizes (> 16 MB or so) could cause the collector
+   to abort with an unexpected mark stack overflow.  (Thanks again to
+   Peter Chubb.)  NOT YET FIXED.  Workaround is to increase the initial
+   size.
+ - The SGI version of the collector marks from mmapped pages, even
+   if they are not part of dynamic library static data areas.  This
+   causes performance problems with some SGI libraries that use mmap
+   as a bitmap allocator.  NOT YET FIXED.  It may be possible to turn
+   off DYNAMIC_LOADING in the collector as a workaround.  It may also
+   be possible to conditionally intercept mmap and use GC_exclude_static_roots.
+   The real fix is to walk rld data structures, which looks possible.
+ - SGI pthreads and incremental collection don't mix yet.
+ - Integrate MIT and DEC pthreads ports.
+ 

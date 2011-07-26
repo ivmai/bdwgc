@@ -25,6 +25,7 @@
 
 extern ptr_t GC_clear_stack();  /* in misc.c, behaves like identity */
 void GC_extend_size_map();      /* in misc.c. */
+bool GC_alloc_reclaim_list();	/* in malloc.c */
 
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h	 */

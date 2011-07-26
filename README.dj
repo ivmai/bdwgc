@@ -1,19 +1,12 @@
-[Partially supplied by Xiaokun Zhu <xiaokun@aero.gla.ac.uk>]
+[Original version supplied by Xiaokun Zhu <xiaokun@aero.gla.ac.uk>]
+[This version came mostly from Gary Leavens.			  ]
 
-There is no caddr_t in djgpp 2.01 so the following declaration was added to
-os_dep.c. It may need to be removed for other versions.
+Look first at Makefile.dj, and possibly change the definitions of
+RM and MV if you don't have rm and mv installed.
+Then use Makefile.dj to compile the garbage collector.
+For example, you can do:
 
-	typedef caddr_t long unsigned int;
+	make -f Makefile.dj test
 
+All the tests should work fine.
 
-Use Makefile.dj to compile it :
-
-	C> make -f Makefile.dj test
-
-
-!!! setjmp_t.exe works fine.
-!!! gctest.exe works fine.
-!!! cordtest.exe fail.
-!!! test_cpp.exe works fine.
-
-In some cases it may be necessary to explicitly set GC_stackbottom.

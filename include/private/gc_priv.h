@@ -20,7 +20,7 @@
 #if defined(mips) && defined(SYSTYPE_BSD) && defined(sony_news)
     /* sony RISC NEWS, NEWSOS 4 */
 #   define BSD_TIME
-    typedef long ptrdiff_t;
+/*    typedef long ptrdiff_t;   -- necessary on some really old systems	*/
 #endif
 
 #if defined(mips) && defined(SYSTYPE_BSD43)
@@ -55,6 +55,9 @@ typedef GC_signed_word signed_word;
     /* By now they should.						     */
 # else
 #   if defined(_SGI_SOURCE) && !defined(_BOOL)
+	typedef int bool;
+#   endif
+#   if defined(__SUNPRO_CC) && __SUNPRO_CC <= 0x410
 	typedef int bool;
 #   endif
 #   if defined(__cplusplus) && defined(_MSC_VER) && _MSC_VER <= 1020
@@ -320,18 +323,19 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 /* space is assumed to be cleared.				*/
 # ifdef PCR
     char * real_malloc();
-#   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)bytes + HBLKSIZE) \
-				  + HBLKSIZE-1)
+#   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)bytes + GC_page_size) \
+				  + GC_page_size-1)
 # else
 #   ifdef OS2
       void * os2_alloc(size_t bytes);
-#     define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc((size_t)bytes + HBLKSIZE) \
-                                    + HBLKSIZE-1)
+#     define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc((size_t)bytes \
+				    + GC_page_size) \
+                                    + GC_page_size-1)
 #   else
-#     if defined(AMIGA) || defined(NEXT)
+#     if defined(AMIGA) || defined(NEXT) || defined(DOS4GW)
 #       define GET_MEM(bytes) HBLKPTR((size_t) \
-				      calloc(1, (size_t)bytes + HBLKSIZE) \
-                                      + HBLKSIZE-1)
+				      calloc(1, (size_t)bytes + GC_page_size) \
+                                      + GC_page_size-1)
 #     else
 #	ifdef MSWIN32
           extern ptr_t GC_win32_get_mem();
@@ -342,14 +346,15 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 		extern Ptr GC_MacTemporaryNewPtr(size_t size,
 						 Boolean clearMemory);
 #               define GET_MEM(bytes) HBLKPTR( \
-		    GC_MacTemporaryNewPtr(bytes + HBLKSIZE, true) + HBLKSIZE-1)
+		    GC_MacTemporaryNewPtr(bytes + GC_page_size, true) \
+		    + GC_page_size-1)
 #	    else
 #         	    define GET_MEM(bytes) HBLKPTR( \
-			NewPtrClear(bytes + HBLKSIZE) + HBLKSIZE-1)
+			NewPtrClear(bytes + GC_page_size) + GC_page_size-1)
 #	    endif
 #	  else
-            extern ptr_t GC_unix_get_mem();
-#           define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
+              extern ptr_t GC_unix_get_mem();
+#             define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
 #	  endif
 #	endif
 #     endif
@@ -436,7 +441,7 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #    else
 #	define LOCK() { if (__test_and_set(&GC_allocate_lock, 1)) GC_lock(); }
 #       if __mips >= 3 && (defined (_ABIN32) || defined(_ABI64))
-#	    define UNLOCK() __lock_release(lock)
+#	    define UNLOCK() __lock_release(&GC_allocate_lock)
 #	else
 #           define UNLOCK() GC_allocate_lock = 0
 #	endif
@@ -601,18 +606,43 @@ extern GC_warn_proc GC_current_warn_proc;
 
 /*  heap block size, bytes. Should be power of 2 */
 
-#ifdef SMALL_CONFIG
+#ifndef HBLKSIZE
+# ifdef SMALL_CONFIG
 #   define CPP_LOG_HBLKSIZE 10
-#else
-# if CPP_WORDSZ == 32
-#   define CPP_LOG_HBLKSIZE 12
 # else
+#   if CPP_WORDSZ == 32
+#     define CPP_LOG_HBLKSIZE 12
+#   else
+#     define CPP_LOG_HBLKSIZE 13
+#   endif
+# endif
+#else
+# if HBLKSIZE == 512
+#   define CPP_LOG_HBLKSIZE 9
+# endif
+# if HBLKSIZE == 1024
+#   define CPP_LOG_HBLKSIZE 10
+# endif
+# if HBLKSIZE == 2048
+#   define CPP_LOG_HBLKSIZE 11
+# endif
+# if HBLKSIZE == 4096
+#   define CPP_LOG_HBLKSIZE 12
+# endif
+# if HBLKSIZE == 8192
 #   define CPP_LOG_HBLKSIZE 13
 # endif
+# if HBLKSIZE == 16384
+#   define CPP_LOG_HBLKSIZE 14
+# endif
+# ifndef CPP_LOG_HBLKSIZE
+    --> fix HBLKSIZE
+# endif
+# undef HBLKSIZE
 #endif
-#define LOG_HBLKSIZE   ((word)CPP_LOG_HBLKSIZE)
-#define CPP_HBLKSIZE (1 << CPP_LOG_HBLKSIZE)
-#define HBLKSIZE ((word)CPP_HBLKSIZE)
+# define CPP_HBLKSIZE (1 << CPP_LOG_HBLKSIZE)
+# define LOG_HBLKSIZE   ((word)CPP_LOG_HBLKSIZE)
+# define HBLKSIZE ((word)CPP_HBLKSIZE)
 
 
 /*  max size objects supported by freelist (larger objects may be   */
@@ -798,8 +828,9 @@ struct _GC_arrays {
   word _words_allocd;
   	/* Number of words allocated during this collection cycle */
   word _words_wasted;
-  	/* Number of words wasted due to internal fragmentation	 */
-  	/* in large objects allocated since last gc. Approximate.*/
+  	/* Number of words wasted due to internal fragmentation	*/
+  	/* in large objects, or due to dropping blacklisted     */
+	/* blocks, since last gc.  Approximate.                 */
   word _words_finalized;
   	/* Approximate number of words in objects (and headers)	*/
   	/* That became ready for finalization in the last 	*/
@@ -1017,16 +1048,21 @@ extern int GC_n_kinds;
 extern word GC_n_heap_sects;	/* Number of separately added heap	*/
 				/* sections.				*/
 
+extern word GC_page_size;
+
 # ifdef MSWIN32
 extern word GC_n_heap_bases;	/* See GC_heap_bases.	*/
 # endif
 
-extern word GC_total_black_listed;
+extern word GC_total_stack_black_listed;
 			/* Number of bytes on stack blacklist. 	*/
 
 extern word GC_black_list_spacing;
 			/* Average number of bytes between blacklisted	*/
 			/* blocks. Approximate.				*/
+			/* Counts only blocks that are 			*/
+			/* "stack-blacklisted", i.e. that are 		*/
+			/* problematic in the interior of an object.	*/
 
 extern char * GC_invalid_map;
 			/* Pointer to the nowhere valid hblk map */
@@ -1139,11 +1175,23 @@ extern void (*GC_push_other_roots)();
 			/* predfined to be non-zero.  A client supplied */
 			/* replacement should also call the original	*/
 			/* function.					*/
+extern void (*GC_start_call_back)(/* void */);
+			/* Called at start of full collections.		*/
+			/* Not called if 0.  Called with allocation 	*/
+			/* lock held.					*/
+			/* 0 by default.				*/
 void GC_push_regs();	/* Push register contents onto mark stack.	*/
 void GC_remark();	/* Mark from all marked objects.  Used	*/
 		 	/* only if we had to drop something.	*/
 void GC_push_one(/*p*/);	/* If p points to an object, mark it	*/
 				/* and push contents on the mark stack	*/
+/* Ivan Demakov: Watcom C error'ed without this */
+# if defined(MSWIN32) && defined(__WATCOMC__)
+  void __cdecl GC_push_one();
+# else
+  void GC_push_one(/*p*/);    /* If p points to an object, mark it    */
+                              /* and push contents on the mark stack  */
+# endif
 void GC_push_one_checked(/*p*/); /* Ditto, omits plausibility test	*/
 void GC_push_marked(/* struct hblk h, hdr * hhdr */);
 		/* Push contents of all marked objects in h onto	*/
@@ -1284,12 +1332,17 @@ void GC_collect_a_little_inner(/* int n */);
 ptr_t GC_generic_malloc(/* bytes, kind */);
 				/* Allocate an object of the given	*/
 				/* kind.  By default, there are only	*/
-				/* two kinds: composite, and atomic.	*/
+				/* a few kinds: composite(pointerfree), */
+				/* atomic, uncollectable, etc.		*/
 				/* We claim it's possible for clever	*/
 				/* client code that understands GC	*/
 				/* internals to add more, e.g. to	*/
 				/* communicate object layout info	*/
 				/* to the collector.			*/
+ptr_t GC_generic_malloc_ignore_off_page(/* bytes, kind */);
+				/* As above, but pointers past the 	*/
+				/* first page of the resulting object	*/
+				/* are ignored.				*/
 ptr_t GC_generic_malloc_inner(/* bytes, kind */);
 				/* Ditto, but I already hold lock, etc.	*/
 ptr_t GC_generic_malloc_words_small GC_PROTO((size_t words, int kind));
@@ -1416,5 +1469,6 @@ void GC_err_printf(/* format, a, b, c, d, e, f */);
 void GC_err_puts(/* char *s */);
 			/* Write s to stderr, don't buffer, don't add	*/
 			/* newlines, don't ...				*/
+
 
 # endif /* GC_PRIVATE_H */

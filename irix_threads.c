@@ -31,7 +31,9 @@
 #undef pthread_sigmask
 #undef pthread_join
 
-#ifdef UNDEFINED
+void GC_thr_init();
+
+#if 0
 void GC_print_sig_mask()
 {
     sigset_t blocked;
@@ -83,9 +85,9 @@ GC_thread GC_lookup_thread(pthread_t id);
 /*
  * The only way to suspend threads given the pthread interface is to send
  * signals.  Unfortunately, this means we have to reserve
- * SIGUSR2, and intercept client calls to change the signal mask.
+ * a signal, and intercept client calls to change the signal mask.
  */
-# define SIG_SUSPEND SIGUSR2
+# define SIG_SUSPEND (SIGRTMIN + 6)
 
 pthread_mutex_t GC_suspend_lock = PTHREAD_MUTEX_INITIALIZER;
 volatile unsigned GC_n_stopped = 0;
@@ -295,6 +297,8 @@ void GC_stop_world()
     }
     pthread_mutex_lock(&GC_suspend_lock);
     while(GC_n_stopped < n_live_threads) {
+        /* GC_printf3("\nwaiting:%d %d %d\n", GC_gc_no,
+			GC_n_stopped, n_live_threads); */
     	pthread_cond_wait(&GC_suspend_ack_cv, &GC_suspend_lock);
     }
     pthread_mutex_unlock(&GC_suspend_lock);
@@ -312,6 +316,25 @@ void GC_start_world()
     pthread_cond_broadcast(&GC_continue_cv);
 }
 
+# ifdef MMAP_STACKS
+--> not really supported yet.
+int GC_is_thread_stack(ptr_t addr)
+{
+    register int i;
+    register GC_thread p;
+
+    for (i = 0; i < THREAD_TABLE_SZ; i++) {
+      for (p = GC_threads[i]; p != 0; p = p -> next) {
+        if (p -> stack_size != 0) {
+            if (p -> stack <= addr &&
+                addr < p -> stack + p -> stack_size)
+                   return 1;
+       }
+      }
+    }
+    return 0;
+}
+# endif
 
 extern ptr_t GC_approx_sp();
 
@@ -347,7 +370,7 @@ void GC_push_all_stacks()
 
 
 /* We hold the allocation lock.	*/
-GC_thr_init()
+void GC_thr_init()
 {
     GC_thread t;
 
@@ -389,7 +412,7 @@ void GC_thread_exit_proc(void *dummy)
     if (me -> flags & DETACHED) {
     	GC_delete_thread(pthread_self());
     } else {
-	me -> flags != FINISHED;
+	me -> flags |= FINISHED;
     }
     UNLOCK();
 }

@@ -17,7 +17,7 @@
 #include "gc_priv.h"
 
 signed_word GC_mem_found = 0;
-			/* Number of longwords of memory GC_reclaimed     */
+			/* Number of words of memory reclaimed     */
 
 # ifdef FIND_LEAK
 static report_leak(p, sz)

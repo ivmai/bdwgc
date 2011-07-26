@@ -46,7 +46,7 @@ word * GC_incomplete_normal_bl;
 word * GC_old_stack_bl;
 word * GC_incomplete_stack_bl;
 
-word GC_total_black_listed;
+word GC_total_stack_black_listed;
 
 word GC_black_list_spacing = MINHINCR*HBLKSIZE;  /* Initial rough guess */
 
@@ -89,7 +89,7 @@ word *new, *old;
     BCOPY(old, new, sizeof(page_hash_table));
 }
 
-static word total_black_listed();
+static word total_stack_black_listed();
 
 /* Signal the completion of a collection.  Turn the incomplete black	*/
 /* lists into new black lists, etc.					*/			 
@@ -106,13 +106,14 @@ void GC_promote_black_lists()
     GC_clear_bl(very_old_stack_bl);
     GC_incomplete_normal_bl = very_old_normal_bl;
     GC_incomplete_stack_bl = very_old_stack_bl;
-    GC_total_black_listed = total_black_listed();
+    GC_total_stack_black_listed = total_stack_black_listed();
 #   ifdef PRINTSTATS
-  	GC_printf1("%ld blacklisted bytes in heap\n",
-  		   (unsigned long)GC_total_black_listed);
+  	GC_printf1("%ld bytes in heap blacklisted for interior pointers\n",
+  		   (unsigned long)GC_total_stack_black_listed);
 #   endif
-    if (GC_total_black_listed != 0) {
-        GC_black_list_spacing = HBLKSIZE*(GC_heapsize/GC_total_black_listed);
+    if (GC_total_stack_black_listed != 0) {
+        GC_black_list_spacing =
+		HBLKSIZE*(GC_heapsize/GC_total_stack_black_listed);
     }
     if (GC_black_list_spacing < 3 * HBLKSIZE) {
     	GC_black_list_spacing = 3 * HBLKSIZE;
@@ -230,7 +231,7 @@ struct hblk *start, *endp1;
 
 
 /* Return the total number of (stack) black-listed bytes. */
-static word total_black_listed()
+static word total_stack_black_listed()
 {
     register unsigned i;
     word total = 0;

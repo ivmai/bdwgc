@@ -19,6 +19,7 @@
 # if defined(SOLARIS_THREADS)
 
 # include "gc_priv.h"
+# include "solaris_threads.h"
 # include <thread.h>
 # include <synch.h>
 # include <signal.h>
@@ -34,8 +35,16 @@
 # include <sys/reg.h>
 # define _CLASSIC_XOPEN_TYPES
 # include <unistd.h>
+# include <errno.h>
 
-# define MAX_LWPS	32
+/*
+ * This is the default size of the LWP arrays. If there are more LWPs
+ * than this when a stop-the-world GC happens, set_max_lwps will be
+ * called to cope.
+ * This must be higher than the number of LWPs at startup time.
+ * The threads library creates a thread early on, so the min. is 3
+ */
+# define DEFAULT_MAX_LWPS	4
 
 #undef thr_join
 #undef thr_create
@@ -46,6 +55,10 @@ cond_t GC_prom_join_cv;		/* Broadcast when any thread terminates	*/
 cond_t GC_create_cv;		/* Signalled when a new undetached	*/
 				/* thread starts.			*/
 				
+
+#ifdef MMAP_STACKS
+static int GC_zfd;
+#endif /* MMAP_STACKS */
 
 /* We use the allocation lock to protect thread-related data structures. */
 
@@ -59,7 +72,6 @@ cond_t GC_create_cv;		/* Signalled when a new undetached	*/
 
 
 static sigset_t old_mask;
-# define MAX_LWPS	32
 
 /* Sleep for n milliseconds, n < 1000	*/
 void GC_msec_sleep(int n)
@@ -81,6 +93,7 @@ void preempt_off()
     sigset_t set;
 
     (void)sigfillset(&set);
+    sigdelset(&set, SIGABRT);
     syscall(SYS_sigprocmask, SIG_SETMASK, &set, &old_mask);
 }
 
@@ -91,12 +104,17 @@ void preempt_on()
 
 int GC_main_proc_fd = -1;
 
+
 struct lwp_cache_entry {
     lwpid_t lc_id;
     int lc_descr;	/* /proc file descriptor.	*/
-} GC_lwp_cache[MAX_LWPS];
+}  GC_lwp_cache_default[DEFAULT_MAX_LWPS];
 
-prgregset_t GC_lwp_registers[MAX_LWPS];
+static int max_lwps = DEFAULT_MAX_LWPS;
+static struct lwp_cache_entry *GC_lwp_cache = GC_lwp_cache_default;
+
+static prgregset_t GC_lwp_registers_default[DEFAULT_MAX_LWPS];
+static prgregset_t *GC_lwp_registers = GC_lwp_registers_default;
 
 /* Return a file descriptor for the /proc entry corresponding	*/
 /* to the given lwp.  The file descriptor may be stale if the	*/
@@ -107,17 +125,35 @@ static int open_lwp(lwpid_t id)
     static int next_victim = 0;
     register int i;
     
-    for (i = 0; i < MAX_LWPS; i++) {
+    for (i = 0; i < max_lwps; i++) {
     	if (GC_lwp_cache[i].lc_id == id) return(GC_lwp_cache[i].lc_descr);
     }
-    if ((result = syscall(SYS_ioctl, GC_main_proc_fd, PIOCOPENLWP, &id)) < 0) {
+    result = syscall(SYS_ioctl, GC_main_proc_fd, PIOCOPENLWP, &id);
+    /*
+     * If PIOCOPENLWP fails, try closing fds in the cache until it succeeds.
+     */
+    if (result < 0 && errno == EMFILE) {
+	    for (i = 0; i < max_lwps; i++) {
+		if (GC_lwp_cache[i].lc_id != 0) {
+        		(void)syscall(SYS_close, GC_lwp_cache[i].lc_descr);
+			result = syscall(SYS_ioctl, GC_main_proc_fd, PIOCOPENLWP, &id);
+			if (result >= 0 || (result < 0 && errno != EMFILE))
+				break;
+		}
+	    }
+    }
+    if (result < 0) {
+	if (errno == EMFILE) {
+		ABORT("Too many open files");
+	}
         return(-1) /* exited? */;
     }
     if (GC_lwp_cache[next_victim].lc_id != 0)
         (void)syscall(SYS_close, GC_lwp_cache[next_victim].lc_descr);
     GC_lwp_cache[next_victim].lc_id = id;
     GC_lwp_cache[next_victim].lc_descr = result;
-    next_victim++;
+    if (++next_victim >= max_lwps)
+	next_victim = 0;
     return(result);
 }
 
@@ -125,7 +161,7 @@ static void uncache_lwp(lwpid_t id)
 {
     register int i;
     
-    for (i = 0; i < MAX_LWPS; i++) {
+    for (i = 0; i < max_lwps; i++) {
     	if (GC_lwp_cache[i].lc_id == id) {
     	    (void)syscall(SYS_close, GC_lwp_cache[id].lc_descr);
     	    GC_lwp_cache[i].lc_id = 0;
@@ -133,8 +169,54 @@ static void uncache_lwp(lwpid_t id)
     	}
     }
 }
+	/* Sequence of current lwp ids	*/
+static lwpid_t GC_current_ids_default[DEFAULT_MAX_LWPS + 1];
+static lwpid_t *GC_current_ids = GC_current_ids_default;
 
-lwpid_t GC_current_ids[MAX_LWPS + 1];	/* Sequence of current lwp ids	*/
+	/* Temporary used below (can be big if large number of LWPs) */
+static lwpid_t last_ids_default[DEFAULT_MAX_LWPS + 1];
+static lwpid_t *last_ids = last_ids_default;
+
+
+#define ROUNDUP(n)    WORDS_TO_BYTES(ROUNDED_UP_WORDS(n))
+
+static void set_max_lwps(GC_word n)
+{
+    char *mem;
+    char *oldmem;
+    int required_bytes = ROUNDUP(n * sizeof(struct lwp_cache_entry))
+	+ ROUNDUP(n * sizeof(prgregset_t))
+	+ ROUNDUP((n + 1) * sizeof(lwpid_t))
+	+ ROUNDUP((n + 1) * sizeof(lwpid_t));
+
+    GC_expand_hp_inner(divHBLKSZ((word)required_bytes));
+    oldmem = mem = GC_scratch_alloc(required_bytes);
+    if (0 == mem) ABORT("No space for lwp data structures");
+
+    /*
+     * We can either flush the old lwp cache or copy it over. Do the latter.
+     */
+    memcpy(mem, GC_lwp_cache, max_lwps * sizeof(struct lwp_cache_entry));
+    GC_lwp_cache = (struct lwp_cache_entry*)mem;
+    mem += ROUNDUP(n * sizeof(struct lwp_cache_entry));
+
+    BZERO(GC_lwp_registers, max_lwps * sizeof(GC_lwp_registers[0]));
+    GC_lwp_registers = (prgregset_t *)mem;
+    mem += ROUNDUP(n * sizeof(prgregset_t));
+
+
+    GC_current_ids = (lwpid_t *)mem;
+    mem += ROUNDUP((n + 1) * sizeof(lwpid_t));
+
+    last_ids = (lwpid_t *)mem;
+    mem += ROUNDUP((n + 1)* sizeof(lwpid_t));
+
+    if (mem > oldmem + required_bytes)
+	ABORT("set_max_lwps buffer overflow");
+
+    max_lwps = n;
+}
+
 
 /* Stop all lwps in process.  Assumes preemption is off.	*/
 /* Caller has allocation lock (and any other locks he may	*/
@@ -144,7 +226,6 @@ static void stop_all_lwps()
     int lwp_fd;
     char buf[30];
     prstatus_t status;
-    lwpid_t last_ids[MAX_LWPS + 1];
     register int i;
     bool changed;
     lwpid_t me = _lwp_self();
@@ -153,24 +234,35 @@ static void stop_all_lwps()
     	sprintf(buf, "/proc/%d", getpid());
     	GC_main_proc_fd = syscall(SYS_open, buf, O_RDONLY);
         if (GC_main_proc_fd < 0) {
-    	    ABORT("/proc open failed");
+		if (errno == EMFILE)
+			ABORT("/proc open failed: too many open files");
+		GC_printf1("/proc open failed: errno %d", errno);
+		abort();
         }
     }
+    BZERO(GC_lwp_registers, sizeof (prgregset_t) * max_lwps);
+    for (i = 0; i < max_lwps; i++)
+	last_ids[i] = 0;
+    for (;;) {
     if (syscall(SYS_ioctl, GC_main_proc_fd, PIOCSTATUS, &status) < 0)
     	ABORT("Main PIOCSTATUS failed");
-    if (status.pr_nlwp < 1 || status.pr_nlwp > MAX_LWPS) {
-    	ABORT("Too many lwps");
-    	/* Only a heuristic.  There seems to be no way to do this right, */
-    	/* since there can be intervening forks.			 */
+    	if (status.pr_nlwp < 1)
+    		ABORT("Invalid number of lwps returned by PIOCSTATUS");
+    	if (status.pr_nlwp >= max_lwps) {
+    		set_max_lwps(status.pr_nlwp*2 + 10);
+		/*
+		 * The data in the old GC_current_ids and
+		 * GC_lwp_registers has been trashed. Cleaning out last_ids
+		 * will make sure every LWP gets re-examined.
+		 */
+        	for (i = 0; i < max_lwps; i++)
+			last_ids[i] = 0;
+		continue;
     }
-    BZERO(GC_lwp_registers, sizeof GC_lwp_registers);
-    for (i = 0; i <= MAX_LWPS; i++) last_ids[i] = 0;
-    for (;;) {
-        if (syscall(SYS_ioctl, GC_main_proc_fd, PIOCLWPIDS, GC_current_ids) < 0) {
+        if (syscall(SYS_ioctl, GC_main_proc_fd, PIOCLWPIDS, GC_current_ids) < 0)
             ABORT("PIOCLWPIDS failed");
-        }
         changed = FALSE;
-        for (i = 0; GC_current_ids[i] != 0; i++) {
+        for (i = 0; GC_current_ids[i] != 0 && i < max_lwps; i++) {
             if (GC_current_ids[i] != last_ids[i]) {
                 changed = TRUE;
                 if (GC_current_ids[i] != me) {
@@ -184,14 +276,24 @@ static void stop_all_lwps()
                     }
                 }
             }
-            if (i >= MAX_LWPS) ABORT("Too many lwps");
         }
+        /*
+         * In the unlikely event something does a fork between the
+	 * PIOCSTATUS and the PIOCLWPIDS. 
+         */
+        if (i >= max_lwps)
+		continue;
         /* All lwps in GC_current_ids != me have been suspended.  Note	*/
         /* that _lwp_suspend is idempotent.				*/
         for (i = 0; GC_current_ids[i] != 0; i++) {
             if (GC_current_ids[i] != last_ids[i]) {
                 if (GC_current_ids[i] != me) {
                     lwp_fd = open_lwp(GC_current_ids[i]);
+		    if (lwp_fd == -1)
+		    {
+			    GC_current_ids[i] = me;
+			    continue;
+		    }
 		    /* LWP should be stopped.  Empirically it sometimes	*/
 		    /* isn't, and more frequently the PR_STOPPED flag	*/
 		    /* is not set.  Wait for PR_STOPPED.		*/
@@ -217,7 +319,10 @@ static void stop_all_lwps()
 			    }
                         }
                         if (status.pr_who !=  GC_current_ids[i]) {
-                            ABORT("Wrong lwp");
+				/* can happen if thread was on death row */
+				uncache_lwp(GC_current_ids[i]);
+				GC_current_ids[i] = me; /* handle next time. */
+				continue;	
                         }
                         /* Save registers where collector can */
 			/* find them.			  */
@@ -228,7 +333,7 @@ static void stop_all_lwps()
             }
         }
         if (!changed) break;
-        for (i = 0; i <= MAX_LWPS; i++) last_ids[i] = GC_current_ids[i];
+        for (i = 0; i < max_lwps; i++) last_ids[i] = GC_current_ids[i];
     }
 }
 
@@ -246,7 +351,6 @@ static void restart_all_lwps()
 	  if (GC_current_ids[i] != me) {
 	    int lwp_fd = open_lwp(GC_current_ids[i]);
 	    prstatus_t status;
-	    gwindows_t windows;
 	    
 	    if (lwp_fd < 0) ABORT("open_lwp failed");
 	    if (syscall(SYS_ioctl, lwp_fd,
@@ -255,16 +359,29 @@ static void restart_all_lwps()
 	    }
 	    if (memcmp(status.pr_reg, GC_lwp_registers[i],
 		       sizeof (prgregset_t)) != 0) {
+		    int j;
+
+		    for(j = 0; j < NGREG; j++)
+		    {
+			    GC_printf3("%i: %x -> %x\n", j,
+				       GC_lwp_registers[i][j],
+				       status.pr_reg[j]);
+		    }
 		ABORT("Register contents changed");
 	    }
 	    if (!status.pr_flags & PR_STOPPED) {
 	    	ABORT("lwp no longer stopped");
 	    }
-	    if (syscall(SYS_ioctl, lwp_fd,
+#ifdef SPARC
+	    {
+		    gwindows_t windows;
+	      if (syscall(SYS_ioctl, lwp_fd,
 			PIOCGWIN, &windows) < 0) {
                 ABORT("PIOCSTATUS failed in restart_all_lwps");
+	      }
+	      if (windows.wbcnt > 0) ABORT("unsaved register windows");
 	    }
-	    if (windows.wbcnt > 0) ABORT("unsaved register windows");
+#endif
 	  }
 #	endif /* PARANOID */
 	if (GC_current_ids[i] == me) continue;
@@ -272,7 +389,7 @@ static void restart_all_lwps()
             ABORT("Failed to restart lwp");
         }
     }
-    if (i >= MAX_LWPS) ABORT("Too many lwps");
+    if (i >= max_lwps) ABORT("Too many lwps");
 }
 
 bool GC_multithreaded = 0;
@@ -291,7 +408,7 @@ void GC_start_world()
     preempt_on();
 }
 
-void GC_thr_init();
+void GC_thr_init(void);
 
 bool GC_thr_initialized = FALSE;
 
@@ -299,12 +416,20 @@ size_t GC_min_stack_sz;
 
 size_t GC_page_sz;
 
+/*
+ * stack_head is stored at the top of free stacks
+ */
+struct stack_head {
+	struct stack_head	*next;
+	ptr_t			base;
+	thread_t		owner;
+};
 
 # define N_FREE_LISTS 25
-ptr_t GC_stack_free_lists[N_FREE_LISTS] = { 0 };
+struct stack_head *GC_stack_free_lists[N_FREE_LISTS] = { 0 };
 		/* GC_stack_free_lists[i] is free list for stacks of 	*/
 		/* size GC_min_stack_sz*2**i.				*/
-		/* Free lists are linked through first word.		*/
+		/* Free lists are linked through stack_head stored	*/			/* at top of stack.					*/
 
 /* Return a stack of size at least *stack_size.  *stack_size is	*/
 /* replaced by the actual stack size.				*/
@@ -314,7 +439,8 @@ ptr_t GC_stack_alloc(size_t * stack_size)
     register size_t requested_sz = *stack_size;
     register size_t search_sz = GC_min_stack_sz;
     register int index = 0;	/* = log2(search_sz/GC_min_stack_sz) */
-    register ptr_t result;
+    register ptr_t base;
+    register struct stack_head *result;
     
     while (search_sz < requested_sz) {
         search_sz *= 2;
@@ -326,19 +452,44 @@ ptr_t GC_stack_alloc(size_t * stack_size)
         search_sz *= 2; index++;
     }
     if (result != 0) {
-        GC_stack_free_lists[index] = *(ptr_t *)result;
+        base =  GC_stack_free_lists[index]->base;
+        GC_stack_free_lists[index] = GC_stack_free_lists[index]->next;
     } else {
-        result = (ptr_t) GC_scratch_alloc(search_sz + 2*GC_page_sz);
-        result = (ptr_t)(((word)result + GC_page_sz) & ~(GC_page_sz - 1));
+#ifdef MMAP_STACKS
+        base = (ptr_t)mmap(0, search_sz + GC_page_sz,
+			     PROT_READ|PROT_WRITE, MAP_PRIVATE |MAP_NORESERVE,
+			     GC_zfd, 0);
+	if (base == (ptr_t)-1)
+	{
+		*stack_size = 0;
+		return NULL;
+	}
+
+	mprotect(base, GC_page_sz, PROT_NONE);
+	/* Should this use divHBLKSZ(search_sz + GC_page_sz) ? -- cf */
+	GC_is_fresh((struct hblk *)base, divHBLKSZ(search_sz));
+	base += GC_page_sz;
+
+#else
+        base = (ptr_t) GC_scratch_alloc(search_sz + 2*GC_page_sz);
+	if (base == NULL)
+	{
+		*stack_size = 0;
+		return NULL;
+	}
+
+        base = (ptr_t)(((word)base + GC_page_sz) & ~(GC_page_sz - 1));
         /* Protect hottest page to detect overflow. */
 #	ifdef SOLARIS23_MPROTECT_BUG_FIXED
-            mprotect(result, GC_page_sz, PROT_NONE);
+            mprotect(base, GC_page_sz, PROT_NONE);
 #	endif
-        GC_is_fresh((struct hblk *)result, divHBLKSZ(search_sz));
-        result += GC_page_sz;
+        GC_is_fresh((struct hblk *)base, divHBLKSZ(search_sz));
+
+        base += GC_page_sz;
+#endif
     }
     *stack_size = search_sz;
-    return(result);
+    return(base);
 }
 
 /* Caller holds  allocationlock.					*/
@@ -346,14 +497,23 @@ void GC_stack_free(ptr_t stack, size_t size)
 {
     register int index = 0;
     register size_t search_sz = GC_min_stack_sz;
+    register struct stack_head *head;
     
+#ifdef MMAP_STACKS
+    /* Zero pointers */
+    mmap(stack, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_NORESERVE|MAP_FIXED,
+	 GC_zfd, 0);
+#endif
     while (search_sz < size) {
         search_sz *= 2;
         index++;
     }
     if (search_sz != size) ABORT("Bad stack size");
-    *(ptr_t *)stack = GC_stack_free_lists[index];
-    GC_stack_free_lists[index] = stack;
+
+    head = (struct stack_head *)(stack + search_sz - sizeof(struct stack_head));
+    head->next = GC_stack_free_lists[index];
+    head->base = stack;
+    GC_stack_free_lists[index] = head;
 }
 
 void GC_my_stack_limits();
@@ -363,16 +523,20 @@ void GC_my_stack_limits();
 /* Caller holds allocation lock.					*/
 void GC_old_stacks_are_fresh()
 {
+/* No point in doing this for MMAP stacks - and pointers are zero'd out */
+/* by the mmap in GC_stack_free */
+#ifndef MMAP_STACKS
     register int i;
+    register struct stack_head *s;
     register ptr_t p;
     register size_t sz;
     register struct hblk * h;
     int dummy;
     
-    GC_thr_init();
     for (i = 0, sz= GC_min_stack_sz; i < N_FREE_LISTS;
          i++, sz *= 2) {
-         for (p = GC_stack_free_lists[i]; p != 0; p = *(ptr_t *)p) {
+         for (s = GC_stack_free_lists[i]; s != 0; s = s->next) {
+             p = s->base;
              h = (struct hblk *)(((word)p + HBLKSIZE-1) & ~(HBLKSIZE-1));
              if ((ptr_t)h == p) {
                  GC_is_fresh((struct hblk *)p, divHBLKSZ(sz));
@@ -382,6 +546,7 @@ void GC_old_stacks_are_fresh()
              }
          }
     }
+#endif /* MMAP_STACKS */
     GC_my_stack_limits();
 }
 
@@ -389,24 +554,6 @@ void GC_old_stacks_are_fresh()
 /* joins.  We never actually create detached threads.  We allocate all 	*/
 /* new thread stacks ourselves.  These allow us to maintain this	*/
 /* data structure.							*/
-/* Protected by GC_thr_lock.						*/
-/* Some of this should be declared vaolatile, but that's incosnsistent	*/
-/* with some library routine declarations.  In particular, the 		*/
-/* definition of cond_t doesn't mention volatile!			*/
-typedef struct GC_Thread_Rep {
-    struct GC_Thread_Rep * next;
-    thread_t id;
-    word flags;
-#	define FINISHED 1   	/* Thread has exited.	*/
-#	define DETACHED 2	/* Thread is intended to be detached.	*/
-#	define CLIENT_OWNS_STACK	4
-				/* Stack was supplied by client.	*/
-#	define SUSPENDED 8	/* Currently suspended.	*/	
-    ptr_t stack;
-    size_t stack_size;
-    cond_t join_cv;
-    void * status;
-} * GC_thread;
 
 # define THREAD_TABLE_SZ 128	/* Must be power of 2	*/
 volatile GC_thread GC_threads[THREAD_TABLE_SZ];
@@ -516,7 +663,9 @@ void GC_push_all_stacks()
       } else { \
         GC_push_all_stack((bottom), (top)); \
       }
-    GC_thr_init();
+    GC_push_all_stack((ptr_t)GC_lwp_registers,
+		      (ptr_t)GC_lwp_registers
+		      + max_lwps * sizeof(GC_lwp_registers[0]));
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (p -> stack_size != 0) {
@@ -530,6 +679,25 @@ void GC_push_all_stacks()
         }
         if ((word)sp > (word)bottom && (word)sp < (word)top) bottom = sp;
         PUSH(bottom, top);
+      }
+    }
+}
+
+
+int GC_is_thread_stack(ptr_t addr)
+{
+    register int i;
+    register GC_thread p;
+    register ptr_t bottom, top;
+    struct rlimit rl;
+    
+    for (i = 0; i < THREAD_TABLE_SZ; i++) {
+      for (p = GC_threads[i]; p != 0; p = p -> next) {
+        if (p -> stack_size != 0) {
+            if (p -> stack <= addr &&
+		addr < p -> stack + p -> stack_size)
+		    return 1;
+	}
       }
     }
 }
@@ -579,16 +747,24 @@ void * GC_thr_daemon(void * dummy)
     }
 }
 
-/* We hold the allocation lock.	*/
-void GC_thr_init()
+/* We hold the allocation lock, or caller ensures that 2 instances	*/
+/* cannot be invoked concurrently.					*/
+void GC_thr_init(void)
 {
     GC_thread t;
+    thread_t tid;
 
-    if (GC_thr_initialized) return;
+    if (GC_thr_initialized)
+	    return;
     GC_thr_initialized = TRUE;
-    GC_min_stack_sz = ((thr_min_stack() + 128*1024 + HBLKSIZE-1)
+    GC_min_stack_sz = ((thr_min_stack() + 32*1024 + HBLKSIZE-1)
     		       & ~(HBLKSIZE - 1));
     GC_page_sz = sysconf(_SC_PAGESIZE);
+#ifdef MMAP_STACKS
+    GC_zfd = open("/dev/zero", O_RDONLY);
+    if (GC_zfd == -1)
+	    ABORT("Can't open /dev/zero");
+#endif /* MMAP_STACKS */
     cond_init(&GC_prom_join_cv, USYNC_THREAD, 0);
     cond_init(&GC_create_cv, USYNC_THREAD, 0);
     /* Add the initial thread, so we can stop it.	*/
@@ -597,10 +773,10 @@ void GC_thr_init()
       t -> flags = DETACHED | CLIENT_OWNS_STACK;
     if (thr_create(0 /* stack */, 0 /* stack_size */, GC_thr_daemon,
     		   0 /* arg */, THR_DETACHED | THR_DAEMON,
-    		   0 /* thread_id */) != 0) {
+    		   &tid /* thread_id */) != 0) {
     	ABORT("Cant fork daemon");
     }
-    
+    thr_setprio(tid, 126);
 }
 
 /* We acquire the allocation lock to prevent races with 	*/
@@ -705,12 +881,16 @@ GC_thr_create(void *stack_base, size_t stack_size,
     void * stack = stack_base;
    
     LOCK();
+    if (!GC_thr_initialized)
+    {
     GC_thr_init();
+    }
     GC_multithreaded++;
     if (stack == 0) {
      	if (stack_size == 0) stack_size = GC_min_stack_sz;
      	stack = (void *)GC_stack_alloc(&stack_size);
      	if (stack == 0) {
+	    GC_multithreaded--;
      	    UNLOCK();
      	    return(ENOMEM);
      	}
@@ -739,11 +919,9 @@ GC_thr_create(void *stack_base, size_t stack_size,
     return(result);
 }
 
-# else
+# else /* SOLARIS_THREADS */
 
 #ifndef LINT
   int GC_no_sunOS_threads;
 #endif
-
-# endif /* SOLARIS_THREADS */
-
+#endif

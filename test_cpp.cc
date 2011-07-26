@@ -27,6 +27,7 @@ few minutes to complete.
 #include "gc_cpp.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #ifndef __GNUC__
 #   include "gc_alloc.h"
 #endif

@@ -448,11 +448,13 @@ word dummy;
     
     p = (word *)(hbp->hb_body);
     word_no = HDR_WORDS;
-    plim = (word *)((((word)hbp) + HBLKSIZE)
-		   - WORDS_TO_BYTES(sz));
-
+    if (sz > MAXOBJSZ) {
+	plim = p;
+    } else {
+    	plim = (word *)((((word)hbp) + HBLKSIZE) - WORDS_TO_BYTES(sz));
+    }
     /* go through all words in block */
-	do {
+	while( p <= plim ) {
 	    if( mark_bit_from_hdr(hhdr, word_no)
 	        && GC_has_debug_info((ptr_t)p)) {
 	        ptr_t clobbered = GC_check_annotated_obj((oh *)p);
@@ -465,7 +467,7 @@ word dummy;
 	    }
 	    word_no += sz;
 	    p += sz;
-	} while( p <= plim );
+	}
 }
 
 

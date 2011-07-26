@@ -9,14 +9,15 @@ at least one explicit call to malloc instead of new to ensure that the proper
 version of malloc is linked in.
 
 Sproc threads are not supported in this version, though there may exist other
-ports.  Pthreads are somewhat supported without incremental collection.  This
+ports.
+
+Pthreads are somewhat supported without incremental collection.  This
 requires that:
 
 1) You compile the collector with -DIRIX_THREADS specified in the Makefile.
 
-2) You have the latest pthreads patches installed.  As of 11/7/96, some of
-the required patches were not yet generally available, so you may have
-to wait.  If gctest fails, this is the likely cause.
+2) You have the latest pthreads patches installed.  
+
 (Though the collector makes only documented pthread calls,
 it relies on signal/threads interactions working just right in ways
 that are not required by the standard.  It is unlikely that this code

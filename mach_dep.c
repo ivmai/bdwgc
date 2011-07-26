@@ -168,7 +168,9 @@ void GC_push_regs()
 #	endif	/* __MWERKS__ */
 #   endif	/* MACOS */
 
-#       if defined(I386) &&!defined(OS2) &&!defined(SVR4) &&!defined(MSWIN32) && !defined(SCO) && (!defined(LINUX) || !defined(__ELF__))
+#       if defined(I386) &&!defined(OS2) &&!defined(SVR4) &&!defined(MSWIN32) \
+	&& !defined(SCO) && !(defined(LINUX) && defined(__ELF__)) \
+	&& !defined(DOS4GW)
 	/* I386 code, generic code does not appear to work */
 	/* It does appear to work under OS2, and asms dont */
 	/* This is used for some 38g UNIX variants and for CYGWIN32 */
@@ -317,7 +319,7 @@ void GC_push_regs()
 		for (; (char *)i < lim; i++) {
 		    *i = 0;
 		}
-#	    if defined(POWERPC) || defined(MSWIN32)
+#	    if defined(POWERPC) || defined(MSWIN32) || defined(UTS4)
 		(void) setjmp(regs);
 #	    else
 	        (void) _setjmp(regs);

@@ -15,6 +15,8 @@
 # include <stdio.h>
 # include "gc_priv.h"
 
+/* MAX_ROOT_SETS is the maximum number of ranges that can be 	*/
+/* registered as static roots. 					*/
 # ifdef LARGE_CONFIG
 #   define MAX_ROOT_SETS 4096
 # else
@@ -30,6 +32,9 @@
 #     endif
 #   endif
 # endif
+
+# define MAX_EXCLUSIONS (MAX_ROOT_SETS/4)
+/* Maximum number of segments that can be excluded from root sets.	*/
 
 /* Data structure for list of root sets.				*/
 /* We keep a hash table, so that we can filter out duplicate additions.	*/
@@ -184,20 +189,6 @@ bool tmp;
 {
     struct roots * old;
     
-    /* We exclude GC data structures from root sets.  It's usually safe	*/
-    /* to mark from those, but it is a waste of time.			*/
-    if ( (ptr_t)b < endGC_arrays && (ptr_t)e > beginGC_arrays) {
-        if ((ptr_t)e <= endGC_arrays) {
-            if ((ptr_t)b >= beginGC_arrays) return;
-            e = (char *)beginGC_arrays;
-        } else if ((ptr_t)b >= beginGC_arrays) {
-            b = (char *)endGC_arrays;
-        } else {
-            GC_add_roots_inner(b, (char *)beginGC_arrays, tmp);
-            GC_add_roots_inner((char *)endGC_arrays, e, tmp);
-            return;
-        }
-    }
 #   ifdef MSWIN32
       /* Spend the time to ensure that there are no overlapping	*/
       /* or adjacent intervals.					*/
@@ -329,6 +320,97 @@ ptr_t GC_approx_sp()
 }
 
 /*
+ * Data structure for excluded static roots.
+ */
+struct exclusion {
+    ptr_t e_start;
+    ptr_t e_end;
+};
+
+struct exclusion excl_table[MAX_EXCLUSIONS];
+					/* Array of exclusions, ascending */
+					/* address order.		  */
+size_t excl_table_entries = 0;		/* Number of entries in use.	  */
+
+/* Return the first exclusion range that includes an address >= start_addr */
+/* Assumes the exclusion table contains at least one entry (namely the	   */
+/* GC data structures).							   */
+struct exclusion * GC_next_exclusion(start_addr)
+ptr_t start_addr;
+{
+    size_t low = 0;
+    size_t high = excl_table_entries - 1;
+    size_t mid;
+
+    while (high > low) {
+	mid = (low + high) >> 1;
+	/* low <= mid < high	*/
+	if ((word) excl_table[mid].e_end <= (word) start_addr) {
+	    low = mid + 1;
+	} else {
+	    high = mid;
+	}
+    }
+    if ((word) excl_table[low].e_end <= (word) start_addr) return 0;
+    return excl_table + low;
+}
+
+void GC_exclude_static_roots(start, finish)
+GC_PTR start;
+GC_PTR finish;
+{
+    struct exclusion * next;
+    size_t next_index, i;
+
+    if (0 == excl_table_entries) {
+	next = 0;
+    } else {
+	next = GC_next_exclusion(start);
+    }
+    if (0 != next) {
+      if ((word)(next -> e_start) < (word) finish) {
+	/* incomplete error check. */
+	ABORT("exclusion ranges overlap");
+      }  
+      if ((word)(next -> e_start) == (word) finish) {
+        /* extend old range backwards	*/
+          next -> e_start = (ptr_t)start;
+	  return;
+      }
+      next_index = next - excl_table;
+      for (i = excl_table_entries - 1; i >= next_index; --i) {
+	excl_table[i+1] = excl_table[i];
+      }
+    } else {
+      next_index = excl_table_entries;
+    }
+    if (excl_table_entries == MAX_EXCLUSIONS) ABORT("Too many exclusions");
+    excl_table[next_index].e_start = (ptr_t)start;
+    excl_table[next_index].e_end = (ptr_t)finish;
+    ++excl_table_entries;
+}
+
+/* Invoke push_conditional on ranges that are not excluded. */
+void GC_push_conditional_with_exclusions(bottom, top, all)
+ptr_t bottom;
+ptr_t top;
+int all;
+{
+    struct exclusion * next;
+    ptr_t excl_start;
+
+    while (bottom < top) {
+        next = GC_next_exclusion(bottom);
+	if (0 == next || (excl_start = next -> e_start) >= top) {
+	    GC_push_conditional(bottom, top, all);
+	    return;
+	}
+	if (excl_start > bottom) GC_push_conditional(bottom, excl_start, all);
+	bottom = next -> e_end;
+    }
+}
+
+/*
  * Call the mark routines (GC_tl_push for a single pointer, GC_push_conditional
  * on groups of pointers) on every top level accessible pointer.
  * If all is FALSE, arrange to push only possibly altered values.
@@ -357,7 +439,8 @@ bool all;
 #      endif
      /* Mark everything in static data areas                             */
        for (i = 0; i < n_root_sets; i++) {
-         GC_push_conditional(static_roots[i].r_start,
+         GC_push_conditional_with_exclusions(
+			     static_roots[i].r_start,
 			     static_roots[i].r_end, all);
        }
 

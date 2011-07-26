@@ -64,11 +64,14 @@ int GC_full_freq = 4;	   /* Every 5th collection is a full	*/
 			   /* collection.			*/
 
 char * GC_copyright[] =
-{"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers",
-"Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.",
+{"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
+"Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved. ",
+"Copyright (c) 1996-1997 by Silicon Graphics.  All rights reserved. ",
 "THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY",
-" EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK."};
+" EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.",
+"See source code for details." };
 
+# include "version.h"
 
 /* some more variables */
 
@@ -191,6 +194,13 @@ bool GC_should_collect()
     return(GC_adj_words_allocd() >= min_words_allocd());
 }
 
+void GC_notify_full_gc()
+{
+    if (GC_start_call_back != (void (*)())0) {
+	(*GC_start_call_back)();
+    }
+}
+
 /* 
  * Initiate a garbage collection if appropriate.
  * Choose judiciously
@@ -202,6 +212,7 @@ void GC_maybe_gc()
     static int n_partial_gcs = 0;
     if (GC_should_collect()) {
         if (!GC_incremental) {
+	    GC_notify_full_gc();
             GC_gcollect_inner();
             n_partial_gcs = 0;
             return;
@@ -216,6 +227,7 @@ void GC_maybe_gc()
 	    (void)GC_reclaim_all((GC_stop_func)0, TRUE);
 	    GC_clear_marks();
             n_partial_gcs = 0;
+	    GC_notify_full_gc();
         } else {
             n_partial_gcs++;
         }
@@ -553,6 +565,7 @@ void GC_finish_collection()
 
 void GC_gcollect GC_PROTO(())
 {
+    GC_notify_full_gc();
     (void)GC_try_to_collect(GC_never_stop_func);
 }
 
@@ -664,6 +677,12 @@ word n;
 
     if (n < MINHINCR) n = MINHINCR;
     bytes = n * HBLKSIZE;
+    /* Make sure bytes is a multiple of GC_page_size */
+      {
+	word mask = GC_page_size - 1;
+	bytes += mask;
+	bytes &= ~mask;
+      }
     
     if (GC_max_heapsize != 0 && GC_heapsize + bytes > GC_max_heapsize) {
         /* Exceeded self-imposed limit */
@@ -726,13 +745,17 @@ word n;
     return(result);
 }
 
+unsigned GC_fail_count = 0;  
+			/* How many consecutive GC/expansion failures?	*/
+			/* Reset by GC_allochblk.			*/
+
 bool GC_collect_or_expand(needed_blocks, ignore_off_page)
 word needed_blocks;
 bool ignore_off_page;
 {
-    static unsigned count = 0;  /* How many failures? */
     
     if (!GC_incremental && !GC_dont_gc && GC_should_collect()) {
+      GC_notify_full_gc();
       GC_gcollect_inner();
     } else {
       word blocks_to_get = GC_heapsize/(HBLKSIZE*GC_free_space_divisor)
@@ -755,18 +778,18 @@ bool ignore_off_page;
       }
       if (!GC_expand_hp_inner(blocks_to_get)
         && !GC_expand_hp_inner(needed_blocks)) {
-      	if (count++ < GC_max_retries) {
+      	if (GC_fail_count++ < GC_max_retries) {
       	    WARN("Out of Memory!  Trying to continue ...\n", 0);
+	    GC_notify_full_gc();
 	    GC_gcollect_inner();
 	} else {
 	    WARN("Out of Memory!  Returning NIL!\n", 0);
 	    return(FALSE);
 	}
-      } else if (count) {
+      } else if (GC_fail_count) {
 #	  ifdef PRINTSTATS
 	    GC_printf0("Memory available again ...\n");
 #	  endif
-          count = 0;
       }
     }
     return(TRUE);

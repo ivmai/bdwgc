@@ -222,6 +222,7 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 	              struct hblk * limit = hbp + (hhdr->hb_sz/HBLKSIZE);
 	              struct hblk * h;
 	              
+		      GC_words_wasted += hhdr->hb_sz;
 	              phdr -> hb_next = hhdr -> hb_next;
 	              for (h = hbp; h < limit; h++) {
 	                if (h == hbp || GC_install_header(h)) {
@@ -256,7 +257,10 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 		    } else {
 			hbp = (struct hblk *)
 			    (((word)thishbp) + size_needed);
-			if (!GC_install_header(hbp)) continue;
+			if (!GC_install_header(hbp)) {
+			    hbp = thishbp;
+			    continue;
+			}
 			hhdr = HDR(hbp);
 			GC_invalidate_map(hhdr);
 			hhdr->hb_next = thishdr->hb_next;
@@ -292,6 +296,14 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 	    || sz > MAXOBJSZ && GC_obj_kinds[kind].ok_init) {
 	    BZERO(thishbp + HDR_BYTES,  size_needed - HDR_BYTES);
 	}
+
+    /* We just successfully allocated a block.  Restart count of	*/
+    /* consecutive failures.						*/
+    {
+	extern unsigned GC_fail_count;
+	
+	GC_fail_count = 0;
+    }
     
     return( thishbp );
 }

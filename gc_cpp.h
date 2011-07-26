@@ -137,7 +137,7 @@ uses explicit invocation.
 #   define OPERATOR_NEW_ARRAY
 #endif
 
-enum GCPlacement {GC, NoGC};
+enum GCPlacement {GC, NoGC, PointerFreeGC};
 
 class gc {public:
     inline void* operator new( size_t size );
@@ -263,6 +263,8 @@ inline void* operator new(
         if (cleanup != 0) 
             GC_REGISTER_FINALIZER_IGNORE_SELF( 
                 obj, cleanup, clientData, 0, 0 );}
+    else if (gcp == PointerFreeGC) {
+        obj = GC_MALLOC_ATOMIC( size );}
     else {
         obj = GC_MALLOC_UNCOLLECTABLE( size );};
     return obj;}

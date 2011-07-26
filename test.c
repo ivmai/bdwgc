@@ -921,8 +921,16 @@ void SetMinimumStack(long minSize)
   int main()
 #endif
 {
+#   if defined(DJGPP)
+	int dummy;
+#   endif
     n_tests = 0;
     
+#   if defined(DJGPP)
+	/* No good way to determine stack base from library; do it */
+	/* manually on this platform.				   */
+    	GC_stackbottom = (GC_PTR)(&dummy);
+#   endif
 #   if defined(MACOS)
 	/* Make sure we have lots and lots of stack space. 	*/
 	SetMinimumStack(cMinStackSpace);

@@ -1,5 +1,7 @@
 The collector has only been compiled under Windows NT, with the
-original Microsoft SDK, with Visual C++ 2.0, and with Borland 4.5.
+original Microsoft SDK, with Visual C++ 2.0 and later, with
+the GNU win32 environment, with Borland 4.5, and recently with
+Watcom C.
 
 It runs under both win32s and win32, but with different semantics.
 Under win32, all writable pages outside of the heaps and stack are
@@ -38,6 +40,10 @@ window colors.)
 For Microsoft development tools, rename NT_MAKEFILE as
 MAKEFILE.  (Make sure that the CPU environment variable is defined
 to be i386.)
+
+For GNU-win32, use the regular makefile, possibly after uncommenting
+the line "include Makefile.DLLs".  The latter should be necessary only
+if you want to package the collector as a DLL.
 
 For Borland tools, use BCC_MAKEFILE.  Note that
 Borland's compiler defaults to 1 byte alignment in structures (-a1),
@@ -100,5 +106,55 @@ check with Geodesic Systems.  I haven't tried it, but they claim
 to support it.
 
 Hans
+
+Ivan V. Demakov's README for the Watcom port:
+
+[ He points out in a later message that there may be a problem compiling
+  under Windows-3.11 for Windows NT. ]
+
+Watcom C/C++ 10.5, 10.6, 11.0 tested.
+
+The collector runs on WIN32 and DOS4GW dos-extender with both
+stack and register based calling conventions (options -5r and -5s).
+Incremental collection not supported.
+
+OS/2 not tested, but should work (only some #ifdef's added for OS/2 port).
+
+cord not ported. Watcom C fails to compile it, from first attempt.
+Since I don't use it, I don't try to fix it.
+
+cpp_test succeeds, but not compiled automaticaly with WCC_MAKEFILE.
+
+
+My changes:
+
+      * config.h      Added definitions for Watcom C/C++.
+                      Undefined MPROTECT_VDB for Watcom C/C++ MSWIN32,
+                      I don't have idea why it not work.
+
+      * gc.h          Explicitly declared GC_noop. This prevents
+                      program crash, compiled with -5r option.
+
+      * gc_priv.h     Changed declaration for GC_push_one to make
+                      compiler happy.
+                      Added GC_dos4gw_get_mem declaration and
+                      GET_MEM uses it in DOS4GW environment.
+
+      * os_dep.c      Added __WATCOMC__ and DOS4GW #ifdef's.
+                      Added GC_dos4gw_get_mem.
+
+      * mach_dep.c    For Watcom used setjmp method of marking registers.
+
+      * WCC_MAKEFILE  New file. Makefile for Watcom C/C++.
+
+      * gc_watcom.asm New file. Some functions for DOS4GW.
+                      This functions may (probably) be done in C,
+                      but I can't figure out how do this for all
+                      possible options of compiler.
+
+      * README.watcom This file.
+
+
+  Ivan Demakov (email: dem@tgrad.nsk.su)
 
 

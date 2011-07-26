@@ -216,6 +216,13 @@ DCL_LOCK_STATE;
     /* It might help to manually inline the GC_malloc call here.	*/
     /* But any decent compiler should reduce the extra procedure call	*/
     /* to at most a jump instruction in this case.			*/
+#   if defined(I386) && defined(SOLARIS_THREADS)
+      /*
+       * Thread initialisation can call malloc before
+       * we're ready for it.
+       */
+      if (!GC_is_initialized) return sbrk(lb);
+#   endif /* I386 && SOLARIS_THREADS */
     return(REDIRECT_MALLOC(lb));
   }
 

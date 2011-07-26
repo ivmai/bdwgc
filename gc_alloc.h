@@ -22,9 +22,11 @@
 // Some of this could be faster in the explicit deallocation case.  In particular,
 // we spend too much time clearing objects on the free lists.  That could be avoided.
 //
-// This uses template classes with static members, and hence soes not work
+// This uses template classes with static members, and hence does not work
 // with g++ 2.7.2 and earlier.
 //
+
+#include "gc.h"
 
 #ifndef GC_ALLOC_H
 
@@ -70,8 +72,6 @@ extern "C" {
     extern void GC_incr_mem_freed(size_t words);
 
     extern char * GC_generic_malloc_words_small(size_t word, int kind);
- 
-    extern void * GC_malloc_atomic_uncollectable(size_t bytes);
 }
 
 // Object kinds; must match PTRFREE, NORMAL, UNCOLLECTABLE, and
@@ -93,13 +93,13 @@ inline void * &GC_obj_link(void * p)
 
 // Compute a number of words >= n+1 bytes.
 // The +1 allows for pointers one past the end.
-inline GC_round_up(size_t n)
+inline size_t GC_round_up(size_t n)
 {
     return ((n + GC_byte_alignment)/GC_byte_alignment)*GC_word_alignment;
 }
 
 // The same but don't allow for extra byte.
-inline GC_round_up_uncollectable(size_t n)
+inline size_t GC_round_up_uncollectable(size_t n)
 {
     return ((n + GC_byte_alignment - 1)/GC_byte_alignment)*GC_word_alignment;
 }
@@ -367,6 +367,6 @@ __GC_SPECIALIZE(unsigned, single_client_alloc)
 __GC_SPECIALIZE(float, single_client_alloc)
 __GC_SPECIALIZE(double, single_client_alloc)
 
-#endif _SGI_SOURCE
+#endif /* _SGI_SOURCE */
 
 #endif /* GC_ALLOC_H */
