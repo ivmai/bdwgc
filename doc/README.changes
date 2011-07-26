@@ -2049,9 +2049,57 @@ Since 6.3alpha4:
  - The USE_MUNMAP code could get confused about the age of a block and
    prematurely unmap it.  GC_unmap_old had a bug related to wrapping of
    GC_gc_no.  GC_freehblk and GC_merge_unmapped didn't maintain
-   hb_last_reclaimed reasonably when blockas were merged.  The code was
+   hb_last_reclaimed reasonably when blocks were merged.  The code was
    fixed to reflect original intent, but that may not always be an
    improvement.  See todo list item.
+
+Since 6.3alpha5:
+ - Define USE_GENERIC_PUSH_REGS for NetBSD/M68K.
+ - Fixed the X86_64 PREFETCH macros to correctly handle ia32e (which uses
+   different prefetch instructions from AMD64).  (Thanks to H.J. Lu.)
+ - GC_config_macros.h did not correctly define GC_WIN32_THREADS from
+   GC_THREADS. 
+ - Added simple_example.html.
+ - Merged Andrew Gray's patch to correctly restore signal handlers on
+   FreeBSD.
+ - Merged a patch from Andreas Jaeger to deal with prefetch-related warnings
+   on x86-64.  Added some other casts so that the PREFETCH macros
+   always get a ptr_t argument.  Removed some casts inthe PREFETCH
+   implementations.
+ - At Jesse Jones suggestion: Added a header guard for gc_allocator.h
+   and changed GC_debug_free to clobber contents of deallocated object.
+ - The signal masking code in pthread_stop_world.c contained some errors.
+   In particular SIGSEGV was masked in the handler, in spite of the fact that
+   it wrote to the heap.  This could lead to an uncaught SIGSEGV, which
+   apparently became much more likely in Linux 2.6.  Also fixed some
+   typos, and reduced code duplication in the same area.
+ - Remove ltconfig, clean up configure messages for DGUX (thanks to
+   Adrian Bunk for the patches).
+ - Integrated NetBSD/OpenBSD patches from Marc Recht and Matthias Drochner.
+
+Since gc6.3alpha6:
+ - Compile test_cpp.cc with CXXCOMPILE instead of COMPILE.
+ - Very large allocations could cause a collector hang.  Correct
+   calculation of GC_collect_at_heapsize.
+ - GC_print_hblkfreelist printed some bogus results if USE_MUNMAP
+   was defined.
+ - The generic GC_THREADS macro didn't work correctly on Solaris,
+   since the implementation failed to include gc_config_macros.h
+   before deciding whether or not to compile the rest of the file.
+ - Threadlibs.c failed to expand the generic GC_THREADS macro.
+ - Correct MacOSX thread stop code. (Thanks to Dick Porter.)
+ - SMALL_OBJ definition was off by one.  This could cause crashes
+   at startup.  (Thanks to Zoltan Varga for narrowing this down to
+   a trivial test case.)
+ - Integrate Paolo Molara's patch to deal with a race in the Darwin
+   thread stopping code.
+ - Changed X86_64 implementation to use SA_SIGINFO in the MPROTECT_VDB
+   implementation.  The old approach appears to have been broken by
+   recent kernels.
+ - Add GC_ATTR_UNUSED to eliminate a warning in gc_allocator.h.  (Thanks
+   to Andrew Begel.)
+ - Fix GC_task_self declaration in os_dep.c.  (Thanks to Andrew Pinski.)
+ - Increase INITIAL_BUF_SZ in os_dep.c for Solaris /proc reads.
   
 To do:
  - The USE_MUNMAP code should really use a separate data structure

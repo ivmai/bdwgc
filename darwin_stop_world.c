@@ -210,22 +210,39 @@ int GC_suspend_thread_list(thread_act_array_t act_list, int count,
       mach_msg_type_number_t outCount = THREAD_INFO_MAX;
       kern_return_t kern_result = thread_info(thread, THREAD_BASIC_INFO,
 				(thread_info_t)&info, &outCount);
-      if(kern_result != KERN_SUCCESS) ABORT("thread_info failed");
+      if(kern_result != KERN_SUCCESS) {
+	/* the thread may have quit since the thread_threads () call 
+	 * we mark already_suspended so it's not dealt with anymore later
+	 */
+        if (!found) {
+	  GC_mach_threads[GC_mach_threads_count].already_suspended = TRUE;
+    	  GC_mach_threads_count++;
+	}
+	continue;
+      }
 #     if DEBUG_THREADS
         GC_printf2("Thread state for 0x%lx = %d\n", thread, info.run_state);
 #     endif
       if (!found) {
-	GC_mach_threads[GC_mach_threads_count].already_suspended =
-	  (info.run_state != TH_STATE_RUNNING);
+	GC_mach_threads[GC_mach_threads_count].already_suspended = info.suspend_count;
       }
-      if (info.run_state != TH_STATE_RUNNING) continue;
+      if (info.suspend_count) continue;
       
 #     if DEBUG_THREADS
         GC_printf1("Suspending 0x%lx\n", thread);
 #     endif
       /* Suspend the thread */
       kern_result = thread_suspend(thread);
-      if(kern_result != KERN_SUCCESS) ABORT("thread_suspend failed");
+      if(kern_result != KERN_SUCCESS) {
+	/* the thread may have quit since the thread_threads () call 
+	 * we mark already_suspended so it's not dealt with anymore later
+	 */
+        if (!found) {
+	  GC_mach_threads[GC_mach_threads_count].already_suspended = TRUE;
+    	  GC_mach_threads_count++;
+	}
+	continue;
+      }
     } 
     if (!found) GC_mach_threads_count++;
   }

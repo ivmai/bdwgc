@@ -85,7 +85,7 @@ test.o:	$(srcdir)/tests/test.c
 	$(COMPILE) -c $(srcdir)/tests/test.c
 # 	Using $< in the above seems to fail with the HP/UX on Itanium make.
 test_cpp.o:	$(srcdir)/tests/test_cpp.cc
-	$(COMPILE) -c $(srcdir)/tests/test_cpp.cc
+	$(CXXCOMPILE) -c $(srcdir)/tests/test_cpp.cc
 
 ## FIXME: this is probably the reason why some files from BUILT_SOURCES
 ##     are included in the distribution

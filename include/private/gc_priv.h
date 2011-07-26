@@ -550,7 +550,7 @@ extern GC_warn_proc GC_current_warn_proc;
 
 #define CPP_MAXOBJBYTES (CPP_HBLKSIZE/2)
 #define MAXOBJBYTES ((word)CPP_MAXOBJBYTES)
-#define CPP_MAXOBJSZ    BYTES_TO_WORDS(CPP_HBLKSIZE/2)
+#define CPP_MAXOBJSZ    BYTES_TO_WORDS(CPP_MAXOBJBYTES)
 #define MAXOBJSZ ((word)CPP_MAXOBJSZ)
 		
 # define divHBLKSZ(n) ((n) >> LOG_HBLKSIZE)
@@ -578,7 +578,7 @@ extern GC_warn_proc GC_current_warn_proc;
 # else
 #       define ALIGNED_WORDS(n) ROUNDED_UP_WORDS(n)
 # endif
-# define SMALL_OBJ(bytes) ((bytes) < (MAXOBJBYTES - EXTRA_BYTES))
+# define SMALL_OBJ(bytes) ((bytes) <= (MAXOBJBYTES - EXTRA_BYTES))
 # define ADD_SLOP(bytes) ((bytes) + EXTRA_BYTES)
 # ifndef MIN_WORDS
     /* MIN_WORDS is the size of the smallest allocated object.	*/
@@ -938,11 +938,11 @@ struct _GC_arrays {
   	char _valid_offsets[VALID_OFFSET_SZ];
 				/* GC_valid_offsets[i] == TRUE ==> i 	*/
 				/* is registered as a displacement.	*/
-#	define OFFSET_VALID(displ) \
-	  (GC_all_interior_pointers || GC_valid_offsets[displ])
   	char _modws_valid_offsets[sizeof(word)];
 				/* GC_valid_offsets[i] ==>		  */
 				/* GC_modws_valid_offsets[i%sizeof(word)] */
+#   define OFFSET_VALID(displ) \
+	  (GC_all_interior_pointers || GC_valid_offsets[displ])
 # ifdef STUBBORN_ALLOC
     page_hash_table _changed_pages;
         /* Stubborn object pages that were changes since last call to	*/

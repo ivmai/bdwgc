@@ -326,7 +326,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 DIST_COMMON = $(dist_noinst_HEADERS) $(dist_noinst_SCRIPTS) \
 	$(include_HEADERS) Makefile.am Makefile.in acinclude.m4 \
 	aclocal.m4 config.guess config.sub configure configure.in \
-	depcomp install-sh ltconfig ltmain.sh missing mkinstalldirs
+	depcomp install-sh ltmain.sh missing mkinstalldirs
 DIST_SUBDIRS = $(SUBDIRS)
 SOURCES = $(libgc_la_SOURCES) $(EXTRA_libgc_la_SOURCES) $(libgccpp_la_SOURCES) $(gctest_SOURCES) $(test_cpp_SOURCES)
 
@@ -902,7 +902,7 @@ test.o:	$(srcdir)/tests/test.c
 	$(COMPILE) -c $(srcdir)/tests/test.c
 # 	Using $< in the above seems to fail with the HP/UX on Itanium make.
 test_cpp.o:	$(srcdir)/tests/test_cpp.cc
-	$(COMPILE) -c $(srcdir)/tests/test_cpp.cc
+	$(CXXCOMPILE) -c $(srcdir)/tests/test_cpp.cc
 $(all_objs) : include/private/gcconfig.h include/private/gc_priv.h \
 include/private/gc_hdrs.h include/gc.h include/gc_gcj.h \
 include/gc_pthread_redirects.h include/gc_config_macros.h \

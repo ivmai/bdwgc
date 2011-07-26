@@ -111,7 +111,7 @@ void GC_print_hblkfreelist()
     for (i = 0; i <= N_HBLK_FLS; ++i) {
       h = GC_hblkfreelist[i];
 #     ifdef USE_MUNMAP
-        if (0 != h) GC_printf1("Free list %ld (Total size %ld):\n",
+        if (0 != h) GC_printf1("Free list %ld:\n",
 		               (unsigned long)i);
 #     else
         if (0 != h) GC_printf2("Free list %ld (Total size %ld):\n",
@@ -133,10 +133,12 @@ void GC_print_hblkfreelist()
         h = hhdr -> hb_next;
       }
     }
-    if (total_free != GC_large_free_bytes) {
+#   ifndef USE_MUNMAP
+      if (total_free != GC_large_free_bytes) {
 	GC_printf1("GC_large_free_bytes = %lu (INCONSISTENT!!)\n",
 		   (unsigned long) GC_large_free_bytes);
-    }
+      }
+#   endif
     GC_printf1("Total of %lu bytes on free list\n", (unsigned long)total_free);
 }
 
@@ -181,7 +183,7 @@ void GC_dump_regions()
 	    hhdr = HDR(p);
 	    GC_printf1("\t0x%lx ", (unsigned long)p);
 	    if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-		GC_printf1("Missing header!!\n", hhdr);
+		GC_printf1("Missing header!!(%ld)\n", hhdr);
 		p += HBLKSIZE;
 		continue;
 	    }
@@ -468,7 +470,11 @@ int index;
     if (total_size == bytes) return h;
     rest = (struct hblk *)((word)h + bytes);
     rest_hdr = GC_install_header(rest);
-    if (0 == rest_hdr) return(0);
+    if (0 == rest_hdr) {
+	/* This may be very bad news ... */
+	WARN("Header allocation failed: Dropping block.\n", 0);
+	return(0);
+    }
     rest_hdr -> hb_sz = total_size - bytes;
     rest_hdr -> hb_flags = 0;
 #   ifdef GC_ASSERTIONS

@@ -320,14 +320,15 @@ DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 	doc/README.environment doc/tree.html doc/gcdescr.html \
 	doc/README.autoconf doc/README.macros doc/README.ews4800 \
 	doc/README.DGUX386 doc/README.arm.cross doc/leak.html \
-	doc/scale.html doc/gcinterface.html doc/README.darwin
+	doc/scale.html doc/gcinterface.html doc/README.darwin \
+	doc/simple_example.html
 
 TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
-	tests/leak_test.c tests/thread_leak_test.c
+	tests/leak_test.c tests/thread_leak_test.c tests/middle.c
 
 GNU_BUILD_FILES= configure.in Makefile.am configure acinclude.m4 \
 		 libtool.m4 install-sh configure.host Makefile.in \
-		 ltconfig aclocal.m4 config.sub config.guess \
+		 aclocal.m4 config.sub config.guess \
 		 include/Makefile.am include/Makefile.in \
 		 doc/Makefile.am doc/Makefile.in \
 		 ltmain.sh mkinstalldirs depcomp missing
@@ -367,16 +368,23 @@ SPECIALCFLAGS = -I$(srcdir)/include
 
 all: gc.a gctest
 
-BSD-pkg-all: bsd-libgc.a
+LEAKFLAGS=$(CFLAGS) -DFIND_LEAK
+
+BSD-pkg-all: bsd-libgc.a bsd-libleak.a
 
 bsd-libgc.a:
 	$(MAKE) CFLAGS="$(CFLAGS)" clean c++-t
 	mv gc.a bsd-libgc.a
 
+bsd-libleak.a:
+	$(MAKE) -f Makefile.direct CFLAGS="$(LEAKFLAGS)" clean c++-nt
+	mv gc.a bsd-libleak.a
+
 BSD-pkg-install: BSD-pkg-all
 	${CP} bsd-libgc.a libgc.a
 	${INSTALL_DATA} libgc.a ${PREFIX}/lib
 	${INSTALL_DATA} gc.h gc_cpp.h ${PREFIX}/include
+	${INSTALL_MAN} doc/gc.man ${PREFIX}/man/man3/gc.3
 
 pcr: PCR-Makefile include/private/gc_private.h include/private/gc_hdrs.h \
 include/private/gc_locks.h include/gc.h include/private/gcconfig.h \

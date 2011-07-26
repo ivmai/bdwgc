@@ -310,6 +310,10 @@
 #   define I386
 #   define mach_type_known
 # endif
+# if defined(__NetBSD__) && defined(__x86_64__)
+#    define X86_64
+#    define mach_type_known
+# endif
 # if defined(bsdi) && (defined(i386) || defined(__i386__))
 #    define I386
 #    define BSDI
@@ -605,8 +609,14 @@
 #   ifdef OPENBSD
 #	define OS_TYPE "OPENBSD"
 #	define HEURISTIC2
-	extern char etext[];
-#	define DATASTART ((ptr_t)(etext))
+#	ifdef __ELF__
+#	  define DATASTART GC_data_start
+#	  define DYNAMIC_LOADING
+#	else
+	  extern char etext[];
+#	  define DATASTART ((ptr_t)(etext))
+#       endif
+#       define USE_GENERIC_PUSH_REGS
 #   endif
 #   ifdef NETBSD
 #	define OS_TYPE "NETBSD"
@@ -618,6 +628,7 @@
 	  extern char etext[];
 #	  define DATASTART ((ptr_t)(etext))
 #       endif
+#	define USE_GENERIC_PUSH_REGS
 #   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
@@ -1086,6 +1097,8 @@
 #            define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
 #       endif
 #	ifdef USE_I686_PREFETCH
+	  /* FIXME: Thus should use __builtin_prefetch, but we'll leave that	*/
+	  /* for the next rtelease.						*/
 #	  define PREFETCH(x) \
 	    __asm__ __volatile__ ("	prefetchnta	%0": : "m"(*(char *)(x)))
 	    /* Empirically prefetcht0 is much more effective at reducing	*/
@@ -1624,17 +1637,17 @@
 #       ifdef __GNUC__
 #	  ifndef __INTEL_COMPILER
 #	    define PREFETCH(x) \
-	      __asm__ ("	lfetch	[%0]": : "r"((void *)(x)))
+	      __asm__ ("	lfetch	[%0]": : "r"(x))
 #	    define PREFETCH_FOR_WRITE(x) \
-	      __asm__ ("	lfetch.excl	[%0]": : "r"((void *)(x)))
+	      __asm__ ("	lfetch.excl	[%0]": : "r"(x))
 #	    define CLEAR_DOUBLE(x) \
 	      __asm__ ("	stf.spill	[%0]=f0": : "r"((void *)(x)))
 #	  else
 #           include <ia64intrin.h>
 #	    define PREFETCH(x) \
-	      __lfetch(__lfhint_none, (void*)(x))
+	      __lfetch(__lfhint_none, (x))
 #	    define PREFETCH_FOR_WRITE(x) \
-	      __lfetch(__lfhint_nta,  (void*)(x))
+	      __lfetch(__lfhint_nta,  (x))
 #	    define CLEAR_DOUBLE(x) \
 	      __stf_spill((void *)(x), 0)
 #	  endif // __INTEL_COMPILER
@@ -1840,10 +1853,19 @@
 	     extern int etext[];
 #            define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
 #       endif
-#	define PREFETCH(x) \
-	  __asm__ __volatile__ ("	prefetch	%0": : "m"(*(char *)(x)))
-#	define PREFETCH_FOR_WRITE(x) \
-	  __asm__ __volatile__ ("	prefetchw	%0": : "m"(*(char *)(x)))
+#       if defined(__GNUC__) && __GNUC >= 3
+#	    define PREFETCH(x) __builtin_prefetch((x), 0, 0)
+#	    define PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
+#	endif
+#   endif
+#   ifdef NETBSD
+#	define OS_TYPE "NETBSD"
+#	ifdef __ELF__
+#	    define DYNAMIC_LOADING
+#	endif
+#	define HEURISTIC2
+	extern char etext[];
+#	define SEARCH_FOR_DATA_START
 #   endif
 # endif
 
@@ -1904,6 +1926,10 @@
 # endif
 
 # if defined(HPUX)
+#   define SUNOS5SIGS
+# endif
+
+# if defined(FREEBSD) && (__FreeBSD__ >= 4)
 #   define SUNOS5SIGS
 # endif
 

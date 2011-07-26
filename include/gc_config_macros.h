@@ -97,7 +97,10 @@
 # endif
 #endif /* GC_THREADS */
 
-#if defined(GC_THREADS) && !defined(GC_PTHREADS) && defined(MSWIN32)
+#if defined(GC_THREADS) && !defined(GC_PTHREADS) && \
+    (defined(_WIN32) || defined(_MSC_VER) || defined(__CYGWIN__) \
+     || defined(__MINGW32__) || defined(__BORLANDC__) \
+     || defined(_WIN32_WCE))
 # define GC_WIN32_THREADS
 #endif
 

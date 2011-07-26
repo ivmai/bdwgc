@@ -778,6 +778,7 @@ GC_API GC_PTR GC_call_with_alloc_lock
 
 /* The following routines are primarily intended for use with a 	*/
 /* preprocessor which inserts calls to check C pointer arithmetic.	*/
+/* They indicate failure by invoking the corresponding _print_proc.	*/
 
 /* Check that p and q point to the same object.  		*/
 /* Fail conspicuously if they don't.				*/
@@ -855,7 +856,7 @@ GC_API GC_PTR GC_is_valid_displacement GC_PROTO((GC_PTR	p));
 #   define GC_PTR_STORE(p, q) *((p) = (q))
 #endif
 
-/* Fynctions called to report pointer checking errors */
+/* Functions called to report pointer checking errors */
 GC_API void (*GC_same_obj_print_proc) GC_PROTO((GC_PTR p, GC_PTR q));
 
 GC_API void (*GC_is_valid_displacement_print_proc)
@@ -929,7 +930,7 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
   * no-op and the collector self-initializes.  But a number of platforms
   * make that too hard.
   */
-#if defined(sparc) || defined(__sparc)
+#if (defined(sparc) || defined(__sparc)) && defined(sun)
     /*
      * If you are planning on putting
      * the collector in a SunOS 5 dynamic library, you need to call GC_INIT()

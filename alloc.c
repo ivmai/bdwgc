@@ -133,7 +133,7 @@ int GC_n_attempts = 0;		/* Number of attempts at finishing	*/
 	  if (GC_print_stats) {
 	    GC_printf0("Abandoning stopped marking after ");
 	    GC_printf1("%lu msecs", (unsigned long)time_diff);
-	    GC_printf1("(attempt %d)\n", (unsigned long) GC_n_attempts);
+	    GC_printf1("(attempt %ld)\n", (unsigned long) GC_n_attempts);
 	  }
 #	endif
     	return(1);
@@ -942,12 +942,7 @@ word n;
             (GC_PTR)GC_min((ptr_t)GC_least_plausible_heap_addr,
                            (ptr_t)space - expansion_slop);
     }
-    /* Force GC before we are likely to allocate past expansion_slop */
-      GC_collect_at_heapsize =
-	  GC_heapsize + expansion_slop - 2*MAXHINCR*HBLKSIZE;
 #   if defined(LARGE_CONFIG)
-      if (GC_collect_at_heapsize < GC_heapsize /* wrapped */)
-	GC_collect_at_heapsize = (word)(-1);
       if (((ptr_t)GC_greatest_plausible_heap_addr <= (ptr_t)space + bytes
            || (ptr_t)GC_least_plausible_heap_addr >= (ptr_t)space)
 	  && GC_heapsize > 0) {
@@ -958,6 +953,13 @@ word n;
     GC_prev_heap_addr = GC_last_heap_addr;
     GC_last_heap_addr = (ptr_t)space;
     GC_add_to_heap(space, bytes);
+    /* Force GC before we are likely to allocate past expansion_slop */
+      GC_collect_at_heapsize =
+	  GC_heapsize + expansion_slop - 2*MAXHINCR*HBLKSIZE;
+#     if defined(LARGE_CONFIG)
+        if (GC_collect_at_heapsize < GC_heapsize /* wrapped */)
+	  GC_collect_at_heapsize = (word)(-1);
+#     endif
     return(TRUE);
 }
 
