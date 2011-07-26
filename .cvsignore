@@ -40,6 +40,7 @@ initsecondarythread
 leaktest
 libtool
 middletest
+realloc_test
 setjmp_test
 smashtest
 staticrootstest

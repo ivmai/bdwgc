@@ -1,3 +1,11 @@
+2011-07-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/realloc_test.c: New file.
+	* tests/tests.am (TESTS, check_PROGRAMS): Add realloc_test.
+	* .cvsignore: Add realloc_test.
+	* configure: Regenerate.
+	* Makefile.in: Ditto.
+
 2011-07-14  Ivan Maidanski <ivmai@mail.ru>
 
 	* .cvsignore: Add more auto-generated files.

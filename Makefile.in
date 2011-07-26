@@ -96,8 +96,9 @@ target_triplet = @target@
 @USE_INTERNAL_LIBATOMIC_OPS_TRUE@	       -I$(top_srcdir)/libatomic_ops/src
 
 check_PROGRAMS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
-	smashtest$(EXEEXT) hugetest$(EXEEXT) staticrootstest$(EXEEXT) \
-	$(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
+	smashtest$(EXEEXT) hugetest$(EXEEXT) realloc_test$(EXEEXT) \
+	staticrootstest$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2) \
+	$(am__EXEEXT_3)
 
 # C Library: Architecture Dependent
 # ---------------------------------
@@ -237,6 +238,9 @@ leaktest_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_middletest_OBJECTS = middle.$(OBJEXT)
 middletest_OBJECTS = $(am_middletest_OBJECTS)
 middletest_DEPENDENCIES = $(am__DEPENDENCIES_2)
+am_realloc_test_OBJECTS = realloc_test.$(OBJEXT)
+realloc_test_OBJECTS = $(am_realloc_test_OBJECTS)
+realloc_test_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_smashtest_OBJECTS = smash_test.$(OBJEXT)
 smashtest_OBJECTS = $(am_smashtest_OBJECTS)
 smashtest_DEPENDENCIES = $(am__DEPENDENCIES_2)
@@ -300,15 +304,16 @@ SOURCES = $(libcord_la_SOURCES) $(libgc_la_SOURCES) \
 	$(libgccpp_la_SOURCES) $(libstaticrootslib_la_SOURCES) \
 	$(gctest_SOURCES) $(hugetest_SOURCES) \
 	$(initsecondarythread_SOURCES) $(leaktest_SOURCES) \
-	$(middletest_SOURCES) $(smashtest_SOURCES) \
-	$(staticrootstest_SOURCES) $(test_cpp_SOURCES) \
-	$(threadkey_test_SOURCES) $(threadleaktest_SOURCES) \
-	$(tracetest_SOURCES)
+	$(middletest_SOURCES) $(realloc_test_SOURCES) \
+	$(smashtest_SOURCES) $(staticrootstest_SOURCES) \
+	$(test_cpp_SOURCES) $(threadkey_test_SOURCES) \
+	$(threadleaktest_SOURCES) $(tracetest_SOURCES)
 DIST_SOURCES = $(libcord_la_SOURCES) $(am__libgc_la_SOURCES_DIST) \
 	$(EXTRA_libgc_la_SOURCES) $(am__libgccpp_la_SOURCES_DIST) \
 	$(libstaticrootslib_la_SOURCES) $(gctest_SOURCES) \
 	$(hugetest_SOURCES) $(am__initsecondarythread_SOURCES_DIST) \
-	$(leaktest_SOURCES) $(middletest_SOURCES) $(smashtest_SOURCES) \
+	$(leaktest_SOURCES) $(middletest_SOURCES) \
+	$(realloc_test_SOURCES) $(smashtest_SOURCES) \
 	$(staticrootstest_SOURCES) $(am__test_cpp_SOURCES_DIST) \
 	$(am__threadkey_test_SOURCES_DIST) \
 	$(am__threadleaktest_SOURCES_DIST) \
@@ -601,8 +606,9 @@ dist_noinst_HEADERS = include/private/gc_hdrs.h \
 	include/ec.h include/javaxfc.h
 check_LTLIBRARIES = libstaticrootslib.la
 TESTS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
-	smashtest$(EXEEXT) hugetest$(EXEEXT) staticrootstest$(EXEEXT) \
-	$(am__append_7) $(am__append_9) $(am__append_11)
+	smashtest$(EXEEXT) hugetest$(EXEEXT) realloc_test$(EXEEXT) \
+	staticrootstest$(EXEEXT) $(am__append_7) $(am__append_9) \
+	$(am__append_11)
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = bdw-gc.pc
 libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
@@ -670,6 +676,8 @@ smashtest_SOURCES = tests/smash_test.c
 smashtest_LDADD = $(test_ldadd)
 hugetest_SOURCES = tests/huge_test.c
 hugetest_LDADD = $(test_ldadd)
+realloc_test_SOURCES = tests/realloc_test.c
+realloc_test_LDADD = $(test_ldadd)
 staticrootstest_SOURCES = tests/staticrootstest.c
 staticrootstest_LDADD = $(test_ldadd) libstaticrootslib.la
 libstaticrootslib_la_SOURCES = tests/staticrootslib.c
@@ -857,6 +865,9 @@ leaktest$(EXEEXT): $(leaktest_OBJECTS) $(leaktest_DEPENDENCIES)
 middletest$(EXEEXT): $(middletest_OBJECTS) $(middletest_DEPENDENCIES) 
 	@rm -f middletest$(EXEEXT)
 	$(LINK) $(middletest_OBJECTS) $(middletest_LDADD) $(LIBS)
+realloc_test$(EXEEXT): $(realloc_test_OBJECTS) $(realloc_test_DEPENDENCIES) 
+	@rm -f realloc_test$(EXEEXT)
+	$(LINK) $(realloc_test_OBJECTS) $(realloc_test_LDADD) $(LIBS)
 smashtest$(EXEEXT): $(smashtest_OBJECTS) $(smashtest_DEPENDENCIES) 
 	@rm -f smashtest$(EXEEXT)
 	$(LINK) $(smashtest_OBJECTS) $(smashtest_LDADD) $(LIBS)
@@ -920,6 +931,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pthread_support.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ptr_chck.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/real_malloc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/realloc_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reclaim.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smash_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparc_mach_dep.Plo@am__quote@
@@ -1089,6 +1101,20 @@ middle.obj: tests/middle.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/middle.c' object='middle.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o middle.obj `if test -f 'tests/middle.c'; then $(CYGPATH_W) 'tests/middle.c'; else $(CYGPATH_W) '$(srcdir)/tests/middle.c'; fi`
+
+realloc_test.o: tests/realloc_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT realloc_test.o -MD -MP -MF $(DEPDIR)/realloc_test.Tpo -c -o realloc_test.o `test -f 'tests/realloc_test.c' || echo '$(srcdir)/'`tests/realloc_test.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/realloc_test.Tpo $(DEPDIR)/realloc_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/realloc_test.c' object='realloc_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o realloc_test.o `test -f 'tests/realloc_test.c' || echo '$(srcdir)/'`tests/realloc_test.c
+
+realloc_test.obj: tests/realloc_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT realloc_test.obj -MD -MP -MF $(DEPDIR)/realloc_test.Tpo -c -o realloc_test.obj `if test -f 'tests/realloc_test.c'; then $(CYGPATH_W) 'tests/realloc_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/realloc_test.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/realloc_test.Tpo $(DEPDIR)/realloc_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='tests/realloc_test.c' object='realloc_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o realloc_test.obj `if test -f 'tests/realloc_test.c'; then $(CYGPATH_W) 'tests/realloc_test.c'; else $(CYGPATH_W) '$(srcdir)/tests/realloc_test.c'; fi`
 
 smash_test.o: tests/smash_test.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT smash_test.o -MD -MP -MF $(DEPDIR)/smash_test.Tpo -c -o smash_test.o `test -f 'tests/smash_test.c' || echo '$(srcdir)/'`tests/smash_test.c
