@@ -1,7 +1,8 @@
 /*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1998 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 1999 by Hewlett-Packard Company. All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -62,8 +63,14 @@ word GC_gc_no = 0;
   int GC_incremental = 0;    /* By default, stop the world.	*/
 #endif
 
-int GC_full_freq = 4;	   /* Every 5th collection is a full	*/
-			   /* collection.			*/
+int GC_full_freq = 19;	   /* Every 20th collection is a full	*/
+			   /* collection, whether we need it 	*/
+			   /* or not.			        */
+
+GC_bool GC_need_full_gc = FALSE;
+			   /* Need full GC do to heap growth.	*/
+
+word GC_used_heap_size_after_full = 0;
 
 char * GC_copyright[] =
 {"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
@@ -210,12 +217,15 @@ GC_bool GC_should_collect()
     return(GC_adj_words_allocd() >= min_words_allocd());
 }
 
+
 void GC_notify_full_gc()
 {
     if (GC_start_call_back != (void (*)())0) {
 	(*GC_start_call_back)();
     }
 }
+
+GC_bool GC_is_full_gc = FALSE;
 
 /* 
  * Initiate a garbage collection if appropriate.
@@ -226,7 +236,6 @@ void GC_notify_full_gc()
 void GC_maybe_gc()
 {
     static int n_partial_gcs = 0;
-    GC_bool is_full_gc = FALSE;
 
     if (GC_should_collect()) {
         if (!GC_incremental) {
@@ -234,7 +243,7 @@ void GC_maybe_gc()
             GC_gcollect_inner();
             n_partial_gcs = 0;
             return;
-        } else if (n_partial_gcs >= GC_full_freq) {
+        } else if (GC_need_full_gc || n_partial_gcs >= GC_full_freq) {
 #   	    ifdef PRINTSTATS
 	      GC_printf2(
 	        "***>Full mark for collection %lu after %ld allocd bytes\n",
@@ -246,7 +255,7 @@ void GC_maybe_gc()
 	    GC_clear_marks();
             n_partial_gcs = 0;
 	    GC_notify_full_gc();
- 	    is_full_gc = TRUE;
+ 	    GC_is_full_gc = TRUE;
         } else {
             n_partial_gcs++;
         }
@@ -260,7 +269,7 @@ void GC_maybe_gc()
 #           endif
             GC_finish_collection();
         } else {
-	    if (!is_full_gc) {
+	    if (!GC_is_full_gc) {
 		/* Count this as the first attempt */
 	        GC_n_attempts++;
 	    }
@@ -297,7 +306,9 @@ GC_stop_func stop_func;
     /* Make sure all blocks have been reclaimed, so sweep routines	*/
     /* don't see cleared mark bits.					*/
     /* If we're guaranteed to finish, then this is unnecessary.		*/
-	if (stop_func != GC_never_stop_func
+    /* In the find_leak case, we have to finish to guarantee that 	*/
+    /* previously unmarked objects are not reported as leaks.		*/
+	if ((GC_find_leak || stop_func != GC_never_stop_func)
 	    && !GC_reclaim_all(stop_func, FALSE)) {
 	    /* Aborted.  So far everything is still consistent.	*/
 	    return(FALSE);
@@ -307,6 +318,7 @@ GC_stop_func stop_func;
 #   ifdef SAVE_CALL_CHAIN
         GC_save_callers(GC_last_stack);
 #   endif
+    GC_is_full_gc = TRUE;
     if (!GC_stopped_mark(stop_func)) {
       if (!GC_incremental) {
     	/* We're partially done and have no way to complete or use 	*/
@@ -548,6 +560,14 @@ void GC_finish_collection()
 #   endif
     /* Reconstruct free lists to contain everything not marked */
         GC_start_reclaim(FALSE);
+        if (GC_is_full_gc)  {
+	    GC_used_heap_size_after_full = USED_HEAP_SIZE;
+	    GC_need_full_gc = FALSE;
+	} else {
+	    GC_need_full_gc =
+		 BYTES_TO_WORDS(USED_HEAP_SIZE - GC_used_heap_size_after_full)
+		 > min_words_allocd();
+	}
 
 #   ifdef PRINTSTATS
 	GC_printf2(
@@ -564,6 +584,7 @@ void GC_finish_collection()
 #   endif
 
       GC_n_attempts = 0;
+      GC_is_full_gc = FALSE;
     /* Reset or increment counters for next cycle */
       GC_words_allocd_before_gc += GC_words_allocd;
       GC_non_gc_bytes_at_gc = GC_non_gc_bytes;
@@ -630,7 +651,8 @@ word bytes;
     if (GC_n_heap_sects >= MAX_HEAP_SECTS) {
     	ABORT("Too many heap sections: Increase MAXHINCR or MAX_HEAP_SECTS");
     }
-    if (!GC_install_header(p)) {
+    phdr = GC_install_header(p);
+    if (0 == phdr) {
     	/* This is extremely unlikely. Can't add it.  This will		*/
     	/* almost certainly result in a	0 return from the allocator,	*/
     	/* which is entirely appropriate.				*/
@@ -640,7 +662,6 @@ word bytes;
     GC_heap_sects[GC_n_heap_sects].hs_bytes = bytes;
     GC_n_heap_sects++;
     words = BYTES_TO_WORDS(bytes - HDR_BYTES);
-    phdr = HDR(p);
     phdr -> hb_sz = words;
     phdr -> hb_map = (char *)1;   /* A value != GC_invalid_map	*/
     phdr -> hb_flags = 0;
@@ -789,6 +810,7 @@ word n;
     LOCK();
     if (!GC_is_initialized) GC_init_inner();
     result = (int)GC_expand_hp_inner(divHBLKSZ((word)bytes));
+    if (result) GC_requested_heapsize += bytes;
     UNLOCK();
     ENABLE_SIGNALS();
     return(result);
@@ -802,7 +824,8 @@ GC_bool GC_collect_or_expand(needed_blocks, ignore_off_page)
 word needed_blocks;
 GC_bool ignore_off_page;
 {
-    if (!GC_incremental && !GC_dont_gc && GC_should_collect()) {
+    if (!GC_incremental && !GC_dont_gc &&
+	(GC_dont_expand && GC_words_allocd > 0 || GC_should_collect())) {
       GC_notify_full_gc();
       GC_gcollect_inner();
     } else {

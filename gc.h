@@ -1,7 +1,8 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
- * Copyright 1996 by Silicon Graphics.  All rights reserved.
+ * Copyright 1996-1999 by Silicon Graphics.  All rights reserved.
+ * Copyright 1999 by Hewlett-Packard Company.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -35,6 +36,14 @@
 #include "libgc_globals.h"
 #endif
 
+#if defined(__MINGW32__) && defined(WIN32_THREADS)
+# ifdef GC_BUILD
+#   define GC_API __declspec(dllexport)
+# else
+#   define GC_API __declspec(dllimport)
+# endif
+#endif
+
 #if defined(_MSC_VER) && defined(_DLL)
 # ifdef GC_BUILD
 #   define GC_API __declspec(dllexport)
@@ -58,9 +67,11 @@
 # if defined(__STDC__) || defined(__cplusplus)
 #   define GC_PROTO(args) args
     typedef void * GC_PTR;
+#   define GC_CONST const
 # else
 #   define GC_PROTO(args) ()
     typedef char * GC_PTR;
+#   define GC_CONST
 #  endif
 
 # ifdef __cplusplus
@@ -128,9 +139,26 @@ GC_API int GC_dont_expand;
 			/* Dont expand heap unless explicitly requested */
 			/* or forced to.				*/
 
+GC_API int GC_use_entire_heap;
+		/* Causes the nonincremental collector to use the	*/
+		/* entire heap before collecting.  This was the only 	*/
+		/* option for GC versions < 5.0.  This sometimes	*/
+		/* results in more large block fragmentation, since	*/
+		/* very larg blocks will tend to get broken up		*/
+		/* during each GC cycle.  It is likely to result in a	*/
+		/* larger working set, but lower collection		*/
+		/* frequencies, and hence fewer instructions executed	*/
+		/* in the collector.					*/
+
 GC_API int GC_full_freq;    /* Number of partial collections between	*/
 			    /* full collections.  Matters only if	*/
 			    /* GC_incremental is set.			*/
+			    /* Full collections are also triggered if	*/
+			    /* the collector detects a substantial	*/
+			    /* increase in the number of in-use heap	*/
+			    /* blocks.  Values in the tens are now	*/
+			    /* perfectly reasonable, unlike for		*/
+			    /* earlier GC versions.			*/
 			
 GC_API GC_word GC_non_gc_bytes;
 			/* Bytes not considered candidates for collection. */
@@ -297,6 +325,9 @@ GC_API int GC_try_to_collect GC_PROTO((GC_stop_func stop_func));
 /* Includes some pages that were allocated but never written.		*/
 GC_API size_t GC_get_heap_size GC_PROTO((void));
 
+/* Return a lower bound on the number of free bytes in the heap.	*/
+GC_API size_t GC_get_free_bytes GC_PROTO((void));
+
 /* Return the number of bytes allocated since the last collection.	*/
 GC_API size_t GC_get_bytes_since_gc GC_PROTO((void));
 
@@ -341,10 +372,10 @@ GC_API GC_PTR GC_malloc_atomic_ignore_off_page GC_PROTO((size_t lb));
 
 #ifdef GC_ADD_CALLER
 #  define GC_EXTRAS GC_RETURN_ADDR, __FILE__, __LINE__
-#  define GC_EXTRA_PARAMS GC_word ra, char * descr_string, int descr_int
+#  define GC_EXTRA_PARAMS GC_word ra, GC_CONST char * s, int i
 #else
 #  define GC_EXTRAS __FILE__, __LINE__
-#  define GC_EXTRA_PARAMS char * descr_string, int descr_int
+#  define GC_EXTRA_PARAMS GC_CONST char * s, int i
 #endif
 
 /* Debugging (annotated) allocation.  GC_gcollect will check 		*/
@@ -375,6 +406,8 @@ GC_API void GC_debug_end_stubborn_change GC_PROTO((GC_PTR));
 	GC_debug_register_finalizer(p, f, d, of, od)
 #   define GC_REGISTER_FINALIZER_IGNORE_SELF(p, f, d, of, od) \
 	GC_debug_register_finalizer_ignore_self(p, f, d, of, od)
+#   define GC_REGISTER_FINALIZER_NO_ORDER(p, f, d, of, od) \
+	GC_debug_register_finalizer_no_order(p, f, d, of, od)
 #   define GC_MALLOC_STUBBORN(sz) GC_debug_malloc_stubborn(sz, GC_EXTRAS);
 #   define GC_CHANGE_STUBBORN(p) GC_debug_change_stubborn(p)
 #   define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
@@ -391,6 +424,8 @@ GC_API void GC_debug_end_stubborn_change GC_PROTO((GC_PTR));
 	GC_register_finalizer(p, f, d, of, od)
 #   define GC_REGISTER_FINALIZER_IGNORE_SELF(p, f, d, of, od) \
 	GC_register_finalizer_ignore_self(p, f, d, of, od)
+#   define GC_REGISTER_FINALIZER_NO_ORDER(p, f, d, of, od) \
+	GC_register_finalizer_no_order(p, f, d, of, od)
 #   define GC_MALLOC_STUBBORN(sz) GC_malloc_stubborn(sz)
 #   define GC_CHANGE_STUBBORN(p) GC_change_stubborn(p)
 #   define GC_END_STUBBORN_CHANGE(p) GC_end_stubborn_change(p)
@@ -469,6 +504,16 @@ GC_API void GC_debug_register_finalizer_ignore_self
 	GC_PROTO((GC_PTR obj, GC_finalization_proc fn, GC_PTR cd,
 		  GC_finalization_proc *ofn, GC_PTR *ocd));
 
+/* Another version of the above.  It ignores all cycles.        */
+/* It should probably only be used by Java implementations.      */
+GC_API void GC_register_finalizer_no_order
+	GC_PROTO((GC_PTR obj, GC_finalization_proc fn, GC_PTR cd,
+		  GC_finalization_proc *ofn, GC_PTR *ocd));
+GC_API void GC_debug_register_finalizer_no_order
+	GC_PROTO((GC_PTR obj, GC_finalization_proc fn, GC_PTR cd,
+		  GC_finalization_proc *ofn, GC_PTR *ocd));
+
+
 /* The following routine may be used to break cycles between	*/
 /* finalizable objects, thus causing cyclic finalizable		*/
 /* objects to be finalized in the correct order.  Standard	*/
@@ -524,6 +569,9 @@ GC_API int GC_unregister_disappearing_link GC_PROTO((GC_PTR * /* link */));
 /* pointers introduced by the debugging allocators.			*/
 GC_API GC_PTR GC_make_closure GC_PROTO((GC_finalization_proc fn, GC_PTR data));
 GC_API void GC_debug_invoke_finalizer GC_PROTO((GC_PTR obj, GC_PTR data));
+
+/* Returns !=0  if GC_invoke_finalizers has something to do. 		*/
+GC_API int GC_should_invoke_finalizers GC_PROTO((void));
 
 GC_API int GC_invoke_finalizers GC_PROTO((void));
 	/* Run finalizers for all objects that are ready to	*/
@@ -688,7 +736,8 @@ GC_API void (*GC_is_visible_print_proc)
 # endif /* SOLARIS_THREADS */
 
 
-#if defined(IRIX_THREADS) || defined(LINUX_THREADS)
+#if !defined(USE_LD_WRAP) && \
+    (defined(IRIX_THREADS) || defined(LINUX_THREADS) || defined(HPUX_THREADS))
 /* We treat these similarly. */
 # include <pthread.h>
 # include <signal.h>
@@ -702,12 +751,13 @@ GC_API void (*GC_is_visible_print_proc)
 # define pthread_create GC_pthread_create
 # define pthread_sigmask GC_pthread_sigmask
 # define pthread_join GC_pthread_join
+# define dlopen GC_dlopen
 
-#endif /* IRIX_THREADS || LINUX_THREADS */
+#endif /* xxxxx_THREADS */
 
 # if defined(PCR) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || \
 	defined(IRIX_THREADS) || defined(LINUX_THREADS) || \
-	defined(IRIX_JDK_THREADS)
+	defined(IRIX_JDK_THREADS) || defined(HPUX_THREADS)
    	/* Any flavor of threads except SRC_M3.	*/
 /* This returns a list of objects, linked through their first		*/
 /* word.  Its use can greatly reduce lock contention problems, since	*/

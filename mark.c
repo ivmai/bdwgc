@@ -38,7 +38,7 @@ word x;
 
 /* mark_proc GC_mark_procs[MAX_MARK_PROCS] = {0} -- declared in gc_priv.h */
 
-word GC_n_mark_procs = 0;
+word GC_n_mark_procs = GC_RESERVED_MARK_PROCS;
 
 /* Initialize GC_obj_kinds properly and standard free lists properly.  	*/
 /* This must be done statically since they may be accessed before 	*/
@@ -87,6 +87,10 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 #   define INITIAL_MARK_STACK_SIZE (1*HBLKSIZE)
 		/* INITIAL_MARK_STACK_SIZE * sizeof(mse) should be a 	*/
 		/* multiple of HBLKSIZE.				*/
+		/* The incremental collector actually likes a larger	*/
+		/* size, since it want to push all marked dirty objs	*/
+		/* before marking anything new.  Currently we let it	*/
+		/* grow dynamically.					*/
 # endif
 
 /*
@@ -248,13 +252,29 @@ static void alloc_mark_stack();
 GC_bool GC_mark_some(cold_gc_frame)
 ptr_t cold_gc_frame;
 {
+#ifdef MSWIN32
+  /* Windows 98 appears to asynchronously create and remove writable	*/
+  /* memory mappings, for reasons we haven't yet understood.  Since	*/
+  /* we look for writable regions to determine the root set, we may	*/
+  /* try to mark from an address range that disappeared since we 	*/
+  /* started the collection.  Thus we have to recover from faults here. */
+  /* This code does not appear to be necessary for Windows 95/NT/2000.	*/ 
+  /* Note that this code should never generate an incremental GC write	*/
+  /* fault.								*/
+  __try {
+#endif
     switch(GC_mark_state) {
     	case MS_NONE:
     	    return(FALSE);
     	    
     	case MS_PUSH_RESCUERS:
     	    if (GC_mark_stack_top
-    	        >= GC_mark_stack + INITIAL_MARK_STACK_SIZE/4) {
+    	        >= GC_mark_stack + GC_mark_stack_size
+		   - INITIAL_MARK_STACK_SIZE/2) {
+		/* Go ahead and mark, even though that might cause us to */
+		/* see more marked dirty objects later on.  Avoid this	 */
+		/* in the future.					 */
+		GC_mark_stack_too_small = TRUE;
     	        GC_mark_from_mark_stack();
     	        return(FALSE);
     	    } else {
@@ -333,6 +353,20 @@ ptr_t cold_gc_frame;
     	    ABORT("GC_mark_some: bad state");
     	    return(FALSE);
     }
+#ifdef MSWIN32
+  } __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ?
+	    EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
+#   ifdef PRINTSTATS
+	GC_printf0("Caught ACCESS_VIOLATION in marker. "
+		   "Memory mapping disappeared.\n");
+#   endif /* PRINTSTATS */
+    /* We have bad roots on the stack.  Discard mark stack.  	*/
+    /* Rescan from marked objects.  Redetermine roots.		*/
+    GC_invalidate_mark_state();	
+    scan_ptr = 0;
+    return FALSE;
+  }
+#endif /* MSWIN32 */
 }
 
 
@@ -356,20 +390,20 @@ GC_bool GC_mark_stack_empty()
 /* with IGNORE_OFF_PAGE set.						*/
 /*ARGSUSED*/
 # ifdef PRINT_BLACK_LIST
-  word GC_find_start(current, hhdr, source)
+  ptr_t GC_find_start(current, hhdr, source)
   word source;
 # else
-  word GC_find_start(current, hhdr)
+  ptr_t GC_find_start(current, hhdr)
 # define source 0
 # endif
-register word current;
+register ptr_t current;
 register hdr * hhdr;
 {
 #   ifdef ALL_INTERIOR_POINTERS
 	if (hhdr != 0) {
-	    register word orig = current;
+	    register ptr_t orig = current;
 	    
-	    current = (word)HBLKPTR(current) + HDR_BYTES;
+	    current = (ptr_t)HBLKPTR(current) + HDR_BYTES;
 	    do {
 	      current = current - HBLKSIZE*(word)hhdr;
 	      hhdr = HDR(current);
@@ -420,6 +454,12 @@ mse * msp;
  * is never 0.  A mark stack entry never has size 0.
  * We try to traverse on the order of a hblk of memory before we return.
  * Caller is responsible for calling this until the mark stack is empty.
+ * Note that this is the most performance critical routine in the
+ * collector.  Hence it contains all sorts of ugly hacks to speed
+ * things up.  In particular, we avoid procedure calls on the common
+ * path, we take advantage of peculiarities of the mark descriptor
+ * encoding, we optionally maintain a cache for the block address to
+ * header mapping, we prefetch when an object is "grayed", etc. 
  */
 void GC_mark_from_mark_stack()
 {
@@ -434,9 +474,12 @@ void GC_mark_from_mark_stack()
   register word descr;
   register ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
   register ptr_t least_ha = GC_least_plausible_heap_addr;
+  DECLARE_HDR_CACHE;
+
 # define SPLIT_RANGE_WORDS 128  /* Must be power of 2.		*/
 
   GC_objects_are_marked = TRUE;
+  INIT_HDR_CACHE;
 # ifdef OS2 /* Use untweaked version to circumvent compiler problem */
   while (GC_mark_stack_top_reg >= GC_mark_stack_reg && credit >= 0) {
 # else
@@ -444,8 +487,13 @@ void GC_mark_from_mark_stack()
   	>= 0) {
 # endif
     current_p = GC_mark_stack_top_reg -> mse_start;
-  retry:
     descr = GC_mark_stack_top_reg -> mse_descr;
+  retry:
+    /* current_p and descr describe the current object.		*/
+    /* *GC_mark_stack_top_reg is vacant.			*/
+    /* The following is 0 only for small objects described by a simple	*/
+    /* length descriptor.  For many applications this is the common	*/
+    /* case, so we try to detect it quickly.				*/
     if (descr & ((~(WORDS_TO_BYTES(SPLIT_RANGE_WORDS) - 1)) | DS_TAGS)) {
       word tag = descr & DS_TAGS;
       
@@ -456,8 +504,8 @@ void GC_mark_from_mark_stack()
           /* stack.							*/
           GC_mark_stack_top_reg -> mse_start =
          	limit = current_p + SPLIT_RANGE_WORDS-1;
-          GC_mark_stack_top_reg -> mse_descr -=
-          		WORDS_TO_BYTES(SPLIT_RANGE_WORDS-1);
+          GC_mark_stack_top_reg -> mse_descr =
+          		descr - WORDS_TO_BYTES(SPLIT_RANGE_WORDS-1);
           /* Make sure that pointers overlapping the two ranges are	*/
           /* considered. 						*/
           limit = (word *)((char *)limit + sizeof(word) - ALIGNMENT);
@@ -470,8 +518,9 @@ void GC_mark_from_mark_stack()
             if ((signed_word)descr < 0) {
               current = *current_p;
 	      if ((ptr_t)current >= least_ha && (ptr_t)current < greatest_ha) {
-                PUSH_CONTENTS(current, GC_mark_stack_top_reg, mark_stack_limit,
-			      current_p, exit1);
+		PREFETCH(current);
+                HC_PUSH_CONTENTS((ptr_t)current, GC_mark_stack_top_reg,
+			      mark_stack_limit, current_p, exit1);
 	      }
             }
 	    descr <<= 1;
@@ -487,24 +536,98 @@ void GC_mark_from_mark_stack()
               	    mark_stack_limit, ENV(descr));
           continue;
         case DS_PER_OBJECT:
-          GC_mark_stack_top_reg -> mse_descr =
-			*(word *)((ptr_t)current_p + descr - tag);
+	  if ((signed_word)descr >= 0) {
+	    /* Descriptor is in the object.	*/
+            descr = *(word *)((ptr_t)current_p + descr - DS_PER_OBJECT);
+	  } else {
+	    /* Descriptor is in type descriptor pointed to by first	*/
+	    /* word in object.						*/
+	    ptr_t type_descr = *(ptr_t *)current_p;
+	    /* type_descr is either a valid pointer to the descriptor	*/
+	    /* structure, or this object was on a free list.  If it 	*/
+	    /* it was anything but the last object on the free list,	*/
+	    /* we will misinterpret the next object on the free list as */
+	    /* the type descriptor, and get a 0 GC descriptor, which	*/
+	    /* is ideal.  Unfortunately, we need to check for the last	*/
+	    /* object case explicitly.					*/
+	    if (0 == type_descr) {
+		/* Rarely executed.	*/
+		GC_mark_stack_top_reg--;
+		continue;
+	    }
+            descr = *(word *)(type_descr
+			      - (descr - (DS_PER_OBJECT - INDIR_PER_OBJ_BIAS)));
+	  }
+	  if (0 == descr) {
+	    GC_mark_stack_top_reg--;
+	    continue;
+	  }
           goto retry;
       }
-    } else {
+    } else /* Small object with length descriptor */ {
       GC_mark_stack_top_reg--;
       limit = (word *)(((ptr_t)current_p) + (word)descr);
     }
     /* The simple case in which we're scanning a range.	*/
     credit -= (ptr_t)limit - (ptr_t)current_p;
     limit -= 1;
-    while (current_p <= limit) {
-      current = *current_p;
-      if ((ptr_t)current >= least_ha && (ptr_t)current <  greatest_ha) {
-        PUSH_CONTENTS(current, GC_mark_stack_top_reg,
-		      mark_stack_limit, current_p, exit2);
+    {
+#     define PREF_DIST 4
+
+#     ifndef SMALL_CONFIG
+        word deferred;
+
+	/* Try to prefetch the next pointer to be examined asap.	*/
+	/* Empirically, this also seems to help slightly without	*/
+	/* prefetches, at least on linux/X86.  Presumably this loop 	*/
+	/* ends up with less register pressure, and gcc thus ends up 	*/
+	/* generating slightly better code.  Overall gcc code quality	*/
+	/* for this loop is still not great.				*/
+	for(;;) {
+	  PREFETCH((ptr_t)limit - PREF_DIST*CACHE_LINE_SIZE);
+	  deferred = *limit;
+	  limit = (word *)((char *)limit - ALIGNMENT);
+	  if ((ptr_t)deferred >= least_ha && (ptr_t)deferred <  greatest_ha) {
+	    PREFETCH(deferred);
+	    break;
+	  }
+	  if (current_p > limit) goto next_object;
+	  /* Unroll once, so we don't do too many of the prefetches 	*/
+	  /* based on limit.						*/
+	  deferred = *limit;
+	  limit = (word *)((char *)limit - ALIGNMENT);
+	  if ((ptr_t)deferred >= least_ha && (ptr_t)deferred <  greatest_ha) {
+	    PREFETCH(deferred);
+	    break;
+	  }
+	  if (current_p > limit) goto next_object;
+	}
+#     endif
+
+      while (current_p <= limit) {
+	/* Empirically, unrolling this loop doesn't help a lot.	*/
+	/* Since HC_PUSH_CONTENTS expands to a lot of code,	*/
+	/* we don't.						*/
+        current = *current_p;
+        PREFETCH((ptr_t)current_p + PREF_DIST*CACHE_LINE_SIZE);
+        if ((ptr_t)current >= least_ha && (ptr_t)current <  greatest_ha) {
+  	  /* Prefetch the contents of the object we just pushed.  It's	*/
+  	  /* likely we will need them soon.				*/
+  	  PREFETCH(current);
+          HC_PUSH_CONTENTS((ptr_t)current, GC_mark_stack_top_reg,
+  		           mark_stack_limit, current_p, exit2);
+        }
+        current_p = (word *)((char *)current_p + ALIGNMENT);
       }
-      current_p = (word *)((char *)current_p + ALIGNMENT);
+
+#     ifndef SMALL_CONFIG
+	/* We still need to mark the entry we previously prefetched.	*/
+	/* We alrady know that it passes the preliminary pointer	*/
+	/* validity test.						*/
+        HC_PUSH_CONTENTS((ptr_t)deferred, GC_mark_stack_top_reg,
+  		         mark_stack_limit, current_p, exit4);
+	next_object:;
+#     endif
     }
   }
   GC_mark_stack_top = GC_mark_stack_top_reg;
@@ -671,7 +794,13 @@ int all;
 # endif
 word p;
 {
-    GC_PUSH_ONE_STACK(p, 0);
+#   ifdef NURSERY
+      if (0 != GC_push_proc) {
+	GC_push_proc(p);
+	return;
+      }
+#   endif
+    GC_PUSH_ONE_STACK(p, MARKED_FROM_REGISTER);
 }
 
 # ifdef __STDC__
@@ -1014,6 +1143,7 @@ struct hblk *h;
 register hdr * hhdr;
 {
     register int sz = hhdr -> hb_sz;
+    register int descr = hhdr -> hb_descr;
     register word * p;
     register int word_no;
     register word * lim;
@@ -1021,19 +1151,14 @@ register hdr * hhdr;
     register mse * mark_stack_limit = &(GC_mark_stack[GC_mark_stack_size]);
     
     /* Some quick shortcuts: */
-	{ 
-	    struct obj_kind *ok = &(GC_obj_kinds[hhdr -> hb_obj_kind]);
-	    if ((0 | DS_LENGTH) == ok -> ok_descriptor
-		&& FALSE == ok -> ok_relocate_descr)
-		return;
-	}
+	if ((0 | DS_LENGTH) == descr) return;
         if (GC_block_empty(hhdr)/* nothing marked */) return;
 #   ifdef GATHERSTATS
         GC_n_rescuing_pages++;
 #   endif
     GC_objects_are_marked = TRUE;
     if (sz > MAXOBJSZ) {
-        lim = (word *)(h + 1);
+        lim = (word *)h + HDR_WORDS;
     } else {
         lim = (word *)(h + 1) - sz;
     }
@@ -1056,10 +1181,6 @@ register hdr * hhdr;
       GC_mark_stack_top_reg = GC_mark_stack_top;
       for (p = (word *)h + HDR_WORDS, word_no = HDR_WORDS; p <= lim;
          p += sz, word_no += sz) {
-         /* This ignores user specified mark procs.  This currently	*/
-         /* doesn't matter, since marking from the whole object		*/
-         /* is always sufficient, and we will eventually use the user	*/
-         /* mark proc to avoid any bogus pointers.			*/
          if (mark_bit_from_hdr(hhdr, word_no)) {
            /* Mark from fields inside the object */
              PUSH_OBJ((word *)p, hhdr, GC_mark_stack_top_reg, mark_stack_limit);
@@ -1115,7 +1236,7 @@ struct hblk *h;
 struct hblk * GC_push_next_marked_dirty(h)
 struct hblk *h;
 {
-    register hdr * hhdr = HDR(h);
+    register hdr * hhdr;
     
     if (!GC_dirty_maintained) { ABORT("dirty bits not set up"); }
     for (;;) {

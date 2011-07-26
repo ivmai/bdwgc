@@ -145,6 +145,13 @@ void GC_promote_black_lists()
     if (GC_black_list_spacing < 3 * HBLKSIZE) {
     	GC_black_list_spacing = 3 * HBLKSIZE;
     }
+    if (GC_black_list_spacing > MAXHINCR * HBLKSIZE) {
+	GC_black_list_spacing = MAXHINCR * HBLKSIZE;
+	/* Makes it easier to allocate really huge blocks, which otherwise */
+	/* may have problems with nonuniform blacklist distributions.	   */
+	/* This way we should always succeed immediately after growing the */ 
+	/* heap.							   */
+    }
 }
 
 void GC_unpromote_black_lists()

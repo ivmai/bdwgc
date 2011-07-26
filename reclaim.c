@@ -1,6 +1,8 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 1999 by Hewlett-Packard Company. All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -11,7 +13,6 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, February 15, 1996 2:41 pm PST */
 
 #include <stdio.h>
 #include "gc_priv.h"
@@ -28,13 +29,8 @@ word sz;
     } else {
         GC_err_printf0("Leaked composite object at ");
     }
-    if (GC_debugging_started && GC_has_debug_info(p)) {
-        GC_print_obj(p);
-    } else {
-        GC_err_printf2("0x%lx (appr. size = %ld)\n",
-       		      (unsigned long)p,
-       		      (unsigned long)WORDS_TO_BYTES(sz));
-    }
+    GC_print_heap_obj(p);
+    GC_err_printf0("\n");
 }
 
 #   define FOUND_FREE(hblk, word_no) \
@@ -66,6 +62,139 @@ register hdr * hhdr;
     }
     return(TRUE);
 }
+
+/* The following functions sometimes return a DONT_KNOW value. */
+#define DONT_KNOW  2
+
+#ifdef SMALL_CONFIG
+# define GC_block_nearly_full1(hhdr, pat1) DONT_KNOW
+# define GC_block_nearly_full3(hhdr, pat1, pat2) DONT_KNOW
+# define GC_block_nearly_full(hhdr) DONT_KNOW
+#else
+
+/*
+ * Test whether nearly all of the mark words consist of the same
+ * repeating pattern.
+ */
+#define FULL_THRESHOLD (MARK_BITS_SZ/16)
+
+GC_bool GC_block_nearly_full1(hhdr, pat1)
+hdr *hhdr;
+word pat1;
+{
+    unsigned i;
+    unsigned misses = 0;
+    GC_ASSERT((MARK_BITS_SZ & 1) == 0);
+    for (i = 0; i < MARK_BITS_SZ; ++i) {
+	if ((hhdr -> hb_marks[i] | ~pat1) != ONES) {
+	    if (++misses > FULL_THRESHOLD) return FALSE;
+	}
+    }
+    return TRUE;
+}
+
+/*
+ * Test whether the same repeating 3 word pattern occurs in nearly
+ * all the mark bit slots.
+ * This is used as a heuristic, so we're a bit sloppy and ignore
+ * the last one or two words.
+ */
+GC_bool GC_block_nearly_full3(hhdr, pat1, pat2, pat3)
+hdr *hhdr;
+word pat1, pat2, pat3;
+{
+    unsigned i;
+    unsigned misses = 0;
+
+    if (MARK_BITS_SZ < 4) {
+      return DONT_KNOW;
+    }
+    for (i = 0; i < MARK_BITS_SZ - 2; i += 3) {
+	if ((hhdr -> hb_marks[i] | ~pat1) != ONES) {
+	    if (++misses > FULL_THRESHOLD) return FALSE;
+	}
+	if ((hhdr -> hb_marks[i+1] | ~pat2) != ONES) {
+	    if (++misses > FULL_THRESHOLD) return FALSE;
+	}
+	if ((hhdr -> hb_marks[i+2] | ~pat3) != ONES) {
+	    if (++misses > FULL_THRESHOLD) return FALSE;
+	}
+    }
+    return TRUE;
+}
+
+/* Check whether a small object block is nearly full by looking at only */
+/* the mark bits.							*/
+/* We manually precomputed the mark bit patterns that need to be 	*/
+/* checked for, and we give up on the ones that are unlikely to occur,	*/
+/* or have period > 3.							*/
+/* This would be a lot easier with a mark bit per object instead of per	*/
+/* word, but that would rewuire computing object numbers in the mark	*/
+/* loop, which would require different data structures ...		*/
+GC_bool GC_block_nearly_full(hhdr)
+hdr *hhdr;
+{
+    int sz = hhdr -> hb_sz;
+
+#   if CPP_WORDSZ != 32 && CPP_WORDSZ != 64
+      return DONT_KNOW;	/* Shouldn't be used in any standard config.	*/
+#   endif
+    if (0 != HDR_WORDS) return DONT_KNOW;
+	/* Also shouldn't happen */
+#   if CPP_WORDSZ == 32
+      switch(sz) {
+        case 1:
+	  return GC_block_nearly_full1(hhdr, 0xffffffffl);
+	case 2:
+	  return GC_block_nearly_full1(hhdr, 0x55555555l);
+	case 4:
+	  return GC_block_nearly_full1(hhdr, 0x11111111l);
+	case 6:
+	  return GC_block_nearly_full3(hhdr, 0x41041041l,
+					      0x10410410l,
+					       0x04104104l);
+	case 8:
+	  return GC_block_nearly_full1(hhdr, 0x01010101l);
+	case 12:
+	  return GC_block_nearly_full3(hhdr, 0x01001001l,
+					      0x10010010l,
+					       0x00100100l);
+	case 16:
+	  return GC_block_nearly_full1(hhdr, 0x00010001l);
+	case 32:
+	  return GC_block_nearly_full1(hhdr, 0x00000001l);
+	default:
+	  return DONT_KNOW;
+      }
+#   endif
+#   if CPP_WORDSZ == 64
+      switch(sz) {
+        case 1:
+	  return GC_block_nearly_full1(hhdr, 0xffffffffffffffffl);
+	case 2:
+	  return GC_block_nearly_full1(hhdr, 0x5555555555555555l);
+	case 4:
+	  return GC_block_nearly_full1(hhdr, 0x1111111111111111l);
+	case 6:
+	  return GC_block_nearly_full3(hhdr, 0x1041041041041041l,
+					       0x4104104104104104l,
+					         0x0410410410410410l);
+	case 8:
+	  return GC_block_nearly_full1(hhdr, 0x0101010101010101l);
+	case 12:
+	  return GC_block_nearly_full3(hhdr, 0x1001001001001001l,
+					       0x0100100100100100l,
+					         0x0010010010010010l);
+	case 16:
+	  return GC_block_nearly_full1(hhdr, 0x0001000100010001l);
+	case 32:
+	  return GC_block_nearly_full1(hhdr, 0x0000000100000001l);
+	default:
+	  return DONT_KNOW;
+      }
+#   endif
+}
+#endif /* !SMALL_CONFIG */
 
 # ifdef GATHERSTATS
 #   define INCR_WORDS(sz) n_words_found += (sz)
@@ -187,8 +316,7 @@ register ptr_t list;
 	    p[start_displ] = (word)list; \
 	    list = (ptr_t)(p+start_displ); \
 	    p[start_displ+1] = 0; \
-	    p[start_displ+2] = 0; \
-	    p[start_displ+3] = 0; \
+	    CLEAR_DOUBLE(p + start_displ + 2); \
 	    INCR_WORDS(4); \
 	}
     
@@ -448,10 +576,11 @@ register struct hblk *hbp;	/* ptr to current heap block		*/
 int report_if_found;		/* Abort if a reclaimable object is found */
 {
     hdr * hhdr;
-    register word sz;		/* size of objects in current block	*/
-    register struct obj_kind * ok;
-    register ptr_t * flh;
-    register int kind;
+    word sz;		/* size of objects in current block	*/
+    struct obj_kind * ok;
+    ptr_t * flh;
+    int kind;
+    GC_bool full;
     
     hhdr = HDR(hbp);
     sz = hhdr -> hb_sz;
@@ -459,7 +588,6 @@ int report_if_found;		/* Abort if a reclaimable object is found */
     kind = hhdr -> hb_obj_kind;
     ok = &GC_obj_kinds[kind];
     flh = &(ok -> ok_freelist[sz]);
-    GC_write_hint(hbp);
 
     if (report_if_found) {
 	GC_reclaim_check(hbp, hhdr, sz);
@@ -467,16 +595,41 @@ int report_if_found;		/* Abort if a reclaimable object is found */
       switch(sz) {
 #      ifndef SMALL_CONFIG
         case 1:
+#           if CPP_WORDSZ == 64
+	      full = GC_block_nearly_full1(hhdr, 0xffffffffffffffffl);
+#	    else
+	      full = GC_block_nearly_full1(hhdr, 0xffffffffl);
+#	    endif
+	    if (TRUE == full) goto out;
+	    if (FALSE == full) GC_write_hint(hbp);
+	    /* In the DONT_KNOW case, we let reclaim fault.	*/
             *flh = GC_reclaim1(hbp, hhdr, *flh);
             break;
         case 2:
+#           if CPP_WORDSZ == 64
+	      full = GC_block_nearly_full1(hhdr, 0x5555555555555555l);
+#	    else
+	      full = GC_block_nearly_full1(hhdr, 0x55555555l);
+#	    endif
+	    if (TRUE == full) goto out;
+	    if (FALSE == full) GC_write_hint(hbp);
             *flh = GC_reclaim_clear2(hbp, hhdr, *flh);
             break;
         case 4:
+#           if CPP_WORDSZ == 64
+	      full = GC_block_nearly_full1(hhdr, 0x1111111111111111l);
+#	    else
+	      full = GC_block_nearly_full1(hhdr, 0x11111111l);
+#	    endif
+	    if (TRUE == full) goto out;
+	    if (FALSE == full) GC_write_hint(hbp);
             *flh = GC_reclaim_clear4(hbp, hhdr, *flh);
             break;
 #      endif
         default:
+	    full = GC_block_nearly_full(hhdr);
+	    if (TRUE == full) goto out;
+	    if (FALSE == full) GC_write_hint(hbp);
             *flh = GC_reclaim_clear(hbp, hhdr, sz, *flh);
             break;
       }
@@ -484,20 +637,45 @@ int report_if_found;		/* Abort if a reclaimable object is found */
       switch(sz) {
 #      ifndef SMALL_CONFIG
         case 1:
+#           if CPP_WORDSZ == 64
+	      full = GC_block_nearly_full1(hhdr, 0xffffffffffffffffl);
+#	    else
+	      full = GC_block_nearly_full1(hhdr, 0xffffffffl);
+#	    endif
+	    if (TRUE == full) goto out;
+	    if (FALSE == full) GC_write_hint(hbp);
             *flh = GC_reclaim1(hbp, hhdr, *flh);
             break;
         case 2:
+#           if CPP_WORDSZ == 64
+	      full = GC_block_nearly_full1(hhdr, 0x5555555555555555l);
+#	    else
+	      full = GC_block_nearly_full1(hhdr, 0x55555555l);
+#	    endif
+	    if (TRUE == full) goto out;
+	    if (FALSE == full) GC_write_hint(hbp);
             *flh = GC_reclaim_uninit2(hbp, hhdr, *flh);
             break;
         case 4:
+#           if CPP_WORDSZ == 64
+	      full = GC_block_nearly_full1(hhdr, 0x1111111111111111l);
+#	    else
+	      full = GC_block_nearly_full1(hhdr, 0x11111111l);
+#	    endif
+	    if (TRUE == full) goto out;
+	    if (FALSE == full) GC_write_hint(hbp);
             *flh = GC_reclaim_uninit4(hbp, hhdr, *flh);
             break;
 #      endif
         default:
+	    full = GC_block_nearly_full(hhdr);
+	    if (TRUE == full) goto out;
+	    if (FALSE == full) GC_write_hint(hbp);
             *flh = GC_reclaim_uninit(hbp, hhdr, sz, *flh);
             break;
       }
     } 
+out:
     if (IS_UNCOLLECTABLE(kind)) GC_set_hdr_marks(hhdr);
 }
 
@@ -654,6 +832,12 @@ int report_if_found;		/* Abort if a GC_reclaimable object is found */
   /* Go through all heap blocks (in hblklist) and reclaim unmarked objects */
   /* or enqueue the block for later processing.				   */
     GC_apply_to_all_blocks(GC_reclaim_block, (word)report_if_found);
+
+# ifdef EAGER_SWEEP
+    /* This is a very stupid thing to do.  We make it possible anyway,	*/
+    /* so that you can convince yourself that it really is very stupid.	*/
+    GC_reclaim_all((GC_stop_func)0, FALSE);
+# endif
     
 }
 
@@ -687,7 +871,7 @@ int kind;
  * Abort and return FALSE when/if (*stop_func)() returns TRUE.
  * If this returns TRUE, then it's safe to restart the world
  * with incorrectly cleared mark bits.
- * If ignore_old is TRUE, then reclain only blocks that have been 
+ * If ignore_old is TRUE, then reclaim only blocks that have been 
  * recently reclaimed, and discard the rest.
  * Stop_func may be 0.
  */

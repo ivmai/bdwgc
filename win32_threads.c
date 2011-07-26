@@ -2,8 +2,10 @@
 
 #include "gc_priv.h"
 
+#if 0
 #define STRICT
 #include <windows.h>
+#endif
 
 #define MAX_THREADS 64
 
@@ -31,6 +33,20 @@ void GC_stop_world()
   for (i = 0; i < MAX_THREADS; i++)
     if (thread_table[i].stack != 0
 	&& thread_table[i].id != thread_id) {
+      /* Apparently the Windows 95 GetOpenFileName call creates	*/
+      /* a thread that does not properly get cleaned up, and		*/
+      /* SuspendThread on its descriptor may provoke a crash.		*/
+      /* This reduces the probability of that event, though it still	*/
+      /* appears there's a race here.					*/
+      DWORD exitCode; 
+      if (GetExitCodeThread(thread_table[i].handle,&exitCode) &&
+            exitCode != STILL_ACTIVE) {
+            thread_table[i].stack = 0;
+          thread_table[i].in_use = FALSE;
+          CloseHandle(thread_table[i].handle);
+          BZERO(&thread_table[i].context, sizeof(CONTEXT));
+          continue;
+      }
       if (SuspendThread(thread_table[i].handle) == (DWORD)-1)
 	ABORT("SuspendThread failed");
       thread_table[i].suspended = TRUE;
@@ -61,7 +77,7 @@ ptr_t GC_current_stackbottom()
   ABORT("no thread table entry for current thread");
 }
 
-ptr_t GC_get_lo_stack_addr(ptr_t s)
+static ptr_t GC_get_lo_stack_addr(ptr_t s)
 {
     ptr_t bottom;
     MEMORY_BASIC_INFORMATION info;
@@ -81,7 +97,7 @@ void GC_push_all_stacks()
     if (thread_table[i].stack) {
       ptr_t bottom = GC_get_lo_stack_addr(thread_table[i].stack);
       if (thread_table[i].id == thread_id)
-	GC_push_all(&i, thread_table[i].stack);
+	GC_push_all_stack(&i, thread_table[i].stack);
       else {
 	thread_table[i].context.ContextFlags
 			= (CONTEXT_INTEGER|CONTEXT_CONTROL);
