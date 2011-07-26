@@ -92,7 +92,7 @@
 #   define GC_DARWIN_THREADS
 #   define GC_PTHREADS
 # endif
-# if !defined(GC_PTHREADS) && defined(__FreeBSD__)
+# if !defined(GC_PTHREADS) && (defined(__FreeBSD__) || defined(__DragonFly__))
 #   define GC_FREEBSD_THREADS
 #   define GC_PTHREADS
 # endif

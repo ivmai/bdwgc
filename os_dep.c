@@ -1626,13 +1626,20 @@ word bytes;
     ptr_t cur_brk = (ptr_t)sbrk(0);
     SBRK_ARG_T lsbs = (word)cur_brk & (GC_page_size-1);
     
-    if ((SBRK_ARG_T)bytes < 0) return(0); /* too big */
+    if ((SBRK_ARG_T)bytes < 0) {
+	result = 0; /* too big */
+	goto out;
+    }
     if (lsbs != 0) {
-        if((ptr_t)sbrk(GC_page_size - lsbs) == (ptr_t)(-1)) return(0);
+        if((ptr_t)sbrk(GC_page_size - lsbs) == (ptr_t)(-1)) {
+	    result = 0;
+	    goto out;
+	}
     }
     result = (ptr_t)sbrk((SBRK_ARG_T)bytes);
     if (result == (ptr_t)(-1)) result = 0;
   }
+ out:
 # ifdef IRIX5
     __UNLOCK_MALLOC();
 # endif

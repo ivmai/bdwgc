@@ -355,6 +355,12 @@ DCL_LOCK_STATE;
     size_t lb;
 # endif
   {
+#   if defined(GC_WIN32_THREADS) && defined(__GNUC__)
+      /* According to Gerard Allen, this helps with MINGW.	*/
+      /* When using threads need to initalised before use, but GCC uses a malloc 
+         in  __w32_sharedptr_initialize (w32-shared-ptr.c) */
+      if (!GC_is_initialized) GC_init();
+#   endif
     /* It might help to manually inline the GC_malloc call here.	*/
     /* But any decent compiler should reduce the extra procedure call	*/
     /* to at most a jump instruction in this case.			*/

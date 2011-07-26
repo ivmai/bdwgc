@@ -2284,6 +2284,22 @@ Since 6.6:
  - Fix Makefile.am, so it handles exe extensions under Cygwin correctly
    for gctest.
 
+Since 6.7:
+ - Added some support for Dragonfly BSD.  (Thanks to Joerg Sonnenberger and
+   Thomas Klausner.)
+ - Improvements to the HP/UX section of configure.in.
+   (Thanks to Andreas Tobler.)
+ - GC_unix_get_mem could neglect to release the malloc lock on Irix, under
+   extremely unlikely circumstances.  Thanks to Jean-Baptiste Nivois for
+   some careful code reading.
+ - Added support for kFreeBSD + glibc (Thanks to Petr Salinger)
+ - Fix more MacOS threads memory leaks (Thanks to Allan Hsu)
+ - Added initial Solaris/X86-64 support (Thanks to Rainer Orth)
+ - Applied a long-lost MINGW patch from Gerard Allan for malloc redirection
+   with threads.  This one probably makes no sense for 7.0, and was not applied
+   there.
+ - The Solaris/SPARC definition of GC_INIT() in gc.h wasn't C++-compilable.
+
 To do:
  - The USE_MUNMAP code should really use a separate data structure
    indexed by physical page to keep track of time since last use of

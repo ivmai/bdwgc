@@ -469,7 +469,7 @@ GC_API GC_PTR GC_malloc_atomic_ignore_off_page GC_PROTO((size_t lb));
 #   define GC_RETURN_ADDR (GC_word)__return_address
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__GLIBC__)
 # include <features.h>
 # if (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1 || __GLIBC__ > 2) \
      && !defined(__ia64__)
@@ -498,7 +498,7 @@ GC_API GC_PTR GC_malloc_atomic_ignore_off_page GC_PROTO((size_t lb));
 /* This may also be desirable if it is possible but expensive to	*/
 /* retrieve the call chain.						*/
 #if (defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) \
-     || defined(__FreeBSD__)) & !defined(GC_CAN_SAVE_CALL_STACKS)
+     || defined(__FreeBSD__) || defined(__DragonFly__)) & !defined(GC_CAN_SAVE_CALL_STACKS)
 # define GC_ADD_CALLER
 # if __GNUC__ >= 3 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95) 
     /* gcc knows how to retrieve return address, but we don't know */
@@ -750,7 +750,7 @@ GC_API int GC_invoke_finalizers GC_PROTO((void));
 	/* be finalized.  Return the number of finalizers	*/
 	/* that were run.  Normally this is also called		*/
 	/* implicitly during some allocations.	If		*/
-	/* GC-finalize_on_demand is nonzero, it must be called	*/
+	/* GC_finalize_on_demand is nonzero, it must be called	*/
 	/* explicitly.						*/
 
 /* GC_set_warn_proc can be used to redirect or filter warning messages.	*/
@@ -945,16 +945,14 @@ extern void GC_thr_init GC_PROTO((void));/* Needed for Solaris/X86	*/
      * from the statically loaded program section.
      * This circumvents a Solaris 2.X (X<=4) linker bug.
      */
+    extern int _end[], _etext[];
 #   ifdef __cplusplus
-#     define GC_INIT() { extern int _end[], _etext[]; \
-		         extern "C" void GC_noop1(GC_word); \
-		         GC_noop1((GC_word)_end); \
-			 GC_noop1((GC_word)_etext); }
+      extern "C" void GC_noop1(GC_word);
 #   else
-#     define GC_INIT() { extern int _end[], _etext[]; \
-		         extern void GC_noop(); \
-		         GC_noop(_end, _etext); }
+      void GC_noop1();
 #   endif /* !__cplusplus */
+#   define GC_INIT() { GC_noop1((GC_word)_end); \
+		       GC_noop1((GC_word)_etext); }
 #else
 # if defined(__CYGWIN32__) || defined (_AIX)
     /*
