@@ -165,14 +165,18 @@ class gc {public:
     	/* Must be redefined here, since the other overloadings	*/
     	/* hide the global definition.				*/
     inline void operator delete( void* obj );
-    inline void operator delete( void*, void* );
+#   ifndef __BORLANDC__  /* Confuses the Borland compiler. */
+      inline void operator delete( void*, void* );
+#   endif
 
 #ifdef GC_OPERATOR_NEW_ARRAY
     inline void* operator new[]( size_t size );
     inline void* operator new[]( size_t size, GCPlacement gcp );
     inline void* operator new[]( size_t size, void *p );
     inline void operator delete[]( void* obj );
-    inline void gc::operator delete[]( void*, void* );
+#   ifndef __BORLANDC__
+      inline void gc::operator delete[]( void*, void* );
+#   endif
 #endif /* GC_OPERATOR_NEW_ARRAY */
     };    
     /*
@@ -278,7 +282,9 @@ inline void* gc::operator new( size_t size, void *p ) {
 inline void gc::operator delete( void* obj ) {
     GC_FREE( obj );}
     
-inline void gc::operator delete( void*, void* ) {}
+#ifndef __BORLANDC__
+  inline void gc::operator delete( void*, void* ) {}
+#endif
 
 #ifdef GC_OPERATOR_NEW_ARRAY
 
@@ -294,13 +300,15 @@ inline void* gc::operator new[]( size_t size, void *p ) {
 inline void gc::operator delete[]( void* obj ) {
     gc::operator delete( obj );}
 
-inline void gc::operator delete[]( void*, void* ) {}
+#ifndef __BORLANDC__
+  inline void gc::operator delete[]( void*, void* ) {}
+#endif
     
 #endif /* GC_OPERATOR_NEW_ARRAY */
 
 
 inline gc_cleanup::~gc_cleanup() {
-    GC_REGISTER_FINALIZER_IGNORE_SELF( GC_base(this), 0, 0, 0, 0 );}
+    GC_register_finalizer_ignore_self( GC_base(this), 0, 0, 0, 0 );}
 
 inline void gc_cleanup::cleanup( void* obj, void* displ ) {
     ((gc_cleanup*) ((char*) obj + (ptrdiff_t) displ))->~gc_cleanup();}

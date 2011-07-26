@@ -153,11 +153,12 @@
                "\tbne 2f\n"            /*   non-zero, return already set */
                "\tstwcx. %2,0,%1\n"    /* else store conditional         */
                "\tbne- 1b\n"           /* retry if lost reservation      */
+               "\tsync\n"              /* import barrier                 */
                "2:\t\n"                /* oldval is zero if we set       */
               : "=&r"(oldval), "=p"(addr)
               : "r"(temp), "1"(addr)
-              : "memory");
-          return (int)oldval;
+              : "cr0","memory");
+          return oldval;
         }
 #       define GC_TEST_AND_SET_DEFINED
         inline static void GC_clear(volatile unsigned int *addr) {
@@ -212,6 +213,19 @@
         }
 #       define GC_TEST_AND_SET_DEFINED
 #    endif /* ARM32 */
+#    ifdef S390
+       inline static int GC_test_and_set(volatile unsigned int *addr) {
+         int ret;
+         __asm__ __volatile__ (
+          "     l     %0,0(%2)\n"
+          "0:   cs    %0,%1,0(%2)\n"
+          "     jl    0b"
+          : "=&d" (ret)
+          : "d" (1), "a" (addr)
+          : "cc", "memory");
+         return ret;
+       }
+#    endif
 #  endif /* __GNUC__ */
 #  if (defined(ALPHA) && !defined(__GNUC__))
 #    ifndef OSF1
@@ -237,17 +251,50 @@
 #    elif __mips < 3 || !(defined (_ABIN32) || defined(_ABI64)) \
 	|| !defined(_COMPILER_VERSION) || _COMPILER_VERSION < 700
 #	 ifdef __GNUC__
-#          define GC_test_and_set(addr) _test_and_set(addr,1)
+#          define GC_test_and_set(addr) _test_and_set((void *)addr,1)
 #	 else
-#          define GC_test_and_set(addr) test_and_set(addr,1)
+#          define GC_test_and_set(addr) test_and_set((void *)addr,1)
 #	 endif
 #    else
-#	 define GC_test_and_set(addr) __test_and_set(addr,1)
+#	 define GC_test_and_set(addr) __test_and_set32((void *)addr,1)
 #	 define GC_clear(addr) __lock_release(addr);
 #	 define GC_CLEAR_DEFINED
 #    endif
 #    define GC_TEST_AND_SET_DEFINED
 #  endif /* MIPS */
+#  if defined(_AIX)
+#    include <sys/atomic_op.h>
+#    if (defined(_POWER) || defined(_POWERPC)) 
+#      if defined(__GNUC__)  
+         inline static void GC_memsync() {
+           __asm__ __volatile__ ("sync" : : : "memory");
+         }
+#      else
+#        ifndef inline
+#          define inline __inline
+#        endif
+#        pragma mc_func GC_memsync { \
+           "7c0004ac" /* sync (same opcode used for dcs)*/ \
+         }
+#      endif
+#    else 
+#    error dont know how to memsync
+#    endif
+     inline static int GC_test_and_set(volatile unsigned int * addr) {
+          int oldvalue = 0;
+          if (compare_and_swap((void *)addr, &oldvalue, 1)) {
+            GC_memsync();
+            return 0;
+          } else return 1;
+     }
+#    define GC_TEST_AND_SET_DEFINED
+     inline static void GC_clear(volatile unsigned int *addr) {
+          GC_memsync();
+          *(addr) = 0;
+     }
+#    define GC_CLEAR_DEFINED
+
+#  endif
 #  if 0 /* defined(HP_PA) */
      /* The official recommendation seems to be to not use ldcw from	*/
      /* user mode.  Since multithreaded incremental collection doesn't	*/
@@ -312,8 +359,8 @@
          {
 	   char result;
 	   __asm__ __volatile__("lock; cmpxchgl %2, %0; setz %1"
-	    	: "=m"(*(addr)), "=r"(result)
-		: "r" (new_val), "0"(*(addr)), "a"(old) : "memory");
+	    	: "+m"(*(addr)), "=r"(result)
+		: "r" (new_val), "a"(old) : "memory");
 	   return (GC_bool) result;
          }
 #      endif /* !GENERIC_COMPARE_AND_SWAP */
@@ -325,6 +372,37 @@
          __asm__ __volatile__("" : : : "memory");
        }
 #     endif /* I386 */
+
+#     if defined(POWERPC)
+#      if !defined(GENERIC_COMPARE_AND_SWAP)
+        /* Returns TRUE if the comparison succeeded. */
+        inline static GC_bool GC_compare_and_exchange(volatile GC_word *addr,
+            GC_word old, GC_word new_val) 
+        {
+            int result, dummy;
+            __asm__ __volatile__(
+                "1:\tlwarx %0,0,%5\n"
+                  "\tcmpw %0,%4\n"
+                  "\tbne  2f\n"
+                  "\tstwcx. %3,0,%2\n"
+                  "\tbne- 1b\n"
+                  "\tsync\n"
+                  "\tli %1, 1\n"
+                  "\tb 3f\n"
+                "2:\tli %1, 0\n"
+                "3:\t\n"
+                :  "=&r" (dummy), "=r" (result), "=p" (addr)
+                :  "r" (new_val), "r" (old), "2"(addr)
+                : "cr0","memory");
+            return (GC_bool) result;
+        }
+#      endif /* !GENERIC_COMPARE_AND_SWAP */
+        inline static void GC_memory_barrier()
+        {
+            __asm__ __volatile__("sync" : : : "memory");
+        }
+#     endif /* POWERPC */
+
 #     if defined(IA64)
 #      if !defined(GENERIC_COMPARE_AND_SWAP)
          inline static GC_bool GC_compare_and_exchange(volatile GC_word *addr,
@@ -385,6 +463,27 @@
 #	 define GC_memory_barrier() asm("mb")
 #      endif /* !__GNUC__ */
 #     endif /* ALPHA */
+#     if defined(S390)
+#      if !defined(GENERIC_COMPARE_AND_SWAP)
+         inline static GC_bool GC_compare_and_exchange(volatile C_word *addr,
+                                         GC_word old, GC_word new_val)
+         {
+           int retval;
+           __asm__ __volatile__ (
+#            ifndef __s390x__
+               "     cs  %1,%2,0(%3)\n"
+#            else
+               "     csg %1,%2,0(%3)\n"
+#            endif
+             "     ipm %0\n"
+             "     srl %0,28\n"
+             : "=&d" (retval), "+d" (old)
+             : "d" (new_val), "a" (addr)
+             : "cc", "memory");
+           return retval == 0;
+         }
+#      endif
+#     endif
 #     if !defined(GENERIC_COMPARE_AND_SWAP)
         /* Returns the original value of *addr.	*/
         inline static GC_word GC_atomic_add(volatile GC_word *addr,
@@ -455,8 +554,12 @@
 		{ GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
 	          pthread_mutex_unlock(&GC_allocate_ml); }
 #      else /* !GC_ASSERTIONS */
+#        if defined(NO_PTHREAD_TRYLOCK)
+#          define LOCK() GC_lock();
+#        else /* !defined(NO_PTHREAD_TRYLOCK) */
 #        define LOCK() \
 	   { if (0 != pthread_mutex_trylock(&GC_allocate_ml)) GC_lock(); }
+#        endif
 #        define UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
 #      endif /* !GC_ASSERTIONS */
 #   endif /* USE_PTHREAD_LOCKS */
@@ -478,7 +581,7 @@
      /* on Irix anymore.						*/
 #    include <mutex.h>
 
-     extern unsigned long GC_allocate_lock;
+     extern volatile unsigned int GC_allocate_lock;
 	/* This is not a mutex because mutexes that obey the (optional) 	*/
 	/* POSIX scheduling rules are subject to convoys in high contention	*/
 	/* applications.  This is basically a spin lock.			*/

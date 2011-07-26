@@ -73,8 +73,13 @@ HOSTCFLAGS=$(CFLAGS)
 # -DGC_OSF1_THREADS enables support for Tru64 pthreads.  Untested.
 # -DGC_FREEBSD_THREADS enables support for FreeBSD pthreads.  Untested.
 #   Appeared to run into some underlying thread problems.
+# -DGC_DARWIN_THREADS enables support for Mac OS X pthreads.  Untested.
 # -DGC_DGUX386_THREADS enables support for DB/UX on I386 threads.
 #   See README.DGUX386.
+# -DGC_WIN32_THREADS enables support for win32 threads.  That makes sense
+#   for this Makefile only under Cygwin.
+# -DGC_THREADS should set the appropriate one of the above macros.
+#   It assumes pthreads for Solaris.
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
 #   of objects to be recognized.  (See gc_priv.h for consequences.)
 #   Alternatively, GC_all_interior_pointers can be set at process
@@ -218,6 +223,9 @@ HOSTCFLAGS=$(CFLAGS)
 # -DUSE_3DNOW_PREFETCH causes the collector to issue AMD 3DNow style
 #   prefetch instructions.  Same restrictions as USE_I686_PREFETCH.
 #   Minimally tested.  Didn't appear to be an obvious win on a K6-2/500.
+# -DUSE_PPC_PREFETCH causes the collector to issue PowerPC style
+#   prefetch instructions.  No effect except on PowerPC OS X platforms.
+#   Performance impact untested.
 # -DGC_USE_LD_WRAP in combination with the old flags listed in README.linux
 #   causes the collector some system and pthread calls in a more transparent
 #   fashion than the usual macro-based approach.  Requires GNU ld, and
@@ -247,8 +255,23 @@ HOSTCFLAGS=$(CFLAGS)
 #   makes incremental collection easier.  Was enabled by default until 6.0.
 #   Rarely used, to my knowledge.
 # -DHANDLE_FORK attempts to make GC_malloc() work in a child process fork()ed
-#   from a multithreaded parent.  Currently only supported by linux_threads.c.
+#   from a multithreaded parent.  Currently only supported by pthread_support.c.
 #   (Similar code should work on Solaris or Irix, but it hasn't been tried.)
+# -DTEST_WITH_SYSTEM_MALLOC causes gctest to allocate (and leak) large chunks
+#   of memory with the standard system malloc.  This will cause the root
+#   set and collected heap to grow significantly if malloced memory is
+#   somehow getting traced by the collector.  This has no impact on the
+#   generated library; it only affects the test.
+# -DPOINTER_MASK=0x... causes candidate pointers to be ANDed with the
+#   given mask before being considered.  If either this or the following
+#   macro is defined, it will be assumed that all pointers stored in
+#   the heap need to be processed this way.  Stack and register pointers
+#   will be considered both with and without processing.
+#   These macros are normally needed only to support systems that use
+#   high-order pointer tags. EXPERIMENTAL.
+# -DPOINTER_SHIFT=n causes the collector to left shift candidate pointers
+#   by the indicated amount before trying to interpret them.  Applied
+#   after POINTER_MASK. EXPERIMENTAL.  See also the preceding macro.
 #
 
 CXXFLAGS= $(CFLAGS) 
@@ -256,15 +279,15 @@ AR= ar
 RANLIB= ranlib
 
 
-OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o irix_threads.o linux_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o gcj_mlc.o specific.o gc_dlopen.o backgraph.o
+OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o aix_irix_threads.o pthread_support.o pthread_stop_world.o darwin_stop_world.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o gcj_mlc.o specific.o gc_dlopen.o backgraph.o win32_threads.o
 
-CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c irix_threads.c linux_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c gcj_mlc.c specific.c gc_dlopen.c backgraph.c
+CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c aix_irix_threads.c pthread_support.c pthread_stop_world.c darwin_stop_world.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c gcj_mlc.c specific.c gc_dlopen.c backgraph.c win32_threads.c
 
 CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c include/cord.h include/ec.h include/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC
 
 CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
-SRCS= $(CSRCS) mips_sgi_mach_dep.S rs6000_mach_dep.s alpha_mach_dep.S \
+SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.S \
     sparc_mach_dep.S include/gc.h include/gc_typed.h \
     include/private/gc_hdrs.h include/private/gc_priv.h \
     include/private/gcconfig.h include/private/gc_pmark.h \
@@ -277,10 +300,12 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.S rs6000_mach_dep.s alpha_mach_dep.S \
     include/private/solaris_threads.h include/gc_backptr.h \
     hpux_test_and_clear.s include/gc_gcj.h \
     include/gc_local_alloc.h include/private/dbg_mlc.h \
-    include/private/specific.h powerpc_macosx_mach_dep.s \
+    include/private/specific.h powerpc_darwin_mach_dep.s \
     include/leak_detector.h include/gc_amiga_redirects.h \
     include/gc_pthread_redirects.h ia64_save_regs_in_stack.s \
-    $(CORD_SRCS)
+    include/gc_config_macros.h include/private/pthread_support.h \
+    include/private/pthread_stop_world.h include/private/darwin_semaphore.h \
+    include/private/darwin_stop_world.h $(CORD_SRCS)
 
 DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 	doc/README.amiga doc/README.cords doc/debugging.html \
@@ -290,7 +315,8 @@ DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
         doc/README.contributors doc/README.changes doc/gc.man \
 	doc/README.environment doc/tree.html doc/gcdescr.html \
 	doc/README.autoconf doc/README.macros doc/README.ews4800 \
-	doc/README.DGUX386 doc/README.arm.cross doc/leak.html
+	doc/README.DGUX386 doc/README.arm.cross doc/leak.html \
+	doc/scale.html doc/gcinterface.html doc/README.darwin
 
 TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 	tests/leak_test.c tests/thread_leak_test.c
@@ -298,6 +324,8 @@ TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 GNU_BUILD_FILES= configure.in Makefile.am configure acinclude.m4 \
 		 libtool.m4 install-sh configure.host Makefile.in \
 		 ltconfig aclocal.m4 config.sub config.guess \
+		 include/Makefile.am include/Makefile.in \
+		 doc/Makefile.am doc/Makefile.in \
 		 ltmain.sh mkinstalldirs depcomp missing
 
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
@@ -310,7 +338,7 @@ OTHER_FILES= Makefile setjmp_t.c callprocs pc_excludes \
            MacProjects.sit.hqx MacOS.c \
            Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-           add_gc_prefix.c gc_cpp.cpp win32_threads.c \
+           add_gc_prefix.c gc_cpp.cpp \
 	   version.h AmigaOS.c \
 	   $(TESTS) $(GNU_BUILD_FILES) $(OTHER_MAKEFILES)
 
@@ -355,16 +383,16 @@ mach_dep.o $(SRCS)
 $(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
     $(srcdir)/include/private/gc_priv.h \
     $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
-    $(srcdir)/include/gc.h \
+    $(srcdir)/include/gc.h $(srcdir)/include/gc_pthread_redirects.h \
     $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h \
-    Makefile
+    $(srcdir)/include/gc_config_macros.h Makefile
 # The dependency on Makefile is needed.  Changing
 # options such as -DSILENT affects the size of GC_arrays,
 # invalidating all .o files that rely on gc_priv.h
 
 mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc_mark.h $(srcdir)/include/private/gc_pmark.h
 
-specific.o linux_threads.o: $(srcdir)/include/private/specific.h
+specific.o pthread_support.o: $(srcdir)/include/private/specific.h
 
 solaris_threads.o solaris_pthreads.o: $(srcdir)/include/private/solaris_threads.h
 
@@ -459,17 +487,17 @@ liblinuxgc.so: $(OBJS) dyn_load.o
 # 	gcc -shared -Wl,-soname=libgc.so.0 -o libgc.so.0 $(LIBOBJS) dyn_load.lo
 #	touch liblinuxgc.so
 
-mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.S \
+mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s \
 	    $(srcdir)/mips_ultrix_mach_dep.s \
-            $(srcdir)/rs6000_mach_dep.s $(srcdir)/powerpc_macosx_mach_dep.s \
+            $(srcdir)/rs6000_mach_dep.s $(srcdir)/powerpc_darwin_mach_dep.s \
 	    $(srcdir)/sparc_mach_dep.S $(srcdir)/sparc_sunos4_mach_dep.s \
 	    $(srcdir)/ia64_save_regs_in_stack.s \
 	    $(srcdir)/sparc_netbsd_mach_dep.s $(UTILS)
 	rm -f mach_dep.o
-	./if_mach MIPS IRIX5 $(AS) -o mach_dep.o $(srcdir)/mips_sgi_mach_dep.S
+	./if_mach MIPS IRIX5 $(CC) -c -o mach_dep.o $(srcdir)/mips_sgi_mach_dep.s
 	./if_mach MIPS RISCOS $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
 	./if_mach MIPS ULTRIX $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
-	./if_mach POWERPC MACOSX $(AS) -o mach_dep.o $(srcdir)/powerpc_macosx_mach_dep.s
+	./if_mach POWERPC DARWIN $(AS) -o mach_dep.o $(srcdir)/powerpc_darwin_mach_dep.s
 	./if_mach ALPHA LINUX $(CC) -c -o mach_dep.o $(srcdir)/alpha_mach_dep.S
 	./if_mach SPARC SUNOS5 $(CC) -c -o mach_dep.o $(srcdir)/sparc_mach_dep.S
 	./if_mach SPARC SUNOS4 $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
@@ -517,7 +545,7 @@ cord/de: $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(UTILS)
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -lucb `./threadlibs`
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -ldld `./threadlibs`
 	./if_mach RS6000 "" $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
-	./if_mach POWERPC MACOSX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a
+	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a
 	./if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
 	./if_mach ALPHA LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
 	./if_mach IA64 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
@@ -536,7 +564,7 @@ if_not_there: $(srcdir)/if_not_there.c
 clean: 
 	rm -f gc.a *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
 	      setjmp_test  mon.out gmon.out a.out core if_not_there if_mach \
-	      threadlibs $(CORD_OBJS) cord/cordtest cord/de
+	      threadlibs $(CORD_OBJS) cord/cordtest cord/de 
 	-rm -f *~
 
 gctest: tests/test.o gc.a $(UTILS)

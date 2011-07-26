@@ -275,33 +275,72 @@ void GC_clear_roots GC_PROTO((void))
 }
 
 /* Internal use only; lock held.	*/
+static void GC_remove_root_at_pos(i) 
+int i;
+{
+    GC_root_size -= (GC_static_roots[i].r_end - GC_static_roots[i].r_start);
+    GC_static_roots[i].r_start = GC_static_roots[n_root_sets-1].r_start;
+    GC_static_roots[i].r_end = GC_static_roots[n_root_sets-1].r_end;
+    GC_static_roots[i].r_tmp = GC_static_roots[n_root_sets-1].r_tmp;
+    n_root_sets--;
+}
+
+#if !defined(MSWIN32) && !defined(MSWINCE)
+static void GC_rebuild_root_index()
+{
+    register int i;
+    	
+    for (i = 0; i < RT_SIZE; i++) GC_root_index[i] = 0;
+    for (i = 0; i < n_root_sets; i++)
+	add_roots_to_index(GC_static_roots + i);
+}
+#endif
+
+/* Internal use only; lock held.	*/
 void GC_remove_tmp_roots()
 {
     register int i;
     
     for (i = 0; i < n_root_sets; ) {
     	if (GC_static_roots[i].r_tmp) {
-    	    GC_root_size -=
-		(GC_static_roots[i].r_end - GC_static_roots[i].r_start);
-    	    GC_static_roots[i].r_start = GC_static_roots[n_root_sets-1].r_start;
-    	    GC_static_roots[i].r_end = GC_static_roots[n_root_sets-1].r_end;
-    	    GC_static_roots[i].r_tmp = GC_static_roots[n_root_sets-1].r_tmp;
-    	    n_root_sets--;
+            GC_remove_root_at_pos(i);
+    	} else {
+    	    i++;
+    }
+    }
+    #if !defined(MSWIN32) && !defined(MSWINCE)
+    GC_rebuild_root_index();
+    #endif
+}
+
+#if !defined(MSWIN32) && !defined(MSWINCE)
+void GC_remove_roots(b, e)
+char * b; char * e;
+{
+    DCL_LOCK_STATE;
+    
+    DISABLE_SIGNALS();
+    LOCK();
+    GC_remove_roots_inner(b, e);
+    UNLOCK();
+    ENABLE_SIGNALS();
+}
+
+/* Should only be called when the lock is held */
+void GC_remove_roots_inner(b,e)
+char * b; char * e;
+{
+    int i;
+    for (i = 0; i < n_root_sets; ) {
+    	if (GC_static_roots[i].r_start >= (ptr_t)b && GC_static_roots[i].r_end <= (ptr_t)e) {
+            GC_remove_root_at_pos(i);
     	} else {
     	    i++;
     	}
     }
-#   if !defined(MSWIN32) && !defined(MSWINCE)
-    {
-    	register int i;
-    	
-    	for (i = 0; i < RT_SIZE; i++) GC_root_index[i] = 0;
-    	for (i = 0; i < n_root_sets; i++)
-		add_roots_to_index(GC_static_roots + i);
-    }
-#   endif
-    
+    GC_rebuild_root_index();
 }
+#endif /* !defined(MSWIN32) && !defined(MSWINCE) */
 
 #if defined(MSWIN32) || defined(_WIN32_WCE_EMULATION)
 /* Workaround for the OS mapping and unmapping behind our back:		*/
@@ -506,6 +545,17 @@ void GC_push_gc_structures GC_PROTO((void))
   void GC_mark_thread_local_free_lists();
 #endif
 
+void GC_cond_register_dynamic_libraries()
+{
+# if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
+     || defined(PCR)) && !defined(SRC_M3)
+    GC_remove_tmp_roots();
+    if (!GC_no_dls) GC_register_dynamic_libraries();
+# else
+    GC_no_dls = TRUE;
+# endif
+}
+
 /*
  * Call the mark routines (GC_tl_push for a single pointer, GC_push_conditional
  * on groups of pointers) on every top level accessible pointer.
@@ -519,19 +569,20 @@ void GC_push_roots(all, cold_gc_frame)
 GC_bool all;
 ptr_t cold_gc_frame;
 {
-    register int i;
+    int i;
+    int kind;
 
     /*
      * Next push static data.  This must happen early on, since it's
      * not robust against mark stack overflow.
      */
-     /* Reregister dynamic libraries, in case one got added.	*/
-#      if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
-	   || defined(PCR)) && !defined(SRC_M3)
-         GC_remove_tmp_roots();
-         if (!GC_no_dls) GC_register_dynamic_libraries();
-#      else
-	 GC_no_dls = TRUE;
+     /* Reregister dynamic libraries, in case one got added.		*/
+     /* There is some argument for doing this as late as possible,	*/
+     /* especially on win32, where it can change asynchronously.	*/
+     /* In those cases, we do it here.  But on other platforms, it's	*/
+     /* not safe with the world stopped, so we do it earlier.		*/
+#      if !defined(REGISTER_LIBRARIES_EARLY)
+         GC_cond_register_dynamic_libraries();
 #      endif
 
      /* Mark everything in static data areas                             */
@@ -541,6 +592,18 @@ ptr_t cold_gc_frame;
 			     GC_static_roots[i].r_end, all);
        }
 
+     /* Mark all free list header blocks, if those were allocated from	*/
+     /* the garbage collected heap.  This makes sure they don't 	*/
+     /* disappear if we are not marking from static data.  It also 	*/
+     /* saves us the trouble of scanning them, and possibly that of	*/
+     /* marking the freelists.						*/
+       for (kind = 0; kind < GC_n_kinds; kind++) {
+	 GC_PTR base = GC_base(GC_obj_kinds[kind].ok_freelist);
+	 if (0 != base) {
+	   GC_set_mark_bit(base);
+	 }
+       }
+       
      /* Mark from GC internal roots if those might otherwise have	*/
      /* been excluded.							*/
        if (GC_no_dls || roots_were_cleared) {
@@ -549,8 +612,11 @@ ptr_t cold_gc_frame;
 
      /* Mark thread local free lists, even if their mark 	*/
      /* descriptor excludes the link field.			*/
+     /* If the world is not stopped, this is unsafe.  It is	*/
+     /* also unnecessary, since we will do this again with the	*/
+     /* world stopped.						*/
 #      ifdef THREAD_LOCAL_ALLOC
-         GC_mark_thread_local_free_lists();
+         if (GC_world_stopped) GC_mark_thread_local_free_lists();
 #      endif
 
     /*
