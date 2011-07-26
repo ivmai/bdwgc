@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:00 pm PDT */
+/* Boehm, April 18, 1995 1:59 pm PDT */
 
 #include <stdio.h>
 #include "gc_priv.h"
@@ -532,6 +532,7 @@ word abort_if_found;		/* Abort if a reclaimable object is found */
     }
 }
 
+#if !defined(NO_DEBUGGING)
 /* Routines to gather and print heap block info 	*/
 /* intended for debugging.  Otherwise should be called	*/
 /* with lock.						*/
@@ -593,6 +594,8 @@ void GC_print_block_list()
     	       (unsigned long)total_bytes);
 }
 
+#endif /* NO_DEBUGGING */
+
 /*
  * Do the same thing on the entire heap, after first clearing small object
  * free lists (if we are not just looking for leaks).
@@ -606,9 +609,11 @@ int abort_if_found;		/* Abort if a GC_reclaimable object is found */
       for (kind = 0; kind < GC_n_kinds; kind++) {
         register ptr_t *fop;
         register ptr_t *lim;
-        register struct hblk ** hbpp;
-        register struct hblk ** hlim;
-          
+        register struct hblk ** rlp;
+        register struct hblk ** rlim;
+        register struct hblk ** rlist = GC_obj_kinds[kind].ok_reclaim_list;
+        
+        if (rlist == 0) continue;	/* This kind not used.	*/
         if (!abort_if_found) {
             lim = &(GC_obj_kinds[kind].ok_freelist[MAXOBJSZ+1]);
 	    for( fop = GC_obj_kinds[kind].ok_freelist; fop < lim; fop++ ) {
@@ -616,10 +621,9 @@ int abort_if_found;		/* Abort if a GC_reclaimable object is found */
 	    }
 	} /* otherwise free list objects are marked, 	*/
 	  /* and its safe to leave them			*/
-	hlim = &(GC_obj_kinds[kind].ok_reclaim_list[MAXOBJSZ+1]);
-	for( hbpp = GC_obj_kinds[kind].ok_reclaim_list;
-	    hbpp < hlim; hbpp++ ) {
-	    *hbpp = 0;
+	rlim = rlist + MAXOBJSZ+1;
+	for( rlp = rlist; rlp < rlim; rlp++ ) {
+	    *rlp = 0;
 	}
       }
     
@@ -646,10 +650,11 @@ int kind;
     register hdr * hhdr;
     register struct hblk * hbp;
     register struct obj_kind * ok = &(GC_obj_kinds[kind]);
-    struct hblk ** rlh = &(ok -> ok_reclaim_list[sz]);
+    struct hblk ** rlh = ok -> ok_reclaim_list;
     ptr_t *flh = &(ok -> ok_freelist[sz]);
     
-    
+    if (rlh == 0) return;	/* No blocks of this kind.	*/
+    rlh += sz;
     while ((hbp = *rlh) != 0) {
         hhdr = HDR(hbp);
         *rlh = hhdr -> hb_next;
@@ -663,7 +668,8 @@ int kind;
  * Clear lists of blocks waiting to be reclaimed.
  * Must be done before clearing mark bits with the world running,
  * since otherwise a subsequent reclamation of block would see
- * the wrong mark bits.
+ * the wrong mark bits.  (Alternatively, GC_reclaim_all
+ * may be used.)
  * SHOULD PROBABLY BE INCREMENTAL
  */
 void GC_reclaim_or_delete_all()
@@ -673,6 +679,7 @@ void GC_reclaim_or_delete_all()
     register hdr * hhdr;
     register struct hblk * hbp;
     register struct obj_kind * ok;
+    struct hblk ** rlp;
     struct hblk ** rlh;
 #   ifdef PRINTTIMES
 	CLOCK_TYPE start_time;
@@ -683,8 +690,10 @@ void GC_reclaim_or_delete_all()
     
     for (kind = 0; kind < GC_n_kinds; kind++) {
     	ok = &(GC_obj_kinds[kind]);
+    	rlp = ok -> ok_reclaim_list;
+    	if (rlp == 0) continue;
     	for (sz = 1; sz <= MAXOBJSZ; sz++) {
-    	    rlh = &(ok -> ok_reclaim_list[sz]);
+    	    rlh = rlp + sz;
     	    while ((hbp = *rlh) != 0) {
         	hhdr = HDR(hbp);
         	*rlh = hhdr -> hb_next;
@@ -702,4 +711,49 @@ void GC_reclaim_or_delete_all()
 	GC_printf1("Disposing of reclaim lists took %lu msecs\n",
 	           MS_TIME_DIFF(done_time,start_time));
 #   endif
+}
+
+/*
+ * Reclaim all small blocks waiting to be reclaimed.
+ * Abort and return FALSE when/if (*stop_func)() returns TRUE.
+ * If this returns TRUE, then it's safe to restart the world
+ * with incorrectly cleared mark bits.
+ */
+bool GC_reclaim_all(stop_func)
+GC_stop_func stop_func;
+{
+    register word sz;
+    register int kind;
+    register hdr * hhdr;
+    register struct hblk * hbp;
+    register struct obj_kind * ok;
+    struct hblk ** rlp;
+    struct hblk ** rlh;
+#   ifdef PRINTTIMES
+	CLOCK_TYPE start_time;
+	CLOCK_TYPE done_time;
+	
+	GET_TIME(start_time);
+#   endif
+    
+    for (kind = 0; kind < GC_n_kinds; kind++) {
+    	ok = &(GC_obj_kinds[kind]);
+    	rlp = ok -> ok_reclaim_list;
+    	if (rlp == 0) continue;
+    	for (sz = 1; sz <= MAXOBJSZ; sz++) {
+    	    rlh = rlp + sz;
+    	    while ((hbp = *rlh) != 0) {
+    	        if ((*stop_func)()) return(FALSE);
+        	hhdr = HDR(hbp);
+        	*rlh = hhdr -> hb_next;
+        	GC_reclaim_small_nonempty_block(hbp, FALSE);
+            }
+        }
+    }
+#   ifdef PRINTTIMES
+	GET_TIME(done_time);
+	GC_printf1("Disposing of reclaim lists took %lu msecs\n",
+	           MS_TIME_DIFF(done_time,start_time));
+#   endif
+    return(TRUE);
 }

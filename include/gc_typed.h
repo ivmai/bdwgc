@@ -1,3 +1,16 @@
+/* 
+ * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
+ */
 /*
  * Some simple primitives for allocation with explicit type information.
  * Facilities for dynamic type inference may be added later.
@@ -6,7 +19,7 @@
  * Note that this is implemented completely separately from the rest
  * of the collector, and is not linked in unless referenced.
  */
-/* Boehm, March 31, 1994 4:43 pm PST */
+/* Boehm, May 19, 1994 2:13 pm PDT */
 
 #ifndef _GC_TYPED_H
 # define _GC_TYPED_H
@@ -26,9 +39,9 @@ typedef GC_word * GC_bitmap;
 typedef GC_word GC_descr;
 
 #if defined(__STDC__) || defined(__cplusplus)
-  extern GC_descr GC_make_decriptor(GC_bitmap bm, size_t len);
+  extern GC_descr GC_make_descriptor(GC_bitmap bm, size_t len);
 #else
-  extern GC_descr GC_make_decriptor(/* GC_bitmap bm, size_t len */);
+  extern GC_descr GC_make_descriptor(/* GC_bitmap bm, size_t len */);
 #endif
 		/* Return a type descriptor for the object whose layout	*/
 		/* is described by the argument.			*/
@@ -39,7 +52,12 @@ typedef GC_word GC_descr;
 		/* may be larger (but not smaller).  Any additional	*/
 		/* words in the object are assumed not to contain 	*/
 		/* pointers.						*/
-		/* Returns (GC_descr)(-1) on failure (no memory).	*/
+		/* Returns a conservative approximation in the		*/
+		/* (unlikely) case of insufficient memory to build	*/
+		/* the descriptor.  Calls to GC_make_descriptor		*/
+		/* may consume some amount of a finite resource.  This	*/
+		/* is intended to be called once per type, not once	*/
+		/* per allocation.					*/
 
 #if defined(__STDC__) || defined(__cplusplus)
   extern void * GC_malloc_explicitly_typed(size_t size_in_bytes, GC_descr d);

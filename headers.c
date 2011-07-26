@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:08 pm PDT */
+/* Boehm, October 7, 1994 9:54 pm PDT */
  
 /*
  * This implements:
@@ -102,9 +102,11 @@ hdr * hhdr;
 void GC_init_headers()
 {
     register int i;
-     
+    
+    GC_all_nils = (bottom_index *)GC_scratch_alloc((word)sizeof(bottom_index));
+    BZERO(GC_all_nils, sizeof(bottom_index));
     for (i = 0; i < TOP_SZ; i++) {
-        GC_top_index[i] = &GC_all_nils;
+        GC_top_index[i] = GC_all_nils;
     }
 }
 
@@ -123,7 +125,7 @@ register word addr;
       register bottom_index * old;
       
       old = p = GC_top_index[i];
-      while(p != &GC_all_nils) {
+      while(p != GC_all_nils) {
           if (p -> key == hi) return(TRUE);
           p = p -> hash_link;
       }
@@ -133,7 +135,7 @@ register word addr;
       r -> hash_link = old;
       GC_top_index[i] = r;
 #   else
-      if (GC_top_index[hi] != &GC_all_nils) return(TRUE);
+      if (GC_top_index[hi] != GC_all_nils) return(TRUE);
       r = (bottom_index*)GC_scratch_alloc((word)(sizeof (bottom_index)));
       if (r == 0) return(FALSE);
       GC_top_index[hi] = r;
@@ -227,7 +229,7 @@ word client_data;
              } else if (index_p->index[j] == 0) {
                 j--;
              } else {
-                j -= (int)(index_p->index[j]);
+                j -= (word)(index_p->index[j]);
              }
          }
      }
@@ -242,7 +244,7 @@ struct hblk * h;
     register word j = ((word)h >> LOG_HBLKSIZE) & (BOTTOM_SZ-1);
     
     GET_BI(h, bi);
-    if (bi == &GC_all_nils) {
+    if (bi == GC_all_nils) {
         register word hi = (word)h >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE);
         bi = GC_all_bottom_indices;
         while (bi != 0 && bi -> key < hi) bi = bi -> asc_link;

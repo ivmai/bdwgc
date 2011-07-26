@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:07 pm PDT */
+/* Boehm, March 29, 1995 12:51 pm PST */
 # ifdef CHECKSUMS
 
 # include "gc_priv.h"
@@ -22,7 +22,7 @@
 /* safe under other conditions.)					*/
 # define NSUMS 2000
 
-# define OFFSET 100000
+# define OFFSET 0x10000
 
 typedef struct {
 	bool new_valid;
@@ -44,7 +44,7 @@ struct hblk *h;
     while (p < lim) {
         result += *p++;
     }
-    return(result);
+    return(result | 0x80000000 /* doesn't look like pointer */);
 }
 
 # ifdef STUBBORN_ALLOC
@@ -80,13 +80,19 @@ int index;
     if (pe -> block != 0 && pe -> block != h + OFFSET) ABORT("goofed");
     pe -> old_sum = pe -> new_sum;
     pe -> new_sum = GC_checksum(h);
+#   ifndef MSWIN32
+        if (pe -> new_sum != 0 && !GC_page_was_ever_dirty(h)) {
+            GC_printf1("GC_page_was_ever_dirty(0x%lx) is wrong\n",
+        	       (unsigned long)h);
+        }
+#   endif
     if (GC_page_was_dirty(h)) {
     	GC_n_dirty++;
     } else {
     	GC_n_clean++;
     }
     if (pe -> new_valid && pe -> old_sum != pe -> new_sum) {
-    	if (!GC_page_was_dirty(h)) {
+    	if (!GC_page_was_dirty(h) || !GC_page_was_ever_dirty(h)) {
     	    /* Set breakpoint here */GC_n_dirty_errors++;
     	}
 #	ifdef STUBBORN_ALLOC
@@ -105,13 +111,52 @@ int index;
     pe -> block = h + OFFSET;
 }
 
+word GC_bytes_in_used_blocks;
+
+void GC_add_block(h, dummy)
+struct hblk *h;
+word dummy;
+{
+   register hdr * hhdr = HDR(h);
+   register bytes = WORDS_TO_BYTES(hhdr -> hb_sz);
+   
+   bytes += HDR_BYTES + HBLKSIZE-1;
+   bytes &= ~(HBLKSIZE-1);
+   GC_bytes_in_used_blocks += bytes;
+}
+
+void GC_check_blocks()
+{
+    word bytes_in_free_blocks = 0;
+    struct hblk * h = GC_hblkfreelist;
+    hdr * hhdr = HDR(h);
+    word sz;
+    
+    GC_bytes_in_used_blocks = 0;
+    GC_apply_to_all_blocks(GC_add_block, (word)0);
+    while (h != 0) {
+        sz = hhdr -> hb_sz;
+        bytes_in_free_blocks += sz;
+        h = hhdr -> hb_next;
+        hhdr = HDR(h);
+    }
+    GC_printf2("GC_bytes_in_used_blocks = %ld, bytes_in_free_blocks = %ld ",
+    		GC_bytes_in_used_blocks, bytes_in_free_blocks);
+    GC_printf1("GC_heapsize = %ld\n", GC_heapsize);
+    if (GC_bytes_in_used_blocks + bytes_in_free_blocks != GC_heapsize) {
+    	GC_printf0("LOST SOME BLOCKS!!\n");
+    }
+}
+
 /* Should be called immediately after GC_read_dirty and GC_read_changed. */
 void GC_check_dirty()
 {
     register int index;
-    register int i;
+    register unsigned i;
     register struct hblk *h;
     register ptr_t start;
+    
+    GC_check_blocks();
     
     GC_n_dirty_errors = 0;
     GC_n_changed_errors = 0;
@@ -139,6 +184,11 @@ out:
     if (GC_n_changed_errors > 0) {
     	GC_printf1("Found %lu changed bit errors\n",
         	   (unsigned long)GC_n_changed_errors);
+	GC_printf0("These may be benign (provoked by nonpointer changes)\n");
+#	ifdef THREADS
+	    GC_printf0(
+	    "Also expect 1 per thread currently allocating a stubborn obj.\n");
+#	endif
     }
 }
 

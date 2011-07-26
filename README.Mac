@@ -1,0 +1,50 @@
+README.Mac
+----------
+
+v4.3 of the collector now runs under Symantec C++/THINK C v7.0.4, and
+Metrowerks C/C++ v4.5 both 68K and PowerPC. Project files are provided
+to build and test the collector under both development systems.
+
+Configuration
+-------------
+
+To configure the collector, under both development systems, a prefix file
+is used to set preprocessor directives. This file is called "MacOS_config.h".
+Also to test the collector, "MacOS_Test_config.h" is provided.
+
+Testing
+-------
+
+To test the collector (always a good idea), build one of the gctest projects,
+gctest.¹ (Symantec C++/THINK C), mw/gctest.68K.¹, or mw/gctest.PPC.¹. The
+test will ask you how many times to run; 1 should be sufficient.
+
+Building 
+--------
+
+For your convenience project files for the major Macintosh development
+systems are provided.
+
+For Symantec C++/THINK C, you must build the two projects gclib-1.¹ and
+gclib-2.¹. It has to be split up because the collector has more than 32k
+of static data and no library can have more than this in the Symantec
+environment. (Future versions will probably fix this.)
+
+For Metrowerks C/C++ 4.5 you build gc.68K.¹/gc.PPC.¹ and the result will
+be a library called gc.68K.lib/gc.PPC.lib.
+
+Using
+-----
+
+Under Symantec C++/THINK C, you can just add the gclib-1.¹ and gclib-2.¹
+projects to your own project. Under Metrowerks, you add gc.68K.lib or
+gc.PPC.lib and two additional files. You add the files called datastart.c
+and dataend.c to your project, bracketing all files that use the collector.
+See mw/gctest.¹ for an example.
+
+Include the projects/libraries you built above into your own project,
+#include "gc.h", and call GC_malloc. You don't have to call GC_free.
+
+
+Patrick C. Beard
+January 4, 1995

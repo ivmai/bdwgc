@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 1:56 pm PDT */
+/* Boehm, August 9, 1995 6:09 pm PDT */
 # include "gc_priv.h"
 
 /*
@@ -46,6 +46,10 @@ word * GC_incomplete_normal_bl;
 word * GC_old_stack_bl;
 word * GC_incomplete_stack_bl;
 
+word GC_total_black_listed;
+
+word GC_black_list_spacing = 10000000;
+
 void GC_clear_bl();
 
 void GC_bl_init()
@@ -79,6 +83,14 @@ word *doomed;
     BZERO(doomed, sizeof(page_hash_table));
 }
 
+void GC_copy_bl(old, new)
+word *new, *old;
+{
+    BCOPY(old, new, sizeof(page_hash_table));
+}
+
+static word total_black_listed();
+
 /* Signal the completion of a collection.  Turn the incomplete black	*/
 /* lists into new black lists, etc.					*/			 
 void GC_promote_black_lists()
@@ -94,6 +106,25 @@ void GC_promote_black_lists()
     GC_clear_bl(very_old_stack_bl);
     GC_incomplete_normal_bl = very_old_normal_bl;
     GC_incomplete_stack_bl = very_old_stack_bl;
+    GC_total_black_listed = total_black_listed();
+#   ifdef PRINTSTATS
+  	GC_printf1("%ld blacklisted bytes in heap\n",
+  		   (unsigned long)GC_total_black_listed);
+#   endif
+    if (GC_total_black_listed != 0) {
+        GC_black_list_spacing = HBLKSIZE*(GC_heapsize/GC_total_black_listed);
+    }
+    if (GC_black_list_spacing < 3 * HBLKSIZE) {
+    	GC_black_list_spacing = 3 * HBLKSIZE;
+    }
+}
+
+void GC_unpromote_black_lists()
+{
+#   ifndef ALL_INTERIOR_POINTERS
+      GC_copy_bl(GC_old_normal_bl, GC_incomplete_normal_bl);
+#   endif
+    GC_copy_bl(GC_old_stack_bl, GC_incomplete_stack_bl);
 }
 
 # ifndef ALL_INTERIOR_POINTERS
@@ -177,5 +208,40 @@ word len;
         index = PHT_HASH((word)(h+i));
     }
     return(0);
+}
+
+
+/* Return the number of blacklisted blocks in a given range.	*/
+/* Used only for statistical purposes.				*/
+/* Looks only at the GC_incomplete_stack_bl.			*/
+word GC_number_stack_black_listed(start, endp1)
+struct hblk *start, *endp1;
+{
+    register struct hblk * h;
+    word result = 0;
+    
+    for (h = start; h < endp1; h++) {
+        register int index = PHT_HASH((word)h);
+        
+        if (get_pht_entry_from_index(GC_old_stack_bl, index)) result++;
+    }
+    return(result);
+}
+
+
+/* Return the total number of (stack) black-listed bytes. */
+static word total_black_listed()
+{
+    register unsigned i;
+    word total = 0;
+    
+    for (i = 0; i < GC_n_heap_sects; i++) {
+    	struct hblk * start = (struct hblk *) GC_heap_sects[i].hs_start;
+    	word len = (word) GC_heap_sects[i].hs_bytes;
+    	struct hblk * endp1 = start + len/HBLKSIZE;
+    	
+    	total += GC_number_stack_black_listed(start, endp1);
+    }
+    return(total * HBLKSIZE);
 }
 

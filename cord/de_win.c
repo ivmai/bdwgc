@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:21 pm PDT */
+/* Boehm, February 6, 1995 12:29 pm PST */
 
 /*
  * The MS Windows specific part of de.  
@@ -94,8 +94,8 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
    hwnd = CreateWindow (szAppName,
    			FullAppName,
    			WS_OVERLAPPEDWINDOW | WS_CAPTION, /* Window style */
-   			CW_USEDEFAULT, 0, /* default pos. */,
-   			CW_USEDEFAULT, 0, /* default width, height */,
+   			CW_USEDEFAULT, 0, /* default pos. */
+   			CW_USEDEFAULT, 0, /* default width, height */
    			NULL,	/* No parent */
    			NULL, 	/* Window class menu */
    			hInstance, NULL);

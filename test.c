@@ -5,14 +5,21 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  */
-/* Boehm, May 6, 1994 3:32 pm PDT */
+/* Boehm, September 21, 1995 5:43 pm PDT */
 /* An incomplete test for the garbage collector.  		*/
 /* Some more obscure entry points are not tested at all.	*/
 
-# include <stdlib.h>
+# if defined(mips) && defined(SYSTYPE_BSD43)
+    /* MIPS RISCOS 4 */
+# else
+#   include <stdlib.h>
+# endif
 # include <stdio.h>
 # include "gc.h"
 # include "gc_typed.h"
@@ -54,17 +61,15 @@ struct SEXPR {
     struct SEXPR * sexpr_cdr;
 };
 
-# ifdef __STDC__
-    typedef void * void_star;
-# else
-    typedef char * void_star;
-# endif
 
 typedef struct SEXPR * sexpr;
 
+# define INT_TO_SEXPR(x) ((sexpr)(unsigned long)(x))
+
 extern sexpr cons();
 
-# define nil ((sexpr) 0)
+# undef nil
+# define nil (INT_TO_SEXPR(0))
 # define car(x) ((x) -> sexpr_car)
 # define cdr(x) ((x) -> sexpr_cdr)
 # define is_nil(x) ((x) == nil)
@@ -139,7 +144,7 @@ sexpr y;
         exit(1);
     }
     r -> sexpr_car = x;
-    r -> sexpr_cdr = (sexpr) (~(unsigned long)y);
+    r -> sexpr_cdr = (sexpr)(~(unsigned long)y);
     return(r);
 }
 
@@ -166,7 +171,7 @@ int low, up;
     if (low > up) {
 	return(nil);
     } else {
-        return(small_cons(small_cons((sexpr)low, (sexpr)0), ints(low+1, up)));
+        return(small_cons(small_cons(INT_TO_SEXPR(low), nil), ints(low+1, up)));
     }
 }
 
@@ -178,7 +183,7 @@ int low, up;
     if (low > up) {
 	return(nil);
     } else {
-        return(small_cons_uncollectable(small_cons((sexpr)low, (sexpr)0),
+        return(small_cons_uncollectable(small_cons(INT_TO_SEXPR(low), nil),
                uncollectable_ints(low+1, up)));
     }
 }
@@ -187,15 +192,15 @@ void check_ints(list, low, up)
 sexpr list;
 int low, up;
 {
-    if ((int)(car(car(list))) != low) {
+    if ((int)(GC_word)(car(car(list))) != low) {
         (void)GC_printf0(
            "List reversal produced incorrect list - collector is broken\n");
-        exit(1);
+        FAIL;
     }
     if (low == up) {
         if (cdr(list) != nil) {
            (void)GC_printf0("List too long - collector is broken\n");
-           exit(1);
+           FAIL;
         }
     } else {
         check_ints(cdr(list), low+1, up);
@@ -208,15 +213,15 @@ void check_uncollectable_ints(list, low, up)
 sexpr list;
 int low, up;
 {
-    if ((int)(car(car(list))) != low) {
+    if ((int)(GC_word)(car(car(list))) != low) {
         (void)GC_printf0(
            "Uncollectable list corrupted - collector is broken\n");
-        exit(1);
+        FAIL;
     }
     if (low == up) {
         if (UNCOLLECTABLE_CDR(list) != nil) {
            (void)GC_printf0("Uncollectable ist too long - collector is broken\n");
-           exit(1);
+           FAIL;
         }
     } else {
         check_uncollectable_ints(UNCOLLECTABLE_CDR(list), low+1, up);
@@ -258,40 +263,67 @@ void reverse_test()
     sexpr c;
     sexpr d;
     sexpr e;
-#   if defined(MSWIN32)
+    sexpr *f, *g, *h;
+#   if defined(MSWIN32) || defined(MACOS)
       /* Win32S only allows 128K stacks */
 #     define BIG 1000
 #   else
-#     define BIG 4500
+#     if defined PCR
+	/* PCR default stack is 100K.  Stack frames are up to 120 bytes. */
+#	define BIG 700
+#     else
+#       define BIG 4500
+#     endif
 #   endif
 
+    A.dummy = 17;
     a = ints(1, 49);
     b = ints(1, 50);
     c = ints(1, BIG);
     d = uncollectable_ints(1, 100);
     e = uncollectable_ints(1, 1);
+    /* Check that realloc updates object descriptors correctly */
+    f = (sexpr *)GC_malloc(4 * sizeof(sexpr));
+    f = (sexpr *)GC_realloc((GC_PTR)f, 6 * sizeof(sexpr));
+    f[5] = ints(1,17);
+    g = (sexpr *)GC_malloc(513 * sizeof(sexpr));
+    g = (sexpr *)GC_realloc((GC_PTR)g, 800 * sizeof(sexpr));
+    g[799] = ints(1,18);
+    h = (sexpr *)GC_malloc(1025 * sizeof(sexpr));
+    h = (sexpr *)GC_realloc((GC_PTR)h, 2000 * sizeof(sexpr));
+    h[1999] = ints(1,19);
+    /* Try to force some collections and reuse of small list elements */
+      for (i = 0; i < 10; i++) {
+        (void)ints(1, BIG);
+      }
     /* Superficially test interior pointer recognition on stack */
     c = (sexpr)((char *)c + sizeof(char *));
     d = (sexpr)((char *)d + sizeof(char *));
+
 #   ifdef __STDC__
         GC_FREE((void *)e);
 #   else
         GC_FREE((char *)e);
 #   endif
+    check_ints(b,1,50);
+    check_ints(a,1,49);
     for (i = 0; i < 50; i++) {
+        check_ints(b,1,50);
         b = reverse(reverse(b));
     }
     check_ints(b,1,50);
+    check_ints(a,1,49);
     for (i = 0; i < 60; i++) {
     	/* This maintains the invariant that a always points to a list of */
-    	/* 49 integers.  Thus this is thread safe without locks.	  */
+    	/* 49 integers.  Thus this is thread safe without locks,	  */
+    	/* assuming atomic pointer assignments.				  */
         a = reverse(reverse(a));
 #	if !defined(AT_END) && !defined(THREADS)
 	  /* This is not thread safe, since realloc explicitly deallocates */
           if (i & 1) {
-            a = (sexpr)GC_REALLOC((void_star)a, 500);
+            a = (sexpr)GC_REALLOC((GC_PTR)a, 500);
           } else {
-            a = (sexpr)GC_REALLOC((void_star)a, 8200);
+            a = (sexpr)GC_REALLOC((GC_PTR)a, 8200);
           }
 #	endif
     }
@@ -301,7 +333,13 @@ void reverse_test()
     d = (sexpr)((char *)d - sizeof(char *));
     check_ints(c,1,BIG);
     check_uncollectable_ints(d, 1, 100);
-    a = b = c = 0;
+    check_ints(f[5], 1,17);
+    check_ints(g[799], 1,18);
+    check_ints(h[1999], 1,19);
+#   ifndef THREADS
+	a = 0;
+#   endif  
+    b = c = 0;
 }
 
 /*
@@ -316,7 +354,7 @@ typedef struct treenode {
 
 int finalizable_count = 0;
 int finalized_count = 0;
-int dropped_something = 0;
+VOLATILE int dropped_something = 0;
 
 # ifdef __STDC__
   void finalizer(void * obj, void * client_data)
@@ -335,7 +373,7 @@ int dropped_something = 0;
     static mutex_t incr_lock;
     mutex_lock(&incr_lock);
 # endif
-  if ((int)client_data != t -> level) {
+  if ((int)(GC_word)client_data != t -> level) {
      (void)GC_printf0("Wrong finalization data - collector is broken\n");
      FAIL;
   }
@@ -351,7 +389,14 @@ int dropped_something = 0;
 size_t counter = 0;
 
 # define MAX_FINALIZED 8000
-GC_FAR GC_word live_indicators[MAX_FINALIZED] = {0};
+
+# if !defined(MACOS)
+  GC_FAR GC_word live_indicators[MAX_FINALIZED] = {0};
+#else
+  /* Too big for THINK_C. have to allocate it dynamically. */
+  GC_word *live_indicators = 0;
+#endif
+
 int live_indicators_count = 0;
 
 tn * mktree(n)
@@ -359,6 +404,16 @@ int n;
 {
     tn * result = (tn *)GC_MALLOC(sizeof(tn));
     
+#if defined(MACOS)
+	/* get around static data limitations. */
+	if (!live_indicators)
+		live_indicators =
+		    (GC_word*)NewPtrClear(MAX_FINALIZED * sizeof(GC_word));
+	if (!live_indicators) {
+        (void)GC_printf0("Out of memory\n");
+        exit(1);
+    }
+#endif
     if (n == 0) return(0);
     if (result == 0) {
         (void)GC_printf0("Out of memory\n");
@@ -395,24 +450,28 @@ int n;
 #	  endif
 	}
 
-        GC_REGISTER_FINALIZER((void_star)result, finalizer, (void_star)n,
-        		      (GC_finalization_proc *)0, (void_star *)0);
+        GC_REGISTER_FINALIZER((GC_PTR)result, finalizer, (GC_PTR)(GC_word)n,
+        		      (GC_finalization_proc *)0, (GC_PTR *)0);
+        if (my_index >= MAX_FINALIZED) {
+		GC_printf0("live_indicators overflowed\n");
+		FAIL;
+	}
         live_indicators[my_index] = 13;
-        if (GC_general_register_disappearing_link(
-         	(void_star *)(&(live_indicators[my_index])),
-         	(void_star)result) != 0) {
+        if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(
+         	(GC_PTR *)(&(live_indicators[my_index])),
+         	(GC_PTR)result) != 0) {
          	GC_printf0("GC_general_register_disappearing_link failed\n");
          	FAIL;
         }
         if (GC_unregister_disappearing_link(
-         	(void_star *)
+         	(GC_PTR *)
          	   (&(live_indicators[my_index]))) == 0) {
          	GC_printf0("GC_unregister_disappearing_link failed\n");
          	FAIL;
         }
-        if (GC_general_register_disappearing_link(
-         	(void_star *)(&(live_indicators[my_index])),
-         	(void_star)result) != 0) {
+        if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(
+         	(GC_PTR *)(&(live_indicators[my_index])),
+         	(GC_PTR)result) != 0) {
          	GC_printf0("GC_general_register_disappearing_link failed 2\n");
          	FAIL;
         }
@@ -489,22 +548,29 @@ int n;
     }
 }
 
+# if defined(THREADS) && defined(GC_DEBUG)
+#   define TREE_HEIGHT 15
+# else
+#   define TREE_HEIGHT 16
+# endif
 void tree_test()
 {
     tn * root;
     register int i;
     
-    root = mktree(16);
+    root = mktree(TREE_HEIGHT);
     alloc_small(5000000);
-    chktree(root, 16);
+    chktree(root, TREE_HEIGHT);
     if (finalized_count && ! dropped_something) {
         (void)GC_printf0("Premature finalization - collector is broken\n");
         FAIL;
     }
     dropped_something = 1;
-    root = mktree(16);
-    chktree(root, 16);
-    for (i = 16; i >= 0; i--) {
+    GC_noop(root);	/* Root needs to remain live until	*/
+    			/* dropped_something is set.		*/
+    root = mktree(TREE_HEIGHT);
+    chktree(root, TREE_HEIGHT);
+    for (i = TREE_HEIGHT; i >= 0; i--) {
         root = mktree(i);
         chktree(root, i);
     }
@@ -571,18 +637,105 @@ void typed_test()
     }
 }
 
+int fail_count = 0;
+
+/*ARGSUSED*/
+void fail_proc(x)
+ptr_t x;
+{
+    fail_count++;
+}
+
+extern void (*GC_is_valid_displacement_print_proc)();
+
+extern void (*GC_is_visible_print_proc)();
+
+#ifdef THREADS
+#   define TEST_FAIL_COUNT(n) 1
+#else 
+#   define TEST_FAIL_COUNT(n) (fail_count >= (n))
+#endif
+
 void run_one_test()
 {
+    char *x;
+#   ifdef LINT
+    	char *y = 0;
+#   else
+    	char *y = (char *)fail_proc;
+#   endif
     DCL_LOCK_STATE;
     
-#   ifndef GC_DEBUG
-	if (GC_size(GC_MALLOC(7)) != 8
-	    || GC_size(GC_MALLOC(15)) != 16) {
+#   ifdef FIND_LEAK
+	(void)GC_printf0(
+		"This test program is not designed for leak detection mode\n");
+	(void)GC_printf0("Expect lots of problems.\n");
+#   endif
+    if (GC_size(GC_malloc(7)) != 8
+	|| GC_size(GC_malloc(15)) != 16) {
 	    (void)GC_printf0("GC_size produced unexpected results\n");
 	    FAIL;
-	}
+    }
+    if (GC_size(GC_malloc(0)) != 4 && GC_size(GC_malloc(0)) != 8) {
+    	(void)GC_printf0("GC_malloc(0) failed\n");
+	    FAIL;
+    }
+    if (GC_size(GC_malloc_uncollectable(0)) != 4
+        && GC_size(GC_malloc_uncollectable(0)) != 8) {
+    	(void)GC_printf0("GC_malloc_uncollectable(0) failed\n");
+	    FAIL;
+    }
+    GC_is_valid_displacement_print_proc = fail_proc;
+    GC_is_visible_print_proc = fail_proc;
+    x = GC_malloc(16);
+    if (GC_base(x + 13) != x) {
+    	(void)GC_printf0("GC_base(heap ptr) produced incorrect result\n");
+	FAIL;
+    }
+#   ifndef PCR
+      if (GC_base(y) != 0) {
+    	(void)GC_printf0("GC_base(fn_ptr) produced incorrect result\n");
+	FAIL;
+      }
 #   endif
-    reverse_test();
+    if (GC_same_obj(x+5, x) != x + 5) {
+    	(void)GC_printf0("GC_same_obj produced incorrect result\n");
+	FAIL;
+    }
+    if (GC_is_visible(y) != y || GC_is_visible(x) != x) {
+    	(void)GC_printf0("GC_is_visible produced incorrect result\n");
+	FAIL;
+    }
+    if (!TEST_FAIL_COUNT(1)) {
+#	ifndef RS6000
+	  /* ON RS6000s function pointers point to a descriptor in the	*/
+	  /* data segment, so there should have been no failures.	*/
+    	  (void)GC_printf0("GC_is_visible produced wrong failure indication\n");
+    	  FAIL;
+#	endif
+    }
+    if (GC_is_valid_displacement(y) != y
+        || GC_is_valid_displacement(x) != x
+        || GC_is_valid_displacement(x + 3) != x + 3) {
+    	(void)GC_printf0(
+    		"GC_is_valid_displacement produced incorrect result\n");
+	FAIL;
+    }
+#   ifndef ALL_INTERIOR_POINTERS
+#    ifdef RS6000
+      if (!TEST_FAIL_COUNT(1)) {
+#    else
+      if (!TEST_FAIL_COUNT(2)) {
+#    endif
+    	(void)GC_printf0("GC_is_valid_displacement produced wrong failure indication\n");
+    	FAIL;
+      }
+#   endif
+    /* Test floating point alignment */
+	*(double *)GC_MALLOC(sizeof(double)) = 1.0;
+	*(double *)GC_MALLOC(sizeof(double)) = 1.0;
+    /* Repeated list reversal test. */
+	reverse_test();
 #   ifdef PRINTSTATS
 	GC_printf0("-------------Finished reverse_test\n");
 #   endif
@@ -606,7 +759,7 @@ void check_heap_stats()
     if (sizeof(char *) > 4) {
         max_heap_sz = 13000000;
     } else {
-    	max_heap_sz = 10000000;
+    	max_heap_sz = 11000000;
     }
 #   ifdef GC_DEBUG
 	max_heap_sz *= 2;
@@ -616,6 +769,7 @@ void check_heap_stats()
 #   endif
     /* Garbage collect repeatedly so that all inaccessible objects	*/
     /* can be finalized.						*/
+      while (GC_collect_a_little()) { }
       for (i = 0; i < 16; i++) {
         GC_gcollect();
       }
@@ -659,6 +813,37 @@ void check_heap_stats()
     (void)GC_printf0("Collector appears to work\n");
 }
 
+#if defined(MACOS)
+void SetMinimumStack(long minSize)
+{
+	long newApplLimit;
+
+	if (minSize > LMGetDefltStack())
+	{
+		newApplLimit = (long) GetApplLimit()
+				- (minSize - LMGetDefltStack());
+		SetApplLimit((Ptr) newApplLimit);
+		MaxApplZone();
+	}
+}
+
+#define cMinStackSpace (512L * 1024L)
+
+#endif
+
+#ifdef __STDC__
+    void warn_proc(char *msg, GC_word p)
+#else
+    void warn_proc(msg, p)
+    char *msg;
+    GC_word p;
+#endif
+{
+    GC_printf1(msg, (unsigned long)p);
+    FAIL;
+}
+
+
 #if !defined(PCR) && !defined(SOLARIS_THREADS) || defined(LINT)
 #ifdef MSWIN32
   int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
@@ -667,6 +852,15 @@ void check_heap_stats()
 #endif
 {
     n_tests = 0;
+    
+#   if defined(MACOS)
+	/* Make sure we have lots and lots of stack space. 	*/
+	SetMinimumStack(cMinStackSpace);
+	/* Cheat and let stdio initialize toolbox for us.	*/
+	printf("Testing GC Macintosh port.\n");
+#   endif
+    GC_INIT();	/* Only needed if gc is dynamic library.	*/
+    (void) GC_set_warn_proc(warn_proc);
 #   if defined(MPROTECT_VDB) || defined(PROC_VDB)
       GC_enable_incremental();
       (void) GC_printf0("Switched to incremental mode\n");
@@ -685,12 +879,16 @@ void check_heap_stats()
 	/* This is a bit SunOS4 specific.				   */			
 	GC_noop(GC_expand_hp, GC_add_roots, GC_clear_roots,
 	        GC_register_disappearing_link,
+	        GC_register_finalizer_ignore_self,
+		GC_debug_register_displacement,
 	        GC_print_obj, GC_debug_change_stubborn,
 	        GC_debug_end_stubborn_change, GC_debug_malloc_uncollectable,
 	        GC_debug_free, GC_debug_realloc, GC_generic_malloc_words_small,
 	        GC_init, GC_make_closure, GC_debug_invoke_finalizer,
 	        GC_page_was_ever_dirty, GC_is_fresh,
-		GC_malloc_ignore_off_page);
+		GC_malloc_ignore_off_page, GC_malloc_atomic_ignore_off_page,
+		GC_set_max_heap_size, GC_get_bytes_since_gc,
+		GC_pre_incr, GC_post_incr);
 #   endif
     return(0);
 }
@@ -704,7 +902,8 @@ test()
     int code;
 
     n_tests = 0;
-    GC_enable_incremental();
+    /* GC_enable_incremental(); */
+    (void) GC_set_warn_proc(warn_proc);
     th1 = PCR_Th_Fork(run_one_test, 0);
     th2 = PCR_Th_Fork(run_one_test, 0);
     run_one_test();
@@ -728,6 +927,11 @@ void * thr_run_one_test(void * arg)
     run_one_test();
     return(0);
 }
+
+#ifdef GC_DEBUG
+#  define GC_free GC_debug_free
+#endif
+
 main()
 {
     thread_t th1;
@@ -735,7 +939,9 @@ main()
     int code;
 
     n_tests = 0;
+    GC_INIT();	/* Only needed if gc is dynamic library.	*/
     GC_enable_incremental();
+    (void) GC_set_warn_proc(warn_proc);
     if (thr_keycreate(&fl_key, GC_free) != 0) {
         (void)GC_printf1("Key creation failed %lu\n", (unsigned long)code);
     	FAIL;

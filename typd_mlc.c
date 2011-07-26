@@ -11,7 +11,7 @@
  * modified is included with the above copyright notice.
  *
  */
-/* Boehm, May 19, 1994 2:06 pm PDT */
+/* Boehm, July 31, 1995 5:02 pm PDT */
 
 
 /*
@@ -343,10 +343,6 @@ ptr_t * GC_eobjfreelist;
 
 ptr_t * GC_arobjfreelist;
 
-struct hblk ** GC_ereclaim_list;
-
-struct hblk ** GC_arreclaim_list;
-
 mse * GC_typed_mark_proc();
 
 mse * GC_array_mark_proc();
@@ -377,14 +373,9 @@ void GC_init_explicit_typing()
           GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(ptr_t), PTRFREE);
       if (GC_eobjfreelist == 0) ABORT("Couldn't allocate GC_eobjfreelist");
       BZERO(GC_eobjfreelist, (MAXOBJSZ+1)*sizeof(ptr_t));
-      GC_ereclaim_list = (struct hblk **)
-    	GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(struct hblk *), PTRFREE);
-      if (GC_ereclaim_list == 0)
-      				ABORT("Couldn't allocate GC_ereclaim_list");
-      BZERO(GC_ereclaim_list, (MAXOBJSZ+1)*sizeof(struct hblk *));
       GC_explicit_kind = GC_n_kinds++;
       GC_obj_kinds[GC_explicit_kind].ok_freelist = GC_eobjfreelist;
-      GC_obj_kinds[GC_explicit_kind].ok_reclaim_list = GC_ereclaim_list;
+      GC_obj_kinds[GC_explicit_kind].ok_reclaim_list = 0;
       GC_obj_kinds[GC_explicit_kind].ok_descriptor =
     		(((word)WORDS_TO_BYTES(-1)) | DS_PER_OBJECT);
       GC_obj_kinds[GC_explicit_kind].ok_relocate_descr = TRUE;
@@ -399,11 +390,6 @@ void GC_init_explicit_typing()
           GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(ptr_t), PTRFREE);
       if (GC_arobjfreelist == 0) ABORT("Couldn't allocate GC_arobjfreelist");
       BZERO(GC_arobjfreelist, (MAXOBJSZ+1)*sizeof(ptr_t));
-      GC_arreclaim_list = (struct hblk **)
-    	GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(struct hblk *), PTRFREE);
-      if (GC_arreclaim_list == 0) ABORT("Couldn't allocate GC_arreclaim_list");
-      BZERO(GC_arreclaim_list, (MAXOBJSZ+1)*sizeof(struct hblk *));
-      if (GC_arreclaim_list == 0) ABORT("Couldn't allocate GC_arreclaim_list");
       if (GC_n_mark_procs >= MAX_MARK_PROCS)
       		ABORT("No slot for array mark proc");
       GC_array_mark_proc_index = GC_n_mark_procs++;
@@ -411,7 +397,7 @@ void GC_init_explicit_typing()
       		ABORT("No kind available for array objects");
       GC_array_kind = GC_n_kinds++;
       GC_obj_kinds[GC_array_kind].ok_freelist = GC_arobjfreelist;
-      GC_obj_kinds[GC_array_kind].ok_reclaim_list = GC_arreclaim_list;
+      GC_obj_kinds[GC_array_kind].ok_reclaim_list = 0;
       GC_obj_kinds[GC_array_kind].ok_descriptor =
     		MAKE_PROC(GC_array_mark_proc_index, 0);;
       GC_obj_kinds[GC_array_kind].ok_relocate_descr = FALSE;
@@ -642,7 +628,7 @@ word env;
 ptr_t GC_clear_stack();
 
 #define GENERAL_MALLOC(lb,k) \
-    (extern_ptr_t)GC_clear_stack(GC_generic_malloc((word)lb, k))
+    (GC_PTR)GC_clear_stack(GC_generic_malloc((word)lb, k))
     
 #if defined(__STDC__) || defined(__cplusplus)
   extern void * GC_malloc_explicitly_typed(size_t lb, GC_descr d)
@@ -662,7 +648,7 @@ DCL_LOCK_STATE;
 #       ifdef MERGE_SIZES
 	  lw = GC_size_map[lb];
 #	else
-	  lw = ROUNDED_UP_WORDS(lb);
+	  lw = ALIGNED_WORDS(lb);
 #       endif
 	opp = &(GC_eobjfreelist[lw]);
 	FASTLOCK();
@@ -682,7 +668,7 @@ DCL_LOCK_STATE;
        lw = BYTES_TO_WORDS(GC_size(op));
    }
    ((word *)op)[lw - 1] = d;
-   return((extern_ptr_t) op);
+   return((GC_PTR) op);
 }
 
 #if defined(__STDC__) || defined(__cplusplus)
@@ -723,7 +709,7 @@ DCL_LOCK_STATE;
 #       ifdef MERGE_SIZES
 	  lw = GC_size_map[lb];
 #	else
-	  lw = ROUNDED_UP_WORDS(lb);
+	  lw = ALIGNED_WORDS(lb);
 #       endif
 	opp = &(GC_arobjfreelist[lw]);
 	FASTLOCK();
@@ -762,9 +748,9 @@ DCL_LOCK_STATE;
        /* Make sure the descriptor is cleared once there is any danger	*/
        /* it may have been collected.					*/
        (void)
-         GC_general_register_disappearing_link((extern_ptr_t *)
+         GC_general_register_disappearing_link((GC_PTR *)
          					  ((word *)op+lw-1),
-       					          (extern_ptr_t) op);
+       					          (GC_PTR) op);
        if (ff != GC_finalization_failures) {
            /* We may have failed to register op due to lack of memory.	*/
            /* We were out of memory very recently, so we can safely 	*/
@@ -773,5 +759,5 @@ DCL_LOCK_STATE;
            return(0);
        }			          
    }
-   return((extern_ptr_t) op);
+   return((GC_PTR) op);
 }

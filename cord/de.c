@@ -26,19 +26,49 @@
  *	The redisplay algorithm doesn't let curses do the scrolling.
  *	The rule for moving the window over the file is suboptimal.
  */
+/* Boehm, February 6, 1995 12:27 pm PST */
+
 /* Boehm, May 19, 1994 2:20 pm PDT */
 #include <stdio.h>
-#include "../gc.h"
+#include "gc.h"
 #include "cord.h"
-#ifdef WIN32
+
+#ifdef THINK_C
+#define MACINTOSH
+#include <ctype.h>
+#endif
+
+#if defined(__BORLANDC__) && !defined(WIN32)
+    /* If this is DOS or win16, we'll fail anyway.	*/
+    /* Might as well assume win32.			*/
+#   define WIN32
+#endif
+
+#if defined(WIN32)
 #  include <windows.h>
 #  include "de_win.h"
+#elif defined(MACINTOSH)
+#	include <console.h>
+/* curses emulation. */
+#	define initscr()
+#	define endwin()
+#	define nonl()
+#	define noecho() csetmode(C_NOECHO, stdout)
+#	define cbreak() csetmode(C_CBREAK, stdout)
+#	define refresh()
+#	define addch(c) putchar(c)
+#	define standout() cinverse(1, stdout)
+#	define standend() cinverse(0, stdout)
+#	define move(line,col) cgotoxy(col + 1, line + 1, stdout)
+#	define clrtoeol() ccleol(stdout)
+#	define de_error(s) { fprintf(stderr, s); getchar(); }
+#	define LINES 25
+#	define COLS 80
 #else
 #  include <curses.h>
 #  define de_error(s) { fprintf(stderr, s); sleep(2); }
 #endif
 #include "de_cmds.h"
-
 
 /* List of line number to position mappings, in descending order. */
 /* There may be holes.						  */
@@ -174,20 +204,26 @@ int screen_size = 0;
 # ifndef WIN32
 /* Replace a line in the curses stdscr.	All control characters are	*/
 /* displayed as upper case characters in standout mode.  This isn't	*/
-/* terribly appropriate for tabs.					*/
+/* terribly appropriate for tabs.									*/
 void replace_line(int i, CORD s)
 {
     register int c;
     CORD_pos p;
+    size_t len = CORD_len(s);
     
     if (screen == 0 || LINES > screen_size) {
         screen_size = LINES;
     	screen = (CORD *)GC_MALLOC(screen_size * sizeof(CORD));
     }
-    if (CORD_cmp(screen[i], s) != 0) {
-        move(i,0); clrtoeol();
+#   if !defined(MACINTOSH)
         /* A gross workaround for an apparent curses bug: */
-            if (i == LINES-1) s = CORD_substr(s, 0, CORD_len(s) - 1);
+        if (i == LINES-1 && len == COLS) {
+            s = CORD_substr(s, 0, CORD_len(s) - 1);
+        }
+#   endif
+    if (CORD_cmp(screen[i], s) != 0) {
+        move(i, 0); clrtoeol(); move(i,0);
+
         CORD_FOR (p, s) {
             c = CORD_pos_fetch(p) & 0x7f;
             if (iscntrl(c)) {
@@ -263,7 +299,7 @@ void normalize_display()
     int old_col = dis_col;
     
     dis_granularity = 1;
-    if (LINES > 15 && COLS > 15) dis_granularity = 5;
+    if (LINES > 15 && COLS > 15) dis_granularity = 2;
     while (dis_line > line) dis_line -= dis_granularity;
     while (dis_col > col) dis_col -= dis_granularity;
     while (line >= dis_line + LINES) dis_line += dis_granularity;
@@ -273,8 +309,11 @@ void normalize_display()
     }
 }
 
-# ifndef WIN32
-#   define move_cursor(x,y) move(y,x)
+# if defined(WIN32)
+# elif defined(MACINTOSH)
+#		define move_cursor(x,y) cgotoxy(x + 1, y + 1, stdout)
+# else
+#		define move_cursor(x,y) move(y,x)
 # endif
 
 /* Adjust display so that cursor is visible; move cursor into position	*/
@@ -309,7 +348,11 @@ void fix_pos()
     }
 }
 
-#ifndef WIN32
+#if defined(WIN32)
+#  define beep() Beep(1000 /* Hz */, 300 /* msecs */) 
+#elif defined(MACINTOSH)
+#	define beep() SysBeep(1)
+#else
 /*
  * beep() is part of some curses packages and not others.
  * We try to match the type of the builtin one, if any.
@@ -323,8 +366,6 @@ void fix_pos()
     putc('\007', stderr);
     return(0);
 }
-#else
-#  define beep() Beep(1000 /* Hz */, 300 /* msecs */) 
 #endif
 
 #   define NO_PREFIX -1
@@ -489,6 +530,7 @@ void do_command(int c)
 }
 
 /* OS independent initialization */
+
 void generic_init(void)
 {
     FILE * f;
@@ -519,6 +561,13 @@ char ** argv;
 {
     int c;
     CORD initial;
+
+#if defined(MACINTOSH)
+	console_options.title = "\pDumb Editor";
+	cshow(stdout);
+	GC_init();
+	argc = ccommand(&argv);
+#endif
     
     if (argc != 2) goto usage;
     arg_file_name = argv[1];
@@ -527,9 +576,15 @@ char ** argv;
     noecho(); nonl(); cbreak();
     generic_init();
     while ((c = getchar()) != QUIT) {
-    	do_command(c);
+		if (c == EOF) break;
+	    do_command(c);
     }
 done:
+    move(LINES-1, 0);
+    clrtoeol();
+    refresh();
+    nl();
+    echo();
     endwin();
     exit(0);
 usage:

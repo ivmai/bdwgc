@@ -12,7 +12,7 @@
  *
  * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
-/* Boehm, May 19, 1994 2:22 pm PDT */
+/* Boehm, October 5, 1995 4:20 pm PDT */
  
 /*
  * Cords are immutable character strings.  A number of operations
@@ -37,6 +37,23 @@
  * ASCII NUL characters may be embedded in cords using CORD_from_fn.
  * This is handled correctly, but CORD_to_char_star will produce a string
  * with embedded NULs when given such a cord. 
+ *
+ * This interface is fairly big, largely for performance reasons.
+ * The most basic constants and functions:
+ *
+ * CORD - the type fo a cord;
+ * CORD_EMPTY - empty cord;
+ * CORD_len(cord) - length of a cord;
+ * CORD_cat(cord1,cord2) - concatenation of two cords;
+ * CORD_substr(cord, start, len) - substring (or subcord);
+ * CORD_pos i;  CORD_FOR(i, cord) {  ... CORD_pos_fetch(i) ... } -
+ *    examine each character in a cord.  CORD_pos_fetch(i) is the char.
+ * CORD_fetch(int i) - Retrieve i'th character (slowly).
+ * CORD_cmp(cord1, cord2) - compare two cords.
+ * CORD_from_file(FILE * f) - turn a read-only file into a cord.
+ * CORD_to_char_star(cord) - convert to C string.
+ *   (Non-NULL C constant strings are cords.)
+ * CORD_printf (etc.) - cord version of printf. Use %r for cords.
  */
 # ifndef CORD_H
 
@@ -55,7 +72,7 @@ typedef const char * CORD;
 # define CORD_EMPTY 0
 
 /* Is a nonempty cord represented as a C string? */
-#define IS_STRING(s) (*(s) != '\0')
+#define CORD_IS_STRING(s) (*(s) != '\0')
 
 /* Concatenate two cords.  If the arguments are C strings, they may 	*/
 /* not be subsequently altered.						*/
@@ -64,6 +81,8 @@ CORD CORD_cat(CORD x, CORD y);
 /* Concatenate a cord and a C string with known length.  Except for the	*/
 /* empty string case, this is a special case of CORD_cat.  Since the	*/
 /* length is known, it can be faster.					*/
+/* The string y is shared with the resulting CORD.  Hence it should	*/
+/* not be altered by the caller.					*/
 CORD CORD_cat_char_star(CORD x, const char * y, size_t leny);
 
 /* Compute the length of a cord */
@@ -135,37 +154,37 @@ int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 /* described below.  Also note that					*/
 /* CORD_pos_fetch, CORD_next and CORD_prev have both macro and function	*/
 /* definitions.  The former may evaluate their argument more than once. */
-# include "cord_pos.h"
+# include "private/cord_pos.h"
 
 /*
 	Visible definitions from above:
 	
 	typedef <OPAQUE but fairly big> CORD_pos[1];
 	
-	/* Extract the cord from a position:
+	* Extract the cord from a position:
 	CORD CORD_pos_to_cord(CORD_pos p);
 	
-	/* Extract the current index from a position:
+	* Extract the current index from a position:
 	size_t CORD_pos_to_index(CORD_pos p);
 	
-	/* Fetch the character located at the given position:
-	char CORD_pos_fetch(register CORD_pos p);
+	* Fetch the character located at the given position:
+	char CORD_pos_fetch(CORD_pos p);
 	
-	/* Initialize the position to refer to the give cord and index.
-	/* Note that this is the most expensive function on positions:
+	* Initialize the position to refer to the given cord and index.
+	* Note that this is the most expensive function on positions:
 	void CORD_set_pos(CORD_pos p, CORD x, size_t i);
 	
-	/* Advance the position to the next character.
-	/* P must be initialized and valid.
-	/* Invalidates p if past end:
+	* Advance the position to the next character.
+	* P must be initialized and valid.
+	* Invalidates p if past end:
 	void CORD_next(CORD_pos p);
 	
-	/* Move the position to the preceding character.
-	/* P must be initialized and valid.
-	/* Invalidates p if past beginning:
+	* Move the position to the preceding character.
+	* P must be initialized and valid.
+	* Invalidates p if past beginning:
 	void CORD_prev(CORD_pos p);
 	
-	/* Is the position valid, i.e. inside the cord?
+	* Is the position valid, i.e. inside the cord?
 	int CORD_pos_valid(CORD_pos p);
 */
 # define CORD_FOR(pos, cord) \
@@ -181,10 +200,13 @@ extern void (* CORD_oom_fn)(void);
 void CORD_dump(CORD x);
 
 /* The following could easily be implemented by the client.  They are	*/
-/* provided in cord_xtra.c for convenience.				*/
+/* provided in cordxtra.c for convenience.				*/
 
 /* Concatenate a character to the end of a cord.	*/
 CORD CORD_cat_char(CORD x, char c);
+
+/* Concatenate n cords.	*/
+CORD CORD_catn(int n, /* CORD */ ...);
 
 /* Return the character in CORD_substr(x, i, 1)  	*/
 char CORD_fetch(CORD x, size_t i);
@@ -237,6 +259,10 @@ CORD CORD_from_file_lazy(FILE * f);
 /* Turn a cord into a C string.	The result shares no structure with	*/
 /* x, and is thus modifiable.						*/
 char * CORD_to_char_star(CORD x);
+
+/* Identical to the above, but the result may share structure with	*/
+/* the argument and is thus not modifiable.				*/
+const char * CORD_to_const_char_star(CORD x); 
 
 /* Write a cord to a file, starting at the current position.  No	*/
 /* trailing NULs are newlines are added.				*/

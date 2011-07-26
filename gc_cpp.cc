@@ -1,11 +1,12 @@
 /*************************************************************************
-
-
 Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
  
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  
+    Last modified on Sat Nov 19 19:31:14 PST 1994 by ellis
+                  on Sat Jun  8 15:10:00 PST 1994 by boehm
+
 Permission is hereby granted to copy this code for any purpose,
 provided the above notices are retained on all copies.
 
@@ -18,16 +19,28 @@ You should ensure (using implementation-dependent techniques) that the
 linker finds this module before the library that defines the default
 built-in "new" and "delete".
 
+Authors: John R. Ellis and Jesse Hull
 
 **************************************************************************/
+/* Boehm, December 20, 1994 7:26 pm PST */
 
-#include "gc_c++.h"
+#include "gc_cpp.h"
 
 void* operator new( size_t size ) {
-    return GC_MALLOC_UNCOLLECTABLE( size ); }
+    return GC_MALLOC_UNCOLLECTABLE( size );}
   
 void operator delete( void* obj ) {
-    return GC_FREE( obj ); }
+    GC_FREE( obj );}
   
+
+#ifdef OPERATOR_NEW_ARRAY
+
+void* operator new[]( size_t size ) {
+    return GC_MALLOC_UNCOLLECTABLE( size );}
+  
+void operator delete[]( void* obj ) {
+    GC_FREE( obj );}
+
+#endif /* OPERATOR_NEW_ARRAY */
 
 

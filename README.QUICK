@@ -37,3 +37,5 @@ and calls to realloc by calls to GC_REALLOC.  If the object is known
 to never contain pointers, use GC_MALLOC_ATOMIC instead of
 GC_MALLOC.
 
+Define GC_DEBUG before including gc.h for additional checking.
+

@@ -1,46 +1,68 @@
-OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o pcr_interface.o blacklst.o finalize.o new_hblk.o real_malloc.o dynamic_load.o dbg_mlc.o malloc.o stubborn.o
-
-CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dynamic_load.c debug_mlc.c malloc.c stubborn.c
-
-SHELL= /bin/sh
-
-# Fix to point to local pcr installation directory.
-PCRDIR= /project/ppcr/dev
-CC= gcc
-CFLAGS= -g -DPCR -I$(PCRDIR) -I$(PCRDIR)/ansi -I$(PCRDIR)/posix
-
-# We assume that mach_dep.o has already been built by top level makefile.  It doesn't
-# care about pcr vs UNIX, and we don't want to repeat that cruft.
+#
+# Default target
+#
 
 default: gc.o
 
-all: gc.o test.o gcpcr
-
-gcpcr: gc.o test.o $(PCRDIR)/base/pcr.o $(PCRDIR)/base/PCR_BaseMain.o
-	$(CC) -o gcpcr $(PCRDIR)/base/pcr.o $(PCRDIR)/base/PCR_BaseMain.o gc.o test.o -ldl
-
-gc.o: $(OBJS)
-	-ld -r -o gc.o $(OBJS)
+include ../config/common.mk
 
 #
-# Dependency construction
+# compilation flags, etc.
 #
-# NOTE: the makefile must include "# DO NOT DELETE THIS LINE" after the
-#   last target.  "make depend" will replace everything following that line
-#   by a newly-constructed list of dependencies.
+
+
+CPPFLAGS = $(INCLUDE) $(CONFIG_CPPFLAGS) \
+	-DPCR_NO_RENAME -DPCR_NO_HOSTDEP_ERR
+#CFLAGS	= -DPCR -DSILENT $(CONFIG_CFLAGS)
+CFLAGS	= -DPCR $(CONFIG_CFLAGS)
+SPECIALCFLAGS = 	# For code involving asm's
+
+ASPPFLAGS  = $(INCLUDE) $(CONFIG_ASPPFLAGS) \
+	-DPCR_NO_RENAME -DPCR_NO_HOSTDEP_ERR -DASM
+
+ASFLAGS	= $(CONFIG_ASFLAGS)
+
+LDRFLAGS = $(CONFIG_LDRFLAGS)
+
+LDFLAGS = $(CONFIG_LDFLAGS)
+
 #
-depend: $(CSRCS)
-	rm -f makedep eddep ; \
-    $(CC) -M $(CFLAGS) $(CSRCS) \
-			| sed -e '/:$$/d' > makedep ; \
-    echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep ; \
-	echo '$$r makedep' >>eddep ; \
-	echo 'w' >>eddep ; \
-	cp PCR-Makefile PCR-Makefile.bak ; \
-	ex - PCR-Makefile < eddep ; \
-	rm -f eddep makedep
-	touch depend
-	
-# DO NOT DELETE THIS LINE
+#
+#
+#
+# BEGIN PACKAGE-SPECIFIC PART
+#
+#
+#
+#
+
+# Fix to point to local pcr installation directory.
+PCRDIR= ..
+
+COBJ= alloc.o reclaim.o allchblk.o misc.o os_dep.o mark_rts.o headers.o mark.o obj_map.o pcr_interface.o blacklst.o finalize.o new_hblk.o real_malloc.o dyn_load.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o typd_mlc.o ptr_chck.o
+
+CSRC= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c typd_mlc.c ptr_chck.c
+
+SHELL= /bin/sh
+
+default: gc.o
+
+gc.o: $(COBJ) mach_dep.o
+	$(LDR) $(CONFIG_LDRFLAGS) -o gc.o $(COBJ) mach_dep.o
+
+
+mach_dep.o: mach_dep.c mips_mach_dep.s rs6000_mach_dep.s if_mach if_not_there
+	rm -f mach_dep.o
+	./if_mach MIPS "" as -o mach_dep.o mips_mach_dep.s
+	./if_mach RS6000 "" as -o mach_dep.o rs6000_mach_dep.s
+	./if_mach ALPHA "" as -o mach_dep.o alpha_mach_dep.s
+	./if_mach SPARC SUNOS5 as -o mach_dep.o sparc_mach_dep.s
+	./if_not_there mach_dep.o $(CC) -c $(SPECIALCFLAGS) mach_dep.c
+
+if_mach: if_mach.c config.h
+	$(CC) $(CFLAGS) -o if_mach if_mach.c
+
+if_not_there: if_not_there.c
+	$(CC) $(CFLAGS) -o if_not_there if_not_there.c
 
 

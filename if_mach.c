@@ -1,4 +1,5 @@
 /* Conditionally execute a command based on machine and OS from config.h */
+/* Boehm, November 21, 1994 1:40 pm PST */
 # include "config.h"
 # include <stdio.h>
 
@@ -12,6 +13,7 @@ char ** envp;
     if (strcmp(OS_TYPE, "") != 0 && strcmp(argv[2], "") != 0
         && strcmp(OS_TYPE, argv[2]) != 0) return(0);
     execvp(argv[3], argv+3);
+    perror("Couldn't execute");
     
 Usage:
     fprintf(stderr, "Usage: %s mach_type os_type command\n", argv[0]);

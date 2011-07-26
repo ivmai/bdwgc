@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 1:59 pm PDT */
+/* Boehm, April 14, 1995 3:10 pm PDT */
 # include "gc_priv.h"
 
 # ifdef PCR
@@ -20,9 +20,12 @@
  * We wrap all of the allocator functions to avoid questions of
  * compatibility between the prototyped and nonprototyped versions of the f
  */
+# include "config/PCR_StdTypes.h"
 # include "mm/PCR_MM.h"
+# include <errno.h>
 
 # define MY_MAGIC 17L
+# define MY_DEBUGMAGIC 42L
 
 void * GC_AllocProc(size_t size, PCR_Bool ptrFree, PCR_Bool clear )
 {
@@ -35,9 +38,26 @@ void * GC_AllocProc(size_t size, PCR_Bool ptrFree, PCR_Bool clear )
     }
 }
 
+void * GC_DebugAllocProc(size_t size, PCR_Bool ptrFree, PCR_Bool clear )
+{
+    if (ptrFree) {
+        void * result = (void *)GC_debug_malloc_atomic(size, __FILE__,
+        						     __LINE__);
+        if (clear && result != 0) BZERO(result, size);
+        return(result);
+    } else {
+        return((void *)GC_debug_malloc(size, __FILE__, __LINE__));
+    }
+}
+
 # define GC_ReallocProc GC_realloc
+void * GC_DebugReallocProc(void * old_object, size_t new_size_in_bytes)
+{
+    return(GC_debug_realloc(old_object, new_size_in_bytes, __FILE__, __LINE__));
+}
 
 # define GC_FreeProc GC_free
+# define GC_DebugFreeProc GC_debug_free
 
 typedef struct {
   PCR_ERes (*ed_proc)(void *p, size_t size, PCR_Any data);
@@ -107,8 +127,47 @@ struct PCR_MM_ProcsRep GC_Rep = {
 	GC_DummyShutdownProc	/* mmp_shutdown */
 };
 
+struct PCR_MM_ProcsRep GC_DebugRep = {
+	MY_DEBUGMAGIC,
+	GC_DebugAllocProc,
+	GC_DebugReallocProc,
+	GC_DummyFreeProc,  	/* mmp_free */
+	GC_DebugFreeProc,  		/* mmp_unsafeFree */
+	GC_EnumerateProc,
+	GC_DummyShutdownProc	/* mmp_shutdown */
+};
+
+bool GC_use_debug = 0;
+
 void GC_pcr_install()
 {
-    PCR_MM_Install(&GC_Rep, &GC_old_allocator);
+    PCR_MM_Install((GC_use_debug? &GC_DebugRep : &GC_Rep), &GC_old_allocator);
 }
+
+PCR_ERes
+PCR_GC_Setup(void)
+{
+    return PCR_ERes_okay;
+}
+
+PCR_ERes
+PCR_GC_Run(void)
+{
+
+    if( !PCR_Base_TestPCRArg("-nogc") ) {
+        GC_quiet = ( PCR_Base_TestPCRArg("-gctrace") ? 0 : 1 );
+        GC_use_debug = (bool)PCR_Base_TestPCRArg("-debug_alloc");
+        GC_init();
+        if( !PCR_Base_TestPCRArg("-nogc_incremental") ) {
+            /*
+             * awful hack to test whether VD is implemented ...
+             */
+            if( PCR_VD_Start( 0, NIL, 0) != PCR_ERes_FromErr(ENOSYS) ) {
+	        GC_enable_incremental();
+	    }
+	}
+    }
+    return PCR_ERes_okay;
+}
+
 # endif

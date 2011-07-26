@@ -10,8 +10,9 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:21 pm PDT */
+/* Boehm, August 24, 1994 11:58 am PDT */
 # include "cord.h"
+# include <string.h>
 # include <stdio.h>
 /* This is a very incomplete test of the cord package.  It knows about	*/
 /* a few internals of the package (e.g. when C strings are returned)	*/
@@ -45,7 +46,7 @@ char id_cord_fn(size_t i, void * client_data)
     return((char)i);
 }
 
-test_basics()
+void test_basics()
 {
     CORD x = "ab";
     register int i;
@@ -54,7 +55,7 @@ test_basics()
     CORD_pos p;
     
     x = CORD_cat(x,x);
-    if (!IS_STRING(x)) ABORT("short cord should usually be a string");
+    if (!CORD_IS_STRING(x)) ABORT("short cord should usually be a string");
     if (strcmp(x, "abab") != 0) ABORT("bad CORD_cat result");
     
     for (i = 1; i < 16; i++) {
@@ -78,15 +79,15 @@ test_basics()
     if (count != 64*1024 + 2) ABORT("Position based iteration failed");
     
     y = CORD_substr(x, 1023, 5);
-    if (!IS_STRING(y)) ABORT("short cord should usually be a string");
+    if (!CORD_IS_STRING(y)) ABORT("short cord should usually be a string");
     if (strcmp(y, "babab") != 0) ABORT("bad CORD_substr result");
     
     y = CORD_substr(x, 1024, 8);
-    if (!IS_STRING(y)) ABORT("short cord should usually be a string");
+    if (!CORD_IS_STRING(y)) ABORT("short cord should usually be a string");
     if (strcmp(y, "abababab") != 0) ABORT("bad CORD_substr result");
     
     y = CORD_substr(x, 128*1024-1, 8);
-    if (!IS_STRING(y)) ABORT("short cord should usually be a string");
+    if (!CORD_IS_STRING(y)) ABORT("short cord should usually be a string");
     if (strcmp(y, "bc") != 0) ABORT("bad CORD_substr result");
     
     x = CORD_balance(x);
@@ -99,7 +100,7 @@ test_basics()
     if (count != 64*1024 + 2) ABORT("CORD_iter5 failed");
     
     y = CORD_substr(x, 1023, 5);
-    if (!IS_STRING(y)) ABORT("short cord should usually be a string");
+    if (!CORD_IS_STRING(y)) ABORT("short cord should usually be a string");
     if (strcmp(y, "babab") != 0) ABORT("bad CORD_substr result");
     y = CORD_from_fn(id_cord_fn, 0, 13);
     i = 0;
@@ -112,11 +113,14 @@ test_basics()
     if (i != 13) ABORT("Bad apparent length for function node");
 }
 
-test_extras()
+void test_extras()
 {
-#   ifdef __OS2__
+#   if defined(__OS2__)
 #	define FNAME1 "tmp1"
 #	define FNAME2 "tmp2"
+#   elif defined(AMIGA)
+#	define FNAME1 "T:tmp1"
+#	define FNAME2 "T:tmp2"
 #   else
 #	define FNAME1 "/tmp/cord_test"
 #	define FNAME2 "/tmp/cord_test2"
@@ -128,6 +132,9 @@ test_extras()
     FILE *f;
     FILE *f1a, *f1b, *f2;
     
+    w = CORD_cat(CORD_cat(y,y),y);
+    z = CORD_catn(3,y,y,y);
+    if (CORD_cmp(w,z) != 0) ABORT("CORD_catn comparison wrong");
     for (i = 1; i < 100; i++) {
         x = CORD_cat(x, y);
     }
@@ -182,7 +189,7 @@ test_extras()
     }
 }
 
-test_printf()
+void test_printf()
 {
     CORD result;
     char result2[200];
@@ -190,7 +197,7 @@ test_printf()
     short s;
     CORD x;
     
-    if (CORD_sprintf(&result, "%7.2f%ln", 3.14159, &l) != 7)
+    if (CORD_sprintf(&result, "%7.2f%ln", 3.14159F, &l) != 7)
     	ABORT("CORD_sprintf failed 1");
     if (CORD_cmp(result, "   3.14") != 0)ABORT("CORD_sprintf goofed 1");
     if (l != 7) ABORT("CORD_sprintf goofed 2");
@@ -210,6 +217,9 @@ test_printf()
 
 main()
 {
+#   ifdef THINK_C
+        printf("cordtest:\n");
+#   endif
     test_basics();
     test_extras();
     test_printf();

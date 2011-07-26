@@ -20,14 +20,14 @@
 /* We assume that void * and char * have the same size.			*/
 /* All this cruft is needed because we want to rely on the underlying	*/
 /* sprintf implementation whenever possible.				*/
-/* Boehm, May 19, 1994 2:19 pm PDT */
+/* Boehm, September 21, 1995 6:00 pm PDT */
 
 #include "cord.h"
 #include "ec.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include "../gc.h"
+#include "gc.h"
 
 #define CONV_SPEC_LEN 50	/* Maximum length of a single	*/
 				/* conversion specification.	*/
@@ -254,11 +254,11 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
             	/* Use standard sprintf to perform conversion */
             	{
             	    register char * buf;
-            	    int needed_sz;
             	    va_list vsprintf_args = args;
             	    	/* The above does not appear to be sanctioned	*/
             	    	/* by the ANSI C standard.			*/
             	    int max_size = 0;
+            	    int res;
             	    	
             	    if (width == VARIABLE) width = va_arg(args, int);
             	    if (prec == VARIABLE) prec = va_arg(args, int);
@@ -302,11 +302,12 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
             	        default:
             	            return(-1);
             	    }
-            	    len = (size_t)vsprintf(buf, conv_spec, vsprintf_args);
-            	    if ((char *)len == buf) {
+            	    res = vsprintf(buf, conv_spec, vsprintf_args);
+            	    len = (size_t)res;
+            	    if ((char *)(GC_word)res == buf) {
             	    	/* old style vsprintf */
             	    	len = strlen(buf);
-            	    } else if (len < 0) {
+            	    } else if (res < 0) {
             	        return(-1);
             	    }
             	    if (buf != result[0].ec_bufptr) {

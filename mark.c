@@ -1,7 +1,7 @@
 
 /*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -31,20 +31,20 @@ word GC_n_mark_procs = 0;
 /* GC_init is called.							*/
 /* It's done here, since we need to deal with mark descriptors.		*/
 struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
-/* PTRFREE */ { &GC_aobjfreelist[0], &GC_areclaim_list[0],
+/* PTRFREE */ { &GC_aobjfreelist[0], 0 /* filled in dynamically */,
 		0 | DS_LENGTH, FALSE, FALSE },
-/* NORMAL  */ { &GC_objfreelist[0], &GC_reclaim_list[0],
-#		ifdef ADD_BYTE_AT_END
-		(word)(WORDS_TO_BYTES(-1)) | DS_LENGTH,
+/* NORMAL  */ { &GC_objfreelist[0], 0,
+#		if defined(ADD_BYTE_AT_END) && ALIGNMENT > DS_TAGS
+		(word)(-ALIGNMENT) | DS_LENGTH,
 #		else
 		0 | DS_LENGTH,
 #		endif
 		TRUE /* add length to descr */, TRUE },
 /* UNCOLLECTABLE */
-	      { &GC_uobjfreelist[0], &GC_ureclaim_list[0],
+	      { &GC_uobjfreelist[0], 0,
 		0 | DS_LENGTH, TRUE /* add length to descr */, TRUE },
 # ifdef STUBBORN_ALLOC
-/*STUBBORN*/ { &GC_sobjfreelist[0], &GC_sreclaim_list[0],
+/*STUBBORN*/ { &GC_sobjfreelist[0], 0,
 		0 | DS_LENGTH, TRUE /* add length to descr */, TRUE },
 # endif
 };
@@ -340,7 +340,7 @@ register hdr * hhdr;
 	    
 	    current = (word)HBLKPTR(current) + HDR_BYTES;
 	    do {
-	      current = current - HBLKSIZE*(int)hhdr;
+	      current = current - HBLKSIZE*(word)hhdr;
 	      hhdr = HDR(current);
 	    } while(IS_FORWARDING_ADDR_OR_NIL(hhdr));
 	    /* current points to the start of the large object */
@@ -360,6 +360,12 @@ register hdr * hhdr;
         GC_ADD_TO_BLACK_LIST_NORMAL(current);
         return(0);
 #   endif
+}
+
+void GC_invalidate_mark_state()
+{
+    GC_mark_state = MS_INVALID;
+    GC_mark_stack_top = GC_mark_stack-1;
 }
 
 mse * GC_signal_mark_stack_overflow(msp)
@@ -421,7 +427,7 @@ void GC_mark_from_mark_stack()
           		WORDS_TO_BYTES(SPLIT_RANGE_WORDS-1);
           /* Make sure that pointers overlapping the two ranges are	*/
           /* considered. 						*/
-          limit += sizeof(word) - ALIGNMENT;
+          limit = (word *)((char *)limit + sizeof(word) - ALIGNMENT);
           break;
         case DS_BITMAP:
           GC_mark_stack_top_reg--;
@@ -624,34 +630,6 @@ ptr_t top;
 }
 #endif
 
-/*
- * Push a single value onto mark stack. Mark from the object pointed to by p.
- * GC_push_one is normally called by GC_push_regs, and thus must be defined.
- * P is considered valid even if it is an interior pointer.
- * Previously marked objects are not pushed.  Hence we make progress even
- * if the mark stack overflows.
- */
-# define GC_PUSH_ONE_STACK(p) \
-    if ((ptr_t)(p) >= GC_least_plausible_heap_addr 	\
-	 && (ptr_t)(p) < GC_greatest_plausible_heap_addr) {	\
-	 GC_push_one_checked(p,TRUE);	\
-    }
-
-/*
- * As above, but interior pointer recognition as for
- * normal for heap pointers.
- */
-# ifdef ALL_INTERIOR_POINTERS
-#   define AIP TRUE
-# else
-#   define AIP FALSE
-# endif
-# define GC_PUSH_ONE_HEAP(p) \
-    if ((ptr_t)(p) >= GC_least_plausible_heap_addr 	\
-	 && (ptr_t)(p) < GC_greatest_plausible_heap_addr) {	\
-	 GC_push_one_checked(p,AIP);	\
-    }
-
 # ifdef MSWIN32
   void __cdecl GC_push_one(p)
 # else
@@ -722,6 +700,51 @@ register bool interior_ptrs;
     }
 }
 
+# ifdef TRACE_BUF
+
+# define TRACE_ENTRIES 1000
+
+struct trace_entry {
+    char * kind;
+    word gc_no;
+    word words_allocd;
+    word arg1;
+    word arg2;
+} GC_trace_buf[TRACE_ENTRIES];
+
+int GC_trace_buf_ptr = 0;
+
+void GC_add_trace_entry(char *kind, word arg1, word arg2)
+{
+    GC_trace_buf[GC_trace_buf_ptr].kind = kind;
+    GC_trace_buf[GC_trace_buf_ptr].gc_no = GC_gc_no;
+    GC_trace_buf[GC_trace_buf_ptr].words_allocd = GC_words_allocd;
+    GC_trace_buf[GC_trace_buf_ptr].arg1 = arg1 ^ 0x80000000;
+    GC_trace_buf[GC_trace_buf_ptr].arg2 = arg2 ^ 0x80000000;
+    GC_trace_buf_ptr++;
+    if (GC_trace_buf_ptr >= TRACE_ENTRIES) GC_trace_buf_ptr = 0;
+}
+
+void GC_print_trace(word gc_no, bool lock)
+{
+    int i;
+    struct trace_entry *p;
+    
+    if (lock) LOCK();
+    for (i = GC_trace_buf_ptr-1; i != GC_trace_buf_ptr; i--) {
+    	if (i < 0) i = TRACE_ENTRIES-1;
+    	p = GC_trace_buf + i;
+    	if (p -> gc_no < gc_no || p -> kind == 0) return;
+    	printf("Trace:%s (gc:%d,words:%d) 0x%X, 0x%X\n",
+    		p -> kind, p -> gc_no, p -> words_allocd,
+    		(p -> arg1) ^ 0x80000000, (p -> arg2) ^ 0x80000000);
+    }
+    printf("Trace incomplete\n");
+    if (lock) UNLOCK();
+}
+
+# endif /* TRACE_BUF */
+
 /*
  * A version of GC_push_all that treats all interior pointers as valid
  */
@@ -731,6 +754,9 @@ ptr_t top;
 {
 # ifdef ALL_INTERIOR_POINTERS
     GC_push_all(bottom, top);
+#   ifdef TRACE_BUF
+        GC_add_trace_entry("GC_push_all_stack", bottom, top);
+#   endif
 # else
     word * b = (word *)(((long) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((long) top) & ~(ALIGNMENT-1));
@@ -794,6 +820,8 @@ register hdr * hhdr;
 #   undef GC_least_plausible_heap_addr        
 }
 
+
+#ifndef UNALIGNED
 
 /* Push all objects reachable from marked objects in the given block */
 /* of size 2 objects.						     */
@@ -881,6 +909,8 @@ register hdr * hhdr;
 #   undef GC_least_plausible_heap_addr        
 }
 
+#endif /* UNALIGNED */
+
 #endif /* SMALL_CONFIG */
 
 /* Push all objects reachable from marked objects in the given block */
@@ -909,10 +939,12 @@ register hdr * hhdr;
     }
     
     switch(sz) {
-#   ifndef SMALL_CONFIG    
+#   if !defined(SMALL_CONFIG)    
      case 1:
        GC_push_marked1(h, hhdr);
        break;
+#   endif
+#   if !defined(SMALL_CONFIG) && !defined(UNALIGNED)
      case 2:
        GC_push_marked2(h, hhdr);
        break;
@@ -924,7 +956,10 @@ register hdr * hhdr;
       GC_mark_stack_top_reg = GC_mark_stack_top;
       for (p = (word *)h + HDR_WORDS, word_no = HDR_WORDS; p <= lim;
          p += sz, word_no += sz) {
-         /* This needs manual optimization: */
+         /* This ignores user specified mark procs.  This currently	*/
+         /* doesn't matter, since marking from the whole object		*/
+         /* is always sufficient, and we will eventually use the user	*/
+         /* mark proc to avoid any bogus pointers.			*/
          if (mark_bit_from_hdr(hhdr, word_no)) {
            /* Mark from fields inside the object */
              PUSH_OBJ((word *)p, hhdr, GC_mark_stack_top_reg, mark_stack_limit);

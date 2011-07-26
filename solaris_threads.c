@@ -14,35 +14,286 @@
  * Support code for Solaris threads.  Provides functionality we wish Sun
  * had provided.  Relies on some information we probably shouldn't rely on.
  */
-/* Boehm, May 19, 1994 2:05 pm PDT */
+/* Boehm, September 14, 1994 4:44 pm PDT */
 
 # if defined(SOLARIS_THREADS)
 
 # include "gc_priv.h"
 # include <thread.h>
 # include <synch.h>
+# include <signal.h>
+# include <fcntl.h>
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/time.h>
 # include <sys/resource.h>
+# include <sys/stat.h>
+# include <sys/syscall.h>
+# include <sys/procfs.h>
+# include <sys/lwp.h>
+# include <sys/reg.h>
 # define _CLASSIC_XOPEN_TYPES
 # include <unistd.h>
+
+# define MAX_LWPS	32
 
 #undef thr_join
 #undef thr_create
 #undef thr_suspend
 #undef thr_continue
 
-mutex_t GC_thr_lock;		/* Acquired before allocation lock	*/
-cond_t GC_prom_join_cv;		/* Broadcast whenany thread terminates	*/
+cond_t GC_prom_join_cv;		/* Broadcast when any thread terminates	*/
 cond_t GC_create_cv;		/* Signalled when a new undetached	*/
 				/* thread starts.			*/
+				
+
+/* We use the allocation lock to protect thread-related data structures. */
+
+/* We stop the world using /proc primitives.  This makes some	*/
+/* minimal assumptions about the threads implementation.	*/
+/* We don't play by the rules, since the rules make this	*/
+/* impossible (as of Solaris 2.3).  Also note that as of	*/
+/* Solaris 2.3 the various thread and lwp suspension		*/
+/* primitives failed to stop threads by the time the request	*/
+/* is completed.						*/
+
+
+static sigset_t old_mask;
+# define MAX_LWPS	32
+
+/* Sleep for n milliseconds, n < 1000	*/
+void GC_msec_sleep(int n)
+{
+    struct timespec ts;
+                            
+    ts.tv_sec = 0;
+    ts.tv_nsec = 1000000*n;
+    if (syscall(SYS_nanosleep, &ts, 0) < 0) {
+	ABORT("nanosleep failed");
+    }
+}
+/* Turn off preemption;  gross but effective.  		*/
+/* Caller has allocation lock.				*/
+/* Actually this is not needed under Solaris 2.3 and	*/
+/* 2.4, but hopefully that'll change.			*/
+void preempt_off()
+{
+    sigset_t set;
+
+    (void)sigfillset(&set);
+    syscall(SYS_sigprocmask, SIG_SETMASK, &set, &old_mask);
+}
+
+void preempt_on()
+{
+    syscall(SYS_sigprocmask, SIG_SETMASK, &old_mask, NULL);
+}
+
+int GC_main_proc_fd = -1;
+
+struct lwp_cache_entry {
+    lwpid_t lc_id;
+    int lc_descr;	/* /proc file descriptor.	*/
+} GC_lwp_cache[MAX_LWPS];
+
+prgregset_t GC_lwp_registers[MAX_LWPS];
+
+/* Return a file descriptor for the /proc entry corresponding	*/
+/* to the given lwp.  The file descriptor may be stale if the	*/
+/* lwp exited and a new one was forked.				*/
+static int open_lwp(lwpid_t id)
+{
+    int result;
+    static int next_victim = 0;
+    register int i;
+    
+    for (i = 0; i < MAX_LWPS; i++) {
+    	if (GC_lwp_cache[i].lc_id == id) return(GC_lwp_cache[i].lc_descr);
+    }
+    if ((result = syscall(SYS_ioctl, GC_main_proc_fd, PIOCOPENLWP, &id)) < 0) {
+        return(-1) /* exited? */;
+    }
+    if (GC_lwp_cache[next_victim].lc_id != 0)
+        (void)syscall(SYS_close, GC_lwp_cache[next_victim].lc_descr);
+    GC_lwp_cache[next_victim].lc_id = id;
+    GC_lwp_cache[next_victim].lc_descr = result;
+    next_victim++;
+    return(result);
+}
+
+static void uncache_lwp(lwpid_t id)
+{
+    register int i;
+    
+    for (i = 0; i < MAX_LWPS; i++) {
+    	if (GC_lwp_cache[i].lc_id == id) {
+    	    (void)syscall(SYS_close, GC_lwp_cache[id].lc_descr);
+    	    GC_lwp_cache[i].lc_id = 0;
+    	    break;
+    	}
+    }
+}
+
+lwpid_t GC_current_ids[MAX_LWPS + 1];	/* Sequence of current lwp ids	*/
+
+/* Stop all lwps in process.  Assumes preemption is off.	*/
+/* Caller has allocation lock (and any other locks he may	*/
+/* need).							*/
+static void stop_all_lwps()
+{
+    int lwp_fd;
+    char buf[30];
+    prstatus_t status;
+    lwpid_t last_ids[MAX_LWPS + 1];
+    register int i;
+    bool changed;
+    lwpid_t me = _lwp_self();
+
+    if (GC_main_proc_fd == -1) {
+    	sprintf(buf, "/proc/%d", getpid());
+    	GC_main_proc_fd = syscall(SYS_open, buf, O_RDONLY);
+        if (GC_main_proc_fd < 0) {
+    	    ABORT("/proc open failed");
+        }
+    }
+    if (syscall(SYS_ioctl, GC_main_proc_fd, PIOCSTATUS, &status) < 0)
+    	ABORT("Main PIOCSTATUS failed");
+    if (status.pr_nlwp < 1 || status.pr_nlwp > MAX_LWPS) {
+    	ABORT("Too many lwps");
+    	/* Only a heuristic.  There seems to be no way to do this right, */
+    	/* since there can be intervening forks.			 */
+    }
+    BZERO(GC_lwp_registers, sizeof GC_lwp_registers);
+    for (i = 0; i <= MAX_LWPS; i++) last_ids[i] = 0;
+    for (;;) {
+        if (syscall(SYS_ioctl, GC_main_proc_fd, PIOCLWPIDS, GC_current_ids) < 0) {
+            ABORT("PIOCLWPIDS failed");
+        }
+        changed = FALSE;
+        for (i = 0; GC_current_ids[i] != 0; i++) {
+            if (GC_current_ids[i] != last_ids[i]) {
+                changed = TRUE;
+                if (GC_current_ids[i] != me) {
+		    /* PIOCSTOP doesn't work without a writable		*/
+		    /* descriptor.  And that makes the process		*/
+		    /* undebuggable.					*/
+                    if (_lwp_suspend(GC_current_ids[i]) < 0) {
+                        /* Could happen if the lwp exited */
+                        uncache_lwp(GC_current_ids[i]);
+                        GC_current_ids[i] = me; /* ignore */
+                    }
+                }
+            }
+            if (i >= MAX_LWPS) ABORT("Too many lwps");
+        }
+        /* All lwps in GC_current_ids != me have been suspended.  Note	*/
+        /* that _lwp_suspend is idempotent.				*/
+        for (i = 0; GC_current_ids[i] != 0; i++) {
+            if (GC_current_ids[i] != last_ids[i]) {
+                if (GC_current_ids[i] != me) {
+                    lwp_fd = open_lwp(GC_current_ids[i]);
+		    /* LWP should be stopped.  Empirically it sometimes	*/
+		    /* isn't, and more frequently the PR_STOPPED flag	*/
+		    /* is not set.  Wait for PR_STOPPED.		*/
+                    if (syscall(SYS_ioctl, lwp_fd,
+                                PIOCSTATUS, &status) < 0) {
+			/* Possible if the descriptor was stale, or */
+			/* we encountered the 2.3 _lwp_suspend bug. */
+			uncache_lwp(GC_current_ids[i]);
+                        GC_current_ids[i] = me; /* handle next time. */
+                    } else {
+                        while (!(status.pr_flags & PR_STOPPED)) {
+                            GC_msec_sleep(1);
+			    if (syscall(SYS_ioctl, lwp_fd,
+				    	PIOCSTATUS, &status) < 0) {
+                            	ABORT("Repeated PIOCSTATUS failed");
+			    }
+			    if (status.pr_flags & PR_STOPPED) break;
+			    
+			    GC_msec_sleep(20);
+			    if (syscall(SYS_ioctl, lwp_fd,
+				    	PIOCSTATUS, &status) < 0) {
+                            	ABORT("Repeated PIOCSTATUS failed");
+			    }
+                        }
+                        if (status.pr_who !=  GC_current_ids[i]) {
+                            ABORT("Wrong lwp");
+                        }
+                        /* Save registers where collector can */
+			/* find them.			  */
+			    BCOPY(status.pr_reg, GC_lwp_registers[i],
+				  sizeof (prgregset_t));
+                    }
+                }
+            }
+        }
+        if (!changed) break;
+        for (i = 0; i <= MAX_LWPS; i++) last_ids[i] = GC_current_ids[i];
+    }
+}
+
+/* Restart all lwps in process.  Assumes preemption is off.	*/
+static void restart_all_lwps()
+{
+    int lwp_fd;
+    register int i;
+    bool changed;
+    lwpid_t me = _lwp_self();
+#   define PARANOID
+
+    for (i = 0; GC_current_ids[i] != 0; i++) {
+#	ifdef PARANOID
+	  if (GC_current_ids[i] != me) {
+	    int lwp_fd = open_lwp(GC_current_ids[i]);
+	    prstatus_t status;
+	    gwindows_t windows;
+	    
+	    if (lwp_fd < 0) ABORT("open_lwp failed");
+	    if (syscall(SYS_ioctl, lwp_fd,
+			PIOCSTATUS, &status) < 0) {
+                ABORT("PIOCSTATUS failed in restart_all_lwps");
+	    }
+	    if (memcmp(status.pr_reg, GC_lwp_registers[i],
+		       sizeof (prgregset_t)) != 0) {
+		ABORT("Register contents changed");
+	    }
+	    if (!status.pr_flags & PR_STOPPED) {
+	    	ABORT("lwp no longer stopped");
+	    }
+	    if (syscall(SYS_ioctl, lwp_fd,
+			PIOCGWIN, &windows) < 0) {
+                ABORT("PIOCSTATUS failed in restart_all_lwps");
+	    }
+	    if (windows.wbcnt > 0) ABORT("unsaved register windows");
+	  }
+#	endif /* PARANOID */
+	if (GC_current_ids[i] == me) continue;
+        if (_lwp_continue(GC_current_ids[i]) < 0) {
+            ABORT("Failed to restart lwp");
+        }
+    }
+    if (i >= MAX_LWPS) ABORT("Too many lwps");
+}
+
+
+void GC_stop_world()
+{
+    preempt_off();
+    stop_all_lwps();
+}
+
+void GC_start_world()
+{
+    restart_all_lwps();
+    preempt_on();
+}
 
 bool GC_thr_initialized = FALSE;
 
 size_t GC_min_stack_sz;
 
 size_t GC_page_sz;
+
 
 # define N_FREE_LISTS 25
 ptr_t GC_stack_free_lists[N_FREE_LISTS] = { 0 };
@@ -52,7 +303,7 @@ ptr_t GC_stack_free_lists[N_FREE_LISTS] = { 0 };
 
 /* Return a stack of size at least *stack_size.  *stack_size is	*/
 /* replaced by the actual stack size.				*/
-/* Caller holds GC_thr_lock.					*/
+/* Caller holds allocation lock.				*/
 ptr_t GC_stack_alloc(size_t * stack_size)
 {
     register size_t requested_sz = *stack_size;
@@ -75,7 +326,9 @@ ptr_t GC_stack_alloc(size_t * stack_size)
         result = (ptr_t) GC_scratch_alloc(search_sz + 2*GC_page_sz);
         result = (ptr_t)(((word)result + GC_page_sz) & ~(GC_page_sz - 1));
         /* Protect hottest page to detect overflow. */
-        mprotect(result, GC_page_sz, PROT_NONE);
+#	ifdef SOLARIS23_MPROTECT_BUG_FIXED
+            mprotect(result, GC_page_sz, PROT_NONE);
+#	endif
         GC_is_fresh((struct hblk *)result, divHBLKSZ(search_sz));
         result += GC_page_sz;
     }
@@ -83,7 +336,7 @@ ptr_t GC_stack_alloc(size_t * stack_size)
     return(result);
 }
 
-/* Caller holds GC_thr_lock.					*/
+/* Caller holds  allocationlock.					*/
 void GC_stack_free(ptr_t stack, size_t size)
 {
     register int index = 0;
@@ -102,6 +355,7 @@ void GC_my_stack_limits();
 
 /* Notify virtual dirty bit implementation that known empty parts of	*/
 /* stacks do not contain useful data.					*/ 
+/* Caller holds allocation lock.					*/
 void GC_old_stacks_are_fresh()
 {
     register int i;
@@ -153,8 +407,7 @@ typedef struct GC_Thread_Rep {
 volatile GC_thread GC_threads[THREAD_TABLE_SZ];
 
 /* Add a thread to GC_threads.  We assume it wasn't already there.	*/
-/* Caller holds GC_thr_lock if there is > 1 thread.			*/
-/* Initial caller may hold allocation lock.				*/
+/* Caller holds allocation lock.					*/
 GC_thread GC_new_thread(thread_t id)
 {
     int hv = ((word)id) % THREAD_TABLE_SZ;
@@ -167,7 +420,8 @@ GC_thread GC_new_thread(thread_t id)
     	first_thread_used = TRUE;
     	/* Dont acquire allocation lock, since we may already hold it. */
     } else {
-        result = GC_NEW(struct GC_Thread_Rep);
+        result = (struct GC_Thread_Rep *)
+        	 GC_generic_malloc_inner(sizeof(struct GC_Thread_Rep), NORMAL);
     }
     if (result == 0) return(0);
     result -> id = id;
@@ -180,7 +434,7 @@ GC_thread GC_new_thread(thread_t id)
 
 /* Delete a thread from GC_threads.  We assume it is there.	*/
 /* (The code intentionally traps if it wasn't.)			*/
-/* Caller holds GC_thr_lock.					*/
+/* Caller holds allocation lock.				*/
 void GC_delete_thread(thread_t id)
 {
     int hv = ((word)id) % THREAD_TABLE_SZ;
@@ -200,7 +454,7 @@ void GC_delete_thread(thread_t id)
 
 /* Return the GC_thread correpsonding to a given thread_t.	*/
 /* Returns 0 if it's not there.					*/
-/* Caller holds GC_thr_lock.					*/
+/* Caller holds  allocation lock.				*/
 GC_thread GC_lookup_thread(thread_t id)
 {
     int hv = ((word)id) % THREAD_TABLE_SZ;
@@ -211,6 +465,7 @@ GC_thread GC_lookup_thread(thread_t id)
 }
 
 /* Notify dirty bit implementation of unused parts of my stack. */
+/* Caller holds allocation lock.				*/
 void GC_my_stack_limits()
 {
     int dummy;
@@ -238,46 +493,14 @@ void GC_my_stack_limits()
 }
 
 
-/* Caller holds allocation lock.	*/
-void GC_stop_world()
-{
-    thread_t my_thread = thr_self();
-    register int i;
-    register GC_thread p;
-    
-    for (i = 0; i < THREAD_TABLE_SZ; i++) {
-      for (p = GC_threads[i]; p != 0; p = p -> next) {
-        if (p -> id != my_thread && !(p -> flags & SUSPENDED)) {
-            if (thr_suspend(p -> id) < 0) ABORT("thr_suspend failed");
-        }
-      }
-    }
-}
+extern ptr_t GC_approx_sp();
 
-/* Caller holds allocation lock.	*/
-void GC_start_world()
-{
-    thread_t my_thread = thr_self();
-    register int i;
-    register GC_thread p;
-    
-    for (i = 0; i < THREAD_TABLE_SZ; i++) {
-      for (p = GC_threads[i]; p != 0; p = p -> next) {
-        if (p -> id != my_thread && !(p -> flags & SUSPENDED)) {
-            if (thr_continue(p -> id) < 0) ABORT("thr_continue failed");
-        }
-      }
-    }
-}
-
-
+/* We hold allocation lock.  We assume the world is stopped.	*/
 void GC_push_all_stacks()
 {
-    /* We assume the world is stopped. */
     register int i;
     register GC_thread p;
-    word dummy;
-    register ptr_t sp = (ptr_t) (&dummy);
+    register ptr_t sp = GC_approx_sp();
     register ptr_t bottom, top;
     struct rlimit rl;
     
@@ -286,7 +509,7 @@ void GC_push_all_stacks()
 	GC_push_dirty((bottom), (top), GC_page_was_ever_dirty, \
 		      GC_push_all_stack); \
       } else { \
-        GC_push_all((bottom), (top)); \
+        GC_push_all_stack((bottom), (top)); \
       }
     if (!GC_thr_initialized) GC_thr_init();
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
@@ -318,47 +541,47 @@ void * GC_thr_daemon(void * dummy)
     for(;;) {
       start:
         result = thr_join((thread_t)0, &departed, &status);
-    	mutex_lock(&GC_thr_lock);
+    	LOCK();
     	if (result != 0) {
     	    /* No more threads; wait for create. */
     	    for (i = 0; i < THREAD_TABLE_SZ; i++) {
     	        for (t = GC_threads[i]; t != 0; t = t -> next) {
                     if (!(t -> flags & (DETACHED | FINISHED))) {
-                      mutex_unlock(&GC_thr_lock);
+                      UNLOCK();
                       goto start; /* Thread started just before we */
                       		  /* acquired the lock.		   */
                     }
                 }
             }
-            cond_wait(&GC_create_cv, &GC_thr_lock);
-            mutex_unlock(&GC_thr_lock);
-            goto start;
-    	}
-    	t = GC_lookup_thread(departed);
-    	if (!(t -> flags & CLIENT_OWNS_STACK)) {
-    	    GC_stack_free(t -> stack, t -> stack_size);
-    	}
-    	if (t -> flags & DETACHED) {
-    	    GC_delete_thread(departed);
+            cond_wait(&GC_create_cv, &GC_allocate_ml);
+            UNLOCK();
     	} else {
-    	    t -> status = status;
-    	    t -> flags |= FINISHED;
-    	    cond_signal(&(t -> join_cv));
-    	    cond_broadcast(&GC_prom_join_cv);
+    	    t = GC_lookup_thread(departed);
+    	    if (!(t -> flags & CLIENT_OWNS_STACK)) {
+    	    	GC_stack_free(t -> stack, t -> stack_size);
+    	    }
+    	    if (t -> flags & DETACHED) {
+    	    	GC_delete_thread(departed);
+    	    } else {
+    	        t -> status = status;
+    	    	t -> flags |= FINISHED;
+    	    	cond_signal(&(t -> join_cv));
+    	    	cond_broadcast(&GC_prom_join_cv);
+    	    }
+    	    UNLOCK();
     	}
-    	mutex_unlock(&GC_thr_lock);
     }
 }
 
+/* We hold the allocation lock.	*/
 GC_thr_init()
 {
     GC_thread t;
-    /* This gets called from the first thread creation, so	*/
-    /* mutual exclusion is not an issue.			*/
+
     GC_thr_initialized = TRUE;
-    GC_min_stack_sz = ((thr_min_stack() + HBLKSIZE-1) & ~(HBLKSIZE - 1));
+    GC_min_stack_sz = ((thr_min_stack() + 128*1024 + HBLKSIZE-1)
+    		       & ~(HBLKSIZE - 1));
     GC_page_sz = sysconf(_SC_PAGESIZE);
-    mutex_init(&GC_thr_lock, USYNC_THREAD, 0);
     cond_init(&GC_prom_join_cv, USYNC_THREAD, 0);
     cond_init(&GC_create_cv, USYNC_THREAD, 0);
     /* Add the initial thread, so we can stop it.	*/
@@ -375,12 +598,13 @@ GC_thr_init()
 
 /* We acquire the allocation lock to prevent races with 	*/
 /* stopping/starting world.					*/
+/* This is no more correct than the underlying Solaris 2.X	*/
+/* implementation.  Under 2.3 THIS IS BROKEN.			*/
 int GC_thr_suspend(thread_t target_thread)
 {
     GC_thread t;
     int result;
     
-    mutex_lock(&GC_thr_lock);
     LOCK();
     result = thr_suspend(target_thread);
     if (result == 0) {
@@ -389,7 +613,6 @@ int GC_thr_suspend(thread_t target_thread)
         t -> flags |= SUSPENDED;
     }
     UNLOCK();
-    mutex_unlock(&GC_thr_lock);
     return(result);
 }
 
@@ -398,7 +621,6 @@ int GC_thr_continue(thread_t target_thread)
     GC_thread t;
     int result;
     
-    mutex_lock(&GC_thr_lock);
     LOCK();
     result = thr_continue(target_thread);
     if (result == 0) {
@@ -407,7 +629,6 @@ int GC_thr_continue(thread_t target_thread)
         t -> flags &= ~SUSPENDED;
     }
     UNLOCK();
-    mutex_unlock(&GC_thr_lock);
     return(result);
 }
 
@@ -416,7 +637,7 @@ int GC_thr_join(thread_t wait_for, thread_t *departed, void **status)
     register GC_thread t;
     int result = 0;
     
-    mutex_lock(&GC_thr_lock);
+    LOCK();
     if (wait_for == 0) {
         register int i;
         register bool thread_exists;
@@ -437,7 +658,7 @@ int GC_thr_join(thread_t wait_for, thread_t *departed, void **status)
               result = ESRCH;
     	      goto out;
           }
-          cond_wait(&GC_prom_join_cv, &GC_thr_lock);
+          cond_wait(&GC_prom_join_cv, &GC_allocate_ml);
         }
     } else {
         t = GC_lookup_thread(wait_for);
@@ -450,7 +671,7 @@ int GC_thr_join(thread_t wait_for, thread_t *departed, void **status)
     	    goto out;
     	}
     	while (!(t -> flags & FINISHED)) {
-            cond_wait(&(t -> join_cv), &GC_thr_lock);
+            cond_wait(&(t -> join_cv), &GC_allocate_ml);
     	}
     	
     }
@@ -460,7 +681,7 @@ int GC_thr_join(thread_t wait_for, thread_t *departed, void **status)
     cond_destroy(&(t -> join_cv));
     GC_delete_thread(t -> id);
   out:
-    mutex_unlock(&GC_thr_lock);
+    UNLOCK();
     return(result);
 }
 
@@ -476,13 +697,13 @@ GC_thr_create(void *stack_base, size_t stack_size,
     word my_flags = 0;
     void * stack = stack_base;
    
+    LOCK();
     if (!GC_thr_initialized) GC_thr_init();
-    mutex_lock(&GC_thr_lock);
     if (stack == 0) {
      	if (stack_size == 0) stack_size = GC_min_stack_sz;
      	stack = (void *)GC_stack_alloc(&stack_size);
      	if (stack == 0) {
-     	    mutex_unlock(&GC_thr_lock);
+     	    UNLOCK();
      	    return(ENOMEM);
      	}
     } else {
@@ -503,7 +724,7 @@ GC_thr_create(void *stack_base, size_t stack_size,
     } else if (!(my_flags & CLIENT_OWNS_STACK)) {
       	GC_stack_free(stack, stack_size);
     }        
-    mutex_unlock(&GC_thr_lock);  
+    UNLOCK();  
     return(result);
 }
 
@@ -514,3 +735,4 @@ GC_thr_create(void *stack_base, size_t stack_size,
 #endif
 
 # endif /* SOLARIS_THREADS */
+

@@ -1,6 +1,6 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -11,33 +11,17 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 2:07 pm PDT */
+/* Boehm, October 9, 1995 1:16 pm PDT */
 # include "gc_priv.h"
 
 /* Do we want to and know how to save the call stack at the time of	*/
 /* an allocation?  How much space do we want to use in each object?	*/
-
-# if defined(SPARC) && defined(SUNOS4)
-#   include <machine/frame.h>
-#   define SAVE_CALL_CHAIN
-#   define NFRAMES 5	/* Number of frames to save. */
-#   define NARGS 2	/* Mumber of arguments to save for each call. */
-#   if NARGS > 6
-	--> We only know how to to get the first 6 arguments
-#   endif
-# endif
 
 # define START_FLAG ((word)0xfedcedcb)
 # define END_FLAG ((word)0xbcdecdef)
 	/* Stored both one past the end of user object, and one before	*/
 	/* the end of the object as seen by the allocator.		*/
 
-#ifdef SAVE_CALL_CHAIN
-    struct callinfo {
-	word ci_pc;
-	word ci_arg[NARGS];	/* bit-wise complement to avoid retention */
-    };
-#endif
 
 /* Object header */
 typedef struct {
@@ -56,50 +40,6 @@ typedef struct {
 #undef ROUNDED_UP_WORDS
 #define ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1) - 1)
 
-#if defined(SPARC) && defined(SUNOS4)
-/* Fill in the pc and argument information for up to NFRAMES of my	*/
-/* callers.  Ignore my frame and my callers frame.			*/
-void GC_save_callers (info) 
-struct callinfo info[NFRAMES];
-{
-  struct frame *frame;
-  struct frame *fp;
-  int nframes = 0;
-  word GC_save_regs_in_stack();
-
-  frame = (struct frame *) GC_save_regs_in_stack ();
-  
-  for (fp = frame -> fr_savfp; fp != 0 && nframes < NFRAMES;
-       fp = fp -> fr_savfp, nframes++) {
-      register int i;
-      
-      info[nframes].ci_pc = fp->fr_savpc;
-      for (i = 0; i < NARGS; i++) {
-	info[nframes].ci_arg[i] = ~(fp->fr_arg[i]);
-      }
-  }
-  if (nframes < NFRAMES) info[nframes].ci_pc = 0;
-}
-
-void GC_print_callers (info)
-struct callinfo info[NFRAMES];
-{
-    register int i,j;
-    
-    GC_err_printf0("\tCall chain at allocation:\n");
-    for (i = 0; i < NFRAMES; i++) {
-     	if (info[i].ci_pc == 0) break;
-     	GC_err_printf1("\t##PC##= 0x%X\n\t\targs: ", info[i].ci_pc);
-     	for (j = 0; j < NARGS; j++) {
-     	    if (j != 0) GC_err_printf0(", ");
-     	    GC_err_printf2("%d (0x%X)", ~(info[i].ci_arg[j]),
-     	    				~(info[i].ci_arg[j]));
-     	}
-     	GC_err_printf0("\n");
-    }
-}
-
-#endif /* SPARC & SUNOS4 */
 
 #ifdef SAVE_CALL_CHAIN
 #   define ADD_CALL_CHAIN(base) GC_save_callers(((oh *)(base)) -> oh_ci)
@@ -204,7 +144,7 @@ ptr_t p, clobbered_addr;
     if (clobbered_addr <= (ptr_t)(&(ohdr -> oh_sz))
         || ohdr -> oh_string == 0) {
         GC_err_printf1("<smashed>, appr. sz = %ld)\n",
-        	       BYTES_TO_WORDS(GC_size((ptr_t)ohdr)));
+        	       GC_size((ptr_t)ohdr) - DEBUG_BYTES);
     } else {
         if (ohdr -> oh_string[0] == '\0') {
             GC_err_puts("EMPTY(smashed?)");
@@ -213,6 +153,7 @@ ptr_t p, clobbered_addr;
         }
         GC_err_printf2(":%ld, sz=%ld)\n", (unsigned long)(ohdr -> oh_int),
         			          (unsigned long)(ohdr -> oh_sz));
+        PRINT_CALL_CHAIN(ohdr);
     }
 }
 
@@ -225,16 +166,27 @@ void GC_start_debugging()
     GC_register_displacement((word)sizeof(oh));
 }
 
-# ifdef __STDC__
-    extern_ptr_t GC_debug_malloc(size_t lb, char * s, int i)
+# if defined(__STDC__) || defined(__cplusplus)
+    void GC_debug_register_displacement(GC_word offset)
 # else
-    extern_ptr_t GC_debug_malloc(lb, s, i)
+    void GC_debug_register_displacement(offset) 
+    GC_word offset;
+# endif
+{
+    GC_register_displacement(offset);
+    GC_register_displacement((word)sizeof(oh) + offset);
+}
+
+# ifdef __STDC__
+    GC_PTR GC_debug_malloc(size_t lb, char * s, int i)
+# else
+    GC_PTR GC_debug_malloc(lb, s, i)
     size_t lb;
     char * s;
     int i;
 # endif
 {
-    extern_ptr_t result = GC_malloc(lb + DEBUG_BYTES);
+    GC_PTR result = GC_malloc(lb + DEBUG_BYTES);
     
     if (result == 0) {
         GC_err_printf1("GC_debug_malloc(%ld) returning NIL (",
@@ -252,15 +204,15 @@ void GC_start_debugging()
 
 #ifdef STUBBORN_ALLOC
 # ifdef __STDC__
-    extern_ptr_t GC_debug_malloc_stubborn(size_t lb, char * s, int i)
+    GC_PTR GC_debug_malloc_stubborn(size_t lb, char * s, int i)
 # else
-    extern_ptr_t GC_debug_malloc_stubborn(lb, s, i)
+    GC_PTR GC_debug_malloc_stubborn(lb, s, i)
     size_t lb;
     char * s;
     int i;
 # endif
 {
-    extern_ptr_t result = GC_malloc_stubborn(lb + DEBUG_BYTES);
+    GC_PTR result = GC_malloc_stubborn(lb + DEBUG_BYTES);
     
     if (result == 0) {
         GC_err_printf1("GC_debug_malloc(%ld) returning NIL (",
@@ -277,9 +229,9 @@ void GC_start_debugging()
 }
 
 void GC_debug_change_stubborn(p)
-extern_ptr_t p;
+GC_PTR p;
 {
-    register extern_ptr_t q = GC_base(p);
+    register GC_PTR q = GC_base(p);
     register hdr * hhdr;
     
     if (q == 0) {
@@ -297,9 +249,9 @@ extern_ptr_t p;
 }
 
 void GC_debug_end_stubborn_change(p)
-extern_ptr_t p;
+GC_PTR p;
 {
-    register extern_ptr_t q = GC_base(p);
+    register GC_PTR q = GC_base(p);
     register hdr * hhdr;
     
     if (q == 0) {
@@ -319,15 +271,15 @@ extern_ptr_t p;
 #endif /* STUBBORN_ALLOC */
 
 # ifdef __STDC__
-    extern_ptr_t GC_debug_malloc_atomic(size_t lb, char * s, int i)
+    GC_PTR GC_debug_malloc_atomic(size_t lb, char * s, int i)
 # else
-    extern_ptr_t GC_debug_malloc_atomic(lb, s, i)
+    GC_PTR GC_debug_malloc_atomic(lb, s, i)
     size_t lb;
     char * s;
     int i;
 # endif
 {
-    extern_ptr_t result = GC_malloc_atomic(lb + DEBUG_BYTES);
+    GC_PTR result = GC_malloc_atomic(lb + DEBUG_BYTES);
     
     if (result == 0) {
         GC_err_printf1("GC_debug_malloc_atomic(%ld) returning NIL (",
@@ -344,15 +296,15 @@ extern_ptr_t p;
 }
 
 # ifdef __STDC__
-    extern_ptr_t GC_debug_malloc_uncollectable(size_t lb, char * s, int i)
+    GC_PTR GC_debug_malloc_uncollectable(size_t lb, char * s, int i)
 # else
-    extern_ptr_t GC_debug_malloc_uncollectable(lb, s, i)
+    GC_PTR GC_debug_malloc_uncollectable(lb, s, i)
     size_t lb;
     char * s;
     int i;
 # endif
 {
-    extern_ptr_t result = GC_malloc_uncollectable(lb + DEBUG_BYTES);
+    GC_PTR result = GC_malloc_uncollectable(lb + DEBUG_BYTES);
     
     if (result == 0) {
         GC_err_printf1("GC_debug_malloc_uncollectable(%ld) returning NIL (",
@@ -370,13 +322,13 @@ extern_ptr_t p;
 
 
 # ifdef __STDC__
-    void GC_debug_free(extern_ptr_t p)
+    void GC_debug_free(GC_PTR p)
 # else
     void GC_debug_free(p)
-    extern_ptr_t p;
+    GC_PTR p;
 # endif
 {
-    register extern_ptr_t base = GC_base(p);
+    register GC_PTR base = GC_base(p);
     register ptr_t clobbered;
     
     if (base == 0) {
@@ -408,18 +360,18 @@ extern_ptr_t p;
 }
 
 # ifdef __STDC__
-    extern_ptr_t GC_debug_realloc(extern_ptr_t p, size_t lb, char *s, int i)
+    GC_PTR GC_debug_realloc(GC_PTR p, size_t lb, char *s, int i)
 # else
-    extern_ptr_t GC_debug_realloc(p, lb, s, i)
-    extern_ptr_t p;
+    GC_PTR GC_debug_realloc(p, lb, s, i)
+    GC_PTR p;
     size_t lb;
     char *s;
     int i;
 # endif
 {
-    register extern_ptr_t base = GC_base(p);
+    register GC_PTR base = GC_base(p);
     register ptr_t clobbered;
-    register extern_ptr_t result = GC_debug_malloc(lb, s, i);
+    register GC_PTR result = GC_debug_malloc(lb, s, i);
     register size_t copy_sz = lb;
     register size_t old_sz;
     register hdr * hhdr;
@@ -503,20 +455,25 @@ word dummy;
 /* I hold the allocation lock.	Normally called by collector.		*/
 void GC_check_heap_proc()
 {
+#   ifndef SMALL_CONFIG
+	if (sizeof(oh) & (2 * sizeof(word) - 1) != 0) {
+	    ABORT("Alignment problem: object header has inappropriate size\n");
+	}
+#   endif
     GC_apply_to_all_blocks(GC_check_heap_block, (word)0);
 }
 
 struct closure {
     GC_finalization_proc cl_fn;
-    extern_ptr_t cl_data;
+    GC_PTR cl_data;
 };
 
 # ifdef __STDC__
     void * GC_make_closure(GC_finalization_proc fn, void * data)
 # else
-    extern_ptr_t GC_make_closure(fn, data)
+    GC_PTR GC_make_closure(fn, data)
     GC_finalization_proc fn;
-    extern_ptr_t data;
+    GC_PTR data;
 # endif
 {
     struct closure * result =
@@ -524,7 +481,7 @@ struct closure {
     
     result -> cl_fn = fn;
     result -> cl_data = data;
-    return((extern_ptr_t)result);
+    return((GC_PTR)result);
 }
 
 # ifdef __STDC__
@@ -537,6 +494,6 @@ struct closure {
 {
     register struct closure * cl = (struct closure *) data;
     
-    (*(cl -> cl_fn))((extern_ptr_t)((char *)obj + sizeof(oh)), cl -> cl_data);
+    (*(cl -> cl_fn))((GC_PTR)((char *)obj + sizeof(oh)), cl -> cl_data);
 } 
 

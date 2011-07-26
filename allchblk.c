@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, May 19, 1994 1:55 pm PDT */
+/* Boehm, August 9, 1995 5:08 pm PDT */
 
 #define DEBUG
 #undef DEBUG
@@ -19,11 +19,11 @@
 #include "gc_priv.h"
 
 
-/**/
-/* allocate/free routines for heap blocks
-/* Note that everything called from outside the garbage collector
-/* should be prepared to abort at any point as the result of a signal.
-/**/
+/*
+ * allocate/free routines for heap blocks
+ * Note that everything called from outside the garbage collector
+ * should be prepared to abort at any point as the result of a signal.
+ */
 
 /*
  * Free heap blocks are kept on a list sorted by address.
@@ -42,6 +42,7 @@ struct hblk *GC_savhbp = (struct hblk *)0;  /* heap block preceding next */
 					 /* block to be examined by   */
 					 /* GC_allochblk.                */
 
+# if !defined(NO_DEBUGGING)
 void GC_print_hblkfreelist()
 {
     struct hblk * h = GC_hblkfreelist;
@@ -65,6 +66,8 @@ void GC_print_hblkfreelist()
     }
     GC_printf1("Total of %lu bytes on free list\n", (unsigned long)total_free);
 }
+
+# endif /* NO_DEBUGGING */
 
 /* Initialize hdr for a block containing the indicated size and 	*/
 /* kind of objects.							*/
@@ -110,7 +113,7 @@ struct hblk *
 GC_allochblk(sz, kind, flags)
 word sz;
 int kind;
-unsigned char flags;
+unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 {
     register struct hblk *thishbp;
     register hdr * thishdr;		/* Header corr. to thishbp */
@@ -164,6 +167,7 @@ unsigned char flags;
 	         (kind != PTRFREE || size_needed > MAX_BLACK_LIST_ALLOC)) {
 	      struct hblk * lasthbp = hbp;
 	      ptr_t search_end = (ptr_t)hbp + size_avail - size_needed;
+	      signed_word orig_avail = size_avail;
 	      signed_word eff_size_needed = ((flags & IGNORE_OFF_PAGE)?
 	      					HBLKSIZE
 	      					: size_needed);
@@ -176,8 +180,8 @@ unsigned char flags;
 	      }
 	      size_avail -= (ptr_t)lasthbp - (ptr_t)hbp;
 	      thishbp = lasthbp;
-	      if (size_avail >= size_needed && thishbp != hbp
-	          && GC_install_header(thishbp)) {
+	      if (size_avail >= size_needed) {
+	        if (thishbp != hbp && GC_install_header(thishbp)) {
 	          /* Split the block at thishbp */
 	              thishdr = HDR(thishbp);
 	              /* GC_invalidate_map not needed, since we will	*/
@@ -191,6 +195,15 @@ unsigned char flags;
 		      phdr = hhdr;
 		      hbp = thishbp;
 		      hhdr = thishdr;
+		}
+	      } else if (size_needed > (signed_word)BL_LIMIT
+	                 && orig_avail - size_needed
+			    > (signed_word)BL_LIMIT) {
+	        /* Punt, since anything else risks unreasonable heap growth. */
+	        WARN("Needed to allocate blacklisted block at 0x%lx\n",
+		     (word)hbp);
+	        thishbp = hbp;
+	        size_avail = orig_avail;
 	      } else if (size_avail == 0
 	      		 && size_needed == HBLKSIZE
 	      		 && prevhbp != 0) {
@@ -203,19 +216,27 @@ unsigned char flags;
 	      	  /* blocks are unpopular.				*/
 	          /* A dropped block will be reconsidered at next GC.	*/
 	          if ((++count & 3) == 0) {
-	            /* Allocate and drop the block */
-	              if (GC_install_counts(hbp, hhdr->hb_sz)) {
-	                phdr -> hb_next = hhdr -> hb_next;
-	                (void) setup_header(
+	            /* Allocate and drop the block in small chunks, to	*/
+	            /* maximize the chance that we will recover some	*/
+	            /* later.						*/
+	              struct hblk * limit = hbp + (hhdr->hb_sz/HBLKSIZE);
+	              struct hblk * h;
+	              
+	              phdr -> hb_next = hhdr -> hb_next;
+	              for (h = hbp; h < limit; h++) {
+	                if (h == hbp || GC_install_header(h)) {
+	                  hhdr = HDR(h);
+	                  (void) setup_header(
 	                	  hhdr,
-	              		  BYTES_TO_WORDS(hhdr->hb_sz - HDR_BYTES),
+	              		  BYTES_TO_WORDS(HBLKSIZE - HDR_BYTES),
 	              		  PTRFREE, 0); /* Cant fail */
-	              	if (GC_debugging_started) {
-	              	    BZERO(hbp + HDR_BYTES, hhdr->hb_sz - HDR_BYTES);
-	              	}
-	                if (GC_savhbp == hbp) GC_savhbp = prevhbp;
+	              	  if (GC_debugging_started) {
+	              	    BZERO(hbp + HDR_BYTES, HBLKSIZE - HDR_BYTES);
+	              	  }
+	                }
 	              }
 	            /* Restore hbp to point at free block */
+	              if (GC_savhbp == hbp) GC_savhbp = prevhbp;
 	              hbp = prevhbp;
 	              hhdr = phdr;
 	              if (hbp == GC_savhbp) first_time = TRUE;
