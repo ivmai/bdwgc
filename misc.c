@@ -39,7 +39,12 @@
 #	ifdef SOLARIS_THREADS
 	  mutex_t GC_allocate_ml;	/* Implicitly initialized.	*/
 #	else
-	  --> declare allocator lock here
+#         if defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
+            pthread_mutex_t GC_allocate_ml;
+            int GC_pt_init_ok= 0;
+#         else
+          --> declare allocator lock here
+#         endif
 #	endif
 #     endif
 #   endif
@@ -376,6 +381,17 @@ void GC_init()
 {
     DCL_LOCK_STATE;
     
+# ifdef DEC_PTHREADS
+    /* initialise the DECthreads support */
+    {
+      pthread_mutexattr_t attr;
+      pthread_mutexattr_create(&attr);
+      pthread_mutexattr_setkind_np(&attr, MUTEX_RECURSIVE_NP);
+      pthread_mutex_init(&GC_allocate_ml, attr);
+      GC_pt_init();
+    }
+# endif
+
     DISABLE_SIGNALS();
     LOCK();
     GC_init_inner();
@@ -393,6 +409,19 @@ void GC_init_inner()
     word dummy;
     
     if (GC_is_initialized) return;
+#ifdef MIT_PTHREADS
+    /* We need to beat the GC to initialisation, so that it doesn't
+       hang when it first tries to use the allocator lock. */
+    {
+      pthread_mutexattr_t attr;
+      extern void *pthread_initial;
+      if (!pthread_initial) pthread_init();
+      pthread_mutexattr_init(&attr);
+      pthread_mutexattr_settype(&attr, PTHREAD_MUTEXTYPE_RECURSIVE);
+      pthread_mutex_init(&GC_allocate_ml, &attr);
+      if (!GC_pt_init_ok) GC_pt_init();  /* faut eviter cela... */
+    }
+#endif
 #   ifdef MSWIN32
  	GC_init_win32();
 #   endif
@@ -513,6 +542,8 @@ void GC_init_inner()
 
 void GC_enable_incremental GC_PROTO(())
 {
+  /* this is broken under DECthreads */
+#ifndef DEC_PTHREADS
     DCL_LOCK_STATE;
     
 # ifndef FIND_LEAK
@@ -551,6 +582,7 @@ out:
     UNLOCK();
     ENABLE_SIGNALS();
 # endif
+#endif /* DEC_PTHREADS */
 }
 
 

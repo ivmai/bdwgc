@@ -1,0 +1,203 @@
+See the README file for main Copyright notices.
+
+DECthreads/MIT-pthreads extensions:
+Copyright (c) 1995, 1996 by Ian Piumarta and INRIA, with permission
+for use under exactly the same terms as the original GC; i.e...
+
+THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+
+Permission is hereby granted to use or copy this program for any
+purpose, provided the above notices are retained on all copies.
+Permission to modify the code and to distribute modified code is
+granted, provided the above notices are retained, and a notice that
+the code was modified is included with the above copyright notice.
+
+
+MODIFICATIONS
+
+The pthreads extensions required the following GC source files to be
+modified:
+
+	dyn_load.c
+	gc.h
+	gc_priv.h
+	misc.c
+	os_dep.c
+	test.c
+
+The modified sections are clearly visible, being those affected by the
+existence of the preprocessor symbols MIT_PTHREADS and DEC_PTHREADS.
+No parts of the original sources outside these sections were modified.
+The following files are new:
+
+	README.pthreads
+	dec_threads.c
+	mit_threads.c
+
+The Makefile was also modified very slightly, to include the two new
+source files in the OBJS and CSRCS lists.
+
+
+GENERAL DESCRIPTION
+
+The pthreads extensions allow the GC to be used with DECpthreads
+(under Digital Unix, formerly DEC OSF/1) or the user-level
+MIT-pthreads implementation by Chris Provenzano (running on a large
+variety of platforms).  DECthreads is bundled with DEC's Unix
+machines; MIT-pthreads is available from:
+
+		ftp://sipb.mit.edu:/pub/pthreads
+	or	ftp://toxicwaste.mit.edu:/pub/archive/pthreads
+
+
+INSTALLATION AND PORTABILITY
+
+These extensions have been tested (and appear to work) on the
+following platforms:
+
+    DECthreads:
+	DEC Alpha	OSF/1 3.2C/3.2D
+
+    MIT-pthreads (tested with pthreads versions 1.60 beta4 and beta5.9):
+	DEC Alpha	OSF/1 3.2C/3.2D
+	Sparc		SunOS 4.1.3/4.1.3_U1/4.1.4
+	i586		Red Hat Linux 3.0.3, Kernel 1.99.4
+	HP 9000/725	HP-UX A.09.05
+
+Very minor additions may be needed to be make the extensions work with
+the other architectures supported by both the GC and MIT-pthreads.
+
+Note that some versions of gcc-2.7 are broken on DEC Alpha.  Version
+2.7.0 seems to be reliable, and versions 2.7.3 and later might be.
+
+    Unless you're already familiar with this GC:
+
+	Read the installtation notes in the README file!
+	Read the Makefile!
+
+    To install for DECpthreads:
+
+	Edit "Makefile.pthreads".  Uncomment the definition "THR=DEC".
+	Edit (if necessary) the definitions immediately following the
+	comment "Definitions for DECthreads" to use the correct
+	compiler and/or CFLAGS for your environment.  See Makefile for
+	an explanation of the GC-related flags.
+
+	If you are using gcc rather than the DEC C compiler, edit the
+	Makefile and remove the line indicated in the target
+	"mark_rts.o".
+
+	Type "make -f Makefile.pthreads" to build the basic library
+	and gctest program, with pthreads support.
+
+	Run gctest to check that things are working.
+
+	If you require C++ support, type "make -f Makefile.pthreads
+	c++ THR=DEC".  Make sure the test_cpp program does not fail.
+
+    To install for MIT-pthreads:
+
+	Install (if necessary) the MIT-pthreads package (see above).
+	Versions 1.60beta4 and earlier have a broken "pg++" script
+	(later versions may be corrected): if necessary change the
+	definition of "libs" from
+		libs='-lpthread -lstdc++ -lm -lgcc'
+	to
+		libs='-lpthread -lstdc++ -lm -lgcc -lpthread'
+
+	Edit "Makefile.pthreads".  Uncomment the definition "THR=MIT".
+	Edit (if necessary) the definitions immediately following the
+	comment "Definitions for MIT-pthreads" to use the correct
+	CFLAGS for your environment (the supplied compiler definitions
+	should be correct in most situations).  See Makefile for an
+	explanation of the GC-related flags.
+
+	If you are compiling on a DEC Alpha using gcc rather than the
+	DEC C compiler, edit the Makefile and remove the line
+	indicated in the target	"mark_rts.o".
+
+	Type "make -f Makefile.pthreads" to build the basic library
+	and gctest program, with pthreads support.
+
+	Run gctest to check that things are working.
+
+	If you require C++ support, type "make -f Makefile.pthreads
+	c++ THR=MIT".  Make sure the test_cpp program does not fail.
+
+
+MODIFICATIONS TO THE PTHREADS INTERFACES
+
+The extensions rely on intercepting calls to a few pthreads routines.
+Any source file using the pthreads routines MUST include "gc.h", even
+if there is no GC-related code in the file.
+
+The following DECthreads routines are affected:
+
+  int pthread_create(pthread_t *thread, pthread_attr_t attr,
+                     pthread_startroutine_t start_routine,
+                     pthread_addr_t arg);
+
+  int pthread_detach(pthread_t *thread);
+
+The following MIT-pthreads routines are affected:
+
+  int pthread_create(pthread_t *thread, pthread_attr_t *attr,
+                     void *(*start_routine)(void *), void *arg);
+
+
+BUGS
+
+Incremental mode does not work with DECpthreads.  The reasons are not
+yet fully explored.  GC_enable_incremental() is therefore a no-op when
+the GC is compiled with DECpthreads support.
+
+The DECthreads extensions assume a one-to-one correspondance between
+each pthread and a kernel (mach) thread.  This appears to be true with
+round-robin scheduling, but may not be true for other scheduling
+policies.  (This concerns stopping the world: there is no documented
+mechanism to stop the pthreads world, so we have to stop the
+underlying kernel threads instead [which is documented].  When asked
+about setting the pthreads kernel lock, all that the DEC techincal
+people would tell me was: "don't meddle with things that you don't
+understand".)
+
+The extensions have been tested with both versions of pthreads,
+although in relatively undemanding situations.  Some subtle problems
+may still exist in programs which use thread synchronisation
+operations (pthread_join/pthread_detach) in bizarre ways, or which use
+scheduling policies other than the default round-robin.  The more
+exotic pthread routines (e.g. executing a call on another thread's
+stack) have not been tested very much at all.
+
+The MITpthreads extensions rely on snooping about in small parts of
+the pthreads' private internal structures.  This seems unavoidable.
+
+The extensions appear to work with unmodified versions of the GNU
+libgcc and libstdc++ (at least as far as iostreams are concerned), but
+large parts of these libraries remain untested in a pthreads/GC
+context.
+
+
+BUG REPORTS AND SUGGESTIONS FOR IMPROVEMENTS
+
+Should be sent to: Ian.Piumarta@inria.fr
+
+It would be most helpful if you could include a small program which
+reproduces the bug.
+
+
+ACKNOWLEDGEMENTS
+
+I am immensely grateful to David Halls (David.Halls@cl.cam.ac.uk) who
+spent many months "alpha testing" the extensions, suffering problems
+with the early implementations, and contributing suggestions for
+improvements.  He also kindly tested the MIT-pthreads extensions under
+Linux and provided the code specific to dynamic loading and the HP-PA
+architecture.
+
+
+------------------------------- projet SOR -------------------------------
+Ian Piumarta, INRIA Rocquencourt,          Internet: Ian.Piumarta@inria.fr
+BP105, 78153 Le Chesnay Cedex, FRANCE         Voice: +33 1 39 63 52 87
+----------------------- Systemes a Objets Repartis -----------------------

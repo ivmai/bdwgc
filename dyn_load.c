@@ -45,7 +45,7 @@
 # endif
 
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32)) && !defined(PCR)
-#if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && !defined(MSWIN32) && !defined(ALPHA)
+#if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && !defined(MSWIN32) && !defined(ALPHA) && !defined(HP_PA)
  --> We only know how to find data segments of dynamic libraries under SunOS,
  --> IRIX5, DRSNX and Win32.  Additional SVR4 variants might not be too
  --> hard to add.
@@ -158,7 +158,8 @@ static ptr_t GC_first_common()
 
 # if defined(SUNOS4) || defined(SUNOS5DL)
 /* Add dynamic library data sections to the root set.		*/
-# if !defined(PCR) && !defined(SOLARIS_THREADS) && defined(THREADS)
+# if !defined(PCR) && !defined(SOLARIS_THREADS) && defined(THREADS) \
+	&& !defined(MIT_PTHREADS) && !defined(DEC_PTHREADS)
 #   ifndef SRC_M3
 	--> fix mutual exclusion with dlopen
 #   endif  /* We assume M3 programs don't call dlopen for now */
@@ -522,6 +523,139 @@ void GC_register_dynamic_libraries()
     }
 }
 #endif
+
+#if defined(HP_PA)
+
+#include <dl.h>
+#include <errno.h>
+
+#ifndef MIT_PTHREADS
+extern int errno;
+extern char *sys_errlist[];
+extern int sys_nerr;
+#endif
+
+void GC_register_dynamic_libraries()
+{
+  int status;
+  int index = 1; /* Ordinal position in shared library search list */
+  struct shl_descriptor *shl_desc; /* Shared library info, see dl.h */
+
+  /* For each dynamic library loaded */
+    while (TRUE) {
+
+      /* Get info about next shared library */
+        status = shl_get(index, &shl_desc);
+
+      /* Check if this is the end of the list or if some error occured */
+        if (status != 0) {
+          if (errno == EINVAL) {
+              break; /* Moved past end of shared library list --> finished */
+          } else {
+              if (errno <= sys_nerr) {
+                    GC_printf1("dynamic_load: %s\n", (long) sys_errlist[errno]);
+              } else {
+                    GC_printf1("dynamic_load: %d\n", (long) errno);
+              }
+              ABORT("shl_get failed");
+          }
+        }
+
+#     ifdef VERBOSE
+          GC_printf0("---Shared library---\n");
+          GC_printf1("\tfilename        = \"%s\"\n", shl_desc->filename);
+          GC_printf1("\tindex           = %d\n", index);
+          GC_printf1("\thandle          = %08x\n",
+                                        (unsigned long) shl_desc->handle);
+          GC_printf1("\ttext seg. start = %08x\n", shl_desc->tstart);
+          GC_printf1("\ttext seg. end   = %08x\n", shl_desc->tend);
+          GC_printf1("\tdata seg. start = %08x\n", shl_desc->dstart);
+          GC_printf1("\tdata seg. end   = %08x\n", shl_desc->dend);
+          GC_printf1("\tref. count      = %lu\n", shl_desc->ref_count);
+#     endif
+
+      /* register shared library's data segment as a garbage collection root */
+        GC_add_roots_inner((char *) shl_desc->dstart,
+                           (char *) shl_desc->dend, TRUE);
+
+        index++;
+    }
+}
+#endif /* HP_PA */
+
+
+#if defined(MIT_PTHREADS) || defined(DEC_PTHREADS)
+#ifdef HP_PA
+
+  /* We're going to protect the lot, since there is evidence    */
+  /* that dlopen() isn't the only place where things can break. */
+
+#undef shl_load
+#undef shl_findsym
+#undef shl_unload
+
+# define GC_DL_DEF(RTYPE, PROTO, FUNC) RTYPE PROTO \
+   { RTYPE result; pthread_mutex_lock(&GC_allocate_ml);  result= FUNC; \
+     pthread_mutex_unlock(&GC_allocate_ml); return (result); }
+GC_DL_DEF(shl_t, GC_shl_load(const char *path, int flags, long address), shl_load(path, flags, address))
+GC_DL_DEF(int  , GC_shl_findsym(shl_t *handle, const char *sym, short type, void *value),
+                                                      shl_findsym(handle, sym, type, value))
+GC_DL_DEF(int  , GC_shl_unload(shl_t handle), shl_unload(handle))
+
+  /* unfortunately, MIT PThreads and dynamic loading on HPUX
+     causes programs to hang (not just for the GC);
+     we keep everything in but define some null-op stubs;
+     makes it easier to fix when pthreads is fixed */
+
+  shl_t shl_load(const char *path, int flags, long address)
+  {
+   return NULL;
+  }
+
+  int shl_findsym(shl_t *handle, const char *symname, short type, void *value)
+  {
+   return -1;
+  }
+
+  int shl_unload(shl_t handle)
+  {
+   return -1;
+  }
+
+  int shl_get(int index, struct shl_descriptor **desc)
+  {
+   errno = EINVAL;
+   return -1;
+  }
+
+# define shl_load    GC_shl_load
+# define shl_findsym GC_shl_findsym
+# define shl_unload  GC_shl_unload
+
+#else
+  /* We're going to protect the lot, since there is evidence    */
+  /* that dlopen() isn't the only place where things can break. */
+
+#undef dlopen
+#undef dlsym
+#undef dlclose
+#undef dlerror
+
+# define GC_DL_DEF(RTYPE, PROTO, FUNC) RTYPE PROTO \
+   { RTYPE result; pthread_mutex_lock(&GC_allocate_ml);  result= FUNC; \
+     pthread_mutex_unlock(&GC_allocate_ml); return (result); }
+GC_DL_DEF(void *, GC_dlopen(const char *path, int mode), dlopen(path, mode))
+GC_DL_DEF(void *, GC_dlsym(void *handle, const char *symbol),
+                                                      dlsym(handle, symbol))
+GC_DL_DEF(int   , GC_dlclose(void *handle), dlclose(handle))
+GC_DL_DEF(char *, GC_dlerror(), dlerror())
+
+# define dlopen  GC_dlopen
+# define dlsym   GC_dlsym
+# define dlclose GC_dlclose
+# define dlerror GC_dlerror
+#endif
+#endif /* PTHREADS */
 
 
 #else /* !DYNAMIC_LOADING */

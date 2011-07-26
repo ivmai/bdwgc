@@ -604,18 +604,21 @@
 #       define HEURISTIC2
 #   endif
 #   define STACK_GROWS_UP
+#   define DYNAMIC_LOADING
 # endif
 
 # ifdef ALPHA
 #   define MACH_TYPE "ALPHA"
 #   define ALIGNMENT 8
 #   define DATASTART ((ptr_t) 0x140000000)
-#   define HEURISTIC2
+#   ifndef DEC_PTHREADS
+#     define HEURISTIC2
 	/* Normally HEURISTIC2 is too conervative, since		*/
 	/* the text segment immediately follows the stack.		*/
 	/* Hence we give an upper pound.				*/
-    extern __start;
-#   define HEURISTIC2_LIMIT ((ptr_t)((word)(&__start) & ~(getpagesize()-1)))
+      extern __start;
+#     define HEURISTIC2_LIMIT ((ptr_t)((word)(&__start) & ~(getpagesize()-1)))
+#   endif
 #   define CPP_WORDSZ 64
 #   define MPROTECT_VDB
 #   define DYNAMIC_LOADING

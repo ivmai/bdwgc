@@ -564,6 +564,48 @@ GC_PTR GC_malloc_many(size_t lb);
 
 #endif /* SOLARIS_THREADS */
 
+#ifdef DEC_PTHREADS
+# include <pthread.h>
+  int GC_pt_pthread_create(pthread_t *thread, pthread_attr_t attr,
+                           pthread_startroutine_t start_routine,
+                           pthread_addr_t arg);
+  int GC_pt_pthread_detach(pthread_t *thread);
+# define pthread_create GC_pt_pthread_create
+# define pthread_detach GC_pt_pthread_detach
+  void * GC_malloc_many(size_t lb);
+# define GC_NEXT(p) (*(void **)(p))
+#endif /* DEC_PTHREADS */
+
+#ifdef MIT_PTHREADS
+# include <pthread.h>
+  int GC_pt_pthread_create(pthread_t *thread, pthread_attr_t *attr,
+                           void *(*start_routine)(void *), void *arg);
+# define pthread_create GC_pt_pthread_create
+  void * GC_malloc_many(size_t lb);
+# define GC_NEXT(p) (*(void **)(p))
+#endif /* MIT_PTHREADS */
+
+#if (defined(MIT_PTHREADS) || defined(DEC_PTHREADS))
+#ifdef __hp9000s700
+# include <dl.h>
+  shl_t GC_shl_load(const char *path, int flags, long address);
+  int   GC_shl_findsym(shl_t *handle, const char *sym, short type, void *value);
+  int   GC_shl_unload(shl_t handle);
+# define shl_load    GC_shl_load
+# define shl_findsym GC_shl_findsym
+# define shl_unload  GC_shl_unload
+#else
+  void *GC_dlopen(const char *pathname, int mode);
+  void *GC_dlsym(void *handle, const char *name);
+  int   GC_dlclose(void *handle);
+  char *GC_dlerror(void);
+# define dlopen  GC_dlopen
+# define dlsym   GC_dlsym
+# define dlclose GC_dlclose
+# define dlerror GC_dlerror
+#endif
+#endif /* PTHREADS */
+
 /*
  * If you are planning on putting
  * the collector in a SunOS 5 dynamic library, you need to call GC_INIT()

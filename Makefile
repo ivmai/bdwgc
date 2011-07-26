@@ -13,7 +13,7 @@ AS=as
 #  The above doesn't work with gas, which doesn't run cpp.
 #  Define AS as `gcc -c -x assembler-with-cpp' instead.
 
-CFLAGS= -O -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DSILENT
+CFLAGS= -O -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DSILENT -DSOLARIS_THREADS
 
 # Setjmp_test may yield overly optimistic results when compiled
 # without optimization.
@@ -79,9 +79,9 @@ RANLIB= ranlib
 srcdir = .
 VPATH = $(srcdir)
 
-OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o typd_mlc.o ptr_chck.o
+OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o typd_mlc.o ptr_chck.o mit_threads.o dec_threads.o
 
-CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c typd_mlc.c ptr_chck.c
+CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c typd_mlc.c ptr_chck.c mit_threads.c dec_threads.c
 
 CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c cord/cord.h cord/ec.h cord/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC cord/SCOPTIONS.amiga cord/SMakefile.amiga
 

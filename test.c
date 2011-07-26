@@ -40,7 +40,8 @@
 #   include <synch.h>
 # endif
 
-# if defined(PCR) || defined(SOLARIS_THREADS)
+# if defined(PCR) || defined(SOLARIS_THREADS) \
+	|| defined(MIT_PTHREADS) || defined(DEC_PTHREADS)
 #   define THREADS
 # endif
 
@@ -356,6 +357,10 @@ int finalizable_count = 0;
 int finalized_count = 0;
 VOLATILE int dropped_something = 0;
 
+# if defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
+static pthread_mutex_t incr_lock;
+# endif
+
 # ifdef __STDC__
   void finalizer(void * obj, void * client_data)
 # else
@@ -373,6 +378,9 @@ VOLATILE int dropped_something = 0;
     static mutex_t incr_lock;
     mutex_lock(&incr_lock);
 # endif
+# if defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
+    pthread_mutex_lock(&incr_lock);
+# endif
   if ((int)(GC_word)client_data != t -> level) {
      (void)GC_printf0("Wrong finalization data - collector is broken\n");
      FAIL;
@@ -383,6 +391,9 @@ VOLATILE int dropped_something = 0;
 # endif
 # ifdef SOLARIS_THREADS
     mutex_unlock(&incr_lock);
+# endif
+# if defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
+    pthread_mutex_unlock(&incr_lock);
 # endif
 }
 
@@ -439,6 +450,9 @@ int n;
 	    static mutex_t incr_lock;
 	    mutex_lock(&incr_lock);
 #	  endif
+#         if defined (DEC_PTHREADS) || defined(MIT_PTHREADS)
+            pthread_mutex_lock(&incr_lock);
+#         endif
 		/* Losing a count here causes erroneous report of failure. */
           finalizable_count++;
           my_index = live_indicators_count++;
@@ -448,6 +462,9 @@ int n;
 #	  ifdef SOLARIS_THREADS
 	    mutex_unlock(&incr_lock);
 #	  endif
+#         if defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
+            pthread_mutex_unlock(&incr_lock);
+#         endif
 	}
 
         GC_REGISTER_FINALIZER((GC_PTR)result, finalizer, (GC_PTR)(GC_word)n,
@@ -529,6 +546,51 @@ void * alloc8bytes()
     *my_free_list_ptr = GC_NEXT(my_free_list);
     GC_NEXT(my_free_list) = 0;
     return(my_free_list);
+}
+
+#elif defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
+pthread_key_t fl_key;
+
+void * alloc8bytes()
+{
+  void ** my_free_list_ptr;
+  void * my_free_list;
+
+# ifdef DEC_PTHREADS
+  if (pthread_getspecific(fl_key, (void **)(&my_free_list_ptr)) != 0)
+    {
+      (void)GC_printf0("pthread_getspecific failed\n");
+      FAIL;
+    }
+# endif
+# ifdef MIT_PTHREADS
+  if (!(my_free_list_ptr= pthread_getspecific(fl_key)))
+    {
+      /* there's no way to tell if this is an error, so what's to do? */
+    }
+# endif
+  if (my_free_list_ptr == 0)
+    {
+      my_free_list_ptr = GC_NEW_UNCOLLECTABLE(void *);
+      if (pthread_setspecific(fl_key, my_free_list_ptr) != 0)
+        {
+          (void)GC_printf0("pthread_setspecific failed\n");
+          FAIL;
+        }
+    }
+  my_free_list = *my_free_list_ptr;
+  if (my_free_list == 0)
+    {
+      my_free_list = GC_malloc_many(8);
+      if (my_free_list == 0)
+        {
+          (void)GC_printf0("alloc8bytes out of memory\n");
+          FAIL;
+        }
+    }
+  *my_free_list_ptr = GC_NEXT(my_free_list);
+  GC_NEXT(my_free_list) = 0;
+  return(my_free_list);
 }
 
 #else
@@ -844,7 +906,10 @@ void SetMinimumStack(long minSize)
 }
 
 
-#if !defined(PCR) && !defined(SOLARIS_THREADS) || defined(LINT)
+#if !defined(PCR) && !defined(SOLARIS_THREADS) \
+	&& !defined(DEC_PTHREADS) && !defined(MIT_PTHREADS) \
+	|| defined(LINT)
+
 #ifdef MSWIN32
   int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
 #else
@@ -921,16 +986,20 @@ test()
 }
 #endif
 
-#ifdef SOLARIS_THREADS
+#if defined(SOLARIS_THREADS) || defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
 void * thr_run_one_test(void * arg)
 {
     run_one_test();
     return(0);
 }
 
-#ifdef GC_DEBUG
+# ifdef GC_DEBUG
 #  define GC_free GC_debug_free
+# endif
+
 #endif
+
+#ifdef SOLARIS_THREADS
 
 main()
 {
@@ -960,6 +1029,69 @@ main()
         FAIL;
     }
     if (thr_join(th2, 0, 0) != 0) {
+        (void)GC_printf1("Thread 2 failed %lu\n", (unsigned long)code);
+        FAIL;
+    }
+    check_heap_stats();
+    (void)fflush(stdout);
+    return(0);
+}
+#endif
+
+#if defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
+
+main()
+{
+    pthread_t th1;
+    pthread_t th2;
+    int code;
+    pthread_attr_t thr_attr;
+    void *status;
+
+# ifdef DEC_PTHREADS
+    pthread_mutex_init(&incr_lock, pthread_mutexattr_default);
+    pthread_mutexattr_create(&thr_attr);
+# else
+    pthread_mutex_init(&incr_lock, NULL);
+    pthread_attr_init(&thr_attr);
+# endif
+    pthread_attr_setstacksize(&thr_attr, (long)1024*1024);
+
+    n_tests = 0;
+    GC_init();	/* Only needed if gc is dynamic library.	*/
+    /*GC_enable_incremental();*/
+    (void) GC_set_warn_proc(warn_proc);
+# ifdef DEC_PTHREADS
+    if (pthread_keycreate(&fl_key, GC_free) != 0)
+# else
+    if (pthread_key_create(&fl_key, GC_free) != 0)
+# endif
+      {
+	(void)GC_printf1("Key creation failed %lu\n", (long)code);
+	FAIL;
+      }
+# ifdef DEC_PTHREADS
+    if ((code = pthread_create(&th1, thr_attr, thr_run_one_test, 0)) != 0) {
+# else
+    if ((code = pthread_create(&th1, &thr_attr, thr_run_one_test, 0)) != 0) {
+# endif
+    	(void)GC_printf1("Thread 1 creation failed %lu\n", (unsigned long)code);
+    	FAIL;
+    }
+# ifdef DEC_PTHREADS
+    if ((code = pthread_create(&th2, thr_attr, thr_run_one_test, 0)) != 0) {
+# else
+    if ((code = pthread_create(&th2, &thr_attr, thr_run_one_test, 0)) != 0) {
+# endif
+    	(void)GC_printf1("Thread 2 creation failed %lu\n", (unsigned long)code);
+    	FAIL;
+    }
+    run_one_test();
+    if ((code = pthread_join(th1, &status)) != 0) {
+        (void)GC_printf1("Thread 1 failed %lu\n", (unsigned long)code);
+        FAIL;
+    }
+    if ((code = pthread_join(th2, &status)) != 0) {
         (void)GC_printf1("Thread 2 failed %lu\n", (unsigned long)code);
         FAIL;
     }

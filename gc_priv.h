@@ -161,10 +161,12 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #   define GATHERSTATS
 #endif
 
-# if defined(SOLARIS_THREADS) && !defined(SUNOS5)
+# if defined(SOLARIS_THREADS) && !defined(SUNOS5) \
+	|| (defined(DEC_PTHREADS) && !defined(ALPHA))
 --> inconsistent configuration
 # endif
-# if defined(PCR) || defined(SRC_M3) || defined(SOLARIS_THREADS)
+# if defined(PCR) || defined(SRC_M3) || defined(SOLARIS_THREADS) \
+	|| defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
 #   define THREADS
 # endif
 
@@ -420,6 +422,18 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #    define LOCK() mutex_lock(&GC_allocate_ml);
 #    define UNLOCK() mutex_unlock(&GC_allocate_ml);
 #  endif
+#  ifdef DEC_PTHREADS
+     extern pthread_mutex_t GC_allocate_ml;
+     extern int GC_pt_init_ok;
+#    define LOCK() {if (!GC_pt_init_ok) GC_init(); pthread_mutex_lock(&GC_allocate_ml);}
+#    define UNLOCK() if (GC_pt_init_ok) pthread_mutex_unlock(&GC_allocate_ml)
+#  endif
+#  ifdef MIT_PTHREADS
+     extern pthread_mutex_t GC_allocate_ml;
+     extern int GC_pt_init_ok;
+#    define LOCK() if (GC_pt_init_ok) pthread_mutex_lock(&GC_allocate_ml)
+#    define UNLOCK() if (GC_pt_init_ok) pthread_mutex_unlock(&GC_allocate_ml)
+#  endif
 # else
 #    define LOCK()
 #    define UNLOCK()
@@ -448,7 +462,8 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 # else
 #   if defined(SRC_M3) || defined(AMIGA) || defined(SOLARIS_THREADS) \
 	|| defined(MSWIN32) || defined(MACOS) || defined(DJGPP) \
-	|| defined(NO_SIGNALS)
+	|| defined(NO_SIGNALS) \
+        || defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
 			/* Also useful for debugging.		*/
 	/* Should probably use thr_sigsetmask for SOLARIS_THREADS. */
 #     define DISABLE_SIGNALS()
@@ -479,8 +494,18 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #     define STOP_WORLD() GC_stop_world()
 #     define START_WORLD() GC_start_world()
 #   else
-#     define STOP_WORLD()
-#     define START_WORLD()
+#     ifdef DEC_PTHREADS
+#       define STOP_WORLD() GC_pt_stop_world()
+#       define START_WORLD() GC_pt_start_world()
+#     else
+#       ifdef MIT_PTHREADS
+#         define STOP_WORLD() GC_pt_stop_world()
+#         define START_WORLD() GC_pt_start_world()
+#       else
+#         define STOP_WORLD()
+#         define START_WORLD()
+#       endif
+#     endif
 #   endif
 # endif
 

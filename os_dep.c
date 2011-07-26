@@ -19,7 +19,11 @@
     /* in some later Linux releases, asm/sigcontext.h may have to	*/
     /* be included instead.						*/
 #   define __KERNEL__
-#   include <asm/signal.h>
+#   ifndef MIT_PTHREADS
+#     include <asm/signal.h>
+#   else
+#     include <asm/sigcontext.h>
+#   endif
 #   undef __KERNEL__
 # endif
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS)
@@ -41,6 +45,23 @@
 
 # if (defined(SVR4) || defined(AUX) || defined(DGUX)) && !defined(PCR)
 #   define NEED_FIND_LIMIT
+# endif
+
+# if defined(MIT_PTHREADS)
+#   define NEED_FIND_LIMIT
+#   if defined (ALPHA)
+      extern void (*signal(int sig, void (*function)(int)))(int);
+      /* Get a definition for struct sigcontext, which the pthreads    */
+      /* headers fail to define.  Temporarily define _KERNEL to avoid  */
+      /* a redefinition of sig_atomic_t.                               */
+#     define _KERNEL
+#     include <machine/signal.h>
+#     undef _KERNEL
+#   endif
+    /* Provide the usual definition for signal(), which the pthreads  */
+    /* headers again fail to define.  (This may be an incorrect       */
+    /* assumption on some architectures!)                             */
+    extern void (*signal(int sig, void (*function)(int)))(int);
 # endif
 
 #ifdef NEED_FIND_LIMIT
@@ -861,7 +882,9 @@ void GC_register_data_segments()
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
 	&& !defined(MSWIN32) && !defined(MACOS)
 
+#  if !defined(DEC_PTHREADS)
 extern caddr_t sbrk();
+#  endif
 # ifdef __STDC__
 #   define SBRK_ARG_T size_t
 # else
@@ -1086,6 +1109,13 @@ void GC_default_push_other_roots()
 
 # endif /* SOLARIS_THREADS */
 
+# if defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
+void GC_default_push_other_roots()
+{
+  GC_pt_push_all_stacks();
+}
+# endif
+
 void (*GC_push_other_roots)() = GC_default_push_other_roots;
 
 #endif
@@ -1254,6 +1284,10 @@ word addr;
     }
     return(FALSE);
 }
+
+#if defined(SUNOS4) && defined(MIT_PTHREADS)
+#  include <vm/faultcode.h>
+#endif
 
 #if defined(SUNOS4) || defined(FREEBSD)
     typedef void (* SIG_PF)();
@@ -1539,8 +1573,12 @@ void GC_protect_heap()
 }
 
 # ifdef THREADS
+  /* HJB say that this bug manifests itself once in a lifetime, so let's
+     take the risk... */
+#  if !defined(DEC_PTHREADS) && !defined(MIT_PTHREADS)
 --> The following is broken.  We can lose dirty bits.  We would need
 --> the signal handler to cooperate, as in PCR.
+#  endif
 # endif
 
 void GC_read_dirty()
@@ -1565,9 +1603,13 @@ struct hblk * h;
  * the cord package issues a read while it already holds the allocation lock.
  */
  
-# ifdef THREADS
+# if defined(DEC_PTHREADS) || defined(MIT_PTHREADS)
+void GC_begin_syscall() { LOCK(); }
+void GC_end_syscall() { UNLOCK(); }
+# else
+#  ifdef THREADS
 	--> fix this
-# endif
+#  endif
 void GC_begin_syscall()
 {
 }
@@ -1575,6 +1617,7 @@ void GC_begin_syscall()
 void GC_end_syscall()
 {
 }
+# endif
 
 void GC_unprotect_range(addr, len)
 ptr_t addr;
@@ -1607,14 +1650,29 @@ word len;
 /* Replacement for UNIX system call.	 */
 /* Other calls that write to the heap	 */
 /* should be handled similarly.		 */
-# ifndef LINT
+# if !defined(LINT)
+#  if defined(MIT_PTHREADS)
+  /* read() is defined in libpthread.a, so we can't redefine it here. */
+  ssize_t GC_read(fd, buf, nbyte)
+#  else
+#   if defined(__GNUC__)
+  ssize_t read(fd, buf, nbyte)
+#   else
   int read(fd, buf, nbyte)
+#   endif
+#  endif
 # else
   int GC_read(fd, buf, nbyte)
 # endif
+# if defined(MIT_PTHREADS) || defined(DEC_PTHREADS)
+int fd;
+void *buf;
+size_t nbyte;
+# else
 int fd;
 char *buf;
 int nbyte;
+# endif
 {
     int result;
     
