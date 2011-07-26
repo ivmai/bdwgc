@@ -178,18 +178,24 @@ mse * GC_signal_mark_stack_overflow();
   exit_label: ; \
 }
 
+#ifdef PRINT_BLACK_LIST
+#   define PUSH_ONE_CHECKED(p, ip, source) \
+	GC_push_one_checked(p, ip, (ptr_t)(source))
+#else
+#   define PUSH_ONE_CHECKED(p, ip, source) \
+	GC_push_one_checked(p, ip)
+#endif
 
 /*
  * Push a single value onto mark stack. Mark from the object pointed to by p.
- * GC_push_one is normally called by GC_push_regs, and thus must be defined.
  * P is considered valid even if it is an interior pointer.
  * Previously marked objects are not pushed.  Hence we make progress even
  * if the mark stack overflows.
  */
-# define GC_PUSH_ONE_STACK(p) \
+# define GC_PUSH_ONE_STACK(p, source) \
     if ((ptr_t)(p) >= GC_least_plausible_heap_addr 	\
 	 && (ptr_t)(p) < GC_greatest_plausible_heap_addr) {	\
-	 GC_push_one_checked(p,TRUE);	\
+	 PUSH_ONE_CHECKED(p, TRUE, source);	\
     }
 
 /*
@@ -201,10 +207,10 @@ mse * GC_signal_mark_stack_overflow();
 # else
 #   define AIP FALSE
 # endif
-# define GC_PUSH_ONE_HEAP(p) \
+# define GC_PUSH_ONE_HEAP(p,source) \
     if ((ptr_t)(p) >= GC_least_plausible_heap_addr 	\
 	 && (ptr_t)(p) < GC_greatest_plausible_heap_addr) {	\
-	 GC_push_one_checked(p,AIP);	\
+	 PUSH_ONE_CHECKED(p,AIP,source);	\
     }
 
 /*
@@ -238,8 +244,8 @@ typedef int mark_state_t;	/* Current state of marking, as follows:*/
 				
 				/* Invariant I: all roots and marked	*/
 				/* objects p are either dirty, or point */
-				/* objects q that are either marked or	*/
-				/* a pointer to q appears in a range	*/
+				/* to objects q that are either marked 	*/
+				/* or a pointer to q appears in a range	*/
 				/* on the mark stack.			*/
 
 # define MS_NONE 0		/* No marking in progress. I holds.	*/

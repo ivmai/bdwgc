@@ -85,6 +85,7 @@ GC_bool GC_dont_expand = 0;
 word GC_free_space_divisor = 4;
 
 extern GC_bool GC_collection_in_progress();
+		/* Collection is in progress, or was abandoned.	*/
 
 int GC_never_stop_func GC_PROTO((void)) { return(0); }
 
@@ -271,7 +272,7 @@ void GC_maybe_gc()
 GC_bool GC_try_to_collect_inner(stop_func)
 GC_stop_func stop_func;
 {
-    if (GC_collection_in_progress()) {
+    if (GC_incremental && GC_collection_in_progress()) {
 #   ifdef PRINTSTATS
 	GC_printf0(
 	    "GC_try_to_collect_inner: finishing collection in progress\n");
@@ -341,7 +342,7 @@ int n;
 {
     register int i;
     
-    if (GC_collection_in_progress()) {
+    if (GC_incremental && GC_collection_in_progress()) {
     	for (i = GC_deficit; i < GC_RATE*n; i++) {
     	    if (GC_mark_some()) {
     	        /* Need to finish a collection */
@@ -385,9 +386,7 @@ int GC_collect_a_little GC_PROTO(())
 /*
  * Assumes lock is held, signals are disabled.
  * We stop the world.
- * If final is TRUE, then we finish the collection, no matter how long
- * it takes.
- * Otherwise we may fail and return FALSE if this takes too long.
+ * If stop_func() ever returns TRUE, we may fail and return FALSE.
  * Increment GC_gc_no if we succeed.
  */
 GC_bool GC_stopped_mark(stop_func)

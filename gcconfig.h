@@ -204,7 +204,7 @@
 #   define mach_type_known
 # endif
 # if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \
-     || defined(_WIN32) && !defined(__CYGWIN32__)
+     || defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__)
 #   define I386
 #   define MSWIN32	/* or Win32s */
 #   define mach_type_known
@@ -216,7 +216,7 @@
 #   endif
 #   define mach_type_known
 # endif
-# if defined(__CYGWIN32__)
+# if defined(__CYGWIN32__) || defined(__CYGWIN__)
 #   define I386
 #   define CYGWIN32
 #   define mach_type_known
@@ -482,7 +482,9 @@
 #   endif
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
-#     define STACKBOTTOM ((ptr_t)0x80000000)
+#     define HEURISTIC1
+#     undef STACK_GRAN
+#     define STACK_GRAN 0x10000000
 #     define DATASTART GC_data_start
       extern int _end;
 #     define DATAEND (&_end)

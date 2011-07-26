@@ -278,7 +278,7 @@ ptr_t p;
     for (q = p; q <= scan_limit; q += ALIGNMENT) {
     	r = *(ptr_t *)q;
     	if (r < p || r > target_limit) {
-    	    GC_PUSH_ONE_HEAP((word)r);
+    	    GC_PUSH_ONE_HEAP((word)r, q);
     	}
     }
 }
