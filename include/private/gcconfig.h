@@ -249,6 +249,10 @@
 #    define POWERPC
 #    define mach_type_known
 # endif
+# if defined(FREEBSD) && (defined(powerpc) || defined(__powerpc__))
+#    define POWERPC
+#    define mach_type_known
+# endif
 # if defined(LINUX) && defined(__mc68000__)
 #    define M68K
 #    define mach_type_known
@@ -767,6 +771,9 @@
 #     if defined(__powerpc64__)
 #       define ALIGNMENT 8
 #       define CPP_WORDSZ 64
+#       ifndef HBLKSIZE
+#         define HBLKSIZE 4096
+#       endif
 #     else
 #       define ALIGNMENT 4
 #     endif
@@ -813,6 +820,22 @@
       /* There seems to be some issues with trylock hanging on darwin. This
          should be looked into some more */
 #     define NO_PTHREAD_TRYLOCK
+#   endif
+#   ifdef FREEBSD
+#       define ALIGNMENT 4
+#       define OS_TYPE "FREEBSD"
+#       ifndef GC_FREEBSD_THREADS
+#           define MPROTECT_VDB
+#       endif
+#       define SIG_SUSPEND SIGUSR1
+#       define SIG_THR_RESTART SIGUSR2
+#       define FREEBSD_STACKBOTTOM
+#       ifdef __ELF__
+#           define DYNAMIC_LOADING
+#       endif
+        extern char etext[];
+        extern char * GC_FreeBSDGetDataStart();
+#       define DATASTART GC_FreeBSDGetDataStart(0x1000, &etext)
 #   endif
 #   ifdef NETBSD
 #     define ALIGNMENT 4
@@ -1739,12 +1762,14 @@
 #   define MACH_TYPE "S390"
 #   define USE_GENERIC_PUSH_REGS
 #   ifndef __s390x__
-#   define ALIGNMENT 4
-#   define CPP_WORDSZ 32
+#     define ALIGNMENT 4
+#     define CPP_WORDSZ 32
 #   else
-#   define ALIGNMENT 8
-#   define CPP_WORDSZ 64
-#   define HBLKSIZE 4096
+#     define ALIGNMENT 8
+#     define CPP_WORDSZ 64
+#   endif
+#   ifndef HBLKSIZE
+#     define HBLKSIZE 4096
 #   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
@@ -1784,7 +1809,7 @@
 #   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
-#       define HEURISTIC1
+#       define LINUX_STACKBOTTOM
 #       undef STACK_GRAN
 #       define STACK_GRAN 0x10000000
 #       define USE_GENERIC_PUSH_REGS
@@ -1849,7 +1874,7 @@
 #   endif
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
-#     define STACKBOTTOM ((ptr_t) 0x7c000000)
+#     define LINUX_STACKBOTTOM
 #     define USE_GENERIC_PUSH_REGS
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START

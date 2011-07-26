@@ -27,6 +27,10 @@
 #   endif
 # endif
 
+#if defined(RS6000) || defined(POWERPC)
+# include <ucontext.h>
+#endif
+
 #if defined(__MWERKS__) && !defined(POWERPC)
 
 asm static void PushMacRegisters()

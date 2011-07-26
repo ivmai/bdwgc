@@ -116,7 +116,7 @@
 # include <semaphore.h>
 #endif /* !GC_DARWIN_THREADS */
 
-#if defined(GC_DARWIN_THREADS)
+#if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS)
 # include <sys/sysctl.h>
 #endif /* GC_DARWIN_THREADS */
 
@@ -877,11 +877,11 @@ void GC_thr_init()
 	  GC_nprocs = sysconf(_SC_NPROCESSORS_ONLN);
 	  if (GC_nprocs <= 0) GC_nprocs = 1;
 #	endif
-#       if defined(GC_FREEBSD_THREADS) || defined(GC_IRIX_THREADS)
-	  /* FIXME: For Irix, that's a ridiculous assumption.	*/
-          GC_nprocs = 1;
+#       if defined(GC_IRIX_THREADS)
+	  GC_nprocs = sysconf(_SC_NPROC_ONLN);
+	  if (GC_nprocs <= 0) GC_nprocs = 1;
 #       endif
-#       if defined(GC_DARWIN_THREADS)
+#       if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS)
 	  int ncpus = 1;
 	  size_t len = sizeof(ncpus);
 	  sysctl((int[2]) {CTL_HW, HW_NCPU}, 2, &ncpus, &len, NULL, 0);

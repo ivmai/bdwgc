@@ -105,10 +105,18 @@ include/gc_pthread_redirects.h include/gc_config_macros.h \
 include/gc_mark.h @addincludes@
 
 ## FIXME: we shouldn't have to do this, but automake forces us to.
+if COMPILER_XLC
+  ## XLC neither requires nor tolerates the unnecessary assembler goop
+  ASM_CPP_OPTIONS =
+else
+  ## We use -Wp,-P to strip #line directives.  Irix `as' chokes on
+  ## these.
+  ASM_CPP_OPTIONS = -Wp,-P -x assembler-with-cpp
+endif
 .s.lo:
 ## We use -Wp,-P to strip #line directives.  Irix `as' chokes on
 ## these.
-	$(LTCOMPILE) -Wp,-P -x assembler-with-cpp -c $<
+	$(LTCOMPILE) $(ASM_CPP_OPTIONS) -c $<
 
 ## We have our own definition of LTCOMPILE because we want to use our
 ## CFLAGS, not those passed in from the top level make.

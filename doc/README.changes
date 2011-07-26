@@ -2221,6 +2221,30 @@ Since GC6.4:
  - Fix stack_size assertion in GC_pthread_create.
  - Fix assertion in GC_steal_mark_stack.
   
+Since 6.5
+ - Fix CPU count detection for Irix and FreeBSD. (Thanks to Dan Bonachea.)
+ - Integrate Dan Bonachea's patch for the IBM XLC compiler on Darwin.
+ - Integrated Andreas Tobler's FreeBSD/PowerPC patch.
+ - Don't access the GC thread structure from the restart handler.  It's
+   unsafe, since the handler may run too late.  (Thanks to Ben Maurer for
+   tracking this down.)
+ - Applied Christian Thalinger's patch to change comment syntax in
+   alpha_mach_dep.S.
+ - Added test for GC_no_dls in GC_dyld_image_add for DARWIN. (Thanks to
+   Juan Jose Garcia Ripoli).
+ - Use LINUX_STACKBOTTOM for Linux/SH and LINUX/ARM. (Thanks to Sugioka
+   Toshinobu and Christian Thalinger.)
+ - Rewrote GC_parse_map_entry.  This assumed a fixed column layout of
+   /proc/self/maps on Linux.  This ceased to be true about 2 years ago.
+   The old code is probably quite problemetic with -DREDIRECT_MALLOC.  It
+   is also used by default for IA64, though I haven't seen actual failures
+   there.
+ - More consistently define HBLKSIZE to 4096 on 64 bit architectures with
+   4K pages.  (Thanks to Andrew Haley.)
+ - With win32 threads, GC_stop_world needs to acquire GC_write_cs.  (Thanks
+   to Ben Hutchings for the observation and patch.)
+ - Move up struct callinfo declaration to make gcc 4.0.2. happy.
+
 To do:
  - The USE_MUNMAP code should really use a separate data structure
    indexed by physical page to keep track of time since last use of

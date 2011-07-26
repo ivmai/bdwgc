@@ -60,6 +60,10 @@
 #   include <signal.h>
 # endif
 
+#if defined(LINUX) || defined(LINUX_STACKBOTTOM)
+# include <ctype.h>
+#endif
+
 /* Blatantly OS dependent routines, except for those that are related 	*/
 /* to dynamic loading.							*/
 
@@ -80,7 +84,7 @@
 #   define NEED_FIND_LIMIT
 # endif
 
-#if defined(FREEBSD) && defined(I386)
+#if defined(FREEBSD) && (defined(I386) || defined(powerpc) || defined(__powerpc__))
 #  include <machine/trap.h>
 #  if !defined(PCR)
 #    define NEED_FIND_LIMIT
@@ -245,30 +249,11 @@ word GC_apply_to_maps(word (*fn)(char *))
 //  XXXXXXXX-XXXXXXXX r-xp 00000000 30:05 260537     name of mapping...\n
 //  ^^^^^^^^ ^^^^^^^^ ^^^^          ^^
 //  start    end      prot          maj_dev
-//  0        9        18            32
-//  
-//  For 64 bit ABIs:
-//  0	     17	      34	    56
 //
-//  The parser is called with a pointer to the entry and the return value
-//  is either NULL or is advanced to the next entry(the byte after the
-//  trailing '\n'.)
+//  Note that since about auguat 2003 kernels, the columns no longer have
+//  fixed offsets on 64-bit kernels.  Hence we no longer rely on fixed offsets
+//  anywhere, which is safer anyway.
 //
-#if CPP_WORDSZ == 32
-# define OFFSET_MAP_START   0
-# define OFFSET_MAP_END     9
-# define OFFSET_MAP_PROT   18
-# define OFFSET_MAP_MAJDEV 32
-# define ADDR_WIDTH 	    8
-#endif
-
-#if CPP_WORDSZ == 64
-# define OFFSET_MAP_START   0
-# define OFFSET_MAP_END    17
-# define OFFSET_MAP_PROT   34
-# define OFFSET_MAP_MAJDEV 56
-# define ADDR_WIDTH 	   16
-#endif
 
 /*
  * Assign various fields of the first line in buf_ptr to *start, *end,
@@ -277,36 +262,46 @@ word GC_apply_to_maps(word (*fn)(char *))
 char *GC_parse_map_entry(char *buf_ptr, word *start, word *end,
                                 char *prot_buf, unsigned int *maj_dev)
 {
-    char *tok;
+    char *start_start, *end_start, *prot_start, *maj_dev_start;
+    char *p;
+    char *endp;
 
     if (buf_ptr == NULL || *buf_ptr == '\0') {
         return NULL;
     }
 
-    memcpy(prot_buf, buf_ptr+OFFSET_MAP_PROT, 4);
-    				/* do the protections first. */
+    p = buf_ptr;
+    while (isspace(*p)) ++p;
+    start_start = p;
+    GC_ASSERT(isxdigit(*start_start));
+    *start = strtoul(start_start, &endp, 16); p = endp;
+    GC_ASSERT(*p=='-');
+
+    ++p;
+    end_start = p;
+    GC_ASSERT(isxdigit(*end_start));
+    *end = strtoul(end_start, &endp, 16); p = endp;
+    GC_ASSERT(isspace(*p));
+
+    while (isspace(*p)) ++p;
+    prot_start = p;
+    GC_ASSERT(*prot_start == 'r' || *prot_start == '-');
+    memcpy(prot_buf, prot_start, 4);
     prot_buf[4] = '\0';
-
-    if (prot_buf[1] == 'w') {/* we can skip all of this if it's not writable. */
-
-        tok = buf_ptr;
-        buf_ptr[OFFSET_MAP_START+ADDR_WIDTH] = '\0';
-        *start = strtoul(tok, NULL, 16);
-
-        tok = buf_ptr+OFFSET_MAP_END;
-        buf_ptr[OFFSET_MAP_END+ADDR_WIDTH] = '\0';
-        *end = strtoul(tok, NULL, 16);
-
-        buf_ptr += OFFSET_MAP_MAJDEV;
-        tok = buf_ptr;
-        while (*buf_ptr != ':') buf_ptr++;
-        *buf_ptr++ = '\0';
-        *maj_dev = strtoul(tok, NULL, 16);
+    if (prot_buf[1] == 'w') {/* we can skip the rest if it's not writable. */
+	/* Skip past protection field to offset field */
+          while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
+          GC_ASSERT(isxdigit(*p));
+	/* Skip past offset field, which we ignore */
+          while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
+	maj_dev_start = p;
+        GC_ASSERT(isxdigit(*maj_dev_start));
+        *maj_dev = strtoul(maj_dev_start, NULL, 16);
     }
 
-    while (*buf_ptr && *buf_ptr++ != '\n');
+    while (*p && *p++ != '\n');
 
-    return buf_ptr;
+    return p;
 }
 
 #endif /* Need to parse /proc/self/maps. */	
@@ -855,7 +850,6 @@ ptr_t GC_get_stack_base()
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <ctype.h>
 
 # define STAT_SKIP 27   /* Number of fields preceding startstack	*/
 			/* field in /proc/self/stat			*/
@@ -1395,7 +1389,7 @@ int * etext_addr;
 }
 # endif
 
-# if defined(FREEBSD) && defined(I386) && !defined(PCR)
+# if defined(FREEBSD) && (defined(I386) || defined(powerpc) || defined(__powerpc__)) && !defined(PCR)
 /* Its unclear whether this should be identical to the above, or 	*/
 /* whether it should apply to non-X86 architectures.			*/
 /* For now we don't assume that there is always an empty page after	*/

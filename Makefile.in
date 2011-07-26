@@ -171,6 +171,8 @@ CCAS = @CCAS@
 CCASFLAGS = @CCASFLAGS@ $(DEFS)
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+COMPILER_XLC_FALSE = @COMPILER_XLC_FALSE@
+COMPILER_XLC_TRUE = @COMPILER_XLC_TRUE@
 CPLUSPLUS_FALSE = @CPLUSPLUS_FALSE@
 CPLUSPLUS_TRUE = @CPLUSPLUS_TRUE@
 CPP = @CPP@
@@ -359,6 +361,8 @@ test_cpp_SOURCES = tests/test_cpp.cc
 test_cpp_LDADD = ./libgc.la ./libgccpp.la $(THREADDLLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
 TESTS = gctest $(extra_checks)
 all_objs = @addobjs@ $(libgc_la_OBJECTS)
+@COMPILER_XLC_FALSE@ASM_CPP_OPTIONS = -Wp,-P -x assembler-with-cpp
+@COMPILER_XLC_TRUE@ASM_CPP_OPTIONS = 
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) \
 	$(AM_CFLAGS) $(MY_CFLAGS) $(GC_CFLAGS) 
@@ -1051,9 +1055,8 @@ $(all_objs) : include/private/gcconfig.h include/private/gc_priv.h \
 include/private/gc_hdrs.h include/gc.h include/gc_gcj.h \
 include/gc_pthread_redirects.h include/gc_config_macros.h \
 include/gc_mark.h @addincludes@
-
 .s.lo:
-	$(LTCOMPILE) -Wp,-P -x assembler-with-cpp -c $<
+	$(LTCOMPILE) $(ASM_CPP_OPTIONS) -c $<
 
 #
 # :GOTCHA: GNU make rule for making .s out of .S is flawed, 

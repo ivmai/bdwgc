@@ -233,6 +233,9 @@ void GC_push_thread_structures GC_PROTO((void))
 # endif
 }
 
+/* Defined in misc.c */
+extern CRITICAL_SECTION GC_write_cs;
+
 void GC_stop_world()
 {
   DWORD thread_id = GetCurrentThreadId();
@@ -241,6 +244,9 @@ void GC_stop_world()
   if (!GC_thr_initialized) ABORT("GC_stop_world() called before GC_thr_init()");
 
   GC_please_stop = TRUE;
+# ifndef CYGWIN32
+    EnterCriticalSection(&GC_write_cs);
+# endif /* !CYGWIN32 */
   for (i = 0; i <= GC_get_max_thread_index(); i++)
     if (thread_table[i].stack_base != 0
 	&& thread_table[i].id != thread_id) {
@@ -271,6 +277,9 @@ void GC_stop_world()
 #     endif
       thread_table[i].suspended = TRUE;
     }
+# ifndef CYGWIN32
+    LeaveCriticalSection(&GC_write_cs);
+# endif /* !CYGWIN32 */
 }
 
 void GC_start_world()
