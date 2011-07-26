@@ -1,0 +1,45 @@
+OBJS= alloc.o reclaim.o allochblk.o misc.o mach_dep.o os_dep.o mark_roots.o headers.o mark.o obj_map.o black_list.o finalize.o new_hblk.o real_malloc.o dynamic_load.o debug_malloc.o malloc.o stubborn.o checksums.o
+
+INC=  gc_private.h gc_headers.h gc.h config.h
+
+all: gctest setjmp_test
+
+alloc.o : alloc.c $(INC)
+reclaim.o : reclaim.c $(INC)
+allochblk.o : allochblk.c $(INC)
+misc.o : misc.c $(INC)
+os_dep.o : os_dep.c $(INC)
+mark_roots.o : mark_roots.c $(INC)
+headers.o : headers.c $(INC)
+mark.o : mark.c $(INC)
+obj_map.o : obj_map.c $(INC)
+black_list.o : black_list.c $(INC)
+finalize.o : finalize.c $(INC)
+new_hblk.o : new_hblk.c $(INC)
+real_malloc.o : real_malloc.c $(INC)
+dynamic_load.o : dynamic_load.c $(INC)
+debug_malloc.o : debug_malloc.c $(INC)
+malloc.o : malloc.c $(INC)
+stubborn.o : stubborn.c $(INC)
+checksums.o : checksums.c $(INC)
+test.o : test.c $(INC)
+
+mach_dep.o : mach_dep.c $(INC)
+	sc noopt mach_dep.c			# optimizer mangles reg save hack
+
+gc.lib: $(OBJS)
+	oml gc.lib r $(OBJS)
+
+clean:
+	delete gc.lib gctest setjmp_test \#?.o
+
+gctest: gc.lib test.o
+	slink LIB:c.o test.o to $@ lib gc.lib LIB:sc.lib LIB:scm.lib
+
+setjmp_test: setjmp_test.c gc.h
+	sc setjmp_test.c
+	slink LIB:c.o $@.o to $@ lib LIB:sc.lib
+
+test: setjmp_test gctest
+	setjmp_test
+	gctest

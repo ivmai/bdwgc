@@ -1,0 +1,39 @@
+# Makefile for OS/2.  Assumes IBM's compiler, static linking, and a single thread.
+# Adding dynamic linking support seems easy, but takes a little bit of work.
+# Adding thread support may be nontrivial, since we haven't yet figured out how to
+# look at another thread's registers.
+
+# We also haven't figured out how to do partial links or build static libraries.  Hence a
+# client currently needs to link against all of the following:
+
+OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj malloc.obj stubborn.obj typd_mlc.obj
+
+CORDOBJS= cord\cordbscs.obj cord\cordxtra.obj cord\cordprnt.obj
+
+CC= icc
+CFLAGS= /O /Q /DSILENT /DSMALL_CONFIG /DALL_INTERIOR_POINTERS
+# Use /Ti instead of /O for debugging
+# Setjmp_test may yield overly optimistic results when compiled
+# without optimization.
+
+all: $(OBJS) gctest.exe cord\cordtest.exe
+
+$(OBJS) test.obj: gc_priv.h gc_hdrs.h gc.h
+
+mach_dep.obj: mach_dep.c
+	$(CC) $(CFLAGS) /C mach_dep.c
+
+gctest.exe: test.obj $(OBJS)
+	$(CC) $(CFLAGS) /B"/STACK:524288" /Fegctest test.obj $(OBJS)
+
+cord\cordbscs.obj: cord\cordbscs.c cord\cord.h cord\cord_pos.h
+	$(CC) $(CFLAGS) /C /Focord\cordbscs cord\cordbscs.c
+
+cord\cordxtra.obj: cord\cordxtra.c cord\cord.h cord\cord_pos.h cord\ec.h
+	$(CC) $(CFLAGS) /C /Focord\cordxtra cord\cordxtra.c
+
+cord\cordprnt.obj: cord\cordprnt.c cord\cord.h cord\cord_pos.h cord\ec.h
+	$(CC) $(CFLAGS) /C /Focord\cordprnt cord\cordprnt.c
+
+cord\cordtest.exe: cord\cordtest.c cord\cord.h cord\cord_pos.h cord\ec.h $(CORDOBJS)
+	$(CC) $(CFLAGS) /B"/STACK:65536" /Fecord\cordtest cord\cordtest.c $(OBJS) $(CORDOBJS)
