@@ -64,6 +64,7 @@ asm static void PushMacRegisters()
 /* on your architecture.  Run the test_setjmp program to see whether    */
 /* there is any chance it will work.                                    */
 
+#ifndef USE_GENERIC_PUSH_REGS
 void GC_push_regs()
 {
 #       ifdef RT
@@ -309,7 +310,21 @@ void GC_push_regs()
 #       endif /* M68K/SYSV */
 
 
-#     if defined(HP_PA) || defined(M88K) || defined(POWERPC) || (defined(I386) && (defined(OS2) || defined(USE_GENERIC))) || defined(UTS4)
+      /* other machines... */
+#       if !(defined M68K) && !(defined VAX) && !(defined RT) 
+#	if !(defined SPARC) && !(defined I386) && !(defined NS32K)
+#	if !defined(POWERPC) && !defined(UTS4)
+	    --> bad news <--
+#       endif
+#       endif
+#       endif
+}
+#endif /* !USE_GENERIC_PUSH_REGS */
+
+#if defined(USE_GENERIC_PUSH_REGS)
+void GC_generic_push_regs(cold_gc_frame)
+ptr_t cold_gc_frame;
+{
 	/* Generic code                          */
 	/* The idea is due to Parag Patel at HP. */
 	/* We're not sure whether he would like  */
@@ -329,21 +344,10 @@ void GC_push_regs()
 #	    else
 	        (void) _setjmp(regs);
 #	    endif
-	    GC_push_all_stack((ptr_t)regs, lim);
+	    GC_push_current_stack(cold_gc_frame);
 	}
-#     endif
-
-      /* other machines... */
-#       if !(defined M68K) && !(defined VAX) && !(defined RT) 
-#	if !(defined SPARC) && !(defined I386) && !(defined NS32K)
-#	if !defined(HP_PA) && !defined(M88K) && !defined(POWERPC)
-#	if !defined(UTS4)
-	    --> bad news <--
-# 	endif
-#       endif
-#       endif
-#       endif
 }
+#endif /* USE_GENERIC_PUSH_REGS */
 
 /* On register window machines, we need a way to force registers into 	*/
 /* the stack.	Return sp.						*/

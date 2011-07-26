@@ -350,6 +350,8 @@ void GC_register_dynamic_libraries()
 #include <errno.h>
 
 extern void * GC_roots_present();
+	/* The type is a lie, since the real type doesn't make sense here, */
+	/* and we only test for NULL.					   */
 
 extern ptr_t GC_scratch_last_end_ptr; /* End of GC_scratch_alloc arena	*/
 
@@ -376,6 +378,8 @@ void GC_register_dynamic_libraries()
 
     if (fd < 0) {
       sprintf(buf, "/proc/%d", getpid());
+	/* The above generates a lint complaint, since pid_t varies.	*/
+	/* It's unclear how to improve this.				*/
       fd = open(buf, O_RDONLY);
       if (fd < 0) {
     	ABORT("/proc open failed");
@@ -388,7 +392,8 @@ void GC_register_dynamic_libraries()
     if (needed_sz >= current_sz) {
         current_sz = needed_sz * 2 + 1;
         		/* Expansion, plus room for 0 record */
-        addr_map = (prmap_t *)GC_scratch_alloc(current_sz * sizeof(prmap_t));
+        addr_map = (prmap_t *)GC_scratch_alloc((word)
+						(current_sz * sizeof(prmap_t)));
     }
     if (ioctl(fd, PIOCMAP, addr_map) < 0) {
         GC_err_printf4("fd = %d, errno = %d, needed_sz = %d, addr_map = 0x%X\n",

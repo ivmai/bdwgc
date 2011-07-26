@@ -38,6 +38,11 @@
 #    define HP
 #    define mach_type_known
 # endif
+# if defined(__OpenBSD__) && defined(m68k)
+#    define M68K
+#    define OPENBSD
+#    define mach_type_known
+# endif
 # if defined(__NetBSD__) && defined(m68k)
 #    define M68K
 #    define NETBSD
@@ -171,6 +176,11 @@
 # if defined(NeXT) && defined(i386)
 #   define I386
 #   define NEXT
+#   define mach_type_known
+# endif
+# if defined(__OpenBSD__) && defined(i386)
+#   define I386
+#   define OPENBSD
 #   define mach_type_known
 # endif
 # if defined(__FreeBSD__) && defined(i386)
@@ -377,6 +387,12 @@
 # ifdef M68K
 #   define MACH_TYPE "M68K"
 #   define ALIGNMENT 2
+#   ifdef OPENBSD
+#	define OS_TYPE "OPENBSD"
+#	define HEURISTIC2
+	extern char etext;
+#	define DATASTART ((ptr_t)(&etext))
+#   endif
 #   ifdef NETBSD
 #	define OS_TYPE "NETBSD"
 #	define HEURISTIC2
@@ -724,10 +740,15 @@
 #       include "stubinfo.h"
         extern int etext;
         extern int _stklen;
+        extern int __djgpp_stack_limit;
 #       define DATASTART ((ptr_t)((((word) (&etext)) + 0x1ff) & ~0x1ff))
-#       define STACKBOTTOM ((ptr_t)((word) _stubinfo + _stubinfo->size \
-                                                     + _stklen))
+/* #       define STACKBOTTOM ((ptr_t)((word) _stubinfo + _stubinfo->size \
+                                                     + _stklen)) */
+#       define STACKBOTTOM ((ptr_t)((word) __djgpp_stack_limit + _stklen))
 		/* This may not be right.  */
+#   endif
+#   ifdef OPENBSD
+#	define OS_TYPE "OPENBSD"
 #   endif
 #   ifdef FREEBSD
 #	define OS_TYPE "FREEBSD"
@@ -742,7 +763,7 @@
 #   ifdef BSDI
 #	define OS_TYPE "BSDI"
 #   endif
-#   if defined(FREEBSD) || defined(NETBSD) \
+#   if defined(OPENBSD) || defined(FREEBSD) || defined(NETBSD) \
         || defined(THREE86BSD) || defined(BSDI)
 #	define HEURISTIC2
 	extern char etext;
@@ -877,7 +898,7 @@
 	/* Normally HEURISTIC2 is too conervative, since		*/
 	/* the text segment immediately follows the stack.		*/
 	/* Hence we give an upper pound.				*/
-    	extern __start;
+    	extern int __start;
 #   	define HEURISTIC2_LIMIT ((ptr_t)((word)(&__start) & ~(getpagesize()-1)))
 #   	define CPP_WORDSZ 64
 #   	define MPROTECT_VDB
@@ -1026,6 +1047,11 @@
 #   define THREADS
 # endif
 
+# if defined(HP_PA) || defined(M88K) || defined(POWERPC) \
+     || (defined(I386) && defined(OS2)) || defined(UTS4) || defined(LINT)
+	/* Use setjmp based hack to mark from callee-save registers. */
+#	define USE_GENERIC_PUSH_REGS
+# endif
 # if defined(SPARC) && !defined(LINUX)
 #   define SAVE_CALL_CHAIN
 #   define ASM_CLEAR_CODE	/* Stack clearing is crucial, and we 	*/

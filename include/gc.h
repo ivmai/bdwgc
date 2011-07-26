@@ -268,6 +268,7 @@ GC_API void GC_gcollect GC_PROTO((void));
 /* than normal pause times for incremental collection.  However,	*/
 /* aborted collections do no useful work; the next collection needs	*/
 /* to start from the beginning.						*/
+/* Return 0 if the collection was aborted, 1 if it succeeded.		*/
 typedef int (* GC_stop_func) GC_PROTO((void));
 GC_API int GC_try_to_collect GC_PROTO((GC_stop_func stop_func));
 

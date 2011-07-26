@@ -164,7 +164,8 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 		if (size_avail != size_needed
 		    && !GC_incremental
 		    && (word)size_needed <= GC_max_hblk_size/2
-		    && GC_in_last_heap_sect(hbp) && GC_should_collect()) {
+		    && GC_in_last_heap_sect((ptr_t)hbp)
+		    && GC_should_collect()) {
 		    continue;
 		} 
 #	    endif
