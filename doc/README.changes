@@ -2151,8 +2151,6 @@ Since 6.3:
    it seems to be incorrect if the preceding memory op is a load.
  - Fixed print_block_list to print the correct kind number for
    STUBBORN.  (Thanks to Rutger Ovidus.)
- - GC_allochblk_nth incremented GC_words_wasted by bytes rather than
-   words.
  - Have configure.in generate an error if it is asked to support
    pthreads, but doesn't know how to.
  - Added Kazuhiro Inaoka's patch for Renesas M32R support.
@@ -2169,6 +2167,59 @@ Since 6.3:
  - Ignore GC_enable_incremental() requests when KEEP_BACK_PTRS is set.
    The GC itself will dirty lots of pages in this cases, probably making
    it counterproductive on all platforms.  And the DARWIN port crashes.
+
+Since GC6.4:
+ - Integrated Paolo Molaro's patch to deal with EINTR in sem_wait.
+ - Make GC_approx_sp() write to dummy location to ensure that stack
+   is grown here, when sp looks reasonable, rather than later, when
+   it might look like a bad memory reference.  (Problem was never
+   observed that I know of.  But on rereading the code it seemed
+   dubious.)
+ - Separate out GC_with_callee_saves_pushed and sometimes call
+   it from GC_suspend_handler in pthread_stop_world.c.  Callee-save
+   register values sometimes failed to get traced under HP/UX on
+   PA-RISC.  Linux/IA64 had the same problem, though non-stacked
+   callee-save registers seem to be so rarely used there that nobody
+   ever noticed.
+ - Integrated an ancient Darwin powerpc_darwin_machine_dep.s patch
+   from Andreas Tobler, which I had lost.
+ - Fix compare_and_exchange implementation for gcc/IA64 to deal with
+   pickier compiler versions.
+ - Fixed Itanium 32-bit ABI support (HP/UX).  In particular, the
+   compare_and_exchange implementation didn't consider that possibility.
+ - Undefine GC_pthread_detach in win32_threads.c.  (Thanks to
+   Tagliapietra Tommaso.)
+ - Fixed inclusion of frame.h for NETBSD in os_dep.c.
+ - Applied Dan Bonachea's patch to use mmap on AIX.
+ - Several fixes to resurrect the Irix port on recent OS versions.
+ - Change ALPHA to use LINUX_STACKBOTTOM.
+ - Change SPARC64/LINUX to also use LINUX_STACKBOTTOM.  Deal with potential
+   bad values of __libc_stack_end on that platform.  (Thanks to David Miller.)
+ - Relax gctest to allow larger heap if ALIGN_DOUBLE isn't set.
+   (Unnecessary in 7.0)
+ - Force a define of __STDC__=0 for the IBM compiler on AIX, so that
+   we get prototypes.  (Unnecessary in 7.0)
+ - GC_INIT definition for AIX and CYGWIN referred to DATASTART and DATAEND
+   which are only defined in private include files.
+ - Integrated some small gcconfig.h patches from Dan Bonachea.  Also
+   relaxed assertion about FreeBSD stack size in pthread_support.c.
+ - Integrated Andrew Begel's darwin_stop_world.c patch for 64-bit
+   support.  This may need additional work.
+ - Avoided potentially infinite recursion in GC_save_callers if
+   the system backtrace calls malloc.  The workaround currently requires
+   __thread support if this code is used with threads.
+ - Avoided another similar infinite recursion by conditionally
+   invoking GC_save_callers in alloc.c.  (Thanks to Matthias Andree
+   for helping to track down both of these.)
+ - Removed all traces of aix_irix_threads.c.  AIX and Irix now use
+   pthread_support.c and pthread_stop_world.c.  The old code appeared
+   to be unreliable for AIX, and was not regularly maintained.
+ - On Irix, ignore segments with MA_FETCHOP or MA_NOTCACHED attributed;
+   they're not always safe to read.
+ - Fixed a previously vacuous assertion (diagnosed by the SGI compiler)
+   in GC_remove_from_fl.
+ - Fix stack_size assertion in GC_pthread_create.
+ - Fix assertion in GC_steal_mark_stack.
   
 To do:
  - The USE_MUNMAP code should really use a separate data structure

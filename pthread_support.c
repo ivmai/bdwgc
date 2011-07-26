@@ -50,8 +50,7 @@
 # include "private/pthread_support.h"
 
 # if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS) \
-     && !defined(GC_IRIX_THREADS) && !defined(GC_WIN32_THREADS) \
-     && !defined(GC_AIX_THREADS)
+     && !defined(GC_WIN32_THREADS)
 
 # if defined(GC_HPUX_THREADS) && !defined(USE_PTHREAD_SPECIFIC) \
      && !defined(USE_COMPILER_TLS)
@@ -68,7 +67,8 @@
 # endif
 
 # if (defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) || \
-      defined(GC_DARWIN_THREADS)) && !defined(USE_PTHREAD_SPECIFIC)
+      defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS)) \
+      && !defined(USE_PTHREAD_SPECIFIC)
 #   define USE_PTHREAD_SPECIFIC
 # endif
 
@@ -873,11 +873,12 @@ void GC_thr_init()
 #       if defined(GC_HPUX_THREADS)
 	  GC_nprocs = pthread_num_processors_np();
 #       endif
-#	if defined(GC_OSF1_THREADS)
+#	if defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS)
 	  GC_nprocs = sysconf(_SC_NPROCESSORS_ONLN);
 	  if (GC_nprocs <= 0) GC_nprocs = 1;
 #	endif
-#       if defined(GC_FREEBSD_THREADS)
+#       if defined(GC_FREEBSD_THREADS) || defined(GC_IRIX_THREADS)
+	  /* FIXME: For Irix, that's a ridiculous assumption.	*/
           GC_nprocs = 1;
 #       endif
 #       if defined(GC_DARWIN_THREADS)
@@ -1228,7 +1229,13 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 	} else {
 	   pthread_attr_getstacksize(attr, &stack_size);
 	}
-	GC_ASSERT(stack_size >= (8*HBLKSIZE*sizeof(word)));
+#       ifdef PARALLEL_MARK
+	  GC_ASSERT(stack_size >= (8*HBLKSIZE*sizeof(word)));
+#       else
+          /* FreeBSD-5.3/Alpha: default pthread stack is 64K, 	*/
+	  /* HBLKSIZE=8192, sizeof(word)=8			*/
+	  GC_ASSERT(stack_size >= 65536);
+#       endif
 	/* Our threads may need to do some work for the GC.	*/
 	/* Ridiculously small threads won't work, and they	*/
 	/* probably wouldn't work anyway.			*/

@@ -92,6 +92,16 @@ char * GC_copyright[] =
 
 # include "version.h"
 
+#if defined(SAVE_CALL_CHAIN) && \
+	!(defined(REDIRECT_MALLOC) && defined(GC_HAVE_BUILTIN_BACKTRACE))
+#   define SAVE_CALL_CHAIN_IN_GC
+    /* This is only safe if the call chain save mechanism won't end up	*/
+    /* calling GC_malloc.  The GNU C library documentation suggests 	*/
+    /* that backtrace doesn't use malloc, but at least the initial	*/
+    /* call in some versions does seem to invoke the dynamic linker,	*/
+    /* which uses malloc.						*/
+#endif
+
 /* some more variables */
 
 extern signed_word GC_mem_found;  /* Number of reclaimed longwords	*/
@@ -222,6 +232,8 @@ void GC_clear_a_few_frames()
 {
 #   define NWORDS 64
     word frames[NWORDS];
+    /* Some compilers will warn that frames was set but never used.	*/
+    /* That's the whole idea ...					*/
     register int i;
     
     for (i = 0; i < NWORDS; i++) frames[i] = 0;
@@ -294,7 +306,7 @@ void GC_maybe_gc()
 #	endif
         if (GC_stopped_mark(GC_time_limit == GC_TIME_UNLIMITED? 
 			    GC_never_stop_func : GC_timeout_stop_func)) {
-#           ifdef SAVE_CALL_CHAIN
+#           ifdef SAVE_CALL_CHAIN_IN_GC
                 GC_save_callers(GC_last_stack);
 #           endif
             GC_finish_collection();
@@ -359,7 +371,7 @@ GC_stop_func stop_func;
 	}
     GC_invalidate_mark_state();  /* Flush mark stack.	*/
     GC_clear_marks();
-#   ifdef SAVE_CALL_CHAIN
+#   ifdef SAVE_CALL_CHAIN_IN_GC
         GC_save_callers(GC_last_stack);
 #   endif
     GC_is_full_gc = TRUE;
@@ -414,7 +426,7 @@ int n;
     	for (i = GC_deficit; i < GC_RATE*n; i++) {
     	    if (GC_mark_some((ptr_t)0)) {
     	        /* Need to finish a collection */
-#     		ifdef SAVE_CALL_CHAIN
+#     		ifdef SAVE_CALL_CHAIN_IN_GC
         	    GC_save_callers(GC_last_stack);
 #     		endif
 #		ifdef PARALLEL_MARK

@@ -1,8 +1,7 @@
 #include "private/pthread_support.h"
 
 #if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS) \
-     && !defined(GC_IRIX_THREADS) && !defined(GC_WIN32_THREADS) \
-     && !defined(GC_DARWIN_THREADS) && !defined(GC_AIX_THREADS)
+     && !defined(GC_WIN32_THREADS) && !defined(GC_DARWIN_THREADS)
 
 #include <signal.h>
 #include <semaphore.h>
@@ -101,8 +100,32 @@ word GC_stop_count;	/* Incremented at the beginning of GC_stop_world. */
 
 sem_t GC_suspend_ack_sem;
 
+void GC_suspend_handler_inner(ptr_t sig_arg);
+
+#if defined(IA64) || defined(HP_PA)
+extern void GC_with_callee_saves_pushed();
+
 void GC_suspend_handler(int sig)
 {
+  int old_errno = errno;
+  GC_with_callee_saves_pushed(GC_suspend_handler_inner, (ptr_t)(word)sig);
+  errno = old_errno;
+}
+
+#else
+/* We believe that in all other cases the full context is already	*/
+/* in the signal handler frame.						*/
+void GC_suspend_handler(int sig)
+{
+  int old_errno = errno;
+  GC_suspend_handler_inner((ptr_t)(word)sig);
+  errno = old_errno;
+}
+#endif
+
+void GC_suspend_handler_inner(ptr_t sig_arg)
+{
+    int sig = (int)(word)sig_arg;
     int dummy;
     pthread_t my_thread = pthread_self();
     GC_thread me;
@@ -369,9 +392,11 @@ void GC_stop_world()
 	  }
       }
     for (i = 0; i < n_live_threads; i++) {
-	  if (0 != (code = sem_wait(&GC_suspend_ack_sem))) {
-	      GC_err_printf1("Sem_wait returned %ld\n", (unsigned long)code);
-	      ABORT("sem_wait for handler failed");
+	  while (0 != (code = sem_wait(&GC_suspend_ack_sem))) {
+	      if (errno != EINTR) {
+	         GC_err_printf1("Sem_wait returned %ld\n", (unsigned long)code);
+	         ABORT("sem_wait for handler failed");
+	      }
 	  }
     }
 #   ifdef PARALLEL_MARK
