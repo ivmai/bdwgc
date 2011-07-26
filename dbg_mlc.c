@@ -12,8 +12,11 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, October 9, 1995 1:16 pm PDT */
+# define I_HIDE_POINTERS
 # include "gc_priv.h"
+# ifdef KEEP_BACK_PTRS
+#   include "backptr.h"
+# endif
 
 void GC_default_print_heap_obj_proc();
 GC_API void GC_register_finalizer_no_order
@@ -31,6 +34,14 @@ GC_API void GC_register_finalizer_no_order
 
 /* Object header */
 typedef struct {
+#   ifdef KEEP_BACK_PTRS
+	ptr_t oh_back_ptr;
+#	define MARKED_FOR_FINALIZATION (ptr_t)(-1)
+	    /* Object was marked because it is finalizable. */
+#	ifdef ALIGN_DOUBLE
+	  word oh_dummy;
+#	endif
+#   endif
     char * oh_string;		/* object descriptor string	*/
     word oh_int;		/* object descriptor integers	*/
 #   ifdef NEED_CALLINFO
@@ -85,6 +96,134 @@ ptr_t p;
     return(FALSE);
 }
 
+#ifdef KEEP_BACK_PTRS
+  /* Store back pointer to source in dest, if that appears to be possible. */
+  /* This is not completely safe, since we may mistakenly conclude that	   */
+  /* dest has a debugging wrapper.  But the error probability is very	   */
+  /* small, and this shouldn't be used in production code.		   */
+  /* We assume that dest is the real base pointer.  Source will usually    */
+  /* be a pointer to the interior of an object.				   */
+  void GC_store_back_pointer(ptr_t source, ptr_t dest)
+  {
+    if (GC_has_debug_info(dest)) {
+      ((oh *)dest) -> oh_back_ptr = (ptr_t)HIDE_POINTER(source);
+    }
+  }
+
+  void GC_marked_for_finalization(ptr_t dest) {
+    GC_store_back_pointer(MARKED_FOR_FINALIZATION, dest);
+  }
+
+  /* Store information about the object referencing dest in *base_p	*/
+  /* and *offset_p.							*/
+  /*   source is root ==> *base_p = 0, *offset_p = address		*/
+  /*   source is heap object ==> *base_p != 0, *offset_p = offset 	*/
+  /*   Returns 1 on success, 0 if source couldn't be determined.	*/
+  /* Dest can be any address within a heap object.			*/
+  GC_ref_kind GC_get_back_ptr_info(void *dest, void **base_p, size_t *offset_p)
+  {
+    oh * hdr = (oh *)GC_base(dest);
+    ptr_t bp;
+    ptr_t bp_base;
+    if (!GC_has_debug_info((ptr_t) hdr)) return GC_NO_SPACE;
+    bp = hdr -> oh_back_ptr;
+    if (MARKED_FOR_FINALIZATION == bp) return GC_FINALIZER_REFD;
+    if (0 == bp) return GC_UNREFERENCED;
+    bp = REVEAL_POINTER(bp);
+    bp_base = GC_base(bp);
+    if (0 == bp_base) {
+      *base_p = bp;
+      *offset_p = 0;
+      return GC_REFD_FROM_ROOT;
+    } else {
+      if (GC_has_debug_info(bp_base)) bp_base += sizeof(oh);
+      *base_p = bp_base;
+      *offset_p = bp - bp_base;
+      return GC_REFD_FROM_HEAP;
+    }
+  }
+
+  /* Generate a random heap address.		*/
+  /* The resulting address is in the heap, but	*/
+  /* not necessarily inside a valid object.	*/
+  void *GC_generate_random_heap_address(void)
+  {
+    int i;
+    int heap_offset = random() % GC_heapsize;
+    for (i = 0; i < GC_n_heap_sects; ++ i) {
+	int size = GC_heap_sects[i].hs_bytes;
+	if (heap_offset < size) {
+	    return GC_heap_sects[i].hs_start + heap_offset;
+	} else {
+	    heap_offset -= size;
+	}
+    }
+    ABORT("GC_generate_random_heap_address: size inconsistency");
+    /*NOTREACHED*/
+    return 0;
+  }
+
+  /* Generate a random address inside a valid marked heap object. */
+  void *GC_generate_random_valid_address(void)
+  {
+    ptr_t result;
+    ptr_t base;
+    for (;;) {
+	result = GC_generate_random_heap_address();
+  	base = GC_base(result);
+	if (0 == base) continue;
+	if (!GC_is_marked(base)) continue;
+	return result;
+    }
+  }
+
+  /* Force a garbage collection and generate a backtrace from a	*/
+  /* random heap address.					*/
+  void GC_generate_random_backtrace(void)
+  {
+    void * current;
+    int i;
+    void * base;
+    size_t offset;
+    GC_ref_kind source;
+    GC_gcollect();
+    current = GC_generate_random_valid_address();
+    GC_printf1("Chose address 0x%lx in object\n", (unsigned long)current);
+    GC_print_heap_obj(GC_base(current));
+    GC_err_printf0("\n");
+    for (i = 0; ; ++i) {
+      source = GC_get_back_ptr_info(current, &base, &offset);
+      if (GC_UNREFERENCED == source) {
+	GC_err_printf0("Reference could not be found\n");
+  	goto out;
+      }
+      if (GC_NO_SPACE == source) {
+	GC_err_printf0("No debug info in object: Can't find reference\n");
+	goto out;
+      }
+      GC_err_printf1("Reachable via %d levels of pointers from ",
+		 (unsigned long)i);
+      switch(source) {
+	case GC_REFD_FROM_ROOT:
+	  GC_err_printf1("root at 0x%lx\n", (unsigned long)base);
+	  goto out;
+	case GC_FINALIZER_REFD:
+	  GC_err_printf0("list of finalizable objects\n");
+	  goto out;
+	case GC_REFD_FROM_HEAP:
+	  GC_err_printf1("offset %ld in object:\n", (unsigned long)offset);
+	  /* Take GC_base(base) to get real base, i.e. header. */
+	  GC_print_heap_obj(GC_base(base));
+	  GC_err_printf0("\n");
+	  break;
+      }
+      current = base;
+    }
+    out:;
+  }
+    
+#endif /* KEEP_BACK_PTRS */
+
 /* Store debugging info into p.  Return displaced pointer. */
 /* Assumes we don't hold allocation lock.		   */
 ptr_t GC_store_debug_info(p, sz, string, integer)
@@ -100,6 +239,9 @@ word integer;
     /* But that's expensive.  And this way things should only appear	*/
     /* inconsistent while we're in the handler.				*/
     LOCK();
+#   ifdef KEEP_BACK_PTRS
+      ((oh *)p) -> oh_back_ptr = 0;
+#   endif
     ((oh *)p) -> oh_string = string;
     ((oh *)p) -> oh_int = integer;
     ((oh *)p) -> oh_sz = sz;
@@ -110,7 +252,7 @@ word integer;
     return((ptr_t)result);
 }
 
-/* Check the object with debugging info at p 		*/
+/* Check the object with debugging info at ohdr		*/
 /* return NIL if it's OK.  Else return clobbered	*/
 /* address.						*/
 ptr_t GC_check_annotated_obj(ohdr)
@@ -408,31 +550,29 @@ GC_PTR p;
             GC_err_printf0(
                   "GC_debug_free: found previously deallocated (?) object at ");
         } else {
-            GC_err_printf0("GC_debug_free: found smashed object at ");
+            GC_err_printf0("GC_debug_free: found smashed location at ");
         }
         GC_print_smashed_obj(p, clobbered);
       }
       /* Invalidate size */
       ((oh *)base) -> oh_sz = GC_size(base);
     }
-#   ifdef FIND_LEAK
+    if (GC_find_leak) {
         GC_free(base);
-#   else
-	{
-	    register hdr * hhdr = HDR(p);
-	    GC_bool uncollectable = FALSE;
+    } else {
+	register hdr * hhdr = HDR(p);
+	GC_bool uncollectable = FALSE;
 
-	    if (hhdr ->  hb_obj_kind == UNCOLLECTABLE) {
-		uncollectable = TRUE;
-	    }
-#	    ifdef ATOMIC_UNCOLLECTABLE
-		if (hhdr ->  hb_obj_kind == AUNCOLLECTABLE) {
-		    uncollectable = TRUE;
-		}
-#	    endif
-	    if (uncollectable) GC_free(base);
+        if (hhdr ->  hb_obj_kind == UNCOLLECTABLE) {
+	    uncollectable = TRUE;
 	}
-#   endif
+#	ifdef ATOMIC_UNCOLLECTABLE
+	    if (hhdr ->  hb_obj_kind == AUNCOLLECTABLE) {
+		    uncollectable = TRUE;
+	    }
+#	endif
+	if (uncollectable) GC_free(base);
+    } /* !GC_find_leak */
 }
 
 # ifdef __STDC__
@@ -491,7 +631,7 @@ GC_PTR p;
     }
     clobbered = GC_check_annotated_obj((oh *)base);
     if (clobbered != 0) {
-        GC_err_printf0("GC_debug_realloc: found smashed object at ");
+        GC_err_printf0("GC_debug_realloc: found smashed location at ");
         GC_print_smashed_obj(p, clobbered);
     }
     old_sz = ((oh *)base) -> oh_sz;
@@ -528,7 +668,7 @@ word dummy;
 	        
 	        if (clobbered != 0) {
 	            GC_err_printf0(
-	                "GC_check_heap_block: found smashed object at ");
+	                "GC_check_heap_block: found smashed location at ");
         	    GC_print_smashed_obj((ptr_t)p, clobbered);
 	        }
 	    }

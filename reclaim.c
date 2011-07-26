@@ -19,7 +19,6 @@
 signed_word GC_mem_found = 0;
 			/* Number of words of memory reclaimed     */
 
-# ifdef FIND_LEAK
 static void report_leak(p, sz)
 ptr_t p;
 word sz;
@@ -39,13 +38,10 @@ word sz;
 }
 
 #   define FOUND_FREE(hblk, word_no) \
-      if (abort_if_found) { \
+      { \
          report_leak((ptr_t)hblk + WORDS_TO_BYTES(word_no), \
          	     HDR(hblk) -> hb_sz); \
       }
-# else
-#   define FOUND_FREE(hblk, word_no)
-# endif
 
 /*
  * reclaim phase
@@ -82,10 +78,9 @@ register hdr * hhdr;
  * Clears unmarked objects.
  */
 /*ARGSUSED*/
-ptr_t GC_reclaim_clear(hbp, hhdr, sz, list, abort_if_found)
+ptr_t GC_reclaim_clear(hbp, hhdr, sz, list)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 register hdr * hhdr;
-GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 register word sz;
 {
@@ -105,7 +100,6 @@ register word sz;
 	    if( mark_bit_from_hdr(hhdr, word_no) ) {
 		p += sz;
 	    } else {
-		FOUND_FREE(hbp, word_no);
 		INCR_WORDS(sz);
 		/* object is available - put on list */
 		    obj_link(p) = list;
@@ -131,10 +125,9 @@ register word sz;
  * A special case for 2 word composite objects (e.g. cons cells):
  */
 /*ARGSUSED*/
-ptr_t GC_reclaim_clear2(hbp, hhdr, list, abort_if_found)
+ptr_t GC_reclaim_clear2(hbp, hhdr, list)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 hdr * hhdr;
-GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 {
     register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
@@ -146,7 +139,6 @@ register ptr_t list;
     register int i;
 #   define DO_OBJ(start_displ) \
 	if (!(mark_word & ((word)1 << start_displ))) { \
-	    FOUND_FREE(hbp, p - (word *)hbp + start_displ); \
 	    p[start_displ] = (word)list; \
 	    list = (ptr_t)(p+start_displ); \
 	    p[start_displ+1] = 0; \
@@ -179,10 +171,9 @@ register ptr_t list;
  * Another special case for 4 word composite objects:
  */
 /*ARGSUSED*/
-ptr_t GC_reclaim_clear4(hbp, hhdr, list, abort_if_found)
+ptr_t GC_reclaim_clear4(hbp, hhdr, list)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 hdr * hhdr;
-GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 {
     register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
@@ -193,7 +184,6 @@ register ptr_t list;
     register word mark_word;
 #   define DO_OBJ(start_displ) \
 	if (!(mark_word & ((word)1 << start_displ))) { \
-	    FOUND_FREE(hbp, p - (word *)hbp + start_displ); \
 	    p[start_displ] = (word)list; \
 	    list = (ptr_t)(p+start_displ); \
 	    p[start_displ+1] = 0; \
@@ -239,10 +229,9 @@ register ptr_t list;
 
 /* The same thing, but don't clear objects: */
 /*ARGSUSED*/
-ptr_t GC_reclaim_uninit(hbp, hhdr, sz, list, abort_if_found)
+ptr_t GC_reclaim_uninit(hbp, hhdr, sz, list)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 register hdr * hhdr;
-GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 register word sz;
 {
@@ -260,7 +249,6 @@ register word sz;
     /* go through all words in block */
 	while( p <= plim )  {
 	    if( !mark_bit_from_hdr(hhdr, word_no) ) {
-		FOUND_FREE(hbp, word_no);
 		INCR_WORDS(sz);
 		/* object is available - put on list */
 		    obj_link(p) = list;
@@ -275,15 +263,42 @@ register word sz;
     return(list);
 }
 
+/* Don't really reclaim objects, just check for unmarked ones: */
+/*ARGSUSED*/
+void GC_reclaim_check(hbp, hhdr, sz)
+register struct hblk *hbp;	/* ptr to current heap block		*/
+register hdr * hhdr;
+register word sz;
+{
+    register int word_no;
+    register word *p, *plim;
+#   ifdef GATHERSTATS
+        register int n_words_found = 0;
+#   endif
+    
+    p = (word *)(hbp->hb_body);
+    word_no = HDR_WORDS;
+    plim = (word *)((((word)hbp) + HBLKSIZE)
+		   - WORDS_TO_BYTES(sz));
+
+    /* go through all words in block */
+	while( p <= plim )  {
+	    if( !mark_bit_from_hdr(hhdr, word_no) ) {
+		FOUND_FREE(hbp, word_no);
+	    }
+	    p += sz;
+	    word_no += sz;
+	}
+}
+
 #ifndef SMALL_CONFIG
 /*
  * Another special case for 2 word atomic objects:
  */
 /*ARGSUSED*/
-ptr_t GC_reclaim_uninit2(hbp, hhdr, list, abort_if_found)
+ptr_t GC_reclaim_uninit2(hbp, hhdr, list)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 hdr * hhdr;
-GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 {
     register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
@@ -295,7 +310,6 @@ register ptr_t list;
     register int i;
 #   define DO_OBJ(start_displ) \
 	if (!(mark_word & ((word)1 << start_displ))) { \
-	    FOUND_FREE(hbp, p - (word *)hbp + start_displ); \
 	    p[start_displ] = (word)list; \
 	    list = (ptr_t)(p+start_displ); \
 	    INCR_WORDS(2); \
@@ -327,10 +341,9 @@ register ptr_t list;
  * Another special case for 4 word atomic objects:
  */
 /*ARGSUSED*/
-ptr_t GC_reclaim_uninit4(hbp, hhdr, list, abort_if_found)
+ptr_t GC_reclaim_uninit4(hbp, hhdr, list)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 hdr * hhdr;
-GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 {
     register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
@@ -341,7 +354,6 @@ register ptr_t list;
     register word mark_word;
 #   define DO_OBJ(start_displ) \
 	if (!(mark_word & ((word)1 << start_displ))) { \
-	    FOUND_FREE(hbp, p - (word *)hbp + start_displ); \
 	    p[start_displ] = (word)list; \
 	    list = (ptr_t)(p+start_displ); \
 	    INCR_WORDS(4); \
@@ -382,10 +394,9 @@ register ptr_t list;
 
 /* Finally the one word case, which never requires any clearing: */
 /*ARGSUSED*/
-ptr_t GC_reclaim1(hbp, hhdr, list, abort_if_found)
+ptr_t GC_reclaim1(hbp, hhdr, list)
 register struct hblk *hbp;	/* ptr to current heap block		*/
 hdr * hhdr;
-GC_bool abort_if_found;		/* Abort if a reclaimable object is found */
 register ptr_t list;
 {
     register word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
@@ -397,7 +408,6 @@ register ptr_t list;
     register int i;
 #   define DO_OBJ(start_displ) \
 	if (!(mark_word & ((word)1 << start_displ))) { \
-	    FOUND_FREE(hbp, p - (word *)hbp + start_displ); \
 	    p[start_displ] = (word)list; \
 	    list = (ptr_t)(p+start_displ); \
 	    INCR_WORDS(1); \
@@ -433,9 +443,9 @@ register ptr_t list;
  * If entirely empty blocks are to be completely deallocated, then
  * caller should perform that check.
  */
-void GC_reclaim_small_nonempty_block(hbp, abort_if_found)
+void GC_reclaim_small_nonempty_block(hbp, report_if_found)
 register struct hblk *hbp;	/* ptr to current heap block		*/
-int abort_if_found;		/* Abort if a reclaimable object is found */
+int report_if_found;		/* Abort if a reclaimable object is found */
 {
     hdr * hhdr;
     register word sz;		/* size of objects in current block	*/
@@ -451,38 +461,40 @@ int abort_if_found;		/* Abort if a reclaimable object is found */
     flh = &(ok -> ok_freelist[sz]);
     GC_write_hint(hbp);
 
-    if (ok -> ok_init) {
+    if (report_if_found) {
+	GC_reclaim_check(hbp, hhdr, sz);
+    } else if (ok -> ok_init) {
       switch(sz) {
 #      ifndef SMALL_CONFIG
         case 1:
-            *flh = GC_reclaim1(hbp, hhdr, *flh, abort_if_found);
+            *flh = GC_reclaim1(hbp, hhdr, *flh);
             break;
         case 2:
-            *flh = GC_reclaim_clear2(hbp, hhdr, *flh, abort_if_found);
+            *flh = GC_reclaim_clear2(hbp, hhdr, *flh);
             break;
         case 4:
-            *flh = GC_reclaim_clear4(hbp, hhdr, *flh, abort_if_found);
+            *flh = GC_reclaim_clear4(hbp, hhdr, *flh);
             break;
 #      endif
         default:
-            *flh = GC_reclaim_clear(hbp, hhdr, sz, *flh, abort_if_found);
+            *flh = GC_reclaim_clear(hbp, hhdr, sz, *flh);
             break;
       }
     } else {
       switch(sz) {
 #      ifndef SMALL_CONFIG
         case 1:
-            *flh = GC_reclaim1(hbp, hhdr, *flh, abort_if_found);
+            *flh = GC_reclaim1(hbp, hhdr, *flh);
             break;
         case 2:
-            *flh = GC_reclaim_uninit2(hbp, hhdr, *flh, abort_if_found);
+            *flh = GC_reclaim_uninit2(hbp, hhdr, *flh);
             break;
         case 4:
-            *flh = GC_reclaim_uninit4(hbp, hhdr, *flh, abort_if_found);
+            *flh = GC_reclaim_uninit4(hbp, hhdr, *flh);
             break;
 #      endif
         default:
-            *flh = GC_reclaim_uninit(hbp, hhdr, sz, *flh, abort_if_found);
+            *flh = GC_reclaim_uninit(hbp, hhdr, sz, *flh);
             break;
       }
     } 
@@ -494,11 +506,12 @@ int abort_if_found;		/* Abort if a reclaimable object is found */
  * to the heap block free list.
  * Otherwise enqueue the block for later processing
  * by GC_reclaim_small_nonempty_block.
- * If abort_if_found is TRUE, then process any block immediately.
+ * If report_if_found is TRUE, then process any block immediately, and
+ * simply report free objects; do not actually reclaim them.
  */
-void GC_reclaim_block(hbp, abort_if_found)
+void GC_reclaim_block(hbp, report_if_found)
 register struct hblk *hbp;	/* ptr to current heap block		*/
-word abort_if_found;		/* Abort if a reclaimable object is found */
+word report_if_found;		/* Abort if a reclaimable object is found */
 {
     register hdr * hhdr;
     register word sz;		/* size of objects in current block	*/
@@ -511,16 +524,19 @@ word abort_if_found;		/* Abort if a reclaimable object is found */
 
     if( sz > MAXOBJSZ ) {  /* 1 big object */
         if( !mark_bit_from_hdr(hhdr, HDR_WORDS) ) {
-	    FOUND_FREE(hbp, HDR_WORDS);
-#	    ifdef GATHERSTATS
+	    if (report_if_found) {
+	      FOUND_FREE(hbp, HDR_WORDS);
+	    } else {
+#	      ifdef GATHERSTATS
 	        GC_mem_found += sz;
-#	    endif
-	    GC_freehblk(hbp);
+#	      endif
+	      GC_freehblk(hbp);
+	    }
 	}
     } else {
         GC_bool empty = GC_block_empty(hhdr);
-        if (abort_if_found) {
-    	  GC_reclaim_small_nonempty_block(hbp, (int)abort_if_found);
+        if (report_if_found) {
+    	  GC_reclaim_small_nonempty_block(hbp, (int)report_if_found);
         } else if (empty) {
 #	  ifdef GATHERSTATS
             GC_mem_found += BYTES_TO_WORDS(HBLKSIZE);
@@ -600,11 +616,11 @@ void GC_print_block_list()
 #endif /* NO_DEBUGGING */
 
 /*
- * Do the same thing on the entire heap, after first clearing small object
- * free lists (if we are not just looking for leaks).
+ * Perform GC_reclaim_block on the entire heap, after first clearing
+ * small object free lists (if we are not just looking for leaks).
  */
-void GC_start_reclaim(abort_if_found)
-int abort_if_found;		/* Abort if a GC_reclaimable object is found */
+void GC_start_reclaim(report_if_found)
+int report_if_found;		/* Abort if a GC_reclaimable object is found */
 {
     int kind;
     
@@ -617,7 +633,7 @@ int abort_if_found;		/* Abort if a GC_reclaimable object is found */
         register struct hblk ** rlist = GC_obj_kinds[kind].ok_reclaim_list;
         
         if (rlist == 0) continue;	/* This kind not used.	*/
-        if (!abort_if_found) {
+        if (!report_if_found) {
             lim = &(GC_obj_kinds[kind].ok_freelist[MAXOBJSZ+1]);
 	    for( fop = GC_obj_kinds[kind].ok_freelist; fop < lim; fop++ ) {
 	      *fop = 0;
@@ -637,7 +653,7 @@ int abort_if_found;		/* Abort if a GC_reclaimable object is found */
 
   /* Go through all heap blocks (in hblklist) and reclaim unmarked objects */
   /* or enqueue the block for later processing.				   */
-    GC_apply_to_all_blocks(GC_reclaim_block, (word)abort_if_found);
+    GC_apply_to_all_blocks(GC_reclaim_block, (word)report_if_found);
     
 }
 

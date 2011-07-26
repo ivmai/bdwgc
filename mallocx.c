@@ -57,8 +57,16 @@ register int k;
     if(GC_incremental && !GC_dont_gc)
         GC_collect_a_little_inner((int)n_blocks);
     lw = ROUNDED_UP_WORDS(lb);
-    while ((h = GC_allochblk(lw, k, IGNORE_OFF_PAGE)) == 0
-           && GC_collect_or_expand(n_blocks, TRUE));
+    h = GC_allochblk(lw, k, IGNORE_OFF_PAGE);
+#   ifdef USE_MUNMAP
+      if (0 == h) {
+        GC_merge_unmapped();
+        h = GC_allochblk(lw, k, IGNORE_OFF_PAGE);
+      }
+#   endif
+    while (0 == h && GC_collect_or_expand(n_blocks, TRUE)) {
+      h = GC_allochblk(lw, k, IGNORE_OFF_PAGE);
+    }
     if (h == 0) {
         op = 0;
     } else {

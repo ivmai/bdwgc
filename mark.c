@@ -681,7 +681,7 @@ word p;
 # endif
 
 /* As above, but argument passed preliminary test. */
-# ifdef PRINT_BLACK_LIST
+# if defined(PRINT_BLACK_LIST) || defined(KEEP_BACK_PTRS)
     void GC_push_one_checked(p, interior_ptrs, source)
     ptr_t source;
 # else
@@ -744,6 +744,7 @@ register GC_bool interior_ptrs;
     } else {
 	if (!mark_bit_from_hdr(hhdr, displ)) {
 	    set_mark_bit_from_hdr(hhdr, displ);
+ 	    GC_STORE_BACK_PTR(source, (ptr_t)r);
 	    PUSH_OBJ((word *)r, hhdr, GC_mark_stack_top,
 	             &(GC_mark_stack[GC_mark_stack_size]));
 	}
@@ -1102,7 +1103,7 @@ struct hblk *h;
 {
     register hdr * hhdr;
     
-    h = GC_next_block(h);
+    h = GC_next_used_block(h);
     if (h == 0) return(0);
     hhdr = HDR(h);
     GC_push_marked(h, hhdr);
@@ -1118,7 +1119,7 @@ struct hblk *h;
     
     if (!GC_dirty_maintained) { ABORT("dirty bits not set up"); }
     for (;;) {
-        h = GC_next_block(h);
+        h = GC_next_used_block(h);
         if (h == 0) return(0);
         hhdr = HDR(h);
 #	ifdef STUBBORN_ALLOC
@@ -1147,7 +1148,7 @@ struct hblk *h;
     register hdr * hhdr = HDR(h);
     
     for (;;) {
-        h = GC_next_block(h);
+        h = GC_next_used_block(h);
         if (h == 0) return(0);
         hhdr = HDR(h);
 	if (hhdr -> hb_obj_kind == UNCOLLECTABLE) break;

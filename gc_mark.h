@@ -171,6 +171,8 @@ mse * GC_signal_mark_stack_overflow();
 	      /* Mark bit is already set */ \
 	      goto exit_label; \
         } \
+        GC_STORE_BACK_PTR((ptr_t)source, (ptr_t)HBLKPTR(current) \
+				      + WORDS_TO_BYTES(displ)); \
         *mark_word_addr = mark_word | mark_bit; \
     } \
     PUSH_OBJ(((word *)(HBLKPTR(current)) + displ), hhdr, \
