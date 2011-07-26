@@ -3,7 +3,6 @@
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
  * Copyright (c) 2000-2001 by Hewlett-Packard Company.  All rights reserved.
- * DG/UX ix86 support <takis@xfree86.org>
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -27,6 +26,7 @@
  * and thread support for some of the other Posix platforms; any changes
  * made here may need to be reflected there too.
  */
+ /* DG/UX ix86 support <takis@xfree86.org> */
 /*
  * Linux_threads.c now also includes some code to support HPUX and
  * OSF1 (Compaq Tru64 Unix, really).  The OSF1 support is not yet
@@ -54,7 +54,7 @@
 # include "gc.h"
 
 # if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS) \
-     && !defined(GC_IRIX_THREADS)
+     && !defined(GC_IRIX_THREADS) && !defined(GC_WIN32_THREADS)
 
 # include "private/gc_priv.h"
 
@@ -63,7 +63,8 @@
 #   define USE_HPUX_TLS
 # endif
 
-# if defined(GC_DGUX386_THREADS) && !defined(USE_PTHREAD_SPECIFIC)
+# if (defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS)) \
+      && !defined(USE_PTHREAD_SPECIFIC)
 #   define USE_PTHREAD_SPECIFIC
 # endif
 
@@ -136,7 +137,20 @@
 
 void GC_thr_init();
 
-#if 0
+#if DEBUG_THREADS
+
+#ifndef NSIG
+# if defined(MAXSIG)
+#  define NSIG (MAXSIG+1)
+# elif defined(_NSIG)
+#  define NSIG _NSIG
+# elif defined(__SIGRTMAX)
+#  define NSIG (__SIGRTMAX+1)
+# else
+  --> please fix it
+# endif
+#endif
+
 void GC_print_sig_mask()
 {
     sigset_t blocked;
@@ -145,13 +159,20 @@ void GC_print_sig_mask()
     if (pthread_sigmask(SIG_BLOCK, NULL, &blocked) != 0)
     	ABORT("pthread_sigmask");
     GC_printf0("Blocked: ");
-    for (i = 1; i <= MAXSIG; i++) {
+    for (i = 1; i < NSIG; i++) {
         if (sigismember(&blocked, i)) { GC_printf1("%ld ",(long) i); }
     }
     GC_printf0("\n");
 }
 #endif
 
+word GC_stop_count;	/* Incremented at the beginning of GC_stop_world. */
+
+#ifdef GC_OSF1_THREADS
+  GC_bool GC_retry_signals = TRUE;
+#else
+  GC_bool GC_retry_signals = FALSE;
+#endif
 
 /* We use the allocation lock to protect thread-related data structures. */
 
@@ -189,6 +210,9 @@ typedef struct GC_Thread_Rep {
     				/* Used only to avoid premature 	*/
 				/* reclamation of any data it might 	*/
 				/* reference.				*/
+    word last_stop_count;	/* GC_last_stop_count value when thread	*/
+    				/* last successfully handled a suspend	*/
+    				/* signal.				*/
 #   ifdef THREAD_LOCAL_ALLOC
 #	if CPP_WORDSZ == 64 && defined(ALIGN_DOUBLE)
 #	    define GRANULARITY 16
@@ -443,7 +467,9 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
 	    *(void * volatile *)result = ptr_to_struct_containing_descr; 
 	    return result;
 	} else if ((word)my_entry - 1 < DIRECT_GRANULES) {
-	    *my_fl = my_entry + index + 1;
+	    if (!GC_incremental) *my_fl = my_entry + index + 1;
+	    	/* In the incremental case, we always have to take this */
+	    	/* path.  Thus we leave the counter alone.		*/
             return GC_gcj_malloc(bytes, ptr_to_struct_containing_descr);
 	} else {
 	    GC_generic_malloc_many(BYTES_FROM_INDEX(index), GC_gcj_kind, my_fl);
@@ -475,7 +501,11 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
 
 #ifndef SIG_THR_RESTART
 #  if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS)
-#   define SIG_THR_RESTART _SIGRTMIN + 5
+#    ifdef _SIGRTMIN
+#      define SIG_THR_RESTART _SIGRTMIN + 5
+#    else
+#      define SIG_THR_RESTART SIGRTMIN + 5
+#    endif
 #  else
 #   define SIG_THR_RESTART SIGXCPU
 #  endif
@@ -612,11 +642,12 @@ void GC_suspend_handler(int sig)
 	/* guaranteed to be the mark_no correspending to our 		*/
 	/* suspension, i.e. the marker can't have incremented it yet.	*/
 #   endif
+    word my_stop_count = GC_stop_count;
 
     if (sig != SIG_SUSPEND) ABORT("Bad signal in suspend_handler");
 
 #if DEBUG_THREADS
-    GC_printf1("Suspending 0x%x\n", my_thread);
+    GC_printf1("Suspending 0x%lx\n", my_thread);
 #endif
 
     me = GC_lookup_thread(my_thread);
@@ -624,6 +655,14 @@ void GC_suspend_handler(int sig)
     /* of a thread which holds the allocation lock in order	*/
     /* to stop the world.  Thus concurrent modification of the	*/
     /* data structure is impossible.				*/
+    if (me -> last_stop_count == my_stop_count) {
+	/* Duplicate signal.  OK if we are retrying.	*/
+	if (!GC_retry_signals) {
+	    WARN("Duplicate suspend signal in thread %lx\n",
+		 pthread_self());
+	}
+	return;
+    }
 #   ifdef SPARC
 	me -> stack_ptr = (ptr_t)GC_save_regs_in_stack();
 #   else
@@ -637,6 +676,7 @@ void GC_suspend_handler(int sig)
     /* thread has been stopped.  Note that sem_post() is  	*/
     /* the only async-signal-safe primitive in LinuxThreads.    */
     sem_post(&GC_suspend_ack_sem);
+    me -> last_stop_count = my_stop_count;
 
     /* Wait until that thread tells us to restart by sending    */
     /* this thread a SIG_THR_RESTART signal.			*/
@@ -654,9 +694,15 @@ void GC_suspend_handler(int sig)
 	    me->signal = 0;
 	    sigsuspend(&mask);             /* Wait for signal */
     } while (me->signal != SIG_THR_RESTART);
+    /* If the RESTART signal gets lost, we can still lose.  That should be  */
+    /* less likely than losing the SUSPEND signal, since we don't do much   */
+    /* between the sem_post and sigsuspend.	   			    */
+    /* We'd need more handshaking to work around that, since we don't want  */
+    /* to accidentally leave a RESTART signal pending, thus causing us to   */
+    /* continue prematurely in a future round.				    */ 
 
 #if DEBUG_THREADS
-    GC_printf1("Continuing 0x%x\n", my_thread);
+    GC_printf1("Continuing 0x%lx\n", my_thread);
 #endif
 }
 
@@ -683,7 +729,7 @@ void GC_restart_handler(int sig)
     */
 
 #if DEBUG_THREADS
-    GC_printf1("In GC_restart_handler for 0x%x\n", pthread_self());
+    GC_printf1("In GC_restart_handler for 0x%lx\n", pthread_self());
 #endif
 }
 
@@ -858,34 +904,28 @@ void GC_remove_all_threads_but_me(void)
 pthread_t GC_stopping_thread;
 int GC_stopping_pid;
 
-/* Caller holds allocation lock.	*/
-void GC_stop_world()
+/* We hold the allocation lock.  Suspend all threads that might	*/
+/* still be running.  Return the number of suspend signals that	*/
+/* were sent.							*/
+int GC_suspend_all()
 {
+    int n_live_threads = 0;
+    int i;
+    GC_thread p;
+    int result;
     pthread_t my_thread = pthread_self();
-    register int i;
-    register GC_thread p;
-    register int n_live_threads = 0;
-    register int result;
 
     GC_stopping_thread = my_thread;    /* debugging only.      */
     GC_stopping_pid = getpid();                /* debugging only.      */
-    /* Make sure all free list construction has stopped before we start. */
-    /* No new construction can start, since free list construction is	*/
-    /* required to acquire and release the GC lock before it starts,	*/
-    /* and we have the lock.						*/
-#   ifdef PARALLEL_MARK
-      GC_acquire_mark_lock();
-      GC_ASSERT(GC_fl_builder_count == 0);
-      /* We should have previously waited for it to become zero. */
-#   endif /* PARALLEL_MARK */
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (p -> id != my_thread) {
             if (p -> flags & FINISHED) continue;
+	    if (p -> last_stop_count == GC_stop_count) continue;
 	    if (p -> thread_blocked) /* Will wait */ continue;
             n_live_threads++;
 	    #if DEBUG_THREADS
-	      GC_printf1("Sending suspend signal to 0x%x\n", p -> id);
+	      GC_printf1("Sending suspend signal to 0x%lx\n", p -> id);
 	    #endif
             result = pthread_kill(p -> id, SIG_SUSPEND);
 	    switch(result) {
@@ -901,6 +941,55 @@ void GC_stop_world()
         }
       }
     }
+    return n_live_threads;
+}
+
+/* Caller holds allocation lock.	*/
+void GC_stop_world()
+{
+    register int i;
+    register int n_live_threads;
+
+    /* Make sure all free list construction has stopped before we start. */
+    /* No new construction can start, since free list construction is	*/
+    /* required to acquire and release the GC lock before it starts,	*/
+    /* and we have the lock.						*/
+#   ifdef PARALLEL_MARK
+      GC_acquire_mark_lock();
+      GC_ASSERT(GC_fl_builder_count == 0);
+      /* We should have previously waited for it to become zero. */
+#   endif /* PARALLEL_MARK */
+    ++GC_stop_count;
+    n_live_threads = GC_suspend_all();
+    if (GC_retry_signals) {
+	unsigned long wait_usecs = 0;  /* Total wait since retry.	*/
+#	define WAIT_UNIT 3000
+#	define RETRY_INTERVAL 100000
+	for (;;) {
+	    int ack_count;
+
+	    sem_getvalue(&GC_suspend_ack_sem, &ack_count);
+	    if (ack_count == n_live_threads) break;
+	    if (wait_usecs > RETRY_INTERVAL) {
+		int newly_sent = GC_suspend_all();
+
+#               ifdef CONDPRINT
+                  if (GC_print_stats) {
+		    GC_printf1("Resent %ld signals after timeout\n",
+		               newly_sent);
+	          }
+#               endif
+	        sem_getvalue(&GC_suspend_ack_sem, &ack_count);
+		if (newly_sent < n_live_threads - ack_count) {
+		    WARN("Lost some threads during GC_stop_world?!\n",0);
+		    n_live_threads = ack_count + newly_sent;
+		}
+		wait_usecs = 0;
+	    }
+	    usleep(WAIT_UNIT);
+	    wait_usecs += WAIT_UNIT;
+	}
+    }
     for (i = 0; i < n_live_threads; i++) {
     	if (0 != sem_wait(&GC_suspend_ack_sem))
 	    ABORT("sem_wait in handler failed");
@@ -909,7 +998,7 @@ void GC_stop_world()
       GC_release_mark_lock();
 #   endif
     #if DEBUG_THREADS
-      GC_printf1("World stopped 0x%x\n", pthread_self());
+      GC_printf1("World stopped from 0x%lx\n", pthread_self());
     #endif
     GC_stopping_thread = 0;  /* debugging only */
 }
@@ -935,7 +1024,7 @@ void GC_start_world()
 	    if (p -> thread_blocked) continue;
             n_live_threads++;
 	    #if DEBUG_THREADS
-	      GC_printf1("Sending restart signal to 0x%x\n", p -> id);
+	      GC_printf1("Sending restart signal to 0x%lx\n", p -> id);
 	    #endif
             result = pthread_kill(p -> id, SIG_THR_RESTART);
 	    switch(result) {
@@ -1082,6 +1171,7 @@ int GC_get_nprocs()
 	    if (cpu_no >= result) result = cpu_no + 1;
 	}
     }
+    close(f);
     return result;
 }
 #endif /* GC_LINUX_THREADS */
@@ -1237,6 +1327,19 @@ void GC_thr_init()
       t -> stack_ptr = (ptr_t)(&dummy);
       t -> flags = DETACHED | MAIN_THREAD;
 
+    /* Check for GC_RETRY_SIGNALS.	*/
+      if (0 != GETENV("GC_RETRY_SIGNALS")) {
+	  GC_retry_signals = TRUE;
+      }
+      if (0 != GETENV("GC_NO_RETRY_SIGNALS")) {
+	  GC_retry_signals = FALSE;
+      }
+#     ifdef CONDPRINT
+          if (GC_print_stats) {
+              GC_printf0("Will retry suspend signal if necessary.\n");
+	  }
+#     endif
+
     /* Set GC_nprocs.  */
       {
 	char * nprocs_string = GETENV("GC_NPROCS");
@@ -1247,7 +1350,11 @@ void GC_thr_init()
 #       if defined(GC_HPUX_THREADS)
 	  GC_nprocs = pthread_num_processors_np();
 #       endif
-#       if defined(GC_OSF1_THREADS) || defined(GC_FREEBSD_THREADS)
+#	if defined(GC_OSF1_THREADS)
+	  GC_nprocs = sysconf(_SC_NPROCESSORS_ONLN);
+	  if (GC_nprocs <= 0) GC_nprocs = 1;
+#	endif
+#       if defined(GC_FREEBSD_THREADS)
           GC_nprocs = 1;
 #       endif
 #	if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
@@ -1746,8 +1853,12 @@ yield:
             return;
         }
 #       define SLEEP_THRESHOLD 12
-		/* nanosleep(<= 2ms) just spins under Linux.  We	*/
-		/* want to be careful to avoid that behavior.		*/
+		/* Under Linux very short sleeps tend to wait until	*/
+		/* the current time quantum expires.  On old Linux	*/
+		/* kernels nanosleep(<= 2ms) just spins under Linux.    */
+		/* (Under 2.4, this happens only for real-time		*/
+		/* processes.)  We want to minimize both behaviors	*/
+		/* here.						*/
         if (i < SLEEP_THRESHOLD) {
             sched_yield();
 	} else {

@@ -1476,7 +1476,7 @@ Since 6.1alpha3:
    (Thanks again to Jeff Sturm.)
  - Use NPRGREG in solaris_threads.c, thus printing all registers if things
    go wrong.
- - Added GC_MARKERS envronment variable to allow use of a single marker
+ - Added GC_MARKERS environment variable to allow use of a single marker
    thread on an MP without confusing the lock implementation.
  - Collect much less aggressively in incremental mode with GC_TIME_UNLIMITED.
    This is really a purely generational mode, and we can afford to 
@@ -1563,7 +1563,129 @@ Since 6.1alpha3:
  - Added README.arm.cross containing some information about cross-
    compiling to an ARM processor from Margaret Fleck.
 
+Since 6.1alpha4:
+ - Added GC_finalizer_mem_freed, and changed some of the code that
+   decided on heap expansion to look at it.  Memory explicitly
+   deallocated by finalizers essentially needs to be counted as reclaimed
+   by the GC.  Otherwise there are cases in which the heap can grow
+   unboundedly.  (Thanks to Mark Reichert for the test case.)
+ - Integrated Adam Megacz patches to not scan dynamic libraries if
+   we are compiling with gcc on win32.  Otherwise we need structured
+   exception handling to deal with asynchronously unmapped root
+   segments, and gcc doesn't directly support that.
+ - Integrated Anthony Green's patch to support Wine.
+ - GC_OPERATOR_NEW_ARRAY was misspelled OPERATOR_NEW_ARRAY in several
+   places, including gc_cpp.cc.  (Thanks to Wink Saville for pointing
+   this out.)
+ - Integrated Loren James Rittle's Alpha FreeBSD patches.  In
+   response to Richard Henderson's suggestion, these also
+   changed the declarations of symbols like _end on many platforms to
+   that they wouldn't mistakenly be declared as short data symbols.
+ - Integrated changes from the Debian distribution.  (Thanks to Ryan Murray
+   for pointing these out.)  Fix C++ comments in POWERPC port.  Add ARM32
+   incremental GC support.  Get rid of USE_GENERIC_PUSH_REGS for alpha/Linux,
+   this time for real.  Use va_copy to get rid of cord printf problems
+   (finally).
+ - Close file descriptor used to count cpus.  Thanks to Jeff Sturm for
+   pointing out the omission.
+ - Don't just drop gcj free lists in GC_start_reclaim, since that can
+   eventually cause the marker to see a bogus mark descriptor in the 
+   dropped objects.  The usual symptom was a very intermittent segmentation
+   fault in the marker.  This mattered only if one of the GC_gcj_malloc
+   variants was used.  (Thanks to Michael Smith, Jeff Sturm, Bryce
+   McKinley and Tom Tromey for helping to track this down.)
+ - Fixed Linux and Solaris/64 SPARC configuration.  (Thanks to David Miller,
+   Jeff Sturm, Tom Tromey, and Christian Joensson.)
+ - Fixed a typo in strdup definition.  (Thanks to Gerard A Allan.)
+ - Changed Makefile.direct to invoke $(CC) to assemble alpha_mach_dep.S.
+   This is needed on Linux.  I'm not sure whether it's better or worse
+   on Tru64.
+ - Changed gc_cpp.h once more to declare operator new and friends only in
+   a Microsoft environment.  This may need further fine tuning.  (Thanks to
+   Johannes Schmidt for pointing out that the older code breaks on gcc3.0.4.)
+ - Don't ever override strdup if it's already macro defined.  (Thanks to
+   Adnan Ali for pointing out the problem.)
+ - Changed gc_cpp.h yet again to also overload placement new.  Due to the
+   C++ overloading rules, the other overloaded new operations otherwise hide
+   placement new, which causes many STL uses to break.  (Thanks to Reza
+   Shahidi for reporting this, and to Matt Austern for proposing a fix.)
+ - Integrated cygwin pthreads support from Dan Bonachea.
+ - Turn on DYNAMIC_LOADING for NetBSD.  (Thanks to Krister Walfridsson.)
+ - Changed printing code to print more complete GC times.
+ - Applied Mark Mitchell's Irix patch to correct some bitrot.
+ - Clarified which object-printing routines in dbg_mlc.c should hold
+   the allocation lock.  Restructured the code to allow reasonable object
+   printing with -DREDIRECT_MALLOC.
+ - Fix the Linux mmap code to always start with 0x1000 as the initial hint.
+   Minor patches for 64-bit AIX, particularly to STACKBOTTOM.
+   (Thanks again to Jeffrey Mark Siskind.)
+ - Renamed "SUSPENDED" flag for Solaris threads support to avoid a conflict
+   with a system header. (Thanks to Philp Brown.)
+ - Cause win32_threads.c to handle an out of range stack pointer correctly,
+   though currently with a warning.  (Thanks to Jonathan Clark for
+   observing that win32 applications may temporarily use the stack
+   pointer for other purposes, and suggesting a fix.  Unfortunately, it's
+   not clear that there is a complete solution to this problem.)
+
+Since 6.1alpha5:
+ - Added GC_MAXIMUM_HEAP_SIZE environment variable.
+ - Fix configure.in for MIPS/LINUX. (Thanks to H.J. Lu.)
+ - Double page hash table size for -DLARGE_CONFIG.
+ - Integrated Bo Thorsen's X86-64 support.
+ - STACKBOTTOM definition for LINUX/MIPS was partially changed back.
+   (Thanks to H.J. Lu and Hiroshi Kawashima for resolving this.)
+ - Replaced all occurrences of LINUX_DATA_START in gcconfig.h with
+   SEARCH_FOR_DATA_START.  It doesn't hurt to falll back to a search.
+   And __data_start doesn't seem to get defined correctly of the GC
+   library is loaded with LD_PRELOAD, e.g. for leak detection.
+ - If the GC_find_leak environment variable is set, do a
+   atexit(GC_gcollect) to give us at least one chance to detect leaks.
+   This may report some very benign leaks, but ...
+ - Addeded REDIRECT_FREE.  It's necessary if we want leak detection with
+   LD_PRELOAD.
+ - Defer printing of leaked objects, as for smashed objects.
+ - Fixed process and descriptor leak in GC_print_callers.  Try for
+   line number even if we got function name.)
+ - Ported parallel GC support and thread local allocation to Alpha.
+   Not yet well-tested.
+ - Added GC_DUMP_REGULARLY and added finalization statistics to GC_dump().
+ - Fixed Makefile.am to mention alpha_mach_dep.S instead of the defunct
+   alpha_mach_dep.s.  (Thanks to Fergus Henderson.)
+ - Incorporated a change to new_gc_alloc.h, suggested by Johannes Schmidt,
+   which should make it work with gcc3.1.  (I would still like to encourage
+   use of gc_allocator.h instead.) 
+ - Use alpha_mach_dep.S only on Linux.  (It's not clear that this is
+   optimal, but it otherwise didn't build on Tru64.  Thanks to Fergus
+   Henderson.)
+ - Added ifdef to guard free() in os_dep.c.  Otherwise we get a
+   compilation error on Irix.  (Thanks to Dai Sato.)
+ - Added an experimental version of GC_memalign to mallocx.c.  This can't
+   always work, since we don't handle alignment requests in the hblk-level
+   allocator, and we can't handle arbitrary pointer displacements unless
+   GC_all_interior_pointers is enabled.  But it should work for alignment
+   requests up to HBLKSIZE.  This is not yet documented in the standard
+   places.
+ - Finally debugged the OSF1/Tru64 thread support.  This needs more testing,
+   since I needed to add a somewhat unconvincing workaround for signal
+   delivery issues that I don't yet completely understand.  But it does
+   pass my tests, even in parallel GC mode.  Incremental GC support is
+   disabled if thread support is enabled, due to the signal issues.
+ - Eliminated name-space-incorrect definition of _cdecl from gc_cpp.h.
+ - Added GC_debug_malloc_replacement and GC_debug_realloc_replacement
+   declarations to gc.h.  On IA64, this is required for REDIRECT_MALLOC
+   to work correctly with these.
+ - Fixed Linux USE_PROC_FOR_LIBRARIES to work with a 64-bit /proc format.
+
 To do:
+ - --enable-redirect-malloc is mostly untested and known not to work
+   on some platforms. 
+ - The win32 collector ends up tracing some (most?) objects allocated with
+   the system allocator, in spite if the fact that it tries not to.
+   This costs time and space, though it remains correct.
+   We need a way to identify memory regions used by the system malloc(),
+   or an alternate way to locate dll data areas.  A very partial
+   workaround is to use GC_malloc_atomic_uncollectable() instead of
+   the system malloc() for most allocation.
  - There seem to be outstanding issues on Solaris/X86, possibly with
    finding the data segment starting address.  Information/patches would
    be appreciated.
@@ -1581,7 +1703,4 @@ To do:
  - Incremental collector should handle large objects better.  Currently,
    it looks like the whole object is treated as dirty if any part of it
    is.
- - Cord/cordprnt.c doesn't build on a few platforms (notably PowerPC), since
-   we make some unwarranted assumptions about how varargs are handled.  This
-   currently makes the cord-aware versions of printf unusable on some platforms.
-   Fixing this is unfortunately not trivial.
+ 

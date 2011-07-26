@@ -35,6 +35,8 @@
  * library, which itself was derived from the SGI STL implementation.
  */
 
+#include "gc.h" 	// For size_t
+
 /* First some helpers to allow us to dispatch on whether or not a type
  * is known to be pointerfree.
  * These are private, except that the client may invoke the

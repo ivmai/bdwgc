@@ -393,21 +393,34 @@ void GC_register_dynamic_libraries()
 //  ^^^^^^^^ ^^^^^^^^ ^^^^          ^^
 //  start    end      prot          maj_dev
 //  0        9        18            32
+//  
+//  For 64 bit ABIs:
+//  0	     17	      34	    56
 //
 //  The parser is called with a pointer to the entry and the return value
 //  is either NULL or is advanced to the next entry(the byte after the
 //  trailing '\n'.)
 //
-#define OFFSET_MAP_START   0
-#define OFFSET_MAP_END     9
-#define OFFSET_MAP_PROT   18
-#define OFFSET_MAP_MAJDEV 32
+#if CPP_WORDSZ == 32
+# define OFFSET_MAP_START   0
+# define OFFSET_MAP_END     9
+# define OFFSET_MAP_PROT   18
+# define OFFSET_MAP_MAJDEV 32
+# define ADDR_WIDTH 	    8
+#endif
+
+#if CPP_WORDSZ == 64
+# define OFFSET_MAP_START   0
+# define OFFSET_MAP_END    17
+# define OFFSET_MAP_PROT   34
+# define OFFSET_MAP_MAJDEV 56
+# define ADDR_WIDTH 	   16
+#endif
 
 static char *parse_map_entry(char *buf_ptr, word *start, word *end,
                              char *prot_buf, unsigned int *maj_dev)
 {
     int i;
-    unsigned int val;
     char *tok;
 
     if (buf_ptr == NULL || *buf_ptr == '\0') {
@@ -420,11 +433,11 @@ static char *parse_map_entry(char *buf_ptr, word *start, word *end,
     if (prot_buf[1] == 'w') { // we can skip all of this if it's not writable
 
         tok = buf_ptr;
-        buf_ptr[OFFSET_MAP_START+8] = '\0';
+        buf_ptr[OFFSET_MAP_START+ADDR_WIDTH] = '\0';
         *start = strtoul(tok, NULL, 16);
 
         tok = buf_ptr+OFFSET_MAP_END;
-        buf_ptr[OFFSET_MAP_END+8] = '\0';
+        buf_ptr[OFFSET_MAP_END+ADDR_WIDTH] = '\0';
         *end = strtoul(tok, NULL, 16);
 
         buf_ptr += OFFSET_MAP_MAJDEV;
@@ -529,13 +542,14 @@ GC_bool GC_register_dynamic_libraries_dl_iterate_phdr()
 
 # endif
 
+#ifdef __GNUC__
+# pragma weak _DYNAMIC
+#endif
+extern ElfW(Dyn) _DYNAMIC[];
+
 static struct link_map *
 GC_FirstDLOpenedLinkMap()
 {
-#   ifdef __GNUC__
-#     pragma weak _DYNAMIC
-#   endif
-    extern ElfW(Dyn) _DYNAMIC[];
     ElfW(Dyn) *dp;
     struct r_debug *r;
     static struct link_map *cachedResult = 0;
@@ -776,7 +790,7 @@ void GC_register_dynamic_libraries()
 # endif
 
 # ifndef MSWINCE
-  extern GC_bool GC_win32s;
+  extern GC_bool GC_no_win32_dlls;
 # endif
   
   void GC_register_dynamic_libraries()
@@ -789,7 +803,7 @@ void GC_register_dynamic_libraries()
     char * limit, * new_limit;
 
 #   ifdef MSWIN32
-      if (GC_win32s) return;
+      if (GC_no_win32_dlls) return;
 #   endif
     base = limit = p = GC_sysinfo.lpMinimumApplicationAddress;
 #   if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)

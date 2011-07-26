@@ -84,7 +84,7 @@
 #   include <setjmp.h>
 #endif
 
-#ifdef FREEBSD
+#if defined(FREEBSD) && defined(I386)
 #  include <machine/trap.h>
 #endif
 
@@ -154,12 +154,17 @@
   /* cover all versions.						*/
 
 # ifdef LINUX
+    /* Some Linux distributions arrange to define __data_start.  Some	*/
+    /* define data_start as a weak symbol.  The latter is technically	*/
+    /* broken, since the user program may define data_start, in which	*/
+    /* case we lose.  Nonetheless, we try both, prefering __data_start.	*/
+    /* We assume gcc-compatible pragmas.	*/
 #   pragma weak __data_start
-    extern int __data_start;
+    extern int __data_start[];
 #   pragma weak data_start
-    extern int data_start;
+    extern int data_start[];
 # endif /* LINUX */
-  extern int _end;
+  extern int _end[];
 
   ptr_t GC_data_start;
 
@@ -169,16 +174,16 @@
 
 #   ifdef LINUX
       /* Try the easy approaches first:	*/
-      if (&__data_start != 0) {
-	  GC_data_start = (ptr_t)(&__data_start);
+      if ((ptr_t)__data_start != 0) {
+	  GC_data_start = (ptr_t)(__data_start);
 	  return;
       }
-      if (&data_start != 0) {
-	  GC_data_start = (ptr_t)(&data_start);
+      if ((ptr_t)data_start != 0) {
+	  GC_data_start = (ptr_t)(data_start);
 	  return;
       }
 #   endif /* LINUX */
-    GC_data_start = GC_find_limit((ptr_t)(&_end), FALSE);
+    GC_data_start = GC_find_limit((ptr_t)(_end), FALSE);
   }
 #endif
 
@@ -755,14 +760,14 @@ ptr_t GC_get_stack_base()
 
   ptr_t GC_freebsd_stack_base(void)
   {
-    int nm[2] = { CTL_KERN, KERN_USRSTACK}, base, len, r;
-    
-    len = sizeof(int);
-    r = sysctl(nm, 2, &base, &len, NULL, 0);
+    int nm[2] = {CTL_KERN, KERN_USRSTACK};
+    ptr_t base;
+    size_t len = sizeof(ptr_t);
+    int r = sysctl(nm, 2, &base, &len, NULL, 0);
     
     if (r) ABORT("Error getting stack base");
 
-    return (ptr_t)base;
+    return base;
   }
 
 #endif /* FREEBSD_STACKBOTTOM */
@@ -931,23 +936,21 @@ void GC_register_data_segments()
   /* Unfortunately, we have to handle win32s very differently from NT, 	*/
   /* Since VirtualQuery has very different semantics.  In particular,	*/
   /* under win32s a VirtualQuery call on an unmapped page returns an	*/
-  /* invalid result.  Under GC_register_data_segments is a noop and	*/
+  /* invalid result.  Under NT, GC_register_data_segments is a noop and	*/
   /* all real work is done by GC_register_dynamic_libraries.  Under	*/
   /* win32s, we cannot find the data segments associated with dll's.	*/
   /* We rgister the main data segment here.				*/
-  GC_bool GC_win32s = FALSE;	/* We're running under win32s.	*/
-  
-  GC_bool GC_is_win32s()
-  {
-      DWORD v = GetVersion();
-      
-      /* Check that this is not NT, and Windows major version <= 3	*/
-      return ((v & 0x80000000) && (v & 0xff) <= 3);
-  }
+#  ifdef __GCC__
+  GC_bool GC_no_win32_dlls = TRUE;	 /* GCC can't do SEH, so we can't use VirtualQuery */
+#  else
+  GC_bool GC_no_win32_dlls = FALSE;	 
+#  endif
   
   void GC_init_win32()
   {
-      GC_win32s = GC_is_win32s();
+    /* if we're running under win32s, assume that no DLLs will be loaded */
+    DWORD v = GetVersion();
+    GC_no_win32_dlls |= ((v & 0x80000000) && (v & 0xff) <= 3);
   }
 
   /* Return the smallest address a such that VirtualQuery		*/
@@ -1015,7 +1018,7 @@ void GC_register_data_segments()
       char * base;
       char * limit, * new_limit;
     
-      if (!GC_win32s) return;
+      if (!GC_no_win32_dlls) return;
       p = base = limit = GC_least_described_address(static_root);
       while (p < GC_sysinfo.lpMaximumApplicationAddress) {
         result = VirtualQuery(p, &buf, sizeof(buf));
@@ -1237,13 +1240,6 @@ word bytes;
     if (bytes & (GC_page_size -1)) ABORT("Bad GET_MEM arg");
     result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
 		  GC_MMAP_FLAGS, fd, 0/* offset */);
-#   if defined(LINUX) && defined(I386)
-      if (result == MAP_FAILED) {
-	/* Retry with a bit of encouragement to use low addresses as well. */
-	result = mmap(0x1000, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
-		  GC_MMAP_FLAGS, fd, 0/* offset */);
-      }
-#   endif
     if (result == MAP_FAILED) return(0);
     last_addr = (ptr_t)result + bytes + GC_page_size - 1;
     last_addr = (ptr_t)((word)last_addr & ~(GC_page_size - 1));
@@ -1321,7 +1317,7 @@ SYSTEM_INFO GC_sysinfo;
 # ifdef USE_GLOBAL_ALLOC
 #   define GLOBAL_ALLOC_TEST 1
 # else
-#   define GLOBAL_ALLOC_TEST GC_win32s
+#   define GLOBAL_ALLOC_TEST GC_no_win32_dlls
 # endif
 
 word GC_n_heap_bases = 0;
@@ -1360,7 +1356,7 @@ word bytes;
 
 void GC_win32_free_heap ()
 {
-    if (GC_win32s) {
+    if (GC_no_win32_dlls) {
  	while (GC_n_heap_bases > 0) {
  	    GlobalFree (GC_heap_bases[--GC_n_heap_bases]);
  	    GC_heap_bases[GC_n_heap_bases] = 0;
@@ -1899,7 +1895,7 @@ GC_bool is_ptrfree;
       typedef struct sigcontext s_c;
 #   else  /* glibc < 2.2 */
 #     include <linux/version.h>
-#     if (LINUX_VERSION_CODE >= 0x20100) && !defined(M68K) || defined(ALPHA)
+#     if (LINUX_VERSION_CODE >= 0x20100) && !defined(M68K) || defined(ALPHA) || defined(ARM32)
         typedef struct sigcontext s_c;
 #     else
         typedef struct sigcontext_struct s_c;
@@ -2147,7 +2143,11 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #     if defined(IA64) || defined(HP_PA)
         void GC_write_fault_handler(int sig, siginfo_t * si, s_c * scp)
 #     else
-        void GC_write_fault_handler(int sig, s_c sc)
+#       if defined(ARM32)
+          void GC_write_fault_handler(int sig, int a2, int a3, int a4, s_c sc)
+#       else
+          void GC_write_fault_handler(int sig, s_c sc)
+#       endif
 #     endif
 #   endif
 #   define SIG_OK (sig == SIGSEGV)
@@ -2206,7 +2206,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 	char * addr = (char *) (scp -> si_addr);
 #   endif
 #   ifdef LINUX
-#     ifdef I386
+#     if defined(I386) || defined (X86_64)
 	char * addr = (char *) (sc.cr2);
 #     else
 #	if defined(M68K)
@@ -2250,7 +2250,11 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #             if defined(POWERPC)
                 char * addr = (char *) (sc.regs->dar);
 #	      else
-		--> architecture not supported
+#               if defined(ARM32)
+                  char * addr = (char *)sc.fault_address;
+#               else
+		  --> architecture not supported
+#               endif
 #	      endif
 #	    endif
 #	  endif
@@ -3147,7 +3151,7 @@ GC_bool is_ptrfree;
 #  endif
 #endif /* SPARC */
 
-#ifdef SAVE_CALL_CHAIN
+#ifdef  NEED_CALLINFO
 /* Fill in the pc and argument information for up to NFRAMES of my	*/
 /* callers.  Ignore my frame and my callers frame.			*/
 
@@ -3155,13 +3159,23 @@ GC_bool is_ptrfree;
 # include <features.h>
 # if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 1 || __GLIBC__ > 2
 #   define HAVE_BUILTIN_BACKTRACE
+#   ifdef IA64
+#     define BUILTIN_BACKTRACE_BROKEN
+#   endif
 # endif
 #endif
 
+#include <execinfo.h>
+#ifdef LINUX
+#   include <unistd.h>
+#endif
+
+#endif /* NEED_CALLINFO */
+
+#ifdef SAVE_CALL_CHAIN
+
 #if NARGS == 0 && NFRAMES % 2 == 0 /* No padding */ \
     && defined(HAVE_BUILTIN_BACKTRACE)
-
-#include <execinfo.h>
 
 void GC_save_callers (info) 
 struct callinfo info[NFRAMES];
@@ -3229,6 +3243,141 @@ struct callinfo info[NFRAMES];
 #endif /* No builtin backtrace */
 
 #endif /* SAVE_CALL_CHAIN */
+
+#ifdef NEED_CALLINFO
+
+/* Print info to stderr.  We do NOT hold the allocation lock */
+void GC_print_callers (info)
+struct callinfo info[NFRAMES];
+{
+    register int i;
+    static int reentry_count = 0;
+    GC_bool stop = FALSE;
+
+    LOCK();
+      ++reentry_count;
+    UNLOCK();
+    
+#   if NFRAMES == 1
+      GC_err_printf0("\tCaller at allocation:\n");
+#   else
+      GC_err_printf0("\tCall chain at allocation:\n");
+#   endif
+    for (i = 0; i < NFRAMES && !stop ; i++) {
+     	if (info[i].ci_pc == 0) break;
+#	if NARGS > 0
+	{
+	  int j;
+
+     	  GC_err_printf0("\t\targs: ");
+     	  for (j = 0; j < NARGS; j++) {
+     	    if (j != 0) GC_err_printf0(", ");
+     	    GC_err_printf2("%d (0x%X)", ~(info[i].ci_arg[j]),
+     	    				~(info[i].ci_arg[j]));
+     	  }
+	  GC_err_printf0("\n");
+	}
+# 	endif
+        if (reentry_count > 1) {
+	    /* We were called during an allocation during	*/
+	    /* a previous GC_print_callers call; punt.		*/
+     	    GC_err_printf1("\t\t##PC##= 0x%lx\n", info[i].ci_pc);
+	    continue;
+	}
+	{
+#	  ifdef LINUX
+	    FILE *pipe;
+#	  endif
+#	  if defined(HAVE_BUILTIN_BACKTRACE) && \
+	     !defined(BUILTIN_BACKTRACE_BROKEN)
+	    char **sym_name =
+	      backtrace_symbols((void **)(&(info[i].ci_pc)), 1);
+	    char *name = sym_name[0];
+#	  else
+	    char buf[40];
+	    char *name = buf;
+     	    sprintf(buf, "##PC##= 0x%lx", info[i].ci_pc);
+#	  endif
+#	  if defined(LINUX) && !defined(SMALL_CONFIG)
+	    /* Try for a line number. */
+	    {
+#	        define EXE_SZ 100
+		static char exe_name[EXE_SZ];
+#		define CMD_SZ 200
+		char cmd_buf[CMD_SZ];
+#		define RESULT_SZ 200
+		static char result_buf[RESULT_SZ];
+		size_t result_len;
+		static GC_bool found_exe_name = FALSE;
+		static GC_bool will_fail = FALSE;
+		int ret_code;
+		/* Try to get it via a hairy and expensive scheme.	*/
+		/* First we get the name of the executable:		*/
+		if (will_fail) goto out;
+		if (!found_exe_name) { 
+		  ret_code = readlink("/proc/self/exe", exe_name, EXE_SZ);
+		  if (ret_code < 0 || ret_code >= EXE_SZ
+		      || exe_name[0] != '/') {
+		    will_fail = TRUE;	/* Dont try again. */
+		    goto out;
+		  }
+		  exe_name[ret_code] = '\0';
+		  found_exe_name = TRUE;
+		}
+		/* Then we use popen to start addr2line -e <exe> <addr>	*/
+		/* There are faster ways to do this, but hopefully this	*/
+		/* isn't time critical.					*/
+		sprintf(cmd_buf, "/usr/bin/addr2line -f -e %s 0x%lx", exe_name,
+				 (unsigned long)info[i].ci_pc);
+		pipe = popen(cmd_buf, "r");
+		if (pipe == NULL
+		    || (result_len = fread(result_buf, 1, RESULT_SZ - 1, pipe))
+		       == 0) {
+		  if (pipe != NULL) pclose(pipe);
+		  will_fail = TRUE;
+		  goto out;
+		}
+		if (result_buf[result_len - 1] == '\n') --result_len;
+		result_buf[result_len] = 0;
+		if (result_buf[0] == '?'
+		    || result_buf[result_len-2] == ':' 
+		       && result_buf[result_len-1] == '0') {
+		    pclose(pipe);
+		    goto out;
+		}
+		/* Get rid of embedded newline, if any.  Test for "main" */
+		{
+		   char * nl = strchr(result_buf, '\n');
+		   if (nl != NULL && nl < result_buf + result_len) {
+		     *nl = ':';
+		   }
+		   if (strncmp(result_buf, "main", nl - result_buf) == 0) {
+		     stop = TRUE;
+		   }
+		}
+		if (result_len < RESULT_SZ - 25) {
+		  /* Add in hex address	*/
+		    sprintf(result_buf + result_len, " [0x%lx]",
+			  (unsigned long)info[i].ci_pc);
+		}
+		name = result_buf;
+		pclose(pipe);
+		out:
+	    }
+#	  endif /* LINUX */
+	  GC_err_printf1("\t\t%s\n", name);
+#	  if defined(HAVE_BUILTIN_BACKTRACE) && \
+	     !defined(BUILTIN_BACKTRACE_BROKEN)
+	    free(sym_name);  /* May call GC_free; that's OK */
+#         endif
+	}
+    }
+    LOCK();
+      --reentry_count;
+    UNLOCK();
+}
+
+#endif /* NEED_CALLINFO */
 
 #if defined(LINUX) && defined(__ELF__) && \
     (!defined(SMALL_CONFIG) || defined(USE_PROC_FOR_LIBRARIES))

@@ -523,7 +523,7 @@ int GC_pthread_detach(pthread_t thread)
     LOCK();
     thread_gc_id = GC_lookup_thread(thread);
     UNLOCK();
-    result = REAL_FUNC(pthread_detach)(thread);
+    result = pthread_detach(thread);
     if (result == 0) {
       LOCK();
       thread_gc_id -> flags |= DETACHED;
@@ -603,7 +603,7 @@ GC_pthread_create(pthread_t *new_thread,
     si -> start_routine = start_routine;
     si -> arg = arg;
     LOCK();
-    if (!GC_initialized) GC_init();
+    if (!GC_is_initialized) GC_init();
     if (NULL == attr) {
         stack = 0;
 	(void) pthread_attr_init(&new_attr);

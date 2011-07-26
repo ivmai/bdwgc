@@ -84,7 +84,8 @@
 # if defined(GC_SOLARIS_PTHREADS) || defined(GC_FREEBSD_THREADS) || \
 	defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) || \
 	defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) || \
-	defined(GC_DGUX386_THREADS)
+	defined(GC_DGUX386_THREADS) || \
+        (defined(GC_WIN32_THREADS) && defined(__CYGWIN32__))
 #   define GC_PTHREADS
 # endif
 
@@ -486,6 +487,9 @@ GC_API size_t GC_get_total_bytes GC_PROTO((void));
 /* Only the generational piece of this is	*/
 /* functional if GC_parallel is TRUE		*/
 /* or if GC_time_limit is GC_TIME_UNLIMITED.	*/
+/* Causes GC_local_gcj_malloc() to revert to	*/
+/* locked allocation.  Must be called 		*/
+/* before any GC_local_gcj_malloc() calls.	*/
 GC_API void GC_enable_incremental GC_PROTO((void));
 
 /* Does incremental mode write-protect pages?  Returns zero or	*/
@@ -551,9 +555,25 @@ GC_API void GC_debug_free GC_PROTO((GC_PTR object_addr));
 GC_API GC_PTR GC_debug_realloc
 	GC_PROTO((GC_PTR old_object, size_t new_size_in_bytes,
   		  GC_EXTRA_PARAMS));
-  			 	 
 GC_API void GC_debug_change_stubborn GC_PROTO((GC_PTR));
 GC_API void GC_debug_end_stubborn_change GC_PROTO((GC_PTR));
+
+/* Routines that allocate objects with debug information (like the 	*/
+/* above), but just fill in dummy file and line number information.	*/
+/* Thus they can serve as drop-in malloc/realloc replacements.  This	*/
+/* can be useful for two reasons:  					*/
+/* 1) It allows the collector to be built with DBG_HDRS_ALL defined	*/
+/*    even if some allocation calls come from 3rd party libraries	*/
+/*    that can't be recompiled.						*/
+/* 2) On some platforms, the file and line information is redundant,	*/
+/*    since it can be reconstructed from a stack trace.  On such	*/
+/*    platforms it may be more convenient not to recompile, e.g. for	*/
+/*    leak detection.  This can be accomplished by instructing the	*/
+/*    linker to replace malloc/realloc with these.			*/
+GC_API GC_PTR GC_debug_malloc_replacement GC_PROTO((size_t size_in_bytes));
+GC_API GC_PTR GC_debug_realloc_replacement
+	      GC_PROTO((GC_PTR object_addr, size_t size_in_bytes));
+  			 	 
 # ifdef GC_DEBUG
 #   define GC_MALLOC(sz) GC_debug_malloc(sz, GC_EXTRAS)
 #   define GC_MALLOC_ATOMIC(sz) GC_debug_malloc_atomic(sz, GC_EXTRAS)
@@ -655,7 +675,8 @@ GC_API void GC_debug_register_finalizer
 /* itself.  There is a stylistic argument that this is wrong,	*/
 /* but it's unavoidable for C++, since the compiler may		*/
 /* silently introduce these.  It's also benign in that specific	*/
-/* case.							*/
+/* case.  And it helps if finalizable objects are split to	*/
+/* avoid cycles.						*/
 /* Note that cd will still be viewed as accessible, even if it	*/
 /* refers to the object itself.					*/
 GC_API void GC_register_finalizer_ignore_self
@@ -886,6 +907,7 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
 
 #if defined(GC_WIN32_THREADS)
 # include <windows.h>
+# include <winbase.h>
 
   /*
    * All threads must be created using GC_CreateThread, so that they will be

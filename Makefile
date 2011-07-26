@@ -34,8 +34,11 @@ CFLAGS= -O -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_
 
 # To build the parallel collector on Linux, add to the above:
 # -DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
-# To build the parallel collector n a static library on HP/UX, add to the above:
+# To build the parallel collector in a static library on HP/UX,
+# add to the above:
 # -DGC_HPUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC -DUSE_HPUX_TLS -D_POSIX_C_SOURCE=199506L
+# To build the thread-safe collector on Tru64, add to the above:
+# -pthread -DGC_OSF1_THREADS
 
 # HOSTCC and HOSTCFLAGS are used to build executables that will be run as
 # part of the build process, i.e. on the build machine.  These will usually
@@ -105,13 +108,15 @@ HOSTCFLAGS=$(CFLAGS)
 #   See gc_cpp.h for details.  No effect on the C part of the collector.
 #   This is defined implicitly in a few environments.  Must also be defined
 #   by clients that use gc_cpp.h.
-# -DREDIRECT_MALLOC=X causes malloc, realloc, and free to be
-#   defined as aliases for X, GC_realloc, and GC_free, respectively.
+# -DREDIRECT_MALLOC=X causes malloc to be defined as alias for X.
+#   Unless the following macros are defined, realloc is also redirected
+#   to GC_realloc, and free is redirected to GC_free.
 #   Calloc and strdup are redefined in terms of the new malloc.  X should
 #   be either GC_malloc or GC_malloc_uncollectable, or
 #   GC_debug_malloc_replacement.  (The latter invokes GC_debug_malloc
 #   with dummy source location information, but still results in
-#   properly remembered call stacks on Linux/X86 and Solaris/SPARC.)
+#   properly remembered call stacks on Linux/X86 and Solaris/SPARC.
+#   It requires that the following two macros also be used.)
 #   The former is occasionally useful for working around leaks in code
 #   you don't want to (or can't) look at.  It may not work for
 #   existing code, but it often does.  Neither works on all platforms,
@@ -123,6 +128,9 @@ HOSTCFLAGS=$(CFLAGS)
 #   The canonical use is -DREDIRECT_REALLOC=GC_debug_realloc_replacement,
 #   together with -DREDIRECT_MALLOC=GC_debug_malloc_replacement to
 #   generate leak reports with call stacks for both malloc and realloc.
+#   This also requires the following:
+# -DREDIRECT_FREE=X causes free to be redirected to X.  The
+#   canonical use is -DREDIRECT_FREE=GC_debug_free.
 # -DIGNORE_FREE turns calls to free into a noop.  Only useful with
 #   -DREDIRECT_MALLOC.
 # -DNO_DEBUGGING removes GC_dump and the debugging routines it calls.
@@ -282,7 +290,7 @@ DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
         doc/README.contributors doc/README.changes doc/gc.man \
 	doc/README.environment doc/tree.html doc/gcdescr.html \
 	doc/README.autoconf doc/README.macros doc/README.ews4800 \
-	doc/README.DGUX386 doc/README.arm.cross
+	doc/README.DGUX386 doc/README.arm.cross doc/leak.html
 
 TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 	tests/leak_test.c tests/thread_leak_test.c
@@ -290,7 +298,7 @@ TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 GNU_BUILD_FILES= configure.in Makefile.am configure acinclude.m4 \
 		 libtool.m4 install-sh configure.host Makefile.in \
 		 ltconfig aclocal.m4 config.sub config.guess \
-		 ltmain.sh mkinstalldirs
+		 ltmain.sh mkinstalldirs depcomp missing
 
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
 		 BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
@@ -461,9 +469,8 @@ mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.S \
 	./if_mach MIPS IRIX5 $(AS) -o mach_dep.o $(srcdir)/mips_sgi_mach_dep.S
 	./if_mach MIPS RISCOS $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
 	./if_mach MIPS ULTRIX $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
-	./if_mach RS6000 "" $(AS) -o mach_dep.o $(srcdir)/rs6000_mach_dep.s
 	./if_mach POWERPC MACOSX $(AS) -o mach_dep.o $(srcdir)/powerpc_macosx_mach_dep.s
-	./if_mach ALPHA "" $(AS) -o mach_dep.o $(srcdir)/alpha_mach_dep.S
+	./if_mach ALPHA LINUX $(CC) -c -o mach_dep.o $(srcdir)/alpha_mach_dep.S
 	./if_mach SPARC SUNOS5 $(CC) -c -o mach_dep.o $(srcdir)/sparc_mach_dep.S
 	./if_mach SPARC SUNOS4 $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_mach SPARC OPENBSD $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s

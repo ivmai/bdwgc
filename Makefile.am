@@ -10,6 +10,7 @@
 # modified is included with the above copyright notice.
 #
 # Original author: Tom Tromey
+# Severely truncated by Hans-J. Boehm
 
 ## Process this file with automake to produce Makefile.in.
 
@@ -17,27 +18,10 @@
 ## files that should be in the distribution are not mentioned in this
 ## Makefile.am.
 
-AUTOMAKE_OPTIONS = cygnus
+AUTOMAKE_OPTIONS = foreign
 
-# Multilib support variables.
-MULTISRCTOP =
-MULTIBUILDTOP =
-MULTIDIRS =
-MULTISUBDIR =
-MULTIDO = true
-MULTICLEAN = true
+lib_LTLIBRARIES = libgc.la
 
-## Install a library built with a cross compiler in tooldir, not
-## libdir.
-if USE_LIBDIR
-toolexeclibdir = $(libdir)$(MULTISUBDIR)
-else
-toolexecdir = $(exec_prefix)/$(target_alias)
-toolexeclibdir = $(toolexecdir)/lib$(MULTISUBDIR)
-endif
-
-toolexeclib_LTLIBRARIES = $(target_all)
-EXTRA_LTLIBRARIES = libgc.la
 libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
 dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c irix_threads.c \
 linux_threads.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
@@ -49,9 +33,9 @@ backgraph.c win32_threads.c
 # linuxthread semaphore functions get linked:
 libgc_la_LIBADD = @addobjs@ $(THREADLIBS)
 libgc_la_DEPENDENCIES = @addobjs@
-libgc_la_LDFLAGS = -version-info 1:1:0 -rpath $(toolexeclibdir)
+libgc_la_LDFLAGS = -version-info 1:1:0
 
-EXTRA_libgc_la_SOURCES = alpha_mach_dep.s \
+EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
 mips_sgi_mach_dep.S mips_ultrix_mach_dep.s powerpc_macosx_mach_dep.s \
 rs6000_mach_dep.s sparc_mach_dep.S sparc_netbsd_mach_dep.s \
 sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s
@@ -62,12 +46,13 @@ AM_CFLAGS = @GC_CFLAGS@
 check_PROGRAMS = gctest
 # The following hack produces a warning from automake, but we need it in order 
 # to build a file from a subdirectory. FIXME.
-test.o:	tests/test.c
-	$(COMPILE) -c tests/test.c
+test.o:	$(srcdir)/tests/test.c
+	$(COMPILE) -c $(srcdir)/tests/test.c
 # 	Using $< in the above seems to fail with the HP/UX on Itanium make.
 
-gctest_OBJECTS = test.o
-gctest_LDADD = ./libgc.la $(THREADLIBS) $(EXTRA_TEST_LIBS)
+# gctest_OBJECTS = test.o
+gctest_SOURCES = 
+gctest_LDADD = test.o ./libgc.la $(THREADLIBS) $(EXTRA_TEST_LIBS)
 TESTS_ENVIRONMENT = LD_LIBRARY_PATH=../../$(MULTIBUILDTOP)gcc
 TESTS = gctest
 
@@ -88,8 +73,6 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) \
 	$(AM_CFLAGS) $(MY_CFLAGS) $(GC_CFLAGS) 
 LINK = $(LIBTOOL) --mode=link $(CC) $(AM_CFLAGS) $(MY_CFLAGS) $(LDFLAGS) -o $@
-
-AM_CFLAGS = @GC_CFLAGS@
 
 # Work around what appears to be a GNU make bug handling MAKEFLAGS
 # values defined in terms of make variables, as is the case for CC and
@@ -133,29 +116,5 @@ AM_MAKEFLAGS = \
 	"DESTDIR=$(DESTDIR)"
 
 CONFIG_STATUS_DEPENDENCIES = $(srcdir)/configure.host
-
-# Multilib support.
-.PHONY: all-multi mostlyclean-multi clean-multi distclean-multi \
-	maintainer-clean-multi
-
-all-am: all-multi
-install-am: install-multi
-mostlyclean-am: mostlyclean-multi
-clean-am: clean-multi
-distclean-am: distclean-multi
-maintainer-clean-am: maintainer-clean-multi
-
-all-multi:
-	$(MULTIDO) $(AM_MAKEFLAGS) DO=all multi-do
-install-multi:
-	$(MULTIDO) $(AM_MAKEFLAGS) DO=install multi-do
-mostlyclean-multi:
-	$(MULTICLEAN) $(AM_MAKEFLAGS) DO=mostlyclean multi-clean
-clean-multi:
-	$(MULTICLEAN) $(AM_MAKEFLAGS) DO=clean multi-clean
-distclean-multi:
-	$(MULTICLEAN) $(AM_MAKEFLAGS) DO=distclean multi-clean
-maintainer-clean-multi:
-	$(MULTICLEAN) $(AM_MAKEFLAGS) DO=maintainer-clean multi-clean
 
 MAKEOVERRIDES=

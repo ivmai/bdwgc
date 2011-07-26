@@ -825,7 +825,7 @@ int GC_thr_suspend(thread_t target_thread)
     if (result == 0) {
     	t = GC_lookup_thread(target_thread);
     	if (t == 0) ABORT("thread unknown to GC");
-        t -> flags |= SUSPENDED;
+        t -> flags |= SUSPNDED;
     }
     UNLOCK();
     return(result);
@@ -841,7 +841,7 @@ int GC_thr_continue(thread_t target_thread)
     if (result == 0) {
     	t = GC_lookup_thread(target_thread);
     	if (t == 0) ABORT("thread unknown to GC");
-        t -> flags &= ~SUSPENDED;
+        t -> flags &= ~SUSPNDED;
     }
     UNLOCK();
     return(result);
@@ -927,7 +927,7 @@ GC_thr_create(void *stack_base, size_t stack_size,
     	my_flags |= CLIENT_OWNS_STACK;
     }
     if (flags & THR_DETACHED) my_flags |= DETACHED;
-    if (flags & THR_SUSPENDED) my_flags |= SUSPENDED;
+    if (flags & THR_SUSPENDED) my_flags |= SUSPNDED;
     result = thr_create(stack, stack_size, start_routine,
    		        arg, flags & ~THR_DETACHED, &my_new_thread);
     if (result == 0) {

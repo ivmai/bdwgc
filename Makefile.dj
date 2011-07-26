@@ -152,7 +152,7 @@ CFLAGS= -O -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DALL_INTERIO
 #   currently probably works only with Linux.
 
 
-CXXFLAGS= $(CFLAGS) -DOPERATOR_NEW_ARRAY
+CXXFLAGS= $(CFLAGS) -DGC_OPERATOR_NEW_ARRAY
 AR= ar
 RANLIB= ranlib
 

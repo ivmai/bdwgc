@@ -47,12 +47,16 @@ GC_bool GC_use_entire_heap = 0;
 struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
 
 #ifndef USE_MUNMAP
+
   word GC_free_bytes[N_HBLK_FLS+1] = { 0 };
 	/* Number of free bytes on each list.	*/
 
   /* Is bytes + the number of free bytes on lists n .. N_HBLK_FLS 	*/
   /* > GC_max_large_allocd_bytes?					*/
-  GC_bool GC_enough_large_bytes_left(bytes,n)
+# ifdef __GNUC__
+  __inline__
+# endif
+  static GC_bool GC_enough_large_bytes_left(bytes,n)
   word bytes;
   int n;
   {
@@ -595,6 +599,12 @@ int n;
 		    if (!GC_enough_large_bytes_left(GC_large_allocd_bytes, n)) {
 		      continue;
 		    } 
+		    /* If we are deallocating lots of memory from	*/
+		    /* finalizers, fail and collect sooner rather	*/
+		    /* than later.					*/
+		    if (GC_finalizer_mem_freed > (GC_heapsize >> 4))  {
+		      continue;
+		    }
 #		endif /* !USE_MUNMAP */
 	    }
 	    /* If the next heap block is obviously better, go on.	*/
@@ -654,9 +664,13 @@ int n;
 	                 && orig_avail - size_needed
 			    > (signed_word)BL_LIMIT) {
 	        /* Punt, since anything else risks unreasonable heap growth. */
-		if (0 == GETENV("GC_NO_BLACKLIST_WARNING")) {
-	          WARN("Needed to allocate blacklisted block at 0x%lx\n",
-		       (word)hbp);
+		if (++GC_large_alloc_warn_suppressed
+		    >= GC_large_alloc_warn_interval) {
+	          WARN("Repeated allocation of very large block "
+		       "(appr. size %ld):\n"
+		       "\tMay lead to memory leak and poor performance.\n",
+		       size_needed);
+		  GC_large_alloc_warn_suppressed = 0;
 		}
 	        size_avail = orig_avail;
 	      } else if (size_avail == 0 && size_needed == HBLKSIZE

@@ -529,7 +529,7 @@ struct {
  */
 #ifdef THREADS
 
-# ifdef GC_WIN32_THREADS
+# if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)
     unsigned __stdcall tiny_reverse_test(void * arg)
 # else
     void * tiny_reverse_test(void * arg)
@@ -748,9 +748,10 @@ VOLATILE int dropped_something = 0;
 # if  defined(GC_PTHREADS)
     static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_lock(&incr_lock);
-# endif
-# ifdef GC_WIN32_THREADS
-    EnterCriticalSection(&incr_cs);
+# else
+#   ifdef GC_WIN32_THREADS
+      EnterCriticalSection(&incr_cs);
+#   endif
 # endif
   if ((int)(GC_word)client_data != t -> level) {
      (void)GC_printf0("Wrong finalization data - collector is broken\n");
@@ -765,9 +766,10 @@ VOLATILE int dropped_something = 0;
 # endif
 # if defined(GC_PTHREADS)
     pthread_mutex_unlock(&incr_lock);
-# endif
-# ifdef GC_WIN32_THREADS
-    LeaveCriticalSection(&incr_cs);
+# else
+#   ifdef GC_WIN32_THREADS
+      LeaveCriticalSection(&incr_cs);
+#   endif
 # endif
 }
 
@@ -839,9 +841,10 @@ int n;
 #         if defined(GC_PTHREADS)
             static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
             pthread_mutex_lock(&incr_lock);
-#         endif
-#         ifdef GC_WIN32_THREADS
-            EnterCriticalSection(&incr_cs);
+#         else
+#           ifdef GC_WIN32_THREADS
+              EnterCriticalSection(&incr_cs);
+#           endif
 #         endif
 		/* Losing a count here causes erroneous report of failure. */
           finalizable_count++;
@@ -854,9 +857,10 @@ int n;
 #	  endif
 #	  if defined(GC_PTHREADS)
 	    pthread_mutex_unlock(&incr_lock);
-#	  endif
-#         ifdef GC_WIN32_THREADS
-            LeaveCriticalSection(&incr_cs);
+#	  else
+#           ifdef GC_WIN32_THREADS
+              LeaveCriticalSection(&incr_cs);
+#           endif
 #         endif
 	}
 
@@ -1241,6 +1245,19 @@ void run_one_test()
     		"GC_is_valid_displacement produced incorrect result\n");
 	FAIL;
       }
+#     if defined(__STDC__) && !defined(MSWIN32) && !defined(MSWINCE)
+        /* Harder to test under Windows without a gc.h declaration.  */
+        {
+	  size_t i;
+	  extern void *GC_memalign();
+
+	  GC_malloc(17);
+	  for (i = sizeof(GC_word); i < 512; i *= 2) {
+	    GC_word result = (GC_word) GC_memalign(i, 17);
+	    if (result % i != 0 || result == 0 || *(int *)result != 0) FAIL;
+	  } 
+	}
+#     endif
 #     ifndef ALL_INTERIOR_POINTERS
 #      if defined(RS6000) || defined(POWERPC)
         if (!TEST_FAIL_COUNT(1)) {
@@ -1480,7 +1497,7 @@ void SetMinimumStack(long minSize)
 }
 # endif
 
-#ifdef GC_WIN32_THREADS
+#if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)
 
 unsigned __stdcall thr_run_one_test(void *arg)
 {
