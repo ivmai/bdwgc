@@ -108,7 +108,7 @@ OBJDUMP = @OBJDUMP@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 STRIP = @STRIP@
-THREADLIBS = @THREADLIBS@
+THREADDLLIBS = @THREADDLLIBS@
 UNWINDLIBS = @UNWINDLIBS@
 VERSION = @VERSION@
 addincludes = @addincludes@
@@ -186,9 +186,9 @@ pthread_support.c pthread_stop_world.c darwin_stop_world.c \
 $(asm_libgc_sources)
 
 
-# Include THREADLIBS here to ensure that the correct versions of
+# Include THREADDLLIBS here to ensure that the correct versions of
 # linuxthread semaphore functions get linked:
-libgc_la_LIBADD = @addobjs@ $(THREADLIBS) $(UNWINDLIBS)
+libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = -version-info 1:2:0
 
@@ -199,7 +199,7 @@ EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
 
 
 libgccpp_la_SOURCES = gc_cpp.cc
-libgccpp_la_LIBADD = $(THREADLIBS) $(UNWINDLIBS)
+libgccpp_la_LIBADD = $(THREADDLLIBS) $(UNWINDLIBS)
 libgccpp_la_LDFLAGS = -version-info 1:2:0
 
 AM_CXXFLAGS = @GC_CFLAGS@
@@ -212,9 +212,9 @@ check_PROGRAMS = gctest $(extra_checks)
 
 # gctest_OBJECTS = test.o
 gctest_SOURCES = tests/test.c
-gctest_LDADD = ./libgc.la $(THREADLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
+gctest_LDADD = ./libgc.la $(THREADDLLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
 test_cpp_SOURCES = tests/test_cpp.cc
-test_cpp_LDADD = ./libgc.la ./libgccpp.la $(THREADLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
+test_cpp_LDADD = ./libgc.la ./libgccpp.la $(THREADDLLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
 
 TESTS = gctest $(extra_checks)
 

@@ -191,7 +191,7 @@ GC_API GC_word GC_free_space_divisor;
 			/* least N/GC_free_space_divisor bytes between	*/
 			/* collections, where N is the heap size plus	*/
 			/* a rough estimate of the root set size.	*/
-			/* Initially, GC_free_space_divisor = 4.	*/
+			/* Initially, GC_free_space_divisor = 3.	*/
 			/* Increasing its value will use less space	*/
 			/* but more collection time.  Decreasing it	*/
 			/* will appreciably decrease collection time	*/
@@ -308,6 +308,9 @@ GC_API void GC_end_stubborn_change GC_PROTO((GC_PTR));
 /* the base of the user object.						*/
 /* Return 0 if displaced_pointer doesn't point to within a valid	*/
 /* object.								*/
+/* Note that a deallocated object in the garbage collected heap		*/
+/* may be considered valid, even if it has been deallocated with	*/
+/* GC_free.  								*/
 GC_API GC_PTR GC_base GC_PROTO((GC_PTR displaced_pointer));
 
 /* Given a pointer to the base of an object, return its size in bytes.	*/

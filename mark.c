@@ -1450,8 +1450,8 @@ void GC_push_all_eager(bottom, top)
 ptr_t bottom;
 ptr_t top;
 {
-    word * b = (word *)(((long) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    word * t = (word *)(((long) top) & ~(ALIGNMENT-1));
+    word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
+    word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
     register word *p;
     register word q;
     register word *lim;

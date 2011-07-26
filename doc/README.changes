@@ -2100,6 +2100,75 @@ Since gc6.3alpha6:
    to Andrew Begel.)
  - Fix GC_task_self declaration in os_dep.c.  (Thanks to Andrew Pinski.)
  - Increase INITIAL_BUF_SZ in os_dep.c for Solaris /proc reads.
+
+Since 6.3:
+ - Merge gcconfig.h changes from gcc tree.
+ - Unconditionally include gc_priv.h in solaris_pthreads.c, win32_threads.h,
+   aix_irix_threads.c, and solaris_threads.c to get thread definitions.
+ - Start marker threads in GC_thr_init, so that they get started even
+   if no other threads are ever started.  (Oddly enough, the parallel
+   collector worked correctly, though not well, with no helper threads.)
+ - Go ahead and split large blocks in GC_allochblk_nth if GC_dont_gc
+   is set.  (Thanks to Alexander Petrossian.)
+ - GC_PRINT_BACK_HEIGHT would deadlock with thread support.
+ - Let in_progress_space in backgraph.s grow dynamically.
+ - Fix README.solaris2.  The GC_thr_init() hack doesn't work anymore.
+ - Convert GC_finalizer_mem_freed to bytes in allchblk.c.
+ - Add missing declaration for GC_generic_malloc_words_small_inner.
+   Without it, s390x breaks.  (Thanks to Ulrich Weigand.)
+ - Applied several MacOSX patches to support older tool chains.
+   (Thanks to Stefan Ring.)
+ - Bug fix for NetBSD/amd64.  (Thanks to Marc Recht.)  Add NetBSD/sh3
+   support.  (Thanks to Uchiyama Yasushi.)
+ - Fixed an uninitialized variable in cordprnt.c.  (Thanks to gcc for
+   providing the warning.)
+ - Eliminated some, but not all, gcc -Wall warnings.
+ - Changed some old style casts to reinterpret_cast in new_gc_alloc.h.
+   (Thanks to Dan Grayson.)
+ - GC_extend_size_map shouldn't adjust for GC_all_interior_pointers if
+   GC_DONT_ADD_BYTE_AT_END is set.
+ - Changed some (long) casts to (word) in preparation for win64.
+   (Thanks to Peter Colson.)
+ - Changed "int stack_size" declaration in pthread_support.c to use
+   size_t.  (Only mattered with GC_ASSERTIONS enabled.)
+ - Added CRIS (etrax) support.  (Thanks to Simon Posnjak and
+   Hans-Peter Nilsson.)
+ - Removed GC_IGNORE_FB frame buffer recognition, and replaced
+   it with a check that the mapping type is MEM_IMAGE.
+   In theory, this should work much better, but it is a high
+   risk change for win32.  (Thanks to Ashley Bone for the crucial
+   experimental data behind this, and to Rutger Ovidus for
+   some further experiments.)
+ - Fixed print_block_list to print the correct kind number for
+   STUBBORN.  (Thanks to Rutger Ovidus.)
+ - GC_allochblk_nth incremented GC_words_wasted by bytes rather than
+   words.
+ - Consider GC_words_wasted in GC_adj_words_allocd only if it is within
+   reason.  (A hack to avoid some extremely unlikely scenarios in which
+   we manage to allocate only "wasted" space.  7.0 has a better fix.)
+ - Changed PowerPC GC_clear implementation to use lwsync instead of
+   eieio, since the documentation recommends against eieio, and
+   it seems to be incorrect if the preceding memory op is a load.
+ - Fixed print_block_list to print the correct kind number for
+   STUBBORN.  (Thanks to Rutger Ovidus.)
+ - GC_allochblk_nth incremented GC_words_wasted by bytes rather than
+   words.
+ - Have configure.in generate an error if it is asked to support
+   pthreads, but doesn't know how to.
+ - Added Kazuhiro Inaoka's patch for Renesas M32R support.
+ - Have the GNU build mechanism link with -ldl.  Rename THREADLIBS
+   to THREADDLLIBS to reflect this.  (Thanks to Sven Verdoolaege.)
+ - Added Hannes Mehnert's patch for FreeBSD/SPARC support.
+ - Merged some FreeBSD specific patches to threadlibs.c and dyn_load.c.
+   (Thanks tp John Merryweather Cooper.)
+ - Define MPROTECT_VDB on MACOSX only if threads are being used, since the
+   dirty page tracking mechanism uses threads.  (This avoids an undefined
+   reference to _GC_darwin_register_mach_handler_thread.)
+ - By popular demand, use __libc symbols only if we are built with
+   USE_LIBC_PRIVATES, which is off by default, and not otherwise documented.
+ - Ignore GC_enable_incremental() requests when KEEP_BACK_PTRS is set.
+   The GC itself will dirty lots of pages in this cases, probably making
+   it counterproductive on all platforms.  And the DARWIN port crashes.
   
 To do:
  - The USE_MUNMAP code should really use a separate data structure

@@ -104,8 +104,6 @@ word GC_free_space_divisor = 3;
 extern GC_bool GC_collection_in_progress();
 		/* Collection is in progress, or was abandoned.	*/
 
-extern GC_bool GC_print_back_height;
-
 int GC_never_stop_func GC_PROTO((void)) { return(0); }
 
 unsigned long GC_time_limit = TIME_LIMIT;
@@ -198,7 +196,8 @@ word GC_adj_words_allocd()
     	/* had been reallocated this round. Finalization is user	*/
     	/* visible progress.  And if we don't count this, we have	*/
     	/* stability problems for programs that finalize all objects.	*/
-    result += GC_words_wasted;
+    if ((GC_words_wasted >> 3) < result)
+        result += GC_words_wasted;
      	/* This doesn't reflect useful work.  But if there is lots of	*/
      	/* new fragmentation, the same is probably true of the heap,	*/
      	/* and the collection will be correspondingly cheaper.		*/
@@ -931,7 +930,7 @@ word n;
 #   endif
     expansion_slop = WORDS_TO_BYTES(min_words_allocd()) + 4*MAXHINCR*HBLKSIZE;
     if (GC_last_heap_addr == 0 && !((word)space & SIGNB)
-        || GC_last_heap_addr != 0 && GC_last_heap_addr < (ptr_t)space) {
+        || (GC_last_heap_addr != 0 && GC_last_heap_addr < (ptr_t)space)) {
         /* Assume the heap is growing up */
         GC_greatest_plausible_heap_addr =
             (GC_PTR)GC_max((ptr_t)GC_greatest_plausible_heap_addr,
@@ -994,7 +993,7 @@ word needed_blocks;
 GC_bool ignore_off_page;
 {
     if (!GC_incremental && !GC_dont_gc &&
-	(GC_dont_expand && GC_words_allocd > 0 || GC_should_collect())) {
+	((GC_dont_expand && GC_words_allocd > 0) || GC_should_collect())) {
       GC_gcollect_inner();
     } else {
       word blocks_to_get = GC_heapsize/(HBLKSIZE*GC_free_space_divisor)
@@ -1003,6 +1002,9 @@ GC_bool ignore_off_page;
       if (blocks_to_get > MAXHINCR) {
           word slop;
           
+	  /* Get the minimum required to make it likely that we		*/
+	  /* can satisfy the current request in the presence of black-	*/
+	  /* listing.  This will probably be more than MAXHINCR.	*/
           if (ignore_off_page) {
               slop = 4;
           } else {

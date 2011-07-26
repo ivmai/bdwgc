@@ -277,7 +277,6 @@ word GC_apply_to_maps(word (*fn)(char *))
 char *GC_parse_map_entry(char *buf_ptr, word *start, word *end,
                                 char *prot_buf, unsigned int *maj_dev)
 {
-    int i;
     char *tok;
 
     if (buf_ptr == NULL || *buf_ptr == '\0') {
@@ -859,8 +858,10 @@ ptr_t GC_get_stack_base()
 # define STAT_SKIP 27   /* Number of fields preceding startstack	*/
 			/* field in /proc/self/stat			*/
 
+#ifdef USE_LIBC_PRIVATES
 # pragma weak __libc_stack_end
   extern ptr_t __libc_stack_end;
+#endif
 
 # ifdef IA64
     /* Try to read the backing store base from /proc/self/maps.	*/
@@ -890,30 +891,33 @@ ptr_t GC_get_stack_base()
         return GC_apply_to_maps(backing_store_base_from_maps);
     }
 
-#   pragma weak __libc_ia64_register_backing_store_base
-    extern ptr_t __libc_ia64_register_backing_store_base;
+#   ifdef USE_LIBC_PRIVATES
+#     pragma weak __libc_ia64_register_backing_store_base
+      extern ptr_t __libc_ia64_register_backing_store_base;
+#   endif
 
     ptr_t GC_get_register_stack_base(void)
     {
-      if (0 != &__libc_ia64_register_backing_store_base
-	  && 0 != __libc_ia64_register_backing_store_base) {
-	/* Glibc 2.2.4 has a bug such that for dynamically linked	*/
-	/* executables __libc_ia64_register_backing_store_base is 	*/
-	/* defined but uninitialized during constructor calls.  	*/
-	/* Hence we check for both nonzero address and value.		*/
-	return __libc_ia64_register_backing_store_base;
-      } else {
-	word result = backing_store_base_from_proc();
-	if (0 == result) {
+#     ifdef USE_LIBC_PRIVATES
+        if (0 != &__libc_ia64_register_backing_store_base
+	    && 0 != __libc_ia64_register_backing_store_base) {
+	  /* Glibc 2.2.4 has a bug such that for dynamically linked	*/
+	  /* executables __libc_ia64_register_backing_store_base is 	*/
+	  /* defined but uninitialized during constructor calls.  	*/
+	  /* Hence we check for both nonzero address and value.		*/
+	  return __libc_ia64_register_backing_store_base;
+        }
+#     endif
+      word result = backing_store_base_from_proc();
+      if (0 == result) {
 	  /* Use dumb heuristics.  Works only for default configuration. */
 	  result = (word)GC_stackbottom - BACKING_STORE_DISPLACEMENT;
 	  result += BACKING_STORE_ALIGNMENT - 1;
 	  result &= ~(BACKING_STORE_ALIGNMENT - 1);
 	  /* Verify that it's at least readable.  If not, we goofed. */
 	  GC_noop1(*(word *)result); 
-	}
-	return (ptr_t)result;
       }
+      return (ptr_t)result;
     }
 # endif
 
@@ -936,6 +940,7 @@ ptr_t GC_get_stack_base()
     /* since the correct value of __libc_stack_end never	*/
     /* becomes visible to us.  The second test works around 	*/
     /* this.							*/  
+#   ifdef USE_LIBC_PRIVATES
       if (0 != &__libc_stack_end && 0 != __libc_stack_end ) {
 #       ifdef IA64
 	  /* Some versions of glibc set the address 16 bytes too	*/
@@ -948,6 +953,7 @@ ptr_t GC_get_stack_base()
 	  return __libc_stack_end;
 #	endif
       }
+#   endif
     f = open("/proc/self/stat", O_RDONLY);
     if (f < 0 || STAT_READ(f, stat_buf, STAT_BUF_SIZE) < 2 * STAT_SKIP) {
 	ABORT("Couldn't read /proc/self/stat");
@@ -2372,7 +2378,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #   endif
 #   ifdef FREEBSD
 #     define SIG_OK (sig == SIGBUS)
-#     define CODE_OK (code == BUS_PAGE_FAULT)
+#     define CODE_OK TRUE
 #   endif
 # endif /* SUNOS4 || (FREEBSD && !SUNOS5SIGS) */
 
@@ -2510,7 +2516,11 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #               if defined(ARM32)
                   char * addr = (char *)sc.fault_address;
 #               else
-		  --> architecture not supported
+#		  if defined(CRIS)
+		    char * addr = (char *)sc.regs.csraddr;
+#		  else
+		    --> architecture not supported
+#		  endif
 #               endif
 #	      endif
 #	    endif
@@ -3943,7 +3953,11 @@ kern_return_t catch_exception_raise_state_identity(
 #	 if defined(OPENBSD) || defined(NETBSD)
 #	   include <frame.h>
 #	 else
-#	   include <sys/frame.h>
+#	   if defined(FREEBSD)
+#	     include <machine/frame.h>
+#	   else
+#	     include <sys/frame.h>
+#	   endif
 #	 endif
 #      endif
 #    endif
@@ -3989,7 +4003,7 @@ struct callinfo info[NFRAMES];
 
 #else /* No builtin backtrace; do it ourselves */
 
-#if (defined(OPENBSD) || defined(NETBSD)) && defined(SPARC)
+#if (defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD)) && defined(SPARC)
 #  define FR_SAVFP fr_fp
 #  define FR_SAVPC fr_pc
 #else

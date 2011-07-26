@@ -324,6 +324,8 @@ void GC_start_world()
   kern_return_t kern_result;
   thread_act_array_t act_list;
   mach_msg_type_number_t listcount;
+  struct thread_basic_info info;
+  mach_msg_type_number_t outCount = THREAD_INFO_MAX;
   
 #   if DEBUG_THREADS
       GC_printf0("World starting\n");
@@ -350,8 +352,6 @@ void GC_start_world()
 #             endif
 	      continue;
 	    }
-	    struct thread_basic_info info;
-	    mach_msg_type_number_t outCount = THREAD_INFO_MAX;
 	    kern_result = thread_info(thread, THREAD_BASIC_INFO,
 				      (thread_info_t)&info, &outCount);
 	    if(kern_result != KERN_SUCCESS) ABORT("thread_info failed");

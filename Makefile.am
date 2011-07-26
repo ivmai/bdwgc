@@ -53,9 +53,9 @@ backgraph.c win32_threads.c \
 pthread_support.c pthread_stop_world.c darwin_stop_world.c \
 $(asm_libgc_sources)
 
-# Include THREADLIBS here to ensure that the correct versions of
+# Include THREADDLLIBS here to ensure that the correct versions of
 # linuxthread semaphore functions get linked:
-libgc_la_LIBADD = @addobjs@ $(THREADLIBS) $(UNWINDLIBS)
+libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = -version-info 1:2:0
 
@@ -65,7 +65,7 @@ EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
     sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s
 
 libgccpp_la_SOURCES = gc_cpp.cc
-libgccpp_la_LIBADD = $(THREADLIBS) $(UNWINDLIBS)
+libgccpp_la_LIBADD = $(THREADDLLIBS) $(UNWINDLIBS)
 libgccpp_la_LDFLAGS = -version-info 1:2:0
 
 EXTRA_DIST += alpha_mach_dep.S mips_sgi_mach_dep.s sparc_mach_dep.S
@@ -91,9 +91,9 @@ test_cpp.o:	$(srcdir)/tests/test_cpp.cc
 ##     are included in the distribution
 # gctest_OBJECTS = test.o
 gctest_SOURCES = tests/test.c
-gctest_LDADD = ./libgc.la $(THREADLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
+gctest_LDADD = ./libgc.la $(THREADDLLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
 test_cpp_SOURCES = tests/test_cpp.cc
-test_cpp_LDADD = ./libgc.la ./libgccpp.la $(THREADLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
+test_cpp_LDADD = ./libgc.la ./libgccpp.la $(THREADDLLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
 
 TESTS = gctest $(extra_checks)
 
