@@ -36,6 +36,7 @@ register struct obj_kind * kind;
 /* Allocate a large block of size lw words.	*/
 /* The block is not cleared.			*/
 /* Flags is 0 or IGNORE_OFF_PAGE.		*/
+/* We hold the allocation lock.			*/
 ptr_t GC_alloc_large(lw, k, flags)
 word lw;
 int k;
@@ -76,6 +77,7 @@ unsigned flags;
 
 
 /* Allocate a large block of size lb bytes.  Clear if appropriate.	*/
+/* We hold the allocation lock.						*/
 ptr_t GC_alloc_large_and_clear(lw, k, flags)
 word lw;
 int k;
@@ -217,7 +219,7 @@ register int k;
 	GC_words_allocd += lw;
 	UNLOCK();
 	ENABLE_SIGNALS();
-    	if (init & !GC_debugging_started && 0 != result) {
+    	if (init && !GC_debugging_started && 0 != result) {
 	    BZERO(result, n_blocks * HBLKSIZE);
         }
     }

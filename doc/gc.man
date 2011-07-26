@@ -63,8 +63,15 @@ It is also possible to use the collector to find storage leaks in programs desti
 .LP
 The collector may, on rare occasion produce warning messages.  On UNIX machines these appear on stderr.  Warning messages can be filtered, redirected, or ignored with
 .I
-GC_set_warn_proc.
+GC_set_warn_proc
 This is recommended for production code.  See gc.h for details.
+.LP
+Fully portable code should call
+.I
+GC_INIT
+from the main program before making any other GC calls.
+On most platforms this does nothing and the collector is initialized on first use.
+On a few platforms explicit initialization is necessary.  And it can never hurt. 
 .LP
 Debugging versions of many of the above routines are provided as macros.  Their names are identical to the above, but consist of all capital letters.  If GC_DEBUG is defined before gc.h is included, these routines do additional checking, and allow the leak detecting version of the collector to produce slightly more useful output.  Without GC_DEBUG defined, they behave exactly like the lower-case versions.
 .LP
@@ -77,6 +84,8 @@ Other facilities not discussed here include limited facilities to support increm
 .LP
 .SH "SEE ALSO"
 The README and gc.h files in the distribution.  More detailed definitions of the functions exported by the collector are given there.  (The above list is not complete.)
+.LP
+The web site at http://www.hpl.hp.com/personal/Hans_Boehm/gc .
 .LP
 Boehm, H., and M. Weiser, "Garbage Collection in an Uncooperative Environment",
 \fISoftware Practice & Experience\fP, September 1988, pp. 807-820.

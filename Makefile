@@ -36,7 +36,7 @@ CFLAGS= -O -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_
 # -DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
 # To build the parallel collector in a static library on HP/UX,
 # add to the above:
-# -DGC_HPUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC -DUSE_HPUX_TLS -D_POSIX_C_SOURCE=199506L
+# -DGC_HPUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC -D_POSIX_C_SOURCE=199506L
 # To build the thread-safe collector on Tru64, add to the above:
 # -pthread -DGC_OSF1_THREADS
 
@@ -182,7 +182,7 @@ HOSTCFLAGS=$(CFLAGS)
 #   this facility is only used in a few places.  It is intended primarily
 #   for debugging of the garbage collector itself, but could also
 # -DDBG_HDRS_ALL Make sure that all objects have debug headers.  Increases
-#   the reliability (from 99.9999% to 100%) of some of the debugging
+#   the reliability (from 99.9999% to 100% mod. bugs) of some of the debugging
 #   code (especially KEEP_BACK_PTRS).  Makes -DSHORT_DBG_HDRS possible.
 #   Assumes that all client allocation is done through debugging
 #   allocators.
@@ -235,6 +235,10 @@ HOSTCFLAGS=$(CFLAGS)
 #   in a way that usually does not involve acquisition of a global lock.
 #   Currently requires -DGC_LINUX_THREADS, but should be easy to port to
 #   other pthreads environments.  Recommended for multiprocessors.
+# -DUSE_COMPILER_TLS causes thread local allocation to use compiler-supported
+#   "__thread" thread-local variables.  This is the default in HP/UX.  It
+#   may help performance on recent Linux installations.  (It failed for
+#   me on RedHat 8, but appears to work on RedHat 9.)
 # -DPARALLEL_MARK allows the marker to run in multiple threads.  Recommended
 #   for multiprocessors.  Currently requires Linux on X86 or IA64, though
 #   support for other Posix platforms should be fairly easy to add,

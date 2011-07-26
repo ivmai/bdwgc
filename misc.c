@@ -116,6 +116,11 @@ GC_bool GC_print_back_height = 0;
   GC_bool GC_dump_regularly = 0;  /* Generate regular debugging dumps. */
 #endif
 
+#ifdef KEEP_BACK_PTRS
+  long GC_backtraces = 0;	/* Number of random backtraces to 	*/
+  				/* generate for each GC.		*/
+#endif
+
 #ifdef FIND_LEAK
   int GC_find_leak = 1;
 #else
@@ -585,6 +590,15 @@ void GC_init_inner()
         GC_dump_regularly = 1;
       }
 #   endif
+#   ifdef KEEP_BACK_PTRS
+      {
+        char * backtraces_string = GETENV("GC_BACKTRACES");
+        if (0 != backtraces_string) {
+          GC_backtraces = atol(backtraces_string);
+	  if (backtraces_string[0] == '\0') GC_backtraces = 1;
+        }
+      }
+#   endif
     if (0 != GETENV("GC_FIND_LEAK")) {
       GC_find_leak = 1;
 #     ifdef __STDC__
@@ -1041,7 +1055,6 @@ GC_CONST char * msg;
 {
 #   if defined(MSWIN32)
       (void) MessageBoxA(NULL, msg, "Fatal error in gc", MB_ICONERROR|MB_OK);
-      DebugBreak();
 #   else
       GC_err_printf1("%s\n", msg);
 #   endif
@@ -1052,7 +1065,7 @@ GC_CONST char * msg;
 	    /* about threads.						*/
 	    for(;;) {}
     }
-#   ifdef MSWIN32
+#   if defined(MSWIN32) || defined(MSWINCE)
 	DebugBreak();
 #   else
         (void) abort();
@@ -1073,6 +1086,75 @@ void GC_disable()
     GC_dont_gc++;
     UNLOCK();
 }
+
+/* Helper procedures for new kind creation.	*/
+void ** GC_new_free_list_inner()
+{
+    void *result = GC_INTERNAL_MALLOC((MAXOBJSZ+1)*sizeof(ptr_t), PTRFREE);
+    if (result == 0) ABORT("Failed to allocate freelist for new kind");
+    BZERO(result, (MAXOBJSZ+1)*sizeof(ptr_t));
+    return result;
+}
+
+void ** GC_new_free_list()
+{
+    void *result;
+    LOCK(); DISABLE_SIGNALS();
+    result = GC_new_free_list_inner();
+    UNLOCK(); ENABLE_SIGNALS();
+    return result;
+}
+
+int GC_new_kind_inner(fl, descr, adjust, clear)
+void **fl;
+GC_word descr;
+int adjust;
+int clear;
+{
+    int result = GC_n_kinds++;
+
+    if (GC_n_kinds > MAXOBJKINDS) ABORT("Too many kinds");
+    GC_obj_kinds[result].ok_freelist = (ptr_t *)fl;
+    GC_obj_kinds[result].ok_reclaim_list = 0;
+    GC_obj_kinds[result].ok_descriptor = descr;
+    GC_obj_kinds[result].ok_relocate_descr = adjust;
+    GC_obj_kinds[result].ok_init = clear;
+    return result;
+}
+
+int GC_new_kind(fl, descr, adjust, clear)
+void **fl;
+GC_word descr;
+int adjust;
+int clear;
+{
+    int result;
+    LOCK(); DISABLE_SIGNALS();
+    result = GC_new_kind_inner(fl, descr, adjust, clear);
+    UNLOCK(); ENABLE_SIGNALS();
+    return result;
+}
+
+int GC_new_proc_inner(proc)
+GC_mark_proc proc;
+{
+    int result = GC_n_mark_procs++;
+
+    if (GC_n_mark_procs > MAX_MARK_PROCS) ABORT("Too many mark procedures");
+    GC_mark_procs[result] = proc;
+    return result;
+}
+
+int GC_new_proc(proc)
+GC_mark_proc proc;
+{
+    int result;
+    LOCK(); DISABLE_SIGNALS();
+    result = GC_new_proc_inner(proc);
+    UNLOCK(); ENABLE_SIGNALS();
+    return result;
+}
+
 
 #if !defined(NO_DEBUGGING)
 

@@ -109,6 +109,7 @@ PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 STRIP = @STRIP@
 THREADLIBS = @THREADLIBS@
+UNWINDLIBS = @UNWINDLIBS@
 VERSION = @VERSION@
 addincludes = @addincludes@
 addlibs = @addlibs@
@@ -187,7 +188,7 @@ $(asm_libgc_sources)
 
 # Include THREADLIBS here to ensure that the correct versions of
 # linuxthread semaphore functions get linked:
-libgc_la_LIBADD = @addobjs@ $(THREADLIBS)
+libgc_la_LIBADD = @addobjs@ $(THREADLIBS) $(UNWINDLIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = -version-info 1:2:0
 
@@ -198,7 +199,7 @@ EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
 
 
 libgccpp_la_SOURCES = gc_cpp.cc
-libgccpp_la_LIBADD = $(THREADLIBS)
+libgccpp_la_LIBADD = $(THREADLIBS) $(UNWINDLIBS)
 libgccpp_la_LDFLAGS = -version-info 1:2:0
 
 AM_CXXFLAGS = @GC_CFLAGS@
@@ -211,9 +212,9 @@ check_PROGRAMS = gctest $(extra_checks)
 
 # gctest_OBJECTS = test.o
 gctest_SOURCES = tests/test.c
-gctest_LDADD = ./libgc.la $(THREADLIBS) $(EXTRA_TEST_LIBS)
+gctest_LDADD = ./libgc.la $(THREADLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
 test_cpp_SOURCES = tests/test_cpp.cc
-test_cpp_LDADD = ./libgc.la ./libgccpp.la $(THREADLIBS) $(EXTRA_TEST_LIBS)
+test_cpp_LDADD = ./libgc.la ./libgccpp.la $(THREADLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
 
 TESTS = gctest $(extra_checks)
 
@@ -235,8 +236,6 @@ dist_noinst_HEADERS = version.h
 # this is an auxiliary shell file used by Makefile and Makefile.direct
 #
 CONFIG_STATUS_DEPENDENCIES = $(srcdir)/configure.host
-
-MAKEOVERRIDES = 
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs

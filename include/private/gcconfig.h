@@ -2,7 +2,7 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
- * Copyright (c) 2000 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (c) 2000-2004 Hewlett-Packard Development Company, L.P.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -349,6 +349,11 @@
 #     define I386
 #     define MSWIN32	/* or Win32s */
 #     define mach_type_known
+#   endif
+#   if defined(_MSC_VER) && defined(_M_IA64)
+#     define IA64
+#     define MSWIN32	/* Really win64, but we don't treat 64-bit 	*/
+			/* variants as a differnt platform.		*/
 #   endif
 # endif
 # if defined(__DJGPP__)
@@ -926,10 +931,17 @@
 
 # ifdef I386
 #   define MACH_TYPE "I386"
-#   define ALIGNMENT 4	/* Appears to hold for all "32 bit" compilers	*/
+#   if defined(__LP64__) || defined(_WIN64)
+#     define CPP_WORDSZ 64
+#     define ALIGNMENT 8
+#   else
+#     define CPP_WORDSZ 32
+#     define ALIGNMENT 4
+			/* Appears to hold for all "32 bit" compilers	*/
 			/* except Borland.  The -a4 option fixes 	*/
 			/* Borland.					*/
                         /* Ivan Demakov: For Watcom the option is -zp4. */
+#   endif
 #   ifndef SMALL_CONFIG
 #     define ALIGN_DOUBLE /* Not strictly necessary, but may give speed   */
 			  /* improvement on Pentiums.			  */
@@ -1628,6 +1640,19 @@
 #	  endif // __INTEL_COMPILER
 #       endif
 #   endif
+#   ifdef MSWIN32
+      /* FIXME: This is a very partial guess.  There is no port, yet.	*/
+#     define OS_TYPE "MSWIN32"
+		/* STACKBOTTOM and DATASTART are handled specially in 	*/
+		/* os_dep.c.						*/
+#     define DATAEND  /* not needed */
+#     if defined(_WIN64)
+#       define CPP_WORDSZ 64
+#     else
+#       define CPP_WORDSZ 32   /* Is this possible?	*/
+#     endif
+#     define ALIGNMENT 8
+#   endif
 # endif
 
 # ifdef M88K
@@ -1998,6 +2023,10 @@
 	/* The define should move to the individual platform 		*/
 	/* descriptions.						*/
 #	define USE_GENERIC_PUSH_REGS
+# endif
+
+# if defined(MSWINCE)
+#   define NO_GETENV
 # endif
 
 # if defined(SPARC)

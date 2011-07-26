@@ -727,6 +727,18 @@ void GC_register_dynamic_libraries()
   
 # define HAVE_REGISTER_MAIN_STATIC_DATA
 
+  GC_bool GC_warn_fb = TRUE;	/* Warn about traced likely 	*/
+  				/* graphics memory.		*/
+  GC_bool GC_disallow_ignore_fb = FALSE;
+  int GC_ignore_fb_mb;	/* Ignore mappings bigger than the 	*/
+  			/* specified number of MB.		*/
+  GC_bool GC_ignore_fb = FALSE; /* Enable frame buffer 	*/
+  				/* checking.		*/
+  
+  /* Issue warning if tracing apparent framebuffer. 		*/
+  /* This limits us to one warning, and it's a back door to	*/
+  /* disable that.						*/
+ 
   /* Should [start, start+len) be treated as a frame buffer	*/
   /* and ignored?						*/
   /* Unfortunately, we currently have no real way to tell	*/
@@ -734,35 +746,56 @@ void GC_register_dynamic_libraries()
   /* FIXME: If we had more data on this phenomenon (e.g.	*/
   /* is start aligned to a MB multiple?) we should be able to	*/
   /* do better.							*/
+  /* Based on a very limited sample, it appears that:		*/
+  /* 	- Frame buffer mappings appear as mappings of length	*/
+  /* 	  2**n MB - 192K.  (We guess the 192K can vary a bit.)	*/
+  /*	- Have a stating address at best 64K aligned.		*/
+  /* I'd love more information about the mapping, since I	*/
+  /* can't reproduce the problem.				*/
   static GC_bool is_frame_buffer(ptr_t start, size_t len)
   {
     static GC_bool initialized = FALSE;
-    static GC_bool ignore_fb;
 #   define MB (1024*1024)
+#   define DEFAULT_FB_MB 15
+#   define MIN_FB_MB 3
 
-    switch(len) {
-      case 16*MB:
-      case 32*MB:
-      case 48*MB:
-      case 64*MB:
-      case 128*MB:
-      case 256*MB:
-      case 512*MB:
-      case 1024*MB:
- 	break;
-      default:
-	return FALSE;
-    }
+    if (GC_disallow_ignore_fb) return FALSE;
     if (!initialized) {
-      ignore_fb = (0 != GETENV("GC_IGNORE_FB"));
-      if (!ignore_fb) {
-	WARN("Possible frame buffer mapping at 0x%lx: \n"
-	     "\tConsider setting GC_IGNORE_FB to improve performance.\n",
-	     start);
+      char * ignore_fb_string =  GETENV("GC_IGNORE_FB");
+
+      if (0 != ignore_fb_string) {
+	while (*ignore_fb_string == ' ' || *ignore_fb_string == '\t')
+	  ++ignore_fb_string;
+	if (*ignore_fb_string == '\0') {
+	  GC_ignore_fb_mb = DEFAULT_FB_MB;
+	} else {
+	  GC_ignore_fb_mb = atoi(ignore_fb_string);
+	  if (GC_ignore_fb_mb < MIN_FB_MB) {
+	    WARN("Bad GC_IGNORE_FB value.  Using %ld\n", DEFAULT_FB_MB);
+	    GC_ignore_fb_mb = DEFAULT_FB_MB;
+	  }
+	}
+	GC_ignore_fb = TRUE;
+      } else {
+	GC_ignore_fb_mb = DEFAULT_FB_MB;  /* For warning */
       }
       initialized = TRUE;
     }
-    return ignore_fb;
+    if (len >= ((size_t)GC_ignore_fb_mb << 20)) {
+      if (GC_ignore_fb) {
+	return TRUE;
+      } else {
+	if (GC_warn_fb) {
+	  WARN("Possible frame buffer mapping at 0x%lx: \n"
+	       "\tConsider setting GC_IGNORE_FB to improve performance.\n",
+	       start);
+	  GC_warn_fb = FALSE;
+	}
+	return FALSE;
+      }
+    } else {
+      return FALSE;
+    }
   }
 
 # ifdef DEBUG_VIRTUALQUERY

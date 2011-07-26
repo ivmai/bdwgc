@@ -106,6 +106,7 @@ PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 STRIP = @STRIP@
 THREADLIBS = @THREADLIBS@
+UNWINDLIBS = @UNWINDLIBS@
 VERSION = @VERSION@
 addincludes = @addincludes@
 addlibs = @addlibs@

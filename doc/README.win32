@@ -114,7 +114,9 @@ Note that incremental collection is disabled with -DSMALL_CONFIG.
 
 Threads
 -------
-James Clark has contributed the necessary code to support win32 threads.
+
+James Clark has contributed the necessary code to support win32 threads
+with the collector in a DLL.
 Use NT_THREADS_MAKEFILE (a.k.a gc.mak) instead of NT_MAKEFILE
 to build this version.  Note that this requires some files whose names
 are more than 8 + 3 characters long.  Thus you should unpack the tar file
@@ -130,10 +132,6 @@ This version relies on the collector residing in a dll.
 
 This version currently supports incremental collection only if it is
 enabled before any additional threads are created.
-Version 4.13 attempts to fix some of the earlier problems, but there
-may be other issues.  If you need solid support for win32 threads, you
-might check with Geodesic Systems.  Their collector must be licensed,
-but they have invested far more time in win32-specific issues.
 
 Since 6.3alpha2, threads are also better supported in static library builds
 with Microsoft tools (use NT_STATIC_THREADS_MAKEFILE) and with the GNU
@@ -144,6 +142,12 @@ defined, even if the Cygwin pthreads interface is used.
 created with GC_CreateThread.  This can be accomplished by
 including gc.h and then calling CreateThread, which is redefined
 by gc.h.
+
+For the statically linked versions, it is required that GC_init()
+be called before other GC calls, since there seems to be no implicit way
+to initialize the allocation lock.  The easiest way to ensure this in
+portable code is to call GC_INIT() from the main executable (not
+a dynamic library) before calling any other GC_ routines.
 
 We strongly advise against using the TerminateThread() win32 API call,
 especially with the garbage collector.  Any use is likely to provoke a

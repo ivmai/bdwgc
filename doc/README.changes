@@ -1956,7 +1956,7 @@ Since 6.3alpha2:
    had suffered from serious bit rot.
  - Rewrote GC_apply_to_maps, eliminating an off-by-one subscript error,
    and a call to alloca (for lcc compatibility).
- - Changed use_MUNMAP behavior on posixy platforms to immediately remap
+ - Changed USE_MUNMAP behavior on posixy platforms to immediately remap
    the memory with PROT_NONE instead of unmapping it.  The latter risks
    an intervening mmap grabbing the address space out from underneath us.
    Updated this code to reflect a cleaner patch from Ulrich Drepper.
@@ -1991,7 +1991,74 @@ Since 6.3alpha3:
    thread creation.  Fixed by explicitly checking for that case.  (Added
    GC_in_thread_creation.)
 
+Since 6.3alpha4:
+ - Fix & vs && typo in GC_generic_malloc and
+   GC_generic_malloc_ignore_off_page.  (Propagated from the gcc tree.)
+ - Removed SA_NODEFER hack from NetBSD and Solaris write-protect handler.
+   (According to Christian Limpach, the NetBSD problem is fixed.
+   Presumably so is the Solaris 2.3 problem.)
+ - Removed placement delete from gc_cpp.h for the SGI compiler.
+   (Thanks to Simon Gornall for the patch.)
+ - Changed semantics of the GC_IGNORE_FB environment variable, based 
+   on experimentation by Nicolas Cannasse pointing out that the old
+   interpretation was useless.  We still need help in identifying win32
+   graphics memory mappings.  The current "solution" is a hack.
+ - Removed "MAKEOVERRIDES =" from Makefile.am and thus Makefile.in.
+   It probably made more sense in the gcc context.
+ - Explicitly ensure that NEED_FIND_LIMIT is defined for {Open,Net}BSD/ELF.
+ - Replaced USE_HPUX_TLS macro by USE_COMPILER_TLS, since gcc often
+   supports the same extension on various platforms.
+ - Added some basic (completely untested) defines for win64, in support
+   of future work.
+ - Declared GC_jmp_buf in os_dep.s as JMP_BUF instead of jmp_buf, fixing
+   a memory overwrite bug on Solaris and perhaps other platforms.
+ - Added 0 != __libc_stack_end test to GC_linux_stack_base.  (Thanks to Jakub
+   Jelinek, both for the patch, and for explaining the problem to me.)
+   Otherwise "prelink"ing could cause the collector to fail.
+ - Changed default thread local storage implementation to USE_PTHREAD_SPECIFIC
+   for HP/UX with gcc.  The compiler-based implementation appears to work
+   only with the vendor compiler.
+ - Export GC_debug_header_size and GC_USR_PTR_FROM_BASE from gc_mark.h,
+   making client mark code cleaner and less dependent on GC version.
+ - Export several new procedures and GC_generic_malloc from gc_mark.h
+   to support user-defined kinds.  Use the new procedures to replace existing
+   code in gcj_mlc.c and typd_mlc.c.
+ - Added support for GC_BACKTRACES.
+ - Fixed a remaining problem in CORD_str with signed characters.  (Thanks
+   to Alexandr Petrosian for the patch.)
+ - Removed supposedly redundant, but very buggy, definitions of finalizer
+   macros from javaxfc.h.  Fortunately this file probably has no users.
+   The correct declarations were already in gc.h.
+ - Also need to set GC_in_thread_creation while waiting for GC during
+   thread termination, since it is also possible to collect from an
+   unregistered thread in that case.
+ - Define NO_GETENV for Windows CE, since getenv doesn't appear to exist.
+   + some other minor WinCE fixes. (Thanks to Alain Novak.)
+ - Added GC_register_describe_type_fn.
+ - Arrange for debugging finalizer registration to ignore non-heap
+   registrations, since the regular version of the routine also behaves
+   that way.
+ - GC_gcj_malloc and friends need to check for finalizers waiting to be run.
+   One of the more obscure allocation routines with missing a LOCK() call.
+ - Fixed cvtres invocations in NT_MAKEFILE and NT_STATIC_THREADS_MAKEFILE
+   to work with VS.NET.
+ - Cleaned up GC_INIT calls in test.  Updated gc.man to encourage GC_INIT
+   use in portable code.
+ - Taught the GC to use libunwind if --enable-full-debug is specified on
+   IA64 and libunwind is present.
+ - The USE_MUNMAP code could get confused about the age of a block and
+   prematurely unmap it.  GC_unmap_old had a bug related to wrapping of
+   GC_gc_no.  GC_freehblk and GC_merge_unmapped didn't maintain
+   hb_last_reclaimed reasonably when blockas were merged.  The code was
+   fixed to reflect original intent, but that may not always be an
+   improvement.  See todo list item.
+  
 To do:
+ - The USE_MUNMAP code should really use a separate data structure
+   indexed by physical page to keep track of time since last use of
+   a page.  Using hblk headers means we lose track of ages when
+   blocks are merged, and we can't unmap pages that have been allocated and
+   dropped by the blacklisting code.  I suspect both of these matter.
  - A dynamic libgc.so references dlopen unconditionally, but doesn't link
    against libdl.
  - GC_proc_fd for Solaris is not correctly updated in response to a

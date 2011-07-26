@@ -11,6 +11,7 @@
  * modified is included with the above copyright notice.
  */
 /* Boehm, August 24, 1994 11:58 am PDT */
+# include "gc.h"	/* For GC_INIT() only */
 # include "cord.h"
 # include <string.h>
 # include <stdio.h>
@@ -225,6 +226,7 @@ main()
 #   ifdef THINK_C
         printf("cordtest:\n");
 #   endif
+    GC_INIT();
     test_basics();
     test_extras();
     test_printf();

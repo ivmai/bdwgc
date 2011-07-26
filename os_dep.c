@@ -87,6 +87,12 @@
 #  endif
 #endif
 
+#if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__) \
+    && !defined(NEED_FIND_LIMIT)
+   /* Used by GC_init_netbsd_elf() below.	*/
+#  define NEED_FIND_LIMIT
+#endif
+
 #ifdef NEED_FIND_LIMIT
 #   include <setjmp.h>
 #endif
@@ -111,7 +117,10 @@
 # include <sys/uio.h>
 # include <malloc.h>   /* for locking */
 #endif
-#ifdef USE_MMAP
+#if defined(USE_MMAP) || defined(USE_MUNMAP)
+# ifndef USE_MMAP
+    --> USE_MUNMAP requires USE_MMAP
+# endif
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
@@ -710,16 +719,12 @@ ptr_t GC_get_stack_base()
 	  struct sigaction	act;
 
 	  act.sa_handler	= h;
-#	  if defined(SUNOS5SIGS) || defined(NETBSD)
+#	  if 0 /* Was necessary for Solaris 2.3 and very temporary 	*/
+	       /* NetBSD bugs.						*/
             act.sa_flags          = SA_RESTART | SA_NODEFER;
 #         else
             act.sa_flags          = SA_RESTART;
 #	  endif
-          /* The presence of SA_NODEFER represents yet another gross    */
-          /* hack.  Under Solaris 2.3, siglongjmp doesn't appear to     */
-          /* interact correctly with -lthread.  We hide the confusion   */
-          /* by making sure that signal handling doesn't affect the     */
-          /* signal mask.                                               */
 
 	  (void) sigemptyset(&act.sa_mask);
 #	  ifdef GC_IRIX_THREADS
@@ -749,7 +754,7 @@ ptr_t GC_get_stack_base()
 # ifdef NEED_FIND_LIMIT
   /* Some tools to implement HEURISTIC2	*/
 #   define MIN_PAGE_SIZE 256	/* Smallest conceivable page size, bytes */
-    /* static */ jmp_buf GC_jmp_buf;
+    /* static */ JMP_BUF GC_jmp_buf;
     
     /*ARGSUSED*/
     void GC_fault_handler(sig)
@@ -927,7 +932,11 @@ ptr_t GC_get_stack_base()
     size_t i, buf_offset = 0;
 
     /* First try the easy way.  This should work for glibc 2.2	*/
-      if (0 != &__libc_stack_end) {
+    /* This fails in a prelinked ("prelink" command) executable */
+    /* since the correct value of __libc_stack_end never	*/
+    /* becomes visible to us.  The second test works around 	*/
+    /* this.							*/  
+      if (0 != &__libc_stack_end && 0 != __libc_stack_end ) {
 #       ifdef IA64
 	  /* Some versions of glibc set the address 16 bytes too	*/
 	  /* low while the initialization code is running.		*/
@@ -1521,8 +1530,7 @@ word bytes;
 
 #else  /* Not RS6000 */
 
-#if defined(USE_MMAP)
-/* Tested only under Linux, IRIX5 and Solaris 2 */
+#if defined(USE_MMAP) || defined(USE_MUNMAP)
 
 #ifdef USE_MMAP_FIXED
 #   define GC_MMAP_FLAGS MAP_FIXED | MAP_PRIVATE
@@ -1530,10 +1538,6 @@ word bytes;
 	/* be unreliable if something is already mapped at the address.	*/
 #else
 #   define GC_MMAP_FLAGS MAP_PRIVATE
-#endif
-
-#ifndef HEAP_START
-#   define HEAP_START 0
 #endif
 
 #ifdef USE_MMAP_ANON
@@ -1547,6 +1551,15 @@ word bytes;
   static int zero_fd;
 # define OPT_MAP_ANON 0
 #endif 
+
+#endif /* defined(USE_MMAP) || defined(USE_MUNMAP) */
+
+#if defined(USE_MMAP)
+/* Tested only under Linux, IRIX5 and Solaris 2 */
+
+#ifndef HEAP_START
+#   define HEAP_START 0
+#endif
 
 ptr_t GC_unix_get_mem(bytes)
 word bytes;
@@ -3932,12 +3945,14 @@ kern_return_t catch_exception_raise_state_identity(
 
 #endif /* NEED_CALLINFO */
 
+#if defined(GC_HAVE_BUILTIN_BACKTRACE)
+# include <execinfo.h>
+#endif
+
 #ifdef SAVE_CALL_CHAIN
 
 #if NARGS == 0 && NFRAMES % 2 == 0 /* No padding */ \
     && defined(GC_HAVE_BUILTIN_BACKTRACE)
-
-#include <execinfo.h>
 
 void GC_save_callers (info) 
 struct callinfo info[NFRAMES];
@@ -4014,6 +4029,8 @@ struct callinfo info[NFRAMES];
     static int reentry_count = 0;
     GC_bool stop = FALSE;
 
+    /* FIXME: This should probably use a different lock, so that we	*/
+    /* become callable with or without the allocation lock.		*/
     LOCK();
       ++reentry_count;
     UNLOCK();
@@ -4048,7 +4065,8 @@ struct callinfo info[NFRAMES];
 #	  ifdef LINUX
 	    FILE *pipe;
 #	  endif
-#	  if defined(GC_HAVE_BUILTIN_BACKTRACE)
+#	  if defined(GC_HAVE_BUILTIN_BACKTRACE) \
+	     && !defined(GC_BACKTRACE_SYMBOLS_BROKEN)
 	    char **sym_name =
 	      backtrace_symbols((void **)(&(info[i].ci_pc)), 1);
 	    char *name = sym_name[0];
@@ -4141,7 +4159,8 @@ struct callinfo info[NFRAMES];
 	    }
 #	  endif /* LINUX */
 	  GC_err_printf1("\t\t%s\n", name);
-#	  if defined(GC_HAVE_BUILTIN_BACKTRACE)
+#	  if defined(GC_HAVE_BUILTIN_BACKTRACE) \
+	     && !defined(GC_BACKTRACE_SYMBOLS_BROKEN)
 	    free(sym_name);  /* May call GC_free; that's OK */
 #         endif
 	}

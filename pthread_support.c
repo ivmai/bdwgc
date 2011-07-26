@@ -54,8 +54,17 @@
      && !defined(GC_AIX_THREADS)
 
 # if defined(GC_HPUX_THREADS) && !defined(USE_PTHREAD_SPECIFIC) \
-     && !defined(USE_HPUX_TLS)
-#   define USE_HPUX_TLS
+     && !defined(USE_COMPILER_TLS)
+#   ifdef __GNUC__
+#     define USE_PTHREAD_SPECIFIC
+      /* Empirically, as of gcc 3.3, USE_COMPILER_TLS doesn't work.	*/
+#   else
+#     define USE_COMPILER_TLS
+#   endif
+# endif
+
+# if defined USE_HPUX_TLS
+    --> Macro replaced by USE_COMPILER_TLS
 # endif
 
 # if (defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) || \
@@ -72,7 +81,7 @@
 # endif
 
 # ifdef THREAD_LOCAL_ALLOC
-#   if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_HPUX_TLS)
+#   if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_COMPILER_TLS)
 #     include "private/specific.h"
 #   endif
 #   if defined(USE_PTHREAD_SPECIFIC)
@@ -81,7 +90,7 @@
 #     define GC_key_create pthread_key_create
       typedef pthread_key_t GC_key_t;
 #   endif
-#   if defined(USE_HPUX_TLS)
+#   if defined(USE_COMPILER_TLS)
 #     define GC_getspecific(x) (x)
 #     define GC_setspecific(key, v) ((key) = (v), 0)
 #     define GC_key_create(key, d) 0
@@ -159,7 +168,7 @@ void GC_init_parallel();
 
 /* We don't really support thread-local allocation with DBG_HDRS_ALL */
 
-#ifdef USE_HPUX_TLS
+#ifdef USE_COMPILER_TLS
   __thread
 #endif
 GC_key_t GC_thread_key;
@@ -735,7 +744,9 @@ void GC_wait_for_gc_completion(GC_bool wait_for_all)
 	while (GC_incremental && GC_collection_in_progress()
 	       && (wait_for_all || old_gc_no == GC_gc_no)) {
 	    ENTER_GC();
+	    GC_in_thread_creation = TRUE;
             GC_collect_a_little_inner(1);
+	    GC_in_thread_creation = FALSE;
 	    EXIT_GC();
 	    UNLOCK();
 	    sched_yield();
@@ -1043,9 +1054,10 @@ void GC_thread_exit_proc(void *arg)
 	me -> flags |= FINISHED;
     }
 #   if defined(THREAD_LOCAL_ALLOC) && !defined(USE_PTHREAD_SPECIFIC) \
-       && !defined(USE_HPUX_TLS) && !defined(DBG_HDRS_ALL)
+       && !defined(USE_COMPILER_TLS) && !defined(DBG_HDRS_ALL)
       GC_remove_specific(GC_thread_key);
 #   endif
+    /* The following may run the GC from "nonexistent" thread.	*/
     GC_wait_for_gc_completion(FALSE);
     UNLOCK();
 }
@@ -1307,7 +1319,7 @@ void GC_pause()
     }
 }
     
-#define SPIN_MAX 1024	/* Maximum number of calls to GC_pause before	*/
+#define SPIN_MAX 128	/* Maximum number of calls to GC_pause before	*/
 			/* give up.					*/
 
 VOLATILE GC_bool GC_collecting = 0;
@@ -1332,19 +1344,34 @@ VOLATILE GC_bool GC_collecting = 0;
 /* yield by calling pthread_mutex_lock(); it never makes sense to	*/
 /* explicitly sleep.							*/
 
+#define LOCK_STATS
+#ifdef LOCK_STATS
+  unsigned long GC_spin_count = 0;
+  unsigned long GC_block_count = 0;
+  unsigned long GC_unlocked_count = 0;
+#endif
+
 void GC_generic_lock(pthread_mutex_t * lock)
 {
 #ifndef NO_PTHREAD_TRYLOCK
     unsigned pause_length = 1;
     unsigned i;
     
-    if (0 == pthread_mutex_trylock(lock)) return;
+    if (0 == pthread_mutex_trylock(lock)) {
+#       ifdef LOCK_STATS
+	    ++GC_unlocked_count;
+#       endif
+	return;
+    }
     for (; pause_length <= SPIN_MAX; pause_length <<= 1) {
 	for (i = 0; i < pause_length; ++i) {
 	    GC_pause();
 	}
         switch(pthread_mutex_trylock(lock)) {
 	    case 0:
+#		ifdef LOCK_STATS
+		    ++GC_spin_count;
+#		endif
 		return;
 	    case EBUSY:
 		break;
@@ -1353,6 +1380,9 @@ void GC_generic_lock(pthread_mutex_t * lock)
         }
     }
 #endif /* !NO_PTHREAD_TRYLOCK */
+#   ifdef LOCK_STATS
+	++GC_block_count;
+#   endif
     pthread_mutex_lock(lock);
 }
 

@@ -17,7 +17,7 @@ dnl Process this file with autoconf to produce configure.
 # Initialization
 # ==============
 
-AC_INIT(gc,6.3alpha4,Hans.Boehm@hp.com) 
+AC_INIT(gc,6.3alpha5,Hans.Boehm@hp.com) 
     ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
@@ -146,7 +146,7 @@ case "$THREADS" in
     ;;
  dgux386)
     THREADS=dgux386
-AC_MSG_RESULT($THREADLIBS)
+    AC_MSG_RESULT($THREADLIBS)
     # Use pthread GCC  switch
     THREADLIBS=-pthread
     if test "${enable_parallel_mark}" = yes; then
@@ -397,15 +397,22 @@ if test -n "${with_cross_host}"; then
    AC_DEFINE(NO_DEBUGGING)
 fi
 
+UNWINDLIBS=
 AC_ARG_ENABLE(full-debug,
 [  --enable-full-debug	include full support for pointer backtracing etc.],
 [ if test "$enable_full_debug" = "yes"; then
-    AC_MSG_WARN("Must define GC_DEBUG and use debug alloc. in clients.")
+    AC_MSG_WARN("Should define GC_DEBUG and use debug alloc. in clients.")
     AC_DEFINE(KEEP_BACK_PTRS)
     AC_DEFINE(DBG_HDRS_ALL)
     case $host in
       ia64-*-linux* )
 	AC_DEFINE(MAKE_BACK_GRAPH)
+	AC_DEFINE(SAVE_CALL_COUNT, 8)
+        AC_CHECK_LIB(unwind, backtrace, [
+	  AC_DEFINE(GC_HAVE_BUILTIN_BACKTRACE)
+	  UNWINDLIBS=-lunwind
+	  AC_MSG_WARN("Client code may need to link against libunwind.")
+	])
       ;;
       x86-*-linux* | i586-*-linux* | i686-*-linux* | x86_64-*-linux* )
 	AC_DEFINE(MAKE_BACK_GRAPH)
@@ -417,6 +424,8 @@ AC_ARG_ENABLE(full-debug,
       ;;
     esac ]
   fi)
+
+AC_SUBST(UNWINDLIBS)
 
 AC_ARG_ENABLE(redirect-malloc,
 [  --enable-redirect-malloc  redirect malloc and friends to GC routines])

@@ -375,9 +375,8 @@ void GC_unmap_old(void)
 	if (!IS_MAPPED(hhdr)) continue;
 	threshold = (unsigned short)(GC_gc_no - UNMAP_THRESHOLD);
 	last_rec = hhdr -> hb_last_reclaimed;
-	if (last_rec > GC_gc_no
-	    || last_rec < threshold && threshold < GC_gc_no
-				       /* not recently wrapped */) {
+	if ((last_rec > GC_gc_no || last_rec < threshold)
+	    && threshold < GC_gc_no /* not recently wrapped */) {
           sz = hhdr -> hb_sz;
 	  GC_unmap((ptr_t)h, sz);
 	  hhdr -> hb_flags |= WAS_UNMAPPED;
@@ -422,6 +421,7 @@ void GC_merge_unmapped(void)
 	      } else {
 		GC_remap((ptr_t)h, size);
 		hhdr -> hb_flags &= ~WAS_UNMAPPED;
+		hhdr -> hb_last_reclaimed = nexthdr -> hb_last_reclaimed;
 	      }
 	    } else {
 	      /* Unmap any gap in the middle */
@@ -784,6 +784,9 @@ signed_word size;
     size = HBLKSIZE * OBJ_SZ_TO_BLOCKS(size);
     GC_remove_counts(hbp, (word)size);
     hhdr->hb_sz = size;
+#   ifdef USE_MUNMAP
+      hhdr -> hb_last_reclaimed = GC_gc_no;
+#   endif
     
     /* Check for duplicate deallocation in the easy case */
       if (HBLK_IS_FREE(hhdr)) {
@@ -809,11 +812,17 @@ signed_word size;
 	if (IS_MAPPED(prevhdr)) {
 	  GC_remove_from_fl(prevhdr, FL_UNKNOWN);
 	  prevhdr -> hb_sz += hhdr -> hb_sz;
+#	  ifdef USE_MUNMAP
+	    prevhdr -> hb_last_reclaimed = GC_gc_no;
+#	  endif
 	  GC_remove_header(hbp);
 	  hbp = prev;
 	  hhdr = prevhdr;
 	}
       }
+    /* FIXME: It is not clear we really always want to do these merges	*/
+    /* with -DUSE_MUNMAP, since it updates ages and hence prevents	*/
+    /* unmapping. 							*/
 
     GC_large_free_bytes += size;
     GC_add_to_fl(hbp, hhdr);    

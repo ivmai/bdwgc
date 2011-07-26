@@ -106,8 +106,9 @@
 #endif
 
 # define __GC
-# include <stddef.h>
-# ifdef _WIN32_WCE
+# ifndef _WIN32_WCE
+#   include <stddef.h>
+# else /* ! _WIN32_WCE */
 /* Yet more kluges for WinCE */
 #   include <stdlib.h>		/* size_t is defined here */
     typedef long ptrdiff_t;	/* ptrdiff_t is not defined */
