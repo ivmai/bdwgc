@@ -78,10 +78,11 @@ HOSTCFLAGS=$(CFLAGS)
 #   Also requires -D_REENTRANT or -D_POSIX_C_SOURCE=199506L. See README.hp.
 # -DGC_LINUX_THREADS enables support for Xavier Leroy's Linux threads.
 #   see README.linux.  -D_REENTRANT may also be required.
-# -DGC_OSF1_THREADS enables support for Tru64 pthreads.  Untested.
-# -DGC_FREEBSD_THREADS enables support for FreeBSD pthreads.  Untested.
+# -DGC_OSF1_THREADS enables support for Tru64 pthreads.
+# -DGC_FREEBSD_THREADS enables support for FreeBSD pthreads.
 #   Appeared to run into some underlying thread problems.
-# -DGC_DARWIN_THREADS enables support for Mac OS X pthreads.  Untested.
+# -DGC_DARWIN_THREADS enables support for Mac OS X pthreads.
+# -DGC_AIX_THREADS enables support for IBM AIX threads.
 # -DGC_DGUX386_THREADS enables support for DB/UX on I386 threads.
 #   See README.DGUX386.
 # -DGC_WIN32_THREADS enables support for win32 threads.  That makes sense
@@ -280,6 +281,10 @@ HOSTCFLAGS=$(CFLAGS)
 #   set and collected heap to grow significantly if malloced memory is
 #   somehow getting traced by the collector.  This has no impact on the
 #   generated library; it only affects the test.
+# -DNO_INCREMENTAL cases the gctest program to not invoke the incremental
+#   collector.  This has no impact on the generated library, only on the
+#   test program.  (This is often useful for debugging failures unrelated
+#   to incremental GC.)
 # -DPOINTER_MASK=0x... causes candidate pointers to be ANDed with the
 #   given mask before being considered.  If either this or the following
 #   macro is defined, it will be assumed that all pointers stored in
@@ -291,8 +296,12 @@ HOSTCFLAGS=$(CFLAGS)
 #   by the indicated amount before trying to interpret them.  Applied
 #   after POINTER_MASK. EXPERIMENTAL.  See also the preceding macro.
 # -DENABLE_TRACE enables the GC_TRACE=addr environment setting to do its
-#   job.  By default this is not supported in order tokeep the marker as fast
+#   job.  By default this is not supported in order to keep the marker as fast
 #   as possible.
+# -DDARWIN_DONT_PARSE_STACK Causes the Darwin port to discover thread
+#   stack bounds in the same way as other pthread ports, without trying to
+#   walk the frames onthe stack.  This is recommended only as a fallback
+#   for applications that don't support proper stack unwinding.
 #
 
 CXXFLAGS= $(CFLAGS) 
@@ -300,9 +309,18 @@ AR= ar
 RANLIB= ranlib
 
 
-OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o aix_irix_threads.o pthread_support.o pthread_stop_world.o darwin_stop_world.o typd_mlc.o ptr_chck.o mallocx.o gcj_mlc.o specific.o gc_dlopen.o backgraph.o win32_threads.o
+OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o \
+  headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o  \
+  malloc.o stubborn.o checksums.o pthread_support.o pthread_stop_world.o \
+  darwin_stop_world.o typd_mlc.o ptr_chck.o mallocx.o gcj_mlc.o specific.o \
+  gc_dlopen.o backgraph.o win32_threads.o thread_local_alloc.o
 
-CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c aix_irix_threads.c pthread_support.c pthread_stop_world.c darwin_stop_world.c typd_mlc.c ptr_chck.c mallocx.c gcj_mlc.c specific.c gc_dlopen.c backgraph.c win32_threads.c
+CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c \
+  headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c \
+  new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c \
+  checksums.c pthread_support.c pthread_stop_world.c darwin_stop_world.c \
+  typd_mlc.c ptr_chck.c mallocx.c gcj_mlc.c specific.c gc_dlopen.c \
+  backgraph.c win32_threads.c thread_local_alloc.c
 
 CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c include/cord.h include/ec.h include/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC
 
@@ -326,10 +344,12 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.S \
     include/gc_pthread_redirects.h ia64_save_regs_in_stack.s \
     include/gc_config_macros.h include/private/pthread_support.h \
     include/private/pthread_stop_world.h include/private/darwin_semaphore.h \
-    include/private/darwin_stop_world.h $(CORD_SRCS)
+    include/private/darwin_stop_world.h include/private/thread_local_alloc.h \
+    $(CORD_SRCS)
 
 DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 	doc/README.amiga doc/README.cords doc/debugging.html \
+	doc/porting.html \
 	doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
 	doc/README.sgi doc/README.solaris2 doc/README.uts \
 	doc/README.win32 doc/barrett_diagram doc/README \
@@ -346,10 +366,10 @@ TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 GNU_BUILD_FILES= configure.ac Makefile.am configure acinclude.m4 \
 		 libtool.m4 install-sh configure.host Makefile.in \
 		 aclocal.m4 config.sub config.guess \
-		 include/include.am include/Makefile.in \
-		 doc/doc.am doc/Makefile.in \
+		 include/include.am doc/doc.am \
 		 ltmain.sh mkinstalldirs depcomp missing \
-		 cord/cord.am tests/tests.am
+		 cord/cord.am tests/tests.am autogen.sh \
+		 bdw-gc.pc.in
 
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
 		 BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
@@ -585,7 +605,7 @@ cord/de: $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(UTILS)
 	rm -f cord/de
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -lucb `./threadlibs`
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -ldld `./threadlibs`
-	./if_mach RS6000 "" $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
+	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
 	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a
 	./if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
 	./if_mach ALPHA LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`

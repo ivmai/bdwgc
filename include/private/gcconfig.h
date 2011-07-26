@@ -167,7 +167,8 @@
 #   define mach_type_known
 # endif
 # if defined(_IBMR2)
-#   define RS6000
+#   define POWERPC
+#   define AIX
 #   define mach_type_known
 # endif
 # if defined(__NetBSD__) && defined(__sparc__)
@@ -229,7 +230,12 @@
 #    endif
 #    define mach_type_known
 # endif
-# if defined(LINUX) && (defined(powerpc) || defined(__powerpc__) || defined(powerpc64) || defined(__powerpc64__))
+# if defined(LINUX) && (defined(powerpc) || defined(__powerpc__) || \
+		        defined(powerpc64) || defined(__powerpc64__))
+#    define POWERPC
+#    define mach_type_known
+# endif
+# if defined(FREEBSD) && (defined(powerpc) || defined(__powerpc__))
 #    define POWERPC
 #    define mach_type_known
 # endif
@@ -277,16 +283,15 @@
 #   define MACOS
 #   define mach_type_known
 # endif
-# if defined(macosx) || \
-     defined(__APPLE__) && defined(__MACH__) && defined(__ppc__)
-#    define DARWIN
+# if defined(macosx) || (defined(__APPLE__) && defined(__MACH__))
+#   define DARWIN
+#   if defined(__ppc__)  || defined(__ppc64__)
 #    define POWERPC
 #    define mach_type_known
-# endif
-# if defined(__APPLE__) && defined(__MACH__) && defined(__i386__)
-#    define DARWIN
+#   elif defined(__i386__)
 #    define I386
      --> Not really supported, but at least we recognize it.
+#   endif
 # endif
 # if defined(NeXT) && defined(mc68000)
 #   define M68K
@@ -454,7 +459,6 @@
                     /*			(ULTRIX variants)		*/
                     /*		   VAX	      ==> DEC VAX		*/
                     /*			(BSD, ULTRIX variants)		*/
-                    /*		   RS6000     ==> IBM RS/6000 AIX3.X	*/
                     /*		   HP_PA      ==> HP9000/700 & /800	*/
                     /*				  HP/UX, LINUX		*/
 		    /*		   SPARC      ==> SPARC	v7/v8/v9	*/
@@ -476,7 +480,9 @@
 		    /* 		   X86_64     ==> AMD x86-64		*/
 		    /*		   POWERPC    ==> IBM/Apple PowerPC	*/
 		    /*			(MACOS(<=9),DARWIN(incl.MACOSX),*/
-		    /*			 LINUX, NETBSD, NOSYS variants)	*/
+		    /*			 LINUX, NETBSD, AIX, NOSYS	*/
+		    /*			 variants)			*/
+		    /*			Handles 32 and 64-bit variants.	*/
 		    /*		   CRIS       ==> Axis Etrax		*/
 		    /*		   M32R	      ==> Renesas M32R		*/
 
@@ -685,8 +691,8 @@
 #   endif
 # endif
 
-# ifdef POWERPC
-#   define MACH_TYPE "POWERPC"
+# if defined(POWERPC)
+#   defined MACH_TYPE "POWERPC"
 #   ifdef MACOS
 #     define ALIGNMENT 2  /* Still necessary?  Could it be 4?	*/
 #     ifndef __LOWMEM__
@@ -698,9 +704,12 @@
 #     define DATAEND  /* not needed */
 #   endif
 #   ifdef LINUX
-#     if (defined (powerpc64) || defined(__powerpc64__))
+#     if defined(__powerpc64__)
 #       define ALIGNMENT 8
 #       define CPP_WORDSZ 64
+#       ifndef HBLKSIZE
+#         define HBLKSIZE 4096
+#       endif
 #     else
 #       define ALIGNMENT 4
 #     endif
@@ -714,7 +723,12 @@
 #     define DATAEND (_end)
 #   endif
 #   ifdef DARWIN
-#     define ALIGNMENT 4
+#     ifdef __ppc64__
+#       define ALIGNMENT 8
+#       define CPP_WORDSZ 64
+#     else
+#       define ALIGNMENT 4
+#     endif
 #     define OS_TYPE "DARWIN"
 #     define DYNAMIC_LOADING
       /* XXX: see get_end(3), get_etext() and get_end() should not be used.
@@ -743,6 +757,22 @@
          should be looked into some more */
 #     define NO_PTHREAD_TRYLOCK
 #   endif
+#   ifdef FREEBSD
+#       define ALIGNMENT 4
+#       define OS_TYPE "FREEBSD"
+#       ifndef GC_FREEBSD_THREADS
+#           define MPROTECT_VDB
+#       endif
+#       define SIG_SUSPEND SIGUSR1
+#       define SIG_THR_RESTART SIGUSR2
+#       define FREEBSD_STACKBOTTOM
+#       ifdef __ELF__
+#           define DYNAMIC_LOADING
+#       endif
+        extern char etext[];
+        extern char * GC_FreeBSDGetDataStart();
+#       define DATASTART GC_FreeBSDGetDataStart(0x1000, &etext)
+#   endif
 #   ifdef NETBSD
 #     define ALIGNMENT 4
 #     define OS_TYPE "NETBSD"
@@ -751,6 +781,40 @@
 #     define DATASTART GC_data_start
 #     define DYNAMIC_LOADING
 #   endif
+#   ifdef AIX
+#     define OS_TYPE "AIX"
+#     undef ALIGNMENT /* in case it's defined	*/
+#     ifdef IA64
+#       undef IA64
+          /* DOB: some AIX installs stupidly define IA64 in */
+          /* /usr/include/sys/systemcfg.h   		    */
+#     endif
+#     ifdef __64BIT__
+#       define ALIGNMENT 8
+#       define CPP_WORDSZ 64
+#       define STACKBOTTOM ((ptr_t)0x1000000000000000)
+#     else
+#       define ALIGNMENT 4
+#       define CPP_WORDSZ 32
+#       define STACKBOTTOM ((ptr_t)((ulong)&errno))
+#     endif
+#     define USE_MMAP
+#     define USE_MMAP_ANON
+	/* From AIX linker man page:
+	_text Specifies the first location of the program.
+	_etext Specifies the first location after the program.
+	_data Specifies the first location of the data.
+	_edata Specifies the first location after the initialized data
+	_end or end Specifies the first location after all data.
+	*/
+      extern int _data[], _end[];
+#     define DATASTART ((ptr_t)((ulong)_data))
+#     define DATAEND ((ptr_t)((ulong)_end))
+      extern int errno;
+#     define DYNAMIC_LOADING
+	/* For really old versions of AIX, this may have to be removed. */
+#   endif
+
 #   ifdef NOSYS
 #     define ALIGNMENT 4
 #     define OS_TYPE "NOSYS"
@@ -1277,40 +1341,6 @@
 #  endif
 # endif
 
-# ifdef RS6000
-#   define MACH_TYPE "RS6000"
-#   ifdef ALIGNMENT
-#     undef ALIGNMENT
-#   endif
-#   ifdef IA64
-#     undef IA64 /* DOB: some AIX installs stupidly define IA64 in /usr/include/sys/systemcfg.h */
-#   endif
-#   ifdef __64BIT__
-#     define ALIGNMENT 8
-#     define CPP_WORDSZ 64
-#     define STACKBOTTOM ((ptr_t)0x1000000000000000)
-#   else
-#     define ALIGNMENT 4
-#     define CPP_WORDSZ 32
-#     define STACKBOTTOM ((ptr_t)((ulong)&errno))
-#   endif
-#   define USE_MMAP
-#   define USE_MMAP_ANON
- /* From AIX linker man page:
- _text Specifies the first location of the program.
- _etext Specifies the first location after the program.
- _data Specifies the first location of the data.
- _edata Specifies the first location after the initialized data
- _end or end Specifies the first location after all data.
- */
-    extern int _data[], _end[];
-#   define DATASTART ((ptr_t)((ulong)_data))
-#   define DATAEND ((ptr_t)((ulong)_end))
-    extern int errno;
-#   define DYNAMIC_LOADING
-	/* For really old versions of AIX, this may have to be removed. */
-# endif
-
 # ifdef HP_PA
 #   define MACH_TYPE "HP_PA"
 #   ifdef __LP64__
@@ -1606,7 +1636,9 @@
 #   else
 #   define ALIGNMENT 8
 #   define CPP_WORDSZ 64
-#   define HBLKSIZE 4096
+#   ifndef HBLKSIZE
+#     define HBLKSIZE 4096
+#   endif
 #   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
@@ -1638,7 +1670,7 @@
 #   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
-#       define HEURISTIC1
+#       define LINUX_STACKBOTTOM
 #       undef STACK_GRAN
 #       define STACK_GRAN 0x10000000
 #       ifdef __ELF__
@@ -1700,7 +1732,7 @@
 #   endif
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
-#     define STACKBOTTOM ((ptr_t) 0x7c000000)
+#     define LINUX_STACKBOTTOM
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
@@ -1853,7 +1885,7 @@
 # if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
 	    || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
 	    || defined(DGUX) || defined(BSD) \
-	    || defined(_AIX) || defined(DARWIN) || defined(OSF1)
+	    || defined(AIX) || defined(DARWIN) || defined(OSF1)
 #   define UNIX_LIKE   /* Basic Unix-like system calls work.	*/
 # endif
 

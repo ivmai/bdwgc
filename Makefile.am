@@ -19,7 +19,13 @@
 ## FIXME: `make distcheck' in this directory will not currently work.
 ##     This is most likely to the explicit flags passed to submakes.
 
-SUBDIRS = @maybe_libatomic_ops@ .
+if USE_INTERNAL_LIBATOMICS_OPS
+SUBDIRS = @maybe_libatomic_ops@
+else
+SUBDIRS =
+endif
+
+SUBDIRS += .
 
 # Initialize variables so that we can declare files locally.
 EXTRA_DIST = 
@@ -31,7 +37,7 @@ check_PROGRAMS =
 TESTS =
 
 pkgconfigdir = $(libdir)/pkgconfig
-dist_pkgconfig_DATA = boehm-gc.pc
+dist_pkgconfig_DATA = bdw-gc.pc
 
 include include/include.am
 include cord/cord.am
@@ -49,17 +55,13 @@ libgc_la_SOURCES = \
 	malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
 	obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c \
 	specific.c stubborn.c typd_mlc.c \
-	backgraph.c
+	backgraph.c thread_local_alloc.c
 
 # C Library: Architecture Dependent
 # ---------------------------------
 
 if PTHREADS
 libgc_la_SOURCES += pthread_support.c pthread_stop_world.c
-endif
-
-if AIX_IRIX_THREADS
-libgc_la_SOURCES += aix_irix_threads.c
 endif
 
 # CHECK: No solaris_pthreads.c solaris_threads.c in gc7.0alpha2.tar.gz.
@@ -119,14 +121,26 @@ AM_CFLAGS = @GC_CFLAGS@
 #$(all_objs) : include/private/gcconfig.h include/private/gc_priv.h \
 #include/private/gc_hdrs.h include/gc.h include/gc_gcj.h \
 #include/gc_pthread_redirects.h include/gc_config_macros.h \
+#include/private/thread_local_alloc.h include/private_support.h \
+#include/private/pthread_stop_world.h \
 #include/gc_mark.h @addincludes@
 
 ## FIXME: we shouldn't have to do this, but automake forces us to.
-.s.lo:
-.S.lo:
 ## We use -Wp,-P to strip #line directives.  Irix `as' chokes on
 ## these.
-	$(LTCOMPILE) -Wp,-P -x assembler-with-cpp -c $<
+if COMPILER_XLC
+  ## XLC neither requires nor tolerates the unnecessary assembler goop
+  ASM_CPP_OPTIONS =
+else
+  ## We use -Wp,-P to strip #line directives.  Irix `as' chokes on
+  ## these.
+  ASM_CPP_OPTIONS = -Wp,-P -x assembler-with-cpp
+endif
+.s.lo:
+	$(LTCOMPILE) $(ASM_CPP_OPTIONS) -c $<
+
+.S.lo:
+	$(LTCOMPILE) $(ASM_CPP_OPTIONS) -c $<
 
 ## We have our own definition of LTCOMPILE because we want to use our
 ## CFLAGS, not those passed in from the top level make.

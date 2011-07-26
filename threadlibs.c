@@ -13,9 +13,15 @@ int main()
 #   if defined(GC_LINUX_THREADS) || defined(GC_IRIX_THREADS) \
 	|| defined(GC_SOLARIS_PTHREADS) \
 	|| defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS)
+#       ifdef GC_USE_DLOPEN_WRAP
+	  printf("-ldl ");
+#	endif
         printf("-lpthread\n");
 #   endif
 #   if defined(GC_FREEBSD_THREADS)
+#       ifdef GC_USE_DLOPEN_WRAP
+	  printf("-ldl ");
+#	endif
 #       if (__FREEBSD_version >= 500000)
           printf("-lpthread\n");
 #       else

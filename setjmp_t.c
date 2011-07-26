@@ -88,9 +88,12 @@ int main()
 	x = 2*x-1;
 	setjmp(b);
 	if (y == 1) {
+	    /* FIXME: I'm nto sure how accurate this is now that we	*/
+	    /* mostly use getcontext().					*/
 	    if (x == 2) {
 		printf("Generic mark_regs code probably wont work\n");
-#		if defined(SPARC) || defined(RS6000) || defined(VAX) || defined(MIPS) || defined(M68K) || defined(I386) || defined(NS32K) || defined(RT)
+#		if defined(SPARC) || defined(M68K) || defined(I386) \
+		   || defined(USE_ASM_PUSH_REGS)
 		    printf("Assembly code supplied\n");
 #		else
 		    printf("Need assembly code\n");

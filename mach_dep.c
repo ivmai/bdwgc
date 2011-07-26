@@ -242,7 +242,7 @@ void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
   	for (; (char *)i < lim; i++) {
   	    *i = 0;
   	}
-#       if defined(POWERPC) || defined(MSWIN32) || defined(MSWINCE) \
+#       if defined(MSWIN32) || defined(MSWINCE) \
                   || defined(UTS4) || defined(LINUX) || defined(EWS4800)
   	  (void) setjmp(regs);
 #       else
@@ -349,4 +349,4 @@ ptr_t cold_gc_frame;
     ptr_t arg; word limit;
     { return(arg); }
 # endif
-#endif  
+#endif /* ASM_CLEAR_CODE */ 

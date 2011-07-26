@@ -55,7 +55,7 @@
     !defined(MSWIN32) && !defined(MSWINCE) && \
     !(defined(ALPHA) && defined(OSF1)) && \
     !defined(HPUX) && !(defined(LINUX) && defined(__ELF__)) && \
-    !defined(RS6000) && !defined(SCO_ELF) && !defined(DGUX) && \
+    !defined(AIX) && !defined(SCO_ELF) && !defined(DGUX) && \
     !(defined(FREEBSD) && defined(__ELF__)) && \
     !(defined(NETBSD) && defined(__ELF__)) && !defined(HURD) && \
     !defined(DARWIN)
@@ -270,8 +270,21 @@ word GC_register_map_entries(char *maps)
 		/* Stack mapping; discard	*/
 		continue;
 	    }
-#	    ifdef THREADS
+#	    if def THREADS
+	      /* This may fail, since a thread may already be 		*/
+	      /* unregistered, but its thread stack may still be there.	*/
+	      /* That can fail because the stack may disappear while	*/
+	      /* we're marking.  Thus the marker is, and has to be	*/
+	      /* prepared to recover from segmentation faults.		*/
 	      if (GC_segment_is_thread_stack(start, end)) continue;
+	      /* FIXME: REDIRECT_MALLOC actually works with threads on	*/
+	      /* LINUX/IA64 if we omit this check.  The problem is that	*/
+	      /* thread stacks contain pointers to dynamic thread	*/
+	      /* vectors, which may be reused due to thread caching.	*/
+	      /* Currently they may not be marked if the thread is 	*/
+	      /* still live.						*/
+	      /* For dead threads, we trace the whole stack, which is	*/
+	      /* very suboptimal for performance reasons.		*/
 #	    endif
 	    /* We no longer exclude the main data segment.		*/
 	    if (start < least_ha && end > least_ha) {
@@ -552,7 +565,8 @@ void GC_register_dynamic_libraries()
     }
     for (i = 0; i < needed_sz; i++) {
         flags = addr_map[i].pr_mflags;
-        if ((flags & (MA_BREAK | MA_STACK | MA_PHYS)) != 0) goto irrelevant;
+	if ((flags & (MA_BREAK | MA_STACK | MA_PHYS
+		      | MA_FETCHOP | MA_NOTCACHED)) != 0) goto irrelevant;
         if ((flags & (MA_READ | MA_WRITE)) != (MA_READ | MA_WRITE))
             goto irrelevant;
           /* The latter test is empirically useless in very old Irix	*/
@@ -909,7 +923,7 @@ void GC_register_dynamic_libraries()
 }
 #endif /* HPUX */
 
-#ifdef RS6000
+#ifdef AIX
 #pragma alloca
 #include <sys/ldr.h>
 #include <sys/errno.h>
@@ -940,7 +954,7 @@ void GC_register_dynamic_libraries()
 		ldi = len ? (struct ld_info *)((char *)ldi + len) : 0;
 	}
 }
-#endif /* RS6000 */
+#endif /* AIX */
 
 #ifdef DARWIN
 
@@ -979,6 +993,7 @@ static const char *GC_dyld_name_for_hdr(struct mach_header *hdr) {
 static void GC_dyld_image_add(struct mach_header* hdr, unsigned long slide) {
     unsigned long start,end,i;
     const struct section *sec;
+    if (GC_no_dls) return;
     for(i=0;i<sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]);i++) {
         sec = getsectbynamefromheader(
             hdr,GC_dyld_sections[i].seg,GC_dyld_sections[i].sect);

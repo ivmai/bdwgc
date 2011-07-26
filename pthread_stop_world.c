@@ -1,13 +1,13 @@
 #include "private/pthread_support.h"
 
 #if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS) \
-     && !defined(GC_IRIX_THREADS) && !defined(GC_WIN32_THREADS) \
-     && !defined(GC_DARWIN_THREADS) && !defined(GC_AIX_THREADS)
+     && !defined(GC_WIN32_THREADS) && !defined(GC_DARWIN_THREADS)
 
 #include <signal.h>
 #include <semaphore.h>
 #include <errno.h>
 #include <unistd.h>
+#include "atomic_ops.h"
 
 #if DEBUG_THREADS
 
@@ -65,7 +65,14 @@ void GC_remove_allowed_signals(sigset_t *set)
 
 static sigset_t suspend_handler_mask;
 
-word GC_stop_count;	/* Incremented at the beginning of GC_stop_world. */
+volatile AO_t GC_stop_count;
+			/* Incremented at the beginning of GC_stop_world. */
+
+volatile AO_t GC_world_is_stopped = FALSE;
+			/* FALSE ==> it is safe for threads to restart, i.e. */
+			/* they will see another suspend signal before they  */
+			/* are expected to stop (unless they have voluntarily */
+			/* stopped).					     */
 
 #ifdef GC_OSF1_THREADS
   GC_bool GC_retry_signals = TRUE;
@@ -104,14 +111,18 @@ void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 #if defined(IA64) || defined(HP_PA)
 void GC_suspend_handler(int sig, siginfo_t *info, void *context)
 {
+  int old_errno = errno;
   GC_with_callee_saves_pushed(GC_suspend_handler_inner, (ptr_t)(word)sig);
+  errno = old_errno;
 }
 #else
 /* We believe that in all other cases the full context is already	*/
 /* in the signal handler frame.						*/
 void GC_suspend_handler(int sig, siginfo_t *info, void *context)
 {
+  int old_errno = errno;
   GC_suspend_handler_inner((ptr_t)(word)sig, context);
+  errno = old_errno;
 }
 #endif
 
@@ -127,7 +138,7 @@ void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 	/* guaranteed to be the mark_no correspending to our 		*/
 	/* suspension, i.e. the marker can't have incremented it yet.	*/
 #   endif
-    word my_stop_count = GC_stop_count;
+    AO_t my_stop_count = AO_load(&GC_stop_count);
 
     if (sig != SIG_SUSPEND) ABORT("Bad signal in suspend_handler");
 
@@ -167,16 +178,23 @@ void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
     /* this thread a SIG_THR_RESTART signal.			*/
     /* SIG_THR_RESTART should be masked at this point.  Thus there	*/
     /* is no race.						*/
+    /* We do not continue until we receive a SIG_THR_RESTART,	*/
+    /* but we do not take that as authoritative.  (We may be	*/
+    /* accidentally restarted by one of the user signals we 	*/
+    /* don't block.)  After we receive the signal, we use a 	*/
+    /* primitive and expensive mechanism to wait until it's	*/
+    /* really safe to proceed.  Under normal circumstances,	*/
+    /* this code should not be executed.			*/
     do {
-	    me->stop_info.signal = 0;
-	    sigsuspend(&suspend_handler_mask);        /* Wait for signal */
-    } while (me->stop_info.signal != SIG_THR_RESTART);
+	sigsuspend (&suspend_handler_mask);
+    } while (AO_load_acquire(&GC_world_is_stopped)
+	     && AO_load(&GC_stop_count) == my_stop_count);
     /* If the RESTART signal gets lost, we can still lose.  That should be  */
     /* less likely than losing the SUSPEND signal, since we don't do much   */
     /* between the sem_post and sigsuspend.	   			    */
-    /* We'd need more handshaking to work around that, since we don't want  */
-    /* to accidentally leave a RESTART signal pending, thus causing us to   */
-    /* continue prematurely in a future round.				    */ 
+    /* We'd need more handshaking to work around that.			    */
+    /* Simply dropping the sigsuspend call should be safe, but is unlikely  */
+    /* to be efficient.							    */
 
 #if DEBUG_THREADS
     GC_printf("Continuing 0x%x\n", (unsigned)my_thread);
@@ -190,16 +208,8 @@ void GC_restart_handler(int sig)
 
     if (sig != SIG_THR_RESTART) ABORT("Bad signal in suspend_handler");
 
-    /* Let the GC_suspend_handler() know that we got a SIG_THR_RESTART. */
-    /* The lookup here is safe, since I'm doing this on behalf  */
-    /* of a thread which holds the allocation lock in order	*/
-    /* to stop the world.  Thus concurrent modification of the	*/
-    /* data structure is impossible.				*/
-    me = GC_lookup_thread(my_thread);
-    me->stop_info.signal = SIG_THR_RESTART;
-
     /*
-    ** Note: even if we didn't do anything useful here,
+    ** Note: even if we don't do anything useful here,
     ** it would still be necessary to have a signal handler,
     ** rather than ignoring the signals, otherwise
     ** the signals will not be delivered at all, and
@@ -313,7 +323,7 @@ int GC_suspend_all()
 			(unsigned)(p -> id));
 	    #endif
         
-        result = pthread_kill(p -> id, SIG_SUSPEND);
+            result = pthread_kill(p -> id, SIG_SUSPEND);
 	    switch(result) {
                 case ESRCH:
                     /* Not really there anymore.  Possible? */
@@ -350,7 +360,9 @@ void GC_stop_world()
       GC_ASSERT(GC_fl_builder_count == 0);
       /* We should have previously waited for it to become zero. */
 #   endif /* PARALLEL_MARK */
-    ++GC_stop_count;
+    AO_store(&GC_stop_count, GC_stop_count+1);
+    	/* Only concurrent reads are possible. */
+    AO_store_release(&GC_world_is_stopped, TRUE);
     n_live_threads = GC_suspend_all();
 
       if (GC_retry_signals) {
@@ -415,6 +427,7 @@ void GC_start_world()
       GC_printf("World starting\n");
 #   endif
 
+    AO_store(&GC_world_is_stopped, FALSE);
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (p -> id != my_thread) {

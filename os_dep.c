@@ -63,38 +63,16 @@
 #   include <signal.h>
 # endif
 
+#ifdef UNIX_LIKE
+# include <fcntl.h>
+#endif
+
+#if defined(LINUX) || defined(LINUX_STACKBOTTOM)
+# include <ctype.h>
+#endif
+
 /* Blatantly OS dependent routines, except for those that are related 	*/
 /* to dynamic loading.							*/
-
-# if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START)
-#   define NEED_FIND_LIMIT
-# endif
-
-# if !defined(STACKBOTTOM) && defined(HEURISTIC2)
-#   define NEED_FIND_LIMIT
-# endif
-
-# if (defined(SVR4) || defined(AUX) || defined(DGUX) \
-      || (defined(LINUX) && defined(SPARC))) && !defined(PCR)
-#   define NEED_FIND_LIMIT
-# endif
-
-#if defined(FREEBSD) && defined(I386)
-#  include <machine/trap.h>
-#  if !defined(PCR)
-#    define NEED_FIND_LIMIT
-#  endif
-#endif
-
-#if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__) \
-    && !defined(NEED_FIND_LIMIT)
-   /* Used by GC_init_netbsd_elf() below.	*/
-#  define NEED_FIND_LIMIT
-#endif
-
-#ifdef NEED_FIND_LIMIT
-#   include <setjmp.h>
-#endif
 
 #ifdef AMIGA
 # define GC_AMIGA_DEF
@@ -116,30 +94,14 @@
 # include <sys/uio.h>
 # include <malloc.h>   /* for locking */
 #endif
-#if defined(USE_MMAP) || defined(USE_MUNMAP)
-# ifndef USE_MMAP
+#if defined(USE_MMAP) || defined(USE_MUNMAP) || defined(ADD_HEAP_GUARD_PAGES)
+# if defined(USE_MUNMAP) && !defined(USE_MMAP)
     --> USE_MUNMAP requires USE_MMAP
 # endif
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
 # include <errno.h>
-#endif
-
-#ifdef UNIX_LIKE
-# include <fcntl.h>
-# if defined(SUNOS5SIGS) && !defined(FREEBSD)
-#  include <sys/siginfo.h>
-# endif
-  /* Define SETJMP and friends to be the version that restores	*/
-  /* the signal mask.						*/
-# define SETJMP(env) sigsetjmp(env, 1)
-# define LONGJMP(env, val) siglongjmp(env, val)
-# define JMP_BUF sigjmp_buf
-#else
-# define SETJMP(env) setjmp(env)
-# define LONGJMP(env, val) longjmp(env, val)
-# define JMP_BUF jmp_buf
 #endif
 
 #ifdef DARWIN
@@ -207,6 +169,20 @@ word GC_apply_to_maps(word (*fn)(char *))
     static char *maps_buf = init_buf;
     static size_t maps_buf_sz = 1;
 
+    /* Note that in the presence of threads, the maps file can	*/
+    /* essentially shrink asynchronously and unexpectedly as 	*/
+    /* threads that we already think of as dead release their	*/
+    /* stacks.  And their is no easy way to read the entire	*/
+    /* file atomically.  This is arguably a misfeature of the	*/
+    /* /proc/.../maps interface.				*/
+
+    /* FIXME:  Since we dont believe the file can grow		*/
+    /* asynchronously, it should suffice to first determine	*/
+    /* the size (using lseek or read), and then to reread the	*/
+    /* file.  If the size is inconsistent we have to retry.	*/
+    /* This only matters with threads enabled, and if we use 	*/
+    /* this to locate roots (not the default).			*/
+
     /* Read /proc/self/maps, growing maps_buf as necessary.	*/
         /* Note that we may not allocate conventionally, and	*/
         /* thus can't use stdio.				*/
@@ -244,30 +220,11 @@ word GC_apply_to_maps(word (*fn)(char *))
 //  XXXXXXXX-XXXXXXXX r-xp 00000000 30:05 260537     name of mapping...\n
 //  ^^^^^^^^ ^^^^^^^^ ^^^^          ^^
 //  start    end      prot          maj_dev
-//  0        9        18            32
-//  
-//  For 64 bit ABIs:
-//  0	     17	      34	    56
 //
-//  The parser is called with a pointer to the entry and the return value
-//  is either NULL or is advanced to the next entry(the byte after the
-//  trailing '\n'.)
+//  Note that since about auguat 2003 kernels, the columns no longer have
+//  fixed offsets on 64-bit kernels.  Hence we no longer rely on fixed offsets
+//  anywhere, which is safer anyway.
 //
-#if CPP_WORDSZ == 32
-# define OFFSET_MAP_START   0
-# define OFFSET_MAP_END     9
-# define OFFSET_MAP_PROT   18
-# define OFFSET_MAP_MAJDEV 32
-# define ADDR_WIDTH 	    8
-#endif
-
-#if CPP_WORDSZ == 64
-# define OFFSET_MAP_START   0
-# define OFFSET_MAP_END    17
-# define OFFSET_MAP_PROT   34
-# define OFFSET_MAP_MAJDEV 56
-# define ADDR_WIDTH 	   16
-#endif
 
 /*
  * Assign various fields of the first line in buf_ptr to *start, *end,
@@ -276,36 +233,46 @@ word GC_apply_to_maps(word (*fn)(char *))
 char *GC_parse_map_entry(char *buf_ptr, word *start, word *end,
                                 char *prot_buf, unsigned int *maj_dev)
 {
-    char *tok;
+    char *start_start, *end_start, *prot_start, *maj_dev_start;
+    char *p;
+    char *endp;
 
     if (buf_ptr == NULL || *buf_ptr == '\0') {
         return NULL;
     }
 
-    memcpy(prot_buf, buf_ptr+OFFSET_MAP_PROT, 4);
-    				/* do the protections first. */
+    p = buf_ptr;
+    while (isspace(*p)) ++p;
+    start_start = p;
+    GC_ASSERT(isxdigit(*start_start));
+    *start = strtoul(start_start, &endp, 16); p = endp;
+    GC_ASSERT(*p=='-');
+
+    ++p;
+    end_start = p;
+    GC_ASSERT(isxdigit(*end_start));
+    *end = strtoul(end_start, &endp, 16); p = endp;
+    GC_ASSERT(isspace(*p));
+
+    while (isspace(*p)) ++p;
+    prot_start = p;
+    GC_ASSERT(*prot_start == 'r' || *prot_start == '-');
+    memcpy(prot_buf, prot_start, 4);
     prot_buf[4] = '\0';
-
-    if (prot_buf[1] == 'w') {/* we can skip all of this if it's not writable. */
-
-        tok = buf_ptr;
-        buf_ptr[OFFSET_MAP_START+ADDR_WIDTH] = '\0';
-        *start = strtoul(tok, NULL, 16);
-
-        tok = buf_ptr+OFFSET_MAP_END;
-        buf_ptr[OFFSET_MAP_END+ADDR_WIDTH] = '\0';
-        *end = strtoul(tok, NULL, 16);
-
-        buf_ptr += OFFSET_MAP_MAJDEV;
-        tok = buf_ptr;
-        while (*buf_ptr != ':') buf_ptr++;
-        *buf_ptr++ = '\0';
-        *maj_dev = strtoul(tok, NULL, 16);
+    if (prot_buf[1] == 'w') {/* we can skip the rest if it's not writable. */
+	/* Skip past protection field to offset field */
+          while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
+          GC_ASSERT(isxdigit(*p));
+	/* Skip past offset field, which we ignore */
+          while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
+	maj_dev_start = p;
+        GC_ASSERT(isxdigit(*maj_dev_start));
+        *maj_dev = strtoul(maj_dev_start, NULL, 16);
     }
 
-    while (*buf_ptr && *buf_ptr++ != '\n');
+    while (*p && *p++ != '\n');
 
-    return buf_ptr;
+    return p;
 }
 
 #endif /* Need to parse /proc/self/maps. */	
@@ -355,10 +322,6 @@ char *GC_parse_map_entry(char *buf_ptr, word *start, word *end,
 # ifndef ECOS_GC_MEMORY_SIZE
 # define ECOS_GC_MEMORY_SIZE (448 * 1024)
 # endif /* ECOS_GC_MEMORY_SIZE */
-
-// setjmp() function, as described in ANSI para 7.6.1.1
-#undef SETJMP
-#define SETJMP( __env__ )  hal_setjmp( __env__ )
 
 // FIXME: This is a simple way of allocating memory which is
 // compatible with ECOS early releases.  Later releases use a more
@@ -751,10 +714,10 @@ ptr_t GC_get_main_stack_base(void)
     }
 # endif /* NEED_FIND_LIMIT || UNIX_LIKE */
 
-# ifdef NEED_FIND_LIMIT
+# if defined(NEED_FIND_LIMIT) || \
+     defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)
   /* Some tools to implement HEURISTIC2	*/
 #   define MIN_PAGE_SIZE 256	/* Smallest conceivable page size, bytes */
-    /* static */ JMP_BUF GC_jmp_buf;
     
     /*ARGSUSED*/
     void GC_fault_handler(int sig)
@@ -851,7 +814,6 @@ ptr_t GC_get_main_stack_base(void)
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <ctype.h>
 
 # define STAT_SKIP 27   /* Number of fields preceding startstack	*/
 			/* field in /proc/self/stat			*/
@@ -1067,11 +1029,39 @@ ptr_t GC_get_main_stack_base(void)
 
 # endif /* ! AMIGA, !OS 2, ! MS Windows, !BEOS, !NOSYS, !ECOS */
 
+#if defined(GC_LINUX_THREADS) && !defined(HAVE_GET_STACK_BASE)
+
+#include <pthread.h>
+
+int GC_get_stack_base(struct GC_stack_base *b)
+{
+    pthread_attr_t attr;
+    size_t size;
+
+    if (pthread_getattr_np(pthread_self(), &attr) != 0) {
+	WARN("pthread_getattr_np failed\n", 0);
+	return GC_UNIMPLEMENTED;
+    }
+    if (pthread_attr_getstack(&attr, &(b -> mem_base), &size) != 0) {
+	ABORT("pthread_attr_getstack failed");
+    }
+#   ifdef IA64
+        b -> reg_base = b -> mem_base - size;
+#   endif
+    return GC_SUCCESS;
+}
+
+#define HAVE_GET_STACK_BASE
+
+#endif /* GC_LINUX_THREADS */
+
 #ifndef HAVE_GET_STACK_BASE
 /* Retrieve stack base.						*/
-/* IIRC, there is a nonportable way to do this on Linux for	*/
-/* non-main threads. 						*/
-/* Actually using the GC_find_limit version seems risky.	*/
+/* Using the GC_find_limit version is risky.			*/
+/* On IA64, for example, there is no guard page between the	*/
+/* stack of one thread and the register backing store of the 	*/
+/* next.  Thus this is likely to identify way too large a	*/
+/* "stack" and thus at least result in disastrous performance.	*/
 /* FIXME - Implement better strategies here.			*/
 int GC_get_stack_base(struct GC_stack_base *b)
 {
@@ -1450,7 +1440,7 @@ ptr_t GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
 }
 # endif
 
-# if defined(FREEBSD) && defined(I386) && !defined(PCR)
+# if defined(FREEBSD) && (defined(I386) || defined(powerpc) || defined(__powerpc__)) && !defined(PCR)
 /* Its unclear whether this should be identical to the above, or 	*/
 /* whether it should apply to non-X86 architectures.			*/
 /* For now we don't assume that there is always an empty page after	*/
@@ -1646,6 +1636,15 @@ ptr_t GC_unix_get_mem(word bytes)
     if (lsbs != 0) {
         if((ptr_t)sbrk(GC_page_size - lsbs) == (ptr_t)(-1)) return(0);
     }
+#   ifdef ADD_HEAP_GUARD_PAGES
+      /* This is useful for catching severe memory overwrite problems that span	*/
+      /* heap sections.  It shouldn't otherwise be turned on.			*/
+      {
+	ptr_t guard = (ptr_t)sbrk((SBRK_ARG_T)GC_page_size);
+	if (mprotect(guard, GC_page_size, PROT_NONE) != 0)
+	    ABORT("ADD_HEAP_GUARD_PAGES: mprotect failed");
+      }
+#   endif /* ADD_HEAP_GUARD_PAGES */
     result = (ptr_t)sbrk((SBRK_ARG_T)bytes);
     if (result == (ptr_t)(-1)) result = 0;
   }
@@ -3651,7 +3650,7 @@ static kern_return_t GC_forward_exception(
     exception_behavior_t behavior;
     thread_state_flavor_t flavor;
     
-    thread_state_data_t thread_state;
+    thread_state_t thread_state;
     mach_msg_type_number_t thread_state_count = THREAD_STATE_MAX;
         
     for(i=0;i<GC_old_exc_ports.count;i++)
@@ -3712,13 +3711,19 @@ catch_exception_raise(
     char *addr;
     struct hblk *h;
     int i;
-#ifdef POWERPC
-    thread_state_flavor_t flavor = PPC_EXCEPTION_STATE;
-    mach_msg_type_number_t exc_state_count = PPC_EXCEPTION_STATE_COUNT;
-    ppc_exception_state_t exc_state;
-#else
+#   if defined(POWERPC)
+#     if CPP_WORDSZ == 32
+        thread_state_flavor_t flavor = PPC_EXCEPTION_STATE;
+        mach_msg_type_number_t exc_state_count = PPC_EXCEPTION_STATE_COUNT;
+        ppc_exception_state_t exc_state;
+#     else
+        thread_state_flavor_t flavor = PPC_EXCEPTION_STATE64;
+        mach_msg_type_number_t exc_state_count = PPC_EXCEPTION_STATE64_COUNT;
+        ppc_exception_state64_t exc_state;
+#     endif
+#   else
 #	error FIXME for non-ppc darwin
-#endif
+#   endif
 
     
     if(exception != EXC_BAD_ACCESS || code[0] != KERN_PROTECTION_FAILURE) {
@@ -3905,6 +3910,16 @@ kern_return_t catch_exception_raise_state_identity(
 #if NARGS == 0 && NFRAMES % 2 == 0 /* No padding */ \
     && defined(GC_HAVE_BUILTIN_BACKTRACE)
 
+#ifdef REDIRECT_MALLOC
+  /* Deal with possible malloc calls in backtrace by omitting	*/
+  /* the infinitely recursing backtrace.			*/
+# ifdef THREADS
+    __thread 	/* If your compiler doesn't understand this */
+    		/* you could use something like pthread_getspecific.	*/
+# endif
+  GC_in_save_callers = FALSE;
+#endif
+
 void GC_save_callers (struct callinfo info[NFRAMES]) 
 {
   void * tmp_info[NFRAMES + 1];
@@ -3913,10 +3928,21 @@ void GC_save_callers (struct callinfo info[NFRAMES])
   
   /* We retrieve NFRAMES+1 pc values, but discard the first, since it	*/
   /* points to our own frame.						*/
+# ifdef REDIRECT_MALLOC
+    if (GC_in_save_callers) {
+      info[0].ci_pc = (word)(&GC_save_callers);
+      for (i = 1; i < NFRAMES; ++i) info[i].ci_pc = 0;
+      return;
+    }
+    GC_in_save_callers = TRUE;
+# endif
   GC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
   npcs = backtrace((void **)tmp_info, NFRAMES + IGNORE_FRAMES);
   BCOPY(tmp_info+IGNORE_FRAMES, info, (npcs - IGNORE_FRAMES) * sizeof(void *));
   for (i = npcs - IGNORE_FRAMES; i < NFRAMES; ++i) info[i].ci_pc = 0;
+# ifdef REDIRECT_MALLOC
+    GC_in_save_callers = FALSE;
+# endif
 }
 
 #else /* No builtin backtrace; do it ourselves */

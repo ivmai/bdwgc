@@ -48,5 +48,6 @@ dist_pkgdata_DATA = \
 	doc/gcinterface.html \
 	doc/scale.html \
 	doc/README.darwin \
-	doc/simple_example.html
+	doc/simple_example.html \
+	doc/porting.html
 

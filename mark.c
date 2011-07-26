@@ -278,6 +278,13 @@ void GC_initiate_gc(void)
 
 static void alloc_mark_stack(size_t);
 
+# if defined(MSWIN32) || defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)
+    /* Under rare conditions, we may end up marking from nonexistent memory. */
+    /* Hence we need to be prepared to recover by running GC_mark_some	     */
+    /* with a suitable handler in place.				     */
+#   define WRAP_MARK_SOME
+# endif
+
 /* Perform a small amount of marking.			*/
 /* We try to touch roughly a page of memory.		*/
 /* Return TRUE if we just finished a mark phase.	*/
@@ -287,7 +294,7 @@ static void alloc_mark_stack(size_t);
 /* register values.					*/
 /* We hold the allocation lock.  In the case of 	*/
 /* incremental collection, the world may not be stopped.*/
-#ifdef MSWIN32
+#ifdef WRAP_MARK_SOME
   /* For win32, this is called after we establish a structured	*/
   /* exception handler, in case Windows unmaps one of our root	*/
   /* segments.  See below.  In either case, we acquire the 	*/
@@ -418,9 +425,7 @@ static void alloc_mark_stack(size_t);
 }
 
 
-#ifdef MSWIN32
-
-# ifdef __GNUC__
+#if defined(MSWIN32) && defined(__GNUC__)
 
     typedef struct {
       EXCEPTION_REGISTRATION ex_reg;
@@ -455,14 +460,16 @@ static void alloc_mark_stack(size_t);
             return ExceptionContinueSearch;
         }
     }
-# endif /* __GNUC__ */
+# endif /* __GNUC__  && MSWIN32 */
 
 
+# ifdef WRAP_MARK_SOME
   GC_bool GC_mark_some(ptr_t cold_gc_frame)
   {
       GC_bool ret_val;
 
-#   ifndef __GNUC__
+#   ifdef MSWIN32
+#    ifndef __GNUC__
       /* Windows 98 appears to asynchronously create and remove  */
       /* writable memory mappings, for reasons we haven't yet    */
       /* understood.  Since we look for writable regions to      */
@@ -472,10 +479,13 @@ static void alloc_mark_stack(size_t);
       /* This code does not appear to be necessary for Windows   */
       /* 95/NT/2000. Note that this code should never generate   */
       /* an incremental GC write fault.                          */
+      /* It's conceivable that this is the same issue with	 */
+      /* terminating threads that we see with Linux and		 */
+      /* USE_PROC_FOR_LIBRARIES.				 */
 
       __try {
 
-#   else /* __GNUC__ */
+#    else /* __GNUC__ */
 
       /* Manually install an exception handler since GCC does    */
       /* not yet support Structured Exception Handling (SEH) on  */
@@ -488,16 +498,30 @@ static void alloc_mark_stack(size_t);
       asm volatile ("movl %%fs:0, %0" : "=r" (er.ex_reg.prev));
       asm volatile ("movl %0, %%fs:0" : : "r" (&er));
 
-#   endif /* __GNUC__ */
+#    endif /* __GNUC__ */
+#   else /* !MSWIN32 */
+      /* Here we are handling the case in which /proc is used for root	*/
+      /* finding, and we have threads.  We may find a stack for a	*/
+      /* thread that is in the process of exiting, and disappears	*/
+      /* while we are marking it.  This seems extremely difficult to	*/
+      /* avoid otherwise.						*/
+      if (GC_incremental)
+	      WARN("Incremental GC incompatible with /proc roots\n", 0);
+      	/* I'm not sure if this could still work ...	*/
+      GC_setup_temporary_fault_handler();
+      if(SETJMP(GC_jmp_buf) != 0) goto handle_ex;
+      
+#   endif /* !MSWIN32 */
 
           ret_val = GC_mark_some_inner(cold_gc_frame);
 
-#   ifndef __GNUC__
+#   ifdef MSWIN32
+#    ifndef __GNUC__
 
       } __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ?
                 EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
 
-#   else /* __GNUC__ */
+#    else /* __GNUC__ */
 
           /* Prevent GCC from considering the following code unreachable */
           /* and thus eliminating it.                                    */
@@ -507,6 +531,10 @@ static void alloc_mark_stack(size_t);
 handle_ex:
           /* Execution resumes from here on an access violation. */
 
+#    endif /* __GNUC__ */
+#   else /* !MSWIN32 */
+	  goto rm_handler;
+handle_ex:
 #   endif /* __GNUC__ */
 
           if (GC_print_stats) {
@@ -521,21 +549,26 @@ handle_ex:
 
           ret_val = FALSE;
 
-#   ifndef __GNUC__
+#   if defined(MSWIN32)
+#    if !defined(__GNUC__)
 
       }
 
-#   else /* __GNUC__ */
+#    else /* __GNUC__  && MSWIN32 */
 
 rm_handler:
       /* Uninstall the exception handler */
       asm volatile ("mov %0, %%fs:0" : : "r" (er.ex_reg.prev));
 
-#   endif /* __GNUC__ */
+#    endif /* __GNUC__ */
+#   else /* !MSWIN32 */
+rm_handler:
+      GC_reset_fault_handler();
+#   endif /* !MSWIN32 */
 
       return ret_val;
   }
-#endif /* MSWIN32 */
+#endif /* WRAP_MARK_SOME */
 
 
 GC_bool GC_mark_stack_empty(void)
@@ -867,9 +900,9 @@ mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
 	    ++top;
 	    top -> mse_descr = descr;
 	    top -> mse_start = p -> mse_start;
-	    GC_ASSERT( (top -> mse_descr & GC_DS_TAGS) != GC_DS_LENGTH || 
-		       top -> mse_descr < GC_greatest_plausible_heap_addr
-			                  - GC_least_plausible_heap_addr);
+	    GC_ASSERT((top -> mse_descr & GC_DS_TAGS) != GC_DS_LENGTH || 
+		      top -> mse_descr < (ptr_t)GC_greatest_plausible_heap_addr
+			                 - (ptr_t)GC_least_plausible_heap_addr);
 	    /* If this is a big object, count it as			*/
 	    /* size/256 + 1 objects.					*/
 	    ++i;

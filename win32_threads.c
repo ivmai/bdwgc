@@ -76,6 +76,14 @@ typedef volatile struct GC_thread_Rep * GC_thread;
 
 volatile GC_bool GC_please_stop = FALSE;
 
+/*
+ * FIXME: At initialization time we should perhaps chose
+ * between two different thread table representations.  This simple
+ * linear representation may be the best we can reliably do if we use
+ * DllMain.  By default we should probably rely on thread registration
+ * as with the other platforms, and use a hash table or other real
+ * data structure.
+ */
 volatile struct GC_thread_Rep thread_table[MAX_THREADS];
 
 volatile LONG GC_max_thread_index = 0; /* Largest index in thread_table	*/
@@ -230,7 +238,7 @@ static void GC_delete_thread(DWORD thread_id) {
   GC_thread t = GC_lookup_thread(thread_id);
 
   if (0 == t) {
-    WARN("Removing nonexisiting thread %ld\n", (GC_word)thread_id);
+    WARN("Removing nonexistent thread %ld\n", (GC_word)thread_id);
   } else {
     GC_delete_gc_thread(t);
   }

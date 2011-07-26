@@ -1417,7 +1417,7 @@ void SetMinimumStack(long minSize)
     GC_INIT();	/* Only needed on a few platforms.	*/
     (void) GC_set_warn_proc(warn_proc);
 #   if (defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(GWW_VDB)) \
-          && !defined(MAKE_BACK_GRAPH)
+          && !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL)
       GC_enable_incremental();
       (void) GC_printf("Switched to incremental mode\n");
 #     if defined(MPROTECT_VDB)
@@ -1557,7 +1557,9 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
 # endif
   DWORD thread_id;
   GC_INIT();
-  GC_enable_incremental();
+# ifndef NO_INCREMENTAL
+    GC_enable_incremental();
+# endif
   InitializeCriticalSection(&incr_cs);
   (void) GC_set_warn_proc(warn_proc);
 # ifdef MSWINCE
@@ -1671,7 +1673,8 @@ int main()
     n_tests = 0;
 #   if (defined(MPROTECT_VDB)) \
             && !defined(PARALLEL_MARK) &&!defined(REDIRECT_MALLOC) \
-            && !defined(MAKE_BACK_GRAPH)
+            && !defined(MAKE_BACK_GRAPH) && !defined(USE_PROC_FOR_LIBRARIES) \
+    	    && !defined(NO_INCREMENTAL)
     	GC_enable_incremental();
         (void) GC_printf("Switched to incremental mode\n");
 #     if defined(MPROTECT_VDB)

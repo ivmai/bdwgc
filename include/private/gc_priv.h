@@ -1923,5 +1923,71 @@ void GC_err_puts(const char *s);
 #  endif /* !SIG_SUSPEND */
   
 # endif
+     
+/* Some macros for setjmp that works across signal handlers	*/
+/* were possible, and a couple of routines to facilitate	*/
+/* catching accesses to bad addresses when that's		*/
+/* possible/needed.						*/
+#ifdef UNIX_LIKE
+# include <setjmp.h>
+# if defined(SUNOS5SIGS) && !defined(FREEBSD)
+#  include <sys/siginfo.h>
+# endif
+  /* Define SETJMP and friends to be the version that restores	*/
+  /* the signal mask.						*/
+# define SETJMP(env) sigsetjmp(env, 1)
+# define LONGJMP(env, val) siglongjmp(env, val)
+# define JMP_BUF sigjmp_buf
+#else
+# ifdef ECOS
+#   define SETJMP(env)  hal_setjmp(env)
+# else
+#   define SETJMP(env) setjmp(env)
+# endif
+# define LONGJMP(env, val) longjmp(env, val)
+# define JMP_BUF jmp_buf
+#endif
+
+/* Do we need the GC_find_limit machinery to find the end of a 	*/
+/* data segment.						*/
+# if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START)
+#   define NEED_FIND_LIMIT
+# endif
+
+# if !defined(STACKBOTTOM) && defined(HEURISTIC2)
+#   define NEED_FIND_LIMIT
+# endif
+
+# if (defined(SVR4) || defined(AUX) || defined(DGUX) \
+      || (defined(LINUX) && defined(SPARC))) && !defined(PCR)
+#   define NEED_FIND_LIMIT
+# endif
+
+#if defined(FREEBSD) && (defined(I386) || defined(powerpc) \
+    || defined(__powerpc__))
+#  include <machine/trap.h>
+#  if !defined(PCR)
+#    define NEED_FIND_LIMIT
+#  endif
+#endif
+
+#if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__) \
+    && !defined(NEED_FIND_LIMIT)
+   /* Used by GC_init_netbsd_elf() in os_dep.c.	*/
+#  define NEED_FIND_LIMIT
+#endif
+
+# if defined(NEED_FIND_LIMIT) || \
+     defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)
+JMP_BUF GC_jmp_buf;
+
+/* Set up a handler for address faults which will longjmp to	*/
+/* GC_jmp_buf;							*/
+extern void GC_setup_temporary_fault_handler(void);
+
+/* Undo the effect of GC_setup_temporary_fault_handler.		*/
+extern void GC_reset_fault_handler(void);
+
+# endif /* Need to handle address faults.	*/
 
 # endif /* GC_PRIVATE_H */

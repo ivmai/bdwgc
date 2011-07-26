@@ -1127,7 +1127,7 @@ void * GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 
     base.mem_base = (void *)&dummy;
 #   ifdef IA64
-      base.reg_base = GC_save_regs_in_stack();
+      base.reg_base = (void *)GC_save_regs_in_stack();
       /* Unnecessarily flushes register stack, 		*/
       /* but that probably doesn't hurt.		*/
 #   endif

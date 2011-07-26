@@ -4,13 +4,17 @@
 # include "private/gc_priv.h"
 
 # if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS) \
-     && !defined(GC_IRIX_THREADS) && !defined(GC_WIN32_THREADS)
+     && !defined(GC_WIN32_THREADS)
      
 #if defined(GC_DARWIN_THREADS)
 # include "private/darwin_stop_world.h"
 #else
 # include "private/pthread_stop_world.h"
 #endif
+
+#ifdef THREAD_LOCAL_ALLOC
+# include "thread_local_alloc.h"
+#endif /* THREAD_LOCAL_ALLOC */
 
 /* We use the allocation lock to protect thread-related data structures. */
 
@@ -59,26 +63,7 @@ typedef struct GC_Thread_Rep {
     				/* reason we need to intercept join	*/
     				/* and detach.				*/
 #   ifdef THREAD_LOCAL_ALLOC
-	void * ptrfree_freelists[TINY_FREELISTS];
-	void * normal_freelists[TINY_FREELISTS];
-#	ifdef GC_GCJ_SUPPORT
-	  void * gcj_freelists[TINY_FREELISTS];
-#	endif
-		/* Free lists contain either a pointer or a small count */
-		/* reflecting the number of granules allocated at that	*/
-		/* size.						*/
-		/* 0 ==> thread-local allocation in use, free list	*/
-		/*       empty.						*/
-		/* > 0, <= DIRECT_GRANULES ==> Using global allocation,	*/
-		/*       too few objects of this size have been		*/
-		/* 	 allocated by this thread.			*/
-		/* >= HBLKSIZE  => pointer to nonempty free list.	*/
-		/* > DIRECT_GRANULES, < HBLKSIZE ==> transition to	*/
-		/*    local alloc, equivalent to 0.			*/
-#	define DIRECT_GRANULES (HBLKSIZE/GRANULE_BYTES)
-		/* Don't use local free lists for up to this much 	*/
-		/* allocation.						*/
-
+        struct thread_local_freelists tlfs;
 #   endif
 } * GC_thread;
 

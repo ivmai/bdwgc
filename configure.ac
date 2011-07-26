@@ -17,7 +17,7 @@ dnl Process this file with autoconf to produce configure.
 # Initialization
 # ==============
 
-AC_INIT(gc,7.0alpha3,Hans.Boehm@hp.com) 
+AC_INIT(gc,7.0alpha4,Hans.Boehm@hp.com) 
     ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
@@ -86,6 +86,7 @@ case "$THREADS" in
 	  AC_DEFINE(PARALLEL_MARK)
 	fi
 	AC_DEFINE(THREAD_LOCAL_ALLOC)
+	AC_MSG_WARN("Explict GC_INIT() calls may be required.");
 	;;
      *-*-linux*)
 	AC_DEFINE(GC_LINUX_THREADS)
@@ -94,7 +95,6 @@ case "$THREADS" in
      *-*-aix*)
 	AC_DEFINE(GC_AIX_THREADS)
 	AC_DEFINE(_REENTRANT)
-	aix_irix_threads=true
 	;;
      *-*-hpux*)
 	AC_MSG_WARN("Only HP/UX 11 threads are supported.")
@@ -104,6 +104,7 @@ case "$THREADS" in
 	  AC_DEFINE(PARALLEL_MARK)
 	fi
 	AC_DEFINE(THREAD_LOCAL_ALLOC)
+	AC_MSG_WARN("Explict GC_INIT() calls may be required.");
 	THREADDLLIBS="-lpthread -lrt"
 	;;
      *-*-freebsd*)
@@ -119,7 +120,6 @@ case "$THREADS" in
 	;;
      *-*-irix*)
 	AC_DEFINE(GC_IRIX_THREADS)
-	aix_irix_threads=true
 	;;
      *-*-cygwin*)
 	AC_DEFINE(GC_WIN32_THREADS)
@@ -128,6 +128,7 @@ case "$THREADS" in
      *-*-darwin*)
 	AC_DEFINE(GC_DARWIN_THREADS)
 	AC_DEFINE(THREAD_LOCAL_ALLOC)
+	AC_MSG_WARN("Explict GC_INIT() calls may be required.");
 	if test "${enable_parallel_mark}" = yes; then
 	  AC_DEFINE(PARALLEL_MARK)
 	fi
@@ -138,6 +139,7 @@ case "$THREADS" in
         if test "${enable_parallel_mark}" = yes; then
 	  AC_DEFINE(PARALLEL_MARK)
 	  AC_DEFINE(THREAD_LOCAL_ALLOC)
+	  AC_MSG_WARN("Explict GC_INIT() calls may be required.");
 	  # May want to enable it in other cases, too.
 	  # Measurements havent yet been done.
 	fi
@@ -163,6 +165,7 @@ case "$THREADS" in
         AC_DEFINE(PARALLEL_MARK)
     fi
     AC_DEFINE(THREAD_LOCAL_ALLOC)
+    AC_MSG_WARN("Explict GC_INIT() calls may be required.");
     AC_DEFINE(GC_DGUX386_THREADS)
     AC_DEFINE(DGUX_THREADS)
     # Enable _POSIX4A_DRAFT10_SOURCE with flag -pthread
@@ -184,7 +187,6 @@ esac
 AC_SUBST(THREADDLLIBS)
 AM_CONDITIONAL(THREADS, test x$THREADS != xnone)
 AM_CONDITIONAL(PTHREADS, test x$THREADS = xposix)
-AM_CONDITIONAL(AIX_IRIX_THREADS, test x$aix_irix_threads = xtrue)
 AM_CONDITIONAL(DARWIN_THREADS, test x$darwin_threads = xtrue)
 AM_CONDITIONAL(ARCH_SOLARIS, test x$solaris_threads = xtrue)
 AM_CONDITIONAL(WIN32_THREADS, test x$win32_threads = xtrue)
@@ -195,6 +197,19 @@ case "$host" in
       ;;
 esac
 AM_CONDITIONAL(POWERPC_DARWIN,test x$powerpc_darwin = xtrue)
+
+AC_MSG_CHECKING(for xlc)
+AC_TRY_COMPILE([],[
+ #ifndef __xlC__
+ # error
+ #endif
+], [compiler_xlc=yes], [compiler_xlc=no])
+AC_MSG_RESULT($compiler_xlc)
+AM_CONDITIONAL(COMPILER_XLC,test $compiler_xlc = yes)
+if test $compiler_xlc = yes -a "$powerpc_darwin" = true; then
+  # the darwin stack-frame-walking code is completely broken on xlc
+  AC_DEFINE(DARWIN_DONT_PARSE_STACK)
+fi
 
 # We never want libdl on darwin. It is a fake libdl that just ends up making
 # dyld calls anyway
@@ -490,7 +505,7 @@ AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
 dnl Atomic Ops
 dnl ----------
 
-AC_CHECK_HEADER(libatomic_ops.h,
+AC_CHECK_HEADER(atomic_ops.h,
   [ AC_MSG_NOTICE([Using pre-installed libatomic_ops]) ],
   [ ao_dir=
     for candidate in ${srcdir}/libatomic_ops*; do
@@ -520,12 +535,14 @@ AC_CHECK_HEADER(libatomic_ops.h,
     ATOMIC_OPS_LIBS="-L \$(top_builddir)/libatomic_ops/src -latomic_ops"
     maybe_libatomic_ops=libatomic_ops
   ])
+
+AM_CONDITIONAL(USE_INTERNAL_LIBATOMICS_OPS, test -z "$maybe_libatomic_ops")
 AC_SUBST(maybe_libatomic_ops)
 
 dnl Produce the Files
 dnl -----------------
 
-AC_CONFIG_FILES([Makefile boehm-gc.pc])
+AC_CONFIG_FILES([Makefile bdw-gc.pc])
 
 AC_CONFIG_COMMANDS([default],,
   [ srcdir=${srcdir}

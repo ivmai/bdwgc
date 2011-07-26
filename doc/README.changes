@@ -2198,8 +2198,46 @@ Since gc6.4:
    which are only defined in private include files.
  - Integrated some small gcconfig.h patches from Dan Bonachea.  Also
    relaxed assertion about FreeBSD stack size in pthread_support.c.
+ - Integrated Andrew Begel's darwin_stop_world.c patch for 64-bit
+   support.  This may need additional work.
+ - Avoided potentially infinite recursion in GC_save_callers if
+   the system backtrace calls malloc.  The workaround currently requires
+   __thread support if this code is used with threads.
+ - Avoided another similar infinite recursion by conditionally
+   invoking GC_save_callers in alloc.c.  (Thanks to Matthias Andree
+   for helping to track down both of these.)
+ - Removed all traces of aix_irix_threads.c.  AIX and Irix now use
+   pthread_support.c and pthread_stop_world.c.  The old code appeared
+   to be unreliable for AIX, and was not regularly maintained.
+ - On Irix, ignore segments with MA_FETCHOP or MA_NOTCACHED attributed;
+   they're not always safe to read.
+ - Fixed a previously vacuous assertion (diagnosed by the SGI compiler)
+   in GC_remove_from_fl.
+ - Fix stack_size assertion in GC_pthread_create.
+ - Fix assertion in GC_steal_mark_stack.
 
 Since gc6.5:
+ - Fix CPU count detection for Irix and FreeBSD. (Thanks to Dan Bonachea.)
+ - Integrate Dan Bonachea's patch for the IBM XLC compiler on Darwin.
+ - Integrated Andreas Tobler's FreeBSD/PowerPC patch.
+ - Don't access the GC thread structure from the restart handler.  It's
+   unsafe, since the handler may run too late.  (Thanks to Ben Maurer for
+   tracking this down.)
+ - Applied Christian Thalinger's patch to change comment syntax in
+   alpha_mach_dep.S.
+ - Added test for GC_no_dls in GC_dyld_image_add for DARWIN. (Thanks to
+   Juan Jose Garcia Ripoli).
+ - Use LINUX_STACKBOTTOM for Linux/SH and LINUX/ARM. (Thanks to Sugioka
+   Toshinobu and Christian Thalinger.)
+ - Rewrote GC_parse_map_entry.  This assumed a fixed column layout of
+   /proc/self/maps on Linux.  This ceased to be true about 2 years ago.
+   The old code is probably quite problemetic with -DREDIRECT_MALLOC.  It
+   is also used by default for IA64, though I haven't seen actual failures
+   there.
+ - More consistently define HBLKSIZE to 4096 on 64 bit architectures with
+   4K pages.  (Thanks to Andrew Haley.)
+
+Since gc6.6:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
    and use ANSI constructs unconditionally.
  - Introduce #elif and #error in some of the appropriate places.
@@ -2287,8 +2325,8 @@ Since gc7.0alpha1:
    pc_excludes file.
  - No longer include GC_bytes_wasted when evaluating allocation progress.
    Since we are now counting live memory, it no longer makes sense.
- - Applied Davide Angeloca's configury patch.  There are now separate
-   Makefile.am's in the cord and tests supdirectory, more tests, etc.
+ - Applied Davide Angelocola's configury patch.  There are now separate
+   Makefile.am's in the cord and tests subdirectory, more tests, etc.
  - Renamed configure.in to configure.ac.
  - Merged a very small number of Nathanael Nerode's configure.ac
    cleanups from the gcc tree.  Unfortunately, that file is a bit
@@ -2326,9 +2364,34 @@ Since gc7.0alpha2
  - Added support for dlopen-based interception of pthread functions.
    This is only half done.  The gc.h redefinitions currently interfere.
  - Integrated major automake overhaul from Petter Urkedal.
+
+Since gc7.0alpha3
+   (various 6.5, 6.6 changes)
+ - Removed GC_brief_async_signal_safe_sleep and used atomic_ops instead.
+   (Thanks to Ben Maurer.)
+ - Integrated build patches from David Angelocola and Petter Urkedal.
+ - Fix dynamic-linker-based pthread call redirection.
+ - Renamed RS6000 to POWERPC/AIX.
+ - Allow recovery from SIGSEGV in marker on Linux.  This works around
+   a race in thread stack marking if /proc is used to find roots.  We do
+   that by default with malloc redirection and threads.  This involved
+   moving some GC_find_limit and SETJMP related declarations to gc_priv.h.
+ - Added doc/porting.html file.
+ - Added ADD_HEAP_GUARD_PAGES for sbrk/*nix platforms to debug extreme
+   memory overwrite errors.
+ - Added trivial NO_INCREMENTAL flag to facilitate debugging.
+ - Added GC_getattr_np-based GC_get_stack_base (untested).
+ - Separated thread local allocation into a separate file and added the
+   beginning of win32 support for that.
   
 To do:
  - Fix USE_MARK_BITS.
+ - REDIRECT_MALLOC and threads combination is getting closer, but currently
+   usually fails because the DTV (dynamic thread vector) used to access
+   thread-local storage is referenced only from the base of a thread stack,
+   but often allocated through malloc.  The symptom on IA64 is a runaway
+   memset in thread creation, which may cause failures elsewhere.
+   Typically large heap sections end up cleared.
  - Clone marker inner loop to support arch-dependent prefetching,
    and counting of objects marked for finalization.
  - function wrapping??
