@@ -131,7 +131,7 @@ GC_API void (* GC_finalizer_notifier)();
 			/* thread, which will call GC_invoke_finalizers */
 			/* in response.					*/
 
-GC_API int GC_dont_gc;	/* != 0 ==> Dont collect.  In versions 7.2a1+,	*/
+GC_API int GC_dont_gc;	/* != 0 ==> Dont collect.  In versions 6.2a1+,	*/
 			/* this overrides explicit GC_gcollect() calls.	*/
 			/* Used as a counter, so that nested enabling	*/
 			/* and disabling work correctly.  Should	*/
@@ -397,7 +397,7 @@ GC_API size_t GC_get_total_bytes GC_PROTO((void));
 /* ineffective.								*/
 GC_API void GC_disable GC_PROTO((void));
 
-/* Reenable garbage collection.  GC_diable() and GC_enable() calls 	*/
+/* Reenable garbage collection.  GC_disable() and GC_enable() calls 	*/
 /* nest.  Garbage collection is enabled if the number of calls to both	*/
 /* both functions is equal.						*/
 GC_API void GC_enable GC_PROTO((void));

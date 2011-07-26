@@ -179,12 +179,18 @@
                              "       bne %2,2f\n"
                              "       xor %0,%3,%0\n"
                              "       stl_c %0,%1\n"
+#	ifdef __ELF__
                              "       beq %0,3f\n"
+#	else
+                             "       beq %0,1b\n"
+#	endif
                              "       mb\n"
                              "2:\n"
+#	ifdef __ELF__
                              ".section .text2,\"ax\"\n"
                              "3:     br 1b\n"
                              ".previous"
+#	endif
                              :"=&r" (temp), "=m" (*addr), "=&r" (oldvalue)
                              :"Ir" (1), "m" (*addr)
 			     :"memory");

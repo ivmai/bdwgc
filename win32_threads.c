@@ -442,7 +442,17 @@ HANDLE WINAPI GC_CreateThread(
 
 		    /* fill in ID and handle; tell child this is done */
 		    thread_table[i].id = *lpThreadId;
-		    thread_table[i].handle = thread_h;
+		    if (!DuplicateHandle(GetCurrentProcess(),
+				 	 thread_h,
+					 GetCurrentProcess(),
+			 		 &thread_table[i].handle,
+			  		 0,
+					 0,
+					 DUPLICATE_SAME_ACCESS)) {
+			DWORD last_error = GetLastError();
+			GC_printf1("Last error code: %lx\n", last_error);
+			ABORT("DuplicateHandle failed");
+		    }
 		    SetEvent (parent_ready_h);
 
 		    /* wait for child to fill in stack and copy args */
@@ -630,12 +640,11 @@ static void threadDetach(DWORD thread_id) {
   LOCK();
   for (i = 0;
        i < MAX_THREADS &&
-       !thread_table[i].in_use || thread_table[i].id != thread_id;
+       (!thread_table[i].in_use || thread_table[i].id != thread_id);
        i++) {}
   if (i >= MAX_THREADS ) {
     WARN("thread %ld not found on detach", (GC_word)thread_id);
-  }
-  else {
+  } else {
     thread_table[i].stack = 0;
     thread_table[i].in_use = FALSE;
     CloseHandle(thread_table[i].handle);

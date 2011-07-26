@@ -58,13 +58,22 @@
   int GC_pthread_join(pthread_t thread, void **retval);
   int GC_pthread_detach(pthread_t thread);
 
-# define pthread_create GC_pthread_create
-#ifndef GC_DARWIN_THREADS
-# define pthread_sigmask GC_pthread_sigmask
+#if defined(GC_OSF1_THREADS) \
+    && defined(_PTHREAD_USE_MANGLED_NAMES_) && !defined(_PTHREAD_USE_PTDNAM_)
+/* Unless the compiler supports #pragma extern_prefix, the Tru64 UNIX
+   <pthread.h> redefines some POSIX thread functions to use mangled names.
+   If so, undef them before redefining. */
+# undef pthread_create
+# undef pthread_join
+# undef pthread_detach
 #endif
+
+# define pthread_create GC_pthread_create
 # define pthread_join GC_pthread_join
 # define pthread_detach GC_pthread_detach
+
 #ifndef GC_DARWIN_THREADS
+# define pthread_sigmask GC_pthread_sigmask
 # define dlopen GC_dlopen
 #endif
 

@@ -135,10 +135,17 @@
 #   endif /* GC_DGUX386_THREADS */
 #   undef pthread_create
 #   if !defined(GC_DARWIN_THREADS)
-#   undef pthread_sigmask
+#     undef pthread_sigmask
 #   endif
 #   undef pthread_join
 #   undef pthread_detach
+#   if defined(GC_OSF1_THREADS) && defined(_PTHREAD_USE_MANGLED_NAMES_) \
+       && !defined(_PTHREAD_USE_PTDNAM_)
+/* Restore the original mangled names on Tru64 UNIX.  */
+#     define pthread_create __pthread_create
+#     define pthread_join __pthread_join
+#     define pthread_detach __pthread_detach
+#   endif
 #endif
 
 void GC_thr_init();
@@ -1247,13 +1254,15 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     /* This also ensures that we hold onto si until the child is done	*/
     /* with it.  Thus it doesn't matter whether it is otherwise		*/
     /* visible to the collector.					*/
-    while (0 != sem_wait(&(si -> registered))) {
-        if (EINTR != errno) ABORT("sem_wait failed");
+    if (0 == result) {
+	while (0 != sem_wait(&(si -> registered))) {
+            if (EINTR != errno) ABORT("sem_wait failed");
+	}
     }
     sem_destroy(&(si -> registered));
-	LOCK();
-	GC_INTERNAL_FREE(si);
-	UNLOCK();
+    LOCK();
+    GC_INTERNAL_FREE(si);
+    UNLOCK();
 
     return(result);
 }

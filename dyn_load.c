@@ -446,6 +446,16 @@ GC_bool GC_register_main_static_data()
 
 #if defined(NETBSD)
 #  include <sys/exec_elf.h>
+/* for compatibility with 1.4.x */
+#  ifndef DT_DEBUG
+#  define DT_DEBUG     21
+#  endif
+#  ifndef PT_LOAD
+#  define PT_LOAD      1
+#  endif
+#  ifndef PF_W
+#  define PF_W         2
+#  endif
 #else
 #  include <elf.h>
 #endif
@@ -1049,32 +1059,43 @@ void GC_register_dynamic_libraries() {
    allocation lock held. */
    
 void GC_init_dyld() {
-    static GC_bool initialized = FALSE;
-    
-    if(initialized) return;
-    
+  static GC_bool initialized = FALSE;
+  char *bind_fully_env = NULL;
+  
+  if(initialized) return;
+  
 #   ifdef DARWIN_DEBUG
-        GC_printf0("Forcing full bind of GC code...\n");
+  GC_printf0("Registering dyld callbacks...\n");
 #   endif
-    if(!_dyld_bind_fully_image_containing_address((unsigned long*)GC_malloc))
-        GC_abort("_dyld_bind_fully_image_containing_addres failed");
-            
-#   ifdef DARWIN_DEBUG
-        GC_printf0("Registering dyld callbacks...\n");
-#   endif
-
-    /* Apple's Documentation:
-    When you call _dyld_register_func_for_add_image, the dynamic linker runtime
-    calls the specified callback (func) once for each of the images that is
-    currently loaded into the program. When a new image is added to the program,
-    your callback is called again with the mach_header for the new image, and the 	virtual memory slide amount of the new image. 
-        
-    This WILL properly register existing and all future libraries
-    */
-        
+  
+  /* Apple's Documentation:
+     When you call _dyld_register_func_for_add_image, the dynamic linker runtime
+     calls the specified callback (func) once for each of the images that is
+     currently loaded into the program. When a new image is added to the program,
+     your callback is called again with the mach_header for the new image, and the 	
+     virtual memory slide amount of the new image. 
+     
+     This WILL properly register already linked libraries and libraries 
+     linked in the future
+  */
+  
     _dyld_register_func_for_add_image(GC_dyld_image_add);
     _dyld_register_func_for_remove_image(GC_dyld_image_remove);
+
+    /* Set this early to avoid reentrancy issues. */
     initialized = TRUE;
+
+    bind_fully_env = getenv("DYLD_BIND_AT_LAUNCH");
+    
+    if (bind_fully_env == NULL) {
+#   ifdef DARWIN_DEBUG
+      GC_printf0("Forcing full bind of GC code...\n");
+#   endif
+      
+      if(!_dyld_bind_fully_image_containing_address((unsigned long*)GC_malloc))
+        GC_abort("_dyld_bind_fully_image_containing_address failed");
+    }
+
 }
 
 #define HAVE_REGISTER_MAIN_STATIC_DATA

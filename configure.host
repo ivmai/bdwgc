@@ -27,8 +27,10 @@ if test :"$GCC": = :yes: ; then
     gc_cflags="${gc_cflags} -fexceptions"
 else
     case "$host" in 
-        *-*-hpux* )
-        gc_cflags="${gc_flags} +ESdbgasm"
+        hppa*-*-hpux* )
+	if test :$GCC: != :"yes": ; then
+            gc_cflags="${gc_flags} +ESdbgasm"
+	fi
         # :TODO: actaully we should check using Autoconf if
         #     the compiler supports this option.
         ;;
@@ -52,7 +54,7 @@ esac
 
 case "${host}" in
   mips-tx39-*|mipstx39-unknown-*)
-	boehm_gc_cflags="${boehm_gc_cflags} -G 0"
+	gc_cflags="${gc_cflags} -G 0"
 	;;
   *)
 	;;

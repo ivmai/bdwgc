@@ -85,7 +85,7 @@
 #    define SPARC
 #    define mach_type_known
 # endif
-# if defined(NETBSD) && defined(m68k)
+# if defined(NETBSD) && (defined(m68k) || defined(__m68k__))
 #    define M68K
 #    define mach_type_known
 # endif
@@ -93,7 +93,7 @@
 #    define POWERPC
 #    define mach_type_known
 # endif
-# if defined(NETBSD) && defined(__arm32__)
+# if defined(NETBSD) && (defined(__arm32__) || defined(__arm__))
 #    define ARM32
 #    define mach_type_known
 # endif
@@ -104,6 +104,10 @@
 #    else
 #	define BSD
 #    endif
+#    define mach_type_known
+# endif
+# if defined(__NetBSD__) && defined(__vax__)
+#    define VAX
 #    define mach_type_known
 # endif
 # if defined(mips) || defined(__mips) || defined(_mips)
@@ -601,8 +605,13 @@
 #   ifdef NETBSD
 #	define OS_TYPE "NETBSD"
 #	define HEURISTIC2
-	extern char etext[];
-#	define DATASTART ((ptr_t)(etext))
+#	ifdef __ELF__
+#	  define DATASTART GC_data_start
+#	  define DYNAMIC_LOADING
+#	else
+	  extern char etext[];
+#	  define DATASTART ((ptr_t)(etext))
+#       endif
 #   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"

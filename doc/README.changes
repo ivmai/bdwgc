@@ -1876,7 +1876,23 @@ Since 6.2alpha6:
    Dick Porter for the small test case that allowed this to be debugged.)
  - Fixed version parsing for non-alpha versions in acinclude.m4 and
    version checking in version.h.
-    
+
+Since 6.2:
+ - Integrated some NetBSD patches forwarded to me by Marc Recht.  These
+   were already in the NetBSD package.    
+ - GC_pthread_create waited for the semaphore even if pthread_create failed.
+   Thanks to Dick Porter for the pthread_support.c patch.  Applied the
+   analogous fix for aix_irix_threads.c.
+ - Added Rainer Orth's Tru64 fixes.
+ - The check for exceeding the thread table size in win32 threadDetach
+   was incorrect.  (Thanks to Alexandr Petrosian for the patch.)
+ - Applied Andrew Begel's patch to correct some reentrancy issues
+   with dynamic loading on Darwin.
+ - GC_CreateThread() was neglecting to duplicate the thread handle in
+   the table.  (Thanks to Tum Nguyen for the patch.)
+ - Pass +ESdbgasm only on PA-RISC machines with vendor compiler.
+   (Thanks to Roger Sayle for the patch.)
+ - Applied more AIX threads patches from Scott Ananian.
 
 To do:
  - A dynamic libgc.so references dlopen unconditionally, but doesn't link

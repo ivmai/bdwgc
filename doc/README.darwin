@@ -1,4 +1,4 @@
-Darwin/MacOSX Support - May 20, 2003
+Darwin/MacOSX Support - July 22, 2003
 ====================================
 
 Important Usage Notes
@@ -8,6 +8,26 @@ GC_init() MUST be called before calling any other GC functions. This
 is necessary to properly register segments in dynamic libraries. This
 call is required even if you code does not use dynamic libraries as the
 dyld code handles registering all data segments.
+
+When your use of the garbage collector is confined to dylibs and you
+cannot call GC_init() before your libraries' static initializers have
+run and perhaps called GC_malloc(), create an initialization routine
+for each library to call GC_init():
+
+#include <gc/gc.h>
+void my_library_init() { GC_init(); }
+
+Compile this code into a my_library_init.o, and link it into your
+dylib. When you link the dylib, pass the -init argument with
+_my_library_init (e.g. gcc -dynamiclib -o my_library.dylib a.o b.o c.o
+my_library_init.o -init _my_library_init). This causes
+my_library_init() to be called before any static initializers, and
+will initialize the garbage collector properly. 
+
+Note: It doesn't hurt to call GC_init() more than once, so it's best,
+if you have an application or set of libraries that all use the
+garbage collector, to create an initialization routine for each of
+them that calls GC_init(). Better safe than sorry. 
 
 The incremental collector is still a bit flaky on darwin. It seems to 
 work reliably with workarounds for a few possible bugs in place however
