@@ -315,7 +315,7 @@ DCL_LOCK_STATE;
     /* It might help to manually inline the GC_malloc call here.	*/
     /* But any decent compiler should reduce the extra procedure call	*/
     /* to at most a jump instruction in this case.			*/
-#   if defined(I386) && defined(SOLARIS_THREADS)
+#   if defined(I386) && defined(GC_SOLARIS_THREADS)
       /*
        * Thread initialisation can call malloc before
        * we're ready for it.
@@ -324,7 +324,7 @@ DCL_LOCK_STATE;
        * inopportune times.
        */
       if (!GC_is_initialized) return sbrk(lb);
-#   endif /* I386 && SOLARIS_THREADS */
+#   endif /* I386 && GC_SOLARIS_THREADS */
     return((GC_PTR)REDIRECT_MALLOC(lb));
   }
 
@@ -336,6 +336,20 @@ DCL_LOCK_STATE;
 # endif
   {
     return((GC_PTR)REDIRECT_MALLOC(n*lb));
+  }
+
+# include <string.h>
+# ifdef __STDC__
+    char *strdup(const char *s)
+# else
+    char *strdup(s)
+    char *s;
+# endif
+  {
+    size_t len = strlen + 1;
+    char * result = ((char *)REDIRECT_MALLOC(len+1));
+    BCOPY(s, result, len+1);
+    return result;
   }
 # endif /* REDIRECT_MALLOC */
 
@@ -360,7 +374,7 @@ DCL_LOCK_STATE;
     h = HBLKPTR(p);
     hhdr = HDR(h);
 #   if defined(REDIRECT_MALLOC) && \
-	(defined(SOLARIS_THREADS) || defined(LINUX_THREADS) \
+	(defined(GC_SOLARIS_THREADS) || defined(GC_LINUX_THREADS) \
 	 || defined(__MINGW32__)) /* Should this be MSWIN32 in general? */
 	/* For Solaris, we have to redirect malloc calls during		*/
 	/* initialization.  For the others, this seems to happen 	*/

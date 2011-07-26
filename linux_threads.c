@@ -3,6 +3,7 @@
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
  * Copyright (c) 2000-2001 by Hewlett-Packard Company.  All rights reserved.
+ * DG/UX ix86 support <takis@xfree86.org>
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -50,15 +51,28 @@
 
 /* ANSI C requires that a compilation unit contains something */
 
-# if defined(GC_LINUX_THREADS) || defined(LINUX_THREADS) \
-     || defined(GC_HPUX_THREADS) || defined(HPUX_THREADS) \
-     || defined(GC_OSF1_THREADS) || defined(OSF1_THREADS) \
+# include "gc.h"
+
+# if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS) \
+     && !defined(GC_IRIX_THREADS)
 
 # include "private/gc_priv.h"
 
-# if defined(HPUX_THREADS) && !defined(USE_PTHREAD_SPECIFIC) \
+# if defined(GC_HPUX_THREADS) && !defined(USE_PTHREAD_SPECIFIC) \
      && !defined(USE_HPUX_TLS)
 #   define USE_HPUX_TLS
+# endif
+
+# if defined(GC_DGUX386_THREADS) && !defined(USE_PTHREAD_SPECIFIC)
+#   define USE_PTHREAD_SPECIFIC
+# endif
+
+# if defined(GC_DGUX386_THREADS) && !defined(_POSIX4A_DRAFT10_SOURCE)
+#   define _POSIX4A_DRAFT10_SOURCE 1
+# endif
+
+# if defined(GC_DGUX386_THREADS) && !defined(_USING_POSIX4A_DRAFT10)
+#   define _USING_POSIX4A_DRAFT10 1
 # endif
 
 # ifdef THREAD_LOCAL_ALLOC
@@ -92,6 +106,13 @@
 # include <sys/stat.h>
 # include <fcntl.h>
 
+#if defined(GC_DGUX386_THREADS)
+# include <sys/dg_sys_info.h>
+# include <sys/_int_psem.h>
+  /* sem_t is an uint in DG/UX */
+  typedef unsigned int  sem_t;
+#endif /* GC_DGUX386_THREADS */
+
 #ifndef __GNUC__
 #   define __inline__
 #endif
@@ -101,7 +122,11 @@
 #   define REAL_FUNC(f) __real_##f
 #else
 #   define WRAP_FUNC(f) GC_##f
-#   define REAL_FUNC(f) f
+#   if !defined(GC_DGUX386_THREADS)
+#     define REAL_FUNC(f) f
+#   else /* GC_DGUX386_THREADS */
+#     define REAL_FUNC(f) __d10_##f
+#   endif /* GC_DGUX386_THREADS */
 #   undef pthread_create
 #   undef pthread_sigmask
 #   undef pthread_join
@@ -203,11 +228,7 @@ GC_thread GC_lookup_thread(pthread_t id);
 
 static GC_bool parallel_initialized = FALSE;
 
-# if defined(__GNUC__)
-    void GC_init_parallel() __attribute__ ((constructor));
-# else
-    void GC_init_parallel();
-# endif
+void GC_init_parallel();
 
 # if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
 
@@ -234,15 +255,16 @@ static void return_freelists(ptr_t *fl, ptr_t *gfl)
 	nwords = i * (GRANULARITY/sizeof(word));
         qptr = fl + i;	
 	q = *qptr;
-	if ((word)q < HBLKSIZE) continue;
-	if (gfl[nwords] == 0) {
+	if ((word)q >= HBLKSIZE) {
+	  if (gfl[nwords] == 0) {
 	    gfl[nwords] = q;
-	} else {
+	  } else {
 	    /* Concatenate: */
 	    for (; (word)q >= HBLKSIZE; qptr = &(obj_link(q)), q = *qptr);
 	    GC_ASSERT(0 == q);
 	    *qptr = gfl[nwords];
 	    gfl[nwords] = fl[i];
+	  }
 	}
 	/* Clear fl[i], since the thread structure may hang around.	*/
 	/* Do it in a way that is likely to trap if we access it.	*/
@@ -294,8 +316,11 @@ void GC_init_thread_local(GC_thread p)
 /* We hold the allocator lock.	*/
 void GC_destroy_thread_local(GC_thread p)
 {
-    /* We currently only do this from the thread itself.	*/
-	GC_ASSERT(GC_getspecific(GC_thread_key) == (void *)p);
+    /* We currently only do this from the thread itself or from	*/
+    /* the fork handler for a child process.			*/
+#   ifndef HANDLE_FORK
+      GC_ASSERT(GC_getspecific(GC_thread_key) == (void *)p);
+#   endif
     return_freelists(p -> ptrfree_freelists, GC_aobjfreelist);
     return_freelists(p -> normal_freelists, GC_objfreelist);
 #   ifdef GC_GCJ_SUPPORT
@@ -316,8 +341,7 @@ GC_PTR GC_local_malloc(size_t bytes)
 	GC_key_t k = GC_thread_key;
 	void * tsd;
 
-#	if defined(REDIRECT_MALLOC) && !defined(USE_PTHREAD_SPECIFIC) \
-	   || !defined(__GNUC__)
+#	if defined(REDIRECT_MALLOC) && !defined(USE_PTHREAD_SPECIFIC)
 	    if (EXPECT(0 == k, 0)) {
 		/* This can happen if we get called when the world is	*/
 		/* being initialized.  Whether we can actually complete	*/
@@ -415,6 +439,7 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
 	    /* A memory barrier is probably never needed, since the 	*/
 	    /* action of stopping this thread will cause prior writes	*/
 	    /* to complete.						*/
+	    GC_ASSERT(((void * volatile *)result)[1] == 0); 
 	    *(void * volatile *)result = ptr_to_struct_containing_descr; 
 	    return result;
 	} else if ((word)my_entry - 1 < DIRECT_GRANULES) {
@@ -449,7 +474,7 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
  */
 
 #ifndef SIG_THR_RESTART
-#  if defined(HPUX_THREADS) || defined(GC_OSF1_THREADS)
+#  if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS)
 #   define SIG_THR_RESTART _SIGRTMIN + 5
 #  else
 #   define SIG_THR_RESTART SIGXCPU
@@ -458,16 +483,19 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
 
 sem_t GC_suspend_ack_sem;
 
-#if !defined(HPUX_THREADS) && !defined(GC_OSF1_THREADS)
+#if 0
 /*
 To make sure that we're using LinuxThreads and not some other thread
 package, we generate a dummy reference to `pthread_kill_other_threads_np'
 (was `__pthread_initial_thread_bos' but that disappeared),
 which is a symbol defined in LinuxThreads, but (hopefully) not in other
 thread packages.
+
+We no longer do this, since this code is now portable enough that it might
+actually work for something else.
 */
 void (*dummy_var_to_force_linux_threads)() = pthread_kill_other_threads_np;
-#endif /* !HPUX_THREADS */
+#endif /* 0 */
 
 #if defined(SPARC) || defined(IA64)
   extern word GC_save_regs_in_stack();
@@ -530,6 +558,24 @@ static void start_mark_threads()
 	
     if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
 	ABORT("pthread_attr_setdetachstate failed");
+
+#   if defined(HPUX) || defined(GC_DGUX386_THREADS)
+      /* Default stack size is usually too small: fix it. */
+      /* Otherwise marker threads or GC may run out of	  */
+      /* space.						  */
+#     define MIN_STACK_SIZE (8*HBLKSIZE*sizeof(word))
+      {
+	size_t old_size;
+	int code;
+
+        if (pthread_attr_getstacksize(&attr, &old_size) != 0)
+	  ABORT("pthread_attr_getstacksize failed\n");
+	if (old_size < MIN_STACK_SIZE) {
+	  if (pthread_attr_setstacksize(&attr, MIN_STACK_SIZE) != 0)
+		  ABORT("pthread_attr_setstacksize failed\n");
+	}
+      }
+#   endif /* HPUX || GC_DGUX386_THREADS */
 #   ifdef CONDPRINT
       if (GC_print_stats) {
 	GC_printf1("Starting %ld marker threads\n", GC_markers - 1);
@@ -692,13 +738,14 @@ void GC_mark_thread_local_free_lists(void)
 }
 #endif /* THREAD_LOCAL_ALLOC */
 
+static struct GC_Thread_Rep first_thread;
+
 /* Add a thread to GC_threads.  We assume it wasn't already there.	*/
 /* Caller holds allocation lock.					*/
 GC_thread GC_new_thread(pthread_t id)
 {
     int hv = ((word)id) % THREAD_TABLE_SZ;
     GC_thread result;
-    static struct GC_Thread_Rep first_thread;
     static GC_bool first_thread_used = FALSE;
     
     if (!first_thread_used) {
@@ -773,6 +820,38 @@ GC_thread GC_lookup_thread(pthread_t id)
     while (p != 0 && !pthread_equal(p -> id, id)) p = p -> next;
     return(p);
 }
+
+#ifdef HANDLE_FORK
+/* Remove all entries from the GC_threads table, except the	*/
+/* one for the current thread.  We need to do this in the child	*/
+/* process after a fork(), since only the current thread 	*/
+/* survives in the child.					*/
+void GC_remove_all_threads_but_me(void)
+{
+    pthread_t self = pthread_self();
+    int hv;
+    GC_thread p, next, me;
+
+    for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
+      me = 0;
+      for (p = GC_threads[hv]; 0 != p; p = next) {
+	next = p -> next;
+	if (p -> id == self) {
+	  me = p;
+	  p -> next = 0;
+	} else {
+#	  ifdef THREAD_LOCAL_ALLOC
+	    if (!(p -> flags & FINISHED)) {
+	      GC_destroy_thread_local(p);
+	    }
+#	  endif /* THREAD_LOCAL_ALLOC */
+	  if (p != &first_thread) GC_INTERNAL_FREE(p);
+	}
+      }
+      GC_threads[hv] = me;
+    }
+}
+#endif /* HANDLE_FORK */
 
 /* There seems to be a very rare thread stopping problem.  To help us  */
 /* debug that, we save the ids of the stopping thread. */
@@ -969,7 +1048,7 @@ int GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
 }
 #endif /* USE_PROC_FOR_LIBRARIES */
 
-#ifdef LINUX_THREADS
+#ifdef GC_LINUX_THREADS
 /* Return the number of processors, or i<= 0 if it can't be determined.	*/
 int GC_get_nprocs()
 {
@@ -1005,7 +1084,112 @@ int GC_get_nprocs()
     }
     return result;
 }
-#endif /* LINUX_THREADS */
+#endif /* GC_LINUX_THREADS */
+
+/* We hold the GC lock.  Wait until an in-progress GC has finished.	*/
+/* Repeatedly RELEASES GC LOCK in order to wait.			*/
+/* If wait_for_all is true, then we exit with the GC lock held and no	*/
+/* collection in progress; otherwise we just wait for the current GC	*/
+/* to finish.								*/
+void GC_wait_for_gc_completion(GC_bool wait_for_all)
+{
+    if (GC_incremental && GC_collection_in_progress()) {
+	int old_gc_no = GC_gc_no;
+
+	/* Make sure that no part of our stack is still on the mark stack, */
+	/* since it's about to be unmapped.				   */
+	while (GC_incremental && GC_collection_in_progress()
+	       && (wait_for_all || old_gc_no == GC_gc_no)) {
+	    ENTER_GC();
+            GC_collect_a_little_inner(1);
+	    EXIT_GC();
+	    UNLOCK();
+	    sched_yield();
+	    LOCK();
+	}
+    }
+}
+
+#ifdef HANDLE_FORK
+/* Procedures called before and after a fork.  The goal here is to make */
+/* it safe to call GC_malloc() in a forked child.  It's unclear that is	*/
+/* attainable, since the single UNIX spec seems to imply that one 	*/
+/* should only call async-signal-safe functions, and we probably can't	*/
+/* quite guarantee that.  But we give it our best shot.  (That same	*/
+/* spec also implies that it's not safe to call the system malloc	*/
+/* between fork() and exec().  Thus we're doing no worse than it.	*/
+
+/* Called before a fork()		*/
+void GC_fork_prepare_proc(void)
+{
+    /* Acquire all relevant locks, so that after releasing the locks	*/
+    /* the child will see a consistent state in which monitor 		*/
+    /* invariants hold.	 Unfortunately, we can't acquire libc locks	*/
+    /* we might need, and there seems to be no guarantee that libc	*/
+    /* must install a suitable fork handler.				*/
+    /* Wait for an ongoing GC to finish, since we can't finish it in	*/
+    /* the (one remaining thread in) the child.				*/
+      LOCK();
+#     if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+        GC_wait_for_reclaim();
+#     endif
+      GC_wait_for_gc_completion(TRUE);
+#     if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+        GC_acquire_mark_lock();
+#     endif
+}
+
+/* Called in parent after a fork()	*/
+void GC_fork_parent_proc(void)
+{
+#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+      GC_release_mark_lock();
+#   endif
+    UNLOCK();
+}
+
+/* Called in child after a fork()	*/
+void GC_fork_child_proc(void)
+{
+    /* Clean up the thread table, so that just our thread is left. */
+#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+      GC_release_mark_lock();
+#   endif
+    GC_remove_all_threads_but_me();
+#   ifdef PARALLEL_MARK
+      /* Turn off parallel marking in the child, since we are probably 	*/
+      /* just going to exec, and we would have to restart mark threads.	*/
+        GC_markers = 1;
+        GC_parallel = FALSE;
+#   endif /* PARALLEL_MARK */
+    UNLOCK();
+}
+#endif /* HANDLE_FORK */
+
+#if defined(GC_DGUX386_THREADS)
+/* Return the number of processors, or i<= 0 if it can't be determined. */
+int GC_get_nprocs()
+{
+    /* <takis@XFree86.Org> */
+    int numCpus;
+    struct dg_sys_info_pm_info pm_sysinfo;
+    int status =0;
+
+    status = dg_sys_info((long int *) &pm_sysinfo,
+	DG_SYS_INFO_PM_INFO_TYPE, DG_SYS_INFO_PM_CURRENT_VERSION);
+    if (status < 0)
+       /* set -1 for error */
+       numCpus = -1;
+    else
+      /* Active CPUs */
+      numCpus = pm_sysinfo.idle_vp_count;
+
+#  ifdef DEBUG_THREADS
+    GC_printf1("Number of active CPUs in this system: %d\n", numCpus);
+#  endif
+    return(numCpus);
+}
+#endif /* GC_DGUX386_THREADS */
 
 /* We hold the allocation lock.	*/
 void GC_thr_init()
@@ -1043,14 +1227,11 @@ void GC_thr_init()
     if (sigaction(SIG_THR_RESTART, &act, NULL) != 0) {
     	ABORT("Cannot set SIG_THR_RESTART handler");
     }
-#   ifdef INSTALL_LOOPING_SEGV_HANDLER
-        act.sa_handler = GC_looping_handler;
-	if (sigaction(SIGSEGV, &act, NULL) != 0
-	    || sigaction(SIGBUS, &act, NULL) != 0) {
-	    ABORT("Cannot set SIGSEGV or SIGBUS looping handler");
-	}
-#   endif  /* INSTALL_LOOPING_SEGV_HANDLER */
-
+#   ifdef HANDLE_FORK
+      /* Prepare for a possible fork.	*/
+        pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
+	  	       GC_fork_child_proc);
+#   endif /* HANDLE_FORK */
     /* Add the initial thread, so we can stop it.	*/
       t = GC_new_thread(pthread_self());
       t -> stack_ptr = (ptr_t)(&dummy);
@@ -1063,13 +1244,13 @@ void GC_thr_init()
 	if (nprocs_string != NULL) GC_nprocs = atoi(nprocs_string);
       }
       if (GC_nprocs <= 0) {
-#       if defined(HPUX_THREADS)
+#       if defined(GC_HPUX_THREADS)
 	  GC_nprocs = pthread_num_processors_np();
 #       endif
-#       if defined(OSF1_THREADS)
+#       if defined(GC_OSF1_THREADS) || defined(GC_FREEBSD_THREADS)
           GC_nprocs = 1;
 #       endif
-#	ifdef LINUX_THREADS
+#	if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
           GC_nprocs = GC_get_nprocs();
 #	endif
       }
@@ -1081,7 +1262,14 @@ void GC_thr_init()
 #	endif
       } else {
 #	ifdef PARALLEL_MARK
-	  GC_markers = GC_nprocs;
+          {
+	    char * markers_string = GETENV("GC_MARKERS");
+	    if (markers_string != NULL) {
+	      GC_markers = atoi(markers_string);
+	    } else {
+	      GC_markers = GC_nprocs;
+	    }
+          }
 #	endif
       }
 #   ifdef PARALLEL_MARK
@@ -1100,6 +1288,8 @@ void GC_thr_init()
 #	endif
       } else {
 	GC_parallel = TRUE;
+	/* Disable true incremental collection, but generational is OK.	*/
+	GC_time_limit = GC_TIME_UNLIMITED;
       }
 #   endif
 }
@@ -1107,7 +1297,7 @@ void GC_thr_init()
 
 /* Perform all initializations, including those that	*/
 /* may require allocation.				*/
-/* Called as constructor without allocation lock.	*/
+/* Called without allocation lock.			*/
 /* Must be called before a second thread is created.	*/
 /* Called without allocation lock.			*/
 void GC_init_parallel()
@@ -1180,6 +1370,10 @@ GC_end_blocking(void) {
     UNLOCK();
 }
     
+#if defined(GC_DGUX386_THREADS)
+#define __d10_sleep sleep
+#endif /* GC_DGUX386_THREADS */
+
 /* A wrapper for the standard C sleep function	*/
 int WRAP_FUNC(sleep) (unsigned int seconds)
 {
@@ -1220,21 +1414,7 @@ void GC_thread_exit_proc(void *arg)
        && !defined(USE_HPUX_TLS) && !defined(DBG_HDRS_ALL)
       GC_remove_specific(GC_thread_key);
 #   endif
-    if (GC_incremental && GC_collection_in_progress()) {
-	int old_gc_no = GC_gc_no;
-
-	/* Make sure that no part of our stack is still on the mark stack, */
-	/* since it's about to be unmapped.				   */
-	while (GC_incremental && GC_collection_in_progress()
-	       && old_gc_no == GC_gc_no) {
-	    ENTER_GC();
-            GC_collect_a_little_inner(1);
-	    EXIT_GC();
-	    UNLOCK();
-	    sched_yield();
-	    LOCK();
-	}
-    }
+    GC_wait_for_gc_completion(FALSE);
     UNLOCK();
 }
 
@@ -1249,6 +1429,17 @@ int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
     /* cant have been recycled by pthreads.				*/
     UNLOCK();
     result = REAL_FUNC(pthread_join)(thread, retval);
+# if defined (GC_FREEBSD_THREADS)
+    /* On FreeBSD, the wrapped pthread_join() sometimes returns (what
+       appears to be) a spurious EINTR which caused the test and real code
+       to gratuitously fail.  Having looked at system pthread library source
+       code, I see how this return code may be generated.  In one path of
+       code, pthread_join() just returns the errno setting of the thread
+       being joined.  This does not match the POSIX specification or the
+       local man pages thus I have taken the liberty to catch this one
+       spurious return value properly conditionalized on GC_FREEBSD_THREADS. */
+    if (result == EINTR) result = 0;
+# endif
     if (result == 0) {
         LOCK();
         /* Here the pthread thread id may have been recycled. */
@@ -1363,8 +1554,13 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 	/* This is otherwise saved only in an area mmapped by the thread */
 	/* library, which isn't visible to the collector.		 */
  
+    /* We resist the temptation to muck with the stack size here,	*/
+    /* even if the default is unreasonably small.  That's the client's	*/
+    /* responsibility.							*/
+
     LOCK();
-    si = (struct start_info *)GC_INTERNAL_MALLOC(sizeof(struct start_info), NORMAL);
+    si = (struct start_info *)GC_INTERNAL_MALLOC(sizeof(struct start_info),
+						 NORMAL);
     UNLOCK();
     if (!parallel_initialized) GC_init_parallel();
     if (0 == si) return(ENOMEM);
@@ -1375,7 +1571,7 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     if (!GC_thr_initialized) GC_thr_init();
     if (NULL == attr) {
 	detachstate = PTHREAD_CREATE_JOINABLE;
-    } else {
+    } else { 
         pthread_attr_getdetachstate(attr, &detachstate);
     }
     if (PTHREAD_CREATE_DETACHED == detachstate) my_flags |= DETACHED;
@@ -1385,6 +1581,7 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
         GC_printf1("About to start new thread from thread 0x%X\n",
 		   pthread_self());
 #   endif
+
     result = REAL_FUNC(pthread_create)(new_thread, attr, GC_start_routine, si);
 #   ifdef DEBUG_THREADS
         GC_printf1("Started thread 0x%X\n", *new_thread);
@@ -1400,6 +1597,7 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 	LOCK();
 	GC_INTERNAL_FREE(si);
 	UNLOCK();
+
     return(result);
 }
 
@@ -1584,7 +1782,7 @@ void GC_lock()
   pthread_t GC_mark_lock_holder = NO_THREAD;
 #endif
 
-#ifdef IA64
+#if 0
   /* Ugly workaround for a linux threads bug in the final versions      */
   /* of glibc2.1.  Pthread_mutex_trylock sets the mutex owner           */
   /* field even when it fails to acquire the mutex.  This causes        */
@@ -1691,5 +1889,5 @@ void GC_notify_all_marker()
 
 #endif /* PARALLEL_MARK */
 
-# endif /* LINUX_THREADS */
+# endif /* GC_LINUX_THREADS and friends */
 

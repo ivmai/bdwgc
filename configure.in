@@ -22,28 +22,6 @@ AC_CANONICAL_SYSTEM
 
 GC_CONFIGURE(.)
 
-AM_PROG_LIBTOOL
-
-dnl We use these options to decide which functions to include.
-AC_ARG_WITH(target-subdir,
-[  --with-target-subdir=SUBDIR
-                          configuring with a cross compiler])
-AC_ARG_WITH(cross-host,
-[  --with-cross-host=HOST  configuring with a cross compiler])
-
-AM_MAINTAINER_MODE
-# automake wants to see AC_EXEEXT.  But we don't need it.  And having
-# it is actually a problem, because the compiler we're passed can't
-# necessarily do a full link.  So we fool automake here.
-if false; then
-  # autoconf 2.50 runs AC_EXEEXT by default, and the macro expands
-  # to nothing, so nothing would remain between `then' and `fi' if it
-  # were not for the `:' below.
-  :
-  AC_EXEEXT
-fi
-
-AC_MSG_CHECKING([for threads package to use])
 AC_ARG_ENABLE(threads, [  --enable-threads=TYPE   choose threading package],
   THREADS=$enableval,
   [ AC_MSG_CHECKING([for thread model used by GCC])
@@ -96,7 +74,7 @@ case "$THREADS" in
 	;;
      *-*-freebsd*)
 	AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
-	AC_DEFINE(FREEBSD_THREADS)
+	AC_DEFINE(GC_FREEBSD_THREADS)
 	INCLUDES="$INCLUDES -pthread"
 	THREADLIBS=-pthread
       	;;
@@ -109,7 +87,23 @@ case "$THREADS" in
 	;;
     esac
     ;;
- decosf1 | irix | mach | os2 | solaris | win32 | dce | vxworks)
+ win32)
+    AC_DEFINE(GC_WIN32_THREADS)
+    ;;
+ dgux386)
+    THREADS=dgux386
+    # Use pthread GCC  switch
+    THREADLIBS=-pthread
+    if test "${enable_parallel_mark}"; then
+        AC_DEFINE(PARALLEL_MARK)
+    fi
+    AC_DEFINE(THREAD_LOCAL_ALLOC)
+    AC_DEFINE(GC_DGUX386_THREADS)
+    AC_DEFINE(DGUX_THREADS)
+    # Enable _POSIX4A_DRAFT10_SOURCE with flag -pthread
+    INCLUDES="-pthread $INCLUDES"
+    ;;
+ decosf1 | irix | mach | os2 | solaris | dce | vxworks)
     AC_MSG_ERROR(thread package $THREADS not yet supported)
     ;;
  *)
@@ -152,11 +146,19 @@ AC_SUBST(CXXINCLUDES)
 
 machdep=
 case "$host" in
-# alpha_mach_dep.s assumes that pointers are not saved in fp registers.
-# Gcc on a 21264 can spill pointers to fp registers.  Oops.
-# alpha*-*-*)
-#    machdep="alpha_mach_dep.lo"
-#    ;;
+ alpha-*-openbsd*)
+    machdep="alpha_mach_dep.lo"
+    if test x"${ac_cv_lib_dl_dlopen}" != xyes ; then
+       AC_MSG_WARN(OpenBSD/Alpha without dlopen(). Shared library support is disabled)
+       AM_DISABLE_SHARED
+    fi
+    ;;
+ alpha*-*-*)
+    machdep="alpha_mach_dep.lo"
+    ;;
+ i?86-*-solaris2.[[89]]*)
+    AC_DEFINE(SOLARIS25_PROC_VDB_BUG_FIXED)
+    ;;
  mipstx39-*-elf*)
     machdep="mips_ultrix_mach_dep.lo"
     AC_DEFINE(STACKBASE, __stackbase)
@@ -165,12 +167,24 @@ case "$host" in
  mips-dec-ultrix*)
     machdep="mips_ultrix_mach-dep.lo"
     ;;
+ mips-nec-sysv*|mips-unknown-sysv*)
+    ;;
  mips-*-*)
     machdep="mips_sgi_mach_dep.lo"
     AC_DEFINE(NO_EXECUTE_PERMISSION)
     ;;
+ sparc-*-netbsd*)
+    machdep="sparc_netbsd_mach_dep.lo"
+    ;;
  sparc-sun-solaris2.3*)
+    machdep="sparc_mach_dep.lo"
     AC_DEFINE(SUNOS53_SHARED_LIB)
+    ;;
+ sparc-sun-solaris2.*)
+    machdep="sparc_mach_dep.lo"
+    ;;
+ ia64-*-*)
+    machdep="mach_dep.lo ia64_save_regs_in_stack.lo"
     ;;
 esac
 if test x"$machdep" = x; then
@@ -178,6 +192,47 @@ if test x"$machdep" = x; then
 fi
 addobjs="$addobjs $machdep"
 AC_SUBST(addobjs)
+
+AM_PROG_LIBTOOL
+
+dnl checks for AViiON Machines running DGUX
+AC_MSG_CHECKING(if host is AViiON running DGUX)
+ac_is_dgux=no
+AC_CHECK_HEADER(sys/dg_sys_info.h,
+[ac_is_dgux=yes;])
+
+if test $ac_is_dgux = yes; then
+    if test "$enable_full_debug" = "yes"; then
+      CFLAGS="-g -mstandard -DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
+      CXXFLAGS="-g -mstandard -DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
+    else
+      CFLAGS="-DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
+      CXXFLAGS="-DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
+   fi
+   AC_SUBST(CFLAGS)
+   AC_SUBST(CXXFLAGS)
+fi
+
+dnl We use these options to decide which functions to include.
+AC_ARG_WITH(target-subdir,
+[  --with-target-subdir=SUBDIR
+                          configuring with a cross compiler])
+AC_ARG_WITH(cross-host,
+[  --with-cross-host=HOST  configuring with a cross compiler])
+
+AM_MAINTAINER_MODE
+# automake wants to see AC_EXEEXT.  But we don't need it.  And having
+# it is actually a problem, because the compiler we're passed can't
+# necessarily do a full link.  So we fool automake here.
+if false; then
+  # autoconf 2.50 runs AC_EXEEXT by default, and the macro expands
+  # to nothing, so nothing would remain between `then' and `fi' if it
+  # were not for the `:' below.
+  :
+  AC_EXEEXT
+fi
+
+AC_MSG_CHECKING([for threads package to use])
 
 dnl As of 4.13a2, the collector will not properly work on Solaris when
 dnl built with gcc and -O.  So we remove -O in the appropriate case.
@@ -232,12 +287,21 @@ AC_ARG_ENABLE(full-debug,
     AC_DEFINE(KEEP_BACK_PTRS)
     AC_DEFINE(DBG_HDRS_ALL)
     case $host in
+      ia64-*-linux* )
+	AC_DEFINE(MAKE_BACK_GRAPH)
+      ;;
       x86-*-linux* | i586-*-linux* | i686-*-linux* )
+	AC_DEFINE(MAKE_BACK_GRAPH)
 	AC_MSG_WARN("Client must not use -fomit-frame-pointer.")
 	AC_DEFINE(SAVE_CALL_COUNT, 8)
       ;;
+      i[3456]86-*-dgux*)
+	AC_DEFINE(MAKE_BACK_GRAPH)
+      ;;
     esac ]
   fi)
+
+
 
 AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
 

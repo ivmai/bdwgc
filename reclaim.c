@@ -631,47 +631,41 @@ COUNT_DECL
     ptr_t result = list;
 
     GC_ASSERT(GC_find_header((ptr_t)hbp) == hhdr);
+    GC_remove_protection(hbp, 1, (hhdr)->hb_descr == 0 /* Pointer-free? */);
     if (init) {
       switch(sz) {
 #      if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES)
         case 1:
 	    /* We now issue the hint even if GC_nearly_full returned	*/
 	    /* DONT_KNOW.						*/
-	    GC_write_hint(hbp);
             result = GC_reclaim1(hbp, hhdr, list COUNT_ARG);
             break;
         case 2:
-	    GC_write_hint(hbp);
             result = GC_reclaim_clear2(hbp, hhdr, list COUNT_ARG);
             break;
         case 4:
-	    GC_write_hint(hbp);
             result = GC_reclaim_clear4(hbp, hhdr, list COUNT_ARG);
             break;
 #      endif /* !SMALL_CONFIG && !USE_MARK_BYTES */
         default:
-	    GC_write_hint(hbp);
             result = GC_reclaim_clear(hbp, hhdr, sz, list COUNT_ARG);
             break;
       }
     } else {
+      GC_ASSERT((hhdr)->hb_descr == 0 /* Pointer-free block */);
       switch(sz) {
 #      if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES)
         case 1:
-	    GC_write_hint(hbp);
             result = GC_reclaim1(hbp, hhdr, list COUNT_ARG);
             break;
         case 2:
-	    GC_write_hint(hbp);
             result = GC_reclaim_uninit2(hbp, hhdr, list COUNT_ARG);
             break;
         case 4:
-	    GC_write_hint(hbp);
             result = GC_reclaim_uninit4(hbp, hhdr, list COUNT_ARG);
             break;
 #      endif /* !SMALL_CONFIG && !USE_MARK_BYTES */
         default:
-	    GC_write_hint(hbp);
             result = GC_reclaim_uninit(hbp, hhdr, sz, list COUNT_ARG);
             break;
       }
@@ -702,7 +696,8 @@ COUNT_DECL
     if (report_if_found) {
 	GC_reclaim_check(hbp, hhdr, sz);
     } else {
-        *flh = GC_reclaim_generic(hbp, hhdr, sz, ok -> ok_init,
+        *flh = GC_reclaim_generic(hbp, hhdr, sz,
+				  (ok -> ok_init || GC_debugging_started),
 	 			  *flh MEM_FOUND_ADDR);
     }
 }
@@ -774,8 +769,12 @@ COUNT_DECL
 /* Routines to gather and print heap block info 	*/
 /* intended for debugging.  Otherwise should be called	*/
 /* with lock.						*/
-static size_t number_of_blocks;
-static size_t total_bytes;
+
+struct Print_stats
+{
+	size_t number_of_blocks;
+	size_t total_bytes;
+};
 
 #ifdef USE_MARK_BYTES
 
@@ -834,25 +833,30 @@ hdr * hhdr;
 {
     register hdr * hhdr = HDR(h);
     register size_t bytes = WORDS_TO_BYTES(hhdr -> hb_sz);
+    struct Print_stats *ps;
     
     GC_printf3("(%lu:%lu,%lu)", (unsigned long)(hhdr -> hb_obj_kind),
     			        (unsigned long)bytes,
     			        (unsigned long)(GC_n_set_marks(hhdr)));
     bytes += HBLKSIZE-1;
     bytes &= ~(HBLKSIZE-1);
-    total_bytes += bytes;
-    number_of_blocks++;
+
+    ps = (struct Print_stats *)dummy;
+    ps->total_bytes += bytes;
+    ps->number_of_blocks++;
 }
 
 void GC_print_block_list()
 {
+    struct Print_stats pstats;
+
     GC_printf0("(kind(0=ptrfree,1=normal,2=unc.,3=stubborn):size_in_bytes, #_marks_set)\n");
-    number_of_blocks = 0;
-    total_bytes = 0;
-    GC_apply_to_all_blocks(GC_print_block_descr, (word)0);
+    pstats.number_of_blocks = 0;
+    pstats.total_bytes = 0;
+    GC_apply_to_all_blocks(GC_print_block_descr, (word)&pstats);
     GC_printf2("\nblocks = %lu, bytes = %lu\n",
-    	       (unsigned long)number_of_blocks,
-    	       (unsigned long)total_bytes);
+    	       (unsigned long)pstats.number_of_blocks,
+    	       (unsigned long)pstats.total_bytes);
 }
 
 #endif /* NO_DEBUGGING */

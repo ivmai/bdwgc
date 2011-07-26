@@ -375,6 +375,7 @@ DCL_LOCK_STATE;
     	while ((hbp = *rlh) != 0) {
             hhdr = HDR(hbp);
             *rlh = hhdr -> hb_next;
+	    hhdr -> hb_last_reclaimed = (unsigned short) GC_gc_no;
 #	    ifdef PARALLEL_MARK
 		{
 		  signed_word my_words_allocd_tmp = GC_words_allocd_tmp;

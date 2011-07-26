@@ -86,8 +86,6 @@ CXXINCLUDES = @CXXINCLUDES@
 DLLTOOL = @DLLTOOL@
 EXEEXT = @EXEEXT@
 EXTRA_TEST_LIBS = @EXTRA_TEST_LIBS@
-GCJ = @GCJ@
-GCJFLAGS = @GCJFLAGS@
 GC_CFLAGS = @GC_CFLAGS@
 INCLUDES = @INCLUDES@
 LIBTOOL = @LIBTOOL@
@@ -96,10 +94,8 @@ MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MY_CFLAGS = @MY_CFLAGS@
 OBJDUMP = @OBJDUMP@
-OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
-STRIP = @STRIP@
 THREADLIBS = @THREADLIBS@
 VERSION = @VERSION@
 addobjs = @addobjs@
@@ -121,7 +117,7 @@ MULTICLEAN = true
 
 toolexeclib_LTLIBRARIES = $(target_all)
 EXTRA_LTLIBRARIES = libgc.la
-libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c irix_threads.c linux_threads.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c solaris_pthreads.c solaris_threads.c specific.c stubborn.c typd_mlc.c
+libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c irix_threads.c linux_threads.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c solaris_pthreads.c solaris_threads.c specific.c stubborn.c typd_mlc.c backgraph.c win32_threads.c
 
 
 # Include THREADLIBS here to ensure that the correct versions of
@@ -130,7 +126,7 @@ libgc_la_LIBADD = @addobjs@ $(THREADLIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = -version-info 1:1:0 -rpath $(toolexeclibdir)
 
-EXTRA_libgc_la_SOURCES = alpha_mach_dep.s mips_sgi_mach_dep.s mips_ultrix_mach_dep.s powerpc_macosx_mach_dep.s rs6000_mach_dep.s sparc_mach_dep.s sparc_netbsd_mach_dep.s sparc_sunos4_mach_dep.s
+EXTRA_libgc_la_SOURCES = alpha_mach_dep.s mips_sgi_mach_dep.S mips_ultrix_mach_dep.s powerpc_macosx_mach_dep.s rs6000_mach_dep.s sparc_mach_dep.S sparc_netbsd_mach_dep.s sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s
 
 
 AM_CXXFLAGS = @GC_CFLAGS@
@@ -138,6 +134,8 @@ AM_CXXFLAGS = @GC_CFLAGS@
 AM_CFLAGS = @GC_CFLAGS@
 
 check_PROGRAMS = gctest
+# 	Using $< in the above seems to fail with the HP/UX on Itanium make.
+
 gctest_OBJECTS = test.o
 gctest_LDADD = ./libgc.la $(THREADLIBS) $(EXTRA_TEST_LIBS)
 TESTS_ENVIRONMENT = LD_LIBRARY_PATH=../../$(MULTIBUILDTOP)gcc
@@ -159,7 +157,7 @@ CONFIG_STATUS_DEPENDENCIES = $(srcdir)/configure.host
 
 MAKEOVERRIDES = 
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+mkinstalldirs = $(SHELL) $(top_srcdir)/$gc_basedir/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 LTLIBRARIES =  $(toolexeclib_LTLIBRARIES)
 
@@ -173,7 +171,8 @@ dbg_mlc.lo dyn_load.lo finalize.lo gc_dlopen.lo gcj_mlc.lo headers.lo \
 irix_threads.lo linux_threads.lo malloc.lo mallocx.lo mark.lo \
 mark_rts.lo misc.lo new_hblk.lo obj_map.lo os_dep.lo pcr_interface.lo \
 ptr_chck.lo real_malloc.lo reclaim.lo solaris_pthreads.lo \
-solaris_threads.lo specific.lo stubborn.lo typd_mlc.lo
+solaris_threads.lo specific.lo stubborn.lo typd_mlc.lo backgraph.lo \
+win32_threads.lo
 check_PROGRAMS =  gctest$(EXEEXT)
 gctest_DEPENDENCIES =  ./libgc.la
 gctest_LDFLAGS = 
@@ -181,8 +180,8 @@ CFLAGS = @CFLAGS@
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 DIST_COMMON =  Makefile.am Makefile.in acinclude.m4 aclocal.m4 \
-config.guess config.sub configure configure.in install-sh ltconfig \
-ltmain.sh
+config.guess config.sub configure configure.in install-sh ltmain.sh \
+mkinstalldirs
 
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
@@ -194,7 +193,7 @@ OBJECTS = $(libgc_la_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
-.SUFFIXES: .S .c .lo .o .obj .s
+.SUFFIXES: .S .c .lo .o .s
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --cygnus Makefile
 
@@ -238,11 +237,6 @@ uninstall-toolexeclibLTLIBRARIES:
 .c.o:
 	$(COMPILE) -c $<
 
-# FIXME: We should only use cygpath when building on Windows,
-# and only if it is available.
-.c.obj:
-	$(COMPILE) -c `cygpath -w $<`
-
 .s.o:
 	$(COMPILE) -c $<
 
@@ -251,7 +245,6 @@ uninstall-toolexeclibLTLIBRARIES:
 
 mostlyclean-compile:
 	-rm -f *.o core *.core
-	-rm -f *.$(OBJEXT)
 
 clean-compile:
 

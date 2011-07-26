@@ -86,7 +86,6 @@ word blocks_needed;
     
 }
 
-# define HBLK_IS_FREE(hdr) ((hdr) -> hb_map == GC_invalid_map)
 # define PHDR(hhdr) HDR(hhdr -> hb_prev)
 # define NHDR(hhdr) HDR(hhdr -> hb_next)
 
@@ -584,11 +583,11 @@ int n;
 	    if (!GC_use_entire_heap
 		&& size_avail != size_needed
 		&& USED_HEAP_SIZE >= GC_requested_heapsize
-		&& !GC_incremental && GC_should_collect()) {
+		&& !TRUE_INCREMENTAL && GC_should_collect()) {
 #		ifdef USE_MUNMAP
 		    continue;
 #		else
-		    /* If we enough large blocks left to cover any	*/
+		    /* If we have enough large blocks left to cover any	*/
 		    /* previous request for large blocks, we go ahead	*/
 		    /* and split.  Assuming a steady state, that should	*/
 		    /* be safe.  It means that we can use the full 	*/
@@ -719,9 +718,6 @@ int n;
 
     if (0 == hbp) return 0;
 	
-    /* Notify virtual dirty bit implementation that we are about to write. */
-    	GC_write_hint(hbp);
-    
     /* Add it to map of valid blocks */
     	if (!GC_install_counts(hbp, (word)size_needed)) return(0);
     	/* This leaks memory under very rare conditions. */
@@ -731,6 +727,11 @@ int n;
             GC_remove_counts(hbp, (word)size_needed);
             return(0); /* ditto */
         }
+
+    /* Notify virtual dirty bit implementation that we are about to write.  */
+    /* Ensure that pointerfree objects are not protected if it's avoidable. */
+    	GC_remove_protection(hbp, divHBLKSZ(size_needed),
+			     (hhdr -> hb_descr == 0) /* pointer-free */);
         
     /* We just successfully allocated a block.  Restart count of	*/
     /* consecutive failures.						*/
@@ -774,6 +775,7 @@ signed_word size;
       if (HBLK_IS_FREE(hhdr)) {
         GC_printf1("Duplicate large block deallocation of 0x%lx\n",
         	   (unsigned long) hbp);
+	ABORT("Duplicate large block deallocation");
       }
 
     GC_ASSERT(IS_MAPPED(hhdr));

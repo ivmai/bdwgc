@@ -42,7 +42,8 @@ libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
 dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c irix_threads.c \
 linux_threads.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
 obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c \
-solaris_pthreads.c solaris_threads.c specific.c stubborn.c typd_mlc.c
+solaris_pthreads.c solaris_threads.c specific.c stubborn.c typd_mlc.c \
+backgraph.c win32_threads.c
 
 # Include THREADLIBS here to ensure that the correct versions of
 # linuxthread semaphore functions get linked:
@@ -51,9 +52,9 @@ libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = -version-info 1:1:0 -rpath $(toolexeclibdir)
 
 EXTRA_libgc_la_SOURCES = alpha_mach_dep.s \
-mips_sgi_mach_dep.s mips_ultrix_mach_dep.s powerpc_macosx_mach_dep.s \
-rs6000_mach_dep.s sparc_mach_dep.s sparc_netbsd_mach_dep.s \
-sparc_sunos4_mach_dep.s
+mips_sgi_mach_dep.S mips_ultrix_mach_dep.s powerpc_macosx_mach_dep.s \
+rs6000_mach_dep.s sparc_mach_dep.S sparc_netbsd_mach_dep.s \
+sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s
 
 AM_CXXFLAGS = @GC_CFLAGS@
 AM_CFLAGS = @GC_CFLAGS@
@@ -62,7 +63,9 @@ check_PROGRAMS = gctest
 # The following hack produces a warning from automake, but we need it in order 
 # to build a file from a subdirectory. FIXME.
 test.o:	tests/test.c
-	$(COMPILE) -c $<
+	$(COMPILE) -c tests/test.c
+# 	Using $< in the above seems to fail with the HP/UX on Itanium make.
+
 gctest_OBJECTS = test.o
 gctest_LDADD = ./libgc.la $(THREADLIBS) $(EXTRA_TEST_LIBS)
 TESTS_ENVIRONMENT = LD_LIBRARY_PATH=../../$(MULTIBUILDTOP)gcc

@@ -9,20 +9,20 @@ int main()
 	       "-Wl,--wrap -Wl,pthread_detach "
 	       "-Wl,--wrap -Wl,pthread_sigmask -Wl,--wrap -Wl,sleep\n");
 #   endif
-#   if defined(LINUX_THREADS)
-      printf("-lpthread\n");
+#   if defined(GC_LINUX_THREADS) || defined(GC_IRIX_THREADS) \
+	|| defined(GC_FREEBSD_THREADS) || defined(GC_SOLARIS_PTHREADS)
+        printf("-lpthread\n");
 #   endif
-#   if defined(IRIX_THREADS)
-	printf("-lpthread\n");
-#   endif
-#   if defined(HPUX_THREADS)
+#   if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS)
 	printf("-lpthread -lrt\n");
 #   endif
-#   ifdef SOLARIS_THREADS
+#   if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
         printf("-lthread -ldl\n");
 #   endif
-#   ifdef GC_OSF1_THREADS
-	printf("-lpthread -lrt\n");
+    /* You need GCC 3.0.3 to build this one!           */  
+    /* DG/UX native gcc doesnt know what "-pthread" is */
+#   if defined(GC_DGUX386_THREADS)
+        printf("-ldl -pthread\n");
 #   endif
     return 0;
 }

@@ -211,50 +211,31 @@ inline void* operator new(
     classes derived from "gc_cleanup" or containing members derived
     from "gc_cleanup". */
 
-#ifdef GC_OPERATOR_NEW_ARRAY
 
-#ifdef _MSC_VER
  /** This ensures that the system default operator new[] doesn't get
   *  undefined, which is what seems to happen on VC++ 6 for some reason
   *  if we define a multi-argument operator new[].
   *  There seems to be really redirect new in this environment without
   *  including this everywhere. 
   */
- inline void *operator new[]( size_t size )
- {
-    return GC_MALLOC_UNCOLLECTABLE( size );
- }
+ void *operator new[]( size_t size );
+ 
+ void operator delete[](void* obj);
 
- inline void operator delete[](void* obj)
- {
-    GC_FREE(obj);
- };
+ void* operator new( size_t size);
 
- inline void* operator new( size_t size)
- {
-    return GC_MALLOC_UNCOLLECTABLE( size);
- };   
+ void operator delete(void* obj);
 
- inline void operator delete(void* obj)
- {
-    GC_FREE(obj);
- };
-
-
-// This new operator is used by VC++ in case of Debug builds !
-  inline void* operator new( size_t size,
+#ifdef _MSC_VER
+ // This new operator is used by VC++ in case of Debug builds !
+ void* operator new(  size_t size,
 		      int ,//nBlockUse,
 		      const char * szFileName,
-		      int nLine
-		      ) {
-# ifndef GC_DEBUG
-     return GC_malloc_uncollectable( size );
-# else
-     return GC_debug_malloc_uncollectable(size, szFileName, nLine);
-# endif
-  }
-
+		      int nLine );
 #endif /* _MSC_VER */
+
+
+#ifdef GC_OPERATOR_NEW_ARRAY
 
 inline void* operator new[](
     size_t size, 

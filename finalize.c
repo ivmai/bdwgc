@@ -207,7 +207,8 @@ signed_word * log_size_ptr;
 	UNLOCK();
     	ENABLE_SIGNALS();
 #     endif
-      new_dl == GC_oom_fn(sizeof(struct disappearing_link));
+      new_dl = (struct disappearing_link *)
+	      GC_oom_fn(sizeof(struct disappearing_link));
       if (0 == new_dl) {
 	GC_finalization_failures++;
 	return(0);
@@ -433,7 +434,8 @@ finalization_mark_proc * mp;
 	UNLOCK();
     	ENABLE_SIGNALS();
 #     endif
-      new_fo == GC_oom_fn(sizeof(struct finalizable_object));
+      new_fo = (struct finalizable_object *)
+	      GC_oom_fn(sizeof(struct finalizable_object));
       if (0 == new_fo) {
 	GC_finalization_failures++;
 	return;
@@ -838,3 +840,4 @@ void GC_notify_or_invoke_finalizers GC_PROTO((void))
 #   endif
     return(result);
 }
+

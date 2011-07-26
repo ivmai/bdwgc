@@ -20,7 +20,7 @@
 
 # undef GC_BUILD
 
-#ifdef DBG_HDRS_ALL
+#if defined(DBG_HDRS_ALL) || defined(MAKE_BACK_GRAPH)
 #  define GC_DEBUG
 #endif
 
@@ -43,7 +43,7 @@
 #   include "gc_local_alloc.h"
 # endif
 # include "private/gc_priv.h"	/* For output, locking, MIN_WORDS, 	*/
-			/* and some statistics.			*/
+				/* and some statistics.			*/
 # include "private/gcconfig.h"
 
 # if defined(MSWIN32) || defined(MSWINCE)
@@ -59,16 +59,16 @@
 #   define GC_printf1 printf
 # endif
 
-# ifdef SOLARIS_THREADS
+# if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
 #   include <thread.h>
 #   include <synch.h>
 # endif
 
-# if defined(IRIX_THREADS) || defined(LINUX_THREADS) || defined(HPUX_THREADS)
+# if defined(GC_PTHREADS)
 #   include <pthread.h>
 # endif
 
-# ifdef WIN32_THREADS
+# ifdef GC_WIN32_THREADS
 #   ifndef MSWINCE
 #     include <process.h>
 #     define GC_CreateThread(a,b,c,d,e,f) ((HANDLE) _beginthreadex(a,b,c,d,e,f))
@@ -205,40 +205,6 @@ sexpr y;
 }
 # endif
 
-sexpr small_cons (x, y)
-sexpr x;
-sexpr y;
-{
-    register sexpr r;
-    
-    collectable_count++;
-    r = (sexpr) GC_MALLOC(sizeof(struct SEXPR));
-    if (r == 0) {
-        (void)GC_printf0("Out of memory\n");
-        exit(1);
-    }
-    r -> sexpr_car = x;
-    r -> sexpr_cdr = y;
-    return(r);
-}
-
-sexpr small_cons_uncollectable (x, y)
-sexpr x;
-sexpr y;
-{
-    register sexpr r;
-    
-    uncollectable_count++;
-    r = (sexpr) GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR));
-    if (r == 0) {
-        (void)GC_printf0("Out of memory\n");
-        exit(1);
-    }
-    r -> sexpr_car = x;
-    r -> sexpr_cdr = (sexpr)(~(unsigned long)y);
-    return(r);
-}
-
 #ifdef GC_GCJ_SUPPORT
 
 #include "gc_mark.h"
@@ -278,6 +244,93 @@ struct GC_ms_entry * fake_gcj_mark_proc(word * addr,
 			      mark_stack_limit, (GC_PTR *)&(x -> sexpr_car));
     return(mark_stack_ptr);
 }
+
+#endif /* GC_GCJ_SUPPORT */
+
+#ifdef THREAD_LOCAL_ALLOC
+
+#undef GC_REDIRECT_TO_LOCAL
+#include "gc_local_alloc.h"
+
+sexpr local_cons (x, y)
+sexpr x;
+sexpr y;
+{
+    register sexpr r;
+    register int *p;
+    register int my_extra = extra_count;
+    static int my_random = 0;
+    
+    collectable_count++;
+    r = (sexpr) GC_LOCAL_MALLOC(sizeof(struct SEXPR) + my_extra);
+#   ifdef GC_GCJ_SUPPORT
+      if (collectable_count % 2 == 0) {
+        r = (sexpr) GC_LOCAL_GCJ_MALLOC(sizeof(struct SEXPR) + sizeof(GC_word) + my_extra,
+					&gcj_class_struct1);
+        r = (sexpr) ((GC_word *)r + 1);
+      }
+#   endif
+    if (r == 0) {
+        (void)GC_printf0("Out of memory\n");
+        exit(1);
+    }
+    for (p = (int *)r;
+         ((char *)p) < ((char *)r) + my_extra + sizeof(struct SEXPR); p++) {
+	if (*p) {
+	    (void)GC_printf1("Found nonzero at 0x%lx (local) - allocator is broken\n",
+	    		     (unsigned long)p);
+	    FAIL;
+        }
+        *p = 13;
+    }
+    r -> sexpr_car = x;
+    r -> sexpr_cdr = y;
+    my_extra++;
+    if ( my_extra >= 5000 || my_extra == 200 && ++my_random % 37 != 0) {
+        extra_count = 0;
+    } else {
+        extra_count = my_extra;
+    }
+    return(r);
+}
+#endif /* THREAD_LOCAL_ALLOC */
+
+sexpr small_cons (x, y)
+sexpr x;
+sexpr y;
+{
+    register sexpr r;
+    
+    collectable_count++;
+    r = (sexpr) GC_MALLOC(sizeof(struct SEXPR));
+    if (r == 0) {
+        (void)GC_printf0("Out of memory\n");
+        exit(1);
+    }
+    r -> sexpr_car = x;
+    r -> sexpr_cdr = y;
+    return(r);
+}
+
+sexpr small_cons_uncollectable (x, y)
+sexpr x;
+sexpr y;
+{
+    register sexpr r;
+    
+    uncollectable_count++;
+    r = (sexpr) GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR));
+    if (r == 0) {
+        (void)GC_printf0("Out of memory\n");
+        exit(1);
+    }
+    r -> sexpr_car = x;
+    r -> sexpr_cdr = (sexpr)(~(unsigned long)y);
+    return(r);
+}
+
+#ifdef GC_GCJ_SUPPORT
+
 
 sexpr gcj_cons(x, y)
 sexpr x;
@@ -365,6 +418,35 @@ int low, up;
 }
 #endif /* GC_GCJ_SUPPORT */
 
+#ifdef THREAD_LOCAL_ALLOC
+/* Return reverse(x) concatenated with y */
+sexpr local_reverse1(x, y)
+sexpr x, y;
+{
+    if (is_nil(x)) {
+        return(y);
+    } else {
+        return( local_reverse1(cdr(x), local_cons(car(x), y)) );
+    }
+}
+
+sexpr local_reverse(x)
+sexpr x;
+{
+    return( local_reverse1(x, nil) );
+}
+
+sexpr local_ints(low, up)
+int low, up;
+{
+    if (low > up) {
+	return(nil);
+    } else {
+        return(local_cons(local_cons(INT_TO_SEXPR(low), nil), local_ints(low+1, up)));
+    }
+}
+#endif /* THREAD_LOCAL_ALLOC */
+
 /* To check uncollectable allocation we build lists with disguised cdr	*/
 /* pointers, and make sure they don't go away.				*/
 sexpr uncollectable_ints(low, up)
@@ -447,18 +529,23 @@ struct {
  */
 #ifdef THREADS
 
-# ifdef WIN32_THREADS
+# ifdef GC_WIN32_THREADS
     unsigned __stdcall tiny_reverse_test(void * arg)
 # else
     void * tiny_reverse_test(void * arg)
 # endif
 {
-    check_ints(reverse(reverse(ints(1,10))), 1, 10);
+    int i;
+    for (i = 0; i < 5; ++i) {
+      check_ints(reverse(reverse(ints(1,10))), 1, 10);
+#     ifdef THREAD_LOCAL_ALLOC
+        check_ints(local_reverse(local_reverse(local_ints(1,10))), 1, 10);
+#     endif
+    }
     return 0;
 }
 
-# if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
-     || defined(SOLARIS_PTHREADS) || defined(HPUX_THREADS)
+# if defined(GC_PTHREADS)
     void fork_a_thread()
     {
       pthread_t t;
@@ -475,7 +562,7 @@ struct {
       }
     }
 
-# elif defined(WIN32_THREADS)
+# elif defined(GC_WIN32_THREADS)
     void fork_a_thread()
     {
   	unsigned thread_id;
@@ -493,7 +580,7 @@ struct {
     	}
     }
 
-/* # elif defined(SOLARIS_THREADS) */
+/* # elif defined(GC_SOLARIS_THREADS) */
 
 # else
 
@@ -564,7 +651,9 @@ void reverse_test()
     h = (sexpr *)GC_REALLOC((GC_PTR)h, 2000 * sizeof(sexpr));
 #   ifdef GC_GCJ_SUPPORT
       h[1999] = gcj_ints(1,200);
-      h[1999] = gcj_reverse(h[1999]);
+      for (i = 0; i < 51; ++i) 
+        h[1999] = gcj_reverse(h[1999]);
+      /* Leave it as the reveresed list for now. */
 #   else
       h[1999] = ints(1,200);
 #   endif
@@ -595,6 +684,9 @@ void reverse_test()
     	/* 49 integers.  Thus this is thread safe without locks,	  */
     	/* assuming atomic pointer assignments.				  */
         a = reverse(reverse(a));
+#       ifdef THREAD_LOCAL_ALLOC
+	  a = local_reverse(local_reverse(a));
+#	endif
 #	if !defined(AT_END) && !defined(THREADS)
 	  /* This is not thread safe, since realloc explicitly deallocates */
           if (i & 1) {
@@ -649,15 +741,15 @@ VOLATILE int dropped_something = 0;
 # ifdef PCR
      PCR_ThCrSec_EnterSys();
 # endif
-# ifdef SOLARIS_THREADS
+# if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
     static mutex_t incr_lock;
     mutex_lock(&incr_lock);
 # endif
-# if  defined(IRIX_THREADS) || defined(LINUX_THREADS) || defined(HPUX_THREADS)
+# if  defined(GC_PTHREADS)
     static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_lock(&incr_lock);
 # endif
-# ifdef WIN32_THREADS
+# ifdef GC_WIN32_THREADS
     EnterCriticalSection(&incr_cs);
 # endif
   if ((int)(GC_word)client_data != t -> level) {
@@ -668,13 +760,13 @@ VOLATILE int dropped_something = 0;
 # ifdef PCR
     PCR_ThCrSec_ExitSys();
 # endif
-# ifdef SOLARIS_THREADS
+# if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
     mutex_unlock(&incr_lock);
 # endif
-# if defined(IRIX_THREADS) || defined(LINUX_THREADS) || defined(HPUX_THREADS)
+# if defined(GC_PTHREADS)
     pthread_mutex_unlock(&incr_lock);
 # endif
-# ifdef WIN32_THREADS
+# ifdef GC_WIN32_THREADS
     LeaveCriticalSection(&incr_cs);
 # endif
 }
@@ -740,16 +832,15 @@ int n;
 #	  ifdef PCR
  	    PCR_ThCrSec_EnterSys();
 #	  endif
-#	  ifdef SOLARIS_THREADS
+#	  if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
 	    static mutex_t incr_lock;
 	    mutex_lock(&incr_lock);
 #	  endif
-#         if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
-	     || defined(HPUX_THREADS)
+#         if defined(GC_PTHREADS)
             static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
             pthread_mutex_lock(&incr_lock);
 #         endif
-#         ifdef WIN32_THREADS
+#         ifdef GC_WIN32_THREADS
             EnterCriticalSection(&incr_cs);
 #         endif
 		/* Losing a count here causes erroneous report of failure. */
@@ -758,14 +849,13 @@ int n;
 #	  ifdef PCR
  	    PCR_ThCrSec_ExitSys();
 #	  endif
-#	  ifdef SOLARIS_THREADS
+#	  if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
 	    mutex_unlock(&incr_lock);
 #	  endif
-#	  if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
-	     || defined(HPUX_THREADS)
+#	  if defined(GC_PTHREADS)
 	    pthread_mutex_unlock(&incr_lock);
 #	  endif
-#         ifdef WIN32_THREADS
+#         ifdef GC_WIN32_THREADS
             LeaveCriticalSection(&incr_cs);
 #         endif
 	}
@@ -825,7 +915,7 @@ int n;
     chktree(t -> rchild, n-1);
 }
 
-# if defined(SOLARIS_THREADS) && !defined(_SOLARIS_PTHREADS)
+# if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
 thread_key_t fl_key;
 
 void * alloc8bytes()
@@ -866,9 +956,7 @@ void * alloc8bytes()
 
 #else
 
-# if defined(GC_SOLARIS_PTHREADS) || defined(GC_IRIX_THREADS) \
-     || defined(GC_LINUX_THREADS) || defined(GC_HPUX_THREADS) \
-     || defined(GC_SOLARIS_THREADS)
+# if defined(GC_PTHREADS)
 pthread_key_t fl_key;
 
 void * alloc8bytes()
@@ -1188,6 +1276,15 @@ void run_one_test()
     LOCK();
     n_tests++;
     UNLOCK();
+#   if defined(THREADS) && defined(HANDLE_FORK)
+      if (fork() == 0) {
+	GC_gcollect();
+	tiny_reverse_test(0);
+	GC_gcollect();
+	GC_printf0("Finished a child process\n");
+	exit(0);
+      }
+#   endif
     /* GC_printf1("Finished %x\n", pthread_self()); */
 }
 
@@ -1207,7 +1304,7 @@ void check_heap_stats()
     }
 #   else
     if (sizeof(char *) > 4) {
-        max_heap_sz = 15000000;
+        max_heap_sz = 19000000;
     } else {
     	max_heap_sz = 11000000;
     }
@@ -1217,7 +1314,7 @@ void check_heap_stats()
 #       ifdef SAVE_CALL_CHAIN
 	    max_heap_sz *= 3;
 #           ifdef SAVE_CALL_COUNT
-		max_heap_sz *= SAVE_CALL_COUNT/4;
+		max_heap_sz += max_heap_sz * SAVE_CALL_COUNT/4;
 #	    endif
 #       endif
 #   endif
@@ -1319,9 +1416,8 @@ void SetMinimumStack(long minSize)
 
 
 #if !defined(PCR) && !defined(GC_SOLARIS_THREADS) \
-    && !defined(GC_WIN32_THREADS) \
-    && !defined(GC_IRIX_THREADS) && !defined(GC_LINUX_THREADS) \
-    && !defined(GC_HPUX_THREADS) || defined(LINT)
+    && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS) \
+    || defined(LINT)
 #if defined(MSWIN32) && !defined(__MINGW32__)
   int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPTSTR cmd, int n)
 #else
@@ -1346,7 +1442,7 @@ void SetMinimumStack(long minSize)
 #   endif
     GC_INIT();	/* Only needed if gc is dynamic library.	*/
     (void) GC_set_warn_proc(warn_proc);
-#   if defined(MPROTECT_VDB) || defined(PROC_VDB)
+#   if (defined(MPROTECT_VDB) || defined(PROC_VDB)) && !defined(MAKE_BACK_GRAPH)
       GC_enable_incremental();
       (void) GC_printf0("Switched to incremental mode\n");
 #     if defined(MPROTECT_VDB)
@@ -1557,8 +1653,7 @@ test()
 }
 #endif
 
-#if defined(GC_SOLARIS_THREADS) || defined(GC_IRIX_THREADS) \
- || defined(GC_HPUX_THREADS) || defined(GC_LINUX_THREADS)
+#if defined(GC_SOLARIS_THREADS) || defined(GC_PTHREADS)
 void * thr_run_one_test(void * arg)
 {
     run_one_test();
@@ -1569,7 +1664,7 @@ void * thr_run_one_test(void * arg)
 #  define GC_free GC_debug_free
 #endif
 
-#ifdef GC_SOLARIS_THREADS
+#if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
 main()
 {
     thread_t th1;
@@ -1578,7 +1673,9 @@ main()
 
     n_tests = 0;
     GC_INIT();	/* Only needed if gc is dynamic library.	*/
-    GC_enable_incremental();
+#   ifndef MAKE_BACK_GRAPH
+      GC_enable_incremental();
+#   endif
     (void) GC_set_warn_proc(warn_proc);
     if (thr_keycreate(&fl_key, GC_free) != 0) {
         (void)GC_printf1("Key creation failed %lu\n", (unsigned long)code);
@@ -1606,6 +1703,11 @@ main()
     return(0);
 }
 #else /* pthreads */
+
+#ifndef GC_PTHREADS
+  --> bad news
+#endif
+
 main()
 {
     pthread_t th1;
@@ -1618,12 +1720,19 @@ main()
 	/* Since the initial cant always grow later.	*/
 	*((volatile char *)&code - 1024*1024) = 0;      /* Require 1 Mb */
 #   endif /* GC_IRIX_THREADS */
+#   if defined(GC_HPUX_THREADS)
+	/* Default stack size is too small, especially with the 64 bit ABI */
+	/* Increase it.							   */
+	if (pthread_default_stacksize_np(1024*1024, 0) != 0) {
+          (void)GC_printf0("pthread_default_stacksize_np failed.\n");
+	}
+#   endif	/* GC_HPUX_THREADS */
     pthread_attr_init(&attr);
-#   if defined(GC_IRIX_THREADS) || defined(GC_HPUX_THREADS)
+#   if defined(GC_IRIX_THREADS) || defined(GC_FREEBSD_THREADS)
     	pthread_attr_setstacksize(&attr, 1000000);
 #   endif
     n_tests = 0;
-#   if  defined(MPROTECT_VDB) && !defined(PARALLEL_MARK) &&!defined(REDIRECT_MALLOC)
+#   if  defined(MPROTECT_VDB) && !defined(PARALLEL_MARK) &&!defined(REDIRECT_MALLOC) && !defined(MAKE_BACK_GRAPH)
     	GC_enable_incremental();
         (void) GC_printf0("Switched to incremental mode\n");
 	(void) GC_printf0("Emulating dirty bits with mprotect/signals\n");
@@ -1656,5 +1765,5 @@ main()
     GC_printf1("Completed %d collections\n", GC_gc_no);
     return(0);
 }
-#endif /* pthreads */
-#endif /* SOLARIS_THREADS || IRIX_THREADS || LINUX_THREADS || HPUX_THREADS */
+#endif /* GC_PTHREADS */
+#endif /* GC_SOLARIS_THREADS || GC_PTHREADS */

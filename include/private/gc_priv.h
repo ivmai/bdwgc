@@ -30,6 +30,12 @@
 #   define BSD_TIME
 #endif
 
+#ifdef DGUX
+#   include <sys/types.h>
+#   include <sys/time.h>
+#   include <sys/resource.h>
+#endif /* DGUX */
+
 #ifdef BSD_TIME
 #   include <sys/types.h>
 #   include <sys/time.h>
@@ -44,10 +50,6 @@
 #   include "../gc_mark.h"
 # endif
 
-# ifndef GCCONFIG_H
-#   include "gcconfig.h"
-# endif
-
 typedef GC_word word;
 typedef GC_signed_word signed_word;
 
@@ -60,6 +62,10 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 			/* Preferably identical to caddr_t, if it 	*/
 			/* exists.					*/
 			
+# ifndef GCCONFIG_H
+#   include "gcconfig.h"
+# endif
+
 # ifndef HEADERS_H
 #   include "gc_hdrs.h"
 # endif
@@ -205,6 +211,11 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
    /* odd numbered words to have mark bits.				*/
 #endif
 
+#if defined(GC_GCJ_SUPPORT) && ALIGNMENT < 8 && !defined(ALIGN_DOUBLE)
+   /* GCJ's Hashtable synchronization code requires 64-bit alignment.  */
+#  define ALIGN_DOUBLE
+#endif
+
 /* ALIGN_DOUBLE requires MERGE_SIZES at present. */
 # if defined(ALIGN_DOUBLE) && !defined(MERGE_SIZES)
 #   define MERGE_SIZES
@@ -249,34 +260,12 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 
 #ifdef SAVE_CALL_CHAIN
 
-/*
- * Number of frames and arguments to save in objects allocated by
- * debugging allocator.
- */
-#   ifndef SAVE_CALL_COUNT
-#     define NFRAMES 6	/* Number of frames to save. Even for		*/
-			/* alignment reasons.				*/
-#   else
-#     define NFRAMES ((SAVE_CALL_COUNT + 1) & ~1)
-#   endif
-#   define NARGS 2	/* Mumber of arguments to save for each call.	*/
-
-#   define NEED_CALLINFO
-
 /* Fill in the pc and argument information for up to NFRAMES of my	*/
 /* callers.  Ignore my frame and my callers frame.			*/
 struct callinfo;
 void GC_save_callers GC_PROTO((struct callinfo info[NFRAMES]));
   
 void GC_print_callers GC_PROTO((struct callinfo info[NFRAMES]));
-
-#else
-
-# ifdef GC_ADD_CALLER
-#   define NFRAMES 1
-#   define NARGS 0
-#   define NEED_CALLINFO
-# endif
 
 #endif
 
@@ -376,85 +365,27 @@ void GC_print_callers GC_PROTO((struct callinfo info[NFRAMES]));
 #   define BZERO(x,n) bzero((char *)(x),(int)(n))
 # endif
 
-/* HBLKSIZE aligned allocation.  0 is taken to mean failure 	*/
-/* space is assumed to be cleared.				*/
-/* In the case os USE_MMAP, the argument must also be a 	*/
-/* physical page size.						*/
-/* GET_MEM is currently not assumed to retrieve 0 filled space, */
-/* though we should perhaps take advantage of the case in which */
-/* does.							*/
-struct hblk;	/* See below.	*/
-# ifdef PCR
-    char * real_malloc();
-#   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)bytes + GC_page_size) \
-				  + GC_page_size-1)
-# else
-#   ifdef OS2
-      void * os2_alloc(size_t bytes);
-#     define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc((size_t)bytes \
-				    + GC_page_size) \
-                                    + GC_page_size-1)
-#   else
-#     if defined(NEXT) || defined(MACOSX) || defined(DOS4GW) || \
-	 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC))
-#       define GET_MEM(bytes) HBLKPTR((size_t) \
-				      calloc(1, (size_t)bytes + GC_page_size) \
-                                      + GC_page_size-1)
-#     else
-#	ifdef MSWIN32
-          extern ptr_t GC_win32_get_mem();
-#         define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
-#	else
-#	  ifdef MACOS
-#	    if defined(USE_TEMPORARY_MEMORY)
-		extern Ptr GC_MacTemporaryNewPtr(size_t size,
-						 Boolean clearMemory);
-#               define GET_MEM(bytes) HBLKPTR( \
-		    GC_MacTemporaryNewPtr(bytes + GC_page_size, true) \
-		    + GC_page_size-1)
-#	    else
-#         	    define GET_MEM(bytes) HBLKPTR( \
-			NewPtrClear(bytes + GC_page_size) + GC_page_size-1)
-#	    endif
-#	  else
-#	    ifdef MSWINCE
-	      extern ptr_t GC_wince_get_mem();
-#	      define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
-#	    else
-#	      if defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
-	        extern void *GC_amiga_get_mem(size_t size);
-		define GET_MEM(bytes) HBLKPTR((size_t) \
-                  GC_amiga_get_mem((size_t)bytes + GC_page_size) \
-		  + GC_page_size-1)
-#	      else
-                extern ptr_t GC_unix_get_mem();
-#               define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
-#	      endif
-#	    endif
-#	  endif
-#	endif
-#     endif
-#   endif
-# endif
-
 /* Delay any interrupts or signals that may abort this thread.  Data	*/
 /* structures are in a consistent state outside this pair of calls.	*/
 /* ANSI C allows both to be empty (though the standard isn't very	*/
 /* clear on that point).  Standard malloc implementations are usually	*/
 /* neither interruptable nor thread-safe, and thus correspond to	*/
 /* empty definitions.							*/
+/* It probably doesn't make any sense to declare these to be nonempty	*/
+/* if the code is being optimized, since signal safety relies on some	*/
+/* ordering constraints that are typically not obeyed by optimizing	*/
+/* compilers.								*/
 # ifdef PCR
 #   define DISABLE_SIGNALS() \
 		 PCR_Th_SetSigMask(PCR_allSigsBlocked,&GC_old_sig_mask)
 #   define ENABLE_SIGNALS() \
 		PCR_Th_SetSigMask(&GC_old_sig_mask, NIL)
 # else
-#   if defined(SRC_M3) || defined(AMIGA) || defined(SOLARIS_THREADS) \
+#   if defined(THREADS) || defined(AMIGA)  \
 	|| defined(MSWIN32) || defined(MSWINCE) || defined(MACOS) \
-	|| defined(DJGPP) || defined(NO_SIGNALS) || defined(IRIX_THREADS) \
-	|| defined(LINUX_THREADS) 
+	|| defined(DJGPP) || defined(NO_SIGNALS) 
 			/* Also useful for debugging.		*/
-	/* Should probably use thr_sigsetmask for SOLARIS_THREADS. */
+	/* Should probably use thr_sigsetmask for GC_SOLARIS_THREADS. */
 #     define DISABLE_SIGNALS()
 #     define ENABLE_SIGNALS()
 #   else
@@ -479,9 +410,8 @@ struct hblk;	/* See below.	*/
  				   PCR_allSigsBlocked, \
  				   PCR_waitForever);
 # else
-#   if defined(SOLARIS_THREADS) || defined(WIN32_THREADS) \
-	|| defined(IRIX_THREADS) || defined(LINUX_THREADS) \
-	|| defined(HPUX_THREADS)
+#   if defined(GC_SOLARIS_THREADS) || defined(GC_WIN32_THREADS) \
+	|| defined(GC_PTHREADS)
       void GC_stop_world();
       void GC_start_world();
 #     define STOP_WORLD() GC_stop_world()
@@ -499,7 +429,7 @@ struct hblk;	/* See below.	*/
 #   ifdef SMALL_CONFIG
 #	define ABORT(msg) abort();
 #   else
-	GC_API void GC_abort();
+	GC_API void GC_abort GC_PROTO((GC_CONST char * msg));
 #       define ABORT(msg) GC_abort(msg);
 #   endif
 # endif
@@ -566,7 +496,8 @@ extern GC_warn_proc GC_current_warn_proc;
 # ifdef SMALL_CONFIG
 #   define CPP_LOG_HBLKSIZE 10
 # else
-#   if CPP_WORDSZ == 32
+#   if (CPP_WORDSZ == 32) || (defined(HPUX) && defined(HP_PA))
+      /* HPUX/PA seems to use 4K pages with the 64 bit ABI */
 #     define CPP_LOG_HBLKSIZE 12
 #   else
 #     define CPP_LOG_HBLKSIZE 13
@@ -784,11 +715,10 @@ struct hblkhdr {
 # define BODY_SZ (HBLKSIZE/sizeof(word))
 
 struct hblk {
-#   if 0  /* DISCARDWORDS no longer supported */
-        word garbage[DISCARD_WORDS];
-#   endif
     word hb_body[BODY_SZ];
 };
+
+# define HBLK_IS_FREE(hdr) ((hdr) -> hb_map == GC_invalid_map)
 
 # define OBJ_SZ_TO_BLOCKS(sz) \
     divHBLKSZ(WORDS_TO_BYTES(sz) + HBLKSIZE-1)
@@ -1214,17 +1144,19 @@ extern struct hblk * GC_hblkfreelist[];
 				/* header structure associated with	*/
 				/* block.				*/
 
-extern GC_bool GC_is_initialized;	/* GC_init() has been run.	*/
-
 extern GC_bool GC_objects_are_marked;	/* There are marked objects in  */
 					/* the heap.			*/
 
 #ifndef SMALL_CONFIG
   extern GC_bool GC_incremental;
 			/* Using incremental/generational collection. */
+# define TRUE_INCREMENTAL \
+	(GC_incremental && GC_time_limit != GC_TIME_UNLIMITED)
+	/* True incremental, not just generational, mode */
 #else
 # define GC_incremental FALSE
 			/* Hopefully allow optimizer to remove some code. */
+# define TRUE_INCREMENTAL FALSE
 #endif
 
 extern GC_bool GC_dirty_maintained;
@@ -1626,7 +1558,8 @@ GC_bool GC_collect_or_expand GC_PROTO(( \
   				/* blocks available.  Should be called	*/
   				/* until the blocks are available or	*/
   				/* until it fails by returning FALSE.	*/
-GC_API void GC_init GC_PROTO((void)); /* Initialize collector.		*/
+
+extern GC_bool GC_is_initialized;	/* GC_init() has been run.	*/
 
 #if defined(MSWIN32) || defined(MSWINCE)
   void GC_deinit GC_PROTO((void));
@@ -1763,8 +1696,12 @@ GC_bool GC_page_was_ever_dirty GC_PROTO((struct hblk *h));
 void GC_is_fresh GC_PROTO((struct hblk *h, word n));
   			/* Assert the region currently contains no	*/
   			/* valid pointers.				*/
-void GC_write_hint GC_PROTO((struct hblk *h));
-  			/* h is about to be written.	*/
+void GC_remove_protection GC_PROTO((struct hblk *h, word nblocks,
+			   	    GC_bool pointerfree));
+  			/* h is about to be writteni or allocated.  Ensure  */
+			/* that it's not write protected by the virtual	    */
+			/* dirty bit implementation.			    */
+			
 void GC_dirty_init GC_PROTO((void));
   
 /* Slow/general mark bit manipulation: */
@@ -1903,8 +1840,7 @@ void GC_err_puts GC_PROTO((GC_CONST char *s));
 		/* some other reason.					*/
 # endif /* PARALLEL_MARK */
 
-# if defined(LINUX_THREADS) || defined(IRIX_THREADS) \
-     || defined(HPUX_THREADS) || defined(OSF1_THREADS)
+# if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS)
   /* We define the thread suspension signal here, so that we can refer	*/
   /* to it in the dirty bit implementation, if necessary.  Ideally we	*/
   /* would allocate a (real-time ?) signal using the standard mechanism.*/
@@ -1912,16 +1848,16 @@ void GC_err_puts GC_PROTO((GC_CONST char *s));
   /* in Linux glibc, but it's not exported.)  Thus we continue to use	*/
   /* the same hard-coded signals we've always used.			*/
 #  if !defined(SIG_SUSPEND)
-#   if defined(LINUX_THREADS)
+#   if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
 #    if defined(SPARC) && !defined(SIGPWR)
        /* SPARC/Linux doesn't properly define SIGPWR in <signal.h>.
         * It is aliased to SIGLOST in asm/signal.h, though.		*/
 #      define SIG_SUSPEND SIGLOST
 #    else
-       /* Linuxthreads uses SIGUSR1 and SIGUSR2.			*/
+       /* Linuxthreads itself uses SIGUSR1 and SIGUSR2.			*/
 #      define SIG_SUSPEND SIGPWR
 #    endif
-#   else  /* !LINUX_THREADS */
+#   else  /* !GC_LINUX_THREADS */
 #    define SIG_SUSPEND _SIGRTMIN + 6
 #   endif
 #  endif /* !SIG_SUSPEND */
