@@ -529,7 +529,7 @@ int index;	/* Index of free list */
 				/* free blocks in GC_add_to_fl.		*/
 #     endif
 #   ifdef USE_MUNMAP
-      hhdr -> hb_last_reclaimed = GC_gc_no;
+      hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
 #   endif
     hhdr -> hb_sz = h_size;
     GC_add_to_fl(h, hhdr);
@@ -793,7 +793,7 @@ signed_word size;
     GC_remove_counts(hbp, (word)size);
     hhdr->hb_sz = size;
 #   ifdef USE_MUNMAP
-      hhdr -> hb_last_reclaimed = GC_gc_no;
+      hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
 #   endif
     
     /* Check for duplicate deallocation in the easy case */
@@ -821,7 +821,7 @@ signed_word size;
 	  GC_remove_from_fl(prevhdr, FL_UNKNOWN);
 	  prevhdr -> hb_sz += hhdr -> hb_sz;
 #	  ifdef USE_MUNMAP
-	    prevhdr -> hb_last_reclaimed = GC_gc_no;
+	    prevhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
 #	  endif
 	  GC_remove_header(hbp);
 	  hbp = prev;

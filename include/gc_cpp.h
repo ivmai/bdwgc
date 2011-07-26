@@ -180,7 +180,7 @@ class gc {public:
     inline void* operator new[]( size_t size, void *p );
     inline void operator delete[]( void* obj );
 #   ifdef GC_PLACEMENT_DELETE
-      inline void gc::operator delete[]( void*, void* );
+      inline void operator delete[]( void*, void* );
 #   endif
 #endif /* GC_OPERATOR_NEW_ARRAY */
     };    

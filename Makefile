@@ -144,9 +144,9 @@ HOSTCFLAGS=$(CFLAGS)
 # -DJAVA_FINALIZATION makes it somewhat safer to finalize objects out of
 #   order by specifying a nonstandard finalization mark procedure  (see
 #   finalize.c).  Objects reachable from finalizable objects will be marked
-#   in a sepearte postpass, and hence their memory won't be reclaimed.
+#   in a separate postpass, and hence their memory won't be reclaimed.
 #   Not recommended unless you are implementing a language that specifies
-#   these semantics.  Since 5.0, determines only only the initial value
+#   these semantics.  Since 5.0, determines only the initial value
 #   of GC_java_finalization variable.
 # -DFINALIZE_ON_DEMAND causes finalizers to be run only in response
 #   to explicit GC_invoke_finalizers() calls.

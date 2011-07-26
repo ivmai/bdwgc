@@ -1486,7 +1486,6 @@ ptr_t top;
 ptr_t cold_gc_frame;
 {
   if (!NEED_FIXUP_POINTER && GC_all_interior_pointers) {
-#   define EAGER_BYTES 1024
     /* Push the hot end of the stack eagerly, so that register values   */
     /* saved inside GC frames are marked before they disappear.		*/
     /* The rest of the marking can be deferred until later.		*/

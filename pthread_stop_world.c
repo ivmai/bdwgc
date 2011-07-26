@@ -107,7 +107,7 @@ void GC_brief_async_signal_safe_sleep()
  */
 
 #ifndef SIG_THR_RESTART
-#  if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS)
+#  if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) || defined(GC_NETBSD_THREADS)
 #    ifdef _SIGRTMIN
 #      define SIG_THR_RESTART _SIGRTMIN + 5
 #    else
@@ -119,6 +119,13 @@ void GC_brief_async_signal_safe_sleep()
 #endif
 
 sem_t GC_suspend_ack_sem;
+
+#ifdef GC_NETBSD_THREADS
+# define GC_NETBSD_THREADS_WORKAROUND
+  /* It seems to be necessary to wait until threads have restarted.	*/
+  /* But it is unclear why that is the case.				*/
+  sem_t GC_restart_ack_sem;
+#endif
 
 void GC_suspend_handler_inner(ptr_t sig_arg);
 
@@ -227,6 +234,10 @@ void GC_restart_handler(int sig)
 
     if (sig != SIG_THR_RESTART) ABORT("Bad signal in suspend_handler");
 
+#ifdef GC_NETBSD_THREADS_WORKAROUND
+    sem_post(&GC_restart_ack_sem);
+#endif
+
     /*
     ** Note: even if we don't do anything useful here,
     ** it would still be necessary to have a signal handler,
@@ -303,6 +314,8 @@ void GC_push_all_stacks()
 		(unsigned long) bs_lo, (unsigned long) bs_hi);
 #	  endif
           if (pthread_equal(p -> id, me)) {
+	    /* FIXME:  This may add an unbounded number of entries,	*/
+	    /* and hence overflow the mark stack, which is bad.		*/
 	    GC_push_all_eager(bs_lo, bs_hi);
 	  } else {
 	    GC_push_all_stack(bs_lo, bs_hi);
@@ -439,6 +452,9 @@ void GC_start_world()
     register GC_thread p;
     register int n_live_threads = 0;
     register int result;
+#ifdef GC_NETBSD_THREADS_WORKAROUND
+    int code;
+#endif
 
 #   if DEBUG_THREADS
       GC_printf0("World starting\n");
@@ -468,6 +484,14 @@ void GC_start_world()
         }
       }
     }
+#ifdef GC_NETBSD_THREADS_WORKAROUND
+    for (i = 0; i < n_live_threads; i++)
+	while (0 != (code = sem_wait(&GC_restart_ack_sem)))
+	    if (errno != EINTR) {
+		GC_err_printf1("sem_wait() returned %ld\n", (unsigned long)code);
+		ABORT("sem_wait() for restart handler failed");
+	    }
+#endif
     #if DEBUG_THREADS
       GC_printf0("World started\n");
     #endif
@@ -478,6 +502,10 @@ void GC_stop_init() {
     
     if (sem_init(&GC_suspend_ack_sem, 0, 0) != 0)
         ABORT("sem_init failed");
+#ifdef GC_NETBSD_THREADS_WORKAROUND
+    if (sem_init(&GC_restart_ack_sem, 0, 0) != 0)
+	ABORT("sem_init failed");
+#endif
 
     act.sa_flags = SA_RESTART;
     if (sigfillset(&act.sa_mask) != 0) {

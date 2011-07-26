@@ -42,10 +42,15 @@
 		             || defined(GC_SOLARIS_PTHREADS) \
 			     || defined(GC_HPUX_THREADS) \
 			     || defined(GC_AIX_THREADS) \
-			     || defined(GC_LINUX_THREADS))
+			     || defined(GC_LINUX_THREADS) \
+			     || defined(GC_NETBSD_THREADS))
 # define _REENTRANT
 	/* Better late than never.  This fails if system headers that	*/
 	/* depend on this were previously included.			*/
+#endif
+
+#if !defined(_PTHREADS) && defined(GC_NETBSD_THREADS)
+# define _PTHREADS
 #endif
 
 #if defined(GC_DGUX386_THREADS) && !defined(_POSIX4A_DRAFT10_SOURCE)
@@ -56,7 +61,7 @@
 	defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) || \
 	defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) || \
 	defined(GC_DGUX386_THREADS) || defined(GC_DARWIN_THREADS) || \
-	defined(GC_AIX_THREADS) || \
+        defined(GC_AIX_THREADS) || defined(GC_NETBSD_THREADS) || \
         (defined(GC_WIN32_THREADS) && defined(__CYGWIN32__))
 #   define GC_PTHREADS
 # endif
@@ -66,7 +71,7 @@
 #   define GC_LINUX_THREADS
 #   define GC_PTHREADS
 # endif
-# if !defined(LINUX) && (defined(_PA_RISC1_1) || defined(_PA_RISC2_0) \
+# if !defined(__linux__) && (defined(_PA_RISC1_1) || defined(_PA_RISC2_0) \
                          || defined(hppa) || defined(__HPPA))
 #   define GC_HPUX_THREADS
 #   define GC_PTHREADS
@@ -89,6 +94,10 @@
 # endif
 # if !defined(GC_PTHREADS) && defined(__FreeBSD__)
 #   define GC_FREEBSD_THREADS
+#   define GC_PTHREADS
+# endif
+# if !defined(GC_PTHREADS) && defined(__NetBSD__)
+#   define GC_NETBSD_THREADS
 #   define GC_PTHREADS
 # endif
 # if defined(DGUX) && (defined(i386) || defined(__i386__))

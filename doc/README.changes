@@ -2245,6 +2245,45 @@ Since 6.5
    to Ben Hutchings for the observation and patch.)
  - Move up struct callinfo declaration to make gcc 4.0.2. happy.
 
+Since 6.6:
+ - Add "int" to Solaris "end" and "etext" declaration in gc.h.  Declared
+   the symbols with underscores and as arrays, since that's what's actually
+   used.  Perhaps this could all just be removed?  (Thanks to John Bowman.)
+ - Fixed ARM GC_test_and_set code.  (Thanks to Kazu Hirata and Paul Brook.)
+ - Added casts for assignments to hb_last_reclaimed, which truncate the
+   value.  Added a cast to GC_adj_words_allocd.  Use GetModuleHandleA
+   when retrieving a handle to kernel32.dll under win32.  (Thanks to the
+   Visual Prolog developers.)
+ - Added Tandem S-Series support.  (Thanks to Craig McDaniel.  A modified
+   version of his patch was applied, and hence breakage is probably not
+   his fault.)
+ - Remove spurious gc:: qualifier for operator delete[] in gc_cpp.h.
+   (Thanks to Hanno Boeck.)
+ - Changed a test for LINUX in config_macros.h to one for __linux__.
+ - Fix ppc 64 test_and_set code by removing it.  (Thanks to Christian
+   Thalinger.)
+ - Add prototypes for GC_finalizer_notifier and GC_thr_init.  (Thanks to
+   David Ayers.)
+ - Use ld instead of nonexistent ldz instruction in Darwin FindTopOfStack.
+   (Thanks to Andreas Tobler.)
+ - Add support for Darwin/X86.  (Thanks to Geoff Norton and the Mono
+   developers.)
+ - Merge in some recent gcc fixes.  Add ppc64 asm code.  (Thanks to Bryce
+   McKinley and other gcj developers.)
+ - Scan MEM_PRIVATE sections under Windows ME and predecessors.
+ - Interior pointers with some largish offsets into large objects could
+   be ignored, if GC_all_interior_pointers was set.  (Oddly this worked
+   correctly for stack references if it was not set.  Otherwise it failed
+   for both stack and heap references.)  Thanks to Andrew McKinlay for the
+   critical test case.
+ - Integrated Tatsuya Bizenn's NETBSD threads support, with some
+   minimally tested changes.
+ - Added GC_strdup and friends to make leak detection work correctly
+   for strdup clients.  (Thanks to Jon Moore.)  Fixed the existing strdup
+   with malloc redirection to handle a null malloc return correctly.
+ - Fix Makefile.am, so it handles exe extensions under Cygwin correctly
+   for gctest.
+
 To do:
  - The USE_MUNMAP code should really use a separate data structure
    indexed by physical page to keep track of time since last use of

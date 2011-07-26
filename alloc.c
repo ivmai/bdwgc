@@ -206,7 +206,7 @@ word GC_adj_words_allocd()
     	/* had been reallocated this round. Finalization is user	*/
     	/* visible progress.  And if we don't count this, we have	*/
     	/* stability problems for programs that finalize all objects.	*/
-    if ((GC_words_wasted >> 3) < result)
+    if ((signed_word)(GC_words_wasted >> 3) < result)
         result += GC_words_wasted;
      	/* This doesn't reflect useful work.  But if there is lots of	*/
      	/* new fragmentation, the same is probably true of the heap,	*/
@@ -402,7 +402,7 @@ GC_stop_func stop_func;
 /*
  * Perform n units of garbage collection work.  A unit is intended to touch
  * roughly GC_RATE pages.  Every once in a while, we do more than that.
- * This needa to be a fairly large number with our current incremental
+ * This needs to be a fairly large number with our current incremental
  * GC strategy, since otherwise we allocate too much during GC, and the
  * cleanup gets expensive.
  */

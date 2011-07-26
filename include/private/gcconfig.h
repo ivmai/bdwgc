@@ -302,9 +302,10 @@
 #   if defined(__ppc__)  || defined(__ppc64__)
 #    define POWERPC
 #    define mach_type_known
-#   elif defined(__i386__)
+#   endif
+#   if defined(__i386__)
 #    define I386
-     --> Not really supported, but at least we recognize it.
+#    define mach_type_known
 #   endif
 # endif
 # if defined(NeXT) && defined(mc68000)
@@ -448,6 +449,13 @@
 #     define  mach_type_known
 #    endif 
 # endif
+# if defined(__TANDEM)
+    /* Nonstop S-series */
+    /* FIXME: Should recognize Integrity series? */
+#   define MIPS
+#   define NONSTOP
+#   define mach_type_known
+# endif
 
 /* Feel free to add more clauses here */
 
@@ -469,8 +477,8 @@
 		    /*		     FREEBSD, THREE86BSD, MSWIN32,	*/
 		    /* 		     BSDI,SUNOS5, NEXT, other variants)	*/
                     /*             NS32K      ==> Encore Multimax 	*/
-                    /*             MIPS       ==> R2000 or R3000	*/
-                    /*			(RISCOS, ULTRIX variants)	*/
+	            /*             MIPS       ==> R2000 through R14K	*/
+                    /*			(many variants)			*/
                     /*		   VAX	      ==> DEC VAX		*/
                     /*			(BSD, ULTRIX variants)		*/
                     /*		   RS6000     ==> IBM RS/6000 AIX3.X	*/
@@ -1301,6 +1309,29 @@
 /* #     define MPROTECT_VDB  Not quite working yet? */
 #     define DYNAMIC_LOADING
 #   endif
+#   ifdef DARWIN
+#     define OS_TYPE "DARWIN"
+#     define DARWIN_DONT_PARSE_STACK
+#     define DYNAMIC_LOADING
+      /* XXX: see get_end(3), get_etext() and get_end() should not be used.
+        These aren't used when dyld support is enabled (it is by default) */
+#     define DATASTART ((ptr_t) get_etext())
+#     define DATAEND	((ptr_t) get_end())
+#     define STACKBOTTOM ((ptr_t) 0xc0000000)
+#     define USE_MMAP
+#     define USE_MMAP_ANON
+#     define USE_ASM_PUSH_REGS
+      /* This is potentially buggy. It needs more testing. See the comments in
+        os_dep.c.  It relies on threads to track writes. */
+#     ifdef GC_DARWIN_THREADS
+/* #       define MPROTECT_VDB -- disabled for now.  May work for some apps. */
+#     endif
+#     include <unistd.h>
+#     define GETPAGESIZE() getpagesize()
+      /* There seems to be some issues with trylock hanging on darwin. This
+         should be looked into some more */
+#      define NO_PTHREAD_TRYLOCK
+#   endif /* DARWIN */
 # endif
 
 # ifdef NS32K
@@ -1406,8 +1437,8 @@
 #       define DATAEND /* not needed */
 #   endif
 #   if defined(NETBSD)
-#     define ALIGNMENT 4
 #     define OS_TYPE "NETBSD"
+#     define ALIGNMENT 4
 #     define HEURISTIC2
 #     define USE_GENERIC_PUSH_REGS
 #     ifdef __ELF__
@@ -1420,6 +1451,16 @@
 #       define STACKBOTTOM ((ptr_t) 0x7ffff000)
 #     endif /* _ELF_ */
 #  endif
+#  if defined(NONSTOP)
+#    define CPP_WORDSZ 32
+#    define OS_TYPE "NONSTOP"
+#    define ALIGNMENT 4
+#    define DATASTART ((ptr_t) 0x08000000)
+     extern int _end[];
+#    define DATAEND (_end)
+#    define STACKBOTTOM ((ptr_t) 0x4fffffff)
+#    define USE_GENERIC_PUSH_REGS
+#   endif
 # endif
 
 # ifdef RS6000
@@ -1885,7 +1926,7 @@
 #      define OS_TYPE "NETBSD"
 #      define HEURISTIC2
 #      define DATASTART GC_data_start
-#       define USE_GENERIC_PUSH_REGS
+#      define USE_GENERIC_PUSH_REGS
 #      define DYNAMIC_LOADING
 #   endif
 # endif
@@ -2027,6 +2068,11 @@
 #   define SUNOS5SIGS
 # endif
 
+# ifdef GC_NETBSD_THREADS
+#   define SIGRTMIN 33
+#   define SIGRTMAX 63
+# endif
+
 # if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
 	    || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
 	    || defined(DGUX) || defined(BSD) || defined(SUNOS4) \
@@ -2115,6 +2161,9 @@
 	--> inconsistent configuration
 # endif
 # if defined(GC_LINUX_THREADS) && !defined(LINUX)
+	--> inconsistent configuration
+# endif
+# if defined(GC_NETBSD_THREADS) && !defined(NETBSD)
 	--> inconsistent configuration
 # endif
 # if defined(GC_SOLARIS_THREADS) && !defined(SUNOS5)
@@ -2250,7 +2299,7 @@
 					    + GC_page_size) \
 					    + GC_page_size-1)
 #   else
-#     if defined(NEXT) || defined(DOS4GW) || \
+#     if defined(NEXT) || defined(DOS4GW) || defined(NONSTOP) || \
 		 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) || \
 		 (defined(SUNOS5) && !defined(USE_MMAP))
 #       define GET_MEM(bytes) HBLKPTR((size_t) \

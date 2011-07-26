@@ -1181,12 +1181,15 @@ void GC_register_data_segments()
   	/* This used to be set for gcc, to avoid dealing with		*/
   	/* the structured exception handling issues.  But we now have	*/
   	/* assembly code to do that right.				*/
+  GC_bool GC_wnt = FALSE;
+        /* This is a Windows NT derivative, i.e. NT, W2K, XP or later.  */
   
   void GC_init_win32()
   {
     /* if we're running under win32s, assume that no DLLs will be loaded */
     DWORD v = GetVersion();
-    GC_no_win32_dlls |= ((v & 0x80000000) && (v & 0xff) <= 3);
+    GC_wnt = !(v & 0x80000000);
+    GC_no_win32_dlls |= ((!GC_wnt) && (v & 0xff) <= 3);
   }
 
   /* Return the smallest address a such that VirtualQuery		*/
@@ -1498,7 +1501,7 @@ void GC_register_data_segments()
 
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
 	&& !defined(MSWIN32) && !defined(MSWINCE) \
-	&& !defined(MACOS) && !defined(DOS4GW)
+	&& !defined(MACOS) && !defined(DOS4GW) && !defined(NONSTOP)
 
 # ifdef SUNOS4
     extern caddr_t sbrk();
@@ -3799,8 +3802,12 @@ catch_exception_raise(
         mach_msg_type_number_t exc_state_count = PPC_EXCEPTION_STATE64_COUNT;
         ppc_exception_state64_t exc_state;
 #     endif
+#   elif defined(I386)
+        thread_state_flavor_t flavor = i386_EXCEPTION_STATE;
+        mach_msg_type_number_t exc_state_count = i386_EXCEPTION_STATE_COUNT;
+        i386_exception_state_t exc_state;
 #   else
-#	error FIXME for non-ppc darwin
+#	error FIXME for non-ppc/x86 darwin
 #   endif
 
     
@@ -3830,7 +3837,13 @@ catch_exception_raise(
     }
     
     /* This is the address that caused the fault */
+#if defined(POWERPC)
     addr = (char*) exc_state.dar;
+#elif defined (I386)
+    addr = (char*) exc_state.faultvaddr;
+#else
+#   error FIXME for non POWERPC/I386
+#endif
         
     if((HDR(addr)) == 0) {
         /* Ugh... just like the SIGBUS problem above, it seems we get a bogus 
