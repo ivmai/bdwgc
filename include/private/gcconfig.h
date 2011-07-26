@@ -30,6 +30,7 @@
     /* Fake ptr_t declaration, just to avoid compilation errors.	*/
     /* This avoids many instances if "ifndef GC_PRIVATE_H" below.	*/
     typedef struct GC_undefined_struct * ptr_t;
+#   include <stddef.h>	/* For size_t etc. */
 # endif
 
 /* Machine dependent parameters.  Some tuning parameters can be found	*/
@@ -160,7 +161,7 @@
 #   define mach_type_known
 # endif
 # if defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
-     && !defined(__OpenBSD__) && !(__NetBSD__)
+     && !defined(__OpenBSD__) && !defined(__NetBSD__) && !defined(__FreeBSD__)
 #   define SPARC
 #   define DRSNX
 #   define mach_type_known
@@ -220,6 +221,12 @@
 #    define ARM32
 #    define mach_type_known
 # endif
+# if defined(LINUX) && defined(__cris__)
+#    ifndef CRIS
+#	define CRIS
+#    endif
+#    define mach_type_known
+# endif
 # if defined(LINUX) && (defined(powerpc) || defined(__powerpc__) || defined(powerpc64) || defined(__powerpc64__))
 #    define POWERPC
 #    define mach_type_known
@@ -238,6 +245,10 @@
 # endif
 # if defined(LINUX) && defined(__sh__)
 #    define SH
+#    define mach_type_known
+# endif
+# if defined(LINUX) && defined(__m32r__)
+#    define M32R
 #    define mach_type_known
 # endif
 # if defined(__alpha) || defined(__alpha__)
@@ -302,6 +313,10 @@
 #    define X86_64
 #    define mach_type_known
 # endif
+# if defined(FREEBSD) && defined(__sparc__)
+#    define SPARC
+#    define mach_type_known
+#endif
 # if defined(bsdi) && (defined(i386) || defined(__i386__))
 #    define I386
 #    define BSDI
@@ -376,8 +391,9 @@
 #   define mach_type_known
 # endif
 # if defined(__pj__)
-#   define PJ
-#   define mach_type_known
+#   error PicoJava no longer supported
+    /* The implementation had problems, and I haven't heard of users	*/
+    /* in ages.  If you want it resurrected, let me know.		*/
 # endif
 # if defined(__embedded__) && defined(PPC)
 #   define POWERPC
@@ -459,17 +475,19 @@
 		    /*		   POWERPC    ==> IBM/Apple PowerPC	*/
 		    /*			(MACOS(<=9),DARWIN(incl.MACOSX),*/
 		    /*			 LINUX, NETBSD, NOSYS variants)	*/
+		    /*		   CRIS       ==> Axis Etrax		*/
+		    /*		   M32R	      ==> Renesas M32R		*/
 
 
 /*
  * For each architecture and OS, the following need to be defined:
  *
- * CPP_WORD_SZ is a simple integer constant representing the word size.
+ * CPP_WORDSZ is a simple integer constant representing the word size.
  * in bits.  We assume byte addressibility, where a byte has 8 bits.
- * We also assume CPP_WORD_SZ is either 32 or 64.
+ * We also assume CPP_WORDSZ is either 32 or 64.
  * (We care about the length of pointers, not hardware
  * bus widths.  Thus a 64 bit processor with a C compiler that uses
- * 32 bit pointers should use CPP_WORD_SZ of 32, not 64. Default is 32.)
+ * 32 bit pointers should use CPP_WORDSZ of 32, not 64. Default is 32.)
  *
  * MACH_TYPE is a string representation of the machine type.
  * OS_TYPE is analogous for the OS.
@@ -578,8 +596,7 @@
  */
 
 /* If we are using a recent version of gcc, we can use __builtin_unwind_init()
- * to push the relevant registers onto the stack.  This generally makes
- * USE_GENERIC_PUSH_REGS the preferred approach for marking from registers.
+ * to push the relevant registers onto the stack.
  */
 # if defined(__GNUC__) && ((__GNUC__ >= 3) || \
 			   (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)) \
@@ -601,7 +618,6 @@
 	  extern char etext[];
 #	  define DATASTART ((ptr_t)(etext))
 #       endif
-#       define USE_GENERIC_PUSH_REGS
 #   endif
 #   ifdef NETBSD
 #	define OS_TYPE "NETBSD"
@@ -613,13 +629,10 @@
 	  extern char etext[];
 #	  define DATASTART ((ptr_t)(etext))
 #       endif
-#	define USE_GENERIC_PUSH_REGS
 #   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define STACKBOTTOM ((ptr_t)0xf0000000)
-#       define USE_GENERIC_PUSH_REGS
-		/* We never got around to the assembly version. */
 /* #       define MPROTECT_VDB - Reported to not work  9/17/01 */
 #       ifdef __ELF__
 #            define DYNAMIC_LOADING
@@ -711,8 +724,10 @@
 #     define USE_MMAP_ANON
 #     define USE_ASM_PUSH_REGS
       /* This is potentially buggy. It needs more testing. See the comments in
-         os_dep.c */
-#     define MPROTECT_VDB
+         os_dep.c.  It relies on threads to track writes. */
+#     ifdef GC_DARWIN_THREADS
+#       define MPROTECT_VDB
+#     endif
 #     include <unistd.h>
 #     define GETPAGESIZE() getpagesize()
 #     if defined(USE_PPC_PREFETCH) && defined(__GNUC__)
@@ -858,6 +873,23 @@
 #	define DATASTART ((ptr_t)(etext))
 #     endif
 #   endif
+#   ifdef FREEBSD
+#	define OS_TYPE "FREEBSD"
+#	define SIG_SUSPEND SIGUSR1
+#	define SIG_THR_RESTART SIGUSR2
+#	define FREEBSD_STACKBOTTOM
+#	ifdef __ELF__
+#	    define DYNAMIC_LOADING
+#	endif
+	extern char etext[];
+	extern char edata[];
+	extern char end[];
+#	define NEED_FIND_LIMIT
+#	define DATASTART ((ptr_t)(&etext))
+#	define DATAEND (GC_find_limit (DATASTART, TRUE))
+#	define DATASTART2 ((ptr_t)(&edata))
+#	define DATAEND2 ((ptr_t)(&end))
+#   endif
 # endif
 
 # ifdef I386
@@ -872,9 +904,6 @@
 			/* except Borland.  The -a4 option fixes 	*/
 			/* Borland.					*/
                         /* Ivan Demakov: For Watcom the option is -zp4. */
-#   endif
-#   ifdef HAVE_BUILTIN_UNWIND_INIT
-#	define USE_GENERIC_PUSH_REGS
 #   endif
 #   ifdef SEQUENT
 #	define OS_TYPE "SEQUENT"
@@ -960,10 +989,6 @@
 #   endif /* DGUX */
 
 #   ifdef LINUX
-#	ifndef __GNUC__
-	  /* The Intel compiler doesn't like inline assembly */
-#	  define USE_GENERIC_PUSH_REGS
-# 	endif
 #	define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
 #	if 0
@@ -1067,15 +1092,15 @@
 		/* os_dep.c. OS2 actually has the right			*/
 		/* system call!						*/
 #	define DATAEND	/* not needed */
-#	define USE_GENERIC_PUSH_REGS
 #   endif
 #   ifdef MSWIN32
 #	define OS_TYPE "MSWIN32"
 		/* STACKBOTTOM and DATASTART are handled specially in 	*/
 		/* os_dep.c.						*/
-#       ifndef __WATCOMC__
+#       if !defined(__WATCOMC__) && !defined(GC_WIN32_THREADS)
 #	  define MPROTECT_VDB
 #	endif
+#       define GWW_VDB
 #       define DATAEND  /* not needed */
 #   endif
 #   ifdef MSWINCE
@@ -1188,7 +1213,6 @@
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
 #     define ALIGNMENT 4
-#     define USE_GENERIC_PUSH_REGS
 #     if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 2 || __GLIBC__ > 2
 #        define LINUX_STACKBOTTOM
 #     else
@@ -1216,7 +1240,6 @@
 #        define ALIGNMENT 4
 #      endif
 #      define OS_TYPE "EWS4800"
-#      define USE_GENERIC_PUSH_REGS 1
 #   endif
 #   ifdef ULTRIX
 #	define HEURISTIC2
@@ -1260,7 +1283,6 @@
 #     define ALIGNMENT 4
 #     define OS_TYPE "NETBSD"
 #     define HEURISTIC2
-#     define USE_GENERIC_PUSH_REGS
 #     ifdef __ELF__
         extern int etext[];
 #       define DATASTART GC_data_start
@@ -1290,6 +1312,8 @@
 #     define CPP_WORDSZ 32
 #     define STACKBOTTOM ((ptr_t)((ulong)&errno))
 #   endif
+#   define USE_MMAP
+#   define USE_MMAP_ANON
  /* From AIX linker man page:
  _text Specifies the first location of the program.
  _etext Specifies the first location after the program.
@@ -1301,7 +1325,6 @@
 #   define DATASTART ((ptr_t)((ulong)_data))
 #   define DATAEND ((ptr_t)((ulong)_end))
     extern int errno;
-#   define USE_GENERIC_PUSH_REGS
 #   define DYNAMIC_LOADING
 	/* For really old versions of AIX, this may have to be removed. */
 # endif
@@ -1373,13 +1396,6 @@
 #   define MACH_TYPE "ALPHA"
 #   define ALIGNMENT 8
 #   define CPP_WORDSZ 64
-#   ifndef LINUX
-#     define USE_GENERIC_PUSH_REGS
-      /* Gcc and probably the DEC/Compaq compiler spill pointers to preserved */
-      /* fp registers in some cases when the target is a 21264.  The assembly */
-      /* code doesn't handle that yet, and version dependencies make that a   */
-      /* bit tricky.  Do the easy thing for now.				    */
-#   endif
 #   ifdef NETBSD
 #	define OS_TYPE "NETBSD"
 #	define HEURISTIC2
@@ -1462,7 +1478,6 @@
 
 # ifdef IA64
 #   define MACH_TYPE "IA64"
-#   define USE_GENERIC_PUSH_REGS
 	/* We need to get preserved registers in addition to register   */
 	/* windows.   That's easiest to do with setjmp.			*/
 #   ifdef PARALLEL_MARK
@@ -1589,7 +1604,6 @@
     /* be moved to the S390 category.					*/
 #   define MACH_TYPE "S370"
 #   define ALIGNMENT 4	/* Required by hardware	*/
-#   define USE_GENERIC_PUSH_REGS
 #   ifdef UTS4
 #       define OS_TYPE "UTS4"
 	extern int etext[];
@@ -1604,7 +1618,6 @@
 
 # ifdef S390
 #   define MACH_TYPE "S390"
-#   define USE_GENERIC_PUSH_REGS
 #   ifndef __s390x__
 #   define ALIGNMENT 4
 #   define CPP_WORDSZ 32
@@ -1626,13 +1639,6 @@
 #   endif
 # endif
 
-# if defined(PJ)
-#   define ALIGNMENT 4
-    extern int _etext[];
-#   define DATASTART ((ptr_t)(_etext))
-#   define HEURISTIC1
-# endif
-
 # ifdef ARM32
 #   define CPP_WORDSZ 32
 #   define MACH_TYPE "ARM32"
@@ -1647,14 +1653,12 @@
            extern char etext[];
 #          define DATASTART ((ptr_t)(etext))
 #	endif
-#       define USE_GENERIC_PUSH_REGS
 #   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define HEURISTIC1
 #       undef STACK_GRAN
 #       define STACK_GRAN 0x10000000
-#       define USE_GENERIC_PUSH_REGS
 #       ifdef __ELF__
 #            define DYNAMIC_LOADING
 #	     include <features.h>
@@ -1687,12 +1691,23 @@
       /* __data_start is usually defined in the target linker script.  */
       extern int __data_start[];
 #     define DATASTART (ptr_t)(__data_start)
-#     define USE_GENERIC_PUSH_REGS
       /* __stack_base__ is set in newlib/libc/sys/arm/crt0.S  */
       extern void *__stack_base__;
 #     define STACKBOTTOM ((ptr_t) (__stack_base__))
 #   endif
 #endif
+
+# ifdef CRIS
+#   define MACH_TYPE "CRIS"
+#   define CPP_WORDSZ 32
+#   define ALIGNMENT 1
+#   define OS_TYPE "LINUX"
+#   define DYNAMIC_LOADING
+#   define LINUX_STACKBOTTOM
+#   define SEARCH_FOR_DATA_START
+      extern int _end[];
+#   define DATAEND (_end)
+# endif
 
 # ifdef SH
 #   define MACH_TYPE "SH"
@@ -1704,7 +1719,6 @@
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define STACKBOTTOM ((ptr_t) 0x7c000000)
-#     define USE_GENERIC_PUSH_REGS
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
@@ -1714,7 +1728,6 @@
 #      define OS_TYPE "NETBSD"
 #      define HEURISTIC2
 #      define DATASTART GC_data_start
-#       define USE_GENERIC_PUSH_REGS
 #      define DYNAMIC_LOADING
 #   endif
 # endif
@@ -1726,6 +1739,22 @@
 #   define DATAEND /* not needed */
 # endif
 
+# ifdef M32R
+#   define CPP_WORDSZ 32
+#   define MACH_TYPE "M32R"
+#   define ALIGNMENT 4
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+#     define LINUX_STACKBOTTOM
+#     undef STACK_GRAN
+#     define STACK_GRAN 0x10000000
+#     define DYNAMIC_LOADING
+#     define SEARCH_FOR_DATA_START
+      extern int _end[];
+#     define DATAEND (_end)
+#   endif
+# endif
+
 # ifdef X86_64
 #   define MACH_TYPE "X86_64"
 #   define ALIGNMENT 8
@@ -1734,7 +1763,6 @@
 #     define HBLKSIZE 4096
 #   endif
 #   define CACHE_LINE_SIZE 64
-#   define USE_GENERIC_PUSH_REGS
 #   ifdef LINUX
 #	define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
@@ -1881,7 +1909,8 @@
 #   undef MPROTECT_VDB  /* For now.	*/
 # endif
 
-# if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB)
+# if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
+    && !defined(GWW_VDB)
 #   define DEFAULT_VDB
 # endif
 
@@ -1947,15 +1976,6 @@
 		defined(GC_SOLARIS_THREADS) || defined(GC_WIN32_THREADS) || \
 		defined(GC_PTHREADS)
 #   define THREADS
-# endif
-
-# if defined(HP_PA) || defined(M88K) || defined(POWERPC) && !defined(DARWIN) \
-	     || defined(LINT) || defined(MSWINCE) || defined(ARM32) \
-	     || (defined(I386) && defined(__LCC__))
-	/* Use setjmp based hack to mark from callee-save registers.    */
-	/* The define should move to the individual platform 		*/
-	/* descriptions.						*/
-#	define USE_GENERIC_PUSH_REGS
 # endif
 
 # if defined(MSWINCE)

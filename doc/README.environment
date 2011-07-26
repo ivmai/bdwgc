@@ -94,28 +94,6 @@ GC_RETRY_SIGNALS, GC_NO_RETRY_SIGNALS - Try to compensate for lost
 		     was turned into a runtime flag to enable last-minute
 		     work-arounds.
 
-GC_IGNORE_FB[=<n>] -  (Win32 only.) Try to avoid treating a mapped
-		frame buffer as part of the root set.  Certain (higher end?)
-		graphics cards seems to result in the graphics memory mapped
-		into the user address space as writable memory.
-		Unfortunately, there seems to be no systematic way to
-		identify such memory.  Setting the environment variable to n
-		causes the collector to ignore mappings longer than n MB.
-		The default value of n is currently 15.  (This should cover
-		a 16 MB graphics card, since the mapping appears to be slightly
-		shorter than all of graphics memory.  It will fail if a dll
-		writes pointers to collectable objects into a data segment
-		whose length is >= 15MB.  Empirically that's rare, but
-		certainly possible.)  WARNING: Security sensitive applications
-		should probably disable this feature by setting
-		GC_disallow_ignore_fb, or by building with -DNO_GETENV,
-		since small values could force collection of reachable
-		objects, which is conceivably a	(difficult to exploit)
-		security hole.  GC_IGNORE_FB values less than 3 MB
-		are never honored, eliminating this risk for most,
-		but not all, applications.  This feature is likely to disappear
-		if/when we find a less disgusting "solution".
-
 The following turn on runtime flags that are also program settable.  Checked
 only during initialization.  We expect that they will usually be set through
 other means, but this may help with debugging and testing:

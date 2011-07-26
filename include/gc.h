@@ -757,6 +757,63 @@ GC_API GC_word GC_set_free_space_divisor(GC_word value);
 typedef void * (*GC_fn_type) (void * client_data);
 GC_API void * GC_call_with_alloc_lock (GC_fn_type fn, void * client_data);
 
+/* These routines are intended to explicitly notify the collector	*/
+/* of new threads.  Often this is unnecessary because thread creation	*/
+/* is implicitly intercepted by the collector, using header-file	*/
+/* defines, or linker-based interception.  In the long run the intent	*/
+/* is to always make redundant registration safe.  In the short run,	*/
+/* this is being implemented a platform at a time.			*/
+/* The interface is complicated by the fact that we probably will not 	*/
+/* ever be able to automatically determine the stack base for thread	*/
+/* stacks on all platforms.						*/
+
+/* Structure representing the base of a thread stack.  On most		*/
+/* platforms this contains just a single address.			*/
+struct GC_stack_base {
+	void * mem_base;	/* Base of memory stack.	*/
+#	if defined(__ia64) || defined(__ia64__)
+	  void * reg_base;	/* Base of separate register stack.	*/
+#	endif
+};
+
+typedef void * (*GC_stack_base_func)(struct GC_stack_base *sb, void *arg);
+
+/* Call a function with a stack base structure corresponding to		*/
+/* somewhere in the GC_call_with_stack_base frame.  This often can	*/
+/* be used to provide a sufficiently accurate stack base.  And we 	*/
+/* implement it everywhere.						*/
+void * GC_call_with_stack_base(GC_stack_base_func fn, void *arg);
+
+/* Register the current thread, with the indicated stack base, as	*/
+/* a new thread whose stack(s) should be traced by the GC.  If a 	*/
+/* platform does not implicitly do so, this must be called before a	*/
+/* thread can allocate garbage collected memory, or assign pointers	*/
+/* to the garbage collected heap.  Once registered, a thread will be	*/
+/* stopped during garbage collections.					*/
+/* Return codes:	*/
+#define GC_SUCCESS 0
+#define GC_DUPLICATE 1	/* Was already registered.	*/
+#define GC_NO_THREADS 2	/* No thread support in GC.  	*/
+#define GC_UNIMPLEMENTED 3	/* Not yet implemented on this platform. */
+int GC_register_my_thread(struct GC_stack_base *);
+
+/* Unregister the current thread.  The thread may no longer allocate	*/
+/* garbage collected memory or manipulate pointers to the		*/
+/* garbage collected heap after making this call.			*/
+/* Specifically, if it wants to return or otherwise communicate a 	*/
+/* pointer to the garbage-collected heap to another thread, it must	*/
+/* do this before calling GC_unregister_my_thread, most probably	*/
+/* by saving it in a global data structure.				*/
+int GC_unregister_my_thread(void);
+
+/* Attempt to fill in the GC_stack_base structure with the stack base	*/
+/* for this thread.  This appears to be required to implement anything	*/
+/* like the JNI AttachCurrentThread in an environment in which new	*/
+/* threads are not automatically registered with the collector.		*/
+/* It is also unfortunately hard to implement well on many platforms.	*/
+/* Returns GC_SUCCESS or GC_UNIMPLEMENTED.				*/
+int GC_get_stack_base(struct GC_stack_base *);
+
 /* The following routines are primarily intended for use with a 	*/
 /* preprocessor which inserts calls to check C pointer arithmetic.	*/
 /* They indicate failure by invoking the corresponding _print_proc.	*/
@@ -859,7 +916,7 @@ GC_API void (*GC_is_visible_print_proc) (void * p);
 void * GC_malloc_many(size_t lb);
 #define GC_NEXT(p) (*(void * *)(p)) 	/* Retrieve the next element	*/
 					/* in returned list.		*/
-extern void GC_thr_init();	/* Needed for Solaris/X86	*/
+extern void GC_thr_init(void);	/* Needed for Solaris/X86	*/
 
 #endif /* THREADS && !SRC_M3 */
 
@@ -902,6 +959,8 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
   * before making any other GC_ calls.  On most platforms this is a
   * no-op and the collector self-initializes.  But a number of platforms
   * make that too hard.
+  * A GC_INIT call is required if the collector is built with THREAD_LOCAL_ALLOC
+  * defined and the initial allocation call is not to GC_malloc().
   */
 #if (defined(sparc) || defined(__sparc)) && defined(sun)
     /*
@@ -911,22 +970,17 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
      * This circumvents a Solaris 2.X (X<=4) linker bug.
      */
 #   define GC_INIT() { extern end, etext; \
-		       GC_noop(&end, &etext); }
-#else
-# if defined(__CYGWIN32__) && defined(GC_DLL) || defined (_AIX)
+		       GC_noop(&end, &etext); \
+		       GC_init();}
+#elif defined(__CYGWIN32__) && defined(GC_DLL) || defined (_AIX)
     /*
      * Similarly gnu-win32 DLLs need explicit initialization from
      * the main program, as does AIX.
      */
-#   define GC_INIT() { GC_add_roots(DATASTART, DATAEND); }
-# else
-#  if defined(__APPLE__) && defined(__MACH__) || defined(GC_WIN32_THREADS)
+#   define GC_INIT() { GC_add_roots(DATASTART, DATAEND); GC_init(); }
+#else
 #   define GC_INIT() { GC_init(); }
-#  else
-#   define GC_INIT()
-#  endif /* !__MACH && !GC_WIN32_THREADS */
-# endif /* !AIX && !cygwin */
-#endif /* !sparc */
+#endif
 
 #if !defined(_WIN32_WCE) \
     && ((defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \

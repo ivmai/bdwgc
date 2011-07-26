@@ -209,8 +209,7 @@ void * GC_is_visible(void *p)
     	    if (GC_is_static_root(p)) return(p);
     	    /* Else do it again correctly:	*/
 #           if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || \
-		defined(MSWINCE) || defined(PCR)) \
-                && !defined(SRC_M3)
+		defined(MSWINCE) || defined(PCR))
     	        GC_register_dynamic_libraries();
     	        result = GC_is_static_root(p);
     	        if (result) return(p);

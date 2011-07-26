@@ -192,10 +192,6 @@ word GC_adj_bytes_allocd(void)
     	/* had been reallocated this round. Finalization is user	*/
     	/* visible progress.  And if we don't count this, we have	*/
     	/* stability problems for programs that finalize all objects.	*/
-    result += GC_bytes_wasted;
-     	/* This doesn't reflect useful work.  But if there is lots of	*/
-     	/* new fragmentation, the same is probably true of the heap,	*/
-     	/* and the collection will be correspondingly cheaper.		*/
     if (result < (signed_word)(GC_bytes_allocd >> 3)) {
     	/* Always count at least 1/8 of the allocations.  We don't want	*/
     	/* to collect too infrequently, since that would inhibit	*/
@@ -459,9 +455,8 @@ GC_bool GC_stopped_mark(GC_stop_func stop_func)
     if (GC_print_stats) {
 	GC_log_printf("--> Marking for collection %lu ",
 		  (unsigned long)GC_gc_no + 1);
-	GC_log_printf("after %lu allocd bytes + %lu wasted bytes\n",
-	   	   (unsigned long) GC_bytes_allocd,
-	   	   (unsigned long) GC_bytes_wasted);
+	GC_log_printf("after %lu allocd bytes\n",
+	   	   (unsigned long) GC_bytes_allocd);
     }
 #   ifdef MAKE_BACK_GRAPH
       if (GC_print_back_height) {
@@ -706,7 +701,6 @@ void GC_finish_collection()
       GC_bytes_allocd_before_gc += GC_bytes_allocd;
       GC_non_gc_bytes_at_gc = GC_non_gc_bytes;
       GC_bytes_allocd = 0;
-      GC_bytes_wasted = 0;
       GC_bytes_freed = 0;
       GC_finalizer_bytes_freed = 0;
       

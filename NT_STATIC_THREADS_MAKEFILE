@@ -6,12 +6,20 @@ MY_CPU=X86
 CPU=$(MY_CPU)
 !include <ntwin32.mak>
 
+# Atomic_ops installation directory.  For win32, the source directory
+# should do, since we only need the headers.
+# We assume this was manually unpacked, since I'm not sure there is
+# a Windows standard command line tool to do this.
+AO_VERSION=0.6
+AO_SRC_DIR=$(srcdir)/atomic_ops-$(AO_VERSION)
+AO_INCLUDE_DIR=$(AO_SRC_DIR)
+
 OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj malloc.obj stubborn.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj mallocx.obj win32_threads.obj
 
 all: gctest.exe cord\de.exe test_cpp.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(cvars) -Iinclude -DALL_INTERIOR_POINTERS -D__STDC__ -DGC_NOT_DLL -DGC_WIN32_THREADS $*.c /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(cvars) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -D__STDC__ -DGC_NOT_DLL -DGC_WIN32_THREADS $*.c /Fo$*.obj
 
 .cpp.obj:
 	$(cc) $(cdebug) $(cflags) $(cvars) -Iinclude -DALL_INTERIOR_POINTERS -DGC_NOT_DLL $*.CPP -DGC_WIN32_THREADS /Fo$*.obj
@@ -56,5 +64,6 @@ test_cpp.cpp: tests\test_cpp.cc
 test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib
 	$(link) -debug:full -debugtype:cv $(guiflags) -stack:16384 -out:test_cpp.exe test_cpp.obj gc.lib $(guilibs)
 
-
+AO_SCR_DIR:
+	        tar xvfz $(AO_SRC_DIR).tar.gz;
 

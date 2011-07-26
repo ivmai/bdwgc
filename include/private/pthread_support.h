@@ -31,7 +31,13 @@ typedef struct GC_Thread_Rep {
     
     short flags;
 #	define FINISHED 1   	/* Thread has exited.	*/
-#	define DETACHED 2	/* Thread is intended to be detached.	*/
+#	define DETACHED 2	/* Thread is treated as detached.	*/
+    				/* Thread may really be detached, or	*/
+    				/* it may have have been explicitly	*/
+    				/* registered, in which case we can	*/
+    				/* deallocate its GC_Thread_Rep once	*/
+    				/* it unregisters itself, since it	*/
+    				/* may not return a GC pointer.		*/
 #	define MAIN_THREAD 4	/* True for the original thread only.	*/
     short thread_blocked;	/* Protected by GC lock.		*/
     				/* Treated as a boolean value.  If set,	*/
@@ -49,18 +55,10 @@ typedef struct GC_Thread_Rep {
     				/* Used only to avoid premature 	*/
 				/* reclamation of any data it might 	*/
 				/* reference.				*/
+    				/* This is unfortunately also the	*/
+    				/* reason we need to intercept join	*/
+    				/* and detach.				*/
 #   ifdef THREAD_LOCAL_ALLOC
-	/* The ith free list corresponds to size i*GRANULE_BYTES	*/
-        /* Convert the number of requested bytes to a suitable free	*/
-    	/* list index, adding EXTRA_BYTES if appripriate.		*/
-#	define INDEX_FROM_REQUESTED_BYTES(n) \
-    			((ADD_SLOP(n) + GRANULE_BYTES - 1)/GRANULE_BYTES)
-        /* Convert a free list index to the actual size of objects	*/
-    	/* on that list, including extra space we added.  Not an	*/
-    	/* inverse of the above.					*/
-#	define RAW_BYTES_FROM_INDEX(i) ((i) * GRANULE_BYTES)
-#	define SMALL_ENOUGH(bytes) (ADD_SLOP(bytes) <= \
-				    (TINY_FREELISTS-1)*GRANULE_BYTES)
 	void * ptrfree_freelists[TINY_FREELISTS];
 	void * normal_freelists[TINY_FREELISTS];
 #	ifdef GC_GCJ_SUPPORT
@@ -80,6 +78,7 @@ typedef struct GC_Thread_Rep {
 #	define DIRECT_GRANULES (HBLKSIZE/GRANULE_BYTES)
 		/* Don't use local free lists for up to this much 	*/
 		/* allocation.						*/
+
 #   endif
 } * GC_thread;
 

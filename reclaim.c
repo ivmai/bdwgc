@@ -332,13 +332,14 @@ int GC_n_set_marks(hdr *hhdr)
 {
     int result = 0;
     int i;
-    int n_objs = HBLK_OBJS(hhdr -> hb_sz);
-    
-    if (0 == n_objs) n_objs = 1;
-    for (i = 0; i < n_objs; i++) {
+    size_t sz = hhdr -> hb_sz;
+    int offset = MARK_BIT_OFFSET(sz);
+    int limit = FINAL_MARK_BIT(sz);
+
+    for (i = 0; i < limit; i += offset) {
         result += hhdr -> hb_marks[i];
     }
-    GC_ASSERT(hhdr -> hb_marks[n_objs]);
+    GC_ASSERT(hhdr -> hb_marks[limit]);
     return(result);
 }
 
@@ -362,16 +363,24 @@ int GC_n_set_marks(hdr *hhdr)
 {
     int result = 0;
     int i;
-    int n_objs = HBLK_OBJS(hhdr -> hb_sz);
     int n_mark_words;
+#   ifdef MARK_BIT_PER_OBJ
+      int n_objs = HBLK_OBJS(hhdr -> hb_sz);
     
-    if (0 == n_objs) n_objs = 1;
-    n_mark_words = divWORDSZ(n_objs + WORDSZ - 1);
+      if (0 == n_objs) n_objs = 1;
+      n_mark_words = divWORDSZ(n_objs + WORDSZ - 1);
+#   else /* MARK_BIT_PER_GRANULE */
+      n_mark_words = MARK_BITS_SZ;
+#   endif
     for (i = 0; i < n_mark_words - 1; i++) {
         result += set_bits(hhdr -> hb_marks[i]);
     }
-    result += set_bits((hhdr -> hb_marks[n_mark_words])
-		       << (n_mark_words * WORDSZ - n_objs));
+#   ifdef MARK_BIT_PER_OBJ
+      result += set_bits((hhdr -> hb_marks[n_mark_words - 1])
+		         << (n_mark_words * WORDSZ - n_objs));
+#   else
+      result += set_bits(hhdr -> hb_marks[n_mark_words - 1]);
+#   endif
     return(result - 1);
 }
 
@@ -405,7 +414,7 @@ void GC_print_block_list()
 {
     struct Print_stats pstats;
 
-    GC_printf("(kind(0=ptrfree,1=normal,2=unc.,3=stubborn):size_in_bytes, #_marks_set)\n");
+    GC_printf("(kind(0=ptrfree,1=normal,2=unc.):size_in_bytes, #_marks_set)\n");
     pstats.number_of_blocks = 0;
     pstats.total_bytes = 0;
     GC_apply_to_all_blocks(GC_print_block_descr, (word)&pstats);

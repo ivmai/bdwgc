@@ -131,7 +131,11 @@ static void maybe_finalize()
 /* Allocate an object, clear it, and store the pointer to the	*/
 /* type structure (vtable in gcj).				*/
 /* This adds a byte at the end of the object if GC_malloc would.*/
-void * GC_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr)
+#ifdef THREAD_LOCAL_ALLOC
+  void * GC_core_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr)
+#else
+  void * GC_gcj_malloc(size_t lb, void * ptr_to_struct_containing_descr)
+#endif
 {
     ptr_t op;
     ptr_t * opp;

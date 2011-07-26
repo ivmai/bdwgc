@@ -731,7 +731,6 @@ GC_allochblk_nth(word sz, int kind, unsigned char flags, int n)
 	              struct hblk * h;
 		      struct hblk * prev = hhdr -> hb_prev;
 	              
-		      GC_bytes_wasted += total_size;
 		      GC_large_free_bytes -= total_size;
 		      GC_remove_from_fl(hhdr, n);
 	              for (h = hbp; h < limit; h++) {

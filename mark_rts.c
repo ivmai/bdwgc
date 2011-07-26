@@ -352,8 +352,11 @@ GC_bool GC_is_tmp_root(ptr_t p)
 
 ptr_t GC_approx_sp(void)
 {
-    word dummy;
+    volatile word dummy;
 
+    dummy = 42;	/* Force stack to grow if necessary.	Otherwise the	*/
+    		/* later accesses might cause the kernel to think we're	*/
+    		/* doing something wrong.				*/
 #   ifdef _MSC_VER
 #     pragma warning(disable:4172)
 #   endif
@@ -456,8 +459,9 @@ void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top, GC_bool all)
  * In the presence of threads, push enough of the current stack
  * to ensure that callee-save registers saved in collector frames have been
  * seen.
+ * FIXME: Merge with per-thread stuff.
  */
-void GC_push_current_stack(ptr_t cold_gc_frame)
+void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
 {
 #   if defined(THREADS)
 	if (0 == cold_gc_frame) return;
@@ -523,8 +527,8 @@ void GC_push_gc_structures(void)
 
 void GC_cond_register_dynamic_libraries(void)
 {
-# if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
-     || defined(PCR)) && !defined(SRC_M3)
+# if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
+     || defined(PCR)
     GC_remove_tmp_roots();
     if (!GC_no_dls) GC_register_dynamic_libraries();
 # else
@@ -597,23 +601,11 @@ void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
      * Now traverse stacks, and mark from register contents.
      * These must be done last, since they can legitimately overflow
      * the mark stack.
+     * This is usually done by saving the current context on the
+     * stack, and then just tracing from the stack.
      */
-#   ifdef USE_GENERIC_PUSH_REGS
-	GC_generic_push_regs(cold_gc_frame);
-	/* Also pushes stack, so that we catch callee-save registers	*/
-	/* saved inside the GC_push_regs frame.				*/
-#   else
-       /*
-        * push registers - i.e., call GC_push_one(r) for each
-        * register contents r.
-        */
-        GC_push_regs(); /* usually defined in machine_dep.c */
-	GC_push_current_stack(cold_gc_frame);
-	/* In the threads case, this only pushes collector frames.      */
-	/* In the case of linux threads on IA64, the hot section of	*/
-	/* the main stack is marked here, but the register stack	*/
-	/* backing store is handled in the threads-specific code.	*/
-#   endif
+      GC_push_regs_and_stack(cold_gc_frame);
+
     if (GC_push_other_roots != 0) (*GC_push_other_roots)();
     	/* In the threads case, this also pushes thread stacks.	*/
         /* Note that without interior pointer recognition lots	*/

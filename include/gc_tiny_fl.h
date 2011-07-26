@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
+ * Copyright (c) 1999-2005 Hewlett-Packard Development Company, L.P.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -11,8 +11,8 @@
  * modified is included with the above copyright notice.
  */
 
-#ifndef TINY_FL_H
-#define TINY_FL_H
+#ifndef GC_TINY_FL_H
+#define GC_TINY_FL_H
 /*
  * Constants and data structures for "tiny" free lists.
  * These are used for thread-local allocation or in-lined allocators.
@@ -34,7 +34,7 @@
  * and space usage for mark bits (usually mark bytes).
  * On many 64-bit architectures some memory references require 16-byte
  * alignment, making this necessary anyway.
- * For a few 32-bit architecture (e.g. 86), we may also need 16-byte alignment
+ * For a few 32-bit architecture (e.g. x86), we may also need 16-byte alignment
  * for certain memory references.  But currently that does not seem to be the
  * default for all conventional malloc implementations, so we ignore that
  * problem.
@@ -43,14 +43,23 @@
  * space, so we no longer do so.
  */
 #ifndef GC_GRANULE_BYTES
-# if defined(__LP64__) || defined (_LP64) || defined(_WIN64) || defined(__s390x__) \
-	|| defined(__x86_64__) || defined(__alpha__) || defined(__powerpc64__) \
+# if defined(__LP64__) || defined (_LP64) || defined(_WIN64) \
+	|| defined(__s390x__) || defined(__x86_64__) \
+	|| defined(__alpha__) || defined(__powerpc64__) \
 	|| defined(__arch64__)
 #  define GC_GRANULE_BYTES 16
+#  define GC_GRANULE_WORDS 2
 # else
 #  define GC_GRANULE_BYTES 8
+#  define GC_GRANULE_WORDS 2
 # endif
 #endif /* !GC_GRANULE_BYTES */
+
+#if GC_GRANULE_WORDS == 2
+#  define GC_WORDS_TO_GRANULES(n) ((n)>>1)
+#else
+#  define GC_WORDS_TO_GRANULES(n) ((n)*sizeof(void *)/GRANULE_BYTES)
+#endif
 
 /* A "tiny" free list header contains TINY_FREELISTS pointers to 	*/
 /* singly linked lists of objects of different sizes, the ith one	*/
@@ -64,4 +73,14 @@
 # endif
 #endif /* !GC_TINY_FREELISTS */
 
-#endif /* TINY_FL_H */
+/* The ith free list corresponds to size i*GRANULE_BYTES	*/
+/* Internally to the collector, the index can be computed with	*/
+/* ROUNDED_UP_GRANULES.  Externally, we don't know whether	*/
+/* DONT_ADD_BYTE_AT_END is set, but the client should know.	*/
+
+/* Convert a free list index to the actual size of objects	*/
+/* on that list, including extra space we added.  Not an	*/
+/* inverse of the above.					*/
+#define RAW_BYTES_FROM_INDEX(i) ((i) * GC_GRANULE_BYTES)
+
+#endif /* GC_TINY_FL_H */

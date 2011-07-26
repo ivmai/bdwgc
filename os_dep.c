@@ -641,22 +641,33 @@ word GC_get_writable_length(ptr_t p, ptr_t *base)
     return(buf.RegionSize);
 }
 
-ptr_t GC_get_stack_base(void)
+int GC_get_stack_base(struct GC_stack_base *sb)
 {
     int dummy;
     ptr_t sp = (ptr_t)(&dummy);
     ptr_t trunc_sp = (ptr_t)((word)sp & ~(GC_page_size - 1));
     word size = GC_get_writable_length(trunc_sp, 0);
    
-    return(trunc_sp + size);
+    sb -> mem_base = trunc_sp + size;
+    return GC_SUCCESS;
 }
 
+#define HAVE_GET_STACK_BASE
+
+/* This is always called from the main thread.	*/
+ptr_t GC_get_main_stack_base(void)
+{
+    struct GC_stack_base sb;
+
+    GC_get_stack_base(&sb);
+    return (ptr_t)sb.mem_base;
+}
 
 # endif /* MS Windows */
 
 # ifdef BEOS
 # include <kernel/OS.h>
-ptr_t GC_get_stack_base(void){
+ptr_t GC_get_main_stack_base(void){
 	thread_info th;
 	get_thread_info(find_thread(NULL),&th);
 	return th.stack_end;
@@ -666,7 +677,7 @@ ptr_t GC_get_stack_base(void){
 
 # ifdef OS2
 
-ptr_t GC_get_stack_base(void)
+ptr_t GC_get_main_stack_base(void)
 {
     PTIB ptib;
     PPIB ppib;
@@ -807,7 +818,7 @@ ptr_t GC_get_stack_base(void)
 # endif
 
 #if defined(ECOS) || defined(NOSYS)
-  ptr_t GC_get_stack_base(void)
+  ptr_t GC_get_main_stack_base(void)
   {
     return STACKBOTTOM;
   }
@@ -845,8 +856,10 @@ ptr_t GC_get_stack_base(void)
 # define STAT_SKIP 27   /* Number of fields preceding startstack	*/
 			/* field in /proc/self/stat			*/
 
+#ifdef USE_LIBC_PRIVATES
 # pragma weak __libc_stack_end
   extern ptr_t __libc_stack_end;
+#endif
 
 # ifdef IA64
     /* Try to read the backing store base from /proc/self/maps.	*/
@@ -877,30 +890,33 @@ ptr_t GC_get_stack_base(void)
         return GC_apply_to_maps(backing_store_base_from_maps);
     }
 
-#   pragma weak __libc_ia64_register_backing_store_base
-    extern ptr_t __libc_ia64_register_backing_store_base;
+#   ifdef USE_LIBC_PRIVATES
+#     pragma weak __libc_ia64_register_backing_store_base
+      extern ptr_t __libc_ia64_register_backing_store_base;
+#   endif
 
     ptr_t GC_get_register_stack_base(void)
     {
-      if (0 != &__libc_ia64_register_backing_store_base
-	  && 0 != __libc_ia64_register_backing_store_base) {
-	/* Glibc 2.2.4 has a bug such that for dynamically linked	*/
-	/* executables __libc_ia64_register_backing_store_base is 	*/
-	/* defined but uninitialized during constructor calls.  	*/
-	/* Hence we check for both nonzero address and value.		*/
-	return __libc_ia64_register_backing_store_base;
-      } else {
-	word result = backing_store_base_from_proc();
-	if (0 == result) {
+#     ifdef USE_LIBC_PRIVATES
+        if (0 != &__libc_ia64_register_backing_store_base
+	    && 0 != __libc_ia64_register_backing_store_base) {
+	  /* Glibc 2.2.4 has a bug such that for dynamically linked	*/
+	  /* executables __libc_ia64_register_backing_store_base is 	*/
+	  /* defined but uninitialized during constructor calls.  	*/
+	  /* Hence we check for both nonzero address and value.		*/
+	  return __libc_ia64_register_backing_store_base;
+        }
+#     endif
+      word result = backing_store_base_from_proc();
+      if (0 == result) {
 	  /* Use dumb heuristics.  Works only for default configuration. */
 	  result = (word)GC_stackbottom - BACKING_STORE_DISPLACEMENT;
 	  result += BACKING_STORE_ALIGNMENT - 1;
 	  result &= ~(BACKING_STORE_ALIGNMENT - 1);
 	  /* Verify that it's at least readable.  If not, we goofed. */
 	  GC_noop1(*(word *)result); 
-	}
-	return (ptr_t)result;
       }
+      return (ptr_t)result;
     }
 # endif
 
@@ -923,6 +939,7 @@ ptr_t GC_get_stack_base(void)
     /* since the correct value of __libc_stack_end never	*/
     /* becomes visible to us.  The second test works around 	*/
     /* this.							*/  
+#   ifdef USE_LIBC_PRIVATES
       if (0 != &__libc_stack_end && 0 != __libc_stack_end ) {
 #       ifdef IA64
 	  /* Some versions of glibc set the address 16 bytes too	*/
@@ -935,6 +952,7 @@ ptr_t GC_get_stack_base(void)
 	  return __libc_stack_end;
 #	endif
       }
+#   endif
     f = open("/proc/self/stat", O_RDONLY);
     if (f < 0 || STAT_READ(f, stat_buf, STAT_BUF_SIZE) < 2 * STAT_SKIP) {
 	ABORT("Couldn't read /proc/self/stat");
@@ -985,7 +1003,7 @@ ptr_t GC_get_stack_base(void)
 #if !defined(BEOS) && !defined(AMIGA) && !defined(MSWIN32) \
     && !defined(MSWINCE) && !defined(OS2) && !defined(NOSYS) && !defined(ECOS)
 
-ptr_t GC_get_stack_base(void)
+ptr_t GC_get_main_stack_base(void)
 {
 #   if defined(HEURISTIC1) || defined(HEURISTIC2)
       word dummy;
@@ -1041,6 +1059,31 @@ ptr_t GC_get_stack_base(void)
 }
 
 # endif /* ! AMIGA, !OS 2, ! MS Windows, !BEOS, !NOSYS, !ECOS */
+
+#ifndef HAVE_GET_STACK_BASE
+/* Retrieve stack base.						*/
+/* IIRC, there is a nonportable way to do this on Linux for	*/
+/* non-main threads. 						*/
+/* Actually using the GC_find_limit version seems risky.	*/
+/* FIXME - Implement better strategies here.			*/
+int GC_get_stack_base(struct GC_stack_base *b)
+{
+    int dummy;
+
+#   ifdef NEED_FIND_LIMIT
+#     ifdef STACK_GROWS_DOWN
+    	b -> mem_base = GC_find_limit(&dummy, TRUE);
+#       ifdef IA64
+	  b -> reg_base = GC_find_limit(GC_save_regs_in_stack(), FALSE);
+#       endif
+#     else
+	b -> mem_base = GC_find_limit(&dummy, FALSE);
+#     endif
+#   else
+      return GC_UNIMPLEMENTED;
+#   endif
+}
+#endif
 
 /*
  * Register static data segment(s) as roots.
@@ -1156,6 +1199,46 @@ void GC_register_data_segments(void)
   	/* This used to be set for gcc, to avoid dealing with		*/
   	/* the structured exception handling issues.  But we now have	*/
   	/* assembly code to do that right.				*/
+
+# if defined(GWW_VDB)
+
+#   ifndef _BASETSD_H_
+      typedef ULONG * PULONG_PTR;
+#   endif
+    typedef UINT (WINAPI * GetWriteWatch_type)(
+      DWORD, PVOID, SIZE_T, PVOID*, PULONG_PTR, PULONG);
+    static GetWriteWatch_type GetWriteWatch_func;
+    static DWORD GetWriteWatch_alloc_flag;
+
+#   define GC_GWW_AVAILABLE() (GetWriteWatch_func != NULL)
+
+    static void detect_GetWriteWatch(void)
+    {
+      static GC_bool done;
+      if (done)
+        return;
+
+      GetWriteWatch_func = (GetWriteWatch_type)
+        GetProcAddress(GetModuleHandle("kernel32.dll"), "GetWriteWatch");
+      if (GetWriteWatch_func != NULL) {
+        /* Also check whether VirtualAlloc accepts MEM_WRITE_WATCH,   */
+        /* as some versions of kernel32.dll have one but not the      */
+        /* other, making the feature completely broken.               */
+        void * page = VirtualAlloc(NULL, GC_page_size,
+                                    MEM_WRITE_WATCH | MEM_RESERVE,
+                                    PAGE_READWRITE);
+        if (page != NULL) {
+          GetWriteWatch_alloc_flag = MEM_WRITE_WATCH;
+          VirtualFree(page, GC_page_size, MEM_RELEASE);
+        } else {
+          /* GetWriteWatch will be useless. */
+          GetWriteWatch_func = NULL;
+        }
+      }
+      done = TRUE;
+    }
+
+# endif
   
   void GC_init_win32(void)
   {
@@ -1402,7 +1485,7 @@ ptr_t GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr)
 
 void GC_register_data_segments(void)
 {
-#   if !defined(PCR) && !defined(SRC_M3) && !defined(MACOS)
+#   if !defined(PCR) && !defined(MACOS)
 #     if defined(REDIRECT_MALLOC) && defined(GC_SOLARIS_THREADS)
 	/* As of Solaris 2.3, the Solaris threads implementation	*/
 	/* allocates the data structure for the initial thread with	*/
@@ -1472,36 +1555,6 @@ void GC_register_data_segments(void)
 # define SBRK_ARG_T ptrdiff_t
 
 
-# ifdef RS6000
-/* The compiler seems to generate speculative reads one past the end of	*/
-/* an allocated object.  Hence we need to make sure that the page 	*/
-/* following the last heap page is also mapped.				*/
-ptr_t GC_unix_get_mem(word bytes)
-{
-    caddr_t cur_brk = (caddr_t)sbrk(0);
-    caddr_t result;
-    SBRK_ARG_T lsbs = (word)cur_brk & (GC_page_size-1);
-    static caddr_t my_brk_val = 0;
-    
-    if ((SBRK_ARG_T)bytes < 0) return(0); /* too big */
-    if (lsbs != 0) {
-        if((caddr_t)(sbrk(GC_page_size - lsbs)) == (caddr_t)(-1)) return(0);
-    }
-    if (cur_brk == my_brk_val) {
-    	/* Use the extra block we allocated last time. */
-        result = (ptr_t)sbrk((SBRK_ARG_T)bytes);
-        if (result == (caddr_t)(-1)) return(0);
-        result -= GC_page_size;
-    } else {
-        result = (ptr_t)sbrk(GC_page_size + (SBRK_ARG_T)bytes);
-        if (result == (caddr_t)(-1)) return(0);
-    }
-    my_brk_val = result + bytes + GC_page_size;	/* Always page aligned */
-    return((ptr_t)result);
-}
-
-#else  /* Not RS6000 */
-
 #if defined(USE_MMAP) || defined(USE_MUNMAP)
 
 #ifdef USE_MMAP_FIXED
@@ -1569,7 +1622,7 @@ ptr_t GC_unix_get_mem(word bytes)
     return((ptr_t)result);
 }
 
-#else /* Not RS6000, not USE_MMAP */
+#else /* Not USE_MMAP */
 ptr_t GC_unix_get_mem(word bytes)
 {
   ptr_t result;
@@ -1596,7 +1649,6 @@ ptr_t GC_unix_get_mem(word bytes)
 }
 
 #endif /* Not USE_MMAP */
-#endif /* Not RS6000 */
 
 # endif /* UN*X */
 
@@ -1651,7 +1703,15 @@ ptr_t GC_win32_get_mem(word bytes)
 	/* This wastes a small amount of memory, and risks	*/
 	/* increased fragmentation.  But better alternatives	*/
 	/* would require effort.				*/
+        /* Pass the MEM_WRITE_WATCH only if GetWriteWatch-based */
+        /* VDBs are enabled and the GetWriteWatch function is   */
+        /* available.  Otherwise we waste resources or possibly */
+        /* cause VirtualAlloc to fail (observed in Windows 2000 */
+        /* SP2).                                                */
         result = (ptr_t) VirtualAlloc(NULL, bytes + 1,
+#                                     ifdef GWW_VDB
+                                        GetWriteWatch_alloc_flag |
+#                                     endif
     				      MEM_COMMIT | MEM_RESERVE,
     				      PAGE_EXECUTE_READWRITE);
     }
@@ -1706,10 +1766,10 @@ ptr_t GC_wince_get_mem(word bytes)
 	/* Reserve more pages */
 	word res_bytes = (bytes + GC_sysinfo.dwAllocationGranularity-1)
 			 & ~(GC_sysinfo.dwAllocationGranularity-1);
-	/* If we ever support MPROTECT_VDB here, we will probably need to	*/
-	/* ensure that res_bytes is strictly > bytes, so that VirtualProtect	*/
-	/* never spans regions.  It seems to be OK for a VirtualFree argument	*/
-	/* to span regions, so we should be OK for now.				*/
+	/* If we ever support MPROTECT_VDB here, we will probably need to    */
+	/* ensure that res_bytes is strictly > bytes, so that VirtualProtect */
+	/* never spans regions.  It seems to be OK for a VirtualFree	     */
+	/* argument to span regions, so we should be OK for now.	     */
 	result = (ptr_t) VirtualAlloc(NULL, res_bytes,
     				      MEM_RESERVE | MEM_TOP_DOWN,
     				      PAGE_EXECUTE_READWRITE);
@@ -1954,50 +2014,6 @@ void GC_default_push_other_roots(void)
 
 # endif /* PCR */
 
-# ifdef SRC_M3
-
-# ifdef ALL_INTERIOR_POINTERS
-    --> misconfigured
-# endif
-
-void GC_push_thread_structures(void)
-{
-    /* Not our responsibibility. */
-}
-
-extern void ThreadF__ProcessStacks(void);
-
-void GC_push_thread_stack(word start, word stop)
-{
-   GC_push_all_stack((ptr_t)start, (ptr_t)stop + sizeof(word));
-}
-
-/* Push routine with M3 specific calling convention. */
-GC_m3_push_root(ptr_t dummy1, word *p, ptr_t dummy2, int dummy3)
-{
-    word q = *p;
-    
-    GC_PUSH_ONE_STACK(q, p);
-}
-
-/* M3 set equivalent to RTHeap.TracedRefTypes */
-typedef struct { int elts[1]; }  RefTypeSet;
-RefTypeSet GC_TracedRefTypes = {{0x1}};
-
-void GC_default_push_other_roots(void)
-{
-    /* Use the M3 provided routine for finding static roots.	 */
-    /* This is a bit dubious, since it presumes no C roots.	 */
-    /* We handle the collector roots explicitly in GC_push_roots */
-      	RTMain__GlobalMapProc(GC_m3_push_root, 0, GC_TracedRefTypes);
-	if (GC_bytes_allocd > 0) {
-	    ThreadF__ProcessStacks(GC_push_thread_stack);
-	}
-	/* Otherwise this isn't absolutely necessary, and we have	*/
-	/* startup ordering problems.					*/
-}
-
-# endif /* SRC_M3 */
 
 # if defined(GC_SOLARIS_THREADS) || defined(GC_PTHREADS) || \
      defined(GC_WIN32_THREADS)
@@ -2017,7 +2033,7 @@ void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
 
 /*
  * Routines for accessing dirty  bits on virtual pages.
- * There are five ways to maintain this information:
+ * There are six ways to maintain this information:
  * DEFAULT_VDB:	A simple dummy implementation that treats every page
  *		as possibly dirty.  This makes incremental collection
  *		useless, but the implementation is still correct.
@@ -2031,8 +2047,11 @@ void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
  * 		In order to avoid races, an object must be marked dirty
  * 		after it is written, and a reference to the object
  * 		must be kept on a stack or in a register in the interim.
- * 		In this mode, an object directly reachable from the
+ * 		With threads enabled, an object directly reachable from the
  * 		stack at the time of a collection is treated as dirty.
+ * 		In single-threaded mode, it suffices to ensure that no
+ * 		collection can take place between the pointer assignment
+ * 		and the GC_dirty() call.
  * PCR_VDB:	Use PPCRs virtual dirty bit facility.
  * PROC_VDB:	Use the /proc facility for reading dirty bits.  Only
  *		works under some SVR4 variants.  Even then, it may be
@@ -2046,8 +2065,124 @@ void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
  *		call from doing so.  It is the clients responsibility to
  *		make sure that other system calls are similarly protected
  *		or write only to the stack.
+ * GWW_VDB:     Use the Win32 GetWriteWatch functions, if available, to
+ *              read dirty bits.  In case it is not available (because we
+ *              are running on Windows 95, Windows 2000 or earlier),
+ *              MPROTECT_VDB may be defined as a fallback strategy.
  */
 GC_bool GC_dirty_maintained = FALSE;
+
+#if defined(PROC_VDB) || defined(GWW_VDB)
+
+/* Add all pages in pht2 to pht1 */
+void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
+{
+    register int i;
+    
+    for (i = 0; i < PHT_SIZE; i++) pht1[i] |= pht2[i];
+}
+
+#endif
+
+#ifdef GWW_VDB
+
+# define GC_GWW_BUF_LEN 1024
+  static PVOID gww_buf[GC_GWW_BUF_LEN];
+
+# ifdef MPROTECT_VDB
+    static GC_bool GC_gww_dirty_init(void)
+    {
+      detect_GetWriteWatch();
+      return GC_GWW_AVAILABLE();
+    }
+# else
+    void GC_dirty_init(void)
+    {
+      detect_GetWriteWatch();
+      GC_dirty_maintained = GC_GWW_AVAILABLE();
+    }
+# endif
+
+# ifdef MPROTECT_VDB
+    static void GC_gww_read_dirty(void)
+# else
+    void GC_read_dirty(void)
+# endif
+  {
+    word i;
+
+    BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
+
+    for (i = 0; i != GC_n_heap_sects; ++i) {
+      DWORD count;
+
+      do {
+        PVOID * pages, * pages_end;
+        DWORD page_size;
+
+        pages = gww_buf;
+        count = GC_GWW_BUF_LEN;
+        /*
+        * GetWriteWatch is documented as returning non-zero when it fails,
+        * but the documentation doesn't explicitly say why it would fail or
+        * what its behaviour will be if it fails.  If there are more dirty
+        * pages than will fit in the buffer, this is not treated as a
+        * failure; we must check the page count in the loop condition.
+        */
+        if (GetWriteWatch_func(WRITE_WATCH_FLAG_RESET,
+                               GC_heap_sects[i].hs_start,
+                               GC_heap_sects[i].hs_bytes,
+                               pages,
+                               &count,
+                               &page_size) != 0)
+        {
+          GC_err_printf(
+            "GC_gww_read_dirty fell back to marking all pages dirty\n");
+          memset(GC_grungy_pages, 0xff, sizeof(page_hash_table));
+          memset(GC_written_pages, 0xff, sizeof(page_hash_table));
+          return;
+        }
+
+        pages_end = pages + count;
+        while (pages != pages_end) {
+          struct hblk * h = (struct hblk *) *pages++;
+          struct hblk * h_end = (struct hblk *) ((char *) h + page_size);
+          do
+            set_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
+          while (++h < h_end);
+        }
+      } while (count == GC_GWW_BUF_LEN);
+    }
+
+    GC_or_pages(GC_written_pages, GC_grungy_pages);
+  }
+
+# ifdef MPROTECT_VDB
+    static GC_bool GC_gww_page_was_dirty(struct hblk * h)
+# else
+    GC_bool GC_page_was_dirty(struct hblk * h)
+# endif
+  {
+    return HDR(h) == 0 || get_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
+  }
+
+# ifdef MPROTECT_VDB
+    static GC_bool GC_gww_page_was_ever_dirty(struct hblk * h)
+# else
+    GC_bool GC_page_was_ever_dirty(struct hblk * h)
+# endif
+  {
+    return HDR(h) == 0 || get_pht_entry_from_index(GC_written_pages, PHT_HASH(h));
+  }
+
+# ifndef MPROTECT_VDB
+    void GC_is_fresh(struct hblk *h, word n)
+    {}
+    void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
+    {}
+# endif
+
+# endif /* GWW_VDB */
 
 # ifdef DEFAULT_VDB
 
@@ -2120,7 +2255,7 @@ void GC_dirty_init(void)
 {
     if (GC_print_stats == VERBOSE)
       GC_log_printf("Initializing MANUAL_VDB...\n");
-    /* FIXME - implement me.	*/
+    /* GC_dirty_pages and GC_grungy_pages are already cleared. */
     GC_dirty_maintained = TRUE;
 }
 
@@ -2128,7 +2263,9 @@ void GC_dirty_init(void)
 /* Restore the systems notion of which pages are dirty.		*/
 void GC_read_dirty(void)
 {
-    /* FIXME - implement me.	*/
+    BCOPY((word *)GC_dirty_pages, GC_grungy_pages,
+          (sizeof GC_dirty_pages));
+    BZERO((word *)GC_dirty_pages, (sizeof GC_dirty_pages));
 }
 
 /* Is the HBLKSIZE sized page at h marked dirty in the local buffer?	*/
@@ -2138,10 +2275,11 @@ void GC_read_dirty(void)
 /*ARGSUSED*/
 GC_bool GC_page_was_dirty(struct hblk *h)
 {
-    /* FIXME - implement me.	*/
-    return(TRUE);
+    register word index;
+    
+    index = PHT_HASH(h);
+    return(HDR(h) == 0 || get_pht_entry_from_index(GC_grungy_pages, index));
 }
-
  
 /* Could any valid GC heap pointer ever have been written to this page?	*/
 /*ARGSUSED*/
@@ -2149,6 +2287,13 @@ GC_bool GC_page_was_ever_dirty(struct hblk *h)
 {
     /* FIXME - implement me.	*/
     return(TRUE);
+}
+
+/* Mark the page containing p as dirty.  Logically, this dirties the	*/
+/* entire object.							*/
+void GC_dirty(ptr_t p)
+{
+    async_set_pht_entry_from_index(GC_dirty_pages, index);
 }
 
 /* Reset the n pages starting at h to "was never dirty" status.	*/
@@ -2323,7 +2468,7 @@ GC_bool GC_old_segv_handler_used_si;
 #if !defined(DARWIN)
 #   include <errno.h>
 #   if defined(FREEBSD)
-#     define SIG_OK (sig == SIGBUS)
+#     define SIG_OK TRUE
 #     define CODE_OK (code == BUS_PAGE_FAULT)
 #   elif defined(OSF1)
 #     define SIG_OK (sig == SIGSEGV)
@@ -2342,17 +2487,17 @@ GC_bool GC_old_segv_handler_used_si;
 	/* architectures.						*/
 #   elif defined(HPUX)
 #     define SIG_OK (sig == SIGSEGV || sig == SIGBUS)
-#     define CODE_OK (scp -> si_code == SEGV_ACCERR) \
-		     || (scp -> si_code == BUS_ADRERR) \
-		     || (scp -> si_code == BUS_UNKNOWN) \
-		     || (scp -> si_code == SEGV_UNKNOWN) \
-		     || (scp -> si_code == BUS_OBJERR)
+#     define CODE_OK (si -> si_code == SEGV_ACCERR) \
+		     || (si -> si_code == BUS_ADRERR) \
+		     || (si -> si_code == BUS_UNKNOWN) \
+		     || (si -> si_code == SEGV_UNKNOWN) \
+		     || (si -> si_code == BUS_OBJERR)
 #   elif defined(FREEBSD)
 #     define SIG_OK (sig == SIGBUS)
-#     define CODE_OK (scp -> si_code == BUS_PAGE_FAULT)
+#     define CODE_OK (si -> si_code == BUS_PAGE_FAULT)
 #   elif defined(SUNOS5SIGS)
 #     define SIG_OK (sig == SIGSEGV)
-#     define CODE_OK (scp -> si_code == SEGV_ACCERR)
+#     define CODE_OK (si -> si_code == SEGV_ACCERR)
 #   elif defined(MSWIN32) || defined(MSWINCE)
 #     define SIG_OK (exc_info -> ExceptionRecord -> ExceptionCode \
 		     == STATUS_ACCESS_VIOLATION)
@@ -2485,6 +2630,9 @@ void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
     struct hblk * current;
     GC_bool found_clean;
     
+#   if defined(GWW_VDB)
+      if (GC_GWW_AVAILABLE()) return;
+#   endif
     if (!GC_dirty_maintained) return;
     h_trunc = (struct hblk *)((word)h & ~(GC_page_size-1));
     h_end = (struct hblk *)(((word)(h + nblocks) + GC_page_size-1)
@@ -2569,10 +2717,15 @@ void GC_dirty_init(void)
       }
 #   endif /* HPUX || LINUX || HURD || (FREEBSD && SUNOS5SIGS) */
 #   if defined(MSWIN32)
+#     if defined(GWW_VDB)
+        if (GC_gww_dirty_init())
+          return;
+#     endif
       GC_old_segv_handler = SetUnhandledExceptionFilter(GC_write_fault_handler);
       if (GC_old_segv_handler != NULL) {
-	if (GC_print_stats == VERBOSE)
-          GC_log_printf("Replaced other UnhandledExceptionFilter\n");
+#	ifdef PRINTSTATS
+          GC_err_printf0("Replaced other UnhandledExceptionFilter\n");
+#	endif
       } else {
           GC_old_segv_handler = SIG_DFL;
       }
@@ -2597,7 +2750,7 @@ int GC_incremental_protection_needs(void)
 void GC_protect_heap(void)
 {
     ptr_t start;
-    word len;
+    size_t len;
     struct hblk * current;
     struct hblk * current_start;  /* Start of block to be protected. */
     struct hblk * limit;
@@ -2658,6 +2811,12 @@ void GC_protect_heap(void)
 /* bits while this is happenning (as in GC_enable_incremental).		*/
 void GC_read_dirty(void)
 {
+#   if defined(GWW_VDB)
+      if (GC_GWW_AVAILABLE()) {
+        GC_gww_read_dirty();
+        return;
+      }
+#   endif
     BCOPY((word *)GC_dirty_pages, GC_grungy_pages,
           (sizeof GC_dirty_pages));
     BZERO((word *)GC_dirty_pages, (sizeof GC_dirty_pages));
@@ -2666,8 +2825,14 @@ void GC_read_dirty(void)
 
 GC_bool GC_page_was_dirty(struct hblk *h)
 {
-    register word index = PHT_HASH(h);
+    register word index;
     
+#   if defined(GWW_VDB)
+      if (GC_GWW_AVAILABLE())
+        return GC_gww_page_was_dirty(h);
+#   endif
+
+    index = PHT_HASH(h);
     return(HDR(h) == 0 || get_pht_entry_from_index(GC_grungy_pages, index));
 }
 
@@ -2802,6 +2967,10 @@ ssize_t read(int fd, void *buf, size_t nbyte)
 /*ARGSUSED*/
 GC_bool GC_page_was_ever_dirty(struct hblk *h)
 {
+#   if defined(GWW_VDB)
+      if (GC_GWW_AVAILABLE())
+        return GC_gww_page_was_ever_dirty(h);
+#   endif
     return(TRUE);
 }
 
@@ -2854,14 +3023,6 @@ char *GC_proc_buf;
 #   define PAGE_IS_FRESH(h) \
 	(GC_fresh_pages[FRESH_PAGE_SLOT(h)] == (h) && (h) != 0)
 #endif
-
-/* Add all pages in pht2 to pht1 */
-void GC_or_pages(pgae_hash_table pht1, page_hash_table pht2)
-{
-    register int i;
-    
-    for (i = 0; i < PHT_SIZE; i++) pht1[i] |= pht2[i];
-}
 
 int GC_proc_fd;
 
@@ -3706,8 +3867,10 @@ kern_return_t catch_exception_raise_state_identity(
      };
 #  elif defined (DRSNX)
 #    include <sys/sparc/frame.h>
-#  elif defined(OPENBSD) || defined(NETBSD)
+#  elif defined(OPENBSD)
 #    include <frame.h>
+#  elif defined(FREEBSD) || defined(NETBSD)
+#    include <machine/frame.h>
 #  else
 #    include <sys/frame.h>
 #  endif
@@ -3751,7 +3914,7 @@ void GC_save_callers (struct callinfo info[NFRAMES])
 
 #else /* No builtin backtrace; do it ourselves */
 
-#if (defined(OPENBSD) || defined(NETBSD)) && defined(SPARC)
+#if (defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD)) && defined(SPARC)
 #  define FR_SAVFP fr_fp
 #  define FR_SAVPC fr_pc
 #else

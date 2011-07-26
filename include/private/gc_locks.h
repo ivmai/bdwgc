@@ -72,11 +72,6 @@
 #    define FASTUNLOCK()  {\
         if( FASTLOCK_SUCCEEDED() ) PCR_Th_ML_Release(&GC_allocate_ml); }
 #  endif
-#  ifdef SRC_M3
-     extern GC_word RT0u__inCritical;
-#    define LOCK() RT0u__inCritical++
-#    define UNLOCK() RT0u__inCritical--
-#  endif
 
 #  if !defined(AO_have_test_and_set_acquire)
 #    define USE_PTHREAD_LOCKS
@@ -205,7 +200,7 @@
 # endif /* !THREADS */
 
 #if defined(UNCOND_LOCK) && !defined(LOCK) 
-     extern GC_bool GC_need_to_lock;
+     GC_API GC_bool GC_need_to_lock;
      		/* At least two thread running; need to lock.	*/
 #    define LOCK() if (GC_need_to_lock) { UNCOND_LOCK(); }
 #    define UNLOCK() if (GC_need_to_lock) { UNCOND_UNLOCK(); }

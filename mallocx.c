@@ -163,7 +163,8 @@ void * realloc(void * p, size_t lb)
 # endif /* REDIRECT_REALLOC */
 
 
-/* The same thing, except caller does not hold allocation lock.	*/
+/* Allocate memory such that only pointers to near the          */
+/* beginning of the object are considered.                      */
 /* We avoid holding allocation lock while we clear memory.	*/
 void * GC_generic_malloc_ignore_off_page(size_t lb, int k)
 {
@@ -233,7 +234,7 @@ void GC_incr_bytes_freed(size_t n)
     GC_bytes_freed += n;
 }
 
-#if defined(THREADS) && !defined(SRC_M3)
+#if defined(THREADS)
 
 extern signed_word GC_bytes_found;   /* Protected by GC lock.  */
 

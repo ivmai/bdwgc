@@ -423,7 +423,11 @@ mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
 /*
  * Mark from one finalizable object using the specified
  * mark proc. May not mark the object pointed to by 
- * real_ptr. That is the job of the caller, if appropriate
+ * real_ptr. That is the job of the caller, if appropriate.
+ * Note that this is called with the mutator running, but
+ * with us holding the allocation lock.  This is safe only if the
+ * mutator needs tha allocation lock to reveal hidden pointers.
+ * FIXME: Why do we need the GC_mark_state test below?
  */
 # define GC_MARK_FO(real_ptr, mark_proc) \
 { \

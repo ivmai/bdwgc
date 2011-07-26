@@ -87,7 +87,13 @@
 /* Newer versions of GNU/Linux define this macro.  We
  * define it similarly for any ELF systems that don't.  */
 #  ifndef ElfW
-#    ifdef NETBSD
+#    if defined(FREEBSD)
+#      if __ELF_WORD_SIZE == 32
+#        define ElfW(type) Elf32_##type
+#      else
+#        define ElfW(type) Elf64_##type
+#      endif
+#    elif defined(NETBSD)
 #      if ELFSIZE == 32
 #        define ElfW(type) Elf32_##type
 #      else
@@ -504,10 +510,10 @@ void GC_register_dynamic_libraries()
     static prmap_t * addr_map = 0;
     static int current_sz = 0;	/* Number of records currently in addr_map */
     static int needed_sz;	/* Required size of addr_map		*/
-    register int i;
-    register long flags;
-    register ptr_t start;
-    register ptr_t limit;
+    int i;
+    long flags;
+    ptr_t start;
+    ptr_t limit;
     ptr_t heap_start = (ptr_t)HEAP_START;
     ptr_t heap_end = heap_start;
 
@@ -668,77 +674,6 @@ void GC_register_dynamic_libraries()
   
 # define HAVE_REGISTER_MAIN_STATIC_DATA
 
-  GC_bool GC_warn_fb = TRUE;	/* Warn about traced likely 	*/
-  				/* graphics memory.		*/
-  GC_bool GC_disallow_ignore_fb = FALSE;
-  int GC_ignore_fb_mb;	/* Ignore mappings bigger than the 	*/
-  			/* specified number of MB.		*/
-  GC_bool GC_ignore_fb = FALSE; /* Enable frame buffer 	*/
-  				/* checking.		*/
-  
-  /* Issue warning if tracing apparent framebuffer. 		*/
-  /* This limits us to one warning, and it's a back door to	*/
-  /* disable that.						*/
- 
-  /* Should [start, start+len) be treated as a frame buffer	*/
-  /* and ignored?						*/
-  /* Unfortunately, we currently have no real way to tell	*/
-  /* automatically, and rely largely on user input.		*/
-  /* FIXME: If we had more data on this phenomenon (e.g.	*/
-  /* is start aligned to a MB multiple?) we should be able to	*/
-  /* do better.							*/
-  /* Based on a very limited sample, it appears that:		*/
-  /* 	- Frame buffer mappings appear as mappings of length	*/
-  /* 	  2**n MB - 192K.  (We guess the 192K can vary a bit.)	*/
-  /*	- Have a stating address at best 64K aligned.		*/
-  /* I'd love more information about the mapping, since I	*/
-  /* can't reproduce the problem.				*/
-  static GC_bool is_frame_buffer(ptr_t start, size_t len)
-  {
-    static GC_bool initialized = FALSE;
-#   define MB (1024*1024)
-#   define DEFAULT_FB_MB 15
-#   define MIN_FB_MB 3
-
-    if (GC_disallow_ignore_fb) return FALSE;
-    if (!initialized) {
-      char * ignore_fb_string =  GETENV("GC_IGNORE_FB");
-
-      if (0 != ignore_fb_string) {
-	while (*ignore_fb_string == ' ' || *ignore_fb_string == '\t')
-	  ++ignore_fb_string;
-	if (*ignore_fb_string == '\0') {
-	  GC_ignore_fb_mb = DEFAULT_FB_MB;
-	} else {
-	  GC_ignore_fb_mb = atoi(ignore_fb_string);
-	  if (GC_ignore_fb_mb < MIN_FB_MB) {
-	    WARN("Bad GC_IGNORE_FB value.  Using %ld\n", DEFAULT_FB_MB);
-	    GC_ignore_fb_mb = DEFAULT_FB_MB;
-	  }
-	}
-	GC_ignore_fb = TRUE;
-      } else {
-	GC_ignore_fb_mb = DEFAULT_FB_MB;  /* For warning */
-      }
-      initialized = TRUE;
-    }
-    if (len >= ((size_t)GC_ignore_fb_mb << 20)) {
-      if (GC_ignore_fb) {
-	return TRUE;
-      } else {
-	if (GC_warn_fb) {
-	  WARN("Possible frame buffer mapping at 0x%lx: \n"
-	       "\tConsider setting GC_IGNORE_FB to improve performance.\n",
-	       start);
-	  GC_warn_fb = FALSE;
-	}
-	return FALSE;
-      }
-    } else {
-      return FALSE;
-    }
-  }
-
 # ifdef DEBUG_VIRTUALQUERY
   void GC_dump_meminfo(MEMORY_BASIC_INFORMATION *buf)
   {
@@ -789,7 +724,7 @@ void GC_register_dynamic_libraries()
 		&& (protect == PAGE_EXECUTE_READWRITE
 		    || protect == PAGE_READWRITE)
 		&& !GC_is_heap_base(buf.AllocationBase)
-		&& !is_frame_buffer(p, buf.RegionSize)) {  
+		&& buf.Type == MEM_IMAGE) {  
 #	        ifdef DEBUG_VIRTUALQUERY
 	          GC_dump_meminfo(&buf);
 #	        endif
@@ -869,7 +804,7 @@ void GC_register_dynamic_libraries()
           if (moduleinfo.lmi_flags & LDR_MAIN)
               continue;    /* skip the main module */
 
-#     ifdef VERBOSE
+#     ifdef DL_VERBOSE
           GC_printf("---Module---\n");
           GC_printf("Module ID            = %16ld\n", moduleinfo.lmi_modid);
           GC_printf("Count of regions     = %16d\n", moduleinfo.lmi_nregion);
@@ -890,7 +825,7 @@ void GC_register_dynamic_libraries()
             if (! (regioninfo.lri_prot & LDR_W))
                 continue;
 
-#         ifdef VERBOSE
+#         ifdef DL_VERBOSE
               GC_printf("--- Region ---\n");
               GC_printf("Region number    = %16ld\n",
               	        regioninfo.lri_region_no);
@@ -917,7 +852,6 @@ void GC_register_dynamic_libraries()
 #include <errno.h>
 #include <dl.h>
 
-extern int errno;
 extern char *sys_errlist[];
 extern int sys_nerr;
 
@@ -953,7 +887,7 @@ void GC_register_dynamic_libraries()
 #	 endif
         }
 
-#     ifdef VERBOSE
+#     ifdef DL_VERBOSE
           GC_printf("---Shared library---\n");
           GC_printf("\tfilename        = \"%s\"\n", shl_desc->filename);
           GC_printf("\tindex           = %d\n", index);

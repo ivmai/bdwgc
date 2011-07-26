@@ -82,11 +82,6 @@ extern int GC_gcj_kind;
 
 extern int GC_gcj_debug_kind;
 
-# if defined(GC_LOCAL_ALLOC_H) && defined(GC_REDIRECT_TO_LOCAL)
-    --> gc_local_alloc.h should be included after this.  Otherwise
-    --> we undo the redirection.
-# endif
-
 # ifdef GC_DEBUG
 #   define GC_GCJ_MALLOC(s,d) GC_debug_gcj_malloc(s,d,GC_EXTRAS)
 #   define GC_GCJ_FAST_MALLOC(s,d) GC_debug_gcj_fast_malloc(s,d,GC_EXTRAS)

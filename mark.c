@@ -103,7 +103,7 @@ word GC_n_rescuing_pages;	/* Number of dirty pages we marked from */
 
 mse * GC_mark_stack;
 
-mse * GC_mark_stack_limit;;
+mse * GC_mark_stack_limit;
 
 size_t GC_mark_stack_size = 0;
  
@@ -1371,6 +1371,11 @@ struct GC_ms_entry *GC_mark_and_push(void *obj,
 	GC_ADD_TO_BLACK_LIST_NORMAL(p, src);
 	return;
     }
+#   if defined(MANUAL_VDB) && defined(THREADS)
+      /* Pointer is on the stack.  We may have dirtied the object	*/
+      /* it points to, but not yet have called GC_dirty();	*/
+      GC_dirty(p);	/* Implicitly affects entire object.	*/
+#   endif
     PUSH_CONTENTS_HDR(r, GC_mark_stack_top, GC_mark_stack_limit,
 		      source, mark_and_push_exit, hhdr, FALSE);
   mark_and_push_exit: ;
@@ -1461,6 +1466,10 @@ void GC_push_all_eager(ptr_t bottom, ptr_t top)
  * register values are not lost.
  * Cold_gc_frame delimits the stack section that must be scanned
  * eagerly.  A zero value indicates that no eager scanning is needed.
+ * We don't need to worry about the MANUAL_VDB case here, since this
+ * is only called in the single-threaded case.  We assume that we
+ * cannot collect between an assignment and the corresponding
+ * GC_dirty() call.
  */
 void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
 				       ptr_t cold_gc_frame)
@@ -1493,11 +1502,15 @@ void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
 
 void GC_push_all_stack(ptr_t bottom, ptr_t top)
 {
-  if (!NEED_FIXUP_POINTER && GC_all_interior_pointers) {
-    GC_push_all(bottom, top);
-  } else {
+# if defined(THREADS) && defined(MPROTECT_VDB)
     GC_push_all_eager(bottom, top);
-  }
+# else
+    if (!NEED_FIXUP_POINTER && GC_all_interior_pointers) {
+      GC_push_all(bottom, top);
+    } else {
+      GC_push_all_eager(bottom, top);
+    }
+# endif
 }
 
 #if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES)

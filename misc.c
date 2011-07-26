@@ -47,38 +47,25 @@
 #   ifdef PCR
 #     include "il/PCR_IL.h"
       PCR_Th_ML GC_allocate_ml;
-#   else
-#     ifdef SRC_M3
-	/* Critical section counter is defined in the M3 runtime 	*/
-	/* That's all we use.						*/
+#   elif defined(GC_WIN32_THREADS) 
+#     if defined(GC_PTHREADS)
+	pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
+#     elif defined(GC_DLL)
+	 __declspec(dllexport) CRITICAL_SECTION GC_allocate_ml;
 #     else
-#	ifdef GC_SOLARIS_THREADS
-	  mutex_t GC_allocate_ml;	/* Implicitly initialized.	*/
-#	else
-#          if defined(GC_WIN32_THREADS) 
-#             if defined(GC_PTHREADS)
-		  pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
-#	      elif defined(GC_DLL)
-		 __declspec(dllexport) CRITICAL_SECTION GC_allocate_ml;
-#	      else
-		 CRITICAL_SECTION GC_allocate_ml;
-#	      endif
-#          else
-#             if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS)
-#		if defined(USE_SPIN_LOCK)
-	          pthread_t GC_lock_holder = NO_THREAD;
-#	        else
-		  pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
-	          pthread_t GC_lock_holder = NO_THREAD;
-			/* Used only for assertions, and to prevent	 */
-			/* recursive reentry in the system call wrapper. */
-#		endif 
-#    	      else
-	          --> declare allocator lock here
-#	      endif
-#	   endif
-#	endif
+	 CRITICAL_SECTION GC_allocate_ml;
 #     endif
+#   elif defined(GC_PTHREADS)
+#     if defined(USE_SPIN_LOCK)
+        pthread_t GC_lock_holder = NO_THREAD;
+#     else
+	pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
+	pthread_t GC_lock_holder = NO_THREAD;
+		/* Used only for assertions, and to prevent	 */
+		/* recursive reentry in the system call wrapper. */
+#     endif 
+#   else
+       --> declare allocator lock here
 #   endif
 # endif
 
@@ -661,7 +648,7 @@ void GC_init_inner()
 #   if !defined(THREADS) || defined(GC_PTHREADS) || defined(GC_WIN32_THREADS) \
 	|| defined(GC_SOLARIS_THREADS)
       if (GC_stackbottom == 0) {
-	GC_stackbottom = GC_get_stack_base();
+	GC_stackbottom = GC_get_main_stack_base();
 #       if (defined(LINUX) || defined(HPUX)) && defined(IA64)
 	  GC_register_stackbottom = GC_get_register_stack_base();
 #       endif
@@ -786,7 +773,10 @@ void GC_init_inner()
 
 void GC_enable_incremental(void)
 {
-# if !defined(SMALL_CONFIG)
+# if !defined(SMALL_CONFIG) && !defined(KEEP_BACK_PTRS)
+  /* If we are keeping back pointers, the GC itself dirties all	*/
+  /* pages on which objects have been marked, making 		*/
+  /* incremental GC pointless.					*/
   if (!GC_find_leak) {
     DCL_LOCK_STATE;
     
@@ -797,6 +787,7 @@ void GC_enable_incremental(void)
 #   ifndef GC_SOLARIS_THREADS 
       maybe_install_looping_handler();  /* Before write fault handler! */
       GC_dirty_init();
+      if (!GC_dirty_maintained) goto out;
 #   endif
     if (!GC_is_initialized) {
         GC_init_inner();
@@ -941,6 +932,9 @@ int GC_write(fd, buf, len)
 #endif
 
 #define BUFSZ 1024
+#ifdef _MSC_VER
+# define vsnprintf _vsnprintf
+#endif
 /* A version of printf that is unlikely to call malloc, and is thus safer */
 /* to call from the collector in case malloc has been bound to GC_malloc. */
 /* Floating point arguments ans formats should be avoided, since fp	  */
@@ -1126,6 +1120,19 @@ int GC_new_proc(GC_mark_proc proc)
     return result;
 }
 
+void * GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
+{
+    int dummy;
+    struct GC_stack_base base;
+
+    base.mem_base = (void *)&dummy;
+#   ifdef IA64
+      base.reg_base = GC_save_regs_in_stack();
+      /* Unnecessarily flushes register stack, 		*/
+      /* but that probably doesn't hurt.		*/
+#   endif
+    return fn(&base, arg);
+}
 
 #if !defined(NO_DEBUGGING)
 

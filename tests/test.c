@@ -39,9 +39,6 @@
 # include <assert.h>	/* Not normally used, but handy for debugging. */
 # include "gc.h"
 # include "gc_typed.h"
-# ifdef THREAD_LOCAL_ALLOC
-#   include "gc_local_alloc.h"
-# endif
 # include "private/gc_priv.h"	/* For output, locking, MIN_WORDS, 	*/
 				/* and some statistics.			*/
 # include "private/gcconfig.h"
@@ -242,53 +239,6 @@ struct GC_ms_entry * fake_gcj_mark_proc(word * addr,
 
 #endif /* GC_GCJ_SUPPORT */
 
-#ifdef THREAD_LOCAL_ALLOC
-
-#undef GC_REDIRECT_TO_LOCAL
-#include "gc_local_alloc.h"
-
-sexpr local_cons (x, y)
-sexpr x;
-sexpr y;
-{
-    register sexpr r;
-    register int *p;
-    register int my_extra = extra_count;
-    static int my_random = 0;
-    
-    collectable_count++;
-    r = (sexpr) GC_LOCAL_MALLOC(sizeof(struct SEXPR) + my_extra);
-#   ifdef GC_GCJ_SUPPORT
-      if (collectable_count % 2 == 0) {
-        r = (sexpr) GC_LOCAL_GCJ_MALLOC(sizeof(struct SEXPR) + sizeof(GC_word) + my_extra,
-					&gcj_class_struct1);
-        r = (sexpr) ((GC_word *)r + 1);
-      }
-#   endif
-    if (r == 0) {
-        (void)GC_printf("Out of memory\n");
-        exit(1);
-    }
-    for (p = (int *)r;
-         ((char *)p) < ((char *)r) + my_extra + sizeof(struct SEXPR); p++) {
-	if (*p) {
-	    (void)GC_printf(
-		"Found nonzero at %p (local) - allocator is broken\n", p);
-	    FAIL;
-        }
-        *p = (7 << 12) + ((p - (int *)r) & 0xfff);
-    }
-    r -> sexpr_car = x;
-    r -> sexpr_cdr = y;
-    my_extra++;
-    if ( my_extra >= 5000 || (my_extra == 200 && ++my_random % 37 != 0)) {
-        extra_count = 0;
-    } else {
-        extra_count = my_extra;
-    }
-    return(r);
-}
-#endif /* THREAD_LOCAL_ALLOC */
 
 sexpr small_cons (x, y)
 sexpr x;
@@ -416,35 +366,6 @@ int low, up;
 }
 #endif /* GC_GCJ_SUPPORT */
 
-#ifdef THREAD_LOCAL_ALLOC
-/* Return reverse(x) concatenated with y */
-sexpr local_reverse1(x, y)
-sexpr x, y;
-{
-    if (is_nil(x)) {
-        return(y);
-    } else {
-        return( local_reverse1(cdr(x), local_cons(car(x), y)) );
-    }
-}
-
-sexpr local_reverse(x)
-sexpr x;
-{
-    return( local_reverse1(x, nil) );
-}
-
-sexpr local_ints(low, up)
-int low, up;
-{
-    if (low > up) {
-	return(nil);
-    } else {
-        return(local_cons(local_cons(INT_TO_SEXPR(low), nil), local_ints(low+1, up)));
-    }
-}
-#endif /* THREAD_LOCAL_ALLOC */
-
 /* To check uncollectable allocation we build lists with disguised cdr	*/
 /* pointers, and make sure they don't go away.				*/
 sexpr uncollectable_ints(low, up)
@@ -549,9 +470,6 @@ void check_marks_int_list(sexpr x)
     int i;
     for (i = 0; i < 5; ++i) {
       check_ints(reverse(reverse(ints(1,10))), 1, 10);
-#     ifdef THREAD_LOCAL_ALLOC
-        check_ints(local_reverse(local_reverse(local_ints(1,10))), 1, 10);
-#     endif
     }
     return 0;
 }
@@ -700,9 +618,6 @@ void reverse_test()
     	/* 49 integers.  Thus this is thread safe without locks,	  */
     	/* assuming atomic pointer assignments.				  */
         a = reverse(reverse(a));
-#       ifdef THREAD_LOCAL_ALLOC
-	  a = local_reverse(local_reverse(a));
-#	endif
 #	if !defined(AT_END) && !defined(THREADS)
 	  /* This is not thread safe, since realloc explicitly deallocates */
           if (i & 1) {
@@ -808,20 +723,9 @@ int live_indicators_count = 0;
 tn * mktree(n)
 int n;
 {
-#   ifdef THREAD_LOCAL_ALLOC
-      tn * result = (tn *)GC_LOCAL_MALLOC(sizeof(tn));
-#   else
-      tn * result = (tn *)GC_MALLOC(sizeof(tn));
-#   endif
+    tn * result = (tn *)GC_MALLOC(sizeof(tn));
     
     collectable_count++;
-#   ifdef THREAD_LOCAL_ALLOC
-       /* Minimally exercise thread local allocation */
-       {
-         char * result = (char *)GC_LOCAL_MALLOC_ATOMIC(17);
-	 memset(result, 'a', 17);
-       }
-#   endif /* THREAD_LOCAL_ALLOC */
 #   if defined(MACOS)
 	/* get around static data limitations. */
 	if (!live_indicators)
@@ -1512,7 +1416,7 @@ void SetMinimumStack(long minSize)
 #   endif
     GC_INIT();	/* Only needed on a few platforms.	*/
     (void) GC_set_warn_proc(warn_proc);
-#   if (defined(MPROTECT_VDB) || defined(PROC_VDB)) \
+#   if (defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(GWW_VDB)) \
           && !defined(MAKE_BACK_GRAPH)
       GC_enable_incremental();
       (void) GC_printf("Switched to incremental mode\n");
@@ -1652,8 +1556,8 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
     HANDLE win_thr_h;
 # endif
   DWORD thread_id;
+  GC_INIT();
   GC_enable_incremental();
-  GC_init();
   InitializeCriticalSection(&incr_cs);
   (void) GC_set_warn_proc(warn_proc);
 # ifdef MSWINCE
@@ -1727,7 +1631,7 @@ test()
 }
 #endif
 
-#if defined(GC_SOLARIS_THREADS) || defined(GC_PTHREADS)
+#if defined(GC_PTHREADS)
 void * thr_run_one_test(void * arg)
 {
     run_one_test();
@@ -1736,50 +1640,6 @@ void * thr_run_one_test(void * arg)
 
 #ifdef GC_DEBUG
 #  define GC_free GC_debug_free
-#endif
-
-#if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
-main()
-{
-    thread_t th1;
-    thread_t th2;
-    int code;
-
-    n_tests = 0;
-    GC_INIT();	/* Only needed if gc is dynamic library.	*/
-#   ifndef MAKE_BACK_GRAPH
-      GC_enable_incremental();
-#   endif
-    (void) GC_set_warn_proc(warn_proc);
-    if (thr_keycreate(&fl_key, GC_free) != 0) {
-        (void)GC_printf("Key creation failed %d\n", code);
-    	FAIL;
-    }
-    if ((code = thr_create(0, 1024*1024, thr_run_one_test, 0, 0, &th1)) != 0) {
-    	(void)GC_printf("Thread 1 creation failed %d\n", code);
-    	FAIL;
-    }
-    if ((code = thr_create(0, 1024*1024, thr_run_one_test, 0, THR_NEW_LWP, &th2)) != 0) {
-    	(void)GC_printf("Thread 2 creation failed %d\n", code);
-    	FAIL;
-    }
-    run_one_test();
-    if ((code = thr_join(th1, 0, 0)) != 0) {
-        (void)GC_printf("Thread 1 failed %d\n", code);
-        FAIL;
-    }
-    if (thr_join(th2, 0, 0) != 0) {
-        (void)GC_printf("Thread 2 failed %d\n", code);
-        FAIL;
-    }
-    check_heap_stats();
-    (void)fflush(stdout);
-    return(0);
-}
-#else /* pthreads */
-
-#ifndef GC_PTHREADS
-  --> bad news
 #endif
 
 int main()
@@ -1853,4 +1713,3 @@ int main()
     return(0);
 }
 #endif /* GC_PTHREADS */
-#endif /* GC_SOLARIS_THREADS || GC_PTHREADS */

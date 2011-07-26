@@ -2,7 +2,7 @@
  * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
- * Copyright (c) 2000-2001 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (c) 2000-2005 by Hewlett-Packard Company.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -14,17 +14,14 @@
  * modified is included with the above copyright notice.
  */
 /*
- * Support code for LinuxThreads, the clone()-based kernel
+ * Support code originally for LinuxThreads, the clone()-based kernel
  * thread package for Linux which is included in libc6.
  *
- * This code relies on implementation details of LinuxThreads,
- * (i.e. properties not guaranteed by the Pthread standard),
- * though this version now does less of that than the other Pthreads
- * support code.
- *
- * Note that there is a lot of code duplication between linux_threads.c
- * and thread support for some of the other Posix platforms; any changes
- * made here may need to be reflected there too.
+ * This code no doubt makes some assumptions beyond what is
+ * guaranteed by the pthread standard, though it now does
+ * very little of that.  It now also supports NPTL, and many
+ * other Posix thread implementations.  We are trying to merge
+ * all flavors of pthread dupport code into this file.
  */
  /* DG/UX ix86 support <takis@xfree86.org> */
 /*
@@ -45,7 +42,6 @@
  */
 
 /*#define DEBUG_THREADS 1*/
-/*#define GC_ASSERTIONS*/
 
 # include "private/pthread_support.h"
 
@@ -109,6 +105,8 @@
 # include <sys/stat.h>
 # include <fcntl.h>
 # include <signal.h>
+
+# include "gc_inline.h"
 
 #if defined(GC_DARWIN_THREADS)
 # include "private/darwin_semaphore.h"
@@ -264,83 +262,49 @@ void GC_destroy_thread_local(GC_thread p)
 #   endif
 }
 
-void * GC_local_malloc(size_t bytes)
+void * GC_malloc(size_t bytes)
 {
-    if (EXPECT(!SMALL_ENOUGH(bytes),0)) {
-        return(GC_malloc(bytes));
-    } else {
-	int index = INDEX_FROM_REQUESTED_BYTES(bytes);
-	void ** my_fl;
-	void * my_entry;
-#	if defined(REDIRECT_MALLOC) && !defined(USE_PTHREAD_SPECIFIC)
-	GC_key_t k = GC_thread_key;
-#	endif
-	void * tsd;
+    size_t granules = ROUNDED_UP_GRANULES(bytes);
+    void *tsd;
+    void *result;
+    void **tiny_fl;
 
-#	if defined(REDIRECT_MALLOC) && !defined(USE_PTHREAD_SPECIFIC)
-	    if (EXPECT(0 == k, 0)) {
-		/* This can happen if we get called when the world is	*/
-		/* being initialized.  Whether we can actually complete	*/
-		/* the initialization then is unclear.			*/
-		GC_init_parallel();
-		k = GC_thread_key;
-	    }
-#	endif
-	tsd = GC_getspecific(GC_thread_key);
-#	ifdef GC_ASSERTIONS
-	  LOCK();
-	  GC_ASSERT(tsd == (void *)GC_lookup_thread(pthread_self()));
-	  UNLOCK();
-#	endif
-	my_fl = ((GC_thread)tsd) -> normal_freelists + index;
-	my_entry = *my_fl;
-	if (EXPECT((word)my_entry >= HBLKSIZE, 1)) {
-	    void * next = obj_link(my_entry);
-	    void * result = (void *)my_entry;
-	    *my_fl = next;
-	    obj_link(my_entry) = 0;
-	    PREFETCH_FOR_WRITE(next);
-	    GC_ASSERT(GC_size(result) >= bytes + EXTRA_BYTES);
-	    GC_ASSERT(((word *)result)[1] == 0);
-	    return result;
-	} else if ((word)my_entry - 1 < DIRECT_GRANULES) {
-	    *my_fl = my_entry + index + 1;
-            return GC_malloc(bytes);
-	} else {
-	    GC_generic_malloc_many(RAW_BYTES_FROM_INDEX(index), NORMAL, my_fl);
-	    if (*my_fl == 0) return GC_oom_fn(bytes);
-	    return GC_local_malloc(bytes);
-	}
-    }
+#   if defined(REDIRECT_MALLOC) && !defined(USE_PTHREAD_SPECIFIC)
+      GC_key_t k = GC_thread_key;
+      if (EXPECT(0 == k, 0)) {
+	/* We haven't yet run GC_init_parallel.  That means	*/
+	/* we also aren't locking, so this is fairly cheap.	*/
+	return GC_core_malloc(bytes);
+      }
+      tsd = GC_getspecific(k);
+#   else
+      tsd = GC_getspecific(GC_thread_key);
+#   endif
+#   if defined(REDIRECT_MALLOC) && defined(USE_PTHREAD_SPECIFIC)
+      if (EXPECT(NULL == tsd, 0)) {
+	return GC_core_malloc(bytes);
+      }
+#   endif
+#   ifdef GC_ASSERTIONS
+      LOCK();
+      GC_ASSERT(tsd == (void *)GC_lookup_thread(pthread_self()));
+      UNLOCK();
+#   endif
+    tiny_fl = ((GC_thread)tsd) -> normal_freelists;
+    GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, DIRECT_GRANULES,
+		         NORMAL, GC_core_malloc(bytes), obj_link(result)=0);
+    return result;
 }
 
-void * GC_local_malloc_atomic(size_t bytes)
+void * GC_malloc_atomic(size_t bytes)
 {
-    if (EXPECT(!SMALL_ENOUGH(bytes), 0)) {
-        return(GC_malloc_atomic(bytes));
-    } else {
-	int index = INDEX_FROM_REQUESTED_BYTES(bytes);
-	void **my_fl = ((GC_thread)GC_getspecific(GC_thread_key))
-		        -> ptrfree_freelists + index;
-	void *my_entry = *my_fl;
-    
-	if (EXPECT((word)my_entry >= HBLKSIZE, 1)) {
-	    void * result = my_entry;
-	    *my_fl = obj_link(my_entry);
-	    GC_ASSERT(GC_size(result) >= bytes + EXTRA_BYTES);
-	    return result;
-	} else if ((word)my_entry - 1 < DIRECT_GRANULES) {
-	    *my_fl = my_entry + index + 1;
-            return GC_malloc_atomic(bytes);
-	} else {
-	    GC_generic_malloc_many(RAW_BYTES_FROM_INDEX(index), PTRFREE, my_fl);
-	    /* *my_fl is updated while the collector is excluded;	*/
-	    /* the free list is always visible to the collector as 	*/
-	    /* such.							*/
-	    if (*my_fl == 0) return GC_oom_fn(bytes);
-	    return GC_local_malloc_atomic(bytes);
-	}
-    }
+    size_t granules = ROUNDED_UP_GRANULES(bytes);
+    void *result;
+    void **tiny_fl = ((GC_thread)GC_getspecific(GC_thread_key))
+		        		-> ptrfree_freelists;
+    GC_FAST_MALLOC_GRANS(result, bytes, tiny_fl, DIRECT_GRANULES,
+		         PTRFREE, GC_core_malloc_atomic(bytes), /* no init */);
+    return result;
 }
 
 #ifdef GC_GCJ_SUPPORT
@@ -353,48 +317,35 @@ void * GC_local_malloc_atomic(size_t bytes)
 
 extern int GC_gcj_kind;
 
-void * GC_local_gcj_malloc(size_t bytes,
-			   void * ptr_to_struct_containing_descr)
+void * GC_gcj_malloc(size_t bytes,
+		     void * ptr_to_struct_containing_descr)
 {
+    size_t granules = ROUNDED_UP_GRANULES(bytes);
+    void *result;
+    void **tiny_fl = (GC_thread)GC_getspecific(GC_thread_key)
+		        		-> ptrfree_freelists;
     GC_ASSERT(GC_gcj_malloc_initialized);
-    if (EXPECT(!SMALL_ENOUGH(bytes), 0)) {
-        return GC_gcj_malloc(bytes, ptr_to_struct_containing_descr);
-    } else {
-	int index = INDEX_FROM_REQUESTED_BYTES(bytes);
-	void **my_fl = ((GC_thread)GC_getspecific(GC_thread_key))
-	                -> gcj_freelists + index;
-	void *my_entry = *my_fl;
-	if (EXPECT((word)my_entry >= HBLKSIZE, 1)) {
-	    void * result = my_entry;
-	    GC_ASSERT(!GC_incremental);
-	    /* We assert that any concurrent marker will stop us.	*/
-	    /* Thus it is impossible for a mark procedure to see the 	*/
-	    /* allocation of the next object, but to see this object 	*/
-	    /* still containing a free list pointer.  Otherwise the 	*/
-	    /* marker might find a random "mark descriptor".		*/
-	    *(volatile ptr_t *)my_fl = obj_link(my_entry);
-	    /* We must update the freelist before we store the pointer.	*/
-	    /* Otherwise a GC at this point would see a corrupted	*/
-	    /* free list.						*/
-	    /* A memory barrier is probably never needed, since the 	*/
-	    /* action of stopping this thread will cause prior writes	*/
-	    /* to complete.						*/
-	    GC_ASSERT(GC_size(result) >= bytes + EXTRA_BYTES);
-	    GC_ASSERT(((void * volatile *)result)[1] == 0); 
-	    *(void * volatile *)result = ptr_to_struct_containing_descr; 
-	    return result;
-	} else if ((word)my_entry - 1 < DIRECT_GRANULES) {
-	    if (!GC_incremental) *my_fl = my_entry + index + 1;
-	    	/* In the incremental case, we always have to take this */
-	    	/* path.  Thus we leave the counter alone.		*/
-            return GC_gcj_malloc(bytes, ptr_to_struct_containing_descr);
-	} else {
-	    GC_generic_malloc_many(RAW_BYTES_FROM_INDEX(index),
-			           GC_gcj_kind, my_fl);
-	    if (*my_fl == 0) return GC_oom_fn(bytes);
-	    return GC_local_gcj_malloc(bytes, ptr_to_struct_containing_descr);
-	}
-    }
+    GC_FAST_MALLOC_GRANS(result, bytes, tiny_fl, DIRECT_GRANULES,
+		         PTRFREE, GC_core_gcj_malloc(bytes),
+			 (AO_compiler_barrier(),
+			  *(void **)result = ptr_to_struct_containing_descr));
+    	/* This forces the initialization of the "method ptr".		*/
+        /* This is necessary to ensure some very subtle properties	*/
+    	/* required if a GC is run in the middle of such an allocation.	*/
+    	/* Here we implicitly also assume atomicity for the free list.	*/
+        /* and method pointer assignments.				*/
+	/* We must update the freelist before we store the pointer.	*/
+	/* Otherwise a GC at this point would see a corrupted		*/
+	/* free list.							*/
+	/* A real memory barrier is not needed, since the 		*/
+	/* action of stopping this thread will cause prior writes	*/
+	/* to complete.							*/
+	/* We assert that any concurrent marker will stop us.		*/
+	/* Thus it is impossible for a mark procedure to see the 	*/
+	/* allocation of the next object, but to see this object 	*/
+	/* still containing a free list pointer.  Otherwise the 	*/
+	/* marker might find a random "mark descriptor".		*/
+    return result;
 }
 
 #endif /* GC_GCJ_SUPPORT */
@@ -404,20 +355,6 @@ void * GC_local_gcj_malloc(size_t bytes,
 #   define GC_destroy_thread_local(t)
 
 # endif /* !THREAD_LOCAL_ALLOC */
-
-#if 0
-/*
-To make sure that we're using LinuxThreads and not some other thread
-package, we generate a dummy reference to `pthread_kill_other_threads_np'
-(was `__pthread_initial_thread_bos' but that disappeared),
-which is a symbol defined in LinuxThreads, but (hopefully) not in other
-thread packages.
-
-We no longer do this, since this code is now portable enough that it might
-actually work for something else.
-*/
-void (*dummy_var_to_force_linux_threads)() = pthread_kill_other_threads_np;
-#endif /* 0 */
 
 long GC_nprocs = 1;	/* Number of processors.  We may not have	*/
 			/* access to all of them, but this is as good	*/
@@ -1000,64 +937,45 @@ int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set, sigset_t *oset)
 }
 #endif /* !GC_DARWIN_THREADS */
 
-/* Wrappers for functions that are likely to block for an appreciable	*/
-/* length of time.  Must be called in pairs, if at all.			*/
-/* Nothing much beyond the system call itself should be executed	*/
-/* between these.							*/
+/* Wrapper for functions that are likely to block for an appreciable	*/
+/* length of time.							*/
 
-void GC_start_blocking(void) {
-#   define SP_SLOP 128
+struct blocking_data {
+    void (*fn)(void *);
+    void *arg;
+};
+
+static void GC_do_blocking_inner(ptr_t data, void * context) {
+    struct blocking_data * d = (struct blocking_data *) data;
     GC_thread me;
     LOCK();
     me = GC_lookup_thread(pthread_self());
     GC_ASSERT(!(me -> thread_blocked));
 #   ifdef SPARC
 	me -> stop_info.stack_ptr = (ptr_t)GC_save_regs_in_stack();
-#   else
-#   ifndef GC_DARWIN_THREADS
+#   elif !defined(GC_DARWIN_THREADS)
 	me -> stop_info.stack_ptr = (ptr_t)GC_approx_sp();
 #   endif
-#   endif
 #   ifdef IA64
-	me -> backing_store_ptr = (ptr_t)GC_save_regs_in_stack() + SP_SLOP;
-#   endif
-    /* Add some slop to the stack pointer, since the wrapped call may 	*/
-    /* end up pushing more callee-save registers.			*/
-#   ifndef GC_DARWIN_THREADS
-#   ifdef STACK_GROWS_UP
-	me -> stop_info.stack_ptr += SP_SLOP;
-#   else
-	me -> stop_info.stack_ptr -= SP_SLOP;
-#   endif
+	me -> backing_store_ptr = (ptr_t)GC_save_regs_in_stack();
 #   endif
     me -> thread_blocked = TRUE;
+    /* Save context here if we want to support precise stack marking */
     UNLOCK();
-}
-
-void GC_end_blocking(void) {
-    GC_thread me;
+    (d -> fn)(d -> arg);
     LOCK();   /* This will block if the world is stopped.	*/
-    me = GC_lookup_thread(pthread_self());
-    GC_ASSERT(me -> thread_blocked);
     me -> thread_blocked = FALSE;
     UNLOCK();
 }
-    
-#if defined(GC_DGUX386_THREADS)
-#define __d10_sleep sleep
-#endif /* GC_DGUX386_THREADS */
 
-/* A wrapper for the standard C sleep function	*/
-int WRAP_FUNC(sleep) (unsigned int seconds)
-{
-    int result;
+void GC_do_blocking(void (*fn)(void *), void *arg) {
+    struct blocking_data my_data;
 
-    GC_start_blocking();
-    result = REAL_FUNC(sleep)(seconds);
-    GC_end_blocking();
-    return result;
+    my_data.fn = fn;
+    my_data.arg = arg;
+    GC_with_callee_saves_pushed(GC_do_blocking_inner, (ptr_t)(&my_data));
 }
-
+    
 struct start_info {
     void *(*start_routine)(void *);
     void *arg;
@@ -1066,16 +984,14 @@ struct start_info {
 				/* parent hasn't yet noticed.		*/
 };
 
-/* Called at thread exit.				*/
-/* Never called for main thread.  That's OK, since it	*/
-/* results in at most a tiny one-time leak.  And 	*/
-/* linuxthreads doesn't reclaim the main threads 	*/
-/* resources or id anyway.				*/
-void GC_thread_exit_proc(void *arg)
+int GC_unregister_my_thread(void)
 {
     GC_thread me;
 
     LOCK();
+    /* Wait for any GC that may be marking from our stack to	*/
+    /* complete before we remove this thread.			*/
+    GC_wait_for_gc_completion(FALSE);
     me = GC_lookup_thread(pthread_self());
     GC_destroy_thread_local(me);
     if (me -> flags & DETACHED) {
@@ -1087,9 +1003,18 @@ void GC_thread_exit_proc(void *arg)
        && !defined(USE_COMPILER_TLS) && !defined(DBG_HDRS_ALL)
       GC_remove_specific(GC_thread_key);
 #   endif
-    /* The following may run the GC from "nonexistent" thread.	*/
-    GC_wait_for_gc_completion(FALSE);
     UNLOCK();
+    return GC_SUCCESS;
+}
+
+/* Called at thread exit.				*/
+/* Never called for main thread.  That's OK, since it	*/
+/* results in at most a tiny one-time leak.  And 	*/
+/* linuxthreads doesn't reclaim the main threads 	*/
+/* resources or id anyway.				*/
+void GC_thread_exit_proc(void *arg)
+{
+    GC_unregister_my_thread();
 }
 
 int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
@@ -1147,7 +1072,46 @@ WRAP_FUNC(pthread_detach)(pthread_t thread)
 
 GC_bool GC_in_thread_creation = FALSE;
 
-void * GC_start_routine(void * arg)
+GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
+				      pthread_t my_pthread)
+{
+    GC_thread me;
+
+    GC_in_thread_creation = TRUE; /* OK to collect from unknow thread. */
+    me = GC_new_thread(my_pthread);
+    GC_in_thread_creation = FALSE;
+#   ifdef GC_DARWIN_THREADS
+      me -> stop_info.mach_thread = mach_thread_self();
+#   else
+      me -> stop_info.stack_ptr = sb -> mem_base;
+#   endif
+    me -> stack_end = sb -> mem_base;
+#   ifdef IA64
+      me -> backing_store_end = sb -> reg_base;
+#   endif /* IA64 */
+    return me;
+}
+
+int GC_register_my_thread(struct GC_stack_base *sb)
+{
+    pthread_t my_pthread = pthread_self();
+
+    LOCK();
+    GC_thread me = GC_lookup_thread(my_pthread);
+    if (0 == me) {
+        me = GC_register_my_thread_inner(sb, my_pthread);
+	me -> flags |= DETACHED;
+    	  /* Treat as detached, since we do not need to worry about	*/
+    	  /* pointer results.						*/
+	UNLOCK();
+        return GC_SUCCESS;
+    } else {
+	UNLOCK();
+	return GC_DUPLICATE;
+    }
+}
+
+void * GC_inner_start_routine(struct GC_stack_base *sb, void * arg)
 {
     int dummy;
     struct start_info * si = arg;
@@ -1164,39 +1128,8 @@ void * GC_start_routine(void * arg)
         GC_printf("sp = 0x%lx\n", (long) &arg);
 #   endif
     LOCK();
-    GC_in_thread_creation = TRUE;
-    me = GC_new_thread(my_pthread);
-    GC_in_thread_creation = FALSE;
-#ifdef GC_DARWIN_THREADS
-    me -> stop_info.mach_thread = mach_thread_self();
-#else
-    me -> stop_info.stack_ptr = 0;
-#endif
+    me = GC_register_my_thread_inner(sb, my_pthread);
     me -> flags = si -> flags;
-    /* me -> stack_end = GC_linux_stack_base(); -- currently (11/99)	*/
-    /* doesn't work because the stack base in /proc/self/stat is the 	*/
-    /* one for the main thread.  There is a strong argument that that's	*/
-    /* a kernel bug, but a pervasive one.				*/
-#   ifdef STACK_GROWS_DOWN
-      me -> stack_end = (ptr_t)(((word)(&dummy) + (GC_page_size - 1))
-		                & ~(GC_page_size - 1));
-#	  ifndef GC_DARWIN_THREADS
-        me -> stop_info.stack_ptr = me -> stack_end - 0x10;
-#	  endif
-	/* Needs to be plausible, since an asynchronous stack mark	*/
-	/* should not crash.						*/
-#   else
-      me -> stack_end = (ptr_t)((word)(&dummy) & ~(GC_page_size - 1));
-      me -> stop_info.stack_ptr = me -> stack_end + 0x10;
-#   endif
-    /* This is dubious, since we may be more than a page into the stack, */
-    /* and hence skip some of it, though it's not clear that matters.	 */
-#   ifdef IA64
-      me -> backing_store_end = (ptr_t)
-			(GC_save_regs_in_stack() & ~(GC_page_size - 1));
-      /* This is also < 100% convincing.  We should also read this 	*/
-      /* from /proc, but the hook to do so isn't there yet.		*/
-#   endif /* IA64 */
     UNLOCK();
     start = si -> start_routine;
 #   ifdef DEBUG_THREADS
@@ -1212,15 +1145,20 @@ void * GC_start_routine(void * arg)
 	UNLOCK();
 #   endif
     result = (*start)(start_arg);
-#if DEBUG_THREADS
+#   if DEBUG_THREADS
         GC_printf("Finishing thread 0x%x\n", (unsigned)pthread_self());
-#endif
+#   endif
     me -> status = result;
     pthread_cleanup_pop(1);
     /* Cleanup acquires lock, ensuring that we can't exit		*/
     /* while a collection that thinks we're alive is trying to stop     */
     /* us.								*/
     return(result);
+}
+
+void * GC_start_routine(void * arg)
+{
+    GC_call_with_stack_base(GC_inner_start_routine, arg);
 }
 
 int

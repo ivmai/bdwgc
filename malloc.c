@@ -69,7 +69,6 @@ ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
 	        GC_max_large_allocd_bytes = GC_large_allocd_bytes;
 	}
 	result = h -> hb_body;
-	GC_bytes_wasted += total_bytes - lb;
     }
     return result;
 }
@@ -99,14 +98,13 @@ ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
 /* hold lock:					*/
 void * GC_generic_malloc_inner(size_t lb, int k)
 {
-size_t lg;
-void *op;
-void **opp;
+    void *op;
 
     if(SMALL_OBJ(lb)) {
-        register struct obj_kind * kind = GC_obj_kinds + k;
-	lg = GC_size_map[lb];
-	opp = &(kind -> ok_freelist[lg]);
+        struct obj_kind * kind = GC_obj_kinds + k;
+	size_t lg = GC_size_map[lb];
+	void ** opp = &(kind -> ok_freelist[lg]);
+
         if( (op = *opp) == 0 ) {
 	    if (GC_size_map[lb] == 0) {
 	      if (!GC_is_initialized)  GC_init_inner();
@@ -121,10 +119,11 @@ void **opp;
         }
         *opp = obj_link(op);
         obj_link(op) = 0;
+        GC_bytes_allocd += GRANULES_TO_BYTES(lg);
     } else {
 	op = (ptr_t)GC_alloc_large_and_clear(ADD_SLOP(lb), k, 0);
+        GC_bytes_allocd += lb;
     }
-    GC_bytes_allocd += GRANULES_TO_BYTES(lg);
     
 out:
     return op;
@@ -202,7 +201,11 @@ void * GC_generic_malloc(size_t lb, int k)
 /* the stack.								*/
 
 /* Allocate lb bytes of atomic (pointerfree) data */
-void * GC_malloc_atomic(size_t lb)
+#ifdef THREAD_LOCAL_ALLOC
+  void * GC_core_malloc_atomic(size_t lb)
+#else
+  void * GC_malloc_atomic(size_t lb)
+#endif
 {
     void *op;
     void ** opp;
@@ -227,7 +230,11 @@ void * GC_malloc_atomic(size_t lb)
 }
 
 /* Allocate lb bytes of composite (pointerful) data */
-void * GC_malloc(size_t lb)
+#ifdef THREAD_LOCAL_ALLOC
+  void * GC_core_malloc(size_t lb)
+#else
+  void * GC_malloc(size_t lb)
+#endif
 {
     void *op;
     void **opp;

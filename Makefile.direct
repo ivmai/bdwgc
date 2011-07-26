@@ -31,10 +31,10 @@ srcdir= .
 VPATH= $(srcdir)
 
 # Atomic_ops installation directory.  If this doesn't exist, we create
-# it from the included atomic_ops distribution.
-AO_VERSION=0.6
-AO_SRC_DIR=$(srcdir)/atomic_ops-$(AO_VERSION)
-AO_INSTALL_DIR=$(AO_SRC_DIR)/installed
+# it from the included libatomic_ops distribution.
+AO_VERSION=1.0
+AO_SRC_DIR=$(srcdir)/libatomic_ops-$(AO_VERSION)
+AO_INSTALL_DIR=$(srcdir)/libatomic_ops-install
 
 CFLAGS= -O -I$(srcdir)/include -I$(AO_INSTALL_DIR)/include -DATOMIC_UNCOLLECTABLE -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS
 
@@ -42,7 +42,8 @@ CFLAGS= -O -I$(srcdir)/include -I$(AO_INSTALL_DIR)/include -DATOMIC_UNCOLLECTABL
 # -DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
 # To build the parallel collector in a static library on HP/UX,
 # add to the above:
-# -DGC_HPUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC -D_POSIX_C_SOURCE=199506L
+# -DGC_HPUX_THREADS -DTHREAD_LOCAL_ALLOC -D_POSIX_C_SOURCE=199506L -mt
+# FIXME: PARALLEL_MARK currently broken on HP/UX.
 # To build the thread-safe collector on Tru64, add to the above:
 # -pthread -DGC_OSF1_THREADS
 
@@ -236,11 +237,12 @@ HOSTCFLAGS=$(CFLAGS)
 #   causes the collector some system and pthread calls in a more transparent
 #   fashion than the usual macro-based approach.  Requires GNU ld, and
 #   currently probably works only with Linux.
-# -DTHREAD_LOCAL_ALLOC defines GC_local_malloc(), GC_local_malloc_atomic()
-#   and GC_local_gcj_malloc().  Needed for gc_gcj.h interface.  These allocate
-#   in a way that usually does not involve acquisition of a global lock.
-#   Currently requires -DGC_LINUX_THREADS, but should be easy to port to
-#   other pthreads environments.  Recommended for multiprocessors.
+# -DTHREAD_LOCAL_ALLOC defines GC_malloc(), GC_malloc_atomic()
+#   and GC_gcj_malloc() to use a per-thread set of free-lists.
+#   These then allocate  in a way that usually does not involve
+#   acquisition of a global lock.  Currently supported only on platforms
+#   such as Linux that use pthread_support.c.  Recommended for multiprocessors.
+#   Requires explicit GC_INIT() call.
 # -DUSE_COMPILER_TLS causes thread local allocation to use compiler-supported
 #   "__thread" thread-local variables.  This is the default in HP/UX.  It
 #   may help performance on recent Linux installations.  (It failed for
@@ -304,7 +306,7 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.S \
     sparc_mach_dep.S include/gc.h include/gc_typed.h include/gc_tiny_fl.h \
     include/private/gc_hdrs.h include/private/gc_priv.h \
     include/private/gcconfig.h include/private/gc_pmark.h \
-    include/gc_inl.h include/gc_inline.h include/gc_mark.h \
+    include/gc_inline.h include/gc_mark.h \
     threadlibs.c if_mach.c if_not_there.c gc_cpp.cc include/gc_cpp.h \
     gcname.c include/weakpointer.h include/private/gc_locks.h \
     mips_ultrix_mach_dep.s \
@@ -312,7 +314,7 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.S \
     include/javaxfc.h sparc_sunos4_mach_dep.s sparc_netbsd_mach_dep.s \
     include/gc_backptr.h \
     hpux_test_and_clear.s include/gc_gcj.h \
-    include/gc_local_alloc.h include/private/dbg_mlc.h \
+    include/private/dbg_mlc.h \
     include/private/specific.h powerpc_darwin_mach_dep.s \
     include/leak_detector.h include/gc_amiga_redirects.h \
     include/gc_pthread_redirects.h ia64_save_regs_in_stack.s \
@@ -335,25 +337,27 @@ DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 	tests/leak_test.c tests/thread_leak_test.c tests/middle.c
 
-GNU_BUILD_FILES= configure.in Makefile.am configure acinclude.m4 \
+GNU_BUILD_FILES= configure.ac Makefile.am configure acinclude.m4 \
 		 libtool.m4 install-sh configure.host Makefile.in \
 		 aclocal.m4 config.sub config.guess \
 		 include/Makefile.am include/Makefile.in \
 		 doc/Makefile.am doc/Makefile.in \
-		 ltmain.sh mkinstalldirs depcomp missing
+		 ltmain.sh mkinstalldirs depcomp missing \
+		 cord/Makefile.am tests/Makefile.am
 
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
 		 BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
 		 PCR-Makefile SMakefile.amiga Makefile.DLLs \
-		 digimars.mak Makefile.direct NT_STATIC_THREADS_MAKEFILE
+		 digimars.mak Makefile.direct NT_STATIC_THREADS_MAKEFILE \
+		 configure_atomic_ops.sh
 #	Makefile and Makefile.direct are copies of each other.
 
-OTHER_FILES= Makefile setjmp_t.c callprocs pc_excludes \
+OTHER_FILES= Makefile setjmp_t.c callprocs \
            MacProjects.sit.hqx MacOS.c \
            Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
            add_gc_prefix.c gc_cpp.cpp \
-	   version.h AmigaOS.c atomic_ops-0.6.tar.gz \
+	   version.h AmigaOS.c \
 	   $(TESTS) $(GNU_BUILD_FILES) $(OTHER_MAKEFILES)
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
@@ -379,8 +383,9 @@ all: gc.a gctest
 
 # if AO_INSTALL_DIR doesn't exist, we assume that it is pointing to
 # the default location, and we need to build
-$(AO_INSTALL_DIR):
-	tar xvfz $(AO_SRC_DIR).tar.gz; cd $(AO_SRC_DIR); make CC=$(CC) install
+$(AO_INSTALL_DIR): 
+	CC=$(CC) $(srcdir)/configure_atomic_ops.sh
+	cd $(AO_SRC_DIR); make CC=$(CC) install
 
 LEAKFLAGS=$(CFLAGS) -DFIND_LEAK
 
@@ -416,9 +421,11 @@ $(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
 # options affects the size of GC_arrays,
 # invalidating all .o files that rely on gc_priv.h
 
-mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc_mark.h $(srcdir)/include/private/gc_pmark.h
+mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc_mark.h \
+					 $(srcdir)/include/private/gc_pmark.h
 
-specific.o pthread_support.o: $(srcdir)/include/private/specific.h
+specific.o pthread_support.o: $(srcdir)/include/private/specific.h \
+			      $(srcdir)/include/gc_inline.h
 
 dbg_mlc.o gcj_mlc.o: $(srcdir)/include/private/dbg_mlc.h
 
@@ -617,34 +624,26 @@ add_gc_prefix: $(srcdir)/add_gc_prefix.c $(srcdir)/version.h
 gcname: $(srcdir)/gcname.c $(srcdir)/version.h
 	$(CC) -o gcname $(srcdir)/gcname.c
 
-gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
+#We assume this is being done from source directory.
+dist gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
 	cp Makefile Makefile.old
 	cp Makefile.direct Makefile
+	CC=$(CC) ./configure_atomic_ops.sh
+	cd $(AO_SRC_DIR); make dist
+	if test $(srcdir)/libatomic_ops-$(AO_VERSION) = $(AO_SRC_DIR); \
+	then \
+	  mv $(AO_SRC_DIR) $(AO_SRC_DIR).bak ; \
+	  tar xvfz $(AO_SRC_DIR).bak/libatomic_ops-$(AO_VERSION).tar.gz ; \
+	else \
+	  tar xvfz $(AO_SRC_DIR)/libatomic_ops-$(AO_VERSION).tar.gz ; \
+	fi
 	rm -f `./gcname`
 	ln -s . `./gcname`
-	./add_gc_prefix $(SRCS) $(DOC_FILES) $(OTHER_FILES) > /tmp/gc.tar-files
+	./add_gc_prefix $(SRCS) $(DOC_FILES) $(OTHER_FILES) libatomic_ops-$(AO_VERSION) > /tmp/gc.tar-files
 	tar cvfh gc.tar `cat /tmp/gc.tar-files`
 	cp gc.tar `./gcname`.tar
 	gzip `./gcname`.tar
 	rm `./gcname`
-
-pc_gc.tar: $(SRCS) $(OTHER_FILES)
-	tar cvfX pc_gc.tar pc_excludes $(SRCS) $(OTHER_FILES)
-
-floppy: pc_gc.tar
-	-mmd a:/cord
-	-mmd a:/cord/private
-	-mmd a:/include
-	-mmd a:/include/private
-	mkdir /tmp/pc_gc
-	cat pc_gc.tar | (cd /tmp/pc_gc; tar xvf -)
-	-mcopy -tmn /tmp/pc_gc/* a:
-	-mcopy -tmn /tmp/pc_gc/cord/* a:/cord
-	-mcopy -mn /tmp/pc_gc/cord/de_win.ICO a:/cord
-	-mcopy -tmn /tmp/pc_gc/cord/private/* a:/cord/private
-	-mcopy -tmn /tmp/pc_gc/include/* a:/include
-	-mcopy -tmn /tmp/pc_gc/include/private/* a:/include/private
-	rm -r /tmp/pc_gc
 
 gc.tar.Z: gc.tar
 	compress gc.tar

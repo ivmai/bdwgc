@@ -99,8 +99,25 @@ word GC_stop_count;	/* Incremented at the beginning of GC_stop_world. */
 
 sem_t GC_suspend_ack_sem;
 
-void GC_suspend_handler(int sig)
+void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
+
+#if defined(IA64) || defined(HP_PA)
+void GC_suspend_handler(int sig, siginfo_t *info, void *context)
 {
+  GC_with_callee_saves_pushed(GC_suspend_handler_inner, (ptr_t)(word)sig);
+}
+#else
+/* We believe that in all other cases the full context is already	*/
+/* in the signal handler frame.						*/
+void GC_suspend_handler(int sig, siginfo_t *info, void *context)
+{
+  GC_suspend_handler_inner((ptr_t)(word)sig, context);
+}
+#endif
+
+void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
+{
+    int sig = (int)(word)sig_arg;
     int dummy;
     pthread_t my_thread = pthread_self();
     GC_thread me;
@@ -366,13 +383,10 @@ void GC_stop_world()
     for (i = 0; i < n_live_threads; i++) {
 	retry:
 	  if (0 != (code = sem_wait(&GC_suspend_ack_sem))) {
-	      GC_err_printf("Sem_wait returned %d (errno = %d)\n", code, errno);
-#	      ifdef LINUX
-	        GC_err_printf("\tSem_wait is documented to never do this.\n");
-#	      endif
+	      /* On Linux, sem_wait is documented to always return zero.*/
+	      /* But the documentation appears to be incorrect.		*/
 	      if (errno == EINTR) {
 		/* Seems to happen with some versions of gdb.	*/
-		GC_err_printf("\tRetrying anyway\n");
 		goto retry;
 	      }
 	      ABORT("sem_wait for handler failed");
@@ -437,18 +451,19 @@ void GC_stop_init() {
     if (sem_init(&GC_suspend_ack_sem, 0, 0) != 0)
         ABORT("sem_init failed");
 
-    act.sa_flags = SA_RESTART;
+    act.sa_flags = SA_RESTART | SA_SIGINFO;
     if (sigfillset(&act.sa_mask) != 0) {
     	ABORT("sigfillset() failed");
     }
     GC_remove_allowed_signals(&act.sa_mask);
     /* SIG_THR_RESTART is set in the resulting mask.		*/
     /* It is unmasked by the handler when necessary. 		*/
-    act.sa_handler = GC_suspend_handler;
+    act.sa_sigaction = GC_suspend_handler;
     if (sigaction(SIG_SUSPEND, &act, NULL) != 0) {
     	ABORT("Cannot set SIG_SUSPEND handler");
     }
 
+    act.sa_flags &= ~ SA_SIGINFO;
     act.sa_handler = GC_restart_handler;
     if (sigaction(SIG_THR_RESTART, &act, NULL) != 0) {
     	ABORT("Cannot set SIG_THR_RESTART handler");

@@ -19,6 +19,11 @@
 # ifndef GC_PRIVATE_H
 # define GC_PRIVATE_H
 
+# include <stdlib.h>
+# if !(defined( sony_news ) )
+#   include <stddef.h>
+# endif
+
 #ifdef DGUX
 #   include <sys/types.h>
 #   include <sys/time.h>
@@ -31,13 +36,17 @@
 #   include <sys/resource.h>
 #endif /* BSD_TIME */
 
-# ifndef _GC_H
+#ifndef _GC_H
 #   include "../gc.h"
-# endif
+#endif
 
-# ifndef GC_MARK_H
+#ifndef GC_TINY_FL_H
+#   include "../gc_tiny_fl.h"
+#endif
+
+#ifndef GC_MARK_H
 #   include "../gc_mark.h"
-# endif
+#endif
 
 typedef GC_word word;
 typedef GC_signed_word signed_word;
@@ -51,7 +60,7 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 			/* byte displacements.				*/
 			/* Preferably identical to caddr_t, if it 	*/
 			/* exists.					*/
-			
+
 # ifndef GCCONFIG_H
 #   include "gcconfig.h"
 #   ifndef USE_MARK_BYTES
@@ -61,11 +70,6 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 
 # ifndef HEADERS_H
 #   include "gc_hdrs.h"
-# endif
-
-# include <stdlib.h>
-# if !(defined( sony_news ) )
-#   include <stddef.h>
 # endif
 
 #if __GNUC__ >= 3
@@ -798,10 +802,6 @@ struct _GC_arrays {
     word _bytes_allocd;
   	/* Number of words allocated during this collection cycle */
 # endif
-  word _bytes_wasted;
-  	/* Number of words wasted due to internal fragmentation	*/
-  	/* in large objects, or due to dropping blacklisted     */
-	/* blocks, since last gc.  Approximate.                 */
   word _bytes_finalized;
   	/* Approximate number of bytes in objects (and headers)	*/
   	/* That became ready for finalization in the last 	*/
@@ -889,15 +889,16 @@ struct _GC_arrays {
         /* Stubborn object pages that were changes before last call to	*/
 	/* GC_read_changed.						*/
 # endif
-# if defined(PROC_VDB) || defined(MPROTECT_VDB)
+# if defined(PROC_VDB) || defined(MPROTECT_VDB) || \
+     defined(GWW_VDB) || defined(MANUAL_VDB)
     page_hash_table _grungy_pages; /* Pages that were dirty at last 	   */
 				     /* GC_read_dirty.			   */
 # endif
-# ifdef MPROTECT_VDB
+# if defined(MPROTECT_VDB) || defined(MANUAL_VDB)
     volatile page_hash_table _dirty_pages;	
 			/* Pages dirtied since last GC_read_dirty. */
 # endif
-# ifdef PROC_VDB
+# if defined(PROC_VDB) || defined(GWW_VDB)
     page_hash_table _written_pages;	/* Pages ever dirtied	*/
 # endif
 # ifdef LARGE_CONFIG
@@ -914,7 +915,7 @@ struct _GC_arrays {
 #   endif
 # endif
   struct HeapSect {
-      ptr_t hs_start; word hs_bytes;
+      ptr_t hs_start; size_t hs_bytes;
   } _heap_sects[MAX_HEAP_SECTS];
 # if defined(MSWIN32) || defined(MSWINCE)
     ptr_t _heap_bases[MAX_HEAP_SECTS];
@@ -968,7 +969,6 @@ GC_API GC_FAR struct _GC_arrays GC_arrays;
 # endif
 # define GC_last_heap_addr GC_arrays._last_heap_addr
 # define GC_prev_heap_addr GC_arrays._prev_heap_addr
-# define GC_bytes_wasted GC_arrays._bytes_wasted
 # define GC_large_free_bytes GC_arrays._large_free_bytes
 # define GC_large_allocd_bytes GC_arrays._large_allocd_bytes
 # define GC_max_large_allocd_bytes GC_arrays._max_large_allocd_bytes
@@ -1002,13 +1002,14 @@ GC_API GC_FAR struct _GC_arrays GC_arrays;
 # define GC_excl_table GC_arrays._excl_table
 # define GC_all_nils GC_arrays._all_nils
 # define GC_top_index GC_arrays._top_index
-# if defined(PROC_VDB) || defined(MPROTECT_VDB)
+# if defined(PROC_VDB) || defined(MPROTECT_VDB) || \
+     defined(GWW_VDB) || defined(MANUAL_VDB)
 #   define GC_grungy_pages GC_arrays._grungy_pages
 # endif
-# ifdef MPROTECT_VDB
+# if defined(MPROTECT_VDB) || defined(MANUAL_VDB)
 #   define GC_dirty_pages GC_arrays._dirty_pages
 # endif
-# ifdef PROC_VDB
+# if defined(PROC_VDB) || defined(GWW_VDB)
 #   define GC_written_pages GC_arrays._written_pages
 # endif
 # define GC_composite_in_use GC_arrays._composite_in_use
@@ -1212,7 +1213,7 @@ extern long GC_large_alloc_warn_suppressed;
 #  define FINAL_MARK_BIT(sz) ((sz) > MAXOBJBYTES? 1 : HBLK_OBJS(sz))
 	/* Position of final, always set, mark bit.			*/
 #else /* MARK_BIT_PER_GRANULE */
-#  define MARK_BIT_NO(offset, sz) BYTES_TO_GRANULES((offset))
+#  define MARK_BIT_NO(offset, sz) BYTES_TO_GRANULES(offset)
 #  define MARK_BIT_OFFSET(sz) BYTES_TO_GRANULES(sz)
 #  define IF_PER_OBJ(x)
 #  define FINAL_MARK_BIT(sz) \
@@ -1292,12 +1293,16 @@ void GC_push_all_eager (ptr_t b, ptr_t t);
   /* stacks are scheduled for scanning in *GC_push_other_roots, which	*/
   /* is thread-package-specific.					*/
 #endif
-void GC_push_current_stack(ptr_t cold_gc_frame);
+void GC_push_current_stack(ptr_t cold_gc_frame, void *context);
   			/* Push enough of the current stack eagerly to	*/
   			/* ensure that callee-save registers saved in	*/
   			/* GC frames are scanned.			*/
   			/* In the non-threads case, schedule entire	*/
   			/* stack for scanning.				*/
+			/* The second argument is a pointer to the 	*/
+			/* (possibly null) thread context, for		*/
+			/* (currently hypothetical) more precise	*/
+			/* stack scanning.				*/
 void GC_push_roots(GC_bool all, ptr_t cold_gc_frame);
   			/* Push all or dirty roots.	*/
 extern void (*GC_push_other_roots)(void);
@@ -1323,11 +1328,13 @@ extern void (*GC_start_call_back) (void);
   			/* Not called if 0.  Called with allocation 	*/
   			/* lock held.					*/
   			/* 0 by default.				*/
-# if defined(USE_GENERIC_PUSH_REGS)
-  void GC_generic_push_regs(ptr_t cold_gc_frame);
-# else
-  void GC_push_regs(void);
-# endif
+void GC_push_regs_and_stack(ptr_t cold_gc_frame);
+
+void GC_push_regs(void);
+
+void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
+				 ptr_t arg);
+
 # if defined(SPARC) || defined(IA64)
   /* Cause all stacked registers to be saved in memory.  Return a	*/
   /* pointer to the top of the corresponding memory stack.		*/
@@ -1409,7 +1416,7 @@ GC_bool GC_register_main_static_data(void);
 		/* dynamic library registration.			*/
   
 /* Machine dependent startup routines */
-ptr_t GC_get_stack_base(void);	/* Cold end of stack */
+ptr_t GC_get_main_stack_base(void);	/* Cold end of stack */
 #ifdef IA64
   ptr_t GC_get_register_stack_base(void);
   					/* Cold end of register stack.	*/
@@ -1610,6 +1617,16 @@ ptr_t GC_allocobj(size_t sz, int kind);
   				/* Make the indicated 			*/
   				/* free list nonempty, and return its	*/
   				/* head.  Sz is in granules.		*/
+
+/* Allocation routines that bypass the thread local cache.	*/
+/* Used internally.						*/
+#ifdef THREAD_LOCAL_ALLOC
+  void * GC_core_malloc(size_t);
+  void * GC_core_malloc_atomic(size_t);
+# ifdef GC_GCJ_SUPPORT
+    void *GC_core_gcj_malloc(size_t, void *); 
+# endif
+#endif /* THREAD_LOCAL_ALLOC */
 
 void GC_free_inner(void * p);
 void GC_debug_free_inner(void * p);

@@ -143,7 +143,7 @@ GC_bool GC_has_other_debug_info(ptr_t p)
         /* e.g. RAND_MAX = 1.5* GC_heapsize.  But for typical cases,	*/
         /* it's not too bad.						*/
     for (i = 0; i < GC_n_heap_sects; ++ i) {
-	int size = GC_heap_sects[i].hs_bytes;
+	size_t size = GC_heap_sects[i].hs_bytes;
 	if (heap_offset < size) {
 	    return GC_heap_sects[i].hs_start + heap_offset;
 	} else {
@@ -847,7 +847,7 @@ void GC_check_heap_block(struct hblk *hbp, word dummy)
     struct hblkhdr * hhdr = HDR(hbp);
     size_t sz = hhdr -> hb_sz;
     int bit_no;
-    unsigned char *p, *plim;
+    char *p, *plim;
     
     p = hbp->hb_body;
     bit_no = 0;
