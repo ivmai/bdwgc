@@ -49,14 +49,12 @@
 #   include "gc_gcj.h"
 #endif
 
-/* We assume ANSI C for this interface.	*/
+void * GC_local_malloc(size_t bytes);
 
-GC_PTR GC_local_malloc(size_t bytes);
-
-GC_PTR GC_local_malloc_atomic(size_t bytes);
+void * GC_local_malloc_atomic(size_t bytes);
 
 #if defined(GC_GCJ_SUPPORT)
-  GC_PTR GC_local_gcj_malloc(size_t bytes,
+  void * GC_local_gcj_malloc(size_t bytes,
 			     void * ptr_to_struct_containing_descr);
 #endif
 

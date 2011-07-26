@@ -97,11 +97,14 @@
 # endif
 #endif /* GC_THREADS */
 
-#if defined(GC_THREADS) && !defined(GC_PTHREADS) && \
-    (defined(_WIN32) || defined(_MSC_VER) || defined(__CYGWIN__) \
+#if defined(GC_THREADS) && !defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
+    && (defined(_WIN32) || defined(_MSC_VER) || defined(__CYGWIN__) \
      || defined(__MINGW32__) || defined(__BORLANDC__) \
      || defined(_WIN32_WCE))
 # define GC_WIN32_THREADS
+# if defined(__CYGWIN__)
+#   define GC_PTHREADS
+# endif
 #endif
 
 #if defined(GC_SOLARIS_PTHREADS) && !defined(GC_SOLARIS_THREADS)

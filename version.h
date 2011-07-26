@@ -1,9 +1,9 @@
 /* The version here should match that in configure/configure.in	*/
 /* Eventually this one may become unnecessary.  For now we need	*/
 /* it to keep the old-style build process working.		*/
-#define GC_TMP_VERSION_MAJOR 6
-#define GC_TMP_VERSION_MINOR 4
-#define GC_TMP_ALPHA_VERSION GC_NOT_ALPHA
+#define GC_TMP_VERSION_MAJOR 7
+#define GC_TMP_VERSION_MINOR 0
+#define GC_TMP_ALPHA_VERSION 1
 
 #ifndef GC_NOT_ALPHA
 #   define GC_NOT_ALPHA 0xff

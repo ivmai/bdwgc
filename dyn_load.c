@@ -51,7 +51,7 @@
 
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE)) \
     && !defined(PCR)
-#if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && \
+#if !defined(SUNOS5DL) && !defined(IRIX5) && \
     !defined(MSWIN32) && !defined(MSWINCE) && \
     !(defined(ALPHA) && defined(OSF1)) && \
     !defined(HPUX) && !(defined(LINUX) && defined(__ELF__)) && \
@@ -70,15 +70,6 @@
 #   include <dlfcn.h>
 #   include <link.h>
 #endif
-#ifdef SUNOS4
-#   include <dlfcn.h>
-#   include <link.h>
-#   include <a.out.h>
-  /* struct link_map field overrides */
-#   define l_next	lm_next
-#   define l_addr	lm_addr
-#   define l_name	lm_name
-#endif
 
 #if defined(NETBSD)
 #   include <machine/elf_machdep.h>
@@ -96,25 +87,17 @@
 /* Newer versions of GNU/Linux define this macro.  We
  * define it similarly for any ELF systems that don't.  */
 #  ifndef ElfW
-#    if defined(FREEBSD)
-#      if __ELF_WORD_SIZE == 32
+#    ifdef NETBSD
+#      if ELFSIZE == 32
 #        define ElfW(type) Elf32_##type
 #      else
 #        define ElfW(type) Elf64_##type
 #      endif
 #    else
-#      ifdef NETBSD
-#        if ELFSIZE == 32
-#          define ElfW(type) Elf32_##type
-#        else
-#          define ElfW(type) Elf64_##type
-#        endif
+#      if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
+#        define ElfW(type) Elf32_##type
 #      else
-#        if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
-#          define ElfW(type) Elf32_##type
-#        else
-#          define ElfW(type) Elf64_##type
-#	 endif
+#        define ElfW(type) Elf64_##type
 #      endif
 #    endif
 #  endif
@@ -172,47 +155,7 @@ GC_FirstDLOpenedLinkMap()
 #   define dlopen GC_dlopen
 # endif
 
-#if defined(SUNOS4) && !defined(USE_PROC_FOR_LIBRARIES)
-
-#ifdef LINT
-    struct link_dynamic _DYNAMIC;
-#endif
-
-static struct link_map *
-GC_FirstDLOpenedLinkMap()
-{
-    extern struct link_dynamic _DYNAMIC;
-
-    if( &_DYNAMIC == 0) {
-        return(0);
-    }
-    return(_DYNAMIC.ld_un.ld_1->ld_loaded);
-}
-
-/* Return the address of the ld.so allocated common symbol	*/
-/* with the least address, or 0 if none.			*/
-static ptr_t GC_first_common()
-{
-    ptr_t result = 0;
-    extern struct link_dynamic _DYNAMIC;
-    struct rtc_symb * curr_symbol;
-    
-    if( &_DYNAMIC == 0) {
-        return(0);
-    }
-    curr_symbol = _DYNAMIC.ldd -> ldd_cp;
-    for (; curr_symbol != 0; curr_symbol = curr_symbol -> rtc_next) {
-        if (result == 0
-            || (ptr_t)(curr_symbol -> rtc_sp -> n_value) < result) {
-            result = (ptr_t)(curr_symbol -> rtc_sp -> n_value);
-        }
-    }
-    return(result);
-}
-
-#endif  /* SUNOS4 ... */
-
-# if defined(SUNOS4) || defined(SUNOS5DL)
+# if defined(SUNOS5DL)
 /* Add dynamic library data sections to the root set.		*/
 # if !defined(PCR) && !defined(GC_SOLARIS_THREADS) && defined(THREADS)
 #   ifndef SRC_M3
@@ -229,15 +172,6 @@ void GC_register_dynamic_libraries()
   for (lm = GC_FirstDLOpenedLinkMap();
        lm != (struct link_map *) 0;  lm = lm->l_next)
     {
-#     ifdef SUNOS4
-	struct exec *e;
-	 
-        e = (struct exec *) lm->lm_addr;
-        GC_add_roots_inner(
-      		    ((char *) (N_DATOFF(*e) + lm->lm_addr)),
-		    ((char *) (N_BSSADDR(*e) + e->a_bss + lm->lm_addr)),
-		    TRUE);
-#     endif
 #     ifdef SUNOS5DL
 	ElfW(Ehdr) * e;
         ElfW(Phdr) * p;
@@ -267,19 +201,6 @@ void GC_register_dynamic_libraries()
 	}
 #     endif
     }
-#   ifdef SUNOS4
-      {
-      	static ptr_t common_start = 0;
-      	ptr_t common_end;
-      	extern ptr_t GC_find_limit();
-      	
-      	if (common_start == 0) common_start = GC_first_common();
-      	if (common_start != 0) {
-      	    common_end = GC_find_limit(common_start, TRUE);
-      	    GC_add_roots_inner((char *)common_start, (char *)common_end, TRUE);
-      	}
-      }
-#   endif
 }
 
 # endif /* !USE_PROC ... */
@@ -501,12 +422,6 @@ GC_FirstDLOpenedLinkMap()
     if( cachedResult == 0 ) {
         int tag;
         for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {
-	    /* FIXME: The DT_DEBUG header is not mandated by the	*/
-	    /* ELF spec.  This code appears to be dependent on		*/
-	    /* idiosynchracies of older GNU tool chains.  If this code	*/
-	    /* fails for you, the real problem is probably that it is	*/
-	    /* being used at all.  You should be getting the 		*/
-	    /* dl_iterate_phdr version.					*/
             if( tag == DT_DEBUG ) {
                 struct link_map *lm
                         = ((struct r_debug *)(dp->d_un.d_ptr))->r_map;
@@ -610,7 +525,7 @@ void GC_register_dynamic_libraries()
       }
     }
     if (ioctl(fd, PIOCNMAP, &needed_sz) < 0) {
-	GC_err_printf2("fd = %d, errno = %d\n", fd, errno);
+	GC_err_printf("fd = %d, errno = %d\n", fd, errno);
     	ABORT("/proc PIOCNMAP ioctl failed");
     }
     if (needed_sz >= current_sz) {
@@ -620,7 +535,7 @@ void GC_register_dynamic_libraries()
 						(current_sz * sizeof(prmap_t)));
     }
     if (ioctl(fd, PIOCMAP, addr_map) < 0) {
-        GC_err_printf4("fd = %d, errno = %d, needed_sz = %d, addr_map = 0x%X\n",
+        GC_err_printf("fd = %d, errno = %d, needed_sz = %d, addr_map = 0x%X\n",
                         fd, errno, needed_sz, addr_map);
     	ABORT("/proc PIOCMAP ioctl failed");
     };
@@ -753,10 +668,6 @@ void GC_register_dynamic_libraries()
   
 # define HAVE_REGISTER_MAIN_STATIC_DATA
 
-  /* The frame buffer testing code is dead in this version.	*/
-  /* We leave it here temporarily in case the switch to just 	*/
-  /* testing for MEM_IMAGE sections causes un expected 		*/
-  /* problems.							*/
   GC_bool GC_warn_fb = TRUE;	/* Warn about traced likely 	*/
   				/* graphics memory.		*/
   GC_bool GC_disallow_ignore_fb = FALSE;
@@ -771,27 +682,25 @@ void GC_register_dynamic_libraries()
  
   /* Should [start, start+len) be treated as a frame buffer	*/
   /* and ignored?						*/
-  /* Unfortunately, we currently are not quite sure how to tell	*/
-  /* this automatically, and rely largely on user input.	*/
-  /* We expect that any mapping with type MEM_MAPPED (which 	*/
-  /* apparently excludes library data sections) can be safely	*/
-  /* ignored.  But we're too chicken to do that in this 	*/
-  /* version.							*/
+  /* Unfortunately, we currently have no real way to tell	*/
+  /* automatically, and rely largely on user input.		*/
+  /* FIXME: If we had more data on this phenomenon (e.g.	*/
+  /* is start aligned to a MB multiple?) we should be able to	*/
+  /* do better.							*/
   /* Based on a very limited sample, it appears that:		*/
-  /* 	- Frame buffer mappings appear as mappings of large	*/
-  /*	  length, usually a bit less than a power of two.	*/
-  /*	- The definition of "a bit less" in the above cannot	*/
-  /*	  be made more precise.					*/
-  /*	- Have a starting address at best 64K aligned.		*/
-  /*	- Have type == MEM_MAPPED.				*/
-  static GC_bool is_frame_buffer(ptr_t start, size_t len, DWORD tp)
+  /* 	- Frame buffer mappings appear as mappings of length	*/
+  /* 	  2**n MB - 192K.  (We guess the 192K can vary a bit.)	*/
+  /*	- Have a stating address at best 64K aligned.		*/
+  /* I'd love more information about the mapping, since I	*/
+  /* can't reproduce the problem.				*/
+  static GC_bool is_frame_buffer(ptr_t start, size_t len)
   {
     static GC_bool initialized = FALSE;
 #   define MB (1024*1024)
 #   define DEFAULT_FB_MB 15
 #   define MIN_FB_MB 3
 
-    if (GC_disallow_ignore_fb || tp != MEM_MAPPED) return FALSE;
+    if (GC_disallow_ignore_fb) return FALSE;
     if (!initialized) {
       char * ignore_fb_string =  GETENV("GC_IGNORE_FB");
 
@@ -833,10 +742,10 @@ void GC_register_dynamic_libraries()
 # ifdef DEBUG_VIRTUALQUERY
   void GC_dump_meminfo(MEMORY_BASIC_INFORMATION *buf)
   {
-    GC_printf4("BaseAddress = %lx, AllocationBase = %lx, RegionSize = %lx(%lu)\n",
+    GC_printf("BaseAddress = %lx, AllocationBase = %lx, RegionSize = %lx(%lu)\n",
 	       buf -> BaseAddress, buf -> AllocationBase, buf -> RegionSize,
 	       buf -> RegionSize);
-    GC_printf4("\tAllocationProtect = %lx, State = %lx, Protect = %lx, "
+    GC_printf("\tAllocationProtect = %lx, State = %lx, Protect = %lx, "
 	       "Type = %lx\n",
 	       buf -> AllocationProtect, buf -> State, buf -> Protect,
 	       buf -> Type);
@@ -880,11 +789,7 @@ void GC_register_dynamic_libraries()
 		&& (protect == PAGE_EXECUTE_READWRITE
 		    || protect == PAGE_READWRITE)
 		&& !GC_is_heap_base(buf.AllocationBase)
-		/* This used to check for
-		 * !is_frame_buffer(p, buf.RegionSize, buf.Type)
-		 * instead of just checking for MEM_IMAGE.
-		 * If something breaks, change it back. */
-		&& buf.Type == MEM_IMAGE) {  
+		&& !is_frame_buffer(p, buf.RegionSize)) {  
 #	        ifdef DEBUG_VIRTUALQUERY
 	          GC_dump_meminfo(&buf);
 #	        endif
@@ -940,15 +845,15 @@ void GC_register_dynamic_libraries()
       /* Check status AFTER checking moduleid because */
       /* of a bug in the non-shared ldr_next_module stub */
         if (status != 0 ) {
-            GC_printf1("dynamic_load: status = %ld\n", (long)status);
+            GC_printf("dynamic_load: status = %d\n", status);
             {
                 extern char *sys_errlist[];
                 extern int sys_nerr;
                 extern int errno;
                 if (errno <= sys_nerr) {
-                    GC_printf1("dynamic_load: %s\n", (long)sys_errlist[errno]);
+                    GC_printf("dynamic_load: %s\n", sys_errlist[errno]);
                } else {
-                    GC_printf1("dynamic_load: %d\n", (long)errno);
+                    GC_printf("dynamic_load: %d\n", errno);
                 }
         }
             ABORT("ldr_next_module failed");
@@ -1039,9 +944,9 @@ void GC_register_dynamic_libraries()
               break; /* Moved past end of shared library list --> finished */
           } else {
               if (errno <= sys_nerr) {
-                    GC_printf1("dynamic_load: %s\n", (long) sys_errlist[errno]);
+                    GC_printf("dynamic_load: %s\n", sys_errlist[errno]);
               } else {
-                    GC_printf1("dynamic_load: %d\n", (long) errno);
+                    GC_printf("dynamic_load: %d\n", errno);
 	      }
               ABORT("shl_get failed");
           }
@@ -1049,16 +954,16 @@ void GC_register_dynamic_libraries()
         }
 
 #     ifdef VERBOSE
-          GC_printf0("---Shared library---\n");
-          GC_printf1("\tfilename        = \"%s\"\n", shl_desc->filename);
-          GC_printf1("\tindex           = %d\n", index);
-          GC_printf1("\thandle          = %08x\n",
+          GC_printf("---Shared library---\n");
+          GC_printf("\tfilename        = \"%s\"\n", shl_desc->filename);
+          GC_printf("\tindex           = %d\n", index);
+          GC_printf("\thandle          = %08x\n",
 					(unsigned long) shl_desc->handle);
-          GC_printf1("\ttext seg. start = %08x\n", shl_desc->tstart);
-          GC_printf1("\ttext seg. end   = %08x\n", shl_desc->tend);
-          GC_printf1("\tdata seg. start = %08x\n", shl_desc->dstart);
-          GC_printf1("\tdata seg. end   = %08x\n", shl_desc->dend);
-          GC_printf1("\tref. count      = %lu\n", shl_desc->ref_count);
+          GC_printf("\ttext seg. start = %08x\n", shl_desc->tstart);
+          GC_printf("\ttext seg. end   = %08x\n", shl_desc->tend);
+          GC_printf("\tdata seg. start = %08x\n", shl_desc->dstart);
+          GC_printf("\tdata seg. end   = %08x\n", shl_desc->dend);
+          GC_printf("\tref. count      = %lu\n", shl_desc->ref_count);
 #     endif
 
       /* register shared library's data segment as a garbage collection root */
@@ -1143,18 +1048,18 @@ static void GC_dyld_image_add(struct mach_header* hdr, unsigned long slide) {
     for(i=0;i<sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]);i++) {
         sec = getsectbynamefromheader(
             hdr,GC_dyld_sections[i].seg,GC_dyld_sections[i].sect);
-            if(sec == NULL || sec->size == 0) continue;
-            start = slide + sec->addr;
-            end = start + sec->size;
-#		ifdef DARWIN_DEBUG
-                GC_printf4("Adding section at %p-%p (%lu bytes) from image %s\n",
-                start,end,sec->size,GC_dyld_name_for_hdr(hdr));
-#			endif
-        GC_add_roots((char*)start,(char*)end);
-        }
+        if(sec == NULL || sec->size == 0) continue;
+        start = slide + sec->addr;
+        end = start + sec->size;
 #	ifdef DARWIN_DEBUG
-    GC_print_static_roots();
+            GC_printf("Adding section at %p-%p (%lu bytes) from image %s\n",
+                      start,end,sec->size,GC_dyld_name_for_hdr(hdr));
 #	endif
+        GC_add_roots((char*)start,(char*)end);
+    }
+#   ifdef DARWIN_DEBUG
+       GC_print_static_roots();
+#   endif
 }
 
 /* This should never be called by a thread holding the lock */
@@ -1167,15 +1072,15 @@ static void GC_dyld_image_remove(struct mach_header* hdr, unsigned long slide) {
         if(sec == NULL || sec->size == 0) continue;
         start = slide + sec->addr;
         end = start + sec->size;
-#		ifdef DARWIN_DEBUG
-            GC_printf4("Removing section at %p-%p (%lu bytes) from image %s\n",
-                start,end,sec->size,GC_dyld_name_for_hdr(hdr));
-#		endif
+#	ifdef DARWIN_DEBUG
+            GC_printf("Removing section at %p-%p (%lu bytes) from image %s\n",
+                      start,end,sec->size,GC_dyld_name_for_hdr(hdr));
+#	endif
         GC_remove_roots((char*)start,(char*)end);
     }
-#	ifdef DARWIN_DEBUG
-    GC_print_static_roots();
-#	endif
+#   ifdef DARWIN_DEBUG
+        GC_print_static_roots();
+#   endif
 }
 
 void GC_register_dynamic_libraries() {
@@ -1196,7 +1101,7 @@ void GC_init_dyld() {
   if(initialized) return;
   
 #   ifdef DARWIN_DEBUG
-  GC_printf0("Registering dyld callbacks...\n");
+      GC_printf("Registering dyld callbacks...\n");
 #   endif
   
   /* Apple's Documentation:
@@ -1220,7 +1125,7 @@ void GC_init_dyld() {
     
     if (bind_fully_env == NULL) {
 #   ifdef DARWIN_DEBUG
-      GC_printf0("Forcing full bind of GC code...\n");
+      GC_printf("Forcing full bind of GC code...\n");
 #   endif
       
       if(!_dyld_bind_fully_image_containing_address((unsigned long*)GC_malloc))

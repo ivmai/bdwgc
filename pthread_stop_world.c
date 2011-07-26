@@ -30,11 +30,11 @@ void GC_print_sig_mask()
 
     if (pthread_sigmask(SIG_BLOCK, NULL, &blocked) != 0)
     	ABORT("pthread_sigmask");
-    GC_printf0("Blocked: ");
+    GC_printf("Blocked: ");
     for (i = 1; i < NSIG; i++) {
-        if (sigismember(&blocked, i)) { GC_printf1("%ld ",(long) i); }
+        if (sigismember(&blocked, i)) { GC_printf("%d ", i); }
     }
-    GC_printf0("\n");
+    GC_printf("\n");
 }
 
 #endif
@@ -43,14 +43,12 @@ void GC_print_sig_mask()
 /* handler from a set.						*/
 void GC_remove_allowed_signals(sigset_t *set)
 {
-#   ifdef NO_SIGNALS
-      if (sigdelset(set, SIGINT) != 0
+    if (sigdelset(set, SIGINT) != 0
 	  || sigdelset(set, SIGQUIT) != 0
 	  || sigdelset(set, SIGABRT) != 0
 	  || sigdelset(set, SIGTERM) != 0) {
         ABORT("sigdelset() failed");
-      }
-#   endif
+    }
 
 #   ifdef MPROTECT_VDB
       /* Handlers write to the thread structure, which is in the heap,	*/
@@ -117,7 +115,7 @@ void GC_suspend_handler(int sig)
     if (sig != SIG_SUSPEND) ABORT("Bad signal in suspend_handler");
 
 #if DEBUG_THREADS
-    GC_printf1("Suspending 0x%lx\n", my_thread);
+    GC_printf("Suspending 0x%x\n", (unsigned)my_thread);
 #endif
 
     me = GC_lookup_thread(my_thread);
@@ -164,7 +162,7 @@ void GC_suspend_handler(int sig)
     /* continue prematurely in a future round.				    */ 
 
 #if DEBUG_THREADS
-    GC_printf1("Continuing 0x%lx\n", my_thread);
+    GC_printf("Continuing 0x%x\n", (unsigned)my_thread);
 #endif
 }
 
@@ -192,7 +190,7 @@ void GC_restart_handler(int sig)
     */
 
 #if DEBUG_THREADS
-    GC_printf1("In GC_restart_handler for 0x%lx\n", pthread_self());
+    GC_printf("In GC_restart_handler for 0x%x\n", (unsigned)pthread_self());
 #endif
 }
 
@@ -215,7 +213,7 @@ void GC_push_all_stacks()
     
     if (!GC_thr_initialized) GC_thr_init();
     #if DEBUG_THREADS
-        GC_printf1("Pushing stacks from thread 0x%lx\n", (unsigned long) me);
+        GC_printf("Pushing stacks from thread 0x%x\n", (unsigned) me);
     #endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
@@ -241,9 +239,8 @@ void GC_push_all_stacks()
 	    IF_IA64(bs_lo = BACKING_STORE_BASE;)
         }
         #if DEBUG_THREADS
-            GC_printf3("Stack for thread 0x%lx = [%lx,%lx)\n",
-    	        (unsigned long) p -> id,
-		(unsigned long) lo, (unsigned long) hi);
+            GC_printf("Stack for thread 0x%x = [%p,%p)\n",
+    	              (unsigned)(p -> id), lo, hi);
         #endif
 	if (0 == lo) ABORT("GC_push_all_stacks: sp not set!\n");
 #       ifdef STACK_GROWS_UP
@@ -254,9 +251,8 @@ void GC_push_all_stacks()
 #	endif
 #	ifdef IA64
 #         if DEBUG_THREADS
-            GC_printf3("Reg stack for thread 0x%lx = [%lx,%lx)\n",
-    	        (unsigned long) p -> id,
-		(unsigned long) bs_lo, (unsigned long) bs_hi);
+            GC_printf("Reg stack for thread 0x%x = [%lx,%lx)\n",
+    	              (unsigned)p -> id, bs_lo, bs_hi);
 #	  endif
           if (pthread_equal(p -> id, me)) {
 	    GC_push_all_eager(bs_lo, bs_hi);
@@ -296,7 +292,8 @@ int GC_suspend_all()
 	    if (p -> thread_blocked) /* Will wait */ continue;
             n_live_threads++;
 	    #if DEBUG_THREADS
-	      GC_printf1("Sending suspend signal to 0x%lx\n", p -> id);
+	      GC_printf("Sending suspend signal to 0x%x\n",
+			(unsigned)(p -> id));
 	    #endif
         
         result = pthread_kill(p -> id, SIG_SUSPEND);
@@ -324,7 +321,7 @@ void GC_stop_world()
     int code;
 
     #if DEBUG_THREADS
-    GC_printf1("Stopping the world from 0x%lx\n", pthread_self());
+      GC_printf("Stopping the world from 0x%x\n", (unsigned)pthread_self());
     #endif
        
     /* Make sure all free list construction has stopped before we start. */
@@ -351,12 +348,10 @@ void GC_stop_world()
 	      if (wait_usecs > RETRY_INTERVAL) {
 		  int newly_sent = GC_suspend_all();
 
-#                 ifdef CONDPRINT
-		    if (GC_print_stats) {
-		      GC_printf1("Resent %ld signals after timeout\n",
-				 newly_sent);
-		    }
-#                 endif
+		  if (GC_print_stats) {
+		      GC_log_printf("Resent %d signals after timeout\n",
+				newly_sent);
+		  }
 		  sem_getvalue(&GC_suspend_ack_sem, &ack_count);
 		  if (newly_sent < n_live_threads - ack_count) {
 		      WARN("Lost some threads during GC_stop_world?!\n",0);
@@ -369,8 +364,17 @@ void GC_stop_world()
 	  }
       }
     for (i = 0; i < n_live_threads; i++) {
+	retry:
 	  if (0 != (code = sem_wait(&GC_suspend_ack_sem))) {
-	      GC_err_printf1("Sem_wait returned %ld\n", (unsigned long)code);
+	      GC_err_printf("Sem_wait returned %d (errno = %d)\n", code, errno);
+#	      ifdef LINUX
+	        GC_err_printf("\tSem_wait is documented to never do this.\n");
+#	      endif
+	      if (errno == EINTR) {
+		/* Seems to happen with some versions of gdb.	*/
+		GC_err_printf("\tRetrying anyway\n");
+		goto retry;
+	      }
 	      ABORT("sem_wait for handler failed");
 	  }
     }
@@ -378,7 +382,7 @@ void GC_stop_world()
       GC_release_mark_lock();
 #   endif
     #if DEBUG_THREADS
-      GC_printf1("World stopped from 0x%lx\n", pthread_self());
+      GC_printf("World stopped from 0x%x\n", (unsigned)pthread_self());
     #endif
     GC_stopping_thread = 0;  /* debugging only */
 }
@@ -394,7 +398,7 @@ void GC_start_world()
     register int result;
 
 #   if DEBUG_THREADS
-      GC_printf0("World starting\n");
+      GC_printf("World starting\n");
 #   endif
 
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
@@ -404,10 +408,11 @@ void GC_start_world()
 	    if (p -> thread_blocked) continue;
             n_live_threads++;
 	    #if DEBUG_THREADS
-	      GC_printf1("Sending restart signal to 0x%lx\n", p -> id);
+	      GC_printf("Sending restart signal to 0x%x\n",
+			(unsigned)(p -> id));
 	    #endif
         
-        result = pthread_kill(p -> id, SIG_THR_RESTART);
+            result = pthread_kill(p -> id, SIG_THR_RESTART);
 	    switch(result) {
                 case ESRCH:
                     /* Not really there anymore.  Possible? */
@@ -422,7 +427,7 @@ void GC_start_world()
       }
     }
     #if DEBUG_THREADS
-      GC_printf0("World started\n");
+      GC_printf("World started\n");
     #endif
 }
 
@@ -462,11 +467,9 @@ void GC_stop_init() {
       if (0 != GETENV("GC_NO_RETRY_SIGNALS")) {
 	  GC_retry_signals = FALSE;
       }
-#     ifdef CONDPRINT
-          if (GC_print_stats && GC_retry_signals) {
-              GC_printf0("Will retry suspend signal if necessary.\n");
-	  }
-#     endif
+      if (GC_print_stats && GC_retry_signals) {
+          GC_log_printf("Will retry suspend signal if necessary.\n");
+      }
 }
 
 #endif

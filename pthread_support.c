@@ -2,7 +2,7 @@
  * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
- * Copyright (c) 2000-2004 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (c) 2000-2001 by Hewlett-Packard Company.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -64,7 +64,7 @@
 # endif
 
 # if defined USE_HPUX_TLS
-    --> Macro replaced by USE_COMPILER_TLS
+#   error USE_HPUX_TLS macro was replaced by USE_COMPILER_TLS
 # endif
 
 # if (defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) || \
@@ -158,11 +158,13 @@
 #   endif
 #endif
 
-void GC_thr_init();
+void GC_thr_init(void);
 
 static GC_bool parallel_initialized = FALSE;
 
-void GC_init_parallel();
+GC_bool GC_need_to_lock = FALSE;
+
+void GC_init_parallel(void);
 
 # if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
 
@@ -179,25 +181,25 @@ static GC_bool keys_initialized;
 /* Note that the indexing scheme differs, in that gfl has finer size	*/
 /* resolution, even if not all entries are used.			*/
 /* We hold the allocator lock.						*/
-static void return_freelists(ptr_t *fl, ptr_t *gfl)
+static void return_freelists(void **fl, void **gfl)
 {
     int i;
-    ptr_t q, *qptr;
-    size_t nwords;
+    void *q, **qptr;
 
-    for (i = 1; i < NFREELISTS; ++i) {
-	nwords = i * (GRANULARITY/sizeof(word));
+    for (i = 1; i < TINY_FREELISTS; ++i) {
         qptr = fl + i;	
 	q = *qptr;
 	if ((word)q >= HBLKSIZE) {
-	  if (gfl[nwords] == 0) {
-	    gfl[nwords] = q;
+	  if (gfl[i] == 0) {
+	    gfl[i] = q;
 	  } else {
+	    GC_ASSERT(GC_size(q) == GRANULES_TO_BYTES(i));
+	    GC_ASSERT(GC_size(gfl[i]) == GRANULES_TO_BYTES(i));
 	    /* Concatenate: */
 	    for (; (word)q >= HBLKSIZE; qptr = &(obj_link(q)), q = *qptr);
 	    GC_ASSERT(0 == q);
-	    *qptr = gfl[nwords];
-	    gfl[nwords] = fl[i];
+	    *qptr = gfl[i];
+	    gfl[i] = fl[i];
 	  }
 	}
 	/* Clear fl[i], since the thread structure may hang around.	*/
@@ -228,23 +230,23 @@ void GC_init_thread_local(GC_thread p)
     if (0 != GC_setspecific(GC_thread_key, p)) {
 	ABORT("Failed to set thread specific allocation pointers");
     }
-    for (i = 1; i < NFREELISTS; ++i) {
-	p -> ptrfree_freelists[i] = (ptr_t)1;
-	p -> normal_freelists[i] = (ptr_t)1;
+    for (i = 1; i < TINY_FREELISTS; ++i) {
+	p -> ptrfree_freelists[i] = (void *)1;
+	p -> normal_freelists[i] = (void *)1;
 #	ifdef GC_GCJ_SUPPORT
-	  p -> gcj_freelists[i] = (ptr_t)1;
+	  p -> gcj_freelists[i] = (void *)1;
 #	endif
     }   
     /* Set up the size 0 free lists.	*/
-    p -> ptrfree_freelists[0] = (ptr_t)(&size_zero_object);
-    p -> normal_freelists[0] = (ptr_t)(&size_zero_object);
+    p -> ptrfree_freelists[0] = (void *)(&size_zero_object);
+    p -> normal_freelists[0] = (void *)(&size_zero_object);
 #   ifdef GC_GCJ_SUPPORT
-        p -> gcj_freelists[0] = (ptr_t)(-1);
+        p -> gcj_freelists[0] = (void *)(-1);
 #   endif
 }
 
 #ifdef GC_GCJ_SUPPORT
-  extern ptr_t * GC_gcjobjfreelist;
+  extern void ** GC_gcjobjfreelist;
 #endif
 
 /* We hold the allocator lock.	*/
@@ -262,16 +264,14 @@ void GC_destroy_thread_local(GC_thread p)
 #   endif
 }
 
-extern GC_PTR GC_generic_malloc_many();
-
-GC_PTR GC_local_malloc(size_t bytes)
+void * GC_local_malloc(size_t bytes)
 {
     if (EXPECT(!SMALL_ENOUGH(bytes),0)) {
         return(GC_malloc(bytes));
     } else {
-	int index = INDEX_FROM_BYTES(bytes);
-	ptr_t * my_fl;
-	ptr_t my_entry;
+	int index = INDEX_FROM_REQUESTED_BYTES(bytes);
+	void ** my_fl;
+	void * my_entry;
 #	if defined(REDIRECT_MALLOC) && !defined(USE_PTHREAD_SPECIFIC)
 	GC_key_t k = GC_thread_key;
 #	endif
@@ -295,42 +295,45 @@ GC_PTR GC_local_malloc(size_t bytes)
 	my_fl = ((GC_thread)tsd) -> normal_freelists + index;
 	my_entry = *my_fl;
 	if (EXPECT((word)my_entry >= HBLKSIZE, 1)) {
-	    ptr_t next = obj_link(my_entry);
-	    GC_PTR result = (GC_PTR)my_entry;
+	    void * next = obj_link(my_entry);
+	    void * result = (void *)my_entry;
 	    *my_fl = next;
 	    obj_link(my_entry) = 0;
 	    PREFETCH_FOR_WRITE(next);
+	    GC_ASSERT(GC_size(result) >= bytes + EXTRA_BYTES);
+	    GC_ASSERT(((word *)result)[1] == 0);
 	    return result;
 	} else if ((word)my_entry - 1 < DIRECT_GRANULES) {
 	    *my_fl = my_entry + index + 1;
             return GC_malloc(bytes);
 	} else {
-	    GC_generic_malloc_many(BYTES_FROM_INDEX(index), NORMAL, my_fl);
+	    GC_generic_malloc_many(RAW_BYTES_FROM_INDEX(index), NORMAL, my_fl);
 	    if (*my_fl == 0) return GC_oom_fn(bytes);
 	    return GC_local_malloc(bytes);
 	}
     }
 }
 
-GC_PTR GC_local_malloc_atomic(size_t bytes)
+void * GC_local_malloc_atomic(size_t bytes)
 {
     if (EXPECT(!SMALL_ENOUGH(bytes), 0)) {
         return(GC_malloc_atomic(bytes));
     } else {
-	int index = INDEX_FROM_BYTES(bytes);
-	ptr_t * my_fl = ((GC_thread)GC_getspecific(GC_thread_key))
+	int index = INDEX_FROM_REQUESTED_BYTES(bytes);
+	void **my_fl = ((GC_thread)GC_getspecific(GC_thread_key))
 		        -> ptrfree_freelists + index;
-	ptr_t my_entry = *my_fl;
+	void *my_entry = *my_fl;
     
 	if (EXPECT((word)my_entry >= HBLKSIZE, 1)) {
-	    GC_PTR result = (GC_PTR)my_entry;
+	    void * result = my_entry;
 	    *my_fl = obj_link(my_entry);
+	    GC_ASSERT(GC_size(result) >= bytes + EXTRA_BYTES);
 	    return result;
 	} else if ((word)my_entry - 1 < DIRECT_GRANULES) {
 	    *my_fl = my_entry + index + 1;
-        return GC_malloc_atomic(bytes);
+            return GC_malloc_atomic(bytes);
 	} else {
-	    GC_generic_malloc_many(BYTES_FROM_INDEX(index), PTRFREE, my_fl);
+	    GC_generic_malloc_many(RAW_BYTES_FROM_INDEX(index), PTRFREE, my_fl);
 	    /* *my_fl is updated while the collector is excluded;	*/
 	    /* the free list is always visible to the collector as 	*/
 	    /* such.							*/
@@ -350,19 +353,19 @@ GC_PTR GC_local_malloc_atomic(size_t bytes)
 
 extern int GC_gcj_kind;
 
-GC_PTR GC_local_gcj_malloc(size_t bytes,
+void * GC_local_gcj_malloc(size_t bytes,
 			   void * ptr_to_struct_containing_descr)
 {
     GC_ASSERT(GC_gcj_malloc_initialized);
     if (EXPECT(!SMALL_ENOUGH(bytes), 0)) {
         return GC_gcj_malloc(bytes, ptr_to_struct_containing_descr);
     } else {
-	int index = INDEX_FROM_BYTES(bytes);
-	ptr_t * my_fl = ((GC_thread)GC_getspecific(GC_thread_key))
+	int index = INDEX_FROM_REQUESTED_BYTES(bytes);
+	void **my_fl = ((GC_thread)GC_getspecific(GC_thread_key))
 	                -> gcj_freelists + index;
-	ptr_t my_entry = *my_fl;
+	void *my_entry = *my_fl;
 	if (EXPECT((word)my_entry >= HBLKSIZE, 1)) {
-	    GC_PTR result = (GC_PTR)my_entry;
+	    void * result = my_entry;
 	    GC_ASSERT(!GC_incremental);
 	    /* We assert that any concurrent marker will stop us.	*/
 	    /* Thus it is impossible for a mark procedure to see the 	*/
@@ -376,6 +379,7 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
 	    /* A memory barrier is probably never needed, since the 	*/
 	    /* action of stopping this thread will cause prior writes	*/
 	    /* to complete.						*/
+	    GC_ASSERT(GC_size(result) >= bytes + EXTRA_BYTES);
 	    GC_ASSERT(((void * volatile *)result)[1] == 0); 
 	    *(void * volatile *)result = ptr_to_struct_containing_descr; 
 	    return result;
@@ -385,7 +389,8 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
 	    	/* path.  Thus we leave the counter alone.		*/
             return GC_gcj_malloc(bytes, ptr_to_struct_containing_descr);
 	} else {
-	    GC_generic_malloc_many(BYTES_FROM_INDEX(index), GC_gcj_kind, my_fl);
+	    GC_generic_malloc_many(RAW_BYTES_FROM_INDEX(index),
+			           GC_gcj_kind, my_fl);
 	    if (*my_fl == 0) return GC_oom_fn(bytes);
 	    return GC_local_gcj_malloc(bytes, ptr_to_struct_containing_descr);
 	}
@@ -444,7 +449,7 @@ void * GC_mark_thread(void * id)
 	my_mark_no = GC_mark_no;
     }
 #   ifdef DEBUG_THREADS
-	GC_printf1("Starting mark helper for mark number %ld\n", my_mark_no);
+	GC_printf("Starting mark helper for mark number %lu\n", my_mark_no);
 #   endif
     GC_help_marker(my_mark_no);
   }
@@ -458,7 +463,7 @@ pthread_t GC_mark_threads[MAX_MARKERS];
 
 #define PTHREAD_CREATE REAL_FUNC(pthread_create)
 
-static void start_mark_threads()
+static void start_mark_threads(void)
 {
     unsigned i;
     pthread_attr_t attr;
@@ -489,11 +494,9 @@ static void start_mark_threads()
 	}
       }
 #   endif /* HPUX || GC_DGUX386_THREADS */
-#   ifdef CONDPRINT
-      if (GC_print_stats) {
-	GC_printf1("Starting %ld marker threads\n", GC_markers - 1);
-      }
-#   endif
+    if (GC_print_stats) {
+	GC_log_printf("Starting %ld marker threads\n", GC_markers - 1);
+    }
     for (i = 0; i < GC_markers - 1; ++i) {
       if (0 != PTHREAD_CREATE(GC_mark_threads + i, &attr,
 			      GC_mark_thread, (void *)(word)i)) {
@@ -504,7 +507,7 @@ static void start_mark_threads()
 
 #else  /* !PARALLEL_MARK */
 
-static __inline__ void start_mark_threads()
+static __inline__ void start_mark_threads(void)
 {
 }
 
@@ -514,7 +517,7 @@ GC_bool GC_thr_initialized = FALSE;
 
 volatile GC_thread GC_threads[THREAD_TABLE_SZ];
 
-void GC_push_thread_structures GC_PROTO((void))
+void GC_push_thread_structures(void)
 {
     GC_push_all((ptr_t)(GC_threads), (ptr_t)(GC_threads)+sizeof(GC_threads));
 #   if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
@@ -523,7 +526,7 @@ void GC_push_thread_structures GC_PROTO((void))
 #   endif
 }
 
-#ifdef THREAD_LOCAL_ALLOC
+#if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
 /* We must explicitly mark ptrfree and gcj free lists, since the free 	*/
 /* list links wouldn't otherwise be found.  We also set them in the 	*/
 /* normal free lists, since that involves touching less memory than if	*/
@@ -536,7 +539,7 @@ void GC_mark_thread_local_free_lists(void)
     
     for (i = 0; i < THREAD_TABLE_SZ; ++i) {
       for (p = GC_threads[i]; 0 != p; p = p -> next) {
-	for (j = 1; j < NFREELISTS; ++j) {
+	for (j = 1; j < TINY_FREELISTS; ++j) {
 	  q = p -> ptrfree_freelists[j];
 	  if ((word)q > HBLKSIZE) GC_set_fl_marks(q);
 	  q = p -> normal_freelists[j];
@@ -549,6 +552,36 @@ void GC_mark_thread_local_free_lists(void)
       }
     }
 }
+
+#if defined(GC_ASSERTIONS)
+# if defined(USE_COMPILER_TLS) || defined(USE_PTHREAD_SPECIFIC)
+    void GC_check_tls(void) {};
+# else
+    void GC_check_tls(void) {
+	int i, j;
+	GC_thread p;
+	ptr_t q;
+	
+	for (i = 0; i < THREAD_TABLE_SZ; ++i) {
+	  for (p = GC_threads[i]; 0 != p; p = p -> next) {
+	    for (j = 1; j < TINY_FREELISTS; ++j) {
+	      q = p -> ptrfree_freelists[j];
+	      if ((word)q > HBLKSIZE) GC_check_fl_marks(q);
+	      q = p -> normal_freelists[j];
+	      if ((word)q > HBLKSIZE) GC_check_fl_marks(q);
+#	      ifdef GC_GCJ_SUPPORT
+	        q = p -> gcj_freelists[j];
+	        if ((word)q > HBLKSIZE) GC_check_fl_marks(q);
+#	      endif /* GC_GCJ_SUPPORT */
+	    }
+	  }
+	}
+	if (GC_thread_key != 0)
+	  GC_check_tsd_marks(GC_thread_key);
+    }
+# endif
+#endif /* GC_ASSERTIONS */
+
 #endif /* THREAD_LOCAL_ALLOC */
 
 static struct GC_Thread_Rep first_thread;
@@ -561,12 +594,14 @@ GC_thread GC_new_thread(pthread_t id)
     GC_thread result;
     static GC_bool first_thread_used = FALSE;
     
+    GC_ASSERT(I_HOLD_LOCK());
     if (!first_thread_used) {
     	result = &first_thread;
     	first_thread_used = TRUE;
     } else {
         result = (struct GC_Thread_Rep *)
         	 GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
+	GC_ASSERT(result -> flags == 0);
     }
     if (result == 0) return(0);
     result -> id = id;
@@ -694,7 +729,7 @@ int GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
 
 #ifdef GC_LINUX_THREADS
 /* Return the number of processors, or i<= 0 if it can't be determined.	*/
-int GC_get_nprocs()
+int GC_get_nprocs(void)
 {
     /* Should be "return sysconf(_SC_NPROCESSORS_ONLN);" but that	*/
     /* appears to be buggy in many cases.				*/
@@ -733,7 +768,7 @@ int GC_get_nprocs()
 /* If wait_for_all is true, then we exit with the GC lock held and no	*/
 /* collection in progress; otherwise we just wait for the current GC	*/
 /* to finish.								*/
-extern GC_bool GC_collection_in_progress();
+extern GC_bool GC_collection_in_progress(void);
 void GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
     if (GC_incremental && GC_collection_in_progress()) {
@@ -813,7 +848,7 @@ void GC_fork_child_proc(void)
 
 #if defined(GC_DGUX386_THREADS)
 /* Return the number of processors, or i<= 0 if it can't be determined. */
-int GC_get_nprocs()
+int GC_get_nprocs(void)
 {
     /* <takis@XFree86.Org> */
     int numCpus;
@@ -830,18 +865,18 @@ int GC_get_nprocs()
       numCpus = pm_sysinfo.idle_vp_count;
 
 #  ifdef DEBUG_THREADS
-    GC_printf1("Number of active CPUs in this system: %d\n", numCpus);
+    GC_printf("Number of active CPUs in this system: %d\n", numCpus);
 #  endif
     return(numCpus);
 }
 #endif /* GC_DGUX386_THREADS */
 
 /* We hold the allocation lock.	*/
-void GC_thr_init()
+void GC_thr_init(void)
 {
-#   ifndef GC_DARWIN_THREADS
-      int dummy;
-#   endif
+#	ifndef GC_DARWIN_THREADS
+        int dummy;
+#	endif
     GC_thread t;
 
     if (GC_thr_initialized) return;
@@ -909,19 +944,16 @@ void GC_thr_init()
 #	endif
       }
 #   ifdef PARALLEL_MARK
-#     ifdef CONDPRINT
-        if (GC_print_stats) {
-          GC_printf2("Number of processors = %ld, "
+      if (GC_print_stats) {
+          GC_log_printf("Number of processors = %ld, "
 		 "number of marker threads = %ld\n", GC_nprocs, GC_markers);
-	}
-#     endif
+      }
       if (GC_markers == 1) {
 	GC_parallel = FALSE;
-#	ifdef CONDPRINT
-	  if (GC_print_stats) {
-	    GC_printf0("Single marker thread, turning off parallel marking\n");
-	  }
-#	endif
+	if (GC_print_stats) {
+	    GC_log_printf(
+		"Single marker thread, turning off parallel marking\n");
+	}
       } else {
 	GC_parallel = TRUE;
 	/* Disable true incremental collection, but generational is OK.	*/
@@ -938,7 +970,7 @@ void GC_thr_init()
 /* Called without allocation lock.			*/
 /* Must be called before a second thread is created.	*/
 /* Called without allocation lock.			*/
-void GC_init_parallel()
+void GC_init_parallel(void)
 {
     if (parallel_initialized) return;
     parallel_initialized = TRUE;
@@ -1127,9 +1159,9 @@ void * GC_start_routine(void * arg)
 
     my_pthread = pthread_self();
 #   ifdef DEBUG_THREADS
-        GC_printf1("Starting thread 0x%lx\n", my_pthread);
-        GC_printf1("pid = %ld\n", (long) getpid());
-        GC_printf1("sp = 0x%lx\n", (long) &arg);
+        GC_printf("Starting thread 0x%x\n", (unsigned)my_pthread);
+        GC_printf("pid = %ld\n", (long) getpid());
+        GC_printf("sp = 0x%lx\n", (long) &arg);
 #   endif
     LOCK();
     GC_in_thread_creation = TRUE;
@@ -1168,7 +1200,7 @@ void * GC_start_routine(void * arg)
     UNLOCK();
     start = si -> start_routine;
 #   ifdef DEBUG_THREADS
-	GC_printf1("start_routine = 0x%lx\n", start);
+	GC_printf("start_routine = %p\n", (void *)start);
 #   endif
     start_arg = si -> arg;
     sem_post(&(si -> registered));	/* Last action on si.	*/
@@ -1181,7 +1213,7 @@ void * GC_start_routine(void * arg)
 #   endif
     result = (*start)(start_arg);
 #if DEBUG_THREADS
-        GC_printf1("Finishing thread 0x%x\n", pthread_self());
+        GC_printf("Finishing thread 0x%x\n", (unsigned)pthread_self());
 #endif
     me -> status = result;
     pthread_cleanup_pop(1);
@@ -1243,14 +1275,15 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     si -> flags = my_flags;
     UNLOCK();
 #   ifdef DEBUG_THREADS
-        GC_printf1("About to start new thread from thread 0x%X\n",
-		   pthread_self());
+        GC_printf("About to start new thread from thread 0x%x\n",
+		  (unsigned)pthread_self());
 #   endif
+    GC_need_to_lock = TRUE;
 
     result = REAL_FUNC(pthread_create)(new_thread, attr, GC_start_routine, si);
 
 #   ifdef DEBUG_THREADS
-        GC_printf1("Started thread 0x%X\n", *new_thread);
+        GC_printf("Started thread 0x%x\n", (unsigned)(*new_thread));
 #   endif
     /* Wait until child has been added to the thread table.		*/
     /* This also ensures that we hold onto si until the child is done	*/
@@ -1300,7 +1333,7 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 #endif /* GENERIC_COMPARE_AND_SWAP */
 /* Spend a few cycles in a way that can't introduce contention with	*/
 /* othre threads.							*/
-void GC_pause()
+void GC_pause(void)
 {
     int i;
 #   if !defined(__GNUC__) || defined(__INTEL_COMPILER)
@@ -1320,7 +1353,7 @@ void GC_pause()
 #define SPIN_MAX 128	/* Maximum number of calls to GC_pause before	*/
 			/* give up.					*/
 
-VOLATILE GC_bool GC_collecting = 0;
+volatile GC_bool GC_collecting = 0;
 			/* A hint that we're in the collector and       */
                         /* holding the allocation lock for an           */
                         /* extended period.                             */
@@ -1392,10 +1425,10 @@ void GC_generic_lock(pthread_mutex_t * lock)
 /* as STL alloc.h.  This isn't really the right way to do this.   */
 /* but until the POSIX scheduling mess gets straightened out ...  */
 
-volatile unsigned int GC_allocate_lock = 0;
+volatile AO_TS_t GC_allocate_lock = 0;
 
 
-void GC_lock()
+void GC_lock(void)
 {
 #   define low_spin_max 30  /* spin cycles if we suspect uniprocessor */
 #   define high_spin_max SPIN_MAX /* spin cycles for multiprocessor */
@@ -1405,18 +1438,18 @@ void GC_lock()
     unsigned my_last_spins;
     int i;
 
-    if (!GC_test_and_set(&GC_allocate_lock)) {
+    if (!AO_test_and_set_acquire(&GC_allocate_lock)) {
         return;
     }
     my_spin_max = spin_max;
     my_last_spins = last_spins;
     for (i = 0; i < my_spin_max; i++) {
         if (GC_collecting || GC_nprocs == 1) goto yield;
-        if (i < my_last_spins/2 || GC_allocate_lock) {
+        if (i < my_last_spins/2) {
             GC_pause();
             continue;
         }
-        if (!GC_test_and_set(&GC_allocate_lock)) {
+        if (!AO_test_and_set_acquire(&GC_allocate_lock)) {
 	    /*
              * got it!
              * Spinning worked.  Thus we're probably not being scheduled
@@ -1432,7 +1465,7 @@ void GC_lock()
     spin_max = low_spin_max;
 yield:
     for (i = 0;; ++i) {
-        if (!GC_test_and_set(&GC_allocate_lock)) {
+        if (!AO_test_and_set_acquire(&GC_allocate_lock)) {
             return;
         }
 #       define SLEEP_THRESHOLD 12
@@ -1458,7 +1491,7 @@ yield:
 }
 
 #else  /* !USE_SPINLOCK */
-void GC_lock()
+void GC_lock(void)
 {
 #ifndef NO_PTHREAD_TRYLOCK
     if (1 == GC_nprocs || GC_collecting) {
@@ -1495,7 +1528,7 @@ void GC_lock()
 
 static pthread_cond_t builder_cv = PTHREAD_COND_INITIALIZER;
 
-void GC_acquire_mark_lock()
+void GC_acquire_mark_lock(void)
 {
 /*
     if (pthread_mutex_lock(&mark_mutex) != 0) {
@@ -1508,7 +1541,7 @@ void GC_acquire_mark_lock()
 #   endif
 }
 
-void GC_release_mark_lock()
+void GC_release_mark_lock(void)
 {
     GC_ASSERT(GC_mark_lock_holder == pthread_self());
 #   ifdef GC_ASSERTIONS
@@ -1524,7 +1557,7 @@ void GC_release_mark_lock()
 /* 2) Partial free lists referenced only by locals may not be scanned 	*/
 /*    correctly, e.g. if they contain "pointer-free" objects, since the	*/
 /*    free-list link may be ignored.					*/
-void GC_wait_builder()
+void GC_wait_builder(void)
 {
     GC_ASSERT(GC_mark_lock_holder == pthread_self());
 #   ifdef GC_ASSERTIONS
@@ -1539,7 +1572,7 @@ void GC_wait_builder()
 #   endif
 }
 
-void GC_wait_for_reclaim()
+void GC_wait_for_reclaim(void)
 {
     GC_acquire_mark_lock();
     while (GC_fl_builder_count > 0) {
@@ -1548,7 +1581,7 @@ void GC_wait_for_reclaim()
     GC_release_mark_lock();
 }
 
-void GC_notify_all_builder()
+void GC_notify_all_builder(void)
 {
     GC_ASSERT(GC_mark_lock_holder == pthread_self());
     if (pthread_cond_broadcast(&builder_cv) != 0) {
@@ -1562,7 +1595,7 @@ void GC_notify_all_builder()
 
 static pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
 
-void GC_wait_marker()
+void GC_wait_marker(void)
 {
     GC_ASSERT(GC_mark_lock_holder == pthread_self());
 #   ifdef GC_ASSERTIONS
@@ -1577,7 +1610,7 @@ void GC_wait_marker()
 #   endif
 }
 
-void GC_notify_all_marker()
+void GC_notify_all_marker(void)
 {
     if (pthread_cond_broadcast(&mark_cv) != 0) {
 	ABORT("pthread_cond_broadcast failed");

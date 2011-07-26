@@ -1,4 +1,4 @@
-# Makefile for Windows NT.  Assumes Microsoft compiler.
+# Makefile for Windows NT.  Assumes Microsoft compiler, and a single thread.
 # DLLs are included in the root set under NT, but not under win32S.
 # Use "nmake nodebug=1 all" for optimized versions of library, gctest and editor.
 
@@ -11,10 +11,10 @@ OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_r
 all: gctest.exe cord\de.exe test_cpp.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(cvars) -Iinclude -DSILENT -DALL_INTERIOR_POINTERS -D__STDC__ -DGC_NOT_DLL -DGC_WIN32_THREADS $*.c /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(cvars) -Iinclude -DALL_INTERIOR_POINTERS -D__STDC__ -DGC_NOT_DLL -DGC_WIN32_THREADS $*.c /Fo$*.obj
 
 .cpp.obj:
-	$(cc) $(cdebug) $(cflags) $(cvars) -Iinclude -DSILENT -DALL_INTERIOR_POINTERS -DGC_NOT_DLL $*.CPP -DGC_WIN32_THREADS /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(cvars) -Iinclude -DALL_INTERIOR_POINTERS -DGC_NOT_DLL $*.CPP -DGC_WIN32_THREADS /Fo$*.obj
 
 $(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc_mark.h
 

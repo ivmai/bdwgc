@@ -50,22 +50,21 @@ typedef struct GC_Thread_Rep {
 				/* reclamation of any data it might 	*/
 				/* reference.				*/
 #   ifdef THREAD_LOCAL_ALLOC
-#	if CPP_WORDSZ == 64 && defined(ALIGN_DOUBLE)
-#	    define GRANULARITY 16
-#	    define NFREELISTS 49
-#	else
-#	    define GRANULARITY 8
-#	    define NFREELISTS 65
-#	endif
-	/* The ith free list corresponds to size i*GRANULARITY */
-#	define INDEX_FROM_BYTES(n) ((ADD_SLOP(n) + GRANULARITY - 1)/GRANULARITY)
-#	define BYTES_FROM_INDEX(i) ((i) * GRANULARITY - EXTRA_BYTES)
+	/* The ith free list corresponds to size i*GRANULE_BYTES	*/
+        /* Convert the number of requested bytes to a suitable free	*/
+    	/* list index, adding EXTRA_BYTES if appripriate.		*/
+#	define INDEX_FROM_REQUESTED_BYTES(n) \
+    			((ADD_SLOP(n) + GRANULE_BYTES - 1)/GRANULE_BYTES)
+        /* Convert a free list index to the actual size of objects	*/
+    	/* on that list, including extra space we added.  Not an	*/
+    	/* inverse of the above.					*/
+#	define RAW_BYTES_FROM_INDEX(i) ((i) * GRANULE_BYTES)
 #	define SMALL_ENOUGH(bytes) (ADD_SLOP(bytes) <= \
-				    (NFREELISTS-1)*GRANULARITY)
-	ptr_t ptrfree_freelists[NFREELISTS];
-	ptr_t normal_freelists[NFREELISTS];
+				    (TINY_FREELISTS-1)*GRANULE_BYTES)
+	void * ptrfree_freelists[TINY_FREELISTS];
+	void * normal_freelists[TINY_FREELISTS];
 #	ifdef GC_GCJ_SUPPORT
-	  ptr_t gcj_freelists[NFREELISTS];
+	  void * gcj_freelists[TINY_FREELISTS];
 #	endif
 		/* Free lists contain either a pointer or a small count */
 		/* reflecting the number of granules allocated at that	*/
@@ -78,7 +77,7 @@ typedef struct GC_Thread_Rep {
 		/* >= HBLKSIZE  => pointer to nonempty free list.	*/
 		/* > DIRECT_GRANULES, < HBLKSIZE ==> transition to	*/
 		/*    local alloc, equivalent to 0.			*/
-#	define DIRECT_GRANULES (HBLKSIZE/GRANULARITY)
+#	define DIRECT_GRANULES (HBLKSIZE/GRANULE_BYTES)
 		/* Don't use local free lists for up to this much 	*/
 		/* allocation.						*/
 #   endif

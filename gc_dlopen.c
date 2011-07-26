@@ -65,9 +65,7 @@
 #ifdef GC_USE_LD_WRAP
   void * __wrap_dlopen(const char *path, int mode)
 #else
-  void * GC_dlopen(path, mode)
-  GC_CONST char * path;
-  int mode;
+  void * GC_dlopen(const char *path, int mode)
 #endif
 {
     void * result;

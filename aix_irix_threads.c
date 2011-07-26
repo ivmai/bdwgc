@@ -26,10 +26,9 @@
  * as a base instead.
  */
 
-# include "private/gc_priv.h"
-
 # if defined(GC_IRIX_THREADS) || defined(GC_AIX_THREADS)
 
+# include "private/gc_priv.h"
 # include <pthread.h>
 # include <assert.h>
 # include <semaphore.h>
@@ -64,6 +63,8 @@ void GC_print_sig_mask()
     GC_printf0("\n");
 }
 #endif
+
+GC_bool GC_need_to_lock = FALSE;
 
 /* We use the allocation lock to protect thread-related data structures. */
 
@@ -583,6 +584,7 @@ GC_pthread_create(pthread_t *new_thread,
     pthread_attr_getdetachstate(attr, &detachstate);
     if (PTHREAD_CREATE_DETACHED == detachstate) my_flags |= DETACHED;
     si -> flags = my_flags;
+    GC_need_to_lock = TRUE;
     result = pthread_create(new_thread, attr, GC_start_routine, si); 
 
     /* Wait until child has been added to the thread table.		*/
@@ -617,9 +619,9 @@ VOLATILE GC_bool GC_collecting = 0; /* A hint that we're in the collector and   
 
 #define SLEEP_THRESHOLD 3
 
-volatile unsigned int GC_allocate_lock = 0;
-#define GC_TRY_LOCK() !GC_test_and_set(&GC_allocate_lock)
-#define GC_LOCK_TAKEN GC_allocate_lock
+volatile AO_TS_t GC_allocate_lock = 0;
+#define GC_TRY_LOCK() !AO_test_and_set_acquire(&GC_allocate_lock)
+#define GC_LOCK_TAKEN ((int)(GC_allocate_lock))  /* FIXME */
 
 void GC_lock()
 {

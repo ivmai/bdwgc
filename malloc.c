@@ -1,7 +1,7 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
- * Copyright (c) 2000 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -12,53 +12,52 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, February 7, 1996 4:32 pm PST */
  
 #include <stdio.h>
 #include "private/gc_priv.h"
 
-extern ptr_t GC_clear_stack();	/* in misc.c, behaves like identity */
-void GC_extend_size_map();	/* in misc.c. */
+extern void * GC_clear_stack(void *);	/* in misc.c, behaves like identity */
+void GC_extend_size_map(size_t);	/* in misc.c. */
 
 /* Allocate reclaim list for kind:	*/
 /* Return TRUE on success		*/
-GC_bool GC_alloc_reclaim_list(kind)
-register struct obj_kind * kind;
+GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
 {
     struct hblk ** result = (struct hblk **)
-    		GC_scratch_alloc((MAXOBJSZ+1) * sizeof(struct hblk *));
+    		GC_scratch_alloc((MAXOBJGRANULES+1) * sizeof(struct hblk *));
     if (result == 0) return(FALSE);
-    BZERO(result, (MAXOBJSZ+1)*sizeof(struct hblk *));
+    BZERO(result, (MAXOBJGRANULES+1)*sizeof(struct hblk *));
     kind -> ok_reclaim_list = result;
     return(TRUE);
 }
 
-/* Allocate a large block of size lw words.	*/
+/* Allocate a large block of size lb bytes.	*/
 /* The block is not cleared.			*/
 /* Flags is 0 or IGNORE_OFF_PAGE.		*/
 /* We hold the allocation lock.			*/
-ptr_t GC_alloc_large(lw, k, flags)
-word lw;
-int k;
-unsigned flags;
+/* EXTRA_BYTES were already added to lb.	*/
+ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
 {
     struct hblk * h;
-    word n_blocks = OBJ_SZ_TO_BLOCKS(lw);
+    word n_blocks;
     ptr_t result;
 	
+    /* Round up to a multiple of a granule. */
+      lb = (lb + GRANULE_BYTES - 1) & ~(GRANULE_BYTES - 1);
+    n_blocks = OBJ_SZ_TO_BLOCKS(lb);
     if (!GC_is_initialized) GC_init_inner();
     /* Do our share of marking work */
         if(GC_incremental && !GC_dont_gc)
 	    GC_collect_a_little_inner((int)n_blocks);
-    h = GC_allochblk(lw, k, flags);
+    h = GC_allochblk(lb, k, flags);
 #   ifdef USE_MUNMAP
 	if (0 == h) {
 	    GC_merge_unmapped();
-	    h = GC_allochblk(lw, k, flags);
+	    h = GC_allochblk(lb, k, flags);
 	}
 #   endif
     while (0 == h && GC_collect_or_expand(n_blocks, (flags != 0))) {
-	h = GC_allochblk(lw, k, flags);
+	h = GC_allochblk(lb, k, flags);
     }
     if (h == 0) {
 	result = 0;
@@ -69,8 +68,8 @@ unsigned flags;
 	    if (GC_large_allocd_bytes > GC_max_large_allocd_bytes)
 	        GC_max_large_allocd_bytes = GC_large_allocd_bytes;
 	}
-	result = (ptr_t) (h -> hb_body);
-	GC_words_wasted += BYTES_TO_WORDS(total_bytes) - lw;
+	result = h -> hb_body;
+	GC_bytes_wasted += total_bytes - lb;
     }
     return result;
 }
@@ -78,13 +77,11 @@ unsigned flags;
 
 /* Allocate a large block of size lb bytes.  Clear if appropriate.	*/
 /* We hold the allocation lock.						*/
-ptr_t GC_alloc_large_and_clear(lw, k, flags)
-word lw;
-int k;
-unsigned flags;
+/* EXTRA_BYTES were already added to lb.				*/
+ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
 {
-    ptr_t result = GC_alloc_large(lw, k, flags);
-    word n_blocks = OBJ_SZ_TO_BLOCKS(lw);
+    ptr_t result = GC_alloc_large(lb, k, flags);
+    word n_blocks = OBJ_SZ_TO_BLOCKS(lb);
 
     if (0 == result) return 0;
     if (GC_debugging_started || GC_obj_kinds[k].ok_init) {
@@ -100,60 +97,34 @@ unsigned flags;
 /* require special handling on allocation.	*/
 /* First a version that assumes we already	*/
 /* hold lock:					*/
-ptr_t GC_generic_malloc_inner(lb, k)
-register word lb;
-register int k;
+void * GC_generic_malloc_inner(size_t lb, int k)
 {
-register word lw;
-register ptr_t op;
-register ptr_t *opp;
+size_t lg;
+void *op;
+void **opp;
 
-    if( SMALL_OBJ(lb) ) {
+    if(SMALL_OBJ(lb)) {
         register struct obj_kind * kind = GC_obj_kinds + k;
-#       ifdef MERGE_SIZES
-	  lw = GC_size_map[lb];
-#	else
-	  lw = ALIGNED_WORDS(lb);
-	  if (lw == 0) lw = MIN_WORDS;
-#       endif
-	opp = &(kind -> ok_freelist[lw]);
+	lg = GC_size_map[lb];
+	opp = &(kind -> ok_freelist[lg]);
         if( (op = *opp) == 0 ) {
-#	    ifdef MERGE_SIZES
-	      if (GC_size_map[lb] == 0) {
-	        if (!GC_is_initialized)  GC_init_inner();
-	        if (GC_size_map[lb] == 0) GC_extend_size_map(lb);
-	        return(GC_generic_malloc_inner(lb, k));
-	      }
-#	    else
-	      if (!GC_is_initialized) {
-	        GC_init_inner();
-	        return(GC_generic_malloc_inner(lb, k));
-	      }
-#	    endif
+	    if (GC_size_map[lb] == 0) {
+	      if (!GC_is_initialized)  GC_init_inner();
+	      if (GC_size_map[lb] == 0) GC_extend_size_map(lb);
+	      return(GC_generic_malloc_inner(lb, k));
+	    }
 	    if (kind -> ok_reclaim_list == 0) {
 	    	if (!GC_alloc_reclaim_list(kind)) goto out;
 	    }
-	    op = GC_allocobj(lw, k);
+	    op = GC_allocobj(lg, k);
 	    if (op == 0) goto out;
         }
-        /* Here everything is in a consistent state.	*/
-        /* We assume the following assignment is	*/
-        /* atomic.  If we get aborted			*/
-        /* after the assignment, we lose an object,	*/
-        /* but that's benign.				*/
-        /* Volatile declarations may need to be added	*/
-        /* to prevent the compiler from breaking things.*/
-	/* If we only execute the second of the 	*/
-	/* following assignments, we lose the free	*/
-	/* list, but that should still be OK, at least	*/
-	/* for garbage collected memory.		*/
         *opp = obj_link(op);
         obj_link(op) = 0;
     } else {
-	lw = ROUNDED_UP_WORDS(lb);
-	op = (ptr_t)GC_alloc_large_and_clear(lw, k, 0);
+	op = (ptr_t)GC_alloc_large_and_clear(ADD_SLOP(lb), k, 0);
     }
-    GC_words_allocd += lw;
+    GC_bytes_allocd += GRANULES_TO_BYTES(lg);
     
 out:
     return op;
@@ -162,46 +133,41 @@ out:
 /* Allocate a composite object of size n bytes.  The caller guarantees  */
 /* that pointers past the first page are not relevant.  Caller holds    */
 /* allocation lock.                                                     */
-ptr_t GC_generic_malloc_inner_ignore_off_page(lb, k)
-register size_t lb;
-register int k;
+void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
 {
-    register word lw;
-    ptr_t op;
+    word lb_adjusted;
+    void * op;
 
     if (lb <= HBLKSIZE)
-        return(GC_generic_malloc_inner((word)lb, k));
-    lw = ROUNDED_UP_WORDS(lb);
-    op = (ptr_t)GC_alloc_large_and_clear(lw, k, IGNORE_OFF_PAGE);
-    GC_words_allocd += lw;
+        return(GC_generic_malloc_inner(lb, k));
+    lb_adjusted = ADD_SLOP(lb);
+    op = GC_alloc_large_and_clear(lb_adjusted, k, IGNORE_OFF_PAGE);
+    GC_bytes_allocd += lb_adjusted;
     return op;
 }
 
-ptr_t GC_generic_malloc(lb, k)
-register word lb;
-register int k;
+void * GC_generic_malloc(size_t lb, int k)
 {
-    ptr_t result;
+    void * result;
     DCL_LOCK_STATE;
 
     if (GC_have_errors) GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
     if (SMALL_OBJ(lb)) {
-    	DISABLE_SIGNALS();
 	LOCK();
         result = GC_generic_malloc_inner((word)lb, k);
 	UNLOCK();
-	ENABLE_SIGNALS();
     } else {
-	word lw;
+	size_t lw;
+	size_t lb_rounded;
 	word n_blocks;
 	GC_bool init;
 	lw = ROUNDED_UP_WORDS(lb);
-	n_blocks = OBJ_SZ_TO_BLOCKS(lw);
+	lb_rounded = WORDS_TO_BYTES(lw);
+	n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
 	init = GC_obj_kinds[k].ok_init;
-	DISABLE_SIGNALS();
 	LOCK();
-	result = (ptr_t)GC_alloc_large(lw, k, 0);
+	result = (ptr_t)GC_alloc_large(lb_rounded, k, 0);
 	if (0 != result) {
 	  if (GC_debugging_started) {
 	    BZERO(result, n_blocks * HBLKSIZE);
@@ -216,9 +182,8 @@ register int k;
 #	    endif
 	  }
 	}
-	GC_words_allocd += lw;
+	GC_bytes_allocd += lb_rounded;
 	UNLOCK();
-	ENABLE_SIGNALS();
     	if (init && !GC_debugging_started && 0 != result) {
 	    BZERO(result, n_blocks * HBLKSIZE);
         }
@@ -232,65 +197,46 @@ register int k;
 
 
 #define GENERAL_MALLOC(lb,k) \
-    (GC_PTR)GC_clear_stack(GC_generic_malloc((word)lb, k))
+    GC_clear_stack(GC_generic_malloc(lb, k))
 /* We make the GC_clear_stack_call a tail call, hoping to get more of	*/
 /* the stack.								*/
 
 /* Allocate lb bytes of atomic (pointerfree) data */
-# ifdef __STDC__
-    GC_PTR GC_malloc_atomic(size_t lb)
-# else
-    GC_PTR GC_malloc_atomic(lb)
-    size_t lb;
-# endif
+void * GC_malloc_atomic(size_t lb)
 {
-register ptr_t op;
-register ptr_t * opp;
-register word lw;
-DCL_LOCK_STATE;
+    void *op;
+    void ** opp;
+    size_t lg;
+    DCL_LOCK_STATE;
 
-    if( EXPECT(SMALL_OBJ(lb), 1) ) {
-#       ifdef MERGE_SIZES
-	  lw = GC_size_map[lb];
-#	else
-	  lw = ALIGNED_WORDS(lb);
-#       endif
-	opp = &(GC_aobjfreelist[lw]);
+    if(SMALL_OBJ(lb)) {
+	lg = GC_size_map[lb];
+	opp = &(GC_aobjfreelist[lg]);
 	FASTLOCK();
         if( EXPECT(!FASTLOCK_SUCCEEDED() || (op = *opp) == 0, 0) ) {
             FASTUNLOCK();
             return(GENERAL_MALLOC((word)lb, PTRFREE));
         }
-        /* See above comment on signals.	*/
         *opp = obj_link(op);
-        GC_words_allocd += lw;
+        GC_bytes_allocd += GRANULES_TO_BYTES(lg);
         FASTUNLOCK();
-        return((GC_PTR) op);
+        return((void *) op);
    } else {
        return(GENERAL_MALLOC((word)lb, PTRFREE));
    }
 }
 
 /* Allocate lb bytes of composite (pointerful) data */
-# ifdef __STDC__
-    GC_PTR GC_malloc(size_t lb)
-# else
-    GC_PTR GC_malloc(lb)
-    size_t lb;
-# endif
+void * GC_malloc(size_t lb)
 {
-register ptr_t op;
-register ptr_t *opp;
-register word lw;
-DCL_LOCK_STATE;
+    void *op;
+    void **opp;
+    size_t lg;
+    DCL_LOCK_STATE;
 
-    if( EXPECT(SMALL_OBJ(lb), 1) ) {
-#       ifdef MERGE_SIZES
-	  lw = GC_size_map[lb];
-#	else
-	  lw = ALIGNED_WORDS(lb);
-#       endif
-	opp = &(GC_objfreelist[lw]);
+    if(SMALL_OBJ(lb)) {
+	lg = GC_size_map[lb];
+	opp = (void **)&(GC_objfreelist[lg]);
 	FASTLOCK();
         if( EXPECT(!FASTLOCK_SUCCEEDED() || (op = *opp) == 0, 0) ) {
             FASTUNLOCK();
@@ -304,11 +250,11 @@ DCL_LOCK_STATE;
 		     	>= (word)GC_least_plausible_heap_addr);
         *opp = obj_link(op);
         obj_link(op) = 0;
-        GC_words_allocd += lw;
+        GC_bytes_allocd += GRANULES_TO_BYTES(lg);
         FASTUNLOCK();
-        return((GC_PTR) op);
+        return op;
    } else {
-       return(GENERAL_MALLOC((word)lb, NORMAL));
+       return(GENERAL_MALLOC(lb, NORMAL));
    }
 }
 
@@ -326,12 +272,7 @@ DCL_LOCK_STATE;
 # define GC_debug_malloc_replacement(lb) \
 	GC_debug_malloc(lb, RA "unknown", 0)
 
-# ifdef __STDC__
-    GC_PTR malloc(size_t lb)
-# else
-    GC_PTR malloc(lb)
-    size_t lb;
-# endif
+void * malloc(size_t lb)
   {
     /* It might help to manually inline the GC_malloc call here.	*/
     /* But any decent compiler should reduce the extra procedure call	*/
@@ -346,27 +287,17 @@ DCL_LOCK_STATE;
        */
       if (!GC_is_initialized) return sbrk(lb);
 #   endif /* I386 && GC_SOLARIS_THREADS */
-    return((GC_PTR)REDIRECT_MALLOC(lb));
+    return((void *)REDIRECT_MALLOC(lb));
   }
 
-# ifdef __STDC__
-    GC_PTR calloc(size_t n, size_t lb)
-# else
-    GC_PTR calloc(n, lb)
-    size_t n, lb;
-# endif
-  {
-    return((GC_PTR)REDIRECT_MALLOC(n*lb));
-  }
+void * calloc(size_t n, size_t lb)
+{
+    return((void *)REDIRECT_MALLOC(n*lb));
+}
 
 #ifndef strdup
 # include <string.h>
-# ifdef __STDC__
-    char *strdup(const char *s)
-# else
-    char *strdup(s)
-    char *s;
-# endif
+  char *strdup(const char *s)
   {
     size_t len = strlen(s) + 1;
     char * result = ((char *)REDIRECT_MALLOC(len+1));
@@ -383,25 +314,23 @@ DCL_LOCK_STATE;
 # endif /* REDIRECT_MALLOC */
 
 /* Explicitly deallocate an object p.				*/
-# ifdef __STDC__
-    void GC_free(GC_PTR p)
-# else
-    void GC_free(p)
-    GC_PTR p;
-# endif
+void GC_free(void * p)
 {
-    register struct hblk *h;
-    register hdr *hhdr;
-    register signed_word sz;
-    register ptr_t * flh;
-    register int knd;
-    register struct obj_kind * ok;
+    struct hblk *h;
+    hdr *hhdr;
+    size_t sz; /* In bytes */
+    size_t ngranules;	/* sz in granules */
+    void **flh;
+    int knd;
+    struct obj_kind * ok;
     DCL_LOCK_STATE;
 
     if (p == 0) return;
     	/* Required by ANSI.  It's not my fault ...	*/
     h = HBLKPTR(p);
     hhdr = HDR(h);
+    sz = hhdr -> hb_sz;
+    ngranules = BYTES_TO_GRANULES(sz);
     GC_ASSERT(GC_base(p) == p);
 #   if defined(REDIRECT_MALLOC) && \
 	(defined(GC_SOLARIS_THREADS) || defined(GC_LINUX_THREADS) \
@@ -413,38 +342,31 @@ DCL_LOCK_STATE;
 	if (0 == hhdr) return;
 #   endif
     knd = hhdr -> hb_obj_kind;
-    sz = hhdr -> hb_sz;
     ok = &GC_obj_kinds[knd];
-    if (EXPECT((sz <= MAXOBJSZ), 1)) {
+    if (EXPECT((ngranules <= MAXOBJGRANULES), 1)) {
 #	ifdef THREADS
-	    DISABLE_SIGNALS();
 	    LOCK();
 #	endif
-	GC_mem_freed += sz;
-	/* A signal here can make GC_mem_freed and GC_non_gc_bytes	*/
-	/* inconsistent.  We claim this is benign.			*/
-	if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= WORDS_TO_BYTES(sz);
+	GC_bytes_freed += sz;
+	if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
 		/* Its unnecessary to clear the mark bit.  If the 	*/
 		/* object is reallocated, it doesn't matter.  O.w. the	*/
 		/* collector will do it, since it's on a free list.	*/
 	if (ok -> ok_init) {
-	    BZERO((word *)p + 1, WORDS_TO_BYTES(sz-1));
+	    BZERO((word *)p + 1, sz-sizeof(word));
 	}
-	flh = &(ok -> ok_freelist[sz]);
+	flh = &(ok -> ok_freelist[ngranules]);
 	obj_link(p) = *flh;
 	*flh = (ptr_t)p;
 #	ifdef THREADS
 	    UNLOCK();
-	    ENABLE_SIGNALS();
 #	endif
     } else {
-    	DISABLE_SIGNALS();
         LOCK();
-        GC_mem_freed += sz;
-	if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= WORDS_TO_BYTES(sz);
+        GC_bytes_freed += sz;
+	if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
         GC_freehblk(h);
         UNLOCK();
-        ENABLE_SIGNALS();
     }
 }
 
@@ -452,33 +374,35 @@ DCL_LOCK_STATE;
 /* Only used for internally allocated objects, so we can take some 	*/
 /* shortcuts.								*/
 #ifdef THREADS
-void GC_free_inner(GC_PTR p)
+void GC_free_inner(void * p)
 {
-    register struct hblk *h;
-    register hdr *hhdr;
-    register signed_word sz;
-    register ptr_t * flh;
-    register int knd;
-    register struct obj_kind * ok;
+    struct hblk *h;
+    hdr *hhdr;
+    size_t sz; /* bytes */
+    size_t ngranules;  /* sz in granules */
+    void ** flh;
+    int knd;
+    struct obj_kind * ok;
     DCL_LOCK_STATE;
 
     h = HBLKPTR(p);
     hhdr = HDR(h);
     knd = hhdr -> hb_obj_kind;
     sz = hhdr -> hb_sz;
+    ngranules = BYTES_TO_GRANULES(sz);
     ok = &GC_obj_kinds[knd];
-    if (sz <= MAXOBJSZ) {
-	GC_mem_freed += sz;
-	if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= WORDS_TO_BYTES(sz);
+    if (ngranules <= MAXOBJGRANULES) {
+	GC_bytes_freed += sz;
+	if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
 	if (ok -> ok_init) {
-	    BZERO((word *)p + 1, WORDS_TO_BYTES(sz-1));
+	    BZERO((word *)p + 1, sz-sizeof(word));
 	}
-	flh = &(ok -> ok_freelist[sz]);
+	flh = &(ok -> ok_freelist[ngranules]);
 	obj_link(p) = *flh;
 	*flh = (ptr_t)p;
     } else {
-        GC_mem_freed += sz;
-	if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= WORDS_TO_BYTES(sz);
+        GC_bytes_freed += sz;
+	if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
         GC_freehblk(h);
     }
 }
@@ -488,12 +412,7 @@ void GC_free_inner(GC_PTR p)
 #   define REDIRECT_FREE GC_free
 # endif
 # ifdef REDIRECT_FREE
-#   ifdef __STDC__
-      void free(GC_PTR p)
-#   else
-      void free(p)
-      GC_PTR p;
-#   endif
+  void free(void * p)
   {
 #   ifndef IGNORE_FREE
       REDIRECT_FREE(p);

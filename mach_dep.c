@@ -94,7 +94,7 @@ void GC_push_regs()
 	  asm("pushl r6");	asm("calls $1,_GC_push_one");
 #	  define HAVE_PUSH_REGS
 #       endif
-#       if defined(M68K) && (defined(SUNOS4) || defined(NEXT))
+#       if defined(M68K) && defined(NEXT)
 	/*  M68K SUNOS - could be replaced by generic code */
 	  /* a0, a1 and d1 are caller save          */
 	  /*  and therefore are on stack or dead.   */
@@ -465,7 +465,7 @@ ptr_t cold_gc_frame;
 /* the stack.	Return sp.						*/
 # ifdef SPARC
     asm("	.seg 	\"text\"");
-#   if defined(SVR4) || defined(NETBSD) || defined(FREEBSD)
+#   if defined(SVR4) || defined(NETBSD)
       asm("	.globl	GC_save_regs_in_stack");
       asm("GC_save_regs_in_stack:");
       asm("	.type GC_save_regs_in_stack,#function");
@@ -547,14 +547,9 @@ ptr_t cold_gc_frame;
 #ifndef SPARC
 	--> fix it
 #endif
-# ifdef SUNOS4
-    asm(".globl _GC_clear_stack_inner");
-    asm("_GC_clear_stack_inner:");
-# else
-    asm(".globl GC_clear_stack_inner");
-    asm("GC_clear_stack_inner:");
-    asm(".type GC_save_regs_in_stack,#function");
-# endif
+  asm(".globl GC_clear_stack_inner");
+  asm("GC_clear_stack_inner:");
+  asm(".type GC_save_regs_in_stack,#function");
 #if defined(__arch64__) || defined(__sparcv9)
   asm("mov %sp,%o2");		/* Save sp			*/
   asm("add %sp,2047-8,%o3");	/* p = sp+bias-8		*/

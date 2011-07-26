@@ -13,6 +13,8 @@
  */
 /* Boehm, October 3, 1995 2:07 pm PDT */
  
+#error FIXME: This needs to be updated.
+
 # ifndef GC_PRIVATE_H
 #   include "private/gc_priv.h"
 # endif
@@ -58,7 +60,7 @@
         obj_link(op) = 0;	\
         GC_words_allocd += (n);	\
         FASTUNLOCK();	\
-        (result) = (GC_PTR) op;	\
+        (result) = (void *) op;	\
     }	\
 }
 
@@ -80,7 +82,7 @@
         obj_link(op) = 0;	\
         GC_words_allocd += (n);	\
         FASTUNLOCK();	\
-        (result) = (GC_PTR) op;	\
+        (result) = (void *) op;	\
     }	\
 }
 
@@ -103,5 +105,5 @@
     } \
     ((word *)op)[0] = (word)(first);	\
     ((word *)op)[1] = (word)(second);	\
-    (result) = (GC_PTR) op;	\
+    (result) = (void *) op;	\
 }

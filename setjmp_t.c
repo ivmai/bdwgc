@@ -57,7 +57,7 @@ int * nested_sp()
     return(&dummy);
 }
 
-main()
+int main()
 {
 	int dummy;
 	long ps = GETPAGESIZE();

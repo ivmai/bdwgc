@@ -17,7 +17,7 @@ dnl Process this file with autoconf to produce configure.
 # Initialization
 # ==============
 
-AC_INIT(gc,6.4,Hans.Boehm@hp.com) 
+AC_INIT(gc,7.0alpha1,Hans.Boehm@hp.com) 
     ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
@@ -68,15 +68,14 @@ AC_ARG_ENABLE(cplusplus,
 )
 
 INCLUDES=-I${srcdir}/include
-THREADDLLIBS=
-## Libraries needed to support dynamic loading and/or threads.
+THREADLIBS=
 case "$THREADS" in
  no | none | single)
     THREADS=none
     ;;
  posix | pthreads)
     THREADS=posix
-    THREADDLLIBS=-lpthread
+    THREADLIBS=-lpthread
     case "$host" in
      x86-*-linux* | ia64-*-linux* | i586-*-linux* | i686-*-linux* | x86_64-*-linux* | alpha-*-linux*)
 	AC_DEFINE(GC_LINUX_THREADS)
@@ -102,13 +101,13 @@ case "$THREADS" in
 	  AC_DEFINE(PARALLEL_MARK)
 	fi
 	AC_DEFINE(THREAD_LOCAL_ALLOC)
-	THREADDLLIBS="-lpthread -lrt"
+	THREADLIBS="-lpthread -lrt"
 	;;
      *-*-freebsd*)
 	AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
 	AC_DEFINE(GC_FREEBSD_THREADS)
 	INCLUDES="$INCLUDES -pthread"
-	THREADDLLIBS=-pthread
+	THREADLIBS=-pthread
       	;;
      *-*-solaris*)
 	AC_DEFINE(GC_SOLARIS_THREADS)
@@ -136,10 +135,7 @@ case "$THREADS" in
 	  # Measurements havent yet been done.
 	fi
 	INCLUDES="$INCLUDES -pthread"
-	THREADDLLIBS="-lpthread -lrt"
-	;;
-      *)
-	AC_MSG_ERROR("Pthreads not supported by the GC on this platform.")
+	THREADLIBS="-lpthread -lrt"
 	;;
     esac
     ;;
@@ -150,9 +146,9 @@ case "$THREADS" in
     ;;
  dgux386)
     THREADS=dgux386
-    AC_MSG_RESULT($THREADDLLIBS)
+    AC_MSG_RESULT($THREADLIBS)
     # Use pthread GCC  switch
-    THREADDLLIBS=-pthread
+    THREADLIBS=-pthread
     if test "${enable_parallel_mark}" = yes; then
         AC_DEFINE(PARALLEL_MARK)
     fi
@@ -164,7 +160,7 @@ case "$THREADS" in
     ;;
  aix)
     THREADS=posix
-    THREADDLLIBS=-lpthread
+    THREADLIBS=-lpthread
     AC_DEFINE(GC_AIX_THREADS)
     AC_DEFINE(_REENTRANT)
     ;;
@@ -175,7 +171,7 @@ case "$THREADS" in
     AC_MSG_ERROR($THREADS is an unknown thread package)
     ;;
 esac
-AC_SUBST(THREADDLLIBS)
+AC_SUBST(THREADLIBS)
 
 case "$host" in 
    powerpc-*-darwin*)
@@ -189,7 +185,7 @@ AM_CONDITIONAL(POWERPC_DARWIN,test x$powerpc_darwin = xtrue)
 case "$host" in
   *-*-darwin*) ;;
   *) 
-    AC_CHECK_LIB(dl, dlopen, THREADDLLIBS="$THREADDLLIBS -ldl")
+    AC_CHECK_LIB(dl, dlopen, EXTRA_TEST_LIBS="$EXTRA_TEST_LIBS -ldl")
     ;;
 esac
 
@@ -290,7 +286,7 @@ case "$host" in
     machdep="sparc_mach_dep.lo"
     AC_DEFINE(SUNOS53_SHARED_LIB)
     ;;
- sparc*-sun-solaris2.*)
+ sparc-sun-solaris2.*)
     machdep="sparc_mach_dep.lo"
     ;;
  ia64-*-*)
@@ -349,10 +345,10 @@ fi
 
 dnl As of 4.13a2, the collector will not properly work on Solaris when
 dnl built with gcc and -O.  So we remove -O in the appropriate case.
-dnl Not needed anymore on Solaris.
+dnl
 AC_MSG_CHECKING(whether Solaris gcc optimization fix is necessary)
 case "$host" in
- *aix*)
+ sparc-sun-solaris2*|*aix*)
     if test "$GCC" = yes; then
        AC_MSG_RESULT(yes)
        new_CFLAGS=
@@ -379,8 +375,6 @@ AC_SUBST(MY_CFLAGS)
 
 dnl Include defines that have become de facto standard.
 dnl ALL_INTERIOR_POINTERS can be overridden in startup code.
-AC_DEFINE(SILENT)
-AC_DEFINE(NO_SIGNALS)
 AC_DEFINE(NO_EXECUTE_PERMISSION)
 AC_DEFINE(ALL_INTERIOR_POINTERS)
 
@@ -400,9 +394,9 @@ if test -n "${with_cross_host}"; then
 fi
 
 UNWINDLIBS=
-AC_ARG_ENABLE(full-debug,
-[  --enable-full-debug	include full support for pointer backtracing etc.],
-[ if test "$enable_full_debug" = "yes"; then
+AC_ARG_ENABLE(gc-debug,
+[  --enable-gc-debug	include full support for pointer backtracing etc.],
+[ if test "$enable_gc_debug" = "yes"; then
     AC_MSG_WARN("Should define GC_DEBUG and use debug alloc. in clients.")
     AC_DEFINE(KEEP_BACK_PTRS)
     AC_DEFINE(DBG_HDRS_ALL)

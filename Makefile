@@ -30,7 +30,13 @@ AS=as $(AS_ABI_FLAG)
 srcdir= .
 VPATH= $(srcdir)
 
-CFLAGS= -O -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DSILENT -DALL_INTERIOR_POINTERS
+# Atomic_ops installation directory.  If this doesn't exist, we create
+# it from the included atomic_ops distribution.
+AO_VERSION=0.6
+AO_SRC_DIR=$(srcdir)/atomic_ops-$(AO_VERSION)
+AO_INSTALL_DIR=$(AO_SRC_DIR)/installed
+
+CFLAGS= -O -I$(srcdir)/include -I$(AO_INSTALL_DIR)/include -DATOMIC_UNCOLLECTABLE -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS
 
 # To build the parallel collector on Linux, add to the above:
 # -DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
@@ -54,7 +60,6 @@ HOSTCFLAGS=$(CFLAGS)
 # without optimization.
 
 # These define arguments influence the collector configuration:
-# -DSILENT disables statistics printing, and improves performance.
 # -DFIND_LEAK causes GC_find_leak to be initially set.
 #   This causes the collector to assume that all inaccessible
 #   objects should have been explicitly deallocated, and reports exceptions.
@@ -96,13 +101,6 @@ HOSTCFLAGS=$(CFLAGS)
 #   an object can be recognized.  This can be expensive.  (The padding
 #   is normally more than one byte due to alignment constraints.)
 #   -DDONT_ADD_BYTE_AT_END disables the padding.
-# -DNO_SIGNALS does not disable signals during critical parts of
-#   the GC process.  This is no less correct than many malloc 
-#   implementations, and it sometimes has a significant performance
-#   impact.  However, it is dangerous for many not-quite-ANSI C
-#   programs that call things like printf in asynchronous signal handlers.
-#   This is on by default.  Turning it off has not been extensively tested with
-#   compilers that reorder stores.  It should have been.
 # -DNO_EXECUTE_PERMISSION may cause some or all of the heap to not
 #   have execute permission, i.e. it may be impossible to execute
 #   code from the heap.  Currently this only affects the incremental
@@ -154,6 +152,14 @@ HOSTCFLAGS=$(CFLAGS)
 # -DATOMIC_UNCOLLECTABLE includes code for GC_malloc_atomic_uncollectable.
 #   This is useful if either the vendor malloc implementation is poor,
 #   or if REDIRECT_MALLOC is used.
+# -DMARK_BIT_PER_GRANULE requests that a mark bit (or often byte)
+#   be allocated for each allocation granule, as opposed to each object.
+#   This often improves speed, possibly at some cost in space and/or
+#   cache footprint.  Normally it is best to let this decision be
+#   made automatically depending on platform.
+# -DMARK_BIT_PER_OBJ requests that a mark bit be allocated for each
+#   object instead of allocation granule.  The opposiet of
+#   MARK_BIT_PER_GRANULE.
 # -DHBLKSIZE=ddd, where ddd is a power of 2 between 512 and 16384, explicitly
 #   sets the heap block size.  Each heap block is devoted to a single size and
 #   kind of object.  For the incremental collector it makes sense to match
@@ -276,6 +282,9 @@ HOSTCFLAGS=$(CFLAGS)
 # -DPOINTER_SHIFT=n causes the collector to left shift candidate pointers
 #   by the indicated amount before trying to interpret them.  Applied
 #   after POINTER_MASK. EXPERIMENTAL.  See also the preceding macro.
+# -DENABLE_TRACE enables the GC_TRACE=addr environment setting to do its
+#   job.  By default this is not supported in order tokeep the marker as fast
+#   as possible.
 #
 
 CXXFLAGS= $(CFLAGS) 
@@ -283,25 +292,25 @@ AR= ar
 RANLIB= ranlib
 
 
-OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o aix_irix_threads.o pthread_support.o pthread_stop_world.o darwin_stop_world.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o gcj_mlc.o specific.o gc_dlopen.o backgraph.o win32_threads.o
+OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o aix_irix_threads.o pthread_support.o pthread_stop_world.o darwin_stop_world.o typd_mlc.o ptr_chck.o mallocx.o gcj_mlc.o specific.o gc_dlopen.o backgraph.o win32_threads.o
 
-CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c aix_irix_threads.c pthread_support.c pthread_stop_world.c darwin_stop_world.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c gcj_mlc.c specific.c gc_dlopen.c backgraph.c win32_threads.c
+CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c aix_irix_threads.c pthread_support.c pthread_stop_world.c darwin_stop_world.c typd_mlc.c ptr_chck.c mallocx.c gcj_mlc.c specific.c gc_dlopen.c backgraph.c win32_threads.c
 
 CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c include/cord.h include/ec.h include/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC
 
 CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
 SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.S \
-    sparc_mach_dep.S include/gc.h include/gc_typed.h \
+    sparc_mach_dep.S include/gc.h include/gc_typed.h include/gc_tiny_fl.h \
     include/private/gc_hdrs.h include/private/gc_priv.h \
     include/private/gcconfig.h include/private/gc_pmark.h \
     include/gc_inl.h include/gc_inline.h include/gc_mark.h \
     threadlibs.c if_mach.c if_not_there.c gc_cpp.cc include/gc_cpp.h \
     gcname.c include/weakpointer.h include/private/gc_locks.h \
-    gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h \
+    mips_ultrix_mach_dep.s \
     include/new_gc_alloc.h include/gc_allocator.h \
     include/javaxfc.h sparc_sunos4_mach_dep.s sparc_netbsd_mach_dep.s \
-    include/private/solaris_threads.h include/gc_backptr.h \
+    include/gc_backptr.h \
     hpux_test_and_clear.s include/gc_gcj.h \
     include/gc_local_alloc.h include/private/dbg_mlc.h \
     include/private/specific.h powerpc_darwin_mach_dep.s \
@@ -344,7 +353,7 @@ OTHER_FILES= Makefile setjmp_t.c callprocs pc_excludes \
            Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
            add_gc_prefix.c gc_cpp.cpp \
-	   version.h AmigaOS.c \
+	   version.h AmigaOS.c atomic_ops-0.6.tar.gz \
 	   $(TESTS) $(GNU_BUILD_FILES) $(OTHER_MAKEFILES)
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
@@ -360,13 +369,18 @@ CURSES= -lcurses -ltermlib
 # the SHELL environment variable.
 SHELL= /bin/sh
 
-SPECIALCFLAGS = -I$(srcdir)/include
+SPECIALCFLAGS = -I$(srcdir)/include -I$(AO_INSTALL_DIR)/include
 # Alternative flags to the C compiler for mach_dep.c.
 # Mach_dep.c often doesn't like optimization, and it's
 # not time-critical anyway.
 # Set SPECIALCFLAGS to -q nodirect_code on Encore.
 
 all: gc.a gctest
+
+# if AO_INSTALL_DIR doesn't exist, we assume that it is pointing to
+# the default location, and we need to build
+$(AO_INSTALL_DIR):
+	tar xvfz $(AO_SRC_DIR).tar.gz; cd $(AO_SRC_DIR); make CC=$(CC) install
 
 LEAKFLAGS=$(CFLAGS) -DFIND_LEAK
 
@@ -397,16 +411,14 @@ $(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
     $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
     $(srcdir)/include/gc.h $(srcdir)/include/gc_pthread_redirects.h \
     $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h \
-    $(srcdir)/include/gc_config_macros.h Makefile
+    $(srcdir)/include/gc_config_macros.h Makefile $(AO_INSTALL_DIR)
 # The dependency on Makefile is needed.  Changing
-# options such as -DSILENT affects the size of GC_arrays,
+# options affects the size of GC_arrays,
 # invalidating all .o files that rely on gc_priv.h
 
 mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc_mark.h $(srcdir)/include/private/gc_pmark.h
 
 specific.o pthread_support.o: $(srcdir)/include/private/specific.h
-
-solaris_threads.o solaris_pthreads.o: $(srcdir)/include/private/solaris_threads.h
 
 dbg_mlc.o gcj_mlc.o: $(srcdir)/include/private/dbg_mlc.h
 
@@ -512,7 +524,6 @@ mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s \
 	./if_mach POWERPC DARWIN $(AS) -o mach_dep.o $(srcdir)/powerpc_darwin_mach_dep.s
 	./if_mach ALPHA LINUX $(CC) -c -o mach_dep.o $(srcdir)/alpha_mach_dep.S
 	./if_mach SPARC SUNOS5 $(CC) -c -o mach_dep.o $(srcdir)/sparc_mach_dep.S
-	./if_mach SPARC SUNOS4 $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_mach SPARC OPENBSD $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_mach SPARC NETBSD $(AS) -o mach_dep.o $(srcdir)/sparc_netbsd_mach_dep.s
 	./if_mach IA64 "" as $(AS_ABI_FLAG) -o ia64_save_regs_in_stack.o $(srcdir)/ia64_save_regs_in_stack.s

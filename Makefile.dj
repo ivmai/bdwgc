@@ -29,11 +29,10 @@ EXE_SUFFIX=.exe
 srcdir= .
 VPATH= $(srcdir)
 
-CFLAGS= -gstabs+ -O2 -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION -DSILENT
+CFLAGS= -gstabs+ -O2 -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION
 
 # Setjmp_test may yield overly optimistic results when compiled
 # without optimization.
-# -DSILENT disables statistics printing, and improves performance.
 # -DFIND_LEAK causes GC_find_leak to be initially set.
 #   This causes the collector to assume that all inaccessible
 #   objects should have been explicitly deallocated, and reports exceptions.
@@ -221,7 +220,7 @@ $(OBJS) test.o dyn_load.o dyn_load_sunos53.o: \
     $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h \
     Makefile
 # The dependency on Makefile is needed.  Changing
-# options such as -DSILENT affects the size of GC_arrays,
+# options affects the size of GC_arrays,
 # invalidating all .o files that rely on gc_priv.h
 
 mark.o typd_mlc.o finalize.o: $(srcdir)/include/gc_mark.h

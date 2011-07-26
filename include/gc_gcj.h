@@ -71,18 +71,6 @@ extern void * GC_debug_gcj_malloc(size_t lb,
 				  void * ptr_to_struct_containing_descr,
 				  GC_EXTRA_PARAMS);
 
-/* Similar to the above, but the size is in words, and we don't	*/
-/* adjust it.  The size is assumed to be such that it can be 	*/
-/* allocated as a small object.					*/
-/* Unless it is known that the collector is not configured 	*/
-/* with USE_MARK_BYTES and unless it is known that the object	*/
-/* has weak alignment requirements, lw must be even.		*/
-extern void * GC_gcj_fast_malloc(size_t lw,
-				 void * ptr_to_struct_containing_descr);
-extern void * GC_debug_gcj_fast_malloc(size_t lw,
-				 void * ptr_to_struct_containing_descr,
-				 GC_EXTRA_PARAMS);
-
 /* Similar to GC_gcj_malloc, but assumes that a pointer to near the	*/
 /* beginning of the resulting object is always maintained.		*/
 extern void * GC_gcj_malloc_ignore_off_page(size_t lb,
