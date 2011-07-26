@@ -2236,8 +2236,21 @@ Since gc6.5:
    there.
  - More consistently define HBLKSIZE to 4096 on 64 bit architectures with
    4K pages.  (Thanks to Andrew Haley.)
+ - With win32 threads, GC_stop_world needs to acquire GC_write_cs.  (Thanks
+   to Ben Hutchings for the observation and patch.)
+ - Move up struct callinfo declaration to make gcc 4.0.2. happy.
 
-Since gc6.6:
+Since 6.6:
+ - Add "int" to Solaris "end" and "etext" declaration in gc.h.  Declared
+   the symbols with underscores and as arrays, since that's what's actually
+   used.  Perhaps this could all just be removed?  (Thanks to John Bowman.)
+ - Fixed ARM GC_test_and_set code.  (Thanks to Kazu Hirata and Paul Brook.)
+ - Added casts for assignments to hb_last_reclaimed, which truncate the
+   value.  Added a cast to GC_adj_words_allocd.  Use GetModuleHandleA
+   when retrieving a handle to kernel32.dll under win32.  (Thanks to the
+   Visual Prolog developers.)
+
+Since gc6.7:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
    and use ANSI constructs unconditionally.
  - Introduce #elif and #error in some of the appropriate places.
@@ -2383,9 +2396,45 @@ Since gc7.0alpha3
  - Added GC_getattr_np-based GC_get_stack_base (untested).
  - Separated thread local allocation into a separate file and added the
    beginning of win32 support for that.
+
+Since gc7.0alpha4
+   (more 6.6, 6.7 changes)
+ - Some Solaris fixes, including some more general changes in how
+   the assembly pieces of mach_dep.c are handled.
+ - Removed a lot of SOLARIS_THREADS-specific code that was only
+   needed with the old implementation.  This included many (mostly no-op)
+   versions of GC_is_fresh.
+ - Don't use atomic_ops in gc_locks.h unless we need threads.
+ - Fixed USE_MARK_BITS, which is once againthe default without PARALLEL_MARK.
+ - Removed Solaris GC_INIT hack.  It's a workaround for a long dead bug,
+   and it seemed to be wrong anyway.
+ - Changed win32_threads.c to require preprocessor-based interception
+   of thread routines by default.  A client call to GC_use_DllMain is
+   now required to get the old behavior in which DllMain is used to implicitly
+   register threads.  This was doen for uniformity with other platforms, and
+   because the DllMain solution seemed to require very tricky code which,
+   at least in the past, imposed hard bounds onthe number of threads.
+ - Many small changes to make thread support work again on Cygwin.
+ - Moved definition of allocator lock etc. to pthread_support.c and
+   win32_threads.c for those two cases.
+ - Got rid of the FASTLOCK() machinery.  It doesn't seem useful on modern
+   platforms.
+ - Cleaned up the uncollectable allocation routines, speeding up the
+   slower paths.  The code did enough unnecessary work off the critical path
+   that the underlying logic was getting hard to extract.
+ - No longer turn off THREAD_LOCAL_ALLOC with DBG_HDRS_ALL.  Indications
+   are it just works, and I think the reasons for it not working disappeared
+   a while ago.
+ - Fixed bugs in hb_n_marks calculation and assertion.
+ - Don't use __builtin_expect for pre-3.0 gcc.
+ - Define GWW_VDB only for recent Microsoft tool chains.
+ - Add overview.html to doc directory.
+ - Fix NT_STATIC_THREADS_MAKEFILE, various compiler warnings.
+ - Made thread local allocation sort of work with Cygwin.  The code should
+   be there to deal with other Windows variants, But non-Cygwin Windows
+   threads need more bug fixes.
   
 To do:
- - Fix USE_MARK_BITS.
  - REDIRECT_MALLOC and threads combination is getting closer, but currently
    usually fails because the DTV (dynamic thread vector) used to access
    thread-local storage is referenced only from the base of a thread stack,
@@ -2394,7 +2443,6 @@ To do:
    Typically large heap sections end up cleared.
  - Clone marker inner loop to support arch-dependent prefetching,
    and counting of objects marked for finalization.
- - function wrapping??
  - The USE_MUNMAP code should really use a separate data structure
    indexed by physical page to keep track of time since last use of
    a page.  Using hblk headers means we lose track of ages when

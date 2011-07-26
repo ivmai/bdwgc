@@ -18,22 +18,10 @@
 #ifndef GC_LOCKS_H
 #define GC_LOCKS_H
 
-#include <atomic_ops.h>
-
 /*
  * Mutual exclusion between allocator/collector routines.
  * Needed if there is more than one allocator thread.
- * FASTLOCK() is assumed to try to acquire the lock in a cheap and
- * dirty way that is acceptable for a few instructions, e.g. by
- * inhibiting preemption.  This is assumed to have succeeded only
- * if a subsequent call to FASTLOCK_SUCCEEDED() returns TRUE.
- * FASTUNLOCK() is called whether or not FASTLOCK_SUCCEEDED().
- * If signals cannot be tolerated with the FASTLOCK held, then
- * FASTLOCK should disable signals.  The code executed under
- * FASTLOCK is otherwise immune to interruption, provided it is
- * not restarted.
- * DCL_LOCK_STATE declares any local variables needed by LOCK and UNLOCK
- * and/or FASTLOCK.
+ * DCL_LOCK_STATE declares any local variables needed by LOCK and UNLOCK.
  *
  * In the PARALLEL_MARK case, we also need to define a number of
  * other inline finctions here:
@@ -44,21 +32,9 @@
  *   
  */  
 # ifdef THREADS
+#  include <atomic_ops.h>
+
    void GC_noop1(word);
-#  ifdef PCR_OBSOLETE	/* Faster, but broken with multiple lwp's	*/
-#    include  "th/PCR_Th.h"
-#    include  "th/PCR_ThCrSec.h"
-     extern struct PCR_Th_MLRep GC_allocate_ml;
-#    define DCL_LOCK_STATE  PCR_sigset_t GC_old_sig_mask
-#    define LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml) 
-#    define UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
-#    define UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
-#    define FASTLOCK() PCR_ThCrSec_EnterSys()
-     /* Here we cheat (a lot): */
-#        define FASTLOCK_SUCCEEDED() (*(int *)(&GC_allocate_ml) == 0)
-		/* TRUE if nobody currently holds the lock */
-#    define FASTUNLOCK() PCR_ThCrSec_ExitSys()
-#  endif
 #  ifdef PCR
 #    include <base/PCR_Base.h>
 #    include <th/PCR_Th.h>
@@ -67,18 +43,37 @@
 	 PCR_ERes GC_fastLockRes; PCR_sigset_t GC_old_sig_mask
 #    define LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml)
 #    define UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
-#    define FASTLOCK() (GC_fastLockRes = PCR_Th_ML_Try(&GC_allocate_ml))
-#    define FASTLOCK_SUCCEEDED() (GC_fastLockRes == PCR_ERes_okay)
-#    define FASTUNLOCK()  {\
-        if( FASTLOCK_SUCCEEDED() ) PCR_Th_ML_Release(&GC_allocate_ml); }
 #  endif
 
 #  if !defined(AO_have_test_and_set_acquire)
 #    define USE_PTHREAD_LOCKS
 #  endif
 
+#  if defined(GC_WIN32_THREADS) && defined(GC_PTHREADS)
+#    define USE_PTHREAD_LOCKS
+#  endif
 
-#  if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
+#  if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS)
+#    include <windows.h>
+#    define NO_THREAD (DWORD)(-1)
+     extern DWORD GC_lock_holder;
+     extern CRITICAL_SECTION GC_allocate_ml;
+#    ifdef GC_ASSERTIONS
+#        define UNCOND_LOCK() \
+		{ EnterCriticalSection(&GC_allocate_ml); \
+		  SET_LOCK_HOLDER(); }
+#        define UNCOND_UNLOCK() \
+		{ GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
+	          LeaveCriticalSection(&GC_allocate_ml); }
+#    else
+#      define UNCOND_LOCK() EnterCriticalSection(&GC_allocate_ml);
+#      define UNCOND_UNLOCK() LeaveCriticalSection(&GC_allocate_ml);
+#    endif /* !GC_ASSERTIONS */
+#    define SET_LOCK_HOLDER() GC_lock_holder = GetCurrentThreadId()
+#    define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
+#    define I_HOLD_LOCK() (!GC_need_to_lock \
+			   || GC_lock_holder == GetCurrentThreadId())
+#  elif defined(GC_PTHREADS)
 #    define NO_THREAD (pthread_t)(-1)
 #    include <pthread.h>
 
@@ -144,29 +139,16 @@
 #    endif
 #  endif /* GC_PTHREADS with linux_threads.c implementation */
 
-#  if defined(GC_WIN32_THREADS)
-#    if defined(GC_PTHREADS)
-#      include <pthread.h>
-       extern pthread_mutex_t GC_allocate_ml;
-#      define UNCOND_LOCK()   pthread_mutex_lock(&GC_allocate_ml)
-#      define UNCOND_UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
-#    else
-#      include <windows.h>
-       GC_API CRITICAL_SECTION GC_allocate_ml;
-#      define UNCOND_LOCK() EnterCriticalSection(&GC_allocate_ml);
-#      define UNCOND_UNLOCK() LeaveCriticalSection(&GC_allocate_ml);
-#    endif
-#  endif
-#  ifndef SET_LOCK_HOLDER
-#      define SET_LOCK_HOLDER()
-#      define UNSET_LOCK_HOLDER()
-#      define I_HOLD_LOCK() FALSE
-		/* Used on platforms were locks can be reacquired,	*/
-		/* so it doesn't matter if we lie.			*/
-#  endif
+
 # else /* !THREADS */
-#    define LOCK()
-#    define UNLOCK()
+#   define LOCK()
+#   define UNLOCK()
+#   define SET_LOCK_HOLDER()
+#   define UNSET_LOCK_HOLDER()
+#   define I_HOLD_LOCK() TRUE
+       		/* Used only in positive assertions or to test whether	*/
+       		/* we still need to acaquire the lock.	TRUE works in	*/
+       		/* either case.						*/
 # endif /* !THREADS */
 
 #if defined(UNCOND_LOCK) && !defined(LOCK) 
@@ -176,14 +158,6 @@
 #    define UNLOCK() if (GC_need_to_lock) { UNCOND_UNLOCK(); }
 #endif
 
-# ifndef SET_LOCK_HOLDER
-#   define SET_LOCK_HOLDER()
-#   define UNSET_LOCK_HOLDER()
-#   define I_HOLD_LOCK() FALSE
-		/* Used on platforms were locks can be reacquired,	*/
-		/* so it doesn't matter if we lie.			*/
-# endif
-
 # ifndef ENTER_GC
 #   define ENTER_GC()
 #   define EXIT_GC()
@@ -191,12 +165,6 @@
 
 # ifndef DCL_LOCK_STATE
 #   define DCL_LOCK_STATE
-# endif
-
-# ifndef FASTLOCK
-#   define FASTLOCK() LOCK()
-#   define FASTLOCK_SUCCEEDED() TRUE
-#   define FASTUNLOCK() UNLOCK()
 # endif
 
 #endif /* GC_LOCKS_H */

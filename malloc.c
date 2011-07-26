@@ -215,14 +215,14 @@ void * GC_generic_malloc(size_t lb, int k)
     if(SMALL_OBJ(lb)) {
 	lg = GC_size_map[lb];
 	opp = &(GC_aobjfreelist[lg]);
-	FASTLOCK();
-        if( EXPECT(!FASTLOCK_SUCCEEDED() || (op = *opp) == 0, 0) ) {
-            FASTUNLOCK();
+	LOCK();
+        if( EXPECT((op = *opp) == 0, 0) ) {
+            UNLOCK();
             return(GENERAL_MALLOC((word)lb, PTRFREE));
         }
         *opp = obj_link(op);
         GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-        FASTUNLOCK();
+        UNLOCK();
         return((void *) op);
    } else {
        return(GENERAL_MALLOC((word)lb, PTRFREE));
@@ -244,9 +244,9 @@ void * GC_generic_malloc(size_t lb, int k)
     if(SMALL_OBJ(lb)) {
 	lg = GC_size_map[lb];
 	opp = (void **)&(GC_objfreelist[lg]);
-	FASTLOCK();
-        if( EXPECT(!FASTLOCK_SUCCEEDED() || (op = *opp) == 0, 0) ) {
-            FASTUNLOCK();
+	LOCK();
+        if( EXPECT((op = *opp) == 0, 0) ) {
+            UNLOCK();
             return(GENERAL_MALLOC((word)lb, NORMAL));
         }
         /* See above comment on signals.	*/
@@ -258,7 +258,7 @@ void * GC_generic_malloc(size_t lb, int k)
         *opp = obj_link(op);
         obj_link(op) = 0;
         GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-        FASTUNLOCK();
+        UNLOCK();
         return op;
    } else {
        return(GENERAL_MALLOC(lb, NORMAL));

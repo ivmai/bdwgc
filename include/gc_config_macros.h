@@ -5,11 +5,11 @@
  * Some tests for old macros.  These violate our namespace rules and will
  * disappear shortly.  Use the GC_ names.
  */
-#if defined(SOLARIS_THREADS) || defined(_SOLARIS_THREADS)
+#if defined(SOLARIS_THREADS) || defined(_SOLARIS_THREADS) \
+    || defined(_SOLARIS_PTHREADS) || defined(GC_SOLARIS_PTHREADS)
+  /* We no longer support old style Solaris threads.		*/
+  /* GC_SOLARIS_THREADS now means pthreads.			*/
 # define GC_SOLARIS_THREADS
-#endif
-#if defined(_SOLARIS_PTHREADS)
-# define GC_SOLARIS_PTHREADS
 #endif
 #if defined(IRIX_THREADS)
 # define GC_IRIX_THREADS
@@ -39,7 +39,6 @@
 #endif
 
 #if !defined(_REENTRANT) && (defined(GC_SOLARIS_THREADS) \
-		             || defined(GC_SOLARIS_PTHREADS) \
 			     || defined(GC_HPUX_THREADS) \
 			     || defined(GC_AIX_THREADS) \
 			     || defined(GC_LINUX_THREADS))
@@ -52,7 +51,7 @@
 # define _POSIX4A_DRAFT10_SOURCE 1
 #endif
 
-# if defined(GC_SOLARIS_PTHREADS) || defined(GC_FREEBSD_THREADS) || \
+# if defined(GC_SOLARIS_THREADS) || defined(GC_FREEBSD_THREADS) || \
 	defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) || \
 	defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) || \
 	defined(GC_DGUX386_THREADS) || defined(GC_DARWIN_THREADS) || \
@@ -79,10 +78,12 @@
 #   define GC_IRIX_THREADS
 #   define GC_PTHREADS
 # endif
-# if defined(__sparc) && !defined(__linux__)
-#   define GC_SOLARIS_PTHREADS
+# if defined(__sparc) && !defined(__linux__) \
+     || defined(sun) && (defined(i386) || defined(__i386__))
+#   define GC_SOLARIS_THREADS
 #   define GC_PTHREADS
 # endif
+
 # if defined(__APPLE__) && defined(__MACH__) && defined(__ppc__)
 #   define GC_DARWIN_THREADS
 #   define GC_PTHREADS
@@ -109,10 +110,6 @@
 # if defined(__CYGWIN__)
 #   define GC_PTHREADS
 # endif
-#endif
-
-#if defined(GC_SOLARIS_PTHREADS) && !defined(GC_SOLARIS_THREADS)
-#   define GC_SOLARIS_THREADS
 #endif
 
 # define __GC

@@ -527,6 +527,7 @@ dist_pkgdata_DATA = \
 	doc/README.solaris2 \
 	doc/README.uts \
 	doc/README.win32 \
+	doc/overview.html \
 	doc/tree.html \
 	doc/leak.html \
 	doc/gcinterface.html \

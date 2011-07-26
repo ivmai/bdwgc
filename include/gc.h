@@ -962,17 +962,7 @@ extern void GC_thr_init(void);	/* Needed for Solaris/X86	*/
   * A GC_INIT call is required if the collector is built with THREAD_LOCAL_ALLOC
   * defined and the initial allocation call is not to GC_malloc().
   */
-#if (defined(sparc) || defined(__sparc)) && defined(sun)
-    /*
-     * If you are planning on putting
-     * the collector in a SunOS 5 dynamic library, you need to call GC_INIT()
-     * from the statically loaded program section.
-     * This circumvents a Solaris 2.X (X<=4) linker bug.
-     */
-#   define GC_INIT() { extern end, etext; \
-		       GC_noop(&end, &etext); \
-		       GC_init();}
-#elif defined(__CYGWIN32__) && defined(GC_DLL) || defined (_AIX)
+#if defined(__CYGWIN32__) || defined (_AIX)
     /*
      * Similarly gnu-win32 DLLs need explicit initialization from
      * the main program, as does AIX.
@@ -984,15 +974,22 @@ extern void GC_thr_init(void);	/* Needed for Solaris/X86	*/
       extern int _bss_end__[];
 #     define GC_MAX(x,y) ((x) > (y) ? (x) : (y))
 #     define GC_MIN(x,y) ((x) < (y) ? (x) : (y))
-#     define GC_DATASTART ((GC_PTR) GC_MIN(_data_start__, _bss_start__))
-#     define GC_DATAEND	 ((GC_PTR) GC_MAX(_data_end__, _bss_end__))
+#     define GC_DATASTART ((void *) GC_MIN(_data_start__, _bss_start__))
+#     define GC_DATAEND	 ((void *) GC_MAX(_data_end__, _bss_end__))
+#     if defined(GC_DLL)
+#       define GC_INIT() { GC_add_roots(GC_DATASTART, GC_DATAEND); GC_init(); }
+#     else
+	/* Main program init not required, but other defined needed for */
+	/* uniformity.							*/
+#       define GC_INIT() { GC_init(); }
+#     endif
 #   endif
 #   if defined(_AIX)
       extern int _data[], _end[];
-#     define GC_DATASTART ((GC_PTR)((ulong)_data))
-#     define GC_DATAEND ((GC_PTR)((ulong)_end))
+#     define GC_DATASTART ((void *)((ulong)_data))
+#     define GC_DATAEND ((void *)((ulong)_end))
+#     define GC_INIT() { GC_add_roots(GC_DATASTART, GC_DATAEND); GC_init(); }
 #   endif
-#   define GC_INIT() { GC_add_roots(GC_DATASTART, GC_DATAEND); GC_init(); }
 #else
 #   define GC_INIT() { GC_init(); }
 #endif

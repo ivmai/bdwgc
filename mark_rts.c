@@ -593,7 +593,7 @@ void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
      /* If the world is not stopped, this is unsafe.  It is	*/
      /* also unnecessary, since we will do this again with the	*/
      /* world stopped.						*/
-#      if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
+#      if defined(THREAD_LOCAL_ALLOC)
          if (GC_world_stopped) GC_mark_thread_local_free_lists();
 #      endif
 

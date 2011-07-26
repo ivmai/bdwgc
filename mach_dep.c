@@ -65,7 +65,7 @@ asm static void PushMacRegisters()
 # if defined(SPARC) || defined(IA64)
     /* Value returned from register flushing routine; either sp (SPARC) */
     /* or ar.bsp (IA64)							*/
-    word GC_save_regs_ret_val;
+    ptr_t GC_save_regs_ret_val;
 # endif
 
 /* Routine to mark from registers that are preserved by the C compiler. */
@@ -265,88 +265,12 @@ ptr_t cold_gc_frame;
     GC_with_callee_saves_pushed(GC_push_current_stack, cold_gc_frame);
 }
 
-/* On register window machines, we need a way to force registers into 	*/
-/* the stack.	Return sp.						*/
-# ifdef SPARC
-    asm("	.seg 	\"text\"");
-#   if defined(SVR4) || defined(NETBSD) || defined(FREEBSD)
-      asm("	.globl	GC_save_regs_in_stack");
-      asm("GC_save_regs_in_stack:");
-      asm("	.type GC_save_regs_in_stack,#function");
-#   else
-      asm("	.globl	_GC_save_regs_in_stack");
-      asm("_GC_save_regs_in_stack:");
-#   endif
-#   if defined(__arch64__) || defined(__sparcv9)
-      asm("	save	%sp,-128,%sp");
-      asm("	flushw");
-      asm("	ret");
-      asm("	restore %sp,2047+128,%o0");
-#   else
-      asm("	ta	0x3   ! ST_FLUSH_WINDOWS");
-      asm("	retl");
-      asm("	mov	%sp,%o0");
-#   endif
-#   ifdef SVR4
-      asm("	.GC_save_regs_in_stack_end:");
-      asm("	.size GC_save_regs_in_stack,.GC_save_regs_in_stack_end-GC_save_regs_in_stack");
-#   endif
-#   ifdef LINT
-	word GC_save_regs_in_stack() { return(0 /* sp really */);}
-#   endif
-# endif
-
-/* GC_clear_stack_inner(arg, limit) clears stack area up to limit and	*/
-/* returns arg.  Stack clearing is crucial on SPARC, so we supply	*/
-/* an assembly version that's more careful.  Assumes limit is hotter	*/
-/* than sp, and limit is 8 byte aligned.				*/
 #if defined(ASM_CLEAR_CODE)
-#ifndef SPARC
-	--> fix it
-#endif
-  asm(".globl GC_clear_stack_inner");
-  asm("GC_clear_stack_inner:");
-  asm(".type GC_save_regs_in_stack,#function");
-#if defined(__arch64__) || defined(__sparcv9)
-  asm("mov %sp,%o2");		/* Save sp			*/
-  asm("add %sp,2047-8,%o3");	/* p = sp+bias-8		*/
-  asm("add %o1,-2047-192,%sp");	/* Move sp out of the way,	*/
-  				/* so that traps still work.	*/
-  				/* Includes some extra words	*/
-  				/* so we can be sloppy below.	*/
-  asm("loop:");
-  asm("stx %g0,[%o3]");		/* *(long *)p = 0		*/
-  asm("cmp %o3,%o1");
-  asm("bgu,pt %xcc, loop");	/* if (p > limit) goto loop	*/
-    asm("add %o3,-8,%o3");	/* p -= 8 (delay slot) */
-  asm("retl");
-    asm("mov %o2,%sp");		/* Restore sp., delay slot	*/
-#else
-  asm("mov %sp,%o2");		/* Save sp	*/
-  asm("add %sp,-8,%o3");	/* p = sp-8	*/
-  asm("clr %g1");		/* [g0,g1] = 0	*/
-  asm("add %o1,-0x60,%sp");	/* Move sp out of the way,	*/
-  				/* so that traps still work.	*/
-  				/* Includes some extra words	*/
-  				/* so we can be sloppy below.	*/
-  asm("loop:");
-  asm("std %g0,[%o3]");		/* *(long long *)p = 0	*/
-  asm("cmp %o3,%o1");
-  asm("bgu loop	");		/* if (p > limit) goto loop	*/
-    asm("add %o3,-8,%o3");	/* p -= 8 (delay slot) */
-  asm("retl");
-    asm("mov %o2,%sp");		/* Restore sp., delay slot	*/
-#endif /* old SPARC */
-  /* First argument = %o0 = return value */
-#   ifdef SVR4
-      asm("	.GC_clear_stack_inner_end:");
-      asm("	.size GC_clear_stack_inner,.GC_clear_stack_inner_end-GC_clear_stack_inner");
-#   endif
-  
 # ifdef LINT
     /*ARGSUSED*/
     ptr_t GC_clear_stack_inner(arg, limit)
     ptr_t arg; word limit;
     { return(arg); }
+    /* The real version is in a .S file */
 # endif
 #endif /* ASM_CLEAR_CODE */ 

@@ -19,15 +19,15 @@ Linux threads.  These should not be touched by the client program.
 
 To use threads, you need to abide by the following requirements:
 
-1) You need to use LinuxThreads (which are included in libc6).
+1) You need to use LinuxThreads or NPTL (which are included in libc6).
 
    The collector relies on some implementation details of the LinuxThreads
-   package.  It is unlikely that this code will work on other
+   package.  This code may not work on other
    pthread implementations (in particular it will *not* work with
    MIT pthreads).
 
-2) You must compile the collector with -DGC_LINUX_THREADS and -D_REENTRANT
-   specified in the Makefile.
+2) You must compile the collector with -DGC_LINUX_THREADS (or
+   just -DGC_THREADS) and -D_REENTRANT specified in the Makefile.
 
 3a) Every file that makes thread calls should define GC_LINUX_THREADS and 
    _REENTRANT and then include gc.h.  Gc.h redefines some of the

@@ -156,7 +156,7 @@ void GC_clear_hdr_marks(hdr *hhdr)
 /* Set all mark bits in the header.  Used for uncollectable blocks. */
 void GC_set_hdr_marks(hdr *hhdr)
 {
-    int i;
+    unsigned i;
     size_t sz = hhdr -> hb_sz;
     int n_marks = FINAL_MARK_BIT(sz);
 
@@ -214,7 +214,7 @@ void GC_clear_mark_bit(ptr_t p)
       int n_marks;
       clear_mark_bit_from_hdr(hhdr, bit_no);
       n_marks = hhdr -> hb_n_marks - 1;
-#     ifdef THREADS
+#     ifdef PARALLEL_MARK
         if (n_marks != 0)
           hhdr -> hb_n_marks = n_marks; 
         /* Don't decrement to zero.  The counts are approximate due to	*/
@@ -1473,7 +1473,7 @@ void GC_push_all_eager(ptr_t bottom, ptr_t top)
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
     register word *p;
-    register word q;
+    register ptr_t q;
     register word *lim;
     register ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
     register ptr_t least_ha = GC_least_plausible_heap_addr;
@@ -1485,7 +1485,7 @@ void GC_push_all_eager(ptr_t bottom, ptr_t top)
     /* to be valid.						*/
       lim = t - 1 /* longword */;
       for (p = b; p <= lim; p = (word *)(((ptr_t)p) + ALIGNMENT)) {
-	q = *p;
+	q = (ptr_t)(*p);
 	GC_PUSH_ONE_STACK((ptr_t)q, p);
       }
 #   undef GC_greatest_plausible_heap_addr
@@ -1508,7 +1508,6 @@ void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
 				       ptr_t cold_gc_frame)
 {
   if (!NEED_FIXUP_POINTER && GC_all_interior_pointers) {
-#   define EAGER_BYTES 1024
     /* Push the hot end of the stack eagerly, so that register values   */
     /* saved inside GC frames are marked before they disappear.		*/
     /* The rest of the marking can be deferred until later.		*/
@@ -1546,21 +1545,52 @@ void GC_push_all_stack(ptr_t bottom, ptr_t top)
 # endif
 }
 
-#if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES)
+#if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES) && \
+    defined(MARK_BIT_PER_GRANULE)
+# if GC_GRANULE_WORDS == 1
+#   define USE_PUSH_MARKED_ACCELERATORS
+#   define PUSH_GRANULE(q) \
+		{ ptr_t qcontents = (ptr_t)((q)[0]); \
+	          GC_PUSH_ONE_HEAP(qcontents, (q)); }
+# elif GC_GRANULE_WORDS == 2
+#   define USE_PUSH_MARKED_ACCELERATORS
+#   define PUSH_GRANULE(q) \
+		{ ptr_t qcontents = (ptr_t)((q)[0]); \
+	          GC_PUSH_ONE_HEAP(qcontents, (q)); \
+		  qcontents = (ptr_t)((q)[1]); \
+	          GC_PUSH_ONE_HEAP(qcontents, (q)+1); }
+# elif GC_GRANULE_WORDS == 4
+#   define USE_PUSH_MARKED_ACCELERATORS
+#   define PUSH_GRANULE(q) \
+		{ ptr_t qcontents = (ptr_t)((q)[0]); \
+	          GC_PUSH_ONE_HEAP(qcontents, (q)); \
+		  qcontents = (ptr_t)((q)[1]); \
+	          GC_PUSH_ONE_HEAP(qcontents, (q)+1); \
+		  qcontents = (ptr_t)((q)[2]); \
+	          GC_PUSH_ONE_HEAP(qcontents, (q)+2); \
+		  qcontents = (ptr_t)((q)[3]); \
+	          GC_PUSH_ONE_HEAP(qcontents, (q)+3); }
+# endif
+#endif
+
+#ifdef USE_PUSH_MARKED_ACCELERATORS
 /* Push all objects reachable from marked objects in the given block */
-/* of size 1 objects.						     */
+/* containing objects of size 1 granule.			     */
 void GC_push_marked1(struct hblk *h, hdr *hhdr)
 {
     word * mark_word_addr = &(hhdr->hb_marks[0]);
-    register word *p;
+    word *p;
     word *plim;
-    register int i;
-    register word q;
-    register word mark_word;
-    register ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
-    register ptr_t least_ha = GC_least_plausible_heap_addr;
-    register mse * mark_stack_top = GC_mark_stack_top;
-    register mse * mark_stack_limit = GC_mark_stack_limit;
+    word *q;
+    word mark_word;
+
+    /* Allow registers to be used for some frequently acccessed	*/
+    /* global variables.  Otherwise aliasing issues are likely	*/
+    /* to prevent that.						*/
+    ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
+    ptr_t least_ha = GC_least_plausible_heap_addr;
+    mse * mark_stack_top = GC_mark_stack_top;
+    mse * mark_stack_limit = GC_mark_stack_limit;
 #   define GC_mark_stack_top mark_stack_top
 #   define GC_mark_stack_limit mark_stack_limit
 #   define GC_greatest_plausible_heap_addr greatest_ha
@@ -1572,21 +1602,22 @@ void GC_push_marked1(struct hblk *h, hdr *hhdr)
     /* go through all words in block */
 	while( p < plim )  {
 	    mark_word = *mark_word_addr++;
-	    i = 0;
+	    q = p;
 	    while(mark_word != 0) {
 	      if (mark_word & 1) {
-	          q = p[i];
-	          GC_PUSH_ONE_HEAP(q, p + i);
+		  PUSH_GRANULE(q);
 	      }
-	      i++;
+	      q += GC_GRANULE_WORDS;
 	      mark_word >>= 1;
 	    }
-	    p += WORDSZ;
+	    p += WORDSZ*GC_GRANULE_WORDS;
 	}
+
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr        
 #   undef GC_mark_stack_top
 #   undef GC_mark_stack_limit
+
     GC_mark_stack_top = mark_stack_top;
 }
 
@@ -1594,19 +1625,20 @@ void GC_push_marked1(struct hblk *h, hdr *hhdr)
 #ifndef UNALIGNED
 
 /* Push all objects reachable from marked objects in the given block */
-/* of size 2 objects.						     */
+/* of size 2 (granules) objects.				     */
 void GC_push_marked2(struct hblk *h, hdr *hhdr)
 {
     word * mark_word_addr = &(hhdr->hb_marks[0]);
-    register word *p;
+    word *p;
     word *plim;
-    register int i;
-    register word q;
-    register word mark_word;
-    register ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
-    register ptr_t least_ha = GC_least_plausible_heap_addr;
-    register mse * mark_stack_top = GC_mark_stack_top;
-    register mse * mark_stack_limit = GC_mark_stack_limit;
+    word *q;
+    word mark_word;
+
+    ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
+    ptr_t least_ha = GC_least_plausible_heap_addr;
+    mse * mark_stack_top = GC_mark_stack_top;
+    mse * mark_stack_limit = GC_mark_stack_limit;
+
 #   define GC_mark_stack_top mark_stack_top
 #   define GC_mark_stack_limit mark_stack_limit
 #   define GC_greatest_plausible_heap_addr greatest_ha
@@ -1618,42 +1650,43 @@ void GC_push_marked2(struct hblk *h, hdr *hhdr)
     /* go through all words in block */
 	while( p < plim )  {
 	    mark_word = *mark_word_addr++;
-	    i = 0;
+	    q = p;
 	    while(mark_word != 0) {
 	      if (mark_word & 1) {
-	          q = p[i];
-	          GC_PUSH_ONE_HEAP(q, p + i);
-	          q = p[i+1];
-	          GC_PUSH_ONE_HEAP(q, p + i);
+		  PUSH_GRANULE(q);
+		  PUSH_GRANULE(q + GC_GRANULE_WORDS);
 	      }
-	      i += 2;
+	      q += 2 * GC_GRANULE_WORDS;
 	      mark_word >>= 2;
 	    }
-	    p += WORDSZ;
+	    p += WORDSZ*GC_GRANULE_WORDS;
 	}
+
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr        
 #   undef GC_mark_stack_top
 #   undef GC_mark_stack_limit
+
     GC_mark_stack_top = mark_stack_top;
 }
 
+# if GC_GRANULE_WORDS < 4
 /* Push all objects reachable from marked objects in the given block */
-/* of size 4 objects.						     */
+/* of size 4 (granules) objects.				     */
 /* There is a risk of mark stack overflow here.  But we handle that. */
 /* And only unmarked objects get pushed, so it's not very likely.    */
 void GC_push_marked4(struct hblk *h, hdr *hhdr)
 {
     word * mark_word_addr = &(hhdr->hb_marks[0]);
-    register word *p;
+    word *p;
     word *plim;
-    register int i;
-    register word q;
-    register word mark_word;
-    register ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
-    register ptr_t least_ha = GC_least_plausible_heap_addr;
-    register mse * mark_stack_top = GC_mark_stack_top;
-    register mse * mark_stack_limit = GC_mark_stack_limit;
+    word *q;
+    word mark_word;
+
+    ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
+    ptr_t least_ha = GC_least_plausible_heap_addr;
+    mse * mark_stack_top = GC_mark_stack_top;
+    mse * mark_stack_limit = GC_mark_stack_limit;
 #   define GC_mark_stack_top mark_stack_top
 #   define GC_mark_stack_limit mark_stack_limit
 #   define GC_greatest_plausible_heap_addr greatest_ha
@@ -1665,22 +1698,18 @@ void GC_push_marked4(struct hblk *h, hdr *hhdr)
     /* go through all words in block */
 	while( p < plim )  {
 	    mark_word = *mark_word_addr++;
-	    i = 0;
+	    q = p;
 	    while(mark_word != 0) {
 	      if (mark_word & 1) {
-	          q = p[i];
-	          GC_PUSH_ONE_HEAP(q, p + i);
-	          q = p[i+1];
-	          GC_PUSH_ONE_HEAP(q, p + i + 1);
-	          q = p[i+2];
-	          GC_PUSH_ONE_HEAP(q, p + i + 2);
-	          q = p[i+3];
-	          GC_PUSH_ONE_HEAP(q, p + i + 3);
+		  PUSH_GRANULE(q);
+		  PUSH_GRANULE(q + GC_GRANULE_WORDS);
+		  PUSH_GRANULE(q + 2*GC_GRANULE_WORDS);
+		  PUSH_GRANULE(q + 3*GC_GRANULE_WORDS);
 	      }
-	      i += 4;
+	      q += 4 * GC_GRANULE_WORDS;
 	      mark_word >>= 4;
 	    }
-	    p += WORDSZ;
+	    p += WORDSZ*GC_GRANULE_WORDS;
 	}
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr        
@@ -1689,9 +1718,11 @@ void GC_push_marked4(struct hblk *h, hdr *hhdr)
     GC_mark_stack_top = mark_stack_top;
 }
 
+#endif /* GC_GRANULE_WORDS < 4 */
+
 #endif /* UNALIGNED */
 
-#endif /* SMALL_CONFIG */
+#endif /* USE_PUSH_MARKED_ACCELERATORS */
 
 /* Push all objects reachable from marked objects in the given block */
 void GC_push_marked(struct hblk *h, hdr *hhdr)
@@ -1715,20 +1746,21 @@ void GC_push_marked(struct hblk *h, hdr *hhdr)
         lim = (h + 1)->hb_body - sz;
     }
     
-    switch(BYTES_TO_WORDS(sz)) {
-#   if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES)   
+    switch(BYTES_TO_GRANULES(sz)) {
+#   if defined(USE_PUSH_MARKED_ACCELERATORS)
      case 1:
        GC_push_marked1(h, hhdr);
        break;
-#   endif
-#   if !defined(SMALL_CONFIG) && !defined(UNALIGNED) && \
-       !defined(USE_MARK_BYTES)
-     case 2:
-       GC_push_marked2(h, hhdr);
-       break;
-     case 4:
-       GC_push_marked4(h, hhdr);
-       break;
+#    if !defined(UNALIGNED)
+       case 2:
+         GC_push_marked2(h, hhdr);
+         break;
+#     if GC_GRANULE_WORDS < 4
+       case 4:
+         GC_push_marked4(h, hhdr);
+         break;
+#     endif
+#    endif
 #   endif       
      default:
       GC_mark_stack_top_reg = GC_mark_stack_top;

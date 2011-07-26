@@ -569,8 +569,16 @@ void GC_clear_fl_marks(ptr_t q)
 	}
 	bit_no = MARK_BIT_NO((ptr_t)p - (ptr_t)h, sz);
 	if (mark_bit_from_hdr(hhdr, bit_no)) {
+	  int n_marks = hhdr -> hb_n_marks - 1;
       	  clear_mark_bit_from_hdr(hhdr, bit_no);
-          --hhdr -> hb_n_marks;
+#	  ifdef PARALLEL_MARK
+	    /* Appr. count, don't decrement to zero! */
+	    if (0 != n_marks) {
+              hhdr -> hb_n_marks = n_marks;
+	    }
+#	  else
+            hhdr -> hb_n_marks = n_marks;
+#	  endif
         }
 	GC_bytes_found -= sz;
    }

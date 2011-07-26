@@ -560,7 +560,7 @@ int index;	/* Index of free list */
 				/* free blocks in GC_add_to_fl.		*/
 #     endif
 #   ifdef USE_MUNMAP
-      hhdr -> hb_last_reclaimed = GC_gc_no;
+      hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
 #   endif
     hhdr -> hb_sz = h_size;
     GC_add_to_fl(h, hhdr);
@@ -568,7 +568,7 @@ int index;	/* Index of free list */
 }
 	
 struct hblk *
-GC_allochblk_nth(word sz/* bytes */, int kind, unsigned char flags, int n);
+GC_allochblk_nth(size_t sz/* bytes */, int kind, unsigned char flags, int n);
 
 /*
  * Allocate (and return pointer to) a heap block
@@ -580,7 +580,7 @@ GC_allochblk_nth(word sz/* bytes */, int kind, unsigned char flags, int n);
  * The client is responsible for clearing the block, if necessary.
  */
 struct hblk *
-GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
+GC_allochblk(size_t sz, int kind, unsigned char flags/* IGNORE_OFF_PAGE or 0 */)
 {
     word blocks;
     int start_list;
@@ -603,7 +603,7 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
  * Unlike the above, sz is in bytes.
  */
 struct hblk *
-GC_allochblk_nth(word sz, int kind, unsigned char flags, int n)
+GC_allochblk_nth(size_t sz, int kind, unsigned char flags, int n)
 {
     struct hblk *hbp;
     hdr * hhdr;		/* Header corr. to hbp */
@@ -822,7 +822,7 @@ signed_word size;
     GC_remove_counts(hbp, (word)size);
     hhdr->hb_sz = size;
 #   ifdef USE_MUNMAP
-      hhdr -> hb_last_reclaimed = GC_gc_no;
+      hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
 #   endif
     
     /* Check for duplicate deallocation in the easy case */
@@ -849,7 +849,7 @@ signed_word size;
 	  GC_remove_from_fl(prevhdr, FL_UNKNOWN);
 	  prevhdr -> hb_sz += hhdr -> hb_sz;
 #	  ifdef USE_MUNMAP
-	    prevhdr -> hb_last_reclaimed = GC_gc_no;
+	    prevhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
 #	  endif
 	  GC_remove_header(hbp);
 	  hbp = prev;

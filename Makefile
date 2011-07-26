@@ -32,7 +32,7 @@ VPATH= $(srcdir)
 
 # Atomic_ops installation directory.  If this doesn't exist, we create
 # it from the included libatomic_ops distribution.
-AO_VERSION=1.0
+AO_VERSION=1.1
 AO_SRC_DIR=$(srcdir)/libatomic_ops-$(AO_VERSION)
 AO_INSTALL_DIR=$(srcdir)/libatomic_ops-install
 
@@ -349,7 +349,7 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.S \
 
 DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 	doc/README.amiga doc/README.cords doc/debugging.html \
-	doc/porting.html \
+	doc/porting.html doc/overview.html \
 	doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
 	doc/README.sgi doc/README.solaris2 doc/README.uts \
 	doc/README.win32 doc/barrett_diagram doc/README \
@@ -450,8 +450,9 @@ $(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
 mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc_mark.h \
 					 $(srcdir)/include/private/gc_pmark.h
 
-specific.o pthread_support.o: $(srcdir)/include/private/specific.h \
-			      $(srcdir)/include/gc_inline.h
+specific.o pthread_support.o thread_local_alloc.o win32_threads.o: \
+	$(srcdir)/include/private/specific.h $(srcdir)/include/gc_inline.h \
+	$(srcdir)/include/private/thread_local_alloc.h
 
 dbg_mlc.o gcj_mlc.o: $(srcdir)/include/private/dbg_mlc.h
 
@@ -465,6 +466,7 @@ tests:
 base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
 	echo > base_lib
 	rm -f dont_ar_1
+	cp $(AO_INSTALL_DIR)/lib/libatomic_ops.a gc.a
 	./if_mach SPARC SUNOS5 touch dont_ar_1
 	./if_mach SPARC SUNOS5 $(AR) rus gc.a $(OBJS) dyn_load.o
 	./if_mach M68K AMIGA touch dont_ar_1
@@ -513,7 +515,7 @@ dyn_load_sunos53.o: dyn_load.c
 
 # SunOS5 shared library version of the collector
 sunos5gc.so: $(OBJS) dyn_load_sunos53.o
-	$(CC) -G -o sunos5gc.so $(OBJS) dyn_load_sunos53.o -ldl
+	$(CC) -G -o sunos5gc.so $(OBJS) dyn_load_sunos53.o $(AO_INSTALL_DIR)/lib/libatomic_ops.a -ldl
 	ln sunos5gc.so libgc.so
 
 # Alpha/OSF shared library version of the collector
@@ -556,14 +558,11 @@ mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s \
 	    $(srcdir)/ia64_save_regs_in_stack.s \
 	    $(srcdir)/sparc_netbsd_mach_dep.s $(UTILS)
 	rm -f mach_dep.o
-	./if_mach MIPS IRIX5 $(CC) -c -o mach_dep.o $(srcdir)/mips_sgi_mach_dep.s
-	./if_mach MIPS RISCOS $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
-	./if_mach MIPS ULTRIX $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
-	./if_mach POWERPC DARWIN $(AS) -o mach_dep.o $(srcdir)/powerpc_darwin_mach_dep.s
-	./if_mach ALPHA LINUX $(CC) -c -o mach_dep.o $(srcdir)/alpha_mach_dep.S
-	./if_mach SPARC SUNOS5 $(CC) -c -o mach_dep.o $(srcdir)/sparc_mach_dep.S
-	./if_mach SPARC OPENBSD $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
-	./if_mach SPARC NETBSD $(AS) -o mach_dep.o $(srcdir)/sparc_netbsd_mach_dep.s
+	./if_mach SPARC SUNOS5 $(CC) -c -o mach_dep2.o $(srcdir)/sparc_mach_dep.S
+	./if_mach SPARC OPENBSD $(AS) -o mach_dep2.o $(srcdir)/sparc_sunos4_mach_dep.s
+	./if_mach SPARC NETBSD $(AS) -o mach_dep2.o $(srcdir)/sparc_netbsd_mach_dep.s
+	./if_mach SPARC "" $(CC) -c -o mach_dep1.o $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
+	./if_mach SPARC "" ld -r -o mach_dep.o mach_dep1.o mach_dep2.o
 	./if_mach IA64 "" as $(AS_ABI_FLAG) -o ia64_save_regs_in_stack.o $(srcdir)/ia64_save_regs_in_stack.s
 	./if_mach IA64 "" $(CC) -c -o mach_dep1.o $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
 	./if_mach IA64 "" ld -r -o mach_dep.o mach_dep1.o ia64_save_regs_in_stack.o
@@ -638,7 +637,7 @@ gctest: tests/test.o gc.a $(UTILS)
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  Gctest may still work.
 # Try compiling setjmp_t.c unoptimized.
-setjmp_test: $(srcdir)/setjmp_t.c $(srcdir)/include/gc.h $(UTILS)
+setjmp_test: $(srcdir)/setjmp_t.c $(srcdir)/include/gc.h $(UTILS) $(AO_INSTALL_DIR)
 	$(CC) $(CFLAGS) -o setjmp_test $(srcdir)/setjmp_t.c
 
 test:  KandRtest cord/cordtest

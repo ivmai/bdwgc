@@ -1,7 +1,7 @@
 #include "private/pthread_support.h"
 
-#if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS) \
-     && !defined(GC_WIN32_THREADS) && !defined(GC_DARWIN_THREADS)
+#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) && \
+    !defined(GC_DARWIN_THREADS)
 
 #include <signal.h>
 #include <semaphore.h>
@@ -160,12 +160,12 @@ void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 	return;
     }
 #   ifdef SPARC
-	me -> stop_info.stack_ptr = (ptr_t)GC_save_regs_in_stack();
+	me -> stop_info.stack_ptr = GC_save_regs_in_stack();
 #   else
 	me -> stop_info.stack_ptr = (ptr_t)(&dummy);
 #   endif
 #   ifdef IA64
-	me -> backing_store_ptr = (ptr_t)GC_save_regs_in_stack();
+	me -> backing_store_ptr = GC_save_regs_in_stack();
 #   endif
 
     /* Tell the thread that wants to stop the world that this   */
@@ -282,6 +282,8 @@ void GC_push_all_stacks()
     	              (unsigned)p -> id, bs_lo, bs_hi);
 #	  endif
           if (pthread_equal(p -> id, me)) {
+	    /* FIXME:  This may add an unbounded number of entries,	*/
+	    /* and hence overflow the mark stack, which is bad.		*/
 	    GC_push_all_eager(bs_lo, bs_hi);
 	  } else {
 	    GC_push_all_stack(bs_lo, bs_hi);
@@ -340,13 +342,13 @@ int GC_suspend_all()
     return n_live_threads;
 }
 
-/* Caller holds allocation lock.	*/
 void GC_stop_world()
 {
     int i;
     int n_live_threads;
     int code;
 
+    GC_ASSERT(I_HOLD_LOCK());
     #if DEBUG_THREADS
       GC_printf("Stopping the world from 0x%x\n", (unsigned)pthread_self());
     #endif

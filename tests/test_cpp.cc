@@ -52,7 +52,7 @@ extern "C" {
 
 #define my_assert( e ) \
     if (! (e)) { \
-        GC_printf1( "Assertion failure in " __FILE__ ", line %d: " #e "\n", \
+        GC_printf( "Assertion failure in " __FILE__ ", line %d: " #e "\n", \
                     __LINE__ ); \
         exit( 1 ); }
 
@@ -216,11 +216,11 @@ int APIENTRY WinMain(
       x = 0;
 #   endif
     if (argc != 2 || (0 >= (n = atoi( argv[ 1 ] )))) {
-        GC_printf0( "usage: test_cpp number-of-iterations\nAssuming 10 iters\n" );
+        GC_printf( "usage: test_cpp number-of-iterations\nAssuming 10 iters\n" );
         n = 10;}
         
     for (iters = 1; iters <= n; iters++) {
-        GC_printf1( "Starting iteration %d\n", iters );
+        GC_printf( "Starting iteration %d\n", iters );
 
             /* Allocate some uncollectable As and disguise their pointers.
             Later we'll check to see if the objects are still there.  We're
@@ -282,7 +282,7 @@ int APIENTRY WinMain(
       x = *xptr;
 #   endif
     my_assert (29 == x[0]);
-    GC_printf0( "The test appears to have succeeded.\n" );
+    GC_printf( "The test appears to have succeeded.\n" );
     return( 0 );}
     
 

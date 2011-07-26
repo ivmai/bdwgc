@@ -43,31 +43,12 @@
   int GC_log;  /* Forward decl, so we can set it.	*/
 #endif
 
-# ifdef THREADS
-#   ifdef PCR
-#     include "il/PCR_IL.h"
-      PCR_Th_ML GC_allocate_ml;
-#   elif defined(GC_WIN32_THREADS) 
-#     if defined(GC_PTHREADS)
-	pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
-#     elif defined(GC_DLL)
-	 __declspec(dllexport) CRITICAL_SECTION GC_allocate_ml;
-#     else
-	 CRITICAL_SECTION GC_allocate_ml;
-#     endif
-#   elif defined(GC_PTHREADS)
-#     if defined(USE_SPIN_LOCK)
-        pthread_t GC_lock_holder = NO_THREAD;
-#     else
-	pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
-	pthread_t GC_lock_holder = NO_THREAD;
-		/* Used only for assertions, and to prevent	 */
-		/* recursive reentry in the system call wrapper. */
-#     endif 
-#   else
-       --> declare allocator lock here
-#   endif
-# endif
+#if defined(THREADS) && defined(PCR)
+# include "il/PCR_IL.h"
+  PCR_Th_ML GC_allocate_ml;
+#endif
+/* For other platforms with threads, the lock and possibly		*/
+/* GC_lock_holder variables are defined in the thread support code.	*/
 
 #if defined(NOSYS) || defined(ECOS)
 #undef STACKBASE
@@ -157,7 +138,7 @@ void * GC_project2(void *arg1, void *arg2)
 /* quantization alogrithm (but we precompute it).			*/ 
 void GC_init_size_map(void)
 {
-    register unsigned i;
+    int i;
 
     /* Map size 0 to something bigger.			*/
     /* This avoids problems at lower levels.		*/
@@ -423,7 +404,7 @@ void GC_init(void)
 #if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
     if (!GC_is_initialized) {
       BOOL (WINAPI *pfn) (LPCRITICAL_SECTION, DWORD) = NULL;
-      HMODULE hK32 = GetModuleHandle("kernel32.dll");
+      HMODULE hK32 = GetModuleHandleA("kernel32.dll");
       if (hK32)
           (FARPROC) pfn = GetProcAddress(hK32,
 			  "InitializeCriticalSectionAndSpinCount");

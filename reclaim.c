@@ -289,7 +289,12 @@ void GC_reclaim_block(struct hblk *hbp, word report_if_found)
 	}
     } else {
         GC_bool empty = GC_block_empty(hhdr);
-	GC_ASSERT(sz * hhdr -> hb_n_marks <= HBLKSIZE);
+#	ifdef PARALLEL_MARK
+	  /* Count can be low or one too high.	*/
+	  GC_ASSERT(hhdr -> hb_n_marks <= HBLKSIZE/sz + 1);
+#	else
+	  GC_ASSERT(sz * hhdr -> hb_n_marks <= HBLKSIZE);
+#	endif
 	if (hhdr -> hb_descr != 0) {
 	  GC_composite_in_use += sz * hhdr -> hb_n_marks;
 	} else {
@@ -387,7 +392,7 @@ int GC_n_set_marks(hdr *hhdr)
 #endif /* !USE_MARK_BYTES  */
 
 /*ARGSUSED*/
-void GC_print_block_descr(struct hblk *h, word dummy)
+void GC_print_block_descr(struct hblk *h, word /* struct PrintStats */ raw_ps)
 {
     hdr * hhdr = HDR(h);
     unsigned bytes = hhdr -> hb_sz;
@@ -405,7 +410,7 @@ void GC_print_block_descr(struct hblk *h, word dummy)
     bytes += HBLKSIZE-1;
     bytes &= ~(HBLKSIZE-1);
 
-    ps = (struct Print_stats *)dummy;
+    ps = (struct Print_stats *)raw_ps;
     ps->total_bytes += bytes;
     ps->number_of_blocks++;
 }

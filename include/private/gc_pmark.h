@@ -167,23 +167,26 @@ exit_label: ; \
 /* Set mark bit, exit if it was already set.	*/
 
 # ifdef USE_MARK_BITS
-/* FIXME: untested */
-#   if defined(THREADS)
-      /* Introduces a benign race as in the byte case.	*/
-#     define OR_WORD_EXIT_IF_SET(addr, mask, label) \
-	if (!(*(addr) & (mask))) { \
-	  AO_or((AO_t *)(addr), (mask); \
-	} else { \
-	  goto label; \
-	}
-#   else /* !THREADS */
-#     define OR_WORD_EXIT_IF_SET(addr, mask, label) \
-	if (!(*(addr) & (mask))) { \
-	  *(addr) |= (mask); \
-	} else { \
-	  goto label; \
-	}
-#   endif
+#   ifdef PARALLEL_MARK
+      /* The following may fail to exit even if the bit was already set.    */
+      /* For our uses, that's benign:                                       */
+#     define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
+        { \
+          if (!(*(addr) & (mask))) { \
+            AO_or((AO_t *)(addr), (mask); \
+          } else { \
+            goto label; \
+          } \
+        }
+#   else
+#     define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
+        { \
+           word old = *(addr); \
+           word my_bits = (bits); \
+           if (old & my_bits) goto exit_label; \
+           *(addr) = (old | my_bits); \
+         }
+#   endif /* !PARALLEL_MARK */
 #   define SET_MARK_BIT_EXIT_IF_SET(hhdr,bit_no,exit_label) \
     { \
         word * mark_word_addr = hhdr -> hb_marks + divWORDSZ(bit_no); \
@@ -194,18 +197,19 @@ exit_label: ; \
 # endif
 
 
-#if defined(I386) && defined(__GNUC__)
+#ifdef USE_MARK_BYTES
+# if defined(I386) && defined(__GNUC__)
 #  define LONG_MULT(hprod, lprod, x, y) { \
 	asm("mull %2" : "=a"(lprod), "=d"(hprod) : "g"(y), "0"(x)); \
    }
-#else /* No in-line X86 assembly code */
+# else /* No in-line X86 assembly code */
 #  define LONG_MULT(hprod, lprod, x, y) { \
 	unsigned long long prod = (unsigned long long)x \
 				  * (unsigned long long)y; \
 	hprod = prod >> 32;  \
 	lprod = (unsigned32)prod;  \
    }
-#endif
+# endif
 
   /* There is a race here, and we may set				*/
   /* the bit twice in the concurrent case.  This can result in the	*/
@@ -218,6 +222,7 @@ exit_label: ; \
 	if (mark_byte) goto exit_label; \
 	*mark_byte_addr = 1;  \
     } 
+#endif /* USE_MARK_BYTES */
 
 #ifdef PARALLEL_MARK
 # define INCR_MARKS(hhdr) \

@@ -587,9 +587,9 @@ void * GC_malloc_explicitly_typed(size_t lb, GC_descr d)
     if(SMALL_OBJ(lb)) {
 	lg = GC_size_map[lb];
 	opp = &(GC_eobjfreelist[lg]);
-	FASTLOCK();
-        if( !FASTLOCK_SUCCEEDED() || (op = *opp) == 0 ) {
-            FASTUNLOCK();
+	LOCK();
+        if( (op = *opp) == 0 ) {
+            UNLOCK();
             op = (ptr_t)GENERAL_MALLOC((word)lb, GC_explicit_kind);
 	    if (0 == op) return 0;
 	    lg = GC_size_map[lb];	/* May have been uninitialized.	*/
@@ -597,7 +597,7 @@ void * GC_malloc_explicitly_typed(size_t lb, GC_descr d)
             *opp = obj_link(op);
 	    obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-            FASTUNLOCK();
+            UNLOCK();
         }
    } else {
        op = (ptr_t)GENERAL_MALLOC((word)lb, GC_explicit_kind);
@@ -620,16 +620,16 @@ DCL_LOCK_STATE;
     if( SMALL_OBJ(lb) ) {
 	lg = GC_size_map[lb];
 	opp = &(GC_eobjfreelist[lg]);
-	FASTLOCK();
-        if( !FASTLOCK_SUCCEEDED() || (op = *opp) == 0 ) {
-            FASTUNLOCK();
+	LOCK();
+        if( (op = *opp) == 0 ) {
+            UNLOCK();
             op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
 	    lg = GC_size_map[lb];	/* May have been uninitialized.	*/
         } else {
             *opp = obj_link(op);
 	    obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-            FASTUNLOCK();
+            UNLOCK();
         }
    } else {
        op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
@@ -669,9 +669,9 @@ DCL_LOCK_STATE;
     if( SMALL_OBJ(lb) ) {
 	lg = GC_size_map[lb];
 	opp = &(GC_arobjfreelist[lg]);
-	FASTLOCK();
-        if( !FASTLOCK_SUCCEEDED() || (op = *opp) == 0 ) {
-            FASTUNLOCK();
+	LOCK();
+        if( (op = *opp) == 0 ) {
+            UNLOCK();
             op = (ptr_t)GENERAL_MALLOC((word)lb, GC_array_kind);
 	    if (0 == op) return(0);
 	    lg = GC_size_map[lb];	/* May have been uninitialized.	*/            
@@ -679,7 +679,7 @@ DCL_LOCK_STATE;
             *opp = obj_link(op);
 	    obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-            FASTUNLOCK();
+            UNLOCK();
         }
    } else {
        op = (ptr_t)GENERAL_MALLOC((word)lb, GC_array_kind);

@@ -854,6 +854,7 @@
 #     define ALIGNMENT 4	/* Required by hardware	*/
 #     define CPP_WORDSZ 32
 #   endif
+#   define USE_ASM_PUSH_REGS
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
 	extern int _etext[];
@@ -1146,7 +1147,11 @@
 #       if !defined(__WATCOMC__) && !defined(GC_WIN32_THREADS)
 #	  define MPROTECT_VDB
 #	endif
-#       define GWW_VDB
+#	if _MSC_VER >= 1300  /* .NET, i.e. > VisualStudio 6	*/
+#         define GWW_VDB
+#	else
+#	  define MPROTECT_VDB
+#	endif
 #       define DATAEND  /* not needed */
 #   endif
 #   ifdef MSWINCE
@@ -1490,13 +1495,6 @@
 
 # ifdef IA64
 #   define MACH_TYPE "IA64"
-	/* We need to get preserved registers in addition to register   */
-	/* windows.   That's easiest to do with setjmp.			*/
-#   ifdef PARALLEL_MARK
-#	define USE_MARK_BYTES
-	    /* Compare-and-exchange is too expensive to use for 	*/
-	    /* setting mark bits.					*/
-#   endif
 #   ifdef HPUX
 #	ifdef _ILP32
 #	  define CPP_WORDSZ 32
@@ -1990,6 +1988,14 @@
 		defined(GC_SOLARIS_THREADS) || defined(GC_WIN32_THREADS) || \
 		defined(GC_PTHREADS)
 #   define THREADS
+# endif
+
+# if !defined(USE_MARK_BITS) && !defined(USE_MARK_BYTES)
+#   if defined(THREADS) && defined(PARALLEL_MARK)
+#     define USE_MARK_BYTES
+#   else
+#     define USE_MARK_BITS
+#   endif
 # endif
 
 # if defined(MSWINCE)

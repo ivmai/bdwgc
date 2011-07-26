@@ -63,9 +63,6 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 
 # ifndef GCCONFIG_H
 #   include "gcconfig.h"
-#   ifndef USE_MARK_BYTES
-#     define USE_MARK_BYTES
-#   endif
 # endif
 
 # ifndef HEADERS_H
@@ -74,8 +71,8 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 
 #if __GNUC__ >= 3
 # define EXPECT(expr, outcome) __builtin_expect(expr,outcome)
-# define INLINE inline
   /* Equivalent to (expr), but predict that usually (expr)==outcome. */
+# define INLINE inline
 #else
 # define EXPECT(expr, outcome) (expr)
 # define INLINE
@@ -192,17 +189,6 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 /*                               */
 /*********************************/
 
-#ifdef SAVE_CALL_CHAIN
-
-/* Fill in the pc and argument information for up to NFRAMES of my	*/
-/* callers.  Ignore my frame and my callers frame.			*/
-struct callinfo;
-void GC_save_callers(struct callinfo info[NFRAMES]);
-  
-void GC_print_callers(struct callinfo info[NFRAMES]);
-
-#endif
-
 #ifdef NEED_CALLINFO
     struct callinfo {
 	word ci_pc;  	/* Caller, not callee, pc	*/
@@ -214,6 +200,16 @@ void GC_print_callers(struct callinfo info[NFRAMES]);
 	    word ci_dummy;
 #	endif
     };
+#endif
+
+#ifdef SAVE_CALL_CHAIN
+
+/* Fill in the pc and argument information for up to NFRAMES of my	*/
+/* callers.  Ignore my frame and my callers frame.			*/
+void GC_save_callers(struct callinfo info[NFRAMES]);
+  
+void GC_print_callers(struct callinfo info[NFRAMES]);
+
 #endif
 
 
@@ -331,10 +327,10 @@ void GC_print_callers(struct callinfo info[NFRAMES]);
 #   define ABORT(s) PCR_Base_Panic(s)
 # else
 #   ifdef SMALL_CONFIG
-#	define ABORT(msg) abort();
+#	define ABORT(msg) abort()
 #   else
 	GC_API void GC_abort(const char * msg);
-#       define ABORT(msg) GC_abort(msg);
+#       define ABORT(msg) GC_abort(msg)
 #   endif
 # endif
 
@@ -660,10 +656,20 @@ struct hblkhdr {
     counter_t hb_n_marks;	/* Number of set mark bits, excluding 	*/
     				/* the one always set at the end.	*/
     				/* Currently it is concurrently 	*/
-    				/* updated and hence only a lower bound.*/
-    				/* But a zero value does gurantee that	*/
+    				/* updated and hence only approximate.  */
+    				/* But a zero value does guarantee that	*/
     				/* the block contains no marked		*/
     				/* objects.				*/
+    				/* Ensuring this property means that we	*/
+    				/* never decrement it to zero during a	*/
+    				/* collection, and hence the count may 	*/
+    				/* be one too high.  Due to concurrent	*/
+    				/* updates, and arbitrary number of	*/
+    				/* increments, but not all of them (!)	*/
+    				/* may be lost, hence it may in theory	*/
+    				/* be much too low.			*/
+    				/* Without parallel marking, the count	*/
+    				/* is accurate.				*/
 #   ifdef USE_MARK_BYTES
       union {
         char _hb_marks[MARK_BITS_SZ];
@@ -676,11 +682,12 @@ struct hblkhdr {
 	word dummy;	/* Force word alignment of mark bytes. */
       } _mark_byte_union;
 #     define hb_marks _mark_byte_union._hb_marks
-#     define ANY_INDEX 23	/* Random mark bit index for assertions */
 #   else
       word hb_marks[MARK_BITS_SZ];
 #   endif /* !USE_MARK_BYTES */
 };
+
+# define ANY_INDEX 23	/* "Random" mark bit index for assertions */
 
 /*  heap block body */
 
@@ -1156,28 +1163,9 @@ extern long GC_large_alloc_warn_suppressed;
 /* accessed.								*/
 #ifdef PARALLEL_MARK
 # define OR_WORD(addr, bits) \
-	{ word old; \
-	  do { \
-	    old = *((volatile word *)addr); \
-	  } while (!GC_compare_and_exchange((addr), old, old | (bits))); \
-	}
-# define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
-	{ word old; \
-	  word my_bits = (bits); \
-	  do { \
-	    old = *((volatile word *)addr); \
-	    if (old & my_bits) goto exit_label; \
-	  } while (!GC_compare_and_exchange((addr), old, old | my_bits)); \
-	}
+	{ AO_or((volatile AO_t *)(addr), (AO_t)bits); }
 #else
 # define OR_WORD(addr, bits) *(addr) |= (bits)
-# define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
-	{ \
-	  word old = *(addr); \
-	  word my_bits = (bits); \
-	  if (old & my_bits) goto exit_label; \
-	  *(addr) = (old | my_bits); \
-	}
 #endif
 
 /* Mark bit operations */
@@ -1338,7 +1326,7 @@ void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 # if defined(SPARC) || defined(IA64)
   /* Cause all stacked registers to be saved in memory.  Return a	*/
   /* pointer to the top of the corresponding memory stack.		*/
-  word GC_save_regs_in_stack(void);
+  ptr_t GC_save_regs_in_stack(void);
 # endif
 			/* Push register contents onto mark stack.	*/
   			/* If NURSERY is defined, the default push	*/
@@ -1504,7 +1492,8 @@ ptr_t GC_build_fl(struct hblk *h, size_t words, GC_bool clear, ptr_t list);
 				/* called by GC_new_hblk, but also	*/
 				/* called explicitly without GC lock.	*/
 
-struct hblk * GC_allochblk (size_t size_in_bytes, int kind, unsigned flags);
+struct hblk * GC_allochblk (size_t size_in_bytes, int kind,
+		            unsigned char flags);
 				/* Allocate a heap block, inform	*/
 				/* the marker that block is valid	*/
 				/* for objects of indicated size.	*/
@@ -1766,9 +1755,6 @@ GC_bool GC_page_was_dirty(struct hblk *h);
   			/* Read retrieved dirty bits.	*/
 GC_bool GC_page_was_ever_dirty(struct hblk *h);
   			/* Could the page contain valid heap pointers?	*/
-void GC_is_fresh(struct hblk *h, word n);
-  			/* Assert the region currently contains no	*/
-  			/* valid pointers.				*/
 void GC_remove_protection(struct hblk *h, word nblocks,
 			  GC_bool pointerfree);
   			/* h is about to be writteni or allocated.  Ensure  */
@@ -1896,7 +1882,7 @@ void GC_err_puts(const char *s);
 		/* some other reason.					*/
 # endif /* PARALLEL_MARK */
 
-# if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS)
+# if defined(GC_PTHREADS)
   /* We define the thread suspension signal here, so that we can refer	*/
   /* to it in the dirty bit implementation, if necessary.  Ideally we	*/
   /* would allocate a (real-time ?) signal using the standard mechanism.*/

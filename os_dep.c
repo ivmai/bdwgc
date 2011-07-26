@@ -80,10 +80,12 @@
 # undef GC_AMIGA_DEF
 #endif
 
-#if defined(MSWIN32) || defined(MSWINCE)
+#if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 # define WIN32_LEAN_AND_MEAN
 # define NOSERVICE
 # include <windows.h>
+  /* It's not clear this is completely kosher under Cygwin.  But it	*/
+  /* allows us to get a working GC_get_stack_base.			*/
 #endif
 
 #ifdef MACOS
@@ -468,7 +470,7 @@ void GC_enable_signals(void)
       && !defined(MACOS) && !defined(DJGPP) && !defined(DOS4GW) \
       && !defined(NOSYS) && !defined(ECOS)
 
-#   if defined(sigmask) && !defined(UTS4) && !defined(HURD)
+#   if 0
 	/* Use the traditional BSD interface */
 #	define SIGSET_T int
 #	define SIG_DEL(set, signal) (set) &= ~(sigmask(signal))
@@ -477,13 +479,14 @@ void GC_enable_signals(void)
     	  /* longjmp implementations.  Most systems appear not to have	*/
     	  /* a signal 32.						*/
 #	define SIGSETMASK(old, new) (old) = sigsetmask(new)
-#   else
-	/* Use POSIX/SYSV interface	*/
-#	define SIGSET_T sigset_t
-#	define SIG_DEL(set, signal) sigdelset(&(set), (signal))
-#	define SIG_FILL(set) sigfillset(&set)
-#	define SIGSETMASK(old, new) sigprocmask(SIG_SETMASK, &(new), &(old))
 #   endif
+
+    /* Use POSIX/SYSV interface	*/
+#   define SIGSET_T sigset_t
+#   define SIG_DEL(set, signal) sigdelset(&(set), (signal))
+#   define SIG_FILL(set) sigfillset(&set)
+#   define SIGSETMASK(old, new) sigprocmask(SIG_SETMASK, &(new), &(old))
+
 
 static GC_bool mask_initialized = FALSE;
 
@@ -578,7 +581,7 @@ word GC_page_size;
  * With threads, GC_mark_roots needs to know how to do this.
  * Called with allocator lock held.
  */
-# if defined(MSWIN32) || defined(MSWINCE)
+# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 # define is_writable(prot) ((prot) == PAGE_READWRITE \
 			    || (prot) == PAGE_WRITECOPY \
 			    || (prot) == PAGE_EXECUTE_READWRITE \
@@ -970,7 +973,8 @@ ptr_t GC_get_main_stack_base(void)
 #endif /* FREEBSD_STACKBOTTOM */
 
 #if !defined(BEOS) && !defined(AMIGA) && !defined(MSWIN32) \
-    && !defined(MSWINCE) && !defined(OS2) && !defined(NOSYS) && !defined(ECOS)
+    && !defined(MSWINCE) && !defined(OS2) && !defined(NOSYS) && !defined(ECOS) \
+    && !defined(CYGWIN32)
 
 ptr_t GC_get_main_stack_base(void)
 {
@@ -2021,8 +2025,7 @@ void GC_default_push_other_roots(void)
 # endif /* PCR */
 
 
-# if defined(GC_SOLARIS_THREADS) || defined(GC_PTHREADS) || \
-     defined(GC_WIN32_THREADS)
+# if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
 
 extern void GC_push_all_stacks(void);
 
@@ -2031,7 +2034,7 @@ void GC_default_push_other_roots(void)
     GC_push_all_stacks();
 }
 
-# endif /* GC_SOLARIS_THREADS || GC_PTHREADS */
+# endif /* GC_WIN32_THREADS || GC_PTHREADS */
 
 void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
 
@@ -2182,8 +2185,6 @@ void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
   }
 
 # ifndef MPROTECT_VDB
-    void GC_is_fresh(struct hblk *h, word n)
-    {}
     void GC_remove_protection(struct hblk *h, word nblocks, GC_bool is_ptrfree)
     {}
 # endif
@@ -2233,11 +2234,6 @@ GC_bool GC_page_was_dirty(struct hblk *h)
 GC_bool GC_page_was_ever_dirty(struct hblk *h)
 {
     return(TRUE);
-}
-
-/* Reset the n pages starting at h to "was never dirty" status.	*/
-void GC_is_fresh(struct hblk *h, word n)
-{
 }
 
 /* A call that:						*/
@@ -2300,11 +2296,6 @@ GC_bool GC_page_was_ever_dirty(struct hblk *h)
 void GC_dirty(ptr_t p)
 {
     async_set_pht_entry_from_index(GC_dirty_pages, index);
-}
-
-/* Reset the n pages starting at h to "was never dirty" status.	*/
-void GC_is_fresh(struct hblk *h, word n)
-{
 }
 
 /*ARGSUSED*/
@@ -2980,12 +2971,6 @@ GC_bool GC_page_was_ever_dirty(struct hblk *h)
     return(TRUE);
 }
 
-/* Reset the n pages starting at h to "was never dirty" status.	*/
-/*ARGSUSED*/
-void GC_is_fresh(struct hblk *h, word n)
-{
-}
-
 # endif /* MPROTECT_VDB */
 
 # ifdef PROC_VDB
@@ -3012,23 +2997,6 @@ void GC_is_fresh(struct hblk *h, word n)
 #define INITIAL_BUF_SZ 16384
 word GC_proc_buf_size = INITIAL_BUF_SZ;
 char *GC_proc_buf;
-
-#ifdef GC_SOLARIS_THREADS
-/* We don't have exact sp values for threads.  So we count on	*/
-/* occasionally declaring stack pages to be fresh.  Thus we 	*/
-/* need a real implementation of GC_is_fresh.  We can't clear	*/
-/* entries in GC_written_pages, since that would declare all	*/
-/* pages with the given hash address to be fresh.		*/
-#   define MAX_FRESH_PAGES 8*1024	/* Must be power of 2 */
-    struct hblk ** GC_fresh_pages;	/* A direct mapped cache.	*/
-    					/* Collisions are dropped.	*/
-
-#   define FRESH_PAGE_SLOT(h) (divHBLKSZ((word)(h)) & (MAX_FRESH_PAGES-1))
-#   define ADD_FRESH_PAGE(h) \
-	GC_fresh_pages[FRESH_PAGE_SLOT(h)] = (h)
-#   define PAGE_IS_FRESH(h) \
-	(GC_fresh_pages[FRESH_PAGE_SLOT(h)] == (h) && (h) != 0)
-#endif
 
 int GC_proc_fd;
 
@@ -3060,15 +3028,6 @@ void GC_dirty_init(void)
     	ABORT("/proc ioctl failed");
     }
     GC_proc_buf = GC_scratch_alloc(GC_proc_buf_size);
-#   ifdef GC_SOLARIS_THREADS
-	GC_fresh_pages = (struct hblk **)
-	  GC_scratch_alloc(MAX_FRESH_PAGES * sizeof (struct hblk *));
-	if (GC_fresh_pages == 0) {
-	    GC_err_printf("No space for fresh pages\n");
-	    EXIT();
-	}
-	BZERO(GC_fresh_pages, MAX_FRESH_PAGES * sizeof (struct hblk *));
-#   endif
 }
 
 /* Ignore write hints. They don't help us here.	*/
@@ -3080,11 +3039,7 @@ GC_bool is_ptrfree;
 {
 }
 
-#ifdef GC_SOLARIS_THREADS
-#   define READ(fd,buf,nbytes) syscall(SYS_read, fd, buf, nbytes)
-#else
-#   define READ(fd,buf,nbytes) read(fd, buf, nbytes)
-#endif
+# define READ(fd,buf,nbytes) read(fd, buf, nbytes)
 
 void GC_read_dirty(void)
 {
@@ -3117,10 +3072,6 @@ void GC_read_dirty(void)
                 /* Punt:	*/
         	memset(GC_grungy_pages, 0xff, sizeof (page_hash_table));
 		memset(GC_written_pages, 0xff, sizeof(page_hash_table));
-#		ifdef GC_SOLARIS_THREADS
-		    BZERO(GC_fresh_pages,
-		    	  MAX_FRESH_PAGES * sizeof (struct hblk *)); 
-#		endif
 		return;
             }
         }
@@ -3147,15 +3098,6 @@ void GC_read_dirty(void)
 	                register word index = PHT_HASH(h);
 	                
 	                set_pht_entry_from_index(GC_grungy_pages, index);
-#			ifdef GC_SOLARIS_THREADS
-			  {
-			    register int slot = FRESH_PAGE_SLOT(h);
-			    
-			    if (GC_fresh_pages[slot] == h) {
-			        GC_fresh_pages[slot] = 0;
-			    }
-			  }
-#			endif
 	                h++;
 	            }
 	        }
@@ -3165,30 +3107,16 @@ void GC_read_dirty(void)
 	}
     /* Update GC_written_pages. */
         GC_or_pages(GC_written_pages, GC_grungy_pages);
-#   ifdef GC_SOLARIS_THREADS
-      /* Make sure that old stacks are considered completely clean	*/
-      /* unless written again.						*/
-	GC_old_stacks_are_fresh();
-#   endif
 }
 
 #undef READ
 
 GC_bool GC_page_was_dirty(struct hblk *h)
-struct hblk *h;
 {
     register word index = PHT_HASH(h);
     register GC_bool result;
     
     result = get_pht_entry_from_index(GC_grungy_pages, index);
-#   ifdef GC_SOLARIS_THREADS
-	if (result && PAGE_IS_FRESH(h)) result = FALSE;
-	/* This happens only if page was declared fresh since	*/
-	/* the read_dirty call, e.g. because it's in an unused  */
-	/* thread stack.  It's OK to treat it as clean, in	*/
-	/* that case.  And it's consistent with 		*/
-	/* GC_page_was_ever_dirty.				*/
-#   endif
     return(result);
 }
 
@@ -3198,27 +3126,7 @@ GC_bool GC_page_was_ever_dirty(struct hblk *h)
     register GC_bool result;
     
     result = get_pht_entry_from_index(GC_written_pages, index);
-#   ifdef GC_SOLARIS_THREADS
-	if (result && PAGE_IS_FRESH(h)) result = FALSE;
-#   endif
     return(result);
-}
-
-/* Caller holds allocation lock.	*/
-void GC_is_fresh(struct hblk *h, word n)
-{
-
-    register word index;
-    
-#   ifdef GC_SOLARIS_THREADS
-      register word i;
-      
-      if (GC_fresh_pages != 0) {
-        for (i = 0; i < n; i++) {
-          ADD_FRESH_PAGE(h + i);
-        }
-      }
-#   endif
 }
 
 # endif /* PROC_VDB */

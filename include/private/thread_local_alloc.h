@@ -19,6 +19,45 @@
 /* implementation also exports GC_malloc and friends, which	*/
 /* are declared in gc.h.					*/
 
+#include "private/gc_priv.h"
+
+#if defined(THREAD_LOCAL_ALLOC)
+
+#include "gc_inline.h"
+
+
+# if defined USE_HPUX_TLS
+#   error USE_HPUX_TLS macro was replaced by USE_COMPILER_TLS
+# endif
+
+# if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_WIN32_SPECIFIC) && \
+     !defined(USE_WIN32_COMPILER_TLS) && !defined(USE_COMPILER_TLS) && \
+     !defined(USE_CUSTOM_SPECIFIC)
+#   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+#     if defined(__GNUC__)  /* Fixed for versions past 2.95? */
+#       define USE_WIN32_SPECIFIC
+#     else
+#       define USE_WIN32_COMPILER_TLS
+#     endif /* !GNU */
+#   elif defined(LINUX) && defined(__GNUC__)
+#     define USE_COMPILER_TLS
+#   elif (defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) || \
+         defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS))
+#     define USE_PTHREAD_SPECIFIC
+#   elif defined(GC_HPUX_THREADS)
+#     ifdef __GNUC__
+#      define USE_PTHREAD_SPECIFIC
+         /* Empirically, as of gcc 3.3, USE_COMPILER_TLS doesn't work.	*/
+#     else
+#      define USE_COMPILER_TLS
+#     endif
+#   else
+#     define USE_CUSTOM_SPECIFIC  /* Use our own.	*/
+#   endif
+# endif
+
+# include <stdlib.h>
+
 /* One of these should be declared as the tlfs field in the	*/
 /* structure pointed to by a GC_thread.				*/
 typedef struct thread_local_freelists {
@@ -52,22 +91,27 @@ typedef struct thread_local_freelists {
 #   define GC_key_create pthread_key_create
 #   define GC_remove_specific()  /* No need for cleanup on exit. */
     typedef pthread_key_t GC_key_t;
-# elif defined(USE_COMPILER_TLS)
+# elif defined(USE_COMPILER_TLS) || defined(USE_WIN32_COMPILER_TLS)
 #   define GC_getspecific(x) (x)
 #   define GC_setspecific(key, v) ((key) = (v), 0)
 #   define GC_key_create(key, d) 0
 #   define GC_remove_specific()  /* No need for cleanup on exit. */
     typedef void * GC_key_t;
 # elif defined(USE_WIN32_SPECIFIC)
+#   include <windows.h>
 #   define GC_getspecific TlsGetValue
-#   define GC_setspecific TlsSetValue
+#   define GC_setspecific(key, v) !TlsSetValue(key, v)
+    	/* We assume 0 == success, msft does the opposite.	*/
 #   define GC_key_create(key, d)  \
 	((d) != 0? (ABORT("Destructor unsupported by TlsAlloc"),0) \
 	 	 : (*(key) = TlsAlloc(), 0))
 #   define GC_remove_specific()  /* No need for cleanup on thread exit. */
     	/* Need TlsFree on process exit/detach ? */
-# else
+    typedef DWORD GC_key_t;
+# elif defined(USE_CUSTOM_SPECIFIC)
 #   include "private/specific.h"
+# else
+#   error implement me
 # endif
 
 
@@ -86,14 +130,18 @@ void GC_destroy_thread_local(GC_tlfs p);
 /* we take care of an individual thread freelist structure.	*/
 void GC_mark_thread_local_fls_for(GC_tlfs p);
 
-#ifdef USE_COMPILER_TLS
+extern
+#if defined(USE_COMPILER_TLS)
   __thread
+#elif defined(USE_WIN32_COMPILER_TLS)
+  declspec(thread)
 #endif
 GC_key_t GC_thread_key;
+
 /* This is set up by the thread_local_alloc implementation.  But the	*/
 /* thread support layer calls GC_remove_specific(GC_thread_key)		*/
 /* before a thread exits.						*/
 /* And the thread support layer makes sure that GC_thread_key is traced,*/
 /* if necessary.							*/
 
-
+#endif /* THREAD_LOCAL_ALLOC */

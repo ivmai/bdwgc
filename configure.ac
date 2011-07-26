@@ -17,7 +17,7 @@ dnl Process this file with autoconf to produce configure.
 # Initialization
 # ==============
 
-AC_INIT(gc,7.0alpha4,Hans.Boehm@hp.com) 
+AC_INIT(gc,7.0alpha5,Hans.Boehm@hp.com) 
     ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
@@ -276,42 +276,42 @@ AC_MSG_CHECKING(which machine-dependent code should be used)
 machdep=
 case "$host" in
  alpha-*-openbsd*)
-    machdep="alpha_mach_dep.lo"
+    machdep="mach_dep.lo"
     if test x"${ac_cv_lib_dl_dlopen}" != xyes ; then
        AC_MSG_WARN(OpenBSD/Alpha without dlopen(). Shared library support is disabled)
     fi
     ;;
  alpha*-*-linux*)
-    machdep="alpha_mach_dep.lo"
+    machdep="mach_dep.lo"
     ;;
  i?86-*-solaris2.[[89]] | i?86-*-solaris2.1?)
     AC_DEFINE(SOLARIS25_PROC_VDB_BUG_FIXED)
     ;;
  mipstx39-*-elf*)
-    machdep="mips_ultrix_mach_dep.lo"
+    machdep="mach_dep.lo"
     AC_DEFINE(STACKBASE, __stackbase)
     AC_DEFINE(DATASTART_IS_ETEXT)
     ;;
  mips-dec-ultrix*)
-    machdep="mips_ultrix_mach-dep.lo"
+    machdep="mach-dep.lo"
     ;;
  mips-nec-sysv*|mips-unknown-sysv*)
     ;;
  mips*-*-linux*) 
     ;; 
  mips-*-*)
-    machdep="mips_sgi_mach_dep.lo"
+    machdep="mach_dep.lo"
     AC_DEFINE(NO_EXECUTE_PERMISSION)
     ;;
  sparc-*-netbsd*)
-    machdep="sparc_netbsd_mach_dep.lo"
+    machdep="mach_dep.lo sparc_netbsd_mach_dep.lo"
     ;;
  sparc-sun-solaris2.3)
-    machdep="sparc_mach_dep.lo"
+    machdep="mach_dep.lo sparc_mach_dep.lo"
     AC_DEFINE(SUNOS53_SHARED_LIB)
     ;;
  sparc*-sun-solaris2.*)
-    machdep="sparc_mach_dep.lo"
+    machdep="mach_dep.lo sparc_mach_dep.lo"
     ;;
  ia64-*-*)
     machdep="mach_dep.lo ia64_save_regs_in_stack.lo"

@@ -451,8 +451,8 @@ void * GC_malloc_uncollectable(size_t lb)
 	    	  /* collected anyway.					*/
 	lg = GC_size_map[lb];
 	opp = &(GC_uobjfreelist[lg]);
-	FASTLOCK();
-        if( FASTLOCK_SUCCEEDED() && (op = *opp) != 0 ) {
+	LOCK();
+        if( (op = *opp) != 0 ) {
             /* See above comment on signals.	*/
             *opp = obj_link(op);
             obj_link(op) = 0;
@@ -461,28 +461,31 @@ void * GC_malloc_uncollectable(size_t lb)
 	    /* cleared only temporarily during a collection, as a 	*/
 	    /* result of the normal free list mark bit clearing.	*/
             GC_non_gc_bytes += GRANULES_TO_BYTES(lg);
-            FASTUNLOCK();
-            return((void *) op);
-        }
-        FASTUNLOCK();
-        op = (ptr_t)GC_generic_malloc((word)lb, UNCOLLECTABLE);
+            UNLOCK();
+        } else {
+            UNLOCK();
+            op = (ptr_t)GC_generic_malloc((word)lb, UNCOLLECTABLE);
+	    /* For small objects, the free lists are completely marked. */
+	}
+	GC_ASSERT(0 == op || GC_is_marked(op));
+        return((void *) op);
     } else {
-	op = (ptr_t)GC_generic_malloc((word)lb, UNCOLLECTABLE);
-    }
-    if (0 == op) return(0);
-    /* We don't need the lock here, since we have an undisguised 	*/
-    /* pointer.  We do need to hold the lock while we adjust		*/
-    /* mark bits.							*/
-    {
-	register struct hblk * h;
 	size_t lb;
+	hdr * hhdr;
 	
-	h = HBLKPTR(op);
-	lb = HDR(h) -> hb_sz;
+	op = (ptr_t)GC_generic_malloc((word)lb, UNCOLLECTABLE);
+        if (0 == op) return(0);
 	
+	GC_ASSERT(((word)op & (HBLKSIZE - 1)) == 0); /* large block */
+	hhdr = HDR((struct hbklk *)op);
+	/* We don't need the lock here, since we have an undisguised 	*/
+	/* pointer.  We do need to hold the lock while we adjust	*/
+	/* mark bits.							*/
+	lb = hhdr -> hb_sz;
 	LOCK();
-	GC_set_mark_bit(op);
-	GC_non_gc_bytes += lb;
+	set_mark_bit_from_hdr(hhdr, 0);	/* Only object.	*/
+	GC_ASSERT(hhdr -> hb_n_marks == 0);
+	hhdr -> hb_n_marks = 1;
 	UNLOCK();
 	return((void *) op);
     }
@@ -538,36 +541,36 @@ void * GC_malloc_atomic_uncollectable(size_t lb)
 	    	  /* collected anyway.					*/
 	lg = GC_size_map[lg];
 	opp = &(GC_auobjfreelist[lg]);
-	FASTLOCK();
-        if( FASTLOCK_SUCCEEDED() && (op = *opp) != 0 ) {
+	LOCK();
+        if( (op = *opp) != 0 ) {
             /* See above comment on signals.	*/
             *opp = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
 	    /* Mark bit was already set while object was on free list. */
             GC_non_gc_bytes += GRANULES_TO_BYTES(lg);
-            FASTUNLOCK();
-            return((void *) op);
-        }
-        FASTUNLOCK();
-        op = (ptr_t)GC_generic_malloc(lb, AUNCOLLECTABLE);
+            UNLOCK();
+        } else {
+            UNLOCK();
+            op = (ptr_t)GC_generic_malloc(lb, AUNCOLLECTABLE);
+	}
+	GC_ASSERT(0 == op || GC_is_marked(op));
+        return((void *) op);
     } else {
-	op = (ptr_t)GC_generic_malloc(lb, AUNCOLLECTABLE);
-    }
-    if (0 == op) return(0);
-    /* We don't need the lock here, since we have an undisguised 	*/
-    /* pointer.  We do need to hold the lock while we adjust		*/
-    /* mark bits.							*/
-    {
-	struct hblk * h;
 	size_t lb;
+	hdr * hhdr;
 	
-	h = HBLKPTR(op);
-	lb = HDR(h) -> hb_sz;
+	op = (ptr_t)GC_generic_malloc(lb, AUNCOLLECTABLE);
+        if (0 == op) return(0);
+
+	GC_ASSERT(((word)op & (HBLKSIZE - 1)) == 0);
+	hhdr = HDR((struct hbklk *)op);
+	lb = hhdr -> hb_sz;
 	
 	LOCK();
-	GC_set_mark_bit(op);
-	GC_non_gc_bytes += lb;
+	set_mark_bit_from_hdr(hhdr, 0);	/* Only object.	*/
+	GC_ASSERT(hhdr -> hb_n_marks == 0);
+	hhdr -> hb_n_marks = 1;
 	UNLOCK();
 	return((void *) op);
     }

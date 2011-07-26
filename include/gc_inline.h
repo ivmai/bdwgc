@@ -26,9 +26,12 @@
 #include "gc.h"
 #include "gc_tiny_fl.h"
 
-#ifndef __GNUC__
-#  define __builtin_expect(x, y) (x)
-#endif
+#if __GNUC__ >= 3
+# define GC_EXPECT(expr, outcome) __builtin_expect(expr,outcome)
+  /* Equivalent to (expr), but predict that usually (expr)==outcome. */
+#else
+# define GC_EXPECT(expr, outcome) (expr)
+#endif /* __GNUC__ */
 
 /* The ultimately general inline allocation macro.  Allocate an object	*/
 /* of size bytes, putting the resulting pointer in result.  Tiny_fl is	*/
@@ -49,14 +52,14 @@
 # define GC_FAST_MALLOC_GRANS(result,granules,tiny_fl,num_direct,\
 			      kind,default_expr,init) \
 { \
-    if (__builtin_expect(granules >= GC_TINY_FREELISTS,0)) { \
+    if (GC_EXPECT(granules >= GC_TINY_FREELISTS,0)) { \
         result = default_expr; \
     } else { \
 	void **my_fl = tiny_fl + granules; \
         void *my_entry=*my_fl; \
 	void *next; \
  \
-	while (__builtin_expect((word)my_entry \
+	while (GC_EXPECT((word)my_entry \
 				<= num_direct + GC_TINY_FREELISTS + 1, 0)) { \
 	    /* Entry contains counter or NULL */ \
 	    if ((word)my_entry - 1 < num_direct) { \
@@ -81,7 +84,7 @@
 	init; \
         PREFETCH_FOR_WRITE(next); \
         GC_ASSERT(GC_size(result) >= bytes + EXTRA_BYTES); \
-        GC_ASSERT(((word *)result)[1] == 0); \
+        GC_ASSERT((kind) == PTRFREE || ((word *)result)[1] == 0); \
       out: ; \
    } \
 }

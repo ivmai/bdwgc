@@ -37,4 +37,5 @@ main() {
     CHECK_LEAKS();
     CHECK_LEAKS();
     CHECK_LEAKS();
+    return 0;
 }

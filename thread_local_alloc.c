@@ -12,37 +12,17 @@
  */
 #include "private/gc_priv.h"
 
-# if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
+# if defined(THREAD_LOCAL_ALLOC)
 
 #include "private/thread_local_alloc.h"
 #include "gc_inline.h"
 
-# if defined(GC_HPUX_THREADS) && !defined(USE_PTHREAD_SPECIFIC) \
-     && !defined(USE_COMPILER_TLS)
-#   ifdef __GNUC__
-#     define USE_PTHREAD_SPECIFIC
-      /* Empirically, as of gcc 3.3, USE_COMPILER_TLS doesn't work.	*/
-#   else
-#     define USE_COMPILER_TLS
-#   endif
-# endif
-
-# if defined USE_HPUX_TLS
-#   error USE_HPUX_TLS macro was replaced by USE_COMPILER_TLS
-# endif
-
-# if (defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) || \
-      defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS)) \
-      && !defined(USE_PTHREAD_SPECIFIC)
-#   define USE_PTHREAD_SPECIFIC
-# endif
-
 # include <stdlib.h>
 
-/* We don't really support thread-local allocation with DBG_HDRS_ALL */
-
-#ifdef USE_COMPILER_TLS
+#if defined(USE_COMPILER_TLS)
   __thread
+#elif defined(USE_WIN32_COMPILER_TLS)
+  declspec(thread)
 #endif
 GC_key_t GC_thread_key;
 
@@ -56,7 +36,6 @@ static void return_freelists(void **fl, void **gfl)
     void *q, **qptr;
 
     for (i = 1; i < TINY_FREELISTS; ++i) {
-#if 0
 	if ((word)(fl[i]) >= HBLKSIZE) {
 	  if (gfl[i] == 0) {
 	    gfl[i] = fl[i];
@@ -71,7 +50,6 @@ static void return_freelists(void **fl, void **gfl)
 	      gfl[i] = fl[i];
 	  }
 	}
-#endif
 	/* Clear fl[i], since the thread structure may hang around.	*/
 	/* Do it in a way that is likely to trap if we access it.	*/
 	fl[i] = (ptr_t)HBLKSIZE;
@@ -134,9 +112,14 @@ void GC_destroy_thread_local(GC_tlfs p)
 #   endif
 }
 
-#if defined(GC_ASSERTIONS) && defined(GC_LINUX_THREADS)
+#if defined(GC_ASSERTIONS) && defined(GC_PTHREADS) && !defined(CYGWIN32)
 # include <pthread.h>
   extern char * GC_lookup_thread(pthread_t id);
+#endif
+
+#if defined(GC_ASSERTIONS) && defined(GC_WIN32_THREADS)
+# include <pthread.h>
+  extern char * GC_lookup_thread(int id);
 #endif
 
 void * GC_malloc(size_t bytes)
@@ -164,10 +147,14 @@ void * GC_malloc(size_t bytes)
 #   endif
 #   ifdef GC_ASSERTIONS
       /* We can't check tsd correctly, since we don't have access to 	*/
-      /* the right declarations.  But we cna check that it's close.	*/
+      /* the right declarations.  But we can check that it's close.	*/
       LOCK();
       {
-	char * me = GC_lookup_thread(pthread_self());
+#	if defined(GC_WIN32_THREADS)
+	  char * me = (char *)GC_lookup_thread_inner(GetCurrentThreadId());
+#       else
+	  char * me = GC_lookup_thread(pthread_self());
+#	endif
         GC_ASSERT((char *)tsd > me && (char *)tsd < me + 1000);
       }
       UNLOCK();
@@ -273,7 +260,7 @@ void GC_mark_thread_local_fls_for(GC_tlfs p)
     }
 #endif /* GC_ASSERTIONS */
 
-# else  /* !THREAD_LOCAL_ALLOC  && !DBG_HDRS_ALL */
+# else  /* !THREAD_LOCAL_ALLOC  */
 
 #   define GC_destroy_thread_local(t)
 

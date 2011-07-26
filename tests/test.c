@@ -36,12 +36,10 @@
 # else
 #   include <assert.h>        /* Not normally used, but handy for debugging. */
 # endif
-# include <assert.h>	/* Not normally used, but handy for debugging. */
 # include "gc.h"
 # include "gc_typed.h"
 # include "private/gc_priv.h"	/* For output, locking, MIN_WORDS, 	*/
-				/* and some statistics.			*/
-# include "private/gcconfig.h"
+				/* and some statistics, and gcconfig.h.	*/
 
 # if defined(MSWIN32) || defined(MSWINCE)
 #   include <windows.h>
@@ -51,11 +49,6 @@
 #   include "th/PCR_ThCrSec.h"
 #   include "th/PCR_Th.h"
 #   define GC_printf printf
-# endif
-
-# if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
-#   include <thread.h>
-#   include <synch.h>
 # endif
 
 # if defined(GC_PTHREADS)
@@ -507,8 +500,6 @@ void check_marks_int_list(sexpr x)
     	}
     }
 
-/* # elif defined(GC_SOLARIS_THREADS) */
-
 # else
 
 #   define fork_a_thread()
@@ -674,17 +665,11 @@ volatile int dropped_something = 0;
 # ifdef PCR
      PCR_ThCrSec_EnterSys();
 # endif
-# if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
-    static mutex_t incr_lock;
-    mutex_lock(&incr_lock);
-# endif
-# if  defined(GC_PTHREADS)
+# if defined(GC_PTHREADS)
     static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_lock(&incr_lock);
-# else
-#   ifdef GC_WIN32_THREADS
-      EnterCriticalSection(&incr_cs);
-#   endif
+# elif defined(GC_WIN32_THREADS)
+    EnterCriticalSection(&incr_cs);
 # endif
   if ((int)(GC_word)client_data != t -> level) {
      (void)GC_printf("Wrong finalization data - collector is broken\n");
@@ -695,15 +680,10 @@ volatile int dropped_something = 0;
 # ifdef PCR
     PCR_ThCrSec_ExitSys();
 # endif
-# if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
-    mutex_unlock(&incr_lock);
-# endif
 # if defined(GC_PTHREADS)
     pthread_mutex_unlock(&incr_lock);
-# else
-#   ifdef GC_WIN32_THREADS
-      LeaveCriticalSection(&incr_cs);
-#   endif
+# elif defined(GC_WIN32_THREADS)
+    LeaveCriticalSection(&incr_cs);
 # endif
 }
 
@@ -757,17 +737,11 @@ int n;
 #	  ifdef PCR
  	    PCR_ThCrSec_EnterSys();
 #	  endif
-#	  if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
-	    static mutex_t incr_lock;
-	    mutex_lock(&incr_lock);
-#	  endif
 #         if defined(GC_PTHREADS)
             static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
             pthread_mutex_lock(&incr_lock);
-#         else
-#           ifdef GC_WIN32_THREADS
-              EnterCriticalSection(&incr_cs);
-#           endif
+#         elif defined(GC_WIN32_THREADS)
+            EnterCriticalSection(&incr_cs);
 #         endif
 		/* Losing a count here causes erroneous report of failure. */
           finalizable_count++;
@@ -775,15 +749,10 @@ int n;
 #	  ifdef PCR
  	    PCR_ThCrSec_ExitSys();
 #	  endif
-#	  if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
-	    mutex_unlock(&incr_lock);
-#	  endif
 #	  if defined(GC_PTHREADS)
 	    pthread_mutex_unlock(&incr_lock);
-#	  else
-#           ifdef GC_WIN32_THREADS
-              LeaveCriticalSection(&incr_cs);
-#           endif
+#	  elif defined(GC_WIN32_THREADS)
+            LeaveCriticalSection(&incr_cs);
 #         endif
 	}
 
@@ -841,48 +810,8 @@ int n;
     chktree(t -> rchild, n-1);
 }
 
-# if defined(GC_SOLARIS_THREADS) && !defined(GC_SOLARIS_PTHREADS)
-thread_key_t fl_key;
 
-void * alloc8bytes()
-{
-# if defined(SMALL_CONFIG) || defined(GC_DEBUG)
-    collectable_count++;
-    return(GC_MALLOC(8));
-# else
-    void ** my_free_list_ptr;
-    void * my_free_list;
-    
-    if (thr_getspecific(fl_key, (void **)(&my_free_list_ptr)) != 0) {
-    	(void)GC_printf("thr_getspecific failed\n");
-    	FAIL;
-    }
-    if (my_free_list_ptr == 0) {
-        uncollectable_count++;
-        my_free_list_ptr = GC_NEW_UNCOLLECTABLE(void *);
-        if (thr_setspecific(fl_key, my_free_list_ptr) != 0) {
-    	    (void)GC_printf("thr_setspecific failed\n");
-    	    FAIL;
-        }
-    }
-    my_free_list = *my_free_list_ptr;
-    if (my_free_list == 0) {
-        collectable_count++;
-        my_free_list = GC_malloc_many(8);
-        if (my_free_list == 0) {
-            (void)GC_printf("alloc8bytes out of memory\n");
-    	    FAIL;
-        }
-    }
-    *my_free_list_ptr = GC_NEXT(my_free_list);
-    GC_NEXT(my_free_list) = 0;
-    return(my_free_list);
-# endif
-}
-
-#else
-
-# if defined(GC_PTHREADS)
+#if defined(GC_PTHREADS)
 pthread_key_t fl_key;
 
 void * alloc8bytes()
@@ -918,9 +847,8 @@ void * alloc8bytes()
 # endif
 }
 
-# else
+#else
 #   define alloc8bytes() GC_MALLOC_ATOMIC(8)
-# endif
 #endif
 
 void alloc_small(n)
@@ -1099,7 +1027,7 @@ static void uniq(void *p, ...) {
     for (j=0; j<i; j++)
       if (q[i] == q[j]) {
         GC_printf(
-              "Apparently failed to mark form some function arguments.\n"
+              "Apparently failed to mark from some function arguments.\n"
               "Perhaps GC_push_regs was configured incorrectly?\n"
         );
 	FAIL;
@@ -1389,7 +1317,7 @@ void SetMinimumStack(long minSize)
 }
 
 
-#if !defined(PCR) && !defined(GC_SOLARIS_THREADS) \
+#if !defined(PCR) \
     && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS) \
     || defined(LINT)
 #if defined(MSWIN32) && !defined(__MINGW32__)

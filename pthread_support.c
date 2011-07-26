@@ -80,7 +80,15 @@
 # include <sys/sysctl.h>
 #endif /* GC_DARWIN_THREADS */
 
-
+/* Allocator lock definitions.		*/
+#if defined(USE_SPIN_LOCK)
+  pthread_t GC_lock_holder = NO_THREAD;
+#else
+  pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
+  pthread_t GC_lock_holder = NO_THREAD;
+		/* Used only for assertions, and to prevent	 */
+		/* recursive reentry in the system call wrapper. */
+#endif
 
 #if defined(GC_DGUX386_THREADS)
 # include <sys/dg_sys_info.h>
@@ -241,7 +249,7 @@ void GC_mark_thread_local_free_lists(void)
 	    GC_check_tls_for(&(p->tlfs));
 	  }
 	}
-#       if !defined(USE_COMPILER_TLS) && !defined(USE_PTHREAD_SPECIFIC)
+#       if defined(USE_CUSTOM_SPECIFIC)
 	  if (GC_thread_key != 0)
 	    GC_check_tsd_marks(GC_thread_key);
 #	endif 
@@ -346,16 +354,15 @@ volatile GC_thread GC_threads[THREAD_TABLE_SZ];
 
 void GC_push_thread_structures(void)
 {
+    GC_ASSERT(I_HOLD_LOCK());
     GC_push_all((ptr_t)(GC_threads), (ptr_t)(GC_threads)+sizeof(GC_threads));
-#   if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
+#   if defined(THREAD_LOCAL_ALLOC)
       GC_push_all((ptr_t)(&GC_thread_key),
 	  (ptr_t)(&GC_thread_key)+sizeof(&GC_thread_key));
 #   endif
 }
 
-#if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
-#endif /* THREAD_LOCAL_ALLOC */
-
+/* It may not be safe to allocate when we register the first thread.	*/
 static struct GC_Thread_Rep first_thread;
 
 /* Add a thread to GC_threads.  We assume it wasn't already there.	*/
@@ -385,13 +392,13 @@ GC_thread GC_new_thread(pthread_t id)
 
 /* Delete a thread from GC_threads.  We assume it is there.	*/
 /* (The code intentionally traps if it wasn't.)			*/
-/* Caller holds allocation lock.				*/
 void GC_delete_thread(pthread_t id)
 {
     int hv = ((word)id) % THREAD_TABLE_SZ;
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
     
+    GC_ASSERT(I_HOLD_LOCK());
     while (!pthread_equal(p -> id, id)) {
         prev = p;
         p = p -> next;
@@ -408,12 +415,14 @@ void GC_delete_thread(pthread_t id)
 /* been notified, then there may be more than one thread 	*/
 /* in the table with the same pthread id.			*/
 /* This is OK, but we need a way to delete a specific one.	*/
-void GC_delete_gc_thread(pthread_t id, GC_thread gc_id)
+void GC_delete_gc_thread(GC_thread gc_id)
 {
+    pthread_t id = gc_id -> id;
     int hv = ((word)id) % THREAD_TABLE_SZ;
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
 
+    GC_ASSERT(I_HOLD_LOCK());
     while (p != gc_id) {
         prev = p;
         p = p -> next;
@@ -680,7 +689,8 @@ void GC_thr_init(void)
 #       if defined(GC_HPUX_THREADS)
 	  GC_nprocs = pthread_num_processors_np();
 #       endif
-#	if defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS)
+#	if defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
+	   || defined(GC_SOLARIS_THREADS)
 	  GC_nprocs = sysconf(_SC_NPROCESSORS_ONLN);
 	  if (GC_nprocs <= 0) GC_nprocs = 1;
 #	endif
@@ -742,7 +752,7 @@ void GC_thr_init(void)
 /* may require allocation.				*/
 /* Called without allocation lock.			*/
 /* Must be called before a second thread is created.	*/
-/* Called without allocation lock.			*/
+/* Did we say it's called without the allocation lock?	*/
 void GC_init_parallel(void)
 {
     if (parallel_initialized) return;
@@ -751,7 +761,7 @@ void GC_init_parallel(void)
     /* GC_init() calls us back, so set flag first.	*/
     if (!GC_is_initialized) GC_init();
     /* Initialize thread local free lists if used.	*/
-#   if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
+#   if defined(THREAD_LOCAL_ALLOC)
       LOCK();
       GC_init_thread_local(&(GC_lookup_thread(pthread_self())->tlfs));
       UNLOCK();
@@ -789,12 +799,12 @@ static void GC_do_blocking_inner(ptr_t data, void * context) {
     me = GC_lookup_thread(pthread_self());
     GC_ASSERT(!(me -> thread_blocked));
 #   ifdef SPARC
-	me -> stop_info.stack_ptr = (ptr_t)GC_save_regs_in_stack();
+	me -> stop_info.stack_ptr = GC_save_regs_in_stack();
 #   elif !defined(GC_DARWIN_THREADS)
-	me -> stop_info.stack_ptr = (ptr_t)GC_approx_sp();
+	me -> stop_info.stack_ptr = GC_approx_sp();
 #   endif
 #   ifdef IA64
-	me -> backing_store_ptr = (ptr_t)GC_save_regs_in_stack();
+	me -> backing_store_ptr = GC_save_regs_in_stack();
 #   endif
     me -> thread_blocked = TRUE;
     /* Save context here if we want to support precise stack marking */
@@ -830,13 +840,17 @@ int GC_unregister_my_thread(void)
     /* complete before we remove this thread.			*/
     GC_wait_for_gc_completion(FALSE);
     me = GC_lookup_thread(pthread_self());
-    GC_destroy_thread_local(&(me->tlfs));
+#   if defined(THREAD_LOCAL_ALLOC)
+      GC_destroy_thread_local(&(me->tlfs));
+#   endif
     if (me -> flags & DETACHED) {
     	GC_delete_thread(pthread_self());
     } else {
 	me -> flags |= FINISHED;
     }
-    GC_remove_specific(GC_thread_key);
+#   if defined(THREAD_LOCAL_ALLOC)
+      GC_remove_specific();
+#   endif
     UNLOCK();
     return GC_SUCCESS;
 }
@@ -877,7 +891,7 @@ int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
     if (result == 0) {
         LOCK();
         /* Here the pthread thread id may have been recycled. */
-        GC_delete_gc_thread(thread, thread_gc_id);
+        GC_delete_gc_thread(thread_gc_id);
         UNLOCK();
     }
     return result;
@@ -899,7 +913,7 @@ WRAP_FUNC(pthread_detach)(pthread_t thread)
       thread_gc_id -> flags |= DETACHED;
       /* Here the pthread thread id may have been recycled. */
       if (thread_gc_id -> flags & FINISHED) {
-        GC_delete_gc_thread(thread, thread_gc_id);
+        GC_delete_gc_thread(thread_gc_id);
       }
       UNLOCK();
     }
@@ -913,7 +927,7 @@ GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
 {
     GC_thread me;
 
-    GC_in_thread_creation = TRUE; /* OK to collect from unknow thread. */
+    GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
     me = GC_new_thread(my_pthread);
     GC_in_thread_creation = FALSE;
 #   ifdef GC_DARWIN_THREADS
@@ -975,7 +989,7 @@ void * GC_inner_start_routine(struct GC_stack_base *sb, void * arg)
     sem_post(&(si -> registered));	/* Last action on si.	*/
     					/* OK to deallocate.	*/
     pthread_cleanup_push(GC_thread_exit_proc, 0);
-#   if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
+#   if defined(THREAD_LOCAL_ALLOC)
  	LOCK();
         GC_init_thread_local(&(me->tlfs));
 	UNLOCK();

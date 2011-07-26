@@ -24,6 +24,10 @@ GC_push_regs:
 	.size GC_save_regs_in_stack,.GC_save_regs_in_stack_end-GC_save_regs_in_stack
 	
 
+! GC_clear_stack_inner(arg, limit) clears stack area up to limit and
+! returns arg.  Stack clearing is crucial on SPARC, so we supply
+! an assembly version that's more careful.  Assumes limit is hotter
+! than sp, and limit is 8 byte aligned.	
 	.globl	GC_clear_stack_inner
 GC_clear_stack_inner:
 #if defined(__arch64__) || defined(__sparcv9)

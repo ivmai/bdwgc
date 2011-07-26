@@ -3,8 +3,7 @@
 
 # include "private/gc_priv.h"
 
-# if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS) \
-     && !defined(GC_WIN32_THREADS)
+# if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
      
 #if defined(GC_DARWIN_THREADS)
 # include "private/darwin_stop_world.h"
@@ -67,7 +66,7 @@ typedef struct GC_Thread_Rep {
 #   endif
 } * GC_thread;
 
-# define THREAD_TABLE_SZ 128	/* Must be power of 2	*/
+# define THREAD_TABLE_SZ 256	/* Must be power of 2	*/
 extern volatile GC_thread GC_threads[THREAD_TABLE_SZ];
 
 extern GC_bool GC_thr_initialized;
