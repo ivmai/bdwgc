@@ -977,7 +977,22 @@ extern void GC_thr_init(void);	/* Needed for Solaris/X86	*/
      * Similarly gnu-win32 DLLs need explicit initialization from
      * the main program, as does AIX.
      */
-#   define GC_INIT() { GC_add_roots(DATASTART, DATAEND); GC_init(); }
+#   ifdef __CYGWIN32__
+      extern int _data_start__[];
+      extern int _data_end__[];
+      extern int _bss_start__[];
+      extern int _bss_end__[];
+#     define GC_MAX(x,y) ((x) > (y) ? (x) : (y))
+#     define GC_MIN(x,y) ((x) < (y) ? (x) : (y))
+#     define GC_DATASTART ((GC_PTR) GC_MIN(_data_start__, _bss_start__))
+#     define GC_DATAEND	 ((GC_PTR) GC_MAX(_data_end__, _bss_end__))
+#   endif
+#   if defined(_AIX)
+      extern int _data[], _end[];
+#     define GC_DATASTART ((GC_PTR)((ulong)_data))
+#     define GC_DATAEND ((GC_PTR)((ulong)_end))
+#   endif
+#   define GC_INIT() { GC_add_roots(GC_DATASTART, GC_DATAEND); GC_init(); }
 #else
 #   define GC_INIT() { GC_init(); }
 #endif

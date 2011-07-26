@@ -40,6 +40,8 @@ CFLAGS= -O -I$(srcdir)/include -I$(AO_INSTALL_DIR)/include -DATOMIC_UNCOLLECTABL
 
 # To build the parallel collector on Linux, add to the above:
 # -DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
+# To build the thread-capable preload library that intercepts
+# malloc, add -DGC_USE_DLOPEN_WRAP -DREDIRECT_MALLOC=GC_malloc -fpic
 # To build the parallel collector in a static library on HP/UX,
 # add to the above:
 # -DGC_HPUX_THREADS -DTHREAD_LOCAL_ALLOC -D_POSIX_C_SOURCE=199506L -mt
@@ -237,6 +239,10 @@ HOSTCFLAGS=$(CFLAGS)
 #   causes the collector some system and pthread calls in a more transparent
 #   fashion than the usual macro-based approach.  Requires GNU ld, and
 #   currently probably works only with Linux.
+# -DGC_USE_DLOPEN_WRAP causes the collector to redefine malloc and intercepted
+#   pthread routines with their real names, and causes it to use dlopen
+#   and dlsym to refer to the original versions.  This makes it possible to
+#   build an LD_PRELOADable malloc replacement library.
 # -DTHREAD_LOCAL_ALLOC defines GC_malloc(), GC_malloc_atomic()
 #   and GC_gcj_malloc() to use a per-thread set of free-lists.
 #   These then allocate  in a way that usually does not involve
@@ -340,10 +346,10 @@ TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 GNU_BUILD_FILES= configure.ac Makefile.am configure acinclude.m4 \
 		 libtool.m4 install-sh configure.host Makefile.in \
 		 aclocal.m4 config.sub config.guess \
-		 include/Makefile.am include/Makefile.in \
-		 doc/Makefile.am doc/Makefile.in \
+		 include/include.am include/Makefile.in \
+		 doc/doc.am doc/Makefile.in \
 		 ltmain.sh mkinstalldirs depcomp missing \
-		 cord/Makefile.am tests/Makefile.am
+		 cord/cord.am tests/tests.am
 
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
 		 BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
@@ -504,6 +510,11 @@ libirixgc.so: $(OBJS) dyn_load.o
 liblinuxgc.so: $(OBJS) dyn_load.o
 	gcc -shared -o liblinuxgc.so $(OBJS) dyn_load.o
 	ln liblinuxgc.so libgc.so
+
+# Build gctest with dynamic library
+dyn_test:
+	$(CC) $(CFLAGS) -o gctest tests/test.c libgc.so `./threadlibs`
+	./gctest
 
 # Alternative Linux rule.  This is preferable, but is likely to break the
 # Makefile for some non-linux platforms.

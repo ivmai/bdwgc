@@ -2186,6 +2186,18 @@ Since gc6.4:
    Tagliapietra Tommaso.)
  - Fixed inclusion of frame.h for NETBSD in os_dep.c.
  - Applied Dan Bonachea's patch to use mmap on AIX.
+ - Several fixes to resurrect the Irix port on recent OS versions.
+ - Change ALPHA to use LINUX_STACKBOTTOM.
+ - Change SPARC64/LINUX to also use LINUX_STACKBOTTOM.  Deal with potential
+   bad values of __libc_stack_end on that platform.  (Thanks to David Miller.)
+ - Relax gctest to allow larger heap if ALIGN_DOUBLE isn't set.
+   (Unnecessary in 7.0)
+ - Force a define of __STDC__=0 for the IBM compiler on AIX, so that
+   we get prototypes.  (Unnecessary in 7.0)
+ - GC_INIT definition for AIX and CYGWIN referred to DATASTART and DATAEND
+   which are only defined in private include files.
+ - Integrated some small gcconfig.h patches from Dan Bonachea.  Also
+   relaxed assertion about FreeBSD stack size in pthread_support.c.
 
 Since gc6.5:
  - Remove GC_PROTO, VOLATILE, GC_PTR, and GC_CONST.  Assume ANSI C compiler
@@ -2309,6 +2321,11 @@ Since gc7.0alpha1:
    redefines GC_malloc.
  - Removed now unused AIX memory allocation code.
  - Various minor fixes for bugs introduced in 7.0alpha1.
+
+Since gc7.0alpha2
+ - Added support for dlopen-based interception of pthread functions.
+   This is only half done.  The gc.h redefinitions currently interfere.
+ - Integrated major automake overhaul from Petter Urkedal.
   
 To do:
  - Fix USE_MARK_BITS.

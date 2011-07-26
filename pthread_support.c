@@ -45,9 +45,7 @@
 
 # include "private/pthread_support.h"
 
-# if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS) \
-     && !defined(GC_IRIX_THREADS) && !defined(GC_WIN32_THREADS) \
-     && !defined(GC_AIX_THREADS)
+# if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
 # if defined(GC_HPUX_THREADS) && !defined(USE_PTHREAD_SPECIFIC) \
      && !defined(USE_COMPILER_TLS)
@@ -135,12 +133,28 @@
 #   define WRAP_FUNC(f) __wrap_##f
 #   define REAL_FUNC(f) __real_##f
 #else
-#   define WRAP_FUNC(f) GC_##f
-#   if !defined(GC_DGUX386_THREADS)
-#     define REAL_FUNC(f) f
-#   else /* GC_DGUX386_THREADS */
-#     define REAL_FUNC(f) __d10_##f
-#   endif /* GC_DGUX386_THREADS */
+#   ifdef GC_USE_DLOPEN_WRAP
+#     include <dlfcn.h>
+#     define WRAP_FUNC(f) f
+#     define REAL_FUNC(f) GC_real_##f
+      /* FIXME: Needs work for DARWIN and True64 (OSF1) */
+      typedef int (* GC_pthread_create_t)(pthread_t *, const pthread_attr_t *,
+		      		          void * (*)(void *), void *);
+      static GC_pthread_create_t GC_real_pthread_create;
+      typedef int (* GC_pthread_sigmask_t)(int, const sigset_t *, sigset_t *);
+      static GC_pthread_sigmask_t GC_real_pthread_sigmask;
+      typedef int (* GC_pthread_join_t)(pthread_t, void **);
+      static GC_pthread_join_t GC_real_pthread_join;
+      typedef int (* GC_pthread_detach_t)(pthread_t);
+      static GC_pthread_detach_t GC_real_pthread_detach;
+#   else
+#     define WRAP_FUNC(f) GC_##f
+#     if !defined(GC_DGUX386_THREADS)
+#       define REAL_FUNC(f) f
+#     else /* GC_DGUX386_THREADS */
+#       define REAL_FUNC(f) __d10_##f
+#     endif /* GC_DGUX386_THREADS */
+#   endif
 #   undef pthread_create
 #   if !defined(GC_DARWIN_THREADS)
 #     undef pthread_sigmask
@@ -154,6 +168,48 @@
 #     define pthread_join __pthread_join
 #     define pthread_detach __pthread_detach
 #   endif
+#endif
+
+#ifdef GC_USE_DLOPEN_WRAP
+  static GC_bool GC_syms_initialized = FALSE;
+
+  void GC_init_real_syms(void)
+  {
+    void *dl_handle;
+#   define LIBPTHREAD_NAME "libpthread.so.0"
+#   define LIBPTHREAD_NAME_LEN 16 /* incl. trailing 0 */
+    size_t len = LIBPTHREAD_NAME_LEN - 1;
+    char namebuf[LIBPTHREAD_NAME_LEN];
+    static char *libpthread_name = LIBPTHREAD_NAME;
+
+    if (GC_syms_initialized) return;
+#   ifdef RTLD_NEXT
+      dl_handle = RTLD_NEXT;
+#   else
+      dl_handle = dlopen(libpthread_name, RTLD_LAZY);
+      if (NULL == dl_handle) {
+        while (isdigit(libpthread_name[len-1])) --len;
+        if (libpthread_name[len-1] == '.') --len;
+        memcpy(namebuf, libpthread_name, len);
+        namebuf[len] = '\0';
+        dl_handle = dlopen(namebuf, RTLD_LAZY);
+      }
+      if (NULL == dl_handle) ABORT("Couldn't open libpthread\n");
+#   endif
+    GC_real_pthread_create = (GC_pthread_create_t)
+	    			dlsym(dl_handle, "pthread_create");
+    GC_real_pthread_sigmask = (GC_pthread_sigmask_t)
+	    			dlsym(dl_handle, "pthread_sigmask");
+    GC_real_pthread_join = (GC_pthread_join_t)
+	    			dlsym(dl_handle, "pthread_join");
+    GC_real_pthread_detach = (GC_pthread_detach_t)
+	    			dlsym(dl_handle, "pthread_detach");
+    GC_syms_initialized = TRUE;
+  }
+
+# define INIT_REAL_SYMS() if (!GC_syms_initialized) GC_init_real_syms();
+#else
+# define INIT_REAL_SYMS()
 #endif
 
 void GC_thr_init(void);
@@ -928,6 +984,7 @@ int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set, sigset_t *oset)
 {
     sigset_t fudged_set;
     
+    INIT_REAL_SYMS();
     if (set != NULL && (how == SIG_BLOCK || how == SIG_SETMASK)) {
         fudged_set = *set;
         sigdelset(&fudged_set, SIG_SUSPEND);
@@ -1022,6 +1079,7 @@ int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
     int result;
     GC_thread thread_gc_id;
     
+    INIT_REAL_SYMS();
     LOCK();
     thread_gc_id = GC_lookup_thread(thread);
     /* This is guaranteed to be the intended one, since the thread id	*/
@@ -1054,6 +1112,7 @@ WRAP_FUNC(pthread_detach)(pthread_t thread)
     int result;
     GC_thread thread_gc_id;
     
+    INIT_REAL_SYMS();
     LOCK();
     thread_gc_id = GC_lookup_thread(thread);
     UNLOCK();
@@ -1095,9 +1154,10 @@ GC_thread GC_register_my_thread_inner(struct GC_stack_base *sb,
 int GC_register_my_thread(struct GC_stack_base *sb)
 {
     pthread_t my_pthread = pthread_self();
+    GC_thread me;
 
     LOCK();
-    GC_thread me = GC_lookup_thread(my_pthread);
+    me = GC_lookup_thread(my_pthread);
     if (0 == me) {
         me = GC_register_my_thread_inner(sb, my_pthread);
 	me -> flags |= DETACHED;
@@ -1177,6 +1237,7 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     /* even if the default is unreasonably small.  That's the client's	*/
     /* responsibility.							*/
 
+    INIT_REAL_SYMS();
     LOCK();
     si = (struct start_info *)GC_INTERNAL_MALLOC(sizeof(struct start_info),
 						 NORMAL);
@@ -1198,7 +1259,12 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 	} else {
 	   pthread_attr_getstacksize(attr, &stack_size);
 	}
+#     if GC_FREEBSD_THREADS
+        /* FreeBSD-5.3/Alpha: default pthread stack is 64K, HBLKSIZE=8192, sizeof(word)=8 */
+	GC_ASSERT(stack_size >= 65536);
+#     else
 	GC_ASSERT(stack_size >= (8*HBLKSIZE*sizeof(word)));
+#     endif
 	/* Our threads may need to do some work for the GC.	*/
 	/* Ridiculously small threads won't work, and they	*/
 	/* probably wouldn't work anyway.			*/

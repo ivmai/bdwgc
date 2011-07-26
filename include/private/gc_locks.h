@@ -78,8 +78,7 @@
 #  endif
 
 
-#  if defined(GC_PTHREADS)  \
-	           && !defined(GC_IRIX_THREADS) && !defined(GC_WIN32_THREADS)
+#  if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 #    define NO_THREAD (pthread_t)(-1)
 #    include <pthread.h>
 
@@ -144,35 +143,6 @@
       extern pthread_t GC_mark_lock_holder;
 #    endif
 #  endif /* GC_PTHREADS with linux_threads.c implementation */
-
-#  if defined(GC_IRIX_THREADS)
-#    include <pthread.h>
-     /* This probably should never be included, but I can't test	*/
-     /* on Irix anymore.						*/
-#    include <mutex.h>
-
-     extern volatile AO_TS_t GC_allocate_lock;
-	/* This is not a mutex because mutexes that obey the (optional) 	*/
-	/* POSIX scheduling rules are subject to convoys in high contention	*/
-	/* applications.  This is basically a spin lock.			*/
-     extern pthread_t GC_lock_holder;
-     extern void GC_lock(void);
-	/* Allocation lock holder.  Only set if acquired by client through */
-	/* GC_call_with_alloc_lock.					   */
-#    define SET_LOCK_HOLDER() GC_lock_holder = pthread_self()
-#    define NO_THREAD (pthread_t)(-1)
-#    define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
-#    define I_HOLD_LOCK() (pthread_equal(GC_lock_holder, pthread_self()))
-#    define UNCOND_LOCK() { if (AO_test_and_set_acquire(&GC_allocate_lock)) \
-		     	    GC_lock(); }
-#    define UNCOND_UNLOCK() AO_CLEAR(&GC_allocate_lock);
-     extern volatile GC_bool GC_collecting;
-#    define ENTER_GC() \
-		{ \
-		    GC_collecting = 1; \
-		}
-#    define EXIT_GC() GC_collecting = 0;
-#  endif /* GC_IRIX_THREADS */
 
 #  if defined(GC_WIN32_THREADS)
 #    if defined(GC_PTHREADS)

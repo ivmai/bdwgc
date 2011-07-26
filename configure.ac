@@ -17,20 +17,20 @@ dnl Process this file with autoconf to produce configure.
 # Initialization
 # ==============
 
-AC_INIT(gc,7.0alpha2,Hans.Boehm@hp.com) 
+AC_INIT(gc,7.0alpha3,Hans.Boehm@hp.com) 
     ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
 AC_REVISION($Revision: 1.2 $)
 GC_SET_VERSION
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects nostdinc])
 AM_MAINTAINER_MODE
 
 AC_SUBST(PACKAGE)
 AC_SUBST(GC_VERSION)
 
-AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_CXX
 
 AM_PROG_AS
@@ -45,27 +45,28 @@ AC_PROG_INSTALL
 GC_CFLAGS=${gc_cflags}
 AC_SUBST(GC_CFLAGS)
 
-AC_ARG_ENABLE(threads, [  --enable-threads=TYPE   choose threading package],
+AC_ARG_ENABLE(threads,
+  [AC_HELP_STRING([--enable-threads=TYPE], [choose threading package])],
   THREADS=$enableval,
   [ AC_MSG_CHECKING([for thread model used by GCC])
     THREADS=`$CC -v 2>&1 | sed -n 's/^Thread model: //p'`
     if test -z "$THREADS"; then
       THREADS=no
     fi
-    AC_MSG_RESULT([$THREADS])])
+    AC_MSG_RESULT([$THREADS]) ])
 
 AC_ARG_ENABLE(parallel-mark,
-[  --enable-parallel-mark	parallelize marking and free list construction],
+   [AC_HELP_STRING([--enable-parallel-mark],
+	[parallelize marking and free list construction])],
    [case "$THREADS" in
       no | none | single)
 	AC_MSG_ERROR([Parallel mark requires --enable-threads=x spec])
 	;;
-    esac]
+    esac ]
 )
 
 AC_ARG_ENABLE(cplusplus,
-[  --enable-cplusplus		install C++ support],
-)
+    [AC_HELP_STRING([--enable-cplusplus], [install C++ support])])
 
 INCLUDES=-I${srcdir}/include
 THREADDLLIBS=
@@ -93,6 +94,7 @@ case "$THREADS" in
      *-*-aix*)
 	AC_DEFINE(GC_AIX_THREADS)
 	AC_DEFINE(_REENTRANT)
+	aix_irix_threads=true
 	;;
      *-*-hpux*)
 	AC_MSG_WARN("Only HP/UX 11 threads are supported.")
@@ -113,12 +115,15 @@ case "$THREADS" in
      *-*-solaris*)
 	AC_DEFINE(GC_SOLARIS_THREADS)
 	AC_DEFINE(GC_SOLARIS_PTHREADS)
+	solaris_threads=true
 	;;
      *-*-irix*)
 	AC_DEFINE(GC_IRIX_THREADS)
+	aix_irix_threads=true
 	;;
      *-*-cygwin*)
 	AC_DEFINE(GC_WIN32_THREADS)
+	win32_threads=true
 	;;
      *-*-darwin*)
 	AC_DEFINE(GC_DARWIN_THREADS)
@@ -126,6 +131,7 @@ case "$THREADS" in
 	if test "${enable_parallel_mark}" = yes; then
 	  AC_DEFINE(PARALLEL_MARK)
 	fi
+	darwin_threads=true
 	;;
      *-*-osf*)
 	AC_DEFINE(GC_OSF1_THREADS)
@@ -176,6 +182,12 @@ case "$THREADS" in
     ;;
 esac
 AC_SUBST(THREADDLLIBS)
+AM_CONDITIONAL(THREADS, test x$THREADS != xnone)
+AM_CONDITIONAL(PTHREADS, test x$THREADS = xposix)
+AM_CONDITIONAL(AIX_IRIX_THREADS, test x$aix_irix_threads = xtrue)
+AM_CONDITIONAL(DARWIN_THREADS, test x$darwin_threads = xtrue)
+AM_CONDITIONAL(ARCH_SOLARIS, test x$solaris_threads = xtrue)
+AM_CONDITIONAL(WIN32_THREADS, test x$win32_threads = xtrue)
 
 case "$host" in 
    powerpc-*-darwin*)
@@ -210,8 +222,6 @@ TARGET_ECOS="$with_ecos"
 
 addobjs=
 addlibs=
-addincludes=
-addtests=
 CXXINCLUDES=
 case "$TARGET_ECOS" in
    no)
@@ -222,11 +232,6 @@ case "$TARGET_ECOS" in
       addobjs="$addobjs ecos.lo"
       ;;
 esac
-
-if test "${enable_cplusplus}" = yes; then
-      addincludes="$addincludes include/gc_cpp.h include/gc_allocator.h"
-      addtests="$addtests test_cpp"
-fi
 
 AM_CONDITIONAL(CPLUSPLUS, test "${enable_cplusplus}" = yes)
 
@@ -303,9 +308,7 @@ AC_MSG_RESULT($machdep)
 fi
 addobjs="$addobjs $machdep"
 AC_SUBST(addobjs)
-AC_SUBST(addincludes)
 AC_SUBST(addlibs)
-AC_SUBST(addtests)
 
 AC_PROG_LIBTOOL
 
@@ -382,10 +385,52 @@ dnl ALL_INTERIOR_POINTERS can be overridden in startup code.
 AC_DEFINE(NO_EXECUTE_PERMISSION)
 AC_DEFINE(ALL_INTERIOR_POINTERS)
 
+
+dnl Interface Selection
+dnl -------------------
+dnl
 dnl By default, make the library as general as possible.
-AC_DEFINE(JAVA_FINALIZATION)
-AC_DEFINE(GC_GCJ_SUPPORT)
-AC_DEFINE(ATOMIC_UNCOLLECTABLE)
+
+dnl :FIXME: gcj does not work as of gc-7.0_alpha2, so default set to no.
+enable_gcj_support=no
+AC_ARG_ENABLE(gcj-support,
+    [AC_HELP_STRING([--enable-gcj-support],
+	[Enable support for gcj.])])
+AM_CONDITIONAL(ENABLE_GCJ_SUPPORT,
+    [test x"$enable_gcj_support" != xno])
+if test x"$enable_gcj_support" != xno; then
+    AC_DEFINE(GC_GCJ_SUPPORT, 1, [Define to include support for gcj])
+fi
+
+AC_ARG_ENABLE(java-finalization,
+    [AC_HELP_STRING([--disable-java-finalization],
+	[Disable support for java finalization.])])
+if test x"$enable_java_finalization" != xno; then
+    AC_DEFINE(JAVA_FINALIZATION)
+fi
+
+AC_ARG_ENABLE(atomic-uncollectable,
+    [AC_HELP_STRING([--disable-atomic-uncollectible],
+	[Disable support for atomic uncollectible allocation.])])
+if test x"$enable_atomic_uncollectible" != x"no"; then
+    AC_DEFINE(ATOMIC_UNCOLLECTABLE, 1,
+	[Define to enable atomic uncollectible allocation.])
+fi
+
+AC_ARG_ENABLE(redirect-malloc,
+    [AC_HELP_STRING([--enable-redirect-malloc],
+	[Redirect malloc and friends to GC routines])])
+
+if test "${enable_redirect_malloc}" = yes; then
+    if test "${enable_full_debug}" = yes; then
+	AC_DEFINE(REDIRECT_MALLOC, GC_debug_malloc_replacement)
+	AC_DEFINE(REDIRECT_REALLOC, GC_debug_realloc_replacement)
+	AC_DEFINE(REDIRECT_FREE, GC_debug_free)
+    else
+	AC_DEFINE(REDIRECT_MALLOC, GC_malloc)
+    fi
+fi
+
 
 dnl This is something of a hack.  When cross-compiling we turn off
 dnl some functionality.  We also enable the "small" configuration.
@@ -397,9 +442,14 @@ if test -n "${with_cross_host}"; then
    AC_DEFINE(NO_DEBUGGING)
 fi
 
+
+dnl Debugging
+dnl ---------
+
 UNWINDLIBS=
 AC_ARG_ENABLE(gc-debug,
-[  --enable-gc-debug	include full support for pointer backtracing etc.],
+[AC_HELP_STRING([--enable-gc-debug],
+    [include full support for pointer backtracing etc.])],
 [ if test "$enable_gc_debug" = "yes"; then
     AC_MSG_WARN("Should define GC_DEBUG and use debug alloc. in clients.")
     AC_DEFINE(KEEP_BACK_PTRS)
@@ -427,32 +477,61 @@ AC_ARG_ENABLE(gc-debug,
 
 AC_SUBST(UNWINDLIBS)
 
-AC_ARG_ENABLE(redirect-malloc,
-[  --enable-redirect-malloc  redirect malloc and friends to GC routines])
-
-if test "${enable_redirect_malloc}" = yes; then
-    if test "${enable_full_debug}" = yes; then
-	AC_DEFINE(REDIRECT_MALLOC, GC_debug_malloc_replacement)
-	AC_DEFINE(REDIRECT_REALLOC, GC_debug_realloc_replacement)
-	AC_DEFINE(REDIRECT_FREE, GC_debug_free)
-    else
-	AC_DEFINE(REDIRECT_MALLOC, GC_malloc)
-    fi
-fi
-
 AC_ARG_ENABLE(gc-assertions,
-[  --enable-gc-assertions  collector-internal assertion checking])
+    [AC_HELP_STRING([--enable-gc-assertions],
+	[collector-internal assertion checking])])
 if test "${enable_gc_assertions}" = yes; then
     AC_DEFINE(GC_ASSERTIONS)
 fi
 
 AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
 
-AC_OUTPUT(
-[Makefile doc/Makefile include/Makefile tests/Makefile cord/Makefile],,
-srcdir=${srcdir}
-host=${host}
-CONFIG_SHELL=${CONFIG_SHELL-/bin/sh}
-CC="${CC}"
-DEFS="$DEFS"
-)
+
+dnl Atomic Ops
+dnl ----------
+
+AC_CHECK_HEADER(libatomic_ops.h,
+  [ AC_MSG_NOTICE([Using pre-installed libatomic_ops]) ],
+  [ ao_dir=
+    for candidate in ${srcdir}/libatomic_ops*; do
+	case $candidate in
+	    *.tar.gz)
+		;;
+	    *)
+		if test -e "$candidate"; then
+		    ao_dir="$candidate"
+		fi
+		;;
+	esac
+    done
+    if test -z "$ao_dir"; then
+	AC_MSG_ERROR([Missig libatomic_ops.])
+    fi
+    ao_version="${ao_dir#*libatomic_ops-}"
+    ao_dir=libatomic_ops-${ao_version}
+    AC_MSG_NOTICE([Using internal version of libatomic_ops])
+
+    dnl Automake does not accept shell variables in AC_CONFIG_SUBDIRS
+    test -e ${srcdir}/libatomic_ops \
+	|| ln -sf ${ao_dir} ${srcdir}/libatomic_ops
+    AC_CONFIG_SUBDIRS(libatomic_ops)
+
+    GC_CFLAGS="${MY_CFLAGS} -I \$(top_srcdir)/libatomic_ops/src"
+    ATOMIC_OPS_LIBS="-L \$(top_builddir)/libatomic_ops/src -latomic_ops"
+    maybe_libatomic_ops=libatomic_ops
+  ])
+AC_SUBST(maybe_libatomic_ops)
+
+dnl Produce the Files
+dnl -----------------
+
+AC_CONFIG_FILES([Makefile boehm-gc.pc])
+
+AC_CONFIG_COMMANDS([default],,
+  [ srcdir=${srcdir}
+    host=${host}
+    CONFIG_SHELL=${CONFIG_SHELL-/bin/sh}
+    CC="${CC}"
+    DEFS="$DEFS" ])
+
+AC_OUTPUT

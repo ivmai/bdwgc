@@ -56,7 +56,7 @@
 # endif
 
 /* And one for FreeBSD: */
-# if defined(__FreeBSD__)
+# if defined(__FreeBSD__) && !defined(FREEBSD)
 #    define FREEBSD
 # endif
 
@@ -190,14 +190,16 @@
 # if defined(_PA_RISC1_0) || defined(_PA_RISC1_1) || defined(_PA_RISC2_0) \
      || defined(hppa) || defined(__hppa__)
 #   define HP_PA
-#   ifndef LINUX
+#   if !defined(LINUX) && !defined(HPUX)
 #     define HPUX
 #   endif
 #   define mach_type_known
 # endif
 # if defined(__ia64) && defined(_HPUX_SOURCE)
 #   define IA64
-#   define HPUX
+#   ifndef HPUX
+#     define HPUX
+#   endif
 #   define mach_type_known
 # endif
 # if defined(__BEOS__) && defined(_X86_)
@@ -600,7 +602,7 @@
  */
 # if defined(__GNUC__) && ((__GNUC__ >= 3) || \
 			   (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)) \
-		       && !defined(__INTEL_COMPILER)
+		       && !defined(__INTEL_COMPILER) && !defined(__PATHCC__)
 #   define HAVE_BUILTIN_UNWIND_INIT
 # endif
 
@@ -849,12 +851,10 @@
       extern ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #     ifdef __arch64__
 #	define DATASTART GC_SysVGetDataStart(0x100000, (ptr_t)_etext)
-	/* libc_stack_end is not set reliably for sparc64 */
-#       define STACKBOTTOM ((ptr_t) 0x80000000000ULL)
 #     else
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
-#	define LINUX_STACKBOTTOM
 #     endif
+#     define LINUX_STACKBOTTOM
 #   endif
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
@@ -1062,26 +1062,8 @@
 #   endif
 #   ifdef CYGWIN32
 #       define OS_TYPE "CYGWIN32"
-          extern int _data_start__[];
-          extern int _data_end__[];
-          extern int _bss_start__[];
-          extern int _bss_end__[];
-  	/* For binutils 2.9.1, we have			*/
-  	/*	DATASTART   = _data_start__		*/
-  	/*	DATAEND	    = _bss_end__		*/
-  	/* whereas for some earlier versions it was	*/
-  	/*	DATASTART   = _bss_start__		*/
-  	/*	DATAEND	    = _data_end__		*/
-  	/* To get it right for both, we take the	*/
-  	/* minumum/maximum of the two.			*/
-#     ifndef MAX
-#   	define MAX(x,y) ((x) > (y) ? (x) : (y))
-#     endif
-#     ifndef MIN
-#   	define MIN(x,y) ((x) < (y) ? (x) : (y))
-#     endif
-#       define DATASTART ((ptr_t) MIN(_data_start__, _bss_start__))
-#       define DATAEND	 ((ptr_t) MAX(_data_end__, _bss_end__))
+#       define DATASTART ((ptr_t)GC_DATASTART)  /* From gc.h */
+#       define DATAEND	 ((ptr_t)GC_DATAEND)
 #	undef STACK_GRAN
 #       define STACK_GRAN 0x10000
 #       define HEURISTIC1
@@ -1461,7 +1443,7 @@
 #   endif
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
-#       define STACKBOTTOM ((ptr_t) 0x120000000)
+#       define LINUX_STACKBOTTOM
 #       ifdef __ELF__
 #	  define SEARCH_FOR_DATA_START
 #         define DYNAMIC_LOADING

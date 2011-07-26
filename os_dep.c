@@ -941,14 +941,21 @@ ptr_t GC_get_main_stack_base(void)
     /* this.							*/  
 #   ifdef USE_LIBC_PRIVATES
       if (0 != &__libc_stack_end && 0 != __libc_stack_end ) {
-#       ifdef IA64
+#       if defined(IA64)
 	  /* Some versions of glibc set the address 16 bytes too	*/
 	  /* low while the initialization code is running.		*/
 	  if (((word)__libc_stack_end & 0xfff) + 0x10 < 0x1000) {
 	    return __libc_stack_end + 0x10;
 	  } /* Otherwise it's not safe to add 16 bytes and we fall	*/
 	    /* back to using /proc.					*/
-#	else 
+#	elif defined(SPARC)
+	  /* Older versions of glibc for 64-bit Sparc do not set
+	   * this variable correctly, it gets set to either zero
+	   * or one.
+	   */
+	  if (__libc_stack_end != (ptr_t) (unsigned long)0x1)
+	    return __libc_stack_end;
+#	else
 	  return __libc_stack_end;
 #	endif
       }
@@ -1072,7 +1079,7 @@ int GC_get_stack_base(struct GC_stack_base *b)
 
 #   ifdef NEED_FIND_LIMIT
 #     ifdef STACK_GROWS_DOWN
-    	b -> mem_base = GC_find_limit(&dummy, TRUE);
+    	b -> mem_base = GC_find_limit((ptr_t)(&dummy), TRUE);
 #       ifdef IA64
 	  b -> reg_base = GC_find_limit(GC_save_regs_in_stack(), FALSE);
 #       endif
