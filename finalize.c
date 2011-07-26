@@ -1,6 +1,6 @@
 /*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
 
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, September 22, 1995 5:49 pm PDT */
+/* Boehm, February 1, 1996 1:19 pm PST */
 # define I_HIDE_POINTERS
 # include "gc_priv.h"
 # include "gc_mark.h"
@@ -56,6 +56,8 @@ static struct finalizable_object {
     struct hash_chain_entry prolog;
 #   define fo_hidden_base prolog.hidden_key
 				/* Pointer to object base.	*/
+				/* No longer hidden once object */
+				/* is on finalize_now queue.	*/
 #   define fo_next(x) (struct finalizable_object *)((x) -> prolog.next)
 #   define fo_set_next(x,y) (x) -> prolog.next = (struct hash_chain_entry *)(y)
     GC_finalization_proc fo_fn;	/* Finalizer.			*/
@@ -545,6 +547,10 @@ void GC_finalize()
             /* Add to list of objects awaiting finalization.	*/
               fo_set_next(curr_fo, GC_finalize_now);
               GC_finalize_now = curr_fo;
+              /* unhide object pointer so any future collections will	*/
+              /* see it.						*/
+              curr_fo -> fo_hidden_base = 
+              		(word) REVEAL_POINTER(curr_fo -> fo_hidden_base);
               GC_words_finalized +=
                  	ALIGNED_WORDS(curr_fo -> fo_object_size)
               		+ ALIGNED_WORDS(sizeof(struct finalizable_object));
@@ -588,7 +594,6 @@ void GC_finalize()
 /* Should be called without allocation lock.				*/
 void GC_invoke_finalizers()
 {
-    ptr_t real_ptr;
     register struct finalizable_object * curr_fo;
     DCL_LOCK_STATE;
     
@@ -607,8 +612,8 @@ void GC_invoke_finalizers()
 	    GC_finalize_now = fo_next(curr_fo);
 #	endif
  	fo_set_next(curr_fo, 0);
-    	real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
-    	(*(curr_fo -> fo_fn))(real_ptr, curr_fo -> fo_client_data);
+    	(*(curr_fo -> fo_fn))((ptr_t)(curr_fo -> fo_hidden_base),
+    			      curr_fo -> fo_client_data);
     	curr_fo -> fo_client_data = 0;
 #	ifdef UNDEFINED
 	    /* This is probably a bad idea.  It throws off accounting if */

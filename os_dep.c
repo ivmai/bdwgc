@@ -10,7 +10,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, October 3, 1995 6:39 pm PDT */
+/* Boehm, February 7, 1996 11:09 am PST */
 
 # include "gc_priv.h"
 # ifdef LINUX
@@ -35,11 +35,11 @@
 #   define NEED_FIND_LIMIT
 # endif
 
-# if defined(SUNOS4) & defined(DYNAMIC_LOADING)
+# if (defined(SUNOS4) & defined(DYNAMIC_LOADING)) && !defined(PCR)
 #   define NEED_FIND_LIMIT
 # endif
 
-# if defined(SVR4) || defined(AUX) || defined(DGUX)
+# if (defined(SVR4) || defined(AUX) || defined(DGUX)) && !defined(PCR)
 #   define NEED_FIND_LIMIT
 # endif
 
@@ -778,7 +778,7 @@ void GC_register_data_segments()
 
 # else
 
-# if defined(SVR4) || defined(AUX) || defined(DGUX)
+# if (defined(SVR4) || defined(AUX) || defined(DGUX)) && !defined(PCR)
 char * GC_SysVGetDataStart(max_page_size, etext_addr)
 int max_page_size;
 int * etext_addr;

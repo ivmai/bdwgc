@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, August 9, 1995 5:49 pm PDT */
+/* Boehm, February 9, 1996 11:41 am PST */
  
 
 # ifndef GC_PRIVATE_H
@@ -49,8 +49,10 @@ typedef GC_signed_word signed_word;
 #   include "gc_hdrs.h"
 # endif
 
-# ifndef bool
+# if !defined(bool)
     typedef int bool;
+    /* This is problematic with C++ implementations that define bool. */
+    /* But those usually treat it correctly as an empty declaration.  */
 # endif
 # define TRUE 1
 # define FALSE 0

@@ -12,7 +12,7 @@
  * modified is included with the above copyright notice.
  *
  */
-/* Boehm, October 9, 1995 1:03 pm PDT */
+/* Boehm, February 7, 1996 4:37 pm PST */
 
 
 # include "gc_priv.h"
@@ -702,8 +702,9 @@ word n;
     return(result);
 }
 
-bool GC_collect_or_expand(needed_blocks)
+bool GC_collect_or_expand(needed_blocks, ignore_off_page)
 word needed_blocks;
+bool ignore_off_page;
 {
     static int count = 0;  /* How many failures? */
     
@@ -714,8 +715,16 @@ word needed_blocks;
       			   + needed_blocks;
       
       if (blocks_to_get > MAXHINCR) {
-          if (needed_blocks > MAXHINCR) {
-              blocks_to_get = needed_blocks;
+          word slop;
+          
+          if (ignore_off_page) {
+              slop = 4;
+          } else {
+	      slop = 2*divHBLKSZ(BL_LIMIT);
+	      if (slop > needed_blocks) slop = needed_blocks;
+	  }
+          if (needed_blocks + slop > MAXHINCR) {
+              blocks_to_get = needed_blocks + slop;
           } else {
               blocks_to_get = MAXHINCR;
           }
@@ -763,7 +772,7 @@ int kind;
         GC_new_hblk(sz, kind);
       }
       if (*flh == 0) {
-        if (!GC_collect_or_expand((word)1)) return(0);
+	if (!GC_collect_or_expand((word)1,FALSE)) return(0);
       }
     }
     

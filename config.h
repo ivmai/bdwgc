@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, October 3, 1995 6:39 pm PDT */
+/* Boehm, December 7, 1995 10:03 am PST */
  
 #ifndef CONFIG_H
 
@@ -581,6 +581,9 @@
 #   define ALIGNMENT 4
 #   define DATASTART ((ptr_t)0x20000000)
 #   define STACKBOTTOM ((ptr_t)0x2ff80000)
+	/* This is known to break under 4.X, under some circumstances.	*/
+	/* But there doesn't seem to be a good alternative.  Set	*/
+	/* GC_stackbottom manually.					*/
 # endif
 
 # ifdef HP_PA
@@ -588,7 +591,18 @@
 #   define ALIGNMENT 4
     extern int __data_start;
 #   define DATASTART ((ptr_t)(&__data_start))
-#   define HEURISTIC2
+#   if 0
+	/* The following appears to work for 7xx systems running HP/UX	*/
+	/* 9.xx Furthermore, it might result in much faster		*/
+	/* collections than HEURISTIC2, which may involve scanning	*/
+	/* segments that directly precede the stack.  It is not the	*/
+	/* default, since it may not work on older machine/OS		*/
+	/* combinations. (Thanks to Raymond X.T. Nijssen for uncovering	*/
+	/* this.)							*/
+#       define STACKBOTTOM ((ptr_t) 0x7b033000)  /* from /etc/conf/h/param.h */
+#   else
+#       define HEURISTIC2
+#   endif
 #   define STACK_GROWS_UP
 # endif
 

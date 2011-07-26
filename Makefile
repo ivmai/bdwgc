@@ -13,12 +13,7 @@ AS=as
 #  The above doesn't work with gas, which doesn't run cpp.
 #  Define AS as `gcc -c -x assembler-with-cpp' instead.
 
-CFLAGS= -O -DNO_SIGNALS -DSILENT -DALL_INTERIOR_POINTERS
-
-LIBGC_CFLAGS= -O -DNO_SIGNALS -DSILENT \
-    -DREDIRECT_MALLOC=GC_malloc_uncollectable \
-    -DDONT_ADD_BYTE_AT_END -DALL_INTERIOR_POINTERS
-#   Flags for building libgc.a -- the last two are required.
+CFLAGS= -O -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DSILENT
 
 # Setjmp_test may yield overly optimistic results when compiled
 # without optimization.
@@ -68,6 +63,11 @@ LIBGC_CFLAGS= -O -DNO_SIGNALS -DSILENT \
 # -DNO_DEBUG removes GC_dump and the debugging routines it calls.
 #   Reduces code size slightly at the expense of debuggability.
 
+LIBGC_CFLAGS= -O -DNO_SIGNALS -DSILENT \
+    -DREDIRECT_MALLOC=GC_malloc_uncollectable \
+    -DDONT_ADD_BYTE_AT_END -DALL_INTERIOR_POINTERS
+#   Flags for building libgc.a -- the last two are required.
+
 CXXFLAGS= $(CFLAGS) 
 AR= ar
 RANLIB= ranlib
@@ -98,7 +98,8 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            SCoptions.amiga README.amiga README.win32 cord/README \
            cord/gc.h include/gc.h include/gc_typed.h include/cord.h \
            include/ec.h include/private/cord_pos.h include/private/config.h \
-           include/private/gc_hdrs.h include/private/gc_priv.h include/gc_cpp.h \
+           include/private/gc_hdrs.h include/private/gc_priv.h \
+	   include/gc_cpp.h README.rs6000 \
            include/weakpointer.h README.QUICK callprocs pc_excludes \
            barrett_diagram README.OS2 README.Mac MacProjects.sit.hqx \
            MacOS.c EMX_MAKEFILE makefile.depend README.debugging \
@@ -204,7 +205,8 @@ mark_rts.o: $(srcdir)/mark_rts.c if_mach if_not_there
 	rm -f mark_rts.o
 	-./if_mach ALPHA "" $(CC) -c $(CFLAGS) -Wo,-notail $(srcdir)/mark_rts.c
 	./if_not_there mark_rts.o $(CC) -c $(CFLAGS) $(srcdir)/mark_rts.c
-#	work-around for DEC optimizer tail recursion elimination bug
+#	Work-around for DEC optimizer tail recursion elimination bug.
+#  The ALPHA-specific line should be removed if gcc is used.
 
 cord/cordbscs.o: $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c $(srcdir)/cord/cordbscs.c

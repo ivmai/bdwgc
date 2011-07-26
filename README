@@ -10,7 +10,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.8 of a conservative garbage collector for C and C++.
+This is version 4.10 of a conservative garbage collector for C and C++.
 
 HISTORY -
 
@@ -448,7 +448,7 @@ result in arrays allocated using the default new operator.
 This is likely to result in disaster without linker warnings.
 
 3. If your compiler supports an overloaded new[] operator,
-then gc_c++.cc and gc_c++.h should be suitably modified.
+then gc_cpp.cc and gc_cpp.h should be suitably modified.
 
 4. Many current C++ compilers have deficiencies that
 break some of the functionality.  See the comments in gc_cpp.h
@@ -900,7 +900,7 @@ Since version 4.2:
 - Fixed SPARC alignment problem with GC_DEBUG.
 - Fixed Solaris threads /proc workaround.  The real
   problem was an interaction with mprotect.
-- Incorporated fix from Patrick Beard for gc_c++.h.
+- Incorporated fix from Patrick Beard for gc_c++.h (now gc_cpp.h).
 - Slightly improved allocator space utilization by
   fixing the GC_size_map mechanism.
 - Integrated some Sony News and MIPS RISCos 4.51
@@ -955,8 +955,9 @@ Since version 4.2:
   <chime@proinf.dk>.)
 - John Ellis' additions to the C++ support:  From John:
 
-* I completely rewrote the documentation in the interface gc_c++.h.
-I've tried to make it both clearer and more precise.
+* I completely rewrote the documentation in the interface gc_c++.h
+(later renamed gc_cpp.h).  I've tried to make it both clearer and more
+precise.
 
 * The definition of accessibility now ignores pointers from an
 finalizable object (an object with a clean-up function) to itself.
@@ -974,8 +975,9 @@ don't yet support operator new[], it is conditionalized on
 -DOPERATOR_NEW_ARRAY.  The code is untested, but its trivial and looks
 correct.
 
-* The test program test_gc_c++ tries to test for the C++-specific
-functionality not tested by the other programs.
+* The test program test_gc_c++ (later renamed test_cpp.cc)
+tries to test for the C++-specific functionality not tested by the
+other programs.
 - Added <unistd.h> include to misc.c.  (Needed for ppcr.)
 - Added PowerMac port. (Thanks to Patrick Beard again.)
 - Fixed "srcdir"-related Makefile problems.  Changed things so
@@ -1133,3 +1135,26 @@ Since version 4.6:
 Since version 4.7:
  - Changed a "comment" in a MacOS specific part of mach-dep.c that caused
    gcc to fail on other platforms.
+
+Since version 4.8
+ - More README.debugging fixes.
+ - Objects ready for finalization, but not finalized in the same GC
+   cycle, could be prematurely collected.  This occasionally happened
+   in test_cpp.
+ - Too little memory was obtained from the system for very large
+   objects.  That could cause a heap explosion if these objects were
+   not contiguous (e.g. under PCR), and too much of them was blacklisted.
+ - Due to an improper initialization, the collector was too hesitant to
+   allocate blacklisted objects immediately after system startup.
+ - Moved GC_arrays from the data into the bss segment by not explicitly
+   initializing it to zero.  This significantly
+   reduces the size of executables, and probably avoids some disk accesses
+   on program startup.  It's conceivable that it might break a port that I
+   didn't test.
+ - Fixed EMX_MAKEFILE to reflect the gc_c++.h to gc_cpp.h renaming which
+   occurred a while ago.
+
+Since 4.9:
+ - Fixed a typo around a call to GC_collect_or_expand in alloc.c.  It broke
+   handling of out of memory.  (Thanks to Patrick Beard for noticing.)
+

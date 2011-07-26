@@ -17,7 +17,7 @@
  * implementation.  They serve also serve as example client code for
  * cord_basics.
  */
-/* Boehm, October 3, 1994 5:10 pm PDT */
+/* Boehm, December 8, 1995 1:53 pm PST */
 # include <stdio.h>
 # include <string.h>
 # include <stdlib.h>
@@ -223,12 +223,9 @@ int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
 
 char * CORD_to_char_star(CORD x)
 {
-    register size_t len;
-    char * result;
+    register size_t len = CORD_len(x);
+    char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
     
-    if (x == 0) return("");
-    len = CORD_len(x);
-    result = (char *)GC_MALLOC_ATOMIC(len + 1);
     if (result == 0) OUT_OF_MEMORY;
     CORD_fill_buf(x, 0, len, result);
     result[len] = '\0';
