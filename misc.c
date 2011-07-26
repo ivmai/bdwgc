@@ -470,7 +470,17 @@ void GC_init()
     DISABLE_SIGNALS();
 
 #if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
-    if (!GC_is_initialized) InitializeCriticalSection(&GC_allocate_ml);
+    if (!GC_is_initialized) {
+      BOOL (WINAPI *pfn) (LPCRITICAL_SECTION, DWORD) = NULL;
+      HMODULE hK32 = GetModuleHandle("kernel32.dll");
+      if (hK32)
+          (FARPROC) pfn = GetProcAddress(hK32,
+			  "InitializeCriticalSectionAndSpinCount");
+      if (pfn)
+          pfn(&GC_allocate_ml, 4000);
+      else
+	  InitializeCriticalSection (&GC_allocate_ml);
+    }
 #endif /* MSWIN32 */
 
     LOCK();
@@ -537,7 +547,7 @@ int sig;
 
 static GC_bool installed_looping_handler = FALSE;
 
-void maybe_install_looping_handler()
+static void maybe_install_looping_handler()
 {
     /* Install looping handler before the write fault handler, so we	*/
     /* handle write faults correctly.					*/
@@ -638,7 +648,8 @@ void GC_init_inner()
 #   if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__)
 	GC_init_netbsd_elf();
 #   endif
-#   if defined(GC_PTHREADS) || defined(GC_SOLARIS_THREADS)
+#   if defined(GC_PTHREADS) || defined(GC_SOLARIS_THREADS) \
+       || defined(GC_WIN32_THREADS)
         GC_thr_init();
 #   endif
 #   ifdef GC_SOLARIS_THREADS
@@ -649,14 +660,14 @@ void GC_init_inner()
 	|| defined(GC_SOLARIS_THREADS)
       if (GC_stackbottom == 0) {
 	GC_stackbottom = GC_get_stack_base();
-#       if defined(LINUX) && defined(IA64)
+#       if (defined(LINUX) || defined(HPUX)) && defined(IA64)
 	  GC_register_stackbottom = GC_get_register_stack_base();
 #       endif
       } else {
-#       if defined(LINUX) && defined(IA64)
+#       if (defined(LINUX) || defined(HPUX)) && defined(IA64)
 	  if (GC_register_stackbottom == 0) {
 	    WARN("GC_register_stackbottom should be set with GC_stackbottom", 0);
-	    /* The following is likely to fail, since we rely on 	*/
+	    /* The following may fail, since we may rely on	 	*/
 	    /* alignment properties that may not hold with a user set	*/
 	    /* GC_stackbottom.						*/
 	    GC_register_stackbottom = GC_get_register_stack_base();
@@ -753,7 +764,7 @@ void GC_init_inner()
       }
 #   endif /* !SMALL_CONFIG */
     COND_DUMP;
-    /* Get black list set up and/or incrmental GC started */
+    /* Get black list set up and/or incremental GC started */
       if (!GC_dont_precollect || GC_incremental) GC_gcollect_inner();
     GC_is_initialized = TRUE;
 #   ifdef STUBBORN_ALLOC
@@ -1002,6 +1013,9 @@ GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
 {
     GC_warn_proc result;
 
+#   ifdef GC_WIN32_THREADS
+      GC_ASSERT(GC_is_initialized);
+#   endif
     LOCK();
     result = GC_current_warn_proc;
     GC_current_warn_proc = p;

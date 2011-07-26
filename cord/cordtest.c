@@ -116,7 +116,7 @@ void test_basics()
 
 void test_extras()
 {
-#   if defined(__OS2__)
+#   if defined(__OS2__) || defined(__DJGPP__)
 #	define FNAME1 "tmp1"
 #	define FNAME2 "tmp2"
 #   elif defined(AMIGA)
@@ -162,6 +162,10 @@ void test_extras()
         x = CORD_cat(x,x);
     }
     if ((f = fopen(FNAME2, "w")) == 0) ABORT("2nd open failed");
+#   ifdef __DJGPP__
+      /* FIXME: DJGPP workaround.  Why does this help? */
+      if (fflush(f) != 0) ABORT("fflush failed");
+#   endif
     if (CORD_put(x,f) == EOF) ABORT("CORD_put failed");
     if (fclose(f) == EOF) ABORT("fclose failed");
     w = CORD_from_file(f2 = fopen(FNAME2, "rb"));

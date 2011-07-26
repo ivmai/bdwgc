@@ -331,7 +331,7 @@ GNU_BUILD_FILES= configure.in Makefile.am configure acinclude.m4 \
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
 		 BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
 		 PCR-Makefile SMakefile.amiga Makefile.DLLs \
-		 digimars.mak Makefile.direct
+		 digimars.mak Makefile.direct NT_STATIC_THREADS_MAKEFILE
 #	Makefile and Makefile.direct are copies of each other.
 
 OTHER_FILES= Makefile setjmp_t.c callprocs pc_excludes \

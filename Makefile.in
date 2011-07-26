@@ -131,7 +131,6 @@ SUBDIRS = doc include
 # :GOTCHA: deliberately we do not include 'Makefile'
 
 # files used by makefiles other than Makefile.am
-# (:FIXME: do we really need gcc_support.c ?)
 #
 
 # part of C++ interface
@@ -151,7 +150,7 @@ EXTRA_DIST = alpha_mach_dep.S mips_sgi_mach_dep.s sparc_mach_dep.S README.QUICK 
     WCC_MAKEFILE\
 add_gc_prefix.c gcname.c if_mach.c if_not_there.c \
     hpux_test_and_clear.s pc_excludes gc.mak MacOS.c \
-    MacProjects.sit.hqx gcc_support.c mach_dep.c setjmp_t.c \
+    MacProjects.sit.hqx mach_dep.c setjmp_t.c \
     threadlibs.c AmigaOS.c \
     Mac_files/datastart.c Mac_files/dataend.c \
     Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h\

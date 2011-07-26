@@ -238,6 +238,7 @@ GC_API unsigned long GC_time_limit;
  * allocation, since unlike the regular allocation routines, GC_local_malloc
  * is not self-initializing.  If you use GC_local_malloc you should arrange
  * to call this somehow (e.g. from a constructor) before doing any allocation.
+ * For win32 threads, it needs to be called explicitly.
  */
 GC_API void GC_init GC_PROTO((void));
 
@@ -886,7 +887,7 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
    * and does then use DllMain to keep track of thread creations.  But new code
    * should be built to call GC_CreateThread.
    */
-  GC_API HANDLE GC_CreateThread(
+   GC_API HANDLE WINAPI GC_CreateThread(
       LPSECURITY_ATTRIBUTES lpThreadAttributes,
       DWORD dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress,
       LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId );
@@ -927,7 +928,7 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
      */
 #   define GC_INIT() { GC_add_roots(DATASTART, DATAEND); }
 # else
-#  if defined(__APPLE__) && defined(__MACH__)
+#  if defined(__APPLE__) && defined(__MACH__) || defined(GC_WIN32_THREADS)
 #   define GC_INIT() { GC_init(); }
 #  else
 #   define GC_INIT()

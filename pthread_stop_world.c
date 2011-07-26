@@ -186,6 +186,7 @@ void GC_restart_handler(int sig)
 /* world is stopped.  Should not fail if it isn't.			*/
 void GC_push_all_stacks()
 {
+    GC_bool found_me = FALSE;
     int i;
     GC_thread p;
     ptr_t lo, hi;
@@ -206,6 +207,7 @@ void GC_push_all_stacks()
 #  	    else
  	        lo = GC_approx_sp();
 #           endif
+	    found_me = TRUE;
 	    IF_IA64(bs_hi = (ptr_t)GC_save_regs_in_stack();)
 	} else {
 	    lo = p -> stop_info.stack_ptr;
@@ -232,6 +234,11 @@ void GC_push_all_stacks()
           GC_push_all_stack(lo, hi);
 #	endif
 #	ifdef IA64
+#         if DEBUG_THREADS
+            GC_printf3("Reg stack for thread 0x%lx = [%lx,%lx)\n",
+    	        (unsigned long) p -> id,
+		(unsigned long) bs_lo, (unsigned long) bs_hi);
+#	  endif
           if (pthread_equal(p -> id, me)) {
 	    GC_push_all_eager(bs_lo, bs_hi);
 	  } else {
@@ -240,6 +247,8 @@ void GC_push_all_stacks()
 #	endif
       }
     }
+    if (!found_me && !GC_in_thread_creation)
+      ABORT("Collecting from unknown thread.");
 }
 
 /* There seems to be a very rare thread stopping problem.  To help us  */

@@ -1,6 +1,6 @@
 The garbage collector looks at a number of environment variables which are
 then used to affect its operation.  These are examined only on Un*x-like
-platforms.
+platforms and win32.
 
 GC_INITIAL_HEAP_SIZE=<bytes> -	Initial heap size in bytes.  May speed up
 				process start-up.
@@ -85,6 +85,13 @@ GC_RETRY_SIGNALS, GC_NO_RETRY_SIGNALS - Try to compensate for lost
 		     similar issues on some other operating systems, it
 		     was turned into a runtime flag to enable last-minute
 		     work-arounds.
+
+GC_IGNORE_FB -  (Currently win32 only.) Try to avoid treating a mapped
+		frame buffer as part of the root set.  Certain (higher end?)
+		graphics cards seems to result in the frame buffer mapped
+		into the user address space as writable memory.
+		Unfortunately, there seems to be no systematic way to
+		identify such memory.
 
 The following turn on runtime flags that are also program settable.  Checked
 only during initialization.  We expect that they will usually be set through

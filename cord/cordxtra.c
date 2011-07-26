@@ -385,7 +385,7 @@ size_t CORD_str(CORD x, size_t start, CORD s)
         mask <<= 8;
         mask |= 0xff;
         s_buf <<= 8;
-        s_buf |= s_start[i];
+        s_buf |= (unsigned char)s_start[i];
         x_buf <<= 8;
         x_buf |= CORD_pos_fetch(xpos);
         CORD_next(xpos);

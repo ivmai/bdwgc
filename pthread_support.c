@@ -99,6 +99,7 @@
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <fcntl.h>
+# include <signal.h>
 
 #if defined(GC_DARWIN_THREADS)
 # include "private/darwin_semaphore.h"
@@ -500,19 +501,6 @@ static __inline__ void start_mark_threads()
 
 #endif /* !PARALLEL_MARK */
 
-/* Defining INSTALL_LOOPING_SEGV_HANDLER causes SIGSEGV and SIGBUS to 	*/
-/* result in an infinite loop in a signal handler.  This can be very	*/
-/* useful for debugging, since (as of RH7) gdb still seems to have	*/
-/* serious problems with threads.					*/
-#ifdef INSTALL_LOOPING_SEGV_HANDLER
-void GC_looping_handler(int sig)
-{
-    GC_printf3("Signal %ld in thread %lx, pid %ld\n",
-	       sig, pthread_self(), getpid());
-    for (;;);
-}
-#endif
-
 GC_bool GC_thr_initialized = FALSE;
 
 volatile GC_thread GC_threads[THREAD_TABLE_SZ];
@@ -622,7 +610,7 @@ void GC_delete_gc_thread(pthread_t id, GC_thread gc_id)
     GC_INTERNAL_FREE(p);
 }
 
-/* Return a GC_thread corresponding to a given thread_t.	*/
+/* Return a GC_thread corresponding to a given pthread_t.	*/
 /* Returns 0 if it's not there.					*/
 /* Caller holds  allocation lock or otherwise inhibits 		*/
 /* updates.							*/
@@ -1115,6 +1103,8 @@ WRAP_FUNC(pthread_detach)(pthread_t thread)
     return result;
 }
 
+GC_bool GC_in_thread_creation = FALSE;
+
 void * GC_start_routine(void * arg)
 {
     int dummy;
@@ -1132,7 +1122,9 @@ void * GC_start_routine(void * arg)
         GC_printf1("sp = 0x%lx\n", (long) &arg);
 #   endif
     LOCK();
+    GC_in_thread_creation = TRUE;
     me = GC_new_thread(my_pthread);
+    GC_in_thread_creation = FALSE;
 #ifdef GC_DARWIN_THREADS
     me -> stop_info.mach_thread = mach_thread_self();
 #else
@@ -1301,12 +1293,12 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 void GC_pause()
 {
     int i;
-#	ifndef __GNUC__
-        volatile word dummy = 0;
-#	endif
+#   if !defined(__GNUC__) || defined(__INTEL_COMPILER)
+      volatile word dummy = 0;
+#   endif
 
     for (i = 0; i < 10; ++i) { 
-#     ifdef __GNUC__
+#     if defined(__GNUC__) && !defined(__INTEL_COMPILER)
         __asm__ __volatile__ (" " : : : "memory");
 #     else
 	/* Something that's unlikely to be optimized away. */

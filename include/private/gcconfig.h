@@ -60,9 +60,9 @@
 # endif
 
 /* Determine the machine type: */
-# if defined(__XSCALE__)
+# if defined(__arm__) || defined(__thumb__)
 #    define ARM32
-#    if !defined(LINUX)
+#    if !defined(LINUX) && !defined(NETBSD)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -588,7 +588,8 @@
  * USE_GENERIC_PUSH_REGS the preferred approach for marking from registers.
  */
 # if defined(__GNUC__) && ((__GNUC__ >= 3) || \
-			   (__GNUC__ == 2 && __GNUC_MINOR__ >= 8))
+			   (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)) \
+		       && !defined(__INTEL_COMPILER)
 #   define HAVE_BUILTIN_UNWIND_INIT
 # endif
 
@@ -1042,7 +1043,7 @@
 	    /* possibly because Linux threads is itself a malloc client */
 	    /* and can't deal with the signals.				*/
 #	endif
-#	define HEAP_START 0x1000
+#	define HEAP_START (ptr_t)0x1000
 		/* This encourages mmap to give us low addresses,	*/
 		/* thus allowing the heap to grow to ~3GB		*/
 #       ifdef __ELF__
@@ -1564,6 +1565,7 @@
     	/* first putenv call.						*/
 	extern char ** environ;
 #       define STACKBOTTOM ((ptr_t)environ)
+#       define HPUX_STACKBOTTOM
 #       define DYNAMIC_LOADING
 #       include <unistd.h>
 #       define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
@@ -1573,9 +1575,9 @@
 	/* address minus one page.					*/
 #	define BACKING_STORE_DISPLACEMENT 0x1000000
 #	define BACKING_STORE_ALIGNMENT 0x1000
-#       define BACKING_STORE_BASE \
-	  (ptr_t)(((word)GC_stackbottom - BACKING_STORE_DISPLACEMENT - 1) \
-			& ~(BACKING_STORE_ALIGNMENT - 1))
+	extern ptr_t GC_register_stackbottom;
+#	define BACKING_STORE_BASE GC_register_stackbottom
+	/* Known to be wrong for recent HP/UX versions!!!	*/
 #   endif
 #   ifdef LINUX
 #   	define CPP_WORDSZ 64
@@ -1593,8 +1595,8 @@
 	/* constants:						*/
 #       define BACKING_STORE_ALIGNMENT 0x100000
 #       define BACKING_STORE_DISPLACEMENT 0x80000000
-	extern char * GC_register_stackbottom;
-#	define BACKING_STORE_BASE ((ptr_t)GC_register_stackbottom)
+	extern ptr_t GC_register_stackbottom;
+#	define BACKING_STORE_BASE GC_register_stackbottom
 #	define SEARCH_FOR_DATA_START
 #	ifdef __GNUC__
 #         define DYNAMIC_LOADING
@@ -1608,12 +1610,22 @@
 	extern int _end[];
 #	define DATAEND (_end)
 #       ifdef __GNUC__
-#	  define PREFETCH(x) \
-	    __asm__ ("	lfetch	[%0]": : "r"((void *)(x)))
-#	  define PREFETCH_FOR_WRITE(x) \
-	    __asm__ ("	lfetch.excl	[%0]": : "r"((void *)(x)))
-#	  define CLEAR_DOUBLE(x) \
-	    __asm__ ("	stf.spill	[%0]=f0": : "r"((void *)(x)))
+#	  ifndef __INTEL_COMPILER
+#	    define PREFETCH(x) \
+	      __asm__ ("	lfetch	[%0]": : "r"((void *)(x)))
+#	    define PREFETCH_FOR_WRITE(x) \
+	      __asm__ ("	lfetch.excl	[%0]": : "r"((void *)(x)))
+#	    define CLEAR_DOUBLE(x) \
+	      __asm__ ("	stf.spill	[%0]=f0": : "r"((void *)(x)))
+#	  else
+#           include <ia64intrin.h>
+#	    define PREFETCH(x) \
+	      __lfetch(__lfhint_none, (void*)(x))
+#	    define PREFETCH_FOR_WRITE(x) \
+	      __lfetch(__lfhint_nta,  (void*)(x))
+#	    define CLEAR_DOUBLE(x) \
+	      __stf_spill((void *)(x), 0)
+#	  endif // __INTEL_COMPILER
 #       endif
 #   endif
 # endif
@@ -1691,8 +1703,13 @@
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
 #       define HEURISTIC2
-        extern char etext[];
-#       define DATASTART ((ptr_t)(etext))
+#	ifdef __ELF__
+#          define DATASTART GC_data_start
+#	   define DYNAMIC_LOADING
+#	else
+           extern char etext[];
+#          define DATASTART ((ptr_t)(etext))
+#	endif
 #       define USE_GENERIC_PUSH_REGS
 #   endif
 #   ifdef LINUX
@@ -1805,6 +1822,12 @@
 #   endif
 # endif
 
+#if defined(LINUX) && defined(USE_MMAP)
+    /* The kernel may do a somewhat better job merging mappings etc.	*/
+    /* with anonymous mappings.						*/
+#   define USE_MMAP_ANON
+#endif
+
 #if defined(LINUX) && defined(REDIRECT_MALLOC)
     /* Rld appears to allocate some memory with its own allocator, and	*/
     /* some through malloc, which might be redirected.  To make this	*/
@@ -1859,9 +1882,9 @@
 #   define SUNOS5SIGS
 # endif
 
-# if defined(SVR4) || defined(LINUX) || defined(IRIX) || defined(HPUX) \
+# if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
 	    || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
-	    || defined(DGUX) || defined(BSD) \
+	    || defined(DGUX) || defined(BSD) || defined(SUNOS4) \
 	    || defined(_AIX) || defined(DARWIN) || defined(OSF1)
 #   define UNIX_LIKE   /* Basic Unix-like system calls work.	*/
 # endif

@@ -727,6 +727,57 @@ void GC_register_dynamic_libraries()
   
 # define HAVE_REGISTER_MAIN_STATIC_DATA
 
+  /* Should [start, start+len) be treated as a frame buffer	*/
+  /* and ignored?						*/
+  /* Unfortunately, we currently have no real way to tell	*/
+  /* automatically, and rely largely on user input.		*/
+  /* FIXME: If we had more data on this phenomenon (e.g.	*/
+  /* is start aligned to a MB multiple?) we should be able to	*/
+  /* do better.							*/
+  static GC_bool is_frame_buffer(ptr_t start, size_t len)
+  {
+    static GC_bool initialized = FALSE;
+    static GC_bool ignore_fb;
+#   define MB (1024*1024)
+
+    switch(len) {
+      case 16*MB:
+      case 32*MB:
+      case 48*MB:
+      case 64*MB:
+      case 128*MB:
+      case 256*MB:
+      case 512*MB:
+      case 1024*MB:
+ 	break;
+      default:
+	return FALSE;
+    }
+    if (!initialized) {
+      ignore_fb = (0 != GETENV("GC_IGNORE_FB"));
+      if (!ignore_fb) {
+	WARN("Possible frame buffer mapping at 0x%lx: \n"
+	     "\tConsider setting GC_IGNORE_FB to improve performance.\n",
+	     start);
+      }
+      initialized = TRUE;
+    }
+    return ignore_fb;
+  }
+
+# ifdef DEBUG_VIRTUALQUERY
+  void GC_dump_meminfo(MEMORY_BASIC_INFORMATION *buf)
+  {
+    GC_printf4("BaseAddress = %lx, AllocationBase = %lx, RegionSize = %lx(%lu)\n",
+	       buf -> BaseAddress, buf -> AllocationBase, buf -> RegionSize,
+	       buf -> RegionSize);
+    GC_printf4("\tAllocationProtect = %lx, State = %lx, Protect = %lx, "
+	       "Type = %lx\n",
+	       buf -> AllocationProtect, buf -> State, buf -> Protect,
+	       buf -> Type);
+  }
+# endif /* DEBUG_VIRTUALQUERY */
+
   void GC_register_dynamic_libraries()
   {
     MEMORY_BASIC_INFORMATION buf;
@@ -763,7 +814,11 @@ void GC_register_dynamic_libraries()
 	    if (buf.State == MEM_COMMIT
 		&& (protect == PAGE_EXECUTE_READWRITE
 		    || protect == PAGE_READWRITE)
-		&& !GC_is_heap_base(buf.AllocationBase)) {
+		&& !GC_is_heap_base(buf.AllocationBase)
+		&& !is_frame_buffer(p, buf.RegionSize)) {  
+#	        ifdef DEBUG_VIRTUALQUERY
+	          GC_dump_meminfo(&buf);
+#	        endif
 		if ((char *)p != limit) {
 		    GC_cond_add_roots(base, limit);
 		    base = p;
@@ -981,7 +1036,14 @@ void GC_register_dynamic_libraries()
 
 #ifdef DARWIN
 
-#include <mach-o/dyld.h>
+/* __private_extern__ hack required for pre-3.4 gcc versions.	*/
+#ifndef __private_extern__
+# define __private_extern__ extern
+# include <mach-o/dyld.h>
+# undef __private_extern__
+#else
+# include <mach-o/dyld.h>
+#endif
 #include <mach-o/getsect.h>
 
 /*#define DARWIN_DEBUG*/

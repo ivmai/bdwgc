@@ -1,12 +1,14 @@
-.TH GC_MALLOC 1L "12 February 1996"
+.TH GC_MALLOC 1L "2 October 2003"
 .SH NAME
 GC_malloc, GC_malloc_atomic, GC_free, GC_realloc, GC_enable_incremental, GC_register_finalizer, GC_malloc_ignore_off_page, GC_malloc_atomic_ignore_off_page, GC_set_warn_proc \- Garbage collecting malloc replacement
 .SH SYNOPSIS
 #include "gc.h"
 .br
-# define malloc(n) GC_malloc(n)
+void * GC_malloc(size_t size);
 .br
-... malloc(...) ...
+void GC_free(void *ptr);
+.br
+void * GC_realloc(void *ptr, size_t size);
 .br
 .sp
 cc ... gc.a
@@ -22,6 +24,11 @@ will attempt to reclaim inaccessible space automatically by invoking a conservat
 .I
 GC_malloc
 or friends.
+.LP
+In most cases it is preferable to call the macros GC_MALLOC, GC_FREE, etc.
+instead of calling GC_malloc and friends directly.  This allows debugging
+versions of the routines to be substituted by defining GC_DEBUG before
+including gc.h.
 .LP
 See the documentation in the include file gc_cpp.h for an alternate, C++ specific interface to the garbage collector.
 .LP
@@ -77,4 +84,5 @@ Boehm, H., and M. Weiser, "Garbage Collection in an Uncooperative Environment",
 The malloc(3) man page.
 .LP
 .SH AUTHOR
-Hans-J. Boehm (boehm@parc.xerox.com).  Some of the code was written by others, most notably Alan Demers.
+Hans-J. Boehm (Hans.Boehm@hp.com).
+Some of the code was written by others, most notably Alan Demers.

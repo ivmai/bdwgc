@@ -448,7 +448,19 @@ extern GC_warn_proc GC_current_warn_proc;
 
 /* Get environment entry */
 #if !defined(NO_GETENV)
-#   define GETENV(name) getenv(name)
+#   if defined(EMPTY_GETENV_RESULTS)
+	/* Workaround for a reputed Wine bug.	*/
+	static inline char * fixed_getenv(const char *name)
+	{
+	  char * tmp = getenv(name);
+	  if (tmp == 0 || strlen(tmp) == 0)
+	    return 0;
+	  return tmp;
+	}
+#       define GETENV(name) fixed_getenv(name)
+#   else
+#       define GETENV(name) getenv(name)
+#   endif
 #else
 #   define GETENV(name) 0
 #endif
@@ -954,7 +966,7 @@ struct _GC_arrays {
 #   endif
 # else
 #   ifdef SMALL_CONFIG
-#     define MAX_HEAP_SECTS 128		/* Roughly 1GB			*/
+#     define MAX_HEAP_SECTS 128		/* Roughly 256MB (128*2048*1K)	*/
 #   else
 #     define MAX_HEAP_SECTS 384		/* Roughly 3GB			*/
 #   endif

@@ -144,11 +144,10 @@ EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE \
     WCC_MAKEFILE
 
 # files used by makefiles other than Makefile.am
-# (:FIXME: do we really need gcc_support.c ?)
 #
 EXTRA_DIST += add_gc_prefix.c gcname.c if_mach.c if_not_there.c \
     hpux_test_and_clear.s pc_excludes gc.mak MacOS.c \
-    MacProjects.sit.hqx gcc_support.c mach_dep.c setjmp_t.c \
+    MacProjects.sit.hqx mach_dep.c setjmp_t.c \
     threadlibs.c AmigaOS.c \
     Mac_files/datastart.c Mac_files/dataend.c \
     Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h
