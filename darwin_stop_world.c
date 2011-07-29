@@ -80,7 +80,7 @@ void GC_push_all_stacks() {
 	mach_msg_type_number_t outCount = THREAD_STATE_MAX;
 	r = thread_get_state(thread, MACHINE_THREAD_STATE,
 			     (natural_t *)&info, &outCount);
-	if(r != KERN_SUCCESS) ABORT("task_get_state failed");
+	if(r != KERN_SUCCESS) continue;
 
 	lo = (void*)(info.r1 - PPC_RED_ZONE_SIZE);
 	hi = (ptr_t)FindTopOfStack(info.r1);
@@ -123,7 +123,7 @@ void GC_push_all_stacks() {
 	mach_msg_type_number_t outCount = THREAD_STATE_MAX;
 	r = thread_get_state(thread, MACHINE_THREAD_STATE,
 			     (natural_t *)&info, &outCount);
-	if(r != KERN_SUCCESS) ABORT("task_get_state failed");
+	if(r != KERN_SUCCESS) continue;
 
 	lo = (void*)info.esp;
 	hi = (ptr_t)FindTopOfStack(info.esp);
@@ -324,8 +324,6 @@ void GC_start_world()
   kern_return_t kern_result;
   thread_act_array_t act_list;
   mach_msg_type_number_t listcount;
-  struct thread_basic_info info;
-  mach_msg_type_number_t outCount = THREAD_INFO_MAX;
   
 #   if DEBUG_THREADS
       GC_printf0("World starting\n");
@@ -352,9 +350,11 @@ void GC_start_world()
 #             endif
 	      continue;
 	    }
+	    struct thread_basic_info info;
+	    mach_msg_type_number_t outCount = THREAD_INFO_MAX;
 	    kern_result = thread_info(thread, THREAD_BASIC_INFO,
 				      (thread_info_t)&info, &outCount);
-	    if(kern_result != KERN_SUCCESS) ABORT("thread_info failed");
+	    if(kern_result != KERN_SUCCESS) continue;
 #           if DEBUG_THREADS
 	      GC_printf2("Thread state for 0x%lx = %d\n", thread,
 			 info.run_state);
@@ -362,7 +362,7 @@ void GC_start_world()
 #           endif
 	    /* Resume the thread */
 	    kern_result = thread_resume(thread);
-	    if(kern_result != KERN_SUCCESS) ABORT("thread_resume failed");
+	    if(kern_result != KERN_SUCCESS) continue;
 	  } 
 	}
       }

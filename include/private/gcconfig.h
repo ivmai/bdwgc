@@ -97,10 +97,6 @@
 #    define ARM32
 #    define mach_type_known
 # endif
-# if defined(NETBSD) && defined(__sh__)
-#    define SH
-#    define mach_type_known
-# endif
 # if defined(vax)
 #    define VAX
 #    ifdef ultrix
@@ -119,8 +115,8 @@
 #    if defined(nec_ews) || defined(_nec_ews)
 #      define EWS4800
 #    endif
-#    if !defined(LINUX) && !defined(EWS4800) && !defined(NETBSD)
-#      if defined(ultrix) || defined(__ultrix)
+#    if !defined(LINUX) && !defined(EWS4800)
+#      if defined(ultrix) || defined(__ultrix) || defined(__NetBSD__)
 #	 define ULTRIX
 #      else
 #	 if defined(_SYSTYPE_SVR4) || defined(SYSTYPE_SVR4) \
@@ -174,7 +170,7 @@
 #   define mach_type_known
 # endif
 # if defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
-     && !defined(__OpenBSD__) && !defined(__NetBSD__) && !defined(__FreeBSD__)
+     && !defined(__OpenBSD__) && !(__NetBSD__)
 #   define SPARC
 #   define DRSNX
 #   define mach_type_known
@@ -236,12 +232,6 @@
 #    define ARM32
 #    define mach_type_known
 # endif
-# if defined(LINUX) && defined(__cris__)
-#    ifndef CRIS
-#	define CRIS
-#    endif
-#    define mach_type_known
-# endif
 # if defined(LINUX) && (defined(powerpc) || defined(__powerpc__) || defined(powerpc64) || defined(__powerpc64__))
 #    define POWERPC
 #    define mach_type_known
@@ -260,10 +250,6 @@
 # endif
 # if defined(LINUX) && defined(__sh__)
 #    define SH
-#    define mach_type_known
-# endif
-# if defined(LINUX) && defined(__m32r__)
-#    define M32R
 #    define mach_type_known
 # endif
 # if defined(__alpha) || defined(__alpha__)
@@ -328,10 +314,6 @@
 #    define X86_64
 #    define mach_type_known
 # endif
-# if defined(FREEBSD) && defined(__sparc__)
-#    define SPARC
-#    define mach_type_known
-#endif
 # if defined(bsdi) && (defined(i386) || defined(__i386__))
 #    define I386
 #    define BSDI
@@ -492,8 +474,6 @@
 		    /*		   POWERPC    ==> IBM/Apple PowerPC	*/
 		    /*			(MACOS(<=9),DARWIN(incl.MACOSX),*/
 		    /*			 LINUX, NETBSD, NOSYS variants)	*/
-		    /*		   CRIS       ==> Axis Etrax		*/
-		    /*		   M32R	      ==> Renesas M32R		*/
 
 
 /*
@@ -525,9 +505,6 @@
  * DATAEND, if not `end' where `end' is defined as ``extern int end[];''.
  * RTH suggests gaining access to linker script synth'd values with
  * this idiom instead of `&end' where `end' is defined as ``extern int end;'' .
- * Otherwise, ``GCC will assume these are in .sdata/.sbss'' and it will, e.g.,
- * cause failures on alpha*-*-* with ``-msmall-data or -fpic'' or mips-*-*
- * without any special options.
  *
  * ALIGN_DOUBLE of GC_malloc should return blocks aligned to twice
  * the pointer size.
@@ -762,7 +739,8 @@
 #       define ALIGNMENT 8
 #       define CPP_WORDSZ 64
 #     else
-#       define ALIGNMENT 4
+#       define ALIGNMENT 4	/* Guess.  Can someone verify?	*/
+				/* This was 2, but that didn't sound right. */
 #     endif
 #     define OS_TYPE "LINUX"
       /* HEURISTIC1 has been reliably reported to fail for a 32-bit	*/
@@ -786,10 +764,8 @@
 #     define USE_MMAP_ANON
 #     define USE_ASM_PUSH_REGS
       /* This is potentially buggy. It needs more testing. See the comments in
-         os_dep.c.  It relies on threads to track writes. */
-#     ifdef GC_DARWIN_THREADS
-#       define MPROTECT_VDB
-#     endif
+         os_dep.c */
+#     define MPROTECT_VDB
 #     include <unistd.h>
 #     define GETPAGESIZE() getpagesize()
 #     if defined(USE_PPC_PREFETCH) && defined(__GNUC__)
@@ -961,23 +937,6 @@
 	extern char etext[];
 #	define DATASTART ((ptr_t)(etext))
 #     endif
-#   endif
-#   ifdef FREEBSD
-#	define OS_TYPE "FREEBSD"
-#	define SIG_SUSPEND SIGUSR1
-#	define SIG_THR_RESTART SIGUSR2
-#	define FREEBSD_STACKBOTTOM
-#	ifdef __ELF__
-#	    define DYNAMIC_LOADING
-#	endif
-	extern char etext[];
-	extern char edata[];
-	extern char end[];
-#	define NEED_FIND_LIMIT
-#	define DATASTART ((ptr_t)(&etext))
-#	define DATAEND (GC_find_limit (DATASTART, TRUE))
-#	define DATASTART2 ((ptr_t)(&edata))
-#	define DATAEND2 ((ptr_t)(&end))
 #   endif
 # endif
 
@@ -1392,6 +1351,8 @@
 #       define DATAEND /* not needed */
 #   endif
 #   if defined(NETBSD)
+      /* This also checked for __MIPSEL__ .  Why?  NETBSD recognition	*/
+      /* should be handled at the top of the file.			*/
 #     define ALIGNMENT 4
 #     define OS_TYPE "NETBSD"
 #     define HEURISTIC2
@@ -1732,7 +1693,7 @@
 #   define USE_GENERIC_PUSH_REGS
 #   ifdef UTS4
 #       define OS_TYPE "UTS4"
-	extern int etext[];
+        extern int etext[];
 	extern int _etext[];
 	extern int _end[];
 	extern ptr_t GC_SysVGetDataStart();
@@ -1757,7 +1718,7 @@
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
 #       define DYNAMIC_LOADING
-	extern int __data_start[];
+        extern int __data_start[];
 #       define DATASTART ((ptr_t)(__data_start))
     extern int _end[];
 #   define DATAEND (_end)
@@ -1834,19 +1795,6 @@
 #   endif
 #endif
 
-# ifdef CRIS
-#   define MACH_TYPE "CRIS"
-#   define CPP_WORDSZ 32
-#   define ALIGNMENT 1
-#   define OS_TYPE "LINUX"
-#   define DYNAMIC_LOADING
-#   define LINUX_STACKBOTTOM
-#   define USE_GENERIC_PUSH_REGS
-#   define SEARCH_FOR_DATA_START
-      extern int _end[];
-#   define DATAEND (_end)
-# endif
-
 # ifdef SH
 #   define MACH_TYPE "SH"
 #   define ALIGNMENT 4
@@ -1863,13 +1811,6 @@
       extern int _end[];
 #     define DATAEND (_end)
 #   endif
-#   ifdef NETBSD
-#      define OS_TYPE "NETBSD"
-#      define HEURISTIC2
-#      define DATASTART GC_data_start
-#       define USE_GENERIC_PUSH_REGS
-#      define DYNAMIC_LOADING
-#   endif
 # endif
  
 # ifdef SH4
@@ -1877,23 +1818,6 @@
 #   define OS_TYPE "MSWINCE"
 #   define ALIGNMENT 4
 #   define DATAEND /* not needed */
-# endif
-
-# ifdef M32R
-#   define CPP_WORDSZ 32
-#   define MACH_TYPE "M32R"
-#   define ALIGNMENT 4
-#   ifdef LINUX
-#     define OS_TYPE "LINUX"
-#     define LINUX_STACKBOTTOM
-#     undef STACK_GRAN
-#     define STACK_GRAN 0x10000000
-#     define USE_GENERIC_PUSH_REGS
-#     define DYNAMIC_LOADING
-#     define SEARCH_FOR_DATA_START
-      extern int _end[];
-#     define DATAEND (_end)
-#   endif
 # endif
 
 # ifdef X86_64
@@ -2119,7 +2043,7 @@
 # endif
 
 # if defined(HP_PA) || defined(M88K) || defined(POWERPC) && !defined(DARWIN) \
-	     || defined(LINT) || defined(MSWINCE) || defined(ARM32) || defined(CRIS) \
+	     || defined(LINT) || defined(MSWINCE) || defined(ARM32) \
 	     || (defined(I386) && defined(__LCC__))
 	/* Use setjmp based hack to mark from callee-save registers.    */
 	/* The define should move to the individual platform 		*/
@@ -2260,7 +2184,7 @@
 #	    else
 #	      if defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
 			extern void *GC_amiga_get_mem(size_t size);
-#		define GET_MEM(bytes) HBLKPTR((size_t) \
+			define GET_MEM(bytes) HBLKPTR((size_t) \
 			  GC_amiga_get_mem((size_t)bytes + GC_page_size) \
 			  + GC_page_size-1)
 #	      else

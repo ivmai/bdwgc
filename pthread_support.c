@@ -2,7 +2,7 @@
  * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
- * Copyright (c) 2000-2004 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (c) 2000-2001 by Hewlett-Packard Company.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -839,9 +839,9 @@ int GC_get_nprocs()
 /* We hold the allocation lock.	*/
 void GC_thr_init()
 {
-#   ifndef GC_DARWIN_THREADS
-      int dummy;
-#   endif
+#	ifndef GC_DARWIN_THREADS
+        int dummy;
+#	endif
     GC_thread t;
 
     if (GC_thr_initialized) return;
@@ -927,8 +927,6 @@ void GC_thr_init()
 	/* Disable true incremental collection, but generational is OK.	*/
 	GC_time_limit = GC_TIME_UNLIMITED;
       }
-      /* If we are using a parallel marker, actually start helper threads.  */
-        if (GC_parallel) start_mark_threads();
 #   endif
 }
 
@@ -945,6 +943,10 @@ void GC_init_parallel()
 
     /* GC_init() calls us back, so set flag first.	*/
     if (!GC_is_initialized) GC_init();
+    /* If we are using a parallel marker, start the helper threads.  */
+#     ifdef PARALLEL_MARK
+        if (GC_parallel) start_mark_threads();
+#     endif
     /* Initialize thread local free lists if used.	*/
 #   if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
       LOCK();
@@ -1220,7 +1222,7 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     if (!GC_thr_initialized) GC_thr_init();
 #   ifdef GC_ASSERTIONS
       {
-	size_t stack_size;
+	int stack_size;
 	if (NULL == attr) {
 	   pthread_attr_t my_attr;
 	   pthread_attr_init(&my_attr);

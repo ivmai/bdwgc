@@ -16,9 +16,9 @@
  */
 /* Boehm, September 14, 1994 4:44 pm PDT */
 
-# include "private/gc_priv.h"
-
 # if defined(GC_SOLARIS_THREADS) || defined(GC_SOLARIS_PTHREADS)
+
+# include "private/gc_priv.h"
 # include "private/solaris_threads.h"
 # include <thread.h>
 # include <synch.h>
@@ -786,7 +786,6 @@ void GC_thr_init(void)
 {
     GC_thread t;
     thread_t tid;
-    int ret;
 
     if (GC_thr_initialized)
 	    return;
@@ -804,11 +803,9 @@ void GC_thr_init(void)
       t = GC_new_thread(thr_self());
       t -> stack_size = 0;
       t -> flags = DETACHED | CLIENT_OWNS_STACK;
-    ret = thr_create(0 /* stack */, 0 /* stack_size */, GC_thr_daemon,
-    		     0 /* arg */, THR_DETACHED | THR_DAEMON,
-    		     &tid /* thread_id */);
-    if (ret != 0) {
-	GC_err_printf1("Thr_create returned %ld\n", ret);
+    if (thr_create(0 /* stack */, 0 /* stack_size */, GC_thr_daemon,
+    		   0 /* arg */, THR_DETACHED | THR_DAEMON,
+    		   &tid /* thread_id */) != 0) {
     	ABORT("Cant fork daemon");
     }
     thr_setprio(tid, 126);

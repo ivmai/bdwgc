@@ -1,7 +1,7 @@
 
 ; GC_push_regs function. Under some optimization levels GCC will clobber
 ; some of the non-volatile registers before we get a chance to save them
-; therefore, this cannot be inline asm.
+; therefore, this can't be inline asm.
 
 .text
 	.align 2

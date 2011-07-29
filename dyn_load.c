@@ -96,25 +96,17 @@
 /* Newer versions of GNU/Linux define this macro.  We
  * define it similarly for any ELF systems that don't.  */
 #  ifndef ElfW
-#    if defined(FREEBSD)
-#      if __ELF_WORD_SIZE == 32
+#    ifdef NETBSD
+#      if ELFSIZE == 32
 #        define ElfW(type) Elf32_##type
 #      else
 #        define ElfW(type) Elf64_##type
 #      endif
 #    else
-#      ifdef NETBSD
-#        if ELFSIZE == 32
-#          define ElfW(type) Elf32_##type
-#        else
-#          define ElfW(type) Elf64_##type
-#        endif
+#      if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
+#        define ElfW(type) Elf32_##type
 #      else
-#        if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
-#          define ElfW(type) Elf32_##type
-#        else
-#          define ElfW(type) Elf64_##type
-#	 endif
+#        define ElfW(type) Elf64_##type
 #      endif
 #    endif
 #  endif
@@ -493,6 +485,7 @@ static struct link_map *
 GC_FirstDLOpenedLinkMap()
 {
     ElfW(Dyn) *dp;
+    struct r_debug *r;
     static struct link_map *cachedResult = 0;
 
     if( _DYNAMIC == 0) {
@@ -501,12 +494,6 @@ GC_FirstDLOpenedLinkMap()
     if( cachedResult == 0 ) {
         int tag;
         for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {
-	    /* FIXME: The DT_DEBUG header is not mandated by the	*/
-	    /* ELF spec.  This code appears to be dependent on		*/
-	    /* idiosynchracies of older GNU tool chains.  If this code	*/
-	    /* fails for you, the real problem is probably that it is	*/
-	    /* being used at all.  You should be getting the 		*/
-	    /* dl_iterate_phdr version.					*/
             if( tag == DT_DEBUG ) {
                 struct link_map *lm
                         = ((struct r_debug *)(dp->d_un.d_ptr))->r_map;
@@ -753,10 +740,6 @@ void GC_register_dynamic_libraries()
   
 # define HAVE_REGISTER_MAIN_STATIC_DATA
 
-  /* The frame buffer testing code is dead in this version.	*/
-  /* We leave it here temporarily in case the switch to just 	*/
-  /* testing for MEM_IMAGE sections causes un expected 		*/
-  /* problems.							*/
   GC_bool GC_warn_fb = TRUE;	/* Warn about traced likely 	*/
   				/* graphics memory.		*/
   GC_bool GC_disallow_ignore_fb = FALSE;
@@ -771,27 +754,25 @@ void GC_register_dynamic_libraries()
  
   /* Should [start, start+len) be treated as a frame buffer	*/
   /* and ignored?						*/
-  /* Unfortunately, we currently are not quite sure how to tell	*/
-  /* this automatically, and rely largely on user input.	*/
-  /* We expect that any mapping with type MEM_MAPPED (which 	*/
-  /* apparently excludes library data sections) can be safely	*/
-  /* ignored.  But we're too chicken to do that in this 	*/
-  /* version.							*/
+  /* Unfortunately, we currently have no real way to tell	*/
+  /* automatically, and rely largely on user input.		*/
+  /* FIXME: If we had more data on this phenomenon (e.g.	*/
+  /* is start aligned to a MB multiple?) we should be able to	*/
+  /* do better.							*/
   /* Based on a very limited sample, it appears that:		*/
-  /* 	- Frame buffer mappings appear as mappings of large	*/
-  /*	  length, usually a bit less than a power of two.	*/
-  /*	- The definition of "a bit less" in the above cannot	*/
-  /*	  be made more precise.					*/
-  /*	- Have a starting address at best 64K aligned.		*/
-  /*	- Have type == MEM_MAPPED.				*/
-  static GC_bool is_frame_buffer(ptr_t start, size_t len, DWORD tp)
+  /* 	- Frame buffer mappings appear as mappings of length	*/
+  /* 	  2**n MB - 192K.  (We guess the 192K can vary a bit.)	*/
+  /*	- Have a stating address at best 64K aligned.		*/
+  /* I'd love more information about the mapping, since I	*/
+  /* can't reproduce the problem.				*/
+  static GC_bool is_frame_buffer(ptr_t start, size_t len)
   {
     static GC_bool initialized = FALSE;
 #   define MB (1024*1024)
 #   define DEFAULT_FB_MB 15
 #   define MIN_FB_MB 3
 
-    if (GC_disallow_ignore_fb || tp != MEM_MAPPED) return FALSE;
+    if (GC_disallow_ignore_fb) return FALSE;
     if (!initialized) {
       char * ignore_fb_string =  GETENV("GC_IGNORE_FB");
 
@@ -880,11 +861,7 @@ void GC_register_dynamic_libraries()
 		&& (protect == PAGE_EXECUTE_READWRITE
 		    || protect == PAGE_READWRITE)
 		&& !GC_is_heap_base(buf.AllocationBase)
-		/* This used to check for
-		 * !is_frame_buffer(p, buf.RegionSize, buf.Type)
-		 * instead of just checking for MEM_IMAGE.
-		 * If something breaks, change it back. */
-		&& buf.Type == MEM_IMAGE) {  
+		&& !is_frame_buffer(p, buf.RegionSize)) {  
 #	        ifdef DEBUG_VIRTUALQUERY
 	          GC_dump_meminfo(&buf);
 #	        endif

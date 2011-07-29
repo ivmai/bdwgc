@@ -1450,8 +1450,8 @@ void GC_push_all_eager(bottom, top)
 ptr_t bottom;
 ptr_t top;
 {
-    word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
+    word * b = (word *)(((long) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
+    word * t = (word *)(((long) top) & ~(ALIGNMENT-1));
     register word *p;
     register word q;
     register word *lim;
@@ -1739,7 +1739,7 @@ register hdr * hhdr;
 {
     register int sz = hhdr -> hb_sz;
     
-    if (sz <= MAXOBJSZ) {
+    if (sz < MAXOBJSZ) {
          return(GC_page_was_dirty(h));
     } else {
     	 register ptr_t p = (ptr_t)h;

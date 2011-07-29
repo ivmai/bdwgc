@@ -129,7 +129,7 @@ GC_API int GC_java_finalization;
 			/* ordered finalization.  Default value is	*/
 			/* determined by JAVA_FINALIZATION macro.	*/
 
-GC_API void (* GC_finalizer_notifier)();
+GC_API void (* GC_finalizer_notifier)(void);
 			/* Invoked by the collector when there are 	*/
 			/* objects to be finalized.  Invoked at most	*/
 			/* once per GC cycle.  Never invoked unless 	*/
@@ -191,7 +191,7 @@ GC_API GC_word GC_free_space_divisor;
 			/* least N/GC_free_space_divisor bytes between	*/
 			/* collections, where N is the heap size plus	*/
 			/* a rough estimate of the root set size.	*/
-			/* Initially, GC_free_space_divisor = 3.	*/
+			/* Initially, GC_free_space_divisor = 4.	*/
 			/* Increasing its value will use less space	*/
 			/* but more collection time.  Decreasing it	*/
 			/* will appreciably decrease collection time	*/
@@ -308,9 +308,6 @@ GC_API void GC_end_stubborn_change GC_PROTO((GC_PTR));
 /* the base of the user object.						*/
 /* Return 0 if displaced_pointer doesn't point to within a valid	*/
 /* object.								*/
-/* Note that a deallocated object in the garbage collected heap		*/
-/* may be considered valid, even if it has been deallocated with	*/
-/* GC_free.  								*/
 GC_API GC_PTR GC_base GC_PROTO((GC_PTR displaced_pointer));
 
 /* Given a pointer to the base of an object, return its size in bytes.	*/
@@ -868,13 +865,19 @@ GC_API void (*GC_is_valid_displacement_print_proc)
 GC_API void (*GC_is_visible_print_proc)
 	GC_PROTO((GC_PTR p));
 
+#define _IN_LIBGC_GC_H
+#include "libgc-mono-debugger.h"
 
 /* For pthread support, we generally need to intercept a number of 	*/
 /* thread library calls.  We do that here by macro defining them.	*/
 
 #if !defined(GC_USE_LD_WRAP) && \
     (defined(GC_PTHREADS) || defined(GC_SOLARIS_THREADS))
+#if defined(_IN_LIBGC) || defined(USE_INCLUDED_LIBGC)
 # include "gc_pthread_redirects.h"
+#else
+# include <gc/gc_pthread_redirects.h>
+#endif
 #endif
 
 # if defined(PCR) || defined(GC_SOLARIS_THREADS) || \
@@ -889,7 +892,7 @@ GC_API void (*GC_is_visible_print_proc)
 GC_PTR GC_malloc_many(size_t lb);
 #define GC_NEXT(p) (*(GC_PTR *)(p)) 	/* Retrieve the next element	*/
 					/* in returned list.		*/
-extern void GC_thr_init();	/* Needed for Solaris/X86	*/
+extern void GC_thr_init(void);	/* Needed for Solaris/X86	*/
 
 #endif /* THREADS && !SRC_M3 */
 
@@ -933,7 +936,7 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
   * no-op and the collector self-initializes.  But a number of platforms
   * make that too hard.
   */
-#if (defined(sparc) || defined(__sparc)) && defined(sun)
+#if defined(sparc) || defined(__sparc)
     /*
      * If you are planning on putting
      * the collector in a SunOS 5 dynamic library, you need to call GC_INIT()

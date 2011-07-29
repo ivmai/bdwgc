@@ -203,7 +203,7 @@ void GC_restart_handler(int sig)
 # endif
 /* We hold allocation lock.  Should do exactly the right thing if the	*/
 /* world is stopped.  Should not fail if it isn't.			*/
-void GC_push_all_stacks()
+static void pthread_push_all_stacks()
 {
     GC_bool found_me = FALSE;
     int i;
@@ -270,6 +270,13 @@ void GC_push_all_stacks()
       ABORT("Collecting from unknown thread.");
 }
 
+/* We hold allocation lock.  Should do exactly the right thing if the	*/
+/* world is stopped.  Should not fail if it isn't.			*/
+void GC_push_all_stacks()
+{
+    gc_thread_vtable->push_all_stacks();
+}
+
 /* There seems to be a very rare thread stopping problem.  To help us  */
 /* debug that, we save the ids of the stopping thread. */
 pthread_t GC_stopping_thread;
@@ -317,7 +324,7 @@ int GC_suspend_all()
 }
 
 /* Caller holds allocation lock.	*/
-void GC_stop_world()
+static void pthread_stop_world()
 {
     int i;
     int n_live_threads;
@@ -327,16 +334,6 @@ void GC_stop_world()
     GC_printf1("Stopping the world from 0x%lx\n", pthread_self());
     #endif
        
-    /* Make sure all free list construction has stopped before we start. */
-    /* No new construction can start, since free list construction is	*/
-    /* required to acquire and release the GC lock before it starts,	*/
-    /* and we have the lock.						*/
-#   ifdef PARALLEL_MARK
-      GC_acquire_mark_lock();
-      GC_ASSERT(GC_fl_builder_count == 0);
-      /* We should have previously waited for it to become zero. */
-#   endif /* PARALLEL_MARK */
-    ++GC_stop_count;
     n_live_threads = GC_suspend_all();
 
       if (GC_retry_signals) {
@@ -374,18 +371,34 @@ void GC_stop_world()
 	      ABORT("sem_wait for handler failed");
 	  }
     }
-#   ifdef PARALLEL_MARK
-      GC_release_mark_lock();
-#   endif
     #if DEBUG_THREADS
       GC_printf1("World stopped from 0x%lx\n", pthread_self());
     #endif
     GC_stopping_thread = 0;  /* debugging only */
 }
 
+/* Caller holds allocation lock.	*/
+void GC_stop_world()
+{
+    /* Make sure all free list construction has stopped before we start. */
+    /* No new construction can start, since free list construction is	*/
+    /* required to acquire and release the GC lock before it starts,	*/
+    /* and we have the lock.						*/
+#   ifdef PARALLEL_MARK
+      GC_acquire_mark_lock();
+      GC_ASSERT(GC_fl_builder_count == 0);
+      /* We should have previously waited for it to become zero. */
+#   endif /* PARALLEL_MARK */
+    ++GC_stop_count;
+    gc_thread_vtable->stop_world ();
+#   ifdef PARALLEL_MARK
+      GC_release_mark_lock();
+#   endif
+}
+
 /* Caller holds allocation lock, and has held it continuously since	*/
 /* the world stopped.							*/
-void GC_start_world()
+static void pthread_start_world()
 {
     pthread_t my_thread = pthread_self();
     register int i;
@@ -426,7 +439,12 @@ void GC_start_world()
     #endif
 }
 
-void GC_stop_init() {
+void GC_start_world()
+{
+    gc_thread_vtable->start_world();
+}
+
+static void pthread_stop_init() {
     struct sigaction act;
     
     if (sem_init(&GC_suspend_ack_sem, 0, 0) != 0)
@@ -468,5 +486,24 @@ void GC_stop_init() {
 	  }
 #     endif
 }
+
+/* We hold the allocation lock.	*/
+void GC_stop_init()
+{
+    gc_thread_vtable->initialize ();
+}
+
+/*
+ * This is used by the Mono Debugger to stop/start the world.
+ */
+GCThreadFunctions pthread_thread_vtable = {
+    pthread_stop_init,
+ 
+    pthread_stop_world,
+    pthread_push_all_stacks,
+    pthread_start_world
+};
+
+GCThreadFunctions *gc_thread_vtable = &pthread_thread_vtable;
 
 #endif

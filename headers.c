@@ -206,7 +206,7 @@ register struct hblk * h;
 {
     hdr * result;
     
-    if (!get_index((word) h)) return(0);
+    if (!get_index((word) h)) return(FALSE);
     result = alloc_hdr();
     SET_HDR(h, result);
 #   ifdef USE_MUNMAP

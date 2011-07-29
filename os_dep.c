@@ -129,7 +129,10 @@
 
 #ifdef UNIX_LIKE
 # include <fcntl.h>
-# if defined(SUNOS5SIGS) && !defined(FREEBSD)
+#endif
+
+#if (defined(SUNOS5SIGS) || defined (HURD) || defined(LINUX) || defined(NETBSD)) && !defined(FREEBSD)
+# ifdef SUNOS5SIGS
 #  include <sys/siginfo.h>
 # endif
   /* Define SETJMP and friends to be the version that restores	*/
@@ -277,6 +280,7 @@ word GC_apply_to_maps(word (*fn)(char *))
 char *GC_parse_map_entry(char *buf_ptr, word *start, word *end,
                                 char *prot_buf, unsigned int *maj_dev)
 {
+    int i;
     char *tok;
 
     if (buf_ptr == NULL || *buf_ptr == '\0') {
@@ -858,10 +862,8 @@ ptr_t GC_get_stack_base()
 # define STAT_SKIP 27   /* Number of fields preceding startstack	*/
 			/* field in /proc/self/stat			*/
 
-#ifdef USE_LIBC_PRIVATES
 # pragma weak __libc_stack_end
   extern ptr_t __libc_stack_end;
-#endif
 
 # ifdef IA64
     /* Try to read the backing store base from /proc/self/maps.	*/
@@ -891,33 +893,30 @@ ptr_t GC_get_stack_base()
         return GC_apply_to_maps(backing_store_base_from_maps);
     }
 
-#   ifdef USE_LIBC_PRIVATES
-#     pragma weak __libc_ia64_register_backing_store_base
-      extern ptr_t __libc_ia64_register_backing_store_base;
-#   endif
+#   pragma weak __libc_ia64_register_backing_store_base
+    extern ptr_t __libc_ia64_register_backing_store_base;
 
     ptr_t GC_get_register_stack_base(void)
     {
-#     ifdef USE_LIBC_PRIVATES
-        if (0 != &__libc_ia64_register_backing_store_base
-	    && 0 != __libc_ia64_register_backing_store_base) {
-	  /* Glibc 2.2.4 has a bug such that for dynamically linked	*/
-	  /* executables __libc_ia64_register_backing_store_base is 	*/
-	  /* defined but uninitialized during constructor calls.  	*/
-	  /* Hence we check for both nonzero address and value.		*/
-	  return __libc_ia64_register_backing_store_base;
-        }
-#     endif
-      word result = backing_store_base_from_proc();
-      if (0 == result) {
+      if (0 != &__libc_ia64_register_backing_store_base
+	  && 0 != __libc_ia64_register_backing_store_base) {
+	/* Glibc 2.2.4 has a bug such that for dynamically linked	*/
+	/* executables __libc_ia64_register_backing_store_base is 	*/
+	/* defined but uninitialized during constructor calls.  	*/
+	/* Hence we check for both nonzero address and value.		*/
+	return __libc_ia64_register_backing_store_base;
+      } else {
+	word result = backing_store_base_from_proc();
+	if (0 == result) {
 	  /* Use dumb heuristics.  Works only for default configuration. */
 	  result = (word)GC_stackbottom - BACKING_STORE_DISPLACEMENT;
 	  result += BACKING_STORE_ALIGNMENT - 1;
 	  result &= ~(BACKING_STORE_ALIGNMENT - 1);
 	  /* Verify that it's at least readable.  If not, we goofed. */
 	  GC_noop1(*(word *)result); 
+	}
+	return (ptr_t)result;
       }
-      return (ptr_t)result;
     }
 # endif
 
@@ -940,7 +939,6 @@ ptr_t GC_get_stack_base()
     /* since the correct value of __libc_stack_end never	*/
     /* becomes visible to us.  The second test works around 	*/
     /* this.							*/  
-#   ifdef USE_LIBC_PRIVATES
       if (0 != &__libc_stack_end && 0 != __libc_stack_end ) {
 #       ifdef IA64
 	  /* Some versions of glibc set the address 16 bytes too	*/
@@ -953,7 +951,6 @@ ptr_t GC_get_stack_base()
 	  return __libc_stack_end;
 #	endif
       }
-#   endif
     f = open("/proc/self/stat", O_RDONLY);
     if (f < 0 || STAT_READ(f, stat_buf, STAT_BUF_SIZE) < 2 * STAT_SKIP) {
 	ABORT("Couldn't read /proc/self/stat");
@@ -2198,7 +2195,7 @@ GC_bool is_ptrfree;
     /* Using vm_protect (mach syscall) over mprotect (BSD syscall) seems to
        decrease the likelihood of some of the problems described below. */
     #include <mach/vm_map.h>
-    static mach_port_t GC_task_self;
+    extern mach_port_t GC_task_self;
     #define PROTECT(addr,len) \
         if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
                 FALSE,VM_PROT_READ) != KERN_SUCCESS) { \
@@ -2286,11 +2283,8 @@ GC_bool is_ptrfree;
 #   if defined(ALPHA) || defined(M68K)
       typedef void (* REAL_SIG_PF)(int, int, s_c *);
 #   else
-#     if defined(IA64) || defined(HP_PA) || defined(X86_64)
+#     if defined(IA64) || defined(HP_PA)
         typedef void (* REAL_SIG_PF)(int, siginfo_t *, s_c *);
-	/* FIXME:						  */
-	/* According to SUSV3, the last argument should have type */
-	/* void * or ucontext_t *				  */
 #     else
         typedef void (* REAL_SIG_PF)(int, s_c);
 #     endif
@@ -2378,7 +2372,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #   endif
 #   ifdef FREEBSD
 #     define SIG_OK (sig == SIGBUS)
-#     define CODE_OK TRUE
+#     define CODE_OK (code == BUS_PAGE_FAULT)
 #   endif
 # endif /* SUNOS4 || (FREEBSD && !SUNOS5SIGS) */
 
@@ -2403,7 +2397,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #   if defined(ALPHA) || defined(M68K)
       void GC_write_fault_handler(int sig, int code, s_c * sc)
 #   else
-#     if defined(IA64) || defined(HP_PA) || defined(X86_64)
+#     if defined(IA64) || defined(HP_PA)
         void GC_write_fault_handler(int sig, siginfo_t * si, s_c * scp)
 #     else
 #       if defined(ARM32)
@@ -2469,7 +2463,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 	char * addr = (char *) (scp -> si_addr);
 #   endif
 #   ifdef LINUX
-#     if defined(I386)
+#     if defined(I386) || defined (X86_64)
 	char * addr = (char *) (sc.cr2);
 #     else
 #	if defined(M68K)
@@ -2504,7 +2498,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #	  ifdef ALPHA
             char * addr = get_fault_addr(sc);
 #	  else
-#	    if defined(IA64) || defined(HP_PA) || defined(X86_64)
+#	    if defined(IA64) || defined(HP_PA)
 	      char * addr = si -> si_addr;
 	      /* I believe this is claimed to work on all platforms for	*/
 	      /* Linux 2.3.47 and later.  Hopefully we don't have to	*/
@@ -2516,11 +2510,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #               if defined(ARM32)
                   char * addr = (char *)sc.fault_address;
 #               else
-#		  if defined(CRIS)
-		    char * addr = (char *)sc.regs.csraddr;
-#		  else
-		    --> architecture not supported
-#		  endif
+		  --> architecture not supported
 #               endif
 #	      endif
 #	    endif
@@ -2589,7 +2579,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #		    if defined(ALPHA) || defined(M68K)
 		        (*(REAL_SIG_PF)old_handler) (sig, code, sc);
 #		    else 
-#		      if defined(IA64) || defined(HP_PA) || defined(X86_64)
+#		      if defined(IA64) || defined(HP_PA)
 		        (*(REAL_SIG_PF)old_handler) (sig, si, scp);
 #		      else
 		        (*(REAL_SIG_PF)old_handler) (sig, sc);
@@ -2683,8 +2673,7 @@ void GC_dirty_init()
       struct sigaction	act, oldact;
       /* We should probably specify SA_SIGINFO for Linux, and handle 	*/
       /* the different architectures more uniformly.			*/
-#     if defined(IRIX5) || defined(LINUX) && !defined(X86_64) \
-	 || defined(OSF1) || defined(HURD)
+#     if defined(IRIX5) || defined(LINUX) || defined(OSF1) || defined(HURD)
     	act.sa_flags	= SA_RESTART;
         act.sa_handler  = (SIG_PF)GC_write_fault_handler;
 #     else
@@ -3062,7 +3051,7 @@ word n;
 #include <sys/procfs.h>
 #include <sys/stat.h>
 
-#define INITIAL_BUF_SZ 16384
+#define INITIAL_BUF_SZ 4096
 word GC_proc_buf_size = INITIAL_BUF_SZ;
 char *GC_proc_buf;
 
@@ -3396,6 +3385,8 @@ extern kern_return_t exception_raise_state_identity(
 
 
 #define MAX_EXCEPTION_PORTS 16
+
+static mach_port_t GC_task_self;
 
 static struct {
     mach_msg_type_number_t count;
@@ -3953,11 +3944,7 @@ kern_return_t catch_exception_raise_state_identity(
 #	 if defined(OPENBSD) || defined(NETBSD)
 #	   include <frame.h>
 #	 else
-#	   if defined(FREEBSD)
-#	     include <machine/frame.h>
-#	   else
-#	     include <sys/frame.h>
-#	   endif
+#	   include <sys/frame.h>
 #	 endif
 #      endif
 #    endif
@@ -4003,7 +3990,7 @@ struct callinfo info[NFRAMES];
 
 #else /* No builtin backtrace; do it ourselves */
 
-#if (defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD)) && defined(SPARC)
+#if (defined(OPENBSD) || defined(NETBSD)) && defined(SPARC)
 #  define FR_SAVFP fr_fp
 #  define FR_SAVPC fr_pc
 #else

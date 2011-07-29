@@ -1,4 +1,4 @@
- # $Id: alpha_mach_dep.s,v 1.2 1993/01/18 22:54:51 dosser Exp $
+ # $Id: alpha_mach_dep.S,v 1.1 2003/03/31 14:33:59 martin Exp $
 	.arch ev6
 
         .text
