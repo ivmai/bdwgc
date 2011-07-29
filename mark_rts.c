@@ -46,7 +46,7 @@ struct roots {
 #	ifndef MSWIN32
 	  struct roots * r_next;
 #	endif
-	bool r_tmp;
+	GC_bool r_tmp;
 	  	/* Delete before registering new dynamic libraries */
 };
 
@@ -85,7 +85,7 @@ void GC_print_static_roots()
 /* Primarily for debugging support:	*/
 /* Is the address p in one of the registered static			*/
 /* root sections?							*/
-bool GC_is_static_root(p)
+GC_bool GC_is_static_root(p)
 ptr_t p;
 {
     static int last_root_set = 0;
@@ -185,7 +185,7 @@ char * b; char * e;
 /* reregistering dynamic libraries.					*/ 
 void GC_add_roots_inner(b, e, tmp)
 char * b; char * e;
-bool tmp;
+GC_bool tmp;
 {
     struct roots * old;
     
@@ -378,8 +378,8 @@ GC_PTR finish;
 	  return;
       }
       next_index = next - excl_table;
-      for (i = excl_table_entries - 1; i >= next_index; --i) {
-	excl_table[i+1] = excl_table[i];
+      for (i = excl_table_entries; i > next_index; --i) {
+	excl_table[i] = excl_table[i-1];
       }
     } else {
       next_index = excl_table_entries;
@@ -417,7 +417,7 @@ int all;
  */
 
 void GC_push_roots(all)
-bool all;
+GC_bool all;
 {
     register int i;
 

@@ -169,8 +169,8 @@ void GC_push_regs()
 #   endif	/* MACOS */
 
 #       if defined(I386) &&!defined(OS2) &&!defined(SVR4) &&!defined(MSWIN32) \
-	&& !defined(SCO) && !(defined(LINUX) && defined(__ELF__)) \
-	&& !defined(DOS4GW)
+	&& !defined(SCO) && !defined(SCO_ELF) && !(defined(LINUX) \
+	&& defined(__ELF__)) && !defined(DOS4GW)
 	/* I386 code, generic code does not appear to work */
 	/* It does appear to work under OS2, and asms dont */
 	/* This is used for some 38g UNIX variants and for CYGWIN32 */
@@ -219,7 +219,7 @@ void GC_push_regs()
 	  __asm  add esp,4
 #       endif
 
-#       if defined(I386) && (defined(SVR4) || defined(SCO))
+#       if defined(I386) && (defined(SVR4) || defined(SCO) || defined(SCO_ELF))
 	/* I386 code, SVR4 variant, generic code does not appear to work */
 	  asm("pushl %eax");  asm("call GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %ebx");  asm("call GC_push_one"); asm("addl $4,%esp");

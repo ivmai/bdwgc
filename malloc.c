@@ -21,7 +21,7 @@ void GC_extend_size_map();	/* in misc.c. */
 
 /* Allocate reclaim list for kind:	*/
 /* Return TRUE on success		*/
-bool GC_alloc_reclaim_list(kind)
+GC_bool GC_alloc_reclaim_list(kind)
 register struct obj_kind * kind;
 {
     struct hblk ** result = (struct hblk **)
@@ -115,7 +115,7 @@ register int k;
     ptr_t result;
     DCL_LOCK_STATE;
 
-    GC_invoke_finalizers();
+    GC_INVOKE_FINALIZERS();
     DISABLE_SIGNALS();
     LOCK();
     result = GC_generic_malloc_inner(lb, k);

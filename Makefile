@@ -7,15 +7,16 @@
 #      	 and runs some tests of collector and cords.  Does not add cords or
 #	 c++ interface to gc.a
 # cord/de - builds dumb editor based on cords.
-CC=cc
-CXX=CC
-AS=as
+ABI_FLAG=
+CC=cc $(ABI_FLAG)
+CXX=CC $(ABI_FLAG)
+AS=as $(ABI_FLAG)
 #  The above doesn't work with gas, which doesn't run cpp.
 #  Define AS as `gcc -c -x assembler-with-cpp' instead.
 #  Under Irix 6, you will have to specify the ABI for as if you specify
 #  it for the C compiler.
 
-CFLAGS= -O -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DATOMIC_UNCOLLECTABLE -DNO_EXECUTE_PERMISSION -DSILENT
+CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION -DSILENT
 
 # Setjmp_test may yield overly optimistic results when compiled
 # without optimization.
@@ -80,6 +81,8 @@ CFLAGS= -O -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DATOMIC_UNCOLLECTABLE -DNO_EXEC
 #   in a sepearte postpass, and hence their memory won't be reclaimed.
 #   Not recommended unless you are implementing a language that specifies
 #   these semantics.
+# -DFINALIZE_ON_DEMAND causes finalizers to be run only in response
+#   to explicit GC_invoke_finalizers() calls.
 # -DATOMIC_UNCOLLECTABLE includes code for GC_malloc_atomic_uncollectable.
 #   This is useful if either the vendor malloc implementation is poor,
 #   or if REDIRECT_MALLOC is used.
@@ -92,6 +95,16 @@ CFLAGS= -O -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DATOMIC_UNCOLLECTABLE -DNO_EXEC
 #   Works for Solaris and Irix.
 # -DMMAP_STACKS (for Solaris threads) Use mmap from /dev/zero rather than
 #   GC_scratch_alloc() to get stack memory.
+# -DPRINT_BLACK_LIST Whenever a black list entry is added, i.e. whenever
+#   the garbage collector detects a value that looks almost, but not quite,
+#   like a pointer, print both the address containing the value, and the
+#   value of the near-bogus-pointer.  Can be used to identifiy regions of
+#   memory that are likely to contribute misidentified pointers.
+# -DOLD_BLOCK_ALLOC Use the old, possibly faster, large block
+#   allocation strategy.  The new strategy tries harder to minimize
+#   fragmentation, sometimes at the expense of spending more time in the
+#   large block allocator and/or collecting more frequently.
+#
 
 
 
@@ -111,9 +124,9 @@ RANLIB= ranlib
 srcdir = .
 VPATH = $(srcdir)
 
-OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o irix_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o
+OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o irix_threads.o linux_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o
 
-CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c irix_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c
+CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c irix_threads.c linux_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c
 
 CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c cord/cord.h cord/ec.h cord/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC cord/SCOPTIONS.amiga cord/SMakefile.amiga
 
@@ -229,10 +242,12 @@ libgc.so: $(OBJS) dyn_load_sunos53.o
 # Alpha/OSF shared library version of the collector
 libalphagc.so: $(OBJS)
 	ld -shared -o libalphagc.so $(OBJS) dyn_load.o -lc
+	ln libalphagc.so libgc.so
 
 # IRIX shared library version of the collector
 libirixgc.so: $(OBJS) dyn_load.o
-	ld -shared -o libirixgc.so $(OBJS) dyn_load.o -lc
+	ld -shared $(ABI_FLAG) -o libirixgc.so $(OBJS) dyn_load.o -lc
+	ln libirixgc.so libgc.so
 
 mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ultrix_mach_dep.s $(srcdir)/rs6000_mach_dep.s $(UTILS)
 	rm -f mach_dep.o

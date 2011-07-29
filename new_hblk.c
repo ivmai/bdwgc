@@ -164,7 +164,7 @@ int kind;
 		  *prev;
     word *last_object;		/* points to last object in new hblk	*/
     register struct hblk *h;	/* the new heap block			*/
-    register bool clear = GC_obj_kinds[kind].ok_init;
+    register GC_bool clear = GC_obj_kinds[kind].ok_init;
 
 #   ifdef PRINTSTATS
 	if ((sizeof (struct hblk)) > HBLKSIZE) {

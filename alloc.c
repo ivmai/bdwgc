@@ -78,11 +78,11 @@ char * GC_copyright[] =
 extern signed_word GC_mem_found;  /* Number of reclaimed longwords	*/
 				  /* after garbage collection      	*/
 
-bool GC_dont_expand = 0;
+GC_bool GC_dont_expand = 0;
 
 word GC_free_space_divisor = 4;
 
-extern bool GC_collection_in_progress();
+extern GC_bool GC_collection_in_progress();
 
 int GC_never_stop_func GC_PROTO((void)) { return(0); }
 
@@ -189,7 +189,7 @@ void GC_clear_a_few_frames()
 }
 
 /* Have we allocated enough to amortize a collection? */
-bool GC_should_collect()
+GC_bool GC_should_collect()
 {
     return(GC_adj_words_allocd() >= min_words_allocd());
 }
@@ -249,7 +249,7 @@ void GC_maybe_gc()
  * Stop the world garbage collection.  Assumes lock held, signals disabled.
  * If stop_func is not GC_never_stop_func, then abort if stop_func returns TRUE.
  */
-bool GC_try_to_collect_inner(stop_func)
+GC_bool GC_try_to_collect_inner(stop_func)
 GC_stop_func stop_func;
 {
     if (GC_collection_in_progress()) {
@@ -355,7 +355,7 @@ int GC_collect_a_little GC_PROTO(())
  * Otherwise we may fail and return FALSE if this takes too long.
  * Increment GC_gc_no if we succeed.
  */
-bool GC_stopped_mark(stop_func)
+GC_bool GC_stopped_mark(stop_func)
 GC_stop_func stop_func;
 {
     register int i;
@@ -548,7 +548,7 @@ void GC_finish_collection()
     int result;
     DCL_LOCK_STATE;
     
-    GC_invoke_finalizers();
+    GC_INVOKE_FINALIZERS();
     DISABLE_SIGNALS();
     LOCK();
     ENTER_GC();
@@ -559,7 +559,7 @@ void GC_finish_collection()
     EXIT_GC();
     UNLOCK();
     ENABLE_SIGNALS();
-    if(result) GC_invoke_finalizers();
+    if(result) GC_INVOKE_FINALIZERS();
     return(result);
 }
 
@@ -609,6 +609,21 @@ word bytes;
         GC_greatest_plausible_heap_addr = (ptr_t)p + bytes;
     }
 }
+
+#ifdef PRESERVE_LAST
+GC_bool GC_in_last_heap_sect(p)
+ptr_t p;
+{
+    struct HeapSect * last_heap_sect = &(GC_heap_sects[GC_n_heap_sects-1]);
+    ptr_t start = last_heap_sect -> hs_start;
+    ptr_t end;
+
+    if (p < start) return FALSE;
+    end = start + last_heap_sect -> hs_bytes;
+    if (p >= end) return FALSE;
+    return TRUE;
+}
+#endif
 
 # if !defined(NO_DEBUGGING)
 void GC_print_heap_sects()
@@ -667,7 +682,7 @@ GC_word GC_max_retries = 0;
  * Tiny values of n are rounded up.
  * Returns FALSE on failure.
  */
-bool GC_expand_hp_inner(n)
+GC_bool GC_expand_hp_inner(n)
 word n;
 {
     word bytes;
@@ -749,9 +764,9 @@ unsigned GC_fail_count = 0;
 			/* How many consecutive GC/expansion failures?	*/
 			/* Reset by GC_allochblk.			*/
 
-bool GC_collect_or_expand(needed_blocks, ignore_off_page)
+GC_bool GC_collect_or_expand(needed_blocks, ignore_off_page)
 word needed_blocks;
-bool ignore_off_page;
+GC_bool ignore_off_page;
 {
     
     if (!GC_incremental && !GC_dont_gc && GC_should_collect()) {

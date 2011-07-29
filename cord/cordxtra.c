@@ -390,7 +390,7 @@ size_t CORD_str(CORD x, size_t start, CORD s)
         x_buf |= CORD_pos_fetch(xpos);
         CORD_next(xpos);
     }
-    for (match_pos = start; match_pos < xlen - slen; match_pos++) {
+    for (match_pos = start; ; match_pos++) {
     	if ((x_buf & mask) == s_buf) {
     	    if (slen == start_len ||
     	     	CORD_ncmp(x, match_pos + start_len,
@@ -398,11 +398,13 @@ size_t CORD_str(CORD x, size_t start, CORD s)
     	        return(match_pos);
     	    }
     	}
+	if ( match_pos == xlen - slen ) {
+	    return(CORD_NOT_FOUND);
+	}
     	x_buf <<= 8;
         x_buf |= CORD_pos_fetch(xpos);
         CORD_next(xpos);
     }
-    return(CORD_NOT_FOUND);
 }
 
 void CORD_ec_flush_buf(CORD_ec x)

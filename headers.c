@@ -71,7 +71,12 @@ register word bytes;
          
         if (bytes_to_get <= bytes) {
           /* Undo the damage, and get memory directly */
-   	    ptr_t result = (ptr_t)GET_MEM(bytes);
+	    bytes_to_get = bytes;
+#	    ifdef USE_MMAP
+		bytes_to_get += GC_page_size - 1;
+		bytes_to_get &= ~(GC_page_size - 1);
+#	    endif
+   	    result = (ptr_t)GET_MEM(bytes_to_get);
             scratch_free_ptr -= bytes;
 	    GC_scratch_last_end_ptr = result + bytes;
             return(result);
@@ -82,7 +87,12 @@ register word bytes;
                 GC_printf0("Out of memory - trying to allocate less\n");
 #	    endif
             scratch_free_ptr -= bytes;
-            return((ptr_t)GET_MEM(bytes));
+	    bytes_to_get = bytes;
+#	    ifdef USE_MMAP
+		bytes_to_get += GC_page_size - 1;
+		bytes_to_get &= (GC_page_size - 1);
+#	    endif
+            return((ptr_t)GET_MEM(bytes_to_get));
         }
         scratch_free_ptr = result;
         GC_scratch_end_ptr = scratch_free_ptr + bytes_to_get;
@@ -127,7 +137,7 @@ void GC_init_headers()
 
 /* Make sure that there is a bottom level index block for address addr  */
 /* Return FALSE on failure.						*/
-static bool get_index(addr)
+static GC_bool get_index(addr)
 register word addr;
 {
     register word hi =
@@ -168,7 +178,7 @@ register word addr;
 /* Install a header for block h.  */
 /* The header is uninitialized.	  */
 /* Returns FALSE on failure.	  */
-bool GC_install_header(h)
+GC_bool GC_install_header(h)
 register struct hblk * h;
 {
     hdr * result;
@@ -180,7 +190,7 @@ register struct hblk * h;
 }
 
 /* Set up forwarding counts for block h of size sz */
-bool GC_install_counts(h, sz)
+GC_bool GC_install_counts(h, sz)
 register struct hblk * h;
 register word sz; /* bytes */
 {

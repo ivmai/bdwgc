@@ -50,6 +50,16 @@ GC_malloc, it is necessary to call GC_thr_init explicitly before forking the
 first thread.  (This avoids a deadlock arising from calling GC_thr_init
 with the allocation lock held.)
 
+It appears that there is a problem in using gc_cpp.h in conjunction with
+Solaris threads and Sun's C++ runtime.  Apparently the overloaded new operator
+is invoked by some iostream initialization code before threads are correctly
+initialized.  As a result, call to thr_self() in garbage collector
+initialization  segfaults.  Currently the only known workaround is to not
+invoke the garbage collector from a user defined global operator new, or to
+have it invoke the garbage-collector's allocators only after main has started.
+(Note that the latter requires a moderately expensive test in operator
+delete.)
+
 Hans-J. Boehm
 (The above contains my personal opinions, which are probably not shared
 by anyone else.)

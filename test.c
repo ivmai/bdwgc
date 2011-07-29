@@ -24,7 +24,7 @@
 # include <assert.h>	/* Not normally used, but handy for debugging. */
 # include "gc.h"
 # include "gc_typed.h"
-# include "gc_priv.h"	/* For output and some statistics	*/
+# include "gc_priv.h"	/* For output, locking,  and some statistics	*/
 # include "config.h"
 
 # ifdef MSWIN32
@@ -45,7 +45,7 @@
 #   include <synch.h>
 # endif
 
-# ifdef IRIX_THREADS
+# if defined(IRIX_THREADS) || defined(LINUX_THREADS)
 #   include <pthread.h>
 # endif
 
@@ -386,7 +386,7 @@ VOLATILE int dropped_something = 0;
     static mutex_t incr_lock;
     mutex_lock(&incr_lock);
 # endif
-# ifdef IRIX_THREADS
+# if  defined(IRIX_THREADS) || defined(LINUX_THREADS)
     static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_lock(&incr_lock);
 # endif
@@ -404,7 +404,7 @@ VOLATILE int dropped_something = 0;
 # ifdef SOLARIS_THREADS
     mutex_unlock(&incr_lock);
 # endif
-# ifdef IRIX_THREADS
+# if defined(IRIX_THREADS) || defined(LINUX_THREADS)
     pthread_mutex_unlock(&incr_lock);
 # endif
 # ifdef WIN32_THREADS
@@ -465,7 +465,7 @@ int n;
 	    static mutex_t incr_lock;
 	    mutex_lock(&incr_lock);
 #	  endif
-#         ifdef IRIX_THREADS
+#         if defined(IRIX_THREADS) || defined(LINUX_THREADS)
             static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
             pthread_mutex_lock(&incr_lock);
 #         endif
@@ -481,7 +481,7 @@ int n;
 #	  ifdef SOLARIS_THREADS
 	    mutex_unlock(&incr_lock);
 #	  endif
-#	  ifdef IRIX_THREADS
+#	  if defined(IRIX_THREADS) || defined(LINUX_THREADS)
 	    pthread_mutex_unlock(&incr_lock);
 #	  endif
 #         ifdef WIN32_THREADS
@@ -543,6 +543,9 @@ thread_key_t fl_key;
 
 void * alloc8bytes()
 {
+# ifdef SMALL_CONFIG
+    return(GC_malloc(8));
+# else
     void ** my_free_list_ptr;
     void * my_free_list;
     
@@ -568,6 +571,7 @@ void * alloc8bytes()
     *my_free_list_ptr = GC_NEXT(my_free_list);
     GC_NEXT(my_free_list) = 0;
     return(my_free_list);
+# endif
 }
 
 #else
@@ -646,7 +650,7 @@ void typed_test()
 #   endif
     GC_descr d3 = GC_make_descriptor(&bm_large, 32);
     GC_descr d4 = GC_make_descriptor(bm_huge, 320);
-    GC_word * x = GC_malloc_explicitly_typed(2000, d4);
+    GC_word * x = (GC_word *)GC_malloc_explicitly_typed(2000, d4);
     register int i;
     
     old = 0;
@@ -811,7 +815,7 @@ void run_one_test()
     LOCK();
     n_tests++;
     UNLOCK();
-    /* GC_printf1("Finished %x\n", pthread_self());    */
+    /* GC_printf1("Finished %x\n", pthread_self()); */
 }
 
 void check_heap_stats()
@@ -819,6 +823,7 @@ void check_heap_stats()
     unsigned long max_heap_sz;
     register int i;
     int still_live;
+    int late_finalize_count = 0;
     
     if (sizeof(char *) > 4) {
         max_heap_sz = 13000000;
@@ -836,11 +841,18 @@ void check_heap_stats()
       while (GC_collect_a_little()) { }
       for (i = 0; i < 16; i++) {
         GC_gcollect();
+        late_finalize_count += GC_invoke_finalizers();
       }
     (void)GC_printf1("Completed %lu tests\n", (unsigned long)n_tests);
     (void)GC_printf2("Finalized %lu/%lu objects - ",
     		     (unsigned long)finalized_count,
     		     (unsigned long)finalizable_count);
+#   ifdef FINALIZE_ON_DEMAND
+	if (finalized_count != late_finalize_count) {
+            (void)GC_printf0("Demand finalization error\n");
+	    FAIL;
+	}
+#   endif
     if (finalized_count > finalizable_count
         || finalized_count < finalizable_count/2) {
         (void)GC_printf0("finalization is probably broken\n");
@@ -857,8 +869,7 @@ void check_heap_stats()
     i = finalizable_count - finalized_count - still_live;
     if (0 != i) {
         (void)GC_printf2
-            ("%lu disappearing links remain and %lu more objects "
-	     "were not finalized\n",
+            ("%lu disappearing links remain and %lu more objects were not finalized\n",
              (unsigned long) still_live, (unsigned long)i);
         if (i > 10) {
 	    GC_printf0("\tVery suspicious!\n");
@@ -914,7 +925,8 @@ void SetMinimumStack(long minSize)
 }
 
 
-#if !defined(PCR) && !defined(SOLARIS_THREADS) && !defined(WIN32_THREADS) && !defined(IRIX_THREADS) || defined(LINT)
+#if !defined(PCR) && !defined(SOLARIS_THREADS) && !defined(WIN32_THREADS) \
+  && !defined(IRIX_THREADS) && !defined(LINUX_THREADS) || defined(LINT)
 #ifdef MSWIN32
   int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int n)
 #else
@@ -1042,7 +1054,7 @@ test()
 }
 #endif
 
-#if defined(SOLARIS_THREADS) || defined(IRIX_THREADS)
+#if defined(SOLARIS_THREADS) || defined(IRIX_THREADS) || defined(LINUX_THREADS)
 void * thr_run_one_test(void * arg)
 {
     run_one_test();
@@ -1100,12 +1112,18 @@ main()
 #   ifdef IRIX_THREADS
 	/* Force a larger stack to be preallocated      */
 	/* Since the initial cant always grow later.	*/
-	*((char *)&code - 1024*1024) = 0;      /* Require 1 Mb */
+	*((volatile char *)&code - 1024*1024) = 0;      /* Require 1 Mb */
 #   endif /* IRIX_THREADS */
     pthread_attr_init(&attr);
-    pthread_attr_setstacksize(&attr, 1000000);
+#   ifdef IRIX_THREADS
+    	pthread_attr_setstacksize(&attr, 1000000);
+#   endif
     n_tests = 0;
-    GC_enable_incremental();
+#   ifdef MPROTECT_VDB
+    	GC_enable_incremental();
+        (void) GC_printf0("Switched to incremental mode\n");
+	(void) GC_printf0("Emulating dirty bits with mprotect/signals\n");
+#   endif
     (void) GC_set_warn_proc(warn_proc);
     if ((code = pthread_create(&th1, &attr, thr_run_one_test, 0)) != 0) {
     	(void)GC_printf1("Thread 1 creation failed %lu\n", (unsigned long)code);
@@ -1131,4 +1149,4 @@ main()
     return(0);
 }
 #endif /* pthreads */
-#endif /* SOLARIS_THREADS || IRIX_THREADS */
+#endif /* SOLARIS_THREADS || IRIX_THREADS || LINUX_THREADS */

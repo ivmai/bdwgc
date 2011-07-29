@@ -25,7 +25,7 @@
 
 extern ptr_t GC_clear_stack();  /* in misc.c, behaves like identity */
 void GC_extend_size_map();      /* in misc.c. */
-bool GC_alloc_reclaim_list();	/* in malloc.c */
+GC_bool GC_alloc_reclaim_list();	/* in malloc.c */
 
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h	 */
@@ -76,7 +76,7 @@ register int k;
     register ptr_t result;
     DCL_LOCK_STATE;
     
-    GC_invoke_finalizers();
+    GC_INVOKE_FINALIZERS();
     DISABLE_SIGNALS();
     LOCK();
     result = GC_generic_malloc_inner_ignore_off_page(lb,k);
@@ -139,7 +139,7 @@ register ptr_t *opp;
 register struct obj_kind * kind = GC_obj_kinds + k;
 DCL_LOCK_STATE;
 
-    GC_invoke_finalizers();
+    GC_INVOKE_FINALIZERS();
     DISABLE_SIGNALS();
     LOCK();
     opp = &(kind -> ok_freelist[lw]);
@@ -192,7 +192,7 @@ DCL_LOCK_STATE;
         return(op);
     }
     lw = ALIGNED_WORDS(lb);
-    GC_invoke_finalizers();
+    GC_INVOKE_FINALIZERS();
     DISABLE_SIGNALS();
     LOCK();
     opp = &(GC_obj_kinds[k].ok_freelist[lw]);

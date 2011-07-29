@@ -1,3 +1,14 @@
+Patrick Beard's Notes for building GC v4.12 with CodeWarrior Pro 2:
+----------------------------------------------------------------------------
+The current build environment for the collector is CodeWarrior Pro 2.
+Projects for CodeWarrior Pro 2 (and for quite a few older versions)
+are distributed in the file Mac_projects.sit.hqx. The project file
+:Mac_projects:gc.prj builds static library versions of the collector.
+:Mac_projects:gctest.prj builds the GC test suite.
+
+Configuring the collector is still done by editing the files
+:Mac_files:MacOS_config.h and :Mac_files:MacOS_Test_config.h.
+
 Lars Farm's suggestions on building the collector:
 ----------------------------------------------------------------------------
 Garbage Collection on MacOS - a manual 'MakeFile'
@@ -240,7 +251,7 @@ prefix:
 #include <ansi_prefix.mac.h>
 #undef NDEBUG
 
-#define ALL_INTERIOR_POINTERS	/* for GC_priv.h
+#define ALL_INTERIOR_POINTERS	/* for GC_priv.h */
 ---- ( cut here ) ----
 
 3) Test that the C++ interface 'gc_cpp.cc/h' works with 'test_cpp.cc'.

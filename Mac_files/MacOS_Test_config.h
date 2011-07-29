@@ -14,11 +14,14 @@
 /* Boehm, November 17, 1995 12:05 pm PST */
 
 #ifdef __MWERKS__
-#if defined(__powerc)
-#include <MacHeadersPPC>
-#else
-#include <MacHeaders68K>
+
+// for CodeWarrior Pro with Metrowerks Standard Library (MSL).
+// #define MSL_USE_PRECOMPILED_HEADERS 0
+#include <ansi_prefix.mac.h>
+#ifndef __STDC__
+#define __STDC__ 0
 #endif
+
 #endif
 
 // these are defined again in gc_priv.h.
@@ -26,10 +29,10 @@
 #undef FALSE
 
 #define ALL_INTERIOR_POINTERS	// follows interior pointers.
-//#define SILENT		// want collection messages.
+//#define SILENT				// want collection messages.
 //#define DONT_ADD_BYTE_AT_END	// no padding.
-//#define SMALL_CONFIG		// whether to a smaller heap.
-#define NO_SIGNALS		// signals aren't real on the Macintosh.
+//#define SMALL_CONFIG			// whether to a smaller heap.
+#define NO_SIGNALS				// signals aren't real on the Macintosh.
 #define USE_TEMPORARY_MEMORY	// use Macintosh temporary memory.
 
 // CFLAGS= -O -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DSILENT

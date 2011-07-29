@@ -48,7 +48,7 @@
 #if !defined(SUNOS4) && !defined(SUNOS5DL) && !defined(IRIX5) && \
     !defined(MSWIN32) && !(defined(ALPHA) && defined(OSF1)) && \
     !defined(HP_PA) && (!defined(LINUX) && !defined(__ELF__)) && \
-    !defined(RS6000)
+    !defined(RS6000) && !defined(SCO_ELF)
  --> We only know how to find data segments of dynamic libraries for the
  --> above.  Additional SVR4 variants might not be too
  --> hard to add.
@@ -260,7 +260,7 @@ void GC_register_dynamic_libraries()
 # endif /* !USE_PROC ... */
 # endif /* SUNOS */
 
-#if defined(LINUX) && defined(__ELF__)
+#if defined(LINUX) && defined(__ELF__) || defined(SCO_ELF)
 
 /* Dynamic loading code for Linux running ELF. Somewhat tested on
  * Linux/x86, untested but hopefully should work on Linux/Alpha. 
@@ -468,7 +468,7 @@ void GC_register_dynamic_libraries()
   /* that could possibly have been written to.				*/
   DWORD GC_allocation_granularity;
   
-  extern bool GC_is_heap_base (ptr_t p);
+  extern GC_bool GC_is_heap_base (ptr_t p);
 
 # ifdef WIN32_THREADS
     extern void GC_get_next_stack(char *start, char **lo, char **hi);
@@ -503,7 +503,7 @@ void GC_register_dynamic_libraries()
 #   endif
   }
   
-  extern bool GC_win32s;
+  extern GC_bool GC_win32s;
   
   void GC_register_dynamic_libraries()
   {

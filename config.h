@@ -102,7 +102,11 @@
 # if defined(_M_XENIX) && defined(_M_SYSV) && defined(_M_I386)
 	/* The above test may need refinement	*/
 #   define I386
-#   define SCO
+#   if defined(_SCO_ELF)
+#     define SCO_ELF
+#   else
+#     define SCO
+#   endif
 #   define mach_type_known
 # endif
 # if defined(_AUX_SOURCE)
@@ -195,7 +199,9 @@
 # endif
 # if defined(__DJGPP__)
 #   define I386
-#   define DJGPP  /* MSDOS running the DJGPP port of GCC */
+#   ifndef DJGPP
+#     define DJGPP  /* MSDOS running the DJGPP port of GCC */
+#   endif
 #   define mach_type_known
 # endif
 # if defined(__CYGWIN32__)
@@ -493,6 +499,10 @@
 #       endif
 #	define PROC_VDB
 #	define HEURISTIC1
+#	include <unistd.h>
+#       define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
+		/* getpagesize() appeared to be missing from at least one */
+		/* Solaris 5.4 installation.  Weird.			  */
 #   endif
 #   ifdef SUNOS4
 #	define OS_TYPE "SUNOS4"
@@ -566,21 +576,35 @@
 				 +((word)&etext & 0xfff))
 #	define STACKBOTTOM ((ptr_t) 0x7ffffffc)
 #   endif
+#   ifdef SCO_ELF
+#       define OS_TYPE "SCO_ELF"
+        extern int etext;
+#       define DATASTART ((ptr_t)(&etext))
+#       define STACKBOTTOM ((ptr_t) 0x08048000)
+#       define DYNAMIC_LOADING
+#	define ELF_CLASS ELFCLASS32
+#   endif
 #   ifdef LINUX
 #	define OS_TYPE "LINUX"
 #	define STACKBOTTOM ((ptr_t)0xc0000000)
+	/* Appears to be 0xe0000000 for at least one 2.1.91 kernel.	*/
+	/* Probably needs to be more flexible, but I don't yet 		*/
+	/* fully understand how flexible.				*/
 #	define MPROTECT_VDB
-#       ifdef __ELF__
-#            define DYNAMIC_LOADING
-#       endif
 #       ifdef __ELF__
 #            define DYNAMIC_LOADING
 #	     ifdef UNDEFINED	/* includes ro data */
 	       extern int _etext;
 #              define DATASTART ((ptr_t)((((word) (&_etext)) + 0xfff) & ~0xfff))
 #	     endif
-    	     extern char **__environ;
-#            define DATASTART ((ptr_t)(&__environ))
+#	     include <linux/version.h>
+#	     include <features.h>
+#	     if LINUX_VERSION_CODE >= 0x20000 && defined(__GLIBC__) && __GLIBC__ >= 2
+		 extern int __data_start;
+#		 define DATASTART ((ptr_t)(&__data_start))
+#	     else
+     	         extern char **__environ;
+#                define DATASTART ((ptr_t)(&__environ))
 			      /* hideous kludge: __environ is the first */
 			      /* word in crt0.o, and delimits the start */
 			      /* of the data segment, no matter which   */
@@ -589,6 +613,7 @@
 			      /* would include .rodata, which may       */
 			      /* contain large read-only data tables    */
 			      /* that we'd rather not scan.		*/
+#	     endif
 	     extern int _end;
 #	     define DATAEND (&_end)
 #	else
@@ -597,11 +622,22 @@
 #       endif
 #   endif
 #   ifdef CYGWIN32
-#       define OS_TYPE "CYGWIN32"
-        extern int _bss_start__;
-#       define DATASTART       ((ptr_t)&_bss_start__)
-        extern int _data_end__;
-#       define DATAEND          ((ptr_t)&_data_end__)
+          extern int _data_start__;
+          extern int _data_end__;
+          extern int _bss_start__;
+          extern int _bss_end__;
+  	/* For binutils 2.9.1, we have			*/
+  	/*	DATASTART   = _data_start__		*/
+  	/*	DATAEND	    = _bss_end__		*/
+  	/* whereas for some earlier versions it was	*/
+  	/*	DATASTART   = _bss_start__		*/
+  	/*	DATAEND	    = _data_end__		*/
+  	/* To get it right for both, we take the	*/
+  	/* minumum/maximum of the two.			*/
+#   	define MAX(x,y) ((x) > (y) ? (x) : (y))
+#   	define MIN(x,y) ((x) < (y) ? (x) : (y))
+#       define DATASTART ((ptr_t) MIN(_data_start__, _bss_start__))
+#       define DATAEND	 ((ptr_t) MAX(_data_end__, _bss_end__))
 #	undef STACK_GRAN
 #       define STACK_GRAN 0x10000
 #       define HEURISTIC1
@@ -696,7 +732,7 @@
       extern int _fdata;
 #     define DATASTART ((ptr_t)(&_fdata))
 #     ifdef USE_MMAP
-#         define HEAP_START (ptr_t)0x40000000
+#         define HEAP_START (ptr_t)0x30000000
 #     else
 #	  define HEAP_START DATASTART
 #     endif
@@ -718,9 +754,7 @@
 #   endif
 #   ifdef IRIX5
 #	define OS_TYPE "IRIX5"
-#       ifndef IRIX_THREADS
-#	    define MPROTECT_VDB
-#       endif
+#       define MPROTECT_VDB
 #       ifdef _MIPS_SZPTR
 #	  define CPP_WORDSZ _MIPS_SZPTR
 #	  define ALIGNMENT (_MIPS_SZPTR/8)
@@ -740,7 +774,7 @@
 #   define ALIGNMENT 4
 #   define DATASTART ((ptr_t)0x20000000)
     extern int errno;
-#   define STACKBOTTOM ((ptr_t)((ulong)&errno + 2*sizeof(int)))
+#   define STACKBOTTOM ((ptr_t)((ulong)&errno))
 #   define DYNAMIC_LOADING
 	/* For really old versions of AIX, this may have to be removed. */
 # endif
@@ -767,6 +801,7 @@
 #   define DYNAMIC_LOADING
 #   include <unistd.h>
 #   define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
+	/* They misspelled the Posix macro?	*/
 # endif
 
 # ifdef ALPHA
@@ -852,14 +887,14 @@
 # endif
 
 # if defined(SVR4) && !defined(GETPAGESIZE)
-# include <unistd.h>
-  int
-  GC_getpagesize()
-  {
-    return sysconf(_SC_PAGESIZE);
-  }
+#    include <unistd.h>
+#    define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
 # endif
+
 # ifndef GETPAGESIZE
+#   if defined(SUNOS5) || defined(IRIX5)
+#	include <unistd.h>
+#   endif
 #   define GETPAGESIZE() getpagesize()
 # endif
 
@@ -909,10 +944,15 @@
 # if defined(IRIX_THREADS) && !defined(IRIX5)
 --> inconsistent configuration
 # endif
+# if defined(LINUX_THREADS) && !defined(LINUX)
+--> inconsistent configuration
+# endif
 # if defined(SOLARIS_THREADS) && !defined(SUNOS5)
 --> inconsistent configuration
 # endif
-# if defined(PCR) || defined(SRC_M3) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || defined(IRIX_THREADS)
+# if defined(PCR) || defined(SRC_M3) || \
+	defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || \
+	defined(IRIX_THREADS) || defined(LINUX_THREADS)
 #   define THREADS
 # endif
 

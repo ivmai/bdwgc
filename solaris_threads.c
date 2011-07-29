@@ -227,7 +227,7 @@ static void stop_all_lwps()
     char buf[30];
     prstatus_t status;
     register int i;
-    bool changed;
+    GC_bool changed;
     lwpid_t me = _lwp_self();
 
     if (GC_main_proc_fd == -1) {
@@ -342,7 +342,7 @@ static void restart_all_lwps()
 {
     int lwp_fd;
     register int i;
-    bool changed;
+    GC_bool changed;
     lwpid_t me = _lwp_self();
 #   define PARANOID
 
@@ -392,7 +392,7 @@ static void restart_all_lwps()
     if (i >= max_lwps) ABORT("Too many lwps");
 }
 
-bool GC_multithreaded = 0;
+GC_bool GC_multithreaded = 0;
 
 void GC_stop_world()
 {
@@ -410,7 +410,7 @@ void GC_start_world()
 
 void GC_thr_init(void);
 
-bool GC_thr_initialized = FALSE;
+GC_bool GC_thr_initialized = FALSE;
 
 size_t GC_min_stack_sz;
 
@@ -565,7 +565,7 @@ GC_thread GC_new_thread(thread_t id)
     int hv = ((word)id) % THREAD_TABLE_SZ;
     GC_thread result;
     static struct GC_Thread_Rep first_thread;
-    static bool first_thread_used = FALSE;
+    static GC_bool first_thread_used = FALSE;
     
     if (!first_thread_used) {
     	result = &first_thread;
@@ -644,8 +644,6 @@ void GC_my_stack_limits()
     GC_is_fresh((struct hblk *)stack, divHBLKSZ(hottest - stack));
 }
 
-
-extern ptr_t GC_approx_sp();
 
 /* We hold allocation lock.  We assume the world is stopped.	*/
 void GC_push_all_stacks()
@@ -823,7 +821,7 @@ int GC_thr_join(thread_t wait_for, thread_t *departed, void **status)
     LOCK();
     if (wait_for == 0) {
         register int i;
-        register bool thread_exists;
+        register GC_bool thread_exists;
     
     	for (;;) {
     	  thread_exists = FALSE;

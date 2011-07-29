@@ -73,7 +73,7 @@ void GC_stubborn_init()
 /* Invariant while this is running: GC_changing_list_current    	*/
 /* points at a word containing 0.					*/
 /* Returns FALSE on failure.						*/
-bool GC_compact_changing_list()
+GC_bool GC_compact_changing_list()
 {
     register GC_PTR *p, *q;
     register word count = 0;
@@ -139,7 +139,7 @@ GC_PTR p;
 #   else
       register GC_PTR * my_current = GC_changing_list_current;
 #   endif
-    register bool tried_quick;
+    register GC_bool tried_quick;
     DCL_LOCK_STATE;
     
     if (*my_current == p) {
@@ -252,7 +252,7 @@ void GC_read_changed()
     }
 }
 
-bool GC_page_was_changed(h)
+GC_bool GC_page_was_changed(h)
 struct hblk * h;
 {
     register word index = PHT_HASH(h);

@@ -8,7 +8,8 @@
 	
 	11/22/94  pcb  StripAddress the temporary memory handle for 24-bit mode.
 	11/30/94  pcb  Tracking all memory usage so we can deallocate it all at once.
-	02/10/96  pcb  Added routine to perform a final collection whenunloading shared library.
+	02/10/96  pcb  Added routine to perform a final collection when
+unloading shared library.
 	
 	by Patrick C. Beard.
  */
@@ -127,7 +128,7 @@ void GC_MacFreeTemporaryMemory()
 	}
 	theTemporaryMemory = NULL;
 
-#       if !defined(SHARED_LIBRARY_BUILD)
+#       if !defined(SILENT) && !defined(SHARED_LIBRARY_BUILD)
           fprintf(stdout, "[total memory used:  %ld bytes.]\n",
                   totalMemoryUsed);
           fprintf(stdout, "[total collections:  %ld.]\n", GC_gc_no);
