@@ -1,6 +1,6 @@
 This is an attempt to acknowledge early contributions to the garbage
 collector.  Later contributions should instead be mentioned in
-README.changes.
+ChangeLog.
 
 HISTORY -
 
@@ -11,15 +11,15 @@ and the Defense Advance Research Projects Agency.
 The garbage collector originated as part of the run-time system for
 the Russell programming language implementation. The first version of the
 garbage collector was written primarily by Al Demers.  It was then refined
-and mostly rewritten, primarily by Hans-J. Boehm, at Cornell U., 
+and mostly rewritten, primarily by Hans-J. Boehm, at Cornell U.,
 the University of Washington, Rice University (where it was first used for
 C and assembly code), Xerox PARC, SGI, and HP Labs.  However, significant
 contributions have also been made by many others.
 
-Some other contributors:  
+Some other contributors:
 
 More recent contributors are mentioned in the modification history in
-README.changes.  My apologies for any omissions.
+ChangeLog.  My apologies for any omissions.
 
 The SPARC specific code was originally contributed by Mark Weiser.
 The Encore Multimax modifications were supplied by
@@ -54,4 +54,3 @@ Jesse Hull and John Ellis supplied the C++ interface code.
 Zhong Shao performed much of the experimentation that led to the
 current typed allocation facility.  (His dynamic type inference code hasn't
 made it into the released version of the collector, yet.)
-

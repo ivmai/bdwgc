@@ -558,7 +558,7 @@ AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
 
 # The libatomic_ops library.  This is not ideal, since we pick up junk from
 # there.
-EXTRA_DIST = gc_cpp.cpp README.QUICK BCC_MAKEFILE NT_MAKEFILE \
+EXTRA_DIST = gc_cpp.cpp README.QUICK TODO BCC_MAKEFILE NT_MAKEFILE \
 	OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE \
 	Makefile.direct Makefile.dj Makefile.DLLs SMakefile.amiga \
 	WCC_MAKEFILE autogen.sh build_atomic_ops.sh \
@@ -707,7 +707,6 @@ dist_pkgdata_DATA = \
 	doc/README.amiga \
 	doc/README.arm.cross \
 	doc/README.autoconf \
-	doc/README.changes \
 	doc/README.cmake \
 	doc/README.contributors \
 	doc/README.cords \

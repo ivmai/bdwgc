@@ -165,7 +165,7 @@ dist_noinst_SCRIPTS = callprocs configure.host
 
 # documentation which is not installed
 #
-EXTRA_DIST += README.QUICK
+EXTRA_DIST += README.QUICK TODO
 
 # other makefiles
 # :GOTCHA: deliberately we do not include 'Makefile'
