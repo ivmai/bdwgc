@@ -478,6 +478,9 @@ STATIC int GC_suspend_all(void)
 #   ifndef NACL_PARK_WAIT_NANOSECONDS
 #     define NACL_PARK_WAIT_NANOSECONDS (100 * 1000)
 #   endif
+#   define NANOS_PER_SECOND (1000UL * 1000 * 1000)
+    unsigned long num_sleeps = 0;
+
 #   ifdef DEBUG_THREADS
       GC_log_printf("pthread_stop_world: num_threads %d\n",
                     GC_nacl_num_gc_threads - 1);
@@ -515,6 +518,12 @@ STATIC int GC_suspend_all(void)
 #     endif
       /* This requires _POSIX_TIMERS feature.   */
       nanosleep(&ts, 0);
+      if (++num_sleeps > NANOS_PER_SECOND / NACL_PARK_WAIT_NANOSECONDS) {
+        WARN("GC appears stalled waiting for %" WARN_PRIdPTR
+             " threads to park...\n",
+             GC_nacl_num_gc_threads - num_threads_parked - 1);
+        num_sleeps = 0;
+      }
     }
 # endif /* NACL */
   return n_live_threads;
@@ -694,9 +703,12 @@ GC_INNER void GC_stop_world(void)
   STATIC GC_bool GC_nacl_thread_parking_inited = FALSE;
   STATIC pthread_mutex_t GC_nacl_thread_alloc_lock = PTHREAD_MUTEX_INITIALIZER;
 
+  extern void nacl_register_gc_hooks(void (*pre)(void), void (*post)(void));
+
   GC_INNER void GC_nacl_initialize_gc_thread(void)
   {
     int i;
+    nacl_register_gc_hooks(nacl_pre_syscall_hook, nacl_post_syscall_hook);
     pthread_mutex_lock(&GC_nacl_thread_alloc_lock);
     if (!EXPECT(GC_nacl_thread_parking_inited, TRUE)) {
       BZERO(GC_nacl_thread_parked, sizeof(GC_nacl_thread_parked));
