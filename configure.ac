@@ -93,6 +93,7 @@ AH_TEMPLATE([GC_OSF1_THREADS],      [Define to support Tru64 pthreads.])
 AH_TEMPLATE([GC_SOLARIS_THREADS],   [Define to support Solaris pthreads.])
 AH_TEMPLATE([GC_WIN32_THREADS],     [Define to support Win32 threads.])
 AH_TEMPLATE([GC_WIN32_PTHREADS],    [Define to support win32-pthreads.])
+AH_TEMPLATE([GC_RTEMS_PTHREADS],    [Define to support rtems-pthreads.])
 
 dnl System header feature requests.
 AH_TEMPLATE([_POSIX_C_SOURCE], [The POSIX feature macro.])
@@ -279,6 +280,11 @@ case "$THREADS" in
     THREADDLLIBS=-lpthread
     AC_DEFINE(GC_AIX_THREADS)
     AC_DEFINE(_REENTRANT)
+    ;;
+ rtems)
+    THREADS=posix
+    AC_DEFINE(GC_RTEMS_PTHREADS)
+    AC_DEFINE(THREAD_LOCAL_ALLOC)
     ;;
  decosf1 | irix | mach | os2 | solaris | dce | vxworks)
     AC_MSG_ERROR(thread package $THREADS not yet supported)

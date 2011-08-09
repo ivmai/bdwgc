@@ -51,6 +51,10 @@
 #    define USE_PTHREAD_LOCKS
 #  endif
 
+#  if defined(GC_RTEMS_PTHREADS)
+#    define USE_PTHREAD_LOCKS
+#  endif
+
 #  if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS)
 #    ifndef WIN32_LEAN_AND_MEAN
 #      define WIN32_LEAN_AND_MEAN 1

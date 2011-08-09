@@ -1380,10 +1380,13 @@
 #       include <sys/unistd.h>
         extern int etext[];
         extern int end[];
-        extern void *InitStackBottom;
+        void *rtems_get_stack_bottom(void);
+#       define InitStackBottom rtems_get_stack_bottom()
 #       define DATASTART ((ptr_t)etext)
 #       define DATAEND ((ptr_t)end)
 #       define STACKBOTTOM ((ptr_t)InitStackBottom)
+#       define SIG_SUSPEND SIGUSR1
+#       define SIG_THR_RESTART SIGUSR2
 #   endif
 #   ifdef DOS4GW
 #     define OS_TYPE "DOS4GW"
