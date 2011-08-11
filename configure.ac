@@ -703,13 +703,18 @@ AS_IF([test x"$with_libatomic_ops" != xno],
               [AC_MSG_ERROR([A pre-installed libatomic_ops was not found.])])
         with_libatomic_ops=no ]) ])
 
+# If we have neither an external or an internal version, offer a useful hint
+# and exit.
+AS_IF([test x"$with_libatomic_ops" = xno -a ! -e "$srcdir/libatomic_ops"],
+  [ AC_MSG_ERROR([libatomic_ops is required.  You can either install it on your system, or fetch and unpack a resent version into the source directory and link or rename it to libatomic_ops.]) ])
+
 # Finally, emit the definitions for bundled or pre-installed AO.
 AC_MSG_CHECKING([which libatomic_ops to use])
 AS_IF([test x"$with_libatomic_ops" != xno],
   [ AC_MSG_RESULT([pre-installed])
     ATOMIC_OPS_LIBS="-latomic_ops"
     AC_SUBST([ATOMIC_OPS_LIBS]) ],
-  [ AC_MSG_RESULT([bundled])
+  [ AC_MSG_RESULT([internal])
     AC_CONFIG_SUBDIRS([libatomic_ops])
   ])
 AM_CONDITIONAL([USE_INTERNAL_LIBATOMIC_OPS],
