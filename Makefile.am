@@ -186,10 +186,6 @@ EXTRA_DIST += extra/add_gc_prefix.c extra/gc.c extra/gcname.c \
     Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
     include/private/msvc_dbg.h extra/msvc_dbg.c
 
-# The libatomic_ops library.  This is not ideal, since we pick up junk from
-# there.
-EXTRA_DIST += libatomic_ops
-
 # this is an auxiliary shell file used by Makefile and Makefile.direct
 #
 CONFIG_STATUS_DEPENDENCIES = $(srcdir)/configure.host
