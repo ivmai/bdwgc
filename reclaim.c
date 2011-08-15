@@ -122,11 +122,6 @@ GC_INNER void GC_print_all_errors(void)
 /* objects.  This does not require the block to be in physical memory.  */
 GC_INNER GC_bool GC_block_empty(hdr *hhdr)
 {
-    /* XXX: Only if reclaim notifiers have not been run. */
-#   ifdef ENABLE_DISCLAIM
-        if (hhdr -> hb_flags & HAS_DISCLAIM)
-            return FALSE;
-#   endif
     return (hhdr -> hb_n_marks == 0);
 }
 
@@ -219,8 +214,8 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
 #ifdef ENABLE_DISCLAIM
 /* Call reclaim notifier for block's kind on each unmarked object in    */
 /* block, all within a pair of corresponding enter/leave callbacks.     */
-ptr_t GC_disclaim_and_reclaim(struct hblk *hbp, hdr *hhdr, size_t sz,
-                              ptr_t list, signed_word *count)
+STATIC ptr_t GC_disclaim_and_reclaim(struct hblk *hbp, hdr *hhdr, size_t sz,
+                                     ptr_t list, signed_word *count)
 {
     register int bit_no = 0;
     register word *p, *q, *plim;
@@ -234,7 +229,12 @@ ptr_t GC_disclaim_and_reclaim(struct hblk *hbp, hdr *hhdr, size_t sz,
     plim = (word *)((ptr_t)p + HBLKSIZE - sz);
 
     while (p <= plim) {
-        if (mark_bit_from_hdr(hhdr, bit_no) || (*proc)(p, cd))
+        int marked = mark_bit_from_hdr(hhdr, bit_no);
+        if (!marked && (*proc)(p, cd)) {
+            hhdr -> hb_n_marks++;
+            marked = 1;
+        }
+        if (marked)
             p = (word *)((ptr_t)p + sz);
         else {
                 n_bytes_found += sz;
@@ -337,6 +337,27 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp,
     }
 }
 
+#ifdef ENABLE_DISCLAIM
+STATIC void GC_disclaim_and_reclaim_or_free_small_block(struct hblk *hbp)
+{
+    hdr *hhdr = HDR(hbp);
+    size_t sz = hhdr -> hb_sz;
+    struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
+    void **flh = &(ok -> ok_freelist[BYTES_TO_GRANULES(sz)]);
+    void *flh_next;
+
+    hhdr -> hb_last_reclaimed = (unsigned short) GC_gc_no;
+    flh_next = GC_reclaim_generic(hbp, hhdr, sz, ok -> ok_init,
+                                  *flh, &GC_bytes_found);
+    if (hhdr -> hb_n_marks)
+        *flh = flh_next;
+    else {
+        GC_bytes_found += HBLKSIZE;
+        GC_freehblk(hbp);
+    }
+}
+#endif
+
 /*
  * Restore an unmarked large object or an entirely empty blocks of small objects
  * to the heap block free list.
@@ -396,16 +417,18 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
 #       else
           GC_ASSERT(sz * hhdr -> hb_n_marks <= HBLKSIZE);
 #       endif
-        if (hhdr -> hb_descr != 0) {
-          GC_composite_in_use += sz * hhdr -> hb_n_marks;
-        } else {
-          GC_atomic_in_use += sz * hhdr -> hb_n_marks;
-        }
         if (report_if_found) {
           GC_reclaim_small_nonempty_block(hbp, TRUE /* report_if_found */);
         } else if (empty) {
-          GC_bytes_found += HBLKSIZE;
-          GC_freehblk(hbp);
+#       ifdef ENABLE_DISCLAIM
+          if ((hhdr -> hb_flags & HAS_DISCLAIM))
+            GC_disclaim_and_reclaim_or_free_small_block(hbp);
+          else
+#       endif
+          {
+            GC_bytes_found += HBLKSIZE;
+            GC_freehblk(hbp);
+          }
         } else if (GC_find_leak || !GC_block_nearly_full(hhdr)) {
           /* group of smaller objects, enqueue the real work */
           rlh = &(ok -> ok_reclaim_list[BYTES_TO_GRANULES(sz)]);
@@ -416,6 +439,12 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
         /* already have the right cache context here.  Also     */
         /* doing it here avoids some silly lock contention in   */
         /* GC_malloc_many.                                      */
+
+        if (hhdr -> hb_descr != 0) {
+          GC_composite_in_use += sz * hhdr -> hb_n_marks;
+        } else {
+          GC_atomic_in_use += sz * hhdr -> hb_n_marks;
+        }
     }
 }
 
