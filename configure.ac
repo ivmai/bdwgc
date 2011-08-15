@@ -36,9 +36,6 @@ AM_PROG_CC_C_O
 AC_PROG_CXX
 
 AM_PROG_AS
-## FIXME: really needed? (AC_LIBTOOL already provides this)
-AC_CHECK_TOOL(AR, ar)
-AC_CHECK_TOOL(RANLIB, ranlib, :)  # :)
 
 AC_PROG_INSTALL
 
@@ -692,29 +689,30 @@ AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
 # found.
 AC_ARG_WITH([libatomic-ops],
     [AS_HELP_STRING([--with-libatomic-ops[=yes|no|check]],
-                    [Use a pre-installed libatomic_ops? (default: check)])],
+                    [Use a external libatomic_ops? (default: check)])],
     [], [with_libatomic_ops=check])
 
 # Check for an external libatomic_ops if the answer was yes or check.  If not
 # found, fail on yes, and convert check to no.
 AS_IF([test x"$with_libatomic_ops" != xno],
-  [ AC_CHECK_HEADER([atomic_ops.h], [],
+  [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops], [],
       [ AS_IF([test x"$with_libatomic_ops" != xcheck],
-              [AC_MSG_ERROR([A pre-installed libatomic_ops was not found.])])
+              [AC_MSG_ERROR([A external libatomic_ops was not found.])])
         with_libatomic_ops=no ]) ])
 
 # If we have neither an external or an internal version, offer a useful hint
 # and exit.
 AS_IF([test x"$with_libatomic_ops" = xno -a ! -e "$srcdir/libatomic_ops"],
-  [ AC_MSG_ERROR([libatomic_ops is required.  You can either install it on your system, or fetch and unpack a resent version into the source directory and link or rename it to libatomic_ops.]) ])
+  [ AC_MSG_ERROR([libatomic_ops is required.  You can either install it on your system, or fetch and unpack a recent version into the source directory and link or rename it to libatomic_ops.]) ])
 
-# Finally, emit the definitions for bundled or pre-installed AO.
+# Finally, emit the definitions for bundled or external AO.
 AC_MSG_CHECKING([which libatomic_ops to use])
 AS_IF([test x"$with_libatomic_ops" != xno],
-  [ AC_MSG_RESULT([pre-installed])
-    ATOMIC_OPS_LIBS="-latomic_ops"
-    AC_SUBST([ATOMIC_OPS_LIBS]) ],
+  [ AC_MSG_RESULT([external]) ],
   [ AC_MSG_RESULT([internal])
+    ATOMIC_OPS_CFLAGS='-I$(top_builddir)/libatomic_ops/src -I$(top_srcdir)/libatomic_ops/src'
+    ATOMIC_OPS_LIBS=""
+    AC_SUBST([ATOMIC_OPS_CFLAGS])
     AC_CONFIG_SUBDIRS([libatomic_ops])
   ])
 AM_CONDITIONAL([USE_INTERNAL_LIBATOMIC_OPS],
