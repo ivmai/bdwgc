@@ -78,7 +78,7 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
 
 GC_INNER void GC_initialize_offsets(void)
 {
-  int i;
+  unsigned i;
   if (GC_all_interior_pointers) {
     for (i = 0; i < VALID_OFFSET_SZ; ++i)
       GC_valid_offsets[i] = TRUE;
