@@ -377,7 +377,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
         my_bytes_allocd = 0;
         for (p = op; p != 0; p = obj_link(p)) {
           my_bytes_allocd += lb;
-          if (my_bytes_allocd >= HBLKSIZE) {
+          if ((word)my_bytes_allocd >= HBLKSIZE) {
             *opp = obj_link(p);
             obj_link(p) = 0;
             break;
