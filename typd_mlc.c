@@ -346,7 +346,7 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
 /* Caller does not hold allocation lock. */
 STATIC void GC_init_explicit_typing(void)
 {
-    register int i;
+    register unsigned i;
     DCL_LOCK_STATE;
 
     GC_STATIC_ASSERT(sizeof(struct LeafDescriptor) % sizeof(word) == 0);
@@ -540,7 +540,8 @@ GC_API GC_descr GC_CALL GC_make_descriptor(GC_bitmap bm, size_t len)
 #   define HIGH_BIT (((word)1) << (WORDSZ - 1))
 
     if (!GC_explicit_typing_initialized) GC_init_explicit_typing();
-    while (last_set_bit >= 0 && !GC_get_bit(bm, last_set_bit)) last_set_bit --;
+    while (last_set_bit >= 0 && !GC_get_bit(bm, last_set_bit))
+      last_set_bit--;
     if (last_set_bit < 0) return(0 /* no pointers */);
 #   if ALIGNMENT == CPP_WORDSZ/8
     {
@@ -557,7 +558,7 @@ GC_API GC_descr GC_CALL GC_make_descriptor(GC_bitmap bm, size_t len)
       }
     }
 #   endif
-    if (last_set_bit < BITMAP_BITS) {
+    if ((word)last_set_bit < BITMAP_BITS) {
         /* Hopefully the common case.                   */
         /* Build bitmap descriptor (with bits reversed) */
         result = HIGH_BIT;

@@ -2627,7 +2627,7 @@ STATIC void GC_default_push_other_roots(void)
   /* Add all pages in pht2 to pht1 */
   STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
   {
-    register int i;
+    register unsigned i;
     for (i = 0; i < PHT_SIZE; i++) pht1[i] |= pht2[i];
   }
 
