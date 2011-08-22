@@ -100,7 +100,7 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.S \
     hpux_test_and_clear.s include/gc_gcj.h \
     include/private/dbg_mlc.h \
     include/private/specific.h \
-    include/leak_detector.h include/gc_amiga_redirects.h \
+    include/leak_detector.h \
     include/gc_pthread_redirects.h ia64_save_regs_in_stack.s \
     include/gc_config_macros.h include/private/pthread_support.h \
     include/private/pthread_stop_world.h include/private/darwin_semaphore.h \

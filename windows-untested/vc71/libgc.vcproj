@@ -690,9 +690,6 @@
                 RelativePath="..\..\include\gc_allocator.h">
             </File>
             <File
-                RelativePath="..\..\include\gc_amiga_redirects.h">
-            </File>
-            <File
                 RelativePath="..\..\include\gc_backptr.h">
             </File>
             <File

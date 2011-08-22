@@ -221,10 +221,6 @@ SOURCE=..\..\include\gc_allocator.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\include\gc_amiga_redirects.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\include\gc_backptr.h
 # End Source File
 # Begin Source File
