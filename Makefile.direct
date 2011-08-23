@@ -112,8 +112,8 @@ DOC_FILES= README.QUICK TODO doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 	doc/porting.html doc/overview.html \
 	doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
 	doc/README.sgi doc/README.solaris2 doc/README.uts \
-	doc/README.win32 doc/barrett_diagram doc/README \
-        doc/README.contributors doc/gc.man \
+	doc/README.win32 doc/barrett_diagram \
+        README AUTHORS doc/gc.man \
 	doc/README.environment doc/tree.html doc/gcdescr.html \
 	doc/README.autoconf doc/README.macros doc/README.ews4800 \
 	doc/README.DGUX386 doc/README.arm.cross doc/leak.html \

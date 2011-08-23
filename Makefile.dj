@@ -62,16 +62,16 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.S rs6000_mach_dep.s alpha_mach_dep.S \
 
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README tests/test.c test_cpp.cc extra/setjmp_t.c SMakefile.amiga \
-           SCoptions.amiga README.amiga README.win32 cord/README \
-	   README.rs6000 README.QUICK TODO callprocs pc_excludes \
-           barrett_diagram README.OS2 README.Mac MacProjects.sit.hqx \
-           extra/MacOS.c EMX_MAKEFILE README.debugging \
-           Mac_files/datastart.c Mac_files/dataend.c \
+           SCoptions.amiga doc/README.amiga doc/README.win32 \
+	   doc/README.cords doc/README.rs6000 README.QUICK TODO callprocs \
+           pc_excludes barrett_diagram doc/README.OS2 doc/README.Mac \
+           MacProjects.sit.hqx extra/MacOS.c EMX_MAKEFILE \
+           doc/README.debugging Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-           extra/add_gc_prefix.c README.solaris2 README.sgi README.hp \
-           README.uts win32_threads.c gc.mak README.dj \
-           Makefile.dj README.alpha README.linux README.MacOSX Makefile.DLLs \
-	   WCC_MAKEFILE
+           extra/add_gc_prefix.c doc/README.solaris2 doc/README.sgi \
+           doc/README.hp doc/README.uts win32_threads.c gc.mak doc/README.dj \
+           Makefile.dj doc/README.alpha doc/README.linux doc/README.MacOSX \
+	   Makefile.DLLs WCC_MAKEFILE
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
 	$(srcdir)/include/ec.h $(srcdir)/include/private/cord_pos.h
