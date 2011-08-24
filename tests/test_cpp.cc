@@ -40,10 +40,8 @@ few minutes to complete.
 
 #ifdef USE_STD_ALLOCATOR
 #   include "gc_allocator.h"
-#elif __GNUC__
-#   include "new_gc_alloc.h"
 #else
-#   include "gc_alloc.h"
+#   include "new_gc_alloc.h"
 #endif
 
 extern "C" {
@@ -215,11 +213,7 @@ int APIENTRY WinMain(
       xio = gc_allocator_ignore_off_page<int>().allocate(1);
       int **xptr = traceable_allocator<int *>().allocate(1);
 #   else
-#     ifdef __GNUC__
-          int *x = (int *)gc_alloc::allocate(sizeof(int));
-#     else
-          int *x = (int *)alloc::allocate(sizeof(int));
-#     endif
+      int *x = (int *)gc_alloc::allocate(sizeof(int));
 #   endif
     *x = 29;
 #   ifdef USE_STD_ALLOCATOR

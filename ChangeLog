@@ -1,3 +1,28 @@
+2011-08-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* hpux_test_and_clear.s: Remove.
+	* Makefile.am (EXTRA_DIST): Remove hpux_test_and_clear.s.
+	* Makefile.direct (SRCS): Ditto.
+	* Makefile.dj (SRCS): Ditto.
+	* Makefile.dj (SRCS): Remove missing gcc_support.c,
+	include/gc_alloc.h, include/gc_local_alloc.h.
+	* doc/gcdescr.html: Remove information about gc_local_alloc.h.
+	* doc/gcinterface.html: Ditto.
+	* doc/scale.html: Ditto.
+	* doc/gcinterface.html: Remove information about gc_alloc.h.
+	* tests/test_cpp.cc: Don't include missing old gc_alloc.h (include
+	new_gc_alloc.h instead); don't test __GNUC__.
+	* tests/test_cpp.cc (main): Use gc_alloc class instead of alloc (don't
+	test __GNUC__).
+	* windows-untested/vc60/gc.dsp (SOURCE): Don't include missing
+	gc_alloc.h, gc_local_alloc.h.
+	* windows-untested/vc60/libgc.dsp (SOURCE): Ditto.
+	* windows-untested/vc70/gc.vcproj (Header Files): Ditto.
+	* windows-untested/vc70/libgc.vcproj (Header Files): Ditto.
+	* windows-untested/vc71/gc.vcproj (Header Files): Ditto.
+	* windows-untested/vc71/libgc.vcproj (Header Files): Ditto.
+	* Makefile.in: Regenerate.
+
 2011-08-14  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
 
 	* configure.ac: Remove checks for ar and ranlib.

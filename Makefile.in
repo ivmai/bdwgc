@@ -564,8 +564,8 @@ EXTRA_DIST = gc_cpp.cpp README.QUICK BCC_MAKEFILE NT_MAKEFILE \
 	NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE \
 	CMakeLists.txt tests/CMakeLists.txt extra/add_gc_prefix.c \
 	extra/gc.c extra/gcname.c extra/if_mach.c extra/if_not_there.c \
-	hpux_test_and_clear.s gc.mak extra/MacOS.c MacProjects.sit.hqx \
-	mach_dep.c extra/setjmp_t.c extra/threadlibs.c extra/AmigaOS.c \
+	gc.mak extra/MacOS.c MacProjects.sit.hqx mach_dep.c \
+	extra/setjmp_t.c extra/threadlibs.c extra/AmigaOS.c \
 	Mac_files/datastart.c Mac_files/dataend.c \
 	Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
 	include/private/msvc_dbg.h extra/msvc_dbg.c cord/cordbscs.c \
