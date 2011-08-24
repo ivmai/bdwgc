@@ -169,7 +169,7 @@ EXTRA_DIST += README.QUICK TODO
 # :GOTCHA: deliberately we do not include 'Makefile'
 EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
     OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE	\
-    Makefile.direct Makefile.dj	Makefile.DLLs SMakefile.amiga \
+    Makefile.direct Makefile.dj Makefile.DLLs SMakefile.amiga \
     WCC_MAKEFILE autogen.sh build_atomic_ops.sh build_atomic_ops.sh.cygwin \
     NT_STATIC_THREADS_MAKEFILE NT_X64_STATIC_THREADS_MAKEFILE \
     NT_X64_THREADS_MAKEFILE CMakeLists.txt tests/CMakeLists.txt
@@ -177,7 +177,7 @@ EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
 # files used by makefiles other than Makefile.am
 #
 EXTRA_DIST += extra/add_gc_prefix.c extra/gc.c extra/gcname.c \
-    extra/if_mach.c extra/if_not_there.c hpux_test_and_clear.s gc.mak \
+    extra/if_mach.c extra/if_not_there.c gc.mak \
     extra/MacOS.c MacProjects.sit.hqx mach_dep.c extra/setjmp_t.c \
     extra/threadlibs.c extra/AmigaOS.c \
     Mac_files/datastart.c Mac_files/dataend.c \

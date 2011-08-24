@@ -158,12 +158,6 @@ for details.
 <P>
 If you are concerned with multiprocessor performance and scalability,
 you should consider enabling and using thread local allocation.
-For GC versions before 7.0, use <I>e.g.</i>
-<TT>GC_LOCAL_MALLOC</tt> and see <TT>gc_local_alloc.h</tt>;
-for later versions enabling thread-local allocations when the collector
-library is built changes the
-implementation of <TT>GC_MALLOC</tt>, so the client doesn't need to
-change.
 <P>
 If your platform
 supports it, you should build the collector with parallel marking support
@@ -242,9 +236,6 @@ Users of the <A HREF="http://www.sgi.com/tech/stl">SGI extended STL</a>
 or its derivatives (including most g++ versions)
 may instead be able to include <TT>new_gc_alloc.h</tt> before including
 STL header files.  This is increasingly discouraged.
-(<TT>gc_alloc.h</tt> corresponds to now obsolete versions of the
-SGI STL.)  This interface is no longer recommended, but it has existed
-for much longer.
 <P>
 This defines SGI-style allocators
 <UL>

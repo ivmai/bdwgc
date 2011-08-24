@@ -52,11 +52,10 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.S rs6000_mach_dep.s alpha_mach_dep.S \
     include/gc_inline.h gc.man extra/threadlibs.c \
     extra/if_mach.c extra/if_not_there.c gc_cpp.cc include/gc_cpp.h \
     include/weakpointer.h include/private/gc_locks.h \
-    gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h \
+    mips_ultrix_mach_dep.s \
     include/new_gc_alloc.h include/javaxfc.h sparc_sunos4_mach_dep.s \
     include/private/solaris_threads.h include/gc_backptr.h \
-    hpux_test_and_clear.s include/gc_gcj.h \
-    include/gc_local_alloc.h include/private/dbg_mlc.h \
+    include/gc_gcj.h include/private/dbg_mlc.h \
     include/private/specific.h \
     include/leak_detector.h $(CORD_SRCS)
 
