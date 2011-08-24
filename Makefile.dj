@@ -41,9 +41,11 @@ OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers
 
 CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c gcj_mlc.c specific.c
 
-CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c include/cord.h include/ec.h include/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC cord/SCOPTIONS.amiga cord/SMakefile.amiga
+CORD_SRCS= cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c \
+    cord/cordtest.c include/cord.h include/ec.h include/private/cord_pos.h \
+    cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.RC
 
-CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
+CORD_OBJS= cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
 SRCS= $(CSRCS) \
     sparc_mach_dep.S include/gc.h include/gc_version.h include/gc_typed.h \
@@ -60,7 +62,7 @@ SRCS= $(CSRCS) \
 
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README tests/test.c test_cpp.cc extra/setjmp_t.c SMakefile.amiga \
-           SCoptions.amiga doc/README.amiga doc/README.win32 \
+           doc/README.amiga doc/README.win32 \
 	   doc/README.cords doc/README.rs6000 README.QUICK TODO callprocs \
            pc_excludes barrett_diagram doc/README.OS2 doc/README.Mac \
            extra/MacOS.c EMX_MAKEFILE \

@@ -82,9 +82,11 @@ CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c \
   typd_mlc.c ptr_chck.c mallocx.c gcj_mlc.c specific.c gc_dlopen.c \
   backgraph.c win32_threads.c pthread_start.c thread_local_alloc.c
 
-CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c include/cord.h include/ec.h include/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC
+CORD_SRCS= cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c \
+    cord/cordtest.c include/cord.h include/ec.h include/private/cord_pos.h \
+    cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.RC
 
-CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
+CORD_OBJS= cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
 SRCS= $(CSRCS) \
     sparc_mach_dep.S include/gc.h include/gc_typed.h include/gc_tiny_fl.h \

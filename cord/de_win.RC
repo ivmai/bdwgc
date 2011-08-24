@@ -7,19 +7,17 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
-/* Boehm, May 13, 1994 9:50 am PDT */
 
 #include "windows.h"
 #include "de_cmds.h"
 #include "de_win.h"
 
 
-
 ABOUTBOX DIALOG 19, 21, 163, 47
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About Demonstration Text Editor"
 BEGIN
-	ICON "DE", -1, 8, 8, 13, 13, WS_CHILD | WS_VISIBLE
+	/* ICON "DE", -1, 8, 8, 13, 13, WS_CHILD | WS_VISIBLE */
 	LTEXT "Demonstration Text Editor", -1, 44, 8, 118, 8, WS_CHILD | WS_VISIBLE | WS_GROUP
 	LTEXT "Version 4.1", -1, 44, 16, 60, 8, WS_CHILD | WS_VISIBLE | WS_GROUP
 	PUSHBUTTON "OK", IDOK, 118, 27, 24, 14, WS_CHILD | WS_VISIBLE | WS_TABSTOP
@@ -74,5 +72,5 @@ BEGIN
 END
 
 
-DE ICON cord\de_win.ICO
+/* DE ICON cord\de_win.ICO */
 
