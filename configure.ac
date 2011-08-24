@@ -8,9 +8,6 @@
 # Permission to modify the code and to distribute modified code is granted,
 # provided the above notices are retained, and a notice that the code was
 # modified is included with the above copyright notice.
-#
-# Original author: Tom Tromey
-# Modified by: Grzegorz Jakacki <jakacki at acm dot org>
 
 dnl Process this file with autoconf to produce configure.
 

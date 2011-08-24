@@ -9,15 +9,14 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
- * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
+
 /*
  * These are functions on cords that do not need to understand their
  * implementation.  They serve also serve as example client code for
  * cord_basics.
  */
-/* Boehm, December 8, 1995 1:53 pm PST */
+
 # include <stdio.h>
 # include <string.h>
 # include <stdlib.h>

@@ -7,9 +7,6 @@
 # Permission to modify the code and to distribute modified code is granted,
 # provided the above notices are retained, and a notice that the code was
 # modified is included with the above copyright notice.
-#
-# Modified by: Grzegorz Jakacki <jakacki at acm dot org>
-# Modified by: Petter Urkedal <petter.urkedal@nordita.dk>
 
 ## Process this file with automake to produce Makefile.in.
 

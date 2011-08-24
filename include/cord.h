@@ -9,8 +9,6 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
- * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
 
 /*

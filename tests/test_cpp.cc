@@ -10,8 +10,6 @@ Permission to modify the code and to distribute modified code is
 granted, provided the above notices are retained, and a notice that
 the code was modified is included with the above copyright notice.
 ****************************************************************************
-Last modified on Mon Jul 10 21:06:03 PDT 1995 by ellis
-     modified on December 20, 1994 7:27 pm PST by boehm
 
 usage: test_cpp number-of-iterations
 
@@ -292,4 +290,3 @@ int APIENTRY WinMain(
     GC_printf( "The test appears to have succeeded.\n" );
     return( 0 );
 }
-

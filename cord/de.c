@@ -9,26 +9,23 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
- * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
+
 /*
  * A really simple-minded text editor based on cords.
  * Things it does right:
- * 	No size bounds.
- *	Inbounded undo.
- *	Shouldn't crash no matter what file you invoke it on (e.g. /vmunix)
- *		(Make sure /vmunix is not writable before you try this.)
- *	Scrolls horizontally.
+ *      No size bounds.
+ *      Inbounded undo.
+ *      Shouldn't crash no matter what file you invoke it on (e.g. /vmunix)
+ *              (Make sure /vmunix is not writable before you try this.)
+ *      Scrolls horizontally.
  * Things it does wrong:
- *	It doesn't handle tabs reasonably (use "expand" first).
- *	The command set is MUCH too small.
- *	The redisplay algorithm doesn't let curses do the scrolling.
- *	The rule for moving the window over the file is suboptimal.
+ *      It doesn't handle tabs reasonably (use "expand" first).
+ *      The command set is MUCH too small.
+ *      The redisplay algorithm doesn't let curses do the scrolling.
+ *      The rule for moving the window over the file is suboptimal.
  */
-/* Boehm, February 6, 1995 12:27 pm PST */
 
-/* Boehm, May 19, 1994 2:20 pm PDT */
 #include <stdio.h>
 #include "gc.h"
 #include "cord.h"
@@ -39,8 +36,8 @@
 #endif
 
 #if defined(__BORLANDC__) && !defined(WIN32)
-    /* If this is DOS or win16, we'll fail anyway.	*/
-    /* Might as well assume win32.			*/
+    /* If this is DOS or win16, we'll fail anyway.      */
+    /* Might as well assume win32.                      */
 #   define WIN32
 #endif
 
@@ -48,22 +45,22 @@
 #  include <windows.h>
 #  include "de_win.h"
 #elif defined(MACINTOSH)
-#	include <console.h>
+#       include <console.h>
 /* curses emulation. */
-#	define initscr()
-#	define endwin()
-#	define nonl()
-#	define noecho() csetmode(C_NOECHO, stdout)
-#	define cbreak() csetmode(C_CBREAK, stdout)
-#	define refresh()
-#	define addch(c) putchar(c)
-#	define standout() cinverse(1, stdout)
-#	define standend() cinverse(0, stdout)
-#	define move(line,col) cgotoxy(col + 1, line + 1, stdout)
-#	define clrtoeol() ccleol(stdout)
-#	define de_error(s) { fprintf(stderr, s); getchar(); }
-#	define LINES 25
-#	define COLS 80
+#       define initscr()
+#       define endwin()
+#       define nonl()
+#       define noecho() csetmode(C_NOECHO, stdout)
+#       define cbreak() csetmode(C_CBREAK, stdout)
+#       define refresh()
+#       define addch(c) putchar(c)
+#       define standout() cinverse(1, stdout)
+#       define standend() cinverse(0, stdout)
+#       define move(line,col) cgotoxy(col + 1, line + 1, stdout)
+#       define clrtoeol() ccleol(stdout)
+#       define de_error(s) { fprintf(stderr, s); getchar(); }
+#       define LINES 25
+#       define COLS 80
 #else
 #  include <curses.h>
 #  define de_error(s) { fprintf(stderr, s); sleep(2); }
@@ -71,7 +68,7 @@
 #include "de_cmds.h"
 
 /* List of line number to position mappings, in descending order. */
-/* There may be holes.						  */
+/* There may be holes.                                            */
 typedef struct LineMapRep {
     int line;
     size_t pos;
@@ -82,16 +79,16 @@ typedef struct LineMapRep {
 typedef struct HistoryRep {
     CORD file_contents;
     struct HistoryRep * previous;
-    line_map map;	/* Invalid for first record "now" */
+    line_map map;       /* Invalid for first record "now" */
 } * history;
 
 history now = 0;
-CORD current;		/* == now -> file_contents.	*/
-size_t current_len;	/* Current file length.		*/
-line_map current_map = 0;	/* Current line no. to pos. map	 */
-size_t current_map_size = 0;	/* Number of current_map entries.	*/
-				/* Not always accurate, but reset	*/
-				/* by prune_map.			*/
+CORD current;           /* == now -> file_contents.     */
+size_t current_len;     /* Current file length.         */
+line_map current_map = 0;       /* Current line no. to pos. map  */
+size_t current_map_size = 0;    /* Number of current_map entries.       */
+                                /* Not always accurate, but reset       */
+                                /* by prune_map.                        */
 # define MAX_MAP_SIZE 3000
 
 /* Current display position */
@@ -100,13 +97,13 @@ int dis_col = 0;
 
 # define ALL -1
 # define NONE - 2
-int need_redisplay = 0;	/* Line that needs to be redisplayed.	*/
+int need_redisplay = 0; /* Line that needs to be redisplayed.   */
 
 
 /* Current cursor position. Always within file. */
-int line = 0; 
+int line = 0;
 int col = 0;
-size_t file_pos = 0;	/* Character position corresponding to cursor.	*/
+size_t file_pos = 0;    /* Character position corresponding to cursor.  */
 
 /* Invalidate line map for lines > i */
 void invalidate_map(int i)
@@ -118,25 +115,25 @@ void invalidate_map(int i)
 }
 
 /* Reduce the number of map entries to save space for huge files. */
-/* This also affects maps in histories.				  */
+/* This also affects maps in histories.                           */
 void prune_map()
 {
     line_map map = current_map;
     int start_line = map -> line;
-    
+
     current_map_size = 0;
     for(; map != 0; map = map -> previous) {
-    	current_map_size++;
-    	if (map -> line < start_line - LINES && map -> previous != 0) {
-    	    map -> previous = map -> previous -> previous;
-    	}
+        current_map_size++;
+        if (map -> line < start_line - LINES && map -> previous != 0) {
+            map -> previous = map -> previous -> previous;
+        }
     }
 }
 /* Add mapping entry */
 void add_map(int line, size_t pos)
 {
     line_map new_map = GC_NEW(struct LineMapRep);
-    
+
     if (current_map_size >= MAX_MAP_SIZE) prune_map();
     new_map -> line = line;
     new_map -> pos = pos;
@@ -149,20 +146,20 @@ void add_map(int line, size_t pos)
 
 /* Return position of column *c of ith line in   */
 /* current file. Adjust *c to be within the line.*/
-/* A 0 pointer is taken as 0 column.		 */
-/* Returns CORD_NOT_FOUND if i is too big.	 */
-/* Assumes i > dis_line.			 */
+/* A 0 pointer is taken as 0 column.             */
+/* Returns CORD_NOT_FOUND if i is too big.       */
+/* Assumes i > dis_line.                         */
 size_t line_pos(int i, int *c)
 {
     int j;
     size_t cur;
     size_t next;
     line_map map = current_map;
-    
+
     while (map -> line > i) map = map -> previous;
     if (map -> line < i - 2) /* rebuild */ invalidate_map(i);
     for (j = map -> line, cur = map -> pos; j < i;) {
-	cur = CORD_chr(current, cur, '\n');
+        cur = CORD_chr(current, cur, '\n');
         if (cur == current_len-1) return(CORD_NOT_FOUND);
         cur++;
         if (++j > current_map -> line) add_map(j, cur);
@@ -181,7 +178,7 @@ size_t line_pos(int i, int *c)
 void add_hist(CORD s)
 {
     history new_file = GC_NEW(struct HistoryRep);
-    
+
     new_file -> file_contents = current = s;
     current_len = CORD_len(s);
     new_file -> previous = now;
@@ -197,23 +194,23 @@ void del_hist(void)
     current_len = CORD_len(current);
 }
 
-/* Current screen_contents; a dynamically allocated array of CORDs	*/
+/* Current screen_contents; a dynamically allocated array of CORDs      */
 CORD * screen = 0;
 int screen_size = 0;
 
 # ifndef WIN32
-/* Replace a line in the curses stdscr.	All control characters are	*/
-/* displayed as upper case characters in standout mode.  This isn't	*/
-/* terribly appropriate for tabs.									*/
+/* Replace a line in the curses stdscr. All control characters are      */
+/* displayed as upper case characters in standout mode.  This isn't     */
+/* terribly appropriate for tabs.                                                                       */
 void replace_line(int i, CORD s)
 {
     register int c;
     CORD_pos p;
     size_t len = CORD_len(s);
-    
+
     if (screen == 0 || LINES > screen_size) {
         screen_size = LINES;
-    	screen = (CORD *)GC_MALLOC(screen_size * sizeof(CORD));
+        screen = (CORD *)GC_MALLOC(screen_size * sizeof(CORD));
     }
 #   if !defined(MACINTOSH)
         /* A gross workaround for an apparent curses bug: */
@@ -227,27 +224,27 @@ void replace_line(int i, CORD s)
         CORD_FOR (p, s) {
             c = CORD_pos_fetch(p) & 0x7f;
             if (iscntrl(c)) {
-            	standout(); addch(c + 0x40); standend();
+                standout(); addch(c + 0x40); standend();
             } else {
-    	        addch(c);
-    	    }
-    	}
-    	screen[i] = s;
+                addch(c);
+            }
+        }
+        screen[i] = s;
     }
 }
 #else
 # define replace_line(i,s) invalidate_line(i)
 #endif
 
-/* Return up to COLS characters of the line of s starting at pos,	*/
-/* returning only characters after the given column.			*/
+/* Return up to COLS characters of the line of s starting at pos,       */
+/* returning only characters after the given column.                    */
 CORD retrieve_line(CORD s, size_t pos, unsigned column)
 {
     CORD candidate = CORD_substr(s, pos, column + COLS);
-    			/* avoids scanning very long lines	*/
+                        /* avoids scanning very long lines      */
     int eol = CORD_chr(candidate, 0, '\n');
     int len;
-    
+
     if (eol == CORD_NOT_FOUND) eol = CORD_len(candidate);
     len = (int)eol - (int)column;
     if (len < 0) len = 0;
@@ -259,25 +256,25 @@ CORD retrieve_line(CORD s, size_t pos, unsigned column)
 
     CORD retrieve_screen_line(int i)
     {
-    	register size_t pos;
-    	
-    	invalidate_map(dis_line + LINES);	/* Prune search */
-    	pos = line_pos(dis_line + i, 0);
-    	if (pos == CORD_NOT_FOUND) return(CORD_EMPTY);
-    	return(retrieve_line(current, pos, dis_col));
+        register size_t pos;
+
+        invalidate_map(dis_line + LINES);       /* Prune search */
+        pos = line_pos(dis_line + i, 0);
+        if (pos == CORD_NOT_FOUND) return(CORD_EMPTY);
+        return(retrieve_line(current, pos, dis_col));
     }
 # endif
 
-/* Display the visible section of the current file	 */
+/* Display the visible section of the current file       */
 void redisplay(void)
 {
     register int i;
-    
-    invalidate_map(dis_line + LINES);	/* Prune search */
+
+    invalidate_map(dis_line + LINES);   /* Prune search */
     for (i = 0; i < LINES; i++) {
         if (need_redisplay == ALL || need_redisplay == i) {
             register size_t pos = line_pos(dis_line + i, 0);
-            
+
             if (pos == CORD_NOT_FOUND) break;
             replace_line(i, retrieve_line(current, pos, dis_col));
             if (need_redisplay == i) goto done;
@@ -291,13 +288,13 @@ done:
 
 int dis_granularity;
 
-/* Update dis_line, dis_col, and dis_pos to make cursor visible.	*/
-/* Assumes line, col, dis_line, dis_pos are in bounds.			*/
+/* Update dis_line, dis_col, and dis_pos to make cursor visible.        */
+/* Assumes line, col, dis_line, dis_pos are in bounds.                  */
 void normalize_display()
 {
     int old_line = dis_line;
     int old_col = dis_col;
-    
+
     dis_granularity = 1;
     if (LINES > 15 && COLS > 15) dis_granularity = 2;
     while (dis_line > line) dis_line -= dis_granularity;
@@ -311,13 +308,13 @@ void normalize_display()
 
 # if defined(WIN32)
 # elif defined(MACINTOSH)
-#		define move_cursor(x,y) cgotoxy(x + 1, y + 1, stdout)
+#               define move_cursor(x,y) cgotoxy(x + 1, y + 1, stdout)
 # else
-#		define move_cursor(x,y) move(y,x)
+#               define move_cursor(x,y) move(y,x)
 # endif
 
-/* Adjust display so that cursor is visible; move cursor into position	*/
-/* Update screen if necessary.						*/
+/* Adjust display so that cursor is visible; move cursor into position  */
+/* Update screen if necessary.                                          */
 void fix_cursor(void)
 {
     normalize_display();
@@ -329,29 +326,29 @@ void fix_cursor(void)
 #   endif
 }
 
-/* Make sure line, col, and dis_pos are somewhere inside file.	*/
-/* Recompute file_pos.	Assumes dis_pos is accurate or past eof	*/
+/* Make sure line, col, and dis_pos are somewhere inside file.  */
+/* Recompute file_pos.  Assumes dis_pos is accurate or past eof */
 void fix_pos()
 {
     int my_col = col;
-    
+
     if ((size_t)line > current_len) line = current_len;
     file_pos = line_pos(line, &my_col);
     if (file_pos == CORD_NOT_FOUND) {
         for (line = current_map -> line, file_pos = current_map -> pos;
              file_pos < current_len;
              line++, file_pos = CORD_chr(current, file_pos, '\n') + 1);
-    	line--;
+        line--;
         file_pos = line_pos(line, &col);
     } else {
-    	col = my_col;
+        col = my_col;
     }
 }
 
 #if defined(WIN32)
-#  define beep() Beep(1000 /* Hz */, 300 /* msecs */) 
+#  define beep() Beep(1000 /* Hz */, 300 /* msecs */)
 #elif defined(MACINTOSH)
-#	define beep() SysBeep(1)
+#       define beep() SysBeep(1)
 #else
 /*
  * beep() is part of some curses packages and not others.
@@ -370,16 +367,16 @@ void fix_pos()
 
 #   define NO_PREFIX -1
 #   define BARE_PREFIX -2
-int repeat_count = NO_PREFIX;	/* Current command prefix. */
+int repeat_count = NO_PREFIX;   /* Current command prefix. */
 
-int locate_mode = 0;			/* Currently between 2 ^Ls	*/
-CORD locate_string = CORD_EMPTY;	/* Current search string.	*/
+int locate_mode = 0;                    /* Currently between 2 ^Ls      */
+CORD locate_string = CORD_EMPTY;        /* Current search string.       */
 
 char * arg_file_name;
 
 #ifdef WIN32
-/* Change the current position to whatever is currently displayed at	*/
-/* the given SCREEN coordinates.					*/
+/* Change the current position to whatever is currently displayed at    */
+/* the given SCREEN coordinates.                                        */
 void set_position(int c, int l)
 {
     line = l + dis_line;
@@ -389,21 +386,21 @@ void set_position(int c, int l)
 }
 #endif /* WIN32 */
 
-/* Perform the command associated with character c.  C may be an	*/
-/* integer > 256 denoting a windows command, one of the above control	*/
-/* characters, or another ASCII character to be used as either a 	*/
-/* character to be inserted, a repeat count, or a search string, 	*/
-/* depending on the current state.					*/
+/* Perform the command associated with character c.  C may be an        */
+/* integer > 256 denoting a windows command, one of the above control   */
+/* characters, or another ASCII character to be used as either a        */
+/* character to be inserted, a repeat count, or a search string,        */
+/* depending on the current state.                                      */
 void do_command(int c)
 {
     int i;
     int need_fix_pos;
     FILE * out;
-    
+
     if ( c == '\r') c = '\n';
     if (locate_mode) {
         size_t new_pos;
-          
+
         if (c == LOCATE) {
               locate_mode = 0;
               locate_string = CORD_EMPTY;
@@ -411,27 +408,27 @@ void do_command(int c)
         }
         locate_string = CORD_cat_char(locate_string, (char)c);
         new_pos = CORD_str(current, file_pos - CORD_len(locate_string) + 1,
-          		   locate_string);
+                           locate_string);
         if (new_pos != CORD_NOT_FOUND) {
             need_redisplay = ALL;
             new_pos += CORD_len(locate_string);
             for (;;) {
-              	file_pos = line_pos(line + 1, 0);
-              	if (file_pos > new_pos) break;
-              	line++;
+                file_pos = line_pos(line + 1, 0);
+                if (file_pos > new_pos) break;
+                line++;
             }
             col = new_pos - line_pos(line, 0);
             file_pos = new_pos;
             fix_cursor();
         } else {
             locate_string = CORD_substr(locate_string, 0,
-              				CORD_len(locate_string) - 1);
+                                        CORD_len(locate_string) - 1);
             beep();
         }
         return;
     }
     if (c == REPEAT) {
-      	repeat_count = BARE_PREFIX; return;
+        repeat_count = BARE_PREFIX; return;
     } else if (c < 0x100 && isdigit(c)){
         if (repeat_count == BARE_PREFIX) {
           repeat_count = c - '0'; return;
@@ -441,7 +438,7 @@ void do_command(int c)
     }
     if (repeat_count == NO_PREFIX) repeat_count = 1;
     if (repeat_count == BARE_PREFIX && (c == UP || c == DOWN)) {
-      	repeat_count = LINES - dis_granularity;
+        repeat_count = LINES - dis_granularity;
     }
     if (repeat_count == BARE_PREFIX) repeat_count = 8;
     need_fix_pos = 0;
@@ -453,80 +450,80 @@ void do_command(int c)
           case TOP:
             line = col = file_pos = 0;
             break;
-     	  case UP:
-     	    if (line != 0) {
-     	        line--;
-     	        need_fix_pos = 1;
-     	    }
-     	    break;
-     	  case DOWN:
-     	    line++;
-     	    need_fix_pos = 1;
-     	    break;
-     	  case LEFT:
-     	    if (col != 0) {
-     	        col--; file_pos--;
-     	    }
-     	    break;
-     	  case RIGHT:
-     	    if (CORD_fetch(current, file_pos) == '\n') break;
-     	    col++; file_pos++;
-     	    break;
-     	  case UNDO:
-     	    del_hist();
-     	    need_redisplay = ALL; need_fix_pos = 1;
-     	    break;
-     	  case BS:
-     	    if (col == 0) {
-     	        beep();
-     	        break;
-     	    }
-     	    col--; file_pos--;
-     	    /* fall through: */
-     	  case DEL:
-     	    if (file_pos == current_len-1) break;
-     	    	/* Can't delete trailing newline */
-     	    if (CORD_fetch(current, file_pos) == '\n') {
-     	        need_redisplay = ALL; need_fix_pos = 1;
-     	    } else {
-     	        need_redisplay = line - dis_line;
-     	    }
-     	    add_hist(CORD_cat(
-     	    		CORD_substr(current, 0, file_pos),
-     	    		CORD_substr(current, file_pos+1, current_len)));
-     	    invalidate_map(line);
-     	    break;
-     	  case WRITE:
-	    {
-  		CORD name = CORD_cat(CORD_from_char_star(arg_file_name),
-				     ".new");
+          case UP:
+            if (line != 0) {
+                line--;
+                need_fix_pos = 1;
+            }
+            break;
+          case DOWN:
+            line++;
+            need_fix_pos = 1;
+            break;
+          case LEFT:
+            if (col != 0) {
+                col--; file_pos--;
+            }
+            break;
+          case RIGHT:
+            if (CORD_fetch(current, file_pos) == '\n') break;
+            col++; file_pos++;
+            break;
+          case UNDO:
+            del_hist();
+            need_redisplay = ALL; need_fix_pos = 1;
+            break;
+          case BS:
+            if (col == 0) {
+                beep();
+                break;
+            }
+            col--; file_pos--;
+            /* fall through: */
+          case DEL:
+            if (file_pos == current_len-1) break;
+                /* Can't delete trailing newline */
+            if (CORD_fetch(current, file_pos) == '\n') {
+                need_redisplay = ALL; need_fix_pos = 1;
+            } else {
+                need_redisplay = line - dis_line;
+            }
+            add_hist(CORD_cat(
+                        CORD_substr(current, 0, file_pos),
+                        CORD_substr(current, file_pos+1, current_len)));
+            invalidate_map(line);
+            break;
+          case WRITE:
+            {
+                CORD name = CORD_cat(CORD_from_char_star(arg_file_name),
+                                     ".new");
 
-    	        if ((out = fopen(CORD_to_const_char_star(name), "wb")) == NULL
-  	            || CORD_put(current, out) == EOF) {
-        	    de_error("Write failed\n");
-        	    need_redisplay = ALL;
+                if ((out = fopen(CORD_to_const_char_star(name), "wb")) == NULL
+                    || CORD_put(current, out) == EOF) {
+                    de_error("Write failed\n");
+                    need_redisplay = ALL;
                 } else {
                     fclose(out);
                 }
-	    }
+            }
             break;
-     	  default:
-     	    {
-     	        CORD left_part = CORD_substr(current, 0, file_pos);
-     	        CORD right_part = CORD_substr(current, file_pos, current_len);
-     	        
-     	        add_hist(CORD_cat(CORD_cat_char(left_part, (char)c),
-     	        		  right_part));
-     	        invalidate_map(line);
-     	        if (c == '\n') {
-     	            col = 0; line++; file_pos++;
-     	            need_redisplay = ALL;
-     	        } else {
-     	            col++; file_pos++;
-     	            need_redisplay = line - dis_line;
-     	    	}
-     	        break;
-     	    }
+          default:
+            {
+                CORD left_part = CORD_substr(current, 0, file_pos);
+                CORD right_part = CORD_substr(current, file_pos, current_len);
+
+                add_hist(CORD_cat(CORD_cat_char(left_part, (char)c),
+                                  right_part));
+                invalidate_map(line);
+                if (c == '\n') {
+                    col = 0; line++; file_pos++;
+                    need_redisplay = ALL;
+                } else {
+                    col++; file_pos++;
+                    need_redisplay = line - dis_line;
+                }
+                break;
+            }
         }
     }
     if (need_fix_pos) fix_pos();
@@ -540,9 +537,9 @@ void generic_init(void)
 {
     FILE * f;
     CORD initial;
-    
+
     if ((f = fopen(arg_file_name, "rb")) == NULL) {
-     	initial = "\n";
+        initial = "\n";
     } else {
         initial = CORD_from_file(f);
         if (initial == CORD_EMPTY
@@ -567,12 +564,12 @@ char ** argv;
     int c;
 
 #if defined(MACINTOSH)
-	console_options.title = "\pDumb Editor";
-	cshow(stdout);
-	argc = ccommand(&argv);
+        console_options.title = "\pDumb Editor";
+        cshow(stdout);
+        argc = ccommand(&argv);
 #endif
     GC_INIT();
-    
+
     if (argc != 2) goto usage;
     arg_file_name = argv[1];
     setvbuf(stdout, GC_MALLOC_ATOMIC(8192), _IOFBF, 8192);
@@ -580,8 +577,8 @@ char ** argv;
     noecho(); nonl(); cbreak();
     generic_init();
     while ((c = getchar()) != QUIT) {
-		if (c == EOF) break;
-	    do_command(c);
+                if (c == EOF) break;
+            do_command(c);
     }
 done:
     move(LINES-1, 0);

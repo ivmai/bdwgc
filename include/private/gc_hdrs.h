@@ -11,7 +11,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 11, 1995 11:54 am PDT */
+
 #ifndef GC_HEADERS_H
 #define GC_HEADERS_H
 
@@ -201,4 +201,4 @@ typedef struct bi {
 /* h.  Assumes hhdr == HDR(h) and IS_FORWARDING_ADDR(hhdr).             */
 #define FORWARDED_ADDR(h, hhdr) ((struct hblk *)(h) - (size_t)(hhdr))
 
-#endif /*  GC_HEADERS_H */
+#endif /* GC_HEADERS_H */

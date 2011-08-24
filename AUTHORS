@@ -54,3 +54,14 @@ Jesse Hull and John Ellis supplied the C++ interface code.
 Zhong Shao performed much of the experimentation that led to the
 current typed allocation facility.  (His dynamic type inference code hasn't
 made it into the released version of the collector, yet.)
+
+More contributors:
+Andrej Cedilnik <acedil1@csee.umbc.edu>
+Bradley D. LaRonde
+Grzegorz Jakacki <jakacki@acm.org>
+Margaret Fleck
+Oliver Kurth <oliver.kurth@innominate.com>
+Petter Urkedal <paurkedal@gmail.com>
+Rob Haack <rhaack@polaris.unm.edu>
+Tilman Vogel <Tilman.Vogel@web.de>
+Tom Tromey

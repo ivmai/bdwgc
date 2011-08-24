@@ -1,5 +1,5 @@
-#ifndef	_weakpointer_h_
-#define	_weakpointer_h_
+#ifndef _weakpointer_h_
+#define _weakpointer_h_
 
 /****************************************************************************
 
@@ -12,8 +12,6 @@ WeakPointer and CleanUp
 
     Permission is hereby granted to copy this code for any purpose,
     provided the above notices are retained on all copies.
-
-    Last modified on Mon Jul 17 18:16:01 PDT 1995 by ellis
 
 ****************************************************************************/
 
@@ -118,7 +116,7 @@ static void Set( T* t, void c( Data* d, T* t ), Data* d = 0 )
        and d can be null, but t cannot. Sets the clean-up queue for
        BO(t) to be the collector's queue. When t is removed from its
        clean-up queue, its clean-up will be applied by calling c(d,
-       t). It is an error if *t is not a collected object. */ 
+       t). It is an error if *t is not a collected object. */
        {_CleanUp_Set( t, c, d );}
 
 static void Call( T* t )
@@ -217,5 +215,3 @@ extern "C" {
 }
 
 #endif /* _weakpointer_h_ */
-
-

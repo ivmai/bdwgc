@@ -5,7 +5,7 @@ There may well be better ways to do some of this, but ....
    -- Margaret
 
 
-The badge4 has a StrongArm-1110 processor and a StrongArm-1111 coprocessor.  
+The badge4 has a StrongArm-1110 processor and a StrongArm-1111 coprocessor.
 
 Assume that the garbage collector distribution is unpacked into /home/arm/gc6.0,
 which is visible to both the ARM machine and a linux desktop (e.g. via NFS mounting).
@@ -21,7 +21,7 @@ Go to /home/arm/gc6.0 directory.  Do
 On your desktop, do:
    make
    make install
-The main garbage collector library should now be in ../gc6.0/lib/libgc.so.  
+The main garbage collector library should now be in ../gc6.0/lib/libgc.so.
 
 To test the garbage collector, first do the following on your desktop
    make gctest
@@ -39,12 +39,6 @@ with it, though I'll be doing so in the near future.
 
 -------------------------------
 # config.site for configure
-
-# Modified from the one provided by Bradley D. LaRonde
-# Edited by Andrej Cedilnik <acedil1@csee.umbc.edu>
-# Used some of solutions by Tilman Vogel <Tilman.Vogel@web.de>
-# Ported for iPAQ Familiar by Oliver Kurth <oliver.kurth@innominate.com>
-# Further modified by Margaret Fleck for the badge4
 
 HOSTCC=gcc
 

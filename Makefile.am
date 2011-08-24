@@ -8,11 +8,6 @@
 # Permission to modify the code and to distribute modified code is granted,
 # provided the above notices are retained, and a notice that the code was
 # modified is included with the above copyright notice.
-#
-# Original author: Tom Tromey
-# Severely truncated by Hans-J. Boehm
-# Modified by: Grzegorz Jakacki <jakacki at acm dot org>
-# Modified by: Petter Urkedal <petter.urkedal@nordita.dk> (2005-04)
 
 ## Process this file with automake to produce Makefile.in.
 
@@ -34,8 +29,8 @@ SUBDIRS =
 
 ACLOCAL_AMFLAGS = -I m4
 AM_CPPFLAGS = \
-	-I$(top_builddir)/include -I$(top_srcdir)/include \
-	$(ATOMIC_OPS_CFLAGS)
+    -I$(top_builddir)/include -I$(top_srcdir)/include \
+    $(ATOMIC_OPS_CFLAGS)
 
 # Initialize variables so that we can declare files locally.
 EXTRA_DIST =
@@ -55,12 +50,12 @@ pkgconfig_DATA = bdw-gc.pc
 
 lib_LTLIBRARIES += libgc.la
 libgc_la_SOURCES = \
-	allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
-	dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c \
-	malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
-	obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c \
-	specific.c stubborn.c typd_mlc.c \
-	backgraph.c thread_local_alloc.c
+    allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
+    dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c \
+    malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
+    obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c \
+    specific.c stubborn.c typd_mlc.c \
+    backgraph.c thread_local_alloc.c
 
 # C Library: Architecture Dependent
 # ---------------------------------
@@ -147,7 +142,7 @@ endif
 
 ## We need to add DEFS to assembler flags
 ## :FIXME: what if assembler does not accept -D... ?
-##     (use Autoconf to prepare ASDEFS ???)
+## (use Autoconf to prepare ASDEFS?)
 
 CCASFLAGS += $(DEFS)
 
@@ -166,7 +161,7 @@ EXTRA_DIST += README.QUICK TODO
 # other makefiles
 # :GOTCHA: deliberately we do not include 'Makefile'
 EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
-    OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE	\
+    OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE \
     Makefile.direct Makefile.dj Makefile.DLLs SMakefile.amiga \
     WCC_MAKEFILE autogen.sh build_atomic_ops.sh build_atomic_ops.sh.cygwin \
     NT_STATIC_THREADS_MAKEFILE NT_X64_STATIC_THREADS_MAKEFILE \
