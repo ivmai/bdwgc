@@ -91,9 +91,7 @@ libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS) $(ATOMIC_OPS_LIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info 1:3:0 -no-undefined
 
-EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
-    mips_sgi_mach_dep.s mips_ultrix_mach_dep.s \
-    rs6000_mach_dep.s sparc_mach_dep.S sparc_netbsd_mach_dep.s \
+EXTRA_libgc_la_SOURCES = sparc_mach_dep.S sparc_netbsd_mach_dep.s \
     sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s
 
 

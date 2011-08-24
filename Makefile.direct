@@ -86,14 +86,13 @@ CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordt
 
 CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
-SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.S \
+SRCS= $(CSRCS) \
     sparc_mach_dep.S include/gc.h include/gc_typed.h include/gc_tiny_fl.h \
     include/gc_version.h include/private/gc_hdrs.h include/private/gc_priv.h \
     include/private/gcconfig.h include/private/gc_pmark.h \
     include/gc_inline.h include/gc_mark.h extra/threadlibs.c \
     extra/if_mach.c extra/if_not_there.c gc_cpp.cc include/gc_cpp.h \
     extra/gcname.c include/weakpointer.h include/private/gc_locks.h \
-    mips_ultrix_mach_dep.s \
     include/new_gc_alloc.h include/gc_allocator.h \
     include/javaxfc.h sparc_sunos4_mach_dep.s sparc_netbsd_mach_dep.s \
     include/gc_backptr.h include/gc_gcj.h include/private/dbg_mlc.h \
@@ -308,10 +307,8 @@ dyn_test:
 # 	gcc -shared -Wl,-soname=libgc.so.0 -o libgc.so.0 $(LIBOBJS) dyn_load.lo
 #	touch liblinuxgc.so
 
-mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s \
-	    $(srcdir)/mips_ultrix_mach_dep.s \
-            $(srcdir)/rs6000_mach_dep.s \
-	    $(srcdir)/sparc_mach_dep.S $(srcdir)/sparc_sunos4_mach_dep.s \
+mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/sparc_mach_dep.S \
+	    $(srcdir)/sparc_sunos4_mach_dep.s \
 	    $(srcdir)/ia64_save_regs_in_stack.s \
 	    $(srcdir)/sparc_netbsd_mach_dep.s $(UTILS)
 	rm -f mach_dep.o
