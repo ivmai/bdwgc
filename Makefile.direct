@@ -135,8 +135,7 @@ OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE gc.mak \
 		 NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE \
 		 build_atomic_ops.sh build_atomic_ops.sh.cygwin
 
-OTHER_FILES= Makefile extra/setjmp_t.c callprocs \
-           MacProjects.sit.hqx extra/MacOS.c \
+OTHER_FILES= Makefile extra/setjmp_t.c callprocs extra/MacOS.c \
            Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
            extra/add_gc_prefix.c gc_cpp.cpp \
