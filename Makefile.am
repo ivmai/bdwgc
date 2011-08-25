@@ -169,9 +169,9 @@ EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
 
 # files used by makefiles other than Makefile.am
 #
-EXTRA_DIST += extra/add_gc_prefix.c extra/gc.c extra/gcname.c \
-    extra/if_mach.c extra/if_not_there.c gc.mak extra/MacOS.c \
-    mach_dep.c extra/setjmp_t.c extra/threadlibs.c extra/AmigaOS.c \
+EXTRA_DIST += tools/add_gc_prefix.c tools/gcname.c tools/if_mach.c \
+    tools/if_not_there.c tools/setjmp_t.c tools/threadlibs.c \
+    gc.mak extra/gc.c extra/MacOS.c mach_dep.c extra/AmigaOS.c \
     Mac_files/datastart.c Mac_files/dataend.c \
     Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
     include/private/msvc_dbg.h extra/msvc_dbg.c

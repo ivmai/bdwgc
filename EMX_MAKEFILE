@@ -63,7 +63,7 @@ CURSES= -lcurses -ltermlib
 # the SHELL environment variable.
 SHELL= bash
 
-SPECIALCFLAGS = 
+SPECIALCFLAGS =
 # Alternative flags to the C compiler for mach_dep.c.
 # Mach_dep.c often doesn't like optimization, and it's
 # not time-critical anyway.
@@ -91,11 +91,11 @@ cords: $(CORD_OBJS) cord/cordtest.exe
 
 gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/gc_cpp.h
 	$(CXX) -c -O $(srcdir)/gc_cpp.cc
-	
+
 c++: gc_cpp.o $(srcdir)/gc_cpp.h
 	$(AR) ru gc.a gc_cpp.o
 	$(RANLIB) gc.a
-	cp $(srcdir)/gc_cpp.h include/gc_cpp.h 
+	cp $(srcdir)/gc_cpp.h include/gc_cpp.h
 
 mach_dep.o: $(srcdir)/mach_dep.c
 	$(CC) -o mach_dep.o -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
@@ -118,7 +118,7 @@ cord/cordtest.exe: $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a
 cord/de.exe: $(srcdir)/cord/de.c $(srcdir)/cord/cordbscs.o $(srcdir)/cord/cordxtra.o gc.a
 	$(CC) $(CFLAGS) -o cord/de.exe $(srcdir)/cord/de.c $(srcdir)/cord/cordbscs.o $(srcdir)/cord/cordxtra.o gc.a $(CURSES)
 
-clean: 
+clean:
 	rm -f gc.a tests/test.o gctest.exe output-local output-diff $(OBJS) \
 	      setjmp_test  mon.out gmon.out a.out core \
 	      $(CORD_OBJS) cord/cordtest.exe cord/de.exe
@@ -130,8 +130,8 @@ gctest.exe: tests/test.o gc.a
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  Gctest may still work.
 # Try compiling setjmp_t.c unoptimized.
-setjmp_test.exe: $(srcdir)/extra/setjmp_t.c $(srcdir)/gc.h
-	$(CC) $(CFLAGS) -o setjmp_test.exe $(srcdir)/extra/setjmp_t.c
+setjmp_test.exe: $(srcdir)/tools/setjmp_t.c $(srcdir)/gc.h
+	$(CC) $(CFLAGS) -o setjmp_test.exe $(srcdir)/tools/setjmp_t.c
 
 test: setjmp_test.exe gctest.exe
 	./setjmp_test

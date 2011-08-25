@@ -51,8 +51,8 @@ SRCS= $(CSRCS) \
     sparc_mach_dep.S include/gc.h include/gc_version.h include/gc_typed.h \
     include/private/gc_hdrs.h include/private/gc_priv.h \
     include/private/gcconfig.h include/private/gc_mark.h \
-    include/gc_inline.h gc.man extra/threadlibs.c \
-    extra/if_mach.c extra/if_not_there.c gc_cpp.cc include/gc_cpp.h \
+    include/gc_inline.h gc.man tools/threadlibs.c \
+    tools/if_mach.c tools/if_not_there.c gc_cpp.cc include/gc_cpp.h \
     include/weakpointer.h include/private/gc_locks.h \
     include/new_gc_alloc.h include/javaxfc.h sparc_sunos4_mach_dep.s \
     include/private/solaris_threads.h include/gc_backptr.h \
@@ -61,14 +61,14 @@ SRCS= $(CSRCS) \
     include/leak_detector.h $(CORD_SRCS)
 
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
-           README tests/test.c test_cpp.cc extra/setjmp_t.c SMakefile.amiga \
+           README tests/test.c test_cpp.cc tools/setjmp_t.c SMakefile.amiga \
            doc/README.amiga doc/README.win32 \
 	   doc/README.cords doc/README.rs6000 README.QUICK TODO callprocs \
            pc_excludes barrett_diagram doc/README.OS2 doc/README.Mac \
            extra/MacOS.c EMX_MAKEFILE \
            doc/README.debugging Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-           extra/add_gc_prefix.c doc/README.solaris2 doc/README.sgi \
+           tools/add_gc_prefix.c doc/README.solaris2 doc/README.sgi \
            doc/README.hp doc/README.uts win32_threads.c gc.mak doc/README.dj \
            Makefile.dj doc/README.alpha doc/README.linux doc/README.MacOSX \
 	   Makefile.DLLs WCC_MAKEFILE
@@ -210,17 +210,17 @@ cord/de$(EXE_SUFFIX): $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $
 	./if_mach ALPHA LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
 	./if_not_there cord/de$(EXE_SUFFIX) $(CC) $(CFLAGS) -o cord/de$(EXE_SUFFIX) $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES)
 
-if_mach$(EXE_SUFFIX): $(srcdir)/extra/if_mach.c $(srcdir)/include/private/gcconfig.h
+if_mach$(EXE_SUFFIX): $(srcdir)/tools/if_mach.c $(srcdir)/include/private/gcconfig.h
 	rm -f if_mach if_mach$(EXE_SUFFIX)
-	$(CC) $(CFLAGS) -o if_mach $(srcdir)/extra/if_mach.c
+	$(CC) $(CFLAGS) -o if_mach $(srcdir)/tools/if_mach.c
 
-threadlibs$(EXE_SUFFIX): $(srcdir)/extra/threadlibs.c $(srcdir)include/private/gcconfig.h Makefile
+threadlibs$(EXE_SUFFIX): $(srcdir)/tools/threadlibs.c $(srcdir)include/private/gcconfig.h Makefile
 	rm -f threadlibs threadlibs$(EXE_SUFFIX)
-	$(CC) $(CFLAGS) -o threadlibs $(srcdir)/extra/threadlibs.c
+	$(CC) $(CFLAGS) -o threadlibs $(srcdir)/tools/threadlibs.c
 
-if_not_there$(EXE_SUFFIX): $(srcdir)/extra/if_not_there.c
+if_not_there$(EXE_SUFFIX): $(srcdir)/tools/if_not_there.c
 	rm -f if_not_there if_not_there$(EXE_SUFFIX)
-	$(CC) $(CFLAGS) -o if_not_there $(srcdir)/extra/if_not_there.c
+	$(CC) $(CFLAGS) -o if_not_there $(srcdir)/tools/if_not_there.c
 
 # Clean removes *.o several times,
 # because as the first one doesn't seem to get them all!
@@ -247,10 +247,10 @@ gctest$(EXE_SUFFIX): tests/test.o gc.a if_mach$(EXE_SUFFIX) if_not_there$(EXE_SU
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  Gctest may still work.
 # Try compiling setjmp_t.c unoptimized.
-setjmp_test$(EXE_SUFFIX): $(srcdir)/extra/setjmp_t.c $(srcdir)/include/gc.h \
+setjmp_test$(EXE_SUFFIX): $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h \
 		if_mach$(EXE_SUFFIX) if_not_there$(EXE_SUFFIX)
 	rm -f setjmp_test$(EXE_SUFFIX)
-	$(CC) $(CFLAGS) -o setjmp_test $(srcdir)/extra/setjmp_t.c
+	$(CC) $(CFLAGS) -o setjmp_test $(srcdir)/tools/setjmp_t.c
 	rm -f setjmp_test
 
 test:  KandRtest cord/cordtest$(EXE_SUFFIX)
@@ -261,8 +261,8 @@ KandRtest: setjmp_test$(EXE_SUFFIX) gctest$(EXE_SUFFIX)
 	./setjmp_test$(EXE_SUFFIX)
 	./gctest$(EXE_SUFFIX)
 
-add_gc_prefix$(EXE_SUFFIX): extra/add_gc_prefix.c
-	$(CC) -o add_gc_prefix$(EXE_SUFFIX) $(srcdir)/extra/add_gc_prefix.c
+add_gc_prefix$(EXE_SUFFIX): tools/add_gc_prefix.c
+	$(CC) -o add_gc_prefix$(EXE_SUFFIX) $(srcdir)/tools/add_gc_prefix.c
 	rm -f add_gc_prefix
 
 gc.tar: $(SRCS) $(OTHER_FILES) add_gc_prefix

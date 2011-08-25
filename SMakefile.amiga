@@ -19,7 +19,7 @@ MATHLIB=LIB:scm881.lib
 
 #----------------COMPILER OPTIONS---------------------
 
-IGNORE= IGNORE=85 IGNORE=154 IGNORE=161 IGNORE=100 
+IGNORE= IGNORE=85 IGNORE=154 IGNORE=161 IGNORE=100
 
 OPTIMIZE=optimize optimizetime optglobal optimizerdepth=100 optimizerpeephole optloop OPTSCHED optimizerinlocal optimizerrecurdepth=100
 # optimizerinline optimizercomplexity=100
@@ -44,7 +44,7 @@ DEFINE GC_AMIGA_GC
 
 SCOPT= $(SOPT) define GC_AMIGA_MAKINGLIB
 
-CSCOPT= $(OPT) DEFINE AMIGA IGNORE=100 IGNORE=161 
+CSCOPT= $(OPT) DEFINE AMIGA IGNORE=100 IGNORE=161
 
 #------------------LINKING----------------------------
 
@@ -156,8 +156,8 @@ ptr_chck.o: ptr_chck.c $(INC)
 test.o : test.c $(INC)
 	$(CC) test.c $(SOPT)
 
-setjmp_t: extra/setjmp_t.c gc.h
-   $(CC) extra/setjmp_t.c $(SOPT)
+setjmp_t: tools/setjmp_t.c gc.h
+   $(CC) tools/setjmp_t.c $(SOPT)
 
 
 # cords:
@@ -173,5 +173,3 @@ cord/cordxtra.o: cord/cordxtra.c
 
 cord/cordtest.o: cord/cordtest.c
 	sc cord/cordtest.c $(CSCOPT)
-
-
