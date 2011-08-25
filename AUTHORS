@@ -1,6 +1,5 @@
 This is an attempt to acknowledge early contributions to the garbage
-collector.  Later contributions should instead be mentioned in
-ChangeLog.
+collector.  Later contributions should be also mentioned in "git log".
 
 HISTORY -
 
@@ -16,64 +15,281 @@ the University of Washington, Rice University (where it was first used for
 C and assembly code), Xerox PARC, SGI, and HP Labs.  However, significant
 contributions have also been made by many others.
 
-Some other contributors:
+Other contributors (my apologies for any omissions):
 
-More recent contributors are mentioned in the modification history in
-ChangeLog.  My apologies for any omissions.
-
-The SPARC specific code was originally contributed by Mark Weiser.
-The Encore Multimax modifications were supplied by
-Kevin Kenny (kenny@m.cs.uiuc.edu).  The adaptation to the IBM PC/RT is largely
-due to Vernon Lee, on machines made available to Rice by IBM.
-Much of the HP specific code and a number of good suggestions for improving the
-generic code are due to Walter Underwood.
-Robert Brazile (brazile@diamond.bbn.com) originally supplied the ULTRIX code.
-Al Dosser (dosser@src.dec.com) and Regis Cridlig (Regis.Cridlig@cl.cam.ac.uk)
-subsequently provided updates and information on variation between ULTRIX
-systems.  Parag Patel (parag@netcom.com) supplied the A/UX code.
-Jesper Peterson(jep@mtiame.mtia.oz.au), Michel Schinz <schinz@alphanet.ch>, and
-Martin Tauchmann (martintauchmann@bigfoot.com) supplied the Amiga port.
-Thomas Funke (thf@zelator.in-berlin.de(?)) and
-Brian D.Carlstrom (bdc@clark.lcs.mit.edu) supplied the NeXT ports.
-Douglas Steel (doug@wg.icl.co.uk) provided ICL DRS6000 code.
-Bill Janssen (janssen@parc.xerox.com) supplied the SunOS dynamic loader
-specific code. Manuel Serrano (serrano@cornas.inria.fr) supplied linux and
-Sony News specific code.  Al Dosser provided Alpha/OSF/1 code.  He and
-Dave Detlefs(detlefs@src.dec.com) also provided several generic bug fixes.
-Alistair G. Crooks(agc@uts.amdahl.com) supplied the NetBSD and 386BSD ports.
-Jeffrey Hsu (hsu@soda.berkeley.edu) provided the FreeBSD port.
-Brent Benson (brent@jade.ssd.csd.harris.com) ported the collector to
-a Motorola 88K processor running CX/UX (Harris NightHawk).
-Ari Huttunen (Ari.Huttunen@hut.fi) generalized the OS/2 port to
-nonIBM development environments (a nontrivial task).
-Patrick Beard (beard@cs.ucdavis.edu) provided the initial MacOS port.
-David Chase, then at Olivetti Research, suggested several improvements.
-Scott Schwartz (schwartz@groucho.cse.psu.edu) supplied some of the
-code to save and print call stacks for leak detection on a SPARC.
-Jesse Hull and John Ellis supplied the C++ interface code.
-Zhong Shao performed much of the experimentation that led to the
-current typed allocation facility.  (His dynamic type inference code hasn't
-made it into the released version of the collector, yet.)
-
-More contributors:
+Adam Megacz <adam@megac.com>
+Adnan Ali
+Adrian Bunk
+Akira Tagoh
+Alain Novak
+Alan Dosser <dosser@src.dec.com>
+Alan J. Demers <ademers@cs.cornell.edu>
+Aleksey Demakov
+Alexander Belchenko <bialix@ukr.net>
+Alexandr Petrosian
+Alexandr Shadchin <ShadchinAV@mail.ru>
+Alistair G. Crooks <agc@uts.amdahl.com>
+Andre Leiradella
+Andreas Jaeger
+Andreas Tobler <a.tobler@schweiz.org>
+Andrei Polushin
 Andrej Cedilnik <acedil1@csee.umbc.edu>
+Andrew Begel
+Andrew Haley
+Andrew Pinski
+Andrew Stitcher
+Andrew Stone
+Andy Wingo <wingo@pobox.com>
+Anselm Baird-Smith <Anselm.BairdSmith@inria.fr>
+Anthony Green
+Ari Huttunen <Ari.Huttunen@hut.fi>
+Arrigo Triulzi <arrigo@ic.ac.uk>
+Ashley Bone
+Assar Westerlund <assar@sics.se>
+Barry DeFreese
+Ben A. Mesander <ben@piglet.cr.usgs.gov>
+Ben Cottrell
+Ben Hutchings
+Ben Maurer
+Bernie Solomon
+Bill Janssen <janssen@parc.xerox.com>
+Bo Thorsen
 Bradley D. LaRonde <brad@ltc.com>
+Bradley Smith <brad@brad-smith.co.uk>
+Brent Benson <brent@jade.ssd.csd.harris.com>
 Brian Alliet <brian@brianweb.net>
+Brian Beuning
+Brian Burton
+Brian D. Carlstrom <bdc@clark.lcs.mit.edu>
+Brian F. Dennis <xjam@cork.cs.berkeley.edu>
+Brian Lewis <btlewis@eng.sun.com>
+Bruce Mitchener <bruce.mitchener@gmail.com>
+Bryce McKinley
+Burkhard Linke <blinke@cebitec.uni-bielefeld.de>
+Cesar Eduardo Barros
+Charles Mills
+Chris Dodd
+Chris Lingard
+Christian Joensson
+Christian Limpach
+Christian Thalinger
+Christoffe Raffali
+Clay Spence <cds@peanut.sarnoff.com>
+Craig McDaniel
+Dai Sato
+Dan Bonachea
+Dan Fandrich
+Daniel R. Grayson <dan@math.uiuc.edu>
+Dan Sullivan
+Danny Smith
+Darrell Schiebel
 Dave Barrett <barrett@asgard.cs.colorado.edu>
+Dave Detlefs <detlefs@src.dec.com>
+Dave Grove
+Dave Korn <dave.korn.cygwin@googlemail.com>
+Dave Love
+David Ayers
+David Daney
+David Leonard
+David Miller
+David Mossberger
+David Peroutka
+David Pickens
+David Stes
+Davide Angelocola
+Dick Porter
 Dietmar Planitzer <dave.pl@ping.at>
+Dimitris Vyzovitis
+Dimitry Andric
+Doug Kaufman
+Douglas Steel <doug@wg.icl.co.uk>
+Elijah Taylor <elijahtaylor@google.com>
+Elvenlord Elrond <elrond@samba-tng.org>
+Emmanual Stumpf
+Fabian Thylman
+Fergus Henderson
+Franklin Chen <chen@adi.com>
+Fred Stearns
+Friedrich Dominicus <friedrichdominicus@googlemail.com>
 Gary Leavens <leavens@eecs.ucf.edu>
+Geoff Norton <grompf@sublimeintervention.com>
+George Talbot <Gtalbot@ansarisbio.com>
+Gerard A Allan
+Glauco Masotti
 Grzegorz Jakacki <jakacki@acm.org>
+Gustavo Rodriguez-Rivera
+H.J. Lu <hjl.tools@gmail.com>
+Hanno Boeck
+Hans Boehm <hans.boehm@hp.com>
+Hans-Peter Nilsson
+Harris NightHawk
+Henning Makholm <Henning@octoshape.com>
+Henrik Theiling
 Hironori Sakamoto <hsaka@mth.biglobe.ne.jp>
+Hiroshi Kawashima
+Iain Sandoe <developer@sandoe-acoustics.co.uk>
+Ian Piumarta
+Ian Searle
+Igor Khavkine
 Ivan Demakov <ivan@tgrad.nsk.su>
+Ivan Maidanski <ivmai@mail.ru>
+Jaap Boender
+Jack Andrews <effbiae@gmail.com>
+Jacob Navia
+Jakub Jelinek
+James Clark <jjc@jclark.com>
+James Dominy
+Jani Kajala
+Jean-Baptiste Nivois
+Jean-Claude Beaudoin <jean.claude.beaudoin@gmail.com>
+Jean-Daniel Fekete
+Jeff Sturm
+Jeffrey Hsu <hsu@soda.berkeley.edu>
+Jeffrey Mark Siskind
+Jeremy Fitzhardinge
+Jesper Peterson <jep@mtiame.mtia.oz.au>
+Jesse Hull
+Jesse Jones
+Jesse Rosenstock
+Ji-Yong Chung
+Jie Liu <lj8175@gmail.com>
+Jim Marshall <jim.marshall@wbemsolutions.com>
+Jim Meyering <jim@meyering.net>
+Joerg Sonnenberger
+Johannes Schmidt
+John Bowman
+John Clements
+John Ellis
+John Merryweather Cooper
+Jon Moore
+Jonathan Bachrach <jonathan@harlequin.com>
+Jonathan Clark
+Jonathan Pryor <jonpryor@vt.edu>
+Juan Jose Garcia-Ripoll <juanjose.garciaripoll@googlemail.com>
+Kazu Hirata
+Kazuhiro Inaoka
+Kenjiro Taura
+Kenneth Schalk
+Kevin Kenny <kenny@m.cs.uiuc.edu>
 Kjetil S. Matheussen <ksvalast@ifi.uio.no>
+Klaus Treichel <ktreichel@web.de>
+Knut Tvedten <knuttv@ifi.uio.no>
+Krister Walfridsson
+Kristian Kristensen
 Lars Farm <lars.farm@ite.mh.se>
+Laurent Morichetti
+Loren J. Rittle <rittle@latour.labs.mot.com>
+Louis Zhuang <louis.zhuang@acm.org>
 Ludovic Courtes <ludo@gnu.org>
+Manuel Serrano <serrano@cornas.inria.fr>
+Marc Recht
+Marco Maggi
+Marcos Dione
+Marcus Herbert
 Margaret Fleck <mfleck@illinois.edu>
+Mark Boulter <mboulter@vnet.ibm.com>
+Mark Mitchell
+Mark Reichert
+Mark Sibly
+Mark Weiser <weiser@ubiq.com>
+Martin Tauchmann <martintauchmann@bigfoot.com>
+Matt Austern
+Matthew Flatt
+Matthias Andree
+Matthias Drochner
+Maurizio Vairani
+Michael Arnoldus <chime@proinf.dk>
+Michael Smith
+Michael Spertus
+Michel Schinz <schinz@alphanet.ch>
+Miguel de Icaza <miguel@ximian.com>
+Mike Gran <spk121@yahoo.com>
+Mike Stump <mrs@windriver.com>
+Mitch Harris <maharri@uiuc.edu>
+Mohan Embar
+Nathanael Nerode
+Neil Sharman <neil@cs.mu.oz.au>
+Nicolas Cannasse
+Niibe Yutaka <gniibe@fsij.org>
+Noah Lavine <noah.b.lavine@gmail.com>
 Oliver Kurth <oliver.kurth@innominate.com>
+Paolo Molaro
+Parag Patel <parag@netcom.com>
+Patrick Bridges
 Patrick C. Beard <beard@netscape.com>
+Patrick Doyle
+Paul Brook
+Peter Chubb
+Peter Colson
+Peter Housel
+Peter Monks
+Peter Ross
+Peter Seebach <seebs@taniemarie.solon.com>
+Peter Wang
+Petr Krajca <krajcap@inf.upol.cz>
+Petr Salinger
 Petter Urkedal <paurkedal@gmail.com>
+Philipp Tomsich
+Philippe Queinnec
+Phillip Musumeci
+Philp Brown
+Pierre de Rop
+Radek Polak
+Rainer Orth <ro@cebitec.uni-bielefeld.de>
+Rauli Ruohonen
+Regis Cridlig <Regis.Cridlig@cl.cam.ac.uk>
+Rene Girard
+Rex Dieter <rdieter@math.unl.edu>
+Reza Shahidi
+Richard Earnshaw
 Rob Haack <rhaack@polaris.unm.edu>
+Robert Brazile <brazile@diamond.bbn.com>
+Roger Sayle
+Roman Hodek
+Romano Paolo Tenca <rotenca@telvia.it>
+Russell Ruby <russ@sludge.net>
+Rutger Ovidus
+Ryan Murray
+Salvador Eduardo Tropea
+Samuel Thibault
+Scott Ananian
+Scott Schwartz <schwartz@groucho.cse.psu.edu>
+Shawn Wagner
+Simon Posnjak
+Slava Sysoltev
+Stefan Ring
+Stefano Rivera <stefano@rivera.za.net>
+Sugioka Toshinobu
+Suzuki Toshiya
+Sven Hartrumpf
+Sven Verdoolaege
+Tagliapietra Tommaso
 Takis Psarogiannakopoulos <takis@xfree86.org>
+Tatsuya Bizenn
+Thiemo Seufer <ths@networkno.de>
+Thomas Funke <thf@zelator.in-berlin.de>
+Thomas Klausner
+Thomas Maier
+Thorsten Glaser <tg@debian.org>
 Tilman Vogel <Tilman.Vogel@web.de>
+Tim Bingham
+Timothy N. Newsham
 Tom Tromey <tromey@cygnus.com>
+Toralf Foerster
+Toshio Endo
+Tum Nguyen
+Tyson Dowd
+Uchiyama Yasushi
+Ulrich Drepper
+Ulrich Weigand
+Uros Bizjak <ubizjak@gmail.com>
+Victor Ivrii
+Vladimir Tsichevski
+Walter Bright
+Walter Underwood
+Wilson Ho
+Wink Saville
 Xiaokun Zhu <xiaokun@aero.gla.ac.uk>
+Yannis Bres
+Zhong Shao
+Zoltan Varga <vargaz@gmail.com>
