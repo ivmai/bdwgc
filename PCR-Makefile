@@ -10,7 +10,6 @@ include ../config/common.mk
 # compilation flags, etc.
 #
 
-
 CPPFLAGS = $(INCLUDE) $(CONFIG_CPPFLAGS) \
 	-DPCR_NO_RENAME -DPCR_NO_HOSTDEP_ERR
 #CFLAGS	= -DPCR $(CONFIG_CFLAGS)
@@ -27,13 +26,7 @@ LDRFLAGS = $(CONFIG_LDRFLAGS)
 LDFLAGS = $(CONFIG_LDFLAGS)
 
 #
-#
-#
-#
 # BEGIN PACKAGE-SPECIFIC PART
-#
-#
-#
 #
 
 # Fix to point to local pcr installation directory.
@@ -50,14 +43,5 @@ default: gc.o
 gc.o: $(COBJ) mach_dep.o
 	$(LDR) $(CONFIG_LDRFLAGS) -o gc.o $(COBJ) mach_dep.o
 
-
-mach_dep.o: mach_dep.c mips_mach_dep.s if_mach if_not_there
-	rm -f mach_dep.o
-	./if_mach MIPS "" as -o mach_dep.o mips_mach_dep.s
-	./if_not_there mach_dep.o $(CC) -c $(SPECIALCFLAGS) mach_dep.c
-
-if_mach: tools/if_mach.c gcconfig.h
-	$(CC) $(CFLAGS) -o if_mach tools/if_mach.c
-
-if_not_there: tools/if_not_there.c
-	$(CC) $(CFLAGS) -o if_not_there tools/if_not_there.c
+mach_dep.o: mach_dep.c
+	$(CC) -c $(SPECIALCFLAGS) mach_dep.c

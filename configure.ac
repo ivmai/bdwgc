@@ -14,7 +14,7 @@ dnl Process this file with autoconf to produce configure.
 # Initialization
 # ==============
 
-AC_INIT(gc,7.2alpha7,Hans.Boehm@hp.com)
+AC_INIT(gc,7.2alpha7,hans.boehm@hp.com)
     ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
@@ -429,27 +429,27 @@ case "$host" in
     dnl performance under Irix.
     ;;
  sparc*-*-linux*)
-    machdep="mach_dep.lo sparc_mach_dep.lo"
+    machdep="mach_dep.lo src/sparc_mach_dep.lo"
     ;;
  sparc-*-netbsd*)
-    machdep="mach_dep.lo sparc_netbsd_mach_dep.lo"
+    machdep="mach_dep.lo src/sparc_netbsd_mach_dep.lo"
     ;;
  sparc64-*-netbsd*)
-    machdep="mach_dep.lo sparc_mach_dep.lo"
+    machdep="mach_dep.lo src/sparc_mach_dep.lo"
     ;;
  sparc*-*-openbsd*)
-    machdep="mach_dep.lo sparc_mach_dep.lo"
+    machdep="mach_dep.lo src/sparc_mach_dep.lo"
     ;;
  sparc-sun-solaris2.3)
-    machdep="mach_dep.lo sparc_mach_dep.lo"
+    machdep="mach_dep.lo src/sparc_mach_dep.lo"
     AC_DEFINE(SUNOS53_SHARED_LIB, 1,
               [Define to work around a Solaris 5.3 bug (see dyn_load.c).])
     ;;
  sparc*-sun-solaris2*)
-    machdep="mach_dep.lo sparc_mach_dep.lo"
+    machdep="mach_dep.lo src/sparc_mach_dep.lo"
     ;;
  ia64-*-*)
-    machdep="mach_dep.lo ia64_save_regs_in_stack.lo"
+    machdep="mach_dep.lo src/ia64_save_regs_in_stack.lo"
     ;;
 esac
 if test x"$machdep" = x; then

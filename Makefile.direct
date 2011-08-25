@@ -89,21 +89,22 @@ CORD_SRCS= cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c \
 CORD_OBJS= cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
 SRCS= $(CSRCS) \
-    sparc_mach_dep.S include/gc.h include/gc_typed.h include/gc_tiny_fl.h \
+    include/gc.h include/gc_typed.h include/gc_tiny_fl.h \
     include/gc_version.h include/private/gc_hdrs.h include/private/gc_priv.h \
     include/private/gcconfig.h include/private/gc_pmark.h \
     include/gc_inline.h include/gc_mark.h tools/threadlibs.c \
     tools/if_mach.c tools/if_not_there.c gc_cpp.cc include/gc_cpp.h \
     tools/gcname.c include/weakpointer.h include/private/gc_locks.h \
     include/new_gc_alloc.h include/gc_allocator.h \
-    include/javaxfc.h sparc_sunos4_mach_dep.s sparc_netbsd_mach_dep.s \
+    include/javaxfc.h \
     include/gc_backptr.h include/gc_gcj.h include/private/dbg_mlc.h \
     include/private/specific.h include/leak_detector.h \
-    include/gc_pthread_redirects.h ia64_save_regs_in_stack.s \
+    include/gc_pthread_redirects.h \
     include/gc_config_macros.h include/private/pthread_support.h \
     include/private/pthread_stop_world.h include/private/darwin_semaphore.h \
     include/private/darwin_stop_world.h include/private/thread_local_alloc.h \
-    $(CORD_SRCS)
+    src/ia64_save_regs_in_stack.s src/sparc_mach_dep.S \
+    src/sparc_netbsd_mach_dep.s src/sparc_sunos4_mach_dep.s $(CORD_SRCS)
 
 DOC_FILES= README.QUICK TODO doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 	doc/README.amiga doc/README.cords doc/debugging.html \
@@ -308,17 +309,17 @@ dyn_test:
 # 	gcc -shared -Wl,-soname=libgc.so.0 -o libgc.so.0 $(LIBOBJS) dyn_load.lo
 #	touch liblinuxgc.so
 
-mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/sparc_mach_dep.S \
-	    $(srcdir)/sparc_sunos4_mach_dep.s \
-	    $(srcdir)/ia64_save_regs_in_stack.s \
-	    $(srcdir)/sparc_netbsd_mach_dep.s $(UTILS)
+mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/src/sparc_mach_dep.S \
+	    $(srcdir)/src/sparc_sunos4_mach_dep.s \
+	    $(srcdir)/src/ia64_save_regs_in_stack.s \
+	    $(srcdir)/src/sparc_netbsd_mach_dep.s $(UTILS)
 	rm -f mach_dep.o
-	./if_mach SPARC SOLARIS $(CC) -c -o mach_dep2.o $(srcdir)/sparc_mach_dep.S
-	./if_mach SPARC OPENBSD $(AS) -o mach_dep2.o $(srcdir)/sparc_sunos4_mach_dep.s
-	./if_mach SPARC NETBSD $(AS) -o mach_dep2.o $(srcdir)/sparc_netbsd_mach_dep.s
+	./if_mach SPARC SOLARIS $(CC) -c -o mach_dep2.o $(srcdir)/src/sparc_mach_dep.S
+	./if_mach SPARC OPENBSD $(AS) -o mach_dep2.o $(srcdir)/src/sparc_sunos4_mach_dep.s
+	./if_mach SPARC NETBSD $(AS) -o mach_dep2.o $(srcdir)/src/sparc_netbsd_mach_dep.s
 	./if_mach SPARC "" $(CC) -c -o mach_dep1.o $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
 	./if_mach SPARC "" ld -r -o mach_dep.o mach_dep1.o mach_dep2.o
-	./if_mach IA64 "" as $(AS_ABI_FLAG) -o ia64_save_regs_in_stack.o $(srcdir)/ia64_save_regs_in_stack.s
+	./if_mach IA64 "" as $(AS_ABI_FLAG) -o ia64_save_regs_in_stack.o $(srcdir)/src/ia64_save_regs_in_stack.s
 	./if_mach IA64 "" $(CC) -c -o mach_dep1.o $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
 	./if_mach IA64 "" ld -r -o mach_dep.o mach_dep1.o ia64_save_regs_in_stack.o
 	./if_not_there mach_dep.o $(CC) -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c

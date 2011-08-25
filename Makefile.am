@@ -86,8 +86,8 @@ libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS) $(ATOMIC_OPS_LIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info 1:3:0 -no-undefined
 
-EXTRA_libgc_la_SOURCES = sparc_mach_dep.S sparc_netbsd_mach_dep.s \
-    sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s
+EXTRA_libgc_la_SOURCES = src/ia64_save_regs_in_stack.s src/sparc_mach_dep.S \
+    src/sparc_netbsd_mach_dep.s src/sparc_sunos4_mach_dep.s
 
 
 # C++ Interface
