@@ -56,7 +56,7 @@ minutes (a few seconds on a modern machine) before you check the output.
 You should see either a failure indication or a "Collector appears to
 work" message.
 
-If you would prefer a VC++.NET project file, ask boehm@acm.org.  One has
+If you would prefer a VC++ .NET project file, ask Hans Boehm.  One has
 been contributed, but it seems to contain some absolute paths etc., so
 it can presumably only be a starting point, and is not in the standard
 distribution.  It is unclear (to me, Hans Boehm) whether it is feasible to
@@ -147,9 +147,6 @@ If the gc is compiled as dll, the macro ``GC_DLL'' should be defined before
 including "gc.h" (for example, with -DGC_DLL compiler option). It's
 important, otherwise resulting programs will not run.
 
-Ivan Demakov (email: ivan@tgrad.nsk.su)
-
-Note from Ivan Maidanski:
 
 Special note for OpenWatcom users: the C (unlike the C++) compiler (of the
 latest stable release, not sure for older ones) doesn't force pointer global

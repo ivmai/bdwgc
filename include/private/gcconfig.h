@@ -462,7 +462,7 @@
 #   define NOSYS
 #   define mach_type_known
 # endif
-/* Ivan Demakov */
+
 # if defined(__WATCOMC__) && defined(__386__)
 #   define I386
 #   if !defined(OS2) && !defined(MSWIN32) && !defined(DOS4GW)
@@ -1093,8 +1093,7 @@
 #     define ALIGNMENT 4
                         /* Appears to hold for all "32 bit" compilers   */
                         /* except Borland.  The -a4 option fixes        */
-                        /* Borland.                                     */
-                        /* Ivan Demakov: For Watcom the option is -zp4. */
+                        /* Borland.  For Watcom the option is -zp4.     */
 #   endif
 #   ifdef SEQUENT
 #       define OS_TYPE "SEQUENT"

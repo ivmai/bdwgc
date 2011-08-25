@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Ludovic Courtes <ludo@gnu.org>
+ * Copyright (C) 2011 Ludovic Courtes
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED. ANY USE IS AT YOUR OWN RISK.

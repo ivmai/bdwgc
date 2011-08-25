@@ -31,7 +31,7 @@ Robert Brazile (brazile@diamond.bbn.com) originally supplied the ULTRIX code.
 Al Dosser (dosser@src.dec.com) and Regis Cridlig (Regis.Cridlig@cl.cam.ac.uk)
 subsequently provided updates and information on variation between ULTRIX
 systems.  Parag Patel (parag@netcom.com) supplied the A/UX code.
-Jesper Peterson(jep@mtiame.mtia.oz.au), Michel Schinz, and
+Jesper Peterson(jep@mtiame.mtia.oz.au), Michel Schinz <schinz@alphanet.ch>, and
 Martin Tauchmann (martintauchmann@bigfoot.com) supplied the Amiga port.
 Thomas Funke (thf@zelator.in-berlin.de(?)) and
 Brian D.Carlstrom (bdc@clark.lcs.mit.edu) supplied the NeXT ports.
@@ -57,11 +57,23 @@ made it into the released version of the collector, yet.)
 
 More contributors:
 Andrej Cedilnik <acedil1@csee.umbc.edu>
-Bradley D. LaRonde
+Bradley D. LaRonde <brad@ltc.com>
+Brian Alliet <brian@brianweb.net>
+Dave Barrett <barrett@asgard.cs.colorado.edu>
+Dietmar Planitzer <dave.pl@ping.at>
+Gary Leavens <leavens@eecs.ucf.edu>
 Grzegorz Jakacki <jakacki@acm.org>
-Margaret Fleck
+Hironori Sakamoto <hsaka@mth.biglobe.ne.jp>
+Ivan Demakov <ivan@tgrad.nsk.su>
+Kjetil S. Matheussen <ksvalast@ifi.uio.no>
+Lars Farm <lars.farm@ite.mh.se>
+Ludovic Courtes <ludo@gnu.org>
+Margaret Fleck <mfleck@illinois.edu>
 Oliver Kurth <oliver.kurth@innominate.com>
+Patrick C. Beard <beard@netscape.com>
 Petter Urkedal <paurkedal@gmail.com>
 Rob Haack <rhaack@polaris.unm.edu>
+Takis Psarogiannakopoulos <takis@xfree86.org>
 Tilman Vogel <Tilman.Vogel@web.de>
-Tom Tromey
+Tom Tromey <tromey@cygnus.com>
+Xiaokun Zhu <xiaokun@aero.gla.ac.uk>

@@ -45,7 +45,7 @@ WHATS NEW:
                        no effect if this flag is set.
 
    GC_AMIGA_GC - If gc returns NULL, do a GC_gcollect, and try again. This
-                 usually is a success with the standard GC configuration. 
+                 usually is a success with the standard GC configuration.
                  It is allso the most important flag to set to prevent
                  GC from returning chip-mem. Beware that it slows down a lot
                  when a program is rapidly allocating/deallocating when
@@ -133,15 +133,11 @@ BEWARE!
 
 
 tested with software: Radium, http://www.stud.ifi.uio.no/~ksvalast/radium/
-
 tested with hardware: MC68060
 
 
--ksvalast@ifi.uio.no
-
-
 ===========================================================================
-			   Martin Tauchmann's notes		(1-Apr-99)
+                           Martin Tauchmann's notes             (1-Apr-99)
 ===========================================================================
 
 Works now, also with the GNU-C compiler V2.7.2.1. <ftp://ftp.unina.it/pub/amiga/geekgadgets/amiga/m68k/snapshots/971125/amiga-bin/>
@@ -183,13 +179,8 @@ TESTED WITH HARDWARE
 MC68030
 
 
-CONTACT
-
-Please, contact me at <martintauchmann@bigfoot.com>, when you change the
-Amiga port. <http://martintauchmann.home.pages.de>
- 
 ===========================================================================
-			   Michel Schinz's notes
+                           Michel Schinz's notes
 ===========================================================================
 WHO DID WHAT
 
@@ -228,14 +219,9 @@ In addition to Jesper's notes, I have the following to say:
   is loaded in memory, whether a segment is a code or a data segment,
   please let me know.
 
-PROBLEMS
-
-If you have any problem with this version, please contact me at
-schinz@alphanet.ch (but do *not* send long files, since we pay for
-every mail!).
 
 ===========================================================================
-			  Jesper Peterson's notes
+                          Jesper Peterson's notes
 ===========================================================================
 
 ADDITIONAL NOTES FOR AMIGA PORT
@@ -309,14 +295,3 @@ compares favourably with an HP9000 with similar architecture (a 325
 with a 68030 I think).
 
 -----------------------------------------------------------------------
-
-The Amiga port has been brought to you by:
-
-Jesper Peterson.
-
-jep@mtiame.mtia.oz.au		(preferred, but 1 week turnaround)
-jep@orca1.vic.design.telecom.au (that's orca<one>, 1 day turnaround)
-
-At least one of these addresses should be around for a while, even
-though I don't work for either of the companies involved.
-

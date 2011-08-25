@@ -26,7 +26,7 @@
  * other Posix thread implementations.  We are trying to merge
  * all flavors of pthread support code into this file.
  */
- /* DG/UX ix86 support <takis@xfree86.org> */
+
 /*
  * Linux_threads.c now also includes some code to support HPUX and
  * OSF1 (Compaq Tru64 Unix, really).  The OSF1 support is based on Eric Benson's
@@ -845,7 +845,6 @@ STATIC void GC_fork_child_proc(void)
   /* Return the number of processors, or i<= 0 if it can't be determined. */
   STATIC int GC_get_nprocs(void)
   {
-    /* <takis@XFree86.Org> */
     int numCpus;
     struct dg_sys_info_pm_info pm_sysinfo;
     int status = 0;

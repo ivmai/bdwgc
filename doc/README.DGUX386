@@ -36,13 +36,6 @@
      mark (aka --enable-parallel-mark) makes a BIG difference.
 
      Takis Psarogiannakopoulos
-     University of Cambridge
-     Centre for Mathematical Sciences
-     Department of Pure Mathematics
-     Wilberforce Road
-     Cambridge CB3 0WB ,UK , <takis@XFree86.Org>
-     January 2002
-
 
 Note (HB):
      The integration of this patch is currently not complete.

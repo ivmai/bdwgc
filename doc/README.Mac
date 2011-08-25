@@ -39,12 +39,6 @@ provide a supported port of the GC to MacOS. It works for me. If it works
 for you, great. If it doesn't, sorry, try again...;-) Still, if you find
 errors, please let me know.
 
-    mailto:         lars.farm@ite.mh.se
-
-    address:        Lars Farm
-                    Krönvägen 33b
-                    856 44 Sundsvall
-                    Sweden
 
 Porting to MacOS is a bit more complex than it first seems. Which MacOS?
 68K/PowerPC? Which compiler? Each supports both 68K and PowerPC and offer a
@@ -256,7 +250,7 @@ prefix:
 #include <ansi_prefix.mac.h>
 #undef NDEBUG
 
-#define ALL_INTERIOR_POINTERS	/* for GC_priv.h */
+#define ALL_INTERIOR_POINTERS   /* for GC_priv.h */
 ---- ( cut here ) ----
 
 3) Test that the C++ interface 'gc_cpp.cc/h' works with 'test_cpp.cc'.
@@ -335,7 +329,6 @@ Very few. Just one tiny in the GC, not strictly needed.
    It worked for me, hope it works for you.
 
    Lars Farm
-   18 July 1997
 ----------------------------------------------------------------------------
 
 
@@ -356,35 +349,33 @@ Testing
 -------
 
 To test the collector (always a good idea), build one of the gctest projects,
-gctest.¹ (Symantec C++/THINK C), mw/gctest.68K.¹, or mw/gctest.PPC.¹. The
+gctest. (Symantec C++/THINK C), mw/gctest.68K, or mw/gctest.PPC.  The
 test will ask you how many times to run; 1 should be sufficient.
 
-Building 
+Building
 --------
 
 For your convenience project files for the major Macintosh development
 systems are provided.
 
-For Symantec C++/THINK C, you must build the two projects gclib-1.¹ and
-gclib-2.¹. It has to be split up because the collector has more than 32k
+For Symantec C++/THINK C, you must build the two projects gclib-1 and
+gclib-2. It has to be split up because the collector has more than 32k
 of static data and no library can have more than this in the Symantec
 environment. (Future versions will probably fix this.)
 
-For Metrowerks C/C++ 4.5 you build gc.68K.¹/gc.PPC.¹ and the result will
+For Metrowerks C/C++ 4.5 you build gc.68K/PPC and the result will
 be a library called gc.68K.lib/gc.PPC.lib.
 
 Using
 -----
 
-Under Symantec C++/THINK C, you can just add the gclib-1.¹ and gclib-2.¹
+Under Symantec C++/THINK C, you can just add the gclib-1 and gclib-2
 projects to your own project. Under Metrowerks, you add gc.68K.lib or
 gc.PPC.lib and two additional files. You add the files called datastart.c
 and dataend.c to your project, bracketing all files that use the collector.
-See mw/gctest.¹ for an example.
+See mw/gctest for an example.
 
 Include the projects/libraries you built above into your own project,
 #include "gc.h", and call GC_malloc. You don't have to call GC_free.
 
-
 Patrick C. Beard
-January 4, 1995
