@@ -20,24 +20,28 @@
 #endif
 
 #define GC_NO_THREAD_REDIRECTS 1
+                /* Do not redirect thread creation and join calls.      */
 
 #include "gc.h"
 
 #include <pthread.h>
+
 #include <stdlib.h>
+#include <stdio.h>
 
 static void *thread(void *arg)
 {
   GC_INIT();
-  GC_MALLOC(123);
-  GC_MALLOC(12345);
-  return NULL;
+  (void)GC_MALLOC(123);
+  (void)GC_MALLOC(12345);
+  return arg;
 }
 
 #include "private/gcconfig.h"
 
 int main(void)
 {
+  int code;
   pthread_t t;
 # if !(defined(BEOS) || defined(MSWIN32) || defined(MSWINCE) \
        || defined(CYGWIN32) || defined(GC_OPENBSD_THREADS) \
@@ -49,7 +53,13 @@ int main(void)
     /* GC_INIT() must be called from main thread only. */
     GC_INIT();
 # endif
-  pthread_create (&t, NULL, thread, NULL);
-  pthread_join (t, NULL);
+  if ((code = pthread_create (&t, NULL, thread, NULL)) != 0) {
+    printf("Thread creation failed %d\n", code);
+    return 1;
+  }
+  if ((code = pthread_join (t, NULL)) != 0) {
+    printf("Thread join failed %d\n", code);
+    return 1;
+  }
   return 0;
 }
