@@ -1,5 +1,4 @@
 #
-#
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
 #
@@ -9,15 +8,8 @@
 # provided the above notices are retained, and a notice that the code was
 # modified is included with the above copyright notice.
 
-
-## FIXME: trace_test doesn't work on macosx 10.3
-## gcc -g -O2 -o .libs/tracetest trace_test.o  ../.libs/libgc.dylib -lpthread
-## ld: Undefined symbols:
-## _GC_generate_random_backtrace
-
 # Common libs to _LDADD for all tests.
 test_ldadd = $(top_builddir)/libgc.la $(EXTRA_TEST_LIBS)
-
 
 TESTS += gctest$(EXEEXT)
 check_PROGRAMS += gctest
