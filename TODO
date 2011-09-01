@@ -1,2 +1,57 @@
 TODO tasks
 ==========
+
+Determine and extract bug-fix commits (including the one that bumps the version)
+from master since 7.2alpha6 to "release-7_2" branch. Merge the branch back to
+"master" with "--no-ff" option.
+
+In master branch (which serves as a "next release development" branch),
+set version to 7_3alpha1.
+
+tests/CMakeLists.txt: Add more executables (see tests.am).
+
+ChangeLog: it should contain release change log not commit one (see that
+in libatomic_ops).
+
+Add .gitattributes: ensure LF line encoding in the repo.
+
+Use C++0x ATM (atomic memory operations) if available (either from the
+compiler runtime, provided it is reliable, or from the future libatomic_ops).
+
+Add a test for libatomic_ops minimal version required (at compile time).
+
+Add Symbian port.
+
+Merge useful code (if any) from iphone_libgc_6x branch. (Same for gcc_boehmgc
+and mono_libgc.)
+
+Makefile.am: CFLAGS: Add -Wall -Wextra -Wno-unused-parameters. Resolve
+compiler warnings (if any).
+
+configure.host: Move contents to configure.ac and remove the file.
+
+windows-untested: Remove if CMake can generate MS Visual Studio 6.0, 7.0, 8.0
+project files.
+
+BCC_MAKEFILE: Remove if CMake can generate Makefile for this compiler.
+(Same for WCC_MAKEFILE, OS2_MAKEFILE, NT_MAKEFILE, NT_STATIC_THREADS_MAKEFILE,
+NT_X64_STATIC_THREADS_MAKEFILE, NT_X64_THREADS_MAKEFILE, gc.mak.)
+
+Makefile.dj: Remove if it is possible to use auto-generated Makefile instead.
+(Same for EMX_MAKEFILE, Makefile.DLLs.)
+
+build_atomic_ops.sh[.cygwin]: Remove if really not needed.
+
+win32-pthreads/cygwin: compile GC_Create/ExitThread as well (in addition to
+GC_pthread_create); redirect the correspoding functions in gc.h.
+
+
+FIXME tasks
+===========
+
+Solaris + GCC: make check fails with the message:
+libc.so.1: gctest: fatal: libgcc_s.so.1: open failed: No such file or directory
+
+Solaris/x86[_64]: gctest fails if PROC_VDB.
+
+Handle item about GC_get_bytes_since_gc locks (and similar API functions).
