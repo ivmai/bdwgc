@@ -218,7 +218,7 @@ GC_API size_t GC_CALL GC_get_free_bytes_inner(void);
 /* the callback should not, directly or indirectly, make any GC_ or     */
 /* potentially blocking calls.  In particular, it is not safe to        */
 /* allocate memory using the garbage collector from within the callback */
-/* function.                                                            */
+/* function.  Both the setter and getter acquire the GC lock.           */
 typedef void (GC_CALLBACK * GC_start_callback_proc)(void);
 GC_API void GC_CALL GC_set_start_callback(GC_start_callback_proc);
 GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void);
