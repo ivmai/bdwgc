@@ -35,7 +35,7 @@
 # include <tchar.h>
 #endif
 
-#ifdef UNIX_LIKE
+#if defined (UNIX_LIKE) || defined(SYMBIAN)
 # include <fcntl.h>
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -63,7 +63,11 @@
 #ifdef DYNAMIC_LOADING
 # define GC_REGISTER_MAIN_STATIC_DATA() GC_register_main_static_data()
 #else
+#ifdef SYMBIAN
+# define GC_REGISTER_MAIN_STATIC_DATA() FALSE
+#else
 # define GC_REGISTER_MAIN_STATIC_DATA() TRUE
+#endif //SYMBIAN
 #endif
 
 GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
@@ -513,9 +517,13 @@ void GC_init_inner()
       if (0 != GETENV("GC_PRINT_VERBOSE_STATS")) {
         GC_print_stats = VERBOSE;
       } 
-#     if defined(UNIX_LIKE)
-        {
+#if defined (UNIX_LIKE) || defined(SYMBIAN)
+        {	  
+	  #if defined(SYMBIAN)
+	  char * file_name = "c:\\libgc.log";
+	  #else
 	  char * file_name = GETENV("GC_LOG_FILE");
+	  #endif
           if (0 != file_name) {
 	    int log_d = open(file_name, O_CREAT|O_WRONLY|O_APPEND, 0666);
 	    if (log_d < 0) {

@@ -173,6 +173,15 @@
 # endif
 #endif
 
+#if defined(__SYMBIAN32__) && defined(GC_DLL)
+# ifdef GC_BUILD
+#   define GC_API extern EXPORT_C
+# else
+#   define GC_API extern IMPORT_C
+# endif
+#endif
+
+
 #ifndef GC_API
 #define GC_API extern
 #endif

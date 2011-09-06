@@ -140,6 +140,8 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 
 #include "gc.h"
 
+#include "gcconfig.h"
+
 #ifndef THINK_CPLUS
 #  define GC_cdecl
 #else
@@ -294,7 +296,7 @@ inline void* gc::operator new( size_t size, GCPlacement gcp ) {
     else
         return GC_MALLOC_UNCOLLECTABLE( size );}
 
-inline void* gc::operator new( size_t size, void *p ) {
+inline void* gc::operator new( size_t /*size*/, void *p ) {
     return p;}
 
 inline void gc::operator delete( void* obj ) {
@@ -303,7 +305,7 @@ inline void gc::operator delete( void* obj ) {
 #ifdef GC_PLACEMENT_DELETE
   inline void gc::operator delete( void*, void* ) {}
 
-  inline void gc::operator delete( void* p, GCPlacement gcp ) {
+  inline void gc::operator delete( void* p, GCPlacement /*gcp*/ ) {
     GC_FREE(p);
   }
 #endif
@@ -316,7 +318,7 @@ inline void* gc::operator new[]( size_t size ) {
 inline void* gc::operator new[]( size_t size, GCPlacement gcp ) {
     return gc::operator new( size, gcp );}
 
-inline void* gc::operator new[]( size_t size, void *p ) {
+inline void* gc::operator new[]( size_t /*size*/, void *p ) {
     return p;}
 
 inline void gc::operator delete[]( void* obj ) {
@@ -325,7 +327,7 @@ inline void gc::operator delete[]( void* obj ) {
 #ifdef GC_PLACEMENT_DELETE
   inline void gc::operator delete[]( void*, void* ) {}
 
-  inline void gc::operator delete[]( void* p, GCPlacement gcp ) {
+  inline void gc::operator delete[]( void* p, GCPlacement /*gcp*/ ) {
     gc::operator delete(p); }
 
 #endif
@@ -373,9 +375,9 @@ inline void* operator new(
 # ifdef GC_PLACEMENT_DELETE
 inline void operator delete ( 
     void *p, 
-    GCPlacement gcp,
-    GCCleanUpFunc cleanup,
-    void* clientData )
+    GCPlacement /*gcp*/,
+    GCCleanUpFunc /*cleanup*/,
+    void* /*clientData*/ )
 {
     GC_FREE(p);
 }

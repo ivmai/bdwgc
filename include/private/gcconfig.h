@@ -38,6 +38,16 @@
 
 /* Machine specific parts contributed by various people.  See README file. */
 
+/* SYMBIAN */
+# if defined(__SYMBIAN32__)
+#  ifndef SYMBIAN
+#	 define SYMBIAN
+	#ifdef __WINS__
+		#pragma data_seg(".data2")
+	#endif	
+#  endif
+# endif
+    
 /* First a unified test for Linux: */
 # if defined(linux) || defined(__linux__)
 #  ifndef LINUX
@@ -64,7 +74,7 @@
 /* Determine the machine type: */
 # if defined(__arm__) || defined(__thumb__)
 #    define ARM32
-#    if !defined(LINUX) && !defined(NETBSD)
+#    if !defined(LINUX) && !defined(NETBSD) && !defined(SYMBIAN)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -280,12 +290,12 @@
 #   define M68K
 #   define mach_type_known
 # endif
-# if defined(THINK_C) || defined(__MWERKS__) && !defined(__powerc)
+# if defined(THINK_C) || defined(__MWERKS__) && !defined(__powerc) && !defined(SYMBIAN)
 #   define M68K
 #   define MACOS
 #   define mach_type_known
 # endif
-# if defined(__MWERKS__) && defined(__powerc) && !defined(__MACH__)
+# if defined(__MWERKS__) && defined(__powerc) && !defined(__MACH__) && !defined(SYMBIAN)
 #   define POWERPC
 #   define MACOS
 #   define mach_type_known
@@ -373,7 +383,8 @@
 #   define mach_type_known
 # else
 #   if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \
-        || defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__)
+        || defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__) \
+        && !defined(SYMBIAN)
 #     if defined(__LP64__) || defined(_WIN64)
 #	define X86_64
 #     else
@@ -462,7 +473,10 @@
 # endif
 
 /* Feel free to add more clauses here */
-
+# if defined(SYMBIAN)
+#	define mach_type_known
+# endif
+    
 /* Or manually define the machine type here.  A machine type is 	*/
 /* characterized by the architecture.  Some				*/
 /* machine types are further subdivided by OS.				*/
@@ -643,6 +657,17 @@
 #   define HAVE_BUILTIN_UNWIND_INIT
 # endif
 
+# ifdef SYMBIAN
+#	define MACH_TYPE "SYMBIAN"
+#	define OS_TYPE "SYMBIAN"
+#	define CPP_WORDSZ 32
+#	define ALIGNMENT 4
+	#define DATASTART NULL
+	#define DATAEND NULL
+#   define USE_MMAP 
+#   define NO_EXECUTE_PERMISSION
+# endif
+    
 # define STACK_GRAN 0x1000000
 # ifdef M68K
 #   define MACH_TYPE "M68K"

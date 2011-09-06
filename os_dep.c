@@ -51,6 +51,7 @@
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS) \
     && !defined(MSWINCE)
 #   include <sys/types.h>
+#	include <fcntl.h> 
 #   if !defined(MSWIN32)
 #   	include <unistd.h>
 #   endif
@@ -1104,9 +1105,16 @@ ptr_t GC_get_main_stack_base(void)
 
 #endif /* FREEBSD_STACKBOTTOM */
 
+#ifdef SYMBIAN
+ptr_t GC_get_main_stack_base(void)
+{
+	return (ptr_t)GC_get_main_symbian_stack_base();
+}
+#endif
+
 #if !defined(BEOS) && !defined(AMIGA) && !defined(MSWIN32) \
     && !defined(MSWINCE) && !defined(OS2) && !defined(NOSYS) && !defined(ECOS) \
-    && !defined(CYGWIN32)
+    && !defined(CYGWIN32) && !defined(SYMBIAN)
 
 ptr_t GC_get_main_stack_base(void)
 {
@@ -1760,6 +1768,10 @@ void GC_register_data_segments(void)
 #   define HEAP_START 0
 #endif
 
+#ifdef SYMBIAN
+extern char* GC_get_private_path_and_zero_file();
+#endif
+
 ptr_t GC_unix_mmap_get_mem(word bytes)
 {
     void *result;
@@ -1768,8 +1780,14 @@ ptr_t GC_unix_mmap_get_mem(word bytes)
 #   ifndef USE_MMAP_ANON
       static GC_bool initialized = FALSE;
 
-      if (!initialized) {
-	  zero_fd = open("/dev/zero", O_RDONLY);
+      if (!initialized) {	  
+	  #ifdef SYMBIAN
+	  	char* path = GC_get_private_path_and_zero_file();
+	  	zero_fd = open(path, O_RDWR | O_CREAT, 0666);
+	  	free( path );
+	  #else
+	  	zero_fd = open("/dev/zero", O_RDONLY);
+	  #endif	  
 	  fcntl(zero_fd, F_SETFD, FD_CLOEXEC);
 	  initialized = TRUE;
       }

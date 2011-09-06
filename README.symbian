@@ -1,0 +1,13 @@
+2-3 ptites infos car il manque le readme.txt et les tests
+le build se fait avec libgc.mmp(dll)
+Il faut juste faire attention a la limitation introduite par l'emulateur,
+les static roots ne sont pas recuperables dynamiquement(il y a les API pour
+ca, mais ce sont des bouchons).
+Donc sur emulateur, il faut uniquement travailler avec des dlls(gc et
+clients de gc) ou un exe, et recuperer les statics roots avec
+global_init_static_root, a appeler par dll. ou exe.
+Sur target, il faut utiliser au contraire des libs statiques, on recupere
+les static roots avec le linker. Il faut simplement appeler
+global_init_static_root dans l'exe principal comem pr l'emu, qui se charge
+de tout.
+

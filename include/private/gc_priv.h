@@ -1664,6 +1664,7 @@ GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page);
 
 extern GC_bool GC_is_initialized;	/* GC_init() has been run.	*/
 
+
 #if defined(MSWIN32) || defined(MSWINCE)
   void GC_deinit(void);
                                 /* Free any resources allocated by      */
@@ -1924,7 +1925,15 @@ GC_API void GC_printf (const char * format, ...);
 			/* (We use sprintf.  Hopefully that doesn't	*/
 			/* allocate for long arguments.)  		*/
 GC_API void GC_err_printf(const char * format, ...);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 GC_API void GC_log_printf(const char * format, ...);
+#ifdef __cplusplus
+	}
+#endif
+
 void GC_err_puts(const char *s);
 			/* Write s to stderr, don't buffer, don't add	*/
 			/* newlines, don't ...				*/
