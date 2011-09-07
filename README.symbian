@@ -1,13 +1,13 @@
-2-3 ptites infos car il manque le readme.txt et les tests
-le build se fait avec libgc.mmp(dll)
-Il faut juste faire attention a la limitation introduite par l'emulateur,
-les static roots ne sont pas recuperables dynamiquement(il y a les API pour
-ca, mais ce sont des bouchons).
-Donc sur emulateur, il faut uniquement travailler avec des dlls(gc et
-clients de gc) ou un exe, et recuperer les statics roots avec
-global_init_static_root, a appeler par dll. ou exe.
-Sur target, il faut utiliser au contraire des libs statiques, on recupere
-les static roots avec le linker. Il faut simplement appeler
-global_init_static_root dans l'exe principal comem pr l'emu, qui se charge
-de tout.
+Instructions for Symbian:
+1. base version: libgc 7.1
+2. Build: use libgc.mmp
+3. Limitations
+3.1.No multi-threaded support
 
+3.2. Be careful with limitation that emulator introduces: Static roots are not
+dynamically accessible (there are Symbian APIs for this purpose but are just
+stubs, returning irrelevant values).
+Consequently, on emulator, you can only use dlls or exe, and retrieve static
+roots by calling global_init_static_root per dll (or exe).
+On target, only libs are supported, because static roots are retrieved by
+linker flags, by calling global_init_static_root in main exe.
