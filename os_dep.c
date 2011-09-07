@@ -939,10 +939,21 @@ GC_INNER word GC_page_size = 0;
             for (;;) {
                 if (up) {
                     result += MIN_PAGE_SIZE;
-                    if (result >= bound) return bound;
+                    if (result >= bound) {
+                      result = bound;
+                      break;
+                    }
                 } else {
                     result -= MIN_PAGE_SIZE;
-                    if (result <= bound) return bound;
+                    if (result <= bound) {
+                      result = bound - MIN_PAGE_SIZE;
+                                        /* This is to compensate        */
+                                        /* further result increment (we */
+                                        /* do not modify "up" variable  */
+                                        /* since it might be clobbered  */
+                                        /* by setjmp otherwise).        */
+                      break;
+                    }
                 }
                 GC_noop1((word)(*result));
             }
@@ -1356,7 +1367,7 @@ GC_INNER word GC_page_size = 0;
   {
     sb->mem_base = rtems_get_stack_bottom();
     return GC_SUCCESS;
-  } 
+  }
 # define HAVE_GET_STACK_BASE
 #endif /* GC_RTEMS_PTHREADS */
 
