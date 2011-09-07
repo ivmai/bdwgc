@@ -54,4 +54,4 @@ libc.so.1: gctest: fatal: libgcc_s.so.1: open failed: No such file or directory
 
 Solaris/x86[_64]: gctest fails if PROC_VDB.
 
-Handle item about GC_get_bytes_since_gc locks (and similar API functions).
+Cygwin: crashes with USE_MUNMAP: mmap(PROT_NONE) failed.
