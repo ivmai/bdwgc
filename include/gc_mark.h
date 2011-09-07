@@ -207,10 +207,6 @@ GC_API void GC_CALL GC_register_describe_type_fn(int /* kind */,
                                 /* to be used when printing objects     */
                                 /* of a particular kind.                */
 
-/* See gc.h for the description of these "inner" functions.             */
-GC_API size_t GC_CALL GC_get_heap_size_inner(void);
-GC_API size_t GC_CALL GC_get_free_bytes_inner(void);
-
 /* Set and get the client notifier on collections.  The client function */
 /* is called at the start of every full GC (called with the allocation  */
 /* lock held).  May be 0.  This is a really tricky interface to use     */

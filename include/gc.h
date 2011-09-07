@@ -517,23 +517,51 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void);
 /* data structures.  Excludes the unmapped memory (returned to the OS). */
 /* Includes empty blocks and fragmentation loss.  Includes some pages   */
 /* that were allocated but never written.                               */
+/* This is an unsynchronized getter, so it should be called typically   */
+/* with the GC lock held to avoid data races on multiprocessors (the    */
+/* alternative is to use GC_get_heap_usage_safe API call instead).      */
+/* This getter remains lock-free (unsynchronized) for compatibility     */
+/* reason since some existing clients call it from a GC callback        */
+/* holding the allocator lock.  (This API function and the following    */
+/* four ones bellow were made thread-safe in GC v7.2alpha1 and          */
+/* reverted back in v7.2alpha7 for the reason described.)               */
 GC_API size_t GC_CALL GC_get_heap_size(void);
 
 /* Return a lower bound on the number of free bytes in the heap         */
-/* (excluding the unmapped memory space).                               */
+/* (excluding the unmapped memory space).  This is an unsynchronized    */
+/* getter (see GC_get_heap_size comment regarding thread-safety).       */
 GC_API size_t GC_CALL GC_get_free_bytes(void);
 
 /* Return the size (in bytes) of the unmapped memory (which is returned */
 /* to the OS but could be remapped back by the collector later unless   */
-/* the OS runs out of system/virtual memory).                           */
+/* the OS runs out of system/virtual memory). This is an unsynchronized */
+/* getter (see GC_get_heap_size comment regarding thread-safety).       */
 GC_API size_t GC_CALL GC_get_unmapped_bytes(void);
 
 /* Return the number of bytes allocated since the last collection.      */
+/* This is an unsynchronized getter (see GC_get_heap_size comment       */
+/* regarding thread-safety).                                            */
 GC_API size_t GC_CALL GC_get_bytes_since_gc(void);
 
 /* Return the total number of bytes allocated in this process.          */
-/* Never decreases, except due to wrapping.                             */
+/* Never decreases, except due to wrapping.  This is an unsynchronized  */
+/* getter (see GC_get_heap_size comment regarding thread-safety).       */
 GC_API size_t GC_CALL GC_get_total_bytes(void);
+
+/* Return the heap usage information.  This is a thread-safe (atomic)   */
+/* alternative for the five above getters.   (This function acquires    */
+/* the allocator lock thus preventing data racing and returning the     */
+/* consistent result.)  Passing NULL pointer is allowed for any         */
+/* argument.  Returned (filled in) values are of word type.             */
+/* (This API function and the accompanying macro were introduced in     */
+/* GC v7.2alpha7 at the moment when GC_get_heap_size and the friends    */
+/* were made lock-free again.)                                          */
+#define GC_HAVE_GET_HEAP_USAGE_SAFE 1
+GC_API void GC_CALL GC_get_heap_usage_safe(GC_word * /* pheap_size */,
+                                           GC_word * /* pfree_bytes */,
+                                           GC_word * /* punmapped_bytes */,
+                                           GC_word * /* pbytes_since_gc */,
+                                           GC_word * /* ptotal_bytes */);
 
 /* Disable garbage collection.  Even GC_gcollect calls will be          */
 /* ineffective.                                                         */
