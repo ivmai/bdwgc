@@ -149,7 +149,7 @@
 /* we encounter EOF.                                            */
 STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 {
-    ssize_t num_read = 0;
+    size_t num_read = 0;
     ssize_t result;
 
     ASSERT_CANCEL_DISABLED();
@@ -199,7 +199,7 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 GC_INNER char * GC_get_maps(void)
 {
     int f;
-    int result;
+    ssize_t result;
     static char init_buf[1];
     static char *maps_buf = init_buf;
     static size_t maps_buf_sz = 1;
@@ -260,7 +260,7 @@ GC_INNER char * GC_get_maps(void)
                 if (result <= 0)
                   break;
                 maps_size += result;
-            } while (result == maps_buf_sz-1);
+            } while ((size_t)result == maps_buf_sz-1);
             close(f);
             if (result <= 0)
               return 0;
