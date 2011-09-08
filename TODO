@@ -5,9 +5,6 @@ Determine and extract bug-fix commits (including the one that bumps the
 version) from master since 7.2alpha6 to "release-7_2" branch. Merge the branch
 back to "master" with "--no-ff" option.
 
-In master branch (which serves as a "next release development" branch),
-set version to 7_3alpha1.
-
 tests/CMakeLists.txt: Add more executables (see tests.am).
 
 ChangeLog: it should contain release change log not commit one (see that
