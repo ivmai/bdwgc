@@ -1,9 +1,9 @@
 TODO tasks
 ==========
 
-Determine and extract bug-fix commits (including the one that bumps the version)
-from master since 7.2alpha6 to "release-7_2" branch. Merge the branch back to
-"master" with "--no-ff" option.
+Determine and extract bug-fix commits (including the one that bumps the
+version) from master since 7.2alpha6 to "release-7_2" branch. Merge the branch
+back to "master" with "--no-ff" option.
 
 In master branch (which serves as a "next release development" branch),
 set version to 7_3alpha1.
@@ -32,7 +32,8 @@ project files.
 
 BCC_MAKEFILE: Remove if CMake can generate Makefile for this compiler.
 (Same for WCC_MAKEFILE, OS2_MAKEFILE, NT_MAKEFILE, NT_STATIC_THREADS_MAKEFILE,
-NT_X64_STATIC_THREADS_MAKEFILE, NT_X64_THREADS_MAKEFILE, gc.mak.)
+NT_X64_STATIC_THREADS_MAKEFILE, NT_X64_THREADS_MAKEFILE, digimars.mak,
+gc.mak.)
 
 Makefile.dj: Remove if it is possible to use auto-generated Makefile instead.
 (Same for EMX_MAKEFILE, Makefile.DLLs.)
@@ -41,6 +42,10 @@ build_atomic_ops.sh[.cygwin]: Remove if really not needed.
 
 win32-pthreads/cygwin: compile GC_Create/ExitThread as well (in addition to
 GC_pthread_create); redirect the correspoding functions in gc.h.
+
+Use GC_ATTR_UNUSED across the whole project (replace ARGSUSED annotation);
+define GC_ATTR_UNUSED as empty for old GCC releases;
+remove -Wno-unused-parameter from configure.
 
 
 FIXME tasks
