@@ -300,6 +300,10 @@ case "$host" in
       ;;
 esac
 
+if test "$GCC" == yes; then
+  CFLAGS="$CFLAGS -Wall -Wextra -Wno-unused-parameter"
+fi
+
 AC_MSG_CHECKING(for xlc)
 AC_TRY_COMPILE([],[
  #ifndef __xlC__
