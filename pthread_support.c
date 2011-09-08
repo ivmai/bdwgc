@@ -400,7 +400,7 @@ STATIC pthread_t GC_mark_threads[MAX_MARKERS];
 
 static void start_mark_threads(void)
 {
-    unsigned i;
+    int i;
     pthread_attr_t attr;
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
@@ -737,7 +737,7 @@ STATIC void GC_remove_all_threads_but_me(void)
       if (stat_buf[i] == '\n' && stat_buf[i+1] == 'c'
           && stat_buf[i+2] == 'p' && stat_buf[i+3] == 'u') {
         int cpu_no = atoi(&stat_buf[i + 4]);
-        if (cpu_no >= result)
+        if (cpu_no >= (int)result)
           result = cpu_no + 1;
       }
     }
@@ -756,7 +756,7 @@ STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
     GC_ASSERT(I_HOLD_LOCK());
     ASSERT_CANCEL_DISABLED();
     if (GC_incremental && GC_collection_in_progress()) {
-        int old_gc_no = GC_gc_no;
+        word old_gc_no = GC_gc_no;
 
         /* Make sure that no part of our stack is still on the mark stack, */
         /* since it's about to be unmapped.                                */
@@ -1703,7 +1703,7 @@ GC_INNER void GC_lock(void)
     unsigned my_spin_max;
     static unsigned last_spins = 0;
     unsigned my_last_spins;
-    int i;
+    unsigned i;
 
     if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_CLEAR) {
         return;

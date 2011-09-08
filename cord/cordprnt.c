@@ -210,12 +210,12 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         if (prec == VARIABLE) prec = va_arg(args, int);
                         arg = va_arg(args, CORD);
                         len = CORD_len(arg);
-                        if (prec != NONE && len > prec) {
+                        if (prec != NONE && len > (size_t)prec) {
                           if (prec < 0) return(-1);
                           arg = CORD_substr(arg, 0, prec);
                           len = prec;
                         }
-                        if (width != NONE && len < width) {
+                        if (width != NONE && len < (size_t)width) {
                           char * blanks = GC_MALLOC_ATOMIC(width-len+1);
 
                           memset(blanks, ' ', width-len);

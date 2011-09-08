@@ -25,9 +25,6 @@ Merge symbian branch to master.
 Merge useful code (if any) from iphone_libgc_6x branch. (Same for gcc_boehmgc
 and mono_libgc.)
 
-Makefile.am: CFLAGS: Add -Wall -Wextra -Wno-unused-parameters. Resolve
-compiler warnings (if any).
-
 configure.host: Move contents to configure.ac and remove the file.
 
 windows-untested: Remove if CMake can generate MS Visual Studio 6.0, 7.0, 8.0
@@ -58,4 +55,3 @@ Cygwin: crashes with USE_MUNMAP: mmap(PROT_NONE) failed.
 
 Cygwin: autoreconf fails: possibly undefined macro: AC_MSG_ERROR, AS_IF
 at configure.ac:59 and configure.ac:694, respectively (autoreconf-2.68).
-

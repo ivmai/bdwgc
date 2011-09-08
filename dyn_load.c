@@ -544,7 +544,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
   dl_iterate_phdr(GC_register_dynlib_callback, &did_something);
   if (did_something) {
 #   ifdef PT_GNU_RELRO
-      size_t i;
+      int i;
 
       for (i = 0; i < n_load_segs; ++i) {
         if (load_segs[i].end > load_segs[i].start) {
