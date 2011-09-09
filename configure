@@ -4970,6 +4970,7 @@ fi
 
 
 
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inline" >&5
 $as_echo_n "checking for inline... " >&6; }
 if ${ac_cv_c_inline+:} false; then :
@@ -5291,6 +5292,13 @@ $as_echo "#define DGUX_THREADS 1" >>confdefs.h
     $as_echo "#define GC_AIX_THREADS 1" >>confdefs.h
 
     $as_echo "#define _REENTRANT 1" >>confdefs.h
+
+    ;;
+ rtems)
+    THREADS=posix
+    $as_echo "#define GC_RTEMS_PTHREADS 1" >>confdefs.h
+
+    $as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
 
     ;;
  decosf1 | irix | mach | os2 | solaris | dce | vxworks)

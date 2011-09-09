@@ -816,14 +816,23 @@ GC_INNER void GC_stop_init(void)
         ABORT("sem_init failed");
 #   endif
 
-    act.sa_flags = SA_RESTART
+#   ifdef SA_RESTART
+      act.sa_flags = SA_RESTART
+#   else
+      act.sa_flags = 0
+#   endif
 #   ifdef SA_SIGINFO
-        | SA_SIGINFO
+                     | SA_SIGINFO
 #   endif
         ;
     if (sigfillset(&act.sa_mask) != 0) {
         ABORT("sigfillset() failed");
     }
+#   ifdef GC_RTEMS_PTHREADS
+      if(sigprocmask(SIG_UNBLOCK, &act.sa_mask, NULL) != 0) {
+        ABORT("rtems sigprocmask() failed");
+      }
+#   endif
     GC_remove_allowed_signals(&act.sa_mask);
     /* SIG_THR_RESTART is set in the resulting mask.            */
     /* It is unmasked by the handler when necessary.            */

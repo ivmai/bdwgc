@@ -50,6 +50,9 @@
 #if defined(WIN32_THREADS)
 # define GC_WIN32_THREADS
 #endif
+#if defined(RTEMS_THREADS)
+# define GC_RTEMS_PTHREADS
+#endif
 #if defined(USE_LD_WRAP)
 # define GC_USE_LD_WRAP
 #endif
@@ -65,7 +68,7 @@
     || defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) \
     || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS) \
     || defined(GC_OSF1_THREADS) || defined(GC_SOLARIS_THREADS) \
-    || defined(GC_WIN32_THREADS)
+    || defined(GC_WIN32_THREADS) || defined(GC_RTEMS_PTHREADS)
 # ifndef GC_THREADS
 #   define GC_THREADS
 # endif
@@ -115,11 +118,15 @@
     /* Either posix or native Win32 threads. */
 #   define GC_WIN32_THREADS
 # endif
+# if defined(__rtems__) && (defined(i386) || defined(__i386__))
+#   define GC_RTEMS_PTHREADS
+# endif
 #endif /* GC_THREADS */
 
 #undef GC_PTHREADS
 #if (!defined(GC_WIN32_THREADS) || defined(GC_WIN32_PTHREADS) \
-     || defined(__CYGWIN32__) || defined(__CYGWIN__)) && defined(GC_THREADS)
+     || defined(GC_RTEMS_PTHREADS) || defined(__CYGWIN32__) \
+     || defined(__CYGWIN__)) && defined(GC_THREADS)
   /* Posix threads. */
 # define GC_PTHREADS
 #endif
@@ -289,7 +296,8 @@
 #ifdef GC_PTHREADS
 
 # if (defined(GC_DARWIN_THREADS) || defined(GC_WIN32_PTHREADS) \
-      || defined(__native_client__)) && !defined(GC_NO_DLOPEN)
+      || defined(__native_client__) || defined(GC_RTEMS_PTHREADS)) \
+      && !defined(GC_NO_DLOPEN)
     /* Either there is no dlopen() or we do not need to intercept it.   */
 #   define GC_NO_DLOPEN
 # endif

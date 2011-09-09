@@ -52,7 +52,9 @@
 # include <time.h>
 # include <errno.h>
 # include <unistd.h>
-# include <sys/mman.h>
+# if !defined(GC_RTEMS_PTHREADS)
+#   include <sys/mman.h>
+# endif
 # include <sys/time.h>
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -953,6 +955,8 @@ GC_INNER void GC_thr_init(void)
       GC_nprocs = get_ncpu();
 #   elif defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
       GC_nprocs = GC_get_nprocs();
+#   elif defined(GC_RTEMS_PTHREADS)
+      GC_nprocs = 1; /* not implemented */
 #   endif
   }
   if (GC_nprocs <= 0) {

@@ -66,6 +66,9 @@
 /* Define to support Tru64 pthreads. */
 #undef GC_OSF1_THREADS
 
+/* Define to support rtems-pthreads. */
+#undef GC_RTEMS_PTHREADS
+
 /* Define to support Solaris pthreads. */
 #undef GC_SOLARIS_THREADS
 

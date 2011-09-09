@@ -1351,6 +1351,15 @@ GC_INNER word GC_page_size = 0;
 # define HAVE_GET_STACK_BASE
 #endif /* GC_SOLARIS_THREADS */
 
+#ifdef GC_RTEMS_PTHREADS
+  GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
+  {
+    sb->mem_base = rtems_get_stack_bottom();
+    return GC_SUCCESS;
+  } 
+# define HAVE_GET_STACK_BASE
+#endif /* GC_RTEMS_PTHREADS */
+
 #ifndef HAVE_GET_STACK_BASE
   /* Retrieve stack base.                                               */
   /* Using the GC_find_limit version is risky.                          */

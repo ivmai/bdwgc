@@ -1,3 +1,26 @@
+2011-08-09  Ivan Maidanski <ivmai@mail.ru> (really Jie Liu)
+
+	* configure.ac: Add GC_RTEMS_PTHREADS AH_TEMPLATE and configure
+	for rtems.
+	* os_dep.c: Add GC_get_stack_base if GC_RTEMS_PTHREADS for rtems.
+	* pthread_stop_world.c (GC_stop_init): Add ifdef SA_RESTART.
+	* pthread_stop_world.c (GC_stop_init): Use sigprocmask for rtems
+	when defined GC_RTEMS_PTHREADS.
+	* pthread_support.c: Exclude sys/mman.h for rtems.
+	* pthread_support.c (GC_thr_init): Set default GC_nprocs (1) for
+	rtems.
+	* include/gc_config_macros.h: Define GC_RTEMS_PTHREADS for rtems
+	pthread and define GC_NO_DLOPEN for rtems.
+	* include/private/gc_locks.h: Define USE_PTHREAD_LOCKS for rtems.
+	* include/private/gcconfig.h: Use rtems_get_stack_bottom()
+	for InitStackBottom; and use SIGUSR1 for SIG_SUSPEND, SIGUSR2
+	for SIG_THR_RESTART on rtems.
+	* include/private/thread_local_alloc.h: Use USE_PTHREAD_SPECIFIC
+	for rtems.
+	* tests/test.c (Init): Use exit(0) for rtems instead of return.
+	* configure: Regenerate.
+	* include/private/config.h.in: Ditto.
+
 2011-07-26  Ivan Maidanski <ivmai@mail.ru>
 
 	* tests/realloc_test.c: New file.

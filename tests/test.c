@@ -1462,7 +1462,11 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #   ifdef MSWIN32
       GC_win32_free_heap();
 #   endif
-    return(0);
+#   ifdef RTEMS
+      exit(0);
+#   else
+      return(0);
+#   endif
 }
 # endif
 
