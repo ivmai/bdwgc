@@ -113,8 +113,11 @@ void *test(void *data)
 
 int main()
 {
+#if THREAD_CNT > 1
     pthread_t th[THREAD_CNT];
     int i;
+#endif
+
     GC_init();
     GC_init_finalized_malloc();
 #if THREAD_CNT > 1

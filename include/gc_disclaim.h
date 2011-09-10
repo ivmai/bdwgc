@@ -23,9 +23,9 @@
 /* will be protected from collection if "mark_from_all" is non-zero,    */
 /* but at the expense that long chains of objects will take many cycles */
 /* to reclaim.                                                          */
-int GC_register_disclaim_proc(int kind,
-			      int (*proc)(void *obj, void *cd), void *cd,
-			      int mark_from_all);
+void GC_register_disclaim_proc(int kind,
+                               int (*proc)(void *obj, void *cd), void *cd,
+                               int mark_from_all);
 
 /* The finalizer closure used by GC_finalized_malloc.                   */
 struct GC_finalizer_closure {

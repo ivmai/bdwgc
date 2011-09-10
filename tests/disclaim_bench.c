@@ -56,7 +56,6 @@ testobj_t testobj_new(int model)
 int main(int argc, char **argv)
 {
     int i;
-    int repeat;
     int model;
     testobj_t *keep_arr;
     double t;
