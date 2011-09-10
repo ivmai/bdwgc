@@ -5,9 +5,9 @@
 
 /* Low level interface for reclaim callbacks. */
 
-int GC_register_disclaim_proc(int kind,
-                              int (*proc)(void *obj, void *cd), void *cd,
-                              int mark_unconditionally)
+void GC_register_disclaim_proc(int kind,
+                               int (*proc)(void *obj, void *cd), void *cd,
+                               int mark_unconditionally)
 {
     GC_obj_kinds[kind].ok_disclaim_proc = proc;
     GC_obj_kinds[kind].ok_disclaim_cd = cd;
