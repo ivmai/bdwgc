@@ -1243,6 +1243,9 @@ GC_EXTERN struct obj_kind {
                         /* is reclaimed, but must also tolerate being   */
                         /* called with object from freelist.  Non-zero  */
                         /* exit prevents object from being reclaimed.   */
+#    define OK_DISCLAIM_INITZ FALSE, NULL, NULL
+#  else
+#    define OK_DISCLAIM_INITZ
 #  endif
 } GC_obj_kinds[MAXOBJKINDS];
 

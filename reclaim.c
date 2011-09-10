@@ -382,9 +382,8 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
 #             ifdef ENABLE_DISCLAIM
                 if (EXPECT(hhdr->hb_flags & HAS_DISCLAIM, 0)) {
                   struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
-                  int resurrect;
-                  resurrect = (*ok->ok_disclaim_proc)(hbp, ok->ok_disclaim_cd);
-                  if (resurrect) {
+                  if ((*ok->ok_disclaim_proc)(hbp, ok->ok_disclaim_cd)) {
+                    /* Not disclaimed => resurrect the object. */
                     set_mark_bit_from_hdr(hhdr, 0);
                     /* excuse me, */ goto in_use;
                   }
@@ -397,7 +396,9 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
               GC_freehblk(hbp);
             }
         } else {
+#        ifdef ENABLE_DISCLAIM
           in_use:
+#        endif
             if (hhdr -> hb_descr != 0) {
               GC_composite_in_use += sz;
             } else {
