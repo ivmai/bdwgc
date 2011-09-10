@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007 by Hewlett-Packard Company. All rights reserved.
+ * Copyright (c) 2007-2011 by Hewlett-Packard Company. All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
