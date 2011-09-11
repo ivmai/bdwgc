@@ -47,6 +47,8 @@ Use GC_ATTR_UNUSED across the whole project (replace ARGSUSED annotation);
 define GC_ATTR_UNUSED as empty for old GCC releases;
 remove -Wno-unused-parameter from configure.
 
+configure.ac: Add option to build GC via extra/gc.c compilation.
+
 
 FIXME tasks
 ===========
