@@ -301,10 +301,12 @@ GC_INNER char * GC_get_maps(void)
 /* (*end), (*prot), (*maj_dev) and (*mapping_name).  mapping_name may   */
 /* be NULL. (*prot) and (*mapping_name) are assigned pointers into the  */
 /* original buffer.                                                     */
-GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
-                                  char **prot, unsigned int *maj_dev,
-                                  char **mapping_name)
-{
+#if defined(REDIRECT_MALLOC) || defined(DYNAMIC_LOADING) || defined(IA64) \
+    || defined(INCLUDE_LINUX_THREAD_DESCR)
+  GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
+                                    char **prot, unsigned int *maj_dev,
+                                    char **mapping_name)
+  {
     char *start_start, *end_start, *maj_dev_start;
     char *p;
     char *endp;
@@ -345,9 +347,9 @@ GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
       *mapping_name = p;
       while (*p && *p++ != '\n');
     }
-
     return p;
-}
+  }
+#endif /* REDIRECT_MALLOC || DYNAMIC_LOADING || IA64 || ... */
 
 #if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)
   /* Try to read the backing store base from /proc/self/maps.           */

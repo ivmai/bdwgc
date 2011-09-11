@@ -2115,9 +2115,11 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #endif
 
 #ifdef NEED_PROC_MAPS
-  GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
-                                    char **prot, unsigned int *maj_dev,
-                                    char **mapping_name);
+# ifdef DYNAMIC_LOADING
+    GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
+                                      char **prot, unsigned int *maj_dev,
+                                      char **mapping_name);
+# endif
   GC_INNER char *GC_get_maps(void); /* from os_dep.c */
 #endif
 
