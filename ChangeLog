@@ -1,3 +1,17 @@
+2011-08-14  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+
+	* configure.ac: Remove checks for ar and ranlib.
+	* configure.ac: Replace AC_CHECK_HEADER with PKG_CHECK_MODULES when
+	checking for libatomic_ops.  The macro sets the appropriate flags, so
+	simplify accordingly.
+	* Makefile.am, configure.ac: Set ATOMIC_OPS_CFLAGS in configure.ac
+	instead of conditionally doing it in Makefile.am, to be more
+	consistent with the pkg-config case.
+	* configure.ac: Fix a typo and some phrases.
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Ditto.
+	* configure: Ditto.
+
 2011-08-11  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
 
 	* configure.ac: Since we no longer bundle libatomic_ops, we must
