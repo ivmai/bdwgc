@@ -555,9 +555,6 @@ AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
 
 # files used by makefiles other than Makefile.am
 #
-
-# The libatomic_ops library.  This is not ideal, since we pick up junk from
-# there.
 EXTRA_DIST = gc_cpp.cpp README.QUICK BCC_MAKEFILE NT_MAKEFILE \
 	OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE \
 	Makefile.direct Makefile.dj Makefile.DLLs SMakefile.amiga \
@@ -570,10 +567,10 @@ EXTRA_DIST = gc_cpp.cpp README.QUICK BCC_MAKEFILE NT_MAKEFILE \
 	mach_dep.c extra/setjmp_t.c extra/threadlibs.c extra/AmigaOS.c \
 	Mac_files/datastart.c Mac_files/dataend.c \
 	Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-	include/private/msvc_dbg.h extra/msvc_dbg.c libatomic_ops \
-	cord/cordbscs.c cord/cordtest.c cord/de.c cord/cordprnt.c \
-	cord/cordxtra.c cord/de_cmds.h cord/de_win.h cord/de_win.c \
-	cord/de_win.RC cord/de_win.ICO
+	include/private/msvc_dbg.h extra/msvc_dbg.c cord/cordbscs.c \
+	cord/cordtest.c cord/de.c cord/cordprnt.c cord/cordxtra.c \
+	cord/de_cmds.h cord/de_win.h cord/de_win.c cord/de_win.RC \
+	cord/de_win.ICO
 
 # C Library
 # ---------

@@ -16611,6 +16611,12 @@ fi
 
 fi
 
+# If we have neither an external or an internal version, offer a useful hint
+# and exit.
+if test x"$with_libatomic_ops" = xno -a ! -e "$srcdir/libatomic_ops"; then :
+   as_fn_error $? "libatomic_ops is required.  You can either install it on your system, or fetch and unpack a resent version into the source directory and link or rename it to libatomic_ops." "$LINENO" 5
+fi
+
 # Finally, emit the definitions for bundled or pre-installed AO.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking which libatomic_ops to use" >&5
 $as_echo_n "checking which libatomic_ops to use... " >&6; }
@@ -16622,8 +16628,8 @@ $as_echo "pre-installed" >&6; }
     ATOMIC_OPS_LIBS="-latomic_ops"
 
 else
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: bundled" >&5
-$as_echo "bundled" >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: internal" >&5
+$as_echo "internal" >&6; }
     subdirs="$subdirs libatomic_ops"
 
 

@@ -1,3 +1,12 @@
+2011-08-11  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+
+	* configure.ac: Since we no longer bundle libatomic_ops, we must
+	check for the sub-directory before using it, in case we didn't
+	find an installed version.
+	* Makefile.am: Don't include libatomic_ops in the distribution.
+	* Makefile.in: Regenerate.
+	* configure: Ditto.
+
 2011-08-09  Ivan Maidanski <ivmai@mail.ru> (really Jie Liu)
 
 	* configure.ac: Add GC_RTEMS_PTHREADS AH_TEMPLATE and configure
