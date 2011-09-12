@@ -29,6 +29,11 @@ pkginclude_HEADERS += \
         include/gc_tiny_fl.h \
         include/gc_version.h
 
+if ENABLE_DISCLAIM
+pkginclude_HEADERS += include/gc_disclaim.h
+endif
+EXTRA_DIST += include/gc_disclaim.h
+
 # headers which are not installed
 #
 dist_noinst_HEADERS += \
