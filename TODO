@@ -1,13 +1,6 @@
 TODO tasks
 ==========
 
-Extract bug-fix commits from master since 7.2alpha6 to "hotfix-7_2a6-1"
-branch (and merge it to release with "--no-ff" option). Commits list in
-reversed order (update ChangeLog for significant commits): 0feaf5b, 42a4604,
-9178d45, aec2500, 1de2070, fd6737b, 00d1059, cc71a44, 8e32d79(?), e773036,
-f4252bf, a63d343, 31831b1, 0e57ad6, d0f0438, aaa0655(?), ce5d588, 06c1e2c,
-463d083(?), cea7d64, 45a3887, ac6f0f9.
-
 tests/CMakeLists.txt: Add more executables (see tests.am).
 
 ChangeLog: it should contain release change log not commit one (see that
