@@ -17,6 +17,73 @@
 	* tests/staticrootstest.c (main): Cast sizeof() value to int in
 	comparisons.
 
+2011-09-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c (GC_find_limit_with_bound): Inside loop, set result local
+	volatile variable and do break instead of return (this also suppresses
+	compiler warning about the potential clobbering of "bound" variable
+	by setjmp).
+
+2011-09-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (GC_get_heap_size, GC_get_free_bytes,
+	GC_get_unmapped_bytes, GC_get_bytes_since_gc, GC_get_total_bytes):
+	Refine comment.
+	* include/gc.h (GC_HAVE_GET_HEAP_USAGE_SAFE): New macro.
+	* include/gc.h (GC_get_heap_usage_safe): New API function.
+	* misc.c (GC_get_heap_usage_safe): Likewise.
+	* include/gc_mark.h (GC_get_heap_size_inner, GC_get_free_bytes_inner):
+	Remove API function.
+	* misc.c (GC_get_heap_size_inner, GC_get_free_bytes_inner): Likewise.
+	* misc.c (GC_get_heap_size): Add comment.
+	* misc.c (GC_get_heap_size, GC_get_free_bytes, GC_get_unmapped_bytes,
+	GC_get_bytes_since_gc, GC_get_total_bytes): Remove locking.
+	* misc.c (GC_get_unmapped_bytes): Do not test USE_MUNMAP (not needed
+	after locking removal).
+	* misc.c (GC_get_bytes_since_gc, GC_get_total_bytes): Cast result to
+	size_t.
+
+2011-09-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_mark.h (GC_set_start_callback): Refine comment (the
+	function acquires the GC lock).
+	* include/gc.h (GC_set_all_interior_pointers, GC_set_stop_func,
+	GC_get_stack_base): Likewise.
+	* include/gc.h (GC_get_version, GC_get_gc_no, GC_get_parallel,
+	GC_set_find_leak, GC_get_all_interior_pointers,
+	GC_get_dont_precollect, GC_get_pages_executable, GC_set_max_heap_size,
+	GC_set_force_unmap_on_gcollect): Refine comment (the function is
+	lock-free).
+
+2011-08-31  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/initsecondarythread.c: Include windows.h instead of pthread.h
+	unless GC_PTHREADS.
+	* tests/thread_leak_test.c: Likewise.
+	* tests/initsecondarythread.c (thread): Use WINAPI and set return
+	type to DWORD unless GC_PTHREADS.
+	* tests/thread_leak_test.c (test): Likewise.
+	* tests/initsecondarythread.c (main): Use HANDLE, CreateThread and
+	WaitForSingleObject instead of pthread_t, pthread_create and
+	pthread_join, respectively, unless GC_PTHREADS.
+	* tests/thread_leak_test.c (main): Likewise.
+
+2011-08-31  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/initsecondarythread.c (GC_NO_THREAD_REDIRECTS): Add comment.
+	* tests/initsecondarythread.c: Include stdio.h.
+	* tests/initsecondarythread.c (thread): Cast result of malloc to void;
+	return arg parameter instead of NULL (to suppress compiler warnings).
+	* tests/initsecondarythread.c (main): Define "code" local variable;
+	store result of pthread_create and pthread_join to "code" variable;
+	exit application with an error code (with the corresponding error
+	message) if pthread_create or pthread_join fails.
+
+2011-08-31  Ivan Maidanski <ivmai@mail.ru>  (really Jean-Claude Beaudoin)
+
+	* include/private/gcconfig.h (GETCONTEXT_FPU_EXCMASK_BUG): Add FIXME
+	that this is no longer needed with the recent GLibC.
+
 2011-08-24  Ivan Maidanski <ivmai@mail.ru>
 
 	* hpux_test_and_clear.s: Remove.
@@ -41,6 +108,23 @@
 	* windows-untested/vc71/gc.vcproj (Header Files): Ditto.
 	* windows-untested/vc71/libgc.vcproj (Header Files): Ditto.
 	* Makefile.in: Regenerate.
+
+2011-08-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* allchblk.c (GC_allochblk_nth): Cast MAX_BLACK_LIST_ALLOC and
+	HBLKSIZE to signed_word.
+	* mallocx.c (GC_generic_malloc_many): Cast my_bytes_allocd to word.
+	* mark.c (GC_do_local_mark): Cast the result of local_top minus
+	local_mark_stack to word (since is non-negative).
+	* misc.c (GC_base): Declare sz as unsigned word.
+	* misc.c (GC_enable_incremental): Cast bytes_written to size_t in
+	comparison to len.
+	* obj_map.c (GC_initialize_offsets): Declare 'i' as unsigned.
+	* os_dep.c (GC_or_pages): Ditto.
+	* typd_mlc.c (GC_init_explicit_typing): Ditto.
+	* ptr_chck.c (GC_is_visible): Cast the result of p minus base to word.
+	* typd_mlc.c (GC_make_descriptor): Cast last_set_bit to word (since
+	non-negative) when compared to BITMAP_BITS.
 
 2011-08-14  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
 
