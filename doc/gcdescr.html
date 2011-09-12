@@ -612,9 +612,6 @@ transferred back to the global free list.
 Note that if the collector is configured for thread-local allocation,
 GC versions before 7 do not invoke the thread-local allocator by default.
 <TT>GC_malloc</tt> only uses thread-local allocation in version 7 and later.
-In earlier versions, <TT>GC_MALLOC</tt> (all caps) may be directed
-to use thread-local allocation by defining <TT>GC_REDIRECT_TO_LOCAL</tt>
-and then include <TT>gc_local_alloc.h</tt>.
 <P>
 For some more details see <A HREF="scale.html">here</a>, and the
 technical report entitled

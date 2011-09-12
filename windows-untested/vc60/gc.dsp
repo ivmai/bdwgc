@@ -213,10 +213,6 @@ SOURCE=..\..\include\gc.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\include\gc_alloc.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\include\gc_allocator.h
 # End Source File
 # Begin Source File
@@ -250,10 +246,6 @@ SOURCE=..\..\include\gc_inl.h
 # Begin Source File
 
 SOURCE=..\..\include\gc_inline.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\include\gc_local_alloc.h
 # End Source File
 # Begin Source File
 

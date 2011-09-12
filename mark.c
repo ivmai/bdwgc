@@ -36,11 +36,10 @@
 #endif
 
 /* Single argument version, robust against whole program analysis. */
+volatile word GC_noop_sink;
 GC_API void GC_CALL GC_noop1(word x)
 {
-    static volatile word sink;
-
-    sink = x;
+    GC_noop_sink = x;
 }
 
 /* mark_proc GC_mark_procs[MAX_MARK_PROCS] = {0} -- declared in gc_priv.h */
@@ -987,7 +986,8 @@ STATIC void GC_do_local_mark(mse *local_mark_stack, mse *local_top)
             local_top = GC_mark_from(local_top, local_mark_stack,
                                      local_mark_stack + LOCAL_MARK_STACK_SIZE);
             if (local_top < local_mark_stack) return;
-            if (local_top - local_mark_stack >= LOCAL_MARK_STACK_SIZE/2) {
+            if ((word)(local_top - local_mark_stack)
+                        >= LOCAL_MARK_STACK_SIZE / 2) {
                 GC_return_mark_stack(local_mark_stack, local_top);
                 return;
             }

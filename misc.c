@@ -375,7 +375,7 @@ GC_API void * GC_CALL GC_base(void * p)
         r = (ptr_t)((word)r & ~(WORDS_TO_BYTES(1) - 1));
         {
             size_t offset = HBLKDISPL(r);
-            signed_word sz = candidate_hdr -> hb_sz;
+            word sz = candidate_hdr -> hb_sz;
             size_t obj_displ = offset % sz;
 
             r -= obj_displ;
@@ -399,74 +399,61 @@ GC_API size_t GC_CALL GC_size(const void * p)
     return hhdr -> hb_sz;
 }
 
+
+/* These getters remain unsynchronized for compatibility (since some    */
+/* clients could call some of them from a GC callback holding the       */
+/* allocator lock).                                                     */
 GC_API size_t GC_CALL GC_get_heap_size(void)
 {
-    size_t value;
-    DCL_LOCK_STATE;
-    LOCK();
     /* ignore the memory space returned to OS (i.e. count only the      */
     /* space owned by the garbage collector)                            */
-    value = (size_t)(GC_heapsize - GC_unmapped_bytes);
-    UNLOCK();
-    return value;
+    return (size_t)(GC_heapsize - GC_unmapped_bytes);
 }
 
 GC_API size_t GC_CALL GC_get_free_bytes(void)
 {
-    size_t value;
-    DCL_LOCK_STATE;
-    LOCK();
     /* ignore the memory space returned to OS */
-    value = (size_t)(GC_large_free_bytes - GC_unmapped_bytes);
-    UNLOCK();
-    return value;
-}
-
-/* The _inner versions assume the caller holds the allocation lock.     */
-/* Declared in gc_mark.h (where other public "inner" functions reside). */
-GC_API size_t GC_CALL GC_get_heap_size_inner(void)
-{
-    return (size_t)(GC_heapsize - GC_unmapped_bytes);
-}
-
-GC_API size_t GC_CALL GC_get_free_bytes_inner(void)
-{
     return (size_t)(GC_large_free_bytes - GC_unmapped_bytes);
 }
 
 GC_API size_t GC_CALL GC_get_unmapped_bytes(void)
 {
-# ifdef USE_MUNMAP
-    size_t value;
-    DCL_LOCK_STATE;
-    LOCK();
-    value = (size_t)GC_unmapped_bytes;
-    UNLOCK();
-    return value;
-# else
-    return 0;
-# endif
+    return (size_t)GC_unmapped_bytes;
 }
 
 GC_API size_t GC_CALL GC_get_bytes_since_gc(void)
 {
-    size_t value;
-    DCL_LOCK_STATE;
-    LOCK();
-    value = GC_bytes_allocd;
-    UNLOCK();
-    return value;
+    return (size_t)GC_bytes_allocd;
 }
 
 GC_API size_t GC_CALL GC_get_total_bytes(void)
 {
-    size_t value;
-    DCL_LOCK_STATE;
-    LOCK();
-    value = GC_bytes_allocd+GC_bytes_allocd_before_gc;
-    UNLOCK();
-    return value;
+    return (size_t)(GC_bytes_allocd + GC_bytes_allocd_before_gc);
 }
+
+/* Return the heap usage information.  This is a thread-safe (atomic)   */
+/* alternative for the five above getters.  NULL pointer is allowed for */
+/* any argument.  Returned (filled in) values are of word type.         */
+GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
+                        GC_word *pfree_bytes, GC_word *punmapped_bytes,
+                        GC_word *pbytes_since_gc, GC_word *ptotal_bytes)
+{
+  DCL_LOCK_STATE;
+
+  LOCK();
+  if (pheap_size != NULL)
+    *pheap_size = GC_heapsize - GC_unmapped_bytes;
+  if (pfree_bytes != NULL)
+    *pfree_bytes = GC_large_free_bytes - GC_unmapped_bytes;
+  if (punmapped_bytes != NULL)
+    *punmapped_bytes = GC_unmapped_bytes;
+  if (pbytes_since_gc != NULL)
+    *pbytes_since_gc = GC_bytes_allocd;
+  if (ptotal_bytes != NULL)
+    *ptotal_bytes = GC_bytes_allocd + GC_bytes_allocd_before_gc;
+  UNLOCK();
+}
+
 
 #ifdef THREADS
   GC_API int GC_CALL GC_get_suspend_signal(void)
@@ -663,6 +650,14 @@ GC_API void GC_CALL GC_init(void)
     IF_CANCEL(int cancel_state;)
 
     if (GC_is_initialized) return;
+#   ifdef REDIRECT_MALLOC
+      {
+        static GC_bool init_started = FALSE;
+        if (init_started)
+          ABORT("Redirected malloc() called during GC init");
+        init_started = TRUE;
+      }
+#   endif
 
 #   ifdef GC_INITIAL_HEAP_SIZE
       initial_heap_sz = divHBLKSZ(GC_INITIAL_HEAP_SIZE);
@@ -906,8 +901,8 @@ GC_API void GC_CALL GC_init(void)
 #   if defined(NETBSD) && defined(__ELF__)
         GC_init_netbsd_elf();
 #   endif
-#   if !defined(THREADS) || defined(GC_PTHREADS) || defined(GC_WIN32_THREADS) \
-        || defined(GC_SOLARIS_THREADS)
+#   if !defined(THREADS) || defined(GC_PTHREADS) \
+        || defined(GC_WIN32_THREADS) || defined(GC_SOLARIS_THREADS)
       if (GC_stackbottom == 0) {
         GC_stackbottom = GC_get_main_stack_base();
 #       if (defined(LINUX) || defined(HPUX)) && defined(IA64)
@@ -929,11 +924,7 @@ GC_API void GC_CALL GC_init(void)
     GC_STATIC_ASSERT(sizeof (signed_word) == sizeof(word));
     GC_STATIC_ASSERT(sizeof (struct hblk) == HBLKSIZE);
 #   ifndef THREADS
-#     ifdef STACK_GROWS_DOWN
-        GC_ASSERT((word)(&dummy) <= (word)GC_stackbottom);
-#     else
-        GC_ASSERT((word)(&dummy) >= (word)GC_stackbottom);
-#     endif
+      GC_ASSERT(!((word)GC_stackbottom HOTTER_THAN (word)(&dummy)));
 #   endif
 #   if !defined(_AUX_SOURCE) || defined(__GNUC__)
       GC_STATIC_ASSERT((word)(-1) > (word)0);
@@ -1253,7 +1244,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
       IF_CANCEL(int cancel_state;)
 
       DISABLE_CANCEL(cancel_state);
-      while (bytes_written < len) {
+      while ((size_t)bytes_written < len) {
 #        ifdef GC_SOLARIS_THREADS
              result = syscall(SYS_write, fd, buf + bytes_written,
                                              len - bytes_written);

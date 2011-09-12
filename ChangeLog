@@ -1,3 +1,320 @@
+2011-09-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordprnt.c (CORD_vsprintf): Cast "prec" and "width" local
+	variables to size_t.
+	* dyn_load.c (GC_register_dynamic_libraries_dl_iterate_phdr): Change
+	type of "i" local variable to int.
+	* pthread_support.c (start_mark_threads): Likewise.
+	* os_dep.c (GC_repeat_read): Change type of "num_read" to size_t.
+	* os_dep.c (GC_get_maps): Change type of "result" local variable from
+	int to ssize_t; cast "result" to size_t in comparison.
+	* pthread_support.c (GC_remove_all_threads_but_me): Cast "result" to
+	int.
+	* pthread_support.c (GC_wait_for_gc_completion): Change type of
+	"old_gc_no" local variable to word.
+	* pthread_support.c (GC_lock): Change type of "i" local variable to
+	unsigned.
+	* tests/staticrootstest.c (main): Cast sizeof() value to int in
+	comparisons.
+
+2011-09-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c (GC_find_limit_with_bound): Inside loop, set result local
+	volatile variable and do break instead of return (this also suppresses
+	compiler warning about the potential clobbering of "bound" variable
+	by setjmp).
+
+2011-09-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (GC_get_heap_size, GC_get_free_bytes,
+	GC_get_unmapped_bytes, GC_get_bytes_since_gc, GC_get_total_bytes):
+	Refine comment.
+	* include/gc.h (GC_HAVE_GET_HEAP_USAGE_SAFE): New macro.
+	* include/gc.h (GC_get_heap_usage_safe): New API function.
+	* misc.c (GC_get_heap_usage_safe): Likewise.
+	* include/gc_mark.h (GC_get_heap_size_inner, GC_get_free_bytes_inner):
+	Remove API function.
+	* misc.c (GC_get_heap_size_inner, GC_get_free_bytes_inner): Likewise.
+	* misc.c (GC_get_heap_size): Add comment.
+	* misc.c (GC_get_heap_size, GC_get_free_bytes, GC_get_unmapped_bytes,
+	GC_get_bytes_since_gc, GC_get_total_bytes): Remove locking.
+	* misc.c (GC_get_unmapped_bytes): Do not test USE_MUNMAP (not needed
+	after locking removal).
+	* misc.c (GC_get_bytes_since_gc, GC_get_total_bytes): Cast result to
+	size_t.
+
+2011-09-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_mark.h (GC_set_start_callback): Refine comment (the
+	function acquires the GC lock).
+	* include/gc.h (GC_set_all_interior_pointers, GC_set_stop_func,
+	GC_get_stack_base): Likewise.
+	* include/gc.h (GC_get_version, GC_get_gc_no, GC_get_parallel,
+	GC_set_find_leak, GC_get_all_interior_pointers,
+	GC_get_dont_precollect, GC_get_pages_executable, GC_set_max_heap_size,
+	GC_set_force_unmap_on_gcollect): Refine comment (the function is
+	lock-free).
+
+2011-08-31  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/initsecondarythread.c: Include windows.h instead of pthread.h
+	unless GC_PTHREADS.
+	* tests/thread_leak_test.c: Likewise.
+	* tests/initsecondarythread.c (thread): Use WINAPI and set return
+	type to DWORD unless GC_PTHREADS.
+	* tests/thread_leak_test.c (test): Likewise.
+	* tests/initsecondarythread.c (main): Use HANDLE, CreateThread and
+	WaitForSingleObject instead of pthread_t, pthread_create and
+	pthread_join, respectively, unless GC_PTHREADS.
+	* tests/thread_leak_test.c (main): Likewise.
+
+2011-08-31  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/initsecondarythread.c (GC_NO_THREAD_REDIRECTS): Add comment.
+	* tests/initsecondarythread.c: Include stdio.h.
+	* tests/initsecondarythread.c (thread): Cast result of malloc to void;
+	return arg parameter instead of NULL (to suppress compiler warnings).
+	* tests/initsecondarythread.c (main): Define "code" local variable;
+	store result of pthread_create and pthread_join to "code" variable;
+	exit application with an error code (with the corresponding error
+	message) if pthread_create or pthread_join fails.
+
+2011-08-31  Ivan Maidanski <ivmai@mail.ru>  (really Jean-Claude Beaudoin)
+
+	* include/private/gcconfig.h (GETCONTEXT_FPU_EXCMASK_BUG): Add FIXME
+	that this is no longer needed with the recent GLibC.
+
+2011-08-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* hpux_test_and_clear.s: Remove.
+	* Makefile.am (EXTRA_DIST): Remove hpux_test_and_clear.s.
+	* Makefile.direct (SRCS): Ditto.
+	* Makefile.dj (SRCS): Ditto.
+	* Makefile.dj (SRCS): Remove missing gcc_support.c,
+	include/gc_alloc.h, include/gc_local_alloc.h.
+	* doc/gcdescr.html: Remove information about gc_local_alloc.h.
+	* doc/gcinterface.html: Ditto.
+	* doc/scale.html: Ditto.
+	* doc/gcinterface.html: Remove information about gc_alloc.h.
+	* tests/test_cpp.cc: Don't include missing old gc_alloc.h (include
+	new_gc_alloc.h instead); don't test __GNUC__.
+	* tests/test_cpp.cc (main): Use gc_alloc class instead of alloc (don't
+	test __GNUC__).
+	* windows-untested/vc60/gc.dsp (SOURCE): Don't include missing
+	gc_alloc.h, gc_local_alloc.h.
+	* windows-untested/vc60/libgc.dsp (SOURCE): Ditto.
+	* windows-untested/vc70/gc.vcproj (Header Files): Ditto.
+	* windows-untested/vc70/libgc.vcproj (Header Files): Ditto.
+	* windows-untested/vc71/gc.vcproj (Header Files): Ditto.
+	* windows-untested/vc71/libgc.vcproj (Header Files): Ditto.
+	* Makefile.in: Regenerate.
+
+2011-08-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* allchblk.c (GC_allochblk_nth): Cast MAX_BLACK_LIST_ALLOC and
+	HBLKSIZE to signed_word.
+	* mallocx.c (GC_generic_malloc_many): Cast my_bytes_allocd to word.
+	* mark.c (GC_do_local_mark): Cast the result of local_top minus
+	local_mark_stack to word (since is non-negative).
+	* misc.c (GC_base): Declare sz as unsigned word.
+	* misc.c (GC_enable_incremental): Cast bytes_written to size_t in
+	comparison to len.
+	* obj_map.c (GC_initialize_offsets): Declare 'i' as unsigned.
+	* os_dep.c (GC_or_pages): Ditto.
+	* typd_mlc.c (GC_init_explicit_typing): Ditto.
+	* ptr_chck.c (GC_is_visible): Cast the result of p minus base to word.
+	* typd_mlc.c (GC_make_descriptor): Cast last_set_bit to word (since
+	non-negative) when compared to BITMAP_BITS.
+
+2011-08-14  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+
+	* configure.ac: Remove checks for ar and ranlib.
+	* configure.ac: Replace AC_CHECK_HEADER with PKG_CHECK_MODULES when
+	checking for libatomic_ops.  The macro sets the appropriate flags, so
+	simplify accordingly.
+	* Makefile.am, configure.ac: Set ATOMIC_OPS_CFLAGS in configure.ac
+	instead of conditionally doing it in Makefile.am, to be more
+	consistent with the pkg-config case.
+	* configure.ac: Fix a typo and some phrases.
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Ditto.
+	* configure: Ditto.
+
+2011-08-11  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+
+	* configure.ac: Since we no longer bundle libatomic_ops, we must
+	check for the sub-directory before using it, in case we didn't
+	find an installed version.
+	* Makefile.am: Don't include libatomic_ops in the distribution.
+	* Makefile.in: Regenerate.
+	* configure: Ditto.
+
+2011-08-09  Ivan Maidanski <ivmai@mail.ru> (really Jie Liu)
+
+	* configure.ac: Add GC_RTEMS_PTHREADS AH_TEMPLATE and configure
+	for rtems.
+	* os_dep.c: Add GC_get_stack_base if GC_RTEMS_PTHREADS for rtems.
+	* pthread_stop_world.c (GC_stop_init): Add ifdef SA_RESTART.
+	* pthread_stop_world.c (GC_stop_init): Use sigprocmask for rtems
+	when defined GC_RTEMS_PTHREADS.
+	* pthread_support.c: Exclude sys/mman.h for rtems.
+	* pthread_support.c (GC_thr_init): Set default GC_nprocs (1) for
+	rtems.
+	* include/gc_config_macros.h: Define GC_RTEMS_PTHREADS for rtems
+	pthread and define GC_NO_DLOPEN for rtems.
+	* include/private/gc_locks.h: Define USE_PTHREAD_LOCKS for rtems.
+	* include/private/gcconfig.h: Use rtems_get_stack_bottom()
+	for InitStackBottom; and use SIGUSR1 for SIG_SUSPEND, SIGUSR2
+	for SIG_THR_RESTART on rtems.
+	* include/private/thread_local_alloc.h: Use USE_PTHREAD_SPECIFIC
+	for rtems.
+	* tests/test.c (Init): Use exit(0) for rtems instead of return.
+	* configure: Regenerate.
+	* include/private/config.h.in: Ditto.
+
+2011-07-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/realloc_test.c: New file.
+	* tests/tests.am (TESTS, check_PROGRAMS): Add realloc_test.
+	* .cvsignore: Add realloc_test.
+	* configure: Regenerate.
+	* Makefile.in: Ditto.
+
+2011-07-14  Ivan Maidanski <ivmai@mail.ru>
+
+	* .cvsignore: Add more auto-generated files.
+
+2011-07-14  Ivan Maidanski <ivmai@mail.ru>
+
+	* new_hblk.c (GC_build_fl): Adjust "h" local variable cast type
+	when setting obj_link (to prevent compiler warning); reformat the
+	comment.
+	* tests/test.c (reverse_test_inner): Use proper type when touching
+	"b" and "c" local variables (to prevent compiler warning).
+
+2011-07-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c (GC_init): Use HOTTER_THAN (instead of STACK_GROWS_DOWN)
+	for GC_stackbottom assertion.
+	* os_dep.c (GC_enclosing_mapping): Define only if IA64 or
+	INCLUDE_LINUX_THREAD_DESCR; make GC_INNER.
+	* pthread_support.c (GC_enclosing_mapping): Declare (only if
+	INCLUDE_LINUX_THREAD_DESCR).
+	* os_dep.c (GC_get_main_stack_base): Don't call pthread_getattr_np
+	if REDIRECT_MALLOC as the former is observed to call redirected
+	malloc (while GC is not initialized yet) on some Linux platforms.
+	* include/private/gc_priv.h (MAX_HEAP_SECTS): Don't use a smaller
+	value for SMALL_CONFIG if USE_PROC_FOR_LIBRARIES defined.
+
+2011-07-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* malloc.c (GC_init_lib_bounds): Call GC_init (to ensure GC is
+	initialized before doing GC_text_mapping).
+	* misc.c (GC_init): Add a check for GC_init recursion in case of
+	malloc is redirected (abort with the corresponding message).
+	* pthread.c (GC_thr_init): Place GC_add_roots_inner call into
+	"else" branch to prevent "local variable might be uninitialized"
+	compiler warning; add comment.
+
+2011-07-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* dyn_load.c (GC_register_dynamic_libraries): Remove duplicate
+	call of GC_FirstDLOpenedLinkMap (twice).
+	* dyn_load.c (GC_register_main_static_data): Add comment.
+	* cord/cordbscs.c (CORD_riter): Check for empty string passed (do
+	not call CORD_riter4 if CORD_len() returned zero).
+	* cord/cordbscs.c (CORD_init_min_len): Replace the K&R-style
+	function definition with the ANSI C one.
+	* cord/cordbscs.c: Expand all tabs to spaces; remove
+	trailing spaces at EOLn.
+	* tests/threadkey_test.c (on_thread_exit_inner): Check
+	GC_pthread_create() result.
+
+2011-07-04  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h (etext): Don't define if unused
+	(NetBSD).
+	* include/private/gcconfig.h (GC_data_start, DATASTART): Define
+	for NetBSD/amd64 if ELF.
+	* include/private/gcconfig.h (SEARCH_FOR_DATA_START): Don't define
+	for NetBSD/amd64 if ELF.
+
+2011-07-04  Ivan Maidanski <ivmai@mail.ru> (mostly really Andy Wingo)
+
+	* configure.ac (GC_THREADS): Refine the comment.
+	* configure.ac (GC_WIN32_PTHREADS): Add template.
+	* configure.ac (cygwin, win32): Define GC_WIN32_THREADS instead of
+	GC_THREADS.
+	* configure.ac (pthreads): Add mingw target (GC_WIN32_PTHREADS).
+	* configure: Regenerate.
+	* include/private/config.h.in: Ditto.
+	* include/private/gc_locks.h (GC_WIN32_PTHREADS): Remove nested
+	test for the macro; add comment.
+
+2011-07-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c (CHECK_LOOKUP_MY_THREAD): New macro definition.
+	* win32_threads.c (GC_reset_finalizer_nested,
+	GC_check_finalizer_nested, GC_unregister_my_thread,
+	GC_do_blocking_inner, GC_call_with_gc_active, GC_init_parallel):
+	Insert CHECK_LOOKUP_MY_THREAD before dereferencing thread
+	descriptor pointer (to instruct a LINT-like tool that it is ok to
+	dereference the pointer).
+	* win32_threads.c (GC_get_next_stack): Assert plast_stack_min is
+	non-NULL if current_min is not ADDR_LIMIT (for a LINT-like tool).
+	* win32_threads.c (GC_init_parallel): Define and use "me" local
+	variable.
+	* cord/cordtest.c (test_basics): Test CORD_substr() result is
+	non-NULL.
+	* cord/cordtest.c (test_extras): Test fopen() result is non-NULL.
+	* cord/cordtest.c (test_basics, test_extras, test_printf, main):
+	Replace the K&R-style function definition with the ANSI C one.
+	* cord/cordtest.c: Expand all tabs to spaces; remove
+	trailing spaces at EOLn.
+	* include/private/gc_priv.h (ABORT): Define as abort() when
+	checking the code with a LINT-like tool (Win32 only).
+	* tests/test.c (FAIL): Ditto.
+	* tests/test.c (CHECH_GCLIB_VERSION): New macro (to check that the
+	version of libgc.so used at runtime matches that at compile time).
+	* tests/test.c (GC_COND_INIT): Use CHECH_GCLIB_VERSION.
+	* tests/test.c (CHECK_OUT_OF_MEMORY): New macro (to test malloc
+	result for out of memory).
+	* tests/test.c (cons, small_cons, small_cons_uncollectable,
+	gcj_cons, reverse_test_inner, mktree, alloc8bytes, typed_test,
+	run_one_test): Use CHECK_OUT_OF_MEMORY.
+
+2011-06-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* dyn_load.c (GC_register_map_entries): Remove "count" local
+	variable as unused.
+	* gc_dlopen.c (disable_gc_for_dlopen): Define only if not
+	USE_PROC_FOR_LIBRARIES.
+	* malloc.c (calloc): Add parentheses around '&&' operator.
+	* mark.c (GC_noop_sink): New global variable (instead of a static
+	local variable inside GC_noop1).
+	* mark.c (GC_noop1): Use GC_noop_sink variable (to prevent
+	"variable set but not used" compiler warning).
+	* include/private/gcconfig.h (USE_PROC_FOR_LIBRARIES): Define only
+	if undefined yet.
+	* tests/smash_test.c (main): Don't dereference "p" local variable
+	if it is NULL.
+	* tests/staticrootslib.c (main): Ditto.
+
+2011-06-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c (GC_segment_is_thread_stack): Replace '&'
+	operator with '&&' one in conditional expressions.
+	* specific.c (remove_specific): Dereference "entry" local variable
+	only if it is non-NULL.
+	* include/gc.h (GC_NEW): Refine the comment (about the returned
+	value).
+
+2011-06-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_version.h, configure.ac, doc/README: Change to
+	version 7.2alpha7.
+	* configure: Regenerate.
+
 [7.2alpha6]
 
 2011-06-14  Ivan Maidanski  <ivmai@mail.ru>

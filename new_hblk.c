@@ -158,12 +158,10 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
     }
     p -= sz;                    /* p now points to last object */
 
-  /*
-   * put p (which is now head of list of objects in *h) as first
-   * pointer in the appropriate free list for this size.
-   */
-      obj_link(h -> hb_body) = list;
-      return ((ptr_t)p);
+  /* Put p (which is now head of list of objects in *h) as first    */
+  /* pointer in the appropriate free list for this size.            */
+    *(ptr_t *)h = list;
+    return ((ptr_t)p);
 }
 
 /*

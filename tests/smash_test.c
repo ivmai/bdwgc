@@ -22,7 +22,7 @@ int main(void)
      A[i] = p = GC_MALLOC(SIZE);
 
      if (i%3000 == 0) GC_gcollect();
-     if (i%5678 == 0) p[SIZE + i/2000] = 42;
+     if (i%5678 == 0 && p != 0) p[SIZE + i/2000] = 42;
   }
   return 0;
 }

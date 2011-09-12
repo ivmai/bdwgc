@@ -20,25 +20,46 @@
 #endif
 
 #define GC_NO_THREAD_REDIRECTS 1
+                /* Do not redirect thread creation and join calls.      */
 
 #include "gc.h"
 
-#include <pthread.h>
-#include <stdlib.h>
+#ifdef GC_PTHREADS
+# include <pthread.h>
+#else
+# include <windows.h>
+#endif
 
-static void *thread(void *arg)
+#include <stdlib.h>
+#include <stdio.h>
+
+#ifdef GC_PTHREADS
+  static void *thread(void *arg)
+#else
+  static DWORD WINAPI thread(LPVOID arg)
+#endif
 {
   GC_INIT();
-  GC_MALLOC(123);
-  GC_MALLOC(12345);
-  return NULL;
+  (void)GC_MALLOC(123);
+  (void)GC_MALLOC(12345);
+# ifdef GC_PTHREADS
+    return arg;
+# else
+    return (DWORD)(GC_word)arg;
+# endif
 }
 
 #include "private/gcconfig.h"
 
 int main(void)
 {
-  pthread_t t;
+# ifdef GC_PTHREADS
+    int code;
+    pthread_t t;
+# else
+    HANDLE t;
+    DWORD thread_id;
+# endif
 # if !(defined(BEOS) || defined(MSWIN32) || defined(MSWINCE) \
        || defined(CYGWIN32) || defined(GC_OPENBSD_THREADS) \
        || (defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP)) \
@@ -49,7 +70,27 @@ int main(void)
     /* GC_INIT() must be called from main thread only. */
     GC_INIT();
 # endif
-  pthread_create (&t, NULL, thread, NULL);
-  pthread_join (t, NULL);
+# ifdef GC_PTHREADS
+    if ((code = pthread_create (&t, NULL, thread, NULL)) != 0) {
+      printf("Thread creation failed %d\n", code);
+      return 1;
+    }
+    if ((code = pthread_join (t, NULL)) != 0) {
+      printf("Thread join failed %d\n", code);
+      return 1;
+    }
+# else
+    t = CreateThread(NULL, 0, thread, 0, 0, &thread_id);
+    if (t == NULL) {
+      printf("Thread creation failed %d\n", (int)GetLastError());
+      return 1;
+    }
+    if (WaitForSingleObject(t, INFINITE) != WAIT_OBJECT_0) {
+      printf("Thread join failed %d\n", (int)GetLastError());
+      CloseHandle(t);
+      return 1;
+    }
+    CloseHandle(t);
+# endif
   return 0;
 }

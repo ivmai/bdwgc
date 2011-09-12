@@ -52,7 +52,9 @@
 # include <time.h>
 # include <errno.h>
 # include <unistd.h>
-# include <sys/mman.h>
+# if !defined(GC_RTEMS_PTHREADS)
+#   include <sys/mman.h>
+# endif
 # include <sys/time.h>
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -398,7 +400,7 @@ STATIC pthread_t GC_mark_threads[MAX_MARKERS];
 
 static void start_mark_threads(void)
 {
-    unsigned i;
+    int i;
     pthread_attr_t attr;
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
@@ -652,9 +654,9 @@ STATIC void GC_remove_all_threads_but_me(void)
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef PARALLEL_MARK
       for (i = 0; i < GC_markers - 1; ++i) {
-        if (marker_sp[i] > lo & marker_sp[i] < hi) return TRUE;
+        if (marker_sp[i] > lo && marker_sp[i] < hi) return TRUE;
 #       ifdef IA64
-          if (marker_bsp[i] > lo & marker_bsp[i] < hi) return TRUE;
+          if (marker_bsp[i] > lo && marker_bsp[i] < hi) return TRUE;
 #       endif
       }
 #   endif
@@ -735,7 +737,7 @@ STATIC void GC_remove_all_threads_but_me(void)
       if (stat_buf[i] == '\n' && stat_buf[i+1] == 'c'
           && stat_buf[i+2] == 'p' && stat_buf[i+3] == 'u') {
         int cpu_no = atoi(&stat_buf[i + 4]);
-        if (cpu_no >= result)
+        if (cpu_no >= (int)result)
           result = cpu_no + 1;
       }
     }
@@ -754,7 +756,7 @@ STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
     GC_ASSERT(I_HOLD_LOCK());
     ASSERT_CANCEL_DISABLED();
     if (GC_incremental && GC_collection_in_progress()) {
-        int old_gc_no = GC_gc_no;
+        word old_gc_no = GC_gc_no;
 
         /* Make sure that no part of our stack is still on the mark stack, */
         /* since it's about to be unmapped.                                */
@@ -879,6 +881,8 @@ STATIC void GC_fork_child_proc(void)
 
 #ifdef INCLUDE_LINUX_THREAD_DESCR
   __thread int GC_dummy_thread_local;
+  GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr,
+                                        ptr_t *startp, ptr_t *endp);
 #endif
 
 /* We hold the allocation lock. */
@@ -906,8 +910,10 @@ GC_INNER void GC_thr_init(void)
       if (!GC_enclosing_mapping(thread_local_addr, &main_thread_start,
                                 &main_thread_end)) {
         ABORT("Failed to find mapping for main thread thread locals");
+      } else {
+        /* main_thread_start and main_thread_end are initialized.       */
+        GC_add_roots_inner(main_thread_start, main_thread_end, FALSE);
       }
-      GC_add_roots_inner(main_thread_start, main_thread_end, FALSE);
     }
 # endif
   /* Add the initial thread, so we can stop it. */
@@ -949,6 +955,8 @@ GC_INNER void GC_thr_init(void)
       GC_nprocs = get_ncpu();
 #   elif defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
       GC_nprocs = GC_get_nprocs();
+#   elif defined(GC_RTEMS_PTHREADS)
+      GC_nprocs = 1; /* not implemented */
 #   endif
   }
   if (GC_nprocs <= 0) {
@@ -1696,7 +1704,7 @@ GC_INNER void GC_lock(void)
     unsigned my_spin_max;
     static unsigned last_spins = 0;
     unsigned my_last_spins;
-    int i;
+    unsigned i;
 
     if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_CLEAR) {
         return;

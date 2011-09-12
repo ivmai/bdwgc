@@ -680,14 +680,14 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
                 }
               }
             }
-            if ( !IS_UNCOLLECTABLE(kind) &&
-                 (kind != PTRFREE || size_needed > MAX_BLACK_LIST_ALLOC)) {
+            if ( !IS_UNCOLLECTABLE(kind) && (kind != PTRFREE
+                        || size_needed > (signed_word)MAX_BLACK_LIST_ALLOC)) {
               struct hblk * lasthbp = hbp;
               ptr_t search_end = (ptr_t)hbp + size_avail - size_needed;
               signed_word orig_avail = size_avail;
-              signed_word eff_size_needed = ((flags & IGNORE_OFF_PAGE)?
-                                                HBLKSIZE
-                                                : size_needed);
+              signed_word eff_size_needed = (flags & IGNORE_OFF_PAGE) != 0 ?
+                                                (signed_word)HBLKSIZE
+                                                : size_needed;
 
 
               while ((ptr_t)lasthbp <= search_end

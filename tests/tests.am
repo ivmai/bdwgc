@@ -45,6 +45,11 @@ check_PROGRAMS += hugetest
 hugetest_SOURCES = tests/huge_test.c
 hugetest_LDADD = $(test_ldadd)
 
+TESTS += realloc_test$(EXEEXT)
+check_PROGRAMS += realloc_test
+realloc_test_SOURCES = tests/realloc_test.c
+realloc_test_LDADD = $(test_ldadd)
+
 TESTS += staticrootstest$(EXEEXT)
 check_PROGRAMS += staticrootstest
 staticrootstest_SOURCES = tests/staticrootstest.c

@@ -354,6 +354,7 @@ void * malloc(size_t lb)
   STATIC void GC_init_lib_bounds(void)
   {
     if (GC_libpthread_start != 0) return;
+    GC_init(); /* if not called yet */
     if (!GC_text_mapping("libpthread-",
                          &GC_libpthread_start, &GC_libpthread_end)) {
         WARN("Failed to find libpthread.so text mapping: Expect crash\n", 0);
@@ -382,7 +383,7 @@ void * calloc(size_t n, size_t lb)
             GC_init_lib_bounds();
             lib_bounds_set = TRUE;
           }
-          if (caller >= GC_libpthread_start && caller < GC_libpthread_end
+          if ((caller >= GC_libpthread_start && caller < GC_libpthread_end)
               || (caller >= GC_libld_start && caller < GC_libld_end))
             return GC_malloc_uncollectable(n*lb);
           /* The two ranges are actually usually adjacent, so there may */

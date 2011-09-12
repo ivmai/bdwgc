@@ -684,9 +684,6 @@
             Name="Header Files"
             Filter="h;hh;hpp;hxx;hm;inl">
             <File
-                RelativePath="..\..\include\gc_alloc.h">
-            </File>
-            <File
                 RelativePath="..\..\include\gc_allocator.h">
             </File>
             <File
@@ -706,9 +703,6 @@
             </File>
             <File
                 RelativePath="..\..\include\gc_inline.h">
-            </File>
-            <File
-                RelativePath="..\..\include\gc_local_alloc.h">
             </File>
             <File
                 RelativePath="..\..\include\gc_pthread_redirects.h">

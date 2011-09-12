@@ -45,11 +45,14 @@ void * GC_CALLBACK on_thread_exit_inner (struct GC_stack_base * sb, void * arg)
 {
   int res = GC_register_my_thread (sb);
   pthread_t t;
+  int creation_res;     /* Used to suppress a warning about     */
+                        /* unchecked pthread_create() result.   */
 
-  GC_pthread_create (&t, NULL, entry, NULL);
+  creation_res = GC_pthread_create (&t, NULL, entry, NULL);
   if (res == GC_SUCCESS)
     GC_unregister_my_thread ();
-  return NULL;
+
+  return (void*)(GC_word)creation_res;
 }
 
 void on_thread_exit (void *v)

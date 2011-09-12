@@ -82,8 +82,8 @@ void PREFIXED(remove_specific) (tsd * key) {
     }
     /* Invalidate qtid field, since qtids may be reused, and a later    */
     /* cache lookup could otherwise find this entry.                    */
-    entry -> qtid = INVALID_QTID;
     if (entry != NULL) {
+      entry -> qtid = INVALID_QTID;
       *link = entry -> next;
       /* Atomic! concurrent accesses still work.        */
       /* They must, since readers don't lock.           */

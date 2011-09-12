@@ -185,8 +185,7 @@ GC_FirstDLOpenedLinkMap(void)
 # ifndef USE_PROC_FOR_LIBRARIES
 GC_INNER void GC_register_dynamic_libraries(void)
 {
-  struct link_map *lm = GC_FirstDLOpenedLinkMap();
-
+  struct link_map *lm;
 
   for (lm = GC_FirstDLOpenedLinkMap(); lm != 0; lm = lm->l_next) {
         ElfW(Ehdr) * e;
@@ -273,7 +272,6 @@ STATIC word GC_register_map_entries(char *maps)
 {
     char *prot;
     char *buf_ptr = maps;
-    int count;
     ptr_t start, end;
     unsigned int maj_dev;
     ptr_t least_ha, greatest_ha;
@@ -522,7 +520,7 @@ GC_INNER GC_bool GC_register_main_static_data(void)
     /* zero (otherwise a compiler might issue a warning).               */
     return FALSE;
 # else
-    return (dl_iterate_phdr == 0);
+    return (dl_iterate_phdr == 0); /* implicit conversion to function ptr */
 # endif
 }
 
@@ -549,7 +547,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
   dl_iterate_phdr(GC_register_dynlib_callback, &did_something);
   if (did_something) {
 #   ifdef PT_GNU_RELRO
-      size_t i;
+      int i;
 
       for (i = 0; i < n_load_segs; ++i) {
         if (load_segs[i].end > load_segs[i].start) {
@@ -668,8 +666,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
         return;
     }
 # endif
-  lm = GC_FirstDLOpenedLinkMap();
-  for (lm = GC_FirstDLOpenedLinkMap(); lm != 0;  lm = lm->l_next)
+  for (lm = GC_FirstDLOpenedLinkMap(); lm != 0; lm = lm->l_next)
     {
         ElfW(Ehdr) * e;
         ElfW(Phdr) * p;

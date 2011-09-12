@@ -878,7 +878,6 @@
 #     define ALIGNMENT 4
 #     define OS_TYPE "NETBSD"
 #     define HEURISTIC2
-      extern char etext[];
       extern ptr_t GC_data_start;
 #     define DATASTART GC_data_start
 #     define DYNAMIC_LOADING
@@ -1381,10 +1380,13 @@
 #       include <sys/unistd.h>
         extern int etext[];
         extern int end[];
-        extern void *InitStackBottom;
+        void *rtems_get_stack_bottom(void);
+#       define InitStackBottom rtems_get_stack_bottom()
 #       define DATASTART ((ptr_t)etext)
 #       define DATAEND ((ptr_t)end)
 #       define STACKBOTTOM ((ptr_t)InitStackBottom)
+#       define SIG_SUSPEND SIGUSR1
+#       define SIG_THR_RESTART SIGUSR2
 #   endif
 #   ifdef DOS4GW
 #     define OS_TYPE "DOS4GW"
@@ -1529,7 +1531,6 @@
 #     define ALIGNMENT 4
 #     define HEURISTIC2
 #     ifdef __ELF__
-        extern int etext[];
         extern ptr_t GC_data_start;
 #       define DATASTART GC_data_start
 #       define NEED_FIND_LIMIT
@@ -2123,6 +2124,7 @@
           /* At present, there's a bug in GLibc getcontext() on         */
           /* Linux/x64 (it clears FPU exception mask).  We define this  */
           /* macro to workaround it.                                    */
+          /* FIXME: This seems to be fixed in GLibc v2.14.              */
 #         define GETCONTEXT_FPU_EXCMASK_BUG
 #       endif
 #   endif
@@ -2171,12 +2173,14 @@
 #   endif
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-#       endif
 #       define HEURISTIC2
-        extern char etext[];
-#       define SEARCH_FOR_DATA_START
+#       ifdef __ELF__
+            extern ptr_t GC_data_start;
+#           define DATASTART GC_data_start
+#           define DYNAMIC_LOADING
+#       else
+#           define SEARCH_FOR_DATA_START
+#       endif
 #   endif
 #   ifdef SOLARIS
 #       define OS_TYPE "SOLARIS"
@@ -2253,7 +2257,8 @@
 #   define USE_MMAP_ANON
 #endif
 
-#if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC)
+#if defined(GC_LINUX_THREADS) && defined(REDIRECT_MALLOC) \
+    && !defined(USE_PROC_FOR_LIBRARIES)
     /* Nptl allocates thread stacks with mmap, which is fine.  But it   */
     /* keeps a cache of thread stacks.  Thread stacks contain the       */
     /* thread control blocks.  These in turn contain a pointer to       */

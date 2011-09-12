@@ -431,7 +431,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #     define DebugBreak() _exit(-1) /* there is no abort() in WinCE */
 #   endif
 #   ifdef SMALL_CONFIG
-#       if defined(MSWIN32) || defined(MSWINCE)
+#       if (defined(MSWIN32) && !defined(LINT2)) || defined(MSWINCE)
 #           define ABORT(msg) DebugBreak()
 #       else
 #           define ABORT(msg) abort()
@@ -952,7 +952,7 @@ struct roots {
 #   else
 #     define MAX_HEAP_SECTS 768         /* Separately added heap sections. */
 #   endif
-# elif defined(SMALL_CONFIG)
+# elif defined(SMALL_CONFIG) && !defined(USE_PROC_FOR_LIBRARIES)
 #   define MAX_HEAP_SECTS 128           /* Roughly 256MB (128*2048*1K)  */
 # elif CPP_WORDSZ > 32
 #   define MAX_HEAP_SECTS 1024          /* Roughly 8GB                  */

@@ -33,11 +33,9 @@
 SUBDIRS =
 
 ACLOCAL_AMFLAGS = -I m4
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
-if USE_INTERNAL_LIBATOMIC_OPS
-AM_CPPFLAGS += -I$(top_builddir)/libatomic_ops/src \
-	       -I$(top_srcdir)/libatomic_ops/src
-endif
+AM_CPPFLAGS = \
+	-I$(top_builddir)/include -I$(top_srcdir)/include \
+	$(ATOMIC_OPS_CFLAGS)
 
 # Initialize variables so that we can declare files locally.
 EXTRA_DIST =
@@ -171,7 +169,7 @@ EXTRA_DIST += README.QUICK
 # :GOTCHA: deliberately we do not include 'Makefile'
 EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
     OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE	\
-    Makefile.direct Makefile.dj	Makefile.DLLs SMakefile.amiga \
+    Makefile.direct Makefile.dj Makefile.DLLs SMakefile.amiga \
     WCC_MAKEFILE autogen.sh build_atomic_ops.sh build_atomic_ops.sh.cygwin \
     NT_STATIC_THREADS_MAKEFILE NT_X64_STATIC_THREADS_MAKEFILE \
     NT_X64_THREADS_MAKEFILE CMakeLists.txt tests/CMakeLists.txt
@@ -179,16 +177,12 @@ EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
 # files used by makefiles other than Makefile.am
 #
 EXTRA_DIST += extra/add_gc_prefix.c extra/gc.c extra/gcname.c \
-    extra/if_mach.c extra/if_not_there.c hpux_test_and_clear.s gc.mak \
+    extra/if_mach.c extra/if_not_there.c gc.mak \
     extra/MacOS.c MacProjects.sit.hqx mach_dep.c extra/setjmp_t.c \
     extra/threadlibs.c extra/AmigaOS.c \
     Mac_files/datastart.c Mac_files/dataend.c \
     Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
     include/private/msvc_dbg.h extra/msvc_dbg.c
-
-# The libatomic_ops library.  This is not ideal, since we pick up junk from
-# there.
-EXTRA_DIST += libatomic_ops
 
 # this is an auxiliary shell file used by Makefile and Makefile.direct
 #

@@ -41,7 +41,7 @@ int main(void)
     root[i] = libsrl_mktree(12);
     GC_gcollect();
   }
-  for (i = 0; i < sizeof(struct treenode); ++i) {
+  for (i = 0; i < (int)sizeof(struct treenode); ++i) {
     if (staticroot[i] != 0x42)
       return -1;
   }
@@ -49,7 +49,7 @@ int main(void)
     root[i] = libsrl_mktree(12);
     GC_gcollect();
   }
-  for (i = 0; i < sizeof(struct treenode); ++i) {
+  for (i = 0; i < (int)sizeof(struct treenode); ++i) {
     if (staticroot[i] != 0x42)
       return -1;
   }
