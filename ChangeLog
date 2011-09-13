@@ -1,3 +1,17 @@
+2011-09-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* CMakeLists.txt (cygwin): Remove "-D_REENTRANT" definition.
+	* CMakeLists.txt (cord): Add gdi32 link library.
+
+2011-09-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/de.c (WIN32): Define also for Cygwin.
+
+2011-09-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* gc_cpp.cc (operator delete): Do not define for Cygwin since already
+	defined in include/gc_cpp.h file.
+
 2011-09-08  Ivan Maidanski <ivmai@mail.ru>
 
 	* cord/cordprnt.c (CORD_vsprintf): Cast "prec" and "width" local
