@@ -10,6 +10,7 @@
 /*.obj
 /src/*.lo
 /src/*.o
+/tests/*.exe
 
 /.deps/
 /.libs/
