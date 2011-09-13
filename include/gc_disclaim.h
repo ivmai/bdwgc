@@ -12,13 +12,14 @@
  *
  */
 
-// FIXME: Add this file to that many scripts we have (see, e.g., gc_mark.h
-// as a reference).
-
 #ifndef GC_DISCLAIM_H
 #define GC_DISCLAIM_H
 
 #include "gc.h"
+
+/* Type of a disclaim call-back, always stored along with closure data  */
+/* passed as the second argument.                                       */
+typedef int (GC_CALLBACK * GC_disclaim_proc)(void *obj, void *cd);
 
 /* Register "proc" to be called on each object of "kind" ready to be    */
 /* reclaimed.  If "proc" returns non-zero, the collector will not       */
@@ -26,15 +27,13 @@
 /* will be protected from collection if "mark_from_all" is non-zero,    */
 /* but at the expense that long chains of objects will take many cycles */
 /* to reclaim.                                                          */
-// FIXME: declare type for callback, use GC_CALBACK
-// FIXME: comment out all parameter names
-void GC_register_disclaim_proc(int kind,
-                               int (*proc)(void *obj, void *cd), void *cd,
-                               int mark_from_all);
+GC_API void GC_register_disclaim_proc(int /* kind */,
+                                      GC_disclaim_proc /*proc*/, void * /*cd*/,
+                                      int /* mark_from_all */);
 
 /* The finalizer closure used by GC_finalized_malloc.                   */
 struct GC_finalizer_closure {
-    void (*proc)(void *obj, void *cd); // FIXME: use typedef
+    GC_finalization_proc proc;
     void *cd;
 };
 

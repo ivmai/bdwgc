@@ -753,6 +753,9 @@
                 RelativePath="..\..\include\gc_mark.h">
             </File>
             <File
+                RelativePath="..\..\include\gc_disclaim.h">
+            </File>
+            <File
                 RelativePath="..\..\include\private\gc_pmark.h">
             </File>
             <File

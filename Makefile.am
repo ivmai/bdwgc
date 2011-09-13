@@ -73,7 +73,7 @@ libgc_la_SOURCES += win32_threads.c
 endif
 
 if ENABLE_DISCLAIM
-libgc_la_SOURCES += disclaim.c
+libgc_la_SOURCES += finalized_mlc.c
 endif
 
 if USE_INTERNAL_LIBATOMIC_OPS

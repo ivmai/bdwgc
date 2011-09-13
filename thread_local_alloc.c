@@ -129,6 +129,10 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 #   ifdef GC_GCJ_SUPPORT
         return_freelists(p -> gcj_freelists, (void **)GC_gcjobjfreelist);
 #   endif
+#   ifdef ENABLE_DISCLAIM
+        return_freelists(p -> finalized_freelists,
+                         (void **)GC_finalized_objfreelist);
+#   endif
 }
 
 #ifdef GC_ASSERTIONS
@@ -290,7 +294,7 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
         q = p -> finalized_freelists[j];
         if ((word)q > HBLKSIZE)
           GC_set_fl_marks(q);
-#     endif
+#     endif /* ENABLE_DISCLAIM */
     }
 }
 
@@ -314,7 +318,7 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
             q = p -> finalized_freelists[j];
             if ((word)q > HBLKSIZE)
               GC_check_fl_marks(q);
-#         endif
+#         endif /* ENABLE_DISCLAIM */
         }
     }
 #endif /* GC_ASSERTIONS */
