@@ -8,6 +8,7 @@
 /*.lo
 /*.o
 /*.obj
+/tests/*.exe
 
 /.deps/
 /.libs/
