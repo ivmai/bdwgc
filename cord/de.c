@@ -348,22 +348,18 @@ void fix_pos()
 #if defined(WIN32)
 #  define beep() Beep(1000 /* Hz */, 300 /* msecs */)
 #elif defined(MACINTOSH)
-#       define beep() SysBeep(1)
+#  define beep() SysBeep(1)
 #else
 /*
  * beep() is part of some curses packages and not others.
  * We try to match the type of the builtin one, if any.
  */
-#ifdef __STDC__
-    int beep(void)
-#else
-    int beep()
-#endif
-{
+  int beep(void)
+  {
     putc('\007', stderr);
     return(0);
-}
-#endif
+  }
+#endif /* !WIN32 && !MACINTOSH */
 
 #   define NO_PREFIX -1
 #   define BARE_PREFIX -2

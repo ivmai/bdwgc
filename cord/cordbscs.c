@@ -449,11 +449,6 @@ CORD CORD_substr(CORD x, size_t i, size_t n)
         /* n < 0 is impossible in a correct C implementation, but       */
         /* quite possible  under SunOS 4.X.                             */
     if (i + n > len) n = len - i;
-#   ifndef __STDC__
-      if (i < 0) ABORT("CORD_substr: second arg. negative");
-        /* Possible only if both client and C implementation are buggy. */
-        /* But empirically this happens frequently.                     */
-#   endif
     return(CORD_substr_checked(x, i, n));
 }
 

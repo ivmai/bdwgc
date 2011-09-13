@@ -332,9 +332,6 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define MS_TIME_DIFF(a,b) ((long)((a)-(b)))
 #else /* !MSWIN32, !MSWINCE, !BSD_TIME */
 # include <time.h>
-# if !defined(__STDC__) && defined(SPARC) && defined(SUNOS4)
-    clock_t clock(void);        /* Not in time.h, where it belongs      */
-# endif
 # if defined(FREEBSD) && !defined(CLOCKS_PER_SEC)
 #   include <machine/limits.h>
 #   define CLOCKS_PER_SEC CLK_TCK
