@@ -37,8 +37,11 @@ Authors: John R. Ellis and Jesse Hull
 void* operator new( size_t size ) {
     return GC_MALLOC_UNCOLLECTABLE( size );}
 
-void operator delete( void* obj ) {
-    GC_FREE( obj );}
+#if !defined(__CYGWIN__)
+  void operator delete( void* obj ) {
+    GC_FREE( obj );
+  }
+#endif /* !__CYGWIN__ */
 
 #ifdef GC_OPERATOR_NEW_ARRAY
 
