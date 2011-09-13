@@ -16,7 +16,9 @@
 
 #include "private/gc_priv.h"
 
-#include "gc_disclaim.h" // FIXME: add ifdef
+#ifdef ENABLE_DISCLAIM
+#  include "gc_disclaim.h"
+#endif
 
 #include <stdio.h>
 
@@ -218,8 +220,8 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
   STATIC ptr_t GC_disclaim_and_reclaim(struct hblk *hbp, hdr *hhdr, size_t sz,
                                        ptr_t list, signed_word *count)
   {
-    register int bit_no = 0; // FIXME: remove register
-    register word *p, *q, *plim;
+    int bit_no = 0;
+    word *p, *q, *plim;
     signed_word n_bytes_found = 0;
     struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
     int (*proc)(void *, void *) = ok -> ok_disclaim_proc;

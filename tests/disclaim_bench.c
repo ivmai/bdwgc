@@ -84,18 +84,15 @@ int main(int argc, char **argv)
     GC_INIT();
     GC_init_finalized_malloc();
 
-    /* Seed with time for distict usage patterns over repeated runs. */
-    srand48(time(NULL)); // FIXME: not available on some targets
-
     keep_arr = GC_MALLOC(sizeof(void *)*KEEP_CNT);
 
     if (argc == 1) {
         char *buf = GC_MALLOC(strlen(argv[0]) + 3);
         printf("\t\t\tfin. ratio       time/s    time/fin.\n");
+        fflush(stdout);
         for (i = 0; i < 3; ++i) {
             int st;
-            sprintf(buf, "%s %d", argv[0], i); // FIXME: Use snprintf
-                                    //FIXME: snprintf not available on WinCE
+            sprintf(buf, "%s %d", argv[0], i);
             st = system(buf); // FIXME: is this available on all targets?
             if (st != 0)
                 return st;
@@ -113,22 +110,21 @@ int main(int argc, char **argv)
     model = atoi(argv[1]);
     if (model < 0 || model > 2)
         exit(2);
-    t = -clock(); // FIXME: not available on some targets?
-                  // FIXME: don't use '-' on probably unsigned type
+    t = -(double)clock();
     for (i = 0; i < ALLOC_CNT; ++i) {
-        int k = lrand48() % KEEP_CNT; // FIXME: not available on some targets
+        int k = rand() % KEEP_CNT;
         keep_arr[k] = testobj_new(model);
     }
 
     GC_gcollect();
 
-    t += clock(); // FIXME: not available on some targets?
-    t /= CLOCKS_PER_SEC; // FIXME: not available on some targets
+    t += clock();
+    t /= CLOCKS_PER_SEC;
     if (model < 2)
         printf("%20s: %12.4lf %12lg %12lg\n", model_str[model],
                free_count/(double)ALLOC_CNT, t, t/free_count);
     else
-        printf("%20s:            0 %12lg          N/A\n", // FIXME: Use \t
-               model_str[model], t);
+        printf("%20s: %12.4lf %12lg %12s\n",
+               model_str[model], 0.0, t, "N/A");
     return 0;
 }

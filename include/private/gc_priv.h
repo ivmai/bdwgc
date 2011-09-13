@@ -1237,7 +1237,7 @@ GC_EXTERN struct obj_kind {
                         /* Mark from all, including unmarked, objects   */
                         /* in block.  Used to protect objects reachable */
                         /* from reclaim notifiers.                      */
-     int (*ok_disclaim_proc)(void *obj, void *cd); // FIXME: GC_CALLBACK
+     int (GC_CALLBACK *ok_disclaim_proc)(void *obj, void *cd);
      void *ok_disclaim_cd;
                         /* The disclaim procedure is called before obj  */
                         /* is reclaimed, but must also tolerate being   */
@@ -2051,6 +2051,10 @@ GC_EXTERN signed_word GC_bytes_found;
     GC_EXTERN GC_bool GC_gcj_malloc_initialized; /* defined in gcj_mlc.c */
 # endif
   GC_EXTERN ptr_t * GC_gcjobjfreelist;
+#endif
+
+#ifdef ENABLE_DISCLAIM
+  GC_EXTERN ptr_t * GC_finalized_objfreelist;
 #endif
 
 #if defined(GWW_VDB) && defined(MPROTECT_VDB)

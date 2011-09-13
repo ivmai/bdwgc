@@ -1385,6 +1385,7 @@ DEP_CPP_MARK_C=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 
@@ -1407,6 +1408,7 @@ DEP_CPP_MARK_C=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 
@@ -1533,6 +1535,7 @@ DEP_CPP_FINAL=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 
@@ -1555,6 +1558,7 @@ DEP_CPP_FINAL=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 
@@ -1681,6 +1685,7 @@ DEP_CPP_TYPD_=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	".\include\gc_typed.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
@@ -1704,6 +1709,7 @@ DEP_CPP_TYPD_=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	".\include\gc_typed.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
@@ -1735,6 +1741,7 @@ DEP_CPP_PTR_C=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 
@@ -1757,6 +1764,7 @@ DEP_CPP_PTR_C=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 

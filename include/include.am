@@ -17,6 +17,7 @@ pkginclude_HEADERS += \
         include/gc_typed.h \
         include/gc_inline.h \
         include/gc_mark.h \
+        include/gc_disclaim.h \
         include/gc_cpp.h \
         include/weakpointer.h \
         include/new_gc_alloc.h \
@@ -28,12 +29,6 @@ pkginclude_HEADERS += \
         include/gc_config_macros.h \
         include/gc_tiny_fl.h \
         include/gc_version.h
-
-if ENABLE_DISCLAIM
-# FIXME: all include headers must be in pkginclude_HEADERS inconditionally
-pkginclude_HEADERS += include/gc_disclaim.h
-endif
-EXTRA_DIST += include/gc_disclaim.h
 
 # headers which are not installed
 #

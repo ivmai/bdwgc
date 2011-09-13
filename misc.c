@@ -15,6 +15,10 @@
 
 #include "private/gc_pmark.h"
 
+#ifdef ENABLE_DISCLAIM
+#  include "gc_disclaim.h"
+#endif
+
 #include <stdio.h>
 #include <limits.h>
 #include <stdarg.h>
@@ -1513,6 +1517,17 @@ GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc proc)
     UNLOCK();
     return result;
 }
+
+#ifdef ENABLE_DISCLAIM
+GC_API void GC_CALL GC_register_disclaim_proc(int kind,
+                                              GC_disclaim_proc proc, void *cd,
+                                              int mark_unconditionally)
+{
+    GC_obj_kinds[kind].ok_disclaim_proc = proc;
+    GC_obj_kinds[kind].ok_disclaim_cd = cd;
+    GC_obj_kinds[kind].ok_mark_unconditionally = mark_unconditionally;
+}
+#endif
 
 GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 {

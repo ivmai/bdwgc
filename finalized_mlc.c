@@ -12,41 +12,22 @@
  *
  */
 
-// FIXME: Move this code to another existing file (which is appropriate),
-// and remove this file (adding a new file is a bit complex due to numerous
-// scripts present).
-
 #include "private/gc_priv.h"
 
-// FIXME: add #ifdef ENABLE_DISCLAIM
+#ifdef ENABLE_DISCLAIM
 
-#include "private/thread_local_alloc.h"
-         // FIXME: we can include it only if THREAD_LOCAL_ALLOC.
+#ifdef THREAD_LOCAL_ALLOC
+#  include "private/thread_local_alloc.h"
+#endif
 
 #include "gc_disclaim.h"
 
-/* Low level interface for reclaim callbacks. */
-
-// FIXME: Use declared type for proc.
-// FIXME: Use GC_API and GC_CALL.
-void GC_register_disclaim_proc(int kind,
-                               int (*proc)(void *obj, void *cd), void *cd,
-                               int mark_unconditionally)
-{
-    GC_obj_kinds[kind].ok_disclaim_proc = proc;
-    GC_obj_kinds[kind].ok_disclaim_cd = cd;
-    GC_obj_kinds[kind].ok_mark_unconditionally = mark_unconditionally;
-}
-
-/* High level interface for finalization. */
-
 STATIC int GC_finalized_kind;
 
-STATIC ptr_t * GC_finalized_objfreelist = 0;
-STATIC ptr_t * GC_finalized_debugobjfreelist = 0;
+ptr_t * GC_finalized_objfreelist = NULL;
 
 
-STATIC int GC_finalized_disclaim(void *obj, void *cd) // FIXME: Add CALLBACK
+STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj, void *cd)
 {
     struct GC_finalizer_closure *fc = *(void **)obj;
     if (((word)fc & 1) != 0) {
@@ -65,18 +46,17 @@ STATIC int GC_finalized_disclaim(void *obj, void *cd) // FIXME: Add CALLBACK
 
 static int done_init = 0;
 
-// FIXME: GC_API
-void GC_init_finalized_malloc(void)
+GC_API void GC_CALL GC_init_finalized_malloc(void)
 {
     DCL_LOCK_STATE;
 
-    if (done_init) // FIXME: Is race possible here?
-        return;
     GC_init(); // FIXME: Portable client should always do GC_INIT() itself
 
     LOCK();
-    if (done_init)
-        goto done; // FIXME: avoid "goto" if possible
+    if (done_init) {
+        UNLOCK();
+        return;
+    }
     done_init = 1;
 
     GC_finalized_objfreelist = (ptr_t *)GC_new_free_list_inner();
@@ -86,18 +66,15 @@ void GC_init_finalized_malloc(void)
                           TRUE, TRUE);
     GC_register_disclaim_proc(GC_finalized_kind, GC_finalized_disclaim, 0, 1);
 
-done:
     UNLOCK();
 }
-
-void * GC_clear_stack(); // FIXME: remove as declared in gc_priv.h
 
 #ifdef THREAD_LOCAL_ALLOC
   STATIC void * GC_core_finalized_malloc(size_t lb,
                                          struct GC_finalizer_closure *fclos)
 #else
-// FIXME: add GC_API, GC_CALL
-  void * GC_finalized_malloc(size_t lb, struct GC_finalizer_closure *fclos)
+  GC_API void * GC_CALL GC_finalized_malloc(size_t lb,
+                                            struct GC_finalizer_closure *fclos)
 #endif
 {
     register ptr_t op;
@@ -105,9 +82,7 @@ void * GC_clear_stack(); // FIXME: remove as declared in gc_priv.h
     DCL_LOCK_STATE;
 
     lb += sizeof(void *);
-    if (!done_init) // FIXME: Probably GC_ASSERT is adequate here?
-        ABORT("You must call GC_init_finalize_malloc before using "
-              "GC_malloc_with_finalizer.");
+    GC_ASSERT(done_init);
     if (EXPECT(SMALL_OBJ(lb), 1)) {
         register word lg;
         lg = GC_size_map[lb];
@@ -130,9 +105,8 @@ void * GC_clear_stack(); // FIXME: remove as declared in gc_priv.h
 }
 
 #ifdef THREAD_LOCAL_ALLOC
-  // FIXME: GC_API, GC_CALL
-  void * GC_finalized_malloc(size_t client_lb,
-                             struct GC_finalizer_closure *fclos)
+  GC_API void * GC_CALL GC_finalized_malloc(size_t client_lb,
+                                            struct GC_finalizer_closure *fclos)
   {
     size_t lb = client_lb + sizeof(void *);
     size_t lg = ROUNDED_UP_GRANULES(lb);
@@ -169,3 +143,5 @@ void * GC_clear_stack(); // FIXME: remove as declared in gc_priv.h
     return (void **)result + 1;
   }
 #endif /* THREAD_LOCAL_ALLOC */
+
+#endif /* ENABLE_DISCLAIM */

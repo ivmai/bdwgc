@@ -37,7 +37,7 @@ all: gc64.dll gctest.exe cord\de.exe test_cpp.exe
 .cpp.obj:
 	$(cc) $(cdebug) $(cflags) $(cvarsmt) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -DALL_INTERIOR_POINTERS -DGC_DLL -DGC_THREADS -D_CRT_SECURE_NO_DEPRECATE $*.cpp /Fo$*.obj
 
-$(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc_mark.h include\private\msvc_dbg.h
+$(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc_mark.h include\gc_disclaim.h include\private\msvc_dbg.h
 
 
 LINK64=link.exe
