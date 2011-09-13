@@ -21,6 +21,8 @@
 #  this will generate gc.sln
 #
 
+SET(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
+
 PROJECT(gc)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
