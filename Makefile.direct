@@ -36,7 +36,7 @@ VPATH= $(srcdir)
 AO_SRC_DIR=$(srcdir)/libatomic_ops
 AO_INSTALL_DIR=$(srcdir)/libatomic_ops-install
 
-CFLAGS= -O -I$(srcdir)/include -I$(AO_INSTALL_DIR)/include -DATOMIC_UNCOLLECTABLE -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM
+CFLAGS= -O -I$(srcdir)/include -I$(AO_INSTALL_DIR)/include -DATOMIC_UNCOLLECTABLE -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS
 
 # To build the parallel collector on Linux, add to the above:
 # -DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
@@ -74,16 +74,14 @@ OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o \
   headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o  \
   malloc.o stubborn.o checksums.o pthread_support.o pthread_stop_world.o \
   darwin_stop_world.o typd_mlc.o ptr_chck.o mallocx.o gcj_mlc.o specific.o \
-  gc_dlopen.o backgraph.o win32_threads.o pthread_start.o thread_local_alloc.o \
-  disclaim.o
+  gc_dlopen.o backgraph.o win32_threads.o pthread_start.o thread_local_alloc.o
 
 CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c \
   headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c \
   new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c \
   checksums.c pthread_support.c pthread_stop_world.c darwin_stop_world.c \
   typd_mlc.c ptr_chck.c mallocx.c gcj_mlc.c specific.c gc_dlopen.c \
-  backgraph.c win32_threads.c pthread_start.c thread_local_alloc.c \
-  disclaim.c
+  backgraph.c win32_threads.c pthread_start.c thread_local_alloc.c
 
 CORD_SRCS= cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/tests/de.c \
   cord/tests/cordtest.c include/cord.h include/ec.h \
@@ -103,7 +101,7 @@ SRCS= $(CSRCS) \
   include/javaxfc.h \
   include/gc_backptr.h include/gc_gcj.h include/private/dbg_mlc.h \
   include/private/specific.h include/leak_detector.h \
-  include/gc_pthread_redirects.h include/gc_disclaim.h \
+  include/gc_pthread_redirects.h \
   include/gc_config_macros.h include/private/pthread_support.h \
   include/private/pthread_stop_world.h include/private/darwin_semaphore.h \
   include/private/darwin_stop_world.h include/private/thread_local_alloc.h \

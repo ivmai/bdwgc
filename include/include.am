@@ -30,6 +30,7 @@ pkginclude_HEADERS += \
         include/gc_version.h
 
 if ENABLE_DISCLAIM
+# FIXME: all include headers must be in pkginclude_HEADERS inconditionally
 pkginclude_HEADERS += include/gc_disclaim.h
 endif
 EXTRA_DIST += include/gc_disclaim.h

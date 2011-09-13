@@ -15,7 +15,8 @@
  */
 
 #include "private/gc_priv.h"
-#include "gc_disclaim.h"
+
+#include "gc_disclaim.h" // FIXME: add ifdef
 
 #include <stdio.h>
 
@@ -212,12 +213,12 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
 }
 
 #ifdef ENABLE_DISCLAIM
-/* Call reclaim notifier for block's kind on each unmarked object in    */
-/* block, all within a pair of corresponding enter/leave callbacks.     */
-STATIC ptr_t GC_disclaim_and_reclaim(struct hblk *hbp, hdr *hhdr, size_t sz,
-                                     ptr_t list, signed_word *count)
-{
-    register int bit_no = 0;
+  /* Call reclaim notifier for block's kind on each unmarked object in  */
+  /* block, all within a pair of corresponding enter/leave callbacks.   */
+  STATIC ptr_t GC_disclaim_and_reclaim(struct hblk *hbp, hdr *hhdr, size_t sz,
+                                       ptr_t list, signed_word *count)
+  {
+    register int bit_no = 0; // FIXME: remove register
     register word *p, *q, *plim;
     signed_word n_bytes_found = 0;
     struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
@@ -263,7 +264,7 @@ STATIC ptr_t GC_disclaim_and_reclaim(struct hblk *hbp, hdr *hhdr, size_t sz,
     }
     *count += n_bytes_found;
     return list;
-}
+  }
 #endif /* ENABLE_DISCLAIM */
 
 /* Don't really reclaim objects, just check for unmarked ones: */
@@ -299,11 +300,11 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
       GC_remove_protection(hbp, 1, (hhdr)->hb_descr == 0 /* Pointer-free? */);
 #   endif
 #   ifdef ENABLE_DISCLAIM
-    if (hhdr -> hb_flags & HAS_DISCLAIM)
-      result = GC_disclaim_and_reclaim(hbp, hhdr, sz, list, count);
-    else
+      if (hhdr -> hb_flags & HAS_DISCLAIM) {
+        result = GC_disclaim_and_reclaim(hbp, hhdr, sz, list, count);
+      } else
 #   endif
-    if (init || GC_debugging_started) {
+    /* else */ if (init || GC_debugging_started) {
       result = GC_reclaim_clear(hbp, hhdr, sz, list, count);
     } else {
       GC_ASSERT((hhdr)->hb_descr == 0 /* Pointer-free block */);
@@ -338,8 +339,8 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp,
 }
 
 #ifdef ENABLE_DISCLAIM
-STATIC void GC_disclaim_and_reclaim_or_free_small_block(struct hblk *hbp)
-{
+  STATIC void GC_disclaim_and_reclaim_or_free_small_block(struct hblk *hbp)
+  {
     hdr *hhdr = HDR(hbp);
     size_t sz = hhdr -> hb_sz;
     struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
@@ -355,8 +356,8 @@ STATIC void GC_disclaim_and_reclaim_or_free_small_block(struct hblk *hbp)
         GC_bytes_found += HBLKSIZE;
         GC_freehblk(hbp);
     }
-}
-#endif
+  }
+#endif /* ENABLE_DISCLAIM */
 
 /*
  * Restore an unmarked large object or an entirely empty blocks of small objects
@@ -385,7 +386,7 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
                   if ((*ok->ok_disclaim_proc)(hbp, ok->ok_disclaim_cd)) {
                     /* Not disclaimed => resurrect the object. */
                     set_mark_bit_from_hdr(hhdr, 0);
-                    /* excuse me, */ goto in_use;
+                    goto in_use;
                   }
                 }
 #             endif
@@ -397,7 +398,7 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
             }
         } else {
 #        ifdef ENABLE_DISCLAIM
-          in_use:
+           in_use:
 #        endif
             if (hhdr -> hb_descr != 0) {
               GC_composite_in_use += sz;
@@ -422,11 +423,11 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
           GC_reclaim_small_nonempty_block(hbp, TRUE /* report_if_found */);
         } else if (empty) {
 #       ifdef ENABLE_DISCLAIM
-          if ((hhdr -> hb_flags & HAS_DISCLAIM))
+          if ((hhdr -> hb_flags & HAS_DISCLAIM) != 0) {
             GC_disclaim_and_reclaim_or_free_small_block(hbp);
-          else
+          } else
 #       endif
-          {
+          /* else */ {
             GC_bytes_found += HBLKSIZE;
             GC_freehblk(hbp);
           }

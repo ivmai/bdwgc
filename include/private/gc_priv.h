@@ -816,10 +816,10 @@ struct hblkhdr {
 #       define FREE_BLK 4       /* Block is free, i.e. not in use.      */
 #       ifdef ENABLE_DISCLAIM
 #           define HAS_DISCLAIM 8
-                                    /* This kind has a callback on reclaim. */
+                                /* This kind has a callback on reclaim. */
 #           define MARK_UNCONDITIONALLY 16
                                 /* Mark from all objects, marked or     */
-                                /* not. Used to mark objects needed by  */
+                                /* not.  Used to mark objects needed by */
                                 /* reclaim notifier.                    */
 #       endif
     unsigned short hb_last_reclaimed;
@@ -1237,7 +1237,7 @@ GC_EXTERN struct obj_kind {
                         /* Mark from all, including unmarked, objects   */
                         /* in block.  Used to protect objects reachable */
                         /* from reclaim notifiers.                      */
-     int (*ok_disclaim_proc)(void *obj, void *cd);
+     int (*ok_disclaim_proc)(void *obj, void *cd); // FIXME: GC_CALLBACK
      void *ok_disclaim_cd;
                         /* The disclaim procedure is called before obj  */
                         /* is reclaimed, but must also tolerate being   */
@@ -1245,8 +1245,8 @@ GC_EXTERN struct obj_kind {
                         /* exit prevents object from being reclaimed.   */
 #    define OK_DISCLAIM_INITZ FALSE, NULL, NULL
 #  else
-#    define OK_DISCLAIM_INITZ
-#  endif
+#    define OK_DISCLAIM_INITZ /* empty */
+#  endif /* !ENABLE_DISCLAIM */
 } GC_obj_kinds[MAXOBJKINDS];
 
 #define beginGC_obj_kinds ((ptr_t)(&GC_obj_kinds))
