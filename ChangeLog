@@ -1,5 +1,16 @@
 2011-09-13  Ivan Maidanski <ivmai@mail.ru>
 
+	* CMakeLists.txt (CMAKE_LEGACY_CYGWIN_WIN32): Set to 0 (required for
+	Cygwin).
+
+2011-09-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c (check_heap_stats): Increase max_heap_sz value (for
+	32-bit targets) from 15M by 1M (as the former is hit sometimes on
+	Cygwin).
+
+2011-09-13  Ivan Maidanski <ivmai@mail.ru>
+
 	* CMakeLists.txt (cygwin): Remove "-D_REENTRANT" definition.
 	* CMakeLists.txt (cord): Add gdi32 link library.
 
