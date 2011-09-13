@@ -92,7 +92,6 @@ TESTS += disclaim_test
 check_PROGRAMS += disclaim_test
 disclaim_test_SOURCES = tests/disclaim_test.c
 disclaim_test_LDADD = $(test_ldadd)
-
 TESTS += disclaim_bench
 check_PROGRAMS += disclaim_bench
 disclaim_bench_SOURCES = tests/disclaim_bench.c
