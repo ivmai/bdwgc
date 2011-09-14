@@ -220,7 +220,8 @@ SET_TARGET_PROPERTIES(gcmt-lib PROPERTIES
 ADD_LIBRARY(          gcmt-dll  SHARED     ${SRC})
 
 IF(WIN32)
-  ADD_EXECUTABLE(cord cord/cordbscs.c cord/cordxtra.c cord/de.c cord/de_win.c)
+  ADD_EXECUTABLE(cord cord/cordbscs.c cord/cordxtra.c
+                 cord/tests/de.c cord/tests/de_win.c)
   SET_TARGET_PROPERTIES(cord PROPERTIES WIN32_EXECUTABLE TRUE)
   SET_TARGET_PROPERTIES(cord    PROPERTIES
                       COMPILE_DEFINITIONS GC_NOT_DLL)

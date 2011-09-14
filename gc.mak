@@ -2074,11 +2074,11 @@ NODEP_CPP_TEST_=\
 ################################################################################
 # Begin Source File
 
-SOURCE=.\cord\de_win.c
+SOURCE=.\cord\tests\de_win.c
 DEP_CPP_DE_WI=\
 	".\include\cord.h"\
-	".\cord\de_cmds.h"\
-	".\cord\de_win.h"\
+	".\cord\tests\de_cmds.h"\
+	".\cord\tests\de_win.h"\
 	".\include\private\cord_pos.h"\
 
 NODEP_CPP_DE_WI=\
@@ -2105,11 +2105,11 @@ NODEP_CPP_DE_WI=\
 ################################################################################
 # Begin Source File
 
-SOURCE=.\cord\de.c
+SOURCE=.\cord\tests\de.c
 DEP_CPP_DE_C2e=\
 	".\include\cord.h"\
-	".\cord\de_cmds.h"\
-	".\cord\de_win.h"\
+	".\cord\tests\de_cmds.h"\
+	".\cord\tests\de_win.h"\
 	".\include\private\cord_pos.h"\
 
 NODEP_CPP_DE_C2e=\
@@ -2195,7 +2195,7 @@ NODEP_CPP_CORDB=\
 ################################################################################
 # Begin Source File
 
-SOURCE=.\cord\de_win.RC
+SOURCE=.\cord\tests\de_win.rc
 
 !IF  "$(CFG)" == "cord - Win32 Release"
 

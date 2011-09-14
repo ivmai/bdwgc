@@ -10,8 +10,8 @@ libcord_la_SOURCES = \
         cord/cordxtra.c
 
 EXTRA_DIST += \
-        cord/cordbscs.c cord/cordtest.c cord/de.c \
-        cord/cordprnt.c cord/cordxtra.c cord/de_cmds.h \
-        cord/de_win.h cord/de_win.c cord/de_win.RC
+        cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c \
+        cord/tests/cordtest.c cord/tests/de.c cord/tests/de_cmds.h \
+        cord/tests/de_win.h cord/tests/de_win.c cord/tests/de_win.rc
 
 pkginclude_HEADERS += include/cord.h

@@ -171,5 +171,5 @@ cord/cordprnt.o: cord/cordprnt.c
 cord/cordxtra.o: cord/cordxtra.c
 	sc cord/cordxtra.c $(CSCOPT)
 
-cord/cordtest.o: cord/cordtest.c
-	sc cord/cordtest.c $(CSCOPT)
+cord/cordtest.o: cord/tests/cordtest.c
+	sc cord/tests/cordtest.c $(CSCOPT)

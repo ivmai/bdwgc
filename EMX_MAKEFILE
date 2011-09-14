@@ -112,11 +112,11 @@ cord/cordxtra.o: $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
 cord/cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c $(srcdir)/cord/cordprnt.c -o cord/cordprnt.o
 
-cord/cordtest.exe: $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a
-	$(CC) $(CFLAGS) -o cord/cordtest.exe $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a
+cord/cordtest.exe: $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a
+	$(CC) $(CFLAGS) -o cord/cordtest.exe $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a
 
-cord/de.exe: $(srcdir)/cord/de.c $(srcdir)/cord/cordbscs.o $(srcdir)/cord/cordxtra.o gc.a
-	$(CC) $(CFLAGS) -o cord/de.exe $(srcdir)/cord/de.c $(srcdir)/cord/cordbscs.o $(srcdir)/cord/cordxtra.o gc.a $(CURSES)
+cord/de.exe: $(srcdir)/cord/tests/de.c $(srcdir)/cord/cordbscs.o $(srcdir)/cord/cordxtra.o gc.a
+	$(CC) $(CFLAGS) -o cord/de.exe $(srcdir)/cord/tests/de.c $(srcdir)/cord/cordbscs.o $(srcdir)/cord/cordxtra.o gc.a $(CURSES)
 
 clean:
 	rm -f gc.a tests/test.o gctest.exe output-local output-diff $(OBJS) \

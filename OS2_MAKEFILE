@@ -41,5 +41,5 @@ cord\cordxtra.obj: cord\cordxtra.c include\cord.h include\private\cord_pos.h inc
 cord\cordprnt.obj: cord\cordprnt.c include\cord.h include\private\cord_pos.h include\ec.h
         $(CC) $(CFLAGS) /C /Focord\cordprnt cord\cordprnt.c
 
-cord\cordtest.exe: cord\cordtest.c include\cord.h include\private\cord_pos.h include\ec.h $(CORDOBJS) gc.lib
-        $(CC) $(CFLAGS) /B"/STACK:65536" /Fecord\cordtest cord\cordtest.c gc.lib $(CORDOBJS)
+cord\cordtest.exe: cord\tests\cordtest.c include\cord.h include\private\cord_pos.h include\ec.h $(CORDOBJS) gc.lib
+        $(CC) $(CFLAGS) /B"/STACK:65536" /Fecord\cordtest cord\tests\cordtest.c gc.lib $(CORDOBJS)

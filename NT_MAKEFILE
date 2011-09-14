@@ -37,14 +37,14 @@ gctest.exe: tests\test.obj gc.lib
 cord\de_win.rbj: cord\de_win.res
 	cvtres /MACHINE:$(MY_CPU) /OUT:cord\de_win.rbj cord\de_win.res
 
-cord\de.obj cord\de_win.obj: include\cord.h include\private\cord_pos.h cord\de_win.h cord\de_cmds.h
+cord\tests\de.obj cord\tests\de_win.obj: include\cord.h include\private\cord_pos.h cord\tests\de_win.h cord\tests\de_cmds.h
 
-cord\de_win.res: cord\de_win.rc cord\de_win.h cord\de_cmds.h
-	$(rc) $(rcvars) -r -fo cord\de_win.res cord\de_win.rc
+cord\de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cmds.h
+	$(rc) $(rcvars) -r -fo cord\de_win.res cord\tests\de_win.rc
 
 # Cord/de is a real win32 gui application.
-cord\de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\de.obj cord\de_win.obj cord\de_win.rbj gc.lib
-	$(link) -debug -debugtype:cv $(guiflags) -stack:16384 -out:cord\de.exe  cord\cordbscs.obj cord\cordxtra.obj cord\de.obj cord\de_win.obj cord\de_win.rbj gc.lib $(guilibs)
+cord\de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\de_win.rbj gc.lib
+	$(link) -debug -debugtype:cv $(guiflags) -stack:16384 -out:cord\de.exe  cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\de_win.rbj gc.lib $(guilibs)
 
 gc_cpp.obj: include\gc_cpp.h include\gc.h
 

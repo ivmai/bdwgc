@@ -31,7 +31,7 @@ http://www.sgi.com/tech/stl/ropeimpl.html is missing a figure.)
 
 All of these are descendents of the "ropes" in Xerox Cedar.
 
-de.c is a very dumb text editor that illustrates the use of cords.
+cord/tests/de.c is a very dumb text editor that illustrates the use of cords.
 It maintains a list of file versions.  Each version is simply a
 cord representing the file contents.  Nonetheless, standard
 editing operations are efficient, even on very large files.
