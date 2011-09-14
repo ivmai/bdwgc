@@ -137,7 +137,7 @@ OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE gc.mak \
   NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE \
   build_atomic_ops.sh build_atomic_ops.sh.cygwin
 
-OTHER_FILES= Makefile tools/setjmp_t.c tools/callprocs.sh extra/MacOS.c \
+OTHER_FILES= tools/setjmp_t.c tools/callprocs.sh extra/MacOS.c \
   Mac_files/datastart.c Mac_files/dataend.c \
   Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
   tools/add_gc_prefix.c gc_cpp.cpp \
@@ -411,7 +411,6 @@ gcname: $(srcdir)/tools/gcname.c $(srcdir)/include/gc_version.h
 
 #We assume this is being done from source directory.
 dist gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
-	cp Makefile Makefile.old
 	cp Makefile.direct Makefile
 	cd $(AO_SRC_DIR); $(MAKE) dist
 	if test $(srcdir)/libatomic_ops = $(AO_SRC_DIR); \

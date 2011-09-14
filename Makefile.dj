@@ -60,7 +60,7 @@ SRCS= $(CSRCS) \
     include/private/specific.h \
     include/leak_detector.h $(CORD_SRCS)
 
-OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
+OTHER_FILES= PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README tests/test.c test_cpp.cc tools/setjmp_t.c SMakefile.amiga \
            doc/README.amiga doc/README.win32 doc/README.cords \
            doc/README.rs6000 README.QUICK TODO tools/callprocs.sh \
@@ -295,6 +295,3 @@ test_dll: test_dll.o libgc_dll.a libgc.dll
 	$(CC) test_dll.o -L$(ABSDIR) -lgc_dll -o test_dll
 
 SYM_PREFIX-libgc=GC
-
-# Uncomment the following line to build a GNU win32 DLL
-# include Makefile.DLLs

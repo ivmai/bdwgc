@@ -203,7 +203,7 @@ contrived program "test.c" than for your application.)
   On most Un*x-like platforms, the collector can be built either using a
 GNU autoconf-based build infrastructure (type "configure; make" in the
 simplest case), or with a classic makefile by itself (type
-"cp Makefile.direct Makefile; make").  Here we focus on the latter option.
+"make -f Makefile.direct").  Here we focus on the latter option.
 On other platforms, typically only the latter option is available, though
 with a different supplied Makefile.)
 
@@ -405,7 +405,7 @@ USE AS LEAK DETECTOR:
 
   The collector may be used to track down leaks in C programs that are
 intended to run with malloc/free (e.g. code with extreme real-time or
-portability constraints).  To do so define FIND_LEAK in Makefile
+portability constraints).  To do so define FIND_LEAK in Makefile.
 This will cause the collector to invoke the report_leak
 routine defined near the top of reclaim.c whenever an inaccessible
 object is found that has not been explicitly freed.  Such objects will
