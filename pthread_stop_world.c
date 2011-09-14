@@ -167,8 +167,8 @@ STATIC sem_t GC_suspend_ack_sem;
 STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 
 #ifdef SA_SIGINFO
-  /*ARGSUSED*/
-  STATIC void GC_suspend_handler(int sig, siginfo_t *info, void *context)
+  STATIC void GC_suspend_handler(int sig, siginfo_t * info GC_ATTR_UNUSED,
+                                 void * context GC_ATTR_UNUSED)
 #else
   STATIC void GC_suspend_handler(int sig)
 #endif
@@ -189,8 +189,8 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 # endif
 }
 
-/*ARGSUSED*/
-STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
+STATIC void GC_suspend_handler_inner(ptr_t sig_arg,
+                                     void * context GC_ATTR_UNUSED)
 {
   pthread_t self = pthread_self();
   GC_thread me;

@@ -146,8 +146,7 @@ STATIC void GC_update_check_page(struct hblk *h, int index)
 
 word GC_bytes_in_used_blocks = 0;
 
-/*ARGSUSED*/
-STATIC void GC_add_block(struct hblk *h, word dummy)
+STATIC void GC_add_block(struct hblk *h, word dummy GC_ATTR_UNUSED)
 {
    hdr * hhdr = HDR(h);
    size_t bytes = hhdr -> hb_sz;

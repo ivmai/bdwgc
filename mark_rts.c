@@ -457,9 +457,8 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
 }
 
 /* Invoke push_conditional on ranges that are not excluded. */
-/*ARGSUSED*/
 STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
-                                                GC_bool all)
+                                                GC_bool all GC_ATTR_UNUSED)
 {
     struct exclusion * next;
     ptr_t excl_start;
@@ -623,8 +622,8 @@ STATIC void GC_push_all_stack_part_eager_sections(ptr_t lo, ptr_t hi,
  * seen.
  * FIXME: Merge with per-thread stuff.
  */
-/*ARGSUSED*/
-STATIC void GC_push_current_stack(ptr_t cold_gc_frame, void * context)
+STATIC void GC_push_current_stack(ptr_t cold_gc_frame,
+                                  void * context GC_ATTR_UNUSED)
 {
 #   if defined(THREADS)
         if (0 == cold_gc_frame) return;

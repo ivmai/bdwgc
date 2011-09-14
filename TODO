@@ -34,10 +34,6 @@ build_atomic_ops.sh[.cygwin]: Remove if really not needed.
 win32-pthreads/cygwin: compile GC_Create/ExitThread as well (in addition to
 GC_pthread_create); redirect the correspoding functions in gc.h.
 
-Use GC_ATTR_UNUSED across the whole project (replace ARGSUSED annotation);
-define GC_ATTR_UNUSED as empty for old GCC releases;
-remove -Wno-unused-parameter from configure.
-
 configure.ac: Add option to build GC via extra/gc.c compilation.
 
 Mac_files: Remove MacOS_config.h, MacOS_Test_config.h.

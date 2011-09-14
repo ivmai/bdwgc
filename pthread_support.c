@@ -1047,8 +1047,7 @@ GC_INNER void GC_init_parallel(void)
 /* Wrapper for functions that are likely to block for an appreciable    */
 /* length of time.                                                      */
 
-/*ARGSUSED*/
-GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
+GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 {
     struct blocking_data * d = (struct blocking_data *) data;
     GC_thread me;

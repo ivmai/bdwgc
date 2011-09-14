@@ -141,8 +141,8 @@ GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
 GC_INNER long GC_large_alloc_warn_interval = GC_LARGE_ALLOC_WARN_INTERVAL;
                         /* Interval between unsuppressed warnings.      */
 
-/*ARGSUSED*/
-STATIC void * GC_CALLBACK GC_default_oom_fn(size_t bytes_requested)
+STATIC void * GC_CALLBACK GC_default_oom_fn(
+                                        size_t bytes_requested GC_ATTR_UNUSED)
 {
     return(0);
 }
@@ -255,7 +255,6 @@ GC_INNER void GC_extend_size_map(size_t i)
   /* Clear the stack up to about limit.  Return arg.  This function is  */
   /* not static because it could also be errorneously defined in .S     */
   /* file, so this error would be caught by the linker.                 */
-  /*ARGSUSED*/
   void * GC_clear_stack_inner(void *arg, ptr_t limit)
   {
     word dummy[CLEAR_SIZE];
@@ -1578,8 +1577,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 }
 
 /* This is nearly the same as in win32_threads.c        */
-/*ARGSUSED*/
-STATIC void GC_do_blocking_inner(ptr_t data, void * context)
+STATIC void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 {
     struct blocking_data * d = (struct blocking_data *) data;
     GC_ASSERT(GC_is_initialized);

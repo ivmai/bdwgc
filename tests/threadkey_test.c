@@ -52,12 +52,12 @@ void * GC_CALLBACK on_thread_exit_inner (struct GC_stack_base * sb, void * arg)
   if (res == GC_SUCCESS)
     GC_unregister_my_thread ();
 
-  return (void*)(GC_word)creation_res;
+  return arg ? (void*)(GC_word)creation_res : 0;
 }
 
 void on_thread_exit (void *v)
 {
-  GC_call_with_stack_base (on_thread_exit_inner, NULL);
+  GC_call_with_stack_base (on_thread_exit_inner, v);
 }
 
 void make_key (void)

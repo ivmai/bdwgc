@@ -56,11 +56,10 @@ GC_INNER ptr_t * GC_gcjobjfreelist = NULL;
 
 STATIC ptr_t * GC_gcjdebugobjfreelist = NULL;
 
-/*ARGSUSED*/
-STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr,
-                                        struct GC_ms_entry *mark_stack_ptr,
-                                        struct GC_ms_entry *mark_stack_limit,
-                                        word env)
+STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr GC_ATTR_UNUSED,
+                        struct GC_ms_entry *mark_stack_ptr,
+                        struct GC_ms_entry * mark_stack_limit GC_ATTR_UNUSED,
+                        word env GC_ATTR_UNUSED)
 {
     ABORT("No client gcj mark proc is specified");
     return mark_stack_ptr;

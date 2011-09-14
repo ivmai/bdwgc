@@ -21,19 +21,21 @@
 # include <string.h>
 # include <stdlib.h>
 # include <stdarg.h>
+
 # include "cord.h"
 # include "ec.h"
+
 # define I_HIDE_POINTERS    /* So we get access to allocation lock. */
                 /* We use this for lazy file reading,   */
-                /* so that we remain independent    */
-                /* of the threads primitives.       */
+                /* so that we remain independent        */
+                /* of the threads primitives.           */
 # include "gc.h"
 
 /* For now we assume that pointer reads and writes are atomic,  */
 /* i.e. another thread always sees the state before or after    */
-/* a write.  This might be false on a Motorola M68K with    */
+/* a write.  This might be false on a Motorola M68K with        */
 /* pointers that are not 32-bit aligned.  But there probably    */
-/* aren't too many threads packages running on those.       */
+/* aren't too many threads packages running on those.           */
 # define ATOMIC_WRITE(x,y) (x) = (y)
 # define ATOMIC_READ(x) (*(x))
 
@@ -45,14 +47,20 @@
 #   define SEEK_END 2
 # endif
 
-# define BUFSZ 2048 /* Size of stack allocated buffers when     */
-            /* we want large buffers.           */
+# define BUFSZ 2048     /* Size of stack allocated buffers when */
+                        /* we want large buffers.               */
 
 typedef void (* oom_fn)(void);
 
 # define OUT_OF_MEMORY {  if (CORD_oom_fn != (oom_fn) 0) (*CORD_oom_fn)(); \
               ABORT("Out of memory\n"); }
 # define ABORT(msg) { fprintf(stderr, "%s\n", msg); abort(); }
+
+#if __GNUC__ >= 4
+# define CORD_ATTR_UNUSED __attribute__((__unused__))
+#else
+# define CORD_ATTR_UNUSED /* empty */
+#endif
 
 CORD CORD_cat_char(CORD x, char c)
 {
@@ -425,8 +433,7 @@ void CORD_ec_append_cord(CORD_ec x, CORD s)
     x[0].ec_cord = CORD_cat(x[0].ec_cord, s);
 }
 
-/*ARGSUSED*/
-char CORD_nul_func(size_t i, void * client_data)
+char CORD_nul_func(size_t i CORD_ATTR_UNUSED, void * client_data)
 {
     return((char)(unsigned long)client_data);
 }
@@ -551,8 +558,7 @@ char CORD_lf_func(size_t i, void * client_data)
     return(cl -> data[MOD_LINE_SZ(i)]);
 }
 
-/*ARGSUSED*/
-void CORD_lf_close_proc(void * obj, void * client_data)
+void CORD_lf_close_proc(void * obj, void * client_data CORD_ATTR_UNUSED)
 {
     if (fclose(((lf_state *)obj) -> lf_file) != 0) {
         ABORT("CORD_lf_close_proc: fclose failed");

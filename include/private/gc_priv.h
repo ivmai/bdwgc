@@ -129,6 +129,14 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # include "gc_hdrs.h"
 #endif
 
+#ifndef GC_ATTR_UNUSED
+# if __GNUC__ >= 4
+#   define GC_ATTR_UNUSED __attribute__((__unused__))
+# else
+#   define GC_ATTR_UNUSED /* empty */
+# endif
+#endif /* !GC_ATTR_UNUSED */
+
 #if __GNUC__ >= 3 && !defined(LINT2)
 # define EXPECT(expr, outcome) __builtin_expect(expr,outcome)
   /* Equivalent to (expr), but predict that usually (expr)==outcome. */

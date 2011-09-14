@@ -25,8 +25,7 @@
 /* We put this here to minimize the risk of inlining. */
 /*VARARGS*/
 #if defined(__BORLANDC__) || defined(__WATCOMC__) || defined(__CC_ARM)
-  /*ARGSUSED*/
-  void GC_noop(void *p, ...) {}
+  void GC_noop(void * p GC_ATTR_UNUSED, ...) {}
 #else
 # ifdef __DMC__
     void GC_noop(...) {}
@@ -174,8 +173,7 @@ GC_INNER void GC_set_hdr_marks(hdr *hhdr)
 /*
  * Clear all mark bits associated with block h.
  */
-/*ARGSUSED*/
-static void clear_marks_for_block(struct hblk *h, word dummy)
+static void clear_marks_for_block(struct hblk *h, word dummy GC_ATTR_UNUSED)
 {
     register hdr * hhdr = HDR(h);
 
@@ -1358,11 +1356,10 @@ GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
     GC_PUSH_ONE_STACK(p, MARKED_FROM_REGISTER);
 }
 
-/*ARGSUSED*/
 GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
                                                 mse *mark_stack_ptr,
                                                 mse *mark_stack_limit,
-                                                void **src)
+                                                void ** src GC_ATTR_UNUSED)
 {
     hdr * hhdr;
 

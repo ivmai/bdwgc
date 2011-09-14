@@ -462,7 +462,7 @@ void check_marks_int_list(sexpr x)
 # if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
     DWORD  __stdcall tiny_reverse_test(void * arg)
 # else
-    void * tiny_reverse_test(void * arg)
+    void * tiny_reverse_test(void * arg GC_ATTR_UNUSED)
 # endif
 {
     int i;
@@ -1000,8 +1000,7 @@ void typed_test(void)
 
 int fail_count = 0;
 
-/*ARGSUSED*/
-void GC_CALLBACK fail_proc1(void * x)
+void GC_CALLBACK fail_proc1(void *x GC_ATTR_UNUSED)
 {
     fail_count++;
 }
@@ -1648,7 +1647,7 @@ int test(void)
 #endif
 
 #if defined(GC_PTHREADS)
-void * thr_run_one_test(void * arg)
+void * thr_run_one_test(void * arg GC_ATTR_UNUSED)
 {
     run_one_test();
     return(0);

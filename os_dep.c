@@ -530,8 +530,7 @@ GC_INNER char * GC_get_maps(void)
   /* SIGSEGV and SIGPROF masked.  Instead, use this custom one that     */
   /* works-around the issues.                                           */
 
-  /*ARGSUSED*/
-  STATIC void GC_fault_handler_openbsd(int sig)
+  STATIC void GC_fault_handler_openbsd(int sig GC_ATTR_UNUSED)
   {
      siglongjmp(GC_jmp_buf_openbsd, 1);
   }
@@ -889,8 +888,7 @@ GC_INNER word GC_page_size = 0;
   /* Some tools to implement HEURISTIC2 */
 #   define MIN_PAGE_SIZE 256    /* Smallest conceivable page size, bytes */
 
-    /*ARGSUSED*/
-    STATIC void GC_fault_handler(int sig)
+    STATIC void GC_fault_handler(int sig GC_ATTR_UNUSED)
     {
         LONGJMP(GC_jmp_buf, 1);
     }
@@ -2675,9 +2673,9 @@ STATIC void GC_default_push_other_roots(void)
 
 # ifndef MPROTECT_VDB
     /* Ignore write hints.  They don't help us here.    */
-    /*ARGSUSED*/
-    GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
-                                       GC_bool is_ptrfree) {}
+    GC_INNER void GC_remove_protection(struct hblk * h GC_ATTR_UNUSED,
+                                       word nblocks GC_ATTR_UNUSED,
+                                       GC_bool is_ptrfree GC_ATTR_UNUSED) {}
 # endif
 
 #endif /* PROC_VDB || GWW_VDB */
@@ -2801,8 +2799,7 @@ STATIC void GC_default_push_other_roots(void)
   /* If the actual page size is different, this returns TRUE if any     */
   /* of the pages overlapping h are dirty.  This routine may err on the */
   /* side of labeling pages as dirty (and this implementation does).    */
-  /*ARGSUSED*/
-  GC_INNER GC_bool GC_page_was_dirty(struct hblk *h)
+  GC_INNER GC_bool GC_page_was_dirty(struct hblk * h GC_ATTR_UNUSED)
   {
     return(TRUE);
   }
@@ -2813,8 +2810,7 @@ STATIC void GC_default_push_other_roots(void)
   /* following default versions are adequate.                           */
 # ifdef CHECKSUMS
     /* Could any valid GC heap pointer ever have been written to this page? */
-    /*ARGSUSED*/
-    GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
+    GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk * h GC_ATTR_UNUSED)
     {
       return(TRUE);
     }
@@ -2827,9 +2823,9 @@ STATIC void GC_default_push_other_roots(void)
   /* (II) may be essential if we need to ensure that      */
   /* pointer-free system call buffers in the heap are     */
   /* not protected.                                       */
-  /*ARGSUSED*/
-  GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
-                                     GC_bool is_ptrfree) {}
+  GC_INNER void GC_remove_protection(struct hblk * h GC_ATTR_UNUSED,
+                                     word nblocks GC_ATTR_UNUSED,
+                                     GC_bool is_ptrfree GC_ATTR_UNUSED) {}
 #endif /* DEFAULT_VDB */
 
 #ifdef MANUAL_VDB
@@ -2872,14 +2868,13 @@ STATIC void GC_default_push_other_roots(void)
     async_set_pht_entry_from_index(GC_dirty_pages, index);
   }
 
-  /*ARGSUSED*/
-  GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
-                                     GC_bool is_ptrfree) {}
+  GC_INNER void GC_remove_protection(struct hblk * h GC_ATTR_UNUSED,
+                                     word nblocks GC_ATTR_UNUSED,
+                                     GC_bool is_ptrfree GC_ATTR_UNUSED) {}
 
 # ifdef CHECKSUMS
     /* Could any valid GC heap pointer ever have been written to this page? */
-    /*ARGSUSED*/
-    GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
+    GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk * h GC_ATTR_UNUSED)
     {
       /* FIXME - implement me.  */
       return(TRUE);
@@ -3100,7 +3095,6 @@ STATIC void GC_default_push_other_roots(void)
 #   ifndef NO_GETCONTEXT
 #     include <ucontext.h>
 #   endif
-    /*ARGSUSED*/
     STATIC void GC_write_fault_handler(int sig, siginfo_t *si, void *raw_sc)
 # else
 #   define SIG_OK (exc_info -> ExceptionRecord -> ExceptionCode \
@@ -3581,8 +3575,7 @@ ssize_t read(int fd, void *buf, size_t nbyte)
 #endif /* 0 */
 
 # ifdef CHECKSUMS
-    /*ARGSUSED*/
-    GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk *h)
+    GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk * h GC_ATTR_UNUSED)
     {
 #     if defined(GWW_VDB)
         if (GC_GWW_AVAILABLE())
@@ -3782,9 +3775,8 @@ GC_INNER GC_bool GC_page_was_dirty(struct hblk *h)
     return(GC_grungy_bits[h - (struct hblk *)GC_vd_base] & PCR_VD_DB_dirtyBit);
 }
 
-/*ARGSUSED*/
 GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
-                                   GC_bool is_ptrfree)
+                                   GC_bool is_ptrfree GC_ATTR_UNUSED)
 {
     PCR_VD_WriteProtectDisable(h, nblocks*HBLKSIZE);
     PCR_VD_WriteProtectEnable(h, nblocks*HBLKSIZE);

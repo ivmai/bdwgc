@@ -610,11 +610,9 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
     return GC_debug_malloc(lb, OPT_RA s, i);
   }
 
-  /*ARGSUSED*/
-  GC_API void GC_CALL GC_debug_change_stubborn(void *p) {}
+  GC_API void GC_CALL GC_debug_change_stubborn(void * p GC_ATTR_UNUSED) {}
 
-  /*ARGSUSED*/
-  GC_API void GC_CALL GC_debug_end_stubborn_change(void *p) {}
+  GC_API void GC_CALL GC_debug_end_stubborn_change(void * p GC_ATTR_UNUSED) {}
 #endif /* !STUBBORN_ALLOC */
 
 GC_API void * GC_CALL GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)
@@ -924,8 +922,7 @@ STATIC void GC_print_all_smashed_proc(void)
 
 /* Check all marked objects in the given block for validity     */
 /* Avoid GC_apply_to_each_object for performance reasons.       */
-/*ARGSUSED*/
-STATIC void GC_check_heap_block(struct hblk *hbp, word dummy)
+STATIC void GC_check_heap_block(struct hblk *hbp, word dummy GC_ATTR_UNUSED)
 {
     struct hblkhdr * hhdr = HDR(hbp);
     size_t sz = hhdr -> hb_sz;

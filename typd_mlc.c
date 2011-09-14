@@ -493,9 +493,9 @@ STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
    }
 }
 
-/*ARGSUSED*/
 STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
-                                mse * mark_stack_limit, word env)
+                                mse * mark_stack_limit,
+                                word env GC_ATTR_UNUSED)
 {
     hdr * hhdr = HDR(addr);
     size_t sz = hhdr -> hb_sz;

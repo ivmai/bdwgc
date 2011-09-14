@@ -279,10 +279,9 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 
 #if defined(ASM_CLEAR_CODE)
 # ifdef LINT
-    /*ARGSUSED*/
     ptr_t GC_clear_stack_inner(ptr_t arg, word limit)
     {
-      return(arg);
+      return limit ? arg : 0; /* use both arguments */
     }
     /* The real version is in a .S file */
 # endif

@@ -798,8 +798,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 /* length of time.                                                      */
 
 /* GC_do_blocking_inner() is nearly the same as in pthread_support.c    */
-/*ARGSUSED*/
-GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
+GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 {
   struct blocking_data * d = (struct blocking_data *) data;
   DWORD thread_id = GetCurrentThreadId();
@@ -2570,8 +2569,8 @@ GC_INNER void GC_thr_init(void)
     /* collector.  (The alternative of initializing the collector here  */
     /* seems dangerous, since DllMain is limited in what it can do.)    */
 
-    /*ARGSUSED*/
-    BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
+    BOOL WINAPI DllMain(HINSTANCE inst GC_ATTR_UNUSED, ULONG reason,
+                        LPVOID reserved GC_ATTR_UNUSED)
     {
       struct GC_stack_base sb;
       DWORD thread_id;

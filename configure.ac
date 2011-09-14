@@ -341,7 +341,7 @@ case "$host" in
 esac
 
 if test "$GCC" == yes; then
-  CFLAGS="$CFLAGS -Wall -Wextra -Wno-unused-parameter"
+  CFLAGS="$CFLAGS -Wall -Wextra"
 fi
 
 AC_MSG_CHECKING(for xlc)
