@@ -1,6 +1,8 @@
 TODO tasks
 ==========
 
+Add "Disclaim" functionality (merge with paurkedal-disclaim).
+
 tests/CMakeLists.txt: Add more executables (see tests.am).
 
 ChangeLog: it should contain release change log not commit one (see that
