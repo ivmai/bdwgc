@@ -36,7 +36,47 @@ AM_PROG_AS
 
 AC_PROG_INSTALL
 
-. ${srcdir}/configure.host
+# Special CFLAGS to use when building
+gc_cflags=""
+
+# We should set -fexceptions if we are using gcc and might be used
+# inside something like gcj.  This is the zeroth approximation:
+if test :"$GCC": = :yes: ; then
+    gc_cflags="${gc_cflags} -fexceptions"
+else
+    case "$host" in
+        hppa*-*-hpux* )
+        if test :$GCC: != :"yes": ; then
+            gc_cflags="${gc_flags} +ESdbgasm"
+        fi
+        # :TODO: actaully we should check using Autoconf if
+        #     the compiler supports this option.
+        ;;
+    esac
+fi
+
+#   target_optspace     --enable-target-optspace ("yes", "no", "")
+case "${target_optspace}:${host}" in
+  yes:*)
+    gc_cflags="${gc_cflags} -Os"
+    ;;
+  :m32r-* | :d10v-* | :d30v-*)
+    gc_cflags="${gc_cflags} -Os"
+    ;;
+  no:* | :*)
+    # Nothing.
+    ;;
+esac
+
+# Set any host dependent compiler flags.
+case "${host}" in
+  mips-tx39-*|mipstx39-unknown-*)
+        gc_cflags="${gc_cflags} -G 0"
+        ;;
+  *)
+        ;;
+esac
+
 
 GC_CFLAGS=${gc_cflags}
 AC_SUBST(GC_CFLAGS)

@@ -18,8 +18,6 @@ Merge symbian branch to master.
 Merge useful code (if any) from iphone_libgc_6x branch. (Same for gcc_boehmgc
 and mono_libgc.)
 
-configure.host: Move contents to configure.ac and remove the file.
-
 windows-untested: Remove if CMake can generate MS Visual Studio 6.0, 7.0, 8.0
 project files.
 

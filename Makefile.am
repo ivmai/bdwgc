@@ -146,9 +146,8 @@ endif
 
 CCASFLAGS += $(DEFS)
 
-dist_noinst_SCRIPTS = callprocs configure.host
-    ## callprocs --- used by Makefile.{dj,direct}
-    ## configure.host --- used by Makefile.{am,dj,direct}
+dist_noinst_SCRIPTS = callprocs
+    ## callprocs --- used by Makefile.direct
 
 # headers which are not installed
 # (see include/include.am for more)
@@ -175,10 +174,6 @@ EXTRA_DIST += tools/add_gc_prefix.c tools/gcname.c tools/if_mach.c \
     Mac_files/datastart.c Mac_files/dataend.c \
     Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
     include/private/msvc_dbg.h extra/msvc_dbg.c
-
-# this is an auxiliary shell file used by Makefile and Makefile.direct
-#
-CONFIG_STATUS_DEPENDENCIES = $(srcdir)/configure.host
 
 #
 # :GOTCHA: GNU make rule for making .s out of .S is flawed,
