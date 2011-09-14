@@ -40,6 +40,8 @@ remove -Wno-unused-parameter from configure.
 
 configure.ac: Add option to build GC via extra/gc.c compilation.
 
+Mac_files: Remove MacOS_config.h, MacOS_Test_config.h.
+
 
 FIXME tasks
 ===========
