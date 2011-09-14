@@ -1,16 +1,13 @@
 # Ignored files in bdwgc Git repo.
 
-# Binary files:
-/*.dll
-/*.exe
-/*.la
-/*.lib
-/*.lo
-/*.o
-/*.obj
-/src/*.lo
-/src/*.o
-/tests/*.exe
+# Binary files (in root dir, cord, src, tests):
+*.dll
+*.exe
+*.la
+*.lib
+*.lo
+*.o
+*.obj
 
 /.deps/
 /.libs/
@@ -19,6 +16,10 @@
 /bdw-gc.pc
 /config.log
 /config.status
+/cord/cordtest
+/cord/de
+/cord/de_win.rbj
+/cord/de_win.res
 /cordtest
 /core
 /de
