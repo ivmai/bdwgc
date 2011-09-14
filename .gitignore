@@ -13,7 +13,9 @@
 /.libs/
 /Makefile
 /add_gc_prefix
+/base_lib
 /bdw-gc.pc
+/c++
 /config.log
 /config.status
 /cord/cordtest
@@ -24,6 +26,7 @@
 /core
 /de
 /gc-*
+/gc.a
 /gcname
 /gctest
 /hugetest
