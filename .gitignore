@@ -45,6 +45,7 @@
 /threadkey_test
 /threadleaktest
 /threadlibs
+/tracetest
 
 /include/private/config.h
 /include/private/config.h.in~
