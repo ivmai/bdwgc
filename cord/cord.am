@@ -7,9 +7,7 @@ libcord_la_LDFLAGS = -version-info 1:3:0 -no-undefined
 libcord_la_SOURCES = \
         cord/cordbscs.c \
         cord/cordprnt.c \
-        cord/cordtest.c \
         cord/cordxtra.c
-
 
 EXTRA_DIST += \
         cord/cordbscs.c cord/cordtest.c cord/de.c \
