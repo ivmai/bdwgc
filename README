@@ -414,8 +414,8 @@ also be automatically reclaimed.
 the default version of report_leak will report at least the source file and
 line number at which the leaked object was allocated.  This may sometimes be
 sufficient.  (On a few machines, it will also report a cryptic stack trace.
-If this is not symbolic, it can somethimes be called into a sympolic stack
-trace by invoking program "foo" with "callprocs foo".  Callprocs is a short
+If this is not symbolic, it can somethimes be called into a symbolic stack
+trace by invoking program "foo" with "tools/callprocs.sh foo".  It is a short
 shell script that invokes adb to expand program counter values to symbolic
 addresses.  It was largely supplied by Scott Schwartz.)
   Note that the debugging facilities described in the next section can

@@ -146,9 +146,6 @@ endif
 
 CCASFLAGS += $(DEFS)
 
-dist_noinst_SCRIPTS = callprocs
-    ## callprocs --- used by Makefile.direct
-
 # headers which are not installed
 # (see include/include.am for more)
 #
@@ -173,7 +170,7 @@ EXTRA_DIST += tools/add_gc_prefix.c tools/gcname.c tools/if_mach.c \
     gc.mak extra/gc.c extra/MacOS.c mach_dep.c extra/AmigaOS.c \
     Mac_files/datastart.c Mac_files/dataend.c \
     Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-    include/private/msvc_dbg.h extra/msvc_dbg.c
+    include/private/msvc_dbg.h extra/msvc_dbg.c tools/callprocs.sh
 
 #
 # :GOTCHA: GNU make rule for making .s out of .S is flawed,

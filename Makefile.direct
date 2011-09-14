@@ -83,69 +83,69 @@ CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c \
   backgraph.c win32_threads.c pthread_start.c thread_local_alloc.c
 
 CORD_SRCS= cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c \
-    cord/cordtest.c include/cord.h include/ec.h include/private/cord_pos.h \
-    cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.RC
+  cord/cordtest.c include/cord.h include/ec.h include/private/cord_pos.h \
+  cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.RC
 
 CORD_OBJS= cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
 SRCS= $(CSRCS) \
-    include/gc.h include/gc_typed.h include/gc_tiny_fl.h \
-    include/gc_version.h include/private/gc_hdrs.h include/private/gc_priv.h \
-    include/private/gcconfig.h include/private/gc_pmark.h \
-    include/gc_inline.h include/gc_mark.h tools/threadlibs.c \
-    tools/if_mach.c tools/if_not_there.c gc_cpp.cc include/gc_cpp.h \
-    tools/gcname.c include/weakpointer.h include/private/gc_locks.h \
-    include/new_gc_alloc.h include/gc_allocator.h \
-    include/javaxfc.h \
-    include/gc_backptr.h include/gc_gcj.h include/private/dbg_mlc.h \
-    include/private/specific.h include/leak_detector.h \
-    include/gc_pthread_redirects.h \
-    include/gc_config_macros.h include/private/pthread_support.h \
-    include/private/pthread_stop_world.h include/private/darwin_semaphore.h \
-    include/private/darwin_stop_world.h include/private/thread_local_alloc.h \
-    src/ia64_save_regs_in_stack.s src/sparc_mach_dep.S \
-    src/sparc_netbsd_mach_dep.s src/sparc_sunos4_mach_dep.s $(CORD_SRCS)
+  include/gc.h include/gc_typed.h include/gc_tiny_fl.h \
+  include/gc_version.h include/private/gc_hdrs.h include/private/gc_priv.h \
+  include/private/gcconfig.h include/private/gc_pmark.h \
+  include/gc_inline.h include/gc_mark.h tools/threadlibs.c \
+  tools/if_mach.c tools/if_not_there.c gc_cpp.cc include/gc_cpp.h \
+  tools/gcname.c include/weakpointer.h include/private/gc_locks.h \
+  include/new_gc_alloc.h include/gc_allocator.h \
+  include/javaxfc.h \
+  include/gc_backptr.h include/gc_gcj.h include/private/dbg_mlc.h \
+  include/private/specific.h include/leak_detector.h \
+  include/gc_pthread_redirects.h \
+  include/gc_config_macros.h include/private/pthread_support.h \
+  include/private/pthread_stop_world.h include/private/darwin_semaphore.h \
+  include/private/darwin_stop_world.h include/private/thread_local_alloc.h \
+  src/ia64_save_regs_in_stack.s src/sparc_mach_dep.S \
+  src/sparc_netbsd_mach_dep.s src/sparc_sunos4_mach_dep.s $(CORD_SRCS)
 
 DOC_FILES= README.QUICK TODO doc/README.Mac doc/README.MacOSX doc/README.OS2 \
-	doc/README.amiga doc/README.cords doc/debugging.html \
-	doc/porting.html doc/overview.html \
-	doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
-	doc/README.sgi doc/README.solaris2 doc/README.uts \
-	doc/README.win32 doc/barrett_diagram \
-        README AUTHORS doc/gc.man \
-	doc/README.environment doc/tree.html doc/gcdescr.html \
-	doc/README.autoconf doc/README.macros doc/README.ews4800 \
-	doc/README.DGUX386 doc/README.arm.cross doc/leak.html \
-	doc/scale.html doc/gcinterface.html doc/README.darwin \
-	doc/simple_example.html doc/README.win64
+  doc/README.amiga doc/README.cords doc/debugging.html \
+  doc/porting.html doc/overview.html \
+  doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
+  doc/README.sgi doc/README.solaris2 doc/README.uts \
+  doc/README.win32 doc/barrett_diagram \
+  README AUTHORS doc/gc.man \
+  doc/README.environment doc/tree.html doc/gcdescr.html \
+  doc/README.autoconf doc/README.macros doc/README.ews4800 \
+  doc/README.DGUX386 doc/README.arm.cross doc/leak.html \
+  doc/scale.html doc/gcinterface.html doc/README.darwin \
+  doc/simple_example.html doc/README.win64
 
 TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
-	tests/leak_test.c tests/thread_leak_test.c tests/middle.c \
-	tests/smash_test.c tests/huge_test.c
+  tests/leak_test.c tests/thread_leak_test.c tests/middle.c \
+  tests/smash_test.c tests/huge_test.c
 
 GNU_BUILD_FILES= configure.ac Makefile.am configure install-sh Makefile.in \
-		 aclocal.m4 config.sub config.guess \
-		 include/include.am doc/doc.am \
-		 ltmain.sh mkinstalldirs depcomp missing \
-		 cord/cord.am tests/tests.am autogen.sh \
-		 bdw-gc.pc.in compile
+  aclocal.m4 config.sub config.guess \
+  include/include.am doc/doc.am \
+  ltmain.sh mkinstalldirs depcomp missing \
+  cord/cord.am tests/tests.am autogen.sh \
+  bdw-gc.pc.in compile
 
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE gc.mak \
-		 BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
-		 PCR-Makefile SMakefile.amiga Makefile.DLLs \
-		 digimars.mak Makefile.direct NT_STATIC_THREADS_MAKEFILE \
-		 NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE \
-		 build_atomic_ops.sh build_atomic_ops.sh.cygwin
+  BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
+  PCR-Makefile SMakefile.amiga Makefile.DLLs \
+  digimars.mak Makefile.direct NT_STATIC_THREADS_MAKEFILE \
+  NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE \
+  build_atomic_ops.sh build_atomic_ops.sh.cygwin
 
-OTHER_FILES= Makefile tools/setjmp_t.c callprocs extra/MacOS.c \
-           Mac_files/datastart.c Mac_files/dataend.c \
-           Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-           tools/add_gc_prefix.c gc_cpp.cpp \
-           extra/AmigaOS.c extra/msvc_dbg.c include/private/msvc_dbg.h \
-	   $(TESTS) $(GNU_BUILD_FILES) $(OTHER_MAKEFILES)
+OTHER_FILES= Makefile tools/setjmp_t.c tools/callprocs.sh extra/MacOS.c \
+  Mac_files/datastart.c Mac_files/dataend.c \
+  Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
+  tools/add_gc_prefix.c gc_cpp.cpp \
+  extra/AmigaOS.c extra/msvc_dbg.c include/private/msvc_dbg.h \
+  $(TESTS) $(GNU_BUILD_FILES) $(OTHER_MAKEFILES)
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
-	$(srcdir)/include/ec.h $(srcdir)/include/private/cord_pos.h
+  $(srcdir)/include/ec.h $(srcdir)/include/private/cord_pos.h
 
 UTILS= if_mach if_not_there threadlibs
 
