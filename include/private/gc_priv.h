@@ -498,6 +498,10 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #endif
 
 #if defined(DARWIN)
+# ifndef MAC_OS_X_VERSION_MAX_ALLOWED
+#   include <AvailabilityMacros.h>
+                /* Include this header just to import the above macro.  */
+# endif
 # if defined(POWERPC)
 #   if CPP_WORDSZ == 32
 #     define GC_THREAD_STATE_T          ppc_thread_state_t

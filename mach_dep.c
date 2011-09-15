@@ -174,7 +174,12 @@ asm static void PushMacRegisters()
 #if !defined(HAVE_PUSH_REGS) && defined(UNIX_LIKE)
 # include <signal.h>
 # ifndef NO_GETCONTEXT
-#   include <ucontext.h>
+#   if defined(DARWIN) \
+       && (MAC_OS_X_VERSION_MAX_ALLOWED >= 1060 /*MAC_OS_X_VERSION_10_6*/)
+#     include <sys/ucontext.h>
+#   else
+#     include <ucontext.h>
+#   endif /* !DARWIN */
 #   ifdef GETCONTEXT_FPU_EXCMASK_BUG
 #     include <fenv.h>
 #   endif
