@@ -5,9 +5,6 @@ Add "Disclaim" functionality (merge with paurkedal-disclaim).
 
 tests/CMakeLists.txt: Add more executables (see tests.am).
 
-ChangeLog: it should contain release change log not commit one (see that
-in libatomic_ops).
-
 Add .gitattributes: ensure LF line encoding in the repo.
 
 Use C++0x ATM (atomic memory operations) if available (either from the
