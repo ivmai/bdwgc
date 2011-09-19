@@ -70,6 +70,11 @@ check_PROGRAMS += threadkey_test
 threadkey_test_SOURCES = tests/threadkey_test.c
 threadkey_test_LDADD = $(test_ldadd)
 
+TESTS += subthread_create$(EXEEXT)
+check_PROGRAMS += subthread_create
+subthread_create_SOURCES = tests/subthread_create.c
+subthread_create_LDADD = $(test_ldadd)
+
 TESTS += initsecondarythread$(EXEEXT)
 check_PROGRAMS += initsecondarythread
 initsecondarythread_SOURCES = tests/initsecondarythread.c
