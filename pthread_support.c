@@ -47,6 +47,7 @@
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
 # include <stdlib.h>
+# include <inttypes.h>
 # include <pthread.h>
 # include <sched.h>
 # include <time.h>
@@ -463,6 +464,22 @@ void GC_push_thread_structures(void)
 #   endif
 }
 
+STATIC int GC_count_threads(void)
+{
+    int i;
+    int count = 0;
+    GC_ASSERT(I_HOLD_LOCK());
+    for (i = 0; i < THREAD_TABLE_SZ; ++i) {
+        GC_thread th = GC_threads[i];
+        while (th) {
+            if (!(th->flags & FINISHED))
+                ++count;
+            th = th->next;
+        }
+    }
+    return count;
+}
+
 /* It may not be safe to allocate when we register the first thread.    */
 static struct GC_Thread_Rep first_thread;
 
@@ -473,6 +490,9 @@ STATIC GC_thread GC_new_thread(pthread_t id)
     int hv = NUMERIC_THREAD_ID(id) % THREAD_TABLE_SZ;
     GC_thread result;
     static GC_bool first_thread_used = FALSE;
+#   ifdef DEBUG_THREADS
+        GC_log_printf("Creating thread %#"PRIxMAX".\n", (uintmax_t)id);
+#   endif
 
     GC_ASSERT(I_HOLD_LOCK());
     if (!first_thread_used) {
@@ -505,6 +525,11 @@ STATIC void GC_delete_thread(pthread_t id)
     int hv = NUMERIC_THREAD_ID(id) % THREAD_TABLE_SZ;
     register GC_thread p = GC_threads[hv];
     register GC_thread prev = 0;
+
+#   ifdef DEBUG_THREADS
+      GC_log_printf("Deleting thread 0x%"PRIxMAX". n_threads = %d.\n",
+                    (uintmax_t)id, GC_count_threads());
+#   endif
 
 #   ifdef NACL
       GC_nacl_shutdown_gc_thread();
@@ -554,6 +579,11 @@ STATIC void GC_delete_gc_thread(GC_thread t)
         mach_port_deallocate(mach_task_self(), p->stop_info.mach_thread);
 #   endif
     GC_INTERNAL_FREE(p);
+
+#   ifdef DEBUG_THREADS
+      GC_log_printf("Deleted gc-thread 0x%"PRIxMAX". n_threads = %d.\n",
+                    (uintmax_t)id, GC_count_threads());
+#   endif
 }
 
 /* Return a GC_thread corresponding to a given pthread_t.       */
@@ -1157,7 +1187,8 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 STATIC void GC_unregister_my_thread_inner(GC_thread me)
 {
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Unregistering thread 0x%x\n", (unsigned)pthread_self());
+      GC_log_printf("Unregistering thread 0x%"PRIxMAX" -> %p. n_threads = %d.\n",
+                    (uintmax_t)me->id, me, GC_count_threads());
 #   endif
     GC_ASSERT(!(me -> flags & FINISHED));
 #   if defined(THREAD_LOCAL_ALLOC)
@@ -1184,6 +1215,7 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
     pthread_t self = pthread_self();
+    GC_thread gc_self;
     IF_CANCEL(int cancel_state;)
     DCL_LOCK_STATE;
 
@@ -1192,7 +1224,13 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     /* Wait for any GC that may be marking from our stack to    */
     /* complete before we remove this thread.                   */
     GC_wait_for_gc_completion(FALSE);
-    GC_unregister_my_thread_inner(GC_lookup_thread(self));
+    gc_self = GC_lookup_thread(self);
+#   ifdef DEBUG_THREADS
+        GC_log_printf("Called GC_unregister_my_thread on %#"PRIxMAX" -> %p.\n",
+                      (uintmax_t)self, GC_lookup_thread(self));
+#   endif
+    GC_ASSERT(gc_self->id == self);
+    GC_unregister_my_thread_inner(gc_self);
     RESTORE_CANCEL(cancel_state);
     UNLOCK();
     return GC_SUCCESS;
@@ -1205,6 +1243,10 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 /* resources or id anyway.                              */
 GC_INNER void GC_thread_exit_proc(void *arg)
 {
+#   ifdef DEBUG_THREADS
+        GC_log_printf("Called GC_thread_exit_proc on %#"PRIxMAX" -> %p.\n",
+                      ((GC_thread)arg)->id, arg);
+#   endif
     IF_CANCEL(int cancel_state;)
     DCL_LOCK_STATE;
 
@@ -1444,8 +1486,8 @@ GC_INNER GC_thread GC_start_rtn_prepare_thread(void *(**pstart)(void *),
     DCL_LOCK_STATE;
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Starting thread 0x%x, pid = %ld, sp = %p\n",
-                    (unsigned)self, (long)getpid(), &arg);
+      GC_log_printf("Starting thread 0x%"PRIxMAX", pid = %ld, sp = %p\n",
+                    (uintmax_t)self, (long)getpid(), &arg);
 #   endif
     LOCK();
     me = GC_register_my_thread_inner(sb, self);
