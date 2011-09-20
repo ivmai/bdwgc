@@ -41,6 +41,7 @@
 /setjmp_test
 /smashtest
 /staticrootstest
+/subthread_create
 /test_cpp
 /threadkey_test
 /threadleaktest
