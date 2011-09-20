@@ -17,8 +17,11 @@
 
 #ifdef SKIP_THREADKEY_TEST
 
+#include <stdio.h>
+
 int main (void)
 {
+  printf("threadkey_test skipped\n");
   return 0;
 }
 
@@ -89,4 +92,4 @@ int main (void)
   return 0;
 }
 
-#endif
+#endif /* !SKIP_THREADKEY_TEST */
