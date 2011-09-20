@@ -452,7 +452,7 @@ static void alloc_mark_stack(size_t);
         struct _EXCEPTION_RECORD *ex_rec,
         void *est_frame,
         struct _CONTEXT *context,
-        void *disp_ctxt)
+        void *disp_ctxt GC_ATTR_UNUSED)
     {
         if (ex_rec->ExceptionCode == STATUS_ACCESS_VIOLATION) {
           ext_ex_regn *xer = (ext_ex_regn *)est_frame;
