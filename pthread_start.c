@@ -47,7 +47,8 @@ void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb, void *arg)
   void * (*start)(void *);
   void * start_arg;
   void * result;
-  GC_thread me = GC_start_rtn_prepare_thread(&start, &start_arg, sb, arg);
+  volatile GC_thread me =
+                GC_start_rtn_prepare_thread(&start, &start_arg, sb, arg);
 
 # ifndef NACL
     pthread_cleanup_push(GC_thread_exit_proc, me);
