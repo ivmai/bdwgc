@@ -1,6 +1,9 @@
 TODO tasks
 ==========
 
+configure: Add -D GC_DLL if shared library (at least for mingw/cygwin).
+And remove Makefile.DLLs.
+
 Add "Disclaim" functionality (merge with paurkedal-disclaim).
 
 tests/CMakeLists.txt: Add more executables (see tests.am).
@@ -26,7 +29,7 @@ NT_X64_STATIC_THREADS_MAKEFILE, NT_X64_THREADS_MAKEFILE, digimars.mak,
 gc.mak.)
 
 Makefile.dj: Remove if it is possible to use auto-generated Makefile instead.
-(Same for EMX_MAKEFILE, Makefile.DLLs.)
+(Same for EMX_MAKEFILE.)
 
 build_atomic_ops.sh[.cygwin]: Remove if really not needed.
 
