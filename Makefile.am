@@ -158,7 +158,7 @@ EXTRA_DIST += README.QUICK TODO
 # :GOTCHA: deliberately we do not include 'Makefile'
 EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
     OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE \
-    Makefile.direct Makefile.dj Makefile.DLLs SMakefile.amiga \
+    Makefile.direct Makefile.dj SMakefile.amiga \
     WCC_MAKEFILE autogen.sh build_atomic_ops.sh build_atomic_ops.sh.cygwin \
     NT_STATIC_THREADS_MAKEFILE NT_X64_STATIC_THREADS_MAKEFILE \
     NT_X64_THREADS_MAKEFILE CMakeLists.txt tests/CMakeLists.txt

@@ -134,7 +134,7 @@ GNU_BUILD_FILES= configure.ac Makefile.am configure install-sh Makefile.in \
 
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE gc.mak \
   BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
-  PCR-Makefile SMakefile.amiga Makefile.DLLs \
+  PCR-Makefile SMakefile.amiga \
   digimars.mak Makefile.direct NT_STATIC_THREADS_MAKEFILE \
   NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE \
   build_atomic_ops.sh build_atomic_ops.sh.cygwin
@@ -461,9 +461,6 @@ test_dll: test_dll.o libgc_dll.a libgc.dll
 	$(CC) test_dll.o -L$(ABSDIR) -lgc_dll -o test_dll
 
 SYM_PREFIX-libgc=GC
-
-# Uncomment the following line to build a GNU win32 DLL
-# include Makefile.DLLs
 
 reserved_namespace: $(SRCS)
 	for file in $(SRCS) tests/test.c tests/test_cpp.cc; do \
