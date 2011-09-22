@@ -1,3 +1,26 @@
+2011-09-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure: Regenerate.
+	* include/private/config.h.in: Ditto.
+
+2011-09-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (GC_DLL): New AC template; define if only the dynamic
+	libraries are being built.
+	* configure.ac (THREAD_LOCAL_ALLOC): Define for Win32 implicitly
+	if static libraries are being built (i.e. GC_DLL is not defined).
+	* doc/README.win32: Update "GNU Tools" section.
+
+2011-09-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (THREADS): Change "posix" to "win32" in case of
+	cross-compiling to MinGW.
+
+2011-09-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (PARALLEL_MARK): Check --enable-parallel-mark also for
+	Solaris.
+
 2011-09-20  Ivan Maidanski <ivmai@mail.ru>
 
 	* pthread_start.c (GC_inner_start_routine): Add volatile to "me" local
