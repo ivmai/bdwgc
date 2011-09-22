@@ -1,9 +1,6 @@
 TODO tasks
 ==========
 
-configure: Add -D GC_DLL if shared library (at least for mingw/cygwin).
-And remove Makefile.DLLs.
-
 Add "Disclaim" functionality (merge with paurkedal-disclaim).
 
 tests/CMakeLists.txt: Add more executables (see tests.am).
