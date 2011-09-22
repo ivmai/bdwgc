@@ -104,6 +104,10 @@ dnl System header feature requests.
 AH_TEMPLATE([_POSIX_C_SOURCE], [The POSIX feature macro.])
 AH_TEMPLATE([_PTHREADS], [Indicates the use of pthreads (NetBSD).])
 
+dnl GC API symbols export control.
+AH_TEMPLATE([GC_DLL],
+        [Define to build dynamic libraries with only API symbols exposed.])
+
 dnl Check for a flavor of supported inline keyword.
 AC_C_INLINE
 
@@ -261,6 +265,11 @@ case "$THREADS" in
     if test "${enable_parallel_mark}" = yes; then
       AC_DEFINE(PARALLEL_MARK)
       AC_DEFINE(THREAD_LOCAL_ALLOC)
+    else
+      if test "${enable_static}" == yes; then
+        # Imply THREAD_LOCAL_ALLOC unless GC_DLL.
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
+      fi
     fi
     win32_threads=true
     AC_DEFINE([EMPTY_GETENV_RESULTS], [1],
@@ -406,6 +415,14 @@ case "$host" in
 esac
 
 AC_MSG_RESULT($enable_shared)
+
+# Compile with GC_DLL defined unless building static libraries.
+if test "${enable_shared}" == yes; then
+  if test "${enable_static}" == no; then
+    AC_DEFINE(GC_DLL)
+    # FIXME: Also pass -fvisibility=hidden option if GCC v4+ and not Win32.
+  fi
+fi
 
 # Configuration of machine-dependent code
 #
