@@ -89,6 +89,14 @@ AC_ARG_ENABLE(threads,
     if test -z "$THREADS"; then
       THREADS=no
     fi
+    if test "$THREADS" = "posix"; then
+      case "$host" in
+        *-*-mingw*)
+          # Adjust thread model if cross-compiling for MinGW.
+          THREADS=win32
+          ;;
+      esac
+    fi
     AC_MSG_RESULT([$THREADS]) ])
 
 AC_ARG_ENABLE(parallel-mark,
