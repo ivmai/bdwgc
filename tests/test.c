@@ -460,7 +460,7 @@ void check_marks_int_list(sexpr x)
 # endif
 
 # if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
-    DWORD  __stdcall tiny_reverse_test(void * arg)
+    DWORD  __stdcall tiny_reverse_test(void * arg GC_ATTR_UNUSED)
 # else
     void * tiny_reverse_test(void * arg GC_ATTR_UNUSED)
 # endif
@@ -1397,8 +1397,10 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #if !defined(PCR) && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS) \
     || defined(LINT)
 #if defined(MSWIN32) && !defined(__MINGW32__) || defined(MSWINCE)
-  int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev,
-                       WINMAIN_LPTSTR cmd, int n)
+  int APIENTRY WinMain(HINSTANCE instance GC_ATTR_UNUSED,
+                       HINSTANCE prev GC_ATTR_UNUSED,
+                       WINMAIN_LPTSTR cmd GC_ATTR_UNUSED,
+                       int n GC_ATTR_UNUSED)
 #elif defined(RTEMS)
 # include <bsp.h>
 # define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
@@ -1471,7 +1473,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 
 #if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
 
-DWORD __stdcall thr_run_one_test(void *arg)
+DWORD __stdcall thr_run_one_test(void * arg GC_ATTR_UNUSED)
 {
   run_one_test();
   return 0;
@@ -1481,7 +1483,8 @@ DWORD __stdcall thr_run_one_test(void *arg)
 HANDLE win_created_h;
 HWND win_handle;
 
-LRESULT CALLBACK window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK window_proc(HWND hwnd, UINT uMsg, WPARAM wParam,
+                             LPARAM lParam)
 {
   LRESULT ret = 0;
   switch (uMsg) {
@@ -1504,7 +1507,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   return ret;
 }
 
-DWORD __stdcall thr_window(void *arg)
+DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
 {
   WNDCLASS win_class = {
     CS_NOCLOSE,
@@ -1551,8 +1554,10 @@ DWORD __stdcall thr_window(void *arg)
 }
 #endif
 
-int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prev,
-                     WINMAIN_LPTSTR cmd, int n)
+int APIENTRY WinMain(HINSTANCE instance GC_ATTR_UNUSED,
+                     HINSTANCE prev GC_ATTR_UNUSED,
+                     WINMAIN_LPTSTR cmd GC_ATTR_UNUSED,
+                     int n GC_ATTR_UNUSED)
 {
 # if NTHREADS > 0
    HANDLE h[NTHREADS];
