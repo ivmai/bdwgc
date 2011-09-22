@@ -180,6 +180,9 @@ case "$THREADS" in
         ;;
      *-*-solaris*)
         AC_DEFINE(GC_SOLARIS_THREADS)
+        if test "${enable_parallel_mark}" = yes; then
+          AC_DEFINE(PARALLEL_MARK)
+        fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
         # Need to use alternate thread library, otherwise gctest hangs
         # on Solaris 8.
@@ -212,12 +215,12 @@ case "$THREADS" in
         ;;
      *-*-darwin*)
         AC_DEFINE(GC_DARWIN_THREADS)
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
         AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
         # Parallel-mark is not well-tested on Darwin
         if test "${enable_parallel_mark}" = yes; then
           AC_DEFINE(PARALLEL_MARK)
         fi
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
         darwin_threads=true
         ;;
      *-*-osf*)
