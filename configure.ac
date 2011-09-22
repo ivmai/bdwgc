@@ -52,6 +52,14 @@ AC_ARG_ENABLE(threads,
     if test -z "$THREADS"; then
       THREADS=no
     fi
+    if test "$THREADS" = "posix"; then
+      case "$host" in
+        *-*-mingw*)
+          # Adjust thread model if cross-compiling for MinGW.
+          THREADS=win32
+          ;;
+      esac
+    fi
     AC_MSG_RESULT([$THREADS]) ])
 
 AC_ARG_ENABLE(parallel-mark,
@@ -95,6 +103,10 @@ AH_TEMPLATE([GC_RTEMS_PTHREADS],    [Define to support rtems-pthreads.])
 dnl System header feature requests.
 AH_TEMPLATE([_POSIX_C_SOURCE], [The POSIX feature macro.])
 AH_TEMPLATE([_PTHREADS], [Indicates the use of pthreads (NetBSD).])
+
+dnl GC API symbols export control.
+AH_TEMPLATE([GC_DLL],
+        [Define to build dynamic libraries with only API symbols exposed.])
 
 dnl Check for a flavor of supported inline keyword.
 AC_C_INLINE
@@ -180,6 +192,9 @@ case "$THREADS" in
         ;;
      *-*-solaris*)
         AC_DEFINE(GC_SOLARIS_THREADS)
+        if test "${enable_parallel_mark}" = yes; then
+          AC_DEFINE(PARALLEL_MARK)
+        fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
         # Need to use alternate thread library, otherwise gctest hangs
         # on Solaris 8.
@@ -212,12 +227,12 @@ case "$THREADS" in
         ;;
      *-*-darwin*)
         AC_DEFINE(GC_DARWIN_THREADS)
-        AC_DEFINE(THREAD_LOCAL_ALLOC)
         AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
         # Parallel-mark is not well-tested on Darwin
         if test "${enable_parallel_mark}" = yes; then
           AC_DEFINE(PARALLEL_MARK)
         fi
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
         darwin_threads=true
         ;;
      *-*-osf*)
@@ -250,6 +265,11 @@ case "$THREADS" in
     if test "${enable_parallel_mark}" = yes; then
       AC_DEFINE(PARALLEL_MARK)
       AC_DEFINE(THREAD_LOCAL_ALLOC)
+    else
+      if test "${enable_static}" == yes; then
+        # Imply THREAD_LOCAL_ALLOC unless GC_DLL.
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
+      fi
     fi
     win32_threads=true
     AC_DEFINE([EMPTY_GETENV_RESULTS], [1],
@@ -395,6 +415,14 @@ case "$host" in
 esac
 
 AC_MSG_RESULT($enable_shared)
+
+# Compile with GC_DLL defined unless building static libraries.
+if test "${enable_shared}" == yes; then
+  if test "${enable_static}" == no; then
+    AC_DEFINE(GC_DLL)
+    # FIXME: Also pass -fvisibility=hidden option if GCC v4+ and not Win32.
+  fi
+fi
 
 # Configuration of machine-dependent code
 #

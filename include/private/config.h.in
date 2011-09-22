@@ -36,6 +36,9 @@
 /* Define to enable support for DB/UX threads on i386. */
 #undef GC_DGUX386_THREADS
 
+/* Define to build dynamic libraries with only API symbols exposed. */
+#undef GC_DLL
+
 /* Define to support FreeBSD pthreads. */
 #undef GC_FREEBSD_THREADS
 
