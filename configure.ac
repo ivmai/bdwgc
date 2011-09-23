@@ -303,7 +303,7 @@ case "$THREADS" in
       AC_DEFINE(PARALLEL_MARK)
       AC_DEFINE(THREAD_LOCAL_ALLOC)
     else
-      if test "${enable_static}" == yes; then
+      if test "${enable_shared}" != yes || test "${enable_static}" != no; then
         # Imply THREAD_LOCAL_ALLOC unless GC_DLL.
         AC_DEFINE(THREAD_LOCAL_ALLOC)
       fi
