@@ -670,10 +670,12 @@ if test -n "${with_cross_host}"; then
    AC_DEFINE([NO_CLOCK], 1, [Define to not use system clock (cross compiling).])
    AC_DEFINE([SMALL_CONFIG], 1,
              [Define to tune the collector for small heap sizes.])
+fi
+
+if test "$enable_gc_debug" == "no"; then
    AC_DEFINE([NO_DEBUGGING], 1,
              [Disable debugging, like GC_dump and its callees.])
 fi
-
 
 AC_SUBST(UNWINDLIBS)
 
