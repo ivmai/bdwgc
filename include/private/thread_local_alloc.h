@@ -74,6 +74,9 @@ typedef struct thread_local_freelists {
         /* Value used for gcj_freelist[-1]; allocation is       */
         /* erroneous.                                           */
 # endif
+# ifdef ENABLE_DISCLAIM
+    void * finalized_freelists[TINY_FREELISTS];
+# endif
   /* Free lists contain either a pointer or a small count       */
   /* reflecting the number of granules allocated at that        */
   /* size.                                                      */

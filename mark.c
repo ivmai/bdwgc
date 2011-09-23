@@ -51,21 +51,26 @@ GC_INNER unsigned GC_n_mark_procs = GC_RESERVED_MARK_PROCS;
 /* It's done here, since we need to deal with mark descriptors.         */
 GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 /* PTRFREE */ { &GC_aobjfreelist[0], 0 /* filled in dynamically */,
-                0 | GC_DS_LENGTH, FALSE, FALSE },
+                0 | GC_DS_LENGTH, FALSE, FALSE,
+                OK_DISCLAIM_INITZ },
 /* NORMAL  */ { &GC_objfreelist[0], 0,
                 0 | GC_DS_LENGTH,  /* Adjusted in GC_init for EXTRA_BYTES */
-                TRUE /* add length to descr */, TRUE },
+                TRUE /* add length to descr */, TRUE,
+                OK_DISCLAIM_INITZ },
 /* UNCOLLECTABLE */
               { &GC_uobjfreelist[0], 0,
-                0 | GC_DS_LENGTH, TRUE /* add length to descr */, TRUE },
+                0 | GC_DS_LENGTH, TRUE /* add length to descr */, TRUE,
+                OK_DISCLAIM_INITZ },
 # ifdef ATOMIC_UNCOLLECTABLE
    /* AUNCOLLECTABLE */
               { &GC_auobjfreelist[0], 0,
-                0 | GC_DS_LENGTH, FALSE /* add length to descr */, FALSE },
+                0 | GC_DS_LENGTH, FALSE /* add length to descr */, FALSE,
+                OK_DISCLAIM_INITZ },
 # endif
 # ifdef STUBBORN_ALLOC
 /*STUBBORN*/ { (void **)&GC_sobjfreelist[0], 0,
-                0 | GC_DS_LENGTH, TRUE /* add length to descr */, TRUE },
+                0 | GC_DS_LENGTH, TRUE /* add length to descr */, TRUE,
+                OK_DISCLAIM_INITZ },
 # endif
 };
 
@@ -1759,6 +1764,42 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     }
 }
 
+#ifdef MARK_UNCONDITIONALLY
+/* Unconditionally mark from all objects which have not been reclaimed. */
+/* This is useful in order to retain pointes which are reachable from   */
+/* the disclaim notifiers.                                              */
+/*                                                                      */
+/* To determine whether an object has been reclaimed, we require that   */
+/* any live object has a non-zero as one of the two lowest bits of the  */
+/* first word.  On the other hand, a reclaimed object is a members of   */
+/* free-lists, and thus contains a word-aligned next-pointer as the     */
+/* first word.                                                          */
+void GC_push_unconditionally(struct hblk *h, hdr *hhdr)
+{
+    size_t sz = hhdr -> hb_sz;
+    word descr = hhdr -> hb_descr;
+    ptr_t p;
+    ptr_t lim;
+    mse * GC_mark_stack_top_reg;
+    mse * mark_stack_limit = GC_mark_stack_limit;
+
+    /* Shortcut */
+        if ((0 | GC_DS_LENGTH) == descr) return;
+    GC_n_rescuing_pages++;
+    GC_objects_are_marked = TRUE;
+    if (sz > MAXOBJBYTES)
+        lim = h -> hb_body;
+    else
+        lim = (h + 1)->hb_body - sz;
+
+    GC_mark_stack_top_reg = GC_mark_stack_top;
+    for (p = h -> hb_body; p <= lim; p += sz)
+        if ((*(GC_word *)p & 0x3) != 0)
+            PUSH_OBJ(p, hhdr, GC_mark_stack_top_reg, mark_stack_limit);
+    GC_mark_stack_top = GC_mark_stack_top_reg;
+}
+#endif
+
 #ifndef GC_DISABLE_INCREMENTAL
   /* Test whether any page in the given block is dirty.   */
   STATIC GC_bool GC_block_was_dirty(struct hblk *h, hdr *hhdr)
@@ -1839,10 +1880,18 @@ STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h)
           if (h == 0) return(0);
           hhdr = GC_find_header((ptr_t)h);
         }
-        if (hhdr -> hb_obj_kind == UNCOLLECTABLE) break;
+        if (hhdr -> hb_obj_kind == UNCOLLECTABLE) {
+            GC_push_marked(h, hhdr);
+            break;
+        }
+#       ifdef MARK_UNCONDITIONALLY
+            if (hhdr -> hb_flags & MARK_UNCONDITIONALLY) {
+                GC_push_unconditionally(h, hhdr);
+                break;
+            }
+#       endif
         h += OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
         hhdr = HDR(h);
     }
-    GC_push_marked(h, hhdr);
     return(h + OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz));
 }

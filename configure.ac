@@ -696,6 +696,16 @@ if test "${enable_redirect_malloc}" = yes; then
     AC_DEFINE([GC_USE_DLOPEN_WRAP], 1, [See doc/README.macros.])
 fi
 
+AC_ARG_ENABLE(disclaim,
+    [AC_HELP_STRING([--disable-disclaim],
+	[Disable alternative (more efficient) finalization interface.])])
+if test x"$enable_disclaim" != xno; then
+    AC_DEFINE(ENABLE_DISCLAIM, 1,
+	[Define to enable alternative finalization interface.])
+fi
+AM_CONDITIONAL(ENABLE_DISCLAIM,
+    [test x"$enable_disclaim" != xno])
+
 AC_ARG_ENABLE(large-config,
     [AC_HELP_STRING([--enable-large-config],
         [Optimize for large (> 100 MB) heap or root set])])

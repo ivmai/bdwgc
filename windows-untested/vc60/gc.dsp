@@ -253,6 +253,10 @@ SOURCE=..\..\include\gc_mark.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\include\gc_disclaim.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\include\private\gc_pmark.h
 # End Source File
 # Begin Source File

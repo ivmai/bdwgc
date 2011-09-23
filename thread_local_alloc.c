@@ -98,6 +98,9 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
 #       ifdef GC_GCJ_SUPPORT
           p -> gcj_freelists[i] = (void *)(word)1;
 #       endif
+#       ifdef ENABLE_DISCLAIM
+          p -> finalized_freelists[i] = (void *)(word)1;
+#       endif
     }
     /* Set up the size 0 free lists.    */
     /* We now handle most of them like regular free lists, to ensure    */
@@ -107,6 +110,9 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
     p -> normal_freelists[0] = (void *)(word)1;
 #   ifdef GC_GCJ_SUPPORT
         p -> gcj_freelists[0] = ERROR_FL;
+#   endif
+#   ifdef ENABLE_DISCLAIM
+        p -> finalized_freelists[0] = (void *)(word)1;
 #   endif
 }
 
@@ -122,6 +128,10 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
     return_freelists(p -> normal_freelists, GC_objfreelist);
 #   ifdef GC_GCJ_SUPPORT
         return_freelists(p -> gcj_freelists, (void **)GC_gcjobjfreelist);
+#   endif
+#   ifdef ENABLE_DISCLAIM
+        return_freelists(p -> finalized_freelists,
+                         (void **)GC_finalized_objfreelist);
 #   endif
 }
 
@@ -280,6 +290,11 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
           if ((word)q > HBLKSIZE) GC_set_fl_marks(q);
         }
 #     endif /* GC_GCJ_SUPPORT */
+#     ifdef ENABLE_DISCLAIM
+        q = p -> finalized_freelists[j];
+        if ((word)q > HBLKSIZE)
+          GC_set_fl_marks(q);
+#     endif /* ENABLE_DISCLAIM */
     }
 }
 
@@ -299,6 +314,11 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
             q = p -> gcj_freelists[j];
             if ((word)q > HBLKSIZE) GC_check_fl_marks(q);
 #         endif /* GC_GCJ_SUPPORT */
+#         ifdef ENABLE_DISCLAIM
+            q = p -> finalized_freelists[j];
+            if ((word)q > HBLKSIZE)
+              GC_check_fl_marks(q);
+#         endif /* ENABLE_DISCLAIM */
         }
     }
 #endif /* GC_ASSERTIONS */
