@@ -32,7 +32,7 @@ struct pair_s {
     pair_t cdr;
 };
 
-void pair_dct(void *obj, void *cd)
+void GC_CALLBACK pair_dct(void *obj, void *cd)
 {
     pair_t p = obj;
     int checksum;
@@ -91,6 +91,7 @@ pair_check_rec(pair_t p)
 
 #ifdef GC_PTHREADS
 #  define THREAD_CNT 6
+#  include <pthread.h>
 #else
 #  define THREAD_CNT 1
 #endif
@@ -143,7 +144,7 @@ int main(void)
 #if THREAD_CNT > 1
     printf("Threaded disclaim test.\n");
     for (i = 0; i < THREAD_CNT; ++i) {
-        int err = GC_pthread_create(&th[i], NULL, test, NULL);
+        int err = pthread_create(&th[i], NULL, test, NULL);
         if (err) {
             fprintf(stderr, "Failed to create thread # %d: %s\n", i,
                     strerror(err));
@@ -151,7 +152,7 @@ int main(void)
         }
     }
     for (i = 0; i < THREAD_CNT; ++i) {
-        int err = GC_pthread_join(th[i], NULL);
+        int err = pthread_join(th[i], NULL);
         if (err) {
             fprintf(stderr, "Failed to join thread # %d: %s\n", i,
                     strerror(err));
