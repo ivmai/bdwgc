@@ -23,6 +23,7 @@
 #include "atomic_ops.h"
 #include "gc_disclaim.h"
 
+// FIXME: skip test if AO_fetch_and_add1 not available
 static AO_t free_count = 0;
 
 typedef struct testobj_s *testobj_t;
@@ -31,7 +32,7 @@ struct testobj_s {
     int i;
 };
 
-void testobj_finalize(void *obj, void *carg)
+void GC_CALLBACK testobj_finalize(void *obj, void *carg)
 {
     AO_fetch_and_add1((AO_t *)carg);
     assert(((testobj_t)obj)->i++ == 109);
