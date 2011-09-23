@@ -224,7 +224,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
     word *p, *q, *plim;
     signed_word n_bytes_found = 0;
     struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
-    int (*proc)(void *, void *) = ok -> ok_disclaim_proc;
+    int (GC_CALLBACK *proc)(void *, void *) = ok->ok_disclaim_proc;
     void *cd = ok -> ok_disclaim_cd;
 
     GC_ASSERT(sz == hhdr -> hb_sz);
@@ -247,8 +247,8 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
                 /* Clear object, advance p to next object in the process */
                     q = (word *)((ptr_t)p + sz);
 #                   ifdef USE_MARK_BYTES
-                      GC_ASSERT(!(sz & 1)
-                                && !((word)p & (2 * sizeof(word) - 1)));
+                      GC_ASSERT((sz & 1) == 0);
+                      GC_ASSERT(((word)p & (2 * sizeof(word) - 1)) == 0);
                       p[1] = 0;
                       p += 2;
                       while (p < q) {
@@ -752,11 +752,14 @@ void GC_reclaim_unconditionally_marked(void)
     struct obj_kind * ok;
     struct hblk ** rlp;
     struct hblk ** rlh;
+
     for (kind = 0; kind < GC_n_kinds; kind++) {
         ok = &(GC_obj_kinds[kind]);
-        if (!ok->ok_mark_unconditionally) continue;
+        if (!ok->ok_mark_unconditionally)
+          continue;
         rlp = ok->ok_reclaim_list;
-        if (rlp == 0) continue;
+        if (rlp == 0)
+          continue;
         for (sz = 1; sz <= MAXOBJGRANULES; sz++) {
             rlh = rlp + sz;
             while ((hbp = *rlh) != 0) {

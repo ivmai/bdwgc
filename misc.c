@@ -1479,11 +1479,11 @@ GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
     GC_obj_kinds[result].ok_relocate_descr = adjust;
     GC_obj_kinds[result].ok_init = clear;
 #   ifdef MARK_UNCONDITIONALLY
-        GC_obj_kinds[result].ok_mark_unconditionally = 0;
+        GC_obj_kinds[result].ok_mark_unconditionally = FALSE;
 #   endif
 #   ifdef ENABLE_DISCLAIM
         GC_obj_kinds[result].ok_disclaim_proc = 0;
-        GC_obj_kinds[result].ok_disclaim_cd = 0;
+        GC_obj_kinds[result].ok_disclaim_cd = NULL;
 #   endif
     return result;
 }
@@ -1519,15 +1519,16 @@ GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc proc)
 }
 
 #ifdef ENABLE_DISCLAIM
-GC_API void GC_CALL GC_register_disclaim_proc(int kind,
-                                              GC_disclaim_proc proc, void *cd,
-                                              int mark_unconditionally)
-{
+  GC_API void GC_CALL GC_register_disclaim_proc(int kind,
+                                                GC_disclaim_proc proc,
+                                                void *cd,
+                                                int mark_unconditionally)
+  {
     GC_obj_kinds[kind].ok_disclaim_proc = proc;
     GC_obj_kinds[kind].ok_disclaim_cd = cd;
-    GC_obj_kinds[kind].ok_mark_unconditionally = mark_unconditionally;
-}
-#endif
+    GC_obj_kinds[kind].ok_mark_unconditionally = (GC_bool)mark_unconditionally;
+  }
+#endif /* ENABLE_DISCLAIM */
 
 GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 {

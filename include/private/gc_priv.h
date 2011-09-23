@@ -1237,7 +1237,7 @@ GC_EXTERN struct obj_kind {
                         /* Mark from all, including unmarked, objects   */
                         /* in block.  Used to protect objects reachable */
                         /* from reclaim notifiers.                      */
-     int (GC_CALLBACK *ok_disclaim_proc)(void *obj, void *cd);
+     int (GC_CALLBACK *ok_disclaim_proc)(void * /*obj*/, void * /*cd*/);
      void *ok_disclaim_cd;
                         /* The disclaim procedure is called before obj  */
                         /* is reclaimed, but must also tolerate being   */
