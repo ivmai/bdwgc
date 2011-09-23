@@ -17,9 +17,12 @@
 
 #include "gc.h"
 
+/* This API is defined only if the library has been suitably compiled   */
+/* (i.e. with ENABLE_DISCLAIM defined).                                 */
+
 /* Type of a disclaim call-back, always stored along with closure data  */
 /* passed as the second argument.                                       */
-typedef int (GC_CALLBACK * GC_disclaim_proc)(void *obj, void *cd);
+typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /*obj*/, void * /*cd*/);
 
 /* Register "proc" to be called on each object of "kind" ready to be    */
 /* reclaimed.  If "proc" returns non-zero, the collector will not       */
@@ -27,9 +30,10 @@ typedef int (GC_CALLBACK * GC_disclaim_proc)(void *obj, void *cd);
 /* will be protected from collection if "mark_from_all" is non-zero,    */
 /* but at the expense that long chains of objects will take many cycles */
 /* to reclaim.                                                          */
-GC_API void GC_register_disclaim_proc(int /* kind */,
-                                      GC_disclaim_proc /*proc*/, void * /*cd*/,
-                                      int /* mark_from_all */);
+GC_API void GC_CALL GC_register_disclaim_proc(int /*kind*/,
+                                              GC_disclaim_proc /*proc*/,
+                                              void * /*cd*/,
+                                              int /*mark_from_all*/);
 
 /* The finalizer closure used by GC_finalized_malloc.                   */
 struct GC_finalizer_closure {
@@ -41,12 +45,11 @@ struct GC_finalizer_closure {
 /* dedicated object kind with a disclaim procedure, and is more         */
 /* efficient than GC_register_finalizer and friends.  You need to call  */
 /* GC_init_finalized_malloc before using this.                          */
-GC_API void *GC_finalized_malloc(size_t size, struct GC_finalizer_closure *fc);
+GC_API void *GC_CALL GC_finalized_malloc(size_t /*size*/,
+                                        struct GC_finalizer_closure * /*fc*/);
 
 /* Prepare the object kind used for GC_finalized_malloc.                */
-GC_API void GC_init_finalized_malloc(void);
-
-// FIXME: Use GC_CALL and GC_API
-// FIXME: GC_init_finalized_malloc: replace with
+GC_API void GC_CALL GC_init_finalized_malloc(void);
+        // FIXME: replace init with enable?
 
 #endif

@@ -33,7 +33,7 @@ GC_key_t GC_thread_key;
 static GC_bool keys_initialized;
 
 /* Return a single nonempty freelist fl to the global one pointed to    */
-/* by gfl.      */
+/* by gfl.                                                              */
 
 static void return_single_freelist(void *fl, void **gfl)
 {
@@ -294,7 +294,7 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
         q = p -> finalized_freelists[j];
         if ((word)q > HBLKSIZE)
           GC_set_fl_marks(q);
-#     endif /* ENABLE_DISCLAIM */
+#     endif
     }
 }
 
@@ -313,12 +313,12 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
 #         ifdef GC_GCJ_SUPPORT
             q = p -> gcj_freelists[j];
             if ((word)q > HBLKSIZE) GC_check_fl_marks(q);
-#         endif /* GC_GCJ_SUPPORT */
+#         endif
 #         ifdef ENABLE_DISCLAIM
             q = p -> finalized_freelists[j];
             if ((word)q > HBLKSIZE)
               GC_check_fl_marks(q);
-#         endif /* ENABLE_DISCLAIM */
+#         endif
         }
     }
 #endif /* GC_ASSERTIONS */

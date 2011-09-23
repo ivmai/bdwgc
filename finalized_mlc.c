@@ -17,27 +17,27 @@
 #ifdef ENABLE_DISCLAIM
 
 #ifdef THREAD_LOCAL_ALLOC
-#  include "private/thread_local_alloc.h"
+# include "private/thread_local_alloc.h"
 #endif
 
 #include "gc_disclaim.h"
 
-STATIC int GC_finalized_kind;
+STATIC int GC_finalized_kind = 0;
 
-ptr_t * GC_finalized_objfreelist = NULL;
-
+GC_INNER ptr_t * GC_finalized_objfreelist = NULL;
 
 STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj, void *cd)
 {
     struct GC_finalizer_closure *fc = *(void **)obj;
     if (((word)fc & 1) != 0) {
-       /* The disclaim function may be passed fragments from the free-list, on
-        * which it should not run finalization.  To recognize this case, we use
-        * the fact that the first word on such fragments are always even (a link
-        * to the next fragment, or NULL).  If it is desirable to have a finalizer
-        * which does not use the first word for storing finalization info,
-        * GC_reclaim_with_finalization must be extended to clear fragments so
-        * that the assumption holds for the selected word. */
+       /* [1] The disclaim function may be passed fragments from the    */
+       /* free-list, on which it should not run finalization.           */
+       /* To recognize this case, we use the fact that the first word   */
+       /* on such fragments are always even (a link to the next         */
+       /* fragment, or NULL).  If it is desirable to have a finalizer   */
+       /* which does not use the first word for storing finalization    */
+       /* info, GC_reclaim_with_finalization must be extended to clear  */
+       /* fragments so that the assumption holds for the selected word. */
         fc = (void *)((word)fc & ~(word)1);
         (*fc->proc)((void **)obj + 1, fc->cd);
     }
@@ -60,12 +60,10 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
     done_init = 1;
 
     GC_finalized_objfreelist = (ptr_t *)GC_new_free_list_inner();
-    GC_finalized_kind =
-        GC_new_kind_inner((void **)GC_finalized_objfreelist,
-                          0 | GC_DS_LENGTH,
-                          TRUE, TRUE);
-    GC_register_disclaim_proc(GC_finalized_kind, GC_finalized_disclaim, 0, 1);
-
+    GC_finalized_kind = GC_new_kind_inner((void **)GC_finalized_objfreelist,
+                                          GC_DS_LENGTH, TRUE, TRUE);
+    GC_register_disclaim_proc(GC_finalized_kind, GC_finalized_disclaim,
+                              NULL, TRUE);
     UNLOCK();
 }
 
@@ -74,17 +72,17 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
                                          struct GC_finalizer_closure *fclos)
 #else
   GC_API void * GC_CALL GC_finalized_malloc(size_t lb,
-                                            struct GC_finalizer_closure *fclos)
+                                         struct GC_finalizer_closure *fclos)
 #endif
 {
-    register ptr_t op;
-    register ptr_t *opp;
+    ptr_t op;
+    ptr_t *opp;
+    word lg;
     DCL_LOCK_STATE;
 
     lb += sizeof(void *);
     GC_ASSERT(done_init);
     if (EXPECT(SMALL_OBJ(lb), 1)) {
-        register word lg;
         lg = GC_size_map[lb];
         opp = &GC_finalized_objfreelist[lg];
         LOCK();
@@ -106,7 +104,7 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
 
 #ifdef THREAD_LOCAL_ALLOC
   GC_API void * GC_CALL GC_finalized_malloc(size_t client_lb,
-                                            struct GC_finalizer_closure *fclos)
+                                        struct GC_finalizer_closure *fclos)
   {
     size_t lb = client_lb + sizeof(void *);
     size_t lg = ROUNDED_UP_GRANULES(lb);
@@ -135,6 +133,7 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
                 return GC_oom_fn(lb);
         }
     }
+
     next = obj_link(my_entry);
     result = (void *)my_entry;
     *my_fl = next;
