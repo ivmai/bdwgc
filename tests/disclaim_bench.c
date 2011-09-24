@@ -23,7 +23,14 @@
 #include "atomic_ops.h"
 #include "gc_disclaim.h"
 
-// FIXME: skip test if AO_fetch_and_add1 not available
+#ifndef AO_HAVE_fetch_and_add1
+int main(void)
+{
+    printf("Skipping disclaim_bench since we don't have AO_fetch_and_add1.\n");
+    return 0;
+}
+#else
+
 static AO_t free_count = 0;
 
 typedef struct testobj_s *testobj_t;
@@ -129,3 +136,5 @@ int main(int argc, char **argv)
                model_str[model], 0.0, t, "N/A");
     return 0;
 }
+
+#endif /* AO_HAVE_fetch_and_add1 */
