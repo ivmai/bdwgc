@@ -23,15 +23,7 @@
 #include "atomic_ops.h"
 #include "gc_disclaim.h"
 
-#ifndef AO_HAVE_fetch_and_add1
-int main(void)
-{
-    printf("Skipping disclaim_bench since we don't have AO_fetch_and_add1.\n");
-    return 0;
-}
-#else
-
-static AO_t free_count = 0;
+static int free_count = 0;
 
 typedef struct testobj_s *testobj_t;
 struct testobj_s {
@@ -41,7 +33,7 @@ struct testobj_s {
 
 void GC_CALLBACK testobj_finalize(void *obj, void *carg)
 {
-    AO_fetch_and_add1((AO_t *)carg);
+    ++*(int *)carg;
     assert(((testobj_t)obj)->i++ == 109);
 }
 
@@ -85,7 +77,7 @@ static char const *model_str[3] = {
 int main(int argc, char **argv)
 {
     int i;
-    int model;
+    int model, model_min, model_max;
     testobj_t *keep_arr;
     double t;
 
@@ -94,47 +86,44 @@ int main(int argc, char **argv)
 
     keep_arr = GC_MALLOC(sizeof(void *)*KEEP_CNT);
 
-    if (argc == 1) {
-        char *buf = GC_MALLOC(strlen(argv[0]) + 3);
-        printf("\t\t\tfin. ratio       time/s    time/fin.\n");
-        fflush(stdout);
-        for (i = 0; i < 3; ++i) {
-            int st;
-            sprintf(buf, "%s %d", argv[0], i);
-            st = system(buf); // FIXME: is this available on all targets?
-            if (st != 0)
-                return st;
-        }
-        return 0;
-    }
     if (argc == 2 && strcmp(argv[1], "--help") == 0) {
         fprintf(stderr,
-                "Usage: %s FINALIZATION_MODEL\n"
+                "Usage: %s [FINALIZATION_MODEL]\n"
                 "\t0 -- original finalization\n"
                 "\t1 -- finalization on reclaim\n"
                 "\t2 -- no finalization\n", argv[0]);
         return 1;
     }
-    model = atoi(argv[1]);
-    if (model < 0 || model > 2)
-        exit(2);
-    t = -(double)clock();
-    for (i = 0; i < ALLOC_CNT; ++i) {
-        int k = rand() % KEEP_CNT;
-        keep_arr[k] = testobj_new(model);
+    if (argc == 2) {
+        model_min = model_max = atoi(argv[1]);
+        if (model_min < 0 || model_max > 2)
+            exit(2);
+    }
+    else {
+        model_min = 0;
+        model_max = 2;
     }
 
-    GC_gcollect();
+    printf("\t\t\tfin. ratio       time/s    time/fin.\n");
+    for (model = model_min; model <= model_max; ++model) {
+        free_count = 0;
+        t = -(double)clock();
+        for (i = 0; i < ALLOC_CNT; ++i) {
+            int k = rand() % KEEP_CNT;
+            keep_arr[k] = testobj_new(model);
+        }
 
-    t += clock();
-    t /= CLOCKS_PER_SEC;
-    if (model < 2)
-        printf("%20s: %12.4lf %12lg %12lg\n", model_str[model],
-               free_count/(double)ALLOC_CNT, t, t/free_count);
-    else
-        printf("%20s: %12.4lf %12lg %12s\n",
-               model_str[model], 0.0, t, "N/A");
+        GC_gcollect();
+
+        t += clock();
+        t /= CLOCKS_PER_SEC;
+
+        if (model < 2)
+            printf("%20s: %12.4lf %12lg %12lg\n", model_str[model],
+                   free_count/(double)ALLOC_CNT, t, t/free_count);
+        else
+            printf("%20s: %12.4lf %12lg %12s\n",
+                   model_str[model], 0.0, t, "N/A");
+    }
     return 0;
 }
-
-#endif /* AO_HAVE_fetch_and_add1 */
