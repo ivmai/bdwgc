@@ -72,7 +72,7 @@ cord/cordtest: cord/cordtest.o cord/cord$(CPU).lib gc$(CPU).lib
 
 #------------------LIBBING----------------------------
 
-OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o real_malloc.o dyn_load.o dbg_mlc.o malloc.o stubborn.o checksums.o typd_mlc.o ptr_chck.o mallocx.o
+OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o real_malloc.o dyn_load.o dbg_mlc.o malloc.o stubborn.o checksums.o typd_mlc.o ptr_chck.o mallocx.o finalized_mlc.o
 
 gc$(CPU).lib: $(OBJS)
    $(LIBER) gc$(CPU).lib r $(OBJS)
@@ -131,6 +131,9 @@ dyn_load.o : dyn_load.c $(INC)
 
 dbg_mlc.o : dbg_mlc.c $(INC)
 	$(CC) dbg_mlc.c $(SCOPT)
+
+finalized_mlc.o : finalized_mlc.c $(INC)
+	$(CC) finalized_mlc.c $(SCOPT)
 
 malloc.o : malloc.c $(INC)
 	$(CC) malloc.c $(SCOPT)
