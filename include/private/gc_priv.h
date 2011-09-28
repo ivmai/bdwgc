@@ -815,9 +815,9 @@ struct hblkhdr {
                                 /* Only set with USE_MUNMAP.            */
 #       define FREE_BLK 4       /* Block is free, i.e. not in use.      */
 #       ifdef ENABLE_DISCLAIM
-#           define HAS_DISCLAIM 8
+#         define HAS_DISCLAIM 8
                                 /* This kind has a callback on reclaim. */
-#           define MARK_UNCONDITIONALLY 16
+#         define MARK_UNCONDITIONALLY 0x10
                                 /* Mark from all objects, marked or     */
                                 /* not.  Used to mark objects needed by */
                                 /* reclaim notifier.                    */
@@ -1243,7 +1243,7 @@ GC_EXTERN struct obj_kind {
                         /* is reclaimed, but must also tolerate being   */
                         /* called with object from freelist.  Non-zero  */
                         /* exit prevents object from being reclaimed.   */
-#    define OK_DISCLAIM_INITZ FALSE, NULL, NULL
+#    define OK_DISCLAIM_INITZ /* comma */, FALSE, NULL, NULL
 #  else
 #    define OK_DISCLAIM_INITZ /* empty */
 #  endif /* !ENABLE_DISCLAIM */
@@ -2051,10 +2051,6 @@ GC_EXTERN signed_word GC_bytes_found;
     GC_EXTERN GC_bool GC_gcj_malloc_initialized; /* defined in gcj_mlc.c */
 # endif
   GC_EXTERN ptr_t * GC_gcjobjfreelist;
-#endif
-
-#ifdef ENABLE_DISCLAIM
-  GC_EXTERN ptr_t * GC_finalized_objfreelist;
 #endif
 
 #if defined(GWW_VDB) && defined(MPROTECT_VDB)

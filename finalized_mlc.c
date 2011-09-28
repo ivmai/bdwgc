@@ -16,15 +16,15 @@
 
 #ifdef ENABLE_DISCLAIM
 
-#ifdef THREAD_LOCAL_ALLOC
-# include "private/thread_local_alloc.h"
-#endif
-
 #include "gc_disclaim.h"
 
-STATIC int GC_finalized_kind = 0;
+#ifdef THREAD_LOCAL_ALLOC
+# include "private/thread_local_alloc.h"
+#else
+  STATIC ptr_t * GC_finalized_objfreelist = NULL;
+#endif /* !THREAD_LOCAL_ALLOC */
 
-GC_INNER ptr_t * GC_finalized_objfreelist = NULL;
+STATIC int GC_finalized_kind = 0;
 
 STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj, void *cd)
 {
@@ -44,20 +44,19 @@ STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj, void *cd)
     return 0;
 }
 
-static int done_init = 0;
+static GC_bool done_init = FALSE;
 
 GC_API void GC_CALL GC_init_finalized_malloc(void)
 {
     DCL_LOCK_STATE;
 
-    GC_init(); // FIXME: Portable client should always do GC_INIT() itself
-
+    GC_init();  /* In case it's not already done.       */
     LOCK();
     if (done_init) {
         UNLOCK();
         return;
     }
-    done_init = 1;
+    done_init = TRUE;
 
     GC_finalized_objfreelist = (ptr_t *)GC_new_free_list_inner();
     GC_finalized_kind = GC_new_kind_inner((void **)GC_finalized_objfreelist,
