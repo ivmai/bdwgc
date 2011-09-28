@@ -144,6 +144,10 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p);
 /* we take care of an individual thread freelist structure.     */
 GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p);
 
+#ifdef ENABLE_DISCLAIM
+  GC_EXTERN ptr_t * GC_finalized_objfreelist;
+#endif
+
 extern
 #if defined(USE_COMPILER_TLS)
   __thread

@@ -17,19 +17,20 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <time.h> // FIXME: It would be good not to use timing API by
-                  // default (is it is not quite portable).
-
 #include "atomic_ops.h"
 #include "gc_disclaim.h"
 
 #ifndef AO_HAVE_fetch_and_add1
+
 int main(void)
 {
-    printf("Skipping disclaim_bench since we don't have AO_fetch_and_add1.\n");
+    printf("Skipping disclaim_bench test\n");
     return 0;
 }
+
 #else
+
+#include <time.h>
 
 static AO_t free_count = 0;
 
@@ -95,19 +96,20 @@ int main(int argc, char **argv)
     keep_arr = GC_MALLOC(sizeof(void *)*KEEP_CNT);
 
     if (argc == 1) {
+// FIXME: Remove this block and invoke this test 3 times from the script
         char *buf = GC_MALLOC(strlen(argv[0]) + 3);
         printf("\t\t\tfin. ratio       time/s    time/fin.\n");
         fflush(stdout);
         for (i = 0; i < 3; ++i) {
             int st;
             sprintf(buf, "%s %d", argv[0], i);
-            st = system(buf); // FIXME: is this available on all targets?
+            st = system(buf);
             if (st != 0)
                 return st;
         }
         return 0;
     }
-    if (argc == 2 && strcmp(argv[1], "--help") == 0) {
+    if (argc < 2 || (argc == 2 && strcmp(argv[1], "--help") == 0)) {
         fprintf(stderr,
                 "Usage: %s FINALIZATION_MODEL\n"
                 "\t0 -- original finalization\n"
@@ -119,8 +121,10 @@ int main(int argc, char **argv)
     if (model < 0 || model > 2)
         exit(2);
     t = -(double)clock();
+    // FIXME: clock() not portable
+    // FIXME: probably it's better to turn on timing only if some macro is on
     for (i = 0; i < ALLOC_CNT; ++i) {
-        int k = rand() % KEEP_CNT;
+        int k = rand() % KEEP_CNT; // FIXME: not protable - see dbg_mlc.c
         keep_arr[k] = testobj_new(model);
     }
 

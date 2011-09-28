@@ -45,8 +45,8 @@ STATIC unsigned GC_n_leaked = 0;
 
 GC_INNER GC_bool GC_have_errors = FALSE;
 
-#if !defined(EAGER_SWEEP) && defined(MARK_UNCONDITIONALLY)
-void GC_reclaim_unconditionally_marked(void);
+#if !defined(EAGER_SWEEP) && defined(ENABLE_DISCLAIM)
+  STATIC void GC_reclaim_unconditionally_marked(void);
 #endif
 
 GC_INLINE void GC_add_leaked(ptr_t leaked)
@@ -302,7 +302,7 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
       GC_remove_protection(hbp, 1, (hhdr)->hb_descr == 0 /* Pointer-free? */);
 #   endif
 #   ifdef ENABLE_DISCLAIM
-      if (hhdr -> hb_flags & HAS_DISCLAIM) {
+      if ((hhdr -> hb_flags & HAS_DISCLAIM) != 0) {
         result = GC_disclaim_and_reclaim(hbp, hhdr, sz, list, count);
       } else
 #   endif
@@ -381,7 +381,8 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
             if (report_if_found) {
               GC_add_leaked((ptr_t)hbp);
             } else {
-              size_t blocks = OBJ_SZ_TO_BLOCKS(sz);
+              size_t blocks;
+
 #             ifdef ENABLE_DISCLAIM
                 if (EXPECT(hhdr->hb_flags & HAS_DISCLAIM, 0)) {
                   struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
@@ -392,6 +393,7 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
                   }
                 }
 #             endif
+              blocks = OBJ_SZ_TO_BLOCKS(sz);
               if (blocks > 1) {
                 GC_large_allocd_bytes -= blocks * HBLKSIZE;
               }
@@ -646,7 +648,7 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
     /* This is a very stupid thing to do.  We make it possible anyway,  */
     /* so that you can convince yourself that it really is very stupid. */
     GC_reclaim_all((GC_stop_func)0, FALSE);
-# elif defined(MARK_UNCONDITIONALLY)
+# elif defined(ENABLE_DISCLAIM)
     /* However, make sure to clear reclaimable objects of kinds with    */
     /* unconditional marking enabled before we do any significant       */
     /* marking work.                                                    */
@@ -738,13 +740,13 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
     return(TRUE);
 }
 
-#if !defined(EAGER_SWEEP) && defined(MARK_UNCONDITIONALLY)
+#if !defined(EAGER_SWEEP) && defined(ENABLE_DISCLAIM)
 /* We do an eager sweep on heap blocks where unconditional marking has  */
 /* been enabled, so that any reclaimable objects have been reclaimed    */
 /* before we start marking.  This is a simplified GC_reclaim_all        */
 /* restricted to kinds where ok_mark_unconditionally is true.           */
-void GC_reclaim_unconditionally_marked(void)
-{
+  STATIC void GC_reclaim_unconditionally_marked(void)
+  {
     word sz;
     unsigned kind;
     hdr * hhdr;
@@ -769,5 +771,5 @@ void GC_reclaim_unconditionally_marked(void)
             }
         }
     }
-}
-#endif
+  }
+#endif /* !EAGER_SWEEP && ENABLE_DISCLAIM */
