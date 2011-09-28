@@ -20,6 +20,7 @@ OBJS=	\
 	blacklst.obj\
 	checksums.obj\
 	dbg_mlc.obj\
+	finalized_mlc.obj\
 	dyn_load.obj\
 	finalize.obj\
 	gc_cpp.obj\
