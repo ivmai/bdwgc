@@ -121,6 +121,10 @@ SOURCE=..\..\dbg_mlc.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\gcj_mlc.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\finalized_mlc.c
 # End Source File
 # Begin Source File

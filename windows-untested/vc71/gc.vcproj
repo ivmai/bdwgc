@@ -296,6 +296,28 @@
                 </FileConfiguration>
             </File>
             <File
+                RelativePath="..\..\gcj_mlc.c">
+                <FileConfiguration
+                    Name="Release|Win32">
+                    <Tool
+                        Name="VCCLCompilerTool"
+                        Optimization="2"
+                        AdditionalIncludeDirectories=""
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        ForcedIncludeFiles=""/>
+                </FileConfiguration>
+                <FileConfiguration
+                    Name="Debug|Win32">
+                    <Tool
+                        Name="VCCLCompilerTool"
+                        Optimization="0"
+                        AdditionalIncludeDirectories=""
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        BasicRuntimeChecks="3"
+                        ForcedIncludeFiles=""/>
+                </FileConfiguration>
+            </File>
+            <File
                 RelativePath="..\..\finalized_mlc.c">
                 <FileConfiguration
                     Name="Release|Win32">

@@ -131,6 +131,9 @@
                 RelativePath="..\..\dbg_mlc.c">
             </File>
             <File
+                RelativePath="..\..\gcj_mlc.c">
+            </File>
+            <File
                 RelativePath="..\..\finalized_mlc.c">
             </File>
             <File
