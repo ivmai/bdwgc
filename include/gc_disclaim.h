@@ -48,8 +48,9 @@ struct GC_finalizer_closure {
 GC_API void *GC_CALL GC_finalized_malloc(size_t /*size*/,
                                         struct GC_finalizer_closure * /*fc*/);
 
-/* Prepare the object kind used for GC_finalized_malloc.                */
+/* Prepare the object kind used by GC_finalized_malloc.  Call it from   */
+/* your initialization code or, at least, at some point before using    */
+/* finalized allocation.  It is idempotent and thread-safe.             */
 GC_API void GC_CALL GC_init_finalized_malloc(void);
-        // FIXME: replace init with enable?
 
 #endif
