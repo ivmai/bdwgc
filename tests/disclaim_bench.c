@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include "atomic_ops.h"
+#include "private/gc_priv.h"
 #include "gc_disclaim.h"
 
 static int free_count = 0;
@@ -76,7 +77,6 @@ int main(int argc, char **argv)
     int i;
     int model, model_min, model_max;
     testobj_t *keep_arr;
-    double t;
 
     GC_INIT();
     GC_init_finalized_malloc();
@@ -103,17 +103,22 @@ int main(int argc, char **argv)
 
     printf("\t\t\tfin. ratio       time/s    time/fin.\n");
     for (model = model_min; model <= model_max; ++model) {
+        double t = 0.0;
         free_count = 0;
-        t = -(double)clock();
+
+#       ifdef CLOCK_TYPE
+            CLOCK_TYPE tI, tF;
+            GET_TIME(tI);
+#       endif
         for (i = 0; i < ALLOC_CNT; ++i) {
             int k = rand() % KEEP_CNT;
             keep_arr[k] = testobj_new(model);
         }
-
         GC_gcollect();
-
-        t += clock();
-        t /= CLOCKS_PER_SEC;
+#       ifdef CLOCK_TYPE
+            GET_TIME(tF);
+            t = MS_TIME_DIFF(tF, tI)*1e-3;
+#       endif
 
         if (model < 2)
             printf("%20s: %12.4lf %12lg %12lg\n", model_str[model],
