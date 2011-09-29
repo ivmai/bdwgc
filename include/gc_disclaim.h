@@ -20,7 +20,9 @@
 /* This API is defined only if the library has been suitably compiled   */
 /* (i.e. with ENABLE_DISCLAIM defined).                                 */
 
-/* Prepare the object kind used for GC_finalized_malloc.                */
+/* Prepare the object kind used by GC_finalized_malloc.  Call it from   */
+/* your initialization code or, at least, at some point before using    */
+/* finalized allocation.  It is a thread-safe function.                 */
 GC_API void GC_CALL GC_init_finalized_malloc(void);
 
 /* Type of a disclaim call-back, always stored along with closure data  */
