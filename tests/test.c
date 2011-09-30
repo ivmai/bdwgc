@@ -726,8 +726,11 @@ tn * mktree(int n)
     result -> lchild = mktree(n-1);
     result -> rchild = mktree(n-1);
     if (counter++ % 17 == 0 && n >= 2) {
-        tn * tmp = result -> lchild -> rchild;
+        tn * tmp;
 
+        CHECK_OUT_OF_MEMORY(result->lchild);
+        tmp = result -> lchild -> rchild;
+        CHECK_OUT_OF_MEMORY(result->rchild);
         result -> lchild -> rchild = result -> rchild -> lchild;
         result -> rchild -> lchild = tmp;
     }
