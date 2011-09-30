@@ -34,7 +34,7 @@
 
 asm static void PushMacRegisters()
 {
-    sub.w   #4,sp                   // reserve space for one parameter.
+    sub.w   #4,sp                   /* reserve space for one parameter */
     move.l  a2,(sp)
     jsr         GC_push_one
     move.l  a3,(sp)
@@ -42,11 +42,11 @@ asm static void PushMacRegisters()
     move.l  a4,(sp)
     jsr         GC_push_one
 #   if !__option(a6frames)
-        // <pcb> perhaps a6 should be pushed if stack frames are not being used.
+      /* <pcb> perhaps a6 should be pushed if stack frames are not being used */
         move.l  a6,(sp)
         jsr             GC_push_one
 #   endif
-        // skip a5 (globals), a6 (frame pointer), and a7 (stack pointer)
+        /* skip a5 (globals), a6 (frame pointer), and a7 (stack pointer) */
     move.l  d2,(sp)
     jsr         GC_push_one
     move.l  d3,(sp)
@@ -59,7 +59,7 @@ asm static void PushMacRegisters()
     jsr         GC_push_one
     move.l  d7,(sp)
     jsr         GC_push_one
-    add.w   #4,sp                   // fix stack.
+    add.w   #4,sp                   /* fix stack */
     rts
 }
 
