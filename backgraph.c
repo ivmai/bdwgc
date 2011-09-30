@@ -159,7 +159,7 @@ static GC_bool is_in_progress(ptr_t p)
   return FALSE;
 }
 
-GC_INLINE void pop_in_progress(ptr_t p)
+GC_INLINE void pop_in_progress(ptr_t p GC_ATTR_UNUSED)
 {
   --n_in_progress;
   GC_ASSERT(in_progress_space[n_in_progress] == p);
