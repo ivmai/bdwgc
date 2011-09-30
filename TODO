@@ -1,8 +1,6 @@
 TODO tasks
 ==========
 
-Add "Disclaim" functionality (merge with paurkedal-disclaim).
-
 tests/CMakeLists.txt: Add more executables (see tests.am).
 
 Add .gitattributes: ensure LF line encoding in the repo.
