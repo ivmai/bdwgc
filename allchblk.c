@@ -127,7 +127,8 @@ void GC_print_hblkfreelist(void)
         hhdr = HDR(h);
         sz = hhdr -> hb_sz;
         total_free += sz;
-        GC_printf("\t%p size %lu %s black listed\n", h, (unsigned long)sz,
+        GC_printf("\t%p size %lu %s black listed\n",
+                (void *)h, (unsigned long)sz,
                 GC_is_black_listed(h, HBLKSIZE) != 0 ? "start" :
                 GC_is_black_listed(h, hhdr -> hb_sz) != 0 ? "partially" :
                                                         "not");
@@ -182,7 +183,7 @@ void GC_dump_regions(void)
         for (p = start; p < end;) {
             hhdr = HDR(p);
             if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-                GC_printf("\t%p Missing header!!(%p)\n", p, hhdr);
+                GC_printf("\t%p Missing header!!(%p)\n", p, (void *)hhdr);
                 p += HBLKSIZE;
                 continue;
             }
@@ -848,7 +849,8 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
     /* Check for duplicate deallocation in the easy case */
       if (HBLK_IS_FREE(hhdr)) {
         if (GC_print_stats)
-          GC_log_printf("Duplicate large block deallocation of %p\n", hbp);
+          GC_log_printf("Duplicate large block deallocation of %p\n",
+                        (void *)hbp);
         ABORT("Duplicate large block deallocation");
       }
 
