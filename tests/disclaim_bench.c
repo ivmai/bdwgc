@@ -24,11 +24,12 @@
 
 static int free_count = 0;
 
-typedef struct testobj_s *testobj_t;
 struct testobj_s {
-    testobj_t keep_link;
+    struct testobj_s *keep_link;
     int i;
 };
+
+typedef struct testobj_s *testobj_t;
 
 void GC_CALLBACK testobj_finalize(void *obj, void *carg)
 {
