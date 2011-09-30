@@ -5,7 +5,7 @@
 
 # Significantly revised for GC version 4.4 by Mark Boulter (Jan 1994).
 
-OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj malloc.obj stubborn.obj typd_mlc.obj ptr_chck.obj mallocx.obj
+OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj finalized_mlc.obj malloc.obj stubborn.obj typd_mlc.obj ptr_chck.obj mallocx.obj
 
 CORDOBJS= cord\cordbscs.obj cord\cordxtra.obj cord\cordprnt.obj
 

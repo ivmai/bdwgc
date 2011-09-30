@@ -34,7 +34,8 @@ XXXOBJS= XXXalloc.obj XXXreclaim.obj XXXallchblk.obj XXXmisc.obj \
     XXXmach_dep.obj XXXos_dep.obj XXXmark_rts.obj XXXheaders.obj XXXmark.obj \
     XXXobj_map.obj XXXblacklst.obj XXXfinalize.obj XXXnew_hblk.obj \
     XXXdbg_mlc.obj XXXmalloc.obj XXXstubborn.obj XXXdyn_load.obj \
-    XXXtypd_mlc.obj XXXptr_chck.obj XXXgc_cpp.obj XXXmallocx.obj
+    XXXtypd_mlc.obj XXXptr_chck.obj XXXgc_cpp.obj XXXmallocx.obj \
+    XXXfinalized_mlc.obj
 
 OBJS= $(XXXOBJS:XXX=)
 

@@ -20,29 +20,20 @@
 #include "atomic_ops.h"
 #include "gc_disclaim.h"
 
-#ifndef AO_HAVE_fetch_and_add1
+#include "private/gc_priv.h"
 
-int main(void)
-{
-    printf("Skipping disclaim_bench test\n");
-    return 0;
-}
+static int free_count = 0;
 
-#else
-
-#include <time.h>
-
-static AO_t free_count = 0;
-
-typedef struct testobj_s *testobj_t;
 struct testobj_s {
-    testobj_t keep_link;
+    struct testobj_s *keep_link;
     int i;
 };
 
+typedef struct testobj_s *testobj_t;
+
 void GC_CALLBACK testobj_finalize(void *obj, void *carg)
 {
-    AO_fetch_and_add1((AO_t *)carg);
+    ++*(int *)carg;
     assert(((testobj_t)obj)->i++ == 109);
 }
 
@@ -86,59 +77,57 @@ static char const *model_str[3] = {
 int main(int argc, char **argv)
 {
     int i;
-    int model;
+    int model, model_min, model_max;
     testobj_t *keep_arr;
-    double t;
 
     GC_INIT();
     GC_init_finalized_malloc();
 
     keep_arr = GC_MALLOC(sizeof(void *)*KEEP_CNT);
 
-    if (argc == 1) {
-// FIXME: Remove this block and invoke this test 3 times from the script
-        char *buf = GC_MALLOC(strlen(argv[0]) + 3);
-        printf("\t\t\tfin. ratio       time/s    time/fin.\n");
-        fflush(stdout);
-        for (i = 0; i < 3; ++i) {
-            int st;
-            sprintf(buf, "%s %d", argv[0], i);
-            st = system(buf);
-            if (st != 0)
-                return st;
-        }
-        return 0;
-    }
-    if (argc < 2 || (argc == 2 && strcmp(argv[1], "--help") == 0)) {
+    if (argc == 2 && strcmp(argv[1], "--help") == 0) {
         fprintf(stderr,
-                "Usage: %s FINALIZATION_MODEL\n"
+                "Usage: %s [FINALIZATION_MODEL]\n"
                 "\t0 -- original finalization\n"
                 "\t1 -- finalization on reclaim\n"
                 "\t2 -- no finalization\n", argv[0]);
         return 1;
     }
-    model = atoi(argv[1]);
-    if (model < 0 || model > 2)
-        exit(2);
-    t = -(double)clock();
-    // FIXME: clock() not portable
-    // FIXME: probably it's better to turn on timing only if some macro is on
-    for (i = 0; i < ALLOC_CNT; ++i) {
-        int k = rand() % KEEP_CNT; // FIXME: not protable - see dbg_mlc.c
-        keep_arr[k] = testobj_new(model);
+    if (argc == 2) {
+        model_min = model_max = atoi(argv[1]);
+        if (model_min < 0 || model_max > 2)
+            exit(2);
+    }
+    else {
+        model_min = 0;
+        model_max = 2;
     }
 
-    GC_gcollect();
+    printf("\t\t\tfin. ratio       time/s    time/fin.\n");
+    for (model = model_min; model <= model_max; ++model) {
+        double t = 0.0;
+        free_count = 0;
 
-    t += clock();
-    t /= CLOCKS_PER_SEC;
-    if (model < 2)
-        printf("%20s: %12.4lf %12lg %12lg\n", model_str[model],
-               free_count/(double)ALLOC_CNT, t, t/free_count);
-    else
-        printf("%20s: %12.4lf %12lg %12s\n",
-               model_str[model], 0.0, t, "N/A");
+#       ifdef CLOCK_TYPE
+            CLOCK_TYPE tI, tF;
+            GET_TIME(tI);
+#       endif
+        for (i = 0; i < ALLOC_CNT; ++i) {
+            int k = rand() % KEEP_CNT;
+            keep_arr[k] = testobj_new(model);
+        }
+        GC_gcollect();
+#       ifdef CLOCK_TYPE
+            GET_TIME(tF);
+            t = MS_TIME_DIFF(tF, tI)*1e-3;
+#       endif
+
+        if (model < 2)
+            printf("%20s: %12.4lf %12lg %12lg\n", model_str[model],
+                   free_count/(double)ALLOC_CNT, t, t/free_count);
+        else
+            printf("%20s: %12.4lf %12lg %12s\n",
+                   model_str[model], 0.0, t, "N/A");
+    }
     return 0;
 }
-
-#endif /* AO_HAVE_fetch_and_add1 */
