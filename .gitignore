@@ -26,6 +26,8 @@
 /cordtest
 /core
 /de
+/disclaim_bench
+/disclaim_test
 /gc-*
 /gc.a
 /gcname
