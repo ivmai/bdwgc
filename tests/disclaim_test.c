@@ -53,7 +53,7 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
     /* Invalidate it. */
     p->is_valid = 0;
     p->checksum = 0;
-    p->car = NULL;
+    p->car = cd;
     p->cdr = NULL;
 }
 
@@ -128,7 +128,7 @@ void *test(void *data)
         if (rand() % 8 == 1)
             pair_check_rec(pop[rand() % POP_SIZE]);
     }
-    return 0;
+    return data;
 }
 
 int main(void)

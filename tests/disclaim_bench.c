@@ -17,8 +17,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "atomic_ops.h"
 #include "private/gc_priv.h"
+
+#include "atomic_ops.h"
 #include "gc_disclaim.h"
 
 static int free_count = 0;
