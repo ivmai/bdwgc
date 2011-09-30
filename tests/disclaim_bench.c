@@ -17,10 +17,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "private/gc_priv.h"
+
 #include "atomic_ops.h"
 #include "gc_disclaim.h"
-
-#include "private/gc_priv.h"
 
 static int free_count = 0;
 
