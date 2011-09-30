@@ -26,7 +26,8 @@
 
 STATIC int GC_finalized_kind = 0;
 
-STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj, void *cd)
+STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj,
+                                             void *cd GC_ATTR_UNUSED)
 {
     struct GC_finalizer_closure *fc = *(void **)obj;
     if (((word)fc & 1) != 0) {
