@@ -301,8 +301,9 @@ GC_INNER char * GC_get_maps(void)
 /* (*end), (*prot), (*maj_dev) and (*mapping_name).  mapping_name may   */
 /* be NULL. (*prot) and (*mapping_name) are assigned pointers into the  */
 /* original buffer.                                                     */
-#if defined(REDIRECT_MALLOC) || defined(DYNAMIC_LOADING) || defined(IA64) \
-    || defined(INCLUDE_LINUX_THREAD_DESCR)
+#if (defined(DYNAMIC_LOADING) && defined(USE_PROC_FOR_LIBRARIES)) \
+    || defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR) \
+    || defined(REDIRECT_MALLOC)
   GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
                                     char **prot, unsigned int *maj_dev,
                                     char **mapping_name)
