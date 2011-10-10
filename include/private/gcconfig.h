@@ -497,6 +497,10 @@
 #   define NONSTOP
 #   define mach_type_known
 # endif
+# if defined(__hexagon__) && defined(LINUX)
+#    define HEXAGON
+#    define mach_type_known
+# endif
 
 /* Feel free to add more clauses here */
 
@@ -547,6 +551,7 @@
                     /*                  Handles 32 and 64-bit variants. */
                     /*             CRIS       ==> Axis Etrax            */
                     /*             M32R       ==> Renesas M32R          */
+                    /*             HEXAGON    ==> Qualcomm Hexagon      */
 
 
 /*
@@ -2240,6 +2245,32 @@
 #       define DATAEND  /* not needed */
 #   endif
 # endif /* X86_64 */
+
+# ifdef HEXAGON
+#   define CPP_WORDSZ 32
+#   define MACH_TYPE "HEXAGON"
+#   define ALIGNMENT 4
+#   ifdef LINUX
+#       define OS_TYPE "LINUX"
+#       define LINUX_STACKBOTTOM
+#       define MPROTECT_VDB
+#       ifdef __ELF__
+#            define DYNAMIC_LOADING
+#            include <features.h>
+#            if defined(__GLIBC__) && __GLIBC__ >= 2
+#                define SEARCH_FOR_DATA_START
+#            else
+#                error --> unknown Hexagon libc configuration
+#            endif
+             extern int _end[];
+#            define DATAEND (ptr_t)(_end)
+#       else
+#            error --> bad Hexagon Linux configuration
+#       endif
+#   else
+#       error --> unknown Hexagon OS configuration
+#   endif
+# endif
 
 #if defined(LINUX_STACKBOTTOM) && defined(NO_PROC_STAT) \
     && !defined(USE_LIBC_PRIVATES)
