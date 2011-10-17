@@ -128,6 +128,14 @@ SOURCE=..\..\dbg_mlc.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\gcj_mlc.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\finalized_mlc.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\dyn_load.c
 # End Source File
 # Begin Source File
@@ -250,6 +258,10 @@ SOURCE=..\..\include\private\gc_locks.h
 # Begin Source File
 
 SOURCE=..\..\include\gc_mark.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\gc_disclaim.h
 # End Source File
 # Begin Source File
 

@@ -17,6 +17,7 @@ pkginclude_HEADERS += \
         include/gc_typed.h \
         include/gc_inline.h \
         include/gc_mark.h \
+        include/gc_disclaim.h \
         include/gc_cpp.h \
         include/weakpointer.h \
         include/new_gc_alloc.h \

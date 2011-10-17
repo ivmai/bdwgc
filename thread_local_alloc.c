@@ -32,8 +32,14 @@ GC_key_t GC_thread_key;
 
 static GC_bool keys_initialized;
 
+#ifdef ENABLE_DISCLAIM
+  GC_INNER ptr_t * GC_finalized_objfreelist = NULL;
+        /* This variable is declared here to prevent linking of         */
+        /* finalized_mlc module unless the client uses the latter one.  */
+#endif
+
 /* Return a single nonempty freelist fl to the global one pointed to    */
-/* by gfl.      */
+/* by gfl.                                                              */
 
 static void return_single_freelist(void *fl, void **gfl)
 {
@@ -98,6 +104,9 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
 #       ifdef GC_GCJ_SUPPORT
           p -> gcj_freelists[i] = (void *)(word)1;
 #       endif
+#       ifdef ENABLE_DISCLAIM
+          p -> finalized_freelists[i] = (void *)(word)1;
+#       endif
     }
     /* Set up the size 0 free lists.    */
     /* We now handle most of them like regular free lists, to ensure    */
@@ -107,6 +116,9 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
     p -> normal_freelists[0] = (void *)(word)1;
 #   ifdef GC_GCJ_SUPPORT
         p -> gcj_freelists[0] = ERROR_FL;
+#   endif
+#   ifdef ENABLE_DISCLAIM
+        p -> finalized_freelists[0] = (void *)(word)1;
 #   endif
 }
 
@@ -122,6 +134,10 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
     return_freelists(p -> normal_freelists, GC_objfreelist);
 #   ifdef GC_GCJ_SUPPORT
         return_freelists(p -> gcj_freelists, (void **)GC_gcjobjfreelist);
+#   endif
+#   ifdef ENABLE_DISCLAIM
+        return_freelists(p -> finalized_freelists,
+                         (void **)GC_finalized_objfreelist);
 #   endif
 }
 
@@ -280,6 +296,11 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
           if ((word)q > HBLKSIZE) GC_set_fl_marks(q);
         }
 #     endif /* GC_GCJ_SUPPORT */
+#     ifdef ENABLE_DISCLAIM
+        q = p -> finalized_freelists[j];
+        if ((word)q > HBLKSIZE)
+          GC_set_fl_marks(q);
+#     endif
     }
 }
 
@@ -298,7 +319,12 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
 #         ifdef GC_GCJ_SUPPORT
             q = p -> gcj_freelists[j];
             if ((word)q > HBLKSIZE) GC_check_fl_marks(q);
-#         endif /* GC_GCJ_SUPPORT */
+#         endif
+#         ifdef ENABLE_DISCLAIM
+            q = p -> finalized_freelists[j];
+            if ((word)q > HBLKSIZE)
+              GC_check_fl_marks(q);
+#         endif
         }
     }
 #endif /* GC_ASSERTIONS */

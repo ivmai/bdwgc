@@ -74,6 +74,9 @@ typedef struct thread_local_freelists {
         /* Value used for gcj_freelist[-1]; allocation is       */
         /* erroneous.                                           */
 # endif
+# ifdef ENABLE_DISCLAIM
+    void * finalized_freelists[TINY_FREELISTS];
+# endif
   /* Free lists contain either a pointer or a small count       */
   /* reflecting the number of granules allocated at that        */
   /* size.                                                      */
@@ -140,6 +143,10 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p);
 /* invisible to the marker.  It knows how to find all threads;  */
 /* we take care of an individual thread freelist structure.     */
 GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p);
+
+#ifdef ENABLE_DISCLAIM
+  GC_EXTERN ptr_t * GC_finalized_objfreelist;
+#endif
 
 extern
 #if defined(USE_COMPILER_TLS)

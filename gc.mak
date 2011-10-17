@@ -347,6 +347,7 @@ BSC32_SBRS= \
 	".\Debug\blacklst.sbr" \
 	".\Debug\checksums.sbr" \
 	".\Debug\dbg_mlc.sbr" \
+	".\Debug\finalized_mlc.sbr" \
 	".\Debug\dyn_load.sbr" \
 	".\Debug\finalize.sbr" \
 	".\Debug\gc_cpp.sbr" \
@@ -386,6 +387,7 @@ LINK32_OBJS= \
 	".\Debug\blacklst.obj" \
 	".\Debug\checksums.obj" \
 	".\Debug\dbg_mlc.obj" \
+	".\Debug\finalized_mlc.obj" \
 	".\Debug\dyn_load.obj" \
 	".\Debug\finalize.obj" \
 	".\Debug\gc_cpp.obj" \
@@ -1385,6 +1387,7 @@ DEP_CPP_MARK_C=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 
@@ -1407,6 +1410,7 @@ DEP_CPP_MARK_C=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 
@@ -1533,6 +1537,7 @@ DEP_CPP_FINAL=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 
@@ -1555,6 +1560,7 @@ DEP_CPP_FINAL=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 
@@ -1623,6 +1629,54 @@ NODEP_CPP_DBG_M=\
 ################################################################################
 # Begin Source File
 
+SOURCE=.\finalized_mlc.c
+
+!IF  "$(CFG)" == "gc - Win32 Release"
+
+DEP_CPP_DBG_M=\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
+
+NODEP_CPP_DBG_M=\
+	".\th\PCR_Th.h"\
+	".\th\PCR_ThCrSec.h"\
+	".\th\PCR_ThCtl.h"\
+
+
+".\Release\finalized_mlc.obj" : $(SOURCE) $(DEP_CPP_DBG_M) "$(INTDIR)"
+
+".\Release\finalized_mlc.sbr" : $(SOURCE) $(DEP_CPP_DBG_M) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "gc - Win32 Debug"
+
+DEP_CPP_DBG_M=\
+	".\include\private\gcconfig.h"\
+	".\include\gc.h"\
+	".\include\private\gc_hdrs.h"\
+	".\include\private\gc_priv.h"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
+
+NODEP_CPP_DBG_M=\
+	".\th\PCR_Th.h"\
+	".\th\PCR_ThCrSec.h"\
+	".\th\PCR_ThCtl.h"\
+
+
+".\Debug\finalized_mlc.obj" : $(SOURCE) $(DEP_CPP_DBG_M) "$(INTDIR)"
+
+".\Debug\finalized_mlc.sbr" : $(SOURCE) $(DEP_CPP_DBG_M) "$(INTDIR)"
+
+
+!ENDIF
+
+# End Source File
+################################################################################
+# Begin Source File
+
 SOURCE=.\blacklst.c
 
 !IF  "$(CFG)" == "gc - Win32 Release"
@@ -1681,6 +1735,7 @@ DEP_CPP_TYPD_=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	".\include\gc_typed.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
@@ -1704,6 +1759,7 @@ DEP_CPP_TYPD_=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	".\include\gc_typed.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
@@ -1735,6 +1791,7 @@ DEP_CPP_PTR_C=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 
@@ -1757,6 +1814,7 @@ DEP_CPP_PTR_C=\
 	".\include\private\gc_hdrs.h"\
 	".\include\private\gc_pmark.h"\
 	".\include\gc_mark.h"\
+	".\include\gc_disclaim.h"\
 	".\include\private\gc_priv.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 
