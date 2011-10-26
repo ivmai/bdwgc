@@ -243,6 +243,57 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     return(0);
 }
 
+GC_API int GC_CALL GC_move_disappearing_link(void * * from, void * * to)
+{
+    struct disappearing_link *curr_dl, *prev_dl;
+    size_t from_index, to_index;
+    DCL_LOCK_STATE;
+
+    if (((word)from & (ALIGNMENT-1)) || from == NULL)
+        ABORT("Bad from arg to GC_move_disappearing_link");
+    if (((word)to & (ALIGNMENT-1)) || to == NULL)
+        ABORT("Bad to arg to GC_move_disappearing_link");
+
+    LOCK();
+    from_index = HASH2(from, log_dl_table_size);
+    prev_dl = 0; curr_dl = dl_head[from_index];
+    while (curr_dl != 0) {
+        if (curr_dl -> dl_hidden_link == GC_HIDE_POINTER(from)) {
+            /* Found the from link. */
+
+            to_index = HASH2(to, log_dl_table_size);
+            {
+                struct disappearing_link *to_curr_dl;
+                for (to_curr_dl = dl_head[to_index]; to_curr_dl != 0;
+                     to_curr_dl = dl_next(to_curr_dl)) {
+                    if (to_curr_dl -> dl_hidden_link == GC_HIDE_POINTER(to)) {
+                        /* Target already registered; bail.  */
+                        UNLOCK();
+                        return GC_DUPLICATE;
+                    }
+                }
+            }
+
+            /* Remove from old, add to new, update link.  */
+            if (prev_dl == 0) {
+                dl_head[from_index] = dl_next(curr_dl);
+            } else {
+                dl_set_next(prev_dl, dl_next(curr_dl));
+            }
+            curr_dl -> dl_hidden_link = GC_HIDE_POINTER (to);
+            dl_set_next(curr_dl, dl_head[to_index]);
+            dl_head[to_index] = curr_dl;
+
+            UNLOCK();
+            return GC_SUCCESS;
+        }
+        prev_dl = curr_dl;
+        curr_dl = dl_next(curr_dl);
+    }
+    UNLOCK();
+    return GC_NOT_FOUND;
+}
+
 /* Possible finalization_marker procedures.  Note that mark stack       */
 /* overflow is handled by the caller, and is not a disaster.            */
 STATIC void GC_normal_finalize_mark_proc(ptr_t p)

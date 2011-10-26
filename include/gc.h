@@ -950,6 +950,17 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void ** /* link */);
         /* routines.  Returns 0 if link was not actually        */
         /* registered (otherwise returns 1).                    */
 
+GC_API int GC_CALL GC_move_disappearing_link (void ** /* from */,
+                                              void ** /* to */);
+        /* Moves a link previously registered via               */
+        /* GC_general_register_disappearing_link or             */
+        /* GC_register_disappearing_link.  Does not change the  */
+        /* target object of the weak reference.                 */
+        /* Returns GC_SUCCESS on success, GC_DUPLICATE if there */
+        /* was already a disappearing link at the new location, */
+        /* or GC_NOT_FOUND if no link was registered at the     */
+        /* original location.                                   */
+
 /* Returns !=0 if GC_invoke_finalizers has something to do.     */
 GC_API int GC_CALL GC_should_invoke_finalizers(void);
 
@@ -1051,6 +1062,8 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
 #define GC_NO_THREADS 2         /* No thread support in GC.             */
         /* GC_NO_THREADS is not returned by any GC function anymore.    */
 #define GC_UNIMPLEMENTED 3 /* Not yet implemented on this platform.     */
+#define GC_NOT_FOUND 4          /* Used by GC_move_disappearing_link to */
+                                /* indicate that the link wasn't found. */
 
 #if defined(GC_DARWIN_THREADS) || defined(GC_WIN32_THREADS)
   /* Use implicit thread registration and processing (via Win32 DllMain */
