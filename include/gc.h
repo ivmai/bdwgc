@@ -945,11 +945,6 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
         /* GC_NO_MEMORY if registration failed for lack of      */
         /* memory (and GC_oom_fn did not handle the problem).   */
 
-GC_API int GC_CALL GC_unregister_disappearing_link(void ** /* link */);
-        /* Undoes a registration by either of the above two     */
-        /* routines.  Returns 0 if link was not actually        */
-        /* registered (otherwise returns 1).                    */
-
 GC_API int GC_CALL GC_move_disappearing_link(void ** /* link */,
                                              void ** /* new_link */);
         /* Moves a link previously registered via               */
@@ -963,6 +958,11 @@ GC_API int GC_CALL GC_move_disappearing_link(void ** /* link */,
         /* disappearing link at the new location (never         */
         /* returned if new_link is equal to link), GC_NOT_FOUND */
         /* if no link is registered at the original location.   */
+
+GC_API int GC_CALL GC_unregister_disappearing_link(void ** /* link */);
+        /* Undoes a registration by either of the above two     */
+        /* routines.  Returns 0 if link was not actually        */
+        /* registered (otherwise returns 1).                    */
 
 /* Returns !=0 if GC_invoke_finalizers has something to do.     */
 GC_API int GC_CALL GC_should_invoke_finalizers(void);
