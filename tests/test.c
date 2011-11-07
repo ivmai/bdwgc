@@ -736,6 +736,7 @@ tn * mktree(int n)
     }
     if (counter++ % 119 == 0) {
         int my_index;
+        void *new_link;
 
         {
 #         ifdef PCR
@@ -773,10 +774,24 @@ tn * mktree(int n)
                 GC_printf("GC_general_register_disappearing_link failed\n");
                 FAIL;
         }
-        if (GC_unregister_disappearing_link(
-                (void * *)
-                   (&(live_indicators[my_index]))) == 0) {
+        if (GC_move_disappearing_link((void **)(&(live_indicators[my_index])),
+                   (void **)(&(live_indicators[my_index]))) != GC_SUCCESS) {
+                GC_printf("GC_move_disappearing_link(link,link) failed\n");
+                FAIL;
+        }
+        new_link = (void *)live_indicators[my_index];
+        if (GC_move_disappearing_link((void **)(&(live_indicators[my_index])),
+                                      &new_link) != GC_SUCCESS) {
+                GC_printf("GC_move_disappearing_link(new_link) failed\n");
+                FAIL;
+        }
+        if (GC_unregister_disappearing_link(&new_link) == 0) {
                 GC_printf("GC_unregister_disappearing_link failed\n");
+                FAIL;
+        }
+        if (GC_move_disappearing_link((void **)(&(live_indicators[my_index])),
+                                      &new_link) != GC_NOT_FOUND) {
+                GC_printf("GC_move_disappearing_link(new_link) failed 2\n");
                 FAIL;
         }
         if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(

@@ -243,55 +243,64 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     return(0);
 }
 
-GC_API int GC_CALL GC_move_disappearing_link(void * * from, void * * to)
+GC_API int GC_CALL GC_move_disappearing_link(void **link, void **new_link)
 {
-    struct disappearing_link *curr_dl, *prev_dl;
-    size_t from_index, to_index;
+    struct disappearing_link *curr_dl, *prev_dl, *new_dl;
+    size_t curr_index, new_index;
+    word curr_hidden_link;
+    word new_hidden_link;
     DCL_LOCK_STATE;
 
-    if (((word)from & (ALIGNMENT-1)) || from == NULL)
-        ABORT("Bad from arg to GC_move_disappearing_link");
-    if (((word)to & (ALIGNMENT-1)) || to == NULL)
-        ABORT("Bad to arg to GC_move_disappearing_link");
+    if (((word)new_link & (ALIGNMENT-1)) != 0 || new_link == NULL)
+      ABORT("Bad new_link arg to GC_move_disappearing_link");
+    if (((word)link & (ALIGNMENT-1)) != 0)
+      return GC_NOT_FOUND; /* Nothing to do. */
 
     LOCK();
-    from_index = HASH2(from, log_dl_table_size);
-    prev_dl = 0; curr_dl = dl_head[from_index];
-    while (curr_dl != 0) {
-        if (curr_dl -> dl_hidden_link == GC_HIDE_POINTER(from)) {
-            /* Found the from link. */
-
-            to_index = HASH2(to, log_dl_table_size);
-            {
-                struct disappearing_link *to_curr_dl;
-                for (to_curr_dl = dl_head[to_index]; to_curr_dl != 0;
-                     to_curr_dl = dl_next(to_curr_dl)) {
-                    if (to_curr_dl -> dl_hidden_link == GC_HIDE_POINTER(to)) {
-                        /* Target already registered; bail.  */
-                        UNLOCK();
-                        return GC_DUPLICATE;
-                    }
-                }
-            }
-
-            /* Remove from old, add to new, update link.  */
-            if (prev_dl == 0) {
-                dl_head[from_index] = dl_next(curr_dl);
-            } else {
-                dl_set_next(prev_dl, dl_next(curr_dl));
-            }
-            curr_dl -> dl_hidden_link = GC_HIDE_POINTER (to);
-            dl_set_next(curr_dl, dl_head[to_index]);
-            dl_head[to_index] = curr_dl;
-
-            UNLOCK();
-            return GC_SUCCESS;
-        }
-        prev_dl = curr_dl;
-        curr_dl = dl_next(curr_dl);
+    /* Find current link.       */
+    curr_index = HASH2(link, log_dl_table_size);
+    curr_hidden_link = GC_HIDE_POINTER(link);
+    prev_dl = 0;
+    for (curr_dl = dl_head[curr_index]; curr_dl != 0;
+         curr_dl = dl_next(curr_dl)) {
+      if (curr_dl -> dl_hidden_link == curr_hidden_link)
+        break;
+      prev_dl = curr_dl;
     }
+
+    if (curr_dl == 0) {
+      UNLOCK();
+      return GC_NOT_FOUND;
+    }
+
+    if (link == new_link) {
+      UNLOCK();
+      return GC_SUCCESS; /* Nothing to do.      */
+    }
+
+    /* link found; now check new_link not present.      */
+    new_index = HASH2(new_link, log_dl_table_size);
+    new_hidden_link = GC_HIDE_POINTER(new_link);
+    for (new_dl = dl_head[new_index]; new_dl != 0;
+         new_dl = dl_next(new_dl)) {
+      if (new_dl -> dl_hidden_link == new_hidden_link) {
+        /* Target already registered; bail.     */
+        UNLOCK();
+        return GC_DUPLICATE;
+      }
+    }
+
+    /* Remove from old, add to new, update link.        */
+    if (prev_dl == 0) {
+      dl_head[curr_index] = dl_next(curr_dl);
+    } else {
+      dl_set_next(prev_dl, dl_next(curr_dl));
+    }
+    curr_dl -> dl_hidden_link = new_hidden_link;
+    dl_set_next(curr_dl, dl_head[new_index]);
+    dl_head[new_index] = curr_dl;
     UNLOCK();
-    return GC_NOT_FOUND;
+    return GC_SUCCESS;
 }
 
 /* Possible finalization_marker procedures.  Note that mark stack       */
