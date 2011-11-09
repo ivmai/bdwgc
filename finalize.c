@@ -243,8 +243,9 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     return(0);
 }
 
-GC_API int GC_CALL GC_move_disappearing_link(void **link, void **new_link)
-{
+#ifndef GC_MOVE_DISAPPEARING_LINK_NOT_NEEDED
+  GC_API int GC_CALL GC_move_disappearing_link(void **link, void **new_link)
+  {
     struct disappearing_link *curr_dl, *prev_dl, *new_dl;
     size_t curr_index, new_index;
     word curr_hidden_link;
@@ -301,7 +302,8 @@ GC_API int GC_CALL GC_move_disappearing_link(void **link, void **new_link)
     dl_head[new_index] = curr_dl;
     UNLOCK();
     return GC_SUCCESS;
-}
+  }
+#endif /* !GC_MOVE_DISAPPEARING_LINK_NOT_NEEDED */
 
 /* Possible finalization_marker procedures.  Note that mark stack       */
 /* overflow is handled by the caller, and is not a disaster.            */
