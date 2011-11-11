@@ -108,7 +108,7 @@ STATIC void GC_update_check_page(struct hblk *h, int index)
     pe -> new_sum = GC_checksum(h);
 #   if !defined(MSWIN32) && !defined(MSWINCE)
         if (pe -> new_sum != 0x80000000 && !GC_page_was_ever_dirty(h)) {
-            GC_err_printf("GC_page_was_ever_dirty(%p) is wrong\n", h);
+            GC_err_printf("GC_page_was_ever_dirty(%p) is wrong\n", (void *)h);
         }
 #   endif
     if (GC_page_was_dirty(h)) {
