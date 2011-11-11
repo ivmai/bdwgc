@@ -72,6 +72,8 @@ CLEAN :
 	-@erase ".\Release\dyn_load.sbr"
 	-@erase ".\Release\finalize.obj"
 	-@erase ".\Release\finalize.sbr"
+	-@erase ".\Release\finalized_mlc.obj"
+	-@erase ".\Release\finalized_mlc.sbr"
 	-@erase ".\Release\gc.bsc"
 	-@erase ".\Release\gc_cpp.obj"
 	-@erase ".\Release\gc_cpp.sbr"
@@ -161,6 +163,7 @@ BSC32_SBRS= \
 	".\Release\dbg_mlc.sbr" \
 	".\Release\dyn_load.sbr" \
 	".\Release\finalize.sbr" \
+	".\Release\finalized_mlc.sbr" \
 	".\Release\gc_cpp.sbr" \
 	".\Release\headers.sbr" \
 	".\Release\mach_dep.sbr" \
@@ -200,6 +203,7 @@ LINK32_OBJS= \
 	".\Release\dbg_mlc.obj" \
 	".\Release\dyn_load.obj" \
 	".\Release\finalize.obj" \
+	".\Release\finalized_mlc.obj" \
 	".\Release\gc_cpp.obj" \
 	".\Release\headers.obj" \
 	".\Release\mach_dep.obj" \
@@ -255,6 +259,8 @@ CLEAN :
 	-@erase ".\Debug\dyn_load.sbr"
 	-@erase ".\Debug\finalize.obj"
 	-@erase ".\Debug\finalize.sbr"
+	-@erase ".\Debug\finalized_mlc.obj"
+	-@erase ".\Debug\finalized_mlc.sbr"
 	-@erase ".\Debug\gc_cpp.obj"
 	-@erase ".\Debug\gc_cpp.sbr"
 	-@erase ".\Debug\gc.bsc"

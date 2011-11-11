@@ -73,6 +73,7 @@ checksums.obj: checksums.c
 dbg_mlc.obj: dbg_mlc.c
 dyn_load.obj: dyn_load.c
 finalize.obj: finalize.c
+finalized_mlc.obj: finalized_mlc.c
 gc_cpp.obj: gc_cpp.cpp
 headers.obj: headers.c
 mach_dep.obj: mach_dep.c
