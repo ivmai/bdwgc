@@ -50,7 +50,7 @@
 #include "../alloc.c"
 #include "../dbg_mlc.c"
 #include "../finalize.c"
-#include "../finalized_mlc.c"
+#include "../fnlz_mlc.c"
 #include "../mallocx.c"
 #include "../mark.c"
 #include "../mark_rts.c"

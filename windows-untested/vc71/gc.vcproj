@@ -318,7 +318,7 @@
                 </FileConfiguration>
             </File>
             <File
-                RelativePath="..\..\finalized_mlc.c">
+                RelativePath="..\..\fnlz_mlc.c">
                 <FileConfiguration
                     Name="Release|Win32">
                     <Tool

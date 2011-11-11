@@ -168,7 +168,7 @@
                 RelativePath="..\..\gcj_mlc.c">
             </File>
             <File
-                RelativePath="..\..\finalized_mlc.c">
+                RelativePath="..\..\fnlz_mlc.c">
             </File>
             <File
                 RelativePath="..\..\dyn_load.c">

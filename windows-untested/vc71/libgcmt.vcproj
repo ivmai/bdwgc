@@ -282,7 +282,7 @@
                 </FileConfiguration>
             </File>
             <File
-                RelativePath="..\..\finalized_mlc.c">
+                RelativePath="..\..\fnlz_mlc.c">
                 <FileConfiguration
                     Name="Debug|Win32">
                     <Tool

@@ -35,7 +35,7 @@ static GC_bool keys_initialized;
 #ifdef ENABLE_DISCLAIM
   GC_INNER ptr_t * GC_finalized_objfreelist = NULL;
         /* This variable is declared here to prevent linking of         */
-        /* finalized_mlc module unless the client uses the latter one.  */
+        /* fnlz_mlc module unless the client uses the latter one.       */
 #endif
 
 /* Return a single nonempty freelist fl to the global one pointed to    */

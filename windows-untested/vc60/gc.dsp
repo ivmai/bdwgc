@@ -132,7 +132,7 @@ SOURCE=..\..\gcj_mlc.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\finalized_mlc.c
+SOURCE=..\..\fnlz_mlc.c
 # End Source File
 # Begin Source File
 
