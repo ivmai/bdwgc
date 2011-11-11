@@ -39,7 +39,8 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
 
     /* Check that obj and its car and cdr are not trashed. */
 #   ifdef DEBUG_DISCLAIM_DESTRUCT
-      printf("Destruct %p = (%p, %p)\n", p, p->car, p->cdr);
+      printf("Destruct %p = (%p, %p)\n",
+             (void *)p, (void *)p->car, (void *)p->cdr);
 #   endif
     assert(GC_base(obj));
     assert(p->is_valid);
@@ -69,7 +70,8 @@ pair_new(pair_t car, pair_t cdr)
     p->car = car;
     p->cdr = cdr;
 #   ifdef DEBUG_DISCLAIM_DESTRUCT
-      printf("Construct %p = (%p, %p)\n", p, p->car, p->cdr);
+      printf("Construct %p = (%p, %p)\n",
+             (void *)p, (void *)p->car, (void *)p->cdr);
 #   endif
     return p;
 }

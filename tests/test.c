@@ -204,7 +204,8 @@ sexpr cons (sexpr x, sexpr y)
     for (p = (int *)r;
          ((char *)p) < ((char *)r) + my_extra + sizeof(struct SEXPR); p++) {
         if (*p) {
-            GC_printf("Found nonzero at %p - allocator is broken\n", p);
+            GC_printf("Found nonzero at %p - allocator is broken\n",
+                      (void *)p);
             FAIL;
         }
         *p = (int)((13 << 12) + ((p - (int *)r) & 0xfff));
@@ -430,14 +431,14 @@ void print_int_list(sexpr x)
 void check_marks_int_list(sexpr x)
 {
     if (!GC_is_marked((ptr_t)x))
-        GC_printf("[unm:%p]", x);
+        GC_printf("[unm:%p]", (void *)x);
     else
-        GC_printf("[mkd:%p]", x);
+        GC_printf("[mkd:%p]", (void *)x);
     if (is_nil(x)) {
         GC_printf("NIL\n");
     } else {
         if (!GC_is_marked((ptr_t)car(x)))
-          GC_printf("[unm car:%p]", car(x));
+          GC_printf("[unm car:%p]", (void *)car(x));
         GC_printf("(%d)", SEXPR_TO_INT(car(car(x))));
         if (!is_nil(cdr(x))) {
             GC_printf(", ");
@@ -1128,7 +1129,7 @@ void run_one_test(void)
       z = GC_malloc(8);
       GC_PTR_STORE(z, x);
       if (*z != x) {
-        GC_printf("GC_PTR_STORE failed: %p != %p\n", *z, x);
+        GC_printf("GC_PTR_STORE failed: %p != %p\n", (void *)(*z), (void *)x);
         FAIL;
       }
       if (!TEST_FAIL_COUNT(1)) {
@@ -1218,7 +1219,7 @@ void run_one_test(void)
           GET_TIME(reverse_time);
           time_diff = MS_TIME_DIFF(reverse_time, start_time);
           GC_log_printf("-------------Finished reverse_test at time %u (%p)\n",
-                        (unsigned) time_diff, &start_time);
+                        (unsigned) time_diff, (void *)&start_time);
         }
 #   ifndef DBG_HDRS_ALL
       typed_test();
@@ -1226,7 +1227,7 @@ void run_one_test(void)
         GET_TIME(typed_time);
         time_diff = MS_TIME_DIFF(typed_time, start_time);
         GC_log_printf("-------------Finished typed_test at time %u (%p)\n",
-                      (unsigned) time_diff, &start_time);
+                      (unsigned) time_diff, (void *)&start_time);
       }
 #   endif /* DBG_HDRS_ALL */
     tree_test();
@@ -1234,7 +1235,7 @@ void run_one_test(void)
       GET_TIME(tree_time);
       time_diff = MS_TIME_DIFF(tree_time, start_time);
       GC_log_printf("-------------Finished tree_test at time %u (%p)\n",
-                    (unsigned) time_diff, &start_time);
+                    (unsigned) time_diff, (void *)&start_time);
     }
     /* Run reverse_test a second time, so we hopefully notice corruption. */
       reverse_test();
@@ -1243,7 +1244,7 @@ void run_one_test(void)
         time_diff = MS_TIME_DIFF(reverse_time, start_time);
         GC_log_printf(
                 "-------------Finished second reverse_test at time %u (%p)\n",
-                (unsigned)time_diff, &start_time);
+                (unsigned)time_diff, (void *)&start_time);
       }
     /* GC_allocate_ml and GC_need_to_lock are no longer exported, and   */
     /* AO_fetch_and_add1() may be unavailable to update a counter.      */
@@ -1259,7 +1260,7 @@ void run_one_test(void)
       }
 #   endif
     if (GC_print_stats)
-      GC_log_printf("Finished %p\n", &start_time);
+      GC_log_printf("Finished %p\n", (void *)&start_time);
 }
 
 #define NUMBER_ROUND_UP(v, bound) ((((v) + (bound) - 1) / (bound)) * (bound))
@@ -1316,7 +1317,7 @@ void check_heap_stats(void)
       }
       if (GC_print_stats) {
           GC_log_printf("Primordial thread stack bottom: %p\n",
-                        GC_stackbottom);
+                        (void *)GC_stackbottom);
       }
     GC_printf("Completed %u tests\n", n_tests);
     GC_printf("Allocated %d collectable objects\n", collectable_count);
