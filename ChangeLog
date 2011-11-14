@@ -2,16 +2,25 @@
 [7.3alpha2] (development)
 =========================
 
+* Add GC_move_disappearing_link() API entry.
+* Add TODO file.
+* Add disclaim callbacks for efficient finalization (ENABLE_DISCLAIM).
+* Fix minor warnings reported by GCC with '-pedantic' option.
+* In tests, print a message in case a test is a no-op.
 * Move "cord" library tests to "cord/tests" folder.
 * Move asm machine-dependent files to "src" folder.
 * Move build tools sources to "tools" folder.
+* Place only major per-release changes description to ChangeLog (this file).
+* Remove all auto-generated files from the repo.
 * Remove binary icon file for de_win.
 * Remove cordtest from "cord" library.
 * Remove gc_amiga_redirects.h (included internally) from public headers.
+* Remove obsolete Makefile.DLL (superseded by Cygwin/MinGW configure).
 * Remove obsolete unused asm files for ALPHA, HPUX, SGI, RS6000, ULTRIX.
 * Replace ARGSUSED comment-based annotation with GCC 'unused' attribute.
 * Turn on "extra" GCC warnings.
 * Turn on unused-parameter checking for GCC.
+* Update AUTHORS file.
 
 
 [7.2] (candidate)
@@ -22,7 +31,11 @@
 GC_get_bytes_since_gc and friends.
 * Add info that getcontext() resets FPE mask no longer on Linux/x86_64.
 * Add realloc_test.c test.
+* Add support for Hexagon target.
 * Check pthread_create/join result in test.
+* Define GC_DLL (in configure) if building only dynamic libraries.
+* Define NO_DEBUGGING (in configure) if "--disable-gc-debug" is set.
+* Enable parallel marker in configure for Solaris.
 * Fix "comparison of signed and unsigned values" compiler warnings.
 * Fix GC_find_limit_with_bound to always reset fault handler on return.
 * Fix GC_init_lib_bounds (and GC_init, GC_get_main_stack_base) regarding
@@ -30,6 +43,8 @@ malloc redirection.
 * Fix duplicate definitions in gcconfig.h for NetBSD.
 * Fix gc_cpp.cc for Cygwin (remove duplicate function definition).
 * Fix mach_dep.c to include sys/ucontext.h on Mac OS X 10.6.
+* Fix tests to check GC_malloc result for NULL (out-of-memory).
+* Fix thread model in configure for MinGW ("win32" instead of "posix").
 * Fix various warnings reported by LINT-like tools
 * Port some thread tests to Win32.
 * Refine API GC setters and getter comments regarding locking.
