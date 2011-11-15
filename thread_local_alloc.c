@@ -147,6 +147,8 @@ GC_API void * GC_CALL GC_malloc(size_t bytes)
       tsd = GC_getspecific(k);
 #   else
       tsd = GC_getspecific(GC_thread_key);
+#   endif
+#   if !defined(USE_COMPILER_TLS) && !defined(USE_WIN32_COMPILER_TLS)
       if (EXPECT(0 == tsd, FALSE)) {
         return GC_core_malloc(bytes);
       }
@@ -182,6 +184,8 @@ GC_API void * GC_CALL GC_malloc_atomic(size_t bytes)
       tsd = GC_getspecific(k);
 #   else
       tsd = GC_getspecific(GC_thread_key);
+#   endif
+#   if !defined(USE_COMPILER_TLS) && !defined(USE_WIN32_COMPILER_TLS)
       if (EXPECT(0 == tsd, FALSE)) {
         return GC_core_malloc_atomic(bytes);
       }
