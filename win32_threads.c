@@ -2000,8 +2000,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
 #endif /* PARALLEL_MARK */
 
-#ifndef GC_PTHREADS
-
   /* We have no DllMain to take care of new threads.  Thus we   */
   /* must properly intercept thread creation.                   */
 
@@ -2154,8 +2152,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     }
 
 # endif /* !MSWINCE */
-
-#endif /* !GC_PTHREADS */
 
 #ifdef GC_WINMAIN_REDIRECT
   /* This might be useful on WinCE.  Shouldn't be used with GC_DLL.     */

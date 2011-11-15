@@ -1277,7 +1277,10 @@ typedef int (GC_CALLBACK * GC_has_static_roots_func)(
 GC_API void GC_CALL GC_register_has_static_roots_callback(
                                         GC_has_static_roots_func);
 
-#if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
+#if defined(GC_WIN32_THREADS) \
+    && (!defined(GC_PTHREADS) || defined(GC_BUILD) || defined(WINAPI))
+                /* Note: for Cygwin and win32-pthread, this is skipped  */
+                /* unless windows.h is included before gc.h.            */
 
 # ifndef GC_NO_THREAD_DECLS
 
