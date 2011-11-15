@@ -312,6 +312,7 @@ STATIC long GC_nprocs = 1;
 #   if defined(USE_CUSTOM_SPECIFIC)
       void GC_check_tsd_marks(tsd *key);
 #   endif
+
     /* Check that all thread-local free-lists are completely marked.    */
     /* Also check that thread-specific-data structures are marked.      */
     void GC_check_tls(void)
@@ -331,6 +332,7 @@ STATIC long GC_nprocs = 1;
 #       endif
     }
 # endif /* GC_ASSERTIONS */
+
 #endif /* THREAD_LOCAL_ALLOC */
 
 #ifdef PARALLEL_MARK
@@ -600,16 +602,14 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
   /* This is called from thread-local GC_malloc(). */
   GC_bool GC_is_thread_tsd_valid(void *tsd)
   {
-    char *me;
+    GC_thread me;
     DCL_LOCK_STATE;
 
     LOCK();
-    me = (char *)GC_lookup_thread(pthread_self());
+    me = GC_lookup_thread(pthread_self());
     UNLOCK();
-    /* FIXME: We can check tsd more correctly (since now we have access */
-    /* to the right declarations).  This old algorithm (moved from      */
-    /* thread_local_alloc.c) checks only that it's close.               */
-    return((char *)tsd > me && (char *)tsd < me + 1000);
+    return (char *)tsd >= (char *)&me->tlfs
+            && (char *)tsd < (char *)&me->tlfs + sizeof(me->tlfs);
   }
 #endif /* GC_ASSERTIONS && THREAD_LOCAL_ALLOC */
 
