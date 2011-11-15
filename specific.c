@@ -26,7 +26,8 @@ static tse invalid_tse = {INVALID_QTID, 0, 0, INVALID_THREADID};
             /* appear valid to a reader.  Used to fill in empty */
             /* cache entries to avoid a check for 0.            */
 
-int PREFIXED(key_create) (tsd ** key_ptr, void (* destructor)(void *)) {
+GC_INNER int GC_key_create(tsd ** key_ptr, void (* destructor)(void *))
+{
     int i;
     tsd * result = (tsd *)MALLOC_CLEAR(sizeof(tsd));
 
@@ -46,7 +47,8 @@ int PREFIXED(key_create) (tsd ** key_ptr, void (* destructor)(void *)) {
     return 0;
 }
 
-int PREFIXED(setspecific) (tsd * key, void * value) {
+GC_INNER int GC_setspecific(tsd * key, void * value)
+{
     pthread_t self = pthread_self();
     int hash_val = HASH(self);
     volatile tse * entry = (volatile tse *)MALLOC_CLEAR(sizeof (tse));
@@ -68,7 +70,8 @@ int PREFIXED(setspecific) (tsd * key, void * value) {
 
 /* Remove thread-specific data for this thread.  Should be called on    */
 /* thread exit.                                                         */
-void PREFIXED(remove_specific) (tsd * key) {
+GC_INNER void GC_remove_specific(tsd * key)
+{
     pthread_t self = pthread_self();
     unsigned hash_val = HASH(self);
     tse *entry;
@@ -106,8 +109,9 @@ void PREFIXED(remove_specific) (tsd * key) {
 }
 
 /* Note that even the slow path doesn't lock.   */
-void * PREFIXED(slow_getspecific) (tsd * key, unsigned long qtid,
-                tse * volatile * cache_ptr) {
+GC_INNER void * GC_slow_getspecific(tsd * key, unsigned long qtid,
+                                    tse * volatile * cache_ptr)
+{
     pthread_t self = pthread_self();
     unsigned hash_val = HASH(self);
     tse *entry = key -> hash[hash_val];
@@ -132,7 +136,7 @@ void * PREFIXED(slow_getspecific) (tsd * key, unsigned long qtid,
 #ifdef GC_ASSERTIONS
   /* Check that that all elements of the data structure associated  */
   /* with key are marked.                                           */
-  void PREFIXED(check_tsd_marks) (tsd *key)
+  void GC_check_tsd_marks(tsd *key)
   {
     int i;
     tse *p;

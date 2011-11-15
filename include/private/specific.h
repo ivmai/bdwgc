@@ -21,7 +21,6 @@
 /* That's hard to fix, but OK if we allocate garbage    */
 /* collected memory.                                    */
 #define MALLOC_CLEAR(n) GC_INTERNAL_MALLOC(n, NORMAL)
-#define PREFIXED(name) GC_##name
 
 #define TS_CACHE_SIZE 1024
 #define CACHE_HASH(n) (((((long)n) >> 8) ^ (long)n) & (TS_CACHE_SIZE - 1))
@@ -65,18 +64,18 @@ typedef struct thread_specific_data {
     pthread_mutex_t lock;
 } tsd;
 
-typedef tsd * PREFIXED(key_t);
+typedef tsd * GC_key_t;
 
-int PREFIXED(key_create) (tsd ** key_ptr, void (* destructor)(void *));
-int PREFIXED(setspecific) (tsd * key, void * value);
-void PREFIXED(remove_specific) (tsd * key);
+GC_INNER int GC_key_create(tsd ** key_ptr, void (* destructor)(void *));
+GC_INNER int GC_setspecific(tsd * key, void * value);
+GC_INNER void GC_remove_specific(tsd * key);
 
 /* An internal version of getspecific that assumes a cache miss.        */
-void * PREFIXED(slow_getspecific) (tsd * key, unsigned long qtid,
-                                   tse * volatile * cache_entry);
+GC_INNER void * GC_slow_getspecific(tsd * key, unsigned long qtid,
+                                    tse * volatile * cache_entry);
 
 /* GC_INLINE is defined in gc_priv.h. */
-GC_INLINE void * PREFIXED(getspecific) (tsd * key)
+GC_INLINE void * GC_getspecific(tsd * key)
 {
     unsigned long qtid = quick_thread_id();
     unsigned hash_val = CACHE_HASH(qtid);
@@ -86,5 +85,5 @@ GC_INLINE void * PREFIXED(getspecific) (tsd * key)
       GC_ASSERT(entry -> thread == pthread_self());
       return entry -> value;
     }
-    return PREFIXED(slow_getspecific) (key, qtid, entry_ptr);
+    return GC_slow_getspecific(key, qtid, entry_ptr);
 }
