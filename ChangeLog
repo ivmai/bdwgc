@@ -1,3 +1,15 @@
+2011-11-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c (GC_is_thread_tsd_valid): Check tsd more correctly
+	using GC_thread and thread_local_freelists declarations; remove FIXME.
+	* win32_threads.c (GC_is_thread_tsd_valid): Likewise.
+
+2011-11-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* thread_local_alloc.c (GC_malloc, GC_malloc_atomic): Test result of
+	GC_getspecific() for NULL in all cases except for USE_COMPILER_TLS and
+	USE_WIN32_COMPILER_TLS (i.e., no-op implementation of GC_getspecific).
+
 2011-10-10  Ivan Maidanski <ivmai@mail.ru>  (really Linas Vepstas)
 
 	* include/private/gcconfig.h: Add machine description for Hexagon.
