@@ -129,8 +129,14 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
             GC_generic_malloc_many(GC_RAW_BYTES_FROM_INDEX(lg),
                                    GC_finalized_kind, my_fl);
             my_entry = *my_fl;
-            if (my_entry == 0)
-                return GC_oom_fn(lb);
+            if (my_entry == 0) {
+                GC_oom_func oom_fn;
+
+                LOCK();
+                oom_fn = GC_oom_fn;
+                UNLOCK();
+                return((*oom_fn)(lb));
+            }
         }
     }
 
