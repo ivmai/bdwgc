@@ -26,7 +26,7 @@ static tse invalid_tse = {INVALID_QTID, 0, 0, INVALID_THREADID};
             /* appear valid to a reader.  Used to fill in empty */
             /* cache entries to avoid a check for 0.            */
 
-GC_INNER int GC_key_create(tsd ** key_ptr, void (* destructor)(void *))
+GC_INNER int GC_key_create_inner(tsd ** key_ptr)
 {
     int i;
     tsd * result = (tsd *)MALLOC_CLEAR(sizeof(tsd));
