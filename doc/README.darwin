@@ -79,7 +79,7 @@ programs that use JNI. If you run code that does not follow the stack
 layout or stack pointer conventions laid out in the PPC Mach-O ABI,
 then this will likely crash the garbage collector.
 
-The original incremental collector support unfortunatelly no longer works
+The original incremental collector support unfortunately no longer works
 on recent Darwin versions. It also relied on some undocumented kernel
 structures. Mach, however, does have a very clean interface to exception
 handing. The current implementation uses Mach's exception handling.
