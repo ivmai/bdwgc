@@ -1,3 +1,10 @@
+2011-11-23  Ivan Maidanski <ivmai@mail.ru>  (really Bruce Mitchener)
+
+	* README: Fix typos.
+	* doc/README.cmake: Likewise.
+	* doc/README.darwin: Likewise.
+	* autogen.sh: Set file 'executable' bit.
+
 2011-11-15  Ivan Maidanski <ivmai@mail.ru>
 
 	* pthread_support.c (GC_is_thread_tsd_valid): Check tsd more correctly
