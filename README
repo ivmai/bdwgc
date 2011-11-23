@@ -33,7 +33,7 @@ at the notice in config.guess or ltmain.sh.)
 
 The atomic_ops library contains some code that is covered by the GNU General
 Public License, but is not needed by, nor linked into the collector library.
-It is included here only becuase the atomic_ops distribution is, for
+It is included here only because the atomic_ops distribution is, for
 simplicity, included in its entirety.
 
 This is version 7.3alpha1 of a conservative garbage collector for C and C++.
@@ -100,7 +100,7 @@ collector.  (See doc/README.cords and H.-J. Boehm, R. Atkinson, and M. Plass,
 (December 1995), pp. 1315-1330.  This is very similar to the "rope" package
 in Xerox Cedar, or the "rope" package in the SGI STL or the g++ distribution.)
 
-Further collector documantation can be found at
+Further collector documentation can be found at
 
 http://www.hpl.hp.com/personal/Hans_Boehm/gc
 
@@ -138,7 +138,7 @@ There are a number of routines which modify the pointer recognition
 algorithm.  GC_register_displacement allows certain interior pointers
 to be recognized even if ALL_INTERIOR_POINTERS is nor defined.
 GC_malloc_ignore_off_page allows some pointers into the middle of large objects
-to be disregarded, greatly reducing the probablility of accidental
+to be disregarded, greatly reducing the probability of accidental
 retention of large objects.  For most purposes it seems best to compile
 with ALL_INTERIOR_POINTERS and to use GC_malloc_ignore_off_page if
 you get collector warnings from allocations of very large objects.
@@ -334,7 +334,7 @@ good way for the collector to compute this value.)  Client code may include
 6)  GC_malloc_ignore_off_page(bytes)
         - identical to GC_malloc, but the client promises to keep a pointer to
           the somewhere within the first 256 bytes of the object while it is
-          live.  (This pointer should nortmally be declared volatile to prevent
+          live.  (This pointer should normally be declared volatile to prevent
           interference from compiler optimizations.)  This is the recommended
           way to allocate anything that is likely to be larger than 100Kbytes
           or so.  (GC_malloc may result in failure to reclaim such objects.)
@@ -398,7 +398,7 @@ proposal without compiler changes.
 
   Very often it will also be necessary to use gc_allocator.h and the
 allocator declared there to construct STL data structures.  Otherwise
-subobjects of STL data structures wil be allcoated using a system
+subobjects of STL data structures will be allocated using a system
 allocator, and objects they refer to may be prematurely collected.
 
 USE AS LEAK DETECTOR:
@@ -414,7 +414,7 @@ also be automatically reclaimed.
 the default version of report_leak will report at least the source file and
 line number at which the leaked object was allocated.  This may sometimes be
 sufficient.  (On a few machines, it will also report a cryptic stack trace.
-If this is not symbolic, it can somethimes be called into a symbolic stack
+If this is not symbolic, it can sometimes be called into a symbolic stack
 trace by invoking program "foo" with "tools/callprocs.sh foo".  It is a short
 shell script that invokes adb to expand program counter values to symbolic
 addresses.  It was largely supplied by Scott Schwartz.)
@@ -452,7 +452,7 @@ the debugger.
 or GC_free, and conversely.  It is however acceptable to allocate only
 some objects with GC_debug_malloc, and to use GC_malloc for other objects,
 provided the two pools are kept distinct.  In this case, there is a very
-low probablility that GC_malloc allocated objects may be misidentified as
+low probability that GC_malloc allocated objects may be misidentified as
 having been overwritten.  This should happen with probability at most
 one in 2**32.  This probability is zero if GC_debug_malloc is never called.
 
