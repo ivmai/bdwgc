@@ -503,12 +503,12 @@ AC_CHECK_HEADER(sys/dg_sys_info.h,
 
     ## :GOTCHA: we do not check anything but sys/dg_sys_info.h
 if test $ac_is_dgux = yes; then
+    dgux_spec_opts="-DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
+    CFLAGS="$dgux_spec_opts $CFLAGS"
+    CXXFLAGS="$dgux_spec_opts $CXXFLAGS"
     if test "$enable_gc_debug" = "yes"; then
-      CFLAGS="-g -mstandard -DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
-      CXXFLAGS="-g -mstandard -DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
-    else
-      CFLAGS="-DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
-      CXXFLAGS="-DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
+      CFLAGS="-g -mstandard $CFLAGS"
+      CXXFLAGS="-g -mstandard $CXXFLAGS"
     fi
     AC_SUBST(CFLAGS)
     AC_SUBST(CXXFLAGS)
