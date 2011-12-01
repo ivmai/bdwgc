@@ -291,7 +291,7 @@ case "$THREADS" in
     case "$host" in
      sparc*-*-solaris*)
         if test "$GCC" != yes; then
-          CFLAGS="$CFLAGS -O"
+          CFLAGS="-O $CFLAGS"
           need_atomic_ops_asm=true
         fi
         ;;
@@ -361,7 +361,7 @@ case "$host" in
 esac
 
 if test "$GCC" == yes; then
-  CFLAGS="$CFLAGS -Wall -Wextra"
+  CFLAGS="-Wall -Wextra $CFLAGS"
 fi
 
 AC_MSG_CHECKING(for xlc)
