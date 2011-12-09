@@ -133,7 +133,7 @@ that write to the garbage collected heap.
 <DD>
 Replace the default procedure used by the collector to print warnings.
 The collector
-may otherwise write to sterr, most commonly because GC_malloc was used
+may otherwise write to stderr, most commonly because GC_malloc was used
 in a situation in which GC_malloc_ignore_off_page would have been more
 appropriate.  See <A HREF="http://www.hpl.hp.com/personal/Hans_Boehm/gc/gc_source/gch.txt">gc.h</a> for details.
 <DT> <B> void GC_REGISTER_FINALIZER(...) </b>
