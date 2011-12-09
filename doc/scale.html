@@ -158,7 +158,7 @@ the client using either one or two marker threads, and running
 one or two client threads.  Note that the client uses thread local
 allocation exclusively.  With -DTHREAD_LOCAL_ALLOC the collector
 switches to a locking strategy that is better tuned to less frequent
-lock acquisition.  The standard allocation primitives thus peform
+lock acquisition.  The standard allocation primitives thus perform
 slightly worse than without -DTHREAD_LOCAL_ALLOC, and should be
 avoided in time-critical code.
 <P>
