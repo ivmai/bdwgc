@@ -1466,6 +1466,7 @@
 #     define DYNAMIC_LOADING
       extern int _end[];
 #     define DATAEND (ptr_t)(_end)
+#     pragma weak __data_start
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
 #     ifdef _MIPS_SZPTR
