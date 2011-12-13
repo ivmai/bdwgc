@@ -3,6 +3,8 @@
 # Binary files (in root dir, cord, src, tests):
 *.dll
 *.exe
+*.gcda
+*.gcno
 *.la
 *.lib
 *.lo
