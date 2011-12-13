@@ -493,27 +493,6 @@ AC_SUBST(addlibs)
 
 AC_PROG_LIBTOOL
 
-#
-# Check for AViiON Machines running DGUX
-# FIXME: Should this be moved down to below the gc-debug processing?
-#
-ac_is_dgux=no
-AC_CHECK_HEADER(sys/dg_sys_info.h,
-[ac_is_dgux=yes;])
-
-    ## :GOTCHA: we do not check anything but sys/dg_sys_info.h
-if test $ac_is_dgux = yes; then
-    dgux_spec_opts="-DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
-    CFLAGS="$dgux_spec_opts $CFLAGS"
-    CXXFLAGS="$dgux_spec_opts $CXXFLAGS"
-    if test "$enable_gc_debug" = "yes"; then
-      CFLAGS="-g -mstandard $CFLAGS"
-      CXXFLAGS="-g -mstandard $CXXFLAGS"
-    fi
-    AC_SUBST(CFLAGS)
-    AC_SUBST(CXXFLAGS)
-fi
-
 dnl We use these options to decide which functions to include.
 AC_ARG_WITH(target-subdir,
 [  --with-target-subdir=SUBDIR
@@ -621,6 +600,24 @@ AC_ARG_ENABLE(gc-debug,
     esac ]
   fi)
 AM_CONDITIONAL([KEEP_BACK_PTRS], [test x"$keep_back_ptrs" = xtrue])
+
+# Check for AViiON Machines running DGUX
+ac_is_dgux=no
+AC_CHECK_HEADER(sys/dg_sys_info.h,
+[ac_is_dgux=yes;])
+
+    ## :GOTCHA: we do not check anything but sys/dg_sys_info.h
+if test $ac_is_dgux = yes; then
+    dgux_spec_opts="-DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
+    CFLAGS="$dgux_spec_opts $CFLAGS"
+    CXXFLAGS="$dgux_spec_opts $CXXFLAGS"
+    if test "$enable_gc_debug" = "yes"; then
+      CFLAGS="-g -mstandard $CFLAGS"
+      CXXFLAGS="-g -mstandard $CXXFLAGS"
+    fi
+    AC_SUBST(CFLAGS)
+    AC_SUBST(CXXFLAGS)
+fi
 
 AC_ARG_ENABLE(java-finalization,
     [AC_HELP_STRING([--disable-java-finalization],
