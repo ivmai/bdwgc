@@ -16113,31 +16113,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-#
-# Check for AViiON Machines running DGUX
-# FIXME: Should this be moved down to below the gc-debug processing?
-#
-ac_is_dgux=no
-ac_fn_c_check_header_mongrel "$LINENO" "sys/dg_sys_info.h" "ac_cv_header_sys_dg_sys_info_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_dg_sys_info_h" = xyes; then :
-  ac_is_dgux=yes;
-fi
-
-
-
-    ## :GOTCHA: we do not check anything but sys/dg_sys_info.h
-if test $ac_is_dgux = yes; then
-    if test "$enable_gc_debug" = "yes"; then
-      CFLAGS="-g -mstandard -DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
-      CXXFLAGS="-g -mstandard -DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
-    else
-      CFLAGS="-DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
-      CXXFLAGS="-DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
-    fi
-
-
-fi
-
 
 # Check whether --with-target-subdir was given.
 if test "${with_target_subdir+set}" = set; then :
@@ -16310,6 +16285,28 @@ else
   KEEP_BACK_PTRS_FALSE=
 fi
 
+
+# Check for AViiON Machines running DGUX
+ac_is_dgux=no
+ac_fn_c_check_header_mongrel "$LINENO" "sys/dg_sys_info.h" "ac_cv_header_sys_dg_sys_info_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_dg_sys_info_h" = xyes; then :
+  ac_is_dgux=yes;
+fi
+
+
+
+    ## :GOTCHA: we do not check anything but sys/dg_sys_info.h
+if test $ac_is_dgux = yes; then
+    dgux_spec_opts="-DDGUX -D_DGUX_SOURCE -Di386 -mno-legend -O2"
+    CFLAGS="$dgux_spec_opts $CFLAGS"
+    CXXFLAGS="$dgux_spec_opts $CXXFLAGS"
+    if test "$enable_gc_debug" = "yes"; then
+      CFLAGS="-g -mstandard $CFLAGS"
+      CXXFLAGS="-g -mstandard $CXXFLAGS"
+    fi
+
+
+fi
 
 # Check whether --enable-java-finalization was given.
 if test "${enable_java_finalization+set}" = set; then :

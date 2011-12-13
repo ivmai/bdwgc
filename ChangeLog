@@ -1,3 +1,18 @@
+2011-12-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure: Regenerate.
+
+2011-12-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (ac_is_dgux): Move down to below gc-debug processing
+	(DG/UX) since it uses "enable_gc_debug" variable; remove FIXME.
+
+2011-12-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (CFLAGS, CXXFLAGS): Preserve C/C++ flags passed by
+	client (DG/UX only); remove code duplication (put common flags to
+	"dgux_spec_opts" variable).
+
 2011-11-23  Ivan Maidanski <ivmai@mail.ru>  (really Bruce Mitchener)
 
 	* README: Fix typos.
