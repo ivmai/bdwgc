@@ -358,6 +358,12 @@ case "$host" in
    powerpc-*-darwin*)
       powerpc_darwin=true
       ;;
+   *-*-wince*)
+      if test "$enable_gc_debug" != "no"; then
+        AC_DEFINE([GC_READ_ENV_FILE], 1,
+                  [Read environment variables from the GC 'env' file.])
+      fi
+      ;;
 esac
 
 if test "$GCC" == yes; then
