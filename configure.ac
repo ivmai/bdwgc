@@ -491,63 +491,39 @@ AC_MSG_CHECKING(which machine-dependent code should be used)
 machdep=
 case "$host" in
  alpha-*-openbsd*)
-    machdep="mach_dep.lo"
     if test x"${ac_cv_lib_dl_dlopen}" != xyes ; then
        AC_MSG_WARN(OpenBSD/Alpha without dlopen(). Shared library support is disabled)
     fi
-    ;;
- alpha*-*-linux*)
-    machdep="mach_dep.lo"
     ;;
  i?86-*-solaris2.[[89]])
     # PROC_VDB appears to work in 2.8 and 2.9 but not in 2.10+ (for now).
     AC_DEFINE([SOLARIS25_PROC_VDB_BUG_FIXED], 1,
               [See the comment in gcconfig.h.])
     ;;
- mipstx39-*-elf*)
-    machdep="mach_dep.lo"
-    ;;
- mips-dec-ultrix*)
-    machdep="mach-dep.lo"
-    ;;
- mips-nec-sysv*|mips-unknown-sysv*)
-    ;;
- mips*-*-linux*)
-    ;;
  mips-*-*)
-    machdep="mach_dep.lo"
     dnl AC_DEFINE(NO_EXECUTE_PERMISSION)
     dnl This is now redundant, but it is also important for incremental GC
     dnl performance under Irix.
     ;;
- sparc*-*-linux*)
-    machdep="mach_dep.lo src/sparc_mach_dep.lo"
-    ;;
  sparc-*-netbsd*)
-    machdep="mach_dep.lo src/sparc_netbsd_mach_dep.lo"
+    machdep="src/sparc_netbsd_mach_dep.lo"
     ;;
- sparc64-*-netbsd*)
-    machdep="mach_dep.lo src/sparc_mach_dep.lo"
-    ;;
- sparc*-*-openbsd*)
-    machdep="mach_dep.lo src/sparc_mach_dep.lo"
+ sparc*-*-linux* | sparc*-*-openbsd* | sparc64-*-netbsd*)
+    machdep="src/sparc_mach_dep.lo"
     ;;
  sparc-sun-solaris2.3)
-    machdep="mach_dep.lo src/sparc_mach_dep.lo"
+    machdep="src/sparc_mach_dep.lo"
     AC_DEFINE(SUNOS53_SHARED_LIB, 1,
               [Define to work around a Solaris 5.3 bug (see dyn_load.c).])
     ;;
  sparc*-sun-solaris2*)
-    machdep="mach_dep.lo src/sparc_mach_dep.lo"
+    machdep="src/sparc_mach_dep.lo"
     ;;
  ia64-*-*)
-    machdep="mach_dep.lo src/ia64_save_regs_in_stack.lo"
+    machdep="src/ia64_save_regs_in_stack.lo"
     ;;
 esac
-if test x"$machdep" = x; then
 AC_MSG_RESULT($machdep)
-   machdep="mach_dep.lo"
-fi
 addobjs="$addobjs $machdep"
 AC_SUBST(addobjs)
 AC_SUBST(addlibs)
