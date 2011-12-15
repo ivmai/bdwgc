@@ -755,6 +755,11 @@ fi
 
 AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
 
+AC_ARG_ENABLE(single-obj-compilation,
+   [AC_HELP_STRING([--enable-single-obj-compilation],
+                   [Compile all library .c files into single .o])],
+   [single_obj_compilation=yes])
+AM_CONDITIONAL([SINGLE_GC_OBJ], [test "$single_obj_compilation" = "yes"])
 
 # Atomic Ops
 # ----------

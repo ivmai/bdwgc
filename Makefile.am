@@ -49,6 +49,10 @@ pkgconfig_DATA = bdw-gc.pc
 # ---------
 
 lib_LTLIBRARIES += libgc.la
+if SINGLE_GC_OBJ
+libgc_la_SOURCES = extra/gc.c
+else
+EXTRA_DIST += extra/gc.c
 libgc_la_SOURCES = \
     allchblk.c alloc.c backgraph.c blacklst.c checksums.c dbg_mlc.c \
     dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c \
@@ -73,6 +77,8 @@ endif
 
 if ENABLE_DISCLAIM
 libgc_la_SOURCES += fnlz_mlc.c
+endif
+
 endif
 
 if USE_INTERNAL_LIBATOMIC_OPS
@@ -170,7 +176,7 @@ EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
 #
 EXTRA_DIST += tools/add_gc_prefix.c tools/gcname.c tools/if_mach.c \
     tools/if_not_there.c tools/setjmp_t.c tools/threadlibs.c \
-    gc.mak extra/gc.c extra/MacOS.c extra/AmigaOS.c \
+    gc.mak extra/MacOS.c extra/AmigaOS.c \
     Mac_files/datastart.c Mac_files/dataend.c \
     Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
     include/private/msvc_dbg.h extra/msvc_dbg.c tools/callprocs.sh
