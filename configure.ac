@@ -397,6 +397,30 @@ if test $compiler_xlc = yes -a "$powerpc_darwin" = true; then
   AC_DEFINE([DARWIN_DONT_PARSE_STACK], 1, [See doc/README.macros.])
 fi
 
+if test "$GCC" == yes; then
+  # Disable aliasing optimization unless forced to.
+  AC_MSG_CHECKING([whether gcc supports -fno-strict-aliasing])
+  ac_cv_fno_strict_aliasing=no
+  for cflag in $CFLAGS; do
+    case "$cflag" in
+      -fstrict-aliasing)
+        # Opposite option already present
+        ac_cv_fno_strict_aliasing=skipped
+        break
+        ;;
+    esac
+  done
+  if test "$ac_cv_fno_strict_aliasing" != skipped; then
+    old_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS -fno-strict-aliasing"
+    AC_TRY_COMPILE([],[], [ac_cv_fno_strict_aliasing=yes], [])
+    CFLAGS="$old_CFLAGS"
+    AS_IF([test "$ac_cv_fno_strict_aliasing" = yes],
+          [CFLAGS="$CFLAGS -fno-strict-aliasing"], [])
+  fi
+  AC_MSG_RESULT($ac_cv_fno_strict_aliasing)
+fi
+
 case "$host" in
 # While IRIX 6 has libdl for the O32 and N32 ABIs, it's missing for N64
 # and unnecessary everywhere.
