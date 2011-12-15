@@ -5241,6 +5241,47 @@ $as_echo "#define DARWIN_DONT_PARSE_STACK 1" >>confdefs.h
 
 fi
 
+if test "$GCC" == yes; then
+  # Disable aliasing optimization unless forced to.
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc supports -fno-strict-aliasing" >&5
+$as_echo_n "checking whether gcc supports -fno-strict-aliasing... " >&6; }
+  ac_cv_fno_strict_aliasing=no
+  for cflag in $CFLAGS; do
+    case "$cflag" in
+      -fstrict-aliasing)
+        # Opposite option already present
+        ac_cv_fno_strict_aliasing=skipped
+        break
+        ;;
+    esac
+  done
+  if test "$ac_cv_fno_strict_aliasing" != skipped; then
+    old_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS -fno-strict-aliasing"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_fno_strict_aliasing=yes
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    CFLAGS="$old_CFLAGS"
+    if test "$ac_cv_fno_strict_aliasing" = yes; then :
+  CFLAGS="$CFLAGS -fno-strict-aliasing"
+fi
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_fno_strict_aliasing" >&5
+$as_echo "$ac_cv_fno_strict_aliasing" >&6; }
+fi
+
 case "$host" in
 # While IRIX 6 has libdl for the O32 and N32 ABIs, it's missing for N64
 # and unnecessary everywhere.

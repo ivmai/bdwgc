@@ -1,3 +1,16 @@
+2011-12-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure: Regenerate.
+
+2011-12-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (ac_cv_fno_strict_aliasing): New variable (set to
+	"skipped" if the client passed "-fstrict-aliasing" option to CFLAGS
+	else set to "yes" if GCC supports "-fno-strict-aliasing" option,
+	otherwise set to "no").
+	* configure.ac (CFLAGS): Append "-fno-strict-aliasing" if
+	ac_cv_fno_strict_aliasing is "yes" (only if GCC).
+
 2011-12-13  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure: Regenerate.
