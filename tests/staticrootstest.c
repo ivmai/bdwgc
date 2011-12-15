@@ -9,6 +9,8 @@
 #include "gc.h"
 #include "gc_backptr.h"
 
+#ifndef GC_VISIBILITY_HIDDEN_SET
+
 struct treenode {
     struct treenode *x;
     struct treenode *y;
@@ -55,3 +57,15 @@ int main(void)
   }
   return 0;
 }
+
+#else
+
+/* Skip since symbols defined in staticrootslib are not visible */
+
+int main(void)
+{
+  printf("staticrootstest skipped\n");
+  return 0;
+}
+
+#endif

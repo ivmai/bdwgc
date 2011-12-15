@@ -195,7 +195,8 @@
 
 # elif defined(__GNUC__)
     /* Only matters if used in conjunction with -fvisibility=hidden option. */
-#   if __GNUC__ >= 4 && defined(GC_BUILD)
+#   if defined(GC_BUILD) && (__GNUC__ >= 4 \
+                             || defined(GC_VISIBILITY_HIDDEN_SET))
 #     define GC_API extern __attribute__((__visibility__("default")))
 #   endif
 # endif

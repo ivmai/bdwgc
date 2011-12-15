@@ -505,7 +505,18 @@ AC_MSG_RESULT($enable_shared)
 if test "${enable_shared}" == yes; then
   if test "${enable_static}" == no; then
     AC_DEFINE(GC_DLL)
-    # FIXME: Also pass -fvisibility=hidden option if GCC v4+ and not Win32.
+    if test "$GCC" = yes; then
+      # Pass -fvisibility=hidden option if supported
+      AC_MSG_CHECKING([whether gcc supports -fvisibility])
+      old_CFLAGS="$CFLAGS"
+      CFLAGS="-fvisibility=hidden $CFLAGS"
+      AC_TRY_COMPILE([],[], [ac_cv_fvisibility_hidden=yes],
+                     [ac_cv_fvisibility_hidden=no])
+      AS_IF([test "$ac_cv_fvisibility_hidden" = yes],
+            [CFLAGS="-DGC_VISIBILITY_HIDDEN_SET $CFLAGS"],
+            [CFLAGS="$old_CFLAGS"])
+      AC_MSG_RESULT($ac_cv_fvisibility_hidden)
+    fi
   fi
 fi
 
