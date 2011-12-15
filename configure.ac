@@ -141,6 +141,12 @@ dnl System header feature requests.
 AH_TEMPLATE([_POSIX_C_SOURCE], [The POSIX feature macro.])
 AH_TEMPLATE([_PTHREADS], [Indicates the use of pthreads (NetBSD).])
 
+dnl Win32-specific API usage controls.
+AH_TEMPLATE([GC_UNDERSCORE_STDCALL],
+        [Explicitly prefix exported/imported WINAPI symbols with '_'.])
+AH_TEMPLATE([UNICODE],
+        [Use Unicode (W) variant of Win32 API instead of ASCII (A) one.])
+
 dnl GC API symbols export control.
 AH_TEMPLATE([GC_DLL],
         [Define to build dynamic libraries with only API symbols exposed.])
