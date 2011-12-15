@@ -28,8 +28,6 @@ Makefile.dj: Remove if it is possible to use auto-generated Makefile instead.
 
 build_atomic_ops.sh[.cygwin]: Remove if really not needed.
 
-configure.ac: Add option to build GC via extra/gc.c compilation.
-
 Mac_files: Remove MacOS_config.h, MacOS_Test_config.h.
 
 configure: Add cordtest.c to tests.am.

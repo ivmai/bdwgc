@@ -2,11 +2,15 @@
 [7.3alpha2] (development)
 =========================
 
+* Add GC_UNDERSCORE_STDCALL, UNICODE macro templates to configure (Win32).
 * Add GC_move_disappearing_link() API entry.
 * Add TODO file.
+* Add configure option to compile all library .c files into single gc.o.
 * Add disclaim callbacks for efficient finalization (ENABLE_DISCLAIM).
+* Define GC_READ_ENV_FILE in configure for WinCE unless gc-debug is off.
 * Fix minor warnings reported by GCC with '-pedantic' option.
 * In tests, print a message in case a test is a no-op.
+* Instruct configure to hide internal libgc.so symbols if supported by GCC.
 * Move "cord" library tests to "cord/tests" folder.
 * Move asm machine-dependent files to "src" folder.
 * Move build tools sources to "tools" folder.
@@ -40,6 +44,7 @@ GC_get_bytes_since_gc and friends.
 * Fix GC_find_limit_with_bound to always reset fault handler on return.
 * Fix GC_init_lib_bounds (and GC_init, GC_get_main_stack_base) regarding
 malloc redirection.
+* Fix configure to disable GCC aliasing optimization unless forced to
 * Fix duplicate definitions in gcconfig.h for NetBSD.
 * Fix gc_cpp.cc for Cygwin (remove duplicate function definition).
 * Fix mach_dep.c to include sys/ucontext.h on Mac OS X 10.6.
