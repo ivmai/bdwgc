@@ -552,7 +552,7 @@ NO_CANCEL_SAFE (Posix platforms with threads only)      Don't bother trying
 UNICODE (Win32 only)    Use the Unicode variant ('W') of the Win32 API instead
   of ANSI/ASCII one ('A').  Useful for WinCE.
 
-PLATFORM_ANDROID        Compile for Android NDK platform.
+PLATFORM_ANDROID (or __ANDROID__)       Compile for Android NDK platform.
 
 SN_TARGET_PS3           Compile for Sony PS/3.
 

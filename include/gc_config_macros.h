@@ -282,7 +282,8 @@
 /* retrieve the call chain.                                             */
 #if (defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) \
      || defined(__FreeBSD__) || defined(__DragonFly__) \
-     || defined(PLATFORM_ANDROID)) && !defined(GC_CAN_SAVE_CALL_STACKS)
+     || defined(PLATFORM_ANDROID) || defined(__ANDROID__)) \
+    && !defined(GC_CAN_SAVE_CALL_STACKS)
 # define GC_ADD_CALLER
 # if __GNUC__ >= 3 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
     /* gcc knows how to retrieve return address, but we don't know      */
@@ -322,7 +323,8 @@
 #   endif
 # endif
 
-# if !defined(GC_PTHREAD_EXIT_ATTRIBUTE) && !defined(PLATFORM_ANDROID) \
+# if !defined(GC_PTHREAD_EXIT_ATTRIBUTE) \
+     && !defined(PLATFORM_ANDROID) && !defined(__ANDROID__) \
      && (defined(GC_LINUX_THREADS) || defined(GC_SOLARIS_THREADS))
     /* Intercept pthread_exit on Linux and Solaris.     */
 #   if defined(__GNUC__) /* since GCC v2.7 */

@@ -37,6 +37,11 @@
 
 /* Machine specific parts contributed by various people.  See README file. */
 
+#if defined(__ANDROID__) && !defined(PLATFORM_ANDROID)
+  /* __ANDROID__ macro is defined by Android NDK gcc.   */
+# define PLATFORM_ANDROID 1
+#endif
+
 /* First a unified test for Linux: */
 # if (defined(linux) || defined(__linux__) || defined(PLATFORM_ANDROID)) \
      && !defined(LINUX) && !defined(__native_client__)
