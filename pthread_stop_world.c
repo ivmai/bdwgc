@@ -874,7 +874,11 @@ GC_INNER void GC_stop_init(void)
 
   GC_API int GC_CALL GC_get_thr_restart_signal(void)
   {
+#   if !defined(GC_OPENBSD_THREADS) && !defined(NACL)
       return SIG_THR_RESTART;
+#   else
+      return -1;
+#   endif
   }
 
 #else /* defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) && \
