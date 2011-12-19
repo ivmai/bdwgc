@@ -467,6 +467,13 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
       return -1;
 #   endif
   }
+
+# if defined(GC_DARWIN_THREADS) || defined(GC_WIN32_THREADS)
+    GC_API int GC_CALL GC_get_thr_restart_signal(void)
+    {
+      return -1; /* GC does not use signals to restart threads. */
+    }
+# endif
 #endif /* THREADS */
 
 #ifdef GC_READ_ENV_FILE

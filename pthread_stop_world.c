@@ -881,12 +881,4 @@ GC_INNER void GC_stop_init(void)
 #   endif
   }
 
-#else /* defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) && \
-         !defined(GC_DARWIN_THREADS) */
-
-  GC_API int GC_CALL GC_get_thr_restart_signal(void)
-  {
-      return -1;
-  }
-
 #endif
