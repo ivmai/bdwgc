@@ -3,6 +3,7 @@
 =========================
 
 * Add GC_UNDERSCORE_STDCALL, UNICODE macro templates to configure (Win32).
+* Add GC_get_thr_restart_signal API entry.
 * Add GC_move_disappearing_link() API entry.
 * Add TODO file.
 * Add configure option to compile all library .c files into single gc.o.
