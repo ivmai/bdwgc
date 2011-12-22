@@ -18,6 +18,7 @@
 /base_lib
 /bdw-gc.pc
 /c++
+/config.cache
 /config.log
 /config.status
 /cord/cordtest
