@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
@@ -74,7 +74,7 @@ void GC_enumerate_block(struct hblk *h; enumerate_data * ed)
     word descr;
 #   error This code was updated without testing.
 #   error and its precursor was clearly broken.
-    
+
     hhdr = HDR(h);
     descr = hhdr -> hb_descr;
     sz = hhdr -> hb_sz;
@@ -99,7 +99,7 @@ PCR_ERes GC_EnumerateProc(
 )
 {
     enumerate_data ed;
-    
+
     ed.ed_proc = proc;
     ed.ed_pointerfree = ptrFree;
     ed.ed_fail_code = PCR_ERes_okay;

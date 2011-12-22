@@ -15,7 +15,7 @@ _C_LABEL(GC_push_regs):
 	mov	%sp,%o0
 	retl
 	nop
-	
+
 	.globl	_C_LABEL(GC_clear_stack_inner)
 _C_LABEL(GC_clear_stack_inner):
 	mov	%sp,%o2		! Save sp

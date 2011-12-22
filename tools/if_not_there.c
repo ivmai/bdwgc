@@ -30,9 +30,8 @@ int main(int argc, char **argv, char **envp)
     fflush(stdout);
     execvp(argv[2], argv+2);
     exit(1);
-    
+
 Usage:
     fprintf(stderr, "Usage: %s file_name command\n", argv[0]);
     return(1);
 }
-

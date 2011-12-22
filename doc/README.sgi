@@ -15,7 +15,7 @@ Pthreads support is provided.  This requires that:
 
 1) You compile the collector with -DGC_IRIX_THREADS specified in the Makefile.
 
-2) You have the latest pthreads patches installed.  
+2) You have the latest pthreads patches installed.
 
 (Though the collector makes only documented pthread calls,
 it relies on signal/threads interactions working just right in ways
@@ -38,4 +38,3 @@ performance with the collector.  (Increasing the heap size may help.)
 6) The collector should not be compiled with -DREDIRECT_MALLOC.  This
 confuses some library calls made by the pthreads implementation, which
 expect the standard malloc.
-

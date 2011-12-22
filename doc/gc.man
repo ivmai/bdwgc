@@ -77,7 +77,7 @@ Fully portable code should call
 GC_INIT
 from the main program before making any other GC calls.
 On most platforms this does nothing and the collector is initialized on first use.
-On a few platforms explicit initialization is necessary.  And it can never hurt. 
+On a few platforms explicit initialization is necessary.  And it can never hurt.
 .LP
 Debugging versions of many of the above routines are provided as macros.  Their names are identical to the above, but consist of all capital letters.  If GC_DEBUG is defined before gc.h is included, these routines do additional checking, and allow the leak detecting version of the collector to produce slightly more useful output.  Without GC_DEBUG defined, they behave exactly like the lower-case versions.
 .LP

@@ -1,12 +1,12 @@
 /*
 	MacOS_config.h
-	
+
 	Configuration flags for Macintosh development systems.
-	
+
  	<Revision History>
- 	
+
  	11/16/95  pcb  Updated compilation flags to reflect latest 4.6 Makefile.
-	
+
 	by Patrick C. Beard.
  */
 /* Boehm, November 17, 1995 12:10 pm PST */
@@ -68,7 +68,7 @@
 //   is normally more than one byte due to alignment constraints.)
 //   -DDONT_ADD_BYTE_AT_END disables the padding.
 // -DNO_SIGNALS does not disable signals during critical parts of
-//   the GC process.  This is no less correct than many malloc 
+//   the GC process.  This is no less correct than many malloc
 //   implementations, and it sometimes has a significant performance
 //   impact.  However, it is dangerous for many not-quite-ANSI C
 //   programs that call things like printf in asynchronous signal handlers.

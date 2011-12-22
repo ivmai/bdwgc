@@ -82,7 +82,7 @@ void * big_realloc(void *p, size_t new_size)
 {
     size_t old_size = GC_size(p);
     void * result;
- 
+
     if (new_size &lt;= 10000) return(GC_realloc(p, new_size));
     if (new_size &lt;= old_size) return(p);
     result = GC_malloc_ignore_off_page(new_size);
@@ -303,7 +303,3 @@ the collector can avoid scanning them.
 </ol>
 </body>
 </html>
-
-
-
-

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 1999-2005 Hewlett-Packard Development Company, L.P.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
@@ -20,7 +20,7 @@
  * However, global free lists are known to the GC.  "Tiny" free lists
  * are basically private to the client.  Their contents are viewed as
  * "in use" and marked accordingly by the core of the GC.
- * 
+ *
  * Note that inlined code might know about the layout of these and the constants
  * involved.  Thus any change here may invalidate clients, and such changes should
  * be avoided.  Hence we keep this as simple as possible.

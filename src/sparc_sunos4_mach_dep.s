@@ -13,7 +13,7 @@ _GC_push_regs:
 	mov	%sp,%o0
 	retl
 	nop
-	
+
 	.globl	_GC_clear_stack_inner
 _GC_clear_stack_inner:
 	mov	%sp,%o2		! Save sp
@@ -30,9 +30,3 @@ loop:
 	  add	%o3,-8,%o3	! p -= 8 (delay slot)
 	retl
 	  mov	%o2,%sp		! Restore sp., delay slot
-	
-		
-		
-		
-		
-	

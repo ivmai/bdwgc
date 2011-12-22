@@ -9,4 +9,3 @@ GC_save_regs_in_stack:
         mov r8=ar.bsp
         br.ret.sptk.few rp
         .endp GC_save_regs_in_stack
-

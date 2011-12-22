@@ -47,7 +47,7 @@ typedef struct CORD_ec_struct {
 /* Note that this is almost the only real function, and it is	*/
 /* implemented in 6 lines in cordxtra.c				*/
 void CORD_ec_flush_buf(CORD_ec x);
-      
+
 /* Convert an extensible cord to a cord. */
 # define CORD_ec_to_cord(x) (CORD_ec_flush_buf(x), (x)[0].ec_cord)
 

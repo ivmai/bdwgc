@@ -168,7 +168,7 @@ fragmentation.  In particular:
 <UL>
 <LI> Programs with a large root set size and
 little live heap memory will expand the heap to amortize the cost of
-scanning the roots.  
+scanning the roots.
 <LI> Versions 5.x of the collector actually collect more frequently in
 nonincremental mode.  The large block allocator usually refuses to split
 large heap blocks once the garbage collection threshold is
@@ -218,7 +218,7 @@ between <TT>DATASTART</tt> and <TT>DATAEND</tt>, as defined in
 <TT>gcconfig.h</tt>.  However, in most cases, this will also involve
 static data regions associated with dynamic libraries.  These are
 identified by the mostly platform-specific code in <TT>dyn_load.c</tt>.
-</ul> 
+</ul>
 The marker maintains an explicit stack of memory regions that are known
 to be accessible, but that have not yet been searched for contained pointers.
 Each stack entry contains the starting address of the block to be scanned,
@@ -393,7 +393,7 @@ Both <TT>GC_register_disappearing_link</tt> and
 table.  The hash table is allocated out of collected memory, but
 the reference to the finalizable object is hidden from the collector.
 Currently finalization requests are processed non-incrementally at the
-end of a mark cycle.  
+end of a mark cycle.
 <P>
 The collector makes an initial pass over the table of finalizable objects,
 pushing the contents of unmarked objects onto the mark stack.
@@ -479,7 +479,7 @@ may actually be better with mprotect and signals.)
 (<TT>PCR_VDB</tt>) By relying on an external dirty bit implementation, in this
 case the one in Xerox PCR.
 <LI>
-(<TT>DEFAULT_VDB</tt>) By treating all pages as dirty.  This is the default if 
+(<TT>DEFAULT_VDB</tt>) By treating all pages as dirty.  This is the default if
 none of the other techniques is known to be usable, and
 <TT>GC_malloc_stubborn</tt> is not used.  Practical only for testing, or if
 the vast majority of objects use <TT>GC_malloc_stubborn</tt>.
@@ -499,7 +499,7 @@ to a currently unallocated page inside the heap.  Pages that have been
 the targets of such near misses are likely to be the targets of
 misidentified ``pointers'' in the future.  To minimize the future
 damage caused by such misidentifications they will be allocated only to
-small pointerfree objects. 
+small pointerfree objects.
 <P>
 The collector understands two different kinds of black-listing.  A
 page may be black listed for interior pointer references

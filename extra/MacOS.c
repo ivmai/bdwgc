@@ -1,16 +1,16 @@
 /*
 	MacOS.c
-	
+
 	Some routines for the Macintosh OS port of the Hans-J. Boehm, Alan J. Demers
 	garbage collector.
-	
+
 	<Revision History>
-	
+
 	11/22/94  pcb  StripAddress the temporary memory handle for 24-bit mode.
 	11/30/94  pcb  Tracking all memory usage so we can deallocate it all at once.
 	02/10/96  pcb  Added routine to perform a final collection when
 unloading shared library.
-	
+
 	by Patrick C. Beard.
  */
 /* Boehm, February 15, 1996 2:55 pm PST */
@@ -79,7 +79,7 @@ Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory)
 		(**tempMemBlock).nextBlock = theTemporaryMemory;
 		theTemporaryMemory = tempMemBlock;
 	}
-	
+
 #     if !defined(SHARED_LIBRARY_BUILD)
 	// install an exit routine to clean up the memory used at the end.
 	if (firstTime) {
@@ -87,17 +87,17 @@ Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory)
 		firstTime = false;
 	}
 #     endif
-	
+
 	return tempPtr;
 }
 
-extern word GC_fo_entries; 
+extern word GC_fo_entries;
 
 static void perform_final_collection()
 {
   unsigned i;
   word last_fo_entries = 0;
-  
+
   /* adjust the stack bottom, because CFM calls us from another stack
      location. */
      GC_stackbottom = (ptr_t)&i;

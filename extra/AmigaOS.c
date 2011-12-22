@@ -43,7 +43,7 @@
 ptr_t GC_get_main_stack_base()
 {
     struct Process *proc = (struct Process*)SysBase->ThisTask;
- 
+
     /* Reference: Amiga Guru Book Pages: 42,567,574 */
     if (proc->pr_Task.tc_Node.ln_Type==NT_PROCESS
         && proc->pr_CLI != NULL) {
@@ -99,7 +99,7 @@ ptr_t GC_get_stack_base()
      struct CommandLineInterface *cli;
      BPTR myseglist;
      ULONG *data;
- 
+
      int	num;
 
 
@@ -619,5 +619,3 @@ void *GC_amiga_realloc(void *old_object,size_t new_size_in_bytes){
 }
 
 #endif //GC_AMIGA_AM
-
-
