@@ -3,8 +3,6 @@ TODO tasks
 
 tests/CMakeLists.txt: Add more executables (see tests.am).
 
-Add .gitattributes: ensure LF line encoding in the repo.
-
 Use C++0x ATM (atomic memory operations) if available (either from the
 compiler runtime, provided it is reliable, or from the future libatomic_ops).
 
