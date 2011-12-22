@@ -97,8 +97,8 @@ The following is an ASCII diagram of the data structure.
 This was contributed by Dave Barrett several years ago.
 <PRE>
 
-		Data Structure used by GC_base in gc3.7:
-			      21-Apr-94
+                Data Structure used by GC_base in gc3.7:
+                              21-Apr-94
 
 
 
@@ -172,7 +172,7 @@ Dynamic data structures above are interleaved throughout the heap in blocks of
 size MININCR * HBLKSIZE bytes as done by gc_scratch_alloc which cannot be
 freed; free lists are used (e.g. alloc_hdr).  HBLK's below are collected.
 
-	      (struct hblk)
+              (struct hblk)
  ---      +----------------------+ < HBLKSIZE ---         ---          DISCARD_
   ^       |garbage[DISCARD_WORDS]|   aligned   ^           ^ HDR_BYTES WORDS
   |       |                      |             |           v (bytes)   (words)
