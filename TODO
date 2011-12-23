@@ -9,9 +9,8 @@ compiler runtime, provided it is reliable, or from the future libatomic_ops).
 Add a test for libatomic_ops minimal version required (at compile time).
 
 Merge symbian branch to master.
-
-Merge useful code (if any) from iphone_libgc_6x branch. (Same for gcc_boehmgc
-and mono_libgc.)
+Merge useful code (if any) from gcc_boehmgc branch.
+Merge useful code (if any) from mono_libgc branch.
 
 windows-untested: Remove if CMake can generate MS Visual Studio 6.0, 7.0, 8.0
 project files.
