@@ -514,9 +514,16 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #   endif
 # elif defined(I386) || defined(X86_64)
 #   if CPP_WORDSZ == 32
-#     define GC_THREAD_STATE_T          x86_thread_state32_t
-#     define GC_MACH_THREAD_STATE       x86_THREAD_STATE32
-#     define GC_MACH_THREAD_STATE_COUNT x86_THREAD_STATE32_COUNT
+#     if defined(i386_THREAD_STATE_COUNT) && !defined(x86_THREAD_STATE32_COUNT)
+        /* Use old naming convention for 32-bit x86.    */
+#       define GC_THREAD_STATE_T                i386_thread_state_t
+#       define GC_MACH_THREAD_STATE             i386_THREAD_STATE
+#       define GC_MACH_THREAD_STATE_COUNT       i386_THREAD_STATE_COUNT
+#     else
+#       define GC_THREAD_STATE_T                x86_thread_state32_t
+#       define GC_MACH_THREAD_STATE             x86_THREAD_STATE32
+#       define GC_MACH_THREAD_STATE_COUNT       x86_THREAD_STATE32_COUNT
+#     endif
 #   else
 #     define GC_THREAD_STATE_T          x86_thread_state64_t
 #     define GC_MACH_THREAD_STATE       x86_THREAD_STATE64
@@ -524,10 +531,16 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #   endif
 # else
 #   if defined(ARM32)
-#     define GC_THREAD_STATE_T          arm_thread_state_t
+#     define GC_THREAD_STATE_T                  arm_thread_state_t
+#     ifdef ARM_MACHINE_THREAD_STATE_COUNT
+#       define GC_MACH_THREAD_STATE             ARM_MACHINE_THREAD_STATE
+#       define GC_MACH_THREAD_STATE_COUNT       ARM_MACHINE_THREAD_STATE_COUNT
+#     endif
 #   else
 #     error define GC_THREAD_STATE_T
 #   endif
+# endif
+# ifndef GC_MACH_THREAD_STATE
 #   define GC_MACH_THREAD_STATE         MACHINE_THREAD_STATE
 #   define GC_MACH_THREAD_STATE_COUNT   MACHINE_THREAD_STATE_COUNT
 # endif
