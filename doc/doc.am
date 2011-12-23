@@ -17,7 +17,6 @@ dist_pkgdata_DATA = \
         README \
         doc/README.DGUX386 \
         doc/README.Mac \
-        doc/README.MacOSX \
         doc/README.OS2 \
         doc/README.amiga \
         doc/README.arm.cross \

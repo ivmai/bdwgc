@@ -71,8 +71,7 @@ OTHER_FILES= PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
            tools/add_gc_prefix.c doc/README.solaris2 doc/README.sgi \
            doc/README.hp doc/README.uts win32_threads.c gc.mak doc/README.dj \
-           Makefile.dj doc/README.alpha doc/README.linux doc/README.MacOSX \
-	   WCC_MAKEFILE
+           Makefile.dj doc/README.alpha doc/README.linux WCC_MAKEFILE
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
 	$(srcdir)/include/ec.h $(srcdir)/include/private/cord_pos.h

@@ -110,7 +110,7 @@ SRCS= $(CSRCS) \
   src/ia64_save_regs_in_stack.s src/sparc_mach_dep.S \
   src/sparc_netbsd_mach_dep.s src/sparc_sunos4_mach_dep.s $(CORD_SRCS)
 
-DOC_FILES= README.QUICK TODO doc/README.Mac doc/README.MacOSX doc/README.OS2 \
+DOC_FILES= README.QUICK TODO doc/README.Mac doc/README.OS2 \
   doc/README.amiga doc/README.cords doc/debugging.html \
   doc/porting.html doc/overview.html \
   doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
