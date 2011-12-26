@@ -3,10 +3,10 @@
 <body>
 <table bgcolor="#f0f0ff" cellpadding="10%">
   <tbody><tr>
-  <td><a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/gcinterface.html">Interface Overview</a></td>
+  <td><a href="gcinterface.html">Interface Overview</a></td>
   <td><a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/04tutorial.pdf">Tutorial Slides</a></td>
   <td><a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/faq.html">FAQ</a></td>
-  <td><a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/simple_example.html">Example</a></td>
+  <td><a href="simple_example.html">Example</a></td>
   <td><a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/gc_source">Download</a></td>
   <td><a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/license.txt">License</a></td>
   </tr>
@@ -37,17 +37,17 @@ without explicitly deallocating memory that is no longer useful.
 The collector automatically recycles memory when it determines
 that it can no longer be otherwise accessed.
 A simple example of such a use is given
-<a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/simple_example.html">here</a>.
+<a href="simple_example.html">here</a>.
 </p><p>
 The collector is also used by a number of programming language
 implementations that either use C as intermediate code, want
 to facilitate easier interoperation with C libraries, or
 just prefer the simple collector interface.
 For a more detailed description of the interface, see
-<a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/gcinterface.html">here</a>.
+<a href="gcinterface.html">here</a>.
 </p><p>
 Alternatively, the garbage collector  may be used as
-a <a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/leak.html">leak detector</a>
+a <a href="leak.html">leak detector</a>
 for C or C++ programs, though that is not its primary goal.
 </p><p>
 Typically several versions will be available.
@@ -130,7 +130,7 @@ based on this one.  Their collector takes advantage of multiple processors
 during a collection.  Starting with collector version 6.0alpha1
 we also do this, though with more modest processor scalability goals.
 Our approach is discussed briefly in
-<a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/scale.html"><tt>scale.html</tt></a>.
+<a href="scale.html"><tt>scale.html</tt></a>.
 <h2><a name="details">Some Collector Details</a></h2>
 The collector uses a <a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/complexity.html">mark-sweep</a> algorithm.
 It provides incremental and generational
@@ -144,10 +144,10 @@ information is provided, but it is usually used without such information.
 ee the README and
 <tt>gc.h</tt> files in the distribution for more details.
 <p>
-For an overview of the implementation, see <a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/gcdescr.html">here</a>.
+For an overview of the implementation, see <a href="gcdescr.html">here</a>.
 </p><p>
 The garbage collector distribution includes a C string
-(<a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/gc_source/cordh.txt"><i>cord</i></a>) package that provides
+(<a type="text/plain" href="../include/cord.h"><i>cord</i></a>) package that provides
 for fast concatenation and substring operations on long strings.
 A simple curses- and win32-based editor that represents the entire file
 as a cord is included as a
@@ -194,7 +194,7 @@ and the underlying design decisions at
 a higher level.</b>
 </p><p>
 (Some of the lower level details can be found
-<a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/gcdescr.html">here</a>.)
+<a href="gcdescr.html">here</a>.)
 </p><p>
 The first one is not available
 electronically due to copyright considerations.  Most of the others are
@@ -347,27 +347,27 @@ system.
 vector graphics language.</a>
 
 </p><h1><a name="collector">More collector information at this site</a></h1>
-<a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/simple_example.html">A simple illustration of how to build and
+<a href="simple_example.html">A simple illustration of how to build and
 use the collector.</a>.
 <p>
-<a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/gcinterface.html">Description of alternate interfaces to the
+<a href="gcinterface.html">Description of alternate interfaces to the
 garbage collector.</a>
 </p><p>
 <a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/04tutorial.pdf">Slides from an ISMM 2004  tutorial about the GC.</a>
 </p><p>
 <a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/faq.html">A FAQ (frequently asked questions) list.</a>
 </p><p>
-<a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/leak.html">How to use the garbage collector as a leak detector.</a>
+<a href="leak.html">How to use the garbage collector as a leak detector.</a>
 </p><p>
-<a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/debugging.html">Some hints on debugging garbage collected
+<a href="debugging.html">Some hints on debugging garbage collected
 applications.</a>
 </p><p>
-<a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/gcdescr.html">An overview of the implementation of the
+<a href="gcdescr.html">An overview of the implementation of the
 garbage collector.</a>
 </p><p>
-<a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/tree.html">The data structure used for fast pointer lookups.</a>
+<a href="tree.html">The data structure used for fast pointer lookups.</a>
 </p><p>
-<a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/scale.html">Scalability of the collector to multiprocessors.</a>
+<a href="scale.html">Scalability of the collector to multiprocessors.</a>
 </p><p>
 <a href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/gc_source">Directory containing garbage collector source.</a>
 
