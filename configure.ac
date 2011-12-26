@@ -768,13 +768,7 @@ fi
 AC_ARG_ENABLE(munmap,
     [AC_HELP_STRING([--enable-munmap=N],
         [return page to the os if empty for N collections])],
-  MUNMAP_THRESHOLD=$enableval;
-   [case "$MMAP" in
-      no)
-        AC_MSG_ERROR([--enable-munmap requires --enable-mmap])
-        ;;
-    esac]
-   )
+    MUNMAP_THRESHOLD=$enableval)
 if test "${enable_munmap}" != ""; then
     AC_DEFINE([USE_MMAP], 1,
               [Define to use mmap instead of sbrk to expand the heap.])
