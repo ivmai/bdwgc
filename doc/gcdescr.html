@@ -407,7 +407,7 @@ object itself becomes marked, we have uncovered
 a cycle involving the object.  This usually results in a warning from the
 collector.  Such objects are not finalized, since it may be
 unsafe to do so.  See the more detailed
-<A HREF="http://www.hpl.hp.com/personal/Hans_Boehm/gc/finalization.html"> discussion of finalization semantics</a>.
+<A HREF="finalization.html"> discussion of finalization semantics</a>.
 <P>
 Any objects remaining unmarked at the end of this process are added to
 a queue of objects whose finalizers can be run.  Depending on collector

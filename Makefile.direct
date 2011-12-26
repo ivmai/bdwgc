@@ -112,7 +112,7 @@ SRCS= $(CSRCS) \
 
 DOC_FILES= README.QUICK TODO doc/README.Mac doc/README.OS2 \
   doc/README.amiga doc/README.cords doc/debugging.html \
-  doc/porting.html doc/overview.html \
+  doc/finalization.html doc/porting.html doc/overview.html \
   doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
   doc/README.sgi doc/README.solaris2 doc/README.uts \
   doc/README.win32 doc/barrett_diagram \
