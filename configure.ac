@@ -39,6 +39,10 @@ AC_PROG_INSTALL
 # Special CFLAGS to use when building
 gc_cflags=""
 
+# gc_use_mmap   Set to "yes" on platforms where mmap should be used instead
+#               of sbrk. This will define USE_MMAP.
+gc_use_mmap=""
+
 # We should set -fexceptions if we are using gcc and might be used
 # inside something like gcj.  This is the zeroth approximation:
 if test :"$GCC": = :yes: ; then
@@ -54,6 +58,13 @@ else
         ;;
     esac
 fi
+
+case "${host}" in
+  *-linux*)
+    # FIXME: This seems to be no longer needed as configured in gcconfig.h
+    #gc_use_mmap=yes
+    ;;
+esac
 
 #   target_optspace     --enable-target-optspace ("yes", "no", "")
 case "${target_optspace}:${host}" in
@@ -780,6 +791,11 @@ if test "${enable_munmap}" != ""; then
     fi
     AC_DEFINE_UNQUOTED([MUNMAP_THRESHOLD], [${MUNMAP_THRESHOLD}],
         [Number of GC cycles to wait before unmapping an unused block.])
+else
+    if test "${gc_use_mmap}" = "yes"; then
+      AC_DEFINE([USE_MMAP], 1,
+                [Define to use mmap instead of sbrk to expand the heap.])
+    fi
 fi
 
 AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
