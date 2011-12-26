@@ -8,6 +8,7 @@
 * Add TODO file.
 * Add configure option to compile all library .c files into single gc.o.
 * Add disclaim callbacks for efficient finalization (ENABLE_DISCLAIM).
+* Add finalization.html to 'doc' folder.
 * Define GC_READ_ENV_FILE in configure for WinCE unless gc-debug is off.
 * Fix minor warnings reported by GCC with '-pedantic' option.
 * In tests, print a message in case a test is a no-op.
