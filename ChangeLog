@@ -1,3 +1,12 @@
+2011-12-27  Ivan Maidanski <ivmai@mail.ru>  (really Richard Sandiford)
+
+	* include/private/gcconfig.h (HBLKSIZE): Define for MIPS.
+
+2011-12-27  Ivan Maidanski <ivmai@mail.ru>  (really David Daney)
+
+	* include/private/gcconfig.h (CPP_WORDSZ, ALIGNMENT): Handle
+	mips64-linux n64 ABI.
+
 2011-12-15  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure: Regenerate.
