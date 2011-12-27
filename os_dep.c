@@ -4239,9 +4239,17 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 # define DARWIN_EXC_STATE_DAR     THREAD_FLD(dar)
 #elif defined(I386) || defined(X86_64)
 # if CPP_WORDSZ == 32
-#   define DARWIN_EXC_STATE       x86_EXCEPTION_STATE32
-#   define DARWIN_EXC_STATE_COUNT x86_EXCEPTION_STATE32_COUNT
-#   define DARWIN_EXC_STATE_T     x86_exception_state32_t
+#   if defined(i386_EXCEPTION_STATE_COUNT) \
+       && !defined(x86_EXCEPTION_STATE32_COUNT)
+      /* Use old naming convention for 32-bit x86.      */
+#     define DARWIN_EXC_STATE           i386_EXCEPTION_STATE
+#     define DARWIN_EXC_STATE_COUNT     i386_EXCEPTION_STATE_COUNT
+#     define DARWIN_EXC_STATE_T         i386_exception_state_t
+#   else
+#     define DARWIN_EXC_STATE           x86_EXCEPTION_STATE32
+#     define DARWIN_EXC_STATE_COUNT     x86_EXCEPTION_STATE32_COUNT
+#     define DARWIN_EXC_STATE_T         x86_exception_state32_t
+#   endif
 # else
 #   define DARWIN_EXC_STATE       x86_EXCEPTION_STATE64
 #   define DARWIN_EXC_STATE_COUNT x86_EXCEPTION_STATE64_COUNT
