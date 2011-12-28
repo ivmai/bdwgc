@@ -27,7 +27,6 @@ pkginclude_HEADERS += \
         include/gc_version.h \
         include/javaxfc.h \
         include/leak_detector.h \
-        include/new_gc_alloc.h \
         include/weakpointer.h
 
 # headers which are not installed
@@ -35,6 +34,7 @@ pkginclude_HEADERS += \
 dist_noinst_HEADERS += \
         include/cord.h \
         include/ec.h \
+        include/new_gc_alloc.h \
         include/private/cord_pos.h \
         include/private/darwin_semaphore.h \
         include/private/darwin_stop_world.h \
