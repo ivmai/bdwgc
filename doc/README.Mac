@@ -11,8 +11,8 @@ are distributed in the file Mac_projects.sit.hqx. The project file
 :Mac_projects:gc.prj builds static library versions of the collector.
 :Mac_projects:gctest.prj builds the GC test suite.
 
-Configuring the collector is still done by editing the files
-:Mac_files:MacOS_config.h and :Mac_files:MacOS_Test_config.h.
+Configuring the collector is still done by editing the file
+:Mac_files:MacOS_config.h.
 
 Lars Farm's suggestions on building the collector:
 ----------------------------------------------------------------------------
@@ -163,8 +163,6 @@ of every source file. I used these:
   //  See list of #defines to configure the library in: 'MakeFile'
   //  see also README
 
-  #define SILENT                // no collection messages. In case
-                                // of trouble you might want this off
   #define ALL_INTERIOR_POINTERS // follows interior pointers.
 //#define DONT_ADD_BYTE_AT_END  // disables the padding if defined.
 //#define SMALL_CONFIG          // whether to use a smaller heap.
@@ -295,14 +293,6 @@ __datastart__, __data_end__ that wraps all globals.
 Source Changes (GC 4.12a2)
 ==========================
 Very few. Just one tiny in the GC, not strictly needed.
-- MacOS.c line 131 in routine GC_MacFreeTemporaryMemory()
-  change #       if !defined(SHARED_LIBRARY_BUILD)
-  to     #       if !defined(SILENT) && !defined(SHARED_LIBRARY_BUILD)
-  To turn off a message when the application quits (actually, I faked
-  this change by #defining SHARED_LIBRARY_BUILD in a statically linked
-  library for more than a year without ill effects but perhaps this is
-  better).
-
 - test_cpp.cc
   made the first lines of main() look like this:
   ------------
@@ -343,7 +333,6 @@ Configuration
 
 To configure the collector, under both development systems, a prefix file
 is used to set preprocessor directives. This file is called "MacOS_config.h".
-Also to test the collector, "MacOS_Test_config.h" is provided.
 
 Testing
 -------

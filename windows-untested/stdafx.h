@@ -11,10 +11,7 @@
 #  define GC_DEBUG
 #endif
 
-#define SILENT 1
-
 #define __STDC__ 1
 
 #define SAVE_CALL_CHAIN
-
 #define SAVE_CALL_COUNT 8
