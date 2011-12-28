@@ -14,41 +14,41 @@
 #
 pkginclude_HEADERS += \
         include/gc.h \
-        include/gc_typed.h \
-        include/gc_inline.h \
-        include/gc_mark.h \
-        include/gc_disclaim.h \
-        include/gc_cpp.h \
-        include/weakpointer.h \
-        include/new_gc_alloc.h \
         include/gc_allocator.h \
         include/gc_backptr.h \
-        include/gc_gcj.h \
-        include/leak_detector.h \
-        include/gc_pthread_redirects.h \
         include/gc_config_macros.h \
+        include/gc_cpp.h \
+        include/gc_disclaim.h \
+        include/gc_gcj.h \
+        include/gc_inline.h \
+        include/gc_mark.h \
+        include/gc_pthread_redirects.h \
         include/gc_tiny_fl.h \
+        include/gc_typed.h \
         include/gc_version.h \
-        include/javaxfc.h
+        include/javaxfc.h \
+        include/leak_detector.h \
+        include/new_gc_alloc.h \
+        include/weakpointer.h
 
 # headers which are not installed
 #
 dist_noinst_HEADERS += \
-        include/private/gc_hdrs.h \
-        include/private/gc_priv.h \
-        include/private/gcconfig.h \
-        include/private/gc_pmark.h \
-        include/private/gc_locks.h \
-        include/private/dbg_mlc.h \
-        include/private/specific.h \
+        include/cord.h \
+        include/ec.h \
         include/private/cord_pos.h \
-        include/private/pthread_support.h \
-        include/private/pthread_stop_world.h \
         include/private/darwin_semaphore.h \
         include/private/darwin_stop_world.h \
-        include/private/thread_local_alloc.h \
-        include/cord.h \
-        include/ec.h
+        include/private/dbg_mlc.h \
+        include/private/gc_hdrs.h \
+        include/private/gc_locks.h \
+        include/private/gc_pmark.h \
+        include/private/gc_priv.h \
+        include/private/gcconfig.h \
+        include/private/pthread_stop_world.h \
+        include/private/pthread_support.h \
+        include/private/specific.h \
+        include/private/thread_local_alloc.h
 
 # unprefixed header
 include_HEADERS += \
