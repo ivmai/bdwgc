@@ -17,7 +17,6 @@ pkginclude_HEADERS += \
         include/gc_allocator.h \
         include/gc_backptr.h \
         include/gc_config_macros.h \
-        include/gc_cpp.h \
         include/gc_disclaim.h \
         include/gc_gcj.h \
         include/gc_inline.h \
@@ -52,5 +51,4 @@ dist_noinst_HEADERS += \
 
 # unprefixed header
 include_HEADERS += \
-        include/extra/gc.h \
-        include/extra/gc_cpp.h
+        include/extra/gc.h

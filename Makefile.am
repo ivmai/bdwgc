@@ -105,7 +105,8 @@ EXTRA_libgc_la_SOURCES = src/ia64_save_regs_in_stack.s src/sparc_mach_dep.S \
 
 if CPLUSPLUS
 lib_LTLIBRARIES += libgccpp.la
-pkginclude_HEADERS += include/gc_cpp.h include/gc_allocator.h
+pkginclude_HEADERS += include/gc_cpp.h
+include_HEADERS += include/extra/gc_cpp.h
 libgccpp_la_SOURCES = gc_cpp.cc
 libgccpp_la_LIBADD = ./libgc.la
 libgccpp_la_LDFLAGS = -version-info 1:3:0 -no-undefined
