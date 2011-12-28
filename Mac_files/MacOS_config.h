@@ -16,10 +16,6 @@
 // for CodeWarrior Pro with Metrowerks Standard Library (MSL).
 // #define MSL_USE_PRECOMPILED_HEADERS 0
 #include <ansi_prefix.mac.h>
-#ifndef __STDC__
-#define __STDC__ 0
-#endif
-
 #endif /* __MWERKS__ */
 
 // these are defined again in gc_priv.h.
@@ -29,5 +25,4 @@
 #define ALL_INTERIOR_POINTERS   // follows interior pointers.
 //#define DONT_ADD_BYTE_AT_END  // no padding.
 //#define SMALL_CONFIG          // whether to use a smaller heap.
-#define NO_SIGNALS              // signals aren't real on the Macintosh.
 #define USE_TEMPORARY_MEMORY    // use Macintosh temporary memory.

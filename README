@@ -175,9 +175,7 @@ need to be informed.
 and during uninterruptible parts of the allocation process.
 Like standard ANSI C mallocs, by default it is unsafe to invoke
 malloc (and other GC routines) from a signal handler while another
-malloc call may be in progress. Removing -DNO_SIGNALS from Makefile
-attempts to remedy that.  But that may not be reliable with a compiler that
-substantially reorders memory operations inside GC_malloc.
+malloc call may be in progress.
 
   The allocator/collector can also be configured for thread-safe operation.
 (Full signal safety can also be achieved, but only at the cost of two system
