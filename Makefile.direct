@@ -453,14 +453,6 @@ gctest_dyn_link: tests/test.o libgc.so
 gctest_irix_dyn_link: tests/test.o libirixgc.so
 	$(CC) -L$(ABSDIR) -o gctest_irix_dyn_link tests/test.o -lirixgc
 
-# The following appear to be dead, especially since libgc_globals.h
-# is apparently lost.
-test_dll.o: tests/test.c libgc_globals.h
-	$(CC) $(CFLAGS) -DGC_USE_DLL -c tests/test.c -o test_dll.o
-
-test_dll: test_dll.o libgc_dll.a libgc.dll
-	$(CC) test_dll.o -L$(ABSDIR) -lgc_dll -o test_dll
-
 SYM_PREFIX-libgc=GC
 
 reserved_namespace: $(SRCS)

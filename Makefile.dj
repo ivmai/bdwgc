@@ -288,10 +288,4 @@ ABSDIR = `pwd`
 gctest_dyn_link: test.o libgc.so
 	$(CC) -L$(ABSDIR) -R$(ABSDIR) -o gctest_dyn_link test.o -lgc -ldl -lthread
 
-test_dll.o: tests/test.c libgc_globals.h
-	$(CC) $(CFLAGS) -DGC_USE_DLL -c tests/test.c -o test_dll.o
-
-test_dll: test_dll.o libgc_dll.a libgc.dll
-	$(CC) test_dll.o -L$(ABSDIR) -lgc_dll -o test_dll
-
 SYM_PREFIX-libgc=GC
