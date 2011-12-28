@@ -63,16 +63,17 @@ libgc_la_SOURCES = \
 # C Library: Architecture Dependent
 # ---------------------------------
 
-if PTHREADS
-libgc_la_SOURCES += pthread_start.c pthread_support.c pthread_stop_world.c
-endif
-
-if DARWIN_THREADS
-libgc_la_SOURCES += darwin_stop_world.c
-endif
-
 if WIN32_THREADS
 libgc_la_SOURCES += win32_threads.c
+else
+if PTHREADS
+libgc_la_SOURCES += pthread_start.c pthread_support.c
+if DARWIN_THREADS
+libgc_la_SOURCES += darwin_stop_world.c
+else
+libgc_la_SOURCES += pthread_stop_world.c
+endif
+endif
 endif
 
 if ENABLE_DISCLAIM
