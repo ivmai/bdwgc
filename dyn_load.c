@@ -1233,7 +1233,7 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
                               intptr_t slide)
 {
   unsigned long start, end;
-  int i, j;
+  unsigned i, j;
   const struct GC_MACH_SECTION *sec;
   const char *name;
   GC_has_static_roots_func callback = GC_has_static_roots;
@@ -1298,7 +1298,7 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
                                  intptr_t slide)
 {
   unsigned long start, end;
-  int i, j;
+  unsigned i, j;
   const struct GC_MACH_SECTION *sec;
   char secnam[16];
   const char *fmt;
