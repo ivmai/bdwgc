@@ -28,7 +28,8 @@ pkginclude_HEADERS += \
         include/gc_pthread_redirects.h \
         include/gc_config_macros.h \
         include/gc_tiny_fl.h \
-        include/gc_version.h
+        include/gc_version.h \
+        include/javaxfc.h
 
 # headers which are not installed
 #
@@ -47,8 +48,7 @@ dist_noinst_HEADERS += \
         include/private/darwin_stop_world.h \
         include/private/thread_local_alloc.h \
         include/cord.h \
-        include/ec.h \
-        include/javaxfc.h
+        include/ec.h
 
 # unprefixed header
 include_HEADERS += \
