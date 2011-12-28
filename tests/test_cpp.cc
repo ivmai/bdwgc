@@ -34,12 +34,11 @@ few minutes to complete.
 #include <stdlib.h>
 #include <string.h>
 
-#define USE_STD_ALLOCATOR
-
-#ifdef USE_STD_ALLOCATOR
-#   include "gc_allocator.h"
+#ifndef DONT_USE_STD_ALLOCATOR
+# include "gc_allocator.h"
 #else
-#   include "new_gc_alloc.h"
+  /* Note: This works only for ancient STL versions.    */
+# include "new_gc_alloc.h"
 #endif
 
 extern "C" {
@@ -209,7 +208,7 @@ int APIENTRY WinMain(
     GC_INIT();
 
     int i, iters, n;
-#   ifdef USE_STD_ALLOCATOR
+#   ifndef DONT_USE_STD_ALLOCATOR
       int *x = gc_allocator<int>().allocate(1);
       int *xio;
       xio = gc_allocator_ignore_off_page<int>().allocate(1);
@@ -218,7 +217,7 @@ int APIENTRY WinMain(
       int *x = (int *)gc_alloc::allocate(sizeof(int));
 #   endif
     *x = 29;
-#   ifdef USE_STD_ALLOCATOR
+#   ifndef DONT_USE_STD_ALLOCATOR
       *xptr = x;
       x = 0;
 #   endif
@@ -287,7 +286,7 @@ int APIENTRY WinMain(
         D::Test();
         F::Test();}
 
-#   ifdef USE_STD_ALLOCATOR
+#   ifndef DONT_USE_STD_ALLOCATOR
       x = *xptr;
 #   endif
     my_assert (29 == x[0]);
