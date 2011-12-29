@@ -433,7 +433,7 @@ static void start_mark_threads(void)
     for (i = 0; i < GC_markers - 1; ++i) {
       if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
-        WARN("Marker thread creation failed, errno = %" GC_PRIdPTR "\n",
+        WARN("Marker thread creation failed, errno = %" WARN_PRIdPTR "\n",
              errno);
         /* Don't try to create other marker threads.    */
         GC_markers = i + 1;
@@ -959,7 +959,7 @@ GC_INNER void GC_thr_init(void)
 #   endif
   }
   if (GC_nprocs <= 0) {
-    WARN("GC_get_nprocs() returned %" GC_PRIdPTR "\n", GC_nprocs);
+    WARN("GC_get_nprocs() returned %" WARN_PRIdPTR "\n", GC_nprocs);
     GC_nprocs = 2; /* assume dual-core */
 #   ifdef PARALLEL_MARK
       GC_markers = 1;

@@ -455,28 +455,20 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # endif
 
 /* Print warning message, e.g. almost out of memory.    */
+/* The argument (if any) format specifier should be:    */
+/* "%s", "%p" or "%"WARN_PRIdPTR.                       */
 #define WARN(msg, arg) (*GC_current_warn_proc)("GC Warning: " msg, \
                                                (GC_word)(arg))
 GC_EXTERN GC_warn_proc GC_current_warn_proc;
 
-/* Print format type macro for signed_word.  Currently used for WARN()  */
-/* only.  This could be of use on Win64 but commented out since Win64   */
-/* is only a little-endian architecture (for now) and the WARN format   */
-/* string is, possibly, processed on the client side, so non-standard   */
-/* print type modifiers should be avoided (if possible).                */
-#if defined(_MSC_VER) && defined(_WIN64) && !defined(GC_PRIdPTR)
-/* #define GC_PRIdPTR "I64d" */
-#endif
-
-#if !defined(GC_PRIdPTR) && (defined(_LLP64) || defined(__LLP64__) \
-        || defined(_WIN64))
-/* #include <inttypes.h> */
-/* #define GC_PRIdPTR PRIdPTR */
-#endif
-
-#ifndef GC_PRIdPTR
+/* Print format type macro for decimal signed_word value passed WARN(). */
+/* This could be redefined for Win64 or LLP64, but typically should     */
+/* not be done as the WARN format string is, possibly, processed on the */
+/* client side, so non-standard print type modifiers (like MS "I64d")   */
+/* should be avoided here if possible.                                  */
+#ifndef WARN_PRIdPTR
   /* Assume sizeof(void *) == sizeof(long) (or a little-endian machine) */
-# define GC_PRIdPTR "ld"
+# define WARN_PRIdPTR "ld"
 #endif
 
 /* Get environment entry */
