@@ -950,7 +950,7 @@ GC_API void GC_CALL GC_init(void)
         /* For GWW_VDB on Win32, this needs to happen before any        */
         /* heap memory is allocated.                                    */
         GC_dirty_init();
-        GC_ASSERT(GC_bytes_allocd == 0)
+        GC_ASSERT(GC_bytes_allocd == 0);
         GC_incremental = TRUE;
       }
 #   endif
