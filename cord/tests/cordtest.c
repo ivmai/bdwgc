@@ -45,6 +45,7 @@ int test_fn(char c, void * client_data)
 
 char id_cord_fn(size_t i, void * client_data)
 {
+    if (client_data != 0) ABORT("id_cord_fn: bad client data");
     return((char)i);
 }
 
