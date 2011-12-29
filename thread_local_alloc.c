@@ -242,7 +242,7 @@ GC_API void * GC_CALL GC_malloc_atomic(size_t bytes)
 GC_API void * GC_CALL GC_gcj_malloc(size_t bytes,
                                     void * ptr_to_struct_containing_descr)
 {
-  if (GC_EXPECT(GC_incremental, 0)) {
+  if (EXPECT(GC_incremental, FALSE)) {
     return GC_core_gcj_malloc(bytes, ptr_to_struct_containing_descr);
   } else {
     size_t granules = ROUNDED_UP_GRANULES(bytes);

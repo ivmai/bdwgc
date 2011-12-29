@@ -82,11 +82,11 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
 
     lb += sizeof(void *);
     GC_ASSERT(done_init);
-    if (EXPECT(SMALL_OBJ(lb), 1)) {
+    if (EXPECT(SMALL_OBJ(lb), TRUE)) {
         lg = GC_size_map[lb];
         opp = &GC_finalized_objfreelist[lg];
         LOCK();
-        if (EXPECT((op = *opp) == 0, 0)) {
+        if (EXPECT((op = *opp) == 0, FALSE)) {
             UNLOCK();
             op = GC_generic_malloc((word)lb, GC_finalized_kind);
         } else {
@@ -113,15 +113,15 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
     void **tiny_fl, **my_fl, *my_entry;
     void *next;
 
-    if (GC_EXPECT(lg >= GC_TINY_FREELISTS, 0))
+    if (EXPECT(lg >= GC_TINY_FREELISTS, FALSE))
         return GC_core_finalized_malloc(client_lb, fclos);
 
     tsd = GC_getspecific(GC_thread_key);
     tiny_fl = tsd->finalized_freelists;
     my_fl = tiny_fl + lg;
     my_entry = *my_fl;
-    while (GC_EXPECT((word)my_entry
-                     <= DIRECT_GRANULES + GC_TINY_FREELISTS + 1, 0)) {
+    while (EXPECT((word)my_entry
+                  <= DIRECT_GRANULES + GC_TINY_FREELISTS + 1, FALSE)) {
         if ((word)my_entry - 1 < DIRECT_GRANULES) {
             *my_fl = (ptr_t)my_entry + lg + 1;
             return GC_core_finalized_malloc(client_lb, fclos);
