@@ -47,7 +47,6 @@
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
 # include <stdlib.h>
-# include <inttypes.h>
 # include <pthread.h>
 # include <sched.h>
 # include <time.h>
@@ -464,8 +463,9 @@ void GC_push_thread_structures(void)
 #   endif
 }
 
-STATIC int GC_count_threads(void)
-{
+#ifdef DEBUG_THREADS
+  STATIC int GC_count_threads(void)
+  {
     int i;
     int count = 0;
     GC_ASSERT(I_HOLD_LOCK());
@@ -478,7 +478,8 @@ STATIC int GC_count_threads(void)
         }
     }
     return count;
-}
+  }
+#endif /* DEBUG_THREADS */
 
 /* It may not be safe to allocate when we register the first thread.    */
 static struct GC_Thread_Rep first_thread;
@@ -491,7 +492,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
     GC_thread result;
     static GC_bool first_thread_used = FALSE;
 #   ifdef DEBUG_THREADS
-        GC_log_printf("Creating thread %#"PRIxMAX".\n", (uintmax_t)id);
+        GC_log_printf("Creating thread %p\n", (void *)id);
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -527,8 +528,8 @@ STATIC void GC_delete_thread(pthread_t id)
     register GC_thread prev = 0;
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Deleting thread 0x%"PRIxMAX". n_threads = %d.\n",
-                    (uintmax_t)id, GC_count_threads());
+      GC_log_printf("Deleting thread %p, n_threads = %d\n",
+                    (void *)id, GC_count_threads());
 #   endif
 
 #   ifdef NACL
@@ -581,8 +582,8 @@ STATIC void GC_delete_gc_thread(GC_thread t)
     GC_INTERNAL_FREE(p);
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Deleted gc-thread 0x%"PRIxMAX". n_threads = %d.\n",
-                    (uintmax_t)id, GC_count_threads());
+      GC_log_printf("Deleted thread %p, n_threads = %d\n",
+                    (void *)id, GC_count_threads());
 #   endif
 }
 
@@ -1187,8 +1188,9 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 STATIC void GC_unregister_my_thread_inner(GC_thread me)
 {
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Unregistering thread 0x%"PRIxMAX" -> %p. n_threads = %d.\n",
-                    (uintmax_t)me->id, me, GC_count_threads());
+      GC_log_printf(
+                "Unregistering thread %p, gc_thread = %p, n_threads = %d\n",
+                (void *)me->id, me, GC_count_threads());
 #   endif
     GC_ASSERT(!(me -> flags & FINISHED));
 #   if defined(THREAD_LOCAL_ALLOC)
@@ -1215,7 +1217,7 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
     pthread_t self = pthread_self();
-    GC_thread gc_self;
+    GC_thread me;
     IF_CANCEL(int cancel_state;)
     DCL_LOCK_STATE;
 
@@ -1224,13 +1226,14 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     /* Wait for any GC that may be marking from our stack to    */
     /* complete before we remove this thread.                   */
     GC_wait_for_gc_completion(FALSE);
-    gc_self = GC_lookup_thread(self);
+    me = GC_lookup_thread(self);
 #   ifdef DEBUG_THREADS
-        GC_log_printf("Called GC_unregister_my_thread on %#"PRIxMAX" -> %p.\n",
-                      (uintmax_t)self, GC_lookup_thread(self));
+        GC_log_printf(
+                "Called GC_unregister_my_thread on %p, gc_thread = %p\n",
+                (void *)self, me);
 #   endif
-    GC_ASSERT(gc_self->id == self);
-    GC_unregister_my_thread_inner(gc_self);
+    GC_ASSERT(me->id == self);
+    GC_unregister_my_thread_inner(me);
     RESTORE_CANCEL(cancel_state);
     UNLOCK();
     return GC_SUCCESS;
@@ -1244,8 +1247,8 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 GC_INNER void GC_thread_exit_proc(void *arg)
 {
 #   ifdef DEBUG_THREADS
-        GC_log_printf("Called GC_thread_exit_proc on %#"PRIxMAX" -> %p.\n",
-                      ((GC_thread)arg)->id, arg);
+        GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread = %p\n",
+                      (void *)((GC_thread)arg)->id, arg);
 #   endif
     IF_CANCEL(int cancel_state;)
     DCL_LOCK_STATE;
@@ -1486,8 +1489,8 @@ GC_INNER GC_thread GC_start_rtn_prepare_thread(void *(**pstart)(void *),
     DCL_LOCK_STATE;
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Starting thread 0x%"PRIxMAX", pid = %ld, sp = %p\n",
-                    (uintmax_t)self, (long)getpid(), &arg);
+      GC_log_printf("Starting thread %p, pid = %ld, sp = %p\n",
+                    (void *)self, (long)getpid(), &arg);
 #   endif
     LOCK();
     me = GC_register_my_thread_inner(sb, self);
@@ -1605,22 +1608,24 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     si -> flags = my_flags;
     UNLOCK();
 #   ifdef DEBUG_THREADS
-      GC_log_printf("About to start new thread from thread 0x%x\n",
-                    (unsigned)pthread_self());
+      GC_log_printf("About to start new thread from thread %p\n",
+                    (void *)pthread_self());
 #   endif
     GC_need_to_lock = TRUE;
 
     result = REAL_FUNC(pthread_create)(new_thread, attr, GC_start_routine, si);
 
-#   ifdef DEBUG_THREADS
-      GC_log_printf("Started thread 0x%x\n", (unsigned)(*new_thread));
-#   endif
     /* Wait until child has been added to the thread table.             */
     /* This also ensures that we hold onto si until the child is done   */
     /* with it.  Thus it doesn't matter whether it is otherwise         */
     /* visible to the collector.                                        */
     if (0 == result) {
         IF_CANCEL(int cancel_state;)
+
+#       ifdef DEBUG_THREADS
+          if (new_thread)
+            GC_log_printf("Started thread %p\n", (void *)(*new_thread));
+#       endif
         DISABLE_CANCEL(cancel_state);
                 /* pthread_create is not a cancellation point. */
         while (0 != sem_wait(&(si -> registered))) {
