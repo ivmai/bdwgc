@@ -3378,8 +3378,8 @@ STATIC void GC_protect_heap(void)
         if (protect_all) {
           PROTECT(start, len);
         } else {
-          GC_ASSERT(PAGE_ALIGNED(len))
-          GC_ASSERT(PAGE_ALIGNED(start))
+          GC_ASSERT(PAGE_ALIGNED(len));
+          GC_ASSERT(PAGE_ALIGNED(start));
           current_start = current = (struct hblk *)start;
           limit = (struct hblk *)(start + len);
           while (current < limit) {
