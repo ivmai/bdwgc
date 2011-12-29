@@ -391,6 +391,15 @@ GC_API void * GC_CALL GC_base(void * p)
     return((void *)r);
 }
 
+/* Return TRUE if and only if p points to somewhere in GC heap. */
+GC_API int GC_CALL GC_is_heap_ptr(const void *p)
+{
+    bottom_index *bi;
+
+    GC_ASSERT(GC_is_initialized);
+    GET_BI(p, bi);
+    return HDR_FROM_BI(bi, p) != 0;
+}
 
 /* Return the size of an object, given a pointer to its base.           */
 /* (For small objects this also happens to work from interior pointers, */

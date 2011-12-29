@@ -1105,6 +1105,18 @@ void run_one_test(void)
         GC_printf("GC_base(heap ptr) produced incorrect result\n");
         FAIL;
       }
+      if (!GC_is_heap_ptr(x)) {
+        GC_printf("GC_is_heap_ptr(heap_ptr) produced incorrect result\n");
+        FAIL;
+      }
+      if (GC_is_heap_ptr(&x)) {
+        GC_printf("GC_is_heap_ptr(&local_var) produced incorrect result\n");
+        FAIL;
+      }
+      if (GC_is_heap_ptr(&fail_count) || GC_is_heap_ptr(NULL)) {
+        GC_printf("GC_is_heap_ptr(&global_var) produced incorrect result\n");
+        FAIL;
+      }
       (void)GC_PRE_INCR(x, 0);
       (void)GC_POST_INCR(x);
       (void)GC_POST_DECR(x);

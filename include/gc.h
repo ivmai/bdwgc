@@ -410,6 +410,12 @@ GC_API void GC_CALL GC_end_stubborn_change(void *);
 /* GC_free.                                                             */
 GC_API void * GC_CALL GC_base(void * /* displaced_pointer */);
 
+/* Return TRUE if and only if the argument points to somewhere in GC    */
+/* heap.  Primary use is as a fast alternative to GC_base to check      */
+/* whether the pointed object is allocated by GC or not.  It is assumed */
+/* that the collector is already initialized.                           */
+GC_API int GC_CALL GC_is_heap_ptr(const void *);
+
 /* Given a pointer to the base of an object, return its size in bytes.  */
 /* The returned size may be slightly larger than what was originally    */
 /* requested.                                                           */
