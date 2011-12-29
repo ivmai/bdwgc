@@ -43,7 +43,7 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
     ptr_t base, limit;
     word sz;
 
-    if (!GC_is_initialized) GC_init();
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     hhdr = HDR((word)p);
     if (hhdr == 0) {
         if (divHBLKSZ((word)p) != divHBLKSZ((word)q)
@@ -122,7 +122,7 @@ GC_API void * GC_CALL GC_is_valid_displacement(void *p)
     struct hblk *h;
     word sz;
 
-    if (!GC_is_initialized) GC_init();
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     hhdr = HDR((word)p);
     if (hhdr == 0) return(p);
     h = HBLKPTR(p);
@@ -189,7 +189,7 @@ GC_API void * GC_CALL GC_is_visible(void *p)
     hdr *hhdr;
 
     if ((word)p & (ALIGNMENT - 1)) goto fail;
-    if (!GC_is_initialized) GC_init();
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
 #   ifdef THREADS
         hhdr = HDR((word)p);
         if (hhdr != 0 && GC_base(p) == 0) {

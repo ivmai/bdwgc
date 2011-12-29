@@ -271,7 +271,7 @@ GC_INNER void GC_push_all_stacks(void)
   int nthreads = 0;
   word total_size = 0;
   mach_msg_type_number_t listcount = (mach_msg_type_number_t)THREAD_TABLE_SZ;
-  if (!GC_thr_initialized)
+  if (!EXPECT(GC_thr_initialized, TRUE))
     GC_thr_init();
 
 # ifndef DARWIN_DONT_PARSE_STACK

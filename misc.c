@@ -361,7 +361,7 @@ GC_API void * GC_CALL GC_base(void * p)
     ptr_t limit;
 
     r = p;
-    if (!GC_is_initialized) return 0;
+    if (!EXPECT(GC_is_initialized, TRUE)) return 0;
     h = HBLKPTR(r);
     GET_BI(r, bi);
     candidate_hdr = HDR_FROM_BI(bi, r);
@@ -659,7 +659,7 @@ GC_API void GC_CALL GC_init(void)
     word initial_heap_sz;
     IF_CANCEL(int cancel_state;)
 
-    if (GC_is_initialized) return;
+    if (EXPECT(GC_is_initialized, TRUE)) return;
 #   ifdef REDIRECT_MALLOC
       {
         static GC_bool init_started = FALSE;

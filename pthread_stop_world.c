@@ -312,7 +312,8 @@ GC_INNER void GC_push_all_stacks(void)
     pthread_t self = pthread_self();
     word total_size = 0;
 
-    if (!GC_thr_initialized) GC_thr_init();
+    if (!EXPECT(GC_thr_initialized, TRUE))
+      GC_thr_init();
 #   ifdef DEBUG_THREADS
       GC_log_printf("Pushing stacks from thread 0x%x\n", (unsigned)self);
 #   endif
@@ -693,7 +694,7 @@ GC_INNER void GC_stop_world(void)
   {
     int i;
     pthread_mutex_lock(&GC_nacl_thread_alloc_lock);
-    if (!GC_nacl_thread_parking_inited) {
+    if (!EXPECT(GC_nacl_thread_parking_inited, TRUE)) {
       BZERO(GC_nacl_thread_parked, sizeof(GC_nacl_thread_parked));
       BZERO(GC_nacl_thread_used, sizeof(GC_nacl_thread_used));
       GC_nacl_thread_parking_inited = TRUE;

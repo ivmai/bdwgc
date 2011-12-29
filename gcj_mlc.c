@@ -144,8 +144,8 @@ static void maybe_finalize(void)
    static word last_finalized_no = 0;
    DCL_LOCK_STATE;
 
-   if (GC_gc_no == last_finalized_no) return;
-   if (!GC_is_initialized) return;
+   if (GC_gc_no == last_finalized_no ||
+       !EXPECT(GC_is_initialized, TRUE)) return;
    UNLOCK();
    GC_INVOKE_FINALIZERS();
    LOCK();

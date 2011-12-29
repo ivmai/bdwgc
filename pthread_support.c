@@ -275,7 +275,8 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
     GC_syms_initialized = TRUE;
   }
 
-# define INIT_REAL_SYMS() if (!GC_syms_initialized) GC_init_real_syms();
+# define INIT_REAL_SYMS() if (!EXPECT(GC_syms_initialized, TRUE)) \
+                            GC_init_real_syms()
 #else
 # define INIT_REAL_SYMS()
 #endif
@@ -475,7 +476,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
     static GC_bool first_thread_used = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
-    if (!first_thread_used) {
+    if (!EXPECT(first_thread_used, TRUE)) {
         result = &first_thread;
         first_thread_used = TRUE;
     } else {
@@ -1511,8 +1512,9 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     si = (struct start_info *)GC_INTERNAL_MALLOC(sizeof(struct start_info),
                                                  NORMAL);
     UNLOCK();
-    if (!parallel_initialized) GC_init_parallel();
-    if (0 == si &&
+    if (!EXPECT(parallel_initialized, TRUE))
+      GC_init_parallel();
+    if (EXPECT(0 == si, FALSE) &&
         (si = (struct start_info *)
                 (*GC_get_oom_fn())(sizeof(struct start_info))) == 0)
       return(ENOMEM);
@@ -1522,7 +1524,8 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     si -> start_routine = start_routine;
     si -> arg = arg;
     LOCK();
-    if (!GC_thr_initialized) GC_thr_init();
+    if (!EXPECT(GC_thr_initialized, TRUE))
+      GC_thr_init();
 #   ifdef GC_ASSERTIONS
       {
         size_t stack_size = 0;

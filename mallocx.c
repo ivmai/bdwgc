@@ -184,7 +184,8 @@ GC_INNER void * GC_generic_malloc_ignore_off_page(size_t lb, int k)
     lb_rounded = GRANULES_TO_BYTES(lg);
     n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
     init = GC_obj_kinds[k].ok_init;
-    if (GC_have_errors) GC_print_all_errors();
+    if (EXPECT(GC_have_errors, FALSE))
+      GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
     LOCK();
     result = (ptr_t)GC_alloc_large(ADD_SLOP(lb), k, IGNORE_OFF_PAGE);
@@ -286,10 +287,11 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     }
     lw = BYTES_TO_WORDS(lb);
     lg = BYTES_TO_GRANULES(lb);
-    if (GC_have_errors) GC_print_all_errors();
+    if (EXPECT(GC_have_errors, FALSE))
+      GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
     LOCK();
-    if (!GC_is_initialized) GC_init();
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     /* Do our share of marking work */
       if (GC_incremental && !GC_dont_gc) {
         ENTER_GC();

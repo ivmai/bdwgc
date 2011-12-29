@@ -539,7 +539,9 @@ GC_API GC_descr GC_CALL GC_make_descriptor(GC_bitmap bm, size_t len)
     signed_word i;
 #   define HIGH_BIT (((word)1) << (WORDSZ - 1))
 
-    if (!GC_explicit_typing_initialized) GC_init_explicit_typing();
+    if (!EXPECT(GC_explicit_typing_initialized, TRUE))
+      GC_init_explicit_typing();
+
     while (last_set_bit >= 0 && !GC_get_bit(bm, last_set_bit))
       last_set_bit--;
     if (last_set_bit < 0) return(0 /* no pointers */);

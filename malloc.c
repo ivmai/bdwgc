@@ -49,7 +49,7 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
     /* Round up to a multiple of a granule. */
       lb = (lb + GRANULE_BYTES - 1) & ~(GRANULE_BYTES - 1);
     n_blocks = OBJ_SZ_TO_BLOCKS(lb);
-    if (!GC_is_initialized) GC_init();
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     /* Do our share of marking work */
         if (GC_incremental && !GC_dont_gc)
             GC_collect_a_little_inner((int)n_blocks);
@@ -111,7 +111,7 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 
         if( (op = *opp) == 0 ) {
             if (GC_size_map[lb] == 0) {
-              if (!GC_is_initialized) GC_init();
+              if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
               if (GC_size_map[lb] == 0) GC_extend_size_map(lb);
               return(GC_generic_malloc_inner(lb, k));
             }
@@ -154,7 +154,8 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
     void * result;
     DCL_LOCK_STATE;
 
-    if (GC_have_errors) GC_print_all_errors();
+    if (EXPECT(GC_have_errors, FALSE))
+      GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
     if (SMALL_OBJ(lb)) {
         LOCK();
@@ -340,7 +341,7 @@ void * malloc(size_t lb)
        * The thread implementation may well call malloc at other
        * inopportune times.
        */
-      if (!GC_is_initialized) return sbrk(lb);
+      if (!EXPECT(GC_is_initialized, TRUE)) return sbrk(lb);
 #   endif /* I386 && GC_SOLARIS_THREADS */
     return((void *)REDIRECT_MALLOC(lb));
 }
@@ -379,7 +380,7 @@ void * calloc(size_t n, size_t lb)
           ptr_t caller = (ptr_t)__builtin_return_address(0);
           /* This test does not need to ensure memory visibility, since */
           /* the bounds will be set when/if we create another thread.   */
-          if (!lib_bounds_set) {
+          if (!EXPECT(lib_bounds_set, TRUE)) {
             GC_init_lib_bounds();
             lib_bounds_set = TRUE;
           }

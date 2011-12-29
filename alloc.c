@@ -936,7 +936,7 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
     IF_CANCEL(int cancel_state;)
     DCL_LOCK_STATE;
 
-    if (!GC_is_initialized) GC_init();
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     if (GC_debugging_started) GC_print_all_smashed();
     GC_INVOKE_FINALIZERS();
     LOCK();
@@ -1183,7 +1183,7 @@ GC_API int GC_CALL GC_expand_hp(size_t bytes)
     DCL_LOCK_STATE;
 
     LOCK();
-    if (!GC_is_initialized) GC_init();
+    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     result = (int)GC_expand_hp_inner(divHBLKSZ((word)bytes));
     if (result) GC_requested_heapsize += bytes;
     UNLOCK();

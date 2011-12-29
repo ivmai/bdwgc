@@ -1855,7 +1855,7 @@ GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
 #ifndef NO_DEBUGGING
   GC_EXTERN GC_bool GC_dump_regularly;
                                 /* Generate regular debugging dumps.    */
-# define COND_DUMP if (GC_dump_regularly) GC_dump()
+# define COND_DUMP if (EXPECT(GC_dump_regularly, FALSE)) GC_dump()
 #else
 # define COND_DUMP /* empty */
 #endif

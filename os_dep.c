@@ -2040,7 +2040,7 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
 #   ifndef USE_MMAP_ANON
       static GC_bool initialized = FALSE;
 
-      if (!initialized) {
+      if (!EXPECT(initialized, TRUE)) {
           zero_fd = open("/dev/zero", O_RDONLY);
           fcntl(zero_fd, F_SETFD, FD_CLOEXEC);
           initialized = TRUE;

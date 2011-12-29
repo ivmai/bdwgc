@@ -330,7 +330,7 @@ STATIC GC_thread GC_new_thread(DWORD id)
   GC_thread result;
 
   GC_ASSERT(I_HOLD_LOCK());
-  if (!first_thread_used) {
+  if (!EXPECT(first_thread_used, TRUE)) {
     result = &first_thread;
     first_thread_used = TRUE;
   } else {
@@ -2061,7 +2061,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     HANDLE thread_h;
     thread_args *args;
 
-    if (!parallel_initialized) GC_init_parallel();
+    if (!EXPECT(parallel_initialized, TRUE))
+      GC_init_parallel();
                 /* make sure GC is initialized (i.e. main thread is     */
                 /* attached, tls initialized).                          */
 
@@ -2109,7 +2110,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       GC_uintptr_t thread_h;
       thread_args *args;
 
-      if (!parallel_initialized) GC_init_parallel();
+      if (!EXPECT(parallel_initialized, TRUE))
+        GC_init_parallel();
                 /* make sure GC is initialized (i.e. main thread is     */
                 /* attached, tls initialized).                          */
 #     ifdef DEBUG_THREADS
@@ -2365,7 +2367,8 @@ GC_INNER void GC_thr_init(void)
                     (long)GetCurrentThreadId(), GC_PTHREAD_PTRVAL(pthread_id));
 #   endif
 
-    if (!parallel_initialized) GC_init_parallel();
+    if (!EXPECT(parallel_initialized, TRUE))
+      GC_init_parallel();
 
     /* Thread being joined might not have registered itself yet. */
     /* After the join,thread id may have been recycled.          */
@@ -2405,7 +2408,8 @@ GC_INNER void GC_thr_init(void)
                                GC_PTHREAD_CREATE_CONST pthread_attr_t *attr,
                                void *(*start_routine)(void *), void *arg)
   {
-    if (!parallel_initialized) GC_init_parallel();
+    if (!EXPECT(parallel_initialized, TRUE))
+      GC_init_parallel();
              /* make sure GC is initialized (i.e. main thread is attached) */
     if (GC_win32_dll_threads) {
       return pthread_create(new_thread, attr, start_routine, arg);
@@ -2525,7 +2529,8 @@ GC_INNER void GC_thr_init(void)
     GC_API int GC_pthread_sigmask(int how, const sigset_t *set,
                                   sigset_t *oset)
     {
-      if (!parallel_initialized) GC_init_parallel();
+      if (!EXPECT(parallel_initialized, TRUE))
+        GC_init_parallel();
       return pthread_sigmask(how, set, oset);
     }
 # endif /* !GC_NO_PTHREAD_SIGMASK */
@@ -2536,7 +2541,8 @@ GC_INNER void GC_thr_init(void)
     GC_thread t;
     DCL_LOCK_STATE;
 
-    if (!parallel_initialized) GC_init_parallel();
+    if (!EXPECT(parallel_initialized, TRUE))
+      GC_init_parallel();
     LOCK();
     t = GC_lookup_pthread(thread);
     UNLOCK();
