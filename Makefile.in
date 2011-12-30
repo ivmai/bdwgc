@@ -106,26 +106,27 @@ check_PROGRAMS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
 # C++ Interface
 # -------------
 @CPLUSPLUS_TRUE@am__append_4 = libgccpp.la
-@CPLUSPLUS_TRUE@am__append_5 = include/gc_cpp.h include/gc_allocator.h
-DIST_COMMON = $(am__configure_deps) $(am__pkginclude_HEADERS_DIST) \
-	$(dist_noinst_HEADERS) $(dist_noinst_SCRIPTS) \
-	$(dist_pkgdata_DATA) $(include_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(srcdir)/bdw-gc.pc.in \
-	$(srcdir)/cord/cord.am $(srcdir)/doc/doc.am \
-	$(srcdir)/include/include.am $(srcdir)/tests/tests.am \
-	$(top_srcdir)/configure \
+@CPLUSPLUS_TRUE@am__append_5 = include/gc_cpp.h
+@CPLUSPLUS_TRUE@am__append_6 = include/extra/gc_cpp.h
+DIST_COMMON = $(am__configure_deps) $(am__include_HEADERS_DIST) \
+	$(am__pkginclude_HEADERS_DIST) $(dist_noinst_HEADERS) \
+	$(dist_noinst_SCRIPTS) $(dist_pkgdata_DATA) \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/bdw-gc.pc.in $(srcdir)/cord/cord.am \
+	$(srcdir)/doc/doc.am $(srcdir)/include/include.am \
+	$(srcdir)/tests/tests.am $(top_srcdir)/configure \
 	$(top_srcdir)/include/private/config.h.in ChangeLog compile \
 	config.guess config.sub depcomp install-sh ltmain.sh missing \
 	mkinstalldirs
-@KEEP_BACK_PTRS_TRUE@am__append_6 = tracetest$(EXEEXT)
-@KEEP_BACK_PTRS_TRUE@am__append_7 = tracetest
-@THREADS_TRUE@am__append_8 = threadleaktest$(EXEEXT) \
+@KEEP_BACK_PTRS_TRUE@am__append_7 = tracetest$(EXEEXT)
+@KEEP_BACK_PTRS_TRUE@am__append_8 = tracetest
+@THREADS_TRUE@am__append_9 = threadleaktest$(EXEEXT) \
 @THREADS_TRUE@	threadkey_test$(EXEEXT) \
 @THREADS_TRUE@	initsecondarythread$(EXEEXT)
-@THREADS_TRUE@am__append_9 = threadleaktest threadkey_test \
+@THREADS_TRUE@am__append_10 = threadleaktest threadkey_test \
 @THREADS_TRUE@	initsecondarythread
-@CPLUSPLUS_TRUE@am__append_10 = test_cpp$(EXEEXT)
-@CPLUSPLUS_TRUE@am__append_11 = test_cpp
+@CPLUSPLUS_TRUE@am__append_11 = test_cpp$(EXEEXT)
+@CPLUSPLUS_TRUE@am__append_12 = test_cpp
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/gc_set_version.m4 \
@@ -323,13 +324,14 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	installcheck-recursive installdirs-recursive pdf-recursive \
 	ps-recursive uninstall-recursive
 DATA = $(dist_pkgdata_DATA) $(pkgconfig_DATA)
-am__pkginclude_HEADERS_DIST = include/gc_cpp.h include/gc_allocator.h \
-	include/gc.h include/gc_typed.h include/gc_inline.h \
-	include/gc_mark.h include/weakpointer.h include/new_gc_alloc.h \
-	include/gc_backptr.h include/gc_gcj.h include/leak_detector.h \
-	include/gc_amiga_redirects.h include/gc_pthread_redirects.h \
-	include/gc_config_macros.h include/gc_tiny_fl.h \
-	include/gc_version.h include/cord.h
+am__include_HEADERS_DIST = include/extra/gc_cpp.h include/extra/gc.h
+am__pkginclude_HEADERS_DIST = include/gc_cpp.h include/gc.h \
+	include/gc_typed.h include/gc_inline.h include/gc_mark.h \
+	include/weakpointer.h include/new_gc_alloc.h \
+	include/gc_allocator.h include/gc_backptr.h include/gc_gcj.h \
+	include/leak_detector.h include/gc_amiga_redirects.h \
+	include/gc_pthread_redirects.h include/gc_config_macros.h \
+	include/gc_tiny_fl.h include/gc_version.h include/cord.h
 HEADERS = $(dist_noinst_HEADERS) $(include_HEADERS) \
 	$(pkginclude_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
@@ -578,17 +580,17 @@ EXTRA_DIST = gc_cpp.cpp README.QUICK BCC_MAKEFILE NT_MAKEFILE \
 lib_LTLIBRARIES = libgc.la $(am__append_4) libcord.la
 
 # unprefixed header
-include_HEADERS = include/extra/gc.h include/extra/gc_cpp.h
+include_HEADERS = $(am__append_6) include/extra/gc.h
 
 # installed headers
 #
 pkginclude_HEADERS = $(am__append_5) include/gc.h include/gc_typed.h \
-	include/gc_inline.h include/gc_mark.h include/gc_cpp.h \
-	include/weakpointer.h include/new_gc_alloc.h \
-	include/gc_allocator.h include/gc_backptr.h include/gc_gcj.h \
-	include/leak_detector.h include/gc_amiga_redirects.h \
-	include/gc_pthread_redirects.h include/gc_config_macros.h \
-	include/gc_tiny_fl.h include/gc_version.h include/cord.h
+	include/gc_inline.h include/gc_mark.h include/weakpointer.h \
+	include/new_gc_alloc.h include/gc_allocator.h \
+	include/gc_backptr.h include/gc_gcj.h include/leak_detector.h \
+	include/gc_amiga_redirects.h include/gc_pthread_redirects.h \
+	include/gc_config_macros.h include/gc_tiny_fl.h \
+	include/gc_version.h include/cord.h
 
 # headers which are not installed
 #
@@ -605,8 +607,8 @@ dist_noinst_HEADERS = include/private/gc_hdrs.h \
 check_LTLIBRARIES = libstaticrootslib.la
 TESTS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
 	smashtest$(EXEEXT) hugetest$(EXEEXT) realloc_test$(EXEEXT) \
-	staticrootstest$(EXEEXT) $(am__append_6) $(am__append_8) \
-	$(am__append_10)
+	staticrootstest$(EXEEXT) $(am__append_7) $(am__append_9) \
+	$(am__append_11)
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = bdw-gc.pc
 libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
