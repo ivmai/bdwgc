@@ -4,12 +4,20 @@
 
 * Add GC_UNDERSCORE_STDCALL, UNICODE macro templates to configure (Win32).
 * Add GC_get_thr_restart_signal API entry.
+* Add GC_is_heap_ptr() to GC API.
 * Add GC_move_disappearing_link() API entry.
 * Add TODO file.
 * Add configure option to compile all library .c files into single gc.o.
+* Add cordtest to make check.
 * Add disclaim callbacks for efficient finalization (ENABLE_DISCLAIM).
 * Add finalization.html to 'doc' folder.
+* Add javaxfc.h to the installation set of GC header files (configure).
+* Changed the order in autogen.sh so ltmain exists in time for automake.
 * Define GC_READ_ENV_FILE in configure for WinCE unless gc-debug is off.
+* Do not compile pthread_stop_world.c for Cygwin/Darwin (configure).
+* Do not install ancient new_gc_alloc.h broken for modern STL (configure).
+* Extend thread-related debug messages.
+* Fix compiler warning in cordtest.
 * Fix minor warnings reported by GCC with '-pedantic' option.
 * In tests, print a message in case a test is a no-op.
 * Instruct configure to hide internal libgc.so symbols if supported by GCC.
@@ -20,13 +28,17 @@
 * Remove all auto-generated files from the repo.
 * Remove binary icon file for de_win.
 * Remove cordtest from "cord" library.
+* Remove duplicate MacOS_Test_config.h file.
 * Remove gc_amiga_redirects.h (included internally) from public headers.
 * Remove obsolete Makefile.DLL (superseded by Cygwin/MinGW configure).
 * Remove obsolete unused asm files for ALPHA, HPUX, SGI, RS6000, ULTRIX.
+* Remove unused ancient SILENT, __STDC__, NO_SIGNALS macros.
 * Replace ARGSUSED comment-based annotation with GCC 'unused' attribute.
+* Replace printf PRIxMAX specifier with '%p' for thread id debug output.
 * Turn on "extra" GCC warnings.
 * Turn on unused-parameter checking for GCC.
 * Update AUTHORS file.
+* Use EXPECT for checking various 'initialized' boolean variables.
 
 
 [7.2] (candidate)
@@ -46,9 +58,12 @@ GC_get_bytes_since_gc and friends.
 * Fix GC_find_limit_with_bound to always reset fault handler on return.
 * Fix GC_init_lib_bounds (and GC_init, GC_get_main_stack_base) regarding
 malloc redirection.
+* Fix compiler warning in GC_dyld_image_add/remove (Darwin).
+* Fix configure --enable-cplusplus make install.
 * Fix configure to disable GCC aliasing optimization unless forced to
 * Fix duplicate definitions in gcconfig.h for NetBSD.
 * Fix gc_cpp.cc for Cygwin (remove duplicate function definition).
+* Fix gcconfig.h to handle mips64-linux target.
 * Fix mach_dep.c to include sys/ucontext.h on Mac OS X 10.6.
 * Fix tests to check GC_malloc result for NULL (out-of-memory).
 * Fix thread model in configure for MinGW ("win32" instead of "posix").
