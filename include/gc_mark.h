@@ -219,6 +219,12 @@ typedef void (GC_CALLBACK * GC_start_callback_proc)(void);
 GC_API void GC_CALL GC_set_start_callback(GC_start_callback_proc);
 GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void);
 
+/* Slow/general mark bit manipulation.  The caller must hold the        */
+/* allocation lock.                                                     */
+GC_API int GC_CALL GC_is_marked(void *);
+GC_API void GC_CALL GC_clear_mark_bit(void *);
+GC_API void GC_CALL GC_set_mark_bit(void *);
+
 #ifdef __cplusplus
   } /* end of extern "C" */
 #endif

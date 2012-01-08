@@ -1932,11 +1932,6 @@ GC_EXTERN GC_bool GC_print_back_height;
   GC_INNER void GC_dirty_init(void);
 #endif /* !GC_DISABLE_INCREMENTAL */
 
-/* Slow/general mark bit manipulation: */
-GC_API_PRIV GC_bool GC_is_marked(ptr_t p);
-GC_INNER void GC_clear_mark_bit(ptr_t p);
-GC_INNER void GC_set_mark_bit(ptr_t p);
-
 /* Stubborn objects: */
 void GC_read_changed(void); /* Analogous to GC_read_dirty */
 GC_bool GC_page_was_changed(struct hblk * h);
