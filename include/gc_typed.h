@@ -48,7 +48,7 @@ typedef GC_word * GC_bitmap;
 
 typedef GC_word GC_descr;
 
-GC_API GC_descr GC_CALL GC_make_descriptor(GC_bitmap /* bm */,
+GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * /* GC_bitmap bm */,
                                            size_t /* len */);
                 /* Return a type descriptor for the object whose layout */
                 /* is described by the argument.                        */

@@ -110,7 +110,7 @@ STATIC void GC_push_typed_structures_proc(void)
 /* starting index.                                              */
 /* Returns -1 on failure.                                       */
 /* Caller does not hold allocation lock.                        */
-STATIC signed_word GC_add_ext_descriptor(GC_bitmap bm, word nbits)
+STATIC signed_word GC_add_ext_descriptor(const GC_word * bm, word nbits)
 {
     size_t nwords = divWORDSZ(nbits + WORDSZ-1);
     signed_word result;
@@ -532,7 +532,7 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
     return new_mark_stack_ptr;
 }
 
-GC_API GC_descr GC_CALL GC_make_descriptor(GC_bitmap bm, size_t len)
+GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 {
     signed_word last_set_bit = len - 1;
     GC_descr result;

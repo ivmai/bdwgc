@@ -924,7 +924,7 @@ void tree_test(void)
 
 unsigned n_tests = 0;
 
-GC_word bm_huge[10] = {
+const GC_word bm_huge[10] = {
     0xffffffff,
     0xffffffff,
     0xffffffff,
