@@ -271,6 +271,10 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 
 STATIC void GC_restart_handler(int sig)
 {
+# if defined(DEBUG_THREADS) || defined(GC_NETBSD_THREADS_WORKAROUND)
+    int old_errno = errno;      /* Preserve errno value.        */
+# endif
+
   if (sig != SIG_THR_RESTART) ABORT("Bad signal in suspend_handler");
 
 # ifdef GC_NETBSD_THREADS_WORKAROUND
@@ -288,6 +292,9 @@ STATIC void GC_restart_handler(int sig)
 # ifdef DEBUG_THREADS
     GC_log_printf("In GC_restart_handler for 0x%x\n",
                   (unsigned)pthread_self());
+# endif
+# if defined(DEBUG_THREADS) || defined(GC_NETBSD_THREADS_WORKAROUND)
+    errno = old_errno;
 # endif
 }
 
