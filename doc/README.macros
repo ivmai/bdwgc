@@ -466,6 +466,9 @@ DARWIN_DONT_PARSE_STACK         Causes the Darwin port to discover thread
 GC_NO_THREADS_DISCOVERY (Darwin and Win32+DLL only)     Exclude DllMain-based
   (on Windows) and task-threads-based (on Darwin) thread registration support.
 
+GC_INSIDE_DLL (Win32 only)      Enable DllMain-based approach of threads
+  registering even in case GC_DLL is not defined.
+
 GC_DISCOVER_TASK_THREADS (Darwin and Win32+DLL only)    Compile the collector
   with the implicitly turned on task-threads-based (on Darwin) or
   DllMain-based (on Windows) approach of threads registering.  Only for

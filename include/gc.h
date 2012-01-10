@@ -1315,6 +1315,15 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 #     define GC_ExitThread _GC_ExitThread
 #   endif
 
+#   ifdef GC_INSIDE_DLL
+      /* Export GC DllMain to be invoked from client DllMain.   */
+#     ifdef GC_UNDERSCORE_STDCALL
+#       define GC_DllMain _GC_DllMain
+#     endif
+      GC_API BOOL WINAPI GC_DllMain(HINSTANCE /* inst */, ULONG /* reason */,
+                                    LPVOID /* reserved */);
+#   endif /* GC_INSIDE_DLL */
+
     /* All threads must be created using GC_CreateThread or             */
     /* GC_beginthreadex, or must explicitly call GC_register_my_thread  */
     /* (and call GC_unregister_my_thread before thread termination), so */

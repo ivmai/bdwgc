@@ -78,7 +78,8 @@
 
 /* DllMain-based thread registration is currently incompatible  */
 /* with thread-local allocation, pthreads and WinCE.            */
-#if defined(GC_DLL) && !defined(GC_NO_THREADS_DISCOVERY) && !defined(MSWINCE) \
+#if (defined(GC_DLL) || defined(GC_INSIDE_DLL)) \
+        && !defined(GC_NO_THREADS_DISCOVERY) && !defined(MSWINCE) \
         && !defined(THREAD_LOCAL_ALLOC) && !defined(GC_PTHREADS)
 # include "atomic_ops.h"
 
@@ -2569,8 +2570,14 @@ GC_INNER void GC_thr_init(void)
     /* collector.  (The alternative of initializing the collector here  */
     /* seems dangerous, since DllMain is limited in what it can do.)    */
 
-    BOOL WINAPI DllMain(HINSTANCE inst GC_ATTR_UNUSED, ULONG reason,
-                        LPVOID reserved GC_ATTR_UNUSED)
+#   ifdef GC_INSIDE_DLL
+      /* Export only if needed by client.       */
+      GC_API
+#   else
+#     define GC_DllMain DllMain
+#   endif
+    BOOL WINAPI GC_DllMain(HINSTANCE inst GC_ATTR_UNUSED, ULONG reason,
+                           LPVOID reserved GC_ATTR_UNUSED)
     {
       struct GC_stack_base sb;
       DWORD thread_id;

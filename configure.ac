@@ -325,6 +325,10 @@ case "$THREADS" in
         AC_DEFINE(THREAD_LOCAL_ALLOC)
       fi
     fi
+    if test "${enable_win32_dllmain}" = yes; then
+      AC_DEFINE(GC_INSIDE_DLL, 1,
+                [Enable Win32 DllMain-based approach of threads registering.])
+    fi
     win32_threads=true
     AC_DEFINE([EMPTY_GETENV_RESULTS], [1],
               [Wine getenv may not return NULL for missing entry.])
