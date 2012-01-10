@@ -173,20 +173,19 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
   STATIC void GC_suspend_handler(int sig)
 #endif
 {
+  int old_errno = errno;
+
 # if defined(IA64) || defined(HP_PA) || defined(M68K)
-    int old_errno = errno;
     GC_with_callee_saves_pushed(GC_suspend_handler_inner, (ptr_t)(word)sig);
-    errno = old_errno;
 # else
     /* We believe that in all other cases the full context is already   */
     /* in the signal handler frame.                                     */
-    int old_errno = errno;
 #   ifndef SA_SIGINFO
       void *context = 0;
 #   endif
     GC_suspend_handler_inner((ptr_t)(word)sig, context);
-    errno = old_errno;
 # endif
+  errno = old_errno;
 }
 
 STATIC void GC_suspend_handler_inner(ptr_t sig_arg,
