@@ -831,11 +831,12 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
                                              void * client_data)
 {
   struct GC_traced_stack_sect_s stacksect;
+  DWORD thread_id = GetCurrentThreadId();
   GC_thread me;
   DCL_LOCK_STATE;
 
   LOCK();   /* This will block if the world is stopped.         */
-  me = GC_lookup_thread_inner(GetCurrentThreadId());
+  me = GC_lookup_thread_inner(thread_id);
   CHECK_LOOKUP_MY_THREAD(me);
   /* Adjust our stack base value (this could happen unless      */
   /* GC_get_stack_base() was used which returned GC_SUCCESS).   */

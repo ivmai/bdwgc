@@ -1082,6 +1082,7 @@ GC_INNER void GC_init_parallel(void)
 GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 {
     struct blocking_data * d = (struct blocking_data *) data;
+    pthread_t self = pthread_self();
     GC_thread me;
 #   if defined(SPARC) || defined(IA64)
         ptr_t stack_ptr = GC_save_regs_in_stack();
@@ -1092,7 +1093,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
     DCL_LOCK_STATE;
 
     LOCK();
-    me = GC_lookup_thread(pthread_self());
+    me = GC_lookup_thread(self);
     GC_ASSERT(!(me -> thread_blocked));
 #   ifdef SPARC
         me -> stop_info.stack_ptr = stack_ptr;
@@ -1131,11 +1132,12 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
                                              void * client_data)
 {
     struct GC_traced_stack_sect_s stacksect;
+    pthread_t self = pthread_self();
     GC_thread me;
     DCL_LOCK_STATE;
 
     LOCK();   /* This will block if the world is stopped.       */
-    me = GC_lookup_thread(pthread_self());
+    me = GC_lookup_thread(self);
 
     /* Adjust our stack base value (this could happen unless    */
     /* GC_get_stack_base() was used which returned GC_SUCCESS). */
@@ -1356,12 +1358,13 @@ GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
 #ifdef GC_PTHREAD_EXIT_ATTRIBUTE
   GC_API GC_PTHREAD_EXIT_ATTRIBUTE void WRAP_FUNC(pthread_exit)(void *retval)
   {
+    pthread_t self = pthread_self();
     GC_thread me;
     DCL_LOCK_STATE;
 
     INIT_REAL_SYMS();
     LOCK();
-    me = GC_lookup_thread(pthread_self());
+    me = GC_lookup_thread(self);
     /* We test DISABLED_GC because someone else could call    */
     /* pthread_cancel at the same time.                       */
     if (me != 0 && (me -> flags & DISABLED_GC) == 0) {
