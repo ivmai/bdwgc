@@ -1955,7 +1955,9 @@
 #   ifdef DARWIN
       /* iPhone */
 #     define OS_TYPE "DARWIN"
-#     define DYNAMIC_LOADING
+#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
+#       define DYNAMIC_LOADING
+#     endif
 #     define DATASTART ((ptr_t) get_etext())
 #     define DATAEND   ((ptr_t) get_end())
 #     define STACKBOTTOM ((ptr_t) 0x30000000)

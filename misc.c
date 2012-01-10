@@ -64,6 +64,8 @@
   /* We need to register the main data segment.  Returns  TRUE unless   */
   /* this is done implicitly as part of dynamic library registration.   */
 # define GC_REGISTER_MAIN_STATIC_DATA() GC_register_main_static_data()
+#elif defined(GC_DONT_REGISTER_MAIN_STATIC_DATA)
+# define GC_REGISTER_MAIN_STATIC_DATA() FALSE
 #else
   /* Don't unnecessarily call GC_register_main_static_data() in case    */
   /* dyn_load.c isn't linked in.                                        */
