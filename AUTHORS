@@ -26,10 +26,13 @@ Alan Dosser <dosser@src.dec.com>
 Alan J. Demers <ademers@cs.cornell.edu>
 Aleksey Demakov
 Alexander Belchenko <bialix@ukr.net>
+Alexander Gavrilov <angavrilov@gmail.com>
 Alexandr Petrosian
 Alexandr Shadchin <ShadchinAV@mail.ru>
 Alistair G. Crooks <agc@uts.amdahl.com>
+Allan Hsu <allan@counterpop.net>
 Andre Leiradella
+Andreas Farber <afaerber@mono-cvs.ximian.com>
 Andreas Jaeger
 Andreas Tobler <a.tobler@schweiz.org>
 Andrei Polushin
@@ -50,7 +53,7 @@ Barry DeFreese
 Ben A. Mesander <ben@piglet.cr.usgs.gov>
 Ben Cottrell
 Ben Hutchings
-Ben Maurer
+Ben Maurer <benm@mono-cvs.ximian.com>
 Bernie Solomon
 Bill Janssen <janssen@parc.xerox.com>
 Bo Thorsen
@@ -79,8 +82,8 @@ Craig McDaniel
 Dai Sato
 Dan Bonachea
 Dan Fandrich
-Daniel R. Grayson <dan@math.uiuc.edu>
 Dan Sullivan
+Daniel R. Grayson <dan@math.uiuc.edu>
 Danny Smith
 Darrell Schiebel
 Dave Barrett <barrett@asgard.cs.colorado.edu>
@@ -117,6 +120,7 @@ Geoff Norton <grompf@sublimeintervention.com>
 George Talbot <Gtalbot@ansarisbio.com>
 Gerard A Allan
 Glauco Masotti
+Gonzalo Paniagua Javier <gonzalo.mono@gmail.com>
 Grzegorz Jakacki <jakacki@acm.org>
 Gustavo Rodriguez-Rivera
 H.J. Lu <hjl.tools@gmail.com>
@@ -148,6 +152,7 @@ Jean-Daniel Fekete
 Jeff Sturm
 Jeffrey Hsu <hsu@soda.berkeley.edu>
 Jeffrey Mark Siskind
+Jeffrey Stedfast <fejj@gnome.org>
 Jeremy Fitzhardinge
 Jesper Peterson <jep@mtiame.mtia.oz.au>
 Jesse Hull
@@ -165,8 +170,9 @@ John Ellis
 John Merryweather Cooper
 Jon Moore
 Jonathan Bachrach <jonathan@harlequin.com>
+Jonathan Chambers <joncham@gmail.com>
 Jonathan Clark
-Jonathan Pryor <jonpryor@vt.edu>
+Jonathan Pryor <jpryor@novell.com>
 Juan Jose Garcia-Ripoll <juanjose.garciaripoll@googlemail.com>
 Kazu Hirata
 Kazuhiro Inaoka
@@ -177,6 +183,8 @@ Kevin Kenny <kenny@m.cs.uiuc.edu>
 Kjetil S. Matheussen <ksvalast@ifi.uio.no>
 Klaus Treichel <ktreichel@web.de>
 Knut Tvedten <knuttv@ifi.uio.no>
+Kornel Pal <kornelpal@gmail.com>
+Koushik Dutta <koushd@gmail.com>
 Krister Walfridsson
 Kristian Kristensen
 Lars Farm <lars.farm@ite.mh.se>
@@ -190,13 +198,17 @@ Marc Recht
 Marco Maggi
 Marcos Dione
 Marcus Herbert
+Marek Safar <marek.safar@gmail.com>
 Margaret Fleck <mfleck@illinois.edu>
 Mark Boulter <mboulter@vnet.ibm.com>
 Mark Mitchell
+Mark Probst <mark.probst@gmail.com>
 Mark Reichert
 Mark Sibly
 Mark Weiser <weiser@ubiq.com>
+Martin Baulig <martin@novell.com>
 Martin Tauchmann <martintauchmann@bigfoot.com>
+Massimiliano Mantione <massi@mono-cvs.ximian.com>
 Matt Austern
 Matthew Flatt
 Matthias Andree
@@ -206,18 +218,19 @@ Michael Arnoldus <chime@proinf.dk>
 Michael Smith
 Michael Spertus
 Michel Schinz <schinz@alphanet.ch>
-Miguel de Icaza <miguel@ximian.com>
+Miguel de Icaza <miguel@gnome.org>
 Mike Gran <spk121@yahoo.com>
 Mike Stump <mrs@windriver.com>
 Mitch Harris <maharri@uiuc.edu>
 Mohan Embar
 Nathanael Nerode
+Neale Ferguson <neale@mono-cvs.ximian.com>
 Neil Sharman <neil@cs.mu.oz.au>
 Nicolas Cannasse
 Niibe Yutaka <gniibe@fsij.org>
 Noah Lavine <noah.b.lavine@gmail.com>
 Oliver Kurth <oliver.kurth@innominate.com>
-Paolo Molaro
+Paolo Molaro <lupus@ximian.com>
 Parag Patel <parag@netcom.com>
 Patrick Bridges
 Patrick C. Beard <beard@netscape.com>
@@ -240,6 +253,7 @@ Philp Brown
 Pierre de Rop
 Radek Polak
 Rainer Orth <ro@cebitec.uni-bielefeld.de>
+Raja R Harinath <harinath@hurrynot.org>
 Rauli Ruohonen
 Regis Cridlig <Regis.Cridlig@cl.cam.ac.uk>
 Rene Girard
@@ -249,6 +263,9 @@ Richard Earnshaw
 Richard Sandiford <rsandifo@nildram.co.uk>
 Rob Haack <rhaack@polaris.unm.edu>
 Robert Brazile <brazile@diamond.bbn.com>
+Robert Jordan <robertj@gmx.net>
+Robert Nagy <robert@openbsd.org>
+Rodrigo Kumpera <kumpera@gmail.com>
 Roger Sayle
 Roman Hodek
 Romano Paolo Tenca <rotenca@telvia.it>
@@ -259,6 +276,7 @@ Salvador Eduardo Tropea
 Samuel Thibault
 Scott Ananian
 Scott Schwartz <schwartz@groucho.cse.psu.edu>
+Sebastien Pouliot <sebastien@ximian.com>
 Shawn Wagner
 Simon Posnjak
 Slava Sysoltev
@@ -279,6 +297,7 @@ Thorsten Glaser <tg@debian.org>
 Tilman Vogel <Tilman.Vogel@web.de>
 Tim Bingham
 Timothy N. Newsham
+Todd Berman <tberman@mono-cvs.ximian.com>
 Tom Tromey <tromey@cygnus.com>
 Toralf Foerster
 Toshio Endo
