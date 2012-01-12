@@ -1,8 +1,6 @@
 Darwin/MacOSX Support - December 16, 2003
-=========================================
 
-Build Notes
-===========
+== Build Notes ==
 
 Building can be done with autoconf as normal. If you want to build
 a Universal library using autoconf, you need to disable dependency
@@ -11,8 +9,7 @@ tracking and specify your desired architectures in CFLAGS:
 CFLAGS="-arch ppc -arch i386 -arch x86_64" ./configure --disable-dependency-tracking
 
 
-Important Usage Notes
-=====================
+== Important Usage Notes ==
 
 GC_init() MUST be called before calling any other GC functions. This
 is necessary to properly register segments in dynamic libraries. This
@@ -50,8 +47,8 @@ created without the GC-provided pthread_create() do not have the
 necessary data structures in the GC to store this data.
 
 
-Implementation Information
-==========================
+== Implementation Information ==
+
 Darwin/MacOSX support is nearly complete. Thread support is reliable on
 Darwin 6.x (MacOSX 10.2) and there have been reports of success on older
 Darwin versions (MacOSX 10.1). Shared library support had also been
@@ -90,8 +87,7 @@ Darwin/OS X port.
 
 -Brian Alliet
 
-gc_cpp.h usage
-==============
+== gc_cpp.h usage ==
 
 Replacement of operator new and delete is apparently not supported with
 dynamic libraries.  This means that applications using gc_cpp.h
@@ -105,8 +101,7 @@ for some details.
 - Hans Boehm (based on information from Andrew Begel)
 
 
-Older Information (Most of this no longer applies to the current code)
-======================================================================
+== Older Information (Most of this no longer applies to the current code) ==
 
 While the GC should work on MacOS X Server, MacOS X and Darwin, I only tested
 it on MacOS X Server.

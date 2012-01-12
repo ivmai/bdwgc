@@ -12,8 +12,6 @@
 dnl Process this file with autoconf to produce configure.
 
 # Initialization
-# ==============
-
 AC_INIT(gc,7.3alpha1,hans.boehm@hp.com)
     ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
 AC_CONFIG_SRCDIR(gcj_mlc.c)

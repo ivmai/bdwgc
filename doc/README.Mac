@@ -57,14 +57,12 @@ As for target settings the major obstacles may be:
 - PPC Processor: uncheck "Store Static Data in TOC".
 
 What you need to do:
-===================
-
 1) Build the GC as a library
 2) Test that the library works with 'test.c'.
 3) Test that the C++ interface 'gc_cpp.cc/h' works with 'test_cpp.cc'.
 
-1) The Libraries:
-=================
+== 1. The Libraries ==
+
 I made one project with four targets (68K/PPC tempmem or appheap). One target
 will suffice if you're able to decide which one you want. I wasn't...
 
@@ -225,8 +223,7 @@ Files to  build the GC libraries:
                -- throw std::bad_alloc when out of memory
                -- gc_cpp.cc works just fine too
 
-2) Test that the library works with 'test.c'.
-=============================================
+== 2. Test that the library works with 'test.c' ==
 
 The test app is just an ordinary ANSI-C console app. Make sure settings
 match the library you're testing.
@@ -247,7 +244,7 @@ prefix:
 #define ALL_INTERIOR_POINTERS   /* for GC_priv.h */
 ---- ( cut here ) ----
 
-3) Test that the C++ interface 'gc_cpp.cc/h' works with 'test_cpp.cc'.
+== 3. Test that the C++ interface 'gc_cpp.cc/h' works with 'test_cpp.cc' ==
 
 The test app is just an ordinary ANSI-C console app. Make sure settings match
 the library you're testing.
@@ -276,8 +273,8 @@ delete if you're freeing other resources than RAM. See gc_cpp.h. You can
 also keep coding as always with delete/free. That works too. If you want,
 "include <gc.h> and tweak it's use a bit.
 
-Symantec SPM
-============
+== Symantec SPM ==
+
 It has been a while since I tried the GC in SPM, but I think that the above
 instructions should be sufficient to guide you through in SPM too. SPM
 needs to know where the global data is. Use the files 'datastart.c' and
@@ -286,8 +283,8 @@ at the bottom  of your project so that all data is surrounded. This is not
 needed in Codewarrior because it provides intrinsic variables
 __datastart__, __data_end__ that wraps all globals.
 
-Source Changes (GC 4.12a2)
-==========================
+== Source Changes (GC 4.12a2) ==
+
 Very few. Just one tiny in the GC, not strictly needed.
 - test_cpp.cc
   made the first lines of main() look like this:

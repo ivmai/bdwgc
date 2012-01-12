@@ -1,5 +1,4 @@
-TODO tasks
-==========
+== TODO tasks ==
 
 tests/CMakeLists.txt: Add more executables (see tests.am).
 
@@ -32,8 +31,7 @@ Makefile.dj: Remove if it is possible to use auto-generated Makefile instead.
 build_atomic_ops.sh[.cygwin]: Remove if really not needed.
 
 
-FIXME tasks
-===========
+== FIXME tasks ==
 
 Solaris + GCC: make check fails with the message:
 libc.so.1: gctest: fatal: libgcc_s.so.1: open failed: No such file or directory

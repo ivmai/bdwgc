@@ -1,6 +1,5 @@
-===========================================================================
             Kjetil S. Matheussen's notes (28-11-2000)
-===========================================================================
+
 Compiles under SAS/C again. Should allso still compile under other
 amiga compilers without big changes. I haven't checked if it still
 works under gcc, because I don't have gcc for amiga. But I have
@@ -136,9 +135,7 @@ tested with software: Radium, http://www.stud.ifi.uio.no/~ksvalast/radium/
 tested with hardware: MC68060
 
 
-===========================================================================
                            Martin Tauchmann's notes             (1-Apr-99)
-===========================================================================
 
 Works now, also with the GNU-C compiler V2.7.2.1. <ftp://ftp.unina.it/pub/amiga/geekgadgets/amiga/m68k/snapshots/971125/amiga-bin/>
 Modify the `Makefile`
@@ -179,9 +176,8 @@ TESTED WITH HARDWARE
 MC68030
 
 
-===========================================================================
                            Michel Schinz's notes
-===========================================================================
+
 WHO DID WHAT
 
 The original Amiga port was made by Jesper Peterson. I (Michel Schinz)
@@ -220,9 +216,7 @@ In addition to Jesper's notes, I have the following to say:
   please let me know.
 
 
-===========================================================================
                           Jesper Peterson's notes
-===========================================================================
 
 ADDITIONAL NOTES FOR AMIGA PORT
 
