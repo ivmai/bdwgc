@@ -11,6 +11,7 @@
 *.o
 *.obj
 
+/*.gc.log
 /.deps/
 /.libs/
 /Makefile
