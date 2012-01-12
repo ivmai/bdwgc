@@ -1078,6 +1078,12 @@ void run_one_test(void)
         GC_printf("Expect lots of problems\n");
 #   endif
     GC_FREE(0);
+#   ifdef THREADS
+      if (!GC_thread_is_registered()) {
+        GC_printf("Current thread is not registered with GC\n");
+        FAIL;
+      }
+#   endif
 #   ifndef DBG_HDRS_ALL
       collectable_count += 3;
       if ((GC_size(GC_malloc(7)) != 8 &&

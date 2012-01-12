@@ -586,8 +586,14 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
 
 GC_API int GC_CALL GC_thread_is_registered(void)
 {
-       /* FIXME: Works only if registered by DllMain */
-       return 1;
+    DWORD thread_id = GetCurrentThreadId();
+    GC_thread me;
+    DCL_LOCK_STATE;
+
+    LOCK();
+    me = GC_lookup_thread_inner(thread_id);
+    UNLOCK();
+    return me != NULL;
 }
 
 /* Make sure thread descriptor t is not protected by the VDB            */

@@ -647,13 +647,14 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
 
 GC_API int GC_CALL GC_thread_is_registered(void)
 {
-    void *ptr;
+    pthread_t self = pthread_self();
+    GC_thread me;
+    DCL_LOCK_STATE;
 
     LOCK();
-    ptr = (void *)GC_lookup_thread(pthread_self());
+    me = GC_lookup_thread(self);
     UNLOCK();
-
-    return ptr ? 1 : 0;
+    return me != NULL;
 }
 
 #ifdef HANDLE_FORK
