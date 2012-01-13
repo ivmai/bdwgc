@@ -27,8 +27,6 @@
 /* for GC and the client otherwise GC_thread_exit_proc() is not         */
 /* guaranteed to be invoked (see the comments in pthread_start.c).      */
 
-/* This file is not well tested (for now). */
-
 
 #define GC_INNER STATIC
 #define GC_EXTERN GC_INNER
@@ -72,5 +70,13 @@
 #include "../win32_threads.c"
 
 #include "../pthread_start.c"
+
+/* Restore pthread calls redirection (if altered in             */
+/* pthread_stop_world.c, pthread_support.c or win32_threads.c). */
+/* This is only useful if directly included from application    */
+/* (instead of linking gc).                                     */
+#ifndef GC_NO_THREAD_REDIRECTS
+# include "gc_pthread_redirects.h"
+#endif
 
 /* real_malloc.c, extra/MacOS.c, extra/msvc_dbg.c are not included. */

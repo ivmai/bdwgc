@@ -2737,4 +2737,14 @@ GC_INNER void GC_init_parallel(void)
 
 #endif /* THREAD_LOCAL_ALLOC ... */
 
+# ifndef GC_NO_THREAD_REDIRECTS
+    /* Restore thread calls redirection.        */
+#   define CreateThread GC_CreateThread
+#   define ExitThread GC_ExitThread
+#   undef _beginthreadex
+#   define _beginthreadex GC_beginthreadex
+#   undef _endthreadex
+#   define _endthreadex GC_endthreadex
+# endif /* !GC_NO_THREAD_REDIRECTS */
+
 #endif /* GC_WIN32_THREADS */
