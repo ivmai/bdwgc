@@ -224,15 +224,14 @@ GC_API void GC_CALL GC_clear_mark_bit(void *p)
     }
 }
 
-GC_API int GC_CALL GC_is_marked(void *p)
+GC_API int GC_CALL GC_is_marked(const void *p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
     word bit_no = MARK_BIT_NO((ptr_t)p - (ptr_t)h, hhdr -> hb_sz);
 
-    return((GC_bool)mark_bit_from_hdr(hhdr, bit_no));
+    return (int)mark_bit_from_hdr(hhdr, bit_no); // 0 or 1
 }
-
 
 /*
  * Clear mark bits in all allocated heap blocks.  This invalidates
