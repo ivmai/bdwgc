@@ -780,7 +780,7 @@ STATIC void GC_clear_fl_marks(ptr_t q)
   void GC_check_tls(void);
 #endif
 
-void (*GC_on_heap_resize)(size_t new_size) = 0;
+GC_on_heap_resize_proc GC_on_heap_resize = 0;
 
 /* Finish up a collection.  Assumes mark bits are consistent, lock is   */
 /* held, but the world is otherwise running.                            */
@@ -1175,7 +1175,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
       if (GC_collect_at_heapsize < GC_heapsize /* wrapped */)
          GC_collect_at_heapsize = (word)(-1);
     if (GC_on_heap_resize)
-      (*GC_on_heap_resize)((size_t)GC_heapsize);
+      (*GC_on_heap_resize)(GC_heapsize);
 
     return(TRUE);
 }

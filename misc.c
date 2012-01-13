@@ -1715,6 +1715,25 @@ GC_API GC_oom_func GC_CALL GC_get_oom_fn(void)
     return fn;
 }
 
+GC_API void GC_CALL GC_set_on_heap_resize(GC_on_heap_resize_proc fn)
+{
+    /* fn may be 0 (means no event notifier). */
+    DCL_LOCK_STATE;
+    LOCK();
+    GC_on_heap_resize = fn;
+    UNLOCK();
+}
+
+GC_API GC_on_heap_resize_proc GC_CALL GC_get_on_heap_resize(void)
+{
+    GC_on_heap_resize_proc fn;
+    DCL_LOCK_STATE;
+    LOCK();
+    fn = GC_on_heap_resize;
+    UNLOCK();
+    return fn;
+}
+
 GC_API void GC_CALL GC_set_finalizer_notifier(GC_finalizer_notifier_proc fn)
 {
     /* fn may be 0 (means no finalizer notifier). */

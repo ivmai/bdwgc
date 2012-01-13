@@ -113,8 +113,15 @@ GC_API GC_oom_func GC_oom_fn;
 GC_API void GC_CALL GC_set_oom_fn(GC_oom_func);
 GC_API GC_oom_func GC_CALL GC_get_oom_fn(void);
 
-GC_API void (*GC_on_heap_resize)(size_t /* new_size */);
-                        /* Invoked when the heap grows or shrinks        */
+typedef void (GC_CALLBACK * GC_on_heap_resize_proc)(GC_word /* new_size */);
+GC_API GC_on_heap_resize_proc GC_on_heap_resize;
+                        /* Invoked when the heap grows or shrinks.      */
+                        /* Called with the world stopped (and the       */
+                        /* allocation lock held).  May be 0.            */
+GC_API void GC_CALL GC_set_on_heap_resize(GC_on_heap_resize_proc);
+GC_API GC_on_heap_resize_proc GC_CALL GC_get_on_heap_resize(void);
+                        /* Both the supplied setter and the getter      */
+                        /* acquire the GC lock (to avoid data races).   */
 
 GC_API int GC_find_leak;
                         /* Do not actually garbage collect, but simply  */
