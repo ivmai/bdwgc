@@ -57,6 +57,14 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include "gc_config_macros.h"
+
+#ifdef CORD_BUILD
+#  define CORD_API GC_API_EXPORT
+#else
+#  define CORD_API GC_API_IMPORT
+#endif
+
 /* Cords have type const char *.  This is cheating quite a bit, and not */
 /* 100% portable.  But it means that nonempty character string          */
 /* constants may be used as cords directly, provided the string is      */
@@ -73,27 +81,27 @@ typedef const char * CORD;
 
 /* Concatenate two cords.  If the arguments are C strings, they may     */
 /* not be subsequently altered.                                         */
-CORD CORD_cat(CORD x, CORD y);
+CORD_API CORD CORD_cat(CORD x, CORD y);
 
 /* Concatenate a cord and a C string with known length.  Except for the */
 /* empty string case, this is a special case of CORD_cat.  Since the    */
 /* length is known, it can be faster.                                   */
 /* The string y is shared with the resulting CORD.  Hence it should     */
 /* not be altered by the caller.                                        */
-CORD CORD_cat_char_star(CORD x, const char * y, size_t leny);
+CORD_API CORD CORD_cat_char_star(CORD x, const char * y, size_t leny);
 
 /* Compute the length of a cord */
-size_t CORD_len(CORD x);
+CORD_API size_t CORD_len(CORD x);
 
 /* Cords may be represented by functions defining the ith character */
 typedef char (* CORD_fn)(size_t i, void * client_data);
 
 /* Turn a functional description into a cord.   */
-CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len);
+CORD_API CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len);
 
 /* Return the substring (subcord really) of x with length at most n,    */
 /* starting at position i.  (The initial character has position 0.)     */
-CORD CORD_substr(CORD x, size_t i, size_t n);
+CORD_API CORD CORD_substr(CORD x, size_t i, size_t n);
 
 /* Return the argument, but rebalanced to allow more efficient          */
 /* character retrieval, substring operations, and comparisons.          */
@@ -103,7 +111,7 @@ CORD CORD_substr(CORD x, size_t i, size_t n);
 /* or the embedded functional descriptions take longer to evaluate.     */
 /* May reallocate significant parts of the cord.  The argument is not   */
 /* modified; only the result is balanced.                               */
-CORD CORD_balance(CORD x);
+CORD_API CORD CORD_balance(CORD x);
 
 /* The following traverse a cord by applying a function to each         */
 /* character.  This is occasionally appropriate, especially where       */
@@ -127,19 +135,19 @@ typedef int (* CORD_batched_iter_fn)(const char * s, void * client_data);
 /* end of this string is reached, or when f1 or f2 return != 0.  In the */
 /* latter case CORD_iter returns != 0.  Otherwise it returns 0.         */
 /* The specified value of i must be < CORD_len(x).                      */
-int CORD_iter5(CORD x, size_t i, CORD_iter_fn f1,
-               CORD_batched_iter_fn f2, void * client_data);
+CORD_API int CORD_iter5(CORD x, size_t i, CORD_iter_fn f1,
+                        CORD_batched_iter_fn f2, void * client_data);
 
 /* A simpler version that starts at 0, and without f2:  */
-int CORD_iter(CORD x, CORD_iter_fn f1, void * client_data);
+CORD_API int CORD_iter(CORD x, CORD_iter_fn f1, void * client_data);
 #define CORD_iter(x, f1, cd) CORD_iter5(x, 0, f1, CORD_NO_FN, cd)
 
 /* Similar to CORD_iter5, but end-to-beginning. No provisions for       */
 /* CORD_batched_iter_fn.                                                */
-int CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void * client_data);
+CORD_API int CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void * client_data);
 
 /* A simpler version that starts at the end:    */
-int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
+CORD_API int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 
 /* Functions that operate on cord positions.  The easy way to traverse  */
 /* cords.  A cord position is logically a pair consisting of a cord     */
@@ -194,36 +202,37 @@ extern void (* CORD_oom_fn)(void);
 
 /* Dump the representation of x to stdout in an implementation defined  */
 /* manner.  Intended for debugging only.                                */
-void CORD_dump(CORD x);
+CORD_API void CORD_dump(CORD x);
 
 /* The following could easily be implemented by the client.  They are   */
 /* provided in cordxtra.c for convenience.                              */
 
 /* Concatenate a character to the end of a cord.        */
-CORD CORD_cat_char(CORD x, char c);
+CORD_API CORD CORD_cat_char(CORD x, char c);
 
 /* Concatenate n cords. */
-CORD CORD_catn(int n, /* CORD */ ...);
+CORD_API CORD CORD_catn(int n, /* CORD */ ...);
 
 /* Return the character in CORD_substr(x, i, 1)         */
-char CORD_fetch(CORD x, size_t i);
+CORD_API char CORD_fetch(CORD x, size_t i);
 
 /* Return < 0, 0, or > 0, depending on whether x < y, x = y, x > y      */
-int CORD_cmp(CORD x, CORD y);
+CORD_API int CORD_cmp(CORD x, CORD y);
 
 /* A generalization that takes both starting positions for the          */
 /* comparison, and a limit on the number of characters to be compared.  */
-int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len);
+CORD_API int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start,
+                       size_t len);
 
 /* Find the first occurrence of s in x at position start or later.      */
 /* Return the position of the first character of s in x, or             */
 /* CORD_NOT_FOUND if there is none.                                     */
-size_t CORD_str(CORD x, size_t start, CORD s);
+CORD_API size_t CORD_str(CORD x, size_t start, CORD s);
 
 /* Return a cord consisting of i copies of (possibly NUL) c.  Dangerous */
 /* in conjunction with CORD_to_char_star.                               */
 /* The resulting representation takes constant space, independent of i. */
-CORD CORD_chars(char c, size_t i);
+CORD_API CORD CORD_chars(char c, size_t i);
 #define CORD_nul(i) CORD_chars('\0', (i))
 
 /* Turn a file into cord.  The file must be seekable.  Its contents     */
@@ -242,33 +251,33 @@ CORD CORD_chars(char c, size_t i);
 /* position in the file, i.e. the number of characters that can be      */
 /* or were read with fread.  On UNIX systems this is always true.  On   */
 /* MS Windows systems, f must be opened in binary mode.                 */
-CORD CORD_from_file(FILE * f);
+CORD_API CORD CORD_from_file(FILE * f);
 
 /* Equivalent to the above, except that the entire file will be read    */
 /* and the file pointer will be closed immediately.                     */
 /* The binary mode restriction from above does not apply.               */
-CORD CORD_from_file_eager(FILE * f);
+CORD_API CORD CORD_from_file_eager(FILE * f);
 
 /* Equivalent to the above, except that the file will be read on demand.*/
 /* The binary mode restriction applies.                                 */
-CORD CORD_from_file_lazy(FILE * f);
+CORD_API CORD CORD_from_file_lazy(FILE * f);
 
 /* Turn a cord into a C string. The result shares no structure with     */
 /* x, and is thus modifiable.                                           */
-char * CORD_to_char_star(CORD x);
+CORD_API char * CORD_to_char_star(CORD x);
 
 /* Turn a C string into a CORD.  The C string is copied, and so may     */
 /* subsequently be modified.                                            */
-CORD CORD_from_char_star(const char *s);
+CORD_API CORD CORD_from_char_star(const char *s);
 
 /* Identical to the above, but the result may share structure with      */
 /* the argument and is thus not modifiable.                             */
-const char * CORD_to_const_char_star(CORD x);
+CORD_API const char * CORD_to_const_char_star(CORD x);
 
 /* Write a cord to a file, starting at the current position.  No        */
 /* trailing NULs are newlines are added.                                */
 /* Returns EOF if a write error occurs, 1 otherwise.                    */
-int CORD_put(CORD x, FILE * f);
+CORD_API int CORD_put(CORD x, FILE * f);
 
 /* "Not found" result for the following two functions.                  */
 #define CORD_NOT_FOUND ((size_t)(-1))
@@ -276,12 +285,12 @@ int CORD_put(CORD x, FILE * f);
 /* A vague analog of strchr.  Returns the position (an integer, not     */
 /* a pointer) of the first occurrence of (char) c inside x at position  */
 /* i or later. The value i must be < CORD_len(x).                       */
-size_t CORD_chr(CORD x, size_t i, int c);
+CORD_API size_t CORD_chr(CORD x, size_t i, int c);
 
 /* A vague analog of strrchr.  Returns index of the last occurrence     */
 /* of (char) c inside x at position i or earlier. The value i           */
 /* must be < CORD_len(x).                                               */
-size_t CORD_rchr(CORD x, size_t i, int c);
+CORD_API size_t CORD_rchr(CORD x, size_t i, int c);
 
 
 /* The following are also not primitive, but are implemented in         */
@@ -292,7 +301,8 @@ size_t CORD_rchr(CORD x, size_t i, int c);
 /*    width, precision, etc. have the same semantics as for %s.         */
 /*    (Note that %c, %C, and %S were already taken.)                    */
 /* 2. The format string is represented as a CORD.                       */
-/* 3. CORD_sprintf and CORD_vsprintf assign the result through the 1st  */      /*    argument. Unlike their ANSI C versions, there is no need to guess */
+/* 3. CORD_sprintf and CORD_vsprintf assign the result through the 1st  */
+/*    argument. Unlike their ANSI C versions, there is no need to guess */
 /*    the correct buffer size.                                          */
 /* 4. Most of the conversions are implement through the native          */
 /*    vsprintf.  Hence they are usually no faster, and                  */
@@ -312,12 +322,12 @@ size_t CORD_rchr(CORD x, size_t i, int c);
 
 #include <stdarg.h>
 
-int CORD_sprintf(CORD * out, CORD format, ...);
-int CORD_vsprintf(CORD * out, CORD format, va_list args);
-int CORD_fprintf(FILE * f, CORD format, ...);
-int CORD_vfprintf(FILE * f, CORD format, va_list args);
-int CORD_printf(CORD format, ...);
-int CORD_vprintf(CORD format, va_list args);
+CORD_API int CORD_sprintf(CORD * out, CORD format, ...);
+CORD_API int CORD_vsprintf(CORD * out, CORD format, va_list args);
+CORD_API int CORD_fprintf(FILE * f, CORD format, ...);
+CORD_API int CORD_vfprintf(FILE * f, CORD format, va_list args);
+CORD_API int CORD_printf(CORD format, ...);
+CORD_API int CORD_vprintf(CORD format, va_list args);
 
 #endif /* CORD_NO_IO */
 
