@@ -57,12 +57,32 @@
 
 #include <stddef.h>
 #include <stdio.h>
-#include "gc_config_macros.h"
 
-#ifdef CORD_BUILD
-#  define CORD_API GC_API_EXPORT
-#else
-#  define CORD_API GC_API_IMPORT
+#ifdef GC_DLL
+  /* Same as for GC_API in gc_config_macros.h.  */
+# ifdef CORD_BUILD
+#   if defined(__MINGW32__) || defined(__CEGCC__)
+#     define CORD_API __declspec(dllexport)
+#   elif defined(_MSC_VER) || defined(__DMC__) || defined(__BORLANDC__) \
+         || defined(__CYGWIN__) || defined(__WATCOMC__)
+#     define CORD_API extern __declspec(dllexport)
+#   elif defined(__GNUC__) && (__GNUC__ >= 4 \
+                               || defined(GC_VISIBILITY_HIDDEN_SET))
+    /* Only matters if used in conjunction with -fvisibility=hidden option. */
+#     define CORD_API extern __attribute__((__visibility__("default")))
+#   endif
+# else
+#   if defined(__MINGW32__) || defined(__CEGCC__) || defined(_MSC_VER) \
+       || defined(__DMC__) || defined(__BORLANDC__) || defined(__CYGWIN__)
+#     define CORD_API __declspec(dllimport)
+#   elif defined(__WATCOMC__)
+#     define CORD_API extern __declspec(dllimport)
+#   endif
+# endif /* !CORD_BUILD */
+#endif /* GC_DLL */
+
+#ifndef CORD_API
+# define CORD_API extern
 #endif
 
 /* Cords have type const char *.  This is cheating quite a bit, and not */

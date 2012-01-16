@@ -17,7 +17,7 @@
 
 /* This should never be included directly; it is included only from gc.h. */
 /* We separate it only to make gc.h more suitable as documentation.       */
-#if defined(GC_H) || defined(CORD_H)
+#if defined(GC_H)
 
 /* Some tests for old macros.  These violate our namespace rules and    */
 /* will disappear shortly.  Use the GC_ names.                          */
@@ -172,32 +172,38 @@
 #if defined(GC_DLL) && !defined(GC_API)
 
 # if defined(__MINGW32__) || defined(__CEGCC__)
-#   define GC_API_EXPORT __declspec(dllexport)
-#   define GC_API_IMPORT __declspec(dllimport)
+#   ifdef GC_BUILD
+#     define GC_API __declspec(dllexport)
+#   else
+#     define GC_API __declspec(dllimport)
+#   endif
+
 # elif defined(_MSC_VER) || defined(__DMC__) || defined(__BORLANDC__) \
         || defined(__CYGWIN__)
-#   define GC_API_EXPORT extern __declspec(dllexport)
-#   define GC_API_IMPORT __declspec(dllimport)
+#   ifdef GC_BUILD
+#     define GC_API extern __declspec(dllexport)
+#   else
+#     define GC_API __declspec(dllimport)
+#   endif
+
 # elif defined(__WATCOMC__)
-#   define GC_API_EXPORT extern __declspec(dllexport)
-#   define GC_API_IMPORT extern __declspec(dllimport)
+#   ifdef GC_BUILD
+#     define GC_API extern __declspec(dllexport)
+#   else
+#     define GC_API extern __declspec(dllimport)
+#   endif
+
 # elif defined(__GNUC__)
     /* Only matters if used in conjunction with -fvisibility=hidden option. */
-#   if __GNUC__ >= 4 || defined(GC_VISIBILITY_HIDDEN_SET)
-#     define GC_API_EXPORT extern __attribute__((__visibility__("default")))
-#     define GC_API_IMPORT extern __attribute__((__visibility__("default")))
+#   if defined(GC_BUILD) && (__GNUC__ >= 4 \
+                             || defined(GC_VISIBILITY_HIDDEN_SET))
+#     define GC_API extern __attribute__((__visibility__("default")))
 #   endif
 # endif
 #endif /* GC_DLL */
-#ifndef GC_API_EXPORT
-# define GC_API_EXPORT extern
-# define GC_API_IMPORT extern
-#endif
 
-#ifdef GC_BUILD
-# define GC_API GC_API_EXPORT
-#else
-# define GC_API GC_API_IMPORT
+#ifndef GC_API
+# define GC_API extern
 #endif
 
 #ifndef GC_CALL
