@@ -23,6 +23,35 @@
 
 #include "gc_disclaim.h"
 
+int memeq(void *s, int c, size_t len)
+{
+    while (len--) {
+        if (*(char *)s != c)
+            return 0;
+        s = (char *)s + 1;
+    }
+    return 1;
+}
+
+void GC_CALLBACK misc_sizes_dct(void *obj, void *cd)
+{
+    size_t size = (size_t)1 << *(unsigned char *)obj;
+    assert(memeq((char *)obj + 1, 0x56, size - 1));
+}
+
+void
+test_misc_sizes()
+{
+    static struct GC_finalizer_closure fc = { misc_sizes_dct, NULL };
+    int i;
+    for (i = 1; i <= 20; ++i) { /* Up to 1 MiB. */
+        void *p = GC_finalized_malloc((size_t)1 << i, &fc);
+        assert(memeq(p, 0, (size_t)1 << i));
+        memset(p, 0x56, (size_t)1 << i);
+        *(unsigned char *)p = i;
+    }
+}
+
 typedef struct pair_s *pair_t;
 
 struct pair_s {
@@ -65,6 +94,7 @@ pair_new(pair_t car, pair_t cdr)
     static struct GC_finalizer_closure fc = { pair_dct, NULL };
 
     p = GC_finalized_malloc(sizeof(struct pair_s), &fc);
+    assert(memeq(p, 0, sizeof(struct pair_s)));
     p->is_valid = 1;
     p->checksum = 782 + (car? car->checksum : 0) + (cdr? cdr->checksum : 0);
     p->car = car;
@@ -140,8 +170,11 @@ int main(void)
     int i;
 #endif
 
+    GC_set_all_interior_pointers(0); /* for a stricter test */
     GC_INIT();
     GC_init_finalized_malloc();
+
+    test_misc_sizes();
 
 #if THREAD_CNT > 1
     printf("Threaded disclaim test.\n");
