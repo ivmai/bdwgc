@@ -29,8 +29,11 @@ STATIC int GC_finalized_kind = 0;
 STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj,
                                              void *cd GC_ATTR_UNUSED)
 {
-    struct GC_finalizer_closure *fc = *(void **)obj;
-    if (((word)fc & 1) != 0) {
+    void **fc_addr;
+    struct GC_finalizer_closure *fc;
+    fc_addr = &((void **)obj)[GC_size(obj) / sizeof(void *) - 1];
+    fc = *fc_addr;
+    if (fc != NULL) {
        /* [1] The disclaim function may be passed fragments from the    */
        /* free-list, on which it should not run finalization.           */
        /* To recognize this case, we use the fact that the first word   */
@@ -39,8 +42,8 @@ STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj,
        /* which does not use the first word for storing finalization    */
        /* info, GC_reclaim_with_finalization must be extended to clear  */
        /* fragments so that the assumption holds for the selected word. */
-        fc = (void *)((word)fc & ~(word)1);
-        (*fc->proc)((void **)obj + 1, fc->cd);
+        (*fc->proc)(obj, fc->cd);
+        *fc_addr = NULL;
     }
     return 0;
 }
@@ -95,11 +98,12 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
             UNLOCK();
         }
+        ((void **)op)[GRANULES_TO_WORDS(lg) - 1] = fclos;
     } else {
         op = GC_generic_malloc((word)lb, GC_finalized_kind);
+        ((void **)op)[GC_size(op) / sizeof(void *) - 1] = fclos;
     }
-    *(void **)op = (ptr_t)fclos + 1; /* See [1] */
-    return GC_clear_stack(op + sizeof(void *));
+    return GC_clear_stack(op);
 }
 
 #ifdef THREAD_LOCAL_ALLOC
@@ -143,9 +147,10 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
     next = obj_link(my_entry);
     result = (void *)my_entry;
     *my_fl = next;
-    *(void **)result = (ptr_t)fclos + 1;
+    obj_link(result) = 0;
+    ((void **)result)[GRANULES_TO_WORDS(lg) - 1] = fclos;
     PREFETCH_FOR_WRITE(next);
-    return (void **)result + 1;
+    return result;
   }
 #endif /* THREAD_LOCAL_ALLOC */
 
