@@ -179,7 +179,7 @@ CORD_API int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 /* described below.  Also note that                                     */
 /* CORD_pos_fetch, CORD_next and CORD_prev have both macro and function */
 /* definitions.  The former may evaluate their argument more than once. */
-#include "private/cord_pos.h"
+#include "cord_pos.h"
 
 /*
         Visible definitions from above:

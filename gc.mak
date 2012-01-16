@@ -2143,7 +2143,7 @@ DEP_CPP_DE_WI=\
 	".\include\cord.h"\
 	".\cord\tests\de_cmds.h"\
 	".\cord\tests\de_win.h"\
-	".\include\private\cord_pos.h"\
+	".\include\cord_pos.h"\
 
 NODEP_CPP_DE_WI=\
 	".\include\gc.h"\
@@ -2174,7 +2174,7 @@ DEP_CPP_DE_C2e=\
 	".\include\cord.h"\
 	".\cord\tests\de_cmds.h"\
 	".\cord\tests\de_win.h"\
-	".\include\private\cord_pos.h"\
+	".\include\cord_pos.h"\
 
 NODEP_CPP_DE_C2e=\
 	".\include\gc.h"\
@@ -2204,7 +2204,7 @@ SOURCE=.\cord\cordxtra.c
 DEP_CPP_CORDX=\
 	".\include\cord.h"\
 	".\include\ec.h"\
-	".\include\private\cord_pos.h"\
+	".\include\cord_pos.h"\
 
 NODEP_CPP_CORDX=\
 	".\include\gc.h"\
@@ -2233,7 +2233,7 @@ NODEP_CPP_CORDX=\
 SOURCE=.\cord\cordbscs.c
 DEP_CPP_CORDB=\
 	".\include\cord.h"\
-	".\include\private\cord_pos.h"\
+	".\include\cord_pos.h"\
 
 NODEP_CPP_CORDB=\
 	".\include\gc.h"\

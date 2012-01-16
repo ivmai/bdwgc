@@ -86,7 +86,7 @@ CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c \
 
 CORD_SRCS= cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/tests/de.c \
   cord/tests/cordtest.c include/cord.h include/ec.h \
-  include/private/cord_pos.h cord/tests/de_win.c cord/tests/de_win.h \
+  include/cord_pos.h cord/tests/de_win.c cord/tests/de_win.h \
   cord/tests/de_cmds.h cord/tests/de_win.rc
 
 CORD_OBJS= cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
@@ -148,7 +148,7 @@ OTHER_FILES= tools/setjmp_t.c tools/callprocs.sh extra/MacOS.c \
   $(TESTS) $(GNU_BUILD_FILES) $(OTHER_MAKEFILES)
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
-  $(srcdir)/include/ec.h $(srcdir)/include/private/cord_pos.h
+  $(srcdir)/include/ec.h $(srcdir)/include/cord_pos.h
 
 UTILS= if_mach if_not_there threadlibs
 

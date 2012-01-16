@@ -37,7 +37,7 @@ gctest.exe: tests\test.obj gc.lib
 cord\de_win.rbj: cord\de_win.res
 	cvtres /MACHINE:$(MY_CPU) /OUT:cord\de_win.rbj cord\de_win.res
 
-cord\tests\de.obj cord\tests\de_win.obj: include\cord.h include\private\cord_pos.h cord\tests\de_win.h cord\tests\de_cmds.h
+cord\tests\de.obj cord\tests\de_win.obj: include\cord.h include\cord_pos.h cord\tests\de_win.h cord\tests\de_cmds.h
 
 cord\de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cmds.h
 	$(rc) $(rcvars) -r -fo cord\de_win.res cord\tests\de_win.rc

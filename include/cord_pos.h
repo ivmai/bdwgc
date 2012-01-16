@@ -11,7 +11,9 @@
  * modified is included with the above copyright notice.
  */
 
-# ifndef CORD_POSITION_H
+/* This should never be included directly; included only from cord.h.   */
+#if !defined(CORD_POSITION_H) && defined(CORD_H)
+#define CORD_POSITION_H
 
 /* The representation of CORD_position.  This is private to the */
 /* implementation, but the size is known to clients.  Also      */
