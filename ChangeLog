@@ -1,3 +1,17 @@
+2012-01-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* extra/gc.c: Include gc_pthread_redirects.h (unless
+	GC_NO_THREAD_REDIRECTS) to restore thread calls macro-based
+	redirection after the corresponding undef's in pthread_support.c.
+	* win32_threads.c: Restore thread calls macro-based redirection
+	(unless GC_NO_THREAD_REDIRECTS) at the file end.
+	* extra/gc.c: Remove "file not well tested" comment.
+
+2012-01-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_stop_world.c (GC_restart_handler): Preserve errno value in
+	case of sem_post or GC_log_printf invocation inside.
+
 2011-12-30  Ivan Maidanski <ivmai@mail.ru>
 
 	* Makefile.in: Regenerate.
