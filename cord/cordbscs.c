@@ -11,6 +11,13 @@
  * modified is included with the above copyright notice.
  */
 
+#ifdef HAVE_CONFIG_H
+# include "private/config.h"
+#endif
+#ifndef CORD_BUILD
+# define CORD_BUILD
+#endif
+
 # include "gc.h"
 # include "cord.h"
 # include <stdlib.h>
