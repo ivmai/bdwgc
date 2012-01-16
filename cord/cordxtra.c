@@ -17,6 +17,13 @@
  * cord_basics.
  */
 
+#ifdef HAVE_CONFIG_H
+# include "private/config.h"
+#endif
+#ifndef CORD_BUILD
+# define CORD_BUILD
+#endif
+
 # include <stdio.h>
 # include <string.h>
 # include <stdlib.h>

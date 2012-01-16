@@ -21,6 +21,13 @@
 /* All this cruft is needed because we want to rely on the underlying   */
 /* sprintf implementation whenever possible.                            */
 
+#ifdef HAVE_CONFIG_H
+# include "private/config.h"
+#endif
+#ifndef CORD_BUILD
+# define CORD_BUILD
+#endif
+
 #include "cord.h"
 #include "ec.h"
 #include <stdio.h>

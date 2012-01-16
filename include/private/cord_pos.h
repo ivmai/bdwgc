@@ -53,34 +53,34 @@ typedef struct CORD_Pos {
 } CORD_pos[1];
 
 /* Extract the cord from a position:    */
-CORD CORD_pos_to_cord(CORD_pos p);
+CORD_API CORD CORD_pos_to_cord(CORD_pos p);
 
 /* Extract the current index from a position:   */
-size_t CORD_pos_to_index(CORD_pos p);
+CORD_API size_t CORD_pos_to_index(CORD_pos p);
 
 /* Fetch the character located at the given position:   */
-char CORD_pos_fetch(CORD_pos p);
+CORD_API char CORD_pos_fetch(CORD_pos p);
 
 /* Initialize the position to refer to the give cord and index. */
 /* Note that this is the most expensive function on positions:  */
-void CORD_set_pos(CORD_pos p, CORD x, size_t i);
+CORD_API void CORD_set_pos(CORD_pos p, CORD x, size_t i);
 
 /* Advance the position to the next character.  */
 /* P must be initialized and valid.             */
 /* Invalidates p if past end:                   */
-void CORD_next(CORD_pos p);
+CORD_API void CORD_next(CORD_pos p);
 
 /* Move the position to the preceding character.        */
 /* P must be initialized and valid.                     */
 /* Invalidates p if past beginning:                     */
-void CORD_prev(CORD_pos p);
+CORD_API void CORD_prev(CORD_pos p);
 
 /* Is the position valid, i.e. inside the cord?         */
-int CORD_pos_valid(CORD_pos p);
+CORD_API int CORD_pos_valid(CORD_pos p);
 
-char CORD__pos_fetch(CORD_pos);
-void CORD__next(CORD_pos);
-void CORD__prev(CORD_pos);
+CORD_API char CORD__pos_fetch(CORD_pos);
+CORD_API void CORD__next(CORD_pos);
+CORD_API void CORD__prev(CORD_pos);
 
 #define CORD_pos_fetch(p)       \
     (((p)[0].cur_end != 0)? \

@@ -522,12 +522,12 @@ if test "${enable_shared}" == yes; then
       # Pass -fvisibility=hidden option if supported
       AC_MSG_CHECKING([whether gcc supports -fvisibility])
       old_CFLAGS="$CFLAGS"
-      CFLAGS="-fvisibility=hidden $CFLAGS"
+      CFLAGS="-Werror -fvisibility=hidden $CFLAGS"
       AC_TRY_COMPILE([],[], [ac_cv_fvisibility_hidden=yes],
                      [ac_cv_fvisibility_hidden=no])
+      CFLAGS="$old_CFLAGS"
       AS_IF([test "$ac_cv_fvisibility_hidden" = yes],
-            [CFLAGS="-DGC_VISIBILITY_HIDDEN_SET $CFLAGS"],
-            [CFLAGS="$old_CFLAGS"])
+            [CFLAGS="-DGC_VISIBILITY_HIDDEN_SET -fvisibility=hidden $CFLAGS"])
       AC_MSG_RESULT($ac_cv_fvisibility_hidden)
     fi
   fi
