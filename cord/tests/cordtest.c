@@ -122,16 +122,8 @@ void test_basics(void)
 
 void test_extras(void)
 {
-#   if defined(__OS2__) || defined(__DJGPP__)
-#   define FNAME1 "tmp1"
-#   define FNAME2 "tmp2"
-#   elif defined(AMIGA)
-#   define FNAME1 "T:tmp1"
-#   define FNAME2 "T:tmp2"
-#   else
-#   define FNAME1 "/tmp/cord_test"
-#   define FNAME2 "/tmp/cord_test2"
-#   endif
+#   define FNAME1 "cordtst1.tmp" /* short name (8+3) for portability */
+#   define FNAME2 "cordtst2.tmp"
     register int i;
     CORD y = "abcdefghijklmnopqrstuvwxyz0123456789";
     CORD x = "{}";
