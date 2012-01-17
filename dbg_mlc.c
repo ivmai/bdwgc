@@ -569,9 +569,9 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
     return (GC_store_debug_info(result, (word)lb, s, i));
   }
 
-  GC_API void GC_CALL GC_debug_change_stubborn(void *p)
+  GC_API void GC_CALL GC_debug_change_stubborn(const void *p)
   {
-    void * q = GC_base(p);
+    const void * q = GC_base((void *)p);
     hdr * hhdr;
 
     if (q == 0) {
@@ -586,9 +586,9 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
     GC_change_stubborn(q);
   }
 
-  GC_API void GC_CALL GC_debug_end_stubborn_change(void *p)
+  GC_API void GC_CALL GC_debug_end_stubborn_change(const void *p)
   {
-    void * q = GC_base(p);
+    const void * q = GC_base((void *)p);
     hdr * hhdr;
 
     if (q == 0) {
@@ -610,9 +610,11 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
     return GC_debug_malloc(lb, OPT_RA s, i);
   }
 
-  GC_API void GC_CALL GC_debug_change_stubborn(void * p GC_ATTR_UNUSED) {}
+  GC_API void GC_CALL GC_debug_change_stubborn(
+                                const void * p GC_ATTR_UNUSED) {}
 
-  GC_API void GC_CALL GC_debug_end_stubborn_change(void * p GC_ATTR_UNUSED) {}
+  GC_API void GC_CALL GC_debug_end_stubborn_change(
+                                const void * p GC_ATTR_UNUSED) {}
 #endif /* !STUBBORN_ALLOC */
 
 GC_API void * GC_CALL GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)

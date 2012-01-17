@@ -222,8 +222,8 @@ GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void);
 /* Slow/general mark bit manipulation.  The caller must hold the        */
 /* allocation lock.  GC_is_marked returns 1 (TRUE) or 0.                */
 GC_API int GC_CALL GC_is_marked(const void *);
-GC_API void GC_CALL GC_clear_mark_bit(void *);
-GC_API void GC_CALL GC_set_mark_bit(void *);
+GC_API void GC_CALL GC_clear_mark_bit(const void *);
+GC_API void GC_CALL GC_set_mark_bit(const void *);
 
 #ifdef __cplusplus
   } /* end of extern "C" */

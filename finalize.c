@@ -144,7 +144,7 @@ GC_API int GC_CALL GC_register_disappearing_link(void * * link)
 }
 
 GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
-                                                         void * obj)
+                                                         const void * obj)
 {
     struct disappearing_link *curr_dl;
     size_t index;
@@ -154,7 +154,7 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
     if (((word)link & (ALIGNMENT-1)) || link == NULL)
         ABORT("Bad arg to GC_general_register_disappearing_link");
     LOCK();
-    GC_ASSERT(obj != NULL && GC_base(obj) == obj);
+    GC_ASSERT(obj != NULL && GC_base((void *)obj) == obj);
     if (log_dl_table_size == -1
         || GC_dl_entries > ((word)1 << log_dl_table_size)) {
         GC_grow_table((struct hash_chain_entry ***)(&dl_head),
@@ -609,7 +609,7 @@ GC_INNER void GC_finalize(void)
             } else {
                 dl_set_next(prev_dl, next_dl);
             }
-            GC_clear_mark_bit((ptr_t)curr_dl);
+            GC_clear_mark_bit(curr_dl);
             GC_dl_entries--;
             curr_dl = next_dl;
         } else {
@@ -737,7 +737,7 @@ GC_INNER void GC_finalize(void)
             } else {
                 dl_set_next(prev_dl, next_dl);
             }
-            GC_clear_mark_bit((ptr_t)curr_dl);
+            GC_clear_mark_bit(curr_dl);
             GC_dl_entries--;
             curr_dl = next_dl;
         } else {

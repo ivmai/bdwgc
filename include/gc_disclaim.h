@@ -51,6 +51,6 @@ struct GC_finalizer_closure {
 /* efficient than GC_register_finalizer and friends.                    */
 /* GC_init_finalized_malloc must be called before using this.           */
 GC_API void *GC_CALL GC_finalized_malloc(size_t /*size*/,
-                                        struct GC_finalizer_closure * /*fc*/);
+                                const struct GC_finalizer_closure * /*fc*/);
 
 #endif

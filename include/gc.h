@@ -404,8 +404,8 @@ GC_API void GC_CALL GC_free(void *);
 /* allowing more than one stubborn object to be changed at once, but it */
 /* is acceptable to do so.  The same applies to dropping stubborn       */
 /* objects that are still changeable.                                   */
-GC_API void GC_CALL GC_change_stubborn(void *);
-GC_API void GC_CALL GC_end_stubborn_change(void *);
+GC_API void GC_CALL GC_change_stubborn(const void *);
+GC_API void GC_CALL GC_end_stubborn_change(const void *);
 
 /* Return a pointer to the base (lowest address) of an object given     */
 /* a pointer to a location within the object.                           */
@@ -684,8 +684,8 @@ GC_API void GC_CALL GC_debug_free(void *);
 GC_API void * GC_CALL GC_debug_realloc(void * /* old_object */,
                         size_t /* new_size_in_bytes */, GC_EXTRA_PARAMS)
                         /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2);
-GC_API void GC_CALL GC_debug_change_stubborn(void *);
-GC_API void GC_CALL GC_debug_end_stubborn_change(void *);
+GC_API void GC_CALL GC_debug_change_stubborn(const void *);
+GC_API void GC_CALL GC_debug_end_stubborn_change(const void *);
 
 /* Routines that allocate objects with debug information (like the      */
 /* above), but just fill in dummy file and line number information.     */
@@ -741,7 +741,8 @@ GC_API void * GC_CALL GC_debug_realloc_replacement(void * /* object_addr */,
 # define GC_CHANGE_STUBBORN(p) GC_debug_change_stubborn(p)
 # define GC_END_STUBBORN_CHANGE(p) GC_debug_end_stubborn_change(p)
 # define GC_GENERAL_REGISTER_DISAPPEARING_LINK(link, obj) \
-      GC_general_register_disappearing_link(link, GC_base(obj))
+      GC_general_register_disappearing_link(link, \
+                                        GC_base((/* no const */ void *)(obj)))
 # define GC_REGISTER_DISPLACEMENT(n) GC_debug_register_displacement(n)
 #else
 # define GC_MALLOC_ATOMIC(sz) GC_malloc_atomic(sz)
@@ -929,7 +930,7 @@ GC_API int GC_CALL GC_register_disappearing_link(void ** /* link */);
         /* Only exists for backward compatibility.  See below:  */
 
 GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
-                                                         void * /* obj */);
+                                                    const void * /* obj */);
         /* A slight generalization of the above. *link is       */
         /* cleared when obj first becomes inaccessible.  This   */
         /* can be used to implement weak pointers easily and    */

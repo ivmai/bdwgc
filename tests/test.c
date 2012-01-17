@@ -221,7 +221,7 @@ sexpr cons (sexpr x, sexpr y)
     } else {
         extra_count = my_extra;
     }
-    GC_END_STUBBORN_CHANGE((char *)r);
+    GC_END_STUBBORN_CHANGE(r);
     return(r);
 }
 # endif
@@ -430,14 +430,14 @@ void print_int_list(sexpr x)
 /* ditto: */
 void check_marks_int_list(sexpr x)
 {
-    if (!GC_is_marked((ptr_t)x))
+    if (!GC_is_marked(x))
         GC_printf("[unm:%p]", (void *)x);
     else
         GC_printf("[mkd:%p]", (void *)x);
     if (is_nil(x)) {
         GC_printf("NIL\n");
     } else {
-        if (!GC_is_marked((ptr_t)car(x)))
+        if (!GC_is_marked(car(x)))
           GC_printf("[unm car:%p]", (void *)car(x));
         GC_printf("(%d)", SEXPR_TO_INT(car(car(x))));
         if (!is_nil(cdr(x))) {
@@ -770,8 +770,7 @@ tn * mktree(int n)
         }
         live_indicators[my_index] = 13;
         if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(
-                (void * *)(&(live_indicators[my_index])),
-                (void *)result) != 0) {
+            (void * *)(&(live_indicators[my_index])), result) != 0) {
                 GC_printf("GC_general_register_disappearing_link failed\n");
                 FAIL;
         }
@@ -796,8 +795,7 @@ tn * mktree(int n)
                 FAIL;
         }
         if (GC_GENERAL_REGISTER_DISAPPEARING_LINK(
-                (void * *)(&(live_indicators[my_index])),
-                (void *)result) != 0) {
+            (void * *)(&(live_indicators[my_index])), result) != 0) {
                 GC_printf("GC_general_register_disappearing_link failed 2\n");
                 FAIL;
         }

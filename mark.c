@@ -190,7 +190,7 @@ static void clear_marks_for_block(struct hblk *h, word dummy GC_ATTR_UNUSED)
 }
 
 /* Slow but general routines for setting/clearing/asking about mark bits */
-GC_API void GC_CALL GC_set_mark_bit(void *p)
+GC_API void GC_CALL GC_set_mark_bit(const void *p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
@@ -202,7 +202,7 @@ GC_API void GC_CALL GC_set_mark_bit(void *p)
     }
 }
 
-GC_API void GC_CALL GC_clear_mark_bit(void *p)
+GC_API void GC_CALL GC_clear_mark_bit(const void *p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);

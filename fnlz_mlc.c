@@ -69,10 +69,10 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
 
 #ifdef THREAD_LOCAL_ALLOC
   STATIC void * GC_core_finalized_malloc(size_t lb,
-                                         struct GC_finalizer_closure *fclos)
+                                const struct GC_finalizer_closure *fclos)
 #else
   GC_API void * GC_CALL GC_finalized_malloc(size_t lb,
-                                         struct GC_finalizer_closure *fclos)
+                                const struct GC_finalizer_closure *fclos)
 #endif
 {
     ptr_t op;
@@ -104,7 +104,7 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
 
 #ifdef THREAD_LOCAL_ALLOC
   GC_API void * GC_CALL GC_finalized_malloc(size_t client_lb,
-                                        struct GC_finalizer_closure *fclos)
+                                const struct GC_finalizer_closure *fclos)
   {
     size_t lb = client_lb + sizeof(void *);
     size_t lg = ROUNDED_UP_GRANULES(lb);
