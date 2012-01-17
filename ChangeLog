@@ -2,19 +2,22 @@
 == [7.3alpha2] (development) ==
 
 * Add GC_UNDERSCORE_STDCALL, UNICODE macro templates to configure (Win32).
-* Add GC_get_thr_restart_signal API entry.
-* Add GC_is_heap_ptr() to GC API.
-* Add GC_move_disappearing_link() API entry.
+* Add GC_get_thr_restart_signal, GC_thread_is_registered to GC API.
+* Add GC_is_heap_ptr, GC_move_disappearing_link to GC API.
 * Add TODO file.
 * Add configure option to compile all library .c files into single gc.o.
 * Add cordtest to make check.
 * Add disclaim callbacks for efficient finalization (ENABLE_DISCLAIM).
 * Add finalization.html to 'doc' folder.
 * Add javaxfc.h to the installation set of GC header files (configure).
+* Add on-heap-resize event notification to API.
+* Allow Win32 DllMain chaining on the client side.
+* Avoid unnecessary GC_find_limit invocation if GC_no_dls.
 * Changed the order in autogen.sh so ltmain exists in time for automake.
 * Define GC_READ_ENV_FILE in configure for WinCE unless gc-debug is off.
 * Do not compile pthread_stop_world.c for Cygwin/Darwin (configure).
 * Do not install ancient new_gc_alloc.h broken for modern STL (configure).
+* Export GC_is_marked, GC_clear/set_mark_bit (for mark-bit manipulation).
 * Extend thread-related debug messages.
 * Fix compiler warning in cordtest.
 * Fix minor warnings reported by GCC with '-pedantic' option.
@@ -23,6 +26,8 @@
 * Move "cord" library tests to "cord/tests" folder.
 * Move asm machine-dependent files to "src" folder.
 * Move build tools sources to "tools" folder.
+* Move cord_pos.h to public headers folder.
+* Optimize some functions by moving pthread_self calls out of LOCK section.
 * Place only major per-release changes description to ChangeLog (this file).
 * Remove all auto-generated files from the repo.
 * Remove binary icon file for de_win.
@@ -43,29 +48,28 @@
 == [7.2] (candidate) ==
 
 * Add GC_WIN32_PTHREADS target in configure.
-* Add GC_get_heap_usage_safe() to API as a thread-safe alternative to
-GC_get_bytes_since_gc and friends.
 * Add info that getcontext() resets FPE mask no longer on Linux/x86_64.
 * Add realloc_test.c test.
 * Add support for Hexagon target.
+* Add thread-safe GC_get_heap_usage_safe to GC API.
 * Check pthread_create/join result in test.
 * Define GC_DLL (in configure) if building only dynamic libraries.
 * Define NO_DEBUGGING (in configure) if "--disable-gc-debug" is set.
 * Enable parallel marker in configure for Solaris.
 * Fix "comparison of signed and unsigned values" compiler warnings.
 * Fix GC_find_limit_with_bound to always reset fault handler on return.
-* Fix GC_init_lib_bounds (and GC_init, GC_get_main_stack_base) regarding
-malloc redirection.
+* Fix GC_init[_lib_bounds] and GC_get_main_stack_base for malloc redirection.
+* Fix GC_restart_handler to preserve errno if needed.
 * Fix compiler warning in GC_dyld_image_add/remove (Darwin).
 * Fix configure --enable-cplusplus make install.
-* Fix configure to disable GCC aliasing optimization unless forced to
+* Fix configure to disable GCC aliasing optimization unless forced to.
 * Fix duplicate definitions in gcconfig.h for NetBSD.
 * Fix gc_cpp.cc for Cygwin (remove duplicate function definition).
 * Fix gcconfig.h to handle mips64-linux target.
 * Fix mach_dep.c to include sys/ucontext.h on Mac OS X 10.6.
 * Fix tests to check GC_malloc result for NULL (out-of-memory).
 * Fix thread model in configure for MinGW ("win32" instead of "posix").
-* Fix various warnings reported by LINT-like tools
+* Fix various warnings reported by LINT-like tools.
 * Port some thread tests to Win32.
 * Refine API GC setters and getter comments regarding locking.
 * Remove duplicate calls in GC_register_dynamic_libraries.
