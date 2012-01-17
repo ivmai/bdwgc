@@ -49,6 +49,10 @@ static GC_bool done_init = FALSE;
 
 GC_API void GC_CALL GC_init_finalized_malloc(void)
 {
+    if (!GC_get_all_interior_pointers())
+        ABORT("GC_set_all_interior_pointers(1) is required for finalized "
+              "object allocation.");
+
     DCL_LOCK_STATE;
 
     GC_init();  /* In case it's not already done.       */
