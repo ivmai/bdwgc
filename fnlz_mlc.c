@@ -30,7 +30,8 @@ STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj,
                                              void *cd GC_ATTR_UNUSED)
 {
     void **fc_addr;
-    struct GC_finalizer_closure *fc;
+    const struct GC_finalizer_closure *fc;
+
     fc_addr = &((void **)obj)[GC_size(obj) / sizeof(void *) - 1];
     fc = *fc_addr;
     if (fc != NULL) {
@@ -89,19 +90,28 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
         lg = GC_size_map[lb];
         opp = &GC_finalized_objfreelist[lg];
         LOCK();
-        if (EXPECT((op = *opp) == 0, FALSE)) {
+        op = *opp;
+        if (EXPECT(0 == op, FALSE)) {
             UNLOCK();
             op = GC_generic_malloc((word)lb, GC_finalized_kind);
+            if (NULL == op)
+                return NULL;
         } else {
             *opp = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
             UNLOCK();
         }
-        ((void **)op)[GRANULES_TO_WORDS(lg) - 1] = fclos;
+        ((const void **)op)[GRANULES_TO_WORDS(lg) - 1] = fclos;
     } else {
+        size_t op_sz;
+
         op = GC_generic_malloc((word)lb, GC_finalized_kind);
-        ((void **)op)[GC_size(op) / sizeof(void *) - 1] = fclos;
+        if (NULL == op)
+            return NULL;
+        op_sz = GC_size(op);
+        GC_ASSERT(op_sz >= lb);
+        ((const void **)op)[op_sz / sizeof(void *) - 1] = fclos;
     }
     return GC_clear_stack(op);
 }
@@ -134,12 +144,7 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
                                    GC_finalized_kind, my_fl);
             my_entry = *my_fl;
             if (my_entry == 0) {
-                GC_oom_func oom_fn;
-
-                LOCK();
-                oom_fn = GC_oom_fn;
-                UNLOCK();
-                return((*oom_fn)(lb));
+                return (*GC_get_oom_fn())(lb);
             }
         }
     }
@@ -148,7 +153,7 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
     result = (void *)my_entry;
     *my_fl = next;
     obj_link(result) = 0;
-    ((void **)result)[GRANULES_TO_WORDS(lg) - 1] = fclos;
+    ((const void **)result)[GRANULES_TO_WORDS(lg) - 1] = fclos;
     PREFETCH_FOR_WRITE(next);
     return result;
   }
