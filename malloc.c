@@ -109,7 +109,8 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
         size_t lg = GC_size_map[lb];
         void ** opp = &(kind -> ok_freelist[lg]);
 
-        if( (op = *opp) == 0 ) {
+        op = *opp;
+        if (EXPECT(0 == op, FALSE)) {
             if (GC_size_map[lb] == 0) {
               if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
               if (GC_size_map[lb] == 0) GC_extend_size_map(lb);
@@ -278,7 +279,8 @@ GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)
         lg = GC_size_map[lb];
         opp = &(GC_uobjfreelist[lg]);
         LOCK();
-        if( (op = *opp) != 0 ) {
+        op = *opp;
+        if (EXPECT(0 != op, TRUE)) {
             *opp = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);

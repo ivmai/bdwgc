@@ -281,7 +281,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     GC_ASSERT(lb != 0 && (lb & (GRANULE_BYTES-1)) == 0);
     if (!SMALL_OBJ(lb)) {
         op = GC_generic_malloc(lb, k);
-        if(0 != op) obj_link(op) = 0;
+        if (EXPECT(0 != op, TRUE))
+            obj_link(op) = 0;
         *result = op;
         return;
     }
@@ -515,7 +516,8 @@ GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
         lg = GC_size_map[lb];
         opp = &(GC_auobjfreelist[lg]);
         LOCK();
-        if( (op = *opp) != 0 ) {
+        op = *opp;
+        if (EXPECT(0 != op, TRUE)) {
             *opp = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);

@@ -594,7 +594,8 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t lb, GC_descr d)
         lg = GC_size_map[lb];
         opp = &(GC_eobjfreelist[lg]);
         LOCK();
-        if( (op = *opp) == 0 ) {
+        op = *opp;
+        if (EXPECT(0 == op, FALSE)) {
             UNLOCK();
             op = (ptr_t)GENERAL_MALLOC((word)lb, GC_explicit_kind);
             if (0 == op) return 0;
@@ -629,7 +630,8 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page(size_t lb,
         lg = GC_size_map[lb];
         opp = &(GC_eobjfreelist[lg]);
         LOCK();
-        if( (op = *opp) == 0 ) {
+        op = *opp;
+        if (EXPECT(0 == op, FALSE)) {
             UNLOCK();
             op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
             if (0 == op) return 0;
@@ -681,7 +683,8 @@ GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t n, size_t lb,
         lg = GC_size_map[lb];
         opp = &(GC_arobjfreelist[lg]);
         LOCK();
-        if( (op = *opp) == 0 ) {
+        op = *opp;
+        if (EXPECT(0 == op, FALSE)) {
             UNLOCK();
             op = (ptr_t)GENERAL_MALLOC((word)lb, GC_array_kind);
             if (0 == op) return(0);

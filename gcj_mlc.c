@@ -247,7 +247,8 @@ GC_API void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
         lg = GC_size_map[lb];
         opp = &(GC_gcjobjfreelist[lg]);
         LOCK();
-        if( (op = *opp) == 0 ) {
+        op = *opp;
+        if (EXPECT(0 == op, FALSE)) {
             maybe_finalize();
             op = (ptr_t)GENERAL_MALLOC_INNER_IOP(lb, GC_gcj_kind);
             if (0 == op) {
