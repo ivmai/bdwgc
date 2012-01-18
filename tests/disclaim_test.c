@@ -19,9 +19,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
 #include "gc_disclaim.h"
+
+#define my_assert(e) \
+    if (!(e)) { \
+        fprintf(stderr, "Assertion failure, line %d: " #e "\n", __LINE__); \
+        exit(-1); \
+    }
 
 int memeq(void *s, int c, size_t len)
 {
@@ -36,17 +41,21 @@ int memeq(void *s, int c, size_t len)
 void GC_CALLBACK misc_sizes_dct(void *obj, void *cd)
 {
     size_t size = (size_t)1 << *(unsigned char *)obj;
-    assert(memeq((char *)obj + 1, 0x56, size - 1));
+    my_assert(cd == NULL);
+    my_assert(memeq((char *)obj + 1, 0x56, size - 1));
 }
 
-void
-test_misc_sizes()
+void test_misc_sizes(void)
 {
-    static struct GC_finalizer_closure fc = { misc_sizes_dct, NULL };
+    static const struct GC_finalizer_closure fc = { misc_sizes_dct, NULL };
     int i;
     for (i = 1; i <= 20; ++i) { /* Up to 1 MiB. */
         void *p = GC_finalized_malloc((size_t)1 << i, &fc);
-        assert(memeq(p, 0, (size_t)1 << i));
+        if (p == NULL) {
+            fprintf(stderr, "Out of memory!\n");
+            exit(3);
+        }
+        my_assert(memeq(p, 0, (size_t)1 << i));
         memset(p, 0x56, (size_t)1 << i);
         *(unsigned char *)p = i;
     }
@@ -71,14 +80,14 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
       printf("Destruct %p = (%p, %p)\n",
              (void *)p, (void *)p->car, (void *)p->cdr);
 #   endif
-    assert(GC_base(obj));
-    assert(p->is_valid);
-    assert(!p->car || p->car->is_valid);
-    assert(!p->cdr || p->cdr->is_valid);
+    my_assert(GC_base(obj));
+    my_assert(p->is_valid);
+    my_assert(!p->car || p->car->is_valid);
+    my_assert(!p->cdr || p->cdr->is_valid);
     checksum = 782;
     if (p->car) checksum += p->car->checksum;
     if (p->cdr) checksum += p->cdr->checksum;
-    assert(p->checksum == checksum);
+    my_assert(p->checksum == checksum);
 
     /* Invalidate it. */
     p->is_valid = 0;
@@ -91,10 +100,14 @@ pair_t
 pair_new(pair_t car, pair_t cdr)
 {
     pair_t p;
-    static struct GC_finalizer_closure fc = { pair_dct, NULL };
+    static const struct GC_finalizer_closure fc = { pair_dct, NULL };
 
     p = GC_finalized_malloc(sizeof(struct pair_s), &fc);
-    assert(memeq(p, 0, sizeof(struct pair_s)));
+    if (p == NULL) {
+        fprintf(stderr, "Out of memory!\n");
+        exit(3);
+    }
+    my_assert(memeq(p, 0, sizeof(struct pair_s)));
     p->is_valid = 1;
     p->checksum = 782 + (car? car->checksum : 0) + (cdr? cdr->checksum : 0);
     p->car = car;
@@ -113,7 +126,7 @@ pair_check_rec(pair_t p)
         int checksum = 782;
         if (p->car) checksum += p->car->checksum;
         if (p->cdr) checksum += p->cdr->checksum;
-        assert(p->checksum == checksum);
+        my_assert(p->checksum == checksum);
         if (rand() % 2)
             p = p->car;
         else

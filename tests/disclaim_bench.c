@@ -12,7 +12,6 @@
  *
  */
 
-#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -21,6 +20,12 @@
 
 #include "atomic_ops.h"
 #include "gc_disclaim.h"
+
+#define my_assert(e) \
+    if (!(e)) { \
+        fprintf(stderr, "Assertion failure, line %d: " #e "\n", __LINE__); \
+        exit(-1); \
+    }
 
 static int free_count = 0;
 
@@ -34,10 +39,10 @@ typedef struct testobj_s *testobj_t;
 void GC_CALLBACK testobj_finalize(void *obj, void *carg)
 {
     ++*(int *)carg;
-    assert(((testobj_t)obj)->i++ == 109);
+    my_assert(((testobj_t)obj)->i++ == 109);
 }
 
-static struct GC_finalizer_closure fclos = {
+static const struct GC_finalizer_closure fclos = {
     testobj_finalize,
     &free_count
 };
@@ -48,8 +53,9 @@ testobj_t testobj_new(int model)
     switch (model) {
         case 0:
             obj = GC_MALLOC(sizeof(struct testobj_s));
-            GC_register_finalizer_no_order(obj, testobj_finalize, &free_count,
-                                           NULL, NULL);
+            if (obj != NULL)
+              GC_register_finalizer_no_order(obj, testobj_finalize,
+                                             &free_count, NULL, NULL);
             break;
         case 1:
             obj = GC_finalized_malloc(sizeof(struct testobj_s), &fclos);
@@ -60,7 +66,11 @@ testobj_t testobj_new(int model)
         default:
             exit(-1);
     }
-    assert(obj->i == 0 && obj->keep_link == NULL);
+    if (obj == NULL) {
+        fprintf(stderr, "Out of memory!\n");
+        exit(3);
+    }
+    my_assert(obj->i == 0 && obj->keep_link == NULL);
     obj->i = 109;
     return obj;
 }
