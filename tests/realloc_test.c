@@ -15,8 +15,8 @@ int main(void) {
     int **p = GC_MALLOC(sizeof(int *));
     int *q = GC_MALLOC_ATOMIC(sizeof(int));
 
-    if (*p != 0) {
-      fprintf(stderr, "GC_malloc returned garbage\n");
+    if (p == 0 || *p != 0) {
+      fprintf(stderr, "GC_malloc returned garbage (or NULL)\n");
       exit(1);
     }
 
