@@ -359,7 +359,7 @@ int CORD_fprintf(FILE * f, CORD format, ...)
 {
     va_list args;
     int result;
-    CORD out;
+    CORD out = CORD_EMPTY; /* initialized to prevent compiler warning */
 
     va_start(args, format);
     result = CORD_vsprintf(&out, format, args);
@@ -371,7 +371,7 @@ int CORD_fprintf(FILE * f, CORD format, ...)
 int CORD_vfprintf(FILE * f, CORD format, va_list args)
 {
     int result;
-    CORD out;
+    CORD out = CORD_EMPTY;
 
     result = CORD_vsprintf(&out, format, args);
     if (result > 0) CORD_put(out, f);
@@ -382,7 +382,7 @@ int CORD_printf(CORD format, ...)
 {
     va_list args;
     int result;
-    CORD out;
+    CORD out = CORD_EMPTY;
 
     va_start(args, format);
     result = CORD_vsprintf(&out, format, args);
@@ -394,7 +394,7 @@ int CORD_printf(CORD format, ...)
 int CORD_vprintf(CORD format, va_list args)
 {
     int result;
-    CORD out;
+    CORD out = CORD_EMPTY;
 
     result = CORD_vsprintf(&out, format, args);
     if (result > 0) CORD_put(out, stdout);
