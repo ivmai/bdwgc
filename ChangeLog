@@ -1,3 +1,10 @@
+2012-01-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (AC_INIT): Update bug reports email.
+	* doc/gcdescr.html: Likewise.
+	* doc/README.cords: Likewise.
+	* doc/overview.html: Fix email address.
+
 2012-01-18  Ivan Maidanski <ivmai@mail.ru>
 
 	* tests/realloc_test.c (main): Prevent NULL pointer dereference
