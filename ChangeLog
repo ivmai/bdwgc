@@ -1,6 +1,7 @@
 
 == [7.3alpha2] (development) ==
 
+* Add 'const' qualifier to pointer argument of some API functions.
 * Add GC_UNDERSCORE_STDCALL, UNICODE macro templates to configure (Win32).
 * Add GC_get_thr_restart_signal, GC_thread_is_registered to GC API.
 * Add GC_is_heap_ptr, GC_move_disappearing_link to GC API.
@@ -21,6 +22,7 @@
 * Extend thread-related debug messages.
 * Fix compiler warning in cordtest.
 * Fix minor warnings reported by GCC with '-pedantic' option.
+* Improve GC_collect_or_expand algorithm for many finalizers registered case.
 * In tests, print a message in case a test is a no-op.
 * Instruct configure to hide internal libgc.so symbols if supported by GCC.
 * Move "cord" library tests to "cord/tests" folder.
