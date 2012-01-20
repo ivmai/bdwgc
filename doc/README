@@ -538,7 +538,7 @@ reclaimed.  Exclusive-or'ing forward and backward links in a list
 doesn't cut it.
   Some C optimizers may lose the last undisguised pointer to a memory
 object as a consequence of clever optimizations.  This has almost
-never been observed in practice.  Send mail to boehm@acm.org
+never been observed in practice.  Send mail to gc@linux.hpl.hp.com
 for suggestions on how to fix your compiler.
   This is not a real-time collector.  In the standard configuration,
 percentage of time required for collection should be constant across
@@ -549,6 +549,6 @@ is enabled.
 per MB of accessible memory that needs to be scanned and processor.
 Your mileage may vary.)  The incremental/generational collection facility
 may help in some cases.
-  Please address bug reports to boehm@acm.org.  If you are
+  Please address bug reports to gc@linux.hpl.hp.com.  If you are
 contemplating a major addition, you might also send mail to ask whether
 it's already been done (or whether we tried and discarded it).
