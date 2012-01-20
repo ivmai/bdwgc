@@ -9,13 +9,8 @@ Add a test for libatomic_ops minimal version required (at compile time).
 
 Merge symbian branch to master.
 
-Merge useful code (if any) from mono_libgc branch (e.g.,
-do not abort on SuspendThread failure,
-last_fo_entries and last_words_finalized in GC_collect_or_expand,
-ignore thread_info/resume errors in GC_thread_resume,
-GC_on_heap_resize).
-
-Declare GC_abort with noreturn attribute.
+Declare GC_abort with noreturn attribute (should as well force optimizer to
+imply not-EXPECT in the condition).
 
 windows-untested: Remove if CMake can generate MS Visual Studio 6.0, 7.0, 8.0
 project files.
@@ -25,10 +20,12 @@ BCC_MAKEFILE: Remove if CMake can generate Makefile for this compiler.
 NT_X64_STATIC_THREADS_MAKEFILE, NT_X64_THREADS_MAKEFILE, digimars.mak,
 gc.mak.)
 
-Makefile.dj: Remove if it is possible to use auto-generated Makefile instead.
-(Same for EMX_MAKEFILE.)
+Makefile.dj: Remove if it is possible to use Makefile.direct (or
+auto-generated Makefile) instead. (Same for EMX_MAKEFILE.)
 
 build_atomic_ops.sh[.cygwin]: Remove if really not needed.
+
+Enable parallel mark, thread-local-alloc (and, probably, unmapping) by default.
 
 
 == FIXME tasks ==
