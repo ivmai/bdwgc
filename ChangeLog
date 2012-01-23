@@ -18,6 +18,7 @@
 * Define GC_READ_ENV_FILE in configure for WinCE unless gc-debug is off.
 * Do not compile pthread_stop_world.c for Cygwin/Darwin (configure).
 * Do not install ancient new_gc_alloc.h broken for modern STL (configure).
+* Enable parallel mark by default in configure (Darwin/Linux/Solaris/Win32).
 * Export GC_is_marked, GC_clear/set_mark_bit (for mark-bit manipulation).
 * Extend thread-related debug messages.
 * Fix compiler warning in cordtest.
@@ -41,6 +42,7 @@
 * Remove unused ancient SILENT, __STDC__, NO_SIGNALS macros.
 * Replace ARGSUSED comment-based annotation with GCC 'unused' attribute.
 * Replace printf PRIxMAX specifier with '%p' for thread id debug output.
+* Split GC_abort with GC_on_abort and abort() invoked from ABORT.
 * Turn on "extra" GCC warnings.
 * Turn on unused-parameter checking for GCC.
 * Update AUTHORS file.
