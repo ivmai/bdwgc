@@ -436,16 +436,24 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #     define DebugBreak() _exit(-1) /* there is no abort() in WinCE */
 #   endif
 #   ifdef SMALL_CONFIG
-#       if (defined(MSWIN32) && !defined(LINT2)) || defined(MSWINCE)
-#           define ABORT(msg) DebugBreak()
-#       else
-#           define ABORT(msg) abort()
-#       endif
+#     define GC_on_abort(msg) (void)0 /* be silent on abort */
 #   else
-        GC_API_PRIV void GC_abort(const char * msg);
-#       define ABORT(msg) GC_abort(msg)
-#   endif
-# endif
+      GC_API_PRIV void GC_on_abort(const char * msg);
+#   endif /* !SMALL_CONFIG */
+#   if defined(MSWIN32) && (defined(NO_DEBUGGING) || defined(LINT2))
+      /* A more user-friendly abort after showing fatal message.        */
+#     define ABORT(msg) (GC_on_abort(msg), _exit(-1))
+                /* Exit on error without running "at-exit" callbacks.   */
+#   elif defined(MSWINCE) && defined(NO_DEBUGGING)
+#     define ABORT(msg) (GC_on_abort(msg), ExitProcess(-1))
+#   elif defined(MSWIN32) || defined(MSWINCE)
+#     define ABORT(msg) (GC_on_abort(msg), DebugBreak())
+                /* Note that on a WinCE box, this could be silently     */
+                /* ignored (i.e., the program is not aborted).          */
+#   else
+#     define ABORT(msg) (GC_on_abort(msg), abort())
+#   endif /* !MSWIN32 */
+# endif /* !PCR */
 
 /* Same as ABORT but does not have 'no-return' attribute.       */
 /* ABORT on dummy condition (which is always true).             */

@@ -1397,8 +1397,8 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 }
 
 #if !defined(PCR) && !defined(SMALL_CONFIG)
-  /* Abort the program with a message. msg must not be NULL. */
-  void GC_abort(const char *msg)
+  /* Print (or display) a message before abort. msg must not be NULL. */
+  void GC_on_abort(const char *msg)
   {
 #   if defined(MSWIN32)
 #     ifndef DONT_USE_USER32_DLL
@@ -1418,7 +1418,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 #     endif
       /* Also duplicate msg to GC log file.     */
 #   endif
-      /* Avoid calling GC_err_printf() here, as GC_abort() could be     */
+      /* Avoid calling GC_err_printf() here, as GC_on_abort() could be  */
       /* called from it.  Note 1: this is not an atomic output.         */
       /* Note 2: possible write errors are ignored.                     */
       if (WRITE(GC_stderr, (void *)msg, strlen(msg)) >= 0)
@@ -1429,23 +1429,10 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
             /* It's arguably nicer to sleep, but that makes it harder   */
             /* to look at the thread if the debugger doesn't know much  */
             /* about threads.                                           */
-            for(;;) {}
+            for(;;) {
+              /* Empty */
+            }
     }
-#   ifndef LINT2
-      if (!msg) return; /* to suppress compiler warnings in ABORT callers. */
-#   endif
-#   if defined(MSWIN32) && (defined(NO_DEBUGGING) || defined(LINT2))
-      /* A more user-friendly abort after showing fatal message.        */
-        _exit(-1); /* exit on error without running "at-exit" callbacks */
-#   elif defined(MSWINCE) && defined(NO_DEBUGGING)
-        ExitProcess(-1);
-#   elif defined(MSWIN32) || defined(MSWINCE)
-        DebugBreak();
-                /* Note that on a WinCE box, this could be silently     */
-                /* ignored (i.e., the program is not aborted).          */
-#   else
-        (void) abort();
-#   endif
   }
 #endif /* !SMALL_CONFIG */
 
