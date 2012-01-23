@@ -1,3 +1,7 @@
+2012-01-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c (GC_sigbus_count): Fix a typo in a comment.
+
 2012-01-20  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure.ac (AC_INIT): Update bug reports email.
