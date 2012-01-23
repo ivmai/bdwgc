@@ -142,7 +142,9 @@
   GC_API void * GC_CALL GC_generate_random_heap_address(void)
   {
     size_t i;
+    size_t size;
     word heap_offset = RANDOM();
+
     if (GC_heapsize > RAND_MAX) {
         heap_offset *= RAND_MAX;
         heap_offset += RANDOM();
@@ -151,17 +153,18 @@
         /* This doesn't yield a uniform distribution, especially if     */
         /* e.g. RAND_MAX = 1.5* GC_heapsize.  But for typical cases,    */
         /* it's not too bad.                                            */
-    for (i = 0; i < GC_n_heap_sects; ++ i) {
-        size_t size = GC_heap_sects[i].hs_bytes;
+    for (i = 0;; ++i) {
+        if (i >= GC_n_heap_sects)
+          ABORT("GC_generate_random_heap_address: size inconsistency");
+
+        size = GC_heap_sects[i].hs_bytes;
         if (heap_offset < size) {
-            return GC_heap_sects[i].hs_start + heap_offset;
+            break;
         } else {
             heap_offset -= size;
         }
     }
-    ABORT("GC_generate_random_heap_address: size inconsistency");
-    /*NOTREACHED*/
-    return 0;
+    return GC_heap_sects[i].hs_start + heap_offset;
   }
 
   /* Generate a random address inside a valid marked heap object. */

@@ -3997,6 +3997,8 @@ STATIC void *GC_mprotect_thread(void *arg)
   } msg;
   mach_msg_id_t id;
 
+  if ((word)arg == (word)-1) return 0; /* to make compiler happy */
+
 # if defined(THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
     GC_darwin_register_mach_handler_thread(mach_thread_self());
 # endif
@@ -4062,8 +4064,6 @@ STATIC void *GC_mprotect_thread(void *arg)
           }
     } /* switch */
   } /* for(;;) */
-    /* NOT REACHED */
-  return NULL;
 }
 
 /* All this SIGBUS code shouldn't be necessary. All protection faults should

@@ -325,7 +325,7 @@ static void alloc_mark_stack(size_t);
 {
     switch(GC_mark_state) {
         case MS_NONE:
-            return(FALSE);
+            break;
 
         case MS_PUSH_RESCUERS:
             if (GC_mark_stack_top
@@ -335,7 +335,7 @@ static void alloc_mark_stack(size_t);
                 /* in the future.                                        */
                 GC_mark_stack_too_small = TRUE;
                 MARK_FROM_MARK_STACK();
-                return(FALSE);
+                break;
             } else {
                 scan_ptr = GC_push_next_marked_dirty(scan_ptr);
                 if (scan_ptr == 0) {
@@ -350,7 +350,7 @@ static void alloc_mark_stack(size_t);
                     }
                 }
             }
-            return(FALSE);
+            break;
 
         case MS_PUSH_UNCOLLECTABLE:
             if (GC_mark_stack_top
@@ -361,7 +361,7 @@ static void alloc_mark_stack(size_t);
                   if (GC_parallel) GC_mark_stack_too_small = TRUE;
 #               endif
                 MARK_FROM_MARK_STACK();
-                return(FALSE);
+                break;
             } else {
                 scan_ptr = GC_push_next_marked_uncollectable(scan_ptr);
                 if (scan_ptr == 0) {
@@ -372,7 +372,7 @@ static void alloc_mark_stack(size_t);
                     }
                 }
             }
-            return(FALSE);
+            break;
 
         case MS_ROOTS_PUSHED:
 #           ifdef PARALLEL_MARK
@@ -394,14 +394,13 @@ static void alloc_mark_stack(size_t);
                   if (GC_mark_state == MS_ROOTS_PUSHED) {
                     GC_mark_state = MS_NONE;
                     return(TRUE);
-                  } else {
-                    return(FALSE);
                   }
+                  break;
                 }
 #           endif
             if (GC_mark_stack_top >= GC_mark_stack) {
                 MARK_FROM_MARK_STACK();
-                return(FALSE);
+                break;
             } else {
                 GC_mark_state = MS_NONE;
                 if (GC_mark_stack_too_small) {
@@ -414,11 +413,11 @@ static void alloc_mark_stack(size_t);
         case MS_PARTIALLY_INVALID:
             if (!GC_objects_are_marked) {
                 GC_mark_state = MS_PUSH_UNCOLLECTABLE;
-                return(FALSE);
+                break;
             }
             if (GC_mark_stack_top >= GC_mark_stack) {
                 MARK_FROM_MARK_STACK();
-                return(FALSE);
+                break;
             }
             if (scan_ptr == 0 && GC_mark_state == MS_INVALID) {
                 /* About to start a heap scan for marked objects. */
@@ -436,11 +435,12 @@ static void alloc_mark_stack(size_t);
                     GC_mark_state = MS_ROOTS_PUSHED;
                 }
             }
-            return(FALSE);
+            break;
+
         default:
             ABORT("GC_mark_some: bad state");
-            return(FALSE);
     }
+    return(FALSE);
 }
 
 #ifdef WRAP_MARK_SOME

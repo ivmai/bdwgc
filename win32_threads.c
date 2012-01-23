@@ -2616,16 +2616,17 @@ GC_INNER void GC_thr_init(void)
         /* This may run with the collector uninitialized. */
         thread_id = GetCurrentThreadId();
         if (parallel_initialized && GC_main_thread != thread_id) {
-          /* Don't lock here.   */
-#         ifdef GC_ASSERTIONS
-            sb_result =
-#         endif
-              GC_get_stack_base(&sb);
-          GC_ASSERT(sb_result == GC_SUCCESS);
 #         if defined(THREAD_LOCAL_ALLOC) || defined(PARALLEL_MARK)
             ABORT("Cannot initialize thread local cache from DllMain");
+#         else
+            /* Don't lock here. */
+#           ifdef GC_ASSERTIONS
+              sb_result =
+#           endif
+                GC_get_stack_base(&sb);
+            GC_ASSERT(sb_result == GC_SUCCESS);
+            GC_register_my_thread_inner(&sb, thread_id);
 #         endif
-          GC_register_my_thread_inner(&sb, thread_id);
         } /* o.w. we already did it during GC_thr_init, called by GC_init */
         break;
 
