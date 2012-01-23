@@ -2066,7 +2066,6 @@
 #   define OS_TYPE "LINUX"
 #   define DYNAMIC_LOADING
 #   define LINUX_STACKBOTTOM
-#   define USE_GENERIC_PUSH_REGS
 #   define SEARCH_FOR_DATA_START
     extern int _end[];
 #   define DATAEND (_end)
