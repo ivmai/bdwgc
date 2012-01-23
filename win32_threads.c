@@ -2592,11 +2592,7 @@ GC_INNER void GC_thr_init(void)
     BOOL WINAPI GC_DllMain(HINSTANCE inst GC_ATTR_UNUSED, ULONG reason,
                            LPVOID reserved GC_ATTR_UNUSED)
     {
-      struct GC_stack_base sb;
       DWORD thread_id;
-#     ifdef GC_ASSERTIONS
-        int sb_result;
-#     endif
       static int entry_count = 0;
 
       if (!GC_win32_dll_threads && parallel_initialized) return TRUE;
@@ -2616,14 +2612,15 @@ GC_INNER void GC_thr_init(void)
         /* This may run with the collector uninitialized. */
         thread_id = GetCurrentThreadId();
         if (parallel_initialized && GC_main_thread != thread_id) {
-#         if defined(THREAD_LOCAL_ALLOC) || defined(PARALLEL_MARK)
-            ABORT("Cannot initialize thread local cache from DllMain");
+#         ifdef PARALLEL_MARK
+            ABORT("Cannot initialize parallel marker from DllMain");
 #         else
+            struct GC_stack_base sb;
             /* Don't lock here. */
 #           ifdef GC_ASSERTIONS
-              sb_result =
+              int sb_result =
 #           endif
-                GC_get_stack_base(&sb);
+                        GC_get_stack_base(&sb);
             GC_ASSERT(sb_result == GC_SUCCESS);
             GC_register_my_thread_inner(&sb, thread_id);
 #         endif
