@@ -4610,9 +4610,6 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
             continue;
         }
         {
-#         ifdef LINUX
-            FILE *pipe;
-#         endif
 #         if defined(GC_HAVE_BUILTIN_BACKTRACE) \
              && !defined(GC_BACKTRACE_SYMBOLS_BROKEN)
             char **sym_name =
@@ -4626,6 +4623,7 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
 #         if defined(LINUX) && !defined(SMALL_CONFIG)
             /* Try for a line number. */
             {
+                FILE *pipe;
 #               define EXE_SZ 100
                 static char exe_name[EXE_SZ];
 #               define CMD_SZ 200
