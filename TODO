@@ -9,9 +9,6 @@ Add a test for libatomic_ops minimal version required (at compile time).
 
 Merge symbian branch to master.
 
-Declare GC_abort with noreturn attribute (should as well force optimizer to
-imply not-EXPECT in the condition).
-
 windows-untested: Remove if CMake can generate MS Visual Studio 6.0, 7.0, 8.0
 project files.
 
@@ -25,8 +22,6 @@ auto-generated Makefile) instead. (Same for EMX_MAKEFILE.)
 
 build_atomic_ops.sh[.cygwin]: Remove if really not needed.
 
-Enable parallel mark, thread-local-alloc (and, probably, unmapping) by default.
-
 
 == FIXME tasks ==
 
@@ -39,3 +34,11 @@ Cygwin: crashes with USE_MUNMAP: mmap(PROT_NONE) failed.
 
 Cygwin: autoreconf fails: possibly undefined macro: AC_MSG_ERROR, AS_IF
 at configure.ac:59 and configure.ac:694, respectively (autoreconf-2.68).
+
+HP-UX 11.00 with the vendor cc fails:
+Perhaps GC_push_regs was configured incorrectly? FAIL: gctest.
+
+OpenBSD 4.9/x86 fails:
+GC_push_all_stacks: sp not set! FAIL: gctest, threadleaktest.
+
+NetBSD 5.1/x86: threadkey_test hangs sometimes.
