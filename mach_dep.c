@@ -30,10 +30,35 @@
 # endif
 #endif
 
-#if defined(__MWERKS__) && !defined(POWERPC)
+#if defined(MACOS) && defined(__MWERKS__)
 
-asm static void PushMacRegisters()
-{
+#if defined(POWERPC)
+
+# define NONVOLATILE_GPR_COUNT 19
+  struct ppc_registers {
+        unsigned long gprs[NONVOLATILE_GPR_COUNT];      /* R13-R31 */
+  };
+  typedef struct ppc_registers ppc_registers;
+
+  asm static void getRegisters(register ppc_registers* regs)
+  {
+        stmw    r13,regs->gprs                          /* save R13-R31 */
+        blr
+  }
+
+  static void PushMacRegisters(void)
+  {
+        ppc_registers regs;
+        int i;
+        getRegisters(&regs);
+        for (i = 0; i < NONVOLATILE_GPR_COUNT; i++)
+                GC_push_one(regs.gprs[i]);
+  }
+
+#else /* M68K */
+
+  asm static void PushMacRegisters(void)
+  {
     sub.w   #4,sp                   /* reserve space for one parameter */
     move.l  a2,(sp)
     jsr         GC_push_one
@@ -61,9 +86,11 @@ asm static void PushMacRegisters()
     jsr         GC_push_one
     add.w   #4,sp                   /* fix stack */
     rts
-}
+  }
 
-#endif /* __MWERKS__ */
+#endif /* M68K */
+
+#endif /* MACOS && __MWERKS__ */
 
 # if defined(SPARC) || defined(IA64)
     /* Value returned from register flushing routine; either sp (SPARC) */
@@ -128,9 +155,9 @@ asm static void PushMacRegisters()
     }
 #   define HAVE_PUSH_REGS
 
-# elif defined(M68K) && defined(MACOS)
+# elif defined(MACOS)
 
-#   if defined(THINK_C)
+#   if defined(M68K) && defined(THINK_C)
 #     define PushMacReg(reg) \
               move.l  reg,(sp) \
               jsr             GC_push_one

@@ -386,6 +386,12 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #   include <string.h>
 #   define BCOPY_EXISTS
 # endif
+# if defined(MACOS) && defined(POWERPC)
+#   include <MacMemory.h>
+#   define bcopy(x,y,n) BlockMoveData(x, y, n)
+#   define bzero(x,n) BlockZero(x, n)
+#   define BCOPY_EXISTS
+# endif
 
 # ifndef BCOPY_EXISTS
 #   include <string.h>
