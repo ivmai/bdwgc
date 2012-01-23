@@ -178,7 +178,7 @@ case "$THREADS" in
      | x86_64-*-linux* | alpha-*-linux* | sparc*-*-linux*)
         AC_DEFINE(GC_LINUX_THREADS)
         AC_DEFINE(_REENTRANT)
-        if test "${enable_parallel_mark}" = yes; then
+        if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
@@ -244,7 +244,7 @@ case "$THREADS" in
         ;;
      *-*-solaris*)
         AC_DEFINE(GC_SOLARIS_THREADS)
-        if test "${enable_parallel_mark}" = yes; then
+        if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
@@ -259,7 +259,7 @@ case "$THREADS" in
         ;;
      *-*-cygwin*)
         AC_DEFINE(GC_WIN32_THREADS)
-        if test "${enable_parallel_mark}" = yes; then
+        if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
@@ -271,7 +271,7 @@ case "$THREADS" in
      *-*-mingw*)
         AC_DEFINE(GC_WIN32_PTHREADS)
         # Using win32-pthreads
-        if test "${enable_parallel_mark}" = yes; then
+        if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
@@ -281,7 +281,7 @@ case "$THREADS" in
         AC_DEFINE(GC_DARWIN_THREADS)
         AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
         # Parallel-mark is not well-tested on Darwin
-        if test "${enable_parallel_mark}" = yes; then
+        if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
@@ -314,7 +314,7 @@ case "$THREADS" in
     ;;
  win32)
     AC_DEFINE(GC_WIN32_THREADS)
-    if test "${enable_parallel_mark}" = yes; then
+    if test "${enable_parallel_mark}" != no; then
       AC_DEFINE(PARALLEL_MARK)
       AC_DEFINE(THREAD_LOCAL_ALLOC)
     else
