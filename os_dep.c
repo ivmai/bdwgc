@@ -4071,8 +4071,8 @@ STATIC void *GC_mprotect_thread(void *arg)
    meaningless and safe to ignore. */
 #ifdef BROKEN_EXCEPTION_HANDLING
 
-  /* Updates to this aren't atomic, but the SIGBUSs seem pretty rare.     */
-  /* Even if this doesn't get updated property, it isn't really a proble. */
+  /* Updates to this aren't atomic, but the SIGBUS'es seem pretty rare.    */
+  /* Even if this doesn't get updated property, it isn't really a problem. */
   STATIC int GC_sigbus_count = 0;
 
   STATIC void GC_darwin_sigbus(int num, siginfo_t *sip, void *context)
