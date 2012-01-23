@@ -3846,23 +3846,24 @@ catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
 
 /* These should never be called, but just in case...  */
 GC_API_OSCALL kern_return_t
-catch_exception_raise_state(mach_port_name_t exception_port, int exception,
-                            exception_data_t code,
-                            mach_msg_type_number_t codeCnt, int flavor,
-                            thread_state_t old_state, int old_stateCnt,
-                            thread_state_t new_state, int new_stateCnt)
+catch_exception_raise_state(mach_port_name_t exception_port GC_ATTR_UNUSED,
+    int exception GC_ATTR_UNUSED, exception_data_t code GC_ATTR_UNUSED,
+    mach_msg_type_number_t codeCnt GC_ATTR_UNUSED, int flavor GC_ATTR_UNUSED,
+    thread_state_t old_state GC_ATTR_UNUSED, int old_stateCnt GC_ATTR_UNUSED,
+    thread_state_t new_state GC_ATTR_UNUSED, int new_stateCnt GC_ATTR_UNUSED)
 {
   ABORT("Unexpected catch_exception_raise_state invocation");
   return(KERN_INVALID_ARGUMENT);
 }
 
 GC_API_OSCALL kern_return_t
-catch_exception_raise_state_identity(mach_port_name_t exception_port,
-                                     mach_port_t thread, mach_port_t task,
-                                     int exception, exception_data_t code,
-                                     mach_msg_type_number_t codeCnt, int flavor,
-                                     thread_state_t old_state, int old_stateCnt,
-                                     thread_state_t new_state, int new_stateCnt)
+catch_exception_raise_state_identity(
+    mach_port_name_t exception_port GC_ATTR_UNUSED,
+    mach_port_t thread GC_ATTR_UNUSED, mach_port_t task GC_ATTR_UNUSED,
+    int exception GC_ATTR_UNUSED, exception_data_t code GC_ATTR_UNUSED,
+    mach_msg_type_number_t codeCnt GC_ATTR_UNUSED, int flavor GC_ATTR_UNUSED,
+    thread_state_t old_state GC_ATTR_UNUSED, int old_stateCnt GC_ATTR_UNUSED,
+    thread_state_t new_state GC_ATTR_UNUSED, int new_stateCnt GC_ATTR_UNUSED)
 {
   ABORT("Unexpected catch_exception_raise_state_identity invocation");
   return(KERN_INVALID_ARGUMENT);
@@ -4275,9 +4276,10 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 /* call this.  catch_exception_raise, catch_exception_raise_state and   */
 /* and catch_exception_raise_state_identity are called from OS.         */
 GC_API_OSCALL kern_return_t
-catch_exception_raise(mach_port_t exception_port, mach_port_t thread,
-                      mach_port_t task, exception_type_t exception,
-                      exception_data_t code, mach_msg_type_number_t code_count)
+catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
+                      mach_port_t thread, mach_port_t task GC_ATTR_UNUSED,
+                      exception_type_t exception, exception_data_t code,
+                      mach_msg_type_number_t code_count GC_ATTR_UNUSED)
 {
   kern_return_t r;
   char *addr;
