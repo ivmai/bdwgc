@@ -3852,7 +3852,7 @@ catch_exception_raise_state(mach_port_name_t exception_port GC_ATTR_UNUSED,
     thread_state_t old_state GC_ATTR_UNUSED, int old_stateCnt GC_ATTR_UNUSED,
     thread_state_t new_state GC_ATTR_UNUSED, int new_stateCnt GC_ATTR_UNUSED)
 {
-  ABORT("Unexpected catch_exception_raise_state invocation");
+  ABORT_RET("Unexpected catch_exception_raise_state invocation");
   return(KERN_INVALID_ARGUMENT);
 }
 
@@ -3865,7 +3865,7 @@ catch_exception_raise_state_identity(
     thread_state_t old_state GC_ATTR_UNUSED, int old_stateCnt GC_ATTR_UNUSED,
     thread_state_t new_state GC_ATTR_UNUSED, int new_stateCnt GC_ATTR_UNUSED)
 {
-  ABORT("Unexpected catch_exception_raise_state_identity invocation");
+  ABORT_RET("Unexpected catch_exception_raise_state_identity invocation");
   return(KERN_INVALID_ARGUMENT);
 }
 

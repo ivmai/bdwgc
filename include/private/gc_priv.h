@@ -447,6 +447,11 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #   endif
 # endif
 
+/* Same as ABORT but does not have 'no-return' attribute.       */
+/* ABORT on dummy condition (which is always true).             */
+#define ABORT_RET(msg) { if ((signed_word)GC_current_warn_proc != -1) \
+                           ABORT(msg); }
+
 /* Exit abnormally, but without making a mess (e.g. out of memory) */
 # ifdef PCR
 #   define EXIT() PCR_Base_Exit(1,PCR_waitForever)

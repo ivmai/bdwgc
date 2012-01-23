@@ -431,8 +431,8 @@ STATIC word GC_descr_obj_size(complex_descriptor *d)
         return(GC_descr_obj_size(d -> sd.sd_first)
                + GC_descr_obj_size(d -> sd.sd_second));
       default:
-        ABORT("Bad complex descriptor");
-        /*NOTREACHED*/ return 0; /*NOTREACHED*/
+        ABORT_RET("Bad complex descriptor");
+        return 0;
     }
 }
 
@@ -488,8 +488,8 @@ STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
           return(msp);
         }
       default:
-        ABORT("Bad complex descriptor");
-        /*NOTREACHED*/ return 0; /*NOTREACHED*/
+        ABORT_RET("Bad complex descriptor");
+        return 0;
    }
 }
 

@@ -869,7 +869,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
       default:
         result = NULL; /* initialized to prevent warning. */
         GC_err_printf("GC_debug_realloc: encountered bad kind\n");
-        ABORT("Bad kind");
+        ABORT_RET("Bad kind");
     }
 
     if (result != NULL) {

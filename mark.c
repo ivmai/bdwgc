@@ -785,8 +785,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           }
           goto retry;
         default:
-          /* Can't happen. */
           limit = 0; /* initialized to prevent warning. */
+          ABORT_RET("GC_mark_from: bad state");
       }
     } else /* Small object with length descriptor */ {
       mark_stack_top--;
