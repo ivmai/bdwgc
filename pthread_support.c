@@ -763,11 +763,7 @@ STATIC void GC_remove_all_threads_but_me(void)
     /* the real one.                                                  */
     char stat_buf[STAT_BUF_SIZE];
     int f;
-    word result = 1;
-    /* Some old kernels only have a single "cpu nnnn ..."     */
-    /* entry in /proc/stat.  We identify those as             */
-    /* uniprocessors.                                         */
-    int i, len;
+    int result, i, len;
 
     f = open("/proc/stat", O_RDONLY);
     if (f < 0) {
@@ -777,17 +773,22 @@ STATIC void GC_remove_all_threads_but_me(void)
     len = STAT_READ(f, stat_buf, STAT_BUF_SIZE);
     close(f);
 
+    result = 1;
+        /* Some old kernels only have a single "cpu nnnn ..."   */
+        /* entry in /proc/stat.  We identify those as           */
+        /* uniprocessors.                                       */
+
     for (i = 0; i < len - 100; ++i) {
       if (stat_buf[i] == '\n' && stat_buf[i+1] == 'c'
           && stat_buf[i+2] == 'p' && stat_buf[i+3] == 'u') {
         int cpu_no = atoi(&stat_buf[i + 4]);
-        if (cpu_no >= (int)result)
+        if (cpu_no >= result)
           result = cpu_no + 1;
       }
     }
     return result;
   }
-#endif /* GC_LINUX_THREADS && !NACL */
+#endif /* GC_LINUX_THREADS && !PLATFORM_ANDROID && !NACL */
 
 /* We hold the GC lock.  Wait until an in-progress GC has finished.     */
 /* Repeatedly RELEASES GC LOCK in order to wait.                        */
