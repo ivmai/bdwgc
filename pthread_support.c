@@ -703,6 +703,14 @@ STATIC void GC_remove_all_threads_but_me(void)
   }
 #endif /* IA64 */
 
+#ifndef STAT_READ
+  /* Also defined in os_dep.c.  */
+# define STAT_BUF_SIZE 4096
+# define STAT_READ read
+        /* If read is wrapped, this may need to be redefined to call    */
+        /* the real one.                                                */
+#endif
+
 #if defined(GC_LINUX_THREADS) && !defined(PLATFORM_ANDROID) && !defined(NACL)
   /* Return the number of processors. */
   STATIC int GC_get_nprocs(void)
@@ -710,13 +718,6 @@ STATIC void GC_remove_all_threads_but_me(void)
     /* Should be "return sysconf(_SC_NPROCESSORS_ONLN);" but that     */
     /* appears to be buggy in many cases.                             */
     /* We look for lines "cpu<n>" in /proc/stat.                      */
-#   ifndef STAT_READ
-      /* Also defined in os_dep.c. */
-#     define STAT_BUF_SIZE 4096
-#     define STAT_READ read
-#   endif
-    /* If read is wrapped, this may need to be redefined to call      */
-    /* the real one.                                                  */
     char stat_buf[STAT_BUF_SIZE];
     int f;
     int result, i, len;
@@ -745,6 +746,39 @@ STATIC void GC_remove_all_threads_but_me(void)
     return result;
   }
 #endif /* GC_LINUX_THREADS && !PLATFORM_ANDROID && !NACL */
+
+#if defined(ARM32) && defined(GC_LINUX_THREADS) && !defined(NACL)
+  /* Some buggy Linux/arm kernels show only non-sleeping CPUs in        */
+  /* /proc/stat (and /proc/cpuinfo), so another data system source is   */
+  /* tried first.  Result <= 0 on error.                                */
+  STATIC int GC_get_nprocs_present(void)
+  {
+    char stat_buf[16];
+    int f;
+    int len;
+
+    f = open("/sys/devices/system/cpu/present", O_RDONLY);
+    if (f < 0)
+      return -1; /* cannot open the file */
+
+    len = STAT_READ(f, stat_buf, sizeof(stat_buf));
+    close(f);
+
+    /* Recognized file format: "0\n" or "0-<max_cpu_id>\n"      */
+    /* The file might probably contain a comma-separated list   */
+    /* but we do not need to handle it (just silently ignore).  */
+    if (len < 2 || stat_buf[0] != '0' || stat_buf[len - 1] != '\n') {
+      return 0; /* read error or unrecognized content */
+    } else if (len == 2) {
+      return 1; /* an uniprocessor */
+    } else if (stat_buf[1] != '-') {
+      return 0; /* unrecognized content */
+    }
+
+    stat_buf[len - 1] = '\0'; /* terminate the string */
+    return atoi(&stat_buf[2]) + 1; /* skip "0-" and parse max_cpu_num */
+  }
+#endif /* ARM32 && GC_LINUX_THREADS && !NACL */
 
 /* We hold the GC lock.  Wait until an in-progress GC has finished.     */
 /* Repeatedly RELEASES GC LOCK in order to wait.                        */
@@ -940,7 +974,13 @@ GC_INNER void GC_thr_init(void)
     GC_nprocs = -1;
     if (nprocs_string != NULL) GC_nprocs = atoi(nprocs_string);
   }
-  if (GC_nprocs <= 0) {
+  if (GC_nprocs <= 0
+#     if defined(ARM32) && defined(GC_LINUX_THREADS) && !defined(NACL)
+        && (GC_nprocs = GC_get_nprocs_present()) <= 1
+                                /* Workaround for some Linux/arm kernels */
+#     endif
+      )
+  {
 #   if defined(GC_HPUX_THREADS)
       GC_nprocs = pthread_num_processors_np();
 #   elif defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
