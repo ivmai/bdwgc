@@ -1020,11 +1020,16 @@ GC_INNER void GC_thr_init(void)
          }
        } else {
          GC_markers = GC_nprocs;
+#        ifdef GC_MIN_MARKERS
+           /* This is primarily for targets without getenv().   */
+           if (GC_markers < GC_MIN_MARKERS)
+             GC_markers = GC_MIN_MARKERS;
+#        endif
          if (GC_markers >= MAX_MARKERS)
            GC_markers = MAX_MARKERS; /* silently limit GC_markers value */
        }
      }
-#   endif
+#  endif
   }
 # ifdef PARALLEL_MARK
     if (GC_print_stats) {
