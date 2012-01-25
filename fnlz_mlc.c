@@ -26,8 +26,7 @@
 
 STATIC int GC_finalized_kind = 0;
 
-STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj,
-                                             void *cd GC_ATTR_UNUSED)
+STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
 {
     void **fc_addr;
     const struct GC_finalizer_closure *fc;
@@ -66,18 +65,15 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
     GC_finalized_objfreelist = (ptr_t *)GC_new_free_list_inner();
     GC_finalized_kind = GC_new_kind_inner((void **)GC_finalized_objfreelist,
                                           GC_DS_LENGTH, TRUE, TRUE);
-    GC_register_disclaim_proc(GC_finalized_kind, GC_finalized_disclaim,
-                              NULL, TRUE);
+    GC_register_disclaim_proc(GC_finalized_kind, GC_finalized_disclaim, TRUE);
     UNLOCK();
 }
 
 GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
-                                              void *cd,
                                               int mark_unconditionally)
 {
     GC_ASSERT((unsigned)kind < MAXOBJKINDS);
     GC_obj_kinds[kind].ok_disclaim_proc = proc;
-    GC_obj_kinds[kind].ok_disclaim_cd = cd;
     GC_obj_kinds[kind].ok_mark_unconditionally = (GC_bool)mark_unconditionally;
 }
 
