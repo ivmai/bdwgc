@@ -71,6 +71,16 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
     UNLOCK();
 }
 
+GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
+                                              void *cd,
+                                              int mark_unconditionally)
+{
+    GC_ASSERT((unsigned)kind < MAXOBJKINDS);
+    GC_obj_kinds[kind].ok_disclaim_proc = proc;
+    GC_obj_kinds[kind].ok_disclaim_cd = cd;
+    GC_obj_kinds[kind].ok_mark_unconditionally = (GC_bool)mark_unconditionally;
+}
+
 #ifdef THREAD_LOCAL_ALLOC
   STATIC void * GC_core_finalized_malloc(size_t lb,
                                 const struct GC_finalizer_closure *fclos)
