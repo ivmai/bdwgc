@@ -25,9 +25,8 @@
 /* finalized allocations.  The function is thread-safe.                 */
 GC_API void GC_CALL GC_init_finalized_malloc(void);
 
-/* Type of a disclaim call-back, always stored along with closure data  */
-/* passed as the second argument.                                       */
-typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /*obj*/, void * /*cd*/);
+/* Type of a disclaim call-back.                                        */
+typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /*obj*/);
 
 /* Register "proc" to be called on each object of "kind" ready to be    */
 /* reclaimed.  If "proc" returns non-zero, the collector will not       */
@@ -37,7 +36,6 @@ typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /*obj*/, void * /*cd*/);
 /* to reclaim.                                                          */
 GC_API void GC_CALL GC_register_disclaim_proc(int /*kind*/,
                                               GC_disclaim_proc /*proc*/,
-                                              void * /*cd*/,
                                               int /*mark_from_all*/);
 
 /* The finalizer closure used by GC_finalized_malloc.                   */

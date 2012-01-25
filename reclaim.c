@@ -224,8 +224,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
     word *p, *q, *plim;
     signed_word n_bytes_found = 0;
     struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
-    int (GC_CALLBACK *proc)(void *, void *) = ok->ok_disclaim_proc;
-    void *cd = ok -> ok_disclaim_cd;
+    int (GC_CALLBACK *disclaim)(void *) = ok->ok_disclaim_proc;
 
     GC_ASSERT(sz == hhdr -> hb_sz);
     p = (word *)(hbp -> hb_body);
@@ -233,7 +232,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
 
     while (p <= plim) {
         int marked = mark_bit_from_hdr(hhdr, bit_no);
-        if (!marked && (*proc)(p, cd)) {
+        if (!marked && (*disclaim)(p)) {
             hhdr -> hb_n_marks++;
             marked = 1;
         }
@@ -386,7 +385,7 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
 #             ifdef ENABLE_DISCLAIM
                 if (EXPECT(hhdr->hb_flags & HAS_DISCLAIM, 0)) {
                   struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
-                  if ((*ok->ok_disclaim_proc)(hbp, ok->ok_disclaim_cd)) {
+                  if ((*ok->ok_disclaim_proc)(hbp)) {
                     /* Not disclaimed => resurrect the object. */
                     set_mark_bit_from_hdr(hhdr, 0);
                     goto in_use;
