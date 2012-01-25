@@ -174,6 +174,7 @@ GC_FirstDLOpenedLinkMap(void)
 # endif
 
 # if defined(SOLARISDL)
+
 /* Add dynamic library data sections to the root set.           */
 # if !defined(PCR) && !defined(GC_SOLARIS_THREADS) && defined(THREADS)
         --> fix mutual exclusion with dlopen
@@ -192,10 +193,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
         int i;
 
         e = (ElfW(Ehdr) *) lm->l_addr;
-#       ifdef PLATFORM_ANDROID
-          if (e == NULL)
-            continue;
-#       endif
         p = ((ElfW(Phdr) *)(((char *)(e)) + e->e_phoff));
         offset = ((unsigned long)(lm->l_addr));
         for( i = 0; i < (int)e->e_phnum; i++, p++ ) {
