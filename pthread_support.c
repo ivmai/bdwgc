@@ -227,25 +227,14 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
   STATIC void GC_init_real_syms(void)
   {
     void *dl_handle;
-#   ifndef RTLD_NEXT
-#     define LIBPTHREAD_NAME "libpthread.so.0"
-#     define LIBPTHREAD_NAME_LEN 16 /* incl. trailing 0 */
-      size_t len = LIBPTHREAD_NAME_LEN - 1;
-      char namebuf[LIBPTHREAD_NAME_LEN];
-      static char *libpthread_name = LIBPTHREAD_NAME;
-#   endif
 
     if (GC_syms_initialized) return;
 #   ifdef RTLD_NEXT
       dl_handle = RTLD_NEXT;
 #   else
-      dl_handle = dlopen(libpthread_name, RTLD_LAZY);
+      dl_handle = dlopen("libpthread.so.0", RTLD_LAZY);
       if (NULL == dl_handle) {
-        while (isdigit(libpthread_name[len-1])) --len;
-        if (libpthread_name[len-1] == '.') --len;
-        BCOPY(libpthread_name, namebuf, len);
-        namebuf[len] = '\0';
-        dl_handle = dlopen(namebuf, RTLD_LAZY);
+        dl_handle = dlopen("libpthread.so", RTLD_LAZY); /* without ".0" */
       }
       if (NULL == dl_handle) ABORT("Couldn't open libpthread");
 #   endif
