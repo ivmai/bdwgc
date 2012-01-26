@@ -229,6 +229,11 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
     if (n_root_sets == MAX_ROOT_SETS) {
         ABORT("Too many root sets");
     }
+
+#   ifdef DEBUG_ADD_DEL_ROOTS
+      GC_log_printf("Adding data root section %d: %p .. %p\n",
+                    n_root_sets, b, e);
+#   endif
     GC_static_roots[n_root_sets].r_start = (ptr_t)b;
     GC_static_roots[n_root_sets].r_end = (ptr_t)e;
     GC_static_roots[n_root_sets].r_tmp = tmp;
@@ -254,12 +259,19 @@ GC_API void GC_CALL GC_clear_roots(void)
 #   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
       BZERO(GC_root_index, RT_SIZE * sizeof(void *));
 #   endif
+#   ifdef DEBUG_ADD_DEL_ROOTS
+      GC_log_printf("Clear all data root sections\n");
+#   endif
     UNLOCK();
 }
 
 /* Internal use only; lock held.        */
 STATIC void GC_remove_root_at_pos(int i)
 {
+#   ifdef DEBUG_ADD_DEL_ROOTS
+      GC_log_printf("Remove data root section %d: %p .. %p\n",
+                    i, GC_static_roots[i].r_start, GC_static_roots[i].r_end);
+#   endif
     GC_root_size -= (GC_static_roots[i].r_end - GC_static_roots[i].r_start);
     GC_static_roots[i].r_start = GC_static_roots[n_root_sets-1].r_start;
     GC_static_roots[i].r_end = GC_static_roots[n_root_sets-1].r_end;
