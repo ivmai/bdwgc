@@ -18,6 +18,7 @@
 * Define GC_READ_ENV_FILE in configure for WinCE unless gc-debug is off.
 * Do not compile pthread_stop_world.c for Cygwin/Darwin (configure).
 * Do not install ancient new_gc_alloc.h broken for modern STL (configure).
+* Enable GC_MIN_MARKERS to set minimal number of pthread-based markers.
 * Enable parallel mark by default in configure (Darwin/Linux/Solaris/Win32).
 * Export GC_is_marked, GC_clear/set_mark_bit (for mark-bit manipulation).
 * Extend thread-related debug messages.
@@ -32,6 +33,7 @@
 * Move cord_pos.h to public headers folder.
 * Optimize some functions by moving pthread_self calls out of LOCK section.
 * Place only major per-release changes description to ChangeLog (this file).
+* Recognize GC_LOG_TO_FILE_ALWAYS macro to log to 'gc.log' by default.
 * Remove all auto-generated files from the repo.
 * Remove binary icon file for de_win.
 * Remove cordtest from "cord" library.
@@ -61,6 +63,7 @@
 * Define NO_DEBUGGING (in configure) if "--disable-gc-debug" is set.
 * Enable parallel marker in configure for Solaris.
 * Fix "comparison of signed and unsigned values" compiler warnings.
+* Fix GC_add_roots_inner for Mac OS X (align segment start).
 * Fix GC_find_limit_with_bound to always reset fault handler on return.
 * Fix GC_init[_lib_bounds] and GC_get_main_stack_base for malloc redirection.
 * Fix GC_restart_handler to preserve errno if needed.
@@ -69,6 +72,7 @@
 * Fix configure to disable GCC aliasing optimization unless forced to.
 * Fix duplicate definitions in gcconfig.h for NetBSD.
 * Fix gc_cpp.cc for Cygwin (remove duplicate function definition).
+* Fix gcconfig.h to define USE_GET_STACKBASE_FOR_MAIN for Android.
 * Fix gcconfig.h to handle mips64-linux target.
 * Fix mach_dep.c to include sys/ucontext.h on Mac OS X 10.6.
 * Fix tests to check GC_malloc result for NULL (out-of-memory).
@@ -83,6 +87,7 @@
 * Support multi-threading for RTEMS target.
 * Use global GC_noop_sink variable in GC_noop1 to suppress compiler warning.
 * Use pkg-config to pick up libatomic_ops, etc.
+* Workaround some Linux/arm kernels bug to get correct GC_nprocs value.
 
 
 == [7.2alpha6] 2011-06-14 ==
