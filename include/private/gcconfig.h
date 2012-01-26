@@ -2347,6 +2347,14 @@
 # define DATAEND (ptr_t)(end)
 #endif
 
+#if defined(PLATFORM_ANDROID) && !defined(THREADS) \
+    && !defined(USE_GET_STACKBASE_FOR_MAIN)
+  /* Always use pthread_attr_getstack on Android ("-lpthread" option is  */
+  /* not needed to be specified manually) since GC_linux_main_stack_base */
+  /* causes app crash if invoked inside Dalvik VM.                       */
+# define USE_GET_STACKBASE_FOR_MAIN
+#endif
+
 #if (defined(SVR4) || defined(PLATFORM_ANDROID)) && !defined(GETPAGESIZE)
 # include <unistd.h>
 # define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
