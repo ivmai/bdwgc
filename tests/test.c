@@ -92,7 +92,7 @@
 /* Call GC_INIT only on platforms on which we think we really need it,  */
 /* so that we can test automatic initialization on the rest.            */
 #if defined(CYGWIN32) || defined (AIX) || defined(DARWIN) \
-        || defined(THREAD_LOCAL_ALLOC) \
+        || defined(PLATFORM_ANDROID) || defined(THREAD_LOCAL_ALLOC) \
         || (defined(MSWINCE) && !defined(GC_WINMAIN_REDIRECT))
 #  define GC_COND_INIT() GC_INIT(); CHECH_GCLIB_VERSION
 #else
