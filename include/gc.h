@@ -468,7 +468,7 @@ GC_API void GC_CALL GC_exclude_static_roots(void * /* low_address */,
 GC_API void GC_CALL GC_clear_roots(void);
 
 /* Add a root segment.  Wizards only.                                   */
-/* The segment (referred to by low_address) must be pointer-aligned.    */
+/* Both segment start and end are not needed to be pointer-aligned.     */
 /* low_address must not be greater than high_address_plus_1.            */
 GC_API void GC_CALL GC_add_roots(void * /* low_address */,
                                  void * /* high_address_plus_1 */);
