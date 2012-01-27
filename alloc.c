@@ -644,16 +644,17 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 
     GC_gc_no++;
     if (GC_print_stats) {
-      GC_log_printf(
-             "Collection %lu reclaimed %ld bytes ---> heapsize = %lu bytes\n",
-             (unsigned long)(GC_gc_no - 1), (long)GC_bytes_found,
-             (unsigned long)GC_heapsize);
+      GC_log_printf("Collection %lu reclaimed %ld bytes ---> heapsize = %lu"
+                    " bytes" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
+                    (unsigned long)(GC_gc_no - 1), (long)GC_bytes_found,
+                    (unsigned long)GC_heapsize /*, */
+                    COMMA_IF_USE_MUNMAP((unsigned long)GC_unmapped_bytes));
     }
 
     /* Check all debugged objects for consistency */
-        if (GC_debugging_started) {
-            (*GC_check_heap)();
-        }
+    if (GC_debugging_started) {
+      (*GC_check_heap)();
+    }
 
 #   ifdef THREAD_LOCAL_ALLOC
       GC_world_stopped = FALSE;
@@ -1063,7 +1064,10 @@ GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
   {
     unsigned i;
 
-    GC_printf("Total heap size: %lu\n", (unsigned long)GC_heapsize);
+    GC_printf("Total heap size: %lu" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
+              (unsigned long)GC_heapsize /*, */
+              COMMA_IF_USE_MUNMAP((unsigned long)GC_unmapped_bytes));
+
     for (i = 0; i < GC_n_heap_sects; i++) {
       ptr_t start = GC_heap_sects[i].hs_start;
       size_t len = GC_heap_sects[i].hs_bytes;
