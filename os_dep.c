@@ -461,12 +461,6 @@ GC_INNER char * GC_get_maps(void)
 
   GC_INNER void GC_init_linux_data_start(void)
   {
-        if (GC_no_dls) {
-                /* Not needed, avoids the SIGSEGV caused by     */
-                /* GC_find_limit which complicates debugging.   */
-                return;
-        }
-
 #   if defined(LINUX) || defined(HURD)
       /* Try the easy approaches first: */
       if ((ptr_t)__data_start != 0) {
@@ -478,6 +472,14 @@ GC_INNER char * GC_get_maps(void)
           return;
       }
 #   endif /* LINUX */
+
+    if (GC_no_dls) {
+      /* Not needed, avoids the SIGSEGV caused by       */
+      /* GC_find_limit which complicates debugging.     */
+      GC_data_start = (ptr_t)_end; /* set data root size to 0 */
+      return;
+    }
+
     GC_data_start = GC_find_limit((ptr_t)(_end), FALSE);
   }
 #endif /* SEARCH_FOR_DATA_START */
@@ -1951,7 +1953,11 @@ void GC_register_data_segments(void)
         extern caddr_t sbrk(int);
 
         GC_ASSERT(DATASTART);
-        GC_add_roots_inner(DATASTART, (ptr_t)sbrk(0), FALSE);
+        {
+          ptr_t p = (ptr_t)sbrk(0);
+          if (DATASTART < p)
+            GC_add_roots_inner(DATASTART, p, FALSE);
+        }
 #     else
         GC_ASSERT(DATASTART);
         GC_add_roots_inner(DATASTART, (ptr_t)(DATAEND), FALSE);
