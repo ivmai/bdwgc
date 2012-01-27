@@ -571,6 +571,14 @@ GC_API int GC_CALL GC_collect_a_little(void)
 # endif
 #endif
 
+#ifdef USE_MUNMAP
+# define IF_USE_MUNMAP(x) x
+# define COMMA_IF_USE_MUNMAP(x) /* comma */, x
+#else
+# define IF_USE_MUNMAP(x) /* empty */
+# define COMMA_IF_USE_MUNMAP(x) /* empty */
+#endif
+
 /*
  * Assumes lock is held.  We stop the world and mark from all roots.
  * If stop_func() ever returns TRUE, we may fail and return FALSE.
@@ -887,16 +895,10 @@ STATIC void GC_finish_collection(void)
     }
 
     if (GC_print_stats == VERBOSE) {
-#     ifdef USE_MUNMAP
-        GC_log_printf("Immediately reclaimed %ld bytes in heap"
-                      " of size %lu bytes (%lu unmapped)\n",
-                      (long)GC_bytes_found, (unsigned long)GC_heapsize,
-                      (unsigned long)GC_unmapped_bytes);
-#     else
-        GC_log_printf(
-                "Immediately reclaimed %ld bytes in heap of size %lu bytes\n",
-                (long)GC_bytes_found, (unsigned long)GC_heapsize);
-#     endif
+      GC_log_printf("Immediately reclaimed %ld bytes in heap of size"
+                    " %lu bytes" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
+                    (long)GC_bytes_found, (unsigned long)GC_heapsize /*, */
+                    COMMA_IF_USE_MUNMAP((unsigned long)GC_unmapped_bytes));
     }
 
     /* Reset or increment counters for next cycle */
@@ -909,9 +911,7 @@ STATIC void GC_finish_collection(void)
     GC_bytes_freed = 0;
     GC_finalizer_bytes_freed = 0;
 
-#   ifdef USE_MUNMAP
-      GC_unmap_old();
-#   endif
+    IF_USE_MUNMAP(GC_unmap_old());
 
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
@@ -932,9 +932,7 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
                                          GC_bool force_unmap GC_ATTR_UNUSED)
 {
     GC_bool result;
-#   ifdef USE_MUNMAP
-      int old_unmap_threshold;
-#   endif
+    IF_USE_MUNMAP(int old_unmap_threshold;)
     IF_CANCEL(int cancel_state;)
     DCL_LOCK_STATE;
 
@@ -955,9 +953,7 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
     result = GC_try_to_collect_inner(stop_func != 0 ? stop_func :
                                      GC_default_stop_func);
     EXIT_GC();
-#   ifdef USE_MUNMAP
-      GC_unmap_threshold = old_unmap_threshold; /* restore */
-#   endif
+    IF_USE_MUNMAP(GC_unmap_threshold = old_unmap_threshold); /* restore */
     RESTORE_CANCEL(cancel_state);
     UNLOCK();
     if (result) {
