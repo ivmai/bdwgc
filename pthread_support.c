@@ -274,7 +274,7 @@ static GC_bool parallel_initialized = FALSE;
 
 GC_INNER GC_bool GC_need_to_lock = FALSE;
 
-STATIC long GC_nprocs = 1;
+STATIC int GC_nprocs = 1;
                         /* Number of processors.  We may not have       */
                         /* access to all of them, but this is as good   */
                         /* a guess as any ...                           */
@@ -432,7 +432,7 @@ static void start_mark_threads(void)
       }
     }
     if (GC_print_stats) {
-      GC_log_printf("Started %ld mark helper threads\n", GC_markers - 1);
+      GC_log_printf("Started %d mark helper threads\n", GC_markers - 1);
     }
     pthread_attr_destroy(&attr);
 }
@@ -1018,10 +1018,10 @@ GC_INNER void GC_thr_init(void)
 #   elif defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
          || defined(GC_SOLARIS_THREADS) || defined(GC_GNU_THREADS) \
          || defined(PLATFORM_ANDROID) || defined(NACL)
-      GC_nprocs = sysconf(_SC_NPROCESSORS_ONLN);
+      GC_nprocs = (int)sysconf(_SC_NPROCESSORS_ONLN);
       if (GC_nprocs <= 0) GC_nprocs = 1;
 #   elif defined(GC_IRIX_THREADS)
-      GC_nprocs = sysconf(_SC_NPROC_ONLN);
+      GC_nprocs = (int)sysconf(_SC_NPROC_ONLN);
       if (GC_nprocs <= 0) GC_nprocs = 1;
 #   elif defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS) \
          || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS)
@@ -1064,8 +1064,8 @@ GC_INNER void GC_thr_init(void)
 # ifdef PARALLEL_MARK
     if (GC_print_stats) {
       GC_log_printf(
-        "Number of processors = %ld, number of marker threads = %ld\n",
-        GC_nprocs, GC_markers);
+                "Number of processors = %d, number of marker threads = %d\n",
+                GC_nprocs, GC_markers);
     }
     if (GC_markers <= 1) {
       GC_parallel = FALSE;

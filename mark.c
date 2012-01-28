@@ -1017,7 +1017,7 @@ STATIC void GC_do_local_mark(mse *local_mark_stack, mse *local_top)
 
 #define ENTRIES_TO_GET 5
 
-GC_INNER long GC_markers = 2;   /* Normally changed by thread-library-  */
+GC_INNER int GC_markers = 2;    /* Normally changed by thread-library-  */
                                 /* -specific code.                      */
 
 /* Mark using the local mark stack until the global mark stack is empty */
@@ -1172,6 +1172,7 @@ GC_INNER void GC_help_marker(word my_mark_no)
     unsigned my_id;
 
     if (!GC_parallel) return;
+
     GC_acquire_mark_lock();
     while (GC_mark_no < my_mark_no
            || (!GC_help_wanted && GC_mark_no == my_mark_no)) {

@@ -1780,9 +1780,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
       /* Adjust GC_markers (and free unused resources) in case of failure. */
 #     ifdef DONT_USE_SIGNALANDWAIT
-        while ((int)GC_markers > i + 1) {
+        while (GC_markers > i + 1) {
           GC_markers--;
-          CloseHandle(GC_marker_cv[(int)GC_markers - 1]);
+          CloseHandle(GC_marker_cv[GC_markers - 1]);
         }
 #     else
         GC_markers = i + 1;
@@ -1904,7 +1904,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       {
         HANDLE event = mark_cv;
         DWORD thread_id = GetCurrentThreadId();
-        int i = (int)GC_markers - 1;
+        int i = GC_markers - 1;
         while (i-- > 0) {
           if (GC_marker_Id[i] == thread_id) {
             event = GC_marker_cv[i];
@@ -1923,7 +1923,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       GC_INNER void GC_notify_all_marker(void)
       {
         DWORD thread_id = GetCurrentThreadId();
-        int i = (int)GC_markers - 1;
+        int i = GC_markers - 1;
         while (i-- > 0) {
           /* Notify every marker ignoring self (for efficiency).  */
           if (SetEvent(GC_marker_Id[i] != thread_id ? GC_marker_cv[i] :
@@ -2280,7 +2280,7 @@ GC_INNER void GC_thr_init(void)
 #       ifdef MSWINCE
           /* There is no GetProcessAffinityMask() in WinCE.     */
           /* GC_sysinfo is already initialized.                 */
-          GC_markers = GC_sysinfo.dwNumberOfProcessors;
+          GC_markers = (int)GC_sysinfo.dwNumberOfProcessors;
 #       else
 #         ifdef _WIN64
             DWORD_PTR procMask = 0;
@@ -2357,7 +2357,7 @@ GC_INNER void GC_thr_init(void)
     /* If we are using a parallel marker, actually start helper threads. */
     if (GC_parallel) start_mark_threads();
     if (GC_print_stats) {
-      GC_log_printf("Started %ld mark helper threads\n", GC_markers - 1);
+      GC_log_printf("Started %d mark helper threads\n", GC_markers - 1);
     }
 # endif
 }

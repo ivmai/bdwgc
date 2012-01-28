@@ -2203,7 +2203,7 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
   /* than the main garbage collector lock; standard pthreads-based      */
   /* implementations should be sufficient.                              */
 
-  GC_EXTERN long GC_markers;  /* Number of mark threads we would like   */
+  GC_EXTERN int GC_markers;   /* Number of mark threads we would like   */
                               /* to have.  Includes the initiating      */
                               /* thread.  Defined in mark.c.            */
 
