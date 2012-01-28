@@ -87,11 +87,15 @@ GC_API GC_word GC_CALL GC_get_gc_no(void);
                         /* PARALLEL_MARK defined and if either:         */
                         /*  Env variable GC_NPROC is set to > 1, or     */
                         /*  GC_NPROC is not set and this is an MP.      */
-                        /* If GC_parallel is set, incremental           */
+                        /* If GC_parallel is on (non-zero), incremental */
                         /* collection is only partially functional,     */
-                        /* and may not be desirable. This getter does   */
+                        /* and may not be desirable.  The getter does   */
                         /* not use or need synchronization (i.e.        */
-                        /* acquiring the GC lock).                      */
+                        /* acquiring the GC lock).  Starting from       */
+                        /* GC v7.3, GC_parallel value is equal to the   */
+                        /* number of marker threads minus one (i.e.     */
+                        /* number of existing parallel marker threads   */
+                        /* excluding the initiating one).               */
   GC_API int GC_CALL GC_get_parallel(void);
 #endif
 
@@ -592,7 +596,7 @@ GC_API void GC_CALL GC_enable(void);
 /* dirty bits are available or most heap objects are pointer-free       */
 /* (atomic) or immutable.  Don't use in leak finding mode.  Ignored if  */
 /* GC_dont_gc is non-zero.  Only the generational piece of this is      */
-/* functional if GC_parallel is TRUE or if GC_time_limit is             */
+/* functional if GC_parallel is non-zero or if GC_time_limit is         */
 /* GC_TIME_UNLIMITED.  Causes thread-local variant of GC_gcj_malloc()   */
 /* to revert to locked allocation.  Must be called before any such      */
 /* GC_gcj_malloc() calls.  For best performance, should be called as    */

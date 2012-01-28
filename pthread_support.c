@@ -427,7 +427,6 @@ static void start_mark_threads(void)
              errno);
         /* Don't try to create other marker threads.    */
         GC_markers_m1 = i;
-        if (i == 0) GC_parallel = FALSE;
         break;
       }
     }
@@ -901,7 +900,6 @@ STATIC void GC_fork_child_proc(void)
 #   ifdef PARALLEL_MARK
       /* Turn off parallel marking in the child, since we are probably  */
       /* just going to exec, and we would have to restart mark threads. */
-        GC_markers_m1 = 0;
         GC_parallel = FALSE;
 #   endif /* PARALLEL_MARK */
     RESTORE_CANCEL(fork_cancel_state);
@@ -1036,7 +1034,7 @@ GC_INNER void GC_thr_init(void)
     WARN("GC_get_nprocs() returned %" WARN_PRIdPTR "\n", GC_nprocs);
     GC_nprocs = 2; /* assume dual-core */
 #   ifdef PARALLEL_MARK
-      GC_markers_m1 = 0; /* but use only one marker */
+      GC_parallel = FALSE; /* but use only one marker */
 #   endif
   } else {
 #  ifdef PARALLEL_MARK
@@ -1068,12 +1066,12 @@ GC_INNER void GC_thr_init(void)
                 GC_nprocs, GC_markers_m1 + 1);
     }
     if (GC_markers_m1 <= 0) {
+      /* Disable parallel marking.      */
       GC_parallel = FALSE;
       if (GC_print_stats) {
         GC_log_printf("Single marker thread, turning off parallel marking\n");
       }
     } else {
-      GC_parallel = TRUE;
       /* Disable true incremental collection, but generational is OK.   */
       GC_time_limit = GC_TIME_UNLIMITED;
     }

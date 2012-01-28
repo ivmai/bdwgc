@@ -1595,7 +1595,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
           WARN("Marker thread creation failed.\n", 0);
           /* Don't try to create other marker threads.    */
           GC_markers_m1 = i;
-          if (i == 0) GC_parallel = FALSE;
           break;
         }
       }
@@ -1788,7 +1787,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         GC_markers_m1 = i;
 #     endif
       if (i == 0) {
-        GC_parallel = FALSE;
         CloseHandle(mark_cv);
         CloseHandle(builder_cv);
         CloseHandle(mark_mutex_event);
@@ -2311,7 +2309,7 @@ GC_INNER void GC_thr_init(void)
       }
     }
 
-    /* Set GC_parallel. */
+    /* Check whether parallel mode could be enabled.    */
     {
 #     if !defined(GC_PTHREADS_PARAMARK) && !defined(MSWINCE) \
                 && !defined(DONT_USE_SIGNALANDWAIT)
@@ -2329,7 +2327,6 @@ GC_INNER void GC_thr_init(void)
          ) {
         /* Disable parallel marking. */
         GC_parallel = FALSE;
-        GC_markers_m1 = 0;
       } else {
 #       ifndef GC_PTHREADS_PARAMARK
           /* Initialize Win32 event objects for parallel marking.       */
@@ -2345,7 +2342,6 @@ GC_INNER void GC_thr_init(void)
               || mark_cv == (HANDLE)0)
             ABORT("CreateEvent() failed");
 #       endif
-        GC_parallel = TRUE;
         /* Disable true incremental collection, but generational is OK. */
         GC_time_limit = GC_TIME_UNLIMITED;
       }

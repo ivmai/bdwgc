@@ -1017,9 +1017,6 @@ STATIC void GC_do_local_mark(mse *local_mark_stack, mse *local_top)
 
 #define ENTRIES_TO_GET 5
 
-GC_INNER int GC_markers_m1 = 1; /* Normally changed by thread-library-  */
-                                /* -specific code.                      */
-
 /* Mark using the local mark stack until the global mark stack is empty */
 /* and there are no active workers. Update GC_first_nonempty to reflect */
 /* progress.                                                            */
