@@ -1092,7 +1092,7 @@ void run_one_test(void)
       }
       collectable_count += 1;
       if (GC_size(GC_malloc(0)) != MIN_WORDS * sizeof(GC_word)) {
-        GC_printf("GC_malloc(0) failed: GC_size returns %ld\n",
+        GC_printf("GC_malloc(0) failed: GC_size returns %lu\n",
                       (unsigned long)GC_size(GC_malloc(0)));
         FAIL;
       }
@@ -1396,7 +1396,11 @@ void check_heap_stats(void)
 #   ifdef THREADS
       GC_unregister_my_thread(); /* just to check it works (for main) */
 #   endif
-    GC_printf("Collector appears to work\n");
+    GC_printf("Completed %u collections", (unsigned)GC_get_gc_no());
+#   ifdef PARALLEL_MARK
+      GC_printf(" (using %d marker threads)", GC_get_parallel() + 1);
+#   endif
+    GC_printf("\n" "Collector appears to work\n");
 }
 
 #if defined(MACOS)
@@ -1770,7 +1774,6 @@ int main(void)
     check_heap_stats();
     (void)fflush(stdout);
     pthread_attr_destroy(&attr);
-    GC_printf("Completed %u collections\n", (unsigned)GC_get_gc_no());
 #   ifdef PTW32_STATIC_LIB
         pthread_win32_thread_detach_np ();
         pthread_win32_process_detach_np ();
