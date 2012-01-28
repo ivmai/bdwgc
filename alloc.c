@@ -365,8 +365,8 @@ STATIC void GC_maybe_gc(void)
           if (GC_need_full_gc || n_partial_gcs >= GC_full_freq) {
             if (GC_print_stats) {
               GC_log_printf(
-                  "***>Full mark for collection %lu after %ld allocd bytes\n",
-                  (unsigned long)GC_gc_no + 1, (long)GC_bytes_allocd);
+                "***>Full mark for collection %lu after %lu allocd bytes\n",
+                (unsigned long)GC_gc_no + 1, (unsigned long)GC_bytes_allocd);
             }
             GC_promote_black_lists();
             (void)GC_reclaim_all((GC_stop_func)0, TRUE);
@@ -646,7 +646,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
     if (GC_print_stats) {
       GC_log_printf("Collection %lu reclaimed %ld bytes ---> heapsize = %lu"
                     " bytes" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
-                    (unsigned long)(GC_gc_no - 1), (long)GC_bytes_found,
+                    (unsigned long)GC_gc_no, (long)GC_bytes_found,
                     (unsigned long)GC_heapsize /*, */
                     COMMA_IF_USE_MUNMAP((unsigned long)GC_unmapped_bytes));
     }
@@ -1135,7 +1135,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     GC_add_to_our_memory((ptr_t)space, bytes);
     if (space == 0) {
         if (GC_print_stats) {
-            GC_log_printf("Failed to expand heap by %ld bytes\n",
+            GC_log_printf("Failed to expand heap by %lu bytes\n",
                           (unsigned long)bytes);
         }
         return(FALSE);

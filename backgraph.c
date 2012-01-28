@@ -458,7 +458,7 @@ GC_INNER void GC_traverse_back_graph(void)
 
 void GC_print_back_graph_stats(void)
 {
-  GC_printf("Maximum backwards height of reachable objects at GC %lu is %ld\n",
+  GC_printf("Maximum backwards height of reachable objects at GC %lu is %lu\n",
             (unsigned long) GC_gc_no, (unsigned long)GC_max_height);
   if (GC_max_height > GC_max_max_height) {
     GC_max_max_height = GC_max_height;

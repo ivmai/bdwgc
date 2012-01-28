@@ -795,8 +795,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #   ifdef ENABLE_TRACE
         if (GC_trace_addr >= current_p
             && GC_trace_addr < limit) {
-          GC_log_printf("GC:%u Tracing from %p len %lu\n",
-                        (int)GC_gc_no, current_p, (unsigned long)descr);
+          GC_log_printf("GC:%u Tracing from %p, length is %lu\n",
+                        (unsigned)GC_gc_no, current_p, (unsigned long)descr);
         }
 #   endif /* ENABLE_TRACE */
     /* The simple case in which we're scanning a range. */

@@ -3634,7 +3634,7 @@ GC_INNER void GC_dirty_init(void)
     if (GC_bytes_allocd != 0 || GC_bytes_allocd_before_gc != 0) {
       memset(GC_written_pages, 0xff, sizeof(page_hash_table));
       if (GC_print_stats == VERBOSE)
-        GC_log_printf("Allocated bytes:%lu:all pages may have been written\n",
+        GC_log_printf("Allocated %lu bytes: all pages may have been written\n",
                       (unsigned long)(GC_bytes_allocd
                                       + GC_bytes_allocd_before_gc));
     }

@@ -57,8 +57,8 @@ STATIC void GC_clear_bl(word *);
 GC_INNER void GC_default_print_heap_obj_proc(ptr_t p)
 {
     ptr_t base = GC_base(p);
-    GC_err_printf("start: %p, appr. length: %ld", base,
-                  (unsigned long)GC_size(base));
+    GC_err_printf("start: %p, appr. length: %lu",
+                  base, (unsigned long)GC_size(base));
 }
 
 GC_INNER void (*GC_print_heap_obj)(ptr_t p) = GC_default_print_heap_obj_proc;
@@ -142,7 +142,7 @@ GC_INNER void GC_promote_black_lists(void)
     GC_incomplete_stack_bl = very_old_stack_bl;
     GC_total_stack_black_listed = total_stack_black_listed();
     if (GC_print_stats == VERBOSE)
-        GC_log_printf("%ld bytes in heap blacklisted for interior pointers\n",
+        GC_log_printf("%lu bytes in heap blacklisted for interior pointers\n",
                       (unsigned long)GC_total_stack_black_listed);
     if (GC_total_stack_black_listed != 0) {
         GC_black_list_spacing =

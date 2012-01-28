@@ -53,10 +53,10 @@ static int n_root_sets = 0;
                   GC_static_roots[i].r_tmp ? " (temporary)" : "");
         total += GC_static_roots[i].r_end - GC_static_roots[i].r_start;
     }
-    GC_printf("Total size: %ld\n", (unsigned long) total);
+    GC_printf("Total size: %lu\n", (unsigned long) total);
     if (GC_root_size != total) {
-        GC_err_printf("GC_root_size incorrect: %ld!!\n",
-                      (long) GC_root_size);
+        GC_err_printf("GC_root_size incorrect: %lu!!\n",
+                      (unsigned long) GC_root_size);
     }
   }
 #endif /* !NO_DEBUGGING */

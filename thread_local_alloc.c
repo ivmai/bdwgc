@@ -177,8 +177,8 @@ GC_API void * GC_CALL GC_malloc(size_t bytes)
     GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, DIRECT_GRANULES,
                          NORMAL, GC_core_malloc(bytes), obj_link(result)=0);
 #   ifdef LOG_ALLOCS
-      GC_err_printf("GC_malloc(%u) = %p : %u\n",
-                        (unsigned)bytes, result, (unsigned)GC_gc_no);
+      GC_err_printf("GC_malloc(%lu) = %p, GC: %lu\n",
+                    (unsigned long)bytes, result, (unsigned long)GC_gc_no);
 #   endif
     return result;
 }
