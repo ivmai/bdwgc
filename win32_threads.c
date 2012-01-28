@@ -1464,7 +1464,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       }
     }
 #   ifdef PARALLEL_MARK
-      for (i = 0; i < GC_markers - 1; ++i) {
+      for (i = 0; i < GC_markers_m1; ++i) {
         ptr_t s = marker_sp[i];
 #       ifdef IA64
           /* FIXME: not implemented */
@@ -1574,7 +1574,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #   endif
 
     /* start_mark_threads() is the same as in pthread_support.c except for: */
-    /* - GC_markers value is adjusted already;                              */
+    /* - GC_markers_m1 value is adjusted already;                              */
     /* - thread stack is assumed to be large enough; and                    */
     /* - statistics about the number of marker threads is printed outside.  */
     static void start_mark_threads(void)
@@ -1588,13 +1588,13 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
         ABORT("pthread_attr_setdetachstate failed");
 
-      for (i = 0; i < GC_markers - 1; ++i) {
+      for (i = 0; i < GC_markers_m1; ++i) {
         marker_last_stack_min[i] = ADDR_LIMIT;
         if (0 != pthread_create(&new_thread, &attr,
                                 GC_mark_thread, (void *)(word)i)) {
           WARN("Marker thread creation failed.\n", 0);
           /* Don't try to create other marker threads.    */
-          GC_markers = i + 1;
+          GC_markers_m1 = i;
           if (i == 0) GC_parallel = FALSE;
           break;
         }
@@ -1737,7 +1737,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #     ifdef DONT_USE_SIGNALANDWAIT
         /* Initialize GC_marker_cv[] and GC_marker_Id[] fully before    */
         /* starting the first helper thread.                            */
-        for (i = 0; i < GC_markers - 1; ++i) {
+        for (i = 0; i < GC_markers_m1; ++i) {
           GC_marker_Id[i] = GetCurrentThreadId();
           if ((GC_marker_cv[i] = CreateEvent(NULL /* attrs */,
                                         TRUE /* isManualReset */,
@@ -1747,7 +1747,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         }
 #     endif
 
-      for (i = 0; i < GC_markers - 1; ++i) {
+      for (i = 0; i < GC_markers_m1; ++i) {
         marker_last_stack_min[i] = ADDR_LIMIT;
 #       ifdef MSWINCE
           /* There is no _beginthreadex() in WinCE. */
@@ -1778,14 +1778,14 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #       endif
       }
 
-      /* Adjust GC_markers (and free unused resources) in case of failure. */
+      /* Adjust GC_markers_m1 (and free unused resources) if failed.    */
 #     ifdef DONT_USE_SIGNALANDWAIT
-        while (GC_markers > i + 1) {
-          GC_markers--;
-          CloseHandle(GC_marker_cv[GC_markers - 1]);
+        while (GC_markers_m1 > i) {
+          GC_markers_m1--;
+          CloseHandle(GC_marker_cv[GC_markers_m1]);
         }
 #     else
-        GC_markers = i + 1;
+        GC_markers_m1 = i;
 #     endif
       if (i == 0) {
         GC_parallel = FALSE;
@@ -1904,7 +1904,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       {
         HANDLE event = mark_cv;
         DWORD thread_id = GetCurrentThreadId();
-        int i = GC_markers - 1;
+        int i = GC_markers_m1;
+
         while (i-- > 0) {
           if (GC_marker_Id[i] == thread_id) {
             event = GC_marker_cv[i];
@@ -1923,7 +1924,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       GC_INNER void GC_notify_all_marker(void)
       {
         DWORD thread_id = GetCurrentThreadId();
-        int i = GC_markers - 1;
+        int i = GC_markers_m1;
+
         while (i-- > 0) {
           /* Notify every marker ignoring self (for efficiency).  */
           if (SetEvent(GC_marker_Id[i] != thread_id ? GC_marker_cv[i] :
@@ -2267,20 +2269,20 @@ GC_INNER void GC_thr_init(void)
   GC_ASSERT(sb_result == GC_SUCCESS);
 
 # if defined(PARALLEL_MARK)
-    /* Set GC_markers. */
+    /* Set GC_markers_m1. */
     {
       char * markers_string = GETENV("GC_MARKERS");
       if (markers_string != NULL) {
-        GC_markers = atoi(markers_string);
-        if (GC_markers > MAX_MARKERS) {
+        GC_markers_m1 = atoi(markers_string) - 1;
+        if (GC_markers_m1 >= MAX_MARKERS) {
           WARN("Limiting number of mark threads\n", 0);
-          GC_markers = MAX_MARKERS;
+          GC_markers_m1 = MAX_MARKERS - 1;
         }
       } else {
 #       ifdef MSWINCE
           /* There is no GetProcessAffinityMask() in WinCE.     */
           /* GC_sysinfo is already initialized.                 */
-          GC_markers = (int)GC_sysinfo.dwNumberOfProcessors;
+          GC_markers_m1 = (int)GC_sysinfo.dwNumberOfProcessors - 1;
 #       else
 #         ifdef _WIN64
             DWORD_PTR procMask = 0;
@@ -2297,15 +2299,15 @@ GC_INNER void GC_thr_init(void)
               ncpu++;
             } while ((procMask &= procMask - 1) != 0);
           }
-          GC_markers = ncpu;
+          GC_markers_m1 = ncpu - 1;
 #       endif
 #       ifdef GC_MIN_MARKERS
           /* This is primarily for testing on systems without getenv(). */
-          if (GC_markers < GC_MIN_MARKERS)
-            GC_markers = GC_MIN_MARKERS;
+          if (GC_markers_m1 < GC_MIN_MARKERS - 1)
+            GC_markers_m1 = GC_MIN_MARKERS - 1;
 #       endif
-        if (GC_markers >= MAX_MARKERS)
-          GC_markers = MAX_MARKERS; /* silently limit GC_markers value  */
+        if (GC_markers_m1 >= MAX_MARKERS)
+          GC_markers_m1 = MAX_MARKERS - 1; /* silently limit the value */
       }
     }
 
@@ -2316,7 +2318,7 @@ GC_INNER void GC_thr_init(void)
         HMODULE hK32;
         /* SignalObjectAndWait() API call works only under NT.          */
 #     endif
-      if (GC_win32_dll_threads || GC_markers <= 1
+      if (GC_win32_dll_threads || GC_markers_m1 <= 0
 #         if !defined(GC_PTHREADS_PARAMARK) && !defined(MSWINCE) \
                 && !defined(DONT_USE_SIGNALANDWAIT)
             || GC_wnt == FALSE
@@ -2327,7 +2329,7 @@ GC_INNER void GC_thr_init(void)
          ) {
         /* Disable parallel marking. */
         GC_parallel = FALSE;
-        GC_markers = 1;
+        GC_markers_m1 = 0;
       } else {
 #       ifndef GC_PTHREADS_PARAMARK
           /* Initialize Win32 event objects for parallel marking.       */
@@ -2357,7 +2359,7 @@ GC_INNER void GC_thr_init(void)
     /* If we are using a parallel marker, actually start helper threads. */
     if (GC_parallel) start_mark_threads();
     if (GC_print_stats) {
-      GC_log_printf("Started %d mark helper threads\n", GC_markers - 1);
+      GC_log_printf("Started %d mark helper threads\n", GC_markers_m1);
     }
 # endif
 }

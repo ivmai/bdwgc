@@ -343,7 +343,7 @@ static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
   GC_INNER GC_bool GC_is_mach_marker(thread_act_t thread)
   {
     int i;
-    for (i = 0; i < GC_markers - 1; i++) {
+    for (i = 0; i < GC_markers_m1; i++) {
       if (marker_mach_threads[i] == thread)
         return TRUE;
     }
@@ -420,19 +420,19 @@ static void start_mark_threads(void)
         }
       }
 #   endif /* HPUX || GC_DGUX386_THREADS */
-    for (i = 0; i < GC_markers - 1; ++i) {
+    for (i = 0; i < GC_markers_m1; ++i) {
       if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
         WARN("Marker thread creation failed, errno = %" WARN_PRIdPTR "\n",
              errno);
         /* Don't try to create other marker threads.    */
-        GC_markers = i + 1;
+        GC_markers_m1 = i;
         if (i == 0) GC_parallel = FALSE;
         break;
       }
     }
     if (GC_print_stats) {
-      GC_log_printf("Started %d mark helper threads\n", GC_markers - 1);
+      GC_log_printf("Started %d mark helper threads\n", GC_markers_m1);
     }
     pthread_attr_destroy(&attr);
 }
@@ -686,7 +686,7 @@ STATIC void GC_remove_all_threads_but_me(void)
 
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef PARALLEL_MARK
-      for (i = 0; i < GC_markers - 1; ++i) {
+      for (i = 0; i < GC_markers_m1; ++i) {
         if (marker_sp[i] > lo && marker_sp[i] < hi) return TRUE;
 #       ifdef IA64
           if (marker_bsp[i] > lo && marker_bsp[i] < hi) return TRUE;
@@ -720,7 +720,7 @@ STATIC void GC_remove_all_threads_but_me(void)
 
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef PARALLEL_MARK
-      for (i = 0; i < GC_markers - 1; ++i) {
+      for (i = 0; i < GC_markers_m1; ++i) {
         if (marker_sp[i] > result && marker_sp[i] < bound)
           result = marker_sp[i];
       }
@@ -901,7 +901,7 @@ STATIC void GC_fork_child_proc(void)
 #   ifdef PARALLEL_MARK
       /* Turn off parallel marking in the child, since we are probably  */
       /* just going to exec, and we would have to restart mark threads. */
-        GC_markers = 1;
+        GC_markers_m1 = 0;
         GC_parallel = FALSE;
 #   endif /* PARALLEL_MARK */
     RESTORE_CANCEL(fork_cancel_state);
@@ -1036,27 +1036,27 @@ GC_INNER void GC_thr_init(void)
     WARN("GC_get_nprocs() returned %" WARN_PRIdPTR "\n", GC_nprocs);
     GC_nprocs = 2; /* assume dual-core */
 #   ifdef PARALLEL_MARK
-      GC_markers = 1;
+      GC_markers_m1 = 0; /* but use only one marker */
 #   endif
   } else {
 #  ifdef PARALLEL_MARK
      {
        char * markers_string = GETENV("GC_MARKERS");
        if (markers_string != NULL) {
-         GC_markers = atoi(markers_string);
-         if (GC_markers > MAX_MARKERS) {
+         GC_markers_m1 = atoi(markers_string) - 1;
+         if (GC_markers_m1 >= MAX_MARKERS) {
            WARN("Limiting number of mark threads\n", 0);
-           GC_markers = MAX_MARKERS;
+           GC_markers_m1 = MAX_MARKERS - 1;
          }
        } else {
-         GC_markers = GC_nprocs;
+         GC_markers_m1 = GC_nprocs - 1;
 #        ifdef GC_MIN_MARKERS
            /* This is primarily for targets without getenv().   */
-           if (GC_markers < GC_MIN_MARKERS)
-             GC_markers = GC_MIN_MARKERS;
+           if (GC_markers_m1 < GC_MIN_MARKERS - 1)
+             GC_markers_m1 = GC_MIN_MARKERS - 1;
 #        endif
-         if (GC_markers >= MAX_MARKERS)
-           GC_markers = MAX_MARKERS; /* silently limit GC_markers value */
+         if (GC_markers_m1 >= MAX_MARKERS)
+           GC_markers_m1 = MAX_MARKERS - 1; /* silently limit the value */
        }
      }
 #  endif
@@ -1065,9 +1065,9 @@ GC_INNER void GC_thr_init(void)
     if (GC_print_stats) {
       GC_log_printf(
                 "Number of processors = %d, number of marker threads = %d\n",
-                GC_nprocs, GC_markers);
+                GC_nprocs, GC_markers_m1 + 1);
     }
-    if (GC_markers <= 1) {
+    if (GC_markers_m1 <= 0) {
       GC_parallel = FALSE;
       if (GC_print_stats) {
         GC_log_printf("Single marker thread, turning off parallel marking\n");

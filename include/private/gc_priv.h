@@ -2203,9 +2203,9 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
   /* than the main garbage collector lock; standard pthreads-based      */
   /* implementations should be sufficient.                              */
 
-  GC_EXTERN int GC_markers;   /* Number of mark threads we would like   */
-                              /* to have.  Includes the initiating      */
-                              /* thread.  Defined in mark.c.            */
+  GC_EXTERN int GC_markers_m1; /* Number of mark threads we would like  */
+                               /* to have excluding the initiating      */
+                               /* thread.  Defined in mark.c.           */
 
   /* The mark lock and condition variable.  If the GC lock is also      */
   /* acquired, the GC lock must be acquired first.  The mark lock is    */
