@@ -806,13 +806,22 @@ typedef word page_hash_table[PHT_SIZE];
 
 #ifdef PARALLEL_MARK
 # include "atomic_ops.h"
-  typedef AO_t counter_t;
+# define counter_t volatile AO_t
 #else
   typedef size_t counter_t;
 # if defined(THREADS) && defined(MPROTECT_VDB)
 #   include "atomic_ops.h"
 # endif
 #endif /* !PARALLEL_MARK */
+
+union word_ptr_ao_u {
+  word w;
+  signed_word sw;
+  void *vp;
+# ifdef AO_HAVE_load
+    volatile AO_t ao;
+# endif
+};
 
 /* We maintain layout maps for heap blocks containing objects of a given */
 /* size.  Each entry in this map describes a byte offset and has the     */

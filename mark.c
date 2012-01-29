@@ -645,7 +645,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 # endif
   {
     current_p = mark_stack_top -> mse_start;
-    descr = mark_stack_top -> mse_descr;
+    descr = mark_stack_top -> mse_descr.w;
   retry:
     /* current_p and descr describe the current object.         */
     /* *mark_stack_top is vacant.                               */
@@ -675,7 +675,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                 && mark_stack_top < mark_stack_limit - 1) {
               int new_size = (descr/2) & ~(sizeof(word)-1);
               mark_stack_top -> mse_start = current_p;
-              mark_stack_top -> mse_descr = new_size + sizeof(word);
+              mark_stack_top -> mse_descr.w = new_size + sizeof(word);
                                         /* makes sure we handle         */
                                         /* misaligned pointers.         */
               mark_stack_top++;
@@ -693,8 +693,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #         endif /* PARALLEL_MARK */
           mark_stack_top -> mse_start =
                 limit = current_p + WORDS_TO_BYTES(SPLIT_RANGE_WORDS-1);
-          mark_stack_top -> mse_descr =
-                        descr - WORDS_TO_BYTES(SPLIT_RANGE_WORDS-1);
+          mark_stack_top -> mse_descr.w =
+                                descr - WORDS_TO_BYTES(SPLIT_RANGE_WORDS-1);
 #         ifdef ENABLE_TRACE
             if (GC_trace_addr >= current_p
                 && GC_trace_addr < current_p + descr) {
@@ -915,17 +915,17 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
 
     GC_ASSERT(high >= low-1 && (word)(high - low + 1) <= GC_mark_stack_size);
     for (p = low; p <= high && i <= max; ++p) {
-        word descr = AO_load((volatile AO_t *) &(p -> mse_descr));
+        word descr = (word)AO_load(&p->mse_descr.ao);
         if (descr != 0) {
             /* Must be ordered after read of descr: */
-            AO_store_release_write((volatile AO_t *) &(p -> mse_descr), 0);
+            AO_store_release_write(&p->mse_descr.ao, 0);
             /* More than one thread may get this entry, but that's only */
             /* a minor performance problem.                             */
             ++top;
-            top -> mse_descr = descr;
+            top -> mse_descr.w = descr;
             top -> mse_start = p -> mse_start;
-            GC_ASSERT((top -> mse_descr & GC_DS_TAGS) != GC_DS_LENGTH ||
-                      top -> mse_descr < (word)GC_greatest_plausible_heap_addr
+            GC_ASSERT((top->mse_descr.w & GC_DS_TAGS) != GC_DS_LENGTH ||
+                      top->mse_descr.w < (word)GC_greatest_plausible_heap_addr
                                          - (word)GC_least_plausible_heap_addr);
             /* If this is a big object, count it as                     */
             /* size/256 + 1 objects.                                    */
@@ -1276,7 +1276,7 @@ GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
         length &= ~GC_DS_TAGS;
 #   endif
     GC_mark_stack_top -> mse_start = bottom;
-    GC_mark_stack_top -> mse_descr = length;
+    GC_mark_stack_top -> mse_descr.w = length;
 }
 
 #ifndef GC_DISABLE_INCREMENTAL

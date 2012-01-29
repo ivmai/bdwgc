@@ -71,7 +71,8 @@ GC_EXTERN unsigned GC_n_mark_procs;
 
 typedef struct GC_ms_entry {
     ptr_t mse_start;    /* First word of object, word aligned.  */
-    GC_word mse_descr;  /* Descriptor; low order two bits are tags,     */
+    union word_ptr_ao_u mse_descr;
+                        /* Descriptor; low order two bits are tags,     */
                         /* as described in gc_mark.h.                   */
 } mse;
 
@@ -81,6 +82,7 @@ GC_EXTERN mse * GC_mark_stack_limit;
 
 #ifdef PARALLEL_MARK
   GC_EXTERN mse * volatile GC_mark_stack_top;
+                                /* FIXME: Use union to avoid casts to AO_t */
 #else
   GC_EXTERN mse * GC_mark_stack_top;
 #endif
@@ -140,7 +142,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
           mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top); \
         } \
         mark_stack_top -> mse_start = (obj); \
-        mark_stack_top -> mse_descr = _descr; \
+        mark_stack_top -> mse_descr.w = _descr; \
     } \
 }
 
@@ -177,7 +179,7 @@ exit_label: ; \
 #   define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
         { \
           if (!(*(addr) & (bits))) { \
-            AO_or((AO_t *)(addr), (bits)); \
+            AO_or((volatile AO_t *)(addr), (AO_t)(bits)); \
           } else { \
             goto exit_label; \
           } \

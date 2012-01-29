@@ -410,8 +410,8 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
             mark_stack_ptr = GC_signal_mark_stack_overflow(mark_stack_ptr);
         }
         mark_stack_ptr -> mse_start = (ptr_t)(addr + WORDSZ);
-        mark_stack_ptr -> mse_descr =
-                GC_MAKE_PROC(GC_typed_mark_proc_index, env+1);
+        mark_stack_ptr -> mse_descr.w =
+                        GC_MAKE_PROC(GC_typed_mark_proc_index, env + 1);
     }
     return(mark_stack_ptr);
 }
@@ -457,7 +457,7 @@ STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
           for (i = 0; i < nelements; i++) {
               msp++;
               msp -> mse_start = current;
-              msp -> mse_descr = descr;
+              msp -> mse_descr.w = descr;
               current += sz;
           }
           return(msp);
@@ -522,12 +522,12 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
         GC_mark_stack_too_small = TRUE;
         new_mark_stack_ptr = orig_mark_stack_ptr + 1;
         new_mark_stack_ptr -> mse_start = (ptr_t)addr;
-        new_mark_stack_ptr -> mse_descr = sz | GC_DS_LENGTH;
+        new_mark_stack_ptr -> mse_descr.w = sz | GC_DS_LENGTH;
     } else {
         /* Push descriptor itself */
         new_mark_stack_ptr++;
         new_mark_stack_ptr -> mse_start = (ptr_t)(addr + nwords - 1);
-        new_mark_stack_ptr -> mse_descr = sizeof(word) | GC_DS_LENGTH;
+        new_mark_stack_ptr -> mse_descr.w = sizeof(word) | GC_DS_LENGTH;
     }
     return new_mark_stack_ptr;
 }
