@@ -21,7 +21,7 @@
 
 #include "atomic_ops.h"
 
-static tse invalid_tse = {INVALID_QTID, 0, 0, INVALID_THREADID};
+static const tse invalid_tse = {INVALID_QTID, 0, 0, INVALID_THREADID};
             /* A thread-specific data entry which will never    */
             /* appear valid to a reader.  Used to fill in empty */
             /* cache entries to avoid a check for 0.            */
@@ -40,7 +40,7 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
     }
 #   ifdef GC_ASSERTIONS
       for (i = 0; i < TS_HASH_SIZE; ++i) {
-        GC_ASSERT(result -> hash[i] == 0);
+        GC_ASSERT(result -> hash[i].p == 0);
       }
 #   endif
     *key_ptr = result;
@@ -57,13 +57,13 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
     if (0 == entry) return ENOMEM;
     pthread_mutex_lock(&(key -> lock));
     /* Could easily check for an existing entry here.   */
-    entry -> next = key -> hash[hash_val];
+    entry -> next = key->hash[hash_val].p;
     entry -> thread = self;
     entry -> value = value;
     GC_ASSERT(entry -> qtid == INVALID_QTID);
     /* There can only be one writer at a time, but this needs to be     */
     /* atomic with respect to concurrent readers.                       */
-    AO_store_release((volatile AO_t *)(key -> hash + hash_val), (AO_t)entry);
+    AO_store_release(&key->hash[hash_val].ao, (AO_t)entry);
     pthread_mutex_unlock(&(key -> lock));
     return 0;
 }
@@ -75,7 +75,7 @@ GC_INNER void GC_remove_specific(tsd * key)
     pthread_t self = pthread_self();
     unsigned hash_val = HASH(self);
     tse *entry;
-    tse **link = key -> hash + hash_val;
+    tse **link = &key->hash[hash_val].p;
 
     pthread_mutex_lock(&(key -> lock));
     entry = *link;
@@ -114,7 +114,7 @@ GC_INNER void * GC_slow_getspecific(tsd * key, unsigned long qtid,
 {
     pthread_t self = pthread_self();
     unsigned hash_val = HASH(self);
-    tse *entry = key -> hash[hash_val];
+    tse *entry = key->hash[hash_val].p;
 
     GC_ASSERT(qtid != INVALID_QTID);
     while (entry != NULL && entry -> thread != self) {
@@ -145,7 +145,7 @@ GC_INNER void * GC_slow_getspecific(tsd * key, unsigned long qtid,
       ABORT("Unmarked thread-specific-data table");
     }
     for (i = 0; i < TS_HASH_SIZE; ++i) {
-      for (p = key -> hash[i]; p != 0; p = p -> next) {
+      for (p = key->hash[i].p; p != 0; p = p -> next) {
         if (!GC_is_marked(GC_base(p))) {
           GC_err_printf("Thread-specific-data entry at %p not marked\n", p);
           ABORT("Unmarked tse");
