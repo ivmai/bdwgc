@@ -172,7 +172,8 @@ STATIC DWORD GC_main_thread = 0;
 struct GC_Thread_Rep {
   union {
 #   ifndef GC_NO_THREADS_DISCOVERY
-      AO_t in_use;      /* Updated without lock.                */
+      volatile AO_t in_use;
+                        /* Updated without lock.                */
                         /* We assert that unused                */
                         /* entries have invalid ids of          */
                         /* zero and zero stack fields.          */
@@ -268,7 +269,7 @@ typedef volatile struct GC_Thread_Rep * GC_vthread;
  */
 
 #ifndef GC_NO_THREADS_DISCOVERY
-  STATIC AO_t GC_attached_thread = FALSE;
+  STATIC volatile AO_t GC_attached_thread = FALSE;
 #endif
 
 #if !defined(__GNUC__)
@@ -277,15 +278,18 @@ typedef volatile struct GC_Thread_Rep * GC_vthread;
   GC_bool GC_started_thread_while_stopped(void)
   {
 #   ifndef GC_NO_THREADS_DISCOVERY
-      AO_t result;
-
       if (GC_win32_dll_threads) {
-        AO_nop_full();  /* Prior heap reads need to complete earlier. */
-        result = AO_load(&GC_attached_thread);
-        if (result) {
-          AO_store(&GC_attached_thread, FALSE);
-          return TRUE;
-        }
+#       ifdef AO_HAVE_compare_and_swap_release
+          if (AO_compare_and_swap_release(&GC_attached_thread, TRUE,
+                                          FALSE /* stored */))
+            return TRUE;
+#       else
+          AO_nop_full(); /* Prior heap reads need to complete earlier. */
+          if (AO_load(&GC_attached_thread)) {
+            AO_store(&GC_attached_thread, FALSE);
+            return TRUE;
+          }
+#       endif
       }
 #   endif
     return FALSE;
@@ -1080,7 +1084,7 @@ GC_INNER void GC_stop_world(void)
       /* Any threads being created during this loop will end up setting */
       /* GC_attached_thread when they start.  This will force marking   */
       /* to restart.  This is not ideal, but hopefully correct.         */
-      GC_attached_thread = FALSE;
+      AO_store(&GC_attached_thread, FALSE);
       my_max = (int)GC_get_max_thread_index();
       for (i = 0; i <= my_max; i++) {
         GC_vthread t = dll_thread_table + i;
@@ -1610,7 +1614,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     /* as in pthread_support.c except that GC_generic_lock() is not used. */
 
 #   ifdef LOCK_STATS
-      AO_t GC_block_count = 0;
+      volatile AO_t GC_block_count = 0;
 #   endif
 
     GC_INNER void GC_acquire_mark_lock(void)
@@ -1806,8 +1810,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
     /* #define LOCK_STATS */
 #   ifdef LOCK_STATS
-      AO_t GC_block_count = 0;
-      AO_t GC_unlocked_count = 0;
+      volatile AO_t GC_block_count = 0;
+      volatile AO_t GC_unlocked_count = 0;
 #   endif
 
     GC_INNER void GC_acquire_mark_lock(void)

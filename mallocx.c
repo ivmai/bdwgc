@@ -241,7 +241,7 @@ GC_API void GC_CALL GC_incr_bytes_freed(size_t n)
 }
 
 # ifdef PARALLEL_MARK
-    STATIC volatile signed_word GC_bytes_allocd_tmp = 0;
+    STATIC volatile AO_t GC_bytes_allocd_tmp = 0;
                         /* Number of bytes of memory allocated since    */
                         /* we released the GC lock.  Instead of         */
                         /* reacquiring the GC lock just to add this in, */
@@ -314,16 +314,16 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
             hhdr -> hb_last_reclaimed = (unsigned short) GC_gc_no;
 #           ifdef PARALLEL_MARK
               if (GC_parallel) {
-                  signed_word my_bytes_allocd_tmp = GC_bytes_allocd_tmp;
-
+                  signed_word my_bytes_allocd_tmp =
+                                (signed_word)AO_load(&GC_bytes_allocd_tmp);
                   GC_ASSERT(my_bytes_allocd_tmp >= 0);
                   /* We only decrement it while holding the GC lock.    */
                   /* Thus we can't accidentally adjust it down in more  */
                   /* than one thread simultaneously.                    */
+
                   if (my_bytes_allocd_tmp != 0) {
-                    (void)AO_fetch_and_add(
-                                (volatile void *)(&GC_bytes_allocd_tmp),
-                                (AO_t)(-my_bytes_allocd_tmp));
+                    (void)AO_fetch_and_add(&GC_bytes_allocd_tmp,
+                                           (AO_t)(-my_bytes_allocd_tmp));
                     GC_bytes_allocd += my_bytes_allocd_tmp;
                   }
                   GC_acquire_mark_lock();
@@ -343,9 +343,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
 #             ifdef PARALLEL_MARK
                 if (GC_parallel) {
                   *result = op;
-                  (void)AO_fetch_and_add(
-                                (volatile AO_t *)(&GC_bytes_allocd_tmp),
-                                (AO_t)(my_bytes_allocd));
+                  (void)AO_fetch_and_add(&GC_bytes_allocd_tmp,
+                                         (AO_t)my_bytes_allocd);
                   GC_acquire_mark_lock();
                   -- GC_fl_builder_count;
                   if (GC_fl_builder_count == 0) GC_notify_all_builder();
