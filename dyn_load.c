@@ -1197,13 +1197,11 @@ STATIC const struct {
 /* containing private vs. public symbols.  It also constructs   */
 /* sections specifically for zero-sized objects, when the       */
 /* target supports section anchors.                             */
-STATIC const char * GC_dyld_add_sect_fmts[] =
-{
+STATIC const char * const GC_dyld_add_sect_fmts[] = {
   "__bss%u",
   "__pu_bss%u",
   "__zo_bss%u",
-  "__zo_pu_bss%u",
-  NULL
+  "__zo_pu_bss%u"
 };
 
 /* Currently, mach-o will allow up to the max of 2^15 alignment */
@@ -1263,7 +1261,8 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
   }
 
   /* Sections constructed on demand.    */
-  for (j = 0; (fmt = GC_dyld_add_sect_fmts[j]) != NULL; j++) {
+  for (j = 0; j < sizeof(GC_dyld_add_sect_fmts) / sizeof(char *); j++) {
+    fmt = GC_dyld_add_sect_fmts[j];
     /* Add our manufactured aligned BSS sections.       */
     for (i = 0; i <= L2_MAX_OFILE_ALIGNMENT; i++) {
       snprintf(secnam, sizeof(secnam), fmt, (unsigned)i);
@@ -1314,7 +1313,8 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
   }
 
   /* Remove our on-demand sections.     */
-  for (j = 0; (fmt = GC_dyld_add_sect_fmts[j]) != NULL; j++) {
+  for (j = 0; j < sizeof(GC_dyld_add_sect_fmts) / sizeof(char *); j++) {
+    fmt = GC_dyld_add_sect_fmts[j];
     for (i = 0; i <= L2_MAX_OFILE_ALIGNMENT; i++) {
       snprintf(secnam, sizeof(secnam), fmt, (unsigned)i);
       sec = GC_GETSECTBYNAME(hdr, SEG_DATA, secnam);
