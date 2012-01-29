@@ -392,18 +392,14 @@ exit_label: ; \
       }
 #endif
 
-
-/*
- * As above, but interior pointer recognition as for
- * normal heap pointers.
- */
-#define GC_PUSH_ONE_HEAP(p,source) \
-    FIXUP_POINTER(p); \
-    if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr \
-         && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) { \
-      GC_mark_stack_top = GC_mark_and_push( \
-                            (void *)(p), GC_mark_stack_top, \
-                            GC_mark_stack_limit, (void * *)(source)); \
+/* As above, but interior pointer recognition as for normal heap pointers. */
+#define GC_PUSH_ONE_HEAP(p,source,mark_stack_top) \
+    { \
+      FIXUP_POINTER(p); \
+      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr \
+          && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) \
+        mark_stack_top = GC_mark_and_push((void *)(p), mark_stack_top, \
+                                GC_mark_stack_limit, (void * *)(source)); \
     }
 
 /* Mark starting at mark stack entry top (incl.) down to        */

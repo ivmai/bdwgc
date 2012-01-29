@@ -1537,25 +1537,25 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 #   define USE_PUSH_MARKED_ACCELERATORS
 #   define PUSH_GRANULE(q) \
                 { word qcontents = (q)[0]; \
-                  GC_PUSH_ONE_HEAP(qcontents, (q)); }
+                  GC_PUSH_ONE_HEAP(qcontents, q, GC_mark_stack_top); }
 # elif GC_GRANULE_WORDS == 2
 #   define USE_PUSH_MARKED_ACCELERATORS
 #   define PUSH_GRANULE(q) \
                 { word qcontents = (q)[0]; \
-                  GC_PUSH_ONE_HEAP(qcontents, (q)); \
+                  GC_PUSH_ONE_HEAP(qcontents, q, GC_mark_stack_top); \
                   qcontents = (q)[1]; \
-                  GC_PUSH_ONE_HEAP(qcontents, (q)+1); }
+                  GC_PUSH_ONE_HEAP(qcontents, (q)+1, GC_mark_stack_top); }
 # elif GC_GRANULE_WORDS == 4
 #   define USE_PUSH_MARKED_ACCELERATORS
 #   define PUSH_GRANULE(q) \
                 { word qcontents = (q)[0]; \
-                  GC_PUSH_ONE_HEAP(qcontents, (q)); \
+                  GC_PUSH_ONE_HEAP(qcontents, q, GC_mark_stack_top); \
                   qcontents = (q)[1]; \
-                  GC_PUSH_ONE_HEAP(qcontents, (q)+1); \
+                  GC_PUSH_ONE_HEAP(qcontents, (q)+1, GC_mark_stack_top); \
                   qcontents = (q)[2]; \
-                  GC_PUSH_ONE_HEAP(qcontents, (q)+2); \
+                  GC_PUSH_ONE_HEAP(qcontents, (q)+2, GC_mark_stack_top); \
                   qcontents = (q)[3]; \
-                  GC_PUSH_ONE_HEAP(qcontents, (q)+3); }
+                  GC_PUSH_ONE_HEAP(qcontents, (q)+3, GC_mark_stack_top); }
 # endif
 #endif /* !USE_MARK_BYTES && MARK_BIT_PER_GRANULE */
 
