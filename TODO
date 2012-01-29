@@ -22,6 +22,9 @@ auto-generated Makefile) instead. (Same for EMX_MAKEFILE.)
 
 build_atomic_ops.sh[.cygwin]: Remove if really not needed.
 
+Do type-punning via union (instead of pointer type cast) to enable safe
+'-fstrict-aliasing' compiler optimization option.
+
 
 == FIXME tasks ==
 
