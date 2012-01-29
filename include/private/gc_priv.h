@@ -1023,7 +1023,6 @@ struct roots {
 
 struct _GC_arrays {
   word _heapsize;               /* Heap size in bytes.                  */
-  word _max_heapsize;
   word _requested_heapsize;     /* Heap size due to explicit expansion. */
   ptr_t _last_heap_addr;
   ptr_t _prev_heap_addr;
@@ -1056,9 +1055,6 @@ struct _GC_arrays {
         /* Approximate number of bytes in objects (and headers) */
         /* that became ready for finalization in the last       */
         /* collection.                                          */
-  word _non_gc_bytes_at_gc;
-        /* Number of explicitly managed bytes of storage        */
-        /* at last collection.                                  */
   word _bytes_freed;
         /* Number of explicitly deallocated bytes of memory     */
         /* since last collection.                               */
@@ -1220,10 +1216,8 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 #define GC_large_free_bytes GC_arrays._large_free_bytes
 #define GC_last_heap_addr GC_arrays._last_heap_addr
 #define GC_mark_procs GC_arrays._mark_procs
-#define GC_max_heapsize GC_arrays._max_heapsize
 #define GC_max_large_allocd_bytes GC_arrays._max_large_allocd_bytes
 #define GC_modws_valid_offsets GC_arrays._modws_valid_offsets
-#define GC_non_gc_bytes_at_gc GC_arrays._non_gc_bytes_at_gc
 #define GC_prev_heap_addr GC_arrays._prev_heap_addr
 #define GC_requested_heapsize GC_arrays._requested_heapsize
 #define GC_scratch_end_ptr GC_arrays._scratch_end_ptr

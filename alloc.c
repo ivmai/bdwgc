@@ -235,6 +235,10 @@ static word min_bytes_allocd(void)
     }
 }
 
+STATIC word GC_non_gc_bytes_at_gc = 0;
+                /* Number of explicitly managed bytes of storage        */
+                /* at last collection.                                  */
+
 /* Return the number of bytes allocated, adjusted for explicit storage  */
 /* management, etc..  This number is used in deciding when to trigger   */
 /* collections.                                                         */
@@ -1096,6 +1100,8 @@ GC_INLINE word GC_min(word x, word y)
 {
     return(x < y? x : y);
 }
+
+STATIC word GC_max_heapsize = 0;
 
 GC_API void GC_CALL GC_set_max_heap_size(GC_word n)
 {
