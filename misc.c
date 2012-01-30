@@ -1140,6 +1140,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
   {
     HANDLE hFile;
     TCHAR *logPath;
+    BOOL appendToFile = FALSE;
 #   if !defined(NO_GETENV_WIN32) || !defined(OLD_WIN32_LOG_FILE)
       TCHAR pathBuf[_MAX_PATH + 0x10]; /* buffer for path + ext */
 
@@ -1149,9 +1150,11 @@ GC_API void GC_CALL GC_enable_incremental(void)
     /* Use GetEnvironmentVariable instead of GETENV() for unicode support. */
 #   ifndef NO_GETENV_WIN32
       if (GetEnvironmentVariable(TEXT("GC_LOG_FILE"), pathBuf,
-                                 _MAX_PATH + 1) - 1U >= (DWORD)_MAX_PATH)
+                                 _MAX_PATH + 1) - 1U < (DWORD)_MAX_PATH) {
+        appendToFile = TRUE;
+      } else
 #   endif
-    {
+    /* else */ {
       /* Env var not found or its value too long.       */
 #     ifdef OLD_WIN32_LOG_FILE
         logPath = TEXT(GC_LOG_STD_NAME);
@@ -1169,11 +1172,19 @@ GC_API void GC_CALL GC_enable_incremental(void)
     }
 
     hFile = CreateFile(logPath, GENERIC_WRITE, FILE_SHARE_READ,
-                       NULL /* lpSecurityAttributes */, CREATE_ALWAYS,
+                       NULL /* lpSecurityAttributes */,
+                       appendToFile ? OPEN_ALWAYS : CREATE_ALWAYS,
                        GC_print_stats == VERBOSE ? FILE_ATTRIBUTE_NORMAL :
                             /* immediately flush writes unless very verbose */
                             FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH,
                        NULL /* hTemplateFile */);
+#   ifndef NO_GETENV_WIN32
+      if (appendToFile && hFile != INVALID_HANDLE_VALUE) {
+        LONG posHigh = 0;
+        (void)SetFilePointer(hFile, 0, &posHigh, FILE_END);
+                                  /* Seek to file end (ignoring any error) */
+      }
+#   endif
     return hFile;
   }
 
