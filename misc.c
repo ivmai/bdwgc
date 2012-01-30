@@ -657,6 +657,8 @@ STATIC word GC_parse_mem_size_arg(const char *str)
   return result;
 }
 
+#define GC_LOG_STD_NAME "gc.log"
+
 GC_API void GC_CALL GC_init(void)
 {
     /* LOCK(); -- no longer does anything this early. */
@@ -742,7 +744,7 @@ GC_API void GC_CALL GC_init(void)
           char * file_name = GETENV("GC_LOG_FILE");
 #         ifdef GC_LOG_TO_FILE_ALWAYS
             if (NULL == file_name)
-              file_name = "gc.log";
+              file_name = GC_LOG_STD_NAME;
 #         else
             if (0 != file_name)
 #         endif
@@ -1136,39 +1138,43 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
   STATIC HANDLE GC_CreateLogFile(void)
   {
+    HANDLE hFile;
+    TCHAR *logPath;
 #   if !defined(NO_GETENV_WIN32) || !defined(OLD_WIN32_LOG_FILE)
-      TCHAR logPath[_MAX_PATH + 0x10]; /* buffer for path + ext */
+      TCHAR pathBuf[_MAX_PATH + 0x10]; /* buffer for path + ext */
+
+      logPath = pathBuf;
 #   endif
+
     /* Use GetEnvironmentVariable instead of GETENV() for unicode support. */
 #   ifndef NO_GETENV_WIN32
-      if (GetEnvironmentVariable(TEXT("GC_LOG_FILE"), logPath,
+      if (GetEnvironmentVariable(TEXT("GC_LOG_FILE"), pathBuf,
                                  _MAX_PATH + 1) - 1U >= (DWORD)_MAX_PATH)
 #   endif
     {
       /* Env var not found or its value too long.       */
 #     ifdef OLD_WIN32_LOG_FILE
-        return CreateFile(TEXT("gc.log"), GENERIC_WRITE, FILE_SHARE_READ,
-                          NULL /* lpSecurityAttributes */, CREATE_ALWAYS,
-                          FILE_FLAG_WRITE_THROUGH, NULL /* hTemplateFile */);
+        logPath = TEXT(GC_LOG_STD_NAME);
 #     else
-        int len = (int)GetModuleFileName(NULL /* hModule */, logPath,
+        int len = (int)GetModuleFileName(NULL /* hModule */, pathBuf,
                                          _MAX_PATH + 1);
         /* If GetModuleFileName() has failed then len is 0. */
-        if (len > 4 && logPath[len - 4] == (TCHAR)'.') {
+        if (len > 4 && pathBuf[len - 4] == (TCHAR)'.') {
           len -= 4; /* strip executable file extension */
         }
         /* strcat/wcscat() are deprecated on WinCE, so use memcpy()     */
-        memcpy(&logPath[len], TEXT(".gc.log"), sizeof(TEXT(".gc.log")));
+        memcpy(&pathBuf[len], TEXT("." GC_LOG_STD_NAME),
+               sizeof(TEXT("." GC_LOG_STD_NAME)));
 #     endif
     }
-#   if !defined(NO_GETENV_WIN32) || !defined(OLD_WIN32_LOG_FILE)
-      return CreateFile(logPath, GENERIC_WRITE, FILE_SHARE_READ,
-                        NULL /* lpSecurityAttributes */, CREATE_ALWAYS,
-                        GC_print_stats == VERBOSE ? FILE_ATTRIBUTE_NORMAL :
+
+    hFile = CreateFile(logPath, GENERIC_WRITE, FILE_SHARE_READ,
+                       NULL /* lpSecurityAttributes */, CREATE_ALWAYS,
+                       GC_print_stats == VERBOSE ? FILE_ATTRIBUTE_NORMAL :
                             /* immediately flush writes unless very verbose */
                             FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH,
-                        NULL /* hTemplateFile */);
-#   endif
+                       NULL /* hTemplateFile */);
+    return hFile;
   }
 
   STATIC int GC_write(const char *buf, size_t len)
