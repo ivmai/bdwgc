@@ -743,7 +743,26 @@ STATIC void GC_remove_all_threads_but_me(void)
         /* the real one.                                                */
 #endif
 
-#if defined(GC_LINUX_THREADS) && !defined(PLATFORM_ANDROID) && !defined(NACL)
+#ifdef GC_HPUX_THREADS
+# define GC_get_nprocs() pthread_num_processors_np()
+
+#elif defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
+      || defined(GC_SOLARIS_THREADS) || defined(GC_GNU_THREADS) \
+      || defined(PLATFORM_ANDROID) || defined(NACL)
+  GC_INLINE int GC_get_nprocs(void)
+  {
+    int nprocs = (int)sysconf(_SC_NPROCESSORS_ONLN);
+    return nprocs > 0 ? nprocs : 1; /* ignore error silently */
+  }
+
+#elif defined(GC_IRIX_THREADS)
+  GC_INLINE int GC_get_nprocs(void)
+  {
+    int nprocs = (int)sysconf(_SC_NPROC_ONLN);
+    return nprocs > 0 ? nprocs : 1; /* ignore error silently */
+  }
+
+#elif defined(GC_LINUX_THREADS) /* && !PLATFORM_ANDROID && !NACL */
   /* Return the number of processors. */
   STATIC int GC_get_nprocs(void)
   {
@@ -777,7 +796,42 @@ STATIC void GC_remove_all_threads_but_me(void)
     }
     return result;
   }
-#endif /* GC_LINUX_THREADS && !PLATFORM_ANDROID && !NACL */
+
+#elif defined(GC_DGUX386_THREADS)
+  /* Return the number of processors, or i<= 0 if it can't be determined. */
+  STATIC int GC_get_nprocs(void)
+  {
+    int numCpus;
+    struct dg_sys_info_pm_info pm_sysinfo;
+    int status = 0;
+
+    status = dg_sys_info((long int *) &pm_sysinfo,
+        DG_SYS_INFO_PM_INFO_TYPE, DG_SYS_INFO_PM_CURRENT_VERSION);
+    if (status < 0)
+       /* set -1 for error */
+       numCpus = -1;
+    else
+      /* Active CPUs */
+      numCpus = pm_sysinfo.idle_vp_count;
+    return(numCpus);
+  }
+
+#elif defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS) \
+      || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS)
+  STATIC int GC_get_nprocs(void)
+  {
+    int mib[] = {CTL_HW,HW_NCPU};
+    int res;
+    size_t len = sizeof(res);
+
+    sysctl(mib, sizeof(mib)/sizeof(int), &res, &len, NULL, 0);
+    return res;
+  }
+
+#else
+  /* E.g., GC_RTEMS_PTHREADS */
+# define GC_get_nprocs() 1 /* not implemented */
+#endif /* !GC_LINUX_THREADS && !GC_DARWIN_THREADS && ... */
 
 #if defined(ARM32) && defined(GC_LINUX_THREADS) && !defined(NACL)
   /* Some buggy Linux/arm kernels show only non-sleeping CPUs in        */
@@ -907,43 +961,6 @@ STATIC void GC_fork_child_proc(void)
 }
 #endif /* HANDLE_FORK */
 
-#if defined(GC_DGUX386_THREADS)
-  /* Return the number of processors, or i<= 0 if it can't be determined. */
-  STATIC int GC_get_nprocs(void)
-  {
-    int numCpus;
-    struct dg_sys_info_pm_info pm_sysinfo;
-    int status = 0;
-
-    status = dg_sys_info((long int *) &pm_sysinfo,
-        DG_SYS_INFO_PM_INFO_TYPE, DG_SYS_INFO_PM_CURRENT_VERSION);
-    if (status < 0)
-       /* set -1 for error */
-       numCpus = -1;
-    else
-      /* Active CPUs */
-      numCpus = pm_sysinfo.idle_vp_count;
-
-#  ifdef DEBUG_THREADS
-     GC_log_printf("Number of active CPUs in this system: %d\n", numCpus);
-#  endif
-    return(numCpus);
-  }
-#endif /* GC_DGUX386_THREADS */
-
-#if defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS) \
-    || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS)
-  static int get_ncpu(void)
-  {
-    int mib[] = {CTL_HW,HW_NCPU};
-    int res;
-    size_t len = sizeof(res);
-
-    sysctl(mib, sizeof(mib)/sizeof(int), &res, &len, NULL, 0);
-    return res;
-  }
-#endif  /* GC_DARWIN_THREADS || ... */
-
 #ifdef INCLUDE_LINUX_THREAD_DESCR
   __thread int GC_dummy_thread_local;
   GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr,
@@ -1011,24 +1028,7 @@ GC_INNER void GC_thr_init(void)
 #     endif
       )
   {
-#   if defined(GC_HPUX_THREADS)
-      GC_nprocs = pthread_num_processors_np();
-#   elif defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
-         || defined(GC_SOLARIS_THREADS) || defined(GC_GNU_THREADS) \
-         || defined(PLATFORM_ANDROID) || defined(NACL)
-      GC_nprocs = (int)sysconf(_SC_NPROCESSORS_ONLN);
-      if (GC_nprocs <= 0) GC_nprocs = 1;
-#   elif defined(GC_IRIX_THREADS)
-      GC_nprocs = (int)sysconf(_SC_NPROC_ONLN);
-      if (GC_nprocs <= 0) GC_nprocs = 1;
-#   elif defined(GC_DARWIN_THREADS) || defined(GC_FREEBSD_THREADS) \
-         || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS)
-      GC_nprocs = get_ncpu();
-#   elif defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
-      GC_nprocs = GC_get_nprocs();
-#   elif defined(GC_RTEMS_PTHREADS)
-      GC_nprocs = 1; /* not implemented */
-#   endif
+    GC_nprocs = GC_get_nprocs();
   }
   if (GC_nprocs <= 0) {
     WARN("GC_get_nprocs() returned %" WARN_PRIdPTR "\n", GC_nprocs);
@@ -1079,6 +1079,9 @@ GC_INNER void GC_thr_init(void)
     if (GC_parallel) {
       start_mark_threads();
     }
+# else
+    if (GC_print_stats)
+      GC_log_printf("Number of processors = %d\n", GC_nprocs);
 # endif
 }
 
