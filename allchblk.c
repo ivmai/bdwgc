@@ -289,7 +289,7 @@ STATIC void GC_remove_from_fl(hdr *hhdr, int n)
 
     GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);
 #   ifndef USE_MUNMAP
-      /* We always need index to mainatin free counts.  */
+      /* We always need index to maintain free counts.  */
       if (FL_UNKNOWN == n) {
           index = GC_hblk_fl_from_blocks(divHBLKSZ(hhdr -> hb_sz));
       } else {
@@ -374,7 +374,7 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
     GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);
     GC_hblkfreelist[index] = h;
     INCR_FREE_BYTES(index, hhdr -> hb_sz);
-    FREE_ASSERT(GC_free_bytes[index] <= GC_large_free_bytes)
+    FREE_ASSERT(GC_free_bytes[index] <= GC_large_free_bytes);
     hhdr -> hb_next = second;
     hhdr -> hb_prev = 0;
     if (0 != second) {
