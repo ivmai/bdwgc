@@ -12,6 +12,8 @@
 * Add finalization.html to 'doc' folder.
 * Add javaxfc.h to the installation set of GC header files (configure).
 * Add on-heap-resize event notification to API.
+* Adjust GC_log_printf format specifiers (regarding signed/unsigned long).
+* Adjust GC_requested_heapsize on GC_init if GC_INITIAL_HEAP_SIZE given.
 * Allow Win32 DllMain chaining on the client side.
 * Avoid unnecessary GC_find_limit invocation if GC_no_dls.
 * Changed the order in autogen.sh so ltmain exists in time for automake.
@@ -24,13 +26,16 @@
 * Extend thread-related debug messages.
 * Fix compiler warning in cordtest.
 * Fix minor warnings reported by GCC with '-pedantic' option.
+* Fix static data roots registration on Android (if GC is shared).
 * Improve GC_collect_or_expand algorithm for many finalizers registered case.
 * In tests, print a message in case a test is a no-op.
 * Instruct configure to hide internal libgc.so symbols if supported by GCC.
+* Log amount of unmapped memory (if enabled) on marking-for-collection.
 * Move "cord" library tests to "cord/tests" folder.
 * Move asm machine-dependent files to "src" folder.
 * Move build tools sources to "tools" folder.
 * Move cord_pos.h to public headers folder.
+* Open log file in APPEND mode on Win32 (similar that on Unix/Cygwin).
 * Optimize some functions by moving pthread_self calls out of LOCK section.
 * Place only major per-release changes description to ChangeLog (this file).
 * Recognize GC_LOG_TO_FILE_ALWAYS macro to log to 'gc.log' by default.
@@ -43,12 +48,14 @@
 * Remove obsolete unused asm files for ALPHA, HPUX, SGI, RS6000, ULTRIX.
 * Remove unused ancient SILENT, __STDC__, NO_SIGNALS macros.
 * Replace ARGSUSED comment-based annotation with GCC 'unused' attribute.
+* Replace long GC_markers global variable with int GC_markers_m1.
 * Replace printf PRIxMAX specifier with '%p' for thread id debug output.
 * Split GC_abort with GC_on_abort and abort() invoked from ABORT.
 * Turn on "extra" GCC warnings.
 * Turn on unused-parameter checking for GCC.
 * Update AUTHORS file.
 * Use EXPECT for checking various 'initialized' boolean variables.
+* Use union of AO_t and word to favor strict-aliasing compiler optimization.
 
 
 == [7.2] (candidate) ==
