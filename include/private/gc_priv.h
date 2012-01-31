@@ -1873,14 +1873,6 @@ GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
 #endif
 #define VERBOSE 2
 
-#ifndef NO_DEBUGGING
-  GC_EXTERN GC_bool GC_dump_regularly;
-                                /* Generate regular debugging dumps.    */
-# define COND_DUMP if (EXPECT(GC_dump_regularly, FALSE)) GC_dump()
-#else
-# define COND_DUMP /* empty */
-#endif
-
 #ifdef KEEP_BACK_PTRS
   GC_EXTERN long GC_backtraces;
   GC_INNER void GC_generate_random_backtrace_no_gc(void);
@@ -2179,14 +2171,16 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #endif /* NEED_PROC_MAPS */
 
 #ifdef GC_ASSERTIONS
-#  define GC_ASSERT(expr) \
+# define GC_ASSERT(expr) \
                 if (!(expr)) { \
                   GC_err_printf("Assertion failure: %s:%d\n", \
                                 __FILE__, __LINE__); \
                   ABORT("assertion failure"); \
                 }
+  GC_INNER word GC_compute_large_free_bytes(void);
+  GC_INNER word GC_compute_root_size(void);
 #else
-#  define GC_ASSERT(expr)
+# define GC_ASSERT(expr)
 #endif
 
 /* Check a compile time assertion at compile time.  The error   */
@@ -2198,6 +2192,19 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
     do { if (0) { char j[(expr)? 1 : -1]; j[0]='\0'; j[0]=j[0]; } } while(0)
 #else
 # define GC_STATIC_ASSERT(expr) (void)sizeof(char[(expr)? 1 : -1])
+#endif
+
+#define COND_DUMP_CHECKS { \
+          GC_ASSERT(GC_compute_large_free_bytes() == GC_large_free_bytes); \
+          GC_ASSERT(GC_compute_root_size() == GC_root_size); }
+
+#ifndef NO_DEBUGGING
+  GC_EXTERN GC_bool GC_dump_regularly;
+                                /* Generate regular debugging dumps.    */
+# define COND_DUMP { if (EXPECT(GC_dump_regularly, FALSE)) GC_dump(); \
+                        else COND_DUMP_CHECKS; }
+#else
+# define COND_DUMP COND_DUMP_CHECKS
 #endif
 
 #if defined(PARALLEL_MARK)

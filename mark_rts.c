@@ -39,25 +39,37 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
 static int n_root_sets = 0;
         /* GC_static_roots[0..n_root_sets) contains the valid root sets. */
 
+#if !defined(NO_DEBUGGING) || defined(GC_ASSERTIONS)
+  /* Should return the same value as GC_root_size.      */
+  GC_INNER word GC_compute_root_size(void)
+  {
+    int i;
+    word size = 0;
+
+    for (i = 0; i < n_root_sets; i++) {
+      size += GC_static_roots[i].r_end - GC_static_roots[i].r_start;
+    }
+    return size;
+  }
+#endif /* !NO_DEBUGGING || GC_ASSERTIONS */
+
 #if !defined(NO_DEBUGGING)
   /* For debugging:     */
   void GC_print_static_roots(void)
   {
     int i;
-    size_t total = 0;
+    word size;
 
     for (i = 0; i < n_root_sets; i++) {
         GC_printf("From %p to %p%s\n",
-                  GC_static_roots[i].r_start,
-                  GC_static_roots[i].r_end,
+                  GC_static_roots[i].r_start, GC_static_roots[i].r_end,
                   GC_static_roots[i].r_tmp ? " (temporary)" : "");
-        total += GC_static_roots[i].r_end - GC_static_roots[i].r_start;
     }
-    GC_printf("Total size: %lu\n", (unsigned long) total);
-    if (GC_root_size != total) {
-        GC_err_printf("GC_root_size incorrect: %lu!!\n",
-                      (unsigned long) GC_root_size);
-    }
+    GC_printf("GC_root_size: %lu\n", (unsigned long)GC_root_size);
+
+    if ((size = GC_compute_root_size()) != GC_root_size)
+      GC_err_printf("GC_root_size incorrect!! Should be: %lu\n",
+                    (unsigned long)size);
   }
 #endif /* !NO_DEBUGGING */
 

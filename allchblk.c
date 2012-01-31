@@ -106,13 +106,34 @@ STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
 #   define IS_MAPPED(hhdr) 1
 # endif /* USE_MUNMAP */
 
+#if (!defined(NO_DEBUGGING) && !defined(USE_MUNMAP)) || defined(GC_ASSERTIONS)
+  /* Should return the same value as GC_large_free_bytes.       */
+  GC_INNER word GC_compute_large_free_bytes(void)
+  {
+#   ifdef USE_MUNMAP
+      return GC_large_free_bytes; /* FIXME: unimplemented */
+#   else
+      struct hblk * h;
+      hdr * hhdr;
+      word total_free = 0;
+      unsigned i;
+
+      for (i = 0; i <= N_HBLK_FLS; ++i) {
+        for (h = GC_hblkfreelist[i]; h != 0; h = hhdr->hb_next) {
+          hhdr = HDR(h);
+          total_free += hhdr->hb_sz;
+        }
+      }
+      return total_free;
+#   endif
+  }
+#endif /* !NO_DEBUGGING || GC_ASSERTIONS */
+
 # if !defined(NO_DEBUGGING)
 void GC_print_hblkfreelist(void)
 {
     struct hblk * h;
-    word total_free = 0;
     hdr * hhdr;
-    word sz;
     unsigned i;
 
     for (i = 0; i <= N_HBLK_FLS; ++i) {
@@ -125,23 +146,25 @@ void GC_print_hblkfreelist(void)
 #     endif
       while (h != 0) {
         hhdr = HDR(h);
-        sz = hhdr -> hb_sz;
-        total_free += sz;
         GC_printf("\t%p size %lu %s black listed\n",
-                (void *)h, (unsigned long)sz,
+                (void *)h, (unsigned long) hhdr -> hb_sz,
                 GC_is_black_listed(h, HBLKSIZE) != 0 ? "start" :
                 GC_is_black_listed(h, hhdr -> hb_sz) != 0 ? "partially" :
                                                         "not");
         h = hhdr -> hb_next;
       }
     }
+    GC_printf("GC_large_free_bytes: %lu\n",
+              (unsigned long)GC_large_free_bytes);
+
 #   ifndef USE_MUNMAP
-      if (total_free != GC_large_free_bytes) {
-        GC_printf("GC_large_free_bytes = %lu (INCONSISTENT!!)\n",
-                  (unsigned long) GC_large_free_bytes);
+      {
+        word total;
+        if ((total = GC_compute_large_free_bytes()) != GC_large_free_bytes)
+          GC_err_printf("GC_large_free_bytes INCONSISTENT!! Should be: %lu\n",
+                        (unsigned long)total);
       }
 #   endif
-    GC_printf("Total of %lu bytes on free list\n", (unsigned long)total_free);
 }
 
 /* Return the free list index on which the block described by the header */
