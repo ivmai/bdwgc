@@ -1000,6 +1000,8 @@ GC_API void GC_CALL GC_init(void)
     if (!GC_expand_hp_inner(initial_heap_sz)) {
         GC_err_printf("Can't start up: not enough memory\n");
         EXIT();
+    } else {
+        GC_requested_heapsize += initial_heap_sz;
     }
     if (GC_all_interior_pointers)
       GC_initialize_offsets();
