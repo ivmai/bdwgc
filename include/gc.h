@@ -195,9 +195,10 @@ GC_API int GC_dont_gc;  /* != 0 ==> Don't collect.  In versions 6.2a1+, */
                         /* Used as a counter, so that nested enabling   */
                         /* and disabling work correctly.  Should        */
                         /* normally be updated with GC_enable() and     */
-                        /* GC_disable() calls.                          */
-                        /* Direct assignment to GC_dont_gc is           */
-                        /* deprecated.                                  */
+                        /* GC_disable() calls.  Direct assignment to    */
+                        /* GC_dont_gc is deprecated.  To check whether  */
+                        /* GC is disabled, GC_is_disabled() is          */
+                        /* preferred for new code.                      */
 
 GC_API int GC_dont_expand;
                         /* Don't expand the heap unless explicitly      */
@@ -589,6 +590,10 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word * /* pheap_size */,
 /* Disable garbage collection.  Even GC_gcollect calls will be          */
 /* ineffective.                                                         */
 GC_API void GC_CALL GC_disable(void);
+
+/* Return non-zero (TRUE) if and only if garbage collection is disabled */
+/* (i.e., GC_dont_gc value is non-zero).  Does not acquire the lock.    */
+GC_API int GC_CALL GC_is_disabled(void);
 
 /* Re-enable garbage collection.  GC_disable() and GC_enable() calls    */
 /* nest.  Garbage collection is enabled if the number of calls to both  */

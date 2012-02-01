@@ -1473,6 +1473,11 @@ GC_API void GC_CALL GC_disable(void)
     UNLOCK();
 }
 
+GC_API int GC_CALL GC_is_disabled(void)
+{
+    return GC_dont_gc != 0;
+}
+
 /* Helper procedures for new kind creation.     */
 GC_API void ** GC_CALL GC_new_free_list_inner(void)
 {
