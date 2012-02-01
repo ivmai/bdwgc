@@ -72,21 +72,22 @@ GC_API void GC_CALL GC_init_gcj_malloc(int /* mp_index */,
 /* Allocate an object, clear it, and store the pointer to the   */
 /* type structure (vtable in gcj).                              */
 /* This adds a byte at the end of the object if GC_malloc would.*/
-GC_API void * GC_CALL GC_gcj_malloc(size_t /* lb */,
-                                void * /* ptr_to_struct_containing_descr */)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_gcj_malloc(size_t /* lb */,
+                      void * /* ptr_to_struct_containing_descr */);
+
 /* The debug versions allocate such that the specified mark_proc        */
 /* is always invoked.                                                   */
-GC_API void * GC_CALL GC_debug_gcj_malloc(size_t /* lb */,
-                                  void * /* ptr_to_struct_containing_descr */,
-                                  GC_EXTRA_PARAMS)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_debug_gcj_malloc(size_t /* lb */,
+                            void * /* ptr_to_struct_containing_descr */,
+                            GC_EXTRA_PARAMS);
 
 /* Similar to GC_gcj_malloc, but assumes that a pointer to near the     */
 /* beginning of the resulting object is always maintained.              */
-GC_API void  * GC_CALL GC_gcj_malloc_ignore_off_page(size_t /* lb */,
-                                void * /* ptr_to_struct_containing_descr */)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_gcj_malloc_ignore_off_page(size_t /* lb */,
+                                void * /* ptr_to_struct_containing_descr */);
 
 /* The kind numbers of normal and debug gcj objects.            */
 /* Useful only for debug support, we hope.                      */

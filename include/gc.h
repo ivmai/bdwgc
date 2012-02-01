@@ -374,20 +374,21 @@ GC_API void GC_CALL GC_init(void);
 /* GC_non_gc_bytes appropriately.                                       */
 /* Note that the GC_malloc_stubborn support doesn't really exist        */
 /* anymore.  MANUAL_VDB provides comparable functionality.              */
-GC_API void * GC_CALL GC_malloc(size_t /* size_in_bytes */)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
-GC_API void * GC_CALL GC_malloc_atomic(size_t /* size_in_bytes */)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
-GC_API char * GC_CALL GC_strdup(const char *) GC_ATTR_MALLOC;
-GC_API char * GC_CALL GC_strndup(const char *, size_t) GC_ATTR_MALLOC;
-GC_API void * GC_CALL GC_malloc_uncollectable(size_t /* size_in_bytes */)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
-GC_API void * GC_CALL GC_malloc_stubborn(size_t /* size_in_bytes */)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_malloc(size_t /* size_in_bytes */);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_malloc_atomic(size_t /* size_in_bytes */);
+GC_API GC_ATTR_MALLOC char * GC_CALL GC_strdup(const char *);
+GC_API GC_ATTR_MALLOC char * GC_CALL
+        GC_strndup(const char *, size_t);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_malloc_uncollectable(size_t /* size_in_bytes */);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_malloc_stubborn(size_t /* size_in_bytes */);
 
 /* GC_memalign() is not well tested.                                    */
-GC_API void * GC_CALL GC_memalign(size_t /* align */, size_t /* lb */)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(2);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
+        GC_memalign(size_t /* align */, size_t /* lb */);
 GC_API int GC_CALL GC_posix_memalign(void ** /* memptr */, size_t /* align */,
                         size_t /* lb */);
 
@@ -647,10 +648,10 @@ GC_API int GC_CALL GC_collect_a_little(void);
 /* for arrays likely to be larger than 100K or so.  For other systems,  */
 /* or if the collector is not configured to recognize all interior      */
 /* pointers, the threshold is normally much higher.                     */
-GC_API void * GC_CALL GC_malloc_ignore_off_page(size_t /* lb */)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
-GC_API void * GC_CALL GC_malloc_atomic_ignore_off_page(size_t /* lb */)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_malloc_ignore_off_page(size_t /* lb */);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_malloc_atomic_ignore_off_page(size_t /* lb */);
 
 #ifdef GC_ADD_CALLER
 # define GC_EXTRAS GC_RETURN_ADDR, __FILE__, __LINE__
@@ -662,37 +663,32 @@ GC_API void * GC_CALL GC_malloc_atomic_ignore_off_page(size_t /* lb */)
 
 /* The following is only defined if the library has been suitably       */
 /* compiled:                                                            */
-GC_API void * GC_CALL GC_malloc_atomic_uncollectable(
-                                                size_t /* size_in_bytes */)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
-GC_API void * GC_CALL GC_debug_malloc_atomic_uncollectable(size_t,
-                                                           GC_EXTRA_PARAMS)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_malloc_atomic_uncollectable(size_t /* size_in_bytes */);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_debug_malloc_atomic_uncollectable(size_t, GC_EXTRA_PARAMS);
 
 /* Debugging (annotated) allocation.  GC_gcollect will check            */
 /* objects allocated in this way for overwrites, etc.                   */
-GC_API void * GC_CALL GC_debug_malloc(size_t /* size_in_bytes */,
-                                      GC_EXTRA_PARAMS)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
-GC_API void * GC_CALL GC_debug_malloc_atomic(size_t /* size_in_bytes */,
-                                             GC_EXTRA_PARAMS)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
-GC_API char * GC_CALL GC_debug_strdup(const char *,
-                                      GC_EXTRA_PARAMS) GC_ATTR_MALLOC;
-GC_API char * GC_CALL GC_debug_strndup(const char *, size_t,
-                                       GC_EXTRA_PARAMS) GC_ATTR_MALLOC;
-GC_API void * GC_CALL GC_debug_malloc_uncollectable(
-                        size_t /* size_in_bytes */, GC_EXTRA_PARAMS)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
-GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t /* size_in_bytes */,
-                                               GC_EXTRA_PARAMS)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
-GC_API void * GC_CALL GC_debug_malloc_ignore_off_page(
-                        size_t /* size_in_bytes */, GC_EXTRA_PARAMS)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
-GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(
-                        size_t /* size_in_bytes */, GC_EXTRA_PARAMS)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_debug_malloc(size_t /* size_in_bytes */, GC_EXTRA_PARAMS);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_debug_malloc_atomic(size_t /* size_in_bytes */, GC_EXTRA_PARAMS);
+GC_API GC_ATTR_MALLOC char * GC_CALL
+        GC_debug_strdup(const char *, GC_EXTRA_PARAMS);
+GC_API GC_ATTR_MALLOC char * GC_CALL
+        GC_debug_strndup(const char *, size_t, GC_EXTRA_PARAMS);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_debug_malloc_uncollectable(size_t /* size_in_bytes */,
+                                      GC_EXTRA_PARAMS);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_debug_malloc_stubborn(size_t /* size_in_bytes */, GC_EXTRA_PARAMS);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_debug_malloc_ignore_off_page(size_t /* size_in_bytes */,
+                                        GC_EXTRA_PARAMS);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_debug_malloc_atomic_ignore_off_page(size_t /* size_in_bytes */,
+                                        GC_EXTRA_PARAMS);
 GC_API void GC_CALL GC_debug_free(void *);
 GC_API void * GC_CALL GC_debug_realloc(void * /* old_object */,
                         size_t /* new_size_in_bytes */, GC_EXTRA_PARAMS)
@@ -712,11 +708,11 @@ GC_API void GC_CALL GC_debug_end_stubborn_change(const void *);
 /*    platforms it may be more convenient not to recompile, e.g. for    */
 /*    leak detection.  This can be accomplished by instructing the      */
 /*    linker to replace malloc/realloc with these.                      */
-GC_API void * GC_CALL GC_debug_malloc_replacement(size_t /* size_in_bytes */)
-                        GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1);
-GC_API void * GC_CALL GC_debug_realloc_replacement(void * /* object_addr */,
-                                                   size_t /* size_in_bytes */)
-                        /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_debug_malloc_replacement(size_t /* size_in_bytes */);
+GC_API /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2) void * GC_CALL
+        GC_debug_realloc_replacement(void * /* object_addr */,
+                                     size_t /* size_in_bytes */);
 
 #ifdef GC_DEBUG_REPLACEMENT
 # define GC_MALLOC(sz) GC_debug_malloc_replacement(sz)
@@ -797,9 +793,10 @@ GC_API void * GC_CALL GC_debug_realloc_replacement(void * /* object_addr */,
 #ifdef GC_REQUIRE_WCSDUP
   /* This might be unavailable on some targets (or not needed). */
   /* wchar_t should be defined in stddef.h */
-  GC_API wchar_t * GC_CALL GC_wcsdup(const wchar_t *) GC_ATTR_MALLOC;
-  GC_API wchar_t * GC_CALL GC_debug_wcsdup(const wchar_t *,
-                                           GC_EXTRA_PARAMS) GC_ATTR_MALLOC;
+  GC_API GC_ATTR_MALLOC wchar_t * GC_CALL
+        GC_wcsdup(const wchar_t *);
+  GC_API GC_ATTR_MALLOC wchar_t * GC_CALL
+        GC_debug_wcsdup(const wchar_t *, GC_EXTRA_PARAMS);
 # ifdef GC_DEBUG
 #   define GC_WCSDUP(s) GC_debug_wcsdup(s, GC_EXTRAS)
 # else

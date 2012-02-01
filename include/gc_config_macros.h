@@ -220,9 +220,13 @@
   /* non-NULL pointer it returns cannot alias any other pointer valid   */
   /* when the function returns).  If the client code violates this rule */
   /* by using custom GC_oom_func then define GC_OOM_FUNC_RETURNS_ALIAS. */
-# if !defined(GC_OOM_FUNC_RETURNS_ALIAS) && defined(__GNUC__) \
-        && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+# ifdef GC_OOM_FUNC_RETURNS_ALIAS
+#   define GC_ATTR_MALLOC /* empty */
+# elif defined(__GNUC__) && (__GNUC__ > 3 \
+                             || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
 #   define GC_ATTR_MALLOC __attribute__((__malloc__))
+# elif defined(_MSC_VER) && _MSC_VER >= 14
+#   define GC_ATTR_MALLOC __declspec(noalias) __declspec(restrict)
 # else
 #   define GC_ATTR_MALLOC
 # endif
