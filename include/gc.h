@@ -286,7 +286,10 @@ GC_API char *GC_stackbottom;    /* Cool end of user stack.              */
                                 /* automatically.                       */
                                 /* For multi-threaded code, this is the */
                                 /* cold end of the stack for the        */
-                                /* primordial thread.                   */
+                                /* primordial thread.  Portable clients */
+                                /* should use GC_get_stack_base(),      */
+                                /* GC_call_with_gc_active() and         */
+                                /* GC_register_my_thread() instead.     */
 
 GC_API int GC_dont_precollect;  /* Don't collect as part of GC          */
                                 /* initialization.  Should be set only  */
