@@ -59,10 +59,9 @@ STATIC struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
   STATIC word GC_free_bytes[N_HBLK_FLS+1] = { 0 };
         /* Number of free bytes on each list.   */
 
-  /* Return the largest n such that                                     */
-  /* Is GC_large_allocd_bytes + the number of free bytes on lists       */
-  /* n .. N_HBLK_FLS > GC_max_large_allocd_bytes.                       */
-  /* If there is no such n, return 0.                                   */
+  /* Return the largest n such that the number of free bytes on lists   */
+  /* n .. N_HBLK_FLS is greater or equal to GC_max_large_allocd_bytes   */
+  /* minus GC_large_allocd_bytes.  If there is no such n, return 0.     */
   GC_INLINE int GC_enough_large_bytes_left(void)
   {
     int n;
@@ -76,8 +75,7 @@ STATIC struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
     return 0;
   }
 
-# define INCR_FREE_BYTES(n, b) GC_free_bytes[n] += (b);
-
+# define INCR_FREE_BYTES(n, b) (GC_free_bytes[n] += (b))
 # define FREE_ASSERT(e) GC_ASSERT(e)
 
 #else /* USE_MUNMAP */
@@ -612,7 +610,6 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
 {
     word blocks;
     int start_list;
-    int i;
     struct hblk *result;
     int split_limit; /* Highest index of free list whose blocks we      */
                      /* split.                                          */
@@ -656,22 +653,20 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
       /* matches.                                                       */
       ++start_list;
     }
-    for (i = start_list; i <= split_limit; ++i) {
-        struct hblk * result = GC_allochblk_nth(sz, kind, flags, i, TRUE);
-        if (0 != result) return result;
+    for (; start_list <= split_limit; ++start_list) {
+        result = GC_allochblk_nth(sz, kind, flags, start_list, TRUE);
+        if (0 != result)
+            break;
     }
-    return 0;
+    return result;
 }
 
 STATIC long GC_large_alloc_warn_suppressed = 0;
                         /* Number of warnings suppressed so far.        */
 
-/*
- * The same, but with search restricted to nth free list.
- * Flags is IGNORE_OFF_PAGE or zero.
- * Unlike the above, sz is in bytes.
- * The may_split flag indicates whether it's OK to split larger blocks.
- */
+/* The same, but with search restricted to nth free list.  Flags is     */
+/* IGNORE_OFF_PAGE or zero.  sz is in bytes.  The may_split flag        */
+/* indicates whether it is OK to split larger blocks.                   */
 STATIC struct hblk *
 GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
                  GC_bool may_split)
