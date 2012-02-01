@@ -243,6 +243,14 @@
 # endif
 #endif
 
+#ifndef GC_ATTR_NONNULL
+# if defined(__GNUC__) && __GNUC__ >= 4
+#   define GC_ATTR_NONNULL(argnum) __attribute__((__nonnull__(argnum)))
+# else
+#   define GC_ATTR_NONNULL(argnum) /* empty */
+# endif
+#endif
+
 #ifndef GC_ATTR_DEPRECATED
 # ifdef GC_BUILD
 #   undef GC_ATTR_DEPRECATED

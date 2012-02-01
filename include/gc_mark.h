@@ -164,14 +164,14 @@ GC_API void ** GC_CALL GC_new_free_list_inner(void);
 
 /* Return a new kind, as specified. */
 GC_API unsigned GC_CALL GC_new_kind(void ** /* free_list */,
-                                    GC_word /* mark_descriptor_template */,
-                                    int /* add_size_to_descriptor */,
-                                    int /* clear_new_objects */);
+                            GC_word /* mark_descriptor_template */,
+                            int /* add_size_to_descriptor */,
+                            int /* clear_new_objects */) GC_ATTR_NONNULL(1);
                 /* The last two parameters must be zero or one. */
 GC_API unsigned GC_CALL GC_new_kind_inner(void ** /* free_list */,
-                                    GC_word /* mark_descriptor_template */,
-                                    int /* add_size_to_descriptor */,
-                                    int /* clear_new_objects */);
+                            GC_word /* mark_descriptor_template */,
+                            int /* add_size_to_descriptor */,
+                            int /* clear_new_objects */) GC_ATTR_NONNULL(1);
 
 /* Return a new mark procedure identifier, suitable for use as  */
 /* the first argument in GC_MAKE_PROC.                          */
@@ -222,9 +222,9 @@ GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void);
 
 /* Slow/general mark bit manipulation.  The caller must hold the        */
 /* allocation lock.  GC_is_marked returns 1 (TRUE) or 0.                */
-GC_API int GC_CALL GC_is_marked(const void *);
-GC_API void GC_CALL GC_clear_mark_bit(const void *);
-GC_API void GC_CALL GC_set_mark_bit(const void *);
+GC_API int GC_CALL GC_is_marked(const void *) GC_ATTR_NONNULL(1);
+GC_API void GC_CALL GC_clear_mark_bit(const void *) GC_ATTR_NONNULL(1);
+GC_API void GC_CALL GC_set_mark_bit(const void *) GC_ATTR_NONNULL(1);
 
 #ifdef __cplusplus
   } /* end of extern "C" */

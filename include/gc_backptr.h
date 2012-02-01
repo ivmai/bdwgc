@@ -68,8 +68,8 @@ typedef enum {
 } GC_ref_kind;
 
 GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void * /* dest */,
-                                                void ** /* base_p */,
-                                                size_t * /* offset_p */);
+                                void ** /* base_p */, size_t * /* offset_p */)
+                                GC_ATTR_NONNULL(1);
 
 /* Generate a random heap address.            */
 /* The resulting address is in the heap, but  */
@@ -89,7 +89,7 @@ GC_API void GC_CALL GC_generate_random_backtrace(void);
 /* Print a backtrace from a specific address.  Used by the      */
 /* above.  The client should call GC_gcollect() immediately     */
 /* before invocation.                                           */
-GC_API void GC_CALL GC_print_backtrace(void *);
+GC_API void GC_CALL GC_print_backtrace(void *) GC_ATTR_NONNULL(1);
 
 #ifdef __cplusplus
   } /* end of extern "C" */
