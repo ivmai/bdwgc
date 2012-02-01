@@ -3364,6 +3364,8 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 
 GC_API int GC_CALL GC_incremental_protection_needs(void)
 {
+    GC_ASSERT(GC_is_initialized);
+
     if (GC_page_size == HBLKSIZE) {
         return GC_PROTECTS_POINTER_HEAP;
     } else {

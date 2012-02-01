@@ -613,6 +613,7 @@ GC_API void GC_CALL GC_enable_incremental(void);
 #define GC_PROTECTS_STACK         8 /* Probably impractical.            */
 
 #define GC_PROTECTS_NONE 0
+/* The collector is assumed to be initialized before this call.         */
 GC_API int GC_CALL GC_incremental_protection_needs(void);
 
 /* Perform some garbage collection work, if appropriate.        */
