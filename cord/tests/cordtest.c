@@ -234,6 +234,6 @@ int main(void)
     test_basics();
     test_extras();
     test_printf();
-    CORD_fprintf(stderr, "SUCCEEDED\n");
+    CORD_fprintf(stdout, "SUCCEEDED\n");
     return(0);
 }
