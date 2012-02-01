@@ -1291,7 +1291,7 @@ GC_API void (GC_CALLBACK * GC_is_visible_print_proc)(void *);
 /* This returns a list of objects, linked through their first word.     */
 /* Its use can greatly reduce lock contention problems, since the       */
 /* allocation lock can be acquired and released many fewer times.       */
-GC_API void * GC_CALL GC_malloc_many(size_t /* lb */);
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_many(size_t /* lb */);
 #define GC_NEXT(p) (*(void * *)(p))     /* Retrieve the next element    */
                                         /* in returned list.            */
 

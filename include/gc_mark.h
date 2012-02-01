@@ -184,7 +184,8 @@ GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc);
 /* the descriptor is not correct.  Even in the single-threaded case,    */
 /* we need to be sure that cleared objects on a free list don't         */
 /* cause a GC crash if they are accidentally traced.                    */
-GC_API void * GC_CALL GC_generic_malloc(size_t /* lb */, int /* k */);
+GC_API GC_ATTR_MALLOC void * GC_CALL
+        GC_generic_malloc(size_t /* lb */, int /* k */);
 
 typedef void (GC_CALLBACK * GC_describe_type_fn)(void * /* p */,
                                                  char * /* out_buf */);

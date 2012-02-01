@@ -12,6 +12,7 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
+
 /*
  * Some simple primitives for allocation with explicit type information.
  * Facilities for dynamic type inference may be added later.
@@ -76,19 +77,21 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * /* GC_bitmap bm */,
 /* ...                                                                  */
 /* T_descr = GC_make_descriptor(T_bitmap, GC_WORD_LEN(T));              */
 
-GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t /* size_in_bytes */,
-                                                 GC_descr /* d */);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_malloc_explicitly_typed(size_t /* size_in_bytes */,
+                                   GC_descr /* d */);
                 /* Allocate an object whose layout is described by d.   */
                 /* The resulting object MAY NOT BE PASSED TO REALLOC.   */
                 /* The returned object is cleared.                      */
 
-GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page(
-                                        size_t /* size_in_bytes */,
-                                        GC_descr /* d */);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_malloc_explicitly_typed_ignore_off_page(size_t /* size_in_bytes */,
+                                                   GC_descr /* d */);
 
-GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t /* nelements */,
-                                        size_t /* element_size_in_bytes */,
-                                        GC_descr /* d */);
+GC_API GC_ATTR_MALLOC void * GC_CALL
+        GC_calloc_explicitly_typed(size_t /* nelements */,
+                                   size_t /* element_size_in_bytes */,
+                                   GC_descr /* d */);
         /* Allocate an array of nelements elements, each of the */
         /* given size, and with the given descriptor.           */
         /* The element size must be a multiple of the byte      */
