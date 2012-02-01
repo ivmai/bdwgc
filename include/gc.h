@@ -413,7 +413,7 @@ GC_API void GC_CALL GC_end_stubborn_change(const void *);
 
 /* Return a pointer to the base (lowest address) of an object given     */
 /* a pointer to a location within the object.                           */
-/* I.e. map an interior pointer to the corresponding bas pointer.       */
+/* I.e., map an interior pointer to the corresponding base pointer.     */
 /* Note that with debugging allocation, this returns a pointer to the   */
 /* actual base of the object, i.e. the debug information, not to        */
 /* the base of the user object.                                         */
