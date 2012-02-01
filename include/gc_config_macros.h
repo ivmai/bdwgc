@@ -243,6 +243,19 @@
 # endif
 #endif
 
+#ifndef GC_ATTR_DEPRECATED
+# ifdef GC_BUILD
+#   undef GC_ATTR_DEPRECATED
+#   define GC_ATTR_DEPRECATED /* empty */
+# elif defined(__GNUC__) && __GNUC__ >= 4
+#   define GC_ATTR_DEPRECATED __attribute__((__deprecated__))
+# elif defined(_MSC_VER) && _MSC_VER >= 12
+#   define GC_ATTR_DEPRECATED __declspec(deprecated)
+# else
+#   define GC_ATTR_DEPRECATED /* empty */
+# endif
+#endif
+
 #if defined(__sgi) && !defined(__GNUC__) && _COMPILER_VERSION >= 720
 # define GC_ADD_CALLER
 # define GC_RETURN_ADDR (GC_word)__return_address
