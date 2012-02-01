@@ -121,10 +121,8 @@ int realloc_count = 0;
   void *GC_amiga_gctest_malloc_explicitly_typed(size_t lb, GC_descr d){
     void *ret=GC_malloc_explicitly_typed(lb,d);
     if(ret==NULL){
-                if(!GC_dont_gc){
               GC_gcollect();
               ret=GC_malloc_explicitly_typed(lb,d);
-                }
       if(ret==NULL){
         GC_printf("Out of memory, (typed allocations are not directly "
                       "supported with the GC_AMIGA_FASTALLOC option.)\n");
@@ -136,10 +134,8 @@ int realloc_count = 0;
   void *GC_amiga_gctest_calloc_explicitly_typed(size_t a,size_t lb, GC_descr d){
     void *ret=GC_calloc_explicitly_typed(a,lb,d);
     if(ret==NULL){
-                if(!GC_dont_gc){
               GC_gcollect();
               ret=GC_calloc_explicitly_typed(a,lb,d);
-                }
       if(ret==NULL){
         GC_printf("Out of memory, (typed allocations are not directly "
                       "supported with the GC_AMIGA_FASTALLOC option.)\n");
@@ -1332,8 +1328,17 @@ void check_heap_stats(void)
                 GC_invoke_finalizers();
       }
       if (GC_print_stats) {
-          GC_log_printf("Primordial thread stack bottom: %p\n",
-                        (void *)GC_stackbottom);
+        struct GC_stack_base sb;
+        int res = GC_get_stack_base(&sb);
+
+        if (res == GC_SUCCESS) {
+          GC_log_printf("Primordial thread stack bottom: %p\n", sb.mem_base);
+        } else if (res == GC_UNIMPLEMENTED) {
+          GC_log_printf("GC_get_stack_base() unimplemented\n");
+        } else {
+          GC_printf("GC_get_stack_base() failed: %d\n", res);
+          FAIL;
+        }
       }
     GC_printf("Completed %u tests\n", n_tests);
     GC_printf("Allocated %d collectable objects\n", collectable_count);
