@@ -16,18 +16,6 @@
 
 #include "private/gc_pmark.h"
 
-#ifdef FINALIZE_ON_DEMAND
-  int GC_finalize_on_demand = 1;
-#else
-  int GC_finalize_on_demand = 0;
-#endif
-
-#ifdef JAVA_FINALIZATION
-  int GC_java_finalization = 1;
-#else
-  int GC_java_finalization = 0;
-#endif
-
 /* Type of mark procedure used for marking from finalizable object.     */
 /* This procedure normally does not mark the object, only its           */
 /* descendents.                                                         */
@@ -80,8 +68,6 @@ STATIC struct finalizable_object * GC_finalize_now = 0;
         /* List of objects that should be finalized now.        */
 
 static signed_word log_fo_table_size = -1;
-
-word GC_fo_entries = 0; /* used also in extra/MacOS.c */
 
 GC_INNER void GC_push_finalizer_structures(void)
 {
@@ -888,10 +874,6 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
     }
     return count;
 }
-
-/* All accesses to it should be synchronized to avoid data races.       */
-GC_finalizer_notifier_proc GC_finalizer_notifier =
-        (GC_finalizer_notifier_proc)0;
 
 static GC_word last_finalizer_notification = 0;
 

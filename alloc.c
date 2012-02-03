@@ -1201,6 +1201,8 @@ GC_API int GC_CALL GC_expand_hp(size_t bytes)
     return(result);
 }
 
+word GC_fo_entries = 0; /* used also in extra/MacOS.c */
+
 GC_INNER unsigned GC_fail_count = 0;
                         /* How many consecutive GC/expansion failures?  */
                         /* Reset by GC_allochblk.                       */

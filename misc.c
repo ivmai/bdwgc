@@ -129,6 +129,22 @@ GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
   int GC_all_interior_pointers = 0;
 #endif
 
+#ifdef FINALIZE_ON_DEMAND
+  int GC_finalize_on_demand = 1;
+#else
+  int GC_finalize_on_demand = 0;
+#endif
+
+#ifdef JAVA_FINALIZATION
+  int GC_java_finalization = 1;
+#else
+  int GC_java_finalization = 0;
+#endif
+
+/* All accesses to it should be synchronized to avoid data races.       */
+GC_finalizer_notifier_proc GC_finalizer_notifier =
+                                        (GC_finalizer_notifier_proc)0;
+
 #ifdef GC_FORCE_UNMAP_ON_GCOLLECT
   /* Has no effect unless USE_MUNMAP.                           */
   /* Has no effect on implicitly-initiated garbage collections. */
