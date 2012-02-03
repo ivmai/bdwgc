@@ -6,6 +6,8 @@
 * Add GC_get_thr_restart_signal, GC_thread_is_registered to GC API.
 * Add GC_is_heap_ptr, GC_move_disappearing_link to GC API.
 * Add TODO file.
+* Add assertion to GC_incremental_protection_needs, refine documentation.
+* Add assertion to check GC_large_free_bytes by GC_finish_collection.
 * Add configure option to compile all library .c files into single gc.o.
 * Add cordtest to make check.
 * Add disclaim callbacks for efficient finalization (ENABLE_DISCLAIM).
@@ -16,7 +18,9 @@
 * Adjust GC_requested_heapsize on GC_init if GC_INITIAL_HEAP_SIZE given.
 * Allow Win32 DllMain chaining on the client side.
 * Avoid unnecessary GC_find_limit invocation if GC_no_dls.
+* Avoid use of deprecated GC_dont_gc and GC_stackbottom in gctest.
 * Changed the order in autogen.sh so ltmain exists in time for automake.
+* Declare privately and use handy GC_base_C() for constant object pointers.
 * Define GC_READ_ENV_FILE in configure for WinCE unless gc-debug is off.
 * Do not compile pthread_stop_world.c for Cygwin/Darwin (configure).
 * Do not install ancient new_gc_alloc.h broken for modern STL (configure).
@@ -27,6 +31,7 @@
 * Fix compiler warning in cordtest.
 * Fix minor warnings reported by GCC with '-pedantic' option.
 * Fix static data roots registration on Android (if GC is shared).
+* Implement GC_get_stack_base for Darwin for single-threaded mode.
 * Improve GC_collect_or_expand algorithm for many finalizers registered case.
 * In tests, print a message in case a test is a no-op.
 * Instruct configure to hide internal libgc.so symbols if supported by GCC.
@@ -38,6 +43,7 @@
 * Open log file in APPEND mode on Win32 (similar that on Unix/Cygwin).
 * Optimize some functions by moving pthread_self calls out of LOCK section.
 * Place only major per-release changes description to ChangeLog (this file).
+* Prevent compiler warnings in GC_FindTopOfStack and GC_ports (Darwin).
 * Recognize GC_LOG_TO_FILE_ALWAYS macro to log to 'gc.log' by default.
 * Remove all auto-generated files from the repo.
 * Remove binary icon file for de_win.
@@ -51,6 +57,10 @@
 * Replace long GC_markers global variable with int GC_markers_m1.
 * Replace printf PRIxMAX specifier with '%p' for thread id debug output.
 * Split GC_abort with GC_on_abort and abort() invoked from ABORT.
+* Support GC_ATTR_MALLOC for MS VisualStudio.
+* Tag auxiliary malloc-like API functions with 'malloc' attribute.
+* Tag deprecated variables in GC API.
+* Tag must-be-non-null arguments of GC API functions.
 * Turn on "extra" GCC warnings.
 * Turn on unused-parameter checking for GCC.
 * Update AUTHORS file.
@@ -61,6 +71,7 @@
 == [7.2] (candidate) ==
 
 * Add GC_WIN32_PTHREADS target in configure.
+* Add GC_is_disabled new function to GC API.
 * Add info that getcontext() resets FPE mask no longer on Linux/x86_64.
 * Add realloc_test.c test.
 * Add support for Hexagon target.
@@ -87,6 +98,7 @@
 * Fix various warnings reported by LINT-like tools.
 * Port some thread tests to Win32.
 * Refine API GC setters and getter comments regarding locking.
+* Refine GC_stackbottom description in gc.h.
 * Remove duplicate calls in GC_register_dynamic_libraries.
 * Remove locking in API GC_get_bytes_since_gc and friends.
 * Remove newly-added GC_get_heap_size/free_bytes_inner from API.
