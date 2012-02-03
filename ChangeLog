@@ -1,3 +1,24 @@
+2012-02-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (GC_dont_gc): Improve comment (add note for new client
+	code).
+	* include/gc.h (GC_is_disabled): New API function.
+	* misc.c (GC_is_disabled): Likewise.
+
+2012-02-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (GC_stackbottom): Improve comment (add note for
+	new client code).
+
+2012-02-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (GC_base): Fix a typo in the comment.
+
+2012-02-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordtest.c (main): Print "SUCCEEDED" message to stdout
+	instead of stderr.
+
 2012-01-31  Ivan Maidanski <ivmai@mail.ru>
 
 	* allchblk.c (GC_add_to_fl): Append ';' after FREE_ASSERT().
