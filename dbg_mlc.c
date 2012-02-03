@@ -574,7 +574,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
 
   GC_API void GC_CALL GC_debug_change_stubborn(const void *p)
   {
-    const void * q = GC_base((void *)p);
+    const void * q = GC_base_C(p);
     hdr * hhdr;
 
     if (q == 0) {
@@ -591,7 +591,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
 
   GC_API void GC_CALL GC_debug_end_stubborn_change(const void *p)
   {
-    const void * q = GC_base((void *)p);
+    const void * q = GC_base_C(p);
     hdr * hhdr;
 
     if (q == 0) {

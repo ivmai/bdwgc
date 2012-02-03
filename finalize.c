@@ -137,7 +137,7 @@ GC_API int GC_CALL GC_register_disappearing_link(void * * link)
 {
     ptr_t base;
 
-    base = (ptr_t)GC_base((void *)link);
+    base = (ptr_t)GC_base(link);
     if (base == 0)
         ABORT("Bad arg to GC_register_disappearing_link");
     return(GC_general_register_disappearing_link(link, base));
@@ -154,7 +154,7 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
     if (((word)link & (ALIGNMENT-1)) || link == NULL)
         ABORT("Bad arg to GC_general_register_disappearing_link");
     LOCK();
-    GC_ASSERT(obj != NULL && GC_base((void *)obj) == obj);
+    GC_ASSERT(obj != NULL && GC_base_C(obj) == obj);
     if (log_dl_table_size == -1
         || GC_dl_entries > ((word)1 << log_dl_table_size)) {
         GC_grow_table((struct hash_chain_entry ***)(&dl_head),
@@ -664,7 +664,7 @@ GC_INNER void GC_finalize(void)
               GC_bytes_finalized +=
                         curr_fo -> fo_object_size
                         + sizeof(struct finalizable_object);
-            GC_ASSERT(GC_is_marked(GC_base((ptr_t)curr_fo)));
+            GC_ASSERT(GC_is_marked(GC_base(curr_fo)));
             curr_fo = next_fo;
         } else {
             prev_fo = curr_fo;

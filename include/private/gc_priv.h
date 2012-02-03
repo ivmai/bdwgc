@@ -1945,6 +1945,9 @@ GC_EXTERN GC_bool GC_print_back_height;
   GC_INNER void GC_dirty_init(void);
 #endif /* !GC_DISABLE_INCREMENTAL */
 
+/* Same as GC_base but excepts and returns a pointer to const object.   */
+#define GC_base_C(p) ((const void *)GC_base((/* no const */ void *)(p)))
+
 /* Stubborn objects: */
 void GC_read_changed(void); /* Analogous to GC_read_dirty */
 GC_bool GC_page_was_changed(struct hblk * h);
