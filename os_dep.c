@@ -3900,6 +3900,9 @@ STATIC struct {
     (void (*)(void))catch_exception_raise_state,
     (void (*)(void))catch_exception_raise_state_identity
   },
+# ifdef THREADS
+    0, /* for 'exception' */
+# endif
   0
 };
 

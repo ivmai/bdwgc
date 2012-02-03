@@ -53,15 +53,18 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
 {
   StackFrame *frame;
 
-  if (stack_start == 0) {
 # ifdef POWERPC
-#   if CPP_WORDSZ == 32
-      __asm__ __volatile__ ("lwz %0,0(r1)" : "=r" (frame));
-#   else
-      __asm__ __volatile__ ("ld %0,0(r1)" : "=r" (frame));
-#   endif
-# endif
-  } else {
+    if (stack_start == 0) {
+#     if CPP_WORDSZ == 32
+        __asm__ __volatile__ ("lwz %0,0(r1)" : "=r" (frame));
+#     else
+        __asm__ __volatile__ ("ld %0,0(r1)" : "=r" (frame));
+#     endif
+    } else
+# else
+    GC_ASSERT(stack_start != 0); /* not implemented */
+# endif /* !POWERPC */
+  /* else */ {
     frame = (StackFrame *)stack_start;
   }
 
@@ -76,7 +79,7 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
     /* we do these next two checks after going to the next frame
        because the LR for the first stack frame in the loop
        is not set up on purpose, so we shouldn't check it. */
-    if ((frame->savedLR & ~0x3) == 0 || (frame->savedLR & ~0x3) == ~0x3)
+    if ((frame->savedLR & ~0x3) == 0 || (frame->savedLR & ~0x3) == ~0x3U)
       break; /* if the next LR is bogus, stop */
   }
 # ifdef DEBUG_THREADS
