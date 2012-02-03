@@ -249,12 +249,12 @@
 #endif /* KEEP_BACK_PTRS */
 
 # define CROSSES_HBLK(p, sz) \
-        (((word)(p + sizeof(oh) + sz - 1) ^ (word)p) >= HBLKSIZE)
+        (((word)((p) + sizeof(oh) + (sz) - 1) ^ (word)(p)) >= HBLKSIZE)
 
 /* Store debugging info into p.  Return displaced pointer.         */
 /* This version assumes we do hold the allocation lock.            */
-STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz, const char *string,
-                                       int linenum)
+STATIC ptr_t GC_store_debug_info_inner(ptr_t p, word sz GC_ATTR_UNUSED,
+                                       const char *string, int linenum)
 {
     word * result = (word *)((oh *)p + 1);
 
