@@ -1380,16 +1380,16 @@ GC_INNER word GC_page_size = 0;
 #endif /* GC_RTEMS_PTHREADS */
 
 #ifndef HAVE_GET_STACK_BASE
-  /* Retrieve stack base.                                               */
-  /* Using the GC_find_limit version is risky.                          */
-  /* On IA64, for example, there is no guard page between the           */
-  /* stack of one thread and the register backing store of the          */
-  /* next.  Thus this is likely to identify way too large a             */
-  /* "stack" and thus at least result in disastrous performance.        */
-  /* FIXME - Implement better strategies here.                          */
-  GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
-  {
-#   ifdef NEED_FIND_LIMIT
+# ifdef NEED_FIND_LIMIT
+    /* Retrieve stack base.                                             */
+    /* Using the GC_find_limit version is risky.                        */
+    /* On IA64, for example, there is no guard page between the         */
+    /* stack of one thread and the register backing store of the        */
+    /* next.  Thus this is likely to identify way too large a           */
+    /* "stack" and thus at least result in disastrous performance.      */
+    /* FIXME - Implement better strategies here.                        */
+    GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
+    {
       int dummy;
       IF_CANCEL(int cancel_state;)
       DCL_LOCK_STATE;
@@ -1407,10 +1407,20 @@ GC_INNER word GC_page_size = 0;
       RESTORE_CANCEL(cancel_state);
       UNLOCK();
       return GC_SUCCESS;
-#   else
-      return GC_UNIMPLEMENTED;
-#   endif
-  }
+    }
+# else
+    GC_API int GC_CALL GC_get_stack_base(
+                                struct GC_stack_base *b GC_ATTR_UNUSED)
+    {
+#     if defined(GET_MAIN_STACKBASE_SPECIAL) && !defined(THREADS) \
+         && !defined(IA64)
+        b->mem_base = GC_get_main_stack_base();
+        return GC_SUCCESS;
+#     else
+        return GC_UNIMPLEMENTED;
+#     endif
+    }
+# endif /* !NEED_FIND_LIMIT */
 #endif /* !HAVE_GET_STACK_BASE */
 
 #ifndef GET_MAIN_STACKBASE_SPECIAL
