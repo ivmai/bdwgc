@@ -714,13 +714,16 @@ GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t n, size_t lb,
        lp -> ld_descriptor = leaf.ld_descriptor;
        ((volatile word *)op)[GRANULES_TO_WORDS(lg) - 1] = (word)lp;
    } else {
+#    ifndef GC_NO_FINALIZATION
        size_t lw = GRANULES_TO_WORDS(lg);
 
        ((word *)op)[lw - 1] = (word)complex_descr;
        /* Make sure the descriptor is cleared once there is any danger  */
        /* it may have been collected.                                   */
        if (GC_general_register_disappearing_link((void * *)((word *)op+lw-1),
-                                                 op) == GC_NO_MEMORY) {
+                                                 op) == GC_NO_MEMORY)
+#    endif
+       {
            /* Couldn't register it due to lack of memory.  Punt.        */
            /* This will probably fail too, but gives the recovery code  */
            /* a chance.                                                 */

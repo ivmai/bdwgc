@@ -247,7 +247,29 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
                     /* through GC_all_interior_pointers.                */
 
 
-#define GC_INVOKE_FINALIZERS() GC_notify_or_invoke_finalizers()
+#ifndef GC_NO_FINALIZATION
+#  define GC_INVOKE_FINALIZERS() GC_notify_or_invoke_finalizers()
+   GC_INNER void GC_notify_or_invoke_finalizers(void);
+                        /* If GC_finalize_on_demand is not set, invoke  */
+                        /* eligible finalizers. Otherwise:              */
+                        /* Call *GC_finalizer_notifier if there are     */
+                        /* finalizers to be run, and we haven't called  */
+                        /* this procedure yet this GC cycle.            */
+
+   GC_INNER void GC_push_finalizer_structures(void);
+   GC_INNER void GC_finalize(void);
+                        /* Perform all indicated finalization actions   */
+                        /* on unmarked objects.                         */
+                        /* Unreachable finalizable objects are enqueued */
+                        /* for processing by GC_invoke_finalizers.      */
+                        /* Invoked with lock.                           */
+
+#  ifndef SMALL_CONFIG
+     GC_INNER void GC_print_finalization_stats(void);
+#  endif
+#else
+#  define GC_INVOKE_FINALIZERS() (void)0
+#endif /* GC_NO_FINALIZATION */
 
 #if !defined(DONT_ADD_BYTE_AT_END)
 # ifdef LINT2
@@ -1517,7 +1539,6 @@ GC_EXTERN void (*GC_push_other_roots)(void);
                         /* supplied replacement should also call the    */
                         /* original function.                           */
 
-GC_INNER void GC_push_finalizer_structures(void);
 #ifdef THREADS
   void GC_push_thread_structures(void);
 #endif
@@ -1803,20 +1824,6 @@ GC_INNER void GC_remove_counts(struct hblk * h, size_t sz);
                                 /* Remove forwarding counts for h.      */
 GC_INNER hdr * GC_find_header(ptr_t h);
 
-GC_INNER void GC_finalize(void);
-                        /* Perform all indicated finalization actions   */
-                        /* on unmarked objects.                         */
-                        /* Unreachable finalizable objects are enqueued */
-                        /* for processing by GC_invoke_finalizers.      */
-                        /* Invoked with lock.                           */
-
-GC_INNER void GC_notify_or_invoke_finalizers(void);
-                        /* If GC_finalize_on_demand is not set, invoke  */
-                        /* eligible finalizers. Otherwise:              */
-                        /* Call *GC_finalizer_notifier if there are     */
-                        /* finalizers to be run, and we haven't called  */
-                        /* this procedure yet this GC cycle.            */
-
 GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes);
                         /* Add a HBLKSIZE aligned chunk to the heap.    */
 
@@ -1961,9 +1968,6 @@ void GC_print_block_list(void);
 void GC_print_hblkfreelist(void);
 void GC_print_heap_sects(void);
 void GC_print_static_roots(void);
-#ifndef SMALL_CONFIG
-  GC_INNER void GC_print_finalization_stats(void);
-#endif
 /* void GC_dump(void); - declared in gc.h */
 
 extern word GC_fo_entries; /* should be visible in extra/MacOS.c */

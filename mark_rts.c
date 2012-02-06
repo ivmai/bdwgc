@@ -706,7 +706,9 @@ GC_INNER void (*GC_push_typed_structures)(void) = 0;
  */
 STATIC void GC_push_gc_structures(void)
 {
-    GC_push_finalizer_structures();
+#   ifndef GC_NO_FINALIZATION
+      GC_push_finalizer_structures();
+#   endif
 #   if defined(THREADS)
       GC_push_thread_structures();
 #   endif

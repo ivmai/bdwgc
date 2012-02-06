@@ -732,8 +732,10 @@ tn * mktree(int n)
         result -> rchild -> lchild = tmp;
     }
     if (counter++ % 119 == 0) {
-        int my_index;
-        void *new_link;
+#       ifndef GC_NO_FINALIZATION
+          int my_index;
+          void *new_link;
+#       endif
 
         {
 #         ifdef PCR
@@ -747,7 +749,9 @@ tn * mktree(int n)
 #         endif
                 /* Losing a count here causes erroneous report of failure. */
           finalizable_count++;
-          my_index = live_indicators_count++;
+#         ifndef GC_NO_FINALIZATION
+            my_index = live_indicators_count++;
+#         endif
 #         ifdef PCR
             PCR_ThCrSec_ExitSys();
 #         endif
@@ -758,6 +762,7 @@ tn * mktree(int n)
 #         endif
         }
 
+#     ifndef GC_NO_FINALIZATION
         GC_REGISTER_FINALIZER((void *)result, finalizer, (void *)(GC_word)n,
                               (GC_finalization_proc *)0, (void * *)0);
         if (my_index >= MAX_FINALIZED) {
@@ -795,6 +800,7 @@ tn * mktree(int n)
                 GC_printf("GC_general_register_disappearing_link failed 2\n");
                 FAIL;
         }
+#     endif
         GC_reachable_here(result);
     }
     return(result);
@@ -1281,9 +1287,11 @@ void check_heap_stats(void)
 {
     size_t max_heap_sz;
     int i;
-    int still_live;
-#   ifdef FINALIZE_ON_DEMAND
+#   ifndef GC_NO_FINALIZATION
+      int still_live;
+#     ifdef FINALIZE_ON_DEMAND
         int late_finalize_count = 0;
+#     endif
 #   endif
 
 #   ifdef VERY_SMALL_CONFIG
@@ -1322,10 +1330,12 @@ void check_heap_stats(void)
       while (GC_collect_a_little()) { }
       for (i = 0; i < 16; i++) {
         GC_gcollect();
-#   ifdef FINALIZE_ON_DEMAND
-           late_finalize_count +=
-#   endif
+#       ifndef GC_NO_FINALIZATION
+#         ifdef FINALIZE_ON_DEMAND
+            late_finalize_count +=
+#         endif
                 GC_invoke_finalizers();
+#       endif
       }
       if (GC_print_stats) {
         struct GC_stack_base sb;
@@ -1348,27 +1358,28 @@ void check_heap_stats(void)
     GC_printf("Allocated %d stubborn objects\n", stubborn_count);
     GC_printf("Finalized %d/%d objects - ",
                   finalized_count, finalizable_count);
-#   ifdef FINALIZE_ON_DEMAND
+#   ifndef GC_NO_FINALIZATION
+#     ifdef FINALIZE_ON_DEMAND
         if (finalized_count != late_finalize_count) {
             GC_printf("Demand finalization error\n");
             FAIL;
         }
-#   endif
-    if (finalized_count > finalizable_count
-        || finalized_count < finalizable_count/2) {
+#     endif
+      if (finalized_count > finalizable_count
+          || finalized_count < finalizable_count/2) {
         GC_printf("finalization is probably broken\n");
         FAIL;
-    } else {
+      } else {
         GC_printf("finalization is probably ok\n");
-    }
-    still_live = 0;
-    for (i = 0; i < MAX_FINALIZED; i++) {
+      }
+      still_live = 0;
+      for (i = 0; i < MAX_FINALIZED; i++) {
         if (live_indicators[i] != 0) {
             still_live++;
         }
-    }
-    i = finalizable_count - finalized_count - still_live;
-    if (0 != i) {
+      }
+      i = finalizable_count - finalized_count - still_live;
+      if (0 != i) {
         GC_printf("%d disappearing links remain and %d more objects "
                       "were not finalized\n", still_live, i);
         if (i > 10) {
@@ -1376,7 +1387,8 @@ void check_heap_stats(void)
         } else {
             GC_printf("\tSlightly suspicious, but probably OK\n");
         }
-    }
+      }
+#   endif
     GC_printf("Total number of bytes allocated is %lu\n",
                   (unsigned long)GC_get_total_bytes());
     GC_printf("Final heap size is %lu bytes\n",

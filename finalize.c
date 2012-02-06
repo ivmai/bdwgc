@@ -16,6 +16,8 @@
 
 #include "private/gc_pmark.h"
 
+#ifndef GC_NO_FINALIZATION
+
 /* Type of mark procedure used for marking from finalizable object.     */
 /* This procedure normally does not mark the object, only its           */
 /* descendents.                                                         */
@@ -949,27 +951,6 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
         (*notifier_fn)(); /* Invoke the notifier */
 }
 
-GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn,
-                                              void * client_data)
-{
-    void * result;
-    DCL_LOCK_STATE;
-
-#   ifdef THREADS
-      LOCK();
-      /* FIXME - This looks wrong!! */
-      SET_LOCK_HOLDER();
-#   endif
-    result = (*fn)(client_data);
-#   ifdef THREADS
-#     ifndef GC_ASSERTIONS
-        UNSET_LOCK_HOLDER();
-#     endif /* o.w. UNLOCK() does it implicitly */
-      UNLOCK();
-#   endif
-    return(result);
-}
-
 #ifndef SMALL_CONFIG
   GC_INNER void GC_print_finalization_stats(void)
   {
@@ -985,3 +966,5 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn,
                   ready, (long)GC_old_dl_entries - (long)GC_dl_entries);
   }
 #endif /* !SMALL_CONFIG */
+
+#endif /* !GC_NO_FINALIZATION */

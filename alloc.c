@@ -841,7 +841,9 @@ STATIC void GC_finish_collection(void)
         /* The above just checks; it doesn't really reclaim anything.   */
     }
 
-    GC_finalize();
+#   ifndef GC_NO_FINALIZATION
+      GC_finalize();
+#   endif
 #   ifdef STUBBORN_ALLOC
       GC_clean_changing_list();
 #   endif
@@ -923,7 +925,9 @@ STATIC void GC_finish_collection(void)
         GET_TIME(done_time);
 
         /* A convenient place to output finalization statistics. */
-        GC_print_finalization_stats();
+#       ifndef GC_NO_FINALIZATION
+          GC_print_finalization_stats();
+#       endif
 
         GC_log_printf("Finalize plus initiate sweep took %lu + %lu msecs\n",
                       MS_TIME_DIFF(finalize_time,start_time),

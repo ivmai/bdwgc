@@ -987,6 +987,8 @@ GC_INNER GC_bool GC_check_leaked(ptr_t base)
 
 #endif /* !SHORT_DBG_HDRS */
 
+#ifndef GC_NO_FINALIZATION
+
 struct closure {
     GC_finalization_proc cl_fn;
     void * cl_data;
@@ -1164,6 +1166,8 @@ GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
     }
     store_old(obj, my_old_fn, (struct closure *)my_old_cd, ofn, ocd);
 }
+
+#endif /* !GC_NO_FINALIZATION */
 
 GC_API void * GC_CALL GC_debug_malloc_replacement(size_t lb)
 {
