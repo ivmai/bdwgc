@@ -585,11 +585,6 @@ handle_ex:
   }
 #endif /* WRAP_MARK_SOME */
 
-GC_INNER GC_bool GC_mark_stack_empty(void)
-{
-    return(GC_mark_stack_top < GC_mark_stack);
-}
-
 GC_INNER void GC_invalidate_mark_state(void)
 {
     GC_mark_state = MS_INVALID;

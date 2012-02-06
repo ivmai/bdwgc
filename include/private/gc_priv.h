@@ -1488,7 +1488,6 @@ GC_INNER void GC_invalidate_mark_state(void);
                                 /* objects may point to unmarked        */
                                 /* ones, and roots may point to         */
                                 /* unmarked objects.  Reset mark stack. */
-GC_INNER GC_bool GC_mark_stack_empty(void);
 GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame);
                         /* Perform about one pages worth of marking     */
                         /* work of whatever kind is needed.  Returns    */

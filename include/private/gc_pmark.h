@@ -415,6 +415,8 @@ GC_INNER mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
                                          GC_mark_stack, \
                                          GC_mark_stack + GC_mark_stack_size);
 
+#define GC_mark_stack_empty() (GC_mark_stack_top < GC_mark_stack)
+
 /*
  * Mark from one finalizable object using the specified
  * mark proc. May not mark the object pointed to by
