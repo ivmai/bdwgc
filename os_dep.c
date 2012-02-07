@@ -2438,15 +2438,15 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
     ptr_t start_addr = GC_unmap_start(start, bytes);
     ptr_t end_addr = GC_unmap_end(start, bytes);
     word len = end_addr - start_addr;
+    if (0 == start_addr) return;
 
     /* FIXME: Handle out-of-memory correctly (at least for Win32)       */
 #   if defined(MSWIN32) || defined(MSWINCE)
-      ptr_t result;
-
-      if (0 == start_addr) return;
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
           GC_word alloc_len;
+          ptr_t result;
+
           if (VirtualQuery(start_addr, &mem_info, sizeof(mem_info))
               != sizeof(mem_info))
               ABORT("Weird VirtualQuery result");
@@ -2468,14 +2468,8 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
       }
 #   else
       /* It was already remapped with PROT_NONE. */
-      int result;
-      if (0 == start_addr) return;
-
-#     ifndef NACL
-        result = mprotect(start_addr, len, (PROT_READ | PROT_WRITE)
-                                    | (GC_pages_executable ? PROT_EXEC : 0));
-#     else
-        {
+      {
+#       ifdef NACL
           /* NaCl does not expose mprotect, but mmap should work fine.  */
           void *mmap_result = mmap(start_addr, len, (PROT_READ | PROT_WRITE)
                                     | (GC_pages_executable ? PROT_EXEC : 0),
@@ -2483,18 +2477,18 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
                                    zero_fd, 0 /* offset */);
           if (mmap_result != (void *)start_addr)
             ABORT("mmap as mprotect failed");
-          /* Fake the return value as if mprotect succeeded.    */
-          result = 0;
-        }
-#     endif /* NACL */
-#     undef IGNORE_PAGES_EXECUTABLE
-
-      if (result != 0) {
-        if (GC_print_stats)
-          GC_log_printf("Mprotect failed at %p (length %lu) with errno %d\n",
+#       else
+          if (mprotect(start_addr, len, (PROT_READ | PROT_WRITE)
+                            | (GC_pages_executable ? PROT_EXEC : 0)) != 0) {
+            if (GC_print_stats)
+              GC_log_printf(
+                        "mprotect failed at %p (length %lu) with errno %d\n",
                         start_addr, (unsigned long)len, errno);
-        ABORT("mprotect remapping failed");
+            ABORT("mprotect remapping failed");
+          }
+#       endif /* !NACL */
       }
+#     undef IGNORE_PAGES_EXECUTABLE
       GC_unmapped_bytes -= len;
 #   endif
 }
