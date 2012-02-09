@@ -98,8 +98,7 @@
 #endif
 
 #if defined(LINUX) || defined(FREEBSD) || defined(SOLARIS) || defined(IRIX5) \
-        || ((defined(USE_MMAP) || defined(USE_MUNMAP)) \
-        && !defined(MSWIN32) && !defined(MSWINCE))
+    || ((defined(USE_MMAP) || defined(USE_MUNMAP)) && !defined(USE_WINALLOC))
 # define MMAP_SUPPORTED
 #endif
 
@@ -710,6 +709,8 @@ GC_INNER word GC_page_size = 0;
 # if defined(MSWINCE) && defined(THREADS)
     GC_INNER GC_bool GC_dont_query_stack_min = FALSE;
 # endif
+
+  GC_INNER SYSTEM_INFO GC_sysinfo;
 
   GC_INNER void GC_setpagesize(void)
   {
@@ -1727,7 +1728,7 @@ void GC_register_data_segments(void)
 
   STATIC size_t GC_max_root_size = 100000; /* Appr. largest root size.  */
 
-# ifndef CYGWIN32
+# ifdef USE_WINALLOC
   /* In the long run, a better data structure would also be nice ...    */
   STATIC struct GC_malloc_heap_list {
     void * allocation_base;
@@ -1790,7 +1791,7 @@ void GC_register_data_segments(void)
     new_l -> next = GC_malloc_heap_l;
     GC_malloc_heap_l = new_l;
   }
-# endif /* !CYGWIN32 */
+# endif /* USE_WINALLOC */
 
 # endif /* !REDIRECT_MALLOC */
 
@@ -1803,7 +1804,7 @@ void GC_register_data_segments(void)
      unsigned i;
 #    ifndef REDIRECT_MALLOC
        if (GC_root_size > GC_max_root_size) GC_max_root_size = GC_root_size;
-#      ifndef CYGWIN32
+#      ifdef USE_WINALLOC
          if (GC_is_malloc_heap_base(p)) return TRUE;
 #      endif
 #    endif
@@ -2014,16 +2015,16 @@ void GC_register_data_segments(void)
     /* change.                                                          */
 }
 
-# endif  /* ! AMIGA */
-# endif  /* ! MSWIN32 && ! MSWINCE*/
-# endif  /* ! OS2 */
+# endif /* !AMIGA */
+# endif /* !MSWIN32 && !MSWINCE */
+# endif /* !OS2 */
 
 /*
  * Auxiliary routines for obtaining memory from OS.
  */
 
-# if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MSWIN32) \
-     && !defined(MSWINCE) && !defined(MACOS) && !defined(DOS4GW) \
+# if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
+     && !defined(USE_WINALLOC) && !defined(MACOS) && !defined(DOS4GW) \
      && !defined(NONSTOP) && !defined(SN_TARGET_PS3) && !defined(RTEMS) \
      && !defined(__CC_ARM)
 
@@ -2192,11 +2193,7 @@ void * os2_alloc(size_t bytes)
 
 # endif /* OS2 */
 
-# if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
-    GC_INNER SYSTEM_INFO GC_sysinfo;
-# endif
-
-#ifdef MSWIN32
+#if defined(MSWIN32) || defined(CYGWIN32)
 
 # ifdef USE_GLOBAL_ALLOC
 #   define GLOBAL_ALLOC_TEST 1
@@ -2204,18 +2201,15 @@ void * os2_alloc(size_t bytes)
 #   define GLOBAL_ALLOC_TEST GC_no_win32_dlls
 # endif
 
-# ifdef GC_USE_MEM_TOP_DOWN
-    STATIC DWORD GC_mem_top_down = MEM_TOP_DOWN;
+# if defined(GC_USE_MEM_TOP_DOWN) && defined(USE_WINALLOC)
+    DWORD GC_mem_top_down = MEM_TOP_DOWN;
                            /* Use GC_USE_MEM_TOP_DOWN for better 64-bit */
                            /* testing.  Otherwise all addresses tend to */
                            /* end up in first 4GB, hiding bugs.         */
 # else
-    STATIC DWORD GC_mem_top_down = 0;
-# endif
+#   define GC_mem_top_down 0
+# endif /* !GC_USE_MEM_TOP_DOWN */
 
-#endif /* MSWIN32 */
-
-#if defined(MSWIN32) || defined(CYGWIN32)
   ptr_t GC_win32_get_mem(word bytes)
   {
     ptr_t result;
@@ -2360,12 +2354,10 @@ void * os2_alloc(size_t bytes)
 /* USE_MUNMAP.                                                  */
 
 #if !defined(MSWIN32) && !defined(MSWINCE)
-
-#include <unistd.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
+# include <unistd.h>
+# include <sys/mman.h>
+# include <sys/stat.h>
+# include <sys/types.h>
 #endif
 
 /* Compute a page aligned starting address for the unmap        */
@@ -2403,11 +2395,13 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
     ptr_t start_addr = GC_unmap_start(start, bytes);
     ptr_t end_addr = GC_unmap_end(start, bytes);
     word len = end_addr - start_addr;
+
     if (0 == start_addr) return;
-#   if defined(MSWIN32) || defined(MSWINCE)
+#   ifdef USE_WINALLOC
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
           GC_word free_len;
+
           if (VirtualQuery(start_addr, &mem_info, sizeof(mem_info))
               != sizeof(mem_info))
               ABORT("Weird VirtualQuery result");
@@ -2423,6 +2417,7 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
       /* accidentally grabbing the same address space.                  */
       {
         void * result;
+
         result = mmap(start_addr, len, PROT_NONE,
                       MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
                       zero_fd, 0/* offset */);
@@ -2441,7 +2436,7 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
     if (0 == start_addr) return;
 
     /* FIXME: Handle out-of-memory correctly (at least for Win32)       */
-#   if defined(MSWIN32) || defined(MSWINCE)
+#   ifdef USE_WINALLOC
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
           GC_word alloc_len;
@@ -2506,12 +2501,13 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
     ptr_t start_addr = end1_addr;
     ptr_t end_addr = start2_addr;
     size_t len;
+
     GC_ASSERT(start1 + bytes1 == start2);
     if (0 == start1_addr) start_addr = GC_unmap_start(start1, bytes1 + bytes2);
     if (0 == start2_addr) end_addr = GC_unmap_end(start1, bytes1 + bytes2);
     if (0 == start_addr) return;
     len = end_addr - start_addr;
-#   if defined(MSWIN32) || defined(MSWINCE)
+#   ifdef USE_WINALLOC
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
           GC_word free_len;
@@ -2942,7 +2938,7 @@ STATIC void GC_default_push_other_roots(void)
             ABORT("vm_protect(UNPROTECT) failed"); \
         }
 
-# elif !defined(MSWIN32) && !defined(MSWINCE)
+# elif !defined(USE_WINALLOC)
 #   include <sys/mman.h>
 #   include <signal.h>
 #   include <sys/syscall.h>
@@ -2963,7 +2959,7 @@ STATIC void GC_default_push_other_roots(void)
         }
 #   undef IGNORE_PAGES_EXECUTABLE
 
-# else /* MSWIN32 */
+# else /* USE_WINALLOC */
 #   ifndef MSWINCE
 #     include <signal.h>
 #   endif
@@ -2985,7 +2981,7 @@ STATIC void GC_default_push_other_roots(void)
                             &protect_junk)) { \
           ABORT("un-VirtualProtect failed"); \
         }
-# endif /* MSWIN32 || MSWINCE || DARWIN */
+# endif /* USE_WINALLOC */
 
 # if defined(MSWIN32)
     typedef LPTOP_LEVEL_EXCEPTION_FILTER SIG_HNDLR_PTR;

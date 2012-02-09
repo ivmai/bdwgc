@@ -597,7 +597,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
       CLOCK_TYPE current_time;
 #   endif
 
-#   if !defined(REDIRECT_MALLOC) && (defined(MSWIN32) || defined(MSWINCE))
+#   if !defined(REDIRECT_MALLOC) && defined(USE_WINALLOC)
         GC_add_current_malloc_heap();
 #   endif
 #   if defined(REGISTER_LIBRARIES_EARLY)

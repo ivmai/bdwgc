@@ -2108,7 +2108,7 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
     GC_INNER GC_bool GC_text_mapping(char *nm, ptr_t *startp, ptr_t *endp);
                                                 /* from os_dep.c */
 # endif
-#elif defined(MSWIN32) || defined(MSWINCE)
+#elif defined(USE_WINALLOC)
   GC_INNER void GC_add_current_malloc_heap(void);
 #endif /* !REDIRECT_MALLOC */
 

@@ -2439,6 +2439,10 @@
 # define GC_DISABLE_INCREMENTAL
 #endif
 
+#if (defined(MSWIN32) || defined(MSWINCE)) && !defined(USE_WINALLOC)
+# define USE_WINALLOC
+#endif
+
 #if defined(GC_DISABLE_INCREMENTAL) || defined(MANUAL_VDB)
 # undef GWW_VDB
 # undef MPROTECT_VDB
