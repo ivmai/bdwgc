@@ -78,9 +78,7 @@ To build the collector as a DLL, pass "--enable-shared --disable-static" to
 configure (this will instruct make compile with -D GC_DLL).
 
 Parallel marker could be enabled via "--enable-parallel-mark".
-
-Memory unmapping could be enabled via "--enable-munmap" (not well supported
-on Cygwin currently).
+Memory unmapping could be enabled via "--enable-munmap".
 
 Borland Tools
 -------------
