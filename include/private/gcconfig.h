@@ -2440,7 +2440,12 @@
 #endif
 
 #if (defined(MSWIN32) || defined(MSWINCE)) && !defined(USE_WINALLOC)
+  /* USE_WINALLOC is only an option for Cygwin. */
 # define USE_WINALLOC
+#endif
+
+#ifdef USE_WINALLOC
+# undef USE_MMAP
 #endif
 
 #if defined(GC_DISABLE_INCREMENTAL) || defined(MANUAL_VDB)

@@ -279,6 +279,9 @@ USE_MUNMAP      Causes memory to be returned to the OS under the right
   Works under some Unix, Linux and Windows versions.
   Requires USE_MMAP except for Windows.
 
+USE_WINALLOC (Cygwin only)   Use Win32 VirtualAlloc (instead of sbrk or mmap)
+  to get new memory.  Useful if memory unmapping (USE_MUNMAP) is enabled.
+
 MUNMAP_THRESHOLD=<value>        Set the desired memory blocks unmapping
   threshold (the number of sequential garbage collections for which
   a candidate block for unmapping should remain free).

@@ -2193,104 +2193,6 @@ void * os2_alloc(size_t bytes)
 
 # endif /* OS2 */
 
-#if defined(MSWIN32) || defined(CYGWIN32)
-
-# ifdef USE_GLOBAL_ALLOC
-#   define GLOBAL_ALLOC_TEST 1
-# else
-#   define GLOBAL_ALLOC_TEST GC_no_win32_dlls
-# endif
-
-# if defined(GC_USE_MEM_TOP_DOWN) && defined(USE_WINALLOC)
-    DWORD GC_mem_top_down = MEM_TOP_DOWN;
-                           /* Use GC_USE_MEM_TOP_DOWN for better 64-bit */
-                           /* testing.  Otherwise all addresses tend to */
-                           /* end up in first 4GB, hiding bugs.         */
-# else
-#   define GC_mem_top_down 0
-# endif /* !GC_USE_MEM_TOP_DOWN */
-
-  ptr_t GC_win32_get_mem(word bytes)
-  {
-    ptr_t result;
-
-# ifdef CYGWIN32
-    result = GC_unix_get_mem(bytes);
-# else
-    if (GLOBAL_ALLOC_TEST) {
-        /* VirtualAlloc doesn't like PAGE_EXECUTE_READWRITE.    */
-        /* There are also unconfirmed rumors of other           */
-        /* problems, so we dodge the issue.                     */
-        result = (ptr_t) GlobalAlloc(0, bytes + HBLKSIZE);
-        result = (ptr_t)(((word)result + HBLKSIZE - 1) & ~(HBLKSIZE-1));
-    } else {
-        /* VirtualProtect only works on regions returned by a   */
-        /* single VirtualAlloc call.  Thus we allocate one      */
-        /* extra page, which will prevent merging of blocks     */
-        /* in separate regions, and eliminate any temptation    */
-        /* to call VirtualProtect on a range spanning regions.  */
-        /* This wastes a small amount of memory, and risks      */
-        /* increased fragmentation.  But better alternatives    */
-        /* would require effort.                                */
-#       ifdef MPROTECT_VDB
-          /* We can't check for GC_incremental here (because    */
-          /* GC_enable_incremental() might be called some time  */
-          /* later after the GC initialization).                */
-#         ifdef GWW_VDB
-#           define VIRTUAL_ALLOC_PAD (GC_GWW_AVAILABLE() ? 0 : 1)
-#         else
-#           define VIRTUAL_ALLOC_PAD 1
-#         endif
-#       else
-#         define VIRTUAL_ALLOC_PAD 0
-#       endif
-        /* Pass the MEM_WRITE_WATCH only if GetWriteWatch-based */
-        /* VDBs are enabled and the GetWriteWatch function is   */
-        /* available.  Otherwise we waste resources or possibly */
-        /* cause VirtualAlloc to fail (observed in Windows 2000 */
-        /* SP2).                                                */
-        result = (ptr_t) VirtualAlloc(NULL, bytes + VIRTUAL_ALLOC_PAD,
-                                GetWriteWatch_alloc_flag
-                                | (MEM_COMMIT | MEM_RESERVE)
-                                | GC_mem_top_down,
-                                GC_pages_executable ? PAGE_EXECUTE_READWRITE :
-                                                      PAGE_READWRITE);
-#       undef IGNORE_PAGES_EXECUTABLE
-    }
-# endif /* !CYGWIN32 */
-    if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
-        /* If I read the documentation correctly, this can      */
-        /* only happen if HBLKSIZE > 64k or not a power of 2.   */
-    if (GC_n_heap_bases >= MAX_HEAP_SECTS) ABORT("Too many heap sections");
-    if (0 != result) GC_heap_bases[GC_n_heap_bases++] = result;
-    return(result);
-  }
-
-  GC_API void GC_CALL GC_win32_free_heap(void)
-  {
-#   ifndef CYGWIN32
-      if (GC_no_win32_dlls)
-#   endif
-    {
-      while (GC_n_heap_bases-- > 0) {
-#       ifdef CYGWIN32
-          /* FIXME: Is it ok to use non-GC free() here? */
-#       else
-          GlobalFree(GC_heap_bases[GC_n_heap_bases]);
-#       endif
-        GC_heap_bases[GC_n_heap_bases] = 0;
-      }
-    }
-  }
-#endif /* MSWIN32 || CYGWIN32 */
-
-#ifdef AMIGA
-# define GC_AMIGA_AM
-# include "extra/AmigaOS.c"
-# undef GC_AMIGA_AM
-#endif
-
-
 #ifdef MSWINCE
   ptr_t GC_wince_get_mem(word bytes)
   {
@@ -2345,6 +2247,105 @@ void * os2_alloc(size_t bytes)
 
     return(result);
   }
+
+#elif defined(USE_WINALLOC) || defined(CYGWIN32)
+
+# ifdef USE_GLOBAL_ALLOC
+#   define GLOBAL_ALLOC_TEST 1
+# else
+#   define GLOBAL_ALLOC_TEST GC_no_win32_dlls
+# endif
+
+# if defined(GC_USE_MEM_TOP_DOWN) && defined(USE_WINALLOC)
+    DWORD GC_mem_top_down = MEM_TOP_DOWN;
+                           /* Use GC_USE_MEM_TOP_DOWN for better 64-bit */
+                           /* testing.  Otherwise all addresses tend to */
+                           /* end up in first 4GB, hiding bugs.         */
+# else
+#   define GC_mem_top_down 0
+# endif /* !GC_USE_MEM_TOP_DOWN */
+
+  ptr_t GC_win32_get_mem(word bytes)
+  {
+    ptr_t result;
+
+# ifndef USE_WINALLOC
+    result = GC_unix_get_mem(bytes);
+# else
+#   ifdef MSWIN32
+      if (GLOBAL_ALLOC_TEST) {
+        /* VirtualAlloc doesn't like PAGE_EXECUTE_READWRITE.    */
+        /* There are also unconfirmed rumors of other           */
+        /* problems, so we dodge the issue.                     */
+        result = (ptr_t) GlobalAlloc(0, bytes + HBLKSIZE);
+        result = (ptr_t)(((word)result + HBLKSIZE - 1) & ~(HBLKSIZE-1));
+      } else
+#   endif
+    /* else */ {
+        /* VirtualProtect only works on regions returned by a   */
+        /* single VirtualAlloc call.  Thus we allocate one      */
+        /* extra page, which will prevent merging of blocks     */
+        /* in separate regions, and eliminate any temptation    */
+        /* to call VirtualProtect on a range spanning regions.  */
+        /* This wastes a small amount of memory, and risks      */
+        /* increased fragmentation.  But better alternatives    */
+        /* would require effort.                                */
+#       ifdef MPROTECT_VDB
+          /* We can't check for GC_incremental here (because    */
+          /* GC_enable_incremental() might be called some time  */
+          /* later after the GC initialization).                */
+#         ifdef GWW_VDB
+#           define VIRTUAL_ALLOC_PAD (GC_GWW_AVAILABLE() ? 0 : 1)
+#         else
+#           define VIRTUAL_ALLOC_PAD 1
+#         endif
+#       else
+#         define VIRTUAL_ALLOC_PAD 0
+#       endif
+        /* Pass the MEM_WRITE_WATCH only if GetWriteWatch-based */
+        /* VDBs are enabled and the GetWriteWatch function is   */
+        /* available.  Otherwise we waste resources or possibly */
+        /* cause VirtualAlloc to fail (observed in Windows 2000 */
+        /* SP2).                                                */
+        result = (ptr_t) VirtualAlloc(NULL, bytes + VIRTUAL_ALLOC_PAD,
+                                GetWriteWatch_alloc_flag
+                                | (MEM_COMMIT | MEM_RESERVE)
+                                | GC_mem_top_down,
+                                GC_pages_executable ? PAGE_EXECUTE_READWRITE :
+                                                      PAGE_READWRITE);
+#       undef IGNORE_PAGES_EXECUTABLE
+    }
+# endif /* USE_WINALLOC */
+    if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
+        /* If I read the documentation correctly, this can      */
+        /* only happen if HBLKSIZE > 64k or not a power of 2.   */
+    if (GC_n_heap_bases >= MAX_HEAP_SECTS) ABORT("Too many heap sections");
+    if (0 != result) GC_heap_bases[GC_n_heap_bases++] = result;
+    return(result);
+  }
+
+  GC_API void GC_CALL GC_win32_free_heap(void)
+  {
+#   ifndef CYGWIN32
+      if (GC_no_win32_dlls)
+#   endif
+    {
+      while (GC_n_heap_bases-- > 0) {
+#       ifdef CYGWIN32
+          /* FIXME: Is it ok to use non-GC free() here? */
+#       else
+          GlobalFree(GC_heap_bases[GC_n_heap_bases]);
+#       endif
+        GC_heap_bases[GC_n_heap_bases] = 0;
+      }
+    }
+  }
+#endif /* USE_WINALLOC || CYGWIN32 */
+
+#ifdef AMIGA
+# define GC_AMIGA_AM
+# include "extra/AmigaOS.c"
+# undef GC_AMIGA_AM
 #endif
 
 #ifdef USE_MUNMAP
@@ -2511,6 +2512,7 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
           GC_word free_len;
+
           if (VirtualQuery(start_addr, &mem_info, sizeof(mem_info))
               != sizeof(mem_info))
               ABORT("Weird VirtualQuery result");
