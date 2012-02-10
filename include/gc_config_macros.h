@@ -164,8 +164,9 @@
 # endif
 #endif /* _WIN32_WCE */
 
-#if defined(_DLL) && !defined(GC_NOT_DLL) && !defined(GC_DLL) \
-        && !defined(__GNUC__)
+#if !defined(GC_NOT_DLL) && !defined(GC_DLL) \
+    && ((defined(_DLL) && !defined(__GNUC__)) \
+        || (defined(DLL_EXPORT) && defined(GC_BUILD)))
 # define GC_DLL
 #endif
 
