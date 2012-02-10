@@ -2583,6 +2583,10 @@
 # define THREADS
 #endif
 
+#if defined(PARALLEL_MARK) && !defined(THREADS)
+# error "invalid config - PARALLEL_MARK requires GC_THREADS"
+#endif
+
 #if defined(UNIX_LIKE) && defined(THREADS) && !defined(NO_CANCEL_SAFE) \
     && !defined(PLATFORM_ANDROID)
   /* Make the code cancellation-safe.  This basically means that we     */
