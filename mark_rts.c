@@ -189,12 +189,12 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
             old = GC_static_roots + i;
             if (b <= old -> r_end && e >= old -> r_start) {
                 if (b < old -> r_start) {
+                    GC_root_size += old->r_start - b;
                     old -> r_start = b;
-                    GC_root_size += (old -> r_start - b);
                 }
                 if (e > old -> r_end) {
+                    GC_root_size += e - old->r_end;
                     old -> r_end = e;
-                    GC_root_size += (e - old -> r_end);
                 }
                 old -> r_tmp &= tmp;
                 break;
@@ -210,12 +210,12 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
               e = other -> r_end;
               if (b <= old -> r_end && e >= old -> r_start) {
                 if (b < old -> r_start) {
+                    GC_root_size += old->r_start - b;
                     old -> r_start = b;
-                    GC_root_size += (old -> r_start - b);
                 }
                 if (e > old -> r_end) {
+                    GC_root_size += e - old->r_end;
                     old -> r_end = e;
-                    GC_root_size += (e - old -> r_end);
                 }
                 old -> r_tmp &= other -> r_tmp;
                 /* Delete this entry. */
