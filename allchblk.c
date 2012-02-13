@@ -73,9 +73,6 @@ GC_INLINE int GC_enough_large_bytes_left(void)
     return 0;
 }
 
-# define INCR_FREE_BYTES(n, b) (GC_free_bytes[n] += (b))
-# define FREE_ASSERT(e) GC_ASSERT(e)
-
 /* Map a number of blocks to the appropriate large block free list index. */
 STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
 {
@@ -86,14 +83,14 @@ STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
 
 }
 
-# define PHDR(hhdr) HDR(hhdr -> hb_prev)
-# define NHDR(hhdr) HDR(hhdr -> hb_next)
+# define PHDR(hhdr) HDR((hhdr) -> hb_prev)
+# define NHDR(hhdr) HDR((hhdr) -> hb_next)
 
 # ifdef USE_MUNMAP
 #   define IS_MAPPED(hhdr) (((hhdr) -> hb_flags & WAS_UNMAPPED) == 0)
-# else  /* !USE_MUNMAP */
-#   define IS_MAPPED(hhdr) 1
-# endif /* USE_MUNMAP */
+# else
+#   define IS_MAPPED(hhdr) TRUE
+# endif /* !USE_MUNMAP */
 
 #if !defined(NO_DEBUGGING) || defined(GC_ASSERTIONS)
   /* Should return the same value as GC_large_free_bytes.       */
@@ -285,24 +282,10 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
     return(TRUE);
 }
 
-#define FL_UNKNOWN -1
-/*
- * Remove hhdr from the appropriate free list.
- * We assume it is on the nth free list, or on the size
- * appropriate free list if n is FL_UNKNOWN.
- */
-STATIC void GC_remove_from_fl(hdr *hhdr, int n)
+/* Remove hhdr from the free list (it is assumed to specified by index). */
+STATIC void GC_remove_from_fl_at(hdr *hhdr, int index)
 {
-    int index;
-
     GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);
-      /* We always need index to maintain free counts.  */
-      if (FL_UNKNOWN == n) {
-          index = GC_hblk_fl_from_blocks(divHBLKSZ(hhdr -> hb_sz));
-      } else {
-          index = n;
-      }
-
     if (hhdr -> hb_prev == 0) {
         GC_ASSERT(HDR(GC_hblkfreelist[index]) == hhdr);
         GC_hblkfreelist[index] = hhdr -> hb_next;
@@ -311,8 +294,9 @@ STATIC void GC_remove_from_fl(hdr *hhdr, int n)
         GET_HDR(hhdr -> hb_prev, phdr);
         phdr -> hb_next = hhdr -> hb_next;
     }
-    FREE_ASSERT(GC_free_bytes[index] >= hhdr -> hb_sz);
-    INCR_FREE_BYTES(index, -(signed_word)(hhdr -> hb_sz));
+    /* We always need index to maintain free counts.    */
+    GC_ASSERT(GC_free_bytes[index] >= hhdr -> hb_sz);
+    GC_free_bytes[index] -= hhdr -> hb_sz;
     if (0 != hhdr -> hb_next) {
         hdr * nhdr;
         GC_ASSERT(!IS_FORWARDING_ADDR_OR_NIL(NHDR(hhdr)));
@@ -321,9 +305,14 @@ STATIC void GC_remove_from_fl(hdr *hhdr, int n)
     }
 }
 
-/*
- * Return a pointer to the free block ending just before h, if any.
- */
+/* Remove hhdr from the appropriate free list (we assume it is on the   */
+/* size-appropriate free list).                                         */
+GC_INLINE void GC_remove_from_fl(hdr *hhdr)
+{
+  GC_remove_from_fl_at(hhdr, GC_hblk_fl_from_blocks(divHBLKSZ(hhdr->hb_sz)));
+}
+
+/* Return a pointer to the free block ending just before h, if any.     */
 STATIC struct hblk * GC_free_block_ending_at(struct hblk *h)
 {
     struct hblk * p = h - 1;
@@ -351,10 +340,8 @@ STATIC struct hblk * GC_free_block_ending_at(struct hblk *h)
     return 0;
 }
 
-/*
- * Add hhdr to the appropriate free list.
- * We maintain individual free lists sorted by address.
- */
+/* Add hhdr to the appropriate free list.               */
+/* We maintain individual free lists sorted by address. */
 STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 {
     int index = GC_hblk_fl_from_blocks(divHBLKSZ(hhdr -> hb_sz));
@@ -374,8 +361,8 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 
     GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);
     GC_hblkfreelist[index] = h;
-    INCR_FREE_BYTES(index, hhdr -> hb_sz);
-    FREE_ASSERT(GC_free_bytes[index] <= GC_large_free_bytes);
+    GC_free_bytes[index] += hhdr -> hb_sz;
+    GC_ASSERT(GC_free_bytes[index] <= GC_large_free_bytes);
     hhdr -> hb_next = second;
     hhdr -> hb_prev = 0;
     if (0 != second) {
@@ -467,8 +454,8 @@ GC_INNER void GC_merge_unmapped(void)
                 GC_unmap_gap((ptr_t)h, size, (ptr_t)next, nextsize);
             }
             /* If they are both unmapped, we merge, but leave unmapped. */
-            GC_remove_from_fl(hhdr, i);
-            GC_remove_from_fl(nexthdr, FL_UNKNOWN);
+            GC_remove_from_fl_at(hhdr, i);
+            GC_remove_from_fl(nexthdr);
             hhdr -> hb_sz += nexthdr -> hb_sz;
             GC_remove_header(next);
             GC_add_to_fl(h, hhdr);
@@ -500,7 +487,7 @@ STATIC struct hblk * GC_get_first_part(struct hblk *h, hdr *hhdr,
     hdr * rest_hdr;
 
     GC_ASSERT((total_size & (HBLKSIZE-1)) == 0);
-    GC_remove_from_fl(hhdr, index);
+    GC_remove_from_fl_at(hhdr, index);
     if (total_size == bytes) return h;
     rest = (struct hblk *)((word)h + bytes);
     rest_hdr = GC_install_header(rest);
@@ -554,8 +541,8 @@ STATIC void GC_split_block(struct hblk *h, hdr *hhdr, struct hblk *n,
       if (0 != next) {
         HDR(next) -> hb_prev = n;
       }
-      INCR_FREE_BYTES(index, -(signed_word)h_size);
-      FREE_ASSERT(GC_free_bytes[index] > 0);
+      GC_ASSERT(GC_free_bytes[index] > h_size);
+      GC_free_bytes[index] -= h_size;
 #   ifdef USE_MUNMAP
       hhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
 #   endif
@@ -749,7 +736,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
 
                       GC_large_free_bytes -= total_size;
                       GC_bytes_dropped += total_size;
-                      GC_remove_from_fl(hhdr, n);
+                      GC_remove_from_fl_at(hhdr, n);
                       for (h = hbp; h < limit; h++) {
                         if (h == hbp || 0 != (hhdr = GC_install_header(h))) {
                           (void) setup_header(
@@ -859,7 +846,7 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
       if(0 != nexthdr && HBLK_IS_FREE(nexthdr) && IS_MAPPED(nexthdr)
          && (signed_word)(hhdr -> hb_sz + nexthdr -> hb_sz) > 0
          /* no overflow */) {
-        GC_remove_from_fl(nexthdr, FL_UNKNOWN);
+        GC_remove_from_fl(nexthdr);
         hhdr -> hb_sz += nexthdr -> hb_sz;
         GC_remove_header(next);
       }
@@ -868,7 +855,7 @@ GC_INNER void GC_freehblk(struct hblk *hbp)
         prevhdr = HDR(prev);
         if (IS_MAPPED(prevhdr)
             && (signed_word)(hhdr -> hb_sz + prevhdr -> hb_sz) > 0) {
-          GC_remove_from_fl(prevhdr, FL_UNKNOWN);
+          GC_remove_from_fl(prevhdr);
           prevhdr -> hb_sz += hhdr -> hb_sz;
 #         ifdef USE_MUNMAP
             prevhdr -> hb_last_reclaimed = (unsigned short)GC_gc_no;
