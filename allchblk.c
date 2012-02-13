@@ -54,16 +54,14 @@ STATIC struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
                                 /* header structure associated with     */
                                 /* block.                               */
 
-#ifndef USE_MUNMAP
-
-  STATIC word GC_free_bytes[N_HBLK_FLS+1] = { 0 };
+STATIC word GC_free_bytes[N_HBLK_FLS+1] = { 0 };
         /* Number of free bytes on each list.   */
 
-  /* Return the largest n such that the number of free bytes on lists   */
-  /* n .. N_HBLK_FLS is greater or equal to GC_max_large_allocd_bytes   */
-  /* minus GC_large_allocd_bytes.  If there is no such n, return 0.     */
-  GC_INLINE int GC_enough_large_bytes_left(void)
-  {
+/* Return the largest n such that the number of free bytes on lists     */
+/* n .. N_HBLK_FLS is greater or equal to GC_max_large_allocd_bytes     */
+/* minus GC_large_allocd_bytes.  If there is no such n, return 0.       */
+GC_INLINE int GC_enough_large_bytes_left(void)
+{
     int n;
     word bytes = GC_large_allocd_bytes;
 
@@ -73,17 +71,10 @@ STATIC struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
         if (bytes >= GC_max_large_allocd_bytes) return n;
     }
     return 0;
-  }
+}
 
 # define INCR_FREE_BYTES(n, b) (GC_free_bytes[n] += (b))
 # define FREE_ASSERT(e) GC_ASSERT(e)
-
-#else /* USE_MUNMAP */
-
-# define INCR_FREE_BYTES(n, b)
-# define FREE_ASSERT(e)
-
-#endif /* USE_MUNMAP */
 
 /* Map a number of blocks to the appropriate large block free list index. */
 STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
@@ -104,13 +95,10 @@ STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
 #   define IS_MAPPED(hhdr) 1
 # endif /* USE_MUNMAP */
 
-#if (!defined(NO_DEBUGGING) && !defined(USE_MUNMAP)) || defined(GC_ASSERTIONS)
+#if !defined(NO_DEBUGGING) || defined(GC_ASSERTIONS)
   /* Should return the same value as GC_large_free_bytes.       */
   GC_INNER word GC_compute_large_free_bytes(void)
   {
-#   ifdef USE_MUNMAP
-      return GC_large_free_bytes; /* FIXME: unimplemented */
-#   else
       struct hblk * h;
       hdr * hhdr;
       word total_free = 0;
@@ -123,7 +111,6 @@ STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
         }
       }
       return total_free;
-#   endif
   }
 #endif /* !NO_DEBUGGING || GC_ASSERTIONS */
 
@@ -133,15 +120,12 @@ void GC_print_hblkfreelist(void)
     struct hblk * h;
     hdr * hhdr;
     unsigned i;
+    word total;
 
     for (i = 0; i <= N_HBLK_FLS; ++i) {
       h = GC_hblkfreelist[i];
-#     ifdef USE_MUNMAP
-        if (0 != h) GC_printf("Free list %u:\n", i);
-#     else
-        if (0 != h) GC_printf("Free list %u (total size %lu):\n",
-                              i, (unsigned long)GC_free_bytes[i]);
-#     endif
+      if (0 != h) GC_printf("Free list %u (total size %lu):\n",
+                            i, (unsigned long)GC_free_bytes[i]);
       while (h != 0) {
         hhdr = HDR(h);
         GC_printf("\t%p size %lu %s black listed\n",
@@ -155,14 +139,9 @@ void GC_print_hblkfreelist(void)
     GC_printf("GC_large_free_bytes: %lu\n",
               (unsigned long)GC_large_free_bytes);
 
-#   ifndef USE_MUNMAP
-      {
-        word total;
-        if ((total = GC_compute_large_free_bytes()) != GC_large_free_bytes)
+    if ((total = GC_compute_large_free_bytes()) != GC_large_free_bytes)
           GC_err_printf("GC_large_free_bytes INCONSISTENT!! Should be: %lu\n",
                         (unsigned long)total);
-      }
-#   endif
 }
 
 /* Return the free list index on which the block described by the header */
@@ -317,22 +296,14 @@ STATIC void GC_remove_from_fl(hdr *hhdr, int n)
     int index;
 
     GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);
-#   ifndef USE_MUNMAP
       /* We always need index to maintain free counts.  */
       if (FL_UNKNOWN == n) {
           index = GC_hblk_fl_from_blocks(divHBLKSZ(hhdr -> hb_sz));
       } else {
           index = n;
       }
-#   endif
+
     if (hhdr -> hb_prev == 0) {
-#       ifdef USE_MUNMAP
-          if (FL_UNKNOWN == n) {
-            index = GC_hblk_fl_from_blocks(divHBLKSZ(hhdr -> hb_sz));
-          } else {
-            index = n;
-          }
-#       endif
         GC_ASSERT(HDR(GC_hblkfreelist[index]) == hhdr);
         GC_hblkfreelist[index] = hhdr -> hb_next;
     } else {
@@ -400,6 +371,7 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
       GC_ASSERT(prev == 0 || !HBLK_IS_FREE(prevhdr)
                 || (signed_word)GC_heapsize < 0);
 #   endif
+
     GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);
     GC_hblkfreelist[index] = h;
     INCR_FREE_BYTES(index, hhdr -> hb_sz);
@@ -631,9 +603,11 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
     } else {
 #     ifdef USE_MUNMAP
         /* avoid splitting, since that might require remapping */
-        split_limit = 0;
-#     else
-        if (GC_finalizer_bytes_freed > (GC_heapsize >> 4)) {
+        if (GC_unmapped_bytes != 0) { /* FIXME: relax this condition */
+          split_limit = 0;
+        } else
+#     endif
+        /* else */ if (GC_finalizer_bytes_freed > (GC_heapsize >> 4)) {
           /* If we are deallocating lots of memory from         */
           /* finalizers, fail and collect sooner rather         */
           /* than later.                                        */
@@ -646,7 +620,6 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
           /* heap if we allocate only small objects.            */
           split_limit = GC_enough_large_bytes_left();
         }
-#     endif
     }
     if (start_list < UNIQUE_THRESHOLD) {
       /* No reason to try start_list again, since all blocks are exact  */
