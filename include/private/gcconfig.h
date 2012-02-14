@@ -1965,7 +1965,9 @@
       /* FIXME: There seems to be some issues with trylock hanging on   */
       /* darwin. This should be looked into some more.                  */
 #     define NO_PTHREAD_TRYLOCK
-#     define NO_DYLD_BIND_FULLY_IMAGE
+#     ifndef NO_DYLD_BIND_FULLY_IMAGE
+#       define NO_DYLD_BIND_FULLY_IMAGE
+#     endif
 #   endif
 #   ifdef OPENBSD
 #     define ALIGNMENT 4
