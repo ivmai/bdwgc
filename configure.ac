@@ -667,6 +667,10 @@ AC_ARG_ENABLE(gc-debug,
     keep_back_ptrs=true
     AC_DEFINE([DBG_HDRS_ALL], 1,
               [Define to force debug headers on all objects.])
+    AH_TEMPLATE([SHORT_DBG_HDRS],
+                [Shorten the headers to minimize object size at the expense
+                 of checking for writes past the end (see doc/README.macros).])
+
     case $host in
       ia64-*-linux* )
         AC_DEFINE(MAKE_BACK_GRAPH)
