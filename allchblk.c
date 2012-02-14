@@ -45,8 +45,8 @@
         /* In between sizes map this many distinct sizes to a single    */
         /* bin.                                                         */
 
-# define N_HBLK_FLS (HUGE_THRESHOLD - UNIQUE_THRESHOLD)/FL_COMPRESSION \
-                                 + UNIQUE_THRESHOLD
+# define N_HBLK_FLS ((HUGE_THRESHOLD - UNIQUE_THRESHOLD) / FL_COMPRESSION \
+                     + UNIQUE_THRESHOLD)
 
 STATIC struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
                                 /* List of completely empty heap blocks */
@@ -552,7 +552,7 @@ STATIC void GC_split_block(struct hblk *h, hdr *hhdr, struct hblk *n,
 }
 
 STATIC struct hblk *
-GC_allochblk_nth(size_t sz/* bytes */, int kind, unsigned flags, int n,
+GC_allochblk_nth(size_t sz /* bytes */, int kind, unsigned flags, int n,
                  GC_bool may_split);
 
 /*
@@ -582,6 +582,7 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
     /* Try for an exact match first. */
     result = GC_allochblk_nth(sz, kind, flags, start_list, FALSE);
     if (0 != result) return result;
+
     if (GC_use_entire_heap || GC_dont_gc
         || USED_HEAP_SIZE < GC_requested_heapsize
         || GC_incremental || !GC_should_collect()) {
@@ -653,8 +654,8 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
 
               if (!may_split) continue;
               /* If the next heap block is obviously better, go on.     */
-              /* This prevents us from disassembling a single large block */
-              /* to get tiny blocks.                                    */
+              /* This prevents us from disassembling a single large     */
+              /* block to get tiny blocks.                              */
               thishbp = hhdr -> hb_next;
               if (thishbp != 0) {
                 GET_HDR(thishbp, thishdr);
@@ -666,7 +667,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
                 }
               }
             }
-            if ( !IS_UNCOLLECTABLE(kind) && (kind != PTRFREE
+            if (!IS_UNCOLLECTABLE(kind) && (kind != PTRFREE
                         || size_needed > (signed_word)MAX_BLACK_LIST_ALLOC)) {
               struct hblk * lasthbp = hbp;
               ptr_t search_end = (ptr_t)hbp + size_avail - size_needed;
@@ -675,18 +676,17 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
                                                 (signed_word)HBLKSIZE
                                                 : size_needed;
 
-
               while ((ptr_t)lasthbp <= search_end
                      && (thishbp = GC_is_black_listed(lasthbp,
-                                                      (word)eff_size_needed))
-                        != 0) {
+                                            (word)eff_size_needed)) != 0) {
                 lasthbp = thishbp;
               }
               size_avail -= (ptr_t)lasthbp - (ptr_t)hbp;
               thishbp = lasthbp;
               if (size_avail >= size_needed) {
-                if (thishbp != hbp &&
-                    0 != (thishdr = GC_install_header(thishbp))) {
+                if (thishbp != hbp) {
+                  thishdr = GC_install_header(thishbp);
+                  if (0 != thishdr) {
                   /* Make sure it's mapped before we mangle it. */
 #                   ifdef USE_MUNMAP
                       if (!IS_MAPPED(hhdr)) {
@@ -701,6 +701,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
                       hhdr = thishdr;
                       /* We must now allocate thishbp, since it may     */
                       /* be on the wrong free list.                     */
+                  }
                 }
               } else if (size_needed > (signed_word)BL_LIMIT
                          && orig_avail - size_needed
