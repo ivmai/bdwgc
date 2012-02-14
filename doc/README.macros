@@ -291,9 +291,6 @@ GC_FORCE_UNMAP_ON_GCOLLECT      Set "unmap as much as possible on explicit GC"
   unless unmapping is turned on.  Has no effect on implicitly-initiated
   garbage collections.
 
-MMAP_STACKS (for Solaris threads)       Use mmap from /dev/zero rather than
-  GC_scratch_alloc() to get stack memory.
-
 PRINT_BLACK_LIST        Whenever a black list entry is added, i.e. whenever
   the garbage collector detects a value that looks almost, but not quite,
   like a pointer, print both the address containing the value, and the

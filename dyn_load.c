@@ -772,9 +772,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
         if (GC_roots_present(start)) goto irrelevant;
         if (start < heap_end && start >= heap_start)
                 goto irrelevant;
-#       ifdef MMAP_STACKS
-          if (GC_is_thread_stack(start)) goto irrelevant;
-#       endif /* MMAP_STACKS */
 
         limit = start + addr_map[i].pr_size;
         /* The following seemed to be necessary for very old versions   */
