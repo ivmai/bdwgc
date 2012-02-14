@@ -553,7 +553,8 @@ STATIC void GC_split_block(struct hblk *h, hdr *hhdr, struct hblk *n,
 
 STATIC struct hblk *
 GC_allochblk_nth(size_t sz /* bytes */, int kind, unsigned flags, int n,
-                 GC_bool may_split);
+                 int may_split);
+#define AVOID_SPLIT_REMAPPED 2
 
 /*
  * Allocate (and return pointer to) a heap block
@@ -570,6 +571,7 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
     word blocks;
     int start_list;
     struct hblk *result;
+    int may_split;
     int split_limit; /* Highest index of free list whose blocks we      */
                      /* split.                                          */
 
@@ -583,31 +585,28 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
     result = GC_allochblk_nth(sz, kind, flags, start_list, FALSE);
     if (0 != result) return result;
 
+    may_split = TRUE;
     if (GC_use_entire_heap || GC_dont_gc
         || USED_HEAP_SIZE < GC_requested_heapsize
         || GC_incremental || !GC_should_collect()) {
         /* Should use more of the heap, even if it requires splitting. */
         split_limit = N_HBLK_FLS;
-    } else {
-#     ifdef USE_MUNMAP
-        /* avoid splitting, since that might require remapping */
-        if (GC_unmapped_bytes != 0) { /* FIXME: relax this condition */
-          split_limit = 0;
-        } else
-#     endif
-        /* else */ if (GC_finalizer_bytes_freed > (GC_heapsize >> 4)) {
+    } else if (GC_finalizer_bytes_freed > (GC_heapsize >> 4)) {
           /* If we are deallocating lots of memory from         */
           /* finalizers, fail and collect sooner rather         */
           /* than later.                                        */
           split_limit = 0;
-        } else {
+    } else {
           /* If we have enough large blocks left to cover any   */
           /* previous request for large blocks, we go ahead     */
           /* and split.  Assuming a steady state, that should   */
           /* be safe.  It means that we can use the full        */
           /* heap if we allocate only small objects.            */
           split_limit = GC_enough_large_bytes_left();
-        }
+#         ifdef USE_MUNMAP
+            if (split_limit > 0)
+              may_split = AVOID_SPLIT_REMAPPED;
+#         endif
     }
     if (start_list < UNIQUE_THRESHOLD) {
       /* No reason to try start_list again, since all blocks are exact  */
@@ -615,7 +614,7 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
       ++start_list;
     }
     for (; start_list <= split_limit; ++start_list) {
-        result = GC_allochblk_nth(sz, kind, flags, start_list, TRUE);
+        result = GC_allochblk_nth(sz, kind, flags, start_list, may_split);
         if (0 != result)
             break;
     }
@@ -627,10 +626,11 @@ STATIC long GC_large_alloc_warn_suppressed = 0;
 
 /* The same, but with search restricted to nth free list.  Flags is     */
 /* IGNORE_OFF_PAGE or zero.  sz is in bytes.  The may_split flag        */
-/* indicates whether it is OK to split larger blocks.                   */
+/* indicates whether it is OK to split larger blocks (if set to         */
+/* AVOID_SPLIT_REMAPPED then memory remapping followed by splitting     */
+/* should be generally avoided).                                        */
 STATIC struct hblk *
-GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
-                 GC_bool may_split)
+GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
 {
     struct hblk *hbp;
     hdr * hhdr;         /* Header corr. to hbp */
@@ -685,6 +685,11 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
               thishbp = lasthbp;
               if (size_avail >= size_needed) {
                 if (thishbp != hbp) {
+#                 ifdef USE_MUNMAP
+                    /* Avoid remapping followed by splitting.   */
+                    if (may_split == AVOID_SPLIT_REMAPPED && !IS_MAPPED(hhdr))
+                      continue;
+#                 endif
                   thishdr = GC_install_header(thishbp);
                   if (0 != thishdr) {
                   /* Make sure it's mapped before we mangle it. */
