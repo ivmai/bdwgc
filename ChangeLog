@@ -5,6 +5,7 @@
 * Add GC_UNDERSCORE_STDCALL, UNICODE macro templates to configure (Win32).
 * Add GC_get_thr_restart_signal, GC_thread_is_registered to GC API.
 * Add GC_is_heap_ptr, GC_move_disappearing_link to GC API.
+* Add SHORT_DBG_HDRS macro template to configure.
 * Add TODO file.
 * Add assertion to GC_incremental_protection_needs, refine documentation.
 * Add assertion to check GC_large_free_bytes by GC_finish_collection.
@@ -17,6 +18,8 @@
 * Adjust GC_log_printf format specifiers (regarding signed/unsigned long).
 * Adjust GC_requested_heapsize on GC_init if GC_INITIAL_HEAP_SIZE given.
 * Allow Win32 DllMain chaining on the client side.
+* Allow to exclude finalization support by GC_NO_FINALIZATION macro.
+* Allow to get memory via Win32 VirtualAlloc (USE_WINALLOC) on Cygwin.
 * Avoid unnecessary GC_find_limit invocation if GC_no_dls.
 * Avoid use of deprecated GC_dont_gc and GC_stackbottom in gctest.
 * Changed the order in autogen.sh so ltmain exists in time for automake.
@@ -32,6 +35,7 @@
 * Fix minor warnings reported by GCC with '-pedantic' option.
 * Fix static data roots registration on Android (if GC is shared).
 * Implement GC_get_stack_base for Darwin for single-threaded mode.
+* Improve GC_allochblk algorithm of block splitting when unmapping enabled.
 * Improve GC_collect_or_expand algorithm for many finalizers registered case.
 * In tests, print a message in case a test is a no-op.
 * Instruct configure to hide internal libgc.so symbols if supported by GCC.
@@ -52,6 +56,7 @@
 * Remove gc_amiga_redirects.h (included internally) from public headers.
 * Remove obsolete Makefile.DLL (superseded by Cygwin/MinGW configure).
 * Remove obsolete unused asm files for ALPHA, HPUX, SGI, RS6000, ULTRIX.
+* Remove unsupported MMAP_STACKS (specific to Solaris threads).
 * Remove unused ancient SILENT, __STDC__, NO_SIGNALS macros.
 * Replace ARGSUSED comment-based annotation with GCC 'unused' attribute.
 * Replace long GC_markers global variable with int GC_markers_m1.
@@ -85,6 +90,7 @@
 * Fix GC_find_limit_with_bound to always reset fault handler on return.
 * Fix GC_init[_lib_bounds] and GC_get_main_stack_base for malloc redirection.
 * Fix GC_restart_handler to preserve errno if needed.
+* Fix GC_root_size update in GC_add_roots_inner (Win32).
 * Fix compiler warning in GC_dyld_image_add/remove (Darwin).
 * Fix configure --enable-cplusplus make install.
 * Fix configure to disable GCC aliasing optimization unless forced to.
