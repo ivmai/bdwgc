@@ -129,7 +129,7 @@ AH_TEMPLATE([USE_COMPILER_TLS],
             [Define to use of compiler-support for thread-local variables.])
 
 dnl Thread selection macros.
-AH_TEMPLATE([GC_THREADS],           [Define to support platform-specific \
+AH_TEMPLATE([GC_THREADS],           [Define to support platform-specific
                                      threads.])
 AH_TEMPLATE([GC_AIX_THREADS],       [Define to support IBM AIX threads.])
 AH_TEMPLATE([GC_DARWIN_THREADS],    [Define to support Darwin pthreads.])
@@ -540,7 +540,8 @@ machdep=
 case "$host" in
  alpha-*-openbsd*)
     if test x"${ac_cv_lib_dl_dlopen}" != xyes ; then
-       AC_MSG_WARN(OpenBSD/Alpha without dlopen(). Shared library support is disabled)
+       AC_MSG_WARN(
+         "OpenBSD/Alpha without dlopen(). Shared library support is disabled.")
     fi
     ;;
  i?86-*-solaris2.[[89]])
@@ -623,9 +624,11 @@ case "$host" in
 esac
 
 dnl Include defines that have become de facto standard.
-dnl ALL_INTERIOR_POINTERS and NO_EXECUTE_PERMISSION can be overridden in the startup code.
+dnl ALL_INTERIOR_POINTERS and NO_EXECUTE_PERMISSION can be overridden
+dnl in the startup code.
 AC_DEFINE([NO_EXECUTE_PERMISSION], [1],
-          [Define to make the collector not allocate executable memory by default.])
+          [Define to make the collector not allocate executable memory
+           by default.])
 AC_DEFINE([ALL_INTERIOR_POINTERS], [1],
           [Define to recognise all pointers to the interior of objects.])
 
@@ -658,7 +661,7 @@ AC_ARG_ENABLE(gc-debug,
 [AC_HELP_STRING([--enable-gc-debug],
     [include full support for pointer backtracing etc.])],
 [ if test "$enable_gc_debug" = "yes"; then
-    AC_MSG_WARN("Should define GC_DEBUG and use debug alloc. in clients.")
+    AC_MSG_WARN("Should define GC_DEBUG and use debug alloc in clients.")
     AC_DEFINE([KEEP_BACK_PTRS], 1,
               [Define to save back-pointers in debugging headers.])
     keep_back_ptrs=true
@@ -789,7 +792,7 @@ if test "${enable_munmap}" != ""; then
       *-*-cygwin*)
         # Workaround for Cygwin: use VirtualAlloc since mmap(PROT_NONE) fails
         AC_DEFINE([USE_WINALLOC], 1,
-                  [Define to use Win32 VirtualAlloc (instead of sbrk or \
+                  [Define to use Win32 VirtualAlloc (instead of sbrk or
                    mmap) to expand the heap.])
         ;;
     esac
@@ -837,7 +840,9 @@ AS_IF([test x"$with_libatomic_ops" != xno],
 # If we have neither an external or an internal version, offer a useful hint
 # and exit.
 AS_IF([test x"$with_libatomic_ops" = xno -a ! -e "$srcdir/libatomic_ops"],
-  [ AC_MSG_ERROR([libatomic_ops is required.  You can either install it on your system, or fetch and unpack a recent version into the source directory and link or rename it to libatomic_ops.]) ])
+  [ AC_MSG_ERROR([libatomic_ops is required.  You can either install it on
+                  your system, or fetch and unpack a recent version into the
+                  source directory and link or rename it to libatomic_ops.]) ])
 
 # Finally, emit the definitions for bundled or external AO.
 AC_MSG_CHECKING([which libatomic_ops to use])
