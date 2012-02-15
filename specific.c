@@ -36,7 +36,7 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
     if (0 == result) return ENOMEM;
     pthread_mutex_init(&(result -> lock), NULL);
     for (i = 0; i < TS_CACHE_SIZE; ++i) {
-      result -> cache[i] = &invalid_tse;
+      result -> cache[i] = (/* no const */ tse *)&invalid_tse;
     }
 #   ifdef GC_ASSERTIONS
       for (i = 0; i < TS_HASH_SIZE; ++i) {
