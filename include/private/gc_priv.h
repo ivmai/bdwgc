@@ -100,8 +100,8 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* for the GC-scope function definitions and prototypes.  Must not be */
   /* used in gcconfig.h.  Shouldn't be used for the debugging-only      */
   /* functions.  Currently, not used for the functions declared in or   */
-  /* called from the "dated" source files (pcr_interface.c, specific.c  */
-  /* and in the "extra" folder).                                        */
+  /* called from the "dated" source files (pcr_interface.c and files    */
+  /* located in the "extra" folder).                                    */
 # if defined(GC_DLL) && defined(__GNUC__) && !defined(MSWIN32) \
         && !defined(MSWINCE) && !defined(CYGWIN32)
 #   if __GNUC__ >= 4
