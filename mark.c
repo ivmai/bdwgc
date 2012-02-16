@@ -1260,7 +1260,8 @@ GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
 
     bottom = (ptr_t)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     top = (ptr_t)(((word) top) & ~(ALIGNMENT-1));
-    if (top == 0 || bottom == top) return;
+    if (bottom >= top) return;
+
     GC_mark_stack_top++;
     if (GC_mark_stack_top >= GC_mark_stack_limit) {
         ABORT("Unexpected mark stack overflow");
@@ -1291,7 +1292,7 @@ GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
 
     bottom = (ptr_t)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     top = (ptr_t)(((word) top) & ~(ALIGNMENT-1));
-    if (top == 0 || bottom == top) return;
+    if (bottom >= top) return;
 
     h = HBLKPTR(bottom + HBLKSIZE);
     if (top <= (ptr_t) h) {
