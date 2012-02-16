@@ -26,45 +26,44 @@ typedef void (* finalization_mark_proc)(ptr_t /* finalizable_obj_ptr */);
 #define HASH3(addr,size,log_size) \
         ((((word)(addr) >> 3) ^ ((word)(addr) >> (3 + (log_size)))) \
          & ((size) - 1))
-#define HASH2(addr,log_size) HASH3(addr, 1 << log_size, log_size)
+#define HASH2(addr,log_size) HASH3(addr, 1 << (log_size), log_size)
 
 struct hash_chain_entry {
     word hidden_key;
     struct hash_chain_entry * next;
 };
 
-static struct disappearing_link {
+STATIC struct disappearing_link {
     struct hash_chain_entry prolog;
 #   define dl_hidden_link prolog.hidden_key
                                 /* Field to be cleared.         */
 #   define dl_next(x) (struct disappearing_link *)((x) -> prolog.next)
-#   define dl_set_next(x,y) (x)->prolog.next = (struct hash_chain_entry *)(y)
+#   define dl_set_next(x,y) ((x)->prolog.next = (struct hash_chain_entry *)(y))
 
     word dl_hidden_obj;         /* Pointer to object base       */
-} **dl_head = 0;
+} **GC_dl_head = 0;
 
 static signed_word log_dl_table_size = -1;
-                        /* Binary log of                                */
-                        /* current size of array pointed to by dl_head. */
-                        /* -1 ==> size is 0.                            */
+                        /* Binary log of current size of array pointed  */
+                        /* to by GC_dl_head.  If -1 then size is 0.     */
 
 STATIC word GC_dl_entries = 0;
                         /* Number of entries currently in disappearing  */
                         /* link table.                                  */
 
-static struct finalizable_object {
+STATIC struct finalizable_object {
     struct hash_chain_entry prolog;
 #   define fo_hidden_base prolog.hidden_key
                                 /* Pointer to object base.      */
                                 /* No longer hidden once object */
                                 /* is on finalize_now queue.    */
 #   define fo_next(x) (struct finalizable_object *)((x) -> prolog.next)
-#   define fo_set_next(x,y) (x)->prolog.next = (struct hash_chain_entry *)(y)
+#   define fo_set_next(x,y) ((x)->prolog.next = (struct hash_chain_entry *)(y))
     GC_finalization_proc fo_fn; /* Finalizer.                   */
     ptr_t fo_client_data;
     word fo_object_size;        /* In bytes.                    */
     finalization_mark_proc fo_mark_proc;        /* Mark-through procedure */
-} **fo_head = 0;
+} **GC_fo_head = 0;
 
 STATIC struct finalizable_object * GC_finalize_now = 0;
         /* List of objects that should be finalized now.        */
@@ -73,12 +72,12 @@ static signed_word log_fo_table_size = -1;
 
 GC_INNER void GC_push_finalizer_structures(void)
 {
-    GC_ASSERT((word)&dl_head % sizeof(word) == 0);
-    GC_ASSERT((word)&fo_head % sizeof(word) == 0);
+    GC_ASSERT((word)&GC_dl_head % sizeof(word) == 0);
+    GC_ASSERT((word)&GC_fo_head % sizeof(word) == 0);
     GC_ASSERT((word)&GC_finalize_now % sizeof(word) == 0);
 
-    GC_push_all((ptr_t)(&dl_head), (ptr_t)(&dl_head) + sizeof(word));
-    GC_push_all((ptr_t)(&fo_head), (ptr_t)(&fo_head) + sizeof(word));
+    GC_push_all((ptr_t)(&GC_dl_head), (ptr_t)(&GC_dl_head) + sizeof(word));
+    GC_push_all((ptr_t)(&GC_fo_head), (ptr_t)(&GC_fo_head) + sizeof(word));
     GC_push_all((ptr_t)(&GC_finalize_now),
                 (ptr_t)(&GC_finalize_now) + sizeof(word));
 }
@@ -149,7 +148,7 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
     GC_ASSERT(obj != NULL && GC_base_C(obj) == obj);
     if (log_dl_table_size == -1
         || GC_dl_entries > ((word)1 << log_dl_table_size)) {
-        GC_grow_table((struct hash_chain_entry ***)(&dl_head),
+        GC_grow_table((struct hash_chain_entry ***)&GC_dl_head,
                       &log_dl_table_size);
         if (GC_print_stats) {
             GC_log_printf("Grew dl table to %u entries\n",
@@ -157,7 +156,8 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
         }
     }
     index = HASH2(link, log_dl_table_size);
-    for (curr_dl = dl_head[index]; curr_dl != 0; curr_dl = dl_next(curr_dl)) {
+    for (curr_dl = GC_dl_head[index]; curr_dl != 0;
+         curr_dl = dl_next(curr_dl)) {
         if (curr_dl -> dl_hidden_link == GC_HIDE_POINTER(link)) {
             curr_dl -> dl_hidden_obj = GC_HIDE_POINTER(obj);
             UNLOCK();
@@ -179,7 +179,7 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
       /* Recalculate index since the table may grow.    */
       index = HASH2(link, log_dl_table_size);
       /* Check again that our disappearing link not in the table. */
-      for (curr_dl = dl_head[index]; curr_dl != 0;
+      for (curr_dl = GC_dl_head[index]; curr_dl != 0;
            curr_dl = dl_next(curr_dl)) {
         if (curr_dl -> dl_hidden_link == GC_HIDE_POINTER(link)) {
           curr_dl -> dl_hidden_obj = GC_HIDE_POINTER(obj);
@@ -194,8 +194,8 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
     }
     new_dl -> dl_hidden_obj = GC_HIDE_POINTER(obj);
     new_dl -> dl_hidden_link = GC_HIDE_POINTER(link);
-    dl_set_next(new_dl, dl_head[index]);
-    dl_head[index] = new_dl;
+    dl_set_next(new_dl, GC_dl_head[index]);
+    GC_dl_head[index] = new_dl;
     GC_dl_entries++;
     UNLOCK();
     return GC_SUCCESS;
@@ -211,11 +211,12 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
     LOCK();
     index = HASH2(link, log_dl_table_size);
-    prev_dl = 0; curr_dl = dl_head[index];
-    while (curr_dl != 0) {
+    prev_dl = 0;
+    for (curr_dl = GC_dl_head[index]; curr_dl != 0;
+         curr_dl = dl_next(curr_dl)) {
         if (curr_dl -> dl_hidden_link == GC_HIDE_POINTER(link)) {
             if (prev_dl == 0) {
-                dl_head[index] = dl_next(curr_dl);
+                GC_dl_head[index] = dl_next(curr_dl);
             } else {
                 dl_set_next(prev_dl, dl_next(curr_dl));
             }
@@ -229,7 +230,6 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
             return(1);
         }
         prev_dl = curr_dl;
-        curr_dl = dl_next(curr_dl);
     }
     UNLOCK();
     return(0);
@@ -254,7 +254,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     curr_index = HASH2(link, log_dl_table_size);
     curr_hidden_link = GC_HIDE_POINTER(link);
     prev_dl = 0;
-    for (curr_dl = dl_head[curr_index]; curr_dl != 0;
+    for (curr_dl = GC_dl_head[curr_index]; curr_dl != 0;
          curr_dl = dl_next(curr_dl)) {
       if (curr_dl -> dl_hidden_link == curr_hidden_link)
         break;
@@ -274,7 +274,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     /* link found; now check new_link not present.      */
     new_index = HASH2(new_link, log_dl_table_size);
     new_hidden_link = GC_HIDE_POINTER(new_link);
-    for (new_dl = dl_head[new_index]; new_dl != 0;
+    for (new_dl = GC_dl_head[new_index]; new_dl != 0;
          new_dl = dl_next(new_dl)) {
       if (new_dl -> dl_hidden_link == new_hidden_link) {
         /* Target already registered; bail.     */
@@ -285,13 +285,13 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
     /* Remove from old, add to new, update link.        */
     if (prev_dl == 0) {
-      dl_head[curr_index] = dl_next(curr_dl);
+      GC_dl_head[curr_index] = dl_next(curr_dl);
     } else {
       dl_set_next(prev_dl, dl_next(curr_dl));
     }
     curr_dl -> dl_hidden_link = new_hidden_link;
-    dl_set_next(curr_dl, dl_head[new_index]);
-    dl_head[new_index] = curr_dl;
+    dl_set_next(curr_dl, GC_dl_head[new_index]);
+    GC_dl_head[new_index] = curr_dl;
     UNLOCK();
     return GC_SUCCESS;
   }
@@ -368,7 +368,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
     LOCK();
     if (log_fo_table_size == -1
         || GC_fo_entries > ((word)1 << log_fo_table_size)) {
-        GC_grow_table((struct hash_chain_entry ***)(&fo_head),
+        GC_grow_table((struct hash_chain_entry ***)&GC_fo_head,
                       &log_fo_table_size);
         if (GC_print_stats) {
             GC_log_printf("Grew fo table to %u entries\n",
@@ -379,7 +379,8 @@ STATIC void GC_register_finalizer_inner(void * obj,
     base = (ptr_t)obj;
     for (;;) {
       index = HASH2(base, log_fo_table_size);
-      prev_fo = 0; curr_fo = fo_head[index];
+      prev_fo = 0;
+      curr_fo = GC_fo_head[index];
       while (curr_fo != 0) {
         GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
         if (curr_fo -> fo_hidden_base == GC_HIDE_POINTER(base)) {
@@ -390,7 +391,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
           if (ofn) *ofn = curr_fo -> fo_fn;
           /* Delete the structure for base. */
           if (prev_fo == 0) {
-            fo_head[index] = fo_next(curr_fo);
+            GC_fo_head[index] = fo_next(curr_fo);
           } else {
             fo_set_next(prev_fo, fo_next(curr_fo));
           }
@@ -409,7 +410,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
             /* Reinsert it.  We deleted it first to maintain    */
             /* consistency in the event of a signal.            */
             if (prev_fo == 0) {
-              fo_head[index] = curr_fo;
+              GC_fo_head[index] = curr_fo;
             } else {
               fo_set_next(prev_fo, curr_fo);
             }
@@ -469,9 +470,9 @@ STATIC void GC_register_finalizer_inner(void * obj,
     new_fo -> fo_client_data = (ptr_t)cd;
     new_fo -> fo_object_size = hhdr -> hb_sz;
     new_fo -> fo_mark_proc = mp;
-    fo_set_next(new_fo, fo_head[index]);
+    fo_set_next(new_fo, GC_fo_head[index]);
     GC_fo_entries++;
-    fo_head[index] = new_fo;
+    GC_fo_head[index] = new_fo;
     UNLOCK();
 }
 
@@ -524,7 +525,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 
     GC_printf("Disappearing links:\n");
     for (i = 0; i < dl_size; i++) {
-      for (curr_dl = dl_head[i]; curr_dl != 0; curr_dl = dl_next(curr_dl)) {
+      for (curr_dl = GC_dl_head[i]; curr_dl != 0;
+           curr_dl = dl_next(curr_dl)) {
         real_ptr = GC_REVEAL_POINTER(curr_dl -> dl_hidden_obj);
         real_link = GC_REVEAL_POINTER(curr_dl -> dl_hidden_link);
         GC_printf("Object: %p, Link:%p\n", real_ptr, real_link);
@@ -532,7 +534,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     }
     GC_printf("Finalizers:\n");
     for (i = 0; i < fo_size; i++) {
-      for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
+      for (curr_fo = GC_fo_head[i]; curr_fo != 0;
+           curr_fo = fo_next(curr_fo)) {
         real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
         GC_printf("Finalizable object: %p\n", real_ptr);
       }
@@ -591,7 +594,7 @@ GC_INNER void GC_finalize(void)
 
   /* Make disappearing links disappear */
     for (i = 0; i < dl_size; i++) {
-      curr_dl = dl_head[i];
+      curr_dl = GC_dl_head[i];
       prev_dl = 0;
       while (curr_dl != 0) {
         real_ptr = GC_REVEAL_POINTER(curr_dl -> dl_hidden_obj);
@@ -600,7 +603,7 @@ GC_INNER void GC_finalize(void)
             *(word *)real_link = 0;
             next_dl = dl_next(curr_dl);
             if (prev_dl == 0) {
-                dl_head[i] = next_dl;
+                GC_dl_head[i] = next_dl;
             } else {
                 dl_set_next(prev_dl, next_dl);
             }
@@ -617,7 +620,8 @@ GC_INNER void GC_finalize(void)
   /* from finalizable objects.                                          */
     GC_ASSERT(GC_mark_state == MS_NONE);
     for (i = 0; i < fo_size; i++) {
-      for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
+      for (curr_fo = GC_fo_head[i]; curr_fo != 0;
+           curr_fo = fo_next(curr_fo)) {
         GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
         real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
@@ -633,7 +637,7 @@ GC_INNER void GC_finalize(void)
   /* unreachable.                                                       */
     GC_bytes_finalized = 0;
     for (i = 0; i < fo_size; i++) {
-      curr_fo = fo_head[i];
+      curr_fo = GC_fo_head[i];
       prev_fo = 0;
       while (curr_fo != 0) {
         real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
@@ -644,7 +648,7 @@ GC_INNER void GC_finalize(void)
             /* Delete from hash table */
               next_fo = fo_next(curr_fo);
               if (prev_fo == 0) {
-                fo_head[i] = next_fo;
+                GC_fo_head[i] = next_fo;
               } else {
                 fo_set_next(prev_fo, next_fo);
               }
@@ -707,9 +711,9 @@ GC_INNER void GC_finalize(void)
                   curr_fo->fo_object_size + sizeof(struct finalizable_object);
 
               i = HASH2(real_ptr, log_fo_table_size);
-              fo_set_next (curr_fo, fo_head[i]);
+              fo_set_next (curr_fo, GC_fo_head[i]);
               GC_fo_entries++;
-              fo_head[i] = curr_fo;
+              GC_fo_head[i] = curr_fo;
               curr_fo = prev_fo;
             }
           }
@@ -721,14 +725,14 @@ GC_INNER void GC_finalize(void)
 
   /* Remove dangling disappearing links. */
     for (i = 0; i < dl_size; i++) {
-      curr_dl = dl_head[i];
+      curr_dl = GC_dl_head[i];
       prev_dl = 0;
       while (curr_dl != 0) {
         real_link = GC_base(GC_REVEAL_POINTER(curr_dl -> dl_hidden_link));
         if (real_link != 0 && !GC_is_marked(real_link)) {
             next_dl = dl_next(curr_dl);
             if (prev_dl == 0) {
-                dl_head[i] = next_dl;
+                GC_dl_head[i] = next_dl;
             } else {
                 dl_set_next(prev_dl, next_dl);
             }
@@ -765,7 +769,7 @@ GC_INNER void GC_finalize(void)
     fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
     GC_bytes_finalized = 0;
     for (i = 0; i < fo_size; i++) {
-        curr_fo = fo_head[i];
+        curr_fo = GC_fo_head[i];
         prev_fo = 0;
       while (curr_fo != 0) {
           real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
@@ -775,7 +779,7 @@ GC_INNER void GC_finalize(void)
           /* Delete from hash table */
           next_fo = fo_next(curr_fo);
           if (prev_fo == 0) {
-              fo_head[i] = next_fo;
+              GC_fo_head[i] = next_fo;
           } else {
               fo_set_next(prev_fo, next_fo);
           }
@@ -786,7 +790,7 @@ GC_INNER void GC_finalize(void)
           GC_finalize_now = curr_fo;
 
           /* unhide object pointer so any future collections will       */
-          /* see it.                                            */
+          /* see it.                                                    */
           curr_fo -> fo_hidden_base =
                         (word)GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
           GC_bytes_finalized +=
