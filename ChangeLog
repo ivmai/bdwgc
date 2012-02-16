@@ -1,3 +1,23 @@
+2012-02-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c (GC_push_all, GC_push_selected): Properly check for empty
+	region after boundaries alignment (for the case when boundaries
+	unaligned and the region is short than one word); simplify the checked
+	condition.
+
+2012-02-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* finalize.c (GC_finalizer_nested): Change type from char to int to
+	force GC symbols proper alignment for some compilers (e.g., Watcom);
+	add comment.
+	* finalize.c (GC_check_finalizer_nested): Cast GC_finalizer_nested
+	properly (since it holds an unsigned char value).
+	* os_dep.c (GC_get_maps): Remove static "init_buf" variable (of char
+	size) and initialize "maps_buf" to NULL since it is allocated anyway
+	(since maps_size is non-zero).
+	* os_dep.c (GC_register_data_segments): Remove static "dummy" variable
+	(of char size) and use GC_pages_executable instead.
+
 2012-02-14  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/private/gcconfig.h (NO_DYLD_BIND_FULLY_IMAGE): Do not define
