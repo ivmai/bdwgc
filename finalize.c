@@ -547,7 +547,10 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 #ifndef THREADS
   /* Global variables to minimize the level of recursion when a client  */
   /* finalizer allocates memory.                                        */
-  STATIC unsigned char GC_finalizer_nested = 0;
+  STATIC int GC_finalizer_nested = 0;
+                        /* Only the lowest byte is used, the rest is    */
+                        /* padding for proper global data alignment     */
+                        /* required for some compilers (like Watcom).   */
   STATIC unsigned GC_finalizer_skipped = 0;
 
   /* Checks and updates the level of finalizers recursion.              */
@@ -556,7 +559,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
   /* otherwise returns a pointer to GC_finalizer_nested.                */
   STATIC unsigned char *GC_check_finalizer_nested(void)
   {
-    unsigned nesting_level = GC_finalizer_nested;
+    unsigned nesting_level = *(unsigned char *)&GC_finalizer_nested;
     if (nesting_level) {
       /* We are inside another GC_invoke_finalizers().          */
       /* Skip some implicitly-called GC_invoke_finalizers()     */
@@ -564,8 +567,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
       if (++GC_finalizer_skipped < (1U << nesting_level)) return NULL;
       GC_finalizer_skipped = 0;
     }
-    GC_finalizer_nested = (unsigned char)(nesting_level + 1);
-    return &GC_finalizer_nested;
+    *(char *)&GC_finalizer_nested = (char)(nesting_level + 1);
+    return (unsigned char *)&GC_finalizer_nested;
   }
 #endif /* THREADS */
 

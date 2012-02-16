@@ -199,8 +199,7 @@ GC_INNER char * GC_get_maps(void)
 {
     int f;
     ssize_t result;
-    static char init_buf[1];
-    static char *maps_buf = init_buf;
+    static char *maps_buf = NULL;
     static size_t maps_buf_sz = 1;
     size_t maps_size, old_maps_size = 0;
 
@@ -1852,8 +1851,8 @@ void GC_register_data_segments(void)
   void GC_register_data_segments(void)
   {
 #   ifdef MSWIN32
-      static char dummy;
-      GC_register_root_section((ptr_t)(&dummy));
+      GC_register_root_section((ptr_t)&GC_pages_executable);
+                            /* any other GC global variable would fit too. */
 #   endif
   }
 
