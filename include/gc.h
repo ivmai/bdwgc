@@ -473,8 +473,7 @@ GC_API void GC_CALL GC_set_max_heap_size(GC_word /* n */);
 /* need not be scanned.  This is sometimes important if the application */
 /* maps large read/write files into the address space, which could be   */
 /* mistaken for dynamic library data segments on some systems.          */
-/* The section (referred to by low_address) must be pointer-aligned.    */
-/* low_address must not be greater than high_address_plus_1.            */
+/* Both section start and end are not needed to be pointer-aligned.     */
 GC_API void GC_CALL GC_exclude_static_roots(void * /* low_address */,
                                             void * /* high_address_plus_1 */);
 
