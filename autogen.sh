@@ -5,7 +5,7 @@ set -e
 # These version are ok, pre-1.7 is not.  Post 1.7 may produce a lot of
 # warnings for unrelated projects, so prefer 1.7 for now.
 am_version=
-for v in 1.10 1.9 1.8 1.7; do
+for v in 1.11 1.10 1.9 1.8 1.7; do
     if type -p &>/dev/null automake-$v; then
 	am_version="-$v"
 	break
