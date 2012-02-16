@@ -73,6 +73,10 @@ static signed_word log_fo_table_size = -1;
 
 GC_INNER void GC_push_finalizer_structures(void)
 {
+    GC_ASSERT((word)&dl_head % sizeof(word) == 0);
+    GC_ASSERT((word)&fo_head % sizeof(word) == 0);
+    GC_ASSERT((word)&GC_finalize_now % sizeof(word) == 0);
+
     GC_push_all((ptr_t)(&dl_head), (ptr_t)(&dl_head) + sizeof(word));
     GC_push_all((ptr_t)(&fo_head), (ptr_t)(&fo_head) + sizeof(word));
     GC_push_all((ptr_t)(&GC_finalize_now),

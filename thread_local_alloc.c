@@ -90,6 +90,7 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
 
     GC_ASSERT(I_HOLD_LOCK());
     if (!EXPECT(keys_initialized, TRUE)) {
+        GC_ASSERT((word)&GC_thread_key % sizeof(word) == 0);
         if (0 != GC_key_create(&GC_thread_key, 0)) {
             ABORT("Failed to create key for local allocator");
         }

@@ -976,6 +976,7 @@ GC_INNER void GC_thr_init(void)
   if (GC_thr_initialized) return;
   GC_thr_initialized = TRUE;
 
+  GC_ASSERT((word)&GC_threads % sizeof(word) == 0);
 # ifdef HANDLE_FORK
     /* Prepare for a possible fork.     */
     pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
