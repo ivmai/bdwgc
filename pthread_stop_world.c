@@ -83,7 +83,7 @@ STATIC void GC_remove_allowed_signals(sigset_t *set)
           || sigdelset(set, SIGQUIT) != 0
           || sigdelset(set, SIGABRT) != 0
           || sigdelset(set, SIGTERM) != 0) {
-        ABORT("sigdelset() failed");
+        ABORT("sigdelset failed");
     }
 
 #   ifdef MPROTECT_VDB
@@ -94,7 +94,7 @@ STATIC void GC_remove_allowed_signals(sigset_t *set)
             || sigdelset(set, SIGBUS) != 0
 #         endif
           ) {
-        ABORT("sigdelset() failed");
+        ABORT("sigdelset failed");
       }
 #   endif
 }
@@ -830,11 +830,11 @@ GC_INNER void GC_stop_init(void)
 #   endif
         ;
     if (sigfillset(&act.sa_mask) != 0) {
-        ABORT("sigfillset() failed");
+        ABORT("sigfillset failed");
     }
 #   ifdef GC_RTEMS_PTHREADS
       if(sigprocmask(SIG_UNBLOCK, &act.sa_mask, NULL) != 0) {
-        ABORT("rtems sigprocmask() failed");
+        ABORT("sigprocmask failed");
       }
 #   endif
     GC_remove_allowed_signals(&act.sa_mask);
@@ -858,10 +858,10 @@ GC_INNER void GC_stop_init(void)
     }
 
     /* Initialize suspend_handler_mask. It excludes SIG_THR_RESTART. */
-    if (sigfillset(&suspend_handler_mask) != 0) ABORT("sigfillset() failed");
+    if (sigfillset(&suspend_handler_mask) != 0) ABORT("sigfillset failed");
     GC_remove_allowed_signals(&suspend_handler_mask);
     if (sigdelset(&suspend_handler_mask, SIG_THR_RESTART) != 0)
-        ABORT("sigdelset() failed");
+        ABORT("sigdelset failed");
 
     /* Check for GC_RETRY_SIGNALS.      */
     if (0 != GETENV("GC_RETRY_SIGNALS")) {

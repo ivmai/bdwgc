@@ -794,7 +794,7 @@ GC_INNER word GC_page_size = 0;
   {
 #   if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(USE_MMAP)
       GC_page_size = GETPAGESIZE();
-      if (!GC_page_size) ABORT("getpagesize() failed");
+      if (!GC_page_size) ABORT("getpagesize failed");
 #   else
       /* It's acceptable to fake it.    */
       GC_page_size = HBLKSIZE;

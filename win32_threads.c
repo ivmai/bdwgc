@@ -1737,7 +1737,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                                         TRUE /* isManualReset */,
                                         FALSE /* initialState */,
                                         NULL /* name (A/W) */)) == (HANDLE)0)
-            ABORT("CreateEvent() failed");
+            ABORT("CreateEvent failed");
         }
 #     endif
 
@@ -1823,7 +1823,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #       endif
         {
           if (WaitForSingleObject(mark_mutex_event, INFINITE) == WAIT_FAILED)
-            ABORT("WaitForSingleObject() failed");
+            ABORT("WaitForSingleObject failed");
         }
       }
 #     ifdef LOCK_STATS
@@ -1853,7 +1853,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         {
           /* wake a waiter */
           if (SetEvent(mark_mutex_event) == FALSE)
-            ABORT("SetEvent() failed");
+            ABORT("SetEvent failed");
         }
     }
 
@@ -1872,10 +1872,10 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         if (GC_fl_builder_count == 0)
           break;
         if (ResetEvent(builder_cv) == FALSE)
-          ABORT("ResetEvent() failed");
+          ABORT("ResetEvent failed");
         GC_release_mark_lock();
         if (WaitForSingleObject(builder_cv, INFINITE) == WAIT_FAILED)
-          ABORT("WaitForSingleObject() failed");
+          ABORT("WaitForSingleObject failed");
       }
       GC_release_mark_lock();
     }
@@ -1886,7 +1886,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       GC_ASSERT(builder_cv != 0);
       GC_ASSERT(GC_fl_builder_count == 0);
       if (SetEvent(builder_cv) == FALSE)
-        ABORT("SetEvent() failed");
+        ABORT("SetEvent failed");
     }
 
 #   ifdef DONT_USE_SIGNALANDWAIT
@@ -1907,10 +1907,10 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         }
 
         if (ResetEvent(event) == FALSE)
-          ABORT("ResetEvent() failed");
+          ABORT("ResetEvent failed");
         GC_release_mark_lock();
         if (WaitForSingleObject(event, INFINITE) == WAIT_FAILED)
-          ABORT("WaitForSingleObject() failed");
+          ABORT("WaitForSingleObject failed");
         GC_acquire_mark_lock();
       }
 
@@ -1923,7 +1923,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
           /* Notify every marker ignoring self (for efficiency).  */
           if (SetEvent(GC_marker_Id[i] != thread_id ? GC_marker_cv[i] :
                        mark_cv) == FALSE)
-            ABORT("SetEvent() failed");
+            ABORT("SetEvent failed");
         }
       }
 
@@ -1979,7 +1979,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                                      mark_cv /* hObjectToWaitOn */,
                                      INFINITE /* timeout */,
                                      FALSE /* isAlertable */) == WAIT_FAILED)
-          ABORT("SignalObjectAndWait() failed");
+          ABORT("SignalObjectAndWait failed");
         /* The state of mark_cv is non-signaled here again. */
 
         if (waitcnt > 1) {
@@ -1988,7 +1988,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
           GC_ASSERT(GC_mark_mutex_waitcnt != 0);
           /* Acquire mark lock */
           if (WaitForSingleObject(mark_mutex_event, INFINITE) == WAIT_FAILED)
-            ABORT("WaitForSingleObject() failed");
+            ABORT("WaitForSingleObject failed");
           GC_ASSERT(GC_mark_lock_holder == NO_THREAD);
 #         ifdef GC_ASSERTIONS
             GC_mark_lock_holder = (unsigned long)GetCurrentThreadId();
@@ -2000,7 +2000,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       {
         GC_ASSERT(mark_cv != 0);
         if (PulseEvent(mark_cv) == FALSE)
-          ABORT("PulseEvent() failed");
+          ABORT("PulseEvent failed");
       }
 
 #   endif /* !DONT_USE_SIGNALANDWAIT */
@@ -2337,7 +2337,7 @@ GC_INNER void GC_thr_init(void)
                                 FALSE /* initialState */, NULL /* name */);
           if (mark_mutex_event == (HANDLE)0 || builder_cv == (HANDLE)0
               || mark_cv == (HANDLE)0)
-            ABORT("CreateEvent() failed");
+            ABORT("CreateEvent failed");
 #       endif
         /* Disable true incremental collection, but generational is OK. */
         GC_time_limit = GC_TIME_UNLIMITED;
