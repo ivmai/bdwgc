@@ -2612,6 +2612,14 @@
 # define IF_CANCEL(x) /* empty */
 #endif
 
+#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
+    && !defined(HANDLE_FORK) && !defined(NO_HANDLE_FORK) \
+    && !defined(HURD) && !defined(NACL) && !defined(PLATFORM_ANDROID)
+  /* Attempts (where supported) to make GC_malloc work in a child       */
+  /* process fork'ed from a multi-threaded parent.                      */
+# define HANDLE_FORK
+#endif
+
 #if !defined(USE_MARK_BITS) && !defined(USE_MARK_BYTES) \
     && defined(PARALLEL_MARK)
    /* Minimize compare-and-swap usage.  */
