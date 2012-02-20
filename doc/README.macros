@@ -433,9 +433,9 @@ STUBBORN_ALLOC  Allows allocation of "hard to change" objects, and thus
   makes incremental collection easier.  Was enabled by default until 6.0.
   Rarely used, to my knowledge.
 
-HANDLE_FORK     Attempts to make GC_malloc() work in a child process fork()'ed
-  from a multithreaded parent.  Currently only supported by pthread_support.c.
-  (Similar code should work on Solaris or Irix, but it hasn't been tried.)
+NO_HANDLE_FORK (Unix only)      Do not attempt to make GC_malloc() work in
+  a child process fork()'ed from a multi-threaded parent.  (Might be required
+  if pthread_atfork is missing.)
 
 TEST_WITH_SYSTEM_MALLOC         Causes gctest to allocate (and leak) large
   chunks of memory with the standard system malloc.  This will cause the root
