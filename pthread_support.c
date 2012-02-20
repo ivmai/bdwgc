@@ -979,8 +979,9 @@ GC_INNER void GC_thr_init(void)
   GC_ASSERT((word)&GC_threads % sizeof(word) == 0);
 # ifdef HANDLE_FORK
     /* Prepare for a possible fork.     */
-    pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
-                   GC_fork_child_proc);
+    if (pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
+                       GC_fork_child_proc) != 0)
+      ABORT("pthread_atfork failed");
 # endif
 # ifdef INCLUDE_LINUX_THREAD_DESCR
     /* Explicitly register the region including the address     */
