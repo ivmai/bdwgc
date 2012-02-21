@@ -1,6 +1,7 @@
 
 == [7.3alpha2] (development) ==
 
+* Abort in GC_thr_init on pthread_atfork failure (POSIX threads).
 * Add 'const' qualifier to pointer argument of some API functions.
 * Add GC_UNDERSCORE_STDCALL, UNICODE macro templates to configure (Win32).
 * Add GC_get_thr_restart_signal, GC_thread_is_registered to GC API.
@@ -63,6 +64,8 @@
 * Replace ARGSUSED comment-based annotation with GCC 'unused' attribute.
 * Replace long GC_markers global variable with int GC_markers_m1.
 * Replace printf PRIxMAX specifier with '%p' for thread id debug output.
+* Require automake 2.63 instead of v2.64.
+* Simplify autogen.sh (use autoreconf).
 * Split GC_abort with GC_on_abort and abort() invoked from ABORT.
 * Support GC_ATTR_MALLOC for MS VisualStudio.
 * Tag auxiliary malloc-like API functions with 'malloc' attribute.
@@ -95,6 +98,7 @@
 * Fix GC_push_all/selected boundaries check.
 * Fix GC_restart_handler to preserve errno if needed.
 * Fix GC_root_size update in GC_add_roots_inner (Win32).
+* Fix GC_unregister_my_thread to ensure no ongoing incremental GC (Win32).
 * Fix compiler warning in GC_dyld_image_add/remove (Darwin).
 * Fix configure --enable-cplusplus make install.
 * Fix configure to disable GCC aliasing optimization unless forced to.
@@ -102,6 +106,7 @@
 * Fix gc_cpp.cc for Cygwin (remove duplicate function definition).
 * Fix gcconfig.h to define USE_GET_STACKBASE_FOR_MAIN for Android.
 * Fix gcconfig.h to handle mips64-linux target.
+* Fix gcconfig.h to turn on POSIX fork() support by default.
 * Fix mach_dep.c to include sys/ucontext.h on Mac OS X 10.6.
 * Fix tests to check GC_malloc result for NULL (out-of-memory).
 * Fix thread model in configure for MinGW ("win32" instead of "posix").
