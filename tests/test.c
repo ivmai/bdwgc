@@ -75,6 +75,10 @@
 #   include <pthread.h>
 # endif
 
+# if defined(THREADS) && defined(HANDLE_FORK)
+#   include <unistd.h>
+# endif
+
 # if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
     static CRITICAL_SECTION incr_cs;
 # endif
