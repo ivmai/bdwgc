@@ -759,6 +759,30 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   }
 }
 
+/* Similar to that in pthread_support.c (wait_for_all is always FALSE). */
+STATIC void GC_wait_for_gc_completion(void)
+{
+  GC_ASSERT(I_HOLD_LOCK());
+  if (GC_incremental && GC_collection_in_progress()) {
+    word old_gc_no = GC_gc_no;
+
+    /* Make sure that no part of our stack is still on the mark stack,  */
+    /* since it's about to be unmapped.                                 */
+    do {
+      ENTER_GC();
+      GC_in_thread_creation = TRUE;
+      GC_collect_a_little_inner(1);
+      GC_in_thread_creation = FALSE;
+      EXIT_GC();
+
+      UNLOCK();
+      Sleep(0); /* yield */
+      LOCK();
+    } while (GC_incremental && GC_collection_in_progress()
+             && old_gc_no == GC_gc_no);
+  }
+}
+
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
   DCL_LOCK_STATE;
@@ -767,7 +791,6 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     GC_log_printf("Unregistering thread 0x%lx\n", (long)GetCurrentThreadId());
 # endif
 
-  /* FIXME: is GC_wait_for_gc_completion(FALSE) needed here? */
   if (GC_win32_dll_threads) {
 #   if defined(THREAD_LOCAL_ALLOC)
       /* Can't happen: see GC_use_threads_discovery(). */
@@ -786,6 +809,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     DWORD thread_id = GetCurrentThreadId();
 
     LOCK();
+    GC_wait_for_gc_completion();
 #   if defined(THREAD_LOCAL_ALLOC) || defined(GC_PTHREADS)
       me = GC_lookup_thread_inner(thread_id);
       CHECK_LOOKUP_MY_THREAD(me);
@@ -2520,6 +2544,7 @@ GC_INNER void GC_thr_init(void)
 #   endif
 
     LOCK();
+    GC_wait_for_gc_completion();
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_destroy_thread_local(&(me->tlfs));
 #   endif
