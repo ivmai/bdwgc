@@ -1,3 +1,24 @@
+2012-02-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c (GC_wait_for_gc_completion): Add function (similar
+	implementation as in pthread_support.c).
+	* win32_threads.c (GC_unregister_my_thread, GC_thread_exit_proc):
+	Call GC_wait_for_gc_completion to prevent collecting from unregistered
+	thread; remove FIXME.
+
+2012-02-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c: Include unistd.h for fork() declaration if HANDLE_FORK
+	(and THREADS).
+
+2012-02-20  Ivan Maidanski <ivmai@mail.ru> (mostly really Andy Wingo)
+
+	* doc/README.macros (HANDLE_FORK): Replace with NO_HANDLE_FORK; update
+	the documentation.
+	* include/private/gcconfig.h (HANDLE_FORK): Explicitly define if
+	GC_PTHREADS unless already defined or NO_HANDLE_FORK is defined, or
+	unsupported on the target.
+
 2012-02-16  Ivan Maidanski <ivmai@mail.ru>
 
 	* mark.c (GC_push_all, GC_push_selected): Properly check for empty
