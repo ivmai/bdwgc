@@ -4142,6 +4142,10 @@ GC_INNER void GC_dirty_init(void)
   if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0)
     ABORT("pthread_attr_setdetachedstate failed");
 
+# if defined(HANDLE_FORK) && !defined(THREADS)
+    /* FIXME: See comment in GC_fork_prepare_proc.      */
+# endif
+
 # undef pthread_create
   /* This will call the real pthread function, not our wrapper */
   if (pthread_create(&thread, &attr, GC_mprotect_thread, NULL) != 0)
