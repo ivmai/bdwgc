@@ -55,6 +55,9 @@
   STATIC void GC_thread_exit_proc(void *arg);
 
 # include <pthread.h>
+# ifdef HANDLE_FORK
+#   include <unistd.h>
+# endif
 
 #else
 
@@ -744,8 +747,8 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   }
 }
 
-/* Similar to that in pthread_support.c (wait_for_all is always FALSE). */
-STATIC void GC_wait_for_gc_completion(void)
+/* Similar to that in pthread_support.c.        */
+STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
   GC_ASSERT(I_HOLD_LOCK());
   if (GC_incremental && GC_collection_in_progress()) {
@@ -764,7 +767,7 @@ STATIC void GC_wait_for_gc_completion(void)
       Sleep(0); /* yield */
       LOCK();
     } while (GC_incremental && GC_collection_in_progress()
-             && old_gc_no == GC_gc_no);
+             && (wait_for_all || old_gc_no == GC_gc_no));
   }
 }
 
@@ -794,7 +797,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     DWORD thread_id = GetCurrentThreadId();
 
     LOCK();
-    GC_wait_for_gc_completion();
+    GC_wait_for_gc_completion(FALSE);
 #   if defined(THREAD_LOCAL_ALLOC) || defined(GC_PTHREADS)
       me = GC_lookup_thread_inner(thread_id);
       CHECK_LOOKUP_MY_THREAD(me);
@@ -966,6 +969,84 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       return p;
     }
   }
+
+# ifdef HANDLE_FORK
+    /* Similar to that in pthread_support.c.    */
+    STATIC void GC_remove_all_threads_but_me(void)
+    {
+      pthread_t id = pthread_self();
+      int hv;
+      GC_thread p, next, me;
+
+      for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
+        me = 0;
+        for (p = GC_threads[hv]; 0 != p; p = next) {
+          next = p -> tm.next;
+          if (THREAD_EQUAL(p -> pthread_id, id)) {
+            me = p;
+            p -> tm.next = 0;
+            /* Update Win32 thread Id and handle.       */
+            me -> id = GetCurrentThreadId();
+#           ifndef MSWINCE
+              if (!DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
+                                   GetCurrentProcess(),
+                                   (HANDLE *)&me->handle, 0, FALSE,
+                                   DUPLICATE_SAME_ACCESS))
+                ABORT("DuplicateHandle failed");
+#           endif
+          } else {
+#           ifdef THREAD_LOCAL_ALLOC
+              if ((p -> flags & FINISHED) == 0) {
+                GC_destroy_thread_local(&p->tlfs);
+              }
+#           endif
+            if (&first_thread != p)
+              GC_INTERNAL_FREE(p);
+          }
+        }
+        GC_threads[hv] = me;
+      }
+    }
+
+    STATIC void GC_fork_prepare_proc(void)
+    {
+      LOCK();
+#     ifdef PARALLEL_MARK
+        if (GC_parallel)
+          GC_wait_for_reclaim();
+#     endif
+      GC_wait_for_gc_completion(TRUE);
+#     ifdef PARALLEL_MARK
+        if (GC_parallel)
+          GC_acquire_mark_lock();
+#     endif
+    }
+
+    STATIC void GC_fork_parent_proc(void)
+    {
+#     ifdef PARALLEL_MARK
+        if (GC_parallel)
+          GC_release_mark_lock();
+#     endif
+      UNLOCK();
+    }
+
+    STATIC void GC_fork_child_proc(void)
+    {
+#     ifdef PARALLEL_MARK
+        if (GC_parallel) {
+          GC_release_mark_lock();
+          GC_markers = 1;
+          GC_parallel = FALSE;
+                /* Turn off parallel marking in the child, since we are */
+                /* probably just going to exec, and we would have to    */
+                /* restart mark threads.                                */
+        }
+#     endif
+      GC_remove_all_threads_but_me();
+      UNLOCK();
+    }
+# endif /* HANDLE_FORK */
 
 #endif /* GC_PTHREADS */
 
@@ -2272,6 +2353,13 @@ GC_INNER void GC_thr_init(void)
   GC_main_thread = GetCurrentThreadId();
   GC_thr_initialized = TRUE;
 
+# if defined(GC_PTHREADS) && defined(HANDLE_FORK)
+    /* Prepare for a possible fork.     */
+    if (pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
+                       GC_fork_child_proc) != 0)
+      ABORT("pthread_atfork failed");
+# endif
+
   /* Add the initial thread, so we can stop it. */
 # ifdef GC_ASSERTIONS
     sb_result =
@@ -2536,7 +2624,7 @@ GC_INNER void GC_thr_init(void)
 #   endif
 
     LOCK();
-    GC_wait_for_gc_completion();
+    GC_wait_for_gc_completion(FALSE);
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_destroy_thread_local(&(me->tlfs));
 #   endif
