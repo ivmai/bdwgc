@@ -1271,7 +1271,11 @@ void run_one_test(void)
     /* GC_allocate_ml and GC_need_to_lock are no longer exported, and   */
     /* AO_fetch_and_add1() may be unavailable to update a counter.      */
     (void)GC_call_with_alloc_lock(inc_int_counter, &n_tests);
-#   if defined(THREADS) && defined(HANDLE_FORK)
+#   if defined(THREADS) && defined(HANDLE_FORK) \
+       && (!defined(DARWIN) || !defined(MPROTECT_VDB) \
+           || defined(NO_INCREMENTAL) || defined(MAKE_BACK_GRAPH))
+           /* FIXME: fork() is not tested on Darwin if incremental mode */
+           /* is on for now (till it would be handled properly).        */
       if (fork() == 0) {
         GC_gcollect();
         tiny_reverse_test(0);
