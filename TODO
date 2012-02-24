@@ -25,6 +25,11 @@ build_atomic_ops.sh[.cygwin]: Remove if really not needed.
 Do type-punning via union (instead of pointer type cast) to enable safe
 '-fstrict-aliasing' compiler optimization option.
 
+Support HANDLE_FORK if USE_WINALLOC for Cygwin.
+
+Properly implement HANDLE_FORK if GC_dirty_maintained for Darwin (both single
+and multi-threaded modes).
+
 
 == FIXME tasks ==
 
