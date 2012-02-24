@@ -1,3 +1,30 @@
+2012-02-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h (HANDLE_FORK): Define also for Cygwin
+	(but not for win32-pthreads).
+	* win32_threads.c: Include unistd.h if HANDLE_FORK (for
+	pthread_atfork).
+	* win32_threads.c (GC_wait_for_gc_completion): Add wait_for_all
+	argument.
+	* win32_threads.c (GC_unregister_my_thread, GC_thread_exit_proc): Pass
+	FALSE ("wait_for_all" argument) to GC_wait_for_gc_completion.
+	* win32_threads.c (GC_remove_all_threads_but_me, GC_fork_prepare_proc,
+	GC_fork_parent_proc, GC_fork_child_proc): New functions (similar to
+	that in pthread_support.c) if HANDLE_FORK.
+	* win32_threads.c (GC_thr_init): Invoke pthread_atfork if HANDLE_FORK.
+
+2012-02-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c (GC_dirty_init): Add FIXME regarding fork (Darwin).
+	* pthread_support.c (GC_remove_all_threads_but_me): Update mach_thread
+	for "me" (Darwin).
+	* pthread_support.c (GC_fork_prepare_proc): Output warning if
+	GC_dirty_maintained (if DARWIN and MPROTECT_VDB).
+	* pthread_support.c (GC_fork_prepare_proc, GC_fork_child_proc): Add
+	FIXME (for Darwin).
+	* tests/test.c (run_one_test): Do not test fork() for Darwin with
+	incremental mode on (if HANDLE_FORK); add FIXME.
+
 2012-02-21  Ivan Maidanski <ivmai@mail.ru>
 
 	* win32_threads.c (GC_wait_for_gc_completion): Add function (similar
