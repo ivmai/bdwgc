@@ -103,6 +103,7 @@
 * Fix configure --enable-cplusplus make install.
 * Fix configure to disable GCC aliasing optimization unless forced to.
 * Fix duplicate definitions in gcconfig.h for NetBSD.
+* Fix fork() support on Cygwin and Darwin targets.
 * Fix gc_cpp.cc for Cygwin (remove duplicate function definition).
 * Fix gcconfig.h to define USE_GET_STACKBASE_FOR_MAIN for Android.
 * Fix gcconfig.h to handle mips64-linux target.
