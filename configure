@@ -5044,6 +5044,7 @@ $as_echo "$as_me: WARNING: \"Only on NetBSD 2.0 or later.\"" >&2;}
         $as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
 
         THREADDLLIBS="-lpthread"
+        win32_threads=true
         ;;
      *-*-darwin*)
         $as_echo "#define GC_DARWIN_THREADS 1" >>confdefs.h
