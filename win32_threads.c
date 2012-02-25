@@ -819,6 +819,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
       GC_ASSERT(!KNOWN_FINISHED(me));
 #   endif
 #   if defined(THREAD_LOCAL_ALLOC)
+      GC_ASSERT(GC_getspecific(GC_thread_key) == &me->tlfs);
       GC_destroy_thread_local(&(me->tlfs));
 #   endif
 #   ifdef GC_PTHREADS
@@ -2633,6 +2634,7 @@ GC_INNER void GC_thr_init(void)
     LOCK();
     GC_wait_for_gc_completion(FALSE);
 #   if defined(THREAD_LOCAL_ALLOC)
+      GC_ASSERT(GC_getspecific(GC_thread_key) == &me->tlfs);
       GC_destroy_thread_local(&(me->tlfs));
 #   endif
     if (me -> flags & DETACHED) {
