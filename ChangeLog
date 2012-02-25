@@ -1,3 +1,9 @@
+2012-02-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (SIG_SUSPEND): Do not define for Cygwin
+	and pthreads-w32 (since signals are not used for threads
+	suspend/resume).
+
 2012-02-24  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/private/gcconfig.h (HANDLE_FORK): Define also for Cygwin
