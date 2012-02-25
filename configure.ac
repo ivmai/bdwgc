@@ -276,6 +276,7 @@ case "$THREADS" in
         fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
         THREADDLLIBS="-lpthread"
+        win32_threads=true
         ;;
      *-*-darwin*)
         AC_DEFINE(GC_DARWIN_THREADS)
