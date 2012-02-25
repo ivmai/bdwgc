@@ -212,7 +212,6 @@ case "$THREADS" in
         AC_DEFINE(GC_OPENBSD_THREADS)
         THREADDLLIBS=-pthread
         INCLUDES="$INCLUDES -pthread"
-        openbsd_threads=true
         ;;
      *-*-freebsd*)
         AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
@@ -372,7 +371,6 @@ AM_CONDITIONAL(THREADS, test x$THREADS != xnone)
 AM_CONDITIONAL(PTHREADS, test x$THREADS = xposix)
 AM_CONDITIONAL(DARWIN_THREADS, test x$darwin_threads = xtrue)
 AM_CONDITIONAL(WIN32_THREADS, test x$win32_threads = xtrue)
-AM_CONDITIONAL(OPENBSD_THREADS, test x$openbsd_threads = xtrue)
 
 case "$host" in
    powerpc-*-darwin*)
@@ -642,8 +640,6 @@ dnl enable_gcj_support=no
 AC_ARG_ENABLE(gcj-support,
     [AC_HELP_STRING([--disable-gcj-support],
         [Disable support for gcj.])])
-AM_CONDITIONAL(ENABLE_GCJ_SUPPORT,
-    [test x"$enable_gcj_support" != xno])
 if test x"$enable_gcj_support" != xno; then
     AC_DEFINE(GC_GCJ_SUPPORT, 1, [Define to include support for gcj.])
 fi

@@ -114,7 +114,6 @@ IF(CMAKE_USE_PTHREADS_INIT)
         ENDIF()
         IF ( "HOST" MATCHES .*-.*-openbsd.*)
                 ADD_DEFINITIONS("-DGC_OPENBSD_THREADS")
-                #FIXME openbsd_threads=true
         ENDIF()
         IF ( "HOST" MATCHES .*-.*-freebsd.*)
                 MESSAGE("FreeBSD does not yet fully support threads with Boehm GC.")
@@ -203,7 +202,6 @@ ENDIF(CMAKE_USE_WIN32_THREADS_INIT)
 
 OPTION(enable_gcj_support "Support for gcj" NO)
 IF(enable_gcj_support)
-        #TODO AM_CONDITIONAL(ENABLE_GCJ_SUPPORT,     [test x"$enable_gcj_support" != xno])
         ADD_DEFINITIONS("-DGC_GCJ_SUPPORT")
 ENDIF(enable_gcj_support)
 
