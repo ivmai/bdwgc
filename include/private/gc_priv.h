@@ -2252,7 +2252,8 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
               /* some other reason.                                     */
 #endif /* PARALLEL_MARK */
 
-#if defined(GC_PTHREADS) && !defined(NACL) && !defined(SIG_SUSPEND)
+#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) && !defined(NACL) \
+    && !defined(SIG_SUSPEND)
   /* We define the thread suspension signal here, so that we can refer  */
   /* to it in the dirty bit implementation, if necessary.  Ideally we   */
   /* would allocate a (real-time?) signal using the standard mechanism. */
