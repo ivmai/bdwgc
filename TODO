@@ -48,3 +48,6 @@ OpenBSD 4.9/x86 fails:
 GC_push_all_stacks: sp not set! FAIL: gctest, threadleaktest.
 
 NetBSD 5.1/x86: threadkey_test hangs sometimes.
+
+Cygwin: gctest: abort with "Too many heap sections" message if SMALL_CONFIG
+and PARALLEL_MARK.
