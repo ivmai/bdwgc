@@ -509,7 +509,6 @@ GC_API void GC_CALL GC_free(void * p)
     void ** flh;
     int knd;
     struct obj_kind * ok;
-    DCL_LOCK_STATE;
 
     h = HBLKPTR(p);
     hhdr = HDR(h);
