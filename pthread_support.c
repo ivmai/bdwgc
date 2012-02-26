@@ -632,8 +632,18 @@ STATIC void GC_remove_all_threads_but_me(void)
           me = p;
           p -> next = 0;
 #         ifdef GC_DARWIN_THREADS
-            /* Update thread Id after fork. */
+            /* Update thread Id after fork (it is ok to call    */
+            /* GC_destroy_thread_local and GC_free_internal     */
+            /* before update).                                  */
             me -> stop_info.mach_thread = mach_thread_self();
+#         endif
+#         if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
+            /* Some TLS implementations might be not fork-friendly, so  */
+            /* we re-assign thread-local pointer to 'tlfs' for safety   */
+            /* instead of the assertion check (again, it is ok to call  */
+            /* GC_destroy_thread_local and GC_free_internal before).    */
+            if (GC_setspecific(GC_thread_key, &me->tlfs) != 0)
+              ABORT("GC_setspecific failed (in child)");
 #         endif
         } else {
 #         ifdef THREAD_LOCAL_ALLOC
