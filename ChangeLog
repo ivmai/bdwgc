@@ -1,3 +1,22 @@
+2012-02-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c (GC_remove_all_threads_but_me): Update comment;
+	re-hash GC_threads map as thread Win32 Id in the child differs from
+	that in the parent; rename "id" local variable to "pthread_id".
+	* win32_threads.c (GC_remove_all_threads_but_me): Call
+	GC_setspecific (if THREAD_LOCAL_ALLOC) to re-assign Win32-based
+	thread-local pointer to 'tlfs' (identified by GC_thread_key) of the
+	current thread.
+
+2012-02-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c (GC_remove_all_threads_but_me): Refine comment for
+	stop_info.mach_thread update.
+	* pthread_support.c (GC_remove_all_threads_but_me): Call
+	GC_setspecific (if THREAD_LOCAL_ALLOC) to re-assign thread-local
+	pointer to 'tlfs' (identified by GC_thread_key) of the current thread
+	(except for USE_CUSTOM_SPECIFIC).
+
 2012-02-25  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure: Regenerate.
