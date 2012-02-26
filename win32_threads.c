@@ -987,29 +987,23 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   }
 
 # ifdef HANDLE_FORK
-    /* Similar to that in pthread_support.c.    */
+    /* Similar to that in pthread_support.c but also rehashes the table */
+    /* since hash map key (thread_id) differs from that in the parent.  */
     STATIC void GC_remove_all_threads_but_me(void)
     {
-      pthread_t id = pthread_self();
       int hv;
-      GC_thread p, next, me;
+      GC_thread p, next, me = NULL;
+      DWORD thread_id;
+      pthread_t pthread_id = pthread_self(); /* same as in parent */
 
+      GC_ASSERT(!GC_win32_dll_threads);
       for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
-        me = 0;
         for (p = GC_threads[hv]; 0 != p; p = next) {
           next = p -> tm.next;
-          if (THREAD_EQUAL(p -> pthread_id, id)) {
+          if (THREAD_EQUAL(p -> pthread_id, pthread_id)) {
+            GC_ASSERT(me == NULL);
             me = p;
             p -> tm.next = 0;
-            /* Update Win32 thread Id and handle.       */
-            me -> id = GetCurrentThreadId();
-#           ifndef MSWINCE
-              if (!DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
-                                   GetCurrentProcess(),
-                                   (HANDLE *)&me->handle, 0, FALSE,
-                                   DUPLICATE_SAME_ACCESS))
-                ABORT("DuplicateHandle failed");
-#           endif
           } else {
 #           ifdef THREAD_LOCAL_ALLOC
               if ((p -> flags & FINISHED) == 0) {
@@ -1020,8 +1014,31 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
               GC_INTERNAL_FREE(p);
           }
         }
-        GC_threads[hv] = me;
+        GC_threads[hv] = NULL;
       }
+
+      /* Put "me" back to GC_threads.   */
+      GC_ASSERT(me != NULL);
+      thread_id = GetCurrentThreadId(); /* differs from that in parent */
+      GC_threads[THREAD_TABLE_INDEX(thread_id)] = me;
+
+      /* Update Win32 thread Id and handle.     */
+      me -> id = thread_id;
+#     ifndef MSWINCE
+        if (!DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
+                        GetCurrentProcess(), (HANDLE *)&me->handle,
+                        0 /* dwDesiredAccess */, FALSE /* bInheritHandle */,
+                        DUPLICATE_SAME_ACCESS))
+          ABORT("DuplicateHandle failed");
+#     endif
+
+#     if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
+        /* For Cygwin, we need to re-assign thread-local pointer to     */
+        /* 'tlfs' (it is ok to call GC_destroy_thread_local and         */
+        /* GC_free_internal before this action).                        */
+        if (GC_setspecific(GC_thread_key, &me->tlfs) != 0)
+          ABORT("GC_setspecific failed (in child)");
+#     endif
     }
 
     STATIC void GC_fork_prepare_proc(void)
