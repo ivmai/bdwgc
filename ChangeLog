@@ -1,5 +1,12 @@
 2012-02-27  Ivan Maidanski <ivmai@mail.ru>
 
+	* win32_threads.c (GC_register_my_thread): Fix SEGV by setting "me"
+	to the newly-created thread GC descriptor (if lookup failed) before
+	altering flags of "me" (only if GC_PTHREADS); add comment (same as
+	in pthread_support.c).
+
+2012-02-27  Ivan Maidanski <ivmai@mail.ru>
+
 	* os_dep.c (GC_SysVGetDataStart): Place "volatile" keyword for
 	"result" local variable properly.
 
