@@ -113,7 +113,9 @@ AC_ARG_ENABLE(parallel-mark,
         [parallelize marking and free list construction])],
    [case "$THREADS" in
       no | none | single)
-        AC_MSG_ERROR([Parallel mark requires --enable-threads=x spec])
+        if test "${enable_parallel_mark}" != no; then
+          AC_MSG_ERROR([Parallel mark requires --enable-threads=x spec])
+        fi
         ;;
     esac ]
 )
