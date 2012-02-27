@@ -166,6 +166,10 @@ case "$THREADS" in
         AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
         AC_DEFINE(GC_FREEBSD_THREADS)
         INCLUDES="$INCLUDES -pthread"
+        if test "${enable_parallel_mark}" = yes; then
+          AC_DEFINE(PARALLEL_MARK)
+        fi
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
         ;;
      *-*-kfreebsd*-gnu)
         AC_DEFINE(GC_FREEBSD_THREADS)
