@@ -2505,9 +2505,6 @@ GC_INNER void GC_thr_init(void)
                     (long)GetCurrentThreadId(), GC_PTHREAD_PTRVAL(pthread_id));
 #   endif
 
-    if (!EXPECT(parallel_initialized, TRUE))
-      GC_init_parallel();
-
     /* Thread being joined might not have registered itself yet. */
     /* After the join,thread id may have been recycled.          */
     /* FIXME: It would be better if this worked more like        */
@@ -2669,8 +2666,6 @@ GC_INNER void GC_thr_init(void)
     GC_API int GC_pthread_sigmask(int how, const sigset_t *set,
                                   sigset_t *oset)
     {
-      if (!EXPECT(parallel_initialized, TRUE))
-        GC_init_parallel();
       return pthread_sigmask(how, set, oset);
     }
 # endif /* !GC_NO_PTHREAD_SIGMASK */
@@ -2681,8 +2676,6 @@ GC_INNER void GC_thr_init(void)
     GC_thread t;
     DCL_LOCK_STATE;
 
-    if (!EXPECT(parallel_initialized, TRUE))
-      GC_init_parallel();
     LOCK();
     t = GC_lookup_pthread(thread);
     UNLOCK();
