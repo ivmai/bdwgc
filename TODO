@@ -51,3 +51,6 @@ NetBSD 5.1/x86: threadkey_test hangs sometimes.
 
 Cygwin: gctest: abort with "Too many heap sections" message if SMALL_CONFIG
 and PARALLEL_MARK.
+
+Sun C++ 5.11: test_cpp.cc:237: Error: Too few arguments in call to
+"operator delete(void*, GCPlacement, extern "C" void(*)(void*,void*), void*)".
