@@ -799,9 +799,6 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
       /* Can't happen: see GC_use_threads_discovery(). */
       GC_ASSERT(FALSE);
 #   else
-#     ifdef GC_PTHREADS
-        /* FIXME: If not DETACHED then just set FINISHED. */
-#     endif
       /* FIXME: Should we just ignore this? */
       GC_delete_thread(GetCurrentThreadId());
 #   endif
@@ -2498,7 +2495,9 @@ GC_INNER void GC_thr_init(void)
   {
     int result;
     GC_thread t;
+    DCL_LOCK_STATE;
 
+    GC_ASSERT(!GC_win32_dll_threads);
 #   ifdef DEBUG_THREADS
       GC_log_printf("thread %p(0x%lx) is joining thread %p\n",
                     GC_PTHREAD_PTRVAL(pthread_self()),
@@ -2516,19 +2515,14 @@ GC_INNER void GC_thr_init(void)
 
     result = pthread_join(pthread_id, retval);
 
-    if (!GC_win32_dll_threads) {
-      DCL_LOCK_STATE;
-
-#     ifdef GC_WIN32_PTHREADS
-        /* win32_pthreads id are unique */
-        t = GC_lookup_pthread(pthread_id);
-        if (NULL == t) ABORT("Thread not registered");
-#     endif
-
-      LOCK();
-      GC_delete_gc_thread(t);
-      UNLOCK();
-    } /* otherwise DllMain handles it.  */
+#   ifdef GC_WIN32_PTHREADS
+      /* win32_pthreads id are unique */
+      t = GC_lookup_pthread(pthread_id);
+      if (NULL == t) ABORT("Thread not registered");
+#   endif
+    LOCK();
+    GC_delete_gc_thread(t);
+    UNLOCK();
 
 #   ifdef DEBUG_THREADS
       GC_log_printf("thread %p(0x%lx) completed join with thread %p\n",
@@ -2544,14 +2538,13 @@ GC_INNER void GC_thr_init(void)
                                GC_PTHREAD_CREATE_CONST pthread_attr_t *attr,
                                void *(*start_routine)(void *), void *arg)
   {
+    int result;
+    struct start_info * si;
+
     if (!EXPECT(parallel_initialized, TRUE))
       GC_init_parallel();
              /* make sure GC is initialized (i.e. main thread is attached) */
-    if (GC_win32_dll_threads) {
-      return pthread_create(new_thread, attr, start_routine, arg);
-    } else {
-      int result;
-      struct start_info * si;
+    GC_ASSERT(!GC_win32_dll_threads);
 
       /* This is otherwise saved only in an area mmapped by the thread  */
       /* library, which isn't visible to the collector.                 */
@@ -2578,7 +2571,6 @@ GC_INNER void GC_thr_init(void)
           GC_free(si);
       }
       return(result);
-    }
   }
 
   STATIC void * GC_CALLBACK GC_pthread_start_inner(struct GC_stack_base *sb,
