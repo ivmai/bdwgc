@@ -1868,7 +1868,7 @@ void GC_register_data_segments(void)
     word next_page = ((text_end + (word)max_page_size - 1)
                       & ~((word)max_page_size - 1));
     word page_offset = (text_end & ((word)max_page_size - 1));
-    volatile char * result = (char *)(next_page + page_offset);
+    char * volatile result = (char *)(next_page + page_offset);
     /* Note that this isn't equivalent to just adding           */
     /* max_page_size to &etext if &etext is at a page boundary  */
 
