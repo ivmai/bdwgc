@@ -31,6 +31,7 @@
 * Do not compile pthread_stop_world.c for Cygwin/Darwin (configure).
 * Do not install ancient new_gc_alloc.h broken for modern STL (configure).
 * Enable GC_MIN_MARKERS to set minimal number of pthread-based markers.
+* Enable PARALLEL_MARK and THREAD_LOCAL_ALLOC for FreeBSD in configure.
 * Enable parallel mark by default in configure (Darwin/Linux/Solaris/Win32).
 * Export GC_is_marked, GC_clear/set_mark_bit (for mark-bit manipulation).
 * Extend thread-related debug messages.
@@ -91,11 +92,13 @@
 * Define NO_DEBUGGING (in configure) if "--disable-gc-debug" is set.
 * Enable parallel marker in configure for Solaris.
 * Fix "comparison of signed and unsigned values" compiler warnings.
+* Fix 'volatile' keyword placement in GC_SysVGetDataStart.
 * Fix GC_add_roots_inner for Mac OS X (align segment start).
 * Fix GC_finalizer_nested size to workaround alignment problem in Watcom.
 * Fix GC_find_limit_with_bound to always reset fault handler on return.
 * Fix GC_init[_lib_bounds] and GC_get_main_stack_base for malloc redirection.
 * Fix GC_push_all/selected boundaries check.
+* Fix GC_register_my_thread marking thread as detached (Cygwin/pthreads-w32).
 * Fix GC_restart_handler to preserve errno if needed.
 * Fix GC_root_size update in GC_add_roots_inner (Win32).
 * Fix GC_unregister_my_thread to ensure no ongoing incremental GC (Win32).
