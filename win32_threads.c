@@ -2516,13 +2516,14 @@ GC_INNER void GC_thr_init(void)
 
     result = pthread_join(pthread_id, retval);
 
-#   ifdef GC_WIN32_PTHREADS
-      /* win32_pthreads id are unique */
-      t = GC_lookup_pthread(pthread_id);
-#   endif
-
     if (!GC_win32_dll_threads) {
       DCL_LOCK_STATE;
+
+#     ifdef GC_WIN32_PTHREADS
+        /* win32_pthreads id are unique */
+        t = GC_lookup_pthread(pthread_id);
+        if (NULL == t) ABORT("Thread not registered");
+#     endif
 
       LOCK();
       GC_delete_gc_thread(t);
@@ -2681,6 +2682,7 @@ GC_INNER void GC_thr_init(void)
     UNLOCK();
     result = pthread_detach(thread);
     if (result == 0) {
+      if (NULL == t) ABORT("Thread not registered");
       LOCK();
       t -> flags |= DETACHED;
       /* Here the pthread thread id may have been recycled. */
