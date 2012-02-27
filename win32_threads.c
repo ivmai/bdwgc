@@ -723,9 +723,13 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   LOCK();
   me = GC_lookup_thread_inner(thread_id);
   if (me == 0) {
-    GC_register_my_thread_inner(sb, thread_id);
 #   ifdef GC_PTHREADS
+      me = GC_register_my_thread_inner(sb, thread_id);
       me -> flags |= DETACHED;
+          /* Treat as detached, since we do not need to worry about     */
+          /* pointer results.                                           */
+#   else
+      GC_register_my_thread_inner(sb, thread_id);
 #   endif
     UNLOCK();
     return GC_SUCCESS;
