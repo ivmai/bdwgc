@@ -130,7 +130,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #endif
 
 #ifndef GC_ATTR_UNUSED
-# if __GNUC__ >= 4
+# if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
 #   define GC_ATTR_UNUSED __attribute__((__unused__))
 # else
 #   define GC_ATTR_UNUSED /* empty */
