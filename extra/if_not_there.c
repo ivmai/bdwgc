@@ -1,5 +1,5 @@
 /* Conditionally execute a command based if the file argv[1] doesn't exist */
-/* Except for execvp, we stick to ANSI C.				   */
+/* Except for execvp, we stick to ANSI C.                                  */
 # include "private/gcconfig.h"
 # include <stdio.h>
 # include <stdlib.h>
@@ -8,7 +8,7 @@
 #include <dirent.h>
 #endif /* __DJGPP__ */
 
-int main(int argc, char **argv, char **envp)
+int main(int argc, char **argv)
 {
     FILE * f;
 #ifdef __DJGPP__
@@ -22,8 +22,8 @@ int main(int argc, char **argv, char **envp)
     }
 #ifdef __DJGPP__
     if ((d = opendir(argv[1])) != 0) {
-	    closedir(d);
-	    return(0);
+            closedir(d);
+            return(0);
     }
 #endif
     printf("^^^^Starting command^^^^\n");

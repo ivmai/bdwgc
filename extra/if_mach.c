@@ -5,7 +5,7 @@
 # include <string.h>
 # include <unistd.h>
 
-int main(int argc, char **argv, char **envp)
+int main(int argc, char **argv)
 {
     if (argc < 4) goto Usage;
     if (strcmp(MACH_TYPE, argv[1]) != 0) return(0);
@@ -19,7 +19,7 @@ int main(int argc, char **argv, char **envp)
 Usage:
     fprintf(stderr, "Usage: %s mach_type os_type command\n", argv[0]);
     fprintf(stderr, "Currently mach_type = %s, os_type = %s\n",
-    	    MACH_TYPE, OS_TYPE);
+            MACH_TYPE, OS_TYPE);
     return(1);
 }
 

@@ -45,6 +45,14 @@ int getpagesize(void)
     }
     return((int)(result[0]));
 }
+#elif defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
+# include <windows.h>
+  int getpagesize(void)
+  {
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    return sysinfo.dwPageSize;
+  }
 #endif
 
 struct {
@@ -90,7 +98,7 @@ int main(void)
     printf("Results may not be accurate/useful:\n");
     /* Encourage the compiler to keep x in a callee-save register */
     x = 2*x-1;
-    printf("");
+    printf("\n");
     x = 2*x-1;
     setjmp(b);
     if (y == 1) {
@@ -108,7 +116,7 @@ int main(void)
     x = 2;
     if (y == 1) longjmp(b,1);
     printf("Some GC internal configuration stuff: \n");
-    printf("\tWORDSZ = %d, ALIGNMENT = %d, GC_GRANULE_BYTES = %d\n",
+    printf("\tWORDSZ = %lu, ALIGNMENT = %d, GC_GRANULE_BYTES = %d\n",
            WORDSZ, ALIGNMENT, GC_GRANULE_BYTES);
     printf("\tUsing one mark ");
 #   if defined(USE_MARK_BYTES)
