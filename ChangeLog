@@ -1,3 +1,9 @@
+2012-03-04  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c (GC_init): Add a workaround for clang/x64 (coming with
+	Xcode 4.3) which cannot process the static assertion on
+	((ptr_t)-1 > 0) correctly.
+
 2012-02-27  Ivan Maidanski <ivmai@mail.ru>
 
 	* win32_threads.c (GC_register_my_thread): Fix SEGV by setting "me"
