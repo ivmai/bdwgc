@@ -4,6 +4,9 @@
 #endif
 #include "gc.h"
 
+#ifdef PARALLEL_MARK
+# define AO_REQUIRE_CAS
+#endif
 #include "atomic_ops.h"
 
 #include <stdio.h>
