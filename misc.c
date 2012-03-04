@@ -930,7 +930,8 @@ GC_API void GC_CALL GC_init(void)
       GC_STATIC_ASSERT((word)(-1) > (word)0);
       /* word should be unsigned */
 #   endif
-#   if !defined(__BORLANDC__) && !defined(__CC_ARM) /* Workaround */
+#   if !defined(__BORLANDC__) && !defined(__CC_ARM) \
+       && !(defined(__clang__) && defined(X86_64)) /* Workaround */
       GC_STATIC_ASSERT((ptr_t)(word)(-1) > (ptr_t)0);
       /* Ptr_t comparisons should behave as unsigned comparisons.       */
 #   endif
