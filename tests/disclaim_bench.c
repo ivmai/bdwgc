@@ -18,7 +18,6 @@
 
 #include "private/gc_priv.h"
 
-#include "atomic_ops.h"
 #include "gc_disclaim.h"
 
 #define my_assert(e) \

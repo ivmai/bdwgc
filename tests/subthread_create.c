@@ -2,9 +2,9 @@
 #ifndef GC_THREADS
 # define GC_THREADS
 #endif
-
 #include "gc.h"
-#include <atomic_ops.h>
+
+#include "atomic_ops.h"
 
 #include <stdio.h>
 
