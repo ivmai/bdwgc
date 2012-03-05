@@ -290,7 +290,7 @@ GC_INNER void GC_push_all_stacks(void)
       for (i = 0; i < (int)listcount; i++) {
         thread_act_t thread = act_list[i];
         lo = GC_stack_range_for(&hi, thread, NULL, FALSE, my_thread);
-        GC_ASSERT(lo <= hi);
+        GC_ASSERT((word)lo <= (word)hi);
         total_size += hi - lo;
         GC_push_all_stack(lo, hi);
         nthreads++;
@@ -311,7 +311,7 @@ GC_INNER void GC_push_all_stacks(void)
           thread_act_t thread = (thread_act_t)p->stop_info.mach_thread;
           lo = GC_stack_range_for(&hi, thread, p, (GC_bool)p->thread_blocked,
                                   my_thread);
-          GC_ASSERT(lo <= hi);
+          GC_ASSERT((word)lo <= (word)hi);
           total_size += hi - lo;
           GC_push_all_stack_sections(lo, hi, p->traced_stack_sect);
           nthreads++;

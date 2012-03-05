@@ -76,7 +76,7 @@ int main(void)
     static int y = 0;
 
     printf("This appears to be a %s running %s\n", MACH_TYPE, OS_TYPE);
-    if (nested_sp() < &dummy) {
+    if ((word)nested_sp() < (word)(&dummy)) {
       printf("Stack appears to grow down, which is the default.\n");
       printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
              ((unsigned long)(&dummy) + ps) & ~(ps-1));

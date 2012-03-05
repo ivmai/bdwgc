@@ -177,7 +177,7 @@ void GC_dump_regions(void)
             end = GC_heap_sects[i].hs_start + GC_heap_sects[i].hs_bytes;
           }
         GC_printf("***Section from %p to %p\n", start, end);
-        for (p = start; p < end;) {
+        for (p = start; (word)p < (word)end; ) {
             hhdr = HDR(p);
             if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
                 GC_printf("\t%p Missing header!!(%p)\n", p, (void *)hhdr);
@@ -676,7 +676,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
                                                 (signed_word)HBLKSIZE
                                                 : size_needed;
 
-              while ((ptr_t)lasthbp <= search_end
+              while ((word)lasthbp <= (word)search_end
                      && (thishbp = GC_is_black_listed(lasthbp,
                                             (word)eff_size_needed)) != 0) {
                 lasthbp = thishbp;
@@ -743,7 +743,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
                       GC_large_free_bytes -= total_size;
                       GC_bytes_dropped += total_size;
                       GC_remove_from_fl_at(hhdr, n);
-                      for (h = hbp; h < limit; h++) {
+                      for (h = hbp; (word)h < (word)limit; h++) {
                         if (h == hbp || 0 != (hhdr = GC_install_header(h))) {
                           (void) setup_header(
                                   hhdr, h,

@@ -314,7 +314,7 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
     *buffer = 0;
   }
   buffer += GetFileLineFromAddress(address, buffer, size, &line_number, NULL);
-  size = end < buffer ? 0 : end - buffer;
+  size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   if (line_number) {
     wsprintf(str, "(%d) : ", line_number);
@@ -322,26 +322,26 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
       strncpy(buffer, str, size)[size - 1] = 0;
     }
     buffer += strlen(str);
-    size = end < buffer ? 0 : end - buffer;
+    size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
   }
 
   if (size) {
     strncpy(buffer, "at ", size)[size - 1] = 0;
   }
   buffer += strlen("at ");
-  size = end < buffer ? 0 : end - buffer;
+  size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   buffer += GetSymbolNameFromAddress(address, buffer, size, NULL);
-  size = end < buffer ? 0 : end - buffer;
+  size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   if (size) {
     strncpy(buffer, " in ", size)[size - 1] = 0;
   }
   buffer += strlen(" in ");
-  size = end < buffer ? 0 : end - buffer;
+  size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   buffer += GetModuleNameFromAddress(address, buffer, size);
-  size = end < buffer ? 0 : end - buffer;
+  size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   return buffer - begin;
 }
@@ -356,7 +356,7 @@ size_t GetDescriptionFromStack(void* const frames[], size_t count,
   size_t i;
   for (i = 0; i < count; ++i) {
     if (description) description[i] = buffer;
-    size = end < buffer ? 0 : end - buffer;
+    size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
     buffer += 1 + GetDescriptionFromAddress(frames[i], NULL, buffer, size);
   }
   if (description) description[count] = NULL;

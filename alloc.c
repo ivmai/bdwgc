@@ -1054,7 +1054,7 @@ GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
     phdr -> hb_flags = 0;
     GC_freehblk(p);
     GC_heapsize += bytes;
-    if ((ptr_t)p <= (ptr_t)GC_least_plausible_heap_addr
+    if ((word)p <= (word)GC_least_plausible_heap_addr
         || GC_least_plausible_heap_addr == 0) {
         GC_least_plausible_heap_addr = (void *)((ptr_t)p - sizeof(word));
                 /* Making it a little smaller than necessary prevents   */
@@ -1062,7 +1062,7 @@ GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
                 /* itself.  There's some unintentional reflection       */
                 /* here.                                                */
     }
-    if ((ptr_t)p + bytes >= (ptr_t)GC_greatest_plausible_heap_addr) {
+    if ((word)p + bytes >= (word)GC_greatest_plausible_heap_addr) {
         GC_greatest_plausible_heap_addr = (void *)endp;
     }
 }
@@ -1082,7 +1082,7 @@ GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
       struct hblk *h;
       unsigned nbl = 0;
 
-      for (h = (struct hblk *)start; h < (struct hblk *)(start + len); h++) {
+      for (h = (struct hblk *)start; (word)h < (word)(start + len); h++) {
         if (GC_is_black_listed(h, HBLKSIZE)) nbl++;
       }
       GC_printf("Section %d from %p to %p %lu/%lu blacklisted\n",
@@ -1159,7 +1159,8 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     /* correctness.                                                     */
     expansion_slop = min_bytes_allocd() + 4*MAXHINCR*HBLKSIZE;
     if ((GC_last_heap_addr == 0 && !((word)space & SIGNB))
-        || (GC_last_heap_addr != 0 && GC_last_heap_addr < (ptr_t)space)) {
+        || (GC_last_heap_addr != 0
+            && (word)GC_last_heap_addr < (word)space)) {
         /* Assume the heap is growing up */
         word new_limit = (word)space + bytes + expansion_slop;
         if (new_limit > (word)space) {

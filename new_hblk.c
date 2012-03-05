@@ -37,7 +37,7 @@
     p[2] = (word)p;
     p[3] = 0;
     p += 4;
-    for (; p < lim; p += 4) {
+    for (; (word)p < (word)lim; p += 4) {
         p[0] = (word)(p-2);
         p[1] = 0;
         p[2] = (word)p;
@@ -57,7 +57,7 @@
     p[2] = 0;
     p[3] = 0;
     p += 4;
-    for (; p < lim; p += 4) {
+    for (; (word)p < (word)lim; p += 4) {
         PREFETCH_FOR_WRITE((ptr_t)(p+64));
         p[0] = (word)(p-4);
         p[1] = 0;
@@ -75,7 +75,7 @@
     p[0] = (word)ofl;
     p[2] = (word)p;
     p += 4;
-    for (; p < lim; p += 4) {
+    for (; (word)p < (word)lim; p += 4) {
         p[0] = (word)(p-2);
         p[2] = (word)p;
     };
@@ -91,7 +91,7 @@
     p[0] = (word)ofl;
     p[4] = (word)p;
     p += 8;
-    for (; p < lim; p += 8) {
+    for (; (word)p < (word)lim; p += 8) {
         PREFETCH_FOR_WRITE((ptr_t)(p+64));
         p[0] = (word)(p-4);
         p[4] = (word)p;
@@ -150,7 +150,7 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
                             /* Last place for last object to start */
 
   /* make a list of all objects in *h with head as last object */
-    while (p <= last_object) {
+    while ((word)p <= (word)last_object) {
       /* current object's link points to last object */
         obj_link(p) = (ptr_t)prev;
         prev = p;

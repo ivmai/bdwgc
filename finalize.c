@@ -324,9 +324,9 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
     } else {
        scan_limit = target_limit + 1 - sizeof(word);
     }
-    for (q = p; q <= scan_limit; q += ALIGNMENT) {
+    for (q = p; (word)q <= (word)scan_limit; q += ALIGNMENT) {
         r = *(word *)q;
-        if ((ptr_t)r < p || (ptr_t)r > target_limit) {
+        if (r < (word)p || r > (word)target_limit) {
             GC_PUSH_ONE_HEAP(r, q, GC_mark_stack_top);
         }
     }

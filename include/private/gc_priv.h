@@ -184,13 +184,14 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # ifdef STACK_GROWS_DOWN
 #   define COOLER_THAN >
 #   define HOTTER_THAN <
-#   define MAKE_COOLER(x,y) if ((x)+(y) > (x)) {(x) += (y);} \
+#   define MAKE_COOLER(x,y) if ((word)((x) + (y)) > (word)(x)) {(x) += (y);} \
                             else {(x) = (ptr_t)ONES;}
 #   define MAKE_HOTTER(x,y) (x) -= (y)
 # else
 #   define COOLER_THAN <
 #   define HOTTER_THAN >
-#   define MAKE_COOLER(x,y) if ((x)-(y) < (x)) {(x) -= (y);} else {(x) = 0;}
+#   define MAKE_COOLER(x,y) if ((word)((x) - (y)) < (word)(x)) {(x) -= (y);} \
+                            else {(x) = 0;}
 #   define MAKE_HOTTER(x,y) (x) += (y)
 # endif
 

@@ -287,7 +287,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 
         /* Setjmp doesn't always clear all of the buffer.               */
         /* That tends to preserve garbage.  Clear it.                   */
-        for (; (char *)i < lim; i++) {
+        for (; (word)i < (word)lim; i++) {
             *i = 0;
         }
 #       if defined(MSWIN32) || defined(MSWINCE) || defined(UTS4) \

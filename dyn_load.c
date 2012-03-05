@@ -246,18 +246,18 @@ static void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
 
     while (nsorted < n) {
       while (nsorted < n &&
-             base[nsorted-1].hs_start < base[nsorted].hs_start)
+             (word)base[nsorted-1].hs_start < (word)base[nsorted].hs_start)
           ++nsorted;
       if (nsorted == n) break;
-      GC_ASSERT(base[nsorted-1].hs_start > base[nsorted].hs_start);
+      GC_ASSERT((word)base[nsorted-1].hs_start > (word)base[nsorted].hs_start);
       i = nsorted - 1;
-      while (i >= 0 && base[i].hs_start > base[i+1].hs_start) {
+      while (i >= 0 && (word)base[i].hs_start > (word)base[i+1].hs_start) {
         struct HeapSect tmp = base[i];
         base[i] = base[i+1];
         base[i+1] = tmp;
         --i;
       }
-      GC_ASSERT(base[nsorted-1].hs_start < base[nsorted].hs_start);
+      GC_ASSERT((word)base[nsorted-1].hs_start < (word)base[nsorted].hs_start);
       ++nsorted;
     }
 }
@@ -298,7 +298,8 @@ STATIC word GC_register_map_entries(char *maps)
             /* This is a writable mapping.  Add it to           */
             /* the root set unless it is already otherwise      */
             /* accounted for.                                   */
-            if (start <= GC_stackbottom && end >= GC_stackbottom) {
+            if ((word)start <= (word)GC_stackbottom
+                && (word)end >= (word)GC_stackbottom) {
                 /* Stack mapping; discard       */
                 continue;
             }
@@ -328,32 +329,34 @@ STATIC word GC_register_map_entries(char *maps)
               /* very suboptimal for performance reasons.               */
 #           endif
             /* We no longer exclude the main data segment.              */
-            if (end <= least_ha || start >= greatest_ha) {
+            if ((word)end <= (word)least_ha
+                || (word)start >= (word)greatest_ha) {
               /* The easy case; just trace entire segment */
               GC_add_roots_inner((char *)start, (char *)end, TRUE);
               continue;
             }
             /* Add sections that don't belong to us. */
               i = 0;
-              while (GC_our_memory[i].hs_start + GC_our_memory[i].hs_bytes
-                     < start)
+              while ((word)(GC_our_memory[i].hs_start
+                                + GC_our_memory[i].hs_bytes) < (word)start)
                   ++i;
               GC_ASSERT(i < GC_n_memory);
-              if (GC_our_memory[i].hs_start <= start) {
+              if ((word)GC_our_memory[i].hs_start <= (word)start) {
                   start = GC_our_memory[i].hs_start
                           + GC_our_memory[i].hs_bytes;
                   ++i;
               }
-              while (i < GC_n_memory && GC_our_memory[i].hs_start < end
-                     && start < end) {
-                  if ((char *)start < GC_our_memory[i].hs_start)
+              while (i < GC_n_memory
+                     && (word)GC_our_memory[i].hs_start < (word)end
+                     && (word)start < (word)end) {
+                  if ((word)start < (word)GC_our_memory[i].hs_start)
                     GC_add_roots_inner((char *)start,
                                        GC_our_memory[i].hs_start, TRUE);
                   start = GC_our_memory[i].hs_start
                           + GC_our_memory[i].hs_bytes;
                   ++i;
               }
-              if (start < end)
+              if ((word)start < (word)end)
                   GC_add_roots_inner((char *)start, (char *)end, TRUE);
         }
     }
@@ -448,11 +451,12 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
             start = ((ptr_t)(p->p_vaddr)) + info->dlpi_addr;
             end = start + p->p_memsz;
             for (j = n_load_segs; --j >= 0; ) {
-              if (start >= load_segs[j].start && start < load_segs[j].end) {
+              if ((word)start >= (word)load_segs[j].start
+                  && (word)start < (word)load_segs[j].end) {
                 if (load_segs[j].start2 != 0) {
                   WARN("More than one GNU_RELRO segment per load seg\n",0);
                 } else {
-                  GC_ASSERT(end <= load_segs[j].end);
+                  GC_ASSERT((word)end <= (word)load_segs[j].end);
                   /* Remove from the existing load segment */
                   load_segs[j].end2 = load_segs[j].end;
                   load_segs[j].end = start;
@@ -544,10 +548,10 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
       int i;
 
       for (i = 0; i < n_load_segs; ++i) {
-        if (load_segs[i].end > load_segs[i].start) {
+        if ((word)load_segs[i].end > (word)load_segs[i].start) {
           GC_add_roots_inner(load_segs[i].start, load_segs[i].end, TRUE);
         }
-        if (load_segs[i].end2 > load_segs[i].start2) {
+        if ((word)load_segs[i].end2 > (word)load_segs[i].start2) {
           GC_add_roots_inner(load_segs[i].start2, load_segs[i].end2, TRUE);
         }
       }
@@ -755,7 +759,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
     if (GC_n_heap_sects > 0) {
         heap_end = GC_heap_sects[GC_n_heap_sects-1].hs_start
                         + GC_heap_sects[GC_n_heap_sects-1].hs_bytes;
-        if (heap_end < GC_scratch_last_end_ptr) heap_end = GC_scratch_last_end_ptr;
+        if ((word)heap_end < (word)GC_scratch_last_end_ptr)
+          heap_end = GC_scratch_last_end_ptr;
     }
     for (i = 0; i < needed_sz; i++) {
         flags = addr_map[i].pr_mflags;
@@ -770,7 +775,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
           /* This makes no sense to me. - HB                            */
         start = (ptr_t)(addr_map[i].pr_vaddr);
         if (GC_roots_present(start)) goto irrelevant;
-        if (start < heap_end && start >= heap_start)
+        if ((word)start < (word)heap_end && (word)start >= (word)heap_start)
                 goto irrelevant;
 
         limit = start + addr_map[i].pr_size;
@@ -839,18 +844,20 @@ GC_INNER void GC_register_dynamic_libraries(void)
       if (base == limit) return;
       for(;;) {
           GC_get_next_stack(curr_base, limit, &next_stack_lo, &next_stack_hi);
-          if (next_stack_lo >= limit) break;
-          if (next_stack_lo > curr_base)
+          if ((word)next_stack_lo >= (word)limit) break;
+          if ((word)next_stack_lo > (word)curr_base)
             GC_add_roots_inner(curr_base, next_stack_lo, TRUE);
           curr_base = next_stack_hi;
       }
-      if (curr_base < limit) GC_add_roots_inner(curr_base, limit, TRUE);
+      if ((word)curr_base < (word)limit)
+        GC_add_roots_inner(curr_base, limit, TRUE);
 #   else
       char dummy;
       char * stack_top
          = (char *) ((word)(&dummy) & ~(GC_sysinfo.dwAllocationGranularity-1));
       if (base == limit) return;
-      if (limit > stack_top && base < GC_stackbottom) {
+      if ((word)limit > (word)stack_top
+          && (word)base < (word)GC_stackbottom) {
           /* Part of the stack; ignore it. */
           return;
       }
@@ -907,7 +914,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
       if (GC_no_win32_dlls) return;
 #   endif
     base = limit = p = GC_sysinfo.lpMinimumApplicationAddress;
-    while (p < GC_sysinfo.lpMaximumApplicationAddress) {
+    while ((word)p < (word)GC_sysinfo.lpMaximumApplicationAddress) {
         result = VirtualQuery(p, &buf, sizeof(buf));
 #       ifdef MSWINCE
           if (result == 0) {
@@ -948,7 +955,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
                 limit = new_limit;
             }
         }
-        if (p > (LPVOID)new_limit /* overflow */) break;
+        if ((word)p > (word)new_limit /* overflow */) break;
         p = (LPVOID)new_limit;
     }
     GC_cond_add_roots(base, limit);

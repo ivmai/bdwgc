@@ -628,8 +628,8 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
     LOCK();
     me = GC_lookup_thread(pthread_self());
     UNLOCK();
-    return (char *)tsd >= (char *)&me->tlfs
-            && (char *)tsd < (char *)&me->tlfs + sizeof(me->tlfs);
+    return (word)tsd >= (word)(&me->tlfs)
+            && (word)tsd < (word)(&me->tlfs) + sizeof(me->tlfs);
   }
 #endif /* GC_ASSERTIONS && THREAD_LOCAL_ALLOC */
 
@@ -700,9 +700,12 @@ STATIC void GC_remove_all_threads_but_me(void)
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef PARALLEL_MARK
       for (i = 0; i < GC_markers_m1; ++i) {
-        if (marker_sp[i] > lo && marker_sp[i] < hi) return TRUE;
+        if ((word)marker_sp[i] > (word)lo && (word)marker_sp[i] < (word)hi)
+          return TRUE;
 #       ifdef IA64
-          if (marker_bsp[i] > lo && marker_bsp[i] < hi) return TRUE;
+          if ((word)marker_bsp[i] > (word)lo
+              && (word)marker_bsp[i] < (word)hi)
+            return TRUE;
 #       endif
       }
 #   endif
@@ -710,9 +713,13 @@ STATIC void GC_remove_all_threads_but_me(void)
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (0 != p -> stack_end) {
 #         ifdef STACK_GROWS_UP
-            if (p -> stack_end >= lo && p -> stack_end < hi) return TRUE;
+            if ((word)p->stack_end >= (word)lo
+                && (word)p->stack_end < (word)hi)
+              return TRUE;
 #         else /* STACK_GROWS_DOWN */
-            if (p -> stack_end > lo && p -> stack_end <= hi) return TRUE;
+            if ((word)p->stack_end > (word)lo
+                && (word)p->stack_end <= (word)hi)
+              return TRUE;
 #         endif
         }
       }
@@ -734,13 +741,15 @@ STATIC void GC_remove_all_threads_but_me(void)
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef PARALLEL_MARK
       for (i = 0; i < GC_markers_m1; ++i) {
-        if (marker_sp[i] > result && marker_sp[i] < bound)
+        if ((word)marker_sp[i] > (word)result
+            && (word)marker_sp[i] < (word)bound)
           result = marker_sp[i];
       }
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
-        if (p -> stack_end > result && p -> stack_end < bound) {
+        if ((word)p->stack_end > (word)result
+            && (word)p->stack_end < (word)bound) {
           result = p -> stack_end;
         }
       }
@@ -812,7 +821,7 @@ STATIC void GC_remove_all_threads_but_me(void)
   }
 
 #elif defined(GC_DGUX386_THREADS)
-  /* Return the number of processors, or i<= 0 if it can't be determined. */
+  /* Return the number of processors, or i <= 0 if it can't be determined. */
   STATIC int GC_get_nprocs(void)
   {
     int numCpus;
@@ -1220,11 +1229,11 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     /* GC_get_stack_base() was used which returned GC_SUCCESS). */
     if ((me -> flags & MAIN_THREAD) == 0) {
       GC_ASSERT(me -> stack_end != NULL);
-      if (me -> stack_end HOTTER_THAN (ptr_t)(&stacksect))
+      if ((word)me->stack_end HOTTER_THAN (word)(&stacksect))
         me -> stack_end = (ptr_t)(&stacksect);
     } else {
       /* The original stack. */
-      if (GC_stackbottom HOTTER_THAN (ptr_t)(&stacksect))
+      if ((word)GC_stackbottom HOTTER_THAN (word)(&stacksect))
         GC_stackbottom = (ptr_t)(&stacksect);
     }
 

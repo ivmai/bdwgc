@@ -115,10 +115,10 @@
         ptr_t target = *(ptr_t *)bp;
         ptr_t alternate_target = *(ptr_t *)alternate_ptr;
 
-        if (alternate_target >= GC_least_plausible_heap_addr
-            && alternate_target <= GC_greatest_plausible_heap_addr
-            && (target < GC_least_plausible_heap_addr
-                || target > GC_greatest_plausible_heap_addr)) {
+        if ((word)alternate_target >= (word)GC_least_plausible_heap_addr
+            && (word)alternate_target <= (word)GC_greatest_plausible_heap_addr
+            && ((word)target < (word)GC_least_plausible_heap_addr
+                || (word)target > (word)GC_greatest_plausible_heap_addr)) {
             bp = alternate_ptr;
         }
       }
@@ -411,7 +411,7 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
 #   ifdef LINT2
       if (!ohdr) ABORT("Invalid GC_print_smashed_obj argument");
 #   endif
-    if (clobbered_addr <= (ptr_t)(&(ohdr -> oh_sz))
+    if ((word)clobbered_addr <= (word)(&ohdr->oh_sz)
         || ohdr -> oh_string == 0) {
         GC_err_printf(
                 "%s %p in or near object at %p(<smashed>, appr. sz = %lu)\n",
@@ -941,7 +941,8 @@ STATIC void GC_check_heap_block(struct hblk *hbp, word dummy GC_ATTR_UNUSED)
       plim = hbp->hb_body + HBLKSIZE - sz;
     }
     /* go through all words in block */
-    for (bit_no = 0; p <= plim; bit_no += MARK_BIT_OFFSET(sz), p += sz) {
+    for (bit_no = 0; (word)p <= (word)plim;
+         bit_no += MARK_BIT_OFFSET(sz), p += sz) {
       if (mark_bit_from_hdr(hhdr, bit_no) && GC_HAS_DEBUG_INFO((ptr_t)p)) {
         ptr_t clobbered = GC_check_annotated_obj((oh *)p);
         if (clobbered != 0)

@@ -62,7 +62,8 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
            hhdr = HDR(h);
         }
         limit = (ptr_t)h + hhdr -> hb_sz;
-        if ((ptr_t)p >= limit || (ptr_t)q >= limit || (ptr_t)q < (ptr_t)h ) {
+        if ((word)p >= (word)limit || (word)q >= (word)limit
+            || (word)q < (word)h) {
             goto fail;
         }
         return(p);
@@ -71,7 +72,7 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
     if (sz > MAXOBJBYTES) {
       base = (ptr_t)HBLKPTR(p);
       limit = base + sz;
-      if ((ptr_t)p >= limit) {
+      if ((word)p >= (word)limit) {
         goto fail;
       }
     } else {
@@ -90,7 +91,7 @@ GC_API void * GC_CALL GC_same_obj(void *p, void *q)
     /* If p is not inside a valid object, then either q is      */
     /* also outside any valid object, or it is outside          */
     /* [base, limit).                                           */
-    if ((ptr_t)q >= limit || (ptr_t)q < base) {
+    if ((word)q >= (word)limit || (word)q < (word)base) {
         goto fail;
     }
     return(p);
@@ -138,9 +139,9 @@ GC_API void * GC_CALL GC_is_valid_displacement(void *p)
     sz = hhdr -> hb_sz;
     pdispl = HBLKDISPL(p);
     offset = pdispl % sz;
-    if ((sz > MAXOBJBYTES && (ptr_t)p >= (ptr_t)h + sz)
+    if ((sz > MAXOBJBYTES && (word)p >= (word)h + sz)
         || !GC_valid_offsets[offset]
-        || (ptr_t)p - offset + sz > (ptr_t)(h + 1)) {
+        || (word)p - offset + sz > (word)(h + 1)) {
         goto fail;
     }
     return(p);
@@ -164,11 +165,11 @@ void (GC_CALLBACK *GC_is_visible_print_proc)(void * p) =
    {
         int dummy;
 #       ifdef STACK_GROWS_DOWN
-            if ((ptr_t)p >= (ptr_t)(&dummy) && (ptr_t)p < GC_stackbottom ) {
+            if ((word)p >= (word)(&dummy) && (word)p < (word)GC_stackbottom) {
                 return(TRUE);
             }
 #       else
-            if ((ptr_t)p <= (ptr_t)(&dummy) && (ptr_t)p > GC_stackbottom ) {
+            if ((word)p <= (word)(&dummy) && (word)p > (word)GC_stackbottom) {
                 return(TRUE);
             }
 #       endif
@@ -223,12 +224,11 @@ GC_API void * GC_CALL GC_is_visible(void *p)
     retry:
             switch(descr & GC_DS_TAGS) {
                 case GC_DS_LENGTH:
-                    if ((word)((ptr_t)p - (ptr_t)base) > (word)descr) goto fail;
+                    if ((word)p - (word)base > descr) goto fail;
                     break;
                 case GC_DS_BITMAP:
-                    if ((word)((ptr_t)p - (ptr_t)base)
-                         >= WORDS_TO_BYTES(BITMAP_BITS)
-                         || ((word)p & (sizeof(word) - 1))) goto fail;
+                    if ((word)p - (word)base >= WORDS_TO_BYTES(BITMAP_BITS)
+                        || ((word)p & (sizeof(word) - 1))) goto fail;
                     if (!(((word)1 << (WORDSZ - ((ptr_t)p - (ptr_t)base) - 1))
                           & descr)) goto fail;
                     break;
@@ -242,8 +242,8 @@ GC_API void * GC_CALL GC_is_visible(void *p)
                     } else {
                       ptr_t type_descr = *(ptr_t *)base;
                       descr = *(word *)(type_descr
-                              - (descr - (word)(GC_DS_PER_OBJECT
-                                          - GC_INDIR_PER_OBJ_BIAS)));
+                                        - (descr - (word)(GC_DS_PER_OBJECT
+                                           - GC_INDIR_PER_OBJ_BIAS)));
                     }
                     goto retry;
             }

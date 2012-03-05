@@ -371,7 +371,7 @@ GC_INNER char * GC_get_maps(void)
 
       if (buf_ptr == NULL) return FALSE;
       if (prot[1] == 'w' && maj_dev == 0) {
-          if (my_end > addr && my_start <= addr) {
+          if ((word)my_end > (word)addr && (word)my_start <= (word)addr) {
             *startp = my_start;
             *endp = my_end;
             return TRUE;
@@ -405,7 +405,7 @@ GC_INNER char * GC_get_maps(void)
           char *p = map_path;
           /* Set p to point just past last slash, if any. */
             while (*p != '\0' && *p != '\n' && *p != ' ' && *p != '\t') ++p;
-            while (*p != '/' && p >= map_path) --p;
+            while (*p != '/' && (word)p >= (word)map_path) --p;
             ++p;
           if (strncmp(nm, p, nm_len) == 0) {
             *startp = my_start;
@@ -499,7 +499,7 @@ GC_INNER char * GC_get_maps(void)
   {
     void *p = ecos_gc_brk;
     ecos_gc_brk += increment;
-    if (ecos_gc_brk > ecos_gc_memory + sizeof(ecos_gc_memory)) {
+    if ((word)ecos_gc_brk > (word)(ecos_gc_memory + sizeof(ecos_gc_memory))) {
       ecos_gc_brk -= increment;
       return NULL;
     }
@@ -564,7 +564,7 @@ GC_INNER char * GC_get_maps(void)
       result = (ptr_t)((word)p & ~(pgsz-1));
       for (;;) {
         result += pgsz;
-        if (result >= bound) {
+        if ((word)result >= (word)bound) {
           result = bound;
           break;
         }
@@ -602,7 +602,7 @@ GC_INNER char * GC_get_maps(void)
     if (sigsetjmp(GC_jmp_buf_openbsd, 1) != 0 || firstpass) {
       firstpass = 0;
       result += pgsz;
-      if (result >= bound) {
+      if ((word)result >= (word)bound) {
         result = bound;
       } else {
         GC_noop1((word)(*result));
@@ -947,13 +947,13 @@ GC_INNER word GC_page_size = 0;
             for (;;) {
                 if (up) {
                     result += MIN_PAGE_SIZE;
-                    if (result >= bound) {
+                    if ((word)result >= (word)bound) {
                       result = bound;
                       break;
                     }
                 } else {
                     result -= MIN_PAGE_SIZE;
-                    if (result <= bound) {
+                    if ((word)result <= (word)bound) {
                       result = bound - MIN_PAGE_SIZE;
                                         /* This is to compensate        */
                                         /* further result increment (we */
@@ -1207,16 +1207,16 @@ GC_INNER word GC_page_size = 0;
 #       ifdef STACK_GROWS_DOWN
           result = GC_find_limit((ptr_t)(&result), TRUE);
 #         ifdef HEURISTIC2_LIMIT
-            if (result > HEURISTIC2_LIMIT
-                && (ptr_t)(&result) < HEURISTIC2_LIMIT) {
+            if ((word)result > (word)HEURISTIC2_LIMIT
+                && (word)(&result) < (word)HEURISTIC2_LIMIT) {
               result = HEURISTIC2_LIMIT;
             }
 #         endif
 #       else
           result = GC_find_limit((ptr_t)(&result), FALSE);
 #         ifdef HEURISTIC2_LIMIT
-            if (result < HEURISTIC2_LIMIT
-                && (ptr_t)(&result) > HEURISTIC2_LIMIT) {
+            if ((word)result < (word)HEURISTIC2_LIMIT
+                && (word)(&result) > (word)HEURISTIC2_LIMIT) {
               result = HEURISTIC2_LIMIT;
             }
 #         endif
@@ -1227,7 +1227,7 @@ GC_INNER word GC_page_size = 0;
           result = (ptr_t)(signed_word)(-sizeof(ptr_t));
 #     endif
 #   endif
-    GC_ASSERT((ptr_t)(&result) HOTTER_THAN result);
+    GC_ASSERT((word)(&result) HOTTER_THAN (word)result);
     return(result);
   }
 # define GET_MAIN_STACKBASE_SPECIAL
@@ -1298,7 +1298,7 @@ GC_INNER word GC_page_size = 0;
     /* pthread_get_stackaddr_np() should return stack bottom (highest   */
     /* stack address plus 1).                                           */
     b->mem_base = pthread_get_stackaddr_np(pthread_self());
-    GC_ASSERT((void *)&dummy HOTTER_THAN b->mem_base);
+    GC_ASSERT((word)(&dummy) HOTTER_THAN (word)b->mem_base);
     return GC_SUCCESS;
   }
 # define HAVE_GET_STACK_BASE
@@ -1354,7 +1354,7 @@ GC_INNER word GC_page_size = 0;
       ABORT("thr_stksegment failed");
     }
     /* s.ss_sp holds the pointer to the stack bottom. */
-    GC_ASSERT((void *)&s HOTTER_THAN s.ss_sp);
+    GC_ASSERT((word)(&s) HOTTER_THAN (word)s.ss_sp);
 
     if (!stackbase_main_self && thr_main() != 0)
       {
@@ -1430,7 +1430,7 @@ GC_INNER word GC_page_size = 0;
     struct GC_stack_base sb;
     if (GC_get_stack_base(&sb) != GC_SUCCESS)
       ABORT("GC_get_stack_base failed");
-    GC_ASSERT((void *)&sb HOTTER_THAN sb.mem_base);
+    GC_ASSERT((word)(&sb) HOTTER_THAN (word)sb.mem_base);
     return (ptr_t)sb.mem_base;
   }
 #endif /* !GET_MAIN_STACKBASE_SPECIAL */
@@ -1706,7 +1706,7 @@ void GC_register_data_segments(void)
     p = (ptr_t)((word)start & ~(GC_page_size - 1));
     for (;;) {
         q = (LPVOID)(p - GC_page_size);
-        if ((ptr_t)q > (ptr_t)p /* underflow */ || q < limit) break;
+        if ((word)q > (word)p /* underflow */ || (word)q < (word)limit) break;
         result = VirtualQuery(q, &buf, sizeof(buf));
         if (result != sizeof(buf) || buf.AllocationBase == 0) break;
         p = (ptr_t)(buf.AllocationBase);
@@ -1825,7 +1825,7 @@ void GC_register_data_segments(void)
 
       if (!GC_no_win32_dlls) return;
       p = base = limit = GC_least_described_address(static_root);
-      while (p < GC_sysinfo.lpMaximumApplicationAddress) {
+      while ((word)p < (word)GC_sysinfo.lpMaximumApplicationAddress) {
         result = VirtualQuery(p, &buf, sizeof(buf));
         if (result != sizeof(buf) || buf.AllocationBase == 0
             || GC_is_heap_base(buf.AllocationBase)) break;
@@ -1841,7 +1841,7 @@ void GC_register_data_segments(void)
                 limit = new_limit;
             }
         }
-        if (p > (LPVOID)new_limit /* overflow */) break;
+        if ((word)p > (word)new_limit /* overflow */) break;
         p = (LPVOID)new_limit;
       }
       if (base != limit) GC_add_roots_inner(base, limit, FALSE);
@@ -1943,7 +1943,7 @@ void GC_register_data_segments(void)
   for (;;) {
     region_end = GC_find_limit_openbsd(region_start, DATAEND);
     GC_add_roots_inner(region_start, region_end, FALSE);
-    if (region_end >= DATAEND)
+    if ((word)region_end >= (word)(DATAEND))
       break;
     region_start = GC_skip_hole_openbsd(region_end, DATAEND);
   }
@@ -1965,7 +1965,7 @@ void GC_register_data_segments(void)
         GC_ASSERT(DATASTART);
         {
           ptr_t p = (ptr_t)sbrk(0);
-          if (DATASTART < p)
+          if ((word)(DATASTART) < (word)p)
             GC_add_roots_inner(DATASTART, p, FALSE);
         }
 #     else
@@ -2368,7 +2368,7 @@ STATIC ptr_t GC_unmap_start(ptr_t start, size_t bytes)
     ptr_t result;
     /* Round start to next page boundary.       */
     result = (ptr_t)((word)(start + GC_page_size - 1) & ~(GC_page_size - 1));
-    if (result + GC_page_size > start + bytes) return 0;
+    if ((word)(result + GC_page_size) > (word)(start + bytes)) return 0;
     return result;
 }
 
@@ -2780,9 +2780,9 @@ STATIC void GC_default_push_other_roots(void)
           while (pages != pages_end) {
             struct hblk * h = (struct hblk *) *pages++;
             struct hblk * h_end = (struct hblk *) ((char *) h + page_size);
-            do
+            do {
               set_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
-            while (++h < h_end);
+            } while ((word)(++h) < (word)h_end);
           }
         }
       } while (count == GC_GWW_BUF_LEN);
@@ -3266,9 +3266,10 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
         /* already marked dirty, and hence unprotected. */
         return;
     }
-    for (current = h_trunc; current < h_end; ++current) {
+    for (current = h_trunc; (word)current < (word)h_end; ++current) {
         size_t index = PHT_HASH(current);
-        if (!is_ptrfree || current < h || current >= h + nblocks) {
+        if (!is_ptrfree || (word)current < (word)h
+            || (word)current >= (word)(h + nblocks)) {
             async_set_pht_entry_from_index(GC_dirty_pages, index);
         }
     }
@@ -3398,7 +3399,7 @@ STATIC void GC_protect_heap(void)
           GC_ASSERT(PAGE_ALIGNED(start));
           current_start = current = (struct hblk *)start;
           limit = (struct hblk *)(start + len);
-          while (current < limit) {
+          while ((word)current < (word)limit) {
             hdr * hhdr;
             word nhblks;
             GC_bool is_ptrfree;
@@ -3423,7 +3424,7 @@ STATIC void GC_protect_heap(void)
               is_ptrfree = IS_PTRFREE(hhdr);
             }
             if (is_ptrfree) {
-              if (current_start < current) {
+              if ((word)current_start < (word)current) {
                 PROTECT(current_start, (ptr_t)current - (ptr_t)current_start);
               }
               current_start = (current += nhblks);
@@ -3431,7 +3432,7 @@ STATIC void GC_protect_heap(void)
               current += nhblks;
             }
           }
-          if (current_start < current) {
+          if ((word)current_start < (word)current) {
             PROTECT(current_start, (ptr_t)current - (ptr_t)current_start);
           }
         }
@@ -3512,7 +3513,7 @@ void GC_unprotect_range(ptr_t addr, word len)
     start_block = (struct hblk *)((word)addr & ~(GC_page_size - 1));
     end_block = (struct hblk *)((word)(addr + len - 1) & ~(GC_page_size - 1));
     end_block += GC_page_size/HBLKSIZE - 1;
-    for (h = start_block; h <= end_block; h++) {
+    for (h = start_block; (word)h <= (word)end_block; h++) {
         register word index = PHT_HASH(h);
 
         async_set_pht_entry_from_index(GC_dirty_pages, index);
@@ -3700,7 +3701,6 @@ GC_INNER void GC_read_dirty(void)
 #   ifdef DEBUG_DIRTY_BITS
       GC_log_printf("Proc VDB read: pr_nmap= %u, pr_npage= %lu\n",
                     nmaps, ((struct prpageheader *)bufp)->pr_npage);
-
 #   endif
     bufp += sizeof(struct prpageheader);
     for (i = 0; i < nmaps; i++) {
@@ -3716,14 +3716,15 @@ GC_INNER void GC_read_dirty(void)
 
         bufp += sizeof(struct prasmap);
         limit = vaddr + pagesize * npages;
-        for (; vaddr < limit; vaddr += pagesize) {
+        for (; (word)vaddr < (word)limit; vaddr += pagesize) {
             if ((*bufp++) & PG_MODIFIED) {
                 register struct hblk * h;
                 ptr_t next_vaddr = vaddr + pagesize;
 #               ifdef DEBUG_DIRTY_BITS
                   GC_log_printf("dirty page at: %p\n", vaddr);
 #               endif
-                for (h = (struct hblk *)vaddr; (ptr_t)h < next_vaddr; h++) {
+                for (h = (struct hblk *)vaddr;
+                     (word)h < (word)next_vaddr; h++) {
                     register word index = PHT_HASH(h);
                     set_pht_entry_from_index(GC_grungy_pages, index);
                 }
@@ -3789,8 +3790,9 @@ GC_INNER void GC_read_dirty(void)
 
 GC_INNER GC_bool GC_page_was_dirty(struct hblk *h)
 {
-    if((ptr_t)h < GC_vd_base || (ptr_t)h >= GC_vd_base + NPAGES*HBLKSIZE) {
-        return(TRUE);
+    if ((word)h < (word)GC_vd_base
+        || (word)h >= (word)(GC_vd_base + NPAGES*HBLKSIZE)) {
+      return(TRUE);
     }
     return(GC_grungy_bits[h - (struct hblk *)GC_vd_base] & PCR_VD_DB_dirtyBit);
 }
@@ -4564,8 +4566,9 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
     fp = (struct frame *)((long) frame -> FR_SAVFP + BIAS);
 #endif
 
-   for (; (!(fp HOTTER_THAN frame) && !(GC_stackbottom HOTTER_THAN (ptr_t)fp)
-           && (nframes < NFRAMES));
+   for (; !((word)fp HOTTER_THAN (word)frame)
+          && !((word)GC_stackbottom HOTTER_THAN (word)fp)
+          && nframes < NFRAMES;
        fp = (struct frame *)((long) fp -> FR_SAVFP + BIAS), nframes++) {
       register int i;
 
@@ -4703,7 +4706,8 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
                 /* Get rid of embedded newline, if any.  Test for "main" */
                 {
                    char * nl = strchr(result_buf, '\n');
-                   if (nl != NULL && nl < result_buf + result_len) {
+                   if (nl != NULL
+                       && (word)nl < (word)(result_buf + result_len)) {
                      *nl = ':';
                    }
                    if (strncmp(result_buf, "main", nl - result_buf) == 0) {

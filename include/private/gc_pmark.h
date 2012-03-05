@@ -138,7 +138,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
     GC_ASSERT(!HBLK_IS_FREE(hhdr)); \
     if (_descr != 0) { \
         mark_stack_top++; \
-        if (mark_stack_top >= mark_stack_limit) { \
+        if ((word)mark_stack_top >= (word)(mark_stack_limit)) { \
           mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top); \
         } \
         mark_stack_top -> mse_start = (obj); \
@@ -273,7 +273,7 @@ exit_label: ; \
           gran_displ = 0; \
           GC_ASSERT(hhdr -> hb_sz > HBLKSIZE || \
                     hhdr -> hb_block == HBLKPTR(current)); \
-          GC_ASSERT((ptr_t)(hhdr -> hb_block) <= (ptr_t) current); \
+          GC_ASSERT((word)hhdr->hb_block <= (word)(current)); \
         } else { \
           size_t obj_displ = GRANULES_TO_BYTES(gran_offset) \
                              + byte_offset; \
@@ -329,7 +329,7 @@ exit_label: ; \
           } \
           GC_ASSERT(hhdr -> hb_sz > HBLKSIZE || \
                     hhdr -> hb_block == HBLKPTR(current)); \
-          GC_ASSERT((ptr_t)(hhdr -> hb_block) < (ptr_t) current); \
+          GC_ASSERT((word)hhdr->hb_block < (word)(current)); \
         } else { \
           /* Accurate enough if HBLKSIZE <= 2**15.      */ \
           GC_STATIC_ASSERT(HBLKSIZE <= (1 << 15)); \
@@ -377,19 +377,19 @@ exit_label: ; \
 #if NEED_FIXUP_POINTER
     /* Try both the raw version and the fixed up one.   */
 # define GC_PUSH_ONE_STACK(p, source) \
-      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr \
-          && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) { \
+      if ((word)(p) >= (word)GC_least_plausible_heap_addr \
+          && (word)(p) < (word)GC_greatest_plausible_heap_addr) { \
          PUSH_ONE_CHECKED_STACK(p, source); \
       } \
       FIXUP_POINTER(p); \
-      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr \
-          && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) { \
+      if ((word)(p) >= (word)GC_least_plausible_heap_addr \
+          && (word)(p) < (word)GC_greatest_plausible_heap_addr) { \
          PUSH_ONE_CHECKED_STACK(p, source); \
       }
 #else /* !NEED_FIXUP_POINTER */
 # define GC_PUSH_ONE_STACK(p, source) \
-      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr \
-          && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) { \
+      if ((word)(p) >= (word)GC_least_plausible_heap_addr \
+          && (word)(p) < (word)GC_greatest_plausible_heap_addr) { \
          PUSH_ONE_CHECKED_STACK(p, source); \
       }
 #endif
@@ -398,8 +398,8 @@ exit_label: ; \
 #define GC_PUSH_ONE_HEAP(p,source,mark_stack_top) \
     { \
       FIXUP_POINTER(p); \
-      if ((ptr_t)(p) >= (ptr_t)GC_least_plausible_heap_addr \
-          && (ptr_t)(p) < (ptr_t)GC_greatest_plausible_heap_addr) \
+      if ((word)(p) >= (word)GC_least_plausible_heap_addr \
+          && (word)(p) < (word)GC_greatest_plausible_heap_addr) \
         mark_stack_top = GC_mark_and_push((void *)(p), mark_stack_top, \
                                 GC_mark_stack_limit, (void * *)(source)); \
     }
@@ -415,7 +415,7 @@ GC_INNER mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
                                          GC_mark_stack, \
                                          GC_mark_stack + GC_mark_stack_size);
 
-#define GC_mark_stack_empty() (GC_mark_stack_top < GC_mark_stack)
+#define GC_mark_stack_empty() ((word)GC_mark_stack_top < (word)GC_mark_stack)
 
 /*
  * Mark from one finalizable object using the specified

@@ -68,7 +68,7 @@ STATIC word GC_checksum(struct hblk *h)
     word *lim = (word *)(h+1);
     word result = 0;
 
-    while (p < lim) {
+    while ((word)p < (word)lim) {
         result += *p++;
     }
     return(result | 0x80000000 /* doesn't look like pointer */);
@@ -193,8 +193,7 @@ void GC_check_dirty(void)
     for (i = 0; i < GC_n_heap_sects; i++) {
         start = GC_heap_sects[i].hs_start;
         for (h = (struct hblk *)start;
-             h < (struct hblk *)(start + GC_heap_sects[i].hs_bytes);
-             h++) {
+             (word)h < (word)(start + GC_heap_sects[i].hs_bytes); h++) {
              GC_update_check_page(h, index);
              index++;
              if (index >= NSUMS) goto out;

@@ -587,8 +587,8 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
     LOCK();
     me = GC_lookup_thread_inner(GetCurrentThreadId());
     UNLOCK();
-    return (char *)tsd >= (char *)&me->tlfs
-            && (char *)tsd < (char *)&me->tlfs + sizeof(me->tlfs);
+    return (word)tsd >= (word)(&me->tlfs)
+            && (word)tsd < (word)(&me->tlfs) + sizeof(me->tlfs);
   }
 #endif /* GC_ASSERTIONS && THREAD_LOCAL_ALLOC */
 
@@ -884,7 +884,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   /* Adjust our stack base value (this could happen unless      */
   /* GC_get_stack_base() was used which returned GC_SUCCESS).   */
   GC_ASSERT(me -> stack_base != NULL);
-  if (me -> stack_base < (ptr_t)(&stacksect))
+  if ((word)me->stack_base < (word)(&stacksect))
     me -> stack_base = (ptr_t)(&stacksect);
 
   if (me -> thread_blocked_sp == NULL) {
@@ -1411,21 +1411,23 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
     /* First, adjust the latest known minimum stack address if we       */
     /* are inside GC_call_with_gc_active().                             */
     if (traced_stack_sect != NULL &&
-        thread -> last_stack_min > (ptr_t)traced_stack_sect) {
+        (word)thread->last_stack_min > (word)traced_stack_sect) {
       UNPROTECT_THREAD(thread);
       thread -> last_stack_min = (ptr_t)traced_stack_sect;
     }
 
-    if (sp < thread -> stack_base && sp >= thread -> last_stack_min) {
+    if ((word)sp < (word)thread->stack_base
+        && (word)sp >= (word)thread->last_stack_min) {
       stack_min = sp;
     } else {
       /* In the current thread it is always safe to use sp value.       */
       if (may_be_in_stack(thread -> id == me &&
-                          sp < thread -> last_stack_min ?
+                          (word)sp < (word)thread->last_stack_min ?
                           sp : thread -> last_stack_min)) {
         stack_min = last_info.BaseAddress;
         /* Do not probe rest of the stack if sp is correct. */
-        if (sp < stack_min || sp >= thread->stack_base)
+        if ((word)sp < (word)stack_min
+            || (word)sp >= (word)thread->stack_base)
           stack_min = GC_get_stack_min(thread -> last_stack_min);
       } else {
         /* Stack shrunk?  Is this possible? */
@@ -1438,10 +1440,12 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
 
   GC_ASSERT(GC_dont_query_stack_min
             || stack_min == GC_get_stack_min(thread -> stack_base)
-            || (sp >= stack_min && stack_min < thread -> stack_base
-                && stack_min > GC_get_stack_min(thread -> stack_base)));
+            || ((word)sp >= (word)stack_min
+                && (word)stack_min < (word)thread->stack_base
+                && (word)stack_min
+                        > (word)GC_get_stack_min(thread -> stack_base)));
 
-  if (sp >= stack_min && sp < thread->stack_base) {
+  if ((word)sp >= (word)stack_min && (word)sp < (word)thread->stack_base) {
 #   ifdef DEBUG_THREADS
       GC_log_printf("Pushing stack for 0x%x from sp %p to %p from 0x%x\n",
                     (int)thread -> id, sp, thread -> stack_base, (int)me);
@@ -1451,8 +1455,8 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
     /* If not current thread then it is possible for sp to point to     */
     /* the guarded (untouched yet) page just below the current          */
     /* stack_min of the thread.                                         */
-    if (thread -> id == me || sp >= thread->stack_base
-        || sp + GC_page_size < stack_min)
+    if (thread -> id == me || (word)sp >= (word)thread->stack_base
+        || (word)(sp + GC_page_size) < (word)stack_min)
       WARN("Thread stack pointer %p out of range, pushing everything\n",
            sp);
 #   ifdef DEBUG_THREADS
@@ -1559,7 +1563,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     for (i = 0; i <= my_max; i++) {
       ptr_t s = (ptr_t)(dll_thread_table[i].stack_base);
 
-      if (s > start && s < current_min) {
+      if ((word)s > (word)start && (word)s < (word)current_min) {
         /* Update address of last_stack_min. */
         plast_stack_min = (ptr_t * /* no volatile */)
                             &dll_thread_table[i].last_stack_min;
@@ -1573,7 +1577,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       for (t = GC_threads[i]; t != 0; t = t -> tm.next) {
         ptr_t s = t -> stack_base;
 
-        if (s > start && s < current_min) {
+        if ((word)s > (word)start && (word)s < (word)current_min) {
           /* Update address of last_stack_min. */
           plast_stack_min = &t -> last_stack_min;
           thread = t; /* Remember current thread to unprotect. */
@@ -1587,7 +1591,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #       ifdef IA64
           /* FIXME: not implemented */
 #       endif
-        if (s > start && s < current_min) {
+        if ((word)s > (word)start && (word)s < (word)current_min) {
           GC_ASSERT(marker_last_stack_min[i] != NULL);
           plast_stack_min = &marker_last_stack_min[i];
           current_min = s;
@@ -1603,7 +1607,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       return;
   }
 
-  GC_ASSERT(current_min > start && plast_stack_min != NULL);
+  GC_ASSERT((word)current_min > (word)start && plast_stack_min != NULL);
 # ifdef MSWINCE
     if (GC_dont_query_stack_min) {
       *lo = GC_wince_evaluate_stack_min(current_min);
@@ -1612,7 +1616,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     }
 # endif
 
-  if (current_min > limit && !may_be_in_stack(limit)) {
+  if ((word)current_min > (word)limit && !may_be_in_stack(limit)) {
     /* Skip the rest since the memory region at limit address is        */
     /* not a stack (so the lowest address of the found stack would      */
     /* be above the limit value anyway).                                */

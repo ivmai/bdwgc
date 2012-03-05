@@ -1460,9 +1460,9 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
   /* Similarly gnu-win32 DLLs need explicit initialization from the     */
   /* main program, as does AIX.                                         */
   extern int _data_start__[], _data_end__[], _bss_start__[], _bss_end__[];
-# define GC_DATASTART (_data_start__ < _bss_start__ ? \
+# define GC_DATASTART ((GC_word)_data_start__ < (GC_word)_bss_start__ ? \
                        (void *)_data_start__ : (void *)_bss_start__)
-# define GC_DATAEND (_data_end__ > _bss_end__ ? \
+# define GC_DATAEND ((GC_word)_data_end__ > (GC_word)_bss_end__ ? \
                      (void *)_data_end__ : (void *)_bss_end__)
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND); \
                                  GC_gcollect() /* For blacklisting. */

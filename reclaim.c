@@ -155,8 +155,8 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, size_t sz,
     plim = (word *)(hbp->hb_body + HBLKSIZE - sz);
 
     /* go through all words in block */
-        while (p <= plim) {
-            if( mark_bit_from_hdr(hhdr, bit_no) ) {
+        while ((word)p <= (word)plim) {
+            if (mark_bit_from_hdr(hhdr, bit_no)) {
                 p = (word *)((ptr_t)p + sz);
             } else {
                 n_bytes_found += sz;
@@ -170,13 +170,13 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, size_t sz,
                                 && !((word)p & (2 * sizeof(word) - 1)));
                       p[1] = 0;
                       p += 2;
-                      while (p < q) {
+                      while ((word)p < (word)q) {
                         CLEAR_DOUBLE(p);
                         p += 2;
                       }
 #                   else
                       p++; /* Skip link field */
-                      while (p < q) {
+                      while ((word)p < (word)q) {
                         *p++ = 0;
                       }
 #                   endif
@@ -200,8 +200,8 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
     plim = (word *)((ptr_t)hbp + HBLKSIZE - sz);
 
     /* go through all words in block */
-        while (p <= plim) {
-            if( !mark_bit_from_hdr(hhdr, bit_no) ) {
+        while ((word)p <= (word)plim) {
+            if (!mark_bit_from_hdr(hhdr, bit_no)) {
                 n_bytes_found += sz;
                 /* object is available - put on list */
                     obj_link(p) = list;
@@ -230,7 +230,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
     p = (word *)(hbp -> hb_body);
     plim = (word *)((ptr_t)p + HBLKSIZE - sz);
 
-    while (p <= plim) {
+    while ((word)p <= (word)plim) {
         int marked = mark_bit_from_hdr(hhdr, bit_no);
         if (!marked && (*disclaim)(p)) {
             hhdr -> hb_n_marks++;
@@ -250,13 +250,13 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
                       GC_ASSERT(((word)p & (2 * sizeof(word) - 1)) == 0);
                       p[1] = 0;
                       p += 2;
-                      while (p < q) {
+                      while ((word)p < (word)q) {
                         CLEAR_DOUBLE(p);
                         p += 2;
                       }
 #                   else
                       p++; /* Skip link field */
-                      while (p < q) {
+                      while ((word)p < (word)q) {
                         *p++ = 0;
                       }
 #                   endif
@@ -278,7 +278,8 @@ STATIC void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
     /* go through all words in block */
     p = hbp->hb_body;
     plim = p + HBLKSIZE - sz;
-    for (bit_no = 0; p <= plim; p += sz, bit_no += MARK_BIT_OFFSET(sz)) {
+    for (bit_no = 0; (word)p <= (word)plim;
+         p += sz, bit_no += MARK_BIT_OFFSET(sz)) {
       if (!mark_bit_from_hdr(hhdr, bit_no)) {
         GC_add_leaked(p);
       }
@@ -624,7 +625,8 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
         if (rlist == 0) continue;       /* This kind not used.  */
         if (!report_if_found) {
             lim = &(GC_obj_kinds[kind].ok_freelist[MAXOBJGRANULES+1]);
-            for( fop = GC_obj_kinds[kind].ok_freelist; fop < lim; fop++ ) {
+            for (fop = GC_obj_kinds[kind].ok_freelist;
+                 (word)fop < (word)lim; fop++) {
               if (*fop != 0) {
                 if (should_clobber) {
                   GC_clear_fl_links(fop);

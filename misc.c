@@ -278,7 +278,7 @@ GC_INNER void GC_extend_size_map(size_t i)
     word dummy[CLEAR_SIZE];
 
     BZERO(dummy, CLEAR_SIZE*sizeof(word));
-    if ((ptr_t)(dummy) COOLER_THAN limit) {
+    if ((word)(&dummy[0]) COOLER_THAN (word)limit) {
         (void) GC_clear_stack_inner(arg, limit);
     }
     /* Make sure the recursive call is not a tail call, and the bzero   */
@@ -340,13 +340,13 @@ GC_INNER void * GC_clear_stack(void *arg)
     }
     /* Adjust GC_high_water */
         MAKE_COOLER(GC_high_water, WORDS_TO_BYTES(DEGRADE_RATE) + GC_SLOP);
-        if (sp HOTTER_THAN GC_high_water) {
+        if ((word)sp HOTTER_THAN (word)GC_high_water) {
             GC_high_water = sp;
         }
         MAKE_HOTTER(GC_high_water, GC_SLOP);
     limit = GC_min_sp;
     MAKE_HOTTER(limit, SLOP);
-    if (sp COOLER_THAN limit) {
+    if ((word)sp COOLER_THAN (word)limit) {
         limit = (ptr_t)((word)limit & ~0xf);
                         /* Make it sufficiently aligned for assembly    */
                         /* implementations of GC_clear_stack_inner.     */
@@ -356,7 +356,8 @@ GC_INNER void * GC_clear_stack(void *arg)
         /* Restart clearing process, but limit how much clearing we do. */
         GC_min_sp = sp;
         MAKE_HOTTER(GC_min_sp, CLEAR_THRESHOLD/4);
-        if (GC_min_sp HOTTER_THAN GC_high_water) GC_min_sp = GC_high_water;
+        if ((word)GC_min_sp HOTTER_THAN (word)GC_high_water)
+          GC_min_sp = GC_high_water;
         GC_bytes_allocd_at_reset = GC_bytes_allocd;
     }
     return(arg);
@@ -397,10 +398,10 @@ GC_API void * GC_CALL GC_base(void * p)
 
             r -= obj_displ;
             limit = r + sz;
-            if (limit > (ptr_t)(h + 1) && sz <= HBLKSIZE) {
+            if ((word)limit > (word)(h + 1) && sz <= HBLKSIZE) {
                 return(0);
             }
-            if ((ptr_t)p >= limit) return(0);
+            if ((word)p >= (word)limit) return(0);
         }
     return((void *)r);
 }
@@ -971,10 +972,8 @@ GC_API void GC_CALL GC_init(void)
       GC_STATIC_ASSERT((word)(-1) > (word)0);
       /* word should be unsigned */
 #   endif
-#   if !defined(__BORLANDC__) && !defined(__CC_ARM) /* Workaround */
-      GC_STATIC_ASSERT((ptr_t)(word)(-1) > (ptr_t)0);
-      /* Ptr_t comparisons should behave as unsigned comparisons.       */
-#   endif
+    /* We no longer check for ((void*)(-1) > NULL) since all pointers   */
+    /* are explicitly cast to word in every less-greater comparison.    */
     GC_STATIC_ASSERT((signed_word)(-1) < (signed_word)0);
 #   ifndef GC_DISABLE_INCREMENTAL
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
@@ -1616,7 +1615,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     /* Adjust our stack base value (this could happen if        */
     /* GC_get_main_stack_base() is unimplemented or broken for  */
     /* the platform).                                           */
-    if (GC_stackbottom HOTTER_THAN (ptr_t)(&stacksect))
+    if ((word)GC_stackbottom HOTTER_THAN (word)(&stacksect))
       GC_stackbottom = (ptr_t)(&stacksect);
 
     if (GC_blocked_sp == NULL) {

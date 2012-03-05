@@ -386,8 +386,10 @@ void * calloc(size_t n, size_t lb)
             GC_init_lib_bounds();
             lib_bounds_set = TRUE;
           }
-          if ((caller >= GC_libpthread_start && caller < GC_libpthread_end)
-              || (caller >= GC_libld_start && caller < GC_libld_end))
+          if (((word)caller >= (word)GC_libpthread_start
+               && (word)caller < (word)GC_libpthread_end)
+              || ((word)caller >= (word)GC_libld_start
+                  && (word)caller < (word)GC_libld_end))
             return GC_malloc_uncollectable(n*lb);
           /* The two ranges are actually usually adjacent, so there may */
           /* be a way to speed this up.                                 */
@@ -552,8 +554,10 @@ GC_API void GC_CALL GC_free(void * p)
           ptr_t caller = (ptr_t)__builtin_return_address(0);
           /* This test does not need to ensure memory visibility, since */
           /* the bounds will be set when/if we create another thread.   */
-          if (caller >= GC_libpthread_start && caller < GC_libpthread_end
-              || (caller >= GC_libld_start && caller < GC_libld_end)) {
+          if (((word)caller >= (word)GC_libpthread_start
+               && (word)caller < (word)GC_libpthread_end)
+              || ((word)caller >= (word)GC_libld_start
+                  && (word)caller < (word)GC_libld_end)) {
             GC_free(p);
             return;
           }

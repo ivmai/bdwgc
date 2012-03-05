@@ -45,7 +45,7 @@
 #   include <winbase.h>
 /* #   define assert ASSERT */
 # else
-#   include <assert.h>        /* Not normally used, but handy for debugging. */
+#   include <assert.h>  /* Not normally used, but handy for debugging.  */
 # endif
 
 # include "gc_typed.h"
@@ -202,7 +202,7 @@ sexpr cons (sexpr x, sexpr y)
     r = (sexpr) GC_MALLOC_STUBBORN(sizeof(struct SEXPR) + my_extra);
     CHECK_OUT_OF_MEMORY(r);
     for (p = (int *)r;
-         ((char *)p) < ((char *)r) + my_extra + sizeof(struct SEXPR); p++) {
+         (word)p < (word)r + my_extra + sizeof(struct SEXPR); p++) {
         if (*p) {
             GC_printf("Found nonzero at %p - allocator is broken\n",
                       (void *)p);

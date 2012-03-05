@@ -395,7 +395,7 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
         if (bm & 1) {
             current = *current_p;
             FIXUP_POINTER(current);
-            if ((ptr_t)current >= least_ha && (ptr_t)current <= greatest_ha) {
+            if (current >= (word)least_ha && current <= (word)greatest_ha) {
                 PUSH_CONTENTS((ptr_t)current, mark_stack_ptr,
                               mark_stack_limit, (ptr_t)current_p, exit1);
             }
@@ -407,7 +407,7 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
         /* we also can't overflow the mark stack unless we actually     */
         /* mark something.                                              */
         mark_stack_ptr++;
-        if (mark_stack_ptr >= mark_stack_limit) {
+        if ((word)mark_stack_ptr >= (word)mark_stack_limit) {
             mark_stack_ptr = GC_signal_mark_stack_overflow(mark_stack_ptr);
         }
         mark_stack_ptr -> mse_start = (ptr_t)(addr + WORDSZ);
