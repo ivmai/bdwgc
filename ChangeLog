@@ -35,6 +35,7 @@
 * Enable parallel mark by default in configure (Darwin/Linux/Solaris/Win32).
 * Export GC_is_marked, GC_clear/set_mark_bit (for mark-bit manipulation).
 * Extend thread-related debug messages.
+* Fix DATASTART (and other minor improvements) for NaCl target.
 * Fix compiler warning in cordtest.
 * Fix minor warnings reported by GCC with '-pedantic' option.
 * Fix static data roots registration on Android (if GC is shared).
@@ -44,6 +45,7 @@
 * In tests, print a message in case a test is a no-op.
 * Instruct configure to hide internal libgc.so symbols if supported by GCC.
 * Log amount of unmapped memory (if enabled) on marking-for-collection.
+* Make __data_start a weak symbol to allow loading modules on mips.
 * Move "cord" library tests to "cord/tests" folder.
 * Move asm machine-dependent files to "src" folder.
 * Move build tools sources to "tools" folder.
@@ -64,6 +66,7 @@
 * Remove unused ancient SILENT, __STDC__, NO_SIGNALS macros.
 * Replace ARGSUSED comment-based annotation with GCC 'unused' attribute.
 * Replace long GC_markers global variable with int GC_markers_m1.
+* Replace pointer relational comparisons with non-pointer ones.
 * Replace printf PRIxMAX specifier with '%p' for thread id debug output.
 * Require automake 2.63 instead of v2.64.
 * Simplify autogen.sh (use autoreconf).
@@ -96,6 +99,7 @@
 * Fix GC_add_roots_inner for Mac OS X (align segment start).
 * Fix GC_finalizer_nested size to workaround alignment problem in Watcom.
 * Fix GC_find_limit_with_bound to always reset fault handler on return.
+* Fix GC_init static assertion for clang/x64 (Darwin).
 * Fix GC_init[_lib_bounds] and GC_get_main_stack_base for malloc redirection.
 * Fix GC_push_all/selected boundaries check.
 * Fix GC_register_my_thread marking thread as detached (Cygwin/pthreads-w32).
