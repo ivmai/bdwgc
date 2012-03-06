@@ -56,14 +56,25 @@
 #   include <windows.h>
 # endif
 
-# ifdef GC_DLL
-#   ifdef GC_PRINT_VERBOSE_STATS
-#     define GC_print_stats VERBOSE
-#   else
-#     define GC_print_stats 0   /* Not exported from DLL */
-                                /* Redefine to 1 to generate output. */
-#   endif
+#ifdef GC_PRINT_VERBOSE_STATS
+# define print_stats VERBOSE
+# define INIT_PRINT_STATS /* empty */
+#else
+  /* Use own variable as GC_print_stats might not be exported.  */
+  static int print_stats = 0;
+# ifdef GC_READ_ENV_FILE
+    /* GETENV uses GC internal function in this case.   */
+#   define INIT_PRINT_STATS /* empty */
+# else
+#   define INIT_PRINT_STATS \
+        { \
+          if (0 != GETENV("GC_PRINT_VERBOSE_STATS")) \
+            print_stats = VERBOSE; \
+          else if (0 != GETENV("GC_PRINT_STATS")) \
+            print_stats = 1; \
+        }
 # endif
+#endif /* !GC_PRINT_VERBOSE_STATS */
 
 # ifdef PCR
 #   include "th/PCR_ThCrSec.h"
@@ -98,9 +109,9 @@
 #if defined(CYGWIN32) || defined (AIX) || defined(DARWIN) \
         || defined(PLATFORM_ANDROID) || defined(THREAD_LOCAL_ALLOC) \
         || (defined(MSWINCE) && !defined(GC_WINMAIN_REDIRECT))
-#  define GC_COND_INIT() GC_INIT(); CHECH_GCLIB_VERSION
+#  define GC_COND_INIT() GC_INIT(); CHECH_GCLIB_VERSION; INIT_PRINT_STATS
 #else
-#  define GC_COND_INIT() CHECH_GCLIB_VERSION
+#  define GC_COND_INIT() CHECH_GCLIB_VERSION; INIT_PRINT_STATS
 #endif
 
 #define CHECK_OUT_OF_MEMORY(p) \
@@ -1237,7 +1248,7 @@ void run_one_test(void)
     /* Repeated list reversal test. */
         GET_TIME(start_time);
         reverse_test();
-        if (GC_print_stats) {
+        if (print_stats) {
           GET_TIME(reverse_time);
           time_diff = MS_TIME_DIFF(reverse_time, start_time);
           GC_log_printf("-------------Finished reverse_test at time %u (%p)\n",
@@ -1245,7 +1256,7 @@ void run_one_test(void)
         }
 #   ifndef DBG_HDRS_ALL
       typed_test();
-      if (GC_print_stats) {
+      if (print_stats) {
         GET_TIME(typed_time);
         time_diff = MS_TIME_DIFF(typed_time, start_time);
         GC_log_printf("-------------Finished typed_test at time %u (%p)\n",
@@ -1253,7 +1264,7 @@ void run_one_test(void)
       }
 #   endif /* DBG_HDRS_ALL */
     tree_test();
-    if (GC_print_stats) {
+    if (print_stats) {
       GET_TIME(tree_time);
       time_diff = MS_TIME_DIFF(tree_time, start_time);
       GC_log_printf("-------------Finished tree_test at time %u (%p)\n",
@@ -1261,7 +1272,7 @@ void run_one_test(void)
     }
     /* Run reverse_test a second time, so we hopefully notice corruption. */
       reverse_test();
-      if (GC_print_stats) {
+      if (print_stats) {
         GET_TIME(reverse_time);
         time_diff = MS_TIME_DIFF(reverse_time, start_time);
         GC_log_printf(
@@ -1280,12 +1291,12 @@ void run_one_test(void)
         GC_gcollect();
         tiny_reverse_test(0);
         GC_gcollect();
-        if (GC_print_stats)
+        if (print_stats)
           GC_log_printf("Finished a child process\n");
         exit(0);
       }
 #   endif
-    if (GC_print_stats)
+    if (print_stats)
       GC_log_printf("Finished %p\n", (void *)&start_time);
 }
 
@@ -1345,7 +1356,7 @@ void check_heap_stats(void)
                 GC_invoke_finalizers();
 #       endif
       }
-      if (GC_print_stats) {
+      if (print_stats) {
         struct GC_stack_base sb;
         int res = GC_get_stack_base(&sb);
 

@@ -1870,7 +1870,7 @@ GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
                                   /* without acquiring the lock.        */
 
 #ifndef SMALL_CONFIG
-  /* GC_print_stats should be visible outside the GC in some cases.     */
+  /* GC_print_stats should be visible to extra/MacOS.c. */
   extern int GC_print_stats;    /* Nonzero generates basic GC log.      */
                                 /* VERBOSE generates add'l messages.    */
 #else
