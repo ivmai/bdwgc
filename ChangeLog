@@ -27,6 +27,7 @@
 * Avoid use of deprecated GC_dont_gc and GC_stackbottom in gctest.
 * Changed the order in autogen.sh so ltmain exists in time for automake.
 * Declare privately and use handy GC_base_C() for constant object pointers.
+* Define GC_DLL if DLL_EXPORT at GC build (for Cygwin/MinGW).
 * Define GC_READ_ENV_FILE in configure for WinCE unless gc-debug is off.
 * Do not compile pthread_stop_world.c for Cygwin/Darwin (configure).
 * Do not install ancient new_gc_alloc.h broken for modern STL (configure).
@@ -96,6 +97,7 @@
 * Enable parallel marker in configure for Solaris.
 * Fix "comparison of signed and unsigned values" compiler warnings.
 * Fix 'volatile' keyword placement in GC_SysVGetDataStart.
+* Fix GC_READ_ENV_FILE code for Cygwin.
 * Fix GC_add_roots_inner for Mac OS X (align segment start).
 * Fix GC_finalizer_nested size to workaround alignment problem in Watcom.
 * Fix GC_find_limit_with_bound to always reset fault handler on return.
@@ -115,6 +117,7 @@
 * Fix gcconfig.h to define USE_GET_STACKBASE_FOR_MAIN for Android.
 * Fix gcconfig.h to handle mips64-linux target.
 * Fix gcconfig.h to turn on POSIX fork() support by default.
+* Fix gctest (for Win32) to avoid GC_print_stats internal variable usage.
 * Fix mach_dep.c to include sys/ucontext.h on Mac OS X 10.6.
 * Fix tests to check GC_malloc result for NULL (out-of-memory).
 * Fix thread model in configure for MinGW ("win32" instead of "posix").
