@@ -487,6 +487,8 @@ TARGET_ECOS="$with_ecos"
 addobjs=
 addlibs=
 CXXINCLUDES=
+CXXLIBS=
+
 case "$TARGET_ECOS" in
    no)
       ;;
@@ -499,10 +501,28 @@ esac
 
 AM_CONDITIONAL(CPLUSPLUS, test "${enable_cplusplus}" = yes)
 
+if test "$GCC" == yes; then
+  if test "${enable_cplusplus}" == yes; then
+    case "$host" in
+      *-*-cygwin* | *-*-mingw*)
+        AC_MSG_CHECKING([whether libsupc++ required])
+        SUPC="`$CXX -print-file-name=libsupc++.a 2>/dev/null`"
+        if test -n "$SUPC" -a "$SUPC" != "libsupc++.a"; then
+          AC_MSG_RESULT(yes)
+          CXXLIBS="-lsupc++"
+        else
+          AC_MSG_RESULT(no)
+        fi
+        ;;
+    esac
+  fi
+fi
+
 AC_SUBST(CXX)
 
 AC_SUBST(INCLUDES)
 AC_SUBST(CXXINCLUDES)
+AC_SUBST(CXXLIBS)
 
 # Configuration of shared libraries
 #

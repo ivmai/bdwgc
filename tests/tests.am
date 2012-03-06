@@ -86,9 +86,9 @@ TESTS += test_cpp$(EXEEXT)
 check_PROGRAMS += test_cpp
 test_cpp_SOURCES = tests/test_cpp.cc
 if AVOID_CPP_LIB
-test_cpp_LDADD = gc_cpp.o $(test_ldadd)
+test_cpp_LDADD = gc_cpp.o $(test_ldadd) $(CXXLIBS)
 else
-test_cpp_LDADD = libgccpp.la $(test_ldadd)
+test_cpp_LDADD = libgccpp.la $(test_ldadd) $(CXXLIBS)
 endif
 endif
 
