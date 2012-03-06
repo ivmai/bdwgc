@@ -26,7 +26,8 @@
 #ifdef GC_SOLARIS_THREADS
 # include <sys/syscall.h>
 #endif
-#if defined(MSWIN32) || defined(MSWINCE)
+#if defined(MSWIN32) || defined(MSWINCE) \
+    || (defined(CYGWIN32) && defined(GC_READ_ENV_FILE))
 # ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN 1
 # endif
@@ -499,6 +500,11 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
     }
 # endif
 #endif /* THREADS */
+
+#if !defined(_MAX_PATH) && (defined(MSWIN32) || defined(MSWINCE) \
+                            || defined(CYGWIN32))
+# define _MAX_PATH MAX_PATH
+#endif
 
 #ifdef GC_READ_ENV_FILE
   /* This works for Win32/WinCE for now.  Really useful only for WinCE. */
@@ -1148,10 +1154,6 @@ GC_API void GC_CALL GC_enable_incremental(void)
 # else
 #   define IF_NEED_TO_LOCK(x)
 # endif /* !THREADS */
-
-# ifndef _MAX_PATH
-#   define _MAX_PATH MAX_PATH
-# endif
 
   STATIC HANDLE GC_CreateLogFile(void)
   {
