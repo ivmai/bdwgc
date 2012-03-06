@@ -1,3 +1,22 @@
+2012-03-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (GC_print_stats): Update the comment.
+	* tests/test.c (GC_print_stats, run_one_test, check_heap_stats):
+	Rename GC_print_stats to print_stats (since the former is used
+	internally by GC and not exported).
+	* tests/test.c (print_stats): Always define (either as a macro or
+	a static int variable) regardless of GC_DLL and SMALL_CONFIG.
+	* tests/test.c (INIT_PRINT_STATS): New macro (used to initialize
+	print_stats if needed); GETENV is used if needed and available.
+	* tests/test.c (GC_COND_INIT): Invoke INIT_PRINT_STATS.
+
+2012-03-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c: Include windows.h for Cygwin if GC_READ_ENV_FILE (required
+	for GC_envfile_init).
+	* misc.c (_MAX_PATH): Move definition to the place before the first
+	use (only Win32).
+
 2012-03-04  Ivan Maidanski <ivmai@mail.ru>
 
 	* misc.c (GC_init): Add a workaround for clang/x64 (coming with
