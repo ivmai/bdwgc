@@ -36,6 +36,7 @@
 * Enable parallel mark by default in configure (Darwin/Linux/Solaris/Win32).
 * Export GC_is_marked, GC_clear/set_mark_bit (for mark-bit manipulation).
 * Extend thread-related debug messages.
+* Fix 'configure --enable-cplusplus' for Cygwin/MinGW.
 * Fix DATASTART (and other minor improvements) for NaCl target.
 * Fix compiler warning in cordtest.
 * Fix minor warnings reported by GCC with '-pedantic' option.
