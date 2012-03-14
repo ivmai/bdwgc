@@ -369,8 +369,13 @@ void * malloc(size_t lb)
   }
 #endif /* GC_LINUX_THREADS */
 
+#ifndef SIZE_MAX
+#define SIZE_MAX (~(size_t)0)
+#endif
 void * calloc(size_t n, size_t lb)
 {
+    if (lb && n > SIZE_MAX / lb)
+      return NULL;
 #   if defined(GC_LINUX_THREADS) /* && !defined(USE_PROC_FOR_LIBRARIES) */
         /* libpthread allocated some memory that is only pointed to by  */
         /* mmapped thread stacks.  Make sure it's not collectable.      */
