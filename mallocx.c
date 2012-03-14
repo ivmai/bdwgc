@@ -182,6 +182,8 @@ GC_INNER void * GC_generic_malloc_ignore_off_page(size_t lb, int k)
         return(GC_generic_malloc((word)lb, k));
     lg = ROUNDED_UP_GRANULES(lb);
     lb_rounded = GRANULES_TO_BYTES(lg);
+    if (lb_rounded < lb)
+        return((*GC_get_oom_fn())(lb));
     n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
     init = GC_obj_kinds[k].ok_init;
     if (EXPECT(GC_have_errors, FALSE))
