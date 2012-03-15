@@ -381,9 +381,12 @@ void * malloc(size_t lb)
 # define GC_SIZE_MAX (~(size_t)0)
 #endif
 
+#define GC_SQRT_SIZE_MAX ((1U << (WORDSZ / 2)) - 1)
+
 void * calloc(size_t n, size_t lb)
 {
-    if (lb && n > GC_SIZE_MAX / lb)
+    if ((lb | n) > GC_SQRT_SIZE_MAX /* fast initial test */
+        && lb && n > GC_SIZE_MAX / lb)
       return NULL;
 #   if defined(GC_LINUX_THREADS) /* && !defined(USE_PROC_FOR_LIBRARIES) */
         /* libpthread allocated some memory that is only pointed to by  */
