@@ -1,3 +1,9 @@
+2012-03-15  Ivan Maidanski <ivmai@mail.ru> (really Hans Boehm)
+
+	* malloc.c (GC_SQRT_SIZE_MAX): New macro.
+	* malloc.c (calloc): Add fast initial size overflow check to avoid
+	integer division for reasonably small values passed.
+
 2012-03-15  Ivan Maidanski <ivmai@mail.ru>
 
 	* malloc.c: Include limits.h for SIZE_MAX.
