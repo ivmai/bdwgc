@@ -109,6 +109,7 @@
 * Fix GC_restart_handler to preserve errno if needed.
 * Fix GC_root_size update in GC_add_roots_inner (Win32).
 * Fix GC_unregister_my_thread to ensure no ongoing incremental GC (Win32).
+* Fix calloc, GC_generic_malloc to check for allocation size overflows.
 * Fix compiler warning in GC_dyld_image_add/remove (Darwin).
 * Fix configure --enable-cplusplus make install.
 * Fix configure to disable GCC aliasing optimization unless forced to.
