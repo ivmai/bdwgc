@@ -1,3 +1,14 @@
+2012-03-15  Xi Wang <xi.wang@gmail.com>
+
+	* malloc.c (GC_generic_malloc): Check if the allocation size is
+	rounded to a smaller value.
+	* mallocx.c (GC_generic_malloc_ignore_off_page): Likewise.
+
+2012-03-15  Xi Wang <xi.wang@gmail.com>
+
+	* malloc.c (calloc): Check multiplication overflow in calloc(),
+	assuming REDIRECT_MALLOC.
+
 2012-03-06  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/private/gc_priv.h (GC_print_stats): Update the comment.
