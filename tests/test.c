@@ -96,6 +96,10 @@
 
 # include <stdarg.h>
 
+#ifndef GC_ALPHA_VERSION
+# define GC_ALPHA_VERSION GC_TMP_ALPHA_VERSION
+#endif
+
 #define CHECH_GCLIB_VERSION \
             if (GC_get_version() != ((GC_VERSION_MAJOR<<16) \
                                     | (GC_VERSION_MINOR<<8) \
