@@ -1,6 +1,10 @@
 # include <stdio.h>
 # include <gc.h>
 
+#ifndef GC_ALPHA_VERSION
+# define GC_ALPHA_VERSION GC_TMP_ALPHA_VERSION
+#endif
+
 int main(int argc, char ** argv)
 {
     int i;
