@@ -35,7 +35,7 @@
 # include <windows.h>
 #endif
 
-#if defined(UNIX_LIKE) || defined(CYGWIN32)
+#if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN)
 # include <fcntl.h>
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -62,6 +62,8 @@
   /* this is done implicitly as part of dynamic library registration.   */
 # define GC_REGISTER_MAIN_STATIC_DATA() GC_register_main_static_data()
 #elif defined(GC_DONT_REGISTER_MAIN_STATIC_DATA)
+# define GC_REGISTER_MAIN_STATIC_DATA() FALSE
+#elif defined(SYMBIAN)
 # define GC_REGISTER_MAIN_STATIC_DATA() FALSE
 #else
   /* Don't unnecessarily call GC_register_main_static_data() in case    */
@@ -762,7 +764,7 @@ GC_API void GC_CALL GC_init(void)
           GC_print_stats = 1;
         }
 #     endif
-#     if defined(UNIX_LIKE) || defined(CYGWIN32)
+#     if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN)
         {
           char * file_name = GETENV("GC_LOG_FILE");
 #         ifdef GC_LOG_TO_FILE_ALWAYS

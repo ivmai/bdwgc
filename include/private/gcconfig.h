@@ -42,6 +42,13 @@
 # define PLATFORM_ANDROID 1
 #endif
 
+#if defined(__SYMBIAN32__) && !defined(SYMBIAN)
+# define SYMBIAN
+# ifdef __WINS__
+#   pragma data_seg(".data2")
+# endif
+#endif
+
 /* First a unified test for Linux: */
 # if (defined(linux) || defined(__linux__) || defined(PLATFORM_ANDROID)) \
      && !defined(LINUX) && !defined(__native_client__)
@@ -78,7 +85,8 @@
 # if defined(__arm) || defined(__arm__) || defined(__thumb__)
 #    define ARM32
 #    if !defined(LINUX) && !defined(NETBSD) && !defined(OPENBSD) \
-        && !defined(DARWIN) && !defined(_WIN32) && !defined(__CEGCC__)
+        && !defined(DARWIN) && !defined(_WIN32) && !defined(__CEGCC__) \
+        && !defined(SYMBIAN)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -309,12 +317,14 @@
 #   define M68K
 #   define mach_type_known
 # endif
-# if defined(THINK_C) || defined(__MWERKS__) && !defined(__powerc)
+# if defined(THINK_C) \
+     || (defined(__MWERKS__) && !defined(__powerc) && !defined(SYMBIAN))
 #   define M68K
 #   define MACOS
 #   define mach_type_known
 # endif
-# if defined(__MWERKS__) && defined(__powerc) && !defined(__MACH__)
+# if defined(__MWERKS__) && defined(__powerc) && !defined(__MACH__) \
+     && !defined(SYMBIAN)
 #   define POWERPC
 #   define MACOS
 #   define mach_type_known
@@ -414,8 +424,9 @@
 #   define MSWINCE
 #   define mach_type_known
 # else
-#   if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \
-        || defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__)
+#   if ((defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300)) \
+       || (defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__) \
+           && !defined(SYMBIAN))
 #     if defined(__LP64__) || defined(_WIN64)
 #       define X86_64
 #     else
@@ -505,6 +516,10 @@
 # if defined(__hexagon__) && defined(LINUX)
 #    define HEXAGON
 #    define mach_type_known
+# endif
+
+# if defined(SYMBIAN)
+#   define mach_type_known
 # endif
 
 /* Feel free to add more clauses here */
@@ -687,6 +702,15 @@
                            || (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)) \
                        && !defined(__INTEL_COMPILER) && !defined(__PATHCC__)
 #   define HAVE_BUILTIN_UNWIND_INIT
+# endif
+
+# ifdef SYMBIAN
+#   define MACH_TYPE "SYMBIAN"
+#   define OS_TYPE "SYMBIAN"
+#   define CPP_WORDSZ 32
+#   define ALIGNMENT 4
+#   define DATASTART NULL
+#   define DATAEND NULL
 # endif
 
 # define STACK_GRAN 0x1000000
