@@ -230,7 +230,7 @@ GC_API int GC_CALL GC_is_marked(const void *p)
     hdr * hhdr = HDR(h);
     word bit_no = MARK_BIT_NO((ptr_t)p - (ptr_t)h, hhdr -> hb_sz);
 
-    return (int)mark_bit_from_hdr(hhdr, bit_no); // 0 or 1
+    return (int)mark_bit_from_hdr(hhdr, bit_no); /* 0 or 1 */
 }
 
 /*
