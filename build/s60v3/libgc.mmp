@@ -47,7 +47,7 @@ SOURCE          misc.c
 SOURCE          new_hblk.c
 SOURCE          obj_map.c
 SOURCE          os_dep.c
-SOURCE          symbian.cpp
+SOURCE          extra/symbian.cpp
 SOURCE          ptr_chck.c
 SOURCE          reclaim.c
 SOURCE          stubborn.c

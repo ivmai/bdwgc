@@ -1,3 +1,4 @@
+// Symbian-specific file.
 
 // INCLUDE FILES
 #include <e32def.h>
@@ -9,7 +10,7 @@
 extern "C" {
 #endif
 
-void init_global_static_roots()
+void GC_init_global_static_roots()
 {
         ptr_t dataStart = NULL;
         ptr_t dataEnd = NULL;

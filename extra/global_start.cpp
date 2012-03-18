@@ -1,3 +1,4 @@
+// Symbian-specific file.
 
 // INCLUDE FILES
 #include "private/gcconfig.h"
@@ -6,7 +7,7 @@
 extern "C" {
 #endif
 
-int winscw_data_end;
+int winscw_data_start;
 
 #ifdef __cplusplus
         }
