@@ -194,6 +194,13 @@
 #     define GC_API extern __declspec(dllimport)
 #   endif
 
+# elif defined(__SYMBIAN32__)
+#   ifdef GC_BUILD
+#     define GC_API extern EXPORT_C
+#   else
+#     define GC_API extern IMPORT_C
+#   endif
+
 # elif defined(__GNUC__)
     /* Only matters if used in conjunction with -fvisibility=hidden option. */
 #   if defined(GC_BUILD) && (__GNUC__ >= 4 \

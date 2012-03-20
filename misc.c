@@ -35,7 +35,7 @@
 # include <windows.h>
 #endif
 
-#if defined(UNIX_LIKE) || defined(CYGWIN32)
+#if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN)
 # include <fcntl.h>
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -762,7 +762,7 @@ GC_API void GC_CALL GC_init(void)
           GC_print_stats = 1;
         }
 #     endif
-#     if defined(UNIX_LIKE) || defined(CYGWIN32)
+#     if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN)
         {
           char * file_name = GETENV("GC_LOG_FILE");
 #         ifdef GC_LOG_TO_FILE_ALWAYS

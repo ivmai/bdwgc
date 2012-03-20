@@ -2013,8 +2013,16 @@ GC_API_PRIV void GC_printf(const char * format, ...)
                         /* allocate for long arguments.)                */
 GC_API_PRIV void GC_err_printf(const char * format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
+
+#if defined(__cplusplus) && defined(SYMBIAN)
+  extern "C" {
+#endif
 GC_API_PRIV void GC_log_printf(const char * format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
+#if defined(__cplusplus) && defined(SYMBIAN)
+  }
+#endif
+
 void GC_err_puts(const char *s);
                         /* Write s to stderr, don't buffer, don't add   */
                         /* newlines, don't ...                          */

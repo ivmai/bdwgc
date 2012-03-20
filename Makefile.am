@@ -179,6 +179,8 @@ EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
 EXTRA_DIST += tools/add_gc_prefix.c tools/gcname.c tools/if_mach.c \
     tools/if_not_there.c tools/setjmp_t.c tools/threadlibs.c \
     gc.mak extra/MacOS.c extra/AmigaOS.c \
+    extra/global_end.cpp extra/global_start.cpp \
+    extra/init_global_static_roots.cpp extra/symbian.cpp \
     Mac_files/datastart.c Mac_files/dataend.c Mac_files/MacOS_config.h \
     include/private/msvc_dbg.h extra/msvc_dbg.c tools/callprocs.sh
 

@@ -61,7 +61,8 @@
 # include <signal.h>
 #endif
 
-#if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(NACL)
+#if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(NACL) \
+    || defined(SYMBIAN)
 # include <fcntl.h>
 #endif
 
@@ -1147,6 +1148,13 @@ GC_INNER word GC_page_size = 0;
     return STACKBOTTOM;
   }
 # define GET_MAIN_STACKBASE_SPECIAL
+#elif defined(SYMBIAN)
+  extern int GC_get_main_symbian_stack_base(void);
+  ptr_t GC_get_main_stack_base(void)
+  {
+    return (ptr_t)GC_get_main_symbian_stack_base();
+  }
+# define GET_MAIN_STACKBASE_SPECIAL
 #elif !defined(BEOS) && !defined(AMIGA) && !defined(OS2) \
       && !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) \
       && !defined(GC_OPENBSD_THREADS) \
@@ -2055,6 +2063,10 @@ void GC_register_data_segments(void)
 #   define HEAP_START ((ptr_t)0)
 #endif
 
+#ifdef SYMBIAN
+  extern char* GC_get_private_path_and_zero_file(void);
+#endif
+
 STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
 {
     void *result;
@@ -2064,7 +2076,13 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
       static GC_bool initialized = FALSE;
 
       if (!EXPECT(initialized, TRUE)) {
+#       ifdef SYMBIAN
+          char* path = GC_get_private_path_and_zero_file();
+          zero_fd = open(path, O_RDWR | O_CREAT, 0666);
+          free(path);
+#       else
           zero_fd = open("/dev/zero", O_RDONLY);
+#       endif
           fcntl(zero_fd, F_SETFD, FD_CLOEXEC);
           initialized = TRUE;
       }
