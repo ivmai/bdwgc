@@ -7,6 +7,7 @@
 * Add GC_get_thr_restart_signal, GC_thread_is_registered to GC API.
 * Add GC_is_heap_ptr, GC_move_disappearing_link to GC API.
 * Add SHORT_DBG_HDRS macro template to configure.
+* Add Symbian port to mainline.
 * Add TODO file.
 * Add assertion ensuring proper alignment of 'pushed' GC symbols.
 * Add assertion to GC_incremental_protection_needs, refine documentation.
