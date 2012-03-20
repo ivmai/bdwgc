@@ -63,8 +63,6 @@
 # define GC_REGISTER_MAIN_STATIC_DATA() GC_register_main_static_data()
 #elif defined(GC_DONT_REGISTER_MAIN_STATIC_DATA)
 # define GC_REGISTER_MAIN_STATIC_DATA() FALSE
-#elif defined(SYMBIAN)
-# define GC_REGISTER_MAIN_STATIC_DATA() FALSE
 #else
   /* Don't unnecessarily call GC_register_main_static_data() in case    */
   /* dyn_load.c isn't linked in.                                        */
