@@ -181,6 +181,7 @@ EXTRA_DIST += tools/add_gc_prefix.c tools/gcname.c tools/if_mach.c \
     gc.mak extra/MacOS.c extra/AmigaOS.c \
     extra/global_end.cpp extra/global_start.cpp \
     extra/init_global_static_roots.cpp extra/symbian.cpp \
+    build/s60v3/bld.inf build/s60v3/libgc.mmp \
     Mac_files/datastart.c Mac_files/dataend.c Mac_files/MacOS_config.h \
     include/private/msvc_dbg.h extra/msvc_dbg.c tools/callprocs.sh
 
