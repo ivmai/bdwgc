@@ -7,8 +7,6 @@ compiler runtime, provided it is reliable, or from the future libatomic_ops).
 
 Add a test for libatomic_ops minimal version required (at compile time).
 
-Merge symbian branch to master.
-
 windows-untested: Remove if CMake can generate MS Visual Studio 6.0, 7.0, 8.0
 project files.
 
@@ -21,6 +19,9 @@ Makefile.dj: Remove if it is possible to use Makefile.direct (or
 auto-generated Makefile) instead. (Same for EMX_MAKEFILE.)
 
 build_atomic_ops.sh[.cygwin]: Remove if really not needed.
+
+BCC_MAKEFILE, EMX_MAKEFILE, OS2_MAKEFILE, PCR-Makefile, WCC_MAKEFILE,
+SMakefile.amiga, Makefile.dj, digimars.mak: move to "build" folder.
 
 Do type-punning via union (instead of pointer type cast) to enable safe
 '-fstrict-aliasing' compiler optimization option.
