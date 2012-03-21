@@ -22,6 +22,8 @@ MACRO GC_DONT_REGISTER_MAIN_STATIC_DATA
 MACRO GC_DLL
 MACRO GC_BUILD
 MACRO SYMBIAN
+//MACRO ENABLE_DISCLAIM
+//MACRO GC_GCJ_SUPPORT
 
 USERINCLUDE      ..\..\include
 USERINCLUDE      ..\..\include\private
@@ -37,7 +39,9 @@ SOURCE          blacklst.c
 SOURCE          dbg_mlc.c
 SOURCE          dyn_load.c
 SOURCE          finalize.c
+SOURCE          fnlz_mlc.c
 //SOURCE        gc_cpp.cpp
+SOURCE          gcj_mlc.c
 SOURCE          headers.c
 SOURCE          mach_dep.c
 SOURCE          malloc.c
