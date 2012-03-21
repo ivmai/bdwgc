@@ -142,8 +142,8 @@ OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE gc.mak \
   build_atomic_ops.sh build_atomic_ops.sh.cygwin
 
 OTHER_FILES= tools/setjmp_t.c tools/callprocs.sh extra/MacOS.c \
-  Mac_files/datastart.c Mac_files/dataend.c Mac_files/MacOS_config.h \
-  tools/add_gc_prefix.c gc_cpp.cpp \
+  extra/Mac_files/datastart.c extra/Mac_files/dataend.c \
+  extra/Mac_files/MacOS_config.h tools/add_gc_prefix.c gc_cpp.cpp \
   extra/global_end.cpp extra/global_start.cpp \
   extra/init_global_static_roots.cpp extra/symbian.cpp \
   build/s60v3/bld.inf build/s60v3/libgc.mmp \

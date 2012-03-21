@@ -12,7 +12,7 @@ are distributed in the file Mac_projects.sit.hqx. The project file
 :Mac_projects:gctest.prj builds the GC test suite.
 
 Configuring the collector is still done by editing the file
-:Mac_files:MacOS_config.h.
+:extra:Mac_files:MacOS_config.h.
 
 Lars Farm's suggestions on building the collector:
 ----------------------------------------------------------------------------
