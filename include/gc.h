@@ -44,6 +44,7 @@
   extern "C" {
 #endif
 
+typedef void * GC_PTR;  /* preserved only for backward compatibility    */
 
 /* Define word and signed_word to be unsigned and signed types of the   */
 /* size as char * or void *.  There seems to be no way to do this       */
