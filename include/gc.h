@@ -1067,7 +1067,7 @@ typedef GC_word GC_hidden_pointer;
 /* allocator lock to avoid a race with the collector.                   */
 #define GC_REVEAL_POINTER(p) ((void *)GC_HIDE_POINTER(p))
 
-#ifdef I_HIDE_POINTERS
+#if defined(I_HIDE_POINTERS) || defined(GC_I_HIDE_POINTERS)
   /* This exists only for compatibility (the GC-prefixed symbols are    */
   /* preferred for new code).                                           */
 # define HIDE_POINTER(p) GC_HIDE_POINTER(p)
