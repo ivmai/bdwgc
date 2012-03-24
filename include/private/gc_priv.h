@@ -1791,9 +1791,6 @@ GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
                                 /* free list nonempty, and return its   */
                                 /* head.  Sz is in granules.            */
 
-GC_INNER void * GC_clear_stack(void *);
-                                /* in misc.c, behaves like identity.    */
-
 #ifdef GC_ADD_CALLER
 # define GC_DBG_RA GC_RETURN_ADDR,
 #else

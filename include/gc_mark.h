@@ -213,6 +213,11 @@ GC_API void GC_CALL GC_register_describe_type_fn(int /* kind */,
                                 /* to be used when printing objects     */
                                 /* of a particular kind.                */
 
+/* Clear some of the inaccessible part of the stack.  Returns its       */
+/* argument, so it can be used in a tail call position, hence clearing  */
+/* another frame.  Argument may be NULL.                                */
+GC_API void * GC_CALL GC_clear_stack(void *);
+
 /* Set and get the client notifier on collections.  The client function */
 /* is called at the start of every full GC (called with the allocation  */
 /* lock held).  May be 0.  This is a really tricky interface to use     */
