@@ -275,7 +275,7 @@ GC_INNER void GC_extend_size_map(size_t i)
 /* Clear some of the inaccessible part of the stack.  Returns its       */
 /* argument, so it can be used in a tail call position, hence clearing  */
 /* another frame.                                                       */
-GC_INNER void * GC_clear_stack(void *arg)
+GC_API void * GC_CALL GC_clear_stack(void *arg)
 {
     ptr_t sp = GC_approx_sp();  /* Hotter than actual sp */
 #   ifdef THREADS
