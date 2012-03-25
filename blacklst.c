@@ -225,7 +225,7 @@ GC_INNER void GC_unpromote_black_lists(void)
  * If (h,len) is not black listed, return 0.
  * Knows about the structure of the black list hash tables.
  */
-GC_INNER struct hblk * GC_is_black_listed(struct hblk *h, word len)
+struct hblk * GC_is_black_listed(struct hblk *h, word len)
 {
     word index = PHT_HASH((word)h);
     word i;
