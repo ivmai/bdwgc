@@ -68,6 +68,7 @@
 * Remove unsupported MMAP_STACKS (specific to Solaris threads).
 * Remove unused ancient SILENT, __STDC__, NO_SIGNALS macros.
 * Replace ARGSUSED comment-based annotation with GCC 'unused' attribute.
+* Replace GC_ms_entry declaration with opaque definition for public API.
 * Replace long GC_markers global variable with int GC_markers_m1.
 * Replace pointer relational comparisons with non-pointer ones.
 * Replace printf PRIxMAX specifier with '%p' for thread id debug output.
@@ -116,6 +117,7 @@
 * Fix configure to disable GCC aliasing optimization unless forced to.
 * Fix duplicate definitions in gcconfig.h for NetBSD.
 * Fix fork() support on Cygwin and Darwin targets.
+* Fix gc.h compatibility regression regarding GC_PTR, GC_I_HIDE_POINTERS.
 * Fix gc_cpp.cc for Cygwin (remove duplicate function definition).
 * Fix gcconfig.h to define USE_GET_STACKBASE_FOR_MAIN for Android.
 * Fix gcconfig.h to handle mips64-linux target.
@@ -125,6 +127,7 @@
 * Fix tests to check GC_malloc result for NULL (out-of-memory).
 * Fix thread model in configure for MinGW ("win32" instead of "posix").
 * Fix various warnings reported by LINT-like tools.
+* Fix visibility of some GC internal symbols used by GNU GCJ currently.
 * Port some thread tests to Win32.
 * Refine API GC setters and getter comments regarding locking.
 * Refine GC_stackbottom description in gc.h.
