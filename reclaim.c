@@ -355,8 +355,9 @@ struct Print_stats
 
 #ifdef USE_MARK_BYTES
 
-/* Return the number of set mark bits in the given header       */
-STATIC int GC_n_set_marks(hdr *hhdr)
+/* Return the number of set mark bits in the given header.      */
+/* Remains externally visible as used by GNU GCJ currently.     */
+int GC_n_set_marks(hdr *hhdr)
 {
     int result = 0;
     int i;
@@ -386,8 +387,7 @@ static int set_bits(word n)
     return(result);
 }
 
-/* Return the number of set mark bits in the given header       */
-STATIC int GC_n_set_marks(hdr *hhdr)
+int GC_n_set_marks(hdr *hhdr)
 {
     int result = 0;
     int i;

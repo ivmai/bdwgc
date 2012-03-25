@@ -48,16 +48,23 @@
 # define N_HBLK_FLS (HUGE_THRESHOLD - UNIQUE_THRESHOLD)/FL_COMPRESSION \
                                  + UNIQUE_THRESHOLD
 
-STATIC struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
+#ifndef GC_GCJ_SUPPORT
+  STATIC
+#endif
+  struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
                                 /* List of completely empty heap blocks */
                                 /* Linked through hb_next field of      */
                                 /* header structure associated with     */
-                                /* block.                               */
+                                /* block.  Remains externally visible   */
+                                /* as used by GNU GCJ currently.        */
 
 #ifndef USE_MUNMAP
 
-  STATIC word GC_free_bytes[N_HBLK_FLS+1] = { 0 };
-        /* Number of free bytes on each list.   */
+#ifndef GC_GCJ_SUPPORT
+  STATIC
+#endif
+  word GC_free_bytes[N_HBLK_FLS+1] = { 0 };
+        /* Number of free bytes on each list.  Remains visible to GCJ.  */
 
   /* Return the largest n such that                                     */
   /* Is GC_large_allocd_bytes + the number of free bytes on lists       */
