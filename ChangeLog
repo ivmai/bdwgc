@@ -1,3 +1,7 @@
+2012-03-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* dyn_load.c: Fix a typo and improve comment (for Android).
+
 2012-03-25  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/gc_mark.h (GC_clear_stack): New API function.
