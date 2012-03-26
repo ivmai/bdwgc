@@ -91,7 +91,7 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #   include <elf.h>
 # endif
 # ifdef PLATFORM_ANDROID
-    /* The header file is in bionics/linker. */
+    /* The header file is in "bionic/linker" folder of Android sources. */
     /* If you don't need the "dynamic loading" feature, you may build   */
     /* the collector with -D IGNORE_DYNAMIC_LOADING.                    */
 #   include <linker.h>
