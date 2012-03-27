@@ -685,6 +685,19 @@ if test "${enable_large_config}" = yes; then
     AC_DEFINE(LARGE_CONFIG, 1, [Define to optimize for large heaps or root sets.])
 fi
 
+AC_ARG_ENABLE(handle-fork,
+    [AC_HELP_STRING([--enable-handle-fork],
+        [Attempt to ensure a usable collector after fork() in multi-threaded
+         programs.])])
+
+if test "${enable_handle_fork}" = yes; then
+    AC_DEFINE(HANDLE_FORK, 1,
+              [Define to install pthread_atfork() handlers if available.])
+elif test "${enable_handle_fork}" = no; then
+    AC_DEFINE(NO_HANDLE_FORK, 1,
+              [Define to inhibit installation of pthread_atfork() handlers.])
+fi
+
 dnl This is something of a hack.  When cross-compiling we turn off
 dnl some functionality.  We also enable the "small" configuration.
 dnl These is only correct when targetting an embedded system.  FIXME.
