@@ -1,3 +1,9 @@
+2012-03-28  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.solaris2 (SOLARIS THREADS): Update.
+	* doc/overview.html: Remove information about Solaris old-style
+	threads support.
+
 2012-03-26  Ivan Maidanski <ivmai@mail.ru>
 
 	* dyn_load.c: Fix a typo and improve comment (for Android).
