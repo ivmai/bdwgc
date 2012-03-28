@@ -72,7 +72,7 @@
 * Replace long GC_markers global variable with int GC_markers_m1.
 * Replace pointer relational comparisons with non-pointer ones.
 * Replace printf PRIxMAX specifier with '%p' for thread id debug output.
-* Require automake 2.61 instead of v2.64.
+* Require autoconf 2.61 instead of v2.64.
 * Simplify autogen.sh (use autoreconf).
 * Split GC_abort with GC_on_abort and abort() invoked from ABORT.
 * Support GC_ATTR_MALLOC for MS VisualStudio.
