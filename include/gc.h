@@ -585,10 +585,8 @@ GC_API size_t GC_CALL GC_get_total_bytes(void);
 /* the allocator lock thus preventing data racing and returning the     */
 /* consistent result.)  Passing NULL pointer is allowed for any         */
 /* argument.  Returned (filled in) values are of word type.             */
-/* (This API function and the accompanying macro were introduced in     */
-/* GC v7.2alpha7 at the moment when GC_get_heap_size and the friends    */
-/* were made lock-free again.)                                          */
-#define GC_HAVE_GET_HEAP_USAGE_SAFE 1
+/* (This API function was introduced in GC v7.2alpha7 at the same time  */
+/* when GC_get_heap_size and the friends were made lock-free again.)    */
 GC_API void GC_CALL GC_get_heap_usage_safe(GC_word * /* pheap_size */,
                                            GC_word * /* pfree_bytes */,
                                            GC_word * /* punmapped_bytes */,
