@@ -846,14 +846,6 @@ STATIC void GC_fork_prepare_proc(void)
     /* Wait for an ongoing GC to finish, since we can't finish it in    */
     /* the (one remaining thread in) the child.                         */
       LOCK();
-#     if defined(GC_DARWIN_THREADS) && defined(MPROTECT_VDB)
-        if (GC_dirty_maintained) {
-          WARN("GC incremental mode is incompatible with fork() for now\n", 0);
-          /* Currently, it is not allowed to use any GC allocated data  */
-          /* or call any GC function in the child (before exec).        */
-          /* FIXME: Remove warning when mode implemented in child_proc. */
-        }
-#     endif
       DISABLE_CANCEL(fork_cancel_state);
                 /* Following waits may include cancellation points. */
 #     if defined(PARALLEL_MARK)
@@ -885,11 +877,6 @@ STATIC void GC_fork_child_proc(void)
 #   if defined(PARALLEL_MARK)
       if (GC_parallel)
         GC_release_mark_lock();
-#   endif
-#   if defined(GC_DARWIN_THREADS) && defined(MPROTECT_VDB)
-      /* FIXME: Since GC_mprotect_thread is not running in the child,   */
-      /* GC_dirty_maintained should be switched off gracefully          */
-      /* (unprotecting all pages and clearing GC_mach_handler_thread).  */
 #   endif
     GC_remove_all_threads_but_me();
 #   ifdef PARALLEL_MARK

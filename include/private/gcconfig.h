@@ -2594,7 +2594,7 @@
 #if !defined(CAN_HANDLE_FORK) && !defined(NO_HANDLE_FORK) \
     && ((defined(GC_PTHREADS) && !defined(HURD) && !defined(NACL) \
          && !defined(PLATFORM_ANDROID) && !defined(GC_WIN32_PTHREADS)) \
-        || defined(HANDLE_FORK))
+        || (defined(DARWIN) && defined(MPROTECT_VDB)) || defined(HANDLE_FORK))
   /* Attempts (where supported and requested) to make GC_malloc work in */
   /* a child process fork'ed from a multi-threaded parent.              */
 # define CAN_HANDLE_FORK
