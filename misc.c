@@ -186,10 +186,11 @@ GC_API void GC_CALL GC_set_handle_fork(int value GC_ATTR_UNUSED)
 # ifdef CAN_HANDLE_FORK
     if (!GC_is_initialized)
       GC_handle_fork = (GC_bool)value;
-# elif defined(THREADS)
-    /* FIXME: Handle Darwin case. */
+# elif defined(THREADS) || (defined(DARWIN) && defined(MPROTECT_VDB))
     if (!GC_is_initialized && value)
       ABORT("fork() handling disabled");
+# else
+    /* No at-fork handler is needed in the single-threaded mode.        */
 # endif
 }
 

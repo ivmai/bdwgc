@@ -4133,6 +4133,21 @@ GC_INNER void GC_dirty_init(void)
   pthread_attr_t attr;
   exception_mask_t mask;
 
+# ifdef CAN_HANDLE_FORK
+    if (GC_handle_fork) {
+      /* To both support GC incremental mode and GC functions usage in  */
+      /* the forked child, pthread_atfork should be used to install     */
+      /* handlers that switch off GC_dirty_maintained in the child      */
+      /* gracefully (unprotecting all pages and clearing                */
+      /* GC_mach_handler_thread).  For now, we just disable incremental */
+      /* mode if fork() handling is requested by the client.            */
+      if (GC_print_stats)
+        GC_log_printf(
+            "GC incremental mode disabled since fork() handling requested\n");
+      return;
+    }
+# endif
+
   if (GC_print_stats == VERBOSE)
     GC_log_printf(
       "Initializing mach/darwin mprotect virtual dirty bit implementation\n");
@@ -4180,10 +4195,6 @@ GC_INNER void GC_dirty_init(void)
     ABORT("pthread_attr_init failed");
   if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0)
     ABORT("pthread_attr_setdetachedstate failed");
-
-# if defined(HANDLE_FORK) && !defined(THREADS)
-    /* FIXME: See comment in GC_fork_prepare_proc.      */
-# endif
 
 # undef pthread_create
   /* This will call the real pthread function, not our wrapper */
