@@ -26,10 +26,10 @@ SMakefile.amiga, Makefile.dj, digimars.mak: move to "build" folder.
 Do type-punning via union (instead of pointer type cast) to enable safe
 '-fstrict-aliasing' compiler optimization option.
 
-Support HANDLE_FORK if USE_WINALLOC for Cygwin.
+Support CAN_HANDLE_FORK if USE_WINALLOC for Cygwin.
 
-Properly implement HANDLE_FORK if GC_dirty_maintained for Darwin (both single
-and multi-threaded modes).
+Enable GC_set_handle_fork(1) for Darwin with GC_dirty_maintained on (both
+single and multi-threaded modes).
 
 
 == FIXME tasks ==
