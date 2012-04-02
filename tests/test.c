@@ -86,8 +86,18 @@
 #   include <pthread.h>
 # endif
 
-# if defined(THREADS) && defined(HANDLE_FORK)
+# if (!defined(THREADS) || !defined(HANDLE_FORK) \
+      || (defined(DARWIN) && defined(MPROTECT_VDB) \
+          && !defined(NO_INCREMENTAL) && !defined(MAKE_BACK_GRAPH))) \
+     && !defined(NO_TEST_HANDLE_FORK)
+#   define NO_TEST_HANDLE_FORK
+# endif
+
+# ifndef NO_TEST_HANDLE_FORK
 #   include <unistd.h>
+#   define INIT_FORK_SUPPORT GC_set_handle_fork(1)
+# else
+#   define INIT_FORK_SUPPORT /* empty */
 # endif
 
 # if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
@@ -113,10 +123,13 @@
 #if defined(CYGWIN32) || defined (AIX) || defined(DARWIN) \
         || defined(PLATFORM_ANDROID) || defined(THREAD_LOCAL_ALLOC) \
         || (defined(MSWINCE) && !defined(GC_WINMAIN_REDIRECT))
-#  define GC_COND_INIT() GC_INIT(); CHECH_GCLIB_VERSION; INIT_PRINT_STATS
+#  define GC_OPT_INIT GC_INIT()
 #else
-#  define GC_COND_INIT() CHECH_GCLIB_VERSION; INIT_PRINT_STATS
+#  define GC_OPT_INIT /* empty */
 #endif
+
+#define GC_COND_INIT() \
+    INIT_FORK_SUPPORT; GC_OPT_INIT; CHECH_GCLIB_VERSION; INIT_PRINT_STATS
 
 #define CHECK_OUT_OF_MEMORY(p) \
             if ((p) == NULL) { \
@@ -1286,11 +1299,7 @@ void run_one_test(void)
     /* GC_allocate_ml and GC_need_to_lock are no longer exported, and   */
     /* AO_fetch_and_add1() may be unavailable to update a counter.      */
     (void)GC_call_with_alloc_lock(inc_int_counter, &n_tests);
-#   if defined(THREADS) && defined(HANDLE_FORK) \
-       && (!defined(DARWIN) || !defined(MPROTECT_VDB) \
-           || defined(NO_INCREMENTAL) || defined(MAKE_BACK_GRAPH))
-           /* FIXME: fork() is not tested on Darwin if incremental mode */
-           /* is on for now (till it would be handled properly).        */
+#   ifndef NO_TEST_HANDLE_FORK
       if (fork() == 0) {
         GC_gcollect();
         tiny_reverse_test(0);

@@ -169,7 +169,31 @@ STATIC void * GC_CALLBACK GC_default_oom_fn(
 /* All accesses to it should be synchronized to avoid data races.       */
 GC_oom_func GC_oom_fn = GC_default_oom_fn;
 
-/* Set things up so that GC_size_map[i] >= granules(i),         */
+#ifdef CAN_HANDLE_FORK
+# ifdef HANDLE_FORK
+    GC_INNER GC_bool GC_handle_fork = TRUE;
+                        /* The value is examined by GC_thr_init.        */
+# else
+    GC_INNER GC_bool GC_handle_fork = FALSE;
+# endif
+#endif /* CAN_HANDLE_FORK */
+
+/* Overrides the default handle-fork mode.  Non-zero value means GC     */
+/* should install proper pthread_atfork handlers (or abort if not       */
+/* supported).  Has effect only if called before GC_INIT.               */
+GC_API void GC_CALL GC_set_handle_fork(int value GC_ATTR_UNUSED)
+{
+# ifdef CAN_HANDLE_FORK
+    if (!GC_is_initialized)
+      GC_handle_fork = (GC_bool)value;
+# elif defined(THREADS)
+    /* FIXME: Handle Darwin case. */
+    if (!GC_is_initialized && value)
+      ABORT("fork() handling disabled");
+# endif
+}
+
+/* Set things up so that GC_size_map[i] >= granules(i),                 */
 /* but not too much bigger                                              */
 /* and so that size_map contains relatively few distinct entries        */
 /* This was originally stolen from Russ Atkinson's Cedar                */

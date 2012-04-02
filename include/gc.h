@@ -363,6 +363,14 @@ GC_API void GC_CALL GC_set_pages_executable(int);
 /* use or need synchronization (i.e. acquiring the allocator lock).     */
 GC_API int GC_CALL GC_get_pages_executable(void);
 
+/* Overrides the default handle-fork mode.  Non-zero value means GC     */
+/* should install proper pthread_atfork handlers.  Has effect only if   */
+/* called before GC_INIT.  Clients should invoke GC_set_handle_fork(1)  */
+/* only if going to use fork with GC functions called in the forked     */
+/* child.  (Note that such client and atfork handlers activities are    */
+/* not fully POSIX-compliant.)                                          */
+GC_API void GC_CALL GC_set_handle_fork(int);
+
 /* Initialize the collector.  Portable clients should call GC_INIT()    */
 /* from the main program instead.                                       */
 GC_API void GC_CALL GC_init(void);

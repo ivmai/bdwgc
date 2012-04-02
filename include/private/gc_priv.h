@@ -1935,6 +1935,10 @@ GC_EXTERN GC_bool GC_print_back_height;
                              size_t bytes2);
 #endif
 
+#ifdef CAN_HANDLE_FORK
+  GC_EXTERN GC_bool GC_handle_fork;
+#endif
+
 #ifndef GC_DISABLE_INCREMENTAL
   GC_EXTERN GC_bool GC_dirty_maintained;
                                 /* Dirty bits are being maintained,     */

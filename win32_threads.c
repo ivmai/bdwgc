@@ -55,7 +55,7 @@
   STATIC void GC_thread_exit_proc(void *arg);
 
 # include <pthread.h>
-# ifdef HANDLE_FORK
+# ifdef CAN_HANDLE_FORK
 #   include <unistd.h>
 # endif
 
@@ -987,7 +987,9 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     }
   }
 
-# ifdef HANDLE_FORK
+#endif /* GC_PTHREADS */
+
+#ifdef CAN_HANDLE_FORK
     /* Similar to that in pthread_support.c but also rehashes the table */
     /* since hash map key (thread_id) differs from that in the parent.  */
     STATIC void GC_remove_all_threads_but_me(void)
@@ -1079,9 +1081,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       GC_remove_all_threads_but_me();
       UNLOCK();
     }
-# endif /* HANDLE_FORK */
-
-#endif /* GC_PTHREADS */
+#endif /* CAN_HANDLE_FORK */
 
 void GC_push_thread_structures(void)
 {
@@ -2383,10 +2383,11 @@ GC_INNER void GC_thr_init(void)
   GC_main_thread = GetCurrentThreadId();
   GC_thr_initialized = TRUE;
 
-# if defined(GC_PTHREADS) && defined(HANDLE_FORK)
-    /* Prepare for a possible fork.     */
-    if (pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
-                       GC_fork_child_proc) != 0)
+# ifdef CAN_HANDLE_FORK
+    /* Prepare for forks if requested.  */
+    if (GC_handle_fork
+        && pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
+                          GC_fork_child_proc) != 0)
       ABORT("pthread_atfork failed");
 # endif
 
