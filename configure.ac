@@ -692,10 +692,10 @@ AC_ARG_ENABLE(handle-fork,
 
 if test "${enable_handle_fork}" = yes; then
     AC_DEFINE(HANDLE_FORK, 1,
-              [Define to install pthread_atfork() handlers if available.])
+              [Define to install pthread_atfork() handlers by default.])
 elif test "${enable_handle_fork}" = no; then
     AC_DEFINE(NO_HANDLE_FORK, 1,
-              [Define to inhibit installation of pthread_atfork() handlers.])
+              [Prohibit installation of pthread_atfork() handlers.])
 fi
 
 dnl This is something of a hack.  When cross-compiling we turn off

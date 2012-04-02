@@ -613,7 +613,7 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
   }
 #endif /* GC_ASSERTIONS && THREAD_LOCAL_ALLOC */
 
-#ifdef HANDLE_FORK
+#ifdef CAN_HANDLE_FORK
 /* Remove all entries from the GC_threads table, except the     */
 /* one for the current thread.  We need to do this in the child */
 /* process after a fork(), since only the current thread        */
@@ -657,7 +657,7 @@ STATIC void GC_remove_all_threads_but_me(void)
       GC_threads[hv] = me;
     }
 }
-#endif /* HANDLE_FORK */
+#endif /* CAN_HANDLE_FORK */
 
 #ifdef USE_PROC_FOR_LIBRARIES
   GC_INNER GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
@@ -823,7 +823,7 @@ STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
     }
 }
 
-#ifdef HANDLE_FORK
+#ifdef CAN_HANDLE_FORK
 /* Procedures called before and after a fork.  The goal here is to make */
 /* it safe to call GC_malloc() in a forked child.  It's unclear that is */
 /* attainable, since the single UNIX spec seems to imply that one       */
@@ -901,7 +901,7 @@ STATIC void GC_fork_child_proc(void)
     RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
 }
-#endif /* HANDLE_FORK */
+#endif /* CAN_HANDLE_FORK */
 
 #if defined(GC_DGUX386_THREADS)
   /* Return the number of processors, or i<= 0 if it can't be determined. */
@@ -956,10 +956,11 @@ GC_INNER void GC_thr_init(void)
   if (GC_thr_initialized) return;
   GC_thr_initialized = TRUE;
 
-# ifdef HANDLE_FORK
-    /* Prepare for a possible fork.     */
-    if (pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
-                       GC_fork_child_proc) != 0)
+# ifdef CAN_HANDLE_FORK
+    /* Prepare for forks if requested.  */
+    if (GC_handle_fork
+        && pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
+                          GC_fork_child_proc) != 0)
       ABORT("pthread_atfork failed");
 # endif
 # ifdef INCLUDE_LINUX_THREAD_DESCR
