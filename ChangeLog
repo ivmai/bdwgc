@@ -1,7 +1,6 @@
 
 == [7.3alpha2] (development) ==
 
-* Abort in GC_thr_init on pthread_atfork failure (POSIX threads).
 * Add 'const' qualifier to pointer argument of some API functions.
 * Add GC_UNDERSCORE_STDCALL, UNICODE macro templates to configure (Win32).
 * Add GC_get_thr_restart_signal, GC_thread_is_registered to GC API.
@@ -88,15 +87,18 @@
 
 == [7.2] (candidate) ==
 
+* Abort in GC_thr_init on pthread_atfork failure (POSIX threads).
 * Add GC_WIN32_PTHREADS target in configure.
 * Add GC_is_disabled new function to GC API.
 * Add info that getcontext() resets FPE mask no longer on Linux/x86_64.
+* Add public GC_set_handle_fork to control forked child handling support.
 * Add realloc_test.c test.
 * Add support for Hexagon target.
 * Add thread-safe GC_get_heap_usage_safe to GC API.
 * Check pthread_create/join result in test.
 * Define GC_DLL (in configure) if building only dynamic libraries.
 * Define NO_DEBUGGING (in configure) if "--disable-gc-debug" is set.
+* Disable incremental mode on Darwin if fork handling requested.
 * Enable parallel marker in configure for Solaris.
 * Fix "comparison of signed and unsigned values" compiler warnings.
 * Fix 'volatile' keyword placement in GC_SysVGetDataStart.
@@ -121,7 +123,6 @@
 * Fix gc_cpp.cc for Cygwin (remove duplicate function definition).
 * Fix gcconfig.h to define USE_GET_STACKBASE_FOR_MAIN for Android.
 * Fix gcconfig.h to handle mips64-linux target.
-* Fix gcconfig.h to turn on POSIX fork() support by default.
 * Fix gctest (for Win32) to avoid GC_print_stats internal variable usage.
 * Fix mach_dep.c to include sys/ucontext.h on Mac OS X 10.6.
 * Fix tests to check GC_malloc result for NULL (out-of-memory).
