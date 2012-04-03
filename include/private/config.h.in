@@ -93,6 +93,9 @@
 /* Define to support Win32 threads. */
 #undef GC_WIN32_THREADS
 
+/* Define to install pthread_atfork() handlers by default. */
+#undef HANDLE_FORK
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
@@ -150,6 +153,9 @@
 
 /* Define to make the collector not allocate executable memory by default. */
 #undef NO_EXECUTE_PERMISSION
+
+/* Prohibit installation of pthread_atfork() handlers. */
+#undef NO_HANDLE_FORK
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O

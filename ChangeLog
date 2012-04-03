@@ -1,3 +1,69 @@
+2012-04-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure: Regenerate.
+	* include/private/config.h.in : Likewise.
+
+2012-04-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.macros (NO_HANDLE_FORK): Replace back with HANDLE_FORK
+	and update.
+	* include/private/gcconfig.h (CAN_HANDLE_FORK): Define also for Darwin
+	in case of MPROTECT_VDB.
+	* misc.c (GC_set_handle_fork): Handle Darwin properly; add comment.
+	* os_dep.c (GC_dirty_init): Do not turn on GC_dirty_maintained for
+	Darwin if GC_handle_fork is on; add comment; remove FIXME.
+	* pthread_support.c (GC_fork_prepare_proc): Remove WARN for Darwin
+	(since GC_dirty_maintained is off in that case).
+	* pthread_support.c (GC_fork_child_proc): Remove comment (for Darwin).
+
+2012-04-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (GC_set_handle_fork): New API function.
+	* misc.c (GC_set_handle_fork): Likewise.
+	* include/private/gc_priv.h (GC_handle_fork): New internal variable
+	declaration (only if CAN_HANDLE_FORK).
+	* misc.c (GC_handle_fork): New internal variable (defined only if
+	CAN_HANDLE_FORK); initialize to TRUE if HANDLE_FORK.
+	* include/private/gcconfig.h (HANDLE_FORK): Replace with
+	CAN_HANDLE_FORK.
+	* pthread_support.c (HANDLE_FORK): Likewise.
+	* win32_threads.c (HANDLE_FORK): Likewise.
+	* include/private/gcconfig.h (CAN_HANDLE_FORK): Always define macro if
+	HANDLE_FORK.
+	* pthread_support.c (GC_thr_init): Replace HANDLE_FORK with
+	CAN_HANDLE_FORK; call pthread_atfork only if GC_handle_fork; update
+	the comment.
+	* win32_threads.c (GC_thr_init): Likewise.
+	* tests/test.c (NO_TEST_HANDLE_FORK): Define new macro if fork
+	handling is not supported (or is a no-op) on the target.
+	* tests/test.c (INIT_FORK_SUPPORT): New macro (invoke
+	GC_set_handle_fork unless NO_TEST_HANDLE_FORK).
+	* tests/test.c (GC_OPT_INIT): New macro (defined to GC_INIT or empty).
+	* tests/test.c (GC_COND_INIT): Use INIT_FORK_SUPPORT and GC_OPT_INIT.
+	* tests/test.c (run_one_test): Test NO_TEST_HANDLE_FORK (instead of
+	target-specific macros).
+	* win32_threads.c (GC_remove_all_threads_but_me, GC_fork_prepare_proc,
+	GC_fork_parent_proc, GC_fork_child_proc): Do not test GC_PTHREADS.
+	* configure.ac (HANDLE_FORK, NO_HANDLE_FORK): Update message.
+
+2012-02-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c (GC_thr_init): Abort on pthread_atfork failure
+	(only if HANDLE_FORK).
+
+2012-03-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (GC_HAVE_GET_HEAP_USAGE_SAFE): Remove public HAVE_
+	macro (since function availability could be determined by autotools);
+	update the comment.
+
+2012-03-27  Andy Wingo <wingo@pobox.com>
+
+	* configure.ac: Add --enable-handle-fork option; if explicitly passed,
+	enables or disables the pthread_atfork support; if not passed, the
+	default, as determined by gcconfig.h, is to enable HANDLE_FORK if it
+	is supported on the target platform.
+
 2012-03-28  Ivan Maidanski <ivmai@mail.ru>
 
 	* doc/README.solaris2 (SOLARIS THREADS): Update.

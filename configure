@@ -809,6 +809,7 @@ enable_java_finalization
 enable_atomic_uncollectable
 enable_redirect_malloc
 enable_large_config
+enable_handle_fork
 enable_gc_assertions
 enable_munmap
 with_libatomic_ops
@@ -1473,6 +1474,8 @@ Optional Features:
   --enable-redirect-malloc
                           Redirect malloc and friends to GC routines
   --enable-large-config   Optimize for large (> 100 MB) heap or root set
+  --enable-handle-fork    Attempt to ensure a usable collector after fork() in
+                          multi-threaded programs.
   --enable-gc-assertions  collector-internal assertion checking
   --enable-munmap=N       return page to the os if empty for N collections
 
@@ -16407,6 +16410,22 @@ fi
 if test "${enable_large_config}" = yes; then
 
 $as_echo "#define LARGE_CONFIG 1" >>confdefs.h
+
+fi
+
+# Check whether --enable-handle-fork was given.
+if test "${enable_handle_fork+set}" = set; then :
+  enableval=$enable_handle_fork;
+fi
+
+
+if test "${enable_handle_fork}" = yes; then
+
+$as_echo "#define HANDLE_FORK 1" >>confdefs.h
+
+elif test "${enable_handle_fork}" = no; then
+
+$as_echo "#define NO_HANDLE_FORK 1" >>confdefs.h
 
 fi
 
