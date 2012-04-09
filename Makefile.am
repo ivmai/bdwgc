@@ -54,7 +54,7 @@ libgc_la_SOURCES = extra/gc.c
 else
 EXTRA_DIST += extra/gc.c
 libgc_la_SOURCES = \
-    allchblk.c alloc.c backgraph.c blacklst.c checksums.c dbg_mlc.c \
+    allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
     dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c \
     mach_dep.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
     obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c \
@@ -74,6 +74,10 @@ else
 libgc_la_SOURCES += pthread_stop_world.c
 endif
 endif
+endif
+
+if MAKE_BACK_GRAPH
+libgc_la_SOURCES += backgraph.c
 endif
 
 if ENABLE_DISCLAIM

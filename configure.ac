@@ -714,6 +714,7 @@ AC_ARG_ENABLE(gc-debug,
       ;;
     esac ]
   fi)
+AM_CONDITIONAL([MAKE_BACK_GRAPH], [test x"$enable_gc_debug" = xyes])
 AM_CONDITIONAL([KEEP_BACK_PTRS], [test x"$keep_back_ptrs" = xtrue])
 
 # Check for AViiON Machines running DGUX
