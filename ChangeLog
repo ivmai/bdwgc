@@ -29,6 +29,7 @@
 * Declare privately and use handy GC_base_C() for constant object pointers.
 * Define GC_DLL if DLL_EXPORT at GC build (for Cygwin/MinGW).
 * Define GC_READ_ENV_FILE in configure for WinCE unless gc-debug is off.
+* Do not compile backgraph.c unless configure '--enable-gc-debug'.
 * Do not compile pthread_stop_world.c for Cygwin/Darwin (configure).
 * Do not install ancient new_gc_alloc.h broken for modern STL (configure).
 * Enable GC_MIN_MARKERS to set minimal number of pthread-based markers.
