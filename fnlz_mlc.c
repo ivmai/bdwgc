@@ -102,7 +102,7 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
             op = GC_generic_malloc((word)lb, GC_finalized_kind);
             if (NULL == op)
                 return NULL;
-            /* GC_generic_malloc have have extended the size map for us. */
+            /* GC_generic_malloc has extended the size map for us.      */
             lg = GC_size_map[lb];
         } else {
             *opp = obj_link(op);
