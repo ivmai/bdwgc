@@ -102,12 +102,15 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
             op = GC_generic_malloc((word)lb, GC_finalized_kind);
             if (NULL == op)
                 return NULL;
+            /* GC_generic_malloc has extended the size map for us.      */
+            lg = GC_size_map[lb];
         } else {
             *opp = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
             UNLOCK();
         }
+        GC_ASSERT(lg > 0);
         ((const void **)op)[GRANULES_TO_WORDS(lg) - 1] = fclos;
     } else {
         size_t op_sz;

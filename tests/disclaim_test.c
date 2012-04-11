@@ -40,8 +40,12 @@ int memeq(void *s, int c, size_t len)
 
 void GC_CALLBACK misc_sizes_dct(void *obj, void *cd)
 {
-    size_t size = (size_t)1 << *(unsigned char *)obj;
+    unsigned log_size = *(unsigned char *)obj;
+    size_t size;
+
+    my_assert(log_size < sizeof(size_t) * 8);
     my_assert(cd == NULL);
+    size = (size_t)1 << log_size;
     my_assert(memeq((char *)obj + 1, 0x56, size - 1));
 }
 
