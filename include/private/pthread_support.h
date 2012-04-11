@@ -56,7 +56,7 @@ typedef struct GC_Thread_Rep {
 #       define FINISHED 1       /* Thread has exited.                   */
 #       define DETACHED 2       /* Thread is treated as detached.       */
                                 /* Thread may really be detached, or    */
-                                /* it may have have been explicitly     */
+                                /* it may have been explicitly          */
                                 /* registered, in which case we can     */
                                 /* deallocate its GC_Thread_Rep once    */
                                 /* it unregisters itself, since it      */
