@@ -1,3 +1,7 @@
+2012-04-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/pthread_support.h (DETACHED): Fix a typo in comment.
+
 2012-04-02  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure: Regenerate.
