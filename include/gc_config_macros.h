@@ -125,8 +125,7 @@
 
 #undef GC_PTHREADS
 #if (!defined(GC_WIN32_THREADS) || defined(GC_WIN32_PTHREADS) \
-     || defined(GC_RTEMS_PTHREADS) || defined(__CYGWIN32__) \
-     || defined(__CYGWIN__)) && defined(GC_THREADS)
+     || defined(__CYGWIN32__) || defined(__CYGWIN__)) && defined(GC_THREADS)
   /* Posix threads. */
 # define GC_PTHREADS
 #endif
