@@ -43,15 +43,8 @@
 #    define UNCOND_UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
 #  endif
 
-#  if !defined(AO_HAVE_test_and_set_acquire) && defined(GC_PTHREADS)
-#    define USE_PTHREAD_LOCKS
-#  endif
-
-#  if defined(GC_WIN32_THREADS) && defined(GC_PTHREADS)
-#    define USE_PTHREAD_LOCKS
-#  endif
-
-#  if defined(GC_RTEMS_PTHREADS)
+#  if (!defined(AO_HAVE_test_and_set_acquire) || defined(GC_RTEMS_PTHREADS) \
+       || defined(GC_WIN32_THREADS)) && defined(GC_PTHREADS)
 #    define USE_PTHREAD_LOCKS
 #  endif
 
