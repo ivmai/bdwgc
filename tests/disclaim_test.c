@@ -20,6 +20,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef HAVE_CONFIG_H
+  /* For GC_[P]THREADS */
+# include "private/config.h"
+#endif
+
 #include "gc_disclaim.h"
 
 #define my_assert(e) \
