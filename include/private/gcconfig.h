@@ -680,7 +680,8 @@
 /* __builtin_unwind_init() to push the relevant registers onto the stack. */
 # if defined(__GNUC__) && ((__GNUC__ >= 3) \
                            || (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)) \
-                       && !defined(__INTEL_COMPILER) && !defined(__PATHCC__)
+     && !defined(__INTEL_COMPILER) && !defined(__PATHCC__) \
+     && !defined(__clang__) /* since no-op in clang (3.0) */
 #   define HAVE_BUILTIN_UNWIND_INIT
 # endif
 
