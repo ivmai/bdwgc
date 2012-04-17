@@ -266,14 +266,10 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
         /* subsumed by the getcontext() call.                           */
         GC_save_regs_ret_val = GC_save_regs_in_stack();
 #     endif /* register windows. */
-#   elif defined(HAVE_BUILTIN_UNWIND_INIT) \
-         && !(defined(POWERPC) && defined(DARWIN)) \
-         && !(defined(I386) && defined(RTEMS))
+#   elif defined(HAVE_BUILTIN_UNWIND_INIT)
       /* This was suggested by Richard Henderson as the way to  */
       /* force callee-save registers and register windows onto  */
       /* the stack.                                             */
-      /* Mark Sibly points out that this doesn't seem to work   */
-      /* on MacOS 10.3.9/PowerPC.                               */
       __builtin_unwind_init();
 #   else /* !HAVE_BUILTIN_UNWIND_INIT && !UNIX_LIKE  */
          /* && !HAVE_PUSH_REGS                       */
