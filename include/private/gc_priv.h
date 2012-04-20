@@ -1508,8 +1508,8 @@ GC_INNER void GC_set_hdr_marks(hdr * hhdr);
 GC_INNER void GC_set_fl_marks(ptr_t p);
                                     /* Set all mark bits associated with */
                                     /* a free list.                      */
-#ifdef GC_ASSERTIONS
-  void GC_check_fl_marks(ptr_t p);
+#if defined(GC_ASSERTIONS) && defined(THREADS) && defined(THREAD_LOCAL_ALLOC)
+  void GC_check_fl_marks(void **);
                                     /* Check that all mark bits         */
                                     /* associated with a free list are  */
                                     /* set.  Abort if not.              */
