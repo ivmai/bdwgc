@@ -729,20 +729,24 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
    }
 }
 
-#ifdef GC_ASSERTIONS
-  /* Check that all mark bits for the free list whose first entry is q  */
-  /* are set.                                                           */
-  void GC_check_fl_marks(ptr_t q)
+#if defined(GC_ASSERTIONS) && defined(THREADS) && defined(THREAD_LOCAL_ALLOC)
+  /* Check that all mark bits for the free list whose first entry is    */
+  /* (*pfreelist) are set.  Check skipped if points to a special value. */
+  void GC_check_fl_marks(void **pfreelist)
   {
-   ptr_t p;
-   for (p = q; p != 0; p = obj_link(p)) {
+    ptr_t list = *pfreelist;
+    ptr_t p;
+
+    if ((word)list <= HBLKSIZE) return;
+
+    for (p = list; p != 0; p = obj_link(p)) {
        if (!GC_is_marked(p)) {
-           GC_err_printf("Unmarked object %p on list %p\n", p, q);
+           GC_err_printf("Unmarked object %p on list %p\n", p, list);
            ABORT("Unmarked local free list entry");
        }
-   }
+    }
   }
-#endif
+#endif /* GC_ASSERTIONS && THREAD_LOCAL_ALLOC */
 
 /* Clear all mark bits for the free list whose first entry is q */
 /* Decrement GC_bytes_found by number of bytes on free list.    */
