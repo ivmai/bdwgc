@@ -310,22 +310,16 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
     /* Check that all thread-local free-lists in p are completely marked. */
     void GC_check_tls_for(GC_tlfs p)
     {
-        ptr_t q;
         int j;
 
         for (j = 1; j < TINY_FREELISTS; ++j) {
-          q = p -> ptrfree_freelists[j];
-          if ((word)q > HBLKSIZE) GC_check_fl_marks(q);
-          q = p -> normal_freelists[j];
-          if ((word)q > HBLKSIZE) GC_check_fl_marks(q);
+          GC_check_fl_marks((AO_t *)&p -> ptrfree_freelists[j]);
+          GC_check_fl_marks((AO_t *)&p -> normal_freelists[j]);
 #         ifdef GC_GCJ_SUPPORT
-            q = p -> gcj_freelists[j];
-            if ((word)q > HBLKSIZE) GC_check_fl_marks(q);
+            GC_check_fl_marks((AO_t *)&p -> gcj_freelists[j]);
 #         endif
 #         ifdef ENABLE_DISCLAIM
-            q = p -> finalized_freelists[j];
-            if ((word)q > HBLKSIZE)
-              GC_check_fl_marks(q);
+            GC_check_fl_marks((AO_t *)&p -> finalized_freelists[j]);
 #         endif
         }
     }

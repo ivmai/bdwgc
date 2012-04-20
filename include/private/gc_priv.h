@@ -1588,7 +1588,7 @@ GC_INNER void GC_set_fl_marks(ptr_t p);
                                     /* Set all mark bits associated with */
                                     /* a free list.                      */
 #ifdef GC_ASSERTIONS
-  void GC_check_fl_marks(ptr_t p);
+  void GC_check_fl_marks(AO_t *p);
                                     /* Check that all mark bits         */
                                     /* associated with a free list are  */
                                     /* set.  Abort if not.              */
