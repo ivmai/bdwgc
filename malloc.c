@@ -111,16 +111,28 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 
         op = *opp;
         if (EXPECT(0 == op, FALSE)) {
-            if (GC_size_map[lb] == 0) {
-              if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
-              if (GC_size_map[lb] == 0) GC_extend_size_map(lb);
-              return(GC_generic_malloc_inner(lb, k));
+          if (lg == 0) {
+            if (!EXPECT(GC_is_initialized, TRUE)) {
+              GC_init();
+              lg = GC_size_map[lb];
             }
-            if (kind -> ok_reclaim_list == 0) {
-                if (!GC_alloc_reclaim_list(kind)) goto out;
+            if (0 == lg) {
+              GC_extend_size_map(lb);
+              lg = GC_size_map[lb];
+              GC_ASSERT(lg != 0);
             }
+            /* Retry */
+            opp = &(kind -> ok_freelist[lg]);
+            op = *opp;
+          }
+          if (0 == op) {
+            if (0 == kind -> ok_reclaim_list &&
+                !GC_alloc_reclaim_list(kind))
+              return NULL;
             op = GC_allocobj(lg, k);
-            if (op == 0) goto out;
+            if (0 == op)
+              return NULL;
+          }
         }
         *opp = obj_link(op);
         obj_link(op) = 0;
@@ -130,7 +142,6 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
         GC_bytes_allocd += lb;
     }
 
-out:
     return op;
 }
 
