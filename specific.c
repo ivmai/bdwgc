@@ -11,15 +11,12 @@
  * modified is included with the above copyright notice.
  */
 
-#include "private/gc_priv.h"    /* For configuration, pthreads.h. */
 #include "private/thread_local_alloc.h"
                 /* To determine type of tsd impl.       */
                 /* Includes private/specific.h          */
                 /* if needed.                           */
 
 #if defined(USE_CUSTOM_SPECIFIC)
-
-#include "atomic_ops.h"
 
 static const tse invalid_tse = {INVALID_QTID, 0, 0, INVALID_THREADID};
             /* A thread-specific data entry which will never    */
@@ -32,7 +29,7 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
     tsd * result = (tsd *)MALLOC_CLEAR(sizeof(tsd));
 
     /* A quick alignment check, since we need atomic stores */
-    GC_ASSERT((unsigned long)(&invalid_tse.next) % sizeof(tse *) == 0);
+    GC_ASSERT((word)(&invalid_tse.next) % sizeof(tse *) == 0);
     if (0 == result) return ENOMEM;
     pthread_mutex_init(&(result -> lock), NULL);
     for (i = 0; i < TS_CACHE_SIZE; ++i) {
@@ -109,7 +106,7 @@ GC_INNER void GC_remove_specific(tsd * key)
 }
 
 /* Note that even the slow path doesn't lock.   */
-GC_INNER void * GC_slow_getspecific(tsd * key, unsigned long qtid,
+GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
                                     tse * volatile * cache_ptr)
 {
     pthread_t self = pthread_self();
