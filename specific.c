@@ -49,11 +49,15 @@ int PREFIXED(key_create) (tsd ** key_ptr, void (* destructor)(void *)) {
 int PREFIXED(setspecific) (tsd * key, void * value) {
     pthread_t self = pthread_self();
     int hash_val = HASH(self);
-    volatile tse * entry = (volatile tse *)MALLOC_CLEAR(sizeof (tse));
+    volatile tse * entry;
 
     GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(self != INVALID_THREADID);
+    GC_dont_gc++; /* disable GC */
+    entry = (volatile tse *)MALLOC_CLEAR(sizeof(tse));
+    GC_dont_gc--;
     if (0 == entry) return ENOMEM;
+
     pthread_mutex_lock(&(key -> lock));
     /* Could easily check for an existing entry here.   */
     entry -> next = key -> hash[hash_val];
