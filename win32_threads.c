@@ -811,6 +811,10 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     /* else */ {
       GC_delete_thread(thread_id);
     }
+#   if defined(THREAD_LOCAL_ALLOC)
+      /* It is required to call remove_specific defined in specific.c. */
+      GC_remove_specific(GC_thread_key);
+#   endif
     UNLOCK();
   }
   return GC_SUCCESS;
@@ -2553,6 +2557,10 @@ GC_INNER void GC_thr_init(void)
       /* deallocate it as part of join */
       me -> flags |= FINISHED;
     }
+#   if defined(THREAD_LOCAL_ALLOC)
+      /* It is required to call remove_specific defined in specific.c. */
+      GC_remove_specific(GC_thread_key);
+#   endif
     UNLOCK();
   }
 
