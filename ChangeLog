@@ -25,6 +25,7 @@
 * Allow to get memory via Win32 VirtualAlloc (USE_WINALLOC) on Cygwin.
 * Avoid unnecessary GC_find_limit invocation if GC_no_dls.
 * Avoid use of deprecated GC_dont_gc and GC_stackbottom in gctest.
+* Cast pointers to word (instead of unsigned long) in specific.h.
 * Changed the order in autogen.sh so ltmain exists in time for automake.
 * Declare privately and use handy GC_base_C() for constant object pointers.
 * Define GC_DLL if DLL_EXPORT at GC build (for Cygwin/MinGW).
@@ -96,6 +97,7 @@
 * Add realloc_test.c test.
 * Add support for Hexagon target.
 * Add thread-safe GC_get_heap_usage_safe to GC API.
+* Change GC_check_fl_marks prototype and implementation.
 * Check pthread_create/join result in test.
 * Define GC_DLL (in configure) if building only dynamic libraries.
 * Define NO_DEBUGGING (in configure) if "--disable-gc-debug" is set.
@@ -111,9 +113,11 @@
 * Fix GC_init[_lib_bounds] and GC_get_main_stack_base for malloc redirection.
 * Fix GC_push_all/selected boundaries check.
 * Fix GC_register_my_thread marking thread as detached (Cygwin/pthreads-w32).
+* Fix GC_remove_all_threads_but_me to cleanup thread-specific data storage.
 * Fix GC_restart_handler to preserve errno if needed.
 * Fix GC_root_size update in GC_add_roots_inner (Win32).
 * Fix GC_unregister_my_thread to ensure no ongoing incremental GC (Win32).
+* Fix GC_with_callee_saves_pushed for clang (disable __builtin_unwind_init).
 * Fix calloc, GC_generic_malloc to check for allocation size overflows.
 * Fix compiler warning in GC_dyld_image_add/remove (Darwin).
 * Fix configure --enable-cplusplus make install.
