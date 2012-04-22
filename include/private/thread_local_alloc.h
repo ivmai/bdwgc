@@ -36,8 +36,9 @@
     && !defined(USE_WIN32_COMPILER_TLS) && !defined(USE_COMPILER_TLS) \
     && !defined(USE_CUSTOM_SPECIFIC)
 # if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
-#   if defined(__GNUC__) /* Fixed for versions past 2.95? */ \
-       || defined(MSWINCE)
+#   if defined(CYGWIN32) && (__GNUC__ >= 4)
+#     define USE_COMPILER_TLS
+#   elif defined(__GNUC__) || defined(MSWINCE)
 #     define USE_WIN32_SPECIFIC
 #   else
 #     define USE_WIN32_COMPILER_TLS
@@ -52,13 +53,13 @@
 #   define USE_PTHREAD_SPECIFIC
 # elif defined(GC_HPUX_THREADS)
 #   ifdef __GNUC__
-#    define USE_PTHREAD_SPECIFIC
-     /* Empirically, as of gcc 3.3, USE_COMPILER_TLS doesn't work.      */
+#     define USE_PTHREAD_SPECIFIC
+        /* Empirically, as of gcc 3.3, USE_COMPILER_TLS doesn't work.   */
 #   else
-#    define USE_COMPILER_TLS
+#     define USE_COMPILER_TLS
 #   endif
 # else
-#   define USE_CUSTOM_SPECIFIC  /* Use our own. */
+#    define USE_CUSTOM_SPECIFIC  /* Use our own. */
 # endif
 #endif
 
