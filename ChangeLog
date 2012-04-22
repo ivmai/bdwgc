@@ -1,3 +1,27 @@
+2012-04-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c (GC_remove_all_threads_but_me): Call
+	GC_remove_specific after destroying thread-local list.
+
+2012-04-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_check_fl_marks): Change prototype (pass pointer to
+	"freelist" element instead of value); do not define the function if
+	THREAD_LOCAL_ALLOC undefined.
+	* include/private/gc_priv.h (GC_check_fl_marks): Likewise.
+	* alloc.c (GC_check_fl_marks): Skip check if the argument points to
+	a special (non-pointer) value; update comment; rename "q" local
+	variable to "list".
+	* thread_local_alloc.c (GC_check_tls_for): Update code according to
+	GC_check_fl_marks functionality change (remove checks for special
+	value).
+
+2012-04-17  Niklas Therning <niklas@therning.org>
+
+	* include/private/gcconfig.h (HAVE_BUILTIN_UNWIND_INIT): Do not define
+	for clang (as __builtin_unwind_init seems to be a no-op in the latest
+	clang release).
+
 2012-04-12  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/private/pthread_support.h (DETACHED): Fix a typo in comment.
