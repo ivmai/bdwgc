@@ -9,6 +9,7 @@
 * Add Symbian port to mainline.
 * Add TODO file.
 * Add assertion ensuring proper alignment of 'pushed' GC symbols.
+* Add assertion in GC_getspecific on qtid.
 * Add assertion to GC_incremental_protection_needs, refine documentation.
 * Add assertion to check GC_large_free_bytes by GC_finish_collection.
 * Add configure option to compile all library .c files into single gc.o.
@@ -40,6 +41,7 @@
 * Extend thread-related debug messages.
 * Fix 'configure --enable-cplusplus' for Cygwin/MinGW.
 * Fix DATASTART (and other minor improvements) for NaCl target.
+* Fix GC_setspecific to prevent garbage collection inside.
 * Fix compiler warning in cordtest.
 * Fix minor warnings reported by GCC with '-pedantic' option.
 * Fix static data roots registration on Android (if GC is shared).
@@ -84,6 +86,8 @@
 * Turn on unused-parameter checking for GCC.
 * Update AUTHORS file.
 * Use EXPECT for checking various 'initialized' boolean variables.
+* Use USE_COMPILER_TLS on Cygwin.
+* Use pthread_key for thread-local storage on FreeBSD.
 * Use union of AO_t and word to favor strict-aliasing compiler optimization.
 
 
@@ -107,6 +111,7 @@
 * Fix 'volatile' keyword placement in GC_SysVGetDataStart.
 * Fix GC_READ_ENV_FILE code for Cygwin.
 * Fix GC_add_roots_inner for Mac OS X (align segment start).
+* Fix GC_check_fl_marks regarding concurrent access.
 * Fix GC_finalizer_nested size to workaround alignment problem in Watcom.
 * Fix GC_find_limit_with_bound to always reset fault handler on return.
 * Fix GC_init static assertion for clang/x64 (Darwin).
