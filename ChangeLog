@@ -1,3 +1,15 @@
+2012-04-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_check_fl_marks): Cast pointer passed to GC_is_marked to
+	prevent compiler warning.
+
+2012-04-21  Petter Urkedal <paurkedal@gmail.com>
+
+	* alloc.c (GC_check_fl_marks): Re-read each pointer atomically before
+	following the pointed-to link and bail out if the result is different
+	(this can happen if the thread has popped the object off the
+	free-list); the function is a no-op if AO_load is unavailable.
+
 2012-04-21  Ivan Maidanski <ivmai@mail.ru>
 
 	* pthread_support.c (GC_remove_all_threads_but_me): Call
