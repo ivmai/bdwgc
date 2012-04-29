@@ -733,7 +733,7 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
       for (p = list; p != NULL;) {
         AO_t *next;
 
-        if (!GC_is_marked(p)) {
+        if (!GC_is_marked((ptr_t)p)) {
           GC_err_printf("Unmarked object %p on list %p\n",
                         (void *)p, (void *)list);
           ABORT("Unmarked local free list entry");
