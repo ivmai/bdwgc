@@ -533,6 +533,9 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
                        (unsigned long) lb);
         return(0);
     }
+    if (!GC_debugging_started) {
+        GC_start_debugging();
+    }
     ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
     return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0));
   }
@@ -547,6 +550,9 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
         return(0);
+    }
+    if (!GC_debugging_started) {
+        GC_start_debugging();
     }
     ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
     return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0));
