@@ -109,6 +109,7 @@
 * Enable parallel marker in configure for Solaris.
 * Fix "comparison of signed and unsigned values" compiler warnings.
 * Fix 'volatile' keyword placement in GC_SysVGetDataStart.
+* Fix ALIGNMENT, CPP_WORDSZ, GC_GRANULE_BYTES/WORDS for x32 target.
 * Fix GC_READ_ENV_FILE code for Cygwin.
 * Fix GC_add_roots_inner for Mac OS X (align segment start).
 * Fix GC_check_fl_marks regarding concurrent access.
