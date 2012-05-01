@@ -1,3 +1,13 @@
+2012-04-16  H.J. Lu <hjl.tools@gmail.com>
+
+	* include/gc_tiny_fl.h (GC_GRANULE_BYTES): Set to 8 for x32.
+	(GC_GRANULE_WORDS): Set to 2 for x32.
+
+2012-04-16  H.J. Lu <hjl.tools@gmail.com>
+
+	* include/private/gcconfig.h: (ALIGNMENT): Set to 4 for x32.
+	(CPP_WORDSZ): Set to 32 for x32.
+
 2012-04-29  Ivan Maidanski <ivmai@mail.ru>
 
 	* alloc.c (GC_check_fl_marks): Cast pointer passed to GC_is_marked to
