@@ -1,5 +1,5 @@
 
-== [7.3alpha2] (development) ==
+== [7.3alpha2] 2012-05-11 ==
 
 * Add 'const' qualifier to pointer argument of some API functions.
 * Add GC_UNDERSCORE_STDCALL, UNICODE macro templates to configure (Win32).
@@ -91,7 +91,7 @@
 * Use union of AO_t and word to favor strict-aliasing compiler optimization.
 
 
-== [7.2] (candidate) ==
+== [7.2] 2012-05-11 ==
 
 * Abort in GC_thr_init on pthread_atfork failure (POSIX threads).
 * Add GC_WIN32_PTHREADS target in configure.

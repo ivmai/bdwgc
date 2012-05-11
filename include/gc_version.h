@@ -23,7 +23,7 @@
 /* it to keep the old-style build process working.              */
 #define GC_TMP_VERSION_MAJOR 7
 #define GC_TMP_VERSION_MINOR 3
-#define GC_TMP_ALPHA_VERSION 1 /* 7.3alpha1 */
+#define GC_TMP_ALPHA_VERSION 2 /* 7.3alpha2 */
 
 #ifndef GC_NOT_ALPHA
 # define GC_NOT_ALPHA 0xff
