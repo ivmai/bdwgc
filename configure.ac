@@ -17,7 +17,7 @@ dnl Process this file with autoconf to produce configure.
 # Initialization
 # ==============
 
-AC_INIT(gc,7.2alpha7,gc@linux.hpl.hp.com)
+AC_INIT(gc,7.2,gc@linux.hpl.hp.com)
     ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])

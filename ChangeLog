@@ -1,3 +1,12 @@
+[7.2]
+
+2012-05-11  Ivan Maidanski  <ivmai@mail.ru>
+
+	* configure.ac, doc/README, include/gc_version.h:
+	Bump version to 7.2 (final).
+	* configure: Regenerate.
+	* Makefile.in: Ditto.
+
 2012-04-16  H.J. Lu <hjl.tools@gmail.com>
 
 	* include/gc_tiny_fl.h (GC_GRANULE_BYTES): Set to 8 for x32.
