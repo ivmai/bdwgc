@@ -539,7 +539,9 @@ GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
 
         LOCK();
         set_mark_bit_from_hdr(hhdr, 0); /* Only object. */
-        GC_ASSERT(hhdr -> hb_n_marks == 0);
+#       ifndef THREADS
+          GC_ASSERT(hhdr -> hb_n_marks == 0);
+#       endif
         hhdr -> hb_n_marks = 1;
         UNLOCK();
         return((void *) op);

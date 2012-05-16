@@ -308,7 +308,11 @@ GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)
         /* mark bits.                                                   */
         LOCK();
         set_mark_bit_from_hdr(hhdr, 0); /* Only object. */
-        GC_ASSERT(hhdr -> hb_n_marks == 0);
+#       ifndef THREADS
+          GC_ASSERT(hhdr -> hb_n_marks == 0);
+                /* This is not guaranteed in the multi-threaded case    */
+                /* because the counter could be updated before locking. */
+#       endif
         hhdr -> hb_n_marks = 1;
         UNLOCK();
         return((void *) op);
