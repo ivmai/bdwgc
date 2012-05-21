@@ -1367,6 +1367,12 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* registered with the garbage collector.                             */
   GC_API int GC_CALL GC_thread_is_registered(void);
 
+/* Notify the collector about the stack and the altstack of the current thread */
+/* STACK/STACK_SIZE is used to determine the stack dimensions when a thread is
+ * suspended while it is on an altstack.
+ */
+GC_API void GC_register_altstack(void *stack, int stack_size, void *altstack, int altstack_size);
+
   /* Unregister the current thread.  Only an explicitly registered      */
   /* thread (i.e. for which GC_register_my_thread() returns GC_SUCCESS) */
   /* is allowed (and required) to call this function.  (As a special    */

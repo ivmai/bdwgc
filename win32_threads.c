@@ -601,6 +601,10 @@ GC_API int GC_CALL GC_thread_is_registered(void)
     return me != NULL;
 }
 
+void GC_register_altstack (void *stack, int stack_size, void *altstack, int altstack_size)
+{
+}
+
 /* Make sure thread descriptor t is not protected by the VDB            */
 /* implementation.                                                      */
 /* Used to prevent write faults when the world is (partially) stopped,  */
