@@ -1,8 +1,8 @@
-[7.2-rev-b]
+[7.2b]
 
-2012-05-20  Ivan Maidanski <ivmai@mail.ru>
+2012-05-23  Ivan Maidanski <ivmai@mail.ru>
 
-	* doc/README: Change version to 7.2 (rev. B).
+	* doc/README: Change version to 7.2b (rev. B).
 
 2012-05-16  Ivan Maidanski <ivmai@mail.ru>
 
