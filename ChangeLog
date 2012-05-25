@@ -91,6 +91,11 @@
 * Use union of AO_t and word to favor strict-aliasing compiler optimization.
 
 
+== [7.2b] 2012-05-23 ==
+
+* Fix assertion in GC_malloc_[atomic_]uncollectable (THREADS case only).
+
+
 == [7.2] 2012-05-11 ==
 
 * Abort in GC_thr_init on pthread_atfork failure (POSIX threads).
