@@ -236,6 +236,27 @@ GC_API int GC_CALL GC_is_marked(const void *) GC_ATTR_NONNULL(1);
 GC_API void GC_CALL GC_clear_mark_bit(const void *) GC_ATTR_NONNULL(1);
 GC_API void GC_CALL GC_set_mark_bit(const void *) GC_ATTR_NONNULL(1);
 
+/* Helpers for dynamically changing roots.                              */
+GC_API void GC_push_all(char * /* bottom */, char * /* top */);
+                                /* Push everything in a range           */
+                                /* onto mark stack.                     */
+#ifndef GC_DISABLE_INCREMENTAL
+  GC_API void GC_push_conditional(char * /* b */, char * /* t */,
+                                  int /* all */);
+#else
+# define GC_push_conditional(b, t, all) GC_push_all(b, t)
+#endif
+                                /* Do either of the above, depending    */
+                                /* on the third arg.                    */
+
+GC_API void (*GC_push_other_roots)(void);
+                        /* Push system or application specific roots    */
+                        /* onto the mark stack.  In some environments   */
+                        /* (e.g. threads environments) this is          */
+                        /* predefined to be non-zero.  A client         */
+                        /* supplied replacement should also call the    */
+                        /* original function.                           */
+
 #ifdef __cplusplus
   } /* end of extern "C" */
 #endif

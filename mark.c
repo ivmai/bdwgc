@@ -1261,7 +1261,7 @@ GC_INNER void GC_mark_init(void)
  * Should only be used if there is no possibility of mark stack
  * overflow.
  */
-GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
+GC_API void GC_push_all(ptr_t bottom, ptr_t top)
 {
     register word length;
 
@@ -1334,7 +1334,7 @@ GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
     }
   }
 
-  GC_INNER void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
+  GC_API void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
   {
     if (!all) {
       GC_push_selected(bottom, top, GC_page_was_dirty);
