@@ -1428,11 +1428,11 @@ GC_INNER void GC_initiate_gc(void);
 GC_INNER GC_bool GC_collection_in_progress(void);
                         /* Collection is in progress, or was abandoned. */
 
-GC_INNER void GC_push_all(ptr_t bottom, ptr_t top);
+GC_API_PRIV void GC_push_all(ptr_t bottom, ptr_t top);
                                 /* Push everything in a range           */
                                 /* onto mark stack.                     */
 #ifndef GC_DISABLE_INCREMENTAL
-  GC_INNER void GC_push_conditional(ptr_t b, ptr_t t, GC_bool all);
+  GC_API_PRIV void GC_push_conditional(ptr_t b, ptr_t t, GC_bool all);
 #else
 # define GC_push_conditional(b, t, all) GC_push_all(b, t)
 #endif
@@ -1456,13 +1456,15 @@ GC_INNER void GC_push_all_eager(ptr_t b, ptr_t t);
 GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame);
                                         /* Push all or dirty roots.     */
 
-GC_EXTERN void (*GC_push_other_roots)(void);
+GC_API_PRIV void (*GC_push_other_roots)(void);
                         /* Push system or application specific roots    */
                         /* onto the mark stack.  In some environments   */
                         /* (e.g. threads environments) this is          */
                         /* predefined to be non-zero.  A client         */
                         /* supplied replacement should also call the    */
-                        /* original function.                           */
+                        /* original function.  Remains externally       */
+                        /* visible as used by some well-known 3rd-party */
+                        /* software (e.g., ECL) currently.              */
 
 GC_INNER void GC_push_finalizer_structures(void);
 #ifdef THREADS
