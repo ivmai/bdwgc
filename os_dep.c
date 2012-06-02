@@ -2560,7 +2560,7 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 /* environment, this is also responsible for marking from       */
 /* thread stacks.                                               */
 #ifndef THREADS
-  GC_INNER void (*GC_push_other_roots)(void) = 0;
+  void (*GC_push_other_roots)(void) = 0;
 #else /* THREADS */
 
 # ifdef PCR
@@ -2624,7 +2624,7 @@ STATIC void GC_default_push_other_roots(void)
     }
 # endif /* SN_TARGET_PS3 */
 
-  GC_INNER void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
+  void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
 #endif /* THREADS */
 
 /*
