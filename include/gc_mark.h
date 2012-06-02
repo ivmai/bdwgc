@@ -236,6 +236,13 @@ GC_API int GC_CALL GC_is_marked(const void *) GC_ATTR_NONNULL(1);
 GC_API void GC_CALL GC_clear_mark_bit(const void *) GC_ATTR_NONNULL(1);
 GC_API void GC_CALL GC_set_mark_bit(const void *) GC_ATTR_NONNULL(1);
 
+/* Push everything in the given range onto the mark stack.              */
+/* (GC_push_conditional pushes either all or only dirty pages depending */
+/* on the third argument.)                                              */
+GC_API void GC_CALL GC_push_all(char * /* bottom */, char * /* top */);
+GC_API void GC_CALL GC_push_conditional(char * /* bottom */, char * /* top */,
+                                        int /* bool all */);
+
 #ifdef __cplusplus
   } /* end of extern "C" */
 #endif
