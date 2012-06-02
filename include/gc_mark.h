@@ -243,6 +243,14 @@ GC_API void GC_CALL GC_push_all(char * /* bottom */, char * /* top */);
 GC_API void GC_CALL GC_push_conditional(char * /* bottom */, char * /* top */,
                                         int /* bool all */);
 
+/* Set and get the client push-other-roots procedure.  A client         */
+/* supplied procedure should also call the original procedure.          */
+/* Note that both the setter and getter require some external           */
+/* synchronization to avoid data race.                                  */
+typedef void (GC_CALLBACK * GC_push_other_roots_proc)(void);
+GC_API void GC_CALL GC_set_push_other_roots(GC_push_other_roots_proc);
+GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void);
+
 #ifdef __cplusplus
   } /* end of extern "C" */
 #endif

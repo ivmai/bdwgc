@@ -2560,7 +2560,7 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 /* environment, this is also responsible for marking from       */
 /* thread stacks.                                               */
 #ifndef THREADS
-  void (*GC_push_other_roots)(void) = 0;
+  GC_push_other_roots_proc GC_push_other_roots = 0;
 #else /* THREADS */
 
 # ifdef PCR
@@ -2587,7 +2587,7 @@ PCR_ERes GC_push_old_obj(void *p, size_t size, PCR_Any data)
 extern struct PCR_MM_ProcsRep * GC_old_allocator;
                                         /* defined in pcr_interface.c.  */
 
-STATIC void GC_default_push_other_roots(void)
+STATIC void GC_CALLBACK GC_default_push_other_roots(void)
 {
     /* Traverse data allocated by previous memory managers.             */
           if ((*(GC_old_allocator->mmp_enumerate))(PCR_Bool_false,
@@ -2606,14 +2606,14 @@ STATIC void GC_default_push_other_roots(void)
 # endif /* PCR */
 
 # if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
-    STATIC void GC_default_push_other_roots(void)
+    STATIC void GC_CALLBACK GC_default_push_other_roots(void)
     {
       GC_push_all_stacks();
     }
 # endif /* GC_WIN32_THREADS || GC_PTHREADS */
 
 # ifdef SN_TARGET_PS3
-    STATIC void GC_default_push_other_roots(void)
+    STATIC void GC_CALLBACK GC_default_push_other_roots(void)
     {
       ABORT("GC_default_push_other_roots is not implemented");
     }
@@ -2624,8 +2624,18 @@ STATIC void GC_default_push_other_roots(void)
     }
 # endif /* SN_TARGET_PS3 */
 
-  void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
+  GC_push_other_roots_proc GC_push_other_roots = GC_default_push_other_roots;
 #endif /* THREADS */
+
+GC_API void GC_CALL GC_set_push_other_roots(GC_push_other_roots_proc fn)
+{
+    GC_push_other_roots = fn;
+}
+
+GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
+{
+    return GC_push_other_roots;
+}
 
 /*
  * Routines for accessing dirty bits on virtual pages.

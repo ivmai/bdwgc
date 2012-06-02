@@ -1536,7 +1536,7 @@ GC_INNER void GC_push_all_eager(ptr_t b, ptr_t t);
 GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame);
                                         /* Push all or dirty roots.     */
 
-GC_API_PRIV void (*GC_push_other_roots)(void);
+GC_API_PRIV GC_push_other_roots_proc GC_push_other_roots;
                         /* Push system or application specific roots    */
                         /* onto the mark stack.  In some environments   */
                         /* (e.g. threads environments) this is          */
