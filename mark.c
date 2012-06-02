@@ -187,7 +187,7 @@ static void clear_marks_for_block(struct hblk *h, word dummy)
 }
 
 /* Slow but general routines for setting/clearing/asking about mark bits */
-GC_INNER void GC_set_mark_bit(ptr_t p)
+void GC_set_mark_bit(ptr_t p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
@@ -199,7 +199,7 @@ GC_INNER void GC_set_mark_bit(ptr_t p)
     }
 }
 
-GC_INNER void GC_clear_mark_bit(ptr_t p)
+void GC_clear_mark_bit(ptr_t p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
