@@ -1,4 +1,10 @@
 
+== [7.3alpha4] (development) ==
+
+* Add GC_push_all/conditional() to GC public API.
+* Add public setter and getter for GC_push_other_roots.
+
+
 == [7.3alpha2] 2012-05-11 ==
 
 * Add 'const' qualifier to pointer argument of some API functions.
@@ -89,6 +95,13 @@
 * Use USE_COMPILER_TLS on Cygwin.
 * Use pthread_key for thread-local storage on FreeBSD.
 * Use union of AO_t and word to favor strict-aliasing compiler optimization.
+
+
+== [7.2c] (to be released) ==
+
+* Fix GC_FirstDLOpenedLinkMap() for NetBSD 6 release.
+* Fix visibility of GC_clear/set_mark_bit (unhide symbols).
+* Fix visibility of GC_push_all/conditional, GC_push_other_roots symbols.
 
 
 == [7.2b] 2012-05-23 ==
