@@ -758,6 +758,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
                         /* Expansion, plus room for 0 record */
         addr_map = (prmap_t *)GC_scratch_alloc(
                                 (word)current_sz * sizeof(prmap_t));
+        if (addr_map == NULL)
+          ABORT("Insufficient memory for address map");
     }
     if (ioctl(fd, PIOCMAP, addr_map) < 0) {
         GC_err_printf("fd = %d, errno = %d, needed_sz = %d, addr_map = %p\n",

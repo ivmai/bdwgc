@@ -1668,7 +1668,7 @@ GC_INNER void GC_unpromote_black_lists(void);
 GC_INNER ptr_t GC_scratch_alloc(size_t bytes);
                                 /* GC internal memory allocation for    */
                                 /* small objects.  Deallocation is not  */
-                                /* possible.                            */
+                                /* possible.  May return NULL.          */
 
 /* Heap block layout maps: */
 GC_INNER GC_bool GC_add_map_entry(size_t sz);
