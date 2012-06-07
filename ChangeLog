@@ -100,6 +100,7 @@
 == [7.2c] (to be released) ==
 
 * Fix GC_FirstDLOpenedLinkMap() for NetBSD 6 release.
+* Fix GC_scratch_alloc and GC_get_maps invocations to prevent SEGV.
 * Fix visibility of GC_clear/set_mark_bit (unhide symbols).
 * Fix visibility of GC_push_all/conditional, GC_push_other_roots symbols.
 
