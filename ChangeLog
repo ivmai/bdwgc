@@ -1,3 +1,16 @@
+2012-06-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* dyn_load.c (GC_register_dynamic_libraries): If GC_scratch_alloc
+	fails (returns null) then abort (with the appropriate message) instead
+	of causing SEGV.
+	* os_dep.c (GC_dirty_init): Likewise.
+	* headers.c (GC_init_headers): Report error and exit if
+	GC_scratch_alloc fails.
+	* include/private/gc_priv.h (GC_scratch_alloc): Improve comment.
+	* os_dep.c (GC_print_address_map): If GC_get_maps return null then
+	print the appropriate message (instead of passing null to GC_err_puts
+	thus causing SEGV).
+
 2012-06-02  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/private/gc_priv.h (GC_push_all, GC_push_other_roots):
