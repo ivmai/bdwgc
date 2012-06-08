@@ -1,3 +1,8 @@
+2012-06-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* cordbscs.c (CORD_cat_char_star): Check GC_MALLOC_ATOMIC result for
+	NULL (do OUT_OF_MEMORY in such case) to prevent SEGV.
+
 2012-06-07  Ivan Maidanski <ivmai@mail.ru>
 
 	* dyn_load.c (GC_register_dynamic_libraries): If GC_scratch_alloc
