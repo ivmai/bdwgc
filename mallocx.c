@@ -464,6 +464,8 @@ GC_API void * GC_CALL GC_memalign(size_t align, size_t lb)
     /* is a multiple of align.  That would be correct up to HBLKSIZE.      */
     new_lb = lb + align - 1;
     result = GC_malloc(new_lb);
+            /* It is ok not to check result for NULL as in that case    */
+            /* GC_memalign returns NULL too since (0 + 0 % align) is 0. */
     offset = (word)result % align;
     if (offset != 0) {
         offset = align - offset;
