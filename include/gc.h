@@ -1503,7 +1503,11 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 # define GC_INIT_CONF_FORCE_UNMAP_ON_GCOLLECT /* empty */
 #endif
 
-#ifdef GC_MAX_RETRIES
+#ifdef GC_DONT_GC
+  /* This is for debugging only (useful if environment variables are    */
+  /* unsupported); cannot call GC_disable as goes before GC_init.       */
+# define GC_INIT_CONF_MAX_RETRIES (void)(GC_dont_gc = 1)
+#elif defined(GC_MAX_RETRIES)
   /* Set GC_max_retries to the desired value at start-up */
 # define GC_INIT_CONF_MAX_RETRIES GC_set_max_retries(GC_MAX_RETRIES)
 #else
