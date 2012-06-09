@@ -3,6 +3,7 @@
 
 * Add GC_push_all/conditional() to GC public API.
 * Add public setter and getter for GC_push_other_roots.
+* Recognize GC_DONT_GC macro in gc.h (causes GC_INIT to turn off GC).
 
 
 == [7.3alpha2] 2012-05-11 ==
