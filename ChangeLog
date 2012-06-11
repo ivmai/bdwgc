@@ -1,3 +1,9 @@
+[7.2c]
+
+2012-06-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README: Change version to 7.2c (rev. C).
+
 2012-06-08  Ivan Maidanski <ivmai@mail.ru>
 
 	* cordbscs.c (CORD_cat_char_star): Check GC_MALLOC_ATOMIC result for
