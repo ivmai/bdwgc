@@ -195,10 +195,11 @@ void* Undisguise( GC_word i ) {
 int APIENTRY WinMain( HINSTANCE instance ATTR_UNUSED,
         HINSTANCE prev ATTR_UNUSED, LPSTR cmd, int cmdShow ATTR_UNUSED )
 {
-    int argc;
+    int argc = 0;
     char* argv[ 3 ];
 
-    for (argc = 1; argc < (int)(sizeof(argv) / sizeof(argv[0])); argc++) {
+    if (cmd != 0)
+      for (argc = 1; argc < (int)(sizeof(argv) / sizeof(argv[0])); argc++) {
         argv[ argc ] = strtok( argc == 1 ? cmd : 0, " \t" );
         if (0 == argv[ argc ]) break;}
 #elif defined(MACOS)
