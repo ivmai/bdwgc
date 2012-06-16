@@ -210,6 +210,9 @@ int APIENTRY WinMain( HINSTANCE instance ATTR_UNUSED,
   int main( int argc, char* argv[] ) {
 #endif
 
+    GC_set_all_interior_pointers(1);
+                        /* needed due to C++ multiple inheritance used  */
+
     GC_INIT();
 
     int i, iters, n;
