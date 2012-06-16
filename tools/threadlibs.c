@@ -15,8 +15,7 @@
  * modified is included with the above copyright notice.
  */
 
-# include "gc_config_macros.h"
-# include "private/gcconfig.h"
+# include "private/gc_priv.h"
 
 # include <stdio.h>
 
