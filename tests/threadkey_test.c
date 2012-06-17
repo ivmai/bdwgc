@@ -1,4 +1,8 @@
 
+#ifdef HAVE_CONFIG_H
+# include "private/config.h"
+#endif
+
 #ifndef GC_THREADS
 # define GC_THREADS
 #endif
