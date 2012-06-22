@@ -1611,11 +1611,11 @@ GC_API void GC_CALL GC_win32_free_heap(void);
 #endif /* _AMIGA && !GC_AMIGA_MAKINGLIB */
 
 
-typedef void (*GC_exit_func)(const int status);
+typedef void (GC_CALLBACK * GC_exit_func)(const int status);
 
 GC_API void GC_CALL GC_set_exit_func(GC_exit_func fn);
 
-typedef void (*GC_abort_func)(const char * const msg);
+typedef void (GC_CALLBACK * GC_abort_func)(const char * const msg);
 
 GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn);
 
