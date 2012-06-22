@@ -1610,6 +1610,21 @@ GC_API void GC_CALL GC_win32_free_heap(void);
         (*GC_amiga_allocwrapper_do)(a,GC_malloc_atomic_ignore_off_page)
 #endif /* _AMIGA && !GC_AMIGA_MAKINGLIB */
 
+
+typedef void (*GC_exit_func)(const int status);
+
+GC_API void GC_CALL GC_set_exit_func(GC_exit_func fn);
+
+typedef void (*GC_abort_func)(const char * const msg);
+
+GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn);
+
+#if defined(GC_LINUX_THREADS)
+GC_API void GC_CALL GC_set_suspend_signal(const int sig);
+GC_API void GC_CALL GC_set_thr_restart_signal(const int sig);
+#endif
+
+
 #ifdef __cplusplus
   }  /* end of extern "C" */
 #endif
