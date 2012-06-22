@@ -509,8 +509,8 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
 
 
 #ifdef THREADS
-static int suspend_signal = SIG_SUSPEND_DEFAULT;
-static int thread_restart_signal = SIG_THR_RESTART_DEFAULT;
+STATIC int suspend_signal = SIG_SUSPEND_DEFAULT;
+STATIC int thread_restart_signal = SIG_THR_RESTART_DEFAULT;
 
 void GC_set_suspend_signal(const int sig)
 {
@@ -1478,7 +1478,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
     return(result);
 }
 
-static GC_abort_func abort_fn = NULL; /* JCB */
+STATIC GC_abort_func abort_fn = NULL; /* JCB */
 
 GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
 {
@@ -1527,7 +1527,7 @@ GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
   }
 #endif /* !SMALL_CONFIG */
 
-static GC_exit_func exit_fn = NULL;
+STATIC GC_exit_func exit_fn = NULL;
 
 void GC_exit(int status)
 {
