@@ -4398,7 +4398,7 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
       /* Can't pass it along to the signal handler because that is      */
       /* ignoring SIGBUS signals.  We also shouldn't call ABORT here as */
       /* signals don't always work too well from the exception handler. */
-      exit(EXIT_FAILURE);
+      EXIT();
 #   else /* BROKEN_EXCEPTION_HANDLING */
       /* Pass it along to the next exception handler
          (which should call SIGBUS/SIGSEGV) */
