@@ -1460,32 +1460,37 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 }
 
 #if !defined(PCR) && !defined(SMALL_CONFIG)
-  /* Print (or display) a message before abort. msg must not be NULL. */
+  /* Print (or display) a message before abnormal exit (including       */
+  /* abort).  Invoked from ABORT(msg) macro (there msg is non-NULL)     */
+  /* and from EXIT() macro (msg is NULL in that case).                  */
   void GC_on_abort(const char *msg)
   {
-#   if defined(MSWIN32)
-#     ifndef DONT_USE_USER32_DLL
-        /* Use static binding to "user32.dll".  */
-        (void)MessageBoxA(NULL, msg, "Fatal error in GC", MB_ICONERROR|MB_OK);
-#     else
-        /* This simplifies linking - resolve "MessageBoxA" at run-time. */
-        HINSTANCE hU32 = LoadLibrary(TEXT("user32.dll"));
-        if (hU32) {
-          FARPROC pfn = GetProcAddress(hU32, "MessageBoxA");
-          if (pfn)
-            (void)(*(int (WINAPI *)(HWND, LPCSTR, LPCSTR, UINT))pfn)(
-                                NULL /* hWnd */, msg, "Fatal error in GC",
-                                MB_ICONERROR | MB_OK);
-          (void)FreeLibrary(hU32);
-        }
+    if (msg != NULL) {
+#     if defined(MSWIN32)
+#       ifndef DONT_USE_USER32_DLL
+          /* Use static binding to "user32.dll".        */
+          (void)MessageBoxA(NULL, msg, "Fatal error in GC",
+                            MB_ICONERROR | MB_OK);
+#       else
+          /* This simplifies linking - resolve "MessageBoxA" at run-time. */
+          HINSTANCE hU32 = LoadLibrary(TEXT("user32.dll"));
+          if (hU32) {
+            FARPROC pfn = GetProcAddress(hU32, "MessageBoxA");
+            if (pfn)
+              (void)(*(int (WINAPI *)(HWND, LPCSTR, LPCSTR, UINT))pfn)(
+                                  NULL /* hWnd */, msg, "Fatal error in GC",
+                                  MB_ICONERROR | MB_OK);
+            (void)FreeLibrary(hU32);
+          }
+#       endif
+        /* Also duplicate msg to GC log file.   */
 #     endif
-      /* Also duplicate msg to GC log file.     */
-#   endif
       /* Avoid calling GC_err_printf() here, as GC_on_abort() could be  */
       /* called from it.  Note 1: this is not an atomic output.         */
       /* Note 2: possible write errors are ignored.                     */
       if (WRITE(GC_stderr, (void *)msg, strlen(msg)) >= 0)
         (void)WRITE(GC_stderr, (void *)("\n"), 1);
+    }
 
     if (GETENV("GC_LOOP_ON_ABORT") != NULL) {
             /* In many cases it's easier to debug a running process.    */

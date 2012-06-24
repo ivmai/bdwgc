@@ -493,7 +493,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # ifdef PCR
 #   define EXIT() PCR_Base_Exit(1,PCR_waitForever)
 # else
-#   define EXIT() (void)exit(1)
+#   define EXIT() (GC_on_abort(NULL), exit(1 /* EXIT_FAILURE */))
 # endif
 
 /* Print warning message, e.g. almost out of memory.    */
