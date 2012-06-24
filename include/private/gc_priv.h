@@ -2286,7 +2286,10 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #     define SIG_SUSPEND SIGLOST
 #   else
       /* Linuxthreads itself uses SIGUSR1 and SIGUSR2.                  */
-#     define SIG_SUSPEND SIGPWR
+#     define SIG_SUSPEND GC_get_suspend_signal()
+#     define SIG_THR_RESTART GC_get_thr_restart_signal()
+#     define SIG_SUSPEND_DEFAULT SIGPWR
+#     define SIG_THR_RESTART_DEFAULT SIGXCPU
 #   endif
 # elif !defined(GC_OPENBSD_THREADS) && !defined(GC_DARWIN_THREADS)
 #   if defined(_SIGRTMIN)

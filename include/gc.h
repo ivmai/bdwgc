@@ -1131,13 +1131,21 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
 #endif
 
 #ifdef GC_THREADS
-  /* Return the signal number (constant) used by the garbage collector  */
+  /* Return the signal number (constant after init) used by the GC      */
   /* to suspend threads on POSIX systems.  Return -1 otherwise.         */
   GC_API int GC_CALL GC_get_suspend_signal(void);
+  /* Sets the signal number (constant after init) used by the GC        */
+  /* to suspend threads on POSIX systems.                               */
+  /* Effective only when used before GC_init().                         */
+  GC_API void GC_CALL GC_set_suspend_signal(int sig);
 
-  /* Return the signal number (constant) used by the garbage collector  */
+  /* Return the signal number (constant after init) used by the GC      */
   /* to restart (resume) threads on POSIX systems. Return -1 otherwise. */
   GC_API int GC_CALL GC_get_thr_restart_signal(void);
+  /* Sets the signal number (constant after init) used by the GC        */
+  /* to restart (resume) threads on POSIX systems.                      */
+  /* Effective only when used before GC_init().                         */
+  GC_API void GC_CALL GC_set_thr_restart_signal(int sig);
 
   /* Explicitly enable GC_register_my_thread() invocation.              */
   /* Done implicitly if a GC thread-creation function is called (or     */

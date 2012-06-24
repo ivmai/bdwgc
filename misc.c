@@ -509,21 +509,56 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
 
 
 #ifdef THREADS
-  GC_API int GC_CALL GC_get_suspend_signal(void)
-  {
-#   ifdef SIG_SUSPEND
-      return SIG_SUSPEND;
-#   else
-      return -1;
-#   endif
-  }
-
-# if defined(GC_DARWIN_THREADS) || defined(GC_WIN32_THREADS)
-    GC_API int GC_CALL GC_get_thr_restart_signal(void)
-    {
-      return -1; /* GC does not use signals to restart threads. */
-    }
+# ifdef SIG_SUSPEND_DEFAULT
+STATIC int suspend_signal = SIG_SUSPEND_DEFAULT;
+# else
+STATIC int suspend_signal = -1;
 # endif
+# ifdef SIG_THR_RESTART_DEFAULT
+STATIC int thread_restart_signal = SIG_THR_RESTART_DEFAULT;
+# else
+STATIC int thread_restart_signal = -1;
+# endif
+
+GC_API void GC_CALL GC_set_suspend_signal(int sig)
+{
+# ifdef SIG_SUSPEND_DEFAULT
+  if (GC_is_initialized) return;
+  suspend_signal = sig;
+# endif
+}
+
+GC_API void GC_CALL GC_set_thread_restart_signal(int sig)
+{
+# ifdef SIG_THR_RESTART_DEFAULT
+  if (GC_is_initialized) return;
+  thread_restart_signal = sig;
+# endif
+}
+
+
+GC_API int GC_CALL GC_get_suspend_signal(void)
+{
+# ifdef SIG_SUSPEND_DEFAULT
+  return suspend_signal;
+# elif defined(SIG_SUSPEND)
+  return SIG_SUSPEND;
+# else
+  return -1;
+#endif
+}
+
+GC_API int GC_CALL GC_get_thr_restart_signal(void)
+{
+# ifdef SIG_THR_RESTART_DEFAULT
+  return thread_restart_signal;
+# elif defined(SIG_THR_RESTART)
+  return SIG_THR_RESTART;
+# else
+  return -1;
+#endif
+}
+
 #endif /* THREADS */
 
 #if !defined(_MAX_PATH) && (defined(MSWIN32) || defined(MSWINCE) \
