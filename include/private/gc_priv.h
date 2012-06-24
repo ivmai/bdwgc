@@ -493,7 +493,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # ifdef PCR
 #   define EXIT() PCR_Base_Exit(1,PCR_waitForever)
 # else
-    GC_API_PRIV void GC_exit(int status);
+    GC_API_PRIV void GC_exit(int status) GC_ATTR_NORETURN;
 #   define EXIT() GC_exit(1)
 # endif
 
@@ -2287,10 +2287,7 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #     define SIG_SUSPEND SIGLOST
 #   else
       /* Linuxthreads itself uses SIGUSR1 and SIGUSR2.                  */
-#     define SIG_SUSPEND GC_get_suspend_signal()
-#     define SIG_THR_RESTART GC_get_thr_restart_signal()
-#     define SIG_SUSPEND_DEFAULT SIGPWR
-#     define SIG_THR_RESTART_DEFAULT SIGXCPU
+#     define SIG_SUSPEND SIGPWR
 #   endif
 # elif !defined(GC_OPENBSD_THREADS) && !defined(GC_DARWIN_THREADS)
 #   if defined(_SIGRTMIN)

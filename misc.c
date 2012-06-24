@@ -509,40 +509,12 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
 
 
 #ifdef THREADS
-STATIC int suspend_signal = SIG_SUSPEND_DEFAULT;
-STATIC int thread_restart_signal = SIG_THR_RESTART_DEFAULT;
-
-void GC_set_suspend_signal(const int sig)
-{
-  if (GC_is_initialized) return;
-  suspend_signal = sig;
-}
-
-void GC_set_thread_restart_signal(const int sig)
-{
-  if (GC_is_initialized) return;
-  thread_restart_signal = sig;
-}
-
-
-    GC_API int GC_CALL GC_get_suspend_signal(void)
-    {
-#   ifdef SIG_SUSPEND
-      return suspend_signal;
-#   else
-      return -1;
-#   endif
-    }
-
-    GC_API int GC_CALL GC_get_thr_restart_signal(void)
-    {
-#   ifdef SIG_THR_RESTART
-      return thread_restart_signal;
-#   else      
+# if defined(GC_DARWIN_THREADS) || defined(GC_WIN32_THREADS)
+  GC_API int GC_CALL GC_get_thr_restart_signal(void)
+  {
       return -1; /* GC does not use signals to restart threads. */
-#   endif
-    }
-
+  }
+# endif
 #endif /* THREADS */
 
 #if !defined(_MAX_PATH) && (defined(MSWIN32) || defined(MSWINCE) \
@@ -1478,7 +1450,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
     return(result);
 }
 
-STATIC GC_abort_func abort_fn = NULL; /* JCB */
+STATIC GC_abort_func abort_fn = NULL;
 
 GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
 {

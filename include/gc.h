@@ -1611,19 +1611,13 @@ GC_API void GC_CALL GC_win32_free_heap(void);
 #endif /* _AMIGA && !GC_AMIGA_MAKINGLIB */
 
 
-typedef void (GC_CALLBACK * GC_exit_func)(const int status);
+typedef void (GC_CALLBACK * GC_exit_func)(int /* status */);
 
-GC_API void GC_CALL GC_set_exit_func(GC_exit_func fn);
+GC_API void GC_CALL GC_set_exit_func(GC_exit_func);
 
-typedef void (GC_CALLBACK * GC_abort_func)(const char * const msg);
+typedef void (GC_CALLBACK * GC_abort_func)(char * /* msg */);
 
-GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn);
-
-#if defined(GC_LINUX_THREADS)
-GC_API void GC_CALL GC_set_suspend_signal(const int sig);
-GC_API void GC_CALL GC_set_thr_restart_signal(const int sig);
-#endif
-
+GC_API void GC_CALL GC_set_abort_func(GC_abort_func);
 
 #ifdef __cplusplus
   }  /* end of extern "C" */
