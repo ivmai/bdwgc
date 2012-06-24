@@ -642,11 +642,13 @@ STATIC void GC_exit_check(void)
    GC_gcollect();
 }
 
-#ifdef UNIX_LIKE
+#if defined(UNIX_LIKE) && !defined(NO_DEBUGGING)
   static void looping_handler(int sig)
   {
     GC_err_printf("Caught signal %d: looping in handler\n", sig);
-    for (;;) {}
+    for (;;) {
+       /* empty */
+    }
   }
 
   static GC_bool installed_looping_handler = FALSE;
@@ -1492,7 +1494,8 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
         (void)WRITE(GC_stderr, (void *)("\n"), 1);
     }
 
-    if (GETENV("GC_LOOP_ON_ABORT") != NULL) {
+#   ifndef NO_DEBUGGING
+      if (GETENV("GC_LOOP_ON_ABORT") != NULL) {
             /* In many cases it's easier to debug a running process.    */
             /* It's arguably nicer to sleep, but that makes it harder   */
             /* to look at the thread if the debugger doesn't know much  */
@@ -1500,7 +1503,8 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
             for(;;) {
               /* Empty */
             }
-    }
+      }
+#   endif
   }
 #endif /* !SMALL_CONFIG */
 
