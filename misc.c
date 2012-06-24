@@ -539,12 +539,24 @@ GC_API void GC_CALL GC_set_thread_restart_signal(int sig)
 
 GC_API int GC_CALL GC_get_suspend_signal(void)
 {
+# ifdef SIG_SUSPEND_DEFAULT
   return suspend_signal;
+# elif defined(SIG_SUSPEND)
+  return SIG_SUSPEND;
+# else
+  return -1;
+#endif
 }
 
 GC_API int GC_CALL GC_get_thr_restart_signal(void)
 {
+# ifdef SIG_THR_RESTART_DEFAULT
   return thread_restart_signal;
+# elif defined(SIG_THR_RESTART)
+  return SIG_THR_RESTART;
+# else
+  return -1;
+#endif
 }
 
 #endif /* THREADS */
