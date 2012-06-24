@@ -1614,10 +1614,12 @@ GC_API void GC_CALL GC_win32_free_heap(void);
 typedef void (GC_CALLBACK * GC_exit_func)(int /* status */);
 
 GC_API void GC_CALL GC_set_exit_func(GC_exit_func);
+GC_API GC_exit_func GC_CALL GC_get_exit_func(void);
 
-typedef void (GC_CALLBACK * GC_abort_func)(char * /* msg */);
+typedef void (GC_CALLBACK * GC_abort_func)(const char * /* msg */);
 
 GC_API void GC_CALL GC_set_abort_func(GC_abort_func);
+GC_API GC_abort_func GC_CALL GC_get_abort_func(void);
 
 #ifdef __cplusplus
   }  /* end of extern "C" */
