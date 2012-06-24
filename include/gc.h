@@ -1612,14 +1612,26 @@ GC_API void GC_CALL GC_win32_free_heap(void);
 
 
 typedef void (GC_CALLBACK * GC_exit_func)(int /* status */);
-
 GC_API void GC_CALL GC_set_exit_func(GC_exit_func);
 GC_API GC_exit_func GC_CALL GC_get_exit_func(void);
+	                /* The function registered by this setter is    */
+                        /* invoked when the GC is just about to call    */
+                  	/* exit().                                      */
+                        /* If this callback function returns then, and  */
+                        /* only then, exit() is called.                 */
+                        /* These setter and getter are synchronized.    */
 
 typedef void (GC_CALLBACK * GC_abort_func)(const char * /* msg */);
-
 GC_API void GC_CALL GC_set_abort_func(GC_abort_func);
 GC_API GC_abort_func GC_CALL GC_get_abort_func(void);
+	                /* The function registered by this setter is    */
+                        /* invoked when the GC is just about to call    */
+                  	/* abort().                                     */
+                        /* If this callback function returns then, and  */
+                        /* only then, abort() may be called.            */
+                        /* This callback function is passed a string    */
+                        /* that describes the cause of the abort.       */
+                        /* These setter and getter are synchronized.    */
 
 #ifdef __cplusplus
   }  /* end of extern "C" */
