@@ -1131,13 +1131,21 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
 #endif
 
 #ifdef GC_THREADS
-  /* Return the signal number (constant) used by the garbage collector  */
+  /* Return the signal number (constant after init) used by the GC      */
   /* to suspend threads on POSIX systems.  Return -1 otherwise.         */
   GC_API int GC_CALL GC_get_suspend_signal(void);
+  /* Sets the signal number (constant after init) used by the GC        */
+  /* to suspend threads on POSIX systems.                               */
+  /* Effective only when used before GC_init().                         */
+  GC_API void GC_CALL GC_set_suspend_signal(int sig);
 
-  /* Return the signal number (constant) used by the garbage collector  */
+  /* Return the signal number (constant after init) used by the GC      */
   /* to restart (resume) threads on POSIX systems. Return -1 otherwise. */
   GC_API int GC_CALL GC_get_thr_restart_signal(void);
+  /* Sets the signal number (constant after init) used by the GC        */
+  /* to restart (resume) threads on POSIX systems.                      */
+  /* Effective only when used before GC_init().                         */
+  GC_API void GC_CALL GC_set_thr_restart_signal(int sig);
 
   /* Explicitly enable GC_register_my_thread() invocation.              */
   /* Done implicitly if a GC thread-creation function is called (or     */
@@ -1609,21 +1617,6 @@ GC_API void GC_CALL GC_win32_free_heap(void);
 # define GC_malloc_atomic_ignore_off_page(a) \
         (*GC_amiga_allocwrapper_do)(a,GC_malloc_atomic_ignore_off_page)
 #endif /* _AMIGA && !GC_AMIGA_MAKINGLIB */
-
-
-typedef void (GC_CALLBACK * GC_exit_func)(const int status);
-
-GC_API void GC_CALL GC_set_exit_func(GC_exit_func fn);
-
-typedef void (GC_CALLBACK * GC_abort_func)(const char * const msg);
-
-GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn);
-
-#if defined(GC_LINUX_THREADS)
-GC_API void GC_CALL GC_set_suspend_signal(const int sig);
-GC_API void GC_CALL GC_set_thr_restart_signal(const int sig);
-#endif
-
 
 #ifdef __cplusplus
   }  /* end of extern "C" */

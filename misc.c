@@ -509,39 +509,43 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
 
 
 #ifdef THREADS
+# ifdef SIG_SUSPEND_DEFAULT
 STATIC int suspend_signal = SIG_SUSPEND_DEFAULT;
+# else
+STATIC int suspend_signal = -1;
+# endif
+# ifdef SIG_THR_RESTART_DEFAULT
 STATIC int thread_restart_signal = SIG_THR_RESTART_DEFAULT;
+# else
+STATIC int thread_restart_signal = -1;
+# endif
 
-void GC_set_suspend_signal(const int sig)
+GC_API void GC_CALL GC_set_suspend_signal(int sig)
 {
+# ifdef SIG_SUSPEND_DEFAULT
   if (GC_is_initialized) return;
   suspend_signal = sig;
+# endif
 }
 
-void GC_set_thread_restart_signal(const int sig)
+GC_API void GC_CALL GC_set_thread_restart_signal(int sig)
 {
+# ifdef SIG_THR_RESTART_DEFAULT
   if (GC_is_initialized) return;
   thread_restart_signal = sig;
+# endif
 }
 
 
-    GC_API int GC_CALL GC_get_suspend_signal(void)
-    {
-#   ifdef SIG_SUSPEND
-      return suspend_signal;
-#   else
-      return -1;
-#   endif
-    }
+GC_API int GC_CALL GC_get_suspend_signal(void)
+{
+  return suspend_signal;
+}
 
-    GC_API int GC_CALL GC_get_thr_restart_signal(void)
-    {
-#   ifdef SIG_THR_RESTART
-      return thread_restart_signal;
-#   else      
-      return -1; /* GC does not use signals to restart threads. */
-#   endif
-    }
+GC_API int GC_CALL GC_get_thr_restart_signal(void)
+{
+  return thread_restart_signal;
+}
 
 #endif /* THREADS */
 
@@ -1478,19 +1482,10 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
     return(result);
 }
 
-STATIC GC_abort_func abort_fn = NULL; /* JCB */
-
-GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
-{
-  abort_fn = fn;
-}
-
-
 #if !defined(PCR) && !defined(SMALL_CONFIG)
   /* Print (or display) a message before abort. msg must not be NULL. */
   void GC_on_abort(const char *msg)
   {
-    if (abort_fn) abort_fn(msg);
 #   if defined(MSWIN32)
 #     ifndef DONT_USE_USER32_DLL
         /* Use static binding to "user32.dll".  */
@@ -1526,20 +1521,6 @@ GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
     }
   }
 #endif /* !SMALL_CONFIG */
-
-STATIC GC_exit_func exit_fn = NULL;
-
-void GC_exit(int status)
-{
-  if (exit_fn) exit_fn(status);
-  (void) exit(status);
-}
-
-GC_API void GC_CALL GC_set_exit_func(GC_exit_func fn)
-{
-  exit_fn = fn;
-}
-
 
 GC_API void GC_CALL GC_enable(void)
 {
