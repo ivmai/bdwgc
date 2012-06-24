@@ -509,20 +509,11 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
 
 
 #ifdef THREADS
-  GC_API int GC_CALL GC_get_suspend_signal(void)
-  {
-#   ifdef SIG_SUSPEND
-      return SIG_SUSPEND;
-#   else
-      return -1;
-#   endif
-  }
-
 # if defined(GC_DARWIN_THREADS) || defined(GC_WIN32_THREADS)
-    GC_API int GC_CALL GC_get_thr_restart_signal(void)
-    {
+  GC_API int GC_CALL GC_get_thr_restart_signal(void)
+  {
       return -1; /* GC does not use signals to restart threads. */
-    }
+  }
 # endif
 #endif /* THREADS */
 
@@ -1459,10 +1450,35 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
     return(result);
 }
 
+STATIC GC_abort_func abort_fn = NULL;
+
+GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
+{
+    GC_ASSERT(fn != 0);
+    DCL_LOCK_STATE;
+    LOCK();
+    abort_fn = fn;
+    UNLOCK();
+}
+
+GC_API GC_abort_func GC_CALL GC_get_abort_func(void)
+{
+    GC_abort_func fn;
+    DCL_LOCK_STATE;
+    LOCK();
+    fn = abort_fn;
+    UNLOCK();
+    return fn;
+}
+
+
 #if !defined(PCR) && !defined(SMALL_CONFIG)
-  /* Print (or display) a message before abort. msg must not be NULL. */
+  /* Call abort callback with msg as argument,           */
+  /* and then print (or display) a message before abort. */
+  /* msg must not be NULL.                               */
   void GC_on_abort(const char *msg)
   {
+    if (abort_fn) abort_fn(msg);
 #   if defined(MSWIN32)
 #     ifndef DONT_USE_USER32_DLL
         /* Use static binding to "user32.dll".  */
@@ -1498,6 +1514,34 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
     }
   }
 #endif /* !SMALL_CONFIG */
+
+STATIC GC_exit_func exit_fn = NULL;
+
+GC_API_PRIV void GC_exit(int status)
+{
+  if (exit_fn) exit_fn(status);
+  (void) exit(status);
+}
+
+GC_API void GC_CALL GC_set_exit_func(GC_exit_func fn)
+{
+    GC_ASSERT(fn != 0);
+    DCL_LOCK_STATE;
+    LOCK();
+    exit_fn = fn;
+    UNLOCK();
+}
+
+GC_API GC_exit_func GC_CALL GC_get_exit_func(void)
+{
+    GC_exit_func fn;
+    DCL_LOCK_STATE;
+    LOCK();
+    fn = exit_fn;
+    UNLOCK();
+    return fn;
+}
+
 
 GC_API void GC_CALL GC_enable(void)
 {

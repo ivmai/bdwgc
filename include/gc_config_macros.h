@@ -376,4 +376,14 @@
 
 #endif /* GC_PTHREADS */
 
+# if !defined(GC_ATTR_NORETURN)
+ #   if defined(__GNUC__) /* since GCC v2.7 */
+#     define GC_ATTR_NORETURN __attribute__((__noreturn__))
+#   elif defined(__NORETURN) /* used in Solaris */
+#     define GC_ATTR_NORETURN __NORETURN
+#   else
+#     define GC_ATTR_NORETURN /* empty */
+#   endif
+# endif
+
 #endif
