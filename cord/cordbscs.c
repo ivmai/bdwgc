@@ -188,6 +188,7 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
             result_len = right_len + leny;  /* length of new_right */
             if (result_len <= SHORT_LIMIT) {
                 new_right = GC_MALLOC_ATOMIC(result_len + 1);
+                if (new_right == 0) OUT_OF_MEMORY;
                 memcpy(new_right, right, right_len);
                 memcpy(new_right + right_len, y, leny);
                 new_right[result_len] = '\0';

@@ -196,6 +196,10 @@ GC_INNER void GC_init_headers(void)
     register unsigned i;
 
     GC_all_nils = (bottom_index *)GC_scratch_alloc((word)sizeof(bottom_index));
+    if (GC_all_nils == NULL) {
+      GC_err_printf("Insufficient memory for GC_all_nils\n");
+      EXIT();
+    }
     BZERO(GC_all_nils, sizeof(bottom_index));
     for (i = 0; i < TOP_SZ; i++) {
         GC_top_index[i] = GC_all_nils;

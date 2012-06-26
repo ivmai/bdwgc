@@ -2523,7 +2523,7 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 /* environment, this is also responsible for marking from       */
 /* thread stacks.                                               */
 #ifndef THREADS
-  GC_INNER void (*GC_push_other_roots)(void) = 0;
+  void (*GC_push_other_roots)(void) = 0;
 #else /* THREADS */
 
 # ifdef PCR
@@ -2587,7 +2587,7 @@ STATIC void GC_default_push_other_roots(void)
     }
 # endif /* SN_TARGET_PS3 */
 
-  GC_INNER void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
+  void (*GC_push_other_roots)(void) = GC_default_push_other_roots;
 #endif /* THREADS */
 
 /*
@@ -3641,6 +3641,8 @@ GC_INNER void GC_dirty_init(void)
 
     GC_dirty_maintained = TRUE;
     GC_proc_buf = GC_scratch_alloc(GC_proc_buf_size);
+    if (GC_proc_buf == NULL)
+      ABORT("Insufficient space for /proc read");
 }
 
 # define READ read
@@ -4724,8 +4726,11 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
   /* addresses in FIND_LEAK output.                                     */
   void GC_print_address_map(void)
   {
+    char *maps;
+
     GC_err_printf("---------- Begin address map ----------\n");
-    GC_err_puts(GC_get_maps());
+    maps = GC_get_maps();
+    GC_err_puts(maps != NULL ? maps : "Failed to get map!\n");
     GC_err_printf("---------- End address map ----------\n");
   }
 #endif /* LINUX && ELF */

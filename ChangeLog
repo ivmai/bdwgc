@@ -1,3 +1,46 @@
+2012-06-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* cordbscs.c (CORD_cat_char_star): Check GC_MALLOC_ATOMIC result for
+	NULL (do OUT_OF_MEMORY in such case) to prevent SEGV.
+
+2012-06-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* dyn_load.c (GC_register_dynamic_libraries): If GC_scratch_alloc
+	fails (returns null) then abort (with the appropriate message) instead
+	of causing SEGV.
+	* os_dep.c (GC_dirty_init): Likewise.
+	* headers.c (GC_init_headers): Report error and exit if
+	GC_scratch_alloc fails.
+	* include/private/gc_priv.h (GC_scratch_alloc): Improve comment.
+	* os_dep.c (GC_print_address_map): If GC_get_maps return null then
+	print the appropriate message (instead of passing null to GC_err_puts
+	thus causing SEGV).
+
+2012-06-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (GC_push_all, GC_push_other_roots):
+	Declare as GC_API_PRIV (instead of GC_INNER) to make the symbol
+	externally visible to some well-known 3rd-party software (e.g., ECL).
+	* include/private/gc_priv.h (GC_push_conditional): Declare as
+	GC_API_PRIV (only if GC_DISABLE_INCREMENTAL is undefined).
+	* mark.c (GC_push_all, GC_push_conditional): Remove GC_INNER (to match
+	the declaration).
+	* os_dep.c (GC_push_other_roots): Likewise.
+
+2012-06-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (GC_clear_mark_bit, GC_set_mark_bit):
+	Declare as GC_API_PRIV (instead of GC_INNER) to make the symbol
+	externally visible to 3rd-party software (e.g., ECL).
+	* mark.c (GC_set_mark_bit, GC_clear_mark_bit): Remove GC_INNER (to
+	match the declaration).
+
+2012-06-01  Tsugutomo Enami <tsugutomo.enami@jp.sony.com>
+
+	* dyn_load.c: Include sys/param.h and dlfcn.h on NetBSD.
+	* dyn_load.c (GC_FirstDLOpenedLinkMap): Obtain link map using dlinfo()
+	on NetBSD if RTLD_DI_LINKMAP feature present (defined).
+
 [7.2b]
 
 2012-05-23  Ivan Maidanski <ivmai@mail.ru>

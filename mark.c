@@ -187,7 +187,7 @@ static void clear_marks_for_block(struct hblk *h, word dummy)
 }
 
 /* Slow but general routines for setting/clearing/asking about mark bits */
-GC_INNER void GC_set_mark_bit(ptr_t p)
+void GC_set_mark_bit(ptr_t p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
@@ -199,7 +199,7 @@ GC_INNER void GC_set_mark_bit(ptr_t p)
     }
 }
 
-GC_INNER void GC_clear_mark_bit(ptr_t p)
+void GC_clear_mark_bit(ptr_t p)
 {
     struct hblk *h = HBLKPTR(p);
     hdr * hhdr = HDR(h);
@@ -1259,7 +1259,7 @@ GC_INNER void GC_mark_init(void)
  * Should only be used if there is no possibility of mark stack
  * overflow.
  */
-GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
+void GC_push_all(ptr_t bottom, ptr_t top)
 {
     register word length;
 
@@ -1332,7 +1332,7 @@ GC_INNER void GC_push_all(ptr_t bottom, ptr_t top)
     }
   }
 
-  GC_INNER void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
+  void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
   {
     if (!all) {
       GC_push_selected(bottom, top, GC_page_was_dirty);

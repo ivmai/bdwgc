@@ -77,6 +77,8 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #endif
 
 #if defined(NETBSD)
+#   include <sys/param.h>
+#   include <dlfcn.h>
 #   include <machine/elf_machdep.h>
 #   define ELFSIZE ARCH_ELFSIZE
 #endif
@@ -644,6 +646,11 @@ GC_FirstDLOpenedLinkMap(void)
         return(0);
     }
     if( cachedResult == 0 ) {
+#     if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
+        struct link_map *lm = NULL;
+        if (!dlinfo(RTLD_SELF, RTLD_DI_LINKMAP, &lm))
+            cachedResult = lm;
+#     else
         int tag;
         for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {
             if( tag == DT_DEBUG ) {
@@ -653,6 +660,7 @@ GC_FirstDLOpenedLinkMap(void)
                 break;
             }
         }
+#     endif /* !NETBSD || !RTLD_DI_LINKMAP */
     }
     return cachedResult;
 }
@@ -752,6 +760,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
                         /* Expansion, plus room for 0 record */
         addr_map = (prmap_t *)GC_scratch_alloc(
                                 (word)current_sz * sizeof(prmap_t));
+        if (addr_map == NULL)
+          ABORT("Insufficient memory for address map");
     }
     if (ioctl(fd, PIOCMAP, addr_map) < 0) {
         GC_err_printf("fd = %d, errno = %d, needed_sz = %d, addr_map = %p\n",
