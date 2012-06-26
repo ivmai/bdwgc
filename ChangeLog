@@ -98,7 +98,7 @@
 * Use union of AO_t and word to favor strict-aliasing compiler optimization.
 
 
-== [7.2c] (to be released) ==
+== [7.2c] 2012-06-11 ==
 
 * Fix CORD_cat_char_star to prevent SEGV in case of out-of-memory.
 * Fix GC_FirstDLOpenedLinkMap() for NetBSD 6 release.
