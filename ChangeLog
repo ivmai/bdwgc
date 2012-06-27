@@ -3,7 +3,11 @@
 
 * Add GC_push_all/conditional() to GC public API.
 * Add public setter and getter for GC_push_other_roots.
+* Call GC_on_abort (with NULL argument) on exit(1).
+* Include proper header file in 'tools' for configuration macros.
 * Recognize GC_DONT_GC macro in gc.h (causes GC_INIT to turn off GC).
+* Suppress GCC warnings in test_cpp and cord 'de' app.
+* Turn off GC_LOOP_ON_ABORT functionality if GC compiled with NO_DEBUGGING.
 
 
 == [7.3alpha2] 2012-05-11 ==
@@ -96,6 +100,13 @@
 * Use USE_COMPILER_TLS on Cygwin.
 * Use pthread_key for thread-local storage on FreeBSD.
 * Use union of AO_t and word to favor strict-aliasing compiler optimization.
+
+
+== [7.2d] (to be released) ==
+
+* Fix test_cpp (ensure the collector recognizes pointers to interiors).
+* Fix thread-related tests for pthreads-w32.
+* test_cpp: Fix WinMain to prevent SEGV if zero arguments passed (MinGW).
 
 
 == [7.2c] 2012-06-11 ==
