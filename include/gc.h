@@ -1058,6 +1058,17 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void);
 /* to suppress all warnings (unless statistics printing is turned on).  */
 GC_API void GC_CALLBACK GC_ignore_warn_proc(char *, GC_word);
 
+/* abort_func is invoked on GC fatal aborts (just before OS-dependent   */
+/* abort or exit(1) is called).  Must be non-NULL.  The default one     */
+/* outputs msg to stderr provided msg is non-NULL.  msg is NULL if      */
+/* invoked before exit(1) otherwise msg is non-NULL (i.e., if invoked   */
+/* before abort).  Both the setter and getter acquire the GC lock.      */
+/* Both the setter and getter are defined only if the library has been  */
+/* compiled without SMALL_CONFIG.                                       */
+typedef void (GC_CALLBACK * GC_abort_func)(const char * /* msg */);
+GC_API void GC_CALL GC_set_abort_func(GC_abort_func) GC_ATTR_NONNULL(1);
+GC_API GC_abort_func GC_CALL GC_get_abort_func(void);
+
 /* The following is intended to be used by a higher level       */
 /* (e.g. Java-like) finalization facility.  It is expected      */
 /* that finalization code will arrange for hidden pointers to   */

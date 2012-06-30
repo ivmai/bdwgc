@@ -1465,7 +1465,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
   /* Print (or display) a message before abnormal exit (including       */
   /* abort).  Invoked from ABORT(msg) macro (there msg is non-NULL)     */
   /* and from EXIT() macro (msg is NULL in that case).                  */
-  void GC_on_abort(const char *msg)
+  STATIC void GC_CALLBACK GC_default_on_abort(const char *msg)
   {
     if (msg != NULL) {
 #     if defined(MSWIN32)
@@ -1505,6 +1505,27 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
             }
       }
 #   endif
+  }
+
+  GC_abort_func GC_on_abort = GC_default_on_abort;
+
+  GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
+  {
+      DCL_LOCK_STATE;
+      GC_ASSERT(fn != 0);
+      LOCK();
+      GC_on_abort = fn;
+      UNLOCK();
+  }
+
+  GC_API GC_abort_func GC_CALL GC_get_abort_func(void)
+  {
+      GC_abort_func fn;
+      DCL_LOCK_STATE;
+      LOCK();
+      fn = GC_on_abort;
+      UNLOCK();
+      return fn;
   }
 #endif /* !SMALL_CONFIG */
 

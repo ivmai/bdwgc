@@ -467,7 +467,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #   ifdef SMALL_CONFIG
 #     define GC_on_abort(msg) (void)0 /* be silent on abort */
 #   else
-      GC_API_PRIV void GC_on_abort(const char * msg);
+      GC_API_PRIV GC_abort_func GC_on_abort;
 #   endif /* !SMALL_CONFIG */
 #   if defined(MSWIN32) && (defined(NO_DEBUGGING) || defined(LINT2))
       /* A more user-friendly abort after showing fatal message.        */
