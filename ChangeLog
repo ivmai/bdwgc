@@ -2,6 +2,7 @@
 == [7.3alpha4] (development) ==
 
 * Add GC_push_all/conditional() to GC public API.
+* Add public GC_set/get_abort_func to replace default GC_on_abort.
 * Add public setter and getter for GC_push_other_roots.
 * Call GC_on_abort (with NULL argument) on exit(1).
 * Include proper header file in 'tools' for configuration macros.
