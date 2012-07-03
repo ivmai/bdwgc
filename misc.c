@@ -528,7 +528,7 @@ GC_API void GC_CALL GC_set_suspend_signal(int sig)
 # endif
 }
 
-GC_API void GC_CALL GC_set_thread_restart_signal(int sig)
+GC_API void GC_CALL GC_set_thr_restart_signal(int sig)
 {
 # ifdef SIG_THR_RESTART_DEFAULT
   if (GC_is_initialized) return;
