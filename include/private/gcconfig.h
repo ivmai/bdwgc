@@ -900,8 +900,10 @@
 #       ifndef GC_FREEBSD_THREADS
 #           define MPROTECT_VDB
 #       endif
-#       define SIG_SUSPEND SIGUSR1
-#       define SIG_THR_RESTART SIGUSR2
+#       define SIG_SUSPEND GC_get_suspend_signal()
+#       define SIG_THR_RESTART GC_get_thr_restart_signal()
+#       define SIG_SUSPEND_DEFAULT SIGUSR1
+#       define SIG_THR_RESTART_DEFAULT SIGUSR2
 #       define FREEBSD_STACKBOTTOM
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
@@ -1102,8 +1104,10 @@
 #   endif
 #   ifdef FREEBSD
 #       define OS_TYPE "FREEBSD"
-#       define SIG_SUSPEND SIGUSR1
-#       define SIG_THR_RESTART SIGUSR2
+#       define SIG_SUSPEND GC_get_suspend_signal()
+#       define SIG_THR_RESTART GC_get_thr_restart_signal()
+#       define SIG_SUSPEND_DEFAULT SIGUSR1
+#       define SIG_THR_RESTART_DEFAULT SIGUSR2
 #       define FREEBSD_STACKBOTTOM
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
@@ -1371,13 +1375,17 @@
 #           define MPROTECT_VDB
 #       endif
 #       ifdef __GLIBC__
-#           define SIG_SUSPEND          (32+6)
-#           define SIG_THR_RESTART      (32+5)
+#           define SIG_SUSPEND GC_get_suspend_signal()
+#           define SIG_THR_RESTART GC_get_thr_restart_signal()
+#           define SIG_SUSPEND_DEFAULT          (32+6)
+#           define SIG_THR_RESTART_DEFAULT      (32+5)
             extern int _end[];
 #           define DATAEND (ptr_t)(_end)
 #       else
-#           define SIG_SUSPEND SIGUSR1
-#           define SIG_THR_RESTART SIGUSR2
+#           define SIG_SUSPEND GC_get_suspend_signal()
+#           define SIG_THR_RESTART GC_get_thr_restart_signal()
+#           define SIG_SUSPEND_DEFAULT SIGUSR1
+#           define SIG_THR_RESTART_DEFAULT SIGUSR2
                 /* SIGTSTP and SIGCONT could be used alternatively.     */
 #       endif
 #       define FREEBSD_STACKBOTTOM
@@ -1423,8 +1431,10 @@
 #       define DATASTART ((ptr_t)etext)
 #       define DATAEND ((ptr_t)end)
 #       define STACKBOTTOM ((ptr_t)InitStackBottom)
-#       define SIG_SUSPEND SIGUSR1
-#       define SIG_THR_RESTART SIGUSR2
+#       define SIG_SUSPEND GC_get_suspend_signal()
+#       define SIG_THR_RESTART GC_get_thr_restart_signal()
+#       define SIG_SUSPEND_DEFAULT SIGUSR1
+#       define SIG_THR_RESTART_DEFAULT SIGUSR2
 #   endif
 #   ifdef DOS4GW
 #     define OS_TYPE "DOS4GW"
@@ -1445,8 +1455,10 @@
 #     define OS_TYPE "HURD"
 #     define STACK_GROWS_DOWN
 #     define HEURISTIC2
-#     define SIG_SUSPEND SIGUSR1
-#     define SIG_THR_RESTART SIGUSR2
+#     define SIG_SUSPEND GC_get_suspend_signal()
+#     define SIG_THR_RESTART GC_get_thr_restart_signal()
+#     define SIG_SUSPEND_DEFAULT SIGUSR1
+#     define SIG_THR_RESTART_DEFAULT SIGUSR2
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
 #     define DATAEND ((ptr_t) (_end))
@@ -1715,8 +1727,10 @@
 #   ifdef FREEBSD
 #       define OS_TYPE "FREEBSD"
 /* MPROTECT_VDB is not yet supported at all on FreeBSD/alpha. */
-#       define SIG_SUSPEND SIGUSR1
-#       define SIG_THR_RESTART SIGUSR2
+#       define SIG_SUSPEND GC_get_suspend_signal()
+#       define SIG_THR_RESTART GC_get_thr_restart_signal()
+#       define SIG_SUSPEND_DEFAULT SIGUSR1
+#       define SIG_THR_RESTART_DEFAULT SIGUSR2
                 /* SIGTSTP and SIGCONT could be used alternatively.     */
 #       define FREEBSD_STACKBOTTOM
 #       ifdef __ELF__
@@ -2209,13 +2223,17 @@
 #           define MPROTECT_VDB
 #       endif
 #       ifdef __GLIBC__
-#           define SIG_SUSPEND          (32+6)
-#           define SIG_THR_RESTART      (32+5)
+#           define SIG_SUSPEND GC_get_suspend_signal()
+#           define SIG_THR_RESTART GC_get_thr_restart_signal()
+#           define SIG_SUSPEND_DEFAULT          (32+6)
+#           define SIG_THR_RESTART_DEFAULT      (32+5)
             extern int _end[];
 #           define DATAEND (ptr_t)(_end)
 #       else
-#           define SIG_SUSPEND SIGUSR1
-#           define SIG_THR_RESTART SIGUSR2
+#           define SIG_SUSPEND GC_get_suspend_signal()
+#           define SIG_THR_RESTART GC_get_thr_restart_signal()
+#           define SIG_SUSPEND_DEFAULT SIGUSR1
+#           define SIG_THR_RESTART_DEFAULT SIGUSR2
                 /* SIGTSTP and SIGCONT could be used alternatively.     */
 #       endif
 #       define FREEBSD_STACKBOTTOM

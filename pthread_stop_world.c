@@ -129,15 +129,16 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
  */
 
 #ifndef SIG_THR_RESTART
+#  define SIG_THR_RESTART GC_get_thr_restart_signal()
 #  if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) \
       || defined(GC_NETBSD_THREADS)
 #    ifdef _SIGRTMIN
-#      define SIG_THR_RESTART _SIGRTMIN + 5
+#      define SIG_THR_RESTART_DEFAULT _SIGRTMIN + 5
 #    else
-#      define SIG_THR_RESTART SIGRTMIN + 5
+#      define SIG_THR_RESTART_DEFAULT SIGRTMIN + 5
 #    endif
 #  else
-#   define SIG_THR_RESTART SIGXCPU
+#   define SIG_THR_RESTART_DEFAULT SIGXCPU
 #  endif
 #endif
 

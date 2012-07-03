@@ -2283,7 +2283,8 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #   if defined(SPARC) && !defined(SIGPWR)
       /* SPARC/Linux doesn't properly define SIGPWR in <signal.h>.      */
       /* It is aliased to SIGLOST in asm/signal.h, though.              */
-#     define SIG_SUSPEND SIGLOST
+#     define SIG_SUSPEND GC_get_suspend_signal()
+#     define SIG_SUSPEND_DEFAULT SIGLOST
 #   else
       /* Linuxthreads itself uses SIGUSR1 and SIGUSR2.                  */
 #     define SIG_SUSPEND GC_get_suspend_signal()
@@ -2292,10 +2293,11 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #     define SIG_THR_RESTART_DEFAULT SIGXCPU
 #   endif
 # elif !defined(GC_OPENBSD_THREADS) && !defined(GC_DARWIN_THREADS)
+#   define SIG_SUSPEND GC_get_suspend_signal()
 #   if defined(_SIGRTMIN)
-#     define SIG_SUSPEND _SIGRTMIN + 6
+#     define SIG_SUSPEND_DEFAULT _SIGRTMIN + 6
 #   else
-#     define SIG_SUSPEND SIGRTMIN + 6
+#     define SIG_SUSPEND_DEFAULT SIGRTMIN + 6
 #   endif
 # endif
 #endif /* GC_PTHREADS && !SIG_SUSPEND */
