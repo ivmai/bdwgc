@@ -141,6 +141,8 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
 #  endif
 #endif
 
+STATIC int GC_sig_thr_restart = SIG_THR_RESTART;
+
 #ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
   /* Some targets (eg., Solaris) might require this to be called when   */
   /* doing thread registering from the thread destructor.               */
@@ -149,7 +151,7 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
     sigset_t set;
     sigemptyset(&set);
     sigaddset(&set, SIG_SUSPEND);
-    sigaddset(&set, SIG_THR_RESTART);
+    sigaddset(&set, GC_sig_thr_restart);
     if (pthread_sigmask(SIG_UNBLOCK, &set, NULL) != 0)
       ABORT("pthread_sigmask failed");
   }
@@ -241,10 +243,9 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg,
   me -> stop_info.last_stop_count = my_stop_count;
 
   /* Wait until that thread tells us to restart by sending      */
-  /* this thread a SIG_THR_RESTART signal.                      */
-  /* SIG_THR_RESTART should be masked at this point.  Thus      */
-  /* there is no race.                                          */
-  /* We do not continue until we receive a SIG_THR_RESTART,     */
+  /* this thread a GC_sig_thr_restart signal (should be masked  */
+  /* at this point thus there is no race).                      */
+  /* We do not continue until we receive that signal,           */
   /* but we do not take that as authoritative.  (We may be      */
   /* accidentally restarted by one of the user signals we       */
   /* don't block.)  After we receive the signal, we use a       */
@@ -274,7 +275,8 @@ STATIC void GC_restart_handler(int sig)
     int old_errno = errno;      /* Preserve errno value.        */
 # endif
 
-  if (sig != SIG_THR_RESTART) ABORT("Bad signal in suspend_handler");
+  if (sig != GC_sig_thr_restart)
+    ABORT("Bad signal in suspend_handler");
 
 # ifdef GC_NETBSD_THREADS_WORKAROUND
     sem_post(&GC_restart_ack_sem);
@@ -780,9 +782,10 @@ GC_INNER void GC_start_world(void)
               ABORT("pthread_resume_np failed");
 #         else
 #           ifndef PLATFORM_ANDROID
-              result = pthread_kill(p -> id, SIG_THR_RESTART);
+              result = pthread_kill(p -> id, GC_sig_thr_restart);
 #           else
-              result = android_thread_kill(p -> kernel_id, SIG_THR_RESTART);
+              result = android_thread_kill(p -> kernel_id,
+                                           GC_sig_thr_restart);
 #           endif
             switch(result) {
                 case ESRCH:
@@ -850,8 +853,8 @@ GC_INNER void GC_stop_init(void)
       }
 #   endif
     GC_remove_allowed_signals(&act.sa_mask);
-    /* SIG_THR_RESTART is set in the resulting mask.            */
-    /* It is unmasked by the handler when necessary.            */
+    /* GC_sig_thr_restart is set in the resulting mask. */
+    /* It is unmasked by the handler when necessary.    */
 #   ifdef SA_SIGINFO
       act.sa_sigaction = GC_suspend_handler;
 #   else
@@ -865,14 +868,14 @@ GC_INNER void GC_stop_init(void)
       act.sa_flags &= ~ SA_SIGINFO;
 #   endif
     act.sa_handler = GC_restart_handler;
-    if (sigaction(SIG_THR_RESTART, &act, NULL) != 0) {
+    if (sigaction(GC_sig_thr_restart, &act, NULL) != 0) {
         ABORT("Cannot set SIG_THR_RESTART handler");
     }
 
-    /* Initialize suspend_handler_mask. It excludes SIG_THR_RESTART. */
+    /* Initialize suspend_handler_mask (excluding GC_sig_thr_restart).  */
     if (sigfillset(&suspend_handler_mask) != 0) ABORT("sigfillset failed");
     GC_remove_allowed_signals(&suspend_handler_mask);
-    if (sigdelset(&suspend_handler_mask, SIG_THR_RESTART) != 0)
+    if (sigdelset(&suspend_handler_mask, GC_sig_thr_restart) != 0)
         ABORT("sigdelset failed");
 
     /* Check for GC_RETRY_SIGNALS.      */
@@ -891,7 +894,7 @@ GC_INNER void GC_stop_init(void)
   GC_API int GC_CALL GC_get_thr_restart_signal(void)
   {
 #   if !defined(GC_OPENBSD_THREADS) && !defined(NACL)
-      return SIG_THR_RESTART;
+      return GC_sig_thr_restart;
 #   else
       return -1;
 #   endif
