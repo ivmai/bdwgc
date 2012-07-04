@@ -144,6 +144,16 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
 STATIC int GC_sig_suspend = SIG_SUSPEND;
 STATIC int GC_sig_thr_restart = SIG_THR_RESTART;
 
+GC_API int GC_CALL GC_get_suspend_signal(void)
+{
+  return GC_sig_suspend;
+}
+
+GC_API int GC_CALL GC_get_thr_restart_signal(void)
+{
+  return GC_sig_thr_restart;
+}
+
 #ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
   /* Some targets (eg., Solaris) might require this to be called when   */
   /* doing thread registering from the thread destructor.               */
@@ -890,24 +900,6 @@ GC_INNER void GC_stop_init(void)
       GC_log_printf("Will retry suspend signal if necessary\n");
     }
 # endif /* !GC_OPENBSD_THREADS && !NACL */
-}
-
-GC_API int GC_CALL GC_get_suspend_signal(void)
-{
-# if !defined(GC_OPENBSD_THREADS) && !defined(NACL)
-    return GC_sig_suspend;
-# else
-    return -1;
-# endif
-}
-
-GC_API int GC_CALL GC_get_thr_restart_signal(void)
-{
-# if !defined(GC_OPENBSD_THREADS) && !defined(NACL)
-    return GC_sig_thr_restart;
-# else
-    return -1;
-# endif
 }
 
 #endif /* GC_PTHREADS && !GC_DARWIN_THREADS && !GC_WIN32_THREADS */
