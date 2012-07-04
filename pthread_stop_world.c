@@ -141,6 +141,7 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
 #  endif
 #endif
 
+STATIC int GC_sig_suspend = SIG_SUSPEND;
 STATIC int GC_sig_thr_restart = SIG_THR_RESTART;
 
 #ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
@@ -150,7 +151,7 @@ STATIC int GC_sig_thr_restart = SIG_THR_RESTART;
   {
     sigset_t set;
     sigemptyset(&set);
-    sigaddset(&set, SIG_SUSPEND);
+    sigaddset(&set, GC_sig_suspend);
     sigaddset(&set, GC_sig_thr_restart);
     if (pthread_sigmask(SIG_UNBLOCK, &set, NULL) != 0)
       ABORT("pthread_sigmask failed");
@@ -198,7 +199,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg,
   IF_CANCEL(int cancel_state;)
   AO_t my_stop_count = AO_load(&GC_stop_count);
 
-  if ((signed_word)sig_arg != SIG_SUSPEND)
+  if ((signed_word)sig_arg != GC_sig_suspend)
     ABORT("Bad signal in suspend_handler");
 
   DISABLE_CANCEL(cancel_state);
@@ -457,9 +458,9 @@ STATIC int GC_suspend_all(void)
                         *(ptr_t *)((char *)p -> id + UTHREAD_SP_OFFSET);
 #           else
 #             ifndef PLATFORM_ANDROID
-                result = pthread_kill(p -> id, SIG_SUSPEND);
+                result = pthread_kill(p -> id, GC_sig_suspend);
 #             else
-                result = android_thread_kill(p -> kernel_id, SIG_SUSPEND);
+                result = android_thread_kill(p -> kernel_id, GC_sig_suspend);
 #             endif
               switch(result) {
                 case ESRCH:
@@ -860,7 +861,7 @@ GC_INNER void GC_stop_init(void)
 #   else
       act.sa_handler = GC_suspend_handler;
 #   endif
-    if (sigaction(SIG_SUSPEND, &act, NULL) != 0) {
+    if (sigaction(GC_sig_suspend, &act, NULL) != 0) {
         ABORT("Cannot set SIG_SUSPEND handler");
     }
 
@@ -891,13 +892,22 @@ GC_INNER void GC_stop_init(void)
 # endif /* !GC_OPENBSD_THREADS && !NACL */
 }
 
-  GC_API int GC_CALL GC_get_thr_restart_signal(void)
-  {
-#   if !defined(GC_OPENBSD_THREADS) && !defined(NACL)
-      return GC_sig_thr_restart;
-#   else
-      return -1;
-#   endif
-  }
+GC_API int GC_CALL GC_get_suspend_signal(void)
+{
+# if !defined(GC_OPENBSD_THREADS) && !defined(NACL)
+    return GC_sig_suspend;
+# else
+    return -1;
+# endif
+}
 
-#endif
+GC_API int GC_CALL GC_get_thr_restart_signal(void)
+{
+# if !defined(GC_OPENBSD_THREADS) && !defined(NACL)
+    return GC_sig_thr_restart;
+# else
+    return -1;
+# endif
+}
+
+#endif /* GC_PTHREADS && !GC_DARWIN_THREADS && !GC_WIN32_THREADS */
