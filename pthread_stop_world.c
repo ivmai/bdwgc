@@ -144,6 +144,20 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
 STATIC int GC_sig_suspend = SIG_SUSPEND;
 STATIC int GC_sig_thr_restart = SIG_THR_RESTART;
 
+GC_API void GC_CALL GC_set_suspend_signal(int sig)
+{
+  if (GC_is_initialized) return;
+
+  GC_sig_suspend = sig;
+}
+
+GC_API void GC_CALL GC_set_thr_restart_signal(int sig)
+{
+  if (GC_is_initialized) return;
+
+  GC_sig_thr_restart = sig;
+}
+
 GC_API int GC_CALL GC_get_suspend_signal(void)
 {
   return GC_sig_suspend;

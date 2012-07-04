@@ -510,6 +510,16 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
 #if defined(GC_DARWIN_THREADS) || defined(GC_OPENBSD_THREADS) \
     || defined(GC_WIN32_THREADS) || (defined(NACL) && defined(THREADS))
   /* GC does not use signals to suspend and restart threads.    */
+  GC_API void GC_CALL GC_set_suspend_signal(int sig GC_ATTR_UNUSED)
+  {
+    /* empty */
+  }
+
+  GC_API void GC_CALL GC_set_thr_restart_signal(int sig GC_ATTR_UNUSED)
+  {
+    /* empty */
+  }
+
   GC_API int GC_CALL GC_get_suspend_signal(void)
   {
     return -1;
