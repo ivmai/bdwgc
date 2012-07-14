@@ -1556,6 +1556,19 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 # define GC_INIT_CONF_TIME_LIMIT /* empty */
 #endif
 
+#if defined(GC_SIG_SUSPEND) && defined(GC_THREADS)
+# define GC_INIT_CONF_SUSPEND_SIGNAL GC_set_suspend_signal(GC_SIG_SUSPEND)
+#else
+# define GC_INIT_CONF_SUSPEND_SIGNAL /* empty */
+#endif
+
+#if defined(GC_SIG_THR_RESTART) && defined(GC_THREADS)
+# define GC_INIT_CONF_THR_RESTART_SIGNAL \
+                GC_set_thr_restart_signal(GC_SIG_THR_RESTART)
+#else
+# define GC_INIT_CONF_THR_RESTART_SIGNAL /* empty */
+#endif
+
 #ifdef GC_MAXIMUM_HEAP_SIZE
   /* Limit the heap size to the desired value (useful for debugging).   */
   /* The limit could be overridden either at the program start-up by    */
@@ -1593,6 +1606,8 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
                     GC_INIT_CONF_FREE_SPACE_DIVISOR; \
                     GC_INIT_CONF_FULL_FREQ; \
                     GC_INIT_CONF_TIME_LIMIT; \
+                    GC_INIT_CONF_SUSPEND_SIGNAL; \
+                    GC_INIT_CONF_THR_RESTART_SIGNAL; \
                     GC_INIT_CONF_MAXIMUM_HEAP_SIZE; \
                     GC_init(); /* real GC initialization */ \
                     GC_INIT_CONF_ROOTS; /* post-init */ \
