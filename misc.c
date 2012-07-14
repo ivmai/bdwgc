@@ -507,24 +507,29 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
   UNLOCK();
 }
 
-
-#ifdef THREADS
-  GC_API int GC_CALL GC_get_suspend_signal(void)
+#if defined(GC_DARWIN_THREADS) || defined(GC_OPENBSD_THREADS) \
+    || defined(GC_WIN32_THREADS) || (defined(NACL) && defined(THREADS))
+  /* GC does not use signals to suspend and restart threads.    */
+  GC_API void GC_CALL GC_set_suspend_signal(int sig GC_ATTR_UNUSED)
   {
-#   ifdef SIG_SUSPEND
-      return SIG_SUSPEND;
-#   else
-      return -1;
-#   endif
+    /* empty */
   }
 
-# if defined(GC_DARWIN_THREADS) || defined(GC_WIN32_THREADS)
-    GC_API int GC_CALL GC_get_thr_restart_signal(void)
-    {
-      return -1; /* GC does not use signals to restart threads. */
-    }
-# endif
-#endif /* THREADS */
+  GC_API void GC_CALL GC_set_thr_restart_signal(int sig GC_ATTR_UNUSED)
+  {
+    /* empty */
+  }
+
+  GC_API int GC_CALL GC_get_suspend_signal(void)
+  {
+    return -1;
+  }
+
+  GC_API int GC_CALL GC_get_thr_restart_signal(void)
+  {
+    return -1;
+  }
+#endif /* GC_DARWIN_THREADS || GC_WIN32_THREADS || ... */
 
 #if !defined(_MAX_PATH) && (defined(MSWIN32) || defined(MSWINCE) \
                             || defined(CYGWIN32))

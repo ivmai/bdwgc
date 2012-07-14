@@ -3313,11 +3313,11 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
       act.sa_sigaction = GC_write_fault_handler;
       (void)sigemptyset(&act.sa_mask);
 #     ifdef SIG_SUSPEND
-        /* Arrange to postpone SIG_SUSPEND while we're in a write fault */
+        /* Arrange to postpone the signal while we are in a write fault */
         /* handler.  This effectively makes the handler atomic w.r.t.   */
         /* stopping the world for GC.                                   */
-        (void)sigaddset(&act.sa_mask, SIG_SUSPEND);
-#     endif /* SIG_SUSPEND */
+        (void)sigaddset(&act.sa_mask, GC_get_suspend_signal());
+#     endif
 #   endif
     if (GC_print_stats == VERBOSE)
       GC_log_printf(
