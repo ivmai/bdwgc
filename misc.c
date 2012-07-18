@@ -673,6 +673,8 @@ STATIC void GC_exit_check(void)
 #endif
 
 #if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
+# include <unistd.h>
+
   STATIC int GC_stdout = 1;
   STATIC int GC_stderr = 2;
   STATIC int GC_log = 2; /* stderr */
@@ -794,8 +796,14 @@ GC_API void GC_CALL GC_init(void)
           GC_print_stats = 1;
         }
 #     endif
-#     if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN)
-        {
+#   endif /* !SMALL_CONFIG */
+    if (0 != GETENV("GC_FIND_LEAK")) {
+      GC_find_leak = 1;
+    }
+#   if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN)
+      {
+        GC_bool need_dup_stdout = GC_find_leak;
+#       ifndef SMALL_CONFIG
           char * file_name = GETENV("GC_LOG_FILE");
 #         ifdef GC_LOG_TO_FILE_ALWAYS
             if (NULL == file_name)
@@ -824,12 +832,26 @@ GC_API void GC_CALL GC_init(void)
               {
                 GC_stdout = log_d;
                 GC_stderr = log_d;
+                need_dup_stdout = FALSE;
               }
             }
           }
+#       endif /* !SMALL_CONFIG */
+        if (need_dup_stdout) {
+          /* In find-leak mode, GC_gcollect (and, thus,         */
+          /* GC_print_callers) could be called inside 'atexit'  */
+          /* hook when stdout and stderr file descriptors are   */
+          /* already closed.   To workaround, we try to         */
+          /* duplicate both of the descriptors.                 */
+          int log_d = dup(GC_stderr);
+          if (log_d != -1)
+            GC_stderr = log_d;
+          log_d = dup(GC_stdout);
+          if (log_d != -1)
+            GC_stdout = log_d;
         }
-#     endif
-#   endif /* !SMALL_CONFIG */
+      }
+#   endif /* UNIX_LIKE || .. */
 #   ifndef NO_DEBUGGING
       if (0 != GETENV("GC_DUMP_REGULARLY")) {
         GC_dump_regularly = TRUE;
@@ -844,9 +866,6 @@ GC_API void GC_CALL GC_init(void)
         }
       }
 #   endif
-    if (0 != GETENV("GC_FIND_LEAK")) {
-      GC_find_leak = 1;
-    }
 #   ifndef SHORT_DBG_HDRS
       if (0 != GETENV("GC_FINDLEAK_DELAY_FREE")) {
         GC_findleak_delay_free = TRUE;
