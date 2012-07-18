@@ -45,7 +45,11 @@ at configure.ac:59 and configure.ac:694, respectively (autoreconf-2.68).
 HP-UX 11.00 with the vendor cc fails:
 Perhaps GC_push_regs was configured incorrectly? FAIL: gctest.
 
-OpenBSD 4.9/x86 fails:
+FreeBSD 9.0/x86_64 (gcc-4.2.1-20070831): gctest segfaults sometimes in
+GC_typed_mark_proc if configured with --enable-threads=pthreads and
+CFLAGS=-DDONT_ADD_BYTE_AT_END (shipped with Gauche Scheme).
+
+OpenBSD 4.9/i386 (and OpenBSD 5.1/i386) fails:
 GC_push_all_stacks: sp not set! FAIL: gctest, threadleaktest.
 
 NetBSD 5.1/x86: threadkey_test hangs sometimes.
