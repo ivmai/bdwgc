@@ -1388,52 +1388,40 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #   define vsnprintf _vsnprintf
 # endif
 #endif
+
 /* A version of printf that is unlikely to call malloc, and is thus safer */
 /* to call from the collector in case malloc has been bound to GC_malloc. */
-/* Floating point arguments and formats should be avoided, since fp       */
-/* conversion is more likely to allocate.                                 */
+/* Floating point arguments and formats should be avoided, since FP       */
+/* conversion is more likely to allocate memory.                          */
 /* Assumes that no more than BUFSZ-1 characters are written at once.      */
+#define GC_PRINTF_IMPL(f, f_name, format) { \
+          va_list args; \
+          char buf[BUFSZ + 1]; \
+          va_start(args, format); \
+          buf[BUFSZ] = 0x15; \
+          (void)vsnprintf(buf, BUFSZ, format, args); \
+          va_end(args); \
+          if (buf[BUFSZ] != 0x15) \
+            ABORT("GC_printf clobbered stack"); \
+          if (WRITE(f, buf, strlen(buf)) < 0) \
+            ABORT("write to " f_name " failed"); \
+        }
+
 void GC_printf(const char *format, ...)
 {
-    va_list args;
-    char buf[BUFSZ+1];
-
     if (GC_quiet) return;
-    va_start(args, format);
-    buf[BUFSZ] = 0x15;
-    (void) vsnprintf(buf, BUFSZ, format, args);
-    va_end(args);
-    if (buf[BUFSZ] != 0x15) ABORT("GC_printf clobbered stack");
-    if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
-      ABORT("write to stdout failed");
+
+    GC_PRINTF_IMPL(GC_stdout, "stdout", format);
 }
 
 void GC_err_printf(const char *format, ...)
 {
-    va_list args;
-    char buf[BUFSZ+1];
-
-    va_start(args, format);
-    buf[BUFSZ] = 0x15;
-    (void) vsnprintf(buf, BUFSZ, format, args);
-    va_end(args);
-    if (buf[BUFSZ] != 0x15) ABORT("GC_printf clobbered stack");
-    if (WRITE(GC_stderr, buf, strlen(buf)) < 0)
-      ABORT("write to stderr failed");
+    GC_PRINTF_IMPL(GC_stderr, "stderr", format);
 }
 
 void GC_log_printf(const char *format, ...)
 {
-    va_list args;
-    char buf[BUFSZ+1];
-
-    va_start(args, format);
-    buf[BUFSZ] = 0x15;
-    (void) vsnprintf(buf, BUFSZ, format, args);
-    va_end(args);
-    if (buf[BUFSZ] != 0x15) ABORT("GC_printf clobbered stack");
-    if (WRITE(GC_log, buf, strlen(buf)) < 0)
-      ABORT("write to log failed");
+    GC_PRINTF_IMPL(GC_log, "log", format);
 }
 
 /* This is equivalent to GC_err_printf("%s",s). */
