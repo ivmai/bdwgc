@@ -741,7 +741,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #   endif /* SOLARISDL */
 
     if (fd < 0) {
-      sprintf(buf, "/proc/%ld", (long)getpid());
+      (void)snprintf(buf, sizeof(buf), "/proc/%ld", (long)getpid());
+      buf[sizeof(buf) - 1] = '\0';
         /* The above generates a lint complaint, since pid_t varies.    */
         /* It's unclear how to improve this.                            */
       fd = open(buf, O_RDONLY);
@@ -1279,7 +1280,8 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
     fmt = GC_dyld_add_sect_fmts[j];
     /* Add our manufactured aligned BSS sections.       */
     for (i = 0; i <= L2_MAX_OFILE_ALIGNMENT; i++) {
-      snprintf(secnam, sizeof(secnam), fmt, (unsigned)i);
+      (void)snprintf(secnam, sizeof(secnam), fmt, (unsigned)i);
+      secnam[sizeof(secnam) - 1] = '\0';
       sec = GC_GETSECTBYNAME(hdr, SEG_DATA, secnam);
       if (sec == NULL || sec->size == 0)
         continue;
@@ -1330,7 +1332,8 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
   for (j = 0; j < sizeof(GC_dyld_add_sect_fmts) / sizeof(char *); j++) {
     fmt = GC_dyld_add_sect_fmts[j];
     for (i = 0; i <= L2_MAX_OFILE_ALIGNMENT; i++) {
-      snprintf(secnam, sizeof(secnam), fmt, (unsigned)i);
+      (void)snprintf(secnam, sizeof(secnam), fmt, (unsigned)i);
+      secnam[sizeof(secnam) - 1] = '\0';
       sec = GC_GETSECTBYNAME(hdr, SEG_DATA, secnam);
       if (sec == NULL || sec->size == 0)
         continue;

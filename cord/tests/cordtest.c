@@ -221,7 +221,9 @@ void test_printf(void)
     x = CORD_cat(x,x);
     if (CORD_sprintf(&result, "->%-120.78r!\n", x) != 124)
         ABORT("CORD_sprintf failed 3");
-    (void) sprintf(result2, "->%-120.78s!\n", CORD_to_char_star(x));
+    (void)snprintf(result2, sizeof(result2), "->%-120.78s!\n",
+                   CORD_to_char_star(x));
+    result2[sizeof(result2) - 1] = '\0';
     if (CORD_cmp(result, result2) != 0)ABORT("CORD_sprintf goofed 5");
 }
 

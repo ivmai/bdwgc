@@ -3671,7 +3671,8 @@ GC_INNER void GC_dirty_init(void)
                                       + GC_bytes_allocd_before_gc));
     }
 
-    sprintf(buf, "/proc/%ld", (long)getpid());
+    (void)snprintf(buf, sizeof(buf), "/proc/%ld", (long)getpid());
+    buf[sizeof(buf) - 1] = '\0';
     fd = open(buf, O_RDONLY);
     if (fd < 0) {
         ABORT("/proc open failed");
@@ -4678,7 +4679,8 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
 #         else
             char buf[40];
             char *name = buf;
-            sprintf(buf, "##PC##= 0x%lx", info[i].ci_pc);
+            (void)snprintf(buf, sizeof(buf), "##PC##= 0x%lx", info[i].ci_pc);
+            buf[sizeof(buf) - 1] = '\0';
 #         endif
 #         if defined(LINUX) && !defined(SMALL_CONFIG)
             /* Try for a line number. */
@@ -4713,8 +4715,10 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
                 /* Then we use popen to start addr2line -e <exe> <addr> */
                 /* There are faster ways to do this, but hopefully this */
                 /* isn't time critical.                                 */
-                sprintf(cmd_buf, "/usr/bin/addr2line -f -e %s 0x%lx", exe_name,
-                                 (unsigned long)info[i].ci_pc);
+                (void)snprintf(cmd_buf, sizeof(cmd_buf),
+                               "/usr/bin/addr2line -f -e %s 0x%lx",
+                               exe_name, (unsigned long)info[i].ci_pc);
+                cmd_buf[sizeof(cmd_buf) - 1] = '\0';
                 old_preload = GETENV("LD_PRELOAD");
                 if (0 != old_preload) {
                   size_t old_len = strlen(old_preload);
@@ -4758,8 +4762,10 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
                 }
                 if (result_len < RESULT_SZ - 25) {
                   /* Add in hex address */
-                    sprintf(result_buf + result_len, " [0x%lx]",
-                          (unsigned long)info[i].ci_pc);
+                  (void)snprintf(&result_buf[result_len],
+                                 sizeof(result_buf) - result_len,
+                                 " [0x%lx]", (unsigned long)info[i].ci_pc);
+                  result_buf[sizeof(result_buf) - 1] = '\0';
                 }
                 name = result_buf;
                 pclose(pipe);
