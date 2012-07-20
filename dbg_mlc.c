@@ -662,12 +662,7 @@ GC_API char * GC_CALL GC_debug_strdup(const char *str, GC_EXTRA_PARAMS)
 #   endif
     return NULL;
   }
-# ifndef MSWINCE
-    strcpy(copy, str);
-# else
-    /* strcpy() is deprecated in WinCE */
-    memcpy(copy, str, lb);
-# endif
+  BCOPY(str, copy, lb);
   return copy;
 }
 

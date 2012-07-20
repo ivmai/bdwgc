@@ -290,10 +290,10 @@ CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len)
             if (c == '\0') goto gen_case;
             buf[i] = c;
         }
-        buf[i] = '\0';
+
         result = GC_MALLOC_ATOMIC(len+1);
         if (result == 0) OUT_OF_MEMORY;
-        strcpy(result, buf);
+        memcpy(result, buf, len);
         result[len] = '\0';
         return((CORD) result);
     }
@@ -440,10 +440,10 @@ CORD CORD_substr_checked(CORD x, size_t i, size_t n)
                 }
                 *p++ = c;
             }
-            *p = '\0';
             result = GC_MALLOC_ATOMIC(n+1);
             if (result == 0) OUT_OF_MEMORY;
-            strcpy(result, buf);
+            memcpy(result, buf, n);
+            result[n] = '\0';
             return(result);
         }
     }

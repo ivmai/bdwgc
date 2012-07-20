@@ -568,12 +568,7 @@ GC_API char * GC_CALL GC_strdup(const char *s)
 #   endif
     return NULL;
   }
-# ifndef MSWINCE
-    strcpy(copy, s);
-# else
-    /* strcpy() is deprecated in WinCE */
-    memcpy(copy, s, lb);
-# endif
+  BCOPY(s, copy, lb);
   return copy;
 }
 

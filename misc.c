@@ -566,7 +566,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
       if (len > 4 && path[len - 4] == (TCHAR)'.') {
         len -= 4; /* strip executable file extension */
       }
-      memcpy(&path[len], TEXT(".gc.env"), sizeof(TEXT(".gc.env")));
+      BCOPY(TEXT(".gc.env"), &path[len], sizeof(TEXT(".gc.env")));
       hFile = CreateFile(path, GENERIC_READ,
                          FILE_SHARE_READ | FILE_SHARE_WRITE,
                          NULL /* lpSecurityAttributes */, OPEN_EXISTING,
@@ -1218,9 +1218,8 @@ GC_API void GC_CALL GC_enable_incremental(void)
         if (len > 4 && pathBuf[len - 4] == (TCHAR)'.') {
           len -= 4; /* strip executable file extension */
         }
-        /* strcat/wcscat() are deprecated on WinCE, so use memcpy()     */
-        memcpy(&pathBuf[len], TEXT("." GC_LOG_STD_NAME),
-               sizeof(TEXT("." GC_LOG_STD_NAME)));
+        BCOPY(TEXT("." GC_LOG_STD_NAME), &pathBuf[len],
+              sizeof(TEXT("." GC_LOG_STD_NAME)));
 #     endif
     }
 

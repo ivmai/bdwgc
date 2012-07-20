@@ -4717,11 +4717,12 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
                                  (unsigned long)info[i].ci_pc);
                 old_preload = GETENV("LD_PRELOAD");
                 if (0 != old_preload) {
-                  if (strlen (old_preload) >= PRELOAD_SZ) {
+                  size_t old_len = strlen(old_preload);
+                  if (old_len >= PRELOAD_SZ) {
                     will_fail = TRUE;
                     goto out;
                   }
-                  strcpy (preload_buf, old_preload);
+                  BCOPY(old_preload, preload_buf, old_len + 1);
                   unsetenv ("LD_PRELOAD");
                 }
                 pipe = popen(cmd_buf, "r");
@@ -4730,8 +4731,8 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
                   WARN("Failed to reset LD_PRELOAD\n", 0);
                 }
                 if (pipe == NULL
-                    || (result_len = fread(result_buf, 1, RESULT_SZ - 1, pipe))
-                       == 0) {
+                    || (result_len = fread(result_buf, 1,
+                                           RESULT_SZ - 1, pipe)) == 0) {
                   if (pipe != NULL) pclose(pipe);
                   will_fail = TRUE;
                   goto out;
