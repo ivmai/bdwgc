@@ -1304,7 +1304,8 @@ GC_INNER word GC_page_size = 0;
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
   {
     stack_t stack;
-    pthread_stackseg_np(pthread_self(), &stack);
+    if (pthread_stackseg_np(pthread_self(), &stack))
+      ABORT("pthread_stackseg_np(self) failed");
     sb->mem_base = stack.ss_sp;
     return GC_SUCCESS;
   }
