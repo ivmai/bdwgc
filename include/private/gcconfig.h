@@ -878,7 +878,7 @@
 #     else
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       define STACKBOTTOM USRSTACK
+#       define STACKBOTTOM ((ptr_t) USRSTACK)
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -1080,7 +1080,7 @@
 #     else
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       define STACKBOTTOM USRSTACK
+#       define STACKBOTTOM ((ptr_t) USRSTACK)
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -1357,7 +1357,7 @@
 #       else
 #         include <sys/param.h>
 #         include <uvm/uvm_extern.h>
-#         define STACKBOTTOM USRSTACK
+#         define STACKBOTTOM ((ptr_t) USRSTACK)
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
@@ -1594,7 +1594,7 @@
 #    else
 #      include <sys/param.h>
 #      include <uvm/uvm_extern.h>
-#      define STACKBOTTOM USRSTACK
+#      define STACKBOTTOM ((ptr_t) USRSTACK)
 #    endif
      extern int _fdata[];
 #    define DATASTART ((ptr_t)_fdata)
@@ -1672,7 +1672,7 @@
 #     else
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       define STACKBOTTOM USRSTACK
+#       define STACKBOTTOM ((ptr_t) USRSTACK)
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -1704,7 +1704,7 @@
 #       else
 #         include <sys/param.h>
 #         include <uvm/uvm_extern.h>
-#         define STACKBOTTOM USRSTACK
+#         define STACKBOTTOM ((ptr_t) USRSTACK)
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
@@ -2014,7 +2014,7 @@
 #     else
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       define STACKBOTTOM USRSTACK
+#       define STACKBOTTOM ((ptr_t) USRSTACK)
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -2073,7 +2073,7 @@
 #      else
 #        include <sys/param.h>
 #        include <uvm/uvm_extern.h>
-#        define STACKBOTTOM USRSTACK
+#        define STACKBOTTOM ((ptr_t) USRSTACK)
 #      endif
        extern int __data_start[];
 #      define DATASTART ((ptr_t)__data_start)
@@ -2139,7 +2139,7 @@
 #       else
 #         include <sys/param.h>
 #         include <uvm/uvm_extern.h>
-#         define STACKBOTTOM USRSTACK
+#         define STACKBOTTOM ((ptr_t) USRSTACK)
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
