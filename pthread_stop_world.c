@@ -475,17 +475,14 @@ STATIC int GC_suspend_all(void)
 #           endif
 
 #           ifdef GC_OPENBSD_THREADS
-              if (pthread_suspend_np(p -> id) != 0)
-                ABORT("pthread_suspend_np failed");
-              /* FIXME: This will only work for userland pthreads.      */
-              /* It will fail badly on rthreads.  Perhaps we should     */
-              /* consider pthread_sp_np() that returns the stack        */
-              /* pointer for a suspended thread and implement in both   */
-              /* pthreads and rthreads.                                 */
-              p -> stop_info.stack_ptr =
-                        *(ptr_t *)((char *)p -> id + UTHREAD_SP_OFFSET);
-              if (p -> stop_info.stack_ptr == NULL)
-                ABORT("NULL pointer at pthread_context UTHREAD_SP_OFFSET");
+              {
+                stack_t stack;
+                if (pthread_suspend_np(p -> id) != 0)
+                  ABORT("pthread_suspend_np failed");
+                if (pthread_stackseg_np(p->id, &stack))
+                  ABORT("pthread_stackseg_np failed");
+                p -> stop_info.stack_ptr = (ptr_t)stack.ss_sp - stack.ss_size;
+              }
 #           else
 #             ifndef PLATFORM_ANDROID
                 result = pthread_kill(p -> id, GC_sig_suspend);
