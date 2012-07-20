@@ -35,7 +35,11 @@ GC_INNER __thread GC_thread GC_nacl_gc_thread_self = NULL;
 int GC_nacl_thread_parked[MAX_NACL_GC_THREADS];
 int GC_nacl_thread_used[MAX_NACL_GC_THREADS];
 
-#elif !defined(GC_OPENBSD_THREADS)
+#elif defined(GC_OPENBSD_THREADS)
+
+# include <pthread_np.h>
+
+#else /* !GC_OPENBSD_THREADS && !NACL */
 
 #include <signal.h>
 #include <semaphore.h>
