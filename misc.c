@@ -644,7 +644,9 @@ GC_INNER GC_bool GC_is_initialized = FALSE;
 
 STATIC void GC_exit_check(void)
 {
-   GC_gcollect();
+   if (GC_find_leak) {
+     GC_gcollect();
+   }
 }
 
 #if defined(UNIX_LIKE) && !defined(NO_DEBUGGING)
@@ -1460,6 +1462,8 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
   /* and from EXIT() macro (msg is NULL in that case).                  */
   STATIC void GC_CALLBACK GC_default_on_abort(const char *msg)
   {
+    GC_find_leak = FALSE; /* disable at-exit GC_gcollect()  */
+
     if (msg != NULL) {
 #     if defined(MSWIN32)
 #       ifndef DONT_USE_USER32_DLL
