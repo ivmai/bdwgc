@@ -6,13 +6,19 @@
 * Add public setter and getter for GC_push_other_roots.
 * Add thread suspend/resume signals public setters (POSIX threads).
 * Call GC_on_abort (with NULL argument) on exit(1).
+* Code refactoring of GC_x_printf (move shared code to macro).
+* Disable find-leak GC_gcollect on GC abnormal EXIT.
 * Include proper header file in 'tools' for configuration macros.
+* Include pthread_np.h from pthread_stop_world.c on OpenBSD.
 * Move GC_get_suspend/thr_restart_signal to misc.c for NaCl and OpenBSD.
 * Recognize GC_DONT_GC macro in gc.h (causes GC_INIT to turn off GC).
 * Recognize GC_SIG_SUSPEND and GC_SIG_THR_RESTART tuning macros in gc.h.
 * Replace SIG_SUSPEND/THR_RESTART macros to variables in pthread_stop_world.
+* Replace sprintf with defensive snprintf.
+* Suppress GCC warning in GC_get_main_stack_base (OpenBSD).
 * Suppress GCC warnings in test_cpp and cord 'de' app.
 * Turn off GC_LOOP_ON_ABORT functionality if GC compiled with NO_DEBUGGING.
+* Use memcpy (BCOPY) instead of strcpy (to suppress GCC warning).
 
 
 == [7.3alpha2] 2012-05-11 ==
@@ -109,6 +115,7 @@
 
 == [7.2d] (to be released) ==
 
+* Fix stop_info.stack_ptr assignment in GC_suspend_all for OpenBSD.
 * Fix test_cpp (ensure the collector recognizes pointers to interiors).
 * Fix thread-related tests for pthreads-w32.
 * test_cpp: Fix WinMain to prevent SEGV if zero arguments passed (MinGW).
