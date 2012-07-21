@@ -1,3 +1,12 @@
+2012-07-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c (GC_get_stack_base): Abort if pthread_stackseg_np fails
+	(if GC_OPENBSD_THREADS).
+	* pthread_stop_world.c (GC_suspend_all): Get correct stack_ptr by
+	calling pthread_stackseg_np (subtracting ss_size from ss_sp) instead
+	of retrieving it from OpenBSD pthread implementation-dependent context
+	(if GC_OPENBSD_THREADS); remove comment.
+
 2012-06-17  Ivan Maidanski <ivmai@mail.ru>
 
 	* tests/initsecondarythread.c: Include "private/config.h" if
