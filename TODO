@@ -49,8 +49,8 @@ FreeBSD 9.0/x86_64 (gcc-4.2.1-20070831): gctest segfaults sometimes in
 GC_typed_mark_proc if configured with --enable-threads=pthreads and
 CFLAGS=-DDONT_ADD_BYTE_AT_END (shipped with Gauche Scheme).
 
-OpenBSD 5.1/i386: leaktest fails (unless logging redirected to a file):
-cannot write to stderr from 'atexit' hook.
+OpenBSD 5.1/i386: leaktest fails rarely (unless logging redirected to file):
+cannot write to stderr from GC_gcollect invoked from 'atexit' hook.
 
 NetBSD 5.1/x86: threadkey_test hangs sometimes.
 
