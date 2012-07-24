@@ -1140,11 +1140,14 @@ GC_INNER void GC_init_parallel(void)
                                         sigset_t *oset)
   {
     sigset_t fudged_set;
+    int sig_suspend;
 
     INIT_REAL_SYMS();
     if (set != NULL && (how == SIG_BLOCK || how == SIG_SETMASK)) {
         fudged_set = *set;
-        sigdelset(&fudged_set, GC_get_suspend_signal());
+        sig_suspend = GC_get_suspend_signal();
+        GC_ASSERT(sig_suspend >= 0);
+        sigdelset(&fudged_set, sig_suspend);
         set = &fudged_set;
     }
     return(REAL_FUNC(pthread_sigmask)(how, set, oset));

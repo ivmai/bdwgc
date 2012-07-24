@@ -3317,7 +3317,12 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
         /* Arrange to postpone the signal while we are in a write fault */
         /* handler.  This effectively makes the handler atomic w.r.t.   */
         /* stopping the world for GC.                                   */
-        (void)sigaddset(&act.sa_mask, GC_get_suspend_signal());
+#       if defined(THREADS) && !defined(GC_OPENBSD_THREADS) \
+           && !defined(GC_WIN32_THREADS) && !defined(NACL)
+          (void)sigaddset(&act.sa_mask, GC_get_suspend_signal());
+#       else
+          (void)sigaddset(&act.sa_mask, SIG_SUSPEND);
+#       endif
 #     endif
 #   endif
     if (GC_print_stats == VERBOSE)
