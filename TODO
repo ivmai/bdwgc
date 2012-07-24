@@ -46,8 +46,7 @@ HP-UX 11.00 with the vendor cc fails:
 Perhaps GC_push_regs was configured incorrectly? FAIL: gctest.
 
 FreeBSD 9.0/x86_64 (gcc-4.2.1-20070831): gctest segfaults sometimes in
-GC_typed_mark_proc if configured with --enable-threads=pthreads and
-CFLAGS=-DDONT_ADD_BYTE_AT_END (shipped with Gauche Scheme).
+GC_typed_mark_proc if configured with --enable-threads=pthreads.
 
 OpenBSD 5.1/i386: leaktest fails rarely (unless logging redirected to file):
 cannot write to stderr from GC_gcollect invoked from 'atexit' hook.
