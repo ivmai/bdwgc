@@ -3309,22 +3309,18 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
   GC_INNER void GC_dirty_init(void)
   {
 #   if !defined(MSWIN32) && !defined(MSWINCE)
-      struct sigaction  act, oldact;
-      act.sa_flags      = SA_RESTART | SA_SIGINFO;
+      struct sigaction act, oldact;
+      act.sa_flags = SA_RESTART | SA_SIGINFO;
       act.sa_sigaction = GC_write_fault_handler;
       (void)sigemptyset(&act.sa_mask);
-#     ifdef SIG_SUSPEND
+#     if defined(THREADS) && !defined(GC_OPENBSD_THREADS) \
+         && !defined(GC_WIN32_THREADS) && !defined(NACL)
         /* Arrange to postpone the signal while we are in a write fault */
         /* handler.  This effectively makes the handler atomic w.r.t.   */
         /* stopping the world for GC.                                   */
-#       if defined(THREADS) && !defined(GC_OPENBSD_THREADS) \
-           && !defined(GC_WIN32_THREADS) && !defined(NACL)
-          (void)sigaddset(&act.sa_mask, GC_get_suspend_signal());
-#       else
-          (void)sigaddset(&act.sa_mask, SIG_SUSPEND);
-#       endif
+        (void)sigaddset(&act.sa_mask, GC_get_suspend_signal());
 #     endif
-#   endif
+#   endif /* !MSWIN32 */
     if (GC_print_stats == VERBOSE)
       GC_log_printf(
                 "Initializing mprotect virtual dirty bit implementation\n");
