@@ -1546,6 +1546,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 {
     int dummy;
     struct GC_stack_base base;
+    void *result;
 
     base.mem_base = (void *)&dummy;
 #   ifdef IA64
@@ -1553,7 +1554,11 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
       /* Unnecessarily flushes register stack,          */
       /* but that probably doesn't hurt.                */
 #   endif
-    return fn(&base, arg);
+    result = fn(&base, arg);
+    /* Strongly discourage the compiler from treating the above */
+    /* as a tail call.                                          */
+    GC_noop1((word)(&base));
+    return result;
 }
 
 #ifndef THREADS
