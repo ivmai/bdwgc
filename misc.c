@@ -303,11 +303,8 @@ GC_INNER void GC_extend_size_map(size_t i)
   {
     volatile word dummy[CLEAR_SIZE];
 
-    dummy[0] = (word)(&dummy);
-                /* Store to a volatile variable prevents the following  */
-                /* condition to be 'optimized' to TRUE constant.        */
-    BZERO((/* no volatile */ void *)&dummy[1], (CLEAR_SIZE-1) * sizeof(word));
-    if (dummy[0] COOLER_THAN (word)limit) {
+    BZERO((/* no volatile */ void *)dummy, sizeof(dummy));
+    if ((word)GC_approx_sp() COOLER_THAN (word)limit) {
         (void) GC_clear_stack_inner(arg, limit);
     }
     /* Make sure the recursive call is not a tail call, and the bzero   */
