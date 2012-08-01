@@ -62,8 +62,8 @@ struct {
 
 int * nested_sp(void)
 {
-    volatile int sp;
-    sp = (int)&sp;
+    volatile word sp;
+    sp = (word)(&sp);
     return (int *)sp;
 }
 
@@ -79,18 +79,18 @@ int main(void)
     if ((word)nested_sp() < (word)(&dummy)) {
       printf("Stack appears to grow down, which is the default.\n");
       printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
-             ((unsigned long)(&dummy) + ps) & ~(ps-1));
+             ((unsigned long)(word)(&dummy) + ps) & ~(ps-1));
     } else {
       printf("Stack appears to grow up.\n");
       printf("Define STACK_GROWS_UP in gc_private.h\n");
       printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
-             ((unsigned long)(&dummy) + ps) & ~(ps-1));
+             ((unsigned long)(word)(&dummy) + ps) & ~(ps-1));
     }
     printf("Note that this may vary between machines of ostensibly\n");
     printf("the same architecture (e.g. Sun 3/50s and 3/80s).\n");
     printf("On many machines the value is not fixed.\n");
     printf("A good guess for ALIGNMENT on this machine is %ld.\n",
-           (unsigned long)(&(a.a_b))-(unsigned long)(&a));
+           (unsigned long)((word)(&(a.a_b)) - (word)(&a)));
 
     printf("The following is a very dubious test of one root marking"
            " strategy.\n");
@@ -116,7 +116,7 @@ int main(void)
     if (y == 1) longjmp(b,1);
     printf("Some GC internal configuration stuff: \n");
     printf("\tWORDSZ = %lu, ALIGNMENT = %d, GC_GRANULE_BYTES = %d\n",
-           WORDSZ, ALIGNMENT, GC_GRANULE_BYTES);
+           (unsigned long)WORDSZ, ALIGNMENT, GC_GRANULE_BYTES);
     printf("\tUsing one mark ");
 #   if defined(USE_MARK_BYTES)
       printf("byte");
