@@ -62,8 +62,8 @@ struct {
 
 int * nested_sp(void)
 {
-    volatile int sp;
-    sp = (int)&sp;
+    volatile word sp;
+    sp = (word)(&sp);
     return (int *)sp;
 }
 
@@ -91,7 +91,7 @@ int main(void)
     printf("the same architecture (e.g. Sun 3/50s and 3/80s).\n");
     printf("On many machines the value is not fixed.\n");
     printf("A good guess for ALIGNMENT on this machine is %ld.\n",
-           (unsigned long)(&(a.a_b))-(unsigned long)(&a));
+           (unsigned long)((word)(&(a.a_b)) - (word)(&a)));
 
     printf("The following is a very dubious test of one root marking"
            " strategy.\n");
@@ -117,7 +117,7 @@ int main(void)
     if (y == 1) longjmp(b,1);
     printf("Some GC internal configuration stuff: \n");
     printf("\tWORDSZ = %lu, ALIGNMENT = %d, GC_GRANULE_BYTES = %d\n",
-           WORDSZ, ALIGNMENT, GC_GRANULE_BYTES);
+           (unsigned long)WORDSZ, ALIGNMENT, GC_GRANULE_BYTES);
     printf("\tUsing one mark ");
 #   if defined(USE_MARK_BYTES)
       printf("byte");
