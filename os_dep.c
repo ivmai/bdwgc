@@ -768,9 +768,8 @@ GC_INNER word GC_page_size = 0;
 
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
     {
-      int dummy;
-      ptr_t sp = (ptr_t)(&dummy);
-      ptr_t trunc_sp = (ptr_t)((word)sp & ~(GC_page_size - 1));
+      volatile int dummy;
+      ptr_t trunc_sp = (ptr_t)((word)(&dummy) & ~(GC_page_size - 1));
       /* FIXME: This won't work if called from a deeply recursive       */
       /* client code (and the committed stack space has grown).         */
       word size = GC_get_writable_length(trunc_sp, 0);
@@ -1172,13 +1171,19 @@ GC_INNER word GC_page_size = 0;
 
   ptr_t GC_get_main_stack_base(void)
   {
-    ptr_t result; /* also used as "dummy" to get the approx. sp value */
+#   if defined(GC_ASSERTIONS) \
+       || (!defined(STACKBOTTOM) \
+           && (defined(HEURISTIC1) || defined(HEURISTIC2)))
+      volatile int dummy;
+#   endif
+    ptr_t result;
 #   if defined(LINUX) && !defined(NACL) \
        && (defined(USE_GET_STACKBASE_FOR_MAIN) \
            || (defined(THREADS) && !defined(REDIRECT_MALLOC)))
       pthread_attr_t attr;
       void *stackaddr;
       size_t size;
+
       if (pthread_getattr_np(pthread_self(), &attr) == 0) {
         if (pthread_attr_getstack(&attr, &stackaddr, &size) == 0
             && stackaddr != NULL) {
@@ -1199,10 +1204,10 @@ GC_INNER word GC_page_size = 0;
 #     define STACKBOTTOM_ALIGNMENT_M1 ((word)STACK_GRAN - 1)
 #     ifdef HEURISTIC1
 #       ifdef STACK_GROWS_DOWN
-          result = (ptr_t)((((word)(&result)) + STACKBOTTOM_ALIGNMENT_M1)
+          result = (ptr_t)((((word)(&dummy)) + STACKBOTTOM_ALIGNMENT_M1)
                            & ~STACKBOTTOM_ALIGNMENT_M1);
 #       else
-          result = (ptr_t)(((word)(&result)) & ~STACKBOTTOM_ALIGNMENT_M1);
+          result = (ptr_t)(((word)(&dummy)) & ~STACKBOTTOM_ALIGNMENT_M1);
 #       endif
 #     endif /* HEURISTIC1 */
 #     ifdef LINUX_STACKBOTTOM
@@ -1213,18 +1218,18 @@ GC_INNER word GC_page_size = 0;
 #     endif
 #     ifdef HEURISTIC2
 #       ifdef STACK_GROWS_DOWN
-          result = GC_find_limit((ptr_t)(&result), TRUE);
+          result = GC_find_limit((ptr_t)(&dummy), TRUE);
 #         ifdef HEURISTIC2_LIMIT
             if ((word)result > (word)HEURISTIC2_LIMIT
-                && (word)(&result) < (word)HEURISTIC2_LIMIT) {
+                && (word)(&dummy) < (word)HEURISTIC2_LIMIT) {
               result = HEURISTIC2_LIMIT;
             }
 #         endif
 #       else
-          result = GC_find_limit((ptr_t)(&result), FALSE);
+          result = GC_find_limit((ptr_t)(&dummy), FALSE);
 #         ifdef HEURISTIC2_LIMIT
             if ((word)result < (word)HEURISTIC2_LIMIT
-                && (word)(&result) > (word)HEURISTIC2_LIMIT) {
+                && (word)(&dummy) > (word)HEURISTIC2_LIMIT) {
               result = HEURISTIC2_LIMIT;
             }
 #         endif
@@ -1235,7 +1240,7 @@ GC_INNER word GC_page_size = 0;
           result = (ptr_t)(signed_word)(-sizeof(ptr_t));
 #     endif
 #   endif
-    GC_ASSERT((word)(&result) HOTTER_THAN (word)result);
+    GC_ASSERT((word)(&dummy) HOTTER_THAN (word)result);
     return(result);
   }
 # define GET_MAIN_STACKBASE_SPECIAL
@@ -1301,7 +1306,7 @@ GC_INNER word GC_page_size = 0;
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
   {
 #   ifdef GC_ASSERTIONS
-      int dummy;
+      volatile int dummy;
 #   endif
     /* pthread_get_stackaddr_np() should return stack bottom (highest   */
     /* stack address plus 1).                                           */
@@ -1344,8 +1349,12 @@ GC_INNER word GC_page_size = 0;
 
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
   {
+#   ifdef GC_ASSERTIONS
+      volatile int dummy;
+#   endif
     stack_t s;
     pthread_t self = pthread_self();
+
     if (self == stackbase_main_self)
       {
         /* If the client calls GC_get_stack_base() from the main thread */
@@ -1363,7 +1372,7 @@ GC_INNER word GC_page_size = 0;
       ABORT("thr_stksegment failed");
     }
     /* s.ss_sp holds the pointer to the stack bottom. */
-    GC_ASSERT((word)(&s) HOTTER_THAN (word)s.ss_sp);
+    GC_ASSERT((word)(&dummy) HOTTER_THAN (word)s.ss_sp);
 
     if (!stackbase_main_self && thr_main() != 0)
       {
@@ -1399,7 +1408,7 @@ GC_INNER word GC_page_size = 0;
     /* FIXME - Implement better strategies here.                        */
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
     {
-      int dummy;
+      volatile int dummy;
       IF_CANCEL(int cancel_state;)
       DCL_LOCK_STATE;
 
@@ -1411,7 +1420,7 @@ GC_INNER word GC_page_size = 0;
           b -> reg_base = GC_find_limit(GC_save_regs_in_stack(), FALSE);
 #       endif
 #     else
-        b -> mem_base = GC_find_limit(&dummy, FALSE);
+        b -> mem_base = GC_find_limit((ptr_t)(&dummy), FALSE);
 #     endif
       RESTORE_CANCEL(cancel_state);
       UNLOCK();
@@ -1436,10 +1445,14 @@ GC_INNER word GC_page_size = 0;
   /* This is always called from the main thread.  Default implementation. */
   ptr_t GC_get_main_stack_base(void)
   {
+#   ifdef GC_ASSERTIONS
+      volatile int dummy;
+#   endif
     struct GC_stack_base sb;
+
     if (GC_get_stack_base(&sb) != GC_SUCCESS)
       ABORT("GC_get_stack_base failed");
-    GC_ASSERT((word)(&sb) HOTTER_THAN (word)sb.mem_base);
+    GC_ASSERT((word)(&dummy) HOTTER_THAN (word)sb.mem_base);
     return (ptr_t)sb.mem_base;
   }
 #endif /* !GET_MAIN_STACKBASE_SPECIAL */
@@ -3079,7 +3092,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   static void async_set_pht_entry_from_index(volatile page_hash_table db,
                                              size_t index)
   {
-    unsigned int update_dummy;
+    volatile int update_dummy;
     currently_updating = (word)(&update_dummy);
     set_pht_entry_from_index(db, index);
     /* If we get contention in the 10 or so instruction window here,    */

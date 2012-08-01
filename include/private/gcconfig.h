@@ -664,7 +664,7 @@
  *              int argc;
  *              char **argv, **envp;
  *              {
- *                  int dummy;
+ *                  volatile int dummy;
  *
  *                  GC_stackbottom = (ptr_t)(&dummy);
  *                  return(real_main(argc, argv, envp));

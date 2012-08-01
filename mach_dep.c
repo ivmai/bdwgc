@@ -219,7 +219,7 @@
 GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
                                           ptr_t arg)
 {
-    word dummy;
+    volatile int dummy;
     void * context = 0;
 
 #   if defined(HAVE_PUSH_REGS)

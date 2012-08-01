@@ -163,7 +163,7 @@ void (GC_CALLBACK *GC_is_visible_print_proc)(void * p) =
 /* Could p be a stack address? */
    STATIC GC_bool GC_on_stack(ptr_t p)
    {
-        int dummy;
+        volatile int dummy;
 #       ifdef STACK_GROWS_DOWN
             if ((word)p >= (word)(&dummy) && (word)p < (word)GC_stackbottom) {
                 return(TRUE);

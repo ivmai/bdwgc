@@ -301,9 +301,11 @@ GC_INNER void GC_extend_size_map(size_t i)
   /* file, so this error would be caught by the linker.                 */
   void * GC_clear_stack_inner(void *arg, ptr_t limit)
   {
-    word dummy[CLEAR_SIZE];
+    volatile word dummy[CLEAR_SIZE];
+                        /* volatile prevents the following condition to */
+                        /* be 'optimized' to TRUE constant.             */
 
-    BZERO(dummy, CLEAR_SIZE*sizeof(word));
+    BZERO((/* no volatile */ void *)dummy, sizeof(dummy));
     if ((word)(&dummy[0]) COOLER_THAN (word)limit) {
         (void) GC_clear_stack_inner(arg, limit);
     }
@@ -720,7 +722,7 @@ GC_API void GC_CALL GC_init(void)
 {
     /* LOCK(); -- no longer does anything this early. */
 #   if !defined(THREADS) && defined(GC_ASSERTIONS)
-        word dummy;
+        volatile int dummy;
 #   endif
     word initial_heap_sz;
     IF_CANCEL(int cancel_state;)
@@ -1636,7 +1638,7 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn, void *client_data)
 
 GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 {
-    int dummy;
+    volatile int dummy;
     struct GC_stack_base base;
 
     base.mem_base = (void *)&dummy;

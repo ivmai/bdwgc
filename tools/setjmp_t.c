@@ -69,7 +69,7 @@ int * nested_sp(void)
 
 int main(void)
 {
-    int dummy;
+    volatile int dummy;
     long ps = GETPAGESIZE();
     jmp_buf b;
     register int x = (int)strlen("a");  /* 1, slightly disguised */

@@ -995,7 +995,7 @@ STATIC void GC_fork_child_proc(void)
 GC_INNER void GC_thr_init(void)
 {
 # ifndef GC_DARWIN_THREADS
-    int dummy;
+    volatile int dummy;
 # endif
   if (GC_thr_initialized) return;
   GC_thr_initialized = TRUE;
