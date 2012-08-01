@@ -768,8 +768,7 @@ GC_INNER word GC_page_size = 0;
 
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
     {
-      volatile int dummy;
-      ptr_t trunc_sp = (ptr_t)((word)(&dummy) & ~(GC_page_size - 1));
+      ptr_t trunc_sp = (ptr_t)((word)GC_approx_sp() & ~(GC_page_size - 1));
       /* FIXME: This won't work if called from a deeply recursive       */
       /* client code (and the committed stack space has grown).         */
       word size = GC_get_writable_length(trunc_sp, 0);
@@ -1171,11 +1170,6 @@ GC_INNER word GC_page_size = 0;
 
   ptr_t GC_get_main_stack_base(void)
   {
-#   if defined(GC_ASSERTIONS) \
-       || (!defined(STACKBOTTOM) \
-           && (defined(HEURISTIC1) || defined(HEURISTIC2)))
-      volatile int dummy;
-#   endif
     ptr_t result;
 #   if defined(LINUX) && !defined(NACL) \
        && (defined(USE_GET_STACKBASE_FOR_MAIN) \
@@ -1204,10 +1198,10 @@ GC_INNER word GC_page_size = 0;
 #     define STACKBOTTOM_ALIGNMENT_M1 ((word)STACK_GRAN - 1)
 #     ifdef HEURISTIC1
 #       ifdef STACK_GROWS_DOWN
-          result = (ptr_t)((((word)(&dummy)) + STACKBOTTOM_ALIGNMENT_M1)
+          result = (ptr_t)(((word)GC_approx_sp() + STACKBOTTOM_ALIGNMENT_M1)
                            & ~STACKBOTTOM_ALIGNMENT_M1);
 #       else
-          result = (ptr_t)(((word)(&dummy)) & ~STACKBOTTOM_ALIGNMENT_M1);
+          result = (ptr_t)((word)GC_approx_sp() & ~STACKBOTTOM_ALIGNMENT_M1);
 #       endif
 #     endif /* HEURISTIC1 */
 #     ifdef LINUX_STACKBOTTOM
@@ -1217,30 +1211,33 @@ GC_INNER word GC_page_size = 0;
          result = GC_freebsd_main_stack_base();
 #     endif
 #     ifdef HEURISTIC2
-#       ifdef STACK_GROWS_DOWN
-          result = GC_find_limit((ptr_t)(&dummy), TRUE);
-#         ifdef HEURISTIC2_LIMIT
-            if ((word)result > (word)HEURISTIC2_LIMIT
-                && (word)(&dummy) < (word)HEURISTIC2_LIMIT) {
-              result = HEURISTIC2_LIMIT;
-            }
+        {
+          ptr_t sp = GC_approx_sp();
+#         ifdef STACK_GROWS_DOWN
+            result = GC_find_limit(sp, TRUE);
+#           ifdef HEURISTIC2_LIMIT
+              if ((word)result > (word)HEURISTIC2_LIMIT
+                  && (word)sp < (word)HEURISTIC2_LIMIT) {
+                result = HEURISTIC2_LIMIT;
+              }
+#           endif
+#         else
+            result = GC_find_limit(sp, FALSE);
+#           ifdef HEURISTIC2_LIMIT
+              if ((word)result < (word)HEURISTIC2_LIMIT
+                  && (word)sp > (word)HEURISTIC2_LIMIT) {
+                result = HEURISTIC2_LIMIT;
+              }
+#           endif
 #         endif
-#       else
-          result = GC_find_limit((ptr_t)(&dummy), FALSE);
-#         ifdef HEURISTIC2_LIMIT
-            if ((word)result < (word)HEURISTIC2_LIMIT
-                && (word)(&dummy) > (word)HEURISTIC2_LIMIT) {
-              result = HEURISTIC2_LIMIT;
-            }
-#         endif
-#       endif
+        }
 #     endif /* HEURISTIC2 */
 #     ifdef STACK_GROWS_DOWN
         if (result == 0)
           result = (ptr_t)(signed_word)(-sizeof(ptr_t));
 #     endif
 #   endif
-    GC_ASSERT((word)(&dummy) HOTTER_THAN (word)result);
+    GC_ASSERT((word)GC_approx_sp() HOTTER_THAN (word)result);
     return(result);
   }
 # define GET_MAIN_STACKBASE_SPECIAL
@@ -1305,13 +1302,10 @@ GC_INNER word GC_page_size = 0;
 
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
   {
-#   ifdef GC_ASSERTIONS
-      volatile int dummy;
-#   endif
     /* pthread_get_stackaddr_np() should return stack bottom (highest   */
     /* stack address plus 1).                                           */
     b->mem_base = pthread_get_stackaddr_np(pthread_self());
-    GC_ASSERT((word)(&dummy) HOTTER_THAN (word)b->mem_base);
+    GC_ASSERT((word)GC_approx_sp() HOTTER_THAN (word)b->mem_base);
     return GC_SUCCESS;
   }
 # define HAVE_GET_STACK_BASE
@@ -1349,9 +1343,6 @@ GC_INNER word GC_page_size = 0;
 
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
   {
-#   ifdef GC_ASSERTIONS
-      volatile int dummy;
-#   endif
     stack_t s;
     pthread_t self = pthread_self();
 
@@ -1372,7 +1363,7 @@ GC_INNER word GC_page_size = 0;
       ABORT("thr_stksegment failed");
     }
     /* s.ss_sp holds the pointer to the stack bottom. */
-    GC_ASSERT((word)(&dummy) HOTTER_THAN (word)s.ss_sp);
+    GC_ASSERT((word)GC_approx_sp() HOTTER_THAN (word)s.ss_sp);
 
     if (!stackbase_main_self && thr_main() != 0)
       {
@@ -1408,19 +1399,18 @@ GC_INNER word GC_page_size = 0;
     /* FIXME - Implement better strategies here.                        */
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
     {
-      volatile int dummy;
       IF_CANCEL(int cancel_state;)
       DCL_LOCK_STATE;
 
       LOCK();
       DISABLE_CANCEL(cancel_state);  /* May be unnecessary? */
 #     ifdef STACK_GROWS_DOWN
-        b -> mem_base = GC_find_limit((ptr_t)(&dummy), TRUE);
+        b -> mem_base = GC_find_limit(GC_approx_sp(), TRUE);
 #       ifdef IA64
           b -> reg_base = GC_find_limit(GC_save_regs_in_stack(), FALSE);
 #       endif
 #     else
-        b -> mem_base = GC_find_limit((ptr_t)(&dummy), FALSE);
+        b -> mem_base = GC_find_limit(GC_approx_sp(), FALSE);
 #     endif
       RESTORE_CANCEL(cancel_state);
       UNLOCK();
@@ -1445,14 +1435,11 @@ GC_INNER word GC_page_size = 0;
   /* This is always called from the main thread.  Default implementation. */
   ptr_t GC_get_main_stack_base(void)
   {
-#   ifdef GC_ASSERTIONS
-      volatile int dummy;
-#   endif
     struct GC_stack_base sb;
 
     if (GC_get_stack_base(&sb) != GC_SUCCESS)
       ABORT("GC_get_stack_base failed");
-    GC_ASSERT((word)(&dummy) HOTTER_THAN (word)sb.mem_base);
+    GC_ASSERT((word)GC_approx_sp() HOTTER_THAN (word)sb.mem_base);
     return (ptr_t)sb.mem_base;
   }
 #endif /* !GET_MAIN_STACKBASE_SPECIAL */
@@ -3088,16 +3075,16 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   /* fail than the old code, which had no reported failures.  Thus we   */
   /* leave it this way while we think of something better, or support   */
   /* GC_test_and_set on the remaining platforms.                        */
-  static volatile word currently_updating = 0;
+  static int * volatile currently_updating = 0;
   static void async_set_pht_entry_from_index(volatile page_hash_table db,
                                              size_t index)
   {
-    volatile int update_dummy;
-    currently_updating = (word)(&update_dummy);
+    int update_dummy;
+    currently_updating = &update_dummy;
     set_pht_entry_from_index(db, index);
     /* If we get contention in the 10 or so instruction window here,    */
     /* and we get stopped by a GC between the two updates, we lose!     */
-    if (currently_updating != (word)(&update_dummy)) {
+    if (currently_updating != &update_dummy) {
         set_pht_entry_from_index_safe(db, index);
         /* We claim that if two threads concurrently try to update the  */
         /* dirty bit vector, the first one to execute UPDATE_START      */

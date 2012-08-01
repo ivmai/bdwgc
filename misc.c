@@ -302,11 +302,12 @@ GC_INNER void GC_extend_size_map(size_t i)
   void * GC_clear_stack_inner(void *arg, ptr_t limit)
   {
     volatile word dummy[CLEAR_SIZE];
-                        /* volatile prevents the following condition to */
-                        /* be 'optimized' to TRUE constant.             */
 
-    BZERO((/* no volatile */ void *)dummy, sizeof(dummy));
-    if ((word)(&dummy[0]) COOLER_THAN (word)limit) {
+    dummy[0] = (word)(&dummy);
+                /* Store to a volatile variable prevents the following  */
+                /* condition to be 'optimized' to TRUE constant.        */
+    BZERO((/* no volatile */ void *)&dummy[1], (CLEAR_SIZE-1) * sizeof(word));
+    if (dummy[0] COOLER_THAN (word)limit) {
         (void) GC_clear_stack_inner(arg, limit);
     }
     /* Make sure the recursive call is not a tail call, and the bzero   */
@@ -721,9 +722,6 @@ STATIC word GC_parse_mem_size_arg(const char *str)
 GC_API void GC_CALL GC_init(void)
 {
     /* LOCK(); -- no longer does anything this early. */
-#   if !defined(THREADS) && defined(GC_ASSERTIONS)
-        volatile int dummy;
-#   endif
     word initial_heap_sz;
     IF_CANCEL(int cancel_state;)
 
@@ -1008,7 +1006,7 @@ GC_API void GC_CALL GC_init(void)
     GC_STATIC_ASSERT(sizeof (signed_word) == sizeof(word));
     GC_STATIC_ASSERT(sizeof (struct hblk) == HBLKSIZE);
 #   ifndef THREADS
-      GC_ASSERT(!((word)GC_stackbottom HOTTER_THAN (word)(&dummy)));
+      GC_ASSERT(!((word)GC_stackbottom HOTTER_THAN (word)GC_approx_sp()));
 #   endif
 #   if !defined(_AUX_SOURCE) || defined(__GNUC__)
       GC_STATIC_ASSERT((word)(-1) > (word)0);
@@ -1638,11 +1636,10 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn, void *client_data)
 
 GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 {
-    volatile int dummy;
     struct GC_stack_base base;
     void *result;
 
-    base.mem_base = (void *)&dummy;
+    base.mem_base = (void *)&base;
 #   ifdef IA64
       base.reg_base = (void *)GC_save_regs_in_stack();
       /* Unnecessarily flushes register stack,          */

@@ -994,9 +994,6 @@ STATIC void GC_fork_child_proc(void)
 /* We hold the allocation lock. */
 GC_INNER void GC_thr_init(void)
 {
-# ifndef GC_DARWIN_THREADS
-    volatile int dummy;
-# endif
   if (GC_thr_initialized) return;
   GC_thr_initialized = TRUE;
 
@@ -1033,7 +1030,7 @@ GC_INNER void GC_thr_init(void)
 #   ifdef GC_DARWIN_THREADS
       t -> stop_info.mach_thread = mach_thread_self();
 #   else
-      t -> stop_info.stack_ptr = (ptr_t)(&dummy);
+      t -> stop_info.stack_ptr = GC_approx_sp();
 #   endif
     t -> flags = DETACHED | MAIN_THREAD;
   }

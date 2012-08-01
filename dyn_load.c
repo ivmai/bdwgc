@@ -863,9 +863,9 @@ GC_INNER void GC_register_dynamic_libraries(void)
       if ((word)curr_base < (word)limit)
         GC_add_roots_inner(curr_base, limit, TRUE);
 #   else
-      volatile int dummy;
       char * stack_top
-         = (char *) ((word)(&dummy) & ~(GC_sysinfo.dwAllocationGranularity-1));
+         = (char *)((word)GC_approx_sp() &
+                        ~(GC_sysinfo.dwAllocationGranularity - 1));
 
       if (base == limit) return;
       if ((word)limit > (word)stack_top

@@ -222,9 +222,6 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 STATIC void GC_suspend_handler_inner(ptr_t sig_arg,
                                      void * context GC_ATTR_UNUSED)
 {
-# ifndef SPARC
-    volatile int dummy;
-# endif
   pthread_t self = pthread_self();
   GC_thread me;
   IF_CANCEL(int cancel_state;)
@@ -262,7 +259,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg,
 # ifdef SPARC
       me -> stop_info.stack_ptr = GC_save_regs_in_stack();
 # else
-      me -> stop_info.stack_ptr = (ptr_t)(&dummy);
+      me -> stop_info.stack_ptr = GC_approx_sp();
 # endif
 # ifdef IA64
       me -> backing_store_ptr = GC_save_regs_in_stack();
@@ -682,19 +679,15 @@ GC_INNER void GC_stop_world(void)
 
   GC_API_OSCALL void nacl_pre_syscall_hook(void)
   {
-    volatile int dummy;
-
     if (GC_nacl_thread_idx != -1) {
       NACL_STORE_REGS();
-      GC_nacl_gc_thread_self->stop_info.stack_ptr = (ptr_t)(&dummy);
+      GC_nacl_gc_thread_self->stop_info.stack_ptr = GC_approx_sp();
       GC_nacl_thread_parked[GC_nacl_thread_idx] = 1;
     }
   }
 
   GC_API_OSCALL void __nacl_suspend_thread_if_needed(void)
   {
-    volatile int dummy;
-
     if (GC_nacl_park_threads_now) {
       pthread_t self = pthread_self();
 
@@ -711,7 +704,7 @@ GC_INNER void GC_stop_world(void)
       /* so don't bother storing registers again, the GC has a set.     */
       if (!GC_nacl_thread_parked[GC_nacl_thread_idx]) {
         NACL_STORE_REGS();
-        GC_nacl_gc_thread_self->stop_info.stack_ptr = (ptr_t)(&dummy);
+        GC_nacl_gc_thread_self->stop_info.stack_ptr = GC_approx_sp();
       }
       GC_nacl_thread_parked[GC_nacl_thread_idx] = 1;
       while (GC_nacl_park_threads_now) {
