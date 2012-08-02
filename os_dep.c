@@ -757,9 +757,7 @@ GC_INNER word GC_page_size = 0;
 
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
     {
-      int dummy;
-      ptr_t sp = (ptr_t)(&dummy);
-      ptr_t trunc_sp = (ptr_t)((word)sp & ~(GC_page_size - 1));
+      ptr_t trunc_sp = (ptr_t)((word)GC_approx_sp() & ~(GC_page_size - 1));
       /* FIXME: This won't work if called from a deeply recursive       */
       /* client code (and the committed stack space has grown).         */
       word size = GC_get_writable_length(trunc_sp, 0);
@@ -1155,13 +1153,14 @@ GC_INNER word GC_page_size = 0;
 
   ptr_t GC_get_main_stack_base(void)
   {
-    ptr_t result; /* also used as "dummy" to get the approx. sp value */
+    ptr_t result;
 #   if defined(LINUX) && !defined(NACL) \
        && (defined(USE_GET_STACKBASE_FOR_MAIN) \
            || (defined(THREADS) && !defined(REDIRECT_MALLOC)))
       pthread_attr_t attr;
       void *stackaddr;
       size_t size;
+
       if (pthread_getattr_np(pthread_self(), &attr) == 0) {
         if (pthread_attr_getstack(&attr, &stackaddr, &size) == 0
             && stackaddr != NULL) {
@@ -1182,10 +1181,10 @@ GC_INNER word GC_page_size = 0;
 #     define STACKBOTTOM_ALIGNMENT_M1 ((word)STACK_GRAN - 1)
 #     ifdef HEURISTIC1
 #       ifdef STACK_GROWS_DOWN
-          result = (ptr_t)((((word)(&result)) + STACKBOTTOM_ALIGNMENT_M1)
+          result = (ptr_t)(((word)GC_approx_sp() + STACKBOTTOM_ALIGNMENT_M1)
                            & ~STACKBOTTOM_ALIGNMENT_M1);
 #       else
-          result = (ptr_t)(((word)(&result)) & ~STACKBOTTOM_ALIGNMENT_M1);
+          result = (ptr_t)((word)GC_approx_sp() & ~STACKBOTTOM_ALIGNMENT_M1);
 #       endif
 #     endif /* HEURISTIC1 */
 #     ifdef LINUX_STACKBOTTOM
@@ -1195,30 +1194,33 @@ GC_INNER word GC_page_size = 0;
          result = GC_freebsd_main_stack_base();
 #     endif
 #     ifdef HEURISTIC2
-#       ifdef STACK_GROWS_DOWN
-          result = GC_find_limit((ptr_t)(&result), TRUE);
-#         ifdef HEURISTIC2_LIMIT
-            if (result > HEURISTIC2_LIMIT
-                && (ptr_t)(&result) < HEURISTIC2_LIMIT) {
-              result = HEURISTIC2_LIMIT;
-            }
+        {
+          ptr_t sp = GC_approx_sp();
+#         ifdef STACK_GROWS_DOWN
+            result = GC_find_limit(sp, TRUE);
+#           ifdef HEURISTIC2_LIMIT
+              if (result > HEURISTIC2_LIMIT
+                  && sp < HEURISTIC2_LIMIT) {
+                result = HEURISTIC2_LIMIT;
+              }
+#           endif
+#         else
+            result = GC_find_limit(sp, FALSE);
+#           ifdef HEURISTIC2_LIMIT
+              if (result < HEURISTIC2_LIMIT
+                  && sp > HEURISTIC2_LIMIT) {
+                result = HEURISTIC2_LIMIT;
+              }
+#           endif
 #         endif
-#       else
-          result = GC_find_limit((ptr_t)(&result), FALSE);
-#         ifdef HEURISTIC2_LIMIT
-            if (result < HEURISTIC2_LIMIT
-                && (ptr_t)(&result) > HEURISTIC2_LIMIT) {
-              result = HEURISTIC2_LIMIT;
-            }
-#         endif
-#       endif
+        }
 #     endif /* HEURISTIC2 */
 #     ifdef STACK_GROWS_DOWN
         if (result == 0)
           result = (ptr_t)(signed_word)(-sizeof(ptr_t));
 #     endif
 #   endif
-    GC_ASSERT((ptr_t)(&result) HOTTER_THAN result);
+    GC_ASSERT(GC_approx_sp() HOTTER_THAN result);
     return(result);
   }
 # define GET_MAIN_STACKBASE_SPECIAL
@@ -1283,13 +1285,10 @@ GC_INNER word GC_page_size = 0;
 
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
   {
-#   ifdef GC_ASSERTIONS
-      int dummy;
-#   endif
     /* pthread_get_stackaddr_np() should return stack bottom (highest   */
     /* stack address plus 1).                                           */
     b->mem_base = pthread_get_stackaddr_np(pthread_self());
-    GC_ASSERT((void *)&dummy HOTTER_THAN b->mem_base);
+    GC_ASSERT((void *)GC_approx_sp() HOTTER_THAN b->mem_base);
     return GC_SUCCESS;
   }
 # define HAVE_GET_STACK_BASE
@@ -1329,6 +1328,7 @@ GC_INNER word GC_page_size = 0;
   {
     stack_t s;
     pthread_t self = pthread_self();
+
     if (self == stackbase_main_self)
       {
         /* If the client calls GC_get_stack_base() from the main thread */
@@ -1346,7 +1346,7 @@ GC_INNER word GC_page_size = 0;
       ABORT("thr_stksegment failed");
     }
     /* s.ss_sp holds the pointer to the stack bottom. */
-    GC_ASSERT((void *)&s HOTTER_THAN s.ss_sp);
+    GC_ASSERT((void *)GC_approx_sp() HOTTER_THAN s.ss_sp);
 
     if (!stackbase_main_self && thr_main() != 0)
       {
@@ -1382,19 +1382,18 @@ GC_INNER word GC_page_size = 0;
   GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *b)
   {
 #   ifdef NEED_FIND_LIMIT
-      int dummy;
       IF_CANCEL(int cancel_state;)
       DCL_LOCK_STATE;
 
       LOCK();
       DISABLE_CANCEL(cancel_state);  /* May be unnecessary? */
 #     ifdef STACK_GROWS_DOWN
-        b -> mem_base = GC_find_limit((ptr_t)(&dummy), TRUE);
+        b -> mem_base = GC_find_limit(GC_approx_sp(), TRUE);
 #       ifdef IA64
           b -> reg_base = GC_find_limit(GC_save_regs_in_stack(), FALSE);
 #       endif
 #     else
-        b -> mem_base = GC_find_limit(&dummy, FALSE);
+        b -> mem_base = GC_find_limit(GC_approx_sp(), FALSE);
 #     endif
       RESTORE_CANCEL(cancel_state);
       UNLOCK();
@@ -1410,9 +1409,10 @@ GC_INNER word GC_page_size = 0;
   ptr_t GC_get_main_stack_base(void)
   {
     struct GC_stack_base sb;
+
     if (GC_get_stack_base(&sb) != GC_SUCCESS)
       ABORT("GC_get_stack_base failed");
-    GC_ASSERT((void *)&sb HOTTER_THAN sb.mem_base);
+    GC_ASSERT((void *)GC_approx_sp() HOTTER_THAN sb.mem_base);
     return (ptr_t)sb.mem_base;
   }
 #endif /* !GET_MAIN_STACKBASE_SPECIAL */

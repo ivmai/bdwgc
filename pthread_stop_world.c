@@ -229,7 +229,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 # ifdef SPARC
       me -> stop_info.stack_ptr = GC_save_regs_in_stack();
 # else
-      me -> stop_info.stack_ptr = (ptr_t)(&me);
+      me -> stop_info.stack_ptr = GC_approx_sp();
 # endif
 # ifdef IA64
       me -> backing_store_ptr = GC_save_regs_in_stack();
@@ -641,10 +641,9 @@ GC_INNER void GC_stop_world(void)
 
   GC_API_OSCALL void nacl_pre_syscall_hook(void)
   {
-    int local_dummy = 0;
     if (GC_nacl_thread_idx != -1) {
       NACL_STORE_REGS();
-      GC_nacl_gc_thread_self->stop_info.stack_ptr = (ptr_t)(&local_dummy);
+      GC_nacl_gc_thread_self->stop_info.stack_ptr = GC_approx_sp();
       GC_nacl_thread_parked[GC_nacl_thread_idx] = 1;
     }
   }
@@ -653,7 +652,6 @@ GC_INNER void GC_stop_world(void)
   {
     if (GC_nacl_park_threads_now) {
       pthread_t self = pthread_self();
-      int local_dummy = 0;
 
       /* Don't try to park the thread parker.   */
       if (GC_nacl_thread_parker == self)
@@ -668,7 +666,7 @@ GC_INNER void GC_stop_world(void)
       /* so don't bother storing registers again, the GC has a set.     */
       if (!GC_nacl_thread_parked[GC_nacl_thread_idx]) {
         NACL_STORE_REGS();
-        GC_nacl_gc_thread_self->stop_info.stack_ptr = (ptr_t)(&local_dummy);
+        GC_nacl_gc_thread_self->stop_info.stack_ptr = GC_approx_sp();
       }
       GC_nacl_thread_parked[GC_nacl_thread_idx] = 1;
       while (GC_nacl_park_threads_now) {
