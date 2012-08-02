@@ -1,3 +1,40 @@
+2012-08-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c (GC_clear_stack_inner): Use GC_approx_sp() instead of
+	"dummy[0]" set to "&dummy" value (that worked as expected only for
+	STACK_GROWS_DOWN case).
+
+2012-08-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (min_bytes_allocd, GC_stopped_mark): Use GC_approx_sp()
+	instead of "&dummy"; remove 'dummy' local variable.
+	* dyn_load.c (GC_cond_add_roots): Likewise.
+	* misc.c (GC_init): Likewise.
+	* os_dep.c (GC_get_stack_base, GC_get_main_stack_base): Likewise.
+	* pthread_stop_world.c (GC_suspend_handler_inner,
+	nacl_pre_syscall_hook, __nacl_suspend_thread_if_needed): Likewise.
+	* pthread_support.c (GC_thr_init): Likewise.
+	* ptr_chck.c (GC_on_stack): Likewise.
+	* win32_threads.c (GC_push_stack_for): Likewise.
+	* extra/setjmp_t.c (main): Define volatile 'sp' local variable, store
+	its address to it and use it instead of "&dummy"; remove 'dummy' local
+	variable.
+	* mach_dep.c (GC_with_callee_saves_pushed): Use volatile for 'dummy'
+	local variable.
+	* misc.c (GC_clear_stack_inner): Store address of volatile 'dummy'
+	local array (i.e. 'sp' value) to its first element (and use it in the
+	comparison of addresses) to prevent any harmful optimizations as C
+	officially disallows comparisons of pointers to different objects
+	(e.g., some Mac OS X clang releases might turn a conditional
+	expression that uses 'dummy' address into a constant); update comment.
+	* misc.c (GC_call_with_stack_base): Use "&base" instead of "&dummy"
+	(it is safe to use address of base here); remove dummy variable.
+
+2012-08-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c (GC_call_with_stack_base): Call GC_noop1 after fn()
+	invocation to prevent a tail-call optimization.
+
 2012-07-21  Ivan Maidanski <ivmai@mail.ru>
 
 	* os_dep.c (GC_get_stack_base): Abort if pthread_stackseg_np fails
