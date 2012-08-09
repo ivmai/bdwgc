@@ -200,11 +200,11 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
 /* collections to amortize the collection cost.                         */
 static word min_bytes_allocd(void)
 {
-    int dummy; /* GC_stackbottom is used only for a single-threaded case. */
 #   ifdef STACK_GROWS_UP
-      word stack_size = (ptr_t)(&dummy) - GC_stackbottom;
+      word stack_size = GC_approx_sp() - GC_stackbottom;
+            /* GC_stackbottom is used only for a single-threaded case.  */
 #   else
-      word stack_size = GC_stackbottom - (ptr_t)(&dummy);
+      word stack_size = GC_stackbottom - GC_approx_sp();
 #   endif
 
     word total_root_size;       /* includes double stack size,  */
@@ -579,7 +579,6 @@ GC_API int GC_CALL GC_collect_a_little(void)
 STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 {
     unsigned i;
-    int dummy;
 #   ifndef SMALL_CONFIG
       CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
       CLOCK_TYPE current_time;
@@ -631,7 +630,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
             START_WORLD();
             return(FALSE);
           }
-          if (GC_mark_some((ptr_t)(&dummy))) break;
+          if (GC_mark_some(GC_approx_sp())) break;
         }
 
     GC_gc_no++;

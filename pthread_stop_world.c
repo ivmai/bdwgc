@@ -229,7 +229,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 # ifdef SPARC
       me -> stop_info.stack_ptr = GC_save_regs_in_stack();
 # else
-      me -> stop_info.stack_ptr = (ptr_t)(&me);
+      me -> stop_info.stack_ptr = GC_approx_sp();
 # endif
 # ifdef IA64
       me -> backing_store_ptr = GC_save_regs_in_stack();
@@ -446,15 +446,14 @@ STATIC int GC_suspend_all(void)
 #           endif
 
 #           ifdef GC_OPENBSD_THREADS
-              if (pthread_suspend_np(p -> id) != 0)
-                ABORT("pthread_suspend_np failed");
-              /* This will only work for userland pthreads.  It will    */
-              /* fail badly on rthreads.  Perhaps we should consider    */
-              /* a pthread_sp_np() function that returns the stack      */
-              /* pointer for a suspended thread and implement in both   */
-              /* pthreads and rthreads.                                 */
-              p -> stop_info.stack_ptr =
-                        *(ptr_t *)((char *)p -> id + UTHREAD_SP_OFFSET);
+              {
+                stack_t stack;
+                if (pthread_suspend_np(p -> id) != 0)
+                  ABORT("pthread_suspend_np failed");
+                if (pthread_stackseg_np(p->id, &stack))
+                  ABORT("pthread_stackseg_np failed");
+                p -> stop_info.stack_ptr = (ptr_t)stack.ss_sp - stack.ss_size;
+              }
 #           else
 #             ifndef PLATFORM_ANDROID
                 result = pthread_kill(p -> id, SIG_SUSPEND);
@@ -642,10 +641,9 @@ GC_INNER void GC_stop_world(void)
 
   GC_API_OSCALL void nacl_pre_syscall_hook(void)
   {
-    int local_dummy = 0;
     if (GC_nacl_thread_idx != -1) {
       NACL_STORE_REGS();
-      GC_nacl_gc_thread_self->stop_info.stack_ptr = (ptr_t)(&local_dummy);
+      GC_nacl_gc_thread_self->stop_info.stack_ptr = GC_approx_sp();
       GC_nacl_thread_parked[GC_nacl_thread_idx] = 1;
     }
   }
@@ -654,7 +652,6 @@ GC_INNER void GC_stop_world(void)
   {
     if (GC_nacl_park_threads_now) {
       pthread_t self = pthread_self();
-      int local_dummy = 0;
 
       /* Don't try to park the thread parker.   */
       if (GC_nacl_thread_parker == self)
@@ -669,7 +666,7 @@ GC_INNER void GC_stop_world(void)
       /* so don't bother storing registers again, the GC has a set.     */
       if (!GC_nacl_thread_parked[GC_nacl_thread_idx]) {
         NACL_STORE_REGS();
-        GC_nacl_gc_thread_self->stop_info.stack_ptr = (ptr_t)(&local_dummy);
+        GC_nacl_gc_thread_self->stop_info.stack_ptr = GC_approx_sp();
       }
       GC_nacl_thread_parked[GC_nacl_thread_idx] = 1;
       while (GC_nacl_park_threads_now) {

@@ -61,22 +61,23 @@ int * nested_sp(void)
 
 int main(void)
 {
-    int dummy;
+    volatile word sp;
     long ps = GETPAGESIZE();
     jmp_buf b;
     register int x = (int)strlen("a");  /* 1, slightly disguised */
     static int y = 0;
 
+    sp = (word)(&sp);
     printf("This appears to be a %s running %s\n", MACH_TYPE, OS_TYPE);
-    if (nested_sp() < &dummy) {
+    if (nested_sp() < (int *)sp) {
       printf("Stack appears to grow down, which is the default.\n");
       printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
-             ((unsigned long)(&dummy) + ps) & ~(ps-1));
+             ((unsigned long)sp + ps) & ~(ps-1));
     } else {
       printf("Stack appears to grow up.\n");
       printf("Define STACK_GROWS_UP in gc_private.h\n");
       printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
-             ((unsigned long)(&dummy) + ps) & ~(ps-1));
+             ((unsigned long)sp + ps) & ~(ps-1));
     }
     printf("Note that this may vary between machines of ostensibly\n");
     printf("the same architecture (e.g. Sun 3/50s and 3/80s).\n");

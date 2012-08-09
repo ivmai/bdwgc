@@ -193,10 +193,11 @@ void* Undisguise( GC_word i ) {
 int APIENTRY WinMain(
     HINSTANCE instance, HINSTANCE prev, LPSTR cmd, int cmdShow )
 {
-    int argc;
+    int argc = 0;
     char* argv[ 3 ];
 
-    for (argc = 1; argc < (int)(sizeof(argv) / sizeof(argv[0])); argc++) {
+    if (cmd != 0)
+      for (argc = 1; argc < (int)(sizeof(argv) / sizeof(argv[0])); argc++) {
         argv[ argc ] = strtok( argc == 1 ? cmd : 0, " \t" );
         if (0 == argv[ argc ]) break;}
 #elif defined(MACOS)
@@ -207,6 +208,9 @@ int APIENTRY WinMain(
 #else
   int main( int argc, char* argv[] ) {
 #endif
+
+    GC_set_all_interior_pointers(1);
+                        /* needed due to C++ multiple inheritance used  */
 
     GC_INIT();
 

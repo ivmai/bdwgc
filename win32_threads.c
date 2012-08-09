@@ -1324,14 +1324,13 @@ static GC_bool may_be_in_stack(ptr_t s)
 
 STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
 {
-  int dummy;
   ptr_t sp, stack_min;
 
   struct GC_traced_stack_sect_s *traced_stack_sect =
                                       thread -> traced_stack_sect;
   if (thread -> id == me) {
     GC_ASSERT(thread -> thread_blocked_sp == NULL);
-    sp = (ptr_t) &dummy;
+    sp = GC_approx_sp();
   } else if ((sp = thread -> thread_blocked_sp) == NULL) {
               /* Use saved sp value for blocked threads. */
     /* For unblocked threads call GetThreadContext().   */

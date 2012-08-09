@@ -162,13 +162,12 @@ void (GC_CALLBACK *GC_is_visible_print_proc)(void * p) =
 /* Could p be a stack address? */
    STATIC GC_bool GC_on_stack(ptr_t p)
    {
-        int dummy;
 #       ifdef STACK_GROWS_DOWN
-            if ((ptr_t)p >= (ptr_t)(&dummy) && (ptr_t)p < GC_stackbottom ) {
+            if ((ptr_t)p >= GC_approx_sp() && (ptr_t)p < GC_stackbottom) {
                 return(TRUE);
             }
 #       else
-            if ((ptr_t)p <= (ptr_t)(&dummy) && (ptr_t)p > GC_stackbottom ) {
+            if ((ptr_t)p <= GC_approx_sp() && (ptr_t)p > GC_stackbottom) {
                 return(TRUE);
             }
 #       endif
