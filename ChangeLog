@@ -1,3 +1,9 @@
+[7.2d]
+
+2012-08-09  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README: Change version to 7.2d (rev. D).
+
 2012-08-05  Ivan Maidanski <ivmai@mail.ru>
 
 	* config.guess: Regenerate (by autoreconf -vif using autoconf-2.68,
