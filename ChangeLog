@@ -2,6 +2,7 @@
 == [7.3alpha4] (development) ==
 
 * Add GC_push_all/conditional() to GC public API.
+* Add note about 'pkg-config' solving problem with autoconf 2.68 or older.
 * Add public GC_set/get_abort_func to replace default GC_on_abort.
 * Add public setter and getter for GC_push_other_roots.
 * Add thread suspend/resume signals public setters (POSIX threads).
@@ -114,7 +115,7 @@
 * Use union of AO_t and word to favor strict-aliasing compiler optimization.
 
 
-== [7.2d] (to be released) ==
+== [7.2d] 2012-08-09 ==
 
 * Fix GC_call_with_stack_base to prevent its tail-call optimization.
 * Fix all address-of-dummy operations by using GC_approx_sp() instead.
