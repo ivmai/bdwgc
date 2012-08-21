@@ -39,9 +39,6 @@ libc.so.1: gctest: fatal: libgcc_s.so.1: open failed: No such file or directory
 
 Solaris/x86[_64]: gctest fails if PROC_VDB.
 
-Cygwin: autoreconf fails: possibly undefined macro: AC_MSG_ERROR, AS_IF
-at configure.ac:59 and configure.ac:694, respectively (autoreconf-2.68).
-
 Darwin/x86_64: deadlock might occur between:
 dlclose() -> GC_dyld_image_remove() -> GC_lock() and
 GC_inner_start_routine()+LOCK -> dyld_stub_binder_().
