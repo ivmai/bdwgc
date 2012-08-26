@@ -390,7 +390,7 @@ case "$host" in
       ;;
 esac
 
-if test "$GCC" == yes; then
+if test "$GCC" = yes; then
   # Output all warnings.
   AC_MSG_CHECKING(for gcc -Wextra)
   old_CFLAGS="$CFLAGS"
@@ -415,7 +415,7 @@ if test $compiler_xlc = yes -a "$powerpc_darwin" = true; then
   AC_DEFINE([DARWIN_DONT_PARSE_STACK], 1, [See doc/README.macros.])
 fi
 
-if test "$GCC" == yes; then
+if test "$GCC" = yes; then
   # Disable aliasing optimization unless forced to.
   AC_MSG_CHECKING([whether gcc supports -fno-strict-aliasing])
   ac_cv_fno_strict_aliasing=no
@@ -501,8 +501,8 @@ esac
 
 AM_CONDITIONAL(CPLUSPLUS, test "${enable_cplusplus}" = yes)
 
-if test "$GCC" == yes; then
-  if test "${enable_cplusplus}" == yes; then
+if test "$GCC" = yes; then
+  if test "${enable_cplusplus}" = yes; then
     case "$host" in
       *-*-cygwin* | *-*-mingw*)
         AC_MSG_CHECKING([whether libsupc++ required])
@@ -540,8 +540,8 @@ esac
 AC_MSG_RESULT($enable_shared)
 
 # Compile with GC_DLL defined unless building static libraries.
-if test "${enable_shared}" == yes; then
-  if test "${enable_static}" == no; then
+if test "${enable_shared}" = yes; then
+  if test "${enable_static}" = no; then
     AC_DEFINE(GC_DLL)
     if test "$GCC" = yes; then
       # Pass -fvisibility=hidden option if supported
@@ -808,7 +808,7 @@ if test -n "${with_cross_host}"; then
              [Define to tune the collector for small heap sizes.])
 fi
 
-if test "$enable_gc_debug" == "no"; then
+if test "$enable_gc_debug" = "no"; then
    AC_DEFINE([NO_DEBUGGING], 1,
              [Disable debugging, like GC_dump and its callees.])
 fi
