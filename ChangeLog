@@ -9,6 +9,7 @@
 * Call GC_on_abort (with NULL argument) on exit(1).
 * Code refactoring of GC_x_printf (move shared code to macro).
 * Disable find-leak GC_gcollect on GC abnormal EXIT.
+* Elaborate comment on dependencies in autogen.sh.
 * Eliminate GCC warning in GC_get_main_stack_base (OpenBSD).
 * Eliminate GCC warnings in setjmp_t.c, test_cpp and cord 'de' app.
 * Include proper header file in 'tools' for configuration macros.
@@ -113,6 +114,11 @@
 * Use USE_COMPILER_TLS on Cygwin.
 * Use pthread_key for thread-local storage on FreeBSD.
 * Use union of AO_t and word to favor strict-aliasing compiler optimization.
+
+
+== [7.2e] (candidate) ==
+
+* Fix unportable '==' test operators in configure.
 
 
 == [7.2d] 2012-08-09 ==
