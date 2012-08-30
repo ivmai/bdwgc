@@ -22,7 +22,7 @@
 
 #ifdef HAVE_CONFIG_H
   /* For GC_[P]THREADS */
-# include "private/config.h"
+# include "config.h"
 #endif
 
 #include "gc_disclaim.h"

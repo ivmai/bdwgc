@@ -22,7 +22,7 @@
 /* sprintf implementation whenever possible.                            */
 
 #ifdef HAVE_CONFIG_H
-# include "private/config.h"
+# include "config.h"
 #endif
 #ifndef CORD_BUILD
 # define CORD_BUILD

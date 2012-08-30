@@ -1,7 +1,7 @@
 
 #ifdef HAVE_CONFIG_H
   /* For PARALLEL_MARK */
-# include "private/config.h"
+# include "config.h"
 #endif
 
 #ifndef GC_THREADS

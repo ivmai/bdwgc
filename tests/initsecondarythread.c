@@ -16,7 +16,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include "private/config.h"
+# include "config.h"
 #endif
 
 #ifndef GC_THREADS
