@@ -12,6 +12,7 @@
 * Elaborate comment on dependencies in autogen.sh.
 * Eliminate GCC warning in GC_get_main_stack_base (OpenBSD).
 * Eliminate GCC warnings in setjmp_t.c, test_cpp and cord 'de' app.
+* Include "config.h" instead of "private/config.h" on HAVE_CONFIG_H.
 * Include proper header file in 'tools' for configuration macros.
 * Include pthread_np.h from pthread_stop_world.c on OpenBSD.
 * Move GC_get_suspend/thr_restart_signal to misc.c for NaCl and OpenBSD.
