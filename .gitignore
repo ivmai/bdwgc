@@ -74,7 +74,6 @@ stamp-h1
 /configure
 /depcomp
 /include/config.h.in
-/include/private/config.h.in
 /install-sh
 /ltmain.sh
 /m4/libtool.m4
