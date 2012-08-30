@@ -10,6 +10,7 @@
 * Code refactoring of GC_x_printf (move shared code to macro).
 * Disable find-leak GC_gcollect on GC abnormal EXIT.
 * Elaborate comment on dependencies in autogen.sh.
+* Eliminate 'missing exception specification' warning in gc_cpp.cc (Clang).
 * Eliminate GCC warning in GC_get_main_stack_base (OpenBSD).
 * Eliminate GCC warnings in setjmp_t.c, test_cpp and cord 'de' app.
 * Include "config.h" instead of "private/config.h" on HAVE_CONFIG_H.
