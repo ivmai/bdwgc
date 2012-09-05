@@ -120,6 +120,7 @@
 
 == [7.2e] (candidate) ==
 
+* Fix GC_get_stack_base assembly code (Cygwin/Clang).
 * Fix unportable '==' test operators in configure.
 
 
