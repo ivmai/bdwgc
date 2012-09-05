@@ -781,7 +781,10 @@ GC_INNER word GC_page_size = 0;
     /* gcc version of boehm-gc).                                        */
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
     {
-      extern void * _tlsbase __asm__ ("%fs:4");
+      void * _tlsbase;
+
+      __asm__ ("movl %%fs:4, %0"
+               : "=r" (_tlsbase));
       sb -> mem_base = _tlsbase;
       return GC_SUCCESS;
     }
