@@ -1,3 +1,9 @@
+2012-09-06  Colin LeMahieu <clemahieu@gmail.com>
+
+	* os_dep.c (GC_get_stack_base): Use inline assembly statement instead
+	of variable assembly attribute (to workaround clang 3.1 linkage error
+	on Cygwin).
+
 2012-08-27  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure: Regenerate.
