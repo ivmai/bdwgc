@@ -22,17 +22,14 @@
 # include <excpt.h>
 #endif
 
-/* We put this here to minimize the risk of inlining. */
-/*VARARGS*/
-#if defined(__BORLANDC__) || defined(__WATCOMC__) || defined(__CC_ARM)
-  void GC_noop(void * p GC_ATTR_UNUSED, ...) {}
-#else
-# ifdef __DMC__
-    void GC_noop(...) {}
-# else
-    void GC_noop() {}
-# endif
-#endif
+/* Make arguments appear live to compiler.  Put here to minimize the    */
+/* risk of inlining.  Used to minimize junk left in registers.          */
+void GC_noop6(word arg1 GC_ATTR_UNUSED, word arg2 GC_ATTR_UNUSED,
+              word arg3 GC_ATTR_UNUSED, word arg4 GC_ATTR_UNUSED,
+              word arg5 GC_ATTR_UNUSED, word arg6 GC_ATTR_UNUSED)
+{
+  /* Empty */
+}
 
 /* Single argument version, robust against whole program analysis. */
 volatile word GC_noop_sink;
