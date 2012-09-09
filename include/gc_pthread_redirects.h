@@ -58,7 +58,8 @@ GC_API int GC_pthread_detach(pthread_t);
   GC_API int GC_pthread_cancel(pthread_t);
 #endif
 
-#ifdef GC_PTHREAD_EXIT_ATTRIBUTE
+#if defined(GC_PTHREAD_EXIT_ATTRIBUTE) && !defined(GC_PTHREAD_EXIT_DECLARED)
+# define GC_PTHREAD_EXIT_DECLARED
   GC_API void GC_pthread_exit(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
 #endif
 
