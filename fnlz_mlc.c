@@ -92,7 +92,7 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
 
     lb += sizeof(void *);
     GC_ASSERT(done_init);
-    if (EXPECT(SMALL_OBJ(lb), TRUE)) {
+    if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
         lg = GC_size_map[lb];
         opp = &GC_finalized_objfreelist[lg];
