@@ -592,6 +592,7 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t lb, GC_descr d)
 
     lb += TYPD_EXTRA_BYTES;
     if(SMALL_OBJ(lb)) {
+        GC_DBG_COLLECT_AT_MALLOC(lb);
         lg = GC_size_map[lb];
         opp = &(GC_eobjfreelist[lg]);
         LOCK();
@@ -628,6 +629,7 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page(size_t lb,
 
     lb += TYPD_EXTRA_BYTES;
     if( SMALL_OBJ(lb) ) {
+        GC_DBG_COLLECT_AT_MALLOC(lb);
         lg = GC_size_map[lb];
         opp = &(GC_eobjfreelist[lg]);
         LOCK();

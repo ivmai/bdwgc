@@ -876,6 +876,16 @@ GC_API void GC_CALL GC_init(void)
 #       endif
       }
     }
+#   ifdef GC_COLLECT_AT_MALLOC
+      {
+        char * string = GETENV("GC_COLLECT_AT_MALLOC");
+        if (0 != string) {
+          size_t min_lb = (size_t)STRTOULL(string, NULL, 10);
+          if (min_lb > 0)
+            GC_dbg_collect_at_malloc_min_lb = min_lb;
+        }
+      }
+#   endif
 #   ifndef GC_DISABLE_INCREMENTAL
       {
         char * time_limit_string = GETENV("GC_PAUSE_TIME_TARGET");

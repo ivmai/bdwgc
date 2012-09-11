@@ -168,6 +168,7 @@ static void maybe_finalize(void)
     word lg;
     DCL_LOCK_STATE;
 
+    GC_DBG_COLLECT_AT_MALLOC(lb);
     if(SMALL_OBJ(lb)) {
         lg = GC_size_map[lb];
         opp = &(GC_gcjobjfreelist[lg]);
@@ -243,6 +244,7 @@ GC_API void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
     word lg;
     DCL_LOCK_STATE;
 
+    GC_DBG_COLLECT_AT_MALLOC(lb);
     if(SMALL_OBJ(lb)) {
         lg = GC_size_map[lb];
         opp = &(GC_gcjobjfreelist[lg]);

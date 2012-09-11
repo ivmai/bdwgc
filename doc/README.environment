@@ -34,6 +34,10 @@ GC_DUMP_REGULARLY - Generate a GC debugging dump GC_dump() on startup
                     if you have a bug to report, but please include only the
                     last complete dump.
 
+GC_COLLECT_AT_MALLOC=<n> - Override the default value specified by
+                           GC_COLLECT_AT_MALLOC macro.  Has no effect unless
+                           GC is built with GC_COLLECT_AT_MALLOC defined.
+
 GC_BACKTRACES=<n> - Generate n random back-traces (for heap profiling) after
                     each GC.  Collector must have been built with
                     KEEP_BACK_PTRS.  This won't generate useful output unless

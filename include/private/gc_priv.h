@@ -1806,6 +1806,16 @@ GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
 #define GENERAL_MALLOC_IOP(lb,k) \
     GC_clear_stack(GC_generic_malloc_ignore_off_page(lb, k))
 
+#ifdef GC_COLLECT_AT_MALLOC
+  extern size_t GC_dbg_collect_at_malloc_min_lb;
+                            /* variable visible outside for debugging   */
+# define GC_DBG_COLLECT_AT_MALLOC(lb) \
+                (void)((lb) >= GC_dbg_collect_at_malloc_min_lb ? \
+                            (GC_gcollect(), 0) : 0)
+#else
+# define GC_DBG_COLLECT_AT_MALLOC(lb) (void)0
+#endif /* !GC_COLLECT_AT_MALLOC */
+
 /* Allocation routines that bypass the thread local cache.      */
 #ifdef THREAD_LOCAL_ALLOC
   GC_INNER void * GC_core_malloc(size_t);

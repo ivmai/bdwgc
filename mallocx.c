@@ -189,6 +189,7 @@ GC_INNER void * GC_generic_malloc_ignore_off_page(size_t lb, int k)
     if (EXPECT(GC_have_errors, FALSE))
       GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
+    GC_DBG_COLLECT_AT_MALLOC(lb);
     LOCK();
     result = (ptr_t)GC_alloc_large(ADD_SLOP(lb), k, IGNORE_OFF_PAGE);
     if (0 != result) {
@@ -293,6 +294,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     if (EXPECT(GC_have_errors, FALSE))
       GC_print_all_errors();
     GC_INVOKE_FINALIZERS();
+    GC_DBG_COLLECT_AT_MALLOC(lb);
     LOCK();
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     /* Do our share of marking work */
@@ -513,6 +515,7 @@ GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
     DCL_LOCK_STATE;
 
     if( SMALL_OBJ(lb) ) {
+        GC_DBG_COLLECT_AT_MALLOC(lb);
         if (EXTRA_BYTES != 0 && lb != 0) lb--;
                   /* We don't need the extra byte, since this won't be  */
                   /* collected anyway.                                  */

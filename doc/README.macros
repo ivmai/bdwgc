@@ -235,6 +235,10 @@ NO_DEBUGGING    Removes GC_dump and the debugging routines it calls.
 DEBUG_THREADS   Turn on printing additional thread-support debugging
   information.
 
+GC_COLLECT_AT_MALLOC=<n>        Force garbage collection at every
+  GC_malloc_* call with the size greater than the specified value.
+  (Might be useful for application debugging or in find-leak mode.)
+
 JAVA_FINALIZATION       Makes it somewhat safer to finalize objects out of
   order by specifying a nonstandard finalization mark procedure  (see
   finalize.c).  Objects reachable from finalizable objects will be marked
