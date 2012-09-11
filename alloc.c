@@ -197,9 +197,10 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
 #endif
 
 /* Return the minimum number of words that must be allocated between    */
-/* collections to amortize the collection cost.                         */
+/* collections to amortize the collection cost.  Should be non-zero.    */
 static word min_bytes_allocd(void)
 {
+    word result;
 #   ifdef STACK_GROWS_UP
       word stack_size = GC_approx_sp() - GC_stackbottom;
             /* GC_stackbottom is used only for a single-threaded case.  */
@@ -228,11 +229,11 @@ static word min_bytes_allocd(void)
     total_root_size = 2 * stack_size + GC_root_size;
     scan_size = 2 * GC_composite_in_use + GC_atomic_in_use / 4
                 + total_root_size;
+    result = scan_size / GC_free_space_divisor;
     if (GC_incremental) {
-        return scan_size / (2 * GC_free_space_divisor);
-    } else {
-        return scan_size / GC_free_space_divisor;
+      result /= 2;
     }
+    return result > 0 ? result : 1;
 }
 
 /* Return the number of bytes allocated, adjusted for explicit storage  */
