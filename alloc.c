@@ -196,7 +196,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
   GC_INNER word GC_total_stacksize = 0; /* updated on every push_all_stacks */
 #endif
 
-/* Return the minimum number of words that must be allocated between    */
+/* Return the minimum number of bytes that must be allocated between    */
 /* collections to amortize the collection cost.  Should be non-zero.    */
 static word min_bytes_allocd(void)
 {
