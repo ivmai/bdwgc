@@ -620,7 +620,8 @@ GC_INNER void GC_stop_world(void)
 
     for (i = 0; i < n_live_threads; i++) {
       retry:
-        if (0 != (code = sem_wait(&GC_suspend_ack_sem))) {
+        code = sem_wait(&GC_suspend_ack_sem);
+        if (0 != code) {
           /* On Linux, sem_wait is documented to always return zero.    */
           /* But the documentation appears to be incorrect.             */
           if (errno == EINTR) {
