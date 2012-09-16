@@ -1,3 +1,23 @@
+2012-09-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordbscs.c (CORD_substr_closure): Prevent SEGV if CORD_from_fn
+	returned NULL/CORD_EMPTY (in case "n" argument is zero).
+
+2012-09-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (min_bytes_allocd): Fix comment (replace "words" with
+	"bytes").
+
+2012-09-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (min_bytes_allocd): Do not return zero in case of big
+	GC_free_space_divisor value (return 1 instead to prevent infinite loop
+	in GC_allocobj if GC_adj_bytes_allocd returns zero); update comment.
+
+2012-09-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README (GC_free_space_divisor): Update information.
+
 2012-09-06  Colin LeMahieu <clemahieu@gmail.com>
 
 	* os_dep.c (GC_get_stack_base): Use inline assembly statement instead
