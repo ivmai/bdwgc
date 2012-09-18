@@ -76,21 +76,21 @@ int main(void)
 # endif
 # ifdef GC_PTHREADS
     if ((code = pthread_create (&t, NULL, thread, NULL)) != 0) {
-      printf("Thread creation failed %d\n", code);
+      fprintf(stderr, "Thread creation failed %d\n", code);
       return 1;
     }
     if ((code = pthread_join (t, NULL)) != 0) {
-      printf("Thread join failed %d\n", code);
+      fprintf(stderr, "Thread join failed %d\n", code);
       return 1;
     }
 # else
     t = CreateThread(NULL, 0, thread, 0, 0, &thread_id);
     if (t == NULL) {
-      printf("Thread creation failed %d\n", (int)GetLastError());
+      fprintf(stderr, "Thread creation failed %d\n", (int)GetLastError());
       return 1;
     }
     if (WaitForSingleObject(t, INFINITE) != WAIT_OBJECT_0) {
-      printf("Thread join failed %d\n", (int)GetLastError());
+      fprintf(stderr, "Thread join failed %d\n", (int)GetLastError());
       CloseHandle(t);
       return 1;
     }

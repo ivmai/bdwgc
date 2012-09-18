@@ -70,7 +70,7 @@ volatile AO_t thread_ended_cnt = 0;
         DWORD thread_id;
         th = CreateThread(NULL, 0, entry, (LPVOID)my_depth, 0, &thread_id);
         if (th == NULL) {
-            printf("Thread #%d creation failed: %d\n", thread_num,
+            fprintf(stderr, "Thread #%d creation failed: %d\n", thread_num,
                    (int)GetLastError());
             exit(2);
         }
@@ -104,7 +104,8 @@ int main(void)
         DWORD thread_id;
         th[i] = CreateThread(NULL, 0, entry, 0, 0, &thread_id);
         if (th[i] == NULL) {
-            printf("Thread creation failed: %d\n", (int)GetLastError());
+            fprintf(stderr, "Thread creation failed: %d\n",
+                    (int)GetLastError());
             exit(1);
         }
 #     endif
@@ -120,7 +121,8 @@ int main(void)
         }
 #     else
         if (WaitForSingleObject(th[i], INFINITE) != WAIT_OBJECT_0) {
-            printf("Failed to join thread: %d\n", (int)GetLastError());
+            fprintf(stderr, "Failed to join thread: %d\n",
+                    (int)GetLastError());
             CloseHandle(th[i]);
             exit(1);
         }
