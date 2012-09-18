@@ -11,9 +11,11 @@
 * Disable find-leak GC_gcollect on GC abnormal EXIT.
 * Elaborate comment on dependencies in autogen.sh.
 * Eliminate 'missing exception specification' warning in gc_cpp.cc (Clang).
+* Eliminate 'unused value' compiler warning in GC_stop_world (Pthreads).
 * Eliminate Clang warning for GC_pthread_exit attribute.
 * Eliminate GCC warning in GC_get_main_stack_base (OpenBSD).
 * Eliminate GCC warnings in setjmp_t.c, test_cpp and cord 'de' app.
+* Enable 'force GC at every GC_malloc' debug-related functionality.
 * Include "config.h" instead of "private/config.h" on HAVE_CONFIG_H.
 * Include proper header file in 'tools' for configuration macros.
 * Include pthread_np.h from pthread_stop_world.c on OpenBSD.
@@ -21,6 +23,7 @@
 * Postpone the suspend signal in GC_dirty_init only if used to stop world.
 * Recognize GC_DONT_GC macro in gc.h (causes GC_INIT to turn off GC).
 * Recognize GC_SIG_SUSPEND and GC_SIG_THR_RESTART tuning macros in gc.h.
+* Remove nested EXPECT in GC_core_finalized_malloc.
 * Replace SIG_SUSPEND/THR_RESTART macros to variables in pthread_stop_world.
 * Replace sprintf with defensive snprintf.
 * Replace var-args GC_noop with GC_noop6 (to eliminate Clang warning).
@@ -123,6 +126,8 @@
 == [7.2e] (candidate) ==
 
 * Fix GC_get_stack_base assembly code (Cygwin/Clang).
+* Fix min_bytes_allocd preventing potential infinite loop in GC_allocobj.
+* Fix null-pointer dereference in CORD_substr_closure.
 * Fix unportable '==' test operators in configure.
 
 
