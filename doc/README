@@ -359,8 +359,8 @@ good way for the collector to compute this value.)  Client code may include
    see gc.h.
 
   The global variable GC_free_space_divisor may be adjusted up from its
-default value of 4 to use less space and more collection time, or down for
-the opposite effect.  Setting it to 1 or 0 will effectively disable collections
+default value of 3 to use less space and more collection time, or down for
+the opposite effect.  Setting it to 1 will almost disable collections
 and cause all allocations to simply grow the heap.
 
   The variable GC_non_gc_bytes, which is normally 0, may be changed to reflect

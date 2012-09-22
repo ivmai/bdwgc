@@ -349,6 +349,7 @@ CORD CORD_substr_closure(CORD x, size_t i, size_t n, CORD_fn f)
     sa->sa_cord = (CordRep *)x;
     sa->sa_index = i;
     result = CORD_from_fn(f, (void *)sa, n);
+    if (result == CORD_EMPTY) return CORD_EMPTY; /* n == 0 */
     ((CordRep *)result) -> function.header = SUBSTR_HDR;
     return (result);
 }
