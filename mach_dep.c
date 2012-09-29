@@ -17,11 +17,6 @@
 #include <stdio.h>
 #include <setjmp.h>
 
-#if defined(OS2) || defined(CX_UX) || defined(__CC_ARM)
-# define _setjmp(b) setjmp(b)
-# define _longjmp(b,v) longjmp(b,v)
-#endif
-
 #ifdef AMIGA
 # ifndef __GNUC__
 #   include <dos.h>
@@ -287,6 +282,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
             *i = 0;
         }
 #       if defined(MSWIN32) || defined(MSWINCE) || defined(UTS4) \
+           || defined(OS2) || defined(CX_UX) || defined(__CC_ARM) \
            || defined(LINUX) || defined(EWS4800) || defined(RTEMS)
           (void) setjmp(regs);
 #       else
