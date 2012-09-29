@@ -2303,12 +2303,13 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define GC_SEM_INIT_PSHARED 0
 #endif
 
+#include <setjmp.h>
+
 /* Some macros for setjmp that works across signal handlers     */
 /* were possible, and a couple of routines to facilitate        */
 /* catching accesses to bad addresses when that's               */
 /* possible/needed.                                             */
 #if defined(UNIX_LIKE) || (defined(NEED_FIND_LIMIT) && defined(CYGWIN32))
-# include <setjmp.h>
 # if defined(SUNOS5SIGS) && !defined(FREEBSD) && !defined(LINUX)
 #  include <sys/siginfo.h>
 # endif

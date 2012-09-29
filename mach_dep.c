@@ -15,7 +15,6 @@
 #include "private/gc_priv.h"
 
 #include <stdio.h>
-#include <setjmp.h>
 
 #ifdef AMIGA
 # ifndef __GNUC__
