@@ -1,3 +1,7 @@
+2012-09-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* mach_dep.c (GC_with_callee_saves_pushed): Fix a typo in comment.
+
 2012-09-19  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure: Regenerate (by autoreconf -vif using autoconf-2.68,
