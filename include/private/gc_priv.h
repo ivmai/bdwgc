@@ -2309,7 +2309,8 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 /* were possible, and a couple of routines to facilitate        */
 /* catching accesses to bad addresses when that's               */
 /* possible/needed.                                             */
-#if defined(UNIX_LIKE) || (defined(NEED_FIND_LIMIT) && defined(CYGWIN32))
+#if (defined(UNIX_LIKE) || (defined(NEED_FIND_LIMIT) && defined(CYGWIN32))) \
+    && !defined(GC_NO_SIGSETJMP)
 # if defined(SUNOS5SIGS) && !defined(FREEBSD) && !defined(LINUX)
 #  include <sys/siginfo.h>
 # endif
@@ -2320,13 +2321,13 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define JMP_BUF sigjmp_buf
 #else
 # ifdef ECOS
-#   define SETJMP(env)  hal_setjmp(env)
+#   define SETJMP(env) hal_setjmp(env)
 # else
 #   define SETJMP(env) setjmp(env)
 # endif
 # define LONGJMP(env, val) longjmp(env, val)
 # define JMP_BUF jmp_buf
-#endif /* !UNIX_LIKE */
+#endif /* !UNIX_LIKE || GC_NO_SIGSETJMP */
 
 /* Do we need the GC_find_limit machinery to find the end of a  */
 /* data segment.                                                */

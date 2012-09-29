@@ -1282,6 +1282,11 @@
 #            endif
              extern int _end[];
 #            define DATAEND (ptr_t)(_end)
+#            if defined(PLATFORM_ANDROID) && !defined(GC_NO_SIGSETJMP)
+               /* As of Android NDK r8b, _sigsetjmp is still missing    */
+               /* for x86 (setjmp is used instead to find data_start).  */
+#              define GC_NO_SIGSETJMP
+#            endif
 #       else
              extern int etext[];
 #            define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
@@ -2529,7 +2534,8 @@
                              || defined(OPENBSD) || defined(ARM32) \
                              || defined(MIPS) || defined(AVR32))) \
      || (defined(LINUX) && (defined(SPARC) || defined(M68K))) \
-     || (defined(RTEMS) && defined(I386))) && !defined(NO_GETCONTEXT)
+     || ((defined(RTEMS) || defined(PLATFORM_ANDROID)) && defined(I386))) \
+    && !defined(NO_GETCONTEXT)
 # define NO_GETCONTEXT
 #endif
 
