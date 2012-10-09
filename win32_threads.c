@@ -39,6 +39,11 @@
   GC_INNER unsigned long GC_lock_holder = NO_THREAD;
 #endif
 
+#undef CreateThread
+#undef ExitThread
+#undef _beginthreadex
+#undef _endthreadex
+
 #ifdef GC_PTHREADS
 # include <errno.h> /* for EAGAIN */
 
@@ -60,11 +65,6 @@
 # endif
 
 #else
-
-# undef CreateThread
-# undef ExitThread
-# undef _beginthreadex
-# undef _endthreadex
 
 # ifdef MSWINCE
     /* Force DONT_USE_SIGNALANDWAIT implementation of PARALLEL_MARK     */
@@ -2239,7 +2239,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     ExitThread(dwExitCode);
   }
 
-# ifndef MSWINCE
+# if !defined(MSWINCE) && !defined(CYGWIN32)
 
     GC_API GC_uintptr_t GC_CALL GC_beginthreadex(
                                   void *security, unsigned stack_size,
@@ -2293,7 +2293,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       _endthreadex(retval);
     }
 
-# endif /* !MSWINCE */
+# endif /* !MSWINCE && !CYGWIN32 */
 
 #ifdef GC_WINMAIN_REDIRECT
   /* This might be useful on WinCE.  Shouldn't be used with GC_DLL.     */
