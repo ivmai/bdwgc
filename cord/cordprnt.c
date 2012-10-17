@@ -306,9 +306,17 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                             (void) va_arg(args, double);
                             break;
                         default:
+#                           if defined(__va_copy) \
+                               || (defined(__GNUC__) && !defined(__DJGPP__))
+                              va_end(vsprintf_args);
+#                           endif
                             return(-1);
                     }
                     res = vsprintf(buf, conv_spec, vsprintf_args);
+#                   if defined(__va_copy) \
+                       || (defined(__GNUC__) && !defined(__DJGPP__))
+                      va_end(vsprintf_args);
+#                   endif
                     len = (size_t)res;
                     if ((char *)(GC_word)res == buf) {
                         /* old style vsprintf */
