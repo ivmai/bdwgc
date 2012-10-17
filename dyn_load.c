@@ -151,7 +151,8 @@ GC_FirstDLOpenedLinkMap(void)
         dynStructureAddr = &_DYNAMIC;
 #   endif
 
-    if( dynStructureAddr == 0) {
+    if (dynStructureAddr == 0) {
+        /* _DYNAMIC symbol not resolved. */
         return(0);
     }
     if( cachedResult == 0 ) {
@@ -640,7 +641,8 @@ GC_FirstDLOpenedLinkMap(void)
     ElfW(Dyn) *dp;
     static struct link_map *cachedResult = 0;
 
-    if( _DYNAMIC == 0) {
+    if (0 == (ptr_t)_DYNAMIC) {
+        /* _DYNAMIC symbol not resolved. */
         return(0);
     }
     if( cachedResult == 0 ) {
