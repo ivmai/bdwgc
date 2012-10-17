@@ -448,7 +448,7 @@ void GC_push_thread_structures(void)
     GC_push_all((ptr_t)(GC_threads), (ptr_t)(GC_threads)+sizeof(GC_threads));
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_push_all((ptr_t)(&GC_thread_key),
-                  (ptr_t)(&GC_thread_key) + sizeof(&GC_thread_key));
+                  (ptr_t)(&GC_thread_key) + sizeof(GC_thread_key));
 #   endif
 }
 
