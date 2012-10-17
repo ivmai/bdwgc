@@ -887,12 +887,13 @@ GC_INNER void GC_stop_init(void)
 #   else
       act.sa_handler = GC_suspend_handler;
 #   endif
+    /* act.sa_restorer is deprecated and should not be initialized. */
     if (sigaction(GC_sig_suspend, &act, NULL) != 0) {
         ABORT("Cannot set SIG_SUSPEND handler");
     }
 
 #   ifdef SA_SIGINFO
-      act.sa_flags &= ~ SA_SIGINFO;
+      act.sa_flags &= ~SA_SIGINFO;
 #   endif
     act.sa_handler = GC_restart_handler;
     if (sigaction(GC_sig_thr_restart, &act, NULL) != 0) {

@@ -559,6 +559,7 @@ GC_INNER char * GC_get_maps(void)
     act.sa_handler = GC_fault_handler_openbsd;
     sigemptyset(&act.sa_mask);
     act.sa_flags = SA_NODEFER | SA_RESTART;
+    /* act.sa_restorer is deprecated and should not be initialized. */
     sigaction(SIGSEGV, &act, &old_segv_act);
 
     if (sigsetjmp(GC_jmp_buf_openbsd, 1) == 0) {
@@ -596,6 +597,7 @@ GC_INNER char * GC_get_maps(void)
     act.sa_handler = GC_fault_handler_openbsd;
     sigemptyset(&act.sa_mask);
     act.sa_flags = SA_NODEFER | SA_RESTART;
+    /* act.sa_restorer is deprecated and should not be initialized. */
     sigaction(SIGSEGV, &act, &old_segv_act);
 
     firstpass = 1;
@@ -868,6 +870,7 @@ GC_INNER word GC_page_size = 0;
 #         endif
 
           (void) sigemptyset(&act.sa_mask);
+          /* act.sa_restorer is deprecated and should not be initialized. */
 #         ifdef GC_IRIX_THREADS
             /* Older versions have a bug related to retrieving and      */
             /* and setting a handler at the same time.                  */
@@ -3332,6 +3335,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
         ABORT("Page size not multiple of HBLKSIZE");
     }
 #   if !defined(MSWIN32) && !defined(MSWINCE)
+      /* act.sa_restorer is deprecated and should not be initialized. */
 #     if defined(GC_IRIX_THREADS)
         sigaction(SIGSEGV, 0, &oldact);
         sigaction(SIGSEGV, &act, 0);
@@ -4227,6 +4231,7 @@ GC_INNER void GC_dirty_init(void)
       sa.sa_handler = (SIG_HNDLR_PTR)GC_darwin_sigbus;
       sigemptyset(&sa.sa_mask);
       sa.sa_flags = SA_RESTART|SA_SIGINFO;
+      /* sa.sa_restorer is deprecated and should not be initialized. */
       if (sigaction(SIGBUS, &sa, &oldsa) < 0)
         ABORT("sigaction failed");
       if ((SIG_HNDLR_PTR)oldsa.sa_handler != SIG_DFL) {
