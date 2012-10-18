@@ -851,7 +851,10 @@ GC_INNER word GC_page_size = 0;
             static struct sigaction old_bus_act;
 #       endif
 #   else
-        static GC_fault_handler_t old_segv_handler, old_bus_handler;
+      static GC_fault_handler_t old_segv_handler;
+#     ifdef SIGBUS
+        static GC_fault_handler_t old_bus_handler;
+#     endif
 #   endif
 
     GC_INNER void GC_set_and_save_fault_handler(GC_fault_handler_t h)
