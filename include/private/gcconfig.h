@@ -1638,7 +1638,7 @@
 #     define DATASTART ((ptr_t)(__data_start))
 #     ifdef USE_HPUX_FIXED_STACKBOTTOM
         /* The following appears to work for 7xx systems running HP/UX  */
-        /* 9.xx Furthermore, it might result in much faster             */
+        /* 9.xx.  Furthermore, it might result in much faster           */
         /* collections than HEURISTIC2, which may involve scanning      */
         /* segments that directly precede the stack.  It is not the     */
         /* default, since it may not work on older machine/OS           */
