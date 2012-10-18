@@ -3046,9 +3046,11 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
                         /* Also old MSWIN32 ACCESS_VIOLATION filter */
 # if !defined(MSWIN32) && !defined(MSWINCE)
     STATIC SIG_HNDLR_PTR GC_old_bus_handler = 0;
-    STATIC GC_bool GC_old_bus_handler_used_si = FALSE;
+#   if defined(FREEBSD) || defined(HURD) || defined(HPUX)
+      STATIC GC_bool GC_old_bus_handler_used_si = FALSE;
+#   endif
     STATIC GC_bool GC_old_segv_handler_used_si = FALSE;
-# endif
+# endif /* !MSWIN32 */
 #endif /* !DARWIN */
 
 #if defined(THREADS)
@@ -3119,6 +3121,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #     define SIG_OK (sig == SIGBUS || sig == SIGSEGV)
 #   else
 #     define SIG_OK (sig == SIGSEGV)
+                            /* Catch SIGSEGV but ignore SIGBUS. */
 #   endif
 #   if defined(FREEBSD)
 #     ifndef SEGV_ACCERR
@@ -3200,12 +3203,15 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #           else
                 GC_bool used_si;
 
-                if (sig == SIGSEGV) {
-                   old_handler = GC_old_segv_handler;
-                   used_si = GC_old_segv_handler_used_si;
-                } else {
+#             if defined(FREEBSD) || defined(HURD) || defined(HPUX)
+                if (sig == SIGBUS) {
                    old_handler = GC_old_bus_handler;
                    used_si = GC_old_bus_handler_used_si;
+                } else
+#             endif
+                /* else */ {
+                   old_handler = GC_old_segv_handler;
+                   used_si = GC_old_segv_handler_used_si;
                 }
 #           endif
 
@@ -3363,22 +3369,29 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
           GC_log_printf("Replaced other SIGSEGV handler\n");
       }
 #   if defined(HPUX) || defined(LINUX) || defined(HURD) \
-      || (defined(FREEBSD) && defined(SUNOS5SIGS))
+       || (defined(FREEBSD) && defined(SUNOS5SIGS))
       sigaction(SIGBUS, &act, &oldact);
-      if (oldact.sa_flags & SA_SIGINFO) {
+      if ((oldact.sa_flags & SA_SIGINFO) != 0) {
         GC_old_bus_handler = oldact.sa_sigaction;
-        GC_old_bus_handler_used_si = TRUE;
+#       if !defined(LINUX)
+          GC_old_bus_handler_used_si = TRUE;
+#       endif
       } else {
         GC_old_bus_handler = (SIG_HNDLR_PTR)oldact.sa_handler;
-        GC_old_bus_handler_used_si = FALSE;
+#       if !defined(LINUX)
+          GC_old_bus_handler_used_si = FALSE;
+#       endif
       }
       if (GC_old_bus_handler == (SIG_HNDLR_PTR)SIG_IGN) {
         if (GC_print_stats)
           GC_err_printf("Previously ignored bus error!?\n");
-        GC_old_bus_handler = (SIG_HNDLR_PTR)SIG_DFL;
-      }
-      if (GC_old_bus_handler != (SIG_HNDLR_PTR)SIG_DFL) {
-        if (GC_print_stats == VERBOSE)
+#       if !defined(LINUX)
+          GC_old_bus_handler = (SIG_HNDLR_PTR)SIG_DFL;
+#       else
+          /* GC_old_bus_handler is not used by GC_write_fault_handler.  */
+#       endif
+      } else if (GC_old_bus_handler != (SIG_HNDLR_PTR)SIG_DFL
+                 && GC_print_stats == VERBOSE) {
           GC_log_printf("Replaced other SIGBUS handler\n");
       }
 #   endif /* HPUX || LINUX || HURD || (FREEBSD && SUNOS5SIGS) */
