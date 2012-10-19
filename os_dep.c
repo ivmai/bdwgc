@@ -2044,6 +2044,9 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
 
       if (!initialized) {
           zero_fd = open("/dev/zero", O_RDONLY);
+          if (zero_fd == -1)
+            ABORT("Could not open /dev/zero");
+
           fcntl(zero_fd, F_SETFD, FD_CLOEXEC);
           initialized = TRUE;
       }
