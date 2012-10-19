@@ -37,6 +37,10 @@ int main(void)
   /*GC_INIT();
   staticroot = GC_MALLOC(sizeof(struct treenode));*/
   staticroot = libsrl_init();
+  if (NULL == staticroot) {
+    fprintf(stderr, "GC_malloc returned NULL\n");
+    return 2;
+  }
   memset(staticroot, 0x42, sizeof(struct treenode));
   GC_gcollect();
   for (i = 0; i < 10; ++i) {
@@ -44,16 +48,20 @@ int main(void)
     GC_gcollect();
   }
   for (i = 0; i < (int)sizeof(struct treenode); ++i) {
-    if (staticroot[i] != 0x42)
+    if (staticroot[i] != 0x42) {
+      fprintf(stderr, "Memory check failed\n");
       return -1;
+    }
   }
   for (i = 0; i < 10; ++i) {
     root[i] = libsrl_mktree(12);
     GC_gcollect();
   }
   for (i = 0; i < (int)sizeof(struct treenode); ++i) {
-    if (staticroot[i] != 0x42)
+    if (staticroot[i] != 0x42) {
+      fprintf(stderr, "Memory check failed\n");
       return -1;
+    }
   }
   return 0;
 }
