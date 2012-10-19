@@ -918,8 +918,12 @@ STATIC void GC_print_all_smashed_proc(void)
     if (GC_n_smashed == 0) return;
     GC_err_printf("GC_check_heap_block: found smashed heap objects:\n");
     for (i = 0; i < GC_n_smashed; ++i) {
-        GC_print_smashed_obj("", (ptr_t)GC_base(GC_smashed[i]) + sizeof(oh),
-                             GC_smashed[i]);
+        ptr_t base = (ptr_t)GC_base(GC_smashed[i]);
+
+#       ifdef LINT2
+          if (!base) ABORT("Invalid GC_smashed element");
+#       endif
+        GC_print_smashed_obj("", base + sizeof(oh), GC_smashed[i]);
         GC_smashed[i] = 0;
     }
     GC_n_smashed = 0;
