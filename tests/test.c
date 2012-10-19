@@ -1201,7 +1201,7 @@ void run_one_test(void)
         {
           size_t i;
 
-          GC_malloc(17);
+          (void)GC_malloc(17);
           for (i = sizeof(GC_word); i < 512; i *= 2) {
             GC_word result = (GC_word) GC_memalign(i, 17);
             if (result % i != 0 || result == 0 || *(int *)result != 0) FAIL;
@@ -1234,9 +1234,9 @@ void run_one_test(void)
         {
            size_t i;
            for (i = 0; i < 10000; ++i) {
-             GC_MALLOC(0);
+             (void)GC_MALLOC(0);
              GC_FREE(GC_MALLOC(0));
-             GC_MALLOC_ATOMIC(0);
+             (void)GC_MALLOC_ATOMIC(0);
              GC_FREE(GC_MALLOC_ATOMIC(0));
            }
          }

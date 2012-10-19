@@ -13,12 +13,12 @@ int main (void)
   GC_INIT();
 
   for (i = 0; i < 20000; ++i) {
-    GC_malloc_atomic (4096);
-    GC_malloc (4096);
+    (void)GC_malloc_atomic(4096);
+    (void)GC_malloc(4096);
   }
   for (i = 0; i < 20000; ++i) {
-    GC_malloc_atomic (2048);
-    GC_malloc (2048);
+    (void)GC_malloc_atomic(2048);
+    (void)GC_malloc(2048);
   }
   printf("Final heap size is %lu\n", (unsigned long)GC_get_heap_size());
   return 0;
