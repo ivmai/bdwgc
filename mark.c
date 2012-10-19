@@ -890,7 +890,7 @@ GC_INNER word GC_mark_no = 0;
 
 #define LOCAL_MARK_STACK_SIZE HBLKSIZE
         /* Under normal circumstances, this is big enough to guarantee  */
-        /* We don't overflow half of it in a single call to             */
+        /* we don't overflow half of it in a single call to             */
         /* GC_mark_from.                                                */
 
 
@@ -1128,6 +1128,7 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
 STATIC void GC_do_parallel_mark(void)
 {
     mse local_mark_stack[LOCAL_MARK_STACK_SIZE];
+                /* Note: local_mark_stack is quite big (up to 128 KiB). */
 
     GC_acquire_mark_lock();
     GC_ASSERT(I_HOLD_LOCK());
@@ -1164,8 +1165,9 @@ STATIC void GC_do_parallel_mark(void)
 /* We do not hold the GC lock, but the requestor does.  */
 GC_INNER void GC_help_marker(word my_mark_no)
 {
-    mse local_mark_stack[LOCAL_MARK_STACK_SIZE];
     unsigned my_id;
+    mse local_mark_stack[LOCAL_MARK_STACK_SIZE];
+                /* Note: local_mark_stack is quite big (up to 128 KiB). */
 
     if (!GC_parallel) return;
 
