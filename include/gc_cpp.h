@@ -142,6 +142,12 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 
 #include "gc.h"
 
+#ifdef GC_NAMESPACE
+# define GC_NS_QUALIFY(T) boehmgc::T
+#else
+# define GC_NS_QUALIFY(T) T
+#endif
+
 #ifndef THINK_CPLUS
 #  define GC_cdecl GC_CALLBACK
 #else
@@ -168,13 +174,18 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 #  define GC_PLACEMENT_DELETE
 #endif
 
+#ifdef GC_NAMESPACE
+namespace boehmgc
+{
+#endif
+
 enum GCPlacement {
   UseGC,
 # ifndef GC_NAME_CONFLICT
     GC=UseGC,
 # endif
-    NoGC,
-    PointerFreeGC
+  NoGC,
+  PointerFreeGC
 };
 
 class gc {
@@ -225,14 +236,18 @@ extern "C" {
     typedef void (GC_CALLBACK * GCCleanUpFunc)( void* obj, void* clientData );
 }
 
+#ifdef GC_NAMESPACE
+}
+#endif
+
 #ifdef _MSC_VER
   // Disable warning that "no matching operator delete found; memory will
   // not be freed if initialization throws an exception"
 # pragma warning(disable:4291)
 #endif
 
-inline void* operator new( size_t size, GCPlacement gcp,
-                          GCCleanUpFunc cleanup = 0,
+inline void* operator new( size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
+                          GC_NS_QUALIFY(GCCleanUpFunc) cleanup = 0,
                           void* clientData = 0 );
     /*
     Allocates a collectable or uncollected object, according to the
@@ -249,7 +264,8 @@ inline void* operator new( size_t size, GCPlacement gcp,
     from "gc_cleanup". */
 
 #ifdef GC_PLACEMENT_DELETE
-  inline void operator delete( void*, GCPlacement, GCCleanUpFunc, void * );
+  inline void operator delete( void*, GC_NS_QUALIFY(GCPlacement),
+                              GC_NS_QUALIFY(GCCleanUpFunc), void * );
 #endif
 
 #ifdef _MSC_VER
@@ -273,8 +289,8 @@ inline void* operator new( size_t size, GCPlacement gcp,
 #endif /* _MSC_VER */
 
 #ifdef GC_OPERATOR_NEW_ARRAY
-  inline void* operator new[]( size_t size, GCPlacement gcp,
-                              GCCleanUpFunc cleanup = 0,
+  inline void* operator new[]( size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
+                              GC_NS_QUALIFY(GCCleanUpFunc) cleanup = 0,
                               void* clientData = 0 );
                 /* The operator new for arrays, identical to the above. */
 #endif /* GC_OPERATOR_NEW_ARRAY */
@@ -284,6 +300,11 @@ inline void* operator new( size_t size, GCPlacement gcp,
 Inline implementation
 
 ****************************************************************************/
+
+#ifdef GC_NAMESPACE
+namespace boehmgc
+{
+#endif
 
 inline void* gc::operator new( size_t size ) {
     return GC_MALLOC( size );
@@ -363,17 +384,22 @@ inline gc_cleanup::gc_cleanup() {
     }
 }
 
-inline void* operator new( size_t size, GCPlacement gcp,
-                          GCCleanUpFunc cleanup, void* clientData )
+#ifdef GC_NAMESPACE
+}
+#endif
+
+inline void* operator new( size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
+                          GC_NS_QUALIFY(GCCleanUpFunc) cleanup,
+                          void* clientData )
 {
     void* obj;
 
-    if (gcp == UseGC) {
+    if (gcp == GC_NS_QUALIFY(UseGC)) {
         obj = GC_MALLOC( size );
         if (cleanup != 0)
             GC_REGISTER_FINALIZER_IGNORE_SELF( obj, cleanup, clientData,
                                               0, 0 );
-    } else if (gcp == PointerFreeGC) {
+    } else if (gcp == GC_NS_QUALIFY(PointerFreeGC)) {
         obj = GC_MALLOC_ATOMIC( size );
     } else {
         obj = GC_MALLOC_UNCOLLECTABLE( size );
@@ -382,8 +408,8 @@ inline void* operator new( size_t size, GCPlacement gcp,
 }
 
 #ifdef GC_PLACEMENT_DELETE
-  inline void operator delete( void *p, GCPlacement /* gcp */,
-                              GCCleanUpFunc /* cleanup */,
+  inline void operator delete( void *p, GC_NS_QUALIFY(GCPlacement) /* gcp */,
+                              GC_NS_QUALIFY(GCCleanUpFunc) /* cleanup */,
                               void* /* clientData */ )
   {
     GC_FREE(p);
@@ -391,8 +417,9 @@ inline void* operator new( size_t size, GCPlacement gcp,
 #endif /* GC_PLACEMENT_DELETE */
 
 #ifdef GC_OPERATOR_NEW_ARRAY
-  inline void* operator new[]( size_t size, GCPlacement gcp,
-                              GCCleanUpFunc cleanup, void* clientData )
+  inline void* operator new[]( size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
+                              GC_NS_QUALIFY(GCCleanUpFunc) cleanup,
+                              void* clientData )
   {
     return ::operator new( size, gcp, cleanup, clientData );
   }
