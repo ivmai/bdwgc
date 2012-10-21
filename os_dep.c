@@ -2259,7 +2259,14 @@ void * os2_alloc(size_t bytes)
 #       endif
         GC_heap_bases[GC_n_heap_bases] = 0;
       }
-    }
+
+    // Avoiding the VirtualAlloc leak
+    } else {
+        while (GC_n_heap_bases > 0) {
+          VirtualFree(GC_heap_bases[--GC_n_heap_bases], 0, MEM_RELEASE);
+          GC_heap_bases[GC_n_heap_bases] = 0;
+        }
+      }
   }
 #endif /* MSWIN32 || CYGWIN32 */
 
