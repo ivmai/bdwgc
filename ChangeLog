@@ -1,3 +1,9 @@
+2012-10-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c (GC_unix_mmap_get_mem): Check open("/dev/zero") (or open
+	of similar file on Symbian) result and abort (with the appropriate
+	message) on failure (only if USE_MMAP_ANON is undefined).
+
 2012-10-17  Ivan Maidanski <ivmai@mail.ru>
 
 	* cord/cordprnt.c (CORD_vsprintf): Invoke va_end (before return) for
