@@ -203,8 +203,8 @@ void test_printf(void)
 {
     CORD result;
     char result2[200];
-    long l;
-    short s;
+    long l = -1;
+    short s = (short)-1;
     CORD x;
 
     if (CORD_sprintf(&result, "%7.2f%ln", 3.14159F, &l) != 7)
