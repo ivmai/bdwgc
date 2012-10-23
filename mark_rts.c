@@ -479,7 +479,7 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
     /* Round boundaries (in direction reverse to that of GC_add_roots). */
     b = (void *)((word)b & ~(sizeof(word) - 1));
     e = (void *)(((word)e + (sizeof(word) - 1)) & ~(sizeof(word) - 1));
-    if (0 == e) e = (void *)(~(sizeof(word) - 1)); /* handle overflow */
+    if (0 == e) e = (void *)(word)(~(sizeof(word) - 1)); /* handle overflow */
 
     LOCK();
     GC_exclude_static_roots_inner(b, e);
