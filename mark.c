@@ -1375,21 +1375,12 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
 
     PREFETCH(obj);
     GET_HDR(obj, hhdr);
-    if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr), FALSE)) {
-      if (GC_all_interior_pointers) {
-        hhdr = GC_find_header(GC_base(obj));
-        if (hhdr == 0) {
-          GC_ADD_TO_BLACK_LIST_NORMAL(obj, (ptr_t)src);
-          return mark_stack_ptr;
-        }
-      } else {
-        GC_ADD_TO_BLACK_LIST_NORMAL(obj, (ptr_t)src);
-        return mark_stack_ptr;
-      }
-    }
-    if (EXPECT(HBLK_IS_FREE(hhdr), FALSE)) {
-        GC_ADD_TO_BLACK_LIST_NORMAL(obj, (ptr_t)src);
-        return mark_stack_ptr;
+    if ((EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr), FALSE)
+         && (!GC_all_interior_pointers
+             || NULL == (hhdr = GC_find_header(GC_base(obj)))))
+        || EXPECT(HBLK_IS_FREE(hhdr), FALSE)) {
+      GC_ADD_TO_BLACK_LIST_NORMAL(obj, (ptr_t)src);
+      return mark_stack_ptr;
     }
 
     PUSH_CONTENTS_HDR(obj, mark_stack_ptr /* modified */, mark_stack_limit,
