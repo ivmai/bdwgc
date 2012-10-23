@@ -321,7 +321,7 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
 {
     ptr_t sp = GC_approx_sp();  /* Hotter than actual sp */
 #   ifdef THREADS
-        word dummy[SMALL_CLEAR_SIZE];
+        word volatile dummy[SMALL_CLEAR_SIZE];
         static unsigned random_no = 0;
                                  /* Should be more random than it is ... */
                                  /* Used to occasionally clear a bigger  */
@@ -353,7 +353,7 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
                         /* implementations of GC_clear_stack_inner.     */
         return GC_clear_stack_inner(arg, limit);
     } else {
-        BZERO(dummy, SMALL_CLEAR_SIZE*sizeof(word));
+        BZERO((void *)dummy, SMALL_CLEAR_SIZE*sizeof(word));
         return arg;
     }
 # else
