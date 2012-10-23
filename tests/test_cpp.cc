@@ -267,7 +267,9 @@ int APIENTRY WinMain( HINSTANCE instance ATTR_UNUSED,
             A* a;
             a = new (USE_GC) A( i );
             (void)a;
-            B* b = new B( i );
+            B* b;
+            b = new B( i );
+            (void)b;
             b = new (USE_GC) B( i );
             if (0 == i % 10) {
                 B::Deleting( 1 );
