@@ -1,3 +1,23 @@
+2012-10-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordtest.c (test_extras): Explicitly clear cord handles
+	obtained from CORD_from_file(), invoke GC_gcollect and
+	GC_invoke_finalizers to force f1a, f1b, f2 handles to be closed before
+	removing the files; remove the second attempts to remove the files on
+	rename failure (print a warning instead) as it might cause double
+	fclose (or double free); add comments.
+
+2012-10-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c (pthread_create): Cleanup my_attr resource by
+	calling pthread_attr_destroy (only if GC_ASSERTIONS).
+
+2012-10-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c (GC_clear_stack): Declare "dummy" local array as volatile to
+	prevent optimizing it out by compiler; add cast of "dummy" to void*
+	(to un-volatile the pointer) in BZERO call (only if THREADS).
+
 2012-10-19  Ivan Maidanski <ivmai@mail.ru>
 
 	* os_dep.c (GC_unix_mmap_get_mem): Check open("/dev/zero") (or open
