@@ -228,6 +228,10 @@ int APIENTRY WinMain( HINSTANCE instance ATTR_UNUSED,
 #   endif
     *x = 29;
 #   ifndef DONT_USE_STD_ALLOCATOR
+      if (!xptr) {
+        fprintf(stderr, "Out of memory!\n");
+        exit(3);
+      }
       *xptr = x;
       x = 0;
 #   endif
