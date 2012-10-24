@@ -1658,8 +1658,10 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
         }
         if (0 == stack_size) {
            pthread_attr_t my_attr;
+
            pthread_attr_init(&my_attr);
            pthread_attr_getstacksize(&my_attr, &stack_size);
+           pthread_attr_destroy(&my_attr);
         }
         /* On Solaris 10, with default attr initialization,     */
         /* stack_size remains 0.  Fudge it.                     */
