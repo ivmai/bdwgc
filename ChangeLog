@@ -7,26 +7,45 @@
 * Add public setter and getter for GC_push_other_roots.
 * Add thread suspend/resume signals public setters (POSIX threads).
 * Call GC_on_abort (with NULL argument) on exit(1).
+* Check GC_base result in GC_print_all_smashed_proc.
+* Check traceable_allocator.allocate result before dereference in test_cpp.
 * Code refactoring of GC_x_printf (move shared code to macro).
+* Define old_bus_handler static variable only if used (Unix).
 * Disable find-leak GC_gcollect on GC abnormal EXIT.
+* Do not define _setjmp/_longjmp macros in mach_dep.c.
 * Elaborate comment on dependencies in autogen.sh.
+* Eliminate 'cast from int to pointer' warning in GC_exclude_static_roots.
 * Eliminate 'missing exception specification' warning in gc_cpp.cc (Clang).
+* Eliminate 'uninitialized variable use' warning in test_printf (cord).
+* Eliminate 'unused result' compiler warning in main() of test_cpp.
 * Eliminate 'unused value' compiler warning in GC_stop_world (Pthreads).
 * Eliminate Clang warning for GC_pthread_exit attribute.
 * Eliminate GCC warning in GC_get_main_stack_base (OpenBSD).
 * Eliminate GCC warnings in setjmp_t.c, test_cpp and cord 'de' app.
+* Eliminate SIGBUS-related dead code in GC_write_fault_handler (Linux).
+* Eliminate warning and simplify expression in GC_init_explicit_typing.
 * Enable 'force GC at every GC_malloc' debug-related functionality.
+* Fix GC_CreateThread and GC_beginthreadex definition for Cygwin.
+* Improve staticrootstest checks (tests).
 * Include "config.h" instead of "private/config.h" on HAVE_CONFIG_H.
 * Include proper header file in 'tools' for configuration macros.
 * Include pthread_np.h from pthread_stop_world.c on OpenBSD.
+* Log error messages to stderr instead of stdout in tests.
+* Minimize code duplication in GC_mark_and_push.
+* Move 'include setjmp.h' from mach_dep.c to gc_priv.h.
 * Move GC_get_suspend/thr_restart_signal to misc.c for NaCl and OpenBSD.
+* Port BDWGC to Android/x86.
 * Postpone the suspend signal in GC_dirty_init only if used to stop world.
+* Put gc_cpp symbols into 'boehmgc' namespace if GC_NAMESPACE defined.
 * Recognize GC_DONT_GC macro in gc.h (causes GC_INIT to turn off GC).
 * Recognize GC_SIG_SUSPEND and GC_SIG_THR_RESTART tuning macros in gc.h.
 * Remove nested EXPECT in GC_core_finalized_malloc.
+* Remove nested always-false ifdef for HPUX and FREEBSD.
 * Replace SIG_SUSPEND/THR_RESTART macros to variables in pthread_stop_world.
 * Replace sprintf with defensive snprintf.
 * Replace var-args GC_noop with GC_noop6 (to eliminate Clang warning).
+* Specify GC_malloc result is unused in some tests.
+* Specify GC_pthread_join result is unused in threadkey_test.
 * Turn off GC_LOOP_ON_ABORT functionality if GC compiled with NO_DEBUGGING.
 * Use memcpy (BCOPY) instead of strcpy (to suppress GCC warning).
 
@@ -125,10 +144,16 @@
 
 == [7.2e] (candidate) ==
 
+* Fix GC_clear_stack by declaring 'dummy' local array as volatile.
 * Fix GC_get_stack_base assembly code (Cygwin/Clang).
+* Fix GC_unix_mmap_get_mem for open of /dev/zero failure.
 * Fix min_bytes_allocd preventing potential infinite loop in GC_allocobj.
 * Fix null-pointer dereference in CORD_substr_closure.
+* Fix potential double fclose in test_extras (cordtest).
+* Fix pthread_attr_t resource leak in pthread_create.
+* Fix sizeof in GC_push_thread_structures.
 * Fix unportable '==' test operators in configure.
+* Fix vsprintf_args cleanup in CORD_vsprintf.
 
 
 == [7.2d] 2012-08-09 ==
