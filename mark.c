@@ -1225,6 +1225,7 @@ static void alloc_mark_stack(size_t n)
           }
           GC_mark_stack = new_stack;
           GC_mark_stack_size = n;
+          /* FIXME: Do we need some way to reset GC_mark_stack_size?    */
           GC_mark_stack_limit = new_stack + n;
           if (GC_print_stats) {
               GC_log_printf("Grew mark stack to %lu frames\n",

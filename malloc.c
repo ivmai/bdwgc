@@ -73,6 +73,7 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
             if (GC_large_allocd_bytes > GC_max_large_allocd_bytes)
                 GC_max_large_allocd_bytes = GC_large_allocd_bytes;
         }
+        /* FIXME: Do we need some way to reset GC_max_large_allocd_bytes? */
         result = h -> hb_body;
     }
     return result;
