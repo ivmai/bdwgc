@@ -509,6 +509,69 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
   UNLOCK();
 }
 
+  /* Fill in GC statistics provided the destination is of enough size.  */
+  static void fill_prof_stats(struct GC_prof_stats_s *pstats)
+  {
+    pstats->heapsize_full = GC_heapsize;
+    pstats->free_bytes_full = GC_large_free_bytes;
+    pstats->unmapped_bytes = GC_unmapped_bytes;
+    pstats->bytes_allocd_since_gc = GC_bytes_allocd;
+    pstats->allocd_bytes_before_gc = GC_bytes_allocd_before_gc;
+    pstats->non_gc_bytes = GC_non_gc_bytes;
+    pstats->gc_no = GC_gc_no; /* could be -1 */
+#   ifdef PARALLEL_MARK
+      pstats->markers_m1 = (word)GC_markers_m1;
+#   else
+      pstats->markers_m1 = 0; /* one marker */
+#   endif
+  }
+
+# include <string.h> /* for memset() */
+
+  GC_API size_t GC_CALL GC_get_prof_stats(struct GC_prof_stats_s *pstats,
+                                          size_t stats_sz)
+  {
+    struct GC_prof_stats_s stats;
+    DCL_LOCK_STATE;
+
+    LOCK();
+    fill_prof_stats(stats_sz >= sizeof(stats) ? pstats : &stats);
+    UNLOCK();
+
+    if (stats_sz == sizeof(stats)) {
+      return sizeof(stats);
+    } else if (stats_sz > sizeof(stats)) {
+      /* Fill in the remaining part with -1.    */
+      memset((char *)pstats + sizeof(stats), 0xff, stats_sz - sizeof(stats));
+      return sizeof(stats);
+    } else {
+      BCOPY(&stats, pstats, stats_sz);
+      return stats_sz;
+    }
+  }
+
+# ifdef THREADS
+    /* The _unsafe version assumes the caller holds the allocation lock. */
+    GC_API size_t GC_CALL GC_get_prof_stats_unsafe(
+                                            struct GC_prof_stats_s *pstats,
+                                            size_t stats_sz)
+    {
+      struct GC_prof_stats_s stats;
+
+      if (stats_sz >= sizeof(stats)) {
+        fill_prof_stats(pstats);
+        if (stats_sz > sizeof(stats))
+          memset((char *)pstats + sizeof(stats), 0xff,
+                 stats_sz - sizeof(stats));
+        return sizeof(stats);
+      } else {
+        fill_prof_stats(&stats);
+        BCOPY(&stats, pstats, stats_sz);
+        return stats_sz;
+      }
+    }
+# endif /* THREADS */
+
 #endif /* !GC_GET_HEAP_USAGE_NOT_NEEDED */
 
 #if defined(GC_DARWIN_THREADS) || defined(GC_OPENBSD_THREADS) \

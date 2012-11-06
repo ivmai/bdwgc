@@ -559,7 +559,8 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void);
 /* that were allocated but never written.                               */
 /* This is an unsynchronized getter, so it should be called typically   */
 /* with the GC lock held to avoid data races on multiprocessors (the    */
-/* alternative is to use GC_get_heap_usage_safe API call instead).      */
+/* alternative is to use GC_get_heap_usage_safe or GC_get_prof_stats    */
+/* API calls instead).                                                  */
 /* This getter remains lock-free (unsynchronized) for compatibility     */
 /* reason since some existing clients call it from a GC callback        */
 /* holding the allocator lock.  (This API function and the following    */
@@ -600,6 +601,58 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word * /* pheap_size */,
                                            GC_word * /* punmapped_bytes */,
                                            GC_word * /* pbytes_since_gc */,
                                            GC_word * /* ptotal_bytes */);
+
+/* Structure used to query GC statistics (profiling information).       */
+/* More fields could be added in the future.  To preserve compatibility */
+/* new fields should be added only to the end, and no deprecated fields */
+/* should be removed from.                                              */
+struct GC_prof_stats_s {
+  GC_word heapsize_full;
+            /* Heap size in bytes (including the area unmapped to OS).  */
+            /* Same as GC_get_heap_size() + GC_get_unmapped_bytes().    */
+  GC_word free_bytes_full;
+            /* Total bytes contained in free and unmapped blocks.       */
+            /* Same as GC_get_free_bytes() + GC_get_unmapped_bytes().   */
+  GC_word unmapped_bytes;
+            /* Amount of memory unmapped to OS.  Same as the value      */
+            /* returned by GC_get_unmapped_bytes().                     */
+  GC_word bytes_allocd_since_gc;
+            /* Number of bytes allocated since the recent collection.   */
+            /* Same as returned by GC_get_bytes_since_gc().             */
+  GC_word allocd_bytes_before_gc;
+            /* Number of bytes allocated before the recent garbage      */
+            /* collection.  The value may wrap.  Same as the result of  */
+            /* GC_get_total_bytes() - GC_get_bytes_since_gc().          */
+  GC_word non_gc_bytes;
+            /* Number of bytes not considered candidates for garbage    */
+            /* collection.  Same as returned by GC_get_non_gc_bytes().  */
+  GC_word gc_no;
+            /* Garbage collection cycle number.  The value may wrap     */
+            /* (and could be -1).  Same as returned by GC_get_gc_no().  */
+  GC_word markers_m1;
+            /* Number of marker threads (excluding the initiating one). */
+            /* Same as returned by GC_get_parallel (or 0 if the         */
+            /* collector is single-threaded).                           */
+};
+
+/* Atomically get GC statistics (various global counters).  Clients     */
+/* should pass the size of the buffer (of GC_prof_stats_s type) to fill */
+/* in the values - this is for interoperability between different GC    */
+/* versions, an old client could have fewer fields, and vice versa,     */
+/* client could use newer gc.h (with more entires declared in the       */
+/* structure) than that of the linked libgc binary; in the latter case, */
+/* unsupported (unknown) fields are filled in with -1.  Return the size */
+/* (in bytes) of the filled in part of the structure (excluding all     */
+/* unknown fields, if any).                                             */
+GC_API size_t GC_CALL GC_get_prof_stats(struct GC_prof_stats_s *,
+                                        size_t /* stats_sz */);
+#ifdef GC_THREADS
+  /* Same as above but unsynchronized (i.e., not holding the allocation */
+  /* lock).  Clients should call it using GC_call_with_alloc_lock to    */
+  /* avoid data races on multiprocessors.                               */
+  GC_API size_t GC_CALL GC_get_prof_stats_unsafe(struct GC_prof_stats_s *,
+                                                 size_t /* stats_sz */);
+#endif
 
 /* Disable garbage collection.  Even GC_gcollect calls will be          */
 /* ineffective.                                                         */
