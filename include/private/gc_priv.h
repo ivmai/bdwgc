@@ -999,12 +999,12 @@ struct _GC_arrays {
         /* large object blocks.  This is used to help decide when it    */
         /* is safe to split up a large block.                           */
   word _bytes_allocd_before_gc;
-                /* Number of words allocated before this        */
+                /* Number of bytes allocated before this        */
                 /* collection cycle.                            */
 # ifndef SEPARATE_GLOBALS
 #   define GC_bytes_allocd GC_arrays._bytes_allocd
     word _bytes_allocd;
-        /* Number of words allocated during this collection cycle.      */
+        /* Number of bytes allocated during this collection cycle.      */
 # endif
   word _bytes_dropped;
         /* Number of black-listed bytes dropped during GC cycle */
@@ -1051,9 +1051,9 @@ struct _GC_arrays {
     void *_auobjfreelist[MAXOBJGRANULES+1];
                         /* Atomic uncollectable but traced objs */
 # endif
-  word _composite_in_use; /* Number of words in accessible      */
+  word _composite_in_use; /* Number of bytes in the accessible  */
                           /* composite objects.                 */
-  word _atomic_in_use;    /* Number of words in accessible      */
+  word _atomic_in_use;    /* Number of bytes in the accessible  */
                           /* atomic objects.                    */
 # ifdef USE_MUNMAP
 #   define GC_unmapped_bytes GC_arrays._unmapped_bytes
@@ -1227,7 +1227,7 @@ GC_EXTERN struct obj_kind {
 
 #ifdef SEPARATE_GLOBALS
   extern word GC_bytes_allocd;
-        /* Number of words allocated during this collection cycle */
+        /* Number of bytes allocated during this collection cycle.      */
   extern ptr_t GC_objfreelist[MAXOBJGRANULES+1];
                           /* free list for NORMAL objects */
 # define beginGC_objfreelist ((ptr_t)(&GC_objfreelist))
