@@ -31,6 +31,19 @@ Support CAN_HANDLE_FORK if USE_WINALLOC for Cygwin.
 Enable GC_set_handle_fork(1) for Darwin with GC_dirty_maintained on (both
 single and multi-threaded modes).
 
+Add more fields to GC_prof_stats_s (potential candidates are:
+requested_heapsize, max_large_allocd_bytes, large_allocd_bytes, bytes_dropped,
+bytes_finalized, bytes_freed, finalizer_bytes_freed, composite_in_use,
+atomic_in_use, GC_n_heap_sects, GC_n_memory, GC_black_list_spacing,
+GC_root_size, GC_max_root_size, n_root_sets, GC_total_stacksize,
+GC_collect_at_heapsize, GC_fail_count, GC_mark_stack_size, last_fo_entries,
+last_bytes_finalized, last_finalizer_notification_no, GC_dl_entries,
+GC_old_dl_entries, GC_used_heap_size_after_full, GC_total_stack_black_listed,
+signed_log_dl_table_size, GC_n_rescuing_pages, signed_log_fo_table_size,
+GC_excl_table_entries, GC_stack_last_cleared, GC_bytes_allocd_at_reset,
+GC_n_heap_bases, registered_threads_cnt, GC_max_thread_index, GC_block_count,
+GC_unlocked_count, GC_hdr_cache_hits, GC_hdr_cache_misses, GC_spin_count).
+
 
 == FIXME tasks ==
 
