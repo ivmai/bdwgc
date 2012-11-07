@@ -633,6 +633,11 @@ struct GC_prof_stats_s {
             /* Number of marker threads (excluding the initiating one). */
             /* Same as returned by GC_get_parallel (or 0 if the         */
             /* collector is single-threaded).                           */
+  GC_word bytes_reclaimed_since_gc;
+            /* Approximate number of reclaimed bytes after recent GC.   */
+  GC_word reclaimed_bytes_before_gc;
+            /* Approximate number of bytes reclaimed before the recent  */
+            /* garbage collection.  The value may wrap.                 */
 };
 
 /* Atomically get GC statistics (various global counters).  Clients     */

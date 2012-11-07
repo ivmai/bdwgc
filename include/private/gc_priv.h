@@ -2049,6 +2049,12 @@ GC_EXTERN signed_word GC_bytes_found;
                 /* Number of reclaimed bytes after garbage collection;  */
                 /* protected by GC lock; defined in reclaim.c.          */
 
+#ifndef GC_GET_HEAP_USAGE_NOT_NEEDED
+  GC_EXTERN word GC_reclaimed_bytes_before_gc;
+                /* Number of bytes reclaimed before this        */
+                /* collection cycle; used for statistics only.  */
+#endif
+
 #ifdef USE_MUNMAP
   GC_EXTERN int GC_unmap_threshold; /* defined in allchblk.c */
   GC_EXTERN GC_bool GC_force_unmap_on_gcollect; /* defined in misc.c */

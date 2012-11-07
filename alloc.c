@@ -846,6 +846,10 @@ STATIC void GC_finish_collection(void)
         GET_TIME(start_time);
 #   endif
 
+#   ifndef GC_GET_HEAP_USAGE_NOT_NEEDED
+      if (GC_bytes_found > 0)
+        GC_reclaimed_bytes_before_gc += (word)GC_bytes_found;
+#   endif
     GC_bytes_found = 0;
 #   if defined(LINUX) && defined(__ELF__) && !defined(SMALL_CONFIG)
         if (GETENV("GC_PRINT_ADDRESS_MAP") != 0) {

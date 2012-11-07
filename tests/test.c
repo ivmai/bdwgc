@@ -1442,6 +1442,19 @@ void check_heap_stats(void)
             (unsigned long)max_heap_sz);
         FAIL;
     }
+
+#   ifndef GC_GET_HEAP_USAGE_NOT_NEEDED
+      /* Get global counters (just to check the functions work).  */
+      GC_get_heap_usage_safe(NULL, NULL, NULL, NULL, NULL);
+      {
+        struct GC_prof_stats_s stats;
+        (void)GC_get_prof_stats(&stats, sizeof(stats));
+#       ifdef THREADS
+          (void)GC_get_prof_stats_unsafe(&stats, sizeof(stats));
+#       endif
+      }
+#   endif
+
 #   ifdef THREADS
       GC_unregister_my_thread(); /* just to check it works (for main) */
 #   endif

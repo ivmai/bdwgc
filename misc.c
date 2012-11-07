@@ -509,6 +509,8 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
   UNLOCK();
 }
 
+  GC_INNER word GC_reclaimed_bytes_before_gc = 0;
+
   /* Fill in GC statistics provided the destination is of enough size.  */
   static void fill_prof_stats(struct GC_prof_stats_s *pstats)
   {
@@ -524,6 +526,9 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
 #   else
       pstats->markers_m1 = 0; /* one marker */
 #   endif
+    pstats->bytes_reclaimed_since_gc = GC_bytes_found > 0 ?
+                                        (word)GC_bytes_found : 0;
+    pstats->reclaimed_bytes_before_gc = GC_reclaimed_bytes_before_gc;
   }
 
 # include <string.h> /* for memset() */
