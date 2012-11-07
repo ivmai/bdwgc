@@ -436,8 +436,9 @@ STATIC void GC_debug_print_heap_obj_proc(ptr_t p)
   STATIC void GC_do_nothing(void) {}
 #endif
 
-GC_INNER void GC_start_debugging(void)
+STATIC void GC_start_debugging_inner(void)
 {
+  GC_ASSERT(I_HOLD_LOCK());
 # ifndef SHORT_DBG_HDRS
     GC_check_heap = GC_check_heap_proc;
     GC_print_all_smashed = GC_print_all_smashed_proc;
@@ -447,15 +448,28 @@ GC_INNER void GC_start_debugging(void)
 # endif
   GC_print_heap_obj = GC_debug_print_heap_obj_proc;
   GC_debugging_started = TRUE;
-  GC_register_displacement((word)sizeof(oh));
+  GC_register_displacement_inner((word)sizeof(oh));
+}
+
+GC_INNER void GC_start_debugging(void)
+{
+  DCL_LOCK_STATE;
+
+  LOCK();
+  GC_start_debugging_inner();
+  UNLOCK();
 }
 
 size_t GC_debug_header_size = sizeof(oh);
 
 GC_API void GC_CALL GC_debug_register_displacement(size_t offset)
 {
-    GC_register_displacement(offset);
-    GC_register_displacement((word)sizeof(oh) + offset);
+  DCL_LOCK_STATE;
+
+  LOCK();
+  GC_register_displacement_inner(offset);
+  GC_register_displacement_inner((word)sizeof(oh) + offset);
+  UNLOCK();
 }
 
 GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
@@ -534,7 +548,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
         return(0);
     }
     if (!GC_debugging_started) {
-        GC_start_debugging();
+        GC_start_debugging_inner();
     }
     ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
     return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0));
@@ -552,7 +566,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
         return(0);
     }
     if (!GC_debugging_started) {
-        GC_start_debugging();
+        GC_start_debugging_inner();
     }
     ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
     return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0));
