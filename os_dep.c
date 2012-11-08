@@ -1482,76 +1482,60 @@ void GC_register_data_segments(void)
     myexefile = fopen(path, "rb");
     if (myexefile == 0) {
         if (GC_print_stats) {
-            GC_err_puts("Couldn't open executable ");
-            GC_err_puts(path);
-            GC_err_puts("\n");
+            GC_err_printf("Could not open executable %s\n", path);
         }
         ABORT("Failed to open executable");
     }
     if (fread((char *)(&hdrdos), 1, sizeof(hdrdos), myexefile)
           < sizeof(hdrdos)) {
         if (GC_print_stats) {
-            GC_err_puts("Couldn't read MSDOS header from ");
-            GC_err_puts(path);
-            GC_err_puts("\n");
+            GC_err_printf("Could not read MSDOS header from %s\n", path);
         }
         ABORT("Couldn't read MSDOS header");
     }
     if (E_MAGIC(hdrdos) != EMAGIC) {
         if (GC_print_stats) {
-            GC_err_puts("Executable has wrong DOS magic number: ");
-            GC_err_puts(path);
-            GC_err_puts("\n");
+            GC_err_printf("Executable has wrong DOS magic number: %s\n",
+                          path);
         }
         ABORT("Bad DOS magic number");
     }
     if (fseek(myexefile, E_LFANEW(hdrdos), SEEK_SET) != 0) {
         if (GC_print_stats) {
-            GC_err_puts("Seek to new header failed in ");
-            GC_err_puts(path);
-            GC_err_puts("\n");
+            GC_err_printf("Seek to new header failed in %s\n", path);
         }
         ABORT("Bad DOS magic number");
     }
     if (fread((char *)(&hdr386), 1, sizeof(hdr386), myexefile)
           < sizeof(hdr386)) {
         if (GC_print_stats) {
-            GC_err_puts("Couldn't read MSDOS header from ");
-            GC_err_puts(path);
-            GC_err_puts("\n");
+            GC_err_printf("Could not read MSDOS header from %s\n", path);
         }
         ABORT("Couldn't read OS/2 header");
     }
     if (E32_MAGIC1(hdr386) != E32MAGIC1 || E32_MAGIC2(hdr386) != E32MAGIC2) {
         if (GC_print_stats) {
-            GC_err_puts("Executable has wrong OS/2 magic number: ");
-            GC_err_puts(path);
-            GC_err_puts("\n");
+            GC_err_printf("Executable has wrong OS/2 magic number: %s\n",
+                          path);
         }
         ABORT("Bad OS/2 magic number");
     }
     if (E32_BORDER(hdr386) != E32LEBO || E32_WORDER(hdr386) != E32LEWO) {
         if (GC_print_stats) {
-            GC_err_puts("Executable has wrong byte order: ");
-            GC_err_puts(path);
-            GC_err_puts("\n");
+            GC_err_printf("Executable has wrong byte order: %s\n", path);
         }
         ABORT("Bad byte order");
     }
     if (E32_CPU(hdr386) == E32CPU286) {
         if (GC_print_stats) {
-            GC_err_puts("GC can't handle 80286 executables: ");
-            GC_err_puts(path);
-            GC_err_puts("\n");
+            GC_err_printf("GC cannot handle 80286 executables: %s\n", path);
         }
         ABORT("Intel 80286 executables are unsupported");
     }
     if (fseek(myexefile, E_LFANEW(hdrdos) + E32_OBJTAB(hdr386),
               SEEK_SET) != 0) {
         if (GC_print_stats) {
-            GC_err_puts("Seek to object table failed: ");
-            GC_err_puts(path);
-            GC_err_puts("\n");
+            GC_err_printf("Seek to object table failed: %s\n", path);
         }
         ABORT("Seek to object table failed");
     }
@@ -1559,9 +1543,7 @@ void GC_register_data_segments(void)
       int flags;
       if (fread((char *)(&seg), 1, sizeof(seg), myexefile) < sizeof(seg)) {
         if (GC_print_stats) {
-            GC_err_puts("Couldn't read obj table entry from ");
-            GC_err_puts(path);
-            GC_err_puts("\n");
+            GC_err_printf("Could not read obj table entry from %s\n", path);
         }
         ABORT("Couldn't read obj table entry");
       }

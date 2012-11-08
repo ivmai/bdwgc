@@ -226,8 +226,8 @@
     out:;
   }
 
-  /* Force a garbage collection and generate a backtrace from a */
-  /* random heap address.                                       */
+  /* Force a garbage collection and generate/print a backtrace  */
+  /* from a random heap address.                                */
   GC_INNER void GC_generate_random_backtrace_no_gc(void)
   {
     void * current;
@@ -329,6 +329,7 @@ STATIC void GC_print_type(ptr_t p)
     hdr * hhdr = GC_find_header(p);
     char buffer[GC_TYPE_DESCR_LEN + 1];
     int kind = hhdr -> hb_obj_kind;
+    char *kind_str;
 
     if (0 != GC_describe_type_fns[kind] && GC_is_marked(GC_base(p))) {
         /* This should preclude free list objects except with   */
@@ -336,34 +337,47 @@ STATIC void GC_print_type(ptr_t p)
         buffer[GC_TYPE_DESCR_LEN] = 0;
         (GC_describe_type_fns[kind])(p, buffer);
         GC_ASSERT(buffer[GC_TYPE_DESCR_LEN] == 0);
-        GC_err_puts(buffer);
+        kind_str = buffer;
     } else {
         switch(kind) {
           case PTRFREE:
-            GC_err_puts("PTRFREE");
+            kind_str = "PTRFREE";
             break;
           case NORMAL:
-            GC_err_puts("NORMAL");
+            kind_str = "NORMAL";
             break;
           case UNCOLLECTABLE:
-            GC_err_puts("UNCOLLECTABLE");
+            kind_str = "UNCOLLECTABLE";
             break;
 #         ifdef ATOMIC_UNCOLLECTABLE
             case AUNCOLLECTABLE:
-              GC_err_puts("ATOMIC UNCOLLECTABLE");
+              kind_str = "ATOMIC UNCOLLECTABLE";
               break;
 #         endif
           case STUBBORN:
-            GC_err_puts("STUBBORN");
+            kind_str = "STUBBORN";
             break;
           default:
-            GC_err_printf("kind=%d descr=0x%lx", kind,
-                          (unsigned long)(hhdr -> hb_descr));
+            kind_str = NULL;
         }
+    }
+    if (NULL != kind_str) {
+        GC_err_puts(kind_str);
+    } else {
+        GC_err_printf("kind=%d descr=0x%lx",
+                      kind, (unsigned long)hhdr->hb_descr);
     }
 }
 
 #define GET_OH_LINENUM(ohdr) ((int)(ohdr)->oh_int)
+
+#ifndef SHORT_DBG_HDRS
+# define IF_NOT_SHORTDBG_HDRS(x) x
+# define COMMA_IFNOT_SHORTDBG_HDRS(x) /* comma */, x
+#else
+# define IF_NOT_SHORTDBG_HDRS(x) /* empty */
+# define COMMA_IFNOT_SHORTDBG_HDRS(x) /* empty */
+#endif
 
 /* Print a human-readable description of the object to stderr. p points */
 /* to somewhere inside an object with the debugging info.               */
@@ -375,14 +389,10 @@ STATIC void GC_print_obj(ptr_t p)
 #   ifdef LINT2
       if (!ohdr) ABORT("Invalid GC_print_obj argument");
 #   endif
-    GC_err_printf("%p (", ((ptr_t)ohdr + sizeof(oh)));
-    GC_err_puts(ohdr -> oh_string);
-#   ifdef SHORT_DBG_HDRS
-      GC_err_printf(":%d, ", GET_OH_LINENUM(ohdr));
-#   else
-      GC_err_printf(":%d, sz=%lu, ",
-                    GET_OH_LINENUM(ohdr), (unsigned long)(ohdr -> oh_sz));
-#   endif
+    GC_err_printf("%p (%s:%d," IF_NOT_SHORTDBG_HDRS(" sz=%lu,") " ",
+                  (ptr_t)ohdr + sizeof(oh), ohdr->oh_string,
+                  GET_OH_LINENUM(ohdr) /*, */
+                  COMMA_IFNOT_SHORTDBG_HDRS((unsigned long)ohdr->oh_sz));
     GC_print_type((ptr_t)(ohdr + 1));
     GC_err_puts(")\n");
     PRINT_CALL_CHAIN(ohdr);
@@ -481,10 +491,8 @@ GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
     result = GC_malloc(lb + DEBUG_BYTES);
 
     if (result == 0) {
-        GC_err_printf("GC_debug_malloc(%lu) returning NULL (",
-                      (unsigned long) lb);
-        GC_err_puts(s);
-        GC_err_printf(":%d)\n", i);
+        GC_err_printf("GC_debug_malloc(%lu) returning NULL (%s:%d)\n",
+                      (unsigned long)lb, s, i);
         return(0);
     }
     if (!GC_debugging_started) {
@@ -500,10 +508,8 @@ GC_API void * GC_CALL GC_debug_malloc_ignore_off_page(size_t lb,
     void * result = GC_malloc_ignore_off_page(lb + DEBUG_BYTES);
 
     if (result == 0) {
-        GC_err_printf("GC_debug_malloc_ignore_off_page(%lu) returning NULL (",
-                       (unsigned long) lb);
-        GC_err_puts(s);
-        GC_err_printf(":%d)\n", i);
+        GC_err_printf("GC_debug_malloc_ignore_off_page(%lu)"
+                      " returning NULL (%s:%d)\n", (unsigned long)lb, s, i);
         return(0);
     }
     if (!GC_debugging_started) {
@@ -520,9 +526,7 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
 
     if (result == 0) {
         GC_err_printf("GC_debug_malloc_atomic_ignore_off_page(%lu)"
-                      " returning NULL (", (unsigned long)lb);
-        GC_err_puts(s);
-        GC_err_printf(":%d)\n", i);
+                      " returning NULL (%s:%d)\n", (unsigned long)lb, s, i);
         return(0);
     }
     if (!GC_debugging_started) {
@@ -579,10 +583,8 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
     void * result = GC_malloc_stubborn(lb + DEBUG_BYTES);
 
     if (result == 0) {
-        GC_err_printf("GC_debug_malloc(%lu) returning NULL (",
-                      (unsigned long) lb);
-        GC_err_puts(s);
-        GC_err_printf(":%d)\n", i);
+        GC_err_printf("GC_debug_malloc_stubborn(%lu)"
+                      " returning NULL (%s:%d)\n", (unsigned long)lb, s, i);
         return(0);
     }
     if (!GC_debugging_started) {
@@ -645,10 +647,8 @@ GC_API void * GC_CALL GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)
     void * result = GC_malloc_atomic(lb + DEBUG_BYTES);
 
     if (result == 0) {
-        GC_err_printf("GC_debug_malloc_atomic(%lu) returning NULL (",
-                      (unsigned long) lb);
-        GC_err_puts(s);
-        GC_err_printf(":%d)\n", i);
+        GC_err_printf("GC_debug_malloc_atomic(%lu) returning NULL (%s:%d)\n",
+                      (unsigned long)lb, s, i);
         return(0);
     }
     if (!GC_debugging_started) {
@@ -723,10 +723,8 @@ GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
     void * result = GC_malloc_uncollectable(lb + UNCOLLECTABLE_DEBUG_BYTES);
 
     if (result == 0) {
-        GC_err_printf("GC_debug_malloc_uncollectable(%lu) returning NULL (",
-                      (unsigned long) lb);
-        GC_err_puts(s);
-        GC_err_printf(":%d)\n", i);
+        GC_err_printf("GC_debug_malloc_uncollectable(%lu)"
+                      " returning NULL (%s:%d)\n", (unsigned long)lb, s, i);
         return(0);
     }
     if (!GC_debugging_started) {
@@ -744,11 +742,8 @@ GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
         GC_malloc_atomic_uncollectable(lb + UNCOLLECTABLE_DEBUG_BYTES);
 
     if (result == 0) {
-        GC_err_printf(
-                "GC_debug_malloc_atomic_uncollectable(%lu) returning NULL (",
-                (unsigned long) lb);
-        GC_err_puts(s);
-        GC_err_printf(":%d)\n", i);
+        GC_err_printf("GC_debug_malloc_atomic_uncollectable(%lu)"
+                      " returning NULL (%s:%d)\n", (unsigned long)lb, s, i);
         return(0);
     }
     if (!GC_debugging_started) {
@@ -1080,9 +1075,8 @@ GC_API void GC_CALL GC_debug_register_finalizer(void * obj,
         return;
     }
     if ((ptr_t)obj - base != sizeof(oh)) {
-        GC_err_printf(
-            "GC_debug_register_finalizer called with non-base-pointer %p\n",
-            obj);
+        GC_err_printf("GC_debug_register_finalizer called with"
+                      " non-base-pointer %p\n", obj);
     }
     if (0 == fn) {
       GC_register_finalizer(base, 0, 0, &my_old_fn, &my_old_cd);
@@ -1110,10 +1104,8 @@ GC_API void GC_CALL GC_debug_register_finalizer_no_order
         return;
     }
     if ((ptr_t)obj - base != sizeof(oh)) {
-        GC_err_printf(
-          "GC_debug_register_finalizer_no_order called with "
-          "non-base-pointer %p\n",
-          obj);
+        GC_err_printf("GC_debug_register_finalizer_no_order called with"
+                      " non-base-pointer %p\n", obj);
     }
     if (0 == fn) {
       GC_register_finalizer_no_order(base, 0, 0, &my_old_fn, &my_old_cd);
@@ -1141,10 +1133,8 @@ GC_API void GC_CALL GC_debug_register_finalizer_unreachable
         return;
     }
     if ((ptr_t)obj - base != sizeof(oh)) {
-        GC_err_printf(
-            "GC_debug_register_finalizer_unreachable called with "
-            "non-base-pointer %p\n",
-            obj);
+        GC_err_printf("GC_debug_register_finalizer_unreachable called with"
+                      " non-base-pointer %p\n", obj);
     }
     if (0 == fn) {
       GC_register_finalizer_unreachable(base, 0, 0, &my_old_fn, &my_old_cd);
@@ -1172,9 +1162,8 @@ GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
         return;
     }
     if ((ptr_t)obj - base != sizeof(oh)) {
-        GC_err_printf(
-            "GC_debug_register_finalizer_ignore_self called with "
-            "non-base-pointer %p\n", obj);
+        GC_err_printf("GC_debug_register_finalizer_ignore_self called with"
+                      " non-base-pointer %p\n", obj);
     }
     if (0 == fn) {
       GC_register_finalizer_ignore_self(base, 0, 0, &my_old_fn, &my_old_cd);
