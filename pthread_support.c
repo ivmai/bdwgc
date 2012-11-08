@@ -1887,7 +1887,7 @@ yield:
     }
 }
 
-#else  /* !USE_SPINLOCK */
+#else  /* !USE_SPIN_LOCK */
 GC_INNER void GC_lock(void)
 {
 #ifndef NO_PTHREAD_TRYLOCK
@@ -1901,7 +1901,7 @@ GC_INNER void GC_lock(void)
 #endif /* !NO_PTHREAD_TRYLOCK */
 }
 
-#endif /* !USE_SPINLOCK */
+#endif /* !USE_SPIN_LOCK */
 
 #ifdef PARALLEL_MARK
 
