@@ -43,8 +43,8 @@
 #  endif
 
 #  if (!defined(AO_HAVE_test_and_set_acquire) || defined(GC_RTEMS_PTHREADS) \
-       || defined(SN_TARGET_PS3) || defined(GC_WIN32_THREADS)) \
-      && defined(GC_PTHREADS)
+       || defined(SN_TARGET_PS3) || defined(GC_WIN32_THREADS) \
+       || defined(LINT2)) && defined(GC_PTHREADS)
 #    define USE_PTHREAD_LOCKS
 #  endif
 
@@ -193,9 +193,16 @@
 # endif /* !THREADS */
 
 #if defined(UNCOND_LOCK) && !defined(LOCK)
+# ifdef LINT2
+    /* Instruct code analysis tools not to care about GC_need_to_lock   */
+    /* influence to LOCK/UNLOCK semantic.                               */
+#   define LOCK() UNCOND_LOCK()
+#   define UNLOCK() UNCOND_UNLOCK()
+# else
                 /* At least two thread running; need to lock.   */
-#    define LOCK() { if (GC_need_to_lock) UNCOND_LOCK(); }
-#    define UNLOCK() { if (GC_need_to_lock) UNCOND_UNLOCK(); }
+#   define LOCK() { if (GC_need_to_lock) UNCOND_LOCK(); }
+#   define UNLOCK() { if (GC_need_to_lock) UNCOND_UNLOCK(); }
+# endif
 #endif
 
 # ifndef ENTER_GC
