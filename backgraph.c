@@ -462,8 +462,9 @@ void GC_print_back_graph_stats(void)
             (unsigned long) GC_gc_no, (unsigned long)GC_max_height);
   if (GC_max_height > GC_max_max_height) {
     GC_max_max_height = GC_max_height;
-    GC_printf("The following unreachable object is last in a longest chain "
-              "of unreachable objects:\n");
+    GC_err_printf(
+            "The following unreachable object is last in a longest chain "
+            "of unreachable objects:\n");
     GC_print_heap_obj(GC_deepest_obj);
   }
   if (GC_print_stats) {

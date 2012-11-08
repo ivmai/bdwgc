@@ -69,7 +69,7 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
   }
 
 # ifdef DEBUG_THREADS
-    /* GC_printf("FindTopOfStack start at sp = %p\n", frame); */
+    /* GC_log_printf("FindTopOfStack start at sp = %p\n", frame); */
 # endif
   while (frame->savedSP != 0) {
     /* if there are no more stack frames, stop */
@@ -83,7 +83,7 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
       break; /* if the next LR is bogus, stop */
   }
 # ifdef DEBUG_THREADS
-    /* GC_printf("FindTopOfStack finish at sp = %p\n", frame); */
+    /* GC_log_printf("FindTopOfStack finish at sp = %p\n", frame); */
 # endif
   return (ptr_t)frame;
 }

@@ -2017,6 +2017,7 @@ GC_API void GC_CALL GC_noop1(word);
 #endif
 
 /* Logging and diagnostic output:       */
+/* GC_printf is used typically on client explicit print requests.       */
 GC_API_PRIV void GC_printf(const char * format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
                         /* A version of printf that doesn't allocate,   */
@@ -2029,6 +2030,8 @@ GC_API_PRIV void GC_err_printf(const char * format, ...)
 #if defined(__cplusplus) && defined(SYMBIAN)
   extern "C" {
 #endif
+/* Logging routine.  Typically called only if GC_print_stats.  It is    */
+/* recommended to put "\n" at 'format' string end (for atomicity).      */
 GC_API_PRIV void GC_log_printf(const char * format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
 #if defined(__cplusplus) && defined(SYMBIAN)
