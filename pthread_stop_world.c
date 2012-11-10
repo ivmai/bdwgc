@@ -70,12 +70,10 @@ int GC_nacl_thread_used[MAX_NACL_GC_THREADS];
 
     if (pthread_sigmask(SIG_BLOCK, NULL, &blocked) != 0)
       ABORT("pthread_sigmask failed");
-    GC_printf("Blocked: ");
     for (i = 1; i < NSIG; i++) {
       if (sigismember(&blocked, i))
-        GC_printf("%d ", i);
+        GC_printf("Signal blocked: %d\n", i);
     }
-    GC_printf("\n");
   }
 #endif /* DEBUG_THREADS */
 

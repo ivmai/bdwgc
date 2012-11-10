@@ -535,10 +535,10 @@ STATIC void GC_print_block_descr(struct hblk *h,
     unsigned n_marks = GC_n_set_marks(hhdr);
 
     if (hhdr -> hb_n_marks != n_marks) {
-      GC_printf("(%u:%u,%u!=%u)", hhdr -> hb_obj_kind, (unsigned)bytes,
-                (unsigned)hhdr -> hb_n_marks, n_marks);
+      GC_printf("(%u:%u,%u!=%u)\n", hhdr->hb_obj_kind, (unsigned)bytes,
+                (unsigned)hhdr->hb_n_marks, n_marks);
     } else {
-      GC_printf("(%u:%u,%u)", hhdr -> hb_obj_kind,
+      GC_printf("(%u:%u,%u)\n", hhdr->hb_obj_kind,
                 (unsigned)bytes, n_marks);
     }
     bytes += HBLKSIZE-1;
@@ -557,7 +557,7 @@ void GC_print_block_list(void)
     pstats.number_of_blocks = 0;
     pstats.total_bytes = 0;
     GC_apply_to_all_blocks(GC_print_block_descr, (word)&pstats);
-    GC_printf("\nblocks = %lu, bytes = %lu\n",
+    GC_printf("blocks= %lu, bytes= %lu\n",
               (unsigned long)pstats.number_of_blocks,
               (unsigned long)pstats.total_bytes);
 }
@@ -567,16 +567,12 @@ void GC_print_free_list(int kind, size_t sz_in_granules)
 {
     struct obj_kind * ok = &GC_obj_kinds[kind];
     ptr_t flh = ok -> ok_freelist[sz_in_granules];
-    struct hblk *lastBlock = 0;
     int n;
 
-    for (n = 1; flh; n++) {
+    for (n = 0; flh; n++) {
         struct hblk *block = HBLKPTR(flh);
-        if (block != lastBlock) {
-          GC_printf("\nIn heap block at %p:\n\t", (void *)block);
-          lastBlock = block;
-        }
-        GC_printf("%d: %p;", n, flh);
+        GC_printf("Free object in heap block %p [%d]: %p\n",
+                  (void *)block, n, flh);
         flh = obj_link(flh);
     }
 }
