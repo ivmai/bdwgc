@@ -57,8 +57,12 @@ STATIC void GC_clear_bl(word *);
 GC_INNER void GC_default_print_heap_obj_proc(ptr_t p)
 {
     ptr_t base = GC_base(p);
-    GC_err_printf("start: %p, appr. length: %lu",
-                  base, (unsigned long)GC_size(base));
+    int kind = HDR(base)->hb_obj_kind;
+
+    GC_err_printf("object at %p of appr. %lu bytes (%s)\n",
+                  base, (unsigned long)GC_size(base),
+                  kind == PTRFREE ? "atomic" :
+                    IS_UNCOLLECTABLE(kind) ? "uncollectable" : "composite");
 }
 
 GC_INNER void (*GC_print_heap_obj)(ptr_t p) = GC_default_print_heap_obj_proc;

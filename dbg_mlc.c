@@ -189,7 +189,7 @@
     void *base;
 
     GC_print_heap_obj(GC_base(current));
-    GC_err_printf("\n");
+
     for (i = 0; ; ++i) {
       source = GC_get_back_ptr_info(current, &base, &offset);
       if (GC_UNREFERENCED == source) {
@@ -215,7 +215,6 @@
           GC_err_printf("offset %ld in object:\n", (long)offset);
           /* Take GC_base(base) to get real base, i.e. header. */
           GC_print_heap_obj(GC_base(base));
-          GC_err_printf("\n");
           break;
         default:
           GC_err_printf("INTERNAL ERROR: UNEXPECTED SOURCE!!!!\n");
@@ -322,20 +321,42 @@ GC_API void GC_CALL GC_register_describe_type_fn(int kind,
   GC_describe_type_fns[kind] = fn;
 }
 
-/* Print a type description for the object whose client-visible address */
-/* is p.                                                                */
-STATIC void GC_print_type(ptr_t p)
-{
-    hdr * hhdr = GC_find_header(p);
-    char buffer[GC_TYPE_DESCR_LEN + 1];
-    int kind = hhdr -> hb_obj_kind;
-    char *kind_str;
+#define GET_OH_LINENUM(ohdr) ((int)(ohdr)->oh_int)
 
-    if (0 != GC_describe_type_fns[kind] && GC_is_marked(GC_base(p))) {
+#ifndef SHORT_DBG_HDRS
+# define IF_NOT_SHORTDBG_HDRS(x) x
+# define COMMA_IFNOT_SHORTDBG_HDRS(x) /* comma */, x
+#else
+# define IF_NOT_SHORTDBG_HDRS(x) /* empty */
+# define COMMA_IFNOT_SHORTDBG_HDRS(x) /* empty */
+#endif
+
+/* Print a human-readable description of the object to stderr.          */
+/* p points to somewhere inside an object with the debugging info.      */
+STATIC void GC_print_obj(ptr_t p)
+{
+    oh * ohdr = (oh *)GC_base(p);
+    ptr_t q;
+    hdr * hhdr;
+    int kind;
+    char *kind_str;
+    char buffer[GC_TYPE_DESCR_LEN + 1];
+
+    GC_ASSERT(I_DONT_HOLD_LOCK());
+#   ifdef LINT2
+      if (!ohdr) ABORT("Invalid GC_print_obj argument");
+#   endif
+
+    q = (ptr_t)(ohdr + 1);
+    /* Print a type description for the object whose client-visible     */
+    /* address is q.                                                    */
+    hhdr = GC_find_header(q);
+    kind = hhdr -> hb_obj_kind;
+    if (0 != GC_describe_type_fns[kind] && GC_is_marked(ohdr)) {
         /* This should preclude free list objects except with   */
         /* thread-local allocation.                             */
         buffer[GC_TYPE_DESCR_LEN] = 0;
-        (GC_describe_type_fns[kind])(p, buffer);
+        (GC_describe_type_fns[kind])(q, buffer);
         GC_ASSERT(buffer[GC_TYPE_DESCR_LEN] == 0);
         kind_str = buffer;
     } else {
@@ -351,7 +372,7 @@ STATIC void GC_print_type(ptr_t p)
             break;
 #         ifdef ATOMIC_UNCOLLECTABLE
             case AUNCOLLECTABLE:
-              kind_str = "ATOMIC UNCOLLECTABLE";
+              kind_str = "ATOMIC_UNCOLLECTABLE";
               break;
 #         endif
           case STUBBORN:
@@ -359,42 +380,24 @@ STATIC void GC_print_type(ptr_t p)
             break;
           default:
             kind_str = NULL;
+                /* The alternative is to use snprintf(buffer) but it is */
+                /* not quite portable (see vsnprintf in misc.c).        */
         }
     }
+
     if (NULL != kind_str) {
-        GC_err_puts(kind_str);
+        GC_err_printf("%p (%s:%d," IF_NOT_SHORTDBG_HDRS(" sz=%lu,") " %s)\n",
+                      (ptr_t)ohdr + sizeof(oh),
+                      ohdr->oh_string, GET_OH_LINENUM(ohdr) /*, */
+                      COMMA_IFNOT_SHORTDBG_HDRS((unsigned long)ohdr->oh_sz),
+                      kind_str);
     } else {
-        GC_err_printf("kind=%d descr=0x%lx",
+        GC_err_printf("%p (%s:%d," IF_NOT_SHORTDBG_HDRS(" sz=%lu,")
+                      " kind=%d descr=0x%lx)\n", (ptr_t)ohdr + sizeof(oh),
+                      ohdr->oh_string, GET_OH_LINENUM(ohdr) /*, */
+                      COMMA_IFNOT_SHORTDBG_HDRS((unsigned long)ohdr->oh_sz),
                       kind, (unsigned long)hhdr->hb_descr);
     }
-}
-
-#define GET_OH_LINENUM(ohdr) ((int)(ohdr)->oh_int)
-
-#ifndef SHORT_DBG_HDRS
-# define IF_NOT_SHORTDBG_HDRS(x) x
-# define COMMA_IFNOT_SHORTDBG_HDRS(x) /* comma */, x
-#else
-# define IF_NOT_SHORTDBG_HDRS(x) /* empty */
-# define COMMA_IFNOT_SHORTDBG_HDRS(x) /* empty */
-#endif
-
-/* Print a human-readable description of the object to stderr. p points */
-/* to somewhere inside an object with the debugging info.               */
-STATIC void GC_print_obj(ptr_t p)
-{
-    oh * ohdr = (oh *)GC_base(p);
-
-    GC_ASSERT(I_DONT_HOLD_LOCK());
-#   ifdef LINT2
-      if (!ohdr) ABORT("Invalid GC_print_obj argument");
-#   endif
-    GC_err_printf("%p (%s:%d," IF_NOT_SHORTDBG_HDRS(" sz=%lu,") " ",
-                  (ptr_t)ohdr + sizeof(oh), ohdr->oh_string,
-                  GET_OH_LINENUM(ohdr) /*, */
-                  COMMA_IFNOT_SHORTDBG_HDRS((unsigned long)ohdr->oh_sz));
-    GC_print_type((ptr_t)(ohdr + 1));
-    GC_err_puts(")\n");
     PRINT_CALL_CHAIN(ohdr);
 }
 
@@ -925,7 +928,8 @@ STATIC void GC_print_all_smashed_proc(void)
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
     if (GC_n_smashed == 0) return;
-    GC_err_printf("GC_check_heap_block: found smashed heap objects:\n");
+    GC_err_printf("GC_check_heap_block: found %u smashed heap objects:\n",
+                  GC_n_smashed);
     for (i = 0; i < GC_n_smashed; ++i) {
         ptr_t base = (ptr_t)GC_base(GC_smashed[i]);
 
@@ -936,7 +940,6 @@ STATIC void GC_print_all_smashed_proc(void)
         GC_smashed[i] = 0;
     }
     GC_n_smashed = 0;
-    GC_err_printf("\n");
 }
 
 /* Check all marked objects in the given block for validity     */

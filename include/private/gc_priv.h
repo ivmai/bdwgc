@@ -1863,9 +1863,9 @@ GC_EXTERN void (*GC_print_all_smashed)(void);
                         /* Print GC_smashed if it's not empty.          */
                         /* Clear GC_smashed list.                       */
 GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
-                        /* If possible print s followed by a more       */
-                        /* detailed description of the object           */
-                        /* referred to by p.                            */
+                        /* If possible print (using GC_err_printf)      */
+                        /* a more detailed description (terminated with */
+                        /* "\n") of the object referred to by p.        */
 
 #if defined(LINUX) && defined(__ELF__) && !defined(SMALL_CONFIG)
   void GC_print_address_map(void);
@@ -2018,6 +2018,7 @@ GC_API void GC_CALL GC_noop1(word);
 
 /* Logging and diagnostic output:       */
 /* GC_printf is used typically on client explicit print requests.       */
+/* It's recommended to put "\n" at 'format' string end (for atomicity). */
 GC_API_PRIV void GC_printf(const char * format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
                         /* A version of printf that doesn't allocate,   */

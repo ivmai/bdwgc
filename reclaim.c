@@ -89,18 +89,15 @@ GC_INNER void GC_print_all_errors(void)
       have_errors = FALSE;
     }
 
+    if (GC_n_leaked > 0) {
+        GC_err_printf("Found %u leaked objects:\n", GC_n_leaked);
+        have_errors = TRUE;
+    }
     for (i = 0; i < GC_n_leaked; ++i) {
         ptr_t p = GC_leaked[i];
-        if (HDR(p) -> hb_obj_kind == PTRFREE) {
-            GC_err_printf("Leaked atomic object at ");
-        } else {
-            GC_err_printf("Leaked composite object at ");
-        }
         GC_print_heap_obj(p);
-        GC_err_printf("\n");
         GC_free(p);
         GC_leaked[i] = 0;
-        have_errors = TRUE;
     }
     GC_n_leaked = 0;
 
