@@ -376,8 +376,7 @@ static word backwards_height(ptr_t p)
   FOR_EACH_PRED(q, p, {
     word this_height;
     if (GC_is_marked(q) && !(FLAG_MANY & (word)GET_OH_BG_PTR(p))) {
-      if (GC_print_stats)
-          GC_log_printf("Found bogus pointer from %p to %p\n", q, p);
+      GC_COND_LOG_PRINTF("Found bogus pointer from %p to %p\n", q, p);
         /* Reachable object "points to" unreachable one.                */
         /* Could be caused by our lax treatment of GC descriptors.      */
       this_height = 1;
@@ -467,10 +466,8 @@ void GC_print_back_graph_stats(void)
             "of unreachable objects:\n");
     GC_print_heap_obj(GC_deepest_obj);
   }
-  if (GC_print_stats) {
-    GC_log_printf("Needed max total of %d back-edge structs\n",
-                  GC_n_back_edge_structs);
-  }
+  GC_COND_LOG_PRINTF("Needed max total of %d back-edge structs\n",
+                     GC_n_back_edge_structs);
   GC_apply_to_each_object(reset_back_edge);
   GC_deepest_obj = 0;
 }

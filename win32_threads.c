@@ -458,9 +458,8 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                         (HANDLE*)&(me -> handle),
                         0 /* dwDesiredAccess */, FALSE /* bInheritHandle */,
                         DUPLICATE_SAME_ACCESS)) {
-        if (GC_print_stats)
-          GC_log_printf("DuplicateHandle failed with error code: %d\n",
-                        (int)GetLastError());
+        GC_COND_LOG_PRINTF("DuplicateHandle failed with error code: %d\n",
+                           (int)GetLastError());
         ABORT("DuplicateHandle failed");
     }
 # endif
@@ -1513,10 +1512,9 @@ GC_INNER void GC_push_all_stacks(void)
     }
   }
 # ifndef SMALL_CONFIG
-    if (GC_print_stats == VERBOSE) {
-      GC_log_printf("Pushed %d thread stacks%s\n", nthreads,
-            GC_win32_dll_threads ? " based on DllMain thread tracking" : "");
-    }
+    GC_VERBOSE_LOG_PRINTF("Pushed %d thread stacks%s\n", nthreads,
+                          GC_win32_dll_threads ?
+                                " based on DllMain thread tracking" : "");
 # endif
   if (!found_me && !GC_in_thread_creation)
     ABORT("Collecting from unknown thread");
@@ -2489,9 +2487,7 @@ GC_INNER void GC_thr_init(void)
 # ifdef PARALLEL_MARK
     /* If we are using a parallel marker, actually start helper threads. */
     if (GC_parallel) start_mark_threads();
-    if (GC_print_stats) {
-      GC_log_printf("Started %d mark helper threads\n", GC_markers_m1);
-    }
+    GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
 # endif
 }
 

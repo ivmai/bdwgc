@@ -1018,13 +1018,11 @@ GC_INNER void GC_register_dynamic_libraries(void)
       /* Check status AFTER checking moduleid because */
       /* of a bug in the non-shared ldr_next_module stub */
         if (status != 0) {
-          if (GC_print_stats) {
-            GC_log_printf("dynamic_load: status = %d\n", status);
-            if (errno < sys_nerr) {
-              GC_log_printf("dynamic_load: %s\n", sys_errlist[errno]);
-            } else {
-              GC_log_printf("dynamic_load: err_code = %d\n", errno);
-            }
+          GC_COND_LOG_PRINTF("dynamic_load: status = %d\n", status);
+          if (errno < sys_nerr) {
+            GC_COND_LOG_PRINTF("dynamic_load: %s\n", sys_errlist[errno]);
+          } else {
+            GC_COND_LOG_PRINTF("dynamic_load: err_code = %d\n", errno);
           }
           ABORT("ldr_next_module failed");
         }
@@ -1111,12 +1109,10 @@ GC_INNER void GC_register_dynamic_libraries(void)
           if (errno == EINVAL) {
             break; /* Moved past end of shared library list --> finished */
           } else {
-            if (GC_print_stats) {
-              if (errno < sys_nerr) {
-                GC_log_printf("dynamic_load: %s\n", sys_errlist[errno]);
-              } else {
-                GC_log_printf("dynamic_load: err_code = %d\n", errno);
-              }
+            if (errno < sys_nerr) {
+              GC_COND_LOG_PRINTF("dynamic_load: %s\n", sys_errlist[errno]);
+            } else {
+              GC_COND_LOG_PRINTF("dynamic_load: err_code = %d\n", errno);
             }
             ABORT("shl_get failed");
           }

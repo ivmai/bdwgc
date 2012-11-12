@@ -2039,6 +2039,10 @@ GC_API_PRIV void GC_log_printf(const char * format, ...)
   }
 #endif
 
+#define GC_COND_LOG_PRINTF if (!GC_print_stats) {} else GC_log_printf
+#define GC_VERBOSE_LOG_PRINTF \
+                if (GC_print_stats != VERBOSE) {} else GC_log_printf
+
 void GC_err_puts(const char *s);
                         /* Write s to stderr, don't buffer, don't add   */
                         /* newlines, don't ...                          */

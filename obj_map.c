@@ -59,9 +59,9 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
     }
     new_map = (short *)GC_scratch_alloc(MAP_LEN * sizeof(short));
     if (new_map == 0) return(FALSE);
-    if (GC_print_stats)
-        GC_log_printf("Adding block map for size of %u granules (%u bytes)\n",
-                  (unsigned)granules, (unsigned)(GRANULES_TO_BYTES(granules)));
+    GC_COND_LOG_PRINTF(
+                "Adding block map for size of %u granules (%u bytes)\n",
+                (unsigned)granules, (unsigned)GRANULES_TO_BYTES(granules));
     if (granules == 0) {
       for (displ = 0; displ < BYTES_TO_GRANULES(HBLKSIZE); displ++) {
         new_map[displ] = 1;  /* Nonzero to get us out of marker fast path. */
@@ -74,7 +74,7 @@ GC_INNER void GC_register_displacement_inner(size_t offset)
     GC_obj_map[granules] = new_map;
     return(TRUE);
   }
-#endif
+#endif /* MARK_BIT_PER_GRANULE */
 
 GC_INNER void GC_initialize_offsets(void)
 {

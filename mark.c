@@ -336,10 +336,8 @@ static void alloc_mark_stack(size_t);
             } else {
                 scan_ptr = GC_push_next_marked_dirty(scan_ptr);
                 if (scan_ptr == 0) {
-                    if (GC_print_stats) {
-                        GC_log_printf("Marked from %lu dirty pages\n",
-                                      (unsigned long)GC_n_rescuing_pages);
-                    }
+                    GC_COND_LOG_PRINTF("Marked from %lu dirty pages\n",
+                                       (unsigned long)GC_n_rescuing_pages);
                     GC_push_roots(FALSE, cold_gc_frame);
                     GC_objects_are_marked = TRUE;
                     if (GC_mark_state != MS_INVALID) {
@@ -567,10 +565,8 @@ static void alloc_mark_stack(size_t);
 
 handle_ex:
     /* Exception handler starts here for all cases. */
-      if (GC_print_stats) {
-        GC_log_printf(
+      GC_COND_LOG_PRINTF(
           "Caught ACCESS_VIOLATION in marker; memory mapping disappeared\n");
-      }
 
       /* We have bad roots on the stack.  Discard mark stack.   */
       /* Rescan from marked objects.  Redetermine roots.        */
@@ -592,10 +588,8 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp)
 {
     GC_mark_state = MS_INVALID;
     GC_mark_stack_too_small = TRUE;
-    if (GC_print_stats) {
-        GC_log_printf("Mark stack overflow; current size = %lu entries\n",
-                      (unsigned long)GC_mark_stack_size);
-    }
+    GC_COND_LOG_PRINTF("Mark stack overflow; current size = %lu entries\n",
+                       (unsigned long)GC_mark_stack_size);
     return(msp - GC_MARK_STACK_DISCARDS);
 }
 
@@ -946,9 +940,7 @@ STATIC void GC_return_mark_stack(mse * low, mse * high)
     my_start = my_top + 1;
     if ((word)(my_start - GC_mark_stack + stack_size)
                 > (word)GC_mark_stack_size) {
-      if (GC_print_stats) {
-          GC_log_printf("No room to copy back mark stack\n");
-      }
+      GC_COND_LOG_PRINTF("No room to copy back mark stack\n");
       GC_mark_state = MS_INVALID;
       GC_mark_stack_too_small = TRUE;
       /* We drop the local mark stack.  We'll fix things later. */
@@ -1028,8 +1020,7 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
     GC_ASSERT((word)AO_load(&GC_first_nonempty) >= (word)GC_mark_stack &&
         (word)AO_load(&GC_first_nonempty) <=
             (word)AO_load((volatile AO_t *)&GC_mark_stack_top) + sizeof(mse));
-    if (GC_print_stats == VERBOSE)
-        GC_log_printf("Starting mark helper %lu\n", (unsigned long)id);
+    GC_VERBOSE_LOG_PRINTF("Starting mark helper %lu\n", (unsigned long)id);
     GC_release_mark_lock();
     for (;;) {
         size_t n_on_stack;
@@ -1091,9 +1082,8 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
                     /* both conditions actually held simultaneously.    */
                     GC_helper_count--;
                     if (0 == GC_helper_count) need_to_notify = TRUE;
-                    if (GC_print_stats == VERBOSE)
-                      GC_log_printf("Finished mark helper %lu\n",
-                                    (unsigned long)id);
+                    GC_VERBOSE_LOG_PRINTF("Finished mark helper %lu\n",
+                                          (unsigned long)id);
                     GC_release_mark_lock();
                     if (need_to_notify) GC_notify_all_marker();
                     return;
@@ -1136,9 +1126,8 @@ STATIC void GC_do_parallel_mark(void)
     /* all the time, especially since it's cheap.                       */
     if (GC_help_wanted || GC_active_count != 0 || GC_helper_count != 0)
         ABORT("Tried to start parallel mark in bad state");
-    if (GC_print_stats == VERBOSE)
-        GC_log_printf("Starting marking for mark phase number %lu\n",
-                      (unsigned long)GC_mark_no);
+    GC_VERBOSE_LOG_PRINTF("Starting marking for mark phase number %lu\n",
+                          (unsigned long)GC_mark_no);
     GC_first_nonempty = (AO_t)GC_mark_stack;
     GC_active_count = 0;
     GC_helper_count = 1;
@@ -1152,9 +1141,8 @@ STATIC void GC_do_parallel_mark(void)
     /* Done; clean up.  */
     while (GC_helper_count > 0) GC_wait_marker();
     /* GC_helper_count cannot be incremented while GC_help_wanted == FALSE */
-    if (GC_print_stats == VERBOSE)
-        GC_log_printf("Finished marking for mark phase number %lu\n",
-                      (unsigned long)GC_mark_no);
+    GC_VERBOSE_LOG_PRINTF("Finished marking for mark phase number %lu\n",
+                          (unsigned long)GC_mark_no);
     GC_mark_no++;
     GC_release_mark_lock();
     GC_notify_all_marker();
@@ -1227,15 +1215,11 @@ static void alloc_mark_stack(size_t n)
           GC_mark_stack_size = n;
           /* FIXME: Do we need some way to reset GC_mark_stack_size?    */
           GC_mark_stack_limit = new_stack + n;
-          if (GC_print_stats) {
-              GC_log_printf("Grew mark stack to %lu frames\n",
-                            (unsigned long) GC_mark_stack_size);
-          }
+          GC_COND_LOG_PRINTF("Grew mark stack to %lu frames\n",
+                             (unsigned long)GC_mark_stack_size);
         } else {
-          if (GC_print_stats) {
-              GC_log_printf("Failed to grow mark stack to %lu frames\n",
-                            (unsigned long) n);
-          }
+          GC_COND_LOG_PRINTF("Failed to grow mark stack to %lu frames\n",
+                             (unsigned long)n);
         }
     } else {
         if (new_stack == 0) {

@@ -88,8 +88,8 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
 #   else
       ignore_gcj_info = (0 != GETENV("GC_IGNORE_GCJ_INFO"));
 #   endif
-    if (GC_print_stats && ignore_gcj_info) {
-        GC_log_printf("Gcj-style type information is disabled!\n");
+    if (ignore_gcj_info) {
+      GC_COND_LOG_PRINTF("Gcj-style type information is disabled!\n");
     }
     GC_ASSERT(GC_mark_procs[mp_index] == (GC_mark_proc)0); /* unused */
     GC_mark_procs[mp_index] = (GC_mark_proc)(word)mp;

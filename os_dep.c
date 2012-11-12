@@ -265,8 +265,7 @@ GC_INNER char * GC_get_maps(void)
               return 0;
 #           ifdef THREADS
               if (maps_size > old_maps_size) {
-                if (GC_print_stats)
-                  GC_log_printf(
+                GC_COND_LOG_PRINTF(
                         "Unexpected maps size growth from %lu to %lu\n",
                         (unsigned long)old_maps_size,
                         (unsigned long)maps_size);
@@ -424,9 +423,7 @@ GC_INNER char * GC_get_maps(void)
   {
     ptr_t my_start, my_end;
     if (!GC_enclosing_mapping(GC_save_regs_in_stack(), &my_start, &my_end)) {
-        if (GC_print_stats) {
-          GC_log_printf("Failed to find backing store base from /proc\n");
-        }
+        GC_COND_LOG_PRINTF("Failed to find backing store base from /proc\n");
         return 0;
     }
     return my_start;
@@ -1481,70 +1478,50 @@ void GC_register_data_segments(void)
     }
     myexefile = fopen(path, "rb");
     if (myexefile == 0) {
-        if (GC_print_stats) {
-            GC_err_printf("Could not open executable %s\n", path);
-        }
+        GC_COND_LOG_PRINTF("Could not open executable %s\n", path);
         ABORT("Failed to open executable");
     }
     if (fread((char *)(&hdrdos), 1, sizeof(hdrdos), myexefile)
           < sizeof(hdrdos)) {
-        if (GC_print_stats) {
-            GC_err_printf("Could not read MSDOS header from %s\n", path);
-        }
+        GC_COND_LOG_PRINTF("Could not read MSDOS header from %s\n", path);
         ABORT("Couldn't read MSDOS header");
     }
     if (E_MAGIC(hdrdos) != EMAGIC) {
-        if (GC_print_stats) {
-            GC_err_printf("Executable has wrong DOS magic number: %s\n",
-                          path);
-        }
+        GC_COND_LOG_PRINTF("Executable has wrong DOS magic number: %s\n",
+                           path);
         ABORT("Bad DOS magic number");
     }
     if (fseek(myexefile, E_LFANEW(hdrdos), SEEK_SET) != 0) {
-        if (GC_print_stats) {
-            GC_err_printf("Seek to new header failed in %s\n", path);
-        }
+        GC_COND_LOG_PRINTF("Seek to new header failed in %s\n", path);
         ABORT("Bad DOS magic number");
     }
     if (fread((char *)(&hdr386), 1, sizeof(hdr386), myexefile)
           < sizeof(hdr386)) {
-        if (GC_print_stats) {
-            GC_err_printf("Could not read MSDOS header from %s\n", path);
-        }
+        GC_COND_LOG_PRINTF("Could not read MSDOS header from %s\n", path);
         ABORT("Couldn't read OS/2 header");
     }
     if (E32_MAGIC1(hdr386) != E32MAGIC1 || E32_MAGIC2(hdr386) != E32MAGIC2) {
-        if (GC_print_stats) {
-            GC_err_printf("Executable has wrong OS/2 magic number: %s\n",
-                          path);
-        }
+        GC_COND_LOG_PRINTF("Executable has wrong OS/2 magic number: %s\n",
+                           path);
         ABORT("Bad OS/2 magic number");
     }
     if (E32_BORDER(hdr386) != E32LEBO || E32_WORDER(hdr386) != E32LEWO) {
-        if (GC_print_stats) {
-            GC_err_printf("Executable has wrong byte order: %s\n", path);
-        }
+        GC_COND_LOG_PRINTF("Executable has wrong byte order: %s\n", path);
         ABORT("Bad byte order");
     }
     if (E32_CPU(hdr386) == E32CPU286) {
-        if (GC_print_stats) {
-            GC_err_printf("GC cannot handle 80286 executables: %s\n", path);
-        }
+        GC_COND_LOG_PRINTF("GC cannot handle 80286 executables: %s\n", path);
         ABORT("Intel 80286 executables are unsupported");
     }
     if (fseek(myexefile, E_LFANEW(hdrdos) + E32_OBJTAB(hdr386),
               SEEK_SET) != 0) {
-        if (GC_print_stats) {
-            GC_err_printf("Seek to object table failed: %s\n", path);
-        }
+        GC_COND_LOG_PRINTF("Seek to object table failed: %s\n", path);
         ABORT("Seek to object table failed");
     }
     for (nsegs = E32_OBJCNT(hdr386); nsegs > 0; nsegs--) {
       int flags;
       if (fread((char *)(&seg), 1, sizeof(seg), myexefile) < sizeof(seg)) {
-        if (GC_print_stats) {
-            GC_err_printf("Could not read obj table entry from %s\n", path);
-        }
+        GC_COND_LOG_PRINTF("Could not read obj table entry from %s\n", path);
         ABORT("Couldn't read obj table entry");
       }
       flags = O32_FLAGS(seg);
@@ -1641,13 +1618,13 @@ void GC_register_data_segments(void)
           GetWriteWatch_func = NULL;
         }
       }
-      if (GC_print_stats) {
+#     ifndef SMALL_CONFIG
         if (GetWriteWatch_func == NULL) {
-          GC_log_printf("Did not find a usable GetWriteWatch()\n");
+          GC_COND_LOG_PRINTF("Did not find a usable GetWriteWatch()\n");
         } else {
-          GC_log_printf("Using GetWriteWatch()\n");
+          GC_COND_LOG_PRINTF("Using GetWriteWatch()\n");
         }
-      }
+#     endif
       done = TRUE;
     }
 
@@ -1781,9 +1758,8 @@ void GC_register_data_segments(void)
           return;
         }
     }
-    if (GC_print_stats)
-      GC_log_printf("Found new system malloc AllocationBase at %p\n",
-                    candidate);
+    GC_COND_LOG_PRINTF("Found new system malloc AllocationBase at %p\n",
+                       candidate);
     new_l -> allocation_base = candidate;
     new_l -> next = GC_malloc_heap_l;
     GC_malloc_heap_l = new_l;
@@ -2486,10 +2462,9 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
 #       else
           if (mprotect(start_addr, len, (PROT_READ | PROT_WRITE)
                             | (GC_pages_executable ? PROT_EXEC : 0)) != 0) {
-            if (GC_print_stats)
-              GC_log_printf(
-                        "mprotect failed at %p (length %lu) with errno %d\n",
-                        start_addr, (unsigned long)len, errno);
+            GC_COND_LOG_PRINTF("mprotect failed at %p (length %lu)"
+                               " with errno %d\n",
+                               start_addr, (unsigned long)len, errno);
             ABORT("mprotect remapping failed");
           }
 #       endif /* !NACL */
@@ -2825,8 +2800,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   /* Initialize virtual dirty bit implementation.       */
   GC_INNER void GC_dirty_init(void)
   {
-    if (GC_print_stats == VERBOSE)
-      GC_log_printf("Initializing DEFAULT_VDB...\n");
+    GC_VERBOSE_LOG_PRINTF("Initializing DEFAULT_VDB...\n");
     GC_dirty_maintained = TRUE;
   }
 
@@ -2871,8 +2845,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   /* Initialize virtual dirty bit implementation.       */
   GC_INNER void GC_dirty_init(void)
   {
-    if (GC_print_stats == VERBOSE)
-      GC_log_printf("Initializing MANUAL_VDB...\n");
+    GC_VERBOSE_LOG_PRINTF("Initializing MANUAL_VDB...\n");
     /* GC_dirty_pages and GC_grungy_pages are already cleared.  */
     GC_dirty_maintained = TRUE;
   }
@@ -2992,8 +2965,8 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
                             GC_pages_executable ? PAGE_EXECUTE_READ : \
                                                   PAGE_READONLY, \
                             &protect_junk)) { \
-          if (GC_print_stats) \
-            GC_log_printf("Last error code: 0x%lx\n", (long)GetLastError()); \
+          GC_COND_LOG_PRINTF("Last error code: 0x%lx\n", \
+                             (long)GetLastError()); \
           ABORT("VirtualProtect failed"); \
         }
 #   define UNPROTECT(addr, len) \
@@ -3202,8 +3175,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
             if (old_handler == (SIG_HNDLR_PTR)SIG_DFL) {
 #               if !defined(MSWIN32) && !defined(MSWINCE)
-                    if (GC_print_stats)
-                      GC_log_printf("Unexpected segfault at %p\n", addr);
+                    GC_COND_LOG_PRINTF("Unexpected segfault at %p\n", addr);
                     ABORT("Unexpected bus error or segmentation fault");
 #               else
                     return(EXCEPTION_CONTINUE_SEARCH);
@@ -3254,8 +3226,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   if defined(MSWIN32) || defined(MSWINCE)
       return EXCEPTION_CONTINUE_SEARCH;
 #   else
-      if (GC_print_stats)
-        GC_log_printf("Unexpected segfault at %p\n", addr);
+      GC_COND_LOG_PRINTF("Unexpected segfault at %p\n", addr);
       ABORT("Unexpected bus error or segmentation fault");
 #   endif
   }
@@ -3319,8 +3290,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
         (void)sigaddset(&act.sa_mask, GC_get_suspend_signal());
 #     endif
 #   endif /* !MSWIN32 */
-    if (GC_print_stats == VERBOSE)
-      GC_log_printf(
+    GC_VERBOSE_LOG_PRINTF(
                 "Initializing mprotect virtual dirty bit implementation\n");
     GC_dirty_maintained = TRUE;
     if (GC_page_size % HBLKSIZE != 0) {
@@ -3345,13 +3315,11 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
         GC_old_segv_handler_used_si = FALSE;
       }
       if (GC_old_segv_handler == (SIG_HNDLR_PTR)SIG_IGN) {
-        if (GC_print_stats)
-          GC_err_printf("Previously ignored segmentation violation!?\n");
+        WARN("Previously ignored segmentation violation!?\n", 0);
         GC_old_segv_handler = (SIG_HNDLR_PTR)SIG_DFL;
       }
       if (GC_old_segv_handler != (SIG_HNDLR_PTR)SIG_DFL) {
-        if (GC_print_stats == VERBOSE)
-          GC_log_printf("Replaced other SIGSEGV handler\n");
+        GC_VERBOSE_LOG_PRINTF("Replaced other SIGSEGV handler\n");
       }
 #   if defined(HPUX) || defined(LINUX) || defined(HURD) \
        || (defined(FREEBSD) && defined(SUNOS5SIGS))
@@ -3368,16 +3336,14 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #       endif
       }
       if (GC_old_bus_handler == (SIG_HNDLR_PTR)SIG_IGN) {
-        if (GC_print_stats)
-          GC_err_printf("Previously ignored bus error!?\n");
+        WARN("Previously ignored bus error!?\n", 0);
 #       if !defined(LINUX)
           GC_old_bus_handler = (SIG_HNDLR_PTR)SIG_DFL;
 #       else
           /* GC_old_bus_handler is not used by GC_write_fault_handler.  */
 #       endif
-      } else if (GC_old_bus_handler != (SIG_HNDLR_PTR)SIG_DFL
-                 && GC_print_stats == VERBOSE) {
-          GC_log_printf("Replaced other SIGBUS handler\n");
+      } else if (GC_old_bus_handler != (SIG_HNDLR_PTR)SIG_DFL) {
+          GC_VERBOSE_LOG_PRINTF("Replaced other SIGBUS handler\n");
       }
 #   endif /* HPUX || LINUX || HURD || (FREEBSD && SUNOS5SIGS) */
 #   endif /* ! MS windows */
@@ -3388,8 +3354,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #   if defined(MSWIN32)
       GC_old_segv_handler = SetUnhandledExceptionFilter(GC_write_fault_handler);
       if (GC_old_segv_handler != NULL) {
-        if (GC_print_stats)
-          GC_log_printf("Replaced other UnhandledExceptionFilter\n");
+        GC_COND_LOG_PRINTF("Replaced other UnhandledExceptionFilter\n");
       } else {
           GC_old_segv_handler = SIG_DFL;
       }
@@ -3673,10 +3638,9 @@ GC_INNER void GC_dirty_init(void)
 
     if (GC_bytes_allocd != 0 || GC_bytes_allocd_before_gc != 0) {
       memset(GC_written_pages, 0xff, sizeof(page_hash_table));
-      if (GC_print_stats == VERBOSE)
-        GC_log_printf("Allocated %lu bytes: all pages may have been written\n",
-                      (unsigned long)(GC_bytes_allocd
-                                      + GC_bytes_allocd_before_gc));
+      GC_VERBOSE_LOG_PRINTF(
+                "Allocated %lu bytes: all pages may have been written\n",
+                (unsigned long)(GC_bytes_allocd + GC_bytes_allocd_before_gc));
     }
 
     (void)snprintf(buf, sizeof(buf), "/proc/%ld", (long)getpid());
@@ -3717,10 +3681,9 @@ GC_INNER void GC_read_dirty(void)
         /* Retry with larger buffer.    */
         word new_size = 2 * GC_proc_buf_size;
         char *new_buf;
-        if (GC_print_stats)
-          GC_err_printf("/proc read failed: GC_proc_buf_size = %lu\n",
-                        (unsigned long)GC_proc_buf_size);
 
+        WARN("/proc read failed: GC_proc_buf_size = %" WARN_PRIdPTR "\n",
+             (signed_word)GC_proc_buf_size);
         new_buf = GC_scratch_alloc(new_size);
         if (new_buf != 0) {
             GC_proc_buf = bufp = new_buf;
@@ -4077,9 +4040,8 @@ STATIC void *GC_mprotect_thread(void *arg)
 #   endif /* THREADS */
 
     if (r != MACH_MSG_SUCCESS) {
-      if (GC_print_stats)
-        GC_log_printf("mach_msg failed with code %d: %s\n", (int)r,
-                      mach_error_string(r));
+      GC_COND_LOG_PRINTF("mach_msg failed with code %d: %s\n", (int)r,
+                         mach_error_string(r));
       ABORT("mach_msg failed");
     }
 
@@ -4162,16 +4124,14 @@ GC_INNER void GC_dirty_init(void)
       /* gracefully (unprotecting all pages and clearing                */
       /* GC_mach_handler_thread).  For now, we just disable incremental */
       /* mode if fork() handling is requested by the client.            */
-      if (GC_print_stats)
-        GC_log_printf(
-            "GC incremental mode disabled since fork() handling requested\n");
+      GC_COND_LOG_PRINTF("GC incremental mode disabled since fork()"
+                         " handling requested\n");
       return;
     }
 # endif
 
-  if (GC_print_stats == VERBOSE)
-    GC_log_printf(
-      "Initializing mach/darwin mprotect virtual dirty bit implementation\n");
+  GC_VERBOSE_LOG_PRINTF("Initializing mach/darwin mprotect"
+                        " virtual dirty bit implementation\n");
 # ifdef BROKEN_EXCEPTION_HANDLING
     WARN("Enabling workarounds for various darwin "
          "exception handling bugs.\n", 0);
@@ -4234,8 +4194,7 @@ GC_INNER void GC_dirty_init(void)
       if (sigaction(SIGBUS, &sa, &oldsa) < 0)
         ABORT("sigaction failed");
       if ((SIG_HNDLR_PTR)oldsa.sa_handler != SIG_DFL) {
-        if (GC_print_stats == VERBOSE)
-          GC_err_printf("Replaced other SIGBUS handler\n");
+        GC_VERBOSE_LOG_PRINTF("Replaced other SIGBUS handler\n");
       }
     }
 # endif /* BROKEN_EXCEPTION_HANDLING  */

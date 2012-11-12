@@ -150,10 +150,8 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
         || GC_dl_entries > ((word)1 << log_dl_table_size)) {
         GC_grow_table((struct hash_chain_entry ***)&GC_dl_head,
                       &log_dl_table_size);
-        if (GC_print_stats) {
-            GC_log_printf("Grew dl table to %u entries\n",
-                      (1 << (unsigned)log_dl_table_size));
-        }
+        GC_COND_LOG_PRINTF("Grew dl table to %u entries\n",
+                           1 << (unsigned)log_dl_table_size);
     }
     index = HASH2(link, log_dl_table_size);
     for (curr_dl = GC_dl_head[index]; curr_dl != 0;
@@ -370,10 +368,8 @@ STATIC void GC_register_finalizer_inner(void * obj,
         || GC_fo_entries > ((word)1 << log_fo_table_size)) {
         GC_grow_table((struct hash_chain_entry ***)&GC_fo_head,
                       &log_fo_table_size);
-        if (GC_print_stats) {
-            GC_log_printf("Grew fo table to %u entries\n",
-                          (1 << (unsigned)log_fo_table_size));
-        }
+        GC_COND_LOG_PRINTF("Grew fo table to %u entries\n",
+                           1 << (unsigned)log_fo_table_size);
     }
     /* in the THREADS case we hold allocation lock.             */
     base = (ptr_t)obj;

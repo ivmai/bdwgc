@@ -407,9 +407,7 @@ GC_INNER void GC_push_all_stacks(void)
 #       endif
       }
     }
-    if (GC_print_stats == VERBOSE) {
-      GC_log_printf("Pushed %d thread stacks\n", (int)nthreads);
-    }
+    GC_VERBOSE_LOG_PRINTF("Pushed %d thread stacks\n", (int)nthreads);
     if (!found_me && !GC_in_thread_creation)
       ABORT("Collecting from unknown thread");
     GC_total_stacksize = total_size;
@@ -601,9 +599,7 @@ GC_INNER void GC_stop_world(void)
         if (wait_usecs > RETRY_INTERVAL) {
           int newly_sent = GC_suspend_all();
 
-          if (GC_print_stats) {
-            GC_log_printf("Resent %d signals after timeout\n", newly_sent);
-          }
+          GC_COND_LOG_PRINTF("Resent %d signals after timeout\n", newly_sent);
           sem_getvalue(&GC_suspend_ack_sem, &ack_count);
           if (newly_sent < n_live_threads - ack_count) {
             WARN("Lost some threads during GC_stop_world?!\n",0);
@@ -830,8 +826,7 @@ GC_INNER void GC_start_world(void)
       for (i = 0; i < n_live_threads; i++) {
         while (0 != (code = sem_wait(&GC_restart_ack_sem))) {
           if (errno != EINTR) {
-            if (GC_print_stats)
-              GC_log_printf("sem_wait() returned %d\n", code);
+            GC_COND_LOG_PRINTF("sem_wait() returned %d\n", code);
             ABORT("sem_wait() for restart handler failed");
           }
         }
@@ -911,8 +906,8 @@ GC_INNER void GC_stop_init(void)
     if (0 != GETENV("GC_NO_RETRY_SIGNALS")) {
         GC_retry_signals = FALSE;
     }
-    if (GC_print_stats && GC_retry_signals) {
-      GC_log_printf("Will retry suspend signal if necessary\n");
+    if (GC_retry_signals) {
+      GC_COND_LOG_PRINTF("Will retry suspend signal if necessary\n");
     }
 # endif /* !GC_OPENBSD_THREADS && !NACL */
 }

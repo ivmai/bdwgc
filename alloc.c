@@ -181,11 +181,9 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
     GET_TIME(current_time);
     time_diff = MS_TIME_DIFF(current_time,GC_start_time);
     if (time_diff >= GC_time_limit) {
-        if (GC_print_stats) {
-          GC_log_printf(
+        GC_COND_LOG_PRINTF(
                 "Abandoning stopped marking after %lu msecs (attempt %d)\n",
                 time_diff, GC_n_attempts);
-        }
         return(1);
     }
     return(0);
@@ -368,11 +366,9 @@ STATIC void GC_maybe_gc(void)
               GC_wait_for_reclaim();
 #         endif
           if (GC_need_full_gc || n_partial_gcs >= GC_full_freq) {
-            if (GC_print_stats) {
-              GC_log_printf(
+            GC_COND_LOG_PRINTF(
                 "***>Full mark for collection %lu after %lu allocd bytes\n",
                 (unsigned long)GC_gc_no + 1, (unsigned long)GC_bytes_allocd);
-            }
             GC_promote_black_lists();
             (void)GC_reclaim_all((GC_stop_func)0, TRUE);
             GC_notify_full_gc();
@@ -421,10 +417,8 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
     ASSERT_CANCEL_DISABLED();
     if (GC_dont_gc || (*stop_func)()) return FALSE;
     if (GC_incremental && GC_collection_in_progress()) {
-      if (GC_print_stats) {
-        GC_log_printf(
+      GC_COND_LOG_PRINTF(
             "GC_try_to_collect_inner: finishing collection in progress\n");
-      }
       /* Just finish collection already in progress.    */
         while(GC_collection_in_progress()) {
             if ((*stop_func)()) return(FALSE);
@@ -613,12 +607,10 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   ifdef THREAD_LOCAL_ALLOC
       GC_world_stopped = TRUE;
 #   endif
-    if (GC_print_stats) {
         /* Output blank line for convenience here */
-        GC_log_printf(
+    GC_COND_LOG_PRINTF(
               "\n--> Marking for collection %lu after %lu allocated bytes\n",
               (unsigned long)GC_gc_no + 1, (unsigned long) GC_bytes_allocd);
-    }
 #   ifdef MAKE_BACK_GRAPH
       if (GC_print_back_height) {
         GC_build_back_graph();
@@ -633,10 +625,8 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         GC_initiate_gc();
         for (i = 0;;i++) {
           if ((*stop_func)()) {
-            if (GC_print_stats) {
-              GC_log_printf("Abandoned stopped marking after %u iterations\n",
-                            i);
-            }
+            GC_COND_LOG_PRINTF("Abandoned stopped marking after"
+                               " %u iterations\n", i);
             GC_deficit = i;     /* Give the mutator a chance.   */
 #           ifdef THREAD_LOCAL_ALLOC
               GC_world_stopped = FALSE;
@@ -648,13 +638,11 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         }
 
     GC_gc_no++;
-    if (GC_print_stats) {
-      GC_log_printf("GC %lu reclaimed %ld bytes --> heapsize: %lu"
-                    " bytes" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
-                    (unsigned long)GC_gc_no, (long)GC_bytes_found,
-                    (unsigned long)GC_heapsize /*, */
-                    COMMA_IF_USE_MUNMAP((unsigned long)GC_unmapped_bytes));
-    }
+    GC_COND_LOG_PRINTF("GC %lu reclaimed %ld bytes --> heapsize: %lu"
+                       " bytes" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
+                       (unsigned long)GC_gc_no, (long)GC_bytes_found,
+                       (unsigned long)GC_heapsize /*, */
+                       COMMA_IF_USE_MUNMAP((unsigned long)GC_unmapped_bytes));
 
     /* Check all debugged objects for consistency */
     if (GC_debugging_started) {
@@ -914,18 +902,15 @@ STATIC void GC_finish_collection(void)
       }
     }
 
-    if (GC_print_stats == VERBOSE)
-        GC_log_printf("Bytes recovered before sweep - f.l. count = %ld\n",
-                      (long)GC_bytes_found);
+    GC_VERBOSE_LOG_PRINTF("Bytes recovered before sweep - f.l. count = %ld\n",
+                          (long)GC_bytes_found);
 
     /* Reconstruct free lists to contain everything not marked */
     GC_start_reclaim(FALSE);
-    if (GC_print_stats) {
-      GC_log_printf("Heap contains %lu pointer-containing "
-                    "+ %lu pointer-free reachable bytes\n",
-                    (unsigned long)GC_composite_in_use,
-                    (unsigned long)GC_atomic_in_use);
-    }
+    GC_COND_LOG_PRINTF("Heap contains %lu pointer-containing"
+                       " + %lu pointer-free reachable bytes\n",
+                       (unsigned long)GC_composite_in_use,
+                       (unsigned long)GC_atomic_in_use);
     if (GC_is_full_gc) {
         GC_used_heap_size_after_full = USED_HEAP_SIZE;
         GC_need_full_gc = FALSE;
@@ -934,12 +919,12 @@ STATIC void GC_finish_collection(void)
                             > min_bytes_allocd();
     }
 
-    if (GC_print_stats == VERBOSE) {
-      GC_log_printf("Immediately reclaimed %ld bytes, heapsize:"
-                    " %lu bytes" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
-                    (long)GC_bytes_found, (unsigned long)GC_heapsize /*, */
-                    COMMA_IF_USE_MUNMAP((unsigned long)GC_unmapped_bytes));
-    }
+    GC_VERBOSE_LOG_PRINTF("Immediately reclaimed %ld bytes, heapsize:"
+                          " %lu bytes" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
+                          (long)GC_bytes_found,
+                          (unsigned long)GC_heapsize /*, */
+                          COMMA_IF_USE_MUNMAP((unsigned long)
+                                              GC_unmapped_bytes));
 
     /* Reset or increment counters for next cycle */
     GC_n_attempts = 0;
@@ -1177,16 +1162,13 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     space = GET_MEM(bytes);
     GC_add_to_our_memory((ptr_t)space, bytes);
     if (space == 0) {
-        if (GC_print_stats) {
-            GC_log_printf("Failed to expand heap by %lu bytes\n",
-                          (unsigned long)bytes);
-        }
+        GC_COND_LOG_PRINTF("Failed to expand heap by %lu bytes\n",
+                           (unsigned long)bytes);
         return(FALSE);
     }
-    if (GC_print_stats) {
-      GC_log_printf("Increasing heap size by %lu after %lu allocated bytes\n",
-                    (unsigned long)bytes, (unsigned long)GC_bytes_allocd);
-    }
+    GC_COND_LOG_PRINTF(
+                "Increasing heap size by %lu after %lu allocated bytes\n",
+                (unsigned long)bytes, (unsigned long)GC_bytes_allocd);
     /* Adjust heap limits generously for blacklisting to work better.   */
     /* GC_add_to_heap performs minimal adjustment needed for            */
     /* correctness.                                                     */
@@ -1320,8 +1302,8 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
         RESTORE_CANCEL(cancel_state);
         return(FALSE);
       }
-    } else if (GC_fail_count && GC_print_stats) {
-      GC_log_printf("Memory available again...\n");
+    } else if (GC_fail_count) {
+      GC_COND_LOG_PRINTF("Memory available again...\n");
     }
     RESTORE_CANCEL(cancel_state);
     return(TRUE);

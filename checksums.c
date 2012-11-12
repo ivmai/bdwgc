@@ -162,12 +162,11 @@ STATIC void GC_check_blocks(void)
 
     GC_bytes_in_used_blocks = 0;
     GC_apply_to_all_blocks(GC_add_block, (word)0);
-    if (GC_print_stats)
-      GC_log_printf("GC_bytes_in_used_blocks = %lu,"
-                    " bytes_in_free_blocks = %lu, heapsize = %lu\n",
-                    (unsigned long)GC_bytes_in_used_blocks,
-                    (unsigned long)bytes_in_free_blocks,
-                    (unsigned long)GC_heapsize);
+    GC_COND_LOG_PRINTF("GC_bytes_in_used_blocks = %lu,"
+                       " bytes_in_free_blocks = %lu, heapsize = %lu\n",
+                       (unsigned long)GC_bytes_in_used_blocks,
+                       (unsigned long)bytes_in_free_blocks,
+                       (unsigned long)GC_heapsize);
     if (GC_bytes_in_used_blocks + bytes_in_free_blocks != GC_heapsize) {
         GC_err_printf("LOST SOME BLOCKS!!\n");
     }
@@ -200,9 +199,8 @@ void GC_check_dirty(void)
         }
     }
 out:
-    if (GC_print_stats)
-      GC_log_printf("Checked %lu clean and %lu dirty pages\n",
-                    (unsigned long)GC_n_clean, (unsigned long)GC_n_dirty);
+    GC_COND_LOG_PRINTF("Checked %lu clean and %lu dirty pages\n",
+                       (unsigned long)GC_n_clean, (unsigned long)GC_n_dirty);
     if (GC_n_dirty_errors > 0) {
         GC_err_printf("Found %d dirty bit errors (%d were faulted)\n",
                       GC_n_dirty_errors, GC_n_faulted_dirty_errors);

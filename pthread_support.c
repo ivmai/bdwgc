@@ -430,9 +430,7 @@ static void start_mark_threads(void)
         break;
       }
     }
-    if (GC_print_stats) {
-      GC_log_printf("Started %d mark helper threads\n", GC_markers_m1);
-    }
+    GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
     pthread_attr_destroy(&attr);
 }
 
@@ -1084,17 +1082,14 @@ GC_INNER void GC_thr_init(void)
 #  endif
   }
 # ifdef PARALLEL_MARK
-    if (GC_print_stats) {
-      GC_log_printf(
-                "Number of processors = %d, number of marker threads = %d\n",
-                GC_nprocs, GC_markers_m1 + 1);
-    }
+    GC_COND_LOG_PRINTF("Number of processors = %d,"
+                       " number of marker threads = %d\n",
+                       GC_nprocs, GC_markers_m1 + 1);
     if (GC_markers_m1 <= 0) {
       /* Disable parallel marking.      */
       GC_parallel = FALSE;
-      if (GC_print_stats) {
-        GC_log_printf("Single marker thread, turning off parallel marking\n");
-      }
+      GC_COND_LOG_PRINTF(
+                "Single marker thread, turning off parallel marking\n");
     } else {
       /* Disable true incremental collection, but generational is OK.   */
       GC_time_limit = GC_TIME_UNLIMITED;
@@ -1104,8 +1099,7 @@ GC_INNER void GC_thr_init(void)
       start_mark_threads();
     }
 # else
-    if (GC_print_stats)
-      GC_log_printf("Number of processors = %d\n", GC_nprocs);
+    GC_COND_LOG_PRINTF("Number of processors = %d\n", GC_nprocs);
 # endif
 }
 
