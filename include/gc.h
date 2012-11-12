@@ -1104,8 +1104,9 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
 #endif
 
 /* GC_set_warn_proc can be used to redirect or filter warning messages. */
-/* p may not be a NULL pointer.  Both the setter and the getter acquire */
-/* the GC lock (to avoid data races).                                   */
+/* p may not be a NULL pointer.  msg is printf format string (arg must  */
+/* match the format).  Both the setter and the getter acquire the GC    */
+/* lock (to avoid data races).                                          */
 typedef void (GC_CALLBACK * GC_warn_proc)(char * /* msg */,
                                           GC_word /* arg */);
 GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc /* p */) GC_ATTR_NONNULL(1);
