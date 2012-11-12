@@ -1,3 +1,27 @@
+2012-11-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c (GC_write): Define "inside_write" static variable (only
+	for Win32 and only if THREADS and GC_ASSERTIONS or
+	GC_PRINT_VERBOSE_STATS); if this variable is set then just return,
+	set this variable if GC_write_disabled or GC_log is
+	INVALID_HANDLE_VALUE just before ABORT call (to prevent infinite
+	recursion).
+	* misc.c (GC_abort): Do not call WRITE if GC_write_disabled
+	(only for Win32 and only if THREADS and GC_ASSERTIONS) to prevent
+	abort in GC_write.
+
+2012-11-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_support.c (GC_lock): Fix USE_SPIN_LOCK macro name in comment.
+
+2012-11-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (_GC_arrays): Fix comment for
+	_bytes_allocd_before_gc, _bytes_allocd, _composite_in_use and
+	_atomic_in_use fields (replace "words" unit with "bytes").
+	* include/private/gc_priv.h (GC_objfreelist): Fix comment (replace
+	"words" unit with "bytes").
+
 2012-10-24  Ivan Maidanski <ivmai@mail.ru>
 
 	* cord/cordtest.c (test_extras): Explicitly clear cord handles
