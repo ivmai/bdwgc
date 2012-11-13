@@ -1439,6 +1439,14 @@ GC_API void GC_CALL GC_enable_incremental(void)
 # define WRITE(f, buf, len) GC_write(f, buf, len)
 #endif /* !MSWIN32 && !OS2 && !MACOS */
 
+#ifdef GC_ANDROID_LOG
+# include <android/log.h>
+
+# ifndef GC_ANDROID_LOG_TAG
+#   define GC_ANDROID_LOG_TAG "BDWGC"
+# endif
+#endif
+
 #define BUFSZ 1024
 
 #ifdef NO_VSNPRINTF
@@ -1472,8 +1480,16 @@ void GC_printf(const char *format, ...)
 {
     char buf[BUFSZ + 1];
 
-    if (!GC_quiet) {
+#   ifdef GC_ANDROID_LOG
       GC_PRINTF_FILLBUF(buf, format);
+      __android_log_write(ANDROID_LOG_DEBUG, GC_ANDROID_LOG_TAG, buf);
+      if (GC_stdout == GC_DEFAULT_STDOUT_FD)
+        return; /* skip duplicate write to stdout */
+#   endif
+    if (!GC_quiet) {
+#     ifndef GC_ANDROID_LOG
+        GC_PRINTF_FILLBUF(buf, format);
+#     endif
       if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
         ABORT("write to stdout failed");
     }
@@ -1492,12 +1508,22 @@ void GC_log_printf(const char *format, ...)
     char buf[BUFSZ + 1];
 
     GC_PRINTF_FILLBUF(buf, format);
+#   ifdef GC_ANDROID_LOG
+      __android_log_write(ANDROID_LOG_INFO, GC_ANDROID_LOG_TAG, buf);
+      if (GC_log == GC_DEFAULT_STDERR_FD)
+        return; /* skip duplicate write to stderr */
+#   endif
     if (WRITE(GC_log, buf, strlen(buf)) < 0)
       ABORT("write to GC log failed");
 }
 
 void GC_err_puts(const char *s)
 {
+#   ifdef GC_ANDROID_LOG
+      __android_log_write(ANDROID_LOG_ERROR, GC_ANDROID_LOG_TAG, s);
+      if (GC_stderr == GC_DEFAULT_STDERR_FD)
+        return; /* skip duplicate write to stderr */
+#   endif
     if (WRITE(GC_stderr, s, strlen(s)) < 0) ABORT("write to stderr failed");
 }
 
@@ -1585,9 +1611,12 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
         if (WRITE(GC_stderr, (void *)msg, strlen(msg)) >= 0)
           (void)WRITE(GC_stderr, (void *)("\n"), 1);
       }
+#   ifdef GC_ANDROID_LOG
+      __android_log_assert("*" /* cond */, GC_ANDROID_LOG_TAG, "%s\n", msg);
+#   endif
     }
 
-#   ifndef NO_DEBUGGING
+#   if !defined(NO_DEBUGGING) && !defined(GC_ANDROID_LOG)
       if (GETENV("GC_LOOP_ON_ABORT") != NULL) {
             /* In many cases it's easier to debug a running process.    */
             /* It's arguably nicer to sleep, but that makes it harder   */
