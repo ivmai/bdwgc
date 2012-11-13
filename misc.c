@@ -746,10 +746,13 @@ STATIC void GC_exit_check(void)
 # define maybe_install_looping_handler()
 #endif
 
+#define GC_DEFAULT_STDOUT_FD 1
+#define GC_DEFAULT_STDERR_FD 2
+
 #if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
-  STATIC int GC_stdout = 1;
-  STATIC int GC_stderr = 2;
-  STATIC int GC_log = 2; /* stderr */
+  STATIC int GC_stdout = GC_DEFAULT_STDOUT_FD;
+  STATIC int GC_stderr = GC_DEFAULT_STDERR_FD;
+  STATIC int GC_log = GC_DEFAULT_STDERR_FD;
 #endif
 
 STATIC word GC_parse_mem_size_arg(const char *str)
@@ -1455,37 +1458,44 @@ GC_API void GC_CALL GC_enable_incremental(void)
 /* Floating point arguments and formats should be avoided, since FP       */
 /* conversion is more likely to allocate memory.                          */
 /* Assumes that no more than BUFSZ-1 characters are written at once.      */
-#define GC_PRINTF_IMPL(f, f_name, format) { \
+#define GC_PRINTF_FILLBUF(buf, format) { \
           va_list args; \
-          char buf[BUFSZ + 1]; \
           va_start(args, format); \
-          buf[BUFSZ] = 0x15; \
-          (void)vsnprintf(buf, BUFSZ, format, args); \
+          (buf)[sizeof(buf) - 1] = 0x15; /* guard */ \
+          (void)vsnprintf(buf, sizeof(buf) - 1, format, args); \
           va_end(args); \
-          if (buf[BUFSZ] != 0x15) \
+          if ((buf)[sizeof(buf) - 1] != 0x15) \
             ABORT("GC_printf clobbered stack"); \
-          if (WRITE(f, buf, strlen(buf)) < 0) \
-            ABORT("write to " f_name " failed"); \
         }
 
 void GC_printf(const char *format, ...)
 {
-    if (GC_quiet) return;
+    char buf[BUFSZ + 1];
 
-    GC_PRINTF_IMPL(GC_stdout, "stdout", format);
+    if (!GC_quiet) {
+      GC_PRINTF_FILLBUF(buf, format);
+      if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
+        ABORT("write to stdout failed");
+    }
 }
 
 void GC_err_printf(const char *format, ...)
 {
-    GC_PRINTF_IMPL(GC_stderr, "stderr", format);
+    char buf[BUFSZ + 1];
+
+    GC_PRINTF_FILLBUF(buf, format);
+    GC_err_puts(buf);
 }
 
 void GC_log_printf(const char *format, ...)
 {
-    GC_PRINTF_IMPL(GC_log, "log", format);
+    char buf[BUFSZ + 1];
+
+    GC_PRINTF_FILLBUF(buf, format);
+    if (WRITE(GC_log, buf, strlen(buf)) < 0)
+      ABORT("write to GC log failed");
 }
 
-/* This is equivalent to GC_err_printf("%s",s). */
 void GC_err_puts(const char *s)
 {
     if (WRITE(GC_stderr, s, strlen(s)) < 0) ABORT("write to stderr failed");
@@ -1493,6 +1503,7 @@ void GC_err_puts(const char *s)
 
 STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
 {
+    /* TODO: Add assertion on arg comply with msg (format).     */
     GC_err_printf(msg, arg);
 }
 
