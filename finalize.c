@@ -47,7 +47,7 @@ STATIC struct dl_hashtbl {
     struct disappearing_link **head;
     signed_word log_size;
     word entries;
-} GC_dl_hashtbl = {.head = 0, .log_size = -1, .entries = 0};
+} GC_dl_hashtbl = { /* head */ 0, /* log_size */ -1, /* entries */ 0};
 
 STATIC struct finalizable_object {
     struct hash_chain_entry prolog;
