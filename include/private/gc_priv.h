@@ -1885,16 +1885,25 @@ GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
                                   /* occasionally.  It is ok to read it */
                                   /* without acquiring the lock.        */
 
+#define VERBOSE 2
 #ifndef SMALL_CONFIG
   /* GC_print_stats should be visible to extra/MacOS.c. */
-  extern int GC_print_stats;    /* Nonzero generates basic GC log.      */
+# ifndef GC_ANDROID_LOG
+    extern int GC_print_stats;  /* Nonzero generates basic GC log.      */
                                 /* VERBOSE generates add'l messages.    */
+#   define GC_real_print_stats GC_print_stats
+# else
+#   ifndef GC_print_stats
+#     define GC_print_stats VERBOSE
+#   endif
+    extern int GC_real_print_stats;
+                /* Influences logging only if redirected to a file.     */
+# endif
 #else /* SMALL_CONFIG */
 # define GC_print_stats 0
   /* Will this remove the message character strings from the executable? */
   /* With a particular level of optimizations, it should...              */
 #endif
-#define VERBOSE 2
 
 #ifdef KEEP_BACK_PTRS
   GC_EXTERN long GC_backtraces;
@@ -2040,10 +2049,17 @@ GC_API_PRIV void GC_log_printf(const char * format, ...)
   }
 #endif
 
+#ifndef GC_ANDROID_LOG
   /* GC_stats_log_printf should be called only if GC_print_stats.       */
 # define GC_stats_log_printf GC_log_printf
   /* GC_verbose_log_printf is called only if GC_print_stats is VERBOSE. */
 # define GC_verbose_log_printf GC_log_printf
+#else
+  GC_INNER void GC_stats_log_printf(const char *format, ...)
+                        GC_ATTR_FORMAT_PRINTF(1, 2);
+  GC_INNER void GC_verbose_log_printf(const char *format, ...)
+                        GC_ATTR_FORMAT_PRINTF(1, 2);
+#endif /* GC_ANDROID_LOG */
 
 /* Convenient macros for GC_stats/verbose_log_printf invocation.        */
 #define GC_COND_LOG_PRINTF if (!GC_print_stats) {} else GC_stats_log_printf

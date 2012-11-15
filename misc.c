@@ -91,7 +91,7 @@ int GC_dont_precollect = FALSE;
 GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
 
 #ifndef SMALL_CONFIG
-  int GC_print_stats = 0;
+  int GC_real_print_stats = 0;
 #endif
 
 #ifdef GC_PRINT_BACK_HEIGHT
@@ -860,12 +860,12 @@ GC_API void GC_CALL GC_init(void)
 #     ifdef GC_PRINT_VERBOSE_STATS
         /* This is useful for debugging and profiling on platforms with */
         /* missing getenv() (like WinCE).                               */
-        GC_print_stats = VERBOSE;
+        GC_real_print_stats = VERBOSE;
 #     else
         if (0 != GETENV("GC_PRINT_VERBOSE_STATS")) {
-          GC_print_stats = VERBOSE;
+          GC_real_print_stats = VERBOSE;
         } else if (0 != GETENV("GC_PRINT_STATS")) {
-          GC_print_stats = 1;
+          GC_real_print_stats = 1;
         }
 #     endif
 #     if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN)
@@ -1514,6 +1514,8 @@ void GC_err_printf(const char *format, ...)
       ABORT("write to GC log failed");
   }
 
+# define GC_warn_printf GC_err_printf
+
 #else
 
 # define GC_LOG_PRINTF_IMPL(loglevel, fileLogCond, format) \
@@ -1528,7 +1530,29 @@ void GC_err_printf(const char *format, ...)
 
   void GC_log_printf(const char *format, ...)
   {
-    GC_LOG_PRINTF_IMPL(ANDROID_LOG_INFO, TRUE, format);
+    GC_LOG_PRINTF_IMPL(ANDROID_LOG_DEBUG, TRUE, format);
+  }
+
+  GC_INNER void GC_stats_log_printf(const char *format, ...)
+  {
+    GC_LOG_PRINTF_IMPL(ANDROID_LOG_INFO, GC_real_print_stats != 0, format);
+  }
+
+  GC_INNER void GC_verbose_log_printf(const char *format, ...)
+  {
+    GC_LOG_PRINTF_IMPL(ANDROID_LOG_VERBOSE, GC_real_print_stats == VERBOSE,
+                       format);
+  }
+
+  STATIC void GC_warn_printf(const char *format, ...)
+  {
+    char buf[BUFSZ + 1];
+
+    GC_PRINTF_FILLBUF(buf, format);
+    __android_log_write(ANDROID_LOG_WARN, GC_ANDROID_LOG_TAG, buf);
+    if (GC_real_print_stats && GC_stderr != GC_DEFAULT_STDERR_FD
+        && WRITE(GC_stderr, buf, strlen(buf)) < 0)
+      ABORT("write to stderr failed");
   }
 
 #endif /* GC_ANDROID_LOG */
@@ -1546,7 +1570,7 @@ void GC_err_puts(const char *s)
 STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
 {
     /* TODO: Add assertion on arg comply with msg (format).     */
-    GC_err_printf(msg, arg);
+    GC_warn_printf(msg, arg);
 }
 
 GC_INNER GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
