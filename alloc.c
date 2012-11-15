@@ -111,9 +111,9 @@ GC_API unsigned GC_CALL GC_get_version(void)
 /* some more variables */
 
 #ifdef GC_DONT_EXPAND
-  GC_bool GC_dont_expand = TRUE;
+  int GC_dont_expand = TRUE;
 #else
-  GC_bool GC_dont_expand = FALSE;
+  int GC_dont_expand = FALSE;
 #endif
 
 #ifndef GC_FREE_SPACE_DIVISOR

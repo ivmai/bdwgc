@@ -84,14 +84,14 @@ ptr_t GC_stackbottom = 0;
   ptr_t GC_register_stackbottom = 0;
 #endif
 
-GC_bool GC_dont_gc = 0;
+int GC_dont_gc = FALSE;
 
-GC_bool GC_dont_precollect = 0;
+int GC_dont_precollect = FALSE;
 
 GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
 
 #ifndef SMALL_CONFIG
-  GC_bool GC_print_stats = 0;
+  int GC_print_stats = 0;
 #endif
 
 #ifdef GC_PRINT_BACK_HEIGHT
