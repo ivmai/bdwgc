@@ -141,6 +141,8 @@ GC_INLINE int GC_register_disappearing_link_inner(
     size_t index;
     struct disappearing_link * new_dl;
 
+    DCL_LOCK_STATE;
+
     LOCK();
     GC_ASSERT(obj != NULL && GC_base_C(obj) == obj);
     if (dl_hashtbl -> log_size == -1
@@ -199,8 +201,6 @@ GC_INLINE int GC_register_disappearing_link_inner(
 GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
                                                          const void * obj)
 {
-    DCL_LOCK_STATE;
-
     if (((word)link & (ALIGNMENT-1)) || link == NULL)
         ABORT("Bad arg to GC_general_register_disappearing_link");
 
@@ -214,6 +214,8 @@ GC_INLINE int GC_unregister_disappearing_link_inner(
     size_t index;
 
     if (((word)link & (ALIGNMENT-1)) != 0) return(0); /* Nothing to do. */
+
+    DCL_LOCK_STATE;
 
     LOCK();
     index = HASH2(link, dl_hashtbl -> log_size);
@@ -243,12 +245,11 @@ GC_INLINE int GC_unregister_disappearing_link_inner(
 
 GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 {
-    DCL_LOCK_STATE;
     return GC_unregister_disappearing_link_inner(&GC_dl_hashtbl, link);
 }
 
 #ifndef GC_MOVE_DISAPPEARING_LINK_NOT_NEEDED
-  GC_INLINE int GC_move_disappearing_link_inner(
+  GC_INLINE int GC_move_disappearing_link_locked(
                           struct dl_hashtbl_s *dl_hashtbl, void **link,
                           void **new_link)
   {
@@ -257,10 +258,6 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     word curr_hidden_link;
     word new_hidden_link;
 
-    if (((word)link & (ALIGNMENT-1)) != 0)
-      return GC_NOT_FOUND; /* Nothing to do. */
-
-    LOCK();
     /* Find current link.       */
     curr_index = HASH2(link, dl_hashtbl -> log_size);
     curr_hidden_link = GC_HIDE_POINTER(link);
@@ -273,12 +270,10 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     }
 
     if (curr_dl == 0) {
-      UNLOCK();
       return GC_NOT_FOUND;
     }
 
     if (link == new_link) {
-      UNLOCK();
       return GC_SUCCESS; /* Nothing to do.      */
     }
 
@@ -289,7 +284,6 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
          new_dl = dl_next(new_dl)) {
       if (new_dl -> dl_hidden_link == new_hidden_link) {
         /* Target already registered; bail.     */
-        UNLOCK();
         return GC_DUPLICATE;
       }
     }
@@ -303,14 +297,28 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     curr_dl -> dl_hidden_link = new_hidden_link;
     dl_set_next(curr_dl, dl_hashtbl -> head[new_index]);
     dl_hashtbl -> head[new_index] = curr_dl;
-    UNLOCK();
     return GC_SUCCESS;
+  }
+
+  GC_INLINE int GC_move_disappearing_link_inner(
+                          struct dl_hashtbl_s *dl_hashtbl, void **link,
+                          void **new_link)
+  {
+    int result;
+
+    if (((word)link & (ALIGNMENT-1)) != 0)
+      return GC_NOT_FOUND; /* Nothing to do. */
+
+    DCL_LOCK_STATE;
+    LOCK();
+    result = GC_move_disappearing_link_locked(dl_hashtbl, link, new_link);
+    UNLOCK();
+    
+    return result;
   }
 
   GC_API int GC_CALL GC_move_disappearing_link(void **link, void **new_link)
   {
-    DCL_LOCK_STATE;
-
     if (((word)new_link & (ALIGNMENT-1)) != 0 || new_link == NULL)
       ABORT("Bad new_link arg to GC_move_disappearing_link");
 
