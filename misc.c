@@ -1503,19 +1503,35 @@ void GC_err_printf(const char *format, ...)
     GC_err_puts(buf);
 }
 
-void GC_log_printf(const char *format, ...)
-{
+#ifndef GC_ANDROID_LOG
+
+  void GC_log_printf(const char *format, ...)
+  {
     char buf[BUFSZ + 1];
 
     GC_PRINTF_FILLBUF(buf, format);
-#   ifdef GC_ANDROID_LOG
-      __android_log_write(ANDROID_LOG_INFO, GC_ANDROID_LOG_TAG, buf);
-      if (GC_log == GC_DEFAULT_STDERR_FD)
-        return; /* skip duplicate write to stderr */
-#   endif
     if (WRITE(GC_log, buf, strlen(buf)) < 0)
       ABORT("write to GC log failed");
-}
+  }
+
+#else
+
+# define GC_LOG_PRINTF_IMPL(loglevel, fileLogCond, format) \
+        { \
+          char buf[BUFSZ + 1]; \
+          GC_PRINTF_FILLBUF(buf, format); \
+          __android_log_write(loglevel, GC_ANDROID_LOG_TAG, buf); \
+          if (GC_log != GC_DEFAULT_STDERR_FD && (fileLogCond) \
+              && WRITE(GC_log, buf, strlen(buf)) < 0) \
+            ABORT("write to GC log file failed"); \
+        }
+
+  void GC_log_printf(const char *format, ...)
+  {
+    GC_LOG_PRINTF_IMPL(ANDROID_LOG_INFO, TRUE, format);
+  }
+
+#endif /* GC_ANDROID_LOG */
 
 void GC_err_puts(const char *s)
 {

@@ -1889,7 +1889,7 @@ GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
   /* GC_print_stats should be visible to extra/MacOS.c. */
   extern int GC_print_stats;    /* Nonzero generates basic GC log.      */
                                 /* VERBOSE generates add'l messages.    */
-#else
+#else /* SMALL_CONFIG */
 # define GC_print_stats 0
   /* Will this remove the message character strings from the executable? */
   /* With a particular level of optimizations, it should...              */
@@ -2018,7 +2018,8 @@ GC_API void GC_CALL GC_noop1(word);
 
 /* Logging and diagnostic output:       */
 /* GC_printf is used typically on client explicit print requests.       */
-/* It's recommended to put "\n" at 'format' string end (for atomicity). */
+/* For all GC_X_printf routines, it is recommended to put "\n" at       */
+/* 'format' string end (for output atomicity).                          */
 GC_API_PRIV void GC_printf(const char * format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
                         /* A version of printf that doesn't allocate,   */
@@ -2028,20 +2029,26 @@ GC_API_PRIV void GC_printf(const char * format, ...)
 GC_API_PRIV void GC_err_printf(const char * format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
 
+/* Basic logging routine.  Typically, GC_log_printf is called directly  */
+/* only inside various DEBUG_x blocks.                                  */
 #if defined(__cplusplus) && defined(SYMBIAN)
   extern "C" {
 #endif
-/* Logging routine.  Typically called only if GC_print_stats.  It is    */
-/* recommended to put "\n" at 'format' string end (for atomicity).      */
 GC_API_PRIV void GC_log_printf(const char * format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
 #if defined(__cplusplus) && defined(SYMBIAN)
   }
 #endif
 
-#define GC_COND_LOG_PRINTF if (!GC_print_stats) {} else GC_log_printf
+  /* GC_stats_log_printf should be called only if GC_print_stats.       */
+# define GC_stats_log_printf GC_log_printf
+  /* GC_verbose_log_printf is called only if GC_print_stats is VERBOSE. */
+# define GC_verbose_log_printf GC_log_printf
+
+/* Convenient macros for GC_stats/verbose_log_printf invocation.        */
+#define GC_COND_LOG_PRINTF if (!GC_print_stats) {} else GC_stats_log_printf
 #define GC_VERBOSE_LOG_PRINTF \
-                if (GC_print_stats != VERBOSE) {} else GC_log_printf
+                if (GC_print_stats != VERBOSE) {} else GC_verbose_log_printf
 
 void GC_err_puts(const char *s);
                         /* Write s to stderr, don't buffer, don't add   */

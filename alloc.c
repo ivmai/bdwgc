@@ -429,7 +429,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
         GET_TIME(start_time);
-        GC_log_printf("Initiating full world-stop collection!\n");
+        GC_stats_log_printf("Initiating full world-stop collection!\n");
       }
 #   endif
     GC_promote_black_lists();
@@ -468,8 +468,8 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
         GET_TIME(current_time);
-        GC_log_printf("Complete collection took %lu msecs\n",
-                      MS_TIME_DIFF(current_time,start_time));
+        GC_stats_log_printf("Complete collection took %lu msecs\n",
+                            MS_TIME_DIFF(current_time,start_time));
       }
 #   endif
     return(TRUE);
@@ -675,7 +675,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         world_stopped_total_divisor = ++divisor;
 
         GC_ASSERT(divisor != 0);
-        GC_log_printf(
+        GC_stats_log_printf(
                 "World-stopped marking took %lu msecs (%u in average)\n",
                 time_diff, total_time / divisor);
       }
@@ -947,9 +947,10 @@ STATIC void GC_finish_collection(void)
           GC_print_finalization_stats();
 #       endif
 
-        GC_log_printf("Finalize plus initiate sweep took %lu + %lu msecs\n",
-                      MS_TIME_DIFF(finalize_time,start_time),
-                      MS_TIME_DIFF(done_time,finalize_time));
+        GC_stats_log_printf(
+                "Finalize plus initiate sweep took %lu + %lu msecs\n",
+                MS_TIME_DIFF(finalize_time,start_time),
+                MS_TIME_DIFF(done_time,finalize_time));
       }
 #   endif
 }

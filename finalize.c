@@ -964,13 +964,13 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
     struct finalizable_object *fo = GC_finalize_now;
     unsigned long ready = 0;
 
-    GC_log_printf(
+    GC_stats_log_printf(
         "%lu finalization table entries; %lu disappearing links alive\n",
         (unsigned long)GC_fo_entries, (unsigned long)GC_dl_entries);
     for (; 0 != fo; fo = fo_next(fo)) ++ready;
-    GC_log_printf("%lu objects are eligible for immediate finalization; "
-                  "%ld links cleared\n",
-                  ready, (long)GC_old_dl_entries - (long)GC_dl_entries);
+    GC_stats_log_printf("%lu objects are eligible for immediate finalization;"
+                        " %ld links cleared\n",
+                        ready, (long)GC_old_dl_entries - (long)GC_dl_entries);
   }
 #endif /* !SMALL_CONFIG */
 
