@@ -601,7 +601,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     for (i = 0; i < dl_size; i++) { \
       curr_dl = dl_hashtbl -> head[i]; \
       prev_dl = NULL; \
-      while (curr_dl != NULL) {
+      while (curr_dl) {
 
 #define ITERATE_DL_HASHTBL_END(curr_dl, prev_dl) \
         prev_dl = curr_dl; \
