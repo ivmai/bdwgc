@@ -611,7 +611,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 
 #define DELETE_DL_HASHTBL_ENTRY(dl_hashtbl, curr_dl, prev_dl, next_dl) \
     next_dl = dl_next(curr_dl); \
-    if (prev_dl == NULL) { \
+    if (!prev_dl) { \
         dl_hashtbl -> head[i] = next_dl; \
     } else { \
         dl_set_next(prev_dl, next_dl); \
