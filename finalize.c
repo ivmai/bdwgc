@@ -212,40 +212,45 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
 # define FREE_DL_ENTRY(curr_dl) GC_free(curr_dl)
 #endif
 
-GC_INLINE int GC_unregister_disappearing_link_inner(
+/* Unregisters given link and returns the link entry to free.   */
+/* Assume the lock is held.                                     */
+GC_INLINE struct disappearing_link *GC_unregister_disappearing_link_inner(
                                 struct dl_hashtbl_s *dl_hashtbl, void **link)
 {
-    struct disappearing_link *curr_dl, *prev_dl;
-    size_t index;
-    DCL_LOCK_STATE;
+    struct disappearing_link *curr_dl;
+    struct disappearing_link *prev_dl = NULL;
+    size_t index = HASH2(link, dl_hashtbl->log_size);
 
-    if (((word)link & (ALIGNMENT-1)) != 0) return(0); /* Nothing to do. */
-
-    LOCK();
-    index = HASH2(link, dl_hashtbl -> log_size);
-    prev_dl = NULL;
     for (curr_dl = dl_hashtbl -> head[index]; curr_dl;
          curr_dl = dl_next(curr_dl)) {
         if (curr_dl -> dl_hidden_link == GC_HIDE_POINTER(link)) {
+            /* Remove found entry from the table. */
             if (NULL == prev_dl) {
                 dl_hashtbl -> head[index] = dl_next(curr_dl);
             } else {
                 dl_set_next(prev_dl, dl_next(curr_dl));
             }
             dl_hashtbl -> entries--;
-            UNLOCK();
-            FREE_DL_ENTRY(curr_dl);
-            return(1);
+            break;
         }
         prev_dl = curr_dl;
     }
-    UNLOCK();
-    return(0);
+    return curr_dl;
 }
 
 GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 {
-    return GC_unregister_disappearing_link_inner(&GC_dl_hashtbl, link);
+    struct disappearing_link *curr_dl;
+    DCL_LOCK_STATE;
+
+    if (((word)link & (ALIGNMENT-1)) != 0) return(0); /* Nothing to do. */
+
+    LOCK();
+    curr_dl = GC_unregister_disappearing_link_inner(&GC_dl_hashtbl, link);
+    UNLOCK();
+    if (NULL == curr_dl) return 0;
+    FREE_DL_ENTRY(curr_dl);
+    return 1;
 }
 
 #ifndef GC_MOVE_DISAPPEARING_LINK_NOT_NEEDED
