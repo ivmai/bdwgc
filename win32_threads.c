@@ -1650,6 +1650,18 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #   define GC_PTHREADS_PARAMARK
 # endif
 
+# if !defined(GC_PTHREADS_PARAMARK) && defined(DONT_USE_SIGNALANDWAIT)
+    STATIC HANDLE GC_marker_cv[MAX_MARKERS - 1] = {0};
+                        /* Events with manual reset (one for each       */
+                        /* mark helper).                                */
+
+    STATIC DWORD GC_marker_Id[MAX_MARKERS - 1] = {0};
+                        /* This table is used for mapping helper        */
+                        /* threads ID to mark helper index (linear      */
+                        /* search is used since the mapping contains    */
+                        /* only a few entries).                         */
+# endif
+
   /* GC_mark_thread() is the same as in pthread_support.c */
 # ifdef GC_PTHREADS_PARAMARK
     STATIC void * GC_mark_thread(void * id)
@@ -1667,6 +1679,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     marker_sp[(word)id] = GC_approx_sp();
 #   ifdef IA64
       marker_bsp[(word)id] = GC_save_regs_in_stack();
+#   endif
+#   if !defined(GC_PTHREADS_PARAMARK) && defined(DONT_USE_SIGNALANDWAIT)
+      GC_marker_Id[(word)id] = GetCurrentThreadId();
 #   endif
 
     for (;; ++my_mark_no) {
@@ -1824,18 +1839,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
 # else /* ! GC_PTHREADS_PARAMARK */
 
-#   ifdef DONT_USE_SIGNALANDWAIT
-      STATIC HANDLE GC_marker_cv[MAX_MARKERS - 1] = {0};
-                        /* Events with manual reset (one for each       */
-                        /* mark helper).                                */
-
-      STATIC DWORD GC_marker_Id[MAX_MARKERS - 1] = {0};
-                        /* This table is used for mapping helper        */
-                        /* threads ID to mark helper index (linear      */
-                        /* search is used since the mapping contains    */
-                        /* only a few entries).                         */
-#   endif
-
 #   ifndef MARK_THREAD_STACK_SIZE
 #     define MARK_THREAD_STACK_SIZE 0   /* default value */
 #   endif
@@ -1857,10 +1860,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #     endif
 
 #     ifdef DONT_USE_SIGNALANDWAIT
-        /* Initialize GC_marker_cv[] and GC_marker_Id[] fully before    */
-        /* starting the first helper thread.                            */
+        /* Initialize GC_marker_cv[] fully before starting the  */
+        /* first helper thread.                                 */
         for (i = 0; i < GC_markers_m1; ++i) {
-          GC_marker_Id[i] = GetCurrentThreadId();
           if ((GC_marker_cv[i] = CreateEvent(NULL /* attrs */,
                                         TRUE /* isManualReset */,
                                         FALSE /* initialState */,
