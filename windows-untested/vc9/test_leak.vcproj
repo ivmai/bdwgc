@@ -2,9 +2,9 @@
 <VisualStudioProject
     ProjectType="Visual C++"
     Version="9.00"
-    Name="test_huge"
-    ProjectGUID="{B3448331-ED22-47F5-914D-0C5C7E7BAB4C}"
-    RootNamespace="test_huge"
+    Name="test_leak"
+    ProjectGUID="{7A56B41D-6B05-4BAF-A32E-CB6028E777E9}"
+    RootNamespace="test_leak"
     Keyword="Win32Proj"
     TargetFrameworkVersion="196613"
     >
@@ -279,7 +279,7 @@
             UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
             >
             <File
-                RelativePath="..\tests\huge_test.c"
+                RelativePath="..\..\tests\leak_test.c"
                 >
             </File>
         </Filter>

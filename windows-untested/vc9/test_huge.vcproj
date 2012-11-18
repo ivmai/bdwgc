@@ -2,9 +2,9 @@
 <VisualStudioProject
     ProjectType="Visual C++"
     Version="9.00"
-    Name="test_libgc"
-    ProjectGUID="{79CFC986-70F7-4254-880B-262F156C11A3}"
-    RootNamespace="test_libgc"
+    Name="test_huge"
+    ProjectGUID="{B3448331-ED22-47F5-914D-0C5C7E7BAB4C}"
+    RootNamespace="test_huge"
     Keyword="Win32Proj"
     TargetFrameworkVersion="196613"
     >
@@ -24,6 +24,7 @@
             ConfigurationType="1"
             InheritedPropertySheets="$(solutiondir)/$(solutionname)_$(platformname).$(configurationname).vsprops"
             CharacterSet="0"
+            WholeProgramOptimization="0"
             >
             <Tool
                 Name="VCPreBuildEventTool"
@@ -42,68 +43,8 @@
             />
             <Tool
                 Name="VCCLCompilerTool"
-                PreprocessorDefinitions="_WINDOWS"
-            />
-            <Tool
-                Name="VCManagedResourceCompilerTool"
-            />
-            <Tool
-                Name="VCResourceCompilerTool"
-            />
-            <Tool
-                Name="VCPreLinkEventTool"
-            />
-            <Tool
-                Name="VCLinkerTool"
-                SubSystem="1"
-            />
-            <Tool
-                Name="VCALinkTool"
-            />
-            <Tool
-                Name="VCManifestTool"
-            />
-            <Tool
-                Name="VCXDCMakeTool"
-            />
-            <Tool
-                Name="VCBscMakeTool"
-            />
-            <Tool
-                Name="VCFxCopTool"
-            />
-            <Tool
-                Name="VCAppVerifierTool"
-            />
-            <Tool
-                Name="VCPostBuildEventTool"
-            />
-        </Configuration>
-        <Configuration
-            Name="Debug|x64"
-            ConfigurationType="1"
-            InheritedPropertySheets="$(solutiondir)/$(solutionname)_$(platformname).$(configurationname).vsprops"
-            CharacterSet="0"
-            >
-            <Tool
-                Name="VCPreBuildEventTool"
-            />
-            <Tool
-                Name="VCCustomBuildTool"
-            />
-            <Tool
-                Name="VCXMLDataGeneratorTool"
-            />
-            <Tool
-                Name="VCWebServiceProxyGeneratorTool"
-            />
-            <Tool
-                Name="VCMIDLTool"
-                TargetEnvironment="3"
-            />
-            <Tool
-                Name="VCCLCompilerTool"
-                PreprocessorDefinitions="_WINDOWS"
+                PreprocessorDefinitions="_CONSOLE"
+                UsePrecompiledHeader="0"
             />
             <Tool
                 Name="VCManagedResourceCompilerTool"
@@ -164,7 +105,71 @@
             />
             <Tool
                 Name="VCCLCompilerTool"
-                PreprocessorDefinitions="_WINDOWS"
+                PreprocessorDefinitions="_CONSOLE"
+                UsePrecompiledHeader="0"
+            />
+            <Tool
+                Name="VCManagedResourceCompilerTool"
+            />
+            <Tool
+                Name="VCResourceCompilerTool"
+            />
+            <Tool
+                Name="VCPreLinkEventTool"
+            />
+            <Tool
+                Name="VCLinkerTool"
+                SubSystem="1"
+            />
+            <Tool
+                Name="VCALinkTool"
+            />
+            <Tool
+                Name="VCManifestTool"
+            />
+            <Tool
+                Name="VCXDCMakeTool"
+            />
+            <Tool
+                Name="VCBscMakeTool"
+            />
+            <Tool
+                Name="VCFxCopTool"
+            />
+            <Tool
+                Name="VCAppVerifierTool"
+            />
+            <Tool
+                Name="VCPostBuildEventTool"
+            />
+        </Configuration>
+        <Configuration
+            Name="Debug|x64"
+            ConfigurationType="1"
+            InheritedPropertySheets="$(solutiondir)/$(solutionname)_$(platformname).$(configurationname).vsprops"
+            CharacterSet="0"
+            WholeProgramOptimization="0"
+            >
+            <Tool
+                Name="VCPreBuildEventTool"
+            />
+            <Tool
+                Name="VCCustomBuildTool"
+            />
+            <Tool
+                Name="VCXMLDataGeneratorTool"
+            />
+            <Tool
+                Name="VCWebServiceProxyGeneratorTool"
+            />
+            <Tool
+                Name="VCMIDLTool"
+                TargetEnvironment="3"
+            />
+            <Tool
+                Name="VCCLCompilerTool"
+                PreprocessorDefinitions="_CONSOLE"
+                UsePrecompiledHeader="0"
             />
             <Tool
                 Name="VCManagedResourceCompilerTool"
@@ -226,7 +231,8 @@
             />
             <Tool
                 Name="VCCLCompilerTool"
-                PreprocessorDefinitions="_WINDOWS"
+                PreprocessorDefinitions="_CONSOLE"
+                UsePrecompiledHeader="0"
             />
             <Tool
                 Name="VCManagedResourceCompilerTool"
@@ -273,7 +279,7 @@
             UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
             >
             <File
-                RelativePath="..\tests\test.c"
+                RelativePath="..\..\tests\huge_test.c"
                 >
             </File>
         </Filter>
