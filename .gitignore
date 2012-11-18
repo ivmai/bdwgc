@@ -106,3 +106,6 @@ stamp-h1
 /*.stackdump
 /*.sym
 /*.tmp
+
+# Stuff from VS build system and IDE
+*.vcproj.*.user
