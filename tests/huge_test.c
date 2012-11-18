@@ -19,8 +19,11 @@
  * expected manner.
  */
 
+#define GC_WORD_MAX (((GC_word)-1) >> 1)
+
 int main(void)
 {
+    void *r;
     GC_INIT();
 
     GC_set_max_heap_size(100*1024*1024);
@@ -28,25 +31,23 @@ int main(void)
         /* That's OK.  We test this corner case mostly to make sure that  */
         /* it fails predictably.                                          */
     GC_expand_hp(1024*1024*5);
-    if (sizeof(long) == sizeof(void *)) {
-        void *r = GC_MALLOC(LONG_MAX-1024);
-        if (0 != r) {
-            fprintf(stderr,
-                    "Size LONG_MAX-1024 allocation unexpectedly succeeded\n");
-            exit(1);
-        }
-        r = GC_MALLOC(LONG_MAX);
-        if (0 != r) {
-            fprintf(stderr,
-                    "Size LONG_MAX allocation unexpectedly succeeded\n");
-            exit(1);
-        }
-        r = GC_MALLOC((size_t)LONG_MAX + 1024);
-        if (0 != r) {
-            fprintf(stderr,
-                    "Size LONG_MAX+1024 allocation unexpectedly succeeded\n");
-            exit(1);
-        }
+    r = GC_MALLOC(GC_WORD_MAX - 1024);
+    if (NULL != r) {
+        fprintf(stderr,
+                "Size GC_WORD_MAX-1024 allocation unexpectedly succeeded\n");
+        exit(1);
+    }
+    r = GC_MALLOC(GC_WORD_MAX);
+    if (NULL != r) {
+        fprintf(stderr,
+                "Size GC_WORD_MAX allocation unexpectedly succeeded\n");
+        exit(1);
+    }
+    r = GC_MALLOC(GC_WORD_MAX + 1024);
+    if (NULL != r) {
+        fprintf(stderr,
+                "Size GC_WORD_MAX+1024 allocation unexpectedly succeeded\n");
+        exit(1);
     }
     return 0;
 }
