@@ -67,9 +67,6 @@ cannot write to stderr from GC_gcollect invoked from 'atexit' hook.
 
 NetBSD 5.1/x86: threadkey_test hangs sometimes.
 
-Cygwin: gctest: abort with "Too many heap sections" message if SMALL_CONFIG
-and PARALLEL_MARK.
-
 Cygwin: subthread_create: exception STATUS_ACCESS_VIOLATION.
 
 Sun C++ 5.11: test_cpp.cc:237: Error: Too few arguments in call to
