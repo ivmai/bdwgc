@@ -1711,10 +1711,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #     define NUMERIC_THREAD_ID(id) (unsigned long)GC_PTHREAD_PTRVAL(id)
 #   endif
 
-    /* start_mark_threads() is the same as in pthread_support.c except for: */
-    /* - GC_markers_m1 value is adjusted already;                           */
-    /* - thread stack is assumed to be large enough; and                    */
-    /* - statistics about the number of marker threads is printed outside.  */
+    /* start_mark_threads is the same as in pthread_support.c except    */
+    /* for thread stack that is assumed to be large enough.             */
     static void start_mark_threads(void)
     {
       int i;
@@ -1722,7 +1720,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       pthread_t new_thread;
 
       if (0 != pthread_attr_init(&attr)) ABORT("pthread_attr_init failed");
-
       if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
         ABORT("pthread_attr_setdetachstate failed");
 
@@ -1737,6 +1734,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         }
       }
       pthread_attr_destroy(&attr);
+      GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
     }
 
     static pthread_mutex_t mark_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -1911,6 +1909,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #     else
         GC_markers_m1 = i;
 #     endif
+      GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
       if (i == 0) {
         CloseHandle(mark_cv);
         CloseHandle(builder_cv);
@@ -2464,6 +2463,8 @@ GC_INNER void GC_thr_init(void)
          ) {
         /* Disable parallel marking. */
         GC_parallel = FALSE;
+        GC_COND_LOG_PRINTF(
+                "Single marker thread, turning off parallel marking\n");
       } else {
 #       ifndef GC_PTHREADS_PARAMARK
           /* Initialize Win32 event objects for parallel marking.       */
@@ -2489,9 +2490,11 @@ GC_INNER void GC_thr_init(void)
   GC_register_my_thread_inner(&sb, GC_main_thread);
 
 # ifdef PARALLEL_MARK
-    /* If we are using a parallel marker, actually start helper threads. */
-    if (GC_parallel) start_mark_threads();
-    GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
+    if (GC_parallel)
+    {
+      /* If we are using a parallel marker, actually start helper threads. */
+      start_mark_threads();
+    }
 # endif
 }
 

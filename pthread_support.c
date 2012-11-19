@@ -399,7 +399,6 @@ static void start_mark_threads(void)
     INIT_REAL_SYMS(); /* for pthread_create */
 
     if (0 != pthread_attr_init(&attr)) ABORT("pthread_attr_init failed");
-
     if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
         ABORT("pthread_attr_setdetachstate failed");
 
@@ -429,8 +428,8 @@ static void start_mark_threads(void)
         break;
       }
     }
-    GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
     pthread_attr_destroy(&attr);
+    GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
 }
 
 #endif /* PARALLEL_MARK */
@@ -1083,10 +1082,8 @@ GC_INNER void GC_thr_init(void)
      }
 #  endif
   }
+  GC_COND_LOG_PRINTF("Number of processors = %d\n", GC_nprocs);
 # ifdef PARALLEL_MARK
-    GC_COND_LOG_PRINTF("Number of processors = %d,"
-                       " number of marker threads = %d\n",
-                       GC_nprocs, GC_markers_m1 + 1);
     if (GC_markers_m1 <= 0) {
       /* Disable parallel marking.      */
       GC_parallel = FALSE;
@@ -1098,8 +1095,6 @@ GC_INNER void GC_thr_init(void)
       /* If we are using a parallel marker, actually start helper threads. */
       start_mark_threads();
     }
-# else
-    GC_COND_LOG_PRINTF("Number of processors = %d\n", GC_nprocs);
 # endif
 }
 
