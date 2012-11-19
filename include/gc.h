@@ -1084,10 +1084,10 @@ GC_API int GC_CALL GC_register_long_link(void ** /* link */,
                         GC_ATTR_NONNULL(1) GC_ATTR_NONNULL(2);
         /* Similar to GC_general_register_disappearing_link but */
         /* *link only gets cleared when obj becomes truly       */
-        /* inaccessible. An object becomes truly inaccessible   */
+        /* inaccessible.  An object becomes truly inaccessible  */
         /* when it can no longer be resurrected from its        */
         /* finalizer (e.g. by assigning itself to a pointer     */
-        /* traceable from root). This can be used to implement  */
+        /* traceable from root).  This can be used to implement */
         /* long weak pointers easily and safely.                */
 
 GC_API int GC_CALL GC_move_long_link(void ** /* link */,
