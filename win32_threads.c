@@ -1704,6 +1704,10 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
   /* GC_mark_threads[] is unused here unlike that in pthread_support.c  */
 
+# ifndef CAN_HANDLE_FORK
+#   define available_markers_m1 GC_markers_m1
+# endif
+
 # ifdef GC_PTHREADS_PARAMARK
 #   include <pthread.h>
 
@@ -1713,26 +1717,39 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
     /* start_mark_threads is the same as in pthread_support.c except    */
     /* for thread stack that is assumed to be large enough.             */
-    static void start_mark_threads(void)
+#   ifdef CAN_HANDLE_FORK
+      static int available_markers_m1 = 0;
+#     define start_mark_threads GC_start_mark_threads
+      GC_API void GC_CALL
+#   else
+      static void
+#   endif
+    start_mark_threads(void)
     {
       int i;
       pthread_attr_t attr;
       pthread_t new_thread;
 
+      GC_ASSERT(I_DONT_HOLD_LOCK());
+#     ifdef CAN_HANDLE_FORK
+        if (available_markers_m1 <= 0 || GC_parallel) return;
+                /* Skip if parallel markers disabled or already started. */
+#     endif
+
       if (0 != pthread_attr_init(&attr)) ABORT("pthread_attr_init failed");
       if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
         ABORT("pthread_attr_setdetachstate failed");
 
-      for (i = 0; i < GC_markers_m1; ++i) {
+      for (i = 0; i < available_markers_m1; ++i) {
         marker_last_stack_min[i] = ADDR_LIMIT;
         if (0 != pthread_create(&new_thread, &attr,
                                 GC_mark_thread, (void *)(word)i)) {
           WARN("Marker thread creation failed.\n", 0);
           /* Don't try to create other marker threads.    */
-          GC_markers_m1 = i;
           break;
         }
       }
+      GC_markers_m1 = i;
       pthread_attr_destroy(&attr);
       GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
     }
@@ -2442,7 +2459,7 @@ GC_INNER void GC_thr_init(void)
         if (markers_m1 >= MAX_MARKERS)
           markers_m1 = MAX_MARKERS - 1; /* silently limit the value */
       }
-      GC_markers_m1 = markers_m1;
+      available_markers_m1 = markers_m1;
     }
 
     /* Check whether parallel mode could be enabled.    */
@@ -2452,7 +2469,7 @@ GC_INNER void GC_thr_init(void)
         HMODULE hK32;
         /* SignalObjectAndWait() API call works only under NT.          */
 #     endif
-      if (GC_win32_dll_threads || GC_markers_m1 <= 0
+      if (GC_win32_dll_threads || available_markers_m1 <= 0
 #         if !defined(GC_PTHREADS_PARAMARK) && !defined(MSWINCE) \
                 && !defined(DONT_USE_SIGNALANDWAIT)
             || GC_wnt == FALSE
@@ -2490,7 +2507,9 @@ GC_INNER void GC_thr_init(void)
   GC_register_my_thread_inner(&sb, GC_main_thread);
 
 # ifdef PARALLEL_MARK
-    if (GC_parallel)
+#   ifndef CAN_HANDLE_FORK
+      if (GC_parallel)
+#   endif
     {
       /* If we are using a parallel marker, actually start helper threads. */
       start_mark_threads();

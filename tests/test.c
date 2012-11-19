@@ -89,7 +89,7 @@
 # if (!defined(THREADS) || !defined(HANDLE_FORK) \
       || (defined(DARWIN) && defined(MPROTECT_VDB) \
           && !defined(NO_INCREMENTAL) && !defined(MAKE_BACK_GRAPH))) \
-     && !defined(NO_TEST_HANDLE_FORK)
+     && !defined(NO_TEST_HANDLE_FORK) && !defined(TEST_HANDLE_FORK)
 #   define NO_TEST_HANDLE_FORK
 # endif
 
@@ -1301,9 +1301,17 @@ void run_one_test(void)
     (void)GC_call_with_alloc_lock(inc_int_counter, &n_tests);
 #   ifndef NO_TEST_HANDLE_FORK
       if (fork() == 0) {
+#       ifdef THREADS
+#         ifdef PARALLEL_MARK
+            GC_gcollect(); /* no parallel markers */
+#         endif
+          GC_start_mark_threads();
+#       endif
         GC_gcollect();
-        tiny_reverse_test(0);
-        GC_gcollect();
+#       ifdef THREADS
+          tiny_reverse_test(0);
+          GC_gcollect();
+#       endif
         if (print_stats)
           GC_log_printf("Finished a child process\n");
         exit(0);

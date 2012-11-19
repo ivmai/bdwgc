@@ -1231,6 +1231,14 @@ GC_API void GC_CALL GC_enable_incremental(void)
   GC_init();
 }
 
+#if defined(THREADS) && (!defined(PARALLEL_MARK) || !defined(CAN_HANDLE_FORK))
+  GC_API void GC_CALL GC_start_mark_threads(void)
+  {
+    /* No action since parallel markers are disabled (or no POSIX fork). */
+    GC_ASSERT(I_DONT_HOLD_LOCK());
+  }
+#endif
+
 #if defined(MSWIN32) || defined(MSWINCE)
 
 # if defined(_MSC_VER) && defined(_DEBUG) && !defined(MSWINCE)

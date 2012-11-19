@@ -1218,6 +1218,10 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* systems.  Return -1 otherwise.                                     */
   GC_API int GC_CALL GC_get_thr_restart_signal(void);
 
+  /* Restart marker threads after POSIX fork in child.  Meaningless in  */
+  /* other situations.  Should not be called if fork followed by exec.  */
+  GC_API void GC_CALL GC_start_mark_threads(void);
+
   /* Explicitly enable GC_register_my_thread() invocation.              */
   /* Done implicitly if a GC thread-creation function is called (or     */
   /* implicit thread registration is activated).  Otherwise, it must    */

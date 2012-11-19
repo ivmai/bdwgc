@@ -390,12 +390,25 @@ STATIC void * GC_mark_thread(void * id)
 
 STATIC pthread_t GC_mark_threads[MAX_MARKERS];
 
-static void start_mark_threads(void)
+#ifdef CAN_HANDLE_FORK
+  static int available_markers_m1 = 0;
+# define start_mark_threads GC_start_mark_threads
+  GC_API void GC_CALL
+#else
+# define available_markers_m1 GC_markers_m1
+  static void
+#endif
+start_mark_threads(void)
 {
     int i;
     pthread_attr_t attr;
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
+#   ifdef CAN_HANDLE_FORK
+      if (available_markers_m1 <= 0 || GC_parallel) return;
+                /* Skip if parallel markers disabled or already started. */
+#   endif
+
     INIT_REAL_SYMS(); /* for pthread_create */
 
     if (0 != pthread_attr_init(&attr)) ABORT("pthread_attr_init failed");
@@ -418,16 +431,16 @@ static void start_mark_threads(void)
         }
       }
 #   endif /* HPUX || GC_DGUX386_THREADS */
-    for (i = 0; i < GC_markers_m1; ++i) {
+    for (i = 0; i < available_markers_m1; ++i) {
       if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
         WARN("Marker thread creation failed, errno = %" WARN_PRIdPTR "\n",
              errno);
         /* Don't try to create other marker threads.    */
-        GC_markers_m1 = i;
         break;
       }
     }
+    GC_markers_m1 = i;
     pthread_attr_destroy(&attr);
     GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
 }
@@ -1054,7 +1067,7 @@ GC_INNER void GC_thr_init(void)
     WARN("GC_get_nprocs() returned %" WARN_PRIdPTR "\n", GC_nprocs);
     GC_nprocs = 2; /* assume dual-core */
 #   ifdef PARALLEL_MARK
-      GC_parallel = FALSE; /* but use only one marker */
+      available_markers_m1 = 0; /* but use only one marker */
 #   endif
   } else {
 #  ifdef PARALLEL_MARK
@@ -1078,13 +1091,13 @@ GC_INNER void GC_thr_init(void)
          if (markers_m1 >= MAX_MARKERS)
            markers_m1 = MAX_MARKERS - 1; /* silently limit the value */
        }
-       GC_markers_m1 = markers_m1;
+       available_markers_m1 = markers_m1;
      }
 #  endif
   }
   GC_COND_LOG_PRINTF("Number of processors = %d\n", GC_nprocs);
 # ifdef PARALLEL_MARK
-    if (GC_markers_m1 <= 0) {
+    if (available_markers_m1 <= 0) {
       /* Disable parallel marking.      */
       GC_parallel = FALSE;
       GC_COND_LOG_PRINTF(
