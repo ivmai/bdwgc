@@ -410,7 +410,6 @@ static void start_mark_threads(void)
 #     define MIN_STACK_SIZE (8*HBLKSIZE*sizeof(word))
       {
         size_t old_size;
-        int code;
 
         if (pthread_attr_getstacksize(&attr, &old_size) != 0)
           ABORT("pthread_attr_getstacksize failed");
