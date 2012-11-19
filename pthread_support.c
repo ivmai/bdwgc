@@ -1061,22 +1061,25 @@ GC_INNER void GC_thr_init(void)
 #  ifdef PARALLEL_MARK
      {
        char * markers_string = GETENV("GC_MARKERS");
+       int markers_m1;
+
        if (markers_string != NULL) {
-         GC_markers_m1 = atoi(markers_string) - 1;
-         if (GC_markers_m1 >= MAX_MARKERS) {
+         markers_m1 = atoi(markers_string) - 1;
+         if (markers_m1 >= MAX_MARKERS) {
            WARN("Limiting number of mark threads\n", 0);
-           GC_markers_m1 = MAX_MARKERS - 1;
+           markers_m1 = MAX_MARKERS - 1;
          }
        } else {
-         GC_markers_m1 = GC_nprocs - 1;
+         markers_m1 = GC_nprocs - 1;
 #        ifdef GC_MIN_MARKERS
            /* This is primarily for targets without getenv().   */
-           if (GC_markers_m1 < GC_MIN_MARKERS - 1)
-             GC_markers_m1 = GC_MIN_MARKERS - 1;
+           if (markers_m1 < GC_MIN_MARKERS - 1)
+             markers_m1 = GC_MIN_MARKERS - 1;
 #        endif
-         if (GC_markers_m1 >= MAX_MARKERS)
-           GC_markers_m1 = MAX_MARKERS - 1; /* silently limit the value */
+         if (markers_m1 >= MAX_MARKERS)
+           markers_m1 = MAX_MARKERS - 1; /* silently limit the value */
        }
+       GC_markers_m1 = markers_m1;
      }
 #  endif
   }
@@ -1092,9 +1095,7 @@ GC_INNER void GC_thr_init(void)
     } else {
       /* Disable true incremental collection, but generational is OK.   */
       GC_time_limit = GC_TIME_UNLIMITED;
-    }
-    /* If we are using a parallel marker, actually start helper threads. */
-    if (GC_parallel) {
+      /* If we are using a parallel marker, actually start helper threads. */
       start_mark_threads();
     }
 # else

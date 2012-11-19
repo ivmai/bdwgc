@@ -2402,20 +2402,21 @@ GC_INNER void GC_thr_init(void)
   GC_ASSERT(sb_result == GC_SUCCESS);
 
 # if defined(PARALLEL_MARK)
-    /* Set GC_markers_m1. */
     {
       char * markers_string = GETENV("GC_MARKERS");
+      int markers_m1;
+
       if (markers_string != NULL) {
-        GC_markers_m1 = atoi(markers_string) - 1;
-        if (GC_markers_m1 >= MAX_MARKERS) {
+        markers_m1 = atoi(markers_string) - 1;
+        if (markers_m1 >= MAX_MARKERS) {
           WARN("Limiting number of mark threads\n", 0);
-          GC_markers_m1 = MAX_MARKERS - 1;
+          markers_m1 = MAX_MARKERS - 1;
         }
       } else {
 #       ifdef MSWINCE
           /* There is no GetProcessAffinityMask() in WinCE.     */
           /* GC_sysinfo is already initialized.                 */
-          GC_markers_m1 = (int)GC_sysinfo.dwNumberOfProcessors - 1;
+          markers_m1 = (int)GC_sysinfo.dwNumberOfProcessors - 1;
 #       else
 #         ifdef _WIN64
             DWORD_PTR procMask = 0;
@@ -2432,16 +2433,17 @@ GC_INNER void GC_thr_init(void)
               ncpu++;
             } while ((procMask &= procMask - 1) != 0);
           }
-          GC_markers_m1 = ncpu - 1;
+          markers_m1 = ncpu - 1;
 #       endif
 #       ifdef GC_MIN_MARKERS
           /* This is primarily for testing on systems without getenv(). */
-          if (GC_markers_m1 < GC_MIN_MARKERS - 1)
-            GC_markers_m1 = GC_MIN_MARKERS - 1;
+          if (markers_m1 < GC_MIN_MARKERS - 1)
+            markers_m1 = GC_MIN_MARKERS - 1;
 #       endif
-        if (GC_markers_m1 >= MAX_MARKERS)
-          GC_markers_m1 = MAX_MARKERS - 1; /* silently limit the value */
+        if (markers_m1 >= MAX_MARKERS)
+          markers_m1 = MAX_MARKERS - 1; /* silently limit the value */
       }
+      GC_markers_m1 = markers_m1;
     }
 
     /* Check whether parallel mode could be enabled.    */
