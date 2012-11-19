@@ -1059,17 +1059,6 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
         /* GC_NO_MEMORY if registration failed for lack of      */
         /* memory (and GC_oom_fn did not handle the problem).   */
 
-GC_API int GC_CALL GC_register_long_link(void ** /* link */,
-                                    const void * /* obj */)
-                        GC_ATTR_NONNULL(1) GC_ATTR_NONNULL(2);
-        /* Similar to the above but *link only gets cleared     */
-        /* obj becomes truly inaccessible. An object becomes    */
-        /* truly inaccessible when it can no longer be          */
-        /* resurrected from a finalizer (e.g. by assigning      */
-        /* itself to a pointer traceable from root). This can   */
-        /* be used to implement long weak pointers easily and   */
-        /* safely.                                              */
-
 GC_API int GC_CALL GC_move_disappearing_link(void ** /* link */,
                                              void ** /* new_link */)
                         GC_ATTR_NONNULL(2);
@@ -1085,19 +1074,31 @@ GC_API int GC_CALL GC_move_disappearing_link(void ** /* link */,
         /* returned if new_link is equal to link), GC_NOT_FOUND */
         /* if no link is registered at the original location.   */
 
-GC_API int GC_CALL GC_move_long_link(void ** /* link */,
-                                     void ** /* new_link */)
-                        GC_ATTR_NONNULL(2);
-        /* Similar to the above but for a link previously       */
-        /* registered via GC_register_long_link.                */
-
 GC_API int GC_CALL GC_unregister_disappearing_link(void ** /* link */);
         /* Undoes a registration by either of the above two     */
         /* routines.  Returns 0 if link was not actually        */
         /* registered (otherwise returns 1).                    */
 
+GC_API int GC_CALL GC_register_long_link(void ** /* link */,
+                                    const void * /* obj */)
+                        GC_ATTR_NONNULL(1) GC_ATTR_NONNULL(2);
+        /* Similar to GC_general_register_disappearing_link but */
+        /* *link only gets cleared when obj becomes truly       */
+        /* inaccessible. An object becomes truly inaccessible   */
+        /* when it can no longer be resurrected from its        */
+        /* finalizer (e.g. by assigning itself to a pointer     */
+        /* traceable from root). This can be used to implement  */
+        /* long weak pointers easily and safely.                */
+
+GC_API int GC_CALL GC_move_long_link(void ** /* link */,
+                                     void ** /* new_link */)
+                        GC_ATTR_NONNULL(2);
+        /* Similar to GC_move_disappearing_link but for a link  */
+        /* previously registered via GC_register_long_link.     */
+
 GC_API int GC_CALL GC_unregister_long_link(void ** /* link */);
-        /* Similar to the above but for the long_link routines. */
+        /* Similar to GC_unregister_disappearing_link but for a */
+        /* registration by either of the above two routines.    */
 
 /* Returns !=0 if GC_invoke_finalizers has something to do.     */
 GC_API int GC_CALL GC_should_invoke_finalizers(void);
