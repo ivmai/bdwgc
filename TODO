@@ -69,5 +69,7 @@ NetBSD 5.1/x86: threadkey_test hangs sometimes.
 
 Cygwin: subthread_create: exception STATUS_ACCESS_VIOLATION.
 
+Cygwin: gctest: assertion failure at UNLOCK in GC_fork_parent_proc.
+
 Sun C++ 5.11: test_cpp.cc:237: Error: Too few arguments in call to
 "operator delete(void*, GCPlacement, extern "C" void(*)(void*,void*), void*)".
