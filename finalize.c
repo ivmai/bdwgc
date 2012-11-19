@@ -48,7 +48,8 @@ STATIC struct dl_hashtbl_s {
     struct disappearing_link **head;
     signed_word log_size;
     word entries;
-} GC_dl_hashtbl = { /* head */ NULL, /* log_size */ -1, /* entries */ 0};
+} GC_dl_hashtbl = { /* head */ NULL, /* log_size */ -1, /* entries */ 0},
+  GC_ll_hashtbl = { /* head */ NULL, /* log_size */ -1, /* entries */ 0};
 
 STATIC struct finalizable_object {
     struct hash_chain_entry prolog;
@@ -72,11 +73,14 @@ static signed_word log_fo_table_size = -1;
 GC_INNER void GC_push_finalizer_structures(void)
 {
     GC_ASSERT((word)&GC_dl_hashtbl.head % sizeof(word) == 0);
+    GC_ASSERT((word)&GC_ll_hashtbl.head % sizeof(word) == 0);
     GC_ASSERT((word)&GC_fo_head % sizeof(word) == 0);
     GC_ASSERT((word)&GC_finalize_now % sizeof(word) == 0);
 
     GC_push_all((ptr_t)(&GC_dl_hashtbl.head),
                 (ptr_t)(&GC_dl_hashtbl.head) + sizeof(word));
+    GC_push_all((ptr_t)(&GC_ll_hashtbl.head),
+                (ptr_t)(&GC_ll_hashtbl.head) + sizeof(word));
     GC_push_all((ptr_t)(&GC_fo_head), (ptr_t)(&GC_fo_head) + sizeof(word));
     GC_push_all((ptr_t)(&GC_finalize_now),
                 (ptr_t)(&GC_finalize_now) + sizeof(word));
@@ -206,6 +210,13 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
     return GC_register_disappearing_link_inner(&GC_dl_hashtbl, link, obj);
 }
 
+GC_API int GC_CALL GC_register_long_link(void * * link, const void * obj)
+{
+    if (((word)link & (ALIGNMENT-1)) != 0 || NULL == link)
+        ABORT("Bad arg to GC_register_long_link");
+    return GC_register_disappearing_link_inner(&GC_ll_hashtbl, link, obj);
+}
+
 #ifdef DBG_HDRS_ALL
 # define FREE_DL_ENTRY(curr_dl) dl_set_next(curr_dl, NULL)
 #else
@@ -247,6 +258,21 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
     LOCK();
     curr_dl = GC_unregister_disappearing_link_inner(&GC_dl_hashtbl, link);
+    UNLOCK();
+    if (NULL == curr_dl) return 0;
+    FREE_DL_ENTRY(curr_dl);
+    return 1;
+}
+
+GC_API int GC_CALL GC_unregister_long_link(void * * link)
+{
+    struct disappearing_link *curr_dl;
+    DCL_LOCK_STATE;
+
+    if (((word)link & (ALIGNMENT-1)) != 0) return(0); /* Nothing to do. */
+
+    LOCK();
+    curr_dl = GC_unregister_disappearing_link_inner(&GC_ll_hashtbl, link);
     UNLOCK();
     if (NULL == curr_dl) return 0;
     FREE_DL_ENTRY(curr_dl);
@@ -318,6 +344,22 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
     LOCK();
     result = GC_move_disappearing_link_inner(&GC_dl_hashtbl, link, new_link);
+    UNLOCK();
+    return result;
+  }
+
+  GC_API int GC_CALL GC_move_long_link(void **link, void **new_link)
+  {
+    int result;
+    DCL_LOCK_STATE;
+
+    if (((word)new_link & (ALIGNMENT-1)) != 0 || new_link == NULL)
+      ABORT("Bad new_link arg to GC_move_disappearing_link");
+    if (((word)link & (ALIGNMENT-1)) != 0)
+      return GC_NOT_FOUND; /* Nothing to do. */
+
+    LOCK();
+    result = GC_move_disappearing_link_inner(&GC_ll_hashtbl, link, new_link);
     UNLOCK();
     return result;
   }
@@ -538,25 +580,35 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 }
 
 #ifndef NO_DEBUGGING
-  void GC_dump_finalization(void)
+  GC_INLINE void GC_dump_finalization_links(struct dl_hashtbl_s* dl_hashtbl)
   {
     struct disappearing_link * curr_dl;
-    struct finalizable_object * curr_fo;
     ptr_t real_ptr, real_link;
-    int dl_size = GC_dl_hashtbl.log_size == -1 ? 0 :
-                                1 << GC_dl_hashtbl.log_size;
-    int fo_size = log_fo_table_size == -1 ? 0 : 1 << log_fo_table_size;
-    int i;
+    size_t dl_size = dl_hashtbl -> log_size == -1 ? 0 :
+                                1 << dl_hashtbl -> log_size;
+    size_t i;
 
-    GC_printf("Disappearing links:\n");
     for (i = 0; i < dl_size; i++) {
-      for (curr_dl = GC_dl_hashtbl.head[i]; curr_dl != 0;
+      for (curr_dl = dl_hashtbl -> head[i]; curr_dl != 0;
            curr_dl = dl_next(curr_dl)) {
         real_ptr = GC_REVEAL_POINTER(curr_dl -> dl_hidden_obj);
         real_link = GC_REVEAL_POINTER(curr_dl -> dl_hidden_link);
         GC_printf("Object: %p, Link:%p\n", real_ptr, real_link);
       }
     }
+  }
+
+  void GC_dump_finalization(void)
+  {
+    struct finalizable_object * curr_fo;
+    size_t fo_size = log_fo_table_size == -1 ? 0 : 1 << log_fo_table_size;
+    ptr_t real_ptr;
+    size_t i;
+
+    GC_printf("Disappearing short links:\n");
+    GC_dump_finalization_links(&GC_dl_hashtbl);
+    GC_printf("Disappearing long links:\n");
+    GC_dump_finalization_links(&GC_ll_hashtbl);
     GC_printf("Finalizers:\n");
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = GC_fo_head[i]; curr_fo != 0;
@@ -569,7 +621,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 #endif /* !NO_DEBUGGING */
 
 #ifndef SMALL_CONFIG
-  STATIC word GC_old_dl_entries = 0; /* for stats printing */
+  /* for stats printing */
+  STATIC word GC_old_dl_entries = 0, GC_old_ll_entries = 0;
 #endif
 
 #ifndef THREADS
@@ -674,8 +727,9 @@ GC_INNER void GC_finalize(void)
     size_t fo_size = log_fo_table_size == -1 ? 0 : 1 << log_fo_table_size;
 
 #   ifndef SMALL_CONFIG
-      /* Save current GC_dl_entries value for stats printing */
+      /* Save current GC_[dl/ll]_entries value for stats printing */
       GC_old_dl_entries = GC_dl_hashtbl.entries;
+      GC_old_ll_entries = GC_ll_hashtbl.entries;
 #   endif
 
     GC_make_disappearing_links_disappear(&GC_dl_hashtbl);
@@ -787,7 +841,10 @@ GC_INNER void GC_finalize(void)
       }
   }
 
+  GC_make_disappearing_links_disappear(&GC_ll_hashtbl);
+
   GC_remove_dangling_disappearing_links(&GC_dl_hashtbl);
+  GC_remove_dangling_disappearing_links(&GC_ll_hashtbl);
 
   if (GC_fail_count) {
     /* Don't prevent running finalizers if there has been an allocation */
@@ -1013,13 +1070,17 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
     unsigned long ready = 0;
 
     GC_log_printf(
-        "%lu finalization table entries; %lu disappearing links alive\n",
-        (unsigned long)GC_fo_entries, (unsigned long)GC_dl_hashtbl.entries);
+        "%lu finalization table entries; "
+        "%lu short/%lu long disappearing links alive\n",
+        (unsigned long)GC_fo_entries,
+        (unsigned long)GC_dl_hashtbl.entries,
+        (unsigned long)GC_ll_hashtbl.entries);
     for (; 0 != fo; fo = fo_next(fo)) ++ready;
-    GC_log_printf("%lu objects are eligible for immediate finalization; "
-                  "%ld links cleared\n",
+    GC_log_printf("%lu objects are ready for finalization; "
+                  "%ld short/%ld long links cleared\n",
                   ready,
-                  (long)GC_old_dl_entries - (long)GC_dl_hashtbl.entries);
+                  (long)GC_old_dl_entries - (long)GC_dl_hashtbl.entries,
+                  (long)GC_old_ll_entries - (long)GC_ll_hashtbl.entries);
   }
 #endif /* !SMALL_CONFIG */
 
