@@ -96,6 +96,7 @@
 # ifndef NO_TEST_HANDLE_FORK
 #   include <unistd.h>
 #   define INIT_FORK_SUPPORT GC_set_handle_fork(1)
+                /* Causes abort in GC_init on pthread_atfork failure.   */
 # else
 #   define INIT_FORK_SUPPORT /* empty */
 # endif
@@ -1262,6 +1263,29 @@ void run_one_test(void)
         GC_free(GC_malloc_atomic(0));
         GC_free(GC_malloc(0));
         GC_free(GC_malloc_atomic(0));
+#   ifndef NO_TEST_HANDLE_FORK
+        if (fork() != 0) {
+          if (print_stats)
+            GC_log_printf("Forked child process (or failed)\n");
+        } else {
+          if (print_stats)
+            GC_log_printf("Started a child process\n");
+#         ifdef THREADS
+#           ifdef PARALLEL_MARK
+              GC_gcollect(); /* no parallel markers */
+#           endif
+            GC_start_mark_threads();
+#         endif
+          GC_gcollect();
+#         ifdef THREADS
+            tiny_reverse_test(0);
+            GC_gcollect();
+#         endif
+          if (print_stats)
+            GC_log_printf("Finished a child process\n");
+          exit(0);
+        }
+#   endif
     /* Repeated list reversal test. */
         GET_TIME(start_time);
         reverse_test();
@@ -1299,24 +1323,6 @@ void run_one_test(void)
     /* GC_allocate_ml and GC_need_to_lock are no longer exported, and   */
     /* AO_fetch_and_add1() may be unavailable to update a counter.      */
     (void)GC_call_with_alloc_lock(inc_int_counter, &n_tests);
-#   ifndef NO_TEST_HANDLE_FORK
-      if (fork() == 0) {
-#       ifdef THREADS
-#         ifdef PARALLEL_MARK
-            GC_gcollect(); /* no parallel markers */
-#         endif
-          GC_start_mark_threads();
-#       endif
-        GC_gcollect();
-#       ifdef THREADS
-          tiny_reverse_test(0);
-          GC_gcollect();
-#       endif
-        if (print_stats)
-          GC_log_printf("Finished a child process\n");
-        exit(0);
-      }
-#   endif
     if (print_stats)
       GC_log_printf("Finished %p\n", (void *)&start_time);
 }
