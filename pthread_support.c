@@ -941,7 +941,7 @@ IF_CANCEL(static int fork_cancel_state;)
                                 /* protected by allocation lock.        */
 
 /* Called before a fork()               */
-STATIC void GC_fork_prepare_proc(void)
+static void fork_prepare_proc(void)
 {
     /* Acquire all relevant locks, so that after releasing the locks    */
     /* the child will see a consistent state in which monitor           */
@@ -964,8 +964,8 @@ STATIC void GC_fork_prepare_proc(void)
 #     endif
 }
 
-/* Called in parent after a fork()      */
-STATIC void GC_fork_parent_proc(void)
+/* Called in parent after a fork() (even if the latter failed). */
+static void fork_parent_proc(void)
 {
 #   if defined(PARALLEL_MARK)
       if (GC_parallel)
@@ -976,7 +976,7 @@ STATIC void GC_fork_parent_proc(void)
 }
 
 /* Called in child after a fork()       */
-STATIC void GC_fork_child_proc(void)
+static void fork_child_proc(void)
 {
     /* Clean up the thread table, so that just our thread is left. */
 #   if defined(PARALLEL_MARK)
@@ -1010,8 +1010,8 @@ GC_INNER void GC_thr_init(void)
 # ifdef CAN_HANDLE_FORK
     /* Prepare for forks if requested.  */
     if (GC_handle_fork
-        && pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
-                          GC_fork_child_proc) != 0)
+          && pthread_atfork(fork_prepare_proc, fork_parent_proc,
+                            fork_child_proc) != 0)
       ABORT("pthread_atfork failed");
 # endif
 # ifdef INCLUDE_LINUX_THREAD_DESCR

@@ -1048,7 +1048,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 #     endif
     }
 
-    STATIC void GC_fork_prepare_proc(void)
+    static void fork_prepare_proc(void)
     {
       LOCK();
 #     ifdef PARALLEL_MARK
@@ -1062,7 +1062,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 #     endif
     }
 
-    STATIC void GC_fork_parent_proc(void)
+    static void fork_parent_proc(void)
     {
 #     ifdef PARALLEL_MARK
         if (GC_parallel)
@@ -1071,7 +1071,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       UNLOCK();
     }
 
-    STATIC void GC_fork_child_proc(void)
+    static void fork_child_proc(void)
     {
 #     ifdef PARALLEL_MARK
         if (GC_parallel) {
@@ -2405,8 +2405,8 @@ GC_INNER void GC_thr_init(void)
 # ifdef CAN_HANDLE_FORK
     /* Prepare for forks if requested.  */
     if (GC_handle_fork
-        && pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
-                          GC_fork_child_proc) != 0)
+          && pthread_atfork(fork_prepare_proc, fork_parent_proc,
+                            fork_child_proc) != 0)
       ABORT("pthread_atfork failed");
 # endif
 
