@@ -1961,7 +1961,20 @@ GC_EXTERN GC_bool GC_print_back_height;
 #endif
 
 #ifdef CAN_HANDLE_FORK
-  GC_EXTERN GC_bool GC_handle_fork;
+  GC_EXTERN int GC_handle_fork;
+                /* Fork-handling mode:                                  */
+                /* 0 means no fork handling requested (but client could */
+                /* anyway call fork() provided it is surrounded with    */
+                /* GC_atfork_prepare/parent/child calls);               */
+                /* -1 means GC tries to use pthread_at_fork if it is    */
+                /* available (if it succeeds then GC_handle_fork value  */
+                /* is changed to 1), client should nonetheless surround */
+                /* fork() with GC_atfork_prepare/parent/child (for the  */
+                /* case of pthread_at_fork failure or absence);         */
+                /* 1 (or other values) means client fully relies on     */
+                /* pthread_at_fork (so if it is missing or failed then  */
+                /* abort occurs in GC_init), GC_atfork_prepare and the  */
+                /* accompanying routines are no-op in such a case.      */
 #endif
 
 #ifndef GC_DISABLE_INCREMENTAL

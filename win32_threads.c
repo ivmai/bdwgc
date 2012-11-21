@@ -60,7 +60,7 @@
   STATIC void GC_thread_exit_proc(void *arg);
 
 # include <pthread.h>
-# ifdef CAN_HANDLE_FORK
+# ifdef CAN_CALL_ATFORK
 #   include <unistd.h>
 # endif
 
@@ -1085,6 +1085,25 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       GC_remove_all_threads_but_me();
       UNLOCK();
     }
+
+  /* Routines for fork handling by client (no-op if pthread_atfork works). */
+  GC_API void GC_CALL GC_atfork_prepare(void)
+  {
+    if (GC_handle_fork <= 0)
+      fork_prepare_proc();
+  }
+
+  GC_API void GC_CALL GC_atfork_parent(void)
+  {
+    if (GC_handle_fork <= 0)
+      fork_parent_proc();
+  }
+
+  GC_API void GC_CALL GC_atfork_child(void)
+  {
+    if (GC_handle_fork <= 0)
+      fork_child_proc();
+  }
 #endif /* CAN_HANDLE_FORK */
 
 void GC_push_thread_structures(void)
@@ -2404,10 +2423,17 @@ GC_INNER void GC_thr_init(void)
 
 # ifdef CAN_HANDLE_FORK
     /* Prepare for forks if requested.  */
-    if (GC_handle_fork
-          && pthread_atfork(fork_prepare_proc, fork_parent_proc,
-                            fork_child_proc) != 0)
-      ABORT("pthread_atfork failed");
+    if (GC_handle_fork) {
+#     ifdef CAN_CALL_ATFORK
+        if (pthread_atfork(fork_prepare_proc, fork_parent_proc,
+                           fork_child_proc) == 0) {
+          /* Handlers successfully registered.  */
+          GC_handle_fork = 1;
+        } else
+#     endif
+      /* else */ if (GC_handle_fork != -1)
+        ABORT("pthread_atfork failed");
+    }
 # endif
 
   /* Add the initial thread, so we can stop it. */

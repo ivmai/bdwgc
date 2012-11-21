@@ -171,24 +171,48 @@ GC_oom_func GC_oom_fn = GC_default_oom_fn;
 
 #ifdef CAN_HANDLE_FORK
 # ifdef HANDLE_FORK
-    GC_INNER GC_bool GC_handle_fork = TRUE;
+    GC_INNER int GC_handle_fork = 1;
                         /* The value is examined by GC_thr_init.        */
 # else
-    GC_INNER GC_bool GC_handle_fork = FALSE;
+    GC_INNER int GC_handle_fork = FALSE;
 # endif
-#endif /* CAN_HANDLE_FORK */
 
-/* Overrides the default handle-fork mode.  Non-zero value means GC     */
-/* should install proper pthread_atfork handlers (or abort if not       */
-/* supported).  Has effect only if called before GC_INIT.               */
+#elif !defined(HAVE_NO_FORK)
+
+  /* Same as above but with GC_CALL calling conventions.  */
+  GC_API void GC_CALL GC_atfork_prepare(void)
+  {
+#   ifdef THREADS
+      ABORT("fork() handling unsupported");
+#   endif
+  }
+
+  GC_API void GC_CALL GC_atfork_parent(void)
+  {
+    /* empty */
+  }
+
+  GC_API void GC_CALL GC_atfork_child(void)
+  {
+    /* empty */
+  }
+#endif /* !CAN_HANDLE_FORK && !HAVE_NO_FORK */
+
+/* Overrides the default automatic handle-fork mode.  Has effect only   */
+/* if called before GC_INIT.                                            */
 GC_API void GC_CALL GC_set_handle_fork(int value GC_ATTR_UNUSED)
 {
 # ifdef CAN_HANDLE_FORK
     if (!GC_is_initialized)
-      GC_handle_fork = (GC_bool)value;
+      GC_handle_fork = value >= -1 ? value : 1;
+                /* Map all negative values except for -1 to a positive one. */
 # elif defined(THREADS) || (defined(DARWIN) && defined(MPROTECT_VDB))
-    if (!GC_is_initialized && value)
-      ABORT("fork() handling disabled");
+    if (!GC_is_initialized && value) {
+#     ifndef SMALL_CONFIG
+        GC_init(); /* just to initialize GC_stderr */
+#     endif
+      ABORT("fork() handling unsupported");
+    }
 # else
     /* No at-fork handler is needed in the single-threaded mode.        */
 # endif

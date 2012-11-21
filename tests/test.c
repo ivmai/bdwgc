@@ -89,15 +89,24 @@
 # if (!defined(THREADS) || !defined(HANDLE_FORK) \
       || (defined(DARWIN) && defined(MPROTECT_VDB) \
           && !defined(NO_INCREMENTAL) && !defined(MAKE_BACK_GRAPH))) \
-     && !defined(NO_TEST_HANDLE_FORK) && !defined(TEST_HANDLE_FORK)
+     && !defined(NO_TEST_HANDLE_FORK) && !defined(TEST_HANDLE_FORK) \
+     && !defined(TEST_FORK_WITHOUT_ATFORK)
 #   define NO_TEST_HANDLE_FORK
 # endif
 
 # ifndef NO_TEST_HANDLE_FORK
 #   include <unistd.h>
-#   define INIT_FORK_SUPPORT GC_set_handle_fork(1)
+#   ifdef HANDLE_FORK
+#     define INIT_FORK_SUPPORT GC_set_handle_fork(1)
                 /* Causes abort in GC_init on pthread_atfork failure.   */
-# else
+#   elif !defined(TEST_FORK_WITHOUT_ATFORK)
+#     define INIT_FORK_SUPPORT GC_set_handle_fork(-1)
+                /* Passing -1 implies fork() should be as well manually */
+                /* surrounded with GC_atfork_prepare/parent/child.      */
+#   endif
+# endif
+
+# ifndef INIT_FORK_SUPPORT
 #   define INIT_FORK_SUPPORT /* empty */
 # endif
 
@@ -1264,10 +1273,13 @@ void run_one_test(void)
         GC_free(GC_malloc(0));
         GC_free(GC_malloc_atomic(0));
 #   ifndef NO_TEST_HANDLE_FORK
+        GC_atfork_prepare();
         if (fork() != 0) {
+          GC_atfork_parent();
           if (print_stats)
             GC_log_printf("Forked child process (or failed)\n");
         } else {
+          GC_atfork_child();
           if (print_stats)
             GC_log_printf("Started a child process\n");
 #         ifdef THREADS

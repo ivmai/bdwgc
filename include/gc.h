@@ -365,11 +365,28 @@ GC_API int GC_CALL GC_get_pages_executable(void);
 
 /* Overrides the default handle-fork mode.  Non-zero value means GC     */
 /* should install proper pthread_atfork handlers.  Has effect only if   */
-/* called before GC_INIT.  Clients should invoke GC_set_handle_fork(1)  */
-/* only if going to use fork with GC functions called in the forked     */
-/* child.  (Note that such client and atfork handlers activities are    */
-/* not fully POSIX-compliant.)                                          */
+/* called before GC_INIT.  Clients should invoke GC_set_handle_fork     */
+/* with non-zero argument if going to use fork with GC functions called */
+/* in the forked child.  (Note that such client and atfork handlers     */
+/* activities are not fully POSIX-compliant.)  GC_set_handle_fork       */
+/* instructs GC_init to setup GC fork handlers using pthread_atfork,    */
+/* the latter might fail (or, even, absent on some targets) causing     */
+/* abort at GC initialization.  Starting from 7.3alpha3, problems with  */
+/* missing (or failed) pthread_atfork() could be avoided by invocation  */
+/* of GC_set_handle_fork(-1) at application start-up and surrounding    */
+/* each fork() with the relevant GC_atfork_prepare/parent/child calls.  */
 GC_API void GC_CALL GC_set_handle_fork(int);
+
+/* Routines to handle POSIX fork() manually (no-op if handled           */
+/* automatically).  GC_atfork_prepare should be called immediately      */
+/* before fork(); GC_atfork_parent should be invoked just after fork in */
+/* the branch that corresponds to parent process (i.e., fork result is  */
+/* non-zero); GC_atfork_child is to be called immediately in the child  */
+/* branch (i.e., fork result is 0). Note that GC_atfork_child() call    */
+/* should, of course, precede GC_start_mark_threads call (if any).      */
+GC_API void GC_CALL GC_atfork_prepare(void);
+GC_API void GC_CALL GC_atfork_parent(void);
+GC_API void GC_CALL GC_atfork_child(void);
 
 /* Initialize the collector.  Portable clients should call GC_INIT()    */
 /* from the main program instead.                                       */

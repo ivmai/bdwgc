@@ -992,6 +992,25 @@ static void fork_child_proc(void)
     RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
 }
+
+  /* Routines for fork handling by client (no-op if pthread_atfork works). */
+  GC_API void GC_CALL GC_atfork_prepare(void)
+  {
+    if (GC_handle_fork <= 0)
+      fork_prepare_proc();
+  }
+
+  GC_API void GC_CALL GC_atfork_parent(void)
+  {
+    if (GC_handle_fork <= 0)
+      fork_parent_proc();
+  }
+
+  GC_API void GC_CALL GC_atfork_child(void)
+  {
+    if (GC_handle_fork <= 0)
+      fork_child_proc();
+  }
 #endif /* CAN_HANDLE_FORK */
 
 #ifdef INCLUDE_LINUX_THREAD_DESCR
@@ -1009,10 +1028,17 @@ GC_INNER void GC_thr_init(void)
   GC_ASSERT((word)&GC_threads % sizeof(word) == 0);
 # ifdef CAN_HANDLE_FORK
     /* Prepare for forks if requested.  */
-    if (GC_handle_fork
-          && pthread_atfork(fork_prepare_proc, fork_parent_proc,
-                            fork_child_proc) != 0)
-      ABORT("pthread_atfork failed");
+    if (GC_handle_fork) {
+#     ifdef CAN_CALL_ATFORK
+        if (pthread_atfork(fork_prepare_proc, fork_parent_proc,
+                           fork_child_proc) == 0) {
+          /* Handlers successfully registered.  */
+          GC_handle_fork = 1;
+        } else
+#     endif
+      /* else */ if (GC_handle_fork != -1)
+        ABORT("pthread_atfork failed");
+    }
 # endif
 # ifdef INCLUDE_LINUX_THREAD_DESCR
     /* Explicitly register the region including the address     */
