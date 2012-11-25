@@ -165,10 +165,12 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
 # define GC_debug_realloc_replacement(p, lb) \
         GC_debug_realloc(p, lb, GC_DBG_EXTRAS)
 
-void * realloc(void * p, size_t lb)
-  {
-    return(REDIRECT_REALLOC(p, lb));
-  }
+# if !defined(REDIRECT_MALLOC_IN_HEADER)
+    void * realloc(void * p, size_t lb)
+    {
+      return(REDIRECT_REALLOC(p, lb));
+    }
+# endif
 
 # undef GC_debug_realloc_replacement
 # endif /* REDIRECT_REALLOC */

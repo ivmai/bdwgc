@@ -351,6 +351,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
 /* but it is admittedly quite ugly.                                     */
 # define GC_debug_malloc_replacement(lb) GC_debug_malloc(lb, GC_DBG_EXTRAS)
 
+#if !defined(REDIRECT_MALLOC_IN_HEADER)
 void * malloc(size_t lb)
 {
     /* It might help to manually inline the GC_malloc call here.        */
@@ -464,6 +465,8 @@ void * calloc(size_t n, size_t lb)
   }
 #endif /* !strndup */
 
+#endif /* !REDIRECT_MALLOC_IN_HEADER */
+
 #undef GC_debug_malloc_replacement
 
 #endif /* REDIRECT_MALLOC */
@@ -574,7 +577,7 @@ GC_API void GC_CALL GC_free(void * p)
 # define REDIRECT_FREE GC_free
 #endif
 
-#ifdef REDIRECT_FREE
+#if defined(REDIRECT_FREE) && !defined(REDIRECT_MALLOC_IN_HEADER)
   void free(void * p)
   {
 #   if defined(GC_LINUX_THREADS) && !defined(USE_PROC_FOR_LIBRARIES)
