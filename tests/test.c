@@ -532,7 +532,10 @@ void check_marks_int_list(sexpr x)
     {
         DWORD thread_id;
         HANDLE h;
-        h = GC_CreateThread(NULL, 0, tiny_reverse_test, 0, 0, &thread_id);
+        h = GC_CreateThread((SECURITY_ATTRIBUTES *)NULL, (word)0,
+                            tiny_reverse_test, NULL, (DWORD)0, &thread_id);
+                                /* Explicitly specify types of the      */
+                                /* arguments to test the prototype.     */
         if (h == (HANDLE)NULL) {
             GC_printf("Small thread creation failed %d\n",
                           (int)GetLastError());
