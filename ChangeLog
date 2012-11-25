@@ -1,3 +1,33 @@
+2012-11-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (GC_uintptr_t): Define (for Win32/CE) even if
+	GC_NO_THREAD_DECLS; move definition upper than GC_CreateThread.
+	* include/gc.h (GC_WIN32_SIZE_T): New macro (defined as GC_uintptr_t,
+	Win32 threads only).
+	* include/gc.h (GC_CreateThread): Use GC_WIN32_SIZE_T instead of DWORD
+	type for "dwStackSize" argument (Win32 threads only).
+	* win32_threads.c (GC_CreateThread): Likewise.
+	* tests/test.c (fork_a_thread): Verify types of GC_CreateThread
+	arguments by explicit casts (only if GC_WIN32_THREADS).
+
+2012-11-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (MAX_HEAP_SECTS): Define to 384 instead of
+	128 if Win32/Cygwin and PARALLEL_MARK.
+
+2012-11-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c (GC_marker_cv, GC_marker_Id): Move variable
+	definition up to precede GC_mark_thread (only if PARALLEL_MARK and
+	DONT_USE_SIGNALANDWAIT).
+	* win32_threads.c (GC_mark_thread): Set corresponding element of
+	GC_marker_Id[] to GetCurrentThreadId() value (only if PARALLEL_MARK
+	and DONT_USE_SIGNALANDWAIT).
+	* win32_threads.c (start_mark_threads): Do not set GC_marker_Id[]
+	elements here because GetCurrentThreadId should be invoked from the
+	corresponding thread; update comment (only if PARALLEL_MARK and
+	DONT_USE_SIGNALANDWAIT).
+
 2012-11-11  Ivan Maidanski <ivmai@mail.ru>
 
 	* misc.c (GC_write): Define "inside_write" static variable (only
