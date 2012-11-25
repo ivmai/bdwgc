@@ -43,7 +43,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 AdditionalIncludeDirectories="../../libatomic_ops/src/"
-                PreprocessorDefinitions="GC_BUILD"
+                PreprocessorDefinitions="GC_BUILD;GC_DISCOVER_TASK_THREADS"
                 UsePrecompiledHeader="0"
             />
             <Tool
@@ -106,7 +106,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 AdditionalIncludeDirectories="../../libatomic_ops/src/"
-                PreprocessorDefinitions="GC_BUILD"
+                PreprocessorDefinitions="GC_BUILD;GC_DISCOVER_TASK_THREADS"
                 UsePrecompiledHeader="0"
             />
             <Tool
@@ -169,7 +169,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 AdditionalIncludeDirectories="../../libatomic_ops/src/"
-                PreprocessorDefinitions="GC_BUILD"
+                PreprocessorDefinitions="GC_BUILD;GC_DISCOVER_TASK_THREADS"
                 UsePrecompiledHeader="0"
             />
             <Tool
@@ -233,7 +233,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 AdditionalIncludeDirectories="../../libatomic_ops/src/"
-                PreprocessorDefinitions="GC_BUILD"
+                PreprocessorDefinitions="GC_BUILD;GC_DISCOVER_TASK_THREADS"
                 UsePrecompiledHeader="0"
             />
             <Tool
