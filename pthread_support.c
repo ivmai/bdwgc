@@ -677,6 +677,8 @@ STATIC void GC_remove_all_threads_but_me(void)
             /* GC_destroy_thread_local and GC_free_internal     */
             /* before update).                                  */
             me -> stop_info.mach_thread = mach_thread_self();
+#         elif defined(PLATFORM_ANDROID)
+            me -> kernel_id = gettid();
 #         endif
 #         if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
             /* Some TLS implementations might be not fork-friendly, so  */
