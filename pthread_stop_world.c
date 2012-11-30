@@ -493,6 +493,10 @@ STATIC int GC_suspend_all(void)
                 case 0:
                     break;
                 default:
+#                   ifdef DEBUG_THREADS
+                      GC_log_printf("pthread_kill failed at suspend,"
+                                    " errcode=%d\n", result);
+#                   endif
                     ABORT("pthread_kill failed");
               }
 #           endif
@@ -816,6 +820,10 @@ GC_INNER void GC_start_world(void)
                 case 0:
                     break;
                 default:
+#                   ifdef DEBUG_THREADS
+                      GC_log_printf("pthread_kill failed at resume,"
+                                    " errcode=%d\n", result);
+#                   endif
                     ABORT("pthread_kill failed");
             }
 #         endif
