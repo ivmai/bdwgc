@@ -1769,23 +1769,10 @@ GC_INNER void GC_collect_a_little_inner(int n);
                                 /* collection work, if appropriate.     */
                                 /* A unit is an amount appropriate for  */
                                 /* HBLKSIZE bytes of allocation.        */
-/* void * GC_generic_malloc(size_t lb, int k); */
-                                /* Allocate an object of the given      */
-                                /* kind.  By default, there are only    */
-                                /* a few kinds: composite(pointerfree), */
-                                /* atomic, uncollectable, etc.          */
-                                /* We claim it's possible for clever    */
-                                /* client code that understands GC      */
-                                /* internals to add more, e.g. to       */
-                                /* communicate object layout info       */
-                                /* to the collector.                    */
-                                /* The actual decl is in gc_mark.h.     */
-GC_INNER void * GC_generic_malloc_ignore_off_page(size_t b, int k);
-                                /* As above, but pointers past the      */
-                                /* first page of the resulting object   */
-                                /* are ignored.                         */
+
 GC_INNER void * GC_generic_malloc_inner(size_t lb, int k);
-                                /* Ditto, but I already hold lock, etc. */
+                                /* Allocate an object of the given      */
+                                /* kind but assuming lock already held. */
 GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k);
                                 /* Allocate an object, where            */
                                 /* the client guarantees that there     */

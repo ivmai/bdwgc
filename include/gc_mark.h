@@ -183,14 +183,24 @@ GC_API unsigned GC_CALL GC_new_kind_inner(void ** /* free_list */,
 GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc);
 GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc);
 
-/* Allocate an object of a given kind.  Note that in multithreaded      */
+/* Allocate an object of a given kind.  By default, there are only      */
+/* a few kinds: composite (pointer-free), atomic, uncollectable, etc.   */
+/* We claim it is possible for clever client code that understands the  */
+/* GC internals to add more, e.g. to communicate object layout          */
+/* information to the collector.  Note that in the multi-threaded       */
 /* contexts, this is usually unsafe for kinds that have the descriptor  */
 /* in the object itself, since there is otherwise a window in which     */
 /* the descriptor is not correct.  Even in the single-threaded case,    */
 /* we need to be sure that cleared objects on a free list don't         */
 /* cause a GC crash if they are accidentally traced.                    */
-GC_API GC_ATTR_MALLOC void * GC_CALL
-        GC_generic_malloc(size_t /* lb */, int /* k */);
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t /* lb */,
+                                                       int /* k */);
+
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_ignore_off_page(
+                                        size_t /* lb */, int /* k */);
+                                /* As above, but pointers to past the   */
+                                /* first page of the resulting object   */
+                                /* are ignored.                         */
 
 typedef void (GC_CALLBACK * GC_describe_type_fn)(void * /* p */,
                                                  char * /* out_buf */);
