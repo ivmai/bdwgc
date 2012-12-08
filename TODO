@@ -71,5 +71,8 @@ Cygwin: subthread_create: exception STATUS_ACCESS_VIOLATION.
 
 Cygwin: gctest: assertion failure at UNLOCK in GC_fork_parent_proc.
 
+Mingw-w32: gctest: "SuspendThread failed" sometimes occurs (if
+GC_DLL+GC_THREADS+GC_ASSERTIONS).
+
 Sun C++ 5.11: test_cpp.cc:237: Error: Too few arguments in call to
 "operator delete(void*, GCPlacement, extern "C" void(*)(void*,void*), void*)".
