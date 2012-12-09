@@ -365,11 +365,28 @@ GC_API int GC_CALL GC_get_pages_executable(void);
 
 /* Overrides the default handle-fork mode.  Non-zero value means GC     */
 /* should install proper pthread_atfork handlers.  Has effect only if   */
-/* called before GC_INIT.  Clients should invoke GC_set_handle_fork(1)  */
-/* only if going to use fork with GC functions called in the forked     */
-/* child.  (Note that such client and atfork handlers activities are    */
-/* not fully POSIX-compliant.)                                          */
+/* called before GC_INIT.  Clients should invoke GC_set_handle_fork     */
+/* with non-zero argument if going to use fork with GC functions called */
+/* in the forked child.  (Note that such client and atfork handlers     */
+/* activities are not fully POSIX-compliant.)  GC_set_handle_fork       */
+/* instructs GC_init to setup GC fork handlers using pthread_atfork,    */
+/* the latter might fail (or, even, absent on some targets) causing     */
+/* abort at GC initialization.  Starting from 7.3alpha3, problems with  */
+/* missing (or failed) pthread_atfork() could be avoided by invocation  */
+/* of GC_set_handle_fork(-1) at application start-up and surrounding    */
+/* each fork() with the relevant GC_atfork_prepare/parent/child calls.  */
 GC_API void GC_CALL GC_set_handle_fork(int);
+
+/* Routines to handle POSIX fork() manually (no-op if handled           */
+/* automatically).  GC_atfork_prepare should be called immediately      */
+/* before fork(); GC_atfork_parent should be invoked just after fork in */
+/* the branch that corresponds to parent process (i.e., fork result is  */
+/* non-zero); GC_atfork_child is to be called immediately in the child  */
+/* branch (i.e., fork result is 0). Note that GC_atfork_child() call    */
+/* should, of course, precede GC_start_mark_threads call (if any).      */
+GC_API void GC_CALL GC_atfork_prepare(void);
+GC_API void GC_CALL GC_atfork_parent(void);
+GC_API void GC_CALL GC_atfork_child(void);
 
 /* Initialize the collector.  Portable clients should call GC_INIT()    */
 /* from the main program instead.                                       */
@@ -1243,6 +1260,10 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* systems.  Return -1 otherwise.                                     */
   GC_API int GC_CALL GC_get_thr_restart_signal(void);
 
+  /* Restart marker threads after POSIX fork in child.  Meaningless in  */
+  /* other situations.  Should not be called if fork followed by exec.  */
+  GC_API void GC_CALL GC_start_mark_threads(void);
+
   /* Explicitly enable GC_register_my_thread() invocation.              */
   /* Done implicitly if a GC thread-creation function is called (or     */
   /* implicit thread registration is activated).  Otherwise, it must    */
@@ -1451,7 +1472,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
                 /* Note: for Cygwin and win32-pthread, this is skipped  */
                 /* unless windows.h is included before gc.h.            */
 
-# ifndef GC_NO_THREAD_DECLS
+# if !defined(GC_NO_THREAD_DECLS) || defined(GC_BUILD)
 
 #   ifdef __cplusplus
       } /* Including windows.h in an extern "C" context no longer works. */
@@ -1483,6 +1504,14 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
                                     LPVOID /* reserved */);
 #   endif /* GC_INSIDE_DLL */
 
+#   if !defined(_UINTPTR_T) && !defined(_UINTPTR_T_DEFINED) \
+       && !defined(UINTPTR_MAX)
+      typedef GC_word GC_uintptr_t;
+#   else
+      typedef uintptr_t GC_uintptr_t;
+#   endif
+#   define GC_WIN32_SIZE_T GC_uintptr_t
+
     /* All threads must be created using GC_CreateThread or             */
     /* GC_beginthreadex, or must explicitly call GC_register_my_thread  */
     /* (and call GC_unregister_my_thread before thread termination), so */
@@ -1495,7 +1524,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
     /* so that the thread is properly unregistered.                     */
     GC_API HANDLE WINAPI GC_CreateThread(
                 LPSECURITY_ATTRIBUTES /* lpThreadAttributes */,
-                DWORD /* dwStackSize */,
+                GC_WIN32_SIZE_T /* dwStackSize */,
                 LPTHREAD_START_ROUTINE /* lpStartAddress */,
                 LPVOID /* lpParameter */, DWORD /* dwCreationFlags */,
                 LPDWORD /* lpThreadId */);
@@ -1509,13 +1538,6 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
                                                 DWORD /* dwExitCode */);
 
 #   if !defined(_WIN32_WCE) && !defined(__CEGCC__)
-#     if !defined(_UINTPTR_T) && !defined(_UINTPTR_T_DEFINED) \
-                && !defined(UINTPTR_MAX)
-        typedef GC_word GC_uintptr_t;
-#     else
-        typedef uintptr_t GC_uintptr_t;
-#     endif
-
       GC_API GC_uintptr_t GC_CALL GC_beginthreadex(
                         void * /* security */, unsigned /* stack_size */,
                         unsigned (__stdcall *)(void *),

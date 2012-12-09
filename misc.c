@@ -84,14 +84,14 @@ ptr_t GC_stackbottom = 0;
   ptr_t GC_register_stackbottom = 0;
 #endif
 
-GC_bool GC_dont_gc = 0;
+int GC_dont_gc = FALSE;
 
-GC_bool GC_dont_precollect = 0;
+int GC_dont_precollect = FALSE;
 
 GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
 
 #ifndef SMALL_CONFIG
-  GC_bool GC_print_stats = 0;
+  int GC_real_print_stats = 0;
 #endif
 
 #ifdef GC_PRINT_BACK_HEIGHT
@@ -171,24 +171,48 @@ GC_oom_func GC_oom_fn = GC_default_oom_fn;
 
 #ifdef CAN_HANDLE_FORK
 # ifdef HANDLE_FORK
-    GC_INNER GC_bool GC_handle_fork = TRUE;
+    GC_INNER int GC_handle_fork = 1;
                         /* The value is examined by GC_thr_init.        */
 # else
-    GC_INNER GC_bool GC_handle_fork = FALSE;
+    GC_INNER int GC_handle_fork = FALSE;
 # endif
-#endif /* CAN_HANDLE_FORK */
 
-/* Overrides the default handle-fork mode.  Non-zero value means GC     */
-/* should install proper pthread_atfork handlers (or abort if not       */
-/* supported).  Has effect only if called before GC_INIT.               */
+#elif !defined(HAVE_NO_FORK)
+
+  /* Same as above but with GC_CALL calling conventions.  */
+  GC_API void GC_CALL GC_atfork_prepare(void)
+  {
+#   ifdef THREADS
+      ABORT("fork() handling unsupported");
+#   endif
+  }
+
+  GC_API void GC_CALL GC_atfork_parent(void)
+  {
+    /* empty */
+  }
+
+  GC_API void GC_CALL GC_atfork_child(void)
+  {
+    /* empty */
+  }
+#endif /* !CAN_HANDLE_FORK && !HAVE_NO_FORK */
+
+/* Overrides the default automatic handle-fork mode.  Has effect only   */
+/* if called before GC_INIT.                                            */
 GC_API void GC_CALL GC_set_handle_fork(int value GC_ATTR_UNUSED)
 {
 # ifdef CAN_HANDLE_FORK
     if (!GC_is_initialized)
-      GC_handle_fork = (GC_bool)value;
+      GC_handle_fork = value >= -1 ? value : 1;
+                /* Map all negative values except for -1 to a positive one. */
 # elif defined(THREADS) || (defined(DARWIN) && defined(MPROTECT_VDB))
-    if (!GC_is_initialized && value)
-      ABORT("fork() handling disabled");
+    if (!GC_is_initialized && value) {
+#     ifndef SMALL_CONFIG
+        GC_init(); /* just to initialize GC_stderr */
+#     endif
+      ABORT("fork() handling unsupported");
+    }
 # else
     /* No at-fork handler is needed in the single-threaded mode.        */
 # endif
@@ -746,10 +770,13 @@ STATIC void GC_exit_check(void)
 # define maybe_install_looping_handler()
 #endif
 
+#define GC_DEFAULT_STDOUT_FD 1
+#define GC_DEFAULT_STDERR_FD 2
+
 #if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
-  STATIC int GC_stdout = 1;
-  STATIC int GC_stderr = 2;
-  STATIC int GC_log = 2; /* stderr */
+  STATIC int GC_stdout = GC_DEFAULT_STDOUT_FD;
+  STATIC int GC_stderr = GC_DEFAULT_STDERR_FD;
+  STATIC int GC_log = GC_DEFAULT_STDERR_FD;
 #endif
 
 STATIC word GC_parse_mem_size_arg(const char *str)
@@ -857,12 +884,12 @@ GC_API void GC_CALL GC_init(void)
 #     ifdef GC_PRINT_VERBOSE_STATS
         /* This is useful for debugging and profiling on platforms with */
         /* missing getenv() (like WinCE).                               */
-        GC_print_stats = VERBOSE;
+        GC_real_print_stats = VERBOSE;
 #     else
         if (0 != GETENV("GC_PRINT_VERBOSE_STATS")) {
-          GC_print_stats = VERBOSE;
+          GC_real_print_stats = VERBOSE;
         } else if (0 != GETENV("GC_PRINT_STATS")) {
-          GC_print_stats = 1;
+          GC_real_print_stats = 1;
         }
 #     endif
 #     if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN)
@@ -1228,6 +1255,14 @@ GC_API void GC_CALL GC_enable_incremental(void)
   GC_init();
 }
 
+#if defined(THREADS) && (!defined(PARALLEL_MARK) || !defined(CAN_HANDLE_FORK))
+  GC_API void GC_CALL GC_start_mark_threads(void)
+  {
+    /* No action since parallel markers are disabled (or no POSIX fork). */
+    GC_ASSERT(I_DONT_HOLD_LOCK());
+  }
+#endif
+
 #if defined(MSWIN32) || defined(MSWINCE)
 
 # if defined(_MSC_VER) && defined(_DEBUG) && !defined(MSWINCE)
@@ -1436,6 +1471,14 @@ GC_API void GC_CALL GC_enable_incremental(void)
 # define WRITE(f, buf, len) GC_write(f, buf, len)
 #endif /* !MSWIN32 && !OS2 && !MACOS */
 
+#ifdef GC_ANDROID_LOG
+# include <android/log.h>
+
+# ifndef GC_ANDROID_LOG_TAG
+#   define GC_ANDROID_LOG_TAG "BDWGC"
+# endif
+#endif
+
 #define BUFSZ 1024
 
 #ifdef NO_VSNPRINTF
@@ -1455,45 +1498,111 @@ GC_API void GC_CALL GC_enable_incremental(void)
 /* Floating point arguments and formats should be avoided, since FP       */
 /* conversion is more likely to allocate memory.                          */
 /* Assumes that no more than BUFSZ-1 characters are written at once.      */
-#define GC_PRINTF_IMPL(f, f_name, format) { \
+#define GC_PRINTF_FILLBUF(buf, format) { \
           va_list args; \
-          char buf[BUFSZ + 1]; \
           va_start(args, format); \
-          buf[BUFSZ] = 0x15; \
-          (void)vsnprintf(buf, BUFSZ, format, args); \
+          (buf)[sizeof(buf) - 1] = 0x15; /* guard */ \
+          (void)vsnprintf(buf, sizeof(buf) - 1, format, args); \
           va_end(args); \
-          if (buf[BUFSZ] != 0x15) \
+          if ((buf)[sizeof(buf) - 1] != 0x15) \
             ABORT("GC_printf clobbered stack"); \
-          if (WRITE(f, buf, strlen(buf)) < 0) \
-            ABORT("write to " f_name " failed"); \
         }
 
 void GC_printf(const char *format, ...)
 {
-    if (GC_quiet) return;
+    char buf[BUFSZ + 1];
 
-    GC_PRINTF_IMPL(GC_stdout, "stdout", format);
+#   ifdef GC_ANDROID_LOG
+      GC_PRINTF_FILLBUF(buf, format);
+      __android_log_write(ANDROID_LOG_DEBUG, GC_ANDROID_LOG_TAG, buf);
+      if (GC_stdout == GC_DEFAULT_STDOUT_FD)
+        return; /* skip duplicate write to stdout */
+#   endif
+    if (!GC_quiet) {
+#     ifndef GC_ANDROID_LOG
+        GC_PRINTF_FILLBUF(buf, format);
+#     endif
+      if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
+        ABORT("write to stdout failed");
+    }
 }
 
 void GC_err_printf(const char *format, ...)
 {
-    GC_PRINTF_IMPL(GC_stderr, "stderr", format);
+    char buf[BUFSZ + 1];
+
+    GC_PRINTF_FILLBUF(buf, format);
+    GC_err_puts(buf);
 }
 
-void GC_log_printf(const char *format, ...)
-{
-    GC_PRINTF_IMPL(GC_log, "log", format);
-}
+#ifndef GC_ANDROID_LOG
 
-/* This is equivalent to GC_err_printf("%s",s). */
+  void GC_log_printf(const char *format, ...)
+  {
+    char buf[BUFSZ + 1];
+
+    GC_PRINTF_FILLBUF(buf, format);
+    if (WRITE(GC_log, buf, strlen(buf)) < 0)
+      ABORT("write to GC log failed");
+  }
+
+# define GC_warn_printf GC_err_printf
+
+#else
+
+# define GC_LOG_PRINTF_IMPL(loglevel, fileLogCond, format) \
+        { \
+          char buf[BUFSZ + 1]; \
+          GC_PRINTF_FILLBUF(buf, format); \
+          __android_log_write(loglevel, GC_ANDROID_LOG_TAG, buf); \
+          if (GC_log != GC_DEFAULT_STDERR_FD && (fileLogCond) \
+              && WRITE(GC_log, buf, strlen(buf)) < 0) \
+            ABORT("write to GC log file failed"); \
+        }
+
+  void GC_log_printf(const char *format, ...)
+  {
+    GC_LOG_PRINTF_IMPL(ANDROID_LOG_DEBUG, TRUE, format);
+  }
+
+  GC_INNER void GC_stats_log_printf(const char *format, ...)
+  {
+    GC_LOG_PRINTF_IMPL(ANDROID_LOG_INFO, GC_real_print_stats != 0, format);
+  }
+
+  GC_INNER void GC_verbose_log_printf(const char *format, ...)
+  {
+    GC_LOG_PRINTF_IMPL(ANDROID_LOG_VERBOSE, GC_real_print_stats == VERBOSE,
+                       format);
+  }
+
+  STATIC void GC_warn_printf(const char *format, ...)
+  {
+    char buf[BUFSZ + 1];
+
+    GC_PRINTF_FILLBUF(buf, format);
+    __android_log_write(ANDROID_LOG_WARN, GC_ANDROID_LOG_TAG, buf);
+    if (GC_real_print_stats && GC_stderr != GC_DEFAULT_STDERR_FD
+        && WRITE(GC_stderr, buf, strlen(buf)) < 0)
+      ABORT("write to stderr failed");
+  }
+
+#endif /* GC_ANDROID_LOG */
+
 void GC_err_puts(const char *s)
 {
+#   ifdef GC_ANDROID_LOG
+      __android_log_write(ANDROID_LOG_ERROR, GC_ANDROID_LOG_TAG, s);
+      if (GC_stderr == GC_DEFAULT_STDERR_FD)
+        return; /* skip duplicate write to stderr */
+#   endif
     if (WRITE(GC_stderr, s, strlen(s)) < 0) ABORT("write to stderr failed");
 }
 
 STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
 {
-    GC_err_printf(msg, arg);
+    /* TODO: Add assertion on arg comply with msg (format).     */
+    GC_warn_printf(msg, arg);
 }
 
 GC_INNER GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
@@ -1574,9 +1683,12 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
         if (WRITE(GC_stderr, (void *)msg, strlen(msg)) >= 0)
           (void)WRITE(GC_stderr, (void *)("\n"), 1);
       }
+#   ifdef GC_ANDROID_LOG
+      __android_log_assert("*" /* cond */, GC_ANDROID_LOG_TAG, "%s\n", msg);
+#   endif
     }
 
-#   ifndef NO_DEBUGGING
+#   if !defined(NO_DEBUGGING) && !defined(GC_ANDROID_LOG)
       if (GETENV("GC_LOOP_ON_ABORT") != NULL) {
             /* In many cases it's easier to debug a running process.    */
             /* It's arguably nicer to sleep, but that makes it harder   */

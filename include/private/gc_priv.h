@@ -476,9 +476,10 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #   elif defined(MSWINCE) && defined(NO_DEBUGGING)
 #     define ABORT(msg) (GC_on_abort(msg), ExitProcess(-1))
 #   elif defined(MSWIN32) || defined(MSWINCE)
-#     define ABORT(msg) (GC_on_abort(msg), DebugBreak())
-                /* Note that on a WinCE box, this could be silently     */
-                /* ignored (i.e., the program is not aborted).          */
+#     define ABORT(msg) { GC_on_abort(msg); DebugBreak(); }
+                /* Note that: on a WinCE box, this could be silently    */
+                /* ignored (i.e., the program is not aborted);          */
+                /* DebugBreak is a statement in some toolchains.        */
 #   else
 #     define ABORT(msg) (GC_on_abort(msg), abort())
 #   endif /* !MSWIN32 */
@@ -1027,7 +1028,11 @@ struct roots {
 #     define MAX_HEAP_SECTS 768         /* Separately added heap sections. */
 #   endif
 # elif defined(SMALL_CONFIG) && !defined(USE_PROC_FOR_LIBRARIES)
-#   define MAX_HEAP_SECTS 128           /* Roughly 256MB (128*2048*1K)  */
+#   if defined(PARALLEL_MARK) && (defined(MSWIN32) || defined(CYGWIN32))
+#     define MAX_HEAP_SECTS 384
+#   else
+#     define MAX_HEAP_SECTS 128         /* Roughly 256MB (128*2048*1K)  */
+#   endif
 # elif CPP_WORDSZ > 32
 #   define MAX_HEAP_SECTS 1024          /* Roughly 8GB                  */
 # else
@@ -1764,23 +1769,10 @@ GC_INNER void GC_collect_a_little_inner(int n);
                                 /* collection work, if appropriate.     */
                                 /* A unit is an amount appropriate for  */
                                 /* HBLKSIZE bytes of allocation.        */
-/* void * GC_generic_malloc(size_t lb, int k); */
-                                /* Allocate an object of the given      */
-                                /* kind.  By default, there are only    */
-                                /* a few kinds: composite(pointerfree), */
-                                /* atomic, uncollectable, etc.          */
-                                /* We claim it's possible for clever    */
-                                /* client code that understands GC      */
-                                /* internals to add more, e.g. to       */
-                                /* communicate object layout info       */
-                                /* to the collector.                    */
-                                /* The actual decl is in gc_mark.h.     */
-GC_INNER void * GC_generic_malloc_ignore_off_page(size_t b, int k);
-                                /* As above, but pointers past the      */
-                                /* first page of the resulting object   */
-                                /* are ignored.                         */
+
 GC_INNER void * GC_generic_malloc_inner(size_t lb, int k);
-                                /* Ditto, but I already hold lock, etc. */
+                                /* Allocate an object of the given      */
+                                /* kind but assuming lock already held. */
 GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k);
                                 /* Allocate an object, where            */
                                 /* the client guarantees that there     */
@@ -1885,16 +1877,25 @@ GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
                                   /* occasionally.  It is ok to read it */
                                   /* without acquiring the lock.        */
 
+#define VERBOSE 2
 #ifndef SMALL_CONFIG
   /* GC_print_stats should be visible to extra/MacOS.c. */
-  extern int GC_print_stats;    /* Nonzero generates basic GC log.      */
+# ifndef GC_ANDROID_LOG
+    extern int GC_print_stats;  /* Nonzero generates basic GC log.      */
                                 /* VERBOSE generates add'l messages.    */
-#else
+#   define GC_real_print_stats GC_print_stats
+# else
+#   ifndef GC_print_stats
+#     define GC_print_stats VERBOSE
+#   endif
+    extern int GC_real_print_stats;
+                /* Influences logging only if redirected to a file.     */
+# endif
+#else /* SMALL_CONFIG */
 # define GC_print_stats 0
   /* Will this remove the message character strings from the executable? */
   /* With a particular level of optimizations, it should...              */
 #endif
-#define VERBOSE 2
 
 #ifdef KEEP_BACK_PTRS
   GC_EXTERN long GC_backtraces;
@@ -1948,7 +1949,20 @@ GC_EXTERN GC_bool GC_print_back_height;
 #endif
 
 #ifdef CAN_HANDLE_FORK
-  GC_EXTERN GC_bool GC_handle_fork;
+  GC_EXTERN int GC_handle_fork;
+                /* Fork-handling mode:                                  */
+                /* 0 means no fork handling requested (but client could */
+                /* anyway call fork() provided it is surrounded with    */
+                /* GC_atfork_prepare/parent/child calls);               */
+                /* -1 means GC tries to use pthread_at_fork if it is    */
+                /* available (if it succeeds then GC_handle_fork value  */
+                /* is changed to 1), client should nonetheless surround */
+                /* fork() with GC_atfork_prepare/parent/child (for the  */
+                /* case of pthread_at_fork failure or absence);         */
+                /* 1 (or other values) means client fully relies on     */
+                /* pthread_at_fork (so if it is missing or failed then  */
+                /* abort occurs in GC_init), GC_atfork_prepare and the  */
+                /* accompanying routines are no-op in such a case.      */
 #endif
 
 #ifndef GC_DISABLE_INCREMENTAL
@@ -2018,7 +2032,8 @@ GC_API void GC_CALL GC_noop1(word);
 
 /* Logging and diagnostic output:       */
 /* GC_printf is used typically on client explicit print requests.       */
-/* It's recommended to put "\n" at 'format' string end (for atomicity). */
+/* For all GC_X_printf routines, it is recommended to put "\n" at       */
+/* 'format' string end (for output atomicity).                          */
 GC_API_PRIV void GC_printf(const char * format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
                         /* A version of printf that doesn't allocate,   */
@@ -2028,20 +2043,33 @@ GC_API_PRIV void GC_printf(const char * format, ...)
 GC_API_PRIV void GC_err_printf(const char * format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
 
+/* Basic logging routine.  Typically, GC_log_printf is called directly  */
+/* only inside various DEBUG_x blocks.                                  */
 #if defined(__cplusplus) && defined(SYMBIAN)
   extern "C" {
 #endif
-/* Logging routine.  Typically called only if GC_print_stats.  It is    */
-/* recommended to put "\n" at 'format' string end (for atomicity).      */
 GC_API_PRIV void GC_log_printf(const char * format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
 #if defined(__cplusplus) && defined(SYMBIAN)
   }
 #endif
 
-#define GC_COND_LOG_PRINTF if (!GC_print_stats) {} else GC_log_printf
+#ifndef GC_ANDROID_LOG
+  /* GC_stats_log_printf should be called only if GC_print_stats.       */
+# define GC_stats_log_printf GC_log_printf
+  /* GC_verbose_log_printf is called only if GC_print_stats is VERBOSE. */
+# define GC_verbose_log_printf GC_log_printf
+#else
+  GC_INNER void GC_stats_log_printf(const char *format, ...)
+                        GC_ATTR_FORMAT_PRINTF(1, 2);
+  GC_INNER void GC_verbose_log_printf(const char *format, ...)
+                        GC_ATTR_FORMAT_PRINTF(1, 2);
+#endif /* GC_ANDROID_LOG */
+
+/* Convenient macros for GC_stats/verbose_log_printf invocation.        */
+#define GC_COND_LOG_PRINTF if (!GC_print_stats) {} else GC_stats_log_printf
 #define GC_VERBOSE_LOG_PRINTF \
-                if (GC_print_stats != VERBOSE) {} else GC_log_printf
+                if (GC_print_stats != VERBOSE) {} else GC_verbose_log_printf
 
 void GC_err_puts(const char *s);
                         /* Write s to stderr, don't buffer, don't add   */

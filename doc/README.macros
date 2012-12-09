@@ -532,6 +532,8 @@ GC_ONLY_LOG_TO_FILE     Don't redirect GC stdout and stderr to the log file
   specified by GC_LOG_FILE environment variable.  Has effect only when the
   variable is set (to anything other than "0").
 
+GC_ANDROID_LOG (Android only)   Output error/debug information to Android log.
+
 GC_DONT_EXPAND  Don't expand the heap unless explicitly requested or forced to.
 
 GC_USE_ENTIRE_HEAP      Causes the non-incremental collector to use the

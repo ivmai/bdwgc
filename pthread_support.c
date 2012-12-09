@@ -390,16 +390,28 @@ STATIC void * GC_mark_thread(void * id)
 
 STATIC pthread_t GC_mark_threads[MAX_MARKERS];
 
-static void start_mark_threads(void)
+#ifdef CAN_HANDLE_FORK
+  static int available_markers_m1 = 0;
+# define start_mark_threads GC_start_mark_threads
+  GC_API void GC_CALL
+#else
+# define available_markers_m1 GC_markers_m1
+  static void
+#endif
+start_mark_threads(void)
 {
     int i;
     pthread_attr_t attr;
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
+#   ifdef CAN_HANDLE_FORK
+      if (available_markers_m1 <= 0 || GC_parallel) return;
+                /* Skip if parallel markers disabled or already started. */
+#   endif
+
     INIT_REAL_SYMS(); /* for pthread_create */
 
     if (0 != pthread_attr_init(&attr)) ABORT("pthread_attr_init failed");
-
     if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
         ABORT("pthread_attr_setdetachstate failed");
 
@@ -410,7 +422,6 @@ static void start_mark_threads(void)
 #     define MIN_STACK_SIZE (8*HBLKSIZE*sizeof(word))
       {
         size_t old_size;
-        int code;
 
         if (pthread_attr_getstacksize(&attr, &old_size) != 0)
           ABORT("pthread_attr_getstacksize failed");
@@ -420,18 +431,18 @@ static void start_mark_threads(void)
         }
       }
 #   endif /* HPUX || GC_DGUX386_THREADS */
-    for (i = 0; i < GC_markers_m1; ++i) {
+    for (i = 0; i < available_markers_m1; ++i) {
       if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
         WARN("Marker thread creation failed, errno = %" WARN_PRIdPTR "\n",
              errno);
         /* Don't try to create other marker threads.    */
-        GC_markers_m1 = i;
         break;
       }
     }
-    GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
+    GC_markers_m1 = i;
     pthread_attr_destroy(&attr);
+    GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
 }
 
 #endif /* PARALLEL_MARK */
@@ -666,6 +677,8 @@ STATIC void GC_remove_all_threads_but_me(void)
             /* GC_destroy_thread_local and GC_free_internal     */
             /* before update).                                  */
             me -> stop_info.mach_thread = mach_thread_self();
+#         elif defined(PLATFORM_ANDROID)
+            me -> kernel_id = gettid();
 #         endif
 #         if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
             /* Some TLS implementations might be not fork-friendly, so  */
@@ -930,7 +943,7 @@ IF_CANCEL(static int fork_cancel_state;)
                                 /* protected by allocation lock.        */
 
 /* Called before a fork()               */
-STATIC void GC_fork_prepare_proc(void)
+static void fork_prepare_proc(void)
 {
     /* Acquire all relevant locks, so that after releasing the locks    */
     /* the child will see a consistent state in which monitor           */
@@ -953,8 +966,8 @@ STATIC void GC_fork_prepare_proc(void)
 #     endif
 }
 
-/* Called in parent after a fork()      */
-STATIC void GC_fork_parent_proc(void)
+/* Called in parent after a fork() (even if the latter failed). */
+static void fork_parent_proc(void)
 {
 #   if defined(PARALLEL_MARK)
       if (GC_parallel)
@@ -965,7 +978,7 @@ STATIC void GC_fork_parent_proc(void)
 }
 
 /* Called in child after a fork()       */
-STATIC void GC_fork_child_proc(void)
+static void fork_child_proc(void)
 {
     /* Clean up the thread table, so that just our thread is left. */
 #   if defined(PARALLEL_MARK)
@@ -981,6 +994,31 @@ STATIC void GC_fork_child_proc(void)
     RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
 }
+
+  /* Routines for fork handling by client (no-op if pthread_atfork works). */
+  GC_API void GC_CALL GC_atfork_prepare(void)
+  {
+#   if defined(GC_DARWIN_THREADS) && defined(MPROTECT_VDB)
+      if (GC_dirty_maintained) {
+        GC_ASSERT(0 == GC_handle_fork);
+        ABORT("Unable to fork while mprotect_thread is running");
+      }
+#   endif
+    if (GC_handle_fork <= 0)
+      fork_prepare_proc();
+  }
+
+  GC_API void GC_CALL GC_atfork_parent(void)
+  {
+    if (GC_handle_fork <= 0)
+      fork_parent_proc();
+  }
+
+  GC_API void GC_CALL GC_atfork_child(void)
+  {
+    if (GC_handle_fork <= 0)
+      fork_child_proc();
+  }
 #endif /* CAN_HANDLE_FORK */
 
 #ifdef INCLUDE_LINUX_THREAD_DESCR
@@ -998,10 +1036,17 @@ GC_INNER void GC_thr_init(void)
   GC_ASSERT((word)&GC_threads % sizeof(word) == 0);
 # ifdef CAN_HANDLE_FORK
     /* Prepare for forks if requested.  */
-    if (GC_handle_fork
-        && pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
-                          GC_fork_child_proc) != 0)
-      ABORT("pthread_atfork failed");
+    if (GC_handle_fork) {
+#     ifdef CAN_CALL_ATFORK
+        if (pthread_atfork(fork_prepare_proc, fork_parent_proc,
+                           fork_child_proc) == 0) {
+          /* Handlers successfully registered.  */
+          GC_handle_fork = 1;
+        } else
+#     endif
+      /* else */ if (GC_handle_fork != -1)
+        ABORT("pthread_atfork failed");
+    }
 # endif
 # ifdef INCLUDE_LINUX_THREAD_DESCR
     /* Explicitly register the region including the address     */
@@ -1056,36 +1101,37 @@ GC_INNER void GC_thr_init(void)
     WARN("GC_get_nprocs() returned %" WARN_PRIdPTR "\n", GC_nprocs);
     GC_nprocs = 2; /* assume dual-core */
 #   ifdef PARALLEL_MARK
-      GC_parallel = FALSE; /* but use only one marker */
+      available_markers_m1 = 0; /* but use only one marker */
 #   endif
   } else {
 #  ifdef PARALLEL_MARK
      {
        char * markers_string = GETENV("GC_MARKERS");
+       int markers_m1;
+
        if (markers_string != NULL) {
-         GC_markers_m1 = atoi(markers_string) - 1;
-         if (GC_markers_m1 >= MAX_MARKERS) {
+         markers_m1 = atoi(markers_string) - 1;
+         if (markers_m1 >= MAX_MARKERS) {
            WARN("Limiting number of mark threads\n", 0);
-           GC_markers_m1 = MAX_MARKERS - 1;
+           markers_m1 = MAX_MARKERS - 1;
          }
        } else {
-         GC_markers_m1 = GC_nprocs - 1;
+         markers_m1 = GC_nprocs - 1;
 #        ifdef GC_MIN_MARKERS
            /* This is primarily for targets without getenv().   */
-           if (GC_markers_m1 < GC_MIN_MARKERS - 1)
-             GC_markers_m1 = GC_MIN_MARKERS - 1;
+           if (markers_m1 < GC_MIN_MARKERS - 1)
+             markers_m1 = GC_MIN_MARKERS - 1;
 #        endif
-         if (GC_markers_m1 >= MAX_MARKERS)
-           GC_markers_m1 = MAX_MARKERS - 1; /* silently limit the value */
+         if (markers_m1 >= MAX_MARKERS)
+           markers_m1 = MAX_MARKERS - 1; /* silently limit the value */
        }
+       available_markers_m1 = markers_m1;
      }
 #  endif
   }
+  GC_COND_LOG_PRINTF("Number of processors = %d\n", GC_nprocs);
 # ifdef PARALLEL_MARK
-    GC_COND_LOG_PRINTF("Number of processors = %d,"
-                       " number of marker threads = %d\n",
-                       GC_nprocs, GC_markers_m1 + 1);
-    if (GC_markers_m1 <= 0) {
+    if (available_markers_m1 <= 0) {
       /* Disable parallel marking.      */
       GC_parallel = FALSE;
       GC_COND_LOG_PRINTF(
@@ -1093,13 +1139,9 @@ GC_INNER void GC_thr_init(void)
     } else {
       /* Disable true incremental collection, but generational is OK.   */
       GC_time_limit = GC_TIME_UNLIMITED;
-    }
-    /* If we are using a parallel marker, actually start helper threads. */
-    if (GC_parallel) {
+      /* If we are using a parallel marker, actually start helper threads. */
       start_mark_threads();
     }
-# else
-    GC_COND_LOG_PRINTF("Number of processors = %d\n", GC_nprocs);
 # endif
 }
 

@@ -165,11 +165,10 @@ void * realloc(void * p, size_t lb)
 # undef GC_debug_realloc_replacement
 # endif /* REDIRECT_REALLOC */
 
-
 /* Allocate memory such that only pointers to near the          */
 /* beginning of the object are considered.                      */
-/* We avoid holding allocation lock while we clear memory.      */
-GC_INNER void * GC_generic_malloc_ignore_off_page(size_t lb, int k)
+/* We avoid holding allocation lock while we clear the memory.  */
+GC_API void * GC_CALL GC_generic_malloc_ignore_off_page(size_t lb, int k)
 {
     void *result;
     size_t lg;

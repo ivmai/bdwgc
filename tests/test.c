@@ -89,14 +89,24 @@
 # if (!defined(THREADS) || !defined(HANDLE_FORK) \
       || (defined(DARWIN) && defined(MPROTECT_VDB) \
           && !defined(NO_INCREMENTAL) && !defined(MAKE_BACK_GRAPH))) \
-     && !defined(NO_TEST_HANDLE_FORK)
+     && !defined(NO_TEST_HANDLE_FORK) && !defined(TEST_HANDLE_FORK) \
+     && !defined(TEST_FORK_WITHOUT_ATFORK)
 #   define NO_TEST_HANDLE_FORK
 # endif
 
 # ifndef NO_TEST_HANDLE_FORK
 #   include <unistd.h>
-#   define INIT_FORK_SUPPORT GC_set_handle_fork(1)
-# else
+#   ifdef HANDLE_FORK
+#     define INIT_FORK_SUPPORT GC_set_handle_fork(1)
+                /* Causes abort in GC_init on pthread_atfork failure.   */
+#   elif !defined(TEST_FORK_WITHOUT_ATFORK)
+#     define INIT_FORK_SUPPORT GC_set_handle_fork(-1)
+                /* Passing -1 implies fork() should be as well manually */
+                /* surrounded with GC_atfork_prepare/parent/child.      */
+#   endif
+# endif
+
+# ifndef INIT_FORK_SUPPORT
 #   define INIT_FORK_SUPPORT /* empty */
 # endif
 
@@ -522,7 +532,10 @@ void check_marks_int_list(sexpr x)
     {
         DWORD thread_id;
         HANDLE h;
-        h = GC_CreateThread(NULL, 0, tiny_reverse_test, 0, 0, &thread_id);
+        h = GC_CreateThread((SECURITY_ATTRIBUTES *)NULL, (word)0,
+                            tiny_reverse_test, NULL, (DWORD)0, &thread_id);
+                                /* Explicitly specify types of the      */
+                                /* arguments to test the prototype.     */
         if (h == (HANDLE)NULL) {
             GC_printf("Small thread creation failed %d\n",
                           (int)GetLastError());
@@ -1298,6 +1311,32 @@ void run_one_test(void)
         GC_free(GC_malloc_atomic(0));
         GC_free(GC_malloc(0));
         GC_free(GC_malloc_atomic(0));
+#   ifndef NO_TEST_HANDLE_FORK
+        GC_atfork_prepare();
+        if (fork() != 0) {
+          GC_atfork_parent();
+          if (print_stats)
+            GC_log_printf("Forked child process (or failed)\n");
+        } else {
+          GC_atfork_child();
+          if (print_stats)
+            GC_log_printf("Started a child process\n");
+#         ifdef THREADS
+#           ifdef PARALLEL_MARK
+              GC_gcollect(); /* no parallel markers */
+#           endif
+            GC_start_mark_threads();
+#         endif
+          GC_gcollect();
+#         ifdef THREADS
+            tiny_reverse_test(0);
+            GC_gcollect();
+#         endif
+          if (print_stats)
+            GC_log_printf("Finished a child process\n");
+          exit(0);
+        }
+#   endif
     /* Repeated list reversal test. */
         GET_TIME(start_time);
         reverse_test();
@@ -1335,16 +1374,6 @@ void run_one_test(void)
     /* GC_allocate_ml and GC_need_to_lock are no longer exported, and   */
     /* AO_fetch_and_add1() may be unavailable to update a counter.      */
     (void)GC_call_with_alloc_lock(inc_int_counter, &n_tests);
-#   ifndef NO_TEST_HANDLE_FORK
-      if (fork() == 0) {
-        GC_gcollect();
-        tiny_reverse_test(0);
-        GC_gcollect();
-        if (print_stats)
-          GC_log_printf("Finished a child process\n");
-        exit(0);
-      }
-#   endif
     if (print_stats)
       GC_log_printf("Finished %p\n", (void *)&start_time);
 }

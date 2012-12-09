@@ -2656,13 +2656,25 @@
 #endif
 
 #if !defined(CAN_HANDLE_FORK) && !defined(NO_HANDLE_FORK) \
-    && ((defined(GC_PTHREADS) && !defined(HURD) && !defined(NACL) \
-         && !defined(PLATFORM_ANDROID) && !defined(GC_WIN32_PTHREADS) \
-         && !defined(USE_WINALLOC)) \
+    && !defined(HAVE_NO_FORK) \
+    && ((defined(GC_PTHREADS) && !defined(NACL) \
+         && !defined(GC_WIN32_PTHREADS) && !defined(USE_WINALLOC)) \
         || (defined(DARWIN) && defined(MPROTECT_VDB)) || defined(HANDLE_FORK))
   /* Attempts (where supported and requested) to make GC_malloc work in */
   /* a child process fork'ed from a multi-threaded parent.              */
 # define CAN_HANDLE_FORK
+#endif
+
+#if defined(CAN_HANDLE_FORK) && !defined(CAN_CALL_ATFORK) \
+    && !defined(HURD) && !defined(PLATFORM_ANDROID)
+  /* Have working pthread_atfork().     */
+# define CAN_CALL_ATFORK
+#endif
+
+#if !defined(CAN_HANDLE_FORK) && !defined(HAVE_NO_FORK) \
+    && (defined(MSWIN32) || defined(MSWINCE) || defined(DOS4GW) \
+        || defined(OS2) || defined(SYMBIAN) /* and probably others ... */)
+# define HAVE_NO_FORK
 #endif
 
 #if !defined(USE_MARK_BITS) && !defined(USE_MARK_BYTES) \
