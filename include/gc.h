@@ -684,8 +684,8 @@ GC_API void GC_CALL GC_disable(void);
 /* (i.e., GC_dont_gc value is non-zero).  Does not acquire the lock.    */
 GC_API int GC_CALL GC_is_disabled(void);
 
-/* Re-enable garbage collection.  GC_disable() and GC_enable() calls    */
-/* nest.  Garbage collection is enabled if the number of calls to both  */
+/* Try to re-enable garbage collection.  GC_disable() and GC_enable()   */
+/* calls nest.  Garbage collection is enabled if the number of calls to */
 /* both functions is equal.                                             */
 GC_API void GC_CALL GC_enable(void);
 
