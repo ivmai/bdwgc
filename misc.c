@@ -1726,7 +1726,9 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 GC_API void GC_CALL GC_enable(void)
 {
     DCL_LOCK_STATE;
+
     LOCK();
+    GC_ASSERT(GC_dont_gc != 0); /* ensure no counter underflow */
     GC_dont_gc--;
     UNLOCK();
 }
