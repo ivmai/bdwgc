@@ -729,9 +729,15 @@ size_t counter = 0;
 
 # if !defined(MACOS)
   GC_FAR GC_word live_indicators[MAX_FINALIZED] = {0};
+# ifndef GC_LONG_REFS_NOT_NEEDED
+    GC_FAR void *live_long_refs[MAX_FINALIZED] = {  NULL };
+# endif
 #else
   /* Too big for THINK_C. have to allocate it dynamically. */
   GC_word *live_indicators = 0;
+# ifndef GC_LONG_REFS_NOT_NEEDED
+#   define GC_LONG_REFS_NOT_NEEDED
+# endif
 #endif
 
 int live_indicators_count = 0;
@@ -832,6 +838,36 @@ tn * mktree(int n)
                 GC_printf("GC_general_register_disappearing_link failed 2\n");
                 FAIL;
         }
+#       ifndef GC_LONG_REFS_NOT_NEEDED
+          if (GC_REGISTER_LONG_LINK(&live_long_refs[my_index], result) != 0) {
+            GC_printf("GC_register_long_link failed\n");
+            FAIL;
+          }
+          if (GC_move_long_link(&live_long_refs[my_index],
+                                &live_long_refs[my_index]) != GC_SUCCESS) {
+            GC_printf("GC_move_long_link(link,link) failed\n");
+            FAIL;
+          }
+          new_link = live_long_refs[my_index];
+          if (GC_move_long_link(&live_long_refs[my_index],
+                                &new_link) != GC_SUCCESS) {
+            GC_printf("GC_move_long_link(new_link) failed\n");
+            FAIL;
+          }
+          if (GC_unregister_long_link(&new_link) == 0) {
+            GC_printf("GC_unregister_long_link failed\n");
+            FAIL;
+          }
+          if (GC_move_long_link(&live_long_refs[my_index],
+                                &new_link) != GC_NOT_FOUND) {
+            GC_printf("GC_move_long_link(new_link) failed 2\n");
+            FAIL;
+          }
+          if (GC_REGISTER_LONG_LINK(&live_long_refs[my_index], result) != 0) {
+            GC_printf("GC_register_long_link failed 2\n");
+            FAIL;
+          }
+#       endif
 #     endif
         GC_reachable_here(result);
     }
@@ -1321,6 +1357,9 @@ void check_heap_stats(void)
     int i;
 #   ifndef GC_NO_FINALIZATION
       int still_live;
+#     ifndef GC_LONG_REFS_NOT_NEEDED
+        int still_long_live = 0;
+#     endif
 #     ifdef FINALIZE_ON_DEMAND
         int late_finalize_count = 0;
 #     endif
@@ -1409,6 +1448,11 @@ void check_heap_stats(void)
         if (live_indicators[i] != 0) {
             still_live++;
         }
+#       ifndef GC_LONG_REFS_NOT_NEEDED
+          if (live_long_refs[i] != NULL) {
+              still_long_live++;
+          }
+#       endif
       }
       i = finalizable_count - finalized_count - still_live;
       if (0 != i) {
@@ -1420,6 +1464,11 @@ void check_heap_stats(void)
             GC_printf("\tSlightly suspicious, but probably OK\n");
         }
       }
+#     ifndef GC_LONG_REFS_NOT_NEEDED
+        if (0 != still_long_live) {
+          GC_printf("%d 'long' links remain\n", still_long_live);
+        }
+#     endif
 #   endif
     GC_printf("Total number of bytes allocated is %lu\n",
                   (unsigned long)GC_get_total_bytes());
