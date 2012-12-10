@@ -1345,8 +1345,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
   {
       BOOL res;
       DWORD written;
-#     if (defined(THREADS) && defined(GC_ASSERTIONS)) \
-         || !defined(GC_PRINT_VERBOSE_STATS)
+#     if defined(THREADS) && defined(GC_ASSERTIONS)
         static GC_bool inside_write = FALSE;
                         /* to prevent infinite recursion at abort.      */
         if (inside_write)
@@ -1362,18 +1361,17 @@ GC_API void GC_CALL GC_enable_incremental(void)
           ABORT("Assertion failure: GC_write called with write_disabled");
         }
 #     endif
-      if (GC_log == INVALID_HANDLE_VALUE) {
-          IF_NEED_TO_LOCK(LeaveCriticalSection(&GC_write_cs));
-          return -1;
-      } else if (GC_log == 0) {
+      if (GC_log == 0) {
         GC_log = GC_CreateLogFile();
-        /* Ignore open log failure if the collector is built with       */
-        /* print_stats always set on.                                   */
-#       ifndef GC_PRINT_VERBOSE_STATS
-          if (GC_log == INVALID_HANDLE_VALUE) {
-            inside_write = TRUE;
-            ABORT("Open of log file failed");
-          }
+      }
+      if (GC_log == INVALID_HANDLE_VALUE) {
+        IF_NEED_TO_LOCK(LeaveCriticalSection(&GC_write_cs));
+#       ifdef NO_DEBUGGING
+          /* Ignore open log failure (e.g., it might be caused by       */
+          /* read-only folder of the client application).               */
+          return 0;
+#       else
+          return -1;
 #       endif
       }
       res = WriteFile(GC_log, buf, (DWORD)len, &written, NULL);
