@@ -1343,7 +1343,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
   STATIC int GC_write(const char *buf, size_t len)
   {
-      BOOL tmp;
+      BOOL res;
       DWORD written;
 #     if (defined(THREADS) && defined(GC_ASSERTIONS)) \
          || !defined(GC_PRINT_VERBOSE_STATS)
@@ -1376,9 +1376,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
           }
 #       endif
       }
-      tmp = WriteFile(GC_log, buf, (DWORD)len, &written, NULL);
-      if (!tmp)
-          DebugBreak();
+      res = WriteFile(GC_log, buf, (DWORD)len, &written, NULL);
 #     if defined(_MSC_VER) && defined(_DEBUG)
 #         ifdef MSWINCE
               /* There is no CrtDbgReport() in WinCE */
@@ -1395,7 +1393,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #         endif
 #     endif
       IF_NEED_TO_LOCK(LeaveCriticalSection(&GC_write_cs));
-      return tmp ? (int)written : -1;
+      return res ? (int)written : -1;
   }
 
   /* FIXME: This is pretty ugly ... */
