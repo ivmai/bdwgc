@@ -1555,9 +1555,8 @@ void GC_err_printf(const char *format, ...)
           char buf[BUFSZ + 1]; \
           GC_PRINTF_FILLBUF(buf, format); \
           __android_log_write(loglevel, GC_ANDROID_LOG_TAG, buf); \
-          if (GC_log != GC_DEFAULT_STDERR_FD && (fileLogCond) \
-              && WRITE(GC_log, buf, strlen(buf)) < 0) \
-            ABORT("write to GC log file failed"); \
+          if (GC_log != GC_DEFAULT_STDERR_FD && (fileLogCond)) \
+            (void)WRITE(GC_log, buf, strlen(buf)); /* ignore errors */ \
         }
 
   void GC_log_printf(const char *format, ...)
@@ -1582,9 +1581,8 @@ void GC_err_printf(const char *format, ...)
 
     GC_PRINTF_FILLBUF(buf, format);
     __android_log_write(ANDROID_LOG_WARN, GC_ANDROID_LOG_TAG, buf);
-    if (GC_real_print_stats && GC_stderr != GC_DEFAULT_STDERR_FD
-        && WRITE(GC_stderr, buf, strlen(buf)) < 0)
-      ABORT("write to stderr failed");
+    if (GC_real_print_stats && GC_stderr != GC_DEFAULT_STDERR_FD)
+      (void)WRITE(GC_stderr, buf, strlen(buf)); /* ignore errors */
   }
 
 #endif /* GC_ANDROID_LOG */
@@ -1596,7 +1594,7 @@ void GC_err_puts(const char *s)
       if (GC_stderr == GC_DEFAULT_STDERR_FD)
         return; /* skip duplicate write to stderr */
 #   endif
-    if (WRITE(GC_stderr, s, strlen(s)) < 0) ABORT("write to stderr failed");
+    (void)WRITE(GC_stderr, s, strlen(s)); /* ignore errors */
 }
 
 STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
