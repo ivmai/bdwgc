@@ -367,7 +367,7 @@ STATIC void GC_maybe_gc(void)
 #         endif
           if (GC_need_full_gc || n_partial_gcs >= GC_full_freq) {
             GC_COND_LOG_PRINTF(
-                "***>Full mark for collection %lu after %lu allocd bytes\n",
+                "***>Full mark for collection #%lu after %lu allocd bytes\n",
                 (unsigned long)GC_gc_no + 1, (unsigned long)GC_bytes_allocd);
             GC_promote_black_lists();
             (void)GC_reclaim_all((GC_stop_func)0, TRUE);
@@ -609,7 +609,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   endif
         /* Output blank line for convenience here */
     GC_COND_LOG_PRINTF(
-              "\n--> Marking for collection %lu after %lu allocated bytes\n",
+              "\n--> Marking for collection #%lu after %lu allocated bytes\n",
               (unsigned long)GC_gc_no + 1, (unsigned long) GC_bytes_allocd);
 #   ifdef MAKE_BACK_GRAPH
       if (GC_print_back_height) {
@@ -638,7 +638,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         }
 
     GC_gc_no++;
-    GC_COND_LOG_PRINTF("GC %lu reclaimed %ld bytes --> heapsize: %lu"
+    GC_COND_LOG_PRINTF("GC #%lu reclaimed %ld bytes --> heapsize: %lu"
                        " bytes" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
                        (unsigned long)GC_gc_no, (long)GC_bytes_found,
                        (unsigned long)GC_heapsize /*, */
