@@ -1162,8 +1162,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     space = GET_MEM(bytes);
     GC_add_to_our_memory((ptr_t)space, bytes);
     if (space == 0) {
-        GC_COND_LOG_PRINTF("Failed to expand heap by %lu bytes\n",
-                           (unsigned long)bytes);
+        WARN("Failed to expand heap by %" WARN_PRIdPTR " bytes\n", bytes);
         return(FALSE);
     }
     GC_COND_LOG_PRINTF(

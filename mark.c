@@ -565,8 +565,8 @@ static void alloc_mark_stack(size_t);
 
 handle_ex:
     /* Exception handler starts here for all cases. */
-      GC_COND_LOG_PRINTF(
-          "Caught ACCESS_VIOLATION in marker; memory mapping disappeared\n");
+      WARN("Caught ACCESS_VIOLATION in marker;"
+           " memory mapping disappeared\n", 0);
 
       /* We have bad roots on the stack.  Discard mark stack.   */
       /* Rescan from marked objects.  Redetermine roots.        */
@@ -1221,8 +1221,7 @@ static void alloc_mark_stack(size_t n)
           GC_COND_LOG_PRINTF("Grew mark stack to %lu frames\n",
                              (unsigned long)GC_mark_stack_size);
         } else {
-          GC_COND_LOG_PRINTF("Failed to grow mark stack to %lu frames\n",
-                             (unsigned long)n);
+          WARN("Failed to grow mark stack to %" WARN_PRIdPTR " frames\n", n);
         }
     } else {
         if (new_stack == 0) {

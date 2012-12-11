@@ -144,7 +144,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
         result = (ptr_t)GET_MEM(bytes_to_get);
         GC_add_to_our_memory(result, bytes_to_get);
         if (result == 0) {
-            GC_COND_LOG_PRINTF("Out of memory - trying to allocate less\n");
+            WARN("Out of memory - trying to allocate less\n", 0);
             scratch_free_ptr -= bytes;
             bytes_to_get = bytes;
 #           ifdef USE_MMAP
