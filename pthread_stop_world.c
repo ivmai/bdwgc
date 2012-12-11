@@ -493,11 +493,8 @@ STATIC int GC_suspend_all(void)
                 case 0:
                     break;
                 default:
-#                   ifdef DEBUG_THREADS
-                      GC_log_printf("pthread_kill failed at suspend,"
-                                    " errcode=%d\n", result);
-#                   endif
-                    ABORT("pthread_kill failed");
+                    ABORT_ARG1("pthread_kill failed at suspend",
+                               ": errcode= %d", result);
               }
 #           endif
         }
@@ -820,11 +817,8 @@ GC_INNER void GC_start_world(void)
                 case 0:
                     break;
                 default:
-#                   ifdef DEBUG_THREADS
-                      GC_log_printf("pthread_kill failed at resume,"
-                                    " errcode=%d\n", result);
-#                   endif
-                    ABORT("pthread_kill failed");
+                    ABORT_ARG1("pthread_kill failed at resume",
+                               ": errcode= %d", result);
             }
 #         endif
         }
@@ -834,8 +828,8 @@ GC_INNER void GC_start_world(void)
       for (i = 0; i < n_live_threads; i++) {
         while (0 != (code = sem_wait(&GC_restart_ack_sem))) {
           if (errno != EINTR) {
-            GC_COND_LOG_PRINTF("sem_wait() returned %d\n", code);
-            ABORT("sem_wait() for restart handler failed");
+            ABORT_ARG1("sem_wait() for restart handler failed",
+                       ": errcode= %d", code);
           }
         }
       }

@@ -753,8 +753,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
       }
     }
     if (ioctl(fd, PIOCNMAP, &needed_sz) < 0) {
-        GC_err_printf("fd = %d, errno = %d\n", fd, errno);
-        ABORT("/proc PIOCNMAP ioctl failed");
+        ABORT_ARG2("/proc PIOCNMAP ioctl failed",
+                   ": fd = %d, errno = %d", fd, errno);
     }
     if (needed_sz >= current_sz) {
         current_sz = needed_sz * 2 + 1;
@@ -765,9 +765,9 @@ GC_INNER void GC_register_dynamic_libraries(void)
           ABORT("Insufficient memory for address map");
     }
     if (ioctl(fd, PIOCMAP, addr_map) < 0) {
-        GC_err_printf("fd = %d, errno = %d, needed_sz = %d, addr_map = %p\n",
-                        fd, errno, needed_sz, addr_map);
-        ABORT("/proc PIOCMAP ioctl failed");
+        ABORT_ARG3("/proc PIOCMAP ioctl failed",
+                   ": errcode= %d, needed_sz= %d, addr_map= %p",
+                   errno, needed_sz, addr_map);
     };
     if (GC_n_heap_sects > 0) {
         heap_end = GC_heap_sects[GC_n_heap_sects-1].hs_start
@@ -1015,16 +1015,12 @@ GC_INNER void GC_register_dynamic_libraries(void)
         if (moduleid == LDR_NULL_MODULE)
             break;    /* No more modules */
 
-      /* Check status AFTER checking moduleid because */
-      /* of a bug in the non-shared ldr_next_module stub */
+      /* Check status AFTER checking moduleid because       */
+      /* of a bug in the non-shared ldr_next_module stub.   */
         if (status != 0) {
-          GC_COND_LOG_PRINTF("dynamic_load: status = %d\n", status);
-          if (errno < sys_nerr) {
-            GC_COND_LOG_PRINTF("dynamic_load: %s\n", sys_errlist[errno]);
-          } else {
-            GC_COND_LOG_PRINTF("dynamic_load: err_code = %d\n", errno);
-          }
-          ABORT("ldr_next_module failed");
+          ABORT_ARG3("ldr_next_module failed",
+                     ": status= %d, errcode= %d (%s)", status, errno,
+                     errno < sys_nerr ? sys_errlist[errno] : "");
         }
 
       /* Get the module information */
@@ -1109,12 +1105,9 @@ GC_INNER void GC_register_dynamic_libraries(void)
           if (errno == EINVAL) {
             break; /* Moved past end of shared library list --> finished */
           } else {
-            if (errno < sys_nerr) {
-              GC_COND_LOG_PRINTF("dynamic_load: %s\n", sys_errlist[errno]);
-            } else {
-              GC_COND_LOG_PRINTF("dynamic_load: err_code = %d\n", errno);
-            }
-            ABORT("shl_get failed");
+            ABORT_ARG3("shl_get failed",
+                       ": status= %d, errcode= %d (%s)", status, errno,
+                       errno < sys_nerr ? sys_errlist[errno] : "");
           }
 #        endif
         }

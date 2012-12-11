@@ -736,9 +736,8 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
         AO_t *next;
 
         if (!GC_is_marked(p)) {
-          GC_err_printf("Unmarked object %p on list %p\n",
-                        (void *)p, (void *)list);
-          ABORT("Unmarked local free list entry");
+          ABORT_ARG2("Unmarked local free list entry",
+                     ": object %p on list %p", (void *)p, (void *)list);
         }
 
         /* While traversing the free-list, it re-reads the pointer to   */

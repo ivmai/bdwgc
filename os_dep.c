@@ -265,12 +265,10 @@ GC_INNER char * GC_get_maps(void)
               return 0;
 #           ifdef THREADS
               if (maps_size > old_maps_size) {
-                GC_COND_LOG_PRINTF(
-                        "Unexpected maps size growth from %lu to %lu\n",
-                        (unsigned long)old_maps_size,
-                        (unsigned long)maps_size);
-                ABORT("Unexpected asynchronous /proc/self/maps growth: "
-                      "unregistered thread?");
+                ABORT_ARG2("Unexpected asynchronous /proc/self/maps growth "
+                           "(unregistered thread?)", " from %lu to %lu",
+                           (unsigned long)old_maps_size,
+                           (unsigned long)maps_size);
               }
 #           endif
         } while (maps_size >= maps_buf_sz || maps_size < old_maps_size);
@@ -1476,51 +1474,39 @@ void GC_register_data_segments(void)
     }
     myexefile = fopen(path, "rb");
     if (myexefile == 0) {
-        GC_COND_LOG_PRINTF("Could not open executable %s\n", path);
-        ABORT("Failed to open executable");
+        ABORT_ARG1("Failed to open executable", ": %s", path);
     }
     if (fread((char *)(&hdrdos), 1, sizeof(hdrdos), myexefile)
           < sizeof(hdrdos)) {
-        GC_COND_LOG_PRINTF("Could not read MSDOS header from %s\n", path);
-        ABORT("Couldn't read MSDOS header");
+        ABORT_ARG1("Could not read MSDOS header", " from: %s", path);
     }
     if (E_MAGIC(hdrdos) != EMAGIC) {
-        GC_COND_LOG_PRINTF("Executable has wrong DOS magic number: %s\n",
-                           path);
-        ABORT("Bad DOS magic number");
+        ABORT_ARG1("Bad DOS magic number", " in file: %s", path);
     }
     if (fseek(myexefile, E_LFANEW(hdrdos), SEEK_SET) != 0) {
-        GC_COND_LOG_PRINTF("Seek to new header failed in %s\n", path);
-        ABORT("Bad DOS magic number");
+        ABORT_ARG1("Bad DOS magic number", " in file: %s", path);
     }
     if (fread((char *)(&hdr386), 1, sizeof(hdr386), myexefile)
           < sizeof(hdr386)) {
-        GC_COND_LOG_PRINTF("Could not read MSDOS header from %s\n", path);
-        ABORT("Couldn't read OS/2 header");
+        ABORT_ARG1("Could not read OS/2 header", " from: %s", path);
     }
     if (E32_MAGIC1(hdr386) != E32MAGIC1 || E32_MAGIC2(hdr386) != E32MAGIC2) {
-        GC_COND_LOG_PRINTF("Executable has wrong OS/2 magic number: %s\n",
-                           path);
-        ABORT("Bad OS/2 magic number");
+        ABORT_ARG1("Bad OS/2 magic number", " in file: %s", path);
     }
     if (E32_BORDER(hdr386) != E32LEBO || E32_WORDER(hdr386) != E32LEWO) {
-        GC_COND_LOG_PRINTF("Executable has wrong byte order: %s\n", path);
-        ABORT("Bad byte order");
+        ABORT_ARG1("Bad byte order in executable", " file: %s", path);
     }
     if (E32_CPU(hdr386) == E32CPU286) {
-        GC_COND_LOG_PRINTF("GC cannot handle 80286 executables: %s\n", path);
-        ABORT("Intel 80286 executables are unsupported");
+        ABORT_ARG1("GC cannot handle 80286 executables", ": %s", path);
     }
     if (fseek(myexefile, E_LFANEW(hdrdos) + E32_OBJTAB(hdr386),
               SEEK_SET) != 0) {
-        GC_COND_LOG_PRINTF("Seek to object table failed: %s\n", path);
-        ABORT("Seek to object table failed");
+        ABORT_ARG1("Seek to object table failed", " in file: %s", path);
     }
     for (nsegs = E32_OBJCNT(hdr386); nsegs > 0; nsegs--) {
       int flags;
       if (fread((char *)(&seg), 1, sizeof(seg), myexefile) < sizeof(seg)) {
-        GC_COND_LOG_PRINTF("Could not read obj table entry from %s\n", path);
-        ABORT("Couldn't read obj table entry");
+        ABORT_ARG1("Could not read obj table entry", " from file: %s", path);
       }
       flags = O32_FLAGS(seg);
       if (!(flags & OBJWRITE)) continue;
@@ -2460,10 +2446,9 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
 #       else
           if (mprotect(start_addr, len, (PROT_READ | PROT_WRITE)
                             | (GC_pages_executable ? PROT_EXEC : 0)) != 0) {
-            GC_COND_LOG_PRINTF("mprotect failed at %p (length %lu)"
-                               " with errno %d\n",
-                               start_addr, (unsigned long)len, errno);
-            ABORT("mprotect remapping failed");
+            ABORT_ARG3("mprotect remapping failed",
+                       " at %p (length %lu), errcode= %d",
+                       start_addr, (unsigned long)len, errno);
           }
 #       endif /* !NACL */
       }
@@ -2963,9 +2948,8 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
                             GC_pages_executable ? PAGE_EXECUTE_READ : \
                                                   PAGE_READONLY, \
                             &protect_junk)) { \
-          GC_COND_LOG_PRINTF("Last error code: 0x%lx\n", \
-                             (long)GetLastError()); \
-          ABORT("VirtualProtect failed"); \
+          ABORT_ARG1("VirtualProtect failed", \
+                     ": errcode= 0x%X", (unsigned)GetLastError()); \
         }
 #   define UNPROTECT(addr, len) \
         if (!VirtualProtect((addr), (len), \
@@ -3173,8 +3157,8 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
             if (old_handler == (SIG_HNDLR_PTR)SIG_DFL) {
 #               if !defined(MSWIN32) && !defined(MSWINCE)
-                    GC_COND_LOG_PRINTF("Unexpected segfault at %p\n", addr);
-                    ABORT("Unexpected bus error or segmentation fault");
+                    ABORT_ARG1("Unexpected bus error or segmentation fault",
+                               " at %p", addr);
 #               else
                     return(EXCEPTION_CONTINUE_SEARCH);
 #               endif
@@ -3224,8 +3208,8 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   if defined(MSWIN32) || defined(MSWINCE)
       return EXCEPTION_CONTINUE_SEARCH;
 #   else
-      GC_COND_LOG_PRINTF("Unexpected segfault at %p\n", addr);
-      ABORT("Unexpected bus error or segmentation fault");
+      ABORT_ARG1("Unexpected bus error or segmentation fault",
+                 " at %p", addr);
 #   endif
   }
 
@@ -4038,9 +4022,8 @@ STATIC void *GC_mprotect_thread(void *arg)
 #   endif /* THREADS */
 
     if (r != MACH_MSG_SUCCESS) {
-      GC_COND_LOG_PRINTF("mach_msg failed with code %d: %s\n", (int)r,
-                         mach_error_string(r));
-      ABORT("mach_msg failed");
+      ABORT_ARG2("mach_msg failed",
+                 ": errcode= %d (%s)", (int)r, mach_error_string(r));
     }
 
     switch(id) {

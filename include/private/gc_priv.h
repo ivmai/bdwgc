@@ -485,6 +485,25 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #   endif /* !MSWIN32 */
 # endif /* !PCR */
 
+/* For abort message with 1-3 arguments.  C_msg and C_fmt should be     */
+/* literals.  C_msg should not contain format specifiers.  Arguments    */
+/* should match their format specifiers.                                */
+#define ABORT_ARG1(C_msg, C_fmt, arg1) \
+                do { \
+                  GC_COND_LOG_PRINTF(C_msg /* + */ C_fmt, arg1); \
+                  ABORT(C_msg); \
+                } while (0)
+#define ABORT_ARG2(C_msg, C_fmt, arg1, arg2) \
+                do { \
+                  GC_COND_LOG_PRINTF(C_msg /* + */ C_fmt, arg1, arg2); \
+                  ABORT(C_msg); \
+                } while (0)
+#define ABORT_ARG3(C_msg, C_fmt, arg1, arg2, arg3) \
+                do { \
+                  GC_COND_LOG_PRINTF(C_msg /* + */ C_fmt, arg1, arg2, arg3); \
+                  ABORT(C_msg); \
+                } while (0)
+
 /* Same as ABORT but does not have 'no-return' attribute.       */
 /* ABORT on dummy condition (which is always true).             */
 #define ABORT_RET(msg) { if ((signed_word)GC_current_warn_proc != -1) \

@@ -603,13 +603,11 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
     hdr * hhdr;
 
     if (q == 0) {
-        GC_err_printf("Bad argument: %p to GC_debug_change_stubborn\n", p);
-        ABORT("GC_debug_change_stubborn: bad arg");
+        ABORT_ARG1("GC_debug_change_stubborn: bad arg", ": %p", p);
     }
     hhdr = HDR(q);
     if (hhdr -> hb_obj_kind != STUBBORN) {
-        GC_err_printf("GC_debug_change_stubborn arg not stubborn: %p\n", p);
-        ABORT("GC_debug_change_stubborn: arg not stubborn");
+        ABORT_ARG1("GC_debug_change_stubborn: arg not stubborn", ": %p", p);
     }
     GC_change_stubborn(q);
   }
@@ -620,13 +618,12 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
     hdr * hhdr;
 
     if (q == 0) {
-        GC_err_printf("Bad argument: %p to GC_debug_end_stubborn_change\n", p);
-        ABORT("GC_debug_end_stubborn_change: bad arg");
+        ABORT_ARG1("GC_debug_end_stubborn_change: bad arg", ": %p", p);
     }
     hhdr = HDR(q);
     if (hhdr -> hb_obj_kind != STUBBORN) {
-        GC_err_printf("debug_end_stubborn_change arg not stubborn: %p\n", p);
-        ABORT("GC_debug_end_stubborn_change: arg not stubborn");
+        ABORT_ARG1("GC_debug_end_stubborn_change: arg not stubborn",
+                   ": %p", p);
     }
     GC_end_stubborn_change(q);
   }
@@ -772,8 +769,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
 
     base = GC_base(p);
     if (base == 0) {
-      GC_err_printf("Attempt to free invalid pointer %p\n", p);
-      ABORT("Invalid pointer passed to free()");
+      ABORT_ARG1("Invalid pointer passed to free()", ": %p", p);
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
       GC_err_printf(
@@ -850,8 +846,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
 
     base = GC_base(p);
     if (base == 0) {
-        GC_err_printf("Attempt to reallocate invalid pointer %p\n", p);
-        ABORT("Invalid pointer passed to realloc()");
+        ABORT_ARG1("Invalid pointer passed to realloc()", ": %p", p);
     }
     if ((ptr_t)p - (ptr_t)base != sizeof(oh)) {
         GC_err_printf(

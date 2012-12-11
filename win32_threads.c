@@ -458,9 +458,8 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
                         (HANDLE*)&(me -> handle),
                         0 /* dwDesiredAccess */, FALSE /* bInheritHandle */,
                         DUPLICATE_SAME_ACCESS)) {
-        GC_COND_LOG_PRINTF("DuplicateHandle failed with error code: %d\n",
-                           (int)GetLastError());
-        ABORT("DuplicateHandle failed");
+        ABORT_ARG1("DuplicateHandle failed",
+                   ": errcode= 0x%X", (unsigned)GetLastError());
     }
 # endif
   me -> last_stack_min = ADDR_LIMIT;
