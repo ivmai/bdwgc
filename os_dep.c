@@ -1467,14 +1467,12 @@ void GC_register_data_segments(void)
     struct o32_obj seg; /* Currrent segment */
     int nsegs;
 
-
     if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
         ABORT("DosGetInfoBlocks failed");
     }
     module_handle = ppib -> pib_hmte;
     if (DosQueryModuleName(module_handle, PBUFSIZ, path) != NO_ERROR) {
-        GC_err_printf("DosQueryModuleName failed\n");
-        ABORT("DosGetInfoBlocks failed");
+        ABORT("DosQueryModuleName failed");
     }
     myexefile = fopen(path, "rb");
     if (myexefile == 0) {
