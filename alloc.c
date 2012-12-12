@@ -638,11 +638,11 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         }
 
     GC_gc_no++;
-    GC_DBGLOG_PRINTF("GC #%lu reclaimed %ld bytes --> heapsize: %lu"
-                     " bytes" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
+    GC_DBGLOG_PRINTF("GC #%lu freed %ld bytes, heap %lu KiB"
+                     IF_USE_MUNMAP(" (+ %lu KiB unmapped)") "\n",
                      (unsigned long)GC_gc_no, (long)GC_bytes_found,
-                     (unsigned long)GC_heapsize /*, */
-                     COMMA_IF_USE_MUNMAP((unsigned long)GC_unmapped_bytes));
+                     TO_KiB_UL(GC_heapsize - GC_unmapped_bytes) /*, */
+                     COMMA_IF_USE_MUNMAP(TO_KiB_UL(GC_unmapped_bytes)));
 
     /* Check all debugged objects for consistency */
     if (GC_debugging_started) {
@@ -811,6 +811,15 @@ STATIC void GC_clear_fl_marks(ptr_t q)
 
 GC_on_heap_resize_proc GC_on_heap_resize = 0;
 
+/* Used for logging only. */
+GC_INLINE int GC_compute_heap_usage_percent(void)
+{
+  word used = GC_composite_in_use + GC_atomic_in_use;
+  word heap_sz = GC_heapsize - GC_unmapped_bytes;
+  return used >= heap_sz ? 0 : used < ((word)-1) / 100 ?
+                (int)((used * 100) / heap_sz) : (int)(used / (heap_sz / 100));
+}
+
 /* Finish up a collection.  Assumes mark bits are consistent, lock is   */
 /* held, but the world is otherwise running.                            */
 STATIC void GC_finish_collection(void)
@@ -906,10 +915,10 @@ STATIC void GC_finish_collection(void)
 
     /* Reconstruct free lists to contain everything not marked */
     GC_start_reclaim(FALSE);
-    GC_COND_LOG_PRINTF("Heap contains %lu pointer-containing"
-                       " + %lu pointer-free reachable bytes\n",
-                       (unsigned long)GC_composite_in_use,
-                       (unsigned long)GC_atomic_in_use);
+    GC_DBGLOG_PRINTF("In-use heap: %d%% (%lu KiB pointers + %lu KiB other)\n",
+                     GC_compute_heap_usage_percent(),
+                     TO_KiB_UL(GC_composite_in_use),
+                     TO_KiB_UL(GC_atomic_in_use));
     if (GC_is_full_gc) {
         GC_used_heap_size_after_full = USED_HEAP_SIZE;
         GC_need_full_gc = FALSE;
@@ -1159,9 +1168,9 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
         WARN("Failed to expand heap by %" WARN_PRIdPTR " bytes\n", bytes);
         return(FALSE);
     }
-    GC_INFOLOG_PRINTF(
-                "Increasing heap size by %lu after %lu allocated bytes\n",
-                (unsigned long)bytes, (unsigned long)GC_bytes_allocd);
+    GC_INFOLOG_PRINTF("Grow heap to %lu KiB after %lu bytes allocated\n",
+                      TO_KiB_UL(GC_heapsize + bytes),
+                      (unsigned long)GC_bytes_allocd);
     /* Adjust heap limits generously for blacklisting to work better.   */
     /* GC_add_to_heap performs minimal adjustment needed for            */
     /* correctness.                                                     */

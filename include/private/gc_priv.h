@@ -2093,6 +2093,10 @@ void GC_err_puts(const char *s);
                         /* Write s to stderr, don't buffer, don't add   */
                         /* newlines, don't ...                          */
 
+/* Handy macro for logging size values (of word type) in KiB (rounding  */
+/* to nearest value).                                                   */
+#define TO_KiB_UL(v) ((unsigned long)(((v) + ((1 << 9) - 1)) >> 10))
+
 GC_EXTERN unsigned GC_fail_count;
                         /* How many consecutive GC/expansion failures?  */
                         /* Reset by GC_allochblk(); defined in alloc.c. */
