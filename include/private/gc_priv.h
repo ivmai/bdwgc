@@ -2065,16 +2065,14 @@ GC_API_PRIV void GC_log_printf(const char * format, ...)
 #endif
 
 #ifndef GC_ANDROID_LOG
-# define GC_DBGLOG_PRINTF GC_COND_LOG_PRINTF
+# define GC_PRINT_STATS_FLAG (GC_print_stats != 0)
 # define GC_INFOLOG_PRINTF GC_COND_LOG_PRINTF
   /* GC_verbose_log_printf is called only if GC_print_stats is VERBOSE. */
 # define GC_verbose_log_printf GC_log_printf
 #else
   extern GC_bool GC_quiet;
-  /* These loggers are enabled even if GC_print_stats is off. */
-# ifndef GC_DBGLOG_PRINTF
-#   define GC_DBGLOG_PRINTF if (GC_quiet) {} else GC_log_printf
-# endif
+# define GC_PRINT_STATS_FLAG (!GC_quiet)
+  /* INFO/DBG loggers are enabled even if GC_print_stats is off. */
 # ifndef GC_INFOLOG_PRINTF
 #   define GC_INFOLOG_PRINTF if (GC_quiet) {} else GC_info_log_printf
 # endif
@@ -2088,6 +2086,9 @@ GC_API_PRIV void GC_log_printf(const char * format, ...)
 #define GC_COND_LOG_PRINTF if (!GC_print_stats) {} else GC_log_printf
 #define GC_VERBOSE_LOG_PRINTF \
                 if (GC_print_stats != VERBOSE) {} else GC_verbose_log_printf
+#ifndef GC_DBGLOG_PRINTF
+# define GC_DBGLOG_PRINTF if (!GC_PRINT_STATS_FLAG) {} else GC_log_printf
+#endif
 
 void GC_err_puts(const char *s);
                         /* Write s to stderr, don't buffer, don't add   */

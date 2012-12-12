@@ -599,7 +599,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   endif
 
 #   ifndef SMALL_CONFIG
-      if (GC_print_stats)
+      if (GC_PRINT_STATS_FLAG)
         GET_TIME(start_time);
 #   endif
 
@@ -654,7 +654,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   endif
     START_WORLD();
 #   ifndef SMALL_CONFIG
-      if (GC_print_stats) {
+      if (GC_PRINT_STATS_FLAG) {
         unsigned long time_diff;
         unsigned total_time, divisor;
         GET_TIME(current_time);
