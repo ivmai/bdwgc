@@ -1899,17 +1899,8 @@ GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
 #define VERBOSE 2
 #ifndef SMALL_CONFIG
   /* GC_print_stats should be visible to extra/MacOS.c. */
-# ifndef GC_ANDROID_LOG
-    extern int GC_print_stats;  /* Nonzero generates basic GC log.      */
+  extern int GC_print_stats;    /* Nonzero generates basic GC log.      */
                                 /* VERBOSE generates add'l messages.    */
-#   define GC_real_print_stats GC_print_stats
-# else
-#   ifndef GC_print_stats
-#     define GC_print_stats VERBOSE
-#   endif
-    extern int GC_real_print_stats;
-                /* Influences logging only if redirected to a file.     */
-# endif
 #else /* SMALL_CONFIG */
 # define GC_print_stats 0
   /* Will this remove the message character strings from the executable? */

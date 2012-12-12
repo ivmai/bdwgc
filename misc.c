@@ -91,7 +91,7 @@ int GC_dont_precollect = FALSE;
 GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
 
 #ifndef SMALL_CONFIG
-  int GC_real_print_stats = 0;
+  int GC_print_stats = 0;
 #endif
 
 #ifdef GC_PRINT_BACK_HEIGHT
@@ -884,12 +884,12 @@ GC_API void GC_CALL GC_init(void)
 #     ifdef GC_PRINT_VERBOSE_STATS
         /* This is useful for debugging and profiling on platforms with */
         /* missing getenv() (like WinCE).                               */
-        GC_real_print_stats = VERBOSE;
+        GC_print_stats = VERBOSE;
 #     else
         if (0 != GETENV("GC_PRINT_VERBOSE_STATS")) {
-          GC_real_print_stats = VERBOSE;
+          GC_print_stats = VERBOSE;
         } else if (0 != GETENV("GC_PRINT_STATS")) {
-          GC_real_print_stats = 1;
+          GC_print_stats = 1;
         }
 #     endif
 #     if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN)
@@ -1508,18 +1508,14 @@ void GC_printf(const char *format, ...)
 {
     char buf[BUFSZ + 1];
 
-#   ifdef GC_ANDROID_LOG
-      GC_PRINTF_FILLBUF(buf, format);
-      __android_log_write(ANDROID_LOG_DEBUG, GC_ANDROID_LOG_TAG, buf);
-      if (GC_stdout == GC_DEFAULT_STDOUT_FD)
-        return; /* skip duplicate write to stdout */
-#   endif
     if (!GC_quiet) {
-#     ifndef GC_ANDROID_LOG
-        GC_PRINTF_FILLBUF(buf, format);
-#     endif
+      GC_PRINTF_FILLBUF(buf, format);
+#   ifndef GC_ANDROID_LOG
       if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
         ABORT("write to stdout failed");
+#   else
+      __android_log_write(ANDROID_LOG_DEBUG, GC_ANDROID_LOG_TAG, buf);
+#   endif
     }
 }
 
@@ -1546,29 +1542,26 @@ void GC_err_printf(const char *format, ...)
 
 #else
 
-# define GC_LOG_PRINTF_IMPL(loglevel, fileLogCond, format) \
+# define GC_LOG_PRINTF_IMPL(loglevel, format) \
         { \
           char buf[BUFSZ + 1]; \
           GC_PRINTF_FILLBUF(buf, format); \
           __android_log_write(loglevel, GC_ANDROID_LOG_TAG, buf); \
-          if (GC_log != GC_DEFAULT_STDERR_FD && (fileLogCond)) \
-            (void)WRITE(GC_log, buf, strlen(buf)); /* ignore errors */ \
         }
 
   void GC_log_printf(const char *format, ...)
   {
-    GC_LOG_PRINTF_IMPL(ANDROID_LOG_DEBUG, TRUE, format);
+    GC_LOG_PRINTF_IMPL(ANDROID_LOG_DEBUG, format);
   }
 
   GC_INNER void GC_stats_log_printf(const char *format, ...)
   {
-    GC_LOG_PRINTF_IMPL(ANDROID_LOG_INFO, GC_real_print_stats != 0, format);
+    GC_LOG_PRINTF_IMPL(ANDROID_LOG_INFO, format);
   }
 
   GC_INNER void GC_verbose_log_printf(const char *format, ...)
   {
-    GC_LOG_PRINTF_IMPL(ANDROID_LOG_VERBOSE, GC_real_print_stats == VERBOSE,
-                       format);
+    GC_LOG_PRINTF_IMPL(ANDROID_LOG_VERBOSE, format);
   }
 
   STATIC void GC_warn_printf(const char *format, ...)
@@ -1577,20 +1570,17 @@ void GC_err_printf(const char *format, ...)
 
     GC_PRINTF_FILLBUF(buf, format);
     __android_log_write(ANDROID_LOG_WARN, GC_ANDROID_LOG_TAG, buf);
-    if (GC_real_print_stats && GC_stderr != GC_DEFAULT_STDERR_FD)
-      (void)WRITE(GC_stderr, buf, strlen(buf)); /* ignore errors */
   }
 
 #endif /* GC_ANDROID_LOG */
 
 void GC_err_puts(const char *s)
 {
-#   ifdef GC_ANDROID_LOG
+# ifdef GC_ANDROID_LOG
       __android_log_write(ANDROID_LOG_ERROR, GC_ANDROID_LOG_TAG, s);
-      if (GC_stderr == GC_DEFAULT_STDERR_FD)
-        return; /* skip duplicate write to stderr */
-#   endif
+# else
     (void)WRITE(GC_stderr, s, strlen(s)); /* ignore errors */
+# endif
 }
 
 STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
@@ -1665,10 +1655,11 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 #       endif
         /* Also duplicate msg to GC log file.   */
 #     endif
+
+#   ifndef GC_ANDROID_LOG
       /* Avoid calling GC_err_printf() here, as GC_on_abort() could be  */
       /* called from it.  Note 1: this is not an atomic output.         */
       /* Note 2: possible write errors are ignored.                     */
-
 #     if defined(THREADS) && defined(GC_ASSERTIONS) \
          && (defined(MSWIN32) || defined(MSWINCE))
         if (!GC_write_disabled)
@@ -1677,7 +1668,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
         if (WRITE(GC_stderr, (void *)msg, strlen(msg)) >= 0)
           (void)WRITE(GC_stderr, (void *)("\n"), 1);
       }
-#   ifdef GC_ANDROID_LOG
+#   else
       __android_log_assert("*" /* cond */, GC_ANDROID_LOG_TAG, "%s\n", msg);
 #   endif
     }
