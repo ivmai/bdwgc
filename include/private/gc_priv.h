@@ -2065,19 +2065,27 @@ GC_API_PRIV void GC_log_printf(const char * format, ...)
 #endif
 
 #ifndef GC_ANDROID_LOG
-  /* GC_stats_log_printf should be called only if GC_print_stats.       */
-# define GC_stats_log_printf GC_log_printf
+# define GC_DBGLOG_PRINTF GC_COND_LOG_PRINTF
+# define GC_INFOLOG_PRINTF GC_COND_LOG_PRINTF
   /* GC_verbose_log_printf is called only if GC_print_stats is VERBOSE. */
 # define GC_verbose_log_printf GC_log_printf
 #else
-  GC_INNER void GC_stats_log_printf(const char *format, ...)
+  extern GC_bool GC_quiet;
+  /* These loggers are enabled even if GC_print_stats is off. */
+# ifndef GC_DBGLOG_PRINTF
+#   define GC_DBGLOG_PRINTF if (GC_quiet) {} else GC_log_printf
+# endif
+# ifndef GC_INFOLOG_PRINTF
+#   define GC_INFOLOG_PRINTF if (GC_quiet) {} else GC_info_log_printf
+# endif
+  GC_INNER void GC_info_log_printf(const char *format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
   GC_INNER void GC_verbose_log_printf(const char *format, ...)
                         GC_ATTR_FORMAT_PRINTF(1, 2);
 #endif /* GC_ANDROID_LOG */
 
-/* Convenient macros for GC_stats/verbose_log_printf invocation.        */
-#define GC_COND_LOG_PRINTF if (!GC_print_stats) {} else GC_stats_log_printf
+/* Convenient macros for GC_[verbose_]log_printf invocation.    */
+#define GC_COND_LOG_PRINTF if (!GC_print_stats) {} else GC_log_printf
 #define GC_VERBOSE_LOG_PRINTF \
                 if (GC_print_stats != VERBOSE) {} else GC_verbose_log_printf
 

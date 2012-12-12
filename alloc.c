@@ -429,7 +429,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
         GET_TIME(start_time);
-        GC_stats_log_printf("Initiating full world-stop collection!\n");
+        GC_log_printf("Initiating full world-stop collection!\n");
       }
 #   endif
     GC_promote_black_lists();
@@ -468,8 +468,8 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
         GET_TIME(current_time);
-        GC_stats_log_printf("Complete collection took %lu msecs\n",
-                            MS_TIME_DIFF(current_time,start_time));
+        GC_log_printf("Complete collection took %lu msecs\n",
+                      MS_TIME_DIFF(current_time,start_time));
       }
 #   endif
     return(TRUE);
@@ -638,11 +638,11 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         }
 
     GC_gc_no++;
-    GC_COND_LOG_PRINTF("GC #%lu reclaimed %ld bytes --> heapsize: %lu"
-                       " bytes" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
-                       (unsigned long)GC_gc_no, (long)GC_bytes_found,
-                       (unsigned long)GC_heapsize /*, */
-                       COMMA_IF_USE_MUNMAP((unsigned long)GC_unmapped_bytes));
+    GC_DBGLOG_PRINTF("GC #%lu reclaimed %ld bytes --> heapsize: %lu"
+                     " bytes" IF_USE_MUNMAP(" (%lu unmapped)") "\n",
+                     (unsigned long)GC_gc_no, (long)GC_bytes_found,
+                     (unsigned long)GC_heapsize /*, */
+                     COMMA_IF_USE_MUNMAP((unsigned long)GC_unmapped_bytes));
 
     /* Check all debugged objects for consistency */
     if (GC_debugging_started) {
@@ -675,7 +675,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         world_stopped_total_divisor = ++divisor;
 
         GC_ASSERT(divisor != 0);
-        GC_stats_log_printf(
+        GC_log_printf(
                 "World-stopped marking took %lu msecs (%u in average)\n",
                 time_diff, total_time / divisor);
       }
@@ -940,16 +940,13 @@ STATIC void GC_finish_collection(void)
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
         GET_TIME(done_time);
-
-        /* A convenient place to output finalization statistics. */
 #       ifndef GC_NO_FINALIZATION
+          /* A convenient place to output finalization statistics.      */
           GC_print_finalization_stats();
 #       endif
-
-        GC_stats_log_printf(
-                "Finalize plus initiate sweep took %lu + %lu msecs\n",
-                MS_TIME_DIFF(finalize_time,start_time),
-                MS_TIME_DIFF(done_time,finalize_time));
+        GC_log_printf("Finalize plus initiate sweep took %lu + %lu msecs\n",
+                      MS_TIME_DIFF(finalize_time,start_time),
+                      MS_TIME_DIFF(done_time,finalize_time));
       }
 #   endif
 }
@@ -1132,13 +1129,10 @@ GC_API void GC_CALL GC_set_max_heap_size(GC_word n)
 
 GC_word GC_max_retries = 0;
 
-/*
- * this explicitly increases the size of the heap.  It is used
- * internally, but may also be invoked from GC_expand_hp by the user.
- * The argument is in units of HBLKSIZE.
- * Tiny values of n are rounded up.
- * Returns FALSE on failure.
- */
+/* This explicitly increases the size of the heap.  It is used          */
+/* internally, but may also be invoked from GC_expand_hp by the user.   */
+/* The argument is in units of HBLKSIZE (tiny values are rounded up).   */
+/* Returns FALSE on failure.                                            */
 GC_INNER GC_bool GC_expand_hp_inner(word n)
 {
     word bytes;
@@ -1165,7 +1159,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
         WARN("Failed to expand heap by %" WARN_PRIdPTR " bytes\n", bytes);
         return(FALSE);
     }
-    GC_COND_LOG_PRINTF(
+    GC_INFOLOG_PRINTF(
                 "Increasing heap size by %lu after %lu allocated bytes\n",
                 (unsigned long)bytes, (unsigned long)GC_bytes_allocd);
     /* Adjust heap limits generously for blacklisting to work better.   */

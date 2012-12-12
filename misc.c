@@ -1547,7 +1547,7 @@ void GC_log_printf(const char *format, ...)
 
 #else
 
-  GC_INNER void GC_stats_log_printf(const char *format, ...)
+  GC_INNER void GC_info_log_printf(const char *format, ...)
   {
     char buf[BUFSZ + 1];
 
