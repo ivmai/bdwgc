@@ -773,7 +773,8 @@ STATIC void GC_exit_check(void)
 #define GC_DEFAULT_STDOUT_FD 1
 #define GC_DEFAULT_STDERR_FD 2
 
-#if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
+#if !defined(OS2) && !defined(MACOS) && !defined(GC_ANDROID_LOG) \
+    && !defined(MSWIN32) && !defined(MSWINCE)
   STATIC int GC_stdout = GC_DEFAULT_STDOUT_FD;
   STATIC int GC_stderr = GC_DEFAULT_STDERR_FD;
   STATIC int GC_log = GC_DEFAULT_STDERR_FD;
@@ -892,7 +893,8 @@ GC_API void GC_CALL GC_init(void)
           GC_print_stats = 1;
         }
 #     endif
-#     if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN)
+#     if (defined(UNIX_LIKE) && !defined(GC_ANDROID_LOG)) \
+         || defined(CYGWIN32) || defined(SYMBIAN)
         {
           char * file_name = GETENV("GC_LOG_FILE");
 #         ifdef GC_LOG_TO_FILE_ALWAYS
@@ -1425,6 +1427,21 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
 # define WRITE(f, buf, len) (GC_set_files(), GC_write(f, buf, len))
 
+#elif defined(GC_ANDROID_LOG)
+
+# include <android/log.h>
+
+# ifndef GC_ANDROID_LOG_TAG
+#   define GC_ANDROID_LOG_TAG "BDWGC"
+# endif
+
+# define GC_stdout ANDROID_LOG_DEBUG
+# define GC_stderr ANDROID_LOG_ERROR
+# define GC_log GC_stdout
+
+# define WRITE(level, buf, unused_len) \
+                __android_log_write(level, GC_ANDROID_LOG_TAG, buf)
+
 #else
 # if !defined(AMIGA) && !defined(__CC_ARM)
 #   include <unistd.h>
@@ -1465,15 +1482,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
   }
 
 # define WRITE(f, buf, len) GC_write(f, buf, len)
-#endif /* !MSWIN32 && !OS2 && !MACOS */
-
-#ifdef GC_ANDROID_LOG
-# include <android/log.h>
-
-# ifndef GC_ANDROID_LOG_TAG
-#   define GC_ANDROID_LOG_TAG "BDWGC"
-# endif
-#endif
+#endif /* !MSWIN32 && !OS2 && !MACOS && !GC_ANDROID_LOG */
 
 #define BUFSZ 1024
 
@@ -1510,12 +1519,8 @@ void GC_printf(const char *format, ...)
 
     if (!GC_quiet) {
       GC_PRINTF_FILLBUF(buf, format);
-#   ifndef GC_ANDROID_LOG
       if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
         ABORT("write to stdout failed");
-#   else
-      __android_log_write(ANDROID_LOG_DEBUG, GC_ANDROID_LOG_TAG, buf);
-#   endif
     }
 }
 
@@ -1527,41 +1532,35 @@ void GC_err_printf(const char *format, ...)
     GC_err_puts(buf);
 }
 
-#ifndef GC_ANDROID_LOG
-
-  void GC_log_printf(const char *format, ...)
-  {
+void GC_log_printf(const char *format, ...)
+{
     char buf[BUFSZ + 1];
 
     GC_PRINTF_FILLBUF(buf, format);
     if (WRITE(GC_log, buf, strlen(buf)) < 0)
       ABORT("write to GC log failed");
-  }
+}
+
+#ifndef GC_ANDROID_LOG
 
 # define GC_warn_printf GC_err_printf
 
 #else
 
-# define GC_LOG_PRINTF_IMPL(loglevel, format) \
-        { \
-          char buf[BUFSZ + 1]; \
-          GC_PRINTF_FILLBUF(buf, format); \
-          __android_log_write(loglevel, GC_ANDROID_LOG_TAG, buf); \
-        }
-
-  void GC_log_printf(const char *format, ...)
-  {
-    GC_LOG_PRINTF_IMPL(ANDROID_LOG_DEBUG, format);
-  }
-
   GC_INNER void GC_stats_log_printf(const char *format, ...)
   {
-    GC_LOG_PRINTF_IMPL(ANDROID_LOG_INFO, format);
+    char buf[BUFSZ + 1];
+
+    GC_PRINTF_FILLBUF(buf, format);
+    (void)WRITE(ANDROID_LOG_INFO, buf, 0 /* unused */);
   }
 
   GC_INNER void GC_verbose_log_printf(const char *format, ...)
   {
-    GC_LOG_PRINTF_IMPL(ANDROID_LOG_VERBOSE, format);
+    char buf[BUFSZ + 1];
+
+    GC_PRINTF_FILLBUF(buf, format);
+    (void)WRITE(ANDROID_LOG_VERBOSE, buf, 0); /* ignore write errors */
   }
 
   STATIC void GC_warn_printf(const char *format, ...)
@@ -1569,18 +1568,14 @@ void GC_err_printf(const char *format, ...)
     char buf[BUFSZ + 1];
 
     GC_PRINTF_FILLBUF(buf, format);
-    __android_log_write(ANDROID_LOG_WARN, GC_ANDROID_LOG_TAG, buf);
+    (void)WRITE(ANDROID_LOG_WARN, buf, 0);
   }
 
 #endif /* GC_ANDROID_LOG */
 
 void GC_err_puts(const char *s)
 {
-# ifdef GC_ANDROID_LOG
-      __android_log_write(ANDROID_LOG_ERROR, GC_ANDROID_LOG_TAG, s);
-# else
     (void)WRITE(GC_stderr, s, strlen(s)); /* ignore errors */
-# endif
 }
 
 STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
