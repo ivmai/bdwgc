@@ -19,15 +19,13 @@
 #define GC_DARWIN_SEMAPHORE_H
 
 #if !defined(GC_DARWIN_THREADS)
-#error darwin_semaphore.h included with GC_DARWIN_THREADS not defined
+# error darwin_semaphore.h included with GC_DARWIN_THREADS not defined
 #endif
 
-/*
-   This is a very simple semaphore implementation for darwin. It
-   is implemented in terms of pthreads calls so it isn't async signal
-   safe. This isn't a problem because signals aren't used to
-   suspend threads on darwin.
-*/
+/* This is a very simple semaphore implementation for Darwin.  It is    */
+/* implemented in terms of pthread calls so it is not async signal      */
+/* safe.  But this is not a problem because signals are not used to     */
+/* suspend threads on Darwin.                                           */
 
 typedef struct {
     pthread_mutex_t mutex;
@@ -35,7 +33,7 @@ typedef struct {
     int value;
 } sem_t;
 
-static int sem_init(sem_t *sem, int pshared, int value) {
+GC_INLINE int sem_init(sem_t *sem, int pshared, int value) {
     int ret;
     if(pshared)
         ABORT("sem_init with pshared set");
@@ -48,7 +46,7 @@ static int sem_init(sem_t *sem, int pshared, int value) {
     return 0;
 }
 
-static int sem_post(sem_t *sem) {
+GC_INLINE int sem_post(sem_t *sem) {
     if(pthread_mutex_lock(&sem->mutex) < 0)
         return -1;
     sem->value++;
@@ -61,7 +59,7 @@ static int sem_post(sem_t *sem) {
     return 0;
 }
 
-static int sem_wait(sem_t *sem) {
+GC_INLINE int sem_wait(sem_t *sem) {
     if(pthread_mutex_lock(&sem->mutex) < 0)
         return -1;
     while(sem->value == 0) {
@@ -73,7 +71,7 @@ static int sem_wait(sem_t *sem) {
     return 0;
 }
 
-static int sem_destroy(sem_t *sem) {
+GC_INLINE int sem_destroy(sem_t *sem) {
     int ret;
     ret = pthread_cond_destroy(&sem->cond);
     if(ret < 0) return -1;
