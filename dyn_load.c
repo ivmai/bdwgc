@@ -446,7 +446,7 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
         case PT_GNU_RELRO:
         /* This entry is known to be constant and will eventually be remapped
            read-only.  However, the address range covered by this entry is
-           typically a subset of a previously encountered `LOAD' segment, so
+           typically a subset of a previously encountered "LOAD" segment, so
            we need to exclude it.  */
         {
             int j;

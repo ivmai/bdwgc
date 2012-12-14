@@ -954,7 +954,7 @@ GC_INNER void GC_finalize(void)
 #endif /* !JAVA_FINALIZATION_NOT_NEEDED */
 
 /* Returns true if it is worth calling GC_invoke_finalizers. (Useful if */
-/* finalizers can only be called from some kind of `safe state' and     */
+/* finalizers can only be called from some kind of "safe state" and     */
 /* getting into that safe state is expensive.)                          */
 GC_API int GC_CALL GC_should_invoke_finalizers(void)
 {

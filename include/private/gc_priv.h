@@ -145,7 +145,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #endif /* __GNUC__ */
 
 #ifdef HAVE_CONFIG_H
-  /* The `inline' keyword as determined by Autoconf's `AC_C_INLINE'.    */
+  /* The "inline" keyword is as determined by Autoconf's AC_C_INLINE.   */
 # define GC_INLINE static inline
 #elif defined(_MSC_VER) || defined(__INTEL_COMPILER) || defined(__DMC__) \
         || defined(__WATCOMC__)
@@ -233,7 +233,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
                     /* 1. There are probably no interesting, portable,  */
                     /*    strictly ANSI conforming C programs.          */
                     /* 2. This option makes it hard for the collector   */
-                    /*    to allocate space that is not ``pointed to''  */
+                    /*    to allocate space that is not "pointed to"    */
                     /*    by integers, etc.  Under SunOS 4.X with a     */
                     /*    statically linked libc, we empirically        */
                     /*    observed that it would be difficult to        */

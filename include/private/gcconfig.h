@@ -600,11 +600,11 @@
  * On UNIX-like systems, the collector will scan the area between DATASTART
  * and DATAEND for root pointers.
  *
- * DATAEND, if not `end' where `end' is defined as ``extern int end[];''.
+ * DATAEND, if not "end", where "end" is defined as "extern int end[]".
  * RTH suggests gaining access to linker script synth'd values with
- * this idiom instead of `&end' where `end' is defined as ``extern int end;'' .
- * Otherwise, ``GCC will assume these are in .sdata/.sbss'' and it will, e.g.,
- * cause failures on alpha*-*-* with ``-msmall-data or -fpic'' or mips-*-*
+ * this idiom instead of "&end", where "end" is defined as "extern int end".
+ * Otherwise, "GCC will assume these are in .sdata/.sbss" and it will, e.g.,
+ * cause failures on alpha*-*-* with -msmall-data or -fpic or mips-*-*
  * without any special options.
  *
  * STACKBOTTOM is the cool end of the stack, which is usually the
