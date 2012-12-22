@@ -2083,9 +2083,10 @@ GC_API_PRIV void GC_log_printf(const char * format, ...)
 #endif /* GC_ANDROID_LOG */
 
 /* Convenient macros for GC_[verbose_]log_printf invocation.    */
-#define GC_COND_LOG_PRINTF if (!GC_print_stats) {} else GC_log_printf
+#define GC_COND_LOG_PRINTF \
+                if (EXPECT(!GC_print_stats, TRUE)) {} else GC_log_printf
 #define GC_VERBOSE_LOG_PRINTF \
-                if (GC_print_stats != VERBOSE) {} else GC_verbose_log_printf
+    if (EXPECT(GC_print_stats != VERBOSE, TRUE)) {} else GC_verbose_log_printf
 #ifndef GC_DBGLOG_PRINTF
 # define GC_DBGLOG_PRINTF if (!GC_PRINT_STATS_FLAG) {} else GC_log_printf
 #endif
