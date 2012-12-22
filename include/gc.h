@@ -460,10 +460,10 @@ GC_API void GC_CALL GC_end_stubborn_change(const void *) GC_ATTR_NONNULL(1);
 /* GC_free.                                                             */
 GC_API void * GC_CALL GC_base(void * /* displaced_pointer */);
 
-/* Return TRUE if and only if the argument points to somewhere in GC    */
-/* heap.  Primary use is as a fast alternative to GC_base to check      */
-/* whether the pointed object is allocated by GC or not.  It is assumed */
-/* that the collector is already initialized.                           */
+/* Return non-zero (TRUE) if and only if the argument points to         */
+/* somewhere in GC heap.  Primary use is as a fast alternative to       */
+/* GC_base to check whether the pointed object is allocated by GC       */
+/* or not.  It is assumed that the collector is already initialized.    */
 GC_API int GC_CALL GC_is_heap_ptr(const void *);
 
 /* Given a pointer to the base of an object, return its size in bytes.  */
@@ -1295,8 +1295,8 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *)
                                                         GC_ATTR_NONNULL(1);
 
-  /* Return TRUE if and only if the calling thread is registered with   */
-  /* the garbage collector.                                             */
+  /* Return non-zero (TRUE) if and only if the calling thread is        */
+  /* registered with the garbage collector.                             */
   GC_API int GC_CALL GC_thread_is_registered(void);
 
   /* Unregister the current thread.  Only an explicitly registered      */
