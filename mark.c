@@ -1472,17 +1472,13 @@ void GC_print_trace_inner(word gc_no)
     GC_printf("Trace incomplete\n");
 }
 
-void GC_print_trace(word gc_no, GC_bool lock)
+void GC_print_trace(word gc_no)
 {
     DCL_LOCK_STATE;
 
-    if (lock) {
-      LOCK();
-      GC_print_trace_inner(gc_no);
-      UNLOCK();
-    } else {
-      GC_print_trace_inner(gc_no);
-    }
+    LOCK();
+    GC_print_trace_inner(gc_no);
+    UNLOCK();
 }
 
 # endif /* TRACE_BUF */
