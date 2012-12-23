@@ -1596,7 +1596,7 @@ void GC_register_data_segments(void)
           } else {
             GetWriteWatch_alloc_flag = MEM_WRITE_WATCH;
           }
-          VirtualFree(page, GC_page_size, MEM_RELEASE);
+          VirtualFree(page, 0 /* dwSize */, MEM_RELEASE);
         } else {
           /* GetWriteWatch will be useless. */
           GetWriteWatch_func = NULL;
