@@ -1453,18 +1453,15 @@ void GC_add_trace_entry(char *kind, word arg1, word arg2)
     if (GC_trace_buf_ptr >= TRACE_ENTRIES) GC_trace_buf_ptr = 0;
 }
 
-void GC_print_trace(word gc_no, GC_bool lock)
+void GC_print_trace_inner(word gc_no)
 {
     int i;
     struct trace_entry *p;
-    DCL_LOCK_STATE;
 
-    if (lock) LOCK();
     for (i = GC_trace_buf_ptr-1; i != GC_trace_buf_ptr; i--) {
         if (i < 0) i = TRACE_ENTRIES-1;
         p = GC_trace_buf + i;
         if (p -> gc_no < gc_no || p -> kind == 0) {
-            if (lock) UNLOCK();
             return;
         }
         GC_printf("Trace:%s (gc:%u, bytes:%lu) 0x%lX, 0x%lX\n",
@@ -1473,7 +1470,19 @@ void GC_print_trace(word gc_no, GC_bool lock)
                   (long)p->arg1 ^ 0x80000000L, (long)p->arg2 ^ 0x80000000L);
     }
     GC_printf("Trace incomplete\n");
-    if (lock) UNLOCK();
+}
+
+void GC_print_trace(word gc_no, GC_bool lock)
+{
+    DCL_LOCK_STATE;
+
+    if (lock) {
+      LOCK();
+      GC_print_trace_inner(gc_no);
+      UNLOCK();
+    } else {
+      GC_print_trace_inner(gc_no);
+    }
 }
 
 # endif /* TRACE_BUF */
