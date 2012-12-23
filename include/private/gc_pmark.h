@@ -229,6 +229,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
     do { \
         unsigned long long prod = (unsigned long long)(x) \
                                   * (unsigned long long)(y); \
+        GC_STATIC_ASSERT(sizeof(x) + sizeof(y) <= sizeof(prod)); \
         hprod = prod >> 32; \
         lprod = (unsigned32)prod; \
     } while (0)
@@ -345,7 +346,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
     } \
     /* May get here for pointer to start of block not at        */ \
     /* beginning of object.  If so, it's valid, and we're fine. */ \
-    GC_ASSERT(high_prod >= 0 && high_prod <= HBLK_OBJS(hhdr -> hb_sz)); \
+    GC_ASSERT(high_prod <= HBLK_OBJS(hhdr -> hb_sz)); \
     TRACE(source, GC_log_printf("GC #%u: passed validity tests\n", \
                                 (unsigned)GC_gc_no)); \
     SET_MARK_BIT_EXIT_IF_SET(hhdr, high_prod, exit_label); \
