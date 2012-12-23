@@ -1463,7 +1463,10 @@ void GC_print_trace(word gc_no, GC_bool lock)
     for (i = GC_trace_buf_ptr-1; i != GC_trace_buf_ptr; i--) {
         if (i < 0) i = TRACE_ENTRIES-1;
         p = GC_trace_buf + i;
-        if (p -> gc_no < gc_no || p -> kind == 0) return;
+        if (p -> gc_no < gc_no || p -> kind == 0) {
+            if (lock) UNLOCK();
+            return;
+        }
         printf("Trace:%s (gc:%u,bytes:%lu) 0x%X, 0x%X\n",
                 p -> kind, (unsigned)p -> gc_no,
                 (unsigned long)p -> bytes_allocd,
