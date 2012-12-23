@@ -1467,12 +1467,12 @@ void GC_print_trace(word gc_no, GC_bool lock)
             if (lock) UNLOCK();
             return;
         }
-        printf("Trace:%s (gc:%u,bytes:%lu) 0x%X, 0x%X\n",
-                p -> kind, (unsigned)p -> gc_no,
-                (unsigned long)p -> bytes_allocd,
-                (p -> arg1) ^ 0x80000000, (p -> arg2) ^ 0x80000000);
+        GC_printf("Trace:%s (gc:%u, bytes:%lu) 0x%lX, 0x%lX\n",
+                  p -> kind, (unsigned)p -> gc_no,
+                  (unsigned long)p -> bytes_allocd,
+                  (long)p->arg1 ^ 0x80000000L, (long)p->arg2 ^ 0x80000000L);
     }
-    printf("Trace incomplete\n");
+    GC_printf("Trace incomplete\n");
     if (lock) UNLOCK();
 }
 
