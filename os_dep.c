@@ -2254,7 +2254,7 @@ void * os2_alloc(size_t bytes)
   GC_API void GC_CALL GC_win32_free_heap(void)
   {
 #   ifndef CYGWIN32
-      if (GC_no_win32_dlls)
+      if (GLOBAL_ALLOC_TEST)
 #   endif
     {
       while (GC_n_heap_bases-- > 0) {
