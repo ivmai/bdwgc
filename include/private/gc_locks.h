@@ -181,10 +181,10 @@
    GC_EXTERN GC_bool GC_need_to_lock;
 
 # else /* !THREADS */
-#   define LOCK()
-#   define UNLOCK()
-#   define SET_LOCK_HOLDER()
-#   define UNSET_LOCK_HOLDER()
+#   define LOCK() (void)0
+#   define UNLOCK() (void)0
+#   define SET_LOCK_HOLDER() (void)0
+#   define UNSET_LOCK_HOLDER() (void)0
 #   define I_HOLD_LOCK() TRUE
 #   define I_DONT_HOLD_LOCK() TRUE
                 /* Used only in positive assertions or to test whether  */
@@ -200,8 +200,8 @@
 #   define UNLOCK() UNCOND_UNLOCK()
 # else
                 /* At least two thread running; need to lock.   */
-#   define LOCK() { if (GC_need_to_lock) UNCOND_LOCK(); }
-#   define UNLOCK() { if (GC_need_to_lock) UNCOND_UNLOCK(); }
+#   define LOCK() do { if (GC_need_to_lock) UNCOND_LOCK(); } while (0)
+#   define UNLOCK() do { if (GC_need_to_lock) UNCOND_UNLOCK(); } while (0)
 # endif
 #endif
 

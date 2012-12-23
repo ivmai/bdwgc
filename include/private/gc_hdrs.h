@@ -104,7 +104,7 @@ typedef struct hce {
 /* Returns zero if p points to somewhere other than the first page      */
 /* of an object, and it is not a valid pointer to the object.           */
 #define HC_GET_HDR(p, hhdr, source, exit_label) \
-        { \
+        do { \
           hdr_cache_entry * hce = HCE(p); \
           if (EXPECT(HCE_VALID_FOR(hce, p), TRUE)) { \
             HC_HIT(); \
@@ -113,7 +113,7 @@ typedef struct hce {
             hhdr = HEADER_CACHE_MISS(p, hce, source); \
             if (0 == hhdr) goto exit_label; \
           } \
-        }
+        } while (0)
 
 typedef struct bi {
     hdr * index[BOTTOM_SZ];
@@ -163,33 +163,41 @@ typedef struct bi {
 # else
 #     define HDR(p) HDR_INNER(p)
 # endif
-# define GET_BI(p, bottom_indx) (bottom_indx) = BI(p)
-# define GET_HDR(p, hhdr) (hhdr) = HDR(p)
-# define SET_HDR(p, hhdr) HDR_INNER(p) = (hhdr)
-# define GET_HDR_ADDR(p, ha) (ha) = &(HDR_INNER(p))
+# define GET_BI(p, bottom_indx) (void)((bottom_indx) = BI(p))
+# define GET_HDR(p, hhdr) (void)((hhdr) = HDR(p))
+# define SET_HDR(p, hhdr) (void)(HDR_INNER(p) = (hhdr))
+# define GET_HDR_ADDR(p, ha) (void)((ha) = &HDR_INNER(p))
 #else /* hash */
   /* Hash function for tree top level */
 # define TL_HASH(hi) ((hi) & (TOP_SZ - 1))
   /* Set bottom_indx to point to the bottom index for address p */
 # define GET_BI(p, bottom_indx) \
-      { \
+        do { \
           register word hi = \
               (word)(p) >> (LOG_BOTTOM_SZ + LOG_HBLKSIZE); \
           register bottom_index * _bi = GC_top_index[TL_HASH(hi)]; \
           while (_bi -> key != hi && _bi != GC_all_nils) \
               _bi = _bi -> hash_link; \
           (bottom_indx) = _bi; \
-      }
+        } while (0)
 # define GET_HDR_ADDR(p, ha) \
-      { \
+        do { \
           register bottom_index * bi; \
           GET_BI(p, bi); \
-          (ha) = &(HDR_FROM_BI(bi, p)); \
-      }
-# define GET_HDR(p, hhdr) { register hdr ** _ha; GET_HDR_ADDR(p, _ha); \
-                            (hhdr) = *_ha; }
-# define SET_HDR(p, hhdr) { register hdr ** _ha; GET_HDR_ADDR(p, _ha); \
-                            *_ha = (hhdr); }
+          (ha) = &HDR_FROM_BI(bi, p); \
+        } while (0)
+# define GET_HDR(p, hhdr) \
+        do { \
+          register hdr ** _ha; \
+          GET_HDR_ADDR(p, _ha); \
+          (hhdr) = *_ha; \
+        } while (0)
+# define SET_HDR(p, hhdr) \
+        do { \
+          register hdr ** _ha; \
+          GET_HDR_ADDR(p, _ha); \
+          *_ha = (hhdr); \
+        } while (0)
 # define HDR(p) GC_find_header((ptr_t)(p))
 #endif
 

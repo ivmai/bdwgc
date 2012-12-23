@@ -264,10 +264,10 @@ GC_INNER unsigned long GC_lock_holder = NO_THREAD;
     GC_syms_initialized = TRUE;
   }
 
-# define INIT_REAL_SYMS() if (!EXPECT(GC_syms_initialized, TRUE)) \
-                            GC_init_real_syms()
+# define INIT_REAL_SYMS() if (EXPECT(GC_syms_initialized, TRUE)) {} \
+                            else GC_init_real_syms()
 #else
-# define INIT_REAL_SYMS()
+# define INIT_REAL_SYMS() (void)0
 #endif
 
 static GC_bool parallel_initialized = FALSE;

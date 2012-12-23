@@ -145,7 +145,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #endif /* __GNUC__ */
 
 #ifdef HAVE_CONFIG_H
-  /* The "inline" keyword is as determined by Autoconf's AC_C_INLINE.   */
+  /* The "inline" keyword is determined by Autoconf AC_C_INLINE.    */
 # define GC_INLINE static inline
 #elif defined(_MSC_VER) || defined(__INTEL_COMPILER) || defined(__DMC__) \
         || defined(__WATCOMC__)
@@ -185,13 +185,13 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #   define COOLER_THAN >
 #   define HOTTER_THAN <
 #   define MAKE_COOLER(x,y) if ((word)((x) + (y)) > (word)(x)) {(x) += (y);} \
-                            else {(x) = (ptr_t)ONES;}
+                            else (x) = (ptr_t)ONES
 #   define MAKE_HOTTER(x,y) (x) -= (y)
 # else
 #   define COOLER_THAN <
 #   define HOTTER_THAN >
 #   define MAKE_COOLER(x,y) if ((word)((x) - (y)) < (word)(x)) {(x) -= (y);} \
-                            else {(x) = 0;}
+                            else (x) = 0
 #   define MAKE_HOTTER(x,y) (x) += (y)
 # endif
 
@@ -346,9 +346,12 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # undef GET_TIME
 # undef MS_TIME_DIFF
 # define CLOCK_TYPE struct timeval
-# define GET_TIME(x) { struct rusage rusage; \
-                       getrusage (RUSAGE_SELF,  &rusage); \
-                       x = rusage.ru_utime; }
+# define GET_TIME(x) \
+                do { \
+                  struct rusage rusage; \
+                  getrusage(RUSAGE_SELF, &rusage); \
+                  x = rusage.ru_utime; \
+                } while (0)
 # define MS_TIME_DIFF(a,b) ((unsigned long)(a.tv_sec - b.tv_sec) * 1000 \
                             + (unsigned long)(a.tv_usec - b.tv_usec) / 1000)
 #elif defined(MSWIN32) || defined(MSWINCE)
@@ -359,7 +362,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # include <windows.h>
 # include <winbase.h>
 # define CLOCK_TYPE DWORD
-# define GET_TIME(x) x = GetTickCount()
+# define GET_TIME(x) (void)(x = GetTickCount())
 # define MS_TIME_DIFF(a,b) ((long)((a)-(b)))
 #else /* !MSWIN32, !MSWINCE, !BSD_TIME */
 # include <time.h>
@@ -380,7 +383,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
     /* microseconds (which are not really clock ticks).                 */
 # endif
 # define CLOCK_TYPE clock_t
-# define GET_TIME(x) x = clock()
+# define GET_TIME(x) (void)(x = clock())
 # define MS_TIME_DIFF(a,b) (CLOCKS_PER_SEC % 1000 == 0 ? \
         (unsigned long)((a) - (b)) / (unsigned long)(CLOCKS_PER_SEC / 1000) \
         : ((unsigned long)((a) - (b)) * 1000) / (unsigned long)CLOCKS_PER_SEC)
@@ -505,9 +508,9 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
                 } while (0)
 
 /* Same as ABORT but does not have 'no-return' attribute.       */
-/* ABORT on dummy condition (which is always true).             */
-#define ABORT_RET(msg) { if ((signed_word)GC_current_warn_proc != -1) \
-                           ABORT(msg); }
+/* ABORT on a dummy condition (which is always true).           */
+#define ABORT_RET(msg) \
+              if ((signed_word)GC_current_warn_proc == -1) {} else ABORT(msg)
 
 /* Exit abnormally, but without making a mess (e.g. out of memory) */
 # ifdef PCR
@@ -1655,9 +1658,8 @@ void GC_register_data_segments(void);
 # define GC_ADD_TO_BLACK_LIST_NORMAL(bits, source) \
                 if (GC_all_interior_pointers) { \
                   GC_add_to_black_list_stack((word)(bits), (source)); \
-                } else { \
-                  GC_add_to_black_list_normal((word)(bits), (source)); \
-                }
+                } else \
+                  GC_add_to_black_list_normal((word)(bits), (source))
   GC_INNER void GC_add_to_black_list_stack(word p, ptr_t source);
 # define GC_ADD_TO_BLACK_LIST_STACK(bits, source) \
             GC_add_to_black_list_stack((word)(bits), (source))
@@ -1666,9 +1668,8 @@ void GC_register_data_segments(void);
 # define GC_ADD_TO_BLACK_LIST_NORMAL(bits, source) \
                 if (GC_all_interior_pointers) { \
                   GC_add_to_black_list_stack((word)(bits)); \
-                } else { \
-                  GC_add_to_black_list_normal((word)(bits)); \
-                }
+                } else \
+                  GC_add_to_black_list_normal((word)(bits))
   GC_INNER void GC_add_to_black_list_stack(word p);
 # define GC_ADD_TO_BLACK_LIST_STACK(bits, source) \
             GC_add_to_black_list_stack((word)(bits))
@@ -2265,11 +2266,13 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 
 #ifdef GC_ASSERTIONS
 # define GC_ASSERT(expr) \
+              do { \
                 if (!(expr)) { \
                   GC_err_printf("Assertion failure: %s:%d\n", \
                                 __FILE__, __LINE__); \
                   ABORT("assertion failure"); \
-                }
+                } \
+              } while (0)
   GC_INNER word GC_compute_large_free_bytes(void);
   GC_INNER word GC_compute_root_size(void);
 #else
@@ -2287,15 +2290,17 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define GC_STATIC_ASSERT(expr) (void)sizeof(char[(expr)? 1 : -1])
 #endif
 
-#define COND_DUMP_CHECKS { \
-          GC_ASSERT(GC_compute_large_free_bytes() == GC_large_free_bytes); \
-          GC_ASSERT(GC_compute_root_size() == GC_root_size); }
+#define COND_DUMP_CHECKS \
+          do { \
+            GC_ASSERT(GC_compute_large_free_bytes() == GC_large_free_bytes); \
+            GC_ASSERT(GC_compute_root_size() == GC_root_size); \
+          } while (0)
 
 #ifndef NO_DEBUGGING
   GC_EXTERN GC_bool GC_dump_regularly;
                                 /* Generate regular debugging dumps.    */
-# define COND_DUMP { if (EXPECT(GC_dump_regularly, FALSE)) GC_dump(); \
-                        else COND_DUMP_CHECKS; }
+# define COND_DUMP if (EXPECT(GC_dump_regularly, FALSE)) GC_dump(); \
+                        else COND_DUMP_CHECKS
 #else
 # define COND_DUMP COND_DUMP_CHECKS
 #endif
@@ -2454,19 +2459,19 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # else
 #   define INCR_CANCEL_DISABLE()
 #   define DECR_CANCEL_DISABLE()
-#   define ASSERT_CANCEL_DISABLED()
+#   define ASSERT_CANCEL_DISABLED() (void)0
 # endif /* GC_ASSERTIONS & ... */
 # define DISABLE_CANCEL(state) \
-        { pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &state); \
-          INCR_CANCEL_DISABLE(); }
+        do { pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &state); \
+          INCR_CANCEL_DISABLE(); } while (0)
 # define RESTORE_CANCEL(state) \
-        { ASSERT_CANCEL_DISABLED(); \
+        do { ASSERT_CANCEL_DISABLED(); \
           pthread_setcancelstate(state, NULL); \
-          DECR_CANCEL_DISABLE(); }
+          DECR_CANCEL_DISABLE(); } while (0)
 #else /* !CANCEL_SAFE */
-# define DISABLE_CANCEL(state)
-# define RESTORE_CANCEL(state)
-# define ASSERT_CANCEL_DISABLED()
+# define DISABLE_CANCEL(state) (void)0
+# define RESTORE_CANCEL(state) (void)0
+# define ASSERT_CANCEL_DISABLED() (void)0
 #endif /* !CANCEL_SAFE */
 
 #endif /* GC_PRIVATE_H */

@@ -172,7 +172,7 @@ GC_INLINE void pop_in_progress(ptr_t p GC_ATTR_UNUSED)
 /* Execute s once for each predecessor q of p in the points-to graph.   */
 /* s should be a bracketed statement.  We declare q.                    */
 #define FOR_EACH_PRED(q, p, s) \
-  { \
+  do { \
     ptr_t q = GET_OH_BG_PTR(p); \
     if (!((word)q & FLAG_MANY)) { \
       if (q && !((word)q & 1)) s \
@@ -191,7 +191,7 @@ GC_INLINE void pop_in_progress(ptr_t p GC_ATTR_UNUSED)
           q = be_ -> edges[local_]; s \
       } \
     } \
-  }
+  } while (0)
 
 /* Ensure that p has a back_edges structure associated with it. */
 static void ensure_struct(ptr_t p)

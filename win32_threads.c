@@ -613,9 +613,9 @@ GC_API int GC_CALL GC_thread_is_registered(void)
         && t != &first_thread) { \
       GC_ASSERT(SMALL_OBJ(GC_size(t))); \
       GC_remove_protection(HBLKPTR(t), 1, FALSE); \
-    }
+    } else (void)0
 #else
-# define UNPROTECT_THREAD(t)
+# define UNPROTECT_THREAD(t) (void)0
 #endif
 
 #ifdef CYGWIN32
@@ -935,7 +935,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
                 ((NUMERIC_THREAD_ID(pthread_id) >> 5) % PTHREAD_MAP_SIZE)
         /* It appears pthread_t is really a pointer type ... */
 # define SET_PTHREAD_MAP_CACHE(pthread_id, win32_id) \
-          (GC_pthread_map_cache[PTHREAD_MAP_INDEX(pthread_id)] = (win32_id))
+      (void)(GC_pthread_map_cache[PTHREAD_MAP_INDEX(pthread_id)] = (win32_id))
 # define GET_PTHREAD_MAP_CACHE(pthread_id) \
           GC_pthread_map_cache[PTHREAD_MAP_INDEX(pthread_id)]
 
@@ -1369,8 +1369,8 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
     /* pointer registers are included in case client code was           */
     /* compiled with the 'omit frame pointer' optimisation.             */
 #   define PUSH1(reg) GC_push_one((word)context.reg)
-#   define PUSH2(r1,r2) PUSH1(r1), PUSH1(r2)
-#   define PUSH4(r1,r2,r3,r4) PUSH2(r1,r2), PUSH2(r3,r4)
+#   define PUSH2(r1,r2) (PUSH1(r1), PUSH1(r2))
+#   define PUSH4(r1,r2,r3,r4) (PUSH2(r1,r2), PUSH2(r3,r4))
 #   if defined(I386)
       PUSH4(Edi,Esi,Ebx,Edx), PUSH2(Ecx,Eax), PUSH1(Ebp);
       sp = (ptr_t)context.Esp;

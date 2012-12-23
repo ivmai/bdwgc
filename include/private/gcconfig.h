@@ -1659,10 +1659,10 @@
 #     include <unistd.h>
 #     define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
 #     ifndef __GNUC__
-#       define PREFETCH(x)  { \
+#       define PREFETCH(x)  do { \
                               register long addr = (long)(x); \
                               (void) _asm ("LDW", 0, 0, addr, 0); \
-                            }
+                            } while (0)
 #     endif
 #   endif /* HPUX */
 #   ifdef LINUX
@@ -2543,12 +2543,12 @@
 #endif
 
 #ifndef PREFETCH
-# define PREFETCH(x)
+# define PREFETCH(x) (void)0
 # define NO_PREFETCH
 #endif
 
 #ifndef PREFETCH_FOR_WRITE
-# define PREFETCH_FOR_WRITE(x)
+# define PREFETCH_FOR_WRITE(x) (void)0
 # define NO_PREFETCH_FOR_WRITE
 #endif
 

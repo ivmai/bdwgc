@@ -2902,19 +2902,15 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   include <mach/vm_map.h>
     STATIC mach_port_t GC_task_self = 0;
 #   define PROTECT(addr,len) \
-        if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
-                      FALSE, VM_PROT_READ \
-                             | (GC_pages_executable ? VM_PROT_EXECUTE : 0)) \
-                != KERN_SUCCESS) { \
-            ABORT("vm_protect(PROTECT) failed"); \
-        }
+        if (vm_protect(GC_task_self, (vm_address_t)(addr), (vm_size_t)(len), \
+                       FALSE, VM_PROT_READ \
+                              | (GC_pages_executable ? VM_PROT_EXECUTE : 0)) \
+                == KERN_SUCCESS) {} else ABORT("vm_protect(PROTECT) failed")
 #   define UNPROTECT(addr,len) \
-        if(vm_protect(GC_task_self,(vm_address_t)(addr),(vm_size_t)(len), \
-                      FALSE, (VM_PROT_READ | VM_PROT_WRITE) \
-                             | (GC_pages_executable ? VM_PROT_EXECUTE : 0)) \
-                != KERN_SUCCESS) { \
-            ABORT("vm_protect(UNPROTECT) failed"); \
-        }
+        if (vm_protect(GC_task_self, (vm_address_t)(addr), (vm_size_t)(len), \
+                       FALSE, (VM_PROT_READ | VM_PROT_WRITE) \
+                              | (GC_pages_executable ? VM_PROT_EXECUTE : 0)) \
+                == KERN_SUCCESS) {} else ABORT("vm_protect(UNPROTECT) failed")
 
 # elif !defined(USE_WINALLOC)
 #   include <sys/mman.h>
@@ -2924,17 +2920,16 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #   define PROTECT(addr, len) \
         if (mprotect((caddr_t)(addr), (size_t)(len), \
                      PROT_READ \
-                     | (GC_pages_executable ? PROT_EXEC : 0)) < 0) { \
-          ABORT("mprotect failed"); \
-        }
+                     | (GC_pages_executable ? PROT_EXEC : 0)) >= 0) { \
+        } else ABORT("mprotect failed")
 #   define UNPROTECT(addr, len) \
         if (mprotect((caddr_t)(addr), (size_t)(len), \
                      (PROT_READ | PROT_WRITE) \
-                     | (GC_pages_executable ? PROT_EXEC : 0)) < 0) { \
-          ABORT(GC_pages_executable ? "un-mprotect executable page" \
-                                      " failed (probably disabled by OS)" : \
-                              "un-mprotect failed"); \
-        }
+                     | (GC_pages_executable ? PROT_EXEC : 0)) >= 0) { \
+        } else ABORT(GC_pages_executable ? \
+                                "un-mprotect executable page failed" \
+                                    " (probably disabled by OS)" : \
+                                "un-mprotect failed")
 #   undef IGNORE_PAGES_EXECUTABLE
 
 # else /* USE_WINALLOC */
@@ -2944,20 +2939,18 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
     static DWORD protect_junk;
 #   define PROTECT(addr, len) \
-        if (!VirtualProtect((addr), (len), \
-                            GC_pages_executable ? PAGE_EXECUTE_READ : \
-                                                  PAGE_READONLY, \
-                            &protect_junk)) { \
-          ABORT_ARG1("VirtualProtect failed", \
-                     ": errcode= 0x%X", (unsigned)GetLastError()); \
-        }
+        if (VirtualProtect((addr), (len), \
+                           GC_pages_executable ? PAGE_EXECUTE_READ : \
+                                                 PAGE_READONLY, \
+                           &protect_junk)) { \
+        } else ABORT_ARG1("VirtualProtect failed", \
+                          ": errcode= 0x%X", (unsigned)GetLastError())
 #   define UNPROTECT(addr, len) \
-        if (!VirtualProtect((addr), (len), \
-                            GC_pages_executable ? PAGE_EXECUTE_READWRITE : \
-                                                  PAGE_READWRITE, \
-                            &protect_junk)) { \
-          ABORT("un-VirtualProtect failed"); \
-        }
+        if (VirtualProtect((addr), (len), \
+                           GC_pages_executable ? PAGE_EXECUTE_READWRITE : \
+                                                 PAGE_READWRITE, \
+                           &protect_junk)) { \
+        } else ABORT("un-VirtualProtect failed")
 # endif /* USE_WINALLOC */
 
 # if defined(MSWIN32)

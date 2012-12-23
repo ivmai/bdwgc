@@ -1503,7 +1503,8 @@ GC_API void GC_CALL GC_enable_incremental(void)
 /* Floating point arguments and formats should be avoided, since FP       */
 /* conversion is more likely to allocate memory.                          */
 /* Assumes that no more than BUFSZ-1 characters are written at once.      */
-#define GC_PRINTF_FILLBUF(buf, format) { \
+#define GC_PRINTF_FILLBUF(buf, format) \
+        do { \
           va_list args; \
           va_start(args, format); \
           (buf)[sizeof(buf) - 1] = 0x15; /* guard */ \
@@ -1511,7 +1512,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
           va_end(args); \
           if ((buf)[sizeof(buf) - 1] != 0x15) \
             ABORT("GC_printf clobbered stack"); \
-        }
+        } while (0)
 
 void GC_printf(const char *format, ...)
 {
