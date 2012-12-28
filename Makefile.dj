@@ -64,7 +64,7 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            SCoptions.amiga README.amiga README.win32 cord/README \
 	   README.rs6000 README.QUICK callprocs pc_excludes \
            barrett_diagram README.OS2 README.Mac MacProjects.sit.hqx \
-           extra/MacOS.c EMX_MAKEFILE README.debugging \
+           extra/MacOS.c EMX_MAKEFILE doc/debugging.html \
            Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
            extra/add_gc_prefix.c README.solaris2 README.sgi README.hp \
