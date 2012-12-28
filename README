@@ -142,7 +142,7 @@ to be disregarded, greatly reducing the probability of accidental
 retention of large objects.  For most purposes it seems best to compile
 with ALL_INTERIOR_POINTERS and to use GC_malloc_ignore_off_page if
 you get collector warnings from allocations of very large objects.
-See README.debugging for details.
+See debugging.html for details.
 
   WARNING: pointers inside memory allocated by the standard "malloc" are not
 seen by the garbage collector.  Thus objects pointed to only from such a
