@@ -16,7 +16,7 @@
 
 #include "private/gc_priv.h"
 
-#if defined(LINUX) && !defined(POWERPC)
+#if defined(LINUX) && !defined(POWERPC) && !defined(NO_SIGCONTEXT_H)
 # include <linux/version.h>
 # if (LINUX_VERSION_CODE <= 0x10400)
     /* Ugly hack to get struct sigcontext_struct definition.  Required  */
@@ -38,13 +38,13 @@
         /* has the right declaration for glibc 2.1.                     */
 #       include <sigcontext.h>
 #     endif /* 0 == __GLIBC_MINOR__ */
-#   else /* not 2 <= __GLIBC__ */
+#   else /* __GLIBC__ < 2 */
       /* libc5 doesn't have <sigcontext.h>: go directly with the kernel   */
       /* one.  Check LINUX_VERSION_CODE to see which we should reference. */
 #     include <asm/sigcontext.h>
-#   endif /* 2 <= __GLIBC__ */
+#   endif /* __GLIBC__ < 2 */
 # endif
-#endif
+#endif /* LINUX && !POWERPC */
 
 #if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS) \
     && !defined(MSWINCE) && !defined(__CC_ARM)
