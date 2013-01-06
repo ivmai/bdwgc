@@ -1233,6 +1233,7 @@
 #      undef STACK_GRAN
 #      define STACK_GRAN 0x10000
 #      define HEURISTIC1
+#      define NO_PTHREAD_GETATTR_NP
 #      define GETPAGESIZE() 65536
 #      ifndef MAX_NACL_GC_THREADS
 #        define MAX_NACL_GC_THREADS 1024
