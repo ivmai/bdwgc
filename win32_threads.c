@@ -2564,7 +2564,7 @@ GC_INNER void GC_thr_init(void)
 #   endif
 
     /* Thread being joined might not have registered itself yet. */
-    /* After the join,thread id may have been recycled.          */
+    /* After the join, thread id may have been recycled.         */
     /* FIXME: It would be better if this worked more like        */
     /* pthread_support.c.                                        */
 #   ifndef GC_WIN32_PTHREADS

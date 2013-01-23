@@ -101,7 +101,7 @@ architecture here is compiler- and OS-dependent.
 <DD>
 The beginning of the main data segment.  The collector will trace all
 memory between <TT>DATASTART</tt> and <TT>DATAEND</tt> for root pointers.
-On some platforms,this can be defined to a constant address,
+On some platforms, this can be defined to a constant address,
 though experience has shown that to be risky.  Ideally the linker will
 define a symbol (e.g. <TT>_data</tt> whose address is the beginning
 of the data segment.  Sometimes the value can be computed using

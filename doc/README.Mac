@@ -120,7 +120,7 @@ o IR Optimizer
   - enable: Optimize Space, Optimize Speed
     I suppose the others would work too, but haven't tried...
 o 68K Linker
-  - Factory Settings (New Style MacsBug,SYM file with full paths,
+  - Factory Settings (New Style MacsBug, SYM file with full paths,
     A6 Frames, fast link, Merge compiler glue into segment 1,
     dead-strip static init)
 

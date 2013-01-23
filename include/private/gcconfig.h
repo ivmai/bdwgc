@@ -550,7 +550,7 @@
                     /*             I386       ==> Intel 386             */
                     /*              (SEQUENT, OS2, SCO, LINUX, NETBSD,  */
                     /*               FREEBSD, THREE86BSD, MSWIN32,      */
-                    /*               BSDI,SOLARIS, NEXT, other variants)        */
+                    /*               BSDI, SOLARIS, NEXT and others)    */
                     /*             NS32K      ==> Encore Multimax       */
                     /*             MIPS       ==> R2000 through R14K    */
                     /*                  (many variants)                 */
