@@ -4,6 +4,7 @@
 *.dll
 *.exe
 *.gcda
+*.gch
 *.gcno
 *.la
 *.lib
