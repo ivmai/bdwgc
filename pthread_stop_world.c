@@ -22,18 +22,18 @@
 
 #ifdef NACL
 
-#include <unistd.h>
-#include <sys/time.h>
+# include <unistd.h>
+# include <sys/time.h>
 
-STATIC int GC_nacl_num_gc_threads = 0;
-STATIC __thread int GC_nacl_thread_idx = -1;
-STATIC int GC_nacl_park_threads_now = 0;
-STATIC pthread_t GC_nacl_thread_parker = -1;
+  STATIC int GC_nacl_num_gc_threads = 0;
+  STATIC __thread int GC_nacl_thread_idx = -1;
+  STATIC volatile int GC_nacl_park_threads_now = 0;
+  STATIC volatile pthread_t GC_nacl_thread_parker = -1;
 
-GC_INNER __thread GC_thread GC_nacl_gc_thread_self = NULL;
+  GC_INNER __thread GC_thread GC_nacl_gc_thread_self = NULL;
 
-int GC_nacl_thread_parked[MAX_NACL_GC_THREADS];
-int GC_nacl_thread_used[MAX_NACL_GC_THREADS];
+  volatile int GC_nacl_thread_parked[MAX_NACL_GC_THREADS];
+  int GC_nacl_thread_used[MAX_NACL_GC_THREADS];
 
 #elif defined(GC_OPENBSD_UTHREADS)
 
