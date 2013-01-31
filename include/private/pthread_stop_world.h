@@ -34,7 +34,12 @@ struct thread_stop_info {
       /* saved registers, they may be pushed to the stack much earlier. */
       /* Also, on amd64 'push' puts 8 bytes on the stack even though    */
       /* our pointers are 4 bytes.                                      */
-#     define NACL_GC_REG_STORAGE_SIZE 20
+#     ifdef ARM32
+        /* Space for r4-r8, r10-r12, r14.       */
+#       define NACL_GC_REG_STORAGE_SIZE 9
+#     else
+#       define NACL_GC_REG_STORAGE_SIZE 20
+#     endif
       ptr_t reg_storage[NACL_GC_REG_STORAGE_SIZE];
 #   endif
 };

@@ -93,7 +93,7 @@
 /* Determine the machine type: */
 # if defined(__native_client__)
 #    define NACL
-#    if !defined(__portable_native_client__)
+#    if !defined(__portable_native_client__) && !defined(__arm__)
 #      define I386
 #      define mach_type_known
 #    else
@@ -109,7 +109,9 @@
 # endif
 # if defined(__arm) || defined(__arm__) || defined(__thumb__)
 #    define ARM32
-#    if !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
+#    if defined(NACL)
+#      define mach_type_known
+#    elif !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
         && !defined(OPENBSD) && !defined(DARWIN) \
         && !defined(_WIN32) && !defined(__CEGCC__) && !defined(SYMBIAN)
 #      define NOSYS
@@ -2134,8 +2136,12 @@
 # endif
 
 # ifdef ARM32
+#   if defined(NACL)
+#     define MACH_TYPE "NACL"
+#   else
+#     define MACH_TYPE "ARM32"
+#   endif
 #   define CPP_WORDSZ 32
-#   define MACH_TYPE "ARM32"
 #   define ALIGNMENT 4
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
