@@ -1596,8 +1596,13 @@ void GC_printf(const char *format, ...)
 
     if (!GC_quiet) {
       GC_PRINTF_FILLBUF(buf, format);
-      if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
-        ABORT("write to stdout failed");
+#     ifdef NACL
+        (void)WRITE(GC_stdout, buf, strlen(buf));
+        /* Ignore errors silently.      */
+#     else
+        if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
+          ABORT("write to stdout failed");
+#     endif
     }
 }
 
@@ -1614,8 +1619,12 @@ void GC_log_printf(const char *format, ...)
     char buf[BUFSZ + 1];
 
     GC_PRINTF_FILLBUF(buf, format);
-    if (WRITE(GC_log, buf, strlen(buf)) < 0)
-      ABORT("write to GC log failed");
+#   ifdef NACL
+      (void)WRITE(GC_log, buf, strlen(buf));
+#   else
+      if (WRITE(GC_log, buf, strlen(buf)) < 0)
+        ABORT("write to GC log failed");
+#   endif
 }
 
 #ifndef GC_ANDROID_LOG

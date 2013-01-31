@@ -769,16 +769,28 @@ GC_INNER void GC_stop_world(void)
   STATIC GC_bool GC_nacl_thread_parking_inited = FALSE;
   STATIC pthread_mutex_t GC_nacl_thread_alloc_lock = PTHREAD_MUTEX_INITIALIZER;
 
-  extern void nacl_register_gc_hooks(void (*pre)(void), void (*post)(void));
+  struct nacl_irt_blockhook {
+    int (*register_block_hooks)(void (*pre)(void), void (*post)(void));
+  };
+
+  extern size_t nacl_interface_query(const char *interface_ident,
+                                     void *table, size_t tablesize);
 
   GC_INNER void GC_nacl_initialize_gc_thread(void)
   {
     int i;
-    nacl_register_gc_hooks(nacl_pre_syscall_hook, nacl_post_syscall_hook);
+    static struct nacl_irt_blockhook gc_hook;
+
     pthread_mutex_lock(&GC_nacl_thread_alloc_lock);
     if (!EXPECT(GC_nacl_thread_parking_inited, TRUE)) {
       BZERO(GC_nacl_thread_parked, sizeof(GC_nacl_thread_parked));
       BZERO(GC_nacl_thread_used, sizeof(GC_nacl_thread_used));
+      /* TODO: replace with public 'register hook' function when        */
+      /* available from glibc.                                          */
+      nacl_interface_query("nacl-irt-blockhook-0.1",
+                           &gc_hook, sizeof(gc_hook));
+      gc_hook.register_block_hooks(nacl_pre_syscall_hook,
+                                   nacl_post_syscall_hook);
       GC_nacl_thread_parking_inited = TRUE;
     }
     GC_ASSERT(GC_nacl_num_gc_threads <= MAX_NACL_GC_THREADS);

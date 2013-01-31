@@ -1542,12 +1542,6 @@ GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
     }
     UNLOCK();
 
-#   ifdef NACL
-      /* Native Client doesn't support pthread cleanup functions, */
-      /* so cleanup the thread here.                              */
-      GC_thread_exit_proc(0);
-#   endif
-
     REAL_FUNC(pthread_exit)(retval);
   }
 #endif /* GC_PTHREAD_EXIT_ATTRIBUTE */

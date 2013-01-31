@@ -52,18 +52,16 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
     || defined(CYGWIN32)) && !defined(PCR)
 
-#if !defined(SOLARISDL) && !defined(IRIX5) && \
-    !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) && \
-    !(defined(ALPHA) && defined(OSF1)) && \
-    !defined(HPUX) && !(defined(LINUX) && defined(__ELF__)) && \
-    !defined(AIX) && !defined(SCO_ELF) && !defined(DGUX) && \
-    !(defined(FREEBSD) && defined(__ELF__)) && \
-    !(defined(OPENBSD) && (defined(__ELF__) || defined(M68K))) && \
-    !(defined(NETBSD) && defined(__ELF__)) && !defined(HURD) && \
-    !defined(DARWIN) && !defined(CYGWIN32)
+#if !defined(DARWIN) && !defined(SCO_ELF) && !defined(SOLARISDL) \
+    && !defined(AIX) && !defined(DGUX) && !defined(IRIX5) && !defined(HPUX) \
+    && !defined(CYGWIN32) && !defined(MSWIN32) && !defined(MSWINCE) \
+    && !(defined(ALPHA) && defined(OSF1)) \
+    && !(defined(FREEBSD) && defined(__ELF__)) \
+    && !((defined(LINUX) || defined(NACL)) && defined(__ELF__)) \
+    && !(defined(NETBSD) && defined(__ELF__)) && !defined(HURD) \
+    && !(defined(OPENBSD) && (defined(__ELF__) || defined(M68K)))
  --> We only know how to find data segments of dynamic libraries for the
- --> above.  Additional SVR4 variants might not be too
- --> hard to add.
+ --> above.  Additional SVR4 variants might not be too hard to add.
 #endif
 
 #include <stdio.h>
@@ -89,7 +87,8 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
 #if defined(SCO_ELF) || defined(DGUX) || defined(HURD) \
     || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
-                             || defined(NETBSD) || defined(OPENBSD)))
+                             || defined(NACL) || defined(NETBSD) \
+                             || defined(OPENBSD)))
 # include <stddef.h>
 # if !defined(OPENBSD) && !defined(PLATFORM_ANDROID)
     /* OpenBSD does not have elf.h file; link.h below is sufficient.    */
@@ -257,7 +256,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 #if defined(SCO_ELF) || defined(DGUX) || defined(HURD) \
     || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
-                             || defined(NETBSD) || defined(OPENBSD)))
+                             || defined(NACL) || defined(NETBSD) \
+                             || defined(OPENBSD)))
 
 #ifdef USE_PROC_FOR_LIBRARIES
 
