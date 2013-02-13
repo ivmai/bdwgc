@@ -455,14 +455,16 @@ GC_INNER char * GC_get_maps(void)
 
   GC_INNER void GC_init_linux_data_start(void)
   {
-#   if defined(LINUX) || defined(HURD)
+#   if (defined(LINUX) || defined(HURD)) && !defined(IGNORE_PROG_DATA_START)
       /* Try the easy approaches first: */
       if ((ptr_t)__data_start != 0) {
           GC_data_start = (ptr_t)(__data_start);
+          GC_ASSERT((word)GC_data_start <= (word)_end);
           return;
       }
       if ((ptr_t)data_start != 0) {
           GC_data_start = (ptr_t)(data_start);
+          GC_ASSERT((word)GC_data_start <= (word)_end);
           return;
       }
 #   endif /* LINUX */
