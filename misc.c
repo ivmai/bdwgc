@@ -738,12 +738,14 @@ GC_INNER GC_bool GC_is_initialized = FALSE;
     GC_INNER CRITICAL_SECTION GC_write_cs;
 #endif
 
-STATIC void GC_exit_check(void)
-{
-   if (GC_find_leak) {
-     GC_gcollect();
-   }
-}
+#ifndef DONT_USE_ATEXIT
+  STATIC void GC_exit_check(void)
+  {
+    if (GC_find_leak) {
+      GC_gcollect();
+    }
+  }
+#endif
 
 #if defined(UNIX_LIKE) && !defined(NO_DEBUGGING)
   static void looping_handler(int sig)
@@ -1196,11 +1198,13 @@ GC_API void GC_CALL GC_init(void)
 #   ifdef STUBBORN_ALLOC
         GC_stubborn_init();
 #   endif
-    if (GC_find_leak) {
-      /* This is to give us at least one chance to detect leaks.        */
-      /* This may report some very benign leaks, but ...                */
-      atexit(GC_exit_check);
-    }
+#   ifndef DONT_USE_ATEXIT
+      if (GC_find_leak) {
+        /* This is to give us at least one chance to detect leaks.        */
+        /* This may report some very benign leaks, but ...                */
+        atexit(GC_exit_check);
+      }
+#   endif
 
     /* The rest of this again assumes we don't really hold      */
     /* the allocation lock.                                     */
