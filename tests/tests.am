@@ -15,6 +15,9 @@ TESTS += gctest$(EXEEXT)
 check_PROGRAMS += gctest
 gctest_SOURCES = tests/test.c
 gctest_LDADD = $(test_ldadd)
+if THREADS
+gctest_LDADD += $(THREADDLLIBS)
+endif
 gctest_DEPENDENCIES = $(top_builddir)/libgc.la
 
 TESTS += leaktest$(EXEEXT)
@@ -63,22 +66,22 @@ if THREADS
 TESTS += threadleaktest$(EXEEXT)
 check_PROGRAMS += threadleaktest
 threadleaktest_SOURCES = tests/thread_leak_test.c
-threadleaktest_LDADD = $(test_ldadd)
+threadleaktest_LDADD = $(test_ldadd) $(THREADDLLIBS)
 
 TESTS += threadkey_test$(EXEEXT)
 check_PROGRAMS += threadkey_test
 threadkey_test_SOURCES = tests/threadkey_test.c
-threadkey_test_LDADD = $(test_ldadd)
+threadkey_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
 
 TESTS += subthread_create$(EXEEXT)
 check_PROGRAMS += subthread_create
 subthread_create_SOURCES = tests/subthread_create.c
-subthread_create_LDADD = $(test_ldadd)
+subthread_create_LDADD = $(test_ldadd) $(THREADDLLIBS)
 
 TESTS += initsecondarythread$(EXEEXT)
 check_PROGRAMS += initsecondarythread
 initsecondarythread_SOURCES = tests/initsecondarythread.c
-initsecondarythread_LDADD = $(test_ldadd)
+initsecondarythread_LDADD = $(test_ldadd) $(THREADDLLIBS)
 endif
 
 if CPLUSPLUS
