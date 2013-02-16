@@ -240,9 +240,9 @@ STATIC void GC_init_size_map(void)
     /* We leave the rest of the array to be filled in on demand. */
 }
 
-/* Fill in additional entries in GC_size_map, including the ith one */
+/* Fill in additional entries in GC_size_map, including the ith one     */
 /* We assume the ith entry is currently 0.                              */
-/* Note that a filled in section of the array ending at n always    */
+/* Note that a filled in section of the array ending at n always        */
 /* has length at least n/4.                                             */
 GC_INNER void GC_extend_size_map(size_t i)
 {
@@ -277,9 +277,10 @@ GC_INNER void GC_extend_size_map(size_t i)
         granule_sz = MAXOBJGRANULES;
     }
     /* If we can fit the same number of larger objects in a block,      */
-    /* do so.                                                   */
+    /* do so.                                                           */
     {
         size_t number_of_objs = HBLK_GRANULES/granule_sz;
+        GC_ASSERT(number_of_objs != 0);
         granule_sz = HBLK_GRANULES/number_of_objs;
         granule_sz &= ~1;
     }
