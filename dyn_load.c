@@ -93,6 +93,15 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
     /* The header file is in "bionic/linker" folder of Android sources. */
     /* If you don't need the "dynamic loading" feature, you may build   */
     /* the collector with -D IGNORE_DYNAMIC_LOADING.                    */
+#   ifdef BIONIC_ELFDATA_REDEF_BUG
+      /* Workaround a problem in Android 4.1 (and 4.2) Bionic which has */
+      /* mismatching ELF_DATA definitions in sys/exec_elf.h and         */
+      /* asm/elf.h included from linker.h file (similar to EM_ALPHA).   */
+#     include <asm/elf.h>
+#     include <linux/elf-em.h>
+#     undef ELF_DATA
+#     undef EM_ALPHA
+#   endif
 #   include <linker.h>
 # else
 #   include <link.h>
