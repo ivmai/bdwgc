@@ -1,3 +1,16 @@
+2013-02-13  Andy Wingo <wingo@pobox.com>
+
+	* tests/tests.am (gctest_LDADD, threadleaktest_LDADD,
+	threadkey_test_LDADD,
+	initsecondarythread_LDADD): Link to pthreads (or appropriate
+	threading libraries) as needed; fixes failure to link with new GNU ld
+	linking rules.
+
+2012-12-28  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README: Change README.debugging to debugging.html.
+	* Makefile.dj (OTHER_FILES): Likewise.
+
 2012-12-23  Ivan Maidanski <ivmai@mail.ru>
 
 	* os_dep.c (GC_win32_free_heap): Test GLOBAL_ALLOC_TEST instead of

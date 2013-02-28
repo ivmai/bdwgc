@@ -118,15 +118,16 @@ DIST_COMMON = $(am__configure_deps) $(am__include_HEADERS_DIST) \
 	$(top_srcdir)/include/private/config.h.in ChangeLog compile \
 	config.guess config.sub depcomp install-sh ltmain.sh missing \
 	mkinstalldirs
-@KEEP_BACK_PTRS_TRUE@am__append_7 = tracetest$(EXEEXT)
-@KEEP_BACK_PTRS_TRUE@am__append_8 = tracetest
-@THREADS_TRUE@am__append_9 = threadleaktest$(EXEEXT) \
+@THREADS_TRUE@am__append_7 = $(THREADDLLIBS)
+@KEEP_BACK_PTRS_TRUE@am__append_8 = tracetest$(EXEEXT)
+@KEEP_BACK_PTRS_TRUE@am__append_9 = tracetest
+@THREADS_TRUE@am__append_10 = threadleaktest$(EXEEXT) \
 @THREADS_TRUE@	threadkey_test$(EXEEXT) \
 @THREADS_TRUE@	initsecondarythread$(EXEEXT)
-@THREADS_TRUE@am__append_10 = threadleaktest threadkey_test \
+@THREADS_TRUE@am__append_11 = threadleaktest threadkey_test \
 @THREADS_TRUE@	initsecondarythread
-@CPLUSPLUS_TRUE@am__append_11 = test_cpp$(EXEEXT)
-@CPLUSPLUS_TRUE@am__append_12 = test_cpp
+@CPLUSPLUS_TRUE@am__append_12 = test_cpp$(EXEEXT)
+@CPLUSPLUS_TRUE@am__append_13 = test_cpp
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/gc_set_version.m4 \
@@ -227,6 +228,7 @@ libstaticrootslib_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 @CPLUSPLUS_TRUE@am__EXEEXT_3 = test_cpp$(EXEEXT)
 am_gctest_OBJECTS = test.$(OBJEXT)
 gctest_OBJECTS = $(am_gctest_OBJECTS)
+@THREADS_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 am_hugetest_OBJECTS = huge_test.$(OBJEXT)
 hugetest_OBJECTS = $(am_hugetest_OBJECTS)
 hugetest_DEPENDENCIES = $(am__DEPENDENCIES_2)
@@ -235,7 +237,7 @@ am__initsecondarythread_SOURCES_DIST = tests/initsecondarythread.c
 @THREADS_TRUE@	initsecondarythread.$(OBJEXT)
 initsecondarythread_OBJECTS = $(am_initsecondarythread_OBJECTS)
 @THREADS_TRUE@initsecondarythread_DEPENDENCIES =  \
-@THREADS_TRUE@	$(am__DEPENDENCIES_2)
+@THREADS_TRUE@	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
 am_leaktest_OBJECTS = leak_test.$(OBJEXT)
 leaktest_OBJECTS = $(am_leaktest_OBJECTS)
 leaktest_DEPENDENCIES = $(am__DEPENDENCIES_2)
@@ -263,11 +265,13 @@ test_cpp_OBJECTS = $(am_test_cpp_OBJECTS)
 am__threadkey_test_SOURCES_DIST = tests/threadkey_test.c
 @THREADS_TRUE@am_threadkey_test_OBJECTS = threadkey_test.$(OBJEXT)
 threadkey_test_OBJECTS = $(am_threadkey_test_OBJECTS)
-@THREADS_TRUE@threadkey_test_DEPENDENCIES = $(am__DEPENDENCIES_2)
+@THREADS_TRUE@threadkey_test_DEPENDENCIES = $(am__DEPENDENCIES_2) \
+@THREADS_TRUE@	$(am__DEPENDENCIES_1)
 am__threadleaktest_SOURCES_DIST = tests/thread_leak_test.c
 @THREADS_TRUE@am_threadleaktest_OBJECTS = thread_leak_test.$(OBJEXT)
 threadleaktest_OBJECTS = $(am_threadleaktest_OBJECTS)
-@THREADS_TRUE@threadleaktest_DEPENDENCIES = $(am__DEPENDENCIES_2)
+@THREADS_TRUE@threadleaktest_DEPENDENCIES = $(am__DEPENDENCIES_2) \
+@THREADS_TRUE@	$(am__DEPENDENCIES_1)
 am__tracetest_SOURCES_DIST = tests/trace_test.c
 @KEEP_BACK_PTRS_TRUE@am_tracetest_OBJECTS = trace_test.$(OBJEXT)
 tracetest_OBJECTS = $(am_tracetest_OBJECTS)
@@ -619,8 +623,8 @@ dist_noinst_HEADERS = include/private/gc_hdrs.h \
 check_LTLIBRARIES = libstaticrootslib.la
 TESTS = gctest$(EXEEXT) leaktest$(EXEEXT) middletest$(EXEEXT) \
 	smashtest$(EXEEXT) hugetest$(EXEEXT) realloc_test$(EXEEXT) \
-	staticrootstest$(EXEEXT) $(am__append_7) $(am__append_9) \
-	$(am__append_11)
+	staticrootstest$(EXEEXT) $(am__append_8) $(am__append_10) \
+	$(am__append_12)
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = bdw-gc.pc
 libgc_la_SOURCES = allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
@@ -678,7 +682,7 @@ libcord_la_SOURCES = \
 # Common libs to _LDADD for all tests.
 test_ldadd = $(top_builddir)/libgc.la $(EXTRA_TEST_LIBS)
 gctest_SOURCES = tests/test.c
-gctest_LDADD = $(test_ldadd)
+gctest_LDADD = $(test_ldadd) $(am__append_7)
 gctest_DEPENDENCIES = $(top_builddir)/libgc.la
 leaktest_SOURCES = tests/leak_test.c
 leaktest_LDADD = $(test_ldadd)
@@ -699,11 +703,11 @@ libstaticrootslib_la_DEPENDENCIES = $(top_builddir)/libgc.la
 @KEEP_BACK_PTRS_TRUE@tracetest_SOURCES = tests/trace_test.c
 @KEEP_BACK_PTRS_TRUE@tracetest_LDADD = $(test_ldadd)
 @THREADS_TRUE@threadleaktest_SOURCES = tests/thread_leak_test.c
-@THREADS_TRUE@threadleaktest_LDADD = $(test_ldadd)
+@THREADS_TRUE@threadleaktest_LDADD = $(test_ldadd) $(THREADDLLIBS)
 @THREADS_TRUE@threadkey_test_SOURCES = tests/threadkey_test.c
-@THREADS_TRUE@threadkey_test_LDADD = $(test_ldadd)
+@THREADS_TRUE@threadkey_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
 @THREADS_TRUE@initsecondarythread_SOURCES = tests/initsecondarythread.c
-@THREADS_TRUE@initsecondarythread_LDADD = $(test_ldadd)
+@THREADS_TRUE@initsecondarythread_LDADD = $(test_ldadd) $(THREADDLLIBS)
 @CPLUSPLUS_TRUE@test_cpp_SOURCES = tests/test_cpp.cc
 @AVOID_CPP_LIB_FALSE@@CPLUSPLUS_TRUE@test_cpp_LDADD = libgccpp.la $(test_ldadd)
 @AVOID_CPP_LIB_TRUE@@CPLUSPLUS_TRUE@test_cpp_LDADD = gc_cpp.o $(test_ldadd)
