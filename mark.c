@@ -1575,7 +1575,7 @@ STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
     word *q;
     word mark_word;
 
-    /* Allow registers to be used for some frequently acccessed */
+    /* Allow registers to be used for some frequently accessed  */
     /* global variables.  Otherwise aliasing issues are likely  */
     /* to prevent that.                                         */
     ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
