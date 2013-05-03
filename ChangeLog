@@ -6607,7 +6607,7 @@ The latter is more reliable and easier on Linux with dl_iterate_phdr.
 * Integrated Bo Thorsen's X86-64 support.
 * STACKBOTTOM definition for LINUX/MIPS was partially changed back.
 * Replaced all occurrences of LINUX_DATA_START in gcconfig.h with
-SEARCH_FOR_DATA_START.  It doesn't hurt to falll back to a search.
+SEARCH_FOR_DATA_START.  It doesn't hurt to fall back to a search.
 And __data_start doesn't seem to get defined correctly of the GC
 library is loaded with LD_PRELOAD, e.g. for leak detection.
 * If the GC_find_leak environment variable is set, do a
@@ -6863,7 +6863,7 @@ that combination anymore.
 * Added some support for OpenBSD/ELF/Linux.
 * Added Jakub Jelinek's patch to use dl_iterate_phdr for dynamic library
 traversal to dyn_load.c.  Changed it to weakly reference dl_iterate_phdr,
-so that the old code is stilll used with old versions of glibc.
+so that the old code is still used with old versions of glibc.
 * Cleaned up feature test macros for various threads packages and
 integrated (partially functional) FreeBSD threads code from Loren Rittle.
 It's likely that the cleanup broke something, since it touched lots of
