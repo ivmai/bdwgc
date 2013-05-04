@@ -22,6 +22,7 @@ unloading shared library.
 #include <stdlib.h>
 #include <string.h>
 
+#define GC_BUILD
 #include "gc.h"
 #include "gc_priv.h"
 

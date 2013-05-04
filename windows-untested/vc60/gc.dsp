@@ -7,19 +7,19 @@
 CFG=gc - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "gc.mak".
-!MESSAGE 
+!MESSAGE
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "gc.mak" CFG="gc - Win32 Debug"
-!MESSAGE 
+!MESSAGE
 !MESSAGE Possible choices for configuration are:
-!MESSAGE 
+!MESSAGE
 !MESSAGE "gc - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "gc - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE 
+!MESSAGE
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GC_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\..\include" /FI"stdafx.h" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "GC_BUILD" /D "GC_DLL" /D "WIN32" /D "_MBCS" /D "GC_THREADS" /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\..\include" /FI"stdafx.h" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "GC_DLL" /D "WIN32" /D "_MBCS" /D "GC_THREADS" /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -75,7 +75,7 @@ PostBuild_Cmds=del $(OutDir)\..\lib\gc.exp
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GC_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /GX /Zi /Od /I "..\..\include" /FI"stdafx.h" /D "_DEBUG" /D "_WINDOWS" /D "_USRDLL" /D "GC_BUILD" /D "GC_DLL" /D "WIN32" /D "_MBCS" /D "GC_THREADS" /Yu"stdafx.h" /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /GX /Zi /Od /I "..\..\include" /FI"stdafx.h" /D "_DEBUG" /D "_WINDOWS" /D "_USRDLL" /D "GC_DLL" /D "WIN32" /D "_MBCS" /D "GC_THREADS" /Yu"stdafx.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -93,7 +93,7 @@ SOURCE="$(InputPath)"
 PostBuild_Cmds=del $(OutDir)\..\lib\gcd.exp
 # End Special Build Tool
 
-!ENDIF 
+!ENDIF
 
 # Begin Target
 

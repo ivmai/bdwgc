@@ -24,8 +24,8 @@
 
 /* X86_64 is currently missing some meachine-dependent code below.  */
 
+#define GC_BUILD
 #include "private/msvc_dbg.h"
-
 #include "gc.h"
 
 #define WIN32_LEAN_AND_MEAN

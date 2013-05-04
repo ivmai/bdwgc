@@ -3,7 +3,7 @@
 # Written by Walter Bright
 
 
-DEFINES=-DNDEBUG -DGC_BUILD -D_WINDOWS -DGC_DLL -DALL_INTERIOR_POINTERS -DWIN32_THREADS
+DEFINES=-DNDEBUG -D_WINDOWS -DGC_DLL -DALL_INTERIOR_POINTERS -DWIN32_THREADS
 CFLAGS=-Iinclude $(DEFINES) -wx -g
 LFLAGS=/ma/implib/co
 CC=sc
@@ -62,7 +62,7 @@ gctest.exe : gc.lib tests\test.obj
 	sc -ogctest.exe tests\test.obj gc.lib
 
 tests\test.obj : tests\test.c
-	$(CC) -c -g -DNDEBUG -DGC_BUILD -D_WINDOWS -DGC_DLL \
+	$(CC) -c -g -DNDEBUG -D_WINDOWS -DGC_DLL \
 	-DALL_INTERIOR_POINTERS -DWIN32_THREADS \
 	-Iinclude tests\test.c -otests\test.obj
 

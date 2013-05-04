@@ -23,7 +23,7 @@
                 Optimization="2"
                 InlineFunctionExpansion="1"
                 AdditionalIncludeDirectories="..\..\include"
-                PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;GC_THREADS"
+                PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;GC_THREADS"
                 StringPooling="TRUE"
                 RuntimeLibrary="2"
                 EnableFunctionLevelLinking="TRUE"
@@ -97,7 +97,7 @@
                 Name="VCCLCompilerTool"
                 Optimization="0"
                 AdditionalIncludeDirectories="..\..\include"
-                PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;GC_THREADS"
+                PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;GC_THREADS"
                 BasicRuntimeChecks="3"
                 RuntimeLibrary="3"
                 UsePrecompiledHeader="3"
@@ -171,7 +171,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -180,7 +180,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -193,7 +193,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -202,7 +202,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -215,7 +215,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -224,7 +224,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -237,7 +237,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -246,7 +246,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -259,7 +259,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -268,7 +268,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -281,7 +281,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -290,7 +290,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -303,7 +303,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -312,7 +312,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -325,7 +325,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -334,7 +334,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -347,7 +347,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -356,7 +356,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -369,7 +369,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -378,7 +378,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -391,7 +391,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -400,7 +400,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -413,7 +413,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -422,7 +422,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -435,7 +435,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -444,7 +444,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -457,7 +457,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -466,7 +466,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -479,7 +479,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -488,7 +488,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -501,7 +501,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -510,7 +510,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -523,7 +523,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -532,7 +532,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -545,7 +545,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -554,7 +554,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -567,7 +567,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -576,7 +576,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -589,7 +589,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -598,7 +598,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -611,7 +611,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -620,7 +620,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -633,7 +633,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -642,7 +642,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -655,7 +655,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -664,7 +664,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -677,7 +677,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         UsePrecompiledHeader="1"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -687,7 +687,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         UsePrecompiledHeader="1"
                         ForcedIncludeFiles=""/>
@@ -701,7 +701,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -710,7 +710,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -723,7 +723,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -732,7 +732,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
@@ -745,7 +745,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="2"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>
                 <FileConfiguration
@@ -754,7 +754,7 @@
                         Name="VCCLCompilerTool"
                         Optimization="0"
                         AdditionalIncludeDirectories=""
-                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_BUILD;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
+                        PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;GC_DLL;WIN32;_MBCS;GC_THREADS;$(NoInherit)"
                         BasicRuntimeChecks="3"
                         ForcedIncludeFiles=""/>
                 </FileConfiguration>

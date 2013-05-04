@@ -7,19 +7,19 @@
 CFG=libgc - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "libgc.mak".
-!MESSAGE 
+!MESSAGE
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "libgc.mak" CFG="libgc - Win32 Debug"
-!MESSAGE 
+!MESSAGE
 !MESSAGE Possible choices for configuration are:
-!MESSAGE 
+!MESSAGE
 !MESSAGE "libgc - Win32 Release" (based on "Win32 (x86) Static Library")
 !MESSAGE "libgc - Win32 Debug" (based on "Win32 (x86) Static Library")
-!MESSAGE 
+!MESSAGE
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\..\obj\Release\libgc"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /W3 /GX /Zi /O2 /I "..\..\include" /FI"stdafx.h" /D "NDEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "GC_BUILD" /Yu"stdafx.h" /Fd"..\..\..\lib\libgc.pdb" /FD /c
+# ADD CPP /nologo /W3 /GX /Zi /O2 /I "..\..\include" /FI"stdafx.h" /D "NDEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /Yu"stdafx.h" /Fd"..\..\..\lib\libgc.pdb" /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -70,7 +70,7 @@ PostBuild_Cmds=del $(OutDir)\$(TargetName).idb
 # PROP Intermediate_Dir "..\..\..\obj\Debug\libgc"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /GX /Zi /Od /I "..\..\include" /FI"stdafx.h" /D "_DEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "GC_BUILD" /Yu"stdafx.h" /Fd"..\..\..\lib\libgcd.pdb" /FD /GZ /c
+# ADD CPP /nologo /W3 /GX /Zi /Od /I "..\..\include" /FI"stdafx.h" /D "_DEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /Yu"stdafx.h" /Fd"..\..\..\lib\libgcd.pdb" /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -86,7 +86,7 @@ SOURCE="$(InputPath)"
 PostBuild_Cmds=del $(OutDir)\$(TargetName).idb
 # End Special Build Tool
 
-!ENDIF 
+!ENDIF
 
 # Begin Target
 
