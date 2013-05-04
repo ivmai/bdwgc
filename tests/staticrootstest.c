@@ -9,33 +9,27 @@
 #include "gc.h"
 #include "gc_backptr.h"
 
-#ifndef GC_VISIBILITY_HIDDEN_SET
+#ifndef GC_TEST_IMPORT_API
+# define GC_TEST_IMPORT_API extern
+#endif
 
+/* Should match that in staticrootslib.c.       */
 struct treenode {
     struct treenode *x;
     struct treenode *y;
-} * root[10];
+};
+
+struct treenode *root[10] = { NULL };
 
 static char *staticroot = 0;
 
-extern struct treenode * libsrl_mktree(int i);
-extern void * libsrl_init(void);
-
-/*
-struct treenode * mktree(int i) {
-  struct treenode * r = GC_MALLOC(sizeof(struct treenode));
-  if (0 == i) return 0;
-  if (1 == i) r = GC_MALLOC_ATOMIC(sizeof(struct treenode));
-  r -> x = mktree(i-1);
-  r -> y = mktree(i-1);
-  return r;
-}*/
+GC_TEST_IMPORT_API struct treenode * libsrl_mktree(int i);
+GC_TEST_IMPORT_API void * libsrl_init(void);
 
 int main(void)
 {
-  int i;
-  /*GC_INIT();
-  staticroot = GC_MALLOC(sizeof(struct treenode));*/
+  int i, j;
+
   staticroot = libsrl_init();
   if (NULL == staticroot) {
     fprintf(stderr, "GC_malloc returned NULL\n");
@@ -43,37 +37,17 @@ int main(void)
   }
   memset(staticroot, 0x42, sizeof(struct treenode));
   GC_gcollect();
-  for (i = 0; i < 10; ++i) {
-    root[i] = libsrl_mktree(12);
-    GC_gcollect();
-  }
-  for (i = 0; i < (int)sizeof(struct treenode); ++i) {
-    if (staticroot[i] != 0x42) {
-      fprintf(stderr, "Memory check failed\n");
-      return -1;
-    }
-  }
-  for (i = 0; i < 10; ++i) {
-    root[i] = libsrl_mktree(12);
-    GC_gcollect();
-  }
-  for (i = 0; i < (int)sizeof(struct treenode); ++i) {
-    if (staticroot[i] != 0x42) {
-      fprintf(stderr, "Memory check failed\n");
-      return -1;
-    }
+  for (j = 0; j < 2; j++) {
+      for (i = 0; i < 10; ++i) {
+        root[i] = libsrl_mktree(12);
+        GC_gcollect();
+      }
+      for (i = 0; i < (int)sizeof(struct treenode); ++i) {
+        if (staticroot[i] != 0x42) {
+          fprintf(stderr, "Memory check failed\n");
+          return -1;
+        }
+      }
   }
   return 0;
 }
-
-#else
-
-/* Skip since symbols defined in staticrootslib are not visible */
-
-int main(void)
-{
-  printf("staticrootstest skipped\n");
-  return 0;
-}
-
-#endif
