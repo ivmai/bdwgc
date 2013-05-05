@@ -1,8 +1,6 @@
 
 /* This test file is intended to be compiled into a DLL. */
 
-#include <stdio.h>
-
 #ifndef GC_DEBUG
 # define GC_DEBUG
 #endif
@@ -24,20 +22,36 @@ struct treenode {
     struct treenode *y;
 };
 
-GC_TEST_EXPORT_API struct treenode * libsrl_mktree(int i)
-{
-  struct treenode * r = GC_MALLOC(sizeof(struct treenode));
-  if (0 == i) return 0;
-  if (1 == i) r = GC_MALLOC_ATOMIC(sizeof(struct treenode));
-  if (r) {
-    r -> x = libsrl_mktree(i-1);
-    r -> y = libsrl_mktree(i-1);
-  }
-  return r;
-}
+static struct treenode *root[10] = { 0 };
+static struct treenode *root_nz[10] = { (void *)(GC_word)2 };
 
-GC_TEST_EXPORT_API void * libsrl_init(void)
+#ifdef STATICROOTSLIB2
+# define libsrl_getpelem libsrl_getpelem2
+#else
+
+  GC_TEST_EXPORT_API struct treenode * libsrl_mktree(int i)
+  {
+    struct treenode * r = GC_MALLOC(sizeof(struct treenode));
+    if (0 == i) return 0;
+    if (1 == i) r = GC_MALLOC_ATOMIC(sizeof(struct treenode));
+    if (r) {
+      r -> x = libsrl_mktree(i-1);
+      r -> y = libsrl_mktree(i-1);
+    }
+    return r;
+  }
+
+  GC_TEST_EXPORT_API void * libsrl_init(void)
+  {
+#   ifndef STATICROOTSLIB_INIT_IN_MAIN
+      GC_INIT();
+#   endif
+    return GC_MALLOC(sizeof(struct treenode));
+  }
+
+#endif /* !STATICROOTSLIB2 */
+
+GC_TEST_EXPORT_API struct treenode ** libsrl_getpelem(int i, int j)
 {
-  GC_INIT();
-  return GC_MALLOC(sizeof(struct treenode));
+  return &((j & 1) != 0 ? root_nz : root)[i];
 }
