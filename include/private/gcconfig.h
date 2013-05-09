@@ -1941,12 +1941,12 @@
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
 #       define DYNAMIC_LOADING
-        extern int __data_start[];
+        extern int __data_start[] __attribute__((__weak__));
 #       define DATASTART ((ptr_t)(__data_start))
-    extern int _end[];
-#   define DATAEND (ptr_t)(_end)
-#   define CACHE_LINE_SIZE 256
-#   define GETPAGESIZE() 4096
+        extern int _end[] __attribute__((__weak__));
+#       define DATAEND (ptr_t)(_end)
+#       define CACHE_LINE_SIZE 256
+#       define GETPAGESIZE() 4096
 #   endif
 # endif
 
