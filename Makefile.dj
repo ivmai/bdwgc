@@ -62,7 +62,7 @@ SRCS= $(CSRCS) \
     include/leak_detector.h $(CORD_SRCS)
 
 OTHER_FILES= PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
-           README tests/test.c test_cpp.cc tools/setjmp_t.c SMakefile.amiga \
+           README.md tests/test.c test_cpp.cc tools/setjmp_t.c SMakefile.amiga \
            doc/README.amiga doc/README.win32 doc/README.cords \
            doc/README.rs6000 README.QUICK TODO tools/callprocs.sh \
            pc_excludes barrett_diagram doc/README.OS2 doc/README.Mac \
