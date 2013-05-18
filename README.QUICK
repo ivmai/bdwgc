@@ -18,11 +18,11 @@ that appears not to significantly restrict use of the collector, though
 use of those files for a purpose other than building the collector may
 require the resulting code to be covered by the GPL.
 
-For more details and the names of other contributors, see the README,
+For more details and the names of other contributors, see the README.md,
 doc/README.*, AUTHORS and include/gc.h files.  These files describe typical
 use of the collector on a machine that is already supported.
 
-For the version number, see README or include/gc_version.h files.
+For the version number, see README.md or include/gc_version.h files.
 
 INSTALLATION:
 Under UN*X, Linux:
@@ -34,7 +34,7 @@ Alternative 1 (the old way): type "make test" in this directory.
 Alternative 2 (the new way): type
         "./configure --prefix=<dir>; make; make check; make install".
         Link against <dir>/lib/libgc.a or <dir>/lib/libgc.so.
-        See README.autoconf for details
+        See doc/README.autoconf for details
 
 Under Windows 95, 98, Me, NT, or 2000:
 copy the appropriate makefile to MAKEFILE, read it, and type "nmake test".
@@ -71,7 +71,7 @@ Define GC_DEBUG before including gc.h for additional checking.
 
 More documentation on the collector interface can be found at
 http://www.hpl.hp.com/personal/Hans_Boehm/gc/gcinterface.html,
-in README and other files in the doc directory, and in include/gc.h file.
+in README.md and other files in the doc directory, and in include/gc.h file.
 
 WARNINGS:
 
