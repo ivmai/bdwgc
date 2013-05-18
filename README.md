@@ -1,4 +1,4 @@
-# Hans Boehm Garbace Collector
+# Boehm-Demers-Weiser Garbage Collector
 
 This is version 7.3alpha3 of a conservative garbage collector for C and C++.
 
@@ -103,7 +103,7 @@ large objects to be disregarded, greatly reducing the probability of
 accidental retention of large objects.  For most purposes it seems
 best to compile with `ALL_INTERIOR_POINTERS` and to use
 `GC_malloc_ignore_off_page` if you get collector warnings from
-allocations of very large objects.  See debugging.html for details.
+allocations of very large objects.  See doc/debugging.html for details.
 
 _WARNING_: pointers inside memory allocated by the standard `malloc` are not
 seen by the garbage collector.  Thus objects pointed to only from such a
@@ -120,11 +120,11 @@ areas that are associated with dynamic libraries.  This is easy to
 remedy IF you know how to find those data areas on your operating
 system (see `GC_add_roots`).  Code for doing this under SunOS, IRIX
 5.X and 6.X, HP/UX, Alpha OSF/1, Linux, and win32 is included and used
-by default.  (See README.win32 for win32 details.)  On other systems
+by default.  (See doc/README.win32 for Win32 details.)  On other systems
 pointers from dynamic library data areas may not be considered by the
 collector.  If you're writing a program that depends on the collector
 scanning dynamic library data areas, it may be a good idea to include
-at least one call to `GC_is_visible()` to ensure that those areas are
+at least one call to `GC_is_visible` to ensure that those areas are
 visible to the collector.
 
 Note that the garbage collector does not need to be informed of shared
@@ -143,7 +143,7 @@ The allocator/collector can also be configured for thread-safe operation.
 calls per malloc, which is usually unacceptable.)
 
 _WARNING_: the collector does not guarantee to scan thread-local storage
-(e.g. of the kind accessed with `pthread_getspecific()`).  The collector
+(e.g. of the kind accessed with `pthread_getspecific`).  The collector
 does scan thread stacks, though, so generally the best solution is to
 ensure that any pointers stored in thread-local storage are also
 stored on the thread's stack for the duration of their lifetime.
@@ -233,7 +233,7 @@ or 64 bit addresses will require a major effort.  A port to plain MSDOS
 or win16 is hard.
 
 For machines not already mentioned, or for nonstandard compilers,
-some porting suggestions are provided in the "porting.html" file.
+some porting suggestions are provided in doc/porting.html.
 
 ## The C Interface to the Allocator
 
@@ -260,7 +260,7 @@ all of the following, plus many others.
       maintain its internal data structures, or that a crucial system
       process will fail and take down the machine.  Most of these
       possibilities are independent of the malloc implementation.
- 
+
  2) `GC_malloc_atomic(nbytes)`
      - Allocate an object of size nbytes that is guaranteed not to contain any
        pointers.  The returned object is not guaranteed to be cleared.
@@ -268,42 +268,42 @@ all of the following, plus many others.
        times.  The collector will probably run faster if large character
        arrays, etc. are allocated with `GC_malloc_atomic` than if they are
        statically allocated.)
- 
+
  3) `GC_realloc(object, new_size)`
     - Change the size of object to be `new_size`.  Returns a pointer to the
       new object, which may, or may not, be the same as the pointer to
-      the old object.  The new object is taken to be atomic iff the old one
-      was.  If the new object is composite and larger than the original object,
-      then the newly added bytes are cleared (we hope).  This is very likely
-      to allocate a new object, unless `MERGE_SIZES` is defined in gc_priv.h.
-      Even then, it is likely to recycle the old object only if the object
-      is grown in small additive increments (which, we claim, is generally bad
-      coding practice.)
- 
+      the old object.  The new object is taken to be atomic if and only if the
+      old one was.  If the new object is composite and larger than the original
+      object,then the newly added bytes are cleared (we hope).  This is very
+      likely to allocate a new object, unless `MERGE_SIZES` is defined in
+      gc_priv.h.  Even then, it is likely to recycle the old object only if the
+      object is grown in small additive increments (which, we claim, is
+      generally bad coding practice.)
+
  4) `GC_free(object)`
     - Explicitly deallocate an object returned by `GC_malloc` or
       `GC_malloc_atomic`.  Not necessary, but can be used to minimize
       collections if performance is critical.  Probably a performance
       loss for very small objects (<= 8 bytes).
- 
+
  5) `GC_expand_hp(bytes)`
      - Explicitly increase the heap size.  (This is normally done automatically
        if a garbage collection failed to `GC_reclaim` enough memory.  Explicit
        calls to `GC_expand_hp` may prevent unnecessarily frequent collections at
        program startup.)
- 
+
  6) `GC_malloc_ignore_off_page(bytes)`
      - Identical to `GC_malloc`, but the client promises to keep a pointer to
        the somewhere within the first 256 bytes of the object while it is
        live.  (This pointer should normally be declared volatile to prevent
        interference from compiler optimizations.)  This is the recommended
-       way to allocate anything that is likely to be larger than 100Kbytes
+       way to allocate anything that is likely to be larger than 100 Kbytes
        or so.  (`GC_malloc` may result in failure to reclaim such objects.)
- 
+
  7) `GC_set_warn_proc(proc)`
      - Can be used to redirect warnings from the collector.  Such warnings
        should be rare, and should not be ignored during code development.
- 
+
  8) `GC_enable_incremental()`
      - Enables generational and incremental collection.  Useful for large
        heaps on machines that provide access to page dirty information.
@@ -311,7 +311,7 @@ all of the following, plus many others.
        (by catching address faults) and place restrictions on heap arguments
        to system calls (since write faults inside a system call may not be
        handled well).
- 
+
  9) Several routines to allow for registration of finalization code.
     User supplied finalization code may be invoked when an object becomes
     unreachable.  To call `(*f)(obj, x)` when obj becomes inaccessible, use
@@ -448,7 +448,7 @@ Furthermore, in this mode, garbage collections run mostly incrementally,
 with a small amount of work performed in response to each of a large number of
 `GC_malloc` requests.
 
-This mode is enabled by a call to `GC_enable_incremental()`.
+This mode is enabled by a call to `GC_enable_incremental`.
 
 Incremental and generational collection is effective in reducing
 pause times only if the collector has some way to tell which objects
@@ -560,4 +560,3 @@ The atomic_ops library contains some code that is covered by the GNU General
 Public License, but is not needed by, nor linked into the collector library.
 It is included here only because the atomic_ops distribution is, for
 simplicity, included in its entirety.
-
