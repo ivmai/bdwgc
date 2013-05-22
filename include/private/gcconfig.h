@@ -2369,6 +2369,11 @@
 #   endif
 # endif
 
+#if defined(__GLIBC__) && !defined(DONT_USE_LIBC_PRIVATES)
+  /* Use glibc's stack-end marker. */
+# define USE_LIBC_PRIVATES
+#endif
+
 #if defined(LINUX_STACKBOTTOM) && defined(NO_PROC_STAT) \
     && !defined(USE_LIBC_PRIVATES)
     /* This combination will fail, since we have no way to get  */
