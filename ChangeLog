@@ -1,3 +1,10 @@
+2013-05-04  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.changes: Fix triple-letter typos.
+	* doc/overview.html: Likewise.
+	* mark.c (GC_push_marked1): Fix a triple-letter typo in a comment.
+	* os_dep.c (GC_register_data_segments): Likewise.
+
 2013-02-13  Andy Wingo <wingo@pobox.com>
 
 	* tests/tests.am (gctest_LDADD, threadleaktest_LDADD,
