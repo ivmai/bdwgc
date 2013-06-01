@@ -1606,10 +1606,12 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 # define GC_DATAEND ((void *)((ulong)_end))
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND)
 #elif (defined(PLATFORM_ANDROID) || defined(__ANDROID__)) \
-      && defined(__arm__) && !defined(GC_NOT_DLL)
+      && !defined(GC_NOT_DLL)
   /* Required if GC is built as shared lib with -D IGNORE_DYNAMIC_LOADING. */
+# pragma weak __data_start
   extern int __data_start[], _end[];
-# define GC_INIT_CONF_ROOTS GC_add_roots(__data_start, _end)
+# define GC_INIT_CONF_ROOTS (void)((GC_word)(__data_start) != 0 ? \
+                                (GC_add_roots(__data_start, _end), 0) : 0)
 #else
 # define GC_INIT_CONF_ROOTS /* empty */
 #endif
