@@ -392,16 +392,21 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 #else /* !USE_PROC_FOR_LIBRARIES */
 
 /* The following is the preferred way to walk dynamic libraries */
-/* For glibc 2.2.4+.  Unfortunately, it doesn't work for older  */
+/* for glibc 2.2.4+.  Unfortunately, it doesn't work for older  */
 /* versions.  Thanks to Jakub Jelinek for most of the code.     */
 
-#if (defined(LINUX) || defined (__GLIBC__)) /* Are others OK here, too? */ \
-     && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
-         || (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG)))
+#if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
+    || (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG)) \
+    || defined(PLATFORM_ANDROID) /* Are others OK here, too? */
 /* We have the header files for a glibc that includes dl_iterate_phdr.  */
 /* It may still not be available in the library on the target system.   */
 /* Thus we also treat it as a weak symbol.                              */
 # define HAVE_DL_ITERATE_PHDR
+# ifdef PLATFORM_ANDROID
+    /* Android headers might have no such definition for some targets.  */
+    int dl_iterate_phdr(int (*cb)(struct dl_phdr_info *, size_t, void *),
+                        void *data);
+# endif
 # pragma weak dl_iterate_phdr
 #endif
 
