@@ -80,12 +80,19 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #   define ELFSIZE ARCH_ELFSIZE
 #endif
 
+#if defined(OPENBSD)
+# include <sys/param.h>
+# if OpenBSD >= 200519
+#   define HAVE_DL_ITERATE_PHDR
+# endif
+#endif /* OPENBSD */
+
 #if defined(SCO_ELF) || defined(DGUX) || defined(HURD) \
     || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
                              || defined(NETBSD) || defined(OPENBSD)))
 # include <stddef.h>
 # if !defined(OPENBSD) && !defined(PLATFORM_ANDROID)
-    /* FIXME: Why we exclude it for OpenBSD? */
+    /* OpenBSD does not have elf.h file; link.h below is sufficient.    */
     /* Exclude Android because linker.h below includes its own version. */
 #   include <elf.h>
 # endif
