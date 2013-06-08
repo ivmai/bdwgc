@@ -192,8 +192,11 @@ GC_API GC_ATTR_DEPRECATED GC_finalizer_notifier_proc GC_finalizer_notifier;
 GC_API void GC_CALL GC_set_finalizer_notifier(GC_finalizer_notifier_proc);
 GC_API GC_finalizer_notifier_proc GC_CALL GC_get_finalizer_notifier(void);
 
-GC_API GC_ATTR_DEPRECATED int GC_dont_gc;
-                        /* != 0 ==> Don't collect.  In versions 6.2a1+, */
+GC_API
+# ifndef GC_DONT_GC
+    GC_ATTR_DEPRECATED
+# endif
+  int GC_dont_gc;       /* != 0 ==> Don't collect.  In versions 6.2a1+, */
                         /* this overrides explicit GC_gcollect() calls. */
                         /* Used as a counter, so that nested enabling   */
                         /* and disabling work correctly.  Should        */
