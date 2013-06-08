@@ -65,7 +65,7 @@ int main(void)
     DWORD thread_id;
 # endif
 # if !(defined(BEOS) || defined(MSWIN32) || defined(MSWINCE) \
-       || defined(CYGWIN32) || defined(GC_OPENBSD_THREADS) \
+       || defined(CYGWIN32) || defined(GC_OPENBSD_UTHREADS) \
        || (defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP)) \
        || (defined(LINUX) && !defined(NACL)) \
        || (defined(GC_SOLARIS_THREADS) && !defined(_STRICT_STDC)) \

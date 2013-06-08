@@ -2361,7 +2361,11 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
       /* Linuxthreads itself uses SIGUSR1 and SIGUSR2.                  */
 #     define SIG_SUSPEND SIGPWR
 #   endif
-# elif !defined(GC_OPENBSD_THREADS) && !defined(GC_DARWIN_THREADS)
+# elif defined(GC_OPENBSD_THREADS)
+#   ifndef GC_OPENBSD_UTHREADS
+#     define SIG_SUSPEND SIGXFSZ
+#   endif
+# elif !defined(GC_DARWIN_THREADS)
 #   if defined(_SIGRTMIN)
 #     define SIG_SUSPEND _SIGRTMIN + 6
 #   else

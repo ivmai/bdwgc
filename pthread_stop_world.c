@@ -35,11 +35,11 @@ GC_INNER __thread GC_thread GC_nacl_gc_thread_self = NULL;
 int GC_nacl_thread_parked[MAX_NACL_GC_THREADS];
 int GC_nacl_thread_used[MAX_NACL_GC_THREADS];
 
-#elif defined(GC_OPENBSD_THREADS)
+#elif defined(GC_OPENBSD_UTHREADS)
 
 # include <pthread_np.h>
 
-#else /* !GC_OPENBSD_THREADS && !NACL */
+#else /* !GC_OPENBSD_UTHREADS && !NACL */
 
 #include <signal.h>
 #include <semaphore.h>
@@ -325,7 +325,7 @@ STATIC void GC_restart_handler(int sig)
 # endif
 }
 
-#endif /* !GC_OPENBSD_THREADS && !NACL */
+#endif /* !GC_OPENBSD_UTHREADS && !NACL */
 
 #ifdef IA64
 # define IF_IA64(x) x
@@ -448,7 +448,7 @@ STATIC int GC_suspend_all(void)
 
 # ifndef NACL
     GC_thread p;
-#   ifndef GC_OPENBSD_THREADS
+#   ifndef GC_OPENBSD_UTHREADS
       int result;
 #   endif
     pthread_t self = pthread_self();
@@ -462,7 +462,7 @@ STATIC int GC_suspend_all(void)
         if (!THREAD_EQUAL(p -> id, self)) {
             if (p -> flags & FINISHED) continue;
             if (p -> thread_blocked) /* Will wait */ continue;
-#           ifndef GC_OPENBSD_THREADS
+#           ifndef GC_OPENBSD_UTHREADS
               if (p -> stop_info.last_stop_count == GC_stop_count) continue;
               n_live_threads++;
 #           endif
@@ -470,7 +470,7 @@ STATIC int GC_suspend_all(void)
               GC_log_printf("Sending suspend signal to %p\n", (void *)p->id);
 #           endif
 
-#           ifdef GC_OPENBSD_THREADS
+#           ifdef GC_OPENBSD_UTHREADS
               {
                 stack_t stack;
                 if (pthread_suspend_np(p -> id) != 0)
@@ -558,7 +558,7 @@ STATIC int GC_suspend_all(void)
 
 GC_INNER void GC_stop_world(void)
 {
-# if !defined(GC_OPENBSD_THREADS) && !defined(NACL)
+# if !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
     int i;
     int n_live_threads;
     int code;
@@ -580,7 +580,7 @@ GC_INNER void GC_stop_world(void)
     }
 # endif /* PARALLEL_MARK */
 
-# if defined(GC_OPENBSD_THREADS) || defined(NACL)
+# if defined(GC_OPENBSD_UTHREADS) || defined(NACL)
     (void)GC_suspend_all();
 # else
     AO_store(&GC_stop_count, GC_stop_count+1);
@@ -772,7 +772,7 @@ GC_INNER void GC_start_world(void)
     pthread_t self = pthread_self();
     register int i;
     register GC_thread p;
-#   ifndef GC_OPENBSD_THREADS
+#   ifndef GC_OPENBSD_UTHREADS
       register int n_live_threads = 0;
       register int result;
 #   endif
@@ -784,7 +784,7 @@ GC_INNER void GC_start_world(void)
       GC_log_printf("World starting\n");
 #   endif
 
-#   ifndef GC_OPENBSD_THREADS
+#   ifndef GC_OPENBSD_UTHREADS
       AO_store(&GC_world_is_stopped, FALSE);
 #   endif
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
@@ -792,14 +792,14 @@ GC_INNER void GC_start_world(void)
         if (!THREAD_EQUAL(p -> id, self)) {
             if (p -> flags & FINISHED) continue;
             if (p -> thread_blocked) continue;
-#           ifndef GC_OPENBSD_THREADS
+#           ifndef GC_OPENBSD_UTHREADS
               n_live_threads++;
 #           endif
 #           ifdef DEBUG_THREADS
               GC_log_printf("Sending restart signal to %p\n", (void *)p->id);
 #           endif
 
-#         ifdef GC_OPENBSD_THREADS
+#         ifdef GC_OPENBSD_UTHREADS
             if (pthread_resume_np(p -> id) != 0)
               ABORT("pthread_resume_np failed");
 #         else
@@ -847,7 +847,7 @@ GC_INNER void GC_start_world(void)
 
 GC_INNER void GC_stop_init(void)
 {
-# if !defined(GC_OPENBSD_THREADS) && !defined(NACL)
+# if !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
     struct sigaction act;
 
     if (sem_init(&GC_suspend_ack_sem, GC_SEM_INIT_PSHARED, 0) != 0)
@@ -911,7 +911,7 @@ GC_INNER void GC_stop_init(void)
     if (GC_retry_signals) {
       GC_COND_LOG_PRINTF("Will retry suspend signal if necessary\n");
     }
-# endif /* !GC_OPENBSD_THREADS && !NACL */
+# endif /* !GC_OPENBSD_UTHREADS && !NACL */
 }
 
 #endif /* GC_PTHREADS && !GC_DARWIN_THREADS && !GC_WIN32_THREADS */

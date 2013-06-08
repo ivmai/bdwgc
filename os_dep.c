@@ -3269,7 +3269,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
       act.sa_flags = SA_RESTART | SA_SIGINFO;
       act.sa_sigaction = GC_write_fault_handler;
       (void)sigemptyset(&act.sa_mask);
-#     if defined(THREADS) && !defined(GC_OPENBSD_THREADS) \
+#     if defined(THREADS) && !defined(GC_OPENBSD_UTHREADS) \
          && !defined(GC_WIN32_THREADS) && !defined(NACL)
         /* Arrange to postpone the signal while we are in a write fault */
         /* handler.  This effectively makes the handler atomic w.r.t.   */
