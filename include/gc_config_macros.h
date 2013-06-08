@@ -329,15 +329,6 @@
 
 #ifdef GC_PTHREADS
 
-# ifdef GC_OPENBSD_THREADS
-#   include <sys/param.h>
-    /* Prior to 5.2 release, OpenBSD had user threads and required      */
-    /* special handling.                                                */
-#   if OpenBSD < 201211
-#     define GC_OPENBSD_UTHREADS 1
-#   endif
-# endif /* GC_OPENBSD_THREADS */
-
 # if (defined(GC_DARWIN_THREADS) || defined(GC_WIN32_PTHREADS) \
       || defined(__native_client__) || defined(GC_RTEMS_PTHREADS)) \
       && !defined(GC_NO_DLOPEN)

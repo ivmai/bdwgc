@@ -2470,6 +2470,15 @@
 # define SIGRTMAX 63
 #endif
 
+#ifdef GC_OPENBSD_THREADS
+# include <sys/param.h>
+  /* Prior to 5.2 release, OpenBSD had user threads and required        */
+  /* special handling.                                                  */
+# if OpenBSD < 201211
+#   define GC_OPENBSD_UTHREADS 1
+# endif
+#endif /* GC_OPENBSD_THREADS */
+
 #if defined(SVR4) || defined(LINUX) || defined(IRIX5) || defined(HPUX) \
     || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
     || defined(DGUX) || defined(BSD) || defined(HURD) \
