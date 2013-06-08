@@ -885,9 +885,7 @@
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     define ALIGNMENT 4
-#     ifdef GC_OPENBSD_THREADS
-#      define UTHREAD_SP_OFFSET 268
-#     else
+#     ifndef GC_OPENBSD_THREADS
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
 #       define STACKBOTTOM ((ptr_t) USRSTACK)
@@ -1090,9 +1088,7 @@
 #   endif
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
-#     ifdef GC_OPENBSD_THREADS
-#      define UTHREAD_SP_OFFSET 232
-#     else
+#     ifndef GC_OPENBSD_THREADS
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
 #       define STACKBOTTOM ((ptr_t) USRSTACK)
@@ -1373,9 +1369,7 @@
 #   endif
 #   ifdef OPENBSD
 #       define OS_TYPE "OPENBSD"
-#       ifdef GC_OPENBSD_THREADS
-#         define UTHREAD_SP_OFFSET 176
-#       else
+#       ifndef GC_OPENBSD_THREADS
 #         include <sys/param.h>
 #         include <uvm/uvm_extern.h>
 #         define STACKBOTTOM ((ptr_t) USRSTACK)
@@ -1610,9 +1604,7 @@
 #  ifdef OPENBSD
 #    define OS_TYPE "OPENBSD"
 #    define ALIGNMENT 4
-#    ifdef GC_OPENBSD_THREADS
-#      define UTHREAD_SP_OFFSET 808
-#    else
+#     ifndef GC_OPENBSD_THREADS
 #      include <sys/param.h>
 #      include <uvm/uvm_extern.h>
 #      define STACKBOTTOM ((ptr_t) USRSTACK)
@@ -1688,9 +1680,7 @@
 #   endif /* LINUX */
 #  ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
-#     ifdef GC_OPENBSD_THREADS
-#       define UTHREAD_SP_OFFSET 520
-#     else
+#     ifndef GC_OPENBSD_THREADS
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
 #       define STACKBOTTOM ((ptr_t) USRSTACK)
@@ -1720,9 +1710,7 @@
 #   ifdef OPENBSD
 #       define OS_TYPE "OPENBSD"
 #       define ELF_CLASS ELFCLASS64
-#       ifdef GC_OPENBSD_THREADS
-#         define UTHREAD_SP_OFFSET 816
-#       else
+#       ifndef GC_OPENBSD_THREADS
 #         include <sys/param.h>
 #         include <uvm/uvm_extern.h>
 #         define STACKBOTTOM ((ptr_t) USRSTACK)
@@ -2055,9 +2043,7 @@
 #   ifdef OPENBSD
 #     define ALIGNMENT 4
 #     define OS_TYPE "OPENBSD"
-#     ifdef GC_OPENBSD_THREADS
-#       define UTHREAD_SP_OFFSET 176
-#     else
+#     ifndef GC_OPENBSD_THREADS
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
 #       define STACKBOTTOM ((ptr_t) USRSTACK)
@@ -2114,9 +2100,7 @@
 #   endif
 #   ifdef OPENBSD
 #      define OS_TYPE "OPENBSD"
-#      ifdef GC_OPENBSD_THREADS
-#        define UTHREAD_SP_OFFSET 332
-#      else
+#      ifndef GC_OPENBSD_THREADS
 #        include <sys/param.h>
 #        include <uvm/uvm_extern.h>
 #        define STACKBOTTOM ((ptr_t) USRSTACK)
@@ -2180,9 +2164,7 @@
 #   ifdef OPENBSD
 #       define OS_TYPE "OPENBSD"
 #       define ELF_CLASS ELFCLASS64
-#       ifdef GC_OPENBSD_THREADS
-#         define UTHREAD_SP_OFFSET 400
-#       else
+#       ifndef GC_OPENBSD_THREADS
 #         include <sys/param.h>
 #         include <uvm/uvm_extern.h>
 #         define STACKBOTTOM ((ptr_t) USRSTACK)
