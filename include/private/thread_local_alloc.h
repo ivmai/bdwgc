@@ -49,7 +49,7 @@
 # elif defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) \
        || defined(GC_AIX_THREADS) || defined(GC_DARWIN_THREADS) \
        || defined(GC_FREEBSD_THREADS) || defined(GC_NETBSD_THREADS) \
-       || defined(GC_RTEMS_PTHREADS)
+       || defined(GC_LINUX_THREADS) || defined(GC_RTEMS_PTHREADS)
 #   define USE_PTHREAD_SPECIFIC
 # elif defined(GC_HPUX_THREADS)
 #   ifdef __GNUC__
