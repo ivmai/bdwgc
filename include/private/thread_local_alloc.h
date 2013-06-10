@@ -43,9 +43,11 @@
 #   else
 #     define USE_WIN32_COMPILER_TLS
 #   endif /* !GNU */
-# elif defined(LINUX) && !defined(ARM32) && !defined(AVR32) \
-       && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)) \
-       && !(defined(__clang__) && defined(PLATFORM_ANDROID))
+# elif (defined(LINUX) && !defined(ARM32) && !defined(AVR32) \
+         && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)) \
+         && !(defined(__clang__) && defined(PLATFORM_ANDROID))) \
+       || (defined(PLATFORM_ANDROID) && defined(ARM32) \
+            && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)))
           /* As of Android NDK r8e, Clang cannot find __tls_get_addr.   */
 #   define USE_COMPILER_TLS
 # elif defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) \
