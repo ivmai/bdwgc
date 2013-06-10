@@ -243,7 +243,9 @@
   /* 'alloc_size' attribute improves __builtin_object_size correctness. */
   /* Only single-argument form of 'alloc_size' attribute is used.       */
 # if defined(__GNUC__) && (__GNUC__ > 4 \
-        || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3 && !defined(__ICC)))
+        || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3 && !defined(__ICC)) \
+        || __clang_major__ > 3 \
+        || (__clang_major__ == 3 && __clang_minor__ >= 2))
 #   define GC_ATTR_ALLOC_SIZE(argnum) __attribute__((__alloc_size__(argnum)))
 # else
 #   define GC_ATTR_ALLOC_SIZE(argnum)
