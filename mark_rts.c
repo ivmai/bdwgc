@@ -246,8 +246,8 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
     }
 
 #   ifdef DEBUG_ADD_DEL_ROOTS
-      GC_log_printf("Adding data root section %d: %p .. %p\n",
-                    n_root_sets, b, e);
+      GC_log_printf("Adding data root section %d: %p .. %p%s\n",
+                    n_root_sets, b, e, tmp ? " (temporary)" : "");
 #   endif
     GC_static_roots[n_root_sets].r_start = (ptr_t)b;
     GC_static_roots[n_root_sets].r_end = (ptr_t)e;
@@ -284,8 +284,9 @@ GC_API void GC_CALL GC_clear_roots(void)
 STATIC void GC_remove_root_at_pos(int i)
 {
 #   ifdef DEBUG_ADD_DEL_ROOTS
-      GC_log_printf("Remove data root section %d: %p .. %p\n",
-                    i, GC_static_roots[i].r_start, GC_static_roots[i].r_end);
+      GC_log_printf("Remove data root section at %d: %p .. %p%s\n",
+                    i, GC_static_roots[i].r_start, GC_static_roots[i].r_end,
+                    GC_static_roots[i].r_tmp ? " (temporary)" : "");
 #   endif
     GC_root_size -= (GC_static_roots[i].r_end - GC_static_roots[i].r_start);
     GC_static_roots[i].r_start = GC_static_roots[n_root_sets-1].r_start;

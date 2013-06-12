@@ -467,6 +467,9 @@ GC_INNER char * GC_get_maps(void)
           GC_ASSERT((word)GC_data_start <= (word)_end);
           return;
       }
+#     ifdef DEBUG_ADD_DEL_ROOTS
+        GC_log_printf("__data_start not provided\n");
+#     endif
 #   endif /* LINUX */
 
     if (GC_no_dls) {
