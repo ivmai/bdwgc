@@ -2058,8 +2058,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       /* signaled state and starts waiting on condvar).  A special      */
       /* case here is GC_mark_mutex_waitcnt == 1 (i.e. nobody waits for */
       /* mark lock at this moment) - we don't change it (otherwise we   */
-      /* may loose a signal sent between decrementing                   */
-      /* GC_mark_mutex_waitcnt and calling WaitForSingleObject()).      */
+      /* may lose a signal sent between decrementing mark_mutex_waitcnt */
+      /* and calling WaitForSingleObject).                              */
 
 #     ifdef MSWINCE
         /* SignalObjectAndWait() is missing in WinCE (for now), so you  */
