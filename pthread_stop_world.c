@@ -883,6 +883,8 @@ GC_INNER void GC_stop_init(void)
       act.sa_handler = GC_suspend_handler;
 #   endif
     /* act.sa_restorer is deprecated and should not be initialized. */
+    if (GC_sig_suspend == GC_sig_thr_restart)
+        ABORT("Cannot use same signal for thread suspend and resume");
     if (sigaction(GC_sig_suspend, &act, NULL) != 0) {
         ABORT("Cannot set SIG_SUSPEND handler");
     }
