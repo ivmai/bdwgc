@@ -135,8 +135,8 @@ int CORD_batched_fill_proc(const char * s, void * client_data)
     return(0);
 }
 
-/* Fill buf with len characters starting at i.              */
-/* Assumes len characters are available.                */
+/* Fill buf with len characters starting at i.  */
+/* Assumes len characters are available.        */
 void CORD_fill_buf(CORD x, size_t i, size_t len, char * buf)
 {
     CORD_fill_data fd;
@@ -362,12 +362,12 @@ size_t CORD_rchr(CORD x, size_t i, int c)
     }
 }
 
-/* Find the first occurrence of s in x at position start or later.  */
+/* Find the first occurrence of s in x at position start or later.      */
 /* This uses an asymptotically poor algorithm, which should typically   */
 /* perform acceptably.  We compare the first few characters directly,   */
-/* and call CORD_ncmp whenever there is a partial match.        */
+/* and call CORD_ncmp whenever there is a partial match.                */
 /* This has the advantage that we allocate very little, or not at all.  */
-/* It's very fast if there are few close misses.            */
+/* It's very fast if there are few close misses.                        */
 size_t CORD_str(CORD x, size_t start, CORD s)
 {
     CORD_pos xpos;
@@ -375,10 +375,10 @@ size_t CORD_str(CORD x, size_t start, CORD s)
     size_t slen;
     register size_t start_len;
     const char * s_start;
-    unsigned long s_buf = 0;    /* The first few characters of s    */
-    unsigned long x_buf = 0;    /* Start of candidate substring.    */
+    unsigned long s_buf = 0;    /* The first few characters of s        */
+    unsigned long x_buf = 0;    /* Start of candidate substring.        */
                     /* Initialized only to make compilers   */
-                    /* happy.               */
+                    /* happy.                               */
     unsigned long mask = 0;
     register size_t i;
     register size_t match_pos;
@@ -460,9 +460,9 @@ CORD CORD_from_file_eager(FILE * f)
     for(;;) {
         c = getc(f);
         if (c == 0) {
-          /* Append the right number of NULs    */
-          /* Note that any string of NULs is rpresented in 4 words, */
-          /* independent of its length.                 */
+          /* Append the right number of NULs                            */
+          /* Note that any string of NULs is rpresented in 4 words,     */
+          /* independent of its length.                                 */
             register size_t count = 1;
 
             CORD_ec_flush_buf(ecord);
@@ -476,18 +476,18 @@ CORD CORD_from_file_eager(FILE * f)
     return(CORD_balance(CORD_ec_to_cord(ecord)));
 }
 
-/* The state maintained for a lazily read file consists primarily   */
-/* of a large direct-mapped cache of previously read values.        */
-/* We could rely more on stdio buffering.  That would have 2        */
-/* disadvantages:                           */
-/*      1) Empirically, not all fseek implementations preserve the  */
-/*     buffer whenever they could.                  */
-/*  2) It would fail if 2 different sections of a long cord     */
-/*     were being read alternately.                 */
-/* We do use the stdio buffer for read ahead.               */
-/* To guarantee thread safety in the presence of atomic pointer     */
-/* writes, cache lines are always replaced, and never modified in   */
-/* place.                               */
+/* The state maintained for a lazily read file consists primarily       */
+/* of a large direct-mapped cache of previously read values.            */
+/* We could rely more on stdio buffering.  That would have 2            */
+/* disadvantages:                                                       */
+/*  1) Empirically, not all fseek implementations preserve the          */
+/*     buffer whenever they could.                                      */
+/*  2) It would fail if 2 different sections of a long cord             */
+/*     were being read alternately.                                     */
+/* We do use the stdio buffer for read ahead.                           */
+/* To guarantee thread safety in the presence of atomic pointer         */
+/* writes, cache lines are always replaced, and never modified in       */
+/* place.                                                               */
 
 # define LOG_CACHE_SZ 14
 # define CACHE_SZ (1 << LOG_CACHE_SZ)
