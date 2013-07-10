@@ -52,19 +52,19 @@ CSCOPT= $(OPT) DEFINE AMIGA IGNORE=100 IGNORE=161
 all: gctest setjmp_t cord/cordtest
 
 clean:
-   delete *.lib gctest setjmp_t *.o *.lnk cord/*.o cord/*.lib cord/*.lnk cord/cordtest
+	delete *.lib gctest setjmp_t *.o *.lnk cord/*.o cord/*.lib cord/*.lnk cord/cordtest
 	smake
 
 test: setjmp_t gctest cord/cordtest
-   setjmp_t
-   gctest
-   cord/cordtest
+	setjmp_t
+	gctest
+	cord/cordtest
 
 gctest: gc$(CPU).lib GCAmigaOS$(CPU).lib test.o
-   $(LINKER) LIB:c.o test.o TO gctest LIB gc$(CPU).lib LIB:sc.lib $(MATHLIB)
+	$(LINKER) LIB:c.o test.o TO gctest LIB gc$(CPU).lib LIB:sc.lib $(MATHLIB)
 
 setjmp_t: setjmp_t.o gc.h
-   $(LINKER) LIB:c.o setjmp_t.o to setjmp_t lib LIB:sc.lib
+	$(LINKER) LIB:c.o setjmp_t.o to setjmp_t lib LIB:sc.lib
 
 cord/cordtest: cord/cordtest.o cord/cord$(CPU).lib gc$(CPU).lib
 	slink LIB:c.o cord/cordtest.o LIB $(MATHLIB) gc$(CPU).lib cord/cord$(CPU).lib LIB:sc.lib TO cord/cordtest
@@ -75,7 +75,7 @@ cord/cordtest: cord/cordtest.o cord/cord$(CPU).lib gc$(CPU).lib
 OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o real_malloc.o dyn_load.o dbg_mlc.o malloc.o stubborn.o checksums.o typd_mlc.o ptr_chck.o mallocx.o fnlz_mlc.o
 
 gc$(CPU).lib: $(OBJS)
-   $(LIBER) gc$(CPU).lib r $(OBJS)
+	$(LIBER) gc$(CPU).lib r $(OBJS)
 
 
 COBJS = cord/cordbscs.o cord/cordprnt.o cord/cordxtra.o
@@ -118,7 +118,8 @@ blacklst.o : blacklst.c $(INC)
 	$(CC) blacklst.c $(SCOPT)
 
 finalize.o : finalize.c $(INC)
-	$(CC) finalize.c $(SCOPT) noopt	#Could sas/c still have problems with this one? Gctest sometimes fails to finalize all.
+	$(CC) finalize.c $(SCOPT) noopt
+# Could sas/c still have problems with this one? Gctest sometimes fails to finalize all.
 
 new_hblk.o : new_hblk.c $(INC)
 	$(CC) new_hblk.c $(SCOPT)
@@ -160,8 +161,7 @@ test.o : test.c $(INC)
 	$(CC) test.c $(SOPT)
 
 setjmp_t: tools/setjmp_t.c gc.h
-   $(CC) tools/setjmp_t.c $(SOPT)
-
+	$(CC) tools/setjmp_t.c $(SOPT)
 
 # cords:
 
