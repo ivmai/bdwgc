@@ -461,7 +461,7 @@ CORD CORD_from_file_eager(FILE * f)
         c = getc(f);
         if (c == 0) {
           /* Append the right number of NULs                            */
-          /* Note that any string of NULs is rpresented in 4 words,     */
+          /* Note that any string of NULs is represented in 4 words,    */
           /* independent of its length.                                 */
             register size_t count = 1;
 

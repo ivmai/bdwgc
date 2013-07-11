@@ -542,7 +542,7 @@ GC_INNER char * GC_get_maps(void)
      siglongjmp(GC_jmp_buf_openbsd, 1);
   }
 
-  /* Return the first non-addressible location > p or bound.    */
+  /* Return the first non-addressable location > p or bound.    */
   /* Requires the allocation lock.                              */
   STATIC ptr_t GC_find_limit_openbsd(ptr_t p, ptr_t bound)
   {
@@ -2902,13 +2902,13 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
    * SIGBUS or SIGSEGV.  We assume no write faults occur in system calls.
    * This means that clients must ensure that system calls don't write
    * to the write-protected heap.  Probably the best way to do this is to
-   * ensure that system calls write at most to POINTERFREE objects in the
+   * ensure that system calls write at most to pointer-free objects in the
    * heap, and do even that only if we are on a platform on which those
    * are not protected.  Another alternative is to wrap system calls
    * (see example for read below), but the current implementation holds
    * applications.
    * We assume the page size is a multiple of HBLKSIZE.
-   * We prefer them to be the same.  We avoid protecting POINTERFREE
+   * We prefer them to be the same.  We avoid protecting pointer-free
    * objects only if they are the same.
    */
 # ifdef DARWIN
@@ -3431,7 +3431,7 @@ STATIC void GC_protect_heap(void)
 }
 
 /* We assume that either the world is stopped or its OK to lose dirty   */
-/* bits while this is happenning (as in GC_enable_incremental).         */
+/* bits while this is happening (as in GC_enable_incremental).          */
 GC_INNER void GC_read_dirty(void)
 {
 #   if defined(GWW_VDB)

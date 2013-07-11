@@ -222,7 +222,7 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
     }
 }
 
-/* Allocate lb bytes of atomic (pointerfree) data */
+/* Allocate lb bytes of atomic (pointer-free) data. */
 #ifdef THREAD_LOCAL_ALLOC
   GC_INNER void * GC_core_malloc_atomic(size_t lb)
 #else
@@ -288,7 +288,7 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
    }
 }
 
-/* Allocate lb bytes of pointerful, traced, but not collectable data */
+/* Allocate lb bytes of pointerful, traced, but not collectible data.   */
 GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)
 {
     void *op;
@@ -365,13 +365,10 @@ void * malloc(size_t lb)
     /* But any decent compiler should reduce the extra procedure call   */
     /* to at most a jump instruction in this case.                      */
 #   if defined(I386) && defined(GC_SOLARIS_THREADS)
-      /*
-       * Thread initialisation can call malloc before
-       * we're ready for it.
-       * It's not clear that this is enough to help matters.
-       * The thread implementation may well call malloc at other
-       * inopportune times.
-       */
+      /* Thread initialization can call malloc before we're ready for.  */
+      /* It's not clear that this is enough to help matters.            */
+      /* The thread implementation may well call malloc at other        */
+      /* inopportune times.                                             */
       if (!EXPECT(GC_is_initialized, TRUE)) return sbrk(lb);
 #   endif /* I386 && GC_SOLARIS_THREADS */
     return((void *)REDIRECT_MALLOC(lb));
@@ -417,7 +414,7 @@ void * calloc(size_t n, size_t lb)
       return NULL;
 #   if defined(GC_LINUX_THREADS) /* && !defined(USE_PROC_FOR_LIBRARIES) */
         /* libpthread allocated some memory that is only pointed to by  */
-        /* mmapped thread stacks.  Make sure it's not collectable.      */
+        /* mmapped thread stacks.  Make sure it is not collectible.     */
         {
           static GC_bool lib_bounds_set = FALSE;
           ptr_t caller = (ptr_t)__builtin_return_address(0);
@@ -592,7 +589,7 @@ GC_API void GC_CALL GC_free(void * p)
         {
           /* Don't bother with initialization checks.  If nothing       */
           /* has been initialized, the check fails, and that's safe,    */
-          /* since we haven't allocated uncollectable objects either.   */
+          /* since we have not allocated uncollectible objects neither. */
           ptr_t caller = (ptr_t)__builtin_return_address(0);
           /* This test does not need to ensure memory visibility, since */
           /* the bounds will be set when/if we create another thread.   */

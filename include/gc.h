@@ -401,8 +401,8 @@ GC_API void GC_CALL GC_init(void);
 /* new object is cleared.  GC_malloc_stubborn promises that no changes  */
 /* to the object will occur after GC_end_stubborn_change has been       */
 /* called on the result of GC_malloc_stubborn.  GC_malloc_uncollectable */
-/* allocates an object that is scanned for pointers to collectable      */
-/* objects, but is not itself collectable.  The object is scanned even  */
+/* allocates an object that is scanned for pointers to collectible      */
+/* objects, but is not itself collectible.  The object is scanned even  */
 /* if it does not appear to be reachable.  GC_malloc_uncollectable and  */
 /* GC_free called on the resulting object implicitly update             */
 /* GC_non_gc_bytes appropriately.                                       */
@@ -954,7 +954,7 @@ GC_API void GC_CALL GC_debug_register_finalizer(void * /* obj */,
         /* allocated by GC_malloc or friends. Obj may also be   */
         /* NULL or point to something outside GC heap (in this  */
         /* case, fn is ignored, *ofn and *ocd are set to NULL). */
-        /* Note that any garbage collectable object referenced  */
+        /* Note that any garbage collectible object referenced  */
         /* by cd will be considered accessible until the        */
         /* finalizer is invoked.                                */
 

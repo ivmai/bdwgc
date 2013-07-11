@@ -24,43 +24,43 @@ basic facilities similar to those described in "Safe, Efficient
 Garbage Collection for C++", by John R. Elis and David L. Detlefs
 (ftp://ftp.parc.xerox.com/pub/ellis/gc).
 
-All heap-allocated objects are either "collectable" or
-"uncollectable".  Programs must explicitly delete uncollectable
+All heap-allocated objects are either "collectible" or
+"uncollectible".  Programs must explicitly delete uncollectible
 objects, whereas the garbage collector will automatically delete
-collectable objects when it discovers them to be inaccessible.
-Collectable objects may freely point at uncollectable objects and vice
+collectible objects when it discovers them to be inaccessible.
+Collectible objects may freely point at uncollectible objects and vice
 versa.
 
-Objects allocated with the built-in "::operator new" are uncollectable.
+Objects allocated with the built-in "::operator new" are uncollectible.
 
-Objects derived from class "gc" are collectable.  For example:
+Objects derived from class "gc" are collectible.  For example:
 
     class A: public gc {...};
-    A* a = new A;       // a is collectable.
+    A* a = new A;       // a is collectible.
 
-Collectable instances of non-class types can be allocated using the GC
+Collectible instances of non-class types can be allocated using the GC
 (or UseGC) placement:
 
     typedef int A[ 10 ];
     A* a = new (GC) A;
 
-Uncollectable instances of classes derived from "gc" can be allocated
+Uncollectible instances of classes derived from "gc" can be allocated
 using the NoGC placement:
 
     class A: public gc {...};
-    A* a = new (NoGC) A;   // a is uncollectable.
+    A* a = new (NoGC) A;   // a is uncollectible.
 
-The new(PointerFreeGC) syntax allows the allocation of collectable
+The new(PointerFreeGC) syntax allows the allocation of collectible
 objects that are not scanned by the collector.  This useful if you
 are allocating compressed data, bitmaps, or network packets.  (In
 the latter case, it may remove danger of unfriendly network packets
 intentionally containing values that cause spurious memory retention.)
 
-Both uncollectable and collectable objects can be explicitly deleted
+Both uncollectible and collectible objects can be explicitly deleted
 with "delete", which invokes an object's destructors and frees its
 storage immediately.
 
-A collectable object may have a clean-up function, which will be
+A collectible object may have a clean-up function, which will be
 invoked when the collector discovers the object to be inaccessible.
 An object derived from "gc_cleanup" or containing a member derived
 from "gc_cleanup" has a default clean-up function that invokes the
@@ -79,7 +79,7 @@ B, B is considered accessible.  After A's clean-up is invoked and its
 storage released, B will then become inaccessible and will have its
 clean-up invoked.  If A points at B and B points to A, forming a
 cycle, then that's considered a storage leak, and neither will be
-collectable.  See the interface gc.h for low-level facilities for
+collectible.  See the interface gc.h for low-level facilities for
 handling such cycles of objects with clean-up.
 
 The collector cannot guarantee that it will find all inaccessible
@@ -96,14 +96,14 @@ add -DGC_OPERATOR_NEW_ARRAY to the Makefile.
 
 If your compiler doesn't support "operator new[]", beware that an
 array of type T, where T is derived from "gc", may or may not be
-allocated as a collectable object (it depends on the compiler).  Use
-the explicit GC placement to make the array collectable.  For example:
+allocated as a collectible object (it depends on the compiler).  Use
+the explicit GC placement to make the array collectible.  For example:
 
     class A: public gc {...};
-    A* a1 = new A[ 10 ];        // collectable or uncollectable?
-    A* a2 = new (GC) A[ 10 ];   // collectable
+    A* a1 = new A[ 10 ];        // collectible or uncollectible?
+    A* a2 = new (GC) A[ 10 ];   // collectible.
 
-3. The destructors of collectable arrays of objects derived from
+3. The destructors of collectible arrays of objects derived from
 "gc_cleanup" will not be invoked properly.  For example:
 
     class A: public gc_cleanup {...};
@@ -250,10 +250,10 @@ inline void* operator new( size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
                           GC_NS_QUALIFY(GCCleanUpFunc) cleanup = 0,
                           void* clientData = 0 );
     /*
-    Allocates a collectable or uncollected object, according to the
+    Allocates a collectible or uncollectible object, according to the
     value of "gcp".
 
-    For collectable objects, if "cleanup" is non-null, then when the
+    For collectible objects, if "cleanup" is non-null, then when the
     allocated object "obj" becomes inaccessible, the collector will
     invoke the function "cleanup( obj, clientData )" but will not
     invoke the object's destructors.  It is an error to explicitly
