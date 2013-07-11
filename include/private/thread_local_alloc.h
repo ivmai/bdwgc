@@ -37,7 +37,12 @@
     && !defined(USE_CUSTOM_SPECIFIC)
 # if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 #   if defined(CYGWIN32) && (__GNUC__ >= 4)
-#     define USE_COMPILER_TLS
+#     if defined(__clang__)
+        /* As of Cygwin clang3.1, thread-local storage is unsupported.  */
+#       define USE_PTHREAD_SPECIFIC
+#     else
+#       define USE_COMPILER_TLS
+#     endif
 #   elif defined(__GNUC__) || defined(MSWINCE)
 #     define USE_WIN32_SPECIFIC
 #   else
