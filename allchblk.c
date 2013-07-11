@@ -743,7 +743,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
 
                   /* The block is completely blacklisted.  We need      */
                   /* to drop some such blocks, since otherwise we spend */
-                  /* all our time traversing them if pointerfree        */
+                  /* all our time traversing them if pointer-free       */
                   /* blocks are unpopular.                              */
                   /* A dropped block will be reconsidered at next GC.   */
                   if ((++count & 3) == 0) {
@@ -807,8 +807,8 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
         }
 #   ifndef GC_DISABLE_INCREMENTAL
         /* Notify virtual dirty bit implementation that we are about to */
-        /* write.  Ensure that pointerfree objects are not protected if */
-        /* it's avoidable.  This also ensures that newly allocated      */
+        /* write.  Ensure that pointer-free objects are not protected   */
+        /* if it is avoidable.  This also ensures that newly allocated  */
         /* blocks are treated as dirty.  Necessary since we don't       */
         /* protect free blocks.                                         */
         GC_ASSERT((size_needed & (HBLKSIZE-1)) == 0);

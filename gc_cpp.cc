@@ -14,7 +14,7 @@
 This implementation module for gc_c++.h provides an implementation of
 the global operators "new" and "delete" that calls the Boehm
 allocator.  All objects allocated by this implementation will be
-non-collectable but part of the root set of the collector.
+uncollectible but part of the root set of the collector.
 
 You should ensure (using implementation-dependent techniques) that the
 linker finds this module before the library that defines the default

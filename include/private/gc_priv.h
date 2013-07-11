@@ -1046,14 +1046,14 @@ struct _GC_arrays {
                           /* free list for atomic objs  */
 # endif
   void *_uobjfreelist[MAXOBJGRANULES+1];
-                          /* Uncollectable but traced objs      */
+                          /* Uncollectible but traced objs      */
                           /* objects on this and auobjfreelist  */
                           /* are always marked, except during   */
                           /* garbage collections.               */
 # ifdef ATOMIC_UNCOLLECTABLE
 #   define GC_auobjfreelist GC_arrays._auobjfreelist
     void *_auobjfreelist[MAXOBJGRANULES+1];
-                        /* Atomic uncollectable but traced objs */
+                        /* Atomic uncollectible but traced objs */
 # endif
   word _composite_in_use; /* Number of bytes in the accessible  */
                           /* composite objects.                 */
@@ -1162,7 +1162,7 @@ struct _GC_arrays {
     struct callinfo _last_stack[NFRAMES];
                 /* Stack at last garbage collection.  Useful for        */
                 /* debugging mysterious object disappearances.  In the  */
-                /* multithreaded case, we currently only save the       */
+                /* multi-threaded case, we currently only save the      */
                 /* calling stack.                                       */
 # endif
 };

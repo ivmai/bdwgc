@@ -1,9 +1,9 @@
 ===========================================================================
             Kjetil S. Matheussen's notes (28-11-2000)
 ===========================================================================
-Compiles under SAS/C again. Should allso still compile under other
-amiga compilers without big changes. I haven't checked if it still
-works under gcc, because I don't have gcc for amiga. But I have
+Compiles under SAS/C again. Should also still compile under other
+Amiga compilers without big changes. I haven't checked if it still
+works under gcc, because I don't have gcc for Amiga. But I have
 updated 'Makefile', and hope it compiles fine.
 
 
@@ -16,7 +16,7 @@ WHATS NEW:
    The lower part of the new file AmigaOS.c does this in various ways, mainly by
    wrapping GC_malloc, GC_malloc_atomic, GC_malloc_uncollectable,
    GC_malloc_atomic_uncollectable, GC_malloc_stubborn, GC_malloc_ignore_off_page
-   and GC_malloc_atomic_ignore_off_page. GC_realloc is allso wrapped, but
+   and GC_malloc_atomic_ignore_off_page. GC_realloc is also wrapped, but
    doesn't do the same effort in preventing to return chip-mem.
    Other allocating-functions (f.ex. GC_*_typed_) can probably be
    used without any problems, but beware that the warn hook will not be called.
@@ -34,7 +34,7 @@ WHATS NEW:
    If you absolutely must call abort() instead of exit(), try calling
    the GC_amiga_free_all_mem function before abort().
 
-   New amiga-spesific compilation flags:
+   New Amiga-specific compilation flags:
 
    GC_AMIGA_FASTALLOC - By NOT defining this option, GC will work like before,
                         it will not try to force fast-mem out of the OS, and
@@ -45,8 +45,8 @@ WHATS NEW:
                        no effect if this flag is set.
 
    GC_AMIGA_GC - If gc returns NULL, do a GC_gcollect, and try again. This
-                 usually is a success with the standard GC configuration. 
-                 It is allso the most important flag to set to prevent
+                 usually is a success with the standard GC configuration.
+                 It is also the most important flag to set to prevent
                  GC from returning chip-mem. Beware that it slows down a lot
                  when a program is rapidly allocating/deallocating when
                  theres either very little fast-memory left or verly little
@@ -67,10 +67,10 @@ WHATS NEW:
    GC_AMIGA_ONLYFAST.
 
    If your program demands high response-time, you should
-   not define GC_AMIGA_GC, and possible allso define GC_AMIGA_ONLYFAST.
+   not define GC_AMIGA_GC, and possible also define GC_AMIGA_ONLYFAST.
    GC_AMIGA_RETRY does not seem to slow down much.
 
-   Allso, when compiling up programs, and GC_AMIGA_FASTALLOC was not defined when
+   Also, when compiling up programs, and GC_AMIGA_FASTALLOC was not defined when
    compilling gc, you can define GC_AMIGA_MAKINGLIB to avoid having these allocation-
    functions wrapped. (see gc.h)
 
@@ -82,20 +82,20 @@ WHATS NEW:
    GC_AMIGA_FASTALLOC by letting the function go thru the new
    GC_amiga_allocwrapper_do function-pointer (see gc.h). Means that
    sending function-pointers, such as GC_malloc, GC_malloc_atomic, etc.,
-   for later to be called like f.ex this, (*GC_malloc_functionpointer)(size),
+   for later to be called like f.ex this, (*GC_malloc_function_pointer)(size),
    will not wrap the function. This is normally not a big problem, unless
    all allocation function is called like this, which will cause the
    atexit un-allocating function never to be called. Then you either
    have to manually add the atexit handler, or call the allocation-
    functions function-pointer functions like this;
-   (*GC_amiga_allocwrapper_do)(size,GC_malloc_functionpointer).
+   (*GC_amiga_allocwrapper_do)(size,GC_malloc_function_pointer).
    There are probably better ways this problem could be handled, unfortunately,
    I didn't find any without rewriting or replacing a lot of the GC-code, which
    I really didn't want to. (Making new GC_malloc_* functions, and just
-   define f.ex GC_malloc as GC_amiga_malloc should allso work).
+   define f.ex GC_malloc as GC_amiga_malloc should work too).
 
 
-   New amiga-spesific function:
+   New Amiga-specific function:
 
      void GC_amiga_set_toany(void (*func)(void));
 
@@ -104,10 +104,10 @@ WHATS NEW:
    it will return chip-mem.
 
 
-2. A few small compiler-spesific additions to make it compile with SAS/C again.
+2. A few small compiler-specific additions to make it compile with SAS/C again.
 
 3. Updated and rewritten the smakefile, so that it works again and that
-   the "unnecesarry" 'SCOPTIONS' files could be removed. Allso included
+   the "unnecessary" 'SCOPTIONS' files could be removed. Also included
    the cord-smakefile stuff in the main smakefile, so that the cord smakefile
    could be removed too. By writing smake -f Smakefile.smk, both gc.lib and
    cord.lib will be made.
@@ -120,14 +120,14 @@ Programs can not be started from workbench, at least not for SAS/C. (Martin
 Tauchmanns note about that it now works with workbench is definitely wrong
 when concerning SAS/C). I guess it works if you use the old "#if 0'ed"-code,
 but I haven't tested it. I think the reason for MT to replace the
-"#if 0'ed"-code was only because it was a bit to SAS/C-spesific. But I
+"#if 0'ed"-code was only because it was a bit to SAS/C-specific. But I
 don't know. An iconx-script solves this problem anyway.
 
 
 BEWARE!
 
 -To run gctest, set the stack to around 200000 bytes first.
--SAS/C-spesific: cord will crash if you compile gc.lib with
+-SAS/C-specific: cord will crash if you compile gc.lib with
  either parm=reg or parm=both. (missing legal prototypes for
  function-pointers someplace is the reason I guess.).
 

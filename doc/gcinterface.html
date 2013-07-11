@@ -30,7 +30,7 @@ or <TT>gc.h</tt> in the distribution.
 <P>
 Clients should include <TT>gc.h</tt>.
 <P>
-In the case of multithreaded code,
+In the case of multi-threaded code,
 <TT>gc.h</tt> should be included after the threads header file, and
 after defining the appropriate <TT>GC_</tt><I>XXXX</i><TT>_THREADS</tt> macro.
 (For 6.2alpha4 and later, simply defining <TT>GC_THREADS</tt> should suffice.)
@@ -74,7 +74,7 @@ collector using the interface in
 Identical to <TT>GC_MALLOC</tt>,
 except that the resulting object is not automatically
 deallocated.  Unlike the system-provided malloc, the collector does
-scan the object for pointers to garbage-collectable memory, even if the
+scan the object for pointers to garbage-collectible memory, even if the
 block itself does not appear to be reachable.  (Objects allocated in this way
 are effectively treated as roots by the collector.)
 <DT> <B> void * GC_REALLOC(void *<I>old</i>, size_t <I>new_size</i>) </b>
@@ -84,12 +84,12 @@ old object into the new object.  The old object is reused in place if
 convenient.  If the original object was allocated with
 <TT>GC_MALLOC_ATOMIC</tt>,
 the new object is subject to the same constraints.  If it was allocated
-as an uncollectable object, then the new object is uncollectable, and
+as an uncollectible object, then the new object is uncollectible, and
 the old object (if different) is deallocated.
 <DT> <B> void GC_FREE(void *<I>dead</i>) </b>
 <DD>
 Explicitly deallocate an object.  Typically not useful for small
-collectable objects.
+collectible objects.
 <DT> <B> void * GC_MALLOC_IGNORE_OFF_PAGE(size_t <I>nbytes</i>) </b>
 <DD>
 <DT> <B> void * GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(size_t <I>nbytes</i>) </b>
@@ -188,11 +188,11 @@ are many "standard" ways to allocate memory in C++.  The default ::new
 operator, default malloc, and default STL allocators allocate memory
 that is not garbage collected, and is not normally "traced" by the
 collector.  This means that any pointers in memory allocated by these
-default allocators will not be seen by the collector.  Garbage-collectable
+default allocators will not be seen by the collector.  Garbage-collectible
 memory referenced only by pointers stored in such default-allocated
 objects is likely to be reclaimed prematurely by the collector.
 <P>
-It is the programmers responsibility to ensure that garbage-collectable
+It is the programmers responsibility to ensure that garbage-collectible
 memory is referenced by pointers stored in one of
 <UL>
 <LI> Program variables
@@ -200,7 +200,7 @@ memory is referenced by pointers stored in one of
 <LI> Uncollected but "traceable" objects
 </ul>
 "Traceable" objects are not necessarily reclaimed by the collector,
-but are scanned for pointers to collectable objects.
+but are scanned for pointers to collectible objects.
 They are usually allocated by <TT>GC_MALLOC_UNCOLLECTABLE</tt>, as described
 above, and through some interfaces described below.
 <P>
@@ -209,8 +209,8 @@ exception objects.  Thus objects thrown as exceptions should only
 point to otherwise reachable memory.  This is another bug whose
 proper repair requires platform hooks.)
 <P>
-The easiest way to ensure that collectable objects are properly referenced
-is to allocate only collectable objects.  This requires that every
+The easiest way to ensure that collectible objects are properly referenced
+is to allocate only collectible objects.  This requires that every
 allocation go through one of the following interfaces, each one of
 which replaces a standard C++ allocation mechanism.  Note that
 this requires that all STL containers be explicitly instantiated with
@@ -226,8 +226,8 @@ allocator implementation in <TT>gc_allocator.h</tt>.  It defines
 <LI> <TT>gc_allocator</tt>
 </ul>
 which may be used either directly to allocate memory or to instantiate
-container templates. 
-The former allocates uncollectable but traced memory.
+container templates.
+The former allocates uncollectible but traced memory.
 The latter allocates garbage-collected memory.
 <P>
 These should work with any fully standard-conforming C++ compiler.
@@ -244,8 +244,8 @@ This defines SGI-style allocators
 <LI> <TT>gc_alloc</tt>
 <LI> <TT>single_client_gc_alloc</tt>
 </ul>
-The first two allocate uncollectable but traced
-memory, while the second two allocate collectable memory.
+The first two allocate uncollectible but traced
+memory, while the second two allocate collectible memory.
 The <TT>single_client</tt> versions are not safe for concurrent access by
 multiple threads, but are faster.
 <P>
@@ -253,13 +253,13 @@ For an example, click <A HREF="http://hpl.hp.com/personal/Hans_Boehm/gc/gc_alloc
 <DT> <B> Class inheritance based interface for new-based allocation</b>
 <DD>
 Users may include gc_cpp.h and then cause members of classes to
-be allocated in garbage collectable memory by having those classes
+be allocated in garbage collectible memory by having those classes
 inherit from class gc.
 For details see <A HREF="http://hpl.hp.com/personal/Hans_Boehm/gc/gc_source/gc_cpph.txt">gc_cpp.h</a>.
 <P>
 Linking against libgccpp in addition to the gc library overrides
-::new (and friends) to allocate traceable memory but uncollectable
-memory, making it safe to refer to collectable objects from the resulting
+::new (and friends) to allocate traceable memory but uncollectible
+memory, making it safe to refer to collectible objects from the resulting
 memory.
 <DT> <B> C interface </b>
 <DD>

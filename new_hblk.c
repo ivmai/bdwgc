@@ -164,16 +164,13 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
     return ((ptr_t)p);
 }
 
-/*
- * Allocate a new heapblock for small objects of size gran granules.
- * Add all of the heapblock's objects to the free list for objects
- * of that size.
- * Set all mark bits if objects are uncollectable.
- * Will fail to do anything if we are out of memory.
- */
+/* Allocate a new heapblock for small objects of size gran granules.    */
+/* Add all of the heapblock's objects to the free list for objects      */
+/* of that size.  Set all mark bits if objects are uncollectible.       */
+/* Will fail to do anything if we are out of memory.                    */
 GC_INNER void GC_new_hblk(size_t gran, int kind)
 {
-  struct hblk *h;       /* the new heap block                   */
+  struct hblk *h;       /* the new heap block */
   GC_bool clear = GC_obj_kinds[kind].ok_init;
 
   GC_STATIC_ASSERT((sizeof (struct hblk)) == HBLKSIZE);

@@ -466,7 +466,7 @@ typedef int mark_state_t;       /* Current state of marking, as follows:*/
                                 /* grungy objects above scan_ptr.       */
 
 #define MS_PUSH_UNCOLLECTABLE 2 /* I holds, except that marked          */
-                                /* uncollectable objects above scan_ptr */
+                                /* uncollectible objects above scan_ptr */
                                 /* may point to unmarked objects.       */
                                 /* Roots may point to unmarked objects  */
 

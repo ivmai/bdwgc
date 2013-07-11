@@ -66,7 +66,7 @@ for PPCR.
 - GC_realloc didn't handle out-of-memory correctly.
 - GC_base could return a nonzero value for addresses inside free blocks.
 - test.c wasn't really thread safe, and could erroneously report failure
-  in a multithreaded environment.  (The locking primitives need to be
+  in a multi-threaded environment.  (The locking primitives need to be
   replaced for other threads packages.)
 - GC_CONS was thoroughly broken.
 - On a SPARC with dynamic linking, signals stayed diabled while the
@@ -110,7 +110,7 @@ for PPCR.
 - A more refined heap expansion policy.  Less space usage by default.
 - Various minor enhancements to reduce space usage, and to reduce
   the amount of memory scanned by the collector.
-- Uncollectable allocation without per object overhead.
+- Uncollectible allocation without per object overhead.
 - More conscientious handling of out-of-memory conditions.
 - Fixed a bug in debugging stubborn allocation.
 - Fixed a bug that resulted in occasional erroneous reporting of smashed
@@ -232,7 +232,7 @@ Since version 4.0:
   finalization procedures are called outside of the allocation
   lock, making direct use of the interface a little less dangerous.
   MAY BREAK EXISTING CLIENTS that assume finalizers
-  are protected by a lock.  Since there seem to be few multithreaded
+  are protected by a lock.  Since there seem to be few multi-threaded
   clients that use finalization, this is hopefully not much of
   a problem.
 - Fixed a gross bug in CORD_prev.
@@ -247,7 +247,7 @@ Since version 4.0:
   the single-threaded case.
 - Reduced retry count in GC_collect_or_expand for garbage
   collecting when out of memory.
-- Made uncollectable allocations bypass black-listing, as they
+- Made uncollectible allocations bypass black-listing, as they
   should.
 - Fixed a bug in typed_test in test.c that could cause (legitimate)
   GC crashes.
@@ -611,7 +611,7 @@ Since 4.10:
    DEC Alpha.  (Thanks to Matthew Flatt.)
  - Added base pointer checking to GC_REGISTER_FINALIZER in debugging
    mode, at the suggestion of Jeremy Fitzhardinge.
- - GC_debug_realloc failed for uncollectable objects.  (Thanks to
+ - GC_debug_realloc failed for uncollectible objects.  (Thanks to
    Jeremy Fitzhardinge.)
  - Explicitly typed allocation could crash if it ran out of memory.
    (Thanks to Jeremy Fitzhardinge.)
@@ -621,9 +621,9 @@ Since 4.10:
  - Added the beginning of Irix pthread support.
  - Integrated Xiaokun Zhu's fixes for djgpp 2.01.
  - Added SGI-style STL allocator support (gc_alloc.h).
- - Fixed a serious bug in README.solaris2.  Multithreaded programs must include
+ - Fixed a serious bug in README.solaris2.  Multi-threaded programs must include
    gc.h with SOLARIS_THREADS defined.
- - Changed GC_free so it actually deallocates uncollectable objects.
+ - Changed GC_free so it actually deallocates uncollectible objects.
    (Thanks to Peter Chubb for pointing out the problem.)
  - Added Linux ELF support for dynamic libararies.  (Thanks again to
    Patrick Bridges.)
@@ -654,7 +654,7 @@ Since 4.11:
  - Fixed a syntactic error in the DJGPP code.  (Thanks to Fergus
    Henderson for finding this by inspection.)  Also fixed a test program
    problem with DJGPP (Thanks to Peter Monks.)
- - Atomic uncollectable objects were not treated correctly by the
+ - Atomic uncollectible objects were not treated correctly by the
    incremental collector.  This resulted in weird log statistics and
    occasional performance problems.  (Thanks to Peter Chubb for pointing
    this out.)
@@ -1322,7 +1322,7 @@ Since 6.0alpha7:
  - Fixed several problems with thread local allocation of pointerfree or
    typed objects.  The collector was reclaiming thread-local free lists, since
    it wasn't following the link fields.
- - There was apparently a long-standing race condition related to multithreaded
+ - There was apparently a long-standing race condition related to multi-threaded
    incremental collection.  A collection could be started and a thread stopped
    between the memory unprotect system call and the setting of the
    corresponding dirt bit.  I believe this did not affect Solaris or PCR, which
@@ -1379,7 +1379,7 @@ Since 6.0alpha8:
 Since 6.0alpha9:
  - Two more bug fixes for KEEP_BACK_PTRS and DBG_HDRS_ALL.
  - Fixed a stack clearing problem that resulted in SIGILL with a
-   misaligned stack pointer for multithreaded SPARC builds.
+   misaligned stack pointer for multi-threaded SPARC builds.
  - Integrated another HURD patch (thanks to Igor Khavkine).
 
 Since 6.0:
@@ -1418,7 +1418,7 @@ Since 6.0:
    implementation should be easier to add.
 
 Since 6.1alpha1:
- - No longer wrap read by default in multithreaded applications.  It was
+ - No longer wrap read by default in multi-threaded applications.  It was
    pointed out on the libgcj list that this holds the allocation lock for
    way too long if the read blocks.  For now, reads into the heap are
    broken with incremental collection.  It's possible to turn this back on
@@ -1498,8 +1498,8 @@ Since 6.1alpha3:
    dllimport/export defines in gc.h.  (Thanks to Adam Megacz.)
  - GC_malloc_many didn't set hb_last_reclaimed when it called 
    GC_reclaim_generic.  (I'm not sure this matters much, but ...)
- - Allocating uncollectable objects with debug information sometimes
-   allocated objects that were one byte too small, since uncollectable
+ - Allocating uncollectible objects with debug information sometimes
+   allocated objects that were one byte too small, since uncollectible
    objects don't have the extra byte added at the end.  (Thanks to
    Wink Saville for pointing this out.)
  - Added a bit more assertion checking to make sure that gcj objects
@@ -1543,7 +1543,7 @@ Since 6.1alpha3:
  - Some more patches for Linux on HP PA-RISC.
  - Added include/gc_allocator.h.  It implements (hopefully) standard
    conforming (as opposed to SGI-style) allocators that allocate
-   collectable (gc_allocator) or GC-traceable, but not collectable
+   collectible (gc_allocator) or GC-traceable, but not collectible
    (traceable_allocator) objects.  This borrows heavily from libstc++,
    which borrows heavily from the SGI implementation, this part of
    which was written by Matt Austern.  Changed test_cpp.cc to very
@@ -1792,7 +1792,7 @@ Since 6.2alpha4:
  - Attempted to sanitize the various DLL macros.  GC_USE_DLL disappeared.
    GC_DLL is used instead.  All internal tests are now on GC_DLL.
    README.macros is now more precise about the intended meaning.
- - Include DllMain in the multithreaded win32 version only if the
+ - Include DllMain in the multi-threaded win32 version only if the
    collector is actually built as a dll.  (Thanks to Mohan Embar for
    a version of the patch.)
  - Hide the cygwin threadAttach/Detach functions.  They were violating our
@@ -2466,7 +2466,7 @@ Since gc7.0alpha4
    win32_threads.c for those two cases.
  - Got rid of the FASTLOCK() machinery.  It doesn't seem useful on modern
    platforms.
- - Cleaned up the uncollectable allocation routines, speeding up the
+ - Cleaned up the uncollectible allocation routines, speeding up the
    slower paths.  The code did enough unnecessary work off the critical path
    that the underlying logic was getting hard to extract.
  - No longer turn off THREAD_LOCAL_ALLOC with DBG_HDRS_ALL.  Indications

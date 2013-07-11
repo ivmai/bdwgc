@@ -103,8 +103,8 @@ typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
                         /* The latter alternative can be used if each   */
                         /* object contains a type descriptor in the     */
                         /* first word.                                  */
-                        /* Note that in multithreaded environments      */
-                        /* per object descriptors must be located in    */
+                        /* Note that in the multi-threaded environments */
+                        /* per-object descriptors must be located in    */
                         /* either the first two or last two words of    */
                         /* the object, since only those are guaranteed  */
                         /* to be cleared while the allocation lock is   */
@@ -178,7 +178,7 @@ GC_API unsigned GC_CALL GC_new_kind_inner(void ** /* free_list */,
 GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc);
 GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc);
 
-/* Allocate an object of a given kind.  Note that in multithreaded      */
+/* Allocate an object of a given kind.  Note that in the multi-threaded */
 /* contexts, this is usually unsafe for kinds that have the descriptor  */
 /* in the object itself, since there is otherwise a window in which     */
 /* the descriptor is not correct.  Even in the single-threaded case,    */

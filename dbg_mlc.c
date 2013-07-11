@@ -28,7 +28,7 @@
   /* of the heap.                                                 */
   /* This excludes the check as to whether the back pointer is    */
   /* odd, which is added by the GC_HAS_DEBUG_INFO macro.          */
-  /* Note that if DBG_HDRS_ALL is set, uncollectable objects      */
+  /* Note that if DBG_HDRS_ALL is set, uncollectible objects      */
   /* on free lists may not have debug information set.  Thus it's */
   /* not always safe to return TRUE (1), even if the client does  */
   /* its part.  Return -1 if the object with debug info has been  */

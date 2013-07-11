@@ -182,7 +182,7 @@ void (GC_CALLBACK *GC_is_visible_print_proc)(void * p) =
 /* in hard cases.  (This is intended for debugging use with             */
 /* untyped allocations.  The idea is that it should be possible, though */
 /* slow, to add such a call to all indirect pointer stores.)            */
-/* Currently useless for multithreaded worlds.                          */
+/* Currently useless for the multi-threaded worlds.                     */
 GC_API void * GC_CALL GC_is_visible(void *p)
 {
     hdr *hhdr;
