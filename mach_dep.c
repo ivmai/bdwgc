@@ -84,7 +84,7 @@ asm static void PushMacRegisters()
 
 # if defined(M68K) && defined(AMIGA)
     /* This function is not static because it could also be             */
-    /* errorneously defined in .S file, so this error would be caught   */
+    /* erroneously defined in .S file, so this error would be caught    */
     /* by the linker.                                                   */
     void GC_push_regs(void)
     {

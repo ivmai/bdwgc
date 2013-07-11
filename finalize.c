@@ -30,7 +30,7 @@
 
 /* Type of mark procedure used for marking from finalizable object.     */
 /* This procedure normally does not mark the object, only its           */
-/* descendents.                                                         */
+/* descendants.                                                         */
 typedef void (* finalization_mark_proc)(ptr_t /* finalizable_obj_ptr */);
 
 #define HASH3(addr,size,log_size) \

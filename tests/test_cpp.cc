@@ -75,7 +75,7 @@ extern "C" {
 
 
 class A {public:
-    /* An uncollectable class. */
+    /* An uncollectible class. */
 
     A( int iArg ): i( iArg ) {}
     void Test( int iArg ) {
@@ -84,7 +84,7 @@ class A {public:
 
 
 class B: public gc, public A {public:
-    /* A collectable class. */
+    /* A collectible class. */
 
     B( int j ): A( j ) {}
     ~B() {
@@ -97,7 +97,7 @@ int B::deleting = 0;
 
 
 class C: public gc_cleanup, public A {public:
-    /* A collectable class with cleanup and virtual multiple inheritance. */
+    /* A collectible class with cleanup and virtual multiple inheritance. */
 
     C( int levelArg ): A( levelArg ), level( levelArg ) {
         nAllocated++;
@@ -128,7 +128,7 @@ int C::nAllocated = 0;
 
 
 class D: public gc {public:
-    /* A collectable class with a static member function to be used as
+    /* A collectible class with a static member function to be used as
     an explicit clean-up function supplied to ::new. */
 
     D( int iArg ): i( iArg ) {
@@ -149,7 +149,7 @@ int D::nAllocated = 0;
 
 
 class E: public gc_cleanup {public:
-    /* A collectable class with clean-up for use by F. */
+    /* A collectible class with clean-up for use by F. */
 
     E() {
         nAllocated++;}
@@ -164,7 +164,7 @@ int E::nAllocated = 0;
 
 
 class F: public E {public:
-    /* A collectable class with clean-up, a base with clean-up, and a
+    /* A collectible class with clean-up, a base with clean-up, and a
     member with clean-up. */
 
     F() {
@@ -235,9 +235,9 @@ int APIENTRY WinMain(
     for (iters = 1; iters <= n; iters++) {
         GC_printf( "Starting iteration %d\n", iters );
 
-            /* Allocate some uncollectable As and disguise their pointers.
+            /* Allocate some uncollectible As and disguise their pointers.
             Later we'll check to see if the objects are still there.  We're
-            checking to make sure these objects really are uncollectable. */
+            checking to make sure these objects really are uncollectible. */
         GC_word as[ 1000 ];
         GC_word bs[ 1000 ];
         for (i = 0; i < 1000; i++) {
@@ -255,7 +255,7 @@ int APIENTRY WinMain(
             f = new F;
             if (0 == i % 10) delete c;}
 
-            /* Allocate a very large number of collectable As and Bs and
+            /* Allocate a very large number of collectible As and Bs and
             drop the references to them immediately, forcing many
             collections. */
         for (i = 0; i < 1000000; i++) {
@@ -272,7 +272,7 @@ int APIENTRY WinMain(
 #           endif
             }
 
-            /* Make sure the uncollectable As and Bs are still there. */
+            /* Make sure the uncollectible As and Bs are still there. */
         for (i = 0; i < 1000; i++) {
             A* a = (A*) Undisguise( as[ i ] );
             B* b = (B*) Undisguise( bs[ i ] );

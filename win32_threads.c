@@ -1341,7 +1341,7 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
 
     /* Push all registers that might point into the heap.  Frame        */
     /* pointer registers are included in case client code was           */
-    /* compiled with the 'omit frame pointer' optimisation.             */
+    /* compiled with the 'omit frame pointer' optimization.             */
 #   define PUSH1(reg) GC_push_one((word)context.reg)
 #   define PUSH2(r1,r2) PUSH1(r1), PUSH1(r2)
 #   define PUSH4(r1,r2,r3,r4) PUSH2(r1,r2), PUSH2(r3,r4)
@@ -2615,7 +2615,7 @@ GC_INNER void GC_thr_init(void)
     start = si -> start_routine;
     start_arg = si -> arg;
 
-    GC_free(si); /* was allocated uncollectable */
+    GC_free(si); /* was allocated uncollectible */
 
     pthread_cleanup_push(GC_thread_exit_proc, (void *)me);
     result = (*start)(start_arg);

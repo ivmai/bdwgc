@@ -129,7 +129,7 @@ GC_INNER GC_bool GC_mark_stack_too_small = FALSE;
 static struct hblk * scan_ptr;
 
 STATIC GC_bool GC_objects_are_marked = FALSE;
-                /* Are there collectable marked objects in the heap?    */
+                /* Are there collectible marked objects in the heap?    */
 
 /* Is a collection in progress?  Note that this can return true in the  */
 /* nonincremental case, if a collection has been abandoned and the      */
@@ -148,7 +148,7 @@ GC_INNER void GC_clear_hdr_marks(hdr *hhdr)
     hhdr -> hb_n_marks = 0;
 }
 
-/* Set all mark bits in the header.  Used for uncollectable blocks. */
+/* Set all mark bits in the header.  Used for uncollectible blocks. */
 GC_INNER void GC_set_hdr_marks(hdr *hhdr)
 {
     unsigned i;
@@ -285,7 +285,7 @@ GC_INNER void GC_initiate_gc(void)
 STATIC struct hblk * GC_push_next_marked(struct hblk *h);
                 /* Ditto, but also mark from clean pages.       */
 STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h);
-                /* Ditto, but mark only from uncollectable pages.       */
+                /* Ditto, but mark only from uncollectible pages.       */
 
 static void alloc_mark_stack(size_t);
 
@@ -999,7 +999,7 @@ STATIC void GC_do_local_mark(mse *local_mark_stack, mse *local_top)
             /* Try to share the load, since the main stack is empty,    */
             /* and helper threads are waiting for a refill.             */
             /* The entries near the bottom of the stack are likely      */
-            /* to require more work.  Thus we return those, eventhough  */
+            /* to require more work.  Thus we return those, even though */
             /* it's harder.                                             */
             mse * new_bottom = local_mark_stack
                                 + (local_top - local_mark_stack)/2;
@@ -1833,7 +1833,7 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
   }
 #endif /* !GC_DISABLE_INCREMENTAL */
 
-/* Similar to above, but for uncollectable pages.  Needed since we      */
+/* Similar to above, but for uncollectible pages.  Needed since we      */
 /* do not clear marks for such pages, even for full collections.        */
 STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h)
 {
