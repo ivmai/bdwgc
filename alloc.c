@@ -559,7 +559,7 @@ GC_API int GC_CALL GC_collect_a_little(void)
 #ifndef SMALL_CONFIG
   /* Variables for world-stop average delay time statistic computation. */
   /* "divisor" is incremented every world-stop and halved when reached  */
-  /* its maximum (or upon "total_time" oveflow).                        */
+  /* its maximum (or upon "total_time" overflow).                       */
   static unsigned world_stopped_total_time = 0;
   static unsigned world_stopped_total_divisor = 0;
 # ifndef MAX_TOTAL_TIME_DIVISOR

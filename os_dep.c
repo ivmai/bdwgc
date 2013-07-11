@@ -3520,15 +3520,15 @@ void GC_unprotect_range(ptr_t addr, word len)
 /* This still serves as sample code if you do want to wrap system calls.*/
 
 #if !defined(MSWIN32) && !defined(MSWINCE) && !defined(GC_USE_LD_WRAP)
-/* Replacement for UNIX system call.                                      */
-/* Other calls that write to the heap should be handled similarly.        */
-/* Note that this doesn't work well for blocking reads:  It will hold     */
-/* the allocation lock for the entire duration of the call. Multithreaded */
-/* clients should really ensure that it won't block, either by setting    */
-/* the descriptor nonblocking, or by calling select or poll first, to     */
-/* make sure that input is available.                                     */
-/* Another, preferred alternative is to ensure that system calls never    */
-/* write to the protected heap (see above).                               */
+/* Replacement for UNIX system call.                                    */
+/* Other calls that write to the heap should be handled similarly.      */
+/* Note that this doesn't work well for blocking reads:  It will hold   */
+/* the allocation lock for the entire duration of the call.             */
+/* Multi-threaded clients should really ensure that it won't block,     */
+/* either by setting the descriptor non-blocking, or by calling select  */
+/* or poll first, to make sure that input is available.                 */
+/* Another, preferred alternative is to ensure that system calls never  */
+/* write to the protected heap (see above).                             */
 # include <unistd.h>
 # include <sys/uio.h>
 ssize_t read(int fd, void *buf, size_t nbyte)

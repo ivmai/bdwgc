@@ -87,7 +87,7 @@ Different kinds are handled somewhat differently by certain parts
 of the garbage collector.  Certain kinds are scanned for pointers,
 others are not.  Some may have per-object type descriptors that
 determine pointer locations.  Or a specific kind may correspond
-to one specific object layout.  Two built-in kinds are uncollectable.
+to one specific object layout.  Two built-in kinds are uncollectible.
 One (<TT>STUBBORN</tt>) is immutable without special precautions.
 In spite of that, it is very likely that most C clients of the
 collector currently
@@ -250,8 +250,8 @@ a stop-the-world collection is:
 objects.  In this case <TT>GC_objects_are_marked</tt> will simultaneously
 be false, so the mark state is advanced to
 <LI> <TT>MS_PUSH_UNCOLLECTABLE</tt> indicating that it suffices to push
-uncollectable objects, roots, and then mark everything reachable from them.
-<TT>Scan_ptr</tt> is advanced through the heap until all uncollectable
+uncollectible objects, roots, and then mark everything reachable from them.
+<TT>Scan_ptr</tt> is advanced through the heap until all uncollectible
 objects are pushed, and objects reachable from them are marked.
 At that point, the next call to <TT>GC_mark_some</tt> calls
 <TT>GC_push_roots</tt> to push the roots.  It the advances the
@@ -498,8 +498,8 @@ to follow a ``pointer'' to just outside the garbage-collected heap, or
 to a currently unallocated page inside the heap.  Pages that have been
 the targets of such near misses are likely to be the targets of
 misidentified ``pointers'' in the future.  To minimize the future
-damage caused by such misidentifications they will be allocated only to
-small pointerfree objects.
+damage caused by such misidentification, they will be allocated only to
+small pointer-free objects.
 <P>
 The collector understands two different kinds of black-listing.  A
 page may be black listed for interior pointer references
@@ -520,7 +520,7 @@ a block to a particular object kind and size.  It occasionally
 drops (i.e. allocates and forgets) blocks that are completely black-listed
 in order to avoid excessively long large block free lists containing
 only unusable blocks.  This would otherwise become an issue
-if there is low demand for small pointerfree objects.
+if there is low demand for small pointer-free objects.
 
 <H2>Thread support</h2>
 We support several different threading models.  Unfortunately Pthreads,

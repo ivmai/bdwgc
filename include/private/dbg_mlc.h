@@ -112,7 +112,7 @@ typedef struct {
 #else
   /* Add space for END_FLAG, but use any extra space that was already   */
   /* added to catch off-the-end pointers.                               */
-  /* For uncollectable objects, the extra byte is not added.            */
+  /* For uncollectible objects, the extra byte is not added.            */
 # define UNCOLLECTABLE_DEBUG_BYTES (sizeof (oh) + sizeof (word))
 # define DEBUG_BYTES (UNCOLLECTABLE_DEBUG_BYTES - EXTRA_BYTES)
 #endif

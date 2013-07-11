@@ -1,7 +1,7 @@
 See README.alpha for Linux on DEC AXP info.
 
-This file applies mostly to Linux/Intel IA32.  Ports to Linux on an M68K, IA64,
-SPARC, MIPS, Alpha and PowerPC are also integrated.  They should behave
+This file applies mostly to Linux/Intel IA32.  Ports to Linux on an M68K,
+IA64, SPARC, MIPS, Alpha and PowerPC are integrated too.  They should behave
 similarly, except that the PowerPC port lacks incremental GC support, and
 it is unknown to what extent the Linux threads code is functional.
 See below for M68K specific notes.
@@ -60,8 +60,8 @@ To use threads, you need to abide by the following requirements:
 
 6) Thread local storage may not be viewed as part of the root set by the
    collector.  This probably depends on the linuxthreads version.  For the
-   time being, any collectable memory referenced by thread local storage should
-   also be referenced from elsewhere, or be allocated as uncollectable.
+   time being, any collectible memory referenced by thread local storage
+   should also be referenced from elsewhere, or be allocated as uncollectible.
    (This is really a bug that should be fixed somehow.  The current GC
    version probably gets things right if there are not too many tls locations
    and if dlopen is not used.)

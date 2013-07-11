@@ -582,7 +582,7 @@ CORD CORD_from_file_lazy_inner(FILE * f, size_t len)
         /* This greatly increases the probability       */
         /* of avoiding deadlock if buffer allocation    */
         /* is redirected to GC_malloc and the           */
-        /* world is multithreaded.                      */
+        /* world is multi-threaded.                     */
         char buf[1];
 
         if (fread(buf, 1, 1, f) > 1) {

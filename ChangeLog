@@ -5831,7 +5831,7 @@ at least in the past, imposed hard bounds on the number of threads.
 win32_threads.c for those two cases.
 * Got rid of the FASTLOCK() machinery.  It doesn't seem useful on modern
 platforms.
-* Cleaned up the uncollectable allocation routines, speeding up the
+* Cleaned up the uncollectible allocation routines, speeding up the
 slower paths.  The code did enough unnecessary work off the critical path
 that the underlying logic was getting hard to extract.
 * No longer turn off THREAD_LOCAL_ALLOC with DBG_HDRS_ALL.  Indications
@@ -6448,7 +6448,7 @@ is not in gcc3.3.)
 * Attempted to sanitize the various DLL macros.  GC_USE_DLL disappeared.
 GC_DLL is used instead.  All internal tests are now on GC_DLL.
 README.macros is now more precise about the intended meaning.
-* Include DllMain in the multithreaded win32 version only if the
+* Include DllMain in the multi-threaded win32 version only if the
 collector is actually built as a dll.
 * Hide the cygwin threadAttach/Detach functions.  They were violating our
 namespace rules.
@@ -6726,8 +6726,8 @@ declaration.
 dllimport/export defines in gc.h.
 * GC_malloc_many didn't set hb_last_reclaimed when it called
 GC_reclaim_generic.  (I'm not sure this matters much, but ...)
-* Allocating uncollectable objects with debug information sometimes
-allocated objects that were one byte too small, since uncollectable
+* Allocating uncollectible objects with debug information sometimes
+allocated objects that were one byte too small, since uncollectible
 objects don't have the extra byte added at the end.
 * Added a bit more assertion checking to make sure that gcj objects
 on free lists never have a nonzero second word.
@@ -6765,7 +6765,7 @@ compatible with Visual C++ 6.
 * Some more patches for Linux on HP PA-RISC.
 * Added include/gc_allocator.h.  It implements (hopefully) standard
 conforming (as opposed to SGI-style) allocators that allocate
-collectable (gc_allocator) or GC-traceable, but not collectable
+collectible (gc_allocator) or GC-traceable, but not collectible
 (traceable_allocator) objects.  This borrows heavily from libstc++,
 which borrows heavily from the SGI implementation, this part of
 which was written by Matt Austern.  Changed test_cpp.cc to very
@@ -7572,7 +7572,7 @@ correctly.
 an out of memory situation.
 * Fixed a syntactic error in the DJGPP code.  Also fixed a test program
 problem with DJGPP.
-* Atomic uncollectable objects were not treated correctly by the
+* Atomic uncollectible objects were not treated correctly by the
 incremental collector.  This resulted in weird log statistics and
 occasional performance problems.
 * Fixed some problems resulting from compilers that don't define
@@ -7678,7 +7678,7 @@ memory.
 * Calls to GC_base before the collector was initialized failed on a
 DEC Alpha.
 * Added base pointer checking to GC_REGISTER_FINALIZER in debugging mode.
-* GC_debug_realloc failed for uncollectable objects.
+* GC_debug_realloc failed for uncollectible objects.
 * Explicitly typed allocation could crash if it ran out of memory.
 * Added minimal support for a DEC Alpha running Linux.
 * Fixed a problem with allocation of objects whose size overflowed
@@ -7689,7 +7689,7 @@ ptrdiff_t.  (This now fails unconditionally, as it should.)
 * Fixed a serious bug in README.solaris2.
 Multi-threaded programs must include
 gc.h with SOLARIS_THREADS defined.
-* Changed GC_free so it actually deallocates uncollectable objects.
+* Changed GC_free so it actually deallocates uncollectible objects.
 * Added Linux ELF support for dynamic libraries.
 * Changed the Borland cc configuration so that the assembler is not
 required.
@@ -7993,7 +7993,7 @@ in the presence of ALL_INTERIOR_POINTERS.
 the single-threaded case.
 * Reduced retry count in GC_collect_or_expand for garbage
 collecting when out of memory.
-* Made uncollectable allocations bypass black-listing, as they
+* Made uncollectible allocations bypass black-listing, as they
 should.
 * Fixed a bug in typed_test in test.c that could cause (legitimate)
 GC crashes.
@@ -8149,7 +8149,7 @@ out by Dave Detlefs and Al Dosser.
 * A more refined heap expansion policy.  Less space usage by default.
 * Various minor enhancements to reduce space usage, and to reduce
 the amount of memory scanned by the collector.
-* Uncollectable allocation without per object overhead.
+* Uncollectible allocation without per object overhead.
 * More conscientious handling of out-of-memory conditions.
 * Fixed a bug in debugging stubborn allocation.
 * Fixed a bug that resulted in occasional erroneous reporting of smashed

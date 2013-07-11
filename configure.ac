@@ -126,7 +126,7 @@ AC_ARG_ENABLE(cplusplus,
 dnl Features which may be selected in the following thread-detection switch.
 AH_TEMPLATE([PARALLEL_MARK], [Define to enable parallel marking.])
 AH_TEMPLATE([THREAD_LOCAL_ALLOC],
-            [Define to enable thread-local allocation optimisation.])
+            [Define to enable thread-local allocation optimization.])
 AH_TEMPLATE([USE_COMPILER_TLS],
             [Define to use of compiler-support for thread-local variables.])
 

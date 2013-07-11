@@ -38,9 +38,9 @@ platforms, this will cause the collector to loop in a handler when the
 SIGSEGV is encountered (or when the collector aborts for some other reason),
 and a debugger can then be attached to the looping
 process.  This sidesteps common operating system problems related
-to incomplete core files for multithreaded applications, etc.
+to incomplete core files for multi-threaded applications, etc.
 <H2>Other Signals</h2>
-On most platforms, the multithreaded version of the collector needs one or
+On most platforms, the multi-threaded version of the collector needs one or
 two other signals for internal use by the collector in stopping threads.
 It is normally wise to tell the debugger to ignore these.  On Linux,
 the collector currently uses SIGPWR and SIGXCPU by default.
@@ -183,7 +183,7 @@ pseudo-random numbers, and the like.  It is also likely to improve GC
 performance, perhaps drastically so if the application is paging.
 <LI> If you allocate large objects containing only
 one or two pointers at the beginning, either try the typed allocation
-primitives is <TT>gc_typed.h</tt>, or separate out the pointerfree component.
+primitives is <TT>gc_typed.h</tt>, or separate out the pointer-free component.
 <LI> Consider using <TT>GC_malloc_ignore_off_page()</tt>
 to allocate large objects.  (See <TT>gc.h</tt> and above for details.
 Large means &gt; 100K in most environments.)
@@ -201,7 +201,7 @@ value in a heap object.  This should, of course, be impossible.  In practice,
 it may happen for reasons like the following:
 <OL>
 <LI> The collector did not intercept the creation of threads correctly in
-a multithreaded application, <I>e.g.</i> because the client called
+a multi-threaded application, <I>e.g.</i> because the client called
 <TT>pthread_create</tt> without including <TT>gc.h</tt>, which redefines it.
 <LI> The last pointer to an object in the garbage collected heap was stored
 somewhere were the collector couldn't see it, <I>e.g.</i> in an

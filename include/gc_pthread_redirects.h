@@ -25,7 +25,7 @@
 /* that we can locate thread stacks and stop the world.                 */
 /* Note also that the collector cannot always see thread specific data. */
 /* Thread specific data should generally consist of pointers to         */
-/* uncollectable objects (allocated with GC_malloc_uncollectable,       */
+/* uncollectible objects (allocated with GC_malloc_uncollectable,       */
 /* not the system malloc), which are deallocated using the destructor   */
 /* facility in thr_keycreate.  Alternatively, keep a redundant pointer  */
 /* to thread specific data on the thread stack.                         */

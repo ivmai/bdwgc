@@ -109,7 +109,7 @@ _WARNING_: pointers inside memory allocated by the standard `malloc` are not
 seen by the garbage collector.  Thus objects pointed to only from such a
 region may be prematurely deallocated.  It is thus suggested that the
 standard `malloc` be used only for memory regions, such as I/O buffers, that
-are guaranteed not to contain pointers to garbage collectable memory.
+are guaranteed not to contain pointers to garbage collectible memory.
 Pointers in C language automatic, static, or register variables,
 are correctly recognized.  (Note that `GC_malloc_uncollectable` has
 semantics similar to standard malloc, but allocates objects that are
@@ -475,7 +475,7 @@ of information:
 This mechanism performs best for objects that are written only for
 initialization, and such that only one stubborn object is writable
 at once.  It is typically not worth using for short-lived
-objects.  Stubborn objects are treated less efficiently than pointerfree
+objects.  Stubborn objects are treated less efficiently than pointer-free
 (atomic) objects.
 
 A rough rule of thumb is that, in the absence of VM information, garbage
