@@ -1963,6 +1963,7 @@ static pthread_cond_t builder_cv = PTHREAD_COND_INITIALIZER;
 
 GC_INNER void GC_acquire_mark_lock(void)
 {
+    GC_ASSERT(GC_mark_lock_holder != NUMERIC_THREAD_ID(pthread_self()));
     GC_generic_lock(&mark_mutex);
 #   ifdef GC_ASSERTIONS
         GC_mark_lock_holder = NUMERIC_THREAD_ID(pthread_self());

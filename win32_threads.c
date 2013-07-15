@@ -1786,6 +1786,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
     GC_INNER void GC_acquire_mark_lock(void)
     {
+      GC_ASSERT(GC_mark_lock_holder != NUMERIC_THREAD_ID(pthread_self()));
       if (pthread_mutex_lock(&mark_mutex) != 0) {
         ABORT("pthread_mutex_lock failed");
       }
@@ -1971,6 +1972,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
     GC_INNER void GC_acquire_mark_lock(void)
     {
+      GC_ASSERT(GC_mark_lock_holder != (unsigned long)GetCurrentThreadId());
 #     ifdef DONT_USE_SIGNALANDWAIT
         if (InterlockedExchange(&GC_mark_mutex_state, 1 /* locked */) != 0)
 #     else
