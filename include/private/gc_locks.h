@@ -59,7 +59,8 @@
      GC_EXTERN CRITICAL_SECTION GC_allocate_ml;
 #    ifdef GC_ASSERTIONS
 #        define UNCOND_LOCK() \
-                { EnterCriticalSection(&GC_allocate_ml); \
+                { GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                  EnterCriticalSection(&GC_allocate_ml); \
                   SET_LOCK_HOLDER(); }
 #        define UNCOND_UNLOCK() \
                 { GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
@@ -116,7 +117,8 @@
         /* GC_call_with_alloc_lock.                                        */
 #     ifdef GC_ASSERTIONS
 #        define UNCOND_LOCK() \
-              { if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
+              { GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
                   GC_lock(); \
                 SET_LOCK_HOLDER(); }
 #        define UNCOND_UNLOCK() \
@@ -124,7 +126,8 @@
                 AO_CLEAR(&GC_allocate_lock); }
 #     else
 #        define UNCOND_LOCK() \
-              { if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
+              { GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
                   GC_lock(); }
 #        define UNCOND_UNLOCK() AO_CLEAR(&GC_allocate_lock)
 #     endif /* !GC_ASSERTIONS */
@@ -137,7 +140,8 @@
 #      include <pthread.h>
        GC_EXTERN pthread_mutex_t GC_allocate_ml;
 #      ifdef GC_ASSERTIONS
-#        define UNCOND_LOCK() { GC_lock(); SET_LOCK_HOLDER(); }
+#        define UNCOND_LOCK() { GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                                GC_lock(); SET_LOCK_HOLDER(); }
 #        define UNCOND_UNLOCK() \
                 { GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
                   pthread_mutex_unlock(&GC_allocate_ml); }
