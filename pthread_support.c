@@ -1943,7 +1943,18 @@ GC_INNER void GC_lock(void)
 
 # ifdef GC_ASSERTIONS
     STATIC unsigned long GC_mark_lock_holder = NO_THREAD;
-# endif
+#   define SET_MARK_LOCK_HOLDER \
+                (void)(GC_mark_lock_holder = NUMERIC_THREAD_ID(pthread_self()))
+#   define UNSET_MARK_LOCK_HOLDER \
+                do { \
+                  GC_ASSERT(GC_mark_lock_holder \
+                                == NUMERIC_THREAD_ID(pthread_self())); \
+                  GC_mark_lock_holder = NO_THREAD; \
+                } while (0)
+# else
+#   define SET_MARK_LOCK_HOLDER (void)0
+#   define UNSET_MARK_LOCK_HOLDER (void)0
+# endif /* !GC_ASSERTIONS */
 
 #ifdef GLIBC_2_1_MUTEX_HACK
   /* Ugly workaround for a linux threads bug in the final versions      */
@@ -1965,17 +1976,12 @@ GC_INNER void GC_acquire_mark_lock(void)
 {
     GC_ASSERT(GC_mark_lock_holder != NUMERIC_THREAD_ID(pthread_self()));
     GC_generic_lock(&mark_mutex);
-#   ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = NUMERIC_THREAD_ID(pthread_self());
-#   endif
+    SET_MARK_LOCK_HOLDER;
 }
 
 GC_INNER void GC_release_mark_lock(void)
 {
-    GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
-#   ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = NO_THREAD;
-#   endif
+    UNSET_MARK_LOCK_HOLDER;
     if (pthread_mutex_unlock(&mark_mutex) != 0) {
         ABORT("pthread_mutex_unlock failed");
     }
@@ -1988,18 +1994,13 @@ GC_INNER void GC_release_mark_lock(void)
 /*    free-list link may be ignored.                                    */
 STATIC void GC_wait_builder(void)
 {
-    GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
     ASSERT_CANCEL_DISABLED();
-#   ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = NO_THREAD;
-#   endif
+    UNSET_MARK_LOCK_HOLDER;
     if (pthread_cond_wait(&builder_cv, &mark_mutex) != 0) {
         ABORT("pthread_cond_wait failed");
     }
     GC_ASSERT(GC_mark_lock_holder == NO_THREAD);
-#   ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = NUMERIC_THREAD_ID(pthread_self());
-#   endif
+    SET_MARK_LOCK_HOLDER;
 }
 
 GC_INNER void GC_wait_for_reclaim(void)
@@ -2023,18 +2024,13 @@ static pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
 
 GC_INNER void GC_wait_marker(void)
 {
-    GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
     ASSERT_CANCEL_DISABLED();
-#   ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = NO_THREAD;
-#   endif
+    UNSET_MARK_LOCK_HOLDER;
     if (pthread_cond_wait(&mark_cv, &mark_mutex) != 0) {
         ABORT("pthread_cond_wait failed");
     }
     GC_ASSERT(GC_mark_lock_holder == NO_THREAD);
-#   ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = NUMERIC_THREAD_ID(pthread_self());
-#   endif
+    SET_MARK_LOCK_HOLDER;
 }
 
 GC_INNER void GC_notify_all_marker(void)

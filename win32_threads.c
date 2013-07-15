@@ -1716,8 +1716,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     }
   }
 
-# ifdef GC_ASSERTIONS
-    STATIC unsigned long GC_mark_lock_holder = NO_THREAD;
+# ifndef GC_ASSERTIONS
+#   define SET_MARK_LOCK_HOLDER (void)0
+#   define UNSET_MARK_LOCK_HOLDER (void)0
 # endif
 
   /* GC_mark_threads[] is unused here unlike that in pthread_support.c  */
@@ -1772,6 +1773,18 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
     }
 
+#   ifdef GC_ASSERTIONS
+      STATIC unsigned long GC_mark_lock_holder = NO_THREAD;
+#     define SET_MARK_LOCK_HOLDER \
+                (void)(GC_mark_lock_holder = NUMERIC_THREAD_ID(pthread_self()))
+#     define UNSET_MARK_LOCK_HOLDER \
+                do { \
+                  GC_ASSERT(GC_mark_lock_holder \
+                                == NUMERIC_THREAD_ID(pthread_self())); \
+                  GC_mark_lock_holder = NO_THREAD; \
+                } while (0)
+#   endif /* GC_ASSERTIONS */
+
     static pthread_mutex_t mark_mutex = PTHREAD_MUTEX_INITIALIZER;
 
     static pthread_cond_t builder_cv = PTHREAD_COND_INITIALIZER;
@@ -1794,17 +1807,12 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         (void)AO_fetch_and_add1(&GC_block_count);
 #     endif
       /* GC_generic_lock(&mark_mutex); */
-#     ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = NUMERIC_THREAD_ID(pthread_self());
-#     endif
+      SET_MARK_LOCK_HOLDER;
     }
 
     GC_INNER void GC_release_mark_lock(void)
     {
-      GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
-#     ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = NO_THREAD;
-#     endif
+      UNSET_MARK_LOCK_HOLDER;
       if (pthread_mutex_unlock(&mark_mutex) != 0) {
         ABORT("pthread_mutex_unlock failed");
       }
@@ -1817,17 +1825,12 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     /* since the free-list link may be ignored.                         */
     STATIC void GC_wait_builder(void)
     {
-      GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
-#     ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = NO_THREAD;
-#     endif
+      UNSET_MARK_LOCK_HOLDER;
       if (pthread_cond_wait(&builder_cv, &mark_mutex) != 0) {
         ABORT("pthread_cond_wait failed");
       }
       GC_ASSERT(GC_mark_lock_holder == NO_THREAD);
-#     ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = NUMERIC_THREAD_ID(pthread_self());
-#     endif
+      SET_MARK_LOCK_HOLDER;
     }
 
     GC_INNER void GC_wait_for_reclaim(void)
@@ -1851,17 +1854,12 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
     GC_INNER void GC_wait_marker(void)
     {
-      GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
-#     ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = NO_THREAD;
-#     endif
+      UNSET_MARK_LOCK_HOLDER;
       if (pthread_cond_wait(&mark_cv, &mark_mutex) != 0) {
         ABORT("pthread_cond_wait failed");
       }
       GC_ASSERT(GC_mark_lock_holder == NO_THREAD);
-#     ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = NUMERIC_THREAD_ID(pthread_self());
-#     endif
+      SET_MARK_LOCK_HOLDER;
     }
 
     GC_INNER void GC_notify_all_marker(void)
@@ -1953,6 +1951,17 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       }
     }
 
+#   ifdef GC_ASSERTIONS
+      STATIC DWORD GC_mark_lock_holder = NO_THREAD;
+#     define SET_MARK_LOCK_HOLDER \
+                (void)(GC_mark_lock_holder = GetCurrentThreadId())
+#     define UNSET_MARK_LOCK_HOLDER \
+                do { \
+                  GC_ASSERT(GC_mark_lock_holder == GetCurrentThreadId()); \
+                  GC_mark_lock_holder = NO_THREAD; \
+                } while (0)
+#   endif /* GC_ASSERTIONS */
+
 #   ifdef DONT_USE_SIGNALANDWAIT
       STATIC /* volatile */ LONG GC_mark_mutex_state = 0;
                                 /* Mutex state: 0 - unlocked,           */
@@ -1972,7 +1981,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
     GC_INNER void GC_acquire_mark_lock(void)
     {
-      GC_ASSERT(GC_mark_lock_holder != (unsigned long)GetCurrentThreadId());
+      GC_ASSERT(GC_mark_lock_holder != GetCurrentThreadId());
 #     ifdef DONT_USE_SIGNALANDWAIT
         if (InterlockedExchange(&GC_mark_mutex_state, 1 /* locked */) != 0)
 #     else
@@ -1999,17 +2008,12 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #     endif
 
       GC_ASSERT(GC_mark_lock_holder == NO_THREAD);
-#     ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = (unsigned long)GetCurrentThreadId();
-#     endif
+      SET_MARK_LOCK_HOLDER;
     }
 
     GC_INNER void GC_release_mark_lock(void)
     {
-      GC_ASSERT(GC_mark_lock_holder == (unsigned long)GetCurrentThreadId());
-#     ifdef GC_ASSERTIONS
-        GC_mark_lock_holder = NO_THREAD;
-#     endif
+      UNSET_MARK_LOCK_HOLDER;
 #     ifdef DONT_USE_SIGNALANDWAIT
         if (InterlockedExchange(&GC_mark_mutex_state, 0 /* unlocked */) < 0)
 #     else
@@ -2048,7 +2052,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
     GC_INNER void GC_notify_all_builder(void)
     {
-      GC_ASSERT(GC_mark_lock_holder == (unsigned long)GetCurrentThreadId());
+      GC_ASSERT(GC_mark_lock_holder == GetCurrentThreadId());
       GC_ASSERT(builder_cv != 0);
       GC_ASSERT(GC_fl_builder_count == 0);
       if (SetEvent(builder_cv) == FALSE)
@@ -2129,11 +2133,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
         /* We inline GC_release_mark_lock() to have atomic              */
         /* unlock-and-wait action here.                                 */
-        GC_ASSERT(GC_mark_lock_holder == (unsigned long)GetCurrentThreadId());
-#       ifdef GC_ASSERTIONS
-          GC_mark_lock_holder = NO_THREAD;
-#       endif
-
+        UNSET_MARK_LOCK_HOLDER;
         if ((waitcnt = AO_load(&GC_mark_mutex_waitcnt)) > 1) {
           (void)AO_fetch_and_sub1_release(&GC_mark_mutex_waitcnt);
         } else {
@@ -2156,9 +2156,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
           if (WaitForSingleObject(mark_mutex_event, INFINITE) == WAIT_FAILED)
             ABORT("WaitForSingleObject failed");
           GC_ASSERT(GC_mark_lock_holder == NO_THREAD);
-#         ifdef GC_ASSERTIONS
-            GC_mark_lock_holder = (unsigned long)GetCurrentThreadId();
-#         endif
+          SET_MARK_LOCK_HOLDER;
         }
       }
 
