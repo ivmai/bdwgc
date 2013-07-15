@@ -1941,9 +1941,9 @@ GC_INNER void GC_lock(void)
 
 #ifdef PARALLEL_MARK
 
-#ifdef GC_ASSERTIONS
-  GC_INNER unsigned long GC_mark_lock_holder = NO_THREAD;
-#endif
+# ifdef GC_ASSERTIONS
+    STATIC unsigned long GC_mark_lock_holder = NO_THREAD;
+# endif
 
 #ifdef GLIBC_2_1_MUTEX_HACK
   /* Ugly workaround for a linux threads bug in the final versions      */

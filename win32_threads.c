@@ -1717,7 +1717,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
   }
 
 # ifdef GC_ASSERTIONS
-    GC_INNER unsigned long GC_mark_lock_holder = NO_THREAD;
+    STATIC unsigned long GC_mark_lock_holder = NO_THREAD;
 # endif
 
   /* GC_mark_threads[] is unused here unlike that in pthread_support.c  */
