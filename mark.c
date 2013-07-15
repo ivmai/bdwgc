@@ -477,7 +477,7 @@ static void alloc_mark_stack(size_t);
 # endif /* __GNUC__  && MSWIN32 */
 
 #if defined(GC_WIN32_THREADS) && !defined(__GNUC__)
-  GC_bool GC_started_thread_while_stopped(void);
+  GC_INNER GC_bool GC_started_thread_while_stopped(void);
   /* In win32_threads.c.  Did we invalidate mark phase with an  */
   /* unexpected thread start?                                   */
 #endif
