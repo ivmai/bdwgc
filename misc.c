@@ -1808,14 +1808,9 @@ GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn, void *client_data)
 
 #   ifdef THREADS
       LOCK();
-      /* FIXME - This looks wrong!! */
-      SET_LOCK_HOLDER();
 #   endif
     result = (*fn)(client_data);
 #   ifdef THREADS
-#     ifndef GC_ASSERTIONS
-        UNSET_LOCK_HOLDER();
-#     endif /* o.w. UNLOCK() does it implicitly */
       UNLOCK();
 #   endif
     return(result);

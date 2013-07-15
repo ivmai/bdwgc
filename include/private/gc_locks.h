@@ -55,9 +55,9 @@
 #    define NOSERVICE
 #    include <windows.h>
 #    define NO_THREAD (DWORD)(-1)
-     GC_EXTERN DWORD GC_lock_holder;
      GC_EXTERN CRITICAL_SECTION GC_allocate_ml;
 #    ifdef GC_ASSERTIONS
+         GC_EXTERN DWORD GC_lock_holder;
 #        define UNCOND_LOCK() \
                 { GC_ASSERT(I_DONT_HOLD_LOCK()); \
                   EnterCriticalSection(&GC_allocate_ml); \
@@ -177,7 +177,9 @@
 #    define ENTER_GC() GC_collecting = 1;
 #    define EXIT_GC() GC_collecting = 0;
      GC_INNER void GC_lock(void);
-     GC_EXTERN unsigned long GC_lock_holder;
+#    ifdef GC_ASSERTIONS
+       GC_EXTERN unsigned long GC_lock_holder;
+#    endif
 #  endif /* GC_PTHREADS with linux_threads.c implementation */
    GC_EXTERN GC_bool GC_need_to_lock;
 

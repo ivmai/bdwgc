@@ -32,11 +32,15 @@
 /* Allocation lock declarations.        */
 #if !defined(USE_PTHREAD_LOCKS)
   GC_INNER CRITICAL_SECTION GC_allocate_ml;
-  GC_INNER DWORD GC_lock_holder = NO_THREAD;
+# ifdef GC_ASSERTIONS
+    GC_INNER DWORD GC_lock_holder = NO_THREAD;
         /* Thread id for current holder of allocation lock */
+# endif
 #else
   GC_INNER pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
-  GC_INNER unsigned long GC_lock_holder = NO_THREAD;
+# ifdef GC_ASSERTIONS
+    GC_INNER unsigned long GC_lock_holder = NO_THREAD;
+# endif
 #endif
 
 #undef CreateThread

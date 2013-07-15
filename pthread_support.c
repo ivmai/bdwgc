@@ -82,9 +82,11 @@
 #if !defined(USE_SPIN_LOCK)
   GC_INNER pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
 #endif
-GC_INNER unsigned long GC_lock_holder = NO_THREAD;
-                /* Used only for assertions, and to prevent      */
-                /* recursive reentry in the system call wrapper. */
+
+#ifdef GC_ASSERTIONS
+  GC_INNER unsigned long GC_lock_holder = NO_THREAD;
+                /* Used only for assertions.    */
+#endif
 
 #if defined(GC_DGUX386_THREADS)
 # include <sys/dg_sys_info.h>
