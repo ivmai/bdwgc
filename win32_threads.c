@@ -620,7 +620,7 @@ GC_API int GC_CALL GC_thread_is_registered(void)
 
 #ifdef CYGWIN32
 # define GC_PTHREAD_PTRVAL(pthread_id) pthread_id
-#elif defined(GC_WIN32_PTHREADS)
+#elif defined(GC_WIN32_PTHREADS) || defined(GC_PTHREADS_PARAMARK)
 # define GC_PTHREAD_PTRVAL(pthread_id) pthread_id.p
 #endif
 
