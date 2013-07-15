@@ -288,9 +288,10 @@ STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h);
 
 static void alloc_mark_stack(size_t);
 
-# if (defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__) \
-        || defined(MSWIN32) && defined(I386) /* for Win98 */ \
-        || defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS)
+# if (((defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__)) \
+        || (defined(MSWIN32) && defined(I386)) /* for Win98 */ \
+        || (defined(USE_PROC_FOR_LIBRARIES) && defined(THREADS))) \
+     && !defined(NO_WRAP_MARK_SOME)
     /* Under rare conditions, we may end up marking from nonexistent memory. */
     /* Hence we need to be prepared to recover by running GC_mark_some       */
     /* with a suitable handler in place.                                     */
