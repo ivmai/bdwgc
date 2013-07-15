@@ -604,7 +604,7 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
 
 #ifdef CYGWIN32
 # define GC_PTHREAD_PTRVAL(pthread_id) pthread_id
-#elif defined(GC_WIN32_PTHREADS)
+#elif defined(GC_WIN32_PTHREADS) || defined(GC_PTHREADS_PARAMARK)
 # define GC_PTHREAD_PTRVAL(pthread_id) pthread_id.p
 #endif
 
