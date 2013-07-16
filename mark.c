@@ -613,9 +613,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 {
   signed_word credit = HBLKSIZE;  /* Remaining credit for marking work  */
   ptr_t current_p;      /* Pointer to current candidate ptr.    */
-  word current; /* Candidate pointer.                   */
-  ptr_t limit;  /* (Incl) limit of current candidate    */
-                                /* range                                */
+  word current; /* Candidate pointer.                           */
+  ptr_t limit;  /* (Incl) limit of current candidate range.     */
   word descr;
   ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
   ptr_t least_ha = GC_least_plausible_heap_addr;
@@ -739,10 +738,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             }
 #         endif /* ENABLE_TRACE */
           credit -= GC_PROC_BYTES;
-          mark_stack_top =
-              (*PROC(descr))
-                    ((word *)current_p, mark_stack_top,
-                    mark_stack_limit, ENV(descr));
+          mark_stack_top = (*PROC(descr))((word *)current_p, mark_stack_top,
+                                          mark_stack_limit, ENV(descr));
           continue;
         case GC_DS_PER_OBJECT:
           if ((signed_word)descr >= 0) {
@@ -848,7 +845,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             }
 #         endif /* ENABLE_TRACE */
           PUSH_CONTENTS((ptr_t)current, mark_stack_top,
-                           mark_stack_limit, current_p, exit2);
+                        mark_stack_limit, current_p, exit2);
         }
         current_p += ALIGNMENT;
       }
@@ -864,7 +861,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             }
 #       endif /* ENABLE_TRACE */
         PUSH_CONTENTS((ptr_t)deferred, mark_stack_top,
-                         mark_stack_limit, current_p, exit4);
+                      mark_stack_limit, current_p, exit4);
         next_object:;
 #     endif
     }
@@ -1021,9 +1018,9 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
     GC_acquire_mark_lock();
     GC_active_count++;
     my_first_nonempty = (mse *)AO_load(&GC_first_nonempty);
-    GC_ASSERT((word)AO_load(&GC_first_nonempty) >= (word)GC_mark_stack &&
-        (word)AO_load(&GC_first_nonempty) <=
-            (word)AO_load((volatile AO_t *)&GC_mark_stack_top) + sizeof(mse));
+    GC_ASSERT((word)GC_mark_stack <= (word)my_first_nonempty);
+    GC_ASSERT((word)my_first_nonempty
+        <= (word)AO_load((volatile AO_t *)&GC_mark_stack_top) + sizeof(mse));
     GC_VERBOSE_LOG_PRINTF("Starting mark helper %lu\n", (unsigned long)id);
     GC_release_mark_lock();
     for (;;) {
@@ -1143,7 +1140,9 @@ STATIC void GC_do_parallel_mark(void)
     GC_acquire_mark_lock();
     GC_help_wanted = FALSE;
     /* Done; clean up.  */
-    while (GC_helper_count > 0) GC_wait_marker();
+    while (GC_helper_count > 0) {
+      GC_wait_marker();
+    }
     /* GC_helper_count cannot be incremented while GC_help_wanted == FALSE */
     GC_VERBOSE_LOG_PRINTF("Finished marking for mark phase number %lu\n",
                           (unsigned long)GC_mark_no);
