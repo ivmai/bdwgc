@@ -42,7 +42,8 @@
 #include <sched.h>
 
 /* Invoked from GC_start_routine(). */
-void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb, void *arg)
+GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
+                                        struct GC_stack_base *sb, void *arg)
 {
   void * (*start)(void *);
   void * start_arg;
@@ -54,7 +55,7 @@ void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb, void *arg)
     pthread_cleanup_push(GC_thread_exit_proc, me);
 # endif
   result = (*start)(start_arg);
-# ifdef DEBUG_THREADS
+# if defined(DEBUG_THREADS) && !defined(GC_PTHREAD_START_STANDALONE)
     GC_log_printf("Finishing thread %p\n", (void *)pthread_self());
 # endif
   me -> status = result;

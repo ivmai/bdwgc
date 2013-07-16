@@ -136,10 +136,17 @@ GC_EXTERN GC_bool GC_in_thread_creation;
   GC_INNER void GC_unblock_gc_signals(void);
 #endif
 
-GC_INNER GC_thread GC_start_rtn_prepare_thread(void *(**pstart)(void *),
+#ifdef GC_PTHREAD_START_STANDALONE
+# define GC_INNER_PTHRSTART /* empty */
+#else
+# define GC_INNER_PTHRSTART GC_INNER
+#endif
+
+GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
+                                        void *(**pstart)(void *),
                                         void **pstart_arg,
                                         struct GC_stack_base *sb, void *arg);
-GC_INNER void GC_thread_exit_proc(void *);
+GC_INNER_PTHRSTART void GC_thread_exit_proc(void *);
 
 #endif /* GC_PTHREADS && !GC_WIN32_THREADS */
 

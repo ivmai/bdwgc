@@ -1361,7 +1361,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 /* results in at most a tiny one-time leak.  And        */
 /* linuxthreads doesn't reclaim the main threads        */
 /* resources or id anyway.                              */
-GC_INNER void GC_thread_exit_proc(void *arg)
+GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
 {
 #   ifdef DEBUG_THREADS
         GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread = %p\n",
@@ -1597,7 +1597,8 @@ struct start_info {
 /* Called from GC_inner_start_routine().  Defined in this file to       */
 /* minimize the number of include files in pthread_start.c (because     */
 /* sem_t and sem_post() are not used that file directly).               */
-GC_INNER GC_thread GC_start_rtn_prepare_thread(void *(**pstart)(void *),
+GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
+                                        void *(**pstart)(void *),
                                         void **pstart_arg,
                                         struct GC_stack_base *sb, void *arg)
 {
@@ -1627,7 +1628,8 @@ GC_INNER GC_thread GC_start_rtn_prepare_thread(void *(**pstart)(void *),
     return me;
 }
 
-void * GC_CALLBACK GC_inner_start_routine(struct GC_stack_base *sb, void *arg);
+GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
+                                        struct GC_stack_base *sb, void *arg);
                                         /* defined in pthread_start.c   */
 
 STATIC void * GC_start_routine(void * arg)
