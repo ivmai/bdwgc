@@ -807,7 +807,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #     ifndef SMALL_CONFIG
         word deferred;
 
-        /* Try to prefetch the next pointer to be examined asap.        */
+        /* Try to prefetch the next pointer to be examined ASAP.        */
         /* Empirically, this also seems to help slightly without        */
         /* prefetches, at least on linux/X86.  Presumably this loop     */
         /* ends up with less register pressure, and gcc thus ends up    */
