@@ -788,6 +788,10 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
       }
     } else /* Small object with length descriptor */ {
       mark_stack_top--;
+#     ifndef SMALL_CONFIG
+        if (descr < sizeof(word))
+          continue;
+#     endif
       limit = current_p + (word)descr;
     }
 #   ifdef ENABLE_TRACE
