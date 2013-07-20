@@ -896,7 +896,10 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   if (me -> thread_blocked_sp == NULL) {
     /* We are not inside GC_do_blocking() - do nothing more.    */
     UNLOCK();
-    return fn(client_data);
+    client_data = fn(client_data);
+    /* Prevent treating the above as a tail call.       */
+    GC_noop1((word)(&stacksect));
+    return client_data; /* result */
   }
 
   /* Setup new "stack section". */
