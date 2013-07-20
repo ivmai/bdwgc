@@ -343,6 +343,7 @@ GC_INNER void GC_push_all_stacks(void)
     ptr_t lo, hi;
     /* On IA64, we also need to scan the register backing store. */
     IF_IA64(ptr_t bs_lo; ptr_t bs_hi;)
+    struct GC_traced_stack_sect_s *traced_stack_sect;
     pthread_t self = pthread_self();
     word total_size = 0;
 
@@ -355,6 +356,7 @@ GC_INNER void GC_push_all_stacks(void)
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (p -> flags & FINISHED) continue;
         ++nthreads;
+        traced_stack_sect = p -> traced_stack_sect;
         if (THREAD_EQUAL(p -> id, self)) {
             GC_ASSERT(!p->thread_blocked);
 #           ifdef SPARC
@@ -367,6 +369,13 @@ GC_INNER void GC_push_all_stacks(void)
         } else {
             lo = p -> stop_info.stack_ptr;
             IF_IA64(bs_hi = p -> backing_store_ptr;)
+            if (traced_stack_sect != NULL
+                    && traced_stack_sect->saved_stack_ptr == lo) {
+              /* If the thread has never been stopped since the recent  */
+              /* GC_call_with_gc_active invocation then skip the top    */
+              /* "stack section" as stack_ptr already points to.        */
+              traced_stack_sect = traced_stack_sect->prev;
+            }
         }
         if ((p -> flags & MAIN_THREAD) == 0) {
             hi = p -> stack_end;
@@ -381,7 +390,7 @@ GC_INNER void GC_push_all_stacks(void)
                         (void *)p->id, lo, hi);
 #       endif
         if (0 == lo) ABORT("GC_push_all_stacks: sp not set!");
-        GC_push_all_stack_sections(lo, hi, p -> traced_stack_sect);
+        GC_push_all_stack_sections(lo, hi, traced_stack_sect);
 #       ifdef STACK_GROWS_UP
           total_size += lo - hi;
 #       else
@@ -402,7 +411,7 @@ GC_INNER void GC_push_all_stacks(void)
           /* entries, and hence overflow the mark stack, which is bad.   */
           GC_push_all_register_sections(bs_lo, bs_hi,
                                         THREAD_EQUAL(p -> id, self),
-                                        p -> traced_stack_sect);
+                                        traced_stack_sect);
           total_size += bs_hi - bs_lo; /* bs_lo <= bs_hi */
 #       endif
       }
