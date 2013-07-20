@@ -209,7 +209,7 @@
 /* Define to work around a Solaris 5.3 bug (see dyn_load.c). */
 #undef SUNOS53_SHARED_LIB
 
-/* Define to enable thread-local allocation optimisation. */
+/* Define to enable thread-local allocation optimization. */
 #undef THREAD_LOCAL_ALLOC
 
 /* Define to use of compiler-support for thread-local variables. */

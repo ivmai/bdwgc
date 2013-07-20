@@ -1,3 +1,108 @@
+2013-07-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/config.h.in: Regenerate.
+
+2013-07-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_stop_world.c (GC_push_all_stacks): Use
+	traced_stack_sect->prev instead of traced_stack_sect if saved_stack_ptr
+	(of traced_stack_sect) is the same as stop_info.stack_ptr of the
+	examined thread (thus preventing assertion violation in
+	GC_push_all_stack_sections invoked during incremental collection).
+
+2013-07-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c (GC_call_with_gc_active): Add GC_noop1 call between "fn" call
+	and "return" statement to discourage the compiler from treating the
+	function call as a tail one (thus ensuring "stackbottom" COOLER_THAN
+	any stack pointer value obtained inside "fn").
+	* pthread_support.c (GC_call_with_gc_active): Likewise.
+	* win32_threads.c (GC_call_with_gc_active): Likewise.
+
+2013-07-17  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c (GC_mark_from): If "descr" is less than size of word then
+	skip prefetching and PUSH_CONTENTS of the current entry (thus,
+	eliminate assertion violation in the prefetch loop) if SMALL_CONFIG is
+	not defined.
+
+2013-07-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c (GC_mark_from): Fix typo (capitalization) in comment ("ASAP").
+
+2013-07-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c (GC_PTHREAD_PTRVAL): Define also if
+	GC_PTHREADS_PARAMARK (even w/o GC_WIN32_PTHREADS).
+
+2013-07-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c: Fix typo ("overflow").
+	* configure.ac: Fix typo ("optimization").
+	* doc/README.amiga: Fix typos ("also", "specific", "unnecessary").
+	* doc/README.cords: Fix typos ("descendants", "highlighted").
+	* doc/README.changes: Fix typos ("[un]collectible").
+	* doc/README: Likewise.
+	* dbg_mlc.c: Likewise.
+	* doc/README.hp: Likewise.
+	* doc/README.linux: Likewise.
+	* doc/gcdescr.html: Likewise.
+	* doc/gcinterface.html: Likewise.
+	* include/gc_mark.h: Likewise.
+	* include/gc_pthread_redirects.h: Likewise.
+	* include/new_gc_alloc.h: Likewise.
+	* include/private/dbg_mlc.h: Likewise.
+	* include/private/gc_pmark.h: Likewise.
+	* include/private/gc_priv.h: Likewise.
+	* new_hblk.c: Likewise.
+	* doc/README.changes: Fix typo ("multi-threaded").
+	* cord/cordxtra.c: Likewise.
+	* doc/debugging.html: Likewise.
+	* doc/gcinterface.html: Likewise.
+	* doc/leak.html: Likewise.
+	* doc/overview.html: Likewise.
+	* doc/simple_example.html: Likewise.
+	* include/gc_mark.h: Likewise.
+	* include/private/gc_priv.h: Likewise.
+	* os_dep.c: Likewise.
+	* ptr_chck.c: Likewise.
+	* doc/README: Fix typo ("pointer-free").
+	* allchblk.c: Likewise.
+	* doc/debugging.html: Likewise.
+	* doc/gcdescr.html: Likewise.
+
+2013-07-11  Ondrej Bilka <neleai@seznam.cz>
+
+	* blacklst.c: Fix typo ("even though").
+	* cord/cordbscs.c: Fix typo ("exponentially").
+	* cord/cordxtra.c: Fix typo ("represented").
+	* dyn_load.c: Fix typos ("uncollectible", "occurred").
+	* extra/AmigaOS: Fix typos ("specific", "necessary", "always",
+	"effectiveness").
+	* finalize.c: Fix typo ("descendants").
+	* include/cord.h: Fix typo ("idiosyncrasies").
+	* include/gc.h: Fix typo ("collectible").
+	* include/gc_allocator.h: Fix typos ("allocator", "[un]collectible").
+	* mach_dep.c: Fix typo ("erroneously").
+	* malloc.c: Fix typos ("[un]collectible", "pointer-free",
+	"initialization").
+	* mallocx.c: Fix typos ("largely", "pointer-free", "uncollectible").
+	* mark.c: Fix typos ("[un]collectible", "even though").
+	* misc.c: Fix typo ("erroneously").
+	* os_dep.c: Fix typos ("non-addressable", "happening", "pointer-free").
+	* tests/test.c: Fix typos ("uncollectible", "reversed").
+	* tests/test_cpp.cc: Fix typos ("[un]collectible").
+	* typd_mlc.c: Fix typo ("copyright").
+	* win32_threads.c: Fix typos ("optimization", "uncollectible").
+
+2013-07-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* SMakefile.amiga (clean, test, gctest, setjmp_t, gc*.lib, setjmp_t):
+
+2013-06-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c (signalObjectAndWait_func): Fix a typo in comment.
+
 2013-05-04  Ivan Maidanski <ivmai@mail.ru>
 
 	* doc/README.changes: Fix triple-letter typos.
@@ -408,7 +513,7 @@
 2012-04-02  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure: Regenerate.
-	* include/private/config.h.in : Likewise.
+	* include/private/config.h.in: Likewise.
 
 2012-04-02  Ivan Maidanski <ivmai@mail.ru>
 
