@@ -28,6 +28,12 @@ Do type-punning via union (instead of pointer type cast) to enable safe
 
 Support CAN_HANDLE_FORK if USE_WINALLOC for Cygwin.
 
+Use madvise() on Unix/Cygwin.
+
+Use Linux VM pressure notifications to force GC and unmapping.
+
+Filter overlaps in GC_add_roots for Unix (same as for Win32).
+
 Enable GC_set_handle_fork(1) for Darwin with GC_dirty_maintained on (both
 single and multi-threaded modes).
 
@@ -44,6 +50,7 @@ GC_excl_table_entries, GC_stack_last_cleared, GC_bytes_allocd_at_reset,
 GC_n_heap_bases, registered_threads_cnt, GC_max_thread_index, GC_block_count,
 GC_unlocked_count, GC_hdr_cache_hits, GC_hdr_cache_misses, GC_spin_count).
 
+Support musl libc (on sabotage linux).
 
 == FIXME tasks ==
 
@@ -52,12 +59,21 @@ libc.so.1: gctest: fatal: libgcc_s.so.1: open failed: No such file or directory
 
 Solaris/x86[_64]: gctest fails if PROC_VDB.
 
+Sun C++ 5.11: test_cpp.cc:237: Error: Too few arguments in call to
+"operator delete(void*, GCPlacement, extern "C" void(*)(void*,void*), void*)".
+
 Darwin/x86_64: deadlock might occur between:
 dlclose() -> GC_dyld_image_remove() -> GC_lock() and
 GC_inner_start_routine()+LOCK -> dyld_stub_binder_().
 
 HP-UX 11.00 with the vendor cc fails:
 Perhaps GC_push_regs was configured incorrectly? FAIL: gctest.
+
+Android NDK: gcc4.7+ld.gold: gctest crashes due to incorrect __data_start.
+
+Linux/mips64el (N32): threadleaktest crashes once every 3-4 runs (SIGSEGV in
+GC_delete_gc_thread(t=0) called from GC_pthread_join) if configured with
+--disable-shared.
 
 FreeBSD 9.0/x86_64 (gcc-4.2.1-20070831): gctest segfaults sometimes in
 GC_typed_mark_proc if configured with --enable-threads=pthreads.
@@ -74,5 +90,9 @@ Cygwin: gctest: assertion failure at UNLOCK in GC_fork_parent_proc.
 Mingw-w32: gctest: "SuspendThread failed" sometimes occurs (if
 GC_DLL+GC_THREADS+GC_ASSERTIONS).
 
-Sun C++ 5.11: test_cpp.cc:237: Error: Too few arguments in call to
-"operator delete(void*, GCPlacement, extern "C" void(*)(void*,void*), void*)".
+Mingw: gctest (compiled with PARALLEL_MARK): launched in gdb with breakpoint
+at GC_mark_local, after several breakpoint hits, crashes with the messages
+"Caught ACCESS_VIOLATION in marker; memory mapping disappeared" and
+"Tried to start parallel mark in bad state", or enters deadlock.
+
+Mingw: test_cpp: crashes at some iteration if big argument (e.g., 1000) given.
