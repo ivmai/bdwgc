@@ -389,25 +389,25 @@
 #   define I386
 #   define mach_type_known
 # endif
-# if defined(FREEBSD) && defined(__amd64__)
-#    define X86_64
-#    define mach_type_known
+# if defined(FREEBSD) && (defined(__amd64__) || defined(__x86_64__))
+#   define X86_64
+#   define mach_type_known
 # endif
 # if defined(FREEBSD) && defined(__ia64__)
-#    define IA64
-#    define mach_type_known
+#   define IA64
+#   define mach_type_known
 # endif
 # if defined(FREEBSD) && defined(__sparc__)
-#    define SPARC
-#    define mach_type_known
+#   define SPARC
+#   define mach_type_known
 # endif
 # if defined(FREEBSD) && (defined(powerpc) || defined(__powerpc__))
-#    define POWERPC
-#    define mach_type_known
+#   define POWERPC
+#   define mach_type_known
 # endif
 # if defined(FREEBSD) && defined(__arm__)
-#    define ARM32
-#    define mach_type_known
+#   define ARM32
+#   define mach_type_known
 # endif
 # if defined(bsdi) && (defined(i386) || defined(__i386__))
 #    define I386
@@ -2025,8 +2025,8 @@
 #     define OS_TYPE "MSWINCE"
 #     define DATAEND /* not needed */
 #   endif
-/* To the future maintainer of this diff: this is the "ifdef ARM32" section */
 #   ifdef FREEBSD
+    /* FreeBSD/arm */
 #   define ALIGNMENT 4
 #       define OS_TYPE "FREEBSD"
 #       ifdef __ELF__

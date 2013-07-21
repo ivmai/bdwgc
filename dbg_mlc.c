@@ -485,7 +485,7 @@ GC_API void GC_CALL GC_debug_register_displacement(size_t offset)
   UNLOCK();
 }
 
-#if defined(__FreeBSD__)
+#ifdef FREEBSD
 #include <dlfcn.h>
 static void GC_caller_func_offset(ad, symp, offp)
 const GC_word ad;
@@ -499,7 +499,7 @@ int *offp;
     }
 }
 #else
-#define GC_caller_func(ad, symp, offp)
+#   define GC_caller_func_offset(ad, symp, offp) (void)0
 #endif
 
 GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
