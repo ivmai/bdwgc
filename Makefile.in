@@ -73,7 +73,7 @@
 
 
 VPATH = @srcdir@
-pkgdatadir = $(datadir)/@PACKAGE@
+pkgdatadir = $(datadir)/doc/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkglibexecdir = $(libexecdir)/@PACKAGE@

@@ -455,6 +455,23 @@ GC_API void GC_CALL GC_debug_register_displacement(size_t offset)
     GC_register_displacement((word)sizeof(oh) + offset);
 }
 
+#if defined(__FreeBSD__)
+#include <dlfcn.h>
+static void GC_caller_func_offset(ad, symp, offp)
+const GC_word ad;
+const char **symp;
+int *offp;
+{
+    Dl_info caller;
+    if (dladdr((const void *)ad, &caller) && caller.dli_sname != NULL) {
+      *symp = caller.dli_sname;
+      *offp = (const char *)ad - (const char *)caller.dli_saddr;
+    }
+}
+#else
+#define GC_caller_func(ad, symp, offp)
+#endif
+
 GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
 {
     void * result;
@@ -462,6 +479,14 @@ GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
     /* malloc() returns either NULL, or a unique pointer value that can */
     /* later be successfully passed to free(). We always do the latter. */
     result = GC_malloc(lb + DEBUG_BYTES);
+
+#ifdef GC_ADD_CALLER
+    if (s == NULL) {
+      GC_caller_func_offset(ra, &s, &i);
+      if (s == NULL)
+        s = "unknown";
+    }
+#endif
 
     if (result == 0) {
         GC_err_printf("GC_debug_malloc(%lu) returning NULL (",
@@ -1165,10 +1190,10 @@ GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
 
 GC_API void * GC_CALL GC_debug_malloc_replacement(size_t lb)
 {
-    return GC_debug_malloc(lb, GC_DBG_RA "unknown", 0);
+    return GC_debug_malloc(lb, GC_DBG_RA NULL, 0);
 }
 
 GC_API void * GC_CALL GC_debug_realloc_replacement(void *p, size_t lb)
 {
-    return GC_debug_realloc(p, lb, GC_DBG_RA "unknown", 0);
+    return GC_debug_realloc(p, lb, GC_DBG_RA NULL, 0);
 }
