@@ -455,7 +455,7 @@ GC_API void GC_CALL GC_debug_register_displacement(size_t offset)
     GC_register_displacement((word)sizeof(oh) + offset);
 }
 
-#if defined(__FreeBSD__)
+#ifdef FREEBSD
 #include <dlfcn.h>
 static void GC_caller_func_offset(ad, symp, offp)
 const GC_word ad;
@@ -469,7 +469,7 @@ int *offp;
     }
 }
 #else
-#define GC_caller_func(ad, symp, offp)
+#   define GC_caller_func_offset(ad, symp, offp) (void)0
 #endif
 
 GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
@@ -854,6 +854,14 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
     void * base;
     void * result;
     hdr * hhdr;
+
+#ifdef GC_ADD_CALLER
+    if (s == NULL) {
+      GC_caller_func_offset(ra, &s, &i);
+      if (s == NULL)
+        s = "unknown";
+    }
+#endif
     if (p == 0)
       return(GC_debug_malloc(lb, OPT_RA s, i));
 

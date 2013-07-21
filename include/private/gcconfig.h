@@ -72,9 +72,9 @@
 # endif
 # if defined(__arm) || defined(__arm__) || defined(__thumb__)
 #    define ARM32
-#    if !defined(LINUX) && !defined(NETBSD) && !defined(OPENBSD) \
-        && !defined(DARWIN) && !defined(_WIN32) && !defined(__CEGCC__) \
-        && !defined(FREEBSD)
+#    if !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
+        && !defined(OPENBSD) && !defined(DARWIN) \
+        && !defined(_WIN32) && !defined(__CEGCC__)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -360,7 +360,7 @@
 #   define I386
 #   define mach_type_known
 # endif
-# if defined(FREEBSD) && defined(__amd64__)
+# if defined(FREEBSD) && (defined(__amd64__) || defined(__x86_64__))
 #   define X86_64
 #   define mach_type_known
 # endif
@@ -1958,8 +1958,8 @@
 #     define OS_TYPE "MSWINCE"
 #     define DATAEND /* not needed */
 #   endif
-/* To the future maintainer of this diff: this is the "ifdef ARM32" section */
 #   ifdef FREEBSD
+    /* FreeBSD/arm */
 #   define ALIGNMENT 4
 #       define OS_TYPE "FREEBSD"
 #       ifdef __ELF__
