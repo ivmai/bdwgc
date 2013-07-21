@@ -505,6 +505,7 @@ GC_API void * GC_malloc_atomic_ignore_off_page(size_t lb);
     /* gcc knows how to retrieve return address, but we don't know */
     /* how to generate call stacks.				   */
 #   define GC_RETURN_ADDR (GC_word)__builtin_return_address(0)
+#   define GC_RETURN_ADDR_PARENT (GC_word)__builtin_return_address(1)
 # else
     /* Just pass 0 for gcc compatibility. */
 #   define GC_RETURN_ADDR 0

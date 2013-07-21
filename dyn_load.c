@@ -105,6 +105,12 @@ static int (*GC_has_static_roots)(const char *, void *, size_t);
 #      else
 #        define ElfW(type) Elf64_##type
 #      endif
+#    elif defined(__FreeBSD__)
+#      if __ELF_WORD_SIZE == 32
+#        define ElfW(type) Elf32_##type
+#      else
+#        define ElfW(type) Elf64_##type
+#      endif
 #    else
 #      if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
 #        define ElfW(type) Elf32_##type

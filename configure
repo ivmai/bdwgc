@@ -6161,6 +6161,9 @@ _ACEOF
  sparc-*-netbsd*)
     machdep="mach_dep.lo sparc_netbsd_mach_dep.lo"
     ;;
+ sparc64-*-freebsd*)
+    machdep="mach_dep.lo sparc_mach_dep.lo"
+    ;;
  sparc-sun-solaris2.3)
     machdep="mach_dep.lo sparc_mach_dep.lo"
     cat >>confdefs.h <<\_ACEOF
