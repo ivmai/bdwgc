@@ -582,7 +582,7 @@ case "$host" in
  sparc-*-netbsd*)
     machdep="src/sparc_netbsd_mach_dep.lo"
     ;;
- sparc*-*-linux* | sparc*-*-openbsd* | sparc64-*-netbsd*)
+ sparc*-*-linux* | sparc*-*-openbsd* | sparc64-*-freebsd* | sparc64-*-netbsd*)
     machdep="src/sparc_mach_dep.lo"
     ;;
  sparc-sun-solaris2.3)
