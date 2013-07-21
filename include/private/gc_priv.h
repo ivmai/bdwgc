@@ -1807,10 +1807,11 @@ GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
                                 /* head.  Sz is in granules.            */
 
 #ifdef GC_ADD_CALLER
+# define GC_DBG_RA GC_RETURN_ADDR,
 # ifdef GC_RETURN_ADDR_PARENT
-#   define GC_DBG_RA GC_RETURN_ADDR_PARENT,
+#  define RA GC_RETURN_ADDR_PARENT,
 # else
-#   define GC_DBG_RA GC_RETURN_ADDR,
+#  define RA GC_RETURN_ADDR,
 # endif
 #else
 # define GC_DBG_RA /* empty */
