@@ -13,32 +13,40 @@ not safe: "Many library routines use malloc() internally, so use brk()
 and sbrk() only when you know  that malloc() definitely will not be used by
 any library routine."  This doesn't make a lot of sense to me, since there
 seems to be no documentation as to which routines can transitively call malloc.
-Nonetheless, under Solaris2, the collector now (since 4.12) allocates
+Nonetheless, under Solaris2, the collector now allocates
 memory using mmap by default.  (It defines USE_MMAP in gcconfig.h.)
 You may want to reverse this decisions if you use -DREDIRECT_MALLOC=...
 
+Note:
+Before you run "make check", you need to set your LD_LIBRARY_PATH correctly
+(eg., to "/usr/local/lib") so that tests can find the shared library
+libgcc_s.so.1.  Alternatively, you can configure with --disable-shared.
 
 SOLARIS THREADS:
 
-The collector must be compiled with -DGC_SOLARIS_THREADS (thr_ functions)
-or -DGC_THREADS to be thread safe.  This assumes use of the pthread_
-interface.  Old style Solaris threads are no longer supported.
+Threads support is enabled by configure "--enable-threads=posix" option.
+(In case of GCC compiler, multi-threading support is on by default.)
+This causes the collector to be compiled with -D GC_THREADS (or
+-D GC_SOLARIS_THREADS) ensuring thread safety.
+This assumes use of the pthread_ interface.  Old style Solaris threads
+are no longer supported.
+Thread-local allocation is now on by default.  Parallel marking is on by
+default starting from GC v7.3 but it could be enabled or disabled manually
+by the corresponding "--enable/disable-parallel-mark" options.
 
-It is also essential that gc.h be included in files that call thr_create,
-thr_join, thr_suspend, thr_continue, or dlopen.  Gc.h macro defines
-these to also do GC bookkeeping, etc.  Gc.h must be included with
-one or both of these macros defined, otherwise
-these replacements are not visible.
-A collector built in this way way only be used by programs that are
-linked with the threads library.
+It is also essential that gc.h be included in files that call pthread_create,
+pthread_join, pthread_detach, or dlopen.  gc.h macro defines these to also do
+GC bookkeeping, etc.  gc.h must be included with one or both of these macros
+defined, otherwise these replacements are not visible.  A collector built in
+this way way only be used by programs that are linked with the threads library.
 
 Since 5.0 alpha5, dlopen disables collection temporarily,
 unless USE_PROC_FOR_LIBRARIES is defined.  In some unlikely cases, this
 can result in unpleasant heap growth.  But it seems better than the
 race/deadlock issues we had before.
 
-If solaris_threads are used on an X86 processor with malloc redirected to
-GC_malloc, it is necessary to call GC_thr_init explicitly before forking the
+If threads are used on an X86 processor with malloc redirected to
+GC_malloc, it is necessary to call GC_INIT explicitly before forking the
 first thread.  (This avoids a deadlock arising from calling GC_thr_init
 with the allocation lock held.)
 
@@ -46,7 +54,7 @@ It appears that there is a problem in using gc_cpp.h in conjunction with
 Solaris threads and Sun's C++ runtime.  Apparently the overloaded new operator
 is invoked by some iostream initialization code before threads are correctly
 initialized.  As a result, call to thr_self() in garbage collector
-initialization  segfaults.  Currently the only known workaround is to not
+initialization  SEGV faults.  Currently the only known workaround is to not
 invoke the garbage collector from a user defined global operator new, or to
 have it invoke the garbage-collector's allocators only after main has started.
 (Note that the latter requires a moderately expensive test in operator

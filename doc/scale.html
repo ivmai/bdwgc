@@ -52,11 +52,8 @@ implementation of <TT>GC_malloc_many</tt>, so that free lists can be
 built, and memory can be cleared, by more than one thread concurrently.
 <LI>
 Building the collector with -DTHREAD_LOCAL_ALLOC adds support for thread
-local allocation.  Before GC version 7.0, it did not, by itself, cause
-thread local allocation to be used.  It simply allowed the use of the
-interface in <TT>gc_local_alloc.h</tt>.  Since version 7.0, this causes
-GC_malloc, GC_malloc_atomic, and GC_gcj_malloc to be redefined to perform
-thread-local allocation.
+local allocation.  This causes GC_malloc, GC_malloc_atomic, and
+GC_gcj_malloc to be redefined to perform thread-local allocation.
 <P>
 Memory returned from thread-local allocators is completely interchangeable
 with that returned by the standard allocators.  It may be used by other
@@ -161,7 +158,7 @@ the client using either one or two marker threads, and running
 one or two client threads.  Note that the client uses thread local
 allocation exclusively.  With -DTHREAD_LOCAL_ALLOC the collector
 switches to a locking strategy that is better tuned to less frequent
-lock acquisition.  The standard allocation primitives thus peform
+lock acquisition.  The standard allocation primitives thus perform
 slightly worse than without -DTHREAD_LOCAL_ALLOC, and should be
 avoided in time-critical code.
 <P>

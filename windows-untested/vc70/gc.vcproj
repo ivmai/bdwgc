@@ -241,9 +241,6 @@
                 RelativePath="..\..\include\gc.h">
             </File>
             <File
-                RelativePath="..\..\include\gc_alloc.h">
-            </File>
-            <File
                 RelativePath="..\..\include\gc_allocator.h">
             </File>
             <File
@@ -269,9 +266,6 @@
             </File>
             <File
                 RelativePath="..\..\include\gc_inline.h">
-            </File>
-            <File
-                RelativePath="..\..\include\gc_local_alloc.h">
             </File>
             <File
                 RelativePath="..\..\include\private\gc_locks.h">

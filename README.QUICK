@@ -27,13 +27,14 @@ For the version number, see doc/README or version.h.
 INSTALLATION:
 Under UN*X, Linux:
 Alternative 1 (the old way): type "make test" in this directory.
-	Link against gc.a.  With the most recent GC distributions
-	you may have to copy Makefile.direct to Makefile first.
+        Link against gc.a.  With the most recent GC distributions
+        you may have to type "make -f Makefile.direct test" or
+        copy Makefile.direct to Makefile first.
 
 Alternative 2 (the new way): type
-	"./configure --prefix=<dir>; make; make check; make install".
-	Link against <dir>/lib/libgc.a or <dir>/lib/libgc.so.
-	See README.autoconf for details
+        "./configure --prefix=<dir>; make; make check; make install".
+        Link against <dir>/lib/libgc.a or <dir>/lib/libgc.so.
+        See README.autoconf for details
 
 Under Windows 95, 98, Me, NT, or 2000:
 copy the appropriate makefile to MAKEFILE, read it, and type "nmake test".
@@ -43,7 +44,7 @@ Read the machine specific README in the doc directory if one exists.
 
 If you need thread support, you will need to follow the special
 platform-dependent instructions (win32), or define GC_THREADS
-as described in Makefile (Makefile.direct), or possibly use
+as described in doc/README.macros, or possibly use
 --enable-threads=posix when running the configure script.
 
 If you wish to use the cord (structured string) library with the stand-alone
@@ -55,8 +56,8 @@ package should still work.)
 
 If you wish to use the collector from C++, type "make c++", or use
 --enable-cplusplus with the configure script.   With Makefile.direct,
-hese add further files to gc.a and to the include subdirectory.  With the
-alternat build process,this generates libgccpp.
+these ones add further files to gc.a and to the include subdirectory.
+With the alternate build process,this generates libgccpp.
 See cord/cord.h and include/gc_cpp.h.
 
 TYPICAL USE:
@@ -85,4 +86,3 @@ accessed with pthread_getspecific()).  The collector does scan
 thread stacks though, so generally the best solution is to ensure that
 any pointers stored in thread-local storage are also stored on the
 thread's stack for the duration of their lifetime.
-

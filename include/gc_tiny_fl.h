@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 1999-2005 Hewlett-Packard Development Company, L.P.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
@@ -20,7 +20,7 @@
  * However, global free lists are known to the GC.  "Tiny" free lists
  * are basically private to the client.  Their contents are viewed as
  * "in use" and marked accordingly by the core of the GC.
- * 
+ *
  * Note that inlined code might know about the layout of these and the constants
  * involved.  Thus any change here may invalidate clients, and such changes should
  * be avoided.  Hence we keep this as simple as possible.
@@ -47,7 +47,8 @@
   /* library that may be shared between applications, since it affects	  */
   /* the binary interface to the library.				  */
 # if defined(__LP64__) || defined (_LP64) || defined(_WIN64) \
-	|| defined(__s390x__) || defined(__x86_64__) \
+        || defined(__s390x__) \
+        || (defined(__x86_64__) && !defined(__ILP32__)) \
 	|| defined(__alpha__) || defined(__powerpc64__) \
 	|| defined(__arch64__)
 #  define GC_GRANULE_BYTES 16

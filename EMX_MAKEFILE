@@ -130,8 +130,8 @@ gctest.exe: tests/test.o gc.a
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  Gctest may still work.
 # Try compiling setjmp_t.c unoptimized.
-setjmp_test.exe: $(srcdir)/setjmp_t.c $(srcdir)/gc.h
-	$(CC) $(CFLAGS) -o setjmp_test.exe $(srcdir)/setjmp_t.c
+setjmp_test.exe: $(srcdir)/extra/setjmp_t.c $(srcdir)/gc.h
+	$(CC) $(CFLAGS) -o setjmp_test.exe $(srcdir)/extra/setjmp_t.c
 
 test: setjmp_test.exe gctest.exe
 	./setjmp_test

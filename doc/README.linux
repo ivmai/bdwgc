@@ -11,7 +11,7 @@ Incremental GC is generally supported.
 Dynamic libraries are supported on an ELF system.  A static executable
 should be linked with the gcc option "-Wl,-defsym,_DYNAMIC=0".
 
-The collector appears to work reliably with Linux threads, but beware 
+The collector appears to work reliably with Linux threads, but beware
 of older versions of glibc and gdb.
 
 The garbage collector uses SIGPWR and SIGXCPU if it is used with
@@ -29,7 +29,7 @@ To use threads, you need to abide by the following requirements:
 2) You must compile the collector with -DGC_LINUX_THREADS (or
    just -DGC_THREADS) and -D_REENTRANT specified in the Makefile.
 
-3a) Every file that makes thread calls should define GC_LINUX_THREADS and 
+3a) Every file that makes thread calls should define GC_LINUX_THREADS and
    _REENTRANT and then include gc.h.  Gc.h redefines some of the
    pthread primitives as macros which also provide the collector with
    information it requires.
@@ -37,14 +37,14 @@ To use threads, you need to abide by the following requirements:
 3b) A new alternative to (3a) is to build the collector and compile GC clients
    with -DGC_USE_LD_WRAP, and to link the final program with
 
-   (for ld) --wrap read --wrap dlopen --wrap pthread_create \
-	    --wrap pthread_join --wrap pthread_detach \
-	    --wrap pthread_sigmask --wrap sleep
+   (for ld) --wrap dlopen --wrap pthread_create \
+            --wrap pthread_join --wrap pthread_detach \
+            --wrap pthread_sigmask --wrap pthread_exit --wrap pthread_cancel
 
-   (for gcc) -Wl,--wrap -Wl,read -Wl,--wrap -Wl,dlopen -Wl,--wrap \
-	     -Wl,pthread_create -Wl,--wrap -Wl,pthread_join -Wl,--wrap \
-	     -Wl,pthread_detach -Wl,--wrap -Wl,pthread_sigmask \
-	     -Wl,--wrap -Wl,sleep
+   (for gcc) -Wl,--wrap -Wl,dlopen -Wl,--wrap -Wl,pthread_create \
+             -Wl,--wrap -Wl,pthread_join -Wl,--wrap -Wl,pthread_detach \
+             -Wl,--wrap -Wl,pthread_sigmask -Wl,--wrap -Wl,pthread_exit \
+             -Wl,--wrap -Wl,pthread_cancel
 
    In any case, _REENTRANT should be defined during compilation.
 
@@ -75,7 +75,7 @@ patches to correct the problem in 68040 buserror handler but it is not
 yet in any standard kernel.
 
 Here is a simple test program to detect whether the kernel has the
-problem. It could be run as a separate check in configure or tested 
+problem. It could be run as a separate check in configure or tested
 upon startup. If it fails (return !0) than mprotect can't be used
 on that system.
 
@@ -127,5 +127,3 @@ main()
   fprintf(stderr,"vmtest Ok\n");
   exit(0);
 }
-
-

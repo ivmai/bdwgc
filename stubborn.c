@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
@@ -11,48 +11,49 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, July 31, 1995 5:02 pm PDT */
-
 
 #include "private/gc_priv.h"
 
 #if defined(MANUAL_VDB)
-/* Stubborn object (hard to change, nearly immutable) allocation. */
-/* This interface is deprecated.  We mostly emulate it using	  */
-/* MANUAL_VDB.  But that imposes the additional constraint that	  */
-/* written, but not yet GC_dirty()ed objects must be referenced	  */
-/* by a stack.							  */
-void * GC_malloc_stubborn(size_t lb)
-{
+
+  /* Stubborn object (hard to change, nearly immutable) allocation.     */
+  /* This interface is deprecated.  We mostly emulate it using          */
+  /* MANUAL_VDB.  But that imposes the additional constraint that       */
+  /* written, but not yet GC_dirty()ed objects must be referenced       */
+  /* by a stack.                                                        */
+
+  void GC_dirty(ptr_t p);
+
+  GC_API void * GC_CALL GC_malloc_stubborn(size_t lb)
+  {
     return(GC_malloc(lb));
-}
+  }
 
-/*ARGSUSED*/
-void GC_end_stubborn_change(void *p)
-{
+  GC_API void GC_CALL GC_end_stubborn_change(void *p)
+  {
     GC_dirty(p);
-}
+  }
 
-/*ARGSUSED*/
-void GC_change_stubborn(void *p)
-{
-}
+  /*ARGSUSED*/
+  GC_API void GC_CALL GC_change_stubborn(void *p)
+  {
+  }
 
 #else /* !MANUAL_VDB */
 
-void * GC_malloc_stubborn(size_t lb)
-{
+  GC_API void * GC_CALL GC_malloc_stubborn(size_t lb)
+  {
     return(GC_malloc(lb));
-}
+  }
 
-/*ARGSUSED*/
-void GC_end_stubborn_change(void *p)
-{
-}
+  /*ARGSUSED*/
+  GC_API void GC_CALL GC_end_stubborn_change(void *p)
+  {
+  }
 
-/*ARGSUSED*/
-void GC_change_stubborn(void *p)
-{
-}
+  /*ARGSUSED*/
+  GC_API void GC_CALL GC_change_stubborn(void *p)
+  {
+  }
 
 #endif /* !MANUAL_VDB */

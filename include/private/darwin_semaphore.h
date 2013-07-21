@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
+ * Copyright (c) 2000-2009 by Hewlett-Packard Development Company.
+ * All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
+ */
+
 #ifndef GC_DARWIN_SEMAPHORE_H
 #define GC_DARWIN_SEMAPHORE_H
 
@@ -11,7 +28,7 @@
    safe. This isn't a problem because signals aren't used to
    suspend threads on darwin.
 */
-   
+
 typedef struct {
     pthread_mutex_t mutex;
     pthread_cond_t cond;
@@ -21,9 +38,9 @@ typedef struct {
 static int sem_init(sem_t *sem, int pshared, int value) {
     int ret;
     if(pshared)
-        GC_abort("sem_init with pshared set");
+        ABORT("sem_init with pshared set");
     sem->value = value;
-    
+
     ret = pthread_mutex_init(&sem->mutex,NULL);
     if(ret < 0) return -1;
     ret = pthread_cond_init(&sem->cond,NULL);
@@ -52,7 +69,7 @@ static int sem_wait(sem_t *sem) {
     }
     sem->value--;
     if(pthread_mutex_unlock(&sem->mutex) < 0)
-        return -1;    
+        return -1;
     return 0;
 }
 

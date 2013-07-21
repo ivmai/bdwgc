@@ -1,0 +1,240 @@
+/* include/private/config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to recognise all pointers to the interior of objects. */
+#undef ALL_INTERIOR_POINTERS
+
+/* Define to enable atomic uncollectible allocation. */
+#undef ATOMIC_UNCOLLECTABLE
+
+/* See doc/README.macros. */
+#undef DARWIN_DONT_PARSE_STACK
+
+/* Define to force debug headers on all objects. */
+#undef DBG_HDRS_ALL
+
+/* Define to enable support for DB/UX threads. */
+#undef DGUX_THREADS
+
+/* Define to enable eCos target support. */
+#undef ECOS
+
+/* Wine getenv may not return NULL for missing entry. */
+#undef EMPTY_GETENV_RESULTS
+
+/* Define to support IBM AIX threads. */
+#undef GC_AIX_THREADS
+
+/* The alpha version number, if applicable. */
+#undef GC_ALPHA_VERSION
+
+/* Define to enable internal debug assertions. */
+#undef GC_ASSERTIONS
+
+/* Define to support Darwin pthreads. */
+#undef GC_DARWIN_THREADS
+
+/* Define to enable support for DB/UX threads on i386. */
+#undef GC_DGUX386_THREADS
+
+/* Define to build dynamic libraries with only API symbols exposed. */
+#undef GC_DLL
+
+/* Define to support FreeBSD pthreads. */
+#undef GC_FREEBSD_THREADS
+
+/* Define to include support for gcj. */
+#undef GC_GCJ_SUPPORT
+
+/* Define to support GNU pthreads. */
+#undef GC_GNU_THREADS
+
+/* Define if backtrace information is supported. */
+#undef GC_HAVE_BUILTIN_BACKTRACE
+
+/* Define to support HP/UX 11 pthreads. */
+#undef GC_HPUX_THREADS
+
+/* Define to support Irix pthreads. */
+#undef GC_IRIX_THREADS
+
+/* Define to support pthreads on Linux. */
+#undef GC_LINUX_THREADS
+
+/* Define to support NetBSD pthreads. */
+#undef GC_NETBSD_THREADS
+
+/* Define to support OpenBSD pthreads. */
+#undef GC_OPENBSD_THREADS
+
+/* Define to support Tru64 pthreads. */
+#undef GC_OSF1_THREADS
+
+/* Define to support rtems-pthreads. */
+#undef GC_RTEMS_PTHREADS
+
+/* Define to support Solaris pthreads. */
+#undef GC_SOLARIS_THREADS
+
+/* Define to support platform-specific threads. */
+#undef GC_THREADS
+
+/* See doc/README.macros. */
+#undef GC_USE_DLOPEN_WRAP
+
+/* The major version number of this GC release. */
+#undef GC_VERSION_MAJOR
+
+/* The minor version number of this GC release. */
+#undef GC_VERSION_MINOR
+
+/* Define to support win32-pthreads. */
+#undef GC_WIN32_PTHREADS
+
+/* Define to support Win32 threads. */
+#undef GC_WIN32_THREADS
+
+/* Define to install pthread_atfork() handlers by default. */
+#undef HANDLE_FORK
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* See doc/README.macros. */
+#undef JAVA_FINALIZATION
+
+/* Define to save back-pointers in debugging headers. */
+#undef KEEP_BACK_PTRS
+
+/* Define to optimize for large heaps or root sets. */
+#undef LARGE_CONFIG
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
+
+/* See doc/README.macros. */
+#undef MAKE_BACK_GRAPH
+
+/* Number of GC cycles to wait before unmapping an unused block. */
+#undef MUNMAP_THRESHOLD
+
+/* Define to not use system clock (cross compiling). */
+#undef NO_CLOCK
+
+/* Disable debugging, like GC_dump and its callees. */
+#undef NO_DEBUGGING
+
+/* Define to make the collector not allocate executable memory by default. */
+#undef NO_EXECUTE_PERMISSION
+
+/* Prohibit installation of pthread_atfork() handlers. */
+#undef NO_HANDLE_FORK
+
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to enable parallel marking. */
+#undef PARALLEL_MARK
+
+/* If defined, redirect free to this function. */
+#undef REDIRECT_FREE
+
+/* If defined, redirect malloc to this function. */
+#undef REDIRECT_MALLOC
+
+/* If defined, redirect GC_realloc to this function. */
+#undef REDIRECT_REALLOC
+
+/* The number of caller frames saved when allocating with the debugging API.
+   */
+#undef SAVE_CALL_COUNT
+
+/* Define to tune the collector for small heap sizes. */
+#undef SMALL_CONFIG
+
+/* See the comment in gcconfig.h. */
+#undef SOLARIS25_PROC_VDB_BUG_FIXED
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to work around a Solaris 5.3 bug (see dyn_load.c). */
+#undef SUNOS53_SHARED_LIB
+
+/* Define to enable thread-local allocation optimisation. */
+#undef THREAD_LOCAL_ALLOC
+
+/* Define to use of compiler-support for thread-local variables. */
+#undef USE_COMPILER_TLS
+
+/* Define to use mmap instead of sbrk to expand the heap. */
+#undef USE_MMAP
+
+/* Define to return memory to OS with munmap calls (see doc/README.macros). */
+#undef USE_MUNMAP
+
+/* Version number of package */
+#undef VERSION
+
+/* The POSIX feature macro. */
+#undef _POSIX_C_SOURCE
+
+/* Indicates the use of pthreads (NetBSD). */
+#undef _PTHREADS
+
+/* Required define if using POSIX threads. */
+#undef _REENTRANT
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif

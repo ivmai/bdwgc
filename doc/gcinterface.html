@@ -1,5 +1,7 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en-us">
 <HEAD>
+<meta http-equiv="Content-Type" content="text/html;charset=US-ASCII" >
 <TITLE>Garbage Collector Interface</TITLE>
 </HEAD>
 <BODY>
@@ -8,7 +10,8 @@ On many platforms, a single-threaded garbage collector library can be built
 to act as a plug-in malloc replacement.
 (Build with <TT>-DREDIRECT_MALLOC=GC_malloc -DIGNORE_FREE</tt>.)
 This is often the best way to deal with third-party libraries
-which leak or prematurely free objects.  <TT>-DREDIRECT_MALLOC</tt> is intended
+which leak or prematurely free objects.
+<TT>-DREDIRECT_MALLOC=GC_malloc</tt> is intended
 primarily as an easy way to adapt old code, not for new development.
 <P>
 New code should use the interface discussed below.
@@ -47,7 +50,9 @@ Allocates and clears <I>nbytes</i> of storage.
 Requires (amortized) time proportional to <I>nbytes</i>.
 The resulting object will be automatically deallocated when unreferenced.
 References from objects allocated with the system malloc are usually not
-considered by the collector.  (See <TT>GC_MALLOC_UNCOLLECTABLE</tt>, however.)
+considered by the collector.  (See <TT>GC_MALLOC_UNCOLLECTABLE</tt>, however.
+Building the collector with <TT>-DREDIRECT_MALLOC=GC_malloc_uncollectable
+is often a way around this.)
 <TT>GC_MALLOC</tt> is a macro which invokes <TT>GC_malloc</tt> by default or,
 if <TT>GC_DEBUG</tt>
 is defined before <TT>gc.h</tt> is included, a debugging version that checks
@@ -128,7 +133,7 @@ that write to the garbage collected heap.
 <DD>
 Replace the default procedure used by the collector to print warnings.
 The collector
-may otherwise write to sterr, most commonly because GC_malloc was used
+may otherwise write to stderr, most commonly because GC_malloc was used
 in a situation in which GC_malloc_ignore_off_page would have been more
 appropriate.  See <A HREF="http://www.hpl.hp.com/personal/Hans_Boehm/gc/gc_source/gch.txt">gc.h</a> for details.
 <DT> <B> void GC_REGISTER_FINALIZER(...) </b>
@@ -152,8 +157,9 @@ for details.
 </dl>
 <P>
 If you are concerned with multiprocessor performance and scalability,
-you should consider enabling and using thread local allocation (<I>e.g.</i>
-<TT>GC_LOCAL_MALLOC</tt>, see <TT>gc_local_alloc.h</tt>.  If your platform
+you should consider enabling and using thread local allocation.
+<P>
+If your platform
 supports it, you should build the collector with parallel marking support
 (<TT>-DPARALLEL_MARK</tt>, or <TT>--enable-parallel-mark</tt>).
 <P>
@@ -230,9 +236,6 @@ Users of the <A HREF="http://www.sgi.com/tech/stl">SGI extended STL</a>
 or its derivatives (including most g++ versions)
 may instead be able to include <TT>new_gc_alloc.h</tt> before including
 STL header files.  This is increasingly discouraged.
-(<TT>gc_alloc.h</tt> corresponds to now obsolete versions of the
-SGI STL.)  This interface is no longer recommended, but it has existed
-for much longer.
 <P>
 This defines SGI-style allocators
 <UL>

@@ -112,8 +112,19 @@ is significantly complicated by black-listing issues
 <P>
 Small blocks are allocated in chunks of size <TT>HBLKSIZE</tt>.
 Each chunk is
-dedicated to only one object size and kind.  The allocator maintains
+dedicated to only one object size and kind.
+<P>
+The allocator maintains
 separate free lists for each size and kind of object.
+Associated with each kind is an array of free list pointers,
+with entry <TT>freelist[</tt><I>i</i><TT>]</tt> pointing to
+a free list of size <I>i</i> objects.
+In recent versions of the
+collector, index <TT>i</tt> is expressed in granules, which are the
+minimum allocatable unit, typically 8 or 16 bytes.
+The free lists themselves are
+linked through the first word in each object (see <TT>obj_link()</tt>
+macro).
 <P>
 Once a large block is split for use in smaller objects, it can only
 be used for objects of that size, unless the collector discovers a completely
@@ -131,7 +142,8 @@ the requested size, subject to alignment constraints.
 See <TT>GC_init_size_map</tt> for details.
 <P>
 The actual size rounding operation during small object allocation is
-implemented as a table lookup in <TT>GC_size_map</tt>.
+implemented as a table lookup in <TT>GC_size_map</tt> which maps
+a requested allocation size in bytes to a number of granules.
 <P>
 Both collector initialization and computation of allocated sizes are
 handled carefully so that they do not slow down the small object fast
@@ -438,7 +450,7 @@ bytes of allocation have taken place.
 After <TT>GC_full_freq</tt> minor collections a major collection
 is started.
 <P>
-All collections initially run interrupted until a predetermined
+All collections initially run uninterrupted until a predetermined
 amount of time (50 msecs by default) has expired.  If this allows
 the collection to complete entirely, we can avoid correcting
 for data structure modifications during the collection.  If it does
@@ -546,7 +558,7 @@ accomplished with <TT># define</tt>'s in <TT>gc.h</tt>
 (really <TT>gc_pthread_redirects.h</tt>), or optionally
 by using ld's function call wrapping mechanism under Linux.
 <P>
-Recent versions of the collector support several facilites to enhance
+Recent versions of the collector support several facilities to enhance
 the processor-scalability and thread performance of the collector.
 These are discussed in more detail <A HREF="scale.html">here</a>.
 We briefly outline the data approach to thread-local allocation in the
@@ -560,11 +572,12 @@ The free list arrays associated
 with each thread are only used to satisfy requests for objects that
 are  both very small, and belong to one of a small number of well-known
 kinds.  These currently include "normal" and pointer-free objects.
-Depending onthe configuration, "gcj" objects may also be included.
+Depending on the configuration, "gcj" objects may also be included.
 <P>
 Thread-local free list entries contain either a pointer to the first
 element of a free list, or they contain a counter of the number of
-allocation "granules" allocated so far.  Initially they contain the
+allocation granules, corresponding to objects of this size,
+allocated so far.  Initially they contain the
 value one, i.e. a small counter value.
 <P>
 Thread-local allocation allocates directly through the global
@@ -599,9 +612,6 @@ transferred back to the global free list.
 Note that if the collector is configured for thread-local allocation,
 GC versions before 7 do not invoke the thread-local allocator by default.
 <TT>GC_malloc</tt> only uses thread-local allocation in version 7 and later.
-In earlier versions, <TT>GC_MALLOC</tt> (all caps) may be directed
-to use thread-local allocation by defining <TT>GC_REDIRECT_TO_LOCAL</tt>
-and then include <TT>gc_local_alloc.h</tt>.
 <P>
 For some more details see <A HREF="scale.html">here</a>, and the
 technical report entitled
@@ -612,7 +622,8 @@ technical report entitled
 <HR>
 <P>
 Comments are appreciated.  Please send mail to
-<A HREF="mailto:boehm@acm.org"><TT>boehm@acm.org</tt></a> or
+<A HREF="mailto:gc@linux.hpl.hp.com"><tt>gc@linux.hpl.hp.com</tt></a>
+(GC mailing list) or
 <A HREF="mailto:Hans.Boehm@hp.com"><TT>Hans.Boehm@hp.com</tt></a>
 <P>
 This is a modified copy of a page written while the author was at SGI.

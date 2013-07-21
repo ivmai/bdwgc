@@ -6,7 +6,6 @@
 
 	.seg 	"text"
 	.globl	GC_save_regs_in_stack
-	.globl 	GC_push_regs
 GC_save_regs_in_stack:
 #if defined(__arch64__) || defined(__sparcv9)
 	save	%sp,-128,%sp
@@ -21,12 +20,11 @@ GC_save_regs_in_stack:
 #endif /* 32 bit SPARC */
 .GC_save_regs_in_stack_end:
 	.size GC_save_regs_in_stack,.GC_save_regs_in_stack_end-GC_save_regs_in_stack
-	
 
 ! GC_clear_stack_inner(arg, limit) clears stack area up to limit and
 ! returns arg.  Stack clearing is crucial on SPARC, so we supply
 ! an assembly version that s more careful.  Assumes limit is hotter
-! than sp, and limit is 8 byte aligned.	
+! than sp, and limit is 8 byte aligned.
 	.globl	GC_clear_stack_inner
 GC_clear_stack_inner:
 #if defined(__arch64__) || defined(__sparcv9)
@@ -42,7 +40,7 @@ loop:
 	bgu,pt %xcc, loop	! if (p > limit) goto loop
           add %o3,-8,%o3	! p -= 8 (delay slot)
 	retl
-    	  mov %o2,%sp		! Restore sp., delay slot	
+    	  mov %o2,%sp		! Restore sp., delay slot
 #else  /* 32 bit SPARC */
 	mov	%sp,%o2		! Save sp
 	add	%sp,-8,%o3	! p = sp-8
@@ -61,10 +59,3 @@ loop:
 #endif  /* 32 bit SPARC */
 .GC_clear_stack_inner_end:
       	.size GC_clear_stack_inner,.GC_clear_stack_inner_end-GC_clear_stack_inner
-
-	
-		
-		
-		
-		
-	

@@ -21,7 +21,6 @@ pkginclude_HEADERS += \
 	include/gc_typed.h \
 	include/gc_inline.h \
 	include/gc_mark.h \
-	include/gc_cpp.h \
 	include/weakpointer.h \
 	include/new_gc_alloc.h \
 	include/gc_allocator.h \
@@ -56,5 +55,4 @@ dist_noinst_HEADERS += \
 
 # unprefixed header
 include_HEADERS += \
-        include/extra/gc.h \
-        include/extra/gc_cpp.h
+        include/extra/gc.h
