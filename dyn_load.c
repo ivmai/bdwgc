@@ -130,6 +130,12 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #      else
 #        define ElfW(type) Elf64_##type
 #      endif
+#    elif defined(__FreeBSD__)
+#      if __ELF_WORD_SIZE == 32
+#        define ElfW(type) Elf32_##type
+#      else
+#        define ElfW(type) Elf64_##type
+#      endif
 #    else
 #      if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
 #        define ElfW(type) Elf32_##type

@@ -91,9 +91,9 @@
 # endif
 # if defined(__arm) || defined(__arm__) || defined(__thumb__)
 #    define ARM32
-#    if !defined(LINUX) && !defined(NETBSD) && !defined(OPENBSD) \
-        && !defined(DARWIN) && !defined(_WIN32) && !defined(__CEGCC__) \
-        && !defined(SYMBIAN)
+#    if !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
+        && !defined(OPENBSD) && !defined(DARWIN) \
+        && !defined(_WIN32) && !defined(__CEGCC__) && !defined(SYMBIAN)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -397,8 +397,24 @@
 #    define X86_64
 #    define mach_type_known
 # endif
+# if defined(__FreeBSD__) && defined(__amd64__)
+#    define X86_64
+#    define mach_type_known
+# endif
+# if defined(__FreeBSD__) && defined(__ia64__)
+#    define IA64
+#    define mach_type_known
+# endif
 # if defined(FREEBSD) && defined(__sparc__)
 #    define SPARC
+#    define mach_type_known
+# endif
+# if defined(FREEBSD) && defined(__powerpc__)
+#    define POWERPC
+#    define mach_type_known
+# endif
+# if defined(FREEBSD) && defined(__arm__)
+#    define ARM32
 #    define mach_type_known
 # endif
 # if defined(bsdi) && (defined(i386) || defined(__i386__))
@@ -2053,6 +2069,16 @@
       extern char _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
+#   endif
+#   ifdef FREEBSD
+#   define ALIGNMENT 4
+#       define OS_TYPE "FREEBSD"
+#       ifdef __ELF__
+#           define DYNAMIC_LOADING
+#       endif
+#   define HEURISTIC2
+    extern char etext[];
+#   define SEARCH_FOR_DATA_START
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.  */
