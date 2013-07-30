@@ -212,7 +212,7 @@ from are copied to the stack.  Typically this can be done portably,
 but on some platforms it may require assembly code, or just
 tweaking of conditional compilation tests.
 <P>
-For GC7, if your platform supports <TT>getcontext()</tt>, then definining
+For GC7, if your platform supports <TT>getcontext()</tt>, then defining
 the macro <TT>UNIX_LIKE</tt> for your OS in <TT>gcconfig.h</tt>
 (if it isn't defined there already) is likely to solve the problem.
 otherwise, if you are using gcc, <TT>_builtin_unwind_init()</tt>
@@ -272,7 +272,7 @@ perform adequately as the allocation lock, you will probably need to
 ensure that a sufficient <TT>atomic_ops</tt> port
 exists for the platform to provided an atomic test and set
 operation.  (Current GC7 versions require more<TT>atomic_ops</tt>
-asupport than necessary.  This is a bug.)  For earlier versions define
+support than necessary.  This is a bug.)  For earlier versions define
 <TT>GC_test_and_set</tt> in <TT>gc_locks.h</tt>.
 <LI>Making any needed adjustments to <TT>pthread_stop_world.c</tt> and
 <TT>pthread_support.c</tt>.  Ideally none should be needed.  In fact,

@@ -1768,7 +1768,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 
 #ifdef ENABLE_DISCLAIM
 /* Unconditionally mark from all objects which have not been reclaimed. */
-/* This is useful in order to retain pointes which are reachable from   */
+/* This is useful in order to retain pointers which are reachable from  */
 /* the disclaim notifiers.                                              */
 /*                                                                      */
 /* To determine whether an object has been reclaimed, we require that   */

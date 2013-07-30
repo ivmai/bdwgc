@@ -146,7 +146,7 @@
 #     define REAL_FUNC(f) GC_real_##f
       /* We define both GC_f and plain f to be the wrapped function.    */
       /* In that way plain calls work, as do calls from files that      */
-      /* included gc.h, wich redefined f to GC_f.                       */
+      /* included gc.h, which redefined f to GC_f.                      */
       /* FIXME: Needs work for DARWIN and True64 (OSF1) */
       typedef int (* GC_pthread_create_t)(pthread_t *,
                                     GC_PTHREAD_CREATE_CONST pthread_attr_t *,
@@ -675,7 +675,7 @@ STATIC void GC_remove_all_threads_but_me(void)
           me = p;
           p -> next = 0;
 #         ifdef GC_DARWIN_THREADS
-            /* Update thread Id after fork (it is ok to call    */
+            /* Update thread Id after fork (it is OK to call    */
             /* GC_destroy_thread_local and GC_free_internal     */
             /* before update).                                  */
             me -> stop_info.mach_thread = mach_thread_self();
@@ -685,7 +685,7 @@ STATIC void GC_remove_all_threads_but_me(void)
 #         if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
             /* Some TLS implementations might be not fork-friendly, so  */
             /* we re-assign thread-local pointer to 'tlfs' for safety   */
-            /* instead of the assertion check (again, it is ok to call  */
+            /* instead of the assertion check (again, it is OK to call  */
             /* GC_destroy_thread_local and GC_free_internal before).    */
             if (GC_setspecific(GC_thread_key, &me->tlfs) != 0)
               ABORT("GC_setspecific failed (in child)");

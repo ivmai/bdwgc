@@ -1071,7 +1071,7 @@
 #     ifdef __ELF__
 #       define DYNAMIC_LOADING
 #     else
-          Linux Sparc/a.out not supported
+#       error --> Linux SPARC a.out not supported
 #     endif
       extern int _end[];
       extern int _etext[];
@@ -1304,8 +1304,8 @@
 #            define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
 #       endif
 #       ifdef USE_I686_PREFETCH
-          /* FIXME: Thus should use __builtin_prefetch, but we'll leave that */
-          /* for the next rtelease.                                          */
+          /* FIXME: Thus should use __builtin_prefetch, but we'll leave */
+          /* that for the next release.                                 */
 #         define PREFETCH(x) \
             __asm__ __volatile__ ("prefetchnta %0" : : "m"(*(char *)(x)))
             /* Empirically prefetcht0 is much more effective at reducing     */

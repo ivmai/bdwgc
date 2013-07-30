@@ -101,7 +101,7 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
 #endif /* !GC_NO_THREADS_DISCOVERY */
 
 /* Use implicit threads registration (all task threads excluding the GC */
-/* special ones are stoped and scanned).  Should be called before       */
+/* special ones are stopped and scanned).  Should be called before      */
 /* GC_INIT() (or, at least, before going multi-threaded).  Deprecated.  */
 GC_API void GC_CALL GC_use_threads_discovery(void)
 {

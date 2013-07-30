@@ -789,7 +789,7 @@ variable.
 
 * configure.ac (THREADDLLIBS): Use alternate thread library on
 Solaris 8.
-* configure.ac (need_atomic_ops_asm): Set to true only for Sparc
+* configure.ac (need_atomic_ops_asm): Set to true only for SPARC
 Solaris.
 * configure.ac: Don't use libdl on mips-sgi-irix6.
 

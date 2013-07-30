@@ -367,8 +367,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
                 GC_release_mark_lock();
                 LOCK();
                 /* GC lock is needed for reclaim list access.   We      */
-                /* must decrement fl_builder_count before reaquiring GC */
-                /* lock.  Hopefully this path is rare.                  */
+                /* must decrement fl_builder_count before reacquiring   */
+                /* the lock.  Hopefully this path is rare.              */
               }
 #           endif
         }
@@ -465,7 +465,7 @@ GC_API void * GC_CALL GC_memalign(size_t align, size_t lb)
     /* is a multiple of align.  That would be correct up to HBLKSIZE.      */
     new_lb = lb + align - 1;
     result = GC_malloc(new_lb);
-            /* It is ok not to check result for NULL as in that case    */
+            /* It is OK not to check result for NULL as in that case    */
             /* GC_memalign returns NULL too since (0 + 0 % align) is 0. */
     offset = (word)result % align;
     if (offset != 0) {

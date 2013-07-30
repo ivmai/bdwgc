@@ -92,7 +92,7 @@ o C/C++ language
 o PPC Processor
   - Struct Alignment: PowerPC
   - uncheck "Store Static Data in TOC" -- important!
-    I don't think the others matter, I use full optimization and its ok
+    I don't think the others matter, I use full optimization and it is OK
 o PPC Linker
   - Factory Settings (SYM file with full paths, faster linking, dead-strip
     static init, Main: __start)
@@ -261,7 +261,7 @@ same as for test.c
 
 For convenience I used one test-project with several targets so that all
 test apps are build at once. Two for each library to test: test.c and
-gc_app.cc. When I was satisfied that the libraries were ok. I put the
+gc_app.cc. When I was satisfied that the libraries were OK. I put the
 libraries + gc.h + the c++ interface-file in a folder that I then put into
 the MSL hierarchy so that I don't have to alter access-paths in projects
 that use the GC.

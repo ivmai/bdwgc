@@ -1047,7 +1047,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
 #     if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
         /* For Cygwin, we need to re-assign thread-local pointer to     */
-        /* 'tlfs' (it is ok to call GC_destroy_thread_local and         */
+        /* 'tlfs' (it is OK to call GC_destroy_thread_local and         */
         /* GC_free_internal before this action).                        */
         if (GC_setspecific(GC_thread_key, &me->tlfs) != 0)
           ABORT("GC_setspecific failed (in child)");
@@ -2110,7 +2110,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       /* does not work because they are used with different checked     */
       /* conditions in different places (and, in addition, notifying is */
       /* done after leaving critical section) and this could result in  */
-      /* a signal loosing between checking for a particular condition   */
+      /* a signal losing between checking for a particular condition    */
       /* and calling WaitForSingleObject.  So, we use PulseEvent() and  */
       /* NT SignalObjectAndWait() (which atomically sets mutex event to */
       /* signaled state and starts waiting on condvar).  A special      */

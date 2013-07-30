@@ -664,7 +664,7 @@ struct GC_prof_stats_s {
 /* should pass the size of the buffer (of GC_prof_stats_s type) to fill */
 /* in the values - this is for interoperability between different GC    */
 /* versions, an old client could have fewer fields, and vice versa,     */
-/* client could use newer gc.h (with more entires declared in the       */
+/* client could use newer gc.h (with more entries declared in the       */
 /* structure) than that of the linked libgc binary; in the latter case, */
 /* unsupported (unknown) fields are filled in with -1.  Return the size */
 /* (in bytes) of the filled in part of the structure (excluding all     */

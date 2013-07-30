@@ -1083,10 +1083,8 @@ GC_INNER word GC_page_size = 0;
           } /* Otherwise it's not safe to add 16 bytes and we fall      */
             /* back to using /proc.                                     */
 #       elif defined(SPARC)
-          /* Older versions of glibc for 64-bit Sparc do not set
-           * this variable correctly, it gets set to either zero
-           * or one.
-           */
+          /* Older versions of glibc for 64-bit SPARC do not set this   */
+          /* variable correctly, it gets set to either zero or one.     */
           if (__libc_stack_end != (ptr_t) (unsigned long)0x1)
             return __libc_stack_end;
 #       else
@@ -2308,7 +2306,7 @@ void * os2_alloc(size_t bytes)
     {
       while (GC_n_heap_bases-- > 0) {
 #       ifdef CYGWIN32
-          /* FIXME: Is it ok to use non-GC free() here? */
+          /* FIXME: Is it OK to use non-GC free() here? */
 #       else
           GlobalFree(GC_heap_bases[GC_n_heap_bases]);
 #       endif
@@ -3912,9 +3910,8 @@ typedef enum {
 } GC_mprotect_state_t;
 
 #ifdef THREADS
-  /* FIXME: 1 and 2 seem to be safe to use in the msgh_id field,        */
-  /* but it isn't documented. Use the source and see if they            */
-  /* should be ok.                                                      */
+  /* FIXME: 1 and 2 seem to be safe to use in the msgh_id field, but it */
+  /* is not documented.  Use the source and see if they should be OK.   */
 # define ID_STOP 1
 # define ID_RESUME 2
 

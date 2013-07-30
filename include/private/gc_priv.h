@@ -1894,7 +1894,7 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
 
 GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
                                   /* Call error printing routine        */
-                                  /* occasionally.  It is ok to read it */
+                                  /* occasionally.  It is OK to read it */
                                   /* without acquiring the lock.        */
 
 #define VERBOSE 2
