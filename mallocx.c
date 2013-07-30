@@ -362,8 +362,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
                 GC_release_mark_lock();
                 LOCK();
                 /* GC lock is needed for reclaim list access.   We      */
-                /* must decrement fl_builder_count before reaquiring GC */
-                /* lock.  Hopefully this path is rare.                  */
+                /* must decrement fl_builder_count before reacquiring   */
+                /* the lock.  Hopefully this path is rare.              */
               }
 #           endif
         }
