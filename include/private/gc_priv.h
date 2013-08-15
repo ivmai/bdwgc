@@ -148,6 +148,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* The "inline" keyword is determined by Autoconf AC_C_INLINE.    */
 # define GC_INLINE static inline
 #elif defined(_MSC_VER) || defined(__INTEL_COMPILER) || defined(__DMC__) \
+        || ((__GNUC__ >= 3) && defined(__STRICT_ANSI__)) \
         || defined(__WATCOMC__)
 # define GC_INLINE static __inline
 #elif (__GNUC__ >= 3) || defined(__sun)
