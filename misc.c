@@ -1494,14 +1494,16 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
 #ifdef NO_VSNPRINTF
   /* In case this function is missing (eg., in DJGPP v2.0.3).   */
-# define vsnprintf(buf, bufsz, format, args) vsprintf(buf, format, args)
+# define GC_VSNPRINTF(buf, bufsz, format, args) vsprintf(buf, format, args)
 #elif defined(_MSC_VER)
 # ifdef MSWINCE
     /* _vsnprintf is deprecated in WinCE */
-#   define vsnprintf StringCchVPrintfA
+#   define GC_VSNPRINTF StringCchVPrintfA
 # else
-#   define vsnprintf _vsnprintf
+#   define GC_VSNPRINTF _vsnprintf
 # endif
+#else
+# define GC_VSNPRINTF vsnprintf
 #endif
 
 /* A version of printf that is unlikely to call malloc, and is thus safer */
@@ -1514,7 +1516,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
           va_list args; \
           va_start(args, format); \
           (buf)[sizeof(buf) - 1] = 0x15; /* guard */ \
-          (void)vsnprintf(buf, sizeof(buf) - 1, format, args); \
+          (void)GC_VSNPRINTF(buf, sizeof(buf) - 1, format, args); \
           va_end(args); \
           if ((buf)[sizeof(buf) - 1] != 0x15) \
             ABORT("GC_printf clobbered stack"); \
