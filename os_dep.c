@@ -844,7 +844,7 @@ GC_INNER word GC_page_size = 0;
     typedef void (*GC_fault_handler_t)(int);
 
 #   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
-       || defined(HURD) || defined(NETBSD)
+       || defined(HURD) || defined(FREEBSD) || defined(NETBSD)
         static struct sigaction old_segv_act;
 #       if defined(_sigargs) /* !Irix6.x */ \
            || defined(HURD) || defined(NETBSD) || defined(FREEBSD)
@@ -859,8 +859,8 @@ GC_INNER word GC_page_size = 0;
 
     GC_INNER void GC_set_and_save_fault_handler(GC_fault_handler_t h)
     {
-#       if defined(SUNOS5SIGS) || defined(IRIX5) \
-           || defined(OSF1) || defined(HURD) || defined(NETBSD) || defined(FREEBSD)
+#       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
+            || defined(HURD) || defined(FREEBSD) || defined(NETBSD)
           struct sigaction act;
 
           act.sa_handler = h;
@@ -888,7 +888,7 @@ GC_INNER word GC_page_size = 0;
               /* don't have to worry in the threads case.       */
               (void) sigaction(SIGBUS, &act, &old_bus_act);
 #           endif
-#         endif /* GC_IRIX_THREADS */
+#         endif /* !GC_IRIX_THREADS */
 #       else
           old_segv_handler = signal(SIGSEGV, h);
 #         ifdef SIGBUS
@@ -918,8 +918,8 @@ GC_INNER word GC_page_size = 0;
 
     GC_INNER void GC_reset_fault_handler(void)
     {
-#       if defined(SUNOS5SIGS) || defined(IRIX5) \
-           || defined(OSF1) || defined(HURD) || defined(NETBSD)
+#       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
+           || defined(HURD) || defined(FREEBSD) || defined(NETBSD)
           (void) sigaction(SIGSEGV, &old_segv_act, 0);
 #         if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
              || defined(HURD) || defined(NETBSD)
