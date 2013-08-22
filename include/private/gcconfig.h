@@ -2026,15 +2026,15 @@
 #     define DATAEND /* not needed */
 #   endif
 #   ifdef FREEBSD
-    /* FreeBSD/arm */
-#   define ALIGNMENT 4
-#       define OS_TYPE "FREEBSD"
-#       ifdef __ELF__
-#           define DYNAMIC_LOADING
-#       endif
-#      define HEURISTIC2
-       extern char etext[];
-#      define SEARCH_FOR_DATA_START
+      /* FreeBSD/arm */
+#     define ALIGNMENT 4
+#     define OS_TYPE "FREEBSD"
+#     ifdef __ELF__
+#       define DYNAMIC_LOADING
+#     endif
+#     define HEURISTIC2
+      extern char etext[];
+#     define SEARCH_FOR_DATA_START
 #   endif
 #   ifdef DARWIN
       /* iPhone */
