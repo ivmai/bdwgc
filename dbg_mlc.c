@@ -1198,10 +1198,10 @@ GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
 
 GC_API void * GC_CALL GC_debug_malloc_replacement(size_t lb)
 {
-    return GC_debug_malloc(lb, GC_DBG_RA NULL, 0);
+    return GC_debug_malloc(lb, GC_DBG_EXTRAS);
 }
 
 GC_API void * GC_CALL GC_debug_realloc_replacement(void *p, size_t lb)
 {
-    return GC_debug_realloc(p, lb, GC_DBG_RA NULL, 0);
+    return GC_debug_realloc(p, lb, GC_DBG_EXTRAS);
 }
