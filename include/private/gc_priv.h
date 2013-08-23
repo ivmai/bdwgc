@@ -1807,13 +1807,16 @@ GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
                                 /* head.  Sz is in granules.            */
 
 #ifdef GC_ADD_CALLER
+  /* GC_DBG_EXTRAS is used by GC debug API functions (unlike GC_EXTRAS  */
+  /* used by GC debug API macros) thus GC_RETURN_ADDR_PARENT (pointing  */
+  /* to client caller) should be used if possible.                      */
 # ifdef GC_RETURN_ADDR_PARENT
-#  define GC_DBG_RA GC_RETURN_ADDR_PARENT,
+#  define GC_DBG_EXTRAS GC_RETURN_ADDR_PARENT, NULL, 0
 # else
-#  define GC_DBG_RA GC_RETURN_ADDR,
+#  define GC_DBG_EXTRAS GC_RETURN_ADDR, NULL, 0
 # endif
 #else
-# define GC_DBG_RA /* empty */
+# define GC_DBG_EXTRAS "unknown", 0
 #endif
 
 /* We make the GC_clear_stack() call a tail one, hoping to get more of  */
