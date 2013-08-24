@@ -2710,6 +2710,12 @@
 # define NEED_CALLINFO
 #endif
 
+#if defined(FREEBSD) && !defined(HAVE_DLADDR)
+  /* TODO: Define for Darwin, Linux, Solaris. */
+  /* TODO: Detect dladdr() presence by configure. */
+# define HAVE_DLADDR
+#endif
+
 #if defined(MAKE_BACK_GRAPH) && !defined(DBG_HDRS_ALL)
 # define DBG_HDRS_ALL
 #endif

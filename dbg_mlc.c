@@ -455,39 +455,40 @@ GC_API void GC_CALL GC_debug_register_displacement(size_t offset)
     GC_register_displacement((word)sizeof(oh) + offset);
 }
 
-#ifdef FREEBSD
-#include <dlfcn.h>
-static void GC_caller_func_offset(ad, symp, offp)
-const GC_word ad;
-const char **symp;
-int *offp;
-{
-    Dl_info caller;
-    if (dladdr((const void *)ad, &caller) && caller.dli_sname != NULL) {
-      *symp = caller.dli_sname;
-      *offp = (const char *)ad - (const char *)caller.dli_saddr;
+#ifdef GC_ADD_CALLER
+# if defined(HAVE_DLADDR) && defined(GC_RETURN_ADDR_PARENT)
+#   include <dlfcn.h>
+
+    STATIC void GC_caller_func_offset(word ad, const char **symp, int *offp)
+    {
+      Dl_info caller;
+
+      if (ad && dladdr((void *)ad, &caller) && caller.dli_sname != NULL) {
+        *symp = caller.dli_sname;
+        *offp = (int)((char *)ad - (char *)caller.dli_saddr);
+      }
+      if (NULL == *symp) {
+        *symp = "unknown";
+      }
     }
-}
-#else
-#   define GC_caller_func_offset(ad, symp, offp) (void)0
-#endif
+# else
+#   define GC_caller_func_offset(ad, symp, offp) (void)(*(symp) = "unknown")
+# endif
+#endif /* GC_ADD_CALLER */
 
 GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
 {
     void * result;
+
     /* Note that according to malloc() specification, if size is 0 then */
     /* malloc() returns either NULL, or a unique pointer value that can */
     /* later be successfully passed to free(). We always do the latter. */
     result = GC_malloc(lb + DEBUG_BYTES);
-
-#ifdef GC_ADD_CALLER
-    if (s == NULL) {
-      GC_caller_func_offset(ra, &s, &i);
-      if (s == NULL)
-        s = "unknown";
-    }
-#endif
-
+#   ifdef GC_ADD_CALLER
+      if (s == NULL) {
+        GC_caller_func_offset(ra, &s, &i);
+      }
+#   endif
     if (result == 0) {
         GC_err_printf("GC_debug_malloc(%lu) returning NULL (",
                       (unsigned long) lb);
@@ -855,16 +856,14 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
     void * result;
     hdr * hhdr;
 
-#ifdef GC_ADD_CALLER
-    if (s == NULL) {
-      GC_caller_func_offset(ra, &s, &i);
-      if (s == NULL)
-        s = "unknown";
+    if (p == 0) {
+      return GC_debug_malloc(lb, OPT_RA s, i);
     }
-#endif
-    if (p == 0)
-      return(GC_debug_malloc(lb, OPT_RA s, i));
-
+#   ifdef GC_ADD_CALLER
+      if (s == NULL) {
+        GC_caller_func_offset(ra, &s, &i);
+      }
+#   endif
     base = GC_base(p);
     if (base == 0) {
         GC_err_printf("Attempt to reallocate invalid pointer %p\n", p);
