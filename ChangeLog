@@ -1,3 +1,142 @@
+2013-08-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.in (pkgdatadir): Move from "doc" to base folder.
+	* doc/gc.man: Remove "PORT INFORMATION".
+
+2013-08-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_config_macros.h (GC_RETURN_ADDR_PARENT): Use
+	__builtin_extract_return_addr (since the address passed to dladdr);
+	do not define the macro for GCC pre-v4.
+
+2013-08-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_config_macros.h (GC_CAN_SAVE_CALL_STACKS): Define also
+	for __amd64__ (synonym for __x86_64__).
+	* include/gc_config_macros.h (GC_RETURN_ADDR_PARENT): Define only for
+	x86 and x86_64 (which have frame-pointer register, for other targets
+	GCC might report "unsupported argument to __builtin_return_address"
+	warning).
+
+2013-08-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* dbg_mlc.c (GC_caller_func_offset): Do not define (and do not include
+	dlfcn.h) unless GC_ADD_CALLER; test HAVE_DLADDR (and
+	GC_RETURN_ADDR_PARENT) instead of FREEBSD macro.
+	* dbg_mlc.c (GC_caller_func_offset): Use STATIC; replace the K&R-style
+	function definition with the ANSI C one; remove unnecessary "const" in
+	type casts; do not call dladdr() if address is 0.
+	* dbg_mlc.c (GC_debug_malloc, GC_debug_realloc): Move assignment of
+	"s" argument to "unknown" to GC_caller_func_offset (if GC_ADD_CALLER).
+	* dbg_mlc.c (GC_debug_realloc): Do not call GC_caller_func_offset if
+	"p" argument is NULL (i.e., if redirected to GC_debug_malloc)..
+	* include/private/gcconfig.h (HAVE_DLADDR): Define for FREEBSD.
+
+2013-08-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* dbg_mlc.c (GC_debug_malloc_replacement,
+	GC_debug_realloc_replacement): Use GC_DBG_EXTRAS (instead of
+	"GC_DBG_RA NULL, 0").
+	* malloc.c (GC_debug_malloc_replacement): Likewise.
+	* mallocx.c (GC_debug_realloc_replacement): Likewise.
+	* include/private/gc_priv.h (GC_DBG_EXTRAS): New macro (similar to
+	GC_EXTRAS but pass NULL/0 instead of __FILE__and __LINE__);
+	pass "unknown" instead of NULL unless GC_ADD_CALLER.
+	* include/private/gc_priv.h (GC_DBG_RA): Remove.
+
+2013-08-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* malloc.c (GC_debug_malloc_replacement): Pass NULL (instead of
+	"unknown") to "s" argument of GC_debug_malloc to match that
+	replacement definition in dbg_mlc.c.
+	* mallocx.c (GC_debug_realloc_replacement): Likewise.
+
+2013-08-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c (old_segv_act): Define static variable for FREEBSD (same as
+	for NETBSD).
+	* os_dep.c (GC_set_and_save_fault_handler): Reformat code (related to
+	FreeBSD).
+	* os_dep.c (GC_reset_fault_handler): Initialize old_segv_act (and
+	old_bus_act) for FREEBSD (same as for NETBSD).
+
+2013-08-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h (ALIGNMENT, OS_TYPE, DYNAMIC_LOADING,
+	HEURISTIC2, etext, SEARCH_FOR_DATA_START): Reformat (adjust
+	indentation) for FreeBSD/arm.
+
+2013-07-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (Configuration of machine-dependent code): Handle
+	sparc64-*-freebsd* case.
+
+2013-07-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* dbg_mlc.c (GC_caller_func_offset): Test FREEBSD macro instead of
+	__FreeBSD__ (since the former is always defined in gcconfig.h included
+	from this file indirectly).
+	* dyn_load.c (ElfW): Likewise.
+	* dbg_mlc.c (GC_caller_func): Fix name to GC_caller_func_offset.
+	* dbg_mlc.c (GC_debug_realloc): Invoke GC_caller_func_offset if
+	GC_ADD_CALLER (same as in GC_debug_malloc and commit 2cdf7ec).
+	* include/private/gc_priv.h (RA): Fix name to GC_DBG_RA.
+	* include/private/gcconfig.h (X86_64): Test __x86_64__ in addition to
+	__amd64__ for FreeBSD (proposed in commit b54833a).
+
+2013-07-21  Ivan Maidanski <ivmai@mail.ru> (mostly really Vitaly Magerya)
+
+	* Makefile.in (pkgdatadir): Move to "doc" folder.
+	* configure (Configuration of machine-dependent code): Handle
+	sparc64-*-freebsd*.
+	* dbg_mlc.c (GC_caller_func_offset): New function (empty unless
+	FreeBSD).
+	* dbg_mlc.c (GC_debug_malloc): Invoke GC_caller_func_offset if
+	GC_ADD_CALLER.
+	* dbg_mlc.c (GC_debug_malloc_replacement,
+	GC_debug_realloc_replacement): Pass NULL (instead of "unknown") to
+	GC_debug_malloc/realloc.
+	* doc/gc.man: Add "PORT INFORMATION".
+	* dyn_load.c (ElfW): Define for __FreeBSD__.
+	* include/gc.h (GC_RETURN_ADDR_PARENT): New macro.
+	* include/private/gc_priv.h (RA): Define to "GC_RETURN_ADDR_PARENT,"
+	if GC_RETURN_ADDR_PARENT defined.
+	* include/private/gcconfig.h (IA64, ARM32,
+	ALIGNMENT, OS_TYPE, DYNAMIC_LOADING, HEURISTIC2,
+	etext, SEARCH_FOR_DATA_START): Define for FreeBSD.
+	* os_dep.c (GC_set_and_save_fault_handler): Invoke sigaction(SIGBUS)
+	for FreeBSD.
+	* os_dep.c (AIM): Define before include machine/trap.h if FreeBSD/ppc.
+	* os_dep.c (CODE_OK): Define to test "code" against EXC_DSI (instead
+	of BUS_PAGE_FAULT) if FreeBSD/ppc.
+
+2013-07-21  Ivan Maidanski <ivmai@mail.ru> (mostly really Mike McGaughey)
+
+	* Makefile.in (pkgdatadir): Move to "doc" folder.
+	* configure (Configuration of machine-dependent code): Handle
+	sparc64-*-freebsd*.
+	* dbg_mlc.c (GC_caller_func_offset): New function (empty unless
+	FreeBSD).
+	* dbg_mlc.c (GC_debug_malloc, GC_debug_realloc): Invoke
+	GC_caller_func_offset if GC_ADD_CALLER.
+	* dbg_mlc.c (RA): Define to GC_RETURN_ADDR_PARENT (if the latter is
+	defined).
+	* dbg_mlc.c (GC_debug_malloc_replacement,
+	GC_debug_realloc_replacement): Pass NULL (instead of "unknown") to
+	GC_debug_malloc/realloc.
+	* doc/gc.man: Add "PORT INFORMATION".
+	* dyn_load.c (ElfW): Define for FreeBSD.
+	* include/private/gcconfig.h (X86_64, IA64, POWERPC, ARM32,
+	mach_type_known, ALIGNMENT, OS_TYPE, DYNAMIC_LOADING, HEURISTIC2,
+	etext, SEARCH_FOR_DATA_START): Likewise.
+	* os_dep.c (old_bus_act): Likewise.
+	* include/gc.h (GC_RETURN_ADDR_PARENT): New macro.
+	* os_dep.c (GC_set_and_save_fault_handler): Invoke sigaction(SIGBUS)
+	for FreeBSD.
+	* os_dep.c (AIM): Define before include machine/trap.h if FreeBSD/ppc.
+	* os_dep.c (CODE_OK): Define to test "code" against EXC_DSI (instead
+	of BUS_PAGE_FAULT) if FreeBSD/ppc.
+
 2013-07-20  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/private/config.h.in: Regenerate.
