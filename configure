@@ -5521,6 +5521,9 @@ $as_echo "#define SOLARIS25_PROC_VDB_BUG_FIXED 1" >>confdefs.h
  sparc*-*-openbsd*)
     machdep="mach_dep.lo sparc_mach_dep.lo"
     ;;
+ sparc64-*-freebsd*)
+    machdep="mach_dep.lo sparc_mach_dep.lo"
+    ;;
  sparc-sun-solaris2.3)
     machdep="mach_dep.lo sparc_mach_dep.lo"
 

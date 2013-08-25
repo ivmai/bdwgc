@@ -153,9 +153,8 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
 # ifdef REDIRECT_REALLOC
 
 /* As with malloc, avoid two levels of extra calls here.        */
-
 # define GC_debug_realloc_replacement(p, lb) \
-        GC_debug_realloc(p, lb, GC_DBG_RA "unknown", 0)
+        GC_debug_realloc(p, lb, GC_DBG_EXTRAS)
 
 void * realloc(void * p, size_t lb)
   {

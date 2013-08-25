@@ -496,6 +496,9 @@ case "$host" in
  sparc*-*-openbsd*)
     machdep="mach_dep.lo sparc_mach_dep.lo"
     ;;
+ sparc64-*-freebsd*)
+    machdep="mach_dep.lo sparc_mach_dep.lo"
+    ;;
  sparc-sun-solaris2.3)
     machdep="mach_dep.lo sparc_mach_dep.lo"
     AC_DEFINE(SUNOS53_SHARED_LIB, 1,

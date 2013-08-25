@@ -72,8 +72,9 @@
 # endif
 # if defined(__arm) || defined(__arm__) || defined(__thumb__)
 #    define ARM32
-#    if !defined(LINUX) && !defined(NETBSD) && !defined(OPENBSD) \
-        && !defined(DARWIN) && !defined(_WIN32) && !defined(__CEGCC__)
+#    if !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
+        && !defined(OPENBSD) && !defined(DARWIN) \
+        && !defined(_WIN32) && !defined(__CEGCC__)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -285,10 +286,6 @@
 #    define M32R
 #    define mach_type_known
 # endif
-# if defined(FREEBSD) && (defined(powerpc) || defined(__powerpc__))
-#    define POWERPC
-#    define mach_type_known
-# endif
 # if defined(__alpha) || defined(__alpha__)
 #   define ALPHA
 #   if !defined(LINUX) && !defined(NETBSD) && !defined(OPENBSD) \
@@ -355,12 +352,28 @@
 #   define OPENBSD
 #   define mach_type_known
 # endif
+# if defined(FREEBSD) && (defined(powerpc) || defined(__powerpc__))
+#    define POWERPC
+#    define mach_type_known
+# endif
 # if defined(FREEBSD) && (defined(i386) || defined(__i386__))
 #   define I386
 #   define mach_type_known
 # endif
-# if defined(FREEBSD) && defined(__x86_64__)
+# if defined(FREEBSD) && (defined(__amd64__) || defined(__x86_64__))
 #   define X86_64
+#   define mach_type_known
+# endif
+# if defined(FREEBSD) && defined(__sparc__)
+#    define SPARC
+#    define mach_type_known
+# endif
+# if defined(FREEBSD) && defined(__ia64__)
+#   define IA64
+#   define mach_type_known
+# endif
+# if defined(FREEBSD) && defined(__arm__)
+#   define ARM32
 #   define mach_type_known
 # endif
 # if defined(__NetBSD__) && (defined(i386) || defined(__i386__))
@@ -369,10 +382,6 @@
 # endif
 # if defined(__NetBSD__) && defined(__x86_64__)
 #    define X86_64
-#    define mach_type_known
-# endif
-# if defined(FREEBSD) && defined(__sparc__)
-#    define SPARC
 #    define mach_type_known
 # endif
 # if defined(bsdi) && (defined(i386) || defined(__i386__))
@@ -1949,6 +1958,17 @@
 #     define OS_TYPE "MSWINCE"
 #     define DATAEND /* not needed */
 #   endif
+#   ifdef FREEBSD
+      /* FreeBSD/arm */
+#     define ALIGNMENT 4
+#     define OS_TYPE "FREEBSD"
+#     ifdef __ELF__
+#       define DYNAMIC_LOADING
+#     endif
+#     define HEURISTIC2
+      extern char etext[];
+#     define SEARCH_FOR_DATA_START
+#   endif
 #   ifdef DARWIN
       /* iPhone */
 #     define OS_TYPE "DARWIN"
@@ -2688,6 +2708,12 @@
 # define NFRAMES 1
 # define NARGS 0
 # define NEED_CALLINFO
+#endif
+
+#if defined(FREEBSD) && !defined(HAVE_DLADDR)
+  /* TODO: Define for Darwin, Linux, Solaris. */
+  /* TODO: Detect dladdr() presence by configure. */
+# define HAVE_DLADDR
 #endif
 
 #if defined(MAKE_BACK_GRAPH) && !defined(DBG_HDRS_ALL)
