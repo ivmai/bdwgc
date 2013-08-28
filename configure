@@ -4980,6 +4980,12 @@ $as_echo "$as_me: WARNING: \"FreeBSD does not yet fully support threads with Boe
         $as_echo "#define GC_FREEBSD_THREADS 1" >>confdefs.h
 
         INCLUDES="$INCLUDES -pthread"
+        if test "${enable_parallel_mark}" = yes; then
+          $as_echo "#define PARALLEL_MARK 1" >>confdefs.h
+
+        fi
+        $as_echo "#define THREAD_LOCAL_ALLOC 1" >>confdefs.h
+
         ;;
      *-*-kfreebsd*-gnu)
         $as_echo "#define GC_FREEBSD_THREADS 1" >>confdefs.h

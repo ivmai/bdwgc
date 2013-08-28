@@ -1,3 +1,14 @@
+2013-08-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure: Regenerate.
+
+2012-02-27  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (PARALLEL_MARK): Define for freebsd if
+	enable_parallel_mark is yes.
+	* configure.ac (THREAD_LOCAL_ALLOC): Always define for freebsd (if
+	posix threads).
+
 2013-08-25  Ivan Maidanski <ivmai@mail.ru>
 
 	* Makefile.in (pkgdatadir): Move from "doc" to base folder.
