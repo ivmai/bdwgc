@@ -29,10 +29,11 @@ AC_SUBST(GC_VERSION)
 
 AM_PROG_CC_C_O
 AC_PROG_CXX
-
 AM_PROG_AS
-
 AC_PROG_INSTALL
+LT_INIT
+# Note: If Autoconf reports that LIBTOOL (or AC_ENABLE_SHARED, or
+# AC_PROG_LIBTOOL) is undefined, Libtool installation should be checked.
 
 # Special CFLAGS to use when building
 gc_cflags=""
