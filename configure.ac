@@ -18,7 +18,6 @@ AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
 AC_PREREQ(2.61)
-AC_REVISION($Revision: 1.69 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
 AC_CONFIG_HEADERS([include/config.h])
