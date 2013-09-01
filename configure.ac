@@ -870,11 +870,16 @@ AC_ARG_WITH([libatomic-ops],
 
 # Check for an external libatomic_ops if the answer was yes or check.  If not
 # found, fail on yes, and convert check to no.
+# Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
+# means Autotools pkg.m4 file was not found during aclocal.m4 generation.
+missing_libatomic_ops=false
 AS_IF([test x"$with_libatomic_ops" != xno],
   [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops], [],
+                      [ missing_libatomic_ops=true ]) ])
+AS_IF([test x$missing_libatomic_ops = xtrue ],
       [ AS_IF([test x"$with_libatomic_ops" != xcheck],
-              [AC_MSG_ERROR([A external libatomic_ops was not found.])])
-        with_libatomic_ops=no ]) ])
+              [ AC_MSG_ERROR([An external libatomic_ops was not found]) ])
+        with_libatomic_ops=no ])
 
 # If we have neither an external or an internal version, offer a useful hint
 # and exit.
