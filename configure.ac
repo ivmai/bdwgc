@@ -213,12 +213,12 @@ case "$THREADS" in
      *-*-openbsd*)
         AC_DEFINE(GC_OPENBSD_THREADS)
         THREADDLLIBS=-pthread
-        INCLUDES="$INCLUDES -pthread"
+        AM_CFLAGS="$AM_CFLAGS -pthread"
         ;;
      *-*-freebsd*)
         AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
         AC_DEFINE(GC_FREEBSD_THREADS)
-        INCLUDES="$INCLUDES -pthread"
+        AM_CFLAGS="$AM_CFLAGS -pthread"
         if test "${enable_parallel_mark}" = yes; then
           AC_DEFINE(PARALLEL_MARK)
         fi
@@ -226,7 +226,7 @@ case "$THREADS" in
         ;;
      *-*-kfreebsd*-gnu)
         AC_DEFINE(GC_FREEBSD_THREADS)
-        INCLUDES="$INCLUDES -pthread"
+        AM_CFLAGS="$AM_CFLAGS -pthread"
         THREADDLLIBS=-pthread
         AC_DEFINE(_REENTRANT)
         if test "${enable_parallel_mark}" = yes; then
@@ -302,7 +302,7 @@ case "$THREADS" in
           # May want to enable it in other cases, too.
           # Measurements have not yet been done.
         fi
-        INCLUDES="$INCLUDES -pthread"
+        AM_CFLAGS="$AM_CFLAGS -pthread"
         THREADDLLIBS="-lpthread -lrt"
         ;;
       *)
@@ -352,7 +352,7 @@ case "$THREADS" in
     AC_DEFINE([DGUX_THREADS], 1,
               [Define to enable support for DB/UX threads.])
     # Enable _POSIX4A_DRAFT10_SOURCE with flag -pthread
-    INCLUDES="-pthread $INCLUDES"
+    AM_CFLAGS="-pthread $AM_CFLAGS"
     ;;
  aix)
     THREADS=posix
@@ -486,7 +486,6 @@ TARGET_ECOS="$with_ecos"
 
 addobjs=
 addlibs=
-CXXINCLUDES=
 CXXLIBS=
 
 case "$TARGET_ECOS" in
@@ -494,7 +493,7 @@ case "$TARGET_ECOS" in
       ;;
    *)
       AC_DEFINE([ECOS], 1, [Define to enable eCos target support.])
-      CXXINCLUDES="-I${TARGET_ECOS}/include"
+      AM_CPPFLAGS="-I${TARGET_ECOS}/include $AM_CPPFLAGS"
       addobjs="$addobjs ecos.lo"
       ;;
 esac
@@ -519,9 +518,8 @@ if test "$GCC" = yes; then
 fi
 
 AC_SUBST(CXX)
-
-AC_SUBST(INCLUDES)
-AC_SUBST(CXXINCLUDES)
+AC_SUBST(AM_CFLAGS)
+AC_SUBST(AM_CPPFLAGS)
 AC_SUBST(CXXLIBS)
 
 # Configuration of shared libraries
