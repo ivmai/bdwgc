@@ -81,10 +81,10 @@ check_PROGRAMS += threadkey_test
 threadkey_test_SOURCES = tests/threadkey_test.c
 threadkey_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
 
-TESTS += subthread_create$(EXEEXT)
-check_PROGRAMS += subthread_create
-subthread_create_SOURCES = tests/subthread_create.c
-subthread_create_LDADD = $(test_ldadd) $(THREADDLLIBS)
+TESTS += subthreadcreate_test$(EXEEXT)
+check_PROGRAMS += subthreadcreate_test
+subthreadcreate_test_SOURCES = tests/subthread_create.c
+subthreadcreate_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
 
 TESTS += initsecondarythread_test$(EXEEXT)
 check_PROGRAMS += initsecondarythread_test

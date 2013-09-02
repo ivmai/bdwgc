@@ -49,7 +49,7 @@
 /setjmp_test
 /smashtest
 /staticrootstest
-/subthread_create
+/subthreadcreate_test
 /test_cpp
 /threadkey_test
 /threadleaktest
