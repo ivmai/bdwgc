@@ -167,9 +167,9 @@ DIST_COMMON = $(srcdir)/include/include.am $(srcdir)/cord/cord.am \
 @KEEP_BACK_PTRS_TRUE@am__append_9 = tracetest
 @THREADS_TRUE@am__append_10 = threadleaktest$(EXEEXT) \
 @THREADS_TRUE@	threadkey_test$(EXEEXT) \
-@THREADS_TRUE@	initsecondarythread$(EXEEXT)
+@THREADS_TRUE@	initsecondarythread_test$(EXEEXT)
 @THREADS_TRUE@am__append_11 = threadleaktest threadkey_test \
-@THREADS_TRUE@	initsecondarythread
+@THREADS_TRUE@	initsecondarythread_test
 @CPLUSPLUS_TRUE@am__append_12 = test_cpp$(EXEEXT)
 @CPLUSPLUS_TRUE@am__append_13 = test_cpp
 subdir = .
@@ -273,7 +273,7 @@ libstaticrootslib_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 @KEEP_BACK_PTRS_TRUE@am__EXEEXT_1 = tracetest$(EXEEXT)
 @THREADS_TRUE@am__EXEEXT_2 = threadleaktest$(EXEEXT) \
 @THREADS_TRUE@	threadkey_test$(EXEEXT) \
-@THREADS_TRUE@	initsecondarythread$(EXEEXT)
+@THREADS_TRUE@	initsecondarythread_test$(EXEEXT)
 @CPLUSPLUS_TRUE@am__EXEEXT_3 = test_cpp$(EXEEXT)
 am_gctest_OBJECTS = test.$(OBJEXT)
 gctest_OBJECTS = $(am_gctest_OBJECTS)
@@ -281,11 +281,13 @@ gctest_OBJECTS = $(am_gctest_OBJECTS)
 am_hugetest_OBJECTS = huge_test.$(OBJEXT)
 hugetest_OBJECTS = $(am_hugetest_OBJECTS)
 hugetest_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am__initsecondarythread_SOURCES_DIST = tests/initsecondarythread.c
-@THREADS_TRUE@am_initsecondarythread_OBJECTS =  \
+am__initsecondarythread_test_SOURCES_DIST =  \
+	tests/initsecondarythread.c
+@THREADS_TRUE@am_initsecondarythread_test_OBJECTS =  \
 @THREADS_TRUE@	initsecondarythread.$(OBJEXT)
-initsecondarythread_OBJECTS = $(am_initsecondarythread_OBJECTS)
-@THREADS_TRUE@initsecondarythread_DEPENDENCIES =  \
+initsecondarythread_test_OBJECTS =  \
+	$(am_initsecondarythread_test_OBJECTS)
+@THREADS_TRUE@initsecondarythread_test_DEPENDENCIES =  \
 @THREADS_TRUE@	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
 am_leaktest_OBJECTS = leak_test.$(OBJEXT)
 leaktest_OBJECTS = $(am_leaktest_OBJECTS)
@@ -400,7 +402,7 @@ SOURCES = $(libcord_la_SOURCES) $(libgc_la_SOURCES) \
 	$(EXTRA_libgc_la_SOURCES) $(nodist_libgc_la_SOURCES) \
 	$(libgccpp_la_SOURCES) $(libstaticrootslib_la_SOURCES) \
 	$(gctest_SOURCES) $(hugetest_SOURCES) \
-	$(initsecondarythread_SOURCES) $(leaktest_SOURCES) \
+	$(initsecondarythread_test_SOURCES) $(leaktest_SOURCES) \
 	$(middletest_SOURCES) $(realloc_test_SOURCES) \
 	$(smashtest_SOURCES) $(staticrootstest_SOURCES) \
 	$(test_cpp_SOURCES) $(threadkey_test_SOURCES) \
@@ -408,7 +410,8 @@ SOURCES = $(libcord_la_SOURCES) $(libgc_la_SOURCES) \
 DIST_SOURCES = $(libcord_la_SOURCES) $(am__libgc_la_SOURCES_DIST) \
 	$(EXTRA_libgc_la_SOURCES) $(am__libgccpp_la_SOURCES_DIST) \
 	$(libstaticrootslib_la_SOURCES) $(gctest_SOURCES) \
-	$(hugetest_SOURCES) $(am__initsecondarythread_SOURCES_DIST) \
+	$(hugetest_SOURCES) \
+	$(am__initsecondarythread_test_SOURCES_DIST) \
 	$(leaktest_SOURCES) $(middletest_SOURCES) \
 	$(realloc_test_SOURCES) $(smashtest_SOURCES) \
 	$(staticrootstest_SOURCES) $(am__test_cpp_SOURCES_DIST) \
@@ -688,6 +691,11 @@ am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_CFLAGS = @GC_CFLAGS@
+AM_CPPFLAGS = \
+	-I$(top_builddir)/include -I$(top_srcdir)/include \
+	$(ATOMIC_OPS_CFLAGS)
+
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 ATOMIC_OPS_CFLAGS = @ATOMIC_OPS_CFLAGS@
@@ -708,7 +716,6 @@ CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
-CXXINCLUDES = @CXXINCLUDES@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -725,7 +732,6 @@ FGREP = @FGREP@
 GC_CFLAGS = @GC_CFLAGS@
 GC_VERSION = @GC_VERSION@
 GREP = @GREP@
-INCLUDES = @INCLUDES@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -844,10 +850,6 @@ top_srcdir = @top_srcdir@
 # endif
 SUBDIRS = 
 ACLOCAL_AMFLAGS = -I m4
-AM_CPPFLAGS = \
-	-I$(top_builddir)/include -I$(top_srcdir)/include \
-	$(ATOMIC_OPS_CFLAGS)
-
 
 # Initialize variables so that we can declare files locally.
 
@@ -947,7 +949,6 @@ EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
 # Misc
 # ----
 AM_CXXFLAGS = @GC_CFLAGS@
-AM_CFLAGS = @GC_CFLAGS@
 @COMPILER_XLC_FALSE@ASM_CPP_OPTIONS = -Wp,-P -x assembler-with-cpp
 
 #all_objs = @addobjs@ $(libgc_la_OBJECTS)
@@ -999,8 +1000,8 @@ libstaticrootslib_la_DEPENDENCIES = $(top_builddir)/libgc.la
 @THREADS_TRUE@threadleaktest_LDADD = $(test_ldadd) $(THREADDLLIBS)
 @THREADS_TRUE@threadkey_test_SOURCES = tests/threadkey_test.c
 @THREADS_TRUE@threadkey_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
-@THREADS_TRUE@initsecondarythread_SOURCES = tests/initsecondarythread.c
-@THREADS_TRUE@initsecondarythread_LDADD = $(test_ldadd) $(THREADDLLIBS)
+@THREADS_TRUE@initsecondarythread_test_SOURCES = tests/initsecondarythread.c
+@THREADS_TRUE@initsecondarythread_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
 @CPLUSPLUS_TRUE@test_cpp_SOURCES = tests/test_cpp.cc
 @AVOID_CPP_LIB_FALSE@@CPLUSPLUS_TRUE@test_cpp_LDADD = libgccpp.la $(test_ldadd)
 @AVOID_CPP_LIB_TRUE@@CPLUSPLUS_TRUE@test_cpp_LDADD = gc_cpp.o $(test_ldadd)
@@ -1177,9 +1178,9 @@ hugetest$(EXEEXT): $(hugetest_OBJECTS) $(hugetest_DEPENDENCIES) $(EXTRA_hugetest
 	@rm -f hugetest$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(hugetest_OBJECTS) $(hugetest_LDADD) $(LIBS)
 
-initsecondarythread$(EXEEXT): $(initsecondarythread_OBJECTS) $(initsecondarythread_DEPENDENCIES) $(EXTRA_initsecondarythread_DEPENDENCIES) 
-	@rm -f initsecondarythread$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(initsecondarythread_OBJECTS) $(initsecondarythread_LDADD) $(LIBS)
+initsecondarythread_test$(EXEEXT): $(initsecondarythread_test_OBJECTS) $(initsecondarythread_test_DEPENDENCIES) $(EXTRA_initsecondarythread_test_DEPENDENCIES) 
+	@rm -f initsecondarythread_test$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(initsecondarythread_test_OBJECTS) $(initsecondarythread_test_LDADD) $(LIBS)
 
 leaktest$(EXEEXT): $(leaktest_OBJECTS) $(leaktest_DEPENDENCIES) $(EXTRA_leaktest_DEPENDENCIES) 
 	@rm -f leaktest$(EXEEXT)
@@ -1967,9 +1968,9 @@ threadkey_test.log: threadkey_test$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-initsecondarythread.log: initsecondarythread$(EXEEXT)
-	@p='initsecondarythread$(EXEEXT)'; \
-	b='initsecondarythread'; \
+initsecondarythread_test.log: initsecondarythread_test$(EXEEXT)
+	@p='initsecondarythread_test$(EXEEXT)'; \
+	b='initsecondarythread_test'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

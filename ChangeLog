@@ -1,5 +1,22 @@
 2013-09-02  Ivan Maidanski <ivmai@mail.ru>
 
+	* configure: Regenerate.
+	* Makefile.in: Likewise.
+
+2013-09-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/tests.am (TESTS, check_PROGRAMS, initsecondarythread_SOURCES,
+	initsecondarythread_LDADD): Rename initsecondarythread to
+	initsecondarythread_test (except for .c file).
+
+2013-09-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (INCLUDES): Replace with AM_CFLAGS (as the former is
+	deprecated in Automake 1.13.4).
+	* configure.ac (CXXINCLUDES): Replace with AM_CPPFLAGS.
+
+2013-09-02  Ivan Maidanski <ivmai@mail.ru>
+
 	* configure: Regenerate (by autoreconf -vif using autoconf-2.69,
 	automake-1.13.4 and libtool-2.4.2).
 	* Makefile.in: Likewise.

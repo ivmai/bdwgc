@@ -680,8 +680,8 @@ SED
 LIBTOOL
 addlibs
 addobjs
-CXXINCLUDES
-INCLUDES
+AM_CPPFLAGS
+AM_CFLAGS
 CPLUSPLUS_FALSE
 CPLUSPLUS_TRUE
 target_all
@@ -5057,7 +5057,7 @@ $as_echo "$as_me: WARNING: \"Only HP-UX 11 POSIX threads are supported.\"" >&2;}
         $as_echo "#define GC_OPENBSD_THREADS 1" >>confdefs.h
 
         THREADDLLIBS=-pthread
-        INCLUDES="$INCLUDES -pthread"
+        AM_CFLAGS="$AM_CFLAGS -pthread"
         openbsd_threads=true
         ;;
      *-*-freebsd*)
@@ -5065,7 +5065,7 @@ $as_echo "$as_me: WARNING: \"Only HP-UX 11 POSIX threads are supported.\"" >&2;}
 $as_echo "$as_me: WARNING: \"FreeBSD does not yet fully support threads with Boehm GC.\"" >&2;}
         $as_echo "#define GC_FREEBSD_THREADS 1" >>confdefs.h
 
-        INCLUDES="$INCLUDES -pthread"
+        AM_CFLAGS="$AM_CFLAGS -pthread"
         if test "${enable_parallel_mark}" = yes; then
           $as_echo "#define PARALLEL_MARK 1" >>confdefs.h
 
@@ -5076,7 +5076,7 @@ $as_echo "$as_me: WARNING: \"FreeBSD does not yet fully support threads with Boe
      *-*-kfreebsd*-gnu)
         $as_echo "#define GC_FREEBSD_THREADS 1" >>confdefs.h
 
-        INCLUDES="$INCLUDES -pthread"
+        AM_CFLAGS="$AM_CFLAGS -pthread"
         THREADDLLIBS=-pthread
         $as_echo "#define _REENTRANT 1" >>confdefs.h
 
@@ -5181,7 +5181,7 @@ $as_echo "$as_me: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&2;};
           # May want to enable it in other cases, too.
           # Measurements have not yet been done.
         fi
-        INCLUDES="$INCLUDES -pthread"
+        AM_CFLAGS="$AM_CFLAGS -pthread"
         THREADDLLIBS="-lpthread -lrt"
         ;;
       *)
@@ -5238,7 +5238,7 @@ $as_echo "#define GC_DGUX386_THREADS 1" >>confdefs.h
 $as_echo "#define DGUX_THREADS 1" >>confdefs.h
 
     # Enable _POSIX4A_DRAFT10_SOURCE with flag -pthread
-    INCLUDES="-pthread $INCLUDES"
+    AM_CFLAGS="-pthread $AM_CFLAGS"
     ;;
  aix)
     THREADS=posix
@@ -5483,7 +5483,7 @@ fi
 
 addobjs=
 addlibs=
-CXXINCLUDES=
+
 case "$TARGET_ECOS" in
    no)
       ;;
@@ -5491,7 +5491,7 @@ case "$TARGET_ECOS" in
 
 $as_echo "#define ECOS 1" >>confdefs.h
 
-      CXXINCLUDES="-I${TARGET_ECOS}/include"
+      AM_CPPFLAGS="-I${TARGET_ECOS}/include $AM_CPPFLAGS"
       addobjs="$addobjs ecos.lo"
       ;;
 esac
@@ -5503,7 +5503,6 @@ else
   CPLUSPLUS_TRUE='#'
   CPLUSPLUS_FALSE=
 fi
-
 
 
 
