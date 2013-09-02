@@ -81,10 +81,10 @@ check_PROGRAMS += threadkey_test
 threadkey_test_SOURCES = tests/threadkey_test.c
 threadkey_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
 
-TESTS += initsecondarythread$(EXEEXT)
-check_PROGRAMS += initsecondarythread
-initsecondarythread_SOURCES = tests/initsecondarythread.c
-initsecondarythread_LDADD = $(test_ldadd) $(THREADDLLIBS)
+TESTS += initsecondarythread_test$(EXEEXT)
+check_PROGRAMS += initsecondarythread_test
+initsecondarythread_test_SOURCES = tests/initsecondarythread.c
+initsecondarythread_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
 endif
 
 if CPLUSPLUS
