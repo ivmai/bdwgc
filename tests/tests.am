@@ -86,10 +86,10 @@ check_PROGRAMS += subthread_create
 subthread_create_SOURCES = tests/subthread_create.c
 subthread_create_LDADD = $(test_ldadd) $(THREADDLLIBS)
 
-TESTS += initsecondarythread$(EXEEXT)
-check_PROGRAMS += initsecondarythread
-initsecondarythread_SOURCES = tests/initsecondarythread.c
-initsecondarythread_LDADD = $(test_ldadd) $(THREADDLLIBS)
+TESTS += initsecondarythread_test$(EXEEXT)
+check_PROGRAMS += initsecondarythread_test
+initsecondarythread_test_SOURCES = tests/initsecondarythread.c
+initsecondarythread_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
 endif
 
 if CPLUSPLUS

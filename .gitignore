@@ -41,7 +41,7 @@
 /hugetest
 /if_mach
 /if_not_there
-/initsecondarythread
+/initsecondarythread_test
 /leaktest
 /libtool
 /middletest
