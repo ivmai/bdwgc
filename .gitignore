@@ -13,6 +13,10 @@
 *.obj
 
 /*.gc.log
+/*_bench.log
+/*_bench.trs
+/*test.log
+/*test.trs
 /.deps/
 /.libs/
 /Makefile
@@ -50,7 +54,10 @@
 /smashtest
 /staticrootstest
 /subthreadcreate_test
+/test-suite.log
 /test_cpp
+/test_cpp.log
+/test_cpp.trs
 /threadkey_test
 /threadleaktest
 /threadlibs
