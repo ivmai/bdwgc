@@ -355,9 +355,7 @@ GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)
 /* malloc replacements.  Otherwise we end up saving a                   */
 /* meaningless return address in the object.  It also speeds things up, */
 /* but it is admittedly quite ugly.                                     */
-
-# define GC_debug_malloc_replacement(lb) \
-                        GC_debug_malloc(lb, GC_DBG_RA "unknown", 0)
+# define GC_debug_malloc_replacement(lb) GC_debug_malloc(lb, GC_DBG_EXTRAS)
 
 void * malloc(size_t lb)
 {
