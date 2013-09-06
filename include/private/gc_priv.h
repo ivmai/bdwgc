@@ -965,6 +965,12 @@ struct roots {
 # endif
 #endif /* !MAX_HEAP_SECTS */
 
+typedef struct GC_ms_entry {
+    ptr_t mse_start;    /* First word of object, word aligned.  */
+    word mse_descr;     /* Descriptor; low order two bits are tags,     */
+                        /* as described in gc_mark.h.                   */
+} mse;
+
 /* Lists of all heap blocks and free lists      */
 /* as well as other random data structures      */
 /* that should not be scanned by the            */
@@ -1033,6 +1039,17 @@ struct _GC_arrays {
   ptr_t _scratch_last_end_ptr;
         /* Used by headers.c, and can easily appear to point to */
         /* heap.                                                */
+  mse *_mark_stack;
+        /* Limits of stack for GC_mark routine.  All ranges     */
+        /* between GC_mark_stack (incl.) and GC_mark_stack_top  */
+        /* (incl.) still need to be marked from.                */
+  mse *_mark_stack_limit;
+# ifdef PARALLEL_MARK
+    mse *volatile _mark_stack_top;
+        /* Updated only with mark lock held, but read asynchronously.   */
+# else
+    mse *_mark_stack_top;
+# endif
   GC_mark_proc _mark_procs[MAX_MARK_PROCS];
         /* Table of user-defined mark procedures.  There is     */
         /* a small number of these, which can be referenced     */
@@ -1182,6 +1199,9 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 #define GC_large_allocd_bytes GC_arrays._large_allocd_bytes
 #define GC_large_free_bytes GC_arrays._large_free_bytes
 #define GC_last_heap_addr GC_arrays._last_heap_addr
+#define GC_mark_stack GC_arrays._mark_stack
+#define GC_mark_stack_limit GC_arrays._mark_stack_limit
+#define GC_mark_stack_top GC_arrays._mark_stack_top
 #define GC_mark_procs GC_arrays._mark_procs
 #define GC_max_heapsize GC_arrays._max_heapsize
 #define GC_max_large_allocd_bytes GC_arrays._max_large_allocd_bytes
