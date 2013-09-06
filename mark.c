@@ -97,30 +97,18 @@ GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
                 /* grow dynamically.                                    */
 # endif
 
-/*
- * Limits of stack for GC_mark routine.
- * All ranges between GC_mark_stack(incl.) and GC_mark_stack_top(incl.) still
- * need to be marked from.
- */
-
 STATIC word GC_n_rescuing_pages = 0;
                                 /* Number of dirty pages we marked from */
                                 /* excludes ptrfree pages, etc.         */
 
-GC_INNER mse * GC_mark_stack = NULL;
-GC_INNER mse * GC_mark_stack_limit = NULL;
 GC_INNER size_t GC_mark_stack_size = 0;
 
 #ifdef PARALLEL_MARK
-  GC_INNER mse * volatile GC_mark_stack_top = NULL;
-        /* Updated only with mark lock held, but read asynchronously.   */
   STATIC volatile AO_t GC_first_nonempty = 0;
         /* Lowest entry on mark stack   */
         /* that may be nonempty.        */
         /* Updated only by initiating   */
         /* thread.                      */
-#else
-  GC_INNER mse * GC_mark_stack_top = NULL;
 #endif
 
 GC_INNER mark_state_t GC_mark_state = MS_NONE;
@@ -1582,6 +1570,9 @@ STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
     ptr_t least_ha = GC_least_plausible_heap_addr;
     mse * mark_stack_top = GC_mark_stack_top;
     mse * mark_stack_limit = GC_mark_stack_limit;
+
+#   undef GC_mark_stack_top
+#   undef GC_mark_stack_limit
 #   define GC_mark_stack_top mark_stack_top
 #   define GC_mark_stack_limit mark_stack_limit
 #   define GC_greatest_plausible_heap_addr greatest_ha
@@ -1608,7 +1599,8 @@ STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
 #   undef GC_least_plausible_heap_addr
 #   undef GC_mark_stack_top
 #   undef GC_mark_stack_limit
-
+#   define GC_mark_stack_limit GC_arrays._mark_stack_limit
+#   define GC_mark_stack_top GC_arrays._mark_stack_top
     GC_mark_stack_top = mark_stack_top;
 }
 
@@ -1630,6 +1622,8 @@ STATIC void GC_push_marked2(struct hblk *h, hdr *hhdr)
     mse * mark_stack_top = GC_mark_stack_top;
     mse * mark_stack_limit = GC_mark_stack_limit;
 
+#   undef GC_mark_stack_top
+#   undef GC_mark_stack_limit
 #   define GC_mark_stack_top mark_stack_top
 #   define GC_mark_stack_limit mark_stack_limit
 #   define GC_greatest_plausible_heap_addr greatest_ha
@@ -1657,7 +1651,8 @@ STATIC void GC_push_marked2(struct hblk *h, hdr *hhdr)
 #   undef GC_least_plausible_heap_addr
 #   undef GC_mark_stack_top
 #   undef GC_mark_stack_limit
-
+#   define GC_mark_stack_limit GC_arrays._mark_stack_limit
+#   define GC_mark_stack_top GC_arrays._mark_stack_top
     GC_mark_stack_top = mark_stack_top;
 }
 
@@ -1678,6 +1673,9 @@ STATIC void GC_push_marked4(struct hblk *h, hdr *hhdr)
     ptr_t least_ha = GC_least_plausible_heap_addr;
     mse * mark_stack_top = GC_mark_stack_top;
     mse * mark_stack_limit = GC_mark_stack_limit;
+
+#   undef GC_mark_stack_top
+#   undef GC_mark_stack_limit
 #   define GC_mark_stack_top mark_stack_top
 #   define GC_mark_stack_limit mark_stack_limit
 #   define GC_greatest_plausible_heap_addr greatest_ha
@@ -1706,6 +1704,8 @@ STATIC void GC_push_marked4(struct hblk *h, hdr *hhdr)
 #   undef GC_least_plausible_heap_addr
 #   undef GC_mark_stack_top
 #   undef GC_mark_stack_limit
+#   define GC_mark_stack_limit GC_arrays._mark_stack_limit
+#   define GC_mark_stack_top GC_arrays._mark_stack_top
     GC_mark_stack_top = mark_stack_top;
 }
 
