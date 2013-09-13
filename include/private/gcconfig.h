@@ -2814,9 +2814,10 @@
 # define NEED_CALLINFO
 #endif
 
-#if defined(FREEBSD) && !defined(HAVE_DLADDR)
-  /* TODO: Define for Darwin, Linux, Solaris. */
-  /* TODO: Detect dladdr() presence by configure. */
+#if (defined(FREEBSD) || (defined(DARWIN) && !defined(_POSIX_C_SOURCE)) \
+        || (defined(SOLARIS) && (!defined(_XOPEN_SOURCE) \
+                                 || defined(__EXTENSIONS__))) \
+        || defined(LINUX)) && !defined(HAVE_DLADDR)
 # define HAVE_DLADDR
 #endif
 
