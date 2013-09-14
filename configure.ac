@@ -715,6 +715,20 @@ AC_ARG_ENABLE(gc-debug,
 AM_CONDITIONAL([MAKE_BACK_GRAPH], [test x"$enable_gc_debug" = xyes])
 AM_CONDITIONAL([KEEP_BACK_PTRS], [test x"$keep_back_ptrs" = xtrue])
 
+# Check for dladdr (used for debugging).
+AC_MSG_CHECKING(for dladdr)
+have_dladdr=no
+AC_TRY_COMPILE([
+#define _GNU_SOURCE 1
+#include <dlfcn.h>], [{
+    Dl_info info;
+    (void)dladdr("", &info);
+}], [ have_dladdr=yes ])
+AC_MSG_RESULT($have_dladdr)
+if test x"$have_dladdr" = xyes; then
+  AC_DEFINE([HAVE_DLADDR], 1, [Define to use 'dladdr' function.])
+fi
+
 # Check for AViiON Machines running DGUX
 ac_is_dgux=no
 AC_CHECK_HEADER(sys/dg_sys_info.h,
