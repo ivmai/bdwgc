@@ -80,7 +80,6 @@ int main(int argc, char **argv)
     int model, model_min, model_max;
     testobj_t *keep_arr;
 
-    GC_set_all_interior_pointers(1);
     GC_INIT();
     GC_init_finalized_malloc();
 

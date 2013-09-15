@@ -140,7 +140,6 @@ int main(void)
     int i;
 #endif
 
-    GC_set_all_interior_pointers(1);
     GC_INIT();
     GC_init_finalized_malloc();
 
