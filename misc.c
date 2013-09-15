@@ -2195,8 +2195,3 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void)
 {
     return (int)GC_force_unmap_on_gcollect;
 }
-
-void __pthread_register_cancel() __attribute__ ((weak));
-void __pthread_unregister_cancel() __attribute__ ((weak));
-void __pthread_register_cancel() {}
-void __pthread_unregister_cancel() {}

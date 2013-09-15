@@ -2049,4 +2049,12 @@ GC_INNER void GC_notify_all_marker(void)
 
 #endif /* PARALLEL_MARK */
 
+#ifdef PTHREAD_REGISTER_CANCEL_WEAK_STUBS
+  /* Workaround "undefined reference" linkage errors on some targets. */
+  void __pthread_register_cancel() __attribute__((__weak__));
+  void __pthread_unregister_cancel() __attribute__((__weak__));
+  void __pthread_register_cancel() {}
+  void __pthread_unregister_cancel() {}
+#endif
+
 #endif /* GC_PTHREADS */
