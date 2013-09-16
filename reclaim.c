@@ -49,7 +49,6 @@ GC_INLINE void GC_add_leaked(ptr_t leaked)
 #  endif
 
     GC_have_errors = TRUE;
-    /* FIXME: Prevent adding an object while printing leaked ones.      */
     if (GC_n_leaked < MAX_LEAKED) {
       GC_leaked[GC_n_leaked++] = leaked;
       /* Make sure it's not reclaimed this cycle */
@@ -63,7 +62,8 @@ GC_INNER void GC_print_all_errors(void)
 {
     static GC_bool printing_errors = FALSE;
     GC_bool have_errors;
-    unsigned i;
+    unsigned i, n_leaked;
+    ptr_t leaked[MAX_LEAKED];
     DCL_LOCK_STATE;
 
     LOCK();
@@ -73,6 +73,11 @@ GC_INNER void GC_print_all_errors(void)
     }
     have_errors = GC_have_errors;
     printing_errors = TRUE;
+    n_leaked = GC_n_leaked;
+    GC_ASSERT(n_leaked <= MAX_LEAKED);
+    BCOPY(GC_leaked, leaked, n_leaked * sizeof(ptr_t));
+    GC_n_leaked = 0;
+    BZERO(GC_leaked, n_leaked * sizeof(ptr_t));
     UNLOCK();
 
     if (GC_debugging_started) {
@@ -81,8 +86,8 @@ GC_INNER void GC_print_all_errors(void)
       have_errors = FALSE;
     }
 
-    for (i = 0; i < GC_n_leaked; ++i) {
-        ptr_t p = GC_leaked[i];
+    for (i = 0; i < n_leaked; i++) {
+        ptr_t p = leaked[i];
         if (HDR(p) -> hb_obj_kind == PTRFREE) {
             GC_err_printf("Leaked atomic object at ");
         } else {
@@ -91,10 +96,8 @@ GC_INNER void GC_print_all_errors(void)
         GC_print_heap_obj(p);
         GC_err_printf("\n");
         GC_free(p);
-        GC_leaked[i] = 0;
         have_errors = TRUE;
     }
-    GC_n_leaked = 0;
 
     if (have_errors
 #       ifndef GC_ABORT_ON_LEAK
@@ -104,7 +107,9 @@ GC_INNER void GC_print_all_errors(void)
       ABORT("Leaked or smashed objects encountered");
     }
 
+    LOCK();
     printing_errors = FALSE;
+    UNLOCK();
 }
 
 
