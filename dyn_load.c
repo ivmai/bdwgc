@@ -96,22 +96,27 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
     /* Exclude Android because linker.h below includes its own version. */
 #   include <elf.h>
 # endif
-# ifdef PLATFORM_ANDROID
-    /* The header file is in "bionic/linker" folder of Android sources. */
+# include <link.h>
+# if defined(PLATFORM_ANDROID) && !defined(GC_DONT_DEFINE_LINK_MAP)
     /* If you don't need the "dynamic loading" feature, you may build   */
     /* the collector with -D IGNORE_DYNAMIC_LOADING.                    */
-#   ifdef BIONIC_ELFDATA_REDEF_BUG
-      /* Workaround a problem in Android 4.1 (and 4.2) Bionic which has */
-      /* mismatching ELF_DATA definitions in sys/exec_elf.h and         */
-      /* asm/elf.h included from linker.h file (similar to EM_ALPHA).   */
-#     include <asm/elf.h>
-#     include <linux/elf-em.h>
-#     undef ELF_DATA
-#     undef EM_ALPHA
-#   endif
-#   include <linker.h>
-# else
-#   include <link.h>
+    /* Otherwise, link_map and r_debug should be defined explicitly,    */
+    /* as only bionic/linker/linker.h defines them but the header       */
+    /* itself is a C++ one starting from Android 4.3.                   */
+    struct link_map {
+      uintptr_t l_addr;
+      char* l_name;
+      uintptr_t l_ld;
+      struct link_map* l_next;
+      struct link_map* l_prev;
+    };
+    struct r_debug {
+      int32_t r_version;
+      struct link_map* r_map;
+      void (*r_brk)(void);
+      int32_t r_state;
+      uintptr_t r_ldbase;
+    };
 # endif
 #endif
 
