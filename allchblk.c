@@ -640,20 +640,18 @@ STATIC struct hblk *
 GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
 {
     struct hblk *hbp;
-    hdr * hhdr;         /* Header corr. to hbp */
-                        /* Initialized after loop if hbp !=0    */
-                        /* Gcc uninitialized use warning is bogus.      */
+    hdr * hhdr;                 /* Header corr. to hbp */
     struct hblk *thishbp;
-    hdr * thishdr;              /* Header corr. to hbp */
+    hdr * thishdr;              /* Header corr. to thishbp */
     signed_word size_needed;    /* number of bytes in requested objects */
     signed_word size_avail;     /* bytes available in this block        */
 
     size_needed = HBLKSIZE * OBJ_SZ_TO_BLOCKS(sz);
 
     /* search for a big enough block in free list */
-        hbp = GC_hblkfreelist[n];
-        for(; 0 != hbp; hbp = hhdr -> hb_next) {
-            GET_HDR(hbp, hhdr);
+        for (hbp = GC_hblkfreelist[n];; hbp = hhdr -> hb_next) {
+            if (NULL == hbp) return NULL;
+            GET_HDR(hbp, hhdr); /* set hhdr value */
             size_avail = hhdr->hb_sz;
             if (size_avail < size_needed) continue;
             if (size_avail != size_needed) {
