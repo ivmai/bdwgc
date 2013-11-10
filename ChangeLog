@@ -8397,4 +8397,4 @@ code is necessary.  On other machines, with certain compiler options,
 the assignments can lead to an unsaved register being overwritten.
 Known to cause problems under SunOS 3.5 WITHOUT the -O option.  (With
 -O the compiler recognizes it as dead code.  It probably shouldn't,
-but t2hat's another story.)
+but that's another story.)
