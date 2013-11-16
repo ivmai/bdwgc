@@ -717,7 +717,7 @@
  * defined GC_register_dynamic_libraries() for the architecture.
  *
  * An architecture may define PREFETCH(x) to preload the cache with *x.
- * This defaults to a no-op.
+ * This defaults to GCC built-in operation (or a no-op for other compilers).
  *
  * PREFETCH_FOR_WRITE(x) is used if *x is about to be written.
  *
@@ -1325,8 +1325,6 @@
 #            define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
 #       endif
 #       ifdef USE_I686_PREFETCH
-          /* FIXME: Thus should use __builtin_prefetch, but we'll leave */
-          /* that for the next release.                                 */
 #         define PREFETCH(x) \
             __asm__ __volatile__ ("prefetchnta %0" : : "m"(*(char *)(x)))
             /* Empirically prefetcht0 is much more effective at reducing     */
@@ -1338,9 +1336,10 @@
             /* impact on performance, at least for a PIII/500.               */
 #           define PREFETCH_FOR_WRITE(x) \
               __asm__ __volatile__ ("prefetcht0 %0" : : "m"(*(char *)(x)))
+#         else
+#           define NO_PREFETCH_FOR_WRITE
 #         endif
-#       endif
-#       ifdef USE_3DNOW_PREFETCH
+#       elif defined(USE_3DNOW_PREFETCH)
 #         define PREFETCH(x) \
             __asm__ __volatile__ ("prefetch %0" : : "m"(*(char *)(x)))
 #         define PREFETCH_FOR_WRITE(x) \
@@ -1879,12 +1878,9 @@
               __asm__ ("        stf.spill       [%0]=f0": : "r"((void *)(x)))
 #         else
 #           include <ia64intrin.h>
-#           define PREFETCH(x) \
-              __lfetch(__lfhint_none, (x))
-#           define PREFETCH_FOR_WRITE(x) \
-              __lfetch(__lfhint_nta,  (x))
-#           define CLEAR_DOUBLE(x) \
-              __stf_spill((void *)(x), 0)
+#           define PREFETCH(x) __lfetch(__lfhint_none, (x))
+#           define PREFETCH_FOR_WRITE(x) __lfetch(__lfhint_nta, (x))
+#           define CLEAR_DOUBLE(x) __stf_spill((void *)(x), 0)
 #         endif /* __INTEL_COMPILER */
 #       endif
 #   endif
@@ -2230,10 +2226,6 @@
 #       else
              extern int etext[];
 #            define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
-#       endif
-#       if defined(__GNUC__) && __GNUC__ >= 3
-#           define PREFETCH(x) __builtin_prefetch((x), 0, 0)
-#           define PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
 #       endif
 #       if defined(__GLIBC__)
           /* At present, there's a bug in GLibc getcontext() on         */
@@ -2609,13 +2601,19 @@
 #endif
 
 #ifndef PREFETCH
-# define PREFETCH(x) (void)0
-# define NO_PREFETCH
+# if defined(__GNUC__) && __GNUC__ >= 3 && !defined(NO_PREFETCH)
+#   define PREFETCH(x) __builtin_prefetch((x), 0, 0)
+# else
+#   define PREFETCH(x) (void)0
+# endif
 #endif
 
 #ifndef PREFETCH_FOR_WRITE
-# define PREFETCH_FOR_WRITE(x) (void)0
-# define NO_PREFETCH_FOR_WRITE
+# if defined(__GNUC__) && __GNUC__ >= 3 && !defined(NO_PREFETCH_FOR_WRITE)
+#   define PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
+# else
+#   define PREFETCH_FOR_WRITE(x) (void)0
+# endif
 #endif
 
 #ifndef CACHE_LINE_SIZE
