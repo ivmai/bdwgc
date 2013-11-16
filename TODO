@@ -34,6 +34,8 @@ Use Linux VM pressure notifications to force GC and unmapping.
 
 Filter overlaps in GC_add_roots for Unix (same as for Win32).
 
+Do not resume parallel markers if only 1 core is active at GC mark start.
+
 Enable GC_set_handle_fork(1) for Darwin with GC_dirty_maintained on (both
 single and multi-threaded modes).
 
