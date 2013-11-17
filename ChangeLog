@@ -1,5 +1,5 @@
 
-== [7.3alpha4] (development) ==
+== [7.4.0] 2013-11-17 ==
 
 * Add 'bytes reclaimed' counters to public GC_prof_stats_s.
 * Add AArch64 (64-bit ARM) target support.
@@ -33,6 +33,7 @@
 * Better document GC_warn_proc in gc.h.
 * Call GC_on_abort (with NULL argument) on exit(1).
 * Call GC_stats/verbose_log_printf instead of GC_log_printf if print_stats.
+* Change policy regarding version numbers ("micro" part instead of "alpha").
 * Changed C99-style designated init of GC_dl_hashtbl struct to use C89-style.
 * Check GC_base result in GC_print_all_smashed_proc.
 * Check that SIG_SUSPEND and SIG_THR_RESTART are different (Pthreads).

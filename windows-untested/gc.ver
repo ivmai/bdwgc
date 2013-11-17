@@ -3,11 +3,6 @@
 
 #include "../include/../version.h"
 
-#if GC_ALPHA_VERSION != GC_NOT_ALPHA
-#define _BETA 1
-#endif
-
-#define GC_VERSION_MICRO    GC_ALPHA_VERSION
 #define GC_VERSION_REVISION 0
 
 #define GC_VERSION        ((GC_VERSION_MAJOR) * 100 + GC_VERSION_MINOR)

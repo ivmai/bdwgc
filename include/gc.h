@@ -67,7 +67,7 @@ typedef void * GC_PTR;  /* preserved only for backward compatibility    */
 #endif
 
 /* Get the GC library version. The returned value is a constant in the  */
-/* form: ((version_major<<16) | (version_minor<<8) | alpha_version).    */
+/* form: ((version_major<<16) | (version_minor<<8) | version_micro).    */
 GC_API unsigned GC_CALL GC_get_version(void);
 
 /* Public read-only variables */

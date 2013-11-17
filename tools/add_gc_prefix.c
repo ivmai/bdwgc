@@ -1,21 +1,13 @@
 # include <stdio.h>
 # include <gc.h>
 
-#ifndef GC_ALPHA_VERSION
-# define GC_ALPHA_VERSION GC_TMP_ALPHA_VERSION
-#endif
-
 int main(int argc, char ** argv)
 {
     int i;
 
     for (i = 1; i < argc; i++) {
-      if (GC_ALPHA_VERSION == GC_NOT_ALPHA) {
-        printf("gc%d.%d/%s ", GC_VERSION_MAJOR, GC_VERSION_MINOR, argv[i]);
-      } else {
-        printf("gc%d.%dalpha%d/%s ", GC_VERSION_MAJOR,
-               GC_VERSION_MINOR, GC_ALPHA_VERSION, argv[i]);
-      }
+      printf("gc-%d.%d.%d/%s ",
+             GC_VERSION_MAJOR, GC_VERSION_MINOR, GC_VERSION_MICRO, argv[i]);
     }
     return(0);
 }

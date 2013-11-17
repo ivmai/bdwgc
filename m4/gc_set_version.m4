@@ -9,26 +9,19 @@
 # modified is included with the above copyright notice.
 
 # GC_SET_VERSION
-# sets and AC_DEFINEs GC_VERSION_MAJOR, GC_VERSION_MINOR and GC_ALPHA_VERSION
+# sets and AC_DEFINEs GC_VERSION_MAJOR, GC_VERSION_MINOR and GC_VERSION_MICRO
 # based on the contents of PACKAGE_VERSION; PACKAGE_VERSION must conform to
-# [0-9]+[.][0-9]+(alpha[0.9]+)?
-# in lex syntax; if there is no alpha number, GC_ALPHA_VERSION is empty
+# [0-9]+[.][0-9]+[.][0-9]+
 #
 AC_DEFUN([GC_SET_VERSION], [
   AC_MSG_CHECKING(GC version numbers)
   GC_VERSION_MAJOR=`echo $PACKAGE_VERSION | sed 's/^\([[0-9]][[0-9]]*\)[[.]].*$/\1/g'`
   GC_VERSION_MINOR=`echo $PACKAGE_VERSION | sed 's/^[[^.]]*[[.]]\([[0-9]][[0-9]]*\).*$/\1/g'`
-  GC_ALPHA_VERSION=`echo $PACKAGE_VERSION | sed 's/^[[^.]]*[[.]][[0-9]]*//'`
-
-  case "$GC_ALPHA_VERSION" in
-    alpha*)
-      GC_ALPHA_VERSION=`echo $GC_ALPHA_VERSION \
-      | sed 's/alpha\([[0-9]][[0-9]]*\)/\1/'` ;;
-    *)  GC_ALPHA_MAJOR='' ;;
-  esac
+  GC_VERSION_MICRO=`echo $PACKAGE_VERSION | sed 's/^[[^.]]*[[.]][[^.]]*[[.]]\([[0-9]][[0-9]]*\)$/\1/g'`
 
   if test :$GC_VERSION_MAJOR: = :: \
-     -o   :$GC_VERSION_MINOR: = :: ;
+       -o :$GC_VERSION_MINOR: = :: \
+       -o :$GC_VERSION_MICRO: = :: ;
   then
     AC_MSG_RESULT(invalid)
     AC_MSG_ERROR([nonconforming PACKAGE_VERSION='$PACKAGE_VERSION'])
@@ -38,12 +31,10 @@ AC_DEFUN([GC_SET_VERSION], [
                      [The major version number of this GC release.])
   AC_DEFINE_UNQUOTED([GC_VERSION_MINOR], $GC_VERSION_MINOR,
                      [The minor version number of this GC release.])
-  if test :$GC_ALPHA_VERSION: != :: ; then
-    AC_DEFINE_UNQUOTED([GC_ALPHA_VERSION], $GC_ALPHA_VERSION,
-                       [The alpha version number, if applicable.])
-  fi
+  AC_DEFINE_UNQUOTED([GC_VERSION_MICRO], $GC_VERSION_MICRO,
+                     [The micro version number of this GC release.])
   AC_MSG_RESULT(major=$GC_VERSION_MAJOR minor=$GC_VERSION_MINOR \
-${GC_ALPHA_VERSION:+alpha=}$GC_ALPHA_VERSION)
+                micro=$GC_VERSION_MICRO)
 ])
 
 sinclude(libtool.m4)

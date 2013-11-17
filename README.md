@@ -1,6 +1,6 @@
 # Boehm-Demers-Weiser Garbage Collector
 
-This is version 7.3alpha3 of a conservative garbage collector for C and C++.
+This is version 7.4.0 of a conservative garbage collector for C and C++.
 
 You might find a more recent version
 [here](http://www.hpl.hp.com/personal/Hans_Boehm/gc).

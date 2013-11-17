@@ -99,13 +99,13 @@ char * const GC_copyright[] =
 /* gc.h, which is included by gc_priv.h.                                */
 #ifndef GC_NO_VERSION_VAR
   const unsigned GC_version = ((GC_VERSION_MAJOR << 16) |
-                        (GC_VERSION_MINOR << 8) | GC_TMP_ALPHA_VERSION);
+                        (GC_VERSION_MINOR << 8) | GC_VERSION_MICRO);
 #endif
 
 GC_API unsigned GC_CALL GC_get_version(void)
 {
   return (GC_VERSION_MAJOR << 16) | (GC_VERSION_MINOR << 8) |
-          GC_TMP_ALPHA_VERSION;
+          GC_VERSION_MICRO;
 }
 
 /* some more variables */
