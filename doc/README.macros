@@ -235,6 +235,8 @@ IGNORE_FREE     Turns calls to free into a no-op.  Only useful with
 NO_DEBUGGING    Removes GC_dump and the debugging routines it calls.
   Reduces code size slightly at the expense of debuggability.
 
+GC_DUMP_REGULARLY       Generate regular debugging dumps.
+
 DEBUG_THREADS   Turn on printing additional thread-support debugging
   information.
 

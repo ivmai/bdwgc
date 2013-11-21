@@ -102,8 +102,12 @@ GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
 #endif
 
 #ifndef NO_DEBUGGING
-  GC_INNER GC_bool GC_dump_regularly = FALSE;
+# ifdef GC_DUMP_REGULARLY
+    GC_INNER GC_bool GC_dump_regularly = TRUE;
                                 /* Generate regular debugging dumps. */
+# else
+    GC_INNER GC_bool GC_dump_regularly = FALSE;
+# endif
 #endif
 
 #ifdef KEEP_BACK_PTRS
@@ -934,7 +938,7 @@ GC_API void GC_CALL GC_init(void)
         }
 #     endif
 #   endif /* !SMALL_CONFIG */
-#   ifndef NO_DEBUGGING
+#   if !defined(NO_DEBUGGING) && !defined(GC_DUMP_REGULARLY)
       if (0 != GETENV("GC_DUMP_REGULARLY")) {
         GC_dump_regularly = TRUE;
       }
