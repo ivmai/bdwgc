@@ -303,7 +303,7 @@ STATIC void GC_restart_handler(int sig)
 # endif
 
   if (sig != GC_sig_thr_restart)
-    ABORT("Bad signal in suspend_handler");
+    ABORT("Bad signal in restart handler");
 
 # ifdef GC_NETBSD_THREADS_WORKAROUND
     sem_post(&GC_restart_ack_sem);
