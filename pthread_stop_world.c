@@ -275,7 +275,7 @@ STATIC void GC_restart_handler(int sig)
     int old_errno = errno;      /* Preserve errno value.        */
 # endif
 
-  if (sig != SIG_THR_RESTART) ABORT("Bad signal in suspend_handler");
+  if (sig != SIG_THR_RESTART) ABORT("Bad signal in restart handler");
 
 # ifdef GC_NETBSD_THREADS_WORKAROUND
     sem_post(&GC_restart_ack_sem);
