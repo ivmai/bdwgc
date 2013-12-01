@@ -853,7 +853,9 @@ GC_API void GC_CALL GC_init(void)
     /* then.  Thus we really don't hold any locks, and can */
     /* in fact safely initialize them here.                */
 #   ifdef THREADS
-      GC_ASSERT(!GC_need_to_lock);
+#     ifndef GC_ALWAYS_MULTITHREADED
+        GC_ASSERT(!GC_need_to_lock);
+#     endif
 #     ifdef SN_TARGET_PS3
         {
           pthread_mutexattr_t mattr;
@@ -1214,7 +1216,9 @@ GC_API void GC_CALL GC_init(void)
 
     /* The rest of this again assumes we don't really hold      */
     /* the allocation lock.                                     */
-#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC) \
+       || (defined(GC_ALWAYS_MULTITHREADED) && defined(GC_WIN32_THREADS) \
+           && !defined(GC_NO_THREADS_DISCOVERY))
         /* Make sure marker threads are started and thread local */
         /* allocation is initialized, in case we didn't get      */
         /* called from GC_init_parallel.                         */
@@ -1293,7 +1297,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
   }
 
 # ifdef THREADS
-#   ifdef PARALLEL_MARK
+#   if defined(PARALLEL_MARK) && !defined(GC_ALWAYS_MULTITHREADED)
 #     define IF_NEED_TO_LOCK(x) if (GC_parallel || GC_need_to_lock) x
 #   else
 #     define IF_NEED_TO_LOCK(x) if (GC_need_to_lock) x

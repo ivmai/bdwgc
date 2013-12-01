@@ -108,7 +108,9 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 # if defined(GC_NO_THREADS_DISCOVERY) || defined(DARWIN_DONT_PARSE_STACK)
     ABORT("Darwin task-threads-based stop and push unsupported");
 # else
-    GC_ASSERT(!GC_need_to_lock);
+#   ifndef GC_ALWAYS_MULTITHREADED
+      GC_ASSERT(!GC_need_to_lock);
+#   endif
 #   ifndef GC_DISCOVER_TASK_THREADS
       GC_query_task_threads = TRUE;
 #   endif

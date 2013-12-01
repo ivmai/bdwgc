@@ -166,8 +166,8 @@
                 GC_lock_holder = NUMERIC_THREAD_ID(pthread_self())
 #      define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
 #      define I_HOLD_LOCK() \
-                (!GC_need_to_lock || \
-                 GC_lock_holder == NUMERIC_THREAD_ID(pthread_self()))
+                (!GC_need_to_lock \
+                 || GC_lock_holder == NUMERIC_THREAD_ID(pthread_self()))
 #      ifndef NUMERIC_THREAD_ID_UNIQUE
 #        define I_DONT_HOLD_LOCK() 1  /* Conservatively say yes */
 #      else
@@ -181,7 +181,11 @@
 #    define EXIT_GC() GC_collecting = 0;
      GC_INNER void GC_lock(void);
 #  endif /* GC_PTHREADS with linux_threads.c implementation */
-   GC_EXTERN GC_bool GC_need_to_lock;
+#  ifdef GC_ALWAYS_MULTITHREADED
+#    define GC_need_to_lock TRUE
+#  else
+     GC_EXTERN GC_bool GC_need_to_lock;
+#  endif
 
 # else /* !THREADS */
 #   define LOCK() (void)0
@@ -196,7 +200,7 @@
 # endif /* !THREADS */
 
 #if defined(UNCOND_LOCK) && !defined(LOCK)
-# ifdef LINT2
+# if defined(LINT2) || defined(GC_ALWAYS_MULTITHREADED)
     /* Instruct code analysis tools not to care about GC_need_to_lock   */
     /* influence to LOCK/UNLOCK semantic.                               */
 #   define LOCK() UNCOND_LOCK()

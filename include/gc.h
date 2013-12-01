@@ -1269,8 +1269,9 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
 
   /* Explicitly enable GC_register_my_thread() invocation.              */
   /* Done implicitly if a GC thread-creation function is called (or     */
-  /* implicit thread registration is activated).  Otherwise, it must    */
-  /* be called from the main (or any previously registered) thread      */
+  /* implicit thread registration is activated, or the collector is     */
+  /* compiled with GC_ALWAYS_MULTITHREADED defined).  Otherwise, it     */
+  /* must be called from the main (or any previously registered) thread */
   /* between the collector initialization and the first explicit        */
   /* registering of a thread (it should be called as late as possible). */
   GC_API void GC_CALL GC_allow_register_threads(void);
