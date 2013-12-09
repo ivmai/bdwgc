@@ -110,7 +110,7 @@ DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 	doc/porting.html doc/overview.html \
 	doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
 	doc/README.sgi doc/README.solaris2 doc/README.uts \
-	doc/README.win32 doc/barrett_diagram doc/README \
+	doc/README.win32 doc/README \
         doc/README.contributors doc/README.changes doc/gc.man \
 	doc/README.environment doc/tree.html doc/gcdescr.html \
 	doc/README.autoconf doc/README.macros doc/README.ews4800 \

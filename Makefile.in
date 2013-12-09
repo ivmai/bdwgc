@@ -1012,7 +1012,6 @@ libstaticrootslib_la_DEPENDENCIES = $(top_builddir)/libgc.la
 # installed documentation
 #
 dist_doc_DATA = \
-	doc/barrett_diagram \
 	doc/debugging.html \
 	doc/gcdescr.html \
 	doc/README \
