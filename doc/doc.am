@@ -37,7 +37,6 @@ dist_pkgdata_DATA = \
         doc/README.uts \
         doc/README.win32 \
         doc/README.win64 \
-        doc/barrett_diagram \
         doc/debugging.html \
         doc/finalization.html \
         doc/gc.man \

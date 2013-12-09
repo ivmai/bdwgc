@@ -65,7 +65,7 @@ OTHER_FILES= PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README.md tests/test.c test_cpp.cc tools/setjmp_t.c SMakefile.amiga \
            doc/README.amiga doc/README.win32 doc/README.cords \
            doc/README.rs6000 README.QUICK TODO tools/callprocs.sh \
-           pc_excludes barrett_diagram doc/README.OS2 doc/README.Mac \
+           pc_excludes doc/README.OS2 doc/README.Mac \
            extra/MacOS.c EMX_MAKEFILE doc/debugging.html \
            extra/Mac_files/datastart.c extra/Mac_files/dataend.c \
            extra/Mac_files/MacOS_config.h \
