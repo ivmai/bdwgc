@@ -95,10 +95,10 @@ The following is an ASCII diagram of the data structure.
 This was contributed by Dave Barrett several years ago.
 <PRE>
 
-		Data Structure used by GC_base in gc3.7:
-			      21-Apr-94
-			 
-			
+                Data Structure used by GC_base in gc3.7:
+                              21-Apr-94
+
+
 
 
     63                  LOG_TOP_SZ[11]  LOG_BOTTOM_SZ[10]   LOG_HBLKSIZE[13]
@@ -106,64 +106,64 @@ This was contributed by Dave Barrett several years ago.
  p:|                  |   TL_HASH(hi)  |                  |   HBLKDISPL(p)   |
    +------------------+----------------+------------------+------------------+
     \-----------------------HBLKPTR(p)-------------------/
-    \------------hi-------------------/ 
+    \------------hi-------------------/
                       \______ ________/ \________ _______/ \________ _______/
                              V                   V                  V
                              |                   |                  |
-           GC_top_index[]    |                   |                  | 
- ---      +--------------+   |                   |                  |  
-  ^       |              |   |                   |                  |   
-  |       |              |   |                   |                  |   
- TOP      +--------------+<--+                   |                  |      
- _SZ   +-<|      []      | *                     |                  |     
-(items)|  +--------------+  if 0 < bi< HBLKSIZE  |                  |    
-  |    |  |              | then large object     |                  |    
-  |    |  |              | starts at the bi'th   |                  |    
-  v    |  |              | HBLK before p.        |             i    |    
- ---   |  +--------------+                       |          (word-  |    
-       v                                         |         aligned) |    
-   bi= |GET_BI(p){->hash_link}->key==hi          |                  |   
-       v                                         |                  |    
-       |   (bottom_index)  \ scratch_alloc'd     |                  |    
-       |   ( struct  bi )  / by get_index()      |                  |    
- ---   +->+--------------+                       |                  |    
+           GC_top_index[]    |                   |                  |
+ ---      +--------------+   |                   |                  |
+  ^       |              |   |                   |                  |
+  |       |              |   |                   |                  |
+ TOP      +--------------+<--+                   |                  |
+ _SZ   +-<|      []      | *                     |                  |
+(items)|  +--------------+  if 0 < bi< HBLKSIZE  |                  |
+  |    |  |              | then large object     |                  |
+  |    |  |              | starts at the bi'th   |                  |
+  v    |  |              | HBLK before p.        |             i    |
+ ---   |  +--------------+                       |          (word-  |
+       v                                         |         aligned) |
+   bi= |GET_BI(p){->hash_link}->key==hi          |                  |
+       v                                         |                  |
+       |   (bottom_index)  \ scratch_alloc'd     |                  |
+       |   ( struct  bi )  / by get_index()      |                  |
+ ---   +->+--------------+                       |                  |
   ^       |              |                       |                  |
   ^       |              |                       |                  |
  BOTTOM   |              |   ha=GET_HDR_ADDR(p)  |                  |
 _SZ(items)+--------------+<----------------------+          +-------+
-  |   +--<|   index[]    |                                  |         
-  |   |   +--------------+                      GC_obj_map: v              
-  |   |   |              |              from      / +-+-+-----+-+-+-+-+  --- 
-  v   |   |              |              GC_add   < 0| | |     | | | | |   ^  
- ---  |   +--------------+             _map_entry \ +-+-+-----+-+-+-+-+   |  
+  |   +--<|   index[]    |                                  |
+  |   |   +--------------+                      GC_obj_map: v
+  |   |   |              |              from      / +-+-+-----+-+-+-+-+  ---
+  v   |   |              |              GC_add   < 0| | |     | | | | |   ^
+ ---  |   +--------------+             _map_entry \ +-+-+-----+-+-+-+-+   |
       |   |   asc_link   |                          +-+-+-----+-+-+-+-+ MAXOBJSZ
-      |   +--------------+                      +-->| | |  j  | | | | |  +1   
-      |   |     key      |                      |   +-+-+-----+-+-+-+-+   |  
-      |   +--------------+                      |   +-+-+-----+-+-+-+-+   | 
-      |   |  hash_link   |                      |   | | |     | | | | |   v 
+      |   +--------------+                      +-->| | |  j  | | | | |  +1
+      |   |     key      |                      |   +-+-+-----+-+-+-+-+   |
+      |   +--------------+                      |   +-+-+-----+-+-+-+-+   |
+      |   |  hash_link   |                      |   | | |     | | | | |   v
       |   +--------------+                      |   +-+-+-----+-+-+-+-+  ---
-      |                                         |   |<--MAX_OFFSET--->|   
+      |                                         |   |<--MAX_OFFSET--->|
       |                                         |         (bytes)
-HDR(p)| GC_find_header(p)                       |   |<--MAP_ENTRIES-->| 
-      |                           \ from        |    =HBLKSIZE/WORDSZ   
+HDR(p)| GC_find_header(p)                       |   |<--MAP_ENTRIES-->|
+      |                           \ from        |    =HBLKSIZE/WORDSZ
       |    (hdr) (struct hblkhdr) / alloc_hdr() |    (1024 on Alpha)
       +-->+----------------------+              |    (8/16 bits each)
-GET_HDR(p)| word   hb_sz (words) |              |          
-          +----------------------+              |     
+GET_HDR(p)| word   hb_sz (words) |              |
+          +----------------------+              |
           | struct hblk *hb_next |              |
-          +----------------------+              |       
+          +----------------------+              |
           |mark_proc hb_mark_proc|              |
           +----------------------+              |
           | char * hb_map        |>-------------+
-          +----------------------+           
+          +----------------------+
           |   uchar hb_obj_kind  |
           +----------------------+
           |    uchar hb_flags    |
-          +----------------------+           
-          |   hb_last_reclaimed  |           
- ---      +----------------------+                
+          +----------------------+
+          |   hb_last_reclaimed  |
+ ---      +----------------------+
   ^       |                      |
- MARK_BITS|       hb_marks[]     | *if hdr is free, hb_sz + DISCARD_WORDS
+ MARK_BITS|       hb_marks[]     | *if hdr is free, hb_sz
 _SZ(words)|                      |  is the size of a heap chunk (struct hblk)
   v       |                      |  of at least MININCR*HBLKSIZE bytes (below),
  ---      +----------------------+  otherwise, size of each object in chunk.
@@ -172,20 +172,20 @@ Dynamic data structures above are interleaved throughout the heap in blocks of
 size MININCR * HBLKSIZE bytes as done by gc_scratch_alloc which cannot be
 freed; free lists are used (e.g. alloc_hdr).  HBLK's below are collected.
 
-	      (struct hblk)      
- ---      +----------------------+ < HBLKSIZE ---         ---          DISCARD_
-  ^       |garbage[DISCARD_WORDS]|   aligned   ^           ^ HDR_BYTES WORDS
-  |       |                      |             |           v (bytes)   (words)
-  |       +-----hb_body----------+ < WORDSZ    |          ---   ---   
-  |       |                      |   aligned   |           ^     ^
-  |       |      Object 0        |             |           hb_sz |
-  |       |                      |           i |(word-    (words)|
-  |       |                      |      (bytes)|aligned)   v     |
-  |       + - - - - - - - - - - -+ ---         |          ---    |
-  |       |                      |  ^          |           ^     |
-  n *     |                      |  j (words)  |          hb_sz BODY_SZ 
- HBLKSIZE |      Object 1        |  v          v           |   (words)
- (bytes)  |                      |---------------          v   MAX_OFFSET
+              (struct hblk)                                  HDR_BYTES
+ ---      +----------------------+ < HBLKSIZE  ---            (bytes)
+  ^       +-----hb_body----------+ (and WORDSZ) ^         ---   ---
+  |       |                      |   aligned    |          ^     ^
+  |       |                      |              |        hb_sz   |
+  |       |                      |              |       (words)  |
+  |       |      Object 0        |              |          |     |
+  |       |                      |            i |(word-    v     |
+  |       + - - - - - - - - - - -+ ---   (bytes)|aligned) ---    |
+  |       |                      |  ^           |          ^     |
+  |       |                      |  j (words)   |          |     |
+  n *     |      Object 1        |  v           v        hb_sz BODY_SZ
+ HBLKSIZE |                      |---------------          |   (words)
+ (bytes)  |                      |                         v   MAX_OFFSET
   |       + - - - - - - - - - - -+                        ---  (bytes)
   |       |                      | !ALL_INTERIOR_POINTERS  ^     |
   |       |                      | sets j only for       hb_sz   |
@@ -193,7 +193,5 @@ freed; free lists are used (e.g. alloc_hdr).  HBLK's below are collected.
   v       |                      | All objects WORDSZ      v     v
  ---      +----------------------+ aligned.               ---   ---
 
-DISCARD_WORDS is normally zero.  Indeed the collector has not been tested
-with another value in ages.
-</pre>
+</PRE>
 </body>
