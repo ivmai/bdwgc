@@ -1765,7 +1765,7 @@ GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
     GC_obj_kinds[result].ok_reclaim_list = 0;
     GC_obj_kinds[result].ok_descriptor = descr;
     GC_obj_kinds[result].ok_relocate_descr = adjust;
-    GC_obj_kinds[result].ok_init = clear;
+    GC_obj_kinds[result].ok_init = (GC_bool)clear;
 #   ifdef ENABLE_DISCLAIM
         GC_obj_kinds[result].ok_mark_unconditionally = FALSE;
         GC_obj_kinds[result].ok_disclaim_proc = 0;
