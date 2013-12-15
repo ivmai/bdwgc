@@ -508,21 +508,19 @@ GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
   GC_API void * GC_CALL GC_malloc_atomic_uncollectable(size_t lb)
   {
     void *op;
-    void **opp;
     size_t lg;
     DCL_LOCK_STATE;
 
-    if( SMALL_OBJ(lb) ) {
+    if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
         if (EXTRA_BYTES != 0 && lb != 0) lb--;
                   /* We don't need the extra byte, since this won't be  */
                   /* collected anyway.                                  */
         lg = GC_size_map[lb];
-        opp = &(GC_auobjfreelist[lg]);
         LOCK();
-        op = *opp;
-        if (EXPECT(0 != op, TRUE)) {
-            *opp = obj_link(op);
+        op = GC_auobjfreelist[lg];
+        if (EXPECT(op != 0, TRUE)) {
+            GC_auobjfreelist[lg] = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
             /* Mark bit was already set while object was on free list. */

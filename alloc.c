@@ -32,12 +32,15 @@
  * kind k objects of size i points to a non-empty
  * free list. It returns a pointer to the first entry on the free list.
  * In a single-threaded world, GC_allocobj may be called to allocate
- * an object of (small) size i as follows:
+ * an object of (small) size lb as follows:
  *
- *            opp = &(GC_objfreelist[i]);
- *            if (*opp == 0) GC_allocobj(i, NORMAL);
- *            ptr = *opp;
- *            *opp = obj_link(ptr);
+ *   lg = GC_size_map[lb];
+ *   op = GC_objfreelist[lg];
+ *   if (NULL == op) {
+ *     op = GENERAL_MALLOC(lb, NORMAL);
+ *   } else {
+ *     GC_objfreelist[lg] = obj_link(op);
+ *   }
  *
  * Note that this is very fast if the free list is non-empty; it should
  * only involve the execution of 4 or 5 simple instructions.

@@ -230,25 +230,24 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
 #endif
 {
     void *op;
-    void ** opp;
     size_t lg;
     DCL_LOCK_STATE;
 
     if(SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
         lg = GC_size_map[lb];
-        opp = &(GC_aobjfreelist[lg]);
         LOCK();
-        if (EXPECT((op = *opp) == 0, FALSE)) {
+        op = GC_aobjfreelist[lg];
+        if (EXPECT(0 == op, FALSE)) {
             UNLOCK();
             return(GENERAL_MALLOC((word)lb, PTRFREE));
         }
-        *opp = obj_link(op);
+        GC_aobjfreelist[lg] = obj_link(op);
         GC_bytes_allocd += GRANULES_TO_BYTES(lg);
         UNLOCK();
         return((void *) op);
    } else {
-       return(GENERAL_MALLOC((word)lb, PTRFREE));
+        return(GENERAL_MALLOC((word)lb, PTRFREE));
    }
 }
 
@@ -260,16 +259,15 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
 #endif
 {
     void *op;
-    void **opp;
     size_t lg;
     DCL_LOCK_STATE;
 
     if(SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
         lg = GC_size_map[lb];
-        opp = (void **)&(GC_objfreelist[lg]);
         LOCK();
-        if (EXPECT((op = *opp) == 0, FALSE)) {
+        op = GC_objfreelist[lg];
+        if (EXPECT(0 == op, FALSE)) {
             UNLOCK();
             return (GENERAL_MALLOC((word)lb, NORMAL));
         }
@@ -278,7 +276,7 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
                         <= (word)GC_greatest_plausible_heap_addr
                      && (word)obj_link(op)
                         >= (word)GC_least_plausible_heap_addr));
-        *opp = obj_link(op);
+        GC_objfreelist[lg] = obj_link(op);
         obj_link(op) = 0;
         GC_bytes_allocd += GRANULES_TO_BYTES(lg);
         UNLOCK();
@@ -292,21 +290,19 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
 GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)
 {
     void *op;
-    void **opp;
     size_t lg;
     DCL_LOCK_STATE;
 
-    if( SMALL_OBJ(lb) ) {
+    if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
         if (EXTRA_BYTES != 0 && lb != 0) lb--;
                   /* We don't need the extra byte, since this won't be  */
                   /* collected anyway.                                  */
         lg = GC_size_map[lb];
-        opp = &(GC_uobjfreelist[lg]);
         LOCK();
-        op = *opp;
-        if (EXPECT(0 != op, TRUE)) {
-            *opp = obj_link(op);
+        op = GC_uobjfreelist[lg];
+        if (EXPECT(op != 0, TRUE)) {
+            GC_uobjfreelist[lg] = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
             /* Mark bit ws already set on free list.  It will be        */

@@ -86,7 +86,6 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
 #endif
 {
     ptr_t op;
-    ptr_t *opp;
     word lg;
     DCL_LOCK_STATE;
 
@@ -95,9 +94,8 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
     if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
         lg = GC_size_map[lb];
-        opp = &GC_finalized_objfreelist[lg];
         LOCK();
-        op = *opp;
+        op = GC_finalized_objfreelist[lg];
         if (EXPECT(0 == op, FALSE)) {
             UNLOCK();
             op = GC_generic_malloc((word)lb, GC_finalized_kind);
@@ -106,7 +104,7 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
             /* GC_generic_malloc has extended the size map for us.      */
             lg = GC_size_map[lb];
         } else {
-            *opp = obj_link(op);
+            GC_finalized_objfreelist[lg] = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
             UNLOCK();
