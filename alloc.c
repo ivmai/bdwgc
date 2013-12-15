@@ -1337,21 +1337,21 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
       EXIT_GC();
       if (*flh == 0) {
         GC_new_hblk(gran, kind);
-      }
-      if (*flh == 0) {
-        ENTER_GC();
-        if (GC_incremental && GC_time_limit == GC_TIME_UNLIMITED
-            && !tried_minor) {
-          GC_collect_a_little_inner(1);
-          tried_minor = TRUE;
-        } else {
-          if (!GC_collect_or_expand(1, FALSE, retry)) {
-            EXIT_GC();
-            return(0);
+        if (*flh == 0) {
+          ENTER_GC();
+          if (GC_incremental && GC_time_limit == GC_TIME_UNLIMITED
+              && !tried_minor) {
+            GC_collect_a_little_inner(1);
+            tried_minor = TRUE;
+          } else {
+            if (!GC_collect_or_expand(1, FALSE, retry)) {
+              EXIT_GC();
+              return(0);
+            }
+            retry = TRUE;
           }
-          retry = TRUE;
+          EXIT_GC();
         }
-        EXIT_GC();
       }
     }
     /* Successful allocation; reset failure count.      */
