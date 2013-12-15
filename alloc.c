@@ -1075,6 +1075,16 @@ GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
     phdr -> hb_flags = 0;
     GC_freehblk(p);
     GC_heapsize += bytes;
+
+    /* Normally the caller calculates a new GC_collect_at_heapsize,
+     * but this is also called directly from alloc_mark_stack, so
+     * adjust here. It will be recalculated when called from
+     * GC_expand_hp_inner.
+     */
+    GC_collect_at_heapsize += bytes;
+    if (GC_collect_at_heapsize < GC_heapsize /* wrapped */)
+       GC_collect_at_heapsize = (word)(-1);
+
     if ((ptr_t)p <= (ptr_t)GC_least_plausible_heap_addr
         || GC_least_plausible_heap_addr == 0) {
         GC_least_plausible_heap_addr = (void *)((ptr_t)p - sizeof(word));
