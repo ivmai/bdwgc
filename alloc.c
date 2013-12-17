@@ -1224,7 +1224,7 @@ GC_INNER unsigned GC_fail_count = 0;
 
 /* Collect or expand heap in an attempt make the indicated number of    */
 /* free blocks available.  Should be called until the blocks are        */
-/* available (seting retry value to TRUE unless this is the first call  */
+/* available (setting retry value to TRUE unless this is the first call */
 /* in a loop) or until it fails by returning FALSE.                     */
 GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
                                       GC_bool ignore_off_page,
