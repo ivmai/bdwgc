@@ -1014,8 +1014,14 @@ GC_API void GC_CALL GC_gcollect(void)
     if (GC_have_errors) GC_print_all_errors();
 }
 
+STATIC word GC_heapsize_at_forced_unmap = 0;
+
 GC_API void GC_CALL GC_gcollect_and_unmap(void)
 {
+    /* Record current heap size to make heap growth more conservative   */
+    /* afterwards (as if the heap is growing from zero size again).     */
+    GC_heapsize_at_forced_unmap = GC_heapsize;
+    /* Collect and force memory unmapping to OS. */
     (void)GC_try_to_collect_general(GC_never_stop_func, TRUE);
 }
 
@@ -1269,8 +1275,9 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
       }
     }
 
-    blocks_to_get = GC_heapsize/(HBLKSIZE*GC_free_space_divisor)
-                        + needed_blocks;
+    blocks_to_get = (GC_heapsize - GC_heapsize_at_forced_unmap)
+                        / (HBLKSIZE * GC_free_space_divisor)
+                    + needed_blocks;
     if (blocks_to_get > MAXHINCR) {
       word slop;
 
@@ -1291,7 +1298,8 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
     }
 
     if (!GC_expand_hp_inner(blocks_to_get)
-        && !GC_expand_hp_inner(needed_blocks)) {
+        && (blocks_to_get == needed_blocks \
+            || !GC_expand_hp_inner(needed_blocks))) {
       if (gc_not_stopped == FALSE) {
         /* Don't increment GC_fail_count here (and no warning).     */
         GC_gcollect_inner();

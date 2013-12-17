@@ -1090,7 +1090,7 @@ typedef struct GC_ms_entry {
 /* compiled.                                    */
 
 struct _GC_arrays {
-  word _heapsize;               /* Heap size in bytes.                  */
+  word _heapsize;       /* Heap size in bytes (value never goes down).  */
   word _requested_heapsize;     /* Heap size due to explicit expansion. */
   ptr_t _last_heap_addr;
   ptr_t _prev_heap_addr;
