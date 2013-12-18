@@ -30,38 +30,40 @@
 /* facility in thr_keycreate.  Alternatively, keep a redundant pointer  */
 /* to thread specific data on the thread stack.                         */
 
-#include <pthread.h>
+#ifndef GC_PTHREAD_REDIRECTS_ONLY
+# include <pthread.h>
 
-#ifndef GC_NO_DLOPEN
-# include <dlfcn.h>
-  GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
-#endif /* !GC_NO_DLOPEN */
+# ifndef GC_NO_DLOPEN
+#   include <dlfcn.h>
+    GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
+# endif /* !GC_NO_DLOPEN */
 
-#ifndef GC_NO_PTHREAD_SIGMASK
-# include <signal.h>
-  GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
-                                sigset_t * /* oset */);
-#endif /* !GC_NO_PTHREAD_SIGMASK */
+# ifndef GC_NO_PTHREAD_SIGMASK
+#   include <signal.h>
+    GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
+                                  sigset_t * /* oset */);
+# endif /* !GC_NO_PTHREAD_SIGMASK */
 
-#ifndef GC_PTHREAD_CREATE_CONST
-  /* This is used for pthread_create() only.    */
-# define GC_PTHREAD_CREATE_CONST const
-#endif
+# ifndef GC_PTHREAD_CREATE_CONST
+    /* This is used for pthread_create() only.    */
+#   define GC_PTHREAD_CREATE_CONST const
+# endif
 
-GC_API int GC_pthread_create(pthread_t *,
-                             GC_PTHREAD_CREATE_CONST pthread_attr_t *,
-                             void *(*)(void *), void * /* arg */);
-GC_API int GC_pthread_join(pthread_t, void ** /* retval */);
-GC_API int GC_pthread_detach(pthread_t);
+  GC_API int GC_pthread_create(pthread_t *,
+                               GC_PTHREAD_CREATE_CONST pthread_attr_t *,
+                               void *(*)(void *), void * /* arg */);
+  GC_API int GC_pthread_join(pthread_t, void ** /* retval */);
+  GC_API int GC_pthread_detach(pthread_t);
 
-#ifndef GC_NO_PTHREAD_CANCEL
-  GC_API int GC_pthread_cancel(pthread_t);
-#endif
+# ifndef GC_NO_PTHREAD_CANCEL
+    GC_API int GC_pthread_cancel(pthread_t);
+# endif
 
-#if defined(GC_PTHREAD_EXIT_ATTRIBUTE) && !defined(GC_PTHREAD_EXIT_DECLARED)
-# define GC_PTHREAD_EXIT_DECLARED
-  GC_API void GC_pthread_exit(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
-#endif
+# if defined(GC_PTHREAD_EXIT_ATTRIBUTE) && !defined(GC_PTHREAD_EXIT_DECLARED)
+#   define GC_PTHREAD_EXIT_DECLARED
+    GC_API void GC_pthread_exit(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
+# endif
+#endif /* !GC_PTHREAD_REDIRECTS_ONLY */
 
 #if !defined(GC_NO_THREAD_REDIRECTS) && !defined(GC_USE_LD_WRAP)
   /* Unless the compiler supports #pragma extern_prefix, the Tru64      */
