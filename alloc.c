@@ -1298,7 +1298,7 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
     }
 
     if (!GC_expand_hp_inner(blocks_to_get)
-        && (blocks_to_get == needed_blocks \
+        && (blocks_to_get == needed_blocks
             || !GC_expand_hp_inner(needed_blocks))) {
       if (gc_not_stopped == FALSE) {
         /* Don't increment GC_fail_count here (and no warning).     */
