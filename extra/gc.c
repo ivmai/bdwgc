@@ -44,6 +44,7 @@
 #include "../ptr_chck.c"
 #include "../stubborn.c"
 
+#include "gc_inline.h"
 #include "../allchblk.c"
 #include "../alloc.c"
 #include "../dbg_mlc.c"
@@ -79,6 +80,7 @@
 /* This is only useful if directly included from application    */
 /* (instead of linking gc).                                     */
 #ifndef GC_NO_THREAD_REDIRECTS
+# define GC_PTHREAD_REDIRECTS_ONLY
 # include "gc_pthread_redirects.h"
 #endif
 
