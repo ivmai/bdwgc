@@ -904,7 +904,7 @@ struct hblkhdr {
                                 /* reclaim notifier.                    */
 #       endif
 #       ifdef MARK_BIT_PER_GRANULE
-#         define LARGE_BLOCK 0x10
+#         define LARGE_BLOCK 0x20
 #       endif
     unsigned short hb_last_reclaimed;
                                 /* Value of GC_gc_no when block was     */
