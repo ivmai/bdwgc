@@ -903,6 +903,9 @@ struct hblkhdr {
                                 /* not.  Used to mark objects needed by */
                                 /* reclaim notifier.                    */
 #       endif
+#       ifdef MARK_BIT_PER_GRANULE
+#         define LARGE_BLOCK 0x10
+#       endif
     unsigned short hb_last_reclaimed;
                                 /* Value of GC_gc_no when block was     */
                                 /* last allocated or swept. May wrap.   */
@@ -924,7 +927,6 @@ struct hblkhdr {
                                 /* LARGE_INV_SZ.                        */
 #     define LARGE_INV_SZ (1 << 16)
 #   else
-      unsigned char hb_large_block;
       short * hb_map;           /* Essentially a table of remainders    */
                                 /* mod BYTES_TO_GRANULES(hb_sz), except */
                                 /* for large blocks.  See GC_obj_map.   */

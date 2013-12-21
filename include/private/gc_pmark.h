@@ -240,7 +240,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
     ptr_t base = current; \
     /* The following always fails for large block references. */ \
     if (EXPECT((gran_offset | byte_offset) != 0, FALSE))  { \
-        if (hhdr -> hb_large_block) { \
+        if ((hhdr -> hb_flags & LARGE_BLOCK) != 0) { \
           /* gran_offset is bogus.      */ \
           size_t obj_displ; \
           base = (ptr_t)(hhdr -> hb_block); \
