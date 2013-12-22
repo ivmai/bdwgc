@@ -576,7 +576,15 @@ GC_INNER void GC_invalidate_mark_state(void)
 GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp)
 {
     GC_mark_state = MS_INVALID;
+#   ifdef PARALLEL_MARK
+    /* We are using a local_mark_stack in parallel mode, so
+     * don't signal the global mark stack to be resized.
+     * That will be done if required in GC_return_mark_stack.
+     */
+    if ( ! GC_parallel) GC_mark_stack_too_small = TRUE;
+#else
     GC_mark_stack_too_small = TRUE;
+#endif
     GC_COND_LOG_PRINTF("Mark stack overflow; current size = %lu entries\n",
                        (unsigned long)GC_mark_stack_size);
     return(msp - GC_MARK_STACK_DISCARDS);
