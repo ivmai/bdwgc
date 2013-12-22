@@ -914,6 +914,12 @@ struct hblkhdr {
                                 /* when the header was allocated, or    */
                                 /* when the size of the block last      */
                                 /* changed.                             */
+#   ifdef MARK_BIT_PER_OBJ
+      unsigned32 hb_inv_sz;     /* A good upper bound for 2**32/hb_sz.  */
+                                /* For large objects, we use            */
+                                /* LARGE_INV_SZ.                        */
+#     define LARGE_INV_SZ (1 << 16)
+#   endif
     size_t hb_sz;  /* If in use, size in bytes, of objects in the block. */
                    /* if free, the size in bytes of the whole block      */
                    /* We assume that this is convertible to signed_word  */
@@ -921,12 +927,7 @@ struct hblkhdr {
                    /* generating free blocks larger than that.           */
     word hb_descr;              /* object descriptor for marking.  See  */
                                 /* mark.h.                              */
-#   ifdef MARK_BIT_PER_OBJ
-      unsigned32 hb_inv_sz;     /* A good upper bound for 2**32/hb_sz.  */
-                                /* For large objects, we use            */
-                                /* LARGE_INV_SZ.                        */
-#     define LARGE_INV_SZ (1 << 16)
-#   else
+#   ifdef MARK_BIT_PER_GRANULE
       short * hb_map;           /* Essentially a table of remainders    */
                                 /* mod BYTES_TO_GRANULES(hb_sz), except */
                                 /* for large blocks.  See GC_obj_map.   */
@@ -1148,10 +1149,40 @@ struct _GC_arrays {
 # else
     mse *_mark_stack_top;
 # endif
+  word _composite_in_use; /* Number of bytes in the accessible  */
+                          /* composite objects.                 */
+  word _atomic_in_use;    /* Number of bytes in the accessible  */
+                          /* atomic objects.                    */
+# ifdef USE_MUNMAP
+#   define GC_unmapped_bytes GC_arrays._unmapped_bytes
+    word _unmapped_bytes;
+# else
+#   define GC_unmapped_bytes 0
+# endif
+  bottom_index * _all_nils;
+# ifdef ENABLE_TRACE
+#   define GC_trace_addr GC_arrays._trace_addr
+    ptr_t _trace_addr;
+# endif
   GC_mark_proc _mark_procs[MAX_MARK_PROCS];
         /* Table of user-defined mark procedures.  There is     */
         /* a small number of these, which can be referenced     */
         /* by DS_PROC mark descriptors.  See gc_mark.h.         */
+  char _modws_valid_offsets[sizeof(word)];
+                                /* GC_valid_offsets[i] ==>                */
+                                /* GC_modws_valid_offsets[i%sizeof(word)] */
+# if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+#   define GC_root_index GC_arrays._root_index
+    struct roots * _root_index[RT_SIZE];
+# endif
+# ifdef SAVE_CALL_CHAIN
+#   define GC_last_stack GC_arrays._last_stack
+    struct callinfo _last_stack[NFRAMES];
+                /* Stack at last garbage collection.  Useful for        */
+                /* debugging mysterious object disappearances.  In the  */
+                /* multi-threaded case, we currently only save the      */
+                /* calling stack.                                       */
+# endif
 # ifndef SEPARATE_GLOBALS
 #   define GC_objfreelist GC_arrays._objfreelist
     void *_objfreelist[MAXOBJGRANULES+1];
@@ -1170,25 +1201,14 @@ struct _GC_arrays {
     void *_auobjfreelist[MAXOBJGRANULES+1];
                         /* Atomic uncollectible but traced objs */
 # endif
-  word _composite_in_use; /* Number of bytes in the accessible  */
-                          /* composite objects.                 */
-  word _atomic_in_use;    /* Number of bytes in the accessible  */
-                          /* atomic objects.                    */
-# ifdef USE_MUNMAP
-#   define GC_unmapped_bytes GC_arrays._unmapped_bytes
-    word _unmapped_bytes;
-# else
-#   define GC_unmapped_bytes 0
-# endif
   size_t _size_map[MAXOBJBYTES+1];
         /* Number of granules to allocate when asked for a certain      */
         /* number of bytes.                                             */
-
 # ifdef STUBBORN_ALLOC
 #   define GC_sobjfreelist GC_arrays._sobjfreelist
     ptr_t _sobjfreelist[MAXOBJGRANULES+1];
+                          /* Free list for immutable objects.   */
 # endif
-                          /* free list for immutable objects    */
 # ifdef MARK_BIT_PER_GRANULE
 #   define GC_obj_map GC_arrays._obj_map
     short * _obj_map[MAXOBJGRANULES+1];
@@ -1208,9 +1228,6 @@ struct _GC_arrays {
   char _valid_offsets[VALID_OFFSET_SZ];
                                 /* GC_valid_offsets[i] == TRUE ==> i    */
                                 /* is registered as a displacement.     */
-  char _modws_valid_offsets[sizeof(word)];
-                                /* GC_valid_offsets[i] ==>                */
-                                /* GC_modws_valid_offsets[i%sizeof(word)] */
 # ifdef STUBBORN_ALLOC
 #   define GC_changed_pages GC_arrays._changed_pages
     page_hash_table _changed_pages;
@@ -1260,26 +1277,9 @@ struct _GC_arrays {
                 /* Committed lengths of memory regions obtained from kernel. */
 # endif
   struct roots _static_roots[MAX_ROOT_SETS];
-# if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
-#   define GC_root_index GC_arrays._root_index
-    struct roots * _root_index[RT_SIZE];
-# endif
   struct exclusion _excl_table[MAX_EXCLUSIONS];
   /* Block header index; see gc_headers.h */
-  bottom_index * _all_nils;
-  bottom_index * _top_index [TOP_SZ];
-# ifdef ENABLE_TRACE
-#   define GC_trace_addr GC_arrays._trace_addr
-    ptr_t _trace_addr;
-# endif
-# ifdef SAVE_CALL_CHAIN
-#   define GC_last_stack GC_arrays._last_stack
-    struct callinfo _last_stack[NFRAMES];
-                /* Stack at last garbage collection.  Useful for        */
-                /* debugging mysterious object disappearances.  In the  */
-                /* multi-threaded case, we currently only save the      */
-                /* calling stack.                                       */
-# endif
+  bottom_index * _top_index[TOP_SZ];
 };
 
 GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
