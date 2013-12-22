@@ -1162,6 +1162,9 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void);
 /* to suppress all warnings (unless statistics printing is turned on).  */
 GC_API void GC_CALLBACK GC_ignore_warn_proc(char *, GC_word);
 
+/* Change file descriptor of GC log.  Unavailable on some targets.      */
+GC_API void GC_CALL GC_set_log_fd(int);
+
 /* abort_func is invoked on GC fatal aborts (just before OS-dependent   */
 /* abort or exit(1) is called).  Must be non-NULL.  The default one     */
 /* outputs msg to stderr provided msg is non-NULL.  msg is NULL if      */

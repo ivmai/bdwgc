@@ -786,6 +786,11 @@ GC_INNER GC_bool GC_is_initialized = FALSE;
   STATIC int GC_stdout = GC_DEFAULT_STDOUT_FD;
   STATIC int GC_stderr = GC_DEFAULT_STDERR_FD;
   STATIC int GC_log = GC_DEFAULT_STDERR_FD;
+
+  GC_API void GC_CALL GC_set_log_fd(int fd)
+  {
+    GC_log = fd;
+  }
 #endif
 
 STATIC word GC_parse_mem_size_arg(const char *str)
