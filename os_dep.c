@@ -441,11 +441,15 @@ GC_INNER char * GC_get_maps(void)
     /* define data_start as a weak symbol.  The latter is technically   */
     /* broken, since the user program may define data_start, in which   */
     /* case we lose.  Nonetheless, we try both, preferring __data_start.*/
-    /* We assume gcc-compatible pragmas.        */
+    /* We assume gcc-compatible pragmas.                                */
 #   pragma weak __data_start
-    extern int __data_start[];
 #   pragma weak data_start
-    extern int data_start[];
+    extern int __data_start[], data_start[];
+#   ifdef PLATFORM_ANDROID
+#     pragma weak _etext
+#     pragma weak __dso_handle
+      extern int _etext[], __dso_handle[];
+#   endif
 # endif /* LINUX */
   extern int _end[];
 
@@ -457,6 +461,19 @@ GC_INNER char * GC_get_maps(void)
   {
 #   if (defined(LINUX) || defined(HURD)) && !defined(IGNORE_PROG_DATA_START)
       /* Try the easy approaches first: */
+#     ifdef PLATFORM_ANDROID
+        /* Workaround for "gold" (default) linker (as of Android NDK r9b).      */
+        if ((word)__data_start < (word)_etext
+            && (word)_etext < (word)__dso_handle) {
+          GC_data_start = (ptr_t)(__dso_handle);
+#         ifdef DEBUG_ADD_DEL_ROOTS
+            GC_log_printf(
+                "__data_start is wrong; using __dso_handle as data start\n");
+#         endif
+          GC_ASSERT((word)GC_data_start <= (word)_end);
+          return;
+        }
+#     endif
       if ((ptr_t)__data_start != 0) {
           GC_data_start = (ptr_t)(__data_start);
           GC_ASSERT((word)GC_data_start <= (word)_end);
