@@ -805,7 +805,11 @@
 #     define OS_TYPE "LINUX"
       /* HEURISTIC1 has been reliably reported to fail for a 32-bit     */
       /* executable on a 64 bit kernel.                                 */
-#     define LINUX_STACKBOTTOM
+#     if defined (__bg__)
+#       define HEURISTIC2
+#     else
+#       define LINUX_STACKBOTTOM
+#     endif
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
