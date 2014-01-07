@@ -1507,6 +1507,8 @@ Optional Features:
   --enable-redirect-malloc
                           Redirect malloc and friends to GC routines
   --enable-large-config   Optimize for large (> 100 MB) heap or root set
+  --enable-sigrt-signals  Force the gc to use SIGRTMIN-based signals for
+                          thread suspend/resume
   --enable-handle-fork    Attempt to ensure a usable collector after fork() in
                           multi-threaded programs.
   --enable-gc-assertions  collector-internal assertion checking
@@ -5002,7 +5004,7 @@ fi
 
     case "$host" in
      x86-*-linux* | ia64-*-linux* | i586-*-linux* | i686-*-linux* \
-     | x86_64-*-linux* | alpha-*-linux* | sparc*-*-linux*)
+     | x86_64-*-linux* | alpha-*-linux* | powerpc*-*-linux* | sparc*-*-linux*)
         $as_echo "#define GC_LINUX_THREADS 1" >>confdefs.h
 
         $as_echo "#define _REENTRANT 1" >>confdefs.h
@@ -16396,7 +16398,17 @@ $as_echo "#define GC_GCJ_SUPPORT 1" >>confdefs.h
 fi
 
 
+# Check whether --enable-sigrt-signals was given.
+if test "${enable_sigrt_signals+set}" = set; then :
+  enableval=$enable_sigrt_signals;
+fi
 
+
+if test "${enable_sigrt_signals}" = yes; then
+
+$as_echo "#define GC_USESIGRT_SIGNALS 1" >>confdefs.h
+
+fi
 
 
 UNWINDLIBS=

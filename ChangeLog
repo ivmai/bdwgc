@@ -1,3 +1,29 @@
+[x10-7.2]
+2014-01-07  David Grove <groved@us.ibm.com>
+
+	* configure:  Add config option to use STGRTMIN-based signals 
+	for thread suspend/resume
+	* configure.ac: Likewise
+	* include/private/config.h.in: Likewise
+	* include/private/gc_priv.h: Likewise
+
+2014-01-07  David Grove <groved@us.ibm.com>
+	* include/private/gcconfig.h: Fix for finding stackbottom 
+	on BlueGene systems; must use HEURISTIC2, not LINUX_STACKBOTTOM
+	* os_dep.c: Likewise
+
+2014-01-07  David Grove <groved@us.ibm.com>
+	* include/private/pthread_support.h: Increase THREAD_TABLE_SZ from 256 to 4096.
+
+2014-01-07  David Grove <groved@us.ibm.com>
+	* configure: recognize powerpc*-*-linux* as a platform 
+	where GC_LINUX_THREADS should be an available option.
+	* configure.ac: Likewise
+
+2014-01-07  David Grove <groved@us.ibm.com>
+	* include/private/gcconfig.h: clause for Fujitsu compiler in
+	unwind logic.
+
 [7.2e]
 
 2013-11-10  Ivan Maidanski <ivmai@mail.ru>

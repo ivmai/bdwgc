@@ -1157,7 +1157,7 @@ GC_INNER word GC_page_size = 0;
   ptr_t GC_get_main_stack_base(void)
   {
     ptr_t result;
-#   if defined(LINUX) && !defined(NACL) \
+#   if defined(LINUX) && !defined(NACL) && !defined(__bg__) \
        && (defined(USE_GET_STACKBASE_FOR_MAIN) \
            || (defined(THREADS) && !defined(REDIRECT_MALLOC)))
       pthread_attr_t attr;

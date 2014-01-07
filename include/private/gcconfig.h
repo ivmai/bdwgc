@@ -689,7 +689,7 @@
 /* __builtin_unwind_init() to push the relevant registers onto the stack. */
 # if defined(__GNUC__) && ((__GNUC__ >= 3) \
                            || (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)) \
-     && !defined(__INTEL_COMPILER) && !defined(__PATHCC__) \
+  && !defined(__INTEL_COMPILER) && !defined(__PATHCC__) && !defined(__FUJITSU) \
      && !defined(__clang__) /* since no-op in clang (3.0) */
 #   define HAVE_BUILTIN_UNWIND_INIT
 # endif
@@ -805,7 +805,11 @@
 #     define OS_TYPE "LINUX"
       /* HEURISTIC1 has been reliably reported to fail for a 32-bit     */
       /* executable on a 64 bit kernel.                                 */
-#     define LINUX_STACKBOTTOM
+#     if defined (__bg__)
+#       define HEURISTIC2
+#     else
+#       define LINUX_STACKBOTTOM
+#     endif
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];

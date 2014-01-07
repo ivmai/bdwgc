@@ -45,6 +45,9 @@
 /* Define to include support for gcj. */
 #undef GC_GCJ_SUPPORT
 
+/* Define to use SIGRTMIN-based signals for thread suspend/resume */
+#undef GC_USESIGRT_SIGNALS
+
 /* Define to support GNU pthreads. */
 #undef GC_GNU_THREADS
 
