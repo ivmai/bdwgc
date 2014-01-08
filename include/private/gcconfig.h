@@ -861,7 +861,14 @@
 #     define OS_TYPE "LINUX"
       /* HEURISTIC1 has been reliably reported to fail for a 32-bit     */
       /* executable on a 64 bit kernel.                                 */
-#     define LINUX_STACKBOTTOM
+#     if defined(__bg__)
+        /* The Linux Compute Node Kernel (used on BlueGene systems)     */
+        /* does not support LINUX_STACKBOTTOM way.                      */
+#       define HEURISTIC2
+#       define NO_PTHREAD_GETATTR_NP
+#     else
+#       define LINUX_STACKBOTTOM
+#     endif
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
