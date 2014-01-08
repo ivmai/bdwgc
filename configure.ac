@@ -668,6 +668,17 @@ if test x"$enable_gcj_support" != xno; then
     AC_DEFINE(GC_GCJ_SUPPORT, 1, [Define to include support for gcj.])
 fi
 
+
+dnl Interaction with other programs that might use signals.
+dnl Force the GC to use signals based on SIGRTMIN+k 
+AC_ARG_ENABLE(sigrt-signals,
+	[AC_HELP_STRING([--enable-sigrt-signals], [Force the gc to use SIGRTMIN-based signals for thread suspend/resume])])
+
+if test "${enable_sigrt_signals}" = yes; then
+   AC_DEFINE(GC_USESIGRT_SIGNALS)
+fi
+
+
 dnl Debugging
 dnl ---------
 

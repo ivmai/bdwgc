@@ -2376,6 +2376,16 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
               /* some other reason.                                     */
 #endif /* PARALLEL_MARK */
 
+# if defined(GC_USESIGRT_SIGNALS)
+#  if defined(_SIGRTMIN)
+#   define SIG_SUSPEND _SIGRTMIN + 6
+#   define SIG_THR_RESTART _SIGRTMIN + 5
+#  else
+#   define SIG_SUSPEND SIGRTMIN + 6
+#   define SIG_THR_RESTART SIGRTMIN + 5
+#  endif
+# endif
+
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) && !defined(NACL) \
     && !defined(SIG_SUSPEND)
   /* We define the thread suspension signal here, so that we can refer  */
