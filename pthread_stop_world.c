@@ -129,18 +129,17 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
  * Note that we can't just stop a thread; we need it to save its stack
  * pointer(s) and acknowledge.
  */
-
 #ifndef SIG_THR_RESTART
-#  if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) \
-      || defined(GC_NETBSD_THREADS)
-#    ifdef _SIGRTMIN
-#      define SIG_THR_RESTART _SIGRTMIN + 5
-#    else
-#      define SIG_THR_RESTART SIGRTMIN + 5
-#    endif
-#  else
+# if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) \
+     || defined(GC_NETBSD_THREADS) || defined(GC_USESIGRT_SIGNALS)
+#   ifdef _SIGRTMIN
+#     define SIG_THR_RESTART _SIGRTMIN + 5
+#   else
+#     define SIG_THR_RESTART SIGRTMIN + 5
+#   endif
+# else
 #   define SIG_THR_RESTART SIGXCPU
-#  endif
+# endif
 #endif
 
 STATIC int GC_sig_suspend = SIG_SUSPEND;
