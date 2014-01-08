@@ -177,7 +177,7 @@ case "$THREADS" in
     AC_CHECK_LIB(pthread, pthread_self, THREADDLLIBS="-lpthread",,)
     case "$host" in
      x86-*-linux* | ia64-*-linux* | i586-*-linux* | i686-*-linux* \
-     | x86_64-*-linux* | alpha-*-linux* | sparc*-*-linux*)
+     | x86_64-*-linux* | alpha-*-linux* | powerpc*-*-linux* | sparc*-*-linux*)
         AC_DEFINE(GC_LINUX_THREADS)
         AC_DEFINE(_REENTRANT)
         if test "${enable_parallel_mark}" != no; then
