@@ -734,6 +734,7 @@
 # if defined(__GNUC__) && ((__GNUC__ >= 3) \
                            || (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)) \
      && !defined(__INTEL_COMPILER) && !defined(__PATHCC__) \
+     && !defined(__FUJITSU) /* for FX10 system */ \
      && !(defined(POWERPC) && defined(DARWIN)) /* for MacOS X 10.3.9 */ \
      && !defined(RTEMS) \
      && !defined(__clang__) /* since no-op in clang (3.0) */
