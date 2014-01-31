@@ -15,7 +15,7 @@
 #ifndef GC_LEAK_DETECTOR_H
 #define GC_LEAK_DETECTOR_H
 
-/* Include leak_detector.h (eg., via GCC --include directive)   */
+/* Include leak_detector.h (e.g., via GCC --include directive)  */
 /* to turn BoehmGC into a Leak Detector.                        */
 
 #ifndef GC_DEBUG

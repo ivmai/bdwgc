@@ -19,7 +19,7 @@ You may want to reverse this decisions if you use -DREDIRECT_MALLOC=...
 
 Note:
 Before you run "make check", you need to set your LD_LIBRARY_PATH correctly
-(eg., to "/usr/local/lib") so that tests can find the shared library
+(e.g., to "/usr/local/lib") so that tests can find the shared library
 libgcc_s.so.1.  Alternatively, you can configure with --disable-shared.
 
 SOLARIS THREADS:

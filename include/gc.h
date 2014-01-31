@@ -1295,7 +1295,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* functions are called to create the thread, e.g. by including gc.h  */
   /* (which redefines some system functions) before calling the system  */
   /* thread creation function.  Nonetheless, thread cleanup routines    */
-  /* (eg., pthread key destructor) typically require manual thread      */
+  /* (e.g., pthread key destructor) typically require manual thread     */
   /* registering (and unregistering) if pointers to GC-allocated        */
   /* objects are manipulated inside.                                    */
   /* It is also always done implicitly on some platforms if             */
