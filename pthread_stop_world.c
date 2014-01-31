@@ -142,7 +142,7 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
 #endif
 
 #ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
-  /* Some targets (eg., Solaris) might require this to be called when   */
+  /* Some targets (e.g., Solaris) might require this to be called when  */
   /* doing thread registering from the thread destructor.               */
   GC_INNER void GC_unblock_gc_signals(void)
   {
