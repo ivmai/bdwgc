@@ -142,8 +142,13 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
 # endif
 #endif
 
-STATIC int GC_sig_suspend = SIG_SUSPEND;
-STATIC int GC_sig_thr_restart = SIG_THR_RESTART;
+#define SIGNAL_UNSET (-1)
+    /* Since SIG_SUSPEND and/or SIG_THR_RESTART could represent */
+    /* a non-constant expression (e.g., in case of SIGRTMIN),   */
+    /* actual signal numbers are determined by GC_stop_init()   */
+    /* unless manually set (before GC initialization).          */
+STATIC int GC_sig_suspend = SIGNAL_UNSET;
+STATIC int GC_sig_thr_restart = SIGNAL_UNSET;
 
 GC_API void GC_CALL GC_set_suspend_signal(int sig)
 {
@@ -161,12 +166,13 @@ GC_API void GC_CALL GC_set_thr_restart_signal(int sig)
 
 GC_API int GC_CALL GC_get_suspend_signal(void)
 {
-  return GC_sig_suspend;
+  return GC_sig_suspend != SIGNAL_UNSET ? GC_sig_suspend : SIG_SUSPEND;
 }
 
 GC_API int GC_CALL GC_get_thr_restart_signal(void)
 {
-  return GC_sig_thr_restart;
+  return GC_sig_thr_restart != SIGNAL_UNSET
+            ? GC_sig_thr_restart : SIG_THR_RESTART;
 }
 
 #ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
@@ -176,6 +182,8 @@ GC_API int GC_CALL GC_get_thr_restart_signal(void)
   {
     sigset_t set;
     sigemptyset(&set);
+    GC_ASSERT(GC_sig_suspend != SIGNAL_UNSET);
+    GC_ASSERT(GC_sig_thr_restart != SIGNAL_UNSET);
     sigaddset(&set, GC_sig_suspend);
     sigaddset(&set, GC_sig_thr_restart);
     if (pthread_sigmask(SIG_UNBLOCK, &set, NULL) != 0)
@@ -863,6 +871,13 @@ GC_INNER void GC_stop_init(void)
 # if !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
     struct sigaction act;
 
+    if (SIGNAL_UNSET == GC_sig_suspend)
+        GC_sig_suspend = SIG_SUSPEND;
+    if (SIGNAL_UNSET == GC_sig_thr_restart)
+        GC_sig_thr_restart = SIG_THR_RESTART;
+    if (GC_sig_suspend == GC_sig_thr_restart)
+        ABORT("Cannot use same signal for thread suspend and resume");
+
     if (sem_init(&GC_suspend_ack_sem, GC_SEM_INIT_PSHARED, 0) != 0)
         ABORT("sem_init failed");
 #   ifdef GC_NETBSD_THREADS_WORKAROUND
@@ -896,8 +911,6 @@ GC_INNER void GC_stop_init(void)
       act.sa_handler = GC_suspend_handler;
 #   endif
     /* act.sa_restorer is deprecated and should not be initialized. */
-    if (GC_sig_suspend == GC_sig_thr_restart)
-        ABORT("Cannot use same signal for thread suspend and resume");
     if (sigaction(GC_sig_suspend, &act, NULL) != 0) {
         ABORT("Cannot set SIG_SUSPEND handler");
     }
