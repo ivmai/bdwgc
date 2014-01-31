@@ -429,7 +429,8 @@ GC_API int GC_CALL GC_posix_memalign(void ** /* memptr */, size_t /* align */,
 /* Explicitly deallocate an object.  Dangerous if used incorrectly.     */
 /* Requires a pointer to the base of an object.                         */
 /* If the argument is stubborn, it should not be changeable when freed. */
-/* An object should not be enabled for finalization when it is          */
+/* An object should not be enabled for finalization (and it should not  */
+/* contain registered disappearing links of any kind) when it is        */
 /* explicitly deallocated.                                              */
 /* GC_free(0) is a no-op, as required by ANSI C for free.               */
 GC_API void GC_CALL GC_free(void *);
@@ -1062,7 +1063,10 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
         /* email discussion with John Ellis.                    */
         /* link must be non-NULL (and be properly aligned).     */
         /* obj must be a pointer to the first word of an object */
-        /* allocated by GC_malloc or friends.  It is unsafe to  */
+        /* allocated by GC_malloc or friends.   A link          */
+        /* disappears when it is unregistered manually, or when */
+        /* (*link) is cleared, or when the object containing    */
+        /* this link is garbage collected.  It is unsafe to     */
         /* explicitly deallocate the object containing link.    */
         /* Explicit deallocation of obj may or may not cause    */
         /* link to eventually be cleared.                       */
