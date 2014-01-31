@@ -1493,7 +1493,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #define BUFSZ 1024
 
 #ifdef NO_VSNPRINTF
-  /* In case this function is missing (eg., in DJGPP v2.0.3).   */
+  /* In case this function is missing (e.g., in DJGPP v2.0.3).  */
 # define GC_VSNPRINTF(buf, bufsz, format, args) vsprintf(buf, format, args)
 #elif defined(_MSC_VER)
 # ifdef MSWINCE
