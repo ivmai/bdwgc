@@ -598,7 +598,7 @@ typedef ForestElement Forest [ MAX_DEPTH ];
                         /* of the forest in order of DECREASING */
                         /* indices.                             */
 
-void CORD_init_min_len()
+void CORD_init_min_len(void)
 {
     register int i;
     register size_t last, previous, current;

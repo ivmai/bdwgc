@@ -116,7 +116,7 @@ void invalidate_map(int i)
 
 /* Reduce the number of map entries to save space for huge files. */
 /* This also affects maps in histories.                           */
-void prune_map()
+void prune_map(void)
 {
     line_map map = current_map;
     int start_line = map -> line;
@@ -290,7 +290,7 @@ int dis_granularity;
 
 /* Update dis_line, dis_col, and dis_pos to make cursor visible.        */
 /* Assumes line, col, dis_line, dis_pos are in bounds.                  */
-void normalize_display()
+void normalize_display(void)
 {
     int old_line = dis_line;
     int old_col = dis_col;
@@ -328,7 +328,7 @@ void fix_cursor(void)
 
 /* Make sure line, col, and dis_pos are somewhere inside file.  */
 /* Recompute file_pos.  Assumes dis_pos is accurate or past eof */
-void fix_pos()
+void fix_pos(void)
 {
     int my_col = col;
 
