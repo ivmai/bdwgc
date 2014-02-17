@@ -52,20 +52,20 @@ STATIC void * GC_generic_or_special_malloc(size_t lb, int knd)
     switch(knd) {
 #     ifdef STUBBORN_ALLOC
         case STUBBORN:
-            return(GC_malloc_stubborn((size_t)lb));
+            return GC_malloc_stubborn(lb);
 #     endif
         case PTRFREE:
-            return(GC_malloc_atomic((size_t)lb));
+            return GC_malloc_atomic(lb);
         case NORMAL:
-            return(GC_malloc((size_t)lb));
+            return GC_malloc(lb);
         case UNCOLLECTABLE:
-            return(GC_malloc_uncollectable((size_t)lb));
+            return GC_malloc_uncollectable(lb);
 #       ifdef ATOMIC_UNCOLLECTABLE
           case AUNCOLLECTABLE:
-            return(GC_malloc_atomic_uncollectable((size_t)lb));
+            return GC_malloc_atomic_uncollectable(lb);
 #       endif /* ATOMIC_UNCOLLECTABLE */
         default:
-            return(GC_generic_malloc(lb,knd));
+            return GC_generic_malloc(lb, knd);
     }
 }
 
@@ -177,7 +177,7 @@ GC_API void * GC_CALL GC_generic_malloc_ignore_off_page(size_t lb, int k)
     DCL_LOCK_STATE;
 
     if (SMALL_OBJ(lb))
-        return(GC_generic_malloc((word)lb, k));
+        return GC_generic_malloc(lb, k);
     lg = ROUNDED_UP_GRANULES(lb);
     lb_rounded = GRANULES_TO_BYTES(lg);
     if (lb_rounded < lb)
@@ -220,12 +220,12 @@ GC_API void * GC_CALL GC_generic_malloc_ignore_off_page(size_t lb, int k)
 
 GC_API void * GC_CALL GC_malloc_ignore_off_page(size_t lb)
 {
-    return((void *)GC_generic_malloc_ignore_off_page(lb, NORMAL));
+    return GC_generic_malloc_ignore_off_page(lb, NORMAL);
 }
 
 GC_API void * GC_CALL GC_malloc_atomic_ignore_off_page(size_t lb)
 {
-    return((void *)GC_generic_malloc_ignore_off_page(lb, PTRFREE));
+    return GC_generic_malloc_ignore_off_page(lb, PTRFREE);
 }
 
 /* Increment GC_bytes_allocd from code that doesn't have direct access  */

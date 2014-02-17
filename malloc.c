@@ -179,7 +179,7 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
     GC_DBG_COLLECT_AT_MALLOC(lb);
     if (SMALL_OBJ(lb)) {
         LOCK();
-        result = GC_generic_malloc_inner((word)lb, k);
+        result = GC_generic_malloc_inner(lb, k);
         UNLOCK();
     } else {
         size_t lg;
@@ -312,15 +312,14 @@ GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)
             UNLOCK();
         } else {
             UNLOCK();
-            op = (ptr_t)GC_generic_malloc((word)lb, UNCOLLECTABLE);
+            op = GC_generic_malloc(lb, UNCOLLECTABLE);
             /* For small objects, the free lists are completely marked. */
         }
         GC_ASSERT(0 == op || GC_is_marked(op));
-        return((void *) op);
     } else {
         hdr * hhdr;
 
-        op = (ptr_t)GC_generic_malloc((word)lb, UNCOLLECTABLE);
+        op = GC_generic_malloc(lb, UNCOLLECTABLE);
         if (0 == op) return(0);
 
         GC_ASSERT(((word)op & (HBLKSIZE - 1)) == 0); /* large block */
@@ -337,8 +336,8 @@ GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)
 #       endif
         hhdr -> hb_n_marks = 1;
         UNLOCK();
-        return((void *) op);
     }
+    return op;
 }
 
 #ifdef REDIRECT_MALLOC

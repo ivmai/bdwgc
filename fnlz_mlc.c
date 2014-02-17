@@ -98,7 +98,7 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
         op = GC_finalized_objfreelist[lg];
         if (EXPECT(0 == op, FALSE)) {
             UNLOCK();
-            op = GC_generic_malloc((word)lb, GC_finalized_kind);
+            op = GC_generic_malloc(lb, GC_finalized_kind);
             if (NULL == op)
                 return NULL;
             /* GC_generic_malloc has extended the size map for us.      */
@@ -114,7 +114,7 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
     } else {
         size_t op_sz;
 
-        op = GC_generic_malloc((word)lb, GC_finalized_kind);
+        op = GC_generic_malloc(lb, GC_finalized_kind);
         if (NULL == op)
             return NULL;
         op_sz = GC_size(op);
