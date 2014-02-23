@@ -4,7 +4,8 @@ This is version 7.5.0 (next release development) of a conservative garbage
 collector for C and C++.
 
 You might find a more recent version
-[here](http://www.hpl.hp.com/personal/Hans_Boehm/gc).
+[here](http://www.hboehm.info/gc/), or
+[here](https://github.com/ivmai/bdwgc).
 
 ## Overview
 
@@ -36,9 +37,6 @@ and
  * Boehm H., "Simple GC-safe Compilation", Proceedings of the ACM SIGPLAN '96
    Conference on Programming Language Design and Implementation.
 
-(Some of these are also available from
-[here](http://www.hpl.hp.com/personal/Hans_Boehm/papers/), among other places.)
-
 Unlike the collector described in the second reference, this collector
 operates either with the mutator stopped during the entire collection
 (default) or incrementally during allocations.  (The latter is supported
@@ -55,8 +53,8 @@ CSL 84-7).  Doug McIlroy wrote a simpler fully conservative collector that
 was part of version 8 UNIX (tm), but appears to not have received
 widespread use.
 
-Rudimentary tools for use of the collector as a leak detector are included
-([link](http://www.hpl.hp.com/personal/Hans_Boehm/gc/leak.html)),
+Rudimentary tools for use of the collector as a
+[leak detector](http://www.hboehm.info/gc/leak.html) are included,
 as is a fairly sophisticated string package "cord" that makes use of the
 collector.  (See doc/README.cords and H.-J. Boehm, R. Atkinson, and M. Plass,
 "Ropes: An Alternative to Strings", Software Practice and Experience 25, 12
@@ -64,7 +62,7 @@ collector.  (See doc/README.cords and H.-J. Boehm, R. Atkinson, and M. Plass,
 in Xerox Cedar, or the "rope" package in the SGI STL or the g++ distribution.)
 
 Further collector documentation can be found
-[here](http://www.hpl.hp.com/personal/Hans_Boehm/gc).
+[here](http://www.hboehm.info/gc/).
 
 
 ## General Description
@@ -516,9 +514,9 @@ per MB of accessible memory that needs to be scanned and processor.
 Your mileage may vary.)  The incremental/generational collection facility
 may help in some cases.
 
-Please address bug reports [here](mailto:gc@linux.hpl.hp.com).  If you are
-contemplating a major addition, you might also send mail to ask whether
-it's already been done (or whether we tried and discarded it).
+Please address bug reports [here](mailto:bdwgc@lists.opendylan.org).
+If you are contemplating a major addition, you might also send mail to ask
+whether it's already been done (or whether we tried and discarded it).
 
 ## Copyright & Warranty
 

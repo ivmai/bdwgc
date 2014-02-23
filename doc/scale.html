@@ -132,7 +132,8 @@ simultaneously runnable threads, this may have disastrous performance
 consequences (e.g. a factor of 10 slowdown).
 <H2>Performance</h2>
 We conducted some simple experiments with a version of
-<A HREF="gc_bench.html">our GC benchmark</a> that was slightly modified to
+<a href="http://www.hboehm.info/gc/gc_bench/">our GC benchmark</a>
+that was slightly modified to
 run multiple concurrent client threads in the same address space.
 Each client thread does the same work as the original benchmark, but they share
 a heap.
