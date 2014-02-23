@@ -425,7 +425,7 @@ Java-style unordered finalization, and to ignore certain kinds of cycles,
 
 <H2>Generational Collection and Dirty Bits</h2>
 We basically use the concurrent and generational GC algorithm described in
-<A HREF="http://www.hpl.hp.com/personal/Hans_Boehm/gc/papers/pldi91.ps.Z">"Mostly Parallel Garbage Collection"</a>,
+<A HREF="http://www.hboehm.info/gc/papers/pldi91.ps.Z">"Mostly Parallel Garbage Collection"</a>,
 by Boehm, Demers, and Shenker.
 <P>
 The most significant modification is that
@@ -616,17 +616,13 @@ GC versions before 7 do not invoke the thread-local allocator by default.
 For some more details see <A HREF="scale.html">here</a>, and the
 technical report entitled
 <A HREF="http://www.hpl.hp.com/techreports/2000/HPL-2000-165.html">
-``Fast Multiprocessor Memory Allocation and Garbage Collection''
-</a>
+"Fast Multiprocessor Memory Allocation and Garbage Collection"</a>
 <P>
 <HR>
 <P>
 Comments are appreciated.  Please send mail to
-<A HREF="mailto:gc@linux.hpl.hp.com"><tt>gc@linux.hpl.hp.com</tt></a>
+<A HREF="mailto:bdwgc@lists.opendylan.org"><tt>bdwgc@lists.opendylan.org</tt></a>
 (GC mailing list) or
-<A HREF="mailto:Hans.Boehm@hp.com"><TT>Hans.Boehm@hp.com</tt></a>
-<P>
-This is a modified copy of a page written while the author was at SGI.
-The original was <A HREF="http://reality.sgi.com/boehm/gcdescr.html">here</a>.
+<A HREF="mailto:boehm@acm.org"><TT>boehm@acm.org</tt></a>
 </body>
 </html>

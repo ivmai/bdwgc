@@ -69,9 +69,8 @@ instead of GC_MALLOC.
 
 Define GC_DEBUG before including gc.h for additional checking.
 
-More documentation on the collector interface can be found at
-http://www.hpl.hp.com/personal/Hans_Boehm/gc/gcinterface.html,
-in README.md and other files in the doc directory, and in include/gc.h file.
+More documentation on the collector interface can be found in README.md,
+doc/gcinterface.html, include/gc.h, and other files in the doc directory.
 
 WARNINGS:
 
