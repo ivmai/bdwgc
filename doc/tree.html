@@ -6,9 +6,7 @@
 <BODY>
 <H1>Two-Level Tree Structure for Fast Pointer Lookup</h1>
 <P>
-The conservative garbage collector described
-<A HREF="http://www.hpl.hp.com/personal/Hans_Boehm/gc/">here</a>
-uses a 2-level tree
+The BDWGC conservative garbage collector uses a 2-level tree
 data structure to aid in fast pointer identification.
 This data structure is described in a bit more detail here, since
 <OL>
@@ -49,7 +47,7 @@ The high bits are used as an index into the <TT>GC_top_index</tt> (really
 <TT>bottom_index</tt> data structure.  This structure in turn consists
 mostly of an array <TT>index</tt> indexed by the middle bits of
 the candidate pointer.  The <TT>index</tt> array contains the actual
-<TT>hdr</tt> pointers. 
+<TT>hdr</tt> pointers.
 <P>
 Thus a pointer lookup consists primarily of a handful of memory references,
 and can be quite fast:
@@ -168,7 +166,7 @@ _SZ(words)|                      |  is the size of a heap chunk (struct hblk)
   v       |                      |  of at least MININCR*HBLKSIZE bytes (below),
  ---      +----------------------+  otherwise, size of each object in chunk.
 
-Dynamic data structures above are interleaved throughout the heap in blocks of 
+Dynamic data structures above are interleaved throughout the heap in blocks of
 size MININCR * HBLKSIZE bytes as done by gc_scratch_alloc which cannot be
 freed; free lists are used (e.g. alloc_hdr).  HBLK's below are collected.
 

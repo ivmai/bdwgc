@@ -9,8 +9,8 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-Please send bug reports to Hans-J. Boehm (Hans.Boehm@hp.com) or,
-preferred, to GC mailing list (gc@linux.hpl.hp.com).
+Please send bug reports to Hans-J. Boehm (boehm@acm.org) or,
+preferred, to GC mailing list (bdwgc@lists.opendylan.org).
 
 This is a string packages that uses a tree-based representation.
 See cord.h for a description of the functions provided.  Ec.h describes

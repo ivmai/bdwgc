@@ -31,7 +31,7 @@ outperforms native queue-based mutual exclusion implementations in most
 cases, sometimes drastically so.
 <H2>Options for enhanced scalability</h2>
 Version 6.0 of the collector adds two facilities to enhance collector
-scalability on multiprocessors.  As of 6.0alpha1, these are supported 
+scalability on multiprocessors.  As of 6.0alpha1, these are supported
 only under Linux on X86 and IA64 processors, though ports to other
 otherwise supported Pthreads platforms should be straightforward.
 They are intended to be used together.
@@ -60,7 +60,7 @@ with that returned by the standard allocators.  It may be used by other
 threads.  The only difference is that, if the thread allocates enough
 memory of a certain kind, it will build a thread-local free list for
 objects of that kind, and allocate from that.  This greatly reduces
-locking.  The thread-local free lists are refilled using 
+locking.  The thread-local free lists are refilled using
 <TT>GC_malloc_many</tt>.
 <P>
 An important side effect of this flag is to replace the default
@@ -129,10 +129,11 @@ Note that setting GC_NPROCS to 1 also causes some lock acquisitions inside
 the collector to immediately yield the processor instead of busy waiting
 first.  In the case of a multiprocessor and a client with multiple
 simultaneously runnable threads, this may have disastrous performance
-consequences (e.g. a factor of 10 slowdown). 
+consequences (e.g. a factor of 10 slowdown).
 <H2>Performance</h2>
 We conducted some simple experiments with a version of
-<A HREF="gc_bench.html">our GC benchmark</a> that was slightly modified to
+<a href="http://www.hboehm.info/gc/gc_bench/">our GC benchmark</a>
+that was slightly modified to
 run multiple concurrent client threads in the same address space.
 Each client thread does the same work as the original benchmark, but they share
 a heap.
@@ -200,7 +201,7 @@ since the memory system is
 a major constraint for the garbage collector,
 the processors usually share a single memory bus, and thus
 the aggregate memory bandwidth does not increase in
-proportion to the number of processors. 
+proportion to the number of processors.
 <P>
 These results are likely to be very sensitive to both hardware and OS
 issues.  Preliminary experiments with an older Pentium Pro machine running
