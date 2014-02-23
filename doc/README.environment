@@ -93,8 +93,8 @@ GC_PRINT_BACK_HEIGHT - Print max length of chain through unreachable objects
                      This feature is still somewhat experimental, and requires
                      that the collector have been built with MAKE_BACK_GRAPH
                      defined.  For details, see Boehm, "Bounding Space Usage
-                     of Conservative Garbage Collectors", POPL 2001, or
-                     http://lib.hpl.hp.com/techpubs/2001/HPL-2001-251.html .
+                     of Conservative Garbage Collectors", POPL 2001
+                     (http://www.hpl.hp.com/techreports/2001/HPL-2001-251.html).
 
 GC_RETRY_SIGNALS, GC_NO_RETRY_SIGNALS - Try to compensate for lost
                      thread suspend signals in linux_threads.c.  On by
