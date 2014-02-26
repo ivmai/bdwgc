@@ -270,6 +270,9 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
                         /* for processing by GC_invoke_finalizers.      */
                         /* Invoked with lock.                           */
 
+  void GC_process_togglerefs (void);
+      /*Process the togglerefs before GC starts */
+
 #  ifndef SMALL_CONFIG
      GC_INNER void GC_print_finalization_stats(void);
 #  endif

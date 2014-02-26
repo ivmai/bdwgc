@@ -605,6 +605,7 @@ GC_INNER void GC_stop_world(void)
     int code;
 # endif
   GC_ASSERT(I_HOLD_LOCK());
+    GC_process_togglerefs ();
 # ifdef DEBUG_THREADS
     GC_log_printf("Stopping the world from %p\n", (void *)pthread_self());
 # endif

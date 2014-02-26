@@ -1172,6 +1172,11 @@ GC_API int GC_CALL GC_unregister_long_link(void ** /* link */);
         /* Similar to GC_unregister_disappearing_link but for a */
         /* registration by either of the above two routines.    */
 
+
+/* toggleref support */
+GC_API void GC_toggleref_register_callback (int (*proccess_toggleref) (GC_PTR obj));
+GC_API void GC_toggleref_add (GC_PTR object, int strong_ref);
+
 /* Finalizer callback support.  Invoked by the collector (with  */
 /* the allocation lock held) for each unreachable object        */
 /* enqueued for finalization.                                   */
