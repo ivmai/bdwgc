@@ -46,8 +46,17 @@ void ** const GC_uobjfreelist_ptr = GC_uobjfreelist;
     void ** const GC_auobjfreelist_ptr = GC_auobjfreelist;
 # endif
 
+GC_API int GC_CALL GC_get_kind_and_size(const void * p, size_t * psize)
+{
+    hdr * hhdr = HDR(p);
 
-STATIC void * GC_generic_or_special_malloc(size_t lb, int knd)
+    if (psize != NULL) {
+        *psize = hhdr -> hb_sz;
+    }
+    return hhdr -> hb_obj_kind;
+}
+
+GC_API void * GC_CALL GC_generic_or_special_malloc(size_t lb, int knd)
 {
     switch(knd) {
 #     ifdef STUBBORN_ALLOC

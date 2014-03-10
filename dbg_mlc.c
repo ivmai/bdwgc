@@ -565,6 +565,23 @@ GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
     return (GC_store_debug_info(result, (word)lb, s, i));
 }
 
+STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
+{
+    void * result = GC_generic_malloc(lb + DEBUG_BYTES, knd);
+
+    if (NULL == result) {
+        GC_err_printf(
+                "GC_debug_generic_malloc(%lu, %d) returning NULL (%s:%d)\n",
+                (unsigned long)lb, knd, s, i);
+        return NULL;
+    }
+    if (!GC_debugging_started) {
+        GC_start_debugging();
+    }
+    ADD_CALL_CHAIN(result, ra);
+    return GC_store_debug_info(result, (word)lb, s, i);
+}
+
 #ifdef DBG_HDRS_ALL
   /* An allocation function for internal use.  Normally internally      */
   /* allocated objects do not have debug information.  But in this      */
@@ -922,6 +939,29 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
       GC_debug_free(p);
     }
     return(result);
+}
+
+GC_API void * GC_CALL GC_debug_generic_or_special_malloc(size_t lb, int knd,
+                                                         GC_EXTRA_PARAMS)
+{
+    switch (knd) {
+#     ifdef STUBBORN_ALLOC
+        case STUBBORN:
+            return GC_debug_malloc_stubborn(lb, OPT_RA s, i);
+#     endif
+        case PTRFREE:
+            return GC_debug_malloc_atomic(lb, OPT_RA s, i);
+        case NORMAL:
+            return GC_debug_malloc(lb, OPT_RA s, i);
+        case UNCOLLECTABLE:
+            return GC_debug_malloc_uncollectable(lb, OPT_RA s, i);
+#     ifdef ATOMIC_UNCOLLECTABLE
+        case AUNCOLLECTABLE:
+            return GC_debug_malloc_atomic_uncollectable(lb, OPT_RA s, i);
+#     endif
+        default:
+            return GC_debug_generic_malloc(lb, knd, OPT_RA s, i);
+    }
 }
 
 #ifndef SHORT_DBG_HDRS
