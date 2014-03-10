@@ -193,11 +193,13 @@ GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc);
 /* the descriptor is not correct.  Even in the single-threaded case,    */
 /* we need to be sure that cleared objects on a free list don't         */
 /* cause a GC crash if they are accidentally traced.                    */
-GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t /* lb */,
-                                                       int /* k */);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL GC_generic_malloc(
+                                                            size_t /* lb */,
+                                                            int /* knd */);
 
-GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_ignore_off_page(
-                                        size_t /* lb */, int /* k */);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+                                        GC_generic_malloc_ignore_off_page(
+                                            size_t /* lb */, int /* knd */);
                                 /* As above, but pointers to past the   */
                                 /* first page of the resulting object   */
                                 /* are ignored.                         */
