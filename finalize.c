@@ -377,7 +377,7 @@ ensure_toggleref_capacity (int capacity)
 {
     if (!GC_toggleref_array) {
         GC_toggleref_array_capacity = 32;
-        GC_toggleref_array = (GCToggleRef *) GC_INTERNAL_MALLOC (GC_toggleref_array_capacity * sizeof (GCToggleRef), NORMAL);
+        GC_toggleref_array = (GCToggleRef *) GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE (GC_toggleref_array_capacity * sizeof (GCToggleRef), NORMAL);
     }
     if (GC_toggleref_array_size + capacity >= GC_toggleref_array_capacity) {
         GCToggleRef *tmp;
@@ -385,10 +385,10 @@ ensure_toggleref_capacity (int capacity)
         while (GC_toggleref_array_capacity < GC_toggleref_array_size + capacity)
             GC_toggleref_array_capacity *= 2;
 
-        tmp = (GCToggleRef *) GC_INTERNAL_MALLOC (GC_toggleref_array_capacity * sizeof (GCToggleRef), NORMAL);
+        tmp = (GCToggleRef *) GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE (GC_toggleref_array_capacity * sizeof (GCToggleRef), NORMAL);
         memcpy (tmp, GC_toggleref_array, GC_toggleref_array_size * sizeof (GCToggleRef));
 
-        GC_free((GC_PTR)GC_toggleref_array);
+        GC_INTERNAL_FREE(GC_toggleref_array);
         GC_toggleref_array = tmp;
     }
 }
