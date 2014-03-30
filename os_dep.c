@@ -97,12 +97,6 @@
 # include <malloc.h>   /* for locking */
 #endif
 
-#if defined(LINUX) || defined(FREEBSD) || defined(SOLARIS) || defined(IRIX5) \
-        || ((defined(USE_MMAP) || defined(USE_MUNMAP)) \
-        && !defined(MSWIN32) && !defined(MSWINCE))
-# define MMAP_SUPPORTED
-#endif
-
 #if defined(MMAP_SUPPORTED) || defined(ADD_HEAP_GUARD_PAGES)
 # if defined(USE_MUNMAP) && !defined(USE_MMAP)
 #   error "invalid config - USE_MUNMAP requires USE_MMAP"

@@ -542,7 +542,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
       }
       /* At this execution point, GC_setpagesize() and GC_init_win32()  */
       /* must already be called (for GET_MEM() to work correctly).      */
-      content = (char *)GET_MEM(len + 1);
+      content = (char *)GET_MEM(ROUNDUP_PAGESIZE_IF_MMAP(len + 1));
       if (content == NULL) {
         CloseHandle(hFile);
         return; /* allocation failure */

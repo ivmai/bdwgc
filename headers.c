@@ -130,28 +130,22 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
 
         if (bytes_to_get <= bytes) {
           /* Undo the damage, and get memory directly */
-            bytes_to_get = bytes;
-#           ifdef USE_MMAP
-                bytes_to_get += GC_page_size - 1;
-                bytes_to_get &= ~(GC_page_size - 1);
-#           endif
+            bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
             result = (ptr_t)GET_MEM(bytes_to_get);
             GC_add_to_our_memory(result, bytes_to_get);
             scratch_free_ptr -= bytes;
             GC_scratch_last_end_ptr = result + bytes;
             return(result);
         }
+
+        bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes_to_get); /* for safety */
         result = (ptr_t)GET_MEM(bytes_to_get);
         GC_add_to_our_memory(result, bytes_to_get);
         if (result == 0) {
             if (GC_print_stats)
                 GC_log_printf("Out of memory - trying to allocate less\n");
             scratch_free_ptr -= bytes;
-            bytes_to_get = bytes;
-#           ifdef USE_MMAP
-                bytes_to_get += GC_page_size - 1;
-                bytes_to_get &= ~(GC_page_size - 1);
-#           endif
+            bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
             result = (ptr_t)GET_MEM(bytes_to_get);
             GC_add_to_our_memory(result, bytes_to_get);
             return result;

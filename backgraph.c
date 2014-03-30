@@ -86,8 +86,9 @@ static back_edges *avail_back_edges = 0;
 static back_edges * new_back_edges(void)
 {
   if (0 == back_edge_space) {
-    back_edge_space = (back_edges *)
-                        GET_MEM(MAX_BACK_EDGE_STRUCTS*sizeof(back_edges));
+    back_edge_space = (back_edges *)GET_MEM(
+                        ROUNDUP_PAGESIZE_IF_MMAP(MAX_BACK_EDGE_STRUCTS
+                                                  * sizeof(back_edges)));
     GC_add_to_our_memory((ptr_t)back_edge_space,
                          MAX_BACK_EDGE_STRUCTS*sizeof(back_edges));
   }
@@ -127,7 +128,9 @@ static void push_in_progress(ptr_t p)
 {
   if (n_in_progress >= in_progress_size) {
     if (in_progress_size == 0) {
-      in_progress_size = INITIAL_IN_PROGRESS;
+      in_progress_size = ROUNDUP_PAGESIZE_IF_MMAP(INITIAL_IN_PROGRESS
+                                                        * sizeof(ptr_t))
+                                / sizeof(ptr_t);
       in_progress_space = (ptr_t *)GET_MEM(in_progress_size * sizeof(ptr_t));
       GC_add_to_our_memory((ptr_t)in_progress_space,
                            in_progress_size * sizeof(ptr_t));

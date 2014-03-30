@@ -1288,6 +1288,18 @@ GC_EXTERN word GC_n_heap_sects; /* Number of separately added heap      */
 
 GC_EXTERN word GC_page_size;
 
+/* Round up allocation size to a multiple of a page size.       */
+/* GC_setpagesize() is assumed to be already invoked.           */
+#define ROUNDUP_PAGESIZE(bytes) \
+                (((bytes) + GC_page_size - 1) & ~(GC_page_size - 1))
+
+/* Same as above but used to make GET_MEM() argument safe.      */
+#ifdef MMAP_SUPPORTED
+# define ROUNDUP_PAGESIZE_IF_MMAP(bytes) ROUNDUP_PAGESIZE(bytes)
+#else
+# define ROUNDUP_PAGESIZE_IF_MMAP(bytes) (bytes)
+#endif
+
 #if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
   struct _SYSTEM_INFO;
   GC_EXTERN struct _SYSTEM_INFO GC_sysinfo;
