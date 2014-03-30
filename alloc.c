@@ -1169,14 +1169,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
                                 /* heap to expand soon.                   */
 
     if (n < MINHINCR) n = MINHINCR;
-    bytes = n * HBLKSIZE;
-    /* Make sure bytes is a multiple of GC_page_size */
-      {
-        word mask = GC_page_size - 1;
-        bytes += mask;
-        bytes &= ~mask;
-      }
-
+    bytes = ROUNDUP_PAGESIZE(n * HBLKSIZE);
     if (GC_max_heapsize != 0 && GC_heapsize + bytes > GC_max_heapsize) {
         /* Exceeded self-imposed limit */
         return(FALSE);

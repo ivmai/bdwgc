@@ -46,8 +46,7 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
     ptr_t result;
     GC_bool retry = FALSE;
 
-    /* Round up to a multiple of a granule. */
-      lb = (lb + GRANULE_BYTES - 1) & ~(GRANULE_BYTES - 1);
+    lb = ROUNDUP_GRANULE_SIZE(lb);
     n_blocks = OBJ_SZ_TO_BLOCKS(lb);
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     /* Do our share of marking work */

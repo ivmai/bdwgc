@@ -2069,8 +2069,7 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
 #   undef IGNORE_PAGES_EXECUTABLE
 
     if (result == MAP_FAILED) return(0);
-    last_addr = (ptr_t)result + bytes + GC_page_size - 1;
-    last_addr = (ptr_t)((word)last_addr & ~(GC_page_size - 1));
+    last_addr = (ptr_t)ROUNDUP_PAGESIZE((word)result + bytes);
 #   if !defined(LINUX)
       if (last_addr == 0) {
         /* Oops.  We got the end of the address space.  This isn't      */
@@ -2190,8 +2189,7 @@ void * os2_alloc(size_t bytes)
     ptr_t result = 0; /* initialized to prevent warning. */
     word i;
 
-    /* Round up allocation size to multiple of page size */
-    bytes = (bytes + GC_page_size-1) & ~(GC_page_size-1);
+    bytes = ROUNDUP_PAGESIZE(bytes);
 
     /* Try to find reserved, uncommitted pages */
     for (i = 0; i < GC_n_heap_bases; i++) {
@@ -2366,9 +2364,8 @@ void * os2_alloc(size_t bytes)
 /* Return 0 if the block is too small to make this feasible.    */
 STATIC ptr_t GC_unmap_start(ptr_t start, size_t bytes)
 {
-    ptr_t result;
-    /* Round start to next page boundary.       */
-    result = (ptr_t)((word)(start + GC_page_size - 1) & ~(GC_page_size - 1));
+    ptr_t result = (ptr_t)ROUNDUP_PAGESIZE((word)start);
+
     if ((word)(result + GC_page_size) > (word)(start + bytes)) return 0;
     return result;
 }
@@ -3269,8 +3266,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #   endif
     if (!GC_dirty_maintained) return;
     h_trunc = (struct hblk *)((word)h & ~(GC_page_size-1));
-    h_end = (struct hblk *)(((word)(h + nblocks) + GC_page_size-1)
-                            & ~(GC_page_size-1));
+    h_end = (struct hblk *)ROUNDUP_PAGESIZE((word)(h + nblocks));
     if (h_end == h_trunc + 1 &&
         get_pht_entry_from_index(GC_dirty_pages, PHT_HASH(h_trunc))) {
         /* already marked dirty, and hence unprotected. */

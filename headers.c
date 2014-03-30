@@ -119,8 +119,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
 {
     register ptr_t result = scratch_free_ptr;
 
-    bytes += GRANULE_BYTES-1;
-    bytes &= ~(GRANULE_BYTES-1);
+    bytes = ROUNDUP_GRANULE_SIZE(bytes);
     scratch_free_ptr += bytes;
     if ((word)scratch_free_ptr <= (word)GC_scratch_end_ptr) {
         return(result);
@@ -132,8 +131,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
           /* Undo the damage, and get memory directly */
             bytes_to_get = bytes;
 #           ifdef USE_MMAP
-                bytes_to_get += GC_page_size - 1;
-                bytes_to_get &= ~(GC_page_size - 1);
+                bytes_to_get = ROUNDUP_PAGESIZE(bytes_to_get);
 #           endif
             result = (ptr_t)GET_MEM(bytes_to_get);
             GC_add_to_our_memory(result, bytes_to_get);
@@ -148,8 +146,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             scratch_free_ptr -= bytes;
             bytes_to_get = bytes;
 #           ifdef USE_MMAP
-                bytes_to_get += GC_page_size - 1;
-                bytes_to_get &= ~(GC_page_size - 1);
+                bytes_to_get = ROUNDUP_PAGESIZE(bytes_to_get);
 #           endif
             result = (ptr_t)GET_MEM(bytes_to_get);
             GC_add_to_our_memory(result, bytes_to_get);

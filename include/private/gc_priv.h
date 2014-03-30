@@ -763,6 +763,10 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 
 # define HBLKDISPL(objptr) (((size_t) (objptr)) & (HBLKSIZE-1))
 
+/* Round up allocation size (in bytes) to a multiple of a granule.      */
+#define ROUNDUP_GRANULE_SIZE(bytes) \
+                (((bytes) + (GRANULE_BYTES - 1)) & ~(GRANULE_BYTES - 1))
+
 /* Round up byte allocation requests to integral number of words, etc. */
 # define ROUNDED_UP_GRANULES(n) \
         BYTES_TO_GRANULES((n) + (GRANULE_BYTES - 1 + EXTRA_BYTES))
@@ -1398,12 +1402,16 @@ GC_EXTERN word GC_n_heap_sects; /* Number of separately added heap      */
 
 GC_EXTERN word GC_page_size;
 
+/* Round up allocation size to a multiple of a page size.       */
+/* GC_setpagesize() is assumed to be already invoked.           */
+#define ROUNDUP_PAGESIZE(bytes) \
+                (((bytes) + GC_page_size - 1) & ~(GC_page_size - 1))
+
 #if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
   struct _SYSTEM_INFO;
   GC_EXTERN struct _SYSTEM_INFO GC_sysinfo;
   GC_INNER GC_bool GC_is_heap_base(ptr_t p);
 #endif
-
 
 GC_EXTERN word GC_black_list_spacing;
                         /* Average number of bytes between blacklisted  */
