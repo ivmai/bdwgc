@@ -2558,6 +2558,11 @@
 # undef USE_MMAP
 #endif
 
+#if defined(LINUX) || defined(FREEBSD) || defined(SOLARIS) || defined(IRIX5) \
+    || ((defined(USE_MMAP) || defined(USE_MUNMAP)) && !defined(USE_WINALLOC))
+# define MMAP_SUPPORTED
+#endif
+
 #if defined(GC_DISABLE_INCREMENTAL) || defined(MANUAL_VDB)
 # undef GWW_VDB
 # undef MPROTECT_VDB
@@ -2894,8 +2899,8 @@
         /* REDIRECT_MALLOC macro defined.                               */
         /* GET_MEM() returns a HLKSIZE aligned chunk.                   */
         /* 0 is taken to mean failure.                                  */
-        /* In the case os USE_MMAP, the argument must also be a         */
-        /* physical page size.                                          */
+        /* In case of MMAP_SUPPORTED, the argument must also be         */
+        /* a multiple of a physical page size.                          */
         /* GET_MEM is currently not assumed to retrieve 0 filled space, */
         /* though we should perhaps take advantage of the case in which */
         /* does.                                                        */
