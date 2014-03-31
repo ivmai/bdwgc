@@ -307,7 +307,7 @@
 # define GC_CAN_SAVE_CALL_STACKS
 #endif
 
-/* If we're on an a platform on which we can't save call stacks, but    */
+/* If we're on a platform on which we can't save call stacks, but       */
 /* gcc is normally used, we go ahead and define GC_ADD_CALLER.          */
 /* We make this decision independent of whether gcc is actually being   */
 /* used, in order to keep the interface consistent, and allow mixing    */
