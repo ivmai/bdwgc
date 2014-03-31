@@ -1140,7 +1140,7 @@ struct _GC_arrays {
   ptr_t _scratch_end_ptr;
   ptr_t _scratch_last_end_ptr;
         /* Used by headers.c, and can easily appear to point to */
-        /* heap.                                                */
+        /* heap.  Also used by GC_register_dynamic_libraries(). */
   mse *_mark_stack;
         /* Limits of stack for GC_mark routine.  All ranges     */
         /* between GC_mark_stack (incl.) and GC_mark_stack_top  */
