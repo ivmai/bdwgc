@@ -1327,8 +1327,8 @@ GC_API void GC_CALL GC_enable_incremental(void)
         if (len > 4 && pathBuf[len - 4] == (TCHAR)'.') {
           len -= 4; /* strip executable file extension */
         }
-        BCOPY(TEXT("." GC_LOG_STD_NAME), &pathBuf[len],
-              sizeof(TEXT("." GC_LOG_STD_NAME)));
+        BCOPY(TEXT(".") TEXT(GC_LOG_STD_NAME), &pathBuf[len],
+              sizeof(TEXT(".") TEXT(GC_LOG_STD_NAME)));
 #     endif
     }
 
