@@ -159,7 +159,7 @@ static void maybe_finalize(void)
   GC_INNER void * GC_core_gcj_malloc(size_t lb,
                                      void * ptr_to_struct_containing_descr)
 #else
-  GC_API void * GC_CALL GC_gcj_malloc(size_t lb,
+  GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t lb,
                                       void * ptr_to_struct_containing_descr)
 #endif
 {
@@ -206,7 +206,7 @@ static void maybe_finalize(void)
 
 /* Similar to GC_gcj_malloc, but add debug info.  This is allocated     */
 /* with GC_gcj_debug_kind.                                              */
-GC_API void * GC_CALL GC_debug_gcj_malloc(size_t lb,
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
                 void * ptr_to_struct_containing_descr, GC_EXTRA_PARAMS)
 {
     void * result;
@@ -234,7 +234,7 @@ GC_API void * GC_CALL GC_debug_gcj_malloc(size_t lb,
 }
 
 /* There is no THREAD_LOCAL_ALLOC for GC_gcj_malloc_ignore_off_page().  */
-GC_API void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
                                      void * ptr_to_struct_containing_descr)
 {
     ptr_t op;

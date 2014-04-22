@@ -581,7 +581,8 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
     }
 }
 
-GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t lb, GC_descr d)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
+                                                                GC_descr d)
 {
     ptr_t op;
     ptr_t * opp;
@@ -617,8 +618,8 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t lb, GC_descr d)
    return((void *) op);
 }
 
-GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page(size_t lb,
-                                                                 GC_descr d)
+GC_API GC_ATTR_MALLOC void * GC_CALL
+    GC_malloc_explicitly_typed_ignore_off_page(size_t lb, GC_descr d)
 {
     ptr_t op;
     ptr_t * opp;
@@ -654,8 +655,8 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page(size_t lb,
    return((void *) op);
 }
 
-GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t n, size_t lb,
-                                                 GC_descr d)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
+                                                        size_t lb, GC_descr d)
 {
     ptr_t op;
     ptr_t * opp;
