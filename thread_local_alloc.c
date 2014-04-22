@@ -144,7 +144,7 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
   GC_bool GC_is_thread_tsd_valid(void *tsd);
 #endif
 
-GC_API void * GC_CALL GC_malloc(size_t bytes)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc(size_t bytes)
 {
     size_t granules = ROUNDED_UP_GRANULES(bytes);
     void *tsd;
@@ -181,7 +181,7 @@ GC_API void * GC_CALL GC_malloc(size_t bytes)
     return result;
 }
 
-GC_API void * GC_CALL GC_malloc_atomic(size_t bytes)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_atomic(size_t bytes)
 {
     size_t granules = ROUNDED_UP_GRANULES(bytes);
     void *tsd;
@@ -237,7 +237,7 @@ GC_API void * GC_CALL GC_malloc_atomic(size_t bytes)
 /* incremental GC should be enabled before we fork a second thread.     */
 /* Unlike the other thread local allocation calls, we assume that the   */
 /* collector has been explicitly initialized.                           */
-GC_API void * GC_CALL GC_gcj_malloc(size_t bytes,
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t bytes,
                                     void * ptr_to_struct_containing_descr)
 {
   if (EXPECT(GC_incremental, FALSE)) {

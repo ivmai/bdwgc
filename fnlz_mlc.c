@@ -81,7 +81,7 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
   STATIC void * GC_core_finalized_malloc(size_t lb,
                                 const struct GC_finalizer_closure *fclos)
 #else
-  GC_API void * GC_CALL GC_finalized_malloc(size_t lb,
+  GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
                                 const struct GC_finalizer_closure *fclos)
 #endif
 {
@@ -125,7 +125,7 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
 }
 
 #ifdef THREAD_LOCAL_ALLOC
-  GC_API void * GC_CALL GC_finalized_malloc(size_t client_lb,
+  GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t client_lb,
                                 const struct GC_finalizer_closure *fclos)
   {
     size_t lb = client_lb + sizeof(void *);

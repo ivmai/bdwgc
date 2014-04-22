@@ -24,7 +24,7 @@
 
   void GC_dirty(ptr_t p);
 
-  GC_API void * GC_CALL GC_malloc_stubborn(size_t lb)
+  GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_stubborn(size_t lb)
   {
     return(GC_malloc(lb));
   }
@@ -40,7 +40,7 @@
 
 #else /* !MANUAL_VDB */
 
-  GC_API void * GC_CALL GC_malloc_stubborn(size_t lb)
+  GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_stubborn(size_t lb)
   {
     return(GC_malloc(lb));
   }

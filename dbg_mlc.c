@@ -506,7 +506,8 @@ GC_API void GC_CALL GC_debug_register_displacement(size_t offset)
 # endif
 #endif /* GC_ADD_CALLER */
 
-GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc(size_t lb,
+                                                     GC_EXTRA_PARAMS)
 {
     void * result;
 
@@ -531,8 +532,8 @@ GC_API void * GC_CALL GC_debug_malloc(size_t lb, GC_EXTRA_PARAMS)
     return (GC_store_debug_info(result, (word)lb, s, i));
 }
 
-GC_API void * GC_CALL GC_debug_malloc_ignore_off_page(size_t lb,
-                                                      GC_EXTRA_PARAMS)
+GC_API GC_ATTR_MALLOC void * GC_CALL
+    GC_debug_malloc_ignore_off_page(size_t lb, GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc_ignore_off_page(lb + DEBUG_BYTES);
 
@@ -548,8 +549,8 @@ GC_API void * GC_CALL GC_debug_malloc_ignore_off_page(size_t lb,
     return (GC_store_debug_info(result, (word)lb, s, i));
 }
 
-GC_API void * GC_CALL GC_debug_malloc_atomic_ignore_off_page(size_t lb,
-                                                             GC_EXTRA_PARAMS)
+GC_API GC_ATTR_MALLOC void * GC_CALL
+    GC_debug_malloc_atomic_ignore_off_page(size_t lb, GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc_atomic_ignore_off_page(lb + DEBUG_BYTES);
 
@@ -624,7 +625,8 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
 #endif /* DBG_HDRS_ALL */
 
 #ifdef STUBBORN_ALLOC
-  GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
+  GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_stubborn(size_t lb,
+                                                        GC_EXTRA_PARAMS)
   {
     void * result = GC_malloc_stubborn(lb + DEBUG_BYTES);
 
@@ -673,7 +675,8 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
 
 #else /* !STUBBORN_ALLOC */
 
-  GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
+  GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_stubborn(size_t lb,
+                                                        GC_EXTRA_PARAMS)
   {
     return GC_debug_malloc(lb, OPT_RA s, i);
   }
@@ -685,7 +688,8 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
                                 const void * p GC_ATTR_UNUSED) {}
 #endif /* !STUBBORN_ALLOC */
 
-GC_API void * GC_CALL GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_atomic(size_t lb,
+                                                            GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc_atomic(lb + DEBUG_BYTES);
 
@@ -701,7 +705,8 @@ GC_API void * GC_CALL GC_debug_malloc_atomic(size_t lb, GC_EXTRA_PARAMS)
     return (GC_store_debug_info(result, (word)lb, s, i));
 }
 
-GC_API char * GC_CALL GC_debug_strdup(const char *str, GC_EXTRA_PARAMS)
+GC_API GC_ATTR_MALLOC char * GC_CALL GC_debug_strdup(const char *str,
+                                                     GC_EXTRA_PARAMS)
 {
   char *copy;
   size_t lb;
@@ -723,8 +728,8 @@ GC_API char * GC_CALL GC_debug_strdup(const char *str, GC_EXTRA_PARAMS)
   return copy;
 }
 
-GC_API char * GC_CALL GC_debug_strndup(const char *str, size_t size,
-                                       GC_EXTRA_PARAMS)
+GC_API GC_ATTR_MALLOC char * GC_CALL GC_debug_strndup(const char *str,
+                                                size_t size, GC_EXTRA_PARAMS)
 {
   char *copy;
   size_t len = strlen(str); /* str is expected to be non-NULL  */
@@ -745,7 +750,8 @@ GC_API char * GC_CALL GC_debug_strndup(const char *str, size_t size,
 #ifdef GC_REQUIRE_WCSDUP
 # include <wchar.h> /* for wcslen() */
 
-  GC_API wchar_t * GC_CALL GC_debug_wcsdup(const wchar_t *str, GC_EXTRA_PARAMS)
+  GC_API GC_ATTR_MALLOC wchar_t * GC_CALL GC_debug_wcsdup(const wchar_t *str,
+                                                          GC_EXTRA_PARAMS)
   {
     size_t lb = (wcslen(str) + 1) * sizeof(wchar_t);
     wchar_t *copy = GC_debug_malloc_atomic(lb, OPT_RA s, i);
@@ -760,8 +766,8 @@ GC_API char * GC_CALL GC_debug_strndup(const char *str, size_t size,
   }
 #endif /* GC_REQUIRE_WCSDUP */
 
-GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
-                                                    GC_EXTRA_PARAMS)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
+                                                        GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc_uncollectable(lb + UNCOLLECTABLE_DEBUG_BYTES);
 
@@ -778,8 +784,8 @@ GC_API void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
 }
 
 #ifdef ATOMIC_UNCOLLECTABLE
-  GC_API void * GC_CALL GC_debug_malloc_atomic_uncollectable(size_t lb,
-                                                             GC_EXTRA_PARAMS)
+  GC_API GC_ATTR_MALLOC void * GC_CALL
+        GC_debug_malloc_atomic_uncollectable(size_t lb, GC_EXTRA_PARAMS)
   {
     void * result =
         GC_malloc_atomic_uncollectable(lb + UNCOLLECTABLE_DEBUG_BYTES);
@@ -941,8 +947,8 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
     return(result);
 }
 
-GC_API void * GC_CALL GC_debug_generic_or_special_malloc(size_t lb, int knd,
-                                                         GC_EXTRA_PARAMS)
+GC_API GC_ATTR_MALLOC void * GC_CALL
+    GC_debug_generic_or_special_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
 {
     switch (knd) {
 #     ifdef STUBBORN_ALLOC
@@ -1247,7 +1253,7 @@ GC_API void GC_CALL GC_debug_register_finalizer_ignore_self
 
 #endif /* !GC_NO_FINALIZATION */
 
-GC_API void * GC_CALL GC_debug_malloc_replacement(size_t lb)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_replacement(size_t lb)
 {
     return GC_debug_malloc(lb, GC_DBG_EXTRAS);
 }

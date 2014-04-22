@@ -167,7 +167,7 @@ GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
   size_t GC_dbg_collect_at_malloc_min_lb = (GC_COLLECT_AT_MALLOC);
 #endif
 
-GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
 {
     void * result;
     DCL_LOCK_STATE;
@@ -225,7 +225,7 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
 #ifdef THREAD_LOCAL_ALLOC
   GC_INNER void * GC_core_malloc_atomic(size_t lb)
 #else
-  GC_API void * GC_CALL GC_malloc_atomic(size_t lb)
+  GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_atomic(size_t lb)
 #endif
 {
     void *op;
@@ -254,7 +254,7 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
 #ifdef THREAD_LOCAL_ALLOC
   GC_INNER void * GC_core_malloc(size_t lb)
 #else
-  GC_API void * GC_CALL GC_malloc(size_t lb)
+  GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc(size_t lb)
 #endif
 {
     void *op;
@@ -286,7 +286,7 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
 }
 
 /* Allocate lb bytes of pointerful, traced, but not collectible data.   */
-GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
 {
     void *op;
     size_t lg;
