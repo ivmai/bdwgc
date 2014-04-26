@@ -2235,7 +2235,7 @@
              extern int etext[];
 #            define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
 #       endif
-#       if defined(__GLIBC__)
+#       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* At present, there's a bug in GLibc getcontext() on         */
           /* Linux/x64 (it clears FPU exception mask).  We define this  */
           /* macro to workaround it.                                    */
