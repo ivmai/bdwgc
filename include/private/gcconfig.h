@@ -2160,7 +2160,7 @@
 #           define PREFETCH(x) __builtin_prefetch((x), 0, 0)
 #           define PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
 #       endif
-#       if defined(__GLIBC__)
+#       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* At present, there's a bug in GLibc getcontext() on         */
           /* Linux/x64 (it clears FPU exception mask).  We define this  */
           /* macro to workaround it.                                    */
