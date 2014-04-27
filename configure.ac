@@ -578,21 +578,21 @@ case "$host" in
     dnl performance under Irix.
     ;;
  sparc-*-netbsd*)
-    machdep="src/sparc_netbsd_mach_dep.lo"
+    machdep="sparc_netbsd_mach_dep.lo"
     ;;
  sparc*-*-linux* | sparc*-*-openbsd* | sparc64-*-freebsd* | sparc64-*-netbsd*)
-    machdep="src/sparc_mach_dep.lo"
+    machdep="sparc_mach_dep.lo"
     ;;
  sparc-sun-solaris2.3)
-    machdep="src/sparc_mach_dep.lo"
+    machdep="sparc_mach_dep.lo"
     AC_DEFINE(SUNOS53_SHARED_LIB, 1,
               [Define to work around a Solaris 5.3 bug (see dyn_load.c).])
     ;;
  sparc*-sun-solaris2*)
-    machdep="src/sparc_mach_dep.lo"
+    machdep="sparc_mach_dep.lo"
     ;;
  ia64-*-*)
-    machdep="src/ia64_save_regs_in_stack.lo"
+    machdep="ia64_save_regs_in_stack.lo"
     ;;
 esac
 AC_MSG_RESULT($machdep)
