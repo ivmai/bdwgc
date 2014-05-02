@@ -1857,11 +1857,7 @@
         /* This does not work on NUE:                           */
 #       define LINUX_STACKBOTTOM
         /* We also need the base address of the register stack  */
-        /* backing store.  This is computed in                  */
-        /* GC_linux_register_stack_base based on the following  */
-        /* constants:                                           */
-#       define BACKING_STORE_ALIGNMENT 0x100000
-#       define BACKING_STORE_DISPLACEMENT 0x80000000
+        /* backing store.                                       */
         extern ptr_t GC_register_stackbottom;
 #       define BACKING_STORE_BASE GC_register_stackbottom
 #       define SEARCH_FOR_DATA_START
