@@ -6470,7 +6470,7 @@ comment it doesn't, and it's unclear that's correct.
 * GC_alloc_large had several largely compensating bugs in the
 computation of GC_words_wasted.  (It was confused about bytes vs.
 words in two places.)
-* Integrated Slava Sysoltev's patch to support more recent versions of
+* Integrated Slava Sysoltsev's patch to support more recent versions of
 the Intel compiler on IA64/Linux.
 * Changed win32 spinlock initialization to conditionally set a spin count.
 (Emmanual Stumpf pointed out that enabling this makes a large performance
@@ -7427,7 +7427,7 @@ when SMALL_CONFIG was defined.  This was no doubt a major performance bug for
 the default win32 configuration.
 * Removed -DSMALL_CONFIG from NT_MAKEFILE.  It seemed like an anachronism now
 that the average PC has 64MB or so.
-* Integrated Bryce McKinley's patches for linux threads and dynamic loading
+* Integrated Bryce McKinlay's patches for linux threads and dynamic loading
 from the libgcj tree.  Turned on dynamic loading support for Linux/PPC.
 * Changed the stack finding code to use environ on HP/UX.  This should
 probably be done on other platforms, too.  Since I can't test those, that'll
