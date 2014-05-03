@@ -71,7 +71,7 @@ Brian F. Dennis <xjam@cork.cs.berkeley.edu>
 Brian Lewis <btlewis@eng.sun.com>
 Bruce Hoult <bruce@hoult.org>
 Bruce Mitchener <bruce.mitchener@gmail.com>
-Bryce McKinley
+Bryce McKinlay <mckinlay@redhat.com>
 Burkhard Linke <blinke@cebitec.uni-bielefeld.de>
 Cesar Eduardo Barros
 Charles Mills
@@ -134,7 +134,6 @@ H.J. Lu <hjl.tools@gmail.com>
 Hanno Boeck
 Hans Boehm <boehm@acm.org>
 Hans-Peter Nilsson <hp@gcc.gnu.org>
-Harris NightHawk
 Henning Makholm <Henning@octoshape.com>
 Henrik Theiling
 Hironori Sakamoto <hsaka@mth.biglobe.ne.jp>
@@ -262,10 +261,10 @@ Peter Wang
 Petr Krajca <krajcap@inf.upol.cz>
 Petr Salinger
 Petter Urkedal <paurkedal@gmail.com>
+Philip Brown <phil@opencsw.org>
 Philipp Tomsich
 Philippe Queinnec
 Phillip Musumeci
-Philp Brown
 Pierre de Rop
 Radek Polak
 Rainer Orth <ro@cebitec.uni-bielefeld.de>
@@ -288,7 +287,7 @@ Roger Sayle
 Roman Hodek
 Romano Paolo Tenca <rotenca@telvia.it>
 Russell Ruby <russ@sludge.net>
-Rutger Ovidus
+Rutger Ovidius <ovidr@users.sourceforge.net>
 Ryan Murray
 Salvador Eduardo Tropea
 Samuel Thibault
@@ -297,14 +296,13 @@ Scott Schwartz <schwartz@groucho.cse.psu.edu>
 Sebastien Pouliot <sebastien@ximian.com>
 Shawn Wagner
 Simon Posnjak
-Slava Sysoltev
+Slava Sysoltsev <Viatcheslav.Sysoltsev@h-d-gmbh.de>
 Stefan Ring
 Stefano Rivera <stefano@rivera.za.net>
 Sugioka Toshinobu
 Suzuki Toshiya
 Sven Hartrumpf
 Sven Verdoolaege
-Tagliapietra Tommaso
 Takis Psarogiannakopoulos <takis@xfree86.org>
 Tatsuya Bizenn
 Thiemo Seufer <ths@networkno.de>
@@ -317,6 +315,7 @@ Tim Bingham
 Timothy N. Newsham
 Todd Berman <tberman@mono-cvs.ximian.com>
 Tom Tromey <tromey@cygnus.com>
+Tommaso Tagliapietra <tommaso.tagliapietra@enel.it>
 Toralf Foerster
 Toshio Endo
 Tsugutomo Enami <tsugutomo.enami@jp.sony.com>
