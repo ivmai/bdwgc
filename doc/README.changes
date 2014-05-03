@@ -976,7 +976,7 @@ Since 5.0alpha6:
    the default win32 configuration.
  - Removed -DSMALL_CONFIG from NT_MAKEFILE.  It seemed like an anchronism now
    that the average PC has 64MB or so.
- - Integrated Bryce McKinley's patches for linux threads and dynamic loading
+ - Integrated Bryce McKinlay's patches for linux threads and dynamic loading
    from the libgcj tree.  Turned on dynamic loading support for Linux/PPC.
  - Changed the stack finding code to use environ on HP/UX.  (Thanks
    to Gustavo Rodriguez-Rivera for the suggestion.)  This should probably
@@ -1200,7 +1200,7 @@ Since 6.0alpha5:
    It was missed in a previous renaming. (Thanks to Vladimir Tsichevski
    for pointing this out.)
  - Arranged to not not mask SIGABRT in linux_threads.c.  (Thanks to Bryce
-   McKinlay.) 
+   McKinlay.)
  - Added GC_no_dls hook for applications that want to register their own
    roots.
  - Integrated Kjetil Matheussen's Amiga changes.
@@ -1335,7 +1335,7 @@ Since 6.0alpha7:
    implementation of GC_malloc_many or the local_malloc primitves.  It still
    doesn't work well, but it shouldn't lose memory anymore.
  - Integrated some changes from the gcc source tree that I had previously
-   missed.  (Thanks to Bryce McKinley for the reminder/diff.)
+   missed.  (Thanks to Bryce McKinlay for the reminder/diff.)
  - Added Makefile.direct as a copy of the default Makefile, which would
    normally be overwritten if configure is run.
  - Changed the gc.tar target in Makefile.direct to embed the version number
@@ -1551,7 +1551,7 @@ Since 6.1alpha3:
  - On Linux/X86, retry mmap with a different start argument.  That should
    allow the collector to use more (closer to 3GB) of the address space.
    (Thanks to Jeffrey Mark Siskind for tracking this down.)
- - Force 64 bit alignment with GCJ support.  (Reflects Bryce McKinley's
+ - Force 64 bit alignment with GCJ support.  (Reflects Bryce McKinlay's
    patch to the gcc tree.)
  - Refined the choice of sa_handler vs. sa_sigaction in GC_dirty_init
    to accomodate some glibc5 systems.  (Thanks to Dan Fandrich for the
@@ -1596,7 +1596,7 @@ Since 6.1alpha4:
    dropped objects.  The usual symptom was a very intermittent segmentation
    fault in the marker.  This mattered only if one of the GC_gcj_malloc
    variants was used.  (Thanks to Michael Smith, Jeff Sturm, Bryce
-   McKinley and Tom Tromey for helping to track this down.)
+   McKinlay and Tom Tromey for helping to track this down.)
  - Fixed Linux and Solaris/64 SPARC configuration.  (Thanks to David Miller,
    Jeff Sturm, Tom Tromey, and Christian Joensson.)
  - Fixed a typo in strdup definition.  (Thanks to Gerard A Allan.)
@@ -1623,7 +1623,7 @@ Since 6.1alpha4:
    Minor patches for 64-bit AIX, particularly to STACKBOTTOM.
    (Thanks again to Jeffrey Mark Siskind.)
  - Renamed "SUSPENDED" flag for Solaris threads support to avoid a conflict
-   with a system header. (Thanks to Philp Brown.)
+   with a system header. (Thanks to Philip Brown.)
  - Cause win32_threads.c to handle an out of range stack pointer correctly,
    though currently with a warning.  (Thanks to Jonathan Clark for
    observing that win32 applications may temporarily use the stack
@@ -1913,7 +1913,7 @@ Since 6.3alpha1:
  - GC_alloc_large had several largely compensating bugs in the
    computation of GC_words_wasted.  (It was confused about bytes vs.
    words in two places.)
- - Integrated Slava Sysoltev's patch to support more recent versions of
+ - Integrated Slava Sysoltsev's patch to support more recent versions of
    the Intel compiler on IA64/Linux.
  - Changed win32 spinlock initialization to conditionally set a spin count.
    (Emmanual Stumpf pointed out that enabling this makes a large performance
@@ -2137,7 +2137,7 @@ Since gc6.3:
    it with a check that the mapping type is MEM_IMAGE.
    In theory, this should work much better, but it is a high
    risk change for win32.  (Thanks to Ashley Bone for the crucial
-   experimental data behind this, and to Rutger Ovidus for
+   experimental data behind this, and to Rutger Ovidius for
    some further experiments.)
  - GC_allochblk_nth incremented GC_words_wasted by bytes rather than
    words.
@@ -2148,7 +2148,7 @@ Since gc6.3:
    eieio, since the documentation recommends against eieio, and
    it seems to be incorrect if the preceding memory op is a load.
  - Fixed print_block_list to print the correct kind number for
-   STUBBORN.  (Thanks to Rutger Ovidus.)
+   STUBBORN.  (Thanks to Rutger Ovidius.)
  - Have configure.in generate an error if it is asked to support
    pthreads, but doesn't know how to.
  - Added Kazuhiro Inaoka's patch for Renesas M32R support.
@@ -2186,7 +2186,7 @@ Since gc6.4:
  - Fixed Itanium 32-bit ABI support (HP/UX).  In particular, the
    compare_and_exchange implementation didn't consider that possibility.
  - Undefine GC_pthread_detach in win32_threads.c.  (Thanks to
-   Tagliapietra Tommaso.)
+   Tommaso Tagliapietra.)
  - Fixed inclusion of frame.h for NETBSD in os_dep.c.
  - Applied Dan Bonachea's patch to use mmap on AIX.
  - Several fixes to resurrect the Irix port on recent OS versions.
@@ -2265,7 +2265,7 @@ Since 6.6:
  - Add support for Darwin/X86.  (Thanks to Geoff Norton and the Mono
    developers.)
  - Merge in some recent gcc fixes.  Add ppc64 asm code.  (Thanks to Bryce
-   McKinley and other gcj developers.)
+   McKinlay and other gcj developers.)
  - Scan MEM_PRIVATE sections under Windows ME and predecessors.
  - Interior pointers with some largish offsets into large objects could
    be ignored, if GC_all_interior_pointers was set.  (Oddly this worked
