@@ -159,6 +159,24 @@ Things don't appear to add up for a variety of reasons, most notably
 fragmentation losses.  These are probably much more significant for the
 contrived program "test.c" than for your application.)
 
+### Building from GIT
+The process is copied from http://www.hboehm.info/gc/ .
+
+D is the absolute path to an installation directory:
+
+    cd D
+    git clone git://github.com/ivmai/libatomic_ops.git
+    git clone git://github.com/ivmai/bdwgc.git
+    ln -s  D/libatomic_ops D/bdwgc/libatomic_ops
+    cd bdwgc
+    autoreconf -vif
+    automake --add-missing
+    ./configure
+    make
+
+
+### Other builds
+
 On most Unix-like platforms, the collector can be built either using a
 GNU autoconf-based build infrastructure (type `configure; make` in the
 simplest case), or with a classic makefile by itself (type
