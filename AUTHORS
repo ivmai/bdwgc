@@ -9,7 +9,7 @@ and the Defense Advance Research Projects Agency.
 
 The garbage collector originated as part of the run-time system for
 the Russell programming language implementation. The first version of the
-garbage collector was written primarily by Al Demers.  It was then refined
+garbage collector was written primarily by Alan Demers.  It was then refined
 and mostly rewritten, primarily by Hans-J. Boehm, at Cornell U.,
 the University of Washington, Rice University (where it was first used for
 C and assembly code), Xerox PARC, SGI, and HP Labs.  However, significant
@@ -21,27 +21,27 @@ Adam Megacz <adam@megac.com>
 Adnan Ali
 Adrian Bunk <bunk@fs.tum.de>
 Akira Tagoh <tagoh@redhat.com>
-Alain Novak
+Alain Novak <alain.novak@hermes.si>
 Alan Dosser <dosser@src.dec.com>
 Alan J. Demers <ademers@cs.cornell.edu>
 Aleksey Demakov <ademakov@gmail.com>
 Alexander Belchenko <bialix@ukr.net>
 Alexander Gavrilov <angavrilov@gmail.com>
 Alexander Herz <alexander.herz@mytum.de>
-Alexandr Petrosian
+Alexandr Petrosian <paf@design.ru>
 Alexandr Shadchin <ShadchinAV@mail.ru>
 Alistair G. Crooks <agc@uts.amdahl.com>
 Allan Hsu <allan@counterpop.net>
-Andre Leiradella
+Andre Leiradella <andre@leiradella.com>
 Andreas Jaeger <aj@suse.de>
 Andreas Tobler <a.tobler@schweiz.org>
-Andrei Polushin
+Andrei Polushin <polushin@gmail.com>
 Andrej Cedilnik <acedil1@csee.umbc.edu>
 Andrew Begel <abegel@eecs.berkeley.edu>
 Andrew Haley <aph@redhat.com>
 Andrew Horton <andrew.j.horton@gmail.com>
 Andrew Pinski <pinskia@physics.uc.edu>
-Andrew Stitcher
+Andrew Stitcher <astitcher@redhat.com>
 Andrew Stone <andrew@stone.com>
 Andy Wingo <wingo@pobox.com>
 Anselm Baird-Smith <Anselm.BairdSmith@inria.fr>
@@ -53,7 +53,7 @@ Assar Westerlund <assar@sics.se>
 Barry DeFreese <bdefreese@debian.org>
 Baruch Siach <baruch@tkos.co.il>
 Ben A. Mesander <ben@piglet.cr.usgs.gov>
-Ben Cottrell
+Ben Cottrell <tamino@wolfhut.org>
 Ben Hutchings <ben@decadentplace.org.uk>
 Ben Maurer <benm@mono-cvs.ximian.com>
 Bernie Solomon <bernard@mono-cvs.ximian.com>
@@ -64,7 +64,7 @@ Bradley Smith <brad@brad-smith.co.uk>
 Brent Benson <brent@jade.ssd.csd.harris.com>
 Brian Alliet <brian@brianweb.net>
 Brian Beuning <bbeuning@corecard.com>
-Brian Burton
+Brian Burton <bburton@users.sourceforge.net>
 Brian D. Carlstrom <bdc@clark.lcs.mit.edu>
 Brian F. Dennis <xjam@cork.cs.berkeley.edu>
 Brian Lewis <btlewis@eng.sun.com>
@@ -73,7 +73,7 @@ Bruce Mitchener <bruce.mitchener@gmail.com>
 Bryce McKinlay <mckinlay@redhat.com>
 Burkhard Linke <blinke@cebitec.uni-bielefeld.de>
 Cesar Eduardo Barros <cesarb@nitnet.com.br>
-Charles Mills
+Charles Mills <boson@cyberspace.org>
 Chris Dodd <chrisd@reservoir.com>
 Chris Lingard <chris@highludworth.freeserve.co.uk>
 Christian Joensson <christian.joensson@gmail.com>
@@ -83,10 +83,10 @@ Christoffe Raffali <christophe.raffalli@univ-savoie.fr>
 Clay Spence <cds@peanut.sarnoff.com>
 Colin LeMahieu <clemahieu@gmail.com>
 Craig McDaniel <kreg7@bellsouth.net>
-Dai Sato
+Dai Sato <satodai@dog.intcul.tohoku.ac.jp>
 Dan Bonachea <bonachea@cs.berkeley.edu>
 Dan Fandrich <dan@coneharvesters.com>
-Dan Sullivan
+Dan Sullivan <sullivan@epa.gov>
 Daniel R. Grayson <dan@math.uiuc.edu>
 Danny Smith <danny_r_smith_2001@yahoo.co.nz>
 Darrell Schiebel <drs@nrao.edu>
@@ -97,7 +97,7 @@ Dave Love <d.love@dl.ac.uk>
 David Ayers <d.ayers@inode.at>
 David Daney <ddaney@avtrex.com>
 David Grove <groved@us.ibm.com>
-David Leonard
+David Leonard <leonard@users.sourceforge.net>
 David Miller <davem@davemloft.net>
 David Mossberger
 David Peroutka <djp@volny.cz>
@@ -132,23 +132,23 @@ Hanno Boeck <hanno@gentoo.org>
 Hans Boehm <boehm@acm.org>
 Hans-Peter Nilsson <hp@gcc.gnu.org>
 Henning Makholm <Henning@octoshape.com>
-Henrik Theiling
+Henrik Theiling <theiling@absint.com>
 Hironori Sakamoto <hsaka@mth.biglobe.ne.jp>
 Hiroshi Kawashima <kei@arch.sony.co.jp>
 Iain Sandoe <developer@sandoe-acoustics.co.uk>
 Ian Piumarta <piumarta@prof.inria.fr>
 Ian Searle <ians@eskimo.com>
-Igor Khavkine
+Igor Khavkine <i_khavki@alcor.concordia.ca>
 Ivan Demakov <ivan@tgrad.nsk.su>
 Ivan Maidanski <ivmai@mail.ru>
-Jaap Boender
+Jaap Boender <jaapb@netbsd.org>
 Jack Andrews <effbiae@gmail.com>
 Jacob Navia <jacob.navia@jacob.remcomp.fr>
 Jakub Jelinek <jakub@redhat.com>
 James Clark <jjc@jclark.com>
 James Dominy
 Jan Wielemaker <J.Wielemaker@cs.vu.nl>
-Jani Kajala
+Jani Kajala <jani@sumea.com>
 Jean-Baptiste Nivois
 Jean-Claude Beaudoin <jean.claude.beaudoin@gmail.com>
 Jean-Daniel Fekete <fekete@cs.umd.edu>
@@ -158,7 +158,7 @@ Jeffrey Mark Siskind
 Jeremy Fitzhardinge <jeremy@goop.org>
 Jesper Peterson <jep@mtiame.mtia.oz.au>
 Jesse Hull
-Jesse Jones
+Jesse Jones <jesjones@mindspring.com>
 Jesse Rosenstock <jmr@ugcs.caltech.edu>
 Ji-Yong Chung
 Jie Liu <lj8175@gmail.com>
@@ -167,11 +167,11 @@ Jim Meyering <jim@meyering.net>
 Joerg Sonnenberger <joerg@britannica.bec.de>
 Johannes Schmidt <jschmidt@avtrex.com>
 Johannes Totz <jtotz@ic.ac.uk>
-John Bowman
-John Clements
-John Ellis
+John Bowman <bowman@ualberta.ca>
+John Clements <clements@brinkerhoff.org>
+John Ellis <ellis@xerox.parc.com>
 John Merryweather Cooper <jmerry@mono-cvs.ximian.com>
-Jon Moore
+Jon Moore <jonm@apache.org>
 Jonathan Bachrach <jonathan@harlequin.com>
 Jonathan Clark
 Jonathan Pryor <jpryor@novell.com>
@@ -187,7 +187,7 @@ Kjetil S. Matheussen <ksvalast@ifi.uio.no>
 Klaus Treichel <ktreichel@web.de>
 Knut Tvedten <knuttv@ifi.uio.no>
 Krister Walfridsson <cato@df.lth.se>
-Kristian Kristensen
+Kristian Kristensen <kk@cs.aau.dk>
 Kurt Miller <kurt@intricatesoftware.com>
 Lars Farm <lars.farm@ite.mh.se>
 Laurent Morichetti <l_m@pacbell.net>
@@ -203,7 +203,7 @@ Marcus Herbert
 Margaret Fleck <mfleck@illinois.edu>
 Mark Boulter <mboulter@vnet.ibm.com>
 Mark Mitchell <mark@codesourcery.com>
-Mark Reichert
+Mark Reichert <markr@sirs.com>
 Mark Sibly
 Mark Weiser <weiser@ubiq.com>
 Martin Tauchmann <martintauchmann@bigfoot.com>
