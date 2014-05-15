@@ -157,7 +157,7 @@
 * Add GC_get_thr_restart_signal, GC_thread_is_registered to GC API.
 * Add GC_is_heap_ptr, GC_move_disappearing_link to GC API.
 * Add SHORT_DBG_HDRS macro template to configure.
-* Add Symbian port to mainline.
+* Add Symbian port to mainline (porting done by Djamel Magri).
 * Add TODO file.
 * Add assertion ensuring proper alignment of 'pushed' GC symbols.
 * Add assertion in GC_getspecific on qtid.
@@ -5760,10 +5760,13 @@ value.
 * Some gc6.9 changes.
 * Change FindTopOfStack decl in darwin_stop_world.c.
 * Move some static tests from misc.c to gcconfig.h.  Use #error.
-* Add GC_print_free_list() function.
-* Add GC_GNU_THREADS support on HURD.
-* __GNUC__ was misspelled as __GNUC in thread_local_alloc.h.
-* Integrated various MacOSX patches and tried to reconcile them.
+* Add GC_print_free_list() function (thanks to Bruce Hoult).
+* Add GC_GNU_THREADS support on HURD (thanks to Aleksey Demakov,
+Barry DeFreese, and possibly other Debian maintainers).
+* __GNUC__ was misspelled as __GNUC in thread_local_alloc.h (thanks to
+Peter Wang).
+* Integrated various MacOSX patches and tried to reconcile them (thanks to
+Allan Hsu, several contributors at Apple, and probably others).
 * Added some casts to powerpc.h in libatomic_ops to silence warnings.
 
 * Makefile.am: Include NT_STSTIC_THREADS_MAKEFILE in dist.
@@ -5884,11 +5887,12 @@ x86_EXCEPTION_STATE32_*. Add X86_64 for exc_state.faultvaddr.
 * More 6.7 changes.
 * Declare GC_dump() in gc.h.
 * Add --enable-large-config, which just defines the LARGE_CONFIG macro.
-* Make GlobalAlloc address alignment a bit more intuitive.
+* Make GlobalAlloc address alignment a bit more intuitive (thanks to
+Charles Mills).
 * Use #elif in the definitions of GET_MEM.
 * Overhaul porting.html.  Remove corresponding text from README.
 * Fix typo in DARWIN section of gcconfig.h.
-* Fix Darwin thread memory leak.
+* Fix Darwin thread memory leak (thanks to Bruce Mitchener).
 * Update x86 AO_test_and_set implementation to use "=q".
 * Add $(EXEEXT) to many tests in tests/tests.am.  (Corresponds to a
 6.7 fix, which no longer applied.)
@@ -5924,9 +5928,10 @@ and then switching to mmap if that fails.
 * Fix REDIRECT_MALLOC with threads on Linux.  It now usually seems to work
 with ugly hacks that include having calloc behave differently when it is
 called from ld.so or the pthreads library.  A reasonable amount of
-infrastructure was added to support some of this.
+infrastructure was added to support some of this.  (Thanks to Roland McGrath
+for ideas and information.)
 * Import various updated build scripts.
-* Add GC_register_has_static_roots_callback.
+* Add GC_register_has_static_roots_callback (thanks to Andrew Haley).
 * Fix serious bugs in GC_malloc_atomic_uncollectable().
 * Return GC_SUCCESS form GC_get_stack_base().
 * Fix several atomic_ops problems on IA64 with HP Compiler.
@@ -5978,8 +5983,9 @@ threads need more bug fixes.
 == [7.0alpha4] 2005-08-02 ==
 
 * Various 6.5, 6.6 changes.
-* Removed GC_brief_async_signal_safe_sleep and used atomic_ops instead.
-* Integrated build patches from David Angelocola and Petter Urkedal.
+* Removed GC_brief_async_signal_safe_sleep and used atomic_ops instead
+(thanks to Ben Maurer).
+* Integrated build patches from Davide Angelocola and Petter Urkedal.
 * Fix dynamic-linker-based pthread call redirection.
 * Renamed RS6000 to POWERPC/AIX.
 * Allow recovery from SIGSEGV in marker on Linux.  This works around
@@ -6005,8 +6011,9 @@ This is only half done.  The gc.h redefinitions currently interfere.
 == [7.0alpha2] 2005-04-07 ==
 
 * GC_bytes_allocd was incremented by a possibly uninitialized variable
-in GC_generic_malloc_inner.  (Bug introduced in gc7.0alpha1.)
-* Win32 fixes.
+in GC_generic_malloc_inner.  (Bug introduced in gc7.0alpha1.  Thanks
+to Ben Hutchings for tracking it down.)
+* Win32 fixes (thanks to Ben Hutchings and Maurizio Vairani).
 * Integrated Ben Hutchings' GetWriteWatch-based virtual dirty bit
 implementation for win32.
 * Removed pc_gc.tar and floppy targets in Makefile.direct.  Removed
@@ -6130,72 +6137,87 @@ in anticipation of a merge with the inline allocation code.
 
 == [6.9] ==
 
-* Fix typo in PREFETCH implementation for X86_64.
-* Fix M68K LINUX port.
-* __GNUC__ was misspelled as __GNUC in new_gc_alloc.h.
+* Fix typo in PREFETCH implementation for X86_64 (thanks to Peter Wang).
+* Fix M68K LINUX port (thanks to Debian packagers).
+* __GNUC__ was misspelled as __GNUC in new_gc_alloc.h (thanks to Peter Wang).
 * Integrated Allan Hsu's patch for OS X VM deallocation problems.
 * Applied FreeBSD/X86_64 patch.
 
 
 == [6.8] 2006-07-08 ==
 
-* Added some support for Dragonfly BSD.
-* Improvements to the HP/UX section of configure.in/configure.ac.
+* Added some support for Dragonfly BSD (thanks to Joerg Sonnenberger and
+Thomas Klausner).
+* Improvements to the HP/UX section of configure.in/configure.ac (thanks
+to Andreas Tobler).
 * GC_unix_get_mem could neglect to release the malloc lock on Irix, under
-extremely unlikely circumstances.
-* Added support for kFreeBSD + glibc
-* Fix more MacOS threads memory leaks
-* Added initial Solaris/X86-64 support
+extremely unlikely circumstances.  (Thanks to Jean-Baptiste Nivois for
+some careful code inspection.)
+* Added support for kFreeBSD + glibc (thanks to Petr Salinger).
+* Fix more MacOS threads memory leaks (thanks to Allan Hsu).
+* Added initial Solaris/X86-64 support (thanks to Rainer Orth).
 
 
 == [6.7] 2006-03-03 ==
 
 * Add "int" to Solaris "end" and "etext" declaration in gc.h.  Declared
 the symbols with underscores and as arrays, since that's what's actually
-used.  Perhaps this could all just be removed.
-* Fixed ARM GC_test_and_set code.
+used.  Perhaps this could all just be removed.  (Thanks to John Bowman.)
+* Fixed ARM GC_test_and_set code (thanks to Kazu Hirata and Paul Brook).
 * Added casts for assignments to hb_last_reclaimed, which truncate the
 value.  Added a cast to GC_adj_words_allocd.  Use GetModuleHandleA
 when retrieving a handle to kernel32.dll under win32.
-* Added Tandem S-Series support.
-* Remove spurious gc:: qualifier for operator delete[] in gc_cpp.h.
+* Added Tandem S-Series support.  (Thanks to Craig McDaniel.  A modified
+version of his patch was applied, and hence breakage is probably not
+his fault.)
+* Remove spurious gc:: qualifier for operator delete[] in gc_cpp.h (thanks
+to Hanno Boeck).
 * Changed a test for LINUX in config_macros.h to one for __linux__.
-* Add prototypes for GC_finalizer_notifier and GC_thr_init.
-* Use ld instead of nonexistent ldz instruction in Darwin FindTopOfStack.
-* Add support for Darwin/X86.
-* Merge in some recent gcc fixes.  Add ppc64 asm code.
+* Add prototypes for GC_finalizer_notifier and GC_thr_init (thanks to
+David Ayers).
+* Use ld instead of nonexitent ldz instruction in Darwin FindTopOfStack
+(thanks to Andreas Tobler).
+* Add support for Darwin/X86 (thanks to Geoff Norton and the Mono
+developers).
+* Merge in some recent gcc fixes.  Add ppc64 asm code.  (Thanks to
+Bryce McKinlay and other GCJ developers.)
 * Scan MEM_PRIVATE sections under Windows ME and predecessors.
 * Interior pointers with some largish offsets into large objects could
 be ignored, if GC_all_interior_pointers was set.  (Oddly this worked
 correctly for stack references if it was not set.  Otherwise it failed
-for both stack and heap references.)
+for both stack and heap references.  Thanks to Andrew McKinlay for the
+critical test case.)
 * Integrated Tatsuya Bizenn's NETBSD threads support, with some
 untested changes.
 * Added GC_strdup and friends to make leak detection work correctly
-for strdup clients.  Fixed the existing strdup
+for strdup clients (thanks to Jon Moore).  Fixed the existing strdup
 with malloc redirection to handle a null malloc return correctly.
 
 
 == [6.6] 2005-09-09 ==
 
-* Fix CPU count detection for Irix and FreeBSD.
+* Fix CPU count detection for Irix and FreeBSD (thanks to Dan Bonachea).
 * Integrate Dan Bonachea's patch for the IBM XLC compiler on Darwin.
 * Integrated Andreas Tobler's FreeBSD/PowerPC patch.
 * Don't access the GC thread structure from the restart handler.  It's
-unsafe, since the handler may run too late.
+unsafe, since the handler may run too late.  (Thanks to Ben Maurer for
+tracking this down.)
 * Applied Christian Thalinger's patch to change comment syntax in
 alpha_mach_dep.S.
-* Added test for GC_no_dls in GC_dyld_image_add for DARWIN.
-* Use LINUX_STACKBOTTOM for Linux/SH and LINUX/ARM.
+* Added test for GC_no_dls in GC_dyld_image_add for DARWIN (thanks to
+Juan Jose Garcia Ripoli).
+* Use LINUX_STACKBOTTOM for Linux/SH and LINUX/ARM (thanks to
+Sugioka Toshinobu and Christian Thalinger).
 * Rewrote GC_parse_map_entry.  This assumed a fixed column layout of
 /proc/self/maps on Linux.  This ceased to be true about 2 years ago.
 The old code is probably quite problematic with -DREDIRECT_MALLOC.  It
 is also used by default for IA64, though I haven't seen actual failures
 there.
 * More consistently define HBLKSIZE to 4096 on 64 bit architectures with
-4K pages.
-* With win32 threads, GC_stop_world needs to acquire GC_write_cs.
-* Move up struct callinfo declaration to make gcc 4.0.2. happy.
+4K pages (thanks to Andrew Haley).
+* With win32 threads, GC_stop_world needs to acquire GC_write_cs (thanks
+to Ben Hutchings for the observation and patch).
+* Move up struct callinfo declaration to make gcc 4.0.2 happy.
 
 
 == [6.5] 2005-05-22 ==
@@ -6218,13 +6240,14 @@ from Andreas Tobler, which I had lost.
 pickier compiler versions.
 * Fixed Itanium 32-bit ABI support (HP/UX).  In particular, the
 compare_and_exchange implementation didn't consider that possibility.
-* Undefine GC_pthread_detach in win32_threads.c.
+* Undefine GC_pthread_detach in win32_threads.c (thanks to
+Tommaso Tagliapietra).
 * Fixed inclusion of frame.h for NETBSD in os_dep.c.
 * Applied Dan Bonachea's patch to use mmap on AIX.
 * Several fixes to resurrect the Irix port on recent OS versions.
 * Change ALPHA to use LINUX_STACKBOTTOM.
 * Change SPARC64/LINUX to also use LINUX_STACKBOTTOM.  Deal with potential
-bad values of __libc_stack_end on that platform.
+bad values of __libc_stack_end on that platform (thanks to David Miller).
 * Relax gctest to allow larger heap if ALIGN_DOUBLE isn't set.
 (Unnecessary in 7.0)
 * Force a define of __STDC__=0 for the IBM compiler on AIX, so that
@@ -6239,7 +6262,8 @@ support.  This may need additional work.
 the system backtrace calls malloc.  The workaround currently requires
 __thread support if this code is used with threads.
 * Avoided another similar infinite recursion by conditionally
-invoking GC_save_callers in alloc.c.
+invoking GC_save_callers in alloc.c (thanks to Matthias Andree
+for helping to track down both of these).
 * Removed all traces of aix_irix_threads.c.  AIX and Irix now use
 pthread_support.c and pthread_stop_world.c.  The old code appeared
 to be unreliable for AIX, and was not regularly maintained.
@@ -6260,28 +6284,34 @@ aix_irix_threads.c, and solaris_threads.c to get thread definitions.
 if no other threads are ever started.  (Oddly enough, the parallel
 collector worked correctly, though not well, with no helper threads.)
 * Go ahead and split large blocks in GC_allochblk_nth if GC_dont_gc
-is set.
+is set (thanks to Alexander Petrossian).
 * GC_PRINT_BACK_HEIGHT would deadlock with thread support.
 * Let in_progress_space in backgraph.s grow dynamically.
 * Fix README.solaris2.  The GC_thr_init() hack doesn't work anymore.
 * Convert GC_finalizer_mem_freed to bytes in allchblk.c.
 * Add missing declaration for GC_generic_malloc_words_small_inner.
-Without it, s390x breaks.
-* Applied several MacOSX patches to support older tool chains.
-* Bug fix for NetBSD/amd64.  Add NetBSD/sh3 support.
+Without it, s390x breaks.  (Thanks to Ulrich Weigand.)
+* Applied several MacOSX patches to support older tool chains (thanks
+to Stefan Ring).
+* Bug fix for NetBSD/amd64 (thanks to Marc Recht).
+* Add NetBSD/sh3 support (thanks to Uchiyama Yasushi).
 * Fixed an uninitialized variable in cordprnt.c.
 * Eliminated some, but not all, gcc -Wall warnings.
-* Changed some old style casts to reinterpret_cast in new_gc_alloc.h.
+* Changed some old style casts to reinterpret_cast in new_gc_alloc.h
+(thanks to Dan Grayson).
 * GC_extend_size_map shouldn't adjust for GC_all_interior_pointers if
 GC_DONT_ADD_BYTE_AT_END is set.
-* Changed some (long) casts to (word) in preparation for win64.
+* Changed some (long) casts to (word) in preparation for win64 (thanks
+to Peter Colson).
 * Changed "int stack_size" declaration in pthread_support.c to use
 size_t.  (Only mattered with GC_ASSERTIONS enabled.)
-* Added CRIS (etrax) support.
+* Added CRIS (etrax) support (thanks to Simon Posnjak and Hans-Peter Nilsson).
 * Removed GC_IGNORE_FB frame buffer recognition, and replaced
 it with a check that the mapping type is MEM_IMAGE.
 In theory, this should work much better, but it is a high
-risk change for win32.
+risk change for win32.  (Thanks to Ashley Bone for the crucial
+experimental data behind this, and to Rutger Ovidius for
+some further experiments.)
 * GC_allochblk_nth incremented GC_words_wasted by bytes rather than
 words.
 * Consider GC_words_wasted in GC_adj_words_allocd only if it is within
@@ -6291,14 +6321,15 @@ we manage to allocate only "wasted" space.  7.0 has a better fix.)
 eieio, since the documentation recommends against eieio, and
 it seems to be incorrect if the preceding memory op is a load.
 * Fixed print_block_list to print the correct kind number for
-STUBBORN.
+STUBBORN (thanks to Rutger Ovidius).
 * Have configure.in generate an error if it is asked to support
 pthreads, but doesn't know how to.
 * Added Kazuhiro Inaoka's patch for Renesas M32R support.
 * Have the GNU build mechanism link with -ldl.  Rename THREADLIBS
-to THREADDLLIBS to reflect this.
+to THREADDLLIBS to reflect this.  (Thanks to Sven Verdoolaege.)
 * Added Hannes Mehnert's patch for FreeBSD/SPARC support.
 * Merged some FreeBSD specific patches to threadlibs.c and dyn_load.c.
+(Thanks tp John Merryweather Cooper.)
 * Define MPROTECT_VDB on MACOSX only if threads are being used, since the
 dirty page tracking mechanism uses threads.  (This avoids an undefined
 reference to _GC_darwin_register_mach_handler_thread.)
@@ -6317,16 +6348,18 @@ calculation of GC_collect_at_heapsize.
 * GC_print_hblkfreelist printed some bogus results if USE_MUNMAP
 was defined.
 * Include gc_config_macros.h in threadlibs.c.
-* Correct MacOSX thread stop code.
+* Correct MacOSX thread stop code (thanks to Dick Porter).
 * SMALL_OBJ definition was off by one.  This could cause crashes
-at startup.
+at startup.  (Thanks to Zoltan Varga for narrowing this down to
+a trivial test case.)
 * Integrate Paolo Molara's patch to deal with a race in the Darwin
 thread stopping code.
 * Changed X86_64 implementation to use SA_SIGINFO in the MPROTECT_VDB
 implementation.  The old approach appears to have been broken by
 recent kernels.
-* Added GC_ATTR_UNUSED to eliminate a warning in gc_allocator.h.
-* Fix GC_task_self declaration in os_dep.c.
+* Added GC_ATTR_UNUSED to eliminate a warning in gc_allocator.h (thanks
+to Andrew Begel).
+* Fix GC_task_self declaration in os_dep.c (thanks to Andrew Pinski).
 * Increase INITIAL_BUF_SZ in os_dep.c for Solaris /proc reads.
 
 
@@ -6334,7 +6367,7 @@ recent kernels.
 
 * Define USE_GENERIC_PUSH_REGS for NetBSD/M68K.
 * Fixed the X86_64 PREFETCH macros to correctly handle ia32e (which uses
-different prefetch instructions from AMD64).
+different prefetch instructions from AMD64).  (Thanks to H.J. Lu.)
 * GC_config_macros.h did not correctly define GC_WIN32_THREADS from
 GC_THREADS.
 * Added simple_example.html.
@@ -6344,14 +6377,15 @@ FreeBSD.
 on x86-64.  Added some other casts so that the PREFETCH macros
 always get a ptr_t argument.  Removed some casts in the PREFETCH
 implementations.
-* Added a header guard for gc_allocator.h
-and changed GC_debug_free to clobber contents of deallocated object.
+* Added a header guard for gc_allocator.h and changed GC_debug_free to
+clobber contents of deallocated object (suggested by Jesse Jones).
 * The signal masking code in pthread_stop_world.c contained some errors.
 In particular SIGSEGV was masked in the handler, in spite of the fact that
 it wrote to the heap.  This could lead to an uncaught SIGSEGV, which
 apparently became much more likely in Linux 2.6.  Also fixed some
 typos, and reduced code duplication in the same area.
-* Remove ltconfig, clean up configure messages for DGUX.
+* Remove ltconfig, clean up configure messages for DG/UX (thanks to
+Adrian Bunk for the patches).
 * Integrated NetBSD/OpenBSD patches from Marc Recht and Matthias Drochner.
 
 
@@ -6362,9 +6396,11 @@ GC_generic_malloc_ignore_off_page.  (Propagated from the gcc tree.)
 * Removed SA_NODEFER hack from NetBSD and Solaris write-protect handler.
 (According to Christian Limpach, the NetBSD problem is fixed.
 Presumably so is the Solaris 2.3 problem.)
-* Removed placement delete from gc_cpp.h for the SGI compiler.
-* Changed semantics of the GC_IGNORE_FB environment variable.
-We still need help in identifying win32
+* Removed placement delete from gc_cpp.h for the SGI compiler (thanks
+to Simon Gornall for the patch).
+* Changed semantics of the GC_IGNORE_FB environment variable, based
+on experimentation by Nicolas Cannasse pointing out that the old
+interpretation was useless.  We still need help in identifying win32
 graphics memory mappings.  The current "solution" is a hack.
 * Removed "MAKEOVERRIDES =" from Makefile.am and thus Makefile.in.
 It probably made more sense in the gcc context.
@@ -6375,7 +6411,8 @@ supports the same extension on various platforms.
 of future work.
 * Declared GC_jmp_buf in os_dep.s as JMP_BUF instead of jmp_buf, fixing
 a memory overwrite bug on Solaris and perhaps other platforms.
-* Added 0 != __libc_stack_end test to GC_linux_stack_base.
+* Added 0 != __libc_stack_end test to GC_linux_stack_base (thanks to
+Jakub Jelinek for the patch and explaining the problem).
 Otherwise pre-linking could cause the collector to fail.
 * Changed default thread local storage implementation to USE_PTHREAD_SPECIFIC
 for HP/UX with gcc.  The compiler-based implementation appears to work
@@ -6386,7 +6423,8 @@ making client mark code cleaner and less dependent on GC version.
 to support user-defined kinds.  Use the new procedures to replace existing
 code in gcj_mlc.c and typd_mlc.c.
 * Added support for GC_BACKTRACES.
-* Fixed a remaining problem in CORD_str with signed characters.
+* Fixed a remaining problem in CORD_str with signed characters (thanks
+to Alexandr Petrosian for the patch).
 * Removed supposedly redundant, but very buggy, definitions of finalizer
 macros from javaxfc.h.  Fortunately this file probably has no users.
 The correct declarations were already in gc.h.
@@ -6394,7 +6432,7 @@ The correct declarations were already in gc.h.
 thread termination, since it is also possible to collect from an
 unregistered thread in that case.
 * Define NO_GETENV for Windows CE, since getenv doesn't appear to exist.
-Plus some other minor WinCE fixes.
+Plus some other minor WinCE fixes (thanks to Alain Novak).
 * Added GC_register_describe_type_fn.
 * Arrange for debugging finalizer registration to ignore non-heap
 registrations, since the regular version of the routine also behaves
@@ -6440,13 +6478,18 @@ an intervening mmap grabbing the address space out from underneath us.
 Updated this code to reflect a cleaner patch from Ulrich Drepper.
 * Replaced _T with _Tp in new_gc_alloc.h to avoid a MACOS X conflict.
 (Patch from Andrew Begel.)
-* Dynamically choose whether or not lock should spin on win32.
-This may be a significant performance improvement for win32.
+* Dynamically choose whether or not lock should spin on win32 (thanks
+to Maurizio Vairani for the patch).  This may be a significant performance
+improvement for win32.
 * Fix Makefile.direct to actually include NT_STATIC_THREADS_MAKEFILE
-in the distribution.
+in the distribution (thanks to Maurizio Vairani).
 * Maybe_install_looping_handler() was accidentally exported, violating
 our name space convention.
-* Made os_dep.c use sigsetjmp and SA_NODEFER for NetBSD.
+* Made os_dep.c use sigsetjmp and SA_NODEFER for NetBSD.  (Thanks to
+Christian Limpach.  I generalized the patch to use sigsetjmp on all
+UNIX_LIKE platforms, admittedly a slightly risky move.  But it may avoid
+similar problems on some other platforms.  I also cleaned up the definition
+of UNIX_LIKE a bit.)
 * Integrated Andrew Begel's Darwin threads patch, adjusted according to
 some of Fergus Hendersons's comments.  (Patch didn't apply cleanly,
 errors are possible.)
@@ -6458,13 +6501,15 @@ with icc, at least on ia64.
 == [6.3alpha2] 2003-11-04 ==
 
 * Re-enabled I_HOLD_LOCK assertion in aix_irix_threads.h.
-* Put back the WINABI qualifier for GC_CreateThread.
+* Put back the WINABI qualifier for GC_CreateThread.  (Thanks to
+Danny Smith for the patch.  6.3alpha1 had the qualifier in one place
+but not elsewhere, which was clearly wrong.)
 * Sometimes explicitly define __private_extern__ before DARWIN dyld.h
-include.
+include.  (Thanks to Andreas Tobker for postting the patch.)
 * Included signal.h from pthread_support.c.  Removed GC_looping_handler,
 which was dead code.
 * GC_find_start was misdeclared by gc_pmark.h if PRINT_BLACK_LIST was
-defined.
+defined (thanks to Glauco Masotti for testing and reporting this).
 Changed GC_find_start to never just return 0.  According to its
 comment it doesn't, and it's unclear that's correct.
 * GC_alloc_large had several largely compensating bugs in the
@@ -6477,18 +6522,21 @@ the Intel compiler on IA64/Linux.
 difference on win32 multiprocessors.)  Also cleaned up the win32 spinlock
 initialization code a bit.
 * Fixed thread support for HP/UX/IA64.  The register backing store base for
-the main thread was sometimes not set correctly.
+the main thread was sometimes not set correctly.  (Thanks to
+Laurent Morichetti.)
 * Added -DEMPTY_GETENV_RESULTS flag to work around Wine problem.
 * Declare GC_stack_alloc and GC_stack_free in solaris_threads.h to
-avoid 64-bit size mismatches.
+avoid 64-bit size mismatches (thanks to Bernie Solomon).
 * Fixed GC_generic_push_regs to avoid a potential and very unfortunate
 tail call optimization.  This could lead to prematurely reclaimed
 objects on configurations that used the generic routine and the new
 build infrastructure (which potentially optimizes mach_dep.c).
 This was a serious bug, but it's unclear whether it has resulted in
 any real failures.
-* Fixed CORD_str to deal with signed characters.
-* Merged a couple of NOSYS/ECOS tests into os_dep.c from gcj.
+* Fixed CORD_str to deal with signed characters (thanks to Alexandr Petrosian
+for noticing the problem and supplying the patch).
+* Merged a couple of NOSYS/ECOS tests into os_dep.c from gcj (thanks
+to Anthony Green).
 * Partially merged a win32 patch from Ben Hutchings, and substantially
 revised other parts of win32_threads.c.  It had several problems.
 Under MinGW with a statically linked library, the main thread was
@@ -6502,22 +6550,27 @@ removed the thread context from them.)
 * Integrated a Solaris configure.in patch from Rainer Orth.
 * Added GC_IGNORE_FB and associated warning to very partially address
 the issue of the collector treating a mapped frame buffer as part
-of the root set.
+of the root set.  (Thanks to David Peroutka for providing some
+insight.  More would be helpful.  Is there anything that can be used
+to at least partially identify such memory segments?)
+
 
 == [6.3alpha1] 2003-07-26 ==
 
-* Integrated some NetBSD patches forwarded to me by Marc Recht.  These
+* Integrated some NetBSD patches by Marc Recht.  These
 were already in the NetBSD package.
 * GC_pthread_create waited for the semaphore even if pthread_create failed.
-Applied the analogous fix for aix_irix_threads.c.
+(Thanks to Dick Porter for the pthread_support.c patch.)  Applied the
+analogous fix for aix_irix_threads.c.
 * Added Rainer Orth's Tru64 fixes.
 * The check for exceeding the thread table size in win32 threadDetach
-was incorrect.
+was incorrect (thanks to Alexandr Petrosian for the patch).
 * Applied Andrew Begel's patch to correct some reentrancy issues
 with dynamic loading on Darwin.
 * GC_CreateThread() was neglecting to duplicate the thread handle in
-the table.
-* Pass +ESdbgasm only on PA-RISC machines with vendor compiler.
+the table (thanks to Tum Nguyen for the patch).
+* Pass +ESdbgasm only on PA-RISC machines with vendor compiler (thanks to
+Roger Sayle for the patch).
 * Applied more AIX threads patches from Scott Ananian.
 
 
@@ -6526,18 +6579,42 @@ the table.
 * Integrated a second round of Irix/AIX patches from Dan Bonachea.
 Renamed mips_sgi_mach_dep.S back to mips_sgi_mach_dep.s, since it requires
 the Irix assembler to do the C preprocessing; gcc -E doesn't work.
-* Fixed Makefile.direct for DARWIN.
+* Fixed Makefile.direct for DARWIN (thanks to Manuel Serrano).
 * There was a race between GC_pthread_detach and thread exit that could
 result in a thread structure being deallocated by GC_pthread_detach
-even though it was still needed by the thread exit code.
+even though it was still needed by the thread exit code (thanks to
+Dick Porter for the small test case that allowed this to be debugged).
 * Fixed version parsing for non-alpha versions in acinclude.m4 and
 version checking in version.h.
+* Issues identified (not yet fixed):
+- A dynamic libgc.so references dlopen unconditionally, but doesn't link
+against libdl.
+- GC_proc_fd for Solaris is not correctly updated in response to a
+fork() call.  Thus incremental collection in the child won't work
+correctly.  (Thanks to Ben Cottrell for pointing this out.)
+- --enable-redirect-malloc is mostly untested and known not to work
+on some platforms.
+- There seem to be outstanding issues on Solaris/X86, possibly with
+finding the data segment starting address.
+- Very large root set sizes (> 16 MB or so) could cause the collector
+to abort with an unexpected mark stack overflow.  (Thanks to
+Peter Chubb.)  NOT YET FIXED.  Workaround is to increase the initial
+size.
+- The SGI version of the collector marks from mmapped pages, even
+if they are not part of dynamic library static data areas.  This
+causes performance problems with some SGI libraries that use mmap
+as a bitmap allocator.  NOT YET FIXED.  It may be possible to turn
+off DYNAMIC_LOADING in the collector as a workaround.  It may also
+be possible to conditionally intercept mmap and use GC_exclude_static_roots.
+The real fix is to walk rld data structures, which looks possible.
+- Incremental collector should handle large objects better.  Currently,
+it looks like the whole object is treated as dirty if any part of it is.
 
 
 == [6.2alpha6] 2003-06-05 ==
 
 * There was an extra underscore in the name of GC_save_registers_in_stack
-for NetBSD/SPARC.
+for NetBSD/SPARC (thanks to Jaap Boender for the patch).
 * Integrated Brian Alliet's patch for Darwin.  This restructured the
 linuxthreads/pthreads support to separate generic pthreads support
 from more the system-dependent thread-stopping code.  I believe this
@@ -6553,8 +6630,8 @@ anyway and it cluttered up the code.  And anything we can do to migrate
 towards generic pthreads support is a good thing.
 * Added a more explicit test for tracing of function arguments to test.c.
 * Added Akira Tagoh's PowerPC64 patch.
-* Fixed some bit rot in the Cygwin port.
-gc.h now includes just windows.h, not winbase.h.
+* Fixed some bit rot in the Cygwin port (thanks to Dan Bonachea for
+pointing it out).  gc.h now includes just windows.h, not winbase.h.
 * Declared GC_save_regs_in_stack() in gc_priv.h.  Remove other declarations.
 * Changed --enable-cplusplus to use automake consistently.  The old way
 confused libtool.  "Make install" didn't work correctly for the old version.
@@ -6576,23 +6653,26 @@ is not in gcc3.3.)
 GC_DLL is used instead.  All internal tests are now on GC_DLL.
 README.macros is now more precise about the intended meaning.
 * Include DllMain in the multi-threaded win32 version only if the
-collector is actually built as a dll.
+collector is actually built as a dll (thanks to Mohan Embar for
+a version of the patch).
 * Hide the cygwin threadAttach/Detach functions.  They were violating our
 namespace rules.
-* Fixed an assertion in GC_check_heap_proc.  Added GC_STATIC_ASSERT.
+* Fixed an assertion in GC_check_heap_proc.  Added GC_STATIC_ASSERT
+(thanks again to Ben Hutchings).
 * Removed some obsolete definitions for Linux/PowerPC in gcconfig.h.
 * CORD_cat was not rebalancing unbalanced trees in some cases, violating
 a CORD invariant.  Also tweaked the re-balancing rule for
-CORD_cat_char_star.
+CORD_cat_char_star.  (Thanks to Alexandr Petrosian for the bug report
+and patch.)
 * Added hand-coded structured exception handling support to mark.c.
 This should enable support of dynamic libraries under win32 with
-gcc-compiled code.
+gcc-compiled code.  (Thanks to Ranjit Mathew for the patch.)
 Turned on dynamic library scanning for win32/gcc.
-* Removed some remnants of read wrapping.
+* Removed some remnants of read wrapping (thanks to Kenneth Schalk).
 GC_USE_LD_WRAP ws probably broken in recent versions.
 * The build could fail on some platforms since gcconfig.h could include
 declarations mentioning ptr_t, which was not defined, e.g. when if_mach
-was built.  Also
+was built (thanks to Yann Dirson for pointing this out).  Also
 cleaned up tests for GC_PRIVATE_H in gcconfig.h a bit.
 * The GC_LOOP_ON_ABORT environment variable interfered with incremental
 collection, since the write fault handler was erroneously overridden.
@@ -6604,7 +6684,7 @@ to avoid it.  (This caused occasional crashes in GC_set_fl_marks
 with thread local allocation and incremental GC.  This probably happened
 primarily on old, slow multiprocessors.)
 * Allowed overriding of MAX_THREADS in win32_threads.c from the build
-command line.
+command line (thanks to Yannis Bres for the patch).
 * Taught the IA64/linux code to determine the register backing store base from
 /proc/self/maps after checking the __libc symbol, but before guessing.
 (__libc symbols are on the endangered list, and the guess is likely to not
@@ -6627,8 +6707,9 @@ libgccpp.
 * Integrated Grzegorz Jakacki's substantial GNU build patch.  "Make dist"
 should now work for the GNU build process.  Documentation files
 are installed under share/gc.
-* Tweaked gc_cpp.h to again support the Borland compiler.
-* Updated BCC_MAKEFILE.
+* Tweaked gc_cpp.h to again support the Borland compiler (thanks to
+Rene Girard for pointing out the problems).
+* Updated BCC_MAKEFILE (thanks to Rene Girard).
 * Added GC_ASSERT check for minimum thread stack size.
 * Added --enable-gc-assertions.
 * Added some web documentation to the distribution.  Updated it in the
@@ -6654,8 +6735,9 @@ exist.
 
 == [6.2alpha2] ==
 
-* Fixed the completely broken FreeBSD code in 6.2alpha1.
-* Changed IRIX reference in dbg_mlc.c to IRIX5.
+* Fixed the completely broken FreeBSD code in 6.2alpha1 (thanks to
+Hironori Sakamoto for the patch).
+* Changed IRIX reference in dbg_mlc.c to IRIX5 (thanks to Marcus Herbert).
 * Attempted to work around the problems with .S filenames and the SGI
 compiler.  (Untested.)
 * Worked around an HP/UX make issue with the GNU-style build process.
@@ -6666,7 +6748,7 @@ address for Linux and XXXBSD on hardware for which we can't get stack
 traces.  Use __builtin_return_address(0) to generate it when possible.
 Some of the configuration work was cleaned up (good) and moved to gc.h
 (bad, but necessary).  This should make leak detection more useful
-on a number of platforms.
+on a number of platforms.  (Thanks to Fabian Thylman for the suggestion.)
 * Fixed compilation problems in dbg_mlc.c with GC_ADD_CALLER.
 * Bumped revision number for dynamic library.
 
@@ -6675,7 +6757,7 @@ on a number of platforms.
 
 * Guard the test for GC_DUMP_REGULARLY in misc.c with
 "#ifndef NO_DEBUGGING".  Otherwise it fails to build with NO_DEBUGGING
-defined.
+defined.  (Thanks to Manuel Serrano.)
 * Message about retrying suspend signals was incorrectly generated even when
 flag was not set.
 * Cleaned up MACOSX/NEXT root registration code.  There was apparently a
@@ -6684,14 +6766,15 @@ separate ifdef case in GC_register_data_segments() for no reason.
 * Arrange for gc.h and friends to be correctly installed with GNU-style
 "make install".
 * Enable the GNU-style build facility include C++ support in the library
-with --enable-cplusplus.
+with --enable-cplusplus (thanks to Thomas Maier for some of the patch).
 * Mark from GC_thread_key in linux_threads.c, in case that's allocated
 from the garbage collected heap, as it is with our own thread-specific
-storage implementation.
+storage implementation (thanks to Jeff Sturm).
 * Mark all free list header blocks if they are heap allocated.  This avoids
 some unnecessary tracing.  And it remains correct if we clear the
-root set.
-* Improved S390/Linux support.  Add S390/Linux 64-bit support.
+root set.  (Thanks to Jeff Sturm for identifying the bug.)
+* Improved S390/Linux support.  Add S390/Linux 64-bit support (thanks to
+Ulrich Weigand).
 * Corrected the spelling of GC_{M,C}ALLOC_EXPLICTLY_TYPED to
 GC_{M,C}ALLOC_EXPLICITLY_TYPED in gc_typed.h.  This is technically
 an interface change.  Based on the fact that nobody reported this,
@@ -6707,14 +6790,17 @@ under win32.  Based on my tests, this tends to eventually find all
 segments, though it may take a while.  There appear to be cleaner,
 but slower solutions under NT/XP.  But they rely on an API that's
 unsupported under 9X.
-* Changed Linux PowerPC stack finding to LINUX_STACKBOTTOM.
+* Changed Linux PowerPC stack finding to LINUX_STACKBOTTOM.  (Thanks
+to Akira Tagoh for pointing out that HEURISTIC1 does not work on
+64-bit kernels.)
 * Added GC_set_free_space_divisor to avoid some Windows dll issues.
 * Added FIXUP_POINTER, POINTER_SHIFT, POINTER_MASK to allow preprocessing
 of candidate pointers for tagging, etc.
 * Always lock around GC_notify_full_gc().  Simplified code for
 invoking GC_notify_full_gc().
 * Changed the way DATASTART is defined on FreeBSD to be robust against
-an unmapped page after etext.
+an unmapped page after etext.  (Thanks to Hironori Sakamoto for
+tracking down the intermittent failure.)
 * Made GC_enable() and GC_disable() official.  Deprecated direct update
 of GC_dont_gc.  Changed GC_gcollect to be a noop when garbage collection
 is disabled.
@@ -6729,10 +6815,11 @@ The latter is more reliable and easier on Linux with dl_iterate_phdr.
 == [6.1] ==
 
 * Added GC_MAXIMUM_HEAP_SIZE environment variable.
-* Fix configure.in for MIPS/LINUX.
+* Fix configure.in for MIPS/LINUX (thanks to H.J. Lu).
 * Double page hash table size for -DLARGE_CONFIG.
 * Integrated Bo Thorsen's X86-64 support.
-* STACKBOTTOM definition for LINUX/MIPS was partially changed back.
+* STACKBOTTOM definition for LINUX/MIPS was partially changed back
+(thanks to H.J. Lu and Hiroshi Kawashima for resolving this).
 * Replaced all occurrences of LINUX_DATA_START in gcconfig.h with
 SEARCH_FOR_DATA_START.  It doesn't hurt to fall back to a search.
 And __data_start doesn't seem to get defined correctly of the GC
@@ -6753,9 +6840,9 @@ alpha_mach_dep.s.
 * Incorporated a change to new_gc_alloc.h,
 which should make it work with gcc3.1.
 * Use alpha_mach_dep.S only on Linux.  (It's not clear that this is
-optimal, but it otherwise didn't build on Tru64.)
+optimal, but it otherwise didn't build on Tru64.  Thanks to Fergus Henderson.)
 * Added ifdef to guard free() in os_dep.c.  Otherwise we get a
-compilation error on Irix.
+compilation error on Irix (thanks to Dai Sato).
 * Added an experimental version of GC_memalign to mallocx.c.  This can't
 always work, since we don't handle alignment requests in the hblk-level
 allocator, and we can't handle arbitrary pointer displacements unless
@@ -6780,52 +6867,64 @@ to work correctly with these.
 decided on heap expansion to look at it.  Memory explicitly
 deallocated by finalizers essentially needs to be counted as reclaimed
 by the GC.  Otherwise there are cases in which the heap can grow
-infinitely.
+infinitely.  (Thanks to Mark Reichert for the test case.)
 * Integrated Adam Megacz patches to not scan dynamic libraries if
 we are compiling with gcc on win32.  Otherwise we need structured
 exception handling to deal with asynchronously unmapped root
 segments, and gcc doesn't directly support that.
 * Integrated Anthony Green's patch to support Wine.
 * GC_OPERATOR_NEW_ARRAY was misspelled OPERATOR_NEW_ARRAY in several
-places, including gc_cpp.cc.
-* Integrated Loren James Rittle's Alpha FreeBSD patches.  These also
+places, including gc_cpp.cc (thanks to Wink Saville for pointing this out).
+* Integrated Loren J. Rittle's Alpha FreeBSD patches.  These also
 changed the declarations of symbols like _end on many platforms to
-that they wouldn't mistakenly be declared as short data symbols.
-* Integrated changes from the Debian distribution.
+that they wouldn't mistakenly be declared as short data symbols (suggested by
+Richard Henderson).
+* Integrated changes from the Debian distribution (thanks to Ryan Murray
+for pointing these out).
 Fix C++ comments in POWERPC port.  Add ARM32
 incremental GC support.  Get rid of USE_GENERIC_PUSH_REGS for alpha/Linux,
 this time for real.  Use va_copy to get rid of cord printf problems
 (finally).
-* Close file descriptor used to count cpus.
+* Close file descriptor used to count cpus (thanks to Jeff Sturm for
+pointing out the omission).
 * Don't just drop gcj free lists in GC_start_reclaim, since that can
 eventually cause the marker to see a bogus mark descriptor in the
 dropped objects.  The usual symptom was a very intermittent segmentation
 fault in the marker.  This mattered only if one of the GC_gcj_malloc
-variants was used.
-* Fixed Linux and Solaris/64 SPARC configuration.
-* Fixed a typo in strdup definition.
+variants was used (thanks to Michael Smith, Jeff Sturm, Bryce McKinlay and
+Tom Tromey for helping to track this down).
+* Fixed Linux and Solaris/64 SPARC configuration (thanks to David Miller,
+Jeff Sturm, Tom Tromey, and Christian Joensson).
+* Fixed a typo in strdup definition (thanks to Gerard A Allan).
 * Changed Makefile.direct to invoke $(CC) to assemble alpha_mach_dep.S.
 This is needed on Linux.  I'm not sure whether it's better or worse
 on Tru64.
 * Changed gc_cpp.h once more to declare operator new and friends only in
-a Microsoft environment.  This may need further fine tuning.
-* Don't ever override strdup if it's already macro defined.
+a Microsoft environment.  This may need further fine tuning (thanks to
+Johannes Schmidt for pointing out that the older code breaks on gcc3.0.4).
+* Don't ever override strdup if it's already macro defined (thanks to
+Adnan Ali for pointing out the problem).
 * Changed gc_cpp.h yet again to also overload placement new.  Due to the
 C++ overloading rules, the other overloaded new operations otherwise hide
-placement new, which causes many STL uses to break.
+placement new, which causes many STL uses to break (thanks to Reza Shahidi
+for reporting this, and to Matt Austern for proposing a fix).
 * Integrated cygwin pthreads support from Dan Bonachea.
-* Turn on DYNAMIC_LOADING for NetBSD.
+* Turn on DYNAMIC_LOADING for NetBSD (thanks to Krister Walfridsson).
 * Changed printing code to print more complete GC times.
 * Applied Mark Mitchell's Irix patch to correct some bitrot.
 * Clarified which object-printing routines in dbg_mlc.c should hold
 the allocation lock.  Restructured the code to allow reasonable object
 printing with -DREDIRECT_MALLOC.
 * Fix the Linux mmap code to always start with 0x1000 as the initial hint.
-Minor patches for 64-bit AIX, particularly to STACKBOTTOM.
+Minor patches for 64-bit AIX, particularly to STACKBOTTOM (thanks to
+Jeffrey Mark Siskind).
 * Renamed "SUSPENDED" flag for Solaris threads support to avoid a conflict
-with a system header.
+with a system header (thanks to Philip Brown).
 * Cause win32_threads.c to handle an out of range stack pointer correctly,
-though currently with a warning.
+though currently with a warning.  (Thanks to Jonathan Clark for
+observing that win32 applications may temporarily use the stack
+pointer for other purposes, and suggesting a fix.  Unfortunately, it's
+not clear that there is a complete solution to this problem.)
 
 
 == [6.1alpha4] 2002-06-16 ==
@@ -6843,28 +6942,30 @@ postpone the collection until the heap is (nearly) full.
 * Remove read() wrapper for MPROTECT_VDB.  It was causing more harm than
 good.  It is often no longer needed if system calls avoid writing to
 pointerfull heap objects.
-* Fix MACOSX test in gcconfig.h.
+* Fix MACOSX test in gcconfig.h (thanks to John Clements).
 * Change GC_test_and_set so that it consistently has one argument.
-Add spaces to ::: in powerpc assembly code in gc_locks.h.
+Add spaces to ::: in powerpc assembly code in gc_locks.h (thanks to
+Ryan Murray).
 * Fixed a formatting error in dbg_mlc.c.  Added prototype to GC_abort()
-declaration.
+declaration (thanks to Michael Smith).
 * Removed "source" argument to GC_find_start().  Eliminate GC_FIND_START().
 * Added win32 recognition code in configure.in.  Changed some of the
-dllimport/export defines in gc.h.
+dllimport/export defines in gc.h (thanks to Adam Megacz).
 * GC_malloc_many didn't set hb_last_reclaimed when it called
 GC_reclaim_generic.  (I'm not sure this matters much, but ...)
 * Allocating uncollectible objects with debug information sometimes
 allocated objects that were one byte too small, since uncollectible
-objects don't have the extra byte added at the end.
+objects don't have the extra byte added at the end (thanks to
+Wink Saville for pointing this out).
 * Added a bit more assertion checking to make sure that gcj objects
 on free lists never have a nonzero second word.
-* Replaced BCC_MAKEFILE with an up-to-date one.
+* Replaced BCC_MAKEFILE with an up-to-date one (thanks to Andre Leiradella).
 * Upgraded libtool, cinfigure.in and some related files to hopefully
-support NetBSD/SPARC.  Unfortunately,
+support NetBSD/SPARC (thanks to Adrian Bunk).  Unfortunately,
 libtool 1.4.2 seemed to be buggy due to missing quotes in several
 "test" invocations.  Fixed those in the ltmain.sh script.
 * Some win32-specific patches, including the introduction of
-GC_CreateThread.
+GC_CreateThread (thanks to Adam Megacz).
 * Merged in gcj changes from Anthony Green to support embedded systems.
 * Tried to consistently rename preprocessed assembly files with a capital
 .S extension.
@@ -6876,19 +6977,22 @@ later in gc_priv.h to avoid forward references to ptr_t.
 * Add some testing of local allocation to test.c.
 * Change definition of INVALID_QTID in specific.h.  The -1 value was used
 inconsistently, and too likely to collide with a valid stack address.
-Some general clean-up of specific.[ch].  Added assertions.
+Some general clean-up of specific.[ch].  Added assertions.  (Thanks
+to Michael Smith for tracking down an intermittent bug to this
+general area.  I'm not sure it has been squashed yet, however.)
 * On Pthread systems it was not safe to call GC_malloc() between fork()
 and exec().  According to the applicable standards, it doesn't appear
 to be safe to call malloc() or many other libc functions either, thus
 it's not clear this is fixable.  Added experimental support for
 -DHANDLE_FORK in linux_threads.c which tries to support it.  It may
 succeed if libc does the right thing.  I'm not sure whether it does.
+(Thanks to Kenneth Schalk for pointing out this issue.)
 * Documented thread local allocation primitives to require an
 explicit GC_init call.  GC_init_parallel is no longer declared to
 be a constructor function, since that isn't portable and often
 seems to lead to initialization order problems.
 * Changed gc_cpp.cc and gc_cpp.h in one more attempt to make them
-compatible with Visual C++ 6.
+compatible with Visual C++ 6 (thanks to Wink Saville for the patch).
 * Some more patches for Linux on HP PA-RISC.
 * Added include/gc_allocator.h.  It implements (hopefully) standard
 conforming (as opposed to SGI-style) allocators that allocate
@@ -6899,9 +7003,10 @@ which was written by Matt Austern.  Changed test_cpp.cc to very
 minimally test this.
 * On Linux/X86, retry mmap with a different start argument.  That should
 allow the collector to use more (closer to 3GB) of the address space.
-* Force 64 bit alignment with GCJ support.
+* Force 64 bit alignment with GCJ support (reflects Bryce McKinlay's
+patch to the gcc tree).
 * Refined the choice of sa_handler vs. sa_sigaction in GC_dirty_init
-to accommodate some glibc5 systems.
+to accommodate some glibc5 systems (thanks to Dan Fandrich for the patch).
 * Compensated for the fact that current versions of glibc set
 __libc_stack_end incorrectly on Linux/IA64 while initialization code
 is running.  This could cause the collector to miss 16 bytes of
@@ -6910,14 +7015,17 @@ the memory stack if GC_malloc or friends where called before main().
 This will probably take another iteration to work, since his
 patch conflicted with the libtool upgrade.
 * Added README.arm.cross containing some information about cross-
-compiling to an ARM processor from Margaret Fleck.
+compiling to an ARM processor from Margaret Fleck (original code provided by
+Bradley D. LaRonde; edited by Andrej Cedilnik using some of solutions by
+Tilman Vogel; also ported for iPAQ by Oliver Kurth).
 
 
 == [6.1alpha3] 2002-02-07 ==
 
 * Minor cleanup on the gcconfig.h section for SPARC.
-* Minor fix to support Intel compiler for I386/Linux.
-* Added SPARC V9 (64-bit) support.
+* Minor fix to support Intel compiler for I386/Linux (thanks to
+Sven Hartrumpf).
+* Added SPARC V9 (64-bit) support (thanks to Jeff Sturm).
 * Restructured the way in which we determine whether or not to keep
 call stacks for debug allocation.  By default SAVE_CALL_COUNT is
 now zero on all platforms.  Added SAVE_CALL_NARGS parameters.
@@ -6955,23 +7063,26 @@ first).
 * Added printing of stop-the-world GC times if GC_PRINT_STATS environment
 variable is set.
 * The calloc definition in leak_detector.h was missing parentheses, and
-realloc was missing a second argument to GC_REALLOC.
+realloc was missing a second argument to GC_REALLOC (thanks to
+Elvenlord Elrond).
 * Added GC_PRINT_BACK_HEIGHT environment variable and associated
 code, mostly in the new file backgraph.c.  See doc/README.environment.
-* Added -DUSE_GLOBAL_ALLOC to work around a Windows NT issue.
+* Added -DUSE_GLOBAL_ALLOC to work around a Windows NT issue (thanks to
+Jonathan Clark).
 * Integrated port to NEC EWS4800 (MIPS-based workstation, with somewhat
-different address-space layout). This may help for other machines with
-holes in the data segment.
+different address-space layout).  This may help for other machines with
+holes in the data segment.  (Thanks to Hironori Sakamoto.)
 * Changed the order in which GC_push_roots and friends push things onto
 the mark stack.  GC_push_all calls need to come first, since we can't
-necessarily recover if those overflow the mark stack.
+necessarily recover if those overflow the mark stack.  (Thanks to
+Matthew Flatt for tracking down the problem.)
 * Some minor cleanups to mostly support the Intel compiler on Linux/IA64.
 
 
 == [6.1alpha1] 2001-09-22 ==
 
 * Non-debug, atomic allocations could result in bogus smashed object
-reports with debugging on.
+reports with debugging on (thanks to Patrick Doyle for the small test case).
 * Fixed GC_get_register_stack_base (Itanium only) to work around a glibc
 2.2.4 bug.
 * Initial port to HP/UX on Itanium.  Thread support and both 32 and 64
@@ -6980,19 +7091,22 @@ some inline assembly code issues.  Thread local allocation does appear
 to work.
 * ifdef'ed out glibc2.1/Itanium workaround.  I suspect nobody is using
 that combination anymore.
-* Added a patch to make new_gc_alloc.h usable with gcc3.0.
+* Added a patch to make new_gc_alloc.h usable with gcc3.0 (thanks to
+Dimitris Vyzovitis for the patch).
 * Debugged 64-bit support on HP/UX PA-RISC.
-* Turned on dynamic loading support for FreeBSD/ELF.
-* Unregistering of finalizers with debugging allocation was broken.
+* Turned on dynamic loading support for FreeBSD/ELF (thanks to Peter Housel).
+* Unregistering of finalizers with debugging allocation was broken (thanks
+to Jani Kajala for the test case).
 * Old finalizers were not returned correctly from GC_debug_register_finalizer.
 * Disabled MPROTECT_VDB for Linux/M68K based on a report that it doesn't work.
-* Cleaned up some statistics gathering code in reclaim.c.
-* Added some support for OpenBSD/ELF/Linux.
+* Cleaned up some statistics gathering code in reclaim.c (thanks to
+Walter Bright).
+* Added some support for OpenBSD/ELF/Linux (thanks to Suzuki Toshiya).
 * Added Jakub Jelinek's patch to use dl_iterate_phdr for dynamic library
 traversal to dyn_load.c.  Changed it to weakly reference dl_iterate_phdr,
 so that the old code is still used with old versions of glibc.
 * Cleaned up feature test macros for various threads packages and
-integrated (partially functional) FreeBSD threads code from Loren Rittle.
+integrated (partially functional) FreeBSD threads code from Loren J. Rittle.
 It's likely that the cleanup broke something, since it touched lots of
 code.  It's also likelly that it fixed some unreported bugs in the
 less common thread implementations, since some of the original code
@@ -7005,7 +7119,7 @@ implementation should be easier to add.
 * Two more bug fixes for KEEP_BACK_PTRS and DBG_HDRS_ALL.
 * Fixed a stack clearing problem that resulted in SIGILL with a
 misaligned stack pointer for multi-threaded SPARC builds.
-* Integrated another HURD patch.
+* Integrated another HURD patch (thanks to Igor Khavkine).
 
 
 == [6.0alpha9] ==
@@ -7015,14 +7129,16 @@ misaligned stack pointer for multi-threaded SPARC builds.
 hard links.
 * Simplified the setting of NEED_FIND_LIMIT in os_dep.c, possibly breaking
 it on untested platforms.
-* Integrated initial GNU HURD port.
-* A few more fixes for Digital Mars compiler (Walter Bright).
+* Integrated initial GNU HURD port (thanks to Chris Lingard and
+Igor Khavkine).
+* A few more fixes for Digital Mars compiler (by Walter Bright).
 * Fixed gcc version recognition.  Renamed OPERATOR_NEW_ARRAY to
 GC_OPERATOR_NEW_ARRAY.  Changed GC_OPERATOR_NEW_ARRAY to be the default.
-It can be overridden with -DGC_NO_OPERATOR_NEW_ARRAY.
+It can be overridden with -DGC_NO_OPERATOR_NEW_ARRAY (thanks to
+Cesar Eduardo Barros).
 * Changed the byte size to free-list mapping in thread local allocation
 so that size 0 allocations are handled correctly.
-* Fixed Linux/MIPS stackbottom for new toolchain.
+* Fixed Linux/MIPS stackbottom for new toolchain (thanks to Ryan Murray).
 * Changed finalization registration to invoke GC_oom_fn when it runs out
 of memory.
 * Removed lvalue cast in finalize.c.  This caused some debug configurations
@@ -7032,13 +7148,13 @@ not to build with some non-gcc compilers.
 == [6.0alpha8] 2001-06-15 ==
 
 * Changed GC_debug_malloc_replacement and GC_debug_realloc_replacement
-so that they compile under Irix.
+so that they compile under Irix (thanks to Dave Love).
 * Updated powerpc_macosx_mach_dep.s so that it works if the collector
-is in a dynamic library.
+is in a dynamic library (thanks to Andrew Begel).
 * Transformed README.debugging into debugging.html, updating and
 expanding it in the process.  Added gcdescr.html and tree.html
 from the web site to the GC distribution.
-* Fixed several problems related to PRINT_BLACK_LIST. This involved
+* Fixed several problems related to PRINT_BLACK_LIST.  This involved
 restructuring some of the marker macros.
 * Fixed some problems with the sizing of objects with debug information.
 Finalization was broken KEEP_BACK_PTRS or PRINT_BLACK_LIST.  Reduced the
@@ -7051,8 +7167,8 @@ They were messy and the performance improvement seemed minimal.  We'll
 leave such scheduling issues to the compiler.
 * Changed Linux/PowerPC test to also check for __powerpc__ in response
 to a discussion on the gcc mailing list.
-* Removed the "static" from the jmp_buf
-declaration in GC_generic_push_regs.  This was causing problems in
+* Removed the "static" from the jmp_buf declaration in GC_generic_push_regs
+(suggested by Matthew Flatt).  This was causing problems in
 systems that register all of their own roots.  It looks far more correct
 to me without the "static" anyway.
 * Fixed several problems with thread local allocation of pointer-free or
@@ -7065,28 +7181,29 @@ the corresponding dirt bit.  I believe this did not affect Solaris or PCR,
 which use a different dirty-bit implementation.  Fixed this by installing
 signal handlers with sigaction instead of signal, and disabling the thread
 suspend signal while in the write-protect handler.  (It is unclear
-whether this scenario ever actually occurred.  I found it while tracking
-down the following:)
+whether this scenario ever actually occurred.)
 * Incremental collection did not cooperate correctly with the PARALLEL_MARK
 implementation of GC_malloc_many or the local_malloc primitives.  It still
 doesn't work well, but it shouldn't lose memory anymore.
 * Integrated some changes from the gcc source tree that I had previously
-missed.
+missed (thanks to Bryce McKinlay for the reminder and patch).
 * Added Makefile.direct as a copy of the default Makefile, which would
 normally be overwritten if configure is run.
 * Changed the gc.tar target in Makefile.direct to embed the version number
 in the gc directory name.  This will affect future tar file distributions.
 * Changed the Irix dynamic library finding code to no longer try to
 eliminate writable text segments under Irix6.x, since that is probably no
-longer necessary, and can apparently be unsafe on occasion.
+longer necessary, and can apparently be unsafe on occasion (thanks to
+Shiro Kawai for pointing this out).
 * GC_cleanup with GC_DEBUG enabled passed a real object base address to
 GC_debug_register_finalizer_ignore_self, which expected a pointer past the
 debug header.  Call GC_register_finalizer_ignore_self instead, even with
-debugging enabled.
+debugging enabled (thanks to Jean-Daniel Fekete for catching this).
 * The collector didn't build with call chain saving enabled but NARGS=0.
 * Fixed up the GNU-style build files enough so that they work in some
-obvious cases.
-* Added initial port to Digital Mars compiler for win32.
+obvious cases (thanks to Maarten Thibaut).
+* Added initial port to Digital Mars compiler for win32 (thanks to Walter
+Bright).
 
 
 == [6.0alpha7] 2001-04-19 ==
@@ -7095,18 +7212,19 @@ obvious cases.
 actually wasn't being tested at the right points.  The build-time flag
 was.)
 * Added Tom Tromey's S390 Linux patch.
-* Added code to push GC_finalize_now in GC_push_finalizer_structures.
+* Added code to push GC_finalize_now in GC_push_finalizer_structures
+(thanks to Matthew Flatt).
 * Added GC_push_gc_structures() to push all GC internal roots.
 * Integrated some FreeBSD changes from Matthew Flatt.
 * It looks like USRSTACK is not always correctly defined under Solaris.
 Hacked gcconfig.h to attempt to work around the problem.  The result
-is not well tested.
+is not well tested.  (Thanks again to Matthew Flatt for pointing this out.)
 * Added Ji-Yong Chung's win32 threads and C++ fixes.
 * Arranged for hpux_test_and_clear.s to no longer be needed or built.
 It was causing build problems with gas, and it's not clear this is
 better than the pthreads alternative on this platform.
 * Some MINGW32 fixes from Hubert Garavel.
-* Added Initial Hitachi SH4 port from Kaz Kojima.
+* Added initial Hitachi SH4 port from Kaz Kojima.
 * Ported thread-local allocation and parallel mark code to HP/UX on PA_RISC.
 * Made include/gc_mark.h more public and separated out the really private
 pieces.  This is probably still not quite sufficient for clients that
@@ -7122,9 +7240,9 @@ yet supported.  (Incremental collection should work if you have the
 right kernel.  Threads may work with a sufficiently patched pthread
 library.)
 * Changed gcconfig.h to recognize __i386__ as an alternative to i386 in
-many places.
+many places (thanks to Benjamin Lerman).
 * Made win32_threads.c more tolerant of detaching a thread that it didn't
-know about.
+know about (thanks to Paul Nash).
 * Added Makefile.am and configure.in from gcc to the distribution, with
 minimal changes.  For the moment, those are just placeholders.  In the
 future, we're planning to switch to a GNU-style build environment for
@@ -7158,24 +7276,28 @@ This should now remain reliable on future kernels.  But since it relies
 on /proc, it will no longer work in the simulated NUE environment.
 * Made the call to random() in dbg_mlc.c with -DKEEP_BACK_PTRS dependent
 on the OS.  On non-Unix systems, rand() should be used instead.  Handled
-small RAND_MAX.
-* Fixed the cord make rules to create the cord subdirectory, if necessary.
+small RAND_MAX (thanks to Peter Ross for pointing this out).
+* Fixed the cord make rules to create the cord subdirectory, if necessary
+(thanks to Doug Moen).
 * Changed fo_object_size calculation in finalize.c.  Turned finalization
 of non-heap object into a no-op.  Removed anachronism from GC_size()
 implementation.
 * Changed GC_push_dirty call in solaris_threads.c to GC_push_selected.
-It was missed in a previous renaming.
-* Arranged to not not mask SIGABRT in linux_threads.c.
+It was missed in a previous renaming (thanks to Vladimir Tsichevski
+for pointing this out).
+* Arranged to not mask SIGABRT in linux_threads.c (thanks to Bryce McKinlay).
 * Added GC_no_dls hook for applications that want to register their own
 roots.
 * Integrated Kjetil Matheussen's Amiga changes.
-* Added FREEBSD_STACKBOTTOM.  Changed the X86/FreeBSD port to use it.
+* Added FREEBSD_STACKBOTTOM.  Changed the X86/FreeBSD port to use it
+(thanks to Matthew Flatt).
 * Added pthread_detach interception for platforms supported by linux_threads.c
 and irix_threads.c.
 * Changed the USE_MMAP code to check for the case in which we got the
 high end of the address space, i.e. mem_ptr + mem_sz == 0.  It appears
 that this can happen under Solaris 7.  It seems to be allowed by what
-I would claim is an oversight in the mmap specification.
+I would claim is an oversight in the mmap specification.  (Thanks to
+Toshio Endo for pointing out the problem.)
 * Cleanup of linux_threads.c.  Some code was originally cloned from
 irix_threads.c and now unnecessary.  Some comments were obviously wrong.
 * (Mostly) fixed a longstanding problem with setting of dirty bits from
@@ -7247,9 +7369,9 @@ object from the global free list.
 of increasing addresses instead of decreasing addresses for cache performance
 reasons.  But this seems to be only a very minor gain with -DEAGER_SWEEP,
 and a loss in other cases.  So the change was backed out.)
-* Fixed some of the documentation.
+* Fixed some of the documentation (thanks in large part to Fergus Henderson).
 * Fixed the Linux USE_PROC_FOR_LIBRARIES code to deal with apps that perform
-large numbers of mmaps.  Also fixed that code to
+large numbers of mmaps (thanks to Eric Benson).  Also fixed that code to
 deal with short reads.
 * Added GC_get_total_bytes().
 * Fixed leak detection mode to avoid spurious messages under linuxthreads.
@@ -7301,7 +7423,8 @@ To turn it on, define SAVE_CALL_CHAIN.
 for which that's expensive.
 * Fixed a locking bug ib GC_gcj_malloc and some locking assertion problems.
 * Added a missing volatile to OR_WORD and renamed the parameter to
-GC_compare_and_swap so it's not a C++ reserved word.
+GC_compare_and_swap so it's not a C++ reserved word (thanks to
+Toshio Endo for pointing out both of those).
 * Changed Linux dynamic library registration code to look at /proc/self/maps
 instead of the rld data structures when REDIRECT_MALLOC is defined.
 Otherwise some of the rld data data structures may be prematurely garbage
@@ -7311,7 +7434,7 @@ collected.
 Temporarily added some backward compatibility definitions.  Renamed
 USE_LD_WRAP to GC_USE_LD_WRAP.
 * Many MACOSX POWERPC changes, some additions to the gctest output, and
-a few minor generic bug fixes.
+a few minor generic bug fixes (thanks to Dietmar Planitzer).
 
 
 == [6.0alpha1] ==
@@ -7356,10 +7479,12 @@ serious, but seemed to generate some confusion.)
 
 == [5.4] ==
 
-* Fixed a typo that prevented compilation with -DUSE_3DNOW_PREFETCH.
+* Fixed a typo that prevented compilation with -DUSE_3DNOW_PREFETCH (thanks to
+Shawn Wagner for actually testing this).
 * Fixed GC_is_thread_stack in solaris_threads.c.  It forgot to return a value
 in the common case.
-* Fixed another silly syntax problem in GC_double_descr.
+* Fixed another silly syntax problem in GC_double_descr (thanks to
+Fergus Henderson for finding it).
 * Fixed a GC_gcj_malloc bug: It tended to release the allocator lock twice.
 
 
@@ -7371,7 +7496,7 @@ by the fact that some pages were not being swept, and hence unmarked
 objects weren't making it onto free lists.  (This bug dated back to 5.0.)
 * Fixed a typo in the liblinuxgc.so Makefile rule.
 * Added the GetExitCodeThread to Win32 GC_stop_world to (mostly) work
-around a Windows 95 GetOpenFileName problem.
+around a Windows 95 GetOpenFileName problem (thanks to Jacob Navia).
 
 
 == [5.2] ==
@@ -7382,18 +7507,20 @@ Irix.
 * We quietly assumed that indirect mark descriptors were never 0.
 Our own typed allocation interface violated that.  This could result
 in segmentation faults in the marker with typed allocation.
-* Fixed a _DUSE_MUNMAP bug in the heap block allocation code.
-* Taught the collector about VC++ handling array operator new.
+* Fixed a _DUSE_MUNMAP bug in the heap block allocation code (thanks to
+Ben Hutchings for the patch).
+* Taught the collector about VC++ handling array operator new (thanks to
+Ben Hutchings for the patch).
 * The two copies of gc_hdrs.h had diverged.  Made one a link to the other
 again.
 
 
 == [5.1] ==
 
-* Fixed a gc.h header bug which showed up under Irix.
+* Fixed a gc.h header bug which showed up under Irix (thanks to Dan Sullivan).
 * Fixed a typo in GC_double_descr in typd_mlc.c.
 This probably could result in objects described by array descriptors not
-getting traced correctly.
+getting traced correctly (thanks to Ben Hutchings for pointing this out).
 * The block nearly full tests in reclaim.c were not correct for 64 bit
 environments.  This could result in unnecessary heap growth under unlikely
 conditions.
@@ -7428,7 +7555,8 @@ the default win32 configuration.
 that the average PC has 64MB or so.
 * Integrated Bryce McKinlay's patches for linux threads and dynamic loading
 from the libgcj tree.  Turned on dynamic loading support for Linux/PPC.
-* Changed the stack finding code to use environ on HP/UX.  This should
+* Changed the stack finding code to use environ on HP/UX (thanks
+to Gustavo Rodriguez-Rivera for the suggestion).  This should
 probably be done on other platforms, too.  Since I can't test those, that'll
 wait until after 5.0.
 
@@ -7446,14 +7574,14 @@ mode if the actual used heap size is less than what was explicitly
 requested.
 * The Solaris pthreads version of GC_pthread_create didn't handle a NULL
 attribute pointer.  Solaris thread support used the wrong default thread
-stack size.
+stack size (thanks to Melissa O'Neill for the patch).
 * Changed PUSH_CONTENTS macro to no longer modify first parameter.
 This usually doesn't matter, but it was certainly an accident waiting
 to happen ...
 * Added GC_register_finalizer_no_order and friends to gc.h.  They're
 needed by Java implementations.
 * Integrated a fix for a win32 deadlock resulting from clock() calling
-malloc.
+malloc (thanks to Chris Dodd).
 * Integrated Hiroshi Kawashima's port to Linux/MIPS.  This was designed
 for a handheld platform, and may or may not be sufficient for other
 machines.
@@ -7474,14 +7602,16 @@ gain is currently near zero, and it adds to code size.
 __data_start, since nothing else seems to be portable.
 * Added -DUSE_LD_WRAP to optionally take advantage of the GNU ld function
 wrapping mechanism.  Probably currently useful only on Linux.
-* Moved some variables for the scratch allocator into GC_arrays.
+* Moved some variables for the scratch allocator into GC_arrays (suggested
+by Martin Hirzel).
 * Fixed a win32 threads bug that caused the collector to not look for
 interior pointers from one of the thread stacks without
-ALL_INTERIOR_POINTERS.
-* Added Mingw32 support.
+ALL_INTERIOR_POINTERS (thanks to Jeff Sturm).
+* Added Mingw32 support (thanks to Jeff Sturm for the patch).
 * Changed the alpha port to use the generic register scanning code instead
 of alpha_mach_dep.s.  Alpha_mach_dep.s doesn't look for pointers in fp
-registers, but gcc sometimes spills pointers there.  Changed the IA64 code to
+registers, but gcc sometimes spills pointers there (thanks to Manuel Serrano
+for helping debug this).  Changed the IA64 code to
 do something similar for similar reasons.
 
 
@@ -7490,9 +7620,9 @@ do something similar for similar reasons.
 * Added protection fault handling patch for Linux/M68K from Fergus
 Henderson and Roman Hodek.
 * Removed the tests for SGI_SOURCE in new_gc_alloc.h.  This was causing that
-interface to fail on nonSGI platforms.
+interface to fail on non-SGI platforms.
 * Changed the Linux stack finding code to use /proc, after changing it
-to use HEURISTIC1.
+to use HEURISTIC1 (thanks to David Mossberger for pointing out /proc hook).
 * Added HP/UX incremental GC support and HP/UX 11 thread support.
 Thread support is currently still flakey.
 * Added basic Linux/IA64 support.
@@ -7509,7 +7639,8 @@ touching them.
 frequency by default, but to explicitly trigger full GCs during
 heap growth.  This doesn't always improve things, but on average it's
 probably a win.
-* GC_debug_free(0, ...) failed.
+* GC_debug_free(0, ...) failed (thanks to Fergus Henderson for the
+bug report and fix).
 
 
 == [5.0alpha3] 1999-09-15 ==
@@ -7528,7 +7659,7 @@ of the above.
 
 * Fixed bugs introduced in alpha1 (OpenBSD & large block initialization).
 * Added -DKEEP_BACK_PTRS and backptr.h interface.  (The implementation
-idea came from Al Demers.)
+idea came from Alan Demers.)
 
 
 == [5.0alpha1] 1999-06-30 ==
@@ -7554,7 +7685,7 @@ GC_register_finalizer, so that it would continue to work with GC_DEBUG.
 * allochblk sometimes cleared the wrong block for debugging purposes
 when it dropped blacklisted blocks.  This could result in spurious
 error reports with GC_DEBUG.
-* added MACOS X Server support.
+* added MACOS X Server support (thanks to Andrew Stone).
 * Changed the Solaris threads code to ignore stack limits > 8 MB with
 a warning.  Empirically, it is not safe to access arbitrary pages
 in such large stacks.  And the dirty bit implementation does not
@@ -7565,7 +7696,7 @@ guarantee that none of them will be accessed.
 
 == [4.14] 1999-04-16 ==
 
-* changed STACKBOTTOM for DJGPP.
+* changed STACKBOTTOM for DJGPP (thanks to Salvador Eduardo Tropea).
 
 
 == [4.14alpha2] 1999-03-26 ==
@@ -7578,14 +7709,15 @@ issue with the normal config and huge pages.)
 completely, even with the setjmp-based code.  Added USE_GENERIC_PUSH_REGS
 macro to facilitate testing on machines I have access to.
 * Added code to explicitly push register contents for win32 threads.
-This seems to be necessary.
+This seems to be necessary.  (Thanks to Pierre de Rop.)
 
 
 == [4.14alpha1] 1999-03-10 ==
 
 * Fixed GC_print_source_ptr to not use a prototype.
 * generalized CYGWIN test.
-* gc::new did the wrong thing with PointerFreeGC placement.
+* gc::new did the wrong thing with PointerFreeGC placement (thanks to
+Rauli Ruohonen).
 * In the ALL_INTERIOR_POINTERS (default) case, some callee-save register
 values could fail to be scanned if the register was saved and
 reused in a GC frame.  This showed up in verbose mode with gctest
@@ -7595,11 +7727,12 @@ bug report that may have been related.  The bug was probably quite old.
 after the relevant frame was overwritten, and the new save location
 might be outside the scanned area.  Fixed by more eager stack scanning.)
 * PRINT_BLACK_LIST had some problems.  A few source addresses were garbage.
-* Replaced Makefile.dj and added -I flags to cord make targets.
+* Replaced Makefile.dj and added -I flags to cord make targets (thanks to
+Gary Leavens).
 * GC_try_to_collect was broken with the non-incremental collector.
 * gc_cleanup destructors could pass the wrong address to
 GC_register_finalizer_ignore_self in the presence of multiple
-inheritance.
+inheritance (thanks to Darrell Schiebel).
 * Changed PowerPC Linux stack finding code.
 
 
@@ -7614,11 +7747,11 @@ or two versions.
 * Fixed bool handling for SPARCCompiler version 4.2.
 * Fixed some files in include that had gotten unlinked from the main
 copy.
-* Some RS/6000 fixes (missing casts).
+* Some RS/6000 fixes (missing casts).  (Thanks to Toralf Foerster.)
 * Fixed several problems in GC_debug_realloc, affecting mostly the
 FIND_LEAK case.
 * GC_exclude_static_roots contained a buggy unsigned comparison to
-terminate a loop.
+terminate a loop (thanks to Wilson Ho).
 * CORD_str failed if the substring occurred at the last possible position.
 (Only affects cord users.)
 * Fixed Linux code to deal with RedHat 5.0 and integrated Peter Bigot's
@@ -7632,7 +7765,8 @@ misdirection problems.
 * Fixed MSWIN32 recognition test, which interfered with cygwin.
 * Removed unnecessary gc_watcom.asm from distribution.  Removed
 some obsolete README.win32 text.
-* Added Alpha Linux incremental GC support.
+* Added Alpha Linux incremental GC support (thanks to Philipp Tomsich
+for code for retrieving the fault address in a signal handler).
 Changed Linux signal handler context argument to be a pointer.
 * Took care of some new warnings generated by the 7.3 SGI compiler.
 * Integrated Phillip Musumeci's FreeBSD/ELF fixes.
@@ -7642,7 +7776,9 @@ Changed Linux signal handler context argument to be a pointer.
 == [4.13alpha2] 1998-08-08 ==
 
 * Fixed more Linux threads problems.
-* Changed default GC_free_space_divisor to 3 with new large block allocation.
+* Changed default GC_free_space_divisor to 3 with new large block allocation
+(thanks to Matthew Flatt for some measurements that suggest the old
+value sometimes favors space too much over time).
 * More CYGWIN32 fixes.
 * Integrated Tyson Dowd's Linux-M68K port.
 * Minor HP PA and DEC UNIX fixes from Fergus Henderson.
@@ -7666,7 +7802,7 @@ across platforms.
 * Fixed a USE_MMAP typo that caused out-of-memory handling to fail
 on Solaris.
 * Added code to test.c to test thread creation a bit more.
-* Integrated GC_win32_free_heap.
+* Integrated GC_win32_free_heap (as suggested by Ivan Demakov).
 * Fixed Solaris 2.7 stack base finding problem.  (This may actually
 have been done in an earlier alpha release.)
 
@@ -7689,7 +7825,7 @@ collector when it succeeds at reducing space cost.
 but needed for newer versions.
 * USE_MMAP had some serious bugs.  This caused the collector to fail
 consistently on Solaris with -DSMALL_CONFIG.
-* Added Linux threads support.
+* Added Linux threads support (thanks to Fergus Henderson).
 
 
 == [4.12] 1997-08-26 ==
@@ -7697,57 +7833,65 @@ consistently on Solaris with -DSMALL_CONFIG.
 * Fixed ElfW definition in dyn_load.c.
 This prevented the dynamic library support from compiling on some
 older ELF Linux systems.
-* Fixed UTS4 port (which I apparently mangled during the integration)
+* Fixed UTS4 port (which I apparently mangled during the integration).
+(Thanks to Alistair Crooks.)
 * "Make C++" failed on Suns with SC4.0, due to a problem with "bool".
 Fixed in gc_priv.h.
-* Added more pieces for GNU win32.
+* Added more pieces for GNU win32 (thanks to Timothy N. Newsham).
 The current state of things should suffice for at least some
 applications.
 * Changed the out of memory retry count handling.  (This matters only
 if GC_max_retries > 0, which is no longer the default.)
 * If a /proc read failed repeatedly, GC_written_pages was not updated
-correctly.
+correctly (thanks to Peter Chubb for diagnosing this).
 * Under unlikely circumstances, the allocator could infinite loop in
-an out of memory situation.
+an out of memory situation (thanks to Kenjiro Taura for
+identifying the problem and supplying a fix).
 * Fixed a syntactic error in the DJGPP code.  Also fixed a test program
-problem with DJGPP.
+problem with DJGPP (thanks to Fergus Henderson and Peter Monks).
 * Atomic uncollectible objects were not treated correctly by the
 incremental collector.  This resulted in weird log statistics and
-occasional performance problems.
+occasional performance problems (thanks to Peter Chubb for pointing this out).
 * Fixed some problems resulting from compilers that don't define
 __STDC__.  In this case void * and char * were used inconsistently
 in some cases.  (Void * should not have been used at all.  If
 you have an ANSI superset compiler that does not define __STDC__,
-please compile with -D__STDC__=0.)
+please compile with -D__STDC__=0.  Thanks to Manuel Serrano and others
+for pointing out the problem.)
 * Fixed a compilation problem on Irix with -n32 and -DIRIX_THREADS.
 Also fixed some other IRIX_THREADS problems which may or may not have
 had observable symptoms.
-* Fixed an HP PA compilation problem in dyn_load.c.
-* SEGV fault handlers sometimes did not get reset correctly.
-* Added a fix for SOLARIS_THREADS on Intel.
+* Fixed an HP PA compilation problem in dyn_load.c (thanks to
+Philippe Queinnec).
+* SEGV fault handlers sometimes did not get reset correctly (thanks
+to David Pickens).
+* Added a fix for SOLARIS_THREADS on Intel (thanks to David Pickens).
 This probably needs more work to become functional.
 * Fixed struct sigcontext_struct in os_dep.c for compilation under
-Linux 2.1.X.
-* Changed the DJGPP STACKBOTTOM and DATASTART values to those ones suggested.
-These may still not be right, but it is
+Linux 2.1.X (thanks to Fergus Henderson).
+* Changed the DJGPP STACKBOTTOM and DATASTART values to those ones suggested
+(by Kristian Kristensen).  These may still not be right, but it is
 it is likely to work more often than what was there before.  They may
 even be exactly right.
 * Added a #include <string.h> to test_cpp.cc.  This appears to help
-with HP/UX and gcc.
+with HP/UX and gcc (thanks to Assar Westerlund).
 * Version 4.11 failed to run in incremental mode on recent 64-bit Irix
 kernels.  This was a problem related to page unaligned heap segments.
 Changed the code to page align heap sections on all platforms.
 (I had mistakenly identified this as a kernel problem earlier.
 It was not.)
 * Version 4.11 did not make allocated storage executable, except on
-one or two platforms, due to a bug in a #if test.
+one or two platforms, due to a bug in a #if test (thanks to David Grove
+for pointing this out).
 * Added sparc_sunos4_mach_dep.s to support Sun's compilers under SunOS4.
 * Added GC_exclude_static_roots.
 * Fixed the object size mapping algorithm.  This shouldn't matter,
 but the old code was ugly.
 * Heap checking code could die if one of the allocated objects was
-larger than its base address.  (Unsigned underflow problem.)
-* Added RS6000 (AIX) dynamic library support and fixed STACK_BOTTOM.
+larger than its base address.  (Unsigned underflow problem.  Thanks
+to Clay Spence for isolating the problem.)
+* Added RS6000 (AIX) dynamic library support and fixed STACK_BOTTOM (thanks
+to Fred Stearns).
 * Added Fergus Henderson's patches for improved robustness with large
 heaps and lots of blacklisting.
 * Added Peter Chubb's changes to support Solaris Pthreads, to support
@@ -7763,10 +7907,11 @@ supported.  The collector now defines USE_MMAP by default on Solaris.
 a DLL under GNU win32.
 * Added Ivan V. Demakov's port to Watcom C on X86.
 * Added Ian Piumarta's Linux/PowerPC port.
-* Added PointerFreeGC to the placement
-options in gc_cpp.h.  This is of course unsafe, and may be controversial.
+* Added PointerFreeGC to the placement options in gc_cpp.h (suggested by
+Brian Burton).  This is of course unsafe, and may be controversial.
 On the other hand, it seems to be needed often enough that it's worth
 adding as a standard facility.
+* Add Lars Farm's suggestions on building the collector for MacOS.
 
 
 == [4.12alpha2] ==
@@ -7786,7 +7931,8 @@ modifications.
 * Fixed the MPROTECT_VDB code to deal with large pages and imprecise
 fault addresses (as on an UltraSPARC running Solaris 2.5).  Note that this
 was not a problem in the default configuration, which uses PROC_VDB.
-* The DEC Alpha assembly code needed to restore $gp between calls.
+* The DEC Alpha assembly code needed to restore $gp between calls (thanks to
+Fergus Henderson for tracking this down and supplying a patch).
 * The write command for "de" was completely broken for large files.
 I used the easiest portable fix, which involved changing the semantics
 so that f.new is written instead of overwriting f.  That's safer anyway.
@@ -7796,7 +7942,7 @@ mixing the collector's sbrk allocation with malloc/realloc.
 old code failed under IRIX6.
 * Required double word alignment for MIPS.
 * Various minor fixes to remove warnings.
-* Attempted to fix some Solaris threads problems.
+* Attempted to fix some Solaris threads problems (reported by Zhiying Chen).
 In particular, the collector could try to fork a thread with the
 world stopped as part of GC_thr_init.  It also failed to deal with
 the case in which the original thread terminated before the whole
@@ -7806,24 +7952,30 @@ on the incremental collector under Irix, and perhaps under other
 operating systems.
 * Added some code to support allocating the heap with mmap.  This may
 be preferable under some circumstances.
-* Integrated dynamic library support for HP.
+* Integrated dynamic library support for HP (thanks to Knut Tvedten).
 * Integrated James Clark's win32 threads support, and made a number
-of changes to it. This is still not 100% solid.
-* Integrated Alistair Crooks' support for UTS4 running on an Amdahl
+of changes to it (many of which suggested by Pontus Rydin).  This is still
+not 100% solid.
+* Integrated Alistair G. Crooks' support for UTS4 running on an Amdahl
 370-class machine.
 * Fixed a serious bug in explicitly typed allocation.  Objects requiring
 large descriptors where handled in a way that usually resulted in
-a segmentation fault in the marker.
-* Added partial support for GNU win32 development.
-* Added optional support for Java-style finalization semantics.
-This is recommended only for Java implementations.
+a segmentation fault in the marker (thanks to Jeremy Fitzhardinge
+for helping to track this down).
+* Added partial support for GNU win32 development (thanks to
+Fergus Henderson).
+* Added optional support for Java-style finalization semantics (thanks to
+Patrick Bridges).  This is recommended only for Java implementations.
 * GC_malloc_uncollectable faulted instead of returning 0 when out of
-memory.
+memory (thanks to Daniel R. Grayson for noticing).
 * Calls to GC_base before the collector was initialized failed on a
-DEC Alpha.
-* Added base pointer checking to GC_REGISTER_FINALIZER in debugging mode.
-* GC_debug_realloc failed for uncollectible objects.
-* Explicitly typed allocation could crash if it ran out of memory.
+DEC Alpha (thanks to Matthew Flatt).
+* Added base pointer checking to GC_REGISTER_FINALIZER in debugging mode
+(thanks to Jeremy Fitzhardinge).
+* GC_debug_realloc failed for uncollectible objects (thanks to
+Jeremy Fitzhardinge).
+* Explicitly typed allocation could crash if it ran out of memory (thanks to
+Jeremy Fitzhardinge).
 * Added minimal support for a DEC Alpha running Linux.
 * Fixed a problem with allocation of objects whose size overflowed
 ptrdiff_t.  (This now fails unconditionally, as it should.)
@@ -7833,8 +7985,9 @@ ptrdiff_t.  (This now fails unconditionally, as it should.)
 * Fixed a serious bug in README.solaris2.
 Multi-threaded programs must include
 gc.h with SOLARIS_THREADS defined.
-* Changed GC_free so it actually deallocates uncollectible objects.
-* Added Linux ELF support for dynamic libraries.
+* Changed GC_free so it actually deallocates uncollectible objects (thanks
+to Peter Chubb for pointing out the problem).
+* Added Linux ELF support for dynamic libraries (thanks to Patrick Bridges).
 * Changed the Borland cc configuration so that the assembler is not
 required.
 * Fixed a bug in the C++ test that caused it to fail in 64-bit
@@ -7849,7 +8002,7 @@ Some changes related to threads support.
 == [4.10] 1996-02-19 ==
 
 * Fixed a typo around a call to GC_collect_or_expand in alloc.c.  It broke
-handling of out of memory.
+handling of out of memory.  (Thanks to Patrick C. Beard for noticing.)
 
 
 == [4.9] 1996-02-12 ==
@@ -7880,36 +8033,43 @@ gcc to fail on other platforms.
 
 == [4.7] 1995-11-18 ==
 
-* Fixed some compilation problems with -DCHECKSUMS.
-* Updated some Mac specific files.
+* Fixed some compilation problems with -DCHECKSUMS (thanks to Ian Searle).
+* Updated some Mac specific files (to synchronize with Patrick C. Beard).
 * Fixed a serious bug for machines with non-word-aligned pointers.
+(Thanks to Patrick C. Beard for pointing out the problem.  The collector
+should fail almost any conceivable test immediately on such machines.)
 
 
 == [4.6] 1995-11-09 ==
 
-* Added Linux ELF support.
+* Added Linux ELF support (thanks to Arrigo Triulzi).
 * GC_base crashed if it was called before any other GC_ routines.
 This could happen if a gc_cleanup object was allocated outside the heap
 before any heap allocation.
 * The heap expansion heuristic was not stable if all objects had finalization
 enabled.  Fixed finalize.c to count memory in finalization queue and
 avoid explicit deallocation.  Changed alloc.c to also consider this count.
-(This is still not recommended.  It's expensive if nothing else.)
-* GC_malloc_uncollectable(0) was broken.
-* The collector didn't compile under Linux 1.3.X.
-The current workaround is ugly, but expected to be temporary.
+(This is still not recommended.  It's expensive if nothing else.  Thanks
+to John Ellis for pointing this out.)
+* GC_malloc_uncollectable(0) was broken (thanks to Phong Vo for pointing
+this out).
+* The collector didn't compile under Linux 1.3.X (thanks to Fred Gilham for
+pointing this out).  The current workaround is ugly, but expected to be
+temporary.
 * Fixed a formatting problem for SPARC stack traces.
 * Fixed some '=='s in os_dep.c that should have been assignments.
-Fortunately these were in code that should never be executed anyway.
+Fortunately these were in code that should never be executed anyway (thanks
+to Fergus Henderson).
 * Fixed the heap block allocator to only drop blacklisted blocks in small
 chunks.  Made BL_LIMIT self adjusting.  (Both of these were in response
 to heap growth observed by Paul Graham.)
-* Fixed the Metrowerks/68K Mac code to also mark from a6.
+* Fixed the Metrowerks/68K Mac code to also mark from a6 (thanks to
+Patrick C. Beard).
 * Significantly updated README.debugging.
 * Fixed some problems with longjmps out of signal handlers, especially under
 Solaris.  Added a workaround for the fact that siglongjmp doesn't appear to
 do the right thing with -lthread under Solaris.
-* Added MSDOS/djgpp port.
+* Added MSDOS/djgpp port (thanks to Mitch Harris).
 * Added "make reserved_namespace" and "make user_namespace".  The
 first renames ALL "GC_xxx" identifiers as "_GC_xxx".  The second is the
 inverse transformation.  Note that doing this is guaranteed to break all
@@ -7928,11 +8088,13 @@ beginning to hopefully specify the remaining dangers.
 
 == [4.5] 1995-06-14 ==
 
-* Fixed many minor and one major README bugs.
-* Fixed ALPHA/OSF/1 dynamic library support.
+* Fixed many minor and one major README bugs (thanks to Franklin Chen
+for pointing out many of them).
+* Fixed ALPHA/OSF/1 dynamic library support (thanks to Jonathan Bachrach).
 * Added incremental GC support (MPROTECT_VDB) for Linux (with some
 help from Bruno Haible).
-* Altered SPARC recognition tests in gc.h and config.h.
+* Altered SPARC recognition tests in gc.h and config.h (mostly as
+suggested by Fergus Henderson).
 * Added basic incremental GC support for win32, as implemented by
 Windows NT and Windows 95.  GC_enable_incremental is a no-op
 under win32s, which doesn't implement enough of the VM interface.
@@ -7952,16 +8114,17 @@ The old way turned out to be a performance bug on some machines.
 * Added -DNO_DEBUGGING and GC_dump.
 * Fixed a couple of bugs arising with SOLARIS_THREADS +
 REDIRECT_MALLOC.
-* Added NetBSD/M68K port.
+* Added NetBSD/M68K port (thanks to Peter Seebach).
 * Fixed a serious realloc bug.  For certain object sizes, the collector
-wouldn't scan the expanded part of the object.
+wouldn't scan the expanded part of the object.  (Thanks to Clay Spence
+for noticing the problem, and helping me to track it down.)
 
 
 == [4.4] 1995-02-18 ==
 
 * ASM_CLEAR_CODE was erroneously defined for HP
 PA machines, resulting in a compile error.
-* Fixed OS/2 Makefile to create a library.
+* Fixed OS/2 Makefile to create a library (thanks to Mark Boulter).
 * Gc_cleanup objects didn't work if they were created on
 the stack.  Fixed.
 * One copy of Gc_cpp.h in the distribution was out of
@@ -7975,7 +8138,7 @@ gc_cleanup is miscompiled.
 a new and different VirtualQuery bug under newer
 versions of win32S.
 * GC_non_gc_bytes was not correctly maintained by
-GC_free.  Fixed.
+GC_free.  Fixed (thanks to James Clark).
 * Added GC_set_max_heap_size.
 * Changed allocation code to ignore blacklisting if it is preventing
 use of a very large block of memory.  This has the advantage
@@ -7988,17 +8151,22 @@ between calls.  FAT file systems otherwise make the log file
 useless for debugging.
 * Added GC_try_to_collect and GC_get_bytes_since_gc.  These
 allow starting an abortable collection during idle times.
-This facility does not require special OS support.
-* Added some support for the Borland development environment.
+This facility does not require special OS support.  (Thanks to
+Michael Spertus of Geodesic Systems for suggesting this.  It was
+actually an easy addition.  Kumar Srikantan previously added a similar
+facility to a now ancient version of the collector.  At the time
+this was much harder, and the result was less convincing.)
+* Added some support for the Borland development environment (thanks
+to John Ellis and Michael Spertus).
 * Removed a misfeature from checksums.c that caused unexpected
-heap growth.
+heap growth (thanks to Scott Schwartz).
 * Changed finalize.c to call WARN if it encounters a finalization cycle.
 WARN is defined in gc_priv.h to write a message, usually to stdout.
 In many environments, this may be inappropriate.
 * Renamed NO_PARAMS in gc.h to GC_NO_PARAMS, thus adhering to my own
 naming convention.
 * Added GC_set_warn_proc to intercept warnings.
-* Fixed Amiga port.
+* Fixed Amiga port (thanks to Michel Schinz).
 * Fixed a bug in mark.c that could result in an access to unmapped
 memory from GC_mark_from_mark_stack on machines with unaligned
 pointers.
@@ -8016,8 +8184,9 @@ problem was an interaction with mprotect.
 * Slightly improved allocator space utilization by
 fixing the GC_size_map mechanism.
 * Integrated some Sony News and MIPS RISCos 4.51
-patches.
-* Fixed HP_PA alignment problem.
+patches (thanks to Nobuyuki Hikichi at Software Research Associates,
+Inc., Japan).
+* Fixed HP_PA alignment problem (thanks to Brian F. Dennis).
 * Added GC_same_obj and friends.  Changed GC_base
 to return 0 for pointers past the end of large objects.
 Improved GC_base performance with ALL_INTERIOR_POINTERS
@@ -8034,15 +8203,15 @@ Can be changed back with a minor Makefile edit.
 following my own naming convention.  Added the function
 CORD_to_const_char_star.
 * Fixed a gross bug in GC_finalize.  Symptom: occasional
-address faults in that function.
+address faults in that function (thanks to Anselm Baird-Smith).
 * Added port to ICL DRS6000 running DRS/NX.  Restructured
 things a bit to factor out common code, and remove obsolete
 code.  Collector should now run under SUNOS5 with either
-mprotect or /proc dirty bits.
+mprotect or /proc dirty bits.  (Thanks to Douglas Steel.)
 * More bug fixes and workarounds for Solaris 2.X.  (These were
 mostly related to putting the collector in a dynamic library,
 which didn't really work before.  Also SOLARIS_THREADS
-didn't interact well with dl_open.)
+didn't interact well with dl_open.) (Thanks to Brian Lewis.)
 * Fixed a serious performance bug on the DEC Alpha.  The text
 segment was getting registered as part of the root set.
 (Amazingly, the result was still fast enough that the bug
@@ -8050,28 +8219,27 @@ was not conspicuous.) The fix works on OSF/1, version 1.3.
 Hopefully it also works on other versions of OSF/1 ...
 * Fixed a bug in GC_clear_roots.
 * Fixed a bug in GC_generic_malloc_words_small that broke
-gc_inl.h.
+gc_inl.h (reported by Antoine de Maricourt).
 * Fixed some problems with cord/de under Linux.
 * Fixed some cord problems, notably with CORD_riter4.
-* Added DG/UX port.
+* Added DG/UX port (thanks to Ben A. Mesander).
 * Added finalization registration routines with weaker ordering
 constraints.  (This is necessary for C++ finalization with
 multiple inheritance, since the compiler often adds self-cycles.)
-* Filled the holes in the SCO port.
-* John Ellis' additions to the C++ support:  From John:
-* I completely rewrote the documentation in the interface gc_c++.h
-(later renamed gc_cpp.h).  I've tried to make it both clearer and more
-precise.
-* The definition of accessibility now ignores pointers from an
-finalizable object (an object with a clean-up function) to itself.
+* Filled the holes in the SCO port (thanks to Michael Arnoldus).
+* Completely rewritten the documentation in the interface gc_c++.h
+(later renamed gc_cpp.h) making it both clearer and more precise (done by
+John Ellis).
+* The definition of accessibility now ignores pointers from an finalizable
+object (an object with a clean-up function) to itself (done by John Ellis).
 This allows objects with virtual base classes to be finalizable by the
 collector.  Compilers typically implement virtual base classes using
 pointers from an object to itself, which under the old definition of
 accessibility prevented objects with virtual base classes from ever
 being collected or finalized.
 * gc_cleanup now includes gc as a virtual base.  This was enabled by
-the change in the definition of accessibility.
-* I added support for operator new[].  Since most compilers
+the change in the definition of accessibility (by John Ellis).
+* Added support for operator new[] (by John Ellis).  Since most compilers
 don't yet support operator new[], it is conditionalized on
 -DOPERATOR_NEW_ARRAY.  The code is untested, but its trivial and looks
 correct.
@@ -8079,14 +8247,14 @@ correct.
 tries to test for the C++-specific functionality not tested by the
 other programs.
 * Added unistd.h include to misc.c.  (Needed for ppcr.)
-* Added PowerMac port.
+* Added PowerMac port (thanks to Patrick C. Beard).
 * Fixed "srcdir"-related Makefile problems.  Changed things so
 that all externally visible include files always appear in the
 include subdirectory of the source.  Made gc.h directly
-includable from C++ code.
-* Changed Intel code to also mark from ebp
+includable from C++ code (thanks to Per Bothner).
+* Changed Intel code to also mark from ebp (thanks to Kevin Warne).
 * Renamed C++ related files so they could live in a FAT
-file system.
+file system (thanks to Charles Fiterman).
 * Changed Windows NT Makefile to include C++ support in
 gc.lib.  Added C++ test as Makefile target.
 
@@ -8102,7 +8270,8 @@ circumstances.  My stack marking code
 contained a serious performance bug.  The new code is
 extremely defensive, and has not failed in several CPU
 hours of testing.  But no guarantees ...)
-* Added MacOS support.
+* Added MacOS support.  (Thanks to Patrick C. Beard.
+David Chase suggested several improvements.)
 * Fixed several syntactic bugs in gc_c++.h and friends.  (These
 didn't bother g++, but did bother most other compilers.)
 Fixed gc_c++.h finalization interface.
@@ -8112,8 +8281,8 @@ few cases in which it should have been.
 * Added GC_collect_a_little.
 * Added some prototypes to gc.h.
 * Some other minor bug fixes (notably in Makefile).
-* Fixed OS/2 / EMX port.
-* Fixed AmigaDOS port.
+* Fixed OS/2 / EMX port (thanks to Ari Huttunen).
+* Fixed AmigaDOS port (thanks to Michel Schinz).
 * Fixed the DATASTART definition under Solaris.  There
 was a 1 in 16K chance of the collector missing the first
 64K of static data (and thus crashing).
@@ -8135,7 +8304,8 @@ a problem.
 heap growth during startup on machines that do not clear
 memory obtained from the OS (e.g. win32S).
 * Ported de editor to win32/win32S.  (This is now the only
-version with a mouse-sensitive UI.)
+version with a mouse-sensitive UI.  Thanks to Rob Haack for the
+implementation based on the generic Windows application template.)
 * Added GC_malloc_ignore_off_page to allocate large arrays
 in the presence of ALL_INTERIOR_POINTERS.
 * Changed GC_call_with_alloc_lock to not disable signals in
@@ -8185,9 +8355,12 @@ destructors.)
 * Added typed allocation primitives.  Rewrote the marker to
 accommodate them with more reasonable efficiency.  This
 change should also speed up marking for GC_malloc allocated
-objects a little.  See gc_typed.h for new primitives.
+objects a little.  See gc_typed.h for new primitives.  (Thanks to
+Zhong Shao performed much of the experimentation that led to the
+current typed allocation facility.)
 * Improved debugging facilities slightly.  Allocation time
-stack traces are now kept by default on SPARC/SUNOS4.
+stack traces are now kept by default on SPARC/SUNOS4.  (Thanks to
+Scott Schwartz.)
 * Added better support for small heap applications.
 * Significantly extended cord package.  Fixed a bug in the
 implementation of lazily read files.  Printf and friends now
@@ -8195,8 +8368,9 @@ have cord variants.  Cord traversals are a bit faster.
 * Made ALL_INTERIOR_POINTERS recognition the default.
 * Fixed de so that it can run in constant space, independent
 of file size.  Added simple string searching to cords and de.
-* Added the Hull-Ellis C++ interface.
-* Added dynamic library support for OSF/1.
+* Added the Hull-Ellis C++ interface (supplied by Jesse Hull and John Ellis).
+* Added dynamic library support for OSF/1 (thanks to Alan Dosser and
+Tim Bingham at DEC).
 * Changed argument to GC_expand_hp to be expressed
 in units of bytes instead of heap blocks.  (Necessary
 since the heap block size now varies depending on
@@ -8204,6 +8378,7 @@ configuration.  The old version was never very clean.)
 * Added GC_get_heap_size().  The previous "equivalent"
 was broken.
 * Restructured the Makefile a bit.
+* Added FreeBSD port (provided by Jeffrey Hsu).
 
 
 == [3.7] 1994-03-15 ==
@@ -8248,31 +8423,33 @@ the data segment contained interesting roots.  The workaround
 assumes a demand-loadable executable.  The original may have
 have "worked" in some other cases.
 * Added dynamic library support under IRIX5.
-* Added support for EMX under OS/2.
+* Added support for EMX under OS/2 (thanks to Ari Huttunen).
+* Added support of Motorola 88K processor running CX/UX (by Brent Benson).
 
 
 == [3.4] ==
 
 * Fixed a performance bug in GC_realloc.
 * Updated the amiga port.
-* Added NetBSD and 386BSD ports.
+* Added NetBSD and 386BSD ports (supplied by Alistair G. Crooks).
 * Added cord library.
 * Added trivial performance enhancement for
-ALL_INTERIOR_POINTERS.  (Don't scan last word.)
+ALL_INTERIOR_POINTERS (do not scan last word).
 
 
 == [3.3] 1993-10-02 ==
 
-* PCR-specific bugs.
+* PCR-specific bugs (thanks to Neil Sharman).
 * Missing locking in GC_free, redundant FASTUNLOCK
 in GC_malloc_stubborn, and 2 bugs in
-GC_unregister_disappearing_link.
+GC_unregister_disappearing_link (pointed out by Neil Sharman).
 * Common symbols allocated by the SunOS4.X dynamic loader
 were not included in the root set.
-* Bug in GC_finalize
-* Merged Amiga port from Jesper Peterson (untested)
+* Bug in GC_finalize (reported by Brian Beuning and Alan Dosser).
+* Merged Amiga port from Jesper Peterson (untested).
 * Merged NeXT port from Thomas Funke (significantly
-modified and untested)
+modified and untested).  (Also thanks to Brian D. Carlstrom for
+the supplied the NeXT ports.)
 
 
 == [3.2] ==
@@ -8291,9 +8468,9 @@ misfeature that caused problems when the collector was turned into
 a dynamic library.
 * A fix for a bug in GC_base that could result in a memory fault.
 * A fix for a performance bug (and several other misfeatures) pointed
-out by Dave Detlefs and Al Dosser.
+out by Dave Detlefs and Alan Dosser.
 * Use of dirty bit information for static data under Solaris 2.X.
-* DEC Alpha/OSF1 support.
+* DEC Alpha/OSF1 support (thanks to Alan Dosser).
 * Incremental collection on more platforms.
 * A more refined heap expansion policy.  Less space usage by default.
 * Various minor enhancements to reduce space usage, and to reduce
@@ -8336,7 +8513,8 @@ fail to be considered for marking.
 bss sections of the dynamic library.  This could result in a bad memory
 reference if the actual length was a multiple of a page.  (Observed on
 Sun 3.  Can probably also happen on a Sun 4.)
-(Dynamic library handling is still broken on Sun 3s
+(Thanks to Robert Brazile for pointing out that the Sun 3 version
+was broken.  Dynamic library handling is still broken on Sun 3s
 under 4.1.1U1, but apparently not 4.1.1.  If you have such a machine,
 use -Bstatic.)
 
@@ -8355,7 +8533,7 @@ in a multi-threaded environment.  (The locking primitives need to be
 replaced for other threads packages.)
 * GC_CONS was thoroughly broken.
 * On a SPARC with dynamic linking, signals stayed disabled while the
-client code was running.
+client code was running (thanks to Manuel Serrano).
 
 
 == [2.2] ==
@@ -8384,7 +8562,8 @@ on HP/PA machines.
 
 * Introduced a consistent naming convention for collector
 routines and added support for registering dynamic library data segments
-in the standard mark_roots.c.  Most of the data structures were revamped.
+in the standard mark_roots.c (original code supporting the SunOS dynamic
+loader provided by Bill Janssen).  Most of the data structures were revamped.
 The treatment of interior pointers was completely changed.  Finalization
 was added.  Support for locking was added.  Object kinds were added.
 We added a black listing facility to avoid allocating at addresses known
@@ -8400,7 +8579,9 @@ The test program was changed and expanded.
 
 == [1.8] ==
 
-* added ULTRIX support in gc_private.h.
+* added ULTRIX support in gc_private.h.  (Robert Brazile originally supplied
+the ULTRIX code.  Alan Dosser and Regis Cridlig subsequently provided updates
+and information on variation between ULTRIX systems.)
 
 
 == [1.5] ==
@@ -8427,3 +8608,11 @@ the assignments can lead to an unsaved register being overwritten.
 Known to cause problems under SunOS 3.5 WITHOUT the -O option.  (With
 -O the compiler recognizes it as dead code.  It probably shouldn't,
 but that's another story.)
+The SPARC-specific code was originally contributed by Mark Weiser.
+The Encore Multimax modifications were supplied by Kevin Kenny.
+The adaptation to the IBM PC/RT is largely
+due to Vernon Lee, on machines made available to Rice by IBM.
+Much of the HP specific code and a number of good suggestions for improving
+the generic code are due to Walter Underwood.
+Parag Patel supplied the A/UX code.
+Manuel Serrano supplied linux and Sony News specific code.
