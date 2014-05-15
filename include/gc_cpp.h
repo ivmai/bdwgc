@@ -21,7 +21,7 @@ C++ Interface to the Boehm Collector
 
 This interface provides access to the Boehm collector.  It provides
 basic facilities similar to those described in "Safe, Efficient
-Garbage Collection for C++", by John R. Elis and David L. Detlefs
+Garbage Collection for C++", by John R. Ellis and David L. Detlefs
 (ftp://ftp.parc.xerox.com/pub/ellis/gc).
 
 All heap-allocated objects are either "collectible" or
