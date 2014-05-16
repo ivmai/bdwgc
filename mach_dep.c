@@ -181,6 +181,11 @@
       }
 #     define HAVE_PUSH_REGS
 #   endif /* __MWERKS__ */
+# elif defined(EMSCRIPTEN)
+      void GC_push_regs(void)
+      {
+      }
+#     define HAVE_PUSH_REGS
 # endif /* MACOS */
 
 #endif /* !USE_ASM_PUSH_REGS */

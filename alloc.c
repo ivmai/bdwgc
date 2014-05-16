@@ -202,11 +202,15 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
 static word min_bytes_allocd(void)
 {
     word result;
-#   ifdef STACK_GROWS_UP
+#   ifdef __EMSCRIPTEN__
+      word stack_size = 0;
+#   else 
+#     ifdef STACK_GROWS_UP
       word stack_size = GC_approx_sp() - GC_stackbottom;
             /* GC_stackbottom is used only for a single-threaded case.  */
-#   else
+#     else
       word stack_size = GC_stackbottom - GC_approx_sp();
+#     endif
 #   endif
 
     word total_root_size;       /* includes double stack size,  */
