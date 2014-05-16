@@ -358,7 +358,7 @@ Since version 4.2:
 (later renamed gc_cpp.h).  I've tried to make it both clearer and more
 precise.
 
-* The definition of accessibility now ignores pointers from an
+* The definition of accessibility now ignores pointers from a
 finalizable object (an object with a clean-up function) to itself.
 This allows objects with virtual base classes to be finalizable by the
 collector.  Compilers typically implement virtual base classes using
@@ -889,7 +889,7 @@ Since 5.0 alpha3
    to use HEURISTIC1.  (Thanks to David Mossberger for pointing out the
    /proc hook.)
  - Added HP/UX incremental GC support and HP/UX 11 thread support.
-   Thread support is currently still flakey.
+   Thread support is currently still flaky.
  - Added basic Linux/IA64 support.
  - Integrated Anthony Green's PicoJava support.
  - Integrated Scott Ananian's StrongARM/NetBSD support.
@@ -1412,7 +1412,7 @@ Since 6.0:
  - Cleaned up feature test macros for various threads packages and
    integrated (partially functional) FreeBSD threads code from Loren Rittle.
    It's likely that the cleanup broke something, since it touched lots of
-   code.  It's also likelly that it fixed some unreported bugs in the
+   code.  It's also likely that it fixed some unreported bugs in the
    less common thread implementations, since some of the original code
    didn't stand up to close scrutiny.  Support for the next pthreads
    implementation should be easier to add.
@@ -1615,7 +1615,7 @@ Since 6.1alpha4:
  - Integrated cygwin pthreads support from Dan Bonachea.
  - Turn on DYNAMIC_LOADING for NetBSD.  (Thanks to Krister Walfridsson.)
  - Changed printing code to print more complete GC times.
- - Applied Mark Mitchell's Irix patch to correct some bitrot.
+ - Applied Mark Mitchell's Irix patch to correct some bit rot.
  - Clarified which object-printing routines in dbg_mlc.c should hold
    the allocation lock.  Restructured the code to allow reasonable object
    printing with -DREDIRECT_MALLOC.
@@ -1903,7 +1903,7 @@ Since 6.3alpha1:
    Danny Smith for the patch.  6.3alpha1 had the qualifier in one place
    but not elsewhere, which was clearly wrong.)
  - Sometimes explicitly define __private_extern__ before DARWIN dyld.h
-   include.  (Thanks to Andreas Tobker for postting the patch.)
+   include.  (Thanks to Andreas Tobler for posting the patch.)
  - Included signal.h from pthread_support.c.  Removed GC_looping_handler,
    which was dead code.
  - GC_find_start was misdeclared by gc_pmark.h if PRINT_BLACK_LIST was
@@ -2091,7 +2091,7 @@ Since 6.3alpha6:
  - SMALL_OBJ definition was off by one.  This could cause crashes
    at startup.  (Thanks to Zoltan Varga for narrowing this down to
    a trivial test case.)
- - Integrate Paolo Molara's patch to deal with a race in the Darwin
+ - Integrate Paolo Molaro's patch to deal with a race in the Darwin
    thread stopping code.
  - Changed X86_64 implementation to use SA_SIGINFO in the MPROTECT_VDB
    implementation.  The old approach appears to have been broken by
@@ -2156,7 +2156,7 @@ Since gc6.3:
    to THREADDLLIBS to reflect this.  (Thanks to Sven Verdoolaege.)
  - Added Hannes Mehnert's patch for FreeBSD/SPARC support.
  - Merged some FreeBSD specific patches to threadlibs.c and dyn_load.c.
-   (Thanks tp John Merryweather Cooper.)
+   (Thanks to John Merryweather Cooper.)
  - Define MPROTECT_VDB on MACOSX only if threads are being used, since the
    dirty page tracking mechanism uses threads.  (This avoids an undefined
    reference to _GC_darwin_register_mach_handler_thread.)
@@ -2229,7 +2229,7 @@ Since gc6.5:
  - Applied Christian Thalinger's patch to change comment syntax in
    alpha_mach_dep.S.
  - Added test for GC_no_dls in GC_dyld_image_add for DARWIN. (Thanks to
-   Juan Jose Garcia Ripoli).
+   Juan Jose Garcia-Ripoll).
  - Use LINUX_STACKBOTTOM for Linux/SH and LINUX/ARM. (Thanks to Sugioka
    Toshinobu and Christian Thalinger.)
  - Rewrote GC_parse_map_entry.  This assumed a fixed column layout of
@@ -2260,7 +2260,7 @@ Since 6.6:
  - Changed a test for LINUX in config_macros.h to one for __linux__.
  - Add prototypes for GC_finalizer_notifier and GC_thr_init.  (Thanks to
    David Ayers.)
- - Use ld instead of nonexitent ldz instruction in Darwin FindTopOfStack.
+ - Use ld instead of nonexistent ldz instruction in Darwin FindTopOfStack.
    (Thanks to Andreas Tobler.)
  - Add support for Darwin/X86.  (Thanks to Geoff Norton and the Mono
    developers.)
