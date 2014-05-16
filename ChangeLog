@@ -6175,7 +6175,7 @@ to Hanno Boeck).
 * Changed a test for LINUX in config_macros.h to one for __linux__.
 * Add prototypes for GC_finalizer_notifier and GC_thr_init (thanks to
 David Ayers).
-* Use ld instead of nonexitent ldz instruction in Darwin FindTopOfStack
+* Use ld instead of nonexistent ldz instruction in Darwin FindTopOfStack
 (thanks to Andreas Tobler).
 * Add support for Darwin/X86 (thanks to Geoff Norton and the Mono
 developers).
@@ -6205,7 +6205,7 @@ tracking this down.)
 * Applied Christian Thalinger's patch to change comment syntax in
 alpha_mach_dep.S.
 * Added test for GC_no_dls in GC_dyld_image_add for DARWIN (thanks to
-Juan Jose Garcia Ripoli).
+Juan Jose Garcia-Ripoll).
 * Use LINUX_STACKBOTTOM for Linux/SH and LINUX/ARM (thanks to
 Sugioka Toshinobu and Christian Thalinger).
 * Rewrote GC_parse_map_entry.  This assumed a fixed column layout of
@@ -6329,7 +6329,7 @@ pthreads, but doesn't know how to.
 to THREADDLLIBS to reflect this.  (Thanks to Sven Verdoolaege.)
 * Added Hannes Mehnert's patch for FreeBSD/SPARC support.
 * Merged some FreeBSD specific patches to threadlibs.c and dyn_load.c.
-(Thanks tp John Merryweather Cooper.)
+(Thanks to John Merryweather Cooper.)
 * Define MPROTECT_VDB on MACOSX only if threads are being used, since the
 dirty page tracking mechanism uses threads.  (This avoids an undefined
 reference to _GC_darwin_register_mach_handler_thread.)
@@ -6352,7 +6352,7 @@ was defined.
 * SMALL_OBJ definition was off by one.  This could cause crashes
 at startup.  (Thanks to Zoltan Varga for narrowing this down to
 a trivial test case.)
-* Integrate Paolo Molara's patch to deal with a race in the Darwin
+* Integrate Paolo Molaro's patch to deal with a race in the Darwin
 thread stopping code.
 * Changed X86_64 implementation to use SA_SIGINFO in the MPROTECT_VDB
 implementation.  The old approach appears to have been broken by
@@ -6505,7 +6505,7 @@ with icc, at least on ia64.
 Danny Smith for the patch.  6.3alpha1 had the qualifier in one place
 but not elsewhere, which was clearly wrong.)
 * Sometimes explicitly define __private_extern__ before DARWIN dyld.h
-include.  (Thanks to Andreas Tobker for postting the patch.)
+include.  (Thanks to Andreas Tobler for posting the patch.)
 * Included signal.h from pthread_support.c.  Removed GC_looping_handler,
 which was dead code.
 * GC_find_start was misdeclared by gc_pmark.h if PRINT_BLACK_LIST was
@@ -6885,7 +6885,7 @@ Fix C++ comments in POWERPC port.  Add ARM32
 incremental GC support.  Get rid of USE_GENERIC_PUSH_REGS for alpha/Linux,
 this time for real.  Use va_copy to get rid of cord printf problems
 (finally).
-* Close file descriptor used to count cpus (thanks to Jeff Sturm for
+* Close file descriptor used to count CPUs (thanks to Jeff Sturm for
 pointing out the omission).
 * Don't just drop gcj free lists in GC_start_reclaim, since that can
 eventually cause the marker to see a bogus mark descriptor in the
@@ -6911,7 +6911,7 @@ for reporting this, and to Matt Austern for proposing a fix).
 * Integrated cygwin pthreads support from Dan Bonachea.
 * Turn on DYNAMIC_LOADING for NetBSD (thanks to Krister Walfridsson).
 * Changed printing code to print more complete GC times.
-* Applied Mark Mitchell's Irix patch to correct some bitrot.
+* Applied Mark Mitchell's Irix patch to correct some bit rot.
 * Clarified which object-printing routines in dbg_mlc.c should hold
 the allocation lock.  Restructured the code to allow reasonable object
 printing with -DREDIRECT_MALLOC.
@@ -7108,7 +7108,7 @@ so that the old code is still used with old versions of glibc.
 * Cleaned up feature test macros for various threads packages and
 integrated (partially functional) FreeBSD threads code from Loren J. Rittle.
 It's likely that the cleanup broke something, since it touched lots of
-code.  It's also likelly that it fixed some unreported bugs in the
+code.  It's also likely that it fixed some unreported bugs in the
 less common thread implementations, since some of the original code
 didn't stand up to close scrutiny.  Support for the next pthreads
 implementation should be easier to add.
@@ -7624,7 +7624,7 @@ interface to fail on non-SGI platforms.
 * Changed the Linux stack finding code to use /proc, after changing it
 to use HEURISTIC1 (thanks to David Mossberger for pointing out /proc hook).
 * Added HP/UX incremental GC support and HP/UX 11 thread support.
-Thread support is currently still flakey.
+Thread support is currently still flaky.
 * Added basic Linux/IA64 support.
 * Integrated Anthony Green's PicoJava support.
 * Integrated Scott Ananian's StrongARM/NetBSD support.
@@ -8230,7 +8230,7 @@ multiple inheritance, since the compiler often adds self-cycles.)
 * Completely rewritten the documentation in the interface gc_c++.h
 (later renamed gc_cpp.h) making it both clearer and more precise (done by
 John Ellis).
-* The definition of accessibility now ignores pointers from an finalizable
+* The definition of accessibility now ignores pointers from a finalizable
 object (an object with a clean-up function) to itself (done by John Ellis).
 This allows objects with virtual base classes to be finalizable by the
 collector.  Compilers typically implement virtual base classes using
