@@ -16,6 +16,7 @@
 
 
 #include <stdio.h>
+#include <limits.h>
 #ifndef _WIN32_WCE
 #include <signal.h>
 #endif
@@ -45,8 +46,10 @@
 #	ifdef GC_SOLARIS_THREADS
 	  mutex_t GC_allocate_ml;	/* Implicitly initialized.	*/
 #	else
-#          ifdef GC_WIN32_THREADS
-#	      if !defined(GC_NOT_DLL) && (defined(_DLL) || defined(GC_DLL))
+#          if defined(GC_WIN32_THREADS) 
+#             if defined(GC_PTHREADS)
+		  pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
+#	      elif !defined(GC_NOT_DLL) && (defined(_DLL) || defined(GC_DLL))
 		 __declspec(dllexport) CRITICAL_SECTION GC_allocate_ml;
 #	      else
 		 CRITICAL_SECTION GC_allocate_ml;
@@ -70,7 +73,7 @@
 #   endif
 # endif
 
-#ifdef ECOS
+#if defined(NOSYS) || defined(ECOS)
 #undef STACKBASE
 #endif
 
@@ -81,6 +84,7 @@ GC_bool GC_debugging_started = FALSE;
 	/* defined here so we don't have to load debug_malloc.o */
 
 void (*GC_check_heap) GC_PROTO((void)) = (void (*) GC_PROTO((void)))0;
+void (*GC_print_all_smashed) GC_PROTO((void)) = (void (*) GC_PROTO((void)))0;
 
 void (*GC_start_call_back) GC_PROTO((void)) = (void (*) GC_PROTO((void)))0;
 
@@ -100,6 +104,10 @@ GC_bool GC_print_stats = 0;
 
 GC_bool GC_print_back_height = 0;
 
+#ifndef NO_DEBUGGING
+  GC_bool GC_dump_regularly = 0;  /* Generate regular debugging dumps. */
+#endif
+
 #ifdef FIND_LEAK
   int GC_find_leak = 1;
 #else
@@ -111,6 +119,12 @@ GC_bool GC_print_back_height = 0;
 #else
   int GC_all_interior_pointers = 0;
 #endif
+
+long GC_large_alloc_warn_interval = 5;
+	/* Interval between unsuppressed warnings.	*/
+
+long GC_large_alloc_warn_suppressed = 0;
+	/* Number of warnings suppressed so far.	*/
 
 /*ARGSUSED*/
 GC_PTR GC_default_oom_fn GC_PROTO((size_t bytes_requested))
@@ -439,6 +453,11 @@ void GC_init()
     DCL_LOCK_STATE;
     
     DISABLE_SIGNALS();
+
+#if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
+    if (!GC_is_initialized) InitializeCriticalSection(&GC_allocate_ml);
+#endif /* MSWIN32 */
+
     LOCK();
     GC_init_inner();
     UNLOCK();
@@ -477,6 +496,17 @@ int sig;
 }
 #endif
 
+#ifdef MSWIN32
+extern GC_bool GC_no_win32_dlls;
+#else
+# define GC_no_win32_dlls FALSE
+#endif
+
+void GC_exit_check GC_PROTO((void))
+{
+   GC_gcollect();
+}
+
 void GC_init_inner()
 {
 #   if !defined(THREADS) && defined(GC_ASSERTIONS)
@@ -488,11 +518,20 @@ void GC_init_inner()
 #   ifdef PRINTSTATS
       GC_print_stats = 1;
 #   endif
+#   if defined(MSWIN32) || defined(MSWINCE)
+      InitializeCriticalSection(&GC_write_cs);
+#   endif
     if (0 != GETENV("GC_PRINT_STATS")) {
       GC_print_stats = 1;
     } 
+    if (0 != GETENV("GC_DUMP_REGULARLY")) {
+      GC_dump_regularly = 1;
+    }
     if (0 != GETENV("GC_FIND_LEAK")) {
       GC_find_leak = 1;
+#     ifdef __STDC__
+        atexit(GC_exit_check);
+#     endif
     }
     if (0 != GETENV("GC_ALL_INTERIOR_POINTERS")) {
       GC_all_interior_pointers = 1;
@@ -503,6 +542,33 @@ void GC_init_inner()
     if (0 != GETENV("GC_PRINT_BACK_HEIGHT")) {
       GC_print_back_height = 1;
     }
+    if (0 != GETENV("GC_NO_BLACKLIST_WARNING")) {
+      GC_large_alloc_warn_interval = LONG_MAX;
+    }
+    {
+      char * time_limit_string = GETENV("GC_PAUSE_TIME_TARGET");
+      if (0 != time_limit_string) {
+        long time_limit = atol(time_limit_string);
+        if (time_limit < 5) {
+	  WARN("GC_PAUSE_TIME_TARGET environment variable value too small "
+	       "or bad syntax: Ignoring\n", 0);
+        } else {
+	  GC_time_limit = time_limit;
+        }
+      }
+    }
+    {
+      char * interval_string = GETENV("GC_LARGE_ALLOC_WARN_INTERVAL");
+      if (0 != interval_string) {
+        long interval = atol(interval_string);
+        if (interval <= 0) {
+	  WARN("GC_LARGE_ALLOC_WARN_INTERVAL environment variable has "
+	       "bad value: Ignoring\n", 0);
+        } else {
+	  GC_large_alloc_warn_interval = interval;
+        }
+      }
+    }
 #   ifdef UNIX_LIKE
       if (0 != GETENV("GC_LOOP_ON_ABORT")) {
         GC_set_and_save_fault_handler(looping_handler);
@@ -512,9 +578,6 @@ void GC_init_inner()
     if (ALIGNMENT > GC_DS_TAGS && EXTRA_BYTES != 0) {
       GC_obj_kinds[NORMAL].ok_descriptor = ((word)(-ALIGNMENT) | GC_DS_LENGTH);
     }
-#   if defined(MSWIN32) || defined(MSWINCE)
-	InitializeCriticalSection(&GC_write_cs);
-#   endif
     GC_setpagesize();
     GC_exclude_static_roots(beginGC_arrays, endGC_arrays);
     GC_exclude_static_roots(beginGC_obj_kinds, endGC_obj_kinds);
@@ -588,6 +651,18 @@ void GC_init_inner()
 	  initial_heap_sz = divHBLKSZ(initial_heap_sz);
 	}
     }
+    {
+	char * sz_str = GETENV("GC_MAXIMUM_HEAP_SIZE");
+	if (sz_str != NULL) {
+	  word max_heap_sz = (word)atol(sz_str);
+	  if (max_heap_sz < initial_heap_sz * HBLKSIZE) {
+	    WARN("Bad maximum heap size %s - ignoring it.\n",
+		 sz_str);
+	  } 
+	  if (0 == GC_max_retries) GC_max_retries = 2;
+	  GC_set_max_heap_size(max_heap_sz);
+	}
+    }
     if (!GC_expand_hp_inner(initial_heap_sz)) {
         GC_err_printf0("Can't start up: not enough memory\n");
         EXIT();
@@ -612,8 +687,20 @@ void GC_init_inner()
       PCR_IL_Unlock();
       GC_pcr_install();
 #   endif
-    /* Get black list set up */
-      if (!GC_dont_precollect) GC_gcollect_inner();
+#   if !defined(SMALL_CONFIG)
+      if (!GC_no_win32_dlls && 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
+	GC_ASSERT(!GC_incremental);
+        GC_setpagesize();
+#       ifndef GC_SOLARIS_THREADS
+          GC_dirty_init();
+#       endif
+        GC_ASSERT(GC_words_allocd == 0)
+    	GC_incremental = TRUE;
+      }
+#   endif /* !SMALL_CONFIG */
+    COND_DUMP;
+    /* Get black list set up and/or incrmental GC started */
+      if (!GC_dont_precollect || GC_incremental) GC_gcollect_inner();
     GC_is_initialized = TRUE;
 #   ifdef STUBBORN_ALLOC
     	GC_stubborn_init();
@@ -646,20 +733,14 @@ void GC_enable_incremental GC_PROTO(())
     LOCK();
     if (GC_incremental) goto out;
     GC_setpagesize();
-#   ifdef MSWIN32
-      {
-        extern GC_bool GC_is_win32s();
-
-	/* VirtualProtect is not functional under win32s.	*/
-	if (GC_is_win32s()) goto out;
-      }
-#   endif /* MSWIN32 */
+    if (GC_no_win32_dlls) goto out;
 #   ifndef GC_SOLARIS_THREADS
         GC_dirty_init();
 #   endif
     if (!GC_is_initialized) {
         GC_init_inner();
     }
+    if (GC_incremental) goto out;
     if (GC_dont_gc) {
         /* Can't easily do it. */
         UNLOCK();
@@ -745,7 +826,8 @@ int GC_tmp;  /* Should really be local ... */
 # endif
 #endif
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(OS2) && !defined(MACOS)
+#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(OS2) \
+    && !defined(MACOS)  && !defined(ECOS) && !defined(NOSYS)
 int GC_write(fd, buf, len)
 int fd;
 GC_CONST char *buf;
@@ -768,10 +850,18 @@ size_t len;
 }
 #endif /* UN*X */
 
-#if defined(ECOS)
+#ifdef ECOS
 int GC_write(fd, buf, len)
 {
   _Jv_diag_write (buf, len);
+  return len;
+}
+#endif
+
+#ifdef NOSYS
+int GC_write(fd, buf, len)
+{
+  /* No writing.  */
   return len;
 }
 #endif
@@ -890,38 +980,6 @@ GC_CONST char * msg;
 }
 #endif
 
-#ifdef NEED_CALLINFO
-
-void GC_print_callers (info)
-struct callinfo info[NFRAMES];
-{
-    register int i;
-    
-#   if NFRAMES == 1
-      GC_err_printf0("\tCaller at allocation:\n");
-#   else
-      GC_err_printf0("\tCall chain at allocation:\n");
-#   endif
-    for (i = 0; i < NFRAMES; i++) {
-     	if (info[i].ci_pc == 0) break;
-#	if NARGS > 0
-	{
-	  int j;
-
-     	  GC_err_printf0("\t\targs: ");
-     	  for (j = 0; j < NARGS; j++) {
-     	    if (j != 0) GC_err_printf0(", ");
-     	    GC_err_printf2("%d (0x%X)", ~(info[i].ci_arg[j]),
-     	    				~(info[i].ci_arg[j]));
-     	  }
-	  GC_err_printf0("\n");
-	}
-# 	endif
-     	GC_err_printf1("\t\t##PC##= 0x%X\n", info[i].ci_pc);
-    }
-}
-
-#endif /* SAVE_CALL_CHAIN */
 
 /* Needed by SRC_M3, gcj, and should perhaps be the official interface	*/
 /* to GC_dont_gc.							*/
@@ -947,6 +1005,8 @@ void GC_dump()
     GC_print_hblkfreelist();
     GC_printf0("\n***Blocks in use:\n");
     GC_print_block_list();
+    GC_printf0("\n***Finalization statistics:\n");
+    GC_print_finalization_stats();
 }
 
 #endif /* NO_DEBUGGING */

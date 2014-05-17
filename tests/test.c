@@ -43,7 +43,7 @@
 #   include "gc_local_alloc.h"
 # endif
 # include "private/gc_priv.h"	/* For output, locking, MIN_WORDS, 	*/
-			/* and some statistics.			*/
+				/* and some statistics.			*/
 # include "private/gcconfig.h"
 
 # if defined(MSWIN32) || defined(MSWINCE)
@@ -205,40 +205,6 @@ sexpr y;
 }
 # endif
 
-sexpr small_cons (x, y)
-sexpr x;
-sexpr y;
-{
-    register sexpr r;
-    
-    collectable_count++;
-    r = (sexpr) GC_MALLOC(sizeof(struct SEXPR));
-    if (r == 0) {
-        (void)GC_printf0("Out of memory\n");
-        exit(1);
-    }
-    r -> sexpr_car = x;
-    r -> sexpr_cdr = y;
-    return(r);
-}
-
-sexpr small_cons_uncollectable (x, y)
-sexpr x;
-sexpr y;
-{
-    register sexpr r;
-    
-    uncollectable_count++;
-    r = (sexpr) GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR));
-    if (r == 0) {
-        (void)GC_printf0("Out of memory\n");
-        exit(1);
-    }
-    r -> sexpr_car = x;
-    r -> sexpr_cdr = (sexpr)(~(unsigned long)y);
-    return(r);
-}
-
 #ifdef GC_GCJ_SUPPORT
 
 #include "gc_mark.h"
@@ -278,6 +244,93 @@ struct GC_ms_entry * fake_gcj_mark_proc(word * addr,
 			      mark_stack_limit, (GC_PTR *)&(x -> sexpr_car));
     return(mark_stack_ptr);
 }
+
+#endif /* GC_GCJ_SUPPORT */
+
+#ifdef THREAD_LOCAL_ALLOC
+
+#undef GC_REDIRECT_TO_LOCAL
+#include "gc_local_alloc.h"
+
+sexpr local_cons (x, y)
+sexpr x;
+sexpr y;
+{
+    register sexpr r;
+    register int *p;
+    register int my_extra = extra_count;
+    static int my_random = 0;
+    
+    collectable_count++;
+    r = (sexpr) GC_LOCAL_MALLOC(sizeof(struct SEXPR) + my_extra);
+#   ifdef GC_GCJ_SUPPORT
+      if (collectable_count % 2 == 0) {
+        r = (sexpr) GC_LOCAL_GCJ_MALLOC(sizeof(struct SEXPR) + sizeof(GC_word) + my_extra,
+					&gcj_class_struct1);
+        r = (sexpr) ((GC_word *)r + 1);
+      }
+#   endif
+    if (r == 0) {
+        (void)GC_printf0("Out of memory\n");
+        exit(1);
+    }
+    for (p = (int *)r;
+         ((char *)p) < ((char *)r) + my_extra + sizeof(struct SEXPR); p++) {
+	if (*p) {
+	    (void)GC_printf1("Found nonzero at 0x%lx (local) - allocator is broken\n",
+	    		     (unsigned long)p);
+	    FAIL;
+        }
+        *p = 13;
+    }
+    r -> sexpr_car = x;
+    r -> sexpr_cdr = y;
+    my_extra++;
+    if ( my_extra >= 5000 || my_extra == 200 && ++my_random % 37 != 0) {
+        extra_count = 0;
+    } else {
+        extra_count = my_extra;
+    }
+    return(r);
+}
+#endif /* THREAD_LOCAL_ALLOC */
+
+sexpr small_cons (x, y)
+sexpr x;
+sexpr y;
+{
+    register sexpr r;
+    
+    collectable_count++;
+    r = (sexpr) GC_MALLOC(sizeof(struct SEXPR));
+    if (r == 0) {
+        (void)GC_printf0("Out of memory\n");
+        exit(1);
+    }
+    r -> sexpr_car = x;
+    r -> sexpr_cdr = y;
+    return(r);
+}
+
+sexpr small_cons_uncollectable (x, y)
+sexpr x;
+sexpr y;
+{
+    register sexpr r;
+    
+    uncollectable_count++;
+    r = (sexpr) GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR));
+    if (r == 0) {
+        (void)GC_printf0("Out of memory\n");
+        exit(1);
+    }
+    r -> sexpr_car = x;
+    r -> sexpr_cdr = (sexpr)(~(unsigned long)y);
+    return(r);
+}
+
+#ifdef GC_GCJ_SUPPORT
+
 
 sexpr gcj_cons(x, y)
 sexpr x;
@@ -365,6 +418,35 @@ int low, up;
 }
 #endif /* GC_GCJ_SUPPORT */
 
+#ifdef THREAD_LOCAL_ALLOC
+/* Return reverse(x) concatenated with y */
+sexpr local_reverse1(x, y)
+sexpr x, y;
+{
+    if (is_nil(x)) {
+        return(y);
+    } else {
+        return( local_reverse1(cdr(x), local_cons(car(x), y)) );
+    }
+}
+
+sexpr local_reverse(x)
+sexpr x;
+{
+    return( local_reverse1(x, nil) );
+}
+
+sexpr local_ints(low, up)
+int low, up;
+{
+    if (low > up) {
+	return(nil);
+    } else {
+        return(local_cons(local_cons(INT_TO_SEXPR(low), nil), local_ints(low+1, up)));
+    }
+}
+#endif /* THREAD_LOCAL_ALLOC */
+
 /* To check uncollectable allocation we build lists with disguised cdr	*/
 /* pointers, and make sure they don't go away.				*/
 sexpr uncollectable_ints(low, up)
@@ -447,13 +529,19 @@ struct {
  */
 #ifdef THREADS
 
-# ifdef GC_WIN32_THREADS
+# if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)
     unsigned __stdcall tiny_reverse_test(void * arg)
 # else
     void * tiny_reverse_test(void * arg)
 # endif
 {
-    check_ints(reverse(reverse(ints(1,10))), 1, 10);
+    int i;
+    for (i = 0; i < 5; ++i) {
+      check_ints(reverse(reverse(ints(1,10))), 1, 10);
+#     ifdef THREAD_LOCAL_ALLOC
+        check_ints(local_reverse(local_reverse(local_ints(1,10))), 1, 10);
+#     endif
+    }
     return 0;
 }
 
@@ -563,7 +651,9 @@ void reverse_test()
     h = (sexpr *)GC_REALLOC((GC_PTR)h, 2000 * sizeof(sexpr));
 #   ifdef GC_GCJ_SUPPORT
       h[1999] = gcj_ints(1,200);
-      h[1999] = gcj_reverse(h[1999]);
+      for (i = 0; i < 51; ++i) 
+        h[1999] = gcj_reverse(h[1999]);
+      /* Leave it as the reveresed list for now. */
 #   else
       h[1999] = ints(1,200);
 #   endif
@@ -594,6 +684,9 @@ void reverse_test()
     	/* 49 integers.  Thus this is thread safe without locks,	  */
     	/* assuming atomic pointer assignments.				  */
         a = reverse(reverse(a));
+#       ifdef THREAD_LOCAL_ALLOC
+	  a = local_reverse(local_reverse(a));
+#	endif
 #	if !defined(AT_END) && !defined(THREADS)
 	  /* This is not thread safe, since realloc explicitly deallocates */
           if (i & 1) {
@@ -655,9 +748,10 @@ VOLATILE int dropped_something = 0;
 # if  defined(GC_PTHREADS)
     static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_lock(&incr_lock);
-# endif
-# ifdef GC_WIN32_THREADS
-    EnterCriticalSection(&incr_cs);
+# else
+#   ifdef GC_WIN32_THREADS
+      EnterCriticalSection(&incr_cs);
+#   endif
 # endif
   if ((int)(GC_word)client_data != t -> level) {
      (void)GC_printf0("Wrong finalization data - collector is broken\n");
@@ -672,9 +766,10 @@ VOLATILE int dropped_something = 0;
 # endif
 # if defined(GC_PTHREADS)
     pthread_mutex_unlock(&incr_lock);
-# endif
-# ifdef GC_WIN32_THREADS
-    LeaveCriticalSection(&incr_cs);
+# else
+#   ifdef GC_WIN32_THREADS
+      LeaveCriticalSection(&incr_cs);
+#   endif
 # endif
 }
 
@@ -746,9 +841,10 @@ int n;
 #         if defined(GC_PTHREADS)
             static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
             pthread_mutex_lock(&incr_lock);
-#         endif
-#         ifdef GC_WIN32_THREADS
-            EnterCriticalSection(&incr_cs);
+#         else
+#           ifdef GC_WIN32_THREADS
+              EnterCriticalSection(&incr_cs);
+#           endif
 #         endif
 		/* Losing a count here causes erroneous report of failure. */
           finalizable_count++;
@@ -761,9 +857,10 @@ int n;
 #	  endif
 #	  if defined(GC_PTHREADS)
 	    pthread_mutex_unlock(&incr_lock);
-#	  endif
-#         ifdef GC_WIN32_THREADS
-            LeaveCriticalSection(&incr_cs);
+#	  else
+#           ifdef GC_WIN32_THREADS
+              LeaveCriticalSection(&incr_cs);
+#           endif
 #         endif
 	}
 
@@ -1148,6 +1245,19 @@ void run_one_test()
     		"GC_is_valid_displacement produced incorrect result\n");
 	FAIL;
       }
+#     if defined(__STDC__) && !defined(MSWIN32) && !defined(MSWINCE)
+        /* Harder to test under Windows without a gc.h declaration.  */
+        {
+	  size_t i;
+	  extern void *GC_memalign();
+
+	  GC_malloc(17);
+	  for (i = sizeof(GC_word); i < 512; i *= 2) {
+	    GC_word result = (GC_word) GC_memalign(i, 17);
+	    if (result % i != 0 || result == 0 || *(int *)result != 0) FAIL;
+	  } 
+	}
+#     endif
 #     ifndef ALL_INTERIOR_POINTERS
 #      if defined(RS6000) || defined(POWERPC)
         if (!TEST_FAIL_COUNT(1)) {
@@ -1183,6 +1293,15 @@ void run_one_test()
     LOCK();
     n_tests++;
     UNLOCK();
+#   if defined(THREADS) && defined(HANDLE_FORK)
+      if (fork() == 0) {
+	GC_gcollect();
+	tiny_reverse_test(0);
+	GC_gcollect();
+	GC_printf0("Finished a child process\n");
+	exit(0);
+      }
+#   endif
     /* GC_printf1("Finished %x\n", pthread_self()); */
 }
 
@@ -1202,7 +1321,7 @@ void check_heap_stats()
     }
 #   else
     if (sizeof(char *) > 4) {
-        max_heap_sz = 15000000;
+        max_heap_sz = 19000000;
     } else {
     	max_heap_sz = 11000000;
     }
@@ -1212,7 +1331,7 @@ void check_heap_stats()
 #       ifdef SAVE_CALL_CHAIN
 	    max_heap_sz *= 3;
 #           ifdef SAVE_CALL_COUNT
-		max_heap_sz *= SAVE_CALL_COUNT/4;
+		max_heap_sz += max_heap_sz * SAVE_CALL_COUNT/4;
 #	    endif
 #       endif
 #   endif
@@ -1378,7 +1497,7 @@ void SetMinimumStack(long minSize)
 }
 # endif
 
-#ifdef GC_WIN32_THREADS
+#if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)
 
 unsigned __stdcall thr_run_one_test(void *arg)
 {

@@ -16,7 +16,7 @@
  */
 /* Boehm, September 14, 1994 4:44 pm PDT */
 
-# if defined(GC_SOLARIS_THREADS)
+# if defined(GC_SOLARIS_THREADS) || defined(GC_SOLARIS_PTHREADS)
 
 # include "private/gc_priv.h"
 # include "private/solaris_threads.h"
@@ -36,6 +36,10 @@
 # define _CLASSIC_XOPEN_TYPES
 # include <unistd.h>
 # include <errno.h>
+
+#ifdef HANDLE_FORK
+  --> Not yet supported.  Try porting the code from linux_threads.c.
+#endif
 
 /*
  * This is the default size of the LWP arrays. If there are more LWPs
@@ -361,7 +365,7 @@ static void restart_all_lwps()
 		       sizeof (prgregset_t)) != 0) {
 		    int j;
 
-		    for(j = 0; j < NGREG; j++)
+		    for(j = 0; j < NPRGREG; j++)
 		    {
 			    GC_printf3("%i: %x -> %x\n", j,
 				       GC_lwp_registers[i][j],
@@ -414,7 +418,6 @@ GC_bool GC_thr_initialized = FALSE;
 
 size_t GC_min_stack_sz;
 
-size_t GC_page_sz;
 
 /*
  * stack_head is stored at the top of free stacks
@@ -456,7 +459,7 @@ ptr_t GC_stack_alloc(size_t * stack_size)
         GC_stack_free_lists[index] = GC_stack_free_lists[index]->next;
     } else {
 #ifdef MMAP_STACKS
-        base = (ptr_t)mmap(0, search_sz + GC_page_sz,
+        base = (ptr_t)mmap(0, search_sz + GC_page_size,
 			     PROT_READ|PROT_WRITE, MAP_PRIVATE |MAP_NORESERVE,
 			     GC_zfd, 0);
 	if (base == (ptr_t)-1)
@@ -465,27 +468,27 @@ ptr_t GC_stack_alloc(size_t * stack_size)
 		return NULL;
 	}
 
-	mprotect(base, GC_page_sz, PROT_NONE);
-	/* Should this use divHBLKSZ(search_sz + GC_page_sz) ? -- cf */
+	mprotect(base, GC_page_size, PROT_NONE);
+	/* Should this use divHBLKSZ(search_sz + GC_page_size) ? -- cf */
 	GC_is_fresh((struct hblk *)base, divHBLKSZ(search_sz));
-	base += GC_page_sz;
+	base += GC_page_size;
 
 #else
-        base = (ptr_t) GC_scratch_alloc(search_sz + 2*GC_page_sz);
+        base = (ptr_t) GC_scratch_alloc(search_sz + 2*GC_page_size);
 	if (base == NULL)
 	{
 		*stack_size = 0;
 		return NULL;
 	}
 
-        base = (ptr_t)(((word)base + GC_page_sz) & ~(GC_page_sz - 1));
+        base = (ptr_t)(((word)base + GC_page_size) & ~(GC_page_size - 1));
         /* Protect hottest page to detect overflow. */
 #	ifdef SOLARIS23_MPROTECT_BUG_FIXED
-            mprotect(base, GC_page_sz, PROT_NONE);
+            mprotect(base, GC_page_size, PROT_NONE);
 #	endif
         GC_is_fresh((struct hblk *)base, divHBLKSZ(search_sz));
 
-        base += GC_page_sz;
+        base += GC_page_size;
 #endif
     }
     *stack_size = search_sz;
@@ -665,8 +668,8 @@ void GC_my_stack_limits()
       /* original thread */
         /* Empirically, what should be the stack page with lowest	*/
         /* address is actually inaccessible.				*/
-        stack_size = GC_get_orig_stack_size() - GC_page_sz;
-        stack = GC_stackbottom - stack_size + GC_page_sz;
+        stack_size = GC_get_orig_stack_size() - GC_page_size;
+        stack = GC_stackbottom - stack_size + GC_page_size;
     } else {
         stack = me -> stack;
     }
@@ -704,7 +707,7 @@ void GC_push_all_stacks()
             top = p -> stack + p -> stack_size;
         } else {
             /* The original stack. */
-            bottom = GC_stackbottom - GC_get_orig_stack_size() + GC_page_sz;
+            bottom = GC_stackbottom - GC_get_orig_stack_size() + GC_page_size;
             top = GC_stackbottom;
         }
         if ((word)sp > (word)bottom && (word)sp < (word)top) bottom = sp;
@@ -789,7 +792,6 @@ void GC_thr_init(void)
     GC_thr_initialized = TRUE;
     GC_min_stack_sz = ((thr_min_stack() + 32*1024 + HBLKSIZE-1)
     		       & ~(HBLKSIZE - 1));
-    GC_page_sz = sysconf(_SC_PAGESIZE);
 #ifdef MMAP_STACKS
     GC_zfd = open("/dev/zero", O_RDONLY);
     if (GC_zfd == -1)
@@ -823,7 +825,7 @@ int GC_thr_suspend(thread_t target_thread)
     if (result == 0) {
     	t = GC_lookup_thread(target_thread);
     	if (t == 0) ABORT("thread unknown to GC");
-        t -> flags |= SUSPENDED;
+        t -> flags |= SUSPNDED;
     }
     UNLOCK();
     return(result);
@@ -839,7 +841,7 @@ int GC_thr_continue(thread_t target_thread)
     if (result == 0) {
     	t = GC_lookup_thread(target_thread);
     	if (t == 0) ABORT("thread unknown to GC");
-        t -> flags &= ~SUSPENDED;
+        t -> flags &= ~SUSPNDED;
     }
     UNLOCK();
     return(result);
@@ -911,10 +913,7 @@ GC_thr_create(void *stack_base, size_t stack_size,
     void * stack = stack_base;
    
     LOCK();
-    if (!GC_thr_initialized)
-    {
-    GC_thr_init();
-    }
+    if (!GC_is_initialized) GC_init_inner();
     GC_multithreaded++;
     if (stack == 0) {
      	if (stack_size == 0) stack_size = 1024*1024;
@@ -928,7 +927,7 @@ GC_thr_create(void *stack_base, size_t stack_size,
     	my_flags |= CLIENT_OWNS_STACK;
     }
     if (flags & THR_DETACHED) my_flags |= DETACHED;
-    if (flags & THR_SUSPENDED) my_flags |= SUSPENDED;
+    if (flags & THR_SUSPENDED) my_flags |= SUSPNDED;
     result = thr_create(stack, stack_size, start_routine,
    		        arg, flags & ~THR_DETACHED, &my_new_thread);
     if (result == 0) {

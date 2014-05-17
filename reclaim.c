@@ -27,23 +27,61 @@ signed_word GC_mem_found = 0;
 	/* nonzero.							*/
 #endif /* PARALLEL_MARK */
 
-static void report_leak(p, sz)
-ptr_t p;
-word sz;
+/* We defer printing of leaked objects until we're done with the GC	*/
+/* cycle, since the routine for printing objects needs to run outside	*/
+/* the collector, e.g. without the allocation lock.			*/
+#define MAX_LEAKED 40
+ptr_t GC_leaked[MAX_LEAKED];
+unsigned GC_n_leaked = 0;
+
+GC_bool GC_have_errors = FALSE;
+
+void GC_add_leaked(leaked)
+ptr_t leaked;
 {
-    if (HDR(p) -> hb_obj_kind == PTRFREE) {
-        GC_err_printf0("Leaked atomic object at ");
-    } else {
-        GC_err_printf0("Leaked composite object at ");
+    if (GC_n_leaked < MAX_LEAKED) {
+      GC_have_errors = TRUE;
+      GC_leaked[GC_n_leaked++] = leaked;
+      /* Make sure it's not reclaimed this cycle */
+        GC_set_mark_bit(leaked);
     }
-    GC_print_heap_obj(p);
-    GC_err_printf0("\n");
 }
+
+static GC_bool printing_errors = FALSE;
+/* Print all objects on the list after printing any smashed objs. 	*/
+/* Clear both lists.							*/
+void GC_print_all_errors ()
+{
+    unsigned i;
+
+    LOCK();
+    if (printing_errors) {
+	UNLOCK();
+	return;
+    }
+    printing_errors = TRUE;
+    UNLOCK();
+    if (GC_debugging_started) GC_print_all_smashed();
+    for (i = 0; i < GC_n_leaked; ++i) {
+	ptr_t p = GC_leaked[i];
+	if (HDR(p) -> hb_obj_kind == PTRFREE) {
+	    GC_err_printf0("Leaked atomic object at ");
+	} else {
+	    GC_err_printf0("Leaked composite object at ");
+	}
+	GC_print_heap_obj(p);
+	GC_err_printf0("\n");
+	GC_free(p);
+	GC_leaked[i] = 0;
+    }
+    GC_n_leaked = 0;
+    printing_errors = FALSE;
+}
+
 
 #   define FOUND_FREE(hblk, word_no) \
       { \
-         report_leak((ptr_t)hblk + WORDS_TO_BYTES(word_no), \
-         	     HDR(hblk) -> hb_sz); \
+         GC_add_leaked((ptr_t)hblk + WORDS_TO_BYTES(word_no)); \
       }
 
 /*
@@ -631,47 +669,41 @@ COUNT_DECL
     ptr_t result = list;
 
     GC_ASSERT(GC_find_header((ptr_t)hbp) == hhdr);
+    GC_remove_protection(hbp, 1, (hhdr)->hb_descr == 0 /* Pointer-free? */);
     if (init) {
       switch(sz) {
 #      if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES)
         case 1:
 	    /* We now issue the hint even if GC_nearly_full returned	*/
 	    /* DONT_KNOW.						*/
-	    GC_write_hint(hbp);
             result = GC_reclaim1(hbp, hhdr, list COUNT_ARG);
             break;
         case 2:
-	    GC_write_hint(hbp);
             result = GC_reclaim_clear2(hbp, hhdr, list COUNT_ARG);
             break;
         case 4:
-	    GC_write_hint(hbp);
             result = GC_reclaim_clear4(hbp, hhdr, list COUNT_ARG);
             break;
 #      endif /* !SMALL_CONFIG && !USE_MARK_BYTES */
         default:
-	    GC_write_hint(hbp);
             result = GC_reclaim_clear(hbp, hhdr, sz, list COUNT_ARG);
             break;
       }
     } else {
+      GC_ASSERT((hhdr)->hb_descr == 0 /* Pointer-free block */);
       switch(sz) {
 #      if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES)
         case 1:
-	    GC_write_hint(hbp);
             result = GC_reclaim1(hbp, hhdr, list COUNT_ARG);
             break;
         case 2:
-	    GC_write_hint(hbp);
             result = GC_reclaim_uninit2(hbp, hhdr, list COUNT_ARG);
             break;
         case 4:
-	    GC_write_hint(hbp);
             result = GC_reclaim_uninit4(hbp, hhdr, list COUNT_ARG);
             break;
 #      endif /* !SMALL_CONFIG && !USE_MARK_BYTES */
         default:
-	    GC_write_hint(hbp);
             result = GC_reclaim_uninit(hbp, hhdr, sz, list COUNT_ARG);
             break;
       }
@@ -868,6 +900,25 @@ void GC_print_block_list()
 #endif /* NO_DEBUGGING */
 
 /*
+ * Clear all obj_link pointers in the list of free objects *flp.
+ * Clear *flp.
+ * This must be done before dropping a list of free gcj-style objects,
+ * since may otherwise end up with dangling "descriptor" pointers.
+ * It may help for other pointer-containg objects.
+ */
+void GC_clear_fl_links(flp)
+ptr_t *flp;
+{
+    ptr_t next = *flp;
+
+    while (0 != next) {
+       *flp = 0;
+       flp = &(obj_link(next));
+       next = *flp;
+    }
+}
+
+/*
  * Perform GC_reclaim_block on the entire heap, after first clearing
  * small object free lists (if we are not just looking for leaks).
  */
@@ -881,17 +932,24 @@ int report_if_found;		/* Abort if a GC_reclaimable object is found */
 #   endif
     /* Clear reclaim- and free-lists */
       for (kind = 0; kind < GC_n_kinds; kind++) {
-        register ptr_t *fop;
-        register ptr_t *lim;
-        register struct hblk ** rlp;
-        register struct hblk ** rlim;
-        register struct hblk ** rlist = GC_obj_kinds[kind].ok_reclaim_list;
+        ptr_t *fop;
+        ptr_t *lim;
+        struct hblk ** rlp;
+        struct hblk ** rlim;
+        struct hblk ** rlist = GC_obj_kinds[kind].ok_reclaim_list;
+	GC_bool should_clobber = (GC_obj_kinds[kind].ok_descriptor != 0);
         
         if (rlist == 0) continue;	/* This kind not used.	*/
         if (!report_if_found) {
             lim = &(GC_obj_kinds[kind].ok_freelist[MAXOBJSZ+1]);
 	    for( fop = GC_obj_kinds[kind].ok_freelist; fop < lim; fop++ ) {
-	      *fop = 0;
+	      if (*fop != 0) {
+		if (should_clobber) {
+		  GC_clear_fl_links(fop);
+		} else {
+	          *fop = 0;
+		}
+	      }
 	    }
 	} /* otherwise free list objects are marked, 	*/
 	  /* and its safe to leave them			*/

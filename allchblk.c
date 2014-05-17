@@ -47,12 +47,16 @@ GC_bool GC_use_entire_heap = 0;
 struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
 
 #ifndef USE_MUNMAP
+
   word GC_free_bytes[N_HBLK_FLS+1] = { 0 };
 	/* Number of free bytes on each list.	*/
 
   /* Is bytes + the number of free bytes on lists n .. N_HBLK_FLS 	*/
   /* > GC_max_large_allocd_bytes?					*/
-  GC_bool GC_enough_large_bytes_left(bytes,n)
+# ifdef __GNUC__
+  __inline__
+# endif
+  static GC_bool GC_enough_large_bytes_left(bytes,n)
   word bytes;
   int n;
   {
@@ -86,7 +90,6 @@ word blocks_needed;
     
 }
 
-# define HBLK_IS_FREE(hdr) ((hdr) -> hb_map == GC_invalid_map)
 # define PHDR(hhdr) HDR(hhdr -> hb_prev)
 # define NHDR(hhdr) HDR(hhdr -> hb_next)
 
@@ -584,11 +587,11 @@ int n;
 	    if (!GC_use_entire_heap
 		&& size_avail != size_needed
 		&& USED_HEAP_SIZE >= GC_requested_heapsize
-		&& !GC_incremental && GC_should_collect()) {
+		&& !TRUE_INCREMENTAL && GC_should_collect()) {
 #		ifdef USE_MUNMAP
 		    continue;
 #		else
-		    /* If we enough large blocks left to cover any	*/
+		    /* If we have enough large blocks left to cover any	*/
 		    /* previous request for large blocks, we go ahead	*/
 		    /* and split.  Assuming a steady state, that should	*/
 		    /* be safe.  It means that we can use the full 	*/
@@ -596,6 +599,12 @@ int n;
 		    if (!GC_enough_large_bytes_left(GC_large_allocd_bytes, n)) {
 		      continue;
 		    } 
+		    /* If we are deallocating lots of memory from	*/
+		    /* finalizers, fail and collect sooner rather	*/
+		    /* than later.					*/
+		    if (GC_finalizer_mem_freed > (GC_heapsize >> 4))  {
+		      continue;
+		    }
 #		endif /* !USE_MUNMAP */
 	    }
 	    /* If the next heap block is obviously better, go on.	*/
@@ -655,9 +664,13 @@ int n;
 	                 && orig_avail - size_needed
 			    > (signed_word)BL_LIMIT) {
 	        /* Punt, since anything else risks unreasonable heap growth. */
-		if (0 == GETENV("GC_NO_BLACKLIST_WARNING")) {
-	          WARN("Needed to allocate blacklisted block at 0x%lx\n",
-		       (word)hbp);
+		if (++GC_large_alloc_warn_suppressed
+		    >= GC_large_alloc_warn_interval) {
+	          WARN("Repeated allocation of very large block "
+		       "(appr. size %ld):\n"
+		       "\tMay lead to memory leak and poor performance.\n",
+		       size_needed);
+		  GC_large_alloc_warn_suppressed = 0;
 		}
 	        size_avail = orig_avail;
 	      } else if (size_avail == 0 && size_needed == HBLKSIZE
@@ -719,9 +732,6 @@ int n;
 
     if (0 == hbp) return 0;
 	
-    /* Notify virtual dirty bit implementation that we are about to write. */
-    	GC_write_hint(hbp);
-    
     /* Add it to map of valid blocks */
     	if (!GC_install_counts(hbp, (word)size_needed)) return(0);
     	/* This leaks memory under very rare conditions. */
@@ -731,6 +741,11 @@ int n;
             GC_remove_counts(hbp, (word)size_needed);
             return(0); /* ditto */
         }
+
+    /* Notify virtual dirty bit implementation that we are about to write.  */
+    /* Ensure that pointerfree objects are not protected if it's avoidable. */
+    	GC_remove_protection(hbp, divHBLKSZ(size_needed),
+			     (hhdr -> hb_descr == 0) /* pointer-free */);
         
     /* We just successfully allocated a block.  Restart count of	*/
     /* consecutive failures.						*/

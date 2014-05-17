@@ -81,23 +81,6 @@ void GC_push_regs()
 	  register long TMP_SP; /* must be bound to r11 */
 #       endif
 
-#       if defined(MIPS) && defined(LINUX)
-	  /* I'm not sure whether this has actually been tested. */
-#         define call_push(x)     asm("move $4," x ";"); asm("jal GC_push_one")
-	  call_push("$2");
-	  call_push("$3");
-	  call_push("$16");
-	  call_push("$17");
-	  call_push("$18");
-	  call_push("$19");
-	  call_push("$20");
-	  call_push("$21");
-	  call_push("$22");
-	  call_push("$23");
-	  call_push("$30");
-#         undef call_push
-#       endif	/* MIPS && LINUX */
-
 #       ifdef VAX
 	  /* VAX - generic code below does not work under 4.2 */
 	  /* r1 through r5 are caller save, and therefore     */
@@ -245,7 +228,8 @@ void GC_push_regs()
 	|| ( defined(I386) && defined(FREEBSD) && defined(__ELF__) ) \
 	|| ( defined(I386) && defined(NETBSD) && defined(__ELF__) ) \
 	|| ( defined(I386) && defined(OPENBSD) && defined(__ELF__) ) \
-	|| ( defined(I386) && defined(HURD) && defined(__ELF__) )
+	|| ( defined(I386) && defined(HURD) && defined(__ELF__) ) \
+	|| ( defined(I386) && defined(DGUX) )
 
 	/* This is modified for Linux with ELF (Note: _ELF_ only) */
 	/* This section handles FreeBSD with ELF. */

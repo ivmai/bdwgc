@@ -55,7 +55,7 @@
     !defined(MSWIN32) && !defined(MSWINCE) && \
     !(defined(ALPHA) && defined(OSF1)) && \
     !defined(HPUX) && !(defined(LINUX) && defined(__ELF__)) && \
-    !defined(RS6000) && !defined(SCO_ELF) && \
+    !defined(RS6000) && !defined(SCO_ELF) && !defined(DGUX) && \
     !(defined(FREEBSD) && defined(__ELF__)) && \
     !(defined(NETBSD) && defined(__ELF__)) && !defined(HURD)
  --> We only know how to find data segments of dynamic libraries for the
@@ -79,6 +79,23 @@
 #   define l_name	lm_name
 #endif
 
+#if defined(LINUX) && defined(__ELF__) || defined(SCO_ELF) || \
+    (defined(FREEBSD) && defined(__ELF__)) || defined(DGUX) || \
+    (defined(NETBSD) && defined(__ELF__)) || defined(HURD)
+#   include <stddef.h>
+#   include <elf.h>
+#   include <link.h>
+#endif
+
+/* Newer versions of GNU/Linux define this macro.  We
+ * define it similarly for any ELF systems that don't.  */
+#  ifndef ElfW
+#    if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
+#      define ElfW(type) Elf32_##type
+#    else
+#      define ElfW(type) Elf64_##type
+#    endif
+#  endif
 
 #if defined(SUNOS5DL) && !defined(USE_PROC_FOR_LIBRARIES)
 
@@ -89,11 +106,11 @@
 static struct link_map *
 GC_FirstDLOpenedLinkMap()
 {
-    extern Elf32_Dyn _DYNAMIC;
-    Elf32_Dyn *dp;
+    extern ElfW(Dyn) _DYNAMIC;
+    ElfW(Dyn) *dp;
     struct r_debug *r;
     static struct link_map * cachedResult = 0;
-    static Elf32_Dyn *dynStructureAddr = 0;
+    static ElfW(Dyn) *dynStructureAddr = 0;
     			/* BTL: added to avoid Solaris 5.3 ld.so _DYNAMIC bug */
 
 #   ifdef SUNOS53_SHARED_LIB
@@ -103,7 +120,7 @@ GC_FirstDLOpenedLinkMap()
 	/* at program startup.						*/
 	if( dynStructureAddr == 0 ) {
 	  void* startupSyms = dlopen(0, RTLD_LAZY);
-	  dynStructureAddr = (Elf32_Dyn*)dlsym(startupSyms, "_DYNAMIC");
+	  dynStructureAddr = (ElfW(Dyn)*)dlsym(startupSyms, "_DYNAMIC");
 		}
 #   else
 	dynStructureAddr = &_DYNAMIC;
@@ -114,7 +131,7 @@ GC_FirstDLOpenedLinkMap()
     }
     if( cachedResult == 0 ) {
         int tag;
-        for( dp = ((Elf32_Dyn *)(&_DYNAMIC)); (tag = dp->d_tag) != 0; dp++ ) {
+        for( dp = ((ElfW(Dyn) *)(&_DYNAMIC)); (tag = dp->d_tag) != 0; dp++ ) {
             if( tag == DT_DEBUG ) {
                 struct link_map *lm
                         = ((struct r_debug *)(dp->d_un.d_ptr))->r_map;
@@ -200,14 +217,14 @@ void GC_register_dynamic_libraries()
 		    TRUE);
 #     endif
 #     ifdef SUNOS5DL
-	Elf32_Ehdr * e;
-        Elf32_Phdr * p;
+	ElfW(Ehdr) * e;
+        ElfW(Phdr) * p;
         unsigned long offset;
         char * start;
         register int i;
         
-	e = (Elf32_Ehdr *) lm->l_addr;
-        p = ((Elf32_Phdr *)(((char *)(e)) + e->e_phoff));
+	e = (ElfW(Ehdr) *) lm->l_addr;
+        p = ((ElfW(Phdr) *)(((char *)(e)) + e->e_phoff));
         offset = ((unsigned long)(lm->l_addr));
         for( i = 0; i < (int)(e->e_phnum); ((i++),(p++)) ) {
           switch( p->p_type ) {
@@ -247,7 +264,7 @@ void GC_register_dynamic_libraries()
 # endif /* SUNOS */
 
 #if defined(LINUX) && defined(__ELF__) || defined(SCO_ELF) || \
-    (defined(FREEBSD) && defined(__ELF__)) || \
+    (defined(FREEBSD) && defined(__ELF__)) || defined(DGUX) || \
     (defined(NETBSD) && defined(__ELF__)) || defined(HURD)
 
 
@@ -376,21 +393,34 @@ void GC_register_dynamic_libraries()
 //  ^^^^^^^^ ^^^^^^^^ ^^^^          ^^
 //  start    end      prot          maj_dev
 //  0        9        18            32
+//  
+//  For 64 bit ABIs:
+//  0	     17	      34	    56
 //
 //  The parser is called with a pointer to the entry and the return value
 //  is either NULL or is advanced to the next entry(the byte after the
 //  trailing '\n'.)
 //
-#define OFFSET_MAP_START   0
-#define OFFSET_MAP_END     9
-#define OFFSET_MAP_PROT   18
-#define OFFSET_MAP_MAJDEV 32
+#if CPP_WORDSZ == 32
+# define OFFSET_MAP_START   0
+# define OFFSET_MAP_END     9
+# define OFFSET_MAP_PROT   18
+# define OFFSET_MAP_MAJDEV 32
+# define ADDR_WIDTH 	    8
+#endif
+
+#if CPP_WORDSZ == 64
+# define OFFSET_MAP_START   0
+# define OFFSET_MAP_END    17
+# define OFFSET_MAP_PROT   34
+# define OFFSET_MAP_MAJDEV 56
+# define ADDR_WIDTH 	   16
+#endif
 
 static char *parse_map_entry(char *buf_ptr, word *start, word *end,
                              char *prot_buf, unsigned int *maj_dev)
 {
     int i;
-    unsigned int val;
     char *tok;
 
     if (buf_ptr == NULL || *buf_ptr == '\0') {
@@ -403,11 +433,11 @@ static char *parse_map_entry(char *buf_ptr, word *start, word *end,
     if (prot_buf[1] == 'w') { // we can skip all of this if it's not writable
 
         tok = buf_ptr;
-        buf_ptr[OFFSET_MAP_START+8] = '\0';
+        buf_ptr[OFFSET_MAP_START+ADDR_WIDTH] = '\0';
         *start = strtoul(tok, NULL, 16);
 
         tok = buf_ptr+OFFSET_MAP_END;
-        buf_ptr[OFFSET_MAP_END+8] = '\0';
+        buf_ptr[OFFSET_MAP_END+ADDR_WIDTH] = '\0';
         *end = strtoul(tok, NULL, 16);
 
         buf_ptr += OFFSET_MAP_MAJDEV;
@@ -428,10 +458,6 @@ static char *parse_map_entry(char *buf_ptr, word *start, word *end,
 /* The following is the preferred way to walk dynamic libraries	*/
 /* For glibc 2.2.4+.  Unfortunately, it doesn't work for older	*/
 /* versions.  Thanks to Jakub Jelinek for most of the code.	*/
-
-#include <stddef.h>
-#include <elf.h>
-#include <link.h>
 
 # if defined(LINUX) /* Are others OK here, too? */ \
      && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
@@ -516,23 +542,14 @@ GC_bool GC_register_dynamic_libraries_dl_iterate_phdr()
 
 # endif
 
-/* Newer versions of Linux/Alpha and Linux/x86 define this macro.  We
- * define it for those older versions that don't.  */
-#  ifndef ElfW
-#    if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
-#      define ElfW(type) Elf32_##type
-#    else
-#      define ElfW(type) Elf64_##type
-#    endif
-#  endif
+#ifdef __GNUC__
+# pragma weak _DYNAMIC
+#endif
+extern ElfW(Dyn) _DYNAMIC[];
 
 static struct link_map *
 GC_FirstDLOpenedLinkMap()
 {
-#   ifdef __GNUC__
-#     pragma weak _DYNAMIC
-#   endif
-    extern ElfW(Dyn) _DYNAMIC[];
     ElfW(Dyn) *dp;
     struct r_debug *r;
     static struct link_map *cachedResult = 0;
@@ -773,7 +790,7 @@ void GC_register_dynamic_libraries()
 # endif
 
 # ifndef MSWINCE
-  extern GC_bool GC_win32s;
+  extern GC_bool GC_no_win32_dlls;
 # endif
   
   void GC_register_dynamic_libraries()
@@ -786,7 +803,7 @@ void GC_register_dynamic_libraries()
     char * limit, * new_limit;
 
 #   ifdef MSWIN32
-      if (GC_win32s) return;
+      if (GC_no_win32_dlls) return;
 #   endif
     base = limit = p = GC_sysinfo.lpMinimumApplicationAddress;
 #   if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)

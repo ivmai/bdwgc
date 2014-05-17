@@ -137,7 +137,7 @@ extern mse * GC_mark_stack;
 #ifdef __STDC__
 # ifdef PRINT_BLACK_LIST
     ptr_t GC_find_start(ptr_t current, hdr *hhdr, hdr **new_hdr_p,
-		    	ptr_t source);
+		    	word source);
 # else
     ptr_t GC_find_start(ptr_t current, hdr *hhdr, hdr **new_hdr_p);
 # endif
@@ -145,7 +145,7 @@ extern mse * GC_mark_stack;
   ptr_t GC_find_start();
 #endif
 
-mse * GC_signal_mark_stack_overflow();
+mse * GC_signal_mark_stack_overflow GC_PROTO((mse *msp));
 
 # ifdef GATHERSTATS
 #   define ADD_TO_ATOMIC(sz) GC_atomic_in_use += (sz)
@@ -174,14 +174,6 @@ mse * GC_signal_mark_stack_overflow();
     } \
 }
 
-#ifdef PRINT_BLACK_LIST
-#   define GC_FIND_START(current, hhdr, new_hdr_p, source) \
-	GC_find_start(current, hhdr, new_hdr_p, source)
-#else
-#   define GC_FIND_START(current, hhdr, new_hdr_p, source) \
-	GC_find_start(current, hhdr, new_hdr_p)
-#endif
-
 /* Push the contents of current onto the mark stack if it is a valid	*/
 /* ptr to a currently unmarked object.  Mark it.			*/
 /* If we assumed a standard-conforming compiler, we could probably	*/
@@ -195,8 +187,7 @@ mse * GC_signal_mark_stack_overflow();
     GET_HDR(my_current, my_hhdr); \
     if (IS_FORWARDING_ADDR_OR_NIL(my_hhdr)) { \
 	 hdr * new_hdr = GC_invalid_header; \
-         my_current = GC_FIND_START(my_current, my_hhdr, \
-			 	    &new_hdr, (word)source); \
+         my_current = GC_find_start(my_current, my_hhdr, &new_hdr); \
          my_hhdr = new_hdr; \
     } \
     PUSH_CONTENTS_HDR(my_current, mark_stack_top, mark_stack_limit, \
@@ -236,7 +227,6 @@ exit_label: ; \
 #   define SET_MARK_BIT_EXIT_IF_SET(hhdr,displ,exit_label) \
     { \
         register word * mark_word_addr = hhdr -> hb_marks + divWORDSZ(displ); \
-        register word mark_word = *mark_word_addr; \
           \
         OR_WORD_EXIT_IF_SET(mark_word_addr, (word)1 << modWORDSZ(displ), \
 			    exit_label); \

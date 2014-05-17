@@ -30,6 +30,12 @@
 #   define BSD_TIME
 #endif
 
+#ifdef DGUX
+#   include <sys/types.h>
+#   include <sys/time.h>
+#   include <sys/resource.h>
+#endif /* DGUX */
+
 #ifdef BSD_TIME
 #   include <sys/types.h>
 #   include <sys/time.h>
@@ -44,10 +50,6 @@
 #   include "../gc_mark.h"
 # endif
 
-# ifndef GCCONFIG_H
-#   include "gcconfig.h"
-# endif
-
 typedef GC_word word;
 typedef GC_signed_word signed_word;
 
@@ -60,6 +62,10 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 			/* Preferably identical to caddr_t, if it 	*/
 			/* exists.					*/
 			
+# ifndef GCCONFIG_H
+#   include "gcconfig.h"
+# endif
+
 # ifndef HEADERS_H
 #   include "gc_hdrs.h"
 # endif
@@ -205,6 +211,11 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
    /* odd numbered words to have mark bits.				*/
 #endif
 
+#if defined(GC_GCJ_SUPPORT) && ALIGNMENT < 8 && !defined(ALIGN_DOUBLE)
+   /* GCJ's Hashtable synchronization code requires 64-bit alignment.  */
+#  define ALIGN_DOUBLE
+#endif
+
 /* ALIGN_DOUBLE requires MERGE_SIZES at present. */
 # if defined(ALIGN_DOUBLE) && !defined(MERGE_SIZES)
 #   define MERGE_SIZES
@@ -249,34 +260,12 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 
 #ifdef SAVE_CALL_CHAIN
 
-/*
- * Number of frames and arguments to save in objects allocated by
- * debugging allocator.
- */
-#   ifndef SAVE_CALL_COUNT
-#     define NFRAMES 6	/* Number of frames to save. Even for		*/
-			/* alignment reasons.				*/
-#   else
-#     define NFRAMES ((SAVE_CALL_COUNT + 1) & ~1)
-#   endif
-#   define NARGS 2	/* Mumber of arguments to save for each call.	*/
-
-#   define NEED_CALLINFO
-
 /* Fill in the pc and argument information for up to NFRAMES of my	*/
 /* callers.  Ignore my frame and my callers frame.			*/
 struct callinfo;
 void GC_save_callers GC_PROTO((struct callinfo info[NFRAMES]));
   
 void GC_print_callers GC_PROTO((struct callinfo info[NFRAMES]));
-
-#else
-
-# ifdef GC_ADD_CALLER
-#   define NFRAMES 1
-#   define NARGS 0
-#   define NEED_CALLINFO
-# endif
 
 #endif
 
@@ -376,68 +365,6 @@ void GC_print_callers GC_PROTO((struct callinfo info[NFRAMES]));
 #   define BZERO(x,n) bzero((char *)(x),(int)(n))
 # endif
 
-/* HBLKSIZE aligned allocation.  0 is taken to mean failure 	*/
-/* space is assumed to be cleared.				*/
-/* In the case os USE_MMAP, the argument must also be a 	*/
-/* physical page size.						*/
-/* GET_MEM is currently not assumed to retrieve 0 filled space, */
-/* though we should perhaps take advantage of the case in which */
-/* does.							*/
-struct hblk;	/* See below.	*/
-# ifdef PCR
-    char * real_malloc();
-#   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)bytes + GC_page_size) \
-				  + GC_page_size-1)
-# else
-#   ifdef OS2
-      void * os2_alloc(size_t bytes);
-#     define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc((size_t)bytes \
-				    + GC_page_size) \
-                                    + GC_page_size-1)
-#   else
-#     if defined(NEXT) || defined(MACOSX) || defined(DOS4GW) || \
-	 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) || \
-	 (defined(SUNOS5) && !defined(USE_MMAP))
-#       define GET_MEM(bytes) HBLKPTR((size_t) \
-				      calloc(1, (size_t)bytes + GC_page_size) \
-                                      + GC_page_size-1)
-#     else
-#	ifdef MSWIN32
-          extern ptr_t GC_win32_get_mem();
-#         define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
-#	else
-#	  ifdef MACOS
-#	    if defined(USE_TEMPORARY_MEMORY)
-		extern Ptr GC_MacTemporaryNewPtr(size_t size,
-						 Boolean clearMemory);
-#               define GET_MEM(bytes) HBLKPTR( \
-		    GC_MacTemporaryNewPtr(bytes + GC_page_size, true) \
-		    + GC_page_size-1)
-#	    else
-#         	    define GET_MEM(bytes) HBLKPTR( \
-			NewPtrClear(bytes + GC_page_size) + GC_page_size-1)
-#	    endif
-#	  else
-#	    ifdef MSWINCE
-	      extern ptr_t GC_wince_get_mem();
-#	      define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
-#	    else
-#	      if defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
-	        extern void *GC_amiga_get_mem(size_t size);
-		define GET_MEM(bytes) HBLKPTR((size_t) \
-                  GC_amiga_get_mem((size_t)bytes + GC_page_size) \
-		  + GC_page_size-1)
-#	      else
-                extern ptr_t GC_unix_get_mem();
-#               define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
-#	      endif
-#	    endif
-#	  endif
-#	endif
-#     endif
-#   endif
-# endif
-
 /* Delay any interrupts or signals that may abort this thread.  Data	*/
 /* structures are in a consistent state outside this pair of calls.	*/
 /* ANSI C allows both to be empty (though the standard isn't very	*/
@@ -502,7 +429,7 @@ struct hblk;	/* See below.	*/
 #   ifdef SMALL_CONFIG
 #	define ABORT(msg) abort();
 #   else
-	GC_API void GC_abort();
+	GC_API void GC_abort GC_PROTO((GC_CONST char * msg));
 #       define ABORT(msg) GC_abort(msg);
 #   endif
 # endif
@@ -515,7 +442,7 @@ struct hblk;	/* See below.	*/
 # endif
 
 /* Print warning message, e.g. almost out of memory.	*/
-# define WARN(msg,arg) (*GC_current_warn_proc)(msg, (GC_word)(arg))
+# define WARN(msg,arg) (*GC_current_warn_proc)("GC Warning: " msg, (GC_word)(arg))
 extern GC_warn_proc GC_current_warn_proc;
 
 /* Get environment entry */
@@ -662,9 +589,10 @@ extern GC_warn_proc GC_current_warn_proc;
  */
  
 # ifdef LARGE_CONFIG
-#   define LOG_PHT_ENTRIES  19  /* Collisions likely at 512K blocks,	*/
-				/* which is >= 2GB.  Each table takes	*/
-				/* 64KB.				*/
+#   define LOG_PHT_ENTRIES  20  /* Collisions likely at 1M blocks,	*/
+				/* which is >= 4GB.  Each table takes	*/
+				/* 128KB, some of which may never be	*/
+				/* touched.				*/
 # else
 #   ifdef SMALL_CONFIG
 #     define LOG_PHT_ENTRIES  14 /* Collisions are likely if heap grows	*/
@@ -672,7 +600,7 @@ extern GC_warn_proc GC_current_warn_proc;
 				 /* Each hash table occupies 2K bytes.   */
 #   else /* default "medium" configuration */
 #     define LOG_PHT_ENTRIES  16 /* Collisions are likely if heap grows	*/
-				 /* to more than 16K hblks >= 256MB.	*/
+				 /* to more than 64K hblks >= 256MB.	*/
 				 /* Each hash table occupies 8K bytes.  */
 #   endif
 # endif
@@ -788,11 +716,10 @@ struct hblkhdr {
 # define BODY_SZ (HBLKSIZE/sizeof(word))
 
 struct hblk {
-#   if 0  /* DISCARDWORDS no longer supported */
-        word garbage[DISCARD_WORDS];
-#   endif
     word hb_body[BODY_SZ];
 };
+
+# define HBLK_IS_FREE(hdr) ((hdr) -> hb_map == GC_invalid_map)
 
 # define OBJ_SZ_TO_BLOCKS(sz) \
     divHBLKSZ(WORDS_TO_BYTES(sz) + HBLKSIZE-1)
@@ -914,6 +841,10 @@ struct _GC_arrays {
   word _mem_freed;
   	/* Number of explicitly deallocated words of memory	*/
   	/* since last collection.				*/
+  word _finalizer_mem_freed;
+  	/* Words of memory explicitly deallocated while 	*/
+  	/* finalizers were running.  Used to approximate mem.	*/
+  	/* explicitly deallocated by finalizers.		*/
   ptr_t _scratch_end_ptr;
   ptr_t _scratch_last_end_ptr;
 	/* Used by headers.c, and can easily appear to point to	*/
@@ -1084,6 +1015,7 @@ GC_API GC_FAR struct _GC_arrays GC_arrays;
 # define GC_words_finalized GC_arrays._words_finalized
 # define GC_non_gc_bytes_at_gc GC_arrays._non_gc_bytes_at_gc
 # define GC_mem_freed GC_arrays._mem_freed
+# define GC_finalizer_mem_freed GC_arrays._finalizer_mem_freed
 # define GC_scratch_end_ptr GC_arrays._scratch_end_ptr
 # define GC_scratch_last_end_ptr GC_arrays._scratch_last_end_ptr
 # define GC_mark_procs GC_arrays._mark_procs
@@ -1218,17 +1150,19 @@ extern struct hblk * GC_hblkfreelist[];
 				/* header structure associated with	*/
 				/* block.				*/
 
-extern GC_bool GC_is_initialized;	/* GC_init() has been run.	*/
-
 extern GC_bool GC_objects_are_marked;	/* There are marked objects in  */
 					/* the heap.			*/
 
 #ifndef SMALL_CONFIG
   extern GC_bool GC_incremental;
 			/* Using incremental/generational collection. */
+# define TRUE_INCREMENTAL \
+	(GC_incremental && GC_time_limit != GC_TIME_UNLIMITED)
+	/* True incremental, not just generational, mode */
 #else
 # define GC_incremental FALSE
 			/* Hopefully allow optimizer to remove some code. */
+# define TRUE_INCREMENTAL FALSE
 #endif
 
 extern GC_bool GC_dirty_maintained;
@@ -1240,7 +1174,12 @@ extern word GC_root_size;	/* Total size of registered root sections */
 
 extern GC_bool GC_debugging_started;	/* GC_debug_malloc has been called. */ 
 
-			
+extern long GC_large_alloc_warn_interval;
+	/* Interval between unsuppressed warnings.	*/
+
+extern long GC_large_alloc_warn_suppressed;
+	/* Number of warnings suppressed so far.	*/
+
 /* Operations */
 # ifndef abs
 #   define abs(x)  ((x) < 0? (-(x)) : (x))
@@ -1630,7 +1569,8 @@ GC_bool GC_collect_or_expand GC_PROTO(( \
   				/* blocks available.  Should be called	*/
   				/* until the blocks are available or	*/
   				/* until it fails by returning FALSE.	*/
-GC_API void GC_init GC_PROTO((void)); /* Initialize collector.		*/
+
+extern GC_bool GC_is_initialized;	/* GC_init() has been run.	*/
 
 #if defined(MSWIN32) || defined(MSWINCE)
   void GC_deinit GC_PROTO((void));
@@ -1712,15 +1652,31 @@ void GC_print_obj GC_PROTO((ptr_t p));
   			/* description of the object to stderr.		*/
 extern void (*GC_check_heap) GC_PROTO((void));
   			/* Check that all objects in the heap with 	*/
-  			/* debugging info are intact.  Print 		*/
-  			/* descriptions of any that are not.		*/
+  			/* debugging info are intact.  			*/
+  			/* Add any that are not to GC_smashed list.	*/
+extern void (*GC_print_all_smashed) GC_PROTO((void));
+			/* Print GC_smashed if it's not empty.		*/
+			/* Clear GC_smashed list.			*/
+extern void GC_print_all_errors GC_PROTO((void));
+			/* Print smashed and leaked objects, if any.	*/
+			/* Clear the lists of such objects.		*/
 extern void (*GC_print_heap_obj) GC_PROTO((ptr_t p));
   			/* If possible print s followed by a more	*/
   			/* detailed description of the object 		*/
   			/* referred to by p.				*/
 
+extern GC_bool GC_have_errors;  /* We saw a smashed or leaked object.	*/
+				/* Call error printing routine 		*/
+				/* occasionally.			*/
 extern GC_bool GC_print_stats;	/* Produce at least some logging output	*/
 				/* Set from environment variable.	*/
+
+#ifndef NO_DEBUGGING
+  extern GC_bool GC_dump_regularly;  /* Generate regular debugging dumps. */
+# define COND_DUMP if (GC_dump_regularly) GC_dump();
+#else
+# define COND_DUMP
+#endif
 
 /* Macros used for collector internal allocation.	*/
 /* These assume the collector lock is held.		*/
@@ -1767,8 +1723,12 @@ GC_bool GC_page_was_ever_dirty GC_PROTO((struct hblk *h));
 void GC_is_fresh GC_PROTO((struct hblk *h, word n));
   			/* Assert the region currently contains no	*/
   			/* valid pointers.				*/
-void GC_write_hint GC_PROTO((struct hblk *h));
-  			/* h is about to be written.	*/
+void GC_remove_protection GC_PROTO((struct hblk *h, word nblocks,
+			   	    GC_bool pointerfree));
+  			/* h is about to be writteni or allocated.  Ensure  */
+			/* that it's not write protected by the virtual	    */
+			/* dirty bit implementation.			    */
+			
 void GC_dirty_init GC_PROTO((void));
   
 /* Slow/general mark bit manipulation: */
@@ -1789,6 +1749,7 @@ void GC_print_block_list GC_PROTO((void));
 void GC_print_hblkfreelist GC_PROTO((void));
 void GC_print_heap_sects GC_PROTO((void));
 void GC_print_static_roots GC_PROTO((void));
+void GC_print_finalization_stats GC_PROTO((void));
 void GC_dump GC_PROTO((void));
 
 #ifdef KEEP_BACK_PTRS
@@ -1915,7 +1876,7 @@ void GC_err_puts GC_PROTO((GC_CONST char *s));
   /* in Linux glibc, but it's not exported.)  Thus we continue to use	*/
   /* the same hard-coded signals we've always used.			*/
 #  if !defined(SIG_SUSPEND)
-#   if defined(GC_LINUX_THREADS)
+#   if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
 #    if defined(SPARC) && !defined(SIGPWR)
        /* SPARC/Linux doesn't properly define SIGPWR in <signal.h>.
         * It is aliased to SIGLOST in asm/signal.h, though.		*/
@@ -1925,7 +1886,11 @@ void GC_err_puts GC_PROTO((GC_CONST char *s));
 #      define SIG_SUSPEND SIGPWR
 #    endif
 #   else  /* !GC_LINUX_THREADS */
-#    define SIG_SUSPEND _SIGRTMIN + 6
+#     if defined(_SIGRTMIN)
+#       define SIG_SUSPEND _SIGRTMIN + 6
+#     else
+#       define SIG_SUSPEND SIGRTMIN + 6
+#     endif       
 #   endif
 #  endif /* !SIG_SUSPEND */
   
