@@ -24,10 +24,8 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 # Setjmp_test may yield overly optimistic results when compiled
 # without optimization.
 # -DSILENT disables statistics printing, and improves performance.
-# -DCHECKSUMS reports on erroneously clear dirty bits, and unexpectedly
-#   altered stubborn objects, at substantial performance cost.
-#   Use only for incremental collector debugging.
-# -DFIND_LEAK causes the collector to assume that all inaccessible
+# -DFIND_LEAK causes GC_find_leak to be initially set.
+#   This causes the collector to assume that all inaccessible
 #   objects should have been explicitly deallocated, and reports exceptions.
 #   Finalization and the test program are not usable in this mode.
 # -DSOLARIS_THREADS enables support for Solaris (thr_) threads.
@@ -85,9 +83,12 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 #   finalize.c).  Objects reachable from finalizable objects will be marked
 #   in a sepearte postpass, and hence their memory won't be reclaimed.
 #   Not recommended unless you are implementing a language that specifies
-#   these semantics.
+#   these semantics.  Since 5.0, determines only only the initial value
+#   of GC_java_finalization variable.
 # -DFINALIZE_ON_DEMAND causes finalizers to be run only in response
 #   to explicit GC_invoke_finalizers() calls.
+#   In 5.0 this became runtime adjustable, and this only determines the
+#   initial value of GC_finalize_on_demand.
 # -DATOMIC_UNCOLLECTABLE includes code for GC_malloc_atomic_uncollectable.
 #   This is useful if either the vendor malloc implementation is poor,
 #   or if REDIRECT_MALLOC is used.
@@ -113,19 +114,22 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 #   allocation strategy.  The new strategy tries harder to minimize
 #   fragmentation, sometimes at the expense of spending more time in the
 #   large block allocator and/or collecting more frequently.
-#   If you expect the allocator to promtly use an explicitly expanded
+#   If you expect the allocator to promptly use an explicitly expanded
 #   heap, this is highly recommended.
-# -DGC_ASSERTIONS Enable some internal GC assertion checking.  Currently
-#   this facility is only used in a few places.  It is intended primarily
-#   for debugging of the garbage collector itself, but could also
-#   occasionally be useful for debugging of client code.  Slows down the
-#   collector somewhat, but not drastically.
 # -DKEEP_BACK_PTRS Add code to save back pointers in debugging headers
 #   for objects allocated with the debugging allocator.  If all objects
 #   through GC_MALLOC with GC_DEBUG defined, this allows the client
 #   to determine how particular or randomly chosen objects are reachable
 #   for debugging/profiling purposes.  The backptr.h interface is
 #   implemented only if this is defined.
+# -DGC_ASSERTIONS Enable some internal GC assertion checking.  Currently
+#   this facility is only used in a few places.  It is intended primarily
+#   for debugging of the garbage collector itself, but could also
+#   occasionally be useful for debugging of client code.  Slows down the
+#   collector somewhat, but not drastically.
+# -DCHECKSUMS reports on erroneously clear dirty bits, and unexpectedly
+#   altered stubborn objects, at substantial performance cost.
+#   Use only for debugging of the incremental collector.
 #
 
 
@@ -176,7 +180,8 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            add_gc_prefix.c README.solaris2 README.sgi README.hp README.uts \
 	   win32_threads.c NT_THREADS_MAKEFILE gc.mak README.dj Makefile.dj \
 	   README.alpha README.linux version.h Makefile.DLLs \
-	   WCC_MAKEFILE
+	   WCC_MAKEFILE nursery.c nursery.h gc_copy_descr.h \
+	   include/leak_detector.h
 
 CORD_INCLUDE_FILES= $(srcdir)/gc.h $(srcdir)/cord/cord.h $(srcdir)/cord/ec.h \
            $(srcdir)/cord/private/cord_pos.h

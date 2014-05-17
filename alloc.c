@@ -474,7 +474,7 @@ void GC_finish_collection()
 #   ifdef GATHERSTATS
         GC_mem_found = 0;
 #   endif
-#   ifdef FIND_LEAK
+    if (GC_find_leak) {
       /* Mark all objects on the free list.  All objects should be */
       /* marked when we're done.				   */
 	{
@@ -497,25 +497,26 @@ void GC_finish_collection()
 	    }
 	  }
 	}
-      /* Check that everything is marked */
 	GC_start_reclaim(TRUE);
-#   else
+	  /* The above just checks; it doesn't really reclaim anything. */
+    }
 
-      GC_finalize();
-#     ifdef STUBBORN_ALLOC
-        GC_clean_changing_list();
-#     endif
+    GC_finalize();
+#   ifdef STUBBORN_ALLOC
+      GC_clean_changing_list();
+#   endif
 
-#     ifdef PRINTTIMES
-	GET_TIME(finalize_time);
-#     endif
+#   ifdef PRINTTIMES
+      GET_TIME(finalize_time);
+#   endif
 
-      /* Clear free list mark bits, in case they got accidentally marked   */
-      /* Note: HBLKPTR(p) == pointer to head of block containing *p        */
-      /* Also subtract memory remaining from GC_mem_found count.           */
-      /* Note that composite objects on free list are cleared.             */
-      /* Thus accidentally marking a free list is not a problem;  only     */
-      /* objects on the list itself will be marked, and that's fixed here. */
+    /* Clear free list mark bits, in case they got accidentally marked   */
+    /* Note: HBLKPTR(p) == pointer to head of block containing *p        */
+    /* (or GC_find_leak is set and they were intentionally marked.)	 */
+    /* Also subtract memory remaining from GC_mem_found count.           */
+    /* Note that composite objects on free list are cleared.             */
+    /* Thus accidentally marking a free list is not a problem;  only     */
+    /* objects on the list itself will be marked, and that's fixed here. */
       {
 	register word size;		/* current object size		*/
 	register ptr_t p;	/* pointer to current object	*/
@@ -541,15 +542,12 @@ void GC_finish_collection()
       }
 
 
-#     ifdef PRINTSTATS
+#   ifdef PRINTSTATS
 	GC_printf1("Bytes recovered before sweep - f.l. count = %ld\n",
 	          (long)WORDS_TO_BYTES(GC_mem_found));
-#     endif
-
+#   endif
     /* Reconstruct free lists to contain everything not marked */
-      GC_start_reclaim(FALSE);
-    
-#   endif /* !FIND_LEAK */
+        GC_start_reclaim(FALSE);
 
 #   ifdef PRINTSTATS
 	GC_printf2(
@@ -660,27 +658,6 @@ word bytes;
         GC_greatest_plausible_heap_addr = (ptr_t)p + bytes;
     }
 }
-
-#ifdef PRESERVE_LAST
-
-GC_bool GC_protect_last_block = FALSE;
-
-GC_bool GC_in_last_heap_sect(p)
-ptr_t p;
-{
-    struct HeapSect * last_heap_sect;
-    ptr_t start;
-    ptr_t end;
-
-    if (!GC_protect_last_block) return FALSE;
-    last_heap_sect = &(GC_heap_sects[GC_n_heap_sects-1]);
-    start = last_heap_sect -> hs_start;
-    if (p < start) return FALSE;
-    end = start + last_heap_sect -> hs_bytes;
-    if (p >= end) return FALSE;
-    return TRUE;
-}
-#endif
 
 # if !defined(NO_DEBUGGING)
 void GC_print_heap_sects()
@@ -812,9 +789,6 @@ word n;
     LOCK();
     if (!GC_is_initialized) GC_init_inner();
     result = (int)GC_expand_hp_inner(divHBLKSZ((word)bytes));
-#   ifdef PRESERVE_LAST
-	if (result) GC_protect_last_block = FALSE;
-#   endif
     UNLOCK();
     ENABLE_SIGNALS();
     return(result);
@@ -866,12 +840,6 @@ GC_bool ignore_off_page;
 	      GC_printf0("Memory available again ...\n");
 	    }
 #	  endif
-#         ifdef PRESERVE_LAST
-	    if (needed_blocks > 1) GC_protect_last_block = TRUE;
-		/* We were forced to expand the heap as the result	*/
-		/* of a large block allocation.  Avoid breaking up	*/
-		/* new block into small pieces.				*/
-#         endif
       }
     }
     return(TRUE);

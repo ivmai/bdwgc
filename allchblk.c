@@ -576,7 +576,7 @@ int n;
 	        size_avail = orig_avail;
 	      } else if (size_avail == 0 && size_needed == HBLKSIZE
 			 && IS_MAPPED(hhdr)) {
-#		ifndef FIND_LEAK
+		if (!GC_find_leak) {
 	      	  static unsigned count = 0;
 	      	  
 	      	  /* The block is completely blacklisted.  We need 	*/
@@ -615,7 +615,7 @@ int n;
 		      }
 	   	      hhdr = HDR(hbp);
 	          }
-#		endif
+		}
 	      }
 	    }
 	    if( size_avail >= size_needed ) {

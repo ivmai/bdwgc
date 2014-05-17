@@ -557,24 +557,22 @@ GC_PTR p;
       /* Invalidate size */
       ((oh *)base) -> oh_sz = GC_size(base);
     }
-#   ifdef FIND_LEAK
+    if (GC_find_leak) {
         GC_free(base);
-#   else
-	{
-	    register hdr * hhdr = HDR(p);
-	    GC_bool uncollectable = FALSE;
+    } else {
+	register hdr * hhdr = HDR(p);
+	GC_bool uncollectable = FALSE;
 
-	    if (hhdr ->  hb_obj_kind == UNCOLLECTABLE) {
-		uncollectable = TRUE;
-	    }
-#	    ifdef ATOMIC_UNCOLLECTABLE
-		if (hhdr ->  hb_obj_kind == AUNCOLLECTABLE) {
-		    uncollectable = TRUE;
-		}
-#	    endif
-	    if (uncollectable) GC_free(base);
+        if (hhdr ->  hb_obj_kind == UNCOLLECTABLE) {
+	    uncollectable = TRUE;
 	}
-#   endif
+#	ifdef ATOMIC_UNCOLLECTABLE
+	    if (hhdr ->  hb_obj_kind == AUNCOLLECTABLE) {
+		    uncollectable = TRUE;
+	    }
+#	endif
+	if (uncollectable) GC_free(base);
+    } /* !GC_find_leak */
 }
 
 # ifdef __STDC__

@@ -362,14 +362,14 @@ void reverse_test()
     d = uncollectable_ints(1, 100);
     e = uncollectable_ints(1, 1);
     /* Check that realloc updates object descriptors correctly */
-    f = (sexpr *)GC_malloc(4 * sizeof(sexpr));
-    f = (sexpr *)GC_realloc((GC_PTR)f, 6 * sizeof(sexpr));
+    f = (sexpr *)GC_MALLOC(4 * sizeof(sexpr));
+    f = (sexpr *)GC_REALLOC((GC_PTR)f, 6 * sizeof(sexpr));
     f[5] = ints(1,17);
-    g = (sexpr *)GC_malloc(513 * sizeof(sexpr));
-    g = (sexpr *)GC_realloc((GC_PTR)g, 800 * sizeof(sexpr));
+    g = (sexpr *)GC_MALLOC(513 * sizeof(sexpr));
+    g = (sexpr *)GC_REALLOC((GC_PTR)g, 800 * sizeof(sexpr));
     g[799] = ints(1,18);
-    h = (sexpr *)GC_malloc(1025 * sizeof(sexpr));
-    h = (sexpr *)GC_realloc((GC_PTR)h, 2000 * sizeof(sexpr));
+    h = (sexpr *)GC_MALLOC(1025 * sizeof(sexpr));
+    h = (sexpr *)GC_REALLOC((GC_PTR)h, 2000 * sizeof(sexpr));
     h[1999] = ints(1,19);
     /* Try to force some collections and reuse of small list elements */
       for (i = 0; i < 10; i++) {
@@ -610,8 +610,8 @@ thread_key_t fl_key;
 
 void * alloc8bytes()
 {
-# ifdef SMALL_CONFIG
-    return(GC_malloc(8));
+# if defined(SMALL_CONFIG) || defined(GC_DEBUG)
+    return(GC_MALLOC(8));
 # else
     void ** my_free_list_ptr;
     void * my_free_list;

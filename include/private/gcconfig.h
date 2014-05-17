@@ -147,9 +147,8 @@
 #    define M68K
 #    define mach_type_known
 # endif
-# if defined(linux) && defined(sparc)
+# if defined(LINUX) && defined(sparc)
 #    define SPARC
-#    define LINUX
 #    define mach_type_known
 # endif
 # if defined(__alpha) || defined(__alpha__)
@@ -685,10 +684,13 @@
 #   endif
 #   ifdef LINUX
 #	define OS_TYPE "LINUX"
-#	define STACKBOTTOM ((ptr_t)0xc0000000)
-	/* Appears to be 0xe0000000 for at least one 2.1.91 kernel.	*/
-	/* Probably needs to be more flexible, but I don't yet 		*/
-	/* fully understand how flexible.				*/
+#       define HEURISTIC1
+#       undef STACK_GRAN
+#       define STACK_GRAN 0x10000000
+	/* STACKBOTTOM is usually 0xc0000000, but this changes with	*/
+	/* different kernel configurations.  In particular, systems	*/
+	/* with 2GB physical memory will usually move the user		*/
+	/* address space limit, and hence initial SP to 0x80000000.	*/
 #       if !defined(LINUX_THREADS) || !defined(REDIRECT_MALLOC)
 #	    define MPROTECT_VDB
 #	else

@@ -73,6 +73,12 @@ GC_bool GC_dont_gc = 0;
 
 GC_bool GC_quiet = 0;
 
+#ifdef FIND_LEAK
+  int GC_find_leak = 1;
+#else
+  int GC_find_leak = 0;
+#endif
+
 /*ARGSUSED*/
 GC_PTR GC_default_oom_fn GC_PROTO((size_t bytes_requested))
 {
@@ -555,7 +561,8 @@ void GC_init_inner()
 
 void GC_enable_incremental GC_PROTO(())
 {
-# if  !defined(FIND_LEAK) && !defined(SMALL_CONFIG)
+# if !defined(SMALL_CONFIG)
+  if (!GC_find_leak) {
     DCL_LOCK_STATE;
     
     DISABLE_SIGNALS();
@@ -593,6 +600,7 @@ void GC_enable_incremental GC_PROTO(())
 out:
     UNLOCK();
     ENABLE_SIGNALS();
+  }
 # endif
 }
 
