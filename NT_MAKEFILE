@@ -1,5 +1,6 @@
 # Makefile for Windows NT.  Assumes Microsoft compiler, and a single thread.
 # DLLs are included in the root set under NT, but not under win32S.
+# Use "nmake nodebug=1 all" for optimized versions of library, gctest and editor.
 
 !include <ntwin32.mak>
 
@@ -8,12 +9,15 @@
 
 OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj malloc.obj stubborn.obj dyn_load.obj typd_mlc.obj
 
-all: $(OBJS) gctest.exe
+all: gctest.exe cord\de.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(cvars) -DSMALL_CONFIG -DSILENT -DALL_INTERIOR_POINTERS $*.c
+	$(cc) $(cdebug) $(cflags) $(cvars) -DSMALL_CONFIG -DSILENT -DALL_INTERIOR_POINTERS $*.c /Fo$*.obj
 
 $(OBJS) test.obj: gc_priv.h gc_hdrs.h gc.h
+
+gc.lib: $(OBJS)
+	lib32 /MACHINE:i386 /out:gc.lib $(OBJS)
 
 gctest.exe: test.obj gc.lib
 #	The following works for win32 debugging.  For win32s debugging use debugtype:coff
@@ -21,5 +25,13 @@ gctest.exe: test.obj gc.lib
 	$(link) -debug:full -debugtype:cv $(guiflags) -stack:131072 -out:$*.exe test.obj $(conlibs) gc.lib
 #	mapsympe -n -o gctest.sym gctest.exe
 
-gc.lib: $(OBJS)
-	lib32 /MACHINE:i386 /out:gc.lib $(OBJS)
+cord\de_win.rbj: cord\de_win.res
+	cvtres -$(CPU) cord\de_win.res -o cord\de_win.rbj
+
+cord\de.obj cord\de_win.obj: cord\cord.h cord\cord_pos.h cord\de_win.h cord\de_cmds.h
+
+cord\de_win.res: cord\de_win.rc cord\de_win.h cord\de_cmds.h
+	$(rc) $(rcvars) -r -fo cord\de_win.res $(cvars) cord\de_win.rc
+
+cord\de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\de.obj cord\de_win.obj cord\de_win.rbj gc.lib
+	$(link) -debug:full -debugtype:cv $(guiflags) -stack:16384 -out:cord\de.exe  cord\cordbscs.obj cord\cordxtra.obj cord\de.obj cord\de_win.obj cord\de_win.rbj gc.lib $(guilibs)

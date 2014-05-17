@@ -5,10 +5,13 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  */
-/* Boehm, March 31, 1994 1:01 pm PST */
+/* Boehm, May 19, 1994 2:17 pm PDT */
  
 
 # ifndef GC_PRIVATE_H
@@ -172,7 +175,7 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #   define MERGE_SIZES
 # endif
 
-#ifdef ALL_INTERIOR_POINTERS
+#if defined(ALL_INTERIOR_POINTERS) && !defined(DONT_ADD_BYTE_AT_END)
 # define ADD_BYTE_AT_END
 #endif
 
@@ -282,7 +285,7 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
  * (There is currently no equivalent for FASTLOCK.)
  */  
 # ifdef THREADS
-#  ifdef PCR
+#  ifdef PCR_OBSOLETE	/* Faster, but broken with multiple lwp's	*/
 #    include  "th/PCR_Th.h"
 #    include  "th/PCR_ThCrSec.h"
      extern struct PCR_Th_MLRep GC_allocate_ml;
@@ -294,6 +297,19 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #        define FASTLOCK_SUCCEEDED() (*(int *)(&GC_allocate_ml) == 0)
 		/* TRUE if nobody currently holds the lock */
 #    define FASTUNLOCK() PCR_ThCrSec_ExitSys()
+#  endif
+#  ifdef PCR
+#    include <base/PCR_Base.h>
+#    include <th/PCR_Th.h>
+     extern PCR_Th_ML GC_allocate_ml;
+#    define DCL_LOCK_STATE  PCR_ERes GC_fastLockRes; PCR_sigset_t GC_old_sig_mas
+k
+#    define LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml)
+#    define UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
+#    define FASTLOCK() (GC_fastLockRes = PCR_Th_ML_Try(&GC_allocate_ml))
+#    define FASTLOCK_SUCCEEDED() (GC_fastLockRes == PCR_ERes_okay)
+#    define FASTUNLOCK()  {\
+        if( FASTLOCK_SUCCEEDED() ) PCR_Th_ML_Release(&GC_allocate_ml); }
 #  endif
 #  ifdef SRC_M3
      extern word RT0u__inCritical;
@@ -470,7 +486,7 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #   define SMALL_OBJ(bytes) ((bytes) < WORDS_TO_BYTES(MAXOBJSZ))
 #   define ADD_SLOP(bytes) ((bytes)+1)
 # else
-#   define ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + WORDS_TO_BYTES(1) - 1)
+#   define ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + (WORDS_TO_BYTES(1) - 1))
 #   define SMALL_OBJ(bytes) ((bytes) <= WORDS_TO_BYTES(MAXOBJSZ))
 #   define ADD_SLOP(bytes) (bytes)
 # endif
@@ -536,10 +552,14 @@ struct hblkhdr {
     		      	/* See GC_obj_map.				     */
     		     	/* Valid for all blocks with headers.		     */
     		     	/* Free blocks point to GC_invalid_map.		     */
-    unsigned short hb_obj_kind;
+    unsigned char hb_obj_kind;
     			 /* Kind of objects in the block.  Each kind 	*/
     			 /* identifies a mark procedure and a set of 	*/
-    			 /* list headers.  sometimes called regions.	*/
+    			 /* list headers.  Sometimes called regions.	*/
+    unsigned char hb_flags;
+#	define IGNORE_OFF_PAGE	1	/* Ignore pointers that do not	*/
+					/* point to the first page of 	*/
+					/* this object.			*/
     unsigned short hb_last_reclaimed;
     				/* Value of GC_gc_no when block was	*/
     				/* last allocated or swept. May wrap.   */
@@ -1030,8 +1050,14 @@ ptr_t GC_generic_malloc_words_small(/*words, kind*/);
 				/* As above, but size in units of words */
 				/* Bypasses MERGE_SIZES.  Assumes	*/
 				/* words <= MAXOBJSZ.			*/
+ptr_t GC_malloc_ignore_off_page_inner(/* bytes */);
+				/* Allocate an object, where		*/
+				/* the client guarantees that there	*/
+				/* will always be a pointer to the 	*/
+				/* beginning of the object while the	*/
+				/* object is live.			*/
 ptr_t GC_allocobj(/* sz_inn_words, kind */);
-				/* Make the indicated 			  */
+				/* Make the indicated 			*/
 				/* free list nonempty, and return its	*/
 				/* head.				*/
 
@@ -1051,6 +1077,11 @@ hdr * GC_find_header(/*p*/);	/* Debugging only.			*/
 
 void GC_finalize();	/* Perform all indicated finalization actions	*/
 			/* on unmarked objects.				*/
+			/* Unreachable finalizable objects are enqueued	*/
+			/* for processing by GC_invoke_finalizers.	*/
+			/* Invoked with lock.				*/
+void GC_invoke_finalizers(); 	/* Run eligible finalizers.	*/
+				/* Invoked without lock.	*/	
 			
 void GC_add_to_heap(/*p, bytes*/);
 			/* Add a HBLKSIZE aligned chunk to the heap.	*/

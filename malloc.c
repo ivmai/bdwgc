@@ -5,10 +5,13 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  */
-/* Boehm, March 29, 1994 4:40 pm PST */
+/* Boehm, May 19, 1994 2:03 pm PDT */
  
 #include <stdio.h>
 #include "gc_priv.h"
@@ -65,13 +68,14 @@ register ptr_t *opp;
         obj_link(op) = 0;
     } else {
 	register struct hblk * h;
-	register word n_blocks = divHBLKSZ(lb + HDR_BYTES + HBLKSIZE-1);
+	register word n_blocks = divHBLKSZ(ADD_SLOP(lb)
+					   + HDR_BYTES + HBLKSIZE-1);
 	
 	if (!GC_is_initialized) GC_init_inner();
 	/* Do our share of marking work */
           if(GC_incremental && !GC_dont_gc) GC_collect_a_little((int)n_blocks);
 	lw = ROUNDED_UP_WORDS(lb);
-	while ((h = GC_allochblk(lw, k)) == 0
+	while ((h = GC_allochblk(lw, k, 0)) == 0
 		&& GC_collect_or_expand(n_blocks));
 	if (h == 0) {
 	    op = 0;
@@ -86,6 +90,59 @@ out:
     return((ptr_t)op);
 }
 
+/* Allocate a composite object of size n bytes.  The caller guarantees	*/
+/* that pointers past the first page are not relevant.  Caller holds	*/
+/* allocation lock.							*/
+ptr_t GC_malloc_ignore_off_page_inner(lb)
+register size_t lb;
+{
+# ifdef ALL_INTERIOR_POINTERS
+    register struct hblk * h;
+    register word n_blocks;
+    register word lw;
+    register ptr_t op;
+
+    if (lb <= HBLKSIZE)
+        return(GC_generic_malloc_inner((word)lb, NORMAL));
+    n_blocks = divHBLKSZ(ADD_SLOP(lb) + HDR_BYTES + HBLKSIZE-1);
+    if (!GC_is_initialized) GC_init_inner();
+    /* Do our share of marking work */
+    if(GC_incremental && !GC_dont_gc) GC_collect_a_little((int)n_blocks);
+    lw = ROUNDED_UP_WORDS(lb);
+    while ((h = GC_allochblk(lw, NORMAL, IGNORE_OFF_PAGE)) == 0
+	   && GC_collect_or_expand(n_blocks));
+    if (h == 0) {
+	op = 0;
+    } else {
+	op = (ptr_t) (h -> hb_body);
+	GC_words_wasted += BYTES_TO_WORDS(n_blocks * HBLKSIZE) - lw;
+    }
+    GC_words_allocd += lw;
+    return((ptr_t)op);
+# else
+    return(GC_generic_malloc_inner((word)lb, NORMAL));
+# endif
+}
+
+# if defined(__STDC__) || defined(__cplusplus)
+  void * GC_malloc_ignore_off_page(size_t lb)
+# else
+  char * GC_malloc_ignore_off_page(lb)
+  register size_t lb;
+# endif
+{
+    register extern_ptr_t result;
+    DCL_LOCK_STATE;
+    
+    GC_invoke_finalizers();
+    DISABLE_SIGNALS();
+    LOCK();
+    result = GC_malloc_ignore_off_page_inner(lb);
+    UNLOCK();
+    ENABLE_SIGNALS();
+    return(result);
+}
+
 ptr_t GC_generic_malloc(lb, k)
 register word lb;
 register int k;
@@ -93,6 +150,7 @@ register int k;
     ptr_t result;
     DCL_LOCK_STATE;
 
+    GC_invoke_finalizers();
     DISABLE_SIGNALS();
     LOCK();
     result = GC_generic_malloc_inner(lb, k);
@@ -112,6 +170,7 @@ register ptr_t op;
 register ptr_t *opp;
 DCL_LOCK_STATE;
 
+    GC_invoke_finalizers();
     DISABLE_SIGNALS();
     LOCK();
     opp = &(GC_obj_kinds[k].ok_freelist[lw]);
@@ -160,6 +219,7 @@ DCL_LOCK_STATE;
         return(op);
     }
     lw = ROUNDED_UP_WORDS(lb);
+    GC_invoke_finalizers();
     DISABLE_SIGNALS();
     LOCK();
     opp = &(GC_obj_kinds[k].ok_freelist[lw]);
@@ -450,7 +510,10 @@ int obj_kind;
     sz = hhdr -> hb_sz;
     ok = &GC_obj_kinds[knd];
     if (sz <= MAXOBJSZ) {
-	LOCK();
+#	ifdef THREADS
+	    DISABLE_SIGNALS();
+	    LOCK();
+#	endif
 	GC_mem_freed += sz;
 	/* A signal here can make GC_mem_freed and GC_non_gc_bytes	*/
 	/* inconsistent.  We claim this is benign.			*/
@@ -461,7 +524,10 @@ int obj_kind;
 	flh = &(ok -> ok_freelist[sz]);
 	obj_link(p) = *flh;
 	*flh = (ptr_t)p;
-	UNLOCK();
+#	ifdef THREADS
+	    UNLOCK();
+	    ENABLE_SIGNALS();
+#	endif
     } else {
     	DISABLE_SIGNALS();
         LOCK();

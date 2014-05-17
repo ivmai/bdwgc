@@ -1,14 +1,17 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991, 1992 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  */
-/* Boehm, March 28, 1994 2:04 pm PST */
+/* Boehm, May 19, 1994 1:56 pm PDT */
 # include "gc_priv.h"
 
 /*
@@ -43,6 +46,8 @@ word * GC_incomplete_normal_bl;
 word * GC_old_stack_bl;
 word * GC_incomplete_stack_bl;
 
+void GC_clear_bl();
+
 void GC_bl_init()
 {
 # ifndef ALL_INTERIOR_POINTERS
@@ -54,6 +59,8 @@ void GC_bl_init()
         GC_err_printf0("Insufficient memory for black list\n");
         EXIT();
     }
+    GC_clear_bl(GC_old_normal_bl);
+    GC_clear_bl(GC_incomplete_normal_bl);
 # endif
     GC_old_stack_bl = (word *)GC_scratch_alloc((word)(sizeof(page_hash_table)));
     GC_incomplete_stack_bl = (word *)GC_scratch_alloc
@@ -62,6 +69,8 @@ void GC_bl_init()
         GC_err_printf0("Insufficient memory for black list\n");
         EXIT();
     }
+    GC_clear_bl(GC_old_stack_bl);
+    GC_clear_bl(GC_incomplete_stack_bl);
 }
 		
 void GC_clear_bl(doomed)

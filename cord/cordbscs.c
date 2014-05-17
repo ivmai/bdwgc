@@ -1,16 +1,21 @@
 /*
- * Copyright (c) 1993 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1993-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this code for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  *
  * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
+/* Boehm, May 19, 1994 2:18 pm PDT */
 # include "../gc.h"
 # include "cord.h"
+# include <stdlib.h>
 # include <stdio.h>
 # include <string.h>
 
@@ -27,7 +32,7 @@ typedef void (* oom_fn)(void);
 oom_fn CORD_oom_fn = (oom_fn) 0;
 
 # define OUT_OF_MEMORY {  if (CORD_oom_fn != (oom_fn) 0) (*CORD_oom_fn)(); \
-			  abort("Out of memory\n"); }
+			  ABORT("Out of memory\n"); }
 # define ABORT(msg) { fprintf(stderr, "%s\n", msg); abort(); }
 
 typedef unsigned long word;
@@ -98,9 +103,9 @@ typedef union {
 /* indentation level n.							*/
 void CORD_dump_inner(CORD x, unsigned n)
 {
-    register int i;
+    register size_t i;
     
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < (size_t)n; i++) {
         fputs("  ", stdout);
     }
     if (x == 0) {
@@ -266,7 +271,7 @@ CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len)
     if (len <= 0) return(0);
     if (len <= SHORT_LIMIT) {
         register char * result;
-        register int i;
+        register size_t i;
         char buf[SHORT_LIMIT+1];
         register char c;
         
@@ -437,7 +442,7 @@ CORD CORD_substr_checked(CORD x, size_t i, size_t n)
 
 CORD CORD_substr(CORD x, size_t i, size_t n)
 {
-    register int len = CORD_len(x);
+    register size_t len = CORD_len(x);
     
     if (i >= len || n <= 0) return(0);
     	/* n < 0 is impossible in a correct C implementation, but	*/
@@ -698,7 +703,6 @@ CORD CORD_balance(CORD x)
 {
     Forest forest;
     register size_t len;
-    register int depth;
     
     if (x == 0) return(0);
     if (IS_STRING(x)) return(x);
@@ -782,8 +786,8 @@ void CORD__next(register CORD_pos p)
     	
     	if (cur_pos < end_pos) {
     	  /* Fill cache and return. */
-    	    register int i;
-    	    register int limit = cur_pos + FUNCTION_BUF_SZ;
+    	    register size_t i;
+    	    register size_t limit = cur_pos + FUNCTION_BUF_SZ;
     	    register CORD_fn fn = f -> fn;
     	    register void * client_data = f -> client_data;
     	    

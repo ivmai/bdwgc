@@ -1,15 +1,18 @@
 /* 
- * Copyright (c) 1993 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1993-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  *
  * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
-/* Boehm, January 21, 1994 5:10 pm PST */
+/* Boehm, May 19, 1994 2:22 pm PDT */
  
 /*
  * Cords are immutable character strings.  A number of operations
@@ -128,11 +131,11 @@ int CORD_riter(CORD x, CORD_iter_fn f1, void * client_data);
 /* charcter based on a position than on an index.  Unfortunately,	*/
 /* positions are big (order of a few 100 bytes), so allocate them with	*/
 /* caution.								*/
-/* Things in cord_position.h should be treated as opaque, except as	*/
+/* Things in cord_pos.h should be treated as opaque, except as		*/
 /* described below.  Also note that					*/
 /* CORD_pos_fetch, CORD_next and CORD_prev have both macro and function	*/
 /* definitions.  The former may evaluate their argument more than once. */
-# include "cord_position.h"
+# include "cord_pos.h"
 
 /*
 	Visible definitions from above:
@@ -178,7 +181,7 @@ extern void (* CORD_oom_fn)(void);
 void CORD_dump(CORD x);
 
 /* The following could easily be implemented by the client.  They are	*/
-/* provided in cord_extras.c for convenience.				*/
+/* provided in cord_xtra.c for convenience.				*/
 
 /* Concatenate a character to the end of a cord.	*/
 CORD CORD_cat_char(CORD x, char c);
@@ -216,13 +219,19 @@ CORD CORD_chars(char c, size_t i);
 /* CORD_from_file(fopen(...))						*/
 /* CORD_from_file arranges to close the file descriptor when it is no	*/
 /* longer needed (e.g. when the result becomes inaccessible).		*/ 
+/* The file f must be such that ftell reflects the actual character	*/
+/* position in the file, i.e. the number of characters that can be 	*/
+/* or were read with fread.  On UNIX systems this is always true.  On	*/
+/* MS Windows systems, f must be opened in binary mode.			*/
 CORD CORD_from_file(FILE * f);
 
 /* Equivalent to the above, except that the entire file will be read	*/
 /* and the file pointer will be closed immediately.			*/
+/* The binary mode restriction from above does not apply.		*/
 CORD CORD_from_file_eager(FILE * f);
 
 /* Equivalent to the above, except that the file will be read on demand.*/
+/* The binary mode restriction applies.					*/
 CORD CORD_from_file_lazy(FILE * f);
 
 /* Turn a cord into a C string.	The result shares no structure with	*/
@@ -249,7 +258,7 @@ size_t CORD_rchr(CORD x, size_t i, int c);
 
 
 /* The following are also not primitive, but are implemented in 	*/
-/* cord_printf.c.  They provide functionality similar to the ANSI C	*/
+/* cordprnt.c.  They provide functionality similar to the ANSI C	*/
 /* functions with corresponding names, but with the following		*/
 /* additions and changes:						*/
 /* 1. A %r conversion specification specifies a CORD argument.  Field	*/

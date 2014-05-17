@@ -4,11 +4,14 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  *
  */
-/* Boehm, April 6, 1994 12:49 pm PDT */
+/* Boehm, May 19, 1994 2:06 pm PDT */
 
 
 /*
@@ -354,10 +357,6 @@ GC_descr GC_generic_array_descr;
 void GC_init_explicit_typing()
 {
     register int i;
-    ptr_t * eobjfreelist;
-    ptr_t * arobjfreelist;
-    struct hblk ** ereclaim_list;
-    struct hblk ** arreclaim_list;
     DCL_LOCK_STATE;
 
     
@@ -365,23 +364,6 @@ void GC_init_explicit_typing()
      	if (sizeof(struct LeafDescriptor) % sizeof(word) != 0)
      	    ABORT("Bad leaf descriptor size");
 #   endif
-    /* Preallocate before acquiring lock. */
-      eobjfreelist = (ptr_t *)
-          GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(ptr_t), PTRFREE);
-      if (eobjfreelist == 0) ABORT("Couldn't allocate GC_eobjfreelist");
-      BZERO(eobjfreelist, (MAXOBJSZ+1)*sizeof(ptr_t));
-      ereclaim_list = (struct hblk **)
-    	GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(struct hblk *), PTRFREE);
-      if (ereclaim_list == 0) ABORT("Couldn't allocate GC_ereclaim_list");
-      BZERO(ereclaim_list, (MAXOBJSZ+1)*sizeof(struct hblk *));
-      arobjfreelist = (ptr_t *)
-          GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(ptr_t), PTRFREE);
-      if (arobjfreelist == 0) ABORT("Couldn't allocate GC_arobjfreelist");
-      BZERO(arobjfreelist, (MAXOBJSZ+1)*sizeof(ptr_t));
-      arreclaim_list = (struct hblk **)
-    	GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(struct hblk *), PTRFREE);
-      if (arreclaim_list == 0) ABORT("Couldn't allocate GC_arreclaim_list");
-      BZERO(arreclaim_list, (MAXOBJSZ+1)*sizeof(struct hblk *));
     DISABLE_SIGNALS();
     LOCK();
     if (GC_explicit_typing_initialized) {
@@ -391,8 +373,15 @@ void GC_init_explicit_typing()
     }
     GC_explicit_typing_initialized = TRUE;
     /* Set up object kind with simple indirect descriptor. */
-      GC_eobjfreelist = eobjfreelist;
-      GC_ereclaim_list = ereclaim_list;
+      GC_eobjfreelist = (ptr_t *)
+          GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(ptr_t), PTRFREE);
+      if (GC_eobjfreelist == 0) ABORT("Couldn't allocate GC_eobjfreelist");
+      BZERO(GC_eobjfreelist, (MAXOBJSZ+1)*sizeof(ptr_t));
+      GC_ereclaim_list = (struct hblk **)
+    	GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(struct hblk *), PTRFREE);
+      if (GC_ereclaim_list == 0)
+      				ABORT("Couldn't allocate GC_ereclaim_list");
+      BZERO(GC_ereclaim_list, (MAXOBJSZ+1)*sizeof(struct hblk *));
       GC_explicit_kind = GC_n_kinds++;
       GC_obj_kinds[GC_explicit_kind].ok_freelist = GC_eobjfreelist;
       GC_obj_kinds[GC_explicit_kind].ok_reclaim_list = GC_ereclaim_list;
@@ -406,8 +395,14 @@ void GC_init_explicit_typing()
       GC_n_mark_procs++;
         /* Moving this up breaks DEC AXP compiler.      */
     /* Set up object kind with array descriptor. */
-      GC_arobjfreelist = arobjfreelist;
-      GC_arreclaim_list = arreclaim_list;
+      GC_arobjfreelist = (ptr_t *)
+          GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(ptr_t), PTRFREE);
+      if (GC_arobjfreelist == 0) ABORT("Couldn't allocate GC_arobjfreelist");
+      BZERO(GC_arobjfreelist, (MAXOBJSZ+1)*sizeof(ptr_t));
+      GC_arreclaim_list = (struct hblk **)
+    	GC_generic_malloc_inner((MAXOBJSZ+1)*sizeof(struct hblk *), PTRFREE);
+      if (GC_arreclaim_list == 0) ABORT("Couldn't allocate GC_arreclaim_list");
+      BZERO(GC_arreclaim_list, (MAXOBJSZ+1)*sizeof(struct hblk *));
       if (GC_arreclaim_list == 0) ABORT("Couldn't allocate GC_arreclaim_list");
       if (GC_n_mark_procs >= MAX_MARK_PROCS)
       		ABORT("No slot for array mark proc");
@@ -586,7 +581,7 @@ word env;
         /* Push descriptor itself */
         new_mark_stack_ptr++;
         new_mark_stack_ptr -> mse_start = addr + sz - 1;
-        new_mark_stack_ptr -> mse_descr = sizeof(word);
+        new_mark_stack_ptr -> mse_descr = sizeof(word) | DS_LENGTH;
     }
     return(new_mark_stack_ptr);
 }
@@ -760,6 +755,9 @@ DCL_LOCK_STATE;
        lp -> ld_descriptor = leaf.ld_descriptor;
        ((VOLATILE word *)op)[lw - 1] = (word)lp;
    } else {
+       extern unsigned GC_finalization_failures;
+       unsigned ff = GC_finalization_failures;
+       
        ((word *)op)[lw - 1] = (word)complex_descr;
        /* Make sure the descriptor is cleared once there is any danger	*/
        /* it may have been collected.					*/
@@ -767,6 +765,13 @@ DCL_LOCK_STATE;
          GC_general_register_disappearing_link((extern_ptr_t *)
          					  ((word *)op+lw-1),
        					          (extern_ptr_t) op);
+       if (ff != GC_finalization_failures) {
+           /* We may have failed to register op due to lack of memory.	*/
+           /* We were out of memory very recently, so we can safely 	*/
+           /* punt.							*/
+           ((word *)op)[lw - 1] = 0;
+           return(0);
+       }			          
    }
    return((extern_ptr_t) op);
 }

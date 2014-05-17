@@ -4,8 +4,11 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this code for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  *
  * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
@@ -14,9 +17,10 @@
  * implementation.  They serve also serve as example client code for
  * cord_basics.
  */
-/* Boehm, January 4, 1994 5:53 pm PST */
+/* Boehm, May 19, 1994 2:18 pm PDT */
 # include <stdio.h>
 # include <string.h>
+# include <stdlib.h>
 # include "cord.h"
 # include "ec.h"
 # define I_HIDE_POINTERS	/* So we get access to allocation lock.	*/
@@ -39,7 +43,8 @@
 typedef void (* oom_fn)(void);
 
 # define OUT_OF_MEMORY {  if (CORD_oom_fn != (oom_fn) 0) (*CORD_oom_fn)(); \
-			  abort("Out of memory\n"); }
+			  ABORT("Out of memory\n"); }
+# define ABORT(msg) { fprintf(stderr, "%s\n", msg); abort(); }
 
 CORD CORD_cat_char(CORD x, char c)
 {
@@ -152,7 +157,7 @@ int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
     CORD_pos xpos;
     CORD_pos ypos;
     register size_t count;
-    register size_t avail, yavail;
+    register long avail, yavail;
     
     CORD_set_pos(xpos, x, x_start);
     CORD_set_pos(ypos, y, y_start);
@@ -183,10 +188,10 @@ int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
             count += avail;
             if (count > len) avail -= (count - len);
             result = strncmp(CORD_pos_cur_char_addr(xpos),
-            		     CORD_pos_cur_char_addr(ypos), avail);
+            		     CORD_pos_cur_char_addr(ypos), (size_t)avail);
             if (result != 0) return(result);
-            CORD_pos_advance(xpos, avail);
-            CORD_pos_advance(ypos, avail);
+            CORD_pos_advance(xpos, (size_t)avail);
+            CORD_pos_advance(ypos, (size_t)avail);
         }
     }
     return(0);
@@ -211,7 +216,7 @@ char CORD_fetch(CORD x, size_t i)
     CORD_pos xpos;
     
     CORD_set_pos(xpos, x, i);
-    if (!CORD_pos_valid(xpos)) abort("bad index?");
+    if (!CORD_pos_valid(xpos)) ABORT("bad index?");
     return(CORD_pos_fetch(xpos));
 }
 
@@ -317,12 +322,14 @@ size_t CORD_str(CORD x, size_t start, CORD s)
     register size_t start_len;
     const char * s_start;
     unsigned long s_buf = 0;	/* The first few characters of s	*/
-    unsigned long x_buf;	/* Start of candidate substring.	*/
+    unsigned long x_buf = 0;	/* Start of candidate substring.	*/
+    				/* Initialized only to make compilers	*/
+    				/* happy.				*/
     unsigned long mask = 0;
-    register int i;
-    register int match_pos;
+    register size_t i;
+    register size_t match_pos;
     
-    if (s == CORD_EMPTY) return(i);
+    if (s == CORD_EMPTY) return(start);
     if (IS_STRING(s)) {
         s_start = s;
         slen = strlen(s);
@@ -469,11 +476,11 @@ refill_data * client_data;
     
     if (line_start != state -> lf_current
         && fseek(f, line_start, SEEK_SET) != 0) {
-    	    abort("fseek failed");
+    	    ABORT("fseek failed");
     }
     if (fread(new_cache -> data, sizeof(char), LINE_SZ, f)
     	<= file_pos - line_start) {
-    	abort("fread failed");
+    	ABORT("fread failed");
     }
     new_cache -> tag = DIV_LINE_SZ(file_pos);
     /* Store barrier goes here. */
@@ -505,7 +512,7 @@ char CORD_lf_func(size_t i, void * client_data)
 void CORD_lf_close_proc(void * obj, void * client_data)  
 {
     if (fclose(((lf_state *)obj) -> lf_file) != 0) {
-    	abort("CORD_lf_close_proc: fclose failed");
+    	ABORT("CORD_lf_close_proc: fclose failed");
     }
 }			
 
@@ -513,7 +520,6 @@ CORD CORD_from_file_lazy_inner(FILE * f, size_t len)
 {
     register lf_state * state = GC_NEW(lf_state);
     register int i;
-    register int c;
     
     if (state == 0) OUT_OF_MEMORY;
     state -> lf_file = f;
@@ -530,10 +536,10 @@ CORD CORD_from_file_lazy(FILE * f)
     register size_t len;
     
     if (fseek(f, 0l, SEEK_END) != 0) {
-        abort("Bad fd argument - fseek failed");
+        ABORT("Bad fd argument - fseek failed");
     }
     if ((len = ftell(f)) < 0) {
-        abort("Bad fd argument - ftell failed");
+        ABORT("Bad fd argument - ftell failed");
     }
     rewind(f);
     return(CORD_from_file_lazy_inner(f, len));
@@ -546,10 +552,10 @@ CORD CORD_from_file(FILE * f)
     register size_t len;
     
     if (fseek(f, 0l, SEEK_END) != 0) {
-        abort("Bad fd argument - fseek failed");
+        ABORT("Bad fd argument - fseek failed");
     }
     if ((len = ftell(f)) < 0) {
-        abort("Bad fd argument - ftell failed");
+        ABORT("Bad fd argument - ftell failed");
     }
     rewind(f);
     if (len < LAZY_THRESHOLD) {

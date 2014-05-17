@@ -4,12 +4,13 @@ Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
 
-Permission is hereby granted to copy this garbage collector for any purpose,
-provided the above notices are retained on all copies.
+Permission is hereby granted to use or copy this program
+for any purpose,  provided the above notices are retained on all copies.
+Permission to modify the code and to distribute modified code is granted,
+provided the above notices are retained, and a notice that the code was
+modified is included with the above copyright notice.
 
-
-This is version 4.0.  Note that functions were renamed since version 1.9
-to make naming consistent with PCR collectors.
+This is version 4.1 of a conservative garbage collector for C and C++.
 
 HISTORY -
 
@@ -43,6 +44,9 @@ David Chase, then at Olivetti Research, suggested several improvements.
 Scott Schwartz (schwartz@groucho.cse.psu.edu) supplied some of the
 code to save and print call stacks for leak detection on a SPARC.
 Jesse Hull and John Ellis supplied the C++ interface code.
+Zhong Shao performed much of the experimentation that led to the
+current typed allocation facility.  (His dynamic type inference code hasn't
+made it into the released version of the collector, yet.)
 (Blame for misinstallation of these modifications goes to the first author,
 however.)
 
@@ -166,14 +170,16 @@ This will fail without an ANSI C compiler.
 
   The Makefile will generate a library gc.a which you should link against.
 Typing "make cords" will add the cord library to gc.a.
-It is suggested that if you need to replace a piece of the collector
-(e.g. GC_mark_roots.c) you simply list your version ahead of gc.a on the
+Note that this requires an ANSI C compiler.
+
+  It is suggested that if you need to replace a piece of the collector
+(e.g. GC_mark_rts.c) you simply list your version ahead of gc.a on the
 ld command line, rather than replacing the one in gc.a.  (This will
 generate numerous warnings under some versions of AIX, but it still
 works.)
 
   All include files that need to be used by clients will be put in the
-include subdirectory.  (Normally this is just gc.h.  "Make cord" adds
+include subdirectory.  (Normally this is just gc.h.  "Make cords" adds
 "cord.h" and "ec.h".)
 
   The collector currently is designed to run essentially unmodified on
@@ -546,7 +552,7 @@ per MB of accessible memory that needs to be scanned.  Your mileage
 may vary.)  The incremental/generational collection facility helps,
 but is portable only if "stubborn" allocation is used.
   Please address bug reports to boehm@parc.xerox.com.  If you are
-contemplatinga major addition, you might also send mail to ask whether
+contemplating a major addition, you might also send mail to ask whether
 it's already been done.
 
 RECENT VERSIONS:
@@ -767,3 +773,43 @@ Version 4.0:
 - Added GC_get_heap_size().  The previous "equivalent"
   was broken.
 - Restructured the Makefile a bit.  
+
+Since version 4.0:
+- Changed finalization implementation to guarantee that
+  finalization procedures are called outside of the allocation
+  lock, making direct use of the interface a little less dangerous.
+  MAY BREAK EXISTING CLIENTS that assume finalizers
+  are protected by a lock.  Since there seem to be few multithreaded
+  clients that use finalization, this is hopefully not much of
+  a problem.
+- Fixed a gross bug in CORD_prev.
+- Fixed a bug in blacklst.c that could result in unbounded
+  heap growth during startup on machines that do not clear
+  memory obtained from the OS (e.g. win32S).
+- Ported de editor to win32/win32S.  (This is now the only
+  version with a mouse-sensitive UI.)
+- Added GC_malloc_ignore_off_page to allocate large arrays
+  in the presence of ALL_INTERIOR_POINTERS.
+- Changed GC_call_with_alloc_lock to not disable signals in
+  the single-threaded case.
+- Reduced retry count in GC_collect_or_expand for garbage
+  collecting when out of memory.
+- Made uncollectable allocations bypass black-listing, as they
+  should.
+- Fixed a bug in typed_test in test.c that could cause (legitimate)
+  GC crashes.
+- Fixed some potential synchronization problems in finalize.c
+- Fixed a real locking problem in typd_mlc.c.
+- Worked around an AIX 3.2 compiler feature that results in
+  out of bounds memory references.
+- Partially worked around an IRIX5.2 beta problem (which may
+  or may not persist to the final release).
+- Fixed a bug in the heap integrity checking code that could
+  result in explicitly deallocated objects being identified as
+  smashed.  Fixed a bug in the dbg_mlc stack saving code
+  that caused old argument pointers to be considered live.
+- Fixed a bug in CORD_ncmp (and hence CORD_str).
+- Repaired the OS2 port, which had suffered from bit rot
+  in 4.0.  Worked around what appears to be CSet/2 V1.0
+  optimizer bug.
+- Fixed a Makefile bug for target "c++".

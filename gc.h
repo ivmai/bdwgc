@@ -1,14 +1,17 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  */
-/* Boehm, April 6, 1994 10:55 am PDT */
+/* Boehm, May 19, 1994 2:13 pm PDT */
  
 #ifndef _GC_H
 
@@ -98,6 +101,7 @@ extern GC_word GC_free_space_divisor;
 /* If the argument is stubborn, it should not be changeable when freed. */
 /* An object should not be enable for finalization when it is 		*/
 /* explicitly deallocated.						*/
+/* GC_free(0) is a no-op, as required by ANSI C for free.		*/
 #if defined(__STDC__) || defined(__cplusplus)
   extern void GC_free(void * object_addr);
 # else
@@ -148,6 +152,7 @@ void GC_end_stubborn_change(/* p */);
 /* The resulting object has the same kind as the original.		*/
 /* If the argument is stubborn, the result will have changes enabled.	*/
 /* It is an error to have changes enabled for the original object.	*/
+/* Follows ANSI comventions for NULL old_object.			*/
 # if defined(__STDC__) || defined(__cplusplus)
     extern void * GC_realloc(void * old_object, size_t new_size_in_bytes);
 # else
@@ -175,6 +180,8 @@ extern void GC_add_roots(/* low_address, high_address_plus_1 */);
 /* Preferably, this should be called before any other GC procedures.	*/
 /* Calling it later adds to the probability of excess memory		*/
 /* retention.								*/
+/* This is a no-op if the collector was compiled with recognition of	*/
+/* arbitrary interior pointers enabled, which is now the default.	*/
 void GC_register_displacement(/* n */);
 
 /* Explicitly trigger a collection. 	*/
@@ -192,6 +199,26 @@ size_t GC_get_heap_size();
 /* Don't use in leak finding mode.		*/
 /* Ignored if GC_dont_gc is true.		*/
 void GC_enable_incremental();
+
+/* Allocate an object of size lb bytes.  The client guarantees that	*/
+/* as long as the object is live, it will be referenced by a pointer	*/
+/* that points to somewhere within the first 256 bytes of the object.	*/
+/* (This should normally be declared volatile to prevent the compiler	*/
+/* from invalidating this assertion.)  This routine is only useful	*/
+/* if a large array is being allocated.  It reduces the chance of 	*/
+/* accidentally retaining such an array as a result of scanning an	*/
+/* integer that happens to be an address inside the array.  (Actually,	*/
+/* it reduces the chance of the allocator not finding space for such	*/
+/* an array, since it will try hard to avoid introducing such a false	*/
+/* reference.)  On a SunOS 4.X or MS Windows system this is recommended */
+/* for arrays likely to be larger than 100K or so.  For other systems,	*/
+/* or if the collector is not configured to recognize all interior	*/
+/* pointers, the threshold is normally much higher.			*/
+# if defined(__STDC__) || defined(__cplusplus)
+  void * GC_malloc_ignore_off_page(size_t lb);
+# else
+  char * GC_malloc_ignore_off_page(/* size_t lb */);
+# endif
 
 /* Debugging (annotated) allocation.  GC_gcollect will check 		*/
 /* objects allocated in this way for overwrites, etc.			*/
@@ -285,10 +312,7 @@ void GC_register_finalizer(/* void * obj,
 	/* pointers will not be finalized (or collected).	*/
 	/* Thus cycles involving finalizable objects should	*/
 	/* be avoided, or broken by disappearing links.		*/
-	/* fn is invoked with the allocation lock held.  It may */
-	/* not allocate.  (Any storage it might need		*/
-	/* should be preallocated and passed as part of cd.) 	*/
-	/* fn should terminate as quickly as possible, and	*/
+	/* Fn should terminate as quickly as possible, and	*/
 	/* defer extended computation.				*/
 	/* All but the last finalizer registered for an object  */
 	/* is ignored.						*/
@@ -304,6 +328,8 @@ void GC_register_finalizer(/* void * obj,
 	/* a signal, the object may be left with no		*/
 	/* finalization, even if neither the old nor new	*/
 	/* finalizer were NULL.					*/
+	/* Obj should be the nonNULL starting address of an 	*/
+	/* object allocated by GC_malloc or friends.		*/	
 
 /* The following routine may be used to break cycles between	*/
 /* finalizable objects, thus causing cyclic finalizable		*/
@@ -342,6 +368,11 @@ int GC_general_register_disappearing_link(/* void ** link, void * obj */);
 	/* May be registered only once, i.e. with one obj	*/
 	/* value.  This was added after a long email discussion */
 	/* with John Ellis.					*/
+	/* Obj must be a pointer to the first word of an object */
+	/* we allocated.  It is unsafe to explicitly deallocate */
+	/* the object containing link.  Explicitly deallocating */
+	/* obj may or may not cause link to eventually be	*/
+	/* cleared.						*/
 int GC_unregister_disappearing_link(/* void ** link */);
 	/* Returns 0 if link was not actually registered.	*/
 	/* Undoes a registration by either of the above two	*/

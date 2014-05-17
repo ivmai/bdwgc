@@ -2,7 +2,7 @@ The collector currently does not handle multiple threads.  There
 is good reason to believe this is fixable.  (SRC M3 works with
 NT threads.)
 
-The collector has only been compiler under Windows NT, with the
+The collector has only been compiled under Windows NT, with the
 Microsoft tools.
 
 It runs under both win32s and win32, but with different semantics.
@@ -10,7 +10,11 @@ Under win32, all writable pages outside of the heaps and stack are
 scanned for roots.  Thus the collector sees pointers in DLL data
 segments.  Under win32s, only the main data segment is scanned.
 Thus all accessible objects should be excessible from local variables
-or variables in the main data segment.
+or variables in the main data segment.  Alternatively, other data
+segments (e.g. in DLLs) may be registered with the collector by
+calling GC_init() and then GC_register_root_section(a), where
+a is the address of some variable inside the data segment.  (Duplicate
+registrations are ignored, but not terribly quickly.)
 
 (There are two reasons for this.  We didn't want to see many 16:16
 pointers.  And the VirtualQuery call has different semantics under
@@ -20,3 +24,16 @@ The collector test program "gctest" is linked as a GUI application,
 but does not open any windows.  Its output appears in the file
 "gc.log".  It may be started from the file manager.  The hour glass
 cursor will appear as long as it's running.
+
+The cord test program has not been ported (but should port
+easily).  A toy editor (cord/de.exe) based on cords (heavyweight
+strings represented as trees) has been ported and is included.
+It runs fine under either win32 or win32S.  It serves as an example
+of a true Windows application, except that it was written by a
+nonexpert Windows programmer.  (There are some peculiarities
+in the way files are displayed.  The <cr> is displayed explicitly
+for standard DOS text files.  As in the UNIX version, control
+characters are displayed explicitly, but in this case as red text.
+This may be suboptimal for some tastes and/or sets of default
+window colors.)
+

@@ -1,3 +1,16 @@
+/* 
+ * Copyright (c) 1993-1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
+ */
+/* Boehm, May 19, 1994 2:21 pm PDT */
 # include "cord.h"
 # include <stdio.h>
 /* This is a very incomplete test of the cord package.  It knows about	*/
@@ -101,11 +114,19 @@ test_basics()
 
 test_extras()
 {
+#   ifdef __OS2__
+#	define FNAME1 "tmp1"
+#	define FNAME2 "tmp2"
+#   else
+#	define FNAME1 "/tmp/cord_test"
+#	define FNAME2 "/tmp/cord_test2"
+#   endif
     register int i;
     CORD y = "abcdefghijklmnopqrstuvwxyz0123456789";
     CORD x = "{}";
     CORD w, z;
     FILE *f;
+    FILE *f1a, *f1b, *f2;
     
     for (i = 1; i < 100; i++) {
         x = CORD_cat(x, y);
@@ -115,15 +136,15 @@ test_extras()
     if (CORD_cmp(x,CORD_cat(z, CORD_nul(13))) >= 0) ABORT("comparison 2");
     if (CORD_cmp(CORD_cat(x, CORD_nul(13)), z) <= 0) ABORT("comparison 3");
     if (CORD_cmp(x,CORD_cat(z, "13")) >= 0) ABORT("comparison 4");
-    if ((f = fopen("/tmp/cord_test", "w")) == 0) ABORT("open failed");
+    if ((f = fopen(FNAME1, "w")) == 0) ABORT("open failed");
     if (CORD_put(z,f) == EOF) ABORT("CORD_put failed");
     if (fclose(f) == EOF) ABORT("fclose failed");
-    w = CORD_from_file(fopen("/tmp/cord_test", "r"));
+    w = CORD_from_file(f1a = fopen(FNAME1, "rb"));
     if (CORD_len(w) != CORD_len(z)) ABORT("file length wrong");
     if (CORD_cmp(w,z) != 0) ABORT("file comparison wrong");
     if (CORD_cmp(CORD_substr(w, 50*36+2, 36), y) != 0)
     	ABORT("file substr wrong");
-    z = CORD_from_file_lazy(fopen("/tmp/cord_test", "r"));
+    z = CORD_from_file_lazy(f1b = fopen(FNAME1, "rb"));
     if (CORD_cmp(w,z) != 0) ABORT("File conversions differ");
     if (CORD_chr(w, 0, '9') != 37) ABORT("CORD_chr failed 1");
     if (CORD_chr(w, 3, 'a') != 38) ABORT("CORD_chr failed 2");
@@ -132,10 +153,10 @@ test_extras()
     for (i = 1; i < 14; i++) {
         x = CORD_cat(x,x);
     }
-    if ((f = fopen("/tmp/cord_test", "w")) == 0) ABORT("2nd open failed");
+    if ((f = fopen(FNAME2, "w")) == 0) ABORT("2nd open failed");
     if (CORD_put(x,f) == EOF) ABORT("CORD_put failed");
     if (fclose(f) == EOF) ABORT("fclose failed");
-    w = CORD_from_file(fopen("/tmp/cord_test", "r"));
+    w = CORD_from_file(f2 = fopen(FNAME2, "rb"));
     if (CORD_len(w) != CORD_len(x)) ABORT("file length wrong");
     if (CORD_cmp(w,x) != 0) ABORT("file comparison wrong");
     if (CORD_cmp(CORD_substr(w, 1000*36, 36), y) != 0)
@@ -144,12 +165,21 @@ test_extras()
     	ABORT("char * file substr wrong");
     if (strcmp(CORD_substr(w, 1000*36, 2), "ab") != 0)
     	ABORT("short file substr wrong");
-    if (remove("/tmp/cord_test") != 0) ABORT("remove failed");
     if (CORD_str(x,1,"9a") != 35) ABORT("CORD_str failed 1");
     if (CORD_str(x,0,"9abcdefghijk") != 35) ABORT("CORD_str failed 2");
     if (CORD_str(x,0,"9abcdefghijx") != CORD_NOT_FOUND)
     	ABORT("CORD_str failed 3");
     if (CORD_str(x,0,"9>") != CORD_NOT_FOUND) ABORT("CORD_str failed 4");
+    if (remove(FNAME1) != 0) {
+    	/* On some systems, e.g. OS2, this may fail if f1 is still open. */
+    	if ((fclose(f1a) == EOF) & (fclose(f1b) == EOF))
+    		ABORT("fclose(f1) failed");
+    	if (remove(FNAME1) != 0) ABORT("remove 1 failed");
+    }
+    if (remove(FNAME2) != 0) {
+    	if (fclose(f2) == EOF) ABORT("fclose(f2) failed");
+    	if (remove(FNAME2) != 0) ABORT("remove 2 failed");
+    }
 }
 
 test_printf()

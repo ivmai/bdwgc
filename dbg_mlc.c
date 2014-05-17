@@ -5,10 +5,13 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  */
-/* Boehm, April 5, 1994 1:52 pm PDT */
+/* Boehm, May 19, 1994 2:07 pm PDT */
 # include "gc_priv.h"
 
 /* Do we want to and know how to save the call stack at the time of	*/
@@ -32,7 +35,7 @@
 #ifdef SAVE_CALL_CHAIN
     struct callinfo {
 	word ci_pc;
-	word ci_arg[NARGS];
+	word ci_arg[NARGS];	/* bit-wise complement to avoid retention */
     };
 #endif
 
@@ -72,7 +75,7 @@ struct callinfo info[NFRAMES];
       
       info[nframes].ci_pc = fp->fr_savpc;
       for (i = 0; i < NARGS; i++) {
-	info[nframes].ci_arg[i] = fp->fr_arg[i];
+	info[nframes].ci_arg[i] = ~(fp->fr_arg[i]);
       }
   }
   if (nframes < NFRAMES) info[nframes].ci_pc = 0;
@@ -89,7 +92,8 @@ struct callinfo info[NFRAMES];
      	GC_err_printf1("\t##PC##= 0x%X\n\t\targs: ", info[i].ci_pc);
      	for (j = 0; j < NARGS; j++) {
      	    if (j != 0) GC_err_printf0(", ");
-     	    GC_err_printf2("%d (0x%X)", info[i].ci_arg[j],info[i].ci_arg[j]);
+     	    GC_err_printf2("%d (0x%X)", ~(info[i].ci_arg[j]),
+     	    				~(info[i].ci_arg[j]));
      	}
      	GC_err_printf0("\n");
     }
@@ -118,6 +122,10 @@ ptr_t p;
     if (HBLKPTR((ptr_t)ohdr) != HBLKPTR((ptr_t)body)
         || sz < sizeof (oh)) {
         return(FALSE);
+    }
+    if (ohdr -> oh_sz == sz) {
+    	/* Object may have had debug info, but has been deallocated	*/
+    	return(FALSE);
     }
     if (ohdr -> oh_sf == (START_FLAG ^ (word)body)) return(TRUE);
     if (((word *)ohdr)[BYTES_TO_WORDS(sz)-1] == (END_FLAG ^ (word)body)) {

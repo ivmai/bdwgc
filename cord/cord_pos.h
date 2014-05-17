@@ -1,3 +1,16 @@
+/* 
+ * Copyright (c) 1993-1994 by Xerox Corporation.  All rights reserved.
+ *
+ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ *
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
+ */
+/* Boehm, May 19, 1994 2:23 pm PDT */
 # ifndef CORD_POSITION_H
 
 /* The representation of CORD_position.  This is private to the	*/
@@ -46,7 +59,7 @@ CORD CORD_pos_to_cord(CORD_pos p);
 size_t CORD_pos_to_index(CORD_pos p);
 	
 /* Fetch the character located at the given position:	*/
-char CORD_pos_fetch(register CORD_pos p);
+char CORD_pos_fetch(CORD_pos p);
 	
 /* Initialize the position to refer to the give cord and index.	*/
 /* Note that this is the most expensive function on positions:	*/
@@ -65,7 +78,10 @@ void CORD_prev(CORD_pos p);
 /* Is the position valid, i.e. inside the cord?		*/
 int CORD_pos_valid(CORD_pos p);
 
- 
+char CORD__pos_fetch(CORD_pos);
+void CORD__next(CORD_pos);
+void CORD__prev(CORD_pos);
+
 #define CORD_pos_fetch(p)	\
     (((p)[0].cur_end != 0)? \
      	(p)[0].cur_leaf[(p)[0].cur_pos - (p)[0].cur_start] \
@@ -73,13 +89,13 @@ int CORD_pos_valid(CORD_pos p);
 
 #define CORD_next(p)	\
     (((p)[0].cur_pos + 1 < (p)[0].cur_end)? \
-    	((p)[0].cur_pos++, 1) \
-    	: CORD__next(p))
+    	(p)[0].cur_pos++ \
+    	: (CORD__next(p), 0))
 
 #define CORD_prev(p)	\
     (((p)[0].cur_end != 0 && (p)[0].cur_pos > (p)[0].cur_start)? \
-    	((p)[0].cur_pos--, 1) \
-    	: CORD__next(p))
+    	(p)[0].cur_pos-- \
+    	: (CORD__prev(p), 0))
 
 #define CORD_pos_to_index(p) ((p)[0].cur_pos)
 

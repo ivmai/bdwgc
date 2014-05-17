@@ -25,6 +25,12 @@ CFLAGS= -O -DALL_INTERIOR_POINTERS -DSILENT
 # -DSMALL_CONFIG tries to tune the collector for small heap sizes,
 #   usually causing it to use less space in such situations.
 #   Incremental collection no longer works in this case.
+# -DDONT_ADD_BYTE_AT_END is meaningful only with
+#   -DALL_INTERIOR_POINTERS.  Normally -DALL_INTERIOR_POINTERS
+#   causes all objects to be padded so that pointers just past the end of
+#   an object can be recognized.  This can be expensive.  (The padding
+#   is normally more than one byte due to alignment constraints.)
+#   -DDONT_ADD_BYTE_AT_END disables the padding.
 
 AR= ar
 RANLIB= ranlib
@@ -39,19 +45,20 @@ OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers
 
 CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c typd_mlc.c
 
-CORD_SRCS=  cord/cord_basics.c cord/cord_extras.c cord/cord_printf.c cord/de.c cord/cord_test.c cord/cord.h cord/ec.h cord/cord_position.h
+CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c cord/cord.h cord/ec.h cord/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC
 
-CORD_OBJS=  cord/cord_basics.o cord/cord_extras.o cord/cord_printf.o
+CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
 SRCS= $(CSRCS) mips_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s sparc_mach_dep.s gc.h gc_typed.h gc_hdrs.h gc_priv.h gc_private.h config.h gc_mark.h gc_inl.h gc_inline.h gc.man if_mach.c if_not_there.c gc_c++.cc gc_c++.h $(CORD_SRCS)
 
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE \
            README test.c setjmp_t.c SMakefile.amiga SCoptions.amiga \
            README.amiga README.win32 cord/README include/gc.h \
-           include/gc_typed.h README.QUICK callprocs
+           include/gc_typed.h README.QUICK callprocs pc_excludes \
+           barrett_diagram README.OS2
 
 CORD_INCLUDE_FILES= $(srcdir)/gc.h $(srcdir)/cord/cord.h $(srcdir)/cord/ec.h \
-           $(srcdir)/cord/cord_position.h
+           $(srcdir)/cord/cord_pos.h
 
 # Libraries needed for curses applications.  Only needed for de.
 CURSES= -lcurses -ltermlib
@@ -89,15 +96,15 @@ gc.a: $(OBJS)
 	$(RANLIB) gc.a || cat /dev/null
 #	ignore ranlib failure; that usually means it doesn't exist, and isn't needed
 
-cords: $(CORD_OBJS) cord/cord_test
+cords: $(CORD_OBJS) cord/cordtest
 	$(AR) ru gc.a $(CORD_OBJS)
 	$(RANLIB) gc.a || cat /dev/null
 	cp $(srcdir)/cord/cord.h include/cord.h
 	cp $(srcdir)/cord/ec.h include/ec.h
-	cp $(srcdir)/cord/cord_position.h include/cord_position.h
+	cp $(srcdir)/cord/cord_pos.h include/cord_pos.h
 
-gc_c++.o: $(srcdir)/gc_c++..cc $(srcdir)/gc_c++.h
-	$(CXX) -c -O $(srcdir)/gc_c++..cc
+gc_c++.o: $(srcdir)/gc_c++.cc $(srcdir)/gc_c++.h
+	$(CXX) -c -O $(srcdir)/gc_c++.cc
 	
 c++: gc_c++.o $(srcdir)/gc_c++.h
 	$(AR) ru gc.a gc_c++.o
@@ -118,24 +125,29 @@ mark_rts.o: $(srcdir)/mark_rts.c if_mach if_not_there
 	./if_not_there mark_rts.o $(CC) -c $(CFLAGS) $(srcdir)/mark_rts.c
 #	work-around for DEC optimizer tail recursion elimination bug
 
-cord/cord_basics.o: $(srcdir)/cord/cord_basics.c $(CORD_INCLUDE_FILES)
-	$(CC) $(CFLAGS) -c -o cord/cord_basics.o $(srcdir)/cord/cord_basics.c
+cord/cordbscs.o: $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
+	$(CC) $(CFLAGS) -c $(srcdir)/cord/cordbscs.c
+	mv cordbscs.o cord/cordbscs.o
+#  not all compilers understand -o filename
 
-cord/cord_extras.o: $(srcdir)/cord/cord_extras.c $(CORD_INCLUDE_FILES)
-	$(CC) $(CFLAGS) -c -o cord/cord_extras.o $(srcdir)/cord/cord_extras.c
+cord/cordxtra.o: $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
+	$(CC) $(CFLAGS) -c $(srcdir)/cord/cordxtra.c
+	mv cordxtra.o cord/cordxtra.o
 
-cord/cord_printf.o: $(srcdir)/cord/cord_printf.c $(CORD_INCLUDE_FILES)
-	$(CC) $(CFLAGS) -c -o cord/cord_printf.o $(srcdir)/cord/cord_printf.c
+cord/cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
+	$(CC) $(CFLAGS) -c $(srcdir)/cord/cordprnt.c
+	mv cordprnt.o cord/cordprnt.o
 
-cord/cord_test: $(srcdir)/cord/cord_test.c $(CORD_OBJS) gc.a
-	rm -f cord/cord_test
-	./if_mach SPARC SUNOS5 $(CC) $(CFLAGS) -o cord/cord_test $(srcdir)/cord/cord_test.c $(CORD_OBJS) gc.a -lthread
-	./if_not_there cord/cord_test $(CC) $(CFLAGS) -o cord/cord_test $(srcdir)/cord/cord_test.c $(CORD_OBJS) gc.a
+cord/cordtest: $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a
+	rm -f cord/cordtest
+	./if_mach SPARC SUNOS5 $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a -lthread
+	./if_not_there cord/cord_test $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a
 
-cord/de: $(srcdir)/cord/de.c $(CORD_OBJS) gc.a
+cord/de: $(srcdir)/cord/de.c $(srcdir)/cord/cordbscs.o $(srcdir)/cord/cordxtra.o gc.a
 	rm -f cord/de
-	./if_mach SPARC SUNOS5 $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c $(CORD_OBJS) gc.a $(CURSES) -lthread
-	./if_not_there cord/de $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c $(CORD_OBJS) gc.a $(CURSES)
+	./if_mach SPARC SUNOS5 $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c $(srcdir)/cord/cordbscs.o $(srcdir)/cord/cordxtra.o gc.a $(CURSES) -lthread
+	./if_mach RS6000 "" $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c $(srcdir)/cord/cordbscs.o $(srcdir)/cord/cordxtra.o gc.a -lcurses
+	./if_not_there cord/de $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c $(srcdir)/cord/cordbscs.o $(srcdir)/cord/cordxtra.o gc.a $(CURSES)
 
 if_mach: $(srcdir)/if_mach.c $(srcdir)/config.h
 	$(CC) $(CFLAGS) -o if_mach $(srcdir)/if_mach.c
@@ -146,7 +158,7 @@ if_not_there: $(srcdir)/if_not_there.c
 clean: 
 	rm -f gc.a test.o gctest output-local output-diff $(OBJS) \
 	      setjmp_test  mon.out gmon.out a.out core if_not_there if_mach \
-	      $(CORD_OBJS) cord/cord_test cord/de
+	      $(CORD_OBJS) cord/cordtest cord/de
 	-rm -f *~
 
 gctest: test.o gc.a if_mach if_not_there
@@ -166,11 +178,25 @@ setjmp_test: $(srcdir)/setjmp_t.c $(srcdir)/gc.h if_mach if_not_there
 test: setjmp_test gctest
 	./setjmp_test
 	./gctest
-	make cord/cord_test
-	cord/cord_test
+	make cord/cordtest
+	cord/cordtest
 
 gc.tar: $(SRCS) $(OTHER_FILES)
 	tar cvf gc.tar $(SRCS) $(OTHER_FILES)
+	
+pc_gc.tar: $(SRCS) $(OTHER_FILES)
+	tar cvfX pc_gc.tar pc_excludes $(SRCS) $(OTHER_FILES)
+
+floppy: pc_gc.tar
+	-mmd a:/cord
+	-mmd a:/include
+	mkdir /tmp/pc_gc
+	cat pc_gc.tar | (cd /tmp/pc_gc; tar xvf -)
+	-mcopy -tmn /tmp/pc_gc/* a:
+	-mcopy -tmn /tmp/pc_gc/cord/* a:/cord
+	-mcopy -mn /tmp/pc_gc/cord/de_win.ICO a:/cord
+	-mcopy -tmn /tmp/pc_gc/include/* a:/cord
+	rm -r /tmp/pc_gc
 
 gc.tar.Z: gc.tar
 	compress gc.tar

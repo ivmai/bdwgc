@@ -5,10 +5,13 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  */
-/* Boehm, March 28, 1994 2:04 pm PST */
+/* Boehm, May 19, 1994 2:08 pm PDT */
  
 /*
  * This implements:
@@ -41,14 +44,14 @@ ptr_t h;
  
 static ptr_t scratch_free_ptr = 0;
  
-static ptr_t scratch_end_ptr = 0;
+ptr_t GC_scratch_end_ptr = 0;
  
 ptr_t GC_scratch_alloc(bytes)
 register word bytes;
 {
     register ptr_t result = scratch_free_ptr;
     scratch_free_ptr += bytes;
-    if (scratch_free_ptr <= scratch_end_ptr) {
+    if (scratch_free_ptr <= GC_scratch_end_ptr) {
         return(result);
     }
     {
@@ -68,7 +71,7 @@ register word bytes;
             return((ptr_t)GET_MEM(bytes));
         }
         scratch_free_ptr = result;
-        scratch_end_ptr = scratch_free_ptr + bytes_to_get;
+        GC_scratch_end_ptr = scratch_free_ptr + bytes_to_get;
         return(GC_scratch_alloc(bytes));
     }
 }

@@ -1,19 +1,22 @@
 /*
- * Copyright (c) 1993 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1993-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this code for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  *
  * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
 /*
- * A really dumb text editor based on cords.
+ * A really simple-minded text editor based on cords.
  * Things it does right:
  * 	No size bounds.
- *	Infinite undo.
+ *	Inbounded undo.
  *	Shouldn't crash no matter what file you invoke it on (e.g. /vmunix)
  *		(Make sure /vmunix is not writable before you try this.)
  *	Scrolls horizontally.
@@ -23,11 +26,19 @@
  *	The redisplay algorithm doesn't let curses do the scrolling.
  *	The rule for moving the window over the file is suboptimal.
  */
-/* Boehm, January 5, 1994 2:35 pm PST */
+/* Boehm, May 19, 1994 2:20 pm PDT */
 #include <stdio.h>
-#include <curses.h>
 #include "../gc.h"
 #include "cord.h"
+#ifdef WIN32
+#  include <windows.h>
+#  include "de_win.h"
+#else
+#  include <curses.h>
+#  define de_error(s) { fprintf(stderr, s); sleep(2); }
+#endif
+#include "de_cmds.h"
+
 
 /* List of line number to position mappings, in descending order. */
 /* There may be holes.						  */
@@ -160,6 +171,7 @@ void del_hist(void)
 CORD * screen = 0;
 int screen_size = 0;
 
+# ifndef WIN32
 /* Replace a line in the curses stdscr.	All control characters are	*/
 /* displayed as upper case characters in standout mode.  This isn't	*/
 /* terribly appropriate for tabs.					*/
@@ -174,6 +186,8 @@ void replace_line(int i, CORD s)
     }
     if (CORD_cmp(screen[i], s) != 0) {
         move(i,0); clrtoeol();
+        /* A gross workaround for an apparent curses bug: */
+            if (i == LINES-1) s = CORD_substr(s, 0, CORD_len(s) - 1);
         CORD_FOR (p, s) {
             c = CORD_pos_fetch(p) & 0x7f;
             if (iscntrl(c)) {
@@ -185,6 +199,9 @@ void replace_line(int i, CORD s)
     	screen[i] = s;
     }
 }
+#else
+# define replace_line(i,s) invalidate_line(i)
+#endif
 
 /* Return up to COLS characters of the line of s starting at pos,	*/
 /* returning only characters after the given column.			*/
@@ -200,6 +217,20 @@ CORD retrieve_line(CORD s, size_t pos, unsigned column)
     if (len < 0) len = 0;
     return(CORD_substr(s, pos + column, len));
 }
+
+# ifdef WIN32
+#   define refresh();
+
+    CORD retrieve_screen_line(int i)
+    {
+    	register size_t pos;
+    	
+    	invalidate_map(dis_line + LINES);	/* Prune search */
+    	pos = line_pos(dis_line + i, 0);
+    	if (pos == CORD_NOT_FOUND) return(CORD_EMPTY);
+    	return(retrieve_line(current, pos, dis_col));
+    }
+# endif
 
 /* Display the visible section of the current file	 */
 void redisplay(void)
@@ -222,22 +253,29 @@ done:
     need_redisplay = NONE;
 }
 
+int dis_granularity;
+
 /* Update dis_line, dis_col, and dis_pos to make cursor visible.	*/
 /* Assumes line, col, dis_line, dis_pos are in bounds.			*/
 void normalize_display()
 {
     int old_line = dis_line;
     int old_col = dis_col;
-    int i;
     
-    while (dis_line > line) dis_line -= 10;
-    while (dis_col > col) dis_col -= 10;
-    while (line >= dis_line + LINES) dis_line += 10;
-    while (col >= dis_col + COLS) dis_col += 10;
+    dis_granularity = 1;
+    if (LINES > 15 && COLS > 15) dis_granularity = 5;
+    while (dis_line > line) dis_line -= dis_granularity;
+    while (dis_col > col) dis_col -= dis_granularity;
+    while (line >= dis_line + LINES) dis_line += dis_granularity;
+    while (col >= dis_col + COLS) dis_col += dis_granularity;
     if (old_line != dis_line || old_col != dis_col) {
         need_redisplay = ALL;
     }
 }
+
+# ifndef WIN32
+#   define move_cursor(x,y) move(y,x)
+# endif
 
 /* Adjust display so that cursor is visible; move cursor into position	*/
 /* Update screen if necessary.						*/
@@ -245,9 +283,11 @@ void fix_cursor(void)
 {
     normalize_display();
     if (need_redisplay != NONE) redisplay();
-    move(line - dis_line, col - dis_col);
+    move_cursor(col - dis_col, line - dis_line);
     refresh();
-    fflush(stdout);
+#   ifndef WIN32
+      fflush(stdout);
+#   endif
 }
 
 /* Make sure line, col, and dis_pos are somewhere inside file.	*/
@@ -256,7 +296,7 @@ void fix_pos()
 {
     int my_col = col;
     
-    if (line > current_len) line = current_len;
+    if ((size_t)line > current_len) line = current_len;
     file_pos = line_pos(line, &my_col);
     if (file_pos == CORD_NOT_FOUND) {
         for (line = current_map -> line, file_pos = current_map -> pos;
@@ -269,6 +309,7 @@ void fix_pos()
     }
 }
 
+#ifndef WIN32
 /*
  * beep() is part of some curses packages and not others.
  * We try to match the type of the builtin one, if any.
@@ -282,103 +323,88 @@ void fix_pos()
     putc('\007', stderr);
     return(0);
 }
+#else
+#  define beep() Beep(1000 /* Hz */, 300 /* msecs */) 
+#endif
 
-# define UP '\020'	/* ^P */
-# define DOWN '\016'	/* ^N */
-# define LEFT '\002'	/* ^B */
-# define RIGHT '\006'	/* ^F */
-# define DEL '\177'	/* ^? */
-# define BS '\010'	/* ^H */
-# define UNDO '\025'	/* ^U */
-# define WRITE '\027'	/* ^W */
-# define QUIT '\004'	/* ^D */
-# define REPEAT '\022'	/* ^R */
-# define LOCATE '\014'	/* ^L */
-# define TOP '\024'	/* ^T */
-
-main(argc, argv)
-int argc;
-char ** argv;
-{
-    FILE * f, * out;
-    int c;
-    CORD initial;
 #   define NO_PREFIX -1
 #   define BARE_PREFIX -2
-    int repeat_count = NO_PREFIX;
-    int locate_mode = 0;	/* Currently between 2 ^Ls	*/
-    CORD locate_string = CORD_EMPTY;
-    int i, file_len;
-    int need_fix_pos; 
+int repeat_count = NO_PREFIX;	/* Current command prefix. */
 
+int locate_mode = 0;			/* Currently between 2 ^Ls	*/
+CORD locate_string = CORD_EMPTY;	/* Current search string.	*/
+
+char * arg_file_name;
+
+#ifdef WIN32
+/* Change the current position to whatever is currently displayed at	*/
+/* the given SCREEN coordinates.					*/
+void set_position(int c, int l)
+{
+    line = l + dis_line;
+    col = c + dis_col;
+    fix_pos();
+    move_cursor(col - dis_col, line - dis_line);
+}
+#endif /* WIN32 */
+
+/* Perform the command associated with character c.  C may be an	*/
+/* integer > 256 denoting a windows command, one of the above control	*/
+/* characters, or another ASCII character to be used as either a 	*/
+/* character to be inserted, a repeat count, or a search string, 	*/
+/* depending on the current state.					*/
+void do_command(int c)
+{
+    int i;
+    int need_fix_pos;
+    FILE * out;
     
-    if (argc != 2) goto usage;
-    if ((f = fopen(argv[1], "r")) == NULL) {
-     	initial = "\n";
-    } else {
-        initial = CORD_from_file(f);
-        if (initial == CORD_EMPTY
-            || CORD_fetch(initial, CORD_len(initial)-1) != '\n') {
-            initial = CORD_cat(initial, "\n");
-        }
-    }
-    add_map(0,0);
-    add_hist(initial);
-    now -> map = current_map;
-    now -> previous = now;  /* Can't back up further: beginning of the world */
-    setvbuf(stdout, GC_MALLOC_ATOMIC(8192), _IOFBF, 8192);
-    initscr();
-    noecho(); nonl(); cbreak();
-    need_redisplay = ALL;
-    fix_cursor();
-    
-    while ((c = getchar()) != QUIT) {
-      if ( c == '\r') c = '\n';
-      if (locate_mode) {
-          size_t new_pos;
+    if ( c == '\r') c = '\n';
+    if (locate_mode) {
+        size_t new_pos;
           
-          if (c == LOCATE) {
+        if (c == LOCATE) {
               locate_mode = 0;
               locate_string = CORD_EMPTY;
-              continue;
-          }
-          locate_string = CORD_cat_char(locate_string,c);
-          new_pos = CORD_str(current, file_pos - CORD_len(locate_string) + 1,
-          		     locate_string);
-          if (new_pos != CORD_NOT_FOUND) {
-              need_redisplay = ALL;
-              new_pos += CORD_len(locate_string);
-              for (;;) {
-              	  file_pos = line_pos(line + 1, 0);
-              	  if (file_pos > new_pos) break;
-              	  line++;
-              }
-              col = new_pos - line_pos(line, 0);
-              file_pos = new_pos;
-              fix_cursor();
-          } else {
-              locate_string = CORD_substr(locate_string, 0,
-              				  CORD_len(locate_string) - 1);
-              beep();
-          }
-          continue;
-      }
-      if ( c == REPEAT ) {
-      	repeat_count = BARE_PREFIX; continue;
-      } else if (isdigit(c)){
-        if (repeat_count == BARE_PREFIX) {
-          repeat_count = c - '0'; continue;
-        } else if (repeat_count != NO_PREFIX) {
-          repeat_count = 10 * repeat_count + c - '0'; continue;
+              return;
         }
-      }
-      if (repeat_count == NO_PREFIX) repeat_count = 1;
-      if (repeat_count == BARE_PREFIX && (c == UP || c == DOWN)) {
-      	repeat_count = LINES/2;
-      }
-      if (repeat_count == BARE_PREFIX) repeat_count = 8;
-      need_fix_pos = 0;
-      for (i = 0; i < repeat_count; i++) {
+        locate_string = CORD_cat_char(locate_string, (char)c);
+        new_pos = CORD_str(current, file_pos - CORD_len(locate_string) + 1,
+          		   locate_string);
+        if (new_pos != CORD_NOT_FOUND) {
+            need_redisplay = ALL;
+            new_pos += CORD_len(locate_string);
+            for (;;) {
+              	file_pos = line_pos(line + 1, 0);
+              	if (file_pos > new_pos) break;
+              	line++;
+            }
+            col = new_pos - line_pos(line, 0);
+            file_pos = new_pos;
+            fix_cursor();
+        } else {
+            locate_string = CORD_substr(locate_string, 0,
+              				CORD_len(locate_string) - 1);
+            beep();
+        }
+        return;
+    }
+    if (c == REPEAT) {
+      	repeat_count = BARE_PREFIX; return;
+    } else if (c < 0x100 && isdigit(c)){
+        if (repeat_count == BARE_PREFIX) {
+          repeat_count = c - '0'; return;
+        } else if (repeat_count != NO_PREFIX) {
+          repeat_count = 10 * repeat_count + c - '0'; return;
+        }
+    }
+    if (repeat_count == NO_PREFIX) repeat_count = 1;
+    if (repeat_count == BARE_PREFIX && (c == UP || c == DOWN)) {
+      	repeat_count = LINES - dis_granularity;
+    }
+    if (repeat_count == BARE_PREFIX) repeat_count = 8;
+    need_fix_pos = 0;
+    for (i = 0; i < repeat_count; i++) {
         switch(c) {
           case LOCATE:
             locate_mode = 1;
@@ -430,9 +456,9 @@ char ** argv;
      	    invalidate_map(line);
      	    break;
      	  case WRITE:
-    	    if ((out = fopen(argv[1], "w")) == NULL
+    	    if ((out = fopen(arg_file_name, "wb")) == NULL
   	        || CORD_put(current, out) == EOF) {
-        	fprintf(stderr, "Write failed\n"); sleep(2);
+        	de_error("Write failed\n");
         	need_redisplay = ALL;
             } else {
                 fclose(out);
@@ -443,7 +469,8 @@ char ** argv;
      	        CORD left_part = CORD_substr(current, 0, file_pos);
      	        CORD right_part = CORD_substr(current, file_pos, current_len);
      	        
-     	        add_hist(CORD_cat(CORD_cat_char(left_part, c), right_part));
+     	        add_hist(CORD_cat(CORD_cat_char(left_part, (char)c),
+     	        		  right_part));
      	        invalidate_map(line);
      	        if (c == '\n') {
      	            col = 0; line++; file_pos++;
@@ -455,10 +482,52 @@ char ** argv;
      	        break;
      	    }
         }
-      }
-      if (need_fix_pos) fix_pos();
-      fix_cursor();
-      repeat_count = NO_PREFIX;
+    }
+    if (need_fix_pos) fix_pos();
+    fix_cursor();
+    repeat_count = NO_PREFIX;
+}
+
+/* OS independent initialization */
+void generic_init(void)
+{
+    FILE * f;
+    CORD initial;
+    
+    if ((f = fopen(arg_file_name, "rb")) == NULL) {
+     	initial = "\n";
+    } else {
+        initial = CORD_from_file(f);
+        if (initial == CORD_EMPTY
+            || CORD_fetch(initial, CORD_len(initial)-1) != '\n') {
+            initial = CORD_cat(initial, "\n");
+        }
+    }
+    add_map(0,0);
+    add_hist(initial);
+    now -> map = current_map;
+    now -> previous = now;  /* Can't back up further: beginning of the world */
+    need_redisplay = ALL;
+    fix_cursor();
+}
+
+#ifndef WIN32
+
+main(argc, argv)
+int argc;
+char ** argv;
+{
+    int c;
+    CORD initial;
+    
+    if (argc != 2) goto usage;
+    arg_file_name = argv[1];
+    setvbuf(stdout, GC_MALLOC_ATOMIC(8192), _IOFBF, 8192);
+    initscr();
+    noecho(); nonl(); cbreak();
+    generic_init();
+    while ((c = getchar()) != QUIT) {
+    	do_command(c);
     }
 done:
     endwin();
@@ -470,3 +539,5 @@ usage:
     fprintf(stderr, "Top: ^T   Locate (search, find): ^L text ^L\n");
     exit(1);
 }
+
+#endif  /* !WIN32 */

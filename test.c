@@ -8,7 +8,7 @@
  * Permission is hereby granted to copy this garbage collector for any purpose,
  * provided the above notices are retained on all copies.
  */
-/* Boehm, April 6, 1994 12:19 pm PDT */
+/* Boehm, May 6, 1994 3:32 pm PDT */
 /* An incomplete test for the garbage collector.  		*/
 /* Some more obscure entry points are not tested at all.	*/
 
@@ -327,11 +327,25 @@ int dropped_something = 0;
 # endif
 {
   tn * t = (tn *)obj;
+
+# ifdef PCR
+     PCR_ThCrSec_EnterSys();
+# endif
+# ifdef SOLARIS_THREADS
+    static mutex_t incr_lock;
+    mutex_lock(&incr_lock);
+# endif
   if ((int)client_data != t -> level) {
      (void)GC_printf0("Wrong finalization data - collector is broken\n");
      FAIL;
   }
   finalized_count++;
+# ifdef PCR
+    PCR_ThCrSec_ExitSys();
+# endif
+# ifdef SOLARIS_THREADS
+    mutex_unlock(&incr_lock);
+# endif
 }
 
 size_t counter = 0;
@@ -365,12 +379,12 @@ int n;
         {
 #	  ifdef PCR
  	    PCR_ThCrSec_EnterSys();
- 	    /* Losing a count here causes erroneous report of failure. */
 #	  endif
 #	  ifdef SOLARIS_THREADS
 	    static mutex_t incr_lock;
 	    mutex_lock(&incr_lock);
 #	  endif
+		/* Losing a count here causes erroneous report of failure. */
           finalizable_count++;
           my_index = live_indicators_count++;
 #	  ifdef PCR
@@ -524,7 +538,7 @@ void typed_test()
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
-        new = (GC_word *) GC_malloc_explicitly_typed(13 * sizeof(GC_word), d3);
+        new = (GC_word *) GC_malloc_explicitly_typed(33 * sizeof(GC_word), d3);
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
@@ -596,6 +610,9 @@ void check_heap_stats()
     }
 #   ifdef GC_DEBUG
 	max_heap_sz *= 2;
+#       ifdef SPARC
+	    max_heap_sz *= 2;
+#       endif
 #   endif
     /* Garbage collect repeatedly so that all inaccessible objects	*/
     /* can be finalized.						*/
@@ -672,7 +689,8 @@ void check_heap_stats()
 	        GC_debug_end_stubborn_change, GC_debug_malloc_uncollectable,
 	        GC_debug_free, GC_debug_realloc, GC_generic_malloc_words_small,
 	        GC_init, GC_make_closure, GC_debug_invoke_finalizer,
-	        GC_page_was_ever_dirty, GC_is_fresh);
+	        GC_page_was_ever_dirty, GC_is_fresh,
+		GC_malloc_ignore_off_page);
 #   endif
     return(0);
 }

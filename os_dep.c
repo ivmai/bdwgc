@@ -4,10 +4,13 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  */
-/* Boehm, April 4, 1994 3:08 pm PDT */
+/* Boehm, May 19, 1994 2:10 pm PDT */
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA)
 #   include <sys/types.h>
 # endif
@@ -338,7 +341,7 @@ ptr_t GC_get_stack_base()
   /* Some tools to implement HEURISTIC2	*/
 #   define MIN_PAGE_SIZE 256	/* Smallest conceivable page size, bytes */
 #   include <setjmp.h>
-    /* static */ VOLATILE jmp_buf GC_jmp_buf;
+    /* static */ jmp_buf GC_jmp_buf;
     
     /*ARGSUSED*/
     void GC_fault_handler(sig)
@@ -594,7 +597,7 @@ void GC_register_data_segments()
      return(FALSE);
   }
   
-  void GC_register_data_segments()
+  void GC_register_root_section(ptr_t static_root)
   {
       MEMORY_BASIC_INFORMATION buf;
       SYSTEM_INFO sysinfo;
@@ -603,10 +606,9 @@ void GC_register_data_segments()
       LPVOID p;
       char * base;
       char * limit, * new_limit;
-      static char dummy;
     
       if (!GC_win32s) return;
-      p = base = limit = GC_least_described_address((ptr_t)(&dummy));
+      p = base = limit = GC_least_described_address(static_root);
       GetSystemInfo(&sysinfo);
       while (p < sysinfo.lpMaximumApplicationAddress) {
         result = VirtualQuery(p, &buf, sizeof(buf));
@@ -627,6 +629,13 @@ void GC_register_data_segments()
         p = (LPVOID)new_limit;
       }
       if (base != limit) GC_add_roots_inner(base, limit);
+  }
+  
+  void GC_register_data_segments()
+  {
+      static char dummy;
+      
+      GC_register_root_section((ptr_t)(&dummy));
   }
 # else
 # ifdef AMIGA
@@ -701,6 +710,35 @@ extern caddr_t sbrk();
 #   define SBRK_ARG_T int
 # endif
 
+# ifdef RS6000
+/* The compiler seems to generate speculative reads one past the end of	*/
+/* an allocated object.  Hence we need to make sure that the page 	*/
+/* following the last heap page is also mapped.				*/
+ptr_t GC_unix_get_mem(bytes)
+word bytes;
+{
+    caddr_t cur_brk = sbrk(0);
+    caddr_t result;
+    SBRK_ARG_T lsbs = (word)cur_brk & (HBLKSIZE-1);
+    static caddr_t my_brk_val = 0;
+    
+    if (lsbs != 0) {
+        if(sbrk(HBLKSIZE - lsbs) == (caddr_t)(-1)) return(0);
+    }
+    if (cur_brk == my_brk_val) {
+    	/* Use the extra block we allocated last time. */
+        result = (ptr_t)sbrk((SBRK_ARG_T)bytes);
+        if (result == (caddr_t)(-1)) return(0);
+        result -= HBLKSIZE;
+    } else {
+        result = (ptr_t)sbrk(HBLKSIZE + (SBRK_ARG_T)bytes);
+        if (result == (caddr_t)(-1)) return(0);
+    }
+    my_brk_val = result + bytes + HBLKSIZE;	/* Always HBLKSIZE aligned */
+    return((ptr_t)result);
+}
+
+#else
 ptr_t GC_unix_get_mem(bytes)
 word bytes;
 {
@@ -715,6 +753,7 @@ word bytes;
     if (result == (caddr_t)(-1)) return(0);
     return((ptr_t)result);
 }
+#endif
 
 # endif
 
@@ -802,7 +841,7 @@ void GC_default_push_other_roots()
 	  extern struct PCR_MM_ProcsRep * GC_old_allocator;
 	  
 	  if ((*(GC_old_allocator->mmp_enumerate))(PCR_Bool_false,
-	  					   GC_push_old_obj, all)
+	  					   GC_push_old_obj, 0)
 	      != PCR_ERes_okay) {
 	      ABORT("Old object enumeration failed");
 	  }

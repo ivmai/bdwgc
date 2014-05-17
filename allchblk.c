@@ -1,14 +1,17 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
- * Copyright (c) 1991 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  */
-/* Boehm, March 28, 1994 2:05 pm PST */
+/* Boehm, May 19, 1994 1:55 pm PDT */
 
 #define DEBUG
 #undef DEBUG
@@ -66,10 +69,11 @@ void GC_print_hblkfreelist()
 /* Initialize hdr for a block containing the indicated size and 	*/
 /* kind of objects.							*/
 /* Return FALSE on failure.						*/
-static bool setup_header(hhdr, sz, kind)
+static bool setup_header(hhdr, sz, kind, flags)
 register hdr * hhdr;
 word sz;	/* object size in words */
 int kind;
+unsigned char flags;
 {
     register word descr;
     
@@ -80,6 +84,7 @@ int kind;
     /* Set size, kind and mark proc fields */
       hhdr -> hb_sz = sz;
       hhdr -> hb_obj_kind = kind;
+      hhdr -> hb_flags = flags;
       descr = GC_obj_kinds[kind].ok_descriptor;
       if (GC_obj_kinds[kind].ok_relocate_descr) descr += WORDS_TO_BYTES(sz);
       hhdr -> hb_descr = descr;
@@ -93,7 +98,7 @@ int kind;
 
 /*
  * Allocate (and return pointer to) a heap block
- *   for objects of size |sz| words.
+ *   for objects of size sz words.
  *
  * NOTE: We set obj_map field in header correctly.
  *       Caller is resposnsible for building an object freelist in block.
@@ -102,9 +107,10 @@ int kind;
  * kind requires that newly allocated objects be cleared.
  */
 struct hblk *
-GC_allochblk(sz, kind)
+GC_allochblk(sz, kind, flags)
 word sz;
 int kind;
+unsigned char flags;
 {
     register struct hblk *thishbp;
     register hdr * thishdr;		/* Header corr. to thishbp */
@@ -154,13 +160,18 @@ int kind;
 	          continue;
 	      }
 	    }
-	    if ( kind != PTRFREE || size_needed > MAX_BLACK_LIST_ALLOC) {
+	    if ( kind != UNCOLLECTABLE &&
+	         (kind != PTRFREE || size_needed > MAX_BLACK_LIST_ALLOC)) {
 	      struct hblk * lasthbp = hbp;
 	      ptr_t search_end = (ptr_t)hbp + size_avail - size_needed;
+	      signed_word eff_size_needed = ((flags & IGNORE_OFF_PAGE)?
+	      					HBLKSIZE
+	      					: size_needed);
+	      
 	      
 	      while ((ptr_t)lasthbp <= search_end
 	             && (thishbp = GC_is_black_listed(lasthbp,
-	             				      (word)size_needed))) {
+	             				      (word)eff_size_needed))) {
 	        lasthbp = thishbp;
 	      }
 	      size_avail -= (ptr_t)lasthbp - (ptr_t)hbp;
@@ -198,7 +209,7 @@ int kind;
 	                (void) setup_header(
 	                	  hhdr,
 	              		  BYTES_TO_WORDS(hhdr->hb_sz - HDR_BYTES),
-	              		  PTRFREE); /* Cant fail */
+	              		  PTRFREE, 0); /* Cant fail */
 	              	if (GC_debugging_started) {
 	              	    BZERO(hbp + HDR_BYTES, hhdr->hb_sz - HDR_BYTES);
 	              	}
@@ -250,7 +261,7 @@ int kind;
     	/* This leaks memory under very rare conditions. */
     		
     /* Set up header */
-        if (!setup_header(thishdr, sz, kind)) {
+        if (!setup_header(thishdr, sz, kind, flags)) {
             GC_remove_counts(thishbp, (word)size_needed);
             return(0); /* ditto */
         }

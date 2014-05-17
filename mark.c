@@ -6,8 +6,11 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  *
  */
 
@@ -32,7 +35,7 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 		0 | DS_LENGTH, FALSE, FALSE },
 /* NORMAL  */ { &GC_objfreelist[0], &GC_reclaim_list[0],
 #		ifdef ADD_BYTE_AT_END
-		WORDS_TO_BYTES(-1) | DS_LENGTH,
+		(word)(WORDS_TO_BYTES(-1)) | DS_LENGTH,
 #		else
 		0 | DS_LENGTH,
 #		endif
@@ -324,6 +327,8 @@ bool GC_mark_stack_empty()
 /* first page of a large object, return a pointer either to the		*/
 /* start of the large object or NIL.					*/
 /* In the latter case black list the address current.			*/
+/* Returns NIL without black listing if current points to a block	*/
+/* with IGNORE_OFF_PAGE set.						*/
 /*ARGSUSED*/
 word GC_find_start(current, hhdr)
 register word current;
@@ -339,8 +344,9 @@ register hdr * hhdr;
 	      hhdr = HDR(current);
 	    } while(IS_FORWARDING_ADDR_OR_NIL(hhdr));
 	    /* current points to the start of the large object */
+	    if (hhdr -> hb_flags & IGNORE_OFF_PAGE) return(0);
 	    if ((word *)orig - (word *)current
-	         >= hhdr->hb_sz) {
+	         >= (ptrdiff_t)(hhdr->hb_sz)) {
 	        /* Pointer past the end of the block */
 	        GC_ADD_TO_BLACK_LIST_NORMAL(orig);
 	        return(0);
@@ -392,9 +398,12 @@ void GC_mark_from_mark_stack()
 # define SPLIT_RANGE_WORDS 128  /* Must be power of 2.		*/
 
   GC_objects_are_marked = TRUE;
-  while (/* GC_mark_stack_top_reg >= GC_mark_stack_reg && credit >= 0 */
-  	 (((ptr_t)GC_mark_stack_top_reg
-  	   - (ptr_t)GC_mark_stack_reg) | credit) >= 0) {
+# ifdef OS2 /* Use untweaked version to circumvent compiler problem */
+  while (GC_mark_stack_top_reg >= GC_mark_stack_reg && credit >= 0) {
+# else
+  while ((((ptr_t)GC_mark_stack_top_reg - (ptr_t)GC_mark_stack_reg) | credit)
+  	>= 0) {
+# endif
     current_p = GC_mark_stack_top_reg -> mse_start;
     descr = GC_mark_stack_top_reg -> mse_descr;
   retry:  

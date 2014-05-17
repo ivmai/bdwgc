@@ -5,10 +5,13 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  */
-/* Boehm, April 6, 1994 11:53 am PDT */
+/* Boehm, May 19, 1994 2:04 pm PDT */
 
 #define DEBUG       /* Some run-time consistency checks */
 #undef DEBUG
@@ -23,7 +26,7 @@
 # ifdef THREADS
 #   ifdef PCR
 #     include "il/PCR_IL.h"
-      struct PCR_Th_MLRep GC_allocate_ml;
+      PCR_Th_ML GC_allocate_ml;
 #   else
 #     ifdef SRC_M3
 	/* Critical section counter is defined in the M3 runtime 	*/
@@ -521,6 +524,7 @@ out:
     if (GC_stderr == NULL) {
 	GC_stderr = stderr;
     }
+  }
 #endif
 
 /* A version of printf that is unlikely to call malloc, and is thus safer */

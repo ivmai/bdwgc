@@ -5,11 +5,14 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  *
  */
-/* Boehm, April 6, 1994 10:55 am PDT */
+/* Boehm, May 19, 1994 2:02 pm PDT */
 
 
 # include <stdio.h>
@@ -429,6 +432,7 @@ void GC_gcollect()
 {
     DCL_LOCK_STATE;
     
+    GC_invoke_finalizers();
     DISABLE_SIGNALS();
     LOCK();
     if (!GC_is_initialized) GC_init_inner();
@@ -437,6 +441,7 @@ void GC_gcollect()
     GC_gcollect_inner();
     UNLOCK();
     ENABLE_SIGNALS();
+    GC_invoke_finalizers();
 }
 
 word GC_n_heap_sects = 0;	/* Number of sections currently in heap. */
@@ -585,7 +590,7 @@ word needed_blocks;
       }
       if (!GC_expand_hp_inner(blocks_to_get)
         && !GC_expand_hp_inner(needed_blocks)) {
-      	if (count++ < 20) {
+      	if (count++ < 5) {
       	    WARN("Out of Memory!  Trying to continue ...\n");
 	    GC_gcollect_inner();
 	} else {

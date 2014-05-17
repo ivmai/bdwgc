@@ -4,12 +4,16 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
- * Author: Bill Janssen
- * Modified by: Hans Boehm
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
+ *
+ * Original author: Bill Janssen
+ * Heavily modified by Hans Boehm and others
  */
-/* Boehm, March 31, 1994 12:43 pm PST */
+/* Boehm, May 19, 1994 1:57 pm PDT */
 
 /*
  * This is incredibly OS specific code for tracking down data sections in
@@ -218,6 +222,8 @@ void GC_register_dynamic_libraries()
 
 extern void * GC_roots_present();
 
+extern ptr_t GC_scratch_end_ptr;   /* End of GC_scratch_alloc arena	*/
+
 /* We use /proc to track down all parts of the address space that are	*/
 /* mapped by the process, and throw out regions we know we shouldn't	*/
 /* worry about.  This may also work under other SVR4 variants.		*/
@@ -232,6 +238,7 @@ void GC_register_dynamic_libraries()
     register long flags;
     register ptr_t start;
     register ptr_t limit;
+    ptr_t heap_end = (ptr_t)DATASTART;
 
     if (fd < 0) {
       sprintf(buf, "/proc/%d", getpid());
@@ -251,6 +258,11 @@ void GC_register_dynamic_libraries()
     if (ioctl(fd, PIOCMAP, addr_map) < 0) {
     	ABORT("/proc PIOCMAP ioctl failed");
     };
+    if (GC_n_heap_sects > 0) {
+    	heap_end = GC_heap_sects[GC_n_heap_sects-1].hs_start
+    			+ GC_heap_sects[GC_n_heap_sects-1].hs_bytes;
+    	if (heap_end < GC_scratch_end_ptr) heap_end = GC_scratch_end_ptr; 
+    }
     for (i = 0; i < needed_sz; i++) {
         flags = addr_map[i].pr_mflags;
         if ((flags & (MA_BREAK | MA_STACK | MA_PHYS)) != 0) goto irrelevant;
@@ -262,6 +274,8 @@ void GC_register_dynamic_libraries()
           /* This makes no sense to me.	- HB				*/
         start = (ptr_t)(addr_map[i].pr_vaddr);
         if (GC_roots_present(start)) goto irrelevant;
+        if (start < heap_end && start >= (ptr_t)DATASTART)
+        	goto irrelevant;
         limit = start + addr_map[i].pr_size;
 	if (addr_map[i].pr_off == 0 && strncmp(start, ELFMAG, 4) == 0) {
 	    /* Discard text segments, i.e. 0-offset mappings against	*/
@@ -281,7 +295,6 @@ void GC_register_dynamic_libraries()
 	    arg = (caddr_t)start;
 	    obj = ioctl(fd, PIOCOPENM, &arg);
 	    if (obj >= 0) {
-	        
 	        fstat(obj, &buf);
 	        close(obj);
 	        if ((buf.st_mode & 0111) != 0) {

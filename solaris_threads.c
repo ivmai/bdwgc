@@ -4,14 +4,17 @@
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
- * Permission is hereby granted to copy this garbage collector for any purpose,
- * provided the above notices are retained on all copies.
+ * Permission is hereby granted to use or copy this program
+ * for any purpose,  provided the above notices are retained on all copies.
+ * Permission to modify the code and to distribute modified code is granted,
+ * provided the above notices are retained, and a notice that the code was
+ * modified is included with the above copyright notice.
  */
 /*
  * Support code for Solaris threads.  Provides functionality we wish Sun
  * had provided.  Relies on some information we probably shouldn't rely on.
  */
-/* Boehm, April 5, 1994 1:30 pm PDT */
+/* Boehm, May 19, 1994 2:05 pm PDT */
 
 # if defined(SOLARIS_THREADS)
 
