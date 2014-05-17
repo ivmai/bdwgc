@@ -67,7 +67,7 @@ GC_API GC_descr GC_make_descriptor GC_PROTO((GC_bitmap bm, size_t len));
 /* It is possible to generate a descriptor for a C type T with	*/
 /* word aligned pointer fields f1, f2, ... as follows:			*/
 /*									*/
-/* GC_descr T_descr;
+/* GC_descr T_descr;                                                    */
 /* GC_word T_bitmap[GC_BITMAP_SIZE(T)] = {0};				*/
 /* GC_set_bit(T_bitmap, GC_WORD_OFFSET(T,f1));				*/
 /* GC_set_bit(T_bitmap, GC_WORD_OFFSET(T,f2));				*/

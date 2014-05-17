@@ -448,7 +448,19 @@ extern GC_warn_proc GC_current_warn_proc;
 
 /* Get environment entry */
 #if !defined(NO_GETENV)
-#   define GETENV(name) getenv(name)
+#   if defined(EMPTY_GETENV_RESULTS)
+	/* Workaround for a reputed Wine bug.	*/
+	static inline char * fixed_getenv(const char *name)
+	{
+	  char * tmp = getenv(name);
+	  if (tmp == 0 || strlen(tmp) == 0)
+	    return 0;
+	  return tmp;
+	}
+#       define GETENV(name) fixed_getenv(name)
+#   else
+#       define GETENV(name) getenv(name)
+#   endif
 #else
 #   define GETENV(name) 0
 #endif
@@ -603,6 +615,10 @@ extern GC_warn_proc GC_current_warn_proc;
 #     define LOG_PHT_ENTRIES  16 /* Collisions are likely if heap grows	*/
 				 /* to more than 64K hblks >= 256MB.	*/
 				 /* Each hash table occupies 8K bytes.  */
+				 /* Even for somewhat smaller heaps, 	*/
+				 /* say half that, collisions may be an	*/
+				 /* issue because we blacklist 		*/
+				 /* addresses outside the heap.		*/
 #   endif
 # endif
 # define PHT_ENTRIES ((word)1 << LOG_PHT_ENTRIES)
@@ -954,7 +970,7 @@ struct _GC_arrays {
 #   endif
 # else
 #   ifdef SMALL_CONFIG
-#     define MAX_HEAP_SECTS 128		/* Roughly 1GB			*/
+#     define MAX_HEAP_SECTS 128		/* Roughly 256MB (128*2048*1K)	*/
 #   else
 #     define MAX_HEAP_SECTS 384		/* Roughly 3GB			*/
 #   endif
@@ -1599,7 +1615,7 @@ void GC_collect_a_little_inner GC_PROTO((int n));
   				/* collection work, if appropriate.	*/
   				/* A unit is an amount appropriate for  */
   				/* HBLKSIZE bytes of allocation.	*/
-ptr_t GC_generic_malloc GC_PROTO((word lb, int k));
+/* ptr_t GC_generic_malloc GC_PROTO((word lb, int k)); */
   				/* Allocate an object of the given	*/
   				/* kind.  By default, there are only	*/
   				/* a few kinds: composite(pointerfree), */
@@ -1609,6 +1625,7 @@ ptr_t GC_generic_malloc GC_PROTO((word lb, int k));
 				/* internals to add more, e.g. to	*/
 				/* communicate object layout info	*/
 				/* to the collector.			*/
+				/* The actual decl is in gc_mark.h.	*/
 ptr_t GC_generic_malloc_ignore_off_page GC_PROTO((size_t b, int k));
   				/* As above, but pointers past the 	*/
   				/* first page of the resulting object	*/
@@ -1704,6 +1721,10 @@ extern GC_bool GC_print_stats;	/* Produce at least some logging output	*/
 # define COND_DUMP if (GC_dump_regularly) GC_dump();
 #else
 # define COND_DUMP
+#endif
+
+#ifdef KEEP_BACK_PTRS
+  extern long GC_backtraces;
 #endif
 
 /* Macros used for collector internal allocation.	*/
@@ -1861,7 +1882,13 @@ void GC_err_puts GC_PROTO((GC_CONST char *s));
 
 /* Check a compile time assertion at compile time.  The error	*/
 /* message for failure is a bit baroque, but ...		*/
+#if defined(mips) && !defined(__GNUC__)
+/* DOB: MIPSPro C gets an internal error taking the sizeof an array type. 
+   This code works correctly (ugliness is to avoid "unused var" warnings) */
+# define GC_STATIC_ASSERT(expr) do { if (0) { char j[(expr)? 1 : -1]; j[0]='\0'; j[0]=j[0]; } } while(0)
+#else
 # define GC_STATIC_ASSERT(expr) sizeof(char[(expr)? 1 : -1])
+#endif
 
 # if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
     /* We need additional synchronization facilities from the thread	*/

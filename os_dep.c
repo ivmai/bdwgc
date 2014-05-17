@@ -87,6 +87,12 @@
 #  endif
 #endif
 
+#if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__) \
+    && !defined(NEED_FIND_LIMIT)
+   /* Used by GC_init_netbsd_elf() below.	*/
+#  define NEED_FIND_LIMIT
+#endif
+
 #ifdef NEED_FIND_LIMIT
 #   include <setjmp.h>
 #endif
@@ -111,25 +117,30 @@
 # include <sys/uio.h>
 # include <malloc.h>   /* for locking */
 #endif
-#ifdef USE_MMAP
+#if defined(USE_MMAP) || defined(USE_MUNMAP)
+# ifndef USE_MMAP
+    --> USE_MUNMAP requires USE_MMAP
+# endif
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
+# include <errno.h>
 #endif
 
 #ifdef UNIX_LIKE
 # include <fcntl.h>
-#endif
-
-#if defined(SUNOS5SIGS) || defined (HURD) || defined(LINUX)
 # ifdef SUNOS5SIGS
 #  include <sys/siginfo.h>
 # endif
-# undef setjmp
-# undef longjmp
-# define setjmp(env) sigsetjmp(env, 1)
-# define longjmp(env, val) siglongjmp(env, val)
-# define jmp_buf sigjmp_buf
+  /* Define SETJMP and friends to be the version that restores	*/
+  /* the signal mask.						*/
+# define SETJMP(env) sigsetjmp(env, 1)
+# define LONGJMP(env, val) siglongjmp(env, val)
+# define JMP_BUF sigjmp_buf
+#else
+# define SETJMP(env) setjmp(env)
+# define LONGJMP(env, val) longjmp(env, val)
+# define JMP_BUF jmp_buf
 #endif
 
 #ifdef DARWIN
@@ -183,45 +194,41 @@ ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 /*
  * Apply fn to a buffer containing the contents of /proc/self/maps.
  * Return the result of fn or, if we failed, 0.
+ * We currently do nothing to /proc/self/maps other than simply read
+ * it.  This code could be simplified if we could determine its size
+ * ahead of time.
  */
 
 word GC_apply_to_maps(word (*fn)(char *))
 {
     int f;
     int result;
-    int maps_size;
-    char maps_temp[32768];
-    char *maps_buf;
+    size_t maps_size = 4000;  /* Initial guess. 	*/
+    static char init_buf[1];
+    static char *maps_buf = init_buf;
+    static size_t maps_buf_sz = 1;
 
-    /* Read /proc/self/maps	*/
-        /* Note that we may not allocate, and thus can't use stdio.	*/
-        f = open("/proc/self/maps", O_RDONLY);
-        if (-1 == f) return 0;
-	/* stat() doesn't work for /proc/self/maps, so we have to
-	   read it to find out how large it is... */
-	maps_size = 0;
+    /* Read /proc/self/maps, growing maps_buf as necessary.	*/
+        /* Note that we may not allocate conventionally, and	*/
+        /* thus can't use stdio.				*/
 	do {
-	    result = GC_repeat_read(f, maps_temp, sizeof(maps_temp));
-	    if (result <= 0) return 0;
-	    maps_size += result;
-	} while (result == sizeof(maps_temp));
-
-	if (maps_size > sizeof(maps_temp)) {
-	    /* If larger than our buffer, close and re-read it. */
-	    close(f);
+	    if (maps_size >= maps_buf_sz) {
+	      /* Grow only by powers of 2, since we leak "too small" buffers. */
+	      while (maps_size >= maps_buf_sz) maps_buf_sz *= 2;
+	      maps_buf = GC_scratch_alloc(maps_buf_sz);
+	      if (maps_buf == 0) return 0;
+	    }
 	    f = open("/proc/self/maps", O_RDONLY);
 	    if (-1 == f) return 0;
-	    maps_buf = alloca(maps_size);
-	    if (NULL == maps_buf) return 0;
-	    result = GC_repeat_read(f, maps_buf, maps_size);
-	    if (result <= 0) return 0;
-	} else {
-	    /* Otherwise use the fixed size buffer */
-	    maps_buf = maps_temp;
-	}
-
-	close(f);
-        maps_buf[result] = '\0';
+	    maps_size = 0;
+	    do {
+	        result = GC_repeat_read(f, maps_buf, maps_buf_sz-1);
+	        if (result <= 0) return 0;
+	        maps_size += result;
+	    } while (result == maps_buf_sz-1);
+	    close(f);
+	} while (maps_size >= maps_buf_sz);
+        maps_buf[maps_size] = '\0';
 	
     /* Apply fn to result. */
 	return fn(maps_buf);
@@ -352,7 +359,8 @@ char *GC_parse_map_entry(char *buf_ptr, word *start, word *end,
 # endif /* ECOS_GC_MEMORY_SIZE */
 
 // setjmp() function, as described in ANSI para 7.6.1.1
-#define setjmp( __env__ )  hal_setjmp( __env__ )
+#undef SETJMP
+#define SETJMP( __env__ )  hal_setjmp( __env__ )
 
 // FIXME: This is a simple way of allocating memory which is
 // compatible with ECOS early releases.  Later releases use a more
@@ -688,9 +696,11 @@ ptr_t GC_get_stack_base()
 	typedef void (*handler)();
 #   endif
 
-#   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) || defined(HURD)
+#   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) \
+    || defined(HURD) || defined(NETBSD)
 	static struct sigaction old_segv_act;
-#	if defined(_sigargs) /* !Irix6.x */ || defined(HPUX) || defined(HURD)
+#	if defined(_sigargs) /* !Irix6.x */ || defined(HPUX) \
+	|| defined(HURD) || defined(NETBSD)
 	    static struct sigaction old_bus_act;
 #	endif
 #   else
@@ -705,20 +715,16 @@ ptr_t GC_get_stack_base()
 #   endif
     {
 #	if defined(SUNOS5SIGS) || defined(IRIX5)  \
-        || defined(OSF1) || defined(HURD)
+        || defined(OSF1) || defined(HURD) || defined(NETBSD)
 	  struct sigaction	act;
 
 	  act.sa_handler	= h;
-#	  ifdef SUNOS5SIGS
+#	  if 0 /* Was necessary for Solaris 2.3 and very temporary 	*/
+	       /* NetBSD bugs.						*/
             act.sa_flags          = SA_RESTART | SA_NODEFER;
 #         else
             act.sa_flags          = SA_RESTART;
 #	  endif
-          /* The presence of SA_NODEFER represents yet another gross    */
-          /* hack.  Under Solaris 2.3, siglongjmp doesn't appear to     */
-          /* interact correctly with -lthread.  We hide the confusion   */
-          /* by making sure that signal handling doesn't affect the     */
-          /* signal mask.                                               */
 
 	  (void) sigemptyset(&act.sa_mask);
 #	  ifdef GC_IRIX_THREADS
@@ -729,7 +735,7 @@ ptr_t GC_get_stack_base()
 #	  else
 	        (void) sigaction(SIGSEGV, &act, &old_segv_act);
 #		if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
-		   || defined(HPUX) || defined(HURD)
+		   || defined(HPUX) || defined(HURD) || defined(NETBSD)
 		    /* Under Irix 5.x or HP/UX, we may get SIGBUS.	*/
 		    /* Pthreads doesn't exist under Irix 5.x, so we	*/
 		    /* don't have to worry in the threads case.		*/
@@ -748,13 +754,13 @@ ptr_t GC_get_stack_base()
 # ifdef NEED_FIND_LIMIT
   /* Some tools to implement HEURISTIC2	*/
 #   define MIN_PAGE_SIZE 256	/* Smallest conceivable page size, bytes */
-    /* static */ jmp_buf GC_jmp_buf;
+    /* static */ JMP_BUF GC_jmp_buf;
     
     /*ARGSUSED*/
     void GC_fault_handler(sig)
     int sig;
     {
-        longjmp(GC_jmp_buf, 1);
+        LONGJMP(GC_jmp_buf, 1);
     }
 
     void GC_setup_temporary_fault_handler()
@@ -765,10 +771,10 @@ ptr_t GC_get_stack_base()
     void GC_reset_fault_handler()
     {
 #       if defined(SUNOS5SIGS) || defined(IRIX5) \
-	   || defined(OSF1) || defined(HURD)
+	   || defined(OSF1) || defined(HURD) || defined(NETBSD)
 	  (void) sigaction(SIGSEGV, &old_segv_act, 0);
 #	  if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
-	     || defined(HPUX) || defined(HURD)
+	     || defined(HPUX) || defined(HURD) || defined(NETBSD)
 	      (void) sigaction(SIGBUS, &old_bus_act, 0);
 #	  endif
 #       else
@@ -794,7 +800,7 @@ ptr_t GC_get_stack_base()
 
 
 	GC_setup_temporary_fault_handler();
-	if (setjmp(GC_jmp_buf) == 0) {
+	if (SETJMP(GC_jmp_buf) == 0) {
 	    result = (ptr_t)(((word)(p))
 			      & ~(MIN_PAGE_SIZE-1));
 	    for (;;) {
@@ -820,6 +826,29 @@ ptr_t GC_get_stack_base()
     return STACKBOTTOM;
   }
 #endif
+
+#ifdef HPUX_STACKBOTTOM
+
+#include <sys/param.h>
+#include <sys/pstat.h>
+
+  ptr_t GC_get_register_stack_base(void)
+  {
+    struct pst_vm_status vm_status;
+
+    int i = 0;
+    while (pstat_getprocvm(&vm_status, sizeof(vm_status), 0, i++) == 1) {
+      if (vm_status.pst_type == PS_RSESTACK) {
+        return (ptr_t) vm_status.pst_vaddr;
+      }
+    }
+
+    /* old way to get the register stackbottom */
+    return (ptr_t)(((word)GC_stackbottom - BACKING_STORE_DISPLACEMENT - 1)
+                   & ~(BACKING_STORE_ALIGNMENT - 1));
+  }
+
+#endif /* HPUX_STACK_BOTTOM */
 
 #ifdef LINUX_STACKBOTTOM
 
@@ -903,7 +932,11 @@ ptr_t GC_get_stack_base()
     size_t i, buf_offset = 0;
 
     /* First try the easy way.  This should work for glibc 2.2	*/
-      if (0 != &__libc_stack_end) {
+    /* This fails in a prelinked ("prelink" command) executable */
+    /* since the correct value of __libc_stack_end never	*/
+    /* becomes visible to us.  The second test works around 	*/
+    /* this.							*/  
+      if (0 != &__libc_stack_end && 0 != __libc_stack_end ) {
 #       ifdef IA64
 	  /* Some versions of glibc set the address 16 bytes too	*/
 	  /* low while the initialization code is running.		*/
@@ -963,7 +996,7 @@ ptr_t GC_get_stack_base()
 #endif /* FREEBSD_STACKBOTTOM */
 
 #if !defined(BEOS) && !defined(AMIGA) && !defined(MSWIN32) \
-    && !defined(MSWINCE) && !defined(OS2)
+    && !defined(MSWINCE) && !defined(OS2) && !defined(NOSYS) && !defined(ECOS)
 
 ptr_t GC_get_stack_base()
 {
@@ -1021,7 +1054,7 @@ ptr_t GC_get_stack_base()
 #   endif /* STACKBOTTOM */
 }
 
-# endif /* ! AMIGA, !OS 2, ! MS Windows, !BEOS */
+# endif /* ! AMIGA, !OS 2, ! MS Windows, !BEOS, !NOSYS, !ECOS */
 
 /*
  * Register static data segment(s) as roots.
@@ -1328,7 +1361,7 @@ int * etext_addr;
     /* max_page_size to &etext if &etext is at a page boundary	*/
     
     GC_setup_temporary_fault_handler();
-    if (setjmp(GC_jmp_buf) == 0) {
+    if (SETJMP(GC_jmp_buf) == 0) {
     	/* Try writing to the address.	*/
     	*result = *result;
         GC_reset_fault_handler();
@@ -1362,7 +1395,7 @@ int * etext_addr;
 			      & ~((word)max_page_size - 1);
     VOLATILE ptr_t result = (ptr_t)text_end;
     GC_setup_temporary_fault_handler();
-    if (setjmp(GC_jmp_buf) == 0) {
+    if (SETJMP(GC_jmp_buf) == 0) {
 	/* Try reading at the address.				*/
 	/* This should happen before there is another thread.	*/
 	for (; next_page < (word)(DATAEND); next_page += (word)max_page_size)
@@ -1497,8 +1530,7 @@ word bytes;
 
 #else  /* Not RS6000 */
 
-#if defined(USE_MMAP)
-/* Tested only under Linux, IRIX5 and Solaris 2 */
+#if defined(USE_MMAP) || defined(USE_MUNMAP)
 
 #ifdef USE_MMAP_FIXED
 #   define GC_MMAP_FLAGS MAP_FIXED | MAP_PRIVATE
@@ -1507,6 +1539,23 @@ word bytes;
 #else
 #   define GC_MMAP_FLAGS MAP_PRIVATE
 #endif
+
+#ifdef USE_MMAP_ANON
+# define zero_fd -1
+# if defined(MAP_ANONYMOUS)
+#   define OPT_MAP_ANON MAP_ANONYMOUS
+# else
+#   define OPT_MAP_ANON MAP_ANON
+# endif
+#else
+  static int zero_fd;
+# define OPT_MAP_ANON 0
+#endif 
+
+#endif /* defined(USE_MMAP) || defined(USE_MUNMAP) */
+
+#if defined(USE_MMAP)
+/* Tested only under Linux, IRIX5 and Solaris 2 */
 
 #ifndef HEAP_START
 #   define HEAP_START 0
@@ -1520,23 +1569,17 @@ word bytes;
 
 #   ifndef USE_MMAP_ANON
       static GC_bool initialized = FALSE;
-      static int fd;
 
       if (!initialized) {
-	  fd = open("/dev/zero", O_RDONLY);
-	  fcntl(fd, F_SETFD, FD_CLOEXEC);
+	  zero_fd = open("/dev/zero", O_RDONLY);
+	  fcntl(zero_fd, F_SETFD, FD_CLOEXEC);
 	  initialized = TRUE;
       }
 #   endif
 
     if (bytes & (GC_page_size -1)) ABORT("Bad GET_MEM arg");
-#   ifdef USE_MMAP_ANON
-      result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
-		    GC_MMAP_FLAGS | MAP_ANON, -1, 0/* offset */);
-#   else
-      result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
-		    GC_MMAP_FLAGS, fd, 0/* offset */);
-#   endif
+    result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
+		  GC_MMAP_FLAGS | OPT_MAP_ANON, zero_fd, 0/* offset */);
     if (result == MAP_FAILED) return(0);
     last_addr = (ptr_t)result + bytes + GC_page_size - 1;
     last_addr = (ptr_t)((word)last_addr & ~(GC_page_size - 1));
@@ -1794,7 +1837,15 @@ void GC_unmap(ptr_t start, word bytes)
 	  len -= free_len;
       }
 #   else
-      if (munmap(start_addr, len) != 0) ABORT("munmap failed");
+      /* We immediately remap it to prevent an intervening mmap from	*/
+      /* accidentally grabbing the same address space.			*/
+      {
+	void * result;
+        result = mmap(start_addr, len, PROT_NONE,
+		      MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
+		      zero_fd, 0/* offset */);
+        if (result != (void *)start_addr) ABORT("mmap(...PROT_NONE...) failed");
+      }
       GC_unmapped_bytes += len;
 #   endif
 }
@@ -1802,13 +1853,13 @@ void GC_unmap(ptr_t start, word bytes)
 
 void GC_remap(ptr_t start, word bytes)
 {
-    static int zero_descr = -1;
     ptr_t start_addr = GC_unmap_start(start, bytes);
     ptr_t end_addr = GC_unmap_end(start, bytes);
     word len = end_addr - start_addr;
-    ptr_t result;
 
 #   if defined(MSWIN32) || defined(MSWINCE)
+      ptr_t result;
+
       if (0 == start_addr) return;
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
@@ -1828,13 +1879,17 @@ void GC_remap(ptr_t start, word bytes)
 	  len -= alloc_len;
       }
 #   else
-      if (-1 == zero_descr) zero_descr = open("/dev/zero", O_RDWR);
-      fcntl(zero_descr, F_SETFD, FD_CLOEXEC);
+      /* It was already remapped with PROT_NONE. */
+      int result; 
+
       if (0 == start_addr) return;
-      result = mmap(start_addr, len, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
-		    MAP_FIXED | MAP_PRIVATE, zero_descr, 0);
-      if (result != start_addr) {
-	  ABORT("mmap remapping failed");
+      result = mprotect(start_addr, len,
+		        PROT_READ | PROT_WRITE | OPT_PROT_EXEC);
+      if (result != 0) {
+	  GC_err_printf3(
+		"Mprotect failed at 0x%lx (length %ld) with errno %ld\n",
+	        start_addr, len, errno);
+	  ABORT("Mprotect remapping failed");
       }
       GC_unmapped_bytes -= len;
 #   endif
@@ -3282,11 +3337,10 @@ GC_bool is_ptrfree;
       3. macosx-nat.c from Apple's GDB source code.
 */
    
-/* There seem to be numerous problems with darwin's mach exception handling.
-   I'm pretty sure they are not problems in my code. Search for 
-   BROKEN_EXCEPTION_HANDLING for more information. */
-#define BROKEN_EXCEPTION_HANDLING
-   
+/* The bug that caused all this trouble should now be fixed. This should
+   eventually be removed if all goes well. */
+/* define BROKEN_EXCEPTION_HANDLING */
+    
 #include <mach/mach.h>
 #include <mach/mach_error.h>
 #include <mach/thread_status.h>
@@ -3432,6 +3486,8 @@ static void *GC_mprotect_thread(void *arg) {
     } msg;
 
     mach_msg_id_t id;
+
+    GC_darwin_register_mach_handler_thread(mach_thread_self());
     
     for(;;) {
         r = mach_msg(
@@ -3889,12 +3945,14 @@ kern_return_t catch_exception_raise_state_identity(
 
 #endif /* NEED_CALLINFO */
 
+#if defined(GC_HAVE_BUILTIN_BACKTRACE)
+# include <execinfo.h>
+#endif
+
 #ifdef SAVE_CALL_CHAIN
 
 #if NARGS == 0 && NFRAMES % 2 == 0 /* No padding */ \
     && defined(GC_HAVE_BUILTIN_BACKTRACE)
-
-#include <execinfo.h>
 
 void GC_save_callers (info) 
 struct callinfo info[NFRAMES];
@@ -3971,6 +4029,8 @@ struct callinfo info[NFRAMES];
     static int reentry_count = 0;
     GC_bool stop = FALSE;
 
+    /* FIXME: This should probably use a different lock, so that we	*/
+    /* become callable with or without the allocation lock.		*/
     LOCK();
       ++reentry_count;
     UNLOCK();
@@ -4005,7 +4065,8 @@ struct callinfo info[NFRAMES];
 #	  ifdef LINUX
 	    FILE *pipe;
 #	  endif
-#	  if defined(GC_HAVE_BUILTIN_BACKTRACE)
+#	  if defined(GC_HAVE_BUILTIN_BACKTRACE) \
+	     && !defined(GC_BACKTRACE_SYMBOLS_BROKEN)
 	    char **sym_name =
 	      backtrace_symbols((void **)(&(info[i].ci_pc)), 1);
 	    char *name = sym_name[0];
@@ -4024,6 +4085,9 @@ struct callinfo info[NFRAMES];
 #		define RESULT_SZ 200
 		static char result_buf[RESULT_SZ];
 		size_t result_len;
+		char *old_preload;
+#		define PRELOAD_SZ 200
+    		char preload_buf[PRELOAD_SZ];
 		static GC_bool found_exe_name = FALSE;
 		static GC_bool will_fail = FALSE;
 		int ret_code;
@@ -4045,7 +4109,20 @@ struct callinfo info[NFRAMES];
 		/* isn't time critical.					*/
 		sprintf(cmd_buf, "/usr/bin/addr2line -f -e %s 0x%lx", exe_name,
 				 (unsigned long)info[i].ci_pc);
+		old_preload = getenv ("LD_PRELOAD");
+	        if (0 != old_preload) {
+		  if (strlen (old_preload) >= PRELOAD_SZ) {
+		    will_fail = TRUE;
+		    goto out;
+		  }
+		  strcpy (preload_buf, old_preload);
+		  unsetenv ("LD_PRELOAD");
+	        }
 		pipe = popen(cmd_buf, "r");
+		if (0 != old_preload
+		    && 0 != setenv ("LD_PRELOAD", preload_buf, 0)) {
+		  WARN("Failed to reset LD_PRELOAD\n", 0);
+      		}
 		if (pipe == NULL
 		    || (result_len = fread(result_buf, 1, RESULT_SZ - 1, pipe))
 		       == 0) {
@@ -4082,7 +4159,8 @@ struct callinfo info[NFRAMES];
 	    }
 #	  endif /* LINUX */
 	  GC_err_printf1("\t\t%s\n", name);
-#	  if defined(GC_HAVE_BUILTIN_BACKTRACE)
+#	  if defined(GC_HAVE_BUILTIN_BACKTRACE) \
+	     && !defined(GC_BACKTRACE_SYMBOLS_BROKEN)
 	    free(sym_name);  /* May call GC_free; that's OK */
 #         endif
 	}

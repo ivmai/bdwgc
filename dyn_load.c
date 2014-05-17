@@ -446,6 +446,16 @@ GC_bool GC_register_main_static_data()
 
 #if defined(NETBSD)
 #  include <sys/exec_elf.h>
+/* for compatibility with 1.4.x */
+#  ifndef DT_DEBUG
+#  define DT_DEBUG     21
+#  endif
+#  ifndef PT_LOAD
+#  define PT_LOAD      1
+#  endif
+#  ifndef PF_W
+#  define PF_W         2
+#  endif
 #else
 #  include <elf.h>
 #endif
@@ -717,6 +727,90 @@ void GC_register_dynamic_libraries()
   
 # define HAVE_REGISTER_MAIN_STATIC_DATA
 
+  GC_bool GC_warn_fb = TRUE;	/* Warn about traced likely 	*/
+  				/* graphics memory.		*/
+  GC_bool GC_disallow_ignore_fb = FALSE;
+  int GC_ignore_fb_mb;	/* Ignore mappings bigger than the 	*/
+  			/* specified number of MB.		*/
+  GC_bool GC_ignore_fb = FALSE; /* Enable frame buffer 	*/
+  				/* checking.		*/
+  
+  /* Issue warning if tracing apparent framebuffer. 		*/
+  /* This limits us to one warning, and it's a back door to	*/
+  /* disable that.						*/
+ 
+  /* Should [start, start+len) be treated as a frame buffer	*/
+  /* and ignored?						*/
+  /* Unfortunately, we currently have no real way to tell	*/
+  /* automatically, and rely largely on user input.		*/
+  /* FIXME: If we had more data on this phenomenon (e.g.	*/
+  /* is start aligned to a MB multiple?) we should be able to	*/
+  /* do better.							*/
+  /* Based on a very limited sample, it appears that:		*/
+  /* 	- Frame buffer mappings appear as mappings of length	*/
+  /* 	  2**n MB - 192K.  (We guess the 192K can vary a bit.)	*/
+  /*	- Have a stating address at best 64K aligned.		*/
+  /* I'd love more information about the mapping, since I	*/
+  /* can't reproduce the problem.				*/
+  static GC_bool is_frame_buffer(ptr_t start, size_t len)
+  {
+    static GC_bool initialized = FALSE;
+#   define MB (1024*1024)
+#   define DEFAULT_FB_MB 15
+#   define MIN_FB_MB 3
+
+    if (GC_disallow_ignore_fb) return FALSE;
+    if (!initialized) {
+      char * ignore_fb_string =  GETENV("GC_IGNORE_FB");
+
+      if (0 != ignore_fb_string) {
+	while (*ignore_fb_string == ' ' || *ignore_fb_string == '\t')
+	  ++ignore_fb_string;
+	if (*ignore_fb_string == '\0') {
+	  GC_ignore_fb_mb = DEFAULT_FB_MB;
+	} else {
+	  GC_ignore_fb_mb = atoi(ignore_fb_string);
+	  if (GC_ignore_fb_mb < MIN_FB_MB) {
+	    WARN("Bad GC_IGNORE_FB value.  Using %ld\n", DEFAULT_FB_MB);
+	    GC_ignore_fb_mb = DEFAULT_FB_MB;
+	  }
+	}
+	GC_ignore_fb = TRUE;
+      } else {
+	GC_ignore_fb_mb = DEFAULT_FB_MB;  /* For warning */
+      }
+      initialized = TRUE;
+    }
+    if (len >= ((size_t)GC_ignore_fb_mb << 20)) {
+      if (GC_ignore_fb) {
+	return TRUE;
+      } else {
+	if (GC_warn_fb) {
+	  WARN("Possible frame buffer mapping at 0x%lx: \n"
+	       "\tConsider setting GC_IGNORE_FB to improve performance.\n",
+	       start);
+	  GC_warn_fb = FALSE;
+	}
+	return FALSE;
+      }
+    } else {
+      return FALSE;
+    }
+  }
+
+# ifdef DEBUG_VIRTUALQUERY
+  void GC_dump_meminfo(MEMORY_BASIC_INFORMATION *buf)
+  {
+    GC_printf4("BaseAddress = %lx, AllocationBase = %lx, RegionSize = %lx(%lu)\n",
+	       buf -> BaseAddress, buf -> AllocationBase, buf -> RegionSize,
+	       buf -> RegionSize);
+    GC_printf4("\tAllocationProtect = %lx, State = %lx, Protect = %lx, "
+	       "Type = %lx\n",
+	       buf -> AllocationProtect, buf -> State, buf -> Protect,
+	       buf -> Type);
+  }
+# endif /* DEBUG_VIRTUALQUERY */
+
   void GC_register_dynamic_libraries()
   {
     MEMORY_BASIC_INFORMATION buf;
@@ -753,7 +847,11 @@ void GC_register_dynamic_libraries()
 	    if (buf.State == MEM_COMMIT
 		&& (protect == PAGE_EXECUTE_READWRITE
 		    || protect == PAGE_READWRITE)
-		&& !GC_is_heap_base(buf.AllocationBase)) {
+		&& !GC_is_heap_base(buf.AllocationBase)
+		&& !is_frame_buffer(p, buf.RegionSize)) {  
+#	        ifdef DEBUG_VIRTUALQUERY
+	          GC_dump_meminfo(&buf);
+#	        endif
 		if ((char *)p != limit) {
 		    GC_cond_add_roots(base, limit);
 		    base = p;
@@ -971,7 +1069,14 @@ void GC_register_dynamic_libraries()
 
 #ifdef DARWIN
 
-#include <mach-o/dyld.h>
+/* __private_extern__ hack required for pre-3.4 gcc versions.	*/
+#ifndef __private_extern__
+# define __private_extern__ extern
+# include <mach-o/dyld.h>
+# undef __private_extern__
+#else
+# include <mach-o/dyld.h>
+#endif
 #include <mach-o/getsect.h>
 
 /*#define DARWIN_DEBUG*/
@@ -1049,32 +1154,43 @@ void GC_register_dynamic_libraries() {
    allocation lock held. */
    
 void GC_init_dyld() {
-    static GC_bool initialized = FALSE;
-    
-    if(initialized) return;
-    
+  static GC_bool initialized = FALSE;
+  char *bind_fully_env = NULL;
+  
+  if(initialized) return;
+  
 #   ifdef DARWIN_DEBUG
-        GC_printf0("Forcing full bind of GC code...\n");
+  GC_printf0("Registering dyld callbacks...\n");
 #   endif
-    if(!_dyld_bind_fully_image_containing_address((unsigned long*)GC_malloc))
-        GC_abort("_dyld_bind_fully_image_containing_addres failed");
-            
-#   ifdef DARWIN_DEBUG
-        GC_printf0("Registering dyld callbacks...\n");
-#   endif
-
-    /* Apple's Documentation:
-    When you call _dyld_register_func_for_add_image, the dynamic linker runtime
-    calls the specified callback (func) once for each of the images that is
-    currently loaded into the program. When a new image is added to the program,
-    your callback is called again with the mach_header for the new image, and the 	virtual memory slide amount of the new image. 
-        
-    This WILL properly register existing and all future libraries
-    */
-        
+  
+  /* Apple's Documentation:
+     When you call _dyld_register_func_for_add_image, the dynamic linker runtime
+     calls the specified callback (func) once for each of the images that is
+     currently loaded into the program. When a new image is added to the program,
+     your callback is called again with the mach_header for the new image, and the 	
+     virtual memory slide amount of the new image. 
+     
+     This WILL properly register already linked libraries and libraries 
+     linked in the future
+  */
+  
     _dyld_register_func_for_add_image(GC_dyld_image_add);
     _dyld_register_func_for_remove_image(GC_dyld_image_remove);
+
+    /* Set this early to avoid reentrancy issues. */
     initialized = TRUE;
+
+    bind_fully_env = getenv("DYLD_BIND_AT_LAUNCH");
+    
+    if (bind_fully_env == NULL) {
+#   ifdef DARWIN_DEBUG
+      GC_printf0("Forcing full bind of GC code...\n");
+#   endif
+      
+      if(!_dyld_bind_fully_image_containing_address((unsigned long*)GC_malloc))
+        GC_abort("_dyld_bind_fully_image_containing_address failed");
+    }
+
 }
 
 #define HAVE_REGISTER_MAIN_STATIC_DATA

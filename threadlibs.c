@@ -24,7 +24,7 @@ int main()
         printf("-lpthread\n");
 #   endif
 #   if defined(GC_OSF1_THREADS)
-	printf("-lpthread -lrt");
+	printf("-pthread -lrt"); /* DOB: must be -pthread, not -lpthread */
 #   endif
     /* You need GCC 3.0.3 to build this one!           */  
     /* DG/UX native gcc doesnt know what "-pthread" is */

@@ -55,20 +55,20 @@ $(asm_libgc_sources)
 
 # Include THREADLIBS here to ensure that the correct versions of
 # linuxthread semaphore functions get linked:
-libgc_la_LIBADD = @addobjs@ $(THREADLIBS)
+libgc_la_LIBADD = @addobjs@ $(THREADLIBS) $(UNWINDLIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = -version-info 1:2:0
 
 EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
-    mips_sgi_mach_dep.S mips_ultrix_mach_dep.s powerpc_darwin_mach_dep.s \
+    mips_sgi_mach_dep.s mips_ultrix_mach_dep.s powerpc_darwin_mach_dep.s \
     rs6000_mach_dep.s sparc_mach_dep.S sparc_netbsd_mach_dep.s \
     sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s
 
 libgccpp_la_SOURCES = gc_cpp.cc
-libgccpp_la_LIBADD = $(THREADLIBS)
+libgccpp_la_LIBADD = $(THREADLIBS) $(UNWINDLIBS)
 libgccpp_la_LDFLAGS = -version-info 1:2:0
 
-EXTRA_DIST += alpha_mach_dep.S mips_sgi_mach_dep.S sparc_mach_dep.S
+EXTRA_DIST += alpha_mach_dep.S mips_sgi_mach_dep.s sparc_mach_dep.S
 
 AM_CXXFLAGS = @GC_CFLAGS@
 AM_CFLAGS = @GC_CFLAGS@
@@ -91,9 +91,9 @@ test_cpp.o:	$(srcdir)/tests/test_cpp.cc
 ##     are included in the distribution
 # gctest_OBJECTS = test.o
 gctest_SOURCES = tests/test.c
-gctest_LDADD = ./libgc.la $(THREADLIBS) $(EXTRA_TEST_LIBS)
+gctest_LDADD = ./libgc.la $(THREADLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
 test_cpp_SOURCES = tests/test_cpp.cc
-test_cpp_LDADD = ./libgc.la ./libgccpp.la $(THREADLIBS) $(EXTRA_TEST_LIBS)
+test_cpp_LDADD = ./libgc.la ./libgccpp.la $(THREADLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
 
 TESTS = gctest $(extra_checks)
 
@@ -144,11 +144,10 @@ EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE \
     WCC_MAKEFILE
 
 # files used by makefiles other than Makefile.am
-# (:FIXME: do we really need gcc_support.c ?)
 #
 EXTRA_DIST += add_gc_prefix.c gcname.c if_mach.c if_not_there.c \
     hpux_test_and_clear.s pc_excludes gc.mak MacOS.c \
-    MacProjects.sit.hqx gcc_support.c mach_dep.c setjmp_t.c \
+    MacProjects.sit.hqx mach_dep.c setjmp_t.c \
     threadlibs.c AmigaOS.c \
     Mac_files/datastart.c Mac_files/dataend.c \
     Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h
@@ -175,8 +174,6 @@ CONFIG_STATUS_DEPENDENCIES = $(srcdir)/configure.host
 # :FIXME: why do we distribute this one???
 #
 EXTRA_DIST += libtool.m4
-
-MAKEOVERRIDES=
 
 #
 # :GOTCHA: GNU make rule for making .s out of .S is flawed, 

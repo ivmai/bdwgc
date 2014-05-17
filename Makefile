@@ -36,7 +36,7 @@ CFLAGS= -O -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_
 # -DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
 # To build the parallel collector in a static library on HP/UX,
 # add to the above:
-# -DGC_HPUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC -DUSE_HPUX_TLS -D_POSIX_C_SOURCE=199506L
+# -DGC_HPUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC -D_POSIX_C_SOURCE=199506L
 # To build the thread-safe collector on Tru64, add to the above:
 # -pthread -DGC_OSF1_THREADS
 
@@ -73,7 +73,7 @@ HOSTCFLAGS=$(CFLAGS)
 # -DGC_OSF1_THREADS enables support for Tru64 pthreads.  Untested.
 # -DGC_FREEBSD_THREADS enables support for FreeBSD pthreads.  Untested.
 #   Appeared to run into some underlying thread problems.
-# -DGC_MACOSX_THREADS enables support for Mac OS X pthreads.  Untested.
+# -DGC_DARWIN_THREADS enables support for Mac OS X pthreads.  Untested.
 # -DGC_DGUX386_THREADS enables support for DB/UX on I386 threads.
 #   See README.DGUX386.
 # -DGC_WIN32_THREADS enables support for win32 threads.  That makes sense
@@ -182,7 +182,7 @@ HOSTCFLAGS=$(CFLAGS)
 #   this facility is only used in a few places.  It is intended primarily
 #   for debugging of the garbage collector itself, but could also
 # -DDBG_HDRS_ALL Make sure that all objects have debug headers.  Increases
-#   the reliability (from 99.9999% to 100%) of some of the debugging
+#   the reliability (from 99.9999% to 100% mod. bugs) of some of the debugging
 #   code (especially KEEP_BACK_PTRS).  Makes -DSHORT_DBG_HDRS possible.
 #   Assumes that all client allocation is done through debugging
 #   allocators.
@@ -235,6 +235,10 @@ HOSTCFLAGS=$(CFLAGS)
 #   in a way that usually does not involve acquisition of a global lock.
 #   Currently requires -DGC_LINUX_THREADS, but should be easy to port to
 #   other pthreads environments.  Recommended for multiprocessors.
+# -DUSE_COMPILER_TLS causes thread local allocation to use compiler-supported
+#   "__thread" thread-local variables.  This is the default in HP/UX.  It
+#   may help performance on recent Linux installations.  (It failed for
+#   me on RedHat 8, but appears to work on RedHat 9.)
 # -DPARALLEL_MARK allows the marker to run in multiple threads.  Recommended
 #   for multiprocessors.  Currently requires Linux on X86 or IA64, though
 #   support for other Posix platforms should be fairly easy to add,
@@ -287,7 +291,7 @@ CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordt
 
 CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
-SRCS= $(CSRCS) mips_sgi_mach_dep.S rs6000_mach_dep.s alpha_mach_dep.S \
+SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.S \
     sparc_mach_dep.S include/gc.h include/gc_typed.h \
     include/private/gc_hdrs.h include/private/gc_priv.h \
     include/private/gcconfig.h include/private/gc_pmark.h \
@@ -316,7 +320,7 @@ DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 	doc/README.environment doc/tree.html doc/gcdescr.html \
 	doc/README.autoconf doc/README.macros doc/README.ews4800 \
 	doc/README.DGUX386 doc/README.arm.cross doc/leak.html \
-	doc/scale.html doc/gcinterface.html
+	doc/scale.html doc/gcinterface.html doc/README.darwin
 
 TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 	tests/leak_test.c tests/thread_leak_test.c
@@ -331,7 +335,7 @@ GNU_BUILD_FILES= configure.in Makefile.am configure acinclude.m4 \
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
 		 BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
 		 PCR-Makefile SMakefile.amiga Makefile.DLLs \
-		 digimars.mak Makefile.direct
+		 digimars.mak Makefile.direct NT_STATIC_THREADS_MAKEFILE
 #	Makefile and Makefile.direct are copies of each other.
 
 OTHER_FILES= Makefile setjmp_t.c callprocs pc_excludes \
@@ -487,18 +491,17 @@ liblinuxgc.so: $(OBJS) dyn_load.o
 # 	gcc -shared -Wl,-soname=libgc.so.0 -o libgc.so.0 $(LIBOBJS) dyn_load.lo
 #	touch liblinuxgc.so
 
-mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.S \
+mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s \
 	    $(srcdir)/mips_ultrix_mach_dep.s \
             $(srcdir)/rs6000_mach_dep.s $(srcdir)/powerpc_darwin_mach_dep.s \
 	    $(srcdir)/sparc_mach_dep.S $(srcdir)/sparc_sunos4_mach_dep.s \
 	    $(srcdir)/ia64_save_regs_in_stack.s \
 	    $(srcdir)/sparc_netbsd_mach_dep.s $(UTILS)
 	rm -f mach_dep.o
-	./if_mach MIPS IRIX5 $(CC) -E $(srcdir)/mips_sgi_mach_dep.S \
-	 | ./if_mach MIPS IRIX5 grep -v "^\#" > $(srcdir)/mips_sgi_mach_dep.s
+	./if_mach MIPS IRIX5 $(CC) -c -o mach_dep.o $(srcdir)/mips_sgi_mach_dep.s
 	./if_mach MIPS RISCOS $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
 	./if_mach MIPS ULTRIX $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
-	./if_mach POWERPC MACOSX $(AS) -o mach_dep.o $(srcdir)/powerpc_darwin_mach_dep.s
+	./if_mach POWERPC DARWIN $(AS) -o mach_dep.o $(srcdir)/powerpc_darwin_mach_dep.s
 	./if_mach ALPHA LINUX $(CC) -c -o mach_dep.o $(srcdir)/alpha_mach_dep.S
 	./if_mach SPARC SUNOS5 $(CC) -c -o mach_dep.o $(srcdir)/sparc_mach_dep.S
 	./if_mach SPARC SUNOS4 $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
@@ -546,7 +549,7 @@ cord/de: $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(UTILS)
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -lucb `./threadlibs`
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -ldld `./threadlibs`
 	./if_mach RS6000 "" $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
-	./if_mach POWERPC MACOSX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a
+	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a
 	./if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
 	./if_mach ALPHA LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
 	./if_mach IA64 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
@@ -565,7 +568,7 @@ if_not_there: $(srcdir)/if_not_there.c
 clean: 
 	rm -f gc.a *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
 	      setjmp_test  mon.out gmon.out a.out core if_not_there if_mach \
-	      threadlibs $(CORD_OBJS) cord/cordtest cord/de mips_sgi_mach_dep.s
+	      threadlibs $(CORD_OBJS) cord/cordtest cord/de 
 	-rm -f *~
 
 gctest: tests/test.o gc.a $(UTILS)

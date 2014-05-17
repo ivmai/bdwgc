@@ -40,7 +40,7 @@ AC_DEFUN(GC_SET_VERSION, [
     alpha*) 
       GC_ALPHA_VERSION=`echo $GC_ALPHA_VERSION \
       | sed 's/alpha\([[0-9]][[0-9]]*\)/\1/'` ;;
-    *)  GC_VERSION_MAJOR='' ;;
+    *)  GC_ALPHA_MAJOR='' ;;
   esac
 
   if test :$GC_VERSION_MAJOR: = :: \

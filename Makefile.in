@@ -109,6 +109,7 @@ PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 STRIP = @STRIP@
 THREADLIBS = @THREADLIBS@
+UNWINDLIBS = @UNWINDLIBS@
 VERSION = @VERSION@
 addincludes = @addincludes@
 addlibs = @addlibs@
@@ -131,7 +132,6 @@ SUBDIRS = doc include
 # :GOTCHA: deliberately we do not include 'Makefile'
 
 # files used by makefiles other than Makefile.am
-# (:FIXME: do we really need gcc_support.c ?)
 #
 
 # part of C++ interface
@@ -145,13 +145,13 @@ SUBDIRS = doc include
 
 # :FIXME: why do we distribute this one???
 #
-EXTRA_DIST = alpha_mach_dep.S mips_sgi_mach_dep.S sparc_mach_dep.S README.QUICK BCC_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE \
+EXTRA_DIST = alpha_mach_dep.S mips_sgi_mach_dep.s sparc_mach_dep.S README.QUICK BCC_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE \
     OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE	\
     Makefile.direct Makefile.dj	Makefile.DLLs SMakefile.amiga \
     WCC_MAKEFILE\
 add_gc_prefix.c gcname.c if_mach.c if_not_there.c \
     hpux_test_and_clear.s pc_excludes gc.mak MacOS.c \
-    MacProjects.sit.hqx gcc_support.c mach_dep.c setjmp_t.c \
+    MacProjects.sit.hqx mach_dep.c setjmp_t.c \
     threadlibs.c AmigaOS.c \
     Mac_files/datastart.c Mac_files/dataend.c \
     Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h\
@@ -188,18 +188,18 @@ $(asm_libgc_sources)
 
 # Include THREADLIBS here to ensure that the correct versions of
 # linuxthread semaphore functions get linked:
-libgc_la_LIBADD = @addobjs@ $(THREADLIBS)
+libgc_la_LIBADD = @addobjs@ $(THREADLIBS) $(UNWINDLIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = -version-info 1:2:0
 
 EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
-    mips_sgi_mach_dep.S mips_ultrix_mach_dep.s powerpc_darwin_mach_dep.s \
+    mips_sgi_mach_dep.s mips_ultrix_mach_dep.s powerpc_darwin_mach_dep.s \
     rs6000_mach_dep.s sparc_mach_dep.S sparc_netbsd_mach_dep.s \
     sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s
 
 
 libgccpp_la_SOURCES = gc_cpp.cc
-libgccpp_la_LIBADD = $(THREADLIBS)
+libgccpp_la_LIBADD = $(THREADLIBS) $(UNWINDLIBS)
 libgccpp_la_LDFLAGS = -version-info 1:2:0
 
 AM_CXXFLAGS = @GC_CFLAGS@
@@ -212,9 +212,9 @@ check_PROGRAMS = gctest $(extra_checks)
 
 # gctest_OBJECTS = test.o
 gctest_SOURCES = tests/test.c
-gctest_LDADD = ./libgc.la $(THREADLIBS) $(EXTRA_TEST_LIBS)
+gctest_LDADD = ./libgc.la $(THREADLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
 test_cpp_SOURCES = tests/test_cpp.cc
-test_cpp_LDADD = ./libgc.la ./libgccpp.la $(THREADLIBS) $(EXTRA_TEST_LIBS)
+test_cpp_LDADD = ./libgc.la ./libgccpp.la $(THREADLIBS) $(UNWINDLIBS) $(EXTRA_TEST_LIBS)
 
 TESTS = gctest $(extra_checks)
 
@@ -236,8 +236,6 @@ dist_noinst_HEADERS = version.h
 # this is an auxiliary shell file used by Makefile and Makefile.direct
 #
 CONFIG_STATUS_DEPENDENCIES = $(srcdir)/configure.host
-
-MAKEOVERRIDES = 
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs

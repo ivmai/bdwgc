@@ -22,5 +22,6 @@ dist_pkgdata_DATA = barrett_diagram debugging.html gc.man \
     README.ews4800 README.hp README.linux README.Mac \
     README.MacOSX README.macros README.OS2 README.rs6000 \
     README.sgi README.solaris2 README.uts README.win32 \
-    tree.html leak.html gcinterface.html scale.html
+    tree.html leak.html gcinterface.html scale.html \
+    README.darwin
 

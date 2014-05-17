@@ -100,17 +100,29 @@
 #      define GC_TEST_AND_SET_DEFINED
 #    endif
 #    if defined(IA64)
+#      if defined(__INTEL_COMPILER)
+#        include <ia64intrin.h>
+#      endif
        inline static int GC_test_and_set(volatile unsigned int *addr) {
 	  long oldval, n = 1;
+#	ifndef __INTEL_COMPILER
 	  __asm__ __volatile__("xchg4 %0=%1,%2"
 		: "=r"(oldval), "=m"(*addr)
 		: "r"(n), "1"(*addr) : "memory");
+#	else
+	  oldval = _InterlockedExchange(addr, n);
+#	endif
 	  return oldval;
        }
 #      define GC_TEST_AND_SET_DEFINED
        /* Should this handle post-increment addressing?? */
        inline static void GC_clear(volatile unsigned int *addr) {
+#	ifndef __INTEL_COMPILER
 	 __asm__ __volatile__("st4.rel %0=r0" : "=m" (*addr) : : "memory");
+#	else
+	// there is no st4 but I can use xchg I hope
+	 _InterlockedExchange(addr, 0);
+#	endif
        }
 #      define GC_CLEAR_DEFINED
 #    endif
@@ -179,12 +191,18 @@
                              "       bne %2,2f\n"
                              "       xor %0,%3,%0\n"
                              "       stl_c %0,%1\n"
+#	ifdef __ELF__
                              "       beq %0,3f\n"
+#	else
+                             "       beq %0,1b\n"
+#	endif
                              "       mb\n"
                              "2:\n"
+#	ifdef __ELF__
                              ".section .text2,\"ax\"\n"
                              "3:     br 1b\n"
                              ".previous"
+#	endif
                              :"=&r" (temp), "=m" (*addr), "=&r" (oldvalue)
                              :"Ir" (1), "m" (*addr)
 			     :"memory");
