@@ -740,9 +740,11 @@
 #       include "stubinfo.h"
         extern int etext;
         extern int _stklen;
+        extern int __djgpp_stack_limit;
 #       define DATASTART ((ptr_t)((((word) (&etext)) + 0x1ff) & ~0x1ff))
-#       define STACKBOTTOM ((ptr_t)((word) _stubinfo + _stubinfo->size \
-                                                     + _stklen))
+/* #       define STACKBOTTOM ((ptr_t)((word) _stubinfo + _stubinfo->size \
+                                                     + _stklen)) */
+#       define STACKBOTTOM ((ptr_t)((word) __djgpp_stack_limit + _stklen))
 		/* This may not be right.  */
 #   endif
 #   ifdef OPENBSD
@@ -896,7 +898,7 @@
 	/* Normally HEURISTIC2 is too conervative, since		*/
 	/* the text segment immediately follows the stack.		*/
 	/* Hence we give an upper pound.				*/
-    	extern __start;
+    	extern int __start;
 #   	define HEURISTIC2_LIMIT ((ptr_t)((word)(&__start) & ~(getpagesize()-1)))
 #   	define CPP_WORDSZ 64
 #   	define MPROTECT_VDB

@@ -11,7 +11,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.14alpha2 of a conservative garbage collector for C and C++.
+This is version 4.14 of a conservative garbage collector for C and C++.
 
 You might find a more recent version of this at
 
@@ -1449,6 +1449,8 @@ Since 4.14alpha1
  - Added code to explicitly push register contents for win32 threads.
    This seems to be necessary.  (Thanks to Pierre de Rop.)
 
+Since 4.14alpha2
+ - changed STACKBOTTOM for DJGPP (Thanks to Salvador Eduardo Tropea).
 
 To do:
  - Very large root set sizes (> 16 MB or so) could cause the collector
