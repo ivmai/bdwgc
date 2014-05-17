@@ -169,8 +169,10 @@ void GC_push_regs()
 #   endif	/* MACOS */
 
 #       if defined(I386) &&!defined(OS2) &&!defined(SVR4) &&!defined(MSWIN32) \
-	&& !defined(SCO) && !defined(SCO_ELF) && !(defined(LINUX) \
-	&& defined(__ELF__)) && !defined(DOS4GW)
+	&& !defined(SCO) && !defined(SCO_ELF) \
+ 	&& !(defined(LINUX)       && defined(__ELF__)) \
+	&& !(defined(__FreeBSD__) && defined(__ELF__)) \
+	&& !defined(DOS4GW)
 	/* I386 code, generic code does not appear to work */
 	/* It does appear to work under OS2, and asms dont */
 	/* This is used for some 38g UNIX variants and for CYGWIN32 */
@@ -183,8 +185,11 @@ void GC_push_regs()
 	  asm("pushl %ebx");  asm("call _GC_push_one"); asm("addl $4,%esp");
 #       endif
 
-#	if defined(I386) && defined(LINUX) && defined(__ELF__)
+#	if ( defined(I386) && defined(LINUX) && defined(__ELF__) ) \
+	|| ( defined(I386) && defined(__FreeBSD__) && defined(__ELF__) )
+
 	/* This is modified for Linux with ELF (Note: _ELF_ only) */
+	/* This section handles FreeBSD with ELF. */
 	  asm("pushl %eax");  asm("call GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %ecx");  asm("call GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %edx");  asm("call GC_push_one"); asm("addl $4,%esp");

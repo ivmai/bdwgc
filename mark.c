@@ -113,6 +113,9 @@ GC_bool GC_mark_stack_too_small = FALSE;
 GC_bool GC_objects_are_marked = FALSE;	/* Are there collectable marked	*/
 					/* objects in the heap?		*/
 
+/* Is a collection in progress?  Note that this can return true in the	*/
+/* nonincremental case, if a collection has been abandoned and the	*/
+/* mark state is now MS_INVALID.					*/
 GC_bool GC_collection_in_progress()
 {
     return(GC_mark_state != MS_NONE);
@@ -304,9 +307,12 @@ GC_bool GC_mark_some()
     	        GC_mark_from_mark_stack();
     	        return(FALSE);
     	    }
-    	    if (scan_ptr == 0
-    	        && (GC_mark_state == MS_INVALID || GC_mark_stack_too_small)) {
-    	        alloc_mark_stack(2*GC_mark_stack_size);
+    	    if (scan_ptr == 0 && GC_mark_state == MS_INVALID) {
+		/* About to start a heap scan for marked objects. */
+		/* Mark stack is empty.  OK to reallocate.	  */
+		if (GC_mark_stack_too_small) {
+    	            alloc_mark_stack(2*GC_mark_stack_size);
+		}
 		GC_mark_state = MS_PARTIALLY_INVALID;
     	    }
     	    scan_ptr = GC_push_next_marked(scan_ptr);
@@ -393,6 +399,7 @@ mse * GC_signal_mark_stack_overflow(msp)
 mse * msp;
 {
     GC_mark_state = MS_INVALID;
+    GC_mark_stack_too_small = TRUE;
 #   ifdef PRINTSTATS
 	GC_printf1("Mark stack overflow; current size = %lu entries\n",
 	    	    GC_mark_stack_size);
@@ -657,7 +664,7 @@ int all;
 # endif
 word p;
 {
-    GC_PUSH_ONE_STACK(p);
+    GC_PUSH_ONE_STACK(p, 0);
 }
 
 # ifdef __STDC__
@@ -696,13 +703,18 @@ register GC_bool interior_ptrs;
         displ = HBLKDISPL(p);
         map_entry = MAP_ENTRY((hhdr -> hb_map), displ);
         if (map_entry == OBJ_INVALID) {
-          if (interior_ptrs) {
-            r = BASE(p);
-	    displ = BYTES_TO_WORDS(HBLKDISPL(r));
-	    if (r == 0) hhdr = 0;
-          } else {
-            hhdr = 0;
-          }
+#	  ifndef ALL_INTERIOR_POINTERS
+            if (interior_ptrs) {
+              r = BASE(p);
+	      displ = BYTES_TO_WORDS(HBLKDISPL(r));
+	      if (r == 0) hhdr = 0;
+            } else {
+              hhdr = 0;
+            }
+#	  else
+	    /* map already reflects interior pointers */
+	    hhdr = 0;
+#	  endif
         } else {
           displ = BYTES_TO_WORDS(displ);
           displ -= map_entry;
@@ -778,17 +790,13 @@ void GC_print_trace(word gc_no, GC_bool lock)
 
 /*
  * A version of GC_push_all that treats all interior pointers as valid
+ * and scans the entire region immediately, in case the contents
+ * change.
  */
-void GC_push_all_stack(bottom, top)
+void GC_push_all_eager(bottom, top)
 ptr_t bottom;
 ptr_t top;
 {
-# ifdef ALL_INTERIOR_POINTERS
-    GC_push_all(bottom, top);
-#   ifdef TRACE_BUF
-        GC_add_trace_entry("GC_push_all_stack", bottom, top);
-#   endif
-# else
     word * b = (word *)(((long) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((long) top) & ~(ALIGNMENT-1));
     register word *p;
@@ -805,10 +813,49 @@ ptr_t top;
       lim = t - 1 /* longword */;
       for (p = b; p <= lim; p = (word *)(((char *)p) + ALIGNMENT)) {
 	q = *p;
-	GC_PUSH_ONE_STACK(q);
+	GC_PUSH_ONE_STACK(q, p);
       }
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr
+}
+
+/*
+ * A version of GC_push_all that treats all interior pointers as valid
+ * and scans part of the area immediately, to make sure that saved
+ * register values are not lost.
+ */
+void GC_push_all_stack(bottom, top)
+ptr_t bottom;
+ptr_t top;
+{
+# ifdef ALL_INTERIOR_POINTERS
+#   define EAGER_BYTES 1024
+    /* Push the hot end of the stack eagerly, so that register values   */
+    /* saved inside GC frames are marked before they disappear.		*/
+    /* The rest of the marking can be deferred until later.		*/
+    ptr_t mid;
+#   ifdef STACK_GROWS_DOWN
+	mid = bottom + 1024;
+	if (mid < top) {
+	    GC_push_all_eager(bottom, mid);
+	    GC_push_all(mid - sizeof(ptr_t), top);
+	} else {
+	    GC_push_all_eager(bottom, top);
+	}
+#   else /* STACK_GROWS_UP */
+	mid = top - 1024;
+	if (mid > bottom) {
+	    GC_push_all_eager(mid, top);
+	    GC_push_all(bottom, mid + sizeof(ptr_t));
+	} else {
+	    GC_push_all_eager(bottom, top);
+	}
+#   endif /* STACK_GROWS_UP */
+# else
+    GC_push_all_eager(bottom, top);
+# endif
+# ifdef TRACE_BUF
+      GC_add_trace_entry("GC_push_all_stack", bottom, top);
 # endif
 }
 
@@ -840,7 +887,7 @@ register hdr * hhdr;
 	    while(mark_word != 0) {
 	      if (mark_word & 1) {
 	          q = p[i];
-	          GC_PUSH_ONE_HEAP(q);
+	          GC_PUSH_ONE_HEAP(q, p + i);
 	      }
 	      i++;
 	      mark_word >>= 1;
@@ -881,9 +928,9 @@ register hdr * hhdr;
 	    while(mark_word != 0) {
 	      if (mark_word & 1) {
 	          q = p[i];
-	          GC_PUSH_ONE_HEAP(q);
+	          GC_PUSH_ONE_HEAP(q, p + i);
 	          q = p[i+1];
-	          GC_PUSH_ONE_HEAP(q);
+	          GC_PUSH_ONE_HEAP(q, p + i);
 	      }
 	      i += 2;
 	      mark_word >>= 2;
@@ -923,13 +970,13 @@ register hdr * hhdr;
 	    while(mark_word != 0) {
 	      if (mark_word & 1) {
 	          q = p[i];
-	          GC_PUSH_ONE_HEAP(q);
+	          GC_PUSH_ONE_HEAP(q, p + i);
 	          q = p[i+1];
-	          GC_PUSH_ONE_HEAP(q);
+	          GC_PUSH_ONE_HEAP(q, p + i + 1);
 	          q = p[i+2];
-	          GC_PUSH_ONE_HEAP(q);
+	          GC_PUSH_ONE_HEAP(q, p + i + 2);
 	          q = p[i+3];
-	          GC_PUSH_ONE_HEAP(q);
+	          GC_PUSH_ONE_HEAP(q, p + i + 3);
 	      }
 	      i += 4;
 	      mark_word >>= 4;

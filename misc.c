@@ -766,7 +766,7 @@ char * msg;
 void GC_print_callers (info)
 struct callinfo info[NFRAMES];
 {
-    register int i,j;
+    register int i;
     
 #   if NFRAMES == 1
       GC_err_printf0("\tCaller at allocation:\n");
@@ -776,6 +776,9 @@ struct callinfo info[NFRAMES];
     for (i = 0; i < NFRAMES; i++) {
      	if (info[i].ci_pc == 0) break;
 #	if NARGS > 0
+	{
+	  int j;
+
      	  GC_err_printf0("\t\targs: ");
      	  for (j = 0; j < NARGS; j++) {
      	    if (j != 0) GC_err_printf0(", ");
@@ -783,6 +786,7 @@ struct callinfo info[NFRAMES];
      	    				~(info[i].ci_arg[j]));
      	  }
 	  GC_err_printf0("\n");
+	}
 # 	endif
      	GC_err_printf1("\t\t##PC##= 0x%X\n", info[i].ci_pc);
     }

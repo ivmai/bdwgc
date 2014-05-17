@@ -336,6 +336,9 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 /* space is assumed to be cleared.				*/
 /* In the case os USE_MMAP, the argument must also be a 	*/
 /* physical page size.						*/
+/* GET_MEM is currently not assumed to retrieve 0 filled space, */
+/* though we should perhaps take advantage of the case in which */
+/* does.							*/
 # ifdef PCR
     char * real_malloc();
 #   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)bytes + GC_page_size) \
@@ -434,7 +437,7 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #  ifdef LINUX_THREADS
 #    include <pthread.h>
 #    ifdef __i386__
-       inline static GC_test_and_set(volatile unsigned int *addr) {
+       inline static int GC_test_and_set(volatile unsigned int *addr) {
 	  int oldval;
 	  /* Note: the "xchg" instruction does not need a "lock" prefix */
 	  __asm__ __volatile__("xchgl %0, %1"
@@ -479,10 +482,11 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #    include <pthread.h>
 #    include <mutex.h>
 
-#    if __mips < 3 || !(defined (_ABIN32) || defined(_ABI64))
+#    if __mips < 3 || !(defined (_ABIN32) || defined(_ABI64)) \
+	|| !defined(_COMPILER_VERSION) || _COMPILER_VERSION < 700
 #        define GC_test_and_set(addr, v) test_and_set(addr,v)
 #    else
-#	  define GC_test_and_set(addr, v) __test_and_set(addr,v)
+#	 define GC_test_and_set(addr, v) __test_and_set(addr,v)
 #    endif
      extern unsigned long GC_allocate_lock;
 	/* This is not a mutex because mutexes that obey the (optional) 	*/
@@ -501,10 +505,17 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #    	define UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
 #    else
 #	define LOCK() { if (GC_test_and_set(&GC_allocate_lock, 1)) GC_lock(); }
-#       if __mips >= 3 && (defined (_ABIN32) || defined(_ABI64))
+#       if __mips >= 3 && (defined (_ABIN32) || defined(_ABI64)) \
+	   && defined(_COMPILER_VERSION) && _COMPILER_VERSION >= 700
 #	    define UNLOCK() __lock_release(&GC_allocate_lock)
 #	else
-#           define UNLOCK() GC_allocate_lock = 0
+	    /* The function call in the following should prevent the	*/
+	    /* compiler from moving assignments to below the UNLOCK.	*/
+	    /* This is probably not necessary for ucode or gcc 2.8.	*/
+	    /* It may be necessary for Ragnarok and future gcc		*/
+	    /* versions.						*/
+#           define UNLOCK() { GC_noop1(&GC_allocate_lock); \
+			*(volatile unsigned long *)(&GC_allocate_lock) = 0; }
 #	endif
 #    endif
      extern GC_bool GC_collecting;
@@ -1248,10 +1259,6 @@ extern GC_bool GC_dirty_maintained;
 				/* Dirty bits are being maintained, 	*/
 				/* either for incremental collection,	*/
 				/* or to limit the root set.		*/
-
-# ifndef PCR
-    extern ptr_t GC_stackbottom;	/* Cool end of user stack	*/
-# endif
 
 extern word GC_root_size;	/* Total size of registered root sections */
 

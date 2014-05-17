@@ -134,7 +134,19 @@ GC_API GC_word GC_max_retries;
 			/* reporting out of memory after heap		*/
 			/* expansion fails.  Initially 0.		*/
 			
-			
+
+GC_API char *GC_stackbottom;	/* Cool end of user stack.		*/
+				/* May be set in the client prior to	*/
+				/* calling any GC_ routines.  This	*/
+				/* avoids some overhead, and 		*/
+				/* potentially some signals that can 	*/
+				/* confuse debuggers.  Otherwise the	*/
+				/* collector attempts to set it 	*/
+				/* automatically.			*/
+				/* For multithreaded code, this is the	*/
+				/* cold end of the stack for the	*/
+				/* primordial thread.			*/
+				
 /* Public procedures */
 /*
  * general purpose allocation routines, with roughly malloc calling conv.

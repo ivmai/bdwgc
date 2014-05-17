@@ -63,11 +63,16 @@ ptr_t p;
 void (*GC_print_heap_obj)(/* char * s, ptr_t p */) =
 				GC_default_print_heap_obj_proc;
 
-void GC_print_source_ptr(ptr_t p)
+void GC_print_source_ptr(p)
+ptr_t p;
 {
     ptr_t base = GC_base(p);
     if (0 == base) {
-	GC_err_printf0("in root set");
+	if (0 == p) {
+	    GC_err_printf0("in register");
+	} else {
+	    GC_err_printf0("in root set");
+	}
     } else {
 	GC_err_printf0("in object at ");
 	(*GC_print_heap_obj)(base);

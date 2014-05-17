@@ -46,7 +46,7 @@ pthread_cond_t GC_prom_join_cv;		/* Broadcast when any thread terminates	*/
 pthread_cond_t GC_create_cv;		/* Signalled when a new undetached	*/
 				/* thread starts.			*/
 				
-extern bool GC_multithreaded;
+extern GC_bool GC_multithreaded;
 
 /* We use the allocation lock to protect thread-related data structures. */
 

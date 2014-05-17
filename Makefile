@@ -13,10 +13,10 @@ CXX=CC $(ABI_FLAG)
 AS=as $(ABI_FLAG)
 #  The above doesn't work with gas, which doesn't run cpp.
 #  Define AS as `gcc -c -x assembler-with-cpp' instead.
-#  Under Irix 6, you will have to specify the ABI for as if you specify
-#  it for the C compiler.
+#  Under Irix 6, you will have to specify the ABI (-o32, -n32, or -64)
+#  if you use something other than the default ABI on your machine.
 
-CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION -DSILENT
+CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSILENT
 
 # For dynamic library builds, it may be necessary to add flags to generate
 # PIC code, e.g. -fPIC on Linux.
@@ -37,7 +37,7 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DALL_INTERIOR_POINTERS -DNO_EXEC
 # -D_SOLARIS_PTHREADS enables support for Solaris pthreads.
 #   Define SOLARIS_THREADS as well.
 # -DIRIX_THREADS enables support for Irix pthreads.  See README.irix.
-# _DLINUX_THREADS enables support for Xavier Leroy's Linux threads.
+# -DLINUX_THREADS enables support for Xavier Leroy's Linux threads.
 #   see README.linux.  -D_REENTRANT may also be required.
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
 #   of objects to be recognized.  (See gc_priv.h for consequences.)
@@ -161,7 +161,7 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
            add_gc_prefix.c README.solaris2 README.sgi README.hp README.uts \
 	   win32_threads.c NT_THREADS_MAKEFILE gc.mak README.dj Makefile.dj \
-	   README.alpha README.linux version.h Makefile.DLLs gc_watcom.asm \
+	   README.alpha README.linux version.h Makefile.DLLs \
 	   WCC_MAKEFILE
 
 CORD_INCLUDE_FILES= $(srcdir)/gc.h $(srcdir)/cord/cord.h $(srcdir)/cord/ec.h \
@@ -275,16 +275,16 @@ mark_rts.o: $(srcdir)/mark_rts.c if_mach if_not_there $(UTILS)
 alloc.o: version.h
 
 cord/cordbscs.o: $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
-	$(CC) $(CFLAGS) -c $(srcdir)/cord/cordbscs.c
+	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordbscs.c
 	mv cordbscs.o cord/cordbscs.o
 #  not all compilers understand -o filename
 
 cord/cordxtra.o: $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
-	$(CC) $(CFLAGS) -c $(srcdir)/cord/cordxtra.c
+	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordxtra.c
 	mv cordxtra.o cord/cordxtra.o
 
 cord/cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
-	$(CC) $(CFLAGS) -c $(srcdir)/cord/cordprnt.c
+	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordprnt.c
 	mv cordprnt.o cord/cordprnt.o
 
 cord/cordtest: $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a $(UTILS)

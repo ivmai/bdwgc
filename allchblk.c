@@ -301,6 +301,7 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 	
     /* Notify virtual dirty bit implementation that we are about to write. */
     	GC_write_hint(thishbp);
+	/* This should deal better with large blocks.	*/
     
     /* Add it to map of valid blocks */
     	if (!GC_install_counts(thishbp, (word)size_needed)) return(0);

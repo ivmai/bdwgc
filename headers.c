@@ -53,7 +53,6 @@ ptr_t GC_scratch_alloc(bytes)
 register word bytes;
 {
     register ptr_t result = scratch_free_ptr;
-    register word bytes_needed = bytes;
 
 #   ifdef ALIGN_DOUBLE
 #	define GRANULARITY (2 * sizeof(word))

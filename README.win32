@@ -146,35 +146,4 @@ important, otherwise resulting programs will not run.
 
 Ivan Demakov (email: ivan@tgrad.nsk.su)
 
-My changes:
-
-      * gcconfig.h    Added definitions for Watcom C/C++.
-                      Undefined MPROTECT_VDB for Watcom C/C++ MSWIN32,
-                      I don't have idea why it not work.
-
-      * gc.h          Explicitly declared GC_noop. This prevents
-                      program crash, compiled with -5r option.
-
-      * gc_priv.h     Changed declaration for GC_push_one to make
-                      compiler happy.
-                      Added GC_dos4gw_get_mem declaration and
-                      GET_MEM uses it in DOS4GW environment.
-
-      * os_dep.c      Added __WATCOMC__ and DOS4GW #ifdef's.
-                      Added GC_dos4gw_get_mem.
-
-      * mach_dep.c    For Watcom used setjmp method of marking registers.
-
-      * WCC_MAKEFILE  New file. Makefile for Watcom C/C++.
-
-      * gc_watcom.asm New file. Some functions for DOS4GW.
-                      This functions may (probably) be done in C,
-                      but I can't figure out how do this for all
-                      possible options of compiler.
-
-      * README.watcom This file.
-
-
-  Ivan Demakov (email: dem@tgrad.nsk.su)
-
 
