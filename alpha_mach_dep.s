@@ -1,5 +1,9 @@
  # $Id: alpha_mach_dep.s,v 1.2 1993/01/18 22:54:51 dosser Exp $
 
+# This is BROKEN on a 21264 running gcc, and probably in other cases.
+# The compiler may spill pointers to fp registers, and this code doesn't
+# scan those.
+
 # define call_push(x)    						\
 	lda   $16, 0(x);    	/* copy x to first argument register */	\
 	jsr   $26, GC_push_one; /* call GC_push_one, ret addr in $26 */	\

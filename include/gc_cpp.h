@@ -16,12 +16,11 @@ the code was modified is included with the above copyright notice.
 C++ Interface to the Boehm Collector
 
     John R. Ellis and Jesse Hull 
-    Last modified on Mon Jul 24 15:43:42 PDT 1995 by ellis
 
 This interface provides access to the Boehm collector.  It provides
 basic facilities similar to those described in "Safe, Efficient
 Garbage Collection for C++", by John R. Elis and David L. Detlefs
-(ftp.parc.xerox.com:/pub/ellis/gc).
+(ftp://ftp.parc.xerox.com/pub/ellis/gc).
 
 All heap-allocated objects are either "collectable" or
 "uncollectable".  Programs must explicitly delete uncollectable
@@ -38,7 +37,7 @@ Objects derived from class "gc" are collectable.  For example:
     A* a = new A;       // a is collectable. 
 
 Collectable instances of non-class types can be allocated using the GC
-placement:
+(or UseGC) placement:
 
     typedef int A[ 10 ];
     A* a = new (GC) A;
@@ -124,6 +123,12 @@ invoked using the ANSI-conforming syntax t->~T().  If you're using
 cfront 3.0, you'll have to comment out the class gc_cleanup, which
 uses explicit invocation.
 
+5. GC name conflicts:
+
+Many other systems seem to use the identifier "GC" as an abbreviation
+for "Graphics Context".  Since version 5.0, GC placement has been replaced
+by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
+
 ****************************************************************************/
 
 #include "gc.h"
@@ -134,11 +139,15 @@ uses explicit invocation.
 
 #if ! defined( OPERATOR_NEW_ARRAY ) \
     && (__BORLANDC__ >= 0x450 || (__GNUC__ >= 2 && __GNUC_MINOR__ >= 6) \
-        || __WATCOMC__ >= 1050)
+        || __WATCOMC__ >= 1050 || _MSC_VER >= 1100)
 #   define OPERATOR_NEW_ARRAY
 #endif
 
-enum GCPlacement {GC, NoGC, PointerFreeGC};
+enum GCPlacement {UseGC,
+#ifndef GC_NAME_CONFLICT
+		  GC=UseGC,
+#endif
+                  NoGC, PointerFreeGC};
 
 class gc {public:
     inline void* operator new( size_t size );
@@ -191,6 +200,17 @@ inline void* operator new(
 
 #ifdef OPERATOR_NEW_ARRAY
 
+#ifdef _MSC_VER
+ /** This ensures that the system default operator new[] doesn't get
+  *  undefined, which is what seems to happen on VC++ 6 for some reason
+  *  if we define a multi-argument operator new[].
+  */
+ inline void *operator new[]( size_t size )
+ {
+    return ::operator new( size );
+ }
+#endif /* _MSC_VER */
+
 inline void* operator new[](
     size_t size, 
     GCPlacement gcp,
@@ -211,7 +231,7 @@ inline void* gc::operator new( size_t size ) {
     return GC_MALLOC( size );}
     
 inline void* gc::operator new( size_t size, GCPlacement gcp ) {
-    if (gcp == GC) 
+    if (gcp == UseGC) 
         return GC_MALLOC( size );
     else if (gcp == PointerFreeGC)
 	return GC_MALLOC_ATOMIC( size );
@@ -246,12 +266,12 @@ inline gc_cleanup::gc_cleanup() {
     GC_finalization_proc oldProc;
     void* oldData;
     void* base = GC_base( (void *) this );
-    if (0 == base) return;
-    GC_REGISTER_FINALIZER_IGNORE_SELF( 
-        base, cleanup, (void*) ((char*) this - (char*) base), 
+    if (0 != base)  {
+      GC_REGISTER_FINALIZER_IGNORE_SELF( 
+        base, (GC_finalization_proc)cleanup, (void*) ((char*) this - (char*) base), 
         &oldProc, &oldData );
-    if (0 != oldProc) {
-        GC_REGISTER_FINALIZER_IGNORE_SELF( base, oldProc, oldData, 0, 0 );}}
+      if (0 != oldProc) {
+        GC_REGISTER_FINALIZER_IGNORE_SELF( base, oldProc, oldData, 0, 0 );}}}
 
 inline void* operator new( 
     size_t size, 
@@ -261,7 +281,7 @@ inline void* operator new(
 {
     void* obj;
 
-    if (gcp == GC) {
+    if (gcp == UseGC) {
         obj = GC_MALLOC( size );
         if (cleanup != 0) 
             GC_REGISTER_FINALIZER_IGNORE_SELF( 

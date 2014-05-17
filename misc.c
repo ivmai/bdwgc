@@ -42,11 +42,12 @@
 #          ifdef WIN32_THREADS
 	      GC_API CRITICAL_SECTION GC_allocate_ml;
 #          else
-#             if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
-		 || defined(IRIX_JDK_THREADS)
+#             if defined(IRIX_THREADS) || defined(IRIX_JDK_THREADS) \
+		 || (defined(LINUX_THREADS) && defined(USE_SPIN_LOCK))
 	        pthread_t GC_lock_holder = NO_THREAD;
 #	      else
-#	        if defined(HPUX_THREADS)
+#	        if defined(HPUX_THREADS) \
+		   || defined(LINUX_THREADS) && !defined(USE_SPIN_LOCK)
 		  pthread_mutex_t GC_allocate_ml = PTHREAD_MUTEX_INITIALIZER;
 #		else 
 	          --> declare allocator lock here
@@ -119,6 +120,15 @@ extern signed_word GC_mem_found;
 	for (i = 8*sizeof(word) + 1; i <= 16 * sizeof(word); i++) {
 	      GC_size_map[i] = (ROUNDED_UP_WORDS(i) + 1) & (~1);
 	}
+#	ifdef GC_GCJ_SUPPORT
+	   /* Make all sizes up to 32 words predictable, so that a 	*/
+	   /* compiler can statically perform the same computation,	*/
+	   /* or at least a computation that results in similar size	*/
+	   /* classes.							*/
+	   for (i = 16*sizeof(word) + 1; i <= 32 * sizeof(word); i++) {
+	      GC_size_map[i] = (ROUNDED_UP_WORDS(i) + 3) & (~3);
+	   }
+#	endif
 	/* We leave the rest of the array to be filled in on demand. */
     }
     
@@ -439,8 +449,8 @@ void GC_init_inner()
 #   ifdef MSWIN32
  	GC_init_win32();
 #   endif
-#   if defined(LINUX) && \
-	(defined(POWERPC) || defined(ALPHA) || defined(SPARC) || defined(IA64))
+#   if defined(SEARCH_FOR_DATA_START)
+	/* This doesn't really work if the collector is in a shared library. */
 	GC_init_linux_data_start();
 #   endif
 #   ifdef SOLARIS_THREADS
@@ -807,7 +817,8 @@ struct callinfo info[NFRAMES];
 
 #endif /* SAVE_CALL_CHAIN */
 
-# ifdef SRC_M3
+/* Needed by SRC_M3, gcj, and should perhaps be the official interface	*/
+/* to GC_dont_gc.							*/
 void GC_enable()
 {
     GC_dont_gc--;
@@ -817,7 +828,6 @@ void GC_disable()
 {
     GC_dont_gc++;
 }
-# endif
 
 #if !defined(NO_DEBUGGING)
 

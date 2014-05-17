@@ -29,13 +29,8 @@ word sz;
     } else {
         GC_err_printf0("Leaked composite object at ");
     }
-    if (GC_debugging_started && GC_has_debug_info(p)) {
-        GC_print_obj(p);
-    } else {
-        GC_err_printf2("0x%lx (appr. size = %ld)\n",
-       		      (unsigned long)p,
-       		      (unsigned long)WORDS_TO_BYTES(sz));
-    }
+    GC_print_heap_obj(p);
+    GC_err_printf0("\n");
 }
 
 #   define FOUND_FREE(hblk, word_no) \
@@ -321,8 +316,7 @@ register ptr_t list;
 	    p[start_displ] = (word)list; \
 	    list = (ptr_t)(p+start_displ); \
 	    p[start_displ+1] = 0; \
-	    p[start_displ+2] = 0; \
-	    p[start_displ+3] = 0; \
+	    CLEAR_DOUBLE(p + start_displ + 2); \
 	    INCR_WORDS(4); \
 	}
     
@@ -601,20 +595,32 @@ int report_if_found;		/* Abort if a reclaimable object is found */
       switch(sz) {
 #      ifndef SMALL_CONFIG
         case 1:
-	    full = GC_block_nearly_full1(hhdr, 0xffffffffl);
+#           if CPP_WORDSZ == 64
+	      full = GC_block_nearly_full1(hhdr, 0xffffffffffffffffl);
+#	    else
+	      full = GC_block_nearly_full1(hhdr, 0xffffffffl);
+#	    endif
 	    if (TRUE == full) goto out;
 	    if (FALSE == full) GC_write_hint(hbp);
 	    /* In the DONT_KNOW case, we let reclaim fault.	*/
             *flh = GC_reclaim1(hbp, hhdr, *flh);
             break;
         case 2:
-	    full = GC_block_nearly_full1(hhdr, 0x55555555l);
+#           if CPP_WORDSZ == 64
+	      full = GC_block_nearly_full1(hhdr, 0x5555555555555555l);
+#	    else
+	      full = GC_block_nearly_full1(hhdr, 0x55555555l);
+#	    endif
 	    if (TRUE == full) goto out;
 	    if (FALSE == full) GC_write_hint(hbp);
             *flh = GC_reclaim_clear2(hbp, hhdr, *flh);
             break;
         case 4:
-	    full = GC_block_nearly_full1(hhdr, 0x11111111l);
+#           if CPP_WORDSZ == 64
+	      full = GC_block_nearly_full1(hhdr, 0x1111111111111111l);
+#	    else
+	      full = GC_block_nearly_full1(hhdr, 0x11111111l);
+#	    endif
 	    if (TRUE == full) goto out;
 	    if (FALSE == full) GC_write_hint(hbp);
             *flh = GC_reclaim_clear4(hbp, hhdr, *flh);
@@ -631,19 +637,31 @@ int report_if_found;		/* Abort if a reclaimable object is found */
       switch(sz) {
 #      ifndef SMALL_CONFIG
         case 1:
-	    full = GC_block_nearly_full1(hhdr, 0xffffffffl);
+#           if CPP_WORDSZ == 64
+	      full = GC_block_nearly_full1(hhdr, 0xffffffffffffffffl);
+#	    else
+	      full = GC_block_nearly_full1(hhdr, 0xffffffffl);
+#	    endif
 	    if (TRUE == full) goto out;
 	    if (FALSE == full) GC_write_hint(hbp);
             *flh = GC_reclaim1(hbp, hhdr, *flh);
             break;
         case 2:
-	    full = GC_block_nearly_full1(hhdr, 0x55555555l);
+#           if CPP_WORDSZ == 64
+	      full = GC_block_nearly_full1(hhdr, 0x5555555555555555l);
+#	    else
+	      full = GC_block_nearly_full1(hhdr, 0x55555555l);
+#	    endif
 	    if (TRUE == full) goto out;
 	    if (FALSE == full) GC_write_hint(hbp);
             *flh = GC_reclaim_uninit2(hbp, hhdr, *flh);
             break;
         case 4:
-	    full = GC_block_nearly_full1(hhdr, 0x11111111l);
+#           if CPP_WORDSZ == 64
+	      full = GC_block_nearly_full1(hhdr, 0x1111111111111111l);
+#	    else
+	      full = GC_block_nearly_full1(hhdr, 0x11111111l);
+#	    endif
 	    if (TRUE == full) goto out;
 	    if (FALSE == full) GC_write_hint(hbp);
             *flh = GC_reclaim_uninit4(hbp, hhdr, *flh);
@@ -814,6 +832,12 @@ int report_if_found;		/* Abort if a GC_reclaimable object is found */
   /* Go through all heap blocks (in hblklist) and reclaim unmarked objects */
   /* or enqueue the block for later processing.				   */
     GC_apply_to_all_blocks(GC_reclaim_block, (word)report_if_found);
+
+# ifdef EAGER_SWEEP
+    /* This is a very stupid thing to do.  We make it possible anyway,	*/
+    /* so that you can convince yourself that it really is very stupid.	*/
+    GC_reclaim_all((GC_stop_func)0, FALSE);
+# endif
     
 }
 
@@ -847,7 +871,7 @@ int kind;
  * Abort and return FALSE when/if (*stop_func)() returns TRUE.
  * If this returns TRUE, then it's safe to restart the world
  * with incorrectly cleared mark bits.
- * If ignore_old is TRUE, then reclain only blocks that have been 
+ * If ignore_old is TRUE, then reclaim only blocks that have been 
  * recently reclaimed, and discard the rest.
  * Stop_func may be 0.
  */

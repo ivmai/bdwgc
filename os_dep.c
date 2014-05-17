@@ -66,7 +66,7 @@
 #   define NEED_FIND_LIMIT
 # endif
 
-# if (defined(SUNOS4) & defined(DYNAMIC_LOADING)) && !defined(PCR)
+# if (defined(SUNOS4) && defined(DYNAMIC_LOADING)) && !defined(PCR)
 #   define NEED_FIND_LIMIT
 # endif
 
@@ -75,7 +75,8 @@
 # endif
 
 # if defined(LINUX) && \
-     (defined(POWERPC) || defined(SPARC) || defined(ALPHA) || defined(IA64))
+     (defined(POWERPC) || defined(SPARC) || defined(ALPHA) || defined(IA64) \
+      || defined(MIPS))
 #   define NEED_FIND_LIMIT
 # endif
 
@@ -142,8 +143,8 @@
 # define OPT_PROT_EXEC 0
 #endif
 
-#if defined(LINUX) && (defined(POWERPC) || defined(SPARC) || defined(ALPHA) \
-    		       || defined(IA64))
+#if defined(SEARCH_FOR_DATA_START)
+  /* The following doesn't work if the GC is in a dynamic library.	*/
   /* The I386 case can be handled without a search.  The Alpha case	*/
   /* used to be handled differently as well, but the rules changed	*/
   /* for recent Linux versions.  This seems to be the easiest way to	*/
@@ -597,33 +598,48 @@ ptr_t GC_get_stack_base()
 
 #ifdef LINUX_STACKBOTTOM
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 # define STAT_SKIP 27   /* Number of fields preceding startstack	*/
-			/* field in /proc/<pid>/stat			*/
+			/* field in /proc/self/stat			*/
 
   ptr_t GC_linux_stack_base(void)
   {
-    char buf[50];
-    FILE *f;
+    /* We read the stack base value from /proc/self/stat.  We do this	*/
+    /* using direct I/O system calls in order to avoid calling malloc   */
+    /* in case REDIRECT_MALLOC is defined.				*/ 
+#   define STAT_BUF_SIZE 4096
+#   ifdef USE_LD_WRAP
+#	define STAT_READ __real_read
+#   else
+#	define STAT_READ read
+#   endif    
+    char stat_buf[STAT_BUF_SIZE];
+    int f;
     char c;
     word result = 0;
-    int i;
+    size_t i, buf_offset = 0;
 
-    sprintf(buf, "/proc/%d/stat", getpid());
-    f = fopen(buf, "r");
-    if (NULL == f) ABORT("Couldn't open /proc/<pid>/stat");
-    c = getc(f);
+    f = open("/proc/self/stat", O_RDONLY);
+    if (f < 0 || STAT_READ(f, stat_buf, STAT_BUF_SIZE) < 2 * STAT_SKIP) {
+	ABORT("Couldn't read /proc/self/stat");
+    }
+    c = stat_buf[buf_offset++];
     /* Skip the required number of fields.  This number is hopefully	*/
     /* constant across all Linux implementations.			*/
       for (i = 0; i < STAT_SKIP; ++i) {
-	while (isspace(c)) c = getc(f);
-	while (!isspace(c)) c = getc(f);
+	while (isspace(c)) c = stat_buf[buf_offset++];
+	while (!isspace(c)) c = stat_buf[buf_offset++];
       }
-    while (isspace(c)) c = getc(f);
+    while (isspace(c)) c = stat_buf[buf_offset++];
     while (isdigit(c)) {
       result *= 10;
       result += c - '0';
-      c = getc(f);
+      c = stat_buf[buf_offset++];
     }
+    close(f);
     if (result < 0x10000000) ABORT("Absurd stack bottom value");
     return (ptr_t)result;
   }
@@ -1825,6 +1841,9 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #	  else
 #	    ifdef IA64
 	      char * addr = si -> si_addr;
+	      /* I believe this is claimed to work on all platforms for	*/
+	      /* Linux 2.3.47 and later.  Hopefully we don't have to	*/
+	      /* worry about earlier kernels on IA64.			*/
 #	    else
 #             if defined(POWERPC)
                 char * addr = (char *) (sc.regs->dar);
@@ -2129,12 +2148,13 @@ word len;
     	      ((ptr_t)end_block - (ptr_t)start_block) + HBLKSIZE);
 }
 
-#ifndef MSWIN32
+#if !defined(MSWIN32) && !defined(LINUX_THREADS)
 /* Replacement for UNIX system call.	 */
 /* Other calls that write to the heap	 */
 /* should be handled similarly.		 */
 # if defined(__STDC__) && !defined(SUNOS4)
 #   include <unistd.h>
+#   include <sys/uio.h>
     ssize_t read(int fd, void *buf, size_t nbyte)
 # else
 #   ifndef LINT
@@ -2151,10 +2171,12 @@ word len;
     
     GC_begin_syscall();
     GC_unprotect_range(buf, (word)nbyte);
-#   ifdef IRIX5
+#   if defined(IRIX5) || defined(LINUX_THREADS)
 	/* Indirect system call may not always be easily available.	*/
 	/* We could call _read, but that would interfere with the	*/
 	/* libpthread interception of read.				*/
+	/* On Linux, we have to be careful with the linuxthreads	*/
+	/* read interception.						*/
 	{
 	    struct iovec iov;
 
@@ -2168,7 +2190,29 @@ word len;
     GC_end_syscall();
     return(result);
 }
-#endif /* !MSWIN32 */
+#endif /* !MSWIN32 && !LINUX */
+
+#ifdef USE_LD_WRAP
+    /* We use the GNU ld call wrapping facility.			*/
+    /* This requires that the linker be invoked with "--wrap read".	*/
+    /* This can be done by passing -Wl,"--wrap read" to gcc.		*/
+    /* I'm not sure that this actually wraps whatever version of read	*/
+    /* is called by stdio.  That code also mentions __read.		*/
+#   include <unistd.h>
+    ssize_t __wrap_read(int fd, void *buf, size_t nbyte)
+    {
+ 	int result;
+
+	GC_begin_syscall();
+    	GC_unprotect_range(buf, (word)nbyte);
+	result = __real_read(fd, buf, nbyte);
+	GC_end_syscall();
+	return(result);
+    }
+
+    /* We should probably also do this for __read, or whatever stdio	*/
+    /* actually calls.							*/
+#endif
 
 /*ARGSUSED*/
 GC_bool GC_page_was_ever_dirty(h)

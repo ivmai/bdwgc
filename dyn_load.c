@@ -32,7 +32,9 @@
 #include "gc_priv.h"
 
 /* BTL: avoid circular redefinition of dlopen if SOLARIS_THREADS defined */
-# if defined(SOLARIS_THREADS) && defined(dlopen)
+# if (defined(LINUX_THREADS) || defined(SOLARIS_THREADS) \
+      || defined(HPUX_THREADS) || defined(IRIX_THREADS)) && defined(dlopen) \
+     && !defined(USE_LD_WRAP)
     /* To support threads in Solaris, gc.h interposes on dlopen by       */
     /* defining "dlopen" to be "GC_dlopen", which is implemented below.  */
     /* However, both GC_FirstDLOpenedLinkMap() and GC_dlopen() use the   */
@@ -159,32 +161,59 @@ static ptr_t GC_first_common()
 
 #endif  /* SUNOS4 ... */
 
-# if defined(SUNOS4) || defined(SUNOS5DL)
-/* Add dynamic library data sections to the root set.		*/
-# if !defined(PCR) && !defined(SOLARIS_THREADS) && defined(THREADS)
-#   ifndef SRC_M3
-	--> fix mutual exclusion with dlopen
-#   endif  /* We assume M3 programs don't call dlopen for now */
-# endif
+# if defined(LINUX_THREADS) || defined(SOLARIS_THREADS) \
+     || defined(HPUX_THREADS) || defined(IRIX_THREADS)
+  /* Make sure we're not in the middle of a collection, and make	*/
+  /* sure we don't start any.	Returns previous value of GC_dont_gc.	*/
+  /* This is invoked prior to a dlopen call to avoid synchronization	*/
+  /* issues.  We can't just acquire the allocation lock, since startup 	*/
+  /* code in dlopen may try to allocate.				*/
+  /* This solution risks heap growth in the presence of many dlopen	*/
+  /* calls in either a multithreaded environment, or if the library	*/
+  /* initialization code allocates substantial amounts of GC'ed memory.	*/
+  /* But I don't know of a better solution.				*/
+  /* This can still deadlock if the client explicitly starts a GC 	*/
+  /* during the dlopen.  He shouldn't do that.				*/
+  static GC_bool disable_gc_for_dlopen()
+  {
+    GC_bool result;
+    LOCK();
+    result = GC_dont_gc;
+    while (GC_incremental && GC_collection_in_progress()) {
+	GC_collect_a_little_inner(1000);
+    }
+    GC_dont_gc = TRUE;
+    UNLOCK();
+    return(result);
+  }
 
-# ifdef SOLARIS_THREADS
   /* Redefine dlopen to guarantee mutual exclusion with	*/
   /* GC_register_dynamic_libraries.			*/
-  /* assumes that dlopen doesn't need to call GC_malloc	*/
-  /* and friends.					*/
-# include <thread.h>
-# include <synch.h>
+  /* Should probably happen for other operating	systems, too. */
 
-void * GC_dlopen(const char *path, int mode)
+#include <dlfcn.h>
+
+#ifdef USE_LD_WRAP
+  void * __wrap_dlopen(const char *path, int mode)
+#else
+  void * GC_dlopen(path, mode)
+  GC_CONST char * path;
+  int mode;
+#endif
 {
     void * result;
+    GC_bool dont_gc_save;
     
 #   ifndef USE_PROC_FOR_LIBRARIES
-      mutex_lock(&GC_allocate_ml);
+      dont_gc_save = disable_gc_for_dlopen();
 #   endif
-    result = dlopen(path, mode);
+#   ifdef USE_LD_WRAP
+      result = __real_dlopen(path, mode);
+#   else
+      result = dlopen(path, mode);
+#   endif
 #   ifndef USE_PROC_FOR_LIBRARIES
-      mutex_unlock(&GC_allocate_ml);
+      GC_dont_gc = dont_gc_save;
 #   endif
     return(result);
 }
@@ -193,6 +222,14 @@ void * GC_dlopen(const char *path, int mode)
 /* BTL: added to fix circular dlopen definition if SOLARIS_THREADS defined */
 # if defined(GC_must_restore_redefined_dlopen)
 #   define dlopen GC_dlopen
+# endif
+
+# if defined(SUNOS4) || defined(SUNOS5DL)
+/* Add dynamic library data sections to the root set.		*/
+# if !defined(PCR) && !defined(SOLARIS_THREADS) && defined(THREADS)
+#   ifndef SRC_M3
+	--> fix mutual exclusion with dlopen
+#   endif  /* We assume M3 programs don't call dlopen for now */
 # endif
 
 # ifndef USE_PROC_FOR_LIBRARIES
@@ -356,7 +393,9 @@ extern void * GC_roots_present();
 	/* The type is a lie, since the real type doesn't make sense here, */
 	/* and we only test for NULL.					   */
 
+#ifndef GC_scratch_last_end_ptr   /* Never an extern any more? */
 extern ptr_t GC_scratch_last_end_ptr; /* End of GC_scratch_alloc arena	*/
+#endif
 
 /* We use /proc to track down all parts of the address space that are	*/
 /* mapped by the process, and throw out regions we know we shouldn't	*/

@@ -619,7 +619,7 @@ void GC_finalize()
 void GC_enqueue_all_finalizers()
 {
     struct finalizable_object * curr_fo, * prev_fo, * next_fo;
-    ptr_t real_ptr, real_link;
+    ptr_t real_ptr;
     register int i;
     int fo_size;
     
@@ -693,6 +693,14 @@ GC_API void GC_finalize_all()
     ENABLE_SIGNALS();
 }
 #endif
+
+/* Returns true if it is worth calling GC_invoke_finalizers. (Useful if	*/
+/* finalizers can only be called from some kind of `safe state' and	*/
+/* getting into that safe state is expensive.)				*/
+int GC_should_invoke_finalizers GC_PROTO((void))
+{
+    return GC_finalize_now != 0;
+}
 
 /* Invoke finalizers for all objects that are ready to be finalized.	*/
 /* Should be called without allocation lock.				*/
