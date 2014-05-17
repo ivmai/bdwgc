@@ -12,7 +12,7 @@
  * modified is included with the above copyright notice.
  *
  */
-/* Boehm, February 7, 1996 4:37 pm PST */
+/* Boehm, February 16, 1996 2:26 pm PST */
 
 
 # include "gc_priv.h"
@@ -64,11 +64,14 @@ int GC_full_freq = 4;	   /* Every 5th collection is a full	*/
 			   /* collection.			*/
 
 char * GC_copyright[] =
-{"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers",
-"Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.",
+{"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
+"Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved. ",
+"Copyright (c) 1996-1997 by Silicon Graphics.  All rights reserved. ",
 "THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY",
-" EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK."};
+" EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.",
+"See source code for details." };
 
+# include "version.h"
 
 /* some more variables */
 
@@ -78,6 +81,8 @@ extern signed_word GC_mem_found;  /* Number of reclaimed longwords	*/
 bool GC_dont_expand = 0;
 
 word GC_free_space_divisor = 4;
+
+extern bool GC_collection_in_progress();
 
 int GC_never_stop_func GC_PROTO((void)) { return(0); }
 
@@ -106,11 +111,11 @@ int GC_timeout_stop_func GC_PROTO((void))
 /* collections to amortize the collection cost.				*/
 static word min_words_allocd()
 {
-    int dummy;
 #   ifdef THREADS
  	/* We punt, for now. */
  	register signed_word stack_size = 10000;
 #   else
+        int dummy;
         register signed_word stack_size = (ptr_t)(&dummy) - GC_stackbottom;
 #   endif
     register word total_root_size;  /* includes double stack size,	*/
@@ -189,6 +194,13 @@ bool GC_should_collect()
     return(GC_adj_words_allocd() >= min_words_allocd());
 }
 
+void GC_notify_full_gc()
+{
+    if (GC_start_call_back != (void (*)())0) {
+	(*GC_start_call_back)();
+    }
+}
+
 /* 
  * Initiate a garbage collection if appropriate.
  * Choose judiciously
@@ -200,23 +212,34 @@ void GC_maybe_gc()
     static int n_partial_gcs = 0;
     if (GC_should_collect()) {
         if (!GC_incremental) {
+	    GC_notify_full_gc();
             GC_gcollect_inner();
             n_partial_gcs = 0;
+            return;
         } else if (n_partial_gcs >= GC_full_freq) {
-            GC_initiate_full();
+#   	    ifdef PRINTSTATS
+	      GC_printf2(
+	        "***>Full mark for collection %lu after %ld allocd bytes\n",
+     		(unsigned long) GC_gc_no+1,
+	   	(long)WORDS_TO_BYTES(GC_words_allocd));
+#           endif
+	    GC_promote_black_lists();
+	    (void)GC_reclaim_all((GC_stop_func)0, TRUE);
+	    GC_clear_marks();
             n_partial_gcs = 0;
+	    GC_notify_full_gc();
         } else {
-            /* We try to mark with the world stopped.	*/
-            /* If we run out of time, this turns into	*/
-            /* incremental marking.			*/
-            GET_TIME(GC_start_time);
-            if (GC_stopped_mark(GC_timeout_stop_func)) {
-#               ifdef SAVE_CALL_CHAIN
-                  GC_save_callers(GC_last_stack);
-#               endif
-                GC_finish_collection();
-            }
             n_partial_gcs++;
+        }
+        /* We try to mark with the world stopped.	*/
+        /* If we run out of time, this turns into	*/
+        /* incremental marking.			*/
+        GET_TIME(GC_start_time);
+        if (GC_stopped_mark(GC_timeout_stop_func)) {
+#           ifdef SAVE_CALL_CHAIN
+                GC_save_callers(GC_last_stack);
+#           endif
+            GC_finish_collection();
         }
     }
 }
@@ -229,6 +252,17 @@ void GC_maybe_gc()
 bool GC_try_to_collect_inner(stop_func)
 GC_stop_func stop_func;
 {
+    if (GC_collection_in_progress()) {
+#   ifdef PRINTSTATS
+	GC_printf0(
+	    "GC_try_to_collect_inner: finishing collection in progress\n");
+#    endif /* PRINTSTATS */
+      /* Just finish collection already in progress.	*/
+    	while(GC_collection_in_progress()) {
+    	    if (stop_func()) return(FALSE);
+    	    GC_collect_a_little_inner(1);
+    	}
+    }
 #   ifdef PRINTSTATS
 	GC_printf2(
 	   "Initiating full world-stop collection %lu after %ld allocd bytes\n",
@@ -239,7 +273,8 @@ GC_stop_func stop_func;
     /* Make sure all blocks have been reclaimed, so sweep routines	*/
     /* don't see cleared mark bits.					*/
     /* If we're guaranteed to finish, then this is unnecessary.		*/
-	if (stop_func != GC_never_stop_func && !GC_reclaim_all(stop_func)) {
+	if (stop_func != GC_never_stop_func
+	    && !GC_reclaim_all(stop_func, FALSE)) {
 	    /* Aborted.  So far everything is still consistent.	*/
 	    return(FALSE);
 	}
@@ -249,17 +284,15 @@ GC_stop_func stop_func;
         GC_save_callers(GC_last_stack);
 #   endif
     if (!GC_stopped_mark(stop_func)) {
+      if (!GC_incremental) {
     	/* We're partially done and have no way to complete or use 	*/
     	/* current work.  Reestablish invariants as cheaply as		*/
     	/* possible.							*/
     	GC_invalidate_mark_state();
 	GC_unpromote_black_lists();
-    	if (GC_incremental) {
-    	    /* Unlikely.  But just invalidating mark state could be	*/
-    	    /* expensive.						*/
-    	    GC_clear_marks();
-    	}
-    	return(FALSE);
+      } /* else we claim the world is already still consistent.  We'll 	*/
+        /* finish incrementally.					*/
+      return(FALSE);
     }
     GC_finish_collection();
     return(TRUE);
@@ -276,7 +309,6 @@ GC_stop_func stop_func;
 int GC_deficit = 0;	/* The number of extra calls to GC_mark_some	*/
 			/* that we have made.				*/
 			/* Negative values are equivalent to 0.		*/
-extern bool GC_collection_in_progress();
 
 void GC_collect_a_little_inner(n)
 int n;
@@ -345,7 +377,7 @@ GC_stop_func stop_func;
         /* Minimize junk left in my registers and on the stack */
             GC_clear_a_few_frames();
             GC_noop(0,0,0,0,0,0);
-	GC_initiate_partial();
+	GC_initiate_gc();
 	for(i = 0;;i++) {
 	    if ((*stop_func)()) {
 #   		    ifdef PRINTSTATS
@@ -519,10 +551,12 @@ void GC_finish_collection()
     GC_invoke_finalizers();
     DISABLE_SIGNALS();
     LOCK();
+    ENTER_GC();
     if (!GC_is_initialized) GC_init_inner();
     /* Minimize junk left in my registers */
       GC_noop(0,0,0,0,0,0);
     result = (int)GC_try_to_collect_inner(stop_func);
+    EXIT_GC();
     UNLOCK();
     ENABLE_SIGNALS();
     if(result) GC_invoke_finalizers();
@@ -531,6 +565,7 @@ void GC_finish_collection()
 
 void GC_gcollect GC_PROTO(())
 {
+    GC_notify_full_gc();
     (void)GC_try_to_collect(GC_never_stop_func);
 }
 
@@ -623,6 +658,8 @@ ptr_t x, y;
     GC_max_heapsize = n;
 }
 
+GC_word GC_max_retries = 0;
+
 /*
  * this explicitly increases the size of the heap.  It is used
  * internally, but may also be invoked from GC_expand_hp by the user.
@@ -640,6 +677,12 @@ word n;
 
     if (n < MINHINCR) n = MINHINCR;
     bytes = n * HBLKSIZE;
+    /* Make sure bytes is a multiple of GC_page_size */
+      {
+	word mask = GC_page_size - 1;
+	bytes += mask;
+	bytes &= ~mask;
+      }
     
     if (GC_max_heapsize != 0 && GC_heapsize + bytes > GC_max_heapsize) {
         /* Exceeded self-imposed limit */
@@ -702,13 +745,17 @@ word n;
     return(result);
 }
 
+unsigned GC_fail_count = 0;  
+			/* How many consecutive GC/expansion failures?	*/
+			/* Reset by GC_allochblk.			*/
+
 bool GC_collect_or_expand(needed_blocks, ignore_off_page)
 word needed_blocks;
 bool ignore_off_page;
 {
-    static int count = 0;  /* How many failures? */
     
     if (!GC_incremental && !GC_dont_gc && GC_should_collect()) {
+      GC_notify_full_gc();
       GC_gcollect_inner();
     } else {
       word blocks_to_get = GC_heapsize/(HBLKSIZE*GC_free_space_divisor)
@@ -731,18 +778,18 @@ bool ignore_off_page;
       }
       if (!GC_expand_hp_inner(blocks_to_get)
         && !GC_expand_hp_inner(needed_blocks)) {
-      	if (count++ < 10) {
+      	if (GC_fail_count++ < GC_max_retries) {
       	    WARN("Out of Memory!  Trying to continue ...\n", 0);
+	    GC_notify_full_gc();
 	    GC_gcollect_inner();
 	} else {
 	    WARN("Out of Memory!  Returning NIL!\n", 0);
 	    return(FALSE);
 	}
-      } else if (count) {
+      } else if (GC_fail_count) {
 #	  ifdef PRINTSTATS
 	    GC_printf0("Memory available again ...\n");
 #	  endif
-          count = 0;
       }
     }
     return(TRUE);
@@ -764,15 +811,22 @@ int kind;
     if (sz == 0) return(0);
 
     while (*flh == 0) {
+      ENTER_GC();
       /* Do our share of marking work */
         if(GC_incremental && !GC_dont_gc) GC_collect_a_little_inner(1);
       /* Sweep blocks for objects of this size */
           GC_continue_reclaim(sz, kind);
+      EXIT_GC();
       if (*flh == 0) {
         GC_new_hblk(sz, kind);
       }
       if (*flh == 0) {
-        if (!GC_collect_or_expand((word)1), FALSE) return(0);
+        ENTER_GC();
+        if (!GC_collect_or_expand((word)1,FALSE)) {
+	    EXIT_GC();
+	    return(0);
+	}
+	EXIT_GC();
       }
     }
     

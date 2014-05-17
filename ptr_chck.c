@@ -15,15 +15,20 @@
 #include "gc_priv.h"
 #include "gc_mark.h"
 
-void GC_default_same_obj_print_proc(p,q)
-ptr_t p, q;
+#ifdef __STDC__
+void GC_default_same_obj_print_proc(GC_PTR p, GC_PTR q)
+#else
+void GC_default_same_obj_print_proc (p, q)
+GC_PTR p, q;
+#endif
 {
     GC_err_printf2("0x%lx and 0x%lx are not in the same object\n",
     		   (unsigned long)p, (unsigned long)q);
     ABORT("GC_same_obj test failed");
 }
 
-void (*GC_same_obj_print_proc)() = GC_default_same_obj_print_proc;
+void (*GC_same_obj_print_proc) GC_PROTO((GC_PTR, GC_PTR))
+		= GC_default_same_obj_print_proc;
 
 /* Check that p and q point to the same object.  Call		*/
 /* *GC_same_obj_print_proc if they don't.			*/
@@ -115,16 +120,19 @@ fail:
     return(p);
 }
 
-
-void GC_default_is_valid_displacement_print_proc(p)
-ptr_t p;
+#ifdef __STDC__
+void GC_default_is_valid_displacement_print_proc (GC_PTR p)
+#else
+void GC_default_is_valid_displacement_print_proc (p)
+GC_PTR p;
+#endif
 {
     GC_err_printf1("0x%lx does not point to valid object displacement\n",
     		   (unsigned long)p);
     ABORT("GC_is_valid_displacement test failed");
 }
 
-void (*GC_is_valid_displacement_print_proc)() = 
+void (*GC_is_valid_displacement_print_proc) GC_PROTO((GC_PTR)) = 
 	GC_default_is_valid_displacement_print_proc;
 
 /* Check that if p is a pointer to a heap page, then it points to	*/
@@ -172,16 +180,19 @@ fail:
     return(p);
 }
 
-
+#ifdef __STDC__
+void GC_default_is_visible_print_proc(GC_PTR p)
+#else
 void GC_default_is_visible_print_proc(p)
-ptr_t p;
+GC_PTR p;
+#endif
 {
     GC_err_printf1("0x%lx is not a GC visible pointer location\n",
     		   (unsigned long)p);
     ABORT("GC_is_visible test failed");
 }
 
-void (*GC_is_visible_print_proc)() = 
+void (*GC_is_visible_print_proc) GC_PROTO((GC_PTR p)) = 
 	GC_default_is_visible_print_proc;
 
 /* Could p be a stack address? */

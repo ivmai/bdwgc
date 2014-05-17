@@ -161,6 +161,7 @@ mse * GC_signal_mark_stack_overflow();
     	     mark_stack_top, mark_stack_limit) \
 }
 
+
 /*
  * Push a single value onto mark stack. Mark from the object pointed to by p.
  * GC_push_one is normally called by GC_push_regs, and thus must be defined.
@@ -189,7 +190,20 @@ mse * GC_signal_mark_stack_overflow();
 	 GC_push_one_checked(p,AIP);	\
     }
 
-
+/*
+ * Mark from one finalizable object using the specified
+ * mark proc. May not mark the object pointed to by 
+ * real_ptr. That is the job of the caller, if appropriate
+ */
+# define GC_MARK_FO(real_ptr, mark_proc) \
+{ \
+    (*(mark_proc))(real_ptr); \
+    while (!GC_mark_stack_empty()) GC_mark_from_mark_stack(); \
+    if (GC_mark_state != MS_NONE) { \
+        GC_set_mark_bit(real_ptr); \
+        while (!GC_mark_some()); \
+    } \
+}
 
 extern bool GC_mark_stack_too_small;
 				/* We need a larger mark stack.  May be	*/
@@ -238,3 +252,4 @@ typedef int mark_state_t;	/* Current state of marking, as follows:*/
 extern mark_state_t GC_mark_state;
 
 #endif  /* GC_MARK_H */
+

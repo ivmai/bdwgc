@@ -260,6 +260,10 @@ CORD CORD_from_file_lazy(FILE * f);
 /* x, and is thus modifiable.						*/
 char * CORD_to_char_star(CORD x);
 
+/* Turn a C string into a CORD.  The C string is copied, and so may	*/
+/* subsequently be modified.						*/
+CORD CORD_from_char_star(const char *s);
+
 /* Identical to the above, but the result may share structure with	*/
 /* the argument and is thus not modifiable.				*/
 const char * CORD_to_const_char_star(CORD x); 

@@ -1,6 +1,7 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -11,7 +12,6 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, October 7, 1994 9:54 pm PDT */
  
 /*
  * This implements:
@@ -45,11 +45,23 @@ ptr_t h;
 static ptr_t scratch_free_ptr = 0;
  
 ptr_t GC_scratch_end_ptr = 0;
+
+ptr_t GC_scratch_last_end_ptr = 0;
+		/* End point of last obtained scratch area */
  
 ptr_t GC_scratch_alloc(bytes)
 register word bytes;
 {
     register ptr_t result = scratch_free_ptr;
+    register word bytes_needed = bytes;
+
+#   ifdef ALIGN_DOUBLE
+#	define GRANULARITY (2 * sizeof(word))
+#   else
+#	define GRANULARITY sizeof(word)
+#   endif
+    bytes += GRANULARITY-1;
+    bytes &= ~(GRANULARITY-1);
     scratch_free_ptr += bytes;
     if (scratch_free_ptr <= GC_scratch_end_ptr) {
         return(result);
@@ -59,8 +71,10 @@ register word bytes;
          
         if (bytes_to_get <= bytes) {
           /* Undo the damage, and get memory directly */
+   	    ptr_t result = (ptr_t)GET_MEM(bytes);
             scratch_free_ptr -= bytes;
-            return((ptr_t)GET_MEM(bytes));
+	    GC_scratch_last_end_ptr = result + bytes;
+            return(result);
         }
         result = (ptr_t)GET_MEM(bytes_to_get);
         if (result == 0) {
@@ -72,6 +86,7 @@ register word bytes;
         }
         scratch_free_ptr = result;
         GC_scratch_end_ptr = scratch_free_ptr + bytes_to_get;
+        GC_scratch_last_end_ptr = GC_scratch_end_ptr;
         return(GC_scratch_alloc(bytes));
     }
 }
@@ -121,7 +136,7 @@ register word addr;
     register bottom_index * p;
     register bottom_index ** prev;
 #   ifdef HASH_TL
-      register i = TL_HASH(hi);
+      register unsigned i = TL_HASH(hi);
       register bottom_index * old;
       
       old = p = GC_top_index[i];

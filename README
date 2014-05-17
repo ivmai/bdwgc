@@ -1,5 +1,6 @@
 Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
-Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
+Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
+Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
 
 THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -10,7 +11,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.9 of a conservative garbage collector for C and C++.
+This is version 4.12 of a conservative garbage collector for C and C++.
 
 HISTORY -
 
@@ -54,6 +55,9 @@ made it into the released version of the collector, yet.)
 (Blame for misinstallation of these modifications goes to the first author,
 however.)
 
+Credits for some more recent modifications are given in the modification
+history at the end of this file.
+
     This is intended to be a general purpose, garbage collecting storage
 allocator.  The algorithms used are described in:
 
@@ -73,7 +77,15 @@ discussed in
 
 Boehm, H., and D. Chase, "A Proposal for GC-safe C Compilation",
 The Journal of C Language Translation 4, 2 (December 1992).
-(Also available from parcftp.xerox.com:pub/gc, among other places.)
+
+and
+
+Boehm H., "Simple GC-safe Compilation", Proceedings
+of the ACM SIGPLAN '96 Conference on Programming Language Design and
+Implementation.
+
+(Both are also available from
+http://reality.sgi.com/employees/boehm_mti/papers/, among other places.)
 
   Unlike the collector described in the second reference, this collector
 operates either with the mutator stopped during the entire collection
@@ -110,19 +122,23 @@ by the routines described below.
 from other such accessible objects, or from the registers,
 stack, data, or statically allocated bss segments.  Pointers from
 the stack or registers may point to anywhere inside an object.
-However, it is usually assumed that all pointers originating in the
-heap point to the beginning of an object.  (This does
-not disallow interior pointers; it simply requires that there must be a
-pointer to the beginning of every accessible object, in addition to any
-interior pointers.)  There are two facilities for altering this behavior.
-The macro ALL_INTERIOR_POINTERS may be defined in gc_private.h to
-cause any pointer into an object (or one past the end) to retain the
-object.  A routine GC_register_displacement is provided to allow for
-more controlled interior pointer use in the heap.  Defining
-ALL_INTERIOR_POINTERS is somewhat dangerous, in that it can result
-in unnecessary memory retention.  However this is much less of a
-problem than with older collector versions.  The routine
-GC_register_displacement is described in gc.h.
+The same is true for heap pointers if the collector is compiled with
+ ALL_INTERIOR_POINTERS defined, as is now the default.
+
+Compiling without ALL_INTERIOR_POINTERS may reduce accidental retention
+of garbage objects, by requiring pointers from the heap to to the beginning
+of an object.  But this no longer appears to be a significant
+issue for most programs.
+
+There are a number of routines which modify the pointer recognition
+algorithm.  GC_register_displacement allows certain interior pointers
+to be recognized even if ALL_INTERIOR_POINTERS is nor defined.
+GC_malloc_ignore_off_page allows some pointers into the middle of large objects
+to be disregarded, greatly reducing the probablility of accidental
+retention of large objects.  For most purposes it seems best to compile
+with ALL_INTERIOR_POINTERS and to use GC_malloc_ignore_off_page if
+you get collector warnings from allocations of very large objects.
+See README.debugging for details.
 
   Note that pointers inside memory allocated by the standard "malloc" are not
 seen by the garbage collector.  Thus objects pointed to only from such a
@@ -133,11 +149,13 @@ static, or register variables, are correctly recognized.  (Note that
 GC_malloc_uncollectable has semantics similar to standard malloc,
 but allocates objects that are traced by the collector.)
 
-  The collector does not generally know how to find pointers in data
+  The collector does not always know how to find pointers in data
 areas that are associated with dynamic libraries.  This is easy to
 remedy IF you know how to find those data areas on your operating
-system (see GC_add_roots).  Code for doing this under SunOS and IRIX 5.X is
-included (see dynamic_load.c).
+system (see GC_add_roots).  Code for doing this under SunOS, IRIX 5.X and 6.X,
+HP/UX, Alpha OSF/1 and win32 is included and used by default.  (See
+README.win32 for win32 details.)  On other systems pointers from dynamic library
+data areas may not be considered by the collector.
 
   Note that the garbage collector does not need to be informed of shared
 read-only data.  However if the shared library mechanism can introduce
@@ -150,7 +168,8 @@ standard ANSI C mallocs, it can be safe to invoke malloc
 from a signal handler while another malloc is in progress, provided
 the original malloc is not restarted.  (Empirically, many UNIX
 applications already assume this.)  To obtain this level  of signal
-safety, remove the definition of -DNO_SIGNALS in Makefile.
+safety, remove the definition of -DNO_SIGNALS in Makefile.  This incurs
+a minor performance penalty, and hence is no longer the default.
 
   The allocator/collector can also be configured for thread-safe operation.
 (Full signal safety can also be achieved, but only at the cost of two system
@@ -184,6 +203,7 @@ Note that this requires an ANSI C compiler.
 
   It is suggested that if you need to replace a piece of the collector
 (e.g. GC_mark_rts.c) you simply list your version ahead of gc.a on the
+		work.)
 ld command line, rather than replacing the one in gc.a.  (This will
 generate numerous warnings under some versions of AIX, but it still
 works.)
@@ -193,38 +213,22 @@ include subdirectory.  (Normally this is just gc.h.  "Make cords" adds
 "cord.h" and "ec.h".)
 
   The collector currently is designed to run essentially unmodified on
-the following machines (most of the operating systems mentioned are
-trademarks of their respective holders):
-
-	    Sun 3
-	    Sun 4 under SunOS 4.X or Solaris2.X (with or without threads)
-	    Vax under 4.3BSD, Ultrix
-	    Intel 386 or 486 under most operating systems, but not MSDOS.
-	    	(Win32S is somewhat supported, so it is possible to
-	    	build applications for Windows 3.1.  There exists a port
-	    	to DOS + 32 bit extender for at least one 32 bit extender.
-	    	However, I don't have source for this.)
-	    Sequent Symmetry  (single threaded)
-	    Encore Multimax   (single threaded)
-	    MIPS M/120 (and presumably M/2000) (RISC/os 4.0 with BSD libraries)
-	    IBM PC/RT  (Berkeley UNIX)
-	    IBM RS/6000
-	    HP9000/300
-	    HP9000/700
-	    DECstations under Ultrix
-	    DEC Alpha running OSF/1
-	    SGI workstations under IRIX 4 & 5
-	    Sony News
-	    Apple Macintosh under A/UX or MacOS
-	    Commodore Amiga (see README.amiga)
-	    NeXT machines
+machines that use a flat 32-bit or 64-bit address space.
+That includes the vast majority of Workstations and X86 (X >= 3) PCs.
+(The list here was deleted because it was getting too long and constantly
+out of date.)
+  It does NOT run under plain 16-bit DOS or Windows 3.X.  There are however
+various packages (e.g. win32s, djgpp) that allow flat 32-bit address
+applications to run under those systemsif the have at least an 80386 processor,
+and several of those are compatible with the collector.
 
   In a few cases (Amiga, OS/2, Win32, MacOS) a separate makefile
-or equivalent is supplied.
+or equivalent is supplied.  Many of these have separate README.system
+files.
 
   Dynamic libraries are completely supported only under SunOS
 (and even that support is not functional on the last Sun 3 release),
-IRIX 5, Win32 (not Win32S) and OSF/1 on DEC AXP machines.
+IRIX 5&6, HP-PA, Win32 (not Win32S) and OSF/1 on DEC AXP machines.
 On other machines we recommend that you do one of the following:
 
   1) Add dynamic library support (and send us the code).
@@ -241,9 +245,8 @@ enforced by the standard C compilers.  If you use a nonstandard compiler
 you may have to adjust the alignment parameters defined in gc_priv.h.
 
   A port to a machine that is not byte addressed, or does not use 32 bit
-or 64 bit addresses will require a major effort.  A port to MSDOS is hard,
-unless you are willing to assume an 80386 or better, and that only flat
-32 bit pointers will ever need to be seen by the collector.
+or 64 bit addresses will require a major effort.  A port to plain MSDOS
+or win16 is hard.
 
   For machines not already mentioned, or for nonstandard compilers, the
 following are likely to require change:
@@ -461,7 +464,9 @@ intended to run with malloc/free (e.g. code with extreme real-time or
 portability constraints).  To do so define FIND_LEAK in Makefile
 This will cause the collector to invoke the report_leak
 routine defined near the top of reclaim.c whenever an inaccessible
-object is found that has not been explicitly freed.
+object is found that has not been explicitly freed.  The collector will
+no longer reclaim inaccessible memory; in this form it is purely a
+debugging tool.
   Productive use of this facility normally involves redefining report_leak
 to do something more intelligent.  This typically requires annotating
 objects with additional information (e.g. creation time stack trace) that
@@ -596,7 +601,7 @@ reclaimed.  Exclusive-or'ing forward and backward links in a list
 doesn't cut it.
   Some C optimizers may lose the last undisguised pointer to a memory
 object as a consequence of clever optimizations.  This has almost
-never been observed in practice.  Send mail to boehm@parc.xerox.com
+never been observed in practice.  Send mail to boehm@mti.sgi.com
 for suggestions on how to fix your compiler.
   This is not a real-time collector.  In the standard configuration,
 percentage of time required for collection should be constant across
@@ -605,7 +610,7 @@ heap sizes.  But collection pauses will increase for larger heaps.
 per MB of accessible memory that needs to be scanned.  Your mileage
 may vary.)  The incremental/generational collection facility helps,
 but is portable only if "stubborn" allocation is used.
-  Please address bug reports to boehm@parc.xerox.com.  If you are
+  Please address bug reports to boehm@mti.sgi.com.  If you are
 contemplating a major addition, you might also send mail to ask whether
 it's already been done (or whether we tried and discarded it).
 
@@ -1153,3 +1158,184 @@ Since version 4.8
    didn't test.
  - Fixed EMX_MAKEFILE to reflect the gc_c++.h to gc_cpp.h renaming which
    occurred a while ago.
+
+Since 4.9:
+ - Fixed a typo around a call to GC_collect_or_expand in alloc.c.  It broke
+   handling of out of memory.  (Thanks to Patrick Beard for noticing.)
+
+Since 4.10:
+ - Rationalized (hopefully) GC_try_to_collect in an incremental collection
+   environment.  It appeared to not handle a call while a collection was in
+   progress, and was otherwise too conservative.
+ - Merged GC_reclaim_or_delete_all into GC_reclaim_all to get rid of some
+   code.
+ - Added Patrick Beard's Mac fixes, with substantial completely untested
+   modifications.
+ - Fixed the MPROTECT_VDB code to deal with large pages and imprecise
+   fault addresses (as on an UltraSPARC running Solaris 2.5).  Note that this
+   was not a problem in the default configuration, which uses PROC_VDB.
+ - The DEC Alpha assembly code needed to restore $gp between calls.
+   Thanks to Fergus Henderson for tracking this down and supplying a
+   patch.
+ - The write command for "de" was completely broken for large files.
+   I used the easiest portable fix, which involved changing the semantics
+   so that f.new is written instead of overwriting f.  That's safer anyway.
+ - Added README.solaris2 with a discussion of the possible problems of
+   mixing the collector's sbrk allocation with malloc/realloc.
+ - Changed the data segment starting address for SGI machines.  The
+   old code failed under IRIX6.
+ - Required double word alignment for MIPS.
+ - Various minor fixes to remove warnings.
+ - Attempted to fix some Solaris threads problems reported by Zhiying Chen.
+   In particular, the collector could try to fork a thread with the
+   world stopped as part of GC_thr_init.  It also failed to deal with
+   the case in which the original thread terminated before the whole
+   process did.
+ - Added -DNO_EXECUTE_PERMISSION.  This has a major performance impact
+   on the incremental collector under Irix, and perhaps under other
+   operating systems.
+ - Added some code to support allocating the heap with mmap.  This may
+   be preferable under some circumstances.
+ - Integrated dynamic library support for HP.
+   (Thanks to Knut Tvedten <knuttv@ifi.uio.no>.)
+ - Integrated James Clark's win32 threads support, and made a number
+   of changes to it, many of which were suggested by Pontus Rydin.
+   This is still not 100% solid.
+ - Integrated Alistair Crooks' support for UTS4 running on an Amdahl
+   370-class machine.
+ - Fixed a serious bug in explicitly typed allocation.  Objects requiring
+   large descriptors where handled in a way that usually resulted in
+   a segmentation fault in the marker.  (Thanks to Jeremy Fitzhardinge
+   for helping to track this down.)
+ - Added partial support for GNU win32 development.  (Thanks to Fergus
+   Henderson.)
+ - Added optional support for Java-style finalization semantics.  (Thanks
+   to Patrick Bridges.)  This is recommended only for Java implementations.
+ - GC_malloc_uncollectable faulted instead of returning 0 when out of
+   memory.  (Thanks to dan@math.uiuc.edu for noticing.)
+ - Calls to GC_base before the collector was initialized failed on a
+   DEC Alpha.  (Thanks to Matthew Flatt.)
+ - Added base pointer checking to GC_REGISTER_FINALIZER in debugging
+   mode, at the suggestion of Jeremy Fitzhardinge.
+ - GC_debug_realloc failed for uncollectable objects.  (Thanks to
+   Jeremy Fitzhardinge.)
+ - Explicitly typed allocation could crash if it ran out of memory.
+   (Thanks to Jeremy Fitzhardinge.)
+ - Added minimal support for a DEC Alpha running Linux.
+ - Fixed a problem with allocation of objects whose size overflowed
+   ptrdiff_t.  (This now fails unconditionally, as it should.)
+ - Added the beginning of Irix pthread support.
+ - Integrated Xiaokun Zhu's fixes for djgpp 2.01.
+ - Added SGI-style STL allocator support (gc_alloc.h).
+ - Fixed a serious bug in README.solaris2.  Multithreaded programs must include
+   gc.h with SOLARIS_THREADS defined.
+ - Changed GC_free so it actually deallocates uncollectable objects.
+   (Thanks to Peter Chubb for pointing out the problem.)
+ - Added Linux ELF support for dynamic libararies.  (Thanks again to
+   Patrick Bridges.)
+ - Changed the Borland cc configuration so that the assembler is not
+   required.
+ - Fixed a bug in the C++ test that caused it to fail in 64-bit
+   environments.
+
+Since 4.11:
+ - Fixed ElfW definition in dyn_load.c. (Thanks to Fergus Henderson.)
+   This prevented the dynamic library support from compiling on some
+   older ELF Linux systems.
+ - Fixed UTS4 port (which I apparently mangled during the integration)
+   (Thanks to again to Alistair Crooks.)
+ - "Make C++" failed on Suns with SC4.0, due to a problem with "bool".
+   Fixed in gc_priv.h.
+ - Added more pieces for GNU win32.  (Thanks to Timothy N. Newsham.)
+   The current state of things should suffice for at least some
+   applications.
+ - Changed the out of memory retry count handling as suggested by
+   Kenjiro Taura.  (This matters only if GC_max_retries > 0, which
+   is no longer the default.)
+ - If a /proc read failed repeatedly, GC_written_pages was not updated
+   correctly.  (Thanks to Peter Chubb for diagnosing this.)
+ - Under unlikely circumstances, the allocator could infinite loop in
+   an out of memory situation.  (Thanks again to Kenjiro Taura for
+   identifying the problem and supplying a fix.)
+ - Fixed a syntactic error in the DJGPP code.  (Thanks to Fergus
+   Henderson for finding this by inspection.)  Also fixed a test program
+   problem with DJGPP (Thanks to Peter Monks.)
+ - Atomic uncollectable objects were not treated correctly by the
+   incremental collector.  This resulted in weird log statistics and
+   occasional performance problems.  (Thanks to Peter Chubb for pointing
+   this out.)
+ - Fixed some problems resulting from compilers that dont define
+   __STDC__.  In this case void * and char * were used inconsistently
+   in some cases.  (Void * should not have been used at all.  If
+   you have an ANSI superset compiler that does not define __STDC__,
+   please compile with -D__STDC__=0. Thanks to Manuel Serrano and others
+   for pointing out the problem.)
+ - Fixed a compilation problem on Irix with -n32 and -DIRIX_THREADS.
+   Also fixed some other IRIX_THREADS problems which may or may not have
+   had observable symptoms.
+ - Fixed an HP PA compilation problem in dyn_load.c.  (Thanks to
+   Philippe Queinnec.)
+ - SEGV fault handlers sometimes did not get reset correctly.  (Thanks
+   to David Pickens.)
+ - Added a fix for SOLARIS_THREADS on Intel.  (Thanks again to David
+   Pickens.)  This probably needs more work to become functional.
+ - Fixed struct sigcontext_struct in os_dep.c for compilation under
+   Linux 2.1.X.	(Thanks to Fergus Henderson.)
+ - Changed the DJGPP STACKBOTTOM and DATASTART values to those suggested
+   by Kristian Kristensen.  These may still not be right, but it is
+   it is likely to work more often than what was there before.  They may
+   even be exactly right.
+ - Added a #include <string.h> to test_cpp.cc.  This appears to help
+   with HP/UX and gcc.  (Thanks to assar@sics.se.)
+ - Version 4.11 failed to run in incremental mode on recent 64-bit Irix
+   kernels.  This was a problem related to page unaligned heap segments.
+   Changed the code to page align heap sections on all platforms.
+   (I had mistakenly identified this as a kernel problem earlier.
+   It was not.)
+ - Version 4.11 did not make allocated storage executable, except on
+   one or two platforms, due to a bug in a #if test.  (Thanks to Dave
+   Grove for pointing this out.)
+ - Added sparc_sunos4_mach_dep.s to support Sun's compilers under SunOS4.
+ - Added GC_exclude_static_roots.
+ - Fixed the object size mapping algorithm.  This shouldn't matter,
+   but the old code was ugly.
+ - Heap checking code could die if one of the allocated objects was
+   larger than its base address.  (Unsigned underflow problem.  Thanks
+   to Clay Spence for isolating the problem.)
+ - Added RS6000 (AIX) dynamic library support and fixed STACK_BOTTOM.
+   (Thanks to Fred Stearns.)
+ - Added Fergus Henderson's patches for improved robustness with large
+   heaps and lots of blacklisting.
+ - Added Peter Chubb's changes to support Solaris Pthreads, to support
+   MMAP allocation in Solaris, to allow Solaris to find dynamic libraries
+   through /proc, to add malloc_typed_ignore_off_page, and a few other
+   minor features and bug fixes.
+ - The Solaris 2 port should not use sbrk.  I received confirmation from
+   Sun that the use of sbrk and malloc in the same program is not
+   supported.  The collector now defines USE_MMAP by default on Solaris.
+ - Replaced the djgpp makefile with Gary Leavens' version.
+ - Fixed MSWIN32 detection test.
+ - Added Fergus Henderson's patches to allow putting the collector into
+   a DLL under GNU win32.
+ - Added Ivan V. Demakov's port to Watcom C on X86.
+ - Added Ian Piumarta's Linux/PowerPC port.
+ - On Brian Burton's suggestion added PointerFreeGC to the placement
+   options in gc_cpp.h.  This is of course unsafe, and may be controversial.
+   On the other hand, it seems to be needed often enough that it's worth
+   adding as a standard facility.
+
+To do:
+ - Very large root set sizes (> 16 MB or so) could cause the collector
+   to abort with an unexpected mark stack overflow.  (Thanks again to
+   Peter Chubb.)  NOT YET FIXED.  Workaround is to increase the initial
+   size.
+ - The SGI version of the collector marks from mmapped pages, even
+   if they are not part of dynamic library static data areas.  This
+   causes performance problems with some SGI libraries that use mmap
+   as a bitmap allocator.  NOT YET FIXED.  It may be possible to turn
+   off DYNAMIC_LOADING in the collector as a workaround.  It may also
+   be possible to conditionally intercept mmap and use GC_exclude_static_roots.
+   The real fix is to walk rld data structures, which looks possible.
+ - SGI pthreads and incremental collection don't mix yet.
+ - Integrate MIT and DEC pthreads ports.
+ 

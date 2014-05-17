@@ -168,9 +168,12 @@ void GC_push_regs()
 #	endif	/* __MWERKS__ */
 #   endif	/* MACOS */
 
-#       if defined(I386) &&!defined(OS2) &&!defined(SVR4) &&!defined(MSWIN32) && !defined(SCO) && (!defined(LINUX) || !defined(__ELF__))
+#       if defined(I386) &&!defined(OS2) &&!defined(SVR4) &&!defined(MSWIN32) \
+	&& !defined(SCO) && !(defined(LINUX) && defined(__ELF__)) \
+	&& !defined(DOS4GW)
 	/* I386 code, generic code does not appear to work */
 	/* It does appear to work under OS2, and asms dont */
+	/* This is used for some 38g UNIX variants and for CYGWIN32 */
 	  asm("pushl %eax");  asm("call _GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %ecx");  asm("call _GC_push_one"); asm("addl $4,%esp");
 	  asm("pushl %edx");  asm("call _GC_push_one"); asm("addl $4,%esp");
@@ -191,7 +194,7 @@ void GC_push_regs()
 	  asm("pushl %ebx");  asm("call GC_push_one"); asm("addl $4,%esp");
 #	endif
 
-#       if defined(I386) && defined(MSWIN32)
+#       if defined(I386) && defined(MSWIN32) && !defined(USE_GENERIC)
 	/* I386 code, Microsoft variant		*/
 	  __asm  push eax
 	  __asm  call GC_push_one
@@ -301,7 +304,7 @@ void GC_push_regs()
 #       endif /* M68K/SYSV */
 
 
-#     if defined(HP_PA) || defined(M88K) || defined(POWERPC) || (defined(I386) && defined(OS2))
+#     if defined(HP_PA) || defined(M88K) || defined(POWERPC) || (defined(I386) && (defined(OS2) || defined(USE_GENERIC))) || defined(UTS4)
 	/* Generic code                          */
 	/* The idea is due to Parag Patel at HP. */
 	/* We're not sure whether he would like  */
@@ -316,7 +319,7 @@ void GC_push_regs()
 		for (; (char *)i < lim; i++) {
 		    *i = 0;
 		}
-#	    ifdef POWERPC
+#	    if defined(POWERPC) || defined(MSWIN32) || defined(UTS4)
 		(void) setjmp(regs);
 #	    else
 	        (void) _setjmp(regs);
@@ -329,7 +332,9 @@ void GC_push_regs()
 #       if !(defined M68K) && !(defined VAX) && !(defined RT) 
 #	if !(defined SPARC) && !(defined I386) && !(defined NS32K)
 #	if !defined(HP_PA) && !defined(M88K) && !defined(POWERPC)
+#	if !defined(UTS4)
 	    --> bad news <--
+# 	endif
 #       endif
 #       endif
 #       endif

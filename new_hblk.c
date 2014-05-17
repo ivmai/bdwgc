@@ -152,7 +152,9 @@ ptr_t ofl;
 /*
  * Allocate a new heapblock for small objects of size n.
  * Add all of the heapblock's objects to the free list for objects
- * of that size.  Will fail to do anything if we are out of memory.
+ * of that size.
+ * Set all mark bits if objects are uncollectable.
+ * Will fail to do anything if we are out of memory.
  */
 void GC_new_hblk(sz, kind)
 register word sz;
@@ -173,6 +175,9 @@ int kind;
   /* Allocate a new heap block */
     h = GC_allochblk(sz, kind, 0);
     if (h == 0) return;
+
+  /* Mark all objects if appropriate. */
+      if (IS_UNCOLLECTABLE(kind)) GC_set_hdr_marks(HDR(h));
 
   /* Handle small objects sizes more efficiently.  For larger objects 	*/
   /* the difference is less significant.				*/

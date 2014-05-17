@@ -27,6 +27,10 @@ few minutes to complete.
 #include "gc_cpp.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#ifndef __GNUC__
+#   include "gc_alloc.h"
+#endif
 extern "C" {
 #include "gc_priv.h"
 }
@@ -104,7 +108,7 @@ class D: public gc {public:
     static void CleanUp( void* obj, void* data ) {
         D* self = (D*) obj;
         nFreed++;
-        my_assert( self->i == (int) data );}
+        my_assert( self->i == (int) (long) data );}
     static void Test() {
         my_assert( nFreed >= .8 * nAllocated );}
        
@@ -174,7 +178,12 @@ int main( int argc, char* argv[] ) {
 #endif
 
     int i, iters, n;
+#   ifndef __GNUC__
+      int *x = (int *)alloc::allocate(sizeof(int));
 
+      *x = 29;
+      x -= 3;
+#   endif
     if (argc != 2 || (0 >= (n = atoi( argv[ 1 ] )))) {
         GC_printf0( "usage: test_cpp number-of-iterations\n" );
         exit( 1 );}
@@ -229,6 +238,9 @@ int main( int argc, char* argv[] ) {
         D::Test();
         F::Test();}
 
+#   ifndef __GNUC__
+      my_assert (29 == x[3]);
+#   endif
     GC_printf0( "The test appears to have succeeded.\n" );
     return( 0 );}
     

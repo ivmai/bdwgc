@@ -1,4 +1,6 @@
 # Makefile for Borland C++ 4.5 on NT
+# For Borland 5.0, replace bc45 by bc5.
+# If you have the Borland assembler, remove "-DUSE_GENERIC"
 #
 bc=        c:\bc45
 bcbin=     $(bc)\bin
@@ -12,7 +14,7 @@ link=    $(bcbin)\tlink32
 cflags=  -R -v -vi -H -H=gc.csm -I$(bcinclude);cord -L$(bclib) \
          -w-pro -w-aus -w-par -w-ccc -w-rch -a4 -D__STDC__=0
 #defines= -DSILENT
-defines= -DSMALL_CONFIG -DSILENT -DALL_INTERIOR_POINTERS
+defines= -DSMALL_CONFIG -DSILENT -DALL_INTERIOR_POINTERS -DUSE_GENERIC
 
 .c.obj:
 	$(cc) @&&|
@@ -31,7 +33,7 @@ XXXOBJS= XXXalloc.obj XXXreclaim.obj XXXallchblk.obj XXXmisc.obj \
     XXXmach_dep.obj XXXos_dep.obj XXXmark_rts.obj XXXheaders.obj XXXmark.obj \
     XXXobj_map.obj XXXblacklst.obj XXXfinalize.obj XXXnew_hblk.obj \
     XXXdbg_mlc.obj XXXmalloc.obj XXXstubborn.obj XXXdyn_load.obj \
-    XXXtypd_mlc.obj XXXptr_chck.obj XXXgc_cpp.obj
+    XXXtypd_mlc.obj XXXptr_chck.obj XXXgc_cpp.obj XXXmallocx.obj
 
 OBJS= $(XXXOBJS:XXX=)
 

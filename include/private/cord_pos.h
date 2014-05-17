@@ -14,7 +14,7 @@
 # ifndef CORD_POSITION_H
 
 /* The representation of CORD_position.  This is private to the	*/
-/* implementation, but the ise is known to clients.  Also	*/
+/* implementation, but the size is known to clients.  Also	*/
 /* the implementation of some exported macros relies on it.	*/
 /* Don't use anything defined here and not in cord.h.		*/
 
@@ -29,7 +29,7 @@ struct CORD_pe {
 
 /* A structure describing an entry on the path from the root 	*/
 /* to current position.						*/
-typedef struct CORD_pos {
+typedef struct CORD_Pos {
     size_t cur_pos;
     int path_len;
 #	define CORD_POS_INVALID (0x55555555)

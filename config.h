@@ -1,6 +1,7 @@
 /* 
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -11,7 +12,6 @@
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
-/* Boehm, December 7, 1995 10:03 am PST */
  
 #ifndef CONFIG_H
 
@@ -49,11 +49,11 @@
 # endif
 # if defined(mips) || defined(__mips)
 #    define MIPS
-#    if defined(ultrix) || defined(__ultrix)
+#    if defined(ultrix) || defined(__ultrix) || defined(__NetBSD__)
 #	define ULTRIX
 #    else
 #	if defined(_SYSTYPE_SVR4) || defined(SYSTYPE_SVR4) || defined(__SYSTYPE_SVR4__)
-#	  define IRIX5
+#	  define IRIX5   /* or IRIX 6.X */
 #	else
 #	  define RISCOS  /* or IRIX 4.X */
 #	endif
@@ -119,8 +119,18 @@
 #    define LINUX
 #    define mach_type_known
 # endif
-# if defined(__alpha)
+# if defined(linux) && defined(powerpc)
+#    define POWERPC
+#    define LINUX
+#    define mach_type_known
+# endif
+# if defined(__alpha) || defined(__alpha__)
 #   define ALPHA
+#   if defined(linux) || defined(__linux__)
+#     define LINUX
+#   else
+#     define OSF1	/* a.k.a Digital Unix */
+#   endif
 #   define mach_type_known
 # endif
 # if defined(_AMIGA)
@@ -178,19 +188,45 @@
     /* DGUX defined */
 #   define mach_type_known
 # endif
-# if defined(_MSDOS) && (_M_IX86 == 300) || (_M_IX86 == 400)
+# if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300)
 #   define I386
 #   define MSWIN32	/* or Win32s */
 #   define mach_type_known
 # endif
-# if defined(GO32)
+# if defined(__DJGPP__)
 #   define I386
 #   define DJGPP  /* MSDOS running the DJGPP port of GCC */
+#   define mach_type_known
+# endif
+# if defined(__CYGWIN32__)
+#   define I386
+#   define CYGWIN32
 #   define mach_type_known
 # endif
 # if defined(__BORLANDC__)
 #   define I386
 #   define MSWIN32
+#   define mach_type_known
+# endif
+# if defined(_UTS) && !defined(mach_type_known)
+#   define S370
+#   define UTS4
+#   define mach_type_known
+# endif
+/* Ivan Demakov */
+# if defined(__WATCOMC__) && defined(__386__)
+#   define I386
+#   if !defined(OS2) && !defined(MSWIN32) && !defined(DOS4GW)
+#     if defined(__OS2__)
+#       define OS2
+#     else
+#       if defined(__WINDOWS_386__) || defined(__NT__)
+#         define MSWIN32
+#       else
+#         define DOS4GW
+#       endif
+#     endif
+#   endif
 #   define mach_type_known
 # endif
 
@@ -225,9 +261,12 @@
 		    /*		   SPARC      ==> SPARC under SunOS	*/
 		    /*			(SUNOS4, SUNOS5,		*/
 		    /*			 DRSNX variants)		*/
-		    /* 		   ALPHA      ==> DEC Alpha OSF/1	*/
+		    /* 		   ALPHA      ==> DEC Alpha 		*/
+		    /*			(OSF1 and LINUX variants)	*/
 		    /* 		   M88K       ==> Motorola 88XX0        */
 		    /* 		        (CX_UX and DGUX)		*/
+		    /* 		   S370	      ==> 370-like machine	*/
+		    /* 			running Amdahl UTS4		*/
 
 
 /*
@@ -249,7 +288,12 @@
  *
  * DATASTART is the beginning of the data segment.
  * On UNIX systems, the collector will scan the area between DATASTART
- * and &end for root pointers.
+ * and DATAEND for root pointers.
+ *
+ * DATAEND, if not &end.
+ *
+ * ALIGN_DOUBLE of GC_malloc should return blocks aligned to twice
+ * the pointer size.
  *
  * STACKBOTTOM is the cool end of the stack, which is usually the
  * highest address in the stack.
@@ -334,6 +378,8 @@
 #       define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
 #       define STACKBOTTOM ((ptr_t) 0xffeffffc)
 			      /* empirically determined.  seems to work. */
+#  	include <unistd.h>
+#	define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
 #   endif
 #   ifdef SYSV
 #	define OS_TYPE "SYSV"
@@ -353,12 +399,15 @@
 			/* that the stack direction is incorrect.  Two  */
 			/* bytes down from 0x0 should be safe enough.   */
 			/* 		--Parag				*/
+#   	include <sys/mmu.h>
+#	define GETPAGESIZE() PAGESIZE	/* Is this still right? */
 #   endif
 #   ifdef AMIGA
 #	define OS_TYPE "AMIGA"
  	    	/* STACKBOTTOM and DATASTART handled specially	*/
  	    	/* in os_dep.c					*/
 # 	define DATAEND	/* not needed */
+#	define GETPAGESIZE() 4096
 #   endif
 #   ifdef MACOS
 #     ifndef __LOWMEM__
@@ -368,6 +417,7 @@
 			/* see os_dep.c for details of global data segments. */
 #     define STACKBOTTOM ((ptr_t) LMGetCurStackBase())
 #     define DATAEND	/* not needed */
+#     define GETPAGESIZE() 4096
 #   endif
 #   ifdef NEXT
 #	define OS_TYPE "NEXT"
@@ -388,6 +438,13 @@
 			/* see os_dep.c for details of global data segments. */
 #     define STACKBOTTOM ((ptr_t) LMGetCurStackBase())
 #     define DATAEND  /* not needed */
+#   endif
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+#     define STACKBOTTOM ((ptr_t)0x80000000)
+#     define DATASTART GC_data_start
+      extern int _end;
+#     define DATAEND (&_end)
 #   endif
 # endif
 
@@ -417,6 +474,7 @@
 # ifdef SPARC
 #   define MACH_TYPE "SPARC"
 #   define ALIGNMENT 4	/* Required by hardware	*/
+#   define ALIGN_DOUBLE
     extern int etext;
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
@@ -425,6 +483,14 @@
 	extern char * GC_SysVGetDataStart();
 #       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &_etext)
 #	define DATAEND (&_end)
+#	ifndef USE_MMAP
+#	    define USE_MMAP
+#	endif
+#       ifdef USE_MMAP
+#         define HEAP_START (ptr_t)0x40000000
+#       else
+#	  define HEAP_START DATAEND
+#       endif
 #	define PROC_VDB
 #	define HEURISTIC1
 #   endif
@@ -463,6 +529,11 @@
 #   define ALIGNMENT 4	/* Appears to hold for all "32 bit" compilers	*/
 			/* except Borland.  The -a4 option fixes 	*/
 			/* Borland.					*/
+                        /* Ivan Demakov: For Watcom the option is -zp4. */
+#   ifndef SMALL_CONFIG
+#     define ALIGN_DOUBLE /* Not strictly necessary, but may give speed   */
+			  /* improvement on Pentiums.			  */
+#   endif
 #   ifdef SEQUENT
 #	define OS_TYPE "SEQUENT"
 	extern int etext;
@@ -475,7 +546,17 @@
   	extern char * GC_SysVGetDataStart();
 #       define DATASTART GC_SysVGetDataStart(0x1000, &etext)
 #	define STACKBOTTOM ((ptr_t)(&_start))
-#	define PROC_VDB
+/** At least in Solaris 2.5, PROC_VDB gives wrong values for dirty bits. */
+/*#	define PROC_VDB*/
+#	define DYNAMIC_LOADING
+#	ifndef USE_MMAP
+#	    define USE_MMAP
+#	endif
+#       ifdef USE_MMAP
+#         define HEAP_START (ptr_t)0x40000000
+#       else
+#	  define HEAP_START DATAEND
+#       endif
 #   endif
 #   ifdef SCO
 #	define OS_TYPE "SCO"
@@ -487,10 +568,43 @@
 #   endif
 #   ifdef LINUX
 #	define OS_TYPE "LINUX"
-	extern int etext;
-#       define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
 #	define STACKBOTTOM ((ptr_t)0xc0000000)
 #	define MPROTECT_VDB
+#       ifdef __ELF__
+#            define DYNAMIC_LOADING
+#       endif
+#       ifdef __ELF__
+#            define DYNAMIC_LOADING
+#	     ifdef UNDEFINED	/* includes ro data */
+	       extern int _etext;
+#              define DATASTART ((ptr_t)((((word) (&_etext)) + 0xfff) & ~0xfff))
+#	     endif
+    	     extern char **__environ;
+#            define DATASTART ((ptr_t)(&__environ))
+			      /* hideous kludge: __environ is the first */
+			      /* word in crt0.o, and delimits the start */
+			      /* of the data segment, no matter which   */
+			      /* ld options were passed through.        */
+			      /* We could use _etext instead, but that  */
+			      /* would include .rodata, which may       */
+			      /* contain large read-only data tables    */
+			      /* that we'd rather not scan.		*/
+	     extern int _end;
+#	     define DATAEND (&_end)
+#	else
+	     extern int etext;
+#            define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
+#       endif
+#   endif
+#   ifdef CYGWIN32
+#       define OS_TYPE "CYGWIN32"
+        extern int _bss_start__;
+#       define DATASTART       ((ptr_t)&_bss_start__)
+        extern int _data_end__;
+#       define DATAEND          ((ptr_t)&_data_end__)
+#	undef STACK_GRAN
+#       define STACK_GRAN 0x10000
+#       define HEURISTIC1
 #   endif
 #   ifdef OS2
 #	define OS_TYPE "OS2"
@@ -503,14 +617,20 @@
 #	define OS_TYPE "MSWIN32"
 		/* STACKBOTTOM and DATASTART are handled specially in 	*/
 		/* os_dep.c.						*/
-#	define MPROTECT_VDB
+#       ifndef __WATCOMC__
+#	  define MPROTECT_VDB
+#	endif
 #       define DATAEND  /* not needed */
 #   endif
 #   ifdef DJGPP
 #       define OS_TYPE "DJGPP"
+#       include "stubinfo.h"
         extern int etext;
-#       define DATASTART ((ptr_t)(&etext))
-#       define STACKBOTTOM ((ptr_t)0x00080000)
+        extern int _stklen;
+#       define DATASTART ((ptr_t)((((word) (&etext)) + 0x1ff) & ~0x1ff))
+#       define STACKBOTTOM ((ptr_t)((word) _stubinfo + _stubinfo->size \
+                                                     + _stklen))
+		/* This may not be right.  */
 #   endif
 #   ifdef FREEBSD
 #	define OS_TYPE "FREEBSD"
@@ -537,6 +657,21 @@
 #	define STACKBOTTOM ((ptr_t)0xc0000000)
 #	define DATAEND	/* not needed */
 #   endif
+#   ifdef DOS4GW
+#     define OS_TYPE "DOS4GW"
+      /* Get_DATASTART, Get_DATAEND, Get_STACKBOTTOM
+       *      Defined in gc-watcom.asm
+       */
+      extern char* Get_DATASTART (void);
+      extern char* Get_DATAEND (void);
+      extern char* Get_STACKBOTTOM (void);
+#     pragma aux Get_DATASTART "*" value [eax];
+#     pragma aux Get_DATAEND "*" value [eax];
+#     pragma aux Get_STACKBOTTOM "*" value [eax];
+#     define DATASTART ((ptr_t) Get_DATASTART())
+#     define STACKBOTTOM ((ptr_t) Get_STACKBOTTOM())
+#     define DATAEND ((ptr_t) Get_DATAEND())
+#   endif
 # endif
 
 # ifdef NS32K
@@ -553,25 +688,49 @@
 
 # ifdef MIPS
 #   define MACH_TYPE "MIPS"
-#   define ALIGNMENT 4	/* Required by hardware	*/
-#   define DATASTART 0x10000000
+#   ifndef IRIX5
+#     define DATASTART (ptr_t)0x10000000
 			      /* Could probably be slightly higher since */
-			      /* startup code allocates lots of junk     */
+			      /* startup code allocates lots of stuff.   */
+#   else
+      extern int _fdata;
+#     define DATASTART ((ptr_t)(&_fdata))
+#     ifdef USE_MMAP
+#         define HEAP_START (ptr_t)0x40000000
+#     else
+#	  define HEAP_START DATASTART
+#     endif
+			      /* Lowest plausible heap address.		*/
+			      /* In the MMAP case, we map there.	*/
+			      /* In either case it is used to identify	*/
+			      /* heap sections so they're not 		*/
+			      /* considered as roots.			*/
+#   endif /* IRIX5 */
 #   define HEURISTIC2
+/* #   define STACKBOTTOM ((ptr_t)0x7fff8000)  sometimes also works.  */
 #   ifdef ULTRIX
 #	define OS_TYPE "ULTRIX"
+#       define ALIGNMENT 4
 #   endif
 #   ifdef RISCOS
 #	define OS_TYPE "RISCOS"
+#   	define ALIGNMENT 4  /* Required by hardware */
 #   endif
 #   ifdef IRIX5
 #	define OS_TYPE "IRIX5"
-#	define MPROTECT_VDB
-		/* The above is dubious.  Mprotect and signals do work,	*/
-		/* and dirty bits are implemented under IRIX5.  But,	*/
-		/* at least under IRIX5.2, mprotect seems to be so	*/
-		/* slow relative to the hardware that incremental	*/
-		/* collection is likely to be rarely useful.		*/
+#       ifndef IRIX_THREADS
+#	    define MPROTECT_VDB
+#       endif
+#       ifdef _MIPS_SZPTR
+#	  define CPP_WORDSZ _MIPS_SZPTR
+#	  define ALIGNMENT (_MIPS_SZPTR/8)
+#	  if CPP_WORDSZ != 64
+#	    define ALIGN_DOUBLE
+#	  endif
+#	else
+#         define ALIGNMENT 4
+#	  define ALIGN_DOUBLE
+#	endif
 #	define DYNAMIC_LOADING
 #   endif
 # endif
@@ -580,15 +739,16 @@
 #   define MACH_TYPE "RS6000"
 #   define ALIGNMENT 4
 #   define DATASTART ((ptr_t)0x20000000)
-#   define STACKBOTTOM ((ptr_t)0x2ff80000)
-	/* This is known to break under 4.X, under some circumstances.	*/
-	/* But there doesn't seem to be a good alternative.  Set	*/
-	/* GC_stackbottom manually.					*/
+    extern int errno;
+#   define STACKBOTTOM ((ptr_t)((ulong)&errno + 2*sizeof(int)))
+#   define DYNAMIC_LOADING
+	/* For really old versions of AIX, this may have to be removed. */
 # endif
 
 # ifdef HP_PA
 #   define MACH_TYPE "HP_PA"
 #   define ALIGNMENT 4
+#   define ALIGN_DOUBLE
     extern int __data_start;
 #   define DATASTART ((ptr_t)(&__data_start))
 #   if 0
@@ -604,34 +764,74 @@
 #       define HEURISTIC2
 #   endif
 #   define STACK_GROWS_UP
+#   define DYNAMIC_LOADING
+#   include <unistd.h>
+#   define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
 # endif
 
 # ifdef ALPHA
 #   define MACH_TYPE "ALPHA"
 #   define ALIGNMENT 8
-#   define DATASTART ((ptr_t) 0x140000000)
-#   define HEURISTIC2
+#   ifdef OSF1
+#	define OS_TYPE "OSF1"
+#   	define DATASTART ((ptr_t) 0x140000000)
+#   	define HEURISTIC2
 	/* Normally HEURISTIC2 is too conervative, since		*/
 	/* the text segment immediately follows the stack.		*/
 	/* Hence we give an upper pound.				*/
-    extern __start;
-#   define HEURISTIC2_LIMIT ((ptr_t)((word)(&__start) & ~(getpagesize()-1)))
-#   define CPP_WORDSZ 64
-#   define MPROTECT_VDB
-#   define DYNAMIC_LOADING
+    	extern __start;
+#   	define HEURISTIC2_LIMIT ((ptr_t)((word)(&__start) & ~(getpagesize()-1)))
+#   	define CPP_WORDSZ 64
+#   	define MPROTECT_VDB
+#   	define DYNAMIC_LOADING
+#   endif
+#   ifdef LINUX
+#       define OS_TYPE "LINUX"
+#       define CPP_WORDSZ 64
+#       define STACKBOTTOM ((ptr_t) 0x120000000)
+#       ifdef __ELF__
+            extern int __data_start;
+#           define DATASTART &__data_start
+#           define DYNAMIC_LOADING
+#       else
+#           define DATASTART ((ptr_t) 0x140000000)
+#       endif
+	extern int _end;
+#	define DATAEND (&_end)
+	/* As of 1.3.90, I couldn't find a way to retrieve the correct	*/
+	/* fault address from a signal handler.				*/
+	/* Hence MPROTECT_VDB is broken.				*/
+#   endif
 # endif
 
 # ifdef M88K
 #   define MACH_TYPE "M88K"
 #   define ALIGNMENT 4
+#   define ALIGN_DOUBLE
+    extern int etext;
 #   ifdef CX_UX
+#	define OS_TYPE "CX_UX"
 #       define DATASTART ((((word)&etext + 0x3fffff) & ~0x3fffff) + 0x10000)
 #   endif
 #   ifdef  DGUX
+#	define OS_TYPE "DGUX"
 	extern char * GC_SysVGetDataStart();
 #       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &etext)
 #   endif
 #   define STACKBOTTOM ((char*)0xf0000000) /* determined empirically */
+# endif
+
+# ifdef S370
+#   define MACH_TYPE "S370"
+#   define OS_TYPE "UTS4"
+#   define ALIGNMENT 4	/* Required by hardware	*/
+    extern int etext;
+	extern int _etext;
+	extern int _end;
+	extern char * GC_SysVGetDataStart();
+#       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &_etext)
+#	define DATAEND (&_end)
+#	define HEURISTIC2
 # endif
 
 # ifndef STACK_GROWS_UP
@@ -651,7 +851,19 @@
 #   define DATAEND (&end)
 # endif
 
-# if defined(SUNOS5) || defined(DRSNX)
+# if defined(SVR4) && !defined(GETPAGESIZE)
+# include <unistd.h>
+  int
+  GC_getpagesize()
+  {
+    return sysconf(_SC_PAGESIZE);
+  }
+# endif
+# ifndef GETPAGESIZE
+#   define GETPAGESIZE() getpagesize()
+# endif
+
+# if defined(SUNOS5) || defined(DRSNX) || defined(UTS4)
     /* OS has SVR4 generic features.  Probably others also qualify.	*/
 #   define SVR4
 # endif
@@ -694,8 +906,20 @@
 #   define DEFAULT_VDB
 # endif
 
+# if defined(IRIX_THREADS) && !defined(IRIX5)
+--> inconsistent configuration
+# endif
+# if defined(SOLARIS_THREADS) && !defined(SUNOS5)
+--> inconsistent configuration
+# endif
+# if defined(PCR) || defined(SRC_M3) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || defined(IRIX_THREADS)
+#   define THREADS
+# endif
+
 # if defined(SPARC)
 #   define SAVE_CALL_CHAIN
+#   define ASM_CLEAR_CODE	/* Stack clearing is crucial, and we 	*/
+				/* include assembly code to do it well.	*/
 # endif
 
 # endif
