@@ -1,4 +1,4 @@
-# This is the original manually generated Makefile.  It may stil be used
+# This is the original manually generated Makefile.  It may still be used
 # to build the collector.
 #
 # Primary targets:
@@ -88,10 +88,11 @@ HOSTCFLAGS=$(CFLAGS)
 #   code from the heap.  Currently this only affects the incremental
 #   collector on UNIX machines.  It may greatly improve its performance,
 #   since this may avoid some expensive cache synchronization.
-# -DOPERATOR_NEW_ARRAY declares that the C++ compiler supports the
-#   new syntax "operator new[]" for allocating and deleting arrays.
+# -DGC_NO_OPERATOR_NEW_ARRAY declares that the C++ compiler does not support
+#   the  new syntax "operator new[]" for allocating and deleting arrays.
 #   See gc_cpp.h for details.  No effect on the C part of the collector.
-#   This is defined implicitly in a few environments.
+#   This is defined implicitly in a few environments.  Must also be defined
+#   by clients that use gc_cpp.h.
 # -DREDIRECT_MALLOC=X causes malloc, realloc, and free to be defined
 #   as aliases for X, GC_realloc, and GC_free, respectively.
 #   Calloc is redefined in terms of the new malloc.  X should
@@ -250,7 +251,7 @@ DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 	doc/README.win32 doc/barrett_diagram doc/README \
         doc/README.contributors doc/README.changes doc/gc.man \
 	doc/README.environment doc/tree.html doc/gcdescr.html \
-	doc/README.autoconf
+	doc/README.autoconf doc/README.macros
 
 TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 	tests/leak_test.c tests/thread_leak_test.c
@@ -516,7 +517,7 @@ KandRtest: setjmp_test gctest
 	./setjmp_test
 	./gctest
 
-add_gc_prefix: $(srcdir)/add_gc_prefix.c
+add_gc_prefix: $(srcdir)/add_gc_prefix.c $(srcdir)/version.h
 	$(CC) -o add_gc_prefix $(srcdir)/add_gc_prefix.c
 
 gcname: $(srcdir)/gcname.c $(srcdir)/version.h

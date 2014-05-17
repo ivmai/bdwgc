@@ -80,10 +80,6 @@
     typedef long ptrdiff_t;	/* ptrdiff_t is not defined */
 # endif
 
-#if defined(__CYGWIN32__) && defined(GC_USE_DLL)
-#include "libgc_globals.h"
-#endif
-
 #if defined(__MINGW32__) && defined(WIN32_THREADS)
 # ifdef GC_BUILD
 #   define GC_API __declspec(dllexport)
@@ -93,7 +89,7 @@
 #endif
 
 #if (defined(__DMC__) || defined(_MSC_VER)) \
-		&& (defined(_DLL) && !defined(NOT_GC_DLL) \
+		&& (defined(_DLL) && !defined(GC_NOT_DLL) \
 	            || defined(GC_DLL))
 # ifdef GC_BUILD
 #   define GC_API extern __declspec(dllexport)
@@ -348,6 +344,10 @@ GC_API void GC_end_stubborn_change GC_PROTO((GC_PTR));
 
 /* Return a pointer to the base (lowest address) of an object given	*/
 /* a pointer to a location within the object.				*/
+/* I.e. map an interior pointer to the corresponding bas pointer.	*/
+/* Note that with debugging allocation, this returns a pointer to the	*/
+/* actual base of the object, i.e. the debug information, not to	*/
+/* the base of the user object.						*/
 /* Return 0 if displaced_pointer doesn't point to within a valid	*/
 /* object.								*/
 GC_API GC_PTR GC_base GC_PROTO((GC_PTR displaced_pointer));

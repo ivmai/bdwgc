@@ -2192,6 +2192,16 @@ EOF
 EOF
 
 	;;
+     *-*-linux*)
+	cat >> confdefs.h <<\EOF
+#define GC_LINUX_THREADS 1
+EOF
+
+	cat >> confdefs.h <<\EOF
+#define _REENTRANT 1
+EOF
+
+	;;
      *-*-hpux*)
 	echo "configure: warning: "Only HP/UX 11 threads are supported."" 1>&2
 	cat >> confdefs.h <<\EOF
@@ -2213,16 +2223,6 @@ EOF
 EOF
 
 	THREADLIBS="-lpthread -lrt"
-	;;
-     *-*-linux*)
-	cat >> confdefs.h <<\EOF
-#define GC_LINUX_THREADS 1
-EOF
-
-	cat >> confdefs.h <<\EOF
-#define _REENTRANT 1
-EOF
-
 	;;
      *-*-freebsd*)
 	echo "configure: warning: "FreeBSD does not yet fully support threads with Boehm GC."" 1>&2

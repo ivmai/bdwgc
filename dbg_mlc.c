@@ -273,7 +273,7 @@ word integer;
     /* But that's expensive.  And this way things should only appear	*/
     /* inconsistent while we're in the handler.				*/
 #   ifdef KEEP_BACK_PTRS
-      ((oh *)p) -> oh_back_ptr = 0;
+      ((oh *)p) -> oh_back_ptr = HIDE_BACK_PTR(NOT_MARKED);
 #   endif
     ((oh *)p) -> oh_string = string;
     ((oh *)p) -> oh_int = integer;

@@ -167,15 +167,16 @@ typedef struct GC_Thread_Rep {
 #   ifdef THREAD_LOCAL_ALLOC
 #	if CPP_WORDSZ == 64 && defined(ALIGN_DOUBLE)
 #	    define GRANULARITY 16
-#	    define NFREELISTS 48
+#	    define NFREELISTS 49
 #	else
 #	    define GRANULARITY 8
-#	    define NFREELISTS 64
+#	    define NFREELISTS 65
 #	endif
-	/* The ith free list corresponds to size (i+1)*GRANULARITY */
-#	define INDEX_FROM_BYTES(n) (ADD_SLOP(n) - 1)/GRANULARITY
-#	define BYTES_FROM_INDEX(i) (((i) + 1) * GRANULARITY - EXTRA_BYTES)
-#	define SMALL_ENOUGH(bytes) (ADD_SLOP(bytes) <= NFREELISTS*GRANULARITY)
+	/* The ith free list corresponds to size i*GRANULARITY */
+#	define INDEX_FROM_BYTES(n) ((ADD_SLOP(n) + GRANULARITY - 1)/GRANULARITY)
+#	define BYTES_FROM_INDEX(i) ((i) * GRANULARITY - EXTRA_BYTES)
+#	define SMALL_ENOUGH(bytes) (ADD_SLOP(bytes) <= \
+				    (NFREELISTS-1)*GRANULARITY)
 	ptr_t ptrfree_freelists[NFREELISTS];
 	ptr_t normal_freelists[NFREELISTS];
 #	ifdef GC_GCJ_SUPPORT
@@ -229,8 +230,8 @@ static void return_freelists(ptr_t *fl, ptr_t *gfl)
     ptr_t q, *qptr;
     size_t nwords;
 
-    for (i = 0; i < NFREELISTS; ++i) {
-	nwords = (i + 1) * (GRANULARITY/sizeof(word));
+    for (i = 1; i < NFREELISTS; ++i) {
+	nwords = i * (GRANULARITY/sizeof(word));
         qptr = fl + i;	
 	q = *qptr;
 	if ((word)q < HBLKSIZE) continue;
@@ -249,6 +250,12 @@ static void return_freelists(ptr_t *fl, ptr_t *gfl)
     }
 }
 
+/* We statically allocate a single "size 0" object. It is linked to	*/
+/* itself, and is thus repeatedly reused for all size 0 allocation	*/
+/* requests.  (Size 0 gcj allocation requests are incorrect, and	*/
+/* we arrange for those to fault asap.)					*/
+static ptr_t size_zero_object = (ptr_t)(&size_zero_object);
+
 /* Each thread structure must be initialized.	*/
 /* This call must be made from the new thread.	*/
 /* Caller holds allocation lock.		*/
@@ -265,13 +272,19 @@ void GC_init_thread_local(GC_thread p)
     if (0 != GC_setspecific(GC_thread_key, p)) {
 	ABORT("Failed to set thread specific allocation pointers");
     }
-    for (i = 0; i < NFREELISTS; ++i) {
+    for (i = 1; i < NFREELISTS; ++i) {
 	p -> ptrfree_freelists[i] = (ptr_t)1;
 	p -> normal_freelists[i] = (ptr_t)1;
 #	ifdef GC_GCJ_SUPPORT
 	  p -> gcj_freelists[i] = (ptr_t)1;
 #	endif
     }   
+    /* Set up the size 0 free lists.	*/
+    p -> ptrfree_freelists[0] = (ptr_t)(&size_zero_object);
+    p -> normal_freelists[0] = (ptr_t)(&size_zero_object);
+#   ifdef GC_GCJ_SUPPORT
+        p -> gcj_freelists[0] = (ptr_t)(-1);
+#   endif
 }
 
 #ifdef GC_GCJ_SUPPORT
@@ -664,7 +677,7 @@ void GC_mark_thread_local_free_lists(void)
     
     for (i = 0; i < THREAD_TABLE_SZ; ++i) {
       for (p = GC_threads[i]; 0 != p; p = p -> next) {
-	for (j = 0; j < NFREELISTS; ++j) {
+	for (j = 1; j < NFREELISTS; ++j) {
 	  q = p -> ptrfree_freelists[j];
 	  if ((word)q > HBLKSIZE) GC_set_fl_marks(q);
 	  q = p -> normal_freelists[j];

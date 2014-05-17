@@ -45,7 +45,7 @@
 	  mutex_t GC_allocate_ml;	/* Implicitly initialized.	*/
 #	else
 #          ifdef WIN32_THREADS
-#	      if defined(_DLL) || defined(GC_DLL)
+#	      if !defined(GC_NOT_DLL) && (defined(_DLL) || defined(GC_DLL))
 		 __declspec(dllexport) CRITICAL_SECTION GC_allocate_ml;
 #	      else
 		 CRITICAL_SECTION GC_allocate_ml;
@@ -301,6 +301,8 @@ ptr_t arg;
     if (++random_no % 13 == 0) {
 	limit = sp;
 	MAKE_HOTTER(limit, BIG_CLEAR_SIZE*sizeof(word));
+        limit &= ~0xf;	/* Make it sufficiently aligned for assembly	*/
+        		/* implementations of GC_clear_stack_inner.	*/
 	return GC_clear_stack_inner(arg, limit);
     } else {
 	BZERO(dummy, SMALL_CLEAR_SIZE*sizeof(word));
@@ -691,7 +693,7 @@ out:
   }
 
   int GC_write(buf, len)
-  char * buf;
+  GC_CONST char * buf;
   size_t len;
   {
       BOOL tmp;

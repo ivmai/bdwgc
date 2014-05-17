@@ -53,7 +53,7 @@
     !(defined(ALPHA) && defined(OSF1)) && \
     !defined(HPUX) && !(defined(LINUX) && defined(__ELF__)) && \
     !defined(RS6000) && !defined(SCO_ELF) && \
-    !(defined(NETBSD) && defined(__ELF__))
+    !(defined(NETBSD) && defined(__ELF__)) && !defined(HURD)
  --> We only know how to find data segments of dynamic libraries for the
  --> above.  Additional SVR4 variants might not be too
  --> hard to add.
@@ -243,7 +243,7 @@ void GC_register_dynamic_libraries()
 # endif /* SUNOS */
 
 #if defined(LINUX) && defined(__ELF__) || defined(SCO_ELF) || \
-    (defined(NETBSD) && defined(__ELF__))
+    (defined(NETBSD) && defined(__ELF__)) || defined(HURD)
 
 
 #ifdef USE_PROC_FOR_LIBRARIES

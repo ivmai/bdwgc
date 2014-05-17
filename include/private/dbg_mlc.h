@@ -19,7 +19,7 @@
  * not use it.  Clients that define their own object kinds with
  * debugging allocators will probably want to include this, however.
  * No attempt is made to keep the namespace clean.  This should not be
- * included from header filrd that are frequently included by clients.
+ * included from header files that are frequently included by clients.
  */
 
 #ifndef _DBG_MLC_H
@@ -68,6 +68,9 @@ typedef struct {
 	    /* overwrite a value with the least significant	*/
 	    /* bit clear, thus ensuring that we never overwrite	*/
 	    /* a free list link field.				*/
+ 	    /* Note that blocks dropped by black-listing will	*/
+ 	    /* also have the lsb clear once debugging has	*/
+ 	    /* started.						*/
 	    /* The following are special back pointer values.	*/
 	    /* Note that the "hidden" (i.e. bitwise 		*/
 	    /* complemented version) of these is actually 	*/

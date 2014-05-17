@@ -63,7 +63,11 @@
 /* Blatantly OS dependent routines, except for those that are related 	*/
 /* to dynamic loading.							*/
 
-# if !defined(THREADS) && !defined(STACKBOTTOM) && defined(HEURISTIC2)
+# if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START)
+#   define NEED_FIND_LIMIT
+# endif
+
+# if !defined(STACKBOTTOM) && defined(HEURISTIC2)
 #   define NEED_FIND_LIMIT
 # endif
 
@@ -75,13 +79,8 @@
 #   define NEED_FIND_LIMIT
 # endif
 
-# if (defined(SVR4) || defined(AUX) || defined(DGUX)) && !defined(PCR)
-#   define NEED_FIND_LIMIT
-# endif
-
-# if defined(LINUX) && \
-     (defined(POWERPC) || defined(SPARC) || defined(ALPHA) || defined(IA64) \
-      || defined(MIPS))
+# if (defined(SVR4) || defined(AUX) || defined(DGUX) \
+      || (defined(LINUX) && defined(SPARC))) && !defined(PCR)
 #   define NEED_FIND_LIMIT
 # endif
 
@@ -123,8 +122,10 @@
 # include <fcntl.h>
 #endif
 
-#ifdef SUNOS5SIGS
-# include <sys/siginfo.h>
+#if defined(SUNOS5SIGS) || defined (HURD) || defined(LINUX)
+# ifdef SUNOS5SIGS
+#  include <sys/siginfo.h>
+# endif
 # undef setjmp
 # undef longjmp
 # define setjmp(env) sigsetjmp(env, 1)
@@ -338,7 +339,7 @@ void GC_enable_signals(void)
       && !defined(MSWINCE) \
       && !defined(MACOS) && !defined(DJGPP) && !defined(DOS4GW)
 
-#   if defined(sigmask) && !defined(UTS4)
+#   if defined(sigmask) && !defined(UTS4) && !defined(HURD)
 	/* Use the traditional BSD interface */
 #	define SIGSET_T int
 #	define SIG_DEL(set, signal) (set) &= ~(sigmask(signal))
@@ -519,7 +520,7 @@ ptr_t GC_get_stack_base()
 #   undef GC_AMIGA_SB
 # endif /* AMIGA */
 
-# if defined(NEED_FIND_LIMIT) || defined(UNIX_LIKE)
+# if defined(NEED_FIND_LIMIT) || (defined(UNIX_LIKE) && !defined(ECOS))
 
 #   ifdef __STDC__
 	typedef void (*handler)(int);
@@ -527,9 +528,9 @@ ptr_t GC_get_stack_base()
 	typedef void (*handler)();
 #   endif
 
-#   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1)
+#   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1) || defined(HURD)
 	static struct sigaction old_segv_act;
-#	if defined(_sigargs) || defined(HPUX) /* !Irix6.x */
+#	if defined(_sigargs) /* !Irix6.x */ || defined(HPUX) || defined(HURD)
 	    static struct sigaction old_bus_act;
 #	endif
 #   else
@@ -543,12 +544,16 @@ ptr_t GC_get_stack_base()
       handler h;
 #   endif
     {
-# ifndef ECOS
-#	if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1)
+#	if defined(SUNOS5SIGS) || defined(IRIX5)  \
+        || defined(OSF1) || defined(HURD)
 	  struct sigaction	act;
 
 	  act.sa_handler	= h;
-          act.sa_flags          = SA_RESTART | SA_NODEFER;
+#	  ifdef SUNOS5SIGS
+            act.sa_flags          = SA_RESTART | SA_NODEFER;
+#         else
+            act.sa_flags          = SA_RESTART;
+#	  endif
           /* The presence of SA_NODEFER represents yet another gross    */
           /* hack.  Under Solaris 2.3, siglongjmp doesn't appear to     */
           /* interact correctly with -lthread.  We hide the confusion   */
@@ -564,7 +569,7 @@ ptr_t GC_get_stack_base()
 #	  else
 	        (void) sigaction(SIGSEGV, &act, &old_segv_act);
 #		if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
-		   || defined(HPUX)
+		   || defined(HPUX) || defined(HURD)
 		    /* Under Irix 5.x or HP/UX, we may get SIGBUS.	*/
 		    /* Pthreads doesn't exist under Irix 5.x, so we	*/
 		    /* don't have to worry in the threads case.		*/
@@ -577,7 +582,6 @@ ptr_t GC_get_stack_base()
 	    old_bus_handler = signal(SIGBUS, h);
 #	  endif
 #	endif
-# endif /* ECOS */
     }
 # endif /* NEED_FIND_LIMIT || UNIX_LIKE */
 
@@ -600,11 +604,11 @@ ptr_t GC_get_stack_base()
     
     void GC_reset_fault_handler()
     {
-# ifndef ECOS
-#       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1)
+#       if defined(SUNOS5SIGS) || defined(IRIX5) \
+	   || defined(OSF1) || defined(HURD)
 	  (void) sigaction(SIGSEGV, &old_segv_act, 0);
 #	  if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
-	     || defined(HPUX)
+	     || defined(HPUX) || defined(HURD)
 	      (void) sigaction(SIGBUS, &old_bus_act, 0);
 #	  endif
 #       else
@@ -613,7 +617,6 @@ ptr_t GC_get_stack_base()
 	    (void) signal(SIGBUS, old_bus_handler);
 #	  endif
 #       endif
-# endif /* ECOS */
     }
 
     /* Return the first nonaddressible location > p (up) or 	*/
@@ -622,7 +625,6 @@ ptr_t GC_get_stack_base()
     ptr_t p;
     GC_bool up;
     {
-# ifndef ECOS
         static VOLATILE ptr_t result;
     		/* Needs to be static, since otherwise it may not be	*/
     		/* preserved across the longjmp.  Can safely be 	*/
@@ -648,13 +650,8 @@ ptr_t GC_get_stack_base()
 	    result += MIN_PAGE_SIZE;
  	}
 	return(result);
-# else /* ECOS */
-	abort();
-# endif /* ECOS */
     }
 # endif
-
-# ifndef ECOS
 
 #ifdef LINUX_STACKBOTTOM
 
@@ -753,7 +750,7 @@ ptr_t GC_get_stack_base()
 #endif /* FREEBSD_STACKBOTTOM */
 
 #if !defined(BEOS) && !defined(AMIGA) && !defined(MSWIN32) \
-    && !defined(MSWINCE) && !defined(OS2)
+    && !defined(MSWINCE) && !defined(OS2) && !defined(ECOS)
 
 ptr_t GC_get_stack_base()
 {
@@ -807,7 +804,6 @@ ptr_t GC_get_stack_base()
     	return(result);
 #   endif /* STACKBOTTOM */
 }
-# endif /* ECOS */
 
 # endif /* ! AMIGA, !OS 2, ! MS Windows, !BEOS */
 
@@ -1808,7 +1804,8 @@ struct hblk *h;
 #if defined(SUNOS4) || defined(FREEBSD)
     typedef void (* SIG_PF)();
 #endif
-#if defined(SUNOS5SIGS) || defined(OSF1) || defined(LINUX) || defined(MACOSX)
+#if defined(SUNOS5SIGS) || defined(OSF1) || defined(LINUX) \
+    || defined(MACOSX) || defined(HURD)
 # ifdef __STDC__
     typedef void (* SIG_PF)(int);
 # else
@@ -1826,7 +1823,7 @@ struct hblk *h;
 #   define SIG_DFL (SIG_PF) (-1)
 #endif
 
-#if defined(IRIX5) || defined(OSF1)
+#if defined(IRIX5) || defined(OSF1) || defined(HURD)
     typedef void (* REAL_SIG_PF)(int, int, struct sigcontext *);
 #endif
 #if defined(SUNOS5SIGS)
@@ -2013,7 +2010,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #ifdef GC_TEST_AND_SET_DEFINED
   static VOLATILE unsigned int fault_handler_lock = 0;
   void async_set_pht_entry_from_index(VOLATILE page_hash_table db, int index) {
-    while (GC_test_and_set(&fault_handler_lock));
+    while (GC_test_and_set(&fault_handler_lock)) {}
     /* Could also revert to set_pht_entry_from_index_safe if initial	*/
     /* GC_test_and_set fails.						*/
     set_pht_entry_from_index(db, index);
@@ -2067,15 +2064,20 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #     define CODE_OK (code == BUS_PAGE_FAULT)
 #   endif
 # endif
-# if defined(IRIX5) || defined(OSF1)
+# if defined(IRIX5) || defined(OSF1) || defined(HURD)
 #   include <errno.h>
     void GC_write_fault_handler(int sig, int code, struct sigcontext *scp)
-#   define SIG_OK (sig == SIGSEGV)
 #   ifdef OSF1
+#     define SIG_OK (sig == SIGSEGV)
 #     define CODE_OK (code == 2 /* experimentally determined */)
 #   endif
 #   ifdef IRIX5
+#     define SIG_OK (sig == SIGSEGV)
 #     define CODE_OK (code == EACCES)
+#   endif
+#   ifdef HURD
+#     define SIG_OK (sig == SIGBUS || sig == SIGSEGV) 	
+#     define CODE_OK  TRUE
 #   endif
 # endif
 # if defined(LINUX)
@@ -2131,6 +2133,9 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 # endif
 {
     register unsigned i;
+#   if defined(HURD) 
+	char *addr = (char *) code;
+#   endif
 #   ifdef IRIX5
 	char * addr = (char *) (size_t) (scp -> sc_badvaddr);
 #   endif
@@ -2254,7 +2259,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #		    endif
 		    return;
 #		endif
-#		if defined (IRIX5) || defined(OSF1)
+#		if defined (IRIX5) || defined(OSF1) || defined(HURD)
 		    (*(REAL_SIG_PF)old_handler) (sig, code, scp);
 		    return;
 #		endif
@@ -2332,13 +2337,14 @@ struct hblk *h;
 
 void GC_dirty_init()
 {
-#   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(LINUX) || defined(OSF1)
+#   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(LINUX) || \
+       defined(OSF1) || defined(HURD)
       struct sigaction	act, oldact;
       /* We should probably specify SA_SIGINFO for Linux, and handle 	*/
       /* the different architectures more uniformly.			*/
-#     if defined(IRIX5) || defined(LINUX) || defined(OSF1)
+#     if defined(IRIX5) || defined(LINUX) || defined(OSF1) || defined(HURD)
     	act.sa_flags	= SA_RESTART;
-        act.sa_handler  = GC_write_fault_handler;
+        act.sa_handler  = (SIG_PF)GC_write_fault_handler;
 #     else
     	act.sa_flags	= SA_RESTART | SA_SIGINFO;
         act.sa_sigaction = GC_write_fault_handler;
@@ -2390,7 +2396,8 @@ void GC_dirty_init()
 #	endif
       }
 #   endif
-#   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(LINUX) || defined(OSF1)
+#   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(LINUX) \
+       || defined(OSF1) || defined(HURD)
       /* SUNOS5SIGS includes HPUX */
 #     if defined(IRIX_THREADS)
       	sigaction(SIGSEGV, 0, &oldact);
@@ -2398,7 +2405,7 @@ void GC_dirty_init()
 #     else
       	sigaction(SIGSEGV, &act, &oldact);
 #     endif
-#     if defined(_sigargs)
+#     if defined(_sigargs) || defined(HURD)
 	/* This is Irix 5.x, not 6.x.  Irix 5.x does not have	*/
 	/* sa_sigaction.					*/
 	GC_old_segv_handler = oldact.sa_handler;
@@ -2419,7 +2426,7 @@ void GC_dirty_init()
 #       endif
       }
 #   endif
-#   if defined(MACOSX) || defined(HPUX) || defined(LINUX)
+#   if defined(MACOSX) || defined(HPUX) || defined(LINUX) || defined(HURD)
       sigaction(SIGBUS, &act, &oldact);
       GC_old_bus_handler = oldact.sa_handler;
       if (GC_old_bus_handler == SIG_IGN) {
@@ -2568,10 +2575,14 @@ word len;
 	    result = readv(fd, &iov, 1);
 	}
 #   else
+#     if defined(HURD)	
+	result = __read(fd, buf, nbyte);
+#     else
  	/* The two zero args at the end of this list are because one
  	   IA-64 syscall() implementation actually requires six args
  	   to be passed, even though they aren't always used. */
      	result = syscall(SYS_read, fd, buf, nbyte, 0, 0);
+#     endif /* !HURD */
 #   endif
     GC_end_syscall();
     return(result);

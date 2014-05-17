@@ -16,10 +16,10 @@ _GC_push_regs:
     stw     r0,8(r1)    ; save return address
     stwu    r1,-spaceToSave(r1)   ; skip over caller save area
     ;
-    mr      r3,r2         ; mark from r2. Well I'm not really sure
+    mr      r3,r2         ; mark from r2. Well Im not really sure
                           ; that this is necessary or even the right
-                          ; thing to do - at least it doesn't harm...
-                          ; According to Apple's docs it points to
+                          ; thing to do - at least it doesnt harm...
+                          ; According to Apples docs it points to
                           ; the direct data area, whatever that is...
     bl 	    L_GC_push_one$stub
     mr      r3,r13        ; mark from r13-r31

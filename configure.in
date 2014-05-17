@@ -80,6 +80,10 @@ case "$THREADS" in
 	fi
 	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	;;
+     *-*-linux*)
+	AC_DEFINE(GC_LINUX_THREADS)
+	AC_DEFINE(_REENTRANT)
+	;;
      *-*-hpux*)
 	AC_MSG_WARN("Only HP/UX 11 threads are supported.")
 	AC_DEFINE(GC_HPUX_THREADS)
@@ -89,10 +93,6 @@ case "$THREADS" in
 	fi
 	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	THREADLIBS="-lpthread -lrt"
-	;;
-     *-*-linux*)
-	AC_DEFINE(GC_LINUX_THREADS)
-	AC_DEFINE(_REENTRANT)
 	;;
      *-*-freebsd*)
 	AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
