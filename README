@@ -10,7 +10,7 @@ Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
 modified is included with the above copyright notice.
 
-This is version 4.7 of a conservative garbage collector for C and C++.
+This is version 4.8 of a conservative garbage collector for C and C++.
 
 HISTORY -
 
@@ -1129,3 +1129,7 @@ Since version 4.6:
  - Fixed a serious bug for machines with non-word-aligned pointers.
    (Thanks to Patrick Beard for pointing out the problem.  The collector
    should fail almost any conceivable test immediately on such machines.)
+
+Since version 4.7:
+ - Changed a "comment" in a MacOS specific part of mach-dep.c that caused
+   gcc to fail on other platforms.

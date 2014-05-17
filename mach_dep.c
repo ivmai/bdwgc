@@ -35,7 +35,7 @@ asm static void PushMacRegisters()
     move.l  a4,(sp)
     jsr		GC_push_one
 #   if !__option(a6frames)
-	// <pcb> perhaps a6 should be pushed if stack frames aren't being used.    
+	// <pcb> perhaps a6 should be pushed if stack frames are not being used.    
   	move.l	a6,(sp)
   	jsr		GC_push_one
 #   endif
