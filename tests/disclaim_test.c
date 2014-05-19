@@ -29,6 +29,7 @@
 
 #define my_assert(e) \
     if (!(e)) { \
+        fflush(stdout); \
         fprintf(stderr, "Assertion failure, line %d: " #e "\n", __LINE__); \
         exit(-1); \
     }
@@ -73,11 +74,18 @@ void test_misc_sizes(void)
 typedef struct pair_s *pair_t;
 
 struct pair_s {
-    int is_valid;
+    char magic[16];
     int checksum;
     pair_t car;
     pair_t cdr;
 };
+
+static const char *pair_magic = "PAIR_MAGIC_BYTES";
+
+int is_pair(pair_t p)
+{
+    return memcmp(p->magic, pair_magic, sizeof(p->magic)) == 0;
+}
 
 void GC_CALLBACK pair_dct(void *obj, void *cd)
 {
@@ -90,16 +98,16 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
              (void *)p, (void *)p->car, (void *)p->cdr);
 #   endif
     my_assert(GC_base(obj));
-    my_assert(p->is_valid);
-    my_assert(!p->car || p->car->is_valid);
-    my_assert(!p->cdr || p->cdr->is_valid);
+    my_assert(is_pair(p));
+    my_assert(!p->car || is_pair(p->car));
+    my_assert(!p->cdr || is_pair(p->cdr));
     checksum = 782;
     if (p->car) checksum += p->car->checksum;
     if (p->cdr) checksum += p->cdr->checksum;
     my_assert(p->checksum == checksum);
 
     /* Invalidate it. */
-    p->is_valid = 0;
+    memset(p->magic, '*', sizeof(p->magic));
     p->checksum = 0;
     p->car = cd;
     p->cdr = NULL;
@@ -112,12 +120,13 @@ pair_new(pair_t car, pair_t cdr)
     static const struct GC_finalizer_closure fc = { pair_dct, NULL };
 
     p = GC_finalized_malloc(sizeof(struct pair_s), &fc);
+    my_assert(!is_pair(p));
     if (p == NULL) {
         fprintf(stderr, "Out of memory!\n");
         exit(3);
     }
     my_assert(memeq(p, 0, sizeof(struct pair_s)));
-    p->is_valid = 1;
+    memcpy(p->magic, pair_magic, sizeof(p->magic));
     p->checksum = 782 + (car? car->checksum : 0) + (cdr? cdr->checksum : 0);
     p->car = car;
     p->cdr = cdr;
