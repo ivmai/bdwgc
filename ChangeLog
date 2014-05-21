@@ -1,3 +1,129 @@
+2014-05-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* README.changes: Fix typos ("nonexistent", "to", "posting", "bit rot",
+	"likely", "flaky").
+	* README.changes: Fix typos in surname (Juan Jose Garcia-Ripoll,
+	Paolo Molaro, Andreas Tobler).
+	* README.changes: Fix incorrect article ("a finalizable").
+
+2014-05-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_cpp.h: Fix typo in surname (John Ellis) in comment.
+
+2014-05-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/overview.html: Update FTP host name (ftp.parc.xerox.com).
+
+2014-05-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* README.changes: Fix typo in surname (Bryce McKinlay, Slava Sysoltsev).
+	* README.changes: Fix typo in name or surname (Philip Brown,
+	Rutger Ovidius).
+	* README.changes: Place surname after 1st name (Tommaso Tagliapietra).
+
+2014-04-26  Baruch Siach <baruch@tkos.co.il>
+
+	* include/private/gcconfig.h (GETCONTEXT_FPU_EXCMASK_BUG): Do not
+	define for uClibc, as it may not have fenv.h.
+
+2014-04-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_config_macros.h (GC_ADD_CALLER): Fix a typo in comment
+	(redundant "an" article).
+
+2014-03-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* headers.c (GC_scratch_alloc): Do not update GC_scratch_last_end_ptr
+	if allocation failed ("result" variable is NULL).
+
+2014-03-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* backgraph.c (new_back_edges): Abort if not enough memory.
+	* backgraph.c (push_in_progress): Prevent null pointer dereference in
+	BCOPY() if allocation failed (due to not enough memory).
+
+2014-03-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* backgraph.c (new_back_edges, push_in_progress): Use
+	ROUNDUP_PAGESIZE_IF_MMAP() to adjust GET_MEM() argument (when needed).
+	* headers.c (GC_scratch_alloc): Likewise.
+	* misc.c (GC_envfile_init): Likewise.
+	* include/private/gc_priv.h (ROUNDUP_PAGESIZE_IF_MMAP): New macro.
+	* include/private/gcconfig.h (MMAP_SUPPORTED): Move definition from
+	os_dep.c (as needed for ROUNDUP_PAGESIZE_IF_MMAP() definition).
+	* include/private/gcconfig.h (GET_MEM): Refine comment (regarding its
+	argument).
+
+2014-02-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/gc.man: Update email.
+	* doc/README.cords: Likewise.
+	* README.QUICK: Change external link to gcinterface.html to local one
+	(pointing to the file in "doc" folder).
+	* doc/README: Replace BDWGC site URL (www.hpl.hp.com/personal/Hans_Boehm
+	to www.hboehm.info).
+	* doc/gc.man: Likewise.
+	* doc/gcdescr.html: Likewise.
+	* doc/gcinterface.html: Likewise.
+	* doc/overview.html: Likewise.
+	* doc/scale.html: Likewise.
+	* doc/README: Update mailing list info (gc@linux.hpl.hp.com to
+	bdwgc@lists.opendylan.org, gc-announce@linux.hpl.hp.com to
+	bdwgc-announce@lists.opendylan.org).
+	* configure.ac: Likewise.
+	* doc/gcdescr.html: Likewise.
+	* doc/overview.html: Likewise.
+	* doc/tree.html: Remove unnecessary external link.
+
+2014-02-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.cords: Remove broken link to reality.sgi.com.
+	* doc/README.environment: Fix link to HPL tech reports.
+	* doc/overview.html: Remove broken link to parcftp.xerox.com.
+	* doc/overview.html: Fix (or update) external links.
+
+2014-02-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/overview.html: Fix a typo ("See").
+
+2013-12-21  Andrew Horton <andrew.j.horton@gmail.com>
+
+	* mark.c (GC_signal_mark_stack_overflow): Do not set
+	GC_mark_stack_too_small if GC_parallel.
+
+2013-12-15  Andrew Horton <andrew.j.horton@gmail.com>
+
+	* alloc.c (GC_add_to_heap): Bump GC_collect_at_heapsize.  In the normal
+	case it is recalculated straight after.  But in the case where it's
+	called directly from alloc_mark_stack, it isn't.  If the mark stack gets
+	very large, this can cause GC_should_collect to always return true, and
+	GC_alloc_large to get stuck in a loop calling GC_collect_or_expand.
+
+2013-12-17  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_collect_or_expand): Fix a typo in comment ("setting").
+
+2013-12-02  Yusuke Suzuki <utatane.tea@gmail.com>
+
+	* CMakeLists.txt: Since latest OSX compiler (clang) provided by Xcode is
+	not accept "-arch ppc"; So if CMAKE_OSX_ARCHITECTURES is defined by
+	client, CMakeLists.txt should not force "ppc;i386;x86_64".
+
+2013-12-02  Yusuke Suzuki <utatane.tea@gmail.com>
+
+	* CMakeLists.txt: Fix broken ADD_DEFINITION for kFreeBSD.
+
+2013-11-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_stop_world.c (GC_suspend_handler_inner): If signal number
+	is zero then silently return (instead of ABORT) if FREEBSD (to
+	workaround a bug in FreeBSD 9.2-RELEASE regarding signals processing,
+	bug is observed only if THREAD_LOCAL_ALLOC defined).
+
+2013-11-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* pthread_stop_world.c (GC_restart_handler): Fix ABORT message.
+
 [7.2e]
 
 2013-11-10  Ivan Maidanski <ivmai@mail.ru>
