@@ -25,7 +25,7 @@ AC_CANONICAL_TARGET
 AC_PREREQ(2.64)
 AC_REVISION($Revision: 1.69 $)
 GC_SET_VERSION
-AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
+AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc subdir-objects])
 AM_CONFIG_HEADER([include/private/config.h])
 AM_MAINTAINER_MODE
 
