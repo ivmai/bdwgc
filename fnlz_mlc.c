@@ -28,13 +28,10 @@ STATIC int GC_finalized_kind = 0;
 
 STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
 {
-    void **fc_addr;
-    const struct GC_finalizer_closure *fc;
+    word fc_word = *(word *)obj;
 
-    fc_addr = &((void **)obj)[GC_size(obj) / sizeof(void *) - 1];
-    fc = *fc_addr;
-    if (fc != NULL) {
-       /* [1] The disclaim function may be passed fragments from the    */
+    if ((fc_word & 1) != 0) {
+       /* The disclaim function may be passed fragments from the        */
        /* free-list, on which it should not run finalization.           */
        /* To recognize this case, we use the fact that the first word   */
        /* on such fragments are always even (a link to the next         */
@@ -42,8 +39,8 @@ STATIC int GC_CALLBACK GC_finalized_disclaim(void *obj)
        /* which does not use the first word for storing finalization    */
        /* info, GC_reclaim_with_finalization must be extended to clear  */
        /* fragments so that the assumption holds for the selected word. */
-        (*fc->proc)(obj, fc->cd);
-        *fc_addr = NULL;
+        const struct GC_finalizer_closure *fc = (void *)(fc_word & ~(word)1);
+        (*fc->proc)((word *)obj + 1, fc->cd);
     }
     return 0;
 }
@@ -61,6 +58,13 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
         return;
     }
     done_init = TRUE;
+
+    /* The finalizer closure is placed in the first word in order to    */
+    /* use the lower bits to distinguish live objects from objects on   */
+    /* the free list.  The downside of this is that we need one-word    */
+    /* offset interior pointers, and that GC_base does not return the   */
+    /* start of the user region.                                        */
+    GC_register_displacement_inner(sizeof(word));
 
     GC_finalized_objfreelist = (ptr_t *)GC_new_free_list_inner();
     GC_finalized_kind = GC_new_kind_inner((void **)GC_finalized_objfreelist,
@@ -89,7 +93,7 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
     word lg;
     DCL_LOCK_STATE;
 
-    lb += sizeof(void *);
+    lb += sizeof(word);
     GC_ASSERT(done_init);
     if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
@@ -110,7 +114,6 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
             UNLOCK();
         }
         GC_ASSERT(lg > 0);
-        ((const void **)op)[GRANULES_TO_WORDS(lg) - 1] = fclos;
     } else {
         size_t op_sz;
 
@@ -119,16 +122,16 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
             return NULL;
         op_sz = GC_size(op);
         GC_ASSERT(op_sz >= lb);
-        ((const void **)op)[op_sz / sizeof(void *) - 1] = fclos;
     }
-    return GC_clear_stack(op);
+    *(word *)op = (word)fclos | 1;
+    return GC_clear_stack((word *)op + 1);
 }
 
 #ifdef THREAD_LOCAL_ALLOC
   GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t client_lb,
                                 const struct GC_finalizer_closure *fclos)
   {
-    size_t lb = client_lb + sizeof(void *);
+    size_t lb = client_lb + sizeof(word);
     size_t lg = ROUNDED_UP_GRANULES(lb);
     GC_tlfs tsd;
     void *result;
@@ -161,9 +164,9 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
     result = (void *)my_entry;
     *my_fl = next;
     obj_link(result) = 0;
-    ((const void **)result)[GRANULES_TO_WORDS(lg) - 1] = fclos;
+    *(word *)result = (word)fclos | 1;
     PREFETCH_FOR_WRITE(next);
-    return result;
+    return (word *)result + 1;
   }
 #endif /* THREAD_LOCAL_ALLOC */
 
