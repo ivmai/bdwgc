@@ -1,4 +1,25 @@
 
+== [7.4.2] (unset) ==
+
+* Add config option to use STGRTMIN-based signals for thread suspend/resume.
+* Allow parallel mark to be enabled on powerpc-linux systems.
+* Check for Fujitsu compiler in builtin_unwind logic (enable FX10/K-Computer).
+* Fix 'attribute declaration must precede definition' warning (clang-3.1).
+* Fix (enable) Cygwin-64 build.
+* Fix GC_sig_suspend initialization when non-constant SIGRTMIN used.
+* Fix MS VC redefinition warning for functions declared with GC_ATTR_MALLOC.
+* Fix TEXT() usage for concatenated strings in GC_CreateLogFile (Win32).
+* Fix data roots registration for Android/x86 and NDK ARM 'gold' linker.
+* Fix find stackbottom on BlueGene P/Q systems.
+* Fix machdep .lo files path in configure (SPARC, IA-64).
+* Fix ok_init assignment (missing cast) in GC_new_kind_inner.
+* Fix typos in names in AUTHORS and ChangeLog files.
+* Remove barrett_diagram file duplicated by tree.html.
+* Remove non-existing DISCARD_WORDS from GC data structure ASCII diagram.
+* Restore contribution information for ancient releases in ChangeLog.
+Also, includes 7.2f changes.
+
+
 == [7.4.0] 2013-11-17 ==
 
 * Add 'bytes reclaimed' counters to public GC_prof_stats_s.
@@ -148,6 +169,7 @@
 * Use pthread API to operate thread-local data on Linux if no compiler TLS.
 * Workaround 'ELF_DATA/EM_ALPHA redefined' warning in Android linker.h.
 * Workaround 'unresolved __tls_get_addr' error for Android NDK Clang.
+Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes.
 
 
 == [7.3alpha2] 2012-05-11 ==
@@ -240,6 +262,26 @@
 * Use USE_COMPILER_TLS on Cygwin.
 * Use pthread_key for thread-local storage on FreeBSD.
 * Use union of AO_t and word to favor strict-aliasing compiler optimization.
+Also, includes 7.2 changes.
+
+
+== [7.2f] (unset) ==
+
+* Fix 'Bad signal in suspend_handler' abort on FreeBSD-9.2.
+* Fix 'source file in a subdirectory' Automake warnings.
+* Fix ABORT message in GC_restart_handler.
+* Fix ADD_DEFINITION in CMakeLists.txt for kFreeBSD.
+* Fix CMakeLists.txt: do not override CMAKE_OSX_ARCHITECTURES.
+* Fix GC_alloc_large by bumping GC_collect_at_heapsize in GC_add_to_heap.
+* Fix GC_scratch_last_end_ptr update on GC_scratch_alloc failure.
+* Fix GET_MEM argument rounding in GC_scratch_alloc and similar.
+* Fix build (broken by fenv.h inclusion) on Linux/x86_64 under uClibc.
+* Fix mark stack excessive growth during parallel mark.
+* Fix or remove broken URLs in documentation.
+* Fix out-of-memory case in new_back_edges, push_in_progress (backgraph).
+* Fix typo in GC_collect_or_expand comment.
+* Fix typos in GC overview file, gc_config_macros.h, gc_cpp.h, README.changes.
+* Update emails/links due to project site and ML transition.
 
 
 == [7.2e] 2013-11-10 ==
