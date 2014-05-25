@@ -1,3 +1,9 @@
+2014-05-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (AM_INIT_AUTOMAKE): Enable subdir-objects (to avoid
+	future incompatibilities as "cord" and "tests" source files are in
+	subdirectories).
+
 2014-05-16  Ivan Maidanski <ivmai@mail.ru>
 
 	* README.changes: Fix typos ("nonexistent", "to", "posting", "bit rot",
