@@ -1,4 +1,27 @@
 
+== [7.5.0] (development) ==
+
+* Add API function to set/modify GC log file descriptor (Unix).
+* Add alloc_size attribute to GC_generic_malloc.
+* Added instructions to README.md for building from git.
+* Allow to force GC_dump_regularly set on at compilation.
+* Change 'cord' no-argument functions declaration style to ANSI C.
+* Define ROUNDUP_PAGESIZE, ROUNDUP_GRANULE_SIZE macros (code refactoring).
+* Define public GC_GENERIC_OR_SPECIAL_MALLOC and GC_get_kind_and_size.
+* Eliminate redundant *flh check for null in GC_allocobj.
+* GC_scratch_alloc code refactoring (and WARN message improvement).
+* Group all compact fields of GC_arrays to fit in single page.
+* Improve documentation for disappearing links in gc.h.
+* Make heap growth more conservative after GC_gcollect_and_unmap call.
+* New macro (GC_ALWAYS_MULTITHREADED) to set multi-threaded mode implicitly.
+* Refine description in README how to build from source repository.
+* Remove 'opp' local variable in GC_malloc_X.
+* Remove hb_large_block field (use 1 extra bit of hb_flags instead).
+* Remove obsolete BACKING_STORE_ALIGNMENT/DISPLACEMENT macros for Linux/IA64.
+* Remove redundant casts in GC_generic_or_special_malloc and similar.
+Also, includes 7.4.2 changes.
+
+
 == [7.4.2] (unset) ==
 
 * Add config option to use STGRTMIN-based signals for thread suspend/resume.
