@@ -71,8 +71,6 @@ GC_inner_start_routine()+LOCK -> dyld_stub_binder_().
 HP-UX 11.00 with the vendor cc fails:
 Perhaps GC_push_regs was configured incorrectly? FAIL: gctest.
 
-Android NDK: gcc4.7+ld.gold: gctest crashes due to incorrect __data_start.
-
 Linux/mips64el (N32): threadleaktest crashes once every 3-4 runs (SIGSEGV in
 GC_delete_gc_thread(t=0) called from GC_pthread_join) if configured with
 --disable-shared.
