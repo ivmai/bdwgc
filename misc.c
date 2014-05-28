@@ -1758,18 +1758,22 @@ GC_API void ** GC_CALL GC_new_free_list(void)
 GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
                                           int adjust, int clear)
 {
-    unsigned result = GC_n_kinds++;
+    unsigned result = GC_n_kinds;
 
-    if (GC_n_kinds > MAXOBJKINDS) ABORT("Too many kinds");
-    GC_obj_kinds[result].ok_freelist = fl;
-    GC_obj_kinds[result].ok_reclaim_list = 0;
-    GC_obj_kinds[result].ok_descriptor = descr;
-    GC_obj_kinds[result].ok_relocate_descr = adjust;
-    GC_obj_kinds[result].ok_init = (GC_bool)clear;
-#   ifdef ENABLE_DISCLAIM
+    if (result < MAXOBJKINDS) {
+      GC_n_kinds++;
+      GC_obj_kinds[result].ok_freelist = fl;
+      GC_obj_kinds[result].ok_reclaim_list = 0;
+      GC_obj_kinds[result].ok_descriptor = descr;
+      GC_obj_kinds[result].ok_relocate_descr = adjust;
+      GC_obj_kinds[result].ok_init = (GC_bool)clear;
+#     ifdef ENABLE_DISCLAIM
         GC_obj_kinds[result].ok_mark_unconditionally = FALSE;
         GC_obj_kinds[result].ok_disclaim_proc = 0;
-#   endif
+#     endif
+    } else {
+      ABORT("Too many kinds");
+    }
     return result;
 }
 
@@ -1786,10 +1790,14 @@ GC_API unsigned GC_CALL GC_new_kind(void **fl, GC_word descr, int adjust,
 
 GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc proc)
 {
-    unsigned result = GC_n_mark_procs++;
+    unsigned result = GC_n_mark_procs;
 
-    if (GC_n_mark_procs > MAX_MARK_PROCS) ABORT("Too many mark procedures");
-    GC_mark_procs[result] = proc;
+    if (result < MAX_MARK_PROCS) {
+      GC_n_mark_procs++;
+      GC_mark_procs[result] = proc;
+    } else {
+      ABORT("Too many mark procedures");
+    }
     return result;
 }
 
