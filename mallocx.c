@@ -288,6 +288,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     size_t lg;      /* Length in granules.  */
     signed_word my_bytes_allocd = 0;
     struct obj_kind * ok = &(GC_obj_kinds[k]);
+    struct hblk ** rlh;
     DCL_LOCK_STATE;
 
     GC_ASSERT(lb != 0 && (lb & (GRANULE_BYTES-1)) == 0);
@@ -314,8 +315,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
       }
     /* First see if we can reclaim a page of objects waiting to be */
     /* reclaimed.                                                  */
-    {
-        struct hblk ** rlh = ok -> ok_reclaim_list;
+    rlh = ok -> ok_reclaim_list;
+    if (rlh != NULL) {
         struct hblk * hbp;
         hdr * hhdr;
 
