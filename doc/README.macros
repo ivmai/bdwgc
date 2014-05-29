@@ -398,13 +398,6 @@ PARALLEL_MARK   Allows the marker to run in multiple threads.  Recommended
 GC_ALWAYS_MULTITHREADED     Force multi-threaded mode at GC initialization.
   (Turns GC_allow_register_threads into a no-op routine.)
 
-DONT_USE_SIGNALANDWAIT (Win32 only)     Use an alternate implementation for
-  marker threads (if PARALLEL_MARK defined) synchronization routines based
-  on InterlockedExchange() (instead of AO_fetch_and_add()) and on multiple
-  event objects (one per each marker instead of that based on Win32
-  SignalObjectAndWait() using a single event object).  This is the default
-  for WinCE.
-
 GC_WINMAIN_REDIRECT (Win32 only)        Redirect (rename) an application
   WinMain to GC_WinMain; implement the "real" WinMain which starts a new
   thread to call GC_WinMain after initializing the GC.  Useful for WinCE.
