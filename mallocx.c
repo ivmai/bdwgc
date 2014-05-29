@@ -314,8 +314,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
       }
     /* First see if we can reclaim a page of objects waiting to be */
     /* reclaimed.                                                  */
-    {
-        struct hblk ** rlh = ok -> ok_reclaim_list;
+    struct hblk ** rlh = ok -> ok_reclaim_list;
+    if (rlh){
         struct hblk * hbp;
         hdr * hhdr;
 
