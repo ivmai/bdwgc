@@ -263,6 +263,15 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     return 1;
 }
 
+/* Finalizer proc support */
+static void (*GC_object_finalized_proc) (GC_PTR obj);
+
+void
+GC_set_finalizer_notify_proc (void (*proc) (GC_PTR obj))
+{
+    GC_object_finalized_proc = proc;
+}
+
 #ifndef GC_LONG_REFS_NOT_NEEDED
   GC_API int GC_CALL GC_register_long_link(void * * link, const void * obj)
   {
@@ -788,6 +797,10 @@ GC_INNER void GC_finalize(void)
                 fo_set_next(prev_fo, next_fo);
               }
               GC_fo_entries--;
+
+              if (GC_object_finalized_proc)
+                  GC_object_finalized_proc (real_ptr);
+
             /* Add to list of objects awaiting finalization.    */
               fo_set_next(curr_fo, GC_finalize_now);
               GC_finalize_now = curr_fo;

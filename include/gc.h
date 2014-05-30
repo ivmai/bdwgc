@@ -1172,6 +1172,9 @@ GC_API int GC_CALL GC_unregister_long_link(void ** /* link */);
         /* Similar to GC_unregister_disappearing_link but for a */
         /* registration by either of the above two routines.    */
 
+/* finalizer callback support */
+GC_API void GC_set_finalizer_notify_proc GC_PROTO((void (*object_finalized) (GC_PTR obj)));
+
 /* Returns !=0 if GC_invoke_finalizers has something to do.     */
 GC_API int GC_CALL GC_should_invoke_finalizers(void);
 
