@@ -1,3 +1,20 @@
+2014-05-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.macros (DONT_USE_SIGNALANDWAIT): Remove.
+	* win32_threads.c (DONT_USE_SIGNALANDWAIT, GC_mark_mutex_waitcnt,
+	SignalObjectAndWait_type, signalObjectAndWait_func): Likewise.
+	* win32_threads.c (GC_marker_cv, GC_mark_thread, start_mark_threads,
+	GC_mark_mutex_state, GC_acquire_mark_lock, GC_release_mark_lock,
+	GC_wait_marker, GC_notify_all_marker, GC_thr_init): Do not check
+	DONT_USE_SIGNALANDWAIT macro (assume it is always on as multi-core
+	marker based on NT SignalObjectAndWait is broken in Windows 7+ leading
+	to a deadlock sometimes because the function is no longer atomic).
+
+2014-05-29  Bruce Hoult <bruce@hoult.org>
+
+	* mallocx.c (GC_generic_malloc_many): Do not dereference
+	ok_reclaim_list if it is NULL.
+
 2014-05-23  Ivan Maidanski <ivmai@mail.ru>
 
 	* configure.ac (AM_INIT_AUTOMAKE): Enable subdir-objects (to avoid
