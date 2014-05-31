@@ -115,13 +115,10 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
         }
         GC_ASSERT(lg > 0);
     } else {
-        size_t op_sz;
-
         op = GC_generic_malloc(lb, GC_finalized_kind);
         if (NULL == op)
             return NULL;
-        op_sz = GC_size(op);
-        GC_ASSERT(op_sz >= lb);
+        GC_ASSERT(GC_size(op) >= lb);
     }
     *(word *)op = (word)fclos | 1;
     return GC_clear_stack((word *)op + 1);
