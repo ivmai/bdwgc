@@ -135,8 +135,7 @@
 /* Define to optimize for large heaps or root sets. */
 #undef LARGE_CONFIG
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* See doc/README.macros. */
@@ -156,9 +155,6 @@
 
 /* Prohibit installation of pthread_atfork() handlers. */
 #undef NO_HANDLE_FORK
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE
