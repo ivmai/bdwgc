@@ -27,8 +27,10 @@ Also, includes 7.4.2 changes.
 * Add config option to use STGRTMIN-based signals for thread suspend/resume.
 * Allow parallel mark to be enabled on powerpc-linux systems.
 * Check for Fujitsu compiler in builtin_unwind logic (enable FX10/K-Computer).
+* Fix 'Array subscript is above array bounds' GCC warning in GC_new_kind/proc.
 * Fix 'attribute declaration must precede definition' warning (clang-3.1).
 * Fix (enable) Cygwin-64 build.
+* Fix GC_finalized_malloc failure on disclaim_test.
 * Fix GC_sig_suspend initialization when non-constant SIGRTMIN used.
 * Fix MS VC redefinition warning for functions declared with GC_ATTR_MALLOC.
 * Fix TEXT() usage for concatenated strings in GC_CreateLogFile (Win32).
@@ -288,7 +290,7 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes.
 Also, includes 7.2 changes.
 
 
-== [7.2f] (unset) ==
+== [7.2f] 2014-06-03 ==
 
 * Fix 'Bad signal in suspend_handler' abort on FreeBSD-9.2.
 * Fix 'source file in a subdirectory' Automake warnings.
@@ -298,12 +300,15 @@ Also, includes 7.2 changes.
 * Fix GC_alloc_large by bumping GC_collect_at_heapsize in GC_add_to_heap.
 * Fix GC_scratch_last_end_ptr update on GC_scratch_alloc failure.
 * Fix GET_MEM argument rounding in GC_scratch_alloc and similar.
+* Fix PARALLEL_MARK for Windows 7+.
 * Fix build (broken by fenv.h inclusion) on Linux/x86_64 under uClibc.
+* Fix crash when using GC_malloc_many() as first allocation call.
 * Fix mark stack excessive growth during parallel mark.
 * Fix or remove broken URLs in documentation.
 * Fix out-of-memory case in new_back_edges, push_in_progress (backgraph).
 * Fix typo in GC_collect_or_expand comment.
 * Fix typos in GC overview file, gc_config_macros.h, gc_cpp.h, README.changes.
+* Regenerate configure files by automake 1.14.1, libtool 2.4.2.418.
 * Update emails/links due to project site and ML transition.
 
 
