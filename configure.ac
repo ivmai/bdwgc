@@ -12,7 +12,7 @@
 dnl Process this file with autoconf to produce configure.
 
 # Initialization
-AC_INIT(gc,7.4.0,bdwgc@lists.opendylan.org)
+AC_INIT(gc,7.4.2,bdwgc@lists.opendylan.org)
     ## version must conform to [0-9]+[.][0-9]+[.][0-9]+
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])

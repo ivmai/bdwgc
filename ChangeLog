@@ -1,5 +1,5 @@
 
-== [7.4.2] (unset) ==
+== [7.4.2] 2014-06-03 ==
 
 * Add config option to use STGRTMIN-based signals for thread suspend/resume.
 * Allow parallel mark to be enabled on powerpc-linux systems.
