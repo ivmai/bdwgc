@@ -19,10 +19,11 @@
 * Remove hb_large_block field (use 1 extra bit of hb_flags instead).
 * Remove obsolete BACKING_STORE_ALIGNMENT/DISPLACEMENT macros for Linux/IA64.
 * Remove redundant casts in GC_generic_or_special_malloc and similar.
+* Use magic header on objects to improve disclaim_test.
 Also, includes 7.4.2 changes.
 
 
-== [7.4.2] (unset) ==
+== [7.4.2] 2014-06-03 ==
 
 * Add config option to use STGRTMIN-based signals for thread suspend/resume.
 * Allow parallel mark to be enabled on powerpc-linux systems.
