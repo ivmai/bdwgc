@@ -310,9 +310,8 @@ case "$THREADS" in
         ;;
     esac
     case "$host" in
-     sparc*-*-solaris*)
+      sparc*-*-solaris*)
         if test "$GCC" != yes; then
-          CFLAGS="-O $CFLAGS"
           need_atomic_ops_asm=true
         fi
         ;;
@@ -381,6 +380,12 @@ AM_CONDITIONAL(WIN32_THREADS, test x$win32_threads = xtrue)
 case "$host" in
    powerpc-*-darwin*)
       powerpc_darwin=true
+      ;;
+   *-*-solaris*)
+      if test "$GCC" != yes; then
+        # Solaris SunCC
+        CFLAGS="-O $CFLAGS"
+      fi
       ;;
    *-*-wince*)
       if test "$enable_gc_debug" != "no"; then
