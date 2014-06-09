@@ -321,6 +321,7 @@ AM_CONDITIONAL(DARWIN_THREADS, test x$darwin_threads = xtrue)
 AM_CONDITIONAL(WIN32_THREADS, test x$win32_threads = xtrue)
 AM_CONDITIONAL(OPENBSD_THREADS, test x$openbsd_threads = xtrue)
 
+compiler_suncc=no
 case "$host" in
    powerpc-*-darwin*)
       powerpc_darwin=true
@@ -328,6 +329,7 @@ case "$host" in
    *-*-solaris*)
       if test "$GCC" != yes; then
         # Solaris SunCC
+        compiler_suncc=yes
         CFLAGS="-O $CFLAGS"
       fi
       ;;
@@ -340,11 +342,15 @@ AC_TRY_COMPILE([],[
  #endif
 ], [compiler_xlc=yes], [compiler_xlc=no])
 AC_MSG_RESULT($compiler_xlc)
-AM_CONDITIONAL(COMPILER_XLC,test $compiler_xlc = yes)
 if test $compiler_xlc = yes -a "$powerpc_darwin" = true; then
   # the darwin stack-frame-walking code is completely broken on xlc
   AC_DEFINE([DARWIN_DONT_PARSE_STACK], 1, [See doc/README.macros.])
 fi
+
+# XLC neither requires nor tolerates the unnecessary assembler goop.
+# Similar for the Sun C compiler.
+AM_CONDITIONAL([ASM_WITH_CPP_UNSUPPORTED],
+    [test $compiler_xlc = yes -o $compiler_suncc = yes])
 
 if test "$GCC" = yes; then
   # Disable aliasing optimization unless forced to.
