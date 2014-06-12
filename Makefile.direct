@@ -414,16 +414,9 @@ gcname: $(srcdir)/tools/gcname.c $(srcdir)/include/gc_version.h
 #We assume this is being done from source directory.
 dist gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
 	cd $(AO_SRC_DIR); $(MAKE) dist
-	if test $(srcdir)/libatomic_ops = $(AO_SRC_DIR); \
-	then \
-	  mv $(AO_SRC_DIR) $(AO_SRC_DIR).bak ; \
-	  tar xvfz $(AO_SRC_DIR).bak/libatomic_ops.tar.gz ; \
-	else \
-	  tar xvfz $(AO_SRC_DIR)/libatomic_ops.tar.gz ; \
-	fi
 	rm -f `./gcname`
 	ln -s . `./gcname`
-	./add_gc_prefix $(SRCS) $(DOC_FILES) $(OTHER_FILES) libatomic_ops > /tmp/gc.tar-files
+	./add_gc_prefix $(SRCS) $(DOC_FILES) $(OTHER_FILES) > /tmp/gc.tar-files
 	tar cvfh gc.tar `cat /tmp/gc.tar-files`
 	cp gc.tar `./gcname`.tar
 	gzip `./gcname`.tar
