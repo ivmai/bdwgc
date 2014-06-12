@@ -204,13 +204,7 @@ $(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
     $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
     $(srcdir)/include/gc.h $(srcdir)/include/gc_pthread_redirects.h \
     $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h \
-    $(srcdir)/include/gc_config_macros.h Makefile $(AO_INSTALL_DIR)
-# The dependency on Makefile is needed.  Changing
-# options affects the size of GC_arrays,
-# invalidating all .o files that rely on gc_priv.h
-
-Makefile: Makefile.direct
-	cp Makefile.direct Makefile
+    $(srcdir)/include/gc_config_macros.h $(AO_INSTALL_DIR)
 
 mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc_mark.h \
 					 $(srcdir)/include/private/gc_pmark.h
@@ -249,7 +243,7 @@ cords: $(CORD_OBJS) cord/cordtest $(UTILS)
 	./if_not_there dont_ar_3 $(AR) ru gc.a $(CORD_OBJS)
 	./if_not_there dont_ar_3 $(RANLIB) gc.a || cat /dev/null
 
-gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h Makefile
+gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
 
 test_cpp: $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h gc_cpp.o $(srcdir)/include/gc.h \
@@ -378,7 +372,7 @@ cord/de: $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(UTILS)
 if_mach: $(srcdir)/tools/if_mach.c $(srcdir)/include/private/gcconfig.h
 	$(HOSTCC) $(HOSTCFLAGS) -o if_mach $(srcdir)/tools/if_mach.c
 
-threadlibs: $(srcdir)/tools/threadlibs.c $(srcdir)/include/private/gcconfig.h Makefile
+threadlibs: $(srcdir)/tools/threadlibs.c $(srcdir)/include/private/gcconfig.h
 	$(HOSTCC) $(HOSTCFLAGS) -o threadlibs $(srcdir)/tools/threadlibs.c
 
 if_not_there: $(srcdir)/tools/if_not_there.c
@@ -403,7 +397,7 @@ gctest: tests/test.o gc.a $(UTILS)
 setjmp_test: $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h $(UTILS) $(AO_INSTALL_DIR)
 	$(CC) $(CFLAGS) -o setjmp_test $(srcdir)/tools/setjmp_t.c
 
-test:  KandRtest cord/cordtest
+test: KandRtest cord/cordtest
 	cord/cordtest
 
 # Those tests that work even with a K&R C compiler:
@@ -419,7 +413,6 @@ gcname: $(srcdir)/tools/gcname.c $(srcdir)/include/gc_version.h
 
 #We assume this is being done from source directory.
 dist gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
-	cp Makefile.direct Makefile
 	cd $(AO_SRC_DIR); $(MAKE) dist
 	if test $(srcdir)/libatomic_ops = $(AO_SRC_DIR); \
 	then \
