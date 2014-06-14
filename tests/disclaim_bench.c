@@ -38,7 +38,8 @@ typedef struct testobj_s *testobj_t;
 void GC_CALLBACK testobj_finalize(void *obj, void *carg)
 {
     ++*(int *)carg;
-    my_assert(((testobj_t)obj)->i++ == 109);
+    my_assert(((testobj_t)obj)->i == 109);
+    ((testobj_t)obj)->i = 110;
 }
 
 static const struct GC_finalizer_closure fclos = {
