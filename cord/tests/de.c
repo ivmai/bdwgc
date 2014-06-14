@@ -122,13 +122,15 @@ void prune_map(void)
     int start_line = map -> line;
 
     current_map_size = 0;
-    for(; map != 0; map = map -> previous) {
+    do {
         current_map_size++;
         if (map -> line < start_line - LINES && map -> previous != 0) {
             map -> previous = map -> previous -> previous;
         }
-    }
+        map = map -> previous;
+    } while (map != 0);
 }
+
 /* Add mapping entry */
 void add_map(int line, size_t pos)
 {
@@ -206,7 +208,9 @@ void replace_line(int i, CORD s)
 {
     register int c;
     CORD_pos p;
-    size_t len = CORD_len(s);
+#   if !defined(MACINTOSH)
+        size_t len = CORD_len(s);
+#   endif
 
     if (screen == 0 || LINES > screen_size) {
         screen_size = LINES;
@@ -215,7 +219,7 @@ void replace_line(int i, CORD s)
 #   if !defined(MACINTOSH)
         /* A gross workaround for an apparent curses bug: */
         if (i == LINES-1 && len == COLS) {
-            s = CORD_substr(s, 0, CORD_len(s) - 1);
+            s = CORD_substr(s, 0, len - 1);
         }
 #   endif
     if (CORD_cmp(screen[i], s) != 0) {
