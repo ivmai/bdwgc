@@ -4589,8 +4589,10 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
    for (; !((word)fp HOTTER_THAN (word)frame)
           && !((word)GC_stackbottom HOTTER_THAN (word)fp)
           && nframes < NFRAMES;
-       fp = (struct frame *)((long) fp -> FR_SAVFP + BIAS), nframes++) {
-      register int i;
+        fp = (struct frame *)((long) fp -> FR_SAVFP + BIAS), nframes++) {
+#     if NARGS > 0
+        register int i;
+#     endif
 
       info[nframes].ci_pc = fp->FR_SAVPC;
 #     if NARGS > 0
