@@ -261,7 +261,8 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
                unsigned xpos = LOWORD(lParam);  /* From left    */
                unsigned ypos = HIWORD(lParam);  /* from top */
 
-               set_position( xpos/char_width, ypos/char_height );
+               set_position(xpos / (unsigned)char_width,
+                            ypos / (unsigned)char_height);
                return(0);
            }
 
