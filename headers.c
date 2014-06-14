@@ -128,8 +128,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             return result;
         }
 
-        bytes_to_get = MINHINCR * HBLKSIZE;
-        if (bytes_to_get <= bytes) {
+        if (bytes >= MINHINCR * HBLKSIZE) {
             bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes);
             result = (ptr_t)GET_MEM(bytes_to_get);
             GC_add_to_our_memory(result, bytes_to_get);
@@ -143,7 +142,8 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
             return result;
         }
 
-        bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(bytes_to_get); /* for safety */
+        bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(MINHINCR * HBLKSIZE);
+                                                /* round up for safety */
         result = (ptr_t)GET_MEM(bytes_to_get);
         GC_add_to_our_memory(result, bytes_to_get);
         if (NULL == result) {
