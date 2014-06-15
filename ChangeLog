@@ -1,3 +1,39 @@
+2014-06-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.in: Regenerate.
+	* configure: Likewise.
+
+2014-06-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/de_win.c (WinMain, plain_chars, control_chars): Cast char
+	value to unsigned char when passed to isspace(), iscntrl().
+	* os_dep.c (GC_parse_map_entry): Change type of "start_start",
+	"end_start", "maj_dev_start", "p" local variables from char* to
+	unsgined char* (as isspace(), isxdigit() expect non-negative values);
+	insert casts between char* and unsigned char* where needed.
+	* os_dep.c (GC_parse_map_entry): Remove "endp" local variable (use "p"
+	variable directly instead).
+
+2014-06-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c (GC_register_data_segments): Call fclose(myexefile) on
+	return (only if OS2).
+
+2014-06-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.am (ASM_CPP_OPTIONS): Move comment to configure.ac.
+	* Makefile.am (COMPILER_XLC): Rename to ASM_WITH_CPP_UNSUPPORTED.
+	* configure.ac (COMPILER_XLC): Likewise.
+	* configure.ac (compiler_suncc): New variable (set to "yes" if Solaris
+	Sun C compiler).
+	* configure.ac (ASM_WITH_CPP_UNSUPPORTED): Define not only for
+	compiler_xlc but also for compiler_suncc.
+
+2014-06-08  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (CFLAGS): Add -O flag if Solaris SunCC (i.e., not GCC)
+	regardless of threads support (i.e., even in case it is off).
+
 [7.2f]
 
 2014-06-03  Ivan Maidanski <ivmai@mail.ru>

@@ -952,7 +952,7 @@ EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
 # Misc
 # ----
 AM_CXXFLAGS = @GC_CFLAGS@
-@COMPILER_XLC_FALSE@ASM_CPP_OPTIONS = -Wp,-P -x assembler-with-cpp
+@ASM_WITH_CPP_UNSUPPORTED_FALSE@ASM_CPP_OPTIONS = -Wp,-P -x assembler-with-cpp
 
 #all_objs = @addobjs@ $(libgc_la_OBJECTS)
 #$(all_objs) : include/private/gcconfig.h include/private/gc_priv.h \
@@ -961,7 +961,7 @@ AM_CXXFLAGS = @GC_CFLAGS@
 #include/private/thread_local_alloc.h include/private_support.h \
 #include/private/pthread_stop_world.h \
 #include/gc_mark.h @addincludes@
-@COMPILER_XLC_TRUE@ASM_CPP_OPTIONS = 
+@ASM_WITH_CPP_UNSUPPORTED_TRUE@ASM_CPP_OPTIONS = 
 dist_noinst_SCRIPTS = callprocs configure.host
 
 # this is an auxiliary shell file used by Makefile and Makefile.direct
@@ -2191,6 +2191,7 @@ uninstall-am: uninstall-dist_pkgdataDATA uninstall-includeHEADERS \
 	uninstall-dist_pkgdataDATA uninstall-includeHEADERS \
 	uninstall-libLTLIBRARIES uninstall-pkgconfigDATA \
 	uninstall-pkgincludeHEADERS
+
 
 .s.lo:
 	$(LTCOMPILE) $(ASM_CPP_OPTIONS) -c $<

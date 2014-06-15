@@ -689,8 +689,8 @@ EXTRA_TEST_LIBS
 extra_ldflags_libgc
 AVOID_CPP_LIB_FALSE
 AVOID_CPP_LIB_TRUE
-COMPILER_XLC_FALSE
-COMPILER_XLC_TRUE
+ASM_WITH_CPP_UNSUPPORTED_FALSE
+ASM_WITH_CPP_UNSUPPORTED_TRUE
 OPENBSD_THREADS_FALSE
 OPENBSD_THREADS_TRUE
 WIN32_THREADS_FALSE
@@ -5164,9 +5164,8 @@ $as_echo "$as_me: WARNING: \"Explicit GC_INIT() calls may be required.\"" >&2;};
         ;;
     esac
     case "$host" in
-     sparc*-*-solaris*)
+      sparc*-*-solaris*)
         if test "$GCC" != yes; then
-          CFLAGS="$CFLAGS -O"
           need_atomic_ops_asm=true
         fi
         ;;
@@ -5279,9 +5278,17 @@ else
 fi
 
 
+compiler_suncc=no
 case "$host" in
    powerpc-*-darwin*)
       powerpc_darwin=true
+      ;;
+   *-*-solaris*)
+      if test "$GCC" != yes; then
+        # Solaris SunCC
+        compiler_suncc=yes
+        CFLAGS="-O $CFLAGS"
+      fi
       ;;
 esac
 
@@ -5310,20 +5317,23 @@ fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $compiler_xlc" >&5
 $as_echo "$compiler_xlc" >&6; }
- if test $compiler_xlc = yes; then
-  COMPILER_XLC_TRUE=
-  COMPILER_XLC_FALSE='#'
-else
-  COMPILER_XLC_TRUE='#'
-  COMPILER_XLC_FALSE=
-fi
-
 if test $compiler_xlc = yes -a "$powerpc_darwin" = true; then
   # the darwin stack-frame-walking code is completely broken on xlc
 
 $as_echo "#define DARWIN_DONT_PARSE_STACK 1" >>confdefs.h
 
 fi
+
+# XLC neither requires nor tolerates the unnecessary assembler goop.
+# Similar for the Sun C compiler.
+ if test $compiler_xlc = yes -o $compiler_suncc = yes; then
+  ASM_WITH_CPP_UNSUPPORTED_TRUE=
+  ASM_WITH_CPP_UNSUPPORTED_FALSE='#'
+else
+  ASM_WITH_CPP_UNSUPPORTED_TRUE='#'
+  ASM_WITH_CPP_UNSUPPORTED_FALSE=
+fi
+
 
 if test "$GCC" = yes; then
   # Disable aliasing optimization unless forced to.
@@ -17148,8 +17158,8 @@ if test -z "${OPENBSD_THREADS_TRUE}" && test -z "${OPENBSD_THREADS_FALSE}"; then
   as_fn_error $? "conditional \"OPENBSD_THREADS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${COMPILER_XLC_TRUE}" && test -z "${COMPILER_XLC_FALSE}"; then
-  as_fn_error $? "conditional \"COMPILER_XLC\" was never defined.
+if test -z "${ASM_WITH_CPP_UNSUPPORTED_TRUE}" && test -z "${ASM_WITH_CPP_UNSUPPORTED_FALSE}"; then
+  as_fn_error $? "conditional \"ASM_WITH_CPP_UNSUPPORTED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${AVOID_CPP_LIB_TRUE}" && test -z "${AVOID_CPP_LIB_FALSE}"; then
