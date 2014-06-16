@@ -63,6 +63,24 @@ word GC_non_gc_bytes = 0;  /* Number of bytes not intended to be collected */
 
 word GC_gc_no = 0;
 
+#ifndef SMALL_CONFIG
+STATIC GC_bool GC_calc_gc_time_enabled = FALSE;
+			   /* Accumulate total gc time  in      */
+			   /* GC_total_gc_time if set to true.  */
+STATIC unsigned long GC_total_gc_time = 0;
+			   /* Measured in milliseconds.         */
+
+GC_API void GC_CALL GC_calc_gc_time(void)
+{
+  GC_calc_gc_time_enabled = TRUE;
+}
+
+GC_API unsigned long GC_CALL GC_get_total_gc_time(void)
+{
+  return GC_total_gc_time;
+}
+#endif
+
 #ifndef GC_DISABLE_INCREMENTAL
   GC_INNER int GC_incremental = 0;      /* By default, stop the world.  */
 #endif
@@ -458,8 +476,9 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
     }
     GC_notify_full_gc();
 #   ifndef SMALL_CONFIG
-      if (GC_print_stats) {
+      if (GC_print_stats || GC_calc_gc_time_enabled) {
         GET_TIME(start_time);
+	if (GC_print_stats)
         GC_log_printf("Initiating full world-stop collection!\n");
       }
 #   endif
@@ -499,13 +518,21 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
     }
     GC_finish_collection();
 #   ifndef SMALL_CONFIG
-      if (GC_print_stats) {
-        CLOCK_TYPE current_time;
+
+    if (GC_print_stats || GC_calc_gc_time_enabled) {
+        CLOCK_TYPE      current_time;
+        unsigned long   cur_gc_time;
 
         GET_TIME(current_time);
-        GC_log_printf("Complete collection took %lu msecs\n",
-                      MS_TIME_DIFF(current_time,start_time));
-      }
+        cur_gc_time = MS_TIME_DIFF(current_time,start_time);
+        if (GC_print_stats) {
+            GC_log_printf("Complete collection took %lu msecs\n",
+                 cur_gc_time);
+        }
+        if (GC_calc_gc_time_enabled) {
+            GC_total_gc_time += cur_gc_time;
+        }
+    }
 #   endif
     if (GC_on_collection_event)
       GC_on_collection_event(GC_EVENT_END);

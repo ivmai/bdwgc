@@ -392,6 +392,21 @@ GC_API GC_ATTR_DEPRECATED unsigned long GC_time_limit;
 GC_API void GC_CALL GC_set_time_limit(unsigned long);
 GC_API unsigned long GC_CALL GC_get_time_limit(void);
 
+GC_API void GC_CALL GC_calc_gc_time(void);
+                        /* Call this to tell the collector to calculate */
+                        /* the time taken by garbage collections. If    */
+                        /* enabled, the times are available from the    */
+                        /* function below.                              */
+                        /* Defined only if the library has been         */
+                        /* compiled without SMALL_CONFIG.               */
+GC_API unsigned long GC_CALL GC_get_total_gc_time(void);
+                        /* If GC_mercury_calc_gc_time is true, this     */
+                        /* holds the total user time used so far by     */
+                        /* garbage collections. It is measured in       */
+                        /* milliseconds.                                */
+                        /* Defined only if the library has been         */
+                        /* compiled without SMALL_CONFIG.               */
+
 /* Public procedures */
 
 /* Set whether the GC will allocate executable memory pages or not.     */
