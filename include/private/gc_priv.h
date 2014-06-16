@@ -2082,6 +2082,8 @@ void GC_print_static_roots(void);
 
 extern word GC_fo_entries; /* should be visible in extra/MacOS.c */
 
+GC_INNER void GC_mercury_enumerate_reachable_objects(void);
+
 #ifdef KEEP_BACK_PTRS
    GC_INNER void GC_store_back_pointer(ptr_t source, ptr_t dest);
    GC_INNER void GC_marked_for_finalization(ptr_t dest);

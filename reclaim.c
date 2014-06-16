@@ -772,3 +772,39 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
     }
   }
 #endif /* !EAGER_SWEEP && ENABLE_DISCLAIM */
+
+STATIC void GC_mercury_do_enumerate_reachable_objects(struct hblk *hbp,
+    word dummy)
+{
+    struct hblkhdr * hhdr = HDR(hbp);
+    size_t sz = hhdr -> hb_sz;
+    size_t bit_no;
+    char *p, *plim;
+
+    if (GC_block_empty(hhdr)) {
+        return;
+    }
+
+    p = hbp->hb_body;
+    bit_no = 0;
+    if (sz > MAXOBJBYTES) { /* one big object */
+        plim = p;
+    } else {
+        plim = hbp->hb_body + HBLKSIZE - sz;
+    }
+    /* Go through all words in block. */
+    while (p <= plim) {
+        if (mark_bit_from_hdr(hhdr, bit_no)) {
+            GC_mercury_callback_reachable_object((GC_word *)p,
+		BYTES_TO_WORDS(sz));
+        }
+        bit_no += MARK_BIT_OFFSET(sz);
+        p += sz;
+    }
+}
+
+GC_INNER void GC_mercury_enumerate_reachable_objects(void)
+{
+    GC_ASSERT(GC_mercury_callback_reachable_object);
+    GC_apply_to_all_blocks(GC_mercury_do_enumerate_reachable_objects, (word)0);
+}
