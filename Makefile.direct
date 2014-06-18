@@ -114,7 +114,7 @@ SRCS= $(CSRCS) \
 DOC_FILES= README.QUICK TODO doc/README.Mac doc/README.OS2 \
   doc/README.amiga doc/README.cords doc/debugging.html \
   doc/finalization.html doc/porting.html doc/overview.html \
-  doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
+  doc/README.hp doc/README.linux doc/README.rs6000 \
   doc/README.sgi doc/README.solaris2 doc/README.uts \
   doc/README.symbian doc/README.win32 README.md AUTHORS doc/gc.man \
   doc/README.environment doc/tree.html doc/gcdescr.html \
@@ -135,8 +135,7 @@ GNU_BUILD_FILES= configure.ac Makefile.am configure install-sh Makefile.in \
   bdw-gc.pc.in compile
 
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE gc.mak \
-  BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
-  PCR-Makefile SMakefile.amiga \
+  BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE PCR-Makefile SMakefile.amiga \
   digimars.mak Makefile.direct NT_STATIC_THREADS_MAKEFILE \
   NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE
 

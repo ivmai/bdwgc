@@ -24,7 +24,6 @@ dist_pkgdata_DATA = \
         doc/README.cmake \
         doc/README.cords \
         doc/README.darwin \
-        doc/README.dj \
         doc/README.environment \
         doc/README.ews4800 \
         doc/README.hp \
