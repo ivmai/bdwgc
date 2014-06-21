@@ -52,13 +52,13 @@ Makefile.direct, type "make cords", after copying to "Makefile".
 (This requires an ANSI C compiler.  You may
 need to redefine CC in the Makefile. The CORD_printf implementation in
 cordprnt.c is known to be less than perfectly portable.  The rest of the
-package should still work.)
+package should still work.)  See include/cord.h for the API.
 
 If you wish to use the collector from C++, type "make c++", or use
 --enable-cplusplus with the configure script.   With Makefile.direct,
 these ones add further files to gc.a and to the include subdirectory.
-With the alternate build process,this generates libgccpp.
-See cord/cord.h and include/gc_cpp.h.
+With the alternate build process, this generates libgccpp.
+See include/gc_cpp.h.
 
 TYPICAL USE:
 Include "gc.h" from the include subdirectory.  Link against the
