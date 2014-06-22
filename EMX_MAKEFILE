@@ -4,8 +4,6 @@
 #  You need GNU Make 3.71, gcc 2.5.7, emx 0.8h and GNU fileutils 3.9
 #  or similar tools. C++ interface and de.exe weren't tested.
 #
-#  Rename this file "Makefile".
-#
 
 # Primary targets:
 # gc.a - builds basic library
@@ -18,10 +16,11 @@ CC= gcc
 CXX=g++
 # Needed only for "make c++", which adds the c++ interface
 
-CFLAGS= -O -DALL_INTERIOR_POINTERS
+CFLAGS= -O -DALL_INTERIOR_POINTERS -I$(srcdir)/include
 # Setjmp_test may yield overly optimistic results when compiled
 # without optimization.
 
+CXXFLAGS= $(CFLAGS)
 AR= ar
 RANLIB= ar s
 
@@ -34,26 +33,22 @@ OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers
 
 CORD_OBJS= cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
-CORD_INCLUDE_FILES= $(srcdir)/gc.h $(srcdir)/include/cord.h \
+CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
     $(srcdir)/include/ec.h $(srcdir)/include/cord_pos.h
 
 # Libraries needed for curses applications.  Only needed for de.
 CURSES= -lcurses -ltermlib
 
-# The following is irrelevant on most systems.  But a few
-# versions of make otherwise fork the shell specified in
-# the SHELL environment variable.
-SHELL= bash
-
-SPECIALCFLAGS =
+SPECIALCFLAGS = -I$(srcdir)/include
 # Alternative flags to the C compiler for mach_dep.c.
 # Mach_dep.c often doesn't like optimization, and it's
 # not time-critical anyway.
 
 all: gc.a gctest.exe
 
-$(OBJS) test.o: $(srcdir)/gc_priv.h $(srcdir)/gc_hdrs.h $(srcdir)/gc.h \
-    $(srcdir)/gcconfig.h $(srcdir)/gc_typed.h
+$(OBJS) test.o: $(srcdir)/include/private/gc_priv.h \
+    $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/gc.h \
+    $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h
 # The dependency on Makefile is needed.  Changing
 # options affects the size of GC_arrays,
 # invalidating all .o files that rely on gc_priv.h
@@ -68,13 +63,12 @@ cords: $(CORD_OBJS) cord/cordtest.exe
 	$(AR) ru gc.a $(CORD_OBJS)
 	$(RANLIB) gc.a
 
-gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/gc_cpp.h
-	$(CXX) -c -O $(srcdir)/gc_cpp.cc
+gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h
+	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
 
-c++: gc_cpp.o $(srcdir)/gc_cpp.h
+c++: gc_cpp.o $(srcdir)/include/gc_cpp.h
 	$(AR) ru gc.a gc_cpp.o
 	$(RANLIB) gc.a
-	cp $(srcdir)/gc_cpp.h include/gc_cpp.h
 
 mach_dep.o: $(srcdir)/mach_dep.c
 	$(CC) -o mach_dep.o -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
@@ -109,7 +103,7 @@ gctest.exe: tests/test.o gc.a
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  Gctest may still work.
 # Try compiling setjmp_t.c unoptimized.
-setjmp_test.exe: $(srcdir)/tools/setjmp_t.c $(srcdir)/gc.h
+setjmp_test.exe: $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h
 	$(CC) $(CFLAGS) -o setjmp_test.exe $(srcdir)/tools/setjmp_t.c
 
 test: setjmp_test.exe gctest.exe
