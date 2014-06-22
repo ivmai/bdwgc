@@ -206,7 +206,7 @@ void test_extras(void)
     }
 }
 
-#ifdef __DJGPP__
+#if defined(__DJGPP__) || defined(__STRICT_ANSI__)
   /* snprintf is missing in DJGPP (v2.0.3) */
 # define GC_SNPRINTF sprintf
 # define GC_SNPRINTF_BUFSZ_ARG(bufsz) /* empty */
