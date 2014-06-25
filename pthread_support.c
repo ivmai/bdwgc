@@ -95,6 +95,10 @@
   typedef unsigned int sem_t;
 #endif /* GC_DGUX386_THREADS */
 
+#ifdef HAVE_LIBC_VERSION_H
+# include <gnu/libc-version.h>
+#endif
+
 /* Undefine macros used to redirect pthread primitives. */
 # undef pthread_create
 # ifndef GC_NO_PTHREAD_SIGMASK
@@ -1973,11 +1977,60 @@ GC_INNER void GC_lock(void)
   /* defined.                                                           */
   static pthread_mutex_t mark_mutex =
         {0, 0, 0, PTHREAD_MUTEX_ERRORCHECK_NP, {0, 0}};
+#elif defined(HAVE_GNU_GET_LIBC_VERSION) && defined(HAVE_LIBC_VERSION_H)
+  static pthread_mutex_t mark_mutex;
 #else
   static pthread_mutex_t mark_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 static pthread_cond_t builder_cv = PTHREAD_COND_INITIALIZER;
+
+GC_INNER void GC_setup_mark_lock(void)
+{
+#if defined(HAVE_GNU_GET_LIBC_VERSION) && defined(HAVE_LIBC_VERSION_H)
+    pthread_mutexattr_t attr;
+    char *version_str = NULL;
+    char *strtok_save;
+    char *version_part;
+    char *version_str;
+
+    if (0 != pthread_mutexattr_init(&attr)) {
+        goto error;
+    }
+
+    /*
+    ** Check for version 2.19 or greater.
+    */
+    version_str = strdup(gnu_get_libc_version());
+    version_part = strtok_r(version_str, ".", &strtok_save);
+    if ((NULL != version_part) && (2 <= atoi(version_part))) {
+        version_part = strtok_r(NULL, ".", &strtok_save);
+        if ((NULL != version_part) && (19 <= atoi(version_part))) {
+            /*
+             * Disable lock elision on this version of glibc.
+             */
+            if (0 != pthread_mutexattr_settype(&attr,
+                        PTHREAD_MUTEX_ERRORCHECK))
+            {
+                goto error;
+            }
+        }
+    }
+
+    if (0 != pthread_mutex_init(&mark_mutex, &attr)) {
+        goto error;
+    }
+    pthread_mutexattr_destroy(&attr);
+    if (NULL != version_str) {
+        free(version_str);
+    }
+    return;
+
+error:
+    perror("Error setting up marker mutex");
+    exit(1);
+#endif /* HAVE_GNU_GET_LIBC_VERSION && HAVE_LIBC_VERSION_H */
+}
 
 GC_INNER void GC_acquire_mark_lock(void)
 {
