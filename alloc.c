@@ -88,6 +88,8 @@ STATIC GC_bool GC_need_full_gc = FALSE;
 
 STATIC word GC_used_heap_size_after_full = 0;
 
+extern GC_on_collection_event_proc GC_on_collection_event;
+
 /* GC_copyright symbol is externally visible. */
 char * const GC_copyright[] =
 {"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
@@ -429,6 +431,9 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
         }
     }
     GC_notify_full_gc();
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_COLLECTION_BEGIN, NULL);
+
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
         GET_TIME(start_time);
@@ -581,6 +586,17 @@ GC_API int GC_CALL GC_collect_a_little(void)
 # define COMMA_IF_USE_MUNMAP(x) /* empty */
 #endif
 
+static void start_world()
+{
+  if (GC_on_collection_event)
+    GC_on_collection_event(GC_EVENT_STARTWORLD_BEGIN, NULL);
+
+  START_WORLD();
+
+  if (GC_on_collection_event)
+    GC_on_collection_event(GC_EVENT_STARTWORLD_END, NULL);
+}
+
 /*
  * Assumes lock is held.  We stop the world and mark from all roots.
  * If stop_func() ever returns TRUE, we may fail and return FALSE.
@@ -606,7 +622,14 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         GET_TIME(start_time);
 #   endif
 
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_STOPWORLD_BEGIN, NULL);
+
     STOP_WORLD();
+
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_STOPWORLD_END, NULL);
+
 #   ifdef THREAD_LOCAL_ALLOC
       GC_world_stopped = TRUE;
 #   endif
@@ -625,6 +648,9 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
             GC_clear_a_few_frames();
             GC_noop6(0,0,0,0,0,0);
 
+        if (GC_on_collection_event)
+          GC_on_collection_event(GC_EVENT_MARK_BEGIN, NULL);
+
         GC_initiate_gc();
         for (i = 0;;i++) {
           if ((*stop_func)()) {
@@ -634,11 +660,18 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #           ifdef THREAD_LOCAL_ALLOC
               GC_world_stopped = FALSE;
 #           endif
-            START_WORLD();
+
+            if (GC_on_collection_event)
+              GC_on_collection_event(GC_EVENT_MARK_END, NULL);
+
+            start_world();
             return(FALSE);
           }
           if (GC_mark_some(GC_approx_sp())) break;
         }
+
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_MARK_END, NULL);
 
     GC_gc_no++;
     GC_DBGLOG_PRINTF("GC #%lu freed %ld bytes, heap %lu KiB"
@@ -655,7 +688,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   ifdef THREAD_LOCAL_ALLOC
       GC_world_stopped = FALSE;
 #   endif
-    START_WORLD();
+    start_world();
 #   ifndef SMALL_CONFIG
       if (GC_PRINT_STATS_FLAG) {
         unsigned long time_diff;
@@ -961,6 +994,9 @@ STATIC void GC_finish_collection(void)
                       MS_TIME_DIFF(done_time,finalize_time));
       }
 #   endif
+
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_COLLECTION_END, NULL);
 }
 
 /* If stop_func == 0 then GC_default_stop_func is used instead.         */

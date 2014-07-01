@@ -466,7 +466,7 @@ STATIC int GC_suspend_all(void)
 {
   int n_live_threads = 0;
   int i;
-
+  int thread_id;
 # ifndef NACL
     GC_thread p;
 #   ifndef GC_OPENBSD_UTHREADS
@@ -499,13 +499,20 @@ STATIC int GC_suspend_all(void)
                 if (pthread_stackseg_np(p->id, &stack))
                   ABORT("pthread_stackseg_np failed");
                 p -> stop_info.stack_ptr = (ptr_t)stack.ss_sp - stack.ss_size;
+
+                if (GC_on_collection_event)
+                  GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED, (void *)p->id);
               }
 #           else
 #             ifndef PLATFORM_ANDROID
-                result = pthread_kill(p -> id, GC_sig_suspend);
+                thread_id = p -> id;
+                result = pthread_kill(thread_id, GC_sig_suspend);
 #             else
-                result = android_thread_kill(p -> kernel_id, GC_sig_suspend);
+                thread_id = p -> kernel_id;
+                result = android_thread_kill(thread_id, GC_sig_suspend);
 #             endif
+              if (GC_on_collection_event)
+                GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED, (void *)threadid);
               switch(result) {
                 case ESRCH:
                     /* Not really there anymore.  Possible? */
@@ -825,11 +832,15 @@ GC_INNER void GC_start_world(void)
               ABORT("pthread_resume_np failed");
 #         else
 #           ifndef PLATFORM_ANDROID
-              result = pthread_kill(p -> id, GC_sig_thr_restart);
+              thread_id = p -> id;
+              result = pthread_kill(thread_id, GC_sig_thr_restart);
 #           else
-              result = android_thread_kill(p -> kernel_id,
-                                           GC_sig_thr_restart);
+              thread_id = p -> kernel_id;
+              result = android_thread_kill(thread_id, GC_sig_thr_restart);
 #           endif
+            if (GC_on_collection_event)
+              GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED, (void *)thread_id);
+
             switch(result) {
                 case ESRCH:
                     /* Not really there anymore.  Possible? */
