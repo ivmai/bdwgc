@@ -1593,7 +1593,8 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 
 #if !defined(PCR) && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS) \
     || defined(LINT)
-#if defined(MSWIN32) && !defined(__MINGW32__) || defined(MSWINCE)
+#if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
+    && !defined(NO_WINMAIN_ENTRY)
   int APIENTRY WinMain(HINSTANCE instance GC_ATTR_UNUSED,
                        HINSTANCE prev GC_ATTR_UNUSED,
                        WINMAIN_LPTSTR cmd GC_ATTR_UNUSED,
@@ -1736,10 +1737,14 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
 }
 #endif
 
-int APIENTRY WinMain(HINSTANCE instance GC_ATTR_UNUSED,
-                     HINSTANCE prev GC_ATTR_UNUSED,
-                     WINMAIN_LPTSTR cmd GC_ATTR_UNUSED,
-                     int n GC_ATTR_UNUSED)
+#if !defined(NO_WINMAIN_ENTRY)
+  int APIENTRY WinMain(HINSTANCE instance GC_ATTR_UNUSED,
+                       HINSTANCE prev GC_ATTR_UNUSED,
+                       WINMAIN_LPTSTR cmd GC_ATTR_UNUSED,
+                       int n GC_ATTR_UNUSED)
+#else
+  int main(void)
+#endif
 {
 # if NTHREADS > 0
    HANDLE h[NTHREADS];
