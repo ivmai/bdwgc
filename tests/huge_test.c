@@ -5,8 +5,8 @@
 
 #ifndef GC_IGNORE_WARN
   /* Ignore misleading "Out of Memory!" warning (which is printed on    */
-  /* every GC_MALLOC(LONG_MAX) call) by defining this macro before      */
-  /* "gc.h" inclusion.                                                  */
+  /* every GC_MALLOC call below) by defining this macro before "gc.h"   */
+  /* inclusion.                                                         */
 # define GC_IGNORE_WARN
 #endif
 
@@ -19,7 +19,7 @@
  * expected manner.
  */
 
-#define GC_WORD_MAX (((GC_word)-1) >> 1)
+#define GC_SWORD_MAX ((GC_signed_word)(((GC_word)-1) >> 1))
 
 int main(void)
 {
@@ -31,22 +31,22 @@ int main(void)
         /* That's OK.  We test this corner case mostly to make sure that  */
         /* it fails predictably.                                          */
     GC_expand_hp(1024*1024*5);
-    r = GC_MALLOC(GC_WORD_MAX - 1024);
+    r = GC_MALLOC(GC_SWORD_MAX - 1024);
     if (NULL != r) {
         fprintf(stderr,
-                "Size GC_WORD_MAX-1024 allocation unexpectedly succeeded\n");
+                "Size SWORD_MAX-1024 allocation unexpectedly succeeded\n");
         exit(1);
     }
-    r = GC_MALLOC(GC_WORD_MAX);
+    r = GC_MALLOC(GC_SWORD_MAX);
     if (NULL != r) {
         fprintf(stderr,
-                "Size GC_WORD_MAX allocation unexpectedly succeeded\n");
+                "Size SWORD_MAX allocation unexpectedly succeeded\n");
         exit(1);
     }
-    r = GC_MALLOC(GC_WORD_MAX + 1024);
+    r = GC_MALLOC((GC_word)GC_SWORD_MAX + 1024);
     if (NULL != r) {
         fprintf(stderr,
-                "Size GC_WORD_MAX+1024 allocation unexpectedly succeeded\n");
+                "Size SWORD_MAX+1024 allocation unexpectedly succeeded\n");
         exit(1);
     }
     return 0;
