@@ -560,7 +560,6 @@
 
 # if defined(__EMSCRIPTEN__)
 #   define I386
-#   define ALIGNMENT 4
 #   define mach_type_known
 # endif
 
@@ -766,6 +765,7 @@
 #   define ALIGNMENT 4
 #   define DATASTART NULL
 #   define DATAEND NULL
+#   define STACK_NOT_SCANNED
 # endif
 
 # define STACK_GRAN 0x1000000
