@@ -558,6 +558,11 @@
 #   define mach_type_known
 # endif
 
+# if defined(__EMSCRIPTEN__)
+#   define I386
+#   define mach_type_known
+# endif
+
 /* Feel free to add more clauses here */
 
 /* Or manually define the machine type here.  A machine type is         */
@@ -752,6 +757,15 @@
 #   define ALIGNMENT 4
 #   define DATASTART NULL
 #   define DATAEND NULL
+# endif
+
+# ifdef __EMSCRIPTEN__
+#   define OS_TYPE "EMSCRIPTEN"
+#   define CPP_WORDSZ 32
+#   define ALIGNMENT 4
+#   define DATASTART NULL
+#   define DATAEND NULL
+#   define STACK_NOT_SCANNED
 # endif
 
 # define STACK_GRAN 0x1000000

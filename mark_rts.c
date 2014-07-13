@@ -751,7 +751,7 @@ STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
  * A zero value indicates that it's OK to miss some
  * register values.
  */
-GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
+GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame GC_ATTR_UNUSED)
 {
     int i;
     unsigned kind;
@@ -810,7 +810,9 @@ GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame)
      * This is usually done by saving the current context on the
      * stack, and then just tracing from the stack.
      */
-      GC_push_regs_and_stack(cold_gc_frame);
+#    ifndef STACK_NOT_SCANNED
+       GC_push_regs_and_stack(cold_gc_frame);
+#    endif
 
     if (GC_push_other_roots != 0) (*GC_push_other_roots)();
         /* In the threads case, this also pushes thread stacks. */
