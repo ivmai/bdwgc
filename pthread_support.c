@@ -95,10 +95,6 @@
   typedef unsigned int sem_t;
 #endif /* GC_DGUX386_THREADS */
 
-#ifdef HAVE_LIBC_VERSION_H
-# include <gnu/libc-version.h>
-#endif
-
 /* Undefine macros used to redirect pthread primitives. */
 # undef pthread_create
 # ifndef GC_NO_PTHREAD_SIGMASK
@@ -1977,59 +1973,59 @@ GC_INNER void GC_lock(void)
   /* defined.                                                           */
   static pthread_mutex_t mark_mutex =
         {0, 0, 0, PTHREAD_MUTEX_ERRORCHECK_NP, {0, 0}};
-#elif defined(HAVE_GNU_GET_LIBC_VERSION) && defined(HAVE_LIBC_VERSION_H)
-  static pthread_mutex_t mark_mutex;
 #else
   static pthread_mutex_t mark_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 static pthread_cond_t builder_cv = PTHREAD_COND_INITIALIZER;
 
+#ifdef GLIBC_2_19_TSX_BUG
+  /* Parse string like <major>[.<minor>[<tail>]] and return major value. */
+  static int parse_version(int *pminor, const char *pverstr) {
+    char *endp;
+    unsigned long value = strtoul(pverstr, &endp, 10);
+    int major = (int)value;
+
+    if (major < 0 || (char *)pverstr == endp || (unsigned)major != value) {
+      /* Parse error */
+      return -1;
+    }
+    if (*endp != '.') {
+      /* No minor part. */
+      *pminor = -1;
+    } else {
+      value = strtoul(endp + 1, &endp, 10);
+      *pminor = (int)value;
+      if (*pminor < 0 || (unsigned)(*pminor) != value) {
+        return -1;
+      }
+    }
+    return major;
+  }
+#endif /* GLIBC_2_19_TSX_BUG */
+
 GC_INNER void GC_setup_mark_lock(void)
 {
-#if defined(HAVE_GNU_GET_LIBC_VERSION) && defined(HAVE_LIBC_VERSION_H)
-    pthread_mutexattr_t attr;
-    char *version_str = NULL;
-    char *strtok_save;
-    char *version_part;
-    char *version_str;
+# ifdef GLIBC_2_19_TSX_BUG
+    pthread_mutexattr_t mattr;
+    int glibc_minor = -1;
+    int glibc_major = parse_version(&glibc_minor, gnu_get_libc_version());
 
-    if (0 != pthread_mutexattr_init(&attr)) {
-        goto error;
+    if (glibc_major > 2 || (glibc_major == 2 && glibc_minor >= 19)) {
+      /* TODO: disable this workaround for glibc with fixed TSX */
+      /* This disables lock elision to workaround a bug in glibc 2.19+  */
+      if (0 != pthread_mutexattr_init(&mattr)) {
+        ABORT("pthread_mutexattr_init failed");
+      }
+      if (0 != pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ERRORCHECK)) {
+        ABORT("pthread_mutexattr_settype failed");
+      }
+      if (0 != pthread_mutex_init(&mark_mutex, &mattr)) {
+        ABORT("pthread_mutex_init failed");
+      }
+      pthread_mutexattr_destroy(&mattr);
     }
-
-    /*
-    ** Check for version 2.19 or greater.
-    */
-    version_str = strdup(gnu_get_libc_version());
-    version_part = strtok_r(version_str, ".", &strtok_save);
-    if ((NULL != version_part) && (2 <= atoi(version_part))) {
-        version_part = strtok_r(NULL, ".", &strtok_save);
-        if ((NULL != version_part) && (19 <= atoi(version_part))) {
-            /*
-             * Disable lock elision on this version of glibc.
-             */
-            if (0 != pthread_mutexattr_settype(&attr,
-                        PTHREAD_MUTEX_ERRORCHECK))
-            {
-                goto error;
-            }
-        }
-    }
-
-    if (0 != pthread_mutex_init(&mark_mutex, &attr)) {
-        goto error;
-    }
-    pthread_mutexattr_destroy(&attr);
-    if (NULL != version_str) {
-        free(version_str);
-    }
-    return;
-
-error:
-    perror("Error setting up marker mutex");
-    exit(1);
-#endif /* HAVE_GNU_GET_LIBC_VERSION && HAVE_LIBC_VERSION_H */
+# endif
 }
 
 GC_INNER void GC_acquire_mark_lock(void)
