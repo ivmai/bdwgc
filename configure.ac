@@ -658,19 +658,6 @@ case "$host" in
  *) AC_MSG_RESULT(no) ;;
 esac
 
-dnl Check for specific glibc functions and definitions that we need to for
-dnl the glibc 2.19 workaround.
-HAVE_LIBC_VERSION_H=no
-HAVE_GNU_GET_LIBC_VERSION=no
-case "${host}" in
-  *-linux*)
-    AC_CHECK_HEADER([gnu/libc-version.h], HAVE_LIBC_VERSION_H=yes)
-    AC_CHECK_FUNC([gnu_get_libc_version], HAVE_GNU_GET_LIBC_VERSION=yes)
-    ;;
-esac
-AC_SUBST(HAVE_LIBC_VERSION_H)
-AC_SUBST(HAVE_GNU_GET_LIBC_VERSION)
-
 dnl Include defines that have become de facto standard.
 dnl ALL_INTERIOR_POINTERS and NO_EXECUTE_PERMISSION can be overridden
 dnl in the startup code.
