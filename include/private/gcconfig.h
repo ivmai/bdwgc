@@ -2257,6 +2257,11 @@
           /* FIXME: This seems to be fixed in GLibc v2.14.              */
 #         define GETCONTEXT_FPU_EXCMASK_BUG
 #       endif
+#       if defined(__GLIBC__)
+          /* Workaround lock elision implementation for some glibc.     */
+#         define GLIBC_2_19_TSX_BUG
+#         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
+#       endif
 #   endif
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
