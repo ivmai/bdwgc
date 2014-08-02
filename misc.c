@@ -853,31 +853,29 @@ GC_API void GC_CALL GC_init(void)
       initial_heap_sz = (word)MINHINCR;
 #   endif
 
-#ifdef GC_DEBUG
-#ifndef _WIN64
+#   if defined(MSWIN32) && !defined(_WIN64) && defined(GC_WIN32_THREADS) \
+       && defined(CHECK_NOT_WOW64)
       {
-            // wow64: running 32-bit-gc on 64-bit-sys is broken!
-            // code copied from msdn docs example
-            typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS)(HANDLE, PBOOL);
-            LPFN_ISWOW64PROCESS fnIsWow64Process = 0;
-            fnIsWow64Process = (LPFN_ISWOW64PROCESS) GetProcAddress(GetModuleHandleA("kernel32"), "IsWow64Process");
-            if (NULL != fnIsWow64Process)
-            {
-                BOOL bIsWow64 = FALSE;
-                if (fnIsWow64Process(GetCurrentProcess(), &bIsWow64))
-                {
-                    if (bIsWow64)
-                        MessageBoxA(NULL,
-                            "This program uses the BDWGC garbage collector compiled for 32-bit "
-                            "but running on a 64-bit version of Windows.\n"
-                            "This is known to be broken due to a design flaw in Windows itself! Expect erratic behaviour...",
-                            "32-bit program running on 64-bit system",
-                            MB_ICONWARNING | MB_OK);
-                }
-            }
+        /* Windows: running 32-bit GC on 64-bit system is broken!       */
+        /* WoW64 bug affects SuspendThread, no workaround exists.       */
+        HMODULE hK32 = GetModuleHandle(TEXT("kernel32.dll"));
+        if (hK32) {
+          FARPROC pfn = GetProcAddress(hK32, "IsWow64Process");
+          BOOL bIsWow64 = FALSE;
+          if (pfn
+              && (*(BOOL (WINAPI*)(HANDLE, BOOL*))pfn)(GetCurrentProcess(),
+                                                       &bIsWow64)
+              && bIsWow64) {
+            MessageBoxA(NULL, "This program uses BDWGC garbage collector"
+                " compiled for 32-bit but running on 64-bit Windows.\n"
+                "This is known to be broken due to a design flaw"
+                " in Windows itself! Expect erratic behavior...",
+                "32-bit program running on 64-bit system",
+                MB_ICONWARNING | MB_OK);
+          }
+        }
       }
-#endif
-#endif
+#   endif
 
     DISABLE_CANCEL(cancel_state);
     /* Note that although we are nominally called with the */
