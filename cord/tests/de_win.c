@@ -28,16 +28,14 @@
 int LINES = 0;
 int COLS = 0;
 
-char       szAppName[]     = "DE";
-char       FullAppName[]   = "Demonstration Editor";
+#define szAppName TEXT("DE")
 
 HWND        hwnd;
 
 void de_error(char *s)
 {
-    MessageBox( hwnd, (LPSTR) s,
-                (LPSTR) FullAppName,
-                MB_ICONINFORMATION | MB_OK );
+    (void)MessageBoxA(hwnd, s, "Demonstration Editor",
+                      MB_ICONINFORMATION | MB_OK);
     InvalidateRect(hwnd, NULL, TRUE);
 }
 
@@ -63,7 +61,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
       wndclass.hIcon          = LoadIcon (hInstance, szAppName);
       wndclass.hCursor        = LoadCursor (NULL, IDC_ARROW);
       wndclass.hbrBackground  = GetStockObject(WHITE_BRUSH);
-      wndclass.lpszMenuName   = "DE";
+      wndclass.lpszMenuName   = TEXT("DE");
       wndclass.lpszClassName  = szAppName;
 
       if (RegisterClass (&wndclass) == 0) {
@@ -96,7 +94,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
    }
 
    hwnd = CreateWindow (szAppName,
-                        FullAppName,
+                        TEXT("Demonstration Editor"),
                         WS_OVERLAPPEDWINDOW | WS_CAPTION, /* Window style */
                         CW_USEDEFAULT, 0, /* default pos. */
                         CW_USEDEFAULT, 0, /* default width, height */
@@ -279,7 +277,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
                   return( 0 );
 
                case IDM_HELPABOUT:
-                  if( DialogBox( hInstance, "ABOUTBOX",
+                  if( DialogBox( hInstance, TEXT("ABOUTBOX"),
                                  hwnd, AboutBoxCallback ) )
                      InvalidateRect( hwnd, NULL, TRUE );
                   return( 0 );
@@ -324,15 +322,15 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
                    SetBkMode(dc, OPAQUE);
                    SetTextColor(dc, GetSysColor(COLOR_WINDOWTEXT));
 
-                   TextOut(dc, this_line.left, this_line.top,
-                           plain, (int)len);
-                   TextOut(dc, this_line.left + (int)len * char_width,
-                           this_line.top,
-                           blanks, (int)(COLS - len));
+                   TextOutA(dc, this_line.left, this_line.top,
+                            plain, (int)len);
+                   TextOutA(dc, this_line.left + (int)len * char_width,
+                            this_line.top,
+                            blanks, (int)(COLS - len));
                    SetBkMode(dc, TRANSPARENT);
                    SetTextColor(dc, RED);
-                   TextOut(dc, this_line.left, this_line.top,
-                           control, (int)strlen(control));
+                   TextOutA(dc, this_line.left, this_line.top,
+                            control, (int)strlen(control));
                }
            }
            EndPaint(hwnd, &ps);
