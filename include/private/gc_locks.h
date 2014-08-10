@@ -83,19 +83,19 @@
      /* structure.  It also helps if comparisons don't involve a        */
      /* function call.  Hence we introduce platform-dependent macros    */
      /* to compare pthread_t ids and to map them to integers.           */
-     /* the mapping to integers does not need to result in different    */
+     /* The mapping to integers does not need to result in different    */
      /* integers for each thread, though that should be true as much    */
      /* as possible.                                                    */
-     /* Refine to exclude platforms on which pthread_t is struct */
+     /* Refine to exclude platforms on which pthread_t is struct.       */
 #    if !defined(GC_WIN32_PTHREADS)
 #      define NUMERIC_THREAD_ID(id) ((unsigned long)(id))
 #      define THREAD_EQUAL(id1, id2) ((id1) == (id2))
 #      define NUMERIC_THREAD_ID_UNIQUE
 #    else
 #      define NUMERIC_THREAD_ID(id) ((unsigned long)(id.p))
-       /* Using documented internal details of win32-pthread library.   */
+       /* Using documented internal details of pthreads-win32 library.  */
        /* Faster than pthread_equal(). Should not change with           */
-       /* future versions of win32-pthread library.                     */
+       /* future versions of pthreads-win32 library.                    */
 #      define THREAD_EQUAL(id1, id2) ((id1.p == id2.p) && (id1.x == id2.x))
 #      undef NUMERIC_THREAD_ID_UNIQUE
        /* Generic definitions based on pthread_equal() always work but  */

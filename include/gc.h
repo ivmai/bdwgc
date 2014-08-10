@@ -1480,7 +1480,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 
 #if defined(GC_WIN32_THREADS) \
     && (!defined(GC_PTHREADS) || defined(GC_BUILD) || defined(WINAPI))
-                /* Note: for Cygwin and win32-pthread, this is skipped  */
+                /* Note: for Cygwin and pthreads-win32, this is skipped */
                 /* unless windows.h is included before gc.h.            */
 
 # if !defined(GC_NO_THREAD_DECLS) || defined(GC_BUILD)

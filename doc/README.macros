@@ -149,7 +149,7 @@ GC_DGUX386_THREADS      Enables support for DB/UX on I386 threads.
 GC_WIN32_THREADS        Enables support for Win32 threads.  That makes sense
   for this Makefile only under Cygwin.
 
-GC_WIN32_PTHREADS       Enables support for Ming32 pthreads.  This cannot be
+GC_WIN32_PTHREADS       Enables support for pthreads-win32.  This cannot be
   enabled automatically by GC_THREADS, which would assume Win32 native
   threads.
 
