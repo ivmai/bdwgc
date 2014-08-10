@@ -2465,15 +2465,14 @@ GC_INNER void GC_thr_init(void)
 #   ifndef GC_WIN32_PTHREADS
       while ((t = GC_lookup_pthread(pthread_id)) == 0)
         Sleep(10);
-#   endif
-
-    result = pthread_join(pthread_id, retval);
-
-#   ifdef GC_WIN32_PTHREADS
-      /* win32_pthreads id are unique */
+      result = pthread_join(pthread_id, retval);
+#   else
+      result = pthread_join(pthread_id, retval);
+      /* pthreads-win32 id are unique (not recycled) */
       t = GC_lookup_pthread(pthread_id);
       if (NULL == t) ABORT("Thread not registered");
 #   endif
+
     LOCK();
     GC_delete_gc_thread_no_free(t);
     GC_INTERNAL_FREE(t);

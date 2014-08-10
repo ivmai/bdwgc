@@ -58,7 +58,7 @@
 #endif
 
 #if defined(GC_WIN32_PTHREADS) && !defined(GC_WIN32_THREADS)
-  /* Using pthreads-w32 library. */
+  /* Using pthreads-win32 library.  */
 # define GC_WIN32_THREADS
 #endif
 
