@@ -1733,6 +1733,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
 #   ifndef NUMERIC_THREAD_ID
 #     define NUMERIC_THREAD_ID(id) (unsigned long)GC_PTHREAD_PTRVAL(id)
+      /* Id not guaranteed to be unique. */
 #   endif
 
     /* start_mark_threads is the same as in pthread_support.c except    */
@@ -1800,7 +1801,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
     GC_INNER void GC_acquire_mark_lock(void)
     {
-      GC_ASSERT(GC_mark_lock_holder != NUMERIC_THREAD_ID(pthread_self()));
+#     ifdef NUMERIC_THREAD_ID_UNIQUE
+        GC_ASSERT(GC_mark_lock_holder != NUMERIC_THREAD_ID(pthread_self()));
+#     endif
       if (pthread_mutex_lock(&mark_mutex) != 0) {
         ABORT("pthread_mutex_lock failed");
       }

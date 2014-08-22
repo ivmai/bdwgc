@@ -1987,7 +1987,9 @@ static pthread_cond_t builder_cv = PTHREAD_COND_INITIALIZER;
 
 GC_INNER void GC_acquire_mark_lock(void)
 {
-    GC_ASSERT(GC_mark_lock_holder != NUMERIC_THREAD_ID(pthread_self()));
+#   ifdef NUMERIC_THREAD_ID_UNIQUE
+      GC_ASSERT(GC_mark_lock_holder != NUMERIC_THREAD_ID(pthread_self()));
+#   endif
     GC_generic_lock(&mark_mutex);
     SET_MARK_LOCK_HOLDER;
 }
