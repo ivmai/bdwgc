@@ -217,7 +217,7 @@ especially with the garbage collector.  Any use is likely to provoke a
 crash in the GC, since it makes it impossible for the collector to
 correctly track threads.
 
-To build the collector for MinGW pthreads-win32,
-use Makefile.direct and explicitly set
+To build the collector for MinGW pthreads-win32 (or other non-Cygwin pthreads
+implementation for Windows), use Makefile.direct and explicitly set
 GC_WIN32_PTHREADS (or pass --enable-threads=pthreads to configure).
 Use -DPTW32_STATIC_LIB for the static threads library.

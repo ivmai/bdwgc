@@ -149,9 +149,9 @@ GC_DGUX386_THREADS      Enables support for DB/UX on I386 threads.
 GC_WIN32_THREADS        Enables support for Win32 threads.  That makes sense
   for this Makefile only under Cygwin.
 
-GC_WIN32_PTHREADS       Enables support for pthreads-win32.  This cannot be
-  enabled automatically by GC_THREADS, which would assume Win32 native
-  threads.
+GC_WIN32_PTHREADS       Enables support for pthreads-win32 (or other
+  non-Cygwin pthreads library for Windows).  This cannot be enabled
+  automatically by GC_THREADS, which would assume Win32 native threads.
 
 PTW32_STATIC_LIB        Causes the static version of the Mingw pthreads
   library to be used.  Requires GC_WIN32_PTHREADS.

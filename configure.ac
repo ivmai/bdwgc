@@ -145,7 +145,8 @@ AH_TEMPLATE([GC_OPENBSD_THREADS],   [Define to support OpenBSD pthreads.])
 AH_TEMPLATE([GC_OSF1_THREADS],      [Define to support Tru64 pthreads.])
 AH_TEMPLATE([GC_SOLARIS_THREADS],   [Define to support Solaris pthreads.])
 AH_TEMPLATE([GC_WIN32_THREADS],     [Define to support Win32 threads.])
-AH_TEMPLATE([GC_WIN32_PTHREADS],    [Define to support pthreads-win32.])
+AH_TEMPLATE([GC_WIN32_PTHREADS],
+                [Define to support pthreads-win32 or winpthreads.])
 AH_TEMPLATE([GC_RTEMS_PTHREADS],    [Define to support rtems-pthreads.])
 
 dnl System header feature requests.
@@ -275,7 +276,7 @@ case "$THREADS" in
         ;;
      *-*-mingw*)
         AC_DEFINE(GC_WIN32_PTHREADS)
-        # Using pthreads-win32 library.
+        # Using pthreads-win32 (or other non-Cygwin pthreads) library.
         if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi

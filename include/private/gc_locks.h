@@ -91,7 +91,14 @@
 #      define NUMERIC_THREAD_ID(id) ((unsigned long)(id))
 #      define THREAD_EQUAL(id1, id2) ((id1) == (id2))
 #      define NUMERIC_THREAD_ID_UNIQUE
-#    else
+#    elif defined(__WINPTHREADS_VERSION_MAJOR) /* winpthreads */
+#      define NUMERIC_THREAD_ID(id) ((unsigned long)(id))
+#      define THREAD_EQUAL(id1, id2) ((id1) == (id2))
+#      ifndef _WIN64
+         /* NUMERIC_THREAD_ID is 32-bit and not unique on Win64. */
+#        define NUMERIC_THREAD_ID_UNIQUE
+#      endif
+#    else /* pthreads-win32 */
 #      define NUMERIC_THREAD_ID(id) ((unsigned long)(id.p))
        /* Using documented internal details of pthreads-win32 library.  */
        /* Faster than pthread_equal(). Should not change with           */
