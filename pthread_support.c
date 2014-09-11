@@ -2028,7 +2028,7 @@ static void setup_mark_lock(void)
       if (0 != pthread_mutexattr_init(&mattr)) {
         ABORT("pthread_mutexattr_init failed");
       }
-      if (0 != pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ERRORCHECK)) {
+      if (0 != pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_NORMAL)) {
         ABORT("pthread_mutexattr_settype failed");
       }
       if (0 != pthread_mutex_init(&mark_mutex, &mattr)) {
