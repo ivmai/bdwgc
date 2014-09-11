@@ -2373,6 +2373,7 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
   /* GC_notify_all_builder() is called when GC_fl_builder_count         */
   /* reaches 0.                                                         */
 
+  GC_INNER void GC_setup_mark_lock(void);
   GC_INNER void GC_acquire_mark_lock(void);
   GC_INNER void GC_release_mark_lock(void);
   GC_INNER void GC_notify_all_builder(void);
