@@ -556,6 +556,7 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #endif
 
 #if defined(DARWIN)
+# include <mach/thread_status.h>
 # ifndef MAC_OS_X_VERSION_MAX_ALLOWED
 #   include <AvailabilityMacros.h>
                 /* Include this header just to import the above macro.  */
@@ -588,7 +589,11 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #     define GC_MACH_THREAD_STATE_COUNT x86_THREAD_STATE64_COUNT
 #   endif
 # else
-#   if defined(ARM32)
+#   if defined(ARM32) && defined(ARM_UNIFIED_THREAD_STATE)
+#     define GC_THREAD_STATE_T                  arm_unified_thread_state_t
+#     define GC_MACH_THREAD_STATE               ARM_UNIFIED_THREAD_STATE
+#     define GC_MACH_THREAD_STATE_COUNT         ARM_UNIFIED_THREAD_STATE_COUNT
+#   elif defined(ARM32)
 #     define GC_THREAD_STATE_T                  arm_thread_state_t
 #     ifdef ARM_MACHINE_THREAD_STATE_COUNT
 #       define GC_MACH_THREAD_STATE             ARM_MACHINE_THREAD_STATE
@@ -619,9 +624,17 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
   /* without __, thus hopefully, not breaking any existing              */
   /* Makefile.direct builds.                                            */
 # if __DARWIN_UNIX03
-#   define THREAD_FLD(x) __ ## x
+#   if defined(ARM32) && defined(ARM_UNIFIED_THREAD_STATE)
+#     define THREAD_FLD(x) ts_32.__ ## x
+#   else
+#     define THREAD_FLD(x) __ ## x
+#   endif
 # else
-#   define THREAD_FLD(x) x
+#   if defined(ARM32) && defined(ARM_UNIFIED_THREAD_STATE)
+#     define THREAD_FLD(x) ts_32. ## x
+#   else
+#     define THREAD_FLD(x) x
+#   endif
 # endif
 #endif /* DARWIN */
 

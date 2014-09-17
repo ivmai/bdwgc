@@ -228,27 +228,27 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       GC_push_one(state.THREAD_FLD(r31));
 
 #   elif defined(ARM32)
-      lo = (void *)state.__sp;
+      lo = (void *)state.THREAD_FLD(sp);
 #     ifndef DARWIN_DONT_PARSE_STACK
-        *phi = GC_FindTopOfStack(state.__sp);
+        *phi = GC_FindTopOfStack(state.THREAD_FLD(sp));
 #     endif
-      GC_push_one(state.__r[0]);
-      GC_push_one(state.__r[1]);
-      GC_push_one(state.__r[2]);
-      GC_push_one(state.__r[3]);
-      GC_push_one(state.__r[4]);
-      GC_push_one(state.__r[5]);
-      GC_push_one(state.__r[6]);
-      GC_push_one(state.__r[7]);
-      GC_push_one(state.__r[8]);
-      GC_push_one(state.__r[9]);
-      GC_push_one(state.__r[10]);
-      GC_push_one(state.__r[11]);
-      GC_push_one(state.__r[12]);
-      /* GC_push_one(state.__sp); */
-      GC_push_one(state.__lr);
-      /* GC_push_one(state.__pc); */
-      GC_push_one(state.__cpsr);
+      GC_push_one(state.THREAD_FLD(r[0]));
+      GC_push_one(state.THREAD_FLD(r[1]));
+      GC_push_one(state.THREAD_FLD(r[2]));
+      GC_push_one(state.THREAD_FLD(r[3]));
+      GC_push_one(state.THREAD_FLD(r[4]));
+      GC_push_one(state.THREAD_FLD(r[5]));
+      GC_push_one(state.THREAD_FLD(r[6]));
+      GC_push_one(state.THREAD_FLD(r[7]));
+      GC_push_one(state.THREAD_FLD(r[8]));
+      GC_push_one(state.THREAD_FLD(r[9]));
+      GC_push_one(state.THREAD_FLD(r[10]));
+      GC_push_one(state.THREAD_FLD(r[11]));
+      GC_push_one(state.THREAD_FLD(r[12]));
+      /* GC_push_one(state.THREAD_FLD(sp)); */
+      GC_push_one(state.THREAD_FLD(lr));
+      /* GC_push_one(state.THREAD_FLD(pc)); */
+      GC_push_one(state.THREAD_FLD(cpsr));
 
 #   else
 #     error FIXME for non-x86 || ppc || arm architectures
