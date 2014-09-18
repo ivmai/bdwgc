@@ -15,6 +15,9 @@
  * modified is included with the above copyright notice.
  */
 
+#include <sys/sysctl.h>
+#include <mach/machine.h>
+
 #include "private/pthread_support.h"
 
 /* This probably needs more porting work to ppc64. */
@@ -143,10 +146,29 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
     /* we could use THREAD_STATE_MAX (but seems to be not optimal). */
     kern_return_t kern_result;
     mach_msg_type_number_t thread_state_count = GC_MACH_THREAD_STATE_COUNT;
+    thread_state_flavor_t flavor = GC_MACH_THREAD_STATE;
     GC_THREAD_STATE_T state;
 
+#   if defined(ARM32) && defined(ARM_THREAD_STATE32)
+      /* When running on 64-bit iOS 7+ we need to use the            */
+      /* ARM_THREAD_STATE32 flavor in the call to thread_get_state() */
+      /* below. If we don't iOS will assume we pass it an            */
+      /* arm_unified_thread_state_t while we actually pass it an     */
+      /* arm_thread_state_t which is a lot smaller. Without this     */
+      /* check thread_get_state() will corrupt the stack and the app */
+      /* will crash.                                                 */
+      size_t size;
+      static cpu_type_t cputype = 0;
+      if (cputype == 0) {
+        sysctlbyname("hw.cputype", &cputype, &size, NULL, 0);
+      }
+      if (cputype == CPU_TYPE_ARM64) {
+        flavor = ARM_THREAD_STATE32;
+      }
+#   endif
+
     /* Get the thread state (registers, etc) */
-    kern_result = thread_get_state(thread, GC_MACH_THREAD_STATE,
+    kern_result = thread_get_state(thread, flavor,
                                    (natural_t *)&state,
                                    &thread_state_count);
 #   ifdef DEBUG_THREADS
