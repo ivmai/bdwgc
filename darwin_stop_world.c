@@ -17,6 +17,7 @@
 
 #include <sys/sysctl.h>
 #include <mach/machine.h>
+#include <CoreFoundation/CoreFoundation.h>
 
 #include "private/pthread_support.h"
 
@@ -146,31 +147,44 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
     /* we could use THREAD_STATE_MAX (but seems to be not optimal). */
     kern_return_t kern_result;
     mach_msg_type_number_t thread_state_count = GC_MACH_THREAD_STATE_COUNT;
-    thread_state_flavor_t flavor = GC_MACH_THREAD_STATE;
     GC_THREAD_STATE_T state;
 
 #   if defined(ARM32) && defined(ARM_THREAD_STATE32)
-      /* When running on 64-bit iOS 7+ we need to use the            */
-      /* ARM_THREAD_STATE32 flavor in the call to thread_get_state() */
-      /* below. If we don't iOS will assume we pass it an            */
-      /* arm_unified_thread_state_t while we actually pass it an     */
-      /* arm_thread_state_t which is a lot smaller. Without this     */
-      /* check thread_get_state() will corrupt the stack and the app */
-      /* will crash.                                                 */
+#     ifndef kCFCoreFoundationVersionNumber_iOS_8_0
+#       define kCFCoreFoundationVersionNumber_iOS_8_0 1140.1
+#     endif
+      /* Use ARM_UNIFIED_THREAD_STATE on iOS7 64-bit and up and iOS8  */
+      /* 32-bit and up. iOS7 was the first iOS with 64-bit support so */
+      /* if we run on a 64-bit CPU we know we're on iOS7 or higher.   */
       size_t size;
       static cpu_type_t cputype = 0;
       if (cputype == 0) {
         sysctlbyname("hw.cputype", &cputype, &size, NULL, 0);
       }
-      if (cputype == CPU_TYPE_ARM64) {
-        flavor = ARM_THREAD_STATE32;
+      if (cputype == CPU_TYPE_ARM64 || kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_8_0) {
+        arm_unified_thread_state_t unified_state;
+        mach_msg_type_number_t unified_thread_state_count = ARM_UNIFIED_THREAD_STATE_COUNT;
+        kern_result = thread_get_state(thread, ARM_UNIFIED_THREAD_STATE,
+                                       (natural_t *)&unified_state,
+                                       &unified_thread_state_count);
+        if (unified_state.ash.flavor != ARM_THREAD_STATE32) {
+          // Sanity check. The flavor in the header should always be ARM_THREAD_STATE32
+          ABORT("unified_state.ash.flavor != ARM_THREAD_STATE32");
+        }
+        state = unified_state.ts_32;
+        thread_state_count = unified_state.ash.count;
+      } else {
+        kern_result = thread_get_state(thread, ARM_THREAD_STATE,
+                               (natural_t *)&state,
+                               &thread_state_count);
       }
-#   endif
+#   else
 
     /* Get the thread state (registers, etc) */
-    kern_result = thread_get_state(thread, flavor,
+    kern_result = thread_get_state(thread, GC_MACH_THREAD_STATE,
                                    (natural_t *)&state,
                                    &thread_state_count);
+#   endif
 #   ifdef DEBUG_THREADS
       GC_log_printf("thread_get_state returns value = %d\n", kern_result);
 #   endif
