@@ -245,7 +245,8 @@
 # if defined(__GNUC__) && (__GNUC__ > 4 \
         || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3 && !defined(__ICC)) \
         || __clang_major__ > 3 \
-        || (__clang_major__ == 3 && __clang_minor__ >= 2))
+        || (__clang_major__ == 3 && __clang_minor__ >= 2 \
+            && (__clang_minor__ != 5 || __clang_patchlevel__ != 0)))
 #   define GC_ATTR_ALLOC_SIZE(argnum) __attribute__((__alloc_size__(argnum)))
 # else
 #   define GC_ATTR_ALLOC_SIZE(argnum)
