@@ -1776,6 +1776,20 @@ GC_API void GC_CALL GC_win32_free_heap(void);
         (*GC_amiga_allocwrapper_do)(a,GC_malloc_atomic_ignore_off_page)
 #endif /* _AMIGA && !GC_AMIGA_MAKINGLIB */
 
+
+
+
+/* Added by Christian Schafmeister, 2014 based on code provided by Peter Wang */
+/* Callback for reachable objects, you are given the pointer and the size */
+typedef void (*GC_reachable_object_callback)( GC_word* ptr, size_t sz);
+
+/* Walk the GC heap of all reachable objects passing each to the callback */
+void GC_enumerate_reachable_objects(GC_reachable_object_callback callback);
+
+
+
+
+
 #ifdef __cplusplus
   }  /* end of extern "C" */
 #endif

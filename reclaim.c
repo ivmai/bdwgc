@@ -776,26 +776,21 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
 
 
 
-/*
- * Code to walk the entire heap of live objects
- *
- */
-extern __attribute__((weak)) void GC_callback_reachable_object( GC_word* ptr, size_t sz)
-{
-    printf("Reachable object@%p sz[%lu]\n", ptr, sz);
-}
-
 
 /* Added by Christian Schafmeister June 2014
-   From code provided by Peter Wang in the bdwgc-request@lists.opendylan.com 
-   mailing list.
+   Based on code provided by Peter Wang in
+   the bdwgc-request@lists.opendylan.com mailing list.
+
    From: Peter Wang novalazy@gmail.com
    To: Christian Schafmeister chris.schaf@verizon.net
    Cc: bdwgc@lists.opendylan.org
    Subject: Re: [Gc] Is there a way to walk the entire heap of live objects
    Message-ID: 20140606141627.GC25889@lucy.localdomain
 */
-STATIC void GC_mercury_do_enumerate_reachable_objects(struct hblk *hbp, word dummy)
+
+GC_reachable_object_callback global_reachable_object_callback = NULL;
+
+STATIC void GC_do_enumerate_reachable_objects(struct hblk *hbp, word dummy)
 {
     struct hblkhdr * hhdr = HDR(hbp);
     size_t sz = hhdr -> hb_sz;
@@ -816,16 +811,17 @@ STATIC void GC_mercury_do_enumerate_reachable_objects(struct hblk *hbp, word dum
     /* Go through all words in block. */
     while (p <= plim) {
         if (mark_bit_from_hdr(hhdr, bit_no)) {
-            GC_callback_reachable_object((GC_word *)p,
-                                                 BYTES_TO_WORDS(sz));
+            (global_reachable_object_callback)((GC_word *)p, BYTES_TO_WORDS(sz));
         }
         bit_no += MARK_BIT_OFFSET(sz);
         p += sz;
     }
 }
 
-GC_INNER void GC_mercury_enumerate_reachable_objects(void)
+extern void GC_enumerate_reachable_objects(GC_reachable_object_callback callback)
 {
-    GC_ASSERT(GC_callback_reachable_object);
-    GC_apply_to_all_blocks(GC_mercury_do_enumerate_reachable_objects, (word)0);
+    GC_ASSERT(callback);
+    global_reachable_object_callback = callback;
+    GC_apply_to_all_blocks(GC_do_enumerate_reachable_objects, (word)0 );
 }
+
