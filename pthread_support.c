@@ -443,7 +443,7 @@ start_mark_threads(void)
       }
     }
     GC_markers_m1 = i;
-    pthread_attr_destroy(&attr);
+    (void)pthread_attr_destroy(&attr);
     GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
 }
 
@@ -1702,14 +1702,17 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
       {
         size_t stack_size = 0;
         if (NULL != attr) {
-           pthread_attr_getstacksize(attr, &stack_size);
+          if (pthread_attr_getstacksize(attr, &stack_size) != 0)
+            ABORT("pthread_attr_getstacksize failed");
         }
         if (0 == stack_size) {
            pthread_attr_t my_attr;
 
-           pthread_attr_init(&my_attr);
-           pthread_attr_getstacksize(&my_attr, &stack_size);
-           pthread_attr_destroy(&my_attr);
+           if (pthread_attr_init(&my_attr) != 0)
+             ABORT("pthread_attr_init failed");
+           if (pthread_attr_getstacksize(&my_attr, &stack_size) != 0)
+             ABORT("pthread_attr_getstacksize failed");
+           (void)pthread_attr_destroy(&my_attr);
         }
         /* On Solaris 10, with default attr initialization,     */
         /* stack_size remains 0.  Fudge it.                     */
@@ -2028,7 +2031,7 @@ static void setup_mark_lock(void)
       if (0 != pthread_mutex_init(&mark_mutex, &mattr)) {
         ABORT("pthread_mutex_init failed");
       }
-      pthread_mutexattr_destroy(&mattr);
+      (void)pthread_mutexattr_destroy(&mattr);
     }
 # endif
 }

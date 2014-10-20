@@ -1767,7 +1767,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         }
       }
       GC_markers_m1 = i;
-      pthread_attr_destroy(&attr);
+      (void)pthread_attr_destroy(&attr);
       GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
     }
 

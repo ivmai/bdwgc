@@ -1852,11 +1852,17 @@ int main(void)
 #   endif
     GC_COND_INIT();
 
-    pthread_attr_init(&attr);
+    if ((code = pthread_attr_init(&attr)) != 0) {
+      GC_printf("pthread_attr_init failed, error=%d\n", code);
+      FAIL;
+    }
 #   if defined(GC_IRIX_THREADS) || defined(GC_FREEBSD_THREADS) \
         || defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS) \
         || defined(GC_OPENBSD_THREADS)
-        pthread_attr_setstacksize(&attr, 1000000);
+        if ((code = pthread_attr_setstacksize(&attr, 1000000)) != 0) {
+          GC_printf("pthread_attr_setstacksize failed, error=%d\n", code);
+          FAIL;
+        }
 #   endif
     n_tests = 0;
 #   if (defined(MPROTECT_VDB)) && !defined(REDIRECT_MALLOC) \
@@ -1894,7 +1900,7 @@ int main(void)
     }
     check_heap_stats();
     (void)fflush(stdout);
-    pthread_attr_destroy(&attr);
+    (void)pthread_attr_destroy(&attr);
 #   ifdef PTW32_STATIC_LIB
         pthread_win32_thread_detach_np ();
         pthread_win32_process_detach_np ();

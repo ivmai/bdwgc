@@ -860,7 +860,7 @@ GC_API void GC_CALL GC_init(void)
           if (0 != pthread_mutex_init(&GC_allocate_ml, &mattr)) {
             ABORT("pthread_mutex_init failed");
           }
-          pthread_mutexattr_destroy(&mattr);
+          (void)pthread_mutexattr_destroy(&mattr);
         }
 #     endif
 #   endif /* THREADS */
