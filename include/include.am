@@ -44,6 +44,7 @@ dist_noinst_HEADERS += \
         include/private/gc_pmark.h \
         include/private/gc_priv.h \
         include/private/gcconfig.h \
+        include/private/msvc_dbg.h \
         include/private/pthread_stop_world.h \
         include/private/pthread_support.h \
         include/private/specific.h \
