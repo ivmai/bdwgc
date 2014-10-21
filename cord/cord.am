@@ -16,4 +16,7 @@ EXTRA_DIST += \
 	cord/cordprnt.c cord/cordxtra.c cord/de_cmds.h \
 	cord/de_win.h cord/de_win.c cord/de_win.RC cord/de_win.ICO
 
-pkginclude_HEADERS += include/cord.h
+pkginclude_HEADERS += \
+        include/cord.h \
+        include/private/cord_pos.h \
+        include/ec.h
