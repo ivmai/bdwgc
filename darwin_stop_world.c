@@ -15,10 +15,6 @@
  * modified is included with the above copyright notice.
  */
 
-#include <sys/sysctl.h>
-#include <mach/machine.h>
-#include <CoreFoundation/CoreFoundation.h>
-
 #include "private/pthread_support.h"
 
 /* This probably needs more porting work to ppc64. */
@@ -27,6 +23,7 @@
 
 #include <sys/sysctl.h>
 #include <mach/machine.h>
+#include <CoreFoundation/CoreFoundation.h>
 
 /* From "Inside Mac OS X - Mach-O Runtime Architecture" published by Apple
    Page 49:
