@@ -26,12 +26,14 @@ static const tse invalid_tse = {INVALID_QTID, 0, 0, INVALID_THREADID};
 GC_INNER int GC_key_create_inner(tsd ** key_ptr)
 {
     int i;
+    int ret;
     tsd * result = (tsd *)MALLOC_CLEAR(sizeof(tsd));
 
     /* A quick alignment check, since we need atomic stores */
     GC_ASSERT((word)(&invalid_tse.next) % sizeof(tse *) == 0);
     if (0 == result) return ENOMEM;
-    pthread_mutex_init(&(result -> lock), NULL);
+    ret = pthread_mutex_init(&result->lock, NULL);
+    if (ret != 0) return ret;
     for (i = 0; i < TS_CACHE_SIZE; ++i) {
       result -> cache[i] = (/* no const */ tse *)&invalid_tse;
     }

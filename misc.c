@@ -866,9 +866,14 @@ GC_API void GC_CALL GC_init(void)
 #     ifdef SN_TARGET_PS3
         {
           pthread_mutexattr_t mattr;
-          pthread_mutexattr_init(&mattr);
-          pthread_mutex_init(&GC_allocate_ml, &mattr);
-          pthread_mutexattr_destroy(&mattr);
+
+          if (0 != pthread_mutexattr_init(&mattr)) {
+            ABORT("pthread_mutexattr_init failed");
+          }
+          if (0 != pthread_mutex_init(&GC_allocate_ml, &mattr)) {
+            ABORT("pthread_mutex_init failed");
+          }
+          (void)pthread_mutexattr_destroy(&mattr);
         }
 #     endif
 #   endif /* THREADS */
@@ -888,9 +893,6 @@ GC_API void GC_CALL GC_init(void)
         /* else */ InitializeCriticalSection (&GC_allocate_ml);
      }
 #   endif /* GC_WIN32_THREADS */
-#   if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
-      GC_setup_mark_lock();
-#   endif /* GC_PTHREADS */
 #   if (defined(MSWIN32) || defined(MSWINCE)) && defined(THREADS)
       InitializeCriticalSection(&GC_write_cs);
 #   endif

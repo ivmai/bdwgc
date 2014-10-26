@@ -25,6 +25,9 @@
 
 #if defined(GC_DARWIN_THREADS)
 
+#include <sys/sysctl.h>
+#include <mach/machine.h>
+
 /* From "Inside Mac OS X - Mach-O Runtime Architecture" published by Apple
    Page 49:
    "The space beneath the stack pointer, where a new stack frame would normally
