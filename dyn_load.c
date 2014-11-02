@@ -687,8 +687,15 @@ GC_FirstDLOpenedLinkMap(void)
     if( cachedResult == 0 ) {
 #     if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
         struct link_map *lm = NULL;
-        if (!dlinfo(RTLD_SELF, RTLD_DI_LINKMAP, &lm))
-            cachedResult = lm;
+        if (!dlinfo(RTLD_SELF, RTLD_DI_LINKMAP, &lm) && lm != NULL) {
+            /* Now lm points link_map object of libgc.  Since it    */
+            /* might not be the first dynamically linked object,    */
+            /* try to find it (object next to the main object).     */
+            while (lm->l_prev != NULL) {
+                lm = lm->l_prev;
+            }
+            cachedResult = lm->l_next;
+        }
 #     else
         int tag;
         for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {
