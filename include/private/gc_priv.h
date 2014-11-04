@@ -563,8 +563,6 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # if defined(POWERPC)
 #   if CPP_WORDSZ == 32
 #     define GC_THREAD_STATE_T          ppc_thread_state_t
-#     define GC_MACH_THREAD_STATE       PPC_THREAD_STATE
-#     define GC_MACH_THREAD_STATE_COUNT PPC_THREAD_STATE_COUNT
 #   else
 #     define GC_THREAD_STATE_T          ppc_thread_state64_t
 #     define GC_MACH_THREAD_STATE       PPC_THREAD_STATE64
@@ -589,8 +587,6 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #   endif
 # elif defined(ARM32)
 #   define GC_THREAD_STATE_T            arm_thread_state_t
-#   define GC_MACH_THREAD_STATE         ARM_THREAD_STATE
-#   define GC_MACH_THREAD_STATE_COUNT   ARM_THREAD_STATE_COUNT
 # else
 #   error define GC_THREAD_STATE_T
 # endif
