@@ -97,7 +97,7 @@
 # endif
 # if defined(__aarch64__)
 #    define AARCH64
-#    if !defined(LINUX)
+#    if !defined(LINUX) && !defined(DARWIN)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -370,6 +370,10 @@
 #    define mach_type_known
 #   elif defined(__arm__)
 #    define ARM32
+#    define mach_type_known
+#    define DARWIN_DONT_PARSE_STACK
+#   elif defined(__aarch64__)
+#    define AARCH64
 #    define mach_type_known
 #    define DARWIN_DONT_PARSE_STACK
 #   endif
@@ -2039,6 +2043,29 @@
 #     define DATASTART ((ptr_t)__data_start)
       extern char _end[];
 #     define DATAEND ((ptr_t)(&_end))
+#   endif
+#   ifdef DARWIN
+      /* iOS */
+#     define OS_TYPE "DARWIN"
+#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
+#       define DYNAMIC_LOADING
+#     endif
+#     define DATASTART ((ptr_t) get_etext())
+#     define DATAEND   ((ptr_t) get_end())
+#     define STACKBOTTOM ((ptr_t) 0x16fdfffff)
+#     ifndef USE_MMAP
+#       define USE_MMAP
+#     endif
+#     define USE_MMAP_ANON
+#     define MPROTECT_VDB
+#     include <unistd.h>
+#     define GETPAGESIZE() getpagesize()
+      /* FIXME: There seems to be some issues with trylock hanging on   */
+      /* darwin. This should be looked into some more.                  */
+#     define NO_PTHREAD_TRYLOCK
+#     ifndef NO_DYLD_BIND_FULLY_IMAGE
+#       define NO_DYLD_BIND_FULLY_IMAGE
+#     endif
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.   */

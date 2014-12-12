@@ -278,6 +278,46 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       GC_push_one(state.THREAD_FLD(lr));
       GC_push_one(state.THREAD_FLD(cpsr));
 
+#   elif defined(AARCH64)
+      lo = (void *)state.__sp;
+#     ifndef DARWIN_DONT_PARSE_STACK
+        *phi = GC_FindTopOfStack(state.__sp);
+#     endif
+      GC_push_one(state.__x[0]);
+      GC_push_one(state.__x[1]);
+      GC_push_one(state.__x[2]);
+      GC_push_one(state.__x[3]);
+      GC_push_one(state.__x[4]);
+      GC_push_one(state.__x[5]);
+      GC_push_one(state.__x[6]);
+      GC_push_one(state.__x[7]);
+      GC_push_one(state.__x[8]);
+      GC_push_one(state.__x[9]);
+      GC_push_one(state.__x[10]);
+      GC_push_one(state.__x[11]);
+      GC_push_one(state.__x[12]);
+      GC_push_one(state.__x[13]);
+      GC_push_one(state.__x[14]);
+      GC_push_one(state.__x[15]);
+      GC_push_one(state.__x[16]);
+      GC_push_one(state.__x[17]);
+      GC_push_one(state.__x[18]);
+      GC_push_one(state.__x[19]);
+      GC_push_one(state.__x[20]);
+      GC_push_one(state.__x[21]);
+      GC_push_one(state.__x[22]);
+      GC_push_one(state.__x[23]);
+      GC_push_one(state.__x[24]);
+      GC_push_one(state.__x[25]);
+      GC_push_one(state.__x[26]);
+      GC_push_one(state.__x[27]);
+      GC_push_one(state.__x[28]);
+      GC_push_one(state.__fp);
+      GC_push_one(state.__lr);
+      /* GC_push_one(state.__sp); */
+      /* GC_push_one(state.__pc); */
+      /* GC_push_one(state.__cpsr); */
+
 #   else
 #     error FIXME for non-x86 || ppc || arm architectures
 #   endif
