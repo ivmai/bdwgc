@@ -1881,7 +1881,7 @@ int main(void)
 #   if defined(GC_IRIX_THREADS) || defined(GC_FREEBSD_THREADS) \
         || defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS) \
         || defined(GC_OPENBSD_THREADS)
-        if ((code = pthread_attr_setstacksize(&attr, 1000000)) != 0) {
+        if ((code = pthread_attr_setstacksize(&attr, 1000 * 1024)) != 0) {
           GC_printf("pthread_attr_setstacksize failed, error=%d\n", code);
           FAIL;
         }
