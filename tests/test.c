@@ -1730,7 +1730,7 @@ int main(void)
 #   if defined(GC_IRIX_THREADS) || defined(GC_FREEBSD_THREADS) \
         || defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS) \
         || defined(GC_OPENBSD_THREADS)
-        pthread_attr_setstacksize(&attr, 1000000);
+        pthread_attr_setstacksize(&attr, 1000 * 1024);
 #   endif
     n_tests = 0;
 #   if (defined(MPROTECT_VDB)) && !defined(REDIRECT_MALLOC) \
