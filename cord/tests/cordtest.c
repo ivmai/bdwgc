@@ -206,8 +206,6 @@ void test_extras(void)
 
 #if defined(__DJGPP__) || defined(__STRICT_ANSI__)
   /* snprintf is missing in DJGPP (v2.0.3) */
-# define GC_SNPRINTF sprintf
-# define GC_SNPRINTF_BUFSZ_ARG(bufsz) /* empty */
 #else
 # if defined(_MSC_VER)
 #   if defined(_WIN32_WCE)
@@ -219,7 +217,6 @@ void test_extras(void)
 # else
 #   define GC_SNPRINTF snprintf
 # endif
-# define GC_SNPRINTF_BUFSZ_ARG(bufsz) (bufsz),
 #endif
 
 void test_printf(void)
@@ -244,8 +241,12 @@ void test_printf(void)
     x = CORD_cat(x,x);
     if (CORD_sprintf(&result, "->%-120.78r!\n", x) != 124)
         ABORT("CORD_sprintf failed 3");
-    (void)GC_SNPRINTF(result2, GC_SNPRINTF_BUFSZ_ARG(sizeof(result2))
-                      "->%-120.78s!\n", CORD_to_char_star(x));
+#   ifdef GC_SNPRINTF
+        (void)GC_SNPRINTF(result2, sizeof(result2), "->%-120.78s!\n",
+                          CORD_to_char_star(x));
+#   else
+        (void)sprintf(result2, "->%-120.78s!\n", CORD_to_char_star(x));
+#   endif
     result2[sizeof(result2) - 1] = '\0';
     if (CORD_cmp(result, result2) != 0)ABORT("CORD_sprintf goofed 5");
 }
