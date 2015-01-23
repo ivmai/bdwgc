@@ -232,22 +232,14 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #     ifndef DARWIN_DONT_PARSE_STACK
         *phi = GC_FindTopOfStack(state.THREAD_FLD(sp));
 #     endif
-      GC_push_one(state.THREAD_FLD(r[0]));
-      GC_push_one(state.THREAD_FLD(r[1]));
-      GC_push_one(state.THREAD_FLD(r[2]));
-      GC_push_one(state.THREAD_FLD(r[3]));
-      GC_push_one(state.THREAD_FLD(r[4]));
-      GC_push_one(state.THREAD_FLD(r[5]));
-      GC_push_one(state.THREAD_FLD(r[6]));
-      GC_push_one(state.THREAD_FLD(r[7]));
-      GC_push_one(state.THREAD_FLD(r[8]));
-      GC_push_one(state.THREAD_FLD(r[9]));
-      GC_push_one(state.THREAD_FLD(r[10]));
-      GC_push_one(state.THREAD_FLD(r[11]));
-      GC_push_one(state.THREAD_FLD(r[12]));
-      /* GC_push_one(state.THREAD_FLD(sp)); */
+      {
+        int j;
+        for (j = 0; j <= 12; j++) {
+          GC_push_one(state.THREAD_FLD(r[j]));
+        }
+      }
+      /* "pc" and "sp" are skipped */
       GC_push_one(state.THREAD_FLD(lr));
-      /* GC_push_one(state.THREAD_FLD(pc)); */
       GC_push_one(state.THREAD_FLD(cpsr));
 
 #   else
