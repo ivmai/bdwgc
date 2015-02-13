@@ -2020,9 +2020,14 @@
 # endif
 
 # ifdef AARCH64
-#   define CPP_WORDSZ 64
 #   define MACH_TYPE "AARCH64"
-#   define ALIGNMENT 8
+#   ifdef __ILP32__
+#     define CPP_WORDSZ 32
+#     define ALIGNMENT 4
+#   else
+#     define CPP_WORDSZ 64
+#     define ALIGNMENT 8
+#   endif
 #   ifndef HBLKSIZE
 #     define HBLKSIZE 4096
 #   endif
