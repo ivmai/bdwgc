@@ -1,6 +1,6 @@
 # Ignored files in bdwgc Git repo.
 
-# Binary files (in root dir, cord, src, tests):
+# Binary files (in root dir, cord, tests):
 *.dll
 *.exe
 *.gcda

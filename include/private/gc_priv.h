@@ -564,8 +564,6 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # if defined(POWERPC)
 #   if CPP_WORDSZ == 32
 #     define GC_THREAD_STATE_T          ppc_thread_state_t
-#     define GC_MACH_THREAD_STATE       PPC_THREAD_STATE
-#     define GC_MACH_THREAD_STATE_COUNT PPC_THREAD_STATE_COUNT
 #   else
 #     define GC_THREAD_STATE_T          ppc_thread_state64_t
 #     define GC_MACH_THREAD_STATE       PPC_THREAD_STATE64
@@ -588,20 +586,18 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #     define GC_MACH_THREAD_STATE       x86_THREAD_STATE64
 #     define GC_MACH_THREAD_STATE_COUNT x86_THREAD_STATE64_COUNT
 #   endif
-# else
-#   if defined(ARM32) && defined(ARM_UNIFIED_THREAD_STATE)
-#     define GC_THREAD_STATE_T                  arm_unified_thread_state_t
-#     define GC_MACH_THREAD_STATE               ARM_UNIFIED_THREAD_STATE
-#     define GC_MACH_THREAD_STATE_COUNT         ARM_UNIFIED_THREAD_STATE_COUNT
-#   elif defined(ARM32)
-#     define GC_THREAD_STATE_T                  arm_thread_state_t
-#     ifdef ARM_MACHINE_THREAD_STATE_COUNT
-#       define GC_MACH_THREAD_STATE             ARM_MACHINE_THREAD_STATE
-#       define GC_MACH_THREAD_STATE_COUNT       ARM_MACHINE_THREAD_STATE_COUNT
-#     endif
-#   else
-#     error define GC_THREAD_STATE_T
+# elif defined(ARM32) && defined(ARM_UNIFIED_THREAD_STATE)
+#   define GC_THREAD_STATE_T            arm_unified_thread_state_t
+#   define GC_MACH_THREAD_STATE         ARM_UNIFIED_THREAD_STATE
+#   define GC_MACH_THREAD_STATE_COUNT   ARM_UNIFIED_THREAD_STATE_COUNT
+# elif defined(ARM32)
+#   define GC_THREAD_STATE_T            arm_thread_state_t
+#   ifdef ARM_MACHINE_THREAD_STATE_COUNT
+#     define GC_MACH_THREAD_STATE       ARM_MACHINE_THREAD_STATE
+#     define GC_MACH_THREAD_STATE_COUNT ARM_MACHINE_THREAD_STATE_COUNT
 #   endif
+# else
+#   error define GC_THREAD_STATE_T
 # endif
 # ifndef GC_MACH_THREAD_STATE
 #   define GC_MACH_THREAD_STATE         MACHINE_THREAD_STATE

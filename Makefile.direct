@@ -108,8 +108,8 @@ SRCS= $(CSRCS) \
   include/gc_config_macros.h include/private/pthread_support.h \
   include/private/pthread_stop_world.h include/private/darwin_semaphore.h \
   include/private/darwin_stop_world.h include/private/thread_local_alloc.h \
-  src/ia64_save_regs_in_stack.s src/sparc_mach_dep.S \
-  src/sparc_netbsd_mach_dep.s src/sparc_sunos4_mach_dep.s $(CORD_SRCS)
+  ia64_save_regs_in_stack.s sparc_mach_dep.S \
+  sparc_netbsd_mach_dep.s sparc_sunos4_mach_dep.s $(CORD_SRCS)
 
 DOC_FILES= README.QUICK TODO doc/README.Mac doc/README.OS2 \
   doc/README.amiga doc/README.cords doc/debugging.html \
@@ -309,17 +309,17 @@ dyn_test:
 # 	gcc -shared -Wl,-soname=libgc.so.0 -o libgc.so.0 $(LIBOBJS) dyn_load.lo
 #	touch liblinuxgc.so
 
-mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/src/sparc_mach_dep.S \
-	    $(srcdir)/src/sparc_sunos4_mach_dep.s \
-	    $(srcdir)/src/ia64_save_regs_in_stack.s \
-	    $(srcdir)/src/sparc_netbsd_mach_dep.s $(UTILS)
+mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/sparc_mach_dep.S \
+	    $(srcdir)/sparc_sunos4_mach_dep.s \
+	    $(srcdir)/ia64_save_regs_in_stack.s \
+	    $(srcdir)/sparc_netbsd_mach_dep.s $(UTILS)
 	rm -f mach_dep.o
-	./if_mach SPARC SOLARIS $(CC) -c -o mach_dep2.o $(srcdir)/src/sparc_mach_dep.S
-	./if_mach SPARC OPENBSD $(AS) -o mach_dep2.o $(srcdir)/src/sparc_sunos4_mach_dep.s
-	./if_mach SPARC NETBSD $(AS) -o mach_dep2.o $(srcdir)/src/sparc_netbsd_mach_dep.s
+	./if_mach SPARC SOLARIS $(CC) -c -o mach_dep2.o $(srcdir)/sparc_mach_dep.S
+	./if_mach SPARC OPENBSD $(AS) -o mach_dep2.o $(srcdir)/sparc_sunos4_mach_dep.s
+	./if_mach SPARC NETBSD $(AS) -o mach_dep2.o $(srcdir)/sparc_netbsd_mach_dep.s
 	./if_mach SPARC "" $(CC) -c -o mach_dep1.o $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
 	./if_mach SPARC "" ld -r -o mach_dep.o mach_dep1.o mach_dep2.o
-	./if_mach IA64 "" as $(AS_ABI_FLAG) -o ia64_save_regs_in_stack.o $(srcdir)/src/ia64_save_regs_in_stack.s
+	./if_mach IA64 "" as $(AS_ABI_FLAG) -o ia64_save_regs_in_stack.o $(srcdir)/ia64_save_regs_in_stack.s
 	./if_mach IA64 "" $(CC) -c -o mach_dep1.o $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
 	./if_mach IA64 "" ld -r -o mach_dep.o mach_dep1.o ia64_save_regs_in_stack.o
 	./if_not_there mach_dep.o $(CC) -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c

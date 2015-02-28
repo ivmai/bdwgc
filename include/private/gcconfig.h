@@ -1375,6 +1375,11 @@
 #         define PREFETCH_FOR_WRITE(x) \
             __asm__ __volatile__ ("prefetchw %0" : : "m"(*(char *)(x)))
 #       endif
+#       if defined(__GLIBC__)
+          /* Workaround lock elision implementation for some glibc.     */
+#         define GLIBC_2_19_TSX_BUG
+#         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
+#       endif
 #   endif
 #   ifdef CYGWIN32
 #       define OS_TYPE "CYGWIN32"
@@ -2015,9 +2020,14 @@
 # endif
 
 # ifdef AARCH64
-#   define CPP_WORDSZ 64
 #   define MACH_TYPE "AARCH64"
-#   define ALIGNMENT 8
+#   ifdef __ILP32__
+#     define CPP_WORDSZ 32
+#     define ALIGNMENT 4
+#   else
+#     define CPP_WORDSZ 64
+#     define ALIGNMENT 8
+#   endif
 #   ifndef HBLKSIZE
 #     define HBLKSIZE 4096
 #   endif
