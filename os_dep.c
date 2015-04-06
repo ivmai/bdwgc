@@ -16,36 +16,6 @@
 
 #include "private/gc_priv.h"
 
-#if defined(LINUX) && !defined(POWERPC) && !defined(NO_SIGCONTEXT_H)
-# include <linux/version.h>
-# if (LINUX_VERSION_CODE <= 0x10400)
-    /* Ugly hack to get struct sigcontext_struct definition.  Required  */
-    /* for some early 1.3.X releases.  Will hopefully go away soon.     */
-    /* in some later Linux releases, asm/sigcontext.h may have to       */
-    /* be included instead.                                             */
-#   define __KERNEL__
-#   include <asm/signal.h>
-#   undef __KERNEL__
-# else
-    /* Kernels prior to 2.1.1 defined struct sigcontext_struct instead of */
-    /* struct sigcontext.  libc6 (glibc2) uses "struct sigcontext" in     */
-    /* prototypes, so we have to include the top-level sigcontext.h to    */
-    /* make sure the former gets defined to be the latter if appropriate. */
-#   include <features.h>
-#   if 2 <= __GLIBC__
-#     if 2 == __GLIBC__ && 0 == __GLIBC_MINOR__
-        /* glibc 2.1 no longer has sigcontext.h.  But signal.h          */
-        /* has the right declaration for glibc 2.1.                     */
-#       include <sigcontext.h>
-#     endif /* 0 == __GLIBC_MINOR__ */
-#   else /* __GLIBC__ < 2 */
-      /* libc5 doesn't have <sigcontext.h>: go directly with the kernel   */
-      /* one.  Check LINUX_VERSION_CODE to see which we should reference. */
-#     include <asm/sigcontext.h>
-#   endif /* __GLIBC__ < 2 */
-# endif
-#endif /* LINUX && !POWERPC */
-
 #if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS) \
     && !defined(MSWINCE) && !defined(__CC_ARM)
 # include <sys/types.h>
