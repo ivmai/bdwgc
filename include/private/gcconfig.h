@@ -1306,15 +1306,6 @@
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
-#       if 0
-#         define HEURISTIC1
-#         undef STACK_GRAN
-#         define STACK_GRAN 0x10000000
-          /* STACKBOTTOM is usually 0xc0000000, but this changes with   */
-          /* different kernel configurations.  In particular, systems   */
-          /* with 2GB physical memory will usually move the user        */
-          /* address space limit, and hence initial SP to 0x80000000.   */
-#       endif
 #       if !defined(GC_LINUX_THREADS) || !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       else

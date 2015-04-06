@@ -57,34 +57,6 @@ ptr_t GC_get_main_stack_base()
     }
 }
 
-#if 0 /* old version */
-ptr_t GC_get_stack_base()
-{
-    extern struct WBStartup *_WBenchMsg;
-    extern long __base;
-    extern long __stack;
-    struct Task *task;
-    struct Process *proc;
-    struct CommandLineInterface *cli;
-    long size;
-
-    if ((task = FindTask(0)) == 0) {
-        GC_err_puts("Cannot find own task structure\n");
-        ABORT("task missing");
-    }
-    proc = (struct Process *)task;
-    cli = BADDR(proc->pr_CLI);
-
-    if (_WBenchMsg != 0 || cli == 0) {
-        size = (char *)task->tc_SPUpper - (char *)task->tc_SPLower;
-    } else {
-        size = cli->cli_DefaultStack * 4;
-    }
-    return (ptr_t)(__base + GC_max(size, __stack));
-}
-#endif
-
-
 #endif
 
 
@@ -156,52 +128,7 @@ ptr_t GC_get_stack_base()
              ABORT("Can`t find correct Segments.\nSolution: Use an newer version of ixemul.library");
            }
 #       endif
-  }
-
-#if 0 /* old version */
-  void GC_register_data_segments()
-  {
-    extern struct WBStartup *_WBenchMsg;
-    struct Process      *proc;
-    struct CommandLineInterface *cli;
-    BPTR myseglist;
-    ULONG *data;
-
-    if ( _WBenchMsg != 0 ) {
-        if ((myseglist = _WBenchMsg->sm_Segment) == 0) {
-            GC_err_puts("No seglist from workbench\n");
-            return;
-        }
-    } else {
-        if ((proc = (struct Process *)FindTask(0)) == 0) {
-            GC_err_puts("Cannot find process structure\n");
-            return;
-        }
-        if ((cli = BADDR(proc->pr_CLI)) == 0) {
-            GC_err_puts("No CLI\n");
-            return;
-        }
-        if ((myseglist = cli->cli_Module) == 0) {
-            GC_err_puts("No seglist from CLI\n");
-            return;
-        }
-    }
-
-    for (data = (ULONG *)BADDR(myseglist); data != 0;
-         data = (ULONG *)BADDR(data[0])) {
-#        ifdef AMIGA_SKIP_SEG
-           if (((ULONG) GC_register_data_segments < (ULONG) &data[1]) ||
-           ((ULONG) GC_register_data_segments > (ULONG) &data[1] + data[-1])) {
-#        else
-           {
-#        endif /* AMIGA_SKIP_SEG */
-          GC_add_roots_inner((char *)&data[1],
-                             ((char *)&data[1]) + data[-1], FALSE);
-         }
-    }
-  }
-#endif /* old version */
-
+   }
 
 #endif
 

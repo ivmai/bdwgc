@@ -117,10 +117,7 @@ STILL MISSING:
 
 Programs can not be started from workbench, at least not for SAS/C. (Martin
 Tauchmanns note about that it now works with workbench is definitely wrong
-when concerning SAS/C). I guess it works if you use the old "#if 0'ed"-code,
-but I haven't tested it. I think the reason for MT to replace the
-"#if 0'ed"-code was only because it was a bit to SAS/C-specific. But I
-don't know. An iconx-script solves this problem anyway.
+when concerning SAS/C).  An iconx-script solves this problem.
 
 
 BEWARE!
