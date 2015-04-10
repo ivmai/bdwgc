@@ -186,9 +186,10 @@ enum GCPlacement
     GC = UseGC,
 # endif
   NoGC,
-  PointerFreeGC,
-  PointerFreeNoGC,
-  NoGCPointerFree = PointerFreeNoGC
+  PointerFreeGC
+# ifdef GC_ATOMIC_UNCOLLECTABLE
+    , PointerFreeNoGC
+# endif
 };
 
 /**
@@ -347,8 +348,10 @@ inline void* gc::operator new(size_t size, GCPlacement gcp)
     return GC_MALLOC(size);
   case PointerFreeGC:
     return GC_MALLOC_ATOMIC(size);
-  case PointerFreeNoGC:
-    return GC_MALLOC_ATOMIC_UNCOLLECTABLE(size);
+# ifdef GC_ATOMIC_UNCOLLECTABLE
+    case PointerFreeNoGC:
+      return GC_MALLOC_ATOMIC_UNCOLLECTABLE(size);
+# endif
   case NoGC:
   default:
     return GC_MALLOC_UNCOLLECTABLE(size);
@@ -449,8 +452,10 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
     return obj;
   case GC_NS_QUALIFY(PointerFreeGC):
     return GC_MALLOC_ATOMIC(size);
-  case GC_NS_QUALIFY(PointerFreeNoGC):
-    return GC_MALLOC_ATOMIC_UNCOLLECTABLE(size);
+# ifdef GC_ATOMIC_UNCOLLECTABLE
+    case GC_NS_QUALIFY(PointerFreeNoGC):
+      return GC_MALLOC_ATOMIC_UNCOLLECTABLE(size);
+# endif
   case GC_NS_QUALIFY(NoGC):
   default:
     return GC_MALLOC_UNCOLLECTABLE(size);
