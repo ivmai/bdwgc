@@ -403,7 +403,7 @@ void *GC_amiga_allocwrapper_any(size_t size,void *(*AllocFunction)(size_t size2)
 //                      printf("trying to force... %d bytes... ",size);
                         if(
                                 AllocFunction!=GC_malloc_uncollectable
-#ifdef ATOMIC_UNCOLLECTABLE
+#ifdef GC_ATOMIC_UNCOLLECTABLE
                                 && AllocFunction!=GC_malloc_atomic_uncollectable
 #endif
                         ){

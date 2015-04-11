@@ -42,7 +42,7 @@
 void ** const GC_objfreelist_ptr = GC_objfreelist;
 void ** const GC_aobjfreelist_ptr = GC_aobjfreelist;
 void ** const GC_uobjfreelist_ptr = GC_uobjfreelist;
-# ifdef ATOMIC_UNCOLLECTABLE
+# ifdef GC_ATOMIC_UNCOLLECTABLE
     void ** const GC_auobjfreelist_ptr = GC_auobjfreelist;
 # endif
 
@@ -70,10 +70,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_or_special_malloc(size_t lb,
             return GC_malloc(lb);
         case UNCOLLECTABLE:
             return GC_malloc_uncollectable(lb);
-#       ifdef ATOMIC_UNCOLLECTABLE
+#       ifdef GC_ATOMIC_UNCOLLECTABLE
           case AUNCOLLECTABLE:
             return GC_malloc_atomic_uncollectable(lb);
-#       endif /* ATOMIC_UNCOLLECTABLE */
+#       endif
         default:
             return GC_generic_malloc(lb, knd);
     }
@@ -513,7 +513,7 @@ GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
   return 0;
 }
 
-#ifdef ATOMIC_UNCOLLECTABLE
+#ifdef GC_ATOMIC_UNCOLLECTABLE
   /* Allocate lb bytes of pointer-free, untraced, uncollectible data    */
   /* This is normally roughly equivalent to the system malloc.          */
   /* But it may be useful if malloc is redefined.                       */
@@ -564,7 +564,7 @@ GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
         return((void *) op);
     }
   }
-#endif /* ATOMIC_UNCOLLECTABLE */
+#endif /* GC_ATOMIC_UNCOLLECTABLE */
 
 /* provide a version of strdup() that uses the collector to allocate the
    copy of the string */

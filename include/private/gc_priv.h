@@ -94,6 +94,11 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # include "gcconfig.h"
 #endif
 
+#if !defined(GC_ATOMIC_UNCOLLECTABLE) && defined(ATOMIC_UNCOLLECTABLE)
+  /* For compatibility with old-style naming. */
+# define GC_ATOMIC_UNCOLLECTABLE
+#endif
+
 #ifndef GC_INNER
   /* This tagging macro must be used at the start of every variable     */
   /* definition which is declared with GC_EXTERN.  Should be also used  */
@@ -1213,7 +1218,7 @@ struct _GC_arrays {
                           /* objects on this and auobjfreelist  */
                           /* are always marked, except during   */
                           /* garbage collections.               */
-# ifdef ATOMIC_UNCOLLECTABLE
+# ifdef GC_ATOMIC_UNCOLLECTABLE
 #   define GC_auobjfreelist GC_arrays._auobjfreelist
     void *_auobjfreelist[MAXOBJGRANULES+1];
                         /* Atomic uncollectible but traced objs */
@@ -1394,7 +1399,7 @@ GC_EXTERN struct obj_kind {
 #define PTRFREE 0
 #define NORMAL  1
 #define UNCOLLECTABLE 2
-#ifdef ATOMIC_UNCOLLECTABLE
+#ifdef GC_ATOMIC_UNCOLLECTABLE
 # define AUNCOLLECTABLE 3
 # define STUBBORN 4
 # define IS_UNCOLLECTABLE(k) (((k) & ~1) == UNCOLLECTABLE)

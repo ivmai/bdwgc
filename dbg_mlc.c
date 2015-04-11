@@ -370,7 +370,7 @@ STATIC void GC_print_obj(ptr_t p)
           case UNCOLLECTABLE:
             kind_str = "UNCOLLECTABLE";
             break;
-#         ifdef ATOMIC_UNCOLLECTABLE
+#         ifdef GC_ATOMIC_UNCOLLECTABLE
             case AUNCOLLECTABLE:
               kind_str = "ATOMIC_UNCOLLECTABLE";
               break;
@@ -783,7 +783,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
     return (GC_store_debug_info(result, (word)lb, s, i));
 }
 
-#ifdef ATOMIC_UNCOLLECTABLE
+#ifdef GC_ATOMIC_UNCOLLECTABLE
   GC_API GC_ATTR_MALLOC void * GC_CALL
         GC_debug_malloc_atomic_uncollectable(size_t lb, GC_EXTRA_PARAMS)
   {
@@ -801,7 +801,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
     ADD_CALL_CHAIN(result, ra);
     return (GC_store_debug_info(result, (word)lb, s, i));
   }
-#endif /* ATOMIC_UNCOLLECTABLE */
+#endif /* GC_ATOMIC_UNCOLLECTABLE */
 
 #ifndef GC_FREED_MEM_MARKER
 # if CPP_WORDSZ == 32
@@ -852,7 +852,7 @@ GC_API void GC_CALL GC_debug_free(void * p)
     } else {
       hdr * hhdr = HDR(p);
       if (hhdr -> hb_obj_kind == UNCOLLECTABLE
-#         ifdef ATOMIC_UNCOLLECTABLE
+#         ifdef GC_ATOMIC_UNCOLLECTABLE
             || hhdr -> hb_obj_kind == AUNCOLLECTABLE
 #         endif
           ) {
@@ -924,7 +924,7 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
       case UNCOLLECTABLE:
         result = GC_debug_malloc_uncollectable(lb, OPT_RA s, i);
         break;
-#    ifdef ATOMIC_UNCOLLECTABLE
+#    ifdef GC_ATOMIC_UNCOLLECTABLE
       case AUNCOLLECTABLE:
         result = GC_debug_malloc_atomic_uncollectable(lb, OPT_RA s, i);
         break;
@@ -961,7 +961,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
             return GC_debug_malloc(lb, OPT_RA s, i);
         case UNCOLLECTABLE:
             return GC_debug_malloc_uncollectable(lb, OPT_RA s, i);
-#     ifdef ATOMIC_UNCOLLECTABLE
+#     ifdef GC_ATOMIC_UNCOLLECTABLE
         case AUNCOLLECTABLE:
             return GC_debug_malloc_atomic_uncollectable(lb, OPT_RA s, i);
 #     endif

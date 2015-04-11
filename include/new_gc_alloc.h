@@ -20,7 +20,7 @@
 // It also doesn't yet understand the new header file names or
 // namespaces.
 //
-// This assumes the collector has been compiled with -DATOMIC_UNCOLLECTABLE.
+// This assumes the collector has been compiled with -DGC_ATOMIC_UNCOLLECTABLE.
 // The user should also consider -DREDIRECT_MALLOC=GC_uncollectable_malloc,
 // to ensure that object allocated through malloc are traced.
 //

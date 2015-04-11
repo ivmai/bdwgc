@@ -161,7 +161,7 @@ of every source file. I used these:
   #define ALL_INTERIOR_POINTERS // follows interior pointers.
 //#define DONT_ADD_BYTE_AT_END  // disables the padding if defined.
 //#define SMALL_CONFIG          // whether to use a smaller heap.
-  #define ATOMIC_UNCOLLECTABLE  // GC_malloc_atomic_uncollectable()
+  #define GC_ATOMIC_UNCOLLECTABLE // GC_malloc_atomic_uncollectable()
 
   // define either or none as per personal preference
   //   used in malloc.c

@@ -259,7 +259,7 @@ FINALIZE_ON_DEMAND      Causes finalizers to be run only in response
 
 GC_NO_FINALIZATION      Exclude finalization support (for smaller code size)
 
-ATOMIC_UNCOLLECTABLE    Includes code for GC_malloc_atomic_uncollectable.
+GC_ATOMIC_UNCOLLECTABLE Includes code for GC_malloc_atomic_uncollectable.
   This is useful if either the vendor malloc implementation is poor,
   or if REDIRECT_MALLOC is used.
 
