@@ -281,6 +281,9 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
   // if we define a multi-argument operator new[].
   // There seems to be no way to redirect new in this environment without
   // including this everywhere.
+  // Inlining done to avoid mix up of new and delete operators by VC++ 9 (due
+  // to arbitrary ordering during linking).
+
 # if _MSC_VER > 1020
     inline void* operator new[](size_t size)
     {
@@ -314,11 +317,14 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 #   endif
   }
 
-  inline void* operator new[](size_t size, int nBlockUse,
-                              const char* szFileName, int nLine)
-  {
-    return operator new(size, nBlockUse, szFileName, nLine);
-  }
+# if _MSC_VER > 1020
+    // This new operator is used by VC++ 7+ in Debug builds:
+    inline void* operator new[](size_t size, int nBlockUse,
+                                const char* szFileName, int nLine)
+    {
+      return operator new(size, nBlockUse, szFileName, nLine);
+    }
+# endif
 
 #endif // _MSC_VER
 
