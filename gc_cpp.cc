@@ -42,3 +42,27 @@ built-in "new" and "delete".
 # define GC_DECL_NEW_THROW /* empty */
 # define GC_DECL_DELETE_THROW /* empty */
 #endif /* !GC_NEW_DELETE_NEED_THROW */
+
+#ifndef _MSC_VER
+
+  void* operator new(size_t size) GC_DECL_NEW_THROW {
+    return GC_MALLOC_UNCOLLECTABLE(size);
+  }
+
+# if !defined(__CYGWIN__)
+    void operator delete(void* obj) GC_DECL_DELETE_THROW {
+      GC_FREE(obj);
+    }
+# endif // !__CYGWIN__
+
+# ifdef GC_OPERATOR_NEW_ARRAY
+    void* operator new[](size_t size) GC_DECL_NEW_THROW {
+      return GC_MALLOC_UNCOLLECTABLE(size);
+    }
+
+    void operator delete[](void* obj) GC_DECL_DELETE_THROW {
+      GC_FREE(obj);
+    }
+# endif // GC_OPERATOR_NEW_ARRAY
+
+#endif // !_MSC_VER
