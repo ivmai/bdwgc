@@ -41,7 +41,7 @@ built-in "new" and "delete".
 #else
 # define GC_DECL_NEW_THROW /* empty */
 # define GC_DECL_DELETE_THROW /* empty */
-#endif /* !GC_NEW_DELETE_NEED_THROW */
+#endif // !GC_NEW_DELETE_NEED_THROW
 
 #ifndef _MSC_VER
 
