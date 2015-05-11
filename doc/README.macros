@@ -43,6 +43,10 @@ GC_NO_THREAD_REDIRECTS  Tested by gc.h.  Prevents redirection of thread
 GC_NO_THREAD_DECLS      Tested by gc.h.  MS Windows only.  Do not declare
                 Windows thread creation routines and do not include windows.h.
 
+GC_DONT_INCLUDE_WINDOWS_H   Tested by gc.h.  MS Windows only.  Do not include
+                windows.h from gc.h (but Windows-specific thread creation
+                routines are declared).
+
 GC_UNDERSCORE_STDCALL   Tested by gc.h.  Explicitly prefix exported/imported
                 WINAPI (__stdcall) symbols with '_' (underscore).  Could be
                 used with MinGW (for x86) compiler (in conjunction with
@@ -259,7 +263,7 @@ FINALIZE_ON_DEMAND      Causes finalizers to be run only in response
 
 GC_NO_FINALIZATION      Exclude finalization support (for smaller code size)
 
-ATOMIC_UNCOLLECTABLE    Includes code for GC_malloc_atomic_uncollectable.
+GC_ATOMIC_UNCOLLECTABLE Includes code for GC_malloc_atomic_uncollectable.
   This is useful if either the vendor malloc implementation is poor,
   or if REDIRECT_MALLOC is used.
 

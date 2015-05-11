@@ -41,48 +41,28 @@ built-in "new" and "delete".
 #else
 # define GC_DECL_NEW_THROW /* empty */
 # define GC_DECL_DELETE_THROW /* empty */
-#endif /* !GC_NEW_DELETE_NEED_THROW */
+#endif // !GC_NEW_DELETE_NEED_THROW
 
-void* operator new( size_t size ) GC_DECL_NEW_THROW {
-  return GC_MALLOC_UNCOLLECTABLE(size);
-}
+#ifndef _MSC_VER
 
-#if !defined(__CYGWIN__)
-  void operator delete( void* obj ) GC_DECL_DELETE_THROW {
-    GC_FREE(obj);
-  }
-#endif /* !__CYGWIN__ */
-
-#ifdef GC_OPERATOR_NEW_ARRAY
-  void* operator new[]( size_t size ) GC_DECL_NEW_THROW {
+  void* operator new(size_t size) GC_DECL_NEW_THROW {
     return GC_MALLOC_UNCOLLECTABLE(size);
   }
 
-  void operator delete[]( void* obj ) GC_DECL_DELETE_THROW {
-    GC_FREE(obj);
-  }
-#endif /* GC_OPERATOR_NEW_ARRAY */
-
-#ifdef _MSC_VER
-
-  // This new operator is used by VC++ in case of Debug builds!
-  void* operator new( size_t size, int /* nBlockUse */,
-                     const char * szFileName, int nLine ) GC_DECL_NEW_THROW
-  {
-#   ifndef GC_DEBUG
-      return GC_malloc_uncollectable(size);
-#   else
-      return GC_debug_malloc_uncollectable(size, szFileName, nLine);
-#   endif
-  }
-
-# if _MSC_VER > 1020
-    // This new operator is used by VC++ 7.0 and later in Debug builds.
-    void* operator new[]( size_t size, int nBlockUse,
-                         const char* szFileName, int nLine ) GC_DECL_NEW_THROW
-    {
-      return operator new(size, nBlockUse, szFileName, nLine);
+# if !defined(__CYGWIN__)
+    void operator delete(void* obj) GC_DECL_DELETE_THROW {
+      GC_FREE(obj);
     }
-# endif
+# endif // !__CYGWIN__
 
-#endif /* _MSC_VER */
+# ifdef GC_OPERATOR_NEW_ARRAY
+    void* operator new[](size_t size) GC_DECL_NEW_THROW {
+      return GC_MALLOC_UNCOLLECTABLE(size);
+    }
+
+    void operator delete[](void* obj) GC_DECL_DELETE_THROW {
+      GC_FREE(obj);
+    }
+# endif // GC_OPERATOR_NEW_ARRAY
+
+#endif // !_MSC_VER

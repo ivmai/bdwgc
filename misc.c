@@ -795,6 +795,29 @@ GC_INNER GC_bool GC_is_initialized = FALSE;
   }
 #endif
 
+#if defined(MSWIN32) && (!defined(SMALL_CONFIG) \
+                         || (!defined(_WIN64) && defined(GC_WIN32_THREADS) \
+                             && defined(CHECK_NOT_WOW64)))
+  STATIC void GC_win32_MessageBoxA(const char *msg, const char *caption,
+                                   unsigned flags)
+  {
+#   ifndef DONT_USE_USER32_DLL
+      /* Use static binding to "user32.dll".    */
+      (void)MessageBoxA(NULL, msg, caption, flags);
+#   else
+      /* This simplifies linking - resolve "MessageBoxA" at run-time. */
+      HINSTANCE hU32 = LoadLibrary(TEXT("user32.dll"));
+      if (hU32) {
+        FARPROC pfn = GetProcAddress(hU32, "MessageBoxA");
+        if (pfn)
+          (void)(*(int (WINAPI *)(HWND, LPCSTR, LPCSTR, UINT))pfn)(
+                              NULL /* hWnd */, msg, caption, flags);
+        (void)FreeLibrary(hU32);
+      }
+#   endif
+  }
+#endif /* MSWIN32 */
+
 STATIC word GC_parse_mem_size_arg(const char *str)
 {
   char *endptr;
@@ -852,6 +875,31 @@ GC_API void GC_CALL GC_init(void)
 #   else
       initial_heap_sz = (word)MINHINCR;
 #   endif
+
+#   if defined(MSWIN32) && !defined(_WIN64) && defined(GC_WIN32_THREADS) \
+       && defined(CHECK_NOT_WOW64)
+      {
+        /* Windows: running 32-bit GC on 64-bit system is broken!       */
+        /* WoW64 bug affects SuspendThread, no workaround exists.       */
+        HMODULE hK32 = GetModuleHandle(TEXT("kernel32.dll"));
+        if (hK32) {
+          FARPROC pfn = GetProcAddress(hK32, "IsWow64Process");
+          BOOL bIsWow64 = FALSE;
+          if (pfn
+              && (*(BOOL (WINAPI*)(HANDLE, BOOL*))pfn)(GetCurrentProcess(),
+                                                       &bIsWow64)
+              && bIsWow64) {
+            GC_win32_MessageBoxA("This program uses BDWGC garbage collector"
+                " compiled for 32-bit but running on 64-bit Windows.\n"
+                "This is known to be broken due to a design flaw"
+                " in Windows itself! Expect erratic behavior...",
+                "32-bit program running on 64-bit system",
+                MB_ICONWARNING | MB_OK);
+          }
+        }
+      }
+#   endif
+
     DISABLE_CANCEL(cancel_state);
     /* Note that although we are nominally called with the */
     /* allocation lock held, the allocation lock is now    */
@@ -1661,22 +1709,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 
     if (msg != NULL) {
 #     if defined(MSWIN32)
-#       ifndef DONT_USE_USER32_DLL
-          /* Use static binding to "user32.dll".        */
-          (void)MessageBoxA(NULL, msg, "Fatal error in GC",
-                            MB_ICONERROR | MB_OK);
-#       else
-          /* This simplifies linking - resolve "MessageBoxA" at run-time. */
-          HINSTANCE hU32 = LoadLibrary(TEXT("user32.dll"));
-          if (hU32) {
-            FARPROC pfn = GetProcAddress(hU32, "MessageBoxA");
-            if (pfn)
-              (void)(*(int (WINAPI *)(HWND, LPCSTR, LPCSTR, UINT))pfn)(
-                                  NULL /* hWnd */, msg, "Fatal error in GC",
-                                  MB_ICONERROR | MB_OK);
-            (void)FreeLibrary(hU32);
-          }
-#       endif
+        GC_win32_MessageBoxA(msg, "Fatal error in GC", MB_ICONERROR | MB_OK);
         /* Also duplicate msg to GC log file.   */
 #     endif
 

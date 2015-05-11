@@ -339,132 +339,132 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
     return op;
 }
 
-#ifdef REDIRECT_MALLOC
+#if defined(REDIRECT_MALLOC) && !defined(REDIRECT_MALLOC_IN_HEADER)
 
 # ifndef MSWINCE
 #  include <errno.h>
 # endif
 
-/* Avoid unnecessary nested procedure calls here, by #defining some     */
-/* malloc replacements.  Otherwise we end up saving a                   */
-/* meaningless return address in the object.  It also speeds things up, */
-/* but it is admittedly quite ugly.                                     */
+  /* Avoid unnecessary nested procedure calls here, by #defining some   */
+  /* malloc replacements.  Otherwise we end up saving a meaningless     */
+  /* return address in the object.  It also speeds things up, but it is */
+  /* admittedly quite ugly.                                             */
 # define GC_debug_malloc_replacement(lb) GC_debug_malloc(lb, GC_DBG_EXTRAS)
 
-void * malloc(size_t lb)
-{
+  void * malloc(size_t lb)
+  {
     /* It might help to manually inline the GC_malloc call here.        */
     /* But any decent compiler should reduce the extra procedure call   */
     /* to at most a jump instruction in this case.                      */
 #   if defined(I386) && defined(GC_SOLARIS_THREADS)
-      /* Thread initialization can call malloc before we're ready for.  */
-      /* It's not clear that this is enough to help matters.            */
+      /* Thread initialization can call malloc before we are ready for. */
+      /* It is not clear that this is enough to help matters.           */
       /* The thread implementation may well call malloc at other        */
       /* inopportune times.                                             */
       if (!EXPECT(GC_is_initialized, TRUE)) return sbrk(lb);
-#   endif /* I386 && GC_SOLARIS_THREADS */
-    return((void *)REDIRECT_MALLOC(lb));
-}
-
-#if defined(GC_LINUX_THREADS) /* && !defined(USE_PROC_FOR_LIBRARIES) */
-  STATIC ptr_t GC_libpthread_start = 0;
-  STATIC ptr_t GC_libpthread_end = 0;
-  STATIC ptr_t GC_libld_start = 0;
-  STATIC ptr_t GC_libld_end = 0;
-
-  STATIC void GC_init_lib_bounds(void)
-  {
-    if (GC_libpthread_start != 0) return;
-    GC_init(); /* if not called yet */
-    if (!GC_text_mapping("libpthread-",
-                         &GC_libpthread_start, &GC_libpthread_end)) {
-        WARN("Failed to find libpthread.so text mapping: Expect crash\n", 0);
-        /* This might still work with some versions of libpthread,      */
-        /* so we don't abort.  Perhaps we should.                       */
-        /* Generate message only once:                                  */
-          GC_libpthread_start = (ptr_t)1;
-    }
-    if (!GC_text_mapping("ld-", &GC_libld_start, &GC_libld_end)) {
-        WARN("Failed to find ld.so text mapping: Expect crash\n", 0);
-    }
+#   endif
+    return (void *)REDIRECT_MALLOC(lb);
   }
-#endif /* GC_LINUX_THREADS */
 
-#include <limits.h>
-#ifdef SIZE_MAX
-# define GC_SIZE_MAX SIZE_MAX
-#else
-# define GC_SIZE_MAX (~(size_t)0)
-#endif
+# if defined(GC_LINUX_THREADS)
+    STATIC ptr_t GC_libpthread_start = 0;
+    STATIC ptr_t GC_libpthread_end = 0;
+    STATIC ptr_t GC_libld_start = 0;
+    STATIC ptr_t GC_libld_end = 0;
 
-#define GC_SQRT_SIZE_MAX ((1U << (WORDSZ / 2)) - 1)
+    STATIC void GC_init_lib_bounds(void)
+    {
+      if (GC_libpthread_start != 0) return;
+      GC_init(); /* if not called yet */
+      if (!GC_text_mapping("libpthread-",
+                           &GC_libpthread_start, &GC_libpthread_end)) {
+          WARN("Failed to find libpthread.so text mapping: Expect crash\n", 0);
+          /* This might still work with some versions of libpthread,      */
+          /* so we don't abort.  Perhaps we should.                       */
+          /* Generate message only once:                                  */
+            GC_libpthread_start = (ptr_t)1;
+      }
+      if (!GC_text_mapping("ld-", &GC_libld_start, &GC_libld_end)) {
+          WARN("Failed to find ld.so text mapping: Expect crash\n", 0);
+      }
+    }
+# endif /* GC_LINUX_THREADS */
 
-void * calloc(size_t n, size_t lb)
-{
+# include <limits.h>
+# ifdef SIZE_MAX
+#   define GC_SIZE_MAX SIZE_MAX
+# else
+#   define GC_SIZE_MAX (~(size_t)0)
+# endif
+
+# define GC_SQRT_SIZE_MAX ((1U << (WORDSZ / 2)) - 1)
+
+  void * calloc(size_t n, size_t lb)
+  {
     if ((lb | n) > GC_SQRT_SIZE_MAX /* fast initial test */
         && lb && n > GC_SIZE_MAX / lb)
       return NULL;
-#   if defined(GC_LINUX_THREADS) /* && !defined(USE_PROC_FOR_LIBRARIES) */
-        /* libpthread allocated some memory that is only pointed to by  */
-        /* mmapped thread stacks.  Make sure it is not collectible.     */
-        {
-          static GC_bool lib_bounds_set = FALSE;
-          ptr_t caller = (ptr_t)__builtin_return_address(0);
-          /* This test does not need to ensure memory visibility, since */
-          /* the bounds will be set when/if we create another thread.   */
-          if (!EXPECT(lib_bounds_set, TRUE)) {
-            GC_init_lib_bounds();
-            lib_bounds_set = TRUE;
-          }
-          if (((word)caller >= (word)GC_libpthread_start
-               && (word)caller < (word)GC_libpthread_end)
-              || ((word)caller >= (word)GC_libld_start
-                  && (word)caller < (word)GC_libld_end))
-            return GC_malloc_uncollectable(n*lb);
-          /* The two ranges are actually usually adjacent, so there may */
-          /* be a way to speed this up.                                 */
+#   if defined(GC_LINUX_THREADS)
+      /* libpthread allocated some memory that is only pointed to by    */
+      /* mmapped thread stacks.  Make sure it is not collectible.       */
+      {
+        static GC_bool lib_bounds_set = FALSE;
+        ptr_t caller = (ptr_t)__builtin_return_address(0);
+        /* This test does not need to ensure memory visibility, since   */
+        /* the bounds will be set when/if we create another thread.     */
+        if (!EXPECT(lib_bounds_set, TRUE)) {
+          GC_init_lib_bounds();
+          lib_bounds_set = TRUE;
         }
+        if (((word)caller >= (word)GC_libpthread_start
+             && (word)caller < (word)GC_libpthread_end)
+            || ((word)caller >= (word)GC_libld_start
+                && (word)caller < (word)GC_libld_end))
+          return GC_malloc_uncollectable(n*lb);
+        /* The two ranges are actually usually adjacent, so there may   */
+        /* be a way to speed this up.                                   */
+      }
 #   endif
-    return((void *)REDIRECT_MALLOC(n*lb));
-}
-
-#ifndef strdup
-  char *strdup(const char *s)
-  {
-    size_t lb = strlen(s) + 1;
-    char *result = (char *)REDIRECT_MALLOC(lb);
-    if (result == 0) {
-      errno = ENOMEM;
-      return 0;
-    }
-    BCOPY(s, result, lb);
-    return result;
+    return (void *)REDIRECT_MALLOC(n * lb);
   }
-#endif /* !defined(strdup) */
+
+# ifndef strdup
+    char *strdup(const char *s)
+    {
+      size_t lb = strlen(s) + 1;
+      char *result = (char *)REDIRECT_MALLOC(lb);
+      if (result == 0) {
+        errno = ENOMEM;
+        return 0;
+      }
+      BCOPY(s, result, lb);
+      return result;
+    }
+# endif /* !defined(strdup) */
  /* If strdup is macro defined, we assume that it actually calls malloc, */
  /* and thus the right thing will happen even without overriding it.     */
  /* This seems to be true on most Linux systems.                         */
 
-#ifndef strndup
-  /* This is similar to strdup().       */
-  char *strndup(const char *str, size_t size)
-  {
-    char *copy;
-    size_t len = strlen(str);
-    if (len > size)
-      len = size;
-    copy = (char *)REDIRECT_MALLOC(len + 1);
-    if (copy == NULL) {
-      errno = ENOMEM;
-      return NULL;
+# ifndef strndup
+    /* This is similar to strdup().     */
+    char *strndup(const char *str, size_t size)
+    {
+      char *copy;
+      size_t len = strlen(str);
+      if (len > size)
+        len = size;
+      copy = (char *)REDIRECT_MALLOC(len + 1);
+      if (copy == NULL) {
+        errno = ENOMEM;
+        return NULL;
+      }
+      BCOPY(str, copy, len);
+      copy[len] = '\0';
+      return copy;
     }
-    BCOPY(str, copy, len);
-    copy[len] = '\0';
-    return copy;
-  }
-#endif /* !strndup */
+# endif /* !strndup */
 
-#undef GC_debug_malloc_replacement
+# undef GC_debug_malloc_replacement
 
 #endif /* REDIRECT_MALLOC */
 
@@ -574,27 +574,25 @@ GC_API void GC_CALL GC_free(void * p)
 # define REDIRECT_FREE GC_free
 #endif
 
-#ifdef REDIRECT_FREE
+#if defined(REDIRECT_FREE) && !defined(REDIRECT_MALLOC_IN_HEADER)
   void free(void * p)
   {
-#   if defined(GC_LINUX_THREADS) && !defined(USE_PROC_FOR_LIBRARIES)
-        {
-          /* Don't bother with initialization checks.  If nothing       */
-          /* has been initialized, the check fails, and that's safe,    */
-          /* since we have not allocated uncollectible objects neither. */
-          ptr_t caller = (ptr_t)__builtin_return_address(0);
-          /* This test does not need to ensure memory visibility, since */
-          /* the bounds will be set when/if we create another thread.   */
-          if (((word)caller >= (word)GC_libpthread_start
-               && (word)caller < (word)GC_libpthread_end)
-              || ((word)caller >= (word)GC_libld_start
-                  && (word)caller < (word)GC_libld_end)) {
-            GC_free(p);
-            return;
-          }
-        }
-#   endif
 #   ifndef IGNORE_FREE
+#     if defined(GC_LINUX_THREADS) && !defined(USE_PROC_FOR_LIBRARIES)
+        /* Don't bother with initialization checks.  If nothing         */
+        /* has been initialized, the check fails, and that's safe,      */
+        /* since we have not allocated uncollectible objects neither.   */
+        ptr_t caller = (ptr_t)__builtin_return_address(0);
+        /* This test does not need to ensure memory visibility, since   */
+        /* the bounds will be set when/if we create another thread.     */
+        if (((word)caller >= (word)GC_libpthread_start
+             && (word)caller < (word)GC_libpthread_end)
+            || ((word)caller >= (word)GC_libld_start
+                && (word)caller < (word)GC_libld_end)) {
+          GC_free(p);
+          return;
+        }
+#     endif
       REDIRECT_FREE(p);
 #   endif
   }

@@ -780,7 +780,7 @@ AC_ARG_ENABLE(atomic-uncollectable,
     [AC_HELP_STRING([--disable-atomic-uncollectible],
         [Disable support for atomic uncollectible allocation.])])
 if test x"$enable_atomic_uncollectible" != x"no"; then
-    AC_DEFINE(ATOMIC_UNCOLLECTABLE, 1,
+    AC_DEFINE([GC_ATOMIC_UNCOLLECTABLE], 1,
         [Define to enable atomic uncollectible allocation.])
 fi
 
