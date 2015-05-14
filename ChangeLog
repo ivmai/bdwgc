@@ -1,4 +1,21 @@
 
+== [7.4.4] (candidate) ==
+
+* Also enable the TSX workaround for i386 (Linux).
+* Do not include sigcontext.h and asm/sigcontext.h.
+* Fix 'variable unused' warning in GC_save_callers.
+* Fix OSX issue with pthread_attr_setstacksize failure.
+* Fix __alloc_size__ availability detection (Clang).
+* Fix and code refactoring of lock elision workaround (Linux/x64).
+* Fix missing error handling of pthread_attr_init/getstacksize.
+* Fix missing error handling of pthreads_mutex_init and cond_wait.
+* Fix setup_mark_lock missing prototype.
+* Relax mark_mutex attribute needed to disable elision (Linux/x64).
+* Revert "Move asm machine-dependent files to 'src' folder" (partly).
+* Workaround Linux NTPL lock elision bug.
+Also, includes 7.2g changes.
+
+
 == [7.4.2] 2014-06-03 ==
 
 * Add config option to use STGRTMIN-based signals for thread suspend/resume.
@@ -265,6 +282,18 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes.
 * Use pthread_key for thread-local storage on FreeBSD.
 * Use union of AO_t and word to favor strict-aliasing compiler optimization.
 Also, includes 7.2 changes.
+
+
+== [7.2g] (candidate) ==
+
+* Fix 'illegal option -xassembler-with-cpp' error (Oracle SunCC).
+* Fix CFLAGS in configure regarding -O flag passing to SunCC compiler.
+* Fix FirstDLOpenedLinkMap for case libgc not 1st dynamically linked (NetBSD).
+* Fix file descriptor resource leak in GC_register_data_segments (OS/2).
+* Fix missing cord_pos.h, ec.h among installed headers (Automake).
+* Fix missing msvc_dbg.h in dist_noinst_HEADERS (Automake).
+* Fix mistyped ARM_THREAD_STATE macro (Darwin/arm).
+* Fix signedness of char values passed to isspace, iscntrl, isxdigit.
 
 
 == [7.2f] 2014-06-03 ==
