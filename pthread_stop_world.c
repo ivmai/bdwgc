@@ -459,6 +459,8 @@ GC_INNER void GC_push_all_stacks(void)
   }
 #endif /* PLATFORM_ANDROID */
 
+extern GC_on_collection_event_proc GC_on_collection_event;
+
 /* We hold the allocation lock.  Suspend all threads that might */
 /* still be running.  Return the number of suspend signals that */
 /* were sent.                                                   */
@@ -466,8 +468,12 @@ STATIC int GC_suspend_all(void)
 {
   int n_live_threads = 0;
   int i;
-  int thread_id;
 # ifndef NACL
+#   ifndef PLATFORM_ANDROID
+      pthread_t thread_id;
+#   else
+      pid_t thread_id;
+#   endif
     GC_thread p;
 #   ifndef GC_OPENBSD_UTHREADS
       int result;
@@ -512,7 +518,8 @@ STATIC int GC_suspend_all(void)
                 result = android_thread_kill(thread_id, GC_sig_suspend);
 #             endif
               if (GC_on_collection_event)
-                GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED, (void *)threadid);
+                GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED,
+                                       (void *)thread_id);
               switch(result) {
                 case ESRCH:
                     /* Not really there anymore.  Possible? */
@@ -559,6 +566,9 @@ STATIC int GC_suspend_all(void)
           num_used++;
           if (GC_nacl_thread_parked[i] == 1) {
             num_threads_parked++;
+            if (GC_on_collection_event)
+              GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED,
+                                     (void *)(word)i);
           }
         }
       }
@@ -804,6 +814,11 @@ GC_INNER void GC_start_world(void)
       register int n_live_threads = 0;
       register int result;
 #   endif
+#   ifndef PLATFORM_ANDROID
+      pthread_t thread_id;
+#   else
+      pid_t thread_id;
+#   endif
 #   ifdef GC_NETBSD_THREADS_WORKAROUND
       int code;
 #   endif
@@ -874,6 +889,9 @@ GC_INNER void GC_start_world(void)
       GC_log_printf("World starting...\n");
 #   endif
     GC_nacl_park_threads_now = 0;
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED, NULL);
+      /* TODO: Send event for every unsuspended thread. */
 # endif
 }
 

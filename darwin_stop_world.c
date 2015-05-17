@@ -543,7 +543,8 @@ GC_INNER void GC_stop_world(void)
           if (kern_result != KERN_SUCCESS)
             ABORT("thread_suspend failed");
           if (GC_on_collection_event)
-              GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED, (void *)p->stop_info.mach_thread);
+            GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED,
+                                   (void *)p->stop_info.mach_thread);
         }
       }
     }
