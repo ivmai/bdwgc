@@ -583,6 +583,9 @@ GC_INNER void GC_stop_world(void)
           kern_result = thread_suspend(p->stop_info.mach_thread);
           if (kern_result != KERN_SUCCESS)
             ABORT("thread_suspend failed");
+          if (GC_on_collection_event)
+            GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED,
+                                   (void *)p->stop_info.mach_thread);
         }
       }
     }
@@ -697,6 +700,9 @@ GC_INNER void GC_start_world(void)
         if ((p->flags & FINISHED) == 0 && !p->thread_blocked &&
              p->stop_info.mach_thread != my_thread)
           GC_thread_resume(p->stop_info.mach_thread);
+          if (GC_on_collection_event)
+            GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED,
+                                   (void *)p->stop_info.mach_thread);
       }
     }
 

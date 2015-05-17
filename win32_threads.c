@@ -1234,6 +1234,9 @@ GC_INNER void GC_stop_world(void)
         if (t -> stack_base != 0 && t -> thread_blocked_sp == NULL
             && t -> id != thread_id) {
           GC_suspend((GC_thread)t);
+          if (GC_on_collection_event)
+            GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED,
+                                   (void *)THREAD_HANDLE(t));
         }
       }
     } else
@@ -1247,6 +1250,9 @@ GC_INNER void GC_stop_world(void)
         if (t -> stack_base != 0 && t -> thread_blocked_sp == NULL
             && !KNOWN_FINISHED(t) && t -> id != thread_id) {
           GC_suspend(t);
+          if (GC_on_collection_event)
+            GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED,
+                                   (void *)THREAD_HANDLE(t));
         }
       }
     }
@@ -1280,6 +1286,9 @@ GC_INNER void GC_start_world(void)
         if (ResumeThread(THREAD_HANDLE(t)) == (DWORD)-1)
           ABORT("ResumeThread failed");
         t -> suspended = FALSE;
+        if (GC_on_collection_event)
+          GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED,
+                                 (void *)THREAD_HANDLE(t));
       }
     }
   } else {
@@ -1294,6 +1303,9 @@ GC_INNER void GC_start_world(void)
             ABORT("ResumeThread failed");
           UNPROTECT_THREAD(t);
           t -> suspended = FALSE;
+          if (GC_on_collection_event)
+            GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED,
+                                   (void *)THREAD_HANDLE(t));
         }
       }
     }

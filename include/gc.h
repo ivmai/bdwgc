@@ -134,6 +134,28 @@ GC_API GC_on_heap_resize_proc GC_CALL GC_get_on_heap_resize(void);
                         /* Both the supplied setter and the getter      */
                         /* acquire the GC lock (to avoid data races).   */
 
+typedef enum
+{
+    GC_EVENT_COLLECTION_BEGIN,
+    GC_EVENT_STOPWORLD_BEGIN,
+    GC_EVENT_STOPWORLD_END,
+    GC_EVENT_MARK_BEGIN,
+    GC_EVENT_MARK_END,
+    GC_EVENT_STARTWORLD_BEGIN,
+    GC_EVENT_STARTWORLD_END,
+    GC_EVENT_COLLECTION_END,
+    GC_EVENT_THREAD_SUSPENDED,
+    GC_EVENT_THREAD_UNSUSPENDED
+} GCEventKind;
+
+typedef void (GC_CALLBACK * GC_on_collection_event_proc)(GCEventKind, void*);
+                        /* Invoked to indicate progress through the     */
+                        /* collection process.                          */
+                        /* Called with the world stopped (and the       */
+                        /* allocation lock held).  May be 0.            */
+GC_API void GC_CALL GC_set_on_collection_event(GC_on_collection_event_proc);
+GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void);
+
 GC_API GC_ATTR_DEPRECATED int GC_find_leak;
                         /* Do not actually garbage collect, but simply  */
                         /* report inaccessible memory that was not      */
