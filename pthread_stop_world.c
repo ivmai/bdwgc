@@ -459,8 +459,6 @@ GC_INNER void GC_push_all_stacks(void)
   }
 #endif /* PLATFORM_ANDROID */
 
-extern GC_on_collection_event_proc GC_on_collection_event;
-
 /* We hold the allocation lock.  Suspend all threads that might */
 /* still be running.  Return the number of suspend signals that */
 /* were sent.                                                   */
@@ -507,7 +505,8 @@ STATIC int GC_suspend_all(void)
                 p -> stop_info.stack_ptr = (ptr_t)stack.ss_sp - stack.ss_size;
 
                 if (GC_on_collection_event)
-                  GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED, (void *)p->id);
+                  GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED,
+                                         (void *)p->id);
               }
 #           else
 #             ifndef PLATFORM_ANDROID
@@ -854,7 +853,8 @@ GC_INNER void GC_start_world(void)
               result = android_thread_kill(thread_id, GC_sig_thr_restart);
 #           endif
             if (GC_on_collection_event)
-              GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED, (void *)thread_id);
+              GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED,
+                                     (void *)thread_id);
 
             switch(result) {
                 case ESRCH:

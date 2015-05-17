@@ -1931,6 +1931,8 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
                         /* Print an address map of the process.         */
 #endif
 
+GC_EXTERN GC_on_collection_event_proc GC_on_collection_event;
+
 #ifndef SHORT_DBG_HDRS
   GC_EXTERN GC_bool GC_findleak_delay_free;
                         /* Do not immediately deallocate object on      */

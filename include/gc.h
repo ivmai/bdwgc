@@ -150,7 +150,7 @@ typedef void (GC_CALLBACK * GC_on_collection_event_proc)(GCEventKind, void*);
                         /* allocation lock held).  May be 0.            */
 GC_API void GC_CALL GC_set_on_collection_event(GC_on_collection_event_proc);
 GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void);
- 
+
 GC_API GC_ATTR_DEPRECATED int GC_find_leak;
                         /* Do not actually garbage collect, but simply  */
                         /* report inaccessible memory that was not      */

@@ -458,8 +458,6 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
 
 #endif /* !GC_NO_THREADS_DISCOVERY */
 
-extern GC_on_collection_event_proc GC_on_collection_event;
-
 /* Caller holds allocation lock.        */
 GC_INNER void GC_stop_world(void)
 {
@@ -660,7 +658,8 @@ GC_INNER void GC_start_world(void)
              p->stop_info.mach_thread != my_thread)
           GC_thread_resume(p->stop_info.mach_thread);
           if (GC_on_collection_event)
-            GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED, (void *)p->stop_info.mach_thread);
+            GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED,
+                                   (void *)p->stop_info.mach_thread);
       }
     }
 

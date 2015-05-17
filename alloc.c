@@ -88,8 +88,6 @@ STATIC GC_bool GC_need_full_gc = FALSE;
 
 STATIC word GC_used_heap_size_after_full = 0;
 
-extern GC_on_collection_event_proc GC_on_collection_event;
-
 /* GC_copyright symbol is externally visible. */
 char * const GC_copyright[] =
 {"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
@@ -586,7 +584,7 @@ GC_API int GC_CALL GC_collect_a_little(void)
 # define COMMA_IF_USE_MUNMAP(x) /* empty */
 #endif
 
-static void start_world()
+GC_INLINE void start_world_inner(void)
 {
   if (GC_on_collection_event)
     GC_on_collection_event(GC_EVENT_STARTWORLD_BEGIN, NULL);
@@ -664,7 +662,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
             if (GC_on_collection_event)
               GC_on_collection_event(GC_EVENT_MARK_END, NULL);
 
-            start_world();
+            start_world_inner();
             return(FALSE);
           }
           if (GC_mark_some(GC_approx_sp())) break;
@@ -688,7 +686,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   ifdef THREAD_LOCAL_ALLOC
       GC_world_stopped = FALSE;
 #   endif
-    start_world();
+    start_world_inner();
 #   ifndef SMALL_CONFIG
       if (GC_PRINT_STATS_FLAG) {
         unsigned long time_diff;

@@ -2034,7 +2034,7 @@ GC_API GC_on_heap_resize_proc GC_CALL GC_get_on_heap_resize(void)
     return fn;
 }
 
-GC_on_collection_event_proc GC_on_collection_event = NULL;
+GC_INNER GC_on_collection_event_proc GC_on_collection_event = 0;
 
 GC_API void GC_CALL GC_set_on_collection_event(GC_on_collection_event_proc fn)
 {
