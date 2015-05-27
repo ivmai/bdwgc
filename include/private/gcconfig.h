@@ -87,6 +87,7 @@
 /* And one for Darwin: */
 # if defined(macosx) || (defined(__APPLE__) && defined(__MACH__))
 #   define DARWIN
+#   include <TargetConditionals.h>
 # endif
 
 /* Determine the machine type: */
@@ -371,11 +372,9 @@
 #   elif defined(__arm__)
 #    define ARM32
 #    define mach_type_known
-#    define DARWIN_DONT_PARSE_STACK
 #   elif defined(__aarch64__)
 #    define AARCH64
 #    define mach_type_known
-#    define DARWIN_DONT_PARSE_STACK
 #   endif
 # endif
 # if defined(__rtems__) && (defined(i386) || defined(__i386__))
@@ -1521,7 +1520,9 @@
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
 #     define DARWIN_DONT_PARSE_STACK
-#     define DYNAMIC_LOADING
+#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
+#       define DYNAMIC_LOADING
+#     endif
       /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
       /* These aren't used when dyld support is enabled (it is by default). */
 #     define DATASTART ((ptr_t) get_etext())
@@ -1537,6 +1538,9 @@
       /* There seems to be some issues with trylock hanging on darwin.  */
       /* This should be looked into some more.                          */
 #     define NO_PTHREAD_TRYLOCK
+#     if TARGET_OS_IPHONE && !defined(NO_DYLD_BIND_FULLY_IMAGE)
+#       define NO_DYLD_BIND_FULLY_IMAGE
+#     endif
 #   endif /* DARWIN */
 # endif
 
@@ -2038,6 +2042,7 @@
 #   ifdef DARWIN
       /* iOS */
 #     define OS_TYPE "DARWIN"
+#     define DARWIN_DONT_PARSE_STACK
 #     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
 #       define DYNAMIC_LOADING
 #     endif
@@ -2054,7 +2059,7 @@
       /* FIXME: There seems to be some issues with trylock hanging on   */
       /* darwin. This should be looked into some more.                  */
 #     define NO_PTHREAD_TRYLOCK
-#     ifndef NO_DYLD_BIND_FULLY_IMAGE
+#     if TARGET_OS_IPHONE && !defined(NO_DYLD_BIND_FULLY_IMAGE)
 #       define NO_DYLD_BIND_FULLY_IMAGE
 #     endif
 #   endif
@@ -2131,6 +2136,7 @@
 #   ifdef DARWIN
       /* iPhone */
 #     define OS_TYPE "DARWIN"
+#     define DARWIN_DONT_PARSE_STACK
 #     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
 #       define DYNAMIC_LOADING
 #     endif
@@ -2147,7 +2153,7 @@
       /* FIXME: There seems to be some issues with trylock hanging on   */
       /* darwin. This should be looked into some more.                  */
 #     define NO_PTHREAD_TRYLOCK
-#     ifndef NO_DYLD_BIND_FULLY_IMAGE
+#     if TARGET_OS_IPHONE && !defined(NO_DYLD_BIND_FULLY_IMAGE)
 #       define NO_DYLD_BIND_FULLY_IMAGE
 #     endif
 #   endif
@@ -2326,7 +2332,9 @@
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
 #     define DARWIN_DONT_PARSE_STACK
-#     define DYNAMIC_LOADING
+#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
+#       define DYNAMIC_LOADING
+#     endif
       /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
       /* These aren't used when dyld support is enabled (it is by default)  */
 #     define DATASTART ((ptr_t) get_etext())
@@ -2342,6 +2350,9 @@
       /* There seems to be some issues with trylock hanging on darwin.  */
       /* This should be looked into some more.                          */
 #     define NO_PTHREAD_TRYLOCK
+#     if TARGET_OS_IPHONE && !defined(NO_DYLD_BIND_FULLY_IMAGE)
+#       define NO_DYLD_BIND_FULLY_IMAGE
+#     endif
 #   endif
 #   ifdef FREEBSD
 #       define OS_TYPE "FREEBSD"
