@@ -4122,12 +4122,12 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 # define DARWIN_EXC_STATE         ARM_EXCEPTION_STATE
 # define DARWIN_EXC_STATE_COUNT   ARM_EXCEPTION_STATE_COUNT
 # define DARWIN_EXC_STATE_T       arm_exception_state_t
-# define DARWIN_EXC_STATE_DAR     THREAD_FLD(far)
+# define DARWIN_EXC_STATE_DAR     THREAD_FLD_NAME(far)
 #elif defined(AARCH64)
 # define DARWIN_EXC_STATE         ARM_EXCEPTION_STATE64
 # define DARWIN_EXC_STATE_COUNT   ARM_EXCEPTION_STATE64_COUNT
 # define DARWIN_EXC_STATE_T       arm_exception_state64_t
-# define DARWIN_EXC_STATE_DAR     THREAD_FLD(far)
+# define DARWIN_EXC_STATE_DAR     THREAD_FLD_NAME(far)
 #elif defined(POWERPC)
 # if CPP_WORDSZ == 32
 #   define DARWIN_EXC_STATE       PPC_EXCEPTION_STATE
@@ -4138,7 +4138,7 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 #   define DARWIN_EXC_STATE_COUNT PPC_EXCEPTION_STATE64_COUNT
 #   define DARWIN_EXC_STATE_T     ppc_exception_state64_t
 # endif
-# define DARWIN_EXC_STATE_DAR     THREAD_FLD(dar)
+# define DARWIN_EXC_STATE_DAR     THREAD_FLD_NAME(dar)
 #elif defined(I386) || defined(X86_64)
 # if CPP_WORDSZ == 32
 #   if defined(i386_EXCEPTION_STATE_COUNT) \
@@ -4157,7 +4157,7 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 #   define DARWIN_EXC_STATE_COUNT x86_EXCEPTION_STATE64_COUNT
 #   define DARWIN_EXC_STATE_T     x86_exception_state64_t
 # endif
-# define DARWIN_EXC_STATE_DAR     THREAD_FLD(faultvaddr)
+# define DARWIN_EXC_STATE_DAR     THREAD_FLD_NAME(faultvaddr)
 #else
 # error FIXME for non-arm/ppc/x86 darwin
 #endif
