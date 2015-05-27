@@ -629,17 +629,14 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
   /* without __, thus hopefully, not breaking any existing              */
   /* Makefile.direct builds.                                            */
 # if __DARWIN_UNIX03
-#   if defined(ARM32) && defined(ARM_UNIFIED_THREAD_STATE)
-#     define THREAD_FLD(x) ts_32.__ ## x
-#   else
-#     define THREAD_FLD(x) __ ## x
-#   endif
+#   define THREAD_FLD_NAME(x) __ ## x
 # else
-#   if defined(ARM32) && defined(ARM_UNIFIED_THREAD_STATE)
-#     define THREAD_FLD(x) ts_32. ## x
-#   else
-#     define THREAD_FLD(x) x
-#   endif
+#   define THREAD_FLD_NAME(x) x
+# endif
+# if defined(ARM32) && defined(ARM_UNIFIED_THREAD_STATE)
+#   define THREAD_FLD(x) ts_32.THREAD_FLD_NAME(x)
+# else
+#   define THREAD_FLD(x) THREAD_FLD_NAME(x)
 # endif
 #endif /* DARWIN */
 
