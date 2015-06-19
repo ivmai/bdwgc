@@ -134,16 +134,15 @@ GC_API GC_on_heap_resize_proc GC_CALL GC_get_on_heap_resize(void);
                         /* Both the supplied setter and the getter      */
                         /* acquire the GC lock (to avoid data races).   */
 
-typedef enum
-{
-    GC_EVENT_COLLECTION_BEGIN,
-    GC_EVENT_STOPWORLD_BEGIN,
-    GC_EVENT_STOPWORLD_END,
-    GC_EVENT_MARK_BEGIN,
+typedef enum {
+    GC_EVENT_START /* COLLECTION */,
+    GC_EVENT_MARK_START,
     GC_EVENT_MARK_END,
-    GC_EVENT_STARTWORLD_BEGIN,
-    GC_EVENT_STARTWORLD_END,
-    GC_EVENT_COLLECTION_END,
+    GC_EVENT_END /* COLLECTION */,
+    GC_EVENT_PRE_STOP_WORLD /* STOPWORLD_BEGIN */,
+    GC_EVENT_POST_STOP_WORLD /* STOPWORLD_END */,
+    GC_EVENT_PRE_START_WORLD /* STARTWORLD_BEGIN */,
+    GC_EVENT_POST_START_WORLD /* STARTWORLD_END */,
     GC_EVENT_THREAD_SUSPENDED,
     GC_EVENT_THREAD_UNSUSPENDED
 } GCEventKind;

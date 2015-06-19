@@ -432,7 +432,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
     }
     GC_notify_full_gc();
     if (GC_on_collection_event)
-      GC_on_collection_event(GC_EVENT_COLLECTION_BEGIN, NULL);
+      GC_on_collection_event(GC_EVENT_START, NULL);
 
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
@@ -589,12 +589,12 @@ GC_API int GC_CALL GC_collect_a_little(void)
 GC_INLINE void start_world_inner(void)
 {
   if (GC_on_collection_event)
-    GC_on_collection_event(GC_EVENT_STARTWORLD_BEGIN, NULL);
+    GC_on_collection_event(GC_EVENT_PRE_START_WORLD, NULL);
 
   START_WORLD();
 
   if (GC_on_collection_event)
-    GC_on_collection_event(GC_EVENT_STARTWORLD_END, NULL);
+    GC_on_collection_event(GC_EVENT_POST_START_WORLD, NULL);
 }
 
 /*
@@ -623,12 +623,12 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   endif
 
     if (GC_on_collection_event)
-      GC_on_collection_event(GC_EVENT_STOPWORLD_BEGIN, NULL);
+      GC_on_collection_event(GC_EVENT_PRE_STOP_WORLD, NULL);
 
     STOP_WORLD();
 
     if (GC_on_collection_event)
-      GC_on_collection_event(GC_EVENT_STOPWORLD_END, NULL);
+      GC_on_collection_event(GC_EVENT_POST_STOP_WORLD, NULL);
 
 #   ifdef THREAD_LOCAL_ALLOC
       GC_world_stopped = TRUE;
@@ -649,7 +649,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
             GC_noop6(0,0,0,0,0,0);
 
         if (GC_on_collection_event)
-          GC_on_collection_event(GC_EVENT_MARK_BEGIN, NULL);
+          GC_on_collection_event(GC_EVENT_MARK_START, NULL);
 
         GC_initiate_gc();
         for (i = 0;;i++) {
@@ -996,7 +996,7 @@ STATIC void GC_finish_collection(void)
 #   endif
 
     if (GC_on_collection_event)
-      GC_on_collection_event(GC_EVENT_COLLECTION_END, NULL);
+      GC_on_collection_event(GC_EVENT_END, NULL);
 }
 
 /* If stop_func == 0 then GC_default_stop_func is used instead.         */
