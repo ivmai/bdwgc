@@ -145,9 +145,9 @@ typedef enum {
     GC_EVENT_POST_START_WORLD /* STARTWORLD_END */,
     GC_EVENT_THREAD_SUSPENDED,
     GC_EVENT_THREAD_UNSUSPENDED
-} GCEventKind;
+} GC_EventType;
 
-typedef void (GC_CALLBACK * GC_on_collection_event_proc)(GCEventKind, void*);
+typedef void (GC_CALLBACK * GC_on_collection_event_proc)(GC_EventType, void*);
                         /* Invoked to indicate progress through the     */
                         /* collection process.                          */
                         /* Called with the world stopped (and the       */
