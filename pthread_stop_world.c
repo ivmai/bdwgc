@@ -516,15 +516,15 @@ STATIC int GC_suspend_all(void)
                 thread_id = p -> kernel_id;
                 result = android_thread_kill(thread_id, GC_sig_suspend);
 #             endif
-              if (GC_on_collection_event)
-                GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED,
-                                       (void *)thread_id);
               switch(result) {
                 case ESRCH:
                     /* Not really there anymore.  Possible? */
                     n_live_threads--;
                     break;
                 case 0:
+                    if (GC_on_collection_event)
+                      GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED,
+                                             (void *)thread_id);
                     break;
                 default:
                     ABORT_ARG1("pthread_kill failed at suspend",
@@ -844,6 +844,9 @@ GC_INNER void GC_start_world(void)
 #         ifdef GC_OPENBSD_UTHREADS
             if (pthread_resume_np(p -> id) != 0)
               ABORT("pthread_resume_np failed");
+            if (GC_on_collection_event)
+              GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED,
+                                     (void *)p->id);
 #         else
 #           ifndef PLATFORM_ANDROID
               thread_id = p -> id;
@@ -852,16 +855,15 @@ GC_INNER void GC_start_world(void)
               thread_id = p -> kernel_id;
               result = android_thread_kill(thread_id, GC_sig_thr_restart);
 #           endif
-            if (GC_on_collection_event)
-              GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED,
-                                     (void *)thread_id);
-
             switch(result) {
                 case ESRCH:
                     /* Not really there anymore.  Possible? */
                     n_live_threads--;
                     break;
                 case 0:
+                    if (GC_on_collection_event)
+                      GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED,
+                                             (void *)thread_id);
                     break;
                 default:
                     ABORT_ARG1("pthread_kill failed at resume",

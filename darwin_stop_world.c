@@ -495,6 +495,8 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
     }
     if (!found)
       GC_mach_threads_count++;
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED, (void *)thread);
   }
   return changed;
 }
@@ -626,6 +628,8 @@ GC_INLINE void GC_thread_resume(thread_act_t thread)
   kern_result = thread_resume(thread);
   if (kern_result != KERN_SUCCESS)
     ABORT("thread_resume failed");
+  if (GC_on_collection_event)
+    GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED, (void *)thread);
 }
 
 /* Caller holds allocation lock, and has held it continuously since     */
@@ -700,9 +704,6 @@ GC_INNER void GC_start_world(void)
         if ((p->flags & FINISHED) == 0 && !p->thread_blocked &&
              p->stop_info.mach_thread != my_thread)
           GC_thread_resume(p->stop_info.mach_thread);
-          if (GC_on_collection_event)
-            GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED,
-                                   (void *)p->stop_info.mach_thread);
       }
     }
 
