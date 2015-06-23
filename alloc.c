@@ -916,6 +916,8 @@ STATIC void GC_finish_collection(void)
       if (GC_print_stats)
         GET_TIME(start_time);
 #   endif
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_RECLAIM_START);
 
 #   ifndef GC_GET_HEAP_USAGE_NOT_NEEDED
       if (GC_bytes_found > 0)
@@ -1021,6 +1023,8 @@ STATIC void GC_finish_collection(void)
 
     IF_USE_MUNMAP(GC_unmap_old());
 
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_RECLAIM_END);
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
         GET_TIME(done_time);
