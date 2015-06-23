@@ -1488,7 +1488,7 @@ void GC_print_trace(word gc_no)
  * and scans the entire region immediately, in case the contents
  * change.
  */
-GC_INNER void GC_push_all_eager(ptr_t bottom, ptr_t top)
+GC_API void GC_CALL GC_push_all_eager(char *bottom, char *top)
 {
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
