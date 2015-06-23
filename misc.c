@@ -2030,7 +2030,28 @@ GC_API GC_word GC_CALL GC_get_gc_no(void)
     /* GC_parallel is initialized at start-up.  */
     return GC_parallel;
   }
-#endif
+
+  GC_INNER GC_on_thread_event_proc GC_on_thread_event = 0;
+
+  GC_API void GC_CALL GC_set_on_thread_event(GC_on_thread_event_proc fn)
+  {
+    /* fn may be 0 (means no event notifier). */
+    DCL_LOCK_STATE;
+    LOCK();
+    GC_on_thread_event = fn;
+    UNLOCK();
+  }
+
+  GC_API GC_on_thread_event_proc GC_CALL GC_get_on_thread_event(void)
+  {
+    GC_on_thread_event_proc fn;
+    DCL_LOCK_STATE;
+    LOCK();
+    fn = GC_on_thread_event;
+    UNLOCK();
+    return fn;
+  }
+#endif /* THREADS */
 
 /* Setter and getter functions for the public R/W function variables.   */
 /* These functions are synchronized (like GC_set_warn_proc() and        */
@@ -2070,27 +2091,6 @@ GC_API GC_on_heap_resize_proc GC_CALL GC_get_on_heap_resize(void)
     DCL_LOCK_STATE;
     LOCK();
     fn = GC_on_heap_resize;
-    UNLOCK();
-    return fn;
-}
-
-GC_INNER GC_on_collection_event_proc GC_on_collection_event = 0;
-
-GC_API void GC_CALL GC_set_on_collection_event(GC_on_collection_event_proc fn)
-{
-    /* fn may be 0 (means no event notifier). */
-    DCL_LOCK_STATE;
-    LOCK();
-    GC_on_collection_event = fn;
-    UNLOCK();
-}
-
-GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void)
-{
-    GC_on_collection_event_proc fn;
-    DCL_LOCK_STATE;
-    LOCK();
-    fn = GC_on_collection_event;
     UNLOCK();
     return fn;
 }

@@ -147,13 +147,29 @@ typedef enum {
     GC_EVENT_THREAD_UNSUSPENDED
 } GC_EventType;
 
-typedef void (GC_CALLBACK * GC_on_collection_event_proc)(GC_EventType, void*);
+typedef void (GC_CALLBACK * GC_on_collection_event_proc)(GC_EventType);
                         /* Invoked to indicate progress through the     */
-                        /* collection process.                          */
-                        /* Called with the world stopped (and the       */
-                        /* allocation lock held).  May be 0.            */
+                        /* collection process.  Not used for thread     */
+                        /* suspend/resume notifications.  Called with   */
+                        /* the GC lock held (or, even, the world        */
+                        /* stopped).  May be 0 (means no notifier).     */
 GC_API void GC_CALL GC_set_on_collection_event(GC_on_collection_event_proc);
 GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void);
+                        /* Both the supplied setter and the getter      */
+                        /* acquire the GC lock (to avoid data races).   */
+
+#ifdef GC_THREADS
+  typedef void (GC_CALLBACK * GC_on_thread_event_proc)(GC_EventType,
+                                                void * /* thread_id */);
+                        /* Invoked when a thread is suspended or        */
+                        /* resumed during collection.  Called with the  */
+                        /* GC lock held (and the world stopped          */
+                        /* partially).  May be 0 (means no notifier).   */
+  GC_API void GC_CALL GC_set_on_thread_event(GC_on_thread_event_proc);
+  GC_API GC_on_thread_event_proc GC_CALL GC_get_on_thread_event(void);
+                        /* Both the supplied setter and the getter      */
+                        /* acquire the GC lock (to avoid data races).   */
+#endif
 
 GC_API GC_ATTR_DEPRECATED int GC_find_leak;
                         /* Do not actually garbage collect, but simply  */

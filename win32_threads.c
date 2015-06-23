@@ -1182,8 +1182,8 @@ STATIC void GC_suspend(GC_thread t)
 # if defined(MPROTECT_VDB)
     AO_CLEAR(&GC_fault_handler_lock);
 # endif
-  if (GC_on_collection_event)
-    GC_on_collection_event(GC_EVENT_THREAD_SUSPENDED, THREAD_HANDLE(t));
+  if (GC_on_thread_event)
+    GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED, THREAD_HANDLE(t));
 }
 
 #if defined(GC_ASSERTIONS) && !defined(CYGWIN32)
@@ -1282,9 +1282,8 @@ GC_INNER void GC_start_world(void)
         if (ResumeThread(THREAD_HANDLE(t)) == (DWORD)-1)
           ABORT("ResumeThread failed");
         t -> suspended = FALSE;
-        if (GC_on_collection_event)
-          GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED,
-                                 THREAD_HANDLE(t));
+        if (GC_on_thread_event)
+          GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, THREAD_HANDLE(t));
       }
     }
   } else {
@@ -1299,9 +1298,8 @@ GC_INNER void GC_start_world(void)
             ABORT("ResumeThread failed");
           UNPROTECT_THREAD(t);
           t -> suspended = FALSE;
-          if (GC_on_collection_event)
-            GC_on_collection_event(GC_EVENT_THREAD_UNSUSPENDED,
-                                   THREAD_HANDLE(t));
+          if (GC_on_thread_event)
+            GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, THREAD_HANDLE(t));
         }
       }
     }

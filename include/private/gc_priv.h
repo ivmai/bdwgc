@@ -460,6 +460,10 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #   endif
 # endif
 
+#ifdef THREADS
+  GC_EXTERN GC_on_thread_event_proc GC_on_thread_event;
+#endif
+
 /* Abandon ship */
 # ifdef PCR
 #   define ABORT(s) PCR_Base_Panic(s)
@@ -1948,8 +1952,6 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
   void GC_print_address_map(void);
                         /* Print an address map of the process.         */
 #endif
-
-GC_EXTERN GC_on_collection_event_proc GC_on_collection_event;
 
 #ifndef SHORT_DBG_HDRS
   GC_EXTERN GC_bool GC_findleak_delay_free;

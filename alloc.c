@@ -407,6 +407,26 @@ STATIC void GC_maybe_gc(void)
     }
 }
 
+STATIC GC_on_collection_event_proc GC_on_collection_event = 0;
+
+GC_API void GC_CALL GC_set_on_collection_event(GC_on_collection_event_proc fn)
+{
+    /* fn may be 0 (means no event notifier). */
+    DCL_LOCK_STATE;
+    LOCK();
+    GC_on_collection_event = fn;
+    UNLOCK();
+}
+
+GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void)
+{
+    GC_on_collection_event_proc fn;
+    DCL_LOCK_STATE;
+    LOCK();
+    fn = GC_on_collection_event;
+    UNLOCK();
+    return fn;
+}
 
 /*
  * Stop the world garbage collection.  Assumes lock held. If stop_func is
@@ -422,7 +442,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
     ASSERT_CANCEL_DISABLED();
     if (GC_dont_gc || (*stop_func)()) return FALSE;
     if (GC_on_collection_event)
-      GC_on_collection_event(GC_EVENT_START, NULL);
+      GC_on_collection_event(GC_EVENT_START);
     if (GC_incremental && GC_collection_in_progress()) {
       GC_COND_LOG_PRINTF(
             "GC_try_to_collect_inner: finishing collection in progress\n");
@@ -485,7 +505,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
       }
 #   endif
     if (GC_on_collection_event)
-      GC_on_collection_event(GC_EVENT_END, NULL);
+      GC_on_collection_event(GC_EVENT_END);
     return(TRUE);
 }
 
@@ -619,14 +639,14 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 
 #   ifdef THREADS
       if (GC_on_collection_event)
-        GC_on_collection_event(GC_EVENT_PRE_STOP_WORLD, NULL);
+        GC_on_collection_event(GC_EVENT_PRE_STOP_WORLD);
 #   endif
 
     STOP_WORLD();
 
 #   ifdef THREADS
       if (GC_on_collection_event)
-        GC_on_collection_event(GC_EVENT_POST_STOP_WORLD, NULL);
+        GC_on_collection_event(GC_EVENT_POST_STOP_WORLD);
 #   endif
 
 #   ifdef THREAD_LOCAL_ALLOC
@@ -644,7 +664,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 
     /* Mark from all roots.  */
         if (GC_on_collection_event)
-          GC_on_collection_event(GC_EVENT_MARK_START, NULL);
+          GC_on_collection_event(GC_EVENT_MARK_START);
 
         /* Minimize junk left in my registers and on the stack */
             GC_clear_a_few_frames();
@@ -662,14 +682,14 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 
 #           ifdef THREADS
               if (GC_on_collection_event)
-                GC_on_collection_event(GC_EVENT_PRE_START_WORLD, NULL);
+                GC_on_collection_event(GC_EVENT_PRE_START_WORLD);
 #           endif
 
             START_WORLD();
 
 #           ifdef THREADS
               if (GC_on_collection_event)
-                GC_on_collection_event(GC_EVENT_POST_START_WORLD, NULL);
+                GC_on_collection_event(GC_EVENT_POST_START_WORLD);
 #           endif
 
             /* TODO: Notify GC_EVENT_MARK_ABANDON */
@@ -690,7 +710,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
       (*GC_check_heap)();
     }
     if (GC_on_collection_event)
-      GC_on_collection_event(GC_EVENT_MARK_END, NULL);
+      GC_on_collection_event(GC_EVENT_MARK_END);
 
 #   ifdef THREAD_LOCAL_ALLOC
       GC_world_stopped = FALSE;
@@ -698,14 +718,14 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 
 #   ifdef THREADS
       if (GC_on_collection_event)
-        GC_on_collection_event(GC_EVENT_PRE_START_WORLD, NULL);
+        GC_on_collection_event(GC_EVENT_PRE_START_WORLD);
 #   endif
 
     START_WORLD();
 
 #   ifdef THREADS
       if (GC_on_collection_event)
-        GC_on_collection_event(GC_EVENT_POST_START_WORLD, NULL);
+        GC_on_collection_event(GC_EVENT_POST_START_WORLD);
 #   endif
 
 #   ifndef SMALL_CONFIG
