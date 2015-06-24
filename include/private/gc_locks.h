@@ -99,7 +99,7 @@
 #        define NUMERIC_THREAD_ID_UNIQUE
 #      endif
 #    else /* pthreads-win32 */
-#      define NUMERIC_THREAD_ID(id) ((unsigned long)(id.p))
+#      define NUMERIC_THREAD_ID(id) ((unsigned long)(word)(id.p))
        /* Using documented internal details of pthreads-win32 library.  */
        /* Faster than pthread_equal(). Should not change with           */
        /* future versions of pthreads-win32 library.                    */
