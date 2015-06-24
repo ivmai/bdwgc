@@ -92,7 +92,7 @@
 #      define THREAD_EQUAL(id1, id2) ((id1) == (id2))
 #      define NUMERIC_THREAD_ID_UNIQUE
 #    else
-#      define NUMERIC_THREAD_ID(id) ((unsigned long)(id.p))
+#      define NUMERIC_THREAD_ID(id) ((unsigned long)(word)(id.p))
        /* Using documented internal details of win32-pthread library.   */
        /* Faster than pthread_equal(). Should not change with           */
        /* future versions of win32-pthread library.                     */
