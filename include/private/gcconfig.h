@@ -1746,7 +1746,8 @@
 #  endif
 #  ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
-#     define ALIGNMENT 4
+#     define CPP_WORDSZ 64 /* all OpenBSD/mips platforms are 64-bit */
+#     define ALIGNMENT 8
 #     ifndef GC_OPENBSD_THREADS
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
@@ -1756,8 +1757,8 @@
 #         define HEURISTIC2
 #       endif
 #     endif
-      extern int _fdata[];
-#     define DATASTART ((ptr_t)_fdata)
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)__data_start)
       extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
