@@ -1852,7 +1852,8 @@ EXTERN_C_BEGIN
 #  endif
 #  ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
-#     define ALIGNMENT 4
+#     define CPP_WORDSZ 64 /* all OpenBSD/mips platforms are 64-bit */
+#     define ALIGNMENT 8
 #     ifndef GC_OPENBSD_THREADS
         EXTERN_C_END
 #       include <sys/param.h>
