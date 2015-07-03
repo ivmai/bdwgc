@@ -98,7 +98,7 @@
 # endif
 # if defined(__aarch64__)
 #    define AARCH64
-#    if !defined(LINUX) && !defined(DARWIN)
+#    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -407,6 +407,10 @@
 # endif
 # if defined(FREEBSD) && (defined(i386) || defined(__i386__))
 #   define I386
+#   define mach_type_known
+# endif
+# if defined(FREEBSD) && defined(__aarch64__)
+#   define AARCH64
 #   define mach_type_known
 # endif
 # if defined(FREEBSD) && (defined(__amd64__) || defined(__x86_64__))
@@ -2063,6 +2067,16 @@
 #     if TARGET_OS_IPHONE && !defined(NO_DYLD_BIND_FULLY_IMAGE)
 #       define NO_DYLD_BIND_FULLY_IMAGE
 #     endif
+#   endif
+#   ifdef FREEBSD
+#     define ALIGNMENT 8
+#     define OS_TYPE "FREEBSD"
+#     ifdef __ELF__
+#       define DYNAMIC_LOADING
+#     endif
+#     define HEURISTIC2
+      extern char etext[];
+#     define SEARCH_FOR_DATA_START
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.   */
