@@ -279,6 +279,7 @@ GC_API void GC_CALL GC_push_all(char * /* bottom */, char * /* top */);
 GC_API void GC_CALL GC_push_all_eager(char * /* bottom */, char * /* top */);
 GC_API void GC_CALL GC_push_conditional(char * /* bottom */, char * /* top */,
                                         int /* bool all */);
+GC_API void GC_CALL GC_push_finalizer_structures(void);
 
 /* Set and get the client push-other-roots procedure.  A client         */
 /* supplied procedure should also call the original procedure.          */

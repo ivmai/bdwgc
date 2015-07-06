@@ -263,7 +263,6 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
                         /* finalizers to be run, and we haven't called  */
                         /* this procedure yet this GC cycle.            */
 
-   GC_INNER void GC_push_finalizer_structures(void);
    GC_INNER void GC_finalize(void);
                         /* Perform all indicated finalization actions   */
                         /* on unmarked objects.                         */
