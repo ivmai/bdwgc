@@ -318,7 +318,7 @@ GC_API GC_ATTR_DEPRECATED GC_word GC_free_space_divisor;
                         /* bytes (bytes in "atomic" objects), plus      */
                         /* a rough estimate of the root set size.       */
                         /* N approximates GC tracing work per GC.       */
-                        /* Initially, GC_free_space_divisor = 3.        */
+                        /* The initial value is GC_FREE_SPACE_DIVISOR.  */
                         /* Increasing its value will use less space     */
                         /* but more collection time.  Decreasing it     */
                         /* will appreciably decrease collection time    */
