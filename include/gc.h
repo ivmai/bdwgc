@@ -724,6 +724,8 @@ GC_API size_t GC_CALL GC_get_prof_stats(struct GC_prof_stats_s *,
                                                  size_t /* stats_sz */);
 #endif
 
+GC_API long GC_get_memory_use(void);
+
 /* Disable garbage collection.  Even GC_gcollect calls will be          */
 /* ineffective.                                                         */
 GC_API void GC_CALL GC_disable(void);
