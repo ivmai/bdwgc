@@ -2014,23 +2014,22 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
   }
 #endif /* !NO_DEBUGGING */
 
-static void get_size(struct hblk *h, word lptr)
+static void block_add_size(struct hblk *h, word pbytes)
 {
   hdr *hhdr = HDR(h);
-  long bytes = WORDS_TO_BYTES(hhdr->hb_sz);
-
-  bytes += HBLKSIZE-1;
-  bytes &= ~(HBLKSIZE-1);
-
-  *(long *)lptr += bytes;
+  *(word *)pbytes += (WORDS_TO_BYTES(hhdr->hb_sz) + (HBLKSIZE - 1))
+                        & ~(HBLKSIZE - 1);
 }
-long GC_get_memory_use()
+
+GC_API size_t GC_CALL GC_get_memory_use(void)
 {
-  long c = 0;
+  word bytes = 0;
+  DCL_LOCK_STATE;
+
   LOCK();
-  GC_apply_to_all_blocks(get_size, (word)&c);
+  GC_apply_to_all_blocks(block_add_size, (word)(&bytes));
   UNLOCK();
-  return c;
+  return (size_t)bytes;
 }
 
 /* Getter functions for the public Read-only variables.                 */
