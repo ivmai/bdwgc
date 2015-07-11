@@ -2484,7 +2484,7 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #endif
 
 #if defined(FREEBSD) && (defined(I386) || defined(X86_64) \
-                        || defined(powerpc) || defined(__powerpc__))
+                        || defined(AARCH64) || defined(POWERPC))
 # include <machine/trap.h>
 # if !defined(PCR)
 #   define NEED_FIND_LIMIT

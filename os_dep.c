@@ -1846,7 +1846,8 @@ void GC_register_data_segments(void)
 # endif
 
 # if defined(FREEBSD) && !defined(PCR) && (defined(I386) || defined(X86_64) \
-                                || defined(powerpc) || defined(__powerpc__))
+                                            || defined(AARCH64) \
+                                            || defined(POWERPC))
 
 /* Its unclear whether this should be identical to the above, or        */
 /* whether it should apply to non-X86 architectures.                    */
@@ -3063,7 +3064,9 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #     ifndef SEGV_ACCERR
 #       define SEGV_ACCERR 2
 #     endif
-#     if defined(POWERPC)
+#     if defined(AARCH64)
+#       define CODE_OK (si -> si_code == SEGV_ACCERR)
+#     elif defined(POWERPC)
 #       define AIM  /* Pretend that we're AIM. */
 #       include <machine/trap.h>
 #       define CODE_OK (si -> si_code == EXC_DSI \

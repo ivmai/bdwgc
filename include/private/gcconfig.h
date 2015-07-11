@@ -409,10 +409,6 @@
 #   define I386
 #   define mach_type_known
 # endif
-# if defined(FREEBSD) && defined(__aarch64__)
-#   define AARCH64
-#   define mach_type_known
-# endif
 # if defined(FREEBSD) && (defined(__amd64__) || defined(__x86_64__))
 #   define X86_64
 #   define mach_type_known
@@ -431,6 +427,10 @@
 # endif
 # if defined(FREEBSD) && defined(__arm__)
 #   define ARM32
+#   define mach_type_known
+# endif
+# if defined(FREEBSD) && defined(__aarch64__)
+#   define AARCH64
 #   define mach_type_known
 # endif
 # if defined(bsdi) && (defined(i386) || defined(__i386__))
@@ -2069,14 +2069,18 @@
 #     endif
 #   endif
 #   ifdef FREEBSD
-#     define ALIGNMENT 8
 #     define OS_TYPE "FREEBSD"
+#     ifndef GC_FREEBSD_THREADS
+#       define MPROTECT_VDB
+#     endif
+#     define FREEBSD_STACKBOTTOM
 #     ifdef __ELF__
 #       define DYNAMIC_LOADING
 #     endif
-#     define HEURISTIC2
       extern char etext[];
-#     define SEARCH_FOR_DATA_START
+      ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
+#     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
+#     define DATASTART_IS_FUNC
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.   */
