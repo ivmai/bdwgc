@@ -975,9 +975,8 @@
 #           define DYNAMIC_LOADING
 #       endif
         extern char etext[];
-        ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
-#       define DATASTART_IS_FUNC
+#       define DATASTART_USES_BSDGETDATASTART
 #   endif
 #   ifdef NETBSD
 #     define ALIGNMENT 4
@@ -1453,9 +1452,8 @@
 #           define DYNAMIC_LOADING
 #       endif
         extern char etext[];
-        char * GC_FreeBSDGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
-#       define DATASTART_IS_FUNC
+#       define DATASTART_USES_BSDGETDATASTART
 #   endif
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
@@ -2078,9 +2076,8 @@
 #       define DYNAMIC_LOADING
 #     endif
       extern char etext[];
-      ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
 #     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
-#     define DATASTART_IS_FUNC
+#     define DATASTART_USES_BSDGETDATASTART
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.   */
@@ -2394,9 +2391,8 @@
 #           define DYNAMIC_LOADING
 #       endif
         extern char etext[];
-        ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
-#       define DATASTART_IS_FUNC
+#       define DATASTART_USES_BSDGETDATASTART
 #   endif
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
@@ -2601,6 +2597,11 @@
 #if defined(FREEBSD) && (defined(__DragonFly__) || __FreeBSD__ >= 4 \
                          || (__FreeBSD_kernel__ >= 4))
 # define SUNOS5SIGS
+#endif
+
+#ifdef DATASTART_USES_BSDGETDATASTART
+  GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
+# define DATASTART_IS_FUNC
 #endif
 
 #if !defined(GC_EXPLICIT_SIGNALS_UNBLOCK) && defined(SUNOS5SIGS) \

@@ -1845,17 +1845,15 @@ void GC_register_data_segments(void)
   }
 # endif
 
-# if defined(FREEBSD) && !defined(PCR) && (defined(I386) || defined(X86_64) \
-                                            || defined(AARCH64) \
-                                            || defined(POWERPC))
-
+#ifdef DATASTART_USES_BSDGETDATASTART
 /* Its unclear whether this should be identical to the above, or        */
 /* whether it should apply to non-X86 architectures.                    */
 /* For now we don't assume that there is always an empty page after     */
 /* etext.  But in some cases there actually seems to be slightly more.  */
 /* This also deals with holes between read-only data and writable data. */
-ptr_t GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr)
-{
+  GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t max_page_size,
+                                        ptr_t etext_addr)
+  {
     word text_end = ((word)(etext_addr) + sizeof(word) - 1)
                      & ~(sizeof(word) - 1);
         /* etext rounded to word boundary       */
@@ -1875,10 +1873,8 @@ ptr_t GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr)
         result = GC_find_limit((ptr_t)(DATAEND), FALSE);
     }
     return(result);
-}
-
-# endif /* FREEBSD */
-
+  }
+#endif /* DATASTART_USES_BSDGETDATASTART */
 
 #ifdef AMIGA
 
