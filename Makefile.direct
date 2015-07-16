@@ -21,10 +21,17 @@ AS_ABI_FLAG=$(ABI_FLAG)
 # executables.
 
 CC=cc $(ABI_FLAG)
+
 CXX=g++ $(ABI_FLAG)
+# Needed only for "make c++", which adds the c++ interface.
+
 AS=as $(AS_ABI_FLAG)
-#  The above doesn't work with gas, which doesn't run cpp.
-#  Define AS as `gcc -c -x assembler-with-cpp' instead.
+# The above doesn't work with gas, which doesn't run cpp.
+# Define AS as `gcc -c -x assembler-with-cpp' instead.
+# Under Irix 6, you have to specify the ABI (-o32, -n32, or -64)
+# if you use something other than the default ABI on your machine.
+
+LD=ld
 
 # Redefining srcdir allows object code for the nonPCR version of the collector
 # to be generated in different directories.
@@ -161,7 +168,7 @@ CURSES= -lcurses -ltermlib
 # the SHELL environment variable.
 SHELL= /bin/sh
 
-SPECIALCFLAGS = -I$(srcdir)/include -I$(AO_SRC_DIR)/src
+SPECIALCFLAGS= -I$(srcdir)/include -I$(AO_SRC_DIR)/src
 # Alternative flags to the C compiler for mach_dep.c.
 # Mach_dep.c often doesn't like optimization, and it's
 # not time-critical anyway.
@@ -175,7 +182,7 @@ atomic_ops.o: $(AO_SRC_DIR)/src/atomic_ops.c
 atomic_ops_sysdeps.o: $(AO_SRC_DIR)/src/atomic_ops_sysdeps.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-LEAKFLAGS=$(CFLAGS) -DFIND_LEAK
+LEAKFLAGS= $(CFLAGS) -DFIND_LEAK
 
 BSD-pkg-all: bsd-libgc.a bsd-libleak.a
 
@@ -200,18 +207,18 @@ mach_dep.o $(SRCS)
 	$(MAKE) -f PCR-Makefile
 
 $(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
-    $(srcdir)/include/private/gc_priv.h \
-    $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
-    $(srcdir)/include/gc.h $(srcdir)/include/gc_pthread_redirects.h \
-    $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h \
-    $(srcdir)/include/gc_config_macros.h
+  $(srcdir)/include/private/gc_priv.h \
+  $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
+  $(srcdir)/include/gc.h $(srcdir)/include/gc_pthread_redirects.h \
+  $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h \
+  $(srcdir)/include/gc_config_macros.h
 
 mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc_mark.h \
 					 $(srcdir)/include/private/gc_pmark.h
 
 specific.o pthread_support.o thread_local_alloc.o win32_threads.o: \
-	$(srcdir)/include/private/specific.h $(srcdir)/include/gc_inline.h \
-	$(srcdir)/include/private/thread_local_alloc.h
+  $(srcdir)/include/private/specific.h $(srcdir)/include/gc_inline.h \
+  $(srcdir)/include/private/thread_local_alloc.h
 
 dbg_mlc.o gcj_mlc.o: $(srcdir)/include/private/dbg_mlc.h
 
@@ -231,7 +238,8 @@ base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
 	./if_mach M68K AMIGA $(AR) -vrus gc.a $(OBJS) dyn_load.o
 	./if_not_there dont_ar_1 $(AR) ru gc.a $(OBJS) dyn_load.o
 	./if_not_there dont_ar_1 $(RANLIB) gc.a || cat /dev/null
-#	ignore ranlib failure; that usually means it doesn't exist, and isn't needed
+#    Ignore ranlib failure; that usually means it doesn't exist, and
+#    isn't needed.
 
 cords: $(CORD_OBJS) cord/cordtest $(UTILS)
 	rm -f dont_ar_3
@@ -246,7 +254,7 @@ gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
 
 test_cpp: $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h gc_cpp.o $(srcdir)/include/gc.h \
-    base_lib $(UTILS)
+  base_lib $(UTILS)
 	rm -f test_cpp
 	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc_cpp.o gc.a -ldld `./threadlibs`
 	./if_not_there test_cpp $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc_cpp.o gc.a `./threadlibs`
@@ -278,12 +286,12 @@ sunos5gc.so: $(OBJS) dyn_load_sunos53.o
 
 # Alpha/OSF shared library version of the collector
 libalphagc.so: $(OBJS)
-	ld -shared -o libalphagc.so $(OBJS) dyn_load.o -lc
+	$(LD) -shared -o libalphagc.so $(OBJS) dyn_load.o -lc
 	ln libalphagc.so libgc.so
 
 # IRIX shared library version of the collector
 libirixgc.so: $(OBJS) dyn_load.o
-	ld -shared $(ABI_FLAG) -o libirixgc.so $(OBJS) dyn_load.o -lc
+	$(LD) -shared $(ABI_FLAG) -o libirixgc.so $(OBJS) dyn_load.o -lc
 	ln libirixgc.so libgc.so
 
 # Linux shared library version of the collector
@@ -303,33 +311,37 @@ dyn_test:
 #.SUFFIXES: .lo $(SUFFIXES)
 #
 #.c.lo:
-#	$(CC) $(CFLAGS) $(CPPFLAGS) -fPIC -c $< -o $@
+# $(CC) $(CFLAGS) $(CPPFLAGS) -fPIC -c $< -o $@
 #
 # liblinuxgc.so: $(LIBOBJS) dyn_load.lo
 # 	gcc -shared -Wl,-soname=libgc.so.0 -o libgc.so.0 $(LIBOBJS) dyn_load.lo
 #	touch liblinuxgc.so
 
 mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/sparc_mach_dep.S \
-	    $(srcdir)/sparc_sunos4_mach_dep.s \
-	    $(srcdir)/ia64_save_regs_in_stack.s \
-	    $(srcdir)/sparc_netbsd_mach_dep.s $(UTILS)
+  $(srcdir)/sparc_sunos4_mach_dep.s \
+  $(srcdir)/ia64_save_regs_in_stack.s \
+  $(srcdir)/sparc_netbsd_mach_dep.s $(UTILS)
 	rm -f mach_dep.o
 	./if_mach SPARC SOLARIS $(CC) -c -o mach_dep2.o $(srcdir)/sparc_mach_dep.S
 	./if_mach SPARC OPENBSD $(AS) -o mach_dep2.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_mach SPARC NETBSD $(AS) -o mach_dep2.o $(srcdir)/sparc_netbsd_mach_dep.s
 	./if_mach SPARC "" $(CC) -c -o mach_dep1.o $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
-	./if_mach SPARC "" ld -r -o mach_dep.o mach_dep1.o mach_dep2.o
-	./if_mach IA64 "" as $(AS_ABI_FLAG) -o ia64_save_regs_in_stack.o $(srcdir)/ia64_save_regs_in_stack.s
+	./if_mach SPARC "" $(LD) -r -o mach_dep.o mach_dep1.o mach_dep2.o
+	./if_mach IA64 "" $(AS) -o ia64_save_regs_in_stack.o $(srcdir)/ia64_save_regs_in_stack.s
 	./if_mach IA64 "" $(CC) -c -o mach_dep1.o $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
-	./if_mach IA64 "" ld -r -o mach_dep.o mach_dep1.o ia64_save_regs_in_stack.o
-	./if_not_there mach_dep.o $(CC) -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
+	./if_mach IA64 "" $(LD) -r -o mach_dep.o mach_dep1.o ia64_save_regs_in_stack.o
+	-./if_not_there mach_dep.o $(CC) -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
+	-./if_not_there mach_dep.o `cygpath -w /bin/sh` $(CC) -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
+	-./if_not_there mach_dep.o /bin/sh $(CC) -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
 
 mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
 	rm -f mark_rts.o
 	-./if_mach ALPHA OSF1 $(CC) -c $(CFLAGS) -Wo,-notail $(srcdir)/mark_rts.c
-	./if_not_there mark_rts.o $(CC) -c $(CFLAGS) $(srcdir)/mark_rts.c
-#	Work-around for DEC optimizer tail recursion elimination bug.
-#  The ALPHA-specific line should be removed if gcc is used.
+	-./if_not_there mark_rts.o $(CC) -c $(CFLAGS) $(srcdir)/mark_rts.c
+	-./if_not_there mark_rts.o `cygpath -w /bin/sh` $(CC) -c $(CFLAGS) $(srcdir)/mark_rts.c
+	-./if_not_there mark_rts.o /bin/sh $(CC) -c $(CFLAGS) $(srcdir)/mark_rts.c
+#   Work-around for DEC optimizer tail recursion elimination bug.
+#   The ALPHA-specific line should be removed if gcc is used.
 
 alloc.o: include/gc_version.h
 
@@ -410,7 +422,7 @@ add_gc_prefix: $(srcdir)/tools/add_gc_prefix.c $(srcdir)/include/gc_version.h
 gcname: $(srcdir)/tools/gcname.c $(srcdir)/include/gc_version.h
 	$(CC) -o gcname $(srcdir)/tools/gcname.c
 
-#We assume this is being done from source directory.
+# We assume this is being done from source directory.
 dist gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
 	rm -f `./gcname`
 	ln -s . `./gcname`
@@ -432,7 +444,7 @@ lint: $(CSRCS) tests/test.c
 # BTL: added to test shared library version of collector.
 # Currently works only under SunOS5.  Requires GC_INIT call from statically
 # loaded client code.
-ABSDIR = `pwd`
+ABSDIR= `pwd`
 gctest_dyn_link: tests/test.o libgc.so
 	$(CC) -L$(ABSDIR) -R$(ABSDIR) -o gctest_dyn_link tests/test.o -lgc -ldl -lthread
 
