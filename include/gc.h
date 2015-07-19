@@ -1172,8 +1172,14 @@ GC_API int GC_CALL GC_unregister_long_link(void ** /* link */);
         /* Similar to GC_unregister_disappearing_link but for a */
         /* registration by either of the above two routines.    */
 
-/* finalizer callback support */
-GC_API void GC_set_finalizer_notify_proc GC_PROTO((void (*object_finalized) (GC_PTR obj)));
+/* Finalizer callback support.  Invoked by the collector (with  */
+/* the allocation lock held) for each unreachable object        */
+/* enqueued for finalization.                                   */
+typedef void (GC_CALLBACK * GC_await_finalize_proc)(void * /* obj */);
+GC_API void GC_CALL GC_set_await_finalize_proc(GC_await_finalize_proc);
+GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void);
+                        /* Zero means no callback.  The setter  */
+                        /* and getter acquire the lock too.     */
 
 /* Returns !=0 if GC_invoke_finalizers has something to do.     */
 GC_API int GC_CALL GC_should_invoke_finalizers(void);

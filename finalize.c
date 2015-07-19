@@ -263,13 +263,27 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     return 1;
 }
 
-/* Finalizer proc support */
-static void (*GC_object_finalized_proc) (GC_PTR obj);
+/* Finalizer callback support. */
+STATIC GC_await_finalize_proc GC_object_finalized_proc = 0;
 
-void
-GC_set_finalizer_notify_proc (void (*proc) (GC_PTR obj))
+GC_API void GC_CALL GC_set_await_finalize_proc(GC_await_finalize_proc fn)
 {
-    GC_object_finalized_proc = proc;
+  DCL_LOCK_STATE;
+
+  LOCK();
+  GC_object_finalized_proc = fn;
+  UNLOCK();
+}
+
+GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
+{
+  GC_await_finalize_proc fn;
+  DCL_LOCK_STATE;
+
+  LOCK();
+  fn = GC_object_finalized_proc;
+  UNLOCK();
+  return fn;
 }
 
 #ifndef GC_LONG_REFS_NOT_NEEDED
@@ -797,9 +811,8 @@ GC_INNER void GC_finalize(void)
                 fo_set_next(prev_fo, next_fo);
               }
               GC_fo_entries--;
-
               if (GC_object_finalized_proc)
-                  GC_object_finalized_proc (real_ptr);
+                GC_object_finalized_proc(real_ptr);
 
             /* Add to list of objects awaiting finalization.    */
               fo_set_next(curr_fo, GC_finalize_now);
