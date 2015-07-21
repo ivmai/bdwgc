@@ -413,10 +413,6 @@
 #   define X86_64
 #   define mach_type_known
 # endif
-# if defined(FREEBSD) && defined(__ia64__)
-#   define IA64
-#   define mach_type_known
-# endif
 # if defined(FREEBSD) && defined(__sparc__)
 #   define SPARC
 #   define mach_type_known
