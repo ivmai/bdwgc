@@ -2483,13 +2483,12 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define NEED_FIND_LIMIT
 #endif
 
-#if defined(FREEBSD) && (defined(I386) || defined(X86_64) \
-                        || defined(AARCH64) || defined(POWERPC))
+#if defined(DATASTART_USES_BSDGETDATASTART)
 # include <machine/trap.h>
 # if !defined(PCR)
 #   define NEED_FIND_LIMIT
 # endif
-#endif /* FREEBSD */
+#endif /* DATASTART_USES_BSDGETDATASTART */
 
 #if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__) \
     && !defined(NEED_FIND_LIMIT)

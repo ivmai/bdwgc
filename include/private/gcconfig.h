@@ -2140,14 +2140,19 @@
 #   endif
 #   ifdef FREEBSD
       /* FreeBSD/arm */
-#     define ALIGNMENT 4
 #     define OS_TYPE "FREEBSD"
+#     ifndef GC_FREEBSD_THREADS
+#       define MPROTECT_VDB
+#     endif
+#     define SIG_SUSPEND SIGUSR1
+#     define SIG_THR_RESTART SIGUSR2
+#     define FREEBSD_STACKBOTTOM
 #     ifdef __ELF__
 #       define DYNAMIC_LOADING
 #     endif
-#     define HEURISTIC2
       extern char etext[];
-#     define SEARCH_FOR_DATA_START
+#     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
+#     define DATASTART_USES_BSDGETDATASTART
 #   endif
 #   ifdef DARWIN
       /* iOS */
