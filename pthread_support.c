@@ -658,32 +658,34 @@ GC_API int GC_CALL GC_thread_is_registered(void)
     return me != NULL;
 }
 
-static pthread_t main_pthread_self;
+static pthread_t main_pthread_id;
 static void *main_stack, *main_altstack;
-static int main_stack_size, main_altstack_size;
+static word main_stack_size, main_altstack_size;
 
-void GC_register_altstack (void *stack, int stack_size, void *altstack, int altstack_size)
+GC_API void GC_CALL GC_register_altstack(void *stack, GC_word stack_size,
+                                         void *altstack,
+                                         GC_word altstack_size)
 {
-    GC_thread thread;
+  GC_thread me;
+  pthread_t self = pthread_self();
+  DCL_LOCK_STATE;
 
-    LOCK();
-    thread = (void *)GC_lookup_thread(pthread_self());
-    if (thread) {
-        thread->stack = stack;
-        thread->stack_size = stack_size;
-        thread->altstack = altstack;
-        thread->altstack_size = altstack_size;
-    } else {
-        /*
-         * This happens if we are called before GC_thr_init ().
-         */
-        main_pthread_self = pthread_self ();
-        main_stack = stack;
-        main_stack_size = stack_size;
-        main_altstack = altstack;
-        main_altstack_size = altstack_size;
-    }
-    UNLOCK();
+  LOCK();
+  me = GC_lookup_thread(self);
+  if (me != NULL) {
+    me->stack = stack;
+    me->stack_size = stack_size;
+    me->altstack = altstack;
+    me->altstack_size = altstack_size;
+  } else {
+    /* This happens if we are called before GC_thr_init.    */
+    main_pthread_id = self;
+    main_stack = stack;
+    main_stack_size = stack_size;
+    main_altstack = altstack;
+    main_altstack_size = altstack_size;
+  }
+  UNLOCK();
 }
 
 #ifdef CAN_HANDLE_FORK
@@ -1103,7 +1105,9 @@ GC_INNER void GC_thr_init(void)
 # endif
   /* Add the initial thread, so we can stop it. */
   {
-    GC_thread t = GC_new_thread(pthread_self());
+    pthread_t self = pthread_self();
+    GC_thread t = GC_new_thread(self);
+
     if (t == NULL)
       ABORT("Failed to allocate memory for the initial thread");
 #   ifdef GC_DARWIN_THREADS
@@ -1112,12 +1116,12 @@ GC_INNER void GC_thr_init(void)
       t -> stop_info.stack_ptr = GC_approx_sp();
 #   endif
     t -> flags = DETACHED | MAIN_THREAD;
-         if (pthread_self () == main_pthread_self) {
-             t->stack = main_stack;
-             t->stack_size = main_stack_size;
-             t->altstack = main_altstack;
-             t->altstack_size = main_altstack_size;
-         }
+    if (THREAD_EQUAL(self, main_pthread_id)) {
+      t -> stack = main_stack;
+      t -> stack_size = main_stack_size;
+      t -> altstack = main_altstack;
+      t -> altstack_size = main_altstack_size;
+    }
   }
 
 # ifndef GC_DARWIN_THREADS

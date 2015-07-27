@@ -601,8 +601,12 @@ GC_API int GC_CALL GC_thread_is_registered(void)
     return me != NULL;
 }
 
-void GC_register_altstack (void *stack, int stack_size, void *altstack, int altstack_size)
+GC_API void GC_CALL GC_register_altstack(void *stack GC_ATTR_UNUSED,
+                                         GC_word stack_size GC_ATTR_UNUSED,
+                                         void *altstack GC_ATTR_UNUSED,
+                                         GC_word altstack_size GC_ATTR_UNUSED)
 {
+  /* TODO: Implement */
 }
 
 /* Make sure thread descriptor t is not protected by the VDB            */

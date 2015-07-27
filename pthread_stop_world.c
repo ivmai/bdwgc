@@ -402,10 +402,12 @@ GC_INNER void GC_push_all_stacks(void)
                         (void *)p->id, lo, hi);
 #       endif
         if (0 == lo) ABORT("GC_push_all_stacks: sp not set!");
-    if (p->altstack && lo >= p->altstack && lo <= p->altstack + p->altstack_size)
-        hi = p->altstack + p->altstack_size;
-       /* FIXME: Need to scan the normal stack too, but how ? */
-
+        if (p->altstack != NULL && (word)p->altstack <= (word)lo
+            && (word)lo <= (word)p->altstack + p->altstack_size) {
+          hi = p->altstack + p->altstack_size;
+          /* FIXME: Need to scan the normal stack too, but how ? */
+          /* FIXME: Assume stack grows down */
+        }
         GC_push_all_stack_sections(lo, hi, traced_stack_sect);
 #       ifdef STACK_GROWS_UP
           total_size += lo - hi;

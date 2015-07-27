@@ -303,16 +303,15 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
     /* p is guaranteed to be non-NULL regardless of GC_query_task_threads. */
     *phi = (p->flags & MAIN_THREAD) != 0 ? GC_stackbottom : p->stack_end;
 # endif
-
-      if (p->altstack && lo >= p->altstack && lo <= p->altstack + p->altstack_size) {
-          *paltstack_lo = lo;
-          *paltstack_hi = p->altstack + p->altstack_size;
-          lo = (char*)p->stack;
-          *phi = (char*)p->stack + p->stack_size;
-      } else {
-          *paltstack_lo = NULL;
-      }
-
+  if (p->altstack != NULL && (word)p->altstack <= (word)lo
+      && (word)lo <= (word)p->altstack + p->altstack_size) {
+    *paltstack_lo = lo;
+    *paltstack_hi = p->altstack + p->altstack_size;
+    lo = p->stack;
+    *phi = p->stack + p->stack_size;
+  } else {
+    *paltstack_lo = NULL;
+  }
 # ifdef DEBUG_THREADS
     GC_log_printf("Darwin: Stack for thread %p = [%p,%p)\n",
                   (void *)thread, lo, *phi);
@@ -350,11 +349,11 @@ GC_INNER void GC_push_all_stacks(void)
         if (lo) {
           GC_ASSERT((word)lo <= (word)hi);
           total_size += hi - lo;
-            GC_push_all_stack(lo,hi);
+          GC_push_all_stack(lo, hi);
         }
         if (altstack_lo) {
           total_size += altstack_hi - altstack_lo;
-            GC_push_all_stack(altstack_lo,altstack_hi);
+          GC_push_all_stack(altstack_lo, altstack_hi);
         }
         nthreads++;
         if (thread == my_thread)

@@ -86,10 +86,12 @@ typedef struct GC_Thread_Rep {
 
     ptr_t stack_end;            /* Cold end of the stack (except for    */
                                 /* main thread).                        */
-    ptr_t altstack; /* The start of the altstack if there is one, NULL otherwise */
-    int altstack_size; /* The size of the altstack if there is one */
-    ptr_t stack; /* The start of the normal stack */
-    int stack_size; /* The size of the normal stack */
+    ptr_t altstack;             /* The start of the alt-stack if there  */
+                                /* is one, NULL otherwise.              */
+    word altstack_size;         /* The size of the alt-stack if exists. */
+    ptr_t stack;                /* The start and size of the normal     */
+                                /* stack (set by GC_register_altstack). */
+    word stack_size;
 #   if defined(GC_DARWIN_THREADS) && !defined(DARWIN_DONT_PARSE_STACK)
       ptr_t topOfStack;         /* Result of GC_FindTopOfStack(0);      */
                                 /* valid only if the thread is blocked; */
