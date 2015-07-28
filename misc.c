@@ -1098,7 +1098,7 @@ GC_API void GC_CALL GC_init(void)
         if (space_divisor_string != NULL) {
           int space_divisor = atoi(space_divisor_string);
           if (space_divisor > 0)
-            GC_free_space_divisor = (GC_word)space_divisor;
+            GC_free_space_divisor = (word)space_divisor;
         }
     }
 #   ifdef USE_MUNMAP
@@ -2243,7 +2243,7 @@ GC_API GC_word GC_CALL GC_get_free_space_divisor(void)
 
 GC_API void GC_CALL GC_set_max_retries(GC_word value)
 {
-    GC_ASSERT(value != ~(GC_word)0);
+    GC_ASSERT(value != ~(word)0);
     GC_max_retries = value;
 }
 

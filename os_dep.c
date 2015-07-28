@@ -2371,7 +2371,7 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
 #   ifdef USE_WINALLOC
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
-          GC_word free_len;
+          word free_len;
 
           if (VirtualQuery(start_addr, &mem_info, sizeof(mem_info))
               != sizeof(mem_info))
@@ -2410,7 +2410,7 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
 #   ifdef USE_WINALLOC
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
-          GC_word alloc_len;
+          word alloc_len;
           ptr_t result;
 
           if (VirtualQuery(start_addr, &mem_info, sizeof(mem_info))
@@ -2479,7 +2479,7 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 #   ifdef USE_WINALLOC
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
-          GC_word free_len;
+          word free_len;
 
           if (VirtualQuery(start_addr, &mem_info, sizeof(mem_info))
               != sizeof(mem_info))

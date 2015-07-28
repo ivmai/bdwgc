@@ -532,7 +532,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 /* The argument (if any) format specifier should be:    */
 /* "%s", "%p" or "%"WARN_PRIdPTR.                       */
 #define WARN(msg, arg) (*GC_current_warn_proc)("GC Warning: " msg, \
-                                               (GC_word)(arg))
+                                               (word)(arg))
 GC_EXTERN GC_warn_proc GC_current_warn_proc;
 
 /* Print format type macro for decimal signed_word value passed WARN(). */

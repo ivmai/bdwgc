@@ -2968,7 +2968,7 @@
 #endif
 
 #if defined(POINTER_SHIFT) && !defined(POINTER_MASK)
-# define POINTER_MASK ((GC_word)(-1))
+# define POINTER_MASK ((word)(-1))
 #endif
 
 #if !defined(FIXUP_POINTER) && defined(POINTER_MASK)
@@ -3052,12 +3052,12 @@
     ptr_t GC_wince_get_mem(GC_word bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
 # elif defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
-    void *GC_amiga_get_mem(size_t size);
+    void *GC_amiga_get_mem(size_t bytes);
 #   define GET_MEM(bytes) HBLKPTR((size_t) \
                           GC_amiga_get_mem((size_t)(bytes) + GC_page_size) \
                           + GC_page_size-1)
 # elif defined(SN_TARGET_PS3)
-    void *ps3_get_mem(size_t size);
+    void *ps3_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)ps3_get_mem(bytes)
 # else
     ptr_t GC_unix_get_mem(GC_word bytes);

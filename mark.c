@@ -1805,7 +1805,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 
     GC_mark_stack_top_reg = GC_mark_stack_top;
     for (p = h -> hb_body; (word)p <= (word)lim; p += sz)
-        if ((*(GC_word *)p & 0x3) != 0)
+        if ((*(word *)p & 0x3) != 0)
             PUSH_OBJ(p, hhdr, GC_mark_stack_top_reg, mark_stack_limit);
     GC_mark_stack_top = GC_mark_stack_top_reg;
   }

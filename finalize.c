@@ -1033,7 +1033,7 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
     return count;
 }
 
-static GC_word last_finalizer_notification = 0;
+static word last_finalizer_notification = 0;
 
 GC_INNER void GC_notify_or_invoke_finalizers(void)
 {

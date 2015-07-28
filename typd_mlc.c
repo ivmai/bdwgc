@@ -110,7 +110,7 @@ STATIC void GC_push_typed_structures_proc(void)
 /* starting index.                                              */
 /* Returns -1 on failure.                                       */
 /* Caller does not hold allocation lock.                        */
-STATIC signed_word GC_add_ext_descriptor(const GC_word * bm, word nbits)
+STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
 {
     size_t nwords = divWORDSZ(nbits + WORDSZ-1);
     signed_word result;
