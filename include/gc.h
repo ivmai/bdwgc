@@ -392,9 +392,6 @@ GC_API GC_ATTR_DEPRECATED unsigned long GC_time_limit;
 GC_API void GC_CALL GC_set_time_limit(unsigned long);
 GC_API unsigned long GC_CALL GC_get_time_limit(void);
 
-GC_API void (*GC_mercury_callback_reachable_object)(GC_word *, size_t);
-                /* This object on the heap is reachable. */
-
 /* Public procedures */
 
 /* Set whether the GC will allocate executable memory pages or not.     */

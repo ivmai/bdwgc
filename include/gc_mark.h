@@ -289,6 +289,16 @@ typedef void (GC_CALLBACK * GC_push_other_roots_proc)(void);
 GC_API void GC_CALL GC_set_push_other_roots(GC_push_other_roots_proc);
 GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void);
 
+/* Walk the GC heap visiting all reachable objects.  Assume the caller  */
+/* holds the allocation lock.  Object base pointer, object size and     */
+/* client custom data are passed to the callback (holding the lock).    */
+typedef void (GC_CALLBACK *GC_reachable_object_proc)(void * /* obj */,
+                                                size_t /* bytes */,
+                                                void * /* client_data */);
+GC_API void GC_CALL GC_enumerate_reachable_objects_inner(
+                                GC_reachable_object_proc,
+                                void * /* client_data */) GC_ATTR_NONNULL(1);
+
 #ifdef __cplusplus
   } /* end of extern "C" */
 #endif

@@ -260,9 +260,10 @@ sexpr cons (sexpr x, sexpr y)
 }
 # endif
 
+#include "gc_mark.h"
+
 #ifdef GC_GCJ_SUPPORT
 
-#include "gc_mark.h"
 #include "gc_gcj.h"
 
 /* The following struct emulates the vtable in gcj.     */
@@ -1396,6 +1397,32 @@ void run_one_test(void)
       GC_log_printf("Finished %p\n", (void *)&start_time);
 }
 
+void GC_CALLBACK reachable_objs_counter(void *obj, size_t size,
+                                        void *pcounter)
+{
+  if (0 == size) {
+    GC_printf("Reachable object has zero size\n");
+    FAIL;
+  }
+  if (GC_base(obj) != obj) {
+    GC_printf("Invalid reachable object base passed by enumerator: %p\n",
+              obj);
+    FAIL;
+  }
+  if (GC_size(obj) != size) {
+    GC_printf("Invalid reachable object size passed by enumerator: %lu\n",
+              (unsigned long)size);
+    FAIL;
+  }
+  (*(unsigned *)pcounter)++;
+}
+
+void * GC_CALLBACK reachable_objs_count_enumerator(void *pcounter)
+{
+  GC_enumerate_reachable_objects_inner(reachable_objs_counter, pcounter);
+  return NULL;
+}
+
 #define NUMBER_ROUND_UP(v, bound) ((((v) + (bound) - 1) / (bound)) * (bound))
 
 void check_heap_stats(void)
@@ -1411,6 +1438,7 @@ void check_heap_stats(void)
         int late_finalize_count = 0;
 #     endif
 #   endif
+    unsigned obj_count = 0;
 
 #   ifdef VERY_SMALL_CONFIG
     /* The upper bounds are a guess, which has been empirically */
@@ -1468,6 +1496,8 @@ void check_heap_stats(void)
           FAIL;
         }
       }
+    (void)GC_call_with_alloc_lock(reachable_objs_count_enumerator,
+                                  &obj_count);
     GC_printf("Completed %u tests\n", n_tests);
     GC_printf("Allocated %d collectable objects\n", collectable_count);
     GC_printf("Allocated %d uncollectable objects\n",
@@ -1540,6 +1570,7 @@ void check_heap_stats(void)
             (unsigned long)max_heap_sz);
         FAIL;
     }
+    GC_printf("Final number of reachable objects is %u\n", obj_count);
 
 #   ifndef GC_GET_HEAP_USAGE_NOT_NEEDED
       /* Get global counters (just to check the functions work).  */

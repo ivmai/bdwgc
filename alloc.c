@@ -63,10 +63,6 @@ word GC_non_gc_bytes = 0;  /* Number of bytes not intended to be collected */
 
 word GC_gc_no = 0;
 
-void (*GC_mercury_callback_reachable_object)(GC_word *, size_t) = NULL;
-                           /* Callbacks for mercury to notify   */
-                           /* the runtime of certain events     */
-
 #ifndef GC_DISABLE_INCREMENTAL
   GC_INNER int GC_incremental = 0;      /* By default, stop the world.  */
 #endif
@@ -934,9 +930,6 @@ STATIC void GC_finish_collection(void)
         }
 #   endif
     COND_DUMP;
-    if (GC_mercury_callback_reachable_object) {
-	GC_mercury_enumerate_reachable_objects();
-    }
     if (GC_find_leak) {
       /* Mark all objects on the free list.  All objects should be      */
       /* marked when we're done.                                        */
