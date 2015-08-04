@@ -146,7 +146,7 @@ GC_API int GC_CALL GC_register_disappearing_link(void * * link)
 
 STATIC int GC_register_disappearing_link_inner(
                         struct dl_hashtbl_s *dl_hashtbl, void **link,
-                        const void *obj)
+                        const void *obj, const char *tbl_log_name)
 {
     struct disappearing_link *curr_dl;
     size_t index;
@@ -159,7 +159,7 @@ STATIC int GC_register_disappearing_link_inner(
         || dl_hashtbl -> entries > ((word)1 << dl_hashtbl -> log_size)) {
         GC_grow_table((struct hash_chain_entry ***)&dl_hashtbl -> head,
                       &dl_hashtbl -> log_size);
-        GC_COND_LOG_PRINTF("Grew dl table to %u entries\n",
+        GC_COND_LOG_PRINTF("Grew %s table to %u entries\n", tbl_log_name,
                            1 << (unsigned)dl_hashtbl -> log_size);
     }
     index = HASH2(link, dl_hashtbl -> log_size);
@@ -213,7 +213,8 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
 {
     if (((word)link & (ALIGNMENT-1)) != 0 || NULL == link)
         ABORT("Bad arg to GC_general_register_disappearing_link");
-    return GC_register_disappearing_link_inner(&GC_dl_hashtbl, link, obj);
+    return GC_register_disappearing_link_inner(&GC_dl_hashtbl, link, obj,
+                                               "dl");
 }
 
 #ifdef DBG_HDRS_ALL
@@ -291,7 +292,8 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
   {
     if (((word)link & (ALIGNMENT-1)) != 0 || NULL == link)
         ABORT("Bad arg to GC_register_long_link");
-    return GC_register_disappearing_link_inner(&GC_ll_hashtbl, link, obj);
+    return GC_register_disappearing_link_inner(&GC_ll_hashtbl, link, obj,
+                                               "long dl");
   }
 
   GC_API int GC_CALL GC_unregister_long_link(void * * link)
