@@ -1606,11 +1606,6 @@ GC_INNER GC_bool GC_collection_in_progress(void);
 GC_INNER void GC_push_all_stack(ptr_t b, ptr_t t);
                                     /* As GC_push_all but consider      */
                                     /* interior pointers as valid.      */
-GC_INNER void GC_push_all_eager(ptr_t b, ptr_t t);
-                                    /* Same as GC_push_all_stack, but   */
-                                    /* ensures that stack is scanned    */
-                                    /* immediately, not just scheduled  */
-                                    /* for scanning.                    */
 
   /* In the threads case, we push part of the current thread stack      */
   /* with GC_push_all_eager when we push the registers.  This gets the  */
