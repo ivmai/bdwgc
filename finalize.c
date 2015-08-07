@@ -74,7 +74,7 @@ STATIC struct finalizable_object * GC_finalize_now = 0;
 
 static signed_word log_fo_table_size = -1;
 
-GC_INNER void GC_push_finalizer_structures(void)
+GC_API void GC_CALL GC_push_finalizer_structures(void)
 {
     GC_ASSERT((word)&GC_dl_hashtbl.head % sizeof(word) == 0);
     GC_ASSERT((word)&GC_fo_head % sizeof(word) == 0);
