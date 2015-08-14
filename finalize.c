@@ -312,8 +312,8 @@ GC_process_togglerefs (void)
     }
 
     for (i = w; i < GC_toggleref_array_size; ++i) {
-        GC_toggleref_array [w].strong_ref = NULL;
-        GC_toggleref_array [w].weak_ref = (GC_hidden_pointer)NULL;
+        GC_toggleref_array [i].strong_ref = NULL;
+        GC_toggleref_array [i].weak_ref = (GC_hidden_pointer)NULL;
     }
 
     GC_toggleref_array_size = w;
