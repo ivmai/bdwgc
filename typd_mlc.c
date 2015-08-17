@@ -546,14 +546,12 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
     if (last_set_bit < 0) return(0 /* no pointers */);
 #   if ALIGNMENT == CPP_WORDSZ/8
     {
-      register GC_bool all_bits_set = TRUE;
       for (i = 0; i < last_set_bit; i++) {
         if (!GC_get_bit(bm, i)) {
-            all_bits_set = FALSE;
-            break;
+          break;
         }
       }
-      if (all_bits_set) {
+      if (i == last_set_bit) {
         /* An initial section contains all pointers.  Use length descriptor. */
         return (WORDS_TO_BYTES(last_set_bit+1) | GC_DS_LENGTH);
       }
@@ -568,17 +566,14 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
             if (GC_get_bit(bm, i)) result |= HIGH_BIT;
         }
         result |= GC_DS_BITMAP;
-        return(result);
     } else {
-        signed_word index;
-
-        index = GC_add_ext_descriptor(bm, (word)last_set_bit+1);
+        signed_word index = GC_add_ext_descriptor(bm, (word)last_set_bit + 1);
         if (index == -1) return(WORDS_TO_BYTES(last_set_bit+1) | GC_DS_LENGTH);
                                 /* Out of memory: use conservative      */
                                 /* approximation.                       */
         result = GC_MAKE_PROC(GC_typed_mark_proc_index, (word)index);
-        return result;
     }
+    return result;
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
