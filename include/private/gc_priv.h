@@ -1603,6 +1603,9 @@ GC_INNER GC_bool GC_collection_in_progress(void);
 # define GC_PUSH_CONDITIONAL(b, t, all) GC_push_all((ptr_t)(b), (ptr_t)(t))
 #endif
 
+#define GC_PUSH_ALL_SYM(sym) \
+                GC_push_all((ptr_t)&(sym), (ptr_t)&(sym) + sizeof(sym))
+
 GC_INNER void GC_push_all_stack(ptr_t b, ptr_t t);
                                     /* As GC_push_all but consider      */
                                     /* interior pointers as valid.      */

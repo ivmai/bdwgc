@@ -76,21 +76,16 @@ static signed_word log_fo_table_size = -1;
 
 GC_API void GC_CALL GC_push_finalizer_structures(void)
 {
-    GC_ASSERT((word)&GC_dl_hashtbl.head % sizeof(word) == 0);
-    GC_ASSERT((word)&GC_fo_head % sizeof(word) == 0);
-    GC_ASSERT((word)&GC_finalize_now % sizeof(word) == 0);
-
+  GC_ASSERT((word)&GC_dl_hashtbl.head % sizeof(word) == 0);
+  GC_ASSERT((word)&GC_fo_head % sizeof(word) == 0);
+  GC_ASSERT((word)&GC_finalize_now % sizeof(word) == 0);
 # ifndef GC_LONG_REFS_NOT_NEEDED
     GC_ASSERT((word)&GC_ll_hashtbl.head % sizeof(word) == 0);
-    GC_push_all((ptr_t)(&GC_ll_hashtbl.head),
-                (ptr_t)(&GC_ll_hashtbl.head) + sizeof(word));
+    GC_PUSH_ALL_SYM(GC_ll_hashtbl.head);
 # endif
-
-    GC_push_all((ptr_t)(&GC_dl_hashtbl.head),
-                (ptr_t)(&GC_dl_hashtbl.head) + sizeof(word));
-    GC_push_all((ptr_t)(&GC_fo_head), (ptr_t)(&GC_fo_head) + sizeof(word));
-    GC_push_all((ptr_t)(&GC_finalize_now),
-                (ptr_t)(&GC_finalize_now) + sizeof(word));
+  GC_PUSH_ALL_SYM(GC_dl_hashtbl.head);
+  GC_PUSH_ALL_SYM(GC_fo_head);
+  GC_PUSH_ALL_SYM(GC_finalize_now);
 }
 
 /* Double the size of a hash table. *size_ptr is the log of its current */
