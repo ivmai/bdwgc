@@ -372,28 +372,38 @@ void GC_toggleref_register_callback(int (*proccess_toggleref) (GC_PTR obj))
     GC_toggleref_callback = proccess_toggleref;
 }
 
-static void
+static GC_bool
 ensure_toggleref_capacity (int capacity)
 {
     if (!GC_toggleref_array) {
         GC_toggleref_array_capacity = 32;
         GC_toggleref_array = (GCToggleRef *) GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE (GC_toggleref_array_capacity * sizeof (GCToggleRef), NORMAL);
+        if (NULL == GC_toggleref_array)
+            return FALSE;
     }
-    if (GC_toggleref_array_size + capacity >= GC_toggleref_array_capacity) {
+    if ((unsigned)GC_toggleref_array_size + (unsigned)capacity
+            >= (unsigned)GC_toggleref_array_capacity) {
         GCToggleRef *tmp;
         int old_capacity = GC_toggleref_array_capacity;
-        while (GC_toggleref_array_capacity < GC_toggleref_array_size + capacity)
+        while ((unsigned)GC_toggleref_array_capacity
+                < (unsigned)GC_toggleref_array_size + (unsigned)capacity) {
             GC_toggleref_array_capacity *= 2;
+            if (GC_toggleref_array_capacity < 0) /* overflow */
+                return FALSE;
+        }
 
         tmp = (GCToggleRef *) GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE (GC_toggleref_array_capacity * sizeof (GCToggleRef), NORMAL);
+        if (NULL == tmp)
+            return FALSE;
         memcpy (tmp, GC_toggleref_array, GC_toggleref_array_size * sizeof (GCToggleRef));
 
         GC_INTERNAL_FREE(GC_toggleref_array);
         GC_toggleref_array = tmp;
     }
+    return TRUE;
 }
 
-void
+int
 GC_toggleref_add (GC_PTR object, int strong_ref)
 {
     DCL_LOCK_STATE;
@@ -402,13 +412,17 @@ GC_toggleref_add (GC_PTR object, int strong_ref)
     if (!GC_toggleref_callback)
         goto end;
 
-    ensure_toggleref_capacity (1);
+    if (!ensure_toggleref_capacity(1)) {
+        UNLOCK();
+        return GC_NO_MEMORY;
+    }
     GC_toggleref_array [GC_toggleref_array_size].strong_ref = strong_ref ? object : NULL;
     GC_toggleref_array [GC_toggleref_array_size].weak_ref = strong_ref ? (GC_hidden_pointer)NULL : GC_HIDE_POINTER (object);
     ++GC_toggleref_array_size;
 
 end:
     UNLOCK();
+    return GC_SUCCESS;
 }
 
 
