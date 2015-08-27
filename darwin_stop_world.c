@@ -534,7 +534,6 @@ GC_INNER void GC_stop_world(void)
   mach_port_t my_thread = mach_thread_self();
   kern_return_t kern_result;
 
-    GC_process_togglerefs ();
 # ifdef DEBUG_THREADS
     GC_log_printf("Stopping the world from thread %p\n", (void *)my_thread);
 # endif

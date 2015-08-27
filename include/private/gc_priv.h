@@ -255,29 +255,30 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 
 
 #ifndef GC_NO_FINALIZATION
-#  define GC_INVOKE_FINALIZERS() GC_notify_or_invoke_finalizers()
-   GC_INNER void GC_notify_or_invoke_finalizers(void);
+# define GC_INVOKE_FINALIZERS() GC_notify_or_invoke_finalizers()
+  GC_INNER void GC_notify_or_invoke_finalizers(void);
                         /* If GC_finalize_on_demand is not set, invoke  */
                         /* eligible finalizers. Otherwise:              */
                         /* Call *GC_finalizer_notifier if there are     */
                         /* finalizers to be run, and we haven't called  */
                         /* this procedure yet this GC cycle.            */
 
-   GC_INNER void GC_finalize(void);
+  GC_INNER void GC_finalize(void);
                         /* Perform all indicated finalization actions   */
                         /* on unmarked objects.                         */
                         /* Unreachable finalizable objects are enqueued */
                         /* for processing by GC_invoke_finalizers.      */
                         /* Invoked with lock.                           */
 
-  void GC_process_togglerefs (void);
-      /*Process the togglerefs before GC starts */
-
-#  ifndef SMALL_CONFIG
-     GC_INNER void GC_print_finalization_stats(void);
-#  endif
+# ifndef GC_TOGGLE_REFS_NOT_NEEDED
+    GC_INNER void GC_process_togglerefs(void);
+                        /* Process the toggle-refs before GC starts.    */
+# endif
+# ifndef SMALL_CONFIG
+    GC_INNER void GC_print_finalization_stats(void);
+# endif
 #else
-#  define GC_INVOKE_FINALIZERS() (void)0
+# define GC_INVOKE_FINALIZERS() (void)0
 #endif /* GC_NO_FINALIZATION */
 
 #if !defined(DONT_ADD_BYTE_AT_END)
