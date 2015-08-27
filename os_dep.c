@@ -3511,8 +3511,7 @@ GC_INNER GC_bool GC_page_was_dirty(struct hblk *h)
 
 GC_INNER void GC_dirty_init(void)
 {
-    int fd;
-    char buf[30];
+    char buf[40];
 
     if (GC_bytes_allocd != 0 || GC_bytes_allocd_before_gc != 0) {
       memset(GC_written_pages, 0xff, sizeof(page_hash_table));
@@ -3521,14 +3520,12 @@ GC_INNER void GC_dirty_init(void)
                 (unsigned long)(GC_bytes_allocd + GC_bytes_allocd_before_gc));
     }
 
-    (void)snprintf(buf, sizeof(buf), "/proc/%ld", (long)getpid());
+    (void)snprintf(buf, sizeof(buf), "/proc/%ld/pagedata", (long)getpid());
     buf[sizeof(buf) - 1] = '\0';
-    fd = open(buf, O_RDONLY);
-    if (fd < 0) {
+    GC_proc_fd = open(buf, O_RDONLY);
+    if (GC_proc_fd < 0) {
         ABORT("/proc open failed");
     }
-    GC_proc_fd = syscall(SYS_ioctl, fd, PIOCOPENPD, 0);
-    close(fd);
     syscall(SYS_fcntl, GC_proc_fd, F_SETFD, FD_CLOEXEC);
     if (GC_proc_fd < 0) {
         WARN("/proc ioctl(PIOCOPENPD) failed", 0);
