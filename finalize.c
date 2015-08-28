@@ -262,8 +262,8 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 
 /* Toggle-ref support.  */
 #ifndef GC_TOGGLE_REFS_NOT_NEEDED
-  typedef struct {
-    /* Only one of the two fields can be non-NULL at a time.    */
+  typedef union {
+    /* Lowest bit is used to distinguish between choices.       */
     void *strong_ref;
     GC_hidden_pointer weak_ref;
   } GCToggleRef;
@@ -283,25 +283,20 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
       GCToggleRef r = GC_toggleref_arr[i];
       void *obj = r.strong_ref;
 
+      if (((word)obj & 1) != 0) {
+        obj = GC_REVEAL_POINTER(r.weak_ref);
+      }
       if (NULL == obj) {
-        if (r.weak_ref != 0) {
-          obj = GC_REVEAL_POINTER(r.weak_ref);
-        } else {
-          continue;
-        }
+        continue;
       }
       switch (GC_toggleref_callback(obj)) {
       case GC_TOGGLE_REF_DROP:
         break;
       case GC_TOGGLE_REF_STRONG:
-        GC_toggleref_arr[new_size].strong_ref = obj;
-        GC_toggleref_arr[new_size].weak_ref = 0;
-        ++new_size;
+        GC_toggleref_arr[new_size++].strong_ref = obj;
         break;
       case GC_TOGGLE_REF_WEAK:
-        GC_toggleref_arr[new_size].strong_ref = NULL;
-        GC_toggleref_arr[new_size].weak_ref = GC_HIDE_POINTER(obj);
-        ++new_size;
+        GC_toggleref_arr[new_size++].weak_ref = GC_HIDE_POINTER(obj);
         break;
       default:
         ABORT("Bad toggle-ref status returned by callback");
@@ -340,8 +335,9 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     /* TODO: Hide GC_toggleref_arr to avoid its marking from roots. */
     GC_set_mark_bit(GC_toggleref_arr);
     for (i = 0; i < GC_toggleref_array_size; ++i) {
-      if (GC_toggleref_arr[i].strong_ref != NULL) {
-        push_and_mark_object(GC_toggleref_arr[i].strong_ref);
+      void *obj = GC_toggleref_arr[i].strong_ref;
+      if (obj != NULL && ((word)obj & 1) == 0) {
+        push_and_mark_object(obj);
       }
     }
   }
@@ -350,7 +346,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
   {
     int i;
     for (i = 0; i < GC_toggleref_array_size; ++i) {
-      if (GC_toggleref_arr[i].weak_ref != 0) {
+      if ((GC_toggleref_arr[i].weak_ref & 1) != 0) {
         if (!GC_is_marked(GC_REVEAL_POINTER(GC_toggleref_arr[i].weak_ref))) {
           GC_toggleref_arr[i].weak_ref = 0;
         } else {
@@ -425,11 +421,8 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
       if (!ensure_toggleref_capacity(1)) {
         res = GC_NO_MEMORY;
       } else {
-        GC_toggleref_arr[GC_toggleref_array_size].strong_ref =
-                                is_strong_ref ? obj : NULL;
-        GC_toggleref_arr[GC_toggleref_array_size].weak_ref =
-                                is_strong_ref ? 0 : GC_HIDE_POINTER(obj);
-        ++GC_toggleref_array_size;
+        GC_toggleref_arr[GC_toggleref_array_size++].strong_ref =
+                        is_strong_ref ? obj : (void *)GC_HIDE_POINTER(obj);
       }
     }
     UNLOCK();
