@@ -287,7 +287,8 @@
 #   include <features.h>
 # endif
 # if (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1 || __GLIBC__ > 2) \
-        && !defined(__ia64__) && !defined(__UCLIBC__) \
+        && !defined(__ia64__) \
+        && !defined(GC_MISSING_EXECINFO_H) \
         && !defined(GC_HAVE_BUILTIN_BACKTRACE)
 #   define GC_HAVE_BUILTIN_BACKTRACE
 # endif
