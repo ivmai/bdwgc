@@ -473,6 +473,12 @@ case "$host" in
 esac
 AM_CONDITIONAL(AVOID_CPP_LIB,test $avoid_cpp_lib = yes)
 
+# Check for various headers.
+AC_CHECK_HEADERS([execinfo.h])
+if test "$ac_cv_header_execinfo_h" != "yes"; then
+  AC_DEFINE([GC_MISSING_EXECINFO_H], [1], [Missing execinfo.h header])
+fi
+
 # extra LD Flags which are required for targets
 case "${host}" in
   *-*-darwin*)
