@@ -429,6 +429,10 @@
 #   define AARCH64
 #   define mach_type_known
 # endif
+# if defined(FREEBSD) && (defined(mips) || defined(__mips) || defined(_mips))
+#   define MIPS
+#   define mach_type_known
+# endif
 # if defined(bsdi) && (defined(i386) || defined(__i386__))
 #    define I386
 #    define BSDI
@@ -1668,6 +1672,22 @@
 #    define DATAEND ((ptr_t)(&_end))
 #    define DYNAMIC_LOADING
 #  endif
+#  ifdef FREEBSD
+#    define OS_TYPE "FREEBSD"
+#    define ALIGNMENT 4
+#    ifndef GC_FREEBSD_THREADS
+#      define MPROTECT_VDB
+#    endif
+#    define SIG_SUSPEND SIGUSR1
+#    define SIG_THR_RESTART SIGUSR2
+#    define FREEBSD_STACKBOTTOM
+#    ifdef __ELF__
+#      define DYNAMIC_LOADING
+#    endif
+     extern char etext[];
+#    define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
+#    define DATASTART_USES_BSDGETDATASTART
+#  endif /* FreeBSD */
 #  if defined(NONSTOP)
 #    define CPP_WORDSZ 32
 #    define OS_TYPE "NONSTOP"

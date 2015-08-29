@@ -3060,7 +3060,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #     ifndef SEGV_ACCERR
 #       define SEGV_ACCERR 2
 #     endif
-#     if defined(AARCH64) || defined(ARM32)
+#     if defined(AARCH64) || defined(ARM32) || defined(MIPS)
 #       define CODE_OK (si -> si_code == SEGV_ACCERR)
 #     elif defined(POWERPC)
 #       define AIM  /* Pretend that we're AIM. */
