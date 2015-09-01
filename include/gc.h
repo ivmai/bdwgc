@@ -1172,6 +1172,43 @@ GC_API int GC_CALL GC_unregister_long_link(void ** /* link */);
         /* Similar to GC_unregister_disappearing_link but for a */
         /* registration by either of the above two routines.    */
 
+/* Support of toggle-ref style of external memory management    */
+/* without hooking up to the host retain/release machinery.     */
+/* The idea of toggle-ref is that an external reference to      */
+/* an object is kept and it can be either a strong or weak      */
+/* reference; a weak reference is used when the external peer   */
+/* has no interest in the object, and a strong otherwise.       */
+typedef enum {
+   GC_TOGGLE_REF_DROP,
+   GC_TOGGLE_REF_STRONG,
+   GC_TOGGLE_REF_WEAK
+} GC_ToggleRefStatus;
+
+/* The callback is to decide (return) the new state of a given  */
+/* object.  Invoked by the collector for all objects registered */
+/* for toggle-ref processing.  Invoked with the allocation lock */
+/* held (but the "world" is running).                           */
+typedef GC_ToggleRefStatus (GC_CALLBACK *GC_toggleref_func)(void * /* obj */);
+
+/* Set (register) a callback that decides the state of a given  */
+/* object (by, probably, inspecting its native state).          */
+/* The argument may be 0 (means no callback).  Both the setter  */
+/* and the getter acquire the allocation lock (to avoid data    */
+/* races).                                                      */
+GC_API void GC_CALL GC_set_toggleref_func(GC_toggleref_func);
+GC_API GC_toggleref_func GC_CALL GC_get_toggleref_func(void);
+
+/* Register a given object for toggle-ref processing.  It will  */
+/* be stored internally and the toggle-ref callback will be     */
+/* invoked on the object until the callback returns             */
+/* GC_TOGGLE_REF_DROP or the object is collected.  If is_strong */
+/* is true then the object is registered with a strong ref,     */
+/* a weak one otherwise.  Returns GC_SUCCESS if registration    */
+/* succeeded (or no callback registered yet), GC_NO_MEMORY if   */
+/* it failed for lack of memory.                                */
+GC_API int GC_CALL GC_toggleref_add(void * /* obj */, int /* is_strong */)
+                                                GC_ATTR_NONNULL(1);
+
 /* Finalizer callback support.  Invoked by the collector (with  */
 /* the allocation lock held) for each unreachable object        */
 /* enqueued for finalization.                                   */

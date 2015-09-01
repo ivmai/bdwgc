@@ -637,13 +637,14 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         GET_TIME(start_time);
 #   endif
 
+#   if !defined(GC_NO_FINALIZATION) && !defined(GC_TOGGLE_REFS_NOT_NEEDED)
+      GC_process_togglerefs();
+#   endif
 #   ifdef THREADS
       if (GC_on_collection_event)
         GC_on_collection_event(GC_EVENT_PRE_STOP_WORLD);
 #   endif
-
     STOP_WORLD();
-
 #   ifdef THREADS
       if (GC_on_collection_event)
         GC_on_collection_event(GC_EVENT_POST_STOP_WORLD);

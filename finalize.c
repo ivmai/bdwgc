@@ -260,6 +260,176 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     return 1;
 }
 
+/* Toggle-ref support.  */
+#ifndef GC_TOGGLE_REFS_NOT_NEEDED
+  typedef union {
+    /* Lowest bit is used to distinguish between choices.       */
+    void *strong_ref;
+    GC_hidden_pointer weak_ref;
+  } GCToggleRef;
+
+  STATIC GC_toggleref_func GC_toggleref_callback = 0;
+  STATIC GCToggleRef *GC_toggleref_arr = NULL;
+  STATIC int GC_toggleref_array_size = 0;
+  STATIC int GC_toggleref_array_capacity = 0;
+
+  GC_INNER void GC_process_togglerefs(void)
+  {
+    int i;
+    int new_size = 0;
+
+    GC_ASSERT(I_HOLD_LOCK());
+    for (i = 0; i < GC_toggleref_array_size; ++i) {
+      GCToggleRef r = GC_toggleref_arr[i];
+      void *obj = r.strong_ref;
+
+      if (((word)obj & 1) != 0) {
+        obj = GC_REVEAL_POINTER(r.weak_ref);
+      }
+      if (NULL == obj) {
+        continue;
+      }
+      switch (GC_toggleref_callback(obj)) {
+      case GC_TOGGLE_REF_DROP:
+        break;
+      case GC_TOGGLE_REF_STRONG:
+        GC_toggleref_arr[new_size++].strong_ref = obj;
+        break;
+      case GC_TOGGLE_REF_WEAK:
+        GC_toggleref_arr[new_size++].weak_ref = GC_HIDE_POINTER(obj);
+        break;
+      default:
+        ABORT("Bad toggle-ref status returned by callback");
+      }
+    }
+
+    if (new_size < GC_toggleref_array_size) {
+      BZERO(&GC_toggleref_arr[new_size],
+            (GC_toggleref_array_size - new_size) * sizeof(GCToggleRef));
+      GC_toggleref_array_size = new_size;
+    }
+  }
+
+  STATIC void GC_normal_finalize_mark_proc(ptr_t);
+
+  static void push_and_mark_object(void *p)
+  {
+    GC_normal_finalize_mark_proc(p);
+    while (!GC_mark_stack_empty()) {
+      MARK_FROM_MARK_STACK();
+    }
+    GC_set_mark_bit(p);
+    if (GC_mark_state != MS_NONE) {
+      while (!GC_mark_some(0)) {
+        /* Empty. */
+      }
+    }
+  }
+
+  STATIC void GC_mark_togglerefs(void)
+  {
+    int i;
+    if (NULL == GC_toggleref_arr)
+      return;
+
+    /* TODO: Hide GC_toggleref_arr to avoid its marking from roots. */
+    GC_set_mark_bit(GC_toggleref_arr);
+    for (i = 0; i < GC_toggleref_array_size; ++i) {
+      void *obj = GC_toggleref_arr[i].strong_ref;
+      if (obj != NULL && ((word)obj & 1) == 0) {
+        push_and_mark_object(obj);
+      }
+    }
+  }
+
+  STATIC void GC_clear_togglerefs(void)
+  {
+    int i;
+    for (i = 0; i < GC_toggleref_array_size; ++i) {
+      if ((GC_toggleref_arr[i].weak_ref & 1) != 0) {
+        if (!GC_is_marked(GC_REVEAL_POINTER(GC_toggleref_arr[i].weak_ref))) {
+          GC_toggleref_arr[i].weak_ref = 0;
+        } else {
+          /* No need to copy, BDWGC is a non-moving collector.    */
+        }
+      }
+    }
+  }
+
+  GC_API void GC_CALL GC_set_toggleref_func(GC_toggleref_func fn)
+  {
+    DCL_LOCK_STATE;
+
+    LOCK();
+    GC_toggleref_callback = fn;
+    UNLOCK();
+  }
+
+  GC_API GC_toggleref_func GC_CALL GC_get_toggleref_func(void)
+  {
+    GC_toggleref_func fn;
+    DCL_LOCK_STATE;
+
+    LOCK();
+    fn = GC_toggleref_callback;
+    UNLOCK();
+    return fn;
+  }
+
+  static GC_bool ensure_toggleref_capacity(int capacity_inc)
+  {
+    GC_ASSERT(capacity_inc >= 0);
+    if (NULL == GC_toggleref_arr) {
+      GC_toggleref_array_capacity = 32; /* initial capacity */
+      GC_toggleref_arr = GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
+                        GC_toggleref_array_capacity * sizeof(GCToggleRef),
+                        NORMAL);
+      if (NULL == GC_toggleref_arr)
+        return FALSE;
+    }
+    if ((unsigned)GC_toggleref_array_size + (unsigned)capacity_inc
+        >= (unsigned)GC_toggleref_array_capacity) {
+      GCToggleRef *new_array;
+      while ((unsigned)GC_toggleref_array_capacity
+              < (unsigned)GC_toggleref_array_size + (unsigned)capacity_inc) {
+        GC_toggleref_array_capacity *= 2;
+        if (GC_toggleref_array_capacity < 0) /* overflow */
+          return FALSE;
+      }
+
+      new_array = GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
+                        GC_toggleref_array_capacity * sizeof(GCToggleRef),
+                        NORMAL);
+      if (NULL == new_array)
+        return FALSE;
+      BCOPY(GC_toggleref_arr, new_array,
+            GC_toggleref_array_size * sizeof(GCToggleRef));
+      GC_INTERNAL_FREE(GC_toggleref_arr);
+      GC_toggleref_arr = new_array;
+    }
+    return TRUE;
+  }
+
+  GC_API int GC_CALL GC_toggleref_add(void *obj, int is_strong_ref)
+  {
+    int res = GC_SUCCESS;
+    DCL_LOCK_STATE;
+
+    GC_ASSERT(obj != NULL);
+    LOCK();
+    if (GC_toggleref_callback != 0) {
+      if (!ensure_toggleref_capacity(1)) {
+        res = GC_NO_MEMORY;
+      } else {
+        GC_toggleref_arr[GC_toggleref_array_size++].strong_ref =
+                        is_strong_ref ? obj : (void *)GC_HIDE_POINTER(obj);
+      }
+    }
+    UNLOCK();
+    return res;
+  }
+#endif /* !GC_TOGGLE_REFS_NOT_NEEDED */
+
 /* Finalizer callback support. */
 STATIC GC_await_finalize_proc GC_object_finalized_proc = 0;
 
@@ -770,6 +940,9 @@ GC_INNER void GC_finalize(void)
 #     endif
 #   endif
 
+#   ifndef GC_TOGGLE_REFS_NOT_NEEDED
+      GC_mark_togglerefs();
+#   endif
     GC_make_disappearing_links_disappear(&GC_dl_hashtbl);
 
   /* Mark all objects reachable via chains of 1 or more pointers        */
@@ -883,6 +1056,9 @@ GC_INNER void GC_finalize(void)
   }
 
   GC_remove_dangling_disappearing_links(&GC_dl_hashtbl);
+# ifndef GC_TOGGLE_REFS_NOT_NEEDED
+    GC_clear_togglerefs();
+# endif
 # ifndef GC_LONG_REFS_NOT_NEEDED
     GC_make_disappearing_links_disappear(&GC_ll_hashtbl);
     GC_remove_dangling_disappearing_links(&GC_ll_hashtbl);
