@@ -41,8 +41,6 @@
 
 #define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
 
-STATIC GC_bool GC_explicit_typing_initialized = FALSE;
-
 STATIC int GC_explicit_kind = 0;
                         /* Object kind for objects with indirect        */
                         /* (possibly extended) descriptors.             */
@@ -99,6 +97,16 @@ STATIC size_t GC_avail_descr = 0;       /* Next available slot.         */
 
 STATIC int GC_typed_mark_proc_index = 0; /* Indices of my mark          */
 STATIC int GC_array_mark_proc_index = 0; /* procedures.                 */
+
+#if !defined(AO_HAVE_load_acquire) && defined(GC_FORCE_INCLUDE_ATOMIC_OPS)
+# include "atomic_ops.h"
+#endif
+
+#ifdef AO_HAVE_load_acquire
+  STATIC volatile AO_t GC_explicit_typing_initialized = FALSE;
+#else
+  STATIC GC_bool GC_explicit_typing_initialized = FALSE;
+#endif
 
 STATIC void GC_push_typed_structures_proc(void)
 {
@@ -343,19 +351,11 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
 STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
                                 mse * mark_stack_limit, word env);
 
-/* Caller does not hold allocation lock. */
 STATIC void GC_init_explicit_typing(void)
 {
-    register unsigned i;
-    DCL_LOCK_STATE;
+    unsigned i;
 
     GC_STATIC_ASSERT(sizeof(struct LeafDescriptor) % sizeof(word) == 0);
-    LOCK();
-    if (GC_explicit_typing_initialized) {
-      UNLOCK();
-      return;
-    }
-    GC_explicit_typing_initialized = TRUE;
     /* Set up object kind with simple indirect descriptor. */
       GC_eobjfreelist = (ptr_t *)GC_new_free_list_inner();
       GC_explicit_kind = GC_new_kind_inner(
@@ -377,7 +377,6 @@ STATIC void GC_init_explicit_typing(void)
           d |= GC_DS_BITMAP;
           GC_bm_table[i] = d;
       }
-    UNLOCK();
 }
 
 STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
@@ -545,11 +544,30 @@ GC_API GC_descr GC_CALL GC_make_descriptor(GC_bitmap bm, size_t len)
     GC_descr result;
     signed_word i;
 #   define HIGH_BIT (((word)1) << (WORDSZ - 1))
+    DCL_LOCK_STATE;
 
-    if (!GC_explicit_typing_initialized) GC_init_explicit_typing();
+#   if defined(AO_HAVE_load_acquire) && defined(AO_HAVE_store_release)
+      if (!EXPECT(AO_load_acquire(&GC_explicit_typing_initialized), TRUE)) {
+        LOCK();
+        if (!GC_explicit_typing_initialized) {
+          GC_init_explicit_typing();
+          AO_store_release(&GC_explicit_typing_initialized, TRUE);
+        }
+        UNLOCK();
+      }
+#   else
+      LOCK();
+      if (!EXPECT(GC_explicit_typing_initialized, TRUE)) {
+        GC_init_explicit_typing();
+        GC_explicit_typing_initialized = TRUE;
+      }
+      UNLOCK();
+#   endif
+
     while (last_set_bit >= 0 && !GC_get_bit(bm, last_set_bit))
       last_set_bit--;
     if (last_set_bit < 0) return(0 /* no pointers */);
+
 #   if ALIGNMENT == CPP_WORDSZ/8
     {
       register GC_bool all_bits_set = TRUE;
@@ -594,6 +612,7 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed(size_t lb, GC_descr d)
     size_t lg;
     DCL_LOCK_STATE;
 
+    GC_ASSERT(GC_explicit_typing_initialized);
     lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
     if (SMALL_OBJ(lb)) {
         lg = GC_size_map[lb];
@@ -629,6 +648,7 @@ GC_API void * GC_CALL GC_malloc_explicitly_typed_ignore_off_page(size_t lb,
     size_t lg;
     DCL_LOCK_STATE;
 
+    GC_ASSERT(GC_explicit_typing_initialized);
     lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
     if (SMALL_OBJ(lb)) {
         lg = GC_size_map[lb];
@@ -668,6 +688,7 @@ GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t n, size_t lb,
     struct LeafDescriptor leaf;
     DCL_LOCK_STATE;
 
+    GC_ASSERT(GC_explicit_typing_initialized);
     descr_type = GC_make_array_descriptor((word)n, (word)lb, d, &simple_descr,
                                           &complex_descr, &leaf);
     if ((lb | n) > GC_SQRT_SIZE_MAX /* fast initial check */
