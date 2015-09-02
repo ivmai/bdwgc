@@ -66,8 +66,8 @@
 #   elif defined(_MSC_VER) || defined(__DMC__) || defined(__BORLANDC__) \
          || defined(__CYGWIN__) || defined(__WATCOMC__)
 #     define CORD_API extern __declspec(dllexport)
-#   elif defined(__GNUC__) && (__GNUC__ >= 4 \
-                               || defined(GC_VISIBILITY_HIDDEN_SET))
+#   elif defined(__GNUC__) && !defined(GC_NO_VISIBILITY) \
+         && (__GNUC__ >= 4 || defined(GC_VISIBILITY_HIDDEN_SET))
     /* Only matters if used in conjunction with -fvisibility=hidden option. */
 #     define CORD_API extern __attribute__((__visibility__("default")))
 #   endif

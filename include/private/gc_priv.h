@@ -109,7 +109,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* located in the "extra" folder).                                    */
 # if defined(GC_DLL) && defined(__GNUC__) && !defined(MSWIN32) \
         && !defined(MSWINCE) && !defined(CYGWIN32)
-#   if __GNUC__ >= 4
+#   if (__GNUC__ >= 4) && !defined(GC_NO_VISIBILITY)
       /* See the corresponding GC_API definition. */
 #     define GC_INNER __attribute__((__visibility__("hidden")))
 #   else
@@ -165,7 +165,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #ifndef GC_API_OSCALL
   /* This is used to identify GC routines called by name from OS.       */
 # if defined(__GNUC__)
-#   if __GNUC__ >= 4
+#   if (__GNUC__ >= 4) && !defined(GC_NO_VISIBILITY)
       /* Same as GC_API if GC_DLL.      */
 #     define GC_API_OSCALL extern __attribute__((__visibility__("default")))
 #   else

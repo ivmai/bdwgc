@@ -562,7 +562,8 @@ if test "${enable_shared}" = yes; then
                      [ac_cv_fvisibility_hidden=no])
       CFLAGS="$old_CFLAGS"
       AS_IF([test "$ac_cv_fvisibility_hidden" = yes],
-            [CFLAGS="-DGC_VISIBILITY_HIDDEN_SET -fvisibility=hidden $CFLAGS"])
+            [CFLAGS="-DGC_VISIBILITY_HIDDEN_SET -fvisibility=hidden $CFLAGS"],
+            [CFLAGS="-DGC_NO_VISIBILITY $CFLAGS"])
       AC_MSG_RESULT($ac_cv_fvisibility_hidden)
     fi
   fi
