@@ -109,9 +109,9 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #     undef EM_ALPHA
 #   endif
 #   include <link.h>
-#   if !defined(GC_DONT_DEFINE_LINK_MAP)
-      /* link_map and r_debug should be defined explicitly,             */
-      /* as only bionic/linker/linker.h defines them but the header     */
+#   if !defined(GC_DONT_DEFINE_LINK_MAP) && !(__ANDROID_API__ >= 21)
+      /* link_map and r_debug are defined in link.h of NDK r10+.        */
+      /* bionic/linker/linker.h defines them too but the header         */
       /* itself is a C++ one starting from Android 4.3.                 */
       struct link_map {
         uintptr_t l_addr;
