@@ -529,7 +529,8 @@ STATIC int GC_suspend_all(void)
                 case 0:
                     if (GC_on_thread_event)
                       GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
-                                         (void *)thread_id);
+                                         (void *)(word)thread_id);
+                                /* Note: thread_id might be truncated.  */
                     break;
                 default:
                     ABORT_ARG1("pthread_kill failed at suspend",
@@ -866,7 +867,7 @@ GC_INNER void GC_start_world(void)
                 case 0:
                     if (GC_on_thread_event)
                       GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED,
-                                         (void *)thread_id);
+                                         (void *)(word)thread_id);
                     break;
                 default:
                     ABORT_ARG1("pthread_kill failed at resume",
