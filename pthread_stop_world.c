@@ -447,7 +447,7 @@ GC_INNER void GC_push_all_stacks(void)
   int GC_stopping_pid = 0;
 #endif
 
-#ifdef PLATFORM_ANDROID
+#ifdef USE_TKILL_ON_ANDROID
   extern int tkill(pid_t tid, int sig); /* from sys/linux-unistd.h */
 
   static int android_thread_kill(pid_t tid, int sig)
@@ -463,7 +463,7 @@ GC_INNER void GC_push_all_stacks(void)
 
     return ret;
   }
-#endif /* PLATFORM_ANDROID */
+#endif /* USE_TKILL_ON_ANDROID */
 
 /* We hold the allocation lock.  Suspend all threads that might */
 /* still be running.  Return the number of suspend signals that */
@@ -473,7 +473,7 @@ STATIC int GC_suspend_all(void)
   int n_live_threads = 0;
   int i;
 # ifndef NACL
-#   ifndef PLATFORM_ANDROID
+#   ifndef USE_TKILL_ON_ANDROID
       pthread_t thread_id;
 #   else
       pid_t thread_id;
@@ -514,7 +514,7 @@ STATIC int GC_suspend_all(void)
                                      (void *)p->id);
               }
 #           else
-#             ifndef PLATFORM_ANDROID
+#             ifndef USE_TKILL_ON_ANDROID
                 thread_id = p -> id;
                 result = pthread_kill(thread_id, GC_sig_suspend);
 #             else
@@ -818,7 +818,7 @@ GC_INNER void GC_start_world(void)
       register int n_live_threads = 0;
       register int result;
 #   endif
-#   ifndef PLATFORM_ANDROID
+#   ifndef USE_TKILL_ON_ANDROID
       pthread_t thread_id;
 #   else
       pid_t thread_id;
@@ -852,7 +852,7 @@ GC_INNER void GC_start_world(void)
             if (GC_on_thread_event)
               GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, (void *)p->id);
 #         else
-#           ifndef PLATFORM_ANDROID
+#           ifndef USE_TKILL_ON_ANDROID
               thread_id = p -> id;
               result = pthread_kill(thread_id, GC_sig_thr_restart);
 #           else

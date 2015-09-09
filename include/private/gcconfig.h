@@ -2055,7 +2055,7 @@
 #     define DYNAMIC_LOADING
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
-      extern char _end[];
+      extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #   endif
 #   ifdef DARWIN
@@ -2597,6 +2597,12 @@
 # define GETPAGESIZE() getpagesize()
 #endif
 
+#if defined(PLATFORM_ANDROID) && ((defined(MIPS) && (CPP_WORDSZ == 32)) \
+                        || defined(ARM32) || defined(I386) /* but not x32 */)
+  /* tkill() exists only on arm32/mips(32)/x86. */
+# define USE_TKILL_ON_ANDROID
+#endif
+
 #if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
         /* OS has SVR4 generic features.        */
         /* Probably others also qualify.        */
@@ -2742,7 +2748,7 @@
                              || defined(MIPS) || defined(AVR32) \
                              || defined(OR1K))) \
      || (defined(LINUX) && (defined(SPARC) || defined(M68K))) \
-     || ((defined(RTEMS) || defined(PLATFORM_ANDROID)) && defined(I386))) \
+     || (defined(RTEMS) && defined(I386)) || defined(PLATFORM_ANDROID)) \
     && !defined(NO_GETCONTEXT)
 # define NO_GETCONTEXT
 #endif
