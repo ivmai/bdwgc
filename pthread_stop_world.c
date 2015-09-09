@@ -202,7 +202,7 @@ STATIC sem_t GC_suspend_ack_sem;
 
 STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 
-#ifdef SA_SIGINFO
+#ifndef NO_SA_SIGACTION
   STATIC void GC_suspend_handler(int sig, siginfo_t * info GC_ATTR_UNUSED,
                                  void * context GC_ATTR_UNUSED)
 #else
@@ -216,7 +216,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 # else
     /* We believe that in all other cases the full context is already   */
     /* in the signal handler frame.                                     */
-#   ifndef SA_SIGINFO
+#   ifdef NO_SA_SIGACTION
       void *context = 0;
 #   endif
     GC_suspend_handler_inner((ptr_t)(word)sig, context);
@@ -925,7 +925,7 @@ GC_INNER void GC_stop_init(void)
 #   else
       act.sa_flags = 0
 #   endif
-#   ifdef SA_SIGINFO
+#   ifndef NO_SA_SIGACTION
                      | SA_SIGINFO
 #   endif
         ;
@@ -940,7 +940,7 @@ GC_INNER void GC_stop_init(void)
     GC_remove_allowed_signals(&act.sa_mask);
     /* GC_sig_thr_restart is set in the resulting mask. */
     /* It is unmasked by the handler when necessary.    */
-#   ifdef SA_SIGINFO
+#   ifndef NO_SA_SIGACTION
       act.sa_sigaction = GC_suspend_handler;
 #   else
       act.sa_handler = GC_suspend_handler;
@@ -950,7 +950,7 @@ GC_INNER void GC_stop_init(void)
         ABORT("Cannot set SIG_SUSPEND handler");
     }
 
-#   ifdef SA_SIGINFO
+#   ifndef NO_SA_SIGACTION
       act.sa_flags &= ~SA_SIGINFO;
 #   endif
     act.sa_handler = GC_restart_handler;

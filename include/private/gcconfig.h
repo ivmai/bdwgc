@@ -2737,6 +2737,15 @@
 # undef MPROTECT_VDB
 #endif
 
+#ifndef SA_SIGINFO
+# define NO_SA_SIGACTION
+#endif
+
+#if defined(NO_SA_SIGACTION) && defined(MPROTECT_VDB) && !defined(DARWIN) \
+    && !defined(MSWIN32) && !defined(MSWINCE)
+# undef MPROTECT_VDB
+#endif
+
 #if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
     && !defined(GWW_VDB) && !defined(MANUAL_VDB) \
     && !defined(GC_DISABLE_INCREMENTAL)
