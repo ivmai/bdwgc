@@ -149,7 +149,7 @@ STATIC GC_stop_func GC_default_stop_func = GC_never_stop_func;
 GC_API void GC_CALL GC_set_stop_func(GC_stop_func stop_func)
 {
   DCL_LOCK_STATE;
-  GC_ASSERT(stop_func != 0);
+  GC_ASSERT(NONNULL_ARG_NOT_NULL(stop_func));
   LOCK();
   GC_default_stop_func = stop_func;
   UNLOCK();
@@ -999,7 +999,7 @@ STATIC GC_bool GC_try_to_collect_general(GC_stop_func stop_func,
 /* Externally callable routines to invoke full, stop-the-world collection. */
 GC_API int GC_CALL GC_try_to_collect(GC_stop_func stop_func)
 {
-    GC_ASSERT(stop_func != 0);
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(stop_func));
     return (int)GC_try_to_collect_general(stop_func, FALSE);
 }
 

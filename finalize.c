@@ -211,7 +211,7 @@ STATIC int GC_register_disappearing_link_inner(
 GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
                                                          const void * obj)
 {
-    if (((word)link & (ALIGNMENT-1)) != 0 || NULL == link)
+    if (((word)link & (ALIGNMENT-1)) != 0 || !NONNULL_ARG_NOT_NULL(link))
         ABORT("Bad arg to GC_general_register_disappearing_link");
     return GC_register_disappearing_link_inner(&GC_dl_hashtbl, link, obj);
 }
@@ -266,7 +266,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 #ifndef GC_LONG_REFS_NOT_NEEDED
   GC_API int GC_CALL GC_register_long_link(void * * link, const void * obj)
   {
-    if (((word)link & (ALIGNMENT-1)) != 0 || NULL == link)
+    if (((word)link & (ALIGNMENT-1)) != 0 || !NONNULL_ARG_NOT_NULL(link))
         ABORT("Bad arg to GC_register_long_link");
     return GC_register_disappearing_link_inner(&GC_ll_hashtbl, link, obj);
   }
@@ -345,7 +345,8 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     int result;
     DCL_LOCK_STATE;
 
-    if (((word)new_link & (ALIGNMENT-1)) != 0 || new_link == NULL)
+    if (((word)new_link & (ALIGNMENT-1)) != 0
+        || !NONNULL_ARG_NOT_NULL(new_link))
       ABORT("Bad new_link arg to GC_move_disappearing_link");
     if (((word)link & (ALIGNMENT-1)) != 0)
       return GC_NOT_FOUND; /* Nothing to do. */
@@ -362,7 +363,8 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
       int result;
       DCL_LOCK_STATE;
 
-      if (((word)new_link & (ALIGNMENT-1)) != 0 || new_link == NULL)
+      if (((word)new_link & (ALIGNMENT-1)) != 0
+          || !NONNULL_ARG_NOT_NULL(new_link))
         ABORT("Bad new_link arg to GC_move_disappearing_link");
       if (((word)link & (ALIGNMENT-1)) != 0)
         return GC_NOT_FOUND; /* Nothing to do. */
