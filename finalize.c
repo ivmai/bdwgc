@@ -556,7 +556,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 
       if (((word)new_link & (ALIGNMENT-1)) != 0
           || !NONNULL_ARG_NOT_NULL(new_link))
-        ABORT("Bad new_link arg to GC_move_disappearing_link");
+        ABORT("Bad new_link arg to GC_move_long_link");
       if (((word)link & (ALIGNMENT-1)) != 0)
         return GC_NOT_FOUND; /* Nothing to do. */
 
