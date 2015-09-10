@@ -950,7 +950,7 @@
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
-      extern char _end[];
+      extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
 #   endif
@@ -990,7 +990,7 @@
 #     define NO_GETENV
 #     define CPP_WORDSZ 32
 #     define ALIGNMENT 4
-      extern int _end [];
+      extern int _end[];
       extern int __bss_start;
 #     define DATAEND (ptr_t)(_end)
 #     define DATASTART (ptr_t)(__bss_start)
@@ -1152,7 +1152,7 @@
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
-      extern char _end[];
+      extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
 #   endif
@@ -1428,7 +1428,7 @@
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
-        extern char _end[];
+        extern int _end[];
 #       define DATAEND ((ptr_t)(&_end))
 #       define DYNAMIC_LOADING
 #   endif
@@ -1668,7 +1668,7 @@
 #    endif
      extern int _fdata[];
 #    define DATASTART ((ptr_t)_fdata)
-     extern char _end[];
+     extern int _end[];
 #    define DATAEND ((ptr_t)(&_end))
 #    define DYNAMIC_LOADING
 #  endif
@@ -1778,7 +1778,7 @@
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
-      extern char _end[];
+      extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
 #  endif
@@ -1808,7 +1808,7 @@
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
-        extern char _end[];
+        extern int _end[];
 #       define DATAEND ((ptr_t)(&_end))
 #       define DYNAMIC_LOADING
 #   endif
@@ -2204,7 +2204,7 @@
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
-      extern char _end[];
+      extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
 #   endif
@@ -2261,7 +2261,7 @@
 #      endif
        extern int __data_start[];
 #      define DATASTART ((ptr_t)__data_start)
-       extern char _end[];
+       extern int _end[];
 #      define DATAEND ((ptr_t)(&_end))
 #      define DYNAMIC_LOADING
 #   endif
@@ -2325,7 +2325,7 @@
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
-        extern char _end[];
+        extern int _end[];
 #       define DATAEND ((ptr_t)(&_end))
 #       define DYNAMIC_LOADING
 #   endif
