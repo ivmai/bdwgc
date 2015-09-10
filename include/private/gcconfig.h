@@ -2892,7 +2892,8 @@
 #endif
 
 #if defined(CAN_HANDLE_FORK) && !defined(CAN_CALL_ATFORK) \
-    && !defined(HURD) && !defined(PLATFORM_ANDROID)
+    && !defined(HURD) \
+    && (!defined(PLATFORM_ANDROID) || __ANDROID_API__ >= 21)
   /* Have working pthread_atfork().     */
 # define CAN_CALL_ATFORK
 #endif
