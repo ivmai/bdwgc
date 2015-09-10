@@ -2357,6 +2357,14 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define GC_STATIC_ASSERT(expr) (void)sizeof(char[(expr)? 1 : -1])
 #endif
 
+/* Runtime check for an argument declared as non-null is actually not null. */
+#if defined(__GNUC__) && __GNUC__ >= 4
+  /* Workaround tautological-pointer-compare Clang warning.     */
+# define NONNULL_ARG_NOT_NULL(arg) (*(volatile void **)&(arg) != NULL)
+#else
+# define NONNULL_ARG_NOT_NULL(arg) (NULL != (arg))
+#endif
+
 #define COND_DUMP_CHECKS \
           do { \
             GC_ASSERT(GC_compute_large_free_bytes() == GC_large_free_bytes); \

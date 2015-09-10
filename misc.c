@@ -1675,7 +1675,7 @@ GC_API void GC_CALLBACK GC_ignore_warn_proc(char *msg, GC_word arg)
 GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc p)
 {
     DCL_LOCK_STATE;
-    GC_ASSERT(p != 0);
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(p));
 #   ifdef GC_WIN32_THREADS
 #     ifdef CYGWIN32
         /* Need explicit GC_INIT call */
@@ -1748,7 +1748,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
   GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
   {
       DCL_LOCK_STATE;
-      GC_ASSERT(fn != 0);
+      GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
       LOCK();
       GC_on_abort = fn;
       UNLOCK();
@@ -2077,7 +2077,7 @@ GC_API GC_word GC_CALL GC_get_gc_no(void)
 
 GC_API void GC_CALL GC_set_oom_fn(GC_oom_func fn)
 {
-    GC_ASSERT(fn != 0);
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
     DCL_LOCK_STATE;
     LOCK();
     GC_oom_fn = fn;
