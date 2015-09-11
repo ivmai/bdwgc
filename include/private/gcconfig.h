@@ -1342,9 +1342,15 @@
 #            endif
              extern int _end[];
 #            define DATAEND (ptr_t)(_end)
-#            if defined(PLATFORM_ANDROID) && !defined(GC_NO_SIGSETJMP)
-               /* As of Android NDK r8b, _sigsetjmp is still missing    */
-               /* for x86 (setjmp is used instead to find data_start).  */
+#            if defined(PLATFORM_ANDROID) && !defined(GC_NO_SIGSETJMP) \
+                && !(__ANDROID_API__ >= 18 || __GNUC__ > 4 \
+                     || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8) \
+                     || __clang_major__ > 3 \
+                     || (__clang_major__ == 3 && __clang_minor__ >= 2))
+               /* Older Android NDK releases lack sigsetjmp in x86 libc */
+               /* (setjmp is used instead to find data_start).  The bug */
+               /* is fixed in Android NDK r8e (so, ok to use sigsetjmp  */
+               /* if gcc4.8+, clang3.2+ or Android API level 18+).      */
 #              define GC_NO_SIGSETJMP
 #            endif
 #       else
