@@ -94,7 +94,6 @@ stamp-h1
 /*.bsc
 /*.csm
 /*.err
-/*.exp
 /*.lb1
 /*.lnk
 /*.map
@@ -102,10 +101,11 @@ stamp-h1
 /*.pdb
 /*.rbj
 /*.res
-/*.sbr
 /*.stackdump
 /*.sym
 /*.tmp
+*.exp
+*.sbr
 
 # Stuff from VS build system and IDE
 *.vcproj.*.user
