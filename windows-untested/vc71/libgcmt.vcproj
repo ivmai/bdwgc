@@ -458,7 +458,7 @@
                 </FileConfiguration>
             </File>
             <File
-                RelativePath="..\..\msvc_dbg.c">
+                RelativePath="..\..\extra\msvc_dbg.c">
                 <FileConfiguration
                     Name="Debug|Win32">
                     <Tool
@@ -684,7 +684,7 @@
             Name="Header Files"
             Filter="h;hh;hpp;hxx;hm;inl">
             <File
-                RelativePath="..\..\msvc_dbg.h">
+                RelativePath="..\..\include\private\msvc_dbg.h">
             </File>
             <File
                 RelativePath="..\stdafx.h">
