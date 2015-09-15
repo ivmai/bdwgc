@@ -165,7 +165,7 @@ SOURCE=..\..\misc.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\msvc_dbg.c
+SOURCE=..\..\extra\msvc_dbg.c
 # End Source File
 # Begin Source File
 
@@ -246,7 +246,7 @@ SOURCE=..\..\include\leak_detector.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\msvc_dbg.h
+SOURCE=..\..\include\private\msvc_dbg.h
 # End Source File
 # Begin Source File
 
