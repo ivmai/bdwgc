@@ -164,7 +164,7 @@
                 RelativePath="..\..\misc.c">
             </File>
             <File
-                RelativePath="..\..\msvc_dbg.c">
+                RelativePath="..\..\extra\msvc_dbg.c">
             </File>
             <File
                 RelativePath="..\..\new_hblk.c">
@@ -210,7 +210,7 @@
             Name="Header Files"
             Filter="h;hh;hpp;hxx;hm;inl">
             <File
-                RelativePath="..\..\msvc_dbg.h">
+                RelativePath="..\..\include\private\msvc_dbg.h">
             </File>
             <File
                 RelativePath="..\stdafx.h">
