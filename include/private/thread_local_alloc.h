@@ -38,7 +38,7 @@
 # if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 #   if defined(CYGWIN32) && (__GNUC__ >= 4)
 #     if defined(__clang__)
-        /* As of Cygwin clang3.1, thread-local storage is unsupported.  */
+        /* As of Cygwin clang3.5.2, thread-local storage is unsupported.    */
 #       define USE_PTHREAD_SPECIFIC
 #     else
 #       define USE_COMPILER_TLS
@@ -51,9 +51,16 @@
 # elif (defined(LINUX) && !defined(ARM32) && !defined(AVR32) \
          && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)) \
          && !(defined(__clang__) && defined(PLATFORM_ANDROID))) \
-       || (defined(PLATFORM_ANDROID) && defined(ARM32) \
-            && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)))
-          /* As of Android NDK r8e, Clang cannot find __tls_get_addr.   */
+       || (defined(PLATFORM_ANDROID) && !defined(__clang__) \
+            && defined(ARM32) \
+            && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))) \
+       || (defined(PLATFORM_ANDROID) && !defined(MIPS) \
+            && (__clang_major__ > 3 \
+                || (__clang_major__ == 3 && __clang_minor__ >= 6)))
+          /* As of Android NDK r10e, Clang/mips cannot find __tls_get_addr. */
+          /* Older NKD releases have same issue for arm and x86 if gcc4.6   */
+          /* toolchain is used for linking (Android NDK r10e added clang3.6 */
+          /* dropping gcc4.6).                                              */
 #   define USE_COMPILER_TLS
 # elif defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) \
        || defined(GC_AIX_THREADS) || defined(GC_DARWIN_THREADS) \
