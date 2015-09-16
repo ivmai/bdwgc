@@ -54,13 +54,15 @@
        || (defined(PLATFORM_ANDROID) && !defined(__clang__) \
             && defined(ARM32) \
             && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))) \
-       || (defined(PLATFORM_ANDROID) && !defined(MIPS) \
+       || (defined(PLATFORM_ANDROID) && !defined(ARM32) && !defined(MIPS) \
             && (__clang_major__ > 3 \
                 || (__clang_major__ == 3 && __clang_minor__ >= 6)))
-          /* As of Android NDK r10e, Clang/mips cannot find __tls_get_addr. */
-          /* Older NKD releases have same issue for arm and x86 if gcc4.6   */
-          /* toolchain is used for linking (Android NDK r10e added clang3.6 */
-          /* dropping gcc4.6).                                              */
+          /* As of Android NDK r10e, Clang/arm with bfd linker and      */
+          /* Clang/mips cannot find __tls_get_addr.  Older NDK releases */
+          /* have same issue for arm (regardless of linker) and x86 if  */
+          /* gcc 4.6 toolchain is used for linking (checked condition   */
+          /* is based on the fact that Android NDK r10e added clang 3.6 */
+          /* dropping gcc 4.6).                                         */
 #   define USE_COMPILER_TLS
 # elif defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) \
        || defined(GC_AIX_THREADS) || defined(GC_DARWIN_THREADS) \
