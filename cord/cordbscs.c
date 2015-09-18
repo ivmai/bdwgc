@@ -216,7 +216,8 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
         if (result == 0) OUT_OF_MEMORY;
         result->header = CONCAT_HDR;
         result->depth = depth;
-        if (lenx <= MAX_LEFT_LEN) result->left_len = lenx;
+        if (lenx <= MAX_LEFT_LEN)
+            result->left_len = (unsigned char)lenx;
         result->len = result_len;
         result->left = x;
         result->right = y;
@@ -257,7 +258,8 @@ CORD CORD_cat(CORD x, CORD y)
         if (result == 0) OUT_OF_MEMORY;
         result->header = CONCAT_HDR;
         result->depth = depth;
-        if (lenx <= MAX_LEFT_LEN) result->left_len = lenx;
+        if (lenx <= MAX_LEFT_LEN)
+            result->left_len = (unsigned char)lenx;
         result->len = result_len;
         result->left = x;
         result->right = y;
