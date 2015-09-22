@@ -378,6 +378,12 @@ STATIC void * GC_mark_thread(void * id)
     marker_mach_threads[(word)id] = mach_thread_self();
 # endif
 
+  /* Inform start_mark_threads() about completion of marker data init.  */
+  GC_acquire_mark_lock();
+  if (0 == --GC_fl_builder_count)
+    GC_notify_all_builder();
+  GC_release_mark_lock();
+
   for (;; ++my_mark_no) {
     /* GC_mark_no is passed only to allow GC_help_marker to terminate   */
     /* promptly.  This is important if it were called from the signal   */
@@ -406,6 +412,7 @@ static void start_mark_threads(void)
     pthread_attr_t attr;
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
+    GC_ASSERT(GC_fl_builder_count == 0);
     INIT_REAL_SYMS(); /* for pthread_create */
 
     if (0 != pthread_attr_init(&attr)) ABORT("pthread_attr_init failed");
@@ -445,6 +452,7 @@ static void start_mark_threads(void)
       GC_log_printf("Started %ld mark helper threads\n", GC_markers - 1);
     }
     pthread_attr_destroy(&attr);
+    GC_wait_for_markers_init();
 }
 
 #endif /* PARALLEL_MARK */

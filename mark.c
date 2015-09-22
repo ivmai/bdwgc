@@ -898,6 +898,24 @@ GC_INNER word GC_mark_no = 0;
         /* We don't overflow half of it in a single call to             */
         /* GC_mark_from.                                                */
 
+/* Wait all markers to finish initialization (i.e. store        */
+/* marker_[b]sp, marker_mach_threads, GC_marker_Id).            */
+GC_INNER void GC_wait_for_markers_init(void)
+{
+  word count;
+
+  if (GC_markers == 1)
+    return;
+
+  /* Reuse marker lock and builders count to synchronize        */
+  /* marker threads startup.                                    */
+  GC_acquire_mark_lock();
+  GC_fl_builder_count += (word)(GC_markers - 1);
+  count = GC_fl_builder_count;
+  GC_release_mark_lock();
+  if (count != 0)
+    GC_wait_for_reclaim();
+}
 
 /* Steal mark stack entries starting at mse low into mark stack local   */
 /* until we either steal mse high, or we have max entries.              */
