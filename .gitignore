@@ -108,20 +108,24 @@ stamp-h1
 /tests/cmake_install.cmake
 
 # Rarely generated files (mostly by some Win/DOS compilers):
-/*.bsc
+/*.copied.c
 /*.csm
 /*.err
 /*.lb1
 /*.lnk
 /*.map
 /*.out
-/*.pdb
 /*.rbj
 /*.res
 /*.stackdump
 /*.sym
 /*.tmp
+*.bsc
+*.dll.manifest
 *.exp
+*.idb
+*.ilk
+*.pdb
 *.sbr
 
 # Stuff from VS build system and IDE
