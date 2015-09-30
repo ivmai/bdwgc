@@ -110,8 +110,9 @@ CLEAN :
 	-@erase ".\Release\typd_mlc.sbr"
 	-@erase ".\Release\win32_threads.obj"
 	-@erase ".\Release\win32_threads.sbr"
-	-@erase ".\Release\msvc_dbg.obj"
-	-@erase ".\Release\msvc_dbg.sbr"
+	-@erase ".\Release\msvc_dbg.copied.obj"
+	-@erase ".\Release\msvc_dbg.copied.sbr"
+	-@erase ".\msvc_dbg.copied.c"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -179,7 +180,7 @@ BSC32_SBRS=\
 	".\Release\reclaim.sbr"\
 	".\Release\stubborn.sbr"\
 	".\Release\typd_mlc.sbr"\
-	".\Release\msvc_dbg.sbr"\
+	".\Release\msvc_dbg.copied.sbr"\
 	".\Release\win32_threads.sbr"
 
 ".\Release\gc.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
@@ -219,7 +220,7 @@ LINK32_OBJS=\
 	".\Release\reclaim.obj"\
 	".\Release\stubborn.obj"\
 	".\Release\typd_mlc.obj"\
-	".\Release\msvc_dbg.obj"\
+	".\Release\msvc_dbg.copied.obj"\
 	".\Release\win32_threads.obj"
 
 ".\Release\gc.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -301,8 +302,9 @@ CLEAN :
 	-@erase ".\Debug\vc40.pdb"
 	-@erase ".\Debug\win32_threads.obj"
 	-@erase ".\Debug\win32_threads.sbr"
-	-@erase ".\Debug\msvc_dbg.obj"
-	-@erase ".\Debug\msvc_dbg.sbr"
+	-@erase ".\Debug\msvc_dbg.copied.obj"
+	-@erase ".\Debug\msvc_dbg.copied.sbr"
+	-@erase ".\msvc_dbg.copied.c"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -371,7 +373,7 @@ BSC32_SBRS=\
 	".\Debug\reclaim.sbr"\
 	".\Debug\stubborn.sbr"\
 	".\Debug\typd_mlc.sbr"\
-	".\Debug\msvc_dbg.sbr"\
+	".\Debug\msvc_dbg.copied.sbr"\
 	".\Debug\win32_threads.sbr"
 
 ".\Debug\gc.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
@@ -411,7 +413,7 @@ LINK32_OBJS=\
 	".\Debug\reclaim.obj"\
 	".\Debug\stubborn.obj"\
 	".\Debug\typd_mlc.obj"\
-	".\Debug\msvc_dbg.obj"\
+	".\Debug\msvc_dbg.copied.obj"\
 	".\Debug\win32_threads.obj"
 
 ".\Debug\gc.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -437,14 +439,15 @@ INTDIR=.\gctest\Release
 ALL : "gc - Win32 Release" ".\Release\gctest.exe"
 
 CLEAN :
-	-@erase ".\gctest\Release\test.obj"
+	-@erase ".\gctest\Release\test.copied.obj"
+	-@erase ".\test.copied.c"
 	-@erase ".\Release\gctest.exe"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-test.c : tests\test.c
-	copy tests\test.c test.c
+test.copied.c : tests\test.c
+	copy tests\test.c test.copied.c
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
@@ -495,7 +498,7 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  odbccp32.lib /nologo /subsystem:windows /incremental:no\
  /pdb:"$(OUTDIR)/gctest.pdb" /machine:I386 /out:"Release/gctest.exe"
 LINK32_OBJS=\
-	".\gctest\Release\test.obj"\
+	".\gctest\Release\test.copied.obj"\
 	".\Release\gc.lib"
 
 ".\Release\gctest.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -525,8 +528,9 @@ CLEAN :
 	-@erase ".\gctest\Debug\gctest.bsc"
 	-@erase ".\gctest\Debug\gctest.map"
 	-@erase ".\gctest\Debug\gctest.pdb"
-	-@erase ".\gctest\Debug\test.obj"
-	-@erase ".\gctest\Debug\test.sbr"
+	-@erase ".\gctest\Debug\test.copied.obj"
+	-@erase ".\gctest\Debug\test.copied.sbr"
+	-@erase ".\test.copied.c"
 	-@erase ".\gctest\Debug\vc40.idb"
 	-@erase ".\gctest\Debug\vc40.pdb"
 
@@ -572,7 +576,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 BSC32_FLAGS=/nologo /o"$(OUTDIR)/gctest.bsc"
 BSC32_SBRS=\
-	".\gctest\Debug\test.sbr"
+	".\gctest\Debug\test.copied.sbr"
 
 ".\gctest\Debug\gctest.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
     $(BSC32) @<<
@@ -589,7 +593,7 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  /out:"Debug/gctest.exe"
 LINK32_OBJS=\
 	".\Debug\gc.lib"\
-	".\gctest\Debug\test.obj"
+	".\gctest\Debug\test.copied.obj"
 
 ".\Debug\gctest.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -628,7 +632,7 @@ CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MD /W3 /GX /O2 /I "." /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /YX /c
 CPP_PROJ=/nologo /MD /W3 /EHsc /O2 /I "." /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS"\
- /I./libatomic_ops/src "ALL_INTERIOR_POINTERS" /Fp"$(INTDIR)/cord.pch" /Fo"$(INTDIR)/" /c
+ /D "ALL_INTERIOR_POINTERS" /I./libatomic_ops/src /Fp"$(INTDIR)/cord.pch" /Fo"$(INTDIR)/" /c
 CPP_OBJS=.\cord\Release/
 CPP_SBRS=.\.
 
@@ -1945,6 +1949,9 @@ NODEP_CPP_WIN32=\
 
 SOURCE=.\extra\msvc_dbg.c
 
+msvc_dbg.copied.c : extra\msvc_dbg.c
+	copy extra\msvc_dbg.c msvc_dbg.copied.c
+
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_WIN32=\
@@ -1961,9 +1968,9 @@ NODEP_CPP_WIN32=\
 	".\th\PCR_ThCtl.h"\
 
 
-".\Release\msvc_dbg.obj" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
+".\Release\msvc_dbg.copied.obj" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
 
-".\Release\msvc_dbg.sbr" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
+".\Release\msvc_dbg.copied.sbr" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
@@ -1982,9 +1989,9 @@ NODEP_CPP_WIN32=\
 	".\th\PCR_ThCtl.h"\
 
 
-".\Debug\msvc_dbg.obj" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
+".\Debug\msvc_dbg.copied.obj" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
 
-".\Debug\msvc_dbg.sbr" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
+".\Debug\msvc_dbg.copied.sbr" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
 
 
 !ENDIF
@@ -2090,15 +2097,15 @@ NODEP_CPP_TEST_=\
 !IF  "$(CFG)" == "gctest - Win32 Release"
 
 
-".\gctest\Release\test.obj" : $(SOURCE) $(DEP_CPP_TEST_) "$(INTDIR)"
+".\gctest\Release\test.copied.obj" : $(SOURCE) $(DEP_CPP_TEST_) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "gctest - Win32 Debug"
 
 
-".\gctest\Debug\test.obj" : $(SOURCE) $(DEP_CPP_TEST_) "$(INTDIR)"
+".\gctest\Debug\test.copied.obj" : $(SOURCE) $(DEP_CPP_TEST_) "$(INTDIR)"
 
-".\gctest\Debug\test.sbr" : $(SOURCE) $(DEP_CPP_TEST_) "$(INTDIR)"
+".\gctest\Debug\test.copied.sbr" : $(SOURCE) $(DEP_CPP_TEST_) "$(INTDIR)"
 
 
 !ENDIF
