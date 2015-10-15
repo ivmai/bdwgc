@@ -62,8 +62,8 @@
 #    define SA_RESTART 0
 #    define HEURISTIC1
      extern char etext[];
-#    define DATASTART ((ptr_t)(etext))
      extern int _end[];
+#    define DATASTART ((ptr_t)(etext))
 #    define DATAEND (_end)
 #    define mach_type_known
 # endif
@@ -839,10 +839,10 @@
                              /* that we'd rather not scan.             */
 #            endif /* !GLIBC2 */
              extern int _end[];
-#            define DATAEND (ptr_t)(_end)
+#            define DATAEND ((ptr_t)(_end))
 #       else
              extern int etext[];
-#            define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
+#            define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #       endif
 #   endif
 #   ifdef AMIGA
@@ -858,15 +858,15 @@
 #     endif
 #     define OS_TYPE "MACOS"
                 /* see os_dep.c for details of global data segments. */
-#     define STACKBOTTOM ((ptr_t) LMGetCurStackBase())
+#     define STACKBOTTOM ((ptr_t)LMGetCurStackBase())
 #     define DATAEND    /* not needed */
 #     define GETPAGESIZE() 4096
 #   endif
 #   ifdef NEXT
 #       define OS_TYPE "NEXT"
-#       define DATASTART ((ptr_t) get_etext())
+#       define DATASTART ((ptr_t)get_etext())
 #       define DATASTART_IS_FUNC
-#       define STACKBOTTOM ((ptr_t) 0x4000000)
+#       define STACKBOTTOM ((ptr_t)0x4000000)
 #       define DATAEND  /* not needed */
 #   endif
 # endif
@@ -880,7 +880,7 @@
 #     endif
 #     define OS_TYPE "MACOS"
                         /* see os_dep.c for details of global data segments. */
-#     define STACKBOTTOM ((ptr_t) LMGetCurStackBase())
+#     define STACKBOTTOM ((ptr_t)LMGetCurStackBase())
 #     define DATAEND  /* not needed */
 #   endif
 #   ifdef LINUX
@@ -907,7 +907,7 @@
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
-#     define DATAEND (ptr_t)(_end)
+#     define DATAEND ((ptr_t)(_end))
 #   endif
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
@@ -915,19 +915,19 @@
 #     if defined(__ppc64__)
 #       define ALIGNMENT 8
 #       define CPP_WORDSZ 64
-#       define STACKBOTTOM ((ptr_t) 0x7fff5fc00000)
+#       define STACKBOTTOM ((ptr_t)0x7fff5fc00000)
 #       define CACHE_LINE_SIZE 64
 #       ifndef HBLKSIZE
 #         define HBLKSIZE 4096
 #       endif
 #     else
 #       define ALIGNMENT 4
-#       define STACKBOTTOM ((ptr_t) 0xc0000000)
+#       define STACKBOTTOM ((ptr_t)0xc0000000)
 #     endif
       /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
       /* These aren't used when dyld support is enabled (it is by default). */
-#     define DATASTART ((ptr_t) get_etext())
-#     define DATAEND   ((ptr_t) get_end())
+#     define DATASTART ((ptr_t)get_etext())
+#     define DATAEND   ((ptr_t)get_end())
 #     ifndef USE_MMAP
 #       define USE_MMAP
 #     endif
@@ -952,7 +952,7 @@
 #     ifndef GC_OPENBSD_THREADS
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       define STACKBOTTOM ((ptr_t) USRSTACK)
+#       define STACKBOTTOM ((ptr_t)USRSTACK)
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -998,8 +998,8 @@
 #     define ALIGNMENT 4
       extern int _end[];
       extern int __bss_start;
-#     define DATAEND (ptr_t)(_end)
-#     define DATASTART (ptr_t)(__bss_start)
+#     define DATASTART ((ptr_t)(__bss_start))
+#     define DATAEND ((ptr_t)(_end))
 #     define STACKBOTTOM ((ptr_t)ps3_get_stack_bottom())
 #     define NO_PTHREAD_TRYLOCK
                 /* Current GC LOCK() implementation for PS3 explicitly  */
@@ -1044,7 +1044,7 @@
 #     define OS_TYPE "NOSYS"
       extern void __end[], __dso_handle[];
 #     define DATASTART (__dso_handle)  /* OK, that's ugly.  */
-#     define DATAEND (ptr_t)(__end)
+#     define DATAEND ((ptr_t)(__end))
         /* Stack starts at 0xE0000000 for the simulator.  */
 #     undef STACK_GRAN
 #     define STACK_GRAN 0x10000000
@@ -1083,7 +1083,7 @@
 #   endif
 #   ifdef ULTRIX
 #       define OS_TYPE "ULTRIX"
-#       define STACKBOTTOM ((ptr_t) 0x7fffc800)
+#       define STACKBOTTOM ((ptr_t)0x7fffc800)
 #   endif
 # endif
 
@@ -1106,7 +1106,7 @@
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
 #       define DATASTART_IS_FUNC
-#       define DATAEND (ptr_t)(_end)
+#       define DATAEND ((ptr_t)(_end))
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
 #         define USE_MMAP
             /* Otherwise we now use calloc.  Mmap may result in the     */
@@ -1128,7 +1128,7 @@
 #       include <sys/vmparam.h>
 #       ifdef USERLIMIT
           /* This should work everywhere, but doesn't.  */
-#         define STACKBOTTOM ((ptr_t) USRSTACK)
+#         define STACKBOTTOM ((ptr_t)USRSTACK)
 #       else
 #         define HEURISTIC2
 #       endif
@@ -1140,12 +1140,12 @@
 #   endif
 #   ifdef DRSNX
 #       define OS_TYPE "DRSNX"
-        ptr_t GC_SysVGetDataStart(size_t, ptr_t);
         extern int etext[];
+        ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)etext)
 #       define DATASTART_IS_FUNC
 #       define MPROTECT_VDB
-#       define STACKBOTTOM ((ptr_t) 0xdfff0000)
+#       define STACKBOTTOM ((ptr_t)0xdfff0000)
 #       define DYNAMIC_LOADING
 #   endif
 #   ifdef LINUX
@@ -1157,7 +1157,7 @@
 #     endif
       extern int _end[];
       extern int _etext[];
-#     define DATAEND (ptr_t)(_end)
+#     define DATAEND ((ptr_t)(_end))
 #     define SVR4
       ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #     ifdef __arch64__
@@ -1173,7 +1173,7 @@
 #     ifndef GC_OPENBSD_THREADS
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       define STACKBOTTOM ((ptr_t) USRSTACK)
+#       define STACKBOTTOM ((ptr_t)USRSTACK)
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -1207,7 +1207,7 @@
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
         ptr_t GC_find_limit(ptr_t, GC_bool);
-#       define DATAEND (GC_find_limit (DATASTART, TRUE))
+#       define DATAEND GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
 #       define DATASTART2 ((ptr_t)(&edata))
 #       define DATAEND2 ((ptr_t)(&end))
@@ -1228,15 +1228,15 @@
 #   ifdef SEQUENT
 #       define OS_TYPE "SEQUENT"
         extern int etext[];
-#       define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
-#       define STACKBOTTOM ((ptr_t) 0x3ffff000)
+#       define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
+#       define STACKBOTTOM ((ptr_t)0x3ffff000)
 #   endif
 #   ifdef BEOS
 #     define OS_TYPE "BEOS"
 #     include <OS.h>
 #     define GETPAGESIZE() B_PAGE_SIZE
       extern int etext[];
-#     define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
+#     define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #   endif
 #   ifdef SOLARIS
 #       define OS_TYPE "SOLARIS"
@@ -1244,14 +1244,14 @@
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
 #       define DATASTART_IS_FUNC
-#       define DATAEND (ptr_t)(_end)
+#       define DATAEND ((ptr_t)(_end))
 /*      # define STACKBOTTOM ((ptr_t)(_start)) worked through 2.7,      */
 /*      but reportedly breaks under 2.8.  It appears that the stack     */
 /*      base is a property of the executable, so this should not break  */
 /*      old executables.                                                */
 /*      HEURISTIC2 probably works, but this appears to be preferable.   */
 #       include <sys/vm.h>
-#       define STACKBOTTOM ((ptr_t) USRSTACK)
+#       define STACKBOTTOM ((ptr_t)USRSTACK)
 /* At least in Solaris 2.5, PROC_VDB gives wrong values for dirty bits. */
 /* It appears to be fixed in 2.8 and 2.9.                               */
 #       ifdef SOLARIS25_PROC_VDB_BUG_FIXED
@@ -1277,16 +1277,15 @@
 #   ifdef SCO
 #       define OS_TYPE "SCO"
         extern int etext[];
-#       define DATASTART ((ptr_t)((((word) (etext)) + 0x3fffff) \
-                                  & ~0x3fffff) \
-                                 +((word)etext & 0xfff))
-#       define STACKBOTTOM ((ptr_t) 0x7ffffffc)
+#       define DATASTART ((ptr_t)((((word)(etext)) + 0x3fffff) & ~0x3fffff) \
+                                 + ((word)(etext) & 0xfff))
+#       define STACKBOTTOM ((ptr_t)0x7ffffffc)
 #   endif
 #   ifdef SCO_ELF
 #       define OS_TYPE "SCO_ELF"
         extern int etext[];
 #       define DATASTART ((ptr_t)(etext))
-#       define STACKBOTTOM ((ptr_t) 0x08048000)
+#       define STACKBOTTOM ((ptr_t)0x08048000)
 #       define DYNAMIC_LOADING
 #       define ELF_CLASS ELFCLASS32
 #   endif
@@ -1296,7 +1295,7 @@
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)(&_etext))
 #       define DATASTART_IS_FUNC
-#       define DATAEND (ptr_t)(&_end)
+#       define DATAEND ((ptr_t)(&_end))
 #       define STACK_GROWS_DOWN
 #       define HEURISTIC2
 #       include <unistd.h>
@@ -1347,7 +1346,7 @@
 #            define DYNAMIC_LOADING
 #            ifdef UNDEFINED    /* includes ro data */
                extern int _etext[];
-#              define DATASTART ((ptr_t)((((word) (_etext)) + 0xfff) & ~0xfff))
+#              define DATASTART ((ptr_t)((((word)(_etext)) + 0xfff) & ~0xfff))
 #            endif
 #            include <features.h>
 #            if defined(__GLIBC__) && __GLIBC__ >= 2 \
@@ -1366,7 +1365,7 @@
                               /* that we'd rather not scan.             */
 #            endif
              extern int _end[];
-#            define DATAEND (ptr_t)(_end)
+#            define DATAEND ((ptr_t)(_end))
 #            if defined(PLATFORM_ANDROID) && !defined(GC_NO_SIGSETJMP) \
                 && !(__ANDROID_API__ >= 18 || __GNUC__ > 4 \
                      || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8) \
@@ -1380,7 +1379,7 @@
 #            endif
 #       else
              extern int etext[];
-#            define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
+#            define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #       endif
 #       ifdef USE_I686_PREFETCH
 #         define PREFETCH(x) \
@@ -1445,9 +1444,9 @@
         extern int etext[];
         extern int _stklen;
         extern int __djgpp_stack_limit;
-#       define DATASTART ((ptr_t)((((word) (etext)) + 0x1ff) & ~0x1ff))
+#       define DATASTART ((ptr_t)((((word)(etext)) + 0x1ff) & ~0x1ff))
 /* #define STACKBOTTOM ((ptr_t)((word)_stubinfo+_stubinfo->size+_stklen)) */
-#       define STACKBOTTOM ((ptr_t)((word) __djgpp_stack_limit + _stklen))
+#       define STACKBOTTOM ((ptr_t)((word)__djgpp_stack_limit + _stklen))
                 /* This may not be right.  */
 #   endif
 #   ifdef OPENBSD
@@ -1455,7 +1454,7 @@
 #       ifndef GC_OPENBSD_THREADS
 #         include <sys/param.h>
 #         include <uvm/uvm_extern.h>
-#         define STACKBOTTOM ((ptr_t) USRSTACK)
+#         define STACKBOTTOM ((ptr_t)USRSTACK)
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
@@ -1472,7 +1471,7 @@
 #           define SIG_SUSPEND          (32+6)
 #           define SIG_THR_RESTART      (32+5)
             extern int _end[];
-#           define DATAEND (ptr_t)(_end)
+#           define DATAEND ((ptr_t)(_end))
 #       else
 #           define SIG_SUSPEND SIGUSR1
 #           define SIG_THR_RESTART SIGUSR2
@@ -1505,7 +1504,7 @@
 #   endif
 #   ifdef NEXT
 #       define OS_TYPE "NEXT"
-#       define DATASTART ((ptr_t) get_etext())
+#       define DATASTART ((ptr_t)get_etext())
 #       define DATASTART_IS_FUNC
 #       define STACKBOTTOM ((ptr_t)0xc0000000)
 #       define DATAEND  /* not needed */
@@ -1533,10 +1532,10 @@
       /* Make sure startup code variables always have the same names.   */
       #pragma aux __nullarea "*";
       #pragma aux _end "*";
-#     define STACKBOTTOM ((ptr_t) _STACKTOP)
+#     define STACKBOTTOM ((ptr_t)_STACKTOP)
                          /* confused? me too. */
-#     define DATASTART ((ptr_t) &__nullarea)
-#     define DATAEND ((ptr_t) &_end)
+#     define DATASTART ((ptr_t)(&__nullarea))
+#     define DATAEND ((ptr_t)(&_end))
 #   endif
 #   ifdef HURD
 #     define OS_TYPE "HURD"
@@ -1546,7 +1545,7 @@
 #     define SIG_THR_RESTART SIGUSR2
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
-#     define DATAEND ((ptr_t) (_end))
+#     define DATAEND ((ptr_t)(_end))
 /* #     define MPROTECT_VDB  Not quite working yet? */
 #     define DYNAMIC_LOADING
 #   endif
@@ -1558,9 +1557,9 @@
 #     endif
       /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
       /* These aren't used when dyld support is enabled (it is by default). */
-#     define DATASTART ((ptr_t) get_etext())
-#     define DATAEND   ((ptr_t) get_end())
-#     define STACKBOTTOM ((ptr_t) 0xc0000000)
+#     define DATASTART ((ptr_t)get_etext())
+#     define DATAEND   ((ptr_t)get_end())
+#     define STACKBOTTOM ((ptr_t)0xc0000000)
 #     ifndef USE_MMAP
 #       define USE_MMAP
 #     endif
@@ -1587,7 +1586,7 @@
                               /* word in crt0.o, and delimits the start */
                               /* of the data segment, no matter which   */
                               /* ld options were passed through.        */
-#   define STACKBOTTOM ((ptr_t) 0xfffff000) /* for Encore */
+#   define STACKBOTTOM ((ptr_t)0xfffff000) /* for Encore */
 # endif
 
 # ifdef MIPS
@@ -1596,10 +1595,10 @@
 #     define OS_TYPE "LINUX"
 #     define DYNAMIC_LOADING
       extern int _end[];
-#     define DATAEND (ptr_t)(_end)
 #     pragma weak __data_start
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
+#     define DATAEND ((ptr_t)(_end))
 #     ifdef _MIPS_SZPTR
 #       define CPP_WORDSZ _MIPS_SZPTR
 #       define ALIGNMENT (_MIPS_SZPTR/8)
@@ -1626,20 +1625,20 @@
 #      else
          extern int etext[], edata[], end[];
          extern int _DYNAMIC_LINKING[], _gp[];
-#        define DATASTART ((ptr_t)((((word)etext + 0x3ffff) & ~0x3ffff) \
-               + ((word)etext & 0xffff)))
-#        define DATAEND (ptr_t)(edata)
+#        define DATASTART ((ptr_t)((((word)(etext) + 0x3ffff) & ~0x3ffff) \
+                                   + ((word)(etext) & 0xffff)))
+#        define DATAEND ((ptr_t)(edata))
 #        define DATASTART2 (_DYNAMIC_LINKING \
                ? (ptr_t)(((word)_gp + 0x8000 + 0x3ffff) & ~0x3ffff) \
                : (ptr_t)edata)
-#        define DATAEND2 (ptr_t)(end)
+#        define DATAEND2 ((ptr_t)(end))
 #        define ALIGNMENT 4
 #      endif
 #      define OS_TYPE "EWS4800"
 #   endif
 #   ifdef ULTRIX
 #       define HEURISTIC2
-#       define DATASTART (ptr_t)0x10000000
+#       define DATASTART ((ptr_t)0x10000000)
                               /* Could probably be slightly higher since */
                               /* startup code allocates lots of stuff.   */
 #       define OS_TYPE "ULTRIX"
@@ -1685,8 +1684,8 @@
 #       define NEED_FIND_LIMIT
 #       define DYNAMIC_LOADING
 #     else
-#       define DATASTART ((ptr_t) 0x10000000)
-#       define STACKBOTTOM ((ptr_t) 0x7ffff000)
+#       define DATASTART ((ptr_t)0x10000000)
+#       define STACKBOTTOM ((ptr_t)0x7ffff000)
 #     endif /* _ELF_ */
 #  endif
 #  ifdef OPENBSD
@@ -1695,7 +1694,7 @@
 #     ifndef GC_OPENBSD_THREADS
 #      include <sys/param.h>
 #      include <uvm/uvm_extern.h>
-#      define STACKBOTTOM ((ptr_t) USRSTACK)
+#      define STACKBOTTOM ((ptr_t)USRSTACK)
 #    endif
      extern int _fdata[];
 #    define DATASTART ((ptr_t)_fdata)
@@ -1723,10 +1722,10 @@
 #    define CPP_WORDSZ 32
 #    define OS_TYPE "NONSTOP"
 #    define ALIGNMENT 4
-#    define DATASTART ((ptr_t) 0x08000000)
+#    define DATASTART ((ptr_t)0x08000000)
      extern char **environ;
 #    define DATAEND ((ptr_t)(environ - 0x10))
-#    define STACKBOTTOM ((ptr_t) 0x4fffffff)
+#    define STACKBOTTOM ((ptr_t)0x4fffffff)
 #   endif
 # endif
 
@@ -1737,9 +1736,9 @@
 #     define OS_TYPE "LINUX"
 #     define DYNAMIC_LOADING
       extern int _end[];
-#     define DATAEND (ptr_t)(_end)
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
+#     define DATAEND ((ptr_t)(_end))
 #     define ALIGNMENT 4
 #     ifndef HBLKSIZE
 #       define HBLKSIZE 4096
@@ -1774,7 +1773,7 @@
         /* default, since it may not work on older machine/OS           */
         /* combinations. (Thanks to Raymond X.T. Nijssen for uncovering */
         /* this.)                                                       */
-#       define STACKBOTTOM ((ptr_t) 0x7b033000)  /* from /etc/conf/h/param.h */
+#       define STACKBOTTOM ((ptr_t)0x7b033000) /* from /etc/conf/h/param.h */
 #     else
         /* Gustavo Rodriguez-Rivera suggested changing HEURISTIC2       */
         /* to this.  Note that the GC must be initialized before the    */
@@ -1798,14 +1797,14 @@
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
-#     define DATAEND (ptr_t)(&_end)
+#     define DATAEND ((ptr_t)(&_end))
 #   endif /* LINUX */
 #  ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       define STACKBOTTOM ((ptr_t) USRSTACK)
+#       define STACKBOTTOM ((ptr_t)USRSTACK)
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -1835,7 +1834,7 @@
 #       ifndef GC_OPENBSD_THREADS
 #         include <sys/param.h>
 #         include <uvm/uvm_extern.h>
-#         define STACKBOTTOM ((ptr_t) USRSTACK)
+#         define STACKBOTTOM ((ptr_t)USRSTACK)
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
@@ -1860,16 +1859,16 @@
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
         ptr_t GC_find_limit(ptr_t, GC_bool);
-#       define DATAEND (GC_find_limit (DATASTART, TRUE))
+#       define DATAEND GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
 #       define DATASTART2 ((ptr_t)(&edata))
 #       define DATAEND2 ((ptr_t)(&end))
 #   endif
 #   ifdef OSF1
 #       define OS_TYPE "OSF1"
-#       define DATASTART ((ptr_t) 0x140000000)
+#       define DATASTART ((ptr_t)0x140000000)
         extern int _end[];
-#       define DATAEND ((ptr_t) &_end)
+#       define DATAEND ((ptr_t)(&_end))
         extern char ** environ;
         /* round up from the value of environ to the nearest page boundary */
         /* Probably breaks if putenv is called before collector            */
@@ -1895,10 +1894,10 @@
 #         define SEARCH_FOR_DATA_START
 #         define DYNAMIC_LOADING
 #       else
-#           define DATASTART ((ptr_t) 0x140000000)
+#           define DATASTART ((ptr_t)0x140000000)
 #       endif
         extern int _end[];
-#       define DATAEND (ptr_t)(_end)
+#       define DATAEND ((ptr_t)(_end))
 #       define MPROTECT_VDB
                 /* Has only been superficially tested.  May not */
                 /* work on all versions.                        */
@@ -1965,7 +1964,7 @@
 #       define MPROTECT_VDB
                 /* Requires Linux 2.3.47 or later.      */
         extern int _end[];
-#       define DATAEND (ptr_t)(_end)
+#       define DATAEND ((ptr_t)(_end))
 #       ifdef __GNUC__
 #         ifndef __INTEL_COMPILER
 #           define PREFETCH(x) \
@@ -2038,7 +2037,7 @@
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x10000, (ptr_t)_etext)
 #       define DATASTART_IS_FUNC
-#       define DATAEND (ptr_t)(_end)
+#       define DATAEND ((ptr_t)(_end))
 #       define HEURISTIC2
 #   endif
 # endif
@@ -2062,7 +2061,7 @@
         extern int __data_start[] __attribute__((__weak__));
 #       define DATASTART ((ptr_t)(__data_start))
         extern int _end[] __attribute__((__weak__));
-#       define DATAEND (ptr_t)(_end)
+#       define DATAEND ((ptr_t)(_end))
 #       define CACHE_LINE_SIZE 256
 #       define GETPAGESIZE() 4096
 #   endif
@@ -2085,8 +2084,8 @@
 #     define LINUX_STACKBOTTOM
 #     define DYNAMIC_LOADING
       extern int __data_start[];
-#     define DATASTART ((ptr_t)__data_start)
       extern int _end[];
+#     define DATASTART ((ptr_t)__data_start)
 #     define DATAEND ((ptr_t)(&_end))
 #   endif
 #   ifdef DARWIN
@@ -2096,9 +2095,9 @@
 #     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
 #       define DYNAMIC_LOADING
 #     endif
-#     define DATASTART ((ptr_t) get_etext())
-#     define DATAEND   ((ptr_t) get_end())
-#     define STACKBOTTOM ((ptr_t) 0x16fdfffff)
+#     define DATASTART ((ptr_t)get_etext())
+#     define DATAEND   ((ptr_t)get_end())
+#     define STACKBOTTOM ((ptr_t)0x16fdfffff)
 #     ifndef USE_MMAP
 #       define USE_MMAP
 #     endif
@@ -2179,10 +2178,10 @@
                               /* that we'd rather not scan.             */
 #            endif
              extern int _end[];
-#            define DATAEND (ptr_t)(_end)
+#            define DATAEND ((ptr_t)(_end))
 #       else
              extern int etext[];
-#            define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
+#            define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #       endif
 #   endif
 #   ifdef MSWINCE
@@ -2212,9 +2211,9 @@
 #     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
 #       define DYNAMIC_LOADING
 #     endif
-#     define DATASTART ((ptr_t) get_etext())
-#     define DATAEND   ((ptr_t) get_end())
-#     define STACKBOTTOM ((ptr_t) 0x30000000)
+#     define DATASTART ((ptr_t)get_etext())
+#     define DATAEND   ((ptr_t)get_end())
+#     define STACKBOTTOM ((ptr_t)0x30000000)
 #     ifndef USE_MMAP
 #       define USE_MMAP
 #     endif
@@ -2235,7 +2234,7 @@
 #     ifndef GC_OPENBSD_THREADS
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       define STACKBOTTOM ((ptr_t) USRSTACK)
+#       define STACKBOTTOM ((ptr_t)USRSTACK)
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -2246,10 +2245,10 @@
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.  */
       extern int __data_start[];
-#     define DATASTART (ptr_t)(__data_start)
+#     define DATASTART ((ptr_t)(__data_start))
       /* __stack_base__ is set in newlib/libc/sys/arm/crt0.S  */
       extern void *__stack_base__;
-#     define STACKBOTTOM ((ptr_t) (__stack_base__))
+#     define STACKBOTTOM ((ptr_t)(__stack_base__))
 #   endif
 #endif
 
@@ -2262,7 +2261,7 @@
 #   define LINUX_STACKBOTTOM
 #   define SEARCH_FOR_DATA_START
       extern int _end[];
-#   define DATAEND (ptr_t)(_end)
+#   define DATAEND ((ptr_t)(_end))
 # endif
 
 # if defined(SH) && !defined(SH4)
@@ -2278,7 +2277,7 @@
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
-#     define DATAEND (ptr_t)(_end)
+#     define DATAEND ((ptr_t)(_end))
 #   endif
 #   ifdef NETBSD
 #      define OS_TYPE "NETBSD"
@@ -2292,7 +2291,7 @@
 #      ifndef GC_OPENBSD_THREADS
 #        include <sys/param.h>
 #        include <uvm/uvm_extern.h>
-#        define STACKBOTTOM ((ptr_t) USRSTACK)
+#        define STACKBOTTOM ((ptr_t)USRSTACK)
 #      endif
        extern int __data_start[];
 #      define DATASTART ((ptr_t)__data_start)
@@ -2333,7 +2332,7 @@
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
-#     define DATAEND (ptr_t)(_end)
+#     define DATAEND ((ptr_t)(_end))
 #   endif
 # endif
 
@@ -2356,11 +2355,11 @@
 #       ifndef GC_OPENBSD_THREADS
 #         include <sys/param.h>
 #         include <uvm/uvm_extern.h>
-#         define STACKBOTTOM ((ptr_t) USRSTACK)
+#         define STACKBOTTOM ((ptr_t)USRSTACK)
 #       endif
         extern int __data_start[];
-#       define DATASTART ((ptr_t)__data_start)
         extern int _end[];
+#       define DATASTART ((ptr_t)__data_start)
 #       define DATAEND ((ptr_t)(&_end))
 #       define DYNAMIC_LOADING
 #   endif
@@ -2378,15 +2377,15 @@
 #            define DYNAMIC_LOADING
 #            ifdef UNDEFINED    /* includes ro data */
                extern int _etext[];
-#              define DATASTART ((ptr_t)((((word) (_etext)) + 0xfff) & ~0xfff))
+#              define DATASTART ((ptr_t)((((word)(_etext)) + 0xfff) & ~0xfff))
 #            endif
 #            include <features.h>
 #            define SEARCH_FOR_DATA_START
              extern int _end[];
-#            define DATAEND (ptr_t)(_end)
+#            define DATAEND ((ptr_t)(_end))
 #       else
              extern int etext[];
-#            define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
+#            define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #       endif
 #       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* At present, there's a bug in GLibc getcontext() on         */
@@ -2409,9 +2408,9 @@
 #     endif
       /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
       /* These aren't used when dyld support is enabled (it is by default)  */
-#     define DATASTART ((ptr_t) get_etext())
-#     define DATAEND   ((ptr_t) get_end())
-#     define STACKBOTTOM ((ptr_t) 0x7fff5fc00000)
+#     define DATASTART ((ptr_t)get_etext())
+#     define DATAEND   ((ptr_t)get_end())
+#     define STACKBOTTOM ((ptr_t)0x7fff5fc00000)
 #     ifndef USE_MMAP
 #       define USE_MMAP
 #     endif
@@ -2436,7 +2435,7 @@
 #           define SIG_SUSPEND          (32+6)
 #           define SIG_THR_RESTART      (32+5)
             extern int _end[];
-#           define DATAEND (ptr_t)(_end)
+#           define DATAEND ((ptr_t)(_end))
 #       else
 #           define SIG_SUSPEND SIGUSR1
 #           define SIG_THR_RESTART SIGUSR2
@@ -2468,7 +2467,7 @@
         ptr_t GC_SysVGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
 #       define DATASTART_IS_FUNC
-#       define DATAEND (ptr_t)(_end)
+#       define DATAEND ((ptr_t)(_end))
 /*      # define STACKBOTTOM ((ptr_t)(_start)) worked through 2.7,      */
 /*      but reportedly breaks under 2.8.  It appears that the stack     */
 /*      base is a property of the executable, so this should not break  */
@@ -2480,7 +2479,7 @@
 #       include <sys/vmparam.h>
 #       ifdef USERLIMIT
           /* This should work everywhere, but doesn't.  */
-#         define STACKBOTTOM ((ptr_t) USRSTACK)
+#         define STACKBOTTOM ((ptr_t)USRSTACK)
 #       else
 #         define HEURISTIC2
 #       endif
@@ -2537,7 +2536,7 @@
 #                error --> unknown Hexagon libc configuration
 #            endif
              extern int _end[];
-#            define DATAEND (ptr_t)(_end)
+#            define DATAEND ((ptr_t)(_end))
 #       else
 #            error --> bad Hexagon Linux configuration
 #       endif
@@ -2608,7 +2607,7 @@
 
 #ifndef DATAEND
   extern int end[];
-# define DATAEND (ptr_t)(end)
+# define DATAEND ((ptr_t)(end))
 #endif
 
 #if defined(PLATFORM_ANDROID) && !defined(THREADS) \
