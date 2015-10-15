@@ -314,11 +314,11 @@ STATIC word GC_register_map_entries(char *maps)
 
       /* Evaluate DATASTART only once.  */
       if (datastart_cached == (ptr_t)(word)-1) {
-        datastart_cached = (ptr_t)(DATASTART);
+        datastart_cached = DATASTART;
       }
       datastart = datastart_cached;
 #   else
-      datastart = (ptr_t)(DATASTART);
+      datastart = DATASTART;
 #   endif
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -606,7 +606,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 
         /* Evaluate DATASTART only once.  */
         if (datastart_cached == (ptr_t)(word)-1) {
-          datastart_cached = (ptr_t)(DATASTART);
+          datastart_cached = DATASTART;
         }
         datastart = (char *)datastart_cached;
 #     else
@@ -617,7 +617,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
           static ptr_t dataend_cached = 0;
           /* Evaluate DATAEND only once. */
           if (dataend_cached == 0) {
-            dataend_cached = (ptr_t)(DATAEND);
+            dataend_cached = DATAEND;
           }
           dataend = (char *)dataend_cached;
         }
@@ -629,7 +629,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
       /* statically linked executables.                         */
       GC_add_roots_inner(datastart, dataend, TRUE);
 #     if defined(DATASTART2)
-        GC_add_roots_inner(DATASTART2, (char *)(DATAEND2), TRUE);
+        GC_add_roots_inner(DATASTART2, DATAEND2, TRUE);
 #     endif
   }
   return TRUE;

@@ -1839,7 +1839,7 @@ void GC_register_data_segments(void)
         /* string constants in the text segment, but after etext.       */
         /* Use plan B.  Note that we now know there is a gap between    */
         /* text and data segments, so plan A bought us something.       */
-        result = (char *)GC_find_limit((ptr_t)(DATAEND), FALSE);
+        result = (char *)GC_find_limit(DATAEND, FALSE);
     }
     return((ptr_t)result);
   }
@@ -1864,13 +1864,13 @@ void GC_register_data_segments(void)
     if (SETJMP(GC_jmp_buf) == 0) {
         /* Try reading at the address.                          */
         /* This should happen before there is another thread.   */
-        for (; next_page < (word)(DATAEND); next_page += (word)max_page_size)
+        for (; next_page < (word)DATAEND; next_page += (word)max_page_size)
             *(volatile char *)next_page;
         GC_reset_fault_handler();
     } else {
         GC_reset_fault_handler();
         /* As above, we go to plan B    */
-        result = GC_find_limit((ptr_t)(DATAEND), FALSE);
+        result = GC_find_limit(DATAEND, FALSE);
     }
     return(result);
   }
@@ -1895,7 +1895,7 @@ void GC_register_data_segments(void)
   for (;;) {
     region_end = GC_find_limit_openbsd(region_start, DATAEND);
     GC_add_roots_inner(region_start, region_end, FALSE);
-    if ((word)region_end >= (word)(DATAEND))
+    if ((word)region_end >= (word)DATAEND)
       break;
     region_start = GC_skip_hole_openbsd(region_end, DATAEND);
   }
@@ -1917,14 +1917,14 @@ void GC_register_data_segments(void)
         GC_ASSERT(DATASTART);
         {
           ptr_t p = (ptr_t)sbrk(0);
-          if ((word)(DATASTART) < (word)p)
+          if ((word)DATASTART < (word)p)
             GC_add_roots_inner(DATASTART, p, FALSE);
         }
 #     else
         GC_ASSERT(DATASTART);
-        GC_add_roots_inner(DATASTART, (ptr_t)(DATAEND), FALSE);
+        GC_add_roots_inner(DATASTART, DATAEND, FALSE);
 #       if defined(DATASTART2)
-          GC_add_roots_inner(DATASTART2, (ptr_t)(DATAEND2), FALSE);
+          GC_add_roots_inner(DATASTART2, DATAEND2, FALSE);
 #       endif
 #     endif
 #   endif

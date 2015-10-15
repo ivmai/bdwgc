@@ -64,7 +64,7 @@
      extern char etext[];
      extern int _end[];
 #    define DATASTART ((ptr_t)(etext))
-#    define DATAEND (_end)
+#    define DATAEND ((ptr_t)(_end))
 #    define mach_type_known
 # endif
 
@@ -1043,7 +1043,7 @@
 #     define ALIGNMENT 4
 #     define OS_TYPE "NOSYS"
       extern void __end[], __dso_handle[];
-#     define DATASTART (__dso_handle)  /* OK, that's ugly.  */
+#     define DATASTART ((ptr_t)__dso_handle) /* OK, that's ugly.    */
 #     define DATAEND ((ptr_t)(__end))
         /* Stack starts at 0xE0000000 for the simulator.  */
 #     undef STACK_GRAN
@@ -2013,7 +2013,8 @@
     extern int etext[];
 #   ifdef CX_UX
 #       define OS_TYPE "CX_UX"
-#       define DATASTART ((((word)etext + 0x3fffff) & ~0x3fffff) + 0x10000)
+#       define DATASTART ((ptr_t)((((word)(etext) + 0x3fffff) & ~0x3fffff) \
+                                  + 0x10000))
 #   endif
 #   ifdef  DGUX
 #       define OS_TYPE "DGUX"
@@ -2317,7 +2318,7 @@
 #   define LINUX_STACKBOTTOM
 #   define SEARCH_FOR_DATA_START
     extern int _end[];
-#   define DATAEND (_end)
+#   define DATAEND ((ptr_t)(_end))
 # endif
 
 # ifdef M32R
