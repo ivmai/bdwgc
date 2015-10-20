@@ -1721,7 +1721,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       GC_marker_Id[(word)id] = GetCurrentThreadId();
 #   endif
 
-    /* Inform start_mark_threads() about completion of marker data init. */
+    /* Inform GC_start_mark_threads about completion of marker data init. */
     GC_acquire_mark_lock();
     if (0 == --GC_fl_builder_count)
       GC_notify_all_builder();
@@ -1760,28 +1760,28 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       /* Id not guaranteed to be unique. */
 #   endif
 
-    /* start_mark_threads is the same as in pthread_support.c except    */
+    /* GC_start_mark_threads is the same as in pthread_support.c except */
     /* for thread stack that is assumed to be large enough.             */
 #   ifdef CAN_HANDLE_FORK
       static int available_markers_m1 = 0;
-#     define start_mark_threads GC_start_mark_threads
       GC_API void GC_CALL
 #   else
-      static void
+      GC_INNER void
 #   endif
-    start_mark_threads(void)
+      GC_start_mark_threads_inner(void)
     {
       int i;
       pthread_attr_t attr;
       pthread_t new_thread;
 
       GC_ASSERT(I_DONT_HOLD_LOCK());
-      GC_ASSERT(GC_fl_builder_count == 0);
-#     ifdef CAN_HANDLE_FORK
-        if (available_markers_m1 <= 0 || GC_parallel) return;
+      if (available_markers_m1 <= 0) return;
                 /* Skip if parallel markers disabled or already started. */
+#     ifdef CAN_HANDLE_FORK
+        if (GC_parallel) return;
 #     endif
 
+      GC_ASSERT(GC_fl_builder_count == 0);
       if (0 != pthread_attr_init(&attr)) ABORT("pthread_attr_init failed");
       if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
         ABORT("pthread_attr_setdetachstate failed");
@@ -1910,7 +1910,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     static HANDLE builder_cv = (HANDLE)0; /* Event with manual reset.       */
     static HANDLE mark_cv = (HANDLE)0; /* Event with manual reset.          */
 
-    static void start_mark_threads(void)
+    GC_INNER void GC_start_mark_threads_inner(void)
     {
       int i;
 #     ifdef MSWINCE
@@ -1920,6 +1920,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         GC_uintptr_t handle;
         unsigned thread_id;
 #     endif
+
+      GC_ASSERT(I_DONT_HOLD_LOCK());
+      if (available_markers_m1 <= 0) return;
 
       GC_ASSERT(GC_fl_builder_count == 0);
       /* Initialize GC_marker_cv[] fully before starting the    */
@@ -2342,7 +2345,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
 #endif /* GC_WINMAIN_REDIRECT */
 
-/* Called by GC_init() - we hold the allocation lock.   */
 GC_INNER void GC_thr_init(void)
 {
   struct GC_stack_base sb;
@@ -2454,16 +2456,6 @@ GC_INNER void GC_thr_init(void)
 
   GC_ASSERT(0 == GC_lookup_thread_inner(GC_main_thread));
   GC_register_my_thread_inner(&sb, GC_main_thread);
-
-# ifdef PARALLEL_MARK
-#   ifndef CAN_HANDLE_FORK
-      if (GC_parallel)
-#   endif
-    {
-      /* If we are using a parallel marker, actually start helper threads. */
-      start_mark_threads();
-    }
-# endif
 }
 
 #ifdef GC_PTHREADS

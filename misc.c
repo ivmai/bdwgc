@@ -1258,7 +1258,17 @@ GC_API void GC_CALL GC_init(void)
 #   endif
     GC_is_initialized = TRUE;
 #   if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
-        GC_thr_init();
+#       if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+          LOCK(); /* just to set GC_lock_holder */
+          GC_thr_init();
+          UNLOCK();
+#       else
+          GC_thr_init();
+#       endif
+#       ifdef PARALLEL_MARK
+          /* Actually start helper threads.     */
+          GC_start_mark_threads_inner();
+#       endif
 #   endif
     COND_DUMP;
     /* Get black list set up and/or incremental GC started */

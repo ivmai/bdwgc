@@ -2418,6 +2418,12 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
               /* my_mark_no.  Returns if the mark cycle finishes or     */
               /* was already done, or there was nothing to do for       */
               /* some other reason.                                     */
+
+# ifdef CAN_HANDLE_FORK
+#   define GC_start_mark_threads_inner GC_start_mark_threads
+# else
+    GC_INNER void GC_start_mark_threads_inner(void);
+# endif
 #endif /* PARALLEL_MARK */
 
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) && !defined(NACL) \

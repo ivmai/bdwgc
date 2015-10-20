@@ -372,7 +372,7 @@ STATIC void * GC_mark_thread(void * id)
     marker_mach_threads[(word)id] = mach_thread_self();
 # endif
 
-  /* Inform start_mark_threads() about completion of marker data init.  */
+  /* Inform GC_start_mark_threads about completion of marker data init. */
   GC_acquire_mark_lock();
   if (0 == --GC_fl_builder_count)
     GC_notify_all_builder();
@@ -402,26 +402,25 @@ STATIC pthread_t GC_mark_threads[MAX_MARKERS];
 
 #ifdef CAN_HANDLE_FORK
   static int available_markers_m1 = 0;
-# define start_mark_threads GC_start_mark_threads
   GC_API void GC_CALL
 #else
 # define available_markers_m1 GC_markers_m1
-  static void
+  GC_INNER void
 #endif
-start_mark_threads(void)
+  GC_start_mark_threads_inner(void)
 {
     int i;
     pthread_attr_t attr;
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
-    GC_ASSERT(GC_fl_builder_count == 0);
-#   ifdef CAN_HANDLE_FORK
-      if (available_markers_m1 <= 0 || GC_parallel) return;
+    if (available_markers_m1 <= 0) return;
                 /* Skip if parallel markers disabled or already started. */
+#   ifdef CAN_HANDLE_FORK
+      if (GC_parallel) return;
 #   endif
 
+    GC_ASSERT(GC_fl_builder_count == 0);
     INIT_REAL_SYMS(); /* for pthread_create */
-
     if (0 != pthread_attr_init(&attr)) ABORT("pthread_attr_init failed");
     if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
         ABORT("pthread_attr_setdetachstate failed");
@@ -1072,9 +1071,9 @@ static void fork_child_proc(void)
   static void setup_mark_lock(void);
 #endif
 
-/* We hold the allocation lock. */
 GC_INNER void GC_thr_init(void)
 {
+  GC_ASSERT(I_HOLD_LOCK());
   if (GC_thr_initialized) return;
   GC_thr_initialized = TRUE;
 
@@ -1193,8 +1192,6 @@ GC_INNER void GC_thr_init(void)
       /* Disable true incremental collection, but generational is OK.   */
       GC_time_limit = GC_TIME_UNLIMITED;
       setup_mark_lock();
-      /* If we are using a parallel marker, actually start helper threads. */
-      start_mark_threads();
     }
 # endif
 }
