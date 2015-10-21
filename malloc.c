@@ -48,7 +48,12 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
     GC_ASSERT(I_HOLD_LOCK());
     lb = ROUNDUP_GRANULE_SIZE(lb);
     n_blocks = OBJ_SZ_TO_BLOCKS(lb);
-    if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
+    if (!EXPECT(GC_is_initialized, TRUE)) {
+      DCL_LOCK_STATE;
+      UNLOCK(); /* just to unset GC_lock_holder */
+      GC_init();
+      LOCK();
+    }
     /* Do our share of marking work */
         if (GC_incremental && !GC_dont_gc)
             GC_collect_a_little_inner((int)n_blocks);
@@ -113,7 +118,10 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
         if (EXPECT(0 == op, FALSE)) {
           if (lg == 0) {
             if (!EXPECT(GC_is_initialized, TRUE)) {
+              DCL_LOCK_STATE;
+              UNLOCK(); /* just to unset GC_lock_holder */
               GC_init();
+              LOCK();
               lg = GC_size_map[lb];
             }
             if (0 == lg) {

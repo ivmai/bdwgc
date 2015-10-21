@@ -1259,6 +1259,7 @@ GC_API void GC_CALL GC_init(void)
     GC_is_initialized = TRUE;
 #   if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
 #       if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+          DCL_LOCK_STATE;
           LOCK(); /* just to set GC_lock_holder */
           GC_thr_init();
           UNLOCK();
@@ -1272,7 +1273,15 @@ GC_API void GC_CALL GC_init(void)
 #   endif
     COND_DUMP;
     /* Get black list set up and/or incremental GC started */
-      if (!GC_dont_precollect || GC_incremental) GC_gcollect_inner();
+      if (!GC_dont_precollect || GC_incremental) {
+#       if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+          LOCK();
+          GC_gcollect_inner();
+          UNLOCK();
+#       else
+          GC_gcollect_inner();
+#       endif
+      }
 #   ifdef STUBBORN_ALLOC
         GC_stubborn_init();
 #   endif
@@ -1318,7 +1327,9 @@ GC_API void GC_CALL GC_enable_incremental(void)
         maybe_install_looping_handler(); /* Before write fault handler! */
         GC_incremental = TRUE;
         if (!GC_is_initialized) {
+          UNLOCK();
           GC_init();
+          LOCK();
         } else {
           GC_dirty_init();
         }

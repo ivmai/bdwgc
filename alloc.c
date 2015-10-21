@@ -1303,8 +1303,8 @@ GC_API int GC_CALL GC_expand_hp(size_t bytes)
     int result;
     DCL_LOCK_STATE;
 
-    LOCK();
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
+    LOCK();
     result = (int)GC_expand_hp_inner(divHBLKSZ((word)bytes));
     if (result) GC_requested_heapsize += bytes;
     UNLOCK();
