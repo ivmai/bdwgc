@@ -103,10 +103,13 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
     word old_size = ((log_old_size == -1)? 0: (1 << log_old_size));
     word new_size = (word)1 << log_new_size;
     /* FIXME: Power of 2 size often gets rounded up to one more page. */
-    struct hash_chain_entry **new_table = (struct hash_chain_entry **)
-        GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
-                (size_t)new_size * sizeof(struct hash_chain_entry *), NORMAL);
+    struct hash_chain_entry **new_table;
 
+    GC_ASSERT(I_HOLD_LOCK());
+    new_table = (struct hash_chain_entry **)
+                    GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
+                        (size_t)new_size * sizeof(struct hash_chain_entry *),
+                        NORMAL);
     if (new_table == 0) {
         if (*table == 0) {
             ABORT("Insufficient space for initial table allocation");

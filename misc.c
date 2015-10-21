@@ -1810,9 +1810,11 @@ GC_API int GC_CALL GC_is_disabled(void)
 /* Helper procedures for new kind creation.     */
 GC_API void ** GC_CALL GC_new_free_list_inner(void)
 {
-    void *result = GC_INTERNAL_MALLOC((MAXOBJGRANULES+1)*sizeof(ptr_t),
-                                      PTRFREE);
-    if (result == 0) ABORT("Failed to allocate freelist for new kind");
+    void *result;
+
+    GC_ASSERT(I_HOLD_LOCK());
+    result = GC_INTERNAL_MALLOC((MAXOBJGRANULES+1) * sizeof(ptr_t), PTRFREE);
+    if (NULL == result) ABORT("Failed to allocate freelist for new kind");
     BZERO(result, (MAXOBJGRANULES+1)*sizeof(ptr_t));
     return result;
 }

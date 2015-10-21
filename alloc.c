@@ -428,11 +428,9 @@ GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void)
     return fn;
 }
 
-/*
- * Stop the world garbage collection.  Assumes lock held. If stop_func is
- * not GC_never_stop_func then abort if stop_func returns TRUE.
- * Return TRUE if we successfully completed the collection.
- */
+/* Stop the world garbage collection.  If stop_func is not      */
+/* GC_never_stop_func then abort if stop_func returns TRUE.     */
+/* Return TRUE if we successfully completed the collection.     */
 GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 {
 #   ifndef SMALL_CONFIG
@@ -440,6 +438,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
       CLOCK_TYPE current_time;
 #   endif
     ASSERT_CANCEL_DISABLED();
+    GC_ASSERT(I_HOLD_LOCK());
     if (GC_dont_gc || (*stop_func)()) return FALSE;
     if (GC_on_collection_event)
       GC_on_collection_event(GC_EVENT_START);

@@ -37,7 +37,6 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
 /* Allocate a large block of size lb bytes.     */
 /* The block is not cleared.                    */
 /* Flags is 0 or IGNORE_OFF_PAGE.               */
-/* We hold the allocation lock.                 */
 /* EXTRA_BYTES were already added to lb.        */
 GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
 {
@@ -46,6 +45,7 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
     ptr_t result;
     GC_bool retry = FALSE;
 
+    GC_ASSERT(I_HOLD_LOCK());
     lb = ROUNDUP_GRANULE_SIZE(lb);
     n_blocks = OBJ_SZ_TO_BLOCKS(lb);
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
@@ -79,15 +79,16 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
 }
 
 /* Allocate a large block of size lb bytes.  Clear if appropriate.      */
-/* We hold the allocation lock.                                         */
 /* EXTRA_BYTES were already added to lb.                                */
 STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
 {
-    ptr_t result = GC_alloc_large(lb, k, flags);
+    ptr_t result;
     word n_blocks = OBJ_SZ_TO_BLOCKS(lb);
 
-    if (0 == result) return 0;
-    if (GC_debugging_started || GC_obj_kinds[k].ok_init) {
+    GC_ASSERT(I_HOLD_LOCK());
+    result = GC_alloc_large(lb, k, flags);
+    if (result != NULL
+          && (GC_debugging_started || GC_obj_kinds[k].ok_init)) {
         /* Clear the whole block, in case of GC_realloc call. */
         BZERO(result, n_blocks * HBLKSIZE);
     }
@@ -98,12 +99,11 @@ STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
 /* Should not be used to directly to allocate   */
 /* objects such as STUBBORN objects that        */
 /* require special handling on allocation.      */
-/* First a version that assumes we already      */
-/* hold lock:                                   */
 GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 {
     void *op;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if(SMALL_OBJ(lb)) {
         struct obj_kind * kind = GC_obj_kinds + k;
         size_t lg = GC_size_map[lb];
@@ -146,13 +146,13 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 }
 
 /* Allocate a composite object of size n bytes.  The caller guarantees  */
-/* that pointers past the first page are not relevant.  Caller holds    */
-/* allocation lock.                                                     */
+/* that pointers past the first page are not relevant.                  */
 GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
 {
     word lb_adjusted;
     void * op;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (lb <= HBLKSIZE)
         return(GC_generic_malloc_inner(lb, k));
     lb_adjusted = ADD_SLOP(lb);
