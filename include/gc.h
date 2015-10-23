@@ -1747,23 +1747,29 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND)
 #elif (defined(PLATFORM_ANDROID) || defined(__ANDROID__)) \
       && !defined(GC_NOT_DLL)
-# pragma weak __data_start
-  extern int __data_start[], _end[];
 # pragma weak _etext
+# pragma weak __data_start
 # pragma weak __dso_handle
-  extern int _etext[], __dso_handle[];
-  /* Explicitly register caller static data roots (__data_start points  */
-  /* to the beginning typically but NDK "gold" linker could provide it  */
-  /* incorrectly, so the workaround is to check the value and use       */
-  /* __dso_handle as an alternative data start reference if provided).  */
-  /* It also works for Android/x86 target where __data_start is not     */
-  /* defined currently (regardless of linker used).                     */
+  extern int _etext[], __data_start[], __dso_handle[];
+# pragma weak __end__
+  extern int __end__[], _end[];
+  /* Explicitly register caller static data roots.  Workaround for      */
+  /* __data_start: NDK "gold" linker might miss it or place it          */
+  /* incorrectly, __dso_handle is an alternative data start reference.  */
+  /* Workaround for _end: NDK Clang 3.5+ does not place it at correct   */
+  /* offset (as of NDK r10e) but "bfd" linker provides __end__ symbol   */
+  /* that could be used instead.                                        */
 # define GC_INIT_CONF_ROOTS \
                 (void)((GC_word)__data_start < (GC_word)_etext \
-                        && (GC_word)_etext < (GC_word)__dso_handle ? \
-                            (GC_add_roots(__dso_handle, _end), 0) : \
-                       (GC_word)__data_start != 0 ? \
-                            (GC_add_roots(__data_start, _end), 0) : 0)
+                        && (GC_word)_etext < (GC_word)__dso_handle \
+                        ? (__end__ != 0 \
+                            ? (GC_add_roots(__dso_handle, __end__), 0) \
+                            : (GC_word)__dso_handle < (GC_word)_end \
+                            ? (GC_add_roots(__dso_handle, _end), 0) : 0) \
+                        : __data_start != 0 ? (__end__ != 0 \
+                            ? (GC_add_roots(__data_start, __end__), 0) \
+                            : (GC_word)__data_start < (GC_word)_end \
+                            ? (GC_add_roots(__data_start, _end), 0) : 0) : 0)
 #else
 # define GC_INIT_CONF_ROOTS /* empty */
 #endif

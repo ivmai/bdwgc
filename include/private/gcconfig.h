@@ -2611,6 +2611,16 @@
 # define DATAEND ((ptr_t)(end))
 #endif
 
+/* Workaround for Android NDK clang 3.5+ (as of NDK r10e) which does    */
+/* not provide correct _end symbol.  Unfortunately, alternate __end__   */
+/* symbol is provided only by NDK "bfd" linker.                         */
+#if defined(PLATFORM_ANDROID) && defined(__clang__)
+# undef DATAEND
+# pragma weak __end__
+  extern int __end__[];
+# define DATAEND (__end__ != 0 ? (ptr_t)__end__ : (ptr_t)_end)
+#endif
+
 #if defined(PLATFORM_ANDROID) && !defined(THREADS) \
     && !defined(USE_GET_STACKBASE_FOR_MAIN)
   /* Always use pthread_attr_getstack on Android ("-lpthread" option is  */

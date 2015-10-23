@@ -415,7 +415,6 @@ GC_INNER char * GC_get_maps(void)
       extern int _etext[], __dso_handle[];
 #   endif
 # endif /* LINUX */
-  extern int _end[];
 
   ptr_t GC_data_start = NULL;
 
@@ -423,10 +422,12 @@ GC_INNER char * GC_get_maps(void)
 
   GC_INNER void GC_init_linux_data_start(void)
   {
+    ptr_t data_end = DATAEND;
+
 #   if (defined(LINUX) || defined(HURD)) && !defined(IGNORE_PROG_DATA_START)
       /* Try the easy approaches first: */
 #     ifdef PLATFORM_ANDROID
-        /* Workaround for "gold" (default) linker (as of Android NDK r9b).      */
+        /* Workaround for "gold" (default) linker (as of Android NDK r10e). */
         if ((word)__data_start < (word)_etext
             && (word)_etext < (word)__dso_handle) {
           GC_data_start = (ptr_t)(__dso_handle);
@@ -434,18 +435,18 @@ GC_INNER char * GC_get_maps(void)
             GC_log_printf(
                 "__data_start is wrong; using __dso_handle as data start\n");
 #         endif
-          GC_ASSERT((word)GC_data_start <= (word)_end);
+          GC_ASSERT((word)GC_data_start <= (word)data_end);
           return;
         }
 #     endif
       if ((ptr_t)__data_start != 0) {
           GC_data_start = (ptr_t)(__data_start);
-          GC_ASSERT((word)GC_data_start <= (word)_end);
+          GC_ASSERT((word)GC_data_start <= (word)data_end);
           return;
       }
       if ((ptr_t)data_start != 0) {
           GC_data_start = (ptr_t)(data_start);
-          GC_ASSERT((word)GC_data_start <= (word)_end);
+          GC_ASSERT((word)GC_data_start <= (word)data_end);
           return;
       }
 #     ifdef DEBUG_ADD_DEL_ROOTS
@@ -456,11 +457,11 @@ GC_INNER char * GC_get_maps(void)
     if (GC_no_dls) {
       /* Not needed, avoids the SIGSEGV caused by       */
       /* GC_find_limit which complicates debugging.     */
-      GC_data_start = (ptr_t)_end; /* set data root size to 0 */
+      GC_data_start = data_end; /* set data root size to 0 */
       return;
     }
 
-    GC_data_start = GC_find_limit((ptr_t)(_end), FALSE);
+    GC_data_start = GC_find_limit(data_end, FALSE);
   }
 #endif /* SEARCH_FOR_DATA_START */
 
