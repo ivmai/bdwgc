@@ -506,17 +506,17 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 /* should match their format specifiers.                                */
 #define ABORT_ARG1(C_msg, C_fmt, arg1) \
                 do { \
-                  GC_COND_LOG_PRINTF(C_msg /* + */ C_fmt, arg1); \
+                  GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt, arg1); \
                   ABORT(C_msg); \
                 } while (0)
 #define ABORT_ARG2(C_msg, C_fmt, arg1, arg2) \
                 do { \
-                  GC_COND_LOG_PRINTF(C_msg /* + */ C_fmt, arg1, arg2); \
+                  GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt, arg1, arg2); \
                   ABORT(C_msg); \
                 } while (0)
 #define ABORT_ARG3(C_msg, C_fmt, arg1, arg2, arg3) \
                 do { \
-                  GC_COND_LOG_PRINTF(C_msg /* + */ C_fmt, arg1, arg2, arg3); \
+                  GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt, arg1, arg2, arg3); \
                   ABORT(C_msg); \
                 } while (0)
 
