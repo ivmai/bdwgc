@@ -624,11 +624,20 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 #     else
         dataend = DATAEND;
 #     endif
+      if (NULL == datastart || (word)datastart > (word)dataend)
+        ABORT_ARG2("Wrong DATASTART/END pair",
+                   ": %p .. %p", datastart, dataend);
 
       /* dl_iterate_phdr may forget the static data segment in  */
       /* statically linked executables.                         */
       GC_add_roots_inner(datastart, dataend, TRUE);
 #     if defined(DATASTART2)
+        if ((word)DATASTART2 - 1U >= (word)DATAEND2) {
+                        /* Subtract one to check also for NULL  */
+                        /* without a compiler warning.          */
+          ABORT_ARG2("Wrong DATASTART/END2 pair",
+                     ": %p .. %p", DATASTART2, DATAEND2);
+        }
         GC_add_roots_inner(DATASTART2, DATAEND2, TRUE);
 #     endif
   }

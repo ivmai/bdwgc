@@ -435,19 +435,18 @@ GC_INNER char * GC_get_maps(void)
             GC_log_printf(
                 "__data_start is wrong; using __dso_handle as data start\n");
 #         endif
-          GC_ASSERT((word)GC_data_start <= (word)data_end);
-          return;
-        }
+        } else
 #     endif
-      if ((ptr_t)__data_start != 0) {
-          GC_data_start = (ptr_t)(__data_start);
-          GC_ASSERT((word)GC_data_start <= (word)data_end);
-          return;
+      /* else */ if ((ptr_t)__data_start != 0) {
+        GC_data_start = (ptr_t)(__data_start);
+      } else {
+        GC_data_start = (ptr_t)(data_start);
       }
-      if ((ptr_t)data_start != 0) {
-          GC_data_start = (ptr_t)(data_start);
-          GC_ASSERT((word)GC_data_start <= (word)data_end);
-          return;
+      if (GC_data_start != NULL) {
+        if ((word)GC_data_start > (word)data_end)
+          ABORT_ARG2("Wrong __data_start/_end pair",
+                     ": %p .. %p", GC_data_start, data_end);
+        return;
       }
 #     ifdef DEBUG_ADD_DEL_ROOTS
         GC_log_printf("__data_start not provided\n");
@@ -1893,6 +1892,9 @@ void GC_register_data_segments(void)
   ptr_t region_start = DATASTART;
   ptr_t region_end;
 
+  if ((word)region_start - 1U >= (word)DATAEND)
+    ABORT_ARG2("Wrong DATASTART/END pair",
+               ": %p .. %p", region_start, DATAEND);
   for (;;) {
     region_end = GC_find_limit_openbsd(region_start, DATAEND);
     GC_add_roots_inner(region_start, region_end, FALSE);
@@ -1922,9 +1924,17 @@ void GC_register_data_segments(void)
             GC_add_roots_inner(DATASTART, p, FALSE);
         }
 #     else
-        GC_ASSERT(DATASTART);
+        if ((word)DATASTART - 1U >= (word)DATAEND) {
+                                /* Subtract one to check also for NULL  */
+                                /* without a compiler warning.          */
+          ABORT_ARG2("Wrong DATASTART/END pair",
+                     ": %p .. %p", DATASTART, DATAEND);
+        }
         GC_add_roots_inner(DATASTART, DATAEND, FALSE);
 #       if defined(DATASTART2)
+          if ((word)DATASTART2 - 1U >= (word)DATAEND2)
+            ABORT_ARG2("Wrong DATASTART/END2 pair",
+                       ": %p .. %p", DATASTART2, DATAEND2);
           GC_add_roots_inner(DATASTART2, DATAEND2, FALSE);
 #       endif
 #     endif
