@@ -403,6 +403,9 @@ PARALLEL_MARK   Allows the marker to run in multiple threads.  Recommended
 GC_ALWAYS_MULTITHREADED     Force multi-threaded mode at GC initialization.
   (Turns GC_allow_register_threads into a no-op routine.)
 
+GC_ENABLE_SUSPEND_THREAD (Linux only)   Turn on thread suspend/resume API
+support.
+
 GC_WINMAIN_REDIRECT (Win32 only)        Redirect (rename) an application
   WinMain to GC_WinMain; implement the "real" WinMain which starts a new
   thread to call GC_WinMain after initializing the GC.  Useful for WinCE.

@@ -33,6 +33,10 @@
 #ifndef GC_PTHREAD_REDIRECTS_ONLY
 # include <pthread.h>
 
+# ifndef GC_SUSPEND_THREAD_ID
+#   define GC_SUSPEND_THREAD_ID pthread_t
+# endif
+
 # ifndef GC_NO_DLOPEN
 #   include <dlfcn.h>
     GC_API void *GC_dlopen(const char * /* path */, int /* mode */);

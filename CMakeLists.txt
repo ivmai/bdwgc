@@ -203,6 +203,7 @@ ENDIF(CMAKE_USE_WIN32_THREADS_INIT)
 OPTION(enable_gcj_support "Support for gcj" NO)
 IF(enable_gcj_support)
         ADD_DEFINITIONS("-DGC_GCJ_SUPPORT")
+        ADD_DEFINITIONS("-DGC_ENABLE_SUSPEND_THREAD")
 ENDIF(enable_gcj_support)
 
 
