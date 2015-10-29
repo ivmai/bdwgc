@@ -46,7 +46,7 @@ typedef struct GC_Thread_Rep {
                                   /* guaranteed to be dead, but we may  */
                                   /* not yet have registered the join.) */
     pthread_t id;
-#   ifdef PLATFORM_ANDROID
+#   ifdef USE_TKILL_ON_ANDROID
       pid_t kernel_id;
 #   endif
     /* Extra bookkeeping information the stopping code uses */
