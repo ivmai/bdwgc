@@ -1397,6 +1397,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* latter case, the explicit call is normally required for threads    */
   /* created by third-party libraries.                                  */
   /* A manually registered thread requires manual unregistering.        */
+  /* Returns GC_SUCCESS on success, GC_DUPLICATE if already registered. */
   GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *)
                                                         GC_ATTR_NONNULL(1);
 
