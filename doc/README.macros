@@ -107,10 +107,6 @@ SUNOS5SIGS      Solaris-like signal handling.  This is probably misnamed,
 PCR     Set if the collector is being built as part of the Xerox Portable
   Common Runtime.
 
-USE_COMPILER_TLS  Assume the existence of __thread-style thread-local storage.
-  Set automatically for thread-local allocation with the HP/UX vendor
-  compiler.  Usable with gcc on sufficiently up-to-date ELF platforms.
-
 IMPORTANT: Any of the _THREADS options must normally also be defined in
   the client before including gc.h.  This redefines thread primitives to
   invoke the GC_ versions instead.  Alternatively, linker-based symbol
