@@ -162,13 +162,17 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p);
   GC_EXTERN ptr_t * GC_finalized_objfreelist;
 #endif
 
+#ifndef GC_ATTR_TLS_FAST
+# define GC_ATTR_TLS_FAST /* empty */
+#endif
+
 extern
 #if defined(USE_COMPILER_TLS)
-  __thread
+  __thread GC_ATTR_TLS_FAST
 #elif defined(USE_WIN32_COMPILER_TLS)
-  __declspec(thread)
+  __declspec(thread) GC_ATTR_TLS_FAST
 #endif
-GC_key_t GC_thread_key;
+  GC_key_t GC_thread_key;
 /* This is set up by the thread_local_alloc implementation.  No need    */
 /* for cleanup on thread exit.  But the thread support layer makes sure */
 /* that GC_thread_key is traced, if necessary.                          */

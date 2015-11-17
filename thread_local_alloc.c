@@ -24,9 +24,9 @@
 #include <stdlib.h>
 
 #if defined(USE_COMPILER_TLS)
-  __thread
+  __thread GC_ATTR_TLS_FAST
 #elif defined(USE_WIN32_COMPILER_TLS)
-  __declspec(thread)
+  __declspec(thread) GC_ATTR_TLS_FAST
 #endif
 GC_key_t GC_thread_key;
 
