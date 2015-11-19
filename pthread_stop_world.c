@@ -200,7 +200,7 @@ STATIC sem_t GC_suspend_ack_sem;
   STATIC sem_t GC_restart_ack_sem;
 #endif
 
-STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
+STATIC void GC_suspend_handler_inner(ptr_t dummy, void *context);
 
 #ifndef NO_SA_SIGACTION
   STATIC void GC_suspend_handler(int sig, siginfo_t * info GC_ATTR_UNUSED,
@@ -211,34 +211,36 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 {
   int old_errno = errno;
 
+  if (sig != GC_sig_suspend) {
+#   if defined(GC_FREEBSD_THREADS)
+      /* Workaround "deferred signal handling" bug in FreeBSD 9.2.      */
+      if (0 == sig) return;
+#   endif
+    ABORT("Bad signal in suspend_handler");
+  }
+
 # if defined(IA64) || defined(HP_PA) || defined(M68K)
-    GC_with_callee_saves_pushed(GC_suspend_handler_inner, (ptr_t)(word)sig);
+    GC_with_callee_saves_pushed(GC_suspend_handler_inner, NULL);
 # else
     /* We believe that in all other cases the full context is already   */
     /* in the signal handler frame.                                     */
-#   ifdef NO_SA_SIGACTION
-      void *context = 0;
-#   endif
-    GC_suspend_handler_inner((ptr_t)(word)sig, context);
+    {
+#     ifdef NO_SA_SIGACTION
+        void *context = 0;
+#     endif
+      GC_suspend_handler_inner(NULL, context);
+    }
 # endif
   errno = old_errno;
 }
 
-STATIC void GC_suspend_handler_inner(ptr_t sig_arg,
+STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
                                      void * context GC_ATTR_UNUSED)
 {
   pthread_t self = pthread_self();
   GC_thread me;
   IF_CANCEL(int cancel_state;)
   AO_t my_stop_count = AO_load(&GC_stop_count);
-
-  if ((signed_word)sig_arg != GC_sig_suspend) {
-#   if defined(GC_FREEBSD_THREADS)
-      /* Workaround "deferred signal handling" bug in FreeBSD 9.2.      */
-      if (0 == sig_arg) return;
-#   endif
-    ABORT("Bad signal in suspend_handler");
-  }
 
   DISABLE_CANCEL(cancel_state);
       /* pthread_setcancelstate is not defined to be async-signal-safe. */
