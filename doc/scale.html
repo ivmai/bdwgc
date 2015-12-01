@@ -70,17 +70,6 @@ though it usually improves performance when thread-local allocation is
 used heavily, and thus the number of short-duration lock acquisitions
 is greatly reduced.
 </ul>
-<P>
-The easiest way to switch an application to thread-local allocation
-in a pre-version-7.0 collector was to
-<OL>
-<LI> Define the macro <TT>GC_REDIRECT_TO_LOCAL</tt>,
-and then include the <TT>gc.h</tt>
-header in each client source file.
-<LI> Invoke <TT>GC_thr_init()</tt> before any allocation.
-<LI> Allocate using <TT>GC_MALLOC</tt>, <TT>GC_MALLOC_ATOMIC</tt>,
-and/or <TT>GC_GCJ_MALLOC</tt>.
-</ol>
 <H2>The Parallel Marking Algorithm</h2>
 We use an algorithm similar to
 <A HREF="http://www.yl.is.s.u-tokyo.ac.jp/gc/">that developed by
