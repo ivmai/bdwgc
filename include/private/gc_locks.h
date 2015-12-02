@@ -187,7 +187,7 @@
 #    define ENTER_GC() GC_collecting = 1;
 #    define EXIT_GC() GC_collecting = 0;
      GC_INNER void GC_lock(void);
-#  endif /* GC_PTHREADS with linux_threads.c implementation */
+#  endif /* GC_PTHREADS */
 #  ifdef GC_ALWAYS_MULTITHREADED
 #    define GC_need_to_lock TRUE
 #  else

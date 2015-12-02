@@ -27,23 +27,6 @@
  * all flavors of pthread support code into this file.
  */
 
-/*
- * Linux_threads.c now also includes some code to support HPUX and
- * OSF1 (Compaq Tru64 Unix, really).  The OSF1 support is based on Eric Benson's
- * patch.
- *
- * Eric also suggested an alternate basis for a lock implementation in
- * his code:
- * + #elif defined(OSF1)
- * +    unsigned long GC_allocate_lock = 0;
- * +    msemaphore GC_allocate_semaphore;
- * + #  define GC_TRY_LOCK() \
- * +    ((msem_lock(&GC_allocate_semaphore, MSEM_IF_NOWAIT) == 0) \
- * +     ? (GC_allocate_lock = 1) \
- * +     : 0)
- * + #  define GC_LOCK_TAKEN GC_allocate_lock
- */
-
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
 
 # include <stdlib.h>

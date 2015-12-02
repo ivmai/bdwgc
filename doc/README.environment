@@ -97,7 +97,7 @@ GC_PRINT_BACK_HEIGHT - Print max length of chain through unreachable objects
                      (http://www.hpl.hp.com/techreports/2001/HPL-2001-251.html).
 
 GC_RETRY_SIGNALS, GC_NO_RETRY_SIGNALS - Try to compensate for lost
-                     thread suspend signals in linux_threads.c.  On by
+                     thread suspend signals (Pthreads only).  On by
                      default for GC_OSF1_THREADS, off otherwise.  Note
                      that this does not work around a possible loss of
                      thread restart signals.  This seems to be necessary for
