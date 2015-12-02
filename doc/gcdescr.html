@@ -534,22 +534,15 @@ common Pthreads implementations.
 In particular, it is very difficult for the collector to stop all other
 threads in the system and examine the register contents.  This is currently
 accomplished with very different mechanisms for some Pthreads
-implementations.  The Solaris implementation temporarily disables much
-of the user-level threads implementation by stopping kernel-level threads
-("lwp"s).  The Linux/HPUX/OSF1 and Irix implementations sends signals to
+implementations.  For Linux/HPUX/OSF1, Solaris and Irix it sends signals to
 individual Pthreads and has them wait in the signal handler.
 <P>
 The Linux and Irix implementations use
 only documented Pthreads calls, but rely on extensions to their semantics.
-The Linux implementation <TT>linux_threads.c</tt> relies on only very
+The Linux implementation <TT>pthread_stop_world.c</tt> relies on only very
 mild extensions to the pthreads semantics, and already supports a large number
 of other Unix-like pthreads implementations.  Our goal is to make this the
 only pthread support in the collector.
-<P>
-(The Irix implementation is separate only for historical reasons and should
-clearly be merged.  The current Solaris implementation probably performs
-better in the uniprocessor case, but does not support thread operations in the
-collector.  Hence it cannot support the parallel marker.)
 <P>
 All implementations must
 intercept thread creation and a few other thread-specific calls to allow

@@ -24,13 +24,7 @@
 
      To enable debugging messages please do:
      1) Add the "--enable-gc-debug" flag during configuration.
-     2) Edit the file linux-threads.c and uncomment the line:
-
-     /* #define DEBUG_THREADS 1 */ to --->
-
-     #define DEBUG_THREADS 1
-
-     Then give "make" as usual.
+     2) Pass "CFLAGS=-DDEBUG_THREADS" to "make".
 
      In a machine with 4 CPUs (my own machine) the option parallel
      mark (aka --enable-parallel-mark) makes a BIG difference.
