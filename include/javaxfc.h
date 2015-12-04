@@ -33,7 +33,7 @@
  *    must be prepared to deal with objects that have been finalized in
  *    spite of the fact that they are still referenced by statically
  *    allocated pointer variables.
- * 1) It may mean that we get stuck in an infinite loop running
+ * 2) It may mean that we get stuck in an infinite loop running
  *    finalizers which create new finalizable objects, though that's
  *    probably unlikely.
  * Thus this is not recommended for general use.
