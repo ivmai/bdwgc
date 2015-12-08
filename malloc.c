@@ -14,6 +14,7 @@
  */
 
 #include "private/gc_priv.h"
+#include "gc_inline.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -229,68 +230,51 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
     }
 }
 
-/* Allocate lb bytes of atomic (pointer-free) data. */
-#ifdef THREAD_LOCAL_ALLOC
-  GC_INNER void * GC_core_malloc_atomic(size_t lb)
+#ifndef THREAD_LOCAL_ALLOC
+  GC_INNER void * GC_generic_malloc_kind(size_t lb, int k)
 #else
-  GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_atomic(size_t lb)
+  GC_INNER void * GC_generic_malloc_kind_global(size_t lb, int k)
 #endif
 {
     void *op;
     size_t lg;
     DCL_LOCK_STATE;
 
-    if(SMALL_OBJ(lb)) {
+    if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
         lg = GC_size_map[lb];
         LOCK();
-        op = GC_freelist[PTRFREE][lg];
+        op = GC_freelist[k][lg];
         if (EXPECT(0 == op, FALSE)) {
             UNLOCK();
-            return(GENERAL_MALLOC((word)lb, PTRFREE));
-        }
-        GC_freelist[PTRFREE][lg] = obj_link(op);
-        GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-        UNLOCK();
-        return((void *) op);
-   } else {
-        return(GENERAL_MALLOC((word)lb, PTRFREE));
-   }
-}
-
-/* Allocate lb bytes of composite (pointerful) data */
-#ifdef THREAD_LOCAL_ALLOC
-  GC_INNER void * GC_core_malloc(size_t lb)
-#else
-  GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc(size_t lb)
-#endif
-{
-    void *op;
-    size_t lg;
-    DCL_LOCK_STATE;
-
-    if(SMALL_OBJ(lb)) {
-        GC_DBG_COLLECT_AT_MALLOC(lb);
-        lg = GC_size_map[lb];
-        LOCK();
-        op = GC_freelist[NORMAL][lg];
-        if (EXPECT(0 == op, FALSE)) {
-            UNLOCK();
-            return (GENERAL_MALLOC((word)lb, NORMAL));
+            return GENERAL_MALLOC((word)lb, k);
         }
         GC_ASSERT(0 == obj_link(op)
-                  || ((word)obj_link(op)
-                        <= (word)GC_greatest_plausible_heap_addr
-                     && (word)obj_link(op)
-                        >= (word)GC_least_plausible_heap_addr));
-        GC_freelist[NORMAL][lg] = obj_link(op);
+            || ((word)obj_link(op)
+            <= (word)GC_greatest_plausible_heap_addr
+            && (word)obj_link(op)
+            >= (word)GC_least_plausible_heap_addr));
+        GC_freelist[k][lg] = obj_link(op);
         obj_link(op) = 0;
         GC_bytes_allocd += GRANULES_TO_BYTES(lg);
         UNLOCK();
         return op;
-   } else {
-       return(GENERAL_MALLOC(lb, NORMAL));
-   }
+    }
+    else {
+        return(GENERAL_MALLOC((word)lb, k));
+    }
+}
+
+/* Allocate lb bytes of atomic (pointer-free) data. */
+  GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_atomic(size_t lb)
+{
+    return GC_generic_malloc_kind(lb, PTRFREE);
+}
+
+/* Allocate lb bytes of composite (pointerful) data */
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc(size_t lb)
+{
+    return GC_generic_malloc_kind(lb, NORMAL);
 }
 
 /* Allocate lb bytes of pointerful, traced, but not collectible data.   */

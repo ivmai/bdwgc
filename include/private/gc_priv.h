@@ -296,6 +296,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define MAX_EXTRA_BYTES 0
 #endif
 
+#define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
 
 # ifndef LARGE_CONFIG
 #   define MINHINCR 16   /* Minimum heap increment, in blocks of HBLKSIZE  */
@@ -1880,8 +1881,6 @@ GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
 
 /* Allocation routines that bypass the thread local cache.      */
 #ifdef THREAD_LOCAL_ALLOC
-  GC_INNER void * GC_core_malloc(size_t);
-  GC_INNER void * GC_core_malloc_atomic(size_t);
 # ifdef GC_GCJ_SUPPORT
     GC_INNER void * GC_core_gcj_malloc(size_t, void *);
 # endif
