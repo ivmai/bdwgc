@@ -817,7 +817,8 @@ GC_INNER word GC_page_size = 0;
     PTIB ptib; /* thread information block */
     PPIB ppib;
     if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
-      ABORT("DosGetInfoBlocks failed");
+      WARN("DosGetInfoBlocks failed\n", 0);
+      return GC_UNIMPLEMENTED;
     }
     sb->mem_base = ptib->tib_pstacklimit;
     return GC_SUCCESS;
