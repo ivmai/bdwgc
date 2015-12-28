@@ -76,14 +76,24 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
         void *my_entry=*my_fl; \
         void *next; \
     \
-        while (GC_EXPECT((GC_word)my_entry \
-                        <= (num_direct) + GC_TINY_FREELISTS + 1, 0)) { \
+        for (;;) { \
+            if (GC_EXPECT((GC_word)my_entry \
+                          > (num_direct) + GC_TINY_FREELISTS + 1, 1)) { \
+                next = *(void **)(my_entry); \
+                result = (void *)my_entry; \
+                *my_fl = next; \
+                init; \
+                PREFETCH_FOR_WRITE(next); \
+                GC_ASSERT(GC_size(result) >= (granules)*GC_GRANULE_BYTES); \
+                GC_ASSERT((kind) == PTRFREE || ((GC_word *)result)[1] == 0); \
+                break; \
+            } \
             /* Entry contains counter or NULL */ \
             if ((GC_word)my_entry <= (num_direct) && my_entry != 0) { \
                 /* Small counter value, not NULL */ \
                 *my_fl = (char *)my_entry + (granules) + 1; \
                 result = (default_expr); \
-                goto out; \
+                break; \
             } else { \
                 /* Large counter or NULL */ \
                 GC_generic_malloc_many(((granules) == 0? GC_GRANULE_BYTES : \
@@ -92,18 +102,10 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
                 my_entry = *my_fl; \
                 if (my_entry == 0) { \
                     result = (*GC_get_oom_fn())((granules)*GC_GRANULE_BYTES); \
-                    goto out; \
+                    break; \
                 } \
             } \
         } \
-        next = *(void **)(my_entry); \
-        result = (void *)my_entry; \
-        *my_fl = next; \
-        init; \
-        PREFETCH_FOR_WRITE(next); \
-        GC_ASSERT(GC_size(result) >= (granules)*GC_GRANULE_BYTES); \
-        GC_ASSERT((kind) == PTRFREE || ((GC_word *)result)[1] == 0); \
-      out: ; \
     } \
   } while (0)
 
