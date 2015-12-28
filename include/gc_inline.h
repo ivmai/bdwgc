@@ -79,7 +79,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
         while (GC_EXPECT((GC_word)my_entry \
                         <= (num_direct) + GC_TINY_FREELISTS + 1, 0)) { \
             /* Entry contains counter or NULL */ \
-            if ((GC_word)my_entry - 1 < (num_direct)) { \
+            if ((GC_word)my_entry <= (num_direct) && my_entry != 0) { \
                 /* Small counter value, not NULL */ \
                 *my_fl = (char *)my_entry + (granules) + 1; \
                 result = (default_expr); \
