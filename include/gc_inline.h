@@ -55,6 +55,16 @@
 /* traced even if objects are ptrfree.                                  */
 GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
                                            void ** /* result */);
+/* Generic allocation function.  Chooses appropriately the thread local */
+/* or the global freelist for the correct kind, then returns a pointer  */
+/* to the alloc'd memory                                                */
+GC_API void * GC_CALL GC_generic_malloc_kind(size_t /* lb */,
+                                             int /* k */);
+#ifdef THREAD_LOCAL_ALLOC
+/* Define the global version in case thread local allocation is enabled */
+GC_API void * GC_CALL GC_generic_malloc_kind_global(size_t /* lb */,
+                                                    int /* k */);
+#endif
 
 /* The ultimately general inline allocation macro.  Allocate an object  */
 /* of size granules, putting the resulting pointer in result.  Tiny_fl  */

@@ -81,6 +81,7 @@
 typedef GC_word word;
 typedef GC_signed_word signed_word;
 typedef unsigned int unsigned32;
+typedef GC_word GC_descr;
 
 typedef int GC_bool;
 #define TRUE 1
@@ -295,6 +296,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define MAX_EXTRA_BYTES 0
 #endif
 
+#define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
 
 # ifndef LARGE_CONFIG
 #   define MINHINCR 16   /* Minimum heap increment, in blocks of HBLKSIZE  */
@@ -769,6 +771,10 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #define CPP_MAXOBJGRANULES BYTES_TO_GRANULES(CPP_MAXOBJBYTES)
 #define MAXOBJGRANULES ((size_t)CPP_MAXOBJGRANULES)
 
+#ifndef MAXOBJKINDS
+# define MAXOBJKINDS 16
+#endif
+
 # define divHBLKSZ(n) ((n) >> LOG_HBLKSIZE)
 
 # define HBLK_PTR_DIFF(p,q) divHBLKSZ((ptr_t)p - (ptr_t)q)
@@ -1210,31 +1216,12 @@ struct _GC_arrays {
                 /* calling stack.                                       */
 # endif
 # ifndef SEPARATE_GLOBALS
-#   define GC_objfreelist GC_arrays._objfreelist
-    void *_objfreelist[MAXOBJGRANULES+1];
-                          /* free list for objects */
-#   define GC_aobjfreelist GC_arrays._aobjfreelist
-    void *_aobjfreelist[MAXOBJGRANULES+1];
-                          /* free list for atomic objs  */
-# endif
-  void *_uobjfreelist[MAXOBJGRANULES+1];
-                          /* Uncollectible but traced objs      */
-                          /* objects on this and auobjfreelist  */
-                          /* are always marked, except during   */
-                          /* garbage collections.               */
-# ifdef GC_ATOMIC_UNCOLLECTABLE
-#   define GC_auobjfreelist GC_arrays._auobjfreelist
-    void *_auobjfreelist[MAXOBJGRANULES+1];
-                        /* Atomic uncollectible but traced objs */
+#   define GC_freelist GC_arrays._freelist
+    void *_freelist[MAXOBJKINDS][MAXOBJGRANULES+1];
 # endif
   size_t _size_map[MAXOBJBYTES+1];
         /* Number of granules to allocate when asked for a certain      */
         /* number of bytes.                                             */
-# ifdef STUBBORN_ALLOC
-#   define GC_sobjfreelist GC_arrays._sobjfreelist
-    ptr_t _sobjfreelist[MAXOBJGRANULES+1];
-                          /* Free list for immutable objects.   */
-# endif
 # ifdef MARK_BIT_PER_GRANULE
 #   define GC_obj_map GC_arrays._obj_map
     short * _obj_map[MAXOBJGRANULES+1];
@@ -1336,15 +1323,12 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 #define GC_size_map GC_arrays._size_map
 #define GC_static_roots GC_arrays._static_roots
 #define GC_top_index GC_arrays._top_index
-#define GC_uobjfreelist GC_arrays._uobjfreelist
 #define GC_valid_offsets GC_arrays._valid_offsets
 
 #define beginGC_arrays ((ptr_t)(&GC_arrays))
 #define endGC_arrays (((ptr_t)(&GC_arrays)) + (sizeof GC_arrays))
 #define USED_HEAP_SIZE (GC_heapsize - GC_large_free_bytes)
 
-/* Object kinds: */
-#define MAXOBJKINDS 16
 
 GC_EXTERN struct obj_kind {
    void **ok_freelist;  /* Array of free listheaders for this kind of object */
@@ -1897,8 +1881,6 @@ GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
 
 /* Allocation routines that bypass the thread local cache.      */
 #ifdef THREAD_LOCAL_ALLOC
-  GC_INNER void * GC_core_malloc(size_t);
-  GC_INNER void * GC_core_malloc_atomic(size_t);
 # ifdef GC_GCJ_SUPPORT
     GC_INNER void * GC_core_gcj_malloc(size_t, void *);
 # endif

@@ -26,8 +26,6 @@
 
 #ifdef THREAD_LOCAL_ALLOC
 
-#include "gc_inline.h"
-
 #if defined(USE_HPUX_TLS)
 # error USE_HPUX_TLS macro was replaced by USE_COMPILER_TLS
 #endif
@@ -78,10 +76,8 @@
 /* One of these should be declared as the tlfs field in the     */
 /* structure pointed to by a GC_thread.                         */
 typedef struct thread_local_freelists {
-  void * ptrfree_freelists[TINY_FREELISTS];
-  void * normal_freelists[TINY_FREELISTS];
+  void * freelists[MAXOBJKINDS][TINY_FREELISTS];
 # ifdef GC_GCJ_SUPPORT
-    void * gcj_freelists[TINY_FREELISTS];
 #   define ERROR_FL ((void *)(word)-1)
         /* Value used for gcj_freelist[-1]; allocation is       */
         /* erroneous.                                           */
