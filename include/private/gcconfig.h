@@ -723,7 +723,7 @@
  * An architecture may define PREFETCH(x) to preload the cache with *x.
  * This defaults to GCC built-in operation (or a no-op for other compilers).
  *
- * PREFETCH_FOR_WRITE(x) is used if *x is about to be written.
+ * GC_PREFETCH_FOR_WRITE(x) is used if *x is about to be written.
  *
  * An architecture may also define CLEAR_DOUBLE(x) to be a fast way to
  * clear the two words at GC_malloc-aligned address x.  By default,
@@ -908,7 +908,7 @@
         /* The performance impact of prefetches is untested */
 #       define PREFETCH(x) \
           __asm__ __volatile__ ("dcbt 0,%0" : : "r" ((const void *) (x)))
-#       define PREFETCH_FOR_WRITE(x) \
+#       define GC_PREFETCH_FOR_WRITE(x) \
           __asm__ __volatile__ ("dcbtst 0,%0" : : "r" ((const void *) (x)))
 #     endif
       /* There seems to be some issues with trylock hanging on darwin.  */
@@ -1346,7 +1346,7 @@
 #         ifdef FORCE_WRITE_PREFETCH
             /* Using prefetches for write seems to have a slight negative    */
             /* impact on performance, at least for a PIII/500.               */
-#           define PREFETCH_FOR_WRITE(x) \
+#           define GC_PREFETCH_FOR_WRITE(x) \
               __asm__ __volatile__ ("prefetcht0 %0" : : "m"(*(char *)(x)))
 #         else
 #           define NO_PREFETCH_FOR_WRITE
@@ -1354,7 +1354,7 @@
 #       elif defined(USE_3DNOW_PREFETCH)
 #         define PREFETCH(x) \
             __asm__ __volatile__ ("prefetch %0" : : "m"(*(char *)(x)))
-#         define PREFETCH_FOR_WRITE(x) \
+#         define GC_PREFETCH_FOR_WRITE(x) \
             __asm__ __volatile__ ("prefetchw %0" : : "m"(*(char *)(x)))
 #       endif
 #       if defined(__GLIBC__)
@@ -1889,14 +1889,14 @@
 #         ifndef __INTEL_COMPILER
 #           define PREFETCH(x) \
               __asm__ ("        lfetch  [%0]": : "r"(x))
-#           define PREFETCH_FOR_WRITE(x) \
+#           define GC_PREFETCH_FOR_WRITE(x) \
               __asm__ ("        lfetch.excl     [%0]": : "r"(x))
 #           define CLEAR_DOUBLE(x) \
               __asm__ ("        stf.spill       [%0]=f0": : "r"((void *)(x)))
 #         else
 #           include <ia64intrin.h>
 #           define PREFETCH(x) __lfetch(__lfhint_none, (x))
-#           define PREFETCH_FOR_WRITE(x) __lfetch(__lfhint_nta, (x))
+#           define GC_PREFETCH_FOR_WRITE(x) __lfetch(__lfhint_nta, (x))
 #           define CLEAR_DOUBLE(x) __stf_spill((void *)(x), 0)
 #         endif /* __INTEL_COMPILER */
 #       endif
@@ -2656,11 +2656,11 @@
 # endif
 #endif
 
-#ifndef PREFETCH_FOR_WRITE
+#ifndef GC_PREFETCH_FOR_WRITE
 # if defined(__GNUC__) && __GNUC__ >= 3 && !defined(NO_PREFETCH_FOR_WRITE)
-#   define PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
+#   define GC_PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
 # else
-#   define PREFETCH_FOR_WRITE(x) (void)0
+#   define GC_PREFETCH_FOR_WRITE(x) (void)0
 # endif
 #endif
 

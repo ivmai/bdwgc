@@ -164,7 +164,7 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
     *my_fl = next;
     obj_link(result) = 0;
     *(word *)result = (word)fclos | 1;
-    PREFETCH_FOR_WRITE(next);
+    GC_PREFETCH_FOR_WRITE(next);
     return (word *)result + 1;
   }
 #endif /* THREAD_LOCAL_ALLOC */

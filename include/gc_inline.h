@@ -42,6 +42,10 @@
 # define GC_ASSERT(expr) /* empty */
 #endif
 
+#ifndef GC_PREFETCH_FOR_WRITE
+# define GC_PREFETCH_FOR_WRITE(x) (void)0
+#endif
+
 /* Store a pointer to a list of newly allocated objects of kind k and   */
 /* size lb in *result.  The caller must make sure that *result is       */
 /* traced even if objects are ptrfree.                                  */
@@ -83,7 +87,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
                 result = (void *)my_entry; \
                 *my_fl = next; \
                 init; \
-                PREFETCH_FOR_WRITE(next); \
+                GC_PREFETCH_FOR_WRITE(next); \
                 GC_ASSERT(GC_size(result) >= (granules)*GC_GRANULE_BYTES); \
                 GC_ASSERT((kind) == PTRFREE || ((GC_word *)result)[1] == 0); \
                 break; \
