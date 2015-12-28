@@ -46,6 +46,10 @@
 # define GC_PREFETCH_FOR_WRITE(x) (void)0
 #endif
 
+/* Object kinds; must match PTRFREE, NORMAL in gc_priv.h.       */
+#define GC_I_PTRFREE 0
+#define GC_I_NORMAL 1
+
 /* Store a pointer to a list of newly allocated objects of kind k and   */
 /* size lb in *result.  The caller must make sure that *result is       */
 /* traced even if objects are ptrfree.                                  */
@@ -89,7 +93,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
                 init; \
                 GC_PREFETCH_FOR_WRITE(next); \
                 GC_ASSERT(GC_size(result) >= (granules)*GC_GRANULE_BYTES); \
-                GC_ASSERT((kind) == PTRFREE || ((GC_word *)result)[1] == 0); \
+                GC_ASSERT((kind) == GC_I_PTRFREE \
+                          || ((GC_word *)result)[1] == 0); \
                 break; \
             } \
             /* Entry contains counter or NULL */ \
@@ -126,16 +131,16 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
 # define GC_MALLOC_WORDS(result,n,tiny_fl) \
   do { \
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
-    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
-                         NORMAL, GC_malloc(grans*GC_GRANULE_BYTES), \
+    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, GC_I_NORMAL, \
+                         GC_malloc(grans * GC_GRANULE_BYTES), \
                          *(void **)(result) = 0); \
   } while (0)
 
 # define GC_MALLOC_ATOMIC_WORDS(result,n,tiny_fl) \
   do { \
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
-    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
-                         PTRFREE, GC_malloc_atomic(grans*GC_GRANULE_BYTES), \
+    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, GC_I_PTRFREE, \
+                         GC_malloc_atomic(grans * GC_GRANULE_BYTES), \
                          (void)0 /* no initialization */); \
   } while (0)
 
@@ -143,8 +148,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
 # define GC_CONS(result, first, second, tiny_fl) \
   do { \
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(2); \
-    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
-                         NORMAL, GC_malloc(grans*GC_GRANULE_BYTES), \
+    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, GC_I_NORMAL, \
+                         GC_malloc(grans * GC_GRANULE_BYTES), \
                          *(void **)(result) = (void *)(first)); \
     ((void **)(result))[1] = (void *)(second); \
   } while (0)
