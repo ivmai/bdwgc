@@ -181,7 +181,7 @@ allows incremental/generational garbage collection.
 <TT>MPROTECT_VDB</tt> identifies modified pages by
 write protecting the heap and catching faults.
 <TT>PROC_VDB</tt> uses the /proc primitives to read dirty bits.
-<DT><TT>PREFETCH, PREFETCH_FOR_WRITE</tt>
+<DT><TT>PREFETCH, GC_PREFETCH_FOR_WRITE</tt>
 <DD>
 The collector uses <TT>PREFETCH</tt>(<I>x</i>) to preload the cache
 with *<I>x</i>.
