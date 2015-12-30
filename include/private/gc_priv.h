@@ -732,10 +732,9 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # define HBLKSIZE ((size_t)CPP_HBLKSIZE)
 
 
-/*  max size objects supported by freelist (larger objects are  */
+/*  Max size objects supported by freelist (larger objects are  */
 /*  allocated directly with allchblk(), by rounding to the next */
-/*  multiple of HBLKSIZE.                                       */
-
+/*  multiple of HBLKSIZE).                                      */
 #define CPP_MAXOBJBYTES (CPP_HBLKSIZE/2)
 #define MAXOBJBYTES ((size_t)CPP_MAXOBJBYTES)
 #define CPP_MAXOBJWORDS BYTES_TO_WORDS(CPP_MAXOBJBYTES)
@@ -1315,13 +1314,13 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 #define MAXOBJKINDS 16
 
 GC_EXTERN struct obj_kind {
-   void **ok_freelist;  /* Array of free listheaders for this kind of object */
-                        /* Point either to GC_arrays or to storage allocated */
-                        /* with GC_scratch_alloc.                            */
+   void **ok_freelist;  /* Array of free list headers for this kind of  */
+                        /* object.  Point either to GC_arrays or to     */
+                        /* storage allocated with GC_scratch_alloc.     */
    struct hblk **ok_reclaim_list;
-                        /* List headers for lists of blocks waiting to be */
-                        /* swept.                                         */
-                        /* Indexed by object size in granules.            */
+                        /* List headers for lists of blocks waiting to  */
+                        /* be swept.  Indexed by object size in         */
+                        /* granules.                                    */
    word ok_descriptor;  /* Descriptor template for objects in this      */
                         /* block.                                       */
    GC_bool ok_relocate_descr;
