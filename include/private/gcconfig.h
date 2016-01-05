@@ -2801,7 +2801,8 @@
                              || defined(OPENBSD) || defined(ARM32) \
                              || defined(MIPS) || defined(AVR32) \
                              || defined(OR1K))) \
-     || (defined(LINUX) && (defined(SPARC) || defined(M68K))) \
+     || (defined(LINUX) && ((!defined(__GLIBC__) && !defined(__UCLIBC__)) \
+                             || defined(SPARC) || defined(M68K))) \
      || (defined(RTEMS) && defined(I386)) || defined(PLATFORM_ANDROID)) \
     && !defined(NO_GETCONTEXT)
 # define NO_GETCONTEXT
