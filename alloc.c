@@ -35,11 +35,11 @@
  * an object of (small) size lb as follows:
  *
  *   lg = GC_size_map[lb];
- *   op = GC_objfreelist[lg];
+ *   op = GC_freelists[NORMAL][lg];
  *   if (NULL == op) {
  *     op = GENERAL_MALLOC(lb, NORMAL);
  *   } else {
- *     GC_objfreelist[lg] = obj_link(op);
+ *     GC_freelists[NORMAL][lg] = obj_link(op);
  *   }
  *
  * Note that this is very fast if the free list is non-empty; it should

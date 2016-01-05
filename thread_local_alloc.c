@@ -141,8 +141,8 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 {
     /* We currently only do this from the thread itself or from */
     /* the fork handler for a child process.                    */
-    return_freelists(p -> ptrfree_freelists, GC_aobjfreelist);
-    return_freelists(p -> normal_freelists, GC_objfreelist);
+    return_freelists(p -> ptrfree_freelists, GC_freelists[PTRFREE]);
+    return_freelists(p -> normal_freelists, GC_freelists[NORMAL]);
 #   ifdef GC_GCJ_SUPPORT
         return_freelists(p -> gcj_freelists, (void **)GC_gcjobjfreelist);
 #   endif

@@ -1098,6 +1098,19 @@ typedef struct GC_ms_entry {
                         /* as described in gc_mark.h.                   */
 } mse;
 
+/* Predefined kinds: */
+#define PTRFREE 0
+#define NORMAL  1
+#define UNCOLLECTABLE 2
+#ifdef GC_ATOMIC_UNCOLLECTABLE
+# define AUNCOLLECTABLE 3
+# define STUBBORN 4
+# define IS_UNCOLLECTABLE(k) (((k) & ~1) == UNCOLLECTABLE)
+#else
+# define STUBBORN 3
+# define IS_UNCOLLECTABLE(k) ((k) == UNCOLLECTABLE)
+#endif
+
 /* Lists of all heap blocks and free lists      */
 /* as well as other random data structures      */
 /* that should not be scanned by the            */
@@ -1208,32 +1221,23 @@ struct _GC_arrays {
                 /* multi-threaded case, we currently only save the      */
                 /* calling stack.                                       */
 # endif
-# ifndef SEPARATE_GLOBALS
-#   define GC_objfreelist GC_arrays._objfreelist
-    void *_objfreelist[MAXOBJGRANULES+1];
-                          /* free list for objects */
-#   define GC_aobjfreelist GC_arrays._aobjfreelist
-    void *_aobjfreelist[MAXOBJGRANULES+1];
-                          /* free list for atomic objs  */
+# ifndef PREDEFINED_KINDS
+#   ifdef STUBBORN_ALLOC
+#     define PREDEFINED_KINDS (STUBBORN+1)
+#   else
+#     define PREDEFINED_KINDS STUBBORN
+#   endif
 # endif
-  void *_uobjfreelist[MAXOBJGRANULES+1];
-                          /* Uncollectible but traced objs      */
-                          /* objects on this and auobjfreelist  */
-                          /* are always marked, except during   */
-                          /* garbage collections.               */
-# ifdef GC_ATOMIC_UNCOLLECTABLE
-#   define GC_auobjfreelist GC_arrays._auobjfreelist
-    void *_auobjfreelist[MAXOBJGRANULES+1];
-                        /* Atomic uncollectible but traced objs */
+# ifndef SEPARATE_GLOBALS
+#   define GC_freelists GC_arrays._freelists
+    void *_freelists[PREDEFINED_KINDS][MAXOBJGRANULES + 1];
+                /* Array of free lists for objects of predefined kinds: */
+                /* normal, atomic, uncollectible, atomic uncollectible  */
+                /* and immutable.                                       */
 # endif
   size_t _size_map[MAXOBJBYTES+1];
         /* Number of granules to allocate when asked for a certain      */
         /* number of bytes.                                             */
-# ifdef STUBBORN_ALLOC
-#   define GC_sobjfreelist GC_arrays._sobjfreelist
-    ptr_t _sobjfreelist[MAXOBJGRANULES+1];
-                          /* Free list for immutable objects.   */
-# endif
 # ifdef MARK_BIT_PER_GRANULE
 #   define GC_obj_map GC_arrays._obj_map
     short * _obj_map[MAXOBJGRANULES+1];
@@ -1335,7 +1339,6 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 #define GC_size_map GC_arrays._size_map
 #define GC_static_roots GC_arrays._static_roots
 #define GC_top_index GC_arrays._top_index
-#define GC_uobjfreelist GC_arrays._uobjfreelist
 #define GC_valid_offsets GC_arrays._valid_offsets
 
 #define beginGC_arrays ((ptr_t)(&GC_arrays))
@@ -1387,29 +1390,9 @@ GC_EXTERN struct obj_kind {
 #ifdef SEPARATE_GLOBALS
   extern word GC_bytes_allocd;
         /* Number of bytes allocated during this collection cycle.      */
-  extern ptr_t GC_objfreelist[MAXOBJGRANULES+1];
-                          /* free list for NORMAL objects */
-# define beginGC_objfreelist ((ptr_t)(&GC_objfreelist))
-# define endGC_objfreelist (beginGC_objfreelist + sizeof(GC_objfreelist))
-
-  extern ptr_t GC_aobjfreelist[MAXOBJGRANULES+1];
-                          /* free list for atomic (PTRFREE) objs        */
-# define beginGC_aobjfreelist ((ptr_t)(&GC_aobjfreelist))
-# define endGC_aobjfreelist (beginGC_aobjfreelist + sizeof(GC_aobjfreelist))
+  extern void *GC_freelists[PREDEFINED_KINDS][MAXOBJGRANULES + 1];
+        /* Array of free lists for objects of predefined kinds.         */
 #endif /* SEPARATE_GLOBALS */
-
-/* Predefined kinds: */
-#define PTRFREE 0
-#define NORMAL  1
-#define UNCOLLECTABLE 2
-#ifdef GC_ATOMIC_UNCOLLECTABLE
-# define AUNCOLLECTABLE 3
-# define STUBBORN 4
-# define IS_UNCOLLECTABLE(k) (((k) & ~1) == UNCOLLECTABLE)
-#else
-# define STUBBORN 3
-# define IS_UNCOLLECTABLE(k) ((k) == UNCOLLECTABLE)
-#endif
 
 GC_EXTERN unsigned GC_n_kinds;
 

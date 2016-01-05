@@ -1146,8 +1146,8 @@ GC_API void GC_CALL GC_init(void)
     GC_exclude_static_roots_inner(beginGC_arrays, endGC_arrays);
     GC_exclude_static_roots_inner(beginGC_obj_kinds, endGC_obj_kinds);
 #   ifdef SEPARATE_GLOBALS
-      GC_exclude_static_roots_inner(beginGC_objfreelist, endGC_objfreelist);
-      GC_exclude_static_roots_inner(beginGC_aobjfreelist, endGC_aobjfreelist);
+      GC_exclude_static_roots_inner((ptr_t)GC_freelists,
+                                (ptr_t)GC_freelists + sizeof(GC_freelists));
 #   endif
 #   if defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS)
         WARN("USE_PROC_FOR_LIBRARIES + GC_LINUX_THREADS performs poorly.\n", 0);

@@ -39,11 +39,11 @@
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h        */
 /* or introducing dependencies on internal data structure layouts.       */
-void ** const GC_objfreelist_ptr = GC_objfreelist;
-void ** const GC_aobjfreelist_ptr = GC_aobjfreelist;
-void ** const GC_uobjfreelist_ptr = GC_uobjfreelist;
+void ** const GC_objfreelist_ptr = GC_freelists[NORMAL];
+void ** const GC_aobjfreelist_ptr = GC_freelists[PTRFREE];
+void ** const GC_uobjfreelist_ptr = GC_freelists[UNCOLLECTABLE];
 # ifdef GC_ATOMIC_UNCOLLECTABLE
-    void ** const GC_auobjfreelist_ptr = GC_auobjfreelist;
+    void ** const GC_auobjfreelist_ptr = GC_freelists[AUNCOLLECTABLE];
 # endif
 
 GC_API int GC_CALL GC_get_kind_and_size(const void * p, size_t * psize)
@@ -533,9 +533,9 @@ GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
                   /* collected anyway.                                  */
         lg = GC_size_map[lb];
         LOCK();
-        op = GC_auobjfreelist[lg];
+        op = GC_freelists[AUNCOLLECTABLE][lg];
         if (EXPECT(op != 0, TRUE)) {
-            GC_auobjfreelist[lg] = obj_link(op);
+            GC_freelists[AUNCOLLECTABLE][lg] = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
             /* Mark bit was already set while object was on free list. */

@@ -80,7 +80,7 @@ STATIC word GC_checksum(struct hblk *h)
     ptr_t p;
 
     if (sz > MAXOBJWORDS) return(FALSE);
-    for (p = GC_sobjfreelist[sz]; p != 0; p = obj_link(p)) {
+    for (p = GC_freelists[STUBBORN][sz]; p != 0; p = obj_link(p)) {
         if (HBLKPTR(p) == h) return(TRUE);
     }
     return(FALSE);
