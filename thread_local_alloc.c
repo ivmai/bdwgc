@@ -99,7 +99,7 @@ static void return_freelists(void **fl, void **gfl)
 /* This call must be made from the new thread.  */
 GC_INNER void GC_init_thread_local(GC_tlfs p)
 {
-    int i;
+    int i, j;
 
     GC_ASSERT(I_HOLD_LOCK());
     if (!EXPECT(keys_initialized, TRUE)) {
@@ -112,37 +112,36 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
     if (0 != GC_setspecific(GC_thread_key, p)) {
         ABORT("Failed to set thread specific allocation pointers");
     }
-    for (i = 1; i < TINY_FREELISTS; ++i) {
-        p -> ptrfree_freelists[i] = (void *)(word)1;
-        p -> normal_freelists[i] = (void *)(word)1;
+    for (j = 0; j < TINY_FREELISTS; ++j) {
+        for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
+            p -> _freelists[i][j] = (void *)(word)1;
+        }
 #       ifdef GC_GCJ_SUPPORT
-          p -> gcj_freelists[i] = (void *)(word)1;
+            p -> gcj_freelists[j] = (void *)(word)1;
 #       endif
 #       ifdef ENABLE_DISCLAIM
-          p -> finalized_freelists[i] = (void *)(word)1;
+            p -> finalized_freelists[j] = (void *)(word)1;
 #       endif
     }
-    /* Set up the size 0 free lists.    */
-    /* We now handle most of them like regular free lists, to ensure    */
-    /* That explicit deallocation works.  However, allocation of a      */
-    /* size 0 "gcj" object is always an error.                          */
-    p -> ptrfree_freelists[0] = (void *)(word)1;
-    p -> normal_freelists[0] = (void *)(word)1;
+    /* The size 0 free lists are handled like the regular free lists,   */
+    /* to ensure that the explicit deallocation works.  However,        */
+    /* allocation of a size 0 "gcj" object is always an error.          */
 #   ifdef GC_GCJ_SUPPORT
         p -> gcj_freelists[0] = ERROR_FL;
-#   endif
-#   ifdef ENABLE_DISCLAIM
-        p -> finalized_freelists[0] = (void *)(word)1;
 #   endif
 }
 
 /* We hold the allocator lock.  */
 GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 {
+    int i;
+
     /* We currently only do this from the thread itself or from */
     /* the fork handler for a child process.                    */
-    return_freelists(p -> ptrfree_freelists, GC_freelists[PTRFREE]);
-    return_freelists(p -> normal_freelists, GC_freelists[NORMAL]);
+    GC_STATIC_ASSERT(MAXOBJKINDS >= THREAD_FREELISTS_KINDS);
+    for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
+        return_freelists(p -> _freelists[i], GC_freelists[i]);
+    }
 #   ifdef GC_GCJ_SUPPORT
         return_freelists(p -> gcj_freelists, (void **)GC_gcjobjfreelist);
 #   endif
@@ -298,19 +297,21 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t bytes,
 GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
 {
     ptr_t q;
-    int j;
+    int i, j;
 
     for (j = 0; j < TINY_FREELISTS; ++j) {
-      q = p -> ptrfree_freelists[j];
-      if ((word)q > HBLKSIZE) GC_set_fl_marks(q);
-      q = p -> normal_freelists[j];
-      if ((word)q > HBLKSIZE) GC_set_fl_marks(q);
+      for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
+        q = p -> _freelists[i][j];
+        if ((word)q > HBLKSIZE)
+          GC_set_fl_marks(q);
+      }
 #     ifdef GC_GCJ_SUPPORT
-        if (j > 0) {
+        if (EXPECT(j > 0, TRUE)) {
           q = p -> gcj_freelists[j];
-          if ((word)q > HBLKSIZE) GC_set_fl_marks(q);
+          if ((word)q > HBLKSIZE)
+            GC_set_fl_marks(q);
         }
-#     endif /* GC_GCJ_SUPPORT */
+#     endif
 #     ifdef ENABLE_DISCLAIM
         q = p -> finalized_freelists[j];
         if ((word)q > HBLKSIZE)
@@ -323,11 +324,12 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
     /* Check that all thread-local free-lists in p are completely marked. */
     void GC_check_tls_for(GC_tlfs p)
     {
-        int j;
+        int i, j;
 
         for (j = 1; j < TINY_FREELISTS; ++j) {
-          GC_check_fl_marks(&p->ptrfree_freelists[j]);
-          GC_check_fl_marks(&p->normal_freelists[j]);
+          for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
+            GC_check_fl_marks(&p->_freelists[i][j]);
+          }
 #         ifdef GC_GCJ_SUPPORT
             GC_check_fl_marks(&p->gcj_freelists[j]);
 #         endif

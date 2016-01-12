@@ -75,11 +75,17 @@
 
 #include <stdlib.h>
 
+#ifndef THREAD_FREELISTS_KINDS
+# define THREAD_FREELISTS_KINDS (NORMAL+1)
+#endif
+
 /* One of these should be declared as the tlfs field in the     */
 /* structure pointed to by a GC_thread.                         */
 typedef struct thread_local_freelists {
-  void * ptrfree_freelists[TINY_FREELISTS];
-  void * normal_freelists[TINY_FREELISTS];
+  void * _freelists[THREAD_FREELISTS_KINDS][TINY_FREELISTS];
+# define ptrfree_freelists _freelists[PTRFREE]
+# define normal_freelists _freelists[NORMAL]
+        /* Note: Preserve *_freelists names for some clients.   */
 # ifdef GC_GCJ_SUPPORT
     void * gcj_freelists[TINY_FREELISTS];
 #   define ERROR_FL ((void *)(word)-1)
