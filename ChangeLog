@@ -6745,7 +6745,7 @@ This should enable support of dynamic libraries under win32 with
 gcc-compiled code.  (Thanks to Ranjit Mathew for the patch.)
 Turned on dynamic library scanning for win32/gcc.
 * Removed some remnants of read wrapping (thanks to Kenneth Schalk).
-GC_USE_LD_WRAP ws probably broken in recent versions.
+GC_USE_LD_WRAP was probably broken in recent versions.
 * The build could fail on some platforms since gcconfig.h could include
 declarations mentioning ptr_t, which was not defined, e.g. when if_mach
 was built (thanks to Yann Dirson for pointing this out).  Also

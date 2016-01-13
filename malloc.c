@@ -309,7 +309,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
             *opp = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-            /* Mark bit ws already set on free list.  It will be        */
+            /* Mark bit was already set on free list.  It will be       */
             /* cleared only temporarily during a collection, as a       */
             /* result of the normal free list mark bit clearing.        */
             GC_non_gc_bytes += GRANULES_TO_BYTES(lg);
