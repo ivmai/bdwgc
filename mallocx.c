@@ -69,11 +69,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_or_special_malloc(size_t lb,
         case NORMAL:
             return GC_malloc(lb);
         case UNCOLLECTABLE:
-            return GC_malloc_uncollectable(lb);
 #       ifdef GC_ATOMIC_UNCOLLECTABLE
           case AUNCOLLECTABLE:
-            return GC_malloc_atomic_uncollectable(lb);
 #       endif
+            return GC_generic_malloc_uncollectable(lb, knd);
         default:
             return GC_generic_malloc(lb, knd);
     }
@@ -514,59 +513,6 @@ GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
   }
   return 0;
 }
-
-#ifdef GC_ATOMIC_UNCOLLECTABLE
-  /* Allocate lb bytes of pointer-free, untraced, uncollectible data    */
-  /* This is normally roughly equivalent to the system malloc.          */
-  /* But it may be useful if malloc is redefined.                       */
-  GC_API GC_ATTR_MALLOC void * GC_CALL
-        GC_malloc_atomic_uncollectable(size_t lb)
-  {
-    void *op;
-    size_t lg;
-    DCL_LOCK_STATE;
-
-    if (SMALL_OBJ(lb)) {
-        GC_DBG_COLLECT_AT_MALLOC(lb);
-        if (EXTRA_BYTES != 0 && lb != 0) lb--;
-                  /* We don't need the extra byte, since this won't be  */
-                  /* collected anyway.                                  */
-        lg = GC_size_map[lb];
-        LOCK();
-        op = GC_freelists[AUNCOLLECTABLE][lg];
-        if (EXPECT(op != 0, TRUE)) {
-            GC_freelists[AUNCOLLECTABLE][lg] = obj_link(op);
-            obj_link(op) = 0;
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-            /* Mark bit was already set while object was on free list. */
-            GC_non_gc_bytes += GRANULES_TO_BYTES(lg);
-            UNLOCK();
-        } else {
-            UNLOCK();
-            op = (ptr_t)GC_generic_malloc(lb, AUNCOLLECTABLE);
-        }
-        GC_ASSERT(0 == op || GC_is_marked(op));
-        return((void *) op);
-    } else {
-        hdr * hhdr;
-
-        op = (ptr_t)GC_generic_malloc(lb, AUNCOLLECTABLE);
-        if (0 == op) return(0);
-
-        GC_ASSERT(((word)op & (HBLKSIZE - 1)) == 0);
-        hhdr = HDR(op);
-
-        LOCK();
-        set_mark_bit_from_hdr(hhdr, 0); /* Only object. */
-#       ifndef THREADS
-          GC_ASSERT(hhdr -> hb_n_marks == 0);
-#       endif
-        hhdr -> hb_n_marks = 1;
-        UNLOCK();
-        return((void *) op);
-    }
-  }
-#endif /* GC_ATOMIC_UNCOLLECTABLE */
 
 /* provide a version of strdup() that uses the collector to allocate the
    copy of the string */

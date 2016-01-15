@@ -293,8 +293,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
    }
 }
 
-/* Allocate lb bytes of pointerful, traced, but not collectible data.   */
-GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
+                                                        size_t lb, int k)
 {
     void *op;
     size_t lg;
@@ -307,9 +307,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
                   /* collected anyway.                                  */
         lg = GC_size_map[lb];
         LOCK();
-        op = GC_freelists[UNCOLLECTABLE][lg];
-        if (EXPECT(op != 0, TRUE)) {
-            GC_freelists[UNCOLLECTABLE][lg] = obj_link(op);
+        op = GC_freelists[k][lg];
+        if (EXPECT(op != NULL, TRUE)) {
+            GC_freelists[k][lg] = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
             /* Mark bit was already set on free list.  It will be       */
@@ -319,15 +319,16 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
             UNLOCK();
         } else {
             UNLOCK();
-            op = GC_generic_malloc(lb, UNCOLLECTABLE);
+            op = GC_generic_malloc(lb, k);
             /* For small objects, the free lists are completely marked. */
         }
         GC_ASSERT(0 == op || GC_is_marked(op));
     } else {
         hdr * hhdr;
 
-        op = GC_generic_malloc(lb, UNCOLLECTABLE);
-        if (0 == op) return(0);
+        op = GC_generic_malloc(lb, k);
+        if (NULL == op)
+            return NULL;
 
         GC_ASSERT(((word)op & (HBLKSIZE - 1)) == 0); /* large block */
         hhdr = HDR(op);
@@ -346,6 +347,23 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
     }
     return op;
 }
+
+/* Allocate lb bytes of pointerful, traced, but not collectible data.   */
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
+{
+  return GC_generic_malloc_uncollectable(lb, UNCOLLECTABLE);
+}
+
+#ifdef GC_ATOMIC_UNCOLLECTABLE
+  /* Allocate lb bytes of pointer-free, untraced, uncollectible data    */
+  /* This is normally roughly equivalent to the system malloc.          */
+  /* But it may be useful if malloc is redefined.                       */
+  GC_API GC_ATTR_MALLOC void * GC_CALL
+        GC_malloc_atomic_uncollectable(size_t lb)
+  {
+    return GC_generic_malloc_uncollectable(lb, AUNCOLLECTABLE);
+  }
+#endif /* GC_ATOMIC_UNCOLLECTABLE */
 
 #if defined(REDIRECT_MALLOC) && !defined(REDIRECT_MALLOC_IN_HEADER)
 
@@ -428,7 +446,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
              && (word)caller < (word)GC_libpthread_end)
             || ((word)caller >= (word)GC_libld_start
                 && (word)caller < (word)GC_libld_end))
-          return GC_malloc_uncollectable(n*lb);
+          return GC_generic_malloc_uncollectable(n * lb, UNCOLLECTABLE);
         /* The two ranges are actually usually adjacent, so there may   */
         /* be a way to speed this up.                                   */
       }

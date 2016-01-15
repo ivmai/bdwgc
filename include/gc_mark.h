@@ -204,6 +204,11 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                                 /* first page of the resulting object   */
                                 /* are ignored.                         */
 
+/* Generalized version of GC_malloc_[atomic_]uncollectable.     */
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+                                        GC_generic_malloc_uncollectable(
+                                            size_t /* lb */, int /* knd */);
+
 /* Same as above but primary for allocating an object of the same kind  */
 /* as an existing one (kind obtained by GC_get_kind_and_size).          */
 /* Not suitable for GCJ and typed-malloc kinds.                         */
