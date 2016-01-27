@@ -15,6 +15,7 @@
  */
 
 #include "private/gc_priv.h"
+#include "gc_inline.h" /* for GC_malloc_kind */
 
 /*
  * These are extra allocation routines which are likely to be less
@@ -65,9 +66,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_or_special_malloc(size_t lb,
             return GC_malloc_stubborn(lb);
 #     endif
         case PTRFREE:
-            return GC_malloc_atomic(lb);
         case NORMAL:
-            return GC_malloc(lb);
+            return GC_malloc_kind(lb, knd);
         case UNCOLLECTABLE:
 #       ifdef GC_ATOMIC_UNCOLLECTABLE
           case AUNCOLLECTABLE:
@@ -189,6 +189,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 
     if (SMALL_OBJ(lb))
         return GC_generic_malloc(lb, k);
+    GC_ASSERT(k < MAXOBJKINDS);
     lg = ROUNDED_UP_GRANULES(lb);
     lb_rounded = GRANULES_TO_BYTES(lg);
     if (lb_rounded < lb)
@@ -300,6 +301,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
         *result = op;
         return;
     }
+    GC_ASSERT(k < MAXOBJKINDS);
     lw = BYTES_TO_WORDS(lb);
     lg = BYTES_TO_GRANULES(lb);
     if (EXPECT(GC_have_errors, FALSE))

@@ -138,7 +138,7 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 
     /* We currently only do this from the thread itself or from */
     /* the fork handler for a child process.                    */
-    GC_STATIC_ASSERT(MAXOBJKINDS >= THREAD_FREELISTS_KINDS);
+    GC_STATIC_ASSERT(PREDEFINED_KINDS >= THREAD_FREELISTS_KINDS);
     for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
         return_freelists(p -> _freelists[i], GC_freelists[i]);
     }
@@ -156,19 +156,23 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
   GC_bool GC_is_thread_tsd_valid(void *tsd);
 #endif
 
-GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc(size_t bytes)
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int knd)
 {
-    size_t granules = ROUNDED_UP_GRANULES(bytes);
+    size_t granules;
     void *tsd;
     void *result;
-    void **tiny_fl;
 
+#   if PREDEFINED_KINDS > THREAD_FREELISTS_KINDS
+      if (EXPECT(knd >= THREAD_FREELISTS_KINDS, FALSE)) {
+        return GC_malloc_kind_global(bytes, knd);
+      }
+#   endif
 #   if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_WIN32_SPECIFIC)
       GC_key_t k = GC_thread_key;
       if (EXPECT(0 == k, FALSE)) {
         /* We haven't yet run GC_init_parallel.  That means     */
         /* we also aren't locking, so this is fairly cheap.     */
-        return GC_core_malloc(bytes);
+        return GC_malloc_kind_global(bytes, knd);
       }
       tsd = GC_getspecific(k);
 #   else
@@ -176,50 +180,22 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc(size_t bytes)
 #   endif
 #   if !defined(USE_COMPILER_TLS) && !defined(USE_WIN32_COMPILER_TLS)
       if (EXPECT(0 == tsd, FALSE)) {
-        return GC_core_malloc(bytes);
+        return GC_malloc_kind_global(bytes, knd);
       }
 #   endif
     GC_ASSERT(GC_is_initialized);
-
     GC_ASSERT(GC_is_thread_tsd_valid(tsd));
-
-    tiny_fl = ((GC_tlfs)tsd) -> normal_freelists;
-    GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, DIRECT_GRANULES,
-                         NORMAL, GC_core_malloc(bytes), obj_link(result)=0);
+    granules = ROUNDED_UP_GRANULES(bytes);
+    GC_FAST_MALLOC_GRANS(result, granules,
+                         ((GC_tlfs)tsd) -> _freelists[knd], DIRECT_GRANULES,
+                         knd, GC_malloc_kind_global(bytes, knd),
+                         (void)(knd == PTRFREE ? NULL
+                                               : (obj_link(result) = 0)));
 #   ifdef LOG_ALLOCS
-      GC_log_printf("GC_malloc(%lu) returned %p, recent GC #%lu\n",
-                    (unsigned long)bytes, result, (unsigned long)GC_gc_no);
+      GC_log_printf("GC_malloc_kind(%lu, %d) returned %p, recent GC #%lu\n",
+                    (unsigned long)bytes, knd, result,
+                    (unsigned long)GC_gc_no);
 #   endif
-    return result;
-}
-
-GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_atomic(size_t bytes)
-{
-    size_t granules = ROUNDED_UP_GRANULES(bytes);
-    void *tsd;
-    void *result;
-    void **tiny_fl;
-
-#   if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_WIN32_SPECIFIC)
-      GC_key_t k = GC_thread_key;
-      if (EXPECT(0 == k, FALSE)) {
-        /* We haven't yet run GC_init_parallel.  That means     */
-        /* we also aren't locking, so this is fairly cheap.     */
-        return GC_core_malloc_atomic(bytes);
-      }
-      tsd = GC_getspecific(k);
-#   else
-      tsd = GC_getspecific(GC_thread_key);
-#   endif
-#   if !defined(USE_COMPILER_TLS) && !defined(USE_WIN32_COMPILER_TLS)
-      if (EXPECT(0 == tsd, FALSE)) {
-        return GC_core_malloc_atomic(bytes);
-      }
-#   endif
-    GC_ASSERT(GC_is_initialized);
-    tiny_fl = ((GC_tlfs)tsd) -> ptrfree_freelists;
-    GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, DIRECT_GRANULES, PTRFREE,
-                         GC_core_malloc_atomic(bytes), (void)0 /* no init */);
     return result;
 }
 

@@ -1346,8 +1346,9 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 #define USED_HEAP_SIZE (GC_heapsize - GC_large_free_bytes)
 
 /* Object kinds: */
-#define MAXOBJKINDS 16
-
+#ifndef MAXOBJKINDS
+# define MAXOBJKINDS 16
+#endif
 GC_EXTERN struct obj_kind {
    void **ok_freelist;  /* Array of free list headers for this kind of  */
                         /* object.  Point either to GC_arrays or to     */
@@ -1878,13 +1879,9 @@ GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
 #endif /* !GC_COLLECT_AT_MALLOC */
 
 /* Allocation routines that bypass the thread local cache.      */
-#ifdef THREAD_LOCAL_ALLOC
-  GC_INNER void * GC_core_malloc(size_t);
-  GC_INNER void * GC_core_malloc_atomic(size_t);
-# ifdef GC_GCJ_SUPPORT
+#if defined(THREAD_LOCAL_ALLOC) && defined(GC_GCJ_SUPPORT)
     GC_INNER void * GC_core_gcj_malloc(size_t, void *);
-# endif
-#endif /* THREAD_LOCAL_ALLOC */
+#endif
 
 GC_INNER void GC_init_headers(void);
 GC_INNER struct hblkhdr * GC_install_header(struct hblk *h);

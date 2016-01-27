@@ -56,6 +56,20 @@
 GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
                                            void ** /* result */);
 
+/* Generalized version of GC_malloc and GC_malloc_atomic.               */
+/* Uses appropriately the thread-local (if available) or the global     */
+/* free-list of the specified kind.                                     */
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_malloc_kind(size_t /* lb */, int /* k */);
+
+#ifdef GC_THREADS
+  /* Same as above but uses only the global free-list.  */
+  GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+        GC_malloc_kind_global(size_t /* lb */, int /* k */);
+#else
+# define GC_malloc_kind_global GC_malloc_kind
+#endif
+
 /* The ultimately general inline allocation macro.  Allocate an object  */
 /* of size granules, putting the resulting pointer in result.  Tiny_fl  */
 /* is a "tiny" free list array, which will be used first, if the size   */
@@ -74,7 +88,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
 /* num_direct = 0 case.                                                 */
 /* Particularly if granules is constant, this should generate a small   */
 /* amount of code.                                                      */
-# define GC_FAST_MALLOC_GRANS(result,granules,tiny_fl,num_direct,\
+# define GC_FAST_MALLOC_GRANS(result,granules,tiny_fl,num_direct, \
                               kind,default_expr,init) \
   do { \
     if (GC_EXPECT((granules) >= GC_TINY_FREELISTS,0)) { \
@@ -128,30 +142,30 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
 /* the caller is responsible for supplying a cleared tiny_fl            */
 /* free list array.  For single-threaded applications, this may be      */
 /* a global array.                                                      */
+# define GC_MALLOC_WORDS_KIND(result,n,tiny_fl,k,init) \
+    do { \
+      size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
+      GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, k, \
+                           GC_malloc_kind(grans * GC_GRANULE_BYTES, k), \
+                           init); \
+    } while (0)
+
 # define GC_MALLOC_WORDS(result,n,tiny_fl) \
-  do { \
-    size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
-    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, GC_I_NORMAL, \
-                         GC_malloc(grans * GC_GRANULE_BYTES), \
-                         *(void **)(result) = 0); \
-  } while (0)
+        GC_MALLOC_WORDS_KIND(result, n, tiny_fl, GC_I_NORMAL, \
+                             *(void **)(result) = 0)
 
 # define GC_MALLOC_ATOMIC_WORDS(result,n,tiny_fl) \
-  do { \
-    size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
-    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, GC_I_PTRFREE, \
-                         GC_malloc_atomic(grans * GC_GRANULE_BYTES), \
-                         (void)0 /* no initialization */); \
-  } while (0)
+        GC_MALLOC_WORDS_KIND(result, n, tiny_fl, GC_I_PTRFREE, (void)0)
 
 /* And once more for two word initialized objects: */
 # define GC_CONS(result, first, second, tiny_fl) \
-  do { \
-    size_t grans = GC_WORDS_TO_WHOLE_GRANULES(2); \
-    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, GC_I_NORMAL, \
-                         GC_malloc(grans * GC_GRANULE_BYTES), \
-                         *(void **)(result) = (void *)(first)); \
-    ((void **)(result))[1] = (void *)(second); \
-  } while (0)
+    do { \
+      size_t grans = GC_WORDS_TO_WHOLE_GRANULES(2); \
+      GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, GC_I_NORMAL, \
+                           GC_malloc_kind(grans * GC_GRANULE_BYTES, \
+                                          GC_I_NORMAL), \
+                           *(void **)(result) = (void *)(first)); \
+      ((void **)(result))[1] = (void *)(second); \
+    } while (0)
 
 #endif /* !GC_INLINE_H */
