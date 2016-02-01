@@ -14,6 +14,7 @@
  */
 
 #include "private/gc_pmark.h"
+#include "gc_inline.h"
 
 /*
  * Some simple primitives for allocation with explicit type information.
@@ -343,10 +344,6 @@ GC_make_sequence_descriptor(complex_descriptor *first,
   }
 #endif
 
-STATIC ptr_t * GC_eobjfreelist = NULL;
-
-STATIC ptr_t * GC_arobjfreelist = NULL;
-
 STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
                                 mse * mark_stack_limit, word env);
 
@@ -359,18 +356,14 @@ STATIC void GC_init_explicit_typing(void)
 
     GC_STATIC_ASSERT(sizeof(struct LeafDescriptor) % sizeof(word) == 0);
     /* Set up object kind with simple indirect descriptor. */
-      GC_eobjfreelist = (ptr_t *)GC_new_free_list_inner();
       GC_explicit_kind = GC_new_kind_inner(
-                            (void **)GC_eobjfreelist,
                             (WORDS_TO_BYTES((word)-1) | GC_DS_PER_OBJECT),
                             TRUE, TRUE);
                 /* Descriptors are in the last word of the object. */
       GC_typed_mark_proc_index = GC_new_proc_inner(GC_typed_mark_proc);
     /* Set up object kind with array descriptor. */
-      GC_arobjfreelist = (ptr_t *)GC_new_free_list_inner();
       GC_array_mark_proc_index = GC_new_proc_inner(GC_array_mark_proc);
       GC_array_kind = GC_new_kind_inner(
-                            (void **)GC_arobjfreelist,
                             GC_MAKE_PROC(GC_array_mark_proc_index, 0),
                             FALSE, TRUE);
       for (i = 0; i < WORDSZ/2; i++) {
@@ -596,37 +589,17 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
                                                                 GC_descr d)
 {
-    ptr_t op;
     size_t lg;
-    DCL_LOCK_STATE;
-
     GC_ASSERT(GC_explicit_typing_initialized);
     lb += TYPD_EXTRA_BYTES;
+    void *result = GC_malloc_kind(lb, GC_explicit_kind);
     if (SMALL_OBJ(lb)) {
-        GC_DBG_COLLECT_AT_MALLOC(lb);
         lg = GC_size_map[lb];
-        LOCK();
-        op = GC_eobjfreelist[lg];
-        if (EXPECT(0 == op, FALSE)) {
-            UNLOCK();
-            op = (ptr_t)GENERAL_MALLOC((word)lb, GC_explicit_kind);
-            if (0 == op) return 0;
-            lg = GC_size_map[lb];       /* May have been uninitialized. */
-        } else {
-            GC_eobjfreelist[lg] = obj_link(op);
-            obj_link(op) = 0;
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-            UNLOCK();
-        }
-        ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
-   } else {
-       op = (ptr_t)GENERAL_MALLOC((word)lb, GC_explicit_kind);
-       if (op != NULL) {
-            lg = BYTES_TO_GRANULES(GC_size(op));
-            ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
-       }
-   }
-   return((void *) op);
+    } else {
+        lg = BYTES_TO_GRANULES(GC_size(result));
+    }
+    ((word *)result)[GRANULES_TO_WORDS(lg) - 1] = d;
+    return result;
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL
@@ -642,14 +615,14 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
         GC_DBG_COLLECT_AT_MALLOC(lb);
         lg = GC_size_map[lb];
         LOCK();
-        op = GC_eobjfreelist[lg];
+        op = GC_freelists[GC_explicit_kind][lg];
         if (EXPECT(0 == op, FALSE)) {
             UNLOCK();
             op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
             if (0 == op) return 0;
             lg = GC_size_map[lb];       /* May have been uninitialized. */
         } else {
-            GC_eobjfreelist[lg] = obj_link(op);
+            GC_freelists[GC_explicit_kind][lg] = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
             UNLOCK();
@@ -691,24 +664,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
             lb += TYPD_EXTRA_BYTES;
             break;
     }
+    op = GC_malloc_kind(lb, GC_array_kind);
     if( SMALL_OBJ(lb) ) {
         lg = GC_size_map[lb];
-        LOCK();
-        op = GC_arobjfreelist[lg];
-        if (EXPECT(0 == op, FALSE)) {
-            UNLOCK();
-            op = (ptr_t)GENERAL_MALLOC((word)lb, GC_array_kind);
-            if (0 == op) return(0);
-            lg = GC_size_map[lb];       /* May have been uninitialized. */
-        } else {
-            GC_arobjfreelist[lg] = obj_link(op);
-            obj_link(op) = 0;
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-            UNLOCK();
-        }
    } else {
-       op = (ptr_t)GENERAL_MALLOC((word)lb, GC_array_kind);
-       if (0 == op) return(0);
        lg = BYTES_TO_GRANULES(GC_size(op));
    }
    if (descr_type == LEAF) {
