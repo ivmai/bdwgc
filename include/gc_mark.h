@@ -163,18 +163,12 @@ GC_API size_t GC_debug_header_size;
 /* custom mark procedures, by language runtimes.                        */
 /* The _inner versions assume the caller holds the allocation lock.     */
 
-/* Return a new free list array.        */
-GC_API void ** GC_CALL GC_new_free_list(void);
-GC_API void ** GC_CALL GC_new_free_list_inner(void);
-
 /* Return a new kind, as specified. */
-GC_API unsigned GC_CALL GC_new_kind(void ** /* free_list */,
-                            GC_word /* mark_descriptor_template */,
+GC_API unsigned GC_CALL GC_new_kind(GC_word /* mark_descriptor_template */,
                             int /* add_size_to_descriptor */,
                             int /* clear_new_objects */) GC_ATTR_NONNULL(1);
                 /* The last two parameters must be zero or one. */
-GC_API unsigned GC_CALL GC_new_kind_inner(void ** /* free_list */,
-                            GC_word /* mark_descriptor_template */,
+GC_API unsigned GC_CALL GC_new_kind_inner(GC_word /* mark_descriptor_template */,
                             int /* add_size_to_descriptor */,
                             int /* clear_new_objects */) GC_ATTR_NONNULL(1);
 

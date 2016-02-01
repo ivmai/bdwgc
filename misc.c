@@ -1826,29 +1826,7 @@ GC_API int GC_CALL GC_is_disabled(void)
     return GC_dont_gc != 0;
 }
 
-/* Helper procedures for new kind creation.     */
-GC_API void ** GC_CALL GC_new_free_list_inner(void)
-{
-    void *result;
-
-    GC_ASSERT(I_HOLD_LOCK());
-    result = GC_INTERNAL_MALLOC((MAXOBJGRANULES+1) * sizeof(ptr_t), PTRFREE);
-    if (NULL == result) ABORT("Failed to allocate freelist for new kind");
-    BZERO(result, (MAXOBJGRANULES+1)*sizeof(ptr_t));
-    return result;
-}
-
-GC_API void ** GC_CALL GC_new_free_list(void)
-{
-    void *result;
-    DCL_LOCK_STATE;
-    LOCK();
-    result = GC_new_free_list_inner();
-    UNLOCK();
-    return result;
-}
-
-GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
+GC_API unsigned GC_CALL GC_new_kind_inner(GC_word descr,
                                           int adjust, int clear)
 {
     unsigned result = GC_n_kinds;
@@ -1857,7 +1835,7 @@ GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
     GC_ASSERT(clear == FALSE || clear == TRUE);
     if (result < MAXOBJKINDS) {
       GC_n_kinds++;
-      GC_obj_kinds[result].ok_freelist = fl;
+      GC_obj_kinds[result].ok_freelist = GC_freelists[result];
       GC_obj_kinds[result].ok_reclaim_list = 0;
       GC_obj_kinds[result].ok_descriptor = descr;
       GC_obj_kinds[result].ok_relocate_descr = adjust;
@@ -1872,13 +1850,13 @@ GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
     return result;
 }
 
-GC_API unsigned GC_CALL GC_new_kind(void **fl, GC_word descr, int adjust,
+GC_API unsigned GC_CALL GC_new_kind(GC_word descr, int adjust,
                                     int clear)
 {
     unsigned result;
     DCL_LOCK_STATE;
     LOCK();
-    result = GC_new_kind_inner(fl, descr, adjust, clear);
+    result = GC_new_kind_inner(descr, adjust, clear);
     UNLOCK();
     return result;
 }
