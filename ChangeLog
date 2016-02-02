@@ -1,3 +1,66 @@
+2015-12-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (CPP_MAXOBJBYTES): Add missing ')' in
+	comment.
+	* include/private/gc_priv.h (obj_kind.ok_freelist): Fix typo in
+	comment ("list headers").
+	* include/private/gc_priv.h (obj_kind.ok_freelist,
+	obj_kind.ok_reclaim_list): Reformat comment.
+
+2015-12-04  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/javaxfc.h (GC_finalize_all): Fix 2nd item numbering in
+	comment.
+
+2015-12-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/scale.html (GC_REDIRECT_TO_LOCAL): Remove documentation.
+	* doc/simple_example.html (GC_REDIRECT_TO_LOCAL): Likewise.
+
+2015-11-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c (GET_MAIN_STACKBASE_SPECIAL): Define if AMIGA (which, in
+	turn, causes default GC_get_stack_base to be defined).
+
+2015-11-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.macros (USE_COMPILER_TLS): Remove duplicate description.
+
+2015-09-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* windows-untested/vc60/gc.dsp (SOURCE): Fix paths to msvc_dbg.c and
+	msvc_dbg.h.
+	* windows-untested/vc60/libgc.dsp (SOURCE): Likewise.
+	* windows-untested/vc60/libgcmt.dsp (SOURCE): Likewise.
+	* windows-untested/vc60/libgcmt.dsp (File RelativePath): Likewise.
+	* windows-untested/vc70/libgc.vcproj (File RelativePath): Likewise.
+	* windows-untested/vc70/libgcmt.vcproj (File RelativePath): Likewise.
+	* windows-untested/vc71/gc.vcproj (File RelativePath): Likewise.
+	* windows-untested/vc71/libgc.vcproj (File RelativePath): Likewise.
+	* windows-untested/vc71/libgcmt.vcproj (File RelativePath): Likewise.
+
+2015-09-14  Terrell Russell <terrellrussell@gmail.com>
+
+	* doc/README.ews4800: Fix typos ("information", "vendor", "the").
+
+2015-07-08  Eli Barzilay <eli@racket-lang.org>
+
+	* os_dep.c (GC_get_stack_base): Call GC_setpagesize if GC_page_size is
+	not initialized (only if MSWIN32 but not CYGWIN32).
+
+2011-02-02  David Van Horn <dvanhorn@ccs.neu.edu>
+
+	* ChangeLog: Fix typo (accommodate).
+	* doc/README.changes: Likewise.
+	* win32_threads.c (GC_pthread_create): Fix typo (interceptable).
+
+2015-01-05  Bruce Hoult <bruce@hoult.org>
+
+	* tests/test.c (main): Set stack size to 1000 KiB instead of
+	1000000 bytes (to avoid pthread_attr_setstacksize failure with
+	"stacksize is not a multiple of the system page size" error on
+	Darwin)
+
 2015-05-14  Ivan Maidanski <ivmai@mail.ru>
 
 	* Makefile.in: Regenerate.
