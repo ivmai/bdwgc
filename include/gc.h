@@ -1733,11 +1733,19 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 #if defined(__CYGWIN32__) || defined(__CYGWIN__)
   /* Similarly gnu-win32 DLLs need explicit initialization from the     */
   /* main program, as does AIX.                                         */
+# ifdef __x86_64__
+  extern int __data_start__[], __data_end__[], __bss_start__[], __bss_end__[];
+#  define GC_DATASTART ((GC_word)__data_start__ < (GC_word)__bss_start__ ? \
+                        (void *)__data_start__ : (void *)__bss_start__)
+#  define GC_DATAEND ((GC_word)__data_end__ > (GC_word)__bss_end__ ? \
+                      (void *)__data_end__ : (void *)__bss_end__)
+# else
   extern int _data_start__[], _data_end__[], _bss_start__[], _bss_end__[];
-# define GC_DATASTART ((GC_word)_data_start__ < (GC_word)_bss_start__ ? \
-                       (void *)_data_start__ : (void *)_bss_start__)
-# define GC_DATAEND ((GC_word)_data_end__ > (GC_word)_bss_end__ ? \
-                     (void *)_data_end__ : (void *)_bss_end__)
+#  define GC_DATASTART ((GC_word)_data_start__ < (GC_word)_bss_start__ ? \
+                        (void *)_data_start__ : (void *)_bss_start__)
+#  define GC_DATAEND ((GC_word)_data_end__ > (GC_word)_bss_end__ ? \
+                      (void *)_data_end__ : (void *)_bss_end__)
+# endif
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND); \
                                  GC_gcollect() /* For blacklisting. */
         /* Required at least if GC is in a DLL.  And doesn't hurt. */
