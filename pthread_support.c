@@ -394,6 +394,9 @@ STATIC pthread_t GC_mark_threads[MAX_MARKERS];
 {
     int i;
     pthread_attr_t attr;
+#   ifndef NO_MARKER_SPECIAL_SIGMASK
+      sigset_t set, oldset;
+#   endif
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
     if (available_markers_m1 <= 0) return;
@@ -424,6 +427,30 @@ STATIC pthread_t GC_mark_threads[MAX_MARKERS];
         }
       }
 #   endif /* HPUX || GC_DGUX386_THREADS */
+
+#   ifndef NO_MARKER_SPECIAL_SIGMASK
+      /* Apply special signal mask to GC marker threads, and don't drop */
+      /* user defined signals by GC marker threads.                     */
+      if (sigfillset(&set) != 0)
+        ABORT("sigfillset failed");
+
+#     if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_UTHREADS) \
+         && !defined(NACL)
+        /* These are used by GC to stop and restart the world.  */
+        if (sigdelset(&set, GC_get_suspend_signal()) != 0
+            || sigdelset(&set, GC_get_thr_restart_signal()) != 0)
+          ABORT("sigdelset failed");
+#     endif
+
+      if (pthread_sigmask(SIG_BLOCK, &set, &oldset) < 0) {
+        WARN("pthread_sigmask set failed, no markers started,"
+             " errno = %" WARN_PRIdPTR "\n", errno);
+        GC_markers_m1 = 0;
+        (void)pthread_attr_destroy(&attr);
+        return;
+      }
+#   endif /* !NO_MARKER_SPECIAL_SIGMASK */
+
     for (i = 0; i < available_markers_m1; ++i) {
       if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
@@ -434,6 +461,15 @@ STATIC pthread_t GC_mark_threads[MAX_MARKERS];
       }
     }
     GC_markers_m1 = i;
+
+#   ifndef NO_MARKER_SPECIAL_SIGMASK
+      /* Restore previous signal mask.  */
+      if (pthread_sigmask(SIG_SETMASK, &oldset, NULL) < 0) {
+        WARN("pthread_sigmask restore failed, errno = %" WARN_PRIdPTR "\n",
+             errno);
+      }
+#   endif
+
     (void)pthread_attr_destroy(&attr);
     GC_wait_for_markers_init();
     GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);

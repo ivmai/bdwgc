@@ -2703,6 +2703,13 @@
 # define GC_EXPLICIT_SIGNALS_UNBLOCK
 #endif
 
+#if !defined(NO_MARKER_SPECIAL_SIGMASK) \
+    && (defined(NACL) || defined(GC_WIN32_PTHREADS))
+  /* Either there is no pthread_sigmask(), or GC marker thread cannot   */
+  /* steal and drop user signal calls.                                  */
+# define NO_MARKER_SPECIAL_SIGMASK
+#endif
+
 #ifdef GC_NETBSD_THREADS
 # define SIGRTMIN 33
 # define SIGRTMAX 63

@@ -1773,6 +1773,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       int i;
       pthread_attr_t attr;
       pthread_t new_thread;
+#     ifndef NO_MARKER_SPECIAL_SIGMASK
+        sigset_t set, oldset;
+#     endif
 
       GC_ASSERT(I_DONT_HOLD_LOCK());
       if (available_markers_m1 <= 0) return;
@@ -1786,6 +1789,20 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
         ABORT("pthread_attr_setdetachstate failed");
 
+#     ifndef NO_MARKER_SPECIAL_SIGMASK
+        /* Apply special signal mask to GC marker threads, and don't drop */
+        /* user defined signals by GC marker threads.                     */
+        if (sigfillset(&set) != 0)
+          ABORT("sigfillset failed");
+        if (pthread_sigmask(SIG_BLOCK, &set, &oldset) < 0) {
+          WARN("pthread_sigmask set failed, no markers started,"
+               " errno = %" WARN_PRIdPTR "\n", errno);
+          GC_markers_m1 = 0;
+          (void)pthread_attr_destroy(&attr);
+          return;
+        }
+#     endif /* !NO_MARKER_SPECIAL_SIGMASK */
+
       for (i = 0; i < available_markers_m1; ++i) {
         marker_last_stack_min[i] = ADDR_LIMIT;
         if (0 != pthread_create(&new_thread, &attr,
@@ -1795,6 +1812,15 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
           break;
         }
       }
+
+#     ifndef NO_MARKER_SPECIAL_SIGMASK
+        /* Restore previous signal mask.        */
+        if (pthread_sigmask(SIG_SETMASK, &oldset, NULL) < 0) {
+          WARN("pthread_sigmask restore failed, errno = %" WARN_PRIdPTR "\n",
+               errno);
+        }
+#     endif
+
       GC_markers_m1 = i;
       (void)pthread_attr_destroy(&attr);
       GC_wait_for_markers_init();
