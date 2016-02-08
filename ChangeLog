@@ -1,5 +1,22 @@
 2015-12-30  Ivan Maidanski <ivmai@mail.ru>
 
+	* include/private/thread_local_alloc.h (ERROR_FL): Fix typo in comment
+	("gcj_freelists").
+
+2015-09-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (GC_wait_for_markers_init): New prototype.
+	* mark.c (GC_wait_for_markers_init): New function (if PARALLEL_MARK).
+	* pthread_support.c (GC_mark_thread): Notify start_mark_threads()
+	about completion of marker data initialization.
+	* win32_threads.c (GC_mark_thread): Likewise.
+	* pthread_support.c (start_mark_threads): Add assertion about
+	GC_fl_builder_count; call GC_wait_for_markers_init.
+	* win32_threads.c (start_mark_threads): Likewise.
+	* win32_threads.c (GC_mark_thread): Reformat code.
+
+2015-12-30  Ivan Maidanski <ivmai@mail.ru>
+
 	* include/private/gc_priv.h (CPP_MAXOBJBYTES): Add missing ')' in
 	comment.
 	* include/private/gc_priv.h (obj_kind.ok_freelist): Fix typo in
