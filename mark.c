@@ -48,25 +48,26 @@ GC_INNER unsigned GC_n_mark_procs = GC_RESERVED_MARK_PROCS;
 /* It's done here, since we need to deal with mark descriptors.         */
 GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 /* PTRFREE */ { &GC_aobjfreelist[0], 0 /* filled in dynamically */,
-                0 | GC_DS_LENGTH, FALSE, FALSE
+                /* 0 | */ GC_DS_LENGTH, FALSE, FALSE
                 /*, */ OK_DISCLAIM_INITZ },
 /* NORMAL  */ { &GC_objfreelist[0], 0,
-                0 | GC_DS_LENGTH,  /* Adjusted in GC_init for EXTRA_BYTES */
+                /* 0 | */ GC_DS_LENGTH,
+                                /* adjusted in GC_init for EXTRA_BYTES  */
                 TRUE /* add length to descr */, TRUE
                 /*, */ OK_DISCLAIM_INITZ },
 /* UNCOLLECTABLE */
               { &GC_uobjfreelist[0], 0,
-                0 | GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
+                /* 0 | */ GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
                 /*, */ OK_DISCLAIM_INITZ },
 # ifdef ATOMIC_UNCOLLECTABLE
    /* AUNCOLLECTABLE */
               { &GC_auobjfreelist[0], 0,
-                0 | GC_DS_LENGTH, FALSE /* add length to descr */, FALSE
+                /* 0 | */ GC_DS_LENGTH, FALSE /* add length to descr */, FALSE
                 /*, */ OK_DISCLAIM_INITZ },
 # endif
 # ifdef STUBBORN_ALLOC
 /*STUBBORN*/ { (void **)&GC_sobjfreelist[0], 0,
-                0 | GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
+                /* 0 | */ GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
                 /*, */ OK_DISCLAIM_INITZ },
 # endif
 };
@@ -1753,7 +1754,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     mse * mark_stack_limit = GC_mark_stack_limit;
 
     /* Some quick shortcuts: */
-        if ((0 | GC_DS_LENGTH) == descr) return;
+        if ((/* 0 | */ GC_DS_LENGTH) == descr) return;
         if (GC_block_empty(hhdr)/* nothing marked */) return;
     GC_n_rescuing_pages++;
     GC_objects_are_marked = TRUE;
@@ -1811,7 +1812,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     mse * GC_mark_stack_top_reg;
     mse * mark_stack_limit = GC_mark_stack_limit;
 
-    if ((0 | GC_DS_LENGTH) == descr)
+    if ((/* 0 | */ GC_DS_LENGTH) == descr)
         return;
 
     GC_n_rescuing_pages++;

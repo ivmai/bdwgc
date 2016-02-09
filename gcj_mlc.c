@@ -101,7 +101,7 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
         /* Use a simple length-based descriptor, thus forcing a fully   */
         /* conservative scan.                                           */
         GC_gcj_kind = GC_new_kind_inner((void **)GC_gcjobjfreelist,
-                                        (0 | GC_DS_LENGTH),
+                                        /* 0 | */ GC_DS_LENGTH,
                                         TRUE, TRUE);
       } else {
         GC_gcj_kind = GC_new_kind_inner(
