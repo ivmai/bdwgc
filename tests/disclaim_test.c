@@ -120,11 +120,11 @@ pair_new(pair_t car, pair_t cdr)
     static const struct GC_finalizer_closure fc = { pair_dct, NULL };
 
     p = GC_finalized_malloc(sizeof(struct pair_s), &fc);
-    my_assert(!is_pair(p));
     if (p == NULL) {
         fprintf(stderr, "Out of memory!\n");
         exit(3);
     }
+    my_assert(!is_pair(p));
     my_assert(memeq(p, 0, sizeof(struct pair_s)));
     memcpy(p->magic, pair_magic, sizeof(p->magic));
     p->checksum = 782 + (car? car->checksum : 0) + (cdr? cdr->checksum : 0);
