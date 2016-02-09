@@ -1222,6 +1222,7 @@ void run_one_test(void)
         FAIL;
       }
       z = GC_malloc(8);
+      CHECK_OUT_OF_MEMORY(z);
       GC_PTR_STORE(z, x);
       if (*z != x) {
         GC_printf("GC_PTR_STORE failed: %p != %p\n", (void *)(*z), (void *)x);
