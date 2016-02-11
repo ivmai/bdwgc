@@ -67,6 +67,11 @@
 #endif
 #include "de_cmds.h"
 
+#define OUT_OF_MEMORY do { \
+                        fprintf(stderr, "Out of memory\n"); \
+                        exit(3); \
+                      } while (0)
+
 /* List of line number to position mappings, in descending order. */
 /* There may be holes.                                            */
 typedef struct LineMapRep {
@@ -215,6 +220,7 @@ void replace_line(int i, CORD s)
     if (screen == 0 || LINES > screen_size) {
         screen_size = LINES;
         screen = (CORD *)GC_MALLOC(screen_size * sizeof(CORD));
+        if (NULL == screen) OUT_OF_MEMORY;
     }
 #   if !defined(MACINTOSH)
         /* A gross workaround for an apparent curses bug: */
@@ -562,6 +568,7 @@ int argc;
 char ** argv;
 {
     int c;
+    void *buf;
 
 #if defined(MACINTOSH)
         console_options.title = "\pDumb Editor";
@@ -572,7 +579,9 @@ char ** argv;
 
     if (argc != 2) goto usage;
     arg_file_name = argv[1];
-    setvbuf(stdout, GC_MALLOC_ATOMIC(8192), _IOFBF, 8192);
+    buf = GC_MALLOC_ATOMIC(8192);
+    if (NULL == buf) OUT_OF_MEMORY;
+    setvbuf(stdout, buf, _IOFBF, 8192);
     initscr();
     noecho(); nonl(); cbreak();
     generic_init();

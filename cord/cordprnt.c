@@ -30,9 +30,12 @@
 
 #include "cord.h"
 #include "ec.h"
-#include <stdio.h>
+
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
 #include "gc.h"
 
 #define CONV_SPEC_LEN 50        /* Maximum length of a single   */
@@ -41,6 +44,11 @@
                                 /* conversion with default      */
                                 /* width and prec.              */
 
+#define OUT_OF_MEMORY do { \
+                        if (CORD_oom_fn != 0) (*CORD_oom_fn)(); \
+                        fprintf(stderr, "Out of memory\n"); \
+                        abort(); \
+                      } while (0)
 
 static int ec_len(CORD_ec x)
 {
@@ -225,6 +233,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         if (width != NONE && len < (size_t)width) {
                           char * blanks = GC_MALLOC_ATOMIC(width-len+1);
 
+                          if (NULL == blanks) OUT_OF_MEMORY;
                           memset(blanks, ' ', width-len);
                           blanks[width-len] = '\0';
                           if (left_adj) {
@@ -281,6 +290,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                     max_size += CONV_RESULT_LEN;
                     if (max_size >= CORD_BUFSZ) {
                         buf = GC_MALLOC_ATOMIC(max_size + 1);
+                        if (NULL == buf) OUT_OF_MEMORY;
                     } else {
                         if (CORD_BUFSZ - (result[0].ec_bufptr-result[0].ec_buf)
                             < max_size) {
