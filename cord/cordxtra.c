@@ -428,6 +428,7 @@ void CORD_ec_flush_buf(CORD_ec x)
 
     if (len == 0) return;
     s = GC_MALLOC_ATOMIC(len+1);
+    if (NULL == s) OUT_OF_MEMORY;
     memcpy(s, x[0].ec_buf, len);
     s[len] = '\0';
     x[0].ec_cord = CORD_cat_char_star(x[0].ec_cord, s, len);
