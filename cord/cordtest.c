@@ -126,7 +126,7 @@ void test_extras(void)
     register int i;
     CORD y = "abcdefghijklmnopqrstuvwxyz0123456789";
     CORD x = "{}";
-    CORD w, z;
+    CORD u, w, z;
     FILE *f;
     FILE *f1a, *f1b, *f2;
 
@@ -178,7 +178,9 @@ void test_extras(void)
         ABORT("file substr wrong");
     if (strcmp(CORD_to_char_star(CORD_substr(w, 1000*36, 36)), y) != 0)
         ABORT("char * file substr wrong");
-    if (strcmp(CORD_substr(w, 1000*36, 2), "ab") != 0)
+    u = CORD_substr(w, 1000*36, 2);
+    if (!u) ABORT("CORD_substr returned NULL");
+    if (strcmp(u, "ab") != 0)
         ABORT("short file substr wrong");
     if (CORD_str(x,1,"9a") != 35) ABORT("CORD_str failed 1");
     if (CORD_str(x,0,"9abcdefghijk") != 35) ABORT("CORD_str failed 2");

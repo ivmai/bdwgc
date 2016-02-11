@@ -131,7 +131,8 @@ char * plain_chars(char * text, size_t len)
 {
     char * result = GC_MALLOC_ATOMIC(len + 1);
     register size_t i;
-    
+
+    if (NULL == result) return NULL;
     for (i = 0; i < len; i++) {
        if (iscntrl(((unsigned char *)text)[i])) {
            result[i] = ' ';
@@ -149,7 +150,8 @@ char * control_chars(char * text, size_t len)
 {
     char * result = GC_MALLOC_ATOMIC(len + 1);
     register size_t i;
-    
+
+    if (NULL == result) return NULL;
     for (i = 0; i < len; i++) {
        if (iscntrl(((unsigned char *)text)[i])) {
            result[i] = text[i] + 0x40;
@@ -321,14 +323,16 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
       	           SetBkMode(dc, OPAQUE);
       	           SetTextColor(dc, GetSysColor(COLOR_WINDOWTEXT));
       	           
-      	           TextOutA(dc, this_line.left, this_line.top,
+                   if (plain != NULL)
+                     TextOutA(dc, this_line.left, this_line.top,
       	           	   plain, (int)len);
       	           TextOutA(dc, this_line.left + (int)len * char_width,
 		   	   this_line.top,
       	           	   blanks, (int)(COLS - len));
       	           SetBkMode(dc, TRANSPARENT);
       	           SetTextColor(dc, RED);
-      	           TextOutA(dc, this_line.left, this_line.top,
+                   if (control != NULL)
+                     TextOutA(dc, this_line.left, this_line.top,
       	           	   control, (int)strlen(control));
       	       }
       	   }
