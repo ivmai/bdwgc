@@ -49,10 +49,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
    WNDCLASS    wndclass;
    HANDLE      hAccel;
 
-#  ifdef THREAD_LOCAL_ALLOC
-     GC_INIT();  /* Required if GC is built with THREAD_LOCAL_ALLOC 	*/
-     		 /* Always safe, but this is used as a GC test.		*/
-#  endif
+   GC_INIT();
 
    if (!hPrevInstance)
    {
