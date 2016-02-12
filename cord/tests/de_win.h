@@ -44,11 +44,7 @@
 /* Windows UI stuff     */
 
 LRESULT CALLBACK WndProc (HWND hwnd, UINT message,
-                          UINT wParam, LONG lParam);
-
-LRESULT CALLBACK AboutBox( HWND hDlg, UINT message,
-                           UINT wParam, LONG lParam );
-
+                          WPARAM wParam, LPARAM lParam);
 
 /* Screen dimensions.  Maintained by de_win.c.  */
 extern int LINES;
