@@ -59,8 +59,8 @@
 
 typedef void (* oom_fn)(void);
 
-# define OUT_OF_MEMORY {  if (CORD_oom_fn != (oom_fn) 0) (*CORD_oom_fn)(); \
-              ABORT("Out of memory\n"); }
+# define OUT_OF_MEMORY { if (CORD_oom_fn != (oom_fn) 0) (*CORD_oom_fn)(); \
+                         ABORT("Out of memory"); }
 # define ABORT(msg) { fprintf(stderr, "%s\n", msg); abort(); }
 
 #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
