@@ -563,21 +563,26 @@ void generic_init(void)
 
 #ifndef WIN32
 
-main(argc, argv)
-int argc;
-char ** argv;
+int main(int argc, char **argv)
 {
     int c;
     void *buf;
 
-#if defined(MACINTOSH)
+#   if defined(MACINTOSH)
         console_options.title = "\pDumb Editor";
         cshow(stdout);
         argc = ccommand(&argv);
-#endif
+#   endif
     GC_INIT();
 
-    if (argc != 2) goto usage;
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s file\n", argv[0]);
+        fprintf(stderr, "Cursor keys: ^B(left) ^F(right) ^P(up) ^N(down)\n");
+        fprintf(stderr, "Undo: ^U    Write to <file>.new: ^W");
+        fprintf(stderr, "Quit:^D     Repeat count: ^R[n]\n");
+        fprintf(stderr, "Top: ^T     Locate (search, find): ^L text ^L\n");
+        exit(1);
+    }
     arg_file_name = argv[1];
     buf = GC_MALLOC_ATOMIC(8192);
     if (NULL == buf) OUT_OF_MEMORY;
@@ -586,8 +591,8 @@ char ** argv;
     noecho(); nonl(); cbreak();
     generic_init();
     while ((c = getchar()) != QUIT) {
-                if (c == EOF) break;
-            do_command(c);
+        if (c == EOF) break;
+        do_command(c);
     }
     move(LINES-1, 0);
     clrtoeol();
@@ -595,14 +600,7 @@ char ** argv;
     nl();
     echo();
     endwin();
-    exit(0);
-usage:
-    fprintf(stderr, "Usage: %s file\n", argv[0]);
-    fprintf(stderr, "Cursor keys: ^B(left) ^F(right) ^P(up) ^N(down)\n");
-    fprintf(stderr, "Undo: ^U    Write to <file>.new: ^W");
-    fprintf(stderr, "Quit:^D  Repeat count: ^R[n]\n");
-    fprintf(stderr, "Top: ^T   Locate (search, find): ^L text ^L\n");
-    exit(1);
+    return 0;
 }
 
 #endif  /* !WIN32 */
