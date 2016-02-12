@@ -224,7 +224,7 @@ void replace_line(int i, CORD s)
     }
 #   if !defined(MACINTOSH)
         /* A gross workaround for an apparent curses bug: */
-        if (i == LINES-1 && len == COLS) {
+        if (i == LINES-1 && len == (unsigned)COLS) {
             s = CORD_substr(s, 0, len - 1);
         }
 #   endif
