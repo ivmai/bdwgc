@@ -589,7 +589,6 @@ char ** argv;
                 if (c == EOF) break;
             do_command(c);
     }
-done:
     move(LINES-1, 0);
     clrtoeol();
     refresh();
