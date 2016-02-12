@@ -21,7 +21,7 @@
 /* that real clients shouldn't rely on.                 */
 
 # define ABORT(string) \
-    { int x = 0; fprintf(stderr, "FAILED: %s\n", string); x = 1 / x; abort(); }
+    { fprintf(stderr, "FAILED: %s\n", string); abort(); }
 
 int count;
 
