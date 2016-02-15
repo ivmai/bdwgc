@@ -141,6 +141,7 @@ void add_map(int line, size_t pos)
 {
     line_map new_map = GC_NEW(struct LineMapRep);
 
+    if (NULL == new_map) OUT_OF_MEMORY;
     if (current_map_size >= MAX_MAP_SIZE) prune_map();
     new_map -> line = line;
     new_map -> pos = pos;
@@ -186,6 +187,7 @@ void add_hist(CORD s)
 {
     history new_file = GC_NEW(struct HistoryRep);
 
+    if (NULL == new_file) OUT_OF_MEMORY;
     new_file -> file_contents = current = s;
     current_len = CORD_len(s);
     new_file -> previous = now;
