@@ -953,7 +953,7 @@ struct hblkhdr {
     word hb_descr;              /* object descriptor for marking.  See  */
                                 /* mark.h.                              */
 #   ifdef MARK_BIT_PER_GRANULE
-      short * hb_map;           /* Essentially a table of remainders    */
+      unsigned short * hb_map;  /* Essentially a table of remainders    */
                                 /* mod BYTES_TO_GRANULES(hb_sz), except */
                                 /* for large blocks.  See GC_obj_map.   */
 #   endif
@@ -1240,7 +1240,7 @@ struct _GC_arrays {
         /* number of bytes.                                             */
 # ifdef MARK_BIT_PER_GRANULE
 #   define GC_obj_map GC_arrays._obj_map
-    short * _obj_map[MAXOBJGRANULES+1];
+    unsigned short * _obj_map[MAXOBJGRANULES + 1];
                        /* If not NULL, then a pointer to a map of valid */
                        /* object addresses.                             */
                        /* _obj_map[sz_in_granules][i] is                */
