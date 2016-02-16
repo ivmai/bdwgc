@@ -27,13 +27,15 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h> /* for exit() */
+
 #include "gc.h"
 #include "cord.h"
 
 #ifdef THINK_C
 #define MACINTOSH
-#include <ctype.h>
 #endif
+#include <ctype.h>
 
 #if (defined(__BORLANDC__) || defined(__CYGWIN__)) && !defined(WIN32)
     /* If this is DOS or win16, we'll fail anyway.      */
@@ -63,6 +65,7 @@
 #       define COLS 80
 #else
 #  include <curses.h>
+#  include <unistd.h> /* for sleep() */
 #  define de_error(s) { fprintf(stderr, s); sleep(2); }
 #endif
 #include "de_cmds.h"
