@@ -607,9 +607,9 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                             mse *mark_stack_limit)
 {
   signed_word credit = HBLKSIZE;  /* Remaining credit for marking work  */
-  ptr_t current_p;      /* Pointer to current candidate ptr.    */
-  word current; /* Candidate pointer.                           */
-  ptr_t limit;  /* (Incl) limit of current candidate range.     */
+  ptr_t current_p;      /* Pointer to current candidate ptr.            */
+  word current;         /* Candidate pointer.                           */
+  ptr_t limit = 0;      /* (Incl) limit of current candidate range.     */
   word descr;
   ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
   ptr_t least_ha = GC_least_plausible_heap_addr;
@@ -636,6 +636,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
     if (descr & ((~(WORDS_TO_BYTES(SPLIT_RANGE_WORDS) - 1)) | GC_DS_TAGS)) {
       word tag = descr & GC_DS_TAGS;
 
+      GC_STATIC_ASSERT(GC_DS_TAGS == 0x3);
       switch(tag) {
         case GC_DS_LENGTH:
           /* Large length.                                              */
@@ -767,9 +768,6 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
               continue;
           }
           goto retry;
-        default:
-          limit = 0; /* initialized to prevent warning. */
-          ABORT_RET("GC_mark_from: bad state");
       }
     } else /* Small object with length descriptor */ {
       mark_stack_top--;
