@@ -934,7 +934,7 @@
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
-#     define GETPAGESIZE() getpagesize()
+#     define GETPAGESIZE() (unsigned)getpagesize()
 #     if defined(USE_PPC_PREFETCH) && defined(__GNUC__)
         /* The performance impact of prefetches is untested */
 #       define PREFETCH(x) \
@@ -1133,7 +1133,7 @@
 #         define HEURISTIC2
 #       endif
 #       include <unistd.h>
-#       define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
+#       define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
                 /* getpagesize() appeared to be missing from at least one */
                 /* Solaris 5.4 installation.  Weird.                      */
 #       define DYNAMIC_LOADING
@@ -1234,7 +1234,7 @@
 #   ifdef BEOS
 #     define OS_TYPE "BEOS"
 #     include <OS.h>
-#     define GETPAGESIZE() B_PAGE_SIZE
+#     define GETPAGESIZE() (unsigned)B_PAGE_SIZE
       extern int etext[];
 #     define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #   endif
@@ -1299,7 +1299,7 @@
 #       define STACK_GROWS_DOWN
 #       define HEURISTIC2
 #       include <unistd.h>
-#       define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
+#       define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 #       define DYNAMIC_LOADING
 #       ifndef USE_MMAP
 #         define USE_MMAP
@@ -1566,7 +1566,7 @@
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
-#     define GETPAGESIZE() getpagesize()
+#     define GETPAGESIZE() (unsigned)getpagesize()
       /* There seems to be some issues with trylock hanging on darwin.  */
       /* This should be looked into some more.                          */
 #     define NO_PTHREAD_TRYLOCK
@@ -1783,7 +1783,7 @@
 #     endif
 #     define DYNAMIC_LOADING
 #     include <unistd.h>
-#     define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
+#     define GETPAGESIZE() (unsigned)sysconf(_SC_PAGE_SIZE)
 #     ifndef __GNUC__
 #       define PREFETCH(x)  do { \
                               register long addr = (long)(x); \
@@ -1930,7 +1930,7 @@
 #       define HPUX_STACKBOTTOM
 #       define DYNAMIC_LOADING
 #       include <unistd.h>
-#       define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
+#       define GETPAGESIZE() (unsigned)sysconf(_SC_PAGE_SIZE)
         /* The following was empirically determined, and is probably    */
         /* not very robust.                                             */
         /* Note that the backing store base seems to be at a nice       */
@@ -2105,7 +2105,7 @@
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
-#     define GETPAGESIZE() getpagesize()
+#     define GETPAGESIZE() (unsigned)getpagesize()
       /* FIXME: There seems to be some issues with trylock hanging on   */
       /* darwin. This should be looked into some more.                  */
 #     define NO_PTHREAD_TRYLOCK
@@ -2221,7 +2221,7 @@
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
-#     define GETPAGESIZE() getpagesize()
+#     define GETPAGESIZE() (unsigned)getpagesize()
       /* FIXME: There seems to be some issues with trylock hanging on   */
       /* darwin. This should be looked into some more.                  */
 #     define NO_PTHREAD_TRYLOCK
@@ -2418,7 +2418,7 @@
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
-#     define GETPAGESIZE() getpagesize()
+#     define GETPAGESIZE() (unsigned)getpagesize()
       /* There seems to be some issues with trylock hanging on darwin.  */
       /* This should be looked into some more.                          */
 #     define NO_PTHREAD_TRYLOCK
@@ -2631,7 +2631,7 @@
 
 #if (defined(SVR4) || defined(PLATFORM_ANDROID)) && !defined(GETPAGESIZE)
 # include <unistd.h>
-# define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
+# define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 #endif
 
 #ifndef GETPAGESIZE
@@ -2639,7 +2639,7 @@
      || defined(NETBSD) || defined(FREEBSD) || defined(HPUX)
 #   include <unistd.h>
 # endif
-# define GETPAGESIZE() getpagesize()
+# define GETPAGESIZE() (unsigned)getpagesize()
 #endif
 
 #if defined(PLATFORM_ANDROID) && ((defined(MIPS) && (CPP_WORDSZ == 32)) \

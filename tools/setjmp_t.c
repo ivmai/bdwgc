@@ -70,7 +70,7 @@ int * nested_sp(void)
 int main(void)
 {
     volatile word sp;
-    long ps = GETPAGESIZE();
+    unsigned ps = GETPAGESIZE();
     jmp_buf b;
     register int x = (int)strlen("a");  /* 1, slightly disguised */
     static int y = 0;
