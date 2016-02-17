@@ -3639,10 +3639,6 @@ GC_INNER void GC_dirty_init(void)
         ABORT("/proc open failed");
     }
     syscall(SYS_fcntl, GC_proc_fd, F_SETFD, FD_CLOEXEC);
-    if (GC_proc_fd < 0) {
-        WARN("/proc ioctl(PIOCOPENPD) failed", 0);
-        return;
-    }
 
     GC_dirty_maintained = TRUE;
     GC_proc_buf = GC_scratch_alloc(GC_proc_buf_size);
