@@ -2042,8 +2042,9 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
 #       endif
           if (zero_fd == -1)
             ABORT("Could not open /dev/zero");
+          if (fcntl(zero_fd, F_SETFD, FD_CLOEXEC) == -1)
+            WARN("Could not set FD_CLOEXEC for /dev/zero", 0);
 
-          fcntl(zero_fd, F_SETFD, FD_CLOEXEC);
           initialized = TRUE;
       }
 #   endif
@@ -3526,9 +3527,10 @@ GC_INNER void GC_dirty_init(void)
     buf[sizeof(buf) - 1] = '\0';
     GC_proc_fd = open(buf, O_RDONLY);
     if (GC_proc_fd < 0) {
-        ABORT("/proc open failed");
+      ABORT("/proc open failed");
     }
-    syscall(SYS_fcntl, GC_proc_fd, F_SETFD, FD_CLOEXEC);
+    if (syscall(SYS_fcntl, GC_proc_fd, F_SETFD, FD_CLOEXEC) == -1)
+      WARN("Could not set FD_CLOEXEC for /proc", 0);
 
     GC_dirty_maintained = TRUE;
     GC_proc_buf = GC_scratch_alloc(GC_proc_buf_size);
