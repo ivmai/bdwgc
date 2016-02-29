@@ -1178,7 +1178,8 @@ GC_INNER void GC_init_parallel(void)
         fudged_set = *set;
         sig_suspend = GC_get_suspend_signal();
         GC_ASSERT(sig_suspend >= 0);
-        sigdelset(&fudged_set, sig_suspend);
+        if (sigdelset(&fudged_set, sig_suspend) != 0)
+            ABORT("sigdelset failed");
         set = &fudged_set;
     }
     return(REAL_FUNC(pthread_sigmask)(how, set, oset));
