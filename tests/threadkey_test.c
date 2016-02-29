@@ -11,6 +11,9 @@
 
 #include "gc.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #if (!defined(GC_PTHREADS) || defined(GC_SOLARIS_THREADS) \
      || defined(__native_client__)) && !defined(SKIP_THREADKEY_TEST)
   /* FIXME: Skip this test on Solaris for now.  The test may fail on    */
@@ -20,8 +23,6 @@
 #endif
 
 #ifdef SKIP_THREADKEY_TEST
-
-#include <stdio.h>
 
 int main (void)
 {
@@ -91,7 +92,11 @@ int main (void)
     void *res;
     if (GC_pthread_create (&t, NULL, entry, NULL) == 0
         && (i & 1) != 0) {
-      (void)GC_pthread_join(t, &res);
+      int code = GC_pthread_join(t, &res);
+      if (code != 0) {
+        fprintf(stderr, "Thread join failed %d\n", code);
+        exit(2);
+      }
     }
   }
   return 0;
