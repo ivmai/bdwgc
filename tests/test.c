@@ -412,6 +412,10 @@ sexpr uncollectable_ints(int low, int up)
 
 void check_ints(sexpr list, int low, int up)
 {
+    if (is_nil(list)) {
+        GC_printf("list is nil\n");
+        FAIL;
+    }
     if (SEXPR_TO_INT(car(car(list))) != low) {
         GC_printf(
            "List reversal produced incorrect list - collector is broken\n");
