@@ -472,7 +472,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
     if (offset != 0) {
         offset = align - offset;
         if (!GC_all_interior_pointers) {
-            if (offset >= VALID_OFFSET_SZ) return GC_malloc(HBLKSIZE);
+            GC_STATIC_ASSERT(VALID_OFFSET_SZ <= HBLKSIZE);
+            GC_ASSERT(offset < VALID_OFFSET_SZ);
             GC_register_displacement(offset);
         }
     }
