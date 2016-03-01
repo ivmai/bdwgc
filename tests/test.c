@@ -155,7 +155,7 @@ int realloc_count = 0;
 
   void GC_amiga_free_all_mem(void);
   void Amiga_Fail(void){GC_amiga_free_all_mem();abort();}
-# define FAIL (void)Amiga_Fail()
+# define FAIL Amiga_Fail()
   void *GC_amiga_gctest_malloc_explicitly_typed(size_t lb, GC_descr d){
     void *ret=GC_malloc_explicitly_typed(lb,d);
     if(ret==NULL){
@@ -188,7 +188,7 @@ int realloc_count = 0;
 #else /* !AMIGA_FASTALLOC */
 
 # if defined(PCR) || defined(LINT2)
-#   define FAIL (void)abort()
+#   define FAIL abort()
 # else
 #   define FAIL ABORT("Test failed")
 # endif
