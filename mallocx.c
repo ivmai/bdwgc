@@ -77,8 +77,9 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
 {
     struct hblk * h;
     hdr * hhdr;
-    size_t sz;   /* Current size in bytes       */
-    size_t orig_sz;      /* Original sz in bytes        */
+    void * result;
+    size_t sz;      /* Current size in bytes    */
+    size_t orig_sz; /* Original sz in bytes     */
     int obj_kind;
 
     if (p == 0) return(GC_malloc(lb));  /* Required by ANSI */
@@ -118,31 +119,20 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
                 BZERO(((ptr_t)p) + lb, orig_sz - lb);
             }
             return(p);
-        } else {
-            /* shrink */
-              void * result =
-                        GC_generic_or_special_malloc((word)lb, obj_kind);
-
-              if (result == 0) return(0);
-                  /* Could also return original object.  But this       */
-                  /* gives the client warning of imminent disaster.     */
-              BCOPY(p, result, lb);
-#             ifndef IGNORE_FREE
-                GC_free(p);
-#             endif
-              return(result);
         }
-    } else {
-        /* grow */
-          void * result = GC_generic_or_special_malloc((word)lb, obj_kind);
-
-          if (result == 0) return(0);
-          BCOPY(p, result, sz);
-#         ifndef IGNORE_FREE
-            GC_free(p);
-#         endif
-          return(result);
+        /* shrink */
+        sz = lb;
     }
+    result = GC_generic_or_special_malloc((word)lb, obj_kind);
+    if (result != NULL) {
+      /* In case of shrink, it could also return original object.       */
+      /* But this gives the client warning of imminent disaster.        */
+      BCOPY(p, result, sz);
+#     ifndef IGNORE_FREE
+        GC_free(p);
+#     endif
+    }
+    return result;
 }
 
 # if defined(REDIRECT_MALLOC) && !defined(REDIRECT_REALLOC)
