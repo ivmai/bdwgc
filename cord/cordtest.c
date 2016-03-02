@@ -197,10 +197,10 @@ void test_extras(void)
     if (remove(FNAME1) != 0) {
         /* On some systems, e.g. OS2, this may fail if f1 is still open. */
         /* But we cannot call fclose as it might lead to double close.   */
-        fprintf(stderr, "WARNING: remove(FNAME1) failed\n");
+        fprintf(stderr, "WARNING: remove failed: " FNAME1 "\n");
     }
     if (remove(FNAME2) != 0) {
-        fprintf(stderr, "WARNING: remove(FNAME2) failed\n");
+        fprintf(stderr, "WARNING: remove failed: " FNAME2 "\n");
     }
 }
 
