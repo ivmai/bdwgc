@@ -136,15 +136,17 @@ int CORD_batched_fill_proc(const char * s, void * client_data)
 }
 
 /* Fill buf with len characters starting at i.  */
-/* Assumes len characters are available.        */
-void CORD_fill_buf(CORD x, size_t i, size_t len, char * buf)
+/* Assumes len characters are available in buf. */
+/* Return 1 if buf is filled fully (and len is  */
+/* non-zero), 0 otherwise.                      */
+int CORD_fill_buf(CORD x, size_t i, size_t len, char * buf)
 {
     CORD_fill_data fd;
 
     fd.len = len;
     fd.buf = buf;
     fd.count = 0;
-    (void)CORD_iter5(x, i, CORD_fill_proc, CORD_batched_fill_proc, &fd);
+    return CORD_iter5(x, i, CORD_fill_proc, CORD_batched_fill_proc, &fd);
 }
 
 int CORD_cmp(CORD x, CORD y)
@@ -241,7 +243,8 @@ char * CORD_to_char_star(CORD x)
     char * result = GC_MALLOC_ATOMIC(len + 1);
 
     if (result == 0) OUT_OF_MEMORY;
-    CORD_fill_buf(x, 0, len, result);
+    if (len > 0 && CORD_fill_buf(x, 0, len, result) != 1)
+      ABORT("CORD_fill_buf malfunction");
     result[len] = '\0';
     return(result);
 }
