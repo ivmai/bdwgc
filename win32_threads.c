@@ -1812,6 +1812,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
           break;
         }
       }
+      GC_markers_m1 = i;
 
 #     ifndef NO_MARKER_SPECIAL_SIGMASK
         /* Restore previous signal mask.        */
@@ -1821,7 +1822,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         }
 #     endif
 
-      GC_markers_m1 = i;
       (void)pthread_attr_destroy(&attr);
       GC_wait_for_markers_init();
       GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
