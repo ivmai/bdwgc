@@ -460,7 +460,6 @@ STATIC pthread_t GC_mark_threads[MAX_MARKERS];
         break;
       }
     }
-    GC_markers_m1 = i;
 
 #   ifndef NO_MARKER_SPECIAL_SIGMASK
       /* Restore previous signal mask.  */
@@ -470,6 +469,7 @@ STATIC pthread_t GC_mark_threads[MAX_MARKERS];
       }
 #   endif
 
+    GC_markers_m1 = i;
     (void)pthread_attr_destroy(&attr);
     GC_wait_for_markers_init();
     GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
