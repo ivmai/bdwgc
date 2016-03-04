@@ -1439,7 +1439,6 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
     if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr), FALSE)) {
         if (hhdr != 0) {
           r = GC_base(p);
-          GC_ASSERT(r != NULL); /* to prevent a warning */
           hhdr = HDR(r);
         }
         if (hhdr == 0) {
