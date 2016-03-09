@@ -1436,15 +1436,12 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
 
     PREFETCH(p);
     GET_HDR(p, hhdr);
-    if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr), FALSE)) {
-        if (hhdr != 0) {
-          r = GC_base(p);
-          hhdr = HDR(r);
-        }
-        if (hhdr == 0) {
-            GC_ADD_TO_BLACK_LIST_STACK(p, source);
-            return;
-        }
+    if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr), FALSE)
+        && (NULL == hhdr
+            || (r = GC_base(p)) == NULL
+            || (hhdr = HDR(r)) == NULL)) {
+        GC_ADD_TO_BLACK_LIST_STACK(p, source);
+        return;
     }
     if (EXPECT(HBLK_IS_FREE(hhdr), FALSE)) {
         GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
