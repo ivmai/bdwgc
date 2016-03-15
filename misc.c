@@ -1845,6 +1845,8 @@ GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
 {
     unsigned result = GC_n_kinds;
 
+    GC_ASSERT(adjust == FALSE || adjust == TRUE);
+    GC_ASSERT(clear == FALSE || clear == TRUE);
     if (result < MAXOBJKINDS) {
       GC_n_kinds++;
       GC_obj_kinds[result].ok_freelist = fl;
