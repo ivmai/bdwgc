@@ -1,3 +1,99 @@
+2016-03-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordtest.c (test_extras): Do not quote FNAME1 and FNAME2.
+
+2016-02-17  Niklas Therning <niklas@therning.org>
+
+	* mark.c (GC_mark_from): In case of GC_DS_PER_OBJECT, skip objects
+	those descriptor is outside object.
+
+2014-06-22  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordprnt.c (CORD_vsprintf): Do not use va_copy and va_end if
+	EMX (as the primitives are missing).
+
+2015-01-05  Bruce Hoult <bruce@hoult.org>
+
+	* cord/cordtest.c (GC_SNPRINTF_BUFSZ_ARG): Remove.
+	* cord/cordtest.c (GC_SNPRINTF): Do not define if no snprintf()
+	available.
+	* cord/cordtest.c (test_printf): If GC_SNPRINTF undefined then
+	use sprintf() instead.
+
+2014-06-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordtest.c (GC_SNPRINTF, GC_SNPRINTF_BUFSZ_ARG): New
+	macro to workaround snprintf() missing in DJGPP and MS VC.
+	* cord/cordtest.c (test_printf): Replace snprintf() with
+	GC_SNPRINTF and GC_SNPRINTF_BUFSZ_ARG.
+	* misc.c (vsnprintf): Test DJGPP instead of NO_VSNPRINTF; refine
+	comment.
+
+2016-02-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c (check_heap_stats): Cast n_tests to size_t before
+	multiplication by 2700000 (instead of implicit cast to size_t of the
+	result).
+
+2016-02-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/de.c: Include stdlib.h (for "exit" prototype); include
+	ctype.h unconditionally (for "iscntrl", "isdigit" prototypes); include
+	unistd.h (for "sleep" prototype) unless WIN32 or MACINTOSH.
+
+2016-02-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/de.c (add_map, add_hist): Check GC_NEW() result for null.
+
+2016-02-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/de_win.c (WinMain): Call GC_INIT() unconditionally.
+
+2016-02-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/de_win.h (WndProc): Change UINT type (for wParam) to
+	WPARAM; change LONG type to LPARAM.
+	* cord/de_win.h (AboutBox): Remove unused declaration.
+
+2016-02-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordprnt.c: Include <stdlib.h> (for abort() declaration).
+	* cord/cordprnt.c (OUT_OF_MEMORY): New macro.
+	* cord/de.c (OUT_OF_MEMORY): Likewise.
+	* cord/cordprnt.c (CORD_vsprintf): Execute OUT_OF_MEMORY if
+	GC_MALLOC_ATOMIC returns NULL.
+	* cord/cordxtra.c (CORD_ec_flush_buf): Likewise.
+	* cord/de.c (replace_line, main): Likewise.
+	* cord/cordtest.c (test_extras): Declare "u" local variable; do ABORT
+	if CORD_substr returns NULL (to avoid null pointer dereference in
+	strcmp).
+	* cord/de_win.c (plain_chars, control_chars): Return NULL if
+	GC_MALLOC_ATOMIC returns NULL.
+	* cord/de_win.c (WndProc): Execute de_error() (with the
+	appropriate message) if plain_chars() or control_chars() returned
+	NULL (and do not call the corresponding TextOutA in such a case).
+
+2014-08-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/de_win.c (FullAppName): Remove global variable.
+	* cord/de_win.c (szAppName): Turn into macro; use TEXT().
+	* cord/de_win.c (de_error): Force calling ANSI version of
+	MessageBox; remove casts to LPSTR.
+	* cord/de_win.c (WinMain): Use TEXT() for lpszMenuName field and
+	for CreateWindow agrument.
+	* cord/de_win.c (WndProc): Use TEXT() for DialogBox argument;
+	force calling ANSI version of TextOut.
+
+2016-02-09  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c (run_one_test): Check GC_MALLOC result for NULL
+	(abort in case of out-of-memory) before dereference.
+
+2016-01-13  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.changes: Fix typo ("was").
+	* malloc.c (GC_malloc_uncollectable): Fix typo ("was") in comment.
+
 2015-12-30  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/private/thread_local_alloc.h (ERROR_FL): Fix typo in comment
