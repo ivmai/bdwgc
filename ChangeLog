@@ -39,18 +39,60 @@ Also, includes 7.4.4 changes.
 
 == [7.4.4] (candidate) ==
 
+* Allow GC_FAST_MALLOC_GRANS() multiple use in a function.
 * Also enable the TSX workaround for i386 (Linux).
+* Avoid unstructured procfs on Solaris.
+* Change cord/de main() declaration style from K-R to ANSI C.
+* Change no-argument functions declaration style to ANSI C (cord).
 * Do not include sigcontext.h and asm/sigcontext.h.
+* Eliminate 'divide by zero' compiler warning in cordtest.
+* Eliminate warning about 64-bit pointer-to-int cast (Win64/pthreads-w32).
+* Eliminate warnings detected by Cppcheck in cord de[_win].
+* Fix 'comparison of non-null parameter is always false' warning (Clang).
+* Fix 'CORD_iter5 unused result' code defect in cordxtra.
+* Fix 'implicit declaration of vsnprintf' GCC warning (if strict ANSI mode).
+* Fix 'signed-to-bigger-unsigned value assignment' in GC_init_size_map.
+* Fix 'signed-to-bigger-unsigned value assignment' warning for hb_map.
+* Fix 'signed-to-bigger-unsigned value assignment' warning in GC_setpagesize.
+* Fix 'statement unreachable' compiler warning in GC_mark_from.
+* Fix 'statement unreachable' compiler warning in memalign.
+* Fix 'unused label' compiler warning in cord/de.
+* Fix 'value truncated' compiler warning in CORD_cat (MS VC).
 * Fix 'variable unused' warning in GC_save_callers.
-* Fix OSX issue with pthread_attr_setstacksize failure.
+* Fix 'visibility attribute not supported' GCC warning (IBM AIX).
+* Fix CMake warning about CMP0054 by unquoting instances of HOST.
+* Fix Cygwin64 build.
+* Fix Makefile.direct for Cygwin.
 * Fix __alloc_size__ availability detection (Clang).
+* Fix abort message in GC_move_long_link.
 * Fix and code refactoring of lock elision workaround (Linux/x64).
+* Fix assertion on mark_lock_holder for non-unique NUMERIC_THREAD_ID.
+* Fix data race in GC_init_explicit_typing.
+* Fix gc.mak regarding msvc_dbg and test (MSVC).
 * Fix missing error handling of pthread_attr_init/getstacksize.
 * Fix missing error handling of pthreads_mutex_init and cond_wait.
+* Fix missing numeric casts in cord.
+* Fix potential left shift overflows in finalize.c (64-bit targets).
+* Fix pthreads-win32 name in comments and documentation.
 * Fix setup_mark_lock missing prototype.
+* Fix unchecked fcntl() result.
+* Fix unchecked pointer dereference in check_ints (gctest).
+* Fix unchecked pthread_join() result in threadkey_test.
+* Fix unchecked sigdelset() result in pthread_support.
+* Fix undefined PTRFREE/NORMAL in gc_inline.h.
+* Prefix PREFETCH_FOR_WRITE with GC_ as used in gc_inline.h public header.
 * Relax mark_mutex attribute needed to disable elision (Linux/x64).
+* Remove code duplication in GC_realloc.
+* Remove duplicate new-line in OUT_OF_MEMORY message (cord).
+* Remove references to missing linux_threads.c from documentation.
 * Revert "Move asm machine-dependent files to 'src' folder" (partly).
+* Support Android API level 21.
+* Update compiler options in gc.mak (Win32).
+* Workaround 'comparison is always false' GCC warning in GC_FAST_MALLOC_GRANS.
+* Workaround 'identical expr on both sides of bitwise op' warning.
 * Workaround Linux NTPL lock elision bug.
+* Workaround false warning about unreachable code path.
+* Workaround invalid '_end' symbol on Android clang 3.5+.
 Also, includes 7.2g changes.
 
 
@@ -325,13 +367,34 @@ Also, includes 7.2 changes.
 == [7.2g] (candidate) ==
 
 * Fix 'illegal option -xassembler-with-cpp' error (Oracle SunCC).
+* Fix 'implicit declaration of function' compiler warnings in cord/de.
 * Fix CFLAGS in configure regarding -O flag passing to SunCC compiler.
 * Fix FirstDLOpenedLinkMap for case libgc not 1st dynamically linked (NetBSD).
+* Fix GC initialization in cord de_win for Cygwin.
+* Fix GC_get_stack_base if called before GC_init (Win32).
+* Fix OSX issue with pthread_attr_setstacksize failure.
+* Fix Unicode Win32 API calls in cord de_win.
+* Fix USE_COMPILER_TLS macro duplicate description in README.
+* Fix cord de_win WndProc prototype parameters for 64-bit (Win64).
 * Fix file descriptor resource leak in GC_register_data_segments (OS/2).
+* Fix filename printing in cordtest.
 * Fix missing cord_pos.h, ec.h among installed headers (Automake).
+* Fix missing GC_get_stack_base for Amiga.
 * Fix missing msvc_dbg.h in dist_noinst_HEADERS (Automake).
 * Fix mistyped ARM_THREAD_STATE macro (Darwin/arm).
+* Fix null-pointer dereferences on out-of-memory in cord and tests.
+* Fix potential multiplication overflow in check_heap_stats (gctest).
+* Fix race (and potential deadlock) at marker threads initialization.
 * Fix signedness of char values passed to isspace, iscntrl, isxdigit.
+* Fix typo (items numbering) in GC_finalize_all documentation.
+* Fix typos in ERROR_FL, GC_malloc_uncollectable comments.
+* Fix typos in gc_priv.h, in README for ews4800.
+* Fix unresolved vsnprintf in misc.c and snprintf in cordtest (DJGPP, VC).
+* Fix various spelling errors.
+* Fix vsprintf_args initialization/cleanup in CORD_vsprintf for EMX.
+* Remove documentation about obsolete GC_REDIRECT_TO_LOCAL.
+* Skip GC_DS_PER_OBJECT objects with negative descriptor in GC_mark_from.
+* windows-untested: Fix paths to msvc_dbg.c/h.
 
 
 == [7.2f] 2014-06-03 ==
