@@ -1823,12 +1823,15 @@ GC_INNER void GC_collect_a_little_inner(int n);
 GC_INNER void * GC_generic_malloc_inner(size_t lb, int k);
                                 /* Allocate an object of the given      */
                                 /* kind but assuming lock already held. */
-GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k);
+#if defined(DBG_HDRS_ALL) || defined(GC_GCJ_SUPPORT) \
+    || !defined(GC_NO_FINALIZATION)
+  GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k);
                                 /* Allocate an object, where            */
                                 /* the client guarantees that there     */
                                 /* will always be a pointer to the      */
                                 /* beginning of the object while the    */
                                 /* object is live.                      */
+#endif
 
 GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
                                 /* Make the indicated                   */
