@@ -155,10 +155,12 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
     return op;
 }
 
-/* Allocate a composite object of size n bytes.  The caller guarantees  */
-/* that pointers past the first page are not relevant.                  */
-GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
-{
+#if defined(DBG_HDRS_ALL) || defined(GC_GCJ_SUPPORT) \
+    || !defined(GC_NO_FINALIZATION)
+  /* Allocate a composite object of size n bytes.  The caller           */
+  /* guarantees that pointers past the first page are not relevant.     */
+  GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
+  {
     word lb_adjusted;
     void * op;
 
@@ -170,7 +172,8 @@ GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
     op = GC_alloc_large_and_clear(lb_adjusted, k, IGNORE_OFF_PAGE);
     GC_bytes_allocd += lb_adjusted;
     return op;
-}
+  }
+#endif
 
 #ifdef GC_COLLECT_AT_MALLOC
   /* Parameter to force GC at every malloc of size greater or equal to  */
