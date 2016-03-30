@@ -1504,6 +1504,10 @@
 #     define DATAEND ((ptr_t) (_end))
 /* #     define MPROTECT_VDB  Not quite working yet? */
 #     define DYNAMIC_LOADING
+#     ifndef USE_MMAP
+#       define USE_MMAP
+#     endif
+#     define USE_MMAP_ANON
 #   endif
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
