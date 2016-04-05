@@ -526,7 +526,20 @@ GC_API size_t GC_CALL GC_size(const void * /* obj_addr */) GC_ATTR_NONNULL(1);
 /* The resulting object has the same kind as the original.              */
 /* If the argument is stubborn, the result will have changes enabled.   */
 /* It is an error to have changes enabled for the original object.      */
-/* Follows ANSI conventions for NULL old_object.                        */
+/* It does not change the content of the object from its beginning to   */
+/* the minimum of old size and new_size_in_bytes; the content above in  */
+/* case of object size growth is initialized to zero (not guaranteed    */
+/* for atomic object type).  The function follows ANSI conventions for  */
+/* NULL old_object (i.e., equivalent to GC_malloc regardless of new     */
+/* size).  If new size is zero (and old_object is non-NULL) then the    */
+/* call is equivalent to GC_free (and NULL is returned).  If old_object */
+/* is non-NULL, it must have been returned by an earlier call to        */
+/* GC_malloc* or GC_realloc.  In case of the allocation failure, the    */
+/* memory pointed by old_object is untouched (and not freed).           */
+/* If the returned pointer is not the same as old_object and both of    */
+/* them are non-NULL then old_object is freed.  Returns either NULL (in */
+/* case of the allocation failure or zero new size) or pointer to the   */
+/* allocated memory.                                                    */
 GC_API void * GC_CALL GC_realloc(void * /* old_object */,
                                  size_t /* new_size_in_bytes */)
                         /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2);

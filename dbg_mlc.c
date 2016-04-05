@@ -894,6 +894,11 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
     if (p == 0) {
       return GC_debug_malloc(lb, OPT_RA s, i);
     }
+    if (0 == lb) /* and p != NULL */ {
+      GC_debug_free(p);
+      return NULL;
+    }
+
 #   ifdef GC_ADD_CALLER
       if (s == NULL) {
         GC_caller_func_offset(ra, &s, &i);

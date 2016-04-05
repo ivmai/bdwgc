@@ -92,6 +92,12 @@ GC_API void * GC_CALL GC_realloc(void * p, size_t lb)
     int obj_kind;
 
     if (p == 0) return(GC_malloc(lb));  /* Required by ANSI */
+    if (0 == lb) /* and p != NULL */ {
+#     ifndef IGNORE_FREE
+        GC_free(p);
+#     endif
+      return NULL;
+    }
     h = HBLKPTR(p);
     hhdr = HDR(h);
     sz = hhdr -> hb_sz;

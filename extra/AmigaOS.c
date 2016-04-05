@@ -508,7 +508,8 @@ void *GC_amiga_realloc(void *old_object,size_t new_size_in_bytes){
         void *ret;
         latestsize=new_size_in_bytes;
         ret=GC_realloc(old_object,new_size_in_bytes);
-        if(ret==NULL && GC_AMIGA_MEMF==(MEMF_FAST | MEMF_CLEAR)){
+        if(ret==NULL && new_size_in_bytes != 0
+           && GC_AMIGA_MEMF==(MEMF_FAST | MEMF_CLEAR)){
                 /* Out of fast-mem. */
 #ifdef GC_AMIGA_GC
                 if(!GC_dont_gc){
@@ -533,7 +534,7 @@ void *GC_amiga_realloc(void *old_object,size_t new_size_in_bytes){
                 }
 #endif
         }
-        if(ret==NULL){
+        if(ret==NULL && new_size_in_bytes != 0){
                 WARN("Out of Memory!  Returning NIL!\n", 0);
         }
 #ifdef GC_AMIGA_PRINTSTATS
