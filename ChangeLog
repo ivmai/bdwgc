@@ -50,6 +50,7 @@ Also, includes 7.4.4 changes.
 * Eliminate warnings detected by Cppcheck in cord de[_win].
 * Fix 'comparison of non-null parameter is always false' warning (Clang).
 * Fix 'CORD_iter5 unused result' code defect in cordxtra.
+* Fix 'GC_generic_malloc_inner_ignore_off_page not used' compiler warning.
 * Fix 'implicit declaration of vsnprintf' GCC warning (if strict ANSI mode).
 * Fix 'signed-to-bigger-unsigned value assignment' in GC_init_size_map.
 * Fix 'signed-to-bigger-unsigned value assignment' warning for hb_map.
@@ -62,6 +63,7 @@ Also, includes 7.4.4 changes.
 * Fix 'visibility attribute not supported' GCC warning (IBM AIX).
 * Fix CMake warning about CMP0054 by unquoting instances of HOST.
 * Fix Cygwin64 build.
+* Fix GC_REALLOC to call GC_FREE if new size is zero and pointer is non-NULL.
 * Fix Makefile.direct for Cygwin.
 * Fix __alloc_size__ availability detection (Clang).
 * Fix abort message in GC_move_long_link.
@@ -88,6 +90,7 @@ Also, includes 7.4.4 changes.
 * Revert "Move asm machine-dependent files to 'src' folder" (partly).
 * Support Android API level 21.
 * Update compiler options in gc.mak (Win32).
+* Use mmap instead of sbrk (Hurd).
 * Workaround 'comparison is always false' GCC warning in GC_FAST_MALLOC_GRANS.
 * Workaround 'identical expr on both sides of bitwise op' warning.
 * Workaround Linux NTPL lock elision bug.
@@ -392,6 +395,7 @@ Also, includes 7.2 changes.
 * Fix unresolved vsnprintf in misc.c and snprintf in cordtest (DJGPP, VC).
 * Fix various spelling errors.
 * Fix vsprintf_args initialization/cleanup in CORD_vsprintf for EMX.
+* Regenerate configure files using official libtool release (v2.4.2).
 * Remove documentation about obsolete GC_REDIRECT_TO_LOCAL.
 * Skip GC_DS_PER_OBJECT objects with negative descriptor in GC_mark_from.
 * windows-untested: Fix paths to msvc_dbg.c/h.
