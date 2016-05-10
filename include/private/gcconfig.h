@@ -574,6 +574,14 @@
 #    define HEXAGON
 #    define mach_type_known
 # endif
+# if defined(__tile__) && defined(LINUX)
+#   ifdef __tilegx__
+#     define TILEGX
+#   else
+#     define TILEPRO
+#   endif
+#   define mach_type_known
+# endif
 
 # if defined(SYMBIAN)
 #   define mach_type_known
@@ -635,6 +643,8 @@
                     /*             CRIS       ==> Axis Etrax            */
                     /*             M32R       ==> Renesas M32R          */
                     /*             HEXAGON    ==> Qualcomm Hexagon      */
+                    /*             TILEPRO    ==> Tilera TILEPro        */
+                    /*             TILEGX     ==> Tilera TILE-Gx        */
 
 
 /*
@@ -2569,6 +2579,44 @@
 #       endif
 #   else
 #       error --> unknown Hexagon OS configuration
+#   endif
+# endif
+
+# ifdef TILEPRO
+#   define CPP_WORDSZ 32
+#   define MACH_TYPE "TILEPro"
+#   define ALIGNMENT 4
+#   define ALIGN_DOUBLE
+#   define PREFETCH(x) __insn_prefetch(x)
+#   define CACHE_LINE_SIZE 64
+#   define USE_GENERIC_PUSH_REGS
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)__data_start)
+#     define LINUX_STACKBOTTOM
+#     define DYNAMIC_LOADING
+#   endif
+# endif
+
+# ifdef TILEGX
+#   define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
+#   define MACH_TYPE "TILE-Gx"
+#   define ALIGNMENT __SIZEOF_POINTER__
+#   if CPP_WORDSZ < 64
+#     define ALIGN_DOUBLE /* Guarantee 64-bit alignment for allocations. */
+      /* Take advantage of 64-bit stores. */
+#     define CLEAR_DOUBLE(x) (*(long long *)(x) = 0)
+#   endif
+#   define PREFETCH(x) __insn_prefetch_l1(x)
+#   define CACHE_LINE_SIZE 64
+#   define USE_GENERIC_PUSH_REGS
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)__data_start)
+#     define LINUX_STACKBOTTOM
+#     define DYNAMIC_LOADING
 #   endif
 # endif
 
