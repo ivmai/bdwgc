@@ -46,6 +46,7 @@
 * Fix undefined PTRFREE/NORMAL in gc_inline.h.
 * Prefix PREFETCH_FOR_WRITE with GC_ as used in gc_inline.h public header.
 * Relax mark_mutex attribute needed to disable elision (Linux/x64).
+* Remove (deprecate) TODO file.
 * Remove code duplication in GC_realloc.
 * Remove duplicate new-line in OUT_OF_MEMORY message (cord).
 * Remove references to missing linux_threads.c from documentation.
@@ -329,7 +330,7 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes.
 Also, includes 7.2 changes.
 
 
-== [7.2g] (candidate) ==
+== [7.2g] 2016-05-23 ==
 
 * Fix 'illegal option -xassembler-with-cpp' error (Oracle SunCC).
 * Fix 'implicit declaration of function' compiler warnings in cord/de.
