@@ -165,7 +165,7 @@ CCASFLAGS += $(DEFS)
 
 # documentation which is not installed
 #
-EXTRA_DIST += README.QUICK TODO
+EXTRA_DIST += README.QUICK
 
 # other makefiles
 # :GOTCHA: deliberately we do not include 'Makefile'
