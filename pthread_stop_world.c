@@ -356,6 +356,29 @@ STATIC void GC_restart_handler(int sig)
 # endif
 }
 
+# ifdef USE_TKILL_ON_ANDROID
+    extern int tkill(pid_t tid, int sig); /* from sys/linux-unistd.h */
+
+    static int android_thread_kill(pid_t tid, int sig)
+    {
+      int ret;
+      int old_errno = errno;
+
+      ret = tkill(tid, sig);
+      if (ret < 0) {
+          ret = errno;
+          errno = old_errno;
+      }
+      return ret;
+    }
+
+#   define THREAD_SYSTEM_ID(t) (t)->kernel_id
+#   define RAISE_SIGNAL(t, sig) android_thread_kill(THREAD_SYSTEM_ID(t), sig)
+# else
+#   define THREAD_SYSTEM_ID(t) (t)->id
+#   define RAISE_SIGNAL(t, sig) pthread_kill(THREAD_SYSTEM_ID(t), sig)
+# endif /* !USE_TKILL_ON_ANDROID */
+
 # ifdef GC_ENABLE_SUSPEND_THREAD
 #   ifndef GC_TIME_LIMIT
 #     define GC_TIME_LIMIT 50
@@ -379,13 +402,8 @@ STATIC void GC_restart_handler(int sig)
       return NULL;
     }
 
-#   ifdef USE_TKILL_ON_ANDROID
-      static int android_thread_kill(pid_t tid, int sig);
-#   endif
-
     GC_API void GC_CALL GC_suspend_thread(GC_SUSPEND_THREAD_ID thread) {
       GC_thread t;
-      int result;
       DCL_LOCK_STATE;
 
       LOCK();
@@ -395,12 +413,7 @@ STATIC void GC_restart_handler(int sig)
         if ((pthread_t)thread == pthread_self()) {
           (void)GC_do_blocking(suspend_self_inner, t);
         } else {
-#         ifndef USE_TKILL_ON_ANDROID
-            result = pthread_kill(t -> id, GC_sig_suspend);
-#         else
-            result = android_thread_kill(t -> kernel_id, GC_sig_suspend);
-#         endif
-          switch (result) {
+          switch (RAISE_SIGNAL(t, GC_sig_suspend)) {
           case ESRCH:
           case 0:
             break;
@@ -547,24 +560,6 @@ GC_INNER void GC_push_all_stacks(void)
   int GC_stopping_pid = 0;
 #endif
 
-#ifdef USE_TKILL_ON_ANDROID
-  extern int tkill(pid_t tid, int sig); /* from sys/linux-unistd.h */
-
-  static int android_thread_kill(pid_t tid, int sig)
-  {
-    int ret;
-    int old_errno = errno;
-
-    ret = tkill(tid, sig);
-    if (ret < 0) {
-        ret = errno;
-        errno = old_errno;
-    }
-
-    return ret;
-  }
-#endif /* USE_TKILL_ON_ANDROID */
-
 /* We hold the allocation lock.  Suspend all threads that might */
 /* still be running.  Return the number of suspend signals that */
 /* were sent.                                                   */
@@ -573,11 +568,6 @@ STATIC int GC_suspend_all(void)
   int n_live_threads = 0;
   int i;
 # ifndef NACL
-#   ifndef USE_TKILL_ON_ANDROID
-      pthread_t thread_id;
-#   else
-      pid_t thread_id;
-#   endif
     GC_thread p;
 #   ifndef GC_OPENBSD_UTHREADS
       int result;
@@ -614,13 +604,7 @@ STATIC int GC_suspend_all(void)
                                      (void *)p->id);
               }
 #           else
-#             ifndef USE_TKILL_ON_ANDROID
-                thread_id = p -> id;
-                result = pthread_kill(thread_id, GC_sig_suspend);
-#             else
-                thread_id = p -> kernel_id;
-                result = android_thread_kill(thread_id, GC_sig_suspend);
-#             endif
+              result = RAISE_SIGNAL(p, GC_sig_suspend);
               switch(result) {
                 case ESRCH:
                     /* Not really there anymore.  Possible? */
@@ -629,8 +613,8 @@ STATIC int GC_suspend_all(void)
                 case 0:
                     if (GC_on_thread_event)
                       GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
-                                         (void *)(word)thread_id);
-                                /* Note: thread_id might be truncated.  */
+                                         (void *)(word)THREAD_SYSTEM_ID(p));
+                                /* Note: thread id might be truncated.  */
                     break;
                 default:
                     ABORT_ARG1("pthread_kill failed at suspend",
@@ -944,11 +928,6 @@ GC_INNER void GC_start_world(void)
       register int n_live_threads = 0;
       register int result;
 #   endif
-#   ifndef USE_TKILL_ON_ANDROID
-      pthread_t thread_id;
-#   else
-      pid_t thread_id;
-#   endif
 #   ifdef GC_NETBSD_THREADS_WORKAROUND
       int code;
 #   endif
@@ -978,13 +957,7 @@ GC_INNER void GC_start_world(void)
             if (GC_on_thread_event)
               GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, (void *)p->id);
 #         else
-#           ifndef USE_TKILL_ON_ANDROID
-              thread_id = p -> id;
-              result = pthread_kill(thread_id, GC_sig_thr_restart);
-#           else
-              thread_id = p -> kernel_id;
-              result = android_thread_kill(thread_id, GC_sig_thr_restart);
-#           endif
+            result = RAISE_SIGNAL(p, GC_sig_thr_restart);
             switch(result) {
                 case ESRCH:
                     /* Not really there anymore.  Possible? */
@@ -993,7 +966,7 @@ GC_INNER void GC_start_world(void)
                 case 0:
                     if (GC_on_thread_event)
                       GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED,
-                                         (void *)(word)thread_id);
+                                         (void *)(word)THREAD_SYSTEM_ID(p));
                     break;
                 default:
                     ABORT_ARG1("pthread_kill failed at resume",
