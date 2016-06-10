@@ -535,19 +535,19 @@ STATIC void GC_print_block_descr(struct hblk *h,
     size_t bytes = hhdr -> hb_sz;
     struct Print_stats *ps;
     unsigned n_marks = GC_n_set_marks(hhdr);
+    unsigned n_objs = HBLK_OBJS((unsigned)bytes);
 
+    if (0 == n_objs) n_objs = 1;
     if (hhdr -> hb_n_marks != n_marks) {
-      GC_printf("(%u:%u,%u!=%u)\n", hhdr->hb_obj_kind, (unsigned)bytes,
-                (unsigned)hhdr->hb_n_marks, n_marks);
+      GC_printf("%u,%u,%u!=%u,%u\n", hhdr->hb_obj_kind, (unsigned)bytes,
+                (unsigned)hhdr->hb_n_marks, n_marks, n_objs);
     } else {
-      GC_printf("(%u:%u,%u)\n", hhdr->hb_obj_kind,
-                (unsigned)bytes, n_marks);
+      GC_printf("%u,%u,%u,%u\n", hhdr->hb_obj_kind, (unsigned)bytes,
+                n_marks, n_objs);
     }
-    bytes += HBLKSIZE-1;
-    bytes &= ~(HBLKSIZE-1);
 
     ps = (struct Print_stats *)raw_ps;
-    ps->total_bytes += bytes;
+    ps->total_bytes += (bytes + (HBLKSIZE-1)) & ~(HBLKSIZE-1); /* round up */
     ps->number_of_blocks++;
 }
 
@@ -555,7 +555,8 @@ void GC_print_block_list(void)
 {
     struct Print_stats pstats;
 
-    GC_printf("(kind(0=ptrfree,1=normal,2=unc.):size_in_bytes, #_marks_set)\n");
+    GC_printf("kind(0=ptrfree,1=normal,2=unc.),"
+              "size_in_bytes,#_marks_set,#objs\n");
     pstats.number_of_blocks = 0;
     pstats.total_bytes = 0;
     GC_apply_to_all_blocks(GC_print_block_descr, (word)&pstats);
