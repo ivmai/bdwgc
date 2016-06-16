@@ -1136,8 +1136,16 @@
 /*      base is a property of the executable, so this should not break  */
 /*      old executables.                                                */
 /*      HEURISTIC2 probably works, but this appears to be preferable.   */
-#       include <sys/vm.h>
-#       define STACKBOTTOM ((ptr_t) USRSTACK)
+/*      Apparently USRSTACK is defined to be USERLIMIT, but in some     */
+/*      installations that's undefined.  We work around this with a     */
+/*      gross hack:                                                     */
+#       include <sys/vmparam.h>
+#       ifdef USERLIMIT
+          /* This should work everywhere, but doesn't.  */
+#         define STACKBOTTOM ((ptr_t)USRSTACK)
+#       else
+#         define HEURISTIC2
+#       endif
 /* At least in Solaris 2.5, PROC_VDB gives wrong values for dirty bits. */
 /* It appears to be fixed in 2.8 and 2.9.                               */
 #       ifdef SOLARIS25_PROC_VDB_BUG_FIXED
