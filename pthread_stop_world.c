@@ -267,8 +267,16 @@ STATIC void GC_suspend_handler_inner(ptr_t dummy GC_ATTR_UNUSED,
 
 # ifdef GC_ENABLE_SUSPEND_THREAD
     if ((me -> flags & SUSPENDED_EXT) != 0) {
-      /* TODO: GC_with_callee_saves_pushed is redundant here. */
-      (void)GC_do_blocking(suspend_self_inner, me);
+#     ifdef SPARC
+        me -> stop_info.stack_ptr = GC_save_regs_in_stack();
+#     else
+        me -> stop_info.stack_ptr = GC_approx_sp();
+#       ifdef IA64
+          me -> backing_store_ptr = GC_save_regs_in_stack();
+#       endif
+#     endif
+      sem_post(&GC_suspend_ack_sem);
+      suspend_self_inner(me);
 #     ifdef DEBUG_THREADS
         GC_log_printf("Continuing %p on GC_resume_thread\n", (void *)self);
 #     endif
@@ -408,19 +416,39 @@ STATIC void GC_restart_handler(int sig)
 
       LOCK();
       t = GC_lookup_thread((pthread_t)thread);
-      if (t != NULL) {
-        t -> flags |= SUSPENDED_EXT;
-        if ((pthread_t)thread == pthread_self()) {
-          (void)GC_do_blocking(suspend_self_inner, t);
-        } else {
-          switch (RAISE_SIGNAL(t, GC_sig_suspend)) {
-          case ESRCH:
-          case 0:
-            break;
-          default:
-            ABORT("pthread_kill failed");
-          }
-        }
+      if (t == NULL || (t -> flags & SUSPENDED_EXT) != 0) {
+        UNLOCK();
+        return;
+      }
+
+      t -> flags |= SUSPENDED_EXT;
+      if ((pthread_t)thread == pthread_self()) {
+        UNLOCK();
+        /* It is safe as "t" cannot become invalid here (no race with   */
+        /* GC_unregister_my_thread).                                    */
+        (void)GC_do_blocking(suspend_self_inner, t);
+        return;
+      }
+
+      /* TODO: Support GC_retry_signals */
+      switch (RAISE_SIGNAL(t, GC_sig_suspend)) {
+      case ESRCH:
+        /* Not really there anymore.  Possible? */
+        t -> flags &= ~SUSPENDED_EXT;
+        UNLOCK();
+        return;
+      case 0:
+        break;
+      default:
+        ABORT("pthread_kill failed");
+      }
+
+      /* Wait for the thread to complete threads table lookup and   */
+      /* stack_ptr assignment.                                      */
+      GC_ASSERT(GC_thr_initialized);
+      while (sem_wait(&GC_suspend_ack_sem) != 0) {
+        if (errno != EINTR)
+          ABORT("sem_wait for handler failed (suspend_self)");
       }
       UNLOCK();
     }
@@ -581,7 +609,7 @@ STATIC int GC_suspend_all(void)
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (!THREAD_EQUAL(p -> id, self)) {
-            if (p -> flags & FINISHED) continue;
+            if ((p -> flags & (FINISHED | SUSPENDED_EXT)) != 0) continue;
             if (p -> thread_blocked) /* Will wait */ continue;
 #           ifndef GC_OPENBSD_UTHREADS
               if (p -> stop_info.last_stop_count == GC_stop_count) continue;
@@ -942,7 +970,7 @@ GC_INNER void GC_start_world(void)
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       for (p = GC_threads[i]; p != 0; p = p -> next) {
         if (!THREAD_EQUAL(p -> id, self)) {
-            if (p -> flags & FINISHED) continue;
+            if ((p -> flags & (FINISHED | SUSPENDED_EXT)) != 0) continue;
             if (p -> thread_blocked) continue;
 #           ifndef GC_OPENBSD_UTHREADS
               n_live_threads++;
