@@ -1352,11 +1352,19 @@ GC_API void GC_CALL GC_enable_incremental(void)
   GC_init();
 }
 
-#if defined(THREADS) && (!defined(PARALLEL_MARK) || !defined(CAN_HANDLE_FORK))
+#if defined(THREADS)
   GC_API void GC_CALL GC_start_mark_threads(void)
   {
-    /* No action since parallel markers are disabled (or no POSIX fork). */
-    GC_ASSERT(I_DONT_HOLD_LOCK());
+#   if defined(PARALLEL_MARK) && defined(CAN_HANDLE_FORK)
+      IF_CANCEL(int cancel_state;)
+
+      DISABLE_CANCEL(cancel_state);
+      GC_start_mark_threads_inner();
+      RESTORE_CANCEL(cancel_state);
+#   else
+      /* No action since parallel markers are disabled (or no POSIX fork). */
+      GC_ASSERT(I_DONT_HOLD_LOCK());
+#   endif
   }
 #endif
 

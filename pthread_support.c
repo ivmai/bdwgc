@@ -385,12 +385,11 @@ STATIC pthread_t GC_mark_threads[MAX_MARKERS];
 
 #ifdef CAN_HANDLE_FORK
   static int available_markers_m1 = 0;
-  GC_API void GC_CALL
 #else
 # define available_markers_m1 GC_markers_m1
-  GC_INNER void
 #endif
-  GC_start_mark_threads_inner(void)
+
+GC_INNER void GC_start_mark_threads_inner(void)
 {
     int i;
     pthread_attr_t attr;

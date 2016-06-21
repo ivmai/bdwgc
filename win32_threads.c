@@ -1769,11 +1769,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     /* for thread stack that is assumed to be large enough.             */
 #   ifdef CAN_HANDLE_FORK
       static int available_markers_m1 = 0;
-      GC_API void GC_CALL
-#   else
-      GC_INNER void
 #   endif
-      GC_start_mark_threads_inner(void)
+
+    GC_INNER void GC_start_mark_threads_inner(void)
     {
       int i;
       pthread_attr_t attr;
