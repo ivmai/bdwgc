@@ -412,6 +412,7 @@ STATIC void GC_restart_handler(int sig)
 
     GC_API void GC_CALL GC_suspend_thread(GC_SUSPEND_THREAD_ID thread) {
       GC_thread t;
+      IF_CANCEL(int cancel_state;)
       DCL_LOCK_STATE;
 
       LOCK();
@@ -447,10 +448,13 @@ STATIC void GC_restart_handler(int sig)
       /* Wait for the thread to complete threads table lookup and   */
       /* stack_ptr assignment.                                      */
       GC_ASSERT(GC_thr_initialized);
+      DISABLE_CANCEL(cancel_state);
+                /* GC_suspend_thread is not a cancellation point.   */
       while (sem_wait(&GC_suspend_ack_sem) != 0) {
         if (errno != EINTR)
           ABORT("sem_wait for handler failed (suspend_self)");
       }
+      RESTORE_CANCEL(cancel_state);
       UNLOCK();
     }
 
