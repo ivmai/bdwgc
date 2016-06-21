@@ -510,10 +510,18 @@ void check_marks_int_list(sexpr x)
       check_ints(reverse(reverse(ints(1, TINY_REVERSE_UPPER_VALUE))),
                  1, TINY_REVERSE_UPPER_VALUE);
     }
+#   if defined(GC_ENABLE_SUSPEND_THREAD)
+      /* Force collection from a thread. */
+      GC_gcollect();
+#   endif
     return 0;
 }
 
 # if defined(GC_PTHREADS)
+#   if defined(GC_ENABLE_SUSPEND_THREAD)
+#     include "javaxfc.h"
+#   endif
+
     void fork_a_thread(void)
     {
       pthread_t t;
@@ -522,6 +530,27 @@ void check_marks_int_list(sexpr x)
         GC_printf("Small thread creation failed %d\n", code);
         FAIL;
       }
+#     if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
+         && !defined(GC_OPENBSD_UTHREADS) && !defined(GC_WIN32_THREADS) \
+         && !defined(NACL)
+        if (GC_is_thread_suspended(t)) {
+          GC_printf("Running thread should be not suspended\n");
+          FAIL;
+        }
+        /* Thread could be running or already terminated (but not joined). */
+        GC_suspend_thread(t);
+        if (!GC_is_thread_suspended(t)) {
+          GC_printf("Thread expected to be suspended\n");
+          FAIL;
+        }
+        GC_suspend_thread(t); /* should be no-op */
+        GC_resume_thread(t);
+        if (GC_is_thread_suspended(t)) {
+          GC_printf("Resumed thread should be not suspended\n");
+          FAIL;
+        }
+        GC_resume_thread(t); /* should be no-op */
+#     endif
       if ((code = pthread_join(t, 0)) != 0) {
         GC_printf("Small thread join failed %d\n", code);
         FAIL;
