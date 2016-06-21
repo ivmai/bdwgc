@@ -925,10 +925,12 @@ GC_INNER word GC_mark_no = 0;
 GC_INNER void GC_wait_for_markers_init(void)
 {
   word count;
+  IF_CANCEL(int cancel_state;)
 
   if (GC_markers == 1)
     return;
 
+  DISABLE_CANCEL(cancel_state);
   /* Reuse marker lock and builders count to synchronize        */
   /* marker threads startup.                                    */
   GC_acquire_mark_lock();
@@ -937,6 +939,7 @@ GC_INNER void GC_wait_for_markers_init(void)
   GC_release_mark_lock();
   if (count != 0)
     GC_wait_for_reclaim();
+  RESTORE_CANCEL(cancel_state);
 }
 
 /* Steal mark stack entries starting at mse low into mark stack local   */
