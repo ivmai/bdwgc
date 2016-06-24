@@ -96,6 +96,8 @@
 
 # ifndef NO_TEST_HANDLE_FORK
 #   include <unistd.h>
+#   include <sys/types.h>
+#   include <sys/wait.h>
 #   ifdef HANDLE_FORK
 #     define INIT_FORK_SUPPORT GC_set_handle_fork(1)
                 /* Causes abort in GC_init on pthread_atfork failure.   */
@@ -1203,6 +1205,10 @@ void run_one_test(void)
     CLOCK_TYPE reverse_time;
     CLOCK_TYPE tree_time;
     unsigned long time_diff;
+#   ifndef NO_TEST_HANDLE_FORK
+      pid_t pid;
+      int wstatus;
+#   endif
 
 #   ifdef FIND_LEAK
         GC_printf(
@@ -1366,10 +1372,23 @@ void run_one_test(void)
         GC_free(GC_malloc_atomic(0));
 #   ifndef NO_TEST_HANDLE_FORK
         GC_atfork_prepare();
-        if (fork() != 0) {
+        pid = fork();
+        if (pid != 0) {
           GC_atfork_parent();
+          if (pid == -1) {
+            GC_printf("Process fork failed\n");
+            FAIL;
+          }
           if (print_stats)
-            GC_log_printf("Forked child process (or failed)\n");
+            GC_log_printf("Forked child process\n");
+          if (waitpid(pid, &wstatus, 0) == -1) {
+            GC_printf("Wait for child process failed\n");
+            FAIL;
+          }
+          if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
+            GC_printf("Child process failed, status= 0x%x\n", wstatus);
+            FAIL;
+          }
         } else {
           GC_atfork_child();
           if (print_stats)
