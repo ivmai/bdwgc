@@ -71,18 +71,21 @@ GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 # endif
 };
 
-#if 0
-# ifdef STUBBORN_ALLOC
-#   define GC_N_KINDS_INITIAL_VALUE (STUBBORN+1)
+# ifdef GC_ATOMIC_UNCOLLECTABLE
+#   ifdef STUBBORN_ALLOC
+#     define GC_N_KINDS_INITIAL_VALUE 5
+#   else
+#     define GC_N_KINDS_INITIAL_VALUE 4
+#   endif
 # else
-#   define GC_N_KINDS_INITIAL_VALUE STUBBORN
-# endif
-#endif
-/* TODO: Add new API function to allocate kinds in range        */
-/* GC_N_KINDS_INITIAL_VALUE .. PREDEFINED_KINDS-1 (if any)      */
-/* which do not need allocation of a free list.                 */
+#   ifdef STUBBORN_ALLOC
+#     define GC_N_KINDS_INITIAL_VALUE 4
+#   else
+#     define GC_N_KINDS_INITIAL_VALUE 3
+#   endif
+# endif /* !GC_ATOMIC_UNCOLLECTABLE */
 
-GC_INNER unsigned GC_n_kinds = PREDEFINED_KINDS;
+GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
 
 # ifndef INITIAL_MARK_STACK_SIZE
 #   define INITIAL_MARK_STACK_SIZE (1*HBLKSIZE)
