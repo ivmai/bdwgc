@@ -134,13 +134,15 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
 /* We hold the allocator lock.  */
 GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 {
-    int i;
+    int k;
 
     /* We currently only do this from the thread itself or from */
     /* the fork handler for a child process.                    */
     GC_STATIC_ASSERT(PREDEFINED_KINDS >= THREAD_FREELISTS_KINDS);
-    for (i = 0; i < THREAD_FREELISTS_KINDS; ++i) {
-        return_freelists(p -> _freelists[i], GC_freelists[i]);
+    for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
+        if (k == (int)GC_n_kinds)
+            break; /* kind is not created */
+        return_freelists(p -> _freelists[k], GC_obj_kinds[k].ok_freelist);
     }
 #   ifdef GC_GCJ_SUPPORT
         return_freelists(p -> gcj_freelists, (void **)GC_gcjobjfreelist);
