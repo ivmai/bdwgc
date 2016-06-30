@@ -40,11 +40,11 @@
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h        */
 /* or introducing dependencies on internal data structure layouts.       */
-void ** const GC_objfreelist_ptr = GC_freelists[NORMAL];
-void ** const GC_aobjfreelist_ptr = GC_freelists[PTRFREE];
-void ** const GC_uobjfreelist_ptr = GC_freelists[UNCOLLECTABLE];
+void ** const GC_objfreelist_ptr = GC_objfreelist;
+void ** const GC_aobjfreelist_ptr = GC_aobjfreelist;
+void ** const GC_uobjfreelist_ptr = GC_uobjfreelist;
 # ifdef GC_ATOMIC_UNCOLLECTABLE
-    void ** const GC_auobjfreelist_ptr = GC_freelists[AUNCOLLECTABLE];
+    void ** const GC_auobjfreelist_ptr = GC_auobjfreelist;
 # endif
 
 GC_API int GC_CALL GC_get_kind_and_size(const void * p, size_t * psize)

@@ -47,41 +47,37 @@ GC_INNER unsigned GC_n_mark_procs = GC_RESERVED_MARK_PROCS;
 /* GC_init is called.                                                   */
 /* It's done here, since we need to deal with mark descriptors.         */
 GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
-              { &GC_freelists[PTRFREE][0], 0 /* filled in dynamically */,
+/* PTRFREE */ { &GC_aobjfreelist[0], 0 /* filled in dynamically */,
                 /* 0 | */ GC_DS_LENGTH, FALSE, FALSE
                 /*, */ OK_DISCLAIM_INITZ },
-              { &GC_freelists[NORMAL][0], 0,
+/* NORMAL */  { &GC_objfreelist[0], 0,
                 /* 0 | */ GC_DS_LENGTH,
                                 /* adjusted in GC_init for EXTRA_BYTES  */
                 TRUE /* add length to descr */, TRUE
                 /*, */ OK_DISCLAIM_INITZ },
-              { &GC_freelists[UNCOLLECTABLE][0], 0,
+/* UNCOLLECTABLE */
+              { &GC_uobjfreelist[0], 0,
                 /* 0 | */ GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
                 /*, */ OK_DISCLAIM_INITZ },
 # ifdef GC_ATOMIC_UNCOLLECTABLE
-              { &GC_freelists[AUNCOLLECTABLE][0], 0,
+              { &GC_auobjfreelist[0], 0,
                 /* 0 | */ GC_DS_LENGTH, FALSE /* add length to descr */, FALSE
                 /*, */ OK_DISCLAIM_INITZ },
 # endif
 # ifdef STUBBORN_ALLOC
-              { (void **)&GC_freelists[STUBBORN][0], 0,
+              { (void **)&GC_sobjfreelist[0], 0,
                 /* 0 | */ GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
                 /*, */ OK_DISCLAIM_INITZ },
 # endif
 };
 
-#if 0
 # ifdef STUBBORN_ALLOC
 #   define GC_N_KINDS_INITIAL_VALUE (STUBBORN+1)
 # else
 #   define GC_N_KINDS_INITIAL_VALUE STUBBORN
 # endif
-#endif
-/* TODO: Add new API function to allocate kinds in range        */
-/* GC_N_KINDS_INITIAL_VALUE .. PREDEFINED_KINDS-1 (if any)      */
-/* which do not need allocation of a free list.                 */
 
-GC_INNER unsigned GC_n_kinds = PREDEFINED_KINDS;
+GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
 
 # ifndef INITIAL_MARK_STACK_SIZE
 #   define INITIAL_MARK_STACK_SIZE (1*HBLKSIZE)
