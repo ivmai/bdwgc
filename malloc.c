@@ -240,8 +240,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
     size_t lg;
     DCL_LOCK_STATE;
 
-    GC_STATIC_ASSERT(MAXOBJKINDS >= PREDEFINED_KINDS);
-    GC_ASSERT(k < PREDEFINED_KINDS);
+    GC_ASSERT(k < MAXOBJKINDS);
     if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
         lg = GC_size_map[lb];
@@ -296,7 +295,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
     size_t lg;
     DCL_LOCK_STATE;
 
-    GC_ASSERT(k < PREDEFINED_KINDS);
+    GC_ASSERT(k < MAXOBJKINDS);
     if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
         if (EXTRA_BYTES != 0 && lb != 0) lb--;

@@ -138,7 +138,7 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 
     /* We currently only do this from the thread itself or from */
     /* the fork handler for a child process.                    */
-    GC_STATIC_ASSERT(PREDEFINED_KINDS >= THREAD_FREELISTS_KINDS);
+    GC_STATIC_ASSERT(THREAD_FREELISTS_KINDS <= MAXOBJKINDS);
     for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
         if (k == (int)GC_n_kinds)
             break; /* kind is not created */
@@ -164,7 +164,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int knd)
     void *tsd;
     void *result;
 
-#   if PREDEFINED_KINDS > THREAD_FREELISTS_KINDS
+#   if MAXOBJKINDS > THREAD_FREELISTS_KINDS
       if (EXPECT(knd >= THREAD_FREELISTS_KINDS, FALSE)) {
         return GC_malloc_kind_global(bytes, knd);
       }
