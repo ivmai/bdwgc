@@ -602,7 +602,7 @@ GC_API void GC_CALL GC_enable_incremental(void);
 
 /* Does incremental mode write-protect pages?  Returns zero or  */
 /* more of the following, or'ed together:                       */
-#define GC_PROTECTS_POINTER_HEAP  1 /* May protect non-atomic objs.     */
+#define GC_PROTECTS_POINTER_HEAP  1 /* May protect non-atomic objects.  */
 #define GC_PROTECTS_PTRFREE_HEAP  2
 #define GC_PROTECTS_STATIC_DATA   4 /* Currently never.                 */
 #define GC_PROTECTS_STACK         8 /* Probably impractical.            */
