@@ -84,7 +84,7 @@ GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
                 /* INITIAL_MARK_STACK_SIZE * sizeof(mse) should be a    */
                 /* multiple of HBLKSIZE.                                */
                 /* The incremental collector actually likes a larger    */
-                /* size, since it want to push all marked dirty objs    */
+                /* size, since it want to push all marked dirty objects */
                 /* before marking anything new.  Currently we let it    */
                 /* grow dynamically.                                    */
 # endif

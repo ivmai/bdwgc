@@ -1214,17 +1214,17 @@ struct _GC_arrays {
                           /* free list for objects */
 #   define GC_aobjfreelist GC_arrays._aobjfreelist
     void *_aobjfreelist[MAXOBJGRANULES+1];
-                          /* free list for atomic objs  */
+                          /* free list for atomic objects       */
 # endif
   void *_uobjfreelist[MAXOBJGRANULES+1];
-                          /* Uncollectible but traced objs      */
-                          /* objects on this and auobjfreelist  */
+                          /* Uncollectible but traced objects.  */
+                          /* Objects on this and _auobjfreelist */
                           /* are always marked, except during   */
                           /* garbage collections.               */
 # ifdef GC_ATOMIC_UNCOLLECTABLE
 #   define GC_auobjfreelist GC_arrays._auobjfreelist
     void *_auobjfreelist[MAXOBJGRANULES+1];
-                        /* Atomic uncollectible but traced objs */
+                /* Atomic uncollectible but traced objects.     */
 # endif
   size_t _size_map[MAXOBJBYTES+1];
         /* Number of granules to allocate when asked for a certain      */
@@ -1394,7 +1394,7 @@ GC_EXTERN struct obj_kind {
 # define endGC_objfreelist (beginGC_objfreelist + sizeof(GC_objfreelist))
 
   extern ptr_t GC_aobjfreelist[MAXOBJGRANULES+1];
-                          /* free list for atomic (PTRFREE) objs        */
+                          /* free list for atomic (PTRFREE) objects     */
 # define beginGC_aobjfreelist ((ptr_t)(&GC_aobjfreelist))
 # define endGC_aobjfreelist (beginGC_aobjfreelist + sizeof(GC_aobjfreelist))
 #endif /* SEPARATE_GLOBALS */
