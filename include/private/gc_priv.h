@@ -1641,7 +1641,7 @@ GC_EXTERN void (*GC_push_typed_structures)(void);
                         /* the typed allocation support if unused.      */
 
 GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
-                                          ptr_t arg);
+                                          volatile ptr_t arg);
 
 #if defined(SPARC) || defined(IA64)
   /* Cause all stacked registers to be saved in memory.  Return a       */
