@@ -655,7 +655,10 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           /* Process part of the range to avoid pushing too much on the */
           /* stack.                                                     */
           GC_ASSERT(descr < (word)GC_greatest_plausible_heap_addr
-                            - (word)GC_least_plausible_heap_addr);
+                            - (word)GC_least_plausible_heap_addr
+                || (word)(current_p + descr)
+                            <= (word)GC_least_plausible_heap_addr
+                || (word)current_p >= (word)GC_greatest_plausible_heap_addr);
 #         ifdef ENABLE_TRACE
             if (GC_trace_addr >= current_p
                 && GC_trace_addr < current_p + descr) {
