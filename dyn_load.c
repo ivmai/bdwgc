@@ -490,8 +490,11 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
         {
             int j;
 
+            GC_has_static_roots_func callback = GC_has_static_roots;
+
             start = ((ptr_t)(p->p_vaddr)) + info->dlpi_addr;
             end = start + p->p_memsz;
+
             for (j = n_load_segs; --j >= 0; ) {
               if ((word)start >= (word)load_segs[j].start
                   && (word)start < (word)load_segs[j].end) {
@@ -506,8 +509,9 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
                 }
                 break;
               }
-              if (j == 0) WARN("Failed to find PT_GNU_RELRO segment"
-                               " inside PT_LOAD region", 0);
+              if (j == 0 && callback == 0 )
+                WARN("Failed to find PT_GNU_RELRO segment"
+                     " inside PT_LOAD region", 0);
             }
         }
 
