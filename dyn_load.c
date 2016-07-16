@@ -490,7 +490,6 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
         continue;
       
 #     ifdef PT_GNU_RELRO
-        if (n_load_segs >= MAX_LOAD_SEGS) ABORT("Too many PT_LOAD segs");
 #       if CPP_WORDSZ == 64
           /* FIXME: GC_push_all eventually does the correct         */
           /* rounding to the next multiple of ALIGNMENT, so, most   */
@@ -499,11 +498,16 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
           /* start pointer value may require aligning */
           start = (ptr_t)((word)start & ~(sizeof(word) - 1));
 #       endif
-        load_segs[n_load_segs].start = start;
-        load_segs[n_load_segs].end = end;
-        load_segs[n_load_segs].start2 = 0;
-        load_segs[n_load_segs].end2 = 0;
-        ++n_load_segs;
+        if (n_load_segs >= MAX_LOAD_SEGS) {
+          WARN("Too many PT_LOAD segs\n", 0);
+          GC_add_roots_inner(start, end, TRUE);
+        } else {
+          load_segs[n_load_segs].start = start;
+          load_segs[n_load_segs].end = end;
+          load_segs[n_load_segs].start2 = 0;
+          load_segs[n_load_segs].end2 = 0;
+          ++n_load_segs;
+        }
 #     else
         GC_add_roots_inner(start, end, TRUE);
 #     endif /* PT_GNU_RELRO */
@@ -542,7 +546,7 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
               }
               if (j == 0 && callback == 0 )
                 WARN("Failed to find PT_GNU_RELRO segment"
-                     " inside PT_LOAD region", 0);
+                     " inside PT_LOAD region\n", 0);
             }
         }
     }
