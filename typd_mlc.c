@@ -374,7 +374,8 @@ STATIC void GC_init_explicit_typing(void)
                             (void **)GC_arobjfreelist,
                             GC_MAKE_PROC(GC_array_mark_proc_index, 0),
                             FALSE, TRUE);
-      for (i = 0; i < WORDSZ/2; i++) {
+      GC_bm_table[0] = GC_DS_BITMAP;
+      for (i = 1; i < WORDSZ/2; i++) {
           GC_bm_table[i] = (((word)-1) << (WORDSZ - i)) | GC_DS_BITMAP;
       }
 }
