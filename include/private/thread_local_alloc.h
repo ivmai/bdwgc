@@ -76,8 +76,12 @@
 #include <stdlib.h>
 
 #ifndef THREAD_FREELISTS_KINDS
-# define THREAD_FREELISTS_KINDS (NORMAL+1)
-#endif
+# ifdef ENABLE_DISCLAIM
+#   define THREAD_FREELISTS_KINDS (NORMAL+2)
+# else
+#   define THREAD_FREELISTS_KINDS (NORMAL+1)
+# endif
+#endif /* !THREAD_FREELISTS_KINDS */
 
 /* One of these should be declared as the tlfs field in the     */
 /* structure pointed to by a GC_thread.                         */
@@ -91,9 +95,6 @@ typedef struct thread_local_freelists {
 #   define ERROR_FL ((void *)(word)-1)
         /* Value used for gcj_freelists[-1]; allocation is      */
         /* erroneous.                                           */
-# endif
-# ifdef ENABLE_DISCLAIM
-    void * finalized_freelists[TINY_FREELISTS];
 # endif
   /* Free lists contain either a pointer or a small count       */
   /* reflecting the number of granules allocated at that        */
@@ -163,10 +164,6 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p);
 /* invisible to the marker.  It knows how to find all threads;  */
 /* we take care of an individual thread freelist structure.     */
 GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p);
-
-#ifdef ENABLE_DISCLAIM
-  GC_EXTERN ptr_t * GC_finalized_objfreelist;
-#endif
 
 #ifndef GC_ATTR_TLS_FAST
 # define GC_ATTR_TLS_FAST /* empty */

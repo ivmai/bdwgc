@@ -32,12 +32,6 @@ GC_key_t GC_thread_key;
 
 static GC_bool keys_initialized;
 
-#ifdef ENABLE_DISCLAIM
-  GC_INNER ptr_t * GC_finalized_objfreelist = NULL;
-        /* This variable is declared here to prevent linking of         */
-        /* fnlz_mlc module unless the client uses the latter one.       */
-#endif
-
 /* Return a single nonempty freelist fl to the global one pointed to    */
 /* by gfl.                                                              */
 
@@ -119,9 +113,6 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
 #       ifdef GC_GCJ_SUPPORT
             p -> gcj_freelists[j] = (void *)(word)1;
 #       endif
-#       ifdef ENABLE_DISCLAIM
-            p -> finalized_freelists[j] = (void *)(word)1;
-#       endif
     }
     /* The size 0 free lists are handled like the regular free lists,   */
     /* to ensure that the explicit deallocation works.  However,        */
@@ -146,10 +137,6 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p)
     }
 #   ifdef GC_GCJ_SUPPORT
         return_freelists(p -> gcj_freelists, (void **)GC_gcjobjfreelist);
-#   endif
-#   ifdef ENABLE_DISCLAIM
-        return_freelists(p -> finalized_freelists,
-                         (void **)GC_finalized_objfreelist);
 #   endif
 }
 
@@ -290,11 +277,6 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
             GC_set_fl_marks(q);
         }
 #     endif
-#     ifdef ENABLE_DISCLAIM
-        q = p -> finalized_freelists[j];
-        if ((word)q > HBLKSIZE)
-          GC_set_fl_marks(q);
-#     endif
     }
 }
 
@@ -310,9 +292,6 @@ GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p)
           }
 #         ifdef GC_GCJ_SUPPORT
             GC_check_fl_marks(&p->gcj_freelists[j]);
-#         endif
-#         ifdef ENABLE_DISCLAIM
-            GC_check_fl_marks(&p->finalized_freelists[j]);
 #         endif
         }
     }
