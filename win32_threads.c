@@ -1772,7 +1772,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         marker_last_stack_min[i] = ADDR_LIMIT;
         if (0 != pthread_create(&new_thread, &attr,
                                 GC_mark_thread, (void *)(word)i)) {
-          WARN("Marker thread creation failed.\n", 0);
+          WARN("Marker thread creation failed\n", 0);
           /* Don't try to create other marker threads.    */
           break;
         }

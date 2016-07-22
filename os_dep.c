@@ -2035,7 +2035,7 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
           if (zero_fd == -1)
             ABORT("Could not open /dev/zero");
           if (fcntl(zero_fd, F_SETFD, FD_CLOEXEC) == -1)
-            WARN("Could not set FD_CLOEXEC for /dev/zero", 0);
+            WARN("Could not set FD_CLOEXEC for /dev/zero\n", 0);
 
           initialized = TRUE;
       }
@@ -3640,7 +3640,7 @@ GC_INNER void GC_dirty_init(void)
       ABORT("/proc open failed");
     }
     if (syscall(SYS_fcntl, GC_proc_fd, F_SETFD, FD_CLOEXEC) == -1)
-      WARN("Could not set FD_CLOEXEC for /proc", 0);
+      WARN("Could not set FD_CLOEXEC for /proc\n", 0);
 
     GC_dirty_maintained = TRUE;
     GC_proc_buf = GC_scratch_alloc(GC_proc_buf_size);
@@ -3720,7 +3720,7 @@ GC_INNER void GC_read_dirty(void)
         bufp = (char *)(((word)bufp + (sizeof(long)-1)) & ~(sizeof(long)-1));
     }
 #   ifdef DEBUG_DIRTY_BITS
-      GC_log_printf("Proc VDB read done.\n");
+      GC_log_printf("Proc VDB read done\n");
 #   endif
 
     /* Update GC_written_pages. */
@@ -4086,7 +4086,7 @@ STATIC void *GC_mprotect_thread(void *arg)
       ABORT("Got more than 8 SIGBUSs in a row!");
     } else {
       GC_sigbus_count++;
-      WARN("Ignoring SIGBUS.\n", 0);
+      WARN("Ignoring SIGBUS\n", 0);
     }
   }
 #endif /* BROKEN_EXCEPTION_HANDLING */
@@ -4117,7 +4117,7 @@ GC_INNER void GC_dirty_init(void)
                         " virtual dirty bit implementation\n");
 # ifdef BROKEN_EXCEPTION_HANDLING
     WARN("Enabling workarounds for various darwin "
-         "exception handling bugs.\n", 0);
+         "exception handling bugs\n", 0);
 # endif
   GC_dirty_maintained = TRUE;
   if (GC_page_size % HBLKSIZE != 0) {
