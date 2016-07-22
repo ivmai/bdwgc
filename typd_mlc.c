@@ -14,6 +14,7 @@
  */
 
 #include "private/gc_pmark.h"
+#include "gc_inline.h" /* for GC_malloc_kind */
 
 /*
  * Some simple primitives for allocation with explicit type information.
@@ -345,8 +346,6 @@ GC_make_sequence_descriptor(complex_descriptor *first,
 
 STATIC ptr_t * GC_eobjfreelist = NULL;
 
-STATIC ptr_t * GC_arobjfreelist = NULL;
-
 STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
                                 mse * mark_stack_limit, word env);
 
@@ -367,10 +366,8 @@ STATIC void GC_init_explicit_typing(void)
                 /* Descriptors are in the last word of the object. */
       GC_typed_mark_proc_index = GC_new_proc_inner(GC_typed_mark_proc);
     /* Set up object kind with array descriptor. */
-      GC_arobjfreelist = (ptr_t *)GC_new_free_list_inner();
       GC_array_mark_proc_index = GC_new_proc_inner(GC_array_mark_proc);
-      GC_array_kind = GC_new_kind_inner(
-                            (void **)GC_arobjfreelist,
+      GC_array_kind = GC_new_kind_inner(GC_new_free_list_inner(),
                             GC_MAKE_PROC(GC_array_mark_proc_index, 0),
                             FALSE, TRUE);
       GC_bm_table[0] = GC_DS_BITMAP;
@@ -597,37 +594,17 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
                                                                 GC_descr d)
 {
-    ptr_t op;
+    word *op;
     size_t lg;
-    DCL_LOCK_STATE;
 
     GC_ASSERT(GC_explicit_typing_initialized);
     lb += TYPD_EXTRA_BYTES;
-    if (SMALL_OBJ(lb)) {
-        GC_DBG_COLLECT_AT_MALLOC(lb);
-        lg = GC_size_map[lb];
-        LOCK();
-        op = GC_eobjfreelist[lg];
-        if (EXPECT(0 == op, FALSE)) {
-            UNLOCK();
-            op = (ptr_t)GENERAL_MALLOC((word)lb, GC_explicit_kind);
-            if (0 == op) return 0;
-            lg = GC_size_map[lb];       /* May have been uninitialized. */
-        } else {
-            GC_eobjfreelist[lg] = obj_link(op);
-            obj_link(op) = 0;
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-            UNLOCK();
-        }
-        ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
-   } else {
-       op = (ptr_t)GENERAL_MALLOC((word)lb, GC_explicit_kind);
-       if (op != NULL) {
-            lg = BYTES_TO_GRANULES(GC_size(op));
-            ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
-       }
-   }
-   return((void *) op);
+    op = GC_malloc_kind(lb, GC_explicit_kind);
+    if (EXPECT(NULL == op, FALSE))
+        return NULL;
+    lg = SMALL_OBJ(lb) ? GC_size_map[lb] : BYTES_TO_GRANULES(GC_size(op));
+    op[GRANULES_TO_WORDS(lg) - 1] = d;
+    return op;
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL
@@ -669,17 +646,16 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
                                                         size_t lb, GC_descr d)
 {
-    ptr_t op;
+    word *op;
     size_t lg;
     GC_descr simple_descr;
     complex_descriptor *complex_descr;
-    register int descr_type;
+    int descr_type;
     struct LeafDescriptor leaf;
-    DCL_LOCK_STATE;
 
     GC_ASSERT(GC_explicit_typing_initialized);
-    descr_type = GC_make_array_descriptor((word)n, (word)lb, d,
-                                          &simple_descr, &complex_descr, &leaf);
+    descr_type = GC_make_array_descriptor((word)n, (word)lb, d, &simple_descr,
+                                          &complex_descr, &leaf);
     switch(descr_type) {
         case NO_MEM: return(0);
         case SIMPLE: return(GC_malloc_explicitly_typed(n*lb, simple_descr));
@@ -692,32 +668,15 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
             lb += TYPD_EXTRA_BYTES;
             break;
     }
-    if( SMALL_OBJ(lb) ) {
-        lg = GC_size_map[lb];
-        LOCK();
-        op = GC_arobjfreelist[lg];
-        if (EXPECT(0 == op, FALSE)) {
-            UNLOCK();
-            op = (ptr_t)GENERAL_MALLOC((word)lb, GC_array_kind);
-            if (0 == op) return(0);
-            lg = GC_size_map[lb];       /* May have been uninitialized. */
-        } else {
-            GC_arobjfreelist[lg] = obj_link(op);
-            obj_link(op) = 0;
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-            UNLOCK();
-        }
-   } else {
-       op = (ptr_t)GENERAL_MALLOC((word)lb, GC_array_kind);
-       if (0 == op) return(0);
-       lg = BYTES_TO_GRANULES(GC_size(op));
-   }
-   if (descr_type == LEAF) {
+    op = GC_malloc_kind(lb, GC_array_kind);
+    if (EXPECT(NULL == op, FALSE))
+        return NULL;
+    lg = SMALL_OBJ(lb) ? GC_size_map[lb] : BYTES_TO_GRANULES(GC_size(op));
+    if (descr_type == LEAF) {
        /* Set up the descriptor inside the object itself. */
        volatile struct LeafDescriptor * lp =
            (struct LeafDescriptor *)
-               ((word *)op
-                + GRANULES_TO_WORDS(lg)
+               (op + GRANULES_TO_WORDS(lg)
                 - (BYTES_TO_WORDS(sizeof(struct LeafDescriptor)) + 1));
 
        lp -> ld_tag = LEAF_TAG;
@@ -729,11 +688,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
 #    ifndef GC_NO_FINALIZATION
        size_t lw = GRANULES_TO_WORDS(lg);
 
-       ((word *)op)[lw - 1] = (word)complex_descr;
+       op[lw - 1] = (word)complex_descr;
        /* Make sure the descriptor is cleared once there is any danger  */
        /* it may have been collected.                                   */
-       if (GC_general_register_disappearing_link((void * *)((word *)op+lw-1),
-                                                 op) == GC_NO_MEMORY)
+       if (EXPECT(GC_general_register_disappearing_link(
+                                                (void **)(op + lw - 1), op)
+                  == GC_NO_MEMORY, FALSE))
 #    endif
        {
            /* Couldn't register it due to lack of memory.  Punt.        */
@@ -742,5 +702,5 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
            return(GC_malloc(n*lb));
        }
    }
-   return((void *) op);
+   return op;
 }
