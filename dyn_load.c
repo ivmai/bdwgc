@@ -507,7 +507,7 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
                 break;
               }
               if (j == 0) WARN("Failed to find PT_GNU_RELRO segment"
-                               " inside PT_LOAD region", 0);
+                               " inside PT_LOAD region\n", 0);
             }
         }
 

@@ -1384,7 +1384,7 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
         GC_gcollect_inner();
         GC_ASSERT(GC_bytes_allocd == 0);
       } else if (GC_fail_count++ < GC_max_retries) {
-        WARN("Out of Memory!  Trying to continue ...\n", 0);
+        WARN("Out of Memory!  Trying to continue...\n", 0);
         GC_gcollect_inner();
       } else {
 #       if !defined(AMIGA) || !defined(GC_AMIGA_FASTALLOC)
