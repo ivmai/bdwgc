@@ -327,23 +327,6 @@ GC_make_sequence_descriptor(complex_descriptor *first,
     return((complex_descriptor *)result);
 }
 
-#ifdef UNDEFINED
-  complex_descriptor * GC_make_complex_array_descriptor(word nelements,
-                                                complex_descriptor *descr)
-  {
-    struct ComplexArrayDescriptor * result =
-        (struct ComplexArrayDescriptor *)
-                GC_malloc(sizeof(struct ComplexArrayDescriptor));
-
-    if (result != 0) {
-        result -> ad_tag = ARRAY_TAG;
-        result -> ad_nelements = nelements;
-        result -> ad_element_descr = descr;
-    }
-    return((complex_descriptor *)result);
-  }
-#endif
-
 STATIC ptr_t * GC_eobjfreelist = NULL;
 
 STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
