@@ -486,7 +486,7 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
       start = ((char *)(p->p_vaddr)) + info->dlpi_addr;
       end = start + p->p_memsz;
 
-      if (callback != 0 && callback(info->dlpi_name, start, p->p_memsz))
+      if (callback != 0 && !callback(info->dlpi_name, start, p->p_memsz))
         continue;
       
 #     ifdef PT_GNU_RELRO
