@@ -479,82 +479,76 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
     return -1;
 
   p = info->dlpi_phdr;
-  for( i = 0; i < (int)info->dlpi_phnum; i++, p++ ) {
-    switch( p->p_type ) {
+  for (i = 0; i < (int)info->dlpi_phnum; i++, p++) {
+    if (p->p_type == PT_LOAD) {
+      GC_has_static_roots_func callback = GC_has_static_roots;
+      if ((p->p_flags & PF_W) == 0) continue;
+
+      start = (ptr_t)p->p_vaddr + info->dlpi_addr;
+      end = start + p->p_memsz;
+      if (callback != 0 && !callback(info->dlpi_name, start, p->p_memsz))
+        continue;
 #     ifdef PT_GNU_RELRO
-        case PT_GNU_RELRO:
-        /* This entry is known to be constant and will eventually be remapped
-           read-only.  However, the address range covered by this entry is
-           typically a subset of a previously encountered "LOAD" segment, so
-           we need to exclude it.  */
-        {
-            int j;
-
-            start = ((ptr_t)(p->p_vaddr)) + info->dlpi_addr;
-            end = start + p->p_memsz;
-            for (j = n_load_segs; --j >= 0; ) {
-              if ((word)start >= (word)load_segs[j].start
-                  && (word)start < (word)load_segs[j].end) {
-                if (load_segs[j].start2 != 0) {
-                  WARN("More than one GNU_RELRO segment per load seg\n",0);
-                } else {
-                  GC_ASSERT((word)end <= (word)load_segs[j].end);
-                  /* Remove from the existing load segment */
-                  load_segs[j].end2 = load_segs[j].end;
-                  load_segs[j].end = start;
-                  load_segs[j].start2 = end;
-                }
-                break;
-              }
-              if (0 == j && 0 == GC_has_static_roots)
-                WARN("Failed to find PT_GNU_RELRO segment"
-                     " inside PT_LOAD region\n", 0);
-              /* No warning reported in case of the callback is present */
-              /* because most likely the segment has been excluded.     */
-            }
+#       if CPP_WORDSZ == 64
+          /* TODO: GC_push_all eventually does the correct          */
+          /* rounding to the next multiple of ALIGNMENT, so, most   */
+          /* probably, we should remove the corresponding assertion */
+          /* check in GC_add_roots_inner along with this code line. */
+          /* start pointer value may require aligning */
+          start = (ptr_t)((word)start & ~(sizeof(word) - 1));
+#       endif
+        if (n_load_segs >= MAX_LOAD_SEGS) {
+          WARN("Too many PT_LOAD segments;"
+               " registering as roots directly...\n", 0);
+          GC_add_roots_inner(start, end, TRUE);
+        } else {
+          load_segs[n_load_segs].start = start;
+          load_segs[n_load_segs].end = end;
+          load_segs[n_load_segs].start2 = 0;
+          load_segs[n_load_segs].end2 = 0;
+          ++n_load_segs;
         }
-
-        break;
-#     endif
-
-      case PT_LOAD:
-        {
-          GC_has_static_roots_func callback = GC_has_static_roots;
-          if( !(p->p_flags & PF_W) ) break;
-          start = ((char *)(p->p_vaddr)) + info->dlpi_addr;
-          end = start + p->p_memsz;
-
-          if (callback != 0 && !callback(info->dlpi_name, start, p->p_memsz))
-            break;
-#         ifdef PT_GNU_RELRO
-#           if CPP_WORDSZ == 64
-              /* FIXME: GC_push_all eventually does the correct         */
-              /* rounding to the next multiple of ALIGNMENT, so, most   */
-              /* probably, we should remove the corresponding assertion */
-              /* check in GC_add_roots_inner along with this code line. */
-              /* start pointer value may require aligning */
-              start = (ptr_t)((word)start & ~(sizeof(word) - 1));
-#           endif
-            if (n_load_segs >= MAX_LOAD_SEGS) {
-              WARN("Too many PT_LOAD segments;"
-                   " registering as roots directly...\n", 0);
-              GC_add_roots_inner(start, end, TRUE);
-            } else {
-              load_segs[n_load_segs].start = start;
-              load_segs[n_load_segs].end = end;
-              load_segs[n_load_segs].start2 = 0;
-              load_segs[n_load_segs].end2 = 0;
-              ++n_load_segs;
-            }
-#         else
-            GC_add_roots_inner(start, end, TRUE);
-#         endif /* PT_GNU_RELRO */
-        }
-      break;
-      default:
-        break;
+#     else
+        GC_add_roots_inner(start, end, TRUE);
+#     endif /* !PT_GNU_RELRO */
     }
   }
+
+# ifdef PT_GNU_RELRO
+    p = info->dlpi_phdr;
+    for (i = 0; i < (int)info->dlpi_phnum; i++, p++) {
+      if (p->p_type == PT_GNU_RELRO) {
+        /* This entry is known to be constant and will eventually be    */
+        /* remapped as read-only.  However, the address range covered   */
+        /* by this entry is typically a subset of a previously          */
+        /* encountered "LOAD" segment, so we need to exclude it.        */
+        int j;
+
+        start = (ptr_t)p->p_vaddr + info->dlpi_addr;
+        end = start + p->p_memsz;
+        for (j = n_load_segs; --j >= 0; ) {
+          if ((word)start >= (word)load_segs[j].start
+              && (word)start < (word)load_segs[j].end) {
+            if (load_segs[j].start2 != 0) {
+              WARN("More than one GNU_RELRO segment per load one\n",0);
+            } else {
+              GC_ASSERT((word)end <= (word)load_segs[j].end);
+              /* Remove from the existing load segment */
+              load_segs[j].end2 = load_segs[j].end;
+              load_segs[j].end = start;
+              load_segs[j].start2 = end;
+            }
+            break;
+          }
+          if (0 == j && 0 == GC_has_static_roots)
+            WARN("Failed to find PT_GNU_RELRO segment"
+                 " inside PT_LOAD region\n", 0);
+            /* No warning reported in case of the callback is present   */
+            /* because most likely the segment has been excluded.       */
+        }
+      }
+    }
+# endif
 
   *(int *)ptr = 1;     /* Signal that we were called */
   return 0;
