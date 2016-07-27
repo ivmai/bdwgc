@@ -1366,10 +1366,6 @@
                 /* thus allowing the heap to grow to ~3GB               */
 #       ifdef __ELF__
 #            define DYNAMIC_LOADING
-#            ifdef UNDEFINED    /* includes ro data */
-               extern int _etext[];
-#              define DATASTART ((ptr_t)((((word)(_etext)) + 0xfff) & ~0xfff))
-#            endif
 #            include <features.h>
 #            if defined(__GLIBC__) && __GLIBC__ >= 2 \
                 || defined(PLATFORM_ANDROID)
@@ -2420,10 +2416,6 @@
 #       endif
 #       ifdef __ELF__
 #            define DYNAMIC_LOADING
-#            ifdef UNDEFINED    /* includes ro data */
-               extern int _etext[];
-#              define DATASTART ((ptr_t)((((word)(_etext)) + 0xfff) & ~0xfff))
-#            endif
 #            include <features.h>
 #            define SEARCH_FOR_DATA_START
              extern int _end[];

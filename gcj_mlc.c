@@ -54,8 +54,6 @@ int GC_gcj_debug_kind = 0;
 
 GC_INNER ptr_t * GC_gcjobjfreelist = NULL;
 
-STATIC ptr_t * GC_gcjdebugobjfreelist = NULL;
-
 STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr GC_ATTR_UNUSED,
                         struct GC_ms_entry *mark_stack_ptr,
                         struct GC_ms_entry * mark_stack_limit GC_ATTR_UNUSED,
@@ -114,11 +112,8 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
     /* Set up object kind for objects that require mark proc call.      */
       if (ignore_gcj_info) {
         GC_gcj_debug_kind = GC_gcj_kind;
-        GC_gcjdebugobjfreelist = GC_gcjobjfreelist;
       } else {
-        GC_gcjdebugobjfreelist = (ptr_t *)GC_new_free_list_inner();
-        GC_gcj_debug_kind = GC_new_kind_inner(
-                                (void **)GC_gcjdebugobjfreelist,
+        GC_gcj_debug_kind = GC_new_kind_inner(GC_new_free_list_inner(),
                                 GC_MAKE_PROC(mp_index,
                                              1 /* allocated with debug info */),
                                 FALSE, TRUE);

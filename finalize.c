@@ -1198,12 +1198,9 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
                               curr_fo -> fo_client_data);
         curr_fo -> fo_client_data = 0;
         ++count;
-#       ifdef UNDEFINED
-            /* This is probably a bad idea.  It throws off accounting if */
-            /* nearly all objects are finalizable.  O.w. it shouldn't    */
-            /* matter.                                                   */
-            GC_free((void *)curr_fo);
-#       endif
+        /* Explicit freeing of curr_fo is probably a bad idea.  */
+        /* It throws off accounting if nearly all objects are   */
+        /* finalizable.  Otherwise it should not matter.        */
     }
     /* bytes_freed_before is initialized whenever count != 0 */
     if (count != 0 && bytes_freed_before != GC_bytes_freed) {

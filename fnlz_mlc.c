@@ -17,12 +17,7 @@
 #ifdef ENABLE_DISCLAIM
 
 #include "gc_disclaim.h"
-
-#ifdef THREAD_LOCAL_ALLOC
-# include "private/thread_local_alloc.h"
-#else
-  STATIC ptr_t * GC_finalized_objfreelist = NULL;
-#endif /* !THREAD_LOCAL_ALLOC */
+#include "gc_inline.h" /* for GC_malloc_kind */
 
 STATIC int GC_finalized_kind = 0;
 
@@ -66,8 +61,7 @@ GC_API void GC_CALL GC_init_finalized_malloc(void)
     /* start of the user region.                                        */
     GC_register_displacement_inner(sizeof(word));
 
-    GC_finalized_objfreelist = (ptr_t *)GC_new_free_list_inner();
-    GC_finalized_kind = GC_new_kind_inner((void **)GC_finalized_objfreelist,
+    GC_finalized_kind = GC_new_kind_inner(GC_new_free_list_inner(),
                                           GC_DS_LENGTH, TRUE, TRUE);
     GC_register_disclaim_proc(GC_finalized_kind, GC_finalized_disclaim, TRUE);
     UNLOCK();
@@ -81,90 +75,17 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
     GC_obj_kinds[kind].ok_mark_unconditionally = (GC_bool)mark_unconditionally;
 }
 
-#ifdef THREAD_LOCAL_ALLOC
-  STATIC void * GC_core_finalized_malloc(size_t lb,
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
                                 const struct GC_finalizer_closure *fclos)
-#else
-  GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
-                                const struct GC_finalizer_closure *fclos)
-#endif
 {
-    ptr_t op;
-    word lg;
-    DCL_LOCK_STATE;
+    word *op;
 
-    lb += sizeof(word);
     GC_ASSERT(done_init);
-    if (SMALL_OBJ(lb)) {
-        GC_DBG_COLLECT_AT_MALLOC(lb);
-        lg = GC_size_map[lb];
-        LOCK();
-        op = GC_finalized_objfreelist[lg];
-        if (EXPECT(0 == op, FALSE)) {
-            UNLOCK();
-            op = GC_generic_malloc(lb, GC_finalized_kind);
-            if (NULL == op)
-                return NULL;
-            /* GC_generic_malloc has extended the size map for us.      */
-            lg = GC_size_map[lb];
-        } else {
-            GC_finalized_objfreelist[lg] = obj_link(op);
-            obj_link(op) = 0;
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-            UNLOCK();
-        }
-        GC_ASSERT(lg > 0);
-    } else {
-        op = GC_generic_malloc(lb, GC_finalized_kind);
-        if (NULL == op)
-            return NULL;
-        GC_ASSERT(GC_size(op) >= lb);
-    }
-    *(word *)op = (word)fclos | 1;
-    return GC_clear_stack((word *)op + 1);
+    op = GC_malloc_kind(lb + sizeof(word), GC_finalized_kind);
+    if (EXPECT(NULL == op, FALSE))
+        return NULL;
+    *op = (word)fclos | 1;
+    return op + 1;
 }
-
-#ifdef THREAD_LOCAL_ALLOC
-  GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t client_lb,
-                                const struct GC_finalizer_closure *fclos)
-  {
-    size_t lb = client_lb + sizeof(word);
-    size_t lg = ROUNDED_UP_GRANULES(lb);
-    GC_tlfs tsd;
-    void *result;
-    void **tiny_fl, **my_fl, *my_entry;
-    void *next;
-
-    if (EXPECT(lg >= GC_TINY_FREELISTS, FALSE))
-        return GC_core_finalized_malloc(client_lb, fclos);
-
-    tsd = GC_getspecific(GC_thread_key);
-    tiny_fl = tsd->finalized_freelists;
-    my_fl = tiny_fl + lg;
-    my_entry = *my_fl;
-    while (EXPECT((word)my_entry
-                  <= DIRECT_GRANULES + GC_TINY_FREELISTS + 1, FALSE)) {
-        if ((word)my_entry - 1 < DIRECT_GRANULES) {
-            *my_fl = (ptr_t)my_entry + lg + 1;
-            return GC_core_finalized_malloc(client_lb, fclos);
-        } else {
-            GC_generic_malloc_many(GC_RAW_BYTES_FROM_INDEX(lg),
-                                   GC_finalized_kind, my_fl);
-            my_entry = *my_fl;
-            if (my_entry == 0) {
-                return (*GC_get_oom_fn())(lb);
-            }
-        }
-    }
-
-    next = obj_link(my_entry);
-    result = (void *)my_entry;
-    *my_fl = next;
-    obj_link(result) = 0;
-    *(word *)result = (word)fclos | 1;
-    GC_PREFETCH_FOR_WRITE(next);
-    return (word *)result + 1;
-  }
-#endif /* THREAD_LOCAL_ALLOC */
 
 #endif /* ENABLE_DISCLAIM */
