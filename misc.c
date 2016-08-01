@@ -361,7 +361,7 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
         /* clearing near the cold end of the stack, a good thing.       */
 #   define GC_SLOP 4000
         /* We make GC_high_water this much hotter than we really saw    */
-        /* saw it, to cover for GC noise etc. above our current frame.  */
+        /* it, to cover for GC noise etc. above our current frame.      */
 #   define CLEAR_THRESHOLD 100000
         /* We restart the clearing process after this many bytes of     */
         /* allocation.  Otherwise very heavily recursive programs       */
