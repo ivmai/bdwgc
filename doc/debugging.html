@@ -286,7 +286,7 @@ collector's layout description for <TT>s</tt> is such that the pointer field
 will be scanned.  Call <TT>*GC_find_header(s)</tt> to look at the descriptor
 for the heap chunk.  The <TT>hb_descr</tt> field specifies the layout
 of objects in that chunk.  See gc_mark.h for the meaning of the descriptor.
-(If it's low order 2 bits are zero, then it is just the length of the
+(If its low order 2 bits are zero, then it is just the length of the
 object prefix to be scanned.  This form is always used for objects allocated
 with <TT>GC_malloc</tt> or <TT>GC_malloc_atomic</tt>.)
 <LI> If the failure is not deterministic, you may still be able to apply some

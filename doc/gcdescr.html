@@ -272,7 +272,7 @@ each call, so that it can also be used by the incremental collector.
 It is fairly carefully tuned, since it usually consumes a large majority
 of the garbage collection time.
 <P>
-The fact that it perform a only a small amount of work per call also
+The fact that it performs only a small amount of work per call also
 allows it to be used as the core routine of the parallel marker.  In that
 case it is normally invoked on thread-private mark stacks instead of the
 global mark stack.  More details can be found in

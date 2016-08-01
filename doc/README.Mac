@@ -286,7 +286,7 @@ action! malloc will call GC_malloc and free GC_free, new/delete too. You
 don't have to call free or delete. You may have to be a bit cautious about
 delete if you're freeing other resources than RAM. See gc_cpp.h. You can
 also keep coding as always with delete/free. That works too. If you want,
-"include <gc.h> and tweak it's use a bit.
+"include <gc.h> and tweak its use a bit.
 
 Symantec SPM
 ============
