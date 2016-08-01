@@ -129,8 +129,8 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 
 #ifdef THREADS
   /* Determine the length of a file by incrementally reading it into a  */
-  /* This would be silly to use on a file supporting lseek, but Linux   */
-  /* /proc files usually do not.                                        */
+  /* buffer.  This would be silly to use it on a file supporting lseek, */
+  /* but Linux /proc files usually do not.                              */
   STATIC size_t GC_get_file_len(int f)
   {
     size_t total = 0;

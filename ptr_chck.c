@@ -178,7 +178,7 @@ void (GC_CALLBACK *GC_is_visible_print_proc)(void * p) =
 
 /* Check that p is visible                                              */
 /* to the collector as a possibly pointer containing location.          */
-/* If it isn't invoke *GC_is_visible_print_proc.                        */
+/* If it isn't, invoke *GC_is_visible_print_proc.                       */
 /* Returns the argument in all cases.  May erroneously succeed          */
 /* in hard cases.  (This is intended for debugging use with             */
 /* untyped allocations.  The idea is that it should be possible, though */

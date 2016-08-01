@@ -84,9 +84,9 @@ GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
                 /* INITIAL_MARK_STACK_SIZE * sizeof(mse) should be a    */
                 /* multiple of HBLKSIZE.                                */
                 /* The incremental collector actually likes a larger    */
-                /* size, since it want to push all marked dirty objects */
-                /* before marking anything new.  Currently we let it    */
-                /* grow dynamically.                                    */
+                /* size, since it wants to push all marked dirty        */
+                /* objects before marking anything new.  Currently we   */
+                /* let it grow dynamically.                             */
 # endif
 
 STATIC word GC_n_rescuing_pages = 0;
@@ -742,8 +742,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             /* word in object.                                          */
             ptr_t type_descr = *(ptr_t *)current_p;
             /* type_descr is either a valid pointer to the descriptor   */
-            /* structure, or this object was on a free list.  If it     */
-            /* it was anything but the last object on the free list,    */
+            /* structure, or this object was on a free list.            */
+            /* If it was anything but the last object on the free list, */
             /* we will misinterpret the next object on the free list as */
             /* the type descriptor, and get a 0 GC descriptor, which    */
             /* is ideal.  Unfortunately, we need to check for the last  */
