@@ -464,6 +464,7 @@ GC_INNER GC_bool GC_register_main_static_data(void)
     } load_segs[MAX_LOAD_SEGS];
 
     static int n_load_segs;
+    static GC_bool load_segs_overflow;
 # endif /* PT_GNU_RELRO */
 
 STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
@@ -498,8 +499,11 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
           start = (ptr_t)((word)start & ~(sizeof(word) - 1));
 #       endif
         if (n_load_segs >= MAX_LOAD_SEGS) {
-          WARN("Too many PT_LOAD segments;"
-               " registering as roots directly...\n", 0);
+          if (!load_segs_overflow) {
+            WARN("Too many PT_LOAD segments;"
+                 " registering as roots directly...\n", 0);
+            load_segs_overflow = TRUE;
+          }
           GC_add_roots_inner(start, end, TRUE);
         } else {
           load_segs[n_load_segs].start = start;
@@ -577,6 +581,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
     {
       static GC_bool excluded_segs = FALSE;
       n_load_segs = 0;
+      load_segs_overflow = FALSE;
       if (!EXPECT(excluded_segs, TRUE)) {
         GC_exclude_static_roots_inner((ptr_t)load_segs,
                                       (ptr_t)load_segs + sizeof(load_segs));
