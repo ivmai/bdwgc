@@ -157,6 +157,10 @@ typedef struct {
 #endif
 
 #if defined(KEEP_BACK_PTRS) || defined(MAKE_BACK_GRAPH)
+# ifdef SHORT_DBG_HDRS
+#   error Non-ptr stored in object results in GC_HAS_DEBUG_INFO malfunction
+    /* We may mistakenly conclude that p has a debugging wrapper.       */
+# endif
 # define GC_HAS_DEBUG_INFO(p) \
         ((*((word *)p) & 1) && GC_has_other_debug_info(p) > 0)
 #else
