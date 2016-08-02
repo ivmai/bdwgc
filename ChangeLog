@@ -24,6 +24,7 @@
 * Altera NIOS2 support.
 * Change 'cord' no-argument functions declaration style to ANSI C.
 * Check DATASTART is less than DATAEND even assertions off.
+* Check for execinfo.h by configure.
 * Code refactoring of GC_push_finalizer/thread/typed_structures.
 * Code refactoring regarding 'data start' definition for FreeBSD.
 * Consistently set type of DATASTART/END to ptr_t (code refactoring).
@@ -33,25 +34,39 @@
 * Define ROUNDUP_PAGESIZE, ROUNDUP_GRANULE_SIZE macros (code refactoring).
 * Define public GC_GENERIC_OR_SPECIAL_MALLOC and GC_get_kind_and_size.
 * Do no declare kernel_id field of GC_Thread_Rep for 64-bit Android.
+* Do not allow SHORT_DBG_HDRS if KEEP_BACK_PTRS or MAKE_BACK_GRAPH.
+* Do not warn of missing PT_GNU_RELRO segment when custom DSO filter used.
 * Document GC_register_my_thread returned value.
+* Dump the block information in CSV format.
 * Eliminate redundant *flh check for null in GC_allocobj.
 * Enable atomic-uncollectable in operator new in gc_cpp.h.
 * Enable build with musl libc.
 * Enable gc.h inclusion by client without implicit include windows.h (Win32).
 * Enable huge_test for Win64 (and LLP64 target).
 * Enable thread-local storage for Android Clang.
+* Enable thread-local storage usage for GC_malloc/calloc_explicitly_typed.
 * Export GC_push_all_eager, GC_push_finalizer_structures.
+* Fix 'arg parameter might be clobbered by setjmp' compiler warning.
+* Fix assertion in GC_mark_from for non-heap regions.
 * Fix compilation for Android clang/arm with bfd linker.
+* Fix integer shift undefined behavior in GC_init_explicit_typing.
+* Fix missing new-line and redundant trailing dot in WARN messages.
+* Fix STACKBOTTOM for Solaris 11/x86.
+* Fix tag collision between ENABLE_DISCLAIM and KEEP_BACK_PTRS.
+* Fix unchecked fork() result in gctest (Unix, Cygwin).
 * Fix user-defined signals drop by marker threads.
+* Fix various typos in comments and documentation.
 * FreeBSD/arm support improvement.
 * GC_make_descriptor code refactoring (eliminate two local variables).
 * GC_malloc[_atomic] global and thread-local generalization with kind.
 * GC_malloc_[atomic_]uncollectable generalization.
 * GC_scratch_alloc code refactoring (and WARN message improvement).
 * Group all compact fields of GC_arrays to fit in single page.
+* Handle load_segs overflow in register_dynlib_callback gracefully.
 * Harmonize OSX/iOS configuration; enable compiling for iPhone simulator.
 * Implement event callbacks for profiling (following Mono GC API).
 * Implement the finalization extension API.
+* Implement thread suspend/resume API (Linux threads only).
 * Improve documentation for disappearing links in gc.h.
 * Make heap growth more conservative after GC_gcollect_and_unmap call.
 * Mark fo_head, finalize_now with a single GC_push_all call (refactoring).
@@ -60,6 +75,9 @@
 * New macro (GC_ALWAYS_MULTITHREADED) to set multi-threaded mode implicitly.
 * New macro (NO_WINMAIN_ENTRY) to prefer main() instead of WinMain in test.
 * New macro (REDIRECT_MALLOC_IN_HEADER) to enable source-level redirection.
+* Process all PT_LOAD segments before PT_GNU_RELRO segments (Glibc).
+* Re-implement GC_finalized_malloc using GC_malloc_kind.
+* Refactoring of android_thread_kill/pthread_kill calls.
 * Refactoring of GC_Xobjfreelist (use single array to keep free lists).
 * Refactoring of thread-local *_freelists (use single array of free lists).
 * Refine description in README how to build from source repository.
@@ -67,15 +85,18 @@
 * Reformat code of gc_cpp.cc/h.
 * Remove 'opp' local variable in GC_malloc_X.
 * Remove 'sig' argument of GC_suspend_handler_inner (code refactoring).
+* Remove code commented out by 'ifdef UNDEFINED'.
 * Remove hb_large_block field (use 1 extra bit of hb_flags instead).
 * Remove obsolete BACKING_STORE_ALIGNMENT/DISPLACEMENT macros for Linux/IA64.
 * Remove redundant casts in GC_generic_or_special_malloc and similar.
 * Remove unsupported FreeBSD/ia64 case from gcconfig.h file.
+* Remove unused GC_gcjdebugobjfreelist.
 * Rename ATOMIC_UNCOLLECTABLE to GC_ATOMIC_UNCOLLECTABLE.
 * Replace non-API occurrences of GC_word to word (code refactoring).
 * Return GC_UNIMPLEMENTED instead of abort in GC_get_stack_base (OS/2).
 * Show WoW64 warning message if running 32-bit on Win64 (enabled by macro).
 * Standalone profiling callback for threads suspend/resume.
+* Support (add machine description for) TILE-Gx and TILEPro targets.
 * Support build for Android 64-bit (arm64, mips64, x86_64).
 * Support FreeBSD/aarch64, FreeBSD/mips.
 * Support iOS7 64-bit (AArch64) and iOS8+ 32/64-bit (Darwin).
@@ -84,6 +105,7 @@
 * Use magic header on objects to improve disclaim_test.
 * Workaround 'sa_sigaction member missing' compiler error (Android/x32).
 * Workaround 'unresolved __tls_get_addr' error for Android NDK Clang.
+* Workaround a bug in winpthreads causing parallel marks deadlock (MinGW).
 Also, includes 7.4.4 changes.
 
 
