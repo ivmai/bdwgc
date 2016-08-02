@@ -109,7 +109,7 @@
 Also, includes 7.4.4 changes.
 
 
-== [7.4.4] (candidate) ==
+== [7.4.4] 2016-05-25 ==
 
 * Allow GC_FAST_MALLOC_GRANS() multiple use in a function.
 * Also enable the TSX workaround for i386 (Linux).
