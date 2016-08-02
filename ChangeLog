@@ -1,5 +1,5 @@
 
-== [7.5.0] (development) ==
+== [7.6.0] 2016-08-02 ==
 
 * ABORT_ARGn log details at INFO level (Android).
 * Add 'pragma message' to gc.h to detect inconsistent WIN64/_WIN64 (MS VC).

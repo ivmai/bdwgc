@@ -29,8 +29,8 @@
 /* Eventually this one may become unnecessary.  For now we need */
 /* it to keep the old-style build process working.              */
 #define GC_TMP_VERSION_MAJOR 7
-#define GC_TMP_VERSION_MINOR 5
-#define GC_TMP_VERSION_MICRO 0 /* 7.5.0 */
+#define GC_TMP_VERSION_MINOR 6
+#define GC_TMP_VERSION_MICRO 0 /* 7.6.0 */
 
 #ifdef GC_VERSION_MAJOR
 # if GC_TMP_VERSION_MAJOR != GC_VERSION_MAJOR \
