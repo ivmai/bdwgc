@@ -1,0 +1,17 @@
+language: c
+
+os:
+  - linux
+  - osx
+
+sudo: false
+
+install:
+  - git clone https://github.com/ivmai/libatomic_ops.git
+  - autoreconf -vif
+  - automake --add-missing
+  - ./configure
+  - make
+
+script:
+  - make check
