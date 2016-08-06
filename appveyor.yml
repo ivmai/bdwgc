@@ -1,0 +1,9 @@
+version: "{build}"
+
+build_script:
+  - git clone https://github.com/ivmai/libatomic_ops.git
+  - cmake .
+  - cmake --build . --config Debug
+
+test_script:
+  - ctest --build-config Debug -V
