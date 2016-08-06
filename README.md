@@ -1,5 +1,8 @@
 # Boehm-Demers-Weiser Garbage Collector
 
+[![Travis-CI build status](https://travis-ci.org/ivmai/bdwgc.svg?branch=master)](https://travis-ci.org/ivmai/bdwgc)
+[![AppVeyor CI build status](https://ci.appveyor.com/api/projects/status/github/ivmai/bdwgc?branch=master&svg=true)](https://ci.appveyor.com/project/ivmai/bdwgc)
+
 This is version 7.7.0 (next release development) of a conservative garbage
 collector for C and C++.
 
