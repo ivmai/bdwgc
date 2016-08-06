@@ -1,0 +1,19 @@
+language: c
+
+os:
+  - linux
+  - osx
+
+compiler:
+  - clang
+  - gcc
+
+sudo: false
+
+install:
+  - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git -b release-7_4
+  - ./autogen.sh
+
+script:
+  - ./configure --enable-munmap
+  - make -j check
