@@ -213,15 +213,16 @@
 GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
                                           volatile ptr_t arg)
 {
-    volatile int dummy;
-    void * context = 0;
+  volatile int dummy;
+  void * context = 0;
 
-#   if defined(HAVE_PUSH_REGS)
-      GC_push_regs();
-#   elif defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
-      /* Older versions of Darwin seem to lack getcontext(). */
-      /* ARM and MIPS Linux often doesn't support a real     */
-      /* getcontext().                                       */
+# if defined(HAVE_PUSH_REGS)
+    GC_push_regs();
+# else
+#   if defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
+      /* Older versions of Darwin seem to lack getcontext().    */
+      /* ARM and MIPS Linux often doesn't support a real        */
+      /* getcontext().                                          */
       ucontext_t ctxt;
 #     ifdef GETCONTEXT_FPU_EXCMASK_BUG
         /* Workaround a bug (clearing the FPU exception mask) in        */
@@ -230,13 +231,20 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
           /* We manipulate FPU control word here just not to force the  */
           /* client application to use -lm linker option.               */
           unsigned short old_fcw;
+
           __asm__ __volatile__ ("fstcw %0" : "=m" (*&old_fcw));
 #       else
           int except_mask = fegetexcept();
 #       endif
 #     endif
-      if (getcontext(&ctxt) < 0)
-        ABORT ("getcontext failed: Use another register retrieval method?");
+
+      if (getcontext(&ctxt) < 0) {
+        WARN("getcontext failed:"
+             " using another register retrieval method...\n", 0);
+        /* E.g., to workaround a bug in Docker ubuntu_32bit.    */
+      } else {
+        context = &ctxt;
+      }
 #     ifdef GETCONTEXT_FPU_EXCMASK_BUG
 #       ifdef X86_64
           __asm__ __volatile__ ("fldcw %0" : : "m" (*&old_fcw));
@@ -252,21 +260,22 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
           if (feenableexcept(except_mask) < 0)
             ABORT("feenableexcept failed");
 #       endif
-#     endif
-      context = &ctxt;
+#     endif /* GETCONTEXT_FPU_EXCMASK_BUG */
 #     if defined(SPARC) || defined(IA64)
         /* On a register window machine, we need to save register       */
         /* contents on the stack for this to work.  This may already be */
         /* subsumed by the getcontext() call.                           */
         GC_save_regs_ret_val = GC_save_regs_in_stack();
-#     endif /* register windows. */
-#   elif defined(HAVE_BUILTIN_UNWIND_INIT)
-      /* This was suggested by Richard Henderson as the way to  */
-      /* force callee-save registers and register windows onto  */
-      /* the stack.                                             */
-      __builtin_unwind_init();
-#   else /* !HAVE_BUILTIN_UNWIND_INIT && !UNIX_LIKE  */
-         /* && !HAVE_PUSH_REGS                       */
+#     endif
+      if (NULL == context) /* getcontext failed */
+#   endif /* !NO_GETCONTEXT */
+    {
+#     if defined(HAVE_BUILTIN_UNWIND_INIT)
+        /* This was suggested by Richard Henderson as the way to        */
+        /* force callee-save registers and register windows onto        */
+        /* the stack.                                                   */
+        __builtin_unwind_init();
+#     else
         /* Generic code                          */
         /* The idea is due to Parag Patel at HP. */
         /* We're not sure whether he would like  */
@@ -290,14 +299,16 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
           /* SUSV3, setjmp() may or may not save signal mask.   */
           /* _setjmp won't, but is less portable.               */
 #       endif
-#   endif /* !HAVE_PUSH_REGS ... */
-    /* FIXME: context here is sometimes just zero.  At the moment the   */
-    /* callees don't really need it.                                    */
-    fn(arg, context);
-    /* Strongly discourage the compiler from treating the above */
-    /* as a tail-call, since that would pop the register        */
-    /* contents before we get a chance to look at them.         */
-    GC_noop1((word)(&dummy));
+#     endif /* !HAVE_BUILTIN_UNWIND_INIT */
+    }
+# endif /* !HAVE_PUSH_REGS */
+  /* FIXME: context here is sometimes just zero.  At the moment the     */
+  /* callees don't really need it.                                      */
+  fn(arg, context);
+  /* Strongly discourage the compiler from treating the above   */
+  /* as a tail-call, since that would pop the register          */
+  /* contents before we get a chance to look at them.           */
+  GC_noop1((word)(&dummy));
 }
 
 #if defined(ASM_CLEAR_CODE)
