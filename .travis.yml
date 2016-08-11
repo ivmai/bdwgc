@@ -4,14 +4,16 @@ os:
   - linux
   - osx
 
+compiler:
+  - clang
+  - gcc
+
 sudo: false
 
 install:
   - git clone https://github.com/ivmai/libatomic_ops.git
-  - autoreconf -vif
-  - automake --add-missing
-  - ./configure
-  - make
+  - ./autogen.sh
+  - ./configure --enable-werror --enable-handle-fork --enable-gcj-support --enable-atomic-uncollectible --enable-disclaim --enable-munmap
 
 script:
-  - make check
+  - make -j check
