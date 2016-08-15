@@ -11,7 +11,7 @@ compiler:
 sudo: false
 
 install:
-  - git clone https://github.com/ivmai/libatomic_ops.git
+  - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
   - ./autogen.sh
   - ./configure --enable-werror --enable-handle-fork --enable-gcj-support --enable-atomic-uncollectible --enable-disclaim --enable-munmap
 
