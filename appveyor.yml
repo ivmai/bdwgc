@@ -1,4 +1,4 @@
-version: "{build}"
+version: 7.7.0-{build}
 
 build_script:
   - git clone https://github.com/ivmai/libatomic_ops.git
