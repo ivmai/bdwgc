@@ -904,6 +904,12 @@ AC_ARG_ENABLE(werror, [--enable-werror Pass -Werror to the C compiler],
               werror_flag=$enableval, werror_flag=no)
 if test x$werror_flag = xyes; then
     WERROR_CFLAGS="-Werror"
+    case "$host" in
+      # _dyld_bind_fully_image_containing_address is deprecated in OS X 10.5+
+      *-*-darwin*)
+        WERROR_CFLAGS="$WERROR_CFLAGS -Wno-deprecated-declarations"
+        ;;
+    esac
 fi
 AC_SUBST([WERROR_CFLAGS])
 
