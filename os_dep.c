@@ -1664,11 +1664,18 @@ void GC_register_data_segments(void)
 
   GC_INNER void GC_init_win32(void)
   {
-    /* Set GC_wnt.  If we're running under win32s, assume that no DLLs  */
-    /* will be loaded.  I doubt anyone still runs win32s, but...        */
-    DWORD v = GetVersion();
-    GC_wnt = !(v & 0x80000000);
-    GC_no_win32_dlls |= ((!GC_wnt) && (v & 0xff) <= 3);
+#   if defined(_WIN64) || (defined(_MSC_VER) && _MSC_VER >= 1800)
+      /* MS Visual Studio 2013 deprecates GetVersion, but on the other  */
+      /* hand it cannot be used to target pre-Win2K.                    */
+      GC_wnt = TRUE;
+#   else
+      /* Set GC_wnt.  If we're running under win32s, assume that no     */
+      /* DLLs will be loaded.  I doubt anyone still runs win32s, but... */
+      DWORD v = GetVersion();
+
+      GC_wnt = !(v & 0x80000000);
+      GC_no_win32_dlls |= ((!GC_wnt) && (v & 0xff) <= 3);
+#   endif
 #   ifdef USE_MUNMAP
       if (GC_no_win32_dlls) {
         /* Turn off unmapping for safety (since may not work well with  */
