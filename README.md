@@ -2,9 +2,14 @@
 
 This is version 7.4.4 of a conservative garbage collector for C and C++.
 
-You might find a more recent version
-[here](http://www.hboehm.info/gc/), or
-[here](https://github.com/ivmai/bdwgc).
+
+## Download
+
+You might find a more recent/stable version on the
+[BDWGC site](http://www.hboehm.info/gc/).
+
+Also, the latest bug fixes and new features are available in the
+[development repository](https://github.com/ivmai/bdwgc).
 
 ## Overview
 
