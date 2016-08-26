@@ -731,7 +731,7 @@
  *    the original main program.  The new main program would read something
  *    like (provided real_main() is not inlined by the compiler):
  *
- *              # include "gc_private.h"
+ *              #include "gc.h"
  *
  *              main(argc, argv, envp)
  *              int argc;
