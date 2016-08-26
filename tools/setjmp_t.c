@@ -67,6 +67,8 @@ int * nested_sp(void)
     return (int *)sp;
 }
 
+int g(int x);
+
 int main(void)
 {
     volatile word sp;
@@ -136,6 +138,7 @@ int main(void)
 #   ifdef PARALLEL_MARK
       printf("Parallel marking enabled.\n");
 #   endif
+    (void)g(x);
     return(0);
 }
 
