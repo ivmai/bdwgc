@@ -24,7 +24,7 @@ unloading shared library.
 
 #define GC_BUILD
 #include "gc.h"
-#include "gc_priv.h"
+#include "private/gc_priv.h"
 
 // use 'CODE' resource 0 to get exact location of the beginning of global space.
 
