@@ -53,7 +53,6 @@ void test_basics(void)
 {
     CORD x = CORD_from_char_star("ab");
     register int i;
-    char c;
     CORD y;
     CORD_pos p;
 
@@ -114,9 +113,11 @@ void test_basics(void)
     i = 0;
     CORD_set_pos(p, y, i);
     while(CORD_pos_valid(p)) {
-        c = CORD_pos_fetch(p);
+        char c = CORD_pos_fetch(p);
+
         if(c != i) ABORT("Traversal of function node failed");
-    CORD_next(p); i++;
+        CORD_next(p);
+        i++;
     }
     if (i != 13) ABORT("Bad apparent length for function node");
 }

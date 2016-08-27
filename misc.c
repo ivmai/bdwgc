@@ -1621,9 +1621,9 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
 void GC_printf(const char *format, ...)
 {
-    char buf[BUFSZ + 1];
-
     if (!GC_quiet) {
+      char buf[BUFSZ + 1];
+
       GC_PRINTF_FILLBUF(buf, format);
 #     ifdef NACL
         (void)WRITE(GC_stdout, buf, strlen(buf));

@@ -164,7 +164,6 @@ size_t line_pos(int i, int *c)
 {
     int j;
     size_t cur;
-    size_t next;
     line_map map = current_map;
 
     while (map -> line > i) map = map -> previous;
@@ -176,7 +175,8 @@ size_t line_pos(int i, int *c)
         if (++j > current_map -> line) add_map(j, cur);
     }
     if (c != 0) {
-        next = CORD_chr(current, cur, '\n');
+        size_t next = CORD_chr(current, cur, '\n');
+
         if (next == CORD_NOT_FOUND) next = current_len - 1;
         if (next < cur + *c) {
             *c = next - cur;
@@ -216,7 +216,6 @@ int screen_size = 0;
 /* terribly appropriate for tabs.                                                                       */
 void replace_line(int i, CORD s)
 {
-    register int c;
     CORD_pos p;
 #   if !defined(MACINTOSH)
         size_t len = CORD_len(s);
@@ -237,7 +236,8 @@ void replace_line(int i, CORD s)
         move(i, 0); clrtoeol(); move(i,0);
 
         CORD_FOR (p, s) {
-            c = CORD_pos_fetch(p) & 0x7f;
+            int c = CORD_pos_fetch(p) & 0x7f;
+
             if (iscntrl(c)) {
                 standout(); addch(c + 0x40); standend();
             } else {

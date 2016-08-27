@@ -1486,9 +1486,10 @@ void GC_add_trace_entry(char *kind, word arg1, word arg2)
 void GC_print_trace_inner(word gc_no)
 {
     int i;
-    struct trace_entry *p;
 
     for (i = GC_trace_buf_ptr-1; i != GC_trace_buf_ptr; i--) {
+        struct trace_entry *p;
+
         if (i < 0) i = TRACE_ENTRIES-1;
         p = GC_trace_buf + i;
         if (p -> gc_no < gc_no || p -> kind == 0) {

@@ -153,7 +153,6 @@ int CORD_cmp(CORD x, CORD y)
 {
     CORD_pos xpos;
     CORD_pos ypos;
-    register size_t avail, yavail;
 
     if (y == CORD_EMPTY) return(x != CORD_EMPTY);
     if (x == CORD_EMPTY) return(-1);
@@ -161,6 +160,8 @@ int CORD_cmp(CORD x, CORD y)
     CORD_set_pos(xpos, x, 0);
     CORD_set_pos(ypos, y, 0);
     for(;;) {
+        size_t avail, yavail;
+
         if (!CORD_pos_valid(xpos)) {
             if (CORD_pos_valid(ypos)) {
                 return(-1);
@@ -197,11 +198,12 @@ int CORD_ncmp(CORD x, size_t x_start, CORD y, size_t y_start, size_t len)
     CORD_pos xpos;
     CORD_pos ypos;
     register size_t count;
-    register long avail, yavail;
 
     CORD_set_pos(xpos, x, x_start);
     CORD_set_pos(ypos, y, y_start);
     for(count = 0; count < len;) {
+        long avail, yavail;
+
         if (!CORD_pos_valid(xpos)) {
             if (CORD_pos_valid(ypos)) {
                 return(-1);
@@ -456,12 +458,12 @@ CORD CORD_chars(char c, size_t i)
 
 CORD CORD_from_file_eager(FILE * f)
 {
-    register int c;
     CORD_ec ecord;
 
     CORD_ec_init(ecord);
     for(;;) {
-        c = getc(f);
+        int c = getc(f);
+
         if (c == 0) {
           /* Append the right number of NULs                            */
           /* Note that any string of NULs is represented in 4 words,    */
