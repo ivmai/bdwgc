@@ -142,7 +142,6 @@
   GC_API void * GC_CALL GC_generate_random_heap_address(void)
   {
     size_t i;
-    size_t size;
     word heap_offset = RANDOM();
 
     if (GC_heapsize > RAND_MAX) {
@@ -154,6 +153,8 @@
         /* e.g. RAND_MAX = 1.5* GC_heapsize.  But for typical cases,    */
         /* it's not too bad.                                            */
     for (i = 0;; ++i) {
+        size_t size;
+
         if (i >= GC_n_heap_sects)
           ABORT("GC_generate_random_heap_address: size inconsistency");
 

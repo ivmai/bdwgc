@@ -175,13 +175,14 @@ CORD CORD_cat_char_star(CORD x, const char * y, size_t leny)
         register CORD right;
         register CORD left;
         register char * new_right;
-        register size_t right_len;
 
         lenx = LEN(x);
 
         if (leny <= SHORT_LIMIT/2
             && IS_CONCATENATION(x)
             && CORD_IS_STRING(right = ((CordRep *)x) -> concatenation.right)) {
+            size_t right_len;
+
             /* Merge y into right part of x. */
             if (!CORD_IS_STRING(left = ((CordRep *)x) -> concatenation.left)) {
                 right_len = lenx - LEN(left);
@@ -284,10 +285,10 @@ static CordRep *CORD_from_fn_inner(CORD_fn fn, void * client_data, size_t len)
         register char * result;
         register size_t i;
         char buf[SHORT_LIMIT+1];
-        register char c;
 
         for (i = 0; i < len; i++) {
-            c = (*fn)(i, client_data);
+            char c = (*fn)(i, client_data);
+
             if (c == '\0') goto gen_case;
             buf[i] = c;
         }
@@ -436,12 +437,12 @@ CORD CORD_substr_checked(CORD x, size_t i, size_t n)
             register struct Function * f = &(((CordRep *)x) -> function);
             char buf[SUBSTR_LIMIT+1];
             register char * p = buf;
-            register char c;
             register int j;
             register int lim = i + n;
 
             for (j = i; j < lim; j++) {
-                c = (*(f -> fn))(j, f -> client_data);
+                char c = (*(f -> fn))(j, f -> client_data);
+
                 if (c == '\0') {
                     return(CORD_substr_closure(x, i, n, CORD_apply_access_fn));
                 }
@@ -525,10 +526,10 @@ int CORD_riter4(CORD x, size_t i, CORD_iter_fn f1, void * client_data)
     if (x == 0) return(0);
     if (CORD_IS_STRING(x)) {
         register const char *p = x + i;
-        register char c;
 
         for(;;) {
-            c = *p;
+            char c = *p;
+
             if (c == '\0') ABORT("2nd arg to CORD_riter4 too big");
             if ((*f1)(c, client_data)) return(1);
             if (p == x) break;
@@ -605,12 +606,13 @@ typedef ForestElement Forest [ MAX_DEPTH ];
 void CORD_init_min_len(void)
 {
     register int i;
-    register size_t last, previous, current;
+    size_t last, previous;
 
     min_len[0] = previous = 1;
     min_len[1] = last = 2;
     for (i = 2; i < MAX_DEPTH; i++) {
-        current = last + previous;
+        size_t current = last + previous;
+
         if (current < last) /* overflow */ current = last;
         min_len[i] = current;
         previous = last;
