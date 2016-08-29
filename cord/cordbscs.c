@@ -281,7 +281,7 @@ CORD CORD_cat(CORD x, CORD y)
 
 CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len)
 {
-    if (len <= 0) return(0);
+    if (len == 0) return(0);
     if (len <= SHORT_LIMIT) {
         register char * result;
         register size_t i;
@@ -457,9 +457,7 @@ CORD CORD_substr(CORD x, size_t i, size_t n)
 {
     register size_t len = CORD_len(x);
 
-    if (i >= len || n <= 0) return(0);
-        /* n < 0 is impossible in a correct C implementation, but       */
-        /* quite possible  under SunOS 4.X.                             */
+    if (i >= len || n == 0) return(0);
     if (i + n > len) n = len - i;
     return(CORD_substr_checked(x, i, n));
 }
