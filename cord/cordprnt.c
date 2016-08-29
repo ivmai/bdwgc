@@ -308,7 +308,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         case 'c':
                             if (long_arg <= 0) {
                               (void) va_arg(args, int);
-                            } else if (long_arg > 0) {
+                            } else /* long_arg > 0 */ {
                               (void) va_arg(args, long);
                             }
                             break;
