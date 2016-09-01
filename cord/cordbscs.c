@@ -306,6 +306,7 @@ CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len)
 
         result = GC_NEW(struct Function);
         if (result == 0) OUT_OF_MEMORY;
+        if (result->null != 0) ABORT("error"); /* make 'null' field used */
         result->header = FN_HDR;
         /* depth is already 0 */
         result->len = len;
