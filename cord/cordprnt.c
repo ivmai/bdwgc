@@ -272,16 +272,17 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                     register char * buf;
                     va_list vsprintf_args;
                     int max_size = 0;
-                    int res;
-#                   ifdef __va_copy
+                    int res = 0;
+
+#                   if defined(CPPCHECK)
+                      va_copy(vsprintf_args, args);
+#                   elif defined(__va_copy)
                       __va_copy(vsprintf_args, args);
-#                   else
-#                     if defined(__GNUC__) && !defined(__DJGPP__) \
+#                   elif defined(__GNUC__) && !defined(__DJGPP__) \
                          && !defined(__EMX__) /* and probably in other cases */
-                        va_copy(vsprintf_args, args);
-#                     else
-                        vsprintf_args = args;
-#                     endif
+                      va_copy(vsprintf_args, args);
+#                   else
+                      vsprintf_args = args;
 #                   endif
                     if (width == VARIABLE) width = va_arg(args, int);
                     if (prec == VARIABLE) prec = va_arg(args, int);
@@ -324,15 +325,11 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                             (void) va_arg(args, double);
                             break;
                         default:
-#                           if defined(__va_copy) \
-                               || (defined(__GNUC__) && !defined(__DJGPP__) \
-                                   && !defined(__EMX__))
-                              va_end(vsprintf_args);
-#                           endif
-                            return(-1);
+                            res = -1;
                     }
-                    res = vsprintf(buf, conv_spec, vsprintf_args);
-#                   if defined(__va_copy) \
+                    if (0 == res)
+                      res = vsprintf(buf, conv_spec, vsprintf_args);
+#                   if defined(CPPCHECK) || defined(__va_copy) \
                        || (defined(__GNUC__) && !defined(__DJGPP__) \
                            && !defined(__EMX__))
                       va_end(vsprintf_args);
