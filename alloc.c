@@ -202,15 +202,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
 static word min_bytes_allocd(void)
 {
     word result;
-#   ifdef STACK_NOT_SCANNED
-      word stack_size = 0;
-#   elif defined(STACK_GROWS_UP)
-      word stack_size = GC_approx_sp() - GC_stackbottom;
-            /* GC_stackbottom is used only for a single-threaded case.  */
-#   else
-      word stack_size = GC_stackbottom - GC_approx_sp();
-#   endif
-
+    word stack_size;
     word total_root_size;       /* includes double stack size,  */
                                 /* since the stack is expensive */
                                 /* to scan.                     */
@@ -226,8 +218,17 @@ static word min_bytes_allocd(void)
           GC_log_printf("Total stacks size: %lu\n",
                         (unsigned long)stack_size);
 #       endif
-      }
+      } else
 #   endif
+    /* else*/ {
+#     ifdef STACK_NOT_SCANNED
+        stack_size = 0;
+#     elif defined(STACK_GROWS_UP)
+        stack_size = GC_approx_sp() - GC_stackbottom;
+#     else
+        stack_size = GC_stackbottom - GC_approx_sp();
+#     endif
+    }
 
     total_root_size = 2 * stack_size + GC_root_size;
     scan_size = 2 * GC_composite_in_use + GC_atomic_in_use / 4
