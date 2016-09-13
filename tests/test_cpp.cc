@@ -170,19 +170,25 @@ class F: public E {public:
     member with clean-up. */
 
     F() {
-        nAllocated++;}
+        nAllocatedF++;
+    }
+
     ~F() {
-        nFreed++;}
+        nFreedF++;
+    }
+
     static void Test() {
-        my_assert( nFreed >= .8 * nAllocated );
-        my_assert( 2 * nFreed == E::nFreed );}
+        my_assert(nFreedF >= .8 * nAllocatedF);
+        my_assert(2 * nFreedF == nFreed);
+    }
 
     E e;
-    static int nFreed;
-    static int nAllocated;};
+    static int nFreedF;
+    static int nAllocatedF;
+};
 
-int F::nFreed = 0;
-int F::nAllocated = 0;
+int F::nFreedF = 0;
+int F::nAllocatedF = 0;
 
 
 GC_word Disguise( void* p ) {
