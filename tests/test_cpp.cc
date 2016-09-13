@@ -136,7 +136,7 @@ class D: public GC_NS_QUALIFY(gc) { public:
     D( int iArg ): i( iArg ) {
         nAllocated++;}
     static void CleanUp( void* obj, void* data ) {
-        D* self = (D*) obj;
+        D* self = static_cast<D*>(obj);
         nFreed++;
         my_assert( self->i == (int) (GC_word) data );}
     static void Test() {
@@ -288,8 +288,8 @@ void* Undisguise( GC_word i ) {
 
             /* Make sure the uncollectible As and Bs are still there. */
         for (i = 0; i < 1000; i++) {
-            A* a = (A*) Undisguise( as[ i ] );
-            B* b = (B*) Undisguise( bs[ i ] );
+            A* a = static_cast<A*>(Undisguise(as[i]));
+            B* b = static_cast<B*>(Undisguise(bs[i]));
             a->Test( i );
             delete a;
             b->Test( i );
