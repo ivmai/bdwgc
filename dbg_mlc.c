@@ -1134,7 +1134,7 @@ STATIC void GC_CALLBACK GC_debug_invoke_finalizer(void * obj, void * data)
 }
 
 /* Special finalizer_proc value to detect GC_register_finalizer() failure. */
-#define OFN_UNSET (GC_finalization_proc)(signed_word)-1
+#define OFN_UNSET ((GC_finalization_proc)~(signed_word)0)
 
 /* Set ofn and ocd to reflect the values we got back.   */
 static void store_old(void *obj, GC_finalization_proc my_old_fn,
