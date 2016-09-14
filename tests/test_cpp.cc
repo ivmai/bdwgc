@@ -76,10 +76,14 @@ extern "C" {
 # define ATTR_UNUSED /* empty */
 #endif
 
+#ifndef GC_ATTR_EXPLICIT
+# define GC_ATTR_EXPLICIT /* empty */
+#endif
+
 class A {public:
     /* An uncollectible class. */
 
-    A( int iArg ): i( iArg ) {}
+    GC_ATTR_EXPLICIT A( int iArg ): i( iArg ) {}
     void Test( int iArg ) {
         my_assert( i == iArg );}
     int i;};
@@ -88,7 +92,7 @@ class A {public:
 class B: public GC_NS_QUALIFY(gc), public A { public:
     /* A collectible class. */
 
-    B( int j ): A( j ) {}
+    GC_ATTR_EXPLICIT B( int j ): A( j ) {}
     ~B() {
         my_assert( deleting );}
     static void Deleting( int on ) {
@@ -101,7 +105,7 @@ int B::deleting = 0;
 class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
     /* A collectible class with cleanup and virtual multiple inheritance. */
 
-    C( int levelArg ): A( levelArg ), level( levelArg ) {
+    GC_ATTR_EXPLICIT C( int levelArg ): A( levelArg ), level( levelArg ) {
         nAllocated++;
         if (level > 0) {
             left = new C( level - 1 );
@@ -133,7 +137,7 @@ class D: public GC_NS_QUALIFY(gc) { public:
     /* A collectible class with a static member function to be used as
     an explicit clean-up function supplied to ::new. */
 
-    D( int iArg ): i( iArg ) {
+    GC_ATTR_EXPLICIT D( int iArg ): i( iArg ) {
         nAllocated++;}
     static void CleanUp( void* obj, void* data ) {
         D* self = static_cast<D*>(obj);

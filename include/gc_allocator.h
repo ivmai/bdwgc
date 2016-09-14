@@ -50,6 +50,14 @@
 #  define GC_ATTR_UNUSED
 #endif
 
+#ifndef GC_ATTR_EXPLICIT
+# if (__cplusplus >= 201103L) || defined(CPPCHECK)
+#   define GC_ATTR_EXPLICIT explicit
+# else
+#   define GC_ATTR_EXPLICIT /* empty */
+# endif
+#endif
+
 /* First some helpers to allow us to dispatch on whether or not a type
  * is known to be pointer-free.
  * These are private, except that the client may invoke the
@@ -116,7 +124,8 @@ public:
     gc_allocator(const gc_allocator&) throw() {}
 # if !(GC_NO_MEMBER_TEMPLATES || 0 < _MSC_VER && _MSC_VER <= 1200)
   // MSVC++ 6.0 do not support member templates
-  template <class GC_Tp1> gc_allocator(const gc_allocator<GC_Tp1>&) throw() {}
+  template <class GC_Tp1> GC_ATTR_EXPLICIT
+    gc_allocator(const gc_allocator<GC_Tp1>&) throw() {}
 # endif
   ~gc_allocator() throw() {}
 
@@ -191,7 +200,7 @@ public:
     gc_allocator_ignore_off_page(const gc_allocator_ignore_off_page&) throw() {}
 # if !(GC_NO_MEMBER_TEMPLATES || 0 < _MSC_VER && _MSC_VER <= 1200)
   // MSVC++ 6.0 do not support member templates
-  template <class GC_Tp1>
+  template <class GC_Tp1> GC_ATTR_EXPLICIT
     gc_allocator_ignore_off_page(const gc_allocator_ignore_off_page<GC_Tp1>&)
         throw() {}
 # endif
@@ -271,8 +280,8 @@ public:
     traceable_allocator(const traceable_allocator&) throw() {}
 # if !(GC_NO_MEMBER_TEMPLATES || 0 < _MSC_VER && _MSC_VER <= 1200)
   // MSVC++ 6.0 do not support member templates
-  template <class GC_Tp1> traceable_allocator
-          (const traceable_allocator<GC_Tp1>&) throw() {}
+  template <class GC_Tp1> GC_ATTR_EXPLICIT
+    traceable_allocator(const traceable_allocator<GC_Tp1>&) throw() {}
 # endif
   ~traceable_allocator() throw() {}
 
