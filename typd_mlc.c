@@ -629,6 +629,15 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
    return((void *) op);
 }
 
+#include <limits.h>
+#ifdef SIZE_MAX
+# define GC_SIZE_MAX SIZE_MAX
+#else
+# define GC_SIZE_MAX (~(size_t)0)
+#endif
+
+#define GC_SQRT_SIZE_MAX ((((size_t)1) << (WORDSZ / 2)) - 1)
+
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
                                                         size_t lb, GC_descr d)
 {
@@ -642,15 +651,18 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     GC_ASSERT(GC_explicit_typing_initialized);
     descr_type = GC_make_array_descriptor((word)n, (word)lb, d, &simple_descr,
                                           &complex_descr, &leaf);
+    if ((lb | n) > GC_SQRT_SIZE_MAX /* fast initial check */
+        && lb > 0 && n > GC_SIZE_MAX / lb)
+      return NULL; /* n*lb overflow */
+    lb *= n;
     switch(descr_type) {
         case NO_MEM: return(0);
-        case SIMPLE: return(GC_malloc_explicitly_typed(n*lb, simple_descr));
+        case SIMPLE:
+            return GC_malloc_explicitly_typed(lb, simple_descr);
         case LEAF:
-            lb *= n;
             lb += sizeof(struct LeafDescriptor) + TYPD_EXTRA_BYTES;
             break;
         case COMPLEX:
-            lb *= n;
             lb += TYPD_EXTRA_BYTES;
             break;
     }
