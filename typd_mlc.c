@@ -719,7 +719,7 @@ GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t n, size_t lb,
            /* Couldn't register it due to lack of memory.  Punt.        */
            /* This will probably fail too, but gives the recovery code  */
            /* a chance.                                                 */
-           return(GC_malloc(n*lb));
+            return GC_malloc(lb);
        }
    }
    return((void *) op);
