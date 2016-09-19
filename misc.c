@@ -226,13 +226,13 @@ GC_API void GC_CALL GC_set_handle_fork(int value GC_ATTR_UNUSED)
 /* quantization algorithm (but we precompute it).                       */
 STATIC void GC_init_size_map(void)
 {
-    int i;
+    size_t i;
 
     /* Map size 0 to something bigger.                  */
     /* This avoids problems at lower levels.            */
       GC_size_map[0] = 1;
     for (i = 1; i <= GRANULES_TO_BYTES(TINY_FREELISTS-1) - EXTRA_BYTES; i++) {
-        GC_size_map[i] = (unsigned)ROUNDED_UP_GRANULES(i);
+        GC_size_map[i] = ROUNDED_UP_GRANULES(i);
 #       ifndef _MSC_VER
           GC_ASSERT(GC_size_map[i] < TINY_FREELISTS);
           /* Seems to tickle bug in VC++ 2008 for AMD64 */
@@ -678,7 +678,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
       }
       /* At this execution point, GC_setpagesize() and GC_init_win32()  */
       /* must already be called (for GET_MEM() to work correctly).      */
-      content = (char *)GET_MEM(ROUNDUP_PAGESIZE_IF_MMAP(len + 1));
+      content = (char *)GET_MEM(ROUNDUP_PAGESIZE_IF_MMAP((size_t)len + 1));
       if (content == NULL) {
         CloseHandle(hFile);
         return; /* allocation failure */

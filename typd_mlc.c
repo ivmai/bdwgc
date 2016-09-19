@@ -609,7 +609,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     DCL_LOCK_STATE;
 
     GC_ASSERT(GC_explicit_typing_initialized);
-    lb += TYPD_EXTRA_BYTES;
+    lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
     if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
         lg = GC_size_map[lb];
@@ -647,8 +647,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     DCL_LOCK_STATE;
 
     GC_ASSERT(GC_explicit_typing_initialized);
-    lb += TYPD_EXTRA_BYTES;
-    if( SMALL_OBJ(lb) ) {
+    lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
+    if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
         lg = GC_size_map[lb];
         opp = &(GC_eobjfreelist[lg]);
@@ -676,15 +676,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
    return((void *) op);
 }
 
-#include <limits.h>
-#ifdef SIZE_MAX
-# define GC_SIZE_MAX SIZE_MAX
-#else
-# define GC_SIZE_MAX (~(size_t)0)
-#endif
-
-#define GC_SQRT_SIZE_MAX ((((size_t)1) << (WORDSZ / 2)) - 1)
-
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
                                                         size_t lb, GC_descr d)
 {
@@ -709,10 +700,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
         case SIMPLE:
             return GC_malloc_explicitly_typed(lb, simple_descr);
         case LEAF:
-            lb += sizeof(struct LeafDescriptor) + TYPD_EXTRA_BYTES;
+            lb = SIZET_SAT_ADD(lb,
+                        sizeof(struct LeafDescriptor) + TYPD_EXTRA_BYTES);
             break;
         case COMPLEX:
-            lb += TYPD_EXTRA_BYTES;
+            lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
             break;
     }
     if( SMALL_OBJ(lb) ) {

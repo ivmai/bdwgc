@@ -102,7 +102,7 @@ GC_API void GC_CALL GC_register_disclaim_proc(int kind, GC_disclaim_proc proc,
     word lg;
     DCL_LOCK_STATE;
 
-    lb += sizeof(word);
+    lb = SIZET_SAT_ADD(lb, sizeof(word));
     GC_ASSERT(done_init);
     if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
