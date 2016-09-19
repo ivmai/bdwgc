@@ -1149,21 +1149,16 @@ GC_word GC_max_retries = 0;
  */
 GC_INNER GC_bool GC_expand_hp_inner(word n)
 {
-    word bytes;
+    size_t bytes;
     struct hblk * space;
     word expansion_slop;        /* Number of bytes by which we expect the */
                                 /* heap to expand soon.                   */
 
     if (n < MINHINCR) n = MINHINCR;
-    bytes = n * HBLKSIZE;
-    /* Make sure bytes is a multiple of GC_page_size */
-      {
-        word mask = GC_page_size - 1;
-        bytes += mask;
-        bytes &= ~mask;
-      }
-
-    if (GC_max_heapsize != 0 && GC_heapsize + bytes > GC_max_heapsize) {
+    bytes = ROUNDUP_PAGESIZE((size_t)n * HBLKSIZE);
+    if (GC_max_heapsize != 0
+        && (GC_max_heapsize < (word)bytes
+            || GC_heapsize > GC_max_heapsize - (word)bytes)) {
         /* Exceeded self-imposed limit */
         return(FALSE);
     }
@@ -1187,7 +1182,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
     if ((GC_last_heap_addr == 0 && !((word)space & SIGNB))
         || (GC_last_heap_addr != 0 && GC_last_heap_addr < (ptr_t)space)) {
         /* Assume the heap is growing up */
-        word new_limit = (word)space + bytes + expansion_slop;
+        word new_limit = (word)space + (word)bytes + expansion_slop;
         if (new_limit > (word)space) {
           GC_greatest_plausible_heap_addr =
             (void *)GC_max((word)GC_greatest_plausible_heap_addr,

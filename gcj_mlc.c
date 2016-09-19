@@ -216,7 +216,8 @@ GC_API void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     /* confuse the backtrace.                                   */
     LOCK();
     maybe_finalize();
-    result = GC_generic_malloc_inner(lb + DEBUG_BYTES, GC_gcj_debug_kind);
+    result = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES),
+                                     GC_gcj_debug_kind);
     if (result == 0) {
         GC_oom_func oom_fn = GC_oom_fn;
         UNLOCK();

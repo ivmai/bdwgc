@@ -90,6 +90,20 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
                         /* byte displacements and which can be used     */
                         /* for address comparisons.                     */
 
+#ifndef SIZE_MAX
+# include <limits.h>
+#endif
+#ifdef SIZE_MAX
+# define GC_SIZE_MAX SIZE_MAX
+#else
+# define GC_SIZE_MAX (~(size_t)0)
+#endif
+
+/* Saturated addition of size_t values.  Used to avoid value wrap       */
+/* around on overflow.  The arguments should have no side effects.      */
+#define SIZET_SAT_ADD(a, b) \
+                ((a) < GC_SIZE_MAX - (b) ? (a) + (b) : GC_SIZE_MAX)
+
 #ifndef GCCONFIG_H
 # include "gcconfig.h"
 #endif
@@ -245,9 +259,9 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # ifdef LINT2
     /* Explicitly instruct the code analysis tool that                  */
     /* GC_all_interior_pointers is assumed to have only 0 or 1 value.   */
-#   define EXTRA_BYTES (GC_all_interior_pointers? 1 : 0)
+#   define EXTRA_BYTES ((size_t)(GC_all_interior_pointers? 1 : 0))
 # else
-#   define EXTRA_BYTES GC_all_interior_pointers
+#   define EXTRA_BYTES (size_t)GC_all_interior_pointers
 # endif
 # define MAX_EXTRA_BYTES 1
 #else
@@ -657,6 +671,7 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # define LOG_HBLKSIZE   ((size_t)CPP_LOG_HBLKSIZE)
 # define HBLKSIZE ((size_t)CPP_HBLKSIZE)
 
+#define GC_SQRT_SIZE_MAX ((((size_t)1) << (WORDSZ / 2)) - 1)
 
 /*  Max size objects supported by freelist (larger objects are  */
 /*  allocated directly with allchblk(), by rounding to the next */
@@ -684,9 +699,12 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 
 # define HBLKDISPL(objptr) (((size_t) (objptr)) & (HBLKSIZE-1))
 
+/* Round up allocation size (in bytes) to a multiple of a granule.      */
+#define ROUNDUP_GRANULE_SIZE(lb) /* lb should have no side-effect */ \
+            (SIZET_SAT_ADD(lb, GRANULE_BYTES - 1) & ~(GRANULE_BYTES - 1))
 /* Round up byte allocation requests to integral number of words, etc. */
-# define ROUNDED_UP_GRANULES(n) \
-        BYTES_TO_GRANULES((n) + (GRANULE_BYTES - 1 + EXTRA_BYTES))
+# define ROUNDED_UP_GRANULES(lb) /* lb should have no side-effect */ \
+        BYTES_TO_GRANULES(SIZET_SAT_ADD(lb, GRANULE_BYTES - 1 + EXTRA_BYTES))
 # if MAX_EXTRA_BYTES == 0
 #  define SMALL_OBJ(bytes) EXPECT((bytes) <= (MAXOBJBYTES), TRUE)
 # else
@@ -696,7 +714,8 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
         /* This really just tests bytes <= MAXOBJBYTES - EXTRA_BYTES.   */
         /* But we try to avoid looking up EXTRA_BYTES.                  */
 # endif
-# define ADD_SLOP(bytes) ((bytes) + EXTRA_BYTES)
+# define ADD_SLOP(lb) /* lb should have no side-effect */ \
+                SIZET_SAT_ADD(lb, EXTRA_BYTES)
 # ifndef MIN_WORDS
 #  define MIN_WORDS 2   /* FIXME: obsolete */
 # endif
@@ -893,9 +912,11 @@ struct hblk {
 
 # define HBLK_IS_FREE(hdr) (((hdr) -> hb_flags & FREE_BLK) != 0)
 
-# define OBJ_SZ_TO_BLOCKS(sz) divHBLKSZ((sz) + HBLKSIZE-1)
+# define OBJ_SZ_TO_BLOCKS(lb) divHBLKSZ((lb) + HBLKSIZE-1)
+# define OBJ_SZ_TO_BLOCKS_CHECKED(lb) /* lb should have no side-effect */ \
+                                divHBLKSZ(SIZET_SAT_ADD(lb, HBLKSIZE - 1))
     /* Size of block (in units of HBLKSIZE) needed to hold objects of   */
-    /* given sz (in bytes).                                             */
+    /* given lb (in bytes).  The checked variant prevents wrap around.  */
 
 /* Object free list link */
 # define obj_link(p) (*(void  **)(p))
@@ -1287,18 +1308,18 @@ GC_EXTERN word GC_n_heap_sects; /* Number of separately added heap      */
                                 /* sections.                            */
 #endif
 
-GC_EXTERN word GC_page_size;
+GC_EXTERN size_t GC_page_size;
 
 /* Round up allocation size to a multiple of a page size.       */
 /* GC_setpagesize() is assumed to be already invoked.           */
-#define ROUNDUP_PAGESIZE(bytes) \
-                (((bytes) + GC_page_size - 1) & ~(GC_page_size - 1))
+#define ROUNDUP_PAGESIZE(lb) /* lb should have no side-effect */ \
+            (SIZET_SAT_ADD(lb, GC_page_size - 1) & ~(GC_page_size - 1))
 
 /* Same as above but used to make GET_MEM() argument safe.      */
 #ifdef MMAP_SUPPORTED
-# define ROUNDUP_PAGESIZE_IF_MMAP(bytes) ROUNDUP_PAGESIZE(bytes)
+# define ROUNDUP_PAGESIZE_IF_MMAP(lb) ROUNDUP_PAGESIZE(lb)
 #else
-# define ROUNDUP_PAGESIZE_IF_MMAP(bytes) (bytes)
+# define ROUNDUP_PAGESIZE_IF_MMAP(lb) (lb)
 #endif
 
 #if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)

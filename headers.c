@@ -119,8 +119,7 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
 {
     register ptr_t result = scratch_free_ptr;
 
-    bytes += GRANULE_BYTES-1;
-    bytes &= ~(GRANULE_BYTES-1);
+    bytes = ROUNDUP_GRANULE_SIZE(bytes);
     scratch_free_ptr += bytes;
     if (scratch_free_ptr <= GC_scratch_end_ptr) {
         return(result);

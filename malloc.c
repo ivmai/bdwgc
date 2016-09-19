@@ -46,9 +46,8 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
     ptr_t result;
     GC_bool retry = FALSE;
 
-    /* Round up to a multiple of a granule. */
-      lb = (lb + GRANULE_BYTES - 1) & ~(GRANULE_BYTES - 1);
-    n_blocks = OBJ_SZ_TO_BLOCKS(lb);
+    lb = ROUNDUP_GRANULE_SIZE(lb);
+    n_blocks = OBJ_SZ_TO_BLOCKS_CHECKED(lb);
     if (!GC_is_initialized) GC_init();
     /* Do our share of marking work */
         if (GC_incremental && !GC_dont_gc)
@@ -84,10 +83,11 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
 STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
 {
     ptr_t result = GC_alloc_large(lb, k, flags);
-    word n_blocks = OBJ_SZ_TO_BLOCKS(lb);
 
     if (0 == result) return 0;
     if (GC_debugging_started || GC_obj_kinds[k].ok_init) {
+        word n_blocks = OBJ_SZ_TO_BLOCKS(lb);
+
         /* Clear the whole block, in case of GC_realloc call. */
         BZERO(result, n_blocks * HBLKSIZE);
     }
@@ -167,8 +167,6 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
         GC_bool init;
         lg = ROUNDED_UP_GRANULES(lb);
         lb_rounded = GRANULES_TO_BYTES(lg);
-        if (lb_rounded < lb)
-            return((*GC_get_oom_fn())(lb));
         n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
         init = GC_obj_kinds[k].ok_init;
         LOCK();
@@ -369,15 +367,6 @@ void * malloc(size_t lb)
     }
   }
 #endif /* GC_LINUX_THREADS */
-
-#include <limits.h>
-#ifdef SIZE_MAX
-# define GC_SIZE_MAX SIZE_MAX
-#else
-# define GC_SIZE_MAX (~(size_t)0)
-#endif
-
-# define GC_SQRT_SIZE_MAX ((((size_t)1) << (WORDSZ / 2)) - 1)
 
 void * calloc(size_t n, size_t lb)
 {

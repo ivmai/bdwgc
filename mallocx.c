@@ -181,8 +181,6 @@ GC_INNER void * GC_generic_malloc_ignore_off_page(size_t lb, int k)
         return(GC_generic_malloc((word)lb, k));
     lg = ROUNDED_UP_GRANULES(lb);
     lb_rounded = GRANULES_TO_BYTES(lg);
-    if (lb_rounded < lb)
-        return((*GC_get_oom_fn())(lb));
     n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
     init = GC_obj_kinds[k].ok_init;
     if (GC_have_errors) GC_print_all_errors();
@@ -434,9 +432,11 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
 GC_API void * GC_CALL GC_malloc_many(size_t lb)
 {
     void *result;
-    GC_generic_malloc_many((lb + EXTRA_BYTES + GRANULE_BYTES-1)
-                           & ~(GRANULE_BYTES-1),
-                           NORMAL, &result);
+    /* Add EXTRA_BYTES and round up to a multiple of a granule. */
+    lb = SIZET_SAT_ADD(lb, EXTRA_BYTES + GRANULE_BYTES - 1)
+            & ~(GRANULE_BYTES - 1);
+
+    GC_generic_malloc_many(lb, NORMAL, &result);
     return result;
 }
 
@@ -460,7 +460,7 @@ GC_API void * GC_CALL GC_memalign(size_t align, size_t lb)
     }
     /* We could also try to make sure that the real rounded-up object size */
     /* is a multiple of align.  That would be correct up to HBLKSIZE.      */
-    new_lb = lb + align - 1;
+    new_lb = SIZET_SAT_ADD(lb, align - 1);
     result = GC_malloc(new_lb);
     offset = (word)result % align;
     if (offset != 0) {

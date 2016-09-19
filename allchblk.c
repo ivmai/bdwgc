@@ -594,7 +594,7 @@ GC_allochblk(size_t sz, int kind, unsigned flags/* IGNORE_OFF_PAGE or 0 */)
                      /* split.                                          */
 
     GC_ASSERT((sz & (GRANULE_BYTES - 1)) == 0);
-    blocks = OBJ_SZ_TO_BLOCKS(sz);
+    blocks = OBJ_SZ_TO_BLOCKS_CHECKED(sz);
     if ((signed_word)(blocks * HBLKSIZE) < 0) {
       return 0;
     }
@@ -661,7 +661,7 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
     signed_word size_needed;    /* number of bytes in requested objects */
     signed_word size_avail;     /* bytes available in this block        */
 
-    size_needed = HBLKSIZE * OBJ_SZ_TO_BLOCKS(sz);
+    size_needed = HBLKSIZE * OBJ_SZ_TO_BLOCKS_CHECKED(sz);
 
     /* search for a big enough block in free list */
         hbp = GC_hblkfreelist[n];
