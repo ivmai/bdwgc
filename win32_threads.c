@@ -2700,7 +2700,7 @@ GC_INNER void GC_init_parallel(void)
 
 #if defined(USE_PTHREAD_LOCKS)
   /* Support for pthread locking code.          */
-  /* Pthread_mutex_try_lock may not win here,   */
+  /* pthread_mutex_trylock may not win here,    */
   /* due to builtin support for spinning first? */
 
   GC_INNER volatile GC_bool GC_collecting = 0;
