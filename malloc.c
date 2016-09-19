@@ -48,7 +48,7 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
 
     GC_ASSERT(I_HOLD_LOCK());
     lb = ROUNDUP_GRANULE_SIZE(lb);
-    n_blocks = OBJ_SZ_TO_BLOCKS(lb);
+    n_blocks = OBJ_SZ_TO_BLOCKS_CHECKED(lb);
     if (!EXPECT(GC_is_initialized, TRUE)) {
       DCL_LOCK_STATE;
       UNLOCK(); /* just to unset GC_lock_holder */
@@ -89,12 +89,13 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
 STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
 {
     ptr_t result;
-    word n_blocks = OBJ_SZ_TO_BLOCKS(lb);
 
     GC_ASSERT(I_HOLD_LOCK());
     result = GC_alloc_large(lb, k, flags);
     if (result != NULL
           && (GC_debugging_started || GC_obj_kinds[k].ok_init)) {
+        word n_blocks = OBJ_SZ_TO_BLOCKS(lb);
+
         /* Clear the whole block, in case of GC_realloc call. */
         BZERO(result, n_blocks * HBLKSIZE);
     }
@@ -203,8 +204,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
 
         lg = ROUNDED_UP_GRANULES(lb);
         lb_rounded = GRANULES_TO_BYTES(lg);
-        if (lb_rounded < lb)
-            return((*GC_get_oom_fn())(lb));
         n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
         init = GC_obj_kinds[k].ok_init;
         LOCK();
@@ -415,15 +414,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
       }
     }
 # endif /* GC_LINUX_THREADS */
-
-# include <limits.h>
-# ifdef SIZE_MAX
-#   define GC_SIZE_MAX SIZE_MAX
-# else
-#   define GC_SIZE_MAX (~(size_t)0)
-# endif
-
-# define GC_SQRT_SIZE_MAX ((((size_t)1) << (WORDSZ / 2)) - 1)
 
   void * calloc(size_t n, size_t lb)
   {

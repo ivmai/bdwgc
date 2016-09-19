@@ -188,8 +188,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_ASSERT(k < MAXOBJKINDS);
     lg = ROUNDED_UP_GRANULES(lb);
     lb_rounded = GRANULES_TO_BYTES(lg);
-    if (lb_rounded < lb)
-        return((*GC_get_oom_fn())(lb));
     n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
     init = GC_obj_kinds[k].ok_init;
     if (EXPECT(GC_have_errors, FALSE))
@@ -448,8 +446,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_many(size_t lb)
 {
     void *result;
 
-    GC_generic_malloc_many(ROUNDUP_GRANULE_SIZE(lb + EXTRA_BYTES),
-                           NORMAL, &result);
+    /* Add EXTRA_BYTES and round up to a multiple of a granule. */
+    lb = SIZET_SAT_ADD(lb, EXTRA_BYTES + GRANULE_BYTES - 1)
+            & ~(GRANULE_BYTES - 1);
+
+    GC_generic_malloc_many(lb, NORMAL, &result);
     return result;
 }
 
@@ -473,7 +474,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
     }
     /* We could also try to make sure that the real rounded-up object size */
     /* is a multiple of align.  That would be correct up to HBLKSIZE.      */
-    new_lb = lb + align - 1;
+    new_lb = SIZET_SAT_ADD(lb, align - 1);
     result = GC_malloc(new_lb);
             /* It is OK not to check result for NULL as in that case    */
             /* GC_memalign returns NULL too since (0 + 0 % align) is 0. */
