@@ -682,7 +682,7 @@ struct o32_obj {
 # endif /* OS/2 */
 
 /* Find the page size */
-GC_INNER word GC_page_size = 0;
+GC_INNER size_t GC_page_size = 0;
 
 #if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
 # ifndef VER_PLATFORM_WIN32_CE
@@ -698,7 +698,7 @@ GC_INNER word GC_page_size = 0;
   GC_INNER void GC_setpagesize(void)
   {
     GetSystemInfo(&GC_sysinfo);
-    GC_page_size = GC_sysinfo.dwPageSize;
+    GC_page_size = (size_t)GC_sysinfo.dwPageSize;
 #   if defined(MSWINCE) && !defined(_WIN32_WCE_EMULATION)
       {
         OSVERSIONINFO verInfo;
@@ -789,7 +789,7 @@ GC_INNER word GC_page_size = 0;
   GC_INNER void GC_setpagesize(void)
   {
 #   if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(USE_MMAP)
-      GC_page_size = GETPAGESIZE();
+      GC_page_size = (size_t)GETPAGESIZE();
       if (!GC_page_size) ABORT("getpagesize failed");
 #   else
       /* It's acceptable to fake it.    */
@@ -2032,7 +2032,7 @@ void GC_register_data_segments(void)
   extern char* GC_get_private_path_and_zero_file(void);
 #endif
 
-STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
+STATIC ptr_t GC_unix_mmap_get_mem(size_t bytes)
 {
     void *result;
     static ptr_t last_addr = HEAP_START;
@@ -2064,13 +2064,14 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
 #   undef IGNORE_PAGES_EXECUTABLE
 
     if (result == MAP_FAILED) return(0);
-    last_addr = (ptr_t)ROUNDUP_PAGESIZE((word)result + bytes);
+    last_addr = (ptr_t)(((word)result + bytes + GC_page_size - 1)
+                        & ~(GC_page_size - 1));
 #   if !defined(LINUX)
       if (last_addr == 0) {
         /* Oops.  We got the end of the address space.  This isn't      */
         /* usable by arbitrary C code, since one-past-end pointers      */
         /* don't work, so we discard it and try again.                  */
-        munmap(result, (size_t)(-GC_page_size) - (size_t)result);
+        munmap(result, ~GC_page_size - (size_t)result + 1);
                         /* Leave last page mapped, so we can't repeat.  */
         return GC_unix_mmap_get_mem(bytes);
       }
@@ -2086,13 +2087,13 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
 # endif  /* MMAP_SUPPORTED */
 
 #if defined(USE_MMAP)
-  ptr_t GC_unix_get_mem(word bytes)
+  ptr_t GC_unix_get_mem(size_t bytes)
   {
     return GC_unix_mmap_get_mem(bytes);
   }
 #else /* !USE_MMAP */
 
-STATIC ptr_t GC_unix_sbrk_get_mem(word bytes)
+STATIC ptr_t GC_unix_sbrk_get_mem(size_t bytes)
 {
   ptr_t result;
 # ifdef IRIX5
@@ -2109,7 +2110,7 @@ STATIC ptr_t GC_unix_sbrk_get_mem(word bytes)
         goto out;
     }
     if (lsbs != 0) {
-        if((ptr_t)sbrk(GC_page_size - lsbs) == (ptr_t)(-1)) {
+        if((ptr_t)sbrk((SBRK_ARG_T)GC_page_size - lsbs) == (ptr_t)(-1)) {
             result = 0;
             goto out;
         }
@@ -2133,7 +2134,7 @@ STATIC ptr_t GC_unix_sbrk_get_mem(word bytes)
   return(result);
 }
 
-ptr_t GC_unix_get_mem(word bytes)
+ptr_t GC_unix_get_mem(size_t bytes)
 {
 # if defined(MMAP_SUPPORTED)
     /* By default, we try both sbrk and mmap, in that order.    */
@@ -2179,7 +2180,7 @@ void * os2_alloc(size_t bytes)
 # endif /* OS2 */
 
 #ifdef MSWINCE
-  ptr_t GC_wince_get_mem(word bytes)
+  ptr_t GC_wince_get_mem(size_t bytes)
   {
     ptr_t result = 0; /* initialized to prevent warning. */
     word i;
@@ -2198,8 +2199,9 @@ void * os2_alloc(size_t bytes)
 
     if (i == GC_n_heap_bases) {
         /* Reserve more pages */
-        word res_bytes = (bytes + GC_sysinfo.dwAllocationGranularity-1)
-                         & ~(GC_sysinfo.dwAllocationGranularity-1);
+        size_t res_bytes =
+            SIZET_SAT_ADD(bytes, (size_t)GC_sysinfo.dwAllocationGranularity-1)
+            & ~((size_t)GC_sysinfo.dwAllocationGranularity-1);
         /* If we ever support MPROTECT_VDB here, we will probably need to    */
         /* ensure that res_bytes is strictly > bytes, so that VirtualProtect */
         /* never spans regions.  It seems to be OK for a VirtualFree         */
@@ -2249,7 +2251,7 @@ void * os2_alloc(size_t bytes)
 #   define GC_mem_top_down 0
 # endif /* !GC_USE_MEM_TOP_DOWN */
 
-  ptr_t GC_win32_get_mem(word bytes)
+  ptr_t GC_win32_get_mem(size_t bytes)
   {
     ptr_t result;
 
@@ -2261,8 +2263,8 @@ void * os2_alloc(size_t bytes)
         /* VirtualAlloc doesn't like PAGE_EXECUTE_READWRITE.    */
         /* There are also unconfirmed rumors of other           */
         /* problems, so we dodge the issue.                     */
-        result = (ptr_t) GlobalAlloc(0, bytes + HBLKSIZE);
-        result = (ptr_t)(((word)result + HBLKSIZE - 1) & ~(HBLKSIZE-1));
+        result = (ptr_t)(((word)GlobalAlloc(0, SIZET_SAT_ADD(bytes, HBLKSIZE))
+                            + HBLKSIZE - 1) & ~(HBLKSIZE - 1));
       } else
 #   endif
     /* else */ {
@@ -2291,12 +2293,13 @@ void * os2_alloc(size_t bytes)
         /* available.  Otherwise we waste resources or possibly */
         /* cause VirtualAlloc to fail (observed in Windows 2000 */
         /* SP2).                                                */
-        result = (ptr_t) VirtualAlloc(NULL, bytes + VIRTUAL_ALLOC_PAD,
-                                GetWriteWatch_alloc_flag
+        result = (ptr_t) VirtualAlloc(NULL,
+                            SIZET_SAT_ADD(bytes, VIRTUAL_ALLOC_PAD),
+                            GetWriteWatch_alloc_flag
                                 | (MEM_COMMIT | MEM_RESERVE)
                                 | GC_mem_top_down,
-                                GC_pages_executable ? PAGE_EXECUTE_READWRITE :
-                                                      PAGE_READWRITE);
+                            GC_pages_executable ? PAGE_EXECUTE_READWRITE :
+                                                  PAGE_READWRITE);
 #       undef IGNORE_PAGES_EXECUTABLE
     }
 # endif /* USE_WINALLOC */
@@ -2359,7 +2362,8 @@ void * os2_alloc(size_t bytes)
 /* Return 0 if the block is too small to make this feasible.    */
 STATIC ptr_t GC_unmap_start(ptr_t start, size_t bytes)
 {
-    ptr_t result = (ptr_t)ROUNDUP_PAGESIZE((word)start);
+    ptr_t result = (ptr_t)(((word)start + GC_page_size - 1)
+                            & ~(GC_page_size - 1));
 
     if ((word)(result + GC_page_size) > (word)(start + bytes)) return 0;
     return result;
@@ -3132,7 +3136,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         char * addr = (char *) (exc_info -> ExceptionRecord
                                 -> ExceptionInformation[1]);
 #   endif
-    unsigned i;
+    size_t i;
 
     if (SIG_OK && CODE_OK) {
         register struct hblk * h =
@@ -3263,7 +3267,8 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #   endif
     if (!GC_dirty_maintained) return;
     h_trunc = (struct hblk *)((word)h & ~(GC_page_size-1));
-    h_end = (struct hblk *)ROUNDUP_PAGESIZE((word)(h + nblocks));
+    h_end = (struct hblk *)(((word)(h + nblocks) + GC_page_size - 1)
+                            & ~(GC_page_size - 1));
     if (h_end == h_trunc + 1 &&
         get_pht_entry_from_index(GC_dirty_pages, PHT_HASH(h_trunc))) {
         /* already marked dirty, and hence unprotected. */
@@ -4197,7 +4202,7 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
   kern_return_t r;
   char *addr;
   struct hblk *h;
-  unsigned int i;
+  size_t i;
   thread_state_flavor_t flavor = DARWIN_EXC_STATE;
   mach_msg_type_number_t exc_state_count = DARWIN_EXC_STATE_COUNT;
   DARWIN_EXC_STATE_T exc_state;

@@ -3169,7 +3169,8 @@
         /* usually makes it possible to merge consecutively allocated   */
         /* chunks.  It also avoids unintended recursion with            */
         /* REDIRECT_MALLOC macro defined.                               */
-        /* GET_MEM() returns a HLKSIZE aligned chunk.                   */
+        /* GET_MEM() argument should be of size_t type and have         */
+        /* no side-effect.  GET_MEM() returns HLKSIZE-aligned chunk;    */
         /* 0 is taken to mean failure.                                  */
         /* In case of MMAP_SUPPORTED, the argument must also be         */
         /* a multiple of a physical page size.                          */
@@ -3179,45 +3180,52 @@
         struct hblk;    /* See gc_priv.h.       */
 # if defined(PCR)
     char * real_malloc(size_t bytes);
-#   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)(bytes) + GC_page_size) \
+#   define GET_MEM(bytes) HBLKPTR(real_malloc(SIZET_SAT_ADD(bytes, \
+                                                            GC_page_size)) \
                                           + GC_page_size-1)
 # elif defined(OS2)
     void * os2_alloc(size_t bytes);
-#   define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc((size_t)(bytes) \
-                                            + GC_page_size) + GC_page_size-1)
+#   define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc( \
+                                            SIZET_SAT_ADD(bytes, \
+                                                          GC_page_size)) \
+                                  + GC_page_size-1)
 # elif defined(NEXT) || defined(DOS4GW) || defined(NONSTOP) \
         || (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) \
         || (defined(SOLARIS) && !defined(USE_MMAP)) || defined(RTEMS) \
         || defined(__CC_ARM)
 #   define GET_MEM(bytes) HBLKPTR((size_t)calloc(1, \
-                                            (size_t)(bytes) + GC_page_size) \
+                                            SIZET_SAT_ADD(bytes, \
+                                                          GC_page_size)) \
                                   + GC_page_size - 1)
 # elif defined(MSWIN32) || defined(CYGWIN32)
-    ptr_t GC_win32_get_mem(GC_word bytes);
+    ptr_t GC_win32_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
 # elif defined(MACOS)
 #   if defined(USE_TEMPORARY_MEMORY)
       Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory);
-#     define GET_MEM(bytes) HBLKPTR( \
-                        GC_MacTemporaryNewPtr((bytes) + GC_page_size, true) \
+#     define GET_MEM(bytes) HBLKPTR(GC_MacTemporaryNewPtr( \
+                                        SIZET_SAT_ADD(bytes, \
+                                                      GC_page_size), true) \
                         + GC_page_size-1)
 #   else
-#     define GET_MEM(bytes) HBLKPTR(NewPtrClear((bytes) + GC_page_size) \
+#     define GET_MEM(bytes) HBLKPTR(NewPtrClear(SIZET_SAT_ADD(bytes, \
+                                                              GC_page_size)) \
                                     + GC_page_size-1)
 #   endif
 # elif defined(MSWINCE)
-    ptr_t GC_wince_get_mem(GC_word bytes);
+    ptr_t GC_wince_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
 # elif defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
     void *GC_amiga_get_mem(size_t bytes);
-#   define GET_MEM(bytes) HBLKPTR((size_t) \
-                          GC_amiga_get_mem((size_t)(bytes) + GC_page_size) \
+#   define GET_MEM(bytes) HBLKPTR((size_t)GC_amiga_get_mem( \
+                                            SIZET_SAT_ADD(bytes, \
+                                                          GC_page_size)) \
                           + GC_page_size-1)
 # elif defined(SN_TARGET_PS3)
     void *ps3_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)ps3_get_mem(bytes)
 # else
-    ptr_t GC_unix_get_mem(GC_word bytes);
+    ptr_t GC_unix_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
 # endif
 #endif /* GC_PRIVATE_H */

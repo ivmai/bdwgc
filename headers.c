@@ -118,7 +118,7 @@ static ptr_t scratch_free_ptr = 0;
 GC_INNER ptr_t GC_scratch_alloc(size_t bytes)
 {
     ptr_t result = scratch_free_ptr;
-    word bytes_to_get;
+    size_t bytes_to_get;
 
     bytes = ROUNDUP_GRANULE_SIZE(bytes);
     for (;;) {

@@ -89,7 +89,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_finalized_malloc(size_t lb,
     word *op;
 
     GC_ASSERT(done_init);
-    op = GC_malloc_kind(lb + sizeof(word), GC_finalized_kind);
+    op = GC_malloc_kind(SIZET_SAT_ADD(lb, sizeof(word)), GC_finalized_kind);
     if (EXPECT(NULL == op, FALSE))
         return NULL;
     *op = (word)fclos | FINALIZER_CLOSURE_FLAG;
