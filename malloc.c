@@ -407,7 +407,7 @@ void * malloc(size_t lb)
 # define GC_SIZE_MAX (~(size_t)0)
 #endif
 
-#define GC_SQRT_SIZE_MAX ((1U << (WORDSZ / 2)) - 1)
+# define GC_SQRT_SIZE_MAX ((((size_t)1) << (WORDSZ / 2)) - 1)
 
 void * calloc(size_t n, size_t lb)
 {
