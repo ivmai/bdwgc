@@ -15,5 +15,5 @@ install:
   - ./autogen.sh
 
 script:
-  - ./configure --enable-werror --enable-handle-fork --enable-munmap
+  - ./configure --enable-werror --enable-munmap
   - make -j check
