@@ -41,8 +41,9 @@ STATIC size_t GC_n_faulted = 0;
 
 void GC_record_fault(struct hblk * h)
 {
-    word page = ROUNDUP_PAGESIZE((word)h);
+    word page = (word)h & ~(GC_page_size - 1);
 
+    GC_ASSERT(GC_page_size != 0);
     if (GC_n_faulted >= NSUMS) ABORT("write fault log overflowed");
     GC_faulted[GC_n_faulted++] = page;
 }
@@ -50,7 +51,7 @@ void GC_record_fault(struct hblk * h)
 STATIC GC_bool GC_was_faulted(struct hblk *h)
 {
     size_t i;
-    word page = ROUNDUP_PAGESIZE((word)h);
+    word page = (word)h & ~(GC_page_size - 1);
 
     for (i = 0; i < GC_n_faulted; ++i) {
         if (GC_faulted[i] == page) return TRUE;
