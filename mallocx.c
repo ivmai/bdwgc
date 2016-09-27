@@ -198,32 +198,30 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_DBG_COLLECT_AT_MALLOC(lb);
     LOCK();
     result = (ptr_t)GC_alloc_large(ADD_SLOP(lb), k, IGNORE_OFF_PAGE);
-    if (0 != result) {
-        if (GC_debugging_started) {
-            BZERO(result, n_blocks * HBLKSIZE);
-        } else {
-#           ifdef THREADS
-              /* Clear any memory that might be used for GC descriptors */
-              /* before we release the lock.                          */
-                ((word *)result)[0] = 0;
-                ((word *)result)[1] = 0;
-                ((word *)result)[GRANULES_TO_WORDS(lg)-1] = 0;
-                ((word *)result)[GRANULES_TO_WORDS(lg)-2] = 0;
-#           endif
-        }
-    }
-    GC_bytes_allocd += lb_rounded;
-    if (0 == result) {
+    if (NULL == result) {
         GC_oom_func oom_fn = GC_oom_fn;
         UNLOCK();
-        return((*oom_fn)(lb));
-    } else {
-        UNLOCK();
-        if (init && !GC_debugging_started) {
-            BZERO(result, n_blocks * HBLKSIZE);
-        }
-        return(result);
+        return (*oom_fn)(lb);
     }
+
+    if (GC_debugging_started) {
+        BZERO(result, n_blocks * HBLKSIZE);
+    } else {
+#       ifdef THREADS
+            /* Clear any memory that might be used for GC descriptors   */
+            /* before we release the lock.                              */
+            ((word *)result)[0] = 0;
+            ((word *)result)[1] = 0;
+            ((word *)result)[GRANULES_TO_WORDS(lg)-1] = 0;
+            ((word *)result)[GRANULES_TO_WORDS(lg)-2] = 0;
+#       endif
+    }
+    GC_bytes_allocd += lb_rounded;
+    UNLOCK();
+    if (init && !GC_debugging_started) {
+        BZERO(result, n_blocks * HBLKSIZE);
+    }
+    return(result);
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_ignore_off_page(size_t lb)

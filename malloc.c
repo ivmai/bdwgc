@@ -149,7 +149,8 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
         GC_bytes_allocd += GRANULES_TO_BYTES(lg);
     } else {
         op = (ptr_t)GC_alloc_large_and_clear(ADD_SLOP(lb), k, 0);
-        GC_bytes_allocd += lb;
+        if (op != NULL)
+            GC_bytes_allocd += lb;
     }
 
     return op;
@@ -170,7 +171,8 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
     GC_ASSERT(k < MAXOBJKINDS);
     lb_adjusted = ADD_SLOP(lb);
     op = GC_alloc_large_and_clear(lb_adjusted, k, IGNORE_OFF_PAGE);
-    GC_bytes_allocd += lb_adjusted;
+    if (op != NULL)
+        GC_bytes_allocd += lb_adjusted;
     return op;
   }
 #endif
@@ -222,8 +224,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
                 ((word *)result)[GRANULES_TO_WORDS(lg)-2] = 0;
 #           endif
           }
+          GC_bytes_allocd += lb_rounded;
         }
-        GC_bytes_allocd += lb_rounded;
         UNLOCK();
         if (init && !GC_debugging_started && 0 != result) {
             BZERO(result, n_blocks * HBLKSIZE);
