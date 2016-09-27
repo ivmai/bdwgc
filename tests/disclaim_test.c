@@ -165,7 +165,7 @@ pair_check_rec(pair_t p)
 #else
 #  define MUTATE_CNT 10000000
 #endif
-#define GROW_LIMIT 10000000
+#define GROW_LIMIT (MUTATE_CNT/10)
 
 void *test(void *data)
 {
