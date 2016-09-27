@@ -1227,6 +1227,8 @@ GC_INNER unsigned GC_fail_count = 0;
                         /* How many consecutive GC/expansion failures?  */
                         /* Reset by GC_allochblk.                       */
 
+#define GC_WORD_MAX (~(word)0)
+
 /* Collect or expand heap in an attempt make the indicated number of    */
 /* free blocks available.  Should be called until the blocks are        */
 /* available (setting retry value to TRUE unless this is the first call */
@@ -1275,6 +1277,8 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
       } else {
         blocks_to_get = MAXHINCR;
       }
+      if (blocks_to_get > divHBLKSZ(GC_WORD_MAX))
+        blocks_to_get = divHBLKSZ(GC_WORD_MAX);
     }
 
     if (!GC_expand_hp_inner(blocks_to_get)
