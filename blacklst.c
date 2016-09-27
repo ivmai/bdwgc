@@ -281,7 +281,7 @@ static word total_stack_black_listed(void)
 
     for (i = 0; i < GC_n_heap_sects; i++) {
         struct hblk * start = (struct hblk *) GC_heap_sects[i].hs_start;
-        struct hblk * endp1 = start + GC_heap_sects[i].hs_bytes/HBLKSIZE;
+        struct hblk * endp1 = start + divHBLKSZ(GC_heap_sects[i].hs_bytes);
 
         total += GC_number_stack_black_listed(start, endp1);
     }
