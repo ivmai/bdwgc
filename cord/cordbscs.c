@@ -277,8 +277,7 @@ CORD CORD_cat(CORD x, CORD y)
 }
 
 
-
-CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len)
+static CordRep *CORD_from_fn_inner(CORD_fn fn, void * client_data, size_t len)
 {
     if (len == 0) return(0);
     if (len <= SHORT_LIMIT) {
@@ -297,7 +296,7 @@ CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len)
         if (result == 0) OUT_OF_MEMORY;
         memcpy(result, buf, len);
         result[len] = '\0';
-        return((CORD) result);
+        return (CordRep *)result;
     }
   gen_case:
     {
@@ -310,8 +309,13 @@ CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len)
         result->len = len;
         result->fn = fn;
         result->client_data = client_data;
-        return((CORD) result);
+        return (CordRep *)result;
     }
+}
+
+CORD CORD_from_fn(CORD_fn fn, void * client_data, size_t len)
+{
+    return (/* const */ CORD) CORD_from_fn_inner(fn, client_data, len);
 }
 
 size_t CORD_len(CORD x)
@@ -355,7 +359,7 @@ CORD CORD_substr_closure(CORD x, size_t i, size_t n, CORD_fn f)
     if (sa == 0) OUT_OF_MEMORY;
     sa->sa_cord = (CordRep *)x;
     sa->sa_index = i;
-    result = (CordRep *)CORD_from_fn(f, (void *)sa, n);
+    result = CORD_from_fn_inner(f, (void *)sa, n);
     if ((CORD)result != CORD_EMPTY && 0 == result -> function.null)
         result -> function.header = SUBSTR_HDR;
     return (CORD)result;
