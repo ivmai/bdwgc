@@ -343,15 +343,15 @@ char CORD_apply_access_fn(size_t i, void * client_data)
 CORD CORD_substr_closure(CORD x, size_t i, size_t n, CORD_fn f)
 {
     register struct substr_args * sa = GC_NEW(struct substr_args);
-    CORD result;
+    CordRep * result;
 
     if (sa == 0) OUT_OF_MEMORY;
     sa->sa_cord = (CordRep *)x;
     sa->sa_index = i;
-    result = CORD_from_fn(f, (void *)sa, n);
-    if (result == CORD_EMPTY) return CORD_EMPTY; /* n == 0 */
-    ((CordRep *)result) -> function.header = SUBSTR_HDR;
-    return (result);
+    result = (CordRep *)CORD_from_fn(f, (void *)sa, n);
+    if ((CORD)result != CORD_EMPTY && 0 == result -> function.null)
+        result -> function.header = SUBSTR_HDR;
+    return (CORD)result;
 }
 
 # define SUBSTR_LIMIT (10 * SHORT_LIMIT)
