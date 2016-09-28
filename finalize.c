@@ -1088,29 +1088,22 @@ GC_INNER void GC_finalize(void)
   /* Enqueue all remaining finalizers to be run - Assumes lock is held. */
   STATIC void GC_enqueue_all_finalizers(void)
   {
-    struct finalizable_object * curr_fo, * prev_fo, * next_fo;
+    struct finalizable_object * curr_fo, * next_fo;
     ptr_t real_ptr;
-    register int i;
+    int i;
     int fo_size;
 
     fo_size = log_fo_table_size == -1 ? 0 : 1 << log_fo_table_size;
     GC_bytes_finalized = 0;
     for (i = 0; i < fo_size; i++) {
       curr_fo = GC_fnlz_roots.fo_head[i];
-      prev_fo = NULL;
+      GC_fnlz_roots.fo_head[i] = NULL;
       while (curr_fo != NULL) {
           real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
           GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
           GC_set_mark_bit(real_ptr);
 
-          /* Delete from hash table */
           next_fo = fo_next(curr_fo);
-          if (prev_fo == 0) {
-            GC_fnlz_roots.fo_head[i] = next_fo;
-          } else {
-            fo_set_next(prev_fo, next_fo);
-          }
-          GC_fo_entries--;
 
           /* Add to list of objects awaiting finalization.      */
           fo_set_next(curr_fo, GC_fnlz_roots.finalize_now);
@@ -1125,6 +1118,7 @@ GC_INNER void GC_finalize(void)
           curr_fo = next_fo;
         }
     }
+    GC_fo_entries = 0;  /* all entries deleted from the hash table */
   }
 
   /* Invoke all remaining finalizers that haven't yet been run.
