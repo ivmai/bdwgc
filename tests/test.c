@@ -534,7 +534,7 @@ void check_marks_int_list(sexpr x)
       }
 #     if defined(GC_ENABLE_SUSPEND_THREAD) && !defined(GC_DARWIN_THREADS) \
          && !defined(GC_OPENBSD_UTHREADS) && !defined(GC_WIN32_THREADS) \
-         && !defined(NACL)
+         && !defined(NACL) && !defined(GC_OSF1_THREADS)
         if (GC_is_thread_suspended(t)) {
           GC_printf("Running thread should be not suspended\n");
           FAIL;
