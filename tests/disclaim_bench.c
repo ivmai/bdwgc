@@ -135,7 +135,7 @@ int main(int argc, char **argv)
             t = MS_TIME_DIFF(tF, tI)*1e-3;
 #       endif
 
-        if (model < 2)
+        if (model < 2 && free_count > 0)
             printf("%20s: %12.4lf %12lg %12lg\n", model_str[model],
                    free_count/(double)ALLOC_CNT, t, t/free_count);
         else
