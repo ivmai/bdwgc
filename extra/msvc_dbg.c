@@ -317,7 +317,7 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   if (line_number) {
-    wsprintf(str, "(%d) : ", line_number);
+    wsprintf(str, "(%d) : ", (int)line_number);
     if (size) {
       strncpy(buffer, str, size)[size - 1] = 0;
     }
