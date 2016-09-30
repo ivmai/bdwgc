@@ -1175,30 +1175,31 @@ GC_INNER void GC_thr_init(void)
       available_markers_m1 = 0; /* but use only one marker */
 #   endif
   } else {
-#  ifdef PARALLEL_MARK
-     {
-       char * markers_string = GETENV("GC_MARKERS");
-       int markers_m1;
+#   ifdef PARALLEL_MARK
+      {
+        char * markers_string = GETENV("GC_MARKERS");
+        int markers;
 
-       if (markers_string != NULL) {
-         markers_m1 = atoi(markers_string) - 1;
-         if (markers_m1 >= MAX_MARKERS) {
-           WARN("Limiting number of mark threads\n", 0);
-           markers_m1 = MAX_MARKERS - 1;
-         }
-       } else {
-         markers_m1 = GC_nprocs - 1;
-#        ifdef GC_MIN_MARKERS
-           /* This is primarily for targets without getenv().   */
-           if (markers_m1 < GC_MIN_MARKERS - 1)
-             markers_m1 = GC_MIN_MARKERS - 1;
-#        endif
-         if (markers_m1 >= MAX_MARKERS)
-           markers_m1 = MAX_MARKERS - 1; /* silently limit the value */
-       }
-       available_markers_m1 = markers_m1;
-     }
-#  endif
+        if (markers_string != NULL) {
+          markers = atoi(markers_string);
+          if (markers <= 0 || markers > MAX_MARKERS) {
+            WARN("Too big or invalid number of mark threads: %" WARN_PRIdPTR
+                 "; using maximum threads\n", (signed_word)markers);
+            markers = MAX_MARKERS;
+          }
+        } else {
+          markers = GC_nprocs;
+#         ifdef GC_MIN_MARKERS
+            /* This is primarily for targets without getenv().  */
+            if (markers < GC_MIN_MARKERS)
+              markers = GC_MIN_MARKERS;
+#         endif
+          if (markers > MAX_MARKERS)
+            markers = MAX_MARKERS; /* silently limit the value */
+        }
+        available_markers_m1 = markers - 1;
+      }
+#   endif
   }
   GC_COND_LOG_PRINTF("Number of processors = %d\n", GC_nprocs);
 # ifdef PARALLEL_MARK
