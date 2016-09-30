@@ -689,9 +689,9 @@ GC_API void GC_CALL GC_init(void)
 #   endif
 
 #   ifdef GC_INITIAL_HEAP_SIZE
-      initial_heap_sz = divHBLKSZ(GC_INITIAL_HEAP_SIZE);
+      initial_heap_sz = GC_INITIAL_HEAP_SIZE;
 #   else
-      initial_heap_sz = (word)MINHINCR;
+      initial_heap_sz = MINHINCR * HBLKSIZE;
 #   endif
     DISABLE_CANCEL(cancel_state);
     /* Note that although we are nominally called with the */
@@ -988,21 +988,20 @@ GC_API void GC_CALL GC_init(void)
           if (initial_heap_sz <= MINHINCR * HBLKSIZE) {
             WARN("Bad initial heap size %s - ignoring it.\n", sz_str);
           }
-          initial_heap_sz = divHBLKSZ(initial_heap_sz);
         }
     }
     {
         char * sz_str = GETENV("GC_MAXIMUM_HEAP_SIZE");
         if (sz_str != NULL) {
           word max_heap_sz = GC_parse_mem_size_arg(sz_str);
-          if (max_heap_sz < initial_heap_sz * HBLKSIZE) {
+          if (max_heap_sz < initial_heap_sz) {
             WARN("Bad maximum heap size %s - ignoring it.\n", sz_str);
           }
           if (0 == GC_max_retries) GC_max_retries = 2;
           GC_set_max_heap_size(max_heap_sz);
         }
     }
-    if (!GC_expand_hp_inner(initial_heap_sz)) {
+    if (!GC_expand_hp_inner(divHBLKSZ(initial_heap_sz))) {
         GC_err_printf("Can't start up: not enough memory\n");
         EXIT();
     }
