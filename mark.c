@@ -898,10 +898,14 @@ STATIC unsigned GC_active_count = 0;    /* Number of active helpers.    */
 
 GC_INNER word GC_mark_no = 0;
 
-#define LOCAL_MARK_STACK_SIZE HBLKSIZE
+#ifdef LINT2
+# define LOCAL_MARK_STACK_SIZE (HBLKSIZE / 8)
+#else
+# define LOCAL_MARK_STACK_SIZE HBLKSIZE
         /* Under normal circumstances, this is big enough to guarantee  */
         /* we don't overflow half of it in a single call to             */
         /* GC_mark_from.                                                */
+#endif
 
 /* Wait all markers to finish initialization (i.e. store        */
 /* marker_[b]sp, marker_mach_threads, GC_marker_Id).            */
