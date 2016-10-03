@@ -2419,6 +2419,10 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
                       zero_fd, 0/* offset */);
         if (result != (void *)start_addr)
           ABORT("mmap(PROT_NONE) failed");
+#       ifdef LINT2
+          /* Explicitly store the resource handle to a global variable. */
+          GC_noop1((word)result);
+#       endif
       }
       GC_unmapped_bytes += len;
 #   endif
@@ -2453,6 +2457,9 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
                   ABORT("VirtualAlloc remapping failed");
               }
           }
+#         ifdef LINT2
+            GC_noop1((word)result);
+#         endif
           GC_unmapped_bytes -= alloc_len;
           start_addr += alloc_len;
           len -= alloc_len;
@@ -2462,12 +2469,15 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
       {
 #       ifdef NACL
           /* NaCl does not expose mprotect, but mmap should work fine.  */
-          void *mmap_result = mmap(start_addr, len, (PROT_READ | PROT_WRITE)
+          void *result = mmap(start_addr, len, (PROT_READ | PROT_WRITE)
                                     | (GC_pages_executable ? PROT_EXEC : 0),
                                    MAP_PRIVATE | MAP_FIXED | OPT_MAP_ANON,
                                    zero_fd, 0 /* offset */);
-          if (mmap_result != (void *)start_addr)
+          if (result != (void *)start_addr)
             ABORT("mmap as mprotect failed");
+#         ifdef LINT2
+            GC_noop1((word)result);
+#         endif
 #       else
           if (mprotect(start_addr, len, (PROT_READ | PROT_WRITE)
                             | (GC_pages_executable ? PROT_EXEC : 0)) != 0) {
@@ -2525,8 +2535,11 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
                       zero_fd, 0/* offset */);
         if (result != (void *)start_addr)
           ABORT("mmap(PROT_NONE) failed");
+#       ifdef LINT2
+          GC_noop1((word)result);
+#       endif
+        GC_unmapped_bytes += len;
       }
-      GC_unmapped_bytes += len;
 #   endif
 }
 
