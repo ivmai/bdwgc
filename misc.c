@@ -431,7 +431,6 @@ GC_API void * GC_CALL GC_base(void * p)
     struct hblk *h;
     bottom_index *bi;
     hdr *candidate_hdr;
-    ptr_t limit;
 
     r = p;
     if (!EXPECT(GC_is_initialized, TRUE)) return 0;
@@ -453,6 +452,7 @@ GC_API void * GC_CALL GC_base(void * p)
             size_t offset = HBLKDISPL(r);
             word sz = candidate_hdr -> hb_sz;
             size_t obj_displ = offset % sz;
+            ptr_t limit;
 
             r -= obj_displ;
             limit = r + sz;
@@ -820,11 +820,12 @@ GC_INNER GC_bool GC_is_initialized = FALSE;
 
 STATIC word GC_parse_mem_size_arg(const char *str)
 {
-  char *endptr;
   word result = 0; /* bad value */
-  char ch;
 
   if (*str != '\0') {
+    char *endptr;
+    char ch;
+
     result = (word)STRTOULL(str, &endptr, 10);
     ch = *endptr;
     if (ch != '\0') {
@@ -1561,17 +1562,17 @@ GC_API void GC_CALL GC_enable_incremental(void)
       return len;
 #   else
       int bytes_written = 0;
-      int result;
       IF_CANCEL(int cancel_state;)
 
       DISABLE_CANCEL(cancel_state);
       while ((size_t)bytes_written < len) {
 #        ifdef GC_SOLARIS_THREADS
-             result = syscall(SYS_write, fd, buf + bytes_written,
+             int result = syscall(SYS_write, fd, buf + bytes_written,
                                              len - bytes_written);
 #        else
-             result = write(fd, buf + bytes_written, len - bytes_written);
+             int result = write(fd, buf + bytes_written, len - bytes_written);
 #        endif
+
          if (-1 == result) {
              RESTORE_CANCEL(cancel_state);
              return(result);

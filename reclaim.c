@@ -376,7 +376,6 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
     hdr * hhdr = HDR(hbp);
     size_t sz = hhdr -> hb_sz;  /* size of objects in current block     */
     struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
-    struct hblk ** rlh;
 
     if( sz > MAXOBJBYTES ) {  /* 1 big object */
         if( !mark_bit_from_hdr(hhdr, 0) ) {
@@ -439,7 +438,8 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
           }
         } else if (GC_find_leak || !GC_block_nearly_full(hhdr)) {
           /* group of smaller objects, enqueue the real work */
-          rlh = &(ok -> ok_reclaim_list[BYTES_TO_GRANULES(sz)]);
+          struct hblk **rlh = ok -> ok_reclaim_list + BYTES_TO_GRANULES(sz);
+
           hhdr -> hb_next = *rlh;
           *rlh = hbp;
         } /* else not worth salvaging. */
@@ -616,14 +616,14 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
       GC_atomic_in_use = 0;
     /* Clear reclaim- and free-lists */
       for (kind = 0; kind < GC_n_kinds; kind++) {
-        void **fop;
-        void **lim;
         struct hblk ** rlist = GC_obj_kinds[kind].ok_reclaim_list;
         GC_bool should_clobber = (GC_obj_kinds[kind].ok_descriptor != 0);
 
         if (rlist == 0) continue;       /* This kind not used.  */
         if (!report_if_found) {
-            lim = &(GC_obj_kinds[kind].ok_freelist[MAXOBJGRANULES+1]);
+            void **fop;
+            void **lim = &(GC_obj_kinds[kind].ok_freelist[MAXOBJGRANULES+1]);
+
             for (fop = GC_obj_kinds[kind].ok_freelist;
                  (word)fop < (word)lim; fop++) {
               if (*fop != 0) {

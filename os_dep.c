@@ -115,11 +115,11 @@
 STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 {
     size_t num_read = 0;
-    ssize_t result;
 
     ASSERT_CANCEL_DISABLED();
     while (num_read < count) {
-        result = READ(fd, buf + num_read, count - num_read);
+        ssize_t result = READ(fd, buf + num_read, count - num_read);
+
         if (result < 0) return result;
         if (result == 0) break;
         num_read += result;
@@ -163,7 +163,6 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 /* of time.                                                             */
 GC_INNER char * GC_get_maps(void)
 {
-    int f;
     ssize_t result;
     static char *maps_buf = NULL;
     static size_t maps_buf_sz = 1;
@@ -199,6 +198,8 @@ GC_INNER char * GC_get_maps(void)
     /* Note that we may not allocate conventionally, and        */
     /* thus can't use stdio.                                    */
         do {
+            int f;
+
             while (maps_size >= maps_buf_sz) {
               /* Grow only by powers of 2, since we leak "too small" buffers.*/
               while (maps_size >= maps_buf_sz) maps_buf_sz *= 2;
@@ -1662,15 +1663,15 @@ void GC_register_data_segments(void)
   STATIC ptr_t GC_least_described_address(ptr_t start)
   {
     MEMORY_BASIC_INFORMATION buf;
-    size_t result;
     LPVOID limit;
     ptr_t p;
-    LPVOID q;
 
     limit = GC_sysinfo.lpMinimumApplicationAddress;
     p = (ptr_t)((word)start & ~(GC_page_size - 1));
     for (;;) {
-        q = (LPVOID)(p - GC_page_size);
+        size_t result;
+        LPVOID q = (LPVOID)(p - GC_page_size);
+
         if ((word)q > (word)p /* underflow */ || (word)q < (word)limit) break;
         result = VirtualQuery(q, &buf, sizeof(buf));
         if (result != sizeof(buf) || buf.AllocationBase == 0) break;
@@ -1781,16 +1782,17 @@ void GC_register_data_segments(void)
   STATIC void GC_register_root_section(ptr_t static_root)
   {
       MEMORY_BASIC_INFORMATION buf;
-      size_t result;
       DWORD protect;
       LPVOID p;
       char * base;
-      char * limit, * new_limit;
+      char * limit;
 
       if (!GC_no_win32_dlls) return;
       p = base = limit = GC_least_described_address(static_root);
       while ((word)p < (word)GC_sysinfo.lpMaximumApplicationAddress) {
-        result = VirtualQuery(p, &buf, sizeof(buf));
+        size_t result = VirtualQuery(p, &buf, sizeof(buf));
+        char * new_limit;
+
         if (result != sizeof(buf) || buf.AllocationBase == 0
             || GC_is_heap_base(buf.AllocationBase)) break;
         new_limit = (char *)p + buf.RegionSize;
@@ -1899,13 +1901,13 @@ void GC_register_data_segments(void)
 void GC_register_data_segments(void)
 {
   ptr_t region_start = DATASTART;
-  ptr_t region_end;
 
   if ((word)region_start - 1U >= (word)DATAEND)
     ABORT_ARG2("Wrong DATASTART/END pair",
                ": %p .. %p", region_start, DATAEND);
   for (;;) {
-    region_end = GC_find_limit_openbsd(region_start, DATAEND);
+    ptr_t region_end = GC_find_limit_openbsd(region_start, DATAEND);
+
     GC_add_roots_inner(region_start, region_end, FALSE);
     if ((word)region_end >= (word)DATAEND)
       break;

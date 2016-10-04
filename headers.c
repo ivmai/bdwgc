@@ -277,14 +277,14 @@ GC_INNER struct hblkhdr * GC_install_header(struct hblk *h)
 GC_INNER GC_bool GC_install_counts(struct hblk *h, size_t sz/* bytes */)
 {
     struct hblk * hbp;
-    word i;
 
     for (hbp = h; (word)hbp < (word)h + sz; hbp += BOTTOM_SZ) {
         if (!get_index((word) hbp)) return(FALSE);
     }
     if (!get_index((word)h + sz - 1)) return(FALSE);
     for (hbp = h + 1; (word)hbp < (word)h + sz; hbp += 1) {
-        i = HBLK_PTR_DIFF(hbp, h);
+        word i = HBLK_PTR_DIFF(hbp, h);
+
         SET_HDR(hbp, (hdr *)(i > MAX_JUMP? MAX_JUMP : i));
     }
     return(TRUE);

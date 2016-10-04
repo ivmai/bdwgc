@@ -1528,7 +1528,6 @@ GC_API void GC_CALL GC_push_all_eager(char *bottom, char *top)
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
     register word *p;
-    register word q;
     register word *lim;
     register ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
     register ptr_t least_ha = GC_least_plausible_heap_addr;
@@ -1541,7 +1540,7 @@ GC_API void GC_CALL GC_push_all_eager(char *bottom, char *top)
       lim = t - 1 /* longword */;
       for (p = b; (word)p <= (word)lim;
            p = (word *)(((ptr_t)p) + ALIGNMENT)) {
-        q = *p;
+        register word q = *p;
         GC_PUSH_ONE_STACK(q, p);
       }
 #   undef GC_greatest_plausible_heap_addr
@@ -1603,8 +1602,6 @@ STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
     word * mark_word_addr = &(hhdr->hb_marks[0]);
     word *p;
     word *plim;
-    word *q;
-    word mark_word;
 
     /* Allow registers to be used for some frequently accessed  */
     /* global variables.  Otherwise aliasing issues are likely  */
@@ -1626,8 +1623,9 @@ STATIC void GC_push_marked1(struct hblk *h, hdr *hhdr)
 
     /* go through all words in block */
         while ((word)p < (word)plim) {
-            mark_word = *mark_word_addr++;
-            q = p;
+            word mark_word = *mark_word_addr++;
+            word *q = p;
+
             while(mark_word != 0) {
               if (mark_word & 1) {
                   PUSH_GRANULE(q);
@@ -1657,8 +1655,6 @@ STATIC void GC_push_marked2(struct hblk *h, hdr *hhdr)
     word * mark_word_addr = &(hhdr->hb_marks[0]);
     word *p;
     word *plim;
-    word *q;
-    word mark_word;
 
     ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
     ptr_t least_ha = GC_least_plausible_heap_addr;
@@ -1677,8 +1673,9 @@ STATIC void GC_push_marked2(struct hblk *h, hdr *hhdr)
 
     /* go through all words in block */
         while ((word)p < (word)plim) {
-            mark_word = *mark_word_addr++;
-            q = p;
+            word mark_word = *mark_word_addr++;
+            word *q = p;
+
             while(mark_word != 0) {
               if (mark_word & 1) {
                   PUSH_GRANULE(q);
@@ -1709,8 +1706,6 @@ STATIC void GC_push_marked4(struct hblk *h, hdr *hhdr)
     word * mark_word_addr = &(hhdr->hb_marks[0]);
     word *p;
     word *plim;
-    word *q;
-    word mark_word;
 
     ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
     ptr_t least_ha = GC_least_plausible_heap_addr;
@@ -1729,8 +1724,9 @@ STATIC void GC_push_marked4(struct hblk *h, hdr *hhdr)
 
     /* go through all words in block */
         while ((word)p < (word)plim) {
-            mark_word = *mark_word_addr++;
-            q = p;
+            word mark_word = *mark_word_addr++;
+            word *q = p;
+
             while(mark_word != 0) {
               if (mark_word & 1) {
                   PUSH_GRANULE(q);

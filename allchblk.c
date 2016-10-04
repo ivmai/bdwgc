@@ -103,12 +103,13 @@ STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
   /* Should return the same value as GC_large_free_bytes.       */
   GC_INNER word GC_compute_large_free_bytes(void)
   {
-      struct hblk * h;
-      hdr * hhdr;
       word total_free = 0;
       unsigned i;
 
       for (i = 0; i <= N_HBLK_FLS; ++i) {
+        struct hblk * h;
+        hdr * hhdr;
+
         for (h = GC_hblkfreelist[i]; h != 0; h = hhdr->hb_next) {
           hhdr = HDR(h);
           total_free += hhdr->hb_sz;
@@ -121,17 +122,17 @@ STATIC int GC_hblk_fl_from_blocks(word blocks_needed)
 # if !defined(NO_DEBUGGING)
 void GC_print_hblkfreelist(void)
 {
-    struct hblk * h;
-    hdr * hhdr;
     unsigned i;
     word total;
 
     for (i = 0; i <= N_HBLK_FLS; ++i) {
-      h = GC_hblkfreelist[i];
+      struct hblk * h = GC_hblkfreelist[i];
+
       if (0 != h) GC_printf("Free list %u (total size %lu):\n",
                             i, (unsigned long)GC_free_bytes[i]);
       while (h != 0) {
-        hhdr = HDR(h);
+        hdr * hhdr = HDR(h);
+
         GC_printf("\t%p size %lu %s black listed\n",
                 (void *)h, (unsigned long) hhdr -> hb_sz,
                 GC_is_black_listed(h, HBLKSIZE) != 0 ? "start" :
@@ -152,16 +153,15 @@ void GC_print_hblkfreelist(void)
 /* appears, or -1 if it appears nowhere.                                 */
 static int free_list_index_of(hdr *wanted)
 {
-    struct hblk * h;
-    hdr * hhdr;
     int i;
 
     for (i = 0; i <= N_HBLK_FLS; ++i) {
-      h = GC_hblkfreelist[i];
-      while (h != 0) {
+      struct hblk * h;
+      hdr * hhdr;
+
+      for (h = GC_hblkfreelist[i]; h != 0; h = hhdr -> hb_next) {
         hhdr = HDR(h);
         if (hhdr == wanted) return i;
-        h = hhdr -> hb_next;
       }
     }
     return -1;
@@ -170,14 +170,13 @@ static int free_list_index_of(hdr *wanted)
 void GC_dump_regions(void)
 {
     unsigned i;
-    ptr_t start, end;
-    ptr_t p;
-    size_t bytes;
-    hdr *hhdr;
+
     for (i = 0; i < GC_n_heap_sects; ++i) {
-        start = GC_heap_sects[i].hs_start;
-        bytes = GC_heap_sects[i].hs_bytes;
-        end = start + bytes;
+        ptr_t start = GC_heap_sects[i].hs_start;
+        size_t bytes = GC_heap_sects[i].hs_bytes;
+        ptr_t end = start + bytes;
+        ptr_t p;
+
         /* Merge in contiguous sections.        */
           while (i+1 < GC_n_heap_sects && GC_heap_sects[i+1].hs_start == end) {
             ++i;
@@ -185,7 +184,8 @@ void GC_dump_regions(void)
           }
         GC_printf("***Section from %p to %p\n", start, end);
         for (p = start; (word)p < (word)end; ) {
-            hhdr = HDR(p);
+            hdr *hhdr = HDR(p);
+
             if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
                 GC_printf("\t%p Missing header!!(%p)\n", p, (void *)hhdr);
                 p += HBLKSIZE;
@@ -353,19 +353,18 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
 {
     int index = GC_hblk_fl_from_blocks(divHBLKSZ(hhdr -> hb_sz));
     struct hblk *second = GC_hblkfreelist[index];
-    hdr * second_hdr;
 #   if defined(GC_ASSERTIONS) && !defined(USE_MUNMAP)
       struct hblk *next = (struct hblk *)((word)h + hhdr -> hb_sz);
       hdr * nexthdr = HDR(next);
       struct hblk *prev = GC_free_block_ending_at(h);
       hdr * prevhdr = HDR(prev);
+
       GC_ASSERT(nexthdr == 0 || !HBLK_IS_FREE(nexthdr)
                 || (signed_word)GC_heapsize < 0);
                 /* In the last case, blocks may be too large to merge. */
       GC_ASSERT(prev == 0 || !HBLK_IS_FREE(prevhdr)
                 || (signed_word)GC_heapsize < 0);
 #   endif
-
     GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);
     GC_hblkfreelist[index] = h;
     GC_free_bytes[index] += hhdr -> hb_sz;
@@ -373,6 +372,8 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
     hhdr -> hb_next = second;
     hhdr -> hb_prev = 0;
     if (0 != second) {
+      hdr * second_hdr;
+
       GET_HDR(second, second_hdr);
       second_hdr -> hb_prev = h;
     }
@@ -391,14 +392,15 @@ GC_INNER int GC_unmap_threshold = MUNMAP_THRESHOLD;
 /* way blocks are ever unmapped.                                          */
 GC_INNER void GC_unmap_old(void)
 {
-    struct hblk * h;
-    hdr * hhdr;
     int i;
 
     if (GC_unmap_threshold == 0)
       return; /* unmapping disabled */
 
     for (i = 0; i <= N_HBLK_FLS; ++i) {
+      struct hblk * h;
+      hdr * hhdr;
+
       for (h = GC_hblkfreelist[i]; 0 != h; h = hhdr -> hb_next) {
         hhdr = HDR(h);
         if (!IS_MAPPED(hhdr)) continue;
@@ -643,26 +645,26 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n, int may_split)
     hdr * hhdr;                 /* Header corr. to hbp */
     struct hblk *thishbp;
     hdr * thishdr;              /* Header corr. to thishbp */
-    signed_word size_needed;    /* number of bytes in requested objects */
-    signed_word size_avail;     /* bytes available in this block        */
-
-    size_needed = HBLKSIZE * OBJ_SZ_TO_BLOCKS_CHECKED(sz);
+    signed_word size_needed = HBLKSIZE * OBJ_SZ_TO_BLOCKS_CHECKED(sz);
+                                /* number of bytes in requested objects */
 
     /* search for a big enough block in free list */
         for (hbp = GC_hblkfreelist[n];; hbp = hhdr -> hb_next) {
+            signed_word size_avail; /* bytes available in this block */
+
             if (NULL == hbp) return NULL;
             GET_HDR(hbp, hhdr); /* set hhdr value */
             size_avail = hhdr->hb_sz;
             if (size_avail < size_needed) continue;
             if (size_avail != size_needed) {
-              signed_word next_size;
-
               if (!may_split) continue;
               /* If the next heap block is obviously better, go on.     */
               /* This prevents us from disassembling a single large     */
               /* block to get tiny blocks.                              */
               thishbp = hhdr -> hb_next;
               if (thishbp != 0) {
+                signed_word next_size;
+
                 GET_HDR(thishbp, thishdr);
                 next_size = (signed_word)(thishdr -> hb_sz);
                 if (next_size < size_avail

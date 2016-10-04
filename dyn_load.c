@@ -980,7 +980,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
   GC_INNER void GC_register_dynamic_libraries(void)
   {
     MEMORY_BASIC_INFORMATION buf;
-    size_t result;
     DWORD protect;
     LPVOID p;
     char * base;
@@ -991,7 +990,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #   endif
     base = limit = p = GC_sysinfo.lpMinimumApplicationAddress;
     while ((word)p < (word)GC_sysinfo.lpMaximumApplicationAddress) {
-        result = VirtualQuery(p, &buf, sizeof(buf));
+        size_t result = VirtualQuery(p, &buf, sizeof(buf));
+
 #       ifdef MSWINCE
           if (result == 0) {
             /* Page is free; advance to the next possible allocation base */

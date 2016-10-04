@@ -356,11 +356,11 @@ STATIC void GC_finish_collection(void);
  */
 STATIC void GC_maybe_gc(void)
 {
-    static int n_partial_gcs = 0;
-
     GC_ASSERT(I_HOLD_LOCK());
     ASSERT_CANCEL_DISABLED();
     if (GC_should_collect()) {
+        static int n_partial_gcs = 0;
+
         if (!GC_incremental) {
             /* FIXME: If possible, GC_default_stop_func should be used here */
             GC_try_to_collect_inner(GC_never_stop_func);
@@ -532,12 +532,13 @@ STATIC int GC_deficit = 0;/* The number of extra calls to GC_mark_some  */
 
 GC_INNER void GC_collect_a_little_inner(int n)
 {
-    int i;
     IF_CANCEL(int cancel_state;)
 
     if (GC_dont_gc) return;
     DISABLE_CANCEL(cancel_state);
     if (GC_incremental && GC_collection_in_progress()) {
+        int i;
+
         for (i = GC_deficit; i < GC_RATE*n; i++) {
             if (GC_mark_some((ptr_t)0)) {
                 /* Need to finish a collection */
@@ -762,19 +763,15 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 /* Set all mark bits for the free list whose first entry is q   */
 GC_INNER void GC_set_fl_marks(ptr_t q)
 {
-   struct hblk *h, *last_h;
-   hdr *hhdr;
-   IF_PER_OBJ(size_t sz;)
-   unsigned bit_no;
+    if (q != NULL) {
+      struct hblk *h = HBLKPTR(q);
+      struct hblk *last_h = h;
+      hdr *hhdr = HDR(h);
+      IF_PER_OBJ(size_t sz = hhdr->hb_sz;)
 
-   if (q != NULL) {
-     h = HBLKPTR(q);
-     last_h = h;
-     hhdr = HDR(h);
-     IF_PER_OBJ(sz = hhdr->hb_sz;)
+      for (;;) {
+        unsigned bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
 
-     for (;;) {
-        bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
         if (!mark_bit_from_hdr(hhdr, bit_no)) {
           set_mark_bit_from_hdr(hhdr, bit_no);
           ++hhdr -> hb_n_marks;
@@ -790,8 +787,8 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
           hhdr = HDR(h);
           IF_PER_OBJ(sz = hhdr->hb_sz;)
         }
-     }
-   }
+      }
+    }
 }
 
 #if defined(GC_ASSERTIONS) && defined(THREADS) && defined(THREAD_LOCAL_ALLOC)
@@ -840,19 +837,15 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
 /* Decrement GC_bytes_found by number of bytes on free list.    */
 STATIC void GC_clear_fl_marks(ptr_t q)
 {
-   struct hblk *h, *last_h;
-   hdr *hhdr;
-   size_t sz;
-   unsigned bit_no;
+    if (q != NULL) {
+      struct hblk *h = HBLKPTR(q);
+      struct hblk *last_h = h;
+      hdr *hhdr = HDR(h);
+      size_t sz = hhdr->hb_sz; /* Normally set only once. */
 
-   if (q != NULL) {
-     h = HBLKPTR(q);
-     last_h = h;
-     hhdr = HDR(h);
-     sz = hhdr->hb_sz;  /* Normally set only once. */
+      for (;;) {
+        unsigned bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
 
-     for (;;) {
-        bit_no = MARK_BIT_NO((ptr_t)q - (ptr_t)h, sz);
         if (mark_bit_from_hdr(hhdr, bit_no)) {
           size_t n_marks = hhdr -> hb_n_marks - 1;
           clear_mark_bit_from_hdr(hhdr, bit_no);
@@ -877,8 +870,8 @@ STATIC void GC_clear_fl_marks(ptr_t q)
           hhdr = HDR(h);
           sz = hhdr->hb_sz;
         }
-     }
-   }
+      }
+    }
 }
 
 #if defined(GC_ASSERTIONS) && defined(THREADS) && defined(THREAD_LOCAL_ALLOC)
