@@ -54,7 +54,7 @@ volatile AO_t thread_ended_cnt = 0;
     if (my_depth <= MAX_SUBTHREAD_DEPTH
             && thread_num < MAX_SUBTHREAD_COUNT
             && (thread_num % DECAY_DENOM) < DECAY_NUMER
-            && (int)(thread_num - AO_load(&thread_ended_cnt))
+            && thread_num - (int)AO_load(&thread_ended_cnt)
                 <= MAX_ALIVE_THREAD_COUNT) {
 # ifdef GC_PTHREADS
         int err;
