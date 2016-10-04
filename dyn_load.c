@@ -281,9 +281,10 @@ static void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
 {
     signed_word n = (signed_word)number_of_elements;
     signed_word nsorted = 1;
-    signed_word i;
 
     while (nsorted < n) {
+      signed_word i;
+
       while (nsorted < n &&
              (word)base[nsorted-1].hs_start < (word)base[nsorted].hs_start)
           ++nsorted;
@@ -976,7 +977,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
   GC_INNER void GC_register_dynamic_libraries(void)
   {
     MEMORY_BASIC_INFORMATION buf;
-    size_t result;
     DWORD protect;
     LPVOID p;
     char * base;
@@ -987,7 +987,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #   endif
     base = limit = p = GC_sysinfo.lpMinimumApplicationAddress;
     while ((word)p < (word)GC_sysinfo.lpMaximumApplicationAddress) {
-        result = VirtualQuery(p, &buf, sizeof(buf));
+        size_t result = VirtualQuery(p, &buf, sizeof(buf));
+
 #       ifdef MSWINCE
           if (result == 0) {
             /* Page is free; advance to the next possible allocation base */
@@ -1045,29 +1046,18 @@ extern int errno;
 
 GC_INNER void GC_register_dynamic_libraries(void)
 {
-  int status;
-  ldr_process_t mypid;
-
-  /* module */
-    ldr_module_t moduleid = LDR_NULL_MODULE;
-    ldr_module_info_t moduleinfo;
-    size_t moduleinfosize = sizeof(moduleinfo);
-    size_t modulereturnsize;
-
-  /* region */
-    ldr_region_t region;
-    ldr_region_info_t regioninfo;
-    size_t regioninfosize = sizeof(regioninfo);
-    size_t regionreturnsize;
-
-  /* Obtain id of this process */
-    mypid = ldr_my_process();
+  ldr_module_t moduleid = LDR_NULL_MODULE;
+  ldr_process_t mypid = ldr_my_process(); /* obtain id of this process */
 
   /* For each module */
     while (TRUE) {
-
-      /* Get the next (first) module */
-        status = ldr_next_module(mypid, &moduleid);
+      ldr_module_info_t moduleinfo;
+      size_t modulereturnsize;
+      ldr_region_t region;
+      ldr_region_info_t regioninfo;
+      size_t regionreturnsize;
+      int status = ldr_next_module(mypid, &moduleid);
+                                /* Get the next (first) module */
 
       /* Any more modules? */
         if (moduleid == LDR_NULL_MODULE)
@@ -1083,7 +1073,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
       /* Get the module information */
         status = ldr_inq_module(mypid, moduleid, &moduleinfo,
-                                moduleinfosize, &modulereturnsize);
+                                sizeof(moduleinfo), &modulereturnsize);
         if (status != 0 )
             ABORT("ldr_inq_module failed");
 
@@ -1103,7 +1093,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
         for (region = 0; region < moduleinfo.lmi_nregion; region++) {
           /* Get the region information */
             status = ldr_inq_region(mypid, moduleid, region, &regioninfo,
-                                    regioninfosize, &regionreturnsize);
+                                    sizeof(regioninfo), &regionreturnsize);
             if (status != 0 )
                 ABORT("ldr_inq_region failed");
 
@@ -1143,15 +1133,13 @@ extern int sys_nerr;
 
 GC_INNER void GC_register_dynamic_libraries(void)
 {
-  int status;
   int index = 1; /* Ordinal position in shared library search list */
-  struct shl_descriptor *shl_desc; /* Shared library info, see dl.h */
 
   /* For each dynamic library loaded */
     while (TRUE) {
-
-      /* Get info about next shared library */
-        status = shl_get(index, &shl_desc);
+      struct shl_descriptor *shl_desc; /* Shared library info, see dl.h */
+      int status = shl_get(index, &shl_desc);
+                                /* Get info about next shared library   */
 
       /* Check if this is the end of the list or if some error occurred */
         if (status != 0) {
@@ -1302,8 +1290,6 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
   const struct GC_MACH_SECTION *sec;
   const char *name;
   GC_has_static_roots_func callback = GC_has_static_roots;
-  char secnam[16];
-  const char *fmt;
   DCL_LOCK_STATE;
 
   if (GC_no_dls) return;
@@ -1335,9 +1321,12 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
 
   /* Sections constructed on demand.    */
   for (j = 0; j < sizeof(GC_dyld_add_sect_fmts) / sizeof(char *); j++) {
-    fmt = GC_dyld_add_sect_fmts[j];
+    const char *fmt = GC_dyld_add_sect_fmts[j];
+
     /* Add our manufactured aligned BSS sections.       */
     for (i = 0; i <= L2_MAX_OFILE_ALIGNMENT; i++) {
+      char secnam[16];
+
       (void)snprintf(secnam, sizeof(secnam), fmt, (unsigned)i);
       secnam[sizeof(secnam) - 1] = '\0';
       sec = GC_GETSECTBYNAME(hdr, SEG_DATA, secnam);
@@ -1367,8 +1356,6 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
   unsigned long start, end;
   unsigned i, j;
   const struct GC_MACH_SECTION *sec;
-  char secnam[16];
-  const char *fmt;
 
   for (i = 0; i < sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]); i++) {
     sec = GC_GETSECTBYNAME(hdr, GC_dyld_sections[i].seg,
@@ -1388,8 +1375,11 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
 
   /* Remove our on-demand sections.     */
   for (j = 0; j < sizeof(GC_dyld_add_sect_fmts) / sizeof(char *); j++) {
-    fmt = GC_dyld_add_sect_fmts[j];
+    const char *fmt = GC_dyld_add_sect_fmts[j];
+
     for (i = 0; i <= L2_MAX_OFILE_ALIGNMENT; i++) {
+      char secnam[16];
+
       (void)snprintf(secnam, sizeof(secnam), fmt, (unsigned)i);
       secnam[sizeof(secnam) - 1] = '\0';
       sec = GC_GETSECTBYNAME(hdr, SEG_DATA, secnam);

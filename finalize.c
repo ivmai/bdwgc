@@ -589,7 +589,6 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
     hdr * hhdr = HDR(p);
     word descr = hhdr -> hb_descr;
     ptr_t q;
-    word r;
     ptr_t scan_limit;
     ptr_t target_limit = p + hhdr -> hb_sz - 1;
 
@@ -599,7 +598,8 @@ STATIC void GC_ignore_self_finalize_mark_proc(ptr_t p)
        scan_limit = target_limit + 1 - sizeof(word);
     }
     for (q = p; (word)q <= (word)scan_limit; q += ALIGNMENT) {
-        r = *(word *)q;
+        word r = *(word *)q;
+
         if (r < (word)p || r > (word)target_limit) {
             GC_PUSH_ONE_HEAP(r, q, GC_mark_stack_top);
         }
@@ -632,11 +632,10 @@ STATIC void GC_register_finalizer_inner(void * obj,
                                         finalization_mark_proc mp)
 {
     ptr_t base;
-    struct finalizable_object * curr_fo, * prev_fo;
+    struct finalizable_object * curr_fo;
     size_t index;
     struct finalizable_object *new_fo = 0;
     hdr *hhdr = NULL; /* initialized to prevent warning. */
-    GC_oom_func oom_fn;
     DCL_LOCK_STATE;
 
     LOCK();
@@ -650,8 +649,10 @@ STATIC void GC_register_finalizer_inner(void * obj,
     /* in the THREADS case we hold allocation lock.             */
     base = (ptr_t)obj;
     for (;;) {
+      struct finalizable_object *prev_fo = NULL;
+      GC_oom_func oom_fn;
+
       index = HASH2(base, log_fo_table_size);
-      prev_fo = 0;
       curr_fo = GC_fnlz_roots.fo_head[index];
       while (curr_fo != 0) {
         GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
@@ -793,17 +794,18 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
   STATIC void GC_dump_finalization_links(
                                 const struct dl_hashtbl_s *dl_hashtbl)
   {
-    struct disappearing_link *curr_dl;
-    ptr_t real_ptr, real_link;
     size_t dl_size = dl_hashtbl->log_size == -1 ? 0 :
                                 (size_t)1 << dl_hashtbl->log_size;
     size_t i;
 
     for (i = 0; i < dl_size; i++) {
+      struct disappearing_link *curr_dl;
+
       for (curr_dl = dl_hashtbl -> head[i]; curr_dl != 0;
            curr_dl = dl_next(curr_dl)) {
-        real_ptr = GC_REVEAL_POINTER(curr_dl -> dl_hidden_obj);
-        real_link = GC_REVEAL_POINTER(curr_dl -> dl_hidden_link);
+        ptr_t real_ptr = GC_REVEAL_POINTER(curr_dl -> dl_hidden_obj);
+        ptr_t real_link = GC_REVEAL_POINTER(curr_dl -> dl_hidden_link);
+
         GC_printf("Object: %p, link: %p\n", real_ptr, real_link);
       }
     }
@@ -814,7 +816,6 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     struct finalizable_object * curr_fo;
     size_t fo_size = log_fo_table_size == -1 ? 0 :
                                 (size_t)1 << log_fo_table_size;
-    ptr_t real_ptr;
     size_t i;
 
     GC_printf("Disappearing (short) links:\n");
@@ -827,7 +828,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = GC_fnlz_roots.fo_head[i];
            curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
-        real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
+        ptr_t real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
+
         GC_printf("Finalizable object: %p\n", real_ptr);
       }
     }
@@ -875,8 +877,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     size_t dl_size = dl_hashtbl->log_size == -1 ? 0 : \
                                 (size_t)1 << dl_hashtbl->log_size; \
     for (i = 0; i < dl_size; i++) { \
+      struct disappearing_link *prev_dl = NULL; \
       curr_dl = dl_hashtbl -> head[i]; \
-      prev_dl = NULL; \
       while (curr_dl) {
 
 #define ITERATE_DL_HASHTBL_END(curr_dl, prev_dl) \
@@ -903,12 +905,12 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
 GC_INLINE void GC_make_disappearing_links_disappear(
                                 struct dl_hashtbl_s* dl_hashtbl)
 {
-    struct disappearing_link *curr, *prev, *next;
-    ptr_t real_ptr, real_link;
+    struct disappearing_link *curr, *next;
 
     ITERATE_DL_HASHTBL_BEGIN(dl_hashtbl, curr, prev)
-        real_ptr = GC_REVEAL_POINTER(curr -> dl_hidden_obj);
-        real_link = GC_REVEAL_POINTER(curr -> dl_hidden_link);
+        ptr_t real_ptr = GC_REVEAL_POINTER(curr -> dl_hidden_obj);
+        ptr_t real_link = GC_REVEAL_POINTER(curr -> dl_hidden_link);
+
         if (!GC_is_marked(real_ptr)) {
             *(word *)real_link = 0;
             GC_clear_mark_bit(curr);
@@ -920,11 +922,11 @@ GC_INLINE void GC_make_disappearing_links_disappear(
 GC_INLINE void GC_remove_dangling_disappearing_links(
                                 struct dl_hashtbl_s* dl_hashtbl)
 {
-    struct disappearing_link *curr, *prev, *next;
-    ptr_t real_link;
+    struct disappearing_link *curr, *next;
 
     ITERATE_DL_HASHTBL_BEGIN(dl_hashtbl, curr, prev)
-        real_link = GC_base(GC_REVEAL_POINTER(curr -> dl_hidden_link));
+        ptr_t real_link = GC_base(GC_REVEAL_POINTER(curr -> dl_hidden_link));
+
         if (NULL != real_link && !GC_is_marked(real_link)) {
             GC_clear_mark_bit(curr);
             DELETE_DL_HASHTBL_ENTRY(dl_hashtbl, curr, prev, next);
@@ -1170,12 +1172,13 @@ GC_API int GC_CALL GC_should_invoke_finalizers(void)
 /* Should be called without allocation lock.                            */
 GC_API int GC_CALL GC_invoke_finalizers(void)
 {
-    struct finalizable_object * curr_fo;
     int count = 0;
     word bytes_freed_before = 0; /* initialized to prevent warning. */
     DCL_LOCK_STATE;
 
     while (GC_fnlz_roots.finalize_now != NULL) {
+        struct finalizable_object * curr_fo;
+
 #       ifdef THREADS
             LOCK();
 #       endif

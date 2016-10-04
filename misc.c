@@ -358,7 +358,6 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
                                 /* Used to occasionally clear a bigger  */
                                 /* chunk.                               */
 #   endif
-    ptr_t limit;
 
 #   define SLOP 400
         /* Extra bytes we clear every time.  This clears our own        */
@@ -377,15 +376,15 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
         /* larger ...                                                   */
 #   ifdef THREADS
       if (++random_no % 13 == 0) {
-        limit = sp;
+        ptr_t limit = sp;
+
         MAKE_HOTTER(limit, BIG_CLEAR_SIZE*sizeof(word));
         limit = (ptr_t)((word)limit & ~0xf);
                         /* Make it sufficiently aligned for assembly    */
                         /* implementations of GC_clear_stack_inner.     */
         return GC_clear_stack_inner(arg, limit);
-      } else {
-        BZERO((void *)dummy, SMALL_CLEAR_SIZE*sizeof(word));
       }
+      BZERO((void *)dummy, SMALL_CLEAR_SIZE*sizeof(word));
 #   else
       if (GC_gc_no > GC_stack_last_cleared) {
         /* Start things over, so we clear the entire stack again */
@@ -401,16 +400,19 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
           GC_high_water = sp;
       }
       MAKE_HOTTER(GC_high_water, GC_SLOP);
-      limit = GC_min_sp;
-      MAKE_HOTTER(limit, SLOP);
-      if ((word)sp COOLER_THAN (word)limit) {
-        limit = (ptr_t)((word)limit & ~0xf);
-                        /* Make it sufficiently aligned for assembly    */
-                        /* implementations of GC_clear_stack_inner.     */
-        GC_min_sp = sp;
-        return GC_clear_stack_inner(arg, limit);
-      } else if (GC_bytes_allocd - GC_bytes_allocd_at_reset
-                    > CLEAR_THRESHOLD) {
+      {
+        ptr_t limit = GC_min_sp;
+
+        MAKE_HOTTER(limit, SLOP);
+        if ((word)sp COOLER_THAN (word)limit) {
+          limit = (ptr_t)((word)limit & ~0xf);
+                          /* Make it sufficiently aligned for assembly    */
+                          /* implementations of GC_clear_stack_inner.     */
+          GC_min_sp = sp;
+          return GC_clear_stack_inner(arg, limit);
+        }
+      }
+      if (GC_bytes_allocd - GC_bytes_allocd_at_reset > CLEAR_THRESHOLD) {
         /* Restart clearing process, but limit how much clearing we do. */
         GC_min_sp = sp;
         MAKE_HOTTER(GC_min_sp, CLEAR_THRESHOLD/4);
@@ -431,7 +433,6 @@ GC_API void * GC_CALL GC_base(void * p)
     struct hblk *h;
     bottom_index *bi;
     hdr *candidate_hdr;
-    ptr_t limit;
 
     r = p;
     if (!EXPECT(GC_is_initialized, TRUE)) return 0;
@@ -453,6 +454,7 @@ GC_API void * GC_CALL GC_base(void * p)
             size_t offset = HBLKDISPL(r);
             word sz = candidate_hdr -> hb_sz;
             size_t obj_displ = offset % sz;
+            ptr_t limit;
 
             r -= obj_displ;
             limit = r + sz;
@@ -820,11 +822,12 @@ GC_INNER GC_bool GC_is_initialized = FALSE;
 
 STATIC word GC_parse_mem_size_arg(const char *str)
 {
-  char *endptr;
   word result = 0; /* bad value */
-  char ch;
 
   if (*str != '\0') {
+    char *endptr;
+    char ch;
+
     result = (word)STRTOULL(str, &endptr, 10);
     ch = *endptr;
     if (ch != '\0') {
@@ -1563,17 +1566,17 @@ GC_API void GC_CALL GC_enable_incremental(void)
       return len;
 #   else
       int bytes_written = 0;
-      int result;
       IF_CANCEL(int cancel_state;)
 
       DISABLE_CANCEL(cancel_state);
       while ((size_t)bytes_written < len) {
 #        ifdef GC_SOLARIS_THREADS
-             result = syscall(SYS_write, fd, buf + bytes_written,
+             int result = syscall(SYS_write, fd, buf + bytes_written,
                                              len - bytes_written);
 #        else
-             result = write(fd, buf + bytes_written, len - bytes_written);
+             int result = write(fd, buf + bytes_written, len - bytes_written);
 #        endif
+
          if (-1 == result) {
              RESTORE_CANCEL(cancel_state);
              return(result);

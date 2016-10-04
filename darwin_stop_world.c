@@ -338,8 +338,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 
 GC_INNER void GC_push_all_stacks(void)
 {
-  int i;
-  ptr_t lo, hi, altstack_lo, altstack_hi;
+  ptr_t hi, altstack_lo, altstack_hi;
   task_t my_task = current_task();
   mach_port_t my_thread = mach_thread_self();
   GC_bool found_me = FALSE;
@@ -351,6 +350,7 @@ GC_INNER void GC_push_all_stacks(void)
 
 # ifndef DARWIN_DONT_PARSE_STACK
     if (GC_query_task_threads) {
+      int i;
       kern_return_t kern_result;
       thread_act_array_t act_list = 0;
 
@@ -361,8 +361,9 @@ GC_INNER void GC_push_all_stacks(void)
 
       for (i = 0; i < (int)listcount; i++) {
         thread_act_t thread = act_list[i];
-        lo = GC_stack_range_for(&hi, thread, NULL, FALSE, my_thread,
-                                &altstack_lo, &altstack_hi);
+        ptr_t lo = GC_stack_range_for(&hi, thread, NULL, FALSE, my_thread,
+                                      &altstack_lo, &altstack_hi);
+
         if (lo) {
           GC_ASSERT((word)lo <= (word)hi);
           total_size += hi - lo;
@@ -380,13 +381,19 @@ GC_INNER void GC_push_all_stacks(void)
     } else
 # endif /* !DARWIN_DONT_PARSE_STACK */
   /* else */ {
+    int i;
+
     for (i = 0; i < (int)listcount; i++) {
       GC_thread p;
+
       for (p = GC_threads[i]; p != NULL; p = p->next)
         if ((p->flags & FINISHED) == 0) {
           thread_act_t thread = (thread_act_t)p->stop_info.mach_thread;
-          lo = GC_stack_range_for(&hi, thread, p, (GC_bool)p->thread_blocked,
-                                  my_thread, &altstack_lo, &altstack_hi);
+          ptr_t lo = GC_stack_range_for(&hi, thread, p,
+                                        (GC_bool)p->thread_blocked,
+                                        my_thread, &altstack_lo,
+                                        &altstack_hi);
+
           if (lo) {
             GC_ASSERT((word)lo <= (word)hi);
             total_size += hi - lo;
@@ -545,7 +552,6 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
 /* Caller holds allocation lock.        */
 GC_INNER void GC_stop_world(void)
 {
-  unsigned i;
   task_t my_task = current_task();
   mach_port_t my_thread = mach_thread_self();
   kern_return_t kern_result;
@@ -568,6 +574,7 @@ GC_INNER void GC_stop_world(void)
 
   if (GC_query_task_threads) {
 #   ifndef GC_NO_THREADS_DISCOVERY
+      unsigned i;
       GC_bool changed;
       thread_act_array_t act_list, prev_list;
       mach_msg_type_number_t listcount, prevcount;
@@ -615,6 +622,8 @@ GC_INNER void GC_stop_world(void)
 #   endif /* !GC_NO_THREADS_DISCOVERY */
 
   } else {
+    unsigned i;
+
     for (i = 0; i < THREAD_TABLE_SZ; i++) {
       GC_thread p;
 
@@ -677,7 +686,6 @@ GC_INLINE void GC_thread_resume(thread_act_t thread)
 GC_INNER void GC_start_world(void)
 {
   task_t my_task = current_task();
-  int i;
 # ifdef DEBUG_THREADS
     GC_log_printf("World starting\n");
 # endif
@@ -689,6 +697,7 @@ GC_INNER void GC_start_world(void)
 
   if (GC_query_task_threads) {
 #   ifndef GC_NO_THREADS_DISCOVERY
+      int i;
       int j = GC_mach_threads_count;
       kern_return_t kern_result;
       thread_act_array_t act_list;
@@ -736,6 +745,7 @@ GC_INNER void GC_start_world(void)
 #   endif /* !GC_NO_THREADS_DISCOVERY */
 
   } else {
+    int i;
     mach_port_t my_thread = mach_thread_self();
 
     for (i = 0; i < THREAD_TABLE_SZ; i++) {

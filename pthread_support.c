@@ -1244,12 +1244,12 @@ GC_INNER void GC_init_parallel(void)
                                         sigset_t *oset)
   {
     sigset_t fudged_set;
-    int sig_suspend;
 
     INIT_REAL_SYMS();
     if (set != NULL && (how == SIG_BLOCK || how == SIG_SETMASK)) {
+        int sig_suspend = GC_get_suspend_signal();
+
         fudged_set = *set;
-        sig_suspend = GC_get_suspend_signal();
         GC_ASSERT(sig_suspend >= 0);
         if (sigdelset(&fudged_set, sig_suspend) != 0)
             ABORT("sigdelset failed");

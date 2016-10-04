@@ -167,8 +167,6 @@ GC_API void GC_CALL GC_add_roots(void *b, void *e)
 /* re-registering dynamic libraries.                                    */
 void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 {
-    struct roots * old;
-
     GC_ASSERT((word)b <= (word)e);
     b = (ptr_t)(((word)b + (sizeof(word) - 1)) & ~(sizeof(word) - 1));
                                         /* round b up to word boundary */
@@ -185,7 +183,8 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
       /* takes to scan the roots.                               */
       {
         register int i;
-        old = 0; /* initialized to prevent warning. */
+        struct roots * old = NULL; /* initialized to prevent warning. */
+
         for (i = 0; i < n_root_sets; i++) {
             old = GC_static_roots + i;
             if ((word)b <= (word)old->r_end
@@ -232,13 +231,17 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
         }
       }
 #   else
-      old = (struct roots *)GC_roots_present(b);
-      if (old != 0) {
-        if ((word)e <= (word)old->r_end) /* already there */ return;
-        /* else extend */
-        GC_root_size += e - old -> r_end;
-        old -> r_end = e;
-        return;
+      {
+        struct roots * old = (struct roots *)GC_roots_present(b);
+
+        if (old != 0) {
+          if ((word)e <= (word)old->r_end)
+            return; /* already there */
+          /* else extend */
+          GC_root_size += e - old -> r_end;
+          old -> r_end = e;
+          return;
+        }
       }
 #   endif
     if (n_root_sets == MAX_ROOT_SETS) {
@@ -419,10 +422,10 @@ STATIC struct exclusion * GC_next_exclusion(ptr_t start_addr)
 {
     size_t low = 0;
     size_t high = GC_excl_table_entries - 1;
-    size_t mid;
 
     while (high > low) {
-        mid = (low + high) >> 1;
+        size_t mid = (low + high) >> 1;
+
         /* low <= mid < high    */
         if ((word) GC_excl_table[mid].e_end <= (word) start_addr) {
             low = mid + 1;
@@ -439,7 +442,7 @@ STATIC struct exclusion * GC_next_exclusion(ptr_t start_addr)
 GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
 {
     struct exclusion * next;
-    size_t next_index, i;
+    size_t next_index;
 
     GC_ASSERT((word)start % sizeof(word) == 0);
     GC_ASSERT((word)start < (word)finish);
@@ -450,6 +453,8 @@ GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish)
         next = GC_next_exclusion(start);
     }
     if (0 != next) {
+      size_t i;
+
       if ((word)(next -> e_start) < (word) finish) {
         /* incomplete error check. */
         ABORT("Exclusion ranges overlap");
@@ -492,14 +497,14 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
 STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
                                                 GC_bool all GC_ATTR_UNUSED)
 {
-    struct exclusion * next;
-    ptr_t excl_start;
-
     while ((word)bottom < (word)top) {
-        next = GC_next_exclusion(bottom);
-        if (0 == next || (word)(excl_start = next -> e_start) >= (word)top) {
-            GC_PUSH_CONDITIONAL(bottom, top, all);
-            return;
+        struct exclusion *next = GC_next_exclusion(bottom);
+        ptr_t excl_start;
+
+        if (0 == next
+            || (word)(excl_start = next -> e_start) >= (word)top) {
+          GC_PUSH_CONDITIONAL(bottom, top, all);
+          break;
         }
         if ((word)excl_start > (word)bottom)
           GC_PUSH_CONDITIONAL(bottom, excl_start, all);

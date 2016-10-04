@@ -159,12 +159,12 @@ static void maybe_finalize(void)
 #endif
 {
     ptr_t op;
-    word lg;
     DCL_LOCK_STATE;
 
     GC_DBG_COLLECT_AT_MALLOC(lb);
     if(SMALL_OBJ(lb)) {
-        lg = GC_size_map[lb];
+        word lg = GC_size_map[lb];
+
         LOCK();
         op = GC_gcjobjfreelist[lg];
         if(EXPECT(0 == op, FALSE)) {
@@ -232,12 +232,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
                                      void * ptr_to_struct_containing_descr)
 {
     ptr_t op;
-    word lg;
     DCL_LOCK_STATE;
 
     GC_DBG_COLLECT_AT_MALLOC(lb);
     if(SMALL_OBJ(lb)) {
-        lg = GC_size_map[lb];
+        word lg = GC_size_map[lb];
+
         LOCK();
         op = GC_gcjobjfreelist[lg];
         if (EXPECT(0 == op, FALSE)) {

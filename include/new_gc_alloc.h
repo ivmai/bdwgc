@@ -219,13 +219,11 @@ class single_client_gc_alloc_template {
         }
         static void deallocate(void *p, size_t n)
         {
-            size_t nwords = GC_round_up(n);
-            void ** flh;
-
             if (n > GC_max_fast_bytes)  {
                 GC_free(p);
             } else {
-                flh = GC_objfreelist_ptr + nwords;
+                size_t nwords = GC_round_up(n);
+                void ** flh = GC_objfreelist_ptr + nwords;
                 GC_obj_link(p) = *flh;
                 memset(reinterpret_cast<char *>(p) + GC_bytes_per_word, 0,
                        GC_bytes_per_word * (nwords - 1));
@@ -235,13 +233,11 @@ class single_client_gc_alloc_template {
         }
         static void ptr_free_deallocate(void *p, size_t n)
         {
-            size_t nwords = GC_round_up(n);
-            void ** flh;
-
             if (n > GC_max_fast_bytes) {
                 GC_free(p);
             } else {
-                flh = GC_aobjfreelist_ptr + nwords;
+                size_t nwords = GC_round_up(n);
+                void ** flh = GC_aobjfreelist_ptr + nwords;
                 GC_obj_link(p) = *flh;
                 *flh = p;
                 GC_aux::GC_bytes_recently_freed += nwords * GC_bytes_per_word;
@@ -289,13 +285,11 @@ class single_client_traceable_alloc_template {
         }
         static void deallocate(void *p, size_t n)
         {
-            size_t nwords = GC_round_up_uncollectable(n);
-            void ** flh;
-
             if (n > GC_max_fast_bytes)  {
                 GC_free(p);
             } else {
-                flh = GC_uobjfreelist_ptr + nwords;
+                size_t nwords = GC_round_up_uncollectable(n);
+                void ** flh = GC_uobjfreelist_ptr + nwords;
                 GC_obj_link(p) = *flh;
                 *flh = p;
                 GC_aux::GC_uncollectable_bytes_recently_freed +=
@@ -304,13 +298,11 @@ class single_client_traceable_alloc_template {
         }
         static void ptr_free_deallocate(void *p, size_t n)
         {
-            size_t nwords = GC_round_up_uncollectable(n);
-            void ** flh;
-
             if (n > GC_max_fast_bytes) {
                 GC_free(p);
             } else {
-                flh = GC_auobjfreelist_ptr + nwords;
+                size_t nwords = GC_round_up_uncollectable(n);
+                void ** flh = GC_auobjfreelist_ptr + nwords;
                 GC_obj_link(p) = *flh;
                 *flh = p;
                 GC_aux::GC_uncollectable_bytes_recently_freed +=

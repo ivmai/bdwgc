@@ -1283,11 +1283,12 @@ GC_INNER void GC_start_world(void)
 # ifdef GC_ASSERTIONS
     DWORD thread_id = GetCurrentThreadId();
 # endif
-  int i;
 
   GC_ASSERT(I_HOLD_LOCK());
   if (GC_win32_dll_threads) {
     LONG my_max = GC_get_max_thread_index();
+    int i;
+
     for (i = 0; i <= my_max; i++) {
       GC_thread t = (GC_thread)(dll_thread_table + i);
       if (t -> suspended) {
@@ -1952,13 +1953,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     GC_INNER void GC_start_mark_threads_inner(void)
     {
       int i;
-#     ifdef MSWINCE
-        HANDLE handle;
-        DWORD thread_id;
-#     else
-        GC_uintptr_t handle;
-        unsigned thread_id;
-#     endif
 
       GC_ASSERT(I_DONT_HOLD_LOCK());
       if (available_markers_m1 <= 0) return;
@@ -1975,8 +1969,11 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       }
 
       for (i = 0; i < GC_markers_m1; ++i) {
-        marker_last_stack_min[i] = ADDR_LIMIT;
 #       ifdef MSWINCE
+          HANDLE handle;
+          DWORD thread_id;
+
+          marker_last_stack_min[i] = ADDR_LIMIT;
           /* There is no _beginthreadex() in WinCE. */
           handle = CreateThread(NULL /* lpsa */,
                                 MARK_THREAD_STACK_SIZE /* ignored */,
@@ -1992,6 +1989,10 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
             CloseHandle(handle);
           }
 #       else
+          GC_uintptr_t handle;
+          unsigned thread_id;
+
+          marker_last_stack_min[i] = ADDR_LIMIT;
           handle = _beginthreadex(NULL /* security_attr */,
                                 MARK_THREAD_STACK_SIZE, GC_mark_thread,
                                 (void *)(word)i, 0 /* flags */, &thread_id);
@@ -2207,7 +2208,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                         LPDWORD lpThreadId)
   {
     HANDLE thread_h;
-    thread_args *args;
 
     if (!EXPECT(parallel_initialized, TRUE))
       GC_init_parallel();
@@ -2222,8 +2222,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       return CreateThread(lpThreadAttributes, dwStackSize, lpStartAddress,
                           lpParameter, dwCreationFlags, lpThreadId);
     } else {
-      args = GC_malloc_uncollectable(sizeof(thread_args));
+      thread_args *args = GC_malloc_uncollectable(sizeof(thread_args));
                 /* Handed off to and deallocated by child thread.       */
+
       if (0 == args) {
         SetLastError(ERROR_NOT_ENOUGH_MEMORY);
         return NULL;
@@ -2257,9 +2258,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                                   void *arglist, unsigned initflag,
                                   unsigned *thrdaddr)
     {
-      GC_uintptr_t thread_h;
-      thread_args *args;
-
       if (!EXPECT(parallel_initialized, TRUE))
         GC_init_parallel();
                 /* make sure GC is initialized (i.e. main thread is     */
@@ -2273,8 +2271,10 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         return _beginthreadex(security, stack_size, start_address,
                               arglist, initflag, thrdaddr);
       } else {
-        args = GC_malloc_uncollectable(sizeof(thread_args));
+        GC_uintptr_t thread_h;
+        thread_args *args = GC_malloc_uncollectable(sizeof(thread_args));
                 /* Handed off to and deallocated by child thread.       */
+
         if (0 == args) {
           /* MSDN docs say _beginthreadex() returns 0 on error and sets */
           /* errno to either EAGAIN (too many threads) or EINVAL (the   */

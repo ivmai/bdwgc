@@ -115,11 +115,11 @@
 STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 {
     size_t num_read = 0;
-    ssize_t result;
 
     ASSERT_CANCEL_DISABLED();
     while (num_read < count) {
-        result = READ(fd, buf + num_read, count - num_read);
+        ssize_t result = READ(fd, buf + num_read, count - num_read);
+
         if (result < 0) return result;
         if (result == 0) break;
         num_read += result;
@@ -163,7 +163,6 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 /* of time.                                                             */
 GC_INNER char * GC_get_maps(void)
 {
-    int f;
     ssize_t result;
     static char *maps_buf = NULL;
     static size_t maps_buf_sz = 1;
@@ -199,6 +198,8 @@ GC_INNER char * GC_get_maps(void)
     /* Note that we may not allocate conventionally, and        */
     /* thus can't use stdio.                                    */
         do {
+            int f;
+
             while (maps_size >= maps_buf_sz) {
               /* Grow only by powers of 2, since we leak "too small" buffers.*/
               while (maps_size >= maps_buf_sz) maps_buf_sz *= 2;
@@ -1673,15 +1674,15 @@ void GC_register_data_segments(void)
   STATIC ptr_t GC_least_described_address(ptr_t start)
   {
     MEMORY_BASIC_INFORMATION buf;
-    size_t result;
     LPVOID limit;
     ptr_t p;
-    LPVOID q;
 
     limit = GC_sysinfo.lpMinimumApplicationAddress;
     p = (ptr_t)((word)start & ~(GC_page_size - 1));
     for (;;) {
-        q = (LPVOID)(p - GC_page_size);
+        size_t result;
+        LPVOID q = (LPVOID)(p - GC_page_size);
+
         if ((word)q > (word)p /* underflow */ || (word)q < (word)limit) break;
         result = VirtualQuery(q, &buf, sizeof(buf));
         if (result != sizeof(buf) || buf.AllocationBase == 0) break;
@@ -1792,16 +1793,17 @@ void GC_register_data_segments(void)
   STATIC void GC_register_root_section(ptr_t static_root)
   {
       MEMORY_BASIC_INFORMATION buf;
-      size_t result;
       DWORD protect;
       LPVOID p;
       char * base;
-      char * limit, * new_limit;
+      char * limit;
 
       if (!GC_no_win32_dlls) return;
       p = base = limit = GC_least_described_address(static_root);
       while ((word)p < (word)GC_sysinfo.lpMaximumApplicationAddress) {
-        result = VirtualQuery(p, &buf, sizeof(buf));
+        size_t result = VirtualQuery(p, &buf, sizeof(buf));
+        char * new_limit;
+
         if (result != sizeof(buf) || buf.AllocationBase == 0
             || GC_is_heap_base(buf.AllocationBase)) break;
         new_limit = (char *)p + buf.RegionSize;
@@ -1914,13 +1916,13 @@ void GC_register_data_segments(void)
 void GC_register_data_segments(void)
 {
   ptr_t region_start = DATASTART;
-  ptr_t region_end;
 
   if ((word)region_start - 1U >= (word)DATAEND)
     ABORT_ARG2("Wrong DATASTART/END pair",
                ": %p .. %p", region_start, DATAEND);
   for (;;) {
-    region_end = GC_find_limit_openbsd(region_start, DATAEND);
+    ptr_t region_end = GC_find_limit_openbsd(region_start, DATAEND);
+
     GC_add_roots_inner(region_start, region_end, FALSE);
     if ((word)region_end >= (word)DATAEND)
       break;
@@ -2766,10 +2768,9 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       GC_ULONG_PTR count;
 
       do {
-        PVOID * pages, * pages_end;
+        PVOID * pages = gww_buf;
         DWORD page_size;
 
-        pages = gww_buf;
         count = GC_GWW_BUF_LEN;
         /* GetWriteWatch is documented as returning non-zero when it    */
         /* fails, but the documentation doesn't explicitly say why it   */
@@ -2809,7 +2810,8 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
           }
           count = 1;  /* Done with this section. */
         } else /* succeeded */ {
-          pages_end = pages + count;
+          PVOID * pages_end = pages + count;
+
           while (pages != pages_end) {
             struct hblk * h = (struct hblk *) *pages++;
             struct hblk * h_end = (struct hblk *) ((char *) h + page_size);
@@ -3164,16 +3166,16 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         char * addr = (char *) (exc_info -> ExceptionRecord
                                 -> ExceptionInformation[1]);
 #   endif
-    size_t i;
 
     if (SIG_OK && CODE_OK) {
         register struct hblk * h =
                         (struct hblk *)((word)addr & ~(GC_page_size-1));
         GC_bool in_allocd_block;
+        size_t i;
+
 #       ifdef CHECKSUMS
           GC_record_fault(h);
 #       endif
-
 #       ifdef SUNOS5SIGS
             /* Address is only within the correct physical page.        */
             in_allocd_block = FALSE;
@@ -3420,20 +3422,21 @@ GC_API int GC_CALL GC_incremental_protection_needs(void)
 
 STATIC void GC_protect_heap(void)
 {
-    ptr_t start;
-    size_t len;
-    struct hblk * current;
-    struct hblk * current_start;  /* Start of block to be protected. */
-    struct hblk * limit;
     unsigned i;
     GC_bool protect_all =
-          (0 != (GC_incremental_protection_needs() & GC_PROTECTS_PTRFREE_HEAP));
+        (0 != (GC_incremental_protection_needs() & GC_PROTECTS_PTRFREE_HEAP));
+
     for (i = 0; i < GC_n_heap_sects; i++) {
-        start = GC_heap_sects[i].hs_start;
-        len = GC_heap_sects[i].hs_bytes;
+        ptr_t start = GC_heap_sects[i].hs_start;
+        size_t len = GC_heap_sects[i].hs_bytes;
+
         if (protect_all) {
           PROTECT(start, len);
         } else {
+          struct hblk * current;
+          struct hblk * current_start; /* Start of block to be protected. */
+          struct hblk * limit;
+
           GC_ASSERT(PAGE_ALIGNED(len));
           GC_ASSERT(PAGE_ALIGNED(start));
           current_start = current = (struct hblk *)start;
@@ -3584,15 +3587,10 @@ GC_INNER void GC_dirty_init(void)
 GC_INNER void GC_read_dirty(void)
 {
     int nmaps;
-    unsigned long npages;
-    unsigned pagesize;
-    ptr_t vaddr, limit;
-    struct prasmap * map;
-    char * bufp;
+    char * bufp = GC_proc_buf;
     int i;
 
     BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
-    bufp = GC_proc_buf;
     if (READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
         /* Retry with larger buffer.    */
         word new_size = 2 * GC_proc_buf_size;
@@ -3622,10 +3620,12 @@ GC_INNER void GC_read_dirty(void)
 #   endif
     bufp += sizeof(struct prpageheader);
     for (i = 0; i < nmaps; i++) {
-        map = (struct prasmap *)bufp;
-        vaddr = (ptr_t)(map -> pr_vaddr);
-        npages = map -> pr_npage;
-        pagesize = map -> pr_pagesize;
+        struct prasmap * map = (struct prasmap *)bufp;
+        ptr_t vaddr = (ptr_t)(map -> pr_vaddr);
+        unsigned long npages = map -> pr_npage;
+        unsigned pagesize = map -> pr_pagesize;
+        ptr_t limit;
+
 #       ifdef DEBUG_DIRTY_BITS
           GC_log_printf(
                 "pr_vaddr= %p, npage= %lu, mflags= 0x%x, pagesize= 0x%x\n",
@@ -4233,8 +4233,6 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
 {
   kern_return_t r;
   char *addr;
-  struct hblk *h;
-  size_t i;
   thread_state_flavor_t flavor = DARWIN_EXC_STATE;
   mach_msg_type_number_t exc_state_count = DARWIN_EXC_STATE_COUNT;
   DARWIN_EXC_STATE_T exc_state;
@@ -4303,7 +4301,9 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
 # endif
 
   if (GC_mprotect_state == GC_MP_NORMAL) { /* common case */
-    h = (struct hblk*)((word)addr & ~(GC_page_size-1));
+    struct hblk * h = (struct hblk*)((word)addr & ~(GC_page_size-1));
+    size_t i;
+
     UNPROTECT(h, GC_page_size);
     for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
       register int index = PHT_HASH(h+i);

@@ -37,11 +37,11 @@ static GC_bool keys_initialized;
 
 static void return_single_freelist(void *fl, void **gfl)
 {
-    void *q, **qptr;
-
     if (*gfl == 0) {
       *gfl = fl;
     } else {
+      void *q, **qptr;
+
       GC_ASSERT(GC_size(fl) == GC_size(*gfl));
       /* Concatenate: */
         qptr = &(obj_link(fl));

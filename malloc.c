@@ -243,15 +243,14 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
 {
-    void *op;
-    void **opp;
-    size_t lg;
-    DCL_LOCK_STATE;
-
     GC_ASSERT(k < MAXOBJKINDS);
     if (SMALL_OBJ(lb)) {
+        void *op;
+        void **opp;
+        size_t lg = GC_size_map[lb];
+        DCL_LOCK_STATE;
+
         GC_DBG_COLLECT_AT_MALLOC(lb);
-        lg = GC_size_map[lb];
         LOCK();
         opp = &GC_obj_kinds[k].ok_freelist[lg];
         op = *opp;
@@ -299,12 +298,13 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
                                                         size_t lb, int k)
 {
     void *op;
-    void **opp;
-    size_t lg;
     DCL_LOCK_STATE;
 
     GC_ASSERT(k < MAXOBJKINDS);
     if (SMALL_OBJ(lb)) {
+        void **opp;
+        size_t lg;
+
         GC_DBG_COLLECT_AT_MALLOC(lb);
         if (EXTRA_BYTES != 0 && lb != 0) lb--;
                   /* We don't need the extra byte, since this won't be  */
@@ -503,7 +503,6 @@ GC_API void GC_CALL GC_free(void * p)
     hdr *hhdr;
     size_t sz; /* In bytes */
     size_t ngranules;   /* sz in granules */
-    void **flh;
     int knd;
     struct obj_kind * ok;
     DCL_LOCK_STATE;
@@ -531,6 +530,8 @@ GC_API void GC_CALL GC_free(void * p)
     knd = hhdr -> hb_obj_kind;
     ok = &GC_obj_kinds[knd];
     if (EXPECT(ngranules <= MAXOBJGRANULES, TRUE)) {
+        void **flh;
+
         LOCK();
         GC_bytes_freed += sz;
         if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
@@ -546,6 +547,7 @@ GC_API void GC_CALL GC_free(void * p)
         UNLOCK();
     } else {
         size_t nblocks = OBJ_SZ_TO_BLOCKS(sz);
+
         LOCK();
         GC_bytes_freed += sz;
         if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
@@ -567,7 +569,6 @@ GC_API void GC_CALL GC_free(void * p)
     hdr *hhdr;
     size_t sz; /* bytes */
     size_t ngranules;  /* sz in granules */
-    void ** flh;
     int knd;
     struct obj_kind * ok;
 
@@ -578,6 +579,8 @@ GC_API void GC_CALL GC_free(void * p)
     ngranules = BYTES_TO_GRANULES(sz);
     ok = &GC_obj_kinds[knd];
     if (ngranules <= MAXOBJGRANULES) {
+        void ** flh;
+
         GC_bytes_freed += sz;
         if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
         if (ok -> ok_init) {
