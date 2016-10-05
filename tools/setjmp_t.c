@@ -60,12 +60,15 @@ struct {
   char * a_b;
 } a;
 
-int * nested_sp(void)
+word nested_sp(void)
 {
     volatile word sp;
     sp = (word)(&sp);
-    return (int *)sp;
+    return sp;
 }
+
+/* To prevent nested_sp inlining. */
+word (*volatile nested_sp_fn)(void) = nested_sp;
 
 int g(int x);
 
@@ -79,7 +82,7 @@ int main(void)
 
     sp = (word)(&sp);
     printf("This appears to be a %s running %s\n", MACH_TYPE, OS_TYPE);
-    if ((word)nested_sp() < sp) {
+    if (nested_sp_fn() < sp) {
       printf("Stack appears to grow down, which is the default.\n");
       printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
              ((unsigned long)sp + ps) & ~(ps-1));
