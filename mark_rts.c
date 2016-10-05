@@ -386,13 +386,15 @@ STATIC void GC_remove_tmp_roots(void)
 GC_INNER ptr_t GC_approx_sp(void)
 {
     volatile word sp;
-    sp = (word)&sp;
+#   if defined(__GNUC__) && (__GNUC__ >= 4)
+        sp = (word)__builtin_frame_address(0);
+#   else
+        sp = (word)&sp;
+#   endif
                 /* Also force stack to grow if necessary. Otherwise the */
                 /* later accesses might cause the kernel to think we're */
                 /* doing something wrong.                               */
     return((ptr_t)sp);
-                /* GNU C: alternatively, we may return the value of     */
-                /*__builtin_frame_address(0).                           */
 }
 
 /*
