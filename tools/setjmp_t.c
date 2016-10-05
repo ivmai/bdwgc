@@ -62,9 +62,13 @@ struct {
 
 word nested_sp(void)
 {
+# if defined(__GNUC__) && (__GNUC__ >= 4)
+    return (word)__builtin_frame_address(0);
+# else
     volatile word sp;
     sp = (word)(&sp);
     return sp;
+# endif
 }
 
 /* To prevent nested_sp inlining. */
