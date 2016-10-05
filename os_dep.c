@@ -69,7 +69,7 @@
 #endif
 
 #if defined(MMAP_SUPPORTED) || defined(ADD_HEAP_GUARD_PAGES)
-# if defined(USE_MUNMAP) && !defined(USE_MMAP)
+# if defined(USE_MUNMAP) && !defined(USE_MMAP) && !defined(CPPCHECK)
 #   error "invalid config - USE_MUNMAP requires USE_MMAP"
 # endif
 # include <sys/types.h>
@@ -4217,7 +4217,7 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 #   define DARWIN_EXC_STATE_T     x86_exception_state64_t
 # endif
 # define DARWIN_EXC_STATE_DAR     THREAD_FLD_NAME(faultvaddr)
-#else
+#elif !defined(CPPCHECK)
 # error FIXME for non-arm/ppc/x86 darwin
 #endif
 

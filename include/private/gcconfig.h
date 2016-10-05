@@ -118,10 +118,10 @@
 #      define mach_type_known
 #    endif
 # endif
-# if defined(sun) && defined(mc68000)
+# if defined(sun) && defined(mc68000) && !defined(CPPCHECK)
 #    error SUNOS4 no longer supported
 # endif
-# if defined(hp9000s300)
+# if defined(hp9000s300) && !defined(CPPCHECK)
 #    error M68K based HP machines no longer supported.
 # endif
 # if defined(OPENBSD) && defined(m68k)
@@ -223,7 +223,7 @@
 #    define OS2
 #    define mach_type_known
 # endif
-# if defined(ibm032)
+# if defined(ibm032) && !defined(CPPCHECK)
 #   error IBM PC/RT no longer supported.
 # endif
 # if defined(sun) && (defined(sparc) || defined(__sparc))
@@ -259,7 +259,7 @@
 #   endif
 #   define mach_type_known
 # endif
-# if defined(_AUX_SOURCE)
+# if defined(_AUX_SOURCE) && !defined(CPPCHECK)
 #   error A/UX no longer supported
 # endif
 # if defined(_PA_RISC1_0) || defined(_PA_RISC1_1) || defined(_PA_RISC2_0) \
@@ -525,7 +525,7 @@
 #   define UTS4
 #   define mach_type_known
 # endif
-# if defined(__pj__)
+# if defined(__pj__) && !defined(CPPCHECK)
 #   error PicoJava no longer supported
     /* The implementation had problems, and I haven't heard of users    */
     /* in ages.  If you want it resurrected, let me know.               */
@@ -600,7 +600,7 @@
 /* Macros such as LINUX, FREEBSD, etc. distinguish them.                */
 /* SYSV on an M68K actually means A/UX.                                 */
 /* The distinction in these cases is usually the stack starting address */
-# ifndef mach_type_known
+# if !defined(mach_type_known) && !defined(CPPCHECK)
 #   error "The collector has not been ported to this machine/OS combination."
 # endif
                     /* Mapping is: M68K       ==> Motorola 680X0        */
@@ -2577,7 +2577,7 @@
 #            endif
              extern int _end[];
 #            define DATAEND ((ptr_t)(_end))
-#       else
+#       elif !defined(CPPCHECK)
 #            error --> bad Hexagon Linux configuration
 #       endif
 #   else
@@ -2785,7 +2785,7 @@
 # error --> bad word size
 #endif
 
-#ifndef ALIGNMENT
+#if !defined(ALIGNMENT) && !defined(CPPCHECK)
 # error --> undefined ALIGNMENT
 #endif
 
@@ -2799,7 +2799,8 @@
 # define PCR_VDB
 #endif
 
-#if !defined(STACKBOTTOM) && (defined(ECOS) || defined(NOSYS))
+#if !defined(STACKBOTTOM) && (defined(ECOS) || defined(NOSYS)) \
+    && !defined(CPPCHECK)
 # error --> undefined STACKBOTTOM
 #endif
 

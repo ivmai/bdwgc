@@ -158,8 +158,8 @@ size_t GetStackFramesFromContext(HANDLE hProcess, HANDLE hThread,
 #elif defined(_M_ALPHA64)
   machineType                 = IMAGE_FILE_MACHINE_ALPHA64;
   stackFrame.AddrPC.Offset    = context->Fir;
-#else
-#error Unknown CPU
+#elif !defined(CPPCHECK)
+# error Unknown CPU
 #endif
   for (frameIndex = 0; frameIndex < maxFrames; ) {
     BOOL bRet = StackWalk(machineType, hProcess, hThread, &stackFrame,
