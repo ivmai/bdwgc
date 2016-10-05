@@ -419,14 +419,16 @@ GC_INNER void GC_unmap_old(void)
 /* fully mapped or fully unmapped.                                      */
 GC_INNER void GC_merge_unmapped(void)
 {
-    struct hblk * h, *next;
-    hdr * hhdr, *nexthdr;
-    word size, nextsize;
     int i;
 
     for (i = 0; i <= N_HBLK_FLS; ++i) {
-      h = GC_hblkfreelist[i];
+      struct hblk *h = GC_hblkfreelist[i];
+
       while (h != 0) {
+        struct hblk *next;
+        hdr *hhdr, *nexthdr;
+        word size, nextsize;
+
         GET_HDR(h, hhdr);
         size = hhdr->hb_sz;
         next = (struct hblk *)((word)h + size);
