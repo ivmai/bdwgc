@@ -63,7 +63,7 @@
 #   elif defined(__SIGRTMAX)
 #     define NSIG (__SIGRTMAX+1)
 #   else
-      --> please fix it
+#     error define NSIG
 #   endif
 # endif /* NSIG */
 

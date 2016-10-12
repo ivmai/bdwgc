@@ -762,7 +762,7 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # elif HBLKSIZE == 16384
 #   define CPP_LOG_HBLKSIZE 14
 # else
-    --> fix HBLKSIZE
+#   error fix HBLKSIZE
 # endif
 # undef HBLKSIZE
 #endif
