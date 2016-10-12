@@ -158,7 +158,7 @@
 
 # elif defined(MACOS)
 
-#   if defined(M68K) && defined(THINK_C)
+#   if defined(M68K) && defined(THINK_C) && !defined(CPPCHECK)
 #     define PushMacReg(reg) \
               move.l  reg,(sp) \
               jsr             GC_push_one
