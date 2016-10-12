@@ -59,7 +59,7 @@ int GC_nacl_thread_used[MAX_NACL_GC_THREADS];
 #   elif defined(__SIGRTMAX)
 #     define NSIG (__SIGRTMAX+1)
 #   else
-      --> please fix it
+#     error define NSIG
 #   endif
 # endif /* NSIG */
 

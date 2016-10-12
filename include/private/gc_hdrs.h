@@ -18,7 +18,7 @@
 typedef struct hblkhdr hdr;
 
 #if CPP_WORDSZ != 32 && CPP_WORDSZ < 36
-        --> Get a real machine.
+# error Get a real machine
 #endif
 
 /*
