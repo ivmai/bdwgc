@@ -90,7 +90,7 @@ int main(void)
     printf("Note that this may vary between machines of ostensibly\n");
     printf("the same architecture (e.g. Sun 3/50s and 3/80s).\n");
     printf("On many machines the value is not fixed.\n");
-    printf("A good guess for ALIGNMENT on this machine is %ld.\n",
+    printf("A good guess for ALIGNMENT on this machine is %lu.\n",
            (unsigned long)((word)(&(a.a_b)) - (word)(&a)));
 
     printf("The following is a very dubious test of one root marking"
