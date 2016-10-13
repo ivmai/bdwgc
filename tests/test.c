@@ -118,7 +118,7 @@
 
 # include <stdarg.h>
 
-#define CHECH_GCLIB_VERSION \
+#define CHECK_GCLIB_VERSION \
             if (GC_get_version() != ((GC_VERSION_MAJOR<<16) \
                                     | (GC_VERSION_MINOR<<8) \
                                     | GC_VERSION_MICRO)) { \
@@ -137,7 +137,7 @@
 #endif
 
 #define GC_COND_INIT() \
-    INIT_FORK_SUPPORT; GC_OPT_INIT; CHECH_GCLIB_VERSION; INIT_PRINT_STATS
+    INIT_FORK_SUPPORT; GC_OPT_INIT; CHECK_GCLIB_VERSION; INIT_PRINT_STATS
 
 #define CHECK_OUT_OF_MEMORY(p) \
             if ((p) == NULL) { \
