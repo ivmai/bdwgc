@@ -2942,6 +2942,7 @@
 # define INCLUDE_LINUX_THREAD_DESCR
 #endif
 
+#if !defined(CPPCHECK)
 #if defined(GC_IRIX_THREADS) && !defined(IRIX5)
 # error --> inconsistent configuration
 #endif
@@ -2970,13 +2971,14 @@
     && !defined(MSWINCE)
 # error --> inconsistent configuration
 #endif
+#endif /* !CPPCHECK */
 
 #if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS) \
     || defined(SN_TARGET_PS3)
 # define THREADS
 #endif
 
-#if defined(PARALLEL_MARK) && !defined(THREADS)
+#if defined(PARALLEL_MARK) && !defined(THREADS) && !defined(CPPCHECK)
 # error "invalid config - PARALLEL_MARK requires GC_THREADS"
 #endif
 
@@ -3145,6 +3147,7 @@
 #endif
 
 /* Some static sanity tests.    */
+#if !defined(CPPCHECK)
 #if defined(MARK_BIT_PER_GRANULE) && defined(MARK_BIT_PER_OBJ)
 # error Define only one of MARK_BIT_PER_GRANULE and MARK_BIT_PER_OBJ.
 #endif
@@ -3160,6 +3163,7 @@
      && !defined(REDIRECT_MALLOC_IN_HEADER)
 # error "REDIRECT_MALLOC with THREADS works at most on Linux."
 #endif
+#endif /* !CPPCHECK */
 
 #ifdef GC_PRIVATE_H
         /* This relies on some type definitions from gc_priv.h, from    */

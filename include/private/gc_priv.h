@@ -626,7 +626,7 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #   define GC_THREAD_STATE_T            arm_thread_state64_t
 #   define GC_MACH_THREAD_STATE         ARM_THREAD_STATE64
 #   define GC_MACH_THREAD_STATE_COUNT   ARM_THREAD_STATE64_COUNT
-# else
+# elif !defined(CPPCHECK)
 #   error define GC_THREAD_STATE_T
 # endif
 # ifndef GC_MACH_THREAD_STATE
