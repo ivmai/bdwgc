@@ -361,7 +361,7 @@ sexpr reverse1(sexpr x, sexpr y)
 sexpr reverse(sexpr x)
 {
 #   ifdef TEST_WITH_SYSTEM_MALLOC
-      malloc(100000);
+      GC_noop1(GC_HIDE_POINTER(malloc(100000)));
 #   endif
     return( reverse1(x, nil) );
 }
