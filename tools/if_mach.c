@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 {
     if (argc < 4) goto Usage;
     if (strcmp(MACH_TYPE, argv[1]) != 0) return(0);
-    if (strcmp(OS_TYPE, "") != 0 && strcmp(argv[2], "") != 0
+    if (strlen(OS_TYPE) > 0 && strlen(argv[2]) > 0
         && strcmp(OS_TYPE, argv[2]) != 0) return(0);
     fprintf(stderr, "^^^^Starting command^^^^\n");
     fflush(stdout);
