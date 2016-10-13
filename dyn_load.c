@@ -59,7 +59,8 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
     && !(defined(FREEBSD) && defined(__ELF__)) \
     && !((defined(LINUX) || defined(NACL)) && defined(__ELF__)) \
     && !(defined(NETBSD) && defined(__ELF__)) && !defined(HURD) \
-    && !(defined(OPENBSD) && (defined(__ELF__) || defined(M68K)))
+    && !(defined(OPENBSD) && (defined(__ELF__) || defined(M68K))) \
+    && !defined(CPPCHECK)
 # error We only know how to find data segments of dynamic libraries for above.
 # error Additional SVR4 variants might not be too hard to add.
 #endif
@@ -212,7 +213,8 @@ GC_FirstDLOpenedLinkMap(void)
 # if defined(SOLARISDL)
 
 /* Add dynamic library data sections to the root set.           */
-# if !defined(PCR) && !defined(GC_SOLARIS_THREADS) && defined(THREADS)
+# if !defined(PCR) && !defined(GC_SOLARIS_THREADS) && defined(THREADS) \
+     && !defined(CPPCHECK)
 #   error Fix mutual exclusion with dlopen
 # endif
 

@@ -304,6 +304,8 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       GC_push_one(state.THREAD_FLD(fp));
       GC_push_one(state.THREAD_FLD(lr));
 
+#   elif defined(CPPCHECK)
+      lo = NULL;
 #   else
 #     error FIXME for non-x86 || ppc || arm architectures
 #   endif
