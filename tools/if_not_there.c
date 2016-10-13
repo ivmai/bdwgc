@@ -16,8 +16,14 @@ int main(int argc, char **argv)
     DIR * d;
 #endif /* __DJGPP__ */
     if (argc < 3) goto Usage;
-    if ((f = fopen(argv[1], "rb")) != 0
-        || (f = fopen(argv[1], "r")) != 0) {
+
+    f = fopen(argv[1], "rb");
+    if (f != NULL) {
+        fclose(f);
+        return(0);
+    }
+    f = fopen(argv[1], "r");
+    if (f != NULL) {
         fclose(f);
         return(0);
     }
