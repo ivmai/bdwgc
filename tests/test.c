@@ -1199,11 +1199,9 @@ void run_one_test(void)
 #       else
             char *y = (char *)(GC_word)fail_proc1;
 #       endif
-        CLOCK_TYPE typed_time;
 #   endif
     CLOCK_TYPE start_time;
     CLOCK_TYPE reverse_time;
-    CLOCK_TYPE tree_time;
     unsigned long time_diff;
 #   ifndef NO_TEST_HANDLE_FORK
       pid_t pid;
@@ -1421,6 +1419,8 @@ void run_one_test(void)
 #   ifndef DBG_HDRS_ALL
       typed_test();
       if (print_stats) {
+        CLOCK_TYPE typed_time;
+
         GET_TIME(typed_time);
         time_diff = MS_TIME_DIFF(typed_time, start_time);
         GC_log_printf("-------------Finished typed_test at time %u (%p)\n",
@@ -1429,6 +1429,8 @@ void run_one_test(void)
 #   endif /* DBG_HDRS_ALL */
     tree_test();
     if (print_stats) {
+      CLOCK_TYPE tree_time;
+
       GET_TIME(tree_time);
       time_diff = MS_TIME_DIFF(tree_time, start_time);
       GC_log_printf("-------------Finished tree_test at time %u (%p)\n",
@@ -1650,12 +1652,10 @@ void check_heap_stats(void)
 #if defined(MACOS)
 void SetMinimumStack(long minSize)
 {
-        long newApplLimit;
-
         if (minSize > LMGetDefltStack())
         {
-                newApplLimit = (long) GetApplLimit()
-                                - (minSize - LMGetDefltStack());
+                long newApplLimit = (long) GetApplLimit()
+                                        - (minSize - LMGetDefltStack());
                 SetApplLimit((Ptr) newApplLimit);
                 MaxApplZone();
         }

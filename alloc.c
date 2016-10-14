@@ -436,8 +436,8 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 {
 #   ifndef SMALL_CONFIG
       CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
-      CLOCK_TYPE current_time;
 #   endif
+
     ASSERT_CANCEL_DISABLED();
     GC_ASSERT(I_HOLD_LOCK());
     if (GC_dont_gc || (*stop_func)()) return FALSE;
@@ -499,6 +499,8 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
     GC_finish_collection();
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
+        CLOCK_TYPE current_time;
+
         GET_TIME(current_time);
         GC_log_printf("Complete collection took %lu msecs\n",
                       MS_TIME_DIFF(current_time,start_time));
@@ -623,7 +625,6 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
     unsigned i;
 #   ifndef SMALL_CONFIG
       CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
-      CLOCK_TYPE current_time;
 #   endif
 
 #   if !defined(REDIRECT_MALLOC) && defined(USE_WINALLOC)
@@ -734,6 +735,8 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
       if (GC_PRINT_STATS_FLAG) {
         unsigned long time_diff;
         unsigned total_time, divisor;
+        CLOCK_TYPE current_time;
+
         GET_TIME(current_time);
         time_diff = MS_TIME_DIFF(current_time,start_time);
 
@@ -896,7 +899,6 @@ STATIC void GC_finish_collection(void)
 #   ifndef SMALL_CONFIG
       CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
       CLOCK_TYPE finalize_time = 0;
-      CLOCK_TYPE done_time;
 #   endif
 
 #   if defined(GC_ASSERTIONS) && defined(THREADS) \
@@ -1021,6 +1023,8 @@ STATIC void GC_finish_collection(void)
       GC_on_collection_event(GC_EVENT_RECLAIM_END);
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
+        CLOCK_TYPE done_time;
+
         GET_TIME(done_time);
 #       ifndef GC_NO_FINALIZATION
           /* A convenient place to output finalization statistics.      */

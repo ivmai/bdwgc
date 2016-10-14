@@ -213,7 +213,6 @@ int ncur151=0;
 
 void GC_amiga_free_all_mem(void){
         struct GC_Amiga_AllocedMemoryHeader *gc_am=(struct GC_Amiga_AllocedMemoryHeader *)(~(int)(GC_AMIGAMEM));
-        struct GC_Amiga_AllocedMemoryHeader *temp;
 
 #ifdef GC_AMIGA_PRINTSTATS
         printf("\n\n"
@@ -244,7 +243,7 @@ void GC_amiga_free_all_mem(void){
 #endif
 
         while(gc_am!=NULL){
-                temp=gc_am->next;
+                struct GC_Amiga_AllocedMemoryHeader *temp = gc_am->next;
                 FreeMem(gc_am,gc_am->size);
                 gc_am=(struct GC_Amiga_AllocedMemoryHeader *)(~(int)(temp));
         }
@@ -362,7 +361,7 @@ void *GC_amiga_rec_alloc(size_t size,void *(*AllocFunction)(size_t size2),const 
 
 
 void *GC_amiga_allocwrapper_any(size_t size,void *(*AllocFunction)(size_t size2)){
-        void *ret,*ret2;
+        void *ret;
 
         GC_amiga_dontalloc=TRUE;        // Pretty tough thing to do, but its indeed necessary.
         latestsize=size;
@@ -397,6 +396,7 @@ void *GC_amiga_allocwrapper_any(size_t size,void *(*AllocFunction)(size_t size2)
                 }
 #ifdef GC_AMIGA_RETRY
                 else{
+                        void *ret2;
                         /* We got chip-mem. Better try again and again and again etc., we might get fast-mem sooner or later... */
                         /* Using gctest to check the effectiveness of doing this, does seldom give a very good result. */
                         /* However, real programs doesn't normally rapidly allocate and deallocate. */

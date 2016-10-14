@@ -559,7 +559,6 @@ GC_API void GC_CALL GC_free(void * p)
     hdr *hhdr;
     size_t sz; /* bytes */
     size_t ngranules;  /* sz in granules */
-    void ** flh;
     int knd;
     struct obj_kind * ok;
 
@@ -570,6 +569,8 @@ GC_API void GC_CALL GC_free(void * p)
     ngranules = BYTES_TO_GRANULES(sz);
     ok = &GC_obj_kinds[knd];
     if (ngranules <= MAXOBJGRANULES) {
+        void ** flh;
+
         GC_bytes_freed += sz;
         if (IS_UNCOLLECTABLE(knd)) GC_non_gc_bytes -= sz;
         if (ok -> ok_init) {

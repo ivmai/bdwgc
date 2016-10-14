@@ -358,7 +358,6 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
                                 /* Used to occasionally clear a bigger  */
                                 /* chunk.                               */
 #   endif
-    ptr_t limit;
 
 #   define SLOP 400
         /* Extra bytes we clear every time.  This clears our own        */
@@ -377,15 +376,15 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
         /* larger ...                                                   */
 #   ifdef THREADS
       if (++random_no % 13 == 0) {
-        limit = sp;
+        ptr_t limit = sp;
+
         MAKE_HOTTER(limit, BIG_CLEAR_SIZE*sizeof(word));
         limit = (ptr_t)((word)limit & ~0xf);
                         /* Make it sufficiently aligned for assembly    */
                         /* implementations of GC_clear_stack_inner.     */
         return GC_clear_stack_inner(arg, limit);
-      } else {
-        BZERO((void *)dummy, SMALL_CLEAR_SIZE*sizeof(word));
       }
+      BZERO((void *)dummy, SMALL_CLEAR_SIZE*sizeof(word));
 #   else
       if (GC_gc_no > GC_stack_last_cleared) {
         /* Start things over, so we clear the entire stack again */
@@ -401,16 +400,19 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
           GC_high_water = sp;
       }
       MAKE_HOTTER(GC_high_water, GC_SLOP);
-      limit = GC_min_sp;
-      MAKE_HOTTER(limit, SLOP);
-      if ((word)sp COOLER_THAN (word)limit) {
-        limit = (ptr_t)((word)limit & ~0xf);
-                        /* Make it sufficiently aligned for assembly    */
-                        /* implementations of GC_clear_stack_inner.     */
-        GC_min_sp = sp;
-        return GC_clear_stack_inner(arg, limit);
-      } else if (GC_bytes_allocd - GC_bytes_allocd_at_reset
-                    > CLEAR_THRESHOLD) {
+      {
+        ptr_t limit = GC_min_sp;
+
+        MAKE_HOTTER(limit, SLOP);
+        if ((word)sp COOLER_THAN (word)limit) {
+          limit = (ptr_t)((word)limit & ~0xf);
+                          /* Make it sufficiently aligned for assembly    */
+                          /* implementations of GC_clear_stack_inner.     */
+          GC_min_sp = sp;
+          return GC_clear_stack_inner(arg, limit);
+        }
+      }
+      if (GC_bytes_allocd - GC_bytes_allocd_at_reset > CLEAR_THRESHOLD) {
         /* Restart clearing process, but limit how much clearing we do. */
         GC_min_sp = sp;
         MAKE_HOTTER(GC_min_sp, CLEAR_THRESHOLD/4);

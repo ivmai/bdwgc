@@ -167,8 +167,6 @@ GC_API void GC_CALL GC_add_roots(void *b, void *e)
 /* re-registering dynamic libraries.                                    */
 void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 {
-    struct roots * old;
-
     GC_ASSERT((word)b <= (word)e);
     b = (ptr_t)(((word)b + (sizeof(word) - 1)) & ~(sizeof(word) - 1));
                                         /* round b up to word boundary */
@@ -185,7 +183,8 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
       /* takes to scan the roots.                               */
       {
         register int i;
-        old = 0; /* initialized to prevent warning. */
+        struct roots * old = NULL; /* initialized to prevent warning. */
+
         for (i = 0; i < n_root_sets; i++) {
             old = GC_static_roots + i;
             if ((word)b <= (word)old->r_end
@@ -232,13 +231,17 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
         }
       }
 #   else
-      old = (struct roots *)GC_roots_present(b);
-      if (old != 0) {
-        if ((word)e <= (word)old->r_end) /* already there */ return;
-        /* else extend */
-        GC_root_size += e - old -> r_end;
-        old -> r_end = e;
-        return;
+      {
+        struct roots * old = (struct roots *)GC_roots_present(b);
+
+        if (old != 0) {
+          if ((word)e <= (word)old->r_end)
+            return; /* already there */
+          /* else extend */
+          GC_root_size += e - old -> r_end;
+          old -> r_end = e;
+          return;
+        }
       }
 #   endif
     if (n_root_sets == MAX_ROOT_SETS) {

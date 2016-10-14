@@ -703,7 +703,6 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
     struct hblk ** rlh;
 #   ifndef SMALL_CONFIG
       CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
-      CLOCK_TYPE done_time;
 
       if (GC_print_stats == VERBOSE)
         GET_TIME(start_time);
@@ -732,6 +731,8 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
     }
 #   ifndef SMALL_CONFIG
       if (GC_print_stats == VERBOSE) {
+        CLOCK_TYPE done_time;
+
         GET_TIME(done_time);
         GC_verbose_log_printf("Disposing of reclaim lists took %lu msecs\n",
                               MS_TIME_DIFF(done_time,start_time));

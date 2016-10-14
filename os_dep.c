@@ -2752,10 +2752,9 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       GC_ULONG_PTR count;
 
       do {
-        PVOID * pages, * pages_end;
+        PVOID * pages = gww_buf;
         DWORD page_size;
 
-        pages = gww_buf;
         count = GC_GWW_BUF_LEN;
         /* GetWriteWatch is documented as returning non-zero when it    */
         /* fails, but the documentation doesn't explicitly say why it   */
@@ -2795,7 +2794,8 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
           }
           count = 1;  /* Done with this section. */
         } else /* succeeded */ {
-          pages_end = pages + count;
+          PVOID * pages_end = pages + count;
+
           while (pages != pages_end) {
             struct hblk * h = (struct hblk *) *pages++;
             struct hblk * h_end = (struct hblk *) ((char *) h + page_size);
@@ -3406,20 +3406,21 @@ GC_API int GC_CALL GC_incremental_protection_needs(void)
 
 STATIC void GC_protect_heap(void)
 {
-    ptr_t start;
-    size_t len;
-    struct hblk * current;
-    struct hblk * current_start;  /* Start of block to be protected. */
-    struct hblk * limit;
     unsigned i;
     GC_bool protect_all =
-          (0 != (GC_incremental_protection_needs() & GC_PROTECTS_PTRFREE_HEAP));
+        (0 != (GC_incremental_protection_needs() & GC_PROTECTS_PTRFREE_HEAP));
+
     for (i = 0; i < GC_n_heap_sects; i++) {
-        start = GC_heap_sects[i].hs_start;
-        len = GC_heap_sects[i].hs_bytes;
+        ptr_t start = GC_heap_sects[i].hs_start;
+        size_t len = GC_heap_sects[i].hs_bytes;
+
         if (protect_all) {
           PROTECT(start, len);
         } else {
+          struct hblk * current;
+          struct hblk * current_start; /* Start of block to be protected. */
+          struct hblk * limit;
+
           GC_ASSERT(PAGE_ALIGNED(len));
           GC_ASSERT(PAGE_ALIGNED(start));
           current_start = current = (struct hblk *)start;
@@ -3570,15 +3571,10 @@ GC_INNER void GC_dirty_init(void)
 GC_INNER void GC_read_dirty(void)
 {
     int nmaps;
-    unsigned long npages;
-    unsigned pagesize;
-    ptr_t vaddr, limit;
-    struct prasmap * map;
-    char * bufp;
+    char * bufp = GC_proc_buf;
     int i;
 
     BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
-    bufp = GC_proc_buf;
     if (READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
         /* Retry with larger buffer.    */
         word new_size = 2 * GC_proc_buf_size;
@@ -3608,10 +3604,12 @@ GC_INNER void GC_read_dirty(void)
 #   endif
     bufp += sizeof(struct prpageheader);
     for (i = 0; i < nmaps; i++) {
-        map = (struct prasmap *)bufp;
-        vaddr = (ptr_t)(map -> pr_vaddr);
-        npages = map -> pr_npage;
-        pagesize = map -> pr_pagesize;
+        struct prasmap * map = (struct prasmap *)bufp;
+        ptr_t vaddr = (ptr_t)(map -> pr_vaddr);
+        unsigned long npages = map -> pr_npage;
+        unsigned pagesize = map -> pr_pagesize;
+        ptr_t limit;
+
 #       ifdef DEBUG_DIRTY_BITS
           GC_log_printf(
                 "pr_vaddr= %p, npage= %lu, mflags= 0x%x, pagesize= 0x%x\n",
@@ -4215,8 +4213,6 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
 {
   kern_return_t r;
   char *addr;
-  struct hblk *h;
-  size_t i;
   thread_state_flavor_t flavor = DARWIN_EXC_STATE;
   mach_msg_type_number_t exc_state_count = DARWIN_EXC_STATE_COUNT;
   DARWIN_EXC_STATE_T exc_state;
@@ -4285,7 +4281,9 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
 # endif
 
   if (GC_mprotect_state == GC_MP_NORMAL) { /* common case */
-    h = (struct hblk*)((word)addr & ~(GC_page_size-1));
+    struct hblk * h = (struct hblk*)((word)addr & ~(GC_page_size-1));
+    size_t i;
+
     UNPROTECT(h, GC_page_size);
     for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
       register int index = PHT_HASH(h+i);

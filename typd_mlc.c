@@ -517,7 +517,6 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 {
     signed_word last_set_bit = len - 1;
     GC_descr result;
-    signed_word i;
 #   define HIGH_BIT (((word)1) << (WORDSZ - 1))
     DCL_LOCK_STATE;
 
@@ -545,6 +544,8 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
     if (last_set_bit < 0) return(0 /* no pointers */);
 #   if ALIGNMENT == CPP_WORDSZ/8
     {
+      signed_word i;
+
       for (i = 0; i < last_set_bit; i++) {
         if (!GC_get_bit(bm, i)) {
           break;
@@ -557,6 +558,8 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
     }
 #   endif
     if ((word)last_set_bit < BITMAP_BITS) {
+        signed_word i;
+
         /* Hopefully the common case.                   */
         /* Build bitmap descriptor (with bits reversed) */
         result = HIGH_BIT;

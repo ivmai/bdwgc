@@ -227,13 +227,6 @@ static void add_edge(ptr_t p, ptr_t q)
     ptr_t old_back_ptr = GET_OH_BG_PTR(q);
     back_edges * be, *be_cont;
     word i;
-    static unsigned random_number = 13;
-#   define GOT_LUCKY_NUMBER (((++random_number) & 0x7f) == 0)
-      /* A not very random number we use to occasionally allocate a     */
-      /* back_edges structure even for a single backward edge.  This    */
-      /* prevents us from repeatedly tracing back through very long     */
-      /* chains, since we will have some place to store height and      */
-      /* in_progress flags along the way.                               */
 
     GC_ASSERT(p == GC_base(p) && q == GC_base(q));
     if (!GC_HAS_DEBUG_INFO(q) || !GC_HAS_DEBUG_INFO(p)) {
@@ -242,6 +235,14 @@ static void add_edge(ptr_t p, ptr_t q)
       return;
     }
     if (0 == old_back_ptr) {
+      static unsigned random_number = 13;
+#     define GOT_LUCKY_NUMBER (((++random_number) & 0x7f) == 0)
+        /* A not very random number we use to occasionally allocate a   */
+        /* back_edges structure even for a single backward edge.  This  */
+        /* prevents us from repeatedly tracing back through very long   */
+        /* chains, since we will have some place to store height and    */
+        /* in_progress flags along the way.                             */
+
         SET_OH_BG_PTR(q, p);
         if (GOT_LUCKY_NUMBER) ensure_struct(q);
         return;

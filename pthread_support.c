@@ -1243,13 +1243,11 @@ GC_INNER void GC_init_parallel(void)
   GC_API int WRAP_FUNC(pthread_sigmask)(int how, const sigset_t *set,
                                         sigset_t *oset)
   {
-    sigset_t fudged_set;
-    int sig_suspend;
-
     INIT_REAL_SYMS();
     if (set != NULL && (how == SIG_BLOCK || how == SIG_SETMASK)) {
-        fudged_set = *set;
-        sig_suspend = GC_get_suspend_signal();
+        sigset_t fudged_set = *set;
+        int sig_suspend = GC_get_suspend_signal();
+
         GC_ASSERT(sig_suspend >= 0);
         if (sigdelset(&fudged_set, sig_suspend) != 0)
             ABORT("sigdelset failed");

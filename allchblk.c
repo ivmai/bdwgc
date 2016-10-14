@@ -226,9 +226,8 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
                             int kind, unsigned flags)
 {
     word descr;
-#   ifdef MARK_BIT_PER_GRANULE
-      size_t granules;
 
+#   ifdef MARK_BIT_PER_GRANULE
       if (byte_sz > MAXOBJBYTES)
         flags |= LARGE_BLOCK;
 #   endif
@@ -269,7 +268,9 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
         hhdr -> hb_inv_sz = inv_sz;
       }
 #   else /* MARK_BIT_PER_GRANULE */
-      granules = BYTES_TO_GRANULES(byte_sz);
+    {
+      size_t granules = BYTES_TO_GRANULES(byte_sz);
+
       if (EXPECT(!GC_add_map_entry(granules), FALSE)) {
         /* Make it look like a valid block. */
         hhdr -> hb_sz = HBLKSIZE;
@@ -280,6 +281,7 @@ static GC_bool setup_header(hdr * hhdr, struct hblk *block, size_t byte_sz,
       }
       hhdr -> hb_map = GC_obj_map[(hhdr -> hb_flags & LARGE_BLOCK) != 0 ?
                                     0 : granules];
+    }
 #   endif /* MARK_BIT_PER_GRANULE */
 
     /* Clear mark bits */
