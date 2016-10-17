@@ -362,10 +362,10 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
       hdr * prevhdr = HDR(prev);
 
       GC_ASSERT(nexthdr == 0 || !HBLK_IS_FREE(nexthdr)
-                || (signed_word)GC_heapsize < 0);
+                || (GC_heapsize & SIGNB) != 0);
                 /* In the last case, blocks may be too large to merge. */
       GC_ASSERT(prev == 0 || !HBLK_IS_FREE(prevhdr)
-                || (signed_word)GC_heapsize < 0);
+                || (GC_heapsize & SIGNB) != 0);
 #   endif
     GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);
     GC_hblkfreelist[index] = h;
