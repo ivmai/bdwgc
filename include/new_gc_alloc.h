@@ -190,8 +190,9 @@ class single_client_gc_alloc_template {
             void * op;
 
             if (n > GC_max_fast_bytes) return GC_malloc(n);
-            flh = GC_objfreelist_ptr + nwords;
-            if (0 == (op = *flh)) {
+            flh = &GC_objfreelist_ptr[nwords];
+            op = *flh;
+            if (0 == op) {
                 return GC_aux::GC_out_of_line_malloc(nwords, GC_NORMAL);
             }
             *flh = GC_obj_link(op);
@@ -205,8 +206,9 @@ class single_client_gc_alloc_template {
             void * op;
 
             if (n > GC_max_fast_bytes) return GC_malloc_atomic(n);
-            flh = GC_aobjfreelist_ptr + nwords;
-            if (0 == (op = *flh)) {
+            flh = &GC_aobjfreelist_ptr[nwords];
+            op = *flh;
+            if (0 == op) {
                 return GC_aux::GC_out_of_line_malloc(nwords, GC_PTRFREE);
             }
             *flh = GC_obj_link(op);
@@ -219,7 +221,8 @@ class single_client_gc_alloc_template {
                 GC_free(p);
             } else {
                 size_t nwords = GC_round_up(n);
-                void ** flh = GC_objfreelist_ptr + nwords;
+                void ** flh = &GC_objfreelist_ptr[nwords];
+
                 GC_obj_link(p) = *flh;
                 memset(reinterpret_cast<char *>(p) + GC_bytes_per_word, 0,
                        GC_bytes_per_word * (nwords - 1));
@@ -233,7 +236,8 @@ class single_client_gc_alloc_template {
                 GC_free(p);
             } else {
                 size_t nwords = GC_round_up(n);
-                void ** flh = GC_aobjfreelist_ptr + nwords;
+                void ** flh = &GC_aobjfreelist_ptr[nwords];
+
                 GC_obj_link(p) = *flh;
                 *flh = p;
                 GC_aux::GC_bytes_recently_freed += nwords * GC_bytes_per_word;
@@ -254,8 +258,9 @@ class single_client_traceable_alloc_template {
             void * op;
 
             if (n > GC_max_fast_bytes) return GC_malloc_uncollectable(n);
-            flh = GC_uobjfreelist_ptr + nwords;
-            if (0 == (op = *flh)) {
+            flh = &GC_uobjfreelist_ptr[nwords];
+            op = *flh;
+            if (0 == op) {
                 return GC_aux::GC_out_of_line_malloc(nwords, GC_UNCOLLECTABLE);
             }
             *flh = GC_obj_link(op);
@@ -270,8 +275,9 @@ class single_client_traceable_alloc_template {
             void * op;
 
             if (n > GC_max_fast_bytes) return GC_malloc_atomic_uncollectable(n);
-            flh = GC_auobjfreelist_ptr + nwords;
-            if (0 == (op = *flh)) {
+            flh = &GC_auobjfreelist_ptr[nwords];
+            op = *flh;
+            if (0 == op) {
                 return GC_aux::GC_out_of_line_malloc(nwords, GC_AUNCOLLECTABLE);
             }
             *flh = GC_obj_link(op);
@@ -285,7 +291,8 @@ class single_client_traceable_alloc_template {
                 GC_free(p);
             } else {
                 size_t nwords = GC_round_up_uncollectable(n);
-                void ** flh = GC_uobjfreelist_ptr + nwords;
+                void ** flh = &GC_uobjfreelist_ptr[nwords];
+
                 GC_obj_link(p) = *flh;
                 *flh = p;
                 GC_aux::GC_uncollectable_bytes_recently_freed +=
@@ -298,7 +305,8 @@ class single_client_traceable_alloc_template {
                 GC_free(p);
             } else {
                 size_t nwords = GC_round_up_uncollectable(n);
-                void ** flh = GC_auobjfreelist_ptr + nwords;
+                void ** flh = &GC_auobjfreelist_ptr[nwords];
+
                 GC_obj_link(p) = *flh;
                 *flh = p;
                 GC_aux::GC_uncollectable_bytes_recently_freed +=
