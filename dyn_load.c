@@ -307,19 +307,6 @@ STATIC word GC_register_map_entries(char *maps)
     unsigned int maj_dev;
     ptr_t least_ha, greatest_ha;
     unsigned i;
-    ptr_t datastart;
-
-#   ifdef DATASTART_IS_FUNC
-      static ptr_t datastart_cached = (ptr_t)(word)-1;
-
-      /* Evaluate DATASTART only once.  */
-      if (datastart_cached == (ptr_t)(word)-1) {
-        datastart_cached = DATASTART;
-      }
-      datastart = datastart_cached;
-#   else
-      datastart = DATASTART;
-#   endif
 
     GC_ASSERT(I_HOLD_LOCK());
     sort_heap_sects(GC_our_memory, GC_n_memory);
