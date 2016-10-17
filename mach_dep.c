@@ -34,11 +34,15 @@
   };
   typedef struct ppc_registers ppc_registers;
 
-  asm static void getRegisters(register ppc_registers* regs)
-  {
+# if defined(CPPCHECK)
+    void getRegisters(ppc_registers* regs);
+# else
+    asm static void getRegisters(register ppc_registers* regs)
+    {
         stmw    r13,regs->gprs                          /* save R13-R31 */
         blr
-  }
+    }
+# endif
 
   static void PushMacRegisters(void)
   {
