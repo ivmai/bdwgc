@@ -58,13 +58,14 @@ struct TemporaryMemoryBlock {
 };
 
 static TemporaryMemoryHandle theTemporaryMemory = NULL;
-static Boolean firstTime = true;
 
 void GC_MacFreeTemporaryMemory(void);
 
 Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory)
 {
+#     if !defined(SHARED_LIBRARY_BUILD)
         static Boolean firstTime = true;
+#     endif
         OSErr result;
         TemporaryMemoryHandle tempMemBlock;
         Ptr tempPtr = nil;
@@ -119,11 +120,15 @@ void GC_MacFreeTemporaryMemory()
 # endif
 
     if (theTemporaryMemory != NULL) {
+#     if !defined(SHARED_LIBRARY_BUILD)
         long totalMemoryUsed = 0;
+#     endif
         TemporaryMemoryHandle tempMemBlock = theTemporaryMemory;
         while (tempMemBlock != NULL) {
                 TemporaryMemoryHandle nextBlock = (**tempMemBlock).nextBlock;
+#             if !defined(SHARED_LIBRARY_BUILD)
                 totalMemoryUsed += GetHandleSize((Handle)tempMemBlock);
+#             endif
                 DisposeHandle((Handle)tempMemBlock);
                 tempMemBlock = nextBlock;
         }
@@ -132,7 +137,7 @@ void GC_MacFreeTemporaryMemory()
 #       if !defined(SHARED_LIBRARY_BUILD)
           if (GC_print_stats) {
             fprintf(stdout, "[total memory used:  %ld bytes.]\n",
-                  totalMemoryUsed);
+                    totalMemoryUsed);
             fprintf(stdout, "[total collections: %lu]\n",
                     (unsigned long)GC_gc_no);
           }

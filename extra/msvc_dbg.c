@@ -342,8 +342,6 @@ size_t GetDescriptionFromAddress(void* address, const char* format,
   size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
 
   buffer += GetModuleNameFromAddress(address, buffer, size);
-  size = (GC_ULONG_PTR)end < (GC_ULONG_PTR)buffer ? 0 : end - buffer;
-
   return buffer - begin;
 }
 

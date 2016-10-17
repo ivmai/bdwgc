@@ -72,9 +72,6 @@ ptr_t GC_get_main_stack_base()
      BPTR myseglist;
      ULONG *data;
 
-     int        num;
-
-
 #    ifdef __GNUC__
         ULONG dataSegSize;
         GC_bool found_segment = FALSE;
@@ -108,7 +105,6 @@ ptr_t GC_get_main_stack_base()
 
         /* xoper hunks Shell Process */
 
-        num=0;
         for (data = (ULONG *)BADDR(myseglist); data != NULL;
              data = (ULONG *)BADDR(data[0])) {
           if (((ULONG) GC_register_data_segments < (ULONG) &data[1]) ||
@@ -121,7 +117,6 @@ ptr_t GC_get_main_stack_base()
               GC_add_roots_inner((char *)&data[1],
                                  ((char *)&data[1]) + data[-1], FALSE);
           }
-          ++num;
         } /* for */
 #       ifdef __GNUC__
            if (!found_segment) {
