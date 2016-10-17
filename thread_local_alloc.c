@@ -61,7 +61,7 @@ static void return_freelists(void **fl, void **gfl)
 
     for (i = 1; i < TINY_FREELISTS; ++i) {
         if ((word)(fl[i]) >= HBLKSIZE) {
-          return_single_freelist(fl[i], gfl+i);
+          return_single_freelist(fl[i], &gfl[i]);
         }
         /* Clear fl[i], since the thread structure may hang around.     */
         /* Do it in a way that is likely to trap if we access it.       */
@@ -72,7 +72,7 @@ static void return_freelists(void **fl, void **gfl)
       if (fl[0] == ERROR_FL) return;
 #   endif
     if ((word)(fl[0]) >= HBLKSIZE) {
-        return_single_freelist(fl[0], gfl+1);
+        return_single_freelist(fl[0], &gfl[1]);
     }
 }
 

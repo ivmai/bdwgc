@@ -625,7 +625,7 @@ GC_INNER void GC_start_reclaim(GC_bool report_if_found)
             void **lim = &(GC_obj_kinds[kind].ok_freelist[MAXOBJGRANULES+1]);
 
             for (fop = GC_obj_kinds[kind].ok_freelist;
-                 (word)fop < (word)lim; fop++) {
+                 (word)fop < (word)lim; (*(word **)&fop)++) {
               if (*fop != 0) {
                 if (should_clobber) {
                   GC_clear_fl_links(fop);
