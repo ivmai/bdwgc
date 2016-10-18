@@ -1464,6 +1464,16 @@ void GC_register_data_segments(void)
     struct o32_obj seg;         /* Current segment */
     int nsegs;
 
+#   if defined(CPPCHECK)
+        hdrdos.padding[0] = 0; /* to prevent "field unused" warnings */
+        hdr386.exe_format_level = 0;
+        hdr386.os = 0;
+        hdr386.padding1[0] = 0;
+        hdr386.padding2[0] = 0;
+        seg.pagemap = 0;
+        seg.mapsize = 0;
+        seg.reserved = 0;
+#   endif
     if (DosGetInfoBlocks(&ptib, &ppib) != NO_ERROR) {
         ABORT("DosGetInfoBlocks failed");
     }
@@ -3913,6 +3923,10 @@ STATIC void *GC_mprotect_thread(void *arg)
   mach_msg_id_t id;
 
   if ((word)arg == (word)-1) return 0; /* to make compiler happy */
+# if defined(CPPCHECK)
+    reply.data[0] = 0; /* to prevent "field unused" warnings */
+    msg.data[0] = 0;
+# endif
 
 # if defined(THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
     GC_darwin_register_mach_handler_thread(mach_thread_self());

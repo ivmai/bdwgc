@@ -85,7 +85,7 @@ typedef union ComplexDescriptor {
         union ComplexDescriptor * sd_second;
     } sd;
 } complex_descriptor;
-#define TAG ld.ld_tag
+#define TAG ad.ad_tag
 
 STATIC ext_descr * GC_ext_descriptors = NULL;
                                         /* Points to array of extended  */
