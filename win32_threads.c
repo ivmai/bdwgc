@@ -877,6 +877,9 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
   UNLOCK();
   d -> client_data = (d -> fn)(d -> client_data);
   LOCK();   /* This will block if the world is stopped. */
+# if defined(CPPCHECK)
+    GC_noop1((word)me->thread_blocked_sp);
+# endif
   me -> thread_blocked_sp = NULL;
   UNLOCK();
 }
@@ -931,6 +934,9 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
   /* Restore original "stack section".  */
   LOCK();
+# if defined(CPPCHECK)
+    GC_noop1((word)me->traced_stack_sect);
+# endif
   me -> traced_stack_sect = stacksect.prev;
 # ifdef IA64
     me -> backing_store_ptr = stacksect.saved_backing_store_ptr;
