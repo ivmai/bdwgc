@@ -77,7 +77,11 @@ extern "C" {
 #endif
 
 #ifndef GC_ATTR_EXPLICIT
-# define GC_ATTR_EXPLICIT /* empty */
+# if (__cplusplus >= 201103L) || defined(CPPCHECK)
+#   define GC_ATTR_EXPLICIT explicit
+# else
+#   define GC_ATTR_EXPLICIT /* empty */
+# endif
 #endif
 
 class A {public:
