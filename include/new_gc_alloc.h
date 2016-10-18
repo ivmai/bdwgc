@@ -98,11 +98,15 @@ enum { GC_PTRFREE = 0, GC_NORMAL = 1, GC_UNCOLLECTABLE = 2,
 
 enum { GC_max_fast_bytes = 255 };
 
-enum { GC_bytes_per_word = sizeof(char *) };
-
 enum { GC_byte_alignment = 8 };
 
-enum { GC_word_alignment = GC_byte_alignment/GC_bytes_per_word };
+#if defined(CPPCHECK)
+  const unsigned GC_bytes_per_word = sizeof(char *);
+  const unsigned GC_word_alignment = GC_byte_alignment/GC_bytes_per_word;
+#else
+  enum { GC_bytes_per_word = sizeof(char *) };
+  enum { GC_word_alignment = GC_byte_alignment/GC_bytes_per_word };
+#endif
 
 inline void * &GC_obj_link(void * p)
 {   return *reinterpret_cast<void **>(p);  }
