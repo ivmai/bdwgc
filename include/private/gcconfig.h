@@ -786,16 +786,16 @@
 #   define OS_TYPE "SYMBIAN"
 #   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
-#   define DATASTART NULL
-#   define DATAEND NULL
+#   define DATASTART (ptr_t)NULL /* typed null for cppcheck */
+#   define DATAEND (ptr_t)NULL
 # endif
 
 # ifdef __EMSCRIPTEN__
 #   define OS_TYPE "EMSCRIPTEN"
 #   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
-#   define DATASTART NULL
-#   define DATAEND NULL
+#   define DATASTART (ptr_t)NULL
+#   define DATAEND (ptr_t)NULL
 #   define STACK_NOT_SCANNED
 # endif
 
