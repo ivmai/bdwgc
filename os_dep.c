@@ -1847,7 +1847,11 @@ void GC_register_data_segments(void)
     GC_setup_temporary_fault_handler();
     if (SETJMP(GC_jmp_buf) == 0) {
         /* Try writing to the address.  */
-        *result = *result;
+        char v = *result;
+#       if defined(CPPCHECK)
+          GC_noop1((word)&v);
+#       endif
+        *result = v;
         GC_reset_fault_handler();
     } else {
         GC_reset_fault_handler();
