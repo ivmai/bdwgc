@@ -2258,7 +2258,8 @@ void * os2_alloc(size_t bytes)
 #   define GLOBAL_ALLOC_TEST GC_no_win32_dlls
 # endif
 
-# if defined(GC_USE_MEM_TOP_DOWN) && defined(USE_WINALLOC)
+# if (defined(GC_USE_MEM_TOP_DOWN) && defined(USE_WINALLOC)) \
+     || defined(CPPCHECK)
     DWORD GC_mem_top_down = MEM_TOP_DOWN;
                            /* Use GC_USE_MEM_TOP_DOWN for better 64-bit */
                            /* testing.  Otherwise all addresses tend to */
