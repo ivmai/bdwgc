@@ -1203,14 +1203,11 @@ GC_INNER size_t GC_page_size = 0;
 #       else
           result = (ptr_t)((word)GC_approx_sp() & ~STACKBOTTOM_ALIGNMENT_M1);
 #       endif
-#     endif /* HEURISTIC1 */
-#     ifdef LINUX_STACKBOTTOM
+#     elif defined(LINUX_STACKBOTTOM)
          result = GC_linux_main_stack_base();
-#     endif
-#     ifdef FREEBSD_STACKBOTTOM
+#     elif defined(FREEBSD_STACKBOTTOM)
          result = GC_freebsd_main_stack_base();
-#     endif
-#     ifdef HEURISTIC2
+#     elif defined(HEURISTIC2)
         {
           ptr_t sp = GC_approx_sp();
 #         ifdef STACK_GROWS_DOWN
@@ -1231,8 +1228,12 @@ GC_INNER size_t GC_page_size = 0;
 #           endif
 #         endif
         }
-#     endif /* HEURISTIC2 */
-#     ifdef STACK_GROWS_DOWN
+#     elif defined(CPPCHECK)
+        result = NULL;
+#     else
+#       error None of HEURISTIC* and *STACKBOTTOM defined!
+#     endif
+#     if defined(STACK_GROWS_DOWN) && !defined(CPPCHECK)
         if (result == 0)
           result = (ptr_t)(signed_word)(-sizeof(ptr_t));
 #     endif

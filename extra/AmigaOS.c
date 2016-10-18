@@ -87,10 +87,9 @@ ptr_t GC_get_main_stack_base()
 
         /* Reference: Amiga Guru Book Pages: 538ff,565,573
                      and XOper.asm */
+        myseglist = proc->pr_SegList;
         if (proc->pr_Task.tc_Node.ln_Type==NT_PROCESS) {
-          if (proc->pr_CLI == NULL) {
-            myseglist = proc->pr_SegList;
-          } else {
+          if (proc->pr_CLI != NULL) {
             /* ProcLoaded       'Loaded as a command: '*/
             cli = BADDR(proc->pr_CLI);
             myseglist = cli->cli_Module;
