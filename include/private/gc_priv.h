@@ -567,7 +567,7 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #ifdef GC_READ_ENV_FILE
   GC_INNER char * GC_envfile_getenv(const char *name);
 # define GETENV(name) GC_envfile_getenv(name)
-#elif defined(NO_GETENV)
+#elif defined(NO_GETENV) && !defined(CPPCHECK)
 # define GETENV(name) NULL
 #elif defined(EMPTY_GETENV_RESULTS)
   /* Workaround for a reputed Wine bug.   */
