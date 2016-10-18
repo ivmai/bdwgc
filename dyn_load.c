@@ -1179,18 +1179,24 @@ GC_INNER void GC_register_dynamic_libraries(void)
 # include <sys/errno.h>
   GC_INNER void GC_register_dynamic_libraries(void)
   {
+      int ldibuflen = 8192;
+
+      for (;;) {
         int len;
-        char *ldibuf;
-        int ldibuflen;
         struct ld_info *ldi;
+#       if defined(CPPCHECK)
+          char ldibuf[ldibuflen];
+#       else
+          char *ldibuf = alloca(ldibuflen);
+#       endif
 
-        ldibuf = alloca(ldibuflen = 8192);
-
-        while ( (len = loadquery(L_GETINFO,ldibuf,ldibuflen)) < 0) {
+        len = loadquery(L_GETINFO, ldibuf, ldibuflen);
+        if (len < 0) {
                 if (errno != ENOMEM) {
                         ABORT("loadquery failed");
                 }
-                ldibuf = alloca(ldibuflen *= 2);
+                ldibuflen *= 2;
+                continue;
         }
 
         ldi = (struct ld_info *)ldibuf;
@@ -1203,6 +1209,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
                                 TRUE);
                 ldi = len ? (struct ld_info *)((char *)ldi + len) : 0;
         }
+        break;
+      }
   }
 #endif /* AIX */
 
