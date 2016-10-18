@@ -683,7 +683,6 @@ extern ElfW(Dyn) _DYNAMIC[];
 STATIC struct link_map *
 GC_FirstDLOpenedLinkMap(void)
 {
-    ElfW(Dyn) *dp;
     static struct link_map *cachedResult = 0;
 
     if (0 == (ptr_t)_DYNAMIC) {
@@ -703,7 +702,9 @@ GC_FirstDLOpenedLinkMap(void)
             cachedResult = lm->l_next;
         }
 #     else
+        ElfW(Dyn) *dp;
         int tag;
+
         for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {
             if( tag == DT_DEBUG ) {
                 struct link_map *lm
