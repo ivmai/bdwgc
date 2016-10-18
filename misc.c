@@ -1184,7 +1184,9 @@ GC_API void GC_CALL GC_init(void)
       }
 #   endif
     GC_STATIC_ASSERT(sizeof (ptr_t) == sizeof(word));
-    GC_STATIC_ASSERT(sizeof (signed_word) == sizeof(word));
+#   if !defined(CPPCHECK)
+      GC_STATIC_ASSERT(sizeof(signed_word) == sizeof(word));
+#   endif
     GC_STATIC_ASSERT(sizeof (struct hblk) == HBLKSIZE);
 #   ifndef THREADS
       GC_ASSERT(!((word)GC_stackbottom HOTTER_THAN (word)GC_approx_sp()));
