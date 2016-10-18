@@ -482,7 +482,14 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #endif
 
 /* Abandon ship */
-# ifdef PCR
+# if defined(SMALL_CONFIG) || defined(PCR)
+#   define GC_on_abort(msg) (void)0 /* be silent on abort */
+# else
+    GC_API_PRIV GC_abort_func GC_on_abort;
+# endif
+# if defined(CPPCHECK)
+#   define ABORT(msg) { GC_on_abort(msg); abort(); }
+# elif defined(PCR)
 #   define ABORT(s) PCR_Base_Panic(s)
 # else
 #   if defined(MSWINCE) && !defined(DebugBreak) \
@@ -494,11 +501,6 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
       /* instead of defining it as a macro).                            */
 #     define DebugBreak() _exit(-1) /* there is no abort() in WinCE */
 #   endif
-#   ifdef SMALL_CONFIG
-#     define GC_on_abort(msg) (void)0 /* be silent on abort */
-#   else
-      GC_API_PRIV GC_abort_func GC_on_abort;
-#   endif /* !SMALL_CONFIG */
 #   if defined(MSWIN32) && (defined(NO_DEBUGGING) || defined(LINT2))
       /* A more user-friendly abort after showing fatal message.        */
 #     define ABORT(msg) (GC_on_abort(msg), _exit(-1))

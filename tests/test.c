@@ -942,11 +942,12 @@ tn * mktree(int n)
 
 void chktree(tn *t, int n)
 {
-    if (n == 0 && t != 0) {
+    if (0 == n) {
+        if (NULL == t) /* is a leaf? */
+            return;
         GC_printf("Clobbered a leaf - collector is broken\n");
         FAIL;
     }
-    if (n == 0) return;
     if (t -> level != n) {
         GC_printf("Lost a node at level %d - collector is broken\n", n);
         FAIL;
