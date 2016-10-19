@@ -3166,16 +3166,16 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         char * addr = (char *) (exc_info -> ExceptionRecord
                                 -> ExceptionInformation[1]);
 #   endif
-    size_t i;
 
     if (SIG_OK && CODE_OK) {
         register struct hblk * h =
                         (struct hblk *)((word)addr & ~(GC_page_size-1));
         GC_bool in_allocd_block;
+        size_t i;
+
 #       ifdef CHECKSUMS
           GC_record_fault(h);
 #       endif
-
 #       ifdef SUNOS5SIGS
             /* Address is only within the correct physical page.        */
             in_allocd_block = FALSE;
