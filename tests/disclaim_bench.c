@@ -119,12 +119,12 @@ int main(int argc, char **argv)
     printf("\t\t\tfin. ratio       time/s    time/fin.\n");
     for (model = model_min; model <= model_max; ++model) {
         double t = 0.0;
-        free_count = 0;
-
 #       ifdef CLOCK_TYPE
             CLOCK_TYPE tI, tF;
+
             GET_TIME(tI);
 #       endif
+        free_count = 0;
         for (i = 0; i < ALLOC_CNT; ++i) {
             int k = rand() % KEEP_CNT;
             keep_arr[k] = testobj_new(model);
