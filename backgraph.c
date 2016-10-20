@@ -383,7 +383,8 @@ static word backwards_height(ptr_t p)
   FOR_EACH_PRED(q, p, {
     word this_height;
     if (GC_is_marked(q) && !(FLAG_MANY & (word)GET_OH_BG_PTR(p))) {
-      GC_COND_LOG_PRINTF("Found bogus pointer from %p to %p\n", q, p);
+      GC_COND_LOG_PRINTF("Found bogus pointer from %p to %p\n",
+                         (void *)q, (void *)p);
         /* Reachable object "points to" unreachable one.                */
         /* Could be caused by our lax treatment of GC descriptors.      */
       this_height = 1;

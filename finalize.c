@@ -803,7 +803,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
         ptr_t real_ptr = GC_REVEAL_POINTER(curr_dl -> dl_hidden_obj);
         ptr_t real_link = GC_REVEAL_POINTER(curr_dl -> dl_hidden_link);
 
-        GC_printf("Object: %p, link: %p\n", real_ptr, real_link);
+        GC_printf("Object: %p, link: %p\n",
+                  (void *)real_ptr, (void *)real_link);
       }
     }
   }
@@ -827,7 +828,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
            curr_fo != NULL; curr_fo = fo_next(curr_fo)) {
         ptr_t real_ptr = GC_REVEAL_POINTER(curr_fo -> fo_hidden_base);
 
-        GC_printf("Finalizable object: %p\n", real_ptr);
+        GC_printf("Finalizable object: %p\n", (void *)real_ptr);
       }
     }
   }

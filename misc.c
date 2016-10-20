@@ -1045,7 +1045,7 @@ GC_API void GC_CALL GC_init(void)
 #       else
           word addr = (word)STRTOULL(addr_string, NULL, 16);
           if (addr < 0x1000)
-              WARN("Unlikely trace address: %p\n", addr);
+              WARN("Unlikely trace address: %p\n", (void *)addr);
           GC_trace_addr = (ptr_t)addr;
 #       endif
       }

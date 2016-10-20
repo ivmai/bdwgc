@@ -446,7 +446,7 @@ GC_INNER char * GC_get_maps(void)
       if (GC_data_start != NULL) {
         if ((word)GC_data_start > (word)data_end)
           ABORT_ARG2("Wrong __data_start/_end pair",
-                     ": %p .. %p", GC_data_start, data_end);
+                     ": %p .. %p", (void *)GC_data_start, (void *)data_end);
         return;
       }
 #     ifdef DEBUG_ADD_DEL_ROOTS
@@ -1919,7 +1919,7 @@ void GC_register_data_segments(void)
 
   if ((word)region_start - 1U >= (word)DATAEND)
     ABORT_ARG2("Wrong DATASTART/END pair",
-               ": %p .. %p", region_start, DATAEND);
+               ": %p .. %p", (void *)region_start, (void *)DATAEND);
   for (;;) {
     ptr_t region_end = GC_find_limit_openbsd(region_start, DATAEND);
 
@@ -1954,13 +1954,13 @@ void GC_register_data_segments(void)
                                 /* Subtract one to check also for NULL  */
                                 /* without a compiler warning.          */
           ABORT_ARG2("Wrong DATASTART/END pair",
-                     ": %p .. %p", DATASTART, DATAEND);
+                     ": %p .. %p", (void *)DATASTART, (void *)DATAEND);
         }
         GC_add_roots_inner(DATASTART, DATAEND, FALSE);
 #       if defined(DATASTART2)
           if ((word)DATASTART2 - 1U >= (word)DATAEND2)
             ABORT_ARG2("Wrong DATASTART/END2 pair",
-                       ": %p .. %p", DATASTART2, DATAEND2);
+                       ": %p .. %p", (void *)DATASTART2, (void *)DATAEND2);
           GC_add_roots_inner(DATASTART2, DATAEND2, FALSE);
 #       endif
 #     endif
@@ -2501,7 +2501,7 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
                             | (GC_pages_executable ? PROT_EXEC : 0)) != 0) {
             ABORT_ARG3("mprotect remapping failed",
                        " at %p (length %lu), errcode= %d",
-                       start_addr, (unsigned long)len, errno);
+                       (void *)start_addr, (unsigned long)len, errno);
           }
 #       endif /* !NACL */
       }
@@ -3216,7 +3216,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
             if (old_handler == (SIG_HNDLR_PTR)SIG_DFL) {
 #               if !defined(MSWIN32) && !defined(MSWINCE)
                     ABORT_ARG1("Unexpected bus error or segmentation fault",
-                               " at %p", addr);
+                               " at %p", (void *)addr);
 #               else
                     return(EXCEPTION_CONTINUE_SEARCH);
 #               endif
@@ -3267,7 +3267,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       return EXCEPTION_CONTINUE_SEARCH;
 #   else
       ABORT_ARG1("Unexpected bus error or segmentation fault",
-                 " at %p", addr);
+                 " at %p", (void *)addr);
 #   endif
   }
 
@@ -3629,7 +3629,7 @@ GC_INNER void GC_read_dirty(void)
 #       ifdef DEBUG_DIRTY_BITS
           GC_log_printf(
                 "pr_vaddr= %p, npage= %lu, mflags= 0x%x, pagesize= 0x%x\n",
-                vaddr, npages, map->pr_mflags, pagesize);
+                (void *)vaddr, npages, map->pr_mflags, pagesize);
 #       endif
 
         bufp += sizeof(struct prasmap);
@@ -3639,7 +3639,7 @@ GC_INNER void GC_read_dirty(void)
                 register struct hblk * h;
                 ptr_t next_vaddr = vaddr + pagesize;
 #               ifdef DEBUG_DIRTY_BITS
-                  GC_log_printf("dirty page at: %p\n", vaddr);
+                  GC_log_printf("dirty page at: %p\n", (void *)vaddr);
 #               endif
                 for (h = (struct hblk *)vaddr;
                      (word)h < (word)next_vaddr; h++) {
@@ -4282,8 +4282,8 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
         return KERN_SUCCESS;
       }
 
-      GC_err_printf(
-        "Unexpected KERN_PROTECTION_FAILURE at %p; aborting...\n", addr);
+      GC_err_printf("Unexpected KERN_PROTECTION_FAILURE at %p; aborting...\n",
+                    (void *)addr);
       /* Can't pass it along to the signal handler because that is      */
       /* ignoring SIGBUS signals.  We also shouldn't call ABORT here as */
       /* signals don't always work too well from the exception handler. */
