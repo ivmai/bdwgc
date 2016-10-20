@@ -126,14 +126,14 @@ void CORD_dump_inner(CORD x, unsigned n)
         register struct Concatenation * conc =
                                 &(((CordRep *)x) -> concatenation);
         printf("Concatenation: %p (len: %d, depth: %d)\n",
-               x, (int)(conc -> len), (int)(conc -> depth));
+               (void *)x, (int)(conc -> len), (int)(conc -> depth));
         CORD_dump_inner(conc -> left, n+1);
         CORD_dump_inner(conc -> right, n+1);
     } else /* function */{
         register struct Function * func =
                                 &(((CordRep *)x) -> function);
         if (IS_SUBSTR(x)) printf("(Substring) ");
-        printf("Function: %p (len: %d): ", x, (int)(func -> len));
+        printf("Function: %p (len: %d): ", (void *)x, (int)(func -> len));
         for (i = 0; i < 20 && i < func -> len; i++) {
             putchar((*(func -> fn))(i, func -> client_data));
         }

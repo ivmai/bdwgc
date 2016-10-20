@@ -151,14 +151,16 @@ GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
     for (i = 0; i < TS_HASH_SIZE; ++i) {
       for (p = key->hash[i].p; p != 0; p = p -> next) {
         if (!GC_is_marked(GC_base(p))) {
-          ABORT_ARG1("Unmarked thread-specific-data entry", " at %p", p);
+          ABORT_ARG1("Unmarked thread-specific-data entry",
+                     " at %p", (void *)p);
         }
       }
     }
     for (i = 0; i < TS_CACHE_SIZE; ++i) {
       p = key -> cache[i];
       if (p != &invalid_tse && !GC_is_marked(GC_base(p))) {
-        ABORT_ARG1("Unmarked cached thread-specific-data entry", " at %p", p);
+        ABORT_ARG1("Unmarked cached thread-specific-data entry",
+                   " at %p", (void *)p);
       }
     }
   }

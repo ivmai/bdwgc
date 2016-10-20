@@ -279,9 +279,9 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
                                 (unsigned)GC_gc_no)); \
     TRACE_TARGET(base, \
         GC_log_printf("GC #%u: marking %p from %p instead\n", \
-                      (unsigned)GC_gc_no, base, source)); \
+                      (unsigned)GC_gc_no, (void *)base, (void *)(source))); \
     INCR_MARKS(hhdr); \
-    GC_STORE_BACK_PTR((ptr_t)source, base); \
+    GC_STORE_BACK_PTR((ptr_t)(source), base); \
     PUSH_OBJ(base, hhdr, mark_stack_top, mark_stack_limit); \
   } while (0)
 #endif /* MARK_BIT_PER_GRANULE */
@@ -336,9 +336,9 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
                                 (unsigned)GC_gc_no)); \
     TRACE_TARGET(base, \
         GC_log_printf("GC #%u: marking %p from %p instead\n", \
-                      (unsigned)GC_gc_no, base, source)); \
+                      (unsigned)GC_gc_no, (void *)base, (void *)(source))); \
     INCR_MARKS(hhdr); \
-    GC_STORE_BACK_PTR((ptr_t)source, base); \
+    GC_STORE_BACK_PTR((ptr_t)(source), base); \
     PUSH_OBJ(base, hhdr, mark_stack_top, mark_stack_limit); \
   } while (0)
 #endif /* MARK_BIT_PER_OBJ */

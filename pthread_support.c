@@ -1379,7 +1379,7 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
 #   ifdef DEBUG_THREADS
       GC_log_printf(
                 "Unregistering thread %p, gc_thread = %p, n_threads = %d\n",
-                (void *)me->id, me, GC_count_threads());
+                (void *)me->id, (void *)me, GC_count_threads());
 #   endif
     GC_ASSERT(!(me -> flags & FINISHED));
 #   if defined(THREAD_LOCAL_ALLOC)
@@ -1420,7 +1420,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 #   ifdef DEBUG_THREADS
         GC_log_printf(
                 "Called GC_unregister_my_thread on %p, gc_thread = %p\n",
-                (void *)self, me);
+                (void *)self, (void *)me);
 #   endif
     GC_ASSERT(me->id == self);
     GC_unregister_my_thread_inner(me);
@@ -1679,7 +1679,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
 
 #   ifdef DEBUG_THREADS
       GC_log_printf("Starting thread %p, pid = %ld, sp = %p\n",
-                    (void *)self, (long)getpid(), &arg);
+                    (void *)self, (long)getpid(), (void *)&arg);
 #   endif
     LOCK();
     me = GC_register_my_thread_inner(sb, self);

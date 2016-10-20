@@ -624,7 +624,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
       if (NULL == *(char * volatile *)&datastart
           || (word)datastart > (word)dataend)
         ABORT_ARG2("Wrong DATASTART/END pair",
-                   ": %p .. %p", datastart, dataend);
+                   ": %p .. %p", (void *)datastart, (void *)dataend);
 
       /* dl_iterate_phdr may forget the static data segment in  */
       /* statically linked executables.                         */
@@ -634,7 +634,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
                         /* Subtract one to check also for NULL  */
                         /* without a compiler warning.          */
           ABORT_ARG2("Wrong DATASTART/END2 pair",
-                     ": %p .. %p", DATASTART2, DATAEND2);
+                     ": %p .. %p", (void *)DATASTART2, (void *)DATAEND2);
         }
         GC_add_roots_inner(DATASTART2, DATAEND2, TRUE);
 #     endif
@@ -826,7 +826,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
     if (ioctl(fd, PIOCMAP, addr_map) < 0) {
         ABORT_ARG3("/proc PIOCMAP ioctl failed",
                    ": errcode= %d, needed_sz= %d, addr_map= %p",
-                   errno, needed_sz, addr_map);
+                   errno, needed_sz, (void *)addr_map);
     };
     if (GC_n_heap_sects > 0) {
         heap_end = GC_heap_sects[GC_n_heap_sects-1].hs_start

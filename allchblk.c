@@ -182,12 +182,13 @@ GC_API void GC_CALL GC_dump_regions(void)
             ++i;
             end = GC_heap_sects[i].hs_start + GC_heap_sects[i].hs_bytes;
           }
-        GC_printf("***Section from %p to %p\n", start, end);
+        GC_printf("***Section from %p to %p\n", (void *)start, (void *)end);
         for (p = start; (word)p < (word)end; ) {
             hdr *hhdr = HDR(p);
 
             if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
-                GC_printf("\t%p Missing header!!(%p)\n", p, (void *)hhdr);
+                GC_printf("\t%p Missing header!!(%p)\n",
+                          (void *)p, (void *)hhdr);
                 p += HBLKSIZE;
                 continue;
             }
@@ -196,8 +197,8 @@ GC_API void GC_CALL GC_dump_regions(void)
                                         divHBLKSZ(hhdr -> hb_sz));
                 int actual_index;
 
-                GC_printf("\t%p\tfree block of size 0x%lx bytes%s\n", p,
-                          (unsigned long)(hhdr -> hb_sz),
+                GC_printf("\t%p\tfree block of size 0x%lx bytes%s\n",
+                          (void *)p, (unsigned long)(hhdr -> hb_sz),
                           IS_MAPPED(hhdr) ? "" : " (unmapped)");
                 actual_index = free_list_index_of(hhdr);
                 if (-1 == actual_index) {
@@ -209,8 +210,8 @@ GC_API void GC_CALL GC_dump_regions(void)
                 }
                 p += hhdr -> hb_sz;
             } else {
-                GC_printf("\t%p\tused for blocks of size 0x%lx bytes\n", p,
-                          (unsigned long)(hhdr -> hb_sz));
+                GC_printf("\t%p\tused for blocks of size 0x%lx bytes\n",
+                          (void *)p, (unsigned long)(hhdr -> hb_sz));
                 p += HBLKSIZE * OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
             }
         }

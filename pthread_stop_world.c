@@ -545,7 +545,7 @@ GC_INNER void GC_push_all_stacks(void)
         }
 #       ifdef DEBUG_THREADS
           GC_log_printf("Stack for thread %p = [%p,%p)\n",
-                        (void *)p->id, lo, hi);
+                        (void *)p->id, (void *)lo, (void *)hi);
 #       endif
         if (0 == lo) ABORT("GC_push_all_stacks: sp not set!");
         if (p->altstack != NULL && (word)p->altstack <= (word)lo
@@ -569,7 +569,7 @@ GC_INNER void GC_push_all_stacks(void)
 #       ifdef IA64
 #         ifdef DEBUG_THREADS
             GC_log_printf("Reg stack for thread %p = [%p,%p)\n",
-                          (void *)p->id, bs_lo, bs_hi);
+                          (void *)p->id, (void *)bs_lo, (void *)bs_hi);
 #         endif
           /* FIXME: This (if p->id==self) may add an unbounded number of */
           /* entries, and hence overflow the mark stack, which is bad.   */

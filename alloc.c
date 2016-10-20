@@ -1204,7 +1204,7 @@ GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
         if (GC_is_black_listed(h, HBLKSIZE)) nbl++;
       }
       GC_printf("Section %d from %p to %p %lu/%lu blacklisted\n",
-                i, start, start + len,
+                i, (void *)start, (void *)&start[len],
                 (unsigned long)nbl, (unsigned long)divHBLKSZ(len));
     }
   }

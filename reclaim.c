@@ -575,7 +575,7 @@ void GC_print_free_list(int kind, size_t sz_in_granules)
     for (n = 0; flh; n++) {
         struct hblk *block = HBLKPTR(flh);
         GC_printf("Free object in heap block %p [%d]: %p\n",
-                  (void *)block, n, flh);
+                  (void *)block, n, (void *)flh);
         flh = obj_link(flh);
     }
 }
