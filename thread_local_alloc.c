@@ -152,13 +152,16 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc(size_t bytes)
     void **tiny_fl;
 
 #   if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_WIN32_SPECIFIC)
+    {
       GC_key_t k = GC_thread_key;
+
       if (EXPECT(0 == k, FALSE)) {
         /* We haven't yet run GC_init_parallel.  That means     */
         /* we also aren't locking, so this is fairly cheap.     */
         return GC_core_malloc(bytes);
       }
       tsd = GC_getspecific(k);
+    }
 #   else
       tsd = GC_getspecific(GC_thread_key);
 #   endif
