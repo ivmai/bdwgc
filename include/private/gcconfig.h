@@ -3136,9 +3136,8 @@
 #endif
 
 #if defined(FIXUP_POINTER)
-# define NEED_FIXUP_POINTER 1
+# define NEED_FIXUP_POINTER
 #else
-# define NEED_FIXUP_POINTER 0
 # define FIXUP_POINTER(p)
 #endif
 

@@ -1558,9 +1558,12 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 # if defined(THREADS) && defined(MPROTECT_VDB)
     GC_push_all_eager(bottom, top);
 # else
-    if (!NEED_FIXUP_POINTER && GC_all_interior_pointers) {
-      GC_push_all(bottom, top);
-    } else {
+#   ifndef NEED_FIXUP_POINTER
+      if (GC_all_interior_pointers) {
+        GC_push_all(bottom, top);
+      } else
+#   endif
+    /* else */ {
       GC_push_all_eager(bottom, top);
     }
 # endif

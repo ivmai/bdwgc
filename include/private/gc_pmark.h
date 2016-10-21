@@ -359,7 +359,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
  * if the mark stack overflows.
  */
 
-#if NEED_FIXUP_POINTER
+#ifdef NEED_FIXUP_POINTER
     /* Try both the raw version and the fixed up one.   */
 # define GC_PUSH_ONE_STACK(p, source) \
     do { \
