@@ -237,9 +237,16 @@ void* Undisguise( GC_word i ) {
       *xptr = x;
       x = 0;
 #   endif
-    if (argc != 2 || (0 >= (n = atoi( argv[ 1 ] )))) {
-        GC_printf( "usage: test_cpp number-of-iterations\nAssuming 10 iters\n" );
-        n = 10;}
+    if (argc != 2
+        || (n = atoi(argv[1])) <= 0
+#       ifdef LINT2
+          || n >= (int)(~0U >> 1) - 1
+#       endif
+       ) {
+      GC_printf("usage: test_cpp number-of-iterations\n"
+                "Assuming 10 iters\n");
+      n = 10;
+    }
 
     for (iters = 1; iters <= n; iters++) {
         GC_printf( "Starting iteration %d\n", iters );
