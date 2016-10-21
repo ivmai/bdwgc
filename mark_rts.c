@@ -582,7 +582,8 @@ GC_INNER void GC_push_all_stack_sections(ptr_t lo, ptr_t hi,
 STATIC void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
                                               ptr_t cold_gc_frame)
 {
-  if (!NEED_FIXUP_POINTER && GC_all_interior_pointers) {
+#ifndef NEED_FIXUP_POINTER
+  if (GC_all_interior_pointers) {
     /* Push the hot end of the stack eagerly, so that register values   */
     /* saved inside GC frames are marked before they disappear.         */
     /* The rest of the marking can be deferred until later.             */
@@ -599,7 +600,9 @@ STATIC void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
         GC_push_all(bottom, cold_gc_frame + sizeof(ptr_t));
         GC_push_all_eager(cold_gc_frame, top);
 #   endif /* STACK_GROWS_UP */
-  } else {
+  } else
+#endif
+  /* else */ {
     GC_push_all_eager(bottom, top);
   }
 # ifdef TRACE_BUF
