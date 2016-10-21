@@ -1892,7 +1892,7 @@ GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
   /* GC_DBG_EXTRAS is used by GC debug API functions (unlike GC_EXTRAS  */
   /* used by GC debug API macros) thus GC_RETURN_ADDR_PARENT (pointing  */
   /* to client caller) should be used if possible.                      */
-# ifdef GC_RETURN_ADDR_PARENT
+# ifdef GC_HAVE_RETURN_ADDR_PARENT
 #  define GC_DBG_EXTRAS GC_RETURN_ADDR_PARENT, NULL, 0
 # else
 #  define GC_DBG_EXTRAS GC_RETURN_ADDR, NULL, 0

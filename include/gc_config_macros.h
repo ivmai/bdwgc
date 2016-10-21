@@ -330,6 +330,7 @@
 #   define GC_RETURN_ADDR (GC_word)__builtin_return_address(0)
 #   if (__GNUC__ >= 4) && (defined(__i386__) || defined(__amd64__) \
         || defined(__x86_64__) /* and probably others... */)
+#     define GC_HAVE_RETURN_ADDR_PARENT
 #     define GC_RETURN_ADDR_PARENT \
         (GC_word)__builtin_extract_return_addr(__builtin_return_address(1))
 #   endif

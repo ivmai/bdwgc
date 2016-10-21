@@ -486,7 +486,7 @@ GC_API void GC_CALL GC_debug_register_displacement(size_t offset)
 }
 
 #ifdef GC_ADD_CALLER
-# if defined(HAVE_DLADDR) && defined(GC_RETURN_ADDR_PARENT)
+# if defined(HAVE_DLADDR) && defined(GC_HAVE_RETURN_ADDR_PARENT)
 #   include <dlfcn.h>
 
     STATIC void GC_caller_func_offset(word ad, const char **symp, int *offp)
