@@ -1434,13 +1434,13 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
 /* resources or id anyway.                              */
 GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
 {
+    IF_CANCEL(int cancel_state;)
+    DCL_LOCK_STATE;
+
 #   ifdef DEBUG_THREADS
         GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread = %p\n",
                       (void *)((GC_thread)arg)->id, arg);
 #   endif
-    IF_CANCEL(int cancel_state;)
-    DCL_LOCK_STATE;
-
     LOCK();
     DISABLE_CANCEL(cancel_state);
     GC_wait_for_gc_completion(FALSE);
