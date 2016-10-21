@@ -135,10 +135,10 @@ int main(int argc, char **argv)
 #       endif
 
         if (model < 2 && free_count > 0)
-            printf("%20s: %12.4lf %12lg %12lg\n", model_str[model],
+            printf("%20s: %12.4f %12g %12g\n", model_str[model],
                    free_count/(double)ALLOC_CNT, t, t/free_count);
         else
-            printf("%20s: %12.4lf %12lg %12s\n",
+            printf("%20s: %12.4f %12g %12s\n",
                    model_str[model], 0.0, t, "N/A");
     }
     return 0;
