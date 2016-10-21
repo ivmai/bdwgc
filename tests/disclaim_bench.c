@@ -119,7 +119,7 @@ int main(int argc, char **argv)
     printf("\t\t\tfin. ratio       time/s    time/fin.\n");
     for (model = model_min; model <= model_max; ++model) {
         double t = 0.0;
-#       ifdef CLOCK_TYPE
+#       ifndef NO_CLOCK
             CLOCK_TYPE tI, tF;
 
             GET_TIME(tI);
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
             keep_arr[k] = testobj_new(model);
         }
         GC_gcollect();
-#       ifdef CLOCK_TYPE
+#       ifndef NO_CLOCK
             GET_TIME(tF);
             t = MS_TIME_DIFF(tF, tI)*1e-3;
 #       endif
