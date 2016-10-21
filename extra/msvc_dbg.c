@@ -378,4 +378,9 @@ char** backtrace_symbols(void*const* addresses, int count)
   return symbols;
 }
 
-#endif /* !_M_AMD64 */
+#else
+
+  extern int GC_quiet;
+        /* ANSI C does not allow translation units to be empty. */
+
+#endif /* _M_AMD64 */
