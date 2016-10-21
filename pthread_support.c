@@ -86,7 +86,7 @@
 # ifndef GC_NO_PTHREAD_CANCEL
 #   undef pthread_cancel
 # endif
-# ifdef GC_PTHREAD_EXIT_ATTRIBUTE
+# ifdef GC_HAVE_PTHREAD_EXIT
 #   undef pthread_exit
 # endif
 # undef pthread_join
@@ -100,7 +100,7 @@
 #   ifndef GC_NO_PTHREAD_CANCEL
 #     define pthread_cancel __pthread_cancel
 #   endif
-#   ifdef GC_PTHREAD_EXIT_ATTRIBUTE
+#   ifdef GC_HAVE_PTHREAD_EXIT
 #     define pthread_exit __pthread_exit
 #   endif
 # endif
@@ -119,7 +119,7 @@
 #   ifndef GC_NO_PTHREAD_CANCEL
       int REAL_FUNC(pthread_cancel)(pthread_t);
 #   endif
-#   ifdef GC_PTHREAD_EXIT_ATTRIBUTE
+#   ifdef GC_HAVE_PTHREAD_EXIT
       void REAL_FUNC(pthread_exit)(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
 #   endif
 #else
@@ -148,7 +148,7 @@
         typedef int (* GC_pthread_cancel_t)(pthread_t);
         static GC_pthread_cancel_t REAL_FUNC(pthread_cancel);
 #     endif
-#     ifdef GC_PTHREAD_EXIT_ATTRIBUTE
+#     ifdef GC_HAVE_PTHREAD_EXIT
         typedef void (* GC_pthread_exit_t)(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
         static GC_pthread_exit_t REAL_FUNC(pthread_exit);
 #     endif
@@ -198,12 +198,12 @@
     }
 # endif /* !GC_NO_PTHREAD_CANCEL */
 
-# ifdef GC_PTHREAD_EXIT_ATTRIBUTE
+# ifdef GC_HAVE_PTHREAD_EXIT
     GC_API GC_PTHREAD_EXIT_ATTRIBUTE void GC_pthread_exit(void *retval)
     {
       pthread_exit(retval);
     }
-# endif /* GC_PTHREAD_EXIT_ATTRIBUTE */
+# endif
 #endif /* Linker-based interception. */
 
 #ifdef GC_USE_DLOPEN_WRAP
@@ -242,7 +242,7 @@
       REAL_FUNC(pthread_cancel) = (GC_pthread_cancel_t)
                                     dlsym(dl_handle, "pthread_cancel");
 #   endif
-#   ifdef GC_PTHREAD_EXIT_ATTRIBUTE
+#   ifdef GC_HAVE_PTHREAD_EXIT
       REAL_FUNC(pthread_exit) = (GC_pthread_exit_t)
                                   dlsym(dl_handle, "pthread_exit");
 #   endif
@@ -1384,7 +1384,7 @@ STATIC void GC_unregister_my_thread_inner(GC_thread me)
       GC_ASSERT(GC_getspecific(GC_thread_key) == &me->tlfs);
       GC_destroy_thread_local(&(me->tlfs));
 #   endif
-#   if defined(GC_PTHREAD_EXIT_ATTRIBUTE) || !defined(GC_NO_PTHREAD_CANCEL)
+#   if defined(GC_HAVE_PTHREAD_EXIT) || !defined(GC_NO_PTHREAD_CANCEL)
       /* Handle DISABLED_GC flag which is set by the    */
       /* intercepted pthread_cancel or pthread_exit.    */
       if ((me -> flags & DISABLED_GC) != 0) {
@@ -1540,7 +1540,7 @@ GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
   }
 #endif /* !GC_NO_PTHREAD_CANCEL */
 
-#ifdef GC_PTHREAD_EXIT_ATTRIBUTE
+#ifdef GC_HAVE_PTHREAD_EXIT
   GC_API GC_PTHREAD_EXIT_ATTRIBUTE void WRAP_FUNC(pthread_exit)(void *retval)
   {
     pthread_t self = pthread_self();
@@ -1560,7 +1560,7 @@ GC_API int WRAP_FUNC(pthread_detach)(pthread_t thread)
 
     REAL_FUNC(pthread_exit)(retval);
   }
-#endif /* GC_PTHREAD_EXIT_ATTRIBUTE */
+#endif /* GC_HAVE_PTHREAD_EXIT */
 
 GC_INNER GC_bool GC_in_thread_creation = FALSE;
                                 /* Protected by allocation lock. */

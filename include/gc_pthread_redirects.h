@@ -63,7 +63,7 @@
     GC_API int GC_pthread_cancel(pthread_t);
 # endif
 
-# if defined(GC_PTHREAD_EXIT_ATTRIBUTE) && !defined(GC_PTHREAD_EXIT_DECLARED)
+# if defined(GC_HAVE_PTHREAD_EXIT) && !defined(GC_PTHREAD_EXIT_DECLARED)
 #   define GC_PTHREAD_EXIT_DECLARED
     GC_API void GC_pthread_exit(void *) GC_PTHREAD_EXIT_ATTRIBUTE;
 # endif
@@ -92,7 +92,7 @@
 #   undef pthread_cancel
 #   define pthread_cancel GC_pthread_cancel
 # endif
-# ifdef GC_PTHREAD_EXIT_ATTRIBUTE
+# ifdef GC_HAVE_PTHREAD_EXIT
 #   undef pthread_exit
 #   define pthread_exit GC_pthread_exit
 # endif

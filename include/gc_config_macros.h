@@ -363,14 +363,16 @@
 #   ifndef GC_PTHREAD_CREATE_CONST
 #     define GC_PTHREAD_CREATE_CONST /* empty */
 #   endif
-#   ifndef GC_PTHREAD_EXIT_ATTRIBUTE
+#   ifndef GC_HAVE_PTHREAD_EXIT
+#     define GC_HAVE_PTHREAD_EXIT
 #     define GC_PTHREAD_EXIT_ATTRIBUTE /* empty */
 #   endif
 # endif
 
-# if !defined(GC_PTHREAD_EXIT_ATTRIBUTE) \
+# if !defined(GC_HAVE_PTHREAD_EXIT) \
      && !defined(PLATFORM_ANDROID) && !defined(__ANDROID__) \
      && (defined(GC_LINUX_THREADS) || defined(GC_SOLARIS_THREADS))
+#   define GC_HAVE_PTHREAD_EXIT
     /* Intercept pthread_exit on Linux and Solaris.     */
 #   if defined(__GNUC__) /* since GCC v2.7 */
 #     define GC_PTHREAD_EXIT_ATTRIBUTE __attribute__((__noreturn__))
@@ -381,7 +383,7 @@
 #   endif
 # endif
 
-# if (!defined(GC_PTHREAD_EXIT_ATTRIBUTE) || defined(__native_client__)) \
+# if (!defined(GC_HAVE_PTHREAD_EXIT) || defined(__native_client__)) \
      && !defined(GC_NO_PTHREAD_CANCEL)
     /* Either there is no pthread_cancel() or no need to intercept it.  */
 #   define GC_NO_PTHREAD_CANCEL
