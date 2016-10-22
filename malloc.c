@@ -378,6 +378,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
   /* admittedly quite ugly.                                             */
 # define GC_debug_malloc_replacement(lb) GC_debug_malloc(lb, GC_DBG_EXTRAS)
 
+# if defined(CPPCHECK)
+#   define REDIRECT_MALLOC_F GC_malloc /* e.g. */
+# else
+#   define REDIRECT_MALLOC_F REDIRECT_MALLOC
+# endif
+
   void * malloc(size_t lb)
   {
     /* It might help to manually inline the GC_malloc call here.        */
@@ -390,7 +396,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
       /* inopportune times.                                             */
       if (!EXPECT(GC_is_initialized, TRUE)) return sbrk(lb);
 #   endif
-    return (void *)REDIRECT_MALLOC(lb);
+    return (void *)REDIRECT_MALLOC_F(lb);
   }
 
 # if defined(GC_LINUX_THREADS)
@@ -443,14 +449,14 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
         /* be a way to speed this up.                                   */
       }
 #   endif
-    return (void *)REDIRECT_MALLOC(n * lb);
+    return (void *)REDIRECT_MALLOC_F(n * lb);
   }
 
 # ifndef strdup
     char *strdup(const char *s)
     {
       size_t lb = strlen(s) + 1;
-      char *result = (char *)REDIRECT_MALLOC(lb);
+      char *result = (char *)REDIRECT_MALLOC_F(lb);
       if (result == 0) {
         errno = ENOMEM;
         return 0;
@@ -471,7 +477,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
       size_t len = strlen(str);
       if (len > size)
         len = size;
-      copy = (char *)REDIRECT_MALLOC(len + 1);
+      copy = (char *)REDIRECT_MALLOC_F(len + 1);
       if (copy == NULL) {
         errno = ENOMEM;
         return NULL;
@@ -593,6 +599,13 @@ GC_API void GC_CALL GC_free(void * p)
 #endif
 
 #if defined(REDIRECT_FREE) && !defined(REDIRECT_MALLOC_IN_HEADER)
+
+# if defined(CPPCHECK)
+#   define REDIRECT_FREE_F GC_free /* e.g. */
+# else
+#   define REDIRECT_FREE_F REDIRECT_FREE
+# endif
+
   void free(void * p)
   {
 #   ifndef IGNORE_FREE
@@ -611,7 +624,7 @@ GC_API void GC_CALL GC_free(void * p)
           return;
         }
 #     endif
-      REDIRECT_FREE(p);
+      REDIRECT_FREE_F(p);
 #   endif
   }
 #endif /* REDIRECT_FREE */
