@@ -847,7 +847,7 @@ GC_INNER size_t GC_page_size = 0;
 #       endif
 #   else
       static GC_fault_handler_t old_segv_handler;
-#     ifdef SIGBUS
+#     ifdef HAVE_SIGBUS
         static GC_fault_handler_t old_bus_handler;
 #     endif
 #   endif
@@ -886,7 +886,7 @@ GC_INNER size_t GC_page_size = 0;
 #         endif /* !GC_IRIX_THREADS */
 #       else
           old_segv_handler = signal(SIGSEGV, h);
-#         ifdef SIGBUS
+#         ifdef HAVE_SIGBUS
             old_bus_handler = signal(SIGBUS, h);
 #         endif
 #       endif
@@ -922,7 +922,7 @@ GC_INNER size_t GC_page_size = 0;
 #         endif
 #       else
           (void) signal(SIGSEGV, old_segv_handler);
-#         ifdef SIGBUS
+#         ifdef HAVE_SIGBUS
             (void) signal(SIGBUS, old_bus_handler);
 #         endif
 #       endif

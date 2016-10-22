@@ -2862,6 +2862,10 @@
 # undef MPROTECT_VDB
 #endif
 
+#if defined(SIGBUS) && !defined(HAVE_SIGBUS) && !defined(CPPCHECK)
+# define HAVE_SIGBUS
+#endif
+
 #ifndef SA_SIGINFO
 # define NO_SA_SIGACTION
 #endif
