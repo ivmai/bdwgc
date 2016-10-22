@@ -1223,6 +1223,7 @@
         ptr_t GC_find_limit(ptr_t, GC_bool);
 #       define DATAEND GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
+#       define GC_HAVE_DATAREGION2
 #       define DATASTART2 ((ptr_t)(&edata))
 #       define DATAEND2 ((ptr_t)(&end))
 #   endif
@@ -1650,6 +1651,7 @@
 #        define DATASTART ((ptr_t)((((word)(etext) + 0x3ffff) & ~0x3ffff) \
                                    + ((word)(etext) & 0xffff)))
 #        define DATAEND ((ptr_t)(edata))
+#        define GC_HAVE_DATAREGION2
 #        define DATASTART2 (_DYNAMIC_LINKING \
                ? (ptr_t)(((word)_gp + 0x8000 + 0x3ffff) & ~0x3ffff) \
                : (ptr_t)edata)
@@ -1901,6 +1903,7 @@
         ptr_t GC_find_limit(ptr_t, GC_bool);
 #       define DATAEND GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
+#       define GC_HAVE_DATAREGION2
 #       define DATASTART2 ((ptr_t)(&edata))
 #       define DATAEND2 ((ptr_t)(&end))
 #   endif
