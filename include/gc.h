@@ -1594,8 +1594,14 @@ typedef int (GC_CALLBACK * GC_has_static_roots_func)(
 GC_API void GC_CALL GC_register_has_static_roots_callback(
                                         GC_has_static_roots_func);
 
+#if !defined(CPPCHECK) && !defined(GC_WINDOWS_H_INCLUDED) && defined(WINAPI)
+  /* windows.h is included before gc.h */
+# define GC_WINDOWS_H_INCLUDED
+#endif
+
 #if defined(GC_WIN32_THREADS) \
-    && (!defined(GC_PTHREADS) || defined(GC_BUILD) || defined(WINAPI))
+    && (!defined(GC_PTHREADS) || defined(GC_BUILD) \
+        || defined(GC_WINDOWS_H_INCLUDED))
                 /* Note: for Cygwin and pthreads-win32, this is skipped */
                 /* unless windows.h is included before gc.h.            */
 
@@ -1611,6 +1617,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 
 #   if defined(GC_BUILD) || !defined(GC_DONT_INCLUDE_WINDOWS_H)
 #     include <windows.h>
+#     define GC_WINDOWS_H_INCLUDED
 #   endif
 
 #   ifdef __cplusplus
@@ -1626,7 +1633,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 
 #   ifndef DECLSPEC_NORETURN
       /* Typically defined in winnt.h. */
-#     if defined(WINAPI)
+#     ifdef GC_WINDOWS_H_INCLUDED
 #       define DECLSPEC_NORETURN /* empty */
 #     else
 #       define DECLSPEC_NORETURN __declspec(noreturn)
@@ -1642,7 +1649,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 
 #   ifdef _WIN64
 #     define GC_WIN32_SIZE_T GC_uintptr_t
-#   elif defined(WINAPI) /* windows.h included */
+#   elif defined(GC_WINDOWS_H_INCLUDED)
 #     define GC_WIN32_SIZE_T DWORD
 #   else
 #     define GC_WIN32_SIZE_T unsigned long
@@ -1653,7 +1660,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 #     ifdef GC_UNDERSCORE_STDCALL
 #       define GC_DllMain _GC_DllMain
 #     endif
-#     if defined(WINAPI) /* windows.h included */
+#     ifdef GC_WINDOWS_H_INCLUDED
         GC_API BOOL WINAPI GC_DllMain(HINSTANCE /* inst */,
                                       ULONG /* reason */,
                                       LPVOID /* reserved */);
@@ -1672,7 +1679,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
     /* Currently the collector expects all threads to fall through and  */
     /* terminate normally, or call GC_endthreadex() or GC_ExitThread,   */
     /* so that the thread is properly unregistered.                     */
-#   if defined(WINAPI) /* windows.h included */
+#   ifdef GC_WINDOWS_H_INCLUDED
       GC_API HANDLE WINAPI GC_CreateThread(
                 LPSECURITY_ATTRIBUTES /* lpThreadAttributes */,
                 GC_WIN32_SIZE_T /* dwStackSize */,
