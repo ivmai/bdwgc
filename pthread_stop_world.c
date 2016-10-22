@@ -96,7 +96,7 @@ STATIC void GC_remove_allowed_signals(sigset_t *set)
       /* Handlers write to the thread structure, which is in the heap,  */
       /* and hence can trigger a protection fault.                      */
       if (sigdelset(set, SIGSEGV) != 0
-#         ifdef SIGBUS
+#         ifdef HAVE_SIGBUS
             || sigdelset(set, SIGBUS) != 0
 #         endif
           ) {
