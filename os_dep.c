@@ -1957,7 +1957,7 @@ void GC_register_data_segments(void)
                      ": %p .. %p", (void *)DATASTART, (void *)DATAEND);
         }
         GC_add_roots_inner(DATASTART, DATAEND, FALSE);
-#       if defined(DATASTART2)
+#       ifdef GC_HAVE_DATAREGION2
           if ((word)DATASTART2 - 1U >= (word)DATAEND2)
             ABORT_ARG2("Wrong DATASTART/END2 pair",
                        ": %p .. %p", (void *)DATASTART2, (void *)DATAEND2);

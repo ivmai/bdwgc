@@ -628,7 +628,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
       /* dl_iterate_phdr may forget the static data segment in  */
       /* statically linked executables.                         */
       GC_add_roots_inner(datastart, dataend, TRUE);
-#     if defined(DATASTART2)
+#     ifdef GC_HAVE_DATAREGION2
         if ((word)DATASTART2 - 1U >= (word)DATAEND2) {
                         /* Subtract one to check also for NULL  */
                         /* without a compiler warning.          */
