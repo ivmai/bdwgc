@@ -181,7 +181,11 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 #ifdef GC_COLLECT_AT_MALLOC
   /* Parameter to force GC at every malloc of size greater or equal to  */
   /* the given value.  This might be handy during debugging.            */
-  size_t GC_dbg_collect_at_malloc_min_lb = (GC_COLLECT_AT_MALLOC);
+# if defined(CPPCHECK)
+    size_t GC_dbg_collect_at_malloc_min_lb = 16*1024; /* e.g. */
+# else
+    size_t GC_dbg_collect_at_malloc_min_lb = (GC_COLLECT_AT_MALLOC);
+# endif
 #endif
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)

@@ -2453,7 +2453,7 @@ GC_INNER void GC_thr_init(void)
           }
           markers = ncpu;
 #       endif
-#       ifdef GC_MIN_MARKERS
+#       if defined(GC_MIN_MARKERS) && !defined(CPPCHECK)
           /* This is primarily for testing on systems without getenv(). */
           if (markers < GC_MIN_MARKERS)
             markers = GC_MIN_MARKERS;

@@ -71,13 +71,13 @@ word GC_gc_no = 0;
   int GC_parallel = FALSE;      /* By default, parallel GC is off.      */
 #endif
 
-#ifndef GC_FULL_FREQ
-# define GC_FULL_FREQ 19   /* Every 20th collection is a full   */
+#if defined(GC_FULL_FREQ) && !defined(CPPCHECK)
+  int GC_full_freq = GC_FULL_FREQ;
+#else
+  int GC_full_freq = 19;   /* Every 20th collection is a full   */
                            /* collection, whether we need it    */
                            /* or not.                           */
 #endif
-
-int GC_full_freq = GC_FULL_FREQ;
 
 STATIC GC_bool GC_need_full_gc = FALSE;
                            /* Need full GC do to heap growth.   */
@@ -119,23 +119,24 @@ GC_API unsigned GC_CALL GC_get_version(void)
   int GC_dont_expand = FALSE;
 #endif
 
-#ifndef GC_FREE_SPACE_DIVISOR
-# define GC_FREE_SPACE_DIVISOR 3 /* must be > 0 */
+#if defined(GC_FREE_SPACE_DIVISOR) && !defined(CPPCHECK)
+  word GC_free_space_divisor = GC_FREE_SPACE_DIVISOR; /* must be > 0 */
+#else
+  word GC_free_space_divisor = 3;
 #endif
-
-word GC_free_space_divisor = GC_FREE_SPACE_DIVISOR;
 
 GC_INNER int GC_CALLBACK GC_never_stop_func(void)
 {
   return(0);
 }
 
-#ifndef GC_TIME_LIMIT
-# define GC_TIME_LIMIT 50  /* We try to keep pause times from exceeding  */
+#if defined(GC_TIME_LIMIT) && !defined(CPPCHECK)
+  unsigned long GC_time_limit = GC_TIME_LIMIT;
+                           /* We try to keep pause times from exceeding  */
                            /* this by much. In milliseconds.             */
+#else
+  unsigned long GC_time_limit = 50;
 #endif
-
-unsigned long GC_time_limit = GC_TIME_LIMIT;
 
 #ifndef NO_CLOCK
   STATIC CLOCK_TYPE GC_start_time = 0;

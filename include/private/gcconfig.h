@@ -3105,7 +3105,7 @@
 # endif
 #endif
 #ifdef SAVE_CALL_CHAIN
-# ifndef SAVE_CALL_COUNT
+# if !defined(SAVE_CALL_COUNT) || defined(CPPCHECK)
 #   define NFRAMES 6    /* Number of frames to save. Even for   */
                         /* alignment reasons.                   */
 # else
@@ -3139,7 +3139,11 @@
 #endif
 
 #if !defined(FIXUP_POINTER) && defined(POINTER_MASK)
-# define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
+# if defined(CPPCHECK)
+#   define FIXUP_POINTER(p) (p = (p) << 4) /* e.g. */
+# else
+#   define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
+# endif
 #endif
 
 #if defined(FIXUP_POINTER)

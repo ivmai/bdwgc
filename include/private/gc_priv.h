@@ -93,7 +93,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #ifndef SIZE_MAX
 # include <limits.h>
 #endif
-#ifdef SIZE_MAX
+#if defined(SIZE_MAX) && !defined(CPPCHECK)
 # define GC_SIZE_MAX SIZE_MAX
 #else
 # define GC_SIZE_MAX (~(size_t)0)
@@ -614,7 +614,8 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #     define GC_MACH_THREAD_STATE       x86_THREAD_STATE64
 #     define GC_MACH_THREAD_STATE_COUNT x86_THREAD_STATE64_COUNT
 #   endif
-# elif defined(ARM32) && defined(ARM_UNIFIED_THREAD_STATE)
+# elif defined(ARM32) && defined(ARM_UNIFIED_THREAD_STATE) \
+       && !defined(CPPCHECK)
 #   define GC_THREAD_STATE_T            arm_unified_thread_state_t
 #   define GC_MACH_THREAD_STATE         ARM_UNIFIED_THREAD_STATE
 #   define GC_MACH_THREAD_STATE_COUNT   ARM_UNIFIED_THREAD_STATE_COUNT
@@ -2463,7 +2464,7 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #   ifndef GC_OPENBSD_UTHREADS
 #     define SIG_SUSPEND SIGXFSZ
 #   endif
-# elif defined(_SIGRTMIN)
+# elif defined(_SIGRTMIN) && !defined(CPPCHECK)
 #   define SIG_SUSPEND _SIGRTMIN + 6
 # else
 #   define SIG_SUSPEND SIGRTMIN + 6
