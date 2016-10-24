@@ -59,7 +59,7 @@ typedef void * GC_PTR;  /* preserved only for backward compatibility    */
 /* better choices.  But those had incorrect definitions on some older   */
 /* systems.  Notably "typedef int size_t" is WRONG.                     */
 #ifdef _WIN64
-# ifdef __int64
+# if defined(__int64) && !defined(CPPCHECK)
     typedef unsigned __int64 GC_word;
     typedef __int64 GC_signed_word;
 # else
@@ -1833,14 +1833,14 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
   /* This is for debugging only (useful if environment variables are    */
   /* unsupported); cannot call GC_disable as goes before GC_init.       */
 # define GC_INIT_CONF_MAX_RETRIES (void)(GC_dont_gc = 1)
-#elif defined(GC_MAX_RETRIES)
+#elif defined(GC_MAX_RETRIES) && !defined(CPPCHECK)
   /* Set GC_max_retries to the desired value at start-up */
 # define GC_INIT_CONF_MAX_RETRIES GC_set_max_retries(GC_MAX_RETRIES)
 #else
 # define GC_INIT_CONF_MAX_RETRIES /* empty */
 #endif
 
-#ifdef GC_FREE_SPACE_DIVISOR
+#if defined(GC_FREE_SPACE_DIVISOR) && !defined(CPPCHECK)
   /* Set GC_free_space_divisor to the desired value at start-up */
 # define GC_INIT_CONF_FREE_SPACE_DIVISOR \
                 GC_set_free_space_divisor(GC_FREE_SPACE_DIVISOR)
@@ -1848,34 +1848,34 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 # define GC_INIT_CONF_FREE_SPACE_DIVISOR /* empty */
 #endif
 
-#ifdef GC_FULL_FREQ
+#if defined(GC_FULL_FREQ) && !defined(CPPCHECK)
   /* Set GC_full_freq to the desired value at start-up */
 # define GC_INIT_CONF_FULL_FREQ GC_set_full_freq(GC_FULL_FREQ)
 #else
 # define GC_INIT_CONF_FULL_FREQ /* empty */
 #endif
 
-#ifdef GC_TIME_LIMIT
+#if defined(GC_TIME_LIMIT) && !defined(CPPCHECK)
   /* Set GC_time_limit to the desired value at start-up */
 # define GC_INIT_CONF_TIME_LIMIT GC_set_time_limit(GC_TIME_LIMIT)
 #else
 # define GC_INIT_CONF_TIME_LIMIT /* empty */
 #endif
 
-#if defined(GC_SIG_SUSPEND) && defined(GC_THREADS)
+#if defined(GC_SIG_SUSPEND) && defined(GC_THREADS) && !defined(CPPCHECK)
 # define GC_INIT_CONF_SUSPEND_SIGNAL GC_set_suspend_signal(GC_SIG_SUSPEND)
 #else
 # define GC_INIT_CONF_SUSPEND_SIGNAL /* empty */
 #endif
 
-#if defined(GC_SIG_THR_RESTART) && defined(GC_THREADS)
+#if defined(GC_SIG_THR_RESTART) && defined(GC_THREADS) && !defined(CPPCHECK)
 # define GC_INIT_CONF_THR_RESTART_SIGNAL \
                 GC_set_thr_restart_signal(GC_SIG_THR_RESTART)
 #else
 # define GC_INIT_CONF_THR_RESTART_SIGNAL /* empty */
 #endif
 
-#ifdef GC_MAXIMUM_HEAP_SIZE
+#if defined(GC_MAXIMUM_HEAP_SIZE) && !defined(CPPCHECK)
   /* Limit the heap size to the desired value (useful for debugging).   */
   /* The limit could be overridden either at the program start-up by    */
   /* the similar environment variable or anytime later by the           */
@@ -1893,7 +1893,7 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 # define GC_INIT_CONF_IGNORE_WARN /* empty */
 #endif
 
-#ifdef GC_INITIAL_HEAP_SIZE
+#if defined(GC_INITIAL_HEAP_SIZE) && !defined(CPPCHECK)
   /* Set heap size to the desired value at start-up */
 # define GC_INIT_CONF_INITIAL_HEAP_SIZE \
                 { size_t heap_size = GC_get_heap_size(); \

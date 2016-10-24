@@ -870,7 +870,7 @@ GC_API void GC_CALL GC_init(void)
       }
 #   endif
 
-#   ifdef GC_INITIAL_HEAP_SIZE
+#   if defined(GC_INITIAL_HEAP_SIZE) && !defined(CPPCHECK)
       initial_heap_sz = GC_INITIAL_HEAP_SIZE;
 #   else
       initial_heap_sz = MINHINCR * HBLKSIZE;

@@ -1211,7 +1211,7 @@ GC_INNER size_t GC_page_size = 0;
           ptr_t sp = GC_approx_sp();
 #         ifdef STACK_GROWS_DOWN
             result = GC_find_limit(sp, TRUE);
-#           ifdef HEURISTIC2_LIMIT
+#           if defined(HEURISTIC2_LIMIT) && !defined(CPPCHECK)
               if ((word)result > (word)HEURISTIC2_LIMIT
                   && (word)sp < (word)HEURISTIC2_LIMIT) {
                 result = HEURISTIC2_LIMIT;
@@ -1219,7 +1219,7 @@ GC_INNER size_t GC_page_size = 0;
 #           endif
 #         else
             result = GC_find_limit(sp, FALSE);
-#           ifdef HEURISTIC2_LIMIT
+#           if defined(HEURISTIC2_LIMIT) && !defined(CPPCHECK)
               if ((word)result < (word)HEURISTIC2_LIMIT
                   && (word)sp > (word)HEURISTIC2_LIMIT) {
                 result = HEURISTIC2_LIMIT;
@@ -2028,7 +2028,7 @@ void GC_register_data_segments(void)
 
 #ifdef USE_MMAP_ANON
 # define zero_fd -1
-# if defined(MAP_ANONYMOUS)
+# if defined(MAP_ANONYMOUS) && !defined(CPPCHECK)
 #   define OPT_MAP_ANON MAP_ANONYMOUS
 # else
 #   define OPT_MAP_ANON MAP_ANON

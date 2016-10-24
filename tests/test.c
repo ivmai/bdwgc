@@ -1517,7 +1517,7 @@ void check_heap_stats(void)
 #       ifdef SAVE_CALL_CHAIN
             max_heap_sz *= 3;
 #           ifdef SAVE_CALL_COUNT
-                max_heap_sz += max_heap_sz * SAVE_CALL_COUNT/4;
+                max_heap_sz += max_heap_sz * NFRAMES / 4;
 #           endif
 #       endif
 #   endif

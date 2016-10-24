@@ -136,7 +136,7 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
 #ifndef SIG_THR_RESTART
 # if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) \
      || defined(GC_NETBSD_THREADS) || defined(GC_USESIGRT_SIGNALS)
-#   ifdef _SIGRTMIN
+#   if defined(_SIGRTMIN) && !defined(CPPCHECK)
 #     define SIG_THR_RESTART _SIGRTMIN + 5
 #   else
 #     define SIG_THR_RESTART SIGRTMIN + 5
@@ -388,15 +388,15 @@ STATIC void GC_restart_handler(int sig)
 # endif /* !USE_TKILL_ON_ANDROID */
 
 # ifdef GC_ENABLE_SUSPEND_THREAD
-#   ifndef GC_TIME_LIMIT
-#     define GC_TIME_LIMIT 50
-#   endif
-
     STATIC void GC_brief_async_signal_safe_sleep(void)
     {
       struct timeval tv;
       tv.tv_sec = 0;
-      tv.tv_usec = 1000 * GC_TIME_LIMIT / 2;
+#     if defined(GC_TIME_LIMIT) && !defined(CPPCHECK)
+        tv.tv_usec = 1000 * GC_TIME_LIMIT / 2;
+#     else
+        tv.tv_usec = 1000 * 50 / 2;
+#     endif
       select(0, 0, 0, 0, &tv);
     }
 

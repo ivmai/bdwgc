@@ -689,8 +689,13 @@ GC_FirstDLOpenedLinkMap(void)
     }
     if( cachedResult == 0 ) {
 #     if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
+#       if defined(CPPCHECK)
+#         define GC_RTLD_DI_LINKMAP 2
+#       else
+#         define GC_RTLD_DI_LINKMAP RTLD_DI_LINKMAP
+#       endif
         struct link_map *lm = NULL;
-        if (!dlinfo(RTLD_SELF, RTLD_DI_LINKMAP, &lm) && lm != NULL) {
+        if (!dlinfo(RTLD_SELF, GC_RTLD_DI_LINKMAP, &lm) && lm != NULL) {
             /* Now lm points link_map object of libgc.  Since it    */
             /* might not be the first dynamically linked object,    */
             /* try to find it (object next to the main object).     */

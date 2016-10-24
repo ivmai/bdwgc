@@ -1189,7 +1189,7 @@ GC_INNER void GC_thr_init(void)
           }
         } else {
           markers = GC_nprocs;
-#         ifdef GC_MIN_MARKERS
+#         if defined(GC_MIN_MARKERS) && !defined(CPPCHECK)
             /* This is primarily for targets without getenv().  */
             if (markers < GC_MIN_MARKERS)
               markers = GC_MIN_MARKERS;

@@ -172,13 +172,19 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
         arm_unified_thread_state_t unified_state;
         mach_msg_type_number_t unified_thread_state_count
                                         = ARM_UNIFIED_THREAD_STATE_COUNT;
-
-        kern_result = thread_get_state(thread, ARM_UNIFIED_THREAD_STATE,
+#       if defined(CPPCHECK)
+#         define GC_ARM_UNIFIED_THREAD_STATE 1
+#       else
+#         define GC_ARM_UNIFIED_THREAD_STATE ARM_UNIFIED_THREAD_STATE
+#       endif
+        kern_result = thread_get_state(thread, GC_ARM_UNIFIED_THREAD_STATE,
                                        (natural_t *)&unified_state,
                                        &unified_thread_state_count);
-        if (unified_state.ash.flavor != ARM_THREAD_STATE32) {
-          ABORT("unified_state flavor should be ARM_THREAD_STATE32");
-        }
+#       if !defined(CPPCHECK)
+          if (unified_state.ash.flavor != ARM_THREAD_STATE32) {
+            ABORT("unified_state flavor should be ARM_THREAD_STATE32");
+          }
+#       endif
         state = unified_state.ts_32;
       } else
 #   endif
