@@ -495,6 +495,9 @@ STATIC mse * GC_array_mark_proc(word * addr, mse * mark_stack_ptr,
                                                     mark_stack_ptr,
                                                     mark_stack_limit-1);
     if (new_mark_stack_ptr == 0) {
+        /* Explicitly instruct Clang Static Analyzer that ptr is non-null. */
+        if (NULL == mark_stack_ptr) ABORT("Bad mark_stack_ptr");
+
         /* Doesn't fit.  Conservatively push the whole array as a unit  */
         /* and request a mark stack expansion.                          */
         /* This cannot cause a mark stack overflow, since it replaces   */
