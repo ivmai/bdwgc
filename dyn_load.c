@@ -621,7 +621,8 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 #     else
         dataend = DATAEND;
 #     endif
-      if (NULL == datastart || (word)datastart > (word)dataend)
+      if (NULL == *(char * volatile *)&datastart
+          || (word)datastart > (word)dataend)
         ABORT_ARG2("Wrong DATASTART/END pair",
                    ": %p .. %p", (void *)datastart, (void *)dataend);
 
