@@ -1617,6 +1617,10 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         plast_stack_min = (ptr_t * /* no volatile */)
                             &dll_thread_table[i].last_stack_min;
         current_min = s;
+#       if defined(CPPCHECK)
+          /* To avoid a warning that thread is always null.     */
+          thread = (GC_thread)&dll_thread_table[i];
+#       endif
       }
     }
   } else {
