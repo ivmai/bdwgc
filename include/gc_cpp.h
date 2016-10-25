@@ -432,7 +432,7 @@ inline gc_cleanup::gc_cleanup()
   if (base != 0) {
     // Don't call the debug version, since this is a real base address.
     GC_register_finalizer_ignore_self(base, (GC_finalization_proc) cleanup,
-                                      (void*) (((char*) this) - (char*) base),
+                                      (void*) ((char*) this - (char*) base),
                                       &oldProc, &oldData);
     if (oldProc != 0) {
       GC_register_finalizer_ignore_self(base, oldProc, oldData, 0, 0);
