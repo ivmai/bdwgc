@@ -142,6 +142,9 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #   endif
 
   } else if (thread_blocked) {
+#   if defined(CPPCHECK)
+      if (NULL == p) ABORT("Invalid GC_thread passed to GC_stack_range_for");
+#   endif
     lo = p->stop_info.stack_ptr;
 #   ifndef DARWIN_DONT_PARSE_STACK
       *phi = p->topOfStack;
