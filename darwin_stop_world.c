@@ -130,7 +130,8 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 /* bound and sets *phi to the upper one.                                */
 STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
                                 GC_bool thread_blocked, mach_port_t my_thread,
-                                ptr_t *paltstack_lo, ptr_t *paltstack_hi)
+                                ptr_t *paltstack_lo,
+                                ptr_t *paltstack_hi GC_ATTR_UNUSED)
 {
   ptr_t lo;
   if (thread == my_thread) {
@@ -311,13 +312,18 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
     /* p is guaranteed to be non-NULL regardless of GC_query_task_threads. */
     *phi = (p->flags & MAIN_THREAD) != 0 ? GC_stackbottom : p->stack_end;
 # endif
+
+  /* TODO: Determine p and handle altstack if !DARWIN_DONT_PARSE_STACK */
+# ifdef DARWIN_DONT_PARSE_STACK
   if (p->altstack != NULL && (word)p->altstack <= (word)lo
       && (word)lo <= (word)p->altstack + p->altstack_size) {
     *paltstack_lo = lo;
     *paltstack_hi = p->altstack + p->altstack_size;
     lo = p->stack;
     *phi = p->stack + p->stack_size;
-  } else {
+  } else
+# endif
+  /* else */ {
     *paltstack_lo = NULL;
   }
 # ifdef DEBUG_THREADS
@@ -360,10 +366,7 @@ GC_INNER void GC_push_all_stacks(void)
           total_size += hi - lo;
           GC_push_all_stack(lo, hi);
         }
-        if (altstack_lo) {
-          total_size += altstack_hi - altstack_lo;
-          GC_push_all_stack(altstack_lo, altstack_hi);
-        }
+        /* TODO: Handle altstack */
         nthreads++;
         if (thread == my_thread)
           found_me = TRUE;
