@@ -869,7 +869,7 @@ void CORD__prev(register CORD_pos p)
 
 char CORD_pos_fetch(register CORD_pos p)
 {
-    if (p[0].cur_start <= p[0].cur_pos && p[0].cur_pos < p[0].cur_end) {
+    if (p[0].cur_end != 0) {
         return(p[0].cur_leaf[p[0].cur_pos - p[0].cur_start]);
     } else {
         return(CORD__pos_fetch(p));
@@ -878,7 +878,7 @@ char CORD_pos_fetch(register CORD_pos p)
 
 void CORD_next(CORD_pos p)
 {
-    if (p[0].cur_pos < p[0].cur_end - 1) {
+    if (p[0].cur_pos + 1 < p[0].cur_end) {
         p[0].cur_pos++;
     } else {
         CORD__next(p);
