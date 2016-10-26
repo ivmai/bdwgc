@@ -1714,15 +1714,11 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
       GC_printf("Switched to incremental mode\n");
 #     if defined(MPROTECT_VDB)
         GC_printf("Emulating dirty bits with mprotect/signals\n");
-#     else
-#       ifdef PROC_VDB
-          GC_printf("Reading dirty bits from /proc\n");
-#       elif defined(GWW_VDB)
-          GC_printf("Using GetWriteWatch-based implementation\n");
-#       else
-          GC_printf("Using DEFAULT_VDB dirty bit implementation\n");
-#       endif
-#      endif
+#     elif defined(PROC_VDB)
+        GC_printf("Reading dirty bits from /proc\n");
+#     else /* GWW_VDB */
+        GC_printf("Using GetWriteWatch-based implementation\n");
+#     endif
 #   endif
     run_one_test();
     check_heap_stats();
@@ -1978,20 +1974,12 @@ int main(void)
         }
 #   endif
     n_tests = 0;
-#   if (defined(MPROTECT_VDB)) && !defined(REDIRECT_MALLOC) \
+#   if defined(MPROTECT_VDB) && !defined(REDIRECT_MALLOC) \
             && !defined(MAKE_BACK_GRAPH) && !defined(USE_PROC_FOR_LIBRARIES) \
             && !defined(NO_INCREMENTAL)
         GC_enable_incremental();
         GC_printf("Switched to incremental mode\n");
-#     if defined(MPROTECT_VDB)
         GC_printf("Emulating dirty bits with mprotect/signals\n");
-#     else
-#       ifdef PROC_VDB
-          GC_printf("Reading dirty bits from /proc\n");
-#       else
-          GC_printf("Using DEFAULT_VDB dirty bit implementation\n");
-#       endif
-#     endif
 #   endif
     GC_set_warn_proc(warn_proc);
     if ((code = pthread_key_create(&fl_key, 0)) != 0) {
