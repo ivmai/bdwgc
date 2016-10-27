@@ -254,7 +254,7 @@ void* Undisguise( GC_word i ) {
     if (argc != 2
         || (n = atoi(argv[1])) <= 0
 #       ifdef LINT2
-          || n >= (((unsigned)-1) >> 1) - 1
+          || n >= (int)(~0U >> 1) - 1
 #       endif
        ) {
       GC_printf("usage: test_cpp number-of-iterations\n"
