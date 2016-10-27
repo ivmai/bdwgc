@@ -552,9 +552,11 @@ void generic_init(void)
     if ((f = fopen(arg_file_name, "rb")) == NULL) {
         initial = "\n";
     } else {
+        size_t len;
+
         initial = CORD_from_file(f);
-        if (initial == CORD_EMPTY
-            || CORD_fetch(initial, CORD_len(initial)-1) != '\n') {
+        len = CORD_len(initial);
+        if (0 == len || CORD_fetch(initial, len - 1) != '\n') {
             initial = CORD_cat(initial, "\n");
         }
     }
