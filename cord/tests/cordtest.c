@@ -13,12 +13,15 @@
 
 # include "gc.h"    /* For GC_INIT() only */
 # include "cord.h"
+
+# include <stdarg.h>
 # include <string.h>
 # include <stdio.h>
 # include <stdlib.h>
+
 /* This is a very incomplete test of the cord package.  It knows about  */
 /* a few internals of the package (e.g. when C strings are returned)    */
-/* that real clients shouldn't rely on.                 */
+/* that real clients shouldn't rely on.                                 */
 
 # define ABORT(string) \
     { fprintf(stderr, "FAILED: %s\n", string); abort(); }
@@ -206,6 +209,28 @@ void test_extras(void)
     }
 }
 
+int wrap_vprintf(CORD format, ...)
+{
+    va_list args;
+    int result;
+
+    va_start(args, format);
+    result = CORD_vprintf(format, args);
+    va_end(args);
+    return result;
+}
+
+int wrap_vfprintf(FILE * f, CORD format, ...)
+{
+    va_list args;
+    int result;
+
+    va_start(args, format);
+    result = CORD_vfprintf(f, format, args);
+    va_end(args);
+    return result;
+}
+
 #if defined(__DJGPP__) || defined(__STRICT_ANSI__)
   /* snprintf is missing in DJGPP (v2.0.3) */
 #else
@@ -251,6 +276,10 @@ void test_printf(void)
 #   endif
     result2[sizeof(result2) - 1] = '\0';
     if (CORD_cmp(result, result2) != 0)ABORT("CORD_sprintf goofed 5");
+    /* TODO: Better test CORD_[v][f]printf.     */
+    (void)CORD_printf(CORD_EMPTY);
+    (void)wrap_vfprintf(stdout, CORD_EMPTY);
+    (void)wrap_vprintf(CORD_EMPTY);
 }
 
 int main(void)
