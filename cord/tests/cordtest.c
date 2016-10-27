@@ -26,6 +26,16 @@
 # define ABORT(string) \
     { fprintf(stderr, "FAILED: %s\n", string); abort(); }
 
+#if defined(CPPCHECK)
+# undef CORD_iter
+# undef CORD_next
+# undef CORD_pos_fetch
+# undef CORD_pos_to_cord
+# undef CORD_pos_to_index
+# undef CORD_pos_valid
+# undef CORD_prev
+#endif
+
 int count;
 
 int test_fn(char c, void * client_data)
@@ -122,6 +132,15 @@ void test_basics(void)
     CORD_next(p); i++;
     }
     if (i != 13) ABORT("Bad apparent length for function node");
+#   if defined(CPPCHECK)
+        /* TODO: Actually test these functions. */
+        CORD_prev(p);
+        (void)CORD_pos_to_cord(p);
+        (void)CORD_pos_to_index(p);
+        (void)CORD_iter(CORD_EMPTY, test_fn, NULL);
+        (void)CORD_riter(CORD_EMPTY, test_fn, NULL);
+        CORD_dump(y);
+#   endif
 }
 
 void test_extras(void)
