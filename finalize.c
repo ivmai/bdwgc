@@ -631,7 +631,6 @@ STATIC void GC_register_finalizer_inner(void * obj,
                                         GC_finalization_proc *ofn, void **ocd,
                                         finalization_mark_proc mp)
 {
-    ptr_t base;
     struct finalizable_object * curr_fo;
     size_t index;
     struct finalizable_object *new_fo = 0;
@@ -647,22 +646,21 @@ STATIC void GC_register_finalizer_inner(void * obj,
                            1 << (unsigned)log_fo_table_size);
     }
     /* in the THREADS case we hold allocation lock.             */
-    base = (ptr_t)obj;
     for (;;) {
       struct finalizable_object *prev_fo = NULL;
       GC_oom_func oom_fn;
 
-      index = HASH2(base, log_fo_table_size);
+      index = HASH2(obj, log_fo_table_size);
       curr_fo = GC_fnlz_roots.fo_head[index];
       while (curr_fo != 0) {
         GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
-        if (curr_fo -> fo_hidden_base == GC_HIDE_POINTER(base)) {
+        if (curr_fo -> fo_hidden_base == GC_HIDE_POINTER(obj)) {
           /* Interruption by a signal in the middle of this     */
           /* should be safe.  The client may see only *ocd      */
           /* updated, but we'll declare that to be his problem. */
           if (ocd) *ocd = (void *) (curr_fo -> fo_client_data);
           if (ofn) *ofn = curr_fo -> fo_fn;
-          /* Delete the structure for base. */
+          /* Delete the structure for obj.      */
           if (prev_fo == 0) {
             GC_fnlz_roots.fo_head[index] = fo_next(curr_fo);
           } else {
@@ -711,7 +709,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
         UNLOCK();
         return;
       }
-      GET_HDR(base, hhdr);
+      GET_HDR(obj, hhdr);
       if (EXPECT(0 == hhdr, FALSE)) {
         /* We won't collect it, hence finalizer wouldn't be run. */
         if (ocd) *ocd = 0;
@@ -739,7 +737,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
     GC_ASSERT(GC_size(new_fo) >= sizeof(struct finalizable_object));
     if (ocd) *ocd = 0;
     if (ofn) *ofn = 0;
-    new_fo -> fo_hidden_base = GC_HIDE_POINTER(base);
+    new_fo -> fo_hidden_base = GC_HIDE_POINTER(obj);
     new_fo -> fo_fn = fn;
     new_fo -> fo_client_data = (ptr_t)cd;
     new_fo -> fo_object_size = hhdr -> hb_sz;
