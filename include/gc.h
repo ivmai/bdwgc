@@ -1518,6 +1518,15 @@ GC_API void * GC_CALL GC_is_valid_displacement(void * /* p */);
 /* Defined only if the library has been compiled without NO_DEBUGGING.  */
 GC_API void GC_CALL GC_dump(void);
 
+/* Dump information about each block of every GC memory section.        */
+/* Defined only if the library has been compiled without NO_DEBUGGING.  */
+GC_API void GC_CALL GC_dump_regions(void);
+
+/* Dump information about every registered disappearing link and        */
+/* finalizable object.                                                  */
+/* Defined only if the library has been compiled without NO_DEBUGGING.  */
+GC_API void GC_CALL GC_dump_finalization(void);
+
 /* Safer, but slow, pointer addition.  Probably useful mainly with      */
 /* a preprocessor.  Useful only for heap pointers.                      */
 /* Only the macros without trailing digits are meant to be used         */

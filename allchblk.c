@@ -167,7 +167,7 @@ static int free_list_index_of(hdr *wanted)
     return -1;
 }
 
-void GC_dump_regions(void)
+GC_API void GC_CALL GC_dump_regions(void)
 {
     unsigned i;
 

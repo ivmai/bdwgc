@@ -807,7 +807,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     }
   }
 
-  void GC_dump_finalization(void)
+  GC_API void GC_CALL GC_dump_finalization(void)
   {
     struct finalizable_object * curr_fo;
     size_t fo_size = log_fo_table_size == -1 ? 0 :
