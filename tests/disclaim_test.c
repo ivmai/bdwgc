@@ -20,7 +20,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef HAVE_CONFIG_H
+#ifdef LINT2
+  /* For GC_random() */
+# include "private/gc_priv.h"
+# undef rand
+# define rand() (int)GC_random()
+#elif defined(HAVE_CONFIG_H)
   /* For GC_[P]THREADS */
 # include "config.h"
 #endif

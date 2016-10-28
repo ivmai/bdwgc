@@ -20,6 +20,11 @@
 
 #include "gc_disclaim.h"
 
+#ifdef LINT2
+# undef rand
+# define rand() (int)GC_random()
+#endif
+
 #define my_assert(e) \
     if (!(e)) { \
         fprintf(stderr, "Assertion failure, line %d: " #e "\n", __LINE__); \

@@ -1997,6 +1997,11 @@ GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
   GC_INNER void GC_generate_random_backtrace_no_gc(void);
 #endif
 
+#ifdef LINT2
+# define GC_RAND_MAX (~0U >> 1)
+  GC_API_PRIV long GC_random(void);
+#endif
+
 GC_EXTERN GC_bool GC_print_back_height;
 
 #ifdef MAKE_BACK_GRAPH

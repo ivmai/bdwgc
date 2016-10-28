@@ -54,9 +54,24 @@
   }
 #endif /* !SHORT_DBG_HDRS */
 
+#ifdef LINT2
+  long GC_random(void)
+  {
+    static unsigned seed = 1; /* not thread-safe */
+
+    /* Linear congruential pseudo-random numbers generator.     */
+    seed = (seed * 1103515245U + 12345) & GC_RAND_MAX; /* overflow is ok */
+    return (long)seed;
+  }
+#endif
+
 #ifdef KEEP_BACK_PTRS
 
+#ifdef LINT2
+# define RANDOM() GC_random()
+#else
 # include <stdlib.h>
+# define GC_RAND_MAX RAND_MAX
 
 # if defined(__GLIBC__) || defined(SOLARIS) \
      || defined(HPUX) || defined(IRIX5) || defined(OSF1)
@@ -64,6 +79,7 @@
 # else
 #   define RANDOM() (long)rand()
 # endif
+#endif /* !LINT2 */
 
   /* Store back pointer to source in dest, if that appears to be possible. */
   /* This is not completely safe, since we may mistakenly conclude that    */
@@ -144,8 +160,8 @@
     size_t i;
     word heap_offset = RANDOM();
 
-    if (GC_heapsize > RAND_MAX) {
-        heap_offset *= RAND_MAX;
+    if (GC_heapsize > GC_RAND_MAX) {
+        heap_offset *= GC_RAND_MAX;
         heap_offset += RANDOM();
     }
     heap_offset %= GC_heapsize;
