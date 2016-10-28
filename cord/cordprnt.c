@@ -172,6 +172,20 @@ static int extract_conv_spec(CORD_pos source, char *buf,
     return(result);
 }
 
+#if defined(DJGPP) || defined(__STRICT_ANSI__)
+  /* vsnprintf is missing in DJGPP (v2.0.3) */
+# define GC_VSNPRINTF(buf, bufsz, format, args) vsprintf(buf, format, args)
+#elif defined(_MSC_VER)
+# ifdef MSWINCE
+    /* _vsnprintf is deprecated in WinCE */
+#   define GC_VSNPRINTF StringCchVPrintfA
+# else
+#   define GC_VSNPRINTF _vsnprintf
+# endif
+#else
+# define GC_VSNPRINTF vsnprintf
+#endif
+
 int CORD_vsprintf(CORD * out, CORD format, va_list args)
 {
     CORD_ec result;
@@ -328,7 +342,8 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                             res = -1;
                     }
                     if (0 == res)
-                      res = vsprintf(buf, conv_spec, vsprintf_args);
+                      res = GC_VSNPRINTF(buf, max_size + 1, conv_spec,
+                                         vsprintf_args);
 #                   if defined(CPPCHECK) || defined(__va_copy) \
                        || (defined(__GNUC__) && !defined(__DJGPP__) \
                            && !defined(__EMX__))
