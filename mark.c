@@ -649,13 +649,6 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                 || (word)(current_p + descr)
                             <= (word)GC_least_plausible_heap_addr
                 || (word)current_p >= (word)GC_greatest_plausible_heap_addr);
-#         ifdef ENABLE_TRACE
-            if ((word)GC_trace_addr >= (word)current_p
-                && (word)GC_trace_addr < (word)(current_p + descr)) {
-              GC_log_printf("GC #%u: large section; start %p, len %lu\n",
-                        (unsigned)GC_gc_no, current_p, (unsigned long)descr);
-            }
-#         endif /* ENABLE_TRACE */
 #         ifdef PARALLEL_MARK
 #           define SHARE_BYTES 2048
             if (descr > SHARE_BYTES && GC_parallel
@@ -669,10 +662,13 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #             ifdef ENABLE_TRACE
                 if ((word)GC_trace_addr >= (word)current_p
                     && (word)GC_trace_addr < (word)(current_p + descr)) {
-                  GC_log_printf("GC #%u: splitting (parallel) %p at %p\n",
-                        (unsigned)GC_gc_no, current_p, current_p + new_size);
+                  GC_log_printf("GC #%u: large section; start %p, len %lu,"
+                                " splitting (parallel) at %p\n",
+                                (unsigned)GC_gc_no, (void *)current_p,
+                                (unsigned long)descr,
+                                (void *)(current_p + new_size));
                 }
-#             endif /* ENABLE_TRACE */
+#             endif
               current_p += new_size;
               descr -= new_size;
               goto retry;
@@ -685,10 +681,12 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #         ifdef ENABLE_TRACE
             if ((word)GC_trace_addr >= (word)current_p
                 && (word)GC_trace_addr < (word)(current_p + descr)) {
-              GC_log_printf("GC #%u: splitting %p at %p\n",
-                            (unsigned)GC_gc_no, current_p, limit);
+              GC_log_printf("GC #%u: large section; start %p, len %lu,"
+                            " splitting at %p\n",
+                            (unsigned)GC_gc_no, (void *)current_p,
+                            (unsigned long)descr, (void *)limit);
             }
-#         endif /* ENABLE_TRACE */
+#         endif
           /* Make sure that pointers overlapping the two ranges are     */
           /* considered.                                                */
           limit += sizeof(word) - ALIGNMENT;
@@ -802,15 +800,16 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
         if (descr < sizeof(word))
           continue;
 #     endif
+#     ifdef ENABLE_TRACE
+        if ((word)GC_trace_addr >= (word)current_p
+            && (word)GC_trace_addr < (word)(current_p + descr)) {
+          GC_log_printf("GC #%u: small object; start %p, len %lu\n",
+                        (unsigned)GC_gc_no, (void *)current_p,
+                        (unsigned long)descr);
+        }
+#     endif
       limit = current_p + (word)descr;
     }
-#   ifdef ENABLE_TRACE
-        if ((word)GC_trace_addr >= (word)current_p
-            && (word)GC_trace_addr < (word)limit) {
-          GC_log_printf("GC #%u: Tracing from %p, length is %lu\n",
-                        (unsigned)GC_gc_no, current_p, (unsigned long)descr);
-        }
-#   endif /* ENABLE_TRACE */
     /* The simple case in which we're scanning a range. */
     GC_ASSERT(!((word)current_p & (ALIGNMENT-1)));
     credit -= limit - current_p;
