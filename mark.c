@@ -1463,9 +1463,11 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
 }
 # undef source
 
-# ifdef TRACE_BUF
+#ifdef TRACE_BUF
 
-# define TRACE_ENTRIES 1000
+# ifndef TRACE_ENTRIES
+#   define TRACE_ENTRIES 1000
+# endif
 
 struct trace_entry {
     char * kind;
@@ -1517,7 +1519,7 @@ void GC_print_trace(word gc_no)
     UNLOCK();
 }
 
-# endif /* TRACE_BUF */
+#endif /* TRACE_BUF */
 
 /*
  * A version of GC_push_all that treats all interior pointers as valid
