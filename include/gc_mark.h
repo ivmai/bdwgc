@@ -305,6 +305,11 @@ GC_API void GC_CALL GC_enumerate_reachable_objects_inner(
                                 GC_reachable_object_proc,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
 
+GC_API int GC_CALL GC_is_tmp_root(void *);
+
+GC_API void GC_CALL GC_print_trace(GC_word /* gc_no */);
+GC_API void GC_CALL GC_print_trace_inner(GC_word /* gc_no */);
+
 #ifdef __cplusplus
   } /* end of extern "C" */
 #endif
