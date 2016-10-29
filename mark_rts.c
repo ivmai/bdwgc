@@ -363,7 +363,7 @@ STATIC void GC_remove_tmp_roots(void)
   /* Not used at present (except for, may be, debugging purpose).       */
   /* Workaround for the OS mapping and unmapping behind our back:       */
   /* Is the address p in one of the temporary static root sections?     */
-  GC_bool GC_is_tmp_root(ptr_t p)
+  GC_API int GC_CALL GC_is_tmp_root(void *p)
   {
     static int last_root_set = MAX_ROOT_SETS;
     register int i;

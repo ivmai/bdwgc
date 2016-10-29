@@ -1483,7 +1483,7 @@ void GC_add_trace_entry(char *kind, word arg1, word arg2)
     if (GC_trace_buf_ptr >= TRACE_ENTRIES) GC_trace_buf_ptr = 0;
 }
 
-void GC_print_trace_inner(word gc_no)
+GC_API void GC_CALL GC_print_trace_inner(word gc_no)
 {
     int i;
 
@@ -1503,7 +1503,7 @@ void GC_print_trace_inner(word gc_no)
     GC_printf("Trace incomplete\n");
 }
 
-void GC_print_trace(word gc_no)
+GC_API void GC_CALL GC_print_trace(word gc_no)
 {
     DCL_LOCK_STATE;
 
