@@ -49,11 +49,9 @@ built-in "new" and "delete".
     return GC_MALLOC_UNCOLLECTABLE(size);
   }
 
-# if !defined(__CYGWIN__)
-    void operator delete(void* obj) GC_DECL_DELETE_THROW {
-      GC_FREE(obj);
-    }
-# endif // !__CYGWIN__
+  void operator delete(void* obj) GC_DECL_DELETE_THROW {
+    GC_FREE(obj);
+  }
 
 # ifdef GC_OPERATOR_NEW_ARRAY
     void* operator new[](size_t size) GC_DECL_NEW_THROW {

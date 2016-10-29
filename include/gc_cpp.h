@@ -487,12 +487,4 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
   }
 #endif // GC_OPERATOR_NEW_ARRAY
 
-#if defined(__CYGWIN__)
-# include <new> // for delete throw()
-  inline void operator delete(void* p)
-  {
-    GC_FREE(p);
-  }
-#endif // __CYGWIN__
-
 #endif /* GC_CPP_H */
