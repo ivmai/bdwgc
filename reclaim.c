@@ -565,13 +565,17 @@ void GC_print_block_list(void)
               (unsigned long)pstats.total_bytes);
 }
 
+#include "gc_inline.h" /* for GC_print_free_list prototype */
+
 /* Currently for debugger use only: */
-void GC_print_free_list(int kind, size_t sz_in_granules)
+GC_API void GC_CALL GC_print_free_list(int kind, size_t sz_in_granules)
 {
-    struct obj_kind * ok = &GC_obj_kinds[kind];
-    ptr_t flh = ok -> ok_freelist[sz_in_granules];
+    ptr_t flh;
     int n;
 
+    GC_ASSERT(kind < MAXOBJKINDS);
+    GC_ASSERT(sz_in_granules <= MAXOBJGRANULES);
+    flh = GC_obj_kinds[kind].ok_freelist[sz_in_granules];
     for (n = 0; flh; n++) {
         struct hblk *block = HBLKPTR(flh);
         GC_printf("Free object in heap block %p [%d]: %p\n",
