@@ -168,4 +168,7 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
       ((void **)(result))[1] = (void *)(second); \
     } while (0)
 
+GC_API void GC_CALL GC_print_free_list(int /* kind */,
+                                       size_t /* sz_in_granules */);
+
 #endif /* !GC_INLINE_H */
