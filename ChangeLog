@@ -1,4 +1,81 @@
 
+== [7.6.2] (unset) ==
+
+* Add more cases to huge_test to cover sizes close to word-type maximum.
+* Adjust code indentation of calloc_explicitly_typed.
+* Allow custom TRACE_ENTRIES value.
+* Code refactoring of divide-by-HBLKSIZE occurrences.
+* Code refactoring of huge_test.
+* Code refactoring of tests/subthread_create regarding AO add primitive.
+* Eliminate 'address of local variable returned' static analyzer warning.
+* Eliminate 'assigned value never used' CSA warning in min_bytes_allocd.
+* Eliminate 'C-style pointer casting' cppcheck style warnings in test.
+* Eliminate 'checking if unsigned variable is <0' cppcheck style warning.
+* Eliminate 'class member var with name also defined in parent' warning.
+* Eliminate 'comparison is always false' static analyzer warning in finalize.
+* Eliminate 'Condition 0==datastart always false' cppcheck warning (dyn_load).
+* Eliminate 'condition is always true' cppcheck style warning.
+* Eliminate 'constructor with 1 argument is not explicit' cppcheck warning.
+* Eliminate 'CORD_*printf is never used' cppcheck style warnings (cordtest).
+* Eliminate 'dereference of null' CSA false warning in array_mark_proc.
+* Eliminate 'possible integer underflow' code defect (cord-de).
+* Eliminate 'potential overflow' static analyzer warning in test.
+* Eliminate 'printf format specifies type void*' GCC pedantic warnings.
+* Eliminate 'scope of variable can be reduced' cppcheck warnings.
+* Eliminate 'suspicious pointer subtraction' cppcheck warning (gc_cpp).
+* Eliminate 'unnecessary comparison of static strings' cppcheck warning.
+* Eliminate 'unsafe vsprintf is deprecated' compiler warning.
+* Eliminate 'value of CLOCK_TYPE unknown' cppcheck info message.
+* Eliminate 'value of DATASTART2 unknown' cppcheck info messages.
+* Eliminate 'value of GC_PTHREAD_EXIT_ATTRIBUTE unknown' cppcheck messages.
+* Eliminate 'value of GC_RETURN_ADDR_PARENT unknown' cppcheck info messages.
+* Eliminate 'value of NEED_FIXUP_POINTER unknown' cppcheck info messages.
+* Eliminate 'write to memory that was const-qualified' code analyzer warning.
+* Eliminate all 'scope of variable can be reduced' cppcheck style warnings.
+* Eliminate redundant local variable in register_finalizer.
+* Eliminate unreachable PROC/DEFAULT_VDB GC_printf calls in gctest main().
+* Enable GC_is_tmp_root for all platforms.
+* Export GC_dump_finalization/regions().
+* Export GC_is_tmp_root() and GC_print_trace[_inner]().
+* Export GC_print_free_list().
+* Fix 'label cannot be reached' static analyzer warning in disclaim_test.
+* Fix 'syntax error' reported by cppcheck for mach_dep.
+* Fix 'unknown type name GC_INNER' compilation error (FreeBSD).
+* Fix 'variable assigned a value that is never used' cppcheck style warnings.
+* Fix 'void pointers in calculations: behavior undefined' cppcheck warning.
+* Fix Clang static analyzer warning about not found gc_priv.h in extra files.
+* Fix compilation if configured with --enable-werror on OS X.
+* Fix null dereference in GC_stack_range_for if not DARWIN_DONT_PARSE_STACK.
+* Fix page calculation in checksums.
+* Skip thread suspend/resume API testing for Tru64 (OSF1).
+* Workaround '#error' cppcheck error messages.
+* Workaround 'checking if unsigned value is negative' cppcheck warning.
+* Workaround 'Condition 0!=GETENV() is always false' cppcheck style warnings.
+* Workaround 'condition is always false' cppcheck warning in get_next_stack.
+* Workaround 'insecure libc pseudo-random number generator used' code defect.
+* Workaround 'local variable size too big' static analyzer warning.
+* Workaround 'obsolete function alloca() called' cppcheck warnings.
+* Workaround 'passing untyped NULL to variadic function' cppcheck warning.
+* Workaround 'pos_*, [r]iter, dump never used' cppcheck style warnings (cord).
+* Workaround 'possible null pointer dereference' cppcheck warning (Darwin).
+* Workaround 'possible null pointer dereference' cppcheck warnings.
+* Workaround 'redundant assignment of *result to itself' cppcheck warning.
+* Workaround 'same expression on both sides of ==' cppcheck style warning.
+* Workaround 'same expression on both sides of OR' cppcheck style warning.
+* Workaround 'struct member is never used' cppcheck style warnings.
+* Workaround 'tainted int used as loop bound' static analysis tool warning.
+* Workaround 'Uninitialized variable' cppcheck errors.
+* Workaround 'unused variable' cppcheck style warnings.
+* Workaround 'va_list used before va_start' cppcheck error in cord.
+* Workaround 'value of macro unknown' cppcheck info messages.
+* Workaround 'value of REDIRECT_MALLOC/FREE unknown' cppcheck info messages.
+* Workaround 'value of SIGBUS unknown' cppcheck info messages.
+* Workaround 'value of WINAPI unknown' cppcheck info messages.
+* Workaround 'variable hides enumerator with same name' cppcheck warnings.
+* Workaround 'variable reassigned before old value used' cppcheck warnings.
+Also, includes 7.4.6 changes.
+
+
 == [7.6.0] 2016-08-02 ==
 
 * ABORT_ARGn log details at INFO level (Android).
