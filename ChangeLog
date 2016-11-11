@@ -1,4 +1,38 @@
 
+== [7.4.6] (unset) ==
+
+* Do not warn of missing PT_GNU_RELRO segment when custom DSO filter used.
+* Eliminate 'cast to void* from int' compiler warnings (Darwin/x64).
+* Eliminate 'FP divide-by-zero' static analyzer warning.
+* Eliminate 'ISO C forbids an empty translation unit' GCC pedantic warning.
+* Eliminate 'null dereference' code defect warning in register_finalizer.
+* Eliminate 'printf format specifier mismatch' compiler warning (tools).
+* Eliminate 'value stored is never read' warning of Clang static analyzer.
+* Eliminate duplicate log messages in GC_mark_from.
+* Fix 'arg parameter might be clobbered by setjmp' compiler warning.
+* Fix 'GetVersion deprecated' compiler warning in os_dep (MS VC).
+* Fix 'incompatible pointer' compiler warning in GC_init_dyld (OS X 64-bit).
+* Fix 'ISO C90 does not support %lf, %lg gnu_printf formats' GCC warnings.
+* Fix 'ISO C90 forbids mixed declarations and code' compiler warning.
+* Fix 'replacement operator delete cannot be inline' GCC warning (Cygwin).
+* Fix 'variable unused' compiler warning in FirstDLOpenedLinkMap.
+* Fix GC_bytes_allocd incrementation in case of allocation failure.
+* Fix local variable declarations in disclaim_bench.
+* Fix missing #error pragma.
+* Fix missing new-line and redundant trailing dot in WARN messages.
+* Fix potential overflow in decrement when computing GC_markers_m1.
+* Fix printf format specifiers in extra files (cppcheck warnings).
+* Fix tag collision between ENABLE_DISCLAIM and KEEP_BACK_PTRS.
+* Fix tools/setjmp_t to prevent nested_sp inlining.
+* Fix typo in CHECK_GCLIB_VERSION name (test).
+* Fix unchecked fork() result in gctest (Unix, Cygwin).
+* Process all PT_LOAD segments before PT_GNU_RELRO segments (Glibc).
+* Refine README about library source downloading.
+* Workaround 'mmap() resource handle leak' static analyzer warning.
+* Workaround 'resource leak' error reported by cppcheck (tools, test).
+Also, includes 7.2h changes.
+
+
 == [7.4.4] 2016-05-25 ==
 
 * Allow GC_FAST_MALLOC_GRANS() multiple use in a function.
@@ -328,6 +362,31 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes.
 * Use pthread_key for thread-local storage on FreeBSD.
 * Use union of AO_t and word to favor strict-aliasing compiler optimization.
 Also, includes 7.2 changes.
+
+
+== [7.2h] (unset) ==
+
+* Add gctest as a test (CMake).
+* Do not allow SHORT_DBG_HDRS if KEEP_BACK_PTRS or MAKE_BACK_GRAPH.
+* Fix 'shift count >= width of type' compiler warning in GC_SQRT_SIZE_MAX.
+* Fix assertion in GC_mark_from for non-heap regions.
+* Fix assertion violation in GC_wait_builder called from start_mark_threads.
+* Fix calloc_explicitly_typed in case of lb*n overflow.
+* Fix conditional expression in pos_fetch, next non-macro definitions (cord).
+* Fix CORD_substr_closure for the case when CORD_from_fn returns C string.
+* Fix double multiplication of lb by n in calloc_explicitly_typed.
+* Fix GC_collect_or_expand to prevent allocation size value wrap-around.
+* Fix GC_requested_heapsize increment in GC_init.
+* Fix header filename in gcconfig.h comment.
+* Fix integer shift undefined behavior in GC_init_explicit_typing.
+* Fix malloc routines to prevent size value wrap-around.
+* Fix STACKBOTTOM for Solaris 11/x86.
+* Fix typo in comment of GC_lock (Win32).
+* Fix various typos in comments and documentation.
+* Handle load_segs overflow in register_dynlib_callback gracefully.
+* Replace (fix) 'objs' acronym in comments with 'objects' word.
+* Workaround a bug in winpthreads causing parallel marks deadlock (MinGW).
+* Workaround missing getcontext() in Docker osrf/ubuntu_32bit.
 
 
 == [7.2g] 2016-05-23 ==
