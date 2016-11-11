@@ -1,3 +1,211 @@
+2016-08-07  Andy Li <andy@onthewings.net>
+
+	* CMakeLists.txt: Include CTest.
+	* tests/CMakeLists.txt: Add gctest as test.
+
+2016-09-27  Ivan Maidanski <ivmai@mail.ru>
+
+	* alloc.c (GC_WORD_MAX): New macro.
+	* alloc.c (GC_collect_or_expand): Limit blocks_to_get by
+	GC_WORD_MAX / HBLKSIZE value (to avoid multiplication overflow in
+	GC_expand_hp_inner).
+
+2016-09-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* allchblk.c (GC_allochblk, GC_allochblk_nth): Use
+	OBJ_SZ_TO_BLOCKS_CHECKED instead of OBJ_SZ_TO_BLOCKS.
+	* malloc.c (GC_alloc_large): Likewise.
+	* alloc.c (GC_expand_hp_inner): Type of "bytes" local variable changed
+	from word to size_t; cast ROUNDUP_PAGESIZE argument to size_t; prevent
+	overflow when computing GC_heapsize+bytes > GC_max_heapsize.
+	* dbg_mlc.c (GC_debug_malloc, GC_debug_malloc_ignore_off_page,
+	GC_debug_malloc_atomic_ignore_off_page,
+	GC_debug_generic_malloc_inner,
+	GC_debug_generic_malloc_inner_ignore_off_page,
+	GC_debug_malloc_stubborn, GC_debug_malloc_atomic,
+	GC_debug_malloc_uncollectable, GC_debug_malloc_atomic_uncollectable):
+	Use SIZET_SAT_ADD (instead of "+" operator) to add extra bytes to lb
+	value.
+	* gcj_mlc.c (GC_debug_gcj_malloc): Likewise.
+	* include/private/gc_priv.h (ROUNDUP_GRANULE_SIZE, ROUNDED_UP_GRANULES,
+	ADD_SLOP, ROUNDUP_PAGESIZE): Likewise.
+	* include/private/gcconfig.h (GET_MEM): Likewise.
+	* mallocx.c (GC_malloc_many, GC_memalign): Likewise.
+	* os_dep.c (GC_wince_get_mem, GC_win32_get_mem): Likewise.
+	* typd_mlc.c (GC_malloc_explicitly_typed,
+	GC_malloc_explicitly_typed_ignore_off_page,
+	GC_calloc_explicitly_typed): Likewise.
+	* headers.c (GC_scratch_alloc): Change type of bytes_to_get from word
+	to size_t (because ROUNDUP_PAGESIZE_IF_MMAP result type changed).
+	* include/private/gc_priv.h: Include limits.h (unless SIZE_MAX already
+	defined).
+	* include/private/gc_priv.h (GC_SIZE_MAX, GC_SQRT_SIZE_MAX): Move from
+	malloc.c file.
+	* include/private/gc_priv.h (SIZET_SAT_ADD): New macro (defined before
+	include gcconfig.h).
+	* include/private/gc_priv.h (EXTRA_BYTES, GC_page_size): Change type
+	to size_t.
+	* os_dep.c (GC_page_size): Likewise.
+	* include/private/gc_priv.h (ROUNDUP_GRANULE_SIZE, ROUNDED_UP_GRANULES,
+	ADD_SLOP, ROUNDUP_PAGESIZE): Add comment about the argument.
+	* include/private/gcconfig.h (GET_MEM): Likewise.
+	* include/private/gc_priv.h (ROUNDUP_GRANULE_SIZE, ROUNDED_UP_GRANULES,
+	ADD_SLOP, OBJ_SZ_TO_BLOCKS, ROUNDUP_PAGESIZE,
+	ROUNDUP_PAGESIZE_IF_MMAP): Rename argument to "lb".
+	* include/private/gc_priv.h (OBJ_SZ_TO_BLOCKS_CHECKED): New macro.
+	* include/private/gcconfig.h (GC_win32_get_mem, GC_wince_get_mem,
+	GC_unix_get_mem): Change argument type from word to int.
+	* os_dep.c (GC_unix_mmap_get_mem, GC_unix_get_mem,
+	GC_unix_sbrk_get_mem, GC_wince_get_mem, GC_win32_get_mem): Likewise.
+	* malloc.c (GC_alloc_large_and_clear): Call OBJ_SZ_TO_BLOCKS only
+	if no value wrap around is guaranteed.
+	* malloc.c (GC_generic_malloc): Do not check for lb_rounded < lb case
+	(because ROUNDED_UP_GRANULES and GRANULES_TO_BYTES guarantees no value
+	wrap around).
+	* mallocx.c (GC_generic_malloc_ignore_off_page): Likewise.
+	* misc.c (GC_init_size_map): Change "i" local variable type from int
+	to size_t.
+	* os_dep.c (GC_write_fault_handler, catch_exception_raise): Likewise.
+	* misc.c (GC_envfile_init): Cast len to size_t when passed to
+	ROUNDUP_PAGESIZE_IF_MMAP.
+	* os_dep.c (GC_setpagesize): Cast GC_sysinfo.dwPageSize and
+	GETPAGESIZE() to size_t (when setting GC_page_size).
+	* os_dep.c (GC_unix_mmap_get_mem):
+	Expand ROUNDUP_PAGESIZE macro but without value wrap-around checking
+	(the argument is of word type).
+	* os_dep.c (GC_unix_mmap_get_mem): Replace -GC_page_size with
+	~GC_page_size+1 (because GC_page_size is unsigned); remove redundant
+	cast to size_t.
+	* os_dep.c (GC_unix_sbrk_get_mem): Add explicit cast of GC_page_size
+	to SBRK_ARG_T.
+	* os_dep.c (GC_wince_get_mem): Change type of res_bytes local variable
+	to size_t.
+	* typd_mlc.c: Do not include limits.h.
+	* typd_mlc.c (GC_SIZE_MAX, GC_SQRT_SIZE_MAX): Remove (as defined in
+	gc_priv.h now).
+
+2016-08-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* mach_dep.c [NO_GETCONTEXT] (GC_with_callee_saves_pushed): Call WARN
+	instead of ABORT if getcontext() failed; do not set context variable
+	if getcontext() failed; fallback to other register retrieval methods
+	(__builtin_unwind_init or setjmp) if context variable is NULL.
+	* mach_dep.c (GC_with_callee_saves_pushed): Reformat code.
+
+2016-09-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* malloc.c (GC_SQRT_SIZE_MAX): Change type from unsigned to size_t.
+
+2016-09-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* typd_mlc.c: Include limits.h (for SIZE_MAX).
+	* typd_mlc.c (GC_SIZE_MAX, GC_SQRT_SIZE_MAX): New macro (same as in
+	malloc.c).
+	* typd_mlc.c (GC_calloc_explicitly_typed): Return NULL if lb * n
+	overflows (same algorithm as in calloc defined in malloc.c); eliminate
+	lb *= n code duplication.
+
+2016-07-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* typd_mlc.c (GC_init_explicit_typing): Avoid left-shift by WORDSZ
+	(which is an undefined behavior), initialize GC_bm_table[0] to
+	GC_DS_BITMAP explicitly.
+
+2016-09-30  Ivan Maidanski <ivmai@mail.ru>
+
+	* misc.c (GC_init): Change initial_heap_sz to keep size value in bytes
+	instead of HBLKSIZE units (thus, GC_requested_heapsize is incremented
+	by a number of bytes not HBLKSIZE units).
+
+2016-10-27  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordbscs.c (CORD_pos_fetch, CORD_next): Match the conditional
+	expression of the macro definition (of the same name) in cord_pos.h.
+
+2016-09-28  Ivan Maidanski <ivmai@mail.ru>
+
+	* cord/cordbscs.c (CORD_substr_closure): Change type of "result" local
+	variable from CORD to CordRep* (insert necessary type casts); update
+	function.header only if function.null field is zero (i.e. CORD_from_fn
+	returned pointer to CordRep, not a pointer to C character string).
+
+2016-09-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* win32_threads.c [USE_PTHREAD_LOCKS] (GC_lock): Fix typo in comment
+	("pthread_mutex_trylock").
+
+2016-09-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* typd_mlc.c (GC_calloc_explicitly_typed): Do not multiply lb by n
+	twice (when passed to GC_malloc in case of
+	GC_general_register_disappearing_link fails).
+
+2016-08-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h: Replace include gc_private.h with gc.h
+	in comment (the header is supposed to be included to declare
+	GC_stackbottom).
+
+2016-08-02  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/dbg_mlc.h [KEEP_BACK_PTRS || MAKE_BACK_GRAPH]
+	(GC_HAS_DEBUG_INFO): Add #error (with the appropriate message) in
+	case of SHORT_DBG_HDRS defined.
+
+2016-08-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.Mac: Fix typo (replace "it's" to "its").
+	* doc/debugging.html: Likewise.
+	* doc/gcdescr.html: Fix typo ("it performs").
+	* include/private/gcconfig.h: Fix typo in comment ("its").
+	* mark.c (INITIAL_MARK_STACK_SIZE): Fix typo in comment ("it wants").
+	* mark.c (GC_mark_from): Fix typo in comment (double "it").
+	* misc.c (GC_SLOP): Fix typo in comma (double "saw").
+	* os_dep.c (GC_get_file_len): Fix typo in comment (missing "buffer").
+	* ptr_chck.c (GC_is_visible): Add missing comma in comment.
+
+2016-07-16  Kjetil Matheussen <k.s.matheussen@notam02.no>
+
+	* dyn_load.c [HAVE_DL_ITERATE_PHDR and PT_GNU_RELRO]
+	(GC_register_dynlib_callback): If n_load_segs reaches MAX_LOAD_SEGS
+	then call WARN (with the appropriate message) and call
+	GC_add_roots_inner to register the segment directly instead of ABORT.
+
+2016-07-05  Gabor Drescher <gabor.drescher@cs.fau.de>
+
+	* mark.c (GC_mark_from): Relax assertion condition for descr and
+	GC_least/greatest_plausible_heap_addr values.
+
+2016-07-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc.h (GC_PROTECTS_POINTER_HEAP): Replace "objs" word to
+	"objects" in comment.
+	* include/private/gc_priv.h (GC_arrays._aobjfreelist,
+	GC_arrays._uobjfreelist, GC_arrays._auobjfreelist, GC_aobjfreelist):
+	Likewise.
+	* mark.c (INITIAL_MARK_STACK_SIZE): Likewise.
+	* include/private/gc_priv.h (GC_arrays._uobjfreelist): Add missing dot
+	to delimit the end of a sentence in comment.
+
+2016-06-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c (GC_wait_for_markers_init): Surround function body with
+	DISABLE/RESTORE_CANCEL.
+
+2016-06-16  Peter Wang <novalazy@gmail.com>
+
+	* include/private/gcconfig.h [I386 && SOLARIS] (STACKBOTTOM,
+	HEURISTIC2): Define conditionally depening on USERLIMIT - use
+	HEURISTIC2 if USERLIMIT is undefined (workaround similar to that for
+	Solaris/sparc and Solaris/x64); include sys/vmparam.h instead of
+	sys/vm.h; update comment.
+
+2016-06-10  Adrian Pop <adrian.pop@liu.se>
+
+	* win32_threads.c (GC_PTHREADS_PARAMARK): Do not define if
+	GC_PTHREADS, PARALLEL_MARK and __MINGW32__ (to workaround a deadlock
+	in do_sema_b_wait() of winpthreads).
+
 [7.2g]
 
 2016-05-23  Ivan Maidanski <ivmai@mail.ru>
