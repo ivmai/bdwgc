@@ -1,4 +1,10 @@
 
+== [7.7.0] (development) ==
+
+<none>
+Also, includes 7.6.2 changes.
+
+
 == [7.6.2] (unset) ==
 
 * Add more cases to huge_test to cover sizes close to word-type maximum.
