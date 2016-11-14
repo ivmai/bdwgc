@@ -34,7 +34,7 @@ typedef struct {
 	unsigned long JTOffset;
 } *CodeZeroPtr, **CodeZeroHandle;
 
-void* GC_MacGetDataStart()
+void* GC_MacGetDataStart(void)
 {
 	CodeZeroHandle code0 = (CodeZeroHandle)GetResource('CODE', 0);
 	if (code0) {
@@ -93,7 +93,7 @@ Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory)
 
 extern word GC_fo_entries; 
 
-static void perform_final_collection()
+static void perform_final_collection(void)
 {
   unsigned i;
   word last_fo_entries = 0;
@@ -110,7 +110,7 @@ static void perform_final_collection()
 }
 
 
-void GC_MacFreeTemporaryMemory()
+void GC_MacFreeTemporaryMemory(void)
 {
 # if defined(SHARED_LIBRARY_BUILD)
     /* if possible, collect all memory, and invoke all finalizers. */
@@ -140,7 +140,7 @@ void GC_MacFreeTemporaryMemory()
 
 #if __option(far_data)
 
-  void* GC_MacGetDataEnd()
+  void* GC_MacGetDataEnd(void)
   {
 	CodeZeroHandle code0 = (CodeZeroHandle)GetResource('CODE', 0);
 	if (code0) {
