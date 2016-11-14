@@ -3106,11 +3106,11 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
                         set_pht_entry_from_index(db, index)
 #endif /* !THREADS */
 
-#ifdef CHECKSUMS
-  void GC_record_fault(struct hblk * h); /* from checksums.c */
-#endif
-
 #ifndef DARWIN
+
+# ifdef CHECKSUMS
+    void GC_record_fault(struct hblk * h); /* from checksums.c */
+# endif
 
 # if !defined(MSWIN32) && !defined(MSWINCE)
 #   include <errno.h>
