@@ -47,7 +47,7 @@ typedef GC_word word;
         typedef ULONG        ULONG_ADDR;
 #endif
 
-static HANDLE GetSymHandle()
+static HANDLE GetSymHandle(void)
 {
   static HANDLE symHandle = NULL;
   if (!symHandle) {

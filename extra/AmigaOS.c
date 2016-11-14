@@ -40,7 +40,7 @@
    Find the base of the stack.
 ******************************************************************/
 
-ptr_t GC_get_main_stack_base()
+ptr_t GC_get_main_stack_base(void)
 {
     struct Process *proc = (struct Process*)SysBase->ThisTask;
 
@@ -65,7 +65,7 @@ ptr_t GC_get_main_stack_base()
    Register data segments.
 ******************************************************************/
 
-   void GC_register_data_segments()
+   void GC_register_data_segments(void)
    {
      struct Process     *proc;
      struct CommandLineInterface *cli;
