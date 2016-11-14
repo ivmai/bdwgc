@@ -48,6 +48,8 @@ void* GC_MacGetDataStart(void)
         return 0;
 }
 
+#ifdef USE_TEMPORARY_MEMORY
+
 /* track the use of temporary memory so it can be freed all at once. */
 
 typedef struct TemporaryMemoryBlock TemporaryMemoryBlock, **TemporaryMemoryHandle;
@@ -144,6 +146,8 @@ void GC_MacFreeTemporaryMemory(void)
 #       endif
     }
 }
+
+#endif /* USE_TEMPORARY_MEMORY */
 
 #if __option(far_data)
 

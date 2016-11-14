@@ -260,6 +260,8 @@ size_t latestsize;
 #endif
 
 
+#ifdef GC_AMIGA_FASTALLOC
+
 /*
  * The actual function that is called with the GET_MEM macro.
  *
@@ -296,7 +298,7 @@ void *GC_amiga_get_mem(size_t size){
 
 }
 
-
+#endif
 
 
 #ifndef GC_AMIGA_ONLYFAST
