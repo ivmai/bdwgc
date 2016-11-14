@@ -26,7 +26,7 @@ unloading shared library.
 #include "gc.h"
 #include "gc_priv.h"
 
-// use 'CODE' resource 0 to get exact location of the beginning of global space.
+/* use 'CODE' resource 0 to get exact location of the beginning of global space. */
 
 typedef struct {
         unsigned long aboveA5;
@@ -76,13 +76,13 @@ Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory)
                 if (clearMemory) memset(tempPtr, 0, size);
                 tempPtr = StripAddress(tempPtr);
 
-                // keep track of the allocated blocks.
+                /* keep track of the allocated blocks. */
                 (**tempMemBlock).nextBlock = theTemporaryMemory;
                 theTemporaryMemory = tempMemBlock;
         }
 
 #     if !defined(SHARED_LIBRARY_BUILD)
-        // install an exit routine to clean up the memory used at the end.
+        /* install an exit routine to clean up the memory used at the end. */
         if (firstTime) {
                 atexit(&GC_MacFreeTemporaryMemory);
                 firstTime = false;

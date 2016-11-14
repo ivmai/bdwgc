@@ -350,11 +350,10 @@ void *GC_amiga_get_mem(size_t size){
 
 #ifndef GC_AMIGA_ONLYFAST
         if(GC_amiga_dontalloc==TRUE){
-//              printf("rejected, size: %d, latestsize: %d\n",size,latestsize);
                 return NULL;
         }
 
-        // We really don't want to use chip-mem, but if we must, then as little as possible.
+        /* We really don't want to use chip-mem, but if we must, then as little as possible. */
         if(GC_AMIGA_MEMF==(MEMF_ANY|MEMF_CLEAR) && size>100000 && latestsize<50000) return NULL;
 #endif
 
@@ -364,8 +363,6 @@ void *GC_amiga_get_mem(size_t size){
         gc_am->next=GC_AMIGAMEM;
         gc_am->size=size + sizeof(struct GC_Amiga_AllocedMemoryHeader);
         GC_AMIGAMEM=(struct GC_Amiga_AllocedMemoryHeader *)(~(int)(gc_am));
-
-//      printf("Allocated %d (%d) bytes at address: %x. Latest: %d\n",size,tot,gc_am,latestsize);
 
 #ifdef GC_AMIGA_PRINTSTATS
         if((char *)gc_am<chipmax){
@@ -421,7 +418,6 @@ void *GC_amiga_rec_alloc(size_t size,void *(*AllocFunction)(size_t size2),const 
 
         if (((char *)ret)<=chipmax && ret!=NULL && (rec<(size>500000?9:size/5000))){
                 ret=GC_amiga_rec_alloc(size,AllocFunction,rec+1);
-//              GC_free(ret2);
         }
 
         return ret;
@@ -437,14 +433,14 @@ void *GC_amiga_rec_alloc(size_t size,void *(*AllocFunction)(size_t size2),const 
 void *GC_amiga_allocwrapper_any(size_t size,void *(*AllocFunction)(size_t size2)){
         void *ret,*ret2;
 
-        GC_amiga_dontalloc=TRUE;        // Pretty tough thing to do, but its indeed necessary.
+        GC_amiga_dontalloc=TRUE; /* Pretty tough thing to do, but its indeed necessary. */
         latestsize=size;
 
         ret=(*AllocFunction)(size);
 
         if(((char *)ret) <= chipmax){
                 if(ret==NULL){
-                        //Give GC access to allocate memory.
+                        /* Give GC access to allocate memory. */
 #ifdef GC_AMIGA_GC
                         if(!GC_dont_gc){
                                 GC_gcollect();
@@ -473,7 +469,6 @@ void *GC_amiga_allocwrapper_any(size_t size,void *(*AllocFunction)(size_t size2)
                         /* We got chip-mem. Better try again and again and again etc., we might get fast-mem sooner or later... */
                         /* Using gctest to check the effectiveness of doing this, does seldom give a very good result. */
                         /* However, real programs doesn't normally rapidly allocate and deallocate. */
-//                      printf("trying to force... %d bytes... ",size);
                         if(
                                 AllocFunction!=GC_malloc_uncollectable
 #ifdef ATOMIC_UNCOLLECTABLE
@@ -496,12 +491,10 @@ void *GC_amiga_allocwrapper_any(size_t size,void *(*AllocFunction)(size_t size2)
 #endif
                         }
                         if(((char *)ret2)>chipmax){
-//                              printf("Succeeded.\n");
                                 GC_free(ret);
                                 ret=ret2;
                         }else{
                                 GC_free(ret2);
-//                              printf("But did not succeed.\n");
                         }
                 }
 #endif
@@ -520,7 +513,7 @@ void GC_amiga_set_toany(void (*func)(void)){
         GC_amiga_toany=func;
 }
 
-#endif // !GC_AMIGA_ONLYFAST
+#endif /* !GC_AMIGA_ONLYFAST */
 
 
 void *GC_amiga_allocwrapper_fast(size_t size,void *(*AllocFunction)(size_t size2)){
@@ -529,8 +522,7 @@ void *GC_amiga_allocwrapper_fast(size_t size,void *(*AllocFunction)(size_t size2
         ret=(*AllocFunction)(size);
 
         if(ret==NULL){
-                // Enable chip-mem allocation.
-//              printf("ret==NULL\n");
+                /* Enable chip-mem allocation. */
 #ifdef GC_AMIGA_GC
                 if(!GC_dont_gc){
                         GC_gcollect();
@@ -560,13 +552,13 @@ void *GC_amiga_allocwrapper_fast(size_t size,void *(*AllocFunction)(size_t size2
 
 void *GC_amiga_allocwrapper_firsttime(size_t size,void *(*AllocFunction)(size_t size2)){
         atexit(&GC_amiga_free_all_mem);
-        chipmax=(char *)SysBase->MaxLocMem;             // For people still having SysBase in chip-mem, this might speed up a bit.
+        chipmax=(char *)SysBase->MaxLocMem; /* For people still having SysBase in chip-mem, this might speed up a bit. */
         GC_amiga_allocwrapper_do=GC_amiga_allocwrapper_fast;
         return GC_amiga_allocwrapper_fast(size,AllocFunction);
 }
 
 
-#endif //GC_AMIGA_FASTALLOC
+#endif /* GC_AMIGA_FASTALLOC */
 
 
 
@@ -619,4 +611,4 @@ void *GC_amiga_realloc(void *old_object,size_t new_size_in_bytes){
 #endif
 }
 
-#endif //GC_AMIGA_AM
+#endif /* GC_AMIGA_AM */
