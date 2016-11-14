@@ -39,14 +39,16 @@ STATIC word GC_faulted[NSUMS] = { 0 };
 
 STATIC size_t GC_n_faulted = 0;
 
-void GC_record_fault(struct hblk * h)
-{
+#if defined(MPROTECT_VDB) && !defined(DARWIN)
+  void GC_record_fault(struct hblk * h)
+  {
     word page = (word)h & ~(GC_page_size - 1);
 
     GC_ASSERT(GC_page_size != 0);
     if (GC_n_faulted >= NSUMS) ABORT("write fault log overflowed");
     GC_faulted[GC_n_faulted++] = page;
-}
+  }
+#endif
 
 STATIC GC_bool GC_was_faulted(struct hblk *h)
 {
