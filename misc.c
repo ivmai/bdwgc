@@ -905,7 +905,7 @@ GC_API void GC_CALL GC_init(void)
 #     if (defined(UNIX_LIKE) && !defined(GC_ANDROID_LOG)) \
          || defined(CYGWIN32) || defined(SYMBIAN)
         {
-          char * file_name = GETENV("GC_LOG_FILE");
+          char * file_name = TRUSTED_STRING(GETENV("GC_LOG_FILE"));
 #         ifdef GC_LOG_TO_FILE_ALWAYS
             if (NULL == file_name)
               file_name = GC_LOG_STD_NAME;
