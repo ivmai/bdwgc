@@ -284,7 +284,10 @@ void* Undisguise( GC_word i ) {
             d = ::new (USE_GC, D::CleanUp, (void*)(GC_word)i) D( i );
             (void)d;
             f = new F;
-            (void)f;
+            F** fa = new F*[1];
+            fa[0] = f;
+            (void)fa;
+            delete[] fa;
             if (0 == i % 10) delete c;}
 
             /* Allocate a very large number of collectible As and Bs and
