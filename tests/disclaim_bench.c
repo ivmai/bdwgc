@@ -59,7 +59,7 @@ testobj_t testobj_new(int model)
         case 0:
             obj = GC_MALLOC(sizeof(struct testobj_s));
             if (obj != NULL)
-              GC_register_finalizer_no_order(obj, testobj_finalize,
+              GC_REGISTER_FINALIZER_NO_ORDER(obj, testobj_finalize,
                                              &free_count, NULL, NULL);
             break;
         case 1:
