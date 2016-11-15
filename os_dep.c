@@ -537,6 +537,8 @@ GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
 
     struct sigaction act;
     size_t pgsz = (size_t)sysconf(_SC_PAGESIZE);
+
+    GC_ASSERT((word)bound >= pgsz);
     GC_ASSERT(I_HOLD_LOCK());
 
     act.sa_handler = GC_fault_handler_openbsd;
@@ -547,11 +549,11 @@ GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
     if (sigsetjmp(GC_jmp_buf_openbsd, 1) == 0) {
       result = (ptr_t)((word)p & ~(pgsz-1));
       for (;;) {
-        result += pgsz;
-        if (result >= bound) {
+        if ((word)result >= (word)bound - pgsz) {
           result = bound;
           break;
         }
+        result += pgsz; /* no overflow expected */
         GC_noop1((word)(*result));
       }
     }
@@ -574,6 +576,8 @@ GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
 
     struct sigaction act;
     size_t pgsz = (size_t)sysconf(_SC_PAGESIZE);
+
+    GC_ASSERT((word)bound >= pgsz);
     GC_ASSERT(I_HOLD_LOCK());
 
     act.sa_handler = GC_fault_handler_openbsd;
@@ -585,10 +589,10 @@ GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
     result = (ptr_t)((word)p & ~(pgsz-1));
     if (sigsetjmp(GC_jmp_buf_openbsd, 1) != 0 || firstpass) {
       firstpass = 0;
-      result += pgsz;
-      if (result >= bound) {
+      if ((word)result >= (word)bound - pgsz) {
         result = bound;
       } else {
+        result += pgsz; /* no overflow expected */
         GC_noop1((word)(*result));
       }
     }
@@ -931,6 +935,8 @@ GC_INNER size_t GC_page_size = 0;
                 /* static since it's only called with the               */
                 /* allocation lock held.                                */
 
+        GC_ASSERT(up ? (word)bound >= MIN_PAGE_SIZE
+                     : (word)bound <= ~(word)MIN_PAGE_SIZE);
         GC_ASSERT(I_HOLD_LOCK());
         GC_setup_temporary_fault_handler();
         if (SETJMP(GC_jmp_buf) == 0) {
@@ -938,14 +944,13 @@ GC_INNER size_t GC_page_size = 0;
                               & ~(MIN_PAGE_SIZE-1));
             for (;;) {
                 if (up) {
-                    result += MIN_PAGE_SIZE;
-                    if (result >= bound) {
+                    if ((word)result >= (word)bound - MIN_PAGE_SIZE) {
                       result = bound;
                       break;
                     }
+                    result += MIN_PAGE_SIZE; /* no overflow expected */
                 } else {
-                    result -= MIN_PAGE_SIZE;
-                    if (result <= bound) {
+                    if ((word)result <= (word)bound + MIN_PAGE_SIZE) {
                       result = bound - MIN_PAGE_SIZE;
                                         /* This is to compensate        */
                                         /* further result increment (we */
@@ -954,6 +959,7 @@ GC_INNER size_t GC_page_size = 0;
                                         /* by setjmp otherwise).        */
                       break;
                     }
+                    result -= MIN_PAGE_SIZE; /* no underflow expected */
                 }
                 GC_noop1((word)(*result));
             }
