@@ -15,27 +15,30 @@ int main(int argc, char **argv)
 #ifdef __DJGPP__
     DIR * d;
 #endif /* __DJGPP__ */
+    char *fname;
+
     if (argc < 3) goto Usage;
 
-    f = fopen(argv[1], "rb");
+    fname = TRUSTED_STRING(argv[1]);
+    f = fopen(fname, "rb");
     if (f != NULL) {
         fclose(f);
         return(0);
     }
-    f = fopen(argv[1], "r");
+    f = fopen(fname, "r");
     if (f != NULL) {
         fclose(f);
         return(0);
     }
 #ifdef __DJGPP__
-    if ((d = opendir(argv[1])) != 0) {
+    if ((d = opendir(fname)) != 0) {
             closedir(d);
             return(0);
     }
 #endif
     printf("^^^^Starting command^^^^\n");
     fflush(stdout);
-    execvp(argv[2], argv+2);
+    execvp(TRUSTED_STRING(argv[2]), argv+2);
     exit(1);
 
 Usage:
