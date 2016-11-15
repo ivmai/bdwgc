@@ -505,6 +505,15 @@ GC_INNER char * GC_get_maps(void)
   }
 #endif /* NETBSD */
 
+#if defined(ADDRESS_SANITIZER) && (defined(UNIX_LIKE) \
+                    || defined(NEED_FIND_LIMIT) || defined(MPROTECT_VDB))
+  /* To tell ASan to allow GC to use its own SIGBUS/SEGV handlers.      */
+  const char *__asan_default_options(void)
+  {
+    return "allow_user_segv_handler=1";
+  }
+#endif
+
 #ifdef OPENBSD
   static struct sigaction old_segv_act;
   STATIC sigjmp_buf GC_jmp_buf_openbsd;
@@ -893,6 +902,9 @@ GC_INNER size_t GC_page_size = 0;
 #         ifdef HAVE_SIGBUS
             old_bus_handler = signal(SIGBUS, h);
 #         endif
+#       endif
+#       if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
+          GC_noop1((word)&__asan_default_options);
 #       endif
     }
 # endif /* NEED_FIND_LIMIT || UNIX_LIKE */
@@ -3409,6 +3421,9 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #   elif defined(MSWINCE)
       /* MPROTECT_VDB is unsupported for WinCE at present.      */
       /* FIXME: implement it (if possible). */
+#   endif
+#   if defined(CPPCHECK) && defined(ADDRESS_SANITIZER)
+      GC_noop1((word)&__asan_default_options);
 #   endif
   }
 #endif /* !DARWIN */

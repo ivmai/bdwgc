@@ -318,7 +318,14 @@ void* Undisguise( GC_word i ) {
             A* a = static_cast<A*>(Undisguise(as[i]));
             B* b = static_cast<B*>(Undisguise(bs[i]));
             a->Test( i );
-            delete a;
+#           if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER)
+              // Workaround for ASan/MSan: the linker uses operator delete
+              // implementation from libclang_rt instead of gc_cpp (thus
+              // causing incompatible alloc/free).
+              GC_FREE(a);
+#           else
+              delete a;
+#           endif
             b->Test( i );
             B::Deleting( 1 );
             delete b;

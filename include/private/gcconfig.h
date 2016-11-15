@@ -3070,6 +3070,16 @@
 # endif
 #endif /* !GC_WORD_C */
 
+#if defined(__has_feature)
+  /* __has_feature() is supported.      */
+# if __has_feature(address_sanitizer) && !defined(ADDRESS_SANITIZER)
+#   define ADDRESS_SANITIZER
+# endif
+# if __has_feature(memory_sanitizer) && !defined(MEMORY_SANITIZER)
+#   define MEMORY_SANITIZER
+# endif
+#endif
+
 #if defined(SPARC)
 # define ASM_CLEAR_CODE /* Stack clearing is crucial, and we    */
                         /* include assembly code to do it well. */
