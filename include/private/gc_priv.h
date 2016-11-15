@@ -148,6 +148,22 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # include "gc_hdrs.h"
 #endif
 
+#ifndef GC_ATTR_NO_SANITIZE_ADDR
+# ifdef ADDRESS_SANITIZER
+#   define GC_ATTR_NO_SANITIZE_ADDR __attribute__((no_sanitize("address")))
+# else
+#   define GC_ATTR_NO_SANITIZE_ADDR /* empty */
+# endif
+#endif /* !GC_ATTR_NO_SANITIZE_ADDR */
+
+#ifndef GC_ATTR_NO_SANITIZE_MEMORY
+# ifdef MEMORY_SANITIZER
+#   define GC_ATTR_NO_SANITIZE_MEMORY __attribute__((no_sanitize("memory")))
+# else
+#   define GC_ATTR_NO_SANITIZE_MEMORY /* empty */
+# endif
+#endif /* !GC_ATTR_NO_SANITIZE_MEMORY */
+
 #ifndef GC_ATTR_UNUSED
 # if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
 #   define GC_ATTR_UNUSED __attribute__((__unused__))
