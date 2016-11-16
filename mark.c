@@ -1080,9 +1080,9 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
         if ((word)my_first_nonempty < (word)global_first_nonempty) {
             my_first_nonempty = global_first_nonempty;
         } else if ((word)global_first_nonempty < (word)my_first_nonempty) {
-            AO_compare_and_swap(&GC_first_nonempty,
-                                (AO_t) global_first_nonempty,
-                                (AO_t) my_first_nonempty);
+            (void)AO_compare_and_swap(&GC_first_nonempty,
+                                      (AO_t)global_first_nonempty,
+                                      (AO_t)my_first_nonempty);
             /* If this fails, we just go ahead, without updating        */
             /* GC_first_nonempty.                                       */
         }
