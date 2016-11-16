@@ -185,6 +185,10 @@ libatomic_ops source repository as well) could look like:
     make
     make check
 
+If you are getting "syntax error near unexpected token ATOMIC_OPS" during
+configure execution, this means pkg.m4 cannot be found, most probably
+you should run `pkg-config` once before autoreconf.
+
 Below we focus on the collector build using classic makefile.
 For the Makefile.direct-based process, typing `make test` instead of `make`
 will automatically build the collector and then run `setjmp_test` and `gctest`.
