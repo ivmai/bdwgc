@@ -24,7 +24,8 @@
 
 # undef GC_BUILD
 
-#if (defined(DBG_HDRS_ALL) || defined(MAKE_BACK_GRAPH)) && !defined(GC_DEBUG)
+#if (defined(DBG_HDRS_ALL) || defined(MAKE_BACK_GRAPH)) \
+    && !defined(GC_DEBUG) && !defined(CPPCHECK)
 #  define GC_DEBUG
 #endif
 
@@ -84,13 +85,15 @@
 
 # if defined(GC_PTHREADS)
 #   include <pthread.h>
+# else
+#   define NO_TEST_HANDLE_FORK
 # endif
 
 # if (!defined(THREADS) || !defined(HANDLE_FORK) \
       || (defined(DARWIN) && defined(MPROTECT_VDB) \
           && !defined(NO_INCREMENTAL) && !defined(MAKE_BACK_GRAPH))) \
      && !defined(NO_TEST_HANDLE_FORK) && !defined(TEST_HANDLE_FORK) \
-     && !defined(TEST_FORK_WITHOUT_ATFORK)
+     && !defined(TEST_FORK_WITHOUT_ATFORK) && !defined(CPPCHECK)
 #   define NO_TEST_HANDLE_FORK
 # endif
 
@@ -1675,6 +1678,11 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
     /*FAIL;*/
 }
 
+#if defined(CPPCHECK)
+# include "gc_inline.h" /* for GC_print_free_list */
+# include "javaxfc.h" /* for GC_finalize_all */
+#endif
+
 #if defined(MSWINCE) && defined(UNDER_CE)
 # define WINMAIN_LPTSTR LPWSTR
 #else
@@ -1703,6 +1711,12 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
   int main(void)
 #endif
 {
+#   if defined(CPPCHECK) && !defined(NO_WINMAIN_ENTRY) \
+       && ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE))
+      GC_noop1((GC_word)&WinMain);
+#   elif defined(CPPCHECK) && defined(RTEMS)
+      GC_noop1((GC_word)&Init);
+#   endif
     n_tests = 0;
 #   if defined(MACOS)
         /* Make sure we have lots and lots of stack space.      */
@@ -1728,6 +1742,180 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
     check_heap_stats();
 #   ifndef MSWINCE
       fflush(stdout);
+#   endif
+#   if defined(CPPCHECK)
+#      define UNTESTED(sym) GC_noop1((word)&sym)
+       /* Entry points we should be testing, but aren't.        */
+#      ifndef GC_DEBUG
+         UNTESTED(GC_debug_end_stubborn_change);
+         UNTESTED(GC_debug_generic_or_special_malloc);
+         UNTESTED(GC_debug_register_displacement);
+         UNTESTED(GC_post_incr);
+         UNTESTED(GC_pre_incr);
+#        ifdef GC_GCJ_SUPPORT
+           UNTESTED(GC_debug_gcj_malloc);
+#        endif
+#      endif
+#      ifdef AMIGA
+#        ifdef GC_AMIGA_FASTALLOC
+           UNTESTED(GC_amiga_get_mem);
+#        endif
+#        ifndef GC_AMIGA_ONLYFAST
+           UNTESTED(GC_amiga_set_toany);
+#        endif
+#      endif
+#      if defined(MACOS) && defined(USE_TEMPORARY_MEMORY)
+         UNTESTED(GC_MacTemporaryNewPtr);
+#      endif
+#      ifdef PCR
+         UNTESTED(test);
+#      endif
+#      if !defined(_M_AMD64) && defined(_MSC_VER)
+         UNTESTED(GetFileLineFromStack);
+         UNTESTED(GetModuleNameFromStack);
+         UNTESTED(GetSymbolNameFromStack);
+#      endif
+       UNTESTED(GC_get_bytes_since_gc);
+       UNTESTED(GC_get_dont_expand);
+       UNTESTED(GC_get_dont_precollect);
+       UNTESTED(GC_get_finalize_on_demand);
+       UNTESTED(GC_get_finalizer_notifier);
+       UNTESTED(GC_get_find_leak);
+       UNTESTED(GC_get_force_unmap_on_gcollect);
+       UNTESTED(GC_get_free_bytes);
+       UNTESTED(GC_get_free_space_divisor);
+       UNTESTED(GC_get_full_freq);
+       UNTESTED(GC_get_java_finalization);
+       UNTESTED(GC_get_max_retries);
+       UNTESTED(GC_get_no_dls);
+       UNTESTED(GC_get_non_gc_bytes);
+       UNTESTED(GC_get_on_collection_event);
+       UNTESTED(GC_get_on_heap_resize);
+       UNTESTED(GC_get_pages_executable);
+       UNTESTED(GC_get_push_other_roots);
+       UNTESTED(GC_get_start_callback);
+       UNTESTED(GC_get_stop_func);
+       UNTESTED(GC_get_time_limit);
+       UNTESTED(GC_get_warn_proc);
+       UNTESTED(GC_is_disabled);
+       UNTESTED(GC_set_dont_precollect);
+       UNTESTED(GC_set_finalize_on_demand);
+       UNTESTED(GC_set_finalizer_notifier);
+       UNTESTED(GC_set_free_space_divisor);
+       UNTESTED(GC_set_full_freq);
+       UNTESTED(GC_set_java_finalization);
+       UNTESTED(GC_set_max_retries);
+       UNTESTED(GC_set_no_dls);
+       UNTESTED(GC_set_non_gc_bytes);
+       UNTESTED(GC_set_on_collection_event);
+       UNTESTED(GC_set_on_heap_resize);
+       UNTESTED(GC_set_oom_fn);
+       UNTESTED(GC_set_pages_executable);
+       UNTESTED(GC_set_push_other_roots);
+       UNTESTED(GC_set_start_callback);
+       UNTESTED(GC_set_stop_func);
+       UNTESTED(GC_set_time_limit);
+       UNTESTED(GC_malloc_explicitly_typed_ignore_off_page);
+       UNTESTED(GC_debug_change_stubborn);
+       UNTESTED(GC_debug_strndup);
+       UNTESTED(GC_strndup);
+       UNTESTED(GC_posix_memalign);
+       UNTESTED(GC_new_free_list);
+       UNTESTED(GC_new_kind);
+       UNTESTED(GC_new_proc);
+       UNTESTED(GC_clear_roots);
+       UNTESTED(GC_exclude_static_roots);
+       UNTESTED(GC_expand_hp);
+       UNTESTED(GC_register_describe_type_fn);
+       UNTESTED(GC_register_has_static_roots_callback);
+#      if !defined(PCR) && !defined(SMALL_CONFIG)
+         UNTESTED(GC_get_abort_func);
+         UNTESTED(GC_set_abort_func);
+#      endif
+#      ifdef GC_GCJ_SUPPORT
+         UNTESTED(GC_gcj_malloc_ignore_off_page);
+#      endif
+#      ifndef NO_DEBUGGING
+         UNTESTED(GC_dump_regions);
+         UNTESTED(GC_is_tmp_root);
+         UNTESTED(GC_print_free_list);
+#      endif
+#      ifdef TRACE_BUF
+         UNTESTED(GC_print_trace);
+#      endif
+#      ifndef GC_NO_FINALIZATION
+         UNTESTED(GC_debug_register_finalizer_unreachable);
+         UNTESTED(GC_get_await_finalize_proc);
+         UNTESTED(GC_register_disappearing_link);
+         UNTESTED(GC_set_await_finalize_proc);
+         UNTESTED(GC_should_invoke_finalizers);
+#        ifndef JAVA_FINALIZATION_NOT_NEEDED
+           UNTESTED(GC_finalize_all);
+#        endif
+#        ifndef NO_DEBUGGING
+           UNTESTED(GC_dump_finalization);
+#        endif
+#        ifndef GC_TOGGLE_REFS_NOT_NEEDED
+           UNTESTED(GC_get_toggleref_func);
+           UNTESTED(GC_set_toggleref_func);
+           UNTESTED(GC_toggleref_add);
+#        endif
+#      endif
+#      if !defined(OS2) && !defined(MACOS) && !defined(GC_ANDROID_LOG) \
+          && !defined(MSWIN32) && !defined(MSWINCE)
+         UNTESTED(GC_set_log_fd);
+#      endif
+#      ifdef THREADS
+         UNTESTED(GC_allow_register_threads);
+         UNTESTED(GC_get_on_thread_event);
+         UNTESTED(GC_register_altstack);
+         UNTESTED(GC_set_on_thread_event);
+#        ifdef GC_PTHREADS
+           UNTESTED(GC_pthread_detach);
+#          ifndef GC_NO_DLOPEN
+             UNTESTED(GC_dlopen);
+#          endif
+#          ifndef GC_NO_PTHREAD_CANCEL
+             UNTESTED(GC_pthread_cancel);
+#          endif
+#          ifdef GC_HAVE_PTHREAD_EXIT
+             UNTESTED(GC_pthread_exit);
+#          endif
+#          ifndef GC_NO_PTHREAD_SIGMASK
+             UNTESTED(GC_pthread_sigmask);
+#          endif
+#        endif
+#        if defined(GC_DARWIN_THREADS) || defined(GC_OPENBSD_UTHREADS) \
+            || defined(GC_WIN32_THREADS) \
+            || (defined(NACL) && defined(THREADS))
+           UNTESTED(GC_set_suspend_signal);
+           UNTESTED(GC_set_thr_restart_signal);
+#        endif
+#        ifdef GC_WIN32_THREADS
+           UNTESTED(GC_ExitThread);
+#          if !defined(MSWINCE) && !defined(CYGWIN32)
+             UNTESTED(GC_beginthreadex);
+             UNTESTED(GC_endthreadex);
+#          endif
+#        endif
+#      endif /* THREADS */
+#      ifndef REDIRECT_MALLOC_IN_HEADER
+#        ifdef REDIRECT_MALLOC
+#          ifndef strndup
+             UNTESTED(strndup);
+#          endif
+#          ifndef strdup
+             UNTESTED(strdup);
+#          endif
+#        endif
+#        ifdef REDIRECT_REALLOC
+           UNTESTED(realloc);
+#        endif
+#      endif /* !REDIRECT_MALLOC_IN_HEADER */
+#      ifdef GC_REQUIRE_WCSDUP
+         UNTESTED(GC_wcsdup);
+         UNTESTED(GC_debug_wcsdup);
+#      endif
 #   endif
 #   ifdef MSWIN32
       GC_win32_free_heap();
@@ -1840,6 +2028,10 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
     HANDLE win_thr_h;
 # endif
   DWORD thread_id;
+
+# if defined(CPPCHECK) && !defined(NO_WINMAIN_ENTRY)
+    GC_noop1((GC_word)&WinMain);
+# endif
 # if defined(GC_DLL) && !defined(GC_NO_THREADS_DISCOVERY) \
         && !defined(MSWINCE) && !defined(THREAD_LOCAL_ALLOC) \
         && !defined(PARALLEL_MARK)
@@ -1905,6 +2097,10 @@ int test(void)
     PCR_Th_T * th2;
     int code;
 
+#   if defined(CPPCHECK)
+      GC_noop1((word)&PCR_GC_Run);
+      GC_noop1((word)&PCR_GC_Setup);
+#   endif
     n_tests = 0;
     /* GC_enable_incremental(); */
     GC_set_warn_proc(warn_proc);
