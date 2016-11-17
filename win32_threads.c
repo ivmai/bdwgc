@@ -2812,6 +2812,9 @@ GC_INNER void GC_init_parallel(void)
   /* GC_init() calls us back, so set flag first.      */
 
   if (!GC_is_initialized) GC_init();
+# if defined(CPPCHECK) && !defined(GC_NO_THREADS_DISCOVERY)
+    GC_noop1((word)&GC_DllMain);
+# endif
 # ifndef GC_ALWAYS_MULTITHREADED
     if (GC_win32_dll_threads) {
       GC_need_to_lock = TRUE;
