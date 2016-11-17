@@ -1074,7 +1074,7 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
                         + sizeof(mse));
         GC_ASSERT((word)global_first_nonempty >= (word)GC_mark_stack &&
                   (word)global_first_nonempty <=
-                        (word)AO_load((volatile AO_t *)&GC_mark_stack_top)
+                    (word)AO_load_acquire((volatile AO_t *)&GC_mark_stack_top)
                         + sizeof(mse));
         if ((word)my_first_nonempty < (word)global_first_nonempty) {
             my_first_nonempty = global_first_nonempty;
