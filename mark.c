@@ -1095,7 +1095,8 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
                   (mse *)AO_load((volatile AO_t *)(&GC_mark_stack_top))  + 1);
         GC_ASSERT(global_first_nonempty >= GC_mark_stack &&
                   global_first_nonempty <=
-                  (mse *)AO_load((volatile AO_t *)(&GC_mark_stack_top))  + 1);
+                  (mse *)AO_load_acquire(
+                                (volatile AO_t *)(&GC_mark_stack_top)) + 1);
         if (my_first_nonempty < global_first_nonempty) {
             my_first_nonempty = global_first_nonempty;
         } else if (global_first_nonempty < my_first_nonempty) {
