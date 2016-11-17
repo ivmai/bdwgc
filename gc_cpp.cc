@@ -53,7 +53,7 @@ built-in "new" and "delete".
     GC_FREE(obj);
   }
 
-# ifdef GC_OPERATOR_NEW_ARRAY
+# if defined(GC_OPERATOR_NEW_ARRAY) && !defined(CPPCHECK)
     void* operator new[](size_t size) GC_DECL_NEW_THROW {
       return GC_MALLOC_UNCOLLECTABLE(size);
     }
