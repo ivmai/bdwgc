@@ -602,7 +602,7 @@ STATIC void GC_push_all_stack_partially_eager(ptr_t bottom, ptr_t top,
     GC_push_all_eager(bottom, top);
   }
 # ifdef TRACE_BUF
-      GC_add_trace_entry("GC_push_all_stack", bottom, top);
+    GC_add_trace_entry("GC_push_all_stack", (word)bottom, (word)top);
 # endif
 }
 
