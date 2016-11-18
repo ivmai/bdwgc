@@ -452,10 +452,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_many(size_t lb)
     return result;
 }
 
-/* Not well tested nor integrated.      */
-/* Debug version is tricky and currently missing.       */
 #include <limits.h>
 
+/* Debug version is tricky and currently missing.       */
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_memalign(size_t align, size_t lb)
 {
     size_t new_lb;
