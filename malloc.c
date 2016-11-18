@@ -431,7 +431,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
   {
     if ((lb | n) > GC_SQRT_SIZE_MAX /* fast initial test */
         && lb && n > GC_SIZE_MAX / lb)
-      return NULL;
+      return (*GC_get_oom_fn())(GC_SIZE_MAX); /* n*lb overflow */
 #   if defined(GC_LINUX_THREADS)
       /* libpthread allocated some memory that is only pointed to by    */
       /* mmapped thread stacks.  Make sure it is not collectible.       */
