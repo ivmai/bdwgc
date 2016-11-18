@@ -379,7 +379,7 @@ Also, includes 7.2 changes.
 * Fix GC_requested_heapsize increment in GC_init.
 * Fix header filename in gcconfig.h comment.
 * Fix integer shift undefined behavior in GC_init_explicit_typing.
-* Fix malloc routines to prevent size value wrap-around.
+* Fix malloc routines to prevent size value wrap-around (fix CVE-2016-9427).
 * Fix STACKBOTTOM for Solaris 11/x86.
 * Fix typo in comment of GC_lock (Win32).
 * Fix various typos in comments and documentation.
