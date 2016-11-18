@@ -666,7 +666,7 @@ GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t n, size_t lb,
                                           &complex_descr, &leaf);
     if ((lb | n) > GC_SQRT_SIZE_MAX /* fast initial check */
         && lb > 0 && n > GC_SIZE_MAX / lb)
-      return NULL; /* n*lb overflow */
+      return (*GC_get_oom_fn())(GC_SIZE_MAX); /* n*lb overflow */
     lb *= n;
     switch(descr_type) {
         case NO_MEM: return(0);
@@ -722,9 +722,7 @@ GC_API void * GC_CALL GC_calloc_explicitly_typed(size_t n, size_t lb,
        if (GC_general_register_disappearing_link((void * *)((word *)op+lw-1),
                                                  op) == GC_NO_MEMORY) {
            /* Couldn't register it due to lack of memory.  Punt.        */
-           /* This will probably fail too, but gives the recovery code  */
-           /* a chance.                                                 */
-            return GC_malloc(lb);
+            return (*GC_get_oom_fn())(lb);
        }
    }
    return((void *) op);
