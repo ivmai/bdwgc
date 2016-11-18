@@ -1681,6 +1681,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #if defined(CPPCHECK)
 # include "gc_inline.h" /* for GC_print_free_list */
 # include "javaxfc.h" /* for GC_finalize_all */
+# define UNTESTED(sym) GC_noop1((word)&sym)
 #endif
 
 #if defined(MSWINCE) && defined(UNDER_CE)
@@ -1744,7 +1745,6 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
       fflush(stdout);
 #   endif
 #   if defined(CPPCHECK)
-#      define UNTESTED(sym) GC_noop1((word)&sym)
        /* Entry points we should be testing, but aren't.        */
 #      ifndef GC_DEBUG
          UNTESTED(GC_debug_end_stubborn_change);
@@ -1766,9 +1766,6 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #      endif
 #      if defined(MACOS) && defined(USE_TEMPORARY_MEMORY)
          UNTESTED(GC_MacTemporaryNewPtr);
-#      endif
-#      ifdef PCR
-         UNTESTED(test);
 #      endif
 #      if !defined(_M_AMD64) && defined(_MSC_VER)
          UNTESTED(GetFileLineFromStack);
@@ -1870,35 +1867,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
          UNTESTED(GC_get_on_thread_event);
          UNTESTED(GC_register_altstack);
          UNTESTED(GC_set_on_thread_event);
-#        ifdef GC_PTHREADS
-           UNTESTED(GC_pthread_detach);
-#          ifndef GC_NO_DLOPEN
-             UNTESTED(GC_dlopen);
-#          endif
-#          ifndef GC_NO_PTHREAD_CANCEL
-             UNTESTED(GC_pthread_cancel);
-#          endif
-#          ifdef GC_HAVE_PTHREAD_EXIT
-             UNTESTED(GC_pthread_exit);
-#          endif
-#          ifndef GC_NO_PTHREAD_SIGMASK
-             UNTESTED(GC_pthread_sigmask);
-#          endif
-#        endif
-#        if defined(GC_DARWIN_THREADS) || defined(GC_OPENBSD_UTHREADS) \
-            || defined(GC_WIN32_THREADS) \
-            || (defined(NACL) && defined(THREADS))
-           UNTESTED(GC_set_suspend_signal);
-           UNTESTED(GC_set_thr_restart_signal);
-#        endif
-#        ifdef GC_WIN32_THREADS
-           UNTESTED(GC_ExitThread);
-#          if !defined(MSWINCE) && !defined(CYGWIN32)
-             UNTESTED(GC_beginthreadex);
-             UNTESTED(GC_endthreadex);
-#          endif
-#        endif
-#      endif /* THREADS */
+#      endif
 #      ifndef REDIRECT_MALLOC_IN_HEADER
 #        ifdef REDIRECT_MALLOC
 #          ifndef strndup
@@ -2084,6 +2053,13 @@ DWORD __stdcall thr_window(void * arg GC_ATTR_UNUSED)
       FAIL;
 # endif
   check_heap_stats();
+# if defined(CPPCHECK) && defined(GC_WIN32_THREADS)
+    UNTESTED(GC_ExitThread);
+#   if !defined(MSWINCE) && !defined(CYGWIN32)
+      UNTESTED(GC_beginthreadex);
+      UNTESTED(GC_endthreadex);
+#   endif
+# endif
   return(0);
 }
 
@@ -2100,6 +2076,7 @@ int test(void)
 #   if defined(CPPCHECK)
       GC_noop1((word)&PCR_GC_Run);
       GC_noop1((word)&PCR_GC_Setup);
+      GC_noop1((word)&test);
 #   endif
     n_tests = 0;
     /* GC_enable_incremental(); */
@@ -2202,6 +2179,23 @@ int main(void)
     check_heap_stats();
     (void)fflush(stdout);
     (void)pthread_attr_destroy(&attr);
+#   if defined(CPPCHECK) && defined(GC_PTHREADS)
+      UNTESTED(GC_pthread_detach);
+      UNTESTED(GC_set_suspend_signal);
+      UNTESTED(GC_set_thr_restart_signal);
+#     ifndef GC_NO_DLOPEN
+        UNTESTED(GC_dlopen);
+#     endif
+#     ifndef GC_NO_PTHREAD_CANCEL
+        UNTESTED(GC_pthread_cancel);
+#     endif
+#     ifdef GC_HAVE_PTHREAD_EXIT
+        UNTESTED(GC_pthread_exit);
+#     endif
+#     ifndef GC_NO_PTHREAD_SIGMASK
+        UNTESTED(GC_pthread_sigmask);
+#     endif
+#   endif /* CPPCHECK && GC_PTHREADS */
 #   ifdef PTW32_STATIC_LIB
         pthread_win32_thread_detach_np ();
         pthread_win32_process_detach_np ();
