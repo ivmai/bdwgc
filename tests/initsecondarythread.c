@@ -74,6 +74,7 @@ int main(void)
     /* GC_INIT() must be called from main thread only. */
     GC_INIT();
 # endif
+  (void)GC_get_parallel(); /* linking fails if no threads support */
 # ifdef GC_PTHREADS
     if ((code = pthread_create (&t, NULL, thread, NULL)) != 0) {
       fprintf(stderr, "Thread creation failed %d\n", code);
