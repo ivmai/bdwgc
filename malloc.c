@@ -411,7 +411,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
 
     STATIC void GC_init_lib_bounds(void)
     {
+      IF_CANCEL(int cancel_state;)
+
       if (GC_libpthread_start != 0) return;
+      DISABLE_CANCEL(cancel_state);
       GC_init(); /* if not called yet */
       if (!GC_text_mapping("libpthread-",
                            &GC_libpthread_start, &GC_libpthread_end)) {
@@ -424,6 +427,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
       if (!GC_text_mapping("ld-", &GC_libld_start, &GC_libld_end)) {
           WARN("Failed to find ld.so text mapping: Expect crash\n", 0);
       }
+      RESTORE_CANCEL(cancel_state);
     }
 # endif /* GC_LINUX_THREADS */
 
