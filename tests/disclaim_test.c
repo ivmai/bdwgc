@@ -30,6 +30,7 @@
 # include "config.h"
 #endif
 
+#undef GC_NO_THREAD_REDIRECTS
 #include "gc_disclaim.h"
 
 #define my_assert(e) \
