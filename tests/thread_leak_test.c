@@ -7,6 +7,7 @@
 # define GC_THREADS
 #endif
 
+#undef GC_NO_THREAD_REDIRECTS
 #include "leak_detector.h"
 
 #ifdef GC_PTHREADS

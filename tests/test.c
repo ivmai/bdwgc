@@ -29,6 +29,7 @@
 #  define GC_DEBUG
 #endif
 
+#undef GC_NO_THREAD_REDIRECTS
 #include "gc.h"
 
 #ifndef NTHREADS /* Number of additional threads to fork. */
