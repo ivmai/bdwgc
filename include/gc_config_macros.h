@@ -88,8 +88,9 @@
 #   define GC_IRIX_THREADS
 # endif
 # if defined(__sparc) && !defined(__linux__) \
-     || defined(sun) && (defined(i386) || defined(__i386__) \
-                         || defined(__amd64__))
+     || ((defined(sun) || defined(__sun)) \
+         && (defined(i386) || defined(__i386__) \
+             || defined(__amd64) || defined(__amd64__)))
 #   define GC_SOLARIS_THREADS
 # elif defined(__APPLE__) && defined(__MACH__)
 #   define GC_DARWIN_THREADS
