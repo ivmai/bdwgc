@@ -193,12 +193,12 @@
 #    define SEQUENT
 #    define mach_type_known
 # endif
-# if defined(sun) && (defined(i386) || defined(__i386__))
+# if (defined(sun) || defined(__sun)) && (defined(i386) || defined(__i386__))
 #    define I386
 #    define SOLARIS
 #    define mach_type_known
 # endif
-# if defined(sun) && defined(__amd64)
+# if (defined(sun) || defined(__sun)) && defined(__amd64)
 #    define X86_64
 #    define SOLARIS
 #    define mach_type_known
@@ -211,16 +211,15 @@
 # if defined(ibm032)
 #   error IBM PC/RT no longer supported.
 # endif
-# if defined(sun) && (defined(sparc) || defined(__sparc))
+# if (defined(sun) || defined(__sun)) && (defined(sparc) || defined(__sparc))
 #   define SPARC
     /* Test for SunOS 5.x */
-#     include <errno.h>
-#     define SOLARIS
+#   include <errno.h>
+#   define SOLARIS
 #   define mach_type_known
-# endif
-# if defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
-     && !defined(__OpenBSD__) && !defined(__NetBSD__) \
-     && !defined(__FreeBSD__) && !defined(__DragonFly__)
+# elif defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
+       && !defined(__OpenBSD__) && !defined(__NetBSD__) \
+       && !defined(__FreeBSD__) && !defined(__DragonFly__)
 #   define SPARC
 #   define DRSNX
 #   define mach_type_known
