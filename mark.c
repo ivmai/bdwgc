@@ -510,7 +510,22 @@ static void alloc_mark_stack(size_t);
 
       ext_ex_regn er;
 
-      er.alt_path = &&handle_ex;
+#     if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) \
+         || __clang_major__ > 3 \
+         || (__clang_major__ == 3 && __clang_minor__ >= 3)
+#       pragma GCC diagnostic push
+        /* Suppress "taking the address of label is non-standard" warning. */
+#       if defined(__clang__)
+#         pragma GCC diagnostic ignored "-Wpedantic"
+#       else
+          /* GCC before ~4.8 does not accept "-Wpedanic" quietly. */
+#         pragma GCC diagnostic ignored "-pedantic"
+#       endif
+        er.alt_path = &&handle_ex;
+#       pragma GCC diagnostic pop
+#     else /* pragma diagnostic is not supported */
+        er.alt_path = &&handle_ex;
+#     endif
       er.ex_reg.handler = mark_ex_handler;
       __asm__ __volatile__ ("movl %%fs:0, %0" : "=r" (er.ex_reg.prev));
       __asm__ __volatile__ ("movl %0, %%fs:0" : : "r" (&er));
