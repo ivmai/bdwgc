@@ -512,7 +512,7 @@ static void alloc_mark_stack(size_t);
 
 #     if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) \
          || __clang_major__ > 3 \
-         || (__clang_major__ == 3 && __clang_minor__ >= 6)
+         || (__clang_major__ == 3 && __clang_minor__ >= 3)
 #       pragma GCC diagnostic push
         /* Suppress "taking the address of label is non-standard" warning. */
 #       if defined(__clang__)
