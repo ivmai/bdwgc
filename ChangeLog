@@ -1,6 +1,8 @@
 
 == [7.4.6] (unset) ==
 
+* Adjust GC_memalign comment.
+* Do not define amiga_get_mem, MacTemporaryNewPtr unless really used (extra).
 * Do not warn of missing PT_GNU_RELRO segment when custom DSO filter used.
 * Eliminate 'cast to void* from int' compiler warnings (Darwin/x64).
 * Eliminate 'FP divide-by-zero' static analyzer warning.
@@ -12,22 +14,28 @@
 * Fix 'arg parameter might be clobbered by setjmp' compiler warning.
 * Fix 'GetVersion deprecated' compiler warning in os_dep (MS VC).
 * Fix 'incompatible pointer' compiler warning in GC_init_dyld (OS X 64-bit).
+* Fix 'incompatible ptr-to-int conversion' compiler warning in push_all_stack.
 * Fix 'ISO C90 does not support %lf, %lg gnu_printf formats' GCC warnings.
 * Fix 'ISO C90 forbids mixed declarations and code' compiler warning.
 * Fix 'replacement operator delete cannot be inline' GCC warning (Cygwin).
 * Fix 'variable unused' compiler warning in FirstDLOpenedLinkMap.
 * Fix GC_bytes_allocd incrementation in case of allocation failure.
+* Fix GC_jmp_buf multiple definition.
+* Fix initsecondarythread_test runtime failure if GC compiled w/o threads.
 * Fix local variable declarations in disclaim_bench.
 * Fix missing #error pragma.
 * Fix missing new-line and redundant trailing dot in WARN messages.
 * Fix potential overflow in decrement when computing GC_markers_m1.
 * Fix printf format specifiers in extra files (cppcheck warnings).
+* Fix register_finalizer call in disclaim_bench for GC_DEBUG.
 * Fix tag collision between ENABLE_DISCLAIM and KEEP_BACK_PTRS.
+* Fix threaded tests runtime crash if GC_NO_THREAD_REDIRECTS supplied.
 * Fix tools/setjmp_t to prevent nested_sp inlining.
 * Fix typo in CHECK_GCLIB_VERSION name (test).
 * Fix unchecked fork() result in gctest (Unix, Cygwin).
 * Process all PT_LOAD segments before PT_GNU_RELRO segments (Glibc).
 * Refine README about library source downloading.
+* Replace C++ style comments to C ones, remove commented out code (extra).
 * Workaround 'mmap() resource handle leak' static analyzer warning.
 * Workaround 'resource leak' error reported by cppcheck (tools, test).
 Also, includes 7.2h changes.
@@ -367,10 +375,14 @@ Also, includes 7.2 changes.
 == [7.2h] (unset) ==
 
 * Add gctest as a test (CMake).
+* Change no-argument functions declaration style to ANSI C (extra files).
 * Do not allow SHORT_DBG_HDRS if KEEP_BACK_PTRS or MAKE_BACK_GRAPH.
+* Ensure oom_fn callback executed on out-of-memory in calloc.
 * Fix 'shift count >= width of type' compiler warning in GC_SQRT_SIZE_MAX.
 * Fix assertion in GC_mark_from for non-heap regions.
+* Fix assertion violation in GC_repeat_read if --enable-redirect-malloc.
 * Fix assertion violation in GC_wait_builder called from start_mark_threads.
+* Fix assertion violation in mark_local checking GC_mark_stack_top.
 * Fix calloc_explicitly_typed in case of lb*n overflow.
 * Fix conditional expression in pos_fetch, next non-macro definitions (cord).
 * Fix CORD_substr_closure for the case when CORD_from_fn returns C string.
@@ -380,6 +392,8 @@ Also, includes 7.2 changes.
 * Fix header filename in gcconfig.h comment.
 * Fix integer shift undefined behavior in GC_init_explicit_typing.
 * Fix malloc routines to prevent size value wrap-around (fix CVE-2016-9427).
+* Fix potential integer overflow in GC_find_limit_* functions.
+* Fix Solaris/sparc detection in case of strict C compliance is enforced.
 * Fix STACKBOTTOM for Solaris 11/x86.
 * Fix typo in comment of GC_lock (Win32).
 * Fix various typos in comments and documentation.
