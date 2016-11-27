@@ -8,11 +8,13 @@ Also, includes 7.6.2 changes.
 == [7.6.2] (unset) ==
 
 * Add more cases to huge_test to cover sizes close to word-type maximum.
+* Add testing of new[]/delete[] (test_cpp).
 * Adjust code indentation of calloc_explicitly_typed.
 * Allow custom TRACE_ENTRIES value.
 * Code refactoring of divide-by-HBLKSIZE occurrences.
 * Code refactoring of huge_test.
 * Code refactoring of tests/subthread_create regarding AO add primitive.
+* Document configure 'syntax error' issue in README.
 * Eliminate 'address of local variable returned' static analyzer warning.
 * Eliminate 'assigned value never used' CSA warning in min_bytes_allocd.
 * Eliminate 'C-style pointer casting' cppcheck style warnings in test.
@@ -24,6 +26,8 @@ Also, includes 7.6.2 changes.
 * Eliminate 'constructor with 1 argument is not explicit' cppcheck warning.
 * Eliminate 'CORD_*printf is never used' cppcheck style warnings (cordtest).
 * Eliminate 'dereference of null' CSA false warning in array_mark_proc.
+* Eliminate 'function result not used' code defect in GC_mark_local.
+* Eliminate 'GC_record_fault is never used' cppcheck style warning.
 * Eliminate 'possible integer underflow' code defect (cord-de).
 * Eliminate 'potential overflow' static analyzer warning in test.
 * Eliminate 'printf format specifies type void*' GCC pedantic warnings.
@@ -53,17 +57,21 @@ Also, includes 7.6.2 changes.
 * Fix compilation if configured with --enable-werror on OS X.
 * Fix null dereference in GC_stack_range_for if not DARWIN_DONT_PARSE_STACK.
 * Fix page calculation in checksums.
+* Report gcc/clang pedantic warnings (configure).
 * Skip thread suspend/resume API testing for Tru64 (OSF1).
+* Support AddressSanitizer and MemorySanitizer (clang).
+* Suppress 'tainted string passed to vulnerable operation' false defects.
+* Suppress 'taking address of label non-standard' GCC/Clang pedantic warning.
+* Update README to use autogen.sh on build from the source repository.
 * Workaround '#error' cppcheck error messages.
 * Workaround 'checking if unsigned value is negative' cppcheck warning.
 * Workaround 'Condition 0!=GETENV() is always false' cppcheck style warnings.
 * Workaround 'condition is always false' cppcheck warning in get_next_stack.
+* Workaround 'function is never used' cppcheck style warnings.
 * Workaround 'insecure libc pseudo-random number generator used' code defect.
 * Workaround 'local variable size too big' static analyzer warning.
 * Workaround 'obsolete function alloca() called' cppcheck warnings.
 * Workaround 'passing untyped NULL to variadic function' cppcheck warning.
-* Workaround 'pos_*, [r]iter, dump never used' cppcheck style warnings (cord).
-* Workaround 'possible null pointer dereference' cppcheck warning (Darwin).
 * Workaround 'possible null pointer dereference' cppcheck warnings.
 * Workaround 'redundant assignment of *result to itself' cppcheck warning.
 * Workaround 'same expression on both sides of ==' cppcheck style warning.
