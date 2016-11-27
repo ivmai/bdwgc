@@ -1,3 +1,53 @@
+2016-11-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_config_macros.h [__i386__||__amd64__] (GC_SOLARIS_THREADS):
+	Define also if __sun is defined (treat __sun as a synonym to sun).
+	* include/private/gcconfig.h [__i386__ || __amd64] (SOLARIS):
+	Likewise.
+	* include/gc_config_macros.h [sun] (GC_SOLARIS_THREADS): Define also
+	if __amd64 is defined (treat __amd64 as a synonym to __amd64__).
+	* include/gc_config_macros.h [sparc && unix] (DRSNX): Do not define if
+	SPARC and SOLARIS are already defined.
+
+2016-11-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* malloc.c [REDIRECT_MALLOC && GC_LINUX_THREADS] (GC_init_lib_bounds):
+	Declare cancel_state local variable; DISABLE_CANCEL for GC_text_mapping
+	(because GC_repeat_read expects the cancellation state off); call
+	RESTORE_CANCEL on return.
+
+2016-11-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* malloc.c [REDIRECT_MALLOC] (calloc):
+	Call oom_fn(SIZE_MAX) (instead of returning NULL) if n*lb overflows.
+	* typd_mlc.c (GC_calloc_explicitly_typed): Likewise.
+	* typd_mlc.c (GC_calloc_explicitly_typed): If register_disappearing_link
+	failed due to lack of memory then call oom_fn(lb) instead of
+	GC_malloc(lb); update comment.
+
+2016-11-17  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c (GC_mark_local): Replace AO_load with AO_load_acquire in
+	the assertion comparing global_first_nonempty to GC_mark_stack_top.
+
+2016-11-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [OPENBSD] (GC_find_limit_openbsd, GC_skip_hole_openbsd): Add
+	assertion for the minimum value of bound; increment result by pgsz only
+	if no overflow is guaranteed.
+	* os_dep.c [USE_PROC_FOR_LIBRARIES && THREADS || NEED_FIND_LIMIT]
+	(GC_find_limit_with_bound): Add assertion for the minimum/maximum value
+	of bound; increment/decrement result by MIN_PAGE_SIZE only if no
+	overflow/underflow is guaranteed.
+
+2016-11-14  Ivan Maidanski <ivmai@mail.ru>
+
+	* extra/AmigaOS.c (GC_get_main_stack_base, GC_register_data_segments):
+	Replace "()" to "(void)" in the function prototype.
+	* extra/MacOS.c (GC_MacGetDataStart, perform_final_collection,
+	GC_MacFreeTemporaryMemory, GC_MacGetDataEnd): Likewise.
+	* extra/msvc_dbg.c (GetSymHandle): Likewise.
+
 2016-08-07  Andy Li <andy@onthewings.net>
 
 	* CMakeLists.txt: Include CTest.
