@@ -15,5 +15,5 @@ install:
   - ./autogen.sh
 
 script:
-  - ./configure --enable-werror --enable-munmap
+  - ./configure --enable-cplusplus --enable-munmap --enable-werror
   - make -j check
