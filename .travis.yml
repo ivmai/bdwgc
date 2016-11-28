@@ -1,4 +1,4 @@
-language: c
+language: c++
 
 os:
   - linux
@@ -22,6 +22,8 @@ sudo: required
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CFLAGS_EXTRA_M" == "-m32" ]]; then
       sudo apt-get install gcc-multilib;
+    else
+      CONF_CPP=--enable-cplusplus;
     fi
 
 install:
@@ -29,5 +31,5 @@ install:
   - ./autogen.sh
 
 script:
-  - ./configure --enable-munmap
+  - ./configure $CONF_CPP --enable-munmap
   - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA_M"
