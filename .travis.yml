@@ -8,10 +8,16 @@ compiler:
   - clang
   - gcc
 
+env:
+  - CONF_GC_DEBUG=
+  - CONF_GC_DEBUG=--enable-gc-debug
+
 matrix:
   exclude:
   - os: osx
     compiler: gcc
+  - compiler: clang
+    env: CONF_GC_DEBUG=--enable-gc-debug
 
 sudo: false
 
@@ -20,5 +26,5 @@ install:
   - autoreconf -vif
 
 script:
-  - ./configure --enable-cplusplus
+  - ./configure --enable-cplusplus $CONF_GC_DEBUG
   - make -j check
