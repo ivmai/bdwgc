@@ -1,4 +1,4 @@
-language: c
+language: c++
 
 os:
   - linux
@@ -20,5 +20,5 @@ install:
   - autoreconf -vif
 
 script:
-  - ./configure
+  - ./configure --enable-cplusplus
   - make -j check
