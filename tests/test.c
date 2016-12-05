@@ -1732,12 +1732,15 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
           && !defined(MAKE_BACK_GRAPH) && !defined(NO_INCREMENTAL)
       GC_enable_incremental();
       GC_printf("Switched to incremental mode\n");
-#     if defined(MPROTECT_VDB)
-        GC_printf("Emulating dirty bits with mprotect/signals\n");
-#     elif defined(PROC_VDB)
+#     ifdef PROC_VDB
         GC_printf("Reading dirty bits from /proc\n");
-#     else /* GWW_VDB */
+#     elif defined(GWW_VDB)
         GC_printf("Using GetWriteWatch-based implementation\n");
+#       ifdef MPROTECT_VDB
+          GC_printf("Or emulating dirty bits with mprotect/signals\n");
+#       endif
+#     else /* MPROTECT_VDB && !GWW_VDB */
+        GC_printf("Emulating dirty bits with mprotect/signals\n");
 #     endif
 #   endif
     run_one_test();
