@@ -226,7 +226,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
                                           GC_ATTR_NO_SANITIZE_ADDR
 {
   volatile int dummy;
-  void * context = 0;
+  void * volatile context = 0;
 
 # if defined(HAVE_PUSH_REGS)
     GC_push_regs();
