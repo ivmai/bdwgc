@@ -340,10 +340,12 @@ sexpr gcj_cons(sexpr x, sexpr y)
 {
     GC_word * r;
     sexpr result;
+    static int obj_cnt = 0;
 
     r = (GC_word *) GC_GCJ_MALLOC(sizeof(struct SEXPR)
                                   + sizeof(struct fake_vtable*),
-                                   &gcj_class_struct2);
+                                  (++obj_cnt & 1) != 0 ? &gcj_class_struct1
+                                                       : &gcj_class_struct2);
     CHECK_OUT_OF_MEMORY(r);
     result = (sexpr)(r + 1);
     result -> sexpr_car = x;
