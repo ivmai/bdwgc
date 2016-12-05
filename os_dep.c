@@ -1847,11 +1847,17 @@ void GC_register_data_segments(void)
     GC_setup_temporary_fault_handler();
     if (SETJMP(GC_jmp_buf) == 0) {
         /* Try writing to the address.  */
-        char v = *result;
-#       if defined(CPPCHECK)
-          GC_noop1((word)&v);
+#       ifdef AO_HAVE_fetch_and_add
+          volatile AO_t zero = 0;
+          (void)AO_fetch_and_add((volatile AO_t *)result, zero);
+#       else
+          /* Fallback to non-atomic fetch-and-store.    */
+          char v = *result;
+#         if defined(CPPCHECK)
+            GC_noop1((word)&v);
+#         endif
+          *result = v;
 #       endif
-        *result = v;
         GC_reset_fault_handler();
     } else {
         GC_reset_fault_handler();
