@@ -1326,7 +1326,7 @@ struct _GC_arrays {
     volatile page_hash_table _dirty_pages;
                         /* Pages dirtied since last GC_read_dirty. */
 # endif
-# if defined(PROC_VDB) || defined(GWW_VDB)
+# if (defined(CHECKSUMS) && defined(GWW_VDB)) || defined(PROC_VDB)
 #   define GC_written_pages GC_arrays._written_pages
     page_hash_table _written_pages;     /* Pages ever dirtied   */
 # endif
