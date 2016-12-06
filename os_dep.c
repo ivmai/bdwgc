@@ -2714,13 +2714,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #endif
 
 #if defined(PROC_VDB) || defined(GWW_VDB)
-  /* Add all pages in pht2 to pht1 */
-  STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
-  {
-    register unsigned i;
-    for (i = 0; i < PHT_SIZE; i++) pht1[i] |= pht2[i];
-  }
-
 # ifdef MPROTECT_VDB
     STATIC GC_bool GC_gww_page_was_dirty(struct hblk * h)
 # else
@@ -2735,6 +2728,13 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   }
 
 # if defined(CHECKSUMS) || defined(PROC_VDB)
+    /* Add all pages in pht2 to pht1.   */
+    STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
+    {
+      register unsigned i;
+      for (i = 0; i < PHT_SIZE; i++) pht1[i] |= pht2[i];
+    }
+
     /* Used only if GWW_VDB. */
 #   ifdef MPROTECT_VDB
       STATIC GC_bool GC_gww_page_was_ever_dirty(struct hblk * h)
@@ -2852,7 +2852,9 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       /* up.  But that should still be handled correctly.                */
     }
 
-    GC_or_pages(GC_written_pages, GC_grungy_pages);
+#   ifdef CHECKSUMS
+      GC_or_pages(GC_written_pages, GC_grungy_pages);
+#   endif
   }
 #endif /* GWW_VDB */
 
