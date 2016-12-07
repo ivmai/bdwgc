@@ -1822,7 +1822,7 @@ GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
         IF_CANCEL(int cancel_state;)
 
 #       ifdef DEBUG_THREADS
-          if (new_thread)
+            /* new_thread is non-NULL because pthread_create requires it. */
             GC_log_printf("Started thread %p\n", (void *)(*new_thread));
 #       endif
         DISABLE_CANCEL(cancel_state);
