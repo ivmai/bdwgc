@@ -494,8 +494,8 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
           /* rounding to the next multiple of ALIGNMENT, so, most   */
           /* probably, we should remove the corresponding assertion */
           /* check in GC_add_roots_inner along with this code line. */
-          /* start pointer value may require aligning */
-          start = (ptr_t)((word)start & ~(sizeof(word) - 1));
+          /* start pointer value may require aligning.              */
+          start = (ptr_t)((word)start & ~(word)(sizeof(word) - 1));
 #       endif
         if (n_load_segs >= MAX_LOAD_SEGS) {
           if (!load_segs_overflow) {
@@ -920,7 +920,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #   else
       char * stack_top
          = (char *)((word)GC_approx_sp() &
-                        ~(GC_sysinfo.dwAllocationGranularity - 1));
+                    ~(word)(GC_sysinfo.dwAllocationGranularity - 1));
 
       if (base == limit) return;
       if ((word)limit > (word)stack_top
