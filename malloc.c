@@ -147,7 +147,7 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
         }
         *opp = obj_link(op);
         obj_link(op) = 0;
-        GC_bytes_allocd += GRANULES_TO_BYTES(lg);
+        GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
     } else {
         op = (ptr_t)GC_alloc_large_and_clear(ADD_SLOP(lb), k, 0);
         if (op != NULL)
@@ -266,7 +266,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
                 *opp = obj_link(op);
                 obj_link(op) = 0;
             }
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
+            GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
             UNLOCK();
             return op;
         }
@@ -316,11 +316,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
         if (EXPECT(op != NULL, TRUE)) {
             *opp = obj_link(op);
             obj_link(op) = 0;
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
+            GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
             /* Mark bit was already set on free list.  It will be       */
             /* cleared only temporarily during a collection, as a       */
             /* result of the normal free list mark bit clearing.        */
-            GC_non_gc_bytes += GRANULES_TO_BYTES(lg);
+            GC_non_gc_bytes += GRANULES_TO_BYTES((word)lg);
             UNLOCK();
         } else {
             UNLOCK();

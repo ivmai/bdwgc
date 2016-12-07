@@ -618,7 +618,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
         } else {
             GC_eobjfreelist[lg] = obj_link(op);
             obj_link(op) = 0;
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
+            GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
             UNLOCK();
         }
         ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;

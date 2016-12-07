@@ -177,7 +177,7 @@ static void maybe_finalize(void)
             }
         } else {
             GC_gcjobjfreelist[lg] = obj_link(op);
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
+            GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
         }
         *(void **)op = ptr_to_struct_containing_descr;
         GC_ASSERT(((void **)op)[1] == 0);
@@ -250,7 +250,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
             }
         } else {
             GC_gcjobjfreelist[lg] = obj_link(op);
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
+            GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
         }
     } else {
         LOCK();
