@@ -2548,9 +2548,10 @@
 #       define OS_TYPE "MSWIN32"
                 /* STACKBOTTOM and DATASTART are handled specially in   */
                 /* os_dep.c.                                            */
-#       if !defined(__GNUC__) || defined(__INTEL_COMPILER)
-          /* GCC does not currently support SetUnhandledExceptionFilter */
-          /* (does not generate SEH unwinding information) on x64.      */
+#       if !defined(__GNUC__) || defined(__INTEL_COMPILER) \
+           || __GNUC__ >= 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
+          /* Older GCC has not supported SetUnhandledExceptionFilter    */
+          /* properly on x64 (e.g. SEH unwinding information missed).   */
 #         define MPROTECT_VDB
 #       endif
 #       define GWW_VDB
