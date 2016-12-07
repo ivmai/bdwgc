@@ -670,7 +670,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #           define SHARE_BYTES 2048
             if (descr > SHARE_BYTES && GC_parallel
                 && mark_stack_top < mark_stack_limit - 1) {
-              int new_size = (descr/2) & ~(sizeof(word)-1);
+              word new_size = (descr/2) & ~(word)(sizeof(word)-1);
               mark_stack_top -> mse_start = current_p;
               mark_stack_top -> mse_descr = new_size + sizeof(word);
                                         /* makes sure we handle         */

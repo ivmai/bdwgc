@@ -695,8 +695,8 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 
 # define modHBLKSZ(n) ((n) & (HBLKSIZE-1))
 
-# define HBLKPTR(objptr) ((struct hblk *)(((word) (objptr)) & ~(HBLKSIZE-1)))
-
+# define HBLKPTR(objptr) ((struct hblk *)(((word)(objptr)) \
+                                          & ~(word)(HBLKSIZE-1)))
 # define HBLKDISPL(objptr) (((size_t) (objptr)) & (HBLKSIZE-1))
 
 /* Round up allocation size (in bytes) to a multiple of a granule.      */

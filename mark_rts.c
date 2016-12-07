@@ -157,9 +157,9 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
     struct roots * old;
 
     GC_ASSERT(b <= e);
-    b = (ptr_t)(((word)b + (sizeof(word) - 1)) & ~(sizeof(word) - 1));
+    b = (ptr_t)(((word)b + (sizeof(word) - 1)) & ~(word)(sizeof(word) - 1));
                                         /* round b up to word boundary */
-    e = (ptr_t)((word)e & ~(sizeof(word) - 1));
+    e = (ptr_t)((word)e & ~(word)(sizeof(word) - 1));
                                         /* round e down to word boundary */
     if (b >= e) return; /* nothing to do */
 
@@ -305,8 +305,8 @@ STATIC void GC_remove_tmp_roots(void)
     DCL_LOCK_STATE;
 
     /* Quick check whether has nothing to do */
-    if ((((word)b + (sizeof(word) - 1)) & ~(sizeof(word) - 1)) >=
-        ((word)e & ~(sizeof(word) - 1)))
+    if ((((word)b + (sizeof(word) - 1)) & ~(word)(sizeof(word) - 1)) >=
+        ((word)e & ~(word)(sizeof(word) - 1)))
       return;
 
     LOCK();
@@ -448,7 +448,7 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
     DCL_LOCK_STATE;
 
     /* Adjust the upper boundary for safety (round down) */
-    e = (void *)((word)e & ~(sizeof(word) - 1));
+    e = (void *)((word)e & ~(word)(sizeof(word) - 1));
 
     if (b == e) return;  /* nothing to exclude? */
 

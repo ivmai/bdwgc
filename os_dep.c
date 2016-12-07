@@ -536,7 +536,7 @@ GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
              /* allocation lock held.                           */
 
     struct sigaction act;
-    size_t pgsz = (size_t)sysconf(_SC_PAGESIZE);
+    word pgsz = (word)sysconf(_SC_PAGESIZE);
 
     GC_ASSERT((word)bound >= pgsz);
     GC_ASSERT(I_HOLD_LOCK());
@@ -575,7 +575,7 @@ GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
     static volatile int firstpass;
 
     struct sigaction act;
-    size_t pgsz = (size_t)sysconf(_SC_PAGESIZE);
+    word pgsz = (word)sysconf(_SC_PAGESIZE);
 
     GC_ASSERT((word)bound >= pgsz);
     GC_ASSERT(I_HOLD_LOCK());
@@ -1855,7 +1855,7 @@ void GC_register_data_segments(void)
   ptr_t GC_SysVGetDataStart(size_t max_page_size, ptr_t etext_addr)
   {
     word text_end = ((word)(etext_addr) + sizeof(word) - 1)
-                    & ~(sizeof(word) - 1);
+                    & ~(word)(sizeof(word) - 1);
         /* etext rounded to word boundary       */
     word next_page = ((text_end + (word)max_page_size - 1)
                       & ~((word)max_page_size - 1));
@@ -1899,7 +1899,7 @@ void GC_register_data_segments(void)
 ptr_t GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr)
 {
     word text_end = ((word)(etext_addr) + sizeof(word) - 1)
-                     & ~(sizeof(word) - 1);
+                     & ~(word)(sizeof(word) - 1);
         /* etext rounded to word boundary       */
     volatile word next_page = (text_end + (word)max_page_size - 1)
                               & ~((word)max_page_size - 1);
@@ -2220,7 +2220,7 @@ void * os2_alloc(size_t bytes)
         /* There are also unconfirmed rumors of other           */
         /* problems, so we dodge the issue.                     */
         result = (ptr_t)(((word)GlobalAlloc(0, SIZET_SAT_ADD(bytes, HBLKSIZE))
-                            + HBLKSIZE - 1) & ~(HBLKSIZE - 1));
+                            + HBLKSIZE - 1) & ~(word)(HBLKSIZE - 1));
     } else {
         /* VirtualProtect only works on regions returned by a   */
         /* single VirtualAlloc call.  Thus we allocate one      */
@@ -3753,7 +3753,8 @@ GC_INNER void GC_read_dirty(void)
                 }
             }
         }
-        bufp = (char *)(((word)bufp + (sizeof(long)-1)) & ~(sizeof(long)-1));
+        bufp = (char *)(((word)bufp + (sizeof(long)-1))
+                        & ~(word)(sizeof(long)-1));
     }
 #   ifdef DEBUG_DIRTY_BITS
       GC_log_printf("Proc VDB read done.\n");

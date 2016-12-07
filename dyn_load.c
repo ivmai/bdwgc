@@ -879,7 +879,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #   else
       char * stack_top
          = (char *)((word)GC_approx_sp() &
-                        ~(GC_sysinfo.dwAllocationGranularity - 1));
+                    ~(word)(GC_sysinfo.dwAllocationGranularity - 1));
       if (base == limit) return;
       if (limit > stack_top && base < GC_stackbottom) {
           /* Part of the stack; ignore it. */
