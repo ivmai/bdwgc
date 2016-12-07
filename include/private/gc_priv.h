@@ -2453,6 +2453,13 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define COND_DUMP COND_DUMP_CHECKS
 #endif
 
+#if !defined(SMALL_CONFIG) || !defined(NO_DEBUGGING)
+GC_EXTERN unsigned long GC_total_gc_time;
+#ifndef NO_DEBUGGING
+GC_EXTERN unsigned long GC_init_time;
+#endif
+#endif
+
 #if defined(PARALLEL_MARK)
   /* We need additional synchronization facilities from the thread      */
   /* support.  We believe these are less performance critical           */

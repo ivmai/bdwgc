@@ -398,14 +398,16 @@ GC_API void GC_CALL GC_calc_gc_time(void);
                         /* enabled, the times are available from the    */
                         /* function below.                              */
                         /* Defined only if the library has been         */
-                        /* compiled without SMALL_CONFIG.               */
+                        /* compiled without either SMALL_CONFIG or      */
+                        /* NO_DEBUGGING.                                */
 GC_API unsigned long GC_CALL GC_get_total_gc_time(void);
                         /* If GC_mercury_calc_gc_time is true, this     */
                         /* holds the total user time used so far by     */
                         /* garbage collections. It is measured in       */
                         /* milliseconds.                                */
                         /* Defined only if the library has been         */
-                        /* compiled without SMALL_CONFIG.               */
+                        /* compiled without either SMALL_CONFIG or      */
+                        /* NO_DEBUGGING.                                */
 
 /* Public procedures */
 
@@ -1532,6 +1534,12 @@ GC_API void * GC_CALL GC_is_valid_displacement(void * /* p */);
 /* but it may be useful to call it from client code during debugging.   */
 /* Defined only if the library has been compiled without NO_DEBUGGING.  */
 GC_API void GC_CALL GC_dump(void);
+
+/* As above with a label that is used to help identifiy individual      */
+/* dumps. If label is NULL or the GC_dump function is called the        */
+/* current GC number will be used to label the dump.                    */
+/* Defined only if the library has been compiled without NO_DEBUGGING.  */
+GC_API void GC_CALL GC_dump_label(const char *label);
 
 /* Dump information about each block of every GC memory section.        */
 /* Defined only if the library has been compiled without NO_DEBUGGING.  */

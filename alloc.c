@@ -63,12 +63,17 @@ word GC_non_gc_bytes = 0;  /* Number of bytes not intended to be collected */
 
 word GC_gc_no = 0;
 
-#ifndef SMALL_CONFIG
-STATIC GC_bool GC_calc_gc_time_enabled = FALSE;
+#if !defined(SMALL_CONFIG) || !defined(NO_DEBUGGING)
+STATIC GC_bool  GC_calc_gc_time_enabled = FALSE;
 			   /* Accumulate total gc time  in      */
 			   /* GC_total_gc_time if set to true.  */
-STATIC unsigned long GC_total_gc_time = 0;
+unsigned long   GC_total_gc_time = 0;
 			   /* Measured in milliseconds.         */
+
+#ifndef NO_DEBUGGING
+unsigned long   GC_init_time;
+                           /* The time that the GC was initialised. */
+#endif
 
 GC_API void GC_CALL GC_calc_gc_time(void)
 {

@@ -1003,6 +1003,13 @@ GC_API void GC_CALL GC_init(void)
           }
         }
 #     endif
+#     if !defined(NO_DEBUGGING)
+        /*
+         * The total mutator time is used with GC_dump.
+         */
+        GC_calc_gc_time();
+        GET_TIME(GC_init_time);
+#     endif
 #   endif /* !SMALL_CONFIG */
 #   if !defined(NO_DEBUGGING) && !defined(GC_DUMP_REGULARLY)
       if (0 != GETENV("GC_DUMP_REGULARLY")) {
@@ -2056,7 +2063,24 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 #if !defined(NO_DEBUGGING)
   GC_API void GC_CALL GC_dump(void)
   {
-    GC_printf("***Static roots:\n");
+    GC_dump_label(NULL);
+  }
+
+  GC_API void GC_CALL GC_dump_label(const char *label)
+  {
+    unsigned long mut_time;
+
+    if (NULL != label) {
+      GC_printf("***GC Dump %s\n", label);
+    } else {
+      GC_printf("***GC Dump collection %lu\n", GC_get_gc_no());
+    }
+
+    GET_TIME(mut_time);
+    mut_time -= GC_init_time + GC_total_gc_time;
+    GC_printf("Time: %lu\n", mut_time);
+
+    GC_printf("\n***Static roots:\n");
     GC_print_static_roots();
     GC_printf("\n***Heap sections:\n");
     GC_print_heap_sects();
