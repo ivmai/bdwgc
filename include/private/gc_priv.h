@@ -2101,11 +2101,18 @@ GC_EXTERN GC_bool GC_print_back_height;
                         /* Retrieve dirty bits. */
   GC_INNER GC_bool GC_page_was_dirty(struct hblk *h);
                         /* Read retrieved dirty bits.   */
+
   GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
                                    GC_bool pointerfree);
-                        /* h is about to be written or allocated.  Ensure   */
-                        /* that it's not write protected by the virtual     */
-                        /* dirty bit implementation.                        */
+                /* h is about to be written or allocated.  Ensure that  */
+                /* it is not write protected by the virtual dirty bit   */
+                /* implementation.  I.e., this is a call that:          */
+                /* - hints that [h, h+nblocks) is about to be written;  */
+                /* - guarantees that protection is removed;             */
+                /* - may speed up some dirty bit implementations;       */
+                /* - may be essential if we need to ensure that         */
+                /* pointer-free system call buffers in the heap are     */
+                /* not protected.                                       */
 
   GC_INNER void GC_dirty_init(void);
 #endif /* !GC_DISABLE_INCREMENTAL */

@@ -2713,21 +2713,24 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
   GC_INNER GC_bool GC_dirty_maintained = FALSE;
 #endif
 
-#if defined(PROC_VDB) || defined(GWW_VDB)
-# ifdef MPROTECT_VDB
-    STATIC GC_bool GC_gww_page_was_dirty(struct hblk * h)
-# else
-    GC_INNER GC_bool GC_page_was_dirty(struct hblk * h)
-# endif
+#if defined(GWW_VDB) || defined(MPROTECT_VDB) || defined(PROC_VDB) \
+    || defined(MANUAL_VDB)
+  /* Is the HBLKSIZE sized page at h marked dirty in the local buffer?  */
+  /* If the actual page size is different, this returns TRUE if any     */
+  /* of the pages overlapping h are dirty.  This routine may err on the */
+  /* side of labeling pages as dirty (and this implementation does).    */
+  GC_INNER GC_bool GC_page_was_dirty(struct hblk * h)
   {
     register word index;
+
     if (HDR(h) == 0)
       return TRUE;
     index = PHT_HASH(h);
     return get_pht_entry_from_index(GC_grungy_pages, index);
   }
+#endif
 
-# if defined(CHECKSUMS) || defined(PROC_VDB)
+#if (defined(CHECKSUMS) && defined(GWW_VDB)) || defined(PROC_VDB)
     /* Add all pages in pht2 to pht1.   */
     STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
     {
@@ -2748,16 +2751,15 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
       index = PHT_HASH(h);
       return get_pht_entry_from_index(GC_written_pages, index);
     }
-# endif /* CHECKSUMS || PROC_VDB */
+#endif /* CHECKSUMS && GWW_VDB || PROC_VDB */
 
-# ifndef MPROTECT_VDB
+#if ((defined(GWW_VDB) || defined(PROC_VDB)) && !defined(MPROTECT_VDB)) \
+    || defined(MANUAL_VDB) || defined(DEFAULT_VDB)
     /* Ignore write hints.  They don't help us here.    */
     GC_INNER void GC_remove_protection(struct hblk * h GC_ATTR_UNUSED,
                                        word nblocks GC_ATTR_UNUSED,
                                        GC_bool is_ptrfree GC_ATTR_UNUSED) {}
-# endif
-
-#endif /* PROC_VDB || GWW_VDB */
+#endif
 
 #ifdef GWW_VDB
 
@@ -2896,16 +2898,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     }
 # endif /* CHECKSUMS */
 
-  /* A call that:                                         */
-  /* I) hints that [h, h+nblocks) is about to be written. */
-  /* II) guarantees that protection is removed.           */
-  /* (I) may speed up some dirty bit implementations.     */
-  /* (II) may be essential if we need to ensure that      */
-  /* pointer-free system call buffers in the heap are     */
-  /* not protected.                                       */
-  GC_INNER void GC_remove_protection(struct hblk * h GC_ATTR_UNUSED,
-                                     word nblocks GC_ATTR_UNUSED,
-                                     GC_bool is_ptrfree GC_ATTR_UNUSED) {}
 #endif /* DEFAULT_VDB */
 
 #ifdef MANUAL_VDB
@@ -2926,16 +2918,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     BZERO((word *)GC_dirty_pages, (sizeof GC_dirty_pages));
   }
 
-  /* Is the HBLKSIZE sized page at h marked dirty in the local buffer?  */
-  /* If the actual page size is different, this returns TRUE if any     */
-  /* of the pages overlapping h are dirty.  This routine may err on the */
-  /* side of labeling pages as dirty (and this implementation does).    */
-  GC_INNER GC_bool GC_page_was_dirty(struct hblk *h)
-  {
-    register word index = PHT_HASH(h);
-    return(HDR(h) == 0 || get_pht_entry_from_index(GC_grungy_pages, index));
-  }
-
 # define async_set_pht_entry_from_index(db, index) \
                         set_pht_entry_from_index(db, index) /* for now */
 
@@ -2946,10 +2928,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     word index = PHT_HASH(p);
     async_set_pht_entry_from_index(GC_dirty_pages, index);
   }
-
-  GC_INNER void GC_remove_protection(struct hblk * h GC_ATTR_UNUSED,
-                                     word nblocks GC_ATTR_UNUSED,
-                                     GC_bool is_ptrfree GC_ATTR_UNUSED) {}
 
 # ifdef CHECKSUMS
     /* Could any valid GC heap pointer ever have been written to this page? */
@@ -3526,19 +3504,6 @@ GC_INNER void GC_read_dirty(void)
           (sizeof GC_dirty_pages));
     BZERO((word *)GC_dirty_pages, (sizeof GC_dirty_pages));
     GC_protect_heap();
-}
-
-GC_INNER GC_bool GC_page_was_dirty(struct hblk *h)
-{
-    register word index;
-
-#   if defined(GWW_VDB)
-      if (GC_GWW_AVAILABLE())
-        return GC_gww_page_was_dirty(h);
-#   endif
-
-    index = PHT_HASH(h);
-    return(HDR(h) == 0 || get_pht_entry_from_index(GC_grungy_pages, index));
 }
 
 /*
