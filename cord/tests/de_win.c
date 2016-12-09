@@ -62,11 +62,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
       wndclass.lpszClassName  = szAppName;
 
       if (RegisterClass (&wndclass) == 0) {
-          char buf[50];
-
-          sprintf(buf, "RegisterClass: error code: 0x%X",
-                  (unsigned)GetLastError());
-          de_error(buf);
+          de_error("RegisterClass error");
           return(0);
       }
    }
@@ -99,11 +95,7 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
                         NULL,   /* Window class menu */
                         hInstance, NULL);
    if (hwnd == NULL) {
-        char buf[50];
-
-        sprintf(buf, "CreateWindow: error code: 0x%X",
-                (unsigned)GetLastError());
-        de_error(buf);
+        de_error("CreateWindow error");
         return(0);
    }
 
