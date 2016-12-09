@@ -361,8 +361,11 @@ inline void gc::operator delete( void* obj ) {
 # endif
 #endif /* GC_OPERATOR_NEW_ARRAY */
 
-inline gc_cleanup::~gc_cleanup() {
-    GC_register_finalizer_ignore_self( GC_base(this), 0, 0, 0, 0 );
+inline gc_cleanup::~gc_cleanup()
+{
+  void* base = GC_base(this);
+  if (0 == base) return; // Non-heap object.
+  GC_register_finalizer_ignore_self(base, 0, 0, 0, 0);
 }
 
 inline void GC_CALLBACK gc_cleanup::cleanup( void* obj, void* displ ) {
