@@ -164,7 +164,7 @@ int char_height;
 
 void get_line_rect(int line, int win_width, RECT * rectp)
 {
-    rectp -> top = line * char_height;
+    rectp -> top = line * (LONG)char_height;
     rectp -> bottom = rectp->top + char_height;
     rectp -> left = 0;
     rectp -> right = win_width;
