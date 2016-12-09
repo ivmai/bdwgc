@@ -90,6 +90,9 @@ esac
 GC_CFLAGS=${gc_cflags}
 AC_SUBST(GC_CFLAGS)
 
+# Extra user-defined flags to pass both to C and C++ compilers.
+AC_SUBST([CFLAGS_EXTRA])
+
 AC_ARG_ENABLE(threads,
   [AC_HELP_STRING([--enable-threads=TYPE], [choose threading package])],
   THREADS=$enableval,
