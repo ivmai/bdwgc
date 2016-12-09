@@ -1784,7 +1784,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     if (sz > MAXOBJBYTES) {
         lim = h -> hb_body;
     } else {
-        lim = (h + 1)->hb_body - sz;
+        lim = (ptr_t)((word)(h + 1)->hb_body - sz);
     }
 
     switch(BYTES_TO_GRANULES(sz)) {
@@ -1843,7 +1843,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     if (sz > MAXOBJBYTES)
         lim = h -> hb_body;
     else
-        lim = (h + 1)->hb_body - sz;
+        lim = (ptr_t)((word)(h + 1)->hb_body - sz);
 
     GC_mark_stack_top_reg = GC_mark_stack_top;
     for (p = h -> hb_body; (word)p <= (word)lim; p += sz)
