@@ -946,9 +946,13 @@ STATIC mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
             ++top;
             top -> mse_descr.w = descr;
             top -> mse_start = p -> mse_start;
-            GC_ASSERT((top->mse_descr.w & GC_DS_TAGS) != GC_DS_LENGTH ||
-                      top->mse_descr.w < (word)GC_greatest_plausible_heap_addr
-                                         - (word)GC_least_plausible_heap_addr);
+            GC_ASSERT((descr & GC_DS_TAGS) != GC_DS_LENGTH
+                      || descr < (word)GC_greatest_plausible_heap_addr
+                                        - (word)GC_least_plausible_heap_addr
+                      || (word)(p->mse_start + descr)
+                            <= (word)GC_least_plausible_heap_addr
+                      || (word)p->mse_start
+                            >= (word)GC_greatest_plausible_heap_addr);
             /* If this is a big object, count it as                     */
             /* size/256 + 1 objects.                                    */
             ++i;
