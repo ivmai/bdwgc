@@ -1075,10 +1075,7 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
         GC_ASSERT(my_first_nonempty >= GC_mark_stack &&
                   my_first_nonempty <=
                   (mse *)AO_load((volatile AO_t *)(&GC_mark_stack_top))  + 1);
-        GC_ASSERT(global_first_nonempty >= GC_mark_stack &&
-                  global_first_nonempty <=
-                  (mse *)AO_load_acquire(
-                                (volatile AO_t *)(&GC_mark_stack_top)) + 1);
+        GC_ASSERT((word)global_first_nonempty >= (word)GC_mark_stack);
         if (my_first_nonempty < global_first_nonempty) {
             my_first_nonempty = global_first_nonempty;
         } else if (global_first_nonempty < my_first_nonempty) {
@@ -1091,8 +1088,7 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
         /* Perhaps we should also update GC_first_nonempty, if it */
         /* is less.  But that would require using atomic updates. */
         my_top = (mse *)AO_load_acquire((volatile AO_t *)(&GC_mark_stack_top));
-        n_on_stack = my_top - my_first_nonempty + 1;
-        if (0 == n_on_stack) {
+        if ((word)my_top < (word)my_first_nonempty) {
             GC_acquire_mark_lock();
             my_top = GC_mark_stack_top;
                 /* Asynchronous modification impossible here,   */
@@ -1139,6 +1135,8 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
             } else {
                 GC_release_mark_lock();
             }
+        } else {
+            n_on_stack = my_top - my_first_nonempty + 1;
         }
         n_to_get = ENTRIES_TO_GET;
         if (n_on_stack < 2 * ENTRIES_TO_GET) n_to_get = 1;
