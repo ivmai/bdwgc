@@ -122,3 +122,10 @@ stamp-h1
 
 # Stuff from VS build system and IDE
 *.vcproj.*.user
+
+# Code analysis tools:
+/.sv*-dir
+/cov-int
+/pvs-project.log
+/pvs-project.tasks
+/strace_out
