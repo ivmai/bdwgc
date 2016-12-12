@@ -171,6 +171,16 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define GC_INLINE static
 #endif
 
+#ifndef GC_ATTR_NOINLINE
+# if __GNUC__ >= 4
+#   define GC_ATTR_NOINLINE __attribute__((__noinline__))
+# elif _MSC_VER >= 14
+#   define GC_ATTR_NOINLINE __declspec(noinline)
+# else
+#   define GC_ATTR_NOINLINE /* empty */
+# endif
+#endif
+
 #ifndef GC_API_OSCALL
   /* This is used to identify GC routines called by name from OS.       */
 # if defined(__GNUC__)
