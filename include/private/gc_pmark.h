@@ -439,34 +439,34 @@ typedef int mark_state_t;       /* Current state of marking, as follows:*/
                                 /* grungy if it was marked dirty in the */
                                 /* last set of bits we retrieved.       */
 
-                                /* Invariant I: all roots and marked    */
+                                /* Invariant "I": all roots and marked  */
                                 /* objects p are either dirty, or point */
                                 /* to objects q that are either marked  */
                                 /* or a pointer to q appears in a range */
                                 /* on the mark stack.                   */
 
-#define MS_NONE 0               /* No marking in progress. I holds.     */
+#define MS_NONE 0               /* No marking in progress. "I" holds.   */
                                 /* Mark stack is empty.                 */
 
 #define MS_PUSH_RESCUERS 1      /* Rescuing objects are currently       */
-                                /* being pushed.  I holds, except       */
+                                /* being pushed.  "I" holds, except     */
                                 /* that grungy roots may point to       */
                                 /* unmarked objects, as may marked      */
                                 /* grungy objects above scan_ptr.       */
 
-#define MS_PUSH_UNCOLLECTABLE 2 /* I holds, except that marked          */
+#define MS_PUSH_UNCOLLECTABLE 2 /* "I" holds, except that marked        */
                                 /* uncollectible objects above scan_ptr */
                                 /* may point to unmarked objects.       */
                                 /* Roots may point to unmarked objects  */
 
-#define MS_ROOTS_PUSHED 3       /* I holds, mark stack may be nonempty  */
+#define MS_ROOTS_PUSHED 3       /* "I" holds, mark stack may be nonempty. */
 
-#define MS_PARTIALLY_INVALID 4  /* I may not hold, e.g. because of M.S. */
-                                /* overflow.  However marked heap       */
-                                /* objects below scan_ptr point to      */
-                                /* marked or stacked objects.           */
+#define MS_PARTIALLY_INVALID 4  /* "I" may not hold, e.g. because of    */
+                                /* the mark stack overflow.  However    */
+                                /* marked heap objects below scan_ptr   */
+                                /* point to marked or stacked objects.  */
 
-#define MS_INVALID 5            /* I may not hold.                      */
+#define MS_INVALID 5            /* "I" may not hold.                    */
 
 GC_EXTERN mark_state_t GC_mark_state;
 
