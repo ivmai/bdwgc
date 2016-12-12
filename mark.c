@@ -24,11 +24,17 @@
 
 /* Make arguments appear live to compiler.  Put here to minimize the    */
 /* risk of inlining.  Used to minimize junk left in registers.          */
+GC_ATTR_NOINLINE
 void GC_noop6(word arg1 GC_ATTR_UNUSED, word arg2 GC_ATTR_UNUSED,
               word arg3 GC_ATTR_UNUSED, word arg4 GC_ATTR_UNUSED,
               word arg5 GC_ATTR_UNUSED, word arg6 GC_ATTR_UNUSED)
 {
-  /* Empty */
+  /* Avoid GC_noop6 calls to be optimized away. */
+# ifdef AO_compiler_barrier
+    AO_compiler_barrier(); /* to serve as a special side-effect */
+# else
+    GC_noop1(0);
+# endif
 }
 
 /* Single argument version, robust against whole program analysis. */
