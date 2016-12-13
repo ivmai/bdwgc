@@ -95,9 +95,12 @@ GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
                 /* let it grow dynamically.                             */
 # endif
 
-STATIC word GC_n_rescuing_pages = 0;
+#if !defined(GC_DISABLE_INCREMENTAL) || defined(STUBBORN_ALLOC)
+  STATIC word GC_n_rescuing_pages = 0;
                                 /* Number of dirty pages we marked from */
                                 /* excludes ptrfree pages, etc.         */
+                                /* Used for logging only.               */
+#endif
 
 GC_INNER size_t GC_mark_stack_size = 0;
 
@@ -246,7 +249,9 @@ GC_INNER void GC_initiate_gc(void)
 #   ifdef CHECKSUMS
         if (GC_dirty_maintained) GC_check_dirty();
 #   endif
-    GC_n_rescuing_pages = 0;
+#   if !defined(GC_DISABLE_INCREMENTAL) || defined(STUBBORN_ALLOC)
+        GC_n_rescuing_pages = 0;
+#   endif
     if (GC_mark_state == MS_NONE) {
         GC_mark_state = MS_PUSH_RESCUERS;
     } else if (GC_mark_state != MS_INVALID) {
@@ -323,8 +328,11 @@ static void alloc_mark_stack(size_t);
             } else {
                 scan_ptr = GC_push_next_marked_dirty(scan_ptr);
                 if (scan_ptr == 0) {
+#                 if !defined(GC_DISABLE_INCREMENTAL) \
+                     || defined(STUBBORN_ALLOC)
                     GC_COND_LOG_PRINTF("Marked from %lu dirty pages\n",
                                        (unsigned long)GC_n_rescuing_pages);
+#                 endif
                     GC_push_roots(FALSE, cold_gc_frame);
                     GC_objects_are_marked = TRUE;
                     if (GC_mark_state != MS_INVALID) {
@@ -1800,7 +1808,9 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     /* Some quick shortcuts: */
         if ((/* 0 | */ GC_DS_LENGTH) == descr) return;
         if (GC_block_empty(hhdr)/* nothing marked */) return;
-    GC_n_rescuing_pages++;
+#   if !defined(GC_DISABLE_INCREMENTAL) || defined(STUBBORN_ALLOC)
+      GC_n_rescuing_pages++;
+#   endif
     GC_objects_are_marked = TRUE;
     if (sz > MAXOBJBYTES) {
         lim = h -> hb_body;
@@ -1859,7 +1869,9 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     if ((/* 0 | */ GC_DS_LENGTH) == descr)
         return;
 
-    GC_n_rescuing_pages++;
+#   if !defined(GC_DISABLE_INCREMENTAL) || defined(STUBBORN_ALLOC)
+      GC_n_rescuing_pages++;
+#   endif
     GC_objects_are_marked = TRUE;
     if (sz > MAXOBJBYTES)
         lim = h -> hb_body;
