@@ -3194,7 +3194,7 @@
         /* chunks.  It also avoids unintended recursion with            */
         /* REDIRECT_MALLOC macro defined.                               */
         /* GET_MEM() argument should be of size_t type and have         */
-        /* no side-effect.  GET_MEM() returns HLKSIZE-aligned chunk;    */
+        /* no side-effect.  GET_MEM() returns HBLKSIZE-aligned chunk;   */
         /* 0 is taken to mean failure.                                  */
         /* In case of MMAP_SUPPORTED, the argument must also be         */
         /* a multiple of a physical page size.                          */
