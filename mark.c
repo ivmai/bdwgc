@@ -720,7 +720,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           descr &= ~GC_DS_TAGS;
           credit -= WORDS_TO_BYTES(WORDSZ/2); /* guess */
           while (descr != 0) {
-            if ((signed_word)descr < 0) {
+            if ((descr & SIGNB) != 0) {
               current = *(word *)current_p;
               FIXUP_POINTER(current);
               if (current >= (word)least_ha && current < (word)greatest_ha) {
