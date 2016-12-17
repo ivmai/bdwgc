@@ -1882,6 +1882,10 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
       h = GC_next_used_block(h);
       if (h == 0) return(0);
       hhdr = GC_find_header((ptr_t)h);
+    } else {
+#     ifdef LINT2
+        if (NULL == h) ABORT("Bad HDR() definition");
+#     endif
     }
     GC_push_marked(h, hhdr);
     return(h + OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz));
@@ -1900,18 +1904,20 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
           h = GC_next_used_block(h);
           if (h == 0) return(0);
           hhdr = GC_find_header((ptr_t)h);
+        } else {
+#         ifdef LINT2
+            if (NULL == h) ABORT("Bad HDR() definition");
+#         endif
         }
 #       ifdef STUBBORN_ALLOC
           if (hhdr -> hb_obj_kind == STUBBORN) {
-            if (GC_page_was_changed(h) && GC_block_was_dirty(h, hhdr)) {
+            if (GC_page_was_changed(h) && GC_block_was_dirty(h, hhdr))
                 break;
-            }
-          } else {
-            if (GC_block_was_dirty(h, hhdr)) break;
-          }
-#       else
-          if (GC_block_was_dirty(h, hhdr)) break;
+          } else
 #       endif
+        /* else */ {
+          if (GC_block_was_dirty(h, hhdr)) break;
+        }
         h += OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
         hhdr = HDR(h);
     }
@@ -1932,6 +1938,10 @@ STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h)
           h = GC_next_used_block(h);
           if (h == 0) return(0);
           hhdr = GC_find_header((ptr_t)h);
+        } else {
+#         ifdef LINT2
+            if (NULL == h) ABORT("Bad HDR() definition");
+#         endif
         }
         if (hhdr -> hb_obj_kind == UNCOLLECTABLE) {
             GC_push_marked(h, hhdr);
