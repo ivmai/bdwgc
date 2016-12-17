@@ -36,7 +36,7 @@
 #    include <base/PCR_Base.h>
 #    include <th/PCR_Th.h>
      GC_EXTERN PCR_Th_ML GC_allocate_ml;
-#    if  defined(CPPCHECK)
+#    if defined(CPPCHECK)
 #      define DCL_LOCK_STATE /* empty */
 #    else
 #      define DCL_LOCK_STATE \
@@ -192,9 +192,14 @@
 #    define EXIT_GC() GC_collecting = 0;
      GC_INNER void GC_lock(void);
 #  endif /* GC_PTHREADS */
-#  ifdef GC_ALWAYS_MULTITHREADED
+#  if defined(GC_ALWAYS_MULTITHREADED) \
+      && (defined(USE_PTHREAD_LOCKS) || defined(USE_SPIN_LOCK))
 #    define GC_need_to_lock TRUE
 #  else
+#    if defined(GC_ALWAYS_MULTITHREADED) && !defined(CPPCHECK)
+#      error Runtime initialization of GC lock is needed!
+#    endif
+#    undef GC_ALWAYS_MULTITHREADED
      GC_EXTERN GC_bool GC_need_to_lock;
 #  endif
 
@@ -211,7 +216,8 @@
 # endif /* !THREADS */
 
 #if defined(UNCOND_LOCK) && !defined(LOCK)
-# if defined(LINT2) || defined(GC_ALWAYS_MULTITHREADED)
+# if (defined(LINT2) && defined(USE_PTHREAD_LOCKS)) \
+     || defined(GC_ALWAYS_MULTITHREADED)
     /* Instruct code analysis tools not to care about GC_need_to_lock   */
     /* influence to LOCK/UNLOCK semantic.                               */
 #   define LOCK() UNCOND_LOCK()
