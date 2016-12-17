@@ -84,7 +84,7 @@
 #   define GC_printf printf
 # endif
 
-# if defined(GC_PTHREADS)
+# if defined(GC_PTHREADS) && !defined(GC_WIN32_PTHREADS)
 #   include <pthread.h>
 # else
 #   define NO_TEST_HANDLE_FORK

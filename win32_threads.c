@@ -1766,7 +1766,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
   /* GC_mark_threads[] is unused here unlike that in pthread_support.c  */
 
-# ifndef CAN_HANDLE_FORK
+# ifdef CAN_HANDLE_FORK
+    static int available_markers_m1 = 0;
+# else
 #   define available_markers_m1 GC_markers_m1
 # endif
 
@@ -1780,9 +1782,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
     /* GC_start_mark_threads is the same as in pthread_support.c except */
     /* for thread stack that is assumed to be large enough.             */
-#   ifdef CAN_HANDLE_FORK
-      static int available_markers_m1 = 0;
-#   endif
 
     GC_INNER void GC_start_mark_threads_inner(void)
     {
