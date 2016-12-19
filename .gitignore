@@ -99,13 +99,21 @@ stamp-h1
 /*.vcxproj.filters
 /CMakeCache.txt
 /CMakeFiles/
+/CTestTestfile.cmake
+/DartConfiguration.tcl
+/Testing/Temporary/
 /cmake_install.cmake
 /gc.sln
+/libgc*-dll.so
+/libgc*-lib.a
 /tests/*.vcxproj
 /tests/*.vcxproj.filters
+/tests/*test
 /tests/CMakeFiles/
+/tests/CTestTestfile.cmake
 /tests/Makefile
 /tests/cmake_install.cmake
+/tests/test_cpp
 
 # Rarely generated files (mostly by some Win/DOS compilers):
 /*.copied.c
