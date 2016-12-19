@@ -15,6 +15,27 @@
 ##
 
 ADD_DEFINITIONS(-DGC_NOT_DLL)
+
 ADD_EXECUTABLE(gctest WIN32 test.c)
 TARGET_LINK_LIBRARIES(gctest gc-lib)
 ADD_TEST(NAME gctest COMMAND gctest)
+
+ADD_EXECUTABLE(hugetest huge_test.c)
+TARGET_LINK_LIBRARIES(hugetest gc-lib)
+ADD_TEST(NAME hugetest COMMAND hugetest)
+
+ADD_EXECUTABLE(leaktest leak_test.c)
+TARGET_LINK_LIBRARIES(leaktest gc-lib)
+ADD_TEST(NAME leaktest COMMAND leaktest)
+
+ADD_EXECUTABLE(middletest middle.c)
+TARGET_LINK_LIBRARIES(middletest gc-lib)
+ADD_TEST(NAME middletest COMMAND middletest)
+
+ADD_EXECUTABLE(realloc_test realloc_test.c)
+TARGET_LINK_LIBRARIES(realloc_test gc-lib)
+ADD_TEST(NAME realloc_test COMMAND realloc_test)
+
+ADD_EXECUTABLE(smashtest smash_test.c)
+TARGET_LINK_LIBRARIES(smashtest gc-lib)
+ADD_TEST(NAME smashtest COMMAND smashtest)
