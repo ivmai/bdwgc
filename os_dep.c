@@ -2785,14 +2785,15 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 # endif /* !MPROTECT_VDB */
 
 # ifdef MPROTECT_VDB
-    STATIC void GC_gww_read_dirty(void)
+    STATIC void GC_gww_read_dirty(GC_bool output_unneeded)
 # else
-    GC_INNER void GC_read_dirty(void)
+    GC_INNER void GC_read_dirty(GC_bool output_unneeded)
 # endif
   {
     word i;
 
-    BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
+    if (!output_unneeded)
+      BZERO(GC_grungy_pages, sizeof(GC_grungy_pages));
 
     for (i = 0; i != GC_n_heap_sects; ++i) {
       GC_ULONG_PTR count;
@@ -2823,23 +2824,25 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
                                &count,
                                &page_size) != 0) {
           static int warn_count = 0;
-          unsigned j;
           struct hblk * start = (struct hblk *)GC_heap_sects[i].hs_start;
           static struct hblk *last_warned = 0;
           size_t nblocks = divHBLKSZ(GC_heap_sects[i].hs_bytes);
 
-          if ( i != 0 && last_warned != start && warn_count++ < 5) {
+          if (i != 0 && last_warned != start && warn_count++ < 5) {
             last_warned = start;
-            WARN(
-              "GC_gww_read_dirty unexpectedly failed at %p: "
-              "Falling back to marking all pages dirty\n", start);
+            WARN("GC_gww_read_dirty unexpectedly failed at %p: "
+                 "Falling back to marking all pages dirty\n", start);
           }
-          for (j = 0; j < nblocks; ++j) {
+          if (!output_unneeded) {
+            unsigned j;
+
+            for (j = 0; j < nblocks; ++j) {
               word hash = PHT_HASH(start + j);
               set_pht_entry_from_index(GC_grungy_pages, hash);
+            }
           }
           count = 1;  /* Done with this section. */
-        } else /* succeeded */ {
+        } else /* succeeded */ if (!output_unneeded) {
           PVOID * pages_end = pages + count;
 
           while (pages != pages_end) {
@@ -2857,6 +2860,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     }
 
 #   ifdef CHECKSUMS
+      GC_ASSERT(!output_unneeded);
       GC_or_pages(GC_written_pages, GC_grungy_pages);
 #   endif
   }
@@ -2877,7 +2881,7 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 
   /* Retrieve system dirty bits for heap to a local buffer.     */
   /* Restore the systems notion of which pages are dirty.       */
-  GC_INNER void GC_read_dirty(void) {}
+  GC_INNER void GC_read_dirty(GC_bool output_unneeded GC_ATTR_UNUSED) {}
 
   /* Is the HBLKSIZE sized page at h marked dirty in the local buffer?  */
   /* If the actual page size is different, this returns TRUE if any     */
@@ -2911,12 +2915,13 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
     GC_dirty_maintained = TRUE;
   }
 
-  /* Retrieve system dirty bits for heap to a local buffer.     */
-  /* Restore the systems notion of which pages are dirty.       */
-  GC_INNER void GC_read_dirty(void)
+  /* Retrieve system dirty bits for the heap to a local buffer  */
+  /* (unless output_unneeded).  Restore the systems notion of   */
+  /* which pages are dirty.                                     */
+  GC_INNER void GC_read_dirty(GC_bool output_unneeded)
   {
-    BCOPY((word *)GC_dirty_pages, GC_grungy_pages,
-          (sizeof GC_dirty_pages));
+    if (!output_unneeded)
+      BCOPY((word *)GC_dirty_pages, GC_grungy_pages, sizeof(GC_dirty_pages));
     BZERO((word *)GC_dirty_pages, (sizeof GC_dirty_pages));
   }
 
@@ -3494,16 +3499,16 @@ STATIC void GC_protect_heap(void)
 
 /* We assume that either the world is stopped or its OK to lose dirty   */
 /* bits while this is happening (as in GC_enable_incremental).          */
-GC_INNER void GC_read_dirty(void)
+GC_INNER void GC_read_dirty(GC_bool output_unneeded)
 {
 #   if defined(GWW_VDB)
       if (GC_GWW_AVAILABLE()) {
-        GC_gww_read_dirty();
+        GC_gww_read_dirty(output_unneeded);
         return;
       }
 #   endif
-    BCOPY((word *)GC_dirty_pages, GC_grungy_pages,
-          (sizeof GC_dirty_pages));
+    if (!output_unneeded)
+      BCOPY((word *)GC_dirty_pages, GC_grungy_pages, sizeof(GC_dirty_pages));
     BZERO((word *)GC_dirty_pages, (sizeof GC_dirty_pages));
     GC_protect_heap();
 }
@@ -3582,7 +3587,7 @@ GC_INNER void GC_dirty_init(void)
 
 # define READ read
 
-GC_INNER void GC_read_dirty(void)
+GC_INNER void GC_read_dirty(GC_bool output_unneeded)
 {
     int nmaps;
     char * bufp = GC_proc_buf;
@@ -3604,7 +3609,8 @@ GC_INNER void GC_read_dirty(void)
         if (READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
             WARN("Insufficient space for /proc read\n", 0);
             /* Punt:        */
-            memset(GC_grungy_pages, 0xff, sizeof (page_hash_table));
+            if (!output_unneeded)
+              memset(GC_grungy_pages, 0xff, sizeof (page_hash_table));
             memset(GC_written_pages, 0xff, sizeof(page_hash_table));
             return;
         }
@@ -3653,7 +3659,7 @@ GC_INNER void GC_read_dirty(void)
       GC_log_printf("Proc VDB read done\n");
 #   endif
 
-    /* Update GC_written_pages. */
+    /* Update GC_written_pages (even if output_unneeded).       */
     GC_or_pages(GC_written_pages, GC_grungy_pages);
 }
 
@@ -3686,7 +3692,7 @@ GC_INNER void GC_dirty_init(void)
     }
 }
 
-GC_INNER void GC_read_dirty(void)
+GC_INNER void GC_read_dirty(GC_bool output_unneeded GC_ATTR_UNUSED)
 {
     /* lazily enable dirty bits on newly added heap sects */
     {

@@ -2107,8 +2107,10 @@ GC_EXTERN GC_bool GC_print_back_height;
 
   /* Virtual dirty bit implementation:            */
   /* Each implementation exports the following:   */
-  GC_INNER void GC_read_dirty(void);
-                        /* Retrieve dirty bits. */
+  GC_INNER void GC_read_dirty(GC_bool output_unneeded);
+                        /* Retrieve dirty bits.  Set output_unneeded to */
+                        /* indicate that reading of the retrieved dirty */
+                        /* bits is not planned till the next retrieval. */
   GC_INNER GC_bool GC_page_was_dirty(struct hblk *h);
                         /* Read retrieved dirty bits.   */
 

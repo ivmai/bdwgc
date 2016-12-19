@@ -242,7 +242,13 @@ GC_INNER void GC_clear_marks(void)
 GC_INNER void GC_initiate_gc(void)
 {
 #   ifndef GC_DISABLE_INCREMENTAL
-        if (GC_dirty_maintained) GC_read_dirty();
+        if (GC_dirty_maintained) {
+#         ifdef CHECKSUMS
+            GC_read_dirty(FALSE);
+#         else
+            GC_read_dirty(GC_mark_state == MS_INVALID);
+#         endif
+        }
 #   endif
 #   ifdef STUBBORN_ALLOC
         GC_read_changed();

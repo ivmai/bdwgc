@@ -1346,7 +1346,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
             /* else we're OK in assuming everything's   */
             /* clean since nothing can point to an      */
             /* unmarked object.                         */
-          GC_read_dirty();
+          GC_read_dirty(FALSE);
         }
       }
       UNLOCK();
