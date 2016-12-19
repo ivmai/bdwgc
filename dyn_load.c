@@ -742,7 +742,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
     char buf[30];
     static prmap_t * addr_map = 0;
     static int current_sz = 0;  /* Number of records currently in addr_map */
-    static int needed_sz;       /* Required size of addr_map            */
+    int needed_sz = 0;          /* Required size of addr_map            */
     int i;
     long flags;
     ptr_t start;
