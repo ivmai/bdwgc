@@ -819,7 +819,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
         current_sz = needed_sz * 2 + 1;
                         /* Expansion, plus room for 0 record */
         addr_map = (prmap_t *)GC_scratch_alloc(
-                                (word)current_sz * sizeof(prmap_t));
+                                (size_t)current_sz * sizeof(prmap_t));
         if (addr_map == NULL)
           ABORT("Insufficient memory for address map");
     }
