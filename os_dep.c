@@ -3658,7 +3658,7 @@ ssize_t read(int fd, void *buf, size_t nbyte)
 # include <sys/stat.h>
 
 # define INITIAL_BUF_SZ 16384
-  STATIC word GC_proc_buf_size = INITIAL_BUF_SZ;
+  STATIC size_t GC_proc_buf_size = INITIAL_BUF_SZ;
   STATIC char *GC_proc_buf = NULL;
   STATIC int GC_proc_fd = 0;
 
@@ -3704,7 +3704,7 @@ GC_INNER void GC_read_dirty(void)
     bufp = GC_proc_buf;
     if (READ(GC_proc_fd, bufp, GC_proc_buf_size) <= 0) {
         /* Retry with larger buffer.    */
-        word new_size = 2 * GC_proc_buf_size;
+        size_t new_size = 2 * GC_proc_buf_size;
         char *new_buf;
 
         WARN("/proc read failed: GC_proc_buf_size = %" WARN_PRIdPTR "\n",
