@@ -1277,7 +1277,7 @@ static void alloc_mark_stack(size_t n)
 #   endif
 
     GC_mark_stack_too_small = FALSE;
-    if (GC_mark_stack_size != 0) {
+    if (GC_mark_stack != NULL) {
         if (new_stack != 0) {
           if (recycle_old) {
             /* Recycle old space */

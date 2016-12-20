@@ -109,6 +109,7 @@ GC_INNER void GC_bl_init(void)
     if (!GC_all_interior_pointers) {
       GC_bl_init_no_interiors();
     }
+    GC_ASSERT(NULL == GC_old_stack_bl && NULL == GC_incomplete_stack_bl);
     GC_old_stack_bl = (word *)GC_scratch_alloc(sizeof(page_hash_table));
     GC_incomplete_stack_bl = (word *)GC_scratch_alloc(sizeof(page_hash_table));
     if (GC_old_stack_bl == 0 || GC_incomplete_stack_bl == 0) {
