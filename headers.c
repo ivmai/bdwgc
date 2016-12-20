@@ -170,7 +170,7 @@ static hdr * alloc_hdr(void)
     register hdr * result;
 
     if (hdr_free_list == 0) {
-        result = (hdr *) GC_scratch_alloc((word)(sizeof(hdr)));
+        result = (hdr *)GC_scratch_alloc(sizeof(hdr));
     } else {
         result = hdr_free_list;
         hdr_free_list = (hdr *) (result -> hb_next);
@@ -194,7 +194,7 @@ GC_INNER void GC_init_headers(void)
 {
     register unsigned i;
 
-    GC_all_nils = (bottom_index *)GC_scratch_alloc((word)sizeof(bottom_index));
+    GC_all_nils = (bottom_index *)GC_scratch_alloc(sizeof(bottom_index));
     if (GC_all_nils == NULL) {
       GC_err_printf("Insufficient memory for GC_all_nils\n");
       EXIT();
@@ -224,14 +224,14 @@ static GC_bool get_index(word addr)
           if (p -> key == hi) return(TRUE);
           p = p -> hash_link;
       }
-      r = (bottom_index*)GC_scratch_alloc((word)(sizeof (bottom_index)));
+      r = (bottom_index *)GC_scratch_alloc(sizeof(bottom_index));
       if (r == 0) return(FALSE);
       BZERO(r, sizeof (bottom_index));
       r -> hash_link = old;
       GC_top_index[i] = r;
 #   else
       if (GC_top_index[hi] != GC_all_nils) return(TRUE);
-      r = (bottom_index*)GC_scratch_alloc((word)(sizeof (bottom_index)));
+      r = (bottom_index *)GC_scratch_alloc(sizeof(bottom_index));
       if (r == 0) return(FALSE);
       GC_top_index[hi] = r;
       BZERO(r, sizeof (bottom_index));
