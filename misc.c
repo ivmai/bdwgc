@@ -707,6 +707,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
        if (content[ofs] == '\r' || content[ofs] == '\n')
          content[ofs] = '\0';
       }
+      GC_ASSERT(NULL == GC_envfile_content);
       GC_envfile_length = len + 1;
       GC_envfile_content = content;
 #   endif
