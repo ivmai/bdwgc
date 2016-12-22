@@ -1224,6 +1224,27 @@ GC_INNER void GC_help_marker(word my_mark_no)
 
 #endif /* PARALLEL_MARK */
 
+GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
+{
+  if (ptr != NULL) {
+    size_t page_offset = (word)ptr & (GC_page_size - 1);
+    size_t displ = 0;
+    size_t recycled_bytes;
+
+    GC_ASSERT(bytes != 0);
+    GC_ASSERT(GC_page_size != 0);
+    /* TODO: Assert correct memory flags if GWW_VDB */
+    if (page_offset != 0)
+      displ = GC_page_size - page_offset;
+    recycled_bytes = (bytes - displ) & ~(GC_page_size - 1);
+    GC_COND_LOG_PRINTF("Recycle %lu/%lu scratch-allocated bytes at %p\n",
+                       (unsigned long)recycled_bytes, (unsigned long)bytes,
+                       ptr);
+    if (recycled_bytes > 0)
+      GC_add_to_heap((struct hblk *)((word)ptr + displ), recycled_bytes);
+  }
+}
+
 /* Allocate or reallocate space for mark stack of size n entries.  */
 /* May silently fail.                                              */
 static void alloc_mark_stack(size_t n)
@@ -1245,16 +1266,8 @@ static void alloc_mark_stack(size_t n)
         if (new_stack != 0) {
           if (recycle_old) {
             /* Recycle old space */
-              size_t page_offset = (word)GC_mark_stack & (GC_page_size - 1);
-              size_t size = GC_mark_stack_size * sizeof(struct GC_ms_entry);
-              size_t displ = 0;
-
-              if (0 != page_offset) displ = GC_page_size - page_offset;
-              size = (size - displ) & ~(GC_page_size - 1);
-              if (size > 0) {
-                GC_add_to_heap((struct hblk *)
-                                ((word)GC_mark_stack + displ), (word)size);
-              }
+            GC_scratch_recycle_inner(GC_mark_stack,
+                        GC_mark_stack_size * sizeof(struct GC_ms_entry));
           }
           GC_mark_stack = new_stack;
           GC_mark_stack_size = n;

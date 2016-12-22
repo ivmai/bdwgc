@@ -129,26 +129,32 @@ static size_t n_in_progress = 0;
 static void push_in_progress(ptr_t p)
 {
   if (n_in_progress >= in_progress_size) {
-    if (in_progress_size == 0) {
+    ptr_t * new_in_progress_space;
+
+    if (NULL == in_progress_space) {
       in_progress_size = ROUNDUP_PAGESIZE_IF_MMAP(INITIAL_IN_PROGRESS
                                                         * sizeof(ptr_t))
                                 / sizeof(ptr_t);
-      in_progress_space = (ptr_t *)GET_MEM(in_progress_size * sizeof(ptr_t));
-      GC_add_to_our_memory((ptr_t)in_progress_space,
-                           in_progress_size * sizeof(ptr_t));
+      new_in_progress_space =
+                        (ptr_t *)GET_MEM(in_progress_size * sizeof(ptr_t));
     } else {
-      ptr_t * new_in_progress_space;
       in_progress_size *= 2;
       new_in_progress_space = (ptr_t *)
                                 GET_MEM(in_progress_size * sizeof(ptr_t));
-      GC_add_to_our_memory((ptr_t)new_in_progress_space,
-                           in_progress_size * sizeof(ptr_t));
       if (new_in_progress_space != NULL)
         BCOPY(in_progress_space, new_in_progress_space,
               n_in_progress * sizeof(ptr_t));
-      in_progress_space = new_in_progress_space;
-      /* FIXME: This just drops the old space.  */
     }
+    GC_add_to_our_memory((ptr_t)new_in_progress_space,
+                         in_progress_size * sizeof(ptr_t));
+#   ifndef GWW_VDB
+      GC_scratch_recycle_no_gww(in_progress_space,
+                                n_in_progress * sizeof(ptr_t));
+#   elif defined(LINT2)
+      /* TODO: implement GWW-aware recycling as in alloc_mark_stack */
+      GC_noop1((word)in_progress_space);
+#   endif
+    in_progress_space = new_in_progress_space;
   }
   if (in_progress_space == 0)
       ABORT("MAKE_BACK_GRAPH: Out of in-progress space: "
