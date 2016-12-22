@@ -1082,18 +1082,18 @@ const GC_word bm_huge[320 / CPP_WORDSZ] = {
 void typed_test(void)
 {
     GC_word * old, * new;
-    GC_word bm3 = 0x3;
-    GC_word bm2 = 0x2;
-    GC_word bm_large = 0xf7ff7fff;
-    GC_descr d1 = GC_make_descriptor(&bm3, 2);
-    GC_descr d2 = GC_make_descriptor(&bm2, 2);
-    GC_descr d3 = GC_make_descriptor(&bm_large, 32);
+    GC_word bm3[1] = { 0x3 };
+    GC_word bm2[1] = { 0x2 };
+    GC_word bm_large[1] = { 0xf7ff7fff };
+    GC_descr d1 = GC_make_descriptor(bm3, 2);
+    GC_descr d2 = GC_make_descriptor(bm2, 2);
+    GC_descr d3 = GC_make_descriptor(bm_large, 32);
     GC_descr d4 = GC_make_descriptor(bm_huge, 320);
     GC_word * x = (GC_word *)GC_malloc_explicitly_typed(2000, d4);
     int i;
 
 #   ifndef LINT
-      (void)GC_make_descriptor(&bm_large, 32);
+      (void)GC_make_descriptor(bm_large, 32);
 #   endif
     collectable_count++;
     if (GC_get_bit(bm_huge, 32) == 0 || GC_get_bit(bm_huge, 311) == 0
