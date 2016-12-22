@@ -1009,6 +1009,23 @@ void * alloc8bytes(void)
 #   define alloc8bytes() GC_MALLOC_ATOMIC(8)
 #endif
 
+#include "gc_inline.h"
+
+void test_tinyfl(void)
+{
+  void *results[3];
+  void *tfls[3][GC_TINY_FREELISTS];
+
+# ifndef DONT_ADD_BYTE_AT_END
+    if (GC_get_all_interior_pointers()) return; /* skip */
+# endif
+  BZERO(tfls, sizeof(tfls));
+  /* TODO: Improve testing of FAST_MALLOC functionality. */
+  GC_MALLOC_WORDS(results[0], 11, tfls[0]);
+  GC_MALLOC_ATOMIC_WORDS(results[1], 20, tfls[1]);
+  GC_CONS(results[2], results[0], results[1], tfls[2]);
+}
+
 void alloc_small(int n)
 {
     int i;
@@ -1234,6 +1251,7 @@ void run_one_test(void)
         FAIL;
       }
 #   endif
+    test_tinyfl();
 #   ifndef DBG_HDRS_ALL
       collectable_count += 3;
       if ((GC_size(GC_malloc(7)) != 8 &&
@@ -1689,7 +1707,6 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 }
 
 #if defined(CPPCHECK)
-# include "gc_inline.h" /* for GC_print_free_list */
 # include "javaxfc.h" /* for GC_finalize_all */
 # define UNTESTED(sym) GC_noop1((word)&sym)
 #endif
