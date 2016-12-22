@@ -519,7 +519,6 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 {
     signed_word last_set_bit = len - 1;
     GC_descr result;
-#   define HIGH_BIT (((word)1) << (WORDSZ - 1))
     DCL_LOCK_STATE;
 
 #   if defined(THREADS) && defined(AO_HAVE_load_acquire)
@@ -564,10 +563,10 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
 
         /* Hopefully the common case.                   */
         /* Build bitmap descriptor (with bits reversed) */
-        result = HIGH_BIT;
+        result = SIGNB;
         for (i = last_set_bit - 1; i >= 0; i--) {
             result >>= 1;
-            if (GC_get_bit(bm, i)) result |= HIGH_BIT;
+            if (GC_get_bit(bm, i)) result |= SIGNB;
         }
         result |= GC_DS_BITMAP;
     } else {
