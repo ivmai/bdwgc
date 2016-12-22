@@ -816,6 +816,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
                    ": fd = %d, errno = %d", fd, errno);
     }
     if (needed_sz >= current_sz) {
+        GC_scratch_recycle_no_gww(addr_map,
+                                  (size_t)current_sz * sizeof(prmap_t));
         current_sz = needed_sz * 2 + 1;
                         /* Expansion, plus room for 0 record */
         addr_map = (prmap_t *)GC_scratch_alloc(

@@ -1807,6 +1807,14 @@ GC_INNER ptr_t GC_scratch_alloc(size_t bytes);
                                 /* small objects.  Deallocation is not  */
                                 /* possible.  May return NULL.          */
 
+#ifdef GWW_VDB
+  /* GC_scratch_recycle_no_gww() not used.      */
+#else
+# define GC_scratch_recycle_no_gww GC_scratch_recycle_inner
+#endif
+GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes);
+                                /* Reuse the memory region by the heap. */
+
 /* Heap block layout maps: */
 GC_INNER GC_bool GC_add_map_entry(size_t sz);
                                 /* Add a heap block map for objects of  */

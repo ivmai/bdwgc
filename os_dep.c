@@ -201,6 +201,7 @@ GC_INNER char * GC_get_maps(void)
             int f;
 
             while (maps_size >= maps_buf_sz) {
+              GC_scratch_recycle_no_gww(maps_buf, maps_buf_sz);
               /* Grow only by powers of 2, since we leak "too small" buffers.*/
               while (maps_size >= maps_buf_sz) maps_buf_sz *= 2;
               maps_buf = GC_scratch_alloc(maps_buf_sz);
@@ -3603,6 +3604,7 @@ GC_INNER void GC_read_dirty(GC_bool output_unneeded)
              (signed_word)GC_proc_buf_size);
         new_buf = GC_scratch_alloc(new_size);
         if (new_buf != 0) {
+            GC_scratch_recycle_no_gww(bufp, GC_proc_buf_size);
             GC_proc_buf = bufp = new_buf;
             GC_proc_buf_size = new_size;
         }
