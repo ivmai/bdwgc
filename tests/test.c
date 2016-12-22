@@ -943,17 +943,19 @@ void tree_test(void)
 
 unsigned n_tests = 0;
 
-GC_word bm_huge[10] = {
+GC_word bm_huge[320 / CPP_WORDSZ] = {
+# if CPP_WORDSZ == 32
     0xffffffff,
     0xffffffff,
     0xffffffff,
     0xffffffff,
     0xffffffff,
-    0xffffffff,
-    0xffffffff,
-    0xffffffff,
-    0xffffffff,
-    0x00ffffff,
+# endif
+    (GC_signed_word)-1,
+    (GC_signed_word)-1,
+    (GC_signed_word)-1,
+    (GC_signed_word)-1,
+    ((GC_word)((GC_signed_word)-1)) >> 8 /* highest byte is zero */
 };
 
 /* A very simple test of explicitly typed allocation    */
@@ -974,6 +976,11 @@ void typed_test(void)
       (void)GC_make_descriptor(&bm_large, 32);
 #   endif
     collectable_count++;
+    if (GC_get_bit(bm_huge, 32) == 0 || GC_get_bit(bm_huge, 311) == 0
+        || GC_get_bit(bm_huge, 319) != 0) {
+      GC_printf("Bad GC_get_bit() or bm_huge initialization\n");
+      FAIL;
+    }
     old = 0;
     for (i = 0; i < 4000; i++) {
         collectable_count++;
