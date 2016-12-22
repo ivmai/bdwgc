@@ -1184,21 +1184,21 @@ GC_API void GC_CALL GC_init(void)
 #       endif
       }
 #   endif
-    GC_STATIC_ASSERT(sizeof (ptr_t) == sizeof(word));
 #   if !defined(CPPCHECK)
+      GC_STATIC_ASSERT(sizeof(ptr_t) == sizeof(word));
       GC_STATIC_ASSERT(sizeof(signed_word) == sizeof(word));
+#     if !defined(_AUX_SOURCE) || defined(__GNUC__)
+        GC_STATIC_ASSERT((word)(-1) > (word)0);
+        /* word should be unsigned */
+#     endif
+      /* We no longer check for ((void*)(-1) > NULL) since all pointers */
+      /* are explicitly cast to word in every less/greater comparison.  */
+      GC_STATIC_ASSERT((signed_word)(-1) < (signed_word)0);
 #   endif
     GC_STATIC_ASSERT(sizeof (struct hblk) == HBLKSIZE);
 #   ifndef THREADS
       GC_ASSERT(!((word)GC_stackbottom HOTTER_THAN (word)GC_approx_sp()));
 #   endif
-#   if !defined(_AUX_SOURCE) || defined(__GNUC__)
-      GC_STATIC_ASSERT((word)(-1) > (word)0);
-      /* word should be unsigned */
-#   endif
-    /* We no longer check for ((void*)(-1) > NULL) since all pointers   */
-    /* are explicitly cast to word in every less-greater comparison.    */
-    GC_STATIC_ASSERT((signed_word)(-1) < (signed_word)0);
 #   ifndef GC_DISABLE_INCREMENTAL
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
         /* For GWW_VDB on Win32, this needs to happen before any        */
