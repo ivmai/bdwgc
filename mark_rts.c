@@ -742,7 +742,7 @@ STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
 }
 
 /*
- * Call the mark routines (GC_tl_push for a single pointer,
+ * Call the mark routines (GC_push_one for a single pointer,
  * GC_push_conditional on groups of pointers) on every top level
  * accessible pointer.
  * If all is FALSE, arrange to push only possibly altered values.
