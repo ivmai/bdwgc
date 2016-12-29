@@ -190,6 +190,9 @@ EXTRA_DIST += tools/add_gc_prefix.c tools/gcname.c tools/if_mach.c \
     extra/Mac_files/MacOS_config.h \
     include/private/msvc_dbg.h extra/msvc_dbg.c tools/callprocs.sh
 
+# Extra 'contrib' scripts
+EXTRA_DIST += extra/analyse_dump.py
+
 #
 # :GOTCHA: GNU make rule for making .s out of .S is flawed,
 # it will not remove dest if building fails
