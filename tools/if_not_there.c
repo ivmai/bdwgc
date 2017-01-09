@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 #endif
     printf("^^^^Starting command^^^^\n");
     fflush(stdout);
-    execvp(TRUSTED_STRING(argv[2]), argv+2);
+    execvp(TRUSTED_STRING(argv[2]), (void *)(argv + 2));
     exit(1);
 
 Usage:
