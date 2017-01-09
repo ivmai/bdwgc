@@ -119,6 +119,7 @@ stamp-h1
 /*.copied.c
 /*.csm
 /*.err
+/*.i
 /*.lb1
 /*.lnk
 /*.map
