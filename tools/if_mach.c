@@ -13,7 +13,7 @@ int main(int argc, char **argv)
         && strcmp(OS_TYPE, argv[2]) != 0) return(0);
     fprintf(stderr, "^^^^Starting command^^^^\n");
     fflush(stdout);
-    execvp(TRUSTED_STRING(argv[3]), argv+3);
+    execvp(TRUSTED_STRING(argv[3]), (void *)(argv + 3));
     perror("Couldn't execute");
 
 Usage:
