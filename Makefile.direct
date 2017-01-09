@@ -187,7 +187,7 @@ LEAKFLAGS= $(CFLAGS) -DFIND_LEAK
 BSD-pkg-all: bsd-libgc.a bsd-libleak.a
 
 bsd-libgc.a:
-	$(MAKE) CFLAGS="$(CFLAGS)" clean c++-t
+	$(MAKE) -f Makefile.direct CFLAGS="$(CFLAGS)" clean c++-t
 	mv gc.a bsd-libgc.a
 
 bsd-libleak.a:
