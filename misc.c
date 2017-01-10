@@ -1749,6 +1749,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
   STATIC void GC_CALLBACK GC_default_on_abort(const char *msg)
   {
     GC_find_leak = FALSE; /* disable at-exit GC_gcollect()  */
+    int test_write = 1;
 
     if (msg != NULL) {
 #     if defined(MSWIN32)
@@ -1759,12 +1760,13 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 #   ifndef GC_ANDROID_LOG
       /* Avoid calling GC_err_printf() here, as GC_on_abort() could be  */
       /* called from it.  Note 1: this is not an atomic output.         */
-      /* Note 2: possible write errors are ignored.                     */
+      /* Note 2: possible write errors are ignored.                     */        
 #     if defined(THREADS) && defined(GC_ASSERTIONS) \
          && (defined(MSWIN32) || defined(MSWINCE))
-        if (!GC_write_disabled)
+        test_write = !GC_write_disabled;
 #     endif
-      {
+
+      if (test_write) {
         if (WRITE(GC_stderr, (void *)msg, strlen(msg)) >= 0)
           (void)WRITE(GC_stderr, (void *)("\n"), 1);
       }
