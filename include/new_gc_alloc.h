@@ -12,8 +12,8 @@
  */
 
 //
-// This is a revision of gc_alloc.h for SGI STL versions > 3.0
-// Unlike earlier versions, it supplements the standard "alloc.h"
+// This is a revision of gc_allocator.h for SGI STL versions > 3.0.
+// Unlike earlier versions, it supplements the standard (STL) alloc.h
 // instead of replacing it.
 //
 // This is sloppy about variable names used in header files.
