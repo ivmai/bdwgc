@@ -161,7 +161,7 @@ before including <TT>gc.h</tt> and allocating with <TT>GC_MALLOC</tt>),
 so that objects will be identified by their allocation site,
 <LI> Running the application long enough so
 that most of the heap is composed of "leaked" memory, and
-<LI> Then calling <TT>GC_generate_random_backtrace()</tt> from backptr.h
+<LI> Then calling <TT>GC_generate_random_backtrace()</tt> from gc_backptr.h
 a few times to determine why some randomly sampled objects in the heap are
 being retained.
 </ol>

@@ -96,10 +96,10 @@ typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
                | (proc_index)) << GC_DS_TAG_BITS) | GC_DS_PROC)
 #define GC_DS_PER_OBJECT 3  /* The real descriptor is at the            */
                         /* byte displacement from the beginning of the  */
-                        /* object given by descr & ~DS_TAGS             */
+                        /* object given by descr & ~GC_DS_TAGS.         */
                         /* If the descriptor is negative, the real      */
                         /* descriptor is at (*<object_start>) -         */
-                        /* (descr & ~DS_TAGS) - GC_INDIR_PER_OBJ_BIAS   */
+                        /* (descr&~GC_DS_TAGS) - GC_INDIR_PER_OBJ_BIAS  */
                         /* The latter alternative can be used if each   */
                         /* object contains a type descriptor in the     */
                         /* first word.                                  */
