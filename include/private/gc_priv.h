@@ -931,7 +931,7 @@ struct hblkhdr {
                    /* without generating a negative result.  We avoid    */
                    /* generating free blocks larger than that.           */
     word hb_descr;              /* object descriptor for marking.  See  */
-                                /* mark.h.                              */
+                                /* gc_mark.h.                           */
 #   ifdef MARK_BIT_PER_OBJ
       unsigned32 hb_inv_sz;     /* A good upper bound for 2**32/hb_sz.  */
                                 /* For large objects, we use            */
