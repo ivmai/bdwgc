@@ -784,8 +784,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             /* the type descriptor, and get a 0 GC descriptor, which    */
             /* is ideal.  Unfortunately, we need to check for the last  */
             /* object case explicitly.                                  */
-            if (0 == type_descr) {
-                /* Rarely executed.     */
+            if (EXPECT(0 == type_descr, FALSE)) {
                 mark_stack_top--;
                 continue;
             }
