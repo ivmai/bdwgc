@@ -734,7 +734,7 @@
                 RelativePath="..\stdafx.h">
             </File>
             <File
-                RelativePath="..\..\version.h">
+                RelativePath="..\..\include\gc_version.h">
             </File>
         </Filter>
     </Files>

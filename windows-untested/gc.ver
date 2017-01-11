@@ -1,7 +1,7 @@
 #include <winres.h>
 #include <winver.h>
 
-#include "../include/../version.h"
+#include "../include/gc_version.h"
 
 #define GC_VERSION_REVISION 0
 
