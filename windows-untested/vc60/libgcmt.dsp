@@ -210,7 +210,7 @@ SOURCE=..\stdafx.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\version.h
+SOURCE=..\..\include\gc_version.h
 # End Source File
 # End Group
 # End Target
