@@ -141,6 +141,9 @@ stamp-h1
 *.vcproj.*.user
 
 # Code analysis tools:
+*.c.gcov
+*.cc.gcov
+*.h.gcov
 /.sv*-dir
 /cov-int
 /pvs-project.log
