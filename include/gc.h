@@ -1515,8 +1515,12 @@ GC_API void * GC_CALL GC_is_valid_displacement(void * /* p */);
 /* Explicitly dump the GC state.  This is most often called from the    */
 /* debugger, or by setting the GC_DUMP_REGULARLY environment variable,  */
 /* but it may be useful to call it from client code during debugging.   */
+/* If name is specified (and non-NULL), it is printed to help           */
+/* identifying individual dumps.  Otherwise the current collection      */
+/* number is used as the name.                                          */
 /* Defined only if the library has been compiled without NO_DEBUGGING.  */
-GC_API void GC_CALL GC_dump(void);
+GC_API void GC_CALL GC_dump_named(const char * /* name */);
+GC_API void GC_CALL GC_dump(void); /* = GC_dump_named(NULL) */
 
 /* Dump information about each block of every GC memory section.        */
 /* Defined only if the library has been compiled without NO_DEBUGGING.  */

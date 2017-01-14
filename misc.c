@@ -2056,7 +2056,17 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 #if !defined(NO_DEBUGGING)
   GC_API void GC_CALL GC_dump(void)
   {
-    GC_printf("***Static roots:\n");
+    GC_dump_named(NULL);
+  }
+
+  GC_API void GC_CALL GC_dump_named(const char *name)
+  {
+    if (name != NULL) {
+      GC_printf("***GC Dump %s\n", name);
+    } else {
+      GC_printf("***GC Dump collection #%lu\n", (unsigned long)GC_gc_no);
+    }
+    GC_printf("\n***Static roots:\n");
     GC_print_static_roots();
     GC_printf("\n***Heap sections:\n");
     GC_print_heap_sects();
