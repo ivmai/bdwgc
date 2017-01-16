@@ -233,7 +233,7 @@
 # elif defined(__GNUC__) && (__GNUC__ > 3 \
                              || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
 #   define GC_ATTR_MALLOC __attribute__((__malloc__))
-# elif defined(_MSC_VER) && _MSC_VER >= 14
+# elif defined(_MSC_VER) && _MSC_VER >= 1400
 #   define GC_ATTR_MALLOC __declspec(noalias) __declspec(restrict)
 # else
 #   define GC_ATTR_MALLOC
@@ -271,7 +271,7 @@
 #   define GC_ATTR_DEPRECATED /* empty */
 # elif defined(__GNUC__) && __GNUC__ >= 4
 #   define GC_ATTR_DEPRECATED __attribute__((__deprecated__))
-# elif defined(_MSC_VER) && _MSC_VER >= 12
+# elif defined(_MSC_VER) && _MSC_VER >= 1200
 #   define GC_ATTR_DEPRECATED __declspec(deprecated)
 # else
 #   define GC_ATTR_DEPRECATED /* empty */

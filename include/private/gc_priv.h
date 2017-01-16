@@ -174,7 +174,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #ifndef GC_ATTR_NOINLINE
 # if __GNUC__ >= 4
 #   define GC_ATTR_NOINLINE __attribute__((__noinline__))
-# elif _MSC_VER >= 14
+# elif _MSC_VER >= 1400
 #   define GC_ATTR_NOINLINE __declspec(noinline)
 # else
 #   define GC_ATTR_NOINLINE /* empty */
