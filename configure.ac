@@ -932,6 +932,20 @@ AC_ARG_ENABLE(single-obj-compilation,
    [single_obj_compilation=yes])
 AM_CONDITIONAL([SINGLE_GC_OBJ], [test "$single_obj_compilation" = "yes"])
 
+AC_ARG_ENABLE(gcov, AC_HELP_STRING([--enable-gcov],
+                                   [Turn on code coverage analysis]))
+if test "$enable_gcov" = "yes"; then
+  CFLAGS="$CFLAGS --coverage"
+  if test "${enable_shared}" = no; then
+    # FIXME: As of g++-4.8.4/x86_64, in case of shared library build, test_cpp
+    # linkage fails with "hidden symbol atexit is referenced by DSO" message.
+    CXXFLAGS="$CXXFLAGS --coverage"
+  fi
+  # Turn off optimization to get accurate line numbers.
+  CFLAGS=`echo "$CFLAGS" | sed -e 's/-O\(1\|2\|3\|4\|s\|fast\)\?//g'`
+  CXXFLAGS=`echo "$CXXFLAGS" | sed -e 's/-O\(1\|2\|3\|4\|s\|fast\)\?//g'`
+fi
+
 # Atomic Ops
 # ----------
 
