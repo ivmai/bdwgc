@@ -2838,11 +2838,6 @@ GC_INNER void GC_init_parallel(void)
   /* pthread_mutex_trylock may not win here,    */
   /* due to builtin support for spinning first? */
 
-  GC_INNER volatile GC_bool GC_collecting = 0;
-                        /* A hint that we're in the collector and       */
-                        /* holding the allocation lock for an           */
-                        /* extended period.                             */
-
   GC_INNER void GC_lock(void)
   {
     pthread_mutex_lock(&GC_allocate_ml);

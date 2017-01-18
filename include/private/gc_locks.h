@@ -187,9 +187,11 @@
                  || GC_lock_holder != NUMERIC_THREAD_ID(pthread_self()))
 #      endif
 #    endif /* GC_ASSERTIONS */
-     GC_EXTERN volatile GC_bool GC_collecting;
-#    define ENTER_GC() GC_collecting = 1;
-#    define EXIT_GC() GC_collecting = 0;
+#    ifndef GC_WIN32_THREADS
+       GC_EXTERN volatile GC_bool GC_collecting;
+#      define ENTER_GC() (void)(GC_collecting = TRUE)
+#      define EXIT_GC() (void)(GC_collecting = FALSE)
+#    endif
      GC_INNER void GC_lock(void);
 #  endif /* GC_PTHREADS */
 #  if defined(GC_ALWAYS_MULTITHREADED) \
