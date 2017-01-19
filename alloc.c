@@ -1426,6 +1426,9 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
       /* Do our share of marking work */
         if(TRUE_INCREMENTAL) GC_collect_a_little_inner(1);
       /* Sweep blocks for objects of this size */
+        GC_ASSERT(!GC_is_full_gc
+                  || NULL == GC_obj_kinds[kind].ok_reclaim_list
+                  || NULL == GC_obj_kinds[kind].ok_reclaim_list[gran]);
         GC_continue_reclaim(gran, kind);
       EXIT_GC();
       if (*flh == 0) {
