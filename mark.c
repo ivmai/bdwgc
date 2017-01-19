@@ -770,28 +770,6 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                 mark_stack_top--;
                 continue;
             }
-            if ((GC_word)(type_descr) >= (GC_word)GC_least_plausible_heap_addr
-                    && (GC_word)(type_descr)
-                        <= (GC_word)GC_greatest_plausible_heap_addr) {
-                /* type_descr looks like a pointer into the heap.       */
-                /* It could still be the link pointer in a free list    */
-                /* though.  That's not a problem as long as the offset  */
-                /* of the actual descriptor in the pointed to object is */
-                /* within the same object.  In that case it will either */
-                /* point at the next free object in the list (if offset */
-                /* is 0) or be zeroed (which we check for below,        */
-                /* descr == 0).  If the offset is larger than the       */
-                /* objects in the block type_descr points to it cannot  */
-                /* be a proper pointer.                                 */
-                word offset = ~(descr + (GC_INDIR_PER_OBJ_BIAS
-                                         - GC_DS_PER_OBJECT - 1));
-                hdr *hhdr;
-                GET_HDR(type_descr, hhdr);
-                if (NULL == hhdr || hhdr->hb_sz - sizeof(word) < offset) {
-                    mark_stack_top--;
-                    continue;
-                }
-            }
             descr = *(word *)(type_descr
                               - (descr + (GC_INDIR_PER_OBJ_BIAS
                                           - GC_DS_PER_OBJECT)));
