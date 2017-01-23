@@ -200,7 +200,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 # define TRACE_TARGET(source, cmd)
 #endif
 
-#if defined(I386) && defined(__GNUC__)
+#if defined(I386) && defined(__GNUC__) && !defined(NACL)
 # define LONG_MULT(hprod, lprod, x, y) \
     do { \
         __asm__ __volatile__("mull %2" : "=a"(lprod), "=d"(hprod) \
