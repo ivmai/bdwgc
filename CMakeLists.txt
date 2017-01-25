@@ -209,6 +209,7 @@ OPTION(enable_gcj_support "Support for gcj" NO)
 IF(enable_gcj_support)
         #TODO AM_CONDITIONAL(ENABLE_GCJ_SUPPORT,     [test x"$enable_gcj_support" != xno])
         ADD_DEFINITIONS("-DGC_GCJ_SUPPORT")
+        SET(SRC ${SRC} gcj_mlc.c)
 ENDIF(enable_gcj_support)
 
 
