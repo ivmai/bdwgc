@@ -13,7 +13,8 @@
  */
 
 #include <errno.h>
-#include "atomic_ops.h"
+
+#include "gc_atomic_ops.h"
 
 /* Called during key creation or setspecific.           */
 /* For the GC we already hold lock.                     */

@@ -111,7 +111,7 @@ SRCS= $(CSRCS) \
   include/javaxfc.h \
   include/gc_backptr.h include/gc_gcj.h include/private/dbg_mlc.h \
   include/private/specific.h include/leak_detector.h \
-  include/gc_pthread_redirects.h \
+  include/gc_pthread_redirects.h include/private/gc_atomic_ops.h \
   include/gc_config_macros.h include/private/pthread_support.h \
   include/private/pthread_stop_world.h include/private/darwin_semaphore.h \
   include/private/darwin_stop_world.h include/private/thread_local_alloc.h \

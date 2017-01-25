@@ -29,7 +29,7 @@
 # ifdef THREADS
 
 #  if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
-#    include "atomic_ops.h"
+#    include "gc_atomic_ops.h"
 #  endif
 
 #  ifdef PCR

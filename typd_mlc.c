@@ -99,8 +99,9 @@ STATIC size_t GC_avail_descr = 0;       /* Next available slot.         */
 STATIC int GC_typed_mark_proc_index = 0; /* Indices of my mark          */
 STATIC int GC_array_mark_proc_index = 0; /* procedures.                 */
 
-#if !defined(AO_HAVE_load_acquire) && defined(GC_FORCE_INCLUDE_ATOMIC_OPS)
-# include "atomic_ops.h"
+#if !defined(AO_HAVE_load_acquire) \
+    && (defined(GC_FORCE_INCLUDE_ATOMIC_OPS) || defined(GC_BUILTIN_ATOMIC))
+# include "private/gc_atomic_ops.h"
 #endif
 
 STATIC

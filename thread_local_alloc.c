@@ -193,7 +193,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int knd)
 
 #ifdef GC_GCJ_SUPPORT
 
-# include "atomic_ops.h" /* for AO_compiler_barrier() */
+# include "private/gc_atomic_ops.h" /* for AO_compiler_barrier() */
 
 # include "include/gc_gcj.h"
 

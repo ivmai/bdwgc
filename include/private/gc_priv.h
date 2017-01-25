@@ -927,13 +927,13 @@ typedef word page_hash_table[PHT_SIZE];
            /* to allocate smaller header for large objects.  */
 
 #ifdef PARALLEL_MARK
-# include "atomic_ops.h"
+# include "gc_atomic_ops.h"
 # define counter_t volatile AO_t
 #else
   typedef size_t counter_t;
 # if defined(THREADS) && (defined(MPROTECT_VDB) \
                 || (defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)))
-#   include "atomic_ops.h"
+#   include "gc_atomic_ops.h"
 # endif
 #endif /* !PARALLEL_MARK */
 

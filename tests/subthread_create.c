@@ -12,7 +12,7 @@
 #ifdef PARALLEL_MARK
 # define AO_REQUIRE_CAS
 #endif
-#include "atomic_ops.h"
+#include "private/gc_atomic_ops.h"
 
 #include <stdio.h>
 

@@ -45,7 +45,8 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <unistd.h>
-#include "atomic_ops.h"
+
+#include "private/gc_atomic_ops.h"
 
 /* It's safe to call original pthread_sigmask() here.   */
 #undef pthread_sigmask

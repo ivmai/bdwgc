@@ -79,7 +79,7 @@
 #if (defined(GC_DLL) || defined(GC_INSIDE_DLL)) \
         && !defined(GC_NO_THREADS_DISCOVERY) && !defined(MSWINCE) \
         && !defined(THREAD_LOCAL_ALLOC) && !defined(GC_PTHREADS)
-# include "atomic_ops.h"
+# include "private/gc_atomic_ops.h"
 
   /* This code operates in two distinct modes, depending on     */
   /* the setting of GC_win32_dll_threads.                       */

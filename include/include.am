@@ -39,6 +39,7 @@ dist_noinst_HEADERS += \
         include/private/darwin_semaphore.h \
         include/private/darwin_stop_world.h \
         include/private/dbg_mlc.h \
+        include/private/gc_atomic_ops.h \
         include/private/gc_hdrs.h \
         include/private/gc_locks.h \
         include/private/gc_pmark.h \
