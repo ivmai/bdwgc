@@ -205,6 +205,7 @@ ENDIF(CMAKE_USE_WIN32_THREADS_INIT)
 OPTION(enable_gcj_support "Support for gcj" NO)
 IF(enable_gcj_support)
         ADD_DEFINITIONS("-DGC_GCJ_SUPPORT")
+        SET(SRC ${SRC} gcj_mlc.c)
 ENDIF(enable_gcj_support)
 
 
