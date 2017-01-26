@@ -43,7 +43,7 @@
 # define AO_test_and_set_acquire(p) __atomic_test_and_set(p, __ATOMIC_ACQUIRE)
 # define AO_HAVE_test_and_set_acquire
 
-# define AO_compiler_barrier() __atomic_thread_fence(__ATOMIC_RELAXED)
+# define AO_compiler_barrier() __atomic_signal_fence(__ATOMIC_SEQ_CST)
 # define AO_nop_full() __atomic_thread_fence(__ATOMIC_SEQ_CST)
 # define AO_HAVE_nop_full
 
