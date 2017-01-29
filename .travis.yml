@@ -8,12 +8,21 @@ compiler:
   - clang
   - gcc
 
+env:
+  - CFLAGS_EXTRA_M=
+  - CFLAGS_EXTRA_M=-m32
+
 matrix:
   exclude:
   - os: osx
     compiler: gcc
 
-sudo: false
+sudo: required
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CFLAGS_EXTRA_M" == "-m32" ]]; then
+      sudo apt-get install gcc-multilib;
+    fi
 
 install:
   - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git -b release-7_4
@@ -21,4 +30,4 @@ install:
 
 script:
   - ./configure --enable-munmap
-  - make -j check
+  - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA_M"
