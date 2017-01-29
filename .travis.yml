@@ -8,12 +8,19 @@ compiler:
   - clang
   - gcc
 
+env:
+  - CFLAGS_EXTRA=
+  - CFLAGS_EXTRA="-m32"
+
 matrix:
   exclude:
   - os: osx
     compiler: gcc
 
-sudo: false
+sudo: required
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CFLAGS_EXTRA" == -m32* ]]; then sudo apt-get install libc6:i386 libc6-dev-i386; fi
 
 install:
   - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
@@ -21,4 +28,4 @@ install:
 
 script:
   - ./configure --enable-cplusplus --enable-gc-debug --enable-munmap --enable-werror
-  - make -j check
+  - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA"
