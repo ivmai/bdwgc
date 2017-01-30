@@ -4479,7 +4479,9 @@ GC_API int GC_CALL GC_get_pages_executable(void)
     struct frame {
         struct frame *fr_savfp;
         long    fr_savpc;
-        long    fr_arg[NARGS];  /* All the arguments go here.   */
+#       if NARGS > 0
+          long  fr_arg[NARGS];  /* All the arguments go here.   */
+#       endif
     };
 #endif
 
