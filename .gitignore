@@ -147,6 +147,7 @@ stamp-h1
 *.h.gcov
 /.sv*-dir
 /cov-int
+/coverage.info
 /pvs-project.log
 /pvs-project.tasks
 /strace_out
