@@ -1,4 +1,4 @@
-language: c
+language: c++
 
 os:
   - linux
@@ -20,12 +20,12 @@ matrix:
 sudo: required
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CFLAGS_EXTRA" == -m32* ]]; then sudo apt-get install libc6:i386 libc6-dev-i386; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CFLAGS_EXTRA" == -m32* ]]; then sudo apt-get install gcc-multilib; else ENABLE_CPP=--enable-cplusplus; fi
 
 install:
   - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
   - ./autogen.sh
 
 script:
-  - ./configure --enable-cplusplus --enable-gc-debug --enable-munmap --enable-werror
+  - ./configure $ENABLE_CPP --enable-gc-debug --enable-munmap --enable-werror
   - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA"
