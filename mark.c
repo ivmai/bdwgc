@@ -539,7 +539,7 @@ static void alloc_mark_stack(size_t);
 #       if defined(__clang__)
 #         pragma GCC diagnostic ignored "-Wpedantic"
 #       else
-          /* GCC before ~4.8 does not accept "-Wpedanic" quietly. */
+          /* GCC before ~4.8 does not accept "-Wpedantic" quietly.  */
 #         pragma GCC diagnostic ignored "-pedantic"
 #       endif
         er.alt_path = &&handle_ex;
