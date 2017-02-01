@@ -9,8 +9,8 @@ compiler:
   - gcc
 
 env:
-  - CFLAGS_EXTRA=
-  - CFLAGS_EXTRA="-m32"
+  - CFLAGS_EXTRA_M=
+  - CFLAGS_EXTRA_M=-m32
 
 matrix:
   exclude:
@@ -20,7 +20,11 @@ matrix:
 sudo: required
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CFLAGS_EXTRA" == -m32* ]]; then sudo apt-get install gcc-multilib; else ENABLE_CPP=--enable-cplusplus; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CFLAGS_EXTRA_M" == "-m32" ]]; then
+      sudo apt-get install gcc-multilib;
+    else
+      ENABLE_CPP=--enable-cplusplus;
+    fi
 
 install:
   - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
@@ -28,4 +32,4 @@ install:
 
 script:
   - ./configure $ENABLE_CPP --enable-gc-debug --enable-munmap --enable-werror
-  - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA"
+  - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA_M"
