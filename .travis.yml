@@ -23,7 +23,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CFLAGS_EXTRA_M" == "-m32" ]]; then
       sudo apt-get install gcc-multilib;
     else
-      ENABLE_CPP=--enable-cplusplus;
+      CONF_CPP=--enable-cplusplus;
     fi
 
 install:
@@ -31,5 +31,5 @@ install:
   - ./autogen.sh
 
 script:
-  - ./configure $ENABLE_CPP --enable-gc-debug --enable-munmap --enable-werror
+  - ./configure $CONF_CPP --enable-gc-debug --enable-munmap --enable-werror
   - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA_M"
