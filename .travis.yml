@@ -12,8 +12,6 @@ env:
   - CFLAGS_EXTRA_M=
   - CFLAGS_EXTRA_M=-m32
   - CONF_GCOV=--enable-gcov
-    CONF_SHARED=--disable-shared
-    CONF_SINGLE_OBJ=--enable-single-obj-compilation
 
 matrix:
   exclude:
@@ -33,6 +31,9 @@ before_install:
   - if [[ "$CONF_GCOV" == --en* ]]; then
       sudo apt-get install lcov;
       gem install coveralls-lcov;
+      CONF_GC_DEBUG=--enable-gc-debug;
+      CONF_SHARED=--disable-shared;
+      CONF_SINGLE_OBJ=--enable-single-obj-compilation;
     fi
 
 install:
@@ -40,13 +41,13 @@ install:
   - ./autogen.sh
 
 script:
-  - ./configure $CONF_CPP --enable-gc-debug $CONF_GCOV --enable-munmap $CONF_SHARED $CONF_SINGLE_OBJ --enable-werror
+  - ./configure $CONF_CPP $CONF_GCOV $CONF_GC_DEBUG --enable-munmap $CONF_SHARED $CONF_SINGLE_OBJ --enable-werror
   - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA_M"
 
 after_success:
   - if [[ "$CONF_GCOV" == --en* ]]; then
-      lcov --capture --directory . --no-external --output-file coverage.info;
-      lcov --remove coverage.info 'cord/tests/*' 'libatomic_ops/*' 'tests/*' --output-file coverage.info;
+      lcov --capture --directory . --output-file coverage.info;
+      lcov --remove coverage.info '/usr/*' 'cord/tests/*' 'libatomic_ops/*' 'tests/*' --output-file coverage.info;
       lcov --list coverage.info;
       coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info;
     fi
