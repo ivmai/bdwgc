@@ -11,6 +11,7 @@ compiler:
 env:
   - CFLAGS_EXTRA_M=
   - CFLAGS_EXTRA_M=-m32
+      CONF_ASSERTIONS=--enable-gc-assertions
   - CONF_GCOV=--enable-gcov
   - CONF_GC_DEBUG=--enable-gc-debug
   - CONF_GC_DEBUG=--disable-gc-debug
@@ -40,6 +41,7 @@ before_install:
   - if [[ "$CONF_GCOV" == --en* ]]; then
       sudo apt-get install lcov;
       gem install coveralls-lcov;
+      CONF_ASSERTIONS=--enable-gc-assertions;
       CONF_M_UNMAP=--enable-munmap;
       CONF_SHARED=--disable-shared;
       CONF_SINGLE_OBJ=--enable-single-obj-compilation;
@@ -50,7 +52,7 @@ install:
   - ./autogen.sh
 
 script:
-  - ./configure $CONF_CPP $CONF_GCOV $CONF_GC_DEBUG
+  - ./configure $CONF_ASSERTIONS $CONF_CPP $CONF_GCOV $CONF_GC_DEBUG
                 $CONF_LARGE_CONFIG $CONF_M_UNMAP $CONF_SHARED
                 $CONF_SINGLE_OBJ --enable-werror
   - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA_M"
