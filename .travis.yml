@@ -12,6 +12,8 @@ env:
   - CFLAGS_EXTRA_M=
   - CFLAGS_EXTRA_M=-m32
   - CONF_GC_DEBUG=--enable-gc-debug
+  - CONF_GC_DEBUG=--disable-gc-debug
+  - CONF_LARGE_CONFIG=--enable-large-config
 
 matrix:
   exclude:
@@ -19,6 +21,10 @@ matrix:
     compiler: gcc
   - compiler: clang
     env: CONF_GC_DEBUG=--enable-gc-debug
+  - compiler: clang
+    env: CONF_GC_DEBUG=--disable-gc-debug
+  - compiler: gcc
+    env: CONF_LARGE_CONFIG=--enable-large-config
 
 sudo: required
 
@@ -34,5 +40,5 @@ install:
   - ./autogen.sh
 
 script:
-  - ./configure $CONF_CPP $CONF_GC_DEBUG --enable-munmap
+  - ./configure $CONF_CPP $CONF_GC_DEBUG $CONF_LARGE_CONFIG --enable-munmap
   - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA_M"
