@@ -14,6 +14,9 @@ env:
   - CONF_GC_DEBUG=--enable-gc-debug
   - CONF_GC_DEBUG=--disable-gc-debug
   - CONF_LARGE_CONFIG=--enable-large-config
+  - CONF_STATIC=--disable-static
+      CONF_THREADS=--disable-threads
+      CFLAGS_EXTRA="-O3 -march=native"
 
 matrix:
   exclude:
@@ -41,4 +44,5 @@ install:
 
 script:
   - ./configure $CONF_CPP $CONF_GC_DEBUG $CONF_LARGE_CONFIG --enable-munmap
-  - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA_M"
+                $CONF_STATIC $CONF_THREADS
+  - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA $CFLAGS_EXTRA_M"
