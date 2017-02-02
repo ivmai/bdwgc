@@ -16,6 +16,9 @@ env:
   - CONF_GC_DEBUG=--enable-gc-debug
   - CONF_GC_DEBUG=--disable-gc-debug
   - CONF_LARGE_CONFIG=--enable-large-config
+  - CONF_STATIC=--disable-static
+      CONF_THREADS=--disable-threads
+      CFLAGS_EXTRA="-O3 -march=native"
 
 matrix:
   exclude:
@@ -54,8 +57,8 @@ install:
 script:
   - ./configure $CONF_ASSERTIONS $CONF_CPP $CONF_GCOV $CONF_GC_DEBUG
                 $CONF_LARGE_CONFIG $CONF_M_UNMAP $CONF_SHARED
-                $CONF_SINGLE_OBJ --enable-werror
-  - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA_M"
+                $CONF_SINGLE_OBJ $CONF_STATIC $CONF_THREADS --enable-werror
+  - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA $CFLAGS_EXTRA_M"
 
 after_success:
   - if [[ "$CONF_GCOV" == --en* ]]; then
