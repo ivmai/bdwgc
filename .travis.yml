@@ -13,6 +13,8 @@ env:
   - CFLAGS_EXTRA_M=-m32
   - CONF_GCOV=--enable-gcov
   - CONF_GC_DEBUG=--enable-gc-debug
+  - CONF_GC_DEBUG=--disable-gc-debug
+  - CONF_LARGE_CONFIG=--enable-large-config
 
 matrix:
   exclude:
@@ -22,6 +24,10 @@ matrix:
     env: CONF_GCOV=--enable-gcov
   - compiler: clang
     env: CONF_GC_DEBUG=--enable-gc-debug
+  - compiler: clang
+    env: CONF_GC_DEBUG=--disable-gc-debug
+  - compiler: gcc
+    env: CONF_LARGE_CONFIG=--enable-large-config
 
 sudo: required
 
@@ -43,7 +49,9 @@ install:
   - ./autogen.sh
 
 script:
-  - ./configure $CONF_CPP $CONF_GCOV $CONF_GC_DEBUG --enable-munmap $CONF_SHARED $CONF_SINGLE_OBJ --enable-werror
+  - ./configure $CONF_CPP $CONF_GCOV $CONF_GC_DEBUG
+                $CONF_LARGE_CONFIG --enable-munmap $CONF_SHARED
+                $CONF_SINGLE_OBJ --enable-werror
   - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA_M"
 
 after_success:
