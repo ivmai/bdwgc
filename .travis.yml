@@ -46,7 +46,7 @@ script:
 
 after_success:
   - if [[ "$CONF_GCOV" == --en* ]]; then
-      lcov --capture --directory . --output-file coverage.info;
+      lcov --capture --base-directory . --directory . --output-file coverage.info;
       lcov --remove coverage.info '/usr/*' 'cord/tests/*' 'libatomic_ops/*' 'tests/*' --output-file coverage.info;
       lcov --list coverage.info;
       coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info;
