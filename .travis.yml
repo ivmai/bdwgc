@@ -10,11 +10,13 @@ compiler:
 
 env:
   - CONF_GC_DEBUG=
+  - CONF_ASSERTIONS=--enable-gc-assertions
   - CONF_GC_DEBUG=--enable-gc-debug
   - CONF_GC_DEBUG=--disable-gc-debug
   - CONF_LARGE_CONFIG=--enable-large-config
   - CONF_STATIC=--disable-static
       CONF_THREADS=--disable-threads
+      CONF_ASSERTIONS=--enable-gc-assertions
 
 matrix:
   exclude:
@@ -34,6 +36,6 @@ install:
   - autoreconf -vif
 
 script:
-  - ./configure --enable-cplusplus $CONF_GC_DEBUG $CONF_LARGE_CONFIG
-                $CONF_STATIC $CONF_THREADS
+  - ./configure $CONF_ASSERTIONS --enable-cplusplus $CONF_GC_DEBUG
+                $CONF_LARGE_CONFIG $CONF_STATIC $CONF_THREADS
   - make -j check
