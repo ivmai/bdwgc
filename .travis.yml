@@ -11,11 +11,13 @@ compiler:
 env:
   - CFLAGS_EXTRA_M=
   - CFLAGS_EXTRA_M=-m32
+      CONF_ASSERTIONS=--enable-gc-assertions
   - CONF_GC_DEBUG=--enable-gc-debug
   - CONF_GC_DEBUG=--disable-gc-debug
   - CONF_LARGE_CONFIG=--enable-large-config
   - CONF_STATIC=--disable-static
       CONF_THREADS=--disable-threads
+      CONF_ASSERTIONS=--enable-gc-assertions
       CFLAGS_EXTRA="-O3 -march=native"
 
 matrix:
@@ -43,6 +45,6 @@ install:
   - ./autogen.sh
 
 script:
-  - ./configure $CONF_CPP $CONF_GC_DEBUG $CONF_LARGE_CONFIG --enable-munmap
-                $CONF_STATIC $CONF_THREADS
+  - ./configure $CONF_ASSERTIONS $CONF_CPP $CONF_GC_DEBUG $CONF_LARGE_CONFIG
+                --enable-munmap $CONF_STATIC $CONF_THREADS
   - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA $CFLAGS_EXTRA_M"
