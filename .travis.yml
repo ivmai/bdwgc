@@ -15,6 +15,7 @@ env:
   - CONF_GC_DEBUG=--enable-gc-debug
   - CONF_GC_DEBUG=--disable-gc-debug
   - CONF_LARGE_CONFIG=--enable-large-config
+      CONF_M_UNMAP=--enable-munmap
   - CONF_STATIC=--disable-static
       CONF_THREADS=--disable-threads
       CONF_ASSERTIONS=--enable-gc-assertions
@@ -29,7 +30,7 @@ matrix:
   - compiler: clang
     env: CONF_GC_DEBUG=--disable-gc-debug
   - compiler: gcc
-    env: CONF_LARGE_CONFIG=--enable-large-config
+    env: CONF_LARGE_CONFIG=--enable-large-config CONF_M_UNMAP=--enable-munmap
 
 sudo: required
 
@@ -46,5 +47,5 @@ install:
 
 script:
   - ./configure $CONF_ASSERTIONS $CONF_CPP $CONF_GC_DEBUG $CONF_LARGE_CONFIG
-                --enable-munmap $CONF_STATIC $CONF_THREADS
+                $CONF_M_UNMAP $CONF_STATIC $CONF_THREADS
   - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA $CFLAGS_EXTRA_M"
