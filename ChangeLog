@@ -7,6 +7,7 @@ Also, includes 7.6.2 changes.
 
 == [7.6.2] (unset) ==
 
+* Add minimal testing of GC_MALLOC_[ATOMIC_]WORDS and GC_CONS (gctest).
 * Add more cases to huge_test to cover sizes close to word-type maximum.
 * Add testing of new[]/delete[] (test_cpp).
 * Adjust code indentation of calloc_explicitly_typed.
@@ -14,8 +15,11 @@ Also, includes 7.6.2 changes.
 * Code refactoring of divide-by-HBLKSIZE occurrences.
 * Code refactoring of huge_test.
 * Code refactoring of tests/subthread_create regarding AO add primitive.
+* Delete preprocessor output on make clean (Makefile.direct).
+* Disable implicit multi-threaded mode for Win32 to avoid LOCK crash.
 * Document configure 'syntax error' issue in README.
 * Eliminate 'address of local variable returned' static analyzer warning.
+* Eliminate 'array vs singleton' code defect in typed_test (gctest).
 * Eliminate 'assigned value never used' CSA warning in min_bytes_allocd.
 * Eliminate 'C-style pointer casting' cppcheck style warnings in test.
 * Eliminate 'checking if unsigned variable is <0' cppcheck style warning.
@@ -27,7 +31,10 @@ Also, includes 7.6.2 changes.
 * Eliminate 'CORD_*printf is never used' cppcheck style warnings (cordtest).
 * Eliminate 'dereference of null' CSA false warning in array_mark_proc.
 * Eliminate 'function result not used' code defect in GC_mark_local.
+* Eliminate 'GC_collecting is set but never used' code defect (Win32).
 * Eliminate 'GC_record_fault is never used' cppcheck style warning.
+* Eliminate 'integer shift by a negative amount' code defect in finalize.
+* Eliminate 'memory leak' code defect for scratch-allocated memory.
 * Eliminate 'possible integer underflow' code defect (cord-de).
 * Eliminate 'potential overflow' static analyzer warning in test.
 * Eliminate 'printf format specifies type void*' GCC pedantic warnings.
@@ -35,6 +42,7 @@ Also, includes 7.6.2 changes.
 * Eliminate 'suspicious pointer subtraction' cppcheck warning (gc_cpp).
 * Eliminate 'unnecessary comparison of static strings' cppcheck warning.
 * Eliminate 'unsafe vsprintf is deprecated' compiler warning.
+* Eliminate 'use of vulnerable sprintf' code defect in de_win test (cord).
 * Eliminate 'value of CLOCK_TYPE unknown' cppcheck info message.
 * Eliminate 'value of DATASTART2 unknown' cppcheck info messages.
 * Eliminate 'value of GC_PTHREAD_EXIT_ATTRIBUTE unknown' cppcheck messages.
@@ -45,35 +53,52 @@ Also, includes 7.6.2 changes.
 * Eliminate redundant local variable in register_finalizer.
 * Eliminate unreachable PROC/DEFAULT_VDB GC_printf calls in gctest main().
 * Enable GC_is_tmp_root for all platforms.
+* Execute more single-threaded GC tests by CMake.
 * Export GC_dump_finalization/regions().
 * Export GC_is_tmp_root() and GC_print_trace[_inner]().
 * Export GC_print_free_list().
+* Fix '32-bit value shift followed by expansion to 64-bit' code defect.
+* Fix 'GC_written_pages never read' code defect (GWW_VDB).
 * Fix 'label cannot be reached' static analyzer warning in disclaim_test.
 * Fix 'syntax error' reported by cppcheck for mach_dep.
 * Fix 'unknown type name GC_INNER' compilation error (FreeBSD).
 * Fix 'variable assigned a value that is never used' cppcheck style warnings.
 * Fix 'void pointers in calculations: behavior undefined' cppcheck warning.
 * Fix Clang static analyzer warning about not found gc_priv.h in extra files.
+* Fix compilation for winpthreads if HANDLE_FORK.
 * Fix compilation if configured with --enable-werror on OS X.
+* Fix message of VDB implementation used if MPROTECT_VDB+GWW_VDB (gctest).
 * Fix null dereference in GC_stack_range_for if not DARWIN_DONT_PARSE_STACK.
 * Fix page calculation in checksums.
+* Fix typo in comment of GC_mark_some.
+* Put invariant name in quotes to make mark_state comments clearer.
+* Remove page_was_dirty and remove_protection duplicate definitions.
 * Report gcc/clang pedantic warnings (configure).
 * Skip thread suspend/resume API testing for Tru64 (OSF1).
 * Support AddressSanitizer and MemorySanitizer (clang).
 * Suppress 'tainted string passed to vulnerable operation' false defects.
 * Suppress 'taking address of label non-standard' GCC/Clang pedantic warning.
+* Test GCJ object creation with length-based descriptor (gctest).
+* Update README regarding make cords with Makefile.direct.
 * Update README to use autogen.sh on build from the source repository.
 * Workaround '#error' cppcheck error messages.
+* Workaround 'bad address arithmetic' static analysis tool false positive.
 * Workaround 'checking if unsigned value is negative' cppcheck warning.
+* Workaround 'checking unsigned value is negative' code defect in mark_from.
 * Workaround 'Condition 0!=GETENV() is always false' cppcheck style warnings.
 * Workaround 'condition is always false' cppcheck warning in get_next_stack.
+* Workaround 'condition is always true' cppcheck style warnings in GC_init.
 * Workaround 'function is never used' cppcheck style warnings.
 * Workaround 'insecure libc pseudo-random number generator used' code defect.
 * Workaround 'local variable size too big' static analyzer warning.
+* Workaround 'null pointer dereference' false positive in push_next_marked.
 * Workaround 'obsolete function alloca() called' cppcheck warnings.
 * Workaround 'passing untyped NULL to variadic function' cppcheck warning.
+* Workaround 'pointer used before comparison to null' code defect (pthread).
 * Workaround 'possible null pointer dereference' cppcheck warnings.
+* Workaround 'potential multiplication overflow' code defect in de_win (cord).
 * Workaround 'redundant assignment of *result to itself' cppcheck warning.
+* Workaround 'resource leak' false positives in alloc_MS, bl/envfile_init.
 * Workaround 'same expression on both sides of ==' cppcheck style warning.
 * Workaround 'same expression on both sides of OR' cppcheck style warning.
 * Workaround 'struct member is never used' cppcheck style warnings.
