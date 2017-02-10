@@ -1,3 +1,127 @@
+2017-02-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* CMakeLists.txt [enable_parallel_mark] (ADD_DEFINITIONS): Add
+	-DPARALLEL_MARK; remove ADD_DEFINITIONS("-DPARALLEL_MARK") in other
+	places; remove ${} for enable_parallel_mark in IF.
+
+2017-02-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* CMakeLists.txt (SRC): Remove checksums.c (to avoid MS VC warning
+	about unused file).
+	* CMakeLists.txt (SRC): Do not add thread_local_alloc.c unless
+	ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC") present.
+
+2017-01-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* CMakeLists.txt [enable_gcj_support] (SRC): Add gcj_mlc.c.
+
+2017-01-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/new_gc_alloc.h: Rename gc_alloc.h to gc_allocator.h in
+	comment; refine the comment about the STL alloc header.
+
+2017-01-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/debugging.html: Rename backptr.h to gc_backptr.h.
+	* include/gc_mark.h (GC_DS_PER_OBJECT): Rename DS_TAGS to GC_DS_TAGS in
+	the comment.
+	* include/private/gc_priv.h (hblkhdr.hb_descr): Rename mark.h to
+	gc_mark.h in the comment.
+
+2017-01-09  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.direct (bsd-libgc.a): Add "-f Makefile.direct" option.
+
+2016-12-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c (bm_huge): Make array size depend on word size
+	(5 elements for 64-bit targets); initialize elements (except the last
+	one) to -1 instead of 0xffffffff (so that all bits are ones even on
+	a 64-bit target); initialize last element to ((word)-1)>>8 instead of
+	0x00ffffff value.
+	* tests/test.c (typed_test): Fail if bm_huge descriptor contains wrong
+	bit values at certain positions (as it had before this fix).
+
+2016-12-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* new_hblk.c [!SMALL_CONFIG] (GC_build_fl_clear2): Fix a typo in
+	comment ("to").
+
+2016-12-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* dyn_load.c [IRIX5 || USE_PROC_FOR_LIBRARIES && !LINUX]
+	(GC_register_dynamic_libraries): Remove "static" for needed_sz local
+	variable (and initialize it to zero).
+
+2016-12-17  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gcconfig.h (GET_MEM): Fix typo in comment (HBLKSIZE).
+
+2016-12-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c (GC_mark_local): Remove assertion checking that
+	global_first_nonempty is not greater than GC_mark_stack_top+1 (because
+	global_first_nonempty could be bigger slightly more at some moments due
+	to concurrency between the markers); replace n_on_stack==0 with
+	my_top<my_first_nonempty (the latter is equivalent to
+	(signed_word)n_on_stack<=0).
+
+2016-12-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c (GC_steal_mark_stack): Replace top->mse_descr.w with descr
+	in assertion; relax assertion condition for descr (length-containing
+	mse_descr.w could be larger than the current GC heap size if
+	mse_start points to a region in a stack or a program data root;
+	e.g. it could happen if MemorySanitizer is used).
+
+2016-12-10  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_cpp.h (gc_cleanup::~gc_cleanup): If GC_base(this) returns
+	null (could be if the object is not allocated dynamically) then do not
+	call GC_register_finalizer_ignore_self.
+
+2016-12-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* mark.c (GC_mark_from): Cast (sizeof(word)-1) to word before "~"
+	operation.
+	* mark_rts.c (GC_add_roots_inner, GC_exclude_static_roots): Likewise.
+	* mark_rts.c [!MSWIN32 && !MSWINCE && !CYGWIN32]
+	(GC_remove_roots_inner): Likewise.
+	* os_dep.c [SVR4 || AUX || DGUX || LINUX && SPARC]
+	(GC_SysVGetDataStart): Likewise.
+	* os_dep.c [!MSWIN32 && DATASTART_USES_BSDGETDATASTART]
+	(GC_FreeBSDGetDataStart): Likewise.
+	* dyn_load.c [(MSWIN32 || MSWINCE || CYGWIN32) && !GC_WIN32_THREADS]
+	(GC_cond_add_roots): Cast (dwAllocationGranularity-1) to word before
+	"~" operation.
+	* include/private/gc_priv.h (HBLKPTR): Cast (HBLKSIZE-1) to word
+	before "~" operation.
+	* os_dep.c [USE_WINALLOC || CYGWIN32] (GC_win32_get_mem): Likewise.
+	* mark.c (GC_mark_from): Change type of new_size local variable from
+	int to word.
+	* os_dep.c [OPENBSD] (GC_find_limit_openbsd, GC_skip_hole_openbsd):
+	Change type of pgsz local variable from size_t to word (to avoid
+	implicit unsigned value extension after "~" operation).
+	* os_dep.c [PROC_VDB] (GC_read_dirty): Cast (sizeof(long)-1) to word
+	before "~" operation.
+
+2016-12-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [SVR4 || AUX || DGUX || LINUX && SPARC]
+	(GC_SysVGetDataStart): Use AO_fetch_and_add(p,0) if available instead
+	of non-atomic read/write in *p = *p statement (thus, to avoid data race
+	though it is highly unlikely).
+
+2016-12-06  Ivan Maidanski <ivmai@mail.ru>
+
+	* mach_dep.c (GC_with_callee_saves_pushed): Mark "context" local
+	variable as volatile (to prevent it from potential clobbering).
+
+2016-12-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* os_dep.c [SVR4 || AUX || DGUX || LINUX && SPARC]
+	(GC_SysVGetDataStart): Fix a typo in comment ("brought").
+
 2016-11-23  Ivan Maidanski <ivmai@mail.ru>
 
 	* include/gc_config_macros.h [__i386__||__amd64__] (GC_SOLARIS_THREADS):
@@ -279,11 +403,6 @@
 2016-03-02  Ivan Maidanski <ivmai@mail.ru>
 
 	* cord/cordtest.c (test_extras): Do not quote FNAME1 and FNAME2.
-
-2016-02-17  Niklas Therning <niklas@therning.org>
-
-	* mark.c (GC_mark_from): In case of GC_DS_PER_OBJECT, skip objects
-	those descriptor is outside object.
 
 2014-06-22  Ivan Maidanski <ivmai@mail.ru>
 
