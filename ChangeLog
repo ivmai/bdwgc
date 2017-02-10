@@ -202,6 +202,7 @@ Also, includes 7.4.4 changes.
 
 == [7.4.6] (unset) ==
 
+* Add configure --enable-gcov option (enable code coverage analysis).
 * Adjust GC_memalign comment.
 * Do not define amiga_get_mem, MacTemporaryNewPtr unless really used (extra).
 * Do not warn of missing PT_GNU_RELRO segment when custom DSO filter used.
@@ -213,6 +214,8 @@ Also, includes 7.4.4 changes.
 * Eliminate 'value stored is never read' warning of Clang static analyzer.
 * Eliminate duplicate log messages in GC_mark_from.
 * Fix 'arg parameter might be clobbered by setjmp' compiler warning.
+* Fix 'bogus LR' detection in FindTopOfStack (Darwin).
+* Fix 'execvp argument incompatible pointer type' compiler warning (tools).
 * Fix 'GetVersion deprecated' compiler warning in os_dep (MS VC).
 * Fix 'incompatible pointer' compiler warning in GC_init_dyld (OS X 64-bit).
 * Fix 'incompatible ptr-to-int conversion' compiler warning in push_all_stack.
@@ -220,9 +223,13 @@ Also, includes 7.4.4 changes.
 * Fix 'ISO C90 forbids mixed declarations and code' compiler warning.
 * Fix 'replacement operator delete cannot be inline' GCC warning (Cygwin).
 * Fix 'variable unused' compiler warning in FirstDLOpenedLinkMap.
+* Fix 'zero-size array is extension' Clang warning in os_dep (Linux/x86).
+* Fix (adjust) GC_scratch_alloc actual argument type.
 * Fix GC_bytes_allocd incrementation in case of allocation failure.
 * Fix GC_jmp_buf multiple definition.
+* Fix GC_noop6 definition to avoid its calls to be optimized away.
 * Fix initsecondarythread_test runtime failure if GC compiled w/o threads.
+* Fix lack of 2 trailing zeros in _MSC_VER numbers.
 * Fix local variable declarations in disclaim_bench.
 * Fix missing #error pragma.
 * Fix missing new-line and redundant trailing dot in WARN messages.
@@ -233,11 +240,16 @@ Also, includes 7.4.4 changes.
 * Fix threaded tests runtime crash if GC_NO_THREAD_REDIRECTS supplied.
 * Fix tools/setjmp_t to prevent nested_sp inlining.
 * Fix typo in CHECK_GCLIB_VERSION name (test).
+* Fix typo in push_roots comment.
 * Fix unchecked fork() result in gctest (Unix, Cygwin).
 * Process all PT_LOAD segments before PT_GNU_RELRO segments (Glibc).
 * Refine README about library source downloading.
 * Replace C++ style comments to C ones, remove commented out code (extra).
+* Support CFLAGS_EXTRA to pass extra user-defined compiler flags (configure).
+* Suppress 'tainted string passed to vulnerable operation' false defects.
+* Workaround 'index out of bounds' UBSan false warning in push_marked.
 * Workaround 'mmap() resource handle leak' static analyzer warning.
+* Workaround 'redundant assignment of *result to itself' cppcheck warning.
 * Workaround 'resource leak' error reported by cppcheck (tools, test).
 Also, includes 7.2h changes.
 
@@ -579,27 +591,43 @@ Also, includes 7.2 changes.
 * Change no-argument functions declaration style to ANSI C (extra files).
 * Do not allow SHORT_DBG_HDRS if KEEP_BACK_PTRS or MAKE_BACK_GRAPH.
 * Ensure oom_fn callback executed on out-of-memory in calloc.
+* Fix '~' operator application to unsigned values shorter than word.
+* Fix 'context local variable might be clobbered by setjmp' compiler warning.
 * Fix 'shift count >= width of type' compiler warning in GC_SQRT_SIZE_MAX.
 * Fix assertion in GC_mark_from for non-heap regions.
+* Fix assertion in GC_steal_mark_stack for non-heap regions.
 * Fix assertion violation in GC_repeat_read if --enable-redirect-malloc.
 * Fix assertion violation in GC_wait_builder called from start_mark_threads.
 * Fix assertion violation in mark_local checking GC_mark_stack_top.
+* Fix bm_huge initialization for 64-bit targets (gctest).
 * Fix calloc_explicitly_typed in case of lb*n overflow.
 * Fix conditional expression in pos_fetch, next non-macro definitions (cord).
 * Fix CORD_substr_closure for the case when CORD_from_fn returns C string.
 * Fix double multiplication of lb by n in calloc_explicitly_typed.
+* Fix enable_parallel_mark condition in CMake script.
+* Fix gc_allocator.h file name in new_gc_alloc.h comment.
+* Fix gc_backptr.h, gc_mark.h, GC_DS_TAGS names in documentation.
+* Fix gc_cleanup destructor for non-heap objects (gc_cpp).
 * Fix GC_collect_or_expand to prevent allocation size value wrap-around.
+* Fix GC_mark_stack_top assertion violation properly in mark_local.
 * Fix GC_requested_heapsize increment in GC_init.
+* Fix GCJ support in CMake build script.
 * Fix header filename in gcconfig.h comment.
 * Fix integer shift undefined behavior in GC_init_explicit_typing.
+* Fix Makefile.direct recursive invocation.
 * Fix malloc routines to prevent size value wrap-around (fix CVE-2016-9427).
+* Fix MS VC warning about compiling unused checksums and thread_local_alloc.
+* Fix potential data race in GC_SysVGetDataStart (SPARC).
 * Fix potential integer overflow in GC_find_limit_* functions.
 * Fix Solaris/sparc detection in case of strict C compliance is enforced.
 * Fix STACKBOTTOM for Solaris 11/x86.
+* Fix storage class of local variable in register_dynamic_libraries (Irix).
 * Fix typo in comment of GC_lock (Win32).
+* Fix typos in GC_build_fl_clear2, GC_SysVGetDataStart, GET_MEM comment.
 * Fix various typos in comments and documentation.
 * Handle load_segs overflow in register_dynlib_callback gracefully.
 * Replace (fix) 'objs' acronym in comments with 'objects' word.
+* Revert "Skip GC_DS_PER_OBJECT objs with negative descriptor in GC_mark_from".
 * Workaround a bug in winpthreads causing parallel marks deadlock (MinGW).
 * Workaround missing getcontext() in Docker osrf/ubuntu_32bit.
 
