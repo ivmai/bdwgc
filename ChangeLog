@@ -1,7 +1,15 @@
 
 == [7.7.0] (development) ==
 
-<none>
+* Add AO primitives implementation to GC based on C11 atomic intrinsic.
+* Add assertion to allocobj that live unmarked object cannot be reclaimed.
+* Do not print n_rescuing_pages value if incremental collections disabled.
+* Do not x86 asm in PUSH_CONTENTS_HDR for NaCl.
+* Enable mprotect-based incremental GC for Win64 (GCC).
+* New API function (GC_dump_named) to produce named dumps.
+* Remove HIGH_BIT macro duplicating SIGNB.
+* Skip grungy_pages update when mark state invalid to speedup read_dirty.
+* Use EXPECT FALSE for mark_from code documented as executed rarely.
 Also, includes 7.6.2 changes.
 
 
