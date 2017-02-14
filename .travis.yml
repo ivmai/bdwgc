@@ -80,7 +80,7 @@ script:
             -D GC_ASSERTIONS -D GC_ATOMIC_UNCOLLECTABLE
             -D GC_ENABLE_SUSPEND_THREAD -D GC_GCJ_SUPPORT
             -D GC_PRINT_BACK_HEIGHT -D GC_THREADS -D HANDLE_FORK
-            -D JAVA_FINALIZATION -DK EEP_BACK_PTRS -D MAKE_BACK_GRAPH
+            -D JAVA_FINALIZATION -D KEEP_BACK_PTRS -D MAKE_BACK_GRAPH
             -D PARALLEL_MARK -D PRINT_BLACK_LIST -D THREAD_LOCAL_ALLOC
             -D USE_MMAP -D USE_MUNMAP
             *.c *.cc cord/*.c cord/tests/cordtest.c cord/tests/de.c extra/gc.c
