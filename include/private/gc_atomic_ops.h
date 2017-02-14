@@ -25,7 +25,7 @@
 # include "gc.h" /* for GC_word */
   typedef GC_word AO_t;
 
-# ifdef GC_INLINE
+# ifdef GC_PRIVATE_H /* have GC_INLINE */
 #   define AO_INLINE GC_INLINE
 # else
 #   define AO_INLINE static __inline
