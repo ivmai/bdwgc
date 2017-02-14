@@ -20,6 +20,7 @@ env:
       CONF_THREADS=--disable-threads
       CFLAGS_EXTRA="-O3 -march=native"
   - CSA_CHECK=true
+      CFLAGS_EXTRA_M=-m32
 
 matrix:
   exclude:
@@ -34,7 +35,7 @@ matrix:
   - compiler: gcc
     env: CONF_LARGE_CONFIG=--enable-large-config
   - compiler: clang
-    env: CSA_CHECK=true
+    env: CSA_CHECK=true CFLAGS_EXTRA_M=-m32
 
 sudo: required
 
@@ -69,7 +70,7 @@ script:
     fi
   - if [[ "$CSA_CHECK" == true ]]; then
       clang --analyze -Xanalyzer -analyzer-output=text
-            -m32 -Werror -I include -I libatomic_ops/src
+            $CFLAGS_EXTRA_M -Werror -I include -I libatomic_ops/src
             *.c *.cc cord/*.c cord/tests/cordtest.c cord/tests/de.c extra/gc.c
             extra/msvc_dbg.c tests/*.c tests/*.cc tools/*.c &&
       clang --analyze -Xanalyzer -analyzer-output=text
