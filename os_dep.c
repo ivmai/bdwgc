@@ -805,7 +805,10 @@ GC_INNER size_t GC_page_size = 0;
   {
 #   if defined(MPROTECT_VDB) || defined(PROC_VDB) || defined(USE_MMAP)
       GC_page_size = (size_t)GETPAGESIZE();
-      if (!GC_page_size) ABORT("getpagesize failed");
+#     if !defined(CPPCHECK)
+        if (0 == GC_page_size)
+          ABORT("getpagesize failed");
+#     endif
 #   else
       /* It's acceptable to fake it.    */
       GC_page_size = HBLKSIZE;
