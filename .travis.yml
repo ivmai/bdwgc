@@ -21,6 +21,8 @@ env:
       CFLAGS_EXTRA="-O3 -march=native"
   - CSA_CHECK=true
       CFLAGS_EXTRA_M=-m32
+  - CPPCHECK=ALL_EXCEPT_UNUSED
+  - CPPCHECK=UNUSED_FUNC
 
 matrix:
   exclude:
@@ -36,6 +38,10 @@ matrix:
     env: CONF_LARGE_CONFIG=--enable-large-config
   - compiler: clang
     env: CSA_CHECK=true CFLAGS_EXTRA_M=-m32
+  - compiler: clang
+    env: CPPCHECK=ALL_EXCEPT_UNUSED
+  - compiler: clang
+    env: CPPCHECK=UNUSED_FUNC
 
 sudo: required
 
@@ -54,18 +60,27 @@ before_install:
       CONF_SHARED=--disable-shared;
       CONF_SINGLE_OBJ=--enable-single-obj-compilation;
     fi
+  - if [[ "$CPPCHECK" != "" ]]; then
+      git clone --depth=3 https://github.com/danmar/cppcheck.git -b master;
+      make --directory cppcheck -j CXXFLAGS="-O3 -march=native -DNDEBUG";
+      if [[ "$CPPCHECK" == "ALL_EXCEPT_UNUSED" ]]; then
+        CPPCHECK_ENABLE="-j16 --enable=information,performance,portability,style,warning";
+      else
+        CPPCHECK_ENABLE="--enable=unusedFunction";
+      fi;
+    fi
 
 install:
   - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
   - ./autogen.sh
 
 script:
-  - if [[ "$CSA_CHECK" != true ]]; then
+  - if [[ "$CSA_CHECK" != true && "$CPPCHECK" == "" ]]; then
       ./configure $CONF_ASSERTIONS $CONF_CPP $CONF_GCOV $CONF_GC_DEBUG
                 $CONF_LARGE_CONFIG $CONF_M_UNMAP $CONF_SHARED
                 $CONF_SINGLE_OBJ $CONF_STATIC $CONF_THREADS --enable-werror;
     fi
-  - if [[ "$CSA_CHECK" != true ]]; then
+  - if [[ "$CSA_CHECK" != true && "$CPPCHECK" == "" ]]; then
       make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA $CFLAGS_EXTRA_M";
     fi
   - if [[ "$CSA_CHECK" == true ]]; then
@@ -85,6 +100,12 @@ script:
             -D USE_MMAP -D USE_MUNMAP
             *.c *.cc cord/*.c cord/tests/cordtest.c cord/tests/de.c extra/gc.c
             extra/msvc_dbg.c tests/*.c tests/*.cc tools/*.c;
+    fi
+  - if [[ "$CPPCHECK" != "" ]]; then
+      cppcheck/cppcheck -f --error-exitcode=2 -Ulong -DCPPCHECK
+                -I include -I libatomic_ops/src $CPPCHECK_ENABLE
+                *.cc cord/*.c cord/tests/*.c extra/*.c extra/*.cpp
+                tests/*.c tests/*.cc tools/*.c;
     fi
 
 after_success:
