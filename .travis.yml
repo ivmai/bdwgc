@@ -42,6 +42,7 @@ sudo: required
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CFLAGS_EXTRA_M" == "-m32" ]]; then
       sudo apt-get install gcc-multilib;
+      CFLAGS_EXTRA="$CFLAGS_EXTRA -DLINT2";
     else
       CONF_CPP=--enable-cplusplus;
     fi
@@ -52,7 +53,6 @@ before_install:
       CONF_M_UNMAP=--enable-munmap;
       CONF_SHARED=--disable-shared;
       CONF_SINGLE_OBJ=--enable-single-obj-compilation;
-      CFLAGS_EXTRA="-DLINT2";
     fi
 
 install:
