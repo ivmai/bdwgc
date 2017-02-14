@@ -51,6 +51,7 @@ before_install:
       CONF_M_UNMAP=--enable-munmap;
       CONF_SHARED=--disable-shared;
       CONF_SINGLE_OBJ=--enable-single-obj-compilation;
+      CFLAGS_EXTRA="-DLINT2";
     fi
 
 install:
