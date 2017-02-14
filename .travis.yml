@@ -63,6 +63,7 @@ script:
       ./configure $CONF_ASSERTIONS $CONF_CPP $CONF_GCOV $CONF_GC_DEBUG
                 $CONF_LARGE_CONFIG $CONF_M_UNMAP $CONF_SHARED
                 $CONF_SINGLE_OBJ $CONF_STATIC $CONF_THREADS --enable-werror;
+    fi
   - if [[ "$CSA_CHECK" != true ]]; then
       make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA $CFLAGS_EXTRA_M";
     fi
