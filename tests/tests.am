@@ -54,14 +54,12 @@ staticrootstest_LDADD = $(test_ldadd) libstaticrootslib_test.la \
 check_LTLIBRARIES += libstaticrootslib_test.la libstaticrootslib2_test.la
 libstaticrootslib_test_la_SOURCES = tests/staticrootslib.c
 libstaticrootslib_test_la_LIBADD = $(test_ldadd)
-libstaticrootslib_test_la_LDFLAGS = -version-info 1:3:0 -no-undefined \
-                                    -rpath /nowhere
+libstaticrootslib_test_la_LDFLAGS = -no-undefined -rpath /nowhere
 libstaticrootslib_test_la_DEPENDENCIES = $(top_builddir)/libgc.la
 libstaticrootslib2_test_la_SOURCES = tests/staticrootslib.c
 libstaticrootslib2_test_la_LIBADD = $(test_ldadd)
 libstaticrootslib2_test_la_CFLAGS = -DSTATICROOTSLIB2
-libstaticrootslib2_test_la_LDFLAGS = -version-info 1:3:0 -no-undefined \
-                                     -rpath /nowhere
+libstaticrootslib2_test_la_LDFLAGS = -no-undefined -rpath /nowhere
 
 if KEEP_BACK_PTRS
 TESTS += tracetest$(EXEEXT)
