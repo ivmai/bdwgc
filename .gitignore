@@ -144,6 +144,7 @@ stamp-h1
 *.c.gcov
 *.cc.gcov
 *.h.gcov
+*.sancov
 /.sv*-dir
 /cov-int
 /coverage.info
