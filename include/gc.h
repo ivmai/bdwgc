@@ -536,7 +536,7 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void);
 /* This getter remains lock-free (unsynchronized) for compatibility     */
 /* reason since some existing clients call it from a GC callback        */
 /* holding the allocator lock.  (This API function and the following    */
-/* four ones bellow were made thread-safe in GC v7.2alpha1 and          */
+/* four ones below were made thread-safe in GC v7.2alpha1 and          */
 /* reverted back in v7.2alpha7 for the reason described.)               */
 GC_API size_t GC_CALL GC_get_heap_size(void);
 

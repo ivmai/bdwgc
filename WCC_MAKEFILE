@@ -1,7 +1,7 @@
 # Makefile for Watcom C/C++ 10.5, 10.6, 11.0 on NT, OS2 and DOS4GW.
 # May work with Watcom 10.0.
 
-# Uncoment one of the lines below for cross compilation.
+# Uncomment one of the lines below for cross compilation.
 SYSTEM=MSWIN32
 #SYSTEM=DOS4GW
 #SYSTEM=OS2
