@@ -48,7 +48,7 @@ WHATS NEW:
                  It is also the most important flag to set to prevent
                  GC from returning chip-mem. Beware that it slows down a lot
                  when a program is rapidly allocating/deallocating when
-                 theres either very little fast-memory left or verly little
+                 there's either very little fast-memory left or verly little
                  chip-memory left. Its not a very common situation, but gctest
                  sometimes (very rare) use many minutes because of this.
 
@@ -252,7 +252,7 @@ will not behave well with Amiga specific code. Especially not inter-
 process comms via messages, and setting up public structures like
 Intuition objects or anything else in the system lists. For the
 time being the use of this library is limited to single threaded
-ANSI/POSIX  compliant or near-complient code. (ie. Stick to stdio
+ANSI/POSIX  compliant or near-compliant code. (ie. Stick to stdio
 for now). Given this limitation there is currently no mechanism for
 allocating "CHIP" or "PUBLIC" memory under the garbage collector.
 I'll add this after giving it considerable thought. The major
@@ -263,7 +263,7 @@ If you allocate your own stack in client code, you will have to
 assign the pointer plus stack size to GC_stackbottom.
 
 The initial stack size of the target program can be compiled in by
-setting the __stack symbol (see SAS documentaion). It can be over-
+setting the __stack symbol (see SAS documentation). It can be over-
 ridden from the CLI by running the AmigaDOS "stack" program, or from
 the WorkBench by setting the stack size in the tool types window.
 
