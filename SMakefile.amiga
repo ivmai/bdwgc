@@ -1,6 +1,6 @@
 
 # Rewritten smakefile for amiga / sas/c. -Kjetil M.
-# Dont use the cord-package if you define parm=both or parm=reg.
+# Don't use the cord-package if you define parm=both or parm=reg.
 
 
 #----------------TOOLS--------------------------------

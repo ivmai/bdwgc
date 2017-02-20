@@ -51,7 +51,7 @@ else
         if test :$GCC: != :"yes": ; then
             gc_cflags="${gc_flags} +ESdbgasm"
         fi
-        # :TODO: actaully we should check using Autoconf if
+        # :TODO: actually we should check using Autoconf if
         #     the compiler supports this option.
         ;;
     esac
@@ -860,7 +860,7 @@ fi
 
 dnl This is something of a hack.  When cross-compiling we turn off
 dnl some functionality.  We also enable the "small" configuration.
-dnl These is only correct when targetting an embedded system.  FIXME.
+dnl These is only correct when targeting an embedded system.  FIXME.
 if test -n "${with_cross_host}"; then
    AC_DEFINE([NO_CLOCK], 1, [Define to not use system clock (cross compiling).])
    AC_DEFINE([SMALL_CONFIG], 1,
