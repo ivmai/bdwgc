@@ -388,6 +388,8 @@ STATIC void GC_restart_handler(int sig)
 # endif /* !USE_TKILL_ON_ANDROID */
 
 # ifdef GC_ENABLE_SUSPEND_THREAD
+#   include <sys/time.h>
+
     STATIC void GC_brief_async_signal_safe_sleep(void)
     {
       struct timeval tv;
