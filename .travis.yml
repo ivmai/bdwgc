@@ -76,7 +76,8 @@ script:
   - if [[ "$CSA_CHECK" != true && "$CPPCHECK" == "" ]]; then
       ./configure $CONF_ASSERTIONS $CONF_CPP $CONF_GCOV $CONF_GC_DEBUG
                 $CONF_LARGE_CONFIG $CONF_M_UNMAP $CONF_SHARED
-                $CONF_SINGLE_OBJ $CONF_STATIC $CONF_THREADS --enable-werror;
+                $CONF_SINGLE_OBJ $CONF_STATIC $CONF_THREADS --enable-werror &&
+      cat include/config.h;
     fi
   - if [[ "$CSA_CHECK" != true && "$CPPCHECK" == "" ]]; then
       make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA $CFLAGS_EXTRA_M";
