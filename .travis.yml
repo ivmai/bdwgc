@@ -10,17 +10,14 @@ compiler:
 
 env:
   - CFLAGS_EXTRA_M=
-  - CFLAGS_EXTRA_M=-m32
-      CONF_ASSERTIONS=--enable-gc-assertions
+  - CFLAGS_EXTRA_M=-m32 CONF_ASSERTIONS=--enable-gc-assertions
   - CONF_GCOV=--enable-gcov
   - CONF_GC_DEBUG=--enable-gc-debug
   - CONF_GC_DEBUG=--disable-gc-debug
   - CONF_LARGE_CONFIG=--enable-large-config
-  - CONF_STATIC=--disable-static
-      CONF_THREADS=--disable-threads
+  - CONF_STATIC=--disable-static CONF_THREADS=--disable-threads
       CFLAGS_EXTRA="-O3 -march=native"
-  - CSA_CHECK=true
-      CFLAGS_EXTRA_M=-m32
+  - CSA_CHECK=true CFLAGS_EXTRA_M=-m32
   - CPPCHECK=ALL_EXCEPT_UNUSED
   - CPPCHECK=UNUSED_FUNC
 
