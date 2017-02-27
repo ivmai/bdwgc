@@ -56,4 +56,5 @@ install:
 
 script:
   - ./configure $CONF_OPTIONS
+  - cat include/config.h
   - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA"
