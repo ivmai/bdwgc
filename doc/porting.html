@@ -265,15 +265,14 @@ with signals.  In this case, the changes involve:
 be automatically defined by <TT>gc_config_macros.h</tt> in the right cases.
 It should also result in a definition of <TT>GC_PTHREADS</tt>, as for the
 existing cases.
-<LI>For GC7+, ensuring that the <TT>atomic_ops</tt> package at least
+<LI>For GC v7, ensuring that the <TT>atomic_ops</tt> package at least
 minimally supports the platform.
 If incremental GC is needed, or if pthread locks don't
 perform adequately as the allocation lock, you will probably need to
 ensure that a sufficient <TT>atomic_ops</tt> port
 exists for the platform to provided an atomic test and set
-operation.  (Current GC7 versions require more<TT>atomic_ops</tt>
-support than necessary.  This is a bug.)  For earlier versions define
-<TT>GC_test_and_set</tt> in <TT>gc_locks.h</tt>.
+operation.  The latest GC code can use GCC atomic intrinsics instead of
+<TT>atomic_ops</tt> package (see <TT>include/private/gc_atomic_ops.h</tt>).
 <LI>Making any needed adjustments to <TT>pthread_stop_world.c</tt> and
 <TT>pthread_support.c</tt>.  Ideally none should be needed.  In fact,
 not all of this is as well standardized as one would like, and outright

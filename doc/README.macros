@@ -400,6 +400,9 @@ GC_ATTR_TLS_FAST        Use specific attributes for GC_thread_key like
 PARALLEL_MARK   Allows the marker to run in multiple threads.  Recommended
   for multiprocessors.
 
+GC_BUILTIN_ATOMIC       Use C11 (GCC) atomic intrinsics instead of
+  libatomic_ops primitives.
+
 GC_ALWAYS_MULTITHREADED     Force multi-threaded mode at GC initialization.
   (Turns GC_allow_register_threads into a no-op routine.)
 
