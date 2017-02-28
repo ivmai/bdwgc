@@ -56,10 +56,10 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
 /* GC_generic_malloc_many with the indicated kind.                      */
 /* Tiny_fl should be an array of GC_TINY_FREELISTS void * pointers.     */
 /* If num_direct is nonzero, and the individual free list pointers      */
-/* are initialized to (void *)1, then we allocate numdirect granules    */
-/* directly using gmalloc before putting multiple objects into the      */
-/* tiny_fl entry.  If num_direct is zero, then the free lists may also  */
-/* be initialized to (void *)0.                                         */
+/* are initialized to (void *)1, then we allocate num_direct granules   */
+/* directly using generic_malloc before putting multiple objects into   */
+/* the tiny_fl entry.  If num_direct is zero, then the free lists may   */
+/* also be initialized to (void *)0.                                    */
 /* Note that we use the zeroth free list to hold objects 1 granule in   */
 /* size that are used to satisfy size 0 allocation requests.            */
 /* We rely on much of this hopefully getting optimized away in the      */
