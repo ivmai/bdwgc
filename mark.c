@@ -733,7 +733,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                   }
 #               endif /* ENABLE_TRACE */
                 PUSH_CONTENTS((ptr_t)current, mark_stack_top,
-                              mark_stack_limit, current_p, exit1);
+                              mark_stack_limit, current_p);
               }
             }
             descr <<= 1;
@@ -862,7 +862,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             }
 #         endif /* ENABLE_TRACE */
           PUSH_CONTENTS((ptr_t)current, mark_stack_top,
-                        mark_stack_limit, current_p, exit2);
+                        mark_stack_limit, current_p);
         }
         current_p += ALIGNMENT;
       }
@@ -879,7 +879,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             }
 #       endif /* ENABLE_TRACE */
         PUSH_CONTENTS((ptr_t)deferred, mark_stack_top,
-                      mark_stack_limit, current_p, exit4);
+                      mark_stack_limit, current_p);
         next_object:;
 #     endif
     }
@@ -1426,8 +1426,7 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
     }
 
     PUSH_CONTENTS_HDR(obj, mark_stack_ptr /* modified */, mark_stack_limit,
-                      (ptr_t)src, was_marked, hhdr, TRUE);
- was_marked:
+                      (ptr_t)src, hhdr, TRUE);
     return mark_stack_ptr;
 }
 
@@ -1471,8 +1470,7 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
       GC_dirty(p);      /* Implicitly affects entire object.            */
 #   endif
     PUSH_CONTENTS_HDR(r, GC_mark_stack_top, GC_mark_stack_limit,
-                      source, mark_and_push_exit, hhdr, FALSE);
-  mark_and_push_exit: ;
+                      source, hhdr, FALSE);
     /* We silently ignore pointers to near the end of a block,  */
     /* which is very mildly suboptimal.                         */
     /* FIXME: We should probably add a header word to address   */
