@@ -1412,7 +1412,7 @@
 #           define GC_PREFETCH_FOR_WRITE(x) \
               __asm__ __volatile__ ("prefetcht0 %0" : : "m"(*(char *)(x)))
 #         else
-#           define NO_PREFETCH_FOR_WRITE
+#           define GC_NO_PREFETCH_FOR_WRITE
 #         endif
 #       elif defined(USE_3DNOW_PREFETCH)
 #         define PREFETCH(x) \
@@ -2900,7 +2900,7 @@
 #endif
 
 #ifndef GC_PREFETCH_FOR_WRITE
-# if defined(__GNUC__) && __GNUC__ >= 3 && !defined(NO_PREFETCH_FOR_WRITE)
+# if defined(__GNUC__) && __GNUC__ >= 3 && !defined(GC_NO_PREFETCH_FOR_WRITE)
 #   define GC_PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
 # else
 #   define GC_PREFETCH_FOR_WRITE(x) (void)0

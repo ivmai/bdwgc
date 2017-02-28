@@ -43,7 +43,11 @@
 #endif
 
 #ifndef GC_PREFETCH_FOR_WRITE
-# define GC_PREFETCH_FOR_WRITE(x) (void)0
+# if defined(__GNUC__) && __GNUC__ >= 3 && !defined(GC_NO_PREFETCH_FOR_WRITE)
+#   define GC_PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
+# else
+#   define GC_PREFETCH_FOR_WRITE(x) (void)0
+# endif
 #endif
 
 /* Object kinds; must match PTRFREE, NORMAL in gc_priv.h.       */
