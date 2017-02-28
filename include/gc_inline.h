@@ -39,7 +39,12 @@
 #endif /* __GNUC__ */
 
 #ifndef GC_ASSERT
-# define GC_ASSERT(expr) /* empty */
+# ifdef NDEBUG
+#   define GC_ASSERT(expr) /* empty */
+# else
+#   include <assert.h>
+#   define GC_ASSERT(expr) assert(expr)
+# endif
 #endif
 
 #ifndef GC_PREFETCH_FOR_WRITE
