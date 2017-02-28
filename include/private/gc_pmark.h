@@ -130,57 +130,54 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 
 /* Push the contents of current onto the mark stack if it is a valid    */
 /* ptr to a currently unmarked object.  Mark it.                        */
-/* If we assumed a standard-conforming compiler, we could probably      */
-/* generate the exit_label transparently.                               */
-#define PUSH_CONTENTS(current, mark_stack_top, mark_stack_limit, \
-                      source, exit_label) \
+#define PUSH_CONTENTS(current, mark_stack_top, mark_stack_limit, source) \
   do { \
     hdr * my_hhdr; \
-    HC_GET_HDR(current, my_hhdr, source, exit_label); \
+    HC_GET_HDR(current, my_hhdr, source); /* contains "break" */ \
     PUSH_CONTENTS_HDR(current, mark_stack_top, mark_stack_limit, \
-                  source, exit_label, my_hhdr, TRUE); \
-  exit_label: ; \
+                      source, my_hhdr, TRUE); \
   } while (0)
 
-/* Set mark bit, exit if it was already set.    */
+/* Set mark bit, exit (using "break" statement) if it is already set.   */
 #ifdef USE_MARK_BYTES
   /* There is a race here, and we may set                               */
   /* the bit twice in the concurrent case.  This can result in the      */
   /* object being pushed twice.  But that's only a performance issue.   */
-# define SET_MARK_BIT_EXIT_IF_SET(hhdr,bit_no,exit_label) \
-    do { \
+# define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
+    { /* cannot use do-while(0) here */ \
         char * mark_byte_addr = (char *)hhdr -> hb_marks + (bit_no); \
-        if (*mark_byte_addr) goto exit_label; \
+        if (*mark_byte_addr != 0) break; /* go to the enclosing loop end */ \
         *mark_byte_addr = 1; \
-    } while (0)
+    }
 #else
 # ifdef PARALLEL_MARK
     /* This is used only if we explicitly set USE_MARK_BITS.            */
     /* The following may fail to exit even if the bit was already set.  */
     /* For our uses, that's benign:                                     */
-#   define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
-        do { \
+#   define OR_WORD_EXIT_IF_SET(addr, bits) \
+        { /* cannot use do-while(0) here */ \
           if (!(*(addr) & (bits))) { \
             AO_or((volatile AO_t *)(addr), (AO_t)(bits)); \
           } else { \
-            goto exit_label; \
+            break; /* go to the enclosing loop end */ \
           } \
-        } while (0)
+        }
 # else
-#   define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
-        do { \
+#   define OR_WORD_EXIT_IF_SET(addr, bits) \
+        { /* cannot use do-while(0) here */ \
            word old = *(addr); \
            word my_bits = (bits); \
-           if (old & my_bits) goto exit_label; \
-           *(addr) = (old | my_bits); \
-        } while (0)
+           if ((old & my_bits) != 0) \
+             break; /* go to the enclosing loop end */ \
+           *(addr) = old | my_bits; \
+        }
 # endif /* !PARALLEL_MARK */
-# define SET_MARK_BIT_EXIT_IF_SET(hhdr,bit_no,exit_label) \
-    do { \
+# define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
+    { /* cannot use do-while(0) here */ \
         word * mark_word_addr = hhdr -> hb_marks + divWORDSZ(bit_no); \
-        OR_WORD_EXIT_IF_SET(mark_word_addr, (word)1 << modWORDSZ(bit_no), \
-                            exit_label); \
-    } while (0)
+        OR_WORD_EXIT_IF_SET(mark_word_addr, \
+                (word)1 << modWORDSZ(bit_no)); /* contains "break" */ \
+    }
 #endif /* !USE_MARK_BYTES */
 
 #ifdef PARALLEL_MARK
@@ -228,7 +225,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 /* interior of a large object.                                          */
 #ifdef MARK_BIT_PER_GRANULE
 # define PUSH_CONTENTS_HDR(current, mark_stack_top, mark_stack_limit, \
-                           source, exit_label, hhdr, do_offset_check) \
+                           source, hhdr, do_offset_check) \
   do { \
     size_t displ = HBLKDISPL(current); /* Displacement in block; in bytes. */\
     /* displ is always within range.  If current doesn't point to       */ \
@@ -252,7 +249,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
           } else { \
             if (do_offset_check && !GC_valid_offsets[obj_displ]) { \
               GC_ADD_TO_BLACK_LIST_NORMAL(current, source); \
-              goto exit_label; \
+              break; /* go to the end of PUSH_CONTENTS_HDR */ \
             } \
           } \
           gran_displ = 0; \
@@ -264,7 +261,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
                              + byte_offset; \
           if (do_offset_check && !GC_valid_offsets[obj_displ]) { \
             GC_ADD_TO_BLACK_LIST_NORMAL(current, source); \
-            goto exit_label; \
+            break; \
           } \
           gran_displ -= gran_offset; \
           base -= obj_displ; \
@@ -274,7 +271,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
     GC_ASSERT(gran_displ % BYTES_TO_GRANULES(hhdr -> hb_sz) == 0); \
     TRACE(source, GC_log_printf("GC #%u: passed validity tests\n", \
                                 (unsigned)GC_gc_no)); \
-    SET_MARK_BIT_EXIT_IF_SET(hhdr, gran_displ, exit_label); \
+    SET_MARK_BIT_EXIT_IF_SET(hhdr, gran_displ); \
     TRACE(source, GC_log_printf("GC #%u: previously unmarked\n", \
                                 (unsigned)GC_gc_no)); \
     TRACE_TARGET(base, \
@@ -288,7 +285,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 
 #ifdef MARK_BIT_PER_OBJ
 # define PUSH_CONTENTS_HDR(current, mark_stack_top, mark_stack_limit, \
-                           source, exit_label, hhdr, do_offset_check) \
+                           source, hhdr, do_offset_check) \
   do { \
     size_t displ = HBLKDISPL(current); /* Displacement in block; in bytes. */\
     unsigned32 low_prod, high_prod; \
@@ -309,7 +306,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
           } else { \
             if (do_offset_check && !GC_valid_offsets[obj_displ]) { \
               GC_ADD_TO_BLACK_LIST_NORMAL(current, source); \
-              goto exit_label; \
+              break; /* go to the end of PUSH_CONTENTS_HDR */ \
             } \
           } \
           GC_ASSERT(hhdr -> hb_sz > HBLKSIZE || \
@@ -321,7 +318,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
           size_t obj_displ = (((low_prod >> 16) + 1) * (hhdr->hb_sz)) >> 16; \
           if (do_offset_check && !GC_valid_offsets[obj_displ]) { \
             GC_ADD_TO_BLACK_LIST_NORMAL(current, source); \
-            goto exit_label; \
+            break; \
           } \
           base -= obj_displ; \
         } \
@@ -331,7 +328,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
     GC_ASSERT(high_prod <= HBLK_OBJS(hhdr -> hb_sz)); \
     TRACE(source, GC_log_printf("GC #%u: passed validity tests\n", \
                                 (unsigned)GC_gc_no)); \
-    SET_MARK_BIT_EXIT_IF_SET(hhdr, high_prod, exit_label); \
+    SET_MARK_BIT_EXIT_IF_SET(hhdr, high_prod); \
     TRACE(source, GC_log_printf("GC #%u: previously unmarked\n", \
                                 (unsigned)GC_gc_no)); \
     TRACE_TARGET(base, \

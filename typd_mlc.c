@@ -377,7 +377,7 @@ STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
             FIXUP_POINTER(current);
             if (current >= (word)least_ha && current <= (word)greatest_ha) {
                 PUSH_CONTENTS((ptr_t)current, mark_stack_ptr,
-                              mark_stack_limit, (ptr_t)current_p, exit1);
+                              mark_stack_limit, (ptr_t)current_p);
             }
         }
     }
