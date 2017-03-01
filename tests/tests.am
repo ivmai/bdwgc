@@ -71,6 +71,7 @@ tracetest_LDADD = $(test_ldadd)
 endif
 
 if THREADS
+
 TESTS += threadleaktest$(EXEEXT)
 check_PROGRAMS += threadleaktest
 threadleaktest_SOURCES = tests/thread_leak_test.c
@@ -90,6 +91,7 @@ TESTS += initsecondarythread_test$(EXEEXT)
 check_PROGRAMS += initsecondarythread_test
 initsecondarythread_test_SOURCES = tests/initsecondarythread.c
 initsecondarythread_test_LDADD = $(test_ldadd) $(THREADDLLIBS)
+
 endif
 
 if CPLUSPLUS
@@ -104,7 +106,8 @@ endif
 endif
 
 if ENABLE_DISCLAIM
-TESTS += disclaim_test
+
+TESTS += disclaim_test$(EXEEXT)
 check_PROGRAMS += disclaim_test
 disclaim_test_SOURCES = tests/disclaim_test.c
 disclaim_test_LDADD = $(test_ldadd)
@@ -112,8 +115,9 @@ if THREADS
 disclaim_test_LDADD += $(THREADDLLIBS)
 endif
 
-TESTS += disclaim_bench
+TESTS += disclaim_bench$(EXEEXT)
 check_PROGRAMS += disclaim_bench
 disclaim_bench_SOURCES = tests/disclaim_bench.c
 disclaim_bench_LDADD = $(test_ldadd)
+
 endif
