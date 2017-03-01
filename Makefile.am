@@ -11,6 +11,12 @@
 
 ## Process this file with automake to produce Makefile.in.
 
+# Info (current:revision:age) for the Libtool versioning system.
+# These numbers should be updated at most once just before the release,
+# and, optionally, at most once during the development (after the release).
+LIBGC_VER_INFO = 1:3:0
+LIBGCCPP_VER_INFO = 1:3:0
+
 ## FIXME: `make distcheck' in this directory will not currently work.
 ##     This is most likely to the explicit flags passed to submakes.
 
@@ -98,7 +104,8 @@ endif
 # linuxthread semaphore functions get linked:
 libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS) $(ATOMIC_OPS_LIBS)
 libgc_la_DEPENDENCIES = @addobjs@
-libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info 1:3:0 -no-undefined
+libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info $(LIBGC_VER_INFO) \
+    -no-undefined
 
 EXTRA_libgc_la_SOURCES = ia64_save_regs_in_stack.s sparc_mach_dep.S \
     sparc_netbsd_mach_dep.s sparc_sunos4_mach_dep.s
@@ -113,7 +120,7 @@ pkginclude_HEADERS += include/gc_cpp.h
 include_HEADERS += include/extra/gc_cpp.h
 libgccpp_la_SOURCES = gc_cpp.cc
 libgccpp_la_LIBADD = ./libgc.la
-libgccpp_la_LDFLAGS = -version-info 1:3:0 -no-undefined
+libgccpp_la_LDFLAGS = -version-info $(LIBGCCPP_VER_INFO) -no-undefined
 endif
 
 # FIXME: If Visual C++ users use Makefile.am, this should go into
