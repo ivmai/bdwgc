@@ -32,3 +32,8 @@ pkginclude_HEADERS += \
         include/cord.h \
         include/cord_pos.h \
         include/ec.h
+
+# Run the tests directly (without test-driver):
+.PHONY: check-without-test-driver
+check-without-test-driver: $(TESTS)
+	./cordtest$(EXEEXT)

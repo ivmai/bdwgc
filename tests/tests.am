@@ -119,3 +119,23 @@ disclaim_bench_SOURCES = tests/disclaim_bench.c
 disclaim_bench_LDADD = $(test_ldadd)
 
 endif
+
+# Run the tests directly (without test-driver):
+.PHONY: check-without-test-driver
+check-without-test-driver: $(TESTS)
+	./gctest$(EXEEXT)
+	./hugetest$(EXEEXT)
+	./leaktest$(EXEEXT)
+	./middletest$(EXEEXT)
+	./realloc_test$(EXEEXT)
+	./smashtest$(EXEEXT)
+	./staticrootstest$(EXEEXT)
+	test ! -f disclaim_bench$(EXEEXT) || ./disclaim_bench$(EXEEXT)
+	test ! -f disclaim_test$(EXEEXT) || ./disclaim_test$(EXEEXT)
+	test ! -f initsecondarythread_test$(EXEEXT) \
+	  || ./initsecondarythread_test$(EXEEXT)
+	test ! -f threadkey_test$(EXEEXT) || ./threadkey_test$(EXEEXT)
+	test ! -f threadleaktest$(EXEEXT) || ./threadleaktest$(EXEEXT)
+	test ! -f subthreadcreate_test$(EXEEXT) || ./subthreadcreate_test$(EXEEXT)
+	test ! -f test_cpp$(EXEEXT) || ./test_cpp$(EXEEXT)
+	test ! -f tracetest$(EXEEXT) || ./tracetest$(EXEEXT)
