@@ -20,6 +20,8 @@ env:
   - CSA_CHECK=true CFLAGS_EXTRA_M=-m32
   - CPPCHECK=ALL_EXCEPT_UNUSED
   - CPPCHECK=UNUSED_FUNC
+  - SANITIZE=undefined CONF_M_UNMAP=--enable-munmap
+# TODO: Add testing with ASan/MSan when clang-3.8 available.
 
 matrix:
   exclude:
@@ -39,6 +41,10 @@ matrix:
     env: CPPCHECK=ALL_EXCEPT_UNUSED
   - compiler: clang
     env: CPPCHECK=UNUSED_FUNC
+  - compiler: gcc
+    env: SANITIZE=undefined CONF_M_UNMAP=--enable-munmap
+  - os: osx
+    env: SANITIZE=undefined CONF_M_UNMAP=--enable-munmap
 
 sudo: required
 
@@ -66,6 +72,9 @@ before_install:
       else
         CPPCHECK_ENABLE="--enable=unusedFunction";
       fi;
+    fi
+  - if [[ "$SANITIZE" != "" ]]; then
+      CFLAGS_EXTRA="$CFLAGS_EXTRA -fsanitize=$SANITIZE -fno-common -fno-omit-frame-pointer";
     fi
 
 install:
@@ -105,6 +114,9 @@ script:
                 -I include -I libatomic_ops/src $CPPCHECK_ENABLE
                 *.cc cord/*.c cord/tests/*.c extra/*.c extra/*.cpp
                 tests/*.c tests/*.cc tools/*.c;
+    fi
+  - if [[ "$SANITIZE" == *memory* || "$SANITIZE" == *undefined* ]]; then
+      UBSAN_OPTIONS="halt_on_error=1" make check-without-test-driver;
     fi
 
 after_success:
