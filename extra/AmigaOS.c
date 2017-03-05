@@ -371,8 +371,9 @@ void *GC_amiga_allocwrapper_any(size_t size,void *(*AllocFunction)(size_t size2)
 #endif
                                 ret=(*AllocFunction)(size);
                         }
+                        if(ret==NULL)
 #endif
-                        if(ret==NULL){
+                        {
                                 GC_amiga_dontalloc=FALSE;
                                 ret=(*AllocFunction)(size);
                                 if(ret==NULL){
@@ -454,8 +455,9 @@ void *GC_amiga_allocwrapper_fast(size_t size,void *(*AllocFunction)(size_t size2
 #endif
                         ret=(*AllocFunction)(size);
                 }
+                if(ret==NULL)
 #endif
-                if(ret==NULL){
+                {
 #ifndef GC_AMIGA_ONLYFAST
                         GC_AMIGA_MEMF=MEMF_ANY | MEMF_CLEAR;
                         if(GC_amiga_toany!=NULL) (*GC_amiga_toany)();
@@ -507,8 +509,9 @@ void *GC_amiga_realloc(void *old_object,size_t new_size_in_bytes){
 #endif
                         ret=GC_realloc(old_object,new_size_in_bytes);
                 }
+                if(ret==NULL)
 #endif
-                if(ret==NULL){
+                {
 #ifndef GC_AMIGA_ONLYFAST
                         GC_AMIGA_MEMF=MEMF_ANY | MEMF_CLEAR;
                         if(GC_amiga_toany!=NULL) (*GC_amiga_toany)();
