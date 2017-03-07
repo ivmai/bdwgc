@@ -91,6 +91,7 @@ script:
   - if [[ "$CSA_CHECK" != true && "$CPPCHECK" == "" ]]; then
       make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA $CFLAGS_EXTRA_M";
     fi
+  - if [ -f gctest.log ]; then cat gctest.log; fi
   - if [[ "$CSA_CHECK" == true ]]; then
       clang --analyze -Xanalyzer -analyzer-output=text
             $CFLAGS_EXTRA_M -Werror -I include -I libatomic_ops/src
