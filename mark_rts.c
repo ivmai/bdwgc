@@ -391,7 +391,7 @@ STATIC void GC_remove_tmp_roots(void)
 GC_INNER ptr_t GC_approx_sp(void)
 {
     volatile word sp;
-#   if defined(__GNUC__) && (__GNUC__ >= 4)
+#   if GC_GNUC_PREREQ(4, 0)
         sp = (word)__builtin_frame_address(0);
 #   else
         sp = (word)&sp;

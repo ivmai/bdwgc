@@ -70,7 +70,7 @@ extern "C" {
                     __LINE__ ); \
         exit( 1 ); }
 
-#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
+#if GC_GNUC_PREREQ(3, 4)
 # define ATTR_UNUSED __attribute__((__unused__))
 #else
 # define ATTR_UNUSED /* empty */

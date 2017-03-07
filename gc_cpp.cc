@@ -29,8 +29,7 @@ built-in "new" and "delete".
 
 #include "gc_cpp.h"
 
-#if !defined(GC_NEW_DELETE_NEED_THROW) && defined(__GNUC__) \
-    && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2))
+#if GC_GNUC_PREREQ(4, 2) && !defined(GC_NEW_DELETE_NEED_THROW)
 # define GC_NEW_DELETE_NEED_THROW
 #endif
 

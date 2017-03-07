@@ -157,8 +157,7 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 #if !defined(GC_NO_OPERATOR_NEW_ARRAY) \
     && !defined(_ENABLE_ARRAYNEW) /* Digimars */ \
     && (defined(__BORLANDC__) && (__BORLANDC__ < 0x450) \
-        || (defined(__GNUC__) && \
-            (__GNUC__ < 2 || __GNUC__ == 2 && __GNUC_MINOR__ < 6)) \
+        || (defined(__GNUC__) && !GC_GNUC_PREREQ(2, 6)) \
         || (defined(_MSC_VER) && _MSC_VER <= 1020) \
         || (defined(__WATCOMC__) && __WATCOMC__ < 1050))
 # define GC_NO_OPERATOR_NEW_ARRAY

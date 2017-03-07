@@ -62,7 +62,7 @@ struct {
 
 word nested_sp(void)
 {
-# if defined(__GNUC__) && (__GNUC__ >= 4)
+# if GC_GNUC_PREREQ(4, 0)
     return (word)__builtin_frame_address(0);
 # else
     volatile word sp;

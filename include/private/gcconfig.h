@@ -768,10 +768,9 @@
  * allocation.
  */
 
-/* If we are using a recent version of gcc, we can use                    */
-/* __builtin_unwind_init() to push the relevant registers onto the stack. */
-# if defined(__GNUC__) && ((__GNUC__ >= 3) \
-                           || (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)) \
+/* If available, we can use __builtin_unwind_init() to push the     */
+/* relevant registers onto the stack.                               */
+# if GC_GNUC_PREREQ(2, 8) \
      && !defined(__INTEL_COMPILER) && !defined(__PATHCC__) \
      && !defined(__FUJITSU) /* for FX10 system */ \
      && !(defined(POWERPC) && defined(DARWIN)) /* for MacOS X 10.3.9 */ \
@@ -1385,10 +1384,8 @@
              extern int _end[];
 #            define DATAEND ((ptr_t)(_end))
 #            if defined(PLATFORM_ANDROID) && !defined(GC_NO_SIGSETJMP) \
-                && !(__ANDROID_API__ >= 18 || __GNUC__ > 4 \
-                     || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8) \
-                     || __clang_major__ > 3 \
-                     || (__clang_major__ == 3 && __clang_minor__ >= 2))
+                && !(GC_GNUC_PREREQ(4, 8) || GC_CLANG_PREREQ(3, 2) \
+                     || __ANDROID_API__ >= 18)
                /* Older Android NDK releases lack sigsetjmp in x86 libc */
                /* (setjmp is used instead to find data_start).  The bug */
                /* is fixed in Android NDK r8e (so, ok to use sigsetjmp  */
@@ -2549,7 +2546,7 @@
                 /* STACKBOTTOM and DATASTART are handled specially in   */
                 /* os_dep.c.                                            */
 #       if !defined(__GNUC__) || defined(__INTEL_COMPILER) \
-           || __GNUC__ >= 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
+           || GC_GNUC_PREREQ(4, 7)
           /* Older GCC has not supported SetUnhandledExceptionFilter    */
           /* properly on x64 (e.g. SEH unwinding information missed).   */
 #         define MPROTECT_VDB
@@ -2892,7 +2889,7 @@
 #endif
 
 #ifndef PREFETCH
-# if defined(__GNUC__) && __GNUC__ >= 3 && !defined(NO_PREFETCH)
+# if GC_GNUC_PREREQ(3, 0) && !defined(NO_PREFETCH)
 #   define PREFETCH(x) __builtin_prefetch((x), 0, 0)
 # else
 #   define PREFETCH(x) (void)0
@@ -2900,7 +2897,7 @@
 #endif
 
 #ifndef GC_PREFETCH_FOR_WRITE
-# if defined(__GNUC__) && __GNUC__ >= 3 && !defined(GC_NO_PREFETCH_FOR_WRITE)
+# if GC_GNUC_PREREQ(3, 0) && !defined(GC_NO_PREFETCH_FOR_WRITE)
 #   define GC_PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
 # else
 #   define GC_PREFETCH_FOR_WRITE(x) (void)0

@@ -70,6 +70,14 @@
 # endif
 #endif
 
+/* Convenient internal macro to test version of Clang.  */
+#if defined(__clang__) && defined(__clang_major__)
+# define GC_CLANG_PREREQ(major, minor) \
+    ((__clang_major__ << 16) + __clang_minor__ >= ((major) << 16) + (minor))
+#else
+# define GC_CLANG_PREREQ(major, minor) 0 /* FALSE */
+#endif
+
 #ifndef GC_TINY_FL_H
 # include "../gc_tiny_fl.h"
 #endif
@@ -123,7 +131,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* located in the "extra" folder).                                    */
 # if defined(GC_DLL) && defined(__GNUC__) && !defined(MSWIN32) \
         && !defined(MSWINCE) && !defined(CYGWIN32)
-#   if (__GNUC__ >= 4) && !defined(GC_NO_VISIBILITY)
+#   if GC_GNUC_PREREQ(4, 0) && !defined(GC_NO_VISIBILITY)
       /* See the corresponding GC_API definition. */
 #     define GC_INNER __attribute__((__visibility__("hidden")))
 #   else
@@ -165,14 +173,14 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #endif /* !GC_ATTR_NO_SANITIZE_MEMORY */
 
 #ifndef GC_ATTR_UNUSED
-# if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
+# if GC_GNUC_PREREQ(3, 4)
 #   define GC_ATTR_UNUSED __attribute__((__unused__))
 # else
 #   define GC_ATTR_UNUSED /* empty */
 # endif
 #endif /* !GC_ATTR_UNUSED */
 
-#if __GNUC__ >= 3 && !defined(LINT2)
+#if GC_GNUC_PREREQ(3, 0) && !defined(LINT2)
 # define EXPECT(expr, outcome) __builtin_expect(expr,outcome)
   /* Equivalent to (expr), but predict that usually (expr)==outcome. */
 #else
@@ -183,17 +191,17 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* The "inline" keyword is determined by Autoconf AC_C_INLINE.    */
 # define GC_INLINE static inline
 #elif defined(_MSC_VER) || defined(__INTEL_COMPILER) || defined(__DMC__) \
-        || ((__GNUC__ >= 3) && defined(__STRICT_ANSI__)) \
+        || (GC_GNUC_PREREQ(3, 0) && defined(__STRICT_ANSI__)) \
         || defined(__WATCOMC__)
 # define GC_INLINE static __inline
-#elif (__GNUC__ >= 3) || defined(__sun)
+#elif GC_GNUC_PREREQ(3, 0) || defined(__sun)
 # define GC_INLINE static inline
 #else
 # define GC_INLINE static
 #endif
 
 #ifndef GC_ATTR_NOINLINE
-# if __GNUC__ >= 4
+# if GC_GNUC_PREREQ(4, 0)
 #   define GC_ATTR_NOINLINE __attribute__((__noinline__))
 # elif _MSC_VER >= 1400
 #   define GC_ATTR_NOINLINE __declspec(noinline)
@@ -205,7 +213,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #ifndef GC_API_OSCALL
   /* This is used to identify GC routines called by name from OS.       */
 # if defined(__GNUC__)
-#   if (__GNUC__ >= 4) && !defined(GC_NO_VISIBILITY)
+#   if GC_GNUC_PREREQ(4, 0) && !defined(GC_NO_VISIBILITY)
       /* Same as GC_API if GC_DLL.      */
 #     define GC_API_OSCALL extern __attribute__((__visibility__("default")))
 #   else
@@ -2173,7 +2181,7 @@ void GC_noop6(word, word, word, word, word, word);
 GC_API void GC_CALL GC_noop1(word);
 
 #ifndef GC_ATTR_FORMAT_PRINTF
-# if defined(__GNUC__) && __GNUC__ >= 3
+# if GC_GNUC_PREREQ(3, 0)
 #   define GC_ATTR_FORMAT_PRINTF(spec_argnum, first_checked) \
         __attribute__((__format__(__printf__, spec_argnum, first_checked)))
 # else
@@ -2431,7 +2439,7 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #endif
 
 /* Runtime check for an argument declared as non-null is actually not null. */
-#if defined(__GNUC__) && __GNUC__ >= 4
+#if GC_GNUC_PREREQ(4, 0)
   /* Workaround tautological-pointer-compare Clang warning.     */
 # define NONNULL_ARG_NOT_NULL(arg) (*(volatile void **)&(arg) != NULL)
 #else
@@ -2603,8 +2611,7 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 /* Some convenience macros for cancellation support. */
 #if defined(CANCEL_SAFE)
 # if defined(GC_ASSERTIONS) && (defined(USE_COMPILER_TLS) \
-     || (defined(LINUX) && !defined(ARM32) \
-              && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)) \
+     || (defined(LINUX) && !defined(ARM32) && GC_GNUC_PREREQ(3, 3)) \
      || defined(HPUX) /* and probably others ... */))
     extern __thread unsigned char GC_cancel_disable_count;
 #   define NEED_CANCEL_DISABLE_COUNT
