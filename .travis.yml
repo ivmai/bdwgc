@@ -73,6 +73,10 @@ matrix:
       compiler: gcc
       env: [ CONF_OPTIONS="--disable-gc-debug --enable-cplusplus" ]
     - os: linux
+      addons: { apt: { packages: [ gcc-multilib ] } }
+      compiler: gcc
+      env: [ CONF_OPTIONS="--enable-large-config", CFLAGS_EXTRA="-m32" ]
+    - os: linux
       compiler: clang
       env:
         - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus"
