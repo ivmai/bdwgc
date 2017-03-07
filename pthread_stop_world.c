@@ -44,6 +44,7 @@
 #include <signal.h>
 #include <semaphore.h>
 #include <errno.h>
+#include <time.h> /* for nanosleep() */
 #include <unistd.h>
 
 #include "private/gc_atomic_ops.h"
@@ -770,7 +771,18 @@ GC_INNER void GC_stop_world(void)
           }
           wait_usecs = 0;
         }
-        usleep(WAIT_UNIT);
+
+#       if defined(CPPCHECK) /* || _POSIX_C_SOURCE >= 199309L */
+          {
+            struct timespec ts;
+
+            ts.tv_sec = 0;
+            ts.tv_nsec = WAIT_UNIT * 1000;
+            (void)nanosleep(&ts, NULL);
+          }
+#       else
+          usleep(WAIT_UNIT);
+#       endif
         wait_usecs += WAIT_UNIT;
       }
     }
