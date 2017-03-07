@@ -15,6 +15,7 @@ env:
   - CONF_GC_DEBUG=--enable-gc-debug
   - CONF_GC_DEBUG=--disable-gc-debug
   - CONF_LARGE_CONFIG=--enable-large-config
+  - CONF_LARGE_CONFIG=--enable-large-config CONF_M_UNMAP=--enable-munmap
   - CONF_STATIC=--disable-static CONF_THREADS=--disable-threads
       CFLAGS_EXTRA="-O3 -march=native"
   - CSA_CHECK=true CFLAGS_EXTRA_M=-m32
@@ -35,6 +36,8 @@ matrix:
     env: CONF_GC_DEBUG=--disable-gc-debug
   - compiler: gcc
     env: CONF_LARGE_CONFIG=--enable-large-config
+  - compiler: clang
+    env: CONF_LARGE_CONFIG=--enable-large-config CONF_M_UNMAP=--enable-munmap
   - compiler: clang
     env: CSA_CHECK=true CFLAGS_EXTRA_M=-m32
   - compiler: clang
