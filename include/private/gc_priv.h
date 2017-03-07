@@ -469,7 +469,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #   define BCOPY_EXISTS
 # endif
 
-# ifndef BCOPY_EXISTS
+# if !defined(BCOPY_EXISTS) || defined(CPPCHECK)
 #   include <string.h>
 #   define BCOPY(x,y,n) memcpy(y, x, (size_t)(n))
 #   define BZERO(x,n)  memset(x, 0, (size_t)(n))
