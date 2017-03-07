@@ -2469,7 +2469,7 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
                       zero_fd, 0/* offset */);
         if (result != (void *)start_addr)
           ABORT("mmap(PROT_NONE) failed");
-#       ifdef LINT2
+#       if defined(CPPCHECK) || defined(LINT2)
           /* Explicitly store the resource handle to a global variable. */
           GC_noop1((word)result);
 #       endif
@@ -2525,7 +2525,7 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
                                    zero_fd, 0 /* offset */);
           if (result != (void *)start_addr)
             ABORT("mmap as mprotect failed");
-#         ifdef LINT2
+#         if defined(CPPCHECK) || defined(LINT2)
             GC_noop1((word)result);
 #         endif
 #       else
@@ -2585,7 +2585,7 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
                       zero_fd, 0/* offset */);
         if (result != (void *)start_addr)
           ABORT("mmap(PROT_NONE) failed");
-#       ifdef LINT2
+#       if defined(CPPCHECK) || defined(LINT2)
           GC_noop1((word)result);
 #       endif
         GC_unmapped_bytes += len;
