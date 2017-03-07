@@ -2610,9 +2610,10 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 
 /* Some convenience macros for cancellation support. */
 #if defined(CANCEL_SAFE)
-# if defined(GC_ASSERTIONS) && (defined(USE_COMPILER_TLS) \
-     || (defined(LINUX) && !defined(ARM32) && GC_GNUC_PREREQ(3, 3)) \
-     || defined(HPUX) /* and probably others ... */))
+# if defined(GC_ASSERTIONS) \
+     && (defined(USE_COMPILER_TLS) \
+         || (defined(LINUX) && !defined(ARM32) && GC_GNUC_PREREQ(3, 3) \
+             || defined(HPUX) /* and probably others ... */))
     extern __thread unsigned char GC_cancel_disable_count;
 #   define NEED_CANCEL_DISABLE_COUNT
 #   define INCR_CANCEL_DISABLE() ++GC_cancel_disable_count
