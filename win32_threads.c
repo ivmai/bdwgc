@@ -2208,8 +2208,6 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
                         LPVOID lpParameter, DWORD dwCreationFlags,
                         LPDWORD lpThreadId)
   {
-    HANDLE thread_h;
-
     if (!EXPECT(parallel_initialized, TRUE))
       GC_init_parallel();
                 /* make sure GC is initialized (i.e. main thread is     */
@@ -2225,6 +2223,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     } else {
       thread_args *args = GC_malloc_uncollectable(sizeof(thread_args));
                 /* Handed off to and deallocated by child thread.       */
+      HANDLE thread_h;
 
       if (0 == args) {
         SetLastError(ERROR_NOT_ENOUGH_MEMORY);
