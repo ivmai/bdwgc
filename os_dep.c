@@ -1817,7 +1817,6 @@ void GC_register_data_segments(void)
   STATIC void GC_register_root_section(ptr_t static_root)
   {
       MEMORY_BASIC_INFORMATION buf;
-      DWORD protect;
       LPVOID p;
       char * base;
       char * limit;
@@ -1827,6 +1826,7 @@ void GC_register_data_segments(void)
       while ((word)p < (word)GC_sysinfo.lpMaximumApplicationAddress) {
         size_t result = VirtualQuery(p, &buf, sizeof(buf));
         char * new_limit;
+        DWORD protect;
 
         if (result != sizeof(buf) || buf.AllocationBase == 0
             || GC_is_heap_base(buf.AllocationBase)) break;
