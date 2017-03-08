@@ -70,14 +70,6 @@
 # endif
 #endif
 
-/* Convenient internal macro to test version of Clang.  */
-#if defined(__clang__) && defined(__clang_major__)
-# define GC_CLANG_PREREQ(major, minor) \
-    ((__clang_major__ << 16) + __clang_minor__ >= ((major) << 16) + (minor))
-#else
-# define GC_CLANG_PREREQ(major, minor) 0 /* FALSE */
-#endif
-
 #ifndef GC_TINY_FL_H
 # include "../gc_tiny_fl.h"
 #endif

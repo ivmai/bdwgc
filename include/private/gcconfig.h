@@ -32,6 +32,14 @@
 #   include <stddef.h>  /* For size_t etc. */
 # endif
 
+/* Convenient internal macro to test version of Clang.  */
+#if defined(__clang__) && defined(__clang_major__)
+# define GC_CLANG_PREREQ(major, minor) \
+    ((__clang_major__ << 16) + __clang_minor__ >= ((major) << 16) + (minor))
+#else
+# define GC_CLANG_PREREQ(major, minor) 0 /* FALSE */
+#endif
+
 /* Machine dependent parameters.  Some tuning parameters can be found   */
 /* near the top of gc_private.h.                                        */
 
