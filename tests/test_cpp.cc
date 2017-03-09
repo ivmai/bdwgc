@@ -219,8 +219,34 @@ void* Undisguise( GC_word i ) {
 #   endif
     if (cmd != 0)
       for (argc = 1; argc < (int)(sizeof(argv) / sizeof(argv[0])); argc++) {
-        argv[ argc ] = strtok( argc == 1 ? cmd : 0, " \t" );
-        if (0 == argv[ argc ]) break;}
+        // Parse the command-line string.  Non-reentrant strtok() is not used
+        // to avoid complains of static analysis tools.  (And, strtok_r() is
+        // not available on some platforms.)  The code is equivalent to:
+        //   if (!(argv[argc] = strtok(argc == 1 ? cmd : 0, " \t"))) break;
+        if (NULL == cmd) {
+          argv[argc] = NULL;
+          break;
+        }
+        argv[argc] = cmd;
+        for (; *cmd != '\0'; cmd++) {
+          if (*cmd != ' ' && *cmd != '\t')
+            break;
+        }
+        if ('\0' == *cmd) {
+          argv[argc] = NULL;
+          break;
+        }
+        argv[argc] = cmd;
+        while (*(++cmd) != '\0') {
+          if (*cmd == ' ' || *cmd == '\t')
+            break;
+        }
+        if (*cmd != '\0') {
+          *(cmd++) = '\0';
+        } else {
+          cmd = NULL;
+        }
+      }
 #elif defined(MACOS)
   int main() {
     char* argv_[] = {"test_cpp", "10"}; // MacOS doesn't have a commandline
