@@ -2786,6 +2786,11 @@
 # define UNIX_LIKE      /* Basic Unix-like system calls work.   */
 #endif
 
+#if defined(CPPCHECK)
+# undef CPP_WORDSZ
+# define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
+#endif
+
 #if CPP_WORDSZ != 32 && CPP_WORDSZ != 64
 # error --> bad word size
 #endif
