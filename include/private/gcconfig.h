@@ -36,8 +36,13 @@
 #if defined(__clang__) && defined(__clang_major__)
 # define GC_CLANG_PREREQ(major, minor) \
     ((__clang_major__ << 16) + __clang_minor__ >= ((major) << 16) + (minor))
+# define GC_CLANG_PREREQ_FULL(major, minor, patchlevel) \
+            (GC_CLANG_PREREQ(major, (minor) + 1) \
+                || (__clang_major__ == (major) && __clang_minor__ == (minor) \
+                    && __clang_patchlevel__ >= (patchlevel)))
 #else
 # define GC_CLANG_PREREQ(major, minor) 0 /* FALSE */
+# define GC_CLANG_PREREQ_FULL(major, minor, patchlevel) 0
 #endif
 
 /* Machine dependent parameters.  Some tuning parameters can be found   */
