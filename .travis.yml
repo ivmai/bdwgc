@@ -11,6 +11,7 @@ compiler:
 env:
   - CFLAGS_EXTRA_M=
   - CFLAGS_EXTRA_M=-m32 CONF_ASSERTIONS=--enable-gc-assertions
+  - CFLAGS_EXTRA="-DGC_BUILTIN_ATOMIC -march=native"
   - CONF_GCOV=--enable-gcov
   - CONF_GC_DEBUG=--enable-gc-debug
   - CONF_GC_DEBUG=--disable-gc-debug
