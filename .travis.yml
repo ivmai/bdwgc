@@ -30,6 +30,8 @@ matrix:
   exclude:
   - os: osx
     compiler: gcc
+  - compiler: gcc
+    env: CFLAGS_EXTRA="-DGC_BUILTIN_ATOMIC -march=native"
   - compiler: clang
     env: CONF_GCOV=--enable-gcov
   - compiler: clang
