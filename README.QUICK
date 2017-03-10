@@ -48,9 +48,8 @@ as described in doc/README.macros, or possibly use
 --enable-threads=posix when running the configure script.
 
 If you wish to use the cord (structured string) library with the stand-alone
-Makefile.direct, type "make -f Makefile.direct cords".
-(This requires an ANSI C compiler.  You may
-need to redefine CC in the Makefile. The CORD_printf implementation in
+Makefile.direct, type "make -f Makefile.direct cords".  (You may need to
+override CC specified in the Makefile. The CORD_printf implementation in
 cordprnt.c is known to be less than perfectly portable.  The rest of the
 package should still work.)  See include/cord.h for the API.
 

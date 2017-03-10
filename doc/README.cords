@@ -40,9 +40,6 @@ almost a screen.  It does not understand tabs, which will show
 up as highlighted "I"s.  Use the UNIX "expand" program first.)
 To build the editor, type "make cord/de" in the gc directory.
 
-This package assumes an ANSI C compiler such as gcc.  It will
-not compile with an old-style K&R compiler.
-
 Note that CORD_printf iand friends use C functions with variable numbers
 of arguments in non-standard-conforming ways.  This code is known to
 break on some platforms, notably PowerPC.  It should be possible to

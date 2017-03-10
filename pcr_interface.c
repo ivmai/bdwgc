@@ -14,8 +14,6 @@
 
 # ifdef PCR
 /*
- * Note that POSIX PCR requires an ANSI C compiler.  Hence we are allowed
- * to make the same assumption here.
  * We wrap all of the allocator functions to avoid questions of
  * compatibility between the prototyped and nonprototyped versions of the f
  */

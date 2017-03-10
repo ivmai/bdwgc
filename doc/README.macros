@@ -354,7 +354,6 @@ CHECKSUMS       Reports on erroneously clear dirty bits, and unexpectedly
 
 GC_GCJ_SUPPORT  Includes support for gcj (and possibly other systems
   that include a pointer to a type descriptor in each allocated object).
-  Building this way requires an ANSI C compiler.
 
 USE_I686_PREFETCH       Causes the collector to issue Pentium III style
   prefetch instructions.  No effect except on X86 Linux platforms.

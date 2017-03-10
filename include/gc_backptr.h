@@ -20,8 +20,6 @@
  * to answer questions such as "who is pointing to this" or
  * "why is this object being retained by the collector"
  *
- * This API assumes that we have an ANSI C compiler.
- *
  * Most of these calls yield useful information on only after
  * a garbage collection.  Usually the client will first force
  * a full collection and then gather information, preferably
