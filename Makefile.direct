@@ -408,13 +408,10 @@ gctest: tests/test.o gc.a $(UTILS)
 setjmp_test: $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h $(UTILS)
 	$(CC) $(CFLAGS) -o setjmp_test $(srcdir)/tools/setjmp_t.c
 
-test: KandRtest cord/cordtest
-	cord/cordtest
-
-# Those tests that work even with a K&R C compiler:
-KandRtest: setjmp_test gctest
+test: cord/cordtest gctest setjmp_test
 	./setjmp_test
 	./gctest
+	cord/cordtest
 
 add_gc_prefix: $(srcdir)/tools/add_gc_prefix.c $(srcdir)/include/gc_version.h
 	$(CC) -o add_gc_prefix $(srcdir)/tools/add_gc_prefix.c
