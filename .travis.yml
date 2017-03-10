@@ -11,7 +11,7 @@ compiler:
 env:
   - CFLAGS_EXTRA_M=
   - CFLAGS_EXTRA_M=-m32 CONF_ASSERTIONS=--enable-gc-assertions
-  - CFLAGS_EXTRA="-DGC_BUILTIN_ATOMIC -march=native"
+  - CFLAGS_EXTRA="-D GC_BUILTIN_ATOMIC -march=native"
   - CONF_GCOV=--enable-gcov
   - CONF_GC_DEBUG=--enable-gc-debug
   - CONF_GC_DEBUG=--disable-gc-debug
@@ -31,7 +31,7 @@ matrix:
   - os: osx
     compiler: gcc
   - compiler: gcc
-    env: CFLAGS_EXTRA="-DGC_BUILTIN_ATOMIC -march=native"
+    env: CFLAGS_EXTRA="-D GC_BUILTIN_ATOMIC -march=native"
   - compiler: clang
     env: CONF_GCOV=--enable-gcov
   - compiler: clang
@@ -60,7 +60,7 @@ sudo: required
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CFLAGS_EXTRA_M" == "-m32" ]]; then
       sudo apt-get install gcc-multilib;
-      CFLAGS_EXTRA="$CFLAGS_EXTRA -DLINT2";
+      CFLAGS_EXTRA="$CFLAGS_EXTRA -D LINT2";
     else
       CONF_CPP=--enable-cplusplus;
     fi
@@ -75,7 +75,7 @@ before_install:
   - if [[ "$CPPCHECK" != "" ]]; then
       git clone --depth=3 https://github.com/danmar/cppcheck.git
             ~/cppcheck -b master;
-      make --directory ~/cppcheck -j CXXFLAGS="-O3 -march=native -DNDEBUG";
+      make --directory ~/cppcheck -j CXXFLAGS="-O3 -march=native -D NDEBUG";
       if [[ "$CPPCHECK" == "ALL_EXCEPT_UNUSED" ]]; then
         CPPCHECK_ENABLE="-j16 --enable=information,performance,portability,style,warning";
       else
@@ -120,7 +120,7 @@ script:
             extra/msvc_dbg.c tests/*.c tests/*.cc tools/*.c;
     fi
   - if [[ "$CPPCHECK" != "" ]]; then
-      ~/cppcheck/cppcheck -f --error-exitcode=2 -Ulong -DCPPCHECK
+      ~/cppcheck/cppcheck -f --error-exitcode=2 -U long -D CPPCHECK
                 -I include -I libatomic_ops/src $CPPCHECK_ENABLE
                 *.cc cord/*.c cord/tests/*.c extra/*.c extra/*.cpp
                 tests/*.c tests/*.cc tools/*.c;
