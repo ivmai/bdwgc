@@ -11,7 +11,9 @@ compiler:
 env:
   - CFLAGS_EXTRA_M=
   - CFLAGS_EXTRA_M=-m32 CONF_ASSERTIONS=--enable-gc-assertions
+  - CFLAGS_EXTRA="-D CHECKSUMS" CONF_THREADS=--disable-threads
   - CFLAGS_EXTRA="-D GC_BUILTIN_ATOMIC -march=native"
+  - CFLAGS_EXTRA="-D SMALL_CONFIG -D MARK_BIT_PER_OBJ"
   - CONF_GCOV=--enable-gcov
   - CONF_GC_DEBUG=--enable-gc-debug
   - CONF_GC_DEBUG=--disable-gc-debug
@@ -30,8 +32,12 @@ matrix:
   exclude:
   - os: osx
     compiler: gcc
+  - compiler: clang
+    env: CFLAGS_EXTRA="-D CHECKSUMS" CONF_THREADS=--disable-threads
   - compiler: gcc
     env: CFLAGS_EXTRA="-D GC_BUILTIN_ATOMIC -march=native"
+  - compiler: clang
+    env: CFLAGS_EXTRA="-D SMALL_CONFIG -D MARK_BIT_PER_OBJ"
   - compiler: clang
     env: CONF_GCOV=--enable-gcov
   - compiler: clang
