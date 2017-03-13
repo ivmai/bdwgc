@@ -26,10 +26,8 @@ For the version number, see README.md or include/gc_version.h files.
 
 INSTALLATION:
 Under UN*X, Linux:
-Alternative 1 (the old way): type "make test" in this directory.
-        Link against gc.a.  With the most recent GC distributions
-        you may have to type "make -f Makefile.direct test" or
-        copy Makefile.direct to Makefile first.
+Alternative 1 (the old way): type "make -f Makefile.direct check".
+        Link against gc.a.
 
 Alternative 2 (the new way): type
         "./configure --prefix=<dir>; make; make check; make install".

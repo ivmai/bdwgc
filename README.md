@@ -189,7 +189,7 @@ configure execution, this means pkg.m4 cannot be found, most probably
 you should run `pkg-config` once before running `./autogen.sh` (autoreconf).
 
 Below we focus on the collector build using classic makefile.
-For the Makefile.direct-based process, typing `make test` instead of `make`
+For the Makefile.direct-based process, typing `make check` instead of `make`
 will automatically build the collector and then run `setjmp_test` and `gctest`.
 `Setjmp_test` will give you information about configuring the collector, which is
 useful primarily if you have a machine that's not already supported.  Gctest is

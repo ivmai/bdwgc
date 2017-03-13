@@ -5,9 +5,9 @@
 # gc.a - builds basic library
 # c++ - adds C++ interface to library
 # cords - adds cords (heavyweight strings) to library
-# test - prints porting information, then builds basic version of gc.a,
-#        and runs some tests of collector and cords.  Does not add cords or
-#        c++ interface to gc.a
+# check - prints porting information, then builds basic version of gc.a,
+#       and runs some tests of collector and cords.  Does not add cords or
+#       c++ interface to gc.a
 # cord/de - builds dumb editor based on cords.
 
 ABI_FLAG=
@@ -409,13 +409,16 @@ gctest: tests/test.o base_lib $(UTILS)
 setjmp_test: $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h $(UTILS)
 	$(CC) $(CFLAGS) -o setjmp_test $(srcdir)/tools/setjmp_t.c
 
-test: KandRtest cord/cordtest
+check: KandRtest cord/cordtest
 	cord/cordtest
 
 # Those tests that work even with a K&R C compiler:
 KandRtest: setjmp_test gctest
 	./setjmp_test
 	./gctest
+
+# A synonym to "check" (for compatibility with older GC versions).
+test: check
 
 add_gc_prefix: $(srcdir)/tools/add_gc_prefix.c $(srcdir)/include/gc_version.h
 	$(CC) -o add_gc_prefix $(srcdir)/tools/add_gc_prefix.c
