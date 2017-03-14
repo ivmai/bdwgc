@@ -3553,10 +3553,29 @@ GC_INNER void GC_read_dirty(GC_bool output_unneeded)
 # include <errno.h>
 # include <sys/types.h>
 # include <sys/signal.h>
-# include <sys/fault.h>
 # include <sys/syscall.h>
-# include <sys/procfs.h>
 # include <sys/stat.h>
+
+# ifdef GC_NO_SYS_FAULT_H
+    /* This exists only to check PROC_VDB code compilation (on Linux).  */
+#   define PG_MODIFIED 1
+    struct prpageheader {
+      int dummy[2]; /* pr_tstamp */
+      unsigned long pr_nmap;
+      unsigned long pr_npage;
+    };
+    struct prasmap {
+      char *pr_vaddr;
+      size_t pr_npage;
+      char dummy1[64+8]; /* pr_mapname, pr_offset */
+      unsigned pr_mflags;
+      unsigned pr_pagesize;
+      int dummy2[2];
+    };
+# else
+#   include <sys/fault.h>
+#   include <sys/procfs.h>
+# endif
 
 # define INITIAL_BUF_SZ 16384
   STATIC size_t GC_proc_buf_size = INITIAL_BUF_SZ;
@@ -3627,6 +3646,9 @@ GC_INNER void GC_read_dirty(GC_bool output_unneeded)
       GC_log_printf("Proc VDB read: pr_nmap= %u, pr_npage= %lu\n",
                     nmaps, ((struct prpageheader *)bufp)->pr_npage);
 #   endif
+#   if defined(GC_NO_SYS_FAULT_H) && defined(CPPCHECK)
+      GC_noop1(((struct prpageheader *)bufp)->dummy[0]);
+#   endif
     bufp += sizeof(struct prpageheader);
     for (i = 0; i < nmaps; i++) {
         struct prasmap * map = (struct prasmap *)bufp;
@@ -3635,6 +3657,9 @@ GC_INNER void GC_read_dirty(GC_bool output_unneeded)
         unsigned pagesize = map -> pr_pagesize;
         ptr_t limit;
 
+#       if defined(GC_NO_SYS_FAULT_H) && defined(CPPCHECK)
+          GC_noop1(map->dummy1[0] + map->dummy2[0]);
+#       endif
 #       ifdef DEBUG_DIRTY_BITS
           GC_log_printf(
                 "pr_vaddr= %p, npage= %lu, mflags= 0x%x, pagesize= 0x%x\n",
