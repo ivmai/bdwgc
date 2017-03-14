@@ -27,6 +27,7 @@ env:
   - CSA_CHECK=true CFLAGS_EXTRA_M=-m32
   - CPPCHECK=ALL_EXCEPT_UNUSED
   - CPPCHECK=UNUSED_FUNC
+  - MAKEFILE_NAME=Makefile.direct MAKEFILE_EXTRA_TARGETS="c++-t"
   - SANITIZE=undefined CONF_M_UNMAP=--enable-munmap
 # TODO: Add testing with ASan/MSan when clang-3.8 available.
 
@@ -94,6 +95,9 @@ before_install:
         CPPCHECK_ENABLE="--enable=unusedFunction";
       fi;
     fi
+  - if [[ "$MAKEFILE_NAME" == "" ]]; then
+      MAKEFILE_NAME=Makefile;
+    fi
   - if [[ "$SANITIZE" != "" ]]; then
       CFLAGS_EXTRA="$CFLAGS_EXTRA -fsanitize=$SANITIZE -fno-common -fno-omit-frame-pointer";
     fi
@@ -103,14 +107,16 @@ install:
   - ./autogen.sh
 
 script:
-  - if [[ "$CSA_CHECK" != true && "$CPPCHECK" == "" ]]; then
+  - if [[ "$CSA_CHECK" != true && "$CPPCHECK" == ""
+          && "$MAKEFILE_NAME" != "Makefile.direct" ]]; then
       ./configure $CONF_ASSERTIONS $CONF_CPP $CONF_GCOV $CONF_GC_DEBUG
                 $CONF_LARGE_CONFIG $CONF_M_UNMAP $CONF_SHARED
                 $CONF_SINGLE_OBJ $CONF_STATIC $CONF_THREADS --enable-werror &&
       cat include/config.h;
     fi
   - if [[ "$CSA_CHECK" != true && "$CPPCHECK" == "" ]]; then
-      make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA $CFLAGS_EXTRA_M";
+      make -j -f $MAKEFILE_NAME check $MAKEFILE_EXTRA_TARGETS
+           CFLAGS_EXTRA="$CFLAGS_EXTRA $CFLAGS_EXTRA_M";
     fi
   - if [ -f gctest.log ]; then cat gctest.log; fi
   - if [[ "$CSA_CHECK" == true ]]; then
