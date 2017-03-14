@@ -94,7 +94,8 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # include <limits.h>
 #endif
 #ifdef SIZE_MAX
-# define GC_SIZE_MAX SIZE_MAX
+# define GC_SIZE_MAX ((size_t)SIZE_MAX)
+            /* Extra cast to workaround some buggy SIZE_MAX definitions. */
 #else
 # define GC_SIZE_MAX (~(size_t)0)
 #endif
