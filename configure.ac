@@ -456,6 +456,11 @@ if test "$GCC" = yes; then
   AC_MSG_RESULT($ac_cv_fno_strict_aliasing)
 fi
 
+# Check for getcontext (uClibc can be configured without it, for example)
+AC_CHECK_FUNCS([getcontext])
+AS_IF([test "$ac_cv_func_getcontext" = "no"],
+      [CFLAGS="$CFLAGS -DNO_GETCONTEXT"])
+
 case "$host" in
 # While IRIX 6 has libdl for the O32 and N32 ABIs, it's missing for N64
 # and unnecessary everywhere.
