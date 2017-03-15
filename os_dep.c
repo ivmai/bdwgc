@@ -4566,10 +4566,10 @@ GC_API int GC_CALL GC_get_pages_executable(void)
   /* Deal with possible malloc calls in backtrace by omitting   */
   /* the infinitely recursing backtrace.                        */
 # ifdef THREADS
-    __thread    /* If your compiler doesn't understand this */
+    __thread    /* If your compiler doesn't understand this             */
                 /* you could use something like pthread_getspecific.    */
 # endif
-  GC_in_save_callers = FALSE;
+    GC_bool GC_in_save_callers = FALSE;
 
 # if defined(THREADS) && defined(DBG_HDRS_ALL)
 #   include "private/dbg_mlc.h"
