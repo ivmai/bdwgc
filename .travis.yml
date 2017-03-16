@@ -25,6 +25,9 @@ env:
   - CONF_LARGE_CONFIG=--enable-large-config
   - CONF_LARGE_CONFIG=--enable-large-config CFLAGS_EXTRA_M=-m32
   - CONF_LARGE_CONFIG=--enable-large-config CONF_M_UNMAP=--enable-munmap
+  - CONF_REDIRECT=--enable-redirect-malloc CFLAGS_EXTRA_M=-m32
+  - CONF_REDIRECT=--enable-redirect-malloc CONF_GC_DEBUG=--enable-gc-debug
+      CONF_ASSERTIONS=--enable-gc-assertions
   - CONF_STATIC=--disable-static CONF_THREADS=--disable-threads
       CFLAGS_EXTRA="-O3 -march=native"
   - CSA_CHECK=true CFLAGS_EXTRA_M=-m32
@@ -67,6 +70,12 @@ matrix:
     env: CONF_LARGE_CONFIG=--enable-large-config CFLAGS_EXTRA_M=-m32
   - compiler: clang
     env: CONF_LARGE_CONFIG=--enable-large-config CONF_M_UNMAP=--enable-munmap
+  - compiler: clang
+    env: CONF_REDIRECT=--enable-redirect-malloc CFLAGS_EXTRA_M=-m32
+  - compiler: gcc
+    env: CONF_REDIRECT=--enable-redirect-malloc
+           CONF_GC_DEBUG=--enable-gc-debug
+           CONF_ASSERTIONS=--enable-gc-assertions
   - compiler: clang
     env: CSA_CHECK=true CFLAGS_EXTRA_M=-m32
   - compiler: clang
@@ -120,7 +129,7 @@ script:
   - if [[ "$CSA_CHECK" != true && "$CPPCHECK" == ""
           && "$MAKEFILE_NAME" != "Makefile.direct" ]]; then
       ./configure $CONF_ASSERTIONS $CONF_CPP $CONF_GCOV $CONF_GC_DEBUG
-                $CONF_LARGE_CONFIG $CONF_M_UNMAP $CONF_SHARED
+                $CONF_LARGE_CONFIG $CONF_M_UNMAP $CONF_REDIRECT $CONF_SHARED
                 $CONF_SINGLE_OBJ $CONF_STATIC $CONF_THREADS --enable-werror &&
       cat include/config.h;
     fi
