@@ -37,6 +37,11 @@ matrix:
         - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS"
         - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
     - os: linux
+      compiler: gcc
+      env:
+        - CFLAGS_EXTRA="-D DEBUG_ADD_DEL_ROOTS -D DEBUG_DIRTY_BITS -D DEBUG_THREADS -D GC_LOG_TO_FILE_ALWAYS"
+        - CONF_OPTIONS="--enable-cplusplus"
+    - os: linux
       addons: { apt: { packages: [ gcc-multilib ] } }
       compiler: gcc
       env: [ CFLAGS_EXTRA="-m32 -D MARK_BIT_PER_OBJ" ]
