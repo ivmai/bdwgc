@@ -259,13 +259,13 @@ test_cpp: $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h gc_cpp.o $(srcd
 	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc_cpp.o gc.a -ldld `./threadlibs`
 	./if_not_there test_cpp $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc_cpp.o gc.a `./threadlibs`
 
-c++-t: c++
+c++-t: c++ test_cpp
 	./test_cpp 1
 
 c++-nt: c++
 	@echo "Use ./test_cpp 1 to test the leak library"
 
-c++: gc_cpp.o $(srcdir)/include/gc_cpp.h base_lib test_cpp
+c++: gc_cpp.o $(srcdir)/include/gc_cpp.h base_lib
 	rm -f dont_ar_4
 	./if_mach SPARC SOLARIS touch dont_ar_4
 	./if_mach SPARC SOLARIS $(AR) rus gc.a gc_cpp.o
@@ -273,7 +273,6 @@ c++: gc_cpp.o $(srcdir)/include/gc_cpp.h base_lib test_cpp
 	./if_mach M68K AMIGA $(AR) -vrus gc.a gc_cpp.o
 	./if_not_there dont_ar_4 $(AR) ru gc.a gc_cpp.o
 	./if_not_there dont_ar_4 $(RANLIB) gc.a || cat /dev/null
-	./test_cpp 1
 	echo > c++
 
 dyn_load_sunos53.o: dyn_load.c
