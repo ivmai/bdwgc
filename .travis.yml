@@ -53,6 +53,11 @@ matrix:
     - os: linux
       compiler: gcc
       env:
+        - CFLAGS_EXTRA="-D POINTER_MASK=~0xf"
+        - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+    - os: linux
+      compiler: gcc
+      env:
         - CFLAGS_EXTRA="-D SMALL_CONFIG -D NO_GETENV"
         - CONF_OPTIONS="--enable-cplusplus"
     - os: linux
