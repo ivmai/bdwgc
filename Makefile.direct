@@ -174,7 +174,7 @@ SPECIALCFLAGS= -I$(srcdir)/include -I$(AO_SRC_DIR)/src
 # not time-critical anyway.
 # Set SPECIALCFLAGS to -q nodirect_code on Encore.
 
-all: gc.a gctest
+all: base_lib gctest
 
 atomic_ops.o: $(AO_SRC_DIR)/src/atomic_ops.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -230,7 +230,6 @@ tests:
 	mkdir tests
 
 base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
-	echo > base_lib
 	rm -f dont_ar_1
 	./if_mach SPARC SOLARIS touch dont_ar_1
 	./if_mach SPARC SOLARIS $(AR) rus gc.a $(OBJS) dyn_load.o
@@ -238,10 +237,11 @@ base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
 	./if_mach M68K AMIGA $(AR) -vrus gc.a $(OBJS) dyn_load.o
 	./if_not_there dont_ar_1 $(AR) ru gc.a $(OBJS) dyn_load.o
 	./if_not_there dont_ar_1 $(RANLIB) gc.a || cat /dev/null
+	echo > base_lib
 #    Ignore ranlib failure; that usually means it doesn't exist, and
 #    isn't needed.
 
-cords: $(CORD_OBJS) cord/cordtest $(UTILS)
+cords: $(CORD_OBJS) cord/cordtest $(UTILS) base_lib
 	rm -f dont_ar_3
 	./if_mach SPARC SOLARIS touch dont_ar_3
 	./if_mach SPARC SOLARIS $(AR) rus gc.a $(CORD_OBJS)
@@ -265,7 +265,7 @@ c++-t: c++
 c++-nt: c++
 	@echo "Use ./test_cpp 1 to test the leak library"
 
-c++: gc_cpp.o $(srcdir)/include/gc_cpp.h test_cpp
+c++: gc_cpp.o $(srcdir)/include/gc_cpp.h base_lib test_cpp
 	rm -f dont_ar_4
 	./if_mach SPARC SOLARIS touch dont_ar_4
 	./if_mach SPARC SOLARIS $(AR) rus gc.a gc_cpp.o
@@ -361,14 +361,15 @@ cord/cordprnt.o: cord $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordprnt.c
 	mv cordprnt.o cord/cordprnt.o
 
-cord/cordtest: $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a $(UTILS)
+cord/cordtest: $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) base_lib $(UTILS)
 	rm -f cord/cordtest
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a -lucb
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a -ldld `./threadlibs`
 	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cord/cordtest $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a `./threadlibs`
 	./if_not_there cord/cordtest $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) gc.a `./threadlibs`
 
-cord/de: $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(UTILS)
+cord/de: $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o base_lib \
+  $(UTILS)
 	rm -f cord/de
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -lucb `./threadlibs`
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -ldld `./threadlibs`
@@ -395,7 +396,7 @@ clean:
 	      base_lib c++ threadlibs $(CORD_OBJS) cord/cordtest cord/de
 	-rm -f *~
 
-gctest: tests/test.o gc.a $(UTILS)
+gctest: tests/test.o base_lib $(UTILS)
 	rm -f gctest
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o gctest  tests/test.o gc.a -lucb
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o gctest  tests/test.o gc.a -ldld `./threadlibs`
