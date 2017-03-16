@@ -179,7 +179,7 @@ GC_FirstDLOpenedLinkMap(void)
         /* at program startup.                                          */
         if( dynStructureAddr == 0 ) {
           void* startupSyms = dlopen(0, RTLD_LAZY);
-          dynStructureAddr = (ElfW(Dyn)*)dlsym(startupSyms, "_DYNAMIC");
+          dynStructureAddr = (ElfW(Dyn)*)(word)dlsym(startupSyms, "_DYNAMIC");
         }
 #   else
         dynStructureAddr = &_DYNAMIC;
