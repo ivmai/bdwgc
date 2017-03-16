@@ -87,6 +87,20 @@ matrix:
         - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus"
         - CFLAGS_EXTRA="-D LINT2"
     - os: linux
+      addons: { apt: { packages: [ gcc-multilib ] } }
+      compiler: clang
+      env:
+        - CONF_OPTIONS="--enable-redirect-malloc --disable-threads"
+        - CFLAGS_EXTRA="-m32"
+    - os: osx
+      env:
+        - CONF_OPTIONS="--enable-redirect-malloc --enable-cplusplus --disable-threads"
+        - CFLAGS_EXTRA="-m32"
+    - os: linux
+      compiler: gcc
+      env:
+        - CONF_OPTIONS="--enable-redirect-malloc --enable-gc-debug --enable-cplusplus --enable-gc-assertions"
+    - os: linux
       compiler: clang
       env:
         - CONF_OPTIONS="--disable-static --disable-threads --enable-gc-assertions --enable-cplusplus"
