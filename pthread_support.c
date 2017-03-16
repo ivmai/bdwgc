@@ -223,7 +223,7 @@
       }
       if (NULL == dl_handle) ABORT("Couldn't open libpthread");
 #   endif
-    REAL_FUNC(pthread_create) = (GC_pthread_create_t)
+    REAL_FUNC(pthread_create) = (GC_pthread_create_t)(word)
                                 dlsym(dl_handle, "pthread_create");
 #   ifdef RTLD_NEXT
       if (REAL_FUNC(pthread_create) == 0)
@@ -231,19 +231,19 @@
               " (probably -lgc is specified after -lpthread)");
 #   endif
 #   ifndef GC_NO_PTHREAD_SIGMASK
-      REAL_FUNC(pthread_sigmask) = (GC_pthread_sigmask_t)
+      REAL_FUNC(pthread_sigmask) = (GC_pthread_sigmask_t)(word)
                                 dlsym(dl_handle, "pthread_sigmask");
 #   endif
-    REAL_FUNC(pthread_join) = (GC_pthread_join_t)
+    REAL_FUNC(pthread_join) = (GC_pthread_join_t)(word)
                                 dlsym(dl_handle, "pthread_join");
-    REAL_FUNC(pthread_detach) = (GC_pthread_detach_t)
+    REAL_FUNC(pthread_detach) = (GC_pthread_detach_t)(word)
                                   dlsym(dl_handle, "pthread_detach");
 #   ifndef GC_NO_PTHREAD_CANCEL
-      REAL_FUNC(pthread_cancel) = (GC_pthread_cancel_t)
+      REAL_FUNC(pthread_cancel) = (GC_pthread_cancel_t)(word)
                                     dlsym(dl_handle, "pthread_cancel");
 #   endif
 #   ifdef GC_HAVE_PTHREAD_EXIT
-      REAL_FUNC(pthread_exit) = (GC_pthread_exit_t)
+      REAL_FUNC(pthread_exit) = (GC_pthread_exit_t)(word)
                                   dlsym(dl_handle, "pthread_exit");
 #   endif
     GC_syms_initialized = TRUE;
