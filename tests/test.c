@@ -94,7 +94,7 @@
       || (defined(DARWIN) && defined(MPROTECT_VDB) \
           && !defined(NO_INCREMENTAL) && !defined(MAKE_BACK_GRAPH))) \
      && !defined(NO_TEST_HANDLE_FORK) && !defined(TEST_HANDLE_FORK) \
-     && !defined(TEST_FORK_WITHOUT_ATFORK) && !defined(CPPCHECK)
+     && !defined(TEST_FORK_WITHOUT_ATFORK)
 #   define NO_TEST_HANDLE_FORK
 # endif
 
@@ -2209,7 +2209,7 @@ int main(void)
     check_heap_stats();
     (void)fflush(stdout);
     (void)pthread_attr_destroy(&attr);
-#   if defined(CPPCHECK) && defined(GC_PTHREADS)
+#   if defined(CPPCHECK)
       UNTESTED(GC_pthread_detach);
       UNTESTED(GC_set_suspend_signal);
       UNTESTED(GC_set_thr_restart_signal);
@@ -2225,7 +2225,14 @@ int main(void)
 #     ifndef GC_NO_PTHREAD_SIGMASK
         UNTESTED(GC_pthread_sigmask);
 #     endif
-#   endif /* CPPCHECK && GC_PTHREADS */
+#     ifdef NO_TEST_HANDLE_FORK
+        UNTESTED(GC_atfork_child);
+        UNTESTED(GC_atfork_parent);
+        UNTESTED(GC_atfork_prepare);
+        UNTESTED(GC_set_handle_fork);
+        UNTESTED(GC_start_mark_threads);
+#     endif
+#   endif /* CPPCHECK */
 #   ifdef PTW32_STATIC_LIB
         pthread_win32_thread_detach_np ();
         pthread_win32_process_detach_np ();
