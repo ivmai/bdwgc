@@ -47,6 +47,9 @@ int APIENTRY WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
    HANDLE      hAccel;
 
    GC_INIT();
+#  if defined(CPPCHECK)
+     GC_noop1((GC_word)&WinMain);
+#  endif
 
    if (!hPrevInstance)
    {
