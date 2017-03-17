@@ -81,7 +81,7 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
 #if defined(OPENBSD)
 # include <sys/param.h>
-# if OpenBSD >= 200519
+# if (OpenBSD >= 200519) && !defined(HAVE_DL_ITERATE_PHDR)
 #   define HAVE_DL_ITERATE_PHDR
 # endif
 #endif /* OPENBSD */
@@ -413,23 +413,28 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 #if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
     || (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG)) \
     || defined(PLATFORM_ANDROID) /* Are others OK here, too? */
-/* We have the header files for a glibc that includes dl_iterate_phdr.  */
-/* It may still not be available in the library on the target system.   */
-/* Thus we also treat it as a weak symbol.                              */
-# define HAVE_DL_ITERATE_PHDR
+# ifndef HAVE_DL_ITERATE_PHDR
+#   define HAVE_DL_ITERATE_PHDR
+# endif
 # ifdef PLATFORM_ANDROID
     /* Android headers might have no such definition for some targets.  */
     int dl_iterate_phdr(int (*cb)(struct dl_phdr_info *, size_t, void *),
                         void *data);
 # endif
-# pragma weak dl_iterate_phdr
-#endif
+#endif /* __GLIBC__ >= 2 || PLATFORM_ANDROID */
 
 #if (defined(FREEBSD) && __FreeBSD__ >= 7)
   /* On the FreeBSD system, any target system at major version 7 shall   */
-  /* have dl_iterate_phdr; therefore, we need not make it weak as above. */
-# define HAVE_DL_ITERATE_PHDR
+  /* have dl_iterate_phdr; therefore, we need not make it weak as below. */
+# ifndef HAVE_DL_ITERATE_PHDR
+#   define HAVE_DL_ITERATE_PHDR
+# endif
 # define DL_ITERATE_PHDR_STRONG
+#elif defined(HAVE_DL_ITERATE_PHDR)
+  /* We have the header files for a glibc that includes dl_iterate_phdr.*/
+  /* It may still not be available in the library on the target system. */
+  /* Thus we also treat it as a weak symbol.                            */
+# pragma weak dl_iterate_phdr
 #endif
 
 #if defined(HAVE_DL_ITERATE_PHDR)
