@@ -634,7 +634,8 @@ void *GC_CALLBACK reverse_test_inner(void *data)
       return GC_call_with_gc_active(reverse_test_inner, (void*)(word)1);
     }
 
-#   if defined(MACOS) || defined(NO_GETCONTEXT /* e.g. musl */)
+#   if defined(MACOS) \
+       || (defined(UNIX_LIKE) && defined(NO_GETCONTEXT)) /* e.g. musl */
       /* Assume 128K stacks at least. */
 #     define BIG 1000
 #   elif defined(PCR)
