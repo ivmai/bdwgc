@@ -28,6 +28,7 @@ env:
   - CONF_LARGE_CONFIG=--enable-large-config CFLAGS_EXTRA_M=-m32
   - CONF_LARGE_CONFIG=--enable-large-config CONF_M_UNMAP=--enable-munmap
   - CONF_REDIRECT=--enable-redirect-malloc CFLAGS_EXTRA_M=-m32
+      CONF_THREADS=--disable-threads
   - CONF_REDIRECT=--enable-redirect-malloc CONF_GC_DEBUG=--enable-gc-debug
       CONF_ASSERTIONS=--enable-gc-assertions
   - CONF_STATIC=--disable-static CONF_THREADS=--disable-threads
@@ -75,9 +76,10 @@ matrix:
     env: CONF_LARGE_CONFIG=--enable-large-config CFLAGS_EXTRA_M=-m32
   - compiler: clang
     env: CONF_LARGE_CONFIG=--enable-large-config CONF_M_UNMAP=--enable-munmap
-  - compiler: clang
-    env: CONF_REDIRECT=--enable-redirect-malloc CFLAGS_EXTRA_M=-m32
   - compiler: gcc
+    env: CONF_REDIRECT=--enable-redirect-malloc CFLAGS_EXTRA_M=-m32
+           CONF_THREADS=--disable-threads
+  - compiler: clang
     env: CONF_REDIRECT=--enable-redirect-malloc
            CONF_GC_DEBUG=--enable-gc-debug
            CONF_ASSERTIONS=--enable-gc-assertions
