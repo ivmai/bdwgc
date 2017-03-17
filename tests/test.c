@@ -580,8 +580,9 @@ void *GC_CALLBACK reverse_test_inner(void *data)
       return GC_call_with_gc_active(reverse_test_inner, (void*)(word)1);
     }
 
-#   if /*defined(MSWIN32) ||*/ defined(MACOS)
-      /* Win32S only allows 128K stacks */
+#   if defined(MACOS) \
+       || (defined(UNIX_LIKE) && defined(NO_GETCONTEXT)) /* e.g. musl */
+      /* Assume 128K stacks at least. */
 #     define BIG 1000
 #   elif defined(PCR)
       /* PCR default stack is 100K.  Stack frames are up to 120 bytes. */
