@@ -23,6 +23,8 @@
 /add_gc_prefix
 /base_lib
 /bdw-gc.pc
+/bsd-libgc.a
+/bsd-libleak.a
 /c++
 /config.cache
 /config.log
