@@ -325,13 +325,3 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
   /* contents before we get a chance to look at them.           */
   GC_noop1((word)(&dummy));
 }
-
-#if defined(ASM_CLEAR_CODE)
-# ifdef LINT
-    ptr_t GC_clear_stack_inner(ptr_t arg, word limit)
-    {
-      return limit ? arg : 0; /* use both arguments */
-    }
-    /* The real version is in a .S file */
-# endif
-#endif /* ASM_CLEAR_CODE */

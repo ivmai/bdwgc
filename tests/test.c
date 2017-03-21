@@ -1112,9 +1112,7 @@ void typed_test(void)
     GC_word * x = (GC_word *)GC_malloc_explicitly_typed(2000, d4);
     int i;
 
-#   ifndef LINT
-      (void)GC_make_descriptor(bm_large, 32);
-#   endif
+    (void)GC_make_descriptor(bm_large, 32);
     collectable_count++;
     if (GC_get_bit(bm_huge, 32) == 0 || GC_get_bit(bm_huge, 311) == 0
         || GC_get_bit(bm_huge, 319) != 0) {
@@ -1226,11 +1224,7 @@ void run_one_test(void)
 #   ifndef DBG_HDRS_ALL
         char *x;
         char **z;
-#       ifdef LINT
-            char *y = 0;
-#       else
-            char *y = (char *)(GC_word)fail_proc1;
-#       endif
+        char *y = (char *)(GC_word)fail_proc1;
 #   endif
     CLOCK_TYPE start_time;
     CLOCK_TYPE reverse_time;
@@ -1718,8 +1712,8 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 # define WINMAIN_LPTSTR LPSTR
 #endif
 
-#if !defined(PCR) && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS) \
-    || defined(LINT)
+#if !defined(PCR) && !defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
+
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
   int APIENTRY WinMain(HINSTANCE instance GC_ATTR_UNUSED,
@@ -1926,7 +1920,7 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
       return(0);
 #   endif
 }
-# endif
+# endif /* !GC_WIN32_THREADS && !GC_PTHREADS */
 
 #if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
 

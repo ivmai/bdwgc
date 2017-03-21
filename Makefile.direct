@@ -433,9 +433,6 @@ gc.tar.Z: gc.tar
 gc.tar.gz: gc.tar
 	gzip gc.tar
 
-lint: $(CSRCS) tests/test.c
-	lint -DLINT $(CSRCS) tests/test.c | egrep -v "possible pointer alignment problem|abort|exit|sbrk|mprotect|syscall|change in ANSI|improper alignment"
-
 # BTL: added to test shared library version of collector.
 # Currently works only under SunOS5.  Requires GC_INIT call from statically
 # loaded client code.

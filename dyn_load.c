@@ -159,10 +159,6 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
 #if defined(SOLARISDL) && !defined(USE_PROC_FOR_LIBRARIES)
 
-#ifdef LINT
-    Elf32_Dyn _DYNAMIC;
-#endif
-
 STATIC struct link_map *
 GC_FirstDLOpenedLinkMap(void)
 {
@@ -809,8 +805,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
     if (fd < 0) {
       (void)snprintf(buf, sizeof(buf), "/proc/%ld", (long)getpid());
       buf[sizeof(buf) - 1] = '\0';
-        /* The above generates a lint complaint, since pid_t varies.    */
-        /* It's unclear how to improve this.                            */
       fd = open(buf, O_RDONLY);
       if (fd < 0) {
         ABORT("/proc open failed");
