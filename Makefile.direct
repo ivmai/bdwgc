@@ -161,7 +161,8 @@ CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
 UTILS= if_mach if_not_there threadlibs
 
 # Libraries needed for curses applications.  Only needed for de.
-CURSES= -lcurses -ltermlib
+# It might also require -ltermlib on some targets.
+CURSES= -lcurses
 
 # The following is irrelevant on most systems.  But a few
 # versions of make otherwise fork the shell specified in
@@ -365,8 +366,8 @@ cord/cordtest: $(srcdir)/cord/tests/cordtest.c $(CORD_OBJS) base_lib $(UTILS)
 
 cord/de: $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o base_lib \
   $(UTILS)
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -lucb `./threadlibs`
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -ldld `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses -ltermlib -lucb `./threadlibs`
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses -ltermlib -ldld `./threadlibs`
 	./if_mach POWERPC AIX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
 	./if_mach POWERPC DARWIN $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a
 	./if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
