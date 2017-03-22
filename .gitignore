@@ -44,11 +44,17 @@
 /gc.log
 /gcname
 /gctest
+/gctest_dyn_link
+/gctest_irix_dyn_link
 /hugetest
 /if_mach
 /if_not_there
 /initsecondarythread_test
 /leaktest
+/libalphagc.so
+/libgc.so
+/libirixgc.so
+/liblinuxgc.so
 /libtool
 /middletest
 /realloc_test
@@ -56,6 +62,7 @@
 /smashtest
 /staticrootstest
 /subthreadcreate_test
+/sunos5gc.so
 /test-suite.log
 /test_cpp
 /test_cpp.log
