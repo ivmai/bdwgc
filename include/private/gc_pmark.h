@@ -210,10 +210,14 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
                              : "g"(y), "0"(x)); \
     } while (0)
 #else
+# if defined(__int64) && !defined(__GNUC__) && !defined(CPPCHECK)
+#   define ULONG_MULT_T unsigned __int64
+# else
+#   define ULONG_MULT_T unsigned long long
+# endif
 # define LONG_MULT(hprod, lprod, x, y) \
     do { \
-        unsigned long long prod = (unsigned long long)(x) \
-                                  * (unsigned long long)(y); \
+        ULONG_MULT_T prod = (ULONG_MULT_T)(x) * (ULONG_MULT_T)(y); \
         GC_STATIC_ASSERT(sizeof(x) + sizeof(y) <= sizeof(prod)); \
         hprod = prod >> 32; \
         lprod = (unsigned32)prod; \
