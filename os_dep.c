@@ -517,7 +517,7 @@ GC_INNER char * GC_get_maps(void)
 
 #ifdef OPENBSD
   static struct sigaction old_segv_act;
-  STATIC sigjmp_buf GC_jmp_buf_openbsd;
+  STATIC JMP_BUF GC_jmp_buf_openbsd;
 
 # ifdef THREADS
 #   include <sys/syscall.h>
@@ -531,7 +531,7 @@ GC_INNER char * GC_get_maps(void)
 
   STATIC void GC_fault_handler_openbsd(int sig GC_ATTR_UNUSED)
   {
-     siglongjmp(GC_jmp_buf_openbsd, 1);
+     LONGJMP(GC_jmp_buf_openbsd, 1);
   }
 
   /* Return the first non-addressable location > p or bound.    */
@@ -556,7 +556,7 @@ GC_INNER char * GC_get_maps(void)
     /* act.sa_restorer is deprecated and should not be initialized. */
     sigaction(SIGSEGV, &act, &old_segv_act);
 
-    if (sigsetjmp(GC_jmp_buf_openbsd, 1) == 0) {
+    if (SETJMP(GC_jmp_buf_openbsd) == 0) {
       result = (ptr_t)((word)p & ~(pgsz-1));
       for (;;) {
         if ((word)result >= (word)bound - pgsz) {
@@ -598,7 +598,7 @@ GC_INNER char * GC_get_maps(void)
 
     firstpass = 1;
     result = (ptr_t)((word)p & ~(pgsz-1));
-    if (sigsetjmp(GC_jmp_buf_openbsd, 1) != 0 || firstpass) {
+    if (SETJMP(GC_jmp_buf_openbsd) != 0 || firstpass) {
       firstpass = 0;
       if ((word)result >= (word)bound - pgsz) {
         result = bound;
