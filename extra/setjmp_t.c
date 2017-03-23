@@ -65,7 +65,7 @@ int main(void)
     long ps = GETPAGESIZE();
     jmp_buf b;
     register int x = (int)strlen("a");  /* 1, slightly disguised */
-    static int y = 0;
+    static volatile int y = 0;
 
     sp = (word)(&sp);
     printf("This appears to be a %s running %s\n", MACH_TYPE, OS_TYPE);
