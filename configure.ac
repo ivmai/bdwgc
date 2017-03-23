@@ -166,7 +166,10 @@ AH_TEMPLATE([GC_DLL],
         [Define to build dynamic libraries with only API symbols exposed.])
 
 dnl Check for a flavor of supported inline keyword.
+old_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $CFLAGS_EXTRA"
 AC_C_INLINE
+CFLAGS="$old_CFLAGS"
 
 THREADDLLIBS=
 need_atomic_ops_asm=false
@@ -743,12 +746,15 @@ AM_CONDITIONAL([KEEP_BACK_PTRS], [test x"$keep_back_ptrs" = xtrue])
 # Check for dladdr (used for debugging).
 AC_MSG_CHECKING(for dladdr)
 have_dladdr=no
+old_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $CFLAGS_EXTRA"
 AC_TRY_COMPILE([
 #define _GNU_SOURCE 1
 #include <dlfcn.h>], [{
     Dl_info info;
     (void)dladdr("", &info);
 }], [ have_dladdr=yes ])
+CFLAGS="$old_CFLAGS"
 AC_MSG_RESULT($have_dladdr)
 if test x"$have_dladdr" = xyes; then
   AC_DEFINE([HAVE_DLADDR], 1, [Define to use 'dladdr' function.])
