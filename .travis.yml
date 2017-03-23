@@ -36,7 +36,7 @@ env:
   - CSA_CHECK=true CFLAGS_EXTRA_M=-m32
   - CPPCHECK=ALL_EXCEPT_UNUSED
   - CPPCHECK=UNUSED_FUNC
-  - MAKEFILE_NAME=Makefile.direct MAKEFILE_EXTRA_TARGETS="check-cpp"
+  - MAKEFILE_NAME=Makefile.direct MAKEFILE_EXTRA_TARGETS="check-cpp cord/de"
   - SANITIZE=undefined CONF_M_UNMAP=--enable-munmap
 # TODO: Add testing with ASan/MSan when clang-3.8 available.
 
