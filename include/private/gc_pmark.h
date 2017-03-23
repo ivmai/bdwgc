@@ -291,9 +291,9 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
     unsigned32 low_prod, high_prod; \
     unsigned32 inv_sz = hhdr -> hb_inv_sz; \
     ptr_t base = current; \
-    LONG_MULT(high_prod, low_prod, displ, inv_sz); \
+    LONG_MULT(high_prod, low_prod, (unsigned32)displ, inv_sz); \
     /* product is > and within sz_in_bytes of displ * sz_in_bytes * 2**32 */ \
-    if (EXPECT(low_prod >> 16 != 0, FALSE))  { \
+    if (EXPECT(low_prod >> 16 != 0, FALSE)) { \
       /* FIXME: fails if offset is a multiple of HBLKSIZE which becomes 0 */ \
         if (inv_sz == LARGE_INV_SZ) { \
           size_t obj_displ; \
