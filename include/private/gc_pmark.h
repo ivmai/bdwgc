@@ -30,6 +30,12 @@
 # define GC_BUILD
 #endif
 
+#if (defined(__linux__) || defined(__GLIBC__) || defined(__GNU__)) \
+    && !defined(_GNU_SOURCE) && defined(GC_PTHREADS) \
+    && !defined(GC_NO_PTHREAD_SIGMASK)
+# define _GNU_SOURCE 1
+#endif
+
 #if defined(KEEP_BACK_PTRS) || defined(PRINT_BLACK_LIST)
 # include "dbg_mlc.h"
 #endif
