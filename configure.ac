@@ -795,6 +795,17 @@ if test x"$have_dladdr" = xyes; then
   AC_DEFINE([HAVE_DLADDR], 1, [Define to use 'dladdr' function.])
 fi
 
+# sigsetjmp could be a macro (thus AC_CHECK_FUNCS cannot be used).
+AC_MSG_CHECKING(for sigsetjmp)
+old_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $CFLAGS_EXTRA"
+AC_TRY_LINK([#include <setjmp.h>],
+            [sigjmp_buf t; sigsetjmp(t, 0)],
+  [AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)
+   AC_DEFINE([GC_NO_SIGSETJMP], [1], [Missing sigsetjmp])])
+CFLAGS="$old_CFLAGS"
+
 # Check for AViiON Machines running DGUX
 ac_is_dgux=no
 AC_CHECK_HEADER(sys/dg_sys_info.h,
