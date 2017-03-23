@@ -54,7 +54,7 @@ matrix:
   - compiler: clang
     env: CFLAGS_EXTRA="-D ENABLE_TRACE -D EMPTY_GETENV_RESULTS -D GC_ALWAYS_MULTITHREADED -D CPPCHECK -D LINT2"
   - compiler: gcc
-    env: CFLAGS_EXTRA="-D GC_BUILTIN_ATOMIC -march=native"
+    env: CFLAGS_EXTRA="-D GC_BUILTIN_ATOMIC -march=native -D _FORTIFY_SOURCE=2"
   - compiler: clang
     env: CFLAGS_EXTRA="-D MARK_BIT_PER_OBJ" CFLAGS_EXTRA_M=-m32
   - compiler: clang
