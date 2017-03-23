@@ -2420,14 +2420,16 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define GC_ASSERT(expr)
 #endif
 
-/* Check a compile time assertion at compile time.  The error   */
-/* message for failure is a bit baroque, but ...                */
-#if defined(mips) && !defined(__GNUC__)
+/* Check a compile time assertion at compile time.      */
+#if defined(static_assert) && (__STDC_VERSION__ >= 201112L)
+# define GC_STATIC_ASSERT(expr) static_assert(expr, "")
+#elif defined(mips) && !defined(__GNUC__)
 /* DOB: MIPSPro C gets an internal error taking the sizeof an array type.
    This code works correctly (ugliness is to avoid "unused var" warnings) */
 # define GC_STATIC_ASSERT(expr) \
     do { if (0) { char j[(expr)? 1 : -1]; j[0]='\0'; j[0]=j[0]; } } while(0)
 #else
+  /* The error message for failure is a bit baroque, but ...    */
 # define GC_STATIC_ASSERT(expr) (void)sizeof(char[(expr)? 1 : -1])
 #endif
 
