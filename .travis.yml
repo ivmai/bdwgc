@@ -155,7 +155,11 @@ matrix:
         - CFLAGS_EXTRA="-O3 -march=native"
         - CONF_CPP=--enable-cplusplus
     - os: linux
-      env: [ CSA_CHECK=true ]
+      env: [ CSA_CHECK=true, CFLAGS_EXTRA="-m32" ]
+    - os: linux
+      env:
+        - CSA_CHECK=true
+        - CFLAGS_EXTRA="-D ALL_INTERIOR_POINTERS -D CHECKSUMS -D DBG_HDRS_ALL -D DEBUG_THREADS -D ENABLE_TRACE -D GC_ALWAYS_MULTITHREADED -D GC_ASSERTIONS -D GC_ATOMIC_UNCOLLECTABLE -D GC_ENABLE_SUSPEND_THREAD -D GC_GCJ_SUPPORT -D GC_PRINT_BACK_HEIGHT -D GC_THREADS -D HANDLE_FORK -D JAVA_FINALIZATION -D KEEP_BACK_PTRS -D MAKE_BACK_GRAPH -D PARALLEL_MARK -D PRINT_BLACK_LIST -D THREAD_LOCAL_ALLOC -D USE_MMAP -D USE_MUNMAP"
     - os: linux
       env:
         - CPPCHECK_ENABLE="-j16 --enable=information,performance,portability,style,warning"
@@ -218,19 +222,7 @@ script:
   - if [ -f gctest.log ]; then cat gctest.log; fi
   - if [[ "$CSA_CHECK" == true ]]; then
       clang --analyze -Xanalyzer -analyzer-output=text
-            -m32 -Werror -I include -I libatomic_ops/src
-            *.c *.cc cord/*.c cord/tests/cordtest.c cord/tests/de.c extra/gc.c
-            extra/msvc_dbg.c tests/*.c tests/*.cc tools/*.c &&
-      clang --analyze -Xanalyzer -analyzer-output=text
-            -Werror -I include -I libatomic_ops/src
-            -D ALL_INTERIOR_POINTERS -D CHECKSUMS -D DBG_HDRS_ALL
-            -D DEBUG_THREADS -D ENABLE_TRACE -D GC_ALWAYS_MULTITHREADED
-            -D GC_ASSERTIONS -D GC_ATOMIC_UNCOLLECTABLE
-            -D GC_ENABLE_SUSPEND_THREAD -D GC_GCJ_SUPPORT
-            -D GC_PRINT_BACK_HEIGHT -D GC_THREADS -D HANDLE_FORK
-            -D JAVA_FINALIZATION -D KEEP_BACK_PTRS -D MAKE_BACK_GRAPH
-            -D PARALLEL_MARK -D PRINT_BLACK_LIST -D THREAD_LOCAL_ALLOC
-            -D USE_MMAP -D USE_MUNMAP
+            -Werror -I include -I libatomic_ops/src $CFLAGS_EXTRA
             *.c *.cc cord/*.c cord/tests/cordtest.c cord/tests/de.c extra/gc.c
             extra/msvc_dbg.c tests/*.c tests/*.cc tools/*.c;
     fi
