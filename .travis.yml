@@ -1,36 +1,52 @@
 language: c++
 
-os:
-  - linux
-  - osx
-
-compiler:
-  - clang
-  - gcc
-
-env:
-  - CONF_GC_DEBUG=
-  - CONF_ASSERTIONS=--enable-gc-assertions
-  - CONF_GC_DEBUG=--enable-gc-debug
-  - CONF_GC_DEBUG=--disable-gc-debug
-  - CONF_LARGE_CONFIG=--enable-large-config
-      CONF_M_UNMAP=--enable-munmap
-  - CONF_STATIC=--disable-static
-      CONF_THREADS=--disable-threads
-      CONF_ASSERTIONS=--enable-gc-assertions
-
 matrix:
-  exclude:
-  - os: osx
-    compiler: gcc
-  - compiler: clang
-    env: CONF_GC_DEBUG=--enable-gc-debug
-  - compiler: clang
-    env: CONF_GC_DEBUG=--disable-gc-debug
-  - compiler: gcc
-    env: CONF_LARGE_CONFIG=--enable-large-config CONF_M_UNMAP=--enable-munmap
-
-sudo: false
+  include:
+    - os: linux
+      compiler: clang
+    - os: linux
+      compiler: gcc
+    - os: osx
+    - os: linux
+      compiler: clang
+      env: [ CONF_ASSERTIONS=--enable-gc-assertions ]
+    - os: linux
+      compiler: gcc
+      env: [ CONF_ASSERTIONS=--enable-gc-assertions ]
+    - os: osx
+      env: [ CONF_ASSERTIONS=--enable-gc-assertions ]
+    - os: linux
+      compiler: gcc
+      env: [ CONF_GC_DEBUG=--enable-gc-debug ]
+    - os: linux
+      compiler: gcc
+      env: [ CONF_GC_DEBUG=--disable-gc-debug ]
+    - os: linux
+      compiler: clang
+      env:
+        - CONF_LARGE_CONFIG=--enable-large-config
+        - CONF_M_UNMAP=--enable-munmap
+    - os: osx
+      env:
+        - CONF_LARGE_CONFIG=--enable-large-config
+        - CONF_M_UNMAP=--enable-munmap
+    - os: linux
+      compiler: clang
+      env:
+        - CONF_STATIC=--disable-static
+        - CONF_THREADS=--disable-threads
+        - CONF_ASSERTIONS=--enable-gc-assertions
+    - os: linux
+      compiler: gcc
+      env:
+        - CONF_STATIC=--disable-static
+        - CONF_THREADS=--disable-threads
+        - CONF_ASSERTIONS=--enable-gc-assertions
+    - os: osx
+      env:
+        - CONF_STATIC=--disable-static
+        - CONF_THREADS=--disable-threads
+        - CONF_ASSERTIONS=--enable-gc-assertions
 
 install:
   - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git -b release-7_2
