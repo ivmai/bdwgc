@@ -1,45 +1,68 @@
 language: c++
 
-os:
-  - linux
-  - osx
-
-compiler:
-  - clang
-  - gcc
-
-env:
-  - CFLAGS_EXTRA_M=
-  - CFLAGS_EXTRA_M=-m32
-      CONF_ASSERTIONS=--enable-gc-assertions
-  - CONF_GC_DEBUG=--enable-gc-debug
-  - CONF_GC_DEBUG=--disable-gc-debug
-  - CONF_LARGE_CONFIG=--enable-large-config
-      CONF_M_UNMAP=--enable-munmap
-  - CONF_STATIC=--disable-static
-      CONF_THREADS=--disable-threads
-      CONF_ASSERTIONS=--enable-gc-assertions
-      CFLAGS_EXTRA="-O3 -march=native"
-
 matrix:
-  exclude:
-  - os: osx
-    compiler: gcc
-  - compiler: clang
-    env: CONF_GC_DEBUG=--enable-gc-debug
-  - compiler: clang
-    env: CONF_GC_DEBUG=--disable-gc-debug
-  - compiler: gcc
-    env: CONF_LARGE_CONFIG=--enable-large-config CONF_M_UNMAP=--enable-munmap
-
-sudo: required
-
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CFLAGS_EXTRA_M" == "-m32" ]]; then
-      sudo apt-get install gcc-multilib;
-    else
-      CONF_CPP=--enable-cplusplus;
-    fi
+  include:
+    - os: linux
+      compiler: clang
+      env: [ CONF_CPP=--enable-cplusplus ]
+    - os: linux
+      compiler: gcc
+      env: [ CONF_CPP=--enable-cplusplus ]
+    - os: osx
+      env: [ CONF_CPP=--enable-cplusplus ]
+    - os: linux
+      addons: { apt: { packages: [ gcc-multilib ] } }
+      compiler: clang
+      env: [ CFLAGS_EXTRA="-m32", CONF_ASSERTIONS=--enable-gc-assertions ]
+    - os: linux
+      addons: { apt: { packages: [ gcc-multilib ] } }
+      compiler: gcc
+      env: [ CFLAGS_EXTRA="-m32", CONF_ASSERTIONS=--enable-gc-assertions ]
+    - os: osx
+      env:
+        - CFLAGS_EXTRA="-m32"
+        - CONF_ASSERTIONS=--enable-gc-assertions
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      compiler: gcc
+      env: [ CONF_GC_DEBUG=--enable-gc-debug, CONF_CPP=--enable-cplusplus ]
+    - os: linux
+      compiler: gcc
+      env: [ CONF_GC_DEBUG=--disable-gc-debug, CONF_CPP=--enable-cplusplus ]
+    - os: linux
+      compiler: clang
+      env:
+        - CONF_LARGE_CONFIG=--enable-large-config
+        - CONF_M_UNMAP=--enable-munmap
+        - CONF_CPP=--enable-cplusplus
+    - os: osx
+      env:
+        - CONF_LARGE_CONFIG=--enable-large-config
+        - CONF_M_UNMAP=--enable-munmap
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      compiler: clang
+      env:
+        - CONF_STATIC=--disable-static
+        - CONF_THREADS=--disable-threads
+        - CFLAGS_EXTRA="-O3 -march=native"
+        - CONF_ASSERTIONS=--enable-gc-assertions
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      compiler: gcc
+      env:
+        - CONF_STATIC=--disable-static
+        - CONF_THREADS=--disable-threads
+        - CFLAGS_EXTRA="-O3 -march=native"
+        - CONF_ASSERTIONS=--enable-gc-assertions
+        - CONF_CPP=--enable-cplusplus
+    - os: osx
+      env:
+        - CONF_STATIC=--disable-static
+        - CONF_THREADS=--disable-threads
+        - CFLAGS_EXTRA="-O3 -march=native"
+        - CONF_ASSERTIONS=--enable-gc-assertions
+        - CONF_CPP=--enable-cplusplus
 
 install:
   - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git -b release-7_4
@@ -48,4 +71,4 @@ install:
 script:
   - ./configure $CONF_ASSERTIONS $CONF_CPP $CONF_GC_DEBUG $CONF_LARGE_CONFIG
                 $CONF_M_UNMAP $CONF_STATIC $CONF_THREADS
-  - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA $CFLAGS_EXTRA_M"
+  - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA"
