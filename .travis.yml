@@ -1,153 +1,224 @@
 language: c++
 
-os:
-  - linux
-  - osx
-
-compiler:
-  - clang
-  - gcc
-
-env:
-  - CFLAGS_EXTRA_M=
-  - CFLAGS_EXTRA_M=-m32 CONF_ASSERTIONS=--enable-gc-assertions
-  - CFLAGS_EXTRA="-D CHECKSUMS" CONF_THREADS=--disable-threads
-  - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS"
-      CONF_ASSERTIONS=--enable-gc-assertions
-  - CFLAGS_EXTRA="-D DEBUG_ADD_DEL_ROOTS -D DEBUG_DIRTY_BITS -D DEBUG_THREADS -D GC_LOG_TO_FILE_ALWAYS"
-  - CFLAGS_EXTRA="-D ENABLE_TRACE -D EMPTY_GETENV_RESULTS -D GC_ALWAYS_MULTITHREADED -D CPPCHECK -D LINT2"
-  - CFLAGS_EXTRA="-D GC_BUILTIN_ATOMIC -march=native -D _FORTIFY_SOURCE=2"
-  - CFLAGS_EXTRA="-D MARK_BIT_PER_OBJ" CFLAGS_EXTRA_M=-m32
-  - CFLAGS_EXTRA="-D POINTER_MASK=~0xf" CONF_ASSERTIONS=--enable-gc-assertions
-  - CFLAGS_EXTRA="-D PROC_VDB -D GC_NO_SYS_FAULT_H -D NO_INCREMENTAL"
-  - CFLAGS_EXTRA="-D SMALL_CONFIG -D NO_GETENV"
-  - CONF_GCOV=--enable-gcov
-  - CONF_GC_DEBUG=--enable-gc-debug
-  - CONF_GC_DEBUG=--disable-gc-debug
-  - CONF_LARGE_CONFIG=--enable-large-config
-  - CONF_LARGE_CONFIG=--enable-large-config CFLAGS_EXTRA_M=-m32
-  - CONF_LARGE_CONFIG=--enable-large-config CONF_M_UNMAP=--enable-munmap
-  - CONF_REDIRECT=--enable-redirect-malloc CFLAGS_EXTRA_M=-m32
-      CONF_THREADS=--disable-threads
-  - CONF_REDIRECT=--enable-redirect-malloc CONF_GC_DEBUG=--enable-gc-debug
-      CONF_ASSERTIONS=--enable-gc-assertions
-  - CONF_STATIC=--disable-static CONF_THREADS=--disable-threads
-      CFLAGS_EXTRA="-O3 -march=native"
-  - CSA_CHECK=true CFLAGS_EXTRA_M=-m32
-  - CPPCHECK=ALL_EXCEPT_UNUSED
-  - CPPCHECK=UNUSED_FUNC
-  - MAKEFILE_NAME=Makefile.direct MAKEFILE_EXTRA_TARGETS="check-cpp cord/de"
-  - SANITIZE=undefined CONF_M_UNMAP=--enable-munmap
+matrix:
+  include:
+    - os: linux
+      compiler: clang
+      env: [ CONF_CPP=--enable-cplusplus ]
+    - os: linux
+      compiler: gcc
+      env: [ CONF_CPP=--enable-cplusplus ]
+    - os: osx
+      env: [ CONF_CPP=--enable-cplusplus ]
+    - os: linux
+      addons: { apt: { packages: [ gcc-multilib ] } }
+      compiler: clang
+      env: [ CFLAGS_EXTRA="-m32", CONF_ASSERTIONS=--enable-gc-assertions ]
+    - os: linux
+      addons: { apt: { packages: [ gcc-multilib ] } }
+      compiler: gcc
+      env: [ CFLAGS_EXTRA="-m32", CONF_ASSERTIONS=--enable-gc-assertions ]
+    - os: osx
+      env:
+        - CFLAGS_EXTRA="-m32"
+        - CONF_ASSERTIONS=--enable-gc-assertions
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      compiler: gcc
+      env:
+        - CFLAGS_EXTRA="-D CHECKSUMS"
+        - CONF_THREADS=--disable-threads
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      compiler: clang
+      env:
+        - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS"
+        - CONF_ASSERTIONS=--enable-gc-assertions
+        - CONF_CPP=--enable-cplusplus
+    - os: osx
+      env:
+        - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS"
+        - CONF_ASSERTIONS=--enable-gc-assertions
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      compiler: gcc
+      env:
+        - CFLAGS_EXTRA="-D DEBUG_ADD_DEL_ROOTS -D DEBUG_DIRTY_BITS -D DEBUG_THREADS -D GC_LOG_TO_FILE_ALWAYS"
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      compiler: gcc
+      env:
+        - CFLAGS_EXTRA="-D ENABLE_TRACE -D EMPTY_GETENV_RESULTS -D GC_ALWAYS_MULTITHREADED -D CPPCHECK -D LINT2"
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      compiler: clang
+      env:
+        - CFLAGS_EXTRA="-D GC_BUILTIN_ATOMIC -march=native -D _FORTIFY_SOURCE=2"
+        - CONF_CPP=--enable-cplusplus
+    - os: osx
+      env:
+        - CFLAGS_EXTRA="-D GC_BUILTIN_ATOMIC -march=native -D _FORTIFY_SOURCE=2"
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      addons: { apt: { packages: [ gcc-multilib ] } }
+      compiler: gcc
+      env: [ CFLAGS_EXTRA="-m32 -D MARK_BIT_PER_OBJ" ]
+    - os: linux
+      compiler: gcc
+      env:
+        - CFLAGS_EXTRA="-D POINTER_MASK=~0xf"
+        - CONF_ASSERTIONS=--enable-gc-assertions
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      compiler: gcc
+      env:
+        - CFLAGS_EXTRA="-D PROC_VDB -D GC_NO_SYS_FAULT_H -D NO_INCREMENTAL"
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      compiler: gcc
+      env:
+        - CFLAGS_EXTRA="-D SMALL_CONFIG -D NO_GETENV"
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      addons: { apt: { packages: [ lcov ] } }
+      compiler: gcc
+      env:
+        - CONF_GCOV=--enable-gcov
+        - CONF_ASSERTIONS=--enable-gc-assertions
+        - CONF_CPP=--enable-cplusplus
+        - CONF_M_UNMAP=--enable-munmap
+        - CONF_SHARED=--disable-shared
+        - CONF_SINGLE_OBJ=--enable-single-obj-compilation
+    - os: linux
+      compiler: gcc
+      env: [ CONF_GC_DEBUG=--enable-gc-debug, CONF_CPP=--enable-cplusplus ]
+    - os: linux
+      compiler: gcc
+      env: [ CONF_GC_DEBUG=--disable-gc-debug, CONF_CPP=--enable-cplusplus ]
+    - os: linux
+      compiler: clang
+      env:
+        - CONF_LARGE_CONFIG=--enable-large-config
+        - CONF_CPP=--enable-cplusplus
+    - os: osx
+      env:
+        - CONF_LARGE_CONFIG=--enable-large-config
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      addons: { apt: { packages: [ gcc-multilib ] } }
+      compiler: gcc
+      env: [ CONF_LARGE_CONFIG=--enable-large-config, CFLAGS_EXTRA="-m32" ]
+    - os: linux
+      compiler: gcc
+      env:
+        - CONF_LARGE_CONFIG=--enable-large-config
+        - CONF_CPP=--enable-cplusplus
+        - CONF_M_UNMAP=--enable-munmap
+    - os: linux
+      addons: { apt: { packages: [ gcc-multilib ] } }
+      compiler: clang
+      env:
+        - CONF_REDIRECT=--enable-redirect-malloc
+        - CFLAGS_EXTRA="-m32"
+        - CONF_THREADS=--disable-threads
+    - os: osx
+      env:
+        - CONF_REDIRECT=--enable-redirect-malloc
+        - CFLAGS_EXTRA="-m32"
+        - CONF_CPP=--enable-cplusplus
+        - CONF_THREADS=--disable-threads
+    - os: linux
+      compiler: gcc
+      env:
+        - CONF_REDIRECT=--enable-redirect-malloc
+        - CONF_GC_DEBUG=--enable-gc-debug
+        - CONF_ASSERTIONS=--enable-gc-assertions
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      compiler: clang
+      env:
+        - CONF_STATIC=--disable-static
+        - CONF_THREADS=--disable-threads
+        - CFLAGS_EXTRA="-O3 -march=native"
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      compiler: gcc
+      env:
+        - CONF_STATIC=--disable-static
+        - CONF_THREADS=--disable-threads
+        - CFLAGS_EXTRA="-O3 -march=native"
+        - CONF_CPP=--enable-cplusplus
+    - os: osx
+      env:
+        - CONF_STATIC=--disable-static
+        - CONF_THREADS=--disable-threads
+        - CFLAGS_EXTRA="-O3 -march=native"
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
+      env: [ CSA_CHECK=true ]
+    - os: linux
+      env:
+        - CPPCHECK_ENABLE="-j16 --enable=information,performance,portability,style,warning"
+      sudo: required
+    - os: linux
+      env: [ CPPCHECK_ENABLE="--enable=unusedFunction" ]
+      sudo: required
+    - os: linux
+      compiler: clang
+      env:
+        - MAKEFILE_NAME=Makefile.direct
+        - MAKEFILE_EXTRA_TARGETS="check-cpp cord/de"
+    - os: linux
+      compiler: gcc
+      env:
+        - MAKEFILE_NAME=Makefile.direct
+        - MAKEFILE_EXTRA_TARGETS="check-cpp cord/de"
+    - os: osx
+      env:
+        - MAKEFILE_NAME=Makefile.direct
+        - MAKEFILE_EXTRA_TARGETS="check-cpp cord/de"
+    - os: linux
+      compiler: clang
+      env:
+        - CFLAGS_EXTRA="-fsanitize=undefined -fno-common -fno-omit-frame-pointer"
+        - MSAN_OR_UBSAN=true
+        - CONF_CPP=--enable-cplusplus
+        - CONF_M_UNMAP=--enable-munmap
 # TODO: Add testing with ASan/MSan when clang-3.8 available.
 
-matrix:
-  exclude:
-  - os: osx
-    compiler: gcc
-  - compiler: clang
-    env: CFLAGS_EXTRA="-D CHECKSUMS" CONF_THREADS=--disable-threads
-  - compiler: gcc
-    env: CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS"
-           CONF_ASSERTIONS=--enable-gc-assertions
-  - compiler: clang
-    env: CFLAGS_EXTRA="-D DEBUG_ADD_DEL_ROOTS -D DEBUG_DIRTY_BITS -D DEBUG_THREADS -D GC_LOG_TO_FILE_ALWAYS"
-  - compiler: clang
-    env: CFLAGS_EXTRA="-D ENABLE_TRACE -D EMPTY_GETENV_RESULTS -D GC_ALWAYS_MULTITHREADED -D CPPCHECK -D LINT2"
-  - compiler: gcc
-    env: CFLAGS_EXTRA="-D GC_BUILTIN_ATOMIC -march=native -D _FORTIFY_SOURCE=2"
-  - compiler: clang
-    env: CFLAGS_EXTRA="-D MARK_BIT_PER_OBJ" CFLAGS_EXTRA_M=-m32
-  - compiler: clang
-    env: CFLAGS_EXTRA="-D POINTER_MASK=~0xf"
-           CONF_ASSERTIONS=--enable-gc-assertions
-  - compiler: clang
-    env: CFLAGS_EXTRA="-D PROC_VDB -D GC_NO_SYS_FAULT_H -D NO_INCREMENTAL"
-  - compiler: clang
-    env: CFLAGS_EXTRA="-D SMALL_CONFIG -D NO_GETENV"
-  - compiler: clang
-    env: CONF_GCOV=--enable-gcov
-  - compiler: clang
-    env: CONF_GC_DEBUG=--enable-gc-debug
-  - compiler: clang
-    env: CONF_GC_DEBUG=--disable-gc-debug
-  - compiler: gcc
-    env: CONF_LARGE_CONFIG=--enable-large-config
-  - compiler: clang
-    env: CONF_LARGE_CONFIG=--enable-large-config CFLAGS_EXTRA_M=-m32
-  - compiler: clang
-    env: CONF_LARGE_CONFIG=--enable-large-config CONF_M_UNMAP=--enable-munmap
-  - compiler: gcc
-    env: CONF_REDIRECT=--enable-redirect-malloc CFLAGS_EXTRA_M=-m32
-           CONF_THREADS=--disable-threads
-  - compiler: clang
-    env: CONF_REDIRECT=--enable-redirect-malloc
-           CONF_GC_DEBUG=--enable-gc-debug
-           CONF_ASSERTIONS=--enable-gc-assertions
-  - compiler: clang
-    env: CSA_CHECK=true CFLAGS_EXTRA_M=-m32
-  - compiler: clang
-    env: CPPCHECK=ALL_EXCEPT_UNUSED
-  - compiler: clang
-    env: CPPCHECK=UNUSED_FUNC
-  - compiler: gcc
-    env: SANITIZE=undefined CONF_M_UNMAP=--enable-munmap
-  - os: osx
-    env: SANITIZE=undefined CONF_M_UNMAP=--enable-munmap
-
-sudo: required
-
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CFLAGS_EXTRA_M" == "-m32" ]]; then
-      sudo apt-get install gcc-multilib;
-      CFLAGS_EXTRA="$CFLAGS_EXTRA -D LINT2";
-    else
-      CONF_CPP=--enable-cplusplus;
-    fi
-  - if [[ "$CONF_GCOV" == --en* ]]; then
-      sudo apt-get install lcov;
-      gem install coveralls-lcov;
-      CONF_ASSERTIONS=--enable-gc-assertions;
-      CONF_M_UNMAP=--enable-munmap;
-      CONF_SHARED=--disable-shared;
-      CONF_SINGLE_OBJ=--enable-single-obj-compilation;
-    fi
-  - if [[ "$CPPCHECK" != "" ]]; then
+  - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
       git clone --depth=3 https://github.com/danmar/cppcheck.git
             ~/cppcheck -b master;
       make --directory ~/cppcheck -j CXXFLAGS="-O3 -march=native -D NDEBUG";
-      if [[ "$CPPCHECK" == "ALL_EXCEPT_UNUSED" ]]; then
-        CPPCHECK_ENABLE="-j16 --enable=information,performance,portability,style,warning";
-      else
-        CPPCHECK_ENABLE="--enable=unusedFunction";
-      fi;
     fi
   - if [[ "$MAKEFILE_NAME" == "" ]]; then
       MAKEFILE_NAME=Makefile;
-    fi
-  - if [[ "$SANITIZE" != "" ]]; then
-      CFLAGS_EXTRA="$CFLAGS_EXTRA -fsanitize=$SANITIZE -fno-common -fno-omit-frame-pointer";
     fi
 
 install:
   - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
   - ./autogen.sh
+  - if [[ "$CONF_GCOV" == --en* ]]; then
+      gem install coveralls-lcov;
+    fi
 
 script:
-  - if [[ "$CSA_CHECK" != true && "$CPPCHECK" == ""
+  - if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == ""
           && "$MAKEFILE_NAME" != "Makefile.direct" ]]; then
       ./configure $CONF_ASSERTIONS $CONF_CPP $CONF_GCOV $CONF_GC_DEBUG
                 $CONF_LARGE_CONFIG $CONF_M_UNMAP $CONF_REDIRECT $CONF_SHARED
                 $CONF_SINGLE_OBJ $CONF_STATIC $CONF_THREADS --enable-werror &&
       cat include/config.h;
     fi
-  - if [[ "$CSA_CHECK" != true && "$CPPCHECK" == "" ]]; then
+  - if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == "" ]]; then
       make -j -f $MAKEFILE_NAME check $MAKEFILE_EXTRA_TARGETS
-           CFLAGS_EXTRA="$CFLAGS_EXTRA $CFLAGS_EXTRA_M";
+           CFLAGS_EXTRA="$CFLAGS_EXTRA";
     fi
   - if [ -f gctest.log ]; then cat gctest.log; fi
   - if [[ "$CSA_CHECK" == true ]]; then
       clang --analyze -Xanalyzer -analyzer-output=text
-            $CFLAGS_EXTRA_M -Werror -I include -I libatomic_ops/src
+            -m32 -Werror -I include -I libatomic_ops/src
             *.c *.cc cord/*.c cord/tests/cordtest.c cord/tests/de.c extra/gc.c
             extra/msvc_dbg.c tests/*.c tests/*.cc tools/*.c &&
       clang --analyze -Xanalyzer -analyzer-output=text
@@ -163,13 +234,13 @@ script:
             *.c *.cc cord/*.c cord/tests/cordtest.c cord/tests/de.c extra/gc.c
             extra/msvc_dbg.c tests/*.c tests/*.cc tools/*.c;
     fi
-  - if [[ "$CPPCHECK" != "" ]]; then
+  - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
       ~/cppcheck/cppcheck -f --error-exitcode=2 -U long -D CPPCHECK
                 -I include -I libatomic_ops/src $CPPCHECK_ENABLE
                 *.cc cord/*.c cord/tests/*.c extra/*.c extra/*.cpp
                 tests/*.c tests/*.cc tools/*.c;
     fi
-  - if [[ "$SANITIZE" == *memory* || "$SANITIZE" == *undefined* ]]; then
+  - if [[ "$MSAN_OR_UBSAN" == true ]]; then
       UBSAN_OPTIONS="halt_on_error=1" make check-without-test-driver;
     fi
 
