@@ -155,16 +155,7 @@ matrix:
         - CONF_THREADS=--disable-threads
         - CFLAGS_EXTRA="-O3 -march=native"
         - CONF_CPP=--enable-cplusplus
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-trusty-4.0
-          packages:
-            - clang-4.0
-            - gcc-multilib
-      compiler: clang-4.0
-      dist: trusty
+    - os: osx
       env: [ CSA_CHECK=true, CFLAGS_EXTRA="-m32" ]
     - os: linux
       addons:
