@@ -34,7 +34,7 @@ matrix:
         - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
     - os: osx
       env:
-        - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS"
+        - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS -D LINT2"
         - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
     - os: linux
       compiler: gcc
@@ -85,6 +85,7 @@ matrix:
       compiler: gcc
       env:
         - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus"
+        - CFLAGS_EXTRA="-D LINT2"
     - os: linux
       compiler: clang
       env:
