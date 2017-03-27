@@ -63,6 +63,13 @@ matrix:
       env:
         - CONF_OPTIONS="--disable-static --disable-threads --enable-gc-assertions --enable-cplusplus"
         - CFLAGS_EXTRA="-O3 -march=native"
+    - os: linux
+      addons: { apt: { packages: [ musl-tools ] } }
+      compiler: musl-gcc
+      dist: trusty
+      language: c
+      env:
+        - CONF_OPTIONS="--disable-parallel-mark --enable-gc-assertions"
 
 install:
   - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git -b release-7_4
