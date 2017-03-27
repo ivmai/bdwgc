@@ -155,6 +155,7 @@ matrix:
         - CFLAGS_EXTRA="-O3 -march=native"
         - CONF_CPP=--enable-cplusplus
     - os: linux
+      addons: { apt: { packages: [ gcc-multilib ] } }
       env: [ CSA_CHECK=true, CFLAGS_EXTRA="-m32" ]
     - os: linux
       env:
