@@ -37,7 +37,7 @@ matrix:
         - CONF_CPP=--enable-cplusplus
     - os: osx
       env:
-        - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS"
+        - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS -D LINT2"
         - CONF_ASSERTIONS=--enable-gc-assertions
         - CONF_CPP=--enable-cplusplus
     - os: linux
@@ -48,7 +48,7 @@ matrix:
     - os: linux
       compiler: gcc
       env:
-        - CFLAGS_EXTRA="-D ENABLE_TRACE -D EMPTY_GETENV_RESULTS -D GC_ALWAYS_MULTITHREADED -D CPPCHECK -D LINT2"
+        - CFLAGS_EXTRA="-D ENABLE_TRACE -D EMPTY_GETENV_RESULTS -D GC_ALWAYS_MULTITHREADED -D CPPCHECK"
         - CONF_CPP=--enable-cplusplus
     - os: linux
       compiler: clang
@@ -114,6 +114,7 @@ matrix:
         - CONF_LARGE_CONFIG=--enable-large-config
         - CONF_CPP=--enable-cplusplus
         - CONF_M_UNMAP=--enable-munmap
+        - CFLAGS_EXTRA="-D LINT2"
     - os: linux
       addons: { apt: { packages: [ gcc-multilib ] } }
       compiler: clang
