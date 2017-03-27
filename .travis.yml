@@ -191,6 +191,14 @@ matrix:
         - MAKEFILE_NAME=Makefile.direct
         - MAKEFILE_EXTRA_TARGETS="check-cpp cord/de"
     - os: linux
+      addons: { apt: { packages: [ musl-tools ] } }
+      compiler: musl-gcc
+      dist: trusty
+      env:
+        - CONF_PARALLEL_MARK=--enable-parallel-mark
+        - CONF_ASSERTIONS=--enable-gc-assertions
+        - CONF_CPP=--enable-cplusplus
+    - os: linux
       compiler: clang
       env:
         - CFLAGS_EXTRA="-fsanitize=undefined -fno-common -fno-omit-frame-pointer"
@@ -220,8 +228,9 @@ script:
   - if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == ""
           && "$MAKEFILE_NAME" != "Makefile.direct" ]]; then
       ./configure $CONF_ASSERTIONS $CONF_CPP $CONF_GCOV $CONF_GC_DEBUG
-                $CONF_LARGE_CONFIG $CONF_M_UNMAP $CONF_REDIRECT $CONF_SHARED
-                $CONF_SINGLE_OBJ $CONF_STATIC $CONF_THREADS --enable-werror &&
+                $CONF_LARGE_CONFIG $CONF_M_UNMAP $CONF_PARALLEL_MARK
+                $CONF_REDIRECT $CONF_SHARED $CONF_SINGLE_OBJ $CONF_STATIC
+                $CONF_THREADS --enable-werror &&
       cat include/config.h;
     fi
   - if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == "" ]]; then
