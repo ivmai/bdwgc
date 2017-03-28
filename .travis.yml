@@ -75,6 +75,11 @@ matrix:
         - CFLAGS_EXTRA="-D SMALL_CONFIG -D NO_GETENV"
         - CONF_OPTIONS="--enable-cplusplus"
     - os: linux
+      compiler: gcc
+      env:
+        - CFLAGS_EXTRA="-std=c11 -D GC_NO_SIGSETJMP"
+        - CONF_OPTIONS="--disable-threads --enable-gc-assertions --enable-cplusplus"
+    - os: linux
       addons: { apt: { packages: [ lcov ] } }
       compiler: gcc
       env:
