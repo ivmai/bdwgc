@@ -62,6 +62,12 @@ matrix:
         - CONF_OPTIONS="--enable-cplusplus"
     - os: linux
       compiler: gcc
+      dist: trusty
+      env:
+        - CFLAGS_EXTRA="-std=c11 -D GC_NO_SIGSETJMP"
+        - CONF_OPTIONS="--disable-threads --enable-gc-assertions --enable-cplusplus"
+    - os: linux
+      compiler: gcc
       env: [ CONF_OPTIONS="--enable-gc-debug --enable-cplusplus" ]
     - os: linux
       compiler: gcc
