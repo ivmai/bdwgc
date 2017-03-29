@@ -171,8 +171,9 @@ matrix:
       addons: { apt: { packages: [ musl-tools ] } }
       compiler: musl-gcc
       dist: trusty
+      language: c
       env:
-        - CONF_OPTIONS="--enable-parallel-mark --enable-gc-assertions --enable-cplusplus"
+        - CONF_OPTIONS="--disable-parallel-mark --enable-gc-assertions"
     - os: linux
       compiler: clang
       env:
