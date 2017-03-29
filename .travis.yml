@@ -175,12 +175,36 @@ matrix:
       env:
         - CONF_OPTIONS="--disable-parallel-mark --enable-gc-assertions"
     - os: linux
+      addons:
+        apt:
+          packages: [ clang-4.0 ]
+          sources: [ llvm-toolchain-trusty-4.0 ]
+      compiler: clang-4.0
+      dist: trusty
+      language: c
+      env:
+        - CXX=clang++-4.0
+        - CFLAGS_EXTRA="-fsanitize=address -fno-common -fno-omit-frame-pointer"
+        - CONF_OPTIONS="--enable-cplusplus"
+    - os: linux
+      addons:
+        apt:
+          packages: [ clang-4.0 ]
+          sources: [ llvm-toolchain-trusty-4.0 ]
+      compiler: clang-4.0
+      dist: trusty
+      language: c
+      env:
+        - CFLAGS_EXTRA="-fsanitize=memory -fno-omit-frame-pointer"
+        - CONF_OPTIONS="--enable-munmap"
+        - MSAN_OR_UBSAN=true
+      sudo: required
+    - os: linux
       compiler: clang
       env:
         - CFLAGS_EXTRA="-fsanitize=undefined -fno-common -fno-omit-frame-pointer"
         - MSAN_OR_UBSAN=true
         - CONF_OPTIONS="--enable-cplusplus --enable-munmap"
-# TODO: Add testing with ASan/MSan when clang-3.8 available.
 
 before_install:
   - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
