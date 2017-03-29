@@ -205,6 +205,51 @@ matrix:
         - CFLAGS_EXTRA="-fsanitize=undefined -fno-common -fno-omit-frame-pointer"
         - MSAN_OR_UBSAN=true
         - CONF_OPTIONS="--enable-cplusplus --enable-munmap"
+    - os: linux
+      addons:
+        apt:
+          packages: [ clang-4.0 ]
+          sources: [ llvm-toolchain-trusty-4.0 ]
+      compiler: clang-4.0
+      dist: trusty
+      language: c
+      env:
+        - CXX=clang++-4.0
+        - CFLAGS_EXTRA="-O3 -march=native"
+        - CONF_OPTIONS="--enable-cplusplus --enable-single-obj-compilation"
+    - os: linux
+      addons:
+        apt:
+          packages: [ clang-4.0, gcc-multilib ]
+          sources: [ llvm-toolchain-trusty-4.0 ]
+      compiler: clang-4.0
+      dist: trusty
+      language: c
+      env:
+        - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2"
+        - CONF_OPTIONS="--enable-munmap --enable-gc-assertions"
+    - os: linux
+      addons:
+        apt:
+          packages: [ gcc-5, g++-5 ]
+          sources: [ ubuntu-toolchain-r-test ]
+      compiler: gcc-5
+      dist: trusty
+      language: c
+      env:
+        - CXX=g++-5
+        - CONF_OPTIONS="--enable-munmap --enable-cplusplus --enable-gc-assertions"
+    - os: linux
+      addons:
+        apt:
+          packages: [ gcc-5, gcc-5-multilib, gcc-multilib ]
+          sources: [ ubuntu-toolchain-r-test ]
+      compiler: gcc-5
+      dist: trusty
+      language: c
+      env:
+        - CFLAGS_EXTRA="-m32 -O3"
+        - CONF_OPTIONS="--disable-shared --enable-single-obj-compilation"
 
 before_install:
   - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
