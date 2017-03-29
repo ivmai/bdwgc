@@ -250,6 +250,17 @@ matrix:
       env:
         - CFLAGS_EXTRA="-m32 -O3"
         - CONF_OPTIONS="--disable-shared --enable-single-obj-compilation"
+    - os: linux
+      addons:
+        apt:
+          packages: [ gcc-5, gcc-5-multilib, gcc-multilib ]
+          sources: [ ubuntu-toolchain-r-test ]
+      compiler: gcc-5
+      dist: trusty
+      language: c
+      env:
+        - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2"
+        - CONF_OPTIONS="--enable-munmap --enable-large-config --enable-gc-assertions"
 
 before_install:
   - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
