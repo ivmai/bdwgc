@@ -121,6 +121,51 @@ matrix:
       language: c
       env:
         - CONF_OPTIONS="--disable-parallel-mark --enable-gc-assertions"
+    - os: linux
+      addons:
+        apt:
+          packages: [ clang-4.0 ]
+          sources: [ llvm-toolchain-trusty-4.0 ]
+      compiler: clang-4.0
+      dist: trusty
+      language: c
+      env:
+        - CXX=clang++-4.0
+        - CFLAGS_EXTRA="-O3 -march=native"
+        - CONF_OPTIONS="--enable-cplusplus --enable-single-obj-compilation"
+    - os: linux
+      addons:
+        apt:
+          packages: [ clang-4.0, gcc-multilib ]
+          sources: [ llvm-toolchain-trusty-4.0 ]
+      compiler: clang-4.0
+      dist: trusty
+      language: c
+      env:
+        - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2"
+        - CONF_OPTIONS="--enable-munmap --enable-gc-assertions"
+    - os: linux
+      addons:
+        apt:
+          packages: [ gcc-5, g++-5 ]
+          sources: [ ubuntu-toolchain-r-test ]
+      compiler: gcc-5
+      dist: trusty
+      language: c
+      env:
+        - CXX=g++-5
+        - CONF_OPTIONS="--enable-munmap --enable-cplusplus --enable-gc-assertions"
+    - os: linux
+      addons:
+        apt:
+          packages: [ gcc-5, gcc-5-multilib, gcc-multilib ]
+          sources: [ ubuntu-toolchain-r-test ]
+      compiler: gcc-5
+      dist: trusty
+      language: c
+      env:
+        - CFLAGS_EXTRA="-m32 -O3"
+        - CONF_OPTIONS="--disable-shared --enable-single-obj-compilation"
 
 install:
   - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git -b release-7_4
