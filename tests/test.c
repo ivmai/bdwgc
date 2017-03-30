@@ -29,6 +29,9 @@
 #  define GC_DEBUG
 #endif
 
+#if defined(CPPCHECK) && defined(GC_PTHREADS) && !defined(_GNU_SOURCE)
+# define _GNU_SOURCE 1
+#endif
 #undef GC_NO_THREAD_REDIRECTS
 #include "gc.h"
 
