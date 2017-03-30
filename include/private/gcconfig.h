@@ -2993,6 +2993,9 @@
     && !defined(MSWINCE)
 # error --> inconsistent configuration
 #endif
+# if defined(GC_WIN32_PTHREADS) && defined(CYGWIN32)
+#   error --> inconsistent configuration
+# endif
 #endif /* !CPPCHECK */
 
 #if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS) \
