@@ -20,18 +20,23 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef LINT2
-  /* For GC_random() */
-# include "private/gc_priv.h"
-# undef rand
-# define rand() (int)GC_random()
-#elif defined(HAVE_CONFIG_H)
+#ifdef HAVE_CONFIG_H
   /* For GC_[P]THREADS */
 # include "config.h"
 #endif
 
 #undef GC_NO_THREAD_REDIRECTS
 #include "gc_disclaim.h"
+
+#ifdef LINT2
+  /* Avoid include gc_priv.h. */
+# ifndef GC_API_PRIV
+#   define GC_API_PRIV GC_API
+# endif
+  GC_API_PRIV long GC_random(void);
+# undef rand
+# define rand() (int)GC_random()
+#endif /* LINT2 */
 
 #define my_assert(e) \
     if (!(e)) { \

@@ -16,9 +16,15 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "private/gc_priv.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include "gc_disclaim.h"
+
+/* Include gc_priv.h is done after including GC public headers, so      */
+/* that GC_BUILD has no effect on the public prototypes.                */
+#include "private/gc_priv.h" /* for CLOCK_TYPE and GC_random */
 
 #ifdef LINT2
 # undef rand
