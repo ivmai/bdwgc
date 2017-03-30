@@ -42,7 +42,9 @@
     GC_API void *GC_dlopen(const char * /* path */, int /* mode */);
 # endif /* !GC_NO_DLOPEN */
 
-# ifndef GC_NO_PTHREAD_SIGMASK
+# if !defined(GC_NO_PTHREAD_SIGMASK) \
+     && (defined(GC_PTHREAD_SIGMASK_NEEDED) \
+         || _POSIX_C_SOURCE >= 199506L || _XOPEN_SOURCE >= 500)
 #   include <signal.h>
     GC_API int GC_pthread_sigmask(int /* how */, const sigset_t *,
                                   sigset_t * /* oset */);

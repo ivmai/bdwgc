@@ -29,6 +29,12 @@
 #  define GC_DEBUG
 #endif
 
+#ifdef CPPCHECK
+# define GC_PTHREAD_SIGMASK_NEEDED
+# ifndef _GNU_SOURCE
+#   define _GNU_SOURCE 1
+# endif
+#endif
 #undef GC_NO_THREAD_REDIRECTS
 #include "gc.h"
 
