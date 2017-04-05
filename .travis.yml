@@ -158,16 +158,16 @@ matrix:
       compiler: clang
       env:
         - MAKEFILE_NAME=Makefile.direct
-        - MAKEFILE_EXTRA_TARGETS="check-cpp cord/de"
+        - MAKEFILE_TARGETS="check check-cpp cord/de"
     - os: linux
       compiler: gcc
       env:
         - MAKEFILE_NAME=Makefile.direct
-        - MAKEFILE_EXTRA_TARGETS="check-cpp cord/de"
+        - MAKEFILE_TARGETS="check check-cpp cord/de"
     - os: osx
       env:
         - MAKEFILE_NAME=Makefile.direct
-        - MAKEFILE_EXTRA_TARGETS="check-cpp cord/de"
+        - MAKEFILE_TARGETS="check check-cpp cord/de"
     - os: linux
       addons: { apt: { packages: [ musl-tools ] } }
       compiler: musl-gcc
@@ -272,6 +272,9 @@ before_install:
   - if [[ "$MAKEFILE_NAME" == "" ]]; then
       MAKEFILE_NAME=Makefile;
     fi
+  - if [[ "$MAKEFILE_TARGETS" == "" ]]; then
+      MAKEFILE_TARGETS="check";
+    fi
 
 install:
   - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
@@ -287,7 +290,7 @@ script:
       cat include/config.h;
     fi
   - if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == "" ]]; then
-      make -j -f $MAKEFILE_NAME check $MAKEFILE_EXTRA_TARGETS
+      make -j -f $MAKEFILE_NAME $MAKEFILE_TARGETS
            CFLAGS_EXTRA="$CFLAGS_EXTRA";
     fi
   - if [ -f gctest.log ]; then cat gctest.log; fi
