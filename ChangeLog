@@ -1,838 +1,838 @@
 
 == [7.6.2] (unset) ==
 
-* Add minimal testing of GC_MALLOC_[ATOMIC_]WORDS and GC_CONS (gctest).
-* Add more cases to huge_test to cover sizes close to word-type maximum.
-* Add testing of new[]/delete[] (test_cpp).
-* Adjust code indentation of calloc_explicitly_typed.
-* Allow custom TRACE_ENTRIES value.
-* Code refactoring of divide-by-HBLKSIZE occurrences.
-* Code refactoring of huge_test.
-* Code refactoring of tests/subthread_create regarding AO add primitive.
-* Delete preprocessor output on make clean (Makefile.direct).
-* Disable implicit multi-threaded mode for Win32 to avoid LOCK crash.
-* Document configure 'syntax error' issue in README.
-* Eliminate 'address of local variable returned' static analyzer warning.
-* Eliminate 'array vs singleton' code defect in typed_test (gctest).
-* Eliminate 'assigned value never used' CSA warning in min_bytes_allocd.
-* Eliminate 'C-style pointer casting' cppcheck style warnings in test.
-* Eliminate 'checking if unsigned variable is <0' cppcheck style warning.
-* Eliminate 'class member var with name also defined in parent' warning.
-* Eliminate 'comparison is always false' static analyzer warning in finalize.
-* Eliminate 'Condition 0==datastart always false' cppcheck warning (dyn_load).
-* Eliminate 'condition is always true' cppcheck style warning.
-* Eliminate 'constructor with 1 argument is not explicit' cppcheck warning.
-* Eliminate 'CORD_*printf is never used' cppcheck style warnings (cordtest).
-* Eliminate 'dereference of null' CSA false warning in array_mark_proc.
-* Eliminate 'function result not used' code defect in GC_mark_local.
-* Eliminate 'GC_collecting is set but never used' code defect (Win32).
-* Eliminate 'GC_record_fault is never used' cppcheck style warning.
-* Eliminate 'integer shift by a negative amount' code defect in finalize.
-* Eliminate 'memory leak' code defect for scratch-allocated memory.
-* Eliminate 'possible integer underflow' code defect (cord-de).
-* Eliminate 'potential overflow' static analyzer warning in test.
-* Eliminate 'printf format specifies type void*' GCC pedantic warnings.
-* Eliminate 'scope of variable can be reduced' cppcheck warnings.
-* Eliminate 'suspicious pointer subtraction' cppcheck warning (gc_cpp).
-* Eliminate 'unnecessary comparison of static strings' cppcheck warning.
-* Eliminate 'unsafe vsprintf is deprecated' compiler warning.
-* Eliminate 'use of vulnerable sprintf' code defect in de_win test (cord).
-* Eliminate 'value of CLOCK_TYPE unknown' cppcheck info message.
-* Eliminate 'value of DATASTART2 unknown' cppcheck info messages.
-* Eliminate 'value of GC_PTHREAD_EXIT_ATTRIBUTE unknown' cppcheck messages.
-* Eliminate 'value of GC_RETURN_ADDR_PARENT unknown' cppcheck info messages.
-* Eliminate 'value of NEED_FIXUP_POINTER unknown' cppcheck info messages.
-* Eliminate 'write to memory that was const-qualified' code analyzer warning.
-* Eliminate all 'scope of variable can be reduced' cppcheck style warnings.
-* Eliminate redundant local variable in register_finalizer.
-* Eliminate unreachable PROC/DEFAULT_VDB GC_printf calls in gctest main().
-* Enable GC_is_tmp_root for all platforms.
-* Execute more single-threaded GC tests by CMake.
-* Export GC_dump_finalization/regions().
-* Export GC_is_tmp_root() and GC_print_trace[_inner]().
-* Export GC_print_free_list().
-* Fix '32-bit value shift followed by expansion to 64-bit' code defect.
-* Fix 'GC_written_pages never read' code defect (GWW_VDB).
-* Fix 'label cannot be reached' static analyzer warning in disclaim_test.
-* Fix 'syntax error' reported by cppcheck for mach_dep.
-* Fix 'unknown type name GC_INNER' compilation error (FreeBSD).
-* Fix 'variable assigned a value that is never used' cppcheck style warnings.
-* Fix 'void pointers in calculations: behavior undefined' cppcheck warning.
-* Fix Clang static analyzer warning about not found gc_priv.h in extra files.
-* Fix compilation for winpthreads if HANDLE_FORK.
-* Fix compilation if configured with --enable-werror on OS X.
-* Fix message of VDB implementation used if MPROTECT_VDB+GWW_VDB (gctest).
-* Fix null dereference in GC_stack_range_for if not DARWIN_DONT_PARSE_STACK.
-* Fix page calculation in checksums.
-* Fix typo in comment of GC_mark_some.
-* Put invariant name in quotes to make mark_state comments clearer.
-* Remove page_was_dirty and remove_protection duplicate definitions.
-* Report gcc/clang pedantic warnings (configure).
-* Skip thread suspend/resume API testing for Tru64 (OSF1).
-* Support AddressSanitizer and MemorySanitizer (clang).
-* Suppress 'tainted string passed to vulnerable operation' false defects.
-* Suppress 'taking address of label non-standard' GCC/Clang pedantic warning.
-* Test GCJ object creation with length-based descriptor (gctest).
-* Update README regarding make cords with Makefile.direct.
-* Update README to use autogen.sh on build from the source repository.
-* Workaround '#error' cppcheck error messages.
-* Workaround 'bad address arithmetic' static analysis tool false positive.
-* Workaround 'checking if unsigned value is negative' cppcheck warning.
-* Workaround 'checking unsigned value is negative' code defect in mark_from.
-* Workaround 'Condition 0!=GETENV() is always false' cppcheck style warnings.
-* Workaround 'condition is always false' cppcheck warning in get_next_stack.
-* Workaround 'condition is always true' cppcheck style warnings in GC_init.
-* Workaround 'function is never used' cppcheck style warnings.
-* Workaround 'insecure libc pseudo-random number generator used' code defect.
-* Workaround 'local variable size too big' static analyzer warning.
-* Workaround 'null pointer dereference' false positive in push_next_marked.
-* Workaround 'obsolete function alloca() called' cppcheck warnings.
-* Workaround 'passing untyped NULL to variadic function' cppcheck warning.
-* Workaround 'pointer used before comparison to null' code defect (pthread).
-* Workaround 'possible null pointer dereference' cppcheck warnings.
-* Workaround 'potential multiplication overflow' code defect in de_win (cord).
-* Workaround 'redundant assignment of *result to itself' cppcheck warning.
-* Workaround 'resource leak' false positives in alloc_MS, bl/envfile_init.
-* Workaround 'same expression on both sides of ==' cppcheck style warning.
-* Workaround 'same expression on both sides of OR' cppcheck style warning.
-* Workaround 'struct member is never used' cppcheck style warnings.
-* Workaround 'tainted int used as loop bound' static analysis tool warning.
-* Workaround 'Uninitialized variable' cppcheck errors.
-* Workaround 'unused variable' cppcheck style warnings.
-* Workaround 'va_list used before va_start' cppcheck error in cord.
-* Workaround 'value of macro unknown' cppcheck info messages.
-* Workaround 'value of REDIRECT_MALLOC/FREE unknown' cppcheck info messages.
-* Workaround 'value of SIGBUS unknown' cppcheck info messages.
-* Workaround 'value of WINAPI unknown' cppcheck info messages.
-* Workaround 'variable hides enumerator with same name' cppcheck warnings.
-* Workaround 'variable reassigned before old value used' cppcheck warnings.
-Also, includes 7.4.6 changes.
+* Add minimal testing of GC_MALLOC_[ATOMIC_]WORDS and GC_CONS (gctest)
+* Add more cases to huge_test to cover sizes close to word-type maximum
+* Add testing of new[]/delete[] (test_cpp)
+* Adjust code indentation of calloc_explicitly_typed
+* Allow custom TRACE_ENTRIES value
+* Code refactoring of divide-by-HBLKSIZE occurrences
+* Code refactoring of huge_test
+* Code refactoring of tests/subthread_create regarding AO add primitive
+* Delete preprocessor output on make clean (Makefile.direct)
+* Disable implicit multi-threaded mode for Win32 to avoid LOCK crash
+* Document configure 'syntax error' issue in README
+* Eliminate 'address of local variable returned' static analyzer warning
+* Eliminate 'array vs singleton' code defect in typed_test (gctest)
+* Eliminate 'assigned value never used' CSA warning in min_bytes_allocd
+* Eliminate 'C-style pointer casting' cppcheck style warnings in test
+* Eliminate 'checking if unsigned variable is <0' cppcheck style warning
+* Eliminate 'class member var with name also defined in parent' warning
+* Eliminate 'comparison is always false' static analyzer warning in finalize
+* Eliminate 'Condition 0==datastart always false' cppcheck warning (dyn_load)
+* Eliminate 'condition is always true' cppcheck style warning
+* Eliminate 'constructor with 1 argument is not explicit' cppcheck warning
+* Eliminate 'CORD_*printf is never used' cppcheck style warnings (cordtest)
+* Eliminate 'dereference of null' CSA false warning in array_mark_proc
+* Eliminate 'function result not used' code defect in GC_mark_local
+* Eliminate 'GC_collecting is set but never used' code defect (Win32)
+* Eliminate 'GC_record_fault is never used' cppcheck style warning
+* Eliminate 'integer shift by a negative amount' code defect in finalize
+* Eliminate 'memory leak' code defect for scratch-allocated memory
+* Eliminate 'possible integer underflow' code defect (cord-de)
+* Eliminate 'potential overflow' static analyzer warning in test
+* Eliminate 'printf format specifies type void*' GCC pedantic warnings
+* Eliminate 'scope of variable can be reduced' cppcheck warnings
+* Eliminate 'suspicious pointer subtraction' cppcheck warning (gc_cpp)
+* Eliminate 'unnecessary comparison of static strings' cppcheck warning
+* Eliminate 'unsafe vsprintf is deprecated' compiler warning
+* Eliminate 'use of vulnerable sprintf' code defect in de_win test (cord)
+* Eliminate 'value of CLOCK_TYPE unknown' cppcheck info message
+* Eliminate 'value of DATASTART2 unknown' cppcheck info messages
+* Eliminate 'value of GC_PTHREAD_EXIT_ATTRIBUTE unknown' cppcheck messages
+* Eliminate 'value of GC_RETURN_ADDR_PARENT unknown' cppcheck info messages
+* Eliminate 'value of NEED_FIXUP_POINTER unknown' cppcheck info messages
+* Eliminate 'write to memory that was const-qualified' code analyzer warning
+* Eliminate all 'scope of variable can be reduced' cppcheck style warnings
+* Eliminate redundant local variable in register_finalizer
+* Eliminate unreachable PROC/DEFAULT_VDB GC_printf calls in gctest main()
+* Enable GC_is_tmp_root for all platforms
+* Execute more single-threaded GC tests by CMake
+* Export GC_dump_finalization/regions()
+* Export GC_is_tmp_root() and GC_print_trace[_inner]()
+* Export GC_print_free_list()
+* Fix '32-bit value shift followed by expansion to 64-bit' code defect
+* Fix 'GC_written_pages never read' code defect (GWW_VDB)
+* Fix 'label cannot be reached' static analyzer warning in disclaim_test
+* Fix 'syntax error' reported by cppcheck for mach_dep
+* Fix 'unknown type name GC_INNER' compilation error (FreeBSD)
+* Fix 'variable assigned a value that is never used' cppcheck style warnings
+* Fix 'void pointers in calculations: behavior undefined' cppcheck warning
+* Fix Clang static analyzer warning about not found gc_priv.h in extra files
+* Fix compilation for winpthreads if HANDLE_FORK
+* Fix compilation if configured with --enable-werror on OS X
+* Fix message of VDB implementation used if MPROTECT_VDB+GWW_VDB (gctest)
+* Fix null dereference in GC_stack_range_for if not DARWIN_DONT_PARSE_STACK
+* Fix page calculation in checksums
+* Fix typo in comment of GC_mark_some
+* Put invariant name in quotes to make mark_state comments clearer
+* Remove page_was_dirty and remove_protection duplicate definitions
+* Report gcc/clang pedantic warnings (configure)
+* Skip thread suspend/resume API testing for Tru64 (OSF1)
+* Support AddressSanitizer and MemorySanitizer (clang)
+* Suppress 'tainted string passed to vulnerable operation' false defects
+* Suppress 'taking address of label non-standard' GCC/Clang pedantic warning
+* Test GCJ object creation with length-based descriptor (gctest)
+* Update README regarding make cords with Makefile.direct
+* Update README to use autogen.sh on build from the source repository
+* Workaround '#error' cppcheck error messages
+* Workaround 'bad address arithmetic' static analysis tool false positive
+* Workaround 'checking if unsigned value is negative' cppcheck warning
+* Workaround 'checking unsigned value is negative' code defect in mark_from
+* Workaround 'Condition 0!=GETENV() is always false' cppcheck style warnings
+* Workaround 'condition is always false' cppcheck warning in get_next_stack
+* Workaround 'condition is always true' cppcheck style warnings in GC_init
+* Workaround 'function is never used' cppcheck style warnings
+* Workaround 'insecure libc pseudo-random number generator used' code defect
+* Workaround 'local variable size too big' static analyzer warning
+* Workaround 'null pointer dereference' false positive in push_next_marked
+* Workaround 'obsolete function alloca() called' cppcheck warnings
+* Workaround 'passing untyped NULL to variadic function' cppcheck warning
+* Workaround 'pointer used before comparison to null' code defect (pthread)
+* Workaround 'possible null pointer dereference' cppcheck warnings
+* Workaround 'potential multiplication overflow' code defect in de_win (cord)
+* Workaround 'redundant assignment of *result to itself' cppcheck warning
+* Workaround 'resource leak' false positives in alloc_MS, bl/envfile_init
+* Workaround 'same expression on both sides of ==' cppcheck style warning
+* Workaround 'same expression on both sides of OR' cppcheck style warning
+* Workaround 'struct member is never used' cppcheck style warnings
+* Workaround 'tainted int used as loop bound' static analysis tool warning
+* Workaround 'Uninitialized variable' cppcheck errors
+* Workaround 'unused variable' cppcheck style warnings
+* Workaround 'va_list used before va_start' cppcheck error in cord
+* Workaround 'value of macro unknown' cppcheck info messages
+* Workaround 'value of REDIRECT_MALLOC/FREE unknown' cppcheck info messages
+* Workaround 'value of SIGBUS unknown' cppcheck info messages
+* Workaround 'value of WINAPI unknown' cppcheck info messages
+* Workaround 'variable hides enumerator with same name' cppcheck warnings
+* Workaround 'variable reassigned before old value used' cppcheck warnings
+Also, includes 7.4.6 changes
 
 
 == [7.6.0] 2016-08-02 ==
 
-* ABORT_ARGn log details at INFO level (Android).
-* Add 'pragma message' to gc.h to detect inconsistent WIN64/_WIN64 (MS VC).
-* Add API function to calculate total memory in use by all GC blocks.
-* Add API function to set/modify GC log file descriptor (Unix).
-* Add alloc_size attribute to GC_generic_malloc.
-* Add alt-stack registration support.
-* Add assertion for GC_new_kind boolean arguments.
-* Add assertion on lock status to GC_alloc_large and its callers.
+* ABORT_ARGn log details at INFO level (Android)
+* Add 'pragma message' to gc.h to detect inconsistent WIN64/_WIN64 (MS VC)
+* Add API function to calculate total memory in use by all GC blocks
+* Add API function to set/modify GC log file descriptor (Unix)
+* Add alloc_size attribute to GC_generic_malloc
+* Add alt-stack registration support
+* Add assertion for GC_new_kind boolean arguments
+* Add assertion on lock status to GC_alloc_large and its callers
 * Add build scripts for VC 9 (Win32/64)
-* Add build system plumbing for building with -Werror.
+* Add build system plumbing for building with -Werror
 * Add incremental GC support for Darwin/arm64
-* Add profiling callback events to indicate start/end of reclaim phase.
-* Add support for enumerating the reachable objects in the heap.
-* Add toggle-ref support (following Mono GC API).
-* Added instructions to README.md for building from git.
-* Adjust code indentation of malloc/calloc/str[n]dup.
-* Allow fork() automatic handling on Android with API level 21+.
-* Allow specific TLS attributes for GC_thread_key.
-* Allow thread local allocations from within pthread TLS destructors.
-* Allow to force GC_dump_regularly set on at compilation.
-* Altera NIOS2 support.
-* Change 'cord' no-argument functions declaration style to ANSI C.
-* Check DATASTART is less than DATAEND even assertions off.
-* Check for execinfo.h by configure.
-* Code refactoring of GC_push_finalizer/thread/typed_structures.
-* Code refactoring regarding 'data start' definition for FreeBSD.
-* Consistently set type of DATASTART/END to ptr_t (code refactoring).
-* Consistently use int[] type for '_end' symbol (code refactoring).
-* Consistently use outermost parentheses for DATASTART/END, STACKBOTTOM.
-* Define GC_LINUX_THREADS, NO_EXECUTE_PERMISSION in configure for NaCl.
-* Define ROUNDUP_PAGESIZE, ROUNDUP_GRANULE_SIZE macros (code refactoring).
-* Define public GC_GENERIC_OR_SPECIAL_MALLOC and GC_get_kind_and_size.
-* Do no declare kernel_id field of GC_Thread_Rep for 64-bit Android.
-* Do not allow SHORT_DBG_HDRS if KEEP_BACK_PTRS or MAKE_BACK_GRAPH.
-* Do not warn of missing PT_GNU_RELRO segment when custom DSO filter used.
-* Document GC_register_my_thread returned value.
-* Dump the block information in CSV format.
-* Eliminate redundant *flh check for null in GC_allocobj.
-* Enable atomic-uncollectable in operator new in gc_cpp.h.
-* Enable build with musl libc.
-* Enable gc.h inclusion by client without implicit include windows.h (Win32).
-* Enable huge_test for Win64 (and LLP64 target).
-* Enable thread-local storage for Android Clang.
-* Enable thread-local storage usage for GC_malloc/calloc_explicitly_typed.
-* Export GC_push_all_eager, GC_push_finalizer_structures.
-* Fix 'arg parameter might be clobbered by setjmp' compiler warning.
-* Fix assertion in GC_mark_from for non-heap regions.
-* Fix compilation for Android clang/arm with bfd linker.
-* Fix integer shift undefined behavior in GC_init_explicit_typing.
-* Fix missing new-line and redundant trailing dot in WARN messages.
-* Fix STACKBOTTOM for Solaris 11/x86.
-* Fix tag collision between ENABLE_DISCLAIM and KEEP_BACK_PTRS.
-* Fix unchecked fork() result in gctest (Unix, Cygwin).
-* Fix user-defined signals drop by marker threads.
-* Fix various typos in comments and documentation.
-* FreeBSD/arm support improvement.
-* GC_make_descriptor code refactoring (eliminate two local variables).
-* GC_malloc[_atomic] global and thread-local generalization with kind.
-* GC_malloc_[atomic_]uncollectable generalization.
-* GC_scratch_alloc code refactoring (and WARN message improvement).
-* Group all compact fields of GC_arrays to fit in single page.
-* Handle load_segs overflow in register_dynlib_callback gracefully.
-* Harmonize OSX/iOS configuration; enable compiling for iPhone simulator.
-* Implement event callbacks for profiling (following Mono GC API).
-* Implement the finalization extension API.
-* Implement thread suspend/resume API (Linux threads only).
-* Improve documentation for disappearing links in gc.h.
-* Make heap growth more conservative after GC_gcollect_and_unmap call.
-* Mark fo_head, finalize_now with a single GC_push_all call (refactoring).
-* Move MessageBox invocation code from GC_abort to a separate routine (Win32).
-* NaCl/arm initial support; NaCl runtime fixes for other CPUs.
-* New macro (GC_ALWAYS_MULTITHREADED) to set multi-threaded mode implicitly.
-* New macro (NO_WINMAIN_ENTRY) to prefer main() instead of WinMain in test.
-* New macro (REDIRECT_MALLOC_IN_HEADER) to enable source-level redirection.
-* Process all PT_LOAD segments before PT_GNU_RELRO segments (Glibc).
-* Re-implement GC_finalized_malloc using GC_malloc_kind.
-* Refactoring of android_thread_kill/pthread_kill calls.
-* Refactoring of GC_Xobjfreelist (use single array to keep free lists).
-* Refactoring of thread-local *_freelists (use single array of free lists).
-* Refine description in README how to build from source repository.
-* Refine GC_free_space_divisor comment regarding its initial value.
-* Reformat code of gc_cpp.cc/h.
-* Remove 'opp' local variable in GC_malloc_X.
-* Remove 'sig' argument of GC_suspend_handler_inner (code refactoring).
-* Remove code commented out by 'ifdef UNDEFINED'.
-* Remove hb_large_block field (use 1 extra bit of hb_flags instead).
-* Remove obsolete BACKING_STORE_ALIGNMENT/DISPLACEMENT macros for Linux/IA64.
-* Remove redundant casts in GC_generic_or_special_malloc and similar.
-* Remove unsupported FreeBSD/ia64 case from gcconfig.h file.
-* Remove unused GC_gcjdebugobjfreelist.
-* Rename ATOMIC_UNCOLLECTABLE to GC_ATOMIC_UNCOLLECTABLE.
-* Replace non-API occurrences of GC_word to word (code refactoring).
-* Return GC_UNIMPLEMENTED instead of abort in GC_get_stack_base (OS/2).
-* Show WoW64 warning message if running 32-bit on Win64 (enabled by macro).
-* Standalone profiling callback for threads suspend/resume.
-* Support (add machine description for) TILE-Gx and TILEPro targets.
-* Support build for Android 64-bit (arm64, mips64, x86_64).
-* Support FreeBSD/aarch64, FreeBSD/mips.
-* Support iOS7 64-bit (AArch64) and iOS8+ 32/64-bit (Darwin).
-* Support MinGW build in scripts.
-* Turn off sigsetjmp workaround for Android/x86 starting from NDK r8e.
-* Use magic header on objects to improve disclaim_test.
-* Workaround 'sa_sigaction member missing' compiler error (Android/x32).
-* Workaround 'unresolved __tls_get_addr' error for Android NDK Clang.
-* Workaround a bug in winpthreads causing parallel marks deadlock (MinGW).
-Also, includes 7.4.4 changes.
+* Add profiling callback events to indicate start/end of reclaim phase
+* Add support for enumerating the reachable objects in the heap
+* Add toggle-ref support (following Mono GC API)
+* Added instructions to README.md for building from git
+* Adjust code indentation of malloc/calloc/str[n]dup
+* Allow fork() automatic handling on Android with API level 21+
+* Allow specific TLS attributes for GC_thread_key
+* Allow thread local allocations from within pthread TLS destructors
+* Allow to force GC_dump_regularly set on at compilation
+* Altera NIOS2 support
+* Change 'cord' no-argument functions declaration style to ANSI C
+* Check DATASTART is less than DATAEND even assertions off
+* Check for execinfo.h by configure
+* Code refactoring of GC_push_finalizer/thread/typed_structures
+* Code refactoring regarding 'data start' definition for FreeBSD
+* Consistently set type of DATASTART/END to ptr_t (code refactoring)
+* Consistently use int[] type for '_end' symbol (code refactoring)
+* Consistently use outermost parentheses for DATASTART/END, STACKBOTTOM
+* Define GC_LINUX_THREADS, NO_EXECUTE_PERMISSION in configure for NaCl
+* Define ROUNDUP_PAGESIZE, ROUNDUP_GRANULE_SIZE macros (code refactoring)
+* Define public GC_GENERIC_OR_SPECIAL_MALLOC and GC_get_kind_and_size
+* Do no declare kernel_id field of GC_Thread_Rep for 64-bit Android
+* Do not allow SHORT_DBG_HDRS if KEEP_BACK_PTRS or MAKE_BACK_GRAPH
+* Do not warn of missing PT_GNU_RELRO segment when custom DSO filter used
+* Document GC_register_my_thread returned value
+* Dump the block information in CSV format
+* Eliminate redundant *flh check for null in GC_allocobj
+* Enable atomic-uncollectable in operator new in gc_cpp.h
+* Enable build with musl libc
+* Enable gc.h inclusion by client without implicit include windows.h (Win32)
+* Enable huge_test for Win64 (and LLP64 target)
+* Enable thread-local storage for Android Clang
+* Enable thread-local storage usage for GC_malloc/calloc_explicitly_typed
+* Export GC_push_all_eager, GC_push_finalizer_structures
+* Fix 'arg parameter might be clobbered by setjmp' compiler warning
+* Fix assertion in GC_mark_from for non-heap regions
+* Fix compilation for Android clang/arm with bfd linker
+* Fix integer shift undefined behavior in GC_init_explicit_typing
+* Fix missing new-line and redundant trailing dot in WARN messages
+* Fix STACKBOTTOM for Solaris 11/x86
+* Fix tag collision between ENABLE_DISCLAIM and KEEP_BACK_PTRS
+* Fix unchecked fork() result in gctest (Unix, Cygwin)
+* Fix user-defined signals drop by marker threads
+* Fix various typos in comments and documentation
+* FreeBSD/arm support improvement
+* GC_make_descriptor code refactoring (eliminate two local variables)
+* GC_malloc[_atomic] global and thread-local generalization with kind
+* GC_malloc_[atomic_]uncollectable generalization
+* GC_scratch_alloc code refactoring (and WARN message improvement)
+* Group all compact fields of GC_arrays to fit in single page
+* Handle load_segs overflow in register_dynlib_callback gracefully
+* Harmonize OSX/iOS configuration; enable compiling for iPhone simulator
+* Implement event callbacks for profiling (following Mono GC API)
+* Implement the finalization extension API
+* Implement thread suspend/resume API (Linux threads only)
+* Improve documentation for disappearing links in gc.h
+* Make heap growth more conservative after GC_gcollect_and_unmap call
+* Mark fo_head, finalize_now with a single GC_push_all call (refactoring)
+* Move MessageBox invocation code from GC_abort to a separate routine (Win32)
+* NaCl/arm initial support; NaCl runtime fixes for other CPUs
+* New macro (GC_ALWAYS_MULTITHREADED) to set multi-threaded mode implicitly
+* New macro (NO_WINMAIN_ENTRY) to prefer main() instead of WinMain in test
+* New macro (REDIRECT_MALLOC_IN_HEADER) to enable source-level redirection
+* Process all PT_LOAD segments before PT_GNU_RELRO segments (Glibc)
+* Re-implement GC_finalized_malloc using GC_malloc_kind
+* Refactoring of android_thread_kill/pthread_kill calls
+* Refactoring of GC_Xobjfreelist (use single array to keep free lists)
+* Refactoring of thread-local *_freelists (use single array of free lists)
+* Refine description in README how to build from source repository
+* Refine GC_free_space_divisor comment regarding its initial value
+* Reformat code of gc_cpp.cc/h
+* Remove 'opp' local variable in GC_malloc_X
+* Remove 'sig' argument of GC_suspend_handler_inner (code refactoring)
+* Remove code commented out by 'ifdef UNDEFINED'
+* Remove hb_large_block field (use 1 extra bit of hb_flags instead)
+* Remove obsolete BACKING_STORE_ALIGNMENT/DISPLACEMENT macros for Linux/IA64
+* Remove redundant casts in GC_generic_or_special_malloc and similar
+* Remove unsupported FreeBSD/ia64 case from gcconfig.h file
+* Remove unused GC_gcjdebugobjfreelist
+* Rename ATOMIC_UNCOLLECTABLE to GC_ATOMIC_UNCOLLECTABLE
+* Replace non-API occurrences of GC_word to word (code refactoring)
+* Return GC_UNIMPLEMENTED instead of abort in GC_get_stack_base (OS/2)
+* Show WoW64 warning message if running 32-bit on Win64 (enabled by macro)
+* Standalone profiling callback for threads suspend/resume
+* Support (add machine description for) TILE-Gx and TILEPro targets
+* Support build for Android 64-bit (arm64, mips64, x86_64)
+* Support FreeBSD/aarch64, FreeBSD/mips
+* Support iOS7 64-bit (AArch64) and iOS8+ 32/64-bit (Darwin)
+* Support MinGW build in scripts
+* Turn off sigsetjmp workaround for Android/x86 starting from NDK r8e
+* Use magic header on objects to improve disclaim_test
+* Workaround 'sa_sigaction member missing' compiler error (Android/x32)
+* Workaround 'unresolved __tls_get_addr' error for Android NDK Clang
+* Workaround a bug in winpthreads causing parallel marks deadlock (MinGW)
+Also, includes 7.4.4 changes
 
 
 == [7.4.6] (unset) ==
 
-* Add configure --enable-gcov option (enable code coverage analysis).
-* Adjust GC_memalign comment.
-* Do not define amiga_get_mem, MacTemporaryNewPtr unless really used (extra).
-* Do not warn of missing PT_GNU_RELRO segment when custom DSO filter used.
-* Eliminate 'cast to void* from int' compiler warnings (Darwin/x64).
-* Eliminate 'FP divide-by-zero' static analyzer warning.
-* Eliminate 'ISO C forbids an empty translation unit' GCC pedantic warning.
-* Eliminate 'null dereference' code defect warning in register_finalizer.
-* Eliminate 'printf format specifier mismatch' compiler warning (tools).
-* Eliminate 'value stored is never read' warning of Clang static analyzer.
-* Eliminate duplicate log messages in GC_mark_from.
-* Fix 'arg parameter might be clobbered by setjmp' compiler warning.
-* Fix 'bogus LR' detection in FindTopOfStack (Darwin).
-* Fix 'execvp argument incompatible pointer type' compiler warning (tools).
-* Fix 'GetVersion deprecated' compiler warning in os_dep (MS VC).
-* Fix 'incompatible pointer' compiler warning in GC_init_dyld (OS X 64-bit).
-* Fix 'incompatible ptr-to-int conversion' compiler warning in push_all_stack.
-* Fix 'ISO C90 does not support %lf, %lg gnu_printf formats' GCC warnings.
-* Fix 'ISO C90 forbids mixed declarations and code' compiler warning.
-* Fix 'replacement operator delete cannot be inline' GCC warning (Cygwin).
-* Fix 'variable unused' compiler warning in FirstDLOpenedLinkMap.
-* Fix 'zero-size array is extension' Clang warning in os_dep (Linux/x86).
-* Fix (adjust) GC_scratch_alloc actual argument type.
-* Fix GC_bytes_allocd incrementation in case of allocation failure.
-* Fix GC_jmp_buf multiple definition.
-* Fix GC_noop6 definition to avoid its calls to be optimized away.
-* Fix initsecondarythread_test runtime failure if GC compiled w/o threads.
-* Fix lack of 2 trailing zeros in _MSC_VER numbers.
-* Fix local variable declarations in disclaim_bench.
-* Fix missing #error pragma.
-* Fix missing new-line and redundant trailing dot in WARN messages.
-* Fix potential overflow in decrement when computing GC_markers_m1.
-* Fix printf format specifiers in extra files (cppcheck warnings).
-* Fix register_finalizer call in disclaim_bench for GC_DEBUG.
-* Fix tag collision between ENABLE_DISCLAIM and KEEP_BACK_PTRS.
-* Fix threaded tests runtime crash if GC_NO_THREAD_REDIRECTS supplied.
-* Fix tools/setjmp_t to prevent nested_sp inlining.
-* Fix typo in CHECK_GCLIB_VERSION name (test).
-* Fix typo in push_roots comment.
-* Fix unchecked fork() result in gctest (Unix, Cygwin).
-* Process all PT_LOAD segments before PT_GNU_RELRO segments (Glibc).
-* Refine README about library source downloading.
-* Replace C++ style comments to C ones, remove commented out code (extra).
-* Support CFLAGS_EXTRA to pass extra user-defined compiler flags (configure).
-* Suppress 'tainted string passed to vulnerable operation' false defects.
-* Workaround 'index out of bounds' UBSan false warning in push_marked.
-* Workaround 'mmap() resource handle leak' static analyzer warning.
-* Workaround 'redundant assignment of *result to itself' cppcheck warning.
-* Workaround 'resource leak' error reported by cppcheck (tools, test).
-Also, includes 7.2h changes.
+* Add configure --enable-gcov option (enable code coverage analysis)
+* Adjust GC_memalign comment
+* Do not define amiga_get_mem, MacTemporaryNewPtr unless really used (extra)
+* Do not warn of missing PT_GNU_RELRO segment when custom DSO filter used
+* Eliminate 'cast to void* from int' compiler warnings (Darwin/x64)
+* Eliminate 'FP divide-by-zero' static analyzer warning
+* Eliminate 'ISO C forbids an empty translation unit' GCC pedantic warning
+* Eliminate 'null dereference' code defect warning in register_finalizer
+* Eliminate 'printf format specifier mismatch' compiler warning (tools)
+* Eliminate 'value stored is never read' warning of Clang static analyzer
+* Eliminate duplicate log messages in GC_mark_from
+* Fix 'arg parameter might be clobbered by setjmp' compiler warning
+* Fix 'bogus LR' detection in FindTopOfStack (Darwin)
+* Fix 'execvp argument incompatible pointer type' compiler warning (tools)
+* Fix 'GetVersion deprecated' compiler warning in os_dep (MS VC)
+* Fix 'incompatible pointer' compiler warning in GC_init_dyld (OS X 64-bit)
+* Fix 'incompatible ptr-to-int conversion' compiler warning in push_all_stack
+* Fix 'ISO C90 does not support %lf, %lg gnu_printf formats' GCC warnings
+* Fix 'ISO C90 forbids mixed declarations and code' compiler warning
+* Fix 'replacement operator delete cannot be inline' GCC warning (Cygwin)
+* Fix 'variable unused' compiler warning in FirstDLOpenedLinkMap
+* Fix 'zero-size array is extension' Clang warning in os_dep (Linux/x86)
+* Fix (adjust) GC_scratch_alloc actual argument type
+* Fix GC_bytes_allocd incrementation in case of allocation failure
+* Fix GC_jmp_buf multiple definition
+* Fix GC_noop6 definition to avoid its calls to be optimized away
+* Fix initsecondarythread_test runtime failure if GC compiled w/o threads
+* Fix lack of 2 trailing zeros in _MSC_VER numbers
+* Fix local variable declarations in disclaim_bench
+* Fix missing #error pragma
+* Fix missing new-line and redundant trailing dot in WARN messages
+* Fix potential overflow in decrement when computing GC_markers_m1
+* Fix printf format specifiers in extra files (cppcheck warnings)
+* Fix register_finalizer call in disclaim_bench for GC_DEBUG
+* Fix tag collision between ENABLE_DISCLAIM and KEEP_BACK_PTRS
+* Fix threaded tests runtime crash if GC_NO_THREAD_REDIRECTS supplied
+* Fix tools/setjmp_t to prevent nested_sp inlining
+* Fix typo in CHECK_GCLIB_VERSION name (test)
+* Fix typo in push_roots comment
+* Fix unchecked fork() result in gctest (Unix, Cygwin)
+* Process all PT_LOAD segments before PT_GNU_RELRO segments (Glibc)
+* Refine README about library source downloading
+* Replace C++ style comments to C ones, remove commented out code (extra)
+* Support CFLAGS_EXTRA to pass extra user-defined compiler flags (configure)
+* Suppress 'tainted string passed to vulnerable operation' false defects
+* Workaround 'index out of bounds' UBSan false warning in push_marked
+* Workaround 'mmap() resource handle leak' static analyzer warning
+* Workaround 'redundant assignment of *result to itself' cppcheck warning
+* Workaround 'resource leak' error reported by cppcheck (tools, test)
+Also, includes 7.2h changes
 
 
 == [7.4.4] 2016-05-25 ==
 
-* Allow GC_FAST_MALLOC_GRANS() multiple use in a function.
-* Also enable the TSX workaround for i386 (Linux).
-* Avoid unstructured procfs on Solaris.
-* Change cord/de main() declaration style from K-R to ANSI C.
-* Change no-argument functions declaration style to ANSI C (cord).
-* Do not include sigcontext.h and asm/sigcontext.h.
-* Eliminate 'divide by zero' compiler warning in cordtest.
-* Eliminate warning about 64-bit pointer-to-int cast (Win64/pthreads-w32).
-* Eliminate warnings detected by Cppcheck in cord de[_win].
-* Fix 'comparison of non-null parameter is always false' warning (Clang).
-* Fix 'CORD_iter5 unused result' code defect in cordxtra.
-* Fix 'GC_generic_malloc_inner_ignore_off_page not used' compiler warning.
-* Fix 'implicit declaration of vsnprintf' GCC warning (if strict ANSI mode).
-* Fix 'signed-to-bigger-unsigned value assignment' in GC_init_size_map.
-* Fix 'signed-to-bigger-unsigned value assignment' warning for hb_map.
-* Fix 'signed-to-bigger-unsigned value assignment' warning in GC_setpagesize.
-* Fix 'statement unreachable' compiler warning in GC_mark_from.
-* Fix 'statement unreachable' compiler warning in memalign.
-* Fix 'unused label' compiler warning in cord/de.
-* Fix 'value truncated' compiler warning in CORD_cat (MS VC).
-* Fix 'variable unused' warning in GC_save_callers.
-* Fix 'visibility attribute not supported' GCC warning (IBM AIX).
-* Fix CMake warning about CMP0054 by unquoting instances of HOST.
-* Fix Cygwin64 build.
-* Fix GC_REALLOC to call GC_FREE if new size is zero and pointer is non-NULL.
-* Fix Makefile.direct for Cygwin.
-* Fix __alloc_size__ availability detection (Clang).
-* Fix abort message in GC_move_long_link.
-* Fix and code refactoring of lock elision workaround (Linux/x64).
-* Fix assertion on mark_lock_holder for non-unique NUMERIC_THREAD_ID.
-* Fix data race in GC_init_explicit_typing.
-* Fix gc.mak regarding msvc_dbg and test (MSVC).
-* Fix missing error handling of pthread_attr_init/getstacksize.
-* Fix missing error handling of pthreads_mutex_init and cond_wait.
-* Fix missing numeric casts in cord.
-* Fix potential left shift overflows in finalize.c (64-bit targets).
-* Fix pthreads-win32 name in comments and documentation.
-* Fix setup_mark_lock missing prototype.
-* Fix unchecked fcntl() result.
-* Fix unchecked pointer dereference in check_ints (gctest).
-* Fix unchecked pthread_join() result in threadkey_test.
-* Fix unchecked sigdelset() result in pthread_support.
-* Fix undefined PTRFREE/NORMAL in gc_inline.h.
-* Prefix PREFETCH_FOR_WRITE with GC_ as used in gc_inline.h public header.
-* Relax mark_mutex attribute needed to disable elision (Linux/x64).
-* Remove (deprecate) TODO file.
-* Remove code duplication in GC_realloc.
-* Remove duplicate new-line in OUT_OF_MEMORY message (cord).
-* Remove references to missing linux_threads.c from documentation.
-* Revert "Move asm machine-dependent files to 'src' folder" (partly).
-* Support Android API level 21.
-* Update compiler options in gc.mak (Win32).
-* Use mmap instead of sbrk (Hurd).
-* Workaround 'comparison is always false' GCC warning in GC_FAST_MALLOC_GRANS.
-* Workaround 'identical expr on both sides of bitwise op' warning.
-* Workaround Linux NTPL lock elision bug.
-* Workaround false warning about unreachable code path.
-* Workaround invalid '_end' symbol on Android clang 3.5+.
-Also, includes 7.2g changes.
+* Allow GC_FAST_MALLOC_GRANS() multiple use in a function
+* Also enable the TSX workaround for i386 (Linux)
+* Avoid unstructured procfs on Solaris
+* Change cord/de main() declaration style from K-R to ANSI C
+* Change no-argument functions declaration style to ANSI C (cord)
+* Do not include sigcontext.h and asm/sigcontext.h
+* Eliminate 'divide by zero' compiler warning in cordtest
+* Eliminate warning about 64-bit pointer-to-int cast (Win64/pthreads-w32)
+* Eliminate warnings detected by Cppcheck in cord de[_win]
+* Fix 'comparison of non-null parameter is always false' warning (Clang)
+* Fix 'CORD_iter5 unused result' code defect in cordxtra
+* Fix 'GC_generic_malloc_inner_ignore_off_page not used' compiler warning
+* Fix 'implicit declaration of vsnprintf' GCC warning (if strict ANSI mode)
+* Fix 'signed-to-bigger-unsigned value assignment' in GC_init_size_map
+* Fix 'signed-to-bigger-unsigned value assignment' warning for hb_map
+* Fix 'signed-to-bigger-unsigned value assignment' warning in GC_setpagesize
+* Fix 'statement unreachable' compiler warning in GC_mark_from
+* Fix 'statement unreachable' compiler warning in memalign
+* Fix 'unused label' compiler warning in cord/de
+* Fix 'value truncated' compiler warning in CORD_cat (MS VC)
+* Fix 'variable unused' warning in GC_save_callers
+* Fix 'visibility attribute not supported' GCC warning (IBM AIX)
+* Fix CMake warning about CMP0054 by unquoting instances of HOST
+* Fix Cygwin64 build
+* Fix GC_REALLOC to call GC_FREE if new size is zero and pointer is non-NULL
+* Fix Makefile.direct for Cygwin
+* Fix __alloc_size__ availability detection (Clang)
+* Fix abort message in GC_move_long_link
+* Fix and code refactoring of lock elision workaround (Linux/x64)
+* Fix assertion on mark_lock_holder for non-unique NUMERIC_THREAD_ID
+* Fix data race in GC_init_explicit_typing
+* Fix gc.mak regarding msvc_dbg and test (MSVC)
+* Fix missing error handling of pthread_attr_init/getstacksize
+* Fix missing error handling of pthreads_mutex_init and cond_wait
+* Fix missing numeric casts in cord
+* Fix potential left shift overflows in finalize.c (64-bit targets)
+* Fix pthreads-win32 name in comments and documentation
+* Fix setup_mark_lock missing prototype
+* Fix unchecked fcntl() result
+* Fix unchecked pointer dereference in check_ints (gctest)
+* Fix unchecked pthread_join() result in threadkey_test
+* Fix unchecked sigdelset() result in pthread_support
+* Fix undefined PTRFREE/NORMAL in gc_inline.h
+* Prefix PREFETCH_FOR_WRITE with GC_ as used in gc_inline.h public header
+* Relax mark_mutex attribute needed to disable elision (Linux/x64)
+* Remove (deprecate) TODO file
+* Remove code duplication in GC_realloc
+* Remove duplicate new-line in OUT_OF_MEMORY message (cord)
+* Remove references to missing linux_threads.c from documentation
+* Revert "Move asm machine-dependent files to 'src' folder" (partly)
+* Support Android API level 21
+* Update compiler options in gc.mak (Win32)
+* Use mmap instead of sbrk (Hurd)
+* Workaround 'comparison is always false' GCC warning in GC_FAST_MALLOC_GRANS
+* Workaround 'identical expr on both sides of bitwise op' warning
+* Workaround Linux NTPL lock elision bug
+* Workaround false warning about unreachable code path
+* Workaround invalid '_end' symbol on Android clang 3.5+
+Also, includes 7.2g changes
 
 
 == [7.4.2] 2014-06-03 ==
 
-* Add config option to use STGRTMIN-based signals for thread suspend/resume.
-* Allow parallel mark to be enabled on powerpc-linux systems.
-* Check for Fujitsu compiler in builtin_unwind logic (enable FX10/K-Computer).
-* Fix 'Array subscript is above array bounds' GCC warning in GC_new_kind/proc.
-* Fix 'attribute declaration must precede definition' warning (clang-3.1).
-* Fix (enable) Cygwin-64 build.
-* Fix GC_finalized_malloc failure on disclaim_test.
-* Fix GC_sig_suspend initialization when non-constant SIGRTMIN used.
-* Fix MS VC redefinition warning for functions declared with GC_ATTR_MALLOC.
-* Fix TEXT() usage for concatenated strings in GC_CreateLogFile (Win32).
-* Fix data roots registration for Android/x86 and NDK ARM 'gold' linker.
-* Fix find stackbottom on BlueGene P/Q systems.
-* Fix machdep .lo files path in configure (SPARC, IA-64).
-* Fix ok_init assignment (missing cast) in GC_new_kind_inner.
-* Fix typos in names in AUTHORS and ChangeLog files.
-* Remove barrett_diagram file duplicated by tree.html.
-* Remove non-existing DISCARD_WORDS from GC data structure ASCII diagram.
-* Restore contribution information for ancient releases in ChangeLog.
-Also, includes 7.2f changes.
+* Add config option to use STGRTMIN-based signals for thread suspend/resume
+* Allow parallel mark to be enabled on powerpc-linux systems
+* Check for Fujitsu compiler in builtin_unwind logic (enable FX10/K-Computer)
+* Fix 'Array subscript is above array bounds' GCC warning in GC_new_kind/proc
+* Fix 'attribute declaration must precede definition' warning (clang-3.1)
+* Fix (enable) Cygwin-64 build
+* Fix GC_finalized_malloc failure on disclaim_test
+* Fix GC_sig_suspend initialization when non-constant SIGRTMIN used
+* Fix MS VC redefinition warning for functions declared with GC_ATTR_MALLOC
+* Fix TEXT() usage for concatenated strings in GC_CreateLogFile (Win32)
+* Fix data roots registration for Android/x86 and NDK ARM 'gold' linker
+* Fix find stackbottom on BlueGene P/Q systems
+* Fix machdep .lo files path in configure (SPARC, IA-64)
+* Fix ok_init assignment (missing cast) in GC_new_kind_inner
+* Fix typos in names in AUTHORS and ChangeLog files
+* Remove barrett_diagram file duplicated by tree.html
+* Remove non-existing DISCARD_WORDS from GC data structure ASCII diagram
+* Restore contribution information for ancient releases in ChangeLog
+Also, includes 7.2f changes
 
 
 == [7.4.0] 2013-11-17 ==
 
-* Add 'bytes reclaimed' counters to public GC_prof_stats_s.
-* Add AArch64 (64-bit ARM) target support.
-* Add GC_LONG_REFS_NOT_NEEDED ifdefs to exclude long link functionality.
-* Add GC_get_prof_stats[_unsafe]() to GC public API.
-* Add GC_push_all/conditional() to GC public API.
-* Add assertion on number_of_objs to GC_extend_size_map.
-* Add assertion to GC_enable() ensuring no counter underflow.
-* Add assertion to LOCK definition that lock is not already held.
-* Add assertion to LONG_MULT and remove useless assert in PUSH_CONTENTS_HDR.
-* Add double-lock assertion to GC_acquire_mark_lock.
-* Add manual POSIX fork handling support (Android).
-* Add note about 'pkg-config' solving problem with autoconf 2.68 or older.
-* Add public GC_set/get_abort_func to replace default GC_on_abort.
-* Add public GC_start_mark_threads() to allow parallel marker in fork child.
-* Add public setter and getter for GC_push_other_roots.
-* Add support of Android logger.
-* Add tests for GC_register/move/unregister_long_link.
-* Add thread suspend/resume signals public setters (POSIX threads).
-* Added long weakref support.
-* Adjust GC_dont_expand/gc/precollect and GC_print_stats type to match gc.h.
-* Adjust README.md title and references to doc .html files in it.
-* Adjust build scripts to enable additional test library in staticrootstest.
-* Adjust logged messages in start_mark_threads and GC_thr_init.
-* Adjust printf format specifiers in GC_print_trace.
-* Allow not to rely on __data_start value (Linux).
-* Allow pthread_kill error code logging in GC_suspend/resume (debugging).
-* Allow to compile GC_inner_start_routine aside from extra/gc.c.
-* Allow to omit libc atexit() call.
-* Avoid LOCK/UNLOCK hard-coding in gc_locks.h for PS3 target.
-* Better document GC_warn_proc in gc.h.
-* Call GC_on_abort (with NULL argument) on exit(1).
-* Call GC_stats/verbose_log_printf instead of GC_log_printf if print_stats.
-* Change policy regarding version numbers ("micro" part instead of "alpha").
-* Changed C99-style designated init of GC_dl_hashtbl struct to use C89-style.
-* Check GC_base result in GC_print_all_smashed_proc.
-* Check that SIG_SUSPEND and SIG_THR_RESTART are different (Pthreads).
-* Check traceable_allocator.allocate result before dereference in test_cpp.
-* Code refactoring of GC_x_printf (move shared code to macro).
-* Convert readme to markdown.
-* Default to use libc_stack_end in single-threaded GC on glibc targets.
-* Define GC_VSNPRINTF internal macro in misc.c (code refactoring).
-* Define functions in darwin_semaphore.h as inline instead of static.
-* Define old_bus_handler static variable only if used (Unix).
-* Detect dladdr() presence by configure.
-* Disable find-leak GC_gcollect on GC abnormal EXIT.
-* Do not define _setjmp/_longjmp macros in mach_dep.c.
-* Do not duplicate android_log_write output to GC log file (Android).
-* Do not include sigcontext.h if NO_SIGCONTEXT_H (Linux).
-* Do not set GC_lock_holder by call_with_alloc_lock if assertions disabled.
-* Do not use pthread_getattr_np if NO_PTHREAD_GETATTR_NP specified.
-* Elaborate comment on dependencies in autogen.sh.
-* Eliminate 'cast from int to pointer' warning in GC_exclude_static_roots.
-* Eliminate 'missing exception specification' warning in gc_cpp.cc (Clang).
-* Eliminate 'uninitialized variable use' warning in test_printf (cord).
-* Eliminate 'unused result' compiler warning in main() of test_cpp.
-* Eliminate 'unused value' compiler warning in GC_stop_world (Pthreads).
-* Eliminate 'unused variable' compiler warning in start_mark_threads (HP/UX).
-* Eliminate Clang warning for GC_pthread_exit attribute.
-* Eliminate GCC warning about uninitialized 'hhdr' in GC_allochblk_nth.
-* Eliminate GCC warning in GC_get_main_stack_base (OpenBSD).
-* Eliminate GCC warnings in setjmp_t.c, test_cpp and cord 'de' app.
-* Eliminate GC_first_nonempty atomic value reload in GC_mark_local assertion.
-* Eliminate SIGBUS-related dead code in GC_write_fault_handler (Linux).
-* Eliminate warning and simplify expression in GC_init_explicit_typing.
-* Enable 'force GC at every GC_malloc' debug-related functionality.
-* Enable on-demand debug logging in GC_FindTopOfStack (Darwin).
-* Enable prefetch operations by default (GCC 3.0+).
-* Enable staticrootstest for the case of GC shared library build.
-* Enable thread-local allocation support for Clang on Cygwin.
-* Explicitly specify that Darwin, Linux and Solaris platforms have dladdr.
-* Fix ABORT definition for mingw32ce (WinCE).
-* Fix AM_CONFIG_HEADER in configure for autoconf-2.69-1.
-* Fix GC_CreateThread and GC_beginthreadex definition for Cygwin.
-* Fix GC_INIT_CONF_ROOTS in gc.h for Android.
-* Fix GC_INLINE definition to comply with ISO C90 standard (GCC).
-* Fix GC_remove_all_threads_but_me for Android (fork support).
-* Fix debug_register_displacement calls from GC_debug_generic_malloc_inner.
-* Fix dyn_load.c compilation for Android 4.3.
-* Fix make disclaim_test to link with new GNU ld linking rules.
-* Improve GC error printing atomicity in GC_debug_X and GC_print_obj.
-* Improve GC output atomicity in GC_print_obj, GC_print_all_errors.
-* Improve debug-only messages of add/remove_roots and init_linux_data_start.
-* Improve fork test logging in gctest.
-* Improve logged messages about heap size and usage.
-* Improve logging for Android differentiating messages by log level.
-* Improve staticrootstest (add global data to library, add lib w/o GC_INIT).
-* Improve staticrootstest checks (tests).
-* Include "config.h" instead of "private/config.h" on HAVE_CONFIG_H.
-* Include proper header file in 'tools' for configuration macros.
-* Include pthread_np.h from pthread_stop_world.c on OpenBSD.
-* Log error messages to stderr instead of stdout in tests.
-* Make GC_generic_malloc_ignore_off_page() public.
-* Make GC_mark_lock_holder variable static.
-* Make GC_print_trace always thread-safe and remove 'lock' argument.
-* Mark GC_started_thread_while_stopped() as GC_INNER.
-* Minimize code duplication in GC_mark_and_push.
-* Move 'include setjmp.h' from mach_dep.c to gc_priv.h.
-* Move GC_OPENBSD_UTHREADS definition to private/gcconfig.h (OpenBSD).
-* Move GC_get_suspend/thr_restart_signal to misc.c for NaCl and OpenBSD.
-* Move LOCK/UNLOCK from GC_unregister_disappearing_link_inner outer.
-* Port BDWGC to Android/x86.
-* Postpone the suspend signal in GC_dirty_init only if used to stop world.
-* Prepend '#' symbol to GC number in logged messages.
-* Prevent POSIX fork if mprotect_thread is started (Darwin).
-* Prevent abort on GC_err/warn_printf write failure.
-* Prevent misleading AC_MSG_ERROR/AS_IF errors reported in configure.ac.
-* Put gc_cpp symbols into 'boehmgc' namespace if GC_NAMESPACE defined.
-* Recognize GC_DONT_GC macro in gc.h (causes GC_INIT to turn off GC).
-* Recognize GC_SIG_SUSPEND and GC_SIG_THR_RESTART tuning macros in gc.h.
-* Redirect WRITE to __android_log_write if GC_ANDROID_LOG (Android).
-* Refine comment of GC_is_heap_ptr and GC_thread_is_registered in gc.h.
-* Register dynamic libraries via dl_iterate_phdr on Android and OpenBSD.
-* Remove DebugBreak on WriteFile failure (Win32).
-* Remove GC_BUILD definition from build scripts.
-* Remove abort on open log failure from GC_write (Win32).
-* Remove configure.ac outdated revision number.
-* Remove nested EXPECT in GC_core_finalized_malloc.
-* Remove nested always-false ifdef for HPUX and FREEBSD.
-* Remove redundant GC_err_printf before abort.
-* Remove unused UTHREAD_SP_OFFSET macro (OpenBSD).
-* Rename subthread_create to subthreadcreate_test (Makefile).
-* Replace GC_COND_LOG_PRINTF calls with WARN for allocation failure messages.
-* Replace GC_log/err_printf() followed by ABORT with ABORT_ARGn().
-* Replace GC_stats_log_printf with GC_DBG/INFOLOG_PRINTF.
-* Replace SIG_SUSPEND/THR_RESTART macros to variables in pthread_stop_world.
-* Replace Win32 GC_delete_gc_thread with GC_delete_gc_thread_no_free.
-* Replace conditional GC_log_printf calls with GC_COND/VERBOSE_LOG_PRINTF.
-* Replace sprintf with defensive snprintf.
-* Replace var-args GC_noop with GC_noop6 (to eliminate Clang warning).
-* Simplify LOCK/UNLOCK macro definition for static code analysis tools.
-* Specify GC_malloc result is unused in some tests.
-* Specify GC_pthread_join result is unused in threadkey_test.
-* Specify LT_INIT in configure.ac.
-* Start of port to QNX.
-* Support rthreads introduced in OpenBSD 5.2+.
-* Suppress 'GC_dont_gc deprecated' warning in gc.h if GC_DONT_GC.
-* Tag GC malloc routines with alloc_size attribute for Clang 3.2+.
-* Test NO_WRAP_MARK_SOME macro to suppress WRAP_MARK_SOME-specific code.
-* Turn off GC_LOOP_ON_ABORT functionality if GC compiled with NO_DEBUGGING.
-* Turn on world-stop delay logging at debug level by default for Android.
-* Use EXPECT in GC_COND/VERBOSE_LOG_PRINTF.
-* Use GC_log_printf for logging instead of GC_[err_]printf.
-* Use compiler TLS for Android NDK gcc/arm.
-* Use memcpy (BCOPY) instead of strcpy (to suppress GCC warning).
-* Use pthread API to operate thread-local data on Linux if no compiler TLS.
-* Workaround 'ELF_DATA/EM_ALPHA redefined' warning in Android linker.h.
-* Workaround 'unresolved __tls_get_addr' error for Android NDK Clang.
-Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes.
+* Add 'bytes reclaimed' counters to public GC_prof_stats_s
+* Add AArch64 (64-bit ARM) target support
+* Add GC_LONG_REFS_NOT_NEEDED ifdefs to exclude long link functionality
+* Add GC_get_prof_stats[_unsafe]() to GC public API
+* Add GC_push_all/conditional() to GC public API
+* Add assertion on number_of_objs to GC_extend_size_map
+* Add assertion to GC_enable() ensuring no counter underflow
+* Add assertion to LOCK definition that lock is not already held
+* Add assertion to LONG_MULT and remove useless assert in PUSH_CONTENTS_HDR
+* Add double-lock assertion to GC_acquire_mark_lock
+* Add manual POSIX fork handling support (Android)
+* Add note about 'pkg-config' solving problem with autoconf 2.68 or older
+* Add public GC_set/get_abort_func to replace default GC_on_abort
+* Add public GC_start_mark_threads() to allow parallel marker in fork child
+* Add public setter and getter for GC_push_other_roots
+* Add support of Android logger
+* Add tests for GC_register/move/unregister_long_link
+* Add thread suspend/resume signals public setters (POSIX threads)
+* Added long weakref support
+* Adjust GC_dont_expand/gc/precollect and GC_print_stats type to match gc.h
+* Adjust README.md title and references to doc .html files in it
+* Adjust build scripts to enable additional test library in staticrootstest
+* Adjust logged messages in start_mark_threads and GC_thr_init
+* Adjust printf format specifiers in GC_print_trace
+* Allow not to rely on __data_start value (Linux)
+* Allow pthread_kill error code logging in GC_suspend/resume (debugging)
+* Allow to compile GC_inner_start_routine aside from extra/gc.c
+* Allow to omit libc atexit() call
+* Avoid LOCK/UNLOCK hard-coding in gc_locks.h for PS3 target
+* Better document GC_warn_proc in gc.h
+* Call GC_on_abort (with NULL argument) on exit(1)
+* Call GC_stats/verbose_log_printf instead of GC_log_printf if print_stats
+* Change policy regarding version numbers ("micro" part instead of "alpha")
+* Changed C99-style designated init of GC_dl_hashtbl struct to use C89-style
+* Check GC_base result in GC_print_all_smashed_proc
+* Check that SIG_SUSPEND and SIG_THR_RESTART are different (Pthreads)
+* Check traceable_allocator.allocate result before dereference in test_cpp
+* Code refactoring of GC_x_printf (move shared code to macro)
+* Convert readme to markdown
+* Default to use libc_stack_end in single-threaded GC on glibc targets
+* Define GC_VSNPRINTF internal macro in misc.c (code refactoring)
+* Define functions in darwin_semaphore.h as inline instead of static
+* Define old_bus_handler static variable only if used (Unix)
+* Detect dladdr() presence by configure
+* Disable find-leak GC_gcollect on GC abnormal EXIT
+* Do not define _setjmp/_longjmp macros in mach_dep.c
+* Do not duplicate android_log_write output to GC log file (Android)
+* Do not include sigcontext.h if NO_SIGCONTEXT_H (Linux)
+* Do not set GC_lock_holder by call_with_alloc_lock if assertions disabled
+* Do not use pthread_getattr_np if NO_PTHREAD_GETATTR_NP specified
+* Elaborate comment on dependencies in autogen.sh
+* Eliminate 'cast from int to pointer' warning in GC_exclude_static_roots
+* Eliminate 'missing exception specification' warning in gc_cpp.cc (Clang)
+* Eliminate 'uninitialized variable use' warning in test_printf (cord)
+* Eliminate 'unused result' compiler warning in main() of test_cpp
+* Eliminate 'unused value' compiler warning in GC_stop_world (Pthreads)
+* Eliminate 'unused variable' compiler warning in start_mark_threads (HP/UX)
+* Eliminate Clang warning for GC_pthread_exit attribute
+* Eliminate GCC warning about uninitialized 'hhdr' in GC_allochblk_nth
+* Eliminate GCC warning in GC_get_main_stack_base (OpenBSD)
+* Eliminate GCC warnings in setjmp_t.c, test_cpp and cord 'de' app
+* Eliminate GC_first_nonempty atomic value reload in GC_mark_local assertion
+* Eliminate SIGBUS-related dead code in GC_write_fault_handler (Linux)
+* Eliminate warning and simplify expression in GC_init_explicit_typing
+* Enable 'force GC at every GC_malloc' debug-related functionality
+* Enable on-demand debug logging in GC_FindTopOfStack (Darwin)
+* Enable prefetch operations by default (GCC 3.0+)
+* Enable staticrootstest for the case of GC shared library build
+* Enable thread-local allocation support for Clang on Cygwin
+* Explicitly specify that Darwin, Linux and Solaris platforms have dladdr
+* Fix ABORT definition for mingw32ce (WinCE)
+* Fix AM_CONFIG_HEADER in configure for autoconf-2.69-1
+* Fix GC_CreateThread and GC_beginthreadex definition for Cygwin
+* Fix GC_INIT_CONF_ROOTS in gc.h for Android
+* Fix GC_INLINE definition to comply with ISO C90 standard (GCC)
+* Fix GC_remove_all_threads_but_me for Android (fork support)
+* Fix debug_register_displacement calls from GC_debug_generic_malloc_inner
+* Fix dyn_load.c compilation for Android 4.3
+* Fix make disclaim_test to link with new GNU ld linking rules
+* Improve GC error printing atomicity in GC_debug_X and GC_print_obj
+* Improve GC output atomicity in GC_print_obj, GC_print_all_errors
+* Improve debug-only messages of add/remove_roots and init_linux_data_start
+* Improve fork test logging in gctest
+* Improve logged messages about heap size and usage
+* Improve logging for Android differentiating messages by log level
+* Improve staticrootstest (add global data to library, add lib w/o GC_INIT)
+* Improve staticrootstest checks (tests)
+* Include "config.h" instead of "private/config.h" on HAVE_CONFIG_H
+* Include proper header file in 'tools' for configuration macros
+* Include pthread_np.h from pthread_stop_world.c on OpenBSD
+* Log error messages to stderr instead of stdout in tests
+* Make GC_generic_malloc_ignore_off_page() public
+* Make GC_mark_lock_holder variable static
+* Make GC_print_trace always thread-safe and remove 'lock' argument
+* Mark GC_started_thread_while_stopped() as GC_INNER
+* Minimize code duplication in GC_mark_and_push
+* Move 'include setjmp.h' from mach_dep.c to gc_priv.h
+* Move GC_OPENBSD_UTHREADS definition to private/gcconfig.h (OpenBSD)
+* Move GC_get_suspend/thr_restart_signal to misc.c for NaCl and OpenBSD
+* Move LOCK/UNLOCK from GC_unregister_disappearing_link_inner outer
+* Port BDWGC to Android/x86
+* Postpone the suspend signal in GC_dirty_init only if used to stop world
+* Prepend '#' symbol to GC number in logged messages
+* Prevent POSIX fork if mprotect_thread is started (Darwin)
+* Prevent abort on GC_err/warn_printf write failure
+* Prevent misleading AC_MSG_ERROR/AS_IF errors reported in configure.ac
+* Put gc_cpp symbols into 'boehmgc' namespace if GC_NAMESPACE defined
+* Recognize GC_DONT_GC macro in gc.h (causes GC_INIT to turn off GC)
+* Recognize GC_SIG_SUSPEND and GC_SIG_THR_RESTART tuning macros in gc.h
+* Redirect WRITE to __android_log_write if GC_ANDROID_LOG (Android)
+* Refine comment of GC_is_heap_ptr and GC_thread_is_registered in gc.h
+* Register dynamic libraries via dl_iterate_phdr on Android and OpenBSD
+* Remove DebugBreak on WriteFile failure (Win32)
+* Remove GC_BUILD definition from build scripts
+* Remove abort on open log failure from GC_write (Win32)
+* Remove configure.ac outdated revision number
+* Remove nested EXPECT in GC_core_finalized_malloc
+* Remove nested always-false ifdef for HPUX and FREEBSD
+* Remove redundant GC_err_printf before abort
+* Remove unused UTHREAD_SP_OFFSET macro (OpenBSD)
+* Rename subthread_create to subthreadcreate_test (Makefile)
+* Replace GC_COND_LOG_PRINTF calls with WARN for allocation failure messages
+* Replace GC_log/err_printf() followed by ABORT with ABORT_ARGn()
+* Replace GC_stats_log_printf with GC_DBG/INFOLOG_PRINTF
+* Replace SIG_SUSPEND/THR_RESTART macros to variables in pthread_stop_world
+* Replace Win32 GC_delete_gc_thread with GC_delete_gc_thread_no_free
+* Replace conditional GC_log_printf calls with GC_COND/VERBOSE_LOG_PRINTF
+* Replace sprintf with defensive snprintf
+* Replace var-args GC_noop with GC_noop6 (to eliminate Clang warning)
+* Simplify LOCK/UNLOCK macro definition for static code analysis tools
+* Specify GC_malloc result is unused in some tests
+* Specify GC_pthread_join result is unused in threadkey_test
+* Specify LT_INIT in configure.ac
+* Start of port to QNX
+* Support rthreads introduced in OpenBSD 5.2+
+* Suppress 'GC_dont_gc deprecated' warning in gc.h if GC_DONT_GC
+* Tag GC malloc routines with alloc_size attribute for Clang 3.2+
+* Test NO_WRAP_MARK_SOME macro to suppress WRAP_MARK_SOME-specific code
+* Turn off GC_LOOP_ON_ABORT functionality if GC compiled with NO_DEBUGGING
+* Turn on world-stop delay logging at debug level by default for Android
+* Use EXPECT in GC_COND/VERBOSE_LOG_PRINTF
+* Use GC_log_printf for logging instead of GC_[err_]printf
+* Use compiler TLS for Android NDK gcc/arm
+* Use memcpy (BCOPY) instead of strcpy (to suppress GCC warning)
+* Use pthread API to operate thread-local data on Linux if no compiler TLS
+* Workaround 'ELF_DATA/EM_ALPHA redefined' warning in Android linker.h
+* Workaround 'unresolved __tls_get_addr' error for Android NDK Clang
+Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 
 
 == [7.3alpha2] 2012-05-11 ==
 
-* Add 'const' qualifier to pointer argument of some API functions.
-* Add GC_UNDERSCORE_STDCALL, UNICODE macro templates to configure (Win32).
-* Add GC_get_thr_restart_signal, GC_thread_is_registered to GC API.
-* Add GC_is_heap_ptr, GC_move_disappearing_link to GC API.
-* Add SHORT_DBG_HDRS macro template to configure.
-* Add Symbian port to mainline (porting done by Djamel Magri).
-* Add TODO file.
-* Add assertion ensuring proper alignment of 'pushed' GC symbols.
-* Add assertion in GC_getspecific on qtid.
-* Add assertion to GC_incremental_protection_needs, refine documentation.
-* Add assertion to check GC_large_free_bytes by GC_finish_collection.
-* Add configure option to compile all library .c files into single gc.o.
-* Add cordtest to make check.
-* Add disclaim callbacks for efficient finalization (ENABLE_DISCLAIM).
-* Add finalization.html to 'doc' folder.
-* Add javaxfc.h to the installation set of GC header files (configure).
-* Add on-heap-resize event notification to API.
-* Adjust GC_log_printf format specifiers (regarding signed/unsigned long).
-* Adjust GC_requested_heapsize on GC_init if GC_INITIAL_HEAP_SIZE given.
-* Allow GC_exclude_static_roots() region start to be unaligned.
-* Allow Win32 DllMain chaining on the client side.
-* Allow to exclude finalization support by GC_NO_FINALIZATION macro.
-* Allow to get memory via Win32 VirtualAlloc (USE_WINALLOC) on Cygwin.
-* Avoid unnecessary GC_find_limit invocation if GC_no_dls.
-* Avoid use of deprecated GC_dont_gc and GC_stackbottom in gctest.
-* Cast pointers to word (instead of unsigned long) in specific.h.
-* Changed the order in autogen.sh so ltmain exists in time for automake.
-* Declare privately and use handy GC_base_C() for constant object pointers.
-* Define GC_DLL if DLL_EXPORT at GC build (for Cygwin/MinGW).
-* Define GC_READ_ENV_FILE in configure for WinCE unless gc-debug is off.
-* Do not compile backgraph.c unless configure '--enable-gc-debug'.
-* Do not compile pthread_stop_world.c for Cygwin/Darwin (configure).
-* Do not install ancient new_gc_alloc.h broken for modern STL (configure).
-* Enable GC_MIN_MARKERS to set minimal number of pthread-based markers.
-* Enable PARALLEL_MARK and THREAD_LOCAL_ALLOC for FreeBSD in configure.
-* Enable parallel mark by default in configure (Darwin/Linux/Solaris/Win32).
-* Export GC_is_marked, GC_clear/set_mark_bit (for mark-bit manipulation).
-* Extend thread-related debug messages.
-* Fix 'configure --enable-cplusplus' for Cygwin/MinGW.
-* Fix DATASTART (and other minor improvements) for NaCl target.
-* Fix GC_setspecific to prevent garbage collection inside.
-* Fix compiler warning in cordtest.
-* Fix minor warnings reported by GCC with '-pedantic' option.
-* Fix static data roots registration on Android (if GC is shared).
-* Implement GC_get_stack_base for Darwin for single-threaded mode.
-* Improve GC_allochblk algorithm of block splitting when unmapping enabled.
-* Improve GC_collect_or_expand algorithm for many finalizers registered case.
-* In tests, print a message in case a test is a no-op.
-* Instruct configure to hide internal libgc.so symbols if supported by GCC.
-* Log amount of unmapped memory (if enabled) on marking-for-collection.
-* Make __data_start a weak symbol to allow loading modules on mips.
-* Move "cord" library tests to "cord/tests" folder.
-* Move asm machine-dependent files to "src" folder.
-* Move build tools sources to "tools" folder.
-* Move cord_pos.h to public headers folder.
-* Open log file in APPEND mode on Win32 (similar that on Unix/Cygwin).
-* Optimize some functions by moving pthread_self calls out of LOCK section.
-* Place only major per-release changes description to ChangeLog (this file).
-* Prevent compiler warnings in GC_FindTopOfStack and GC_ports (Darwin).
-* Recognize GC_LOG_TO_FILE_ALWAYS macro to log to 'gc.log' by default.
-* Remove all auto-generated files from the repo.
-* Remove binary icon file for de_win.
-* Remove cordtest from "cord" library.
-* Remove duplicate MacOS_Test_config.h file.
-* Remove gc_amiga_redirects.h (included internally) from public headers.
-* Remove obsolete Makefile.DLL (superseded by Cygwin/MinGW configure).
-* Remove obsolete unused asm files for ALPHA, HPUX, SGI, RS6000, ULTRIX.
-* Remove unsupported MMAP_STACKS (specific to Solaris threads).
-* Remove unused ancient SILENT, __STDC__, NO_SIGNALS macros.
-* Replace ARGSUSED comment-based annotation with GCC 'unused' attribute.
-* Replace GC_ms_entry declaration with opaque definition for public API.
-* Replace long GC_markers global variable with int GC_markers_m1.
-* Replace pointer relational comparisons with non-pointer ones.
-* Replace printf PRIxMAX specifier with '%p' for thread id debug output.
-* Require autoconf 2.61 instead of v2.64.
-* Simplify autogen.sh (use autoreconf).
-* Split GC_abort with GC_on_abort and abort() invoked from ABORT.
-* Support GC_ATTR_MALLOC for MS VisualStudio.
-* Tag auxiliary malloc-like API functions with 'malloc' attribute.
-* Tag deprecated variables in GC API.
-* Tag must-be-non-null arguments of GC API functions.
-* Turn on "extra" GCC warnings.
-* Turn on unused-parameter checking for GCC.
-* Update AUTHORS file.
-* Use EXPECT for checking various 'initialized' boolean variables.
-* Use USE_COMPILER_TLS on Cygwin.
-* Use pthread_key for thread-local storage on FreeBSD.
-* Use union of AO_t and word to favor strict-aliasing compiler optimization.
-Also, includes 7.2 changes.
+* Add 'const' qualifier to pointer argument of some API functions
+* Add GC_UNDERSCORE_STDCALL, UNICODE macro templates to configure (Win32)
+* Add GC_get_thr_restart_signal, GC_thread_is_registered to GC API
+* Add GC_is_heap_ptr, GC_move_disappearing_link to GC API
+* Add SHORT_DBG_HDRS macro template to configure
+* Add Symbian port to mainline (porting done by Djamel Magri)
+* Add TODO file
+* Add assertion ensuring proper alignment of 'pushed' GC symbols
+* Add assertion in GC_getspecific on qtid
+* Add assertion to GC_incremental_protection_needs, refine documentation
+* Add assertion to check GC_large_free_bytes by GC_finish_collection
+* Add configure option to compile all library .c files into single gc.o
+* Add cordtest to make check
+* Add disclaim callbacks for efficient finalization (ENABLE_DISCLAIM)
+* Add finalization.html to 'doc' folder
+* Add javaxfc.h to the installation set of GC header files (configure)
+* Add on-heap-resize event notification to API
+* Adjust GC_log_printf format specifiers (regarding signed/unsigned long)
+* Adjust GC_requested_heapsize on GC_init if GC_INITIAL_HEAP_SIZE given
+* Allow GC_exclude_static_roots() region start to be unaligned
+* Allow Win32 DllMain chaining on the client side
+* Allow to exclude finalization support by GC_NO_FINALIZATION macro
+* Allow to get memory via Win32 VirtualAlloc (USE_WINALLOC) on Cygwin
+* Avoid unnecessary GC_find_limit invocation if GC_no_dls
+* Avoid use of deprecated GC_dont_gc and GC_stackbottom in gctest
+* Cast pointers to word (instead of unsigned long) in specific.h
+* Changed the order in autogen.sh so ltmain exists in time for automake
+* Declare privately and use handy GC_base_C() for constant object pointers
+* Define GC_DLL if DLL_EXPORT at GC build (for Cygwin/MinGW)
+* Define GC_READ_ENV_FILE in configure for WinCE unless gc-debug is off
+* Do not compile backgraph.c unless configure '--enable-gc-debug'
+* Do not compile pthread_stop_world.c for Cygwin/Darwin (configure)
+* Do not install ancient new_gc_alloc.h broken for modern STL (configure)
+* Enable GC_MIN_MARKERS to set minimal number of pthread-based markers
+* Enable PARALLEL_MARK and THREAD_LOCAL_ALLOC for FreeBSD in configure
+* Enable parallel mark by default in configure (Darwin/Linux/Solaris/Win32)
+* Export GC_is_marked, GC_clear/set_mark_bit (for mark-bit manipulation)
+* Extend thread-related debug messages
+* Fix 'configure --enable-cplusplus' for Cygwin/MinGW
+* Fix DATASTART (and other minor improvements) for NaCl target
+* Fix GC_setspecific to prevent garbage collection inside
+* Fix compiler warning in cordtest
+* Fix minor warnings reported by GCC with '-pedantic' option
+* Fix static data roots registration on Android (if GC is shared)
+* Implement GC_get_stack_base for Darwin for single-threaded mode
+* Improve GC_allochblk algorithm of block splitting when unmapping enabled
+* Improve GC_collect_or_expand algorithm for many finalizers registered case
+* In tests, print a message in case a test is a no-op
+* Instruct configure to hide internal libgc.so symbols if supported by GCC
+* Log amount of unmapped memory (if enabled) on marking-for-collection
+* Make __data_start a weak symbol to allow loading modules on mips
+* Move "cord" library tests to "cord/tests" folder
+* Move asm machine-dependent files to "src" folder
+* Move build tools sources to "tools" folder
+* Move cord_pos.h to public headers folder
+* Open log file in APPEND mode on Win32 (similar that on Unix/Cygwin)
+* Optimize some functions by moving pthread_self calls out of LOCK section
+* Place only major per-release changes description to ChangeLog (this file)
+* Prevent compiler warnings in GC_FindTopOfStack and GC_ports (Darwin)
+* Recognize GC_LOG_TO_FILE_ALWAYS macro to log to 'gc.log' by default
+* Remove all auto-generated files from the repo
+* Remove binary icon file for de_win
+* Remove cordtest from "cord" library
+* Remove duplicate MacOS_Test_config.h file
+* Remove gc_amiga_redirects.h (included internally) from public headers
+* Remove obsolete Makefile.DLL (superseded by Cygwin/MinGW configure)
+* Remove obsolete unused asm files for ALPHA, HPUX, SGI, RS6000, ULTRIX
+* Remove unsupported MMAP_STACKS (specific to Solaris threads)
+* Remove unused ancient SILENT, __STDC__, NO_SIGNALS macros
+* Replace ARGSUSED comment-based annotation with GCC 'unused' attribute
+* Replace GC_ms_entry declaration with opaque definition for public API
+* Replace long GC_markers global variable with int GC_markers_m1
+* Replace pointer relational comparisons with non-pointer ones
+* Replace printf PRIxMAX specifier with '%p' for thread id debug output
+* Require autoconf 2.61 instead of v2.64
+* Simplify autogen.sh (use autoreconf)
+* Split GC_abort with GC_on_abort and abort() invoked from ABORT
+* Support GC_ATTR_MALLOC for MS VisualStudio
+* Tag auxiliary malloc-like API functions with 'malloc' attribute
+* Tag deprecated variables in GC API
+* Tag must-be-non-null arguments of GC API functions
+* Turn on "extra" GCC warnings
+* Turn on unused-parameter checking for GCC
+* Update AUTHORS file
+* Use EXPECT for checking various 'initialized' boolean variables
+* Use USE_COMPILER_TLS on Cygwin
+* Use pthread_key for thread-local storage on FreeBSD
+* Use union of AO_t and word to favor strict-aliasing compiler optimization
+Also, includes 7.2 changes
 
 
 == [7.2h] (unset) ==
 
-* Add gctest as a test (CMake).
-* Change no-argument functions declaration style to ANSI C (extra files).
-* Do not allow SHORT_DBG_HDRS if KEEP_BACK_PTRS or MAKE_BACK_GRAPH.
-* Ensure oom_fn callback executed on out-of-memory in calloc.
-* Fix '~' operator application to unsigned values shorter than word.
-* Fix 'context local variable might be clobbered by setjmp' compiler warning.
-* Fix 'shift count >= width of type' compiler warning in GC_SQRT_SIZE_MAX.
-* Fix assertion in GC_mark_from for non-heap regions.
-* Fix assertion in GC_steal_mark_stack for non-heap regions.
-* Fix assertion violation in GC_repeat_read if --enable-redirect-malloc.
-* Fix assertion violation in GC_wait_builder called from start_mark_threads.
-* Fix assertion violation in mark_local checking GC_mark_stack_top.
-* Fix bm_huge initialization for 64-bit targets (gctest).
-* Fix calloc_explicitly_typed in case of lb*n overflow.
-* Fix conditional expression in pos_fetch, next non-macro definitions (cord).
-* Fix CORD_substr_closure for the case when CORD_from_fn returns C string.
-* Fix double multiplication of lb by n in calloc_explicitly_typed.
-* Fix enable_parallel_mark condition in CMake script.
-* Fix gc_allocator.h file name in new_gc_alloc.h comment.
-* Fix gc_backptr.h, gc_mark.h, GC_DS_TAGS names in documentation.
-* Fix gc_cleanup destructor for non-heap objects (gc_cpp).
-* Fix GC_collect_or_expand to prevent allocation size value wrap-around.
-* Fix GC_mark_stack_top assertion violation properly in mark_local.
-* Fix GC_requested_heapsize increment in GC_init.
-* Fix GCJ support in CMake build script.
-* Fix header filename in gcconfig.h comment.
-* Fix integer shift undefined behavior in GC_init_explicit_typing.
-* Fix Makefile.direct recursive invocation.
-* Fix malloc routines to prevent size value wrap-around (fix CVE-2016-9427).
-* Fix MS VC warning about compiling unused checksums and thread_local_alloc.
-* Fix potential data race in GC_SysVGetDataStart (SPARC).
-* Fix potential integer overflow in GC_find_limit_* functions.
-* Fix Solaris/sparc detection in case of strict C compliance is enforced.
-* Fix STACKBOTTOM for Solaris 11/x86.
-* Fix storage class of local variable in register_dynamic_libraries (Irix).
-* Fix typo in comment of GC_lock (Win32).
-* Fix typos in GC_build_fl_clear2, GC_SysVGetDataStart, GET_MEM comment.
-* Fix various typos in comments and documentation.
-* Handle load_segs overflow in register_dynlib_callback gracefully.
-* Replace (fix) 'objs' acronym in comments with 'objects' word.
-* Revert "Skip GC_DS_PER_OBJECT objs with negative descriptor in GC_mark_from".
-* Workaround a bug in winpthreads causing parallel marks deadlock (MinGW).
-* Workaround missing getcontext() in Docker osrf/ubuntu_32bit.
+* Add gctest as a test (CMake)
+* Change no-argument functions declaration style to ANSI C (extra files)
+* Do not allow SHORT_DBG_HDRS if KEEP_BACK_PTRS or MAKE_BACK_GRAPH
+* Ensure oom_fn callback executed on out-of-memory in calloc
+* Fix '~' operator application to unsigned values shorter than word
+* Fix 'context local variable might be clobbered by setjmp' compiler warning
+* Fix 'shift count >= width of type' compiler warning in GC_SQRT_SIZE_MAX
+* Fix assertion in GC_mark_from for non-heap regions
+* Fix assertion in GC_steal_mark_stack for non-heap regions
+* Fix assertion violation in GC_repeat_read if --enable-redirect-malloc
+* Fix assertion violation in GC_wait_builder called from start_mark_threads
+* Fix assertion violation in mark_local checking GC_mark_stack_top
+* Fix bm_huge initialization for 64-bit targets (gctest)
+* Fix calloc_explicitly_typed in case of lb*n overflow
+* Fix conditional expression in pos_fetch, next non-macro definitions (cord)
+* Fix CORD_substr_closure for the case when CORD_from_fn returns C string
+* Fix double multiplication of lb by n in calloc_explicitly_typed
+* Fix enable_parallel_mark condition in CMake script
+* Fix gc_allocator.h file name in new_gc_alloc.h comment
+* Fix gc_backptr.h, gc_mark.h, GC_DS_TAGS names in documentation
+* Fix gc_cleanup destructor for non-heap objects (gc_cpp)
+* Fix GC_collect_or_expand to prevent allocation size value wrap-around
+* Fix GC_mark_stack_top assertion violation properly in mark_local
+* Fix GC_requested_heapsize increment in GC_init
+* Fix GCJ support in CMake build script
+* Fix header filename in gcconfig.h comment
+* Fix integer shift undefined behavior in GC_init_explicit_typing
+* Fix Makefile.direct recursive invocation
+* Fix malloc routines to prevent size value wrap-around (fix CVE-2016-9427)
+* Fix MS VC warning about compiling unused checksums and thread_local_alloc
+* Fix potential data race in GC_SysVGetDataStart (SPARC)
+* Fix potential integer overflow in GC_find_limit_* functions
+* Fix Solaris/sparc detection in case of strict C compliance is enforced
+* Fix STACKBOTTOM for Solaris 11/x86
+* Fix storage class of local variable in register_dynamic_libraries (Irix)
+* Fix typo in comment of GC_lock (Win32)
+* Fix typos in GC_build_fl_clear2, GC_SysVGetDataStart, GET_MEM comment
+* Fix various typos in comments and documentation
+* Handle load_segs overflow in register_dynlib_callback gracefully
+* Replace (fix) 'objs' acronym in comments with 'objects' word
+* Revert "Skip GC_DS_PER_OBJECT objs with negative descriptor in GC_mark_from"
+* Workaround a bug in winpthreads causing parallel marks deadlock (MinGW)
+* Workaround missing getcontext() in Docker osrf/ubuntu_32bit
 
 
 == [7.2g] 2016-05-23 ==
 
-* Fix 'illegal option -xassembler-with-cpp' error (Oracle SunCC).
-* Fix 'implicit declaration of function' compiler warnings in cord/de.
-* Fix CFLAGS in configure regarding -O flag passing to SunCC compiler.
-* Fix FirstDLOpenedLinkMap for case libgc not 1st dynamically linked (NetBSD).
-* Fix GC initialization in cord de_win for Cygwin.
-* Fix GC_get_stack_base if called before GC_init (Win32).
-* Fix OSX issue with pthread_attr_setstacksize failure.
-* Fix Unicode Win32 API calls in cord de_win.
-* Fix USE_COMPILER_TLS macro duplicate description in README.
-* Fix cord de_win WndProc prototype parameters for 64-bit (Win64).
-* Fix file descriptor resource leak in GC_register_data_segments (OS/2).
-* Fix filename printing in cordtest.
-* Fix missing cord_pos.h, ec.h among installed headers (Automake).
-* Fix missing GC_get_stack_base for Amiga.
-* Fix missing msvc_dbg.h in dist_noinst_HEADERS (Automake).
-* Fix mistyped ARM_THREAD_STATE macro (Darwin/arm).
-* Fix null-pointer dereferences on out-of-memory in cord and tests.
-* Fix potential multiplication overflow in check_heap_stats (gctest).
-* Fix race (and potential deadlock) at marker threads initialization.
-* Fix signedness of char values passed to isspace, iscntrl, isxdigit.
-* Fix typo (items numbering) in GC_finalize_all documentation.
-* Fix typos in ERROR_FL, GC_malloc_uncollectable comments.
-* Fix typos in gc_priv.h, in README for ews4800.
-* Fix unresolved vsnprintf in misc.c and snprintf in cordtest (DJGPP, VC).
-* Fix various spelling errors.
-* Fix vsprintf_args initialization/cleanup in CORD_vsprintf for EMX.
-* Regenerate configure files using official libtool release (v2.4.2).
-* Remove documentation about obsolete GC_REDIRECT_TO_LOCAL.
-* Skip GC_DS_PER_OBJECT objects with negative descriptor in GC_mark_from.
-* windows-untested: Fix paths to msvc_dbg.c/h.
+* Fix 'illegal option -xassembler-with-cpp' error (Oracle SunCC)
+* Fix 'implicit declaration of function' compiler warnings in cord/de
+* Fix CFLAGS in configure regarding -O flag passing to SunCC compiler
+* Fix FirstDLOpenedLinkMap for case libgc not 1st dynamically linked (NetBSD)
+* Fix GC initialization in cord de_win for Cygwin
+* Fix GC_get_stack_base if called before GC_init (Win32)
+* Fix OSX issue with pthread_attr_setstacksize failure
+* Fix Unicode Win32 API calls in cord de_win
+* Fix USE_COMPILER_TLS macro duplicate description in README
+* Fix cord de_win WndProc prototype parameters for 64-bit (Win64)
+* Fix file descriptor resource leak in GC_register_data_segments (OS/2)
+* Fix filename printing in cordtest
+* Fix missing cord_pos.h, ec.h among installed headers (Automake)
+* Fix missing GC_get_stack_base for Amiga
+* Fix missing msvc_dbg.h in dist_noinst_HEADERS (Automake)
+* Fix mistyped ARM_THREAD_STATE macro (Darwin/arm)
+* Fix null-pointer dereferences on out-of-memory in cord and tests
+* Fix potential multiplication overflow in check_heap_stats (gctest)
+* Fix race (and potential deadlock) at marker threads initialization
+* Fix signedness of char values passed to isspace, iscntrl, isxdigit
+* Fix typo (items numbering) in GC_finalize_all documentation
+* Fix typos in ERROR_FL, GC_malloc_uncollectable comments
+* Fix typos in gc_priv.h, in README for ews4800
+* Fix unresolved vsnprintf in misc.c and snprintf in cordtest (DJGPP, VC)
+* Fix various spelling errors
+* Fix vsprintf_args initialization/cleanup in CORD_vsprintf for EMX
+* Regenerate configure files using official libtool release (v2.4.2)
+* Remove documentation about obsolete GC_REDIRECT_TO_LOCAL
+* Skip GC_DS_PER_OBJECT objects with negative descriptor in GC_mark_from
+* windows-untested: Fix paths to msvc_dbg.c/h
 
 
 == [7.2f] 2014-06-03 ==
 
-* Fix 'Bad signal in suspend_handler' abort on FreeBSD-9.2.
-* Fix 'source file in a subdirectory' Automake warnings.
-* Fix ABORT message in GC_restart_handler.
-* Fix ADD_DEFINITION in CMakeLists.txt for kFreeBSD.
-* Fix CMakeLists.txt: do not override CMAKE_OSX_ARCHITECTURES.
-* Fix GC_alloc_large by bumping GC_collect_at_heapsize in GC_add_to_heap.
-* Fix GC_scratch_last_end_ptr update on GC_scratch_alloc failure.
-* Fix GET_MEM argument rounding in GC_scratch_alloc and similar.
-* Fix PARALLEL_MARK for Windows 7+.
-* Fix build (broken by fenv.h inclusion) on Linux/x86_64 under uClibc.
-* Fix crash when using GC_malloc_many() as first allocation call.
-* Fix mark stack excessive growth during parallel mark.
-* Fix or remove broken URLs in documentation.
-* Fix out-of-memory case in new_back_edges, push_in_progress (backgraph).
-* Fix typo in GC_collect_or_expand comment.
-* Fix typos in GC overview file, gc_config_macros.h, gc_cpp.h, README.changes.
-* Regenerate configure files by automake 1.14.1, libtool 2.4.2.418.
-* Update emails/links due to project site and ML transition.
+* Fix 'Bad signal in suspend_handler' abort on FreeBSD-9.2
+* Fix 'source file in a subdirectory' Automake warnings
+* Fix ABORT message in GC_restart_handler
+* Fix ADD_DEFINITION in CMakeLists.txt for kFreeBSD
+* Fix CMakeLists.txt: do not override CMAKE_OSX_ARCHITECTURES
+* Fix GC_alloc_large by bumping GC_collect_at_heapsize in GC_add_to_heap
+* Fix GC_scratch_last_end_ptr update on GC_scratch_alloc failure
+* Fix GET_MEM argument rounding in GC_scratch_alloc and similar
+* Fix PARALLEL_MARK for Windows 7+
+* Fix build (broken by fenv.h inclusion) on Linux/x86_64 under uClibc
+* Fix crash when using GC_malloc_many() as first allocation call
+* Fix mark stack excessive growth during parallel mark
+* Fix or remove broken URLs in documentation
+* Fix out-of-memory case in new_back_edges, push_in_progress (backgraph)
+* Fix typo in GC_collect_or_expand comment
+* Fix typos in GC overview file, gc_config_macros.h, gc_cpp.h, README.changes
+* Regenerate configure files by automake 1.14.1, libtool 2.4.2.418
+* Update emails/links due to project site and ML transition
 
 
 == [7.2e] 2013-11-10 ==
 
-* Add weak attribute to avoid __data_start undefined messages (s390x).
-* Add weak stubs for pthread_cancel API.
-* Adjust 'pthread_[un]register_cancel undefined ref' workaround (Pthreads).
-* Append _test suffix to 'initsecondarythread' binary file names.
-* Enable PARALLEL_MARK and THREAD_LOCAL_ALLOC for FreeBSD in configure.
-* Fix 'stack section' pointer passed to push_all_stack_sections (Pthreads).
-* Fix GC_CreateThread 'dwStackSize' argument type for Win64.
-* Fix GC_PTHREAD_PTRVAL definition for GC_PTHREADS_PARAMARK (Win32).
-* Fix GC_clear_stack by declaring 'dummy' local array as volatile.
-* Fix GC_get_stack_base assembly code (Cygwin/Clang).
-* Fix GC_malloc_explicitly_typed_ignore_off_page for large allocations.
-* Fix GC_marker_Id elements initialization (WinCE).
-* Fix GC_print_trace missing unlock.
-* Fix GC_unix_mmap_get_mem for open of /dev/zero failure.
-* Fix GC_win32_free_heap compilation error for Cygwin.
-* Fix GC_win32_free_heap to prevent memory leak if USE_GLOBAL_ALLOC.
-* Fix Win32 GC_write preventing potential infinite recursion at abort.
-* Fix assertion violation in GC_mark_from prefetch loop.
-* Fix collection of objects referenced only from GC_mark_stack_X variables.
-* Fix dwSize argument of VirtualFree call in detect_GetWriteWatch (Win32).
-* Fix heap sections overflow for Win32/Cygwin with enabled parallel marker.
-* Fix min_bytes_allocd preventing potential infinite loop in GC_allocobj.
-* Fix missing tabs in SMakefile.amiga file.
-* Fix null-pointer dereference in CORD_substr_closure.
-* Fix old_segv/bus_act variables initialization for FreeBSD.
-* Fix potential double fclose in test_extras (cordtest).
-* Fix pthread_attr_t resource leak in pthread_create.
-* Fix race in GC_print_all_errors regarding GC_leaked.
-* Fix sizeof in GC_push_thread_structures.
-* Fix stackbottom/stack_end assignment in GC_call_with_gc_active.
-* Fix tests makefile to link with new GNU ld linking rules.
-* Fix typos in comments and documentation.
-* Fix unportable '==' test operators in configure.
-* Fix vsprintf_args cleanup in CORD_vsprintf.
-* Merge FreeBSD New ports collection for boehm-gc v7.2d.
-* Replace GC_DBG_RA with GC_DBG_EXTRAS macro.
-* Replace deprecated [CXX]INCLUDES to AM_C[PP]FLAGS in configure.ac file.
-* Use __builtin_extract_return_addr in GC_RETURN_ADDR_PARENT (gcc/x86).
+* Add weak attribute to avoid __data_start undefined messages (s390x)
+* Add weak stubs for pthread_cancel API
+* Adjust 'pthread_[un]register_cancel undefined ref' workaround (Pthreads)
+* Append _test suffix to 'initsecondarythread' binary file names
+* Enable PARALLEL_MARK and THREAD_LOCAL_ALLOC for FreeBSD in configure
+* Fix 'stack section' pointer passed to push_all_stack_sections (Pthreads)
+* Fix GC_CreateThread 'dwStackSize' argument type for Win64
+* Fix GC_PTHREAD_PTRVAL definition for GC_PTHREADS_PARAMARK (Win32)
+* Fix GC_clear_stack by declaring 'dummy' local array as volatile
+* Fix GC_get_stack_base assembly code (Cygwin/Clang)
+* Fix GC_malloc_explicitly_typed_ignore_off_page for large allocations
+* Fix GC_marker_Id elements initialization (WinCE)
+* Fix GC_print_trace missing unlock
+* Fix GC_unix_mmap_get_mem for open of /dev/zero failure
+* Fix GC_win32_free_heap compilation error for Cygwin
+* Fix GC_win32_free_heap to prevent memory leak if USE_GLOBAL_ALLOC
+* Fix Win32 GC_write preventing potential infinite recursion at abort
+* Fix assertion violation in GC_mark_from prefetch loop
+* Fix collection of objects referenced only from GC_mark_stack_X variables
+* Fix dwSize argument of VirtualFree call in detect_GetWriteWatch (Win32)
+* Fix heap sections overflow for Win32/Cygwin with enabled parallel marker
+* Fix min_bytes_allocd preventing potential infinite loop in GC_allocobj
+* Fix missing tabs in SMakefile.amiga file
+* Fix null-pointer dereference in CORD_substr_closure
+* Fix old_segv/bus_act variables initialization for FreeBSD
+* Fix potential double fclose in test_extras (cordtest)
+* Fix pthread_attr_t resource leak in pthread_create
+* Fix race in GC_print_all_errors regarding GC_leaked
+* Fix sizeof in GC_push_thread_structures
+* Fix stackbottom/stack_end assignment in GC_call_with_gc_active
+* Fix tests makefile to link with new GNU ld linking rules
+* Fix typos in comments and documentation
+* Fix unportable '==' test operators in configure
+* Fix vsprintf_args cleanup in CORD_vsprintf
+* Merge FreeBSD New ports collection for boehm-gc v7.2d
+* Replace GC_DBG_RA with GC_DBG_EXTRAS macro
+* Replace deprecated [CXX]INCLUDES to AM_C[PP]FLAGS in configure.ac file
+* Use __builtin_extract_return_addr in GC_RETURN_ADDR_PARENT (gcc/x86)
 
 
 == [7.2d] 2012-08-09 ==
 
-* Fix GC_call_with_stack_base to prevent its tail-call optimization.
-* Fix all address-of-dummy operations by using GC_approx_sp() instead.
-* Fix stop_info.stack_ptr assignment in GC_suspend_all for OpenBSD.
-* Fix test_cpp (ensure the collector recognizes pointers to interiors).
-* Fix thread-related tests for pthreads-w32.
-* test_cpp: Fix WinMain to prevent SEGV if zero arguments passed (MinGW).
+* Fix GC_call_with_stack_base to prevent its tail-call optimization
+* Fix all address-of-dummy operations by using GC_approx_sp() instead
+* Fix stop_info.stack_ptr assignment in GC_suspend_all for OpenBSD
+* Fix test_cpp (ensure the collector recognizes pointers to interiors)
+* Fix thread-related tests for pthreads-w32
+* test_cpp: Fix WinMain to prevent SEGV if zero arguments passed (MinGW)
 
 
 == [7.2c] 2012-06-11 ==
 
-* Fix CORD_cat_char_star to prevent SEGV in case of out-of-memory.
-* Fix GC_FirstDLOpenedLinkMap() for NetBSD 6 release.
-* Fix GC_scratch_alloc and GC_get_maps invocations to prevent SEGV.
-* Fix visibility of GC_clear/set_mark_bit (unhide symbols).
-* Fix visibility of GC_push_all/conditional, GC_push_other_roots symbols.
+* Fix CORD_cat_char_star to prevent SEGV in case of out-of-memory
+* Fix GC_FirstDLOpenedLinkMap() for NetBSD 6 release
+* Fix GC_scratch_alloc and GC_get_maps invocations to prevent SEGV
+* Fix visibility of GC_clear/set_mark_bit (unhide symbols)
+* Fix visibility of GC_push_all/conditional, GC_push_other_roots symbols
 
 
 == [7.2b] 2012-05-23 ==
 
-* Fix assertion in GC_malloc_[atomic_]uncollectable (THREADS case only).
+* Fix assertion in GC_malloc_[atomic_]uncollectable (THREADS case only)
 
 
 == [7.2] 2012-05-11 ==
 
-* Abort in GC_thr_init on pthread_atfork failure (POSIX threads).
-* Add GC_WIN32_PTHREADS target in configure.
-* Add GC_is_disabled new function to GC API.
-* Add info that getcontext() resets FPE mask no longer on Linux/x86_64.
-* Add public GC_set_handle_fork to control forked child handling support.
-* Add realloc_test.c test.
-* Add support for Hexagon target.
-* Add thread-safe GC_get_heap_usage_safe to GC API.
-* Change GC_check_fl_marks prototype and implementation.
-* Check pthread_create/join result in test.
-* Define GC_DLL (in configure) if building only dynamic libraries.
-* Define NO_DEBUGGING (in configure) if "--disable-gc-debug" is set.
-* Disable incremental mode on Darwin if fork handling requested.
-* Enable parallel marker in configure for Solaris.
-* Fix "comparison of signed and unsigned values" compiler warnings.
-* Fix 'volatile' keyword placement in GC_SysVGetDataStart.
-* Fix ALIGNMENT, CPP_WORDSZ, GC_GRANULE_BYTES/WORDS for x32 target.
-* Fix GC_READ_ENV_FILE code for Cygwin.
-* Fix GC_add_roots_inner for Mac OS X (align segment start).
-* Fix GC_check_fl_marks regarding concurrent access.
-* Fix GC_finalizer_nested size to workaround alignment problem in Watcom.
-* Fix GC_find_limit_with_bound to always reset fault handler on return.
-* Fix GC_init static assertion for clang/x64 (Darwin).
-* Fix GC_init[_lib_bounds] and GC_get_main_stack_base for malloc redirection.
-* Fix GC_push_all/selected boundaries check.
-* Fix GC_register_my_thread marking thread as detached (Cygwin/pthreads-w32).
-* Fix GC_remove_all_threads_but_me to cleanup thread-specific data storage.
-* Fix GC_restart_handler to preserve errno if needed.
-* Fix GC_root_size update in GC_add_roots_inner (Win32).
-* Fix GC_unregister_my_thread to ensure no ongoing incremental GC (Win32).
-* Fix GC_with_callee_saves_pushed for clang (disable __builtin_unwind_init).
-* Fix calloc, GC_generic_malloc to check for allocation size overflows.
-* Fix compiler warning in GC_dyld_image_add/remove (Darwin).
-* Fix configure --enable-cplusplus make install.
-* Fix configure to disable GCC aliasing optimization unless forced to.
-* Fix duplicate definitions in gcconfig.h for NetBSD.
-* Fix fork() support on Cygwin and Darwin targets.
-* Fix gc.h compatibility regression regarding GC_PTR, GC_I_HIDE_POINTERS.
-* Fix gc_cpp.cc for Cygwin (remove duplicate function definition).
-* Fix gcconfig.h to define USE_GET_STACKBASE_FOR_MAIN for Android.
-* Fix gcconfig.h to handle mips64-linux target.
-* Fix gctest (for Win32) to avoid GC_print_stats internal variable usage.
-* Fix mach_dep.c to include sys/ucontext.h on Mac OS X 10.6.
-* Fix tests to check GC_malloc result for NULL (out-of-memory).
-* Fix thread model in configure for MinGW ("win32" instead of "posix").
-* Fix various warnings reported by LINT-like tools.
-* Fix visibility of some GC internal symbols used by GNU GCJ currently.
-* Port some thread tests to Win32.
-* Refine API GC setters and getter comments regarding locking.
-* Refine GC_stackbottom description in gc.h.
-* Remove duplicate calls in GC_register_dynamic_libraries.
-* Remove locking in API GC_get_bytes_since_gc and friends.
-* Remove newly-added GC_get_heap_size/free_bytes_inner from API.
-* Remove some local variables that are unused.
-* Support multi-threading for RTEMS target.
-* Use global GC_noop_sink variable in GC_noop1 to suppress compiler warning.
-* Use pkg-config to pick up libatomic_ops, etc.
-* Workaround some Linux/arm kernels bug to get correct GC_nprocs value.
+* Abort in GC_thr_init on pthread_atfork failure (POSIX threads)
+* Add GC_WIN32_PTHREADS target in configure
+* Add GC_is_disabled new function to GC API
+* Add info that getcontext() resets FPE mask no longer on Linux/x86_64
+* Add public GC_set_handle_fork to control forked child handling support
+* Add realloc_test.c test
+* Add support for Hexagon target
+* Add thread-safe GC_get_heap_usage_safe to GC API
+* Change GC_check_fl_marks prototype and implementation
+* Check pthread_create/join result in test
+* Define GC_DLL (in configure) if building only dynamic libraries
+* Define NO_DEBUGGING (in configure) if "--disable-gc-debug" is set
+* Disable incremental mode on Darwin if fork handling requested
+* Enable parallel marker in configure for Solaris
+* Fix "comparison of signed and unsigned values" compiler warnings
+* Fix 'volatile' keyword placement in GC_SysVGetDataStart
+* Fix ALIGNMENT, CPP_WORDSZ, GC_GRANULE_BYTES/WORDS for x32 target
+* Fix GC_READ_ENV_FILE code for Cygwin
+* Fix GC_add_roots_inner for Mac OS X (align segment start)
+* Fix GC_check_fl_marks regarding concurrent access
+* Fix GC_finalizer_nested size to workaround alignment problem in Watcom
+* Fix GC_find_limit_with_bound to always reset fault handler on return
+* Fix GC_init static assertion for clang/x64 (Darwin)
+* Fix GC_init[_lib_bounds] and GC_get_main_stack_base for malloc redirection
+* Fix GC_push_all/selected boundaries check
+* Fix GC_register_my_thread marking thread as detached (Cygwin/pthreads-w32)
+* Fix GC_remove_all_threads_but_me to cleanup thread-specific data storage
+* Fix GC_restart_handler to preserve errno if needed
+* Fix GC_root_size update in GC_add_roots_inner (Win32)
+* Fix GC_unregister_my_thread to ensure no ongoing incremental GC (Win32)
+* Fix GC_with_callee_saves_pushed for clang (disable __builtin_unwind_init)
+* Fix calloc, GC_generic_malloc to check for allocation size overflows
+* Fix compiler warning in GC_dyld_image_add/remove (Darwin)
+* Fix configure --enable-cplusplus make install
+* Fix configure to disable GCC aliasing optimization unless forced to
+* Fix duplicate definitions in gcconfig.h for NetBSD
+* Fix fork() support on Cygwin and Darwin targets
+* Fix gc.h compatibility regression regarding GC_PTR, GC_I_HIDE_POINTERS
+* Fix gc_cpp.cc for Cygwin (remove duplicate function definition)
+* Fix gcconfig.h to define USE_GET_STACKBASE_FOR_MAIN for Android
+* Fix gcconfig.h to handle mips64-linux target
+* Fix gctest (for Win32) to avoid GC_print_stats internal variable usage
+* Fix mach_dep.c to include sys/ucontext.h on Mac OS X 10.6
+* Fix tests to check GC_malloc result for NULL (out-of-memory)
+* Fix thread model in configure for MinGW ("win32" instead of "posix")
+* Fix various warnings reported by LINT-like tools
+* Fix visibility of some GC internal symbols used by GNU GCJ currently
+* Port some thread tests to Win32
+* Refine API GC setters and getter comments regarding locking
+* Refine GC_stackbottom description in gc.h
+* Remove duplicate calls in GC_register_dynamic_libraries
+* Remove locking in API GC_get_bytes_since_gc and friends
+* Remove newly-added GC_get_heap_size/free_bytes_inner from API
+* Remove some local variables that are unused
+* Support multi-threading for RTEMS target
+* Use global GC_noop_sink variable in GC_noop1 to suppress compiler warning
+* Use pkg-config to pick up libatomic_ops, etc
+* Workaround some Linux/arm kernels bug to get correct GC_nprocs value
 
 
 == [7.2alpha6] 2011-06-14 ==
