@@ -254,6 +254,31 @@ matrix:
     env:
     - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2"
     - CONF_OPTIONS="--enable-munmap --enable-large-config --enable-gc-assertions"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - g++-mingw-w64
+        - gcc-mingw-w64
+    compiler: x86_64-w64-mingw32-gcc
+    dist: trusty
+    language: c
+    env:
+    - CXX=x86_64-w64-mingw32-g++
+    - CONF_OPTIONS="--host=x86_64-w64-mingw32 --enable-cplusplus"
+    - MAKEFILE_TARGETS="all"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - gcc-mingw-w64
+    compiler: i686-w64-mingw32-gcc
+    dist: trusty
+    language: c
+    env:
+    - CONF_OPTIONS="--host=i686-w64-mingw32 --enable-munmap"
+    - MAKEFILE_TARGETS="all"
+    - CFLAGS_EXTRA="-fno-omit-frame-pointer"
 
 before_install:
 - if [[ "$MAKEFILE_TARGETS" == "" ]]; then MAKEFILE_TARGETS="check"; fi
