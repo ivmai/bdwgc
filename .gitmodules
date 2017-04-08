@@ -1,0 +1,4 @@
+[submodule "libatomic_ops"]
+	path = libatomic_ops
+	url = ../libatomic_ops.git
+	branch = master
