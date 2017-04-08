@@ -210,6 +210,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t lb, int k)
 
         lg = ROUNDED_UP_GRANULES(lb);
         lb_rounded = GRANULES_TO_BYTES(lg);
+        if (lb_rounded < lb)
+            return((*GC_get_oom_fn())(lb));
         n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
         init = GC_obj_kinds[k].ok_init;
         LOCK();
