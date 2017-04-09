@@ -4,71 +4,56 @@ matrix:
   include:
     - os: linux
       compiler: clang
-      env: [ CONF_CPP=--enable-cplusplus ]
+      env: [ CONF_OPTIONS="--enable-cplusplus" ]
     - os: linux
       compiler: gcc
-      env: [ CONF_CPP=--enable-cplusplus ]
+      env: [ CONF_OPTIONS="--enable-cplusplus" ]
     - os: osx
-      env: [ CONF_CPP=--enable-cplusplus ]
+      env: [ CONF_OPTIONS="--enable-cplusplus" ]
     - os: linux
       addons: { apt: { packages: [ gcc-multilib ] } }
       compiler: clang
-      env: [ CFLAGS_EXTRA="-m32", CONF_ASSERTIONS=--enable-gc-assertions ]
+      env: [ CFLAGS_EXTRA="-m32", CONF_OPTIONS="--enable-gc-assertions" ]
     - os: linux
       addons: { apt: { packages: [ gcc-multilib ] } }
       compiler: gcc
-      env: [ CFLAGS_EXTRA="-m32", CONF_ASSERTIONS=--enable-gc-assertions ]
+      env: [ CFLAGS_EXTRA="-m32", CONF_OPTIONS="--enable-gc-assertions" ]
     - os: osx
       env:
         - CFLAGS_EXTRA="-m32"
-        - CONF_ASSERTIONS=--enable-gc-assertions
-        - CONF_CPP=--enable-cplusplus
+        - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
     - os: linux
       compiler: gcc
-      env: [ CONF_GC_DEBUG=--enable-gc-debug, CONF_CPP=--enable-cplusplus ]
+      env: [ CONF_OPTIONS="--enable-gc-debug --enable-cplusplus" ]
     - os: linux
       compiler: gcc
-      env: [ CONF_GC_DEBUG=--disable-gc-debug, CONF_CPP=--enable-cplusplus ]
+      env: [ CONF_OPTIONS="--disable-gc-debug --enable-cplusplus" ]
     - os: linux
       compiler: clang
       env:
-        - CONF_LARGE_CONFIG=--enable-large-config
-        - CONF_M_UNMAP=--enable-munmap
-        - CONF_CPP=--enable-cplusplus
+        - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus"
     - os: osx
       env:
-        - CONF_LARGE_CONFIG=--enable-large-config
-        - CONF_M_UNMAP=--enable-munmap
-        - CONF_CPP=--enable-cplusplus
+        - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus"
     - os: linux
       compiler: clang
       env:
-        - CONF_STATIC=--disable-static
-        - CONF_THREADS=--disable-threads
+        - CONF_OPTIONS="--disable-static --disable-threads --enable-gc-assertions --enable-cplusplus"
         - CFLAGS_EXTRA="-O3 -march=native"
-        - CONF_ASSERTIONS=--enable-gc-assertions
-        - CONF_CPP=--enable-cplusplus
     - os: linux
       compiler: gcc
       env:
-        - CONF_STATIC=--disable-static
-        - CONF_THREADS=--disable-threads
+        - CONF_OPTIONS="--disable-static --disable-threads --enable-gc-assertions --enable-cplusplus"
         - CFLAGS_EXTRA="-O3 -march=native"
-        - CONF_ASSERTIONS=--enable-gc-assertions
-        - CONF_CPP=--enable-cplusplus
     - os: osx
       env:
-        - CONF_STATIC=--disable-static
-        - CONF_THREADS=--disable-threads
+        - CONF_OPTIONS="--disable-static --disable-threads --enable-gc-assertions --enable-cplusplus"
         - CFLAGS_EXTRA="-O3 -march=native"
-        - CONF_ASSERTIONS=--enable-gc-assertions
-        - CONF_CPP=--enable-cplusplus
 
 install:
   - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git -b release-7_4
   - ./autogen.sh
 
 script:
-  - ./configure $CONF_ASSERTIONS $CONF_CPP $CONF_GC_DEBUG $CONF_LARGE_CONFIG
-                $CONF_M_UNMAP $CONF_STATIC $CONF_THREADS
+  - ./configure $CONF_OPTIONS
   - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA"
