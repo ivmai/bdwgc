@@ -103,16 +103,16 @@ matrix:
     - os: linux
       compiler: clang
       env:
-        - CONF_OPTIONS="--disable-static --disable-threads --enable-gc-assertions --enable-cplusplus"
+        - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
         - CFLAGS_EXTRA="-O3 -march=native"
     - os: linux
       compiler: gcc
       env:
-        - CONF_OPTIONS="--disable-static --disable-threads --enable-gc-assertions --enable-cplusplus"
+        - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
         - CFLAGS_EXTRA="-O3 -march=native"
     - os: osx
       env:
-        - CONF_OPTIONS="--disable-static --disable-threads --enable-gc-assertions --enable-cplusplus"
+        - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
         - CFLAGS_EXTRA="-O3 -march=native"
     - os: linux
       addons: { apt: { packages: [ musl-tools ] } }
