@@ -26,9 +26,14 @@ matrix:
       env: [ CONF_OPTIONS="--disable-gc-debug --enable-cplusplus" ]
     - os: linux
       compiler: clang
-      env:
-        - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus"
+      env: [ CONF_OPTIONS="--enable-large-config --enable-cplusplus" ]
     - os: osx
+      env: [ CONF_OPTIONS="--enable-large-config --enable-cplusplus" ]
+    - os: linux
+      compiler: gcc
+      env: [ CONF_OPTIONS="--enable-large-config" ]
+    - os: linux
+      compiler: gcc
       env:
         - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus"
     - os: linux
