@@ -12,10 +12,10 @@ matrix:
       env: [ CONF_OPTIONS="--enable-cplusplus" ]
     - os: linux
       compiler: clang
-      env: [ CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus" ]
+      env: [ CONF_OPTIONS="--enable-gc-assertions" ]
     - os: linux
       compiler: gcc
-      env: [ CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus" ]
+      env: [ CONF_OPTIONS="--enable-gc-assertions" ]
     - os: osx
       env: [ CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus" ]
     - os: linux
