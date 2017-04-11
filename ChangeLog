@@ -1,3 +1,71 @@
+2017-04-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.in: Regenerate (by autoreconf -vif using autoconf-2.69,
+	automake-1.14.1, libtool-2.4.2, pkg-config 0.26).
+
+2017-04-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.am (libgc_la_LDFLAGS): Change version info to 2:0:0
+	(there are some incompatible API changes since the last change of the
+	info, e.g. in GC_set_warn_proc, so the "current" part of the info is
+	incremented).
+	* Makefile.am (libgccpp_la_LDFLAGS): Change version info to 1:4:0
+	(only the library implementation has changes since the last change of
+	the info).
+	* cord/cord.am (libcord_la_LDFLAGS): Likewise.
+
+2014-01-31  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.cmake: Fix typo (e.g.).
+	* doc/README.solaris2: Likewise.
+	* doc/README.solaris2: Likewise.
+	* doc/README.win32: Likewise.
+	* include/gc.h (GC_register_my_thread): Fix typo in a comment (e.g.).
+	* include/leak_detector.h: Likewise.
+	* pthread_stop_world.c (GC_unblock_gc_signals): Likewise.
+
+2017-03-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h [SIZE_MAX] (GC_SIZE_MAX): Cast
+	SIZE_MAX to size_t explicitly (to workaround incorrect definition
+	of SIZE_MAX - e.g. it is defined as ~0ULL in musl-tools which is not
+	correct for a 32-bit target).
+
+2017-03-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* tools/setjmp_t.c (main): Declare "y" static variable as volatile (to
+	prevent reordering/optimization of y++).
+
+2017-03-23  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/private/gc_priv.h (GC_setup_temporary_fault_handler): Fix typo
+	in comment (replace trailing ';' with a dot).
+
+2017-03-01  Ivan Maidanski <ivmai@mail.ru>
+
+	* include/gc_inline.h (GC_FAST_MALLOC_GRANS): Fix typos in names in
+	comment ("num_direct", "generic_malloc").
+
+2017-02-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.amiga (GC_AMIGA_GC): Fix a typo ("very").
+
+2017-02-21  Klemens Zwischenbrugger <ka7@la-evento.com>
+
+	* SMakefile.amiga: Fix typo in comment ("don't").
+	* WCC_MAKEFILE (SYSTEM): Fix typo in comment ("uncomment").
+	* configure.ac (NO_CLOCK): Fix typo in comment ("targeting").
+	* doc/README.amiga: Fix typos in documentation ("there's", "compliant",
+	"documentation").
+	* extra/AmigaOS.c [GC_AMIGA_PRINTSTATS] (GC_amiga_free_all_mem): Fix
+	typos in printed messages ("succeeded", "succeeding").
+	* include/gc.h (GC_get_heap_size): Fix typo in comment ("below").
+	* tools/setjmp_t.c (main): Fix typo in printed message ("won't").
+
+2017-02-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.am (SUBDIRS): Fix typo in comment ("to be").
+
 2017-02-01  Ivan Maidanski <ivmai@mail.ru>
 
 	* CMakeLists.txt [enable_parallel_mark] (ADD_DEFINITIONS): Add
