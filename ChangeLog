@@ -28,7 +28,9 @@
 * Eliminate 'GC_collecting is set but never used' code defect (Win32)
 * Eliminate 'GC_record_fault is never used' cppcheck style warning
 * Eliminate 'integer shift by a negative amount' code defect in finalize
+* Eliminate 'label not used' cppcheck false warnings in GC_mark_X
 * Eliminate 'memory leak' code defect for scratch-allocated memory
+* Eliminate 'non-reentrant function strtok called' cppcheck warning (POSIX)
 * Eliminate 'possible integer underflow' code defect (cord-de)
 * Eliminate 'potential overflow' static analyzer warning in test
 * Eliminate 'printf format specifies type void*' GCC pedantic warnings
@@ -54,6 +56,7 @@
 * Fix '32-bit value shift followed by expansion to 64-bit' code defect
 * Fix 'GC_written_pages never read' code defect (GWW_VDB)
 * Fix 'label cannot be reached' static analyzer warning in disclaim_test
+* Fix 'size of tv is unknown' error in brief_async_signal_safe_sleep (musl)
 * Fix 'syntax error' reported by cppcheck for mach_dep
 * Fix 'unknown type name GC_INNER' compilation error (FreeBSD)
 * Fix 'variable assigned a value that is never used' cppcheck style warnings
@@ -61,12 +64,20 @@
 * Fix Clang static analyzer warning about not found gc_priv.h in extra files
 * Fix compilation for winpthreads if HANDLE_FORK
 * Fix compilation if configured with --enable-werror on OS X
+* Fix cord/de build in Makefile.direct (Linux)
+* Fix gctest failure for Darwin if CPPCHECK is defined
 * Fix message of VDB implementation used if MPROTECT_VDB+GWW_VDB (gctest)
 * Fix null dereference in GC_stack_range_for if not DARWIN_DONT_PARSE_STACK
 * Fix page calculation in checksums
+* Fix parallel build in Makefile.direct
+* Fix test_cpp and c++ parallel build in Makefile.direct
 * Fix typo in comment of GC_mark_some
+* Match uclinux pattern in configure
+* New target (check-cpp) in Makefile.direct
 * Put invariant name in quotes to make mark_state comments clearer
+* Refine configure messages when checking for compiler option support
 * Remove page_was_dirty and remove_protection duplicate definitions
+* Rename 'test' to 'check' target in Makefile.direct
 * Report gcc/clang pedantic warnings (configure)
 * Skip thread suspend/resume API testing for Tru64 (OSF1)
 * Support AddressSanitizer and MemorySanitizer (clang)
@@ -75,7 +86,10 @@
 * Test GCJ object creation with length-based descriptor (gctest)
 * Update README regarding make cords with Makefile.direct
 * Update README to use autogen.sh on build from the source repository
+* Update shared libraries version info to differentiate against v7.4
+* Workaround '!GC_page_size is always false' cppcheck style warning
 * Workaround '#error' cppcheck error messages
+* Workaround '32-bit value shift by >31 bits is undefined' cppcheck warnings
 * Workaround 'bad address arithmetic' static analysis tool false positive
 * Workaround 'checking if unsigned value is negative' cppcheck warning
 * Workaround 'checking unsigned value is negative' code defect in mark_from
@@ -85,7 +99,10 @@
 * Workaround 'function is never used' cppcheck style warnings
 * Workaround 'insecure libc pseudo-random number generator used' code defect
 * Workaround 'local variable size too big' static analyzer warning
+* Workaround 'memory leak: result' cppcheck false error (POSIX)
 * Workaround 'null pointer dereference' false positive in push_next_marked
+* Workaround 'obsolescent bcopy, bzero called' cppcheck warnings (POSIX)
+* Workaround 'obsolescent usleep called' cppcheck warning (POSIX)
 * Workaround 'obsolete function alloca() called' cppcheck warnings
 * Workaround 'passing untyped NULL to variadic function' cppcheck warning
 * Workaround 'pointer used before comparison to null' code defect (pthread)
