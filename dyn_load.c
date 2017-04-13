@@ -185,13 +185,16 @@ GC_FirstDLOpenedLinkMap(void)
         /* _DYNAMIC symbol not resolved. */
         return(0);
     }
-    if( cachedResult == 0 ) {
+    if (cachedResult == 0) {
         int tag;
         for( dp = ((ElfW(Dyn) *)(&_DYNAMIC)); (tag = dp->d_tag) != 0; dp++ ) {
-            if( tag == DT_DEBUG ) {
-                struct link_map *lm
-                        = ((struct r_debug *)(dp->d_un.d_ptr))->r_map;
-                if( lm != 0 ) cachedResult = lm->l_next; /* might be NULL */
+            if (tag == DT_DEBUG) {
+                struct r_debug *rd = (struct r_debug *)dp->d_un.d_ptr;
+                if (rd != NULL) {
+                    struct link_map *lm = rd->r_map;
+                    if (lm != NULL)
+                        cachedResult = lm->l_next; /* might be NULL */
+                }
                 break;
             }
         }
@@ -713,10 +716,14 @@ GC_FirstDLOpenedLinkMap(void)
         int tag;
 
         for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {
-            if( tag == DT_DEBUG ) {
-                struct link_map *lm
-                        = ((struct r_debug *)(dp->d_un.d_ptr))->r_map;
-                if( lm != 0 ) cachedResult = lm->l_next; /* might be NULL */
+            if (tag == DT_DEBUG) {
+                struct r_debug *rd = (struct r_debug *)dp->d_un.d_ptr;
+                /* d_ptr could be null if libs are linked statically. */
+                if (rd != NULL) {
+                    struct link_map *lm = rd->r_map;
+                    if (lm != NULL)
+                        cachedResult = lm->l_next; /* might be NULL */
+                }
                 break;
             }
         }
