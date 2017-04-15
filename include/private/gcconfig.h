@@ -147,7 +147,8 @@ EXTERN_C_BEGIN
 # if defined(__aarch64__)
 #    define AARCH64
 #    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD) \
-        && !defined(NETBSD) && !defined(NN_BUILD_TARGET_PLATFORM_NX)
+        && !defined(NETBSD) && !defined(NN_BUILD_TARGET_PLATFORM_NX) \
+        && !defined(OPENBSD)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -181,6 +182,10 @@ EXTERN_C_BEGIN
 # endif
 # if defined(OPENBSD) && defined(__arm__)
 #    define ARM32
+#    define mach_type_known
+# endif
+# if defined(OPENBSD) && defined(__aarch64__)
+#    define AARCH64
 #    define mach_type_known
 # endif
 # if defined(OPENBSD) && defined(__sh__)
@@ -2325,6 +2330,26 @@ EXTERN_C_BEGIN
       extern ptr_t GC_data_start;
 #     define DATASTART GC_data_start
 #     define ELF_CLASS ELFCLASS64
+#     define DYNAMIC_LOADING
+#   endif
+#   ifdef OPENBSD
+#     define OS_TYPE "OPENBSD"
+#     define ELF_CLASS ELFCLASS64
+#     ifndef GC_OPENBSD_THREADS
+        EXTERN_C_END
+#       include <sys/param.h>
+#       include <uvm/uvm_extern.h>
+        EXTERN_C_BEGIN
+#       ifdef USRSTACK
+#         define STACKBOTTOM ((ptr_t)USRSTACK)
+#       else
+#         define HEURISTIC2
+#       endif
+#     endif
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)__data_start)
+      extern int _end[];
+#     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
 #   endif
 #   ifdef NINTENDO_SWITCH
