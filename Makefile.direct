@@ -47,14 +47,17 @@ CFLAGS= -O -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
   -DGC_ATOMIC_UNCOLLECTABLE -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS \
   $(CFLAGS_EXTRA)
 
-# To build the parallel collector on Linux, add to the above:
-# -DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
+# To build the collector with threads support, add to the above:
+# -DGC_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
+#
 # To build the thread-capable preload library that intercepts
 # malloc, add -DGC_USE_DLOPEN_WRAP -DREDIRECT_MALLOC=GC_malloc -fpic
+#
 # To build the parallel collector in a static library on HP/UX,
 # add to the above:
 # -DGC_HPUX_THREADS -DTHREAD_LOCAL_ALLOC -D_POSIX_C_SOURCE=199506L -mt
 # FIXME: PARALLEL_MARK currently broken on HP/UX.
+#
 # To build the thread-safe collector on Tru64, add to the above:
 # -pthread -DGC_OSF1_THREADS
 
