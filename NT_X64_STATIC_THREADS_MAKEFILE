@@ -36,7 +36,7 @@ gc.lib: $(OBJS)
 	lib /MACHINE:X64 /out:gc.lib $(OBJS)
 
 gctest.exe: tests\test.obj gc.lib
-#  This produces a "GUI" applications that opens no windows and writes to
+#  This produces a "GUI" application that opens no windows and writes to
 # the log file "gctest.gc.log".
 	$(link) $(ldebug) $(guiflags) -out:$*.exe tests\test.obj $(guilibs) gc.lib
 
