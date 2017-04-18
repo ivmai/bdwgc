@@ -80,7 +80,7 @@ test_cpp.cpp: tests\test_cpp.cc
 test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc64_dll.lib
 	$(link) $(ldebug) $(guiflags) -stack:16384 -out:test_cpp.exe test_cpp.obj gc64_dll.lib $(guilibs)
 
-AO_SCR_DIR:
+$(AO_SRC_DIR):
 	tar xvfz $(AO_SRC_DIR).tar.gz;
 
 clean:
