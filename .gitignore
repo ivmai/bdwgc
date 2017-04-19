@@ -65,6 +65,7 @@
 /sunos5gc.so
 /test-suite.log
 /test_cpp
+/test_cpp.cpp
 /test_cpp.log
 /test_cpp.trs
 /threadkey_test
