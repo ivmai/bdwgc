@@ -951,10 +951,10 @@ GC_word bm_huge[320 / CPP_WORDSZ] = {
     0xffffffff,
     0xffffffff,
 # endif
-    (GC_signed_word)-1,
-    (GC_signed_word)-1,
-    (GC_signed_word)-1,
-    (GC_signed_word)-1,
+    (GC_word)((GC_signed_word)-1),
+    (GC_word)((GC_signed_word)-1),
+    (GC_word)((GC_signed_word)-1),
+    (GC_word)((GC_signed_word)-1),
     ((GC_word)((GC_signed_word)-1)) >> 8 /* highest byte is zero */
 };
 
