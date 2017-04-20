@@ -44,12 +44,6 @@
 #include "gc.h"
 #include <new> // for placement new
 
-#if defined(__GNUC__)
-#  define GC_ATTR_UNUSED __attribute__((__unused__))
-#else
-#  define GC_ATTR_UNUSED
-#endif
-
 #ifndef GC_ATTR_EXPLICIT
 # if (__cplusplus >= 201103L) || defined(CPPCHECK)
 #   define GC_ATTR_EXPLICIT explicit
@@ -142,7 +136,7 @@ public:
   }
 
   // __p is not permitted to be a null pointer.
-  void deallocate(pointer __p, size_type GC_ATTR_UNUSED GC_n)
+  void deallocate(pointer __p, size_type /* GC_n */)
     { GC_FREE(__p); }
 
   size_type max_size() const throw()
@@ -219,7 +213,7 @@ public:
   }
 
   // __p is not permitted to be a null pointer.
-  void deallocate(pointer __p, size_type GC_ATTR_UNUSED GC_n)
+  void deallocate(pointer __p, size_type /* GC_n */)
     { GC_FREE(__p); }
 
   size_type max_size() const throw()
@@ -295,7 +289,7 @@ public:
   }
 
   // __p is not permitted to be a null pointer.
-  void deallocate(pointer __p, size_type GC_ATTR_UNUSED GC_n)
+  void deallocate(pointer __p, size_type /* GC_n */)
     { GC_FREE(__p); }
 
   size_type max_size() const throw()
