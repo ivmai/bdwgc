@@ -307,15 +307,19 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
   }
 
   // This new operator is used by VC++ in case of Debug builds:
-  inline void* operator new(size_t size, int /* nBlockUse */,
-                            const char* szFileName, int nLine)
-  {
-#   ifndef GC_DEBUG
-      return GC_malloc_uncollectable(size);
-#   else
+# ifdef GC_DEBUG
+    inline void* operator new(size_t size, int /* nBlockUse */,
+                              const char* szFileName, int nLine)
+    {
       return GC_debug_malloc_uncollectable(size, szFileName, nLine);
-#   endif
-  }
+    }
+# else
+    inline void* operator new(size_t size, int /* nBlockUse */,
+                              const char* /* szFileName */, int /* nLine */)
+    {
+      return GC_malloc_uncollectable(size);
+    }
+# endif /* !GC_DEBUG */
 
 # if _MSC_VER > 1020
     // This new operator is used by VC++ 7+ in Debug builds:

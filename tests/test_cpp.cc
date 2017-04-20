@@ -70,12 +70,6 @@ extern "C" {
                     __LINE__ ); \
         exit( 1 ); }
 
-#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
-# define ATTR_UNUSED __attribute__((__unused__))
-#else
-# define ATTR_UNUSED /* empty */
-#endif
-
 #ifndef GC_ATTR_EXPLICIT
 # if (__cplusplus >= 201103L) || defined(CPPCHECK)
 #   define GC_ATTR_EXPLICIT explicit
@@ -207,9 +201,8 @@ void* Undisguise( GC_word i ) {
 
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
-  int APIENTRY WinMain( HINSTANCE instance ATTR_UNUSED,
-                       HINSTANCE prev ATTR_UNUSED, LPSTR cmd,
-                       int cmdShow ATTR_UNUSED )
+  int APIENTRY WinMain( HINSTANCE /* instance */, HINSTANCE /* prev */,
+                       LPSTR cmd, int /* cmdShow */)
   {
     int argc = 0;
     char* argv[ 3 ];
