@@ -58,7 +58,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#ifdef GC_DLL
+#if defined(GC_DLL) && !defined(CORD_NOT_DLL)
   /* Same as for GC_API in gc_config_macros.h.  */
 # ifdef CORD_BUILD
 #   if defined(__MINGW32__) || defined(__CEGCC__)
