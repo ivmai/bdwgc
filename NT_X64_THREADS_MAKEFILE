@@ -84,4 +84,4 @@ $(AO_SRC_DIR):
 	tar xvfz $(AO_SRC_DIR).tar.gz;
 
 clean:
-	del *.obj gc64_dll.lib gc64.dll
+	del *.exe *.log *.obj *.pdb cord\*.exe cord\*.exp cord\*.lib cord\*.obj cord\*.pdb cord\*.rbj cord\*.res cord\tests\*.obj extra\*.obj gc*.lib gc*.dll gc*.exp test_cpp.cpp tests\*.obj 2> nul
