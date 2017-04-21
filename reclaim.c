@@ -222,7 +222,7 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, size_t sz,
   STATIC ptr_t GC_disclaim_and_reclaim(struct hblk *hbp, hdr *hhdr, size_t sz,
                                        ptr_t list, signed_word *count)
   {
-    int bit_no = 0;
+    word bit_no = 0;
     word *p, *q, *plim;
     signed_word n_bytes_found = 0;
     struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
