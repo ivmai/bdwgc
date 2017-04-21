@@ -1,61 +1,102 @@
-# Makefile for Windows NT.  Assumes Microsoft compiler, and a single thread.
-# Use "nmake nodebug=1 all" for optimized versions of library, gctest and editor.
+# Makefile for Windows NT.  Assumes Microsoft compiler.
+# Use "nmake -f NT_MAKEFILE nodebug=1 all" for optimized versions of library,
+# gctest and editor.
 
-MY_CPU=X86
-CPU=$(MY_CPU)
+# For building x86 (32-bit) library:
+CVTRES_CPU=X86
+#
+# For building x64 (amd64) library:
+#CVTRES_CPU=X64
+
+#CPU=$(CVTRES_CPU)
+
 !include <ntwin32.mak>
+
+# For static single-threaded collector library:
+#CFLAGS_SPECIFIC=$(cvars) -DGC_NOT_DLL
+#GC_DLL=
+#GC_LIB=gc.lib
+#
+# For static multi-threaded collector library:
+#CFLAGS_SPECIFIC=$(cvarsmt) -DGC_NOT_DLL -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
+#GC_DLL=
+#GC_LIB=gc.lib
+#
+# For dynamic multi-threaded collector library:
+CFLAGS_SPECIFIC=$(cvarsmt) -DGC_DLL -DGC_THREADS -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK
+GC_DLL=gc.dll
+GC_LIB=gc_dll.lib
+#GC_DLL=gc64.dll
+#GC_LIB=gc64_dll.lib
+
+LINK_DLL_FLAGS=kernel32.lib user32.lib uuid.lib \
+  /nologo /subsystem:windows /dll /incremental:no /pdb:"gc.pdb" \
+  /out:$(GC_DLL) /implib:$(GC_LIB)
+
+# For static collector library:
+#LINK_GC=lib /out:$(GC_LIB)
+#
+# For dynamic multi-threaded collector library:
+LINK_GC=link $(ldebug) $(LINK_DLL_FLAGS)
 
 # Make sure that .cc is not viewed as a suffix.  It is for VC++2005, but
 # not earlier versions.  We can deal with either, but not inconsistency.
 .SUFFIXES:
 .SUFFIXES: .obj .cpp .c
 
-OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj stubborn.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj mallocx.obj extra\msvc_dbg.obj
+# Atomic_ops installation directory.  For win32, the source directory
+# should do, since we only need the headers.
+# We assume this was manually unpacked.
+AO_SRC_DIR=libatomic_ops/src
+AO_INCLUDE_DIR=$(AO_SRC_DIR)
+
+OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj stubborn.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gc_cpp.obj mallocx.obj win32_threads.obj extra\msvc_dbg.obj thread_local_alloc.obj
 
 all: gctest.exe cord\de.exe test_cpp.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(cvars) -Iinclude -DALL_INTERIOR_POINTERS -DGC_NOT_DLL -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -DCORD_NOT_DLL -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
+# Disable crt security warnings, since unfortunately they warn about all sorts
+# of safe uses of strncpy.  It would be nice to leave the rest enabled.
 
 .cpp.obj:
-	$(cc) $(cdebug) $(cflags) $(cvars) -Iinclude -DALL_INTERIOR_POINTERS -DGC_NOT_DLL -D_CRT_SECURE_NO_DEPRECATE $*.cpp /Fo$*.obj
+	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -D_CRT_SECURE_NO_DEPRECATE $*.cpp /Fo$*.obj
 
 $(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc_mark.h include\gc_disclaim.h include\private\msvc_dbg.h
 
-gc.lib: $(OBJS)
-	lib /MACHINE:i386 /out:gc.lib $(OBJS)
-# The original NT SDK used lib32 instead of lib
+$(GC_LIB): $(OBJS)
+	$(LINK_GC) /MACHINE:$(CPU) $(OBJS)
 
-gctest.exe: tests\test.obj gc.lib
-#	The following works for win32 debugging.  For win32s debugging use debugtype:coff
-#	and add mapsympe line.
-#  This produces a "GUI" application that opens no windows and writes to the log file
-#  "gctest.gc.log".  This is done to make the result runnable under win32s.
-	$(link) -debug -debugtype:cv $(guiflags) -stack:131072 -out:$*.exe tests\test.obj $(guilibs) gc.lib
+gctest.exe: tests\test.obj $(GC_LIB)
+	$(link) $(ldebug) $(guiflags) -stack:131072 -out:$*.exe tests\test.obj $(guilibs) $(GC_LIB)
 #	mapsympe -n -o gctest.sym gctest.exe
+# This produces a GUI app that opens no window and writes to gctest.gc.log.
 
 cord\de_win.rbj: cord\de_win.res
-	cvtres /MACHINE:$(MY_CPU) /OUT:cord\de_win.rbj cord\de_win.res
+	cvtres /MACHINE:$(CVTRES_CPU) /OUT:cord\de_win.rbj cord\de_win.res
 
 cord\tests\de.obj cord\tests\de_win.obj: include\cord.h include\cord_pos.h cord\tests\de_win.h cord\tests\de_cmds.h
 
 cord\de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cmds.h
 	$(rc) $(rcvars) -r -fo cord\de_win.res cord\tests\de_win.rc
 
-# Cord/de is a real win32 gui application.
-cord\de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\de_win.rbj gc.lib
-	$(link) -debug -debugtype:cv $(guiflags) -stack:16384 -out:cord\de.exe  cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\de_win.rbj gc.lib $(guilibs)
+# Cord/de is a real win32 GUI app.
+cord\de.exe: cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\de_win.rbj $(GC_LIB)
+	$(link) $(ldebug) $(guiflags) -stack:16384 -out:cord\de.exe cord\cordbscs.obj cord\cordxtra.obj cord\tests\de.obj cord\tests\de_win.obj cord\de_win.rbj $(GC_LIB) $(guilibs)
 
 gc_cpp.obj: include\gc_cpp.h include\gc.h
-
-gc_cpp.cpp: gc_cpp.cc
-#	copy gc_cpp.cc gc_cpp.cpp
 
 test_cpp.cpp: tests\test_cpp.cc
 	copy tests\test_cpp.cc test_cpp.cpp
 
 # This generates the C++ test executable.  The executable expects
 # a single numeric argument, which is the number of iterations.
-# The output appears in the file "test_cpp.gc.log".
-test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib
-	$(link) -debug -debugtype:cv $(guiflags) -stack:16384 -out:test_cpp.exe test_cpp.obj gc.lib $(guilibs)
+# The output appears in test_cpp.gc.log file.
+test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h $(GC_LIB)
+	$(link) $(ldebug) $(guiflags) -stack:16384 -out:test_cpp.exe test_cpp.obj $(GC_LIB) $(guilibs)
+
+$(AO_SRC_DIR):
+	tar xvfz $(AO_SRC_DIR).tar.gz
+
+clean:
+	del *.exe *.log *.obj *.pdb cord\*.exe cord\*.exp cord\*.lib cord\*.obj cord\*.pdb cord\*.rbj cord\*.res cord\tests\*.obj extra\*.obj gc*.lib gc*.dll gc*.exp test_cpp.cpp tests\*.obj 2> nul
