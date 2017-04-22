@@ -205,7 +205,7 @@ case "$THREADS" in
         AC_MSG_WARN("Only HP/UX 11 POSIX threads are supported.")
         AC_DEFINE(GC_HPUX_THREADS)
         AC_DEFINE(_POSIX_C_SOURCE,199506L)
-        if test "${enable_parallel_mark}" = yes; then
+        if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
@@ -226,7 +226,7 @@ case "$THREADS" in
         AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
         AC_DEFINE(GC_FREEBSD_THREADS)
         AM_CFLAGS="$AM_CFLAGS -pthread"
-        if test "${enable_parallel_mark}" = yes; then
+        if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
@@ -236,7 +236,7 @@ case "$THREADS" in
         AM_CFLAGS="$AM_CFLAGS -pthread"
         THREADDLLIBS=-pthread
         AC_DEFINE(_REENTRANT)
-        if test "${enable_parallel_mark}" = yes; then
+        if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
@@ -302,12 +302,10 @@ case "$THREADS" in
         ;;
      *-*-osf*)
         AC_DEFINE(GC_OSF1_THREADS)
-        if test "${enable_parallel_mark}" = yes; then
+        if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
           AC_DEFINE(THREAD_LOCAL_ALLOC)
           AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
-          # May want to enable it in other cases, too.
-          # Measurements have not yet been done.
         fi
         AM_CFLAGS="$AM_CFLAGS -pthread"
         THREADDLLIBS="-lpthread -lrt"
@@ -348,7 +346,7 @@ case "$THREADS" in
     AC_MSG_RESULT($THREADDLLIBS)
     # Use pthread GCC switch
     THREADDLLIBS=-pthread
-    if test "${enable_parallel_mark}" = yes; then
+    if test "${enable_parallel_mark}" != no; then
         AC_DEFINE(PARALLEL_MARK)
     fi
     AC_DEFINE(THREAD_LOCAL_ALLOC)
