@@ -2602,7 +2602,6 @@
 #   define ALIGN_DOUBLE
 #   define PREFETCH(x) __insn_prefetch(x)
 #   define CACHE_LINE_SIZE 64
-#   define USE_GENERIC_PUSH_REGS
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
       extern int __data_start[];
@@ -2623,7 +2622,6 @@
 #   endif
 #   define PREFETCH(x) __insn_prefetch_l1(x)
 #   define CACHE_LINE_SIZE 64
-#   define USE_GENERIC_PUSH_REGS
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
       extern int __data_start[];
