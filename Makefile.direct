@@ -46,7 +46,7 @@ AO_SRC_DIR=$(srcdir)/libatomic_ops
 CFLAGS_EXTRA=
 CFLAGS= -O -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
   -DGC_ATOMIC_UNCOLLECTABLE -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS \
-  $(CFLAGS_EXTRA)
+  -DENABLE_DISCLAIM $(CFLAGS_EXTRA)
 
 # To build the collector with threads support, add to the above:
 # -DGC_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC

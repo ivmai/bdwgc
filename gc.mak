@@ -121,7 +121,8 @@ CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /FR /YX /c
 CPP_PROJ=/nologo /MD /W3 /EHsc /O2 /I include /D "NDEBUG" /D "WIN32"\
- /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /D "_CRT_SECURE_NO_DEPRECATE"\
+ /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "ENABLE_DISCLAIM"\
+ /D "GC_THREADS" /D "_CRT_SECURE_NO_DEPRECATE"\
  /FR"$(INTDIR)/" /Fp"$(INTDIR)/gc.pch"\
  /I./libatomic_ops/src /Fo"$(INTDIR)/" /c
 CPP_OBJS=.\Release/
@@ -313,7 +314,7 @@ CPP=cl.exe
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I include /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /FR /YX /c
 CPP_PROJ=/nologo /MDd /W3 /Gm /EHsc /Zi /Od /I include /D "_DEBUG"\
- /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS"\
+ /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "ENABLE_DISCLAIM"\
  /D "GC_ASSERTIONS" /D "GC_THREADS" /D "_CRT_SECURE_NO_DEPRECATE"\
  /FR"$(INTDIR)/" /Fp"$(INTDIR)/gc.pch" /Fo"$(INTDIR)/"\
  /I./libatomic_ops/src /Fd"$(INTDIR)/" /c
@@ -453,8 +454,8 @@ CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /YX /c
 CPP_PROJ=/nologo /MD /W3 /EHsc /O2 /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS"\
- /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /D "_CRT_SECURE_NO_DEPRECATE"\
- /I./libatomic_ops/src /Fp"$(INTDIR)/gctest.pch"\
+ /D "ALL_INTERIOR_POINTERS" /D "ENABLE_DISCLAIM" /D "GC_THREADS"\
+ /D "_CRT_SECURE_NO_DEPRECATE" /I./libatomic_ops/src /Fp"$(INTDIR)/gctest.pch"\
  /Fo"$(INTDIR)/" /c
 CPP_OBJS=.\gctest\Release/
 CPP_SBRS=.\.
@@ -541,7 +542,8 @@ CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /FR /YX /c
 CPP_PROJ=/nologo /MDd /W3 /Gm /EHsc /Zi /Od /I include /D "_DEBUG" /D "WIN32" /D "_WINDOWS"\
- /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /D "_CRT_SECURE_NO_DEPRECATE" /FR"$(INTDIR)/"\
+ /D "ALL_INTERIOR_POINTERS" /D "ENABLE_DISCLAIM" /D "GC_THREADS"\
+ /D "_CRT_SECURE_NO_DEPRECATE" /FR"$(INTDIR)/"\
  /I./libatomic_ops/src /Fp"$(INTDIR)/gctest.pch" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c
 CPP_OBJS=.\gctest\Debug/
 CPP_SBRS=.\gctest\Debug/
@@ -632,7 +634,8 @@ CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MD /W3 /GX /O2 /I "." /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /YX /c
 CPP_PROJ=/nologo /MD /W3 /EHsc /O2 /I "." /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS"\
- /D "ALL_INTERIOR_POINTERS" /I./libatomic_ops/src /Fp"$(INTDIR)/cord.pch" /Fo"$(INTDIR)/" /c
+ /D "ALL_INTERIOR_POINTERS" /D "ENABLE_DISCLAIM"\
+ /I./libatomic_ops/src /Fp"$(INTDIR)/cord.pch" /Fo"$(INTDIR)/" /c
 CPP_OBJS=.\cord\Release/
 CPP_SBRS=.\.
 
@@ -724,7 +727,7 @@ CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "." /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /YX /c
 CPP_PROJ=/nologo /MDd /W3 /Gm /EHsc /Zi /Od /I "." /I include /D "_DEBUG" /D "WIN32" /D "_WINDOWS"\
- /D "ALL_INTERIOR_POINTERS" /Fp"$(INTDIR)/cord.pch"\
+ /D "ALL_INTERIOR_POINTERS" /D "ENABLE_DISCLAIM" /Fp"$(INTDIR)/cord.pch"\
  /I./libatomic_ops/src /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c
 CPP_OBJS=.\cord\Debug/
 CPP_SBRS=.\.

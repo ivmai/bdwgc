@@ -59,7 +59,7 @@ OBJS= alloc.obj reclaim.obj allchblk.obj misc.obj mach_dep.obj os_dep.obj mark_r
 all: gctest.exe cord\de.exe test_cpp.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -DCORD_NOT_DLL -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
+	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude -I$(AO_INCLUDE_DIR) -DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DCORD_NOT_DLL -D_CRT_SECURE_NO_DEPRECATE $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
 # Disable crt security warnings, since unfortunately they warn about all sorts
 # of safe uses of strncpy.  It would be nice to leave the rest enabled.
 
