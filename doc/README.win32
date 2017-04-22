@@ -94,9 +94,7 @@ I expect that -a1 introduces major performance penalties on a
 resort, gcconfig.h can be changed to allow 1 byte alignment.  But
 this has significant negative performance implications.)
 The Makefile is set up to assume Borland 4.5.  If you have another
-version, change the line near the top.  By default, it does not
-require the assembler.  If you do have the assembler, I recommend
-removing the -DUSE_GENERIC.
+version, change the line near the top.
 
 Digital Mars compiler
 ---------------------
