@@ -196,10 +196,16 @@ case "$THREADS" in
      *-*-*linux* | *-*-nacl*)
         AC_DEFINE(GC_LINUX_THREADS)
         AC_DEFINE(_REENTRANT)
+        if test "${enable_parallel_mark}" != no; then
+          AC_DEFINE(PARALLEL_MARK)
+        fi
         ;;
      *-*-aix*)
         AC_DEFINE(GC_AIX_THREADS)
         AC_DEFINE(_REENTRANT)
+        if test "${enable_parallel_mark}" != no; then
+          AC_DEFINE(PARALLEL_MARK)
+        fi
         ;;
      *-*-hpux11*)
         AC_MSG_WARN("Only HP/UX 11 POSIX threads are supported.")
@@ -219,6 +225,9 @@ case "$THREADS" in
         ;;
      *-*-openbsd*)
         AC_DEFINE(GC_OPENBSD_THREADS)
+        if test "${enable_parallel_mark}" != no; then
+          AC_DEFINE(PARALLEL_MARK)
+        fi
         THREADDLLIBS=-pthread
         AM_CFLAGS="$AM_CFLAGS -pthread"
         ;;
@@ -245,6 +254,9 @@ case "$THREADS" in
      *-*-gnu*)
         AC_DEFINE(GC_GNU_THREADS)
         AC_DEFINE(_REENTRANT)
+        if test "${enable_parallel_mark}" != no; then
+          AC_DEFINE(PARALLEL_MARK)
+        fi
         AC_DEFINE(THREAD_LOCAL_ALLOC)
         ;;
      *-*-netbsd*)
@@ -252,6 +264,9 @@ case "$THREADS" in
         AC_DEFINE(GC_NETBSD_THREADS)
         AC_DEFINE(_REENTRANT)
         AC_DEFINE(_PTHREADS)
+        if test "${enable_parallel_mark}" != no; then
+          AC_DEFINE(PARALLEL_MARK)
+        fi
         THREADDLLIBS="-lpthread -lrt"
         ;;
      *-*-solaris*)
@@ -268,6 +283,9 @@ case "$THREADS" in
         ;;
      *-*-irix*)
         AC_DEFINE(GC_IRIX_THREADS)
+        if test "${enable_parallel_mark}" != no; then
+          AC_DEFINE(PARALLEL_MARK)
+        fi
         ;;
      *-*-cygwin*)
         AC_DEFINE(GC_WIN32_THREADS)
@@ -363,10 +381,16 @@ case "$THREADS" in
     THREADDLLIBS=-lpthread
     AC_DEFINE(GC_AIX_THREADS)
     AC_DEFINE(_REENTRANT)
+    if test "${enable_parallel_mark}" != no; then
+      AC_DEFINE(PARALLEL_MARK)
+    fi
     ;;
  rtems)
     THREADS=posix
     AC_DEFINE(GC_RTEMS_PTHREADS)
+    if test "${enable_parallel_mark}" != no; then
+      AC_DEFINE(PARALLEL_MARK)
+    fi
     AC_DEFINE(THREAD_LOCAL_ALLOC)
     ;;
  decosf1 | irix | mach | os2 | solaris | dce | vxworks)
