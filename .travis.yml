@@ -280,6 +280,8 @@ matrix:
         - CONF_OPTIONS="--host=i686-w64-mingw32 --enable-munmap"
         - MAKEFILE_TARGETS="all"
         - CFLAGS_EXTRA="-fno-omit-frame-pointer"
+    - os: linux
+      env: [ MAKEFILE_TARGETS="dist" ]
 
 before_install:
   - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
