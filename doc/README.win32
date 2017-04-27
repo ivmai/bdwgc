@@ -14,8 +14,7 @@ minutes (a few seconds on a modern machine) before you check the output.
 You should see either a failure indication or a "Collector appears to
 work" message.
 
-The cord test program has not been ported (but should port
-easily).  A toy editor (cord/de.exe) based on cords (heavyweight
+A toy editor (cord/de.exe) based on cords (heavyweight
 strings represented as trees) has been ported and is included.
 It runs fine under either win32 or win32S.  It serves as an example
 of a true Windows application, except that it was written by a
@@ -35,7 +34,7 @@ not Windows 95/98) if the memory is later passed to CreateDIBitmap.
 To work around this problem, build the collector with -DUSE_GLOBAL_ALLOC.
 This is currently incompatible with -DUSE_MUNMAP.  (Thanks to Jonathan
 Clark for tracking this down.  There's some chance this may be fixed
-in 6.1alpha4, since we now separate heap sections with an unused page.)
+since we now separate heap sections with an unused page.)
 
 [Threads and incremental collection are discussed near the end, below.]
 
@@ -46,15 +45,7 @@ MAKEFILE.  (Make sure that the CPU environment variable is defined
 to be i386.)  In order to use the gc_cpp.h C++ interface, all
 client code should include gc_cpp.h.
 
-For historical reasons,
-the collector test program "gctest" is linked as a GUI application,
-but does not open any windows.  Its output appears in the file
-"gctest.gc.log".  It may be started from the file manager.  The hour glass
-cursor may appear as long as it's running.  If it is started from the
-command line, it will usually run in the background.  Wait a few
-minutes (a few seconds on a modern machine) before you check the output.
-You should see either a failure indication or a "Collector appears to
-work" message.
+[See above for gctest.]
 
 If you would prefer a VC++ .NET project file, ask Hans Boehm.  One has
 been contributed, but it seems to contain some absolute paths etc., so
@@ -63,21 +54,23 @@ distribution.  It is unclear (to me, Hans Boehm) whether it is feasible to
 change that.
 
 Clients may need to define GC_NOT_DLL before including gc.h, if the
-collector was built as a static library (as it normally is in the
-absence of thread support).
+collector was built as a static library.
 
 GNU Tools
 ---------
 The collector should be buildable under Cygwin with the
 "./configure; make check" machinery.
 
-MinGW builds (including for x86_64) are available via cross-compilation, e.g.
+MinGW builds (including for x86_64) are available both directly (on a Windows
+host) and via cross-compilation, e.g.
 "./configure --host=i686-pc-mingw32; make check"
 
 To build the collector as a DLL, pass "--enable-shared --disable-static" to
-configure (this will instruct make compile with -D GC_DLL).
+configure (this will instruct make to compile with -D GC_DLL).
 
-Parallel marker could be enabled via "--enable-parallel-mark".
+Parallel marker is enabled by default; it could be disabled by
+"--disable-parallel-mark" option.
+
 Memory unmapping could be enabled via "--enable-munmap".
 
 Borland Tools
@@ -193,22 +186,21 @@ enabled before any additional threads are created.
 
 Since 6.3alpha2, threads are also better supported in static library builds
 with Microsoft tools (use NT_STATIC_THREADS_MAKEFILE) and with the GNU
-tools.  The collector must be built with GC_THREADS defined.
-(NT_STATIC_THREADS_MAKEFILE does this implicitly.  Under Cygwin,
-./configure --enable-threads=posix should be used.)
+tools.  The collector must be built with GC_THREADS defined (this is the
+default in NT_STATIC_THREADS_MAKEFILE, ./configure and CMakeLists.txt).
 
 For the normal, non-dll-based thread tracking to work properly,
 threads should be created with GC_CreateThread or GC_beginthreadex,
-and exit normally or call GC_endthreadex or GC_ExitThread.  (For
-Cygwin, use standard pthread calls instead.)  As in the pthread
+and exit normally or call GC_endthreadex or GC_ExitThread.  (For Cygwin, the
+standard pthread_create/exit calls could be used instead.)  As in the pthread
 case, including gc.h will redefine CreateThread, _beginthreadex,
 _endthreadex, and ExitThread to call the GC_ versions instead.
 
-Note that, as usual, GC_CreateThread tends to introduce resource leaks
-that are avoided by GC_beginthreadex.  There is currently no equivalent of
-_beginthread, and it should not be used.
+Note that, as usual, GC_CreateThread tends to introduce resource leaks (in the
+C runtime) that are avoided by GC_beginthreadex.  There is currently no
+equivalent of _beginthread, and it should not be used.
 
-GC_INIT should be called from the main executable before other GC calls.
+GC_INIT should be called from the main thread before other GC calls.
 
 We strongly advise against using the TerminateThread() win32 API call,
 especially with the garbage collector.  Any use is likely to provoke a
