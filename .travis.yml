@@ -14,6 +14,9 @@ matrix:
     env:
     - CONF_OPTIONS="--enable-cplusplus"
   - os: linux
+    env:
+    - MAKEFILE_TARGETS="dist"
+  - os: linux
     addons:
       apt:
         packages:
@@ -252,6 +255,9 @@ matrix:
     - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2"
     - CONF_OPTIONS="--enable-munmap --enable-large-config --enable-gc-assertions"
 
+before_install:
+- if [[ "$MAKEFILE_TARGETS" == "" ]]; then MAKEFILE_TARGETS="check"; fi
+
 install:
 - if [[ "$NO_CLONE_LIBATOMIC_OPS" != true ]]; then
     git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
@@ -262,5 +268,5 @@ install:
 script:
 - ./configure $CONF_OPTIONS
 - cat include/config.h
-- make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA"
+- make -j $MAKEFILE_TARGETS CFLAGS_EXTRA="$CFLAGS_EXTRA"
 - if [ -f gctest.log ]; then cat gctest.log; fi
