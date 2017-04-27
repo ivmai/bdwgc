@@ -171,9 +171,8 @@ to the collector DLL still exists, but requires that both
 We generally recommend avoiding this if possible, since it seems to
 be less than 100% reliable.
 
-Use gc.mak (a.k.a NT_THREADS_MAKEFILE) instead of NT_MAKEFILE
-to build a version that supports both kinds of thread tracking.
-To build the garbage collector
+Use gc.mak instead of NT_MAKEFILE to build a version that supports
+both kinds of thread tracking.  To build the garbage collector
 test with VC++ from the command line, use
 
 nmake /F ".\gc.mak" CFG="gctest - Win32 Release"
@@ -185,9 +184,9 @@ This version currently supports incremental collection only if it is
 enabled before any additional threads are created.
 
 Since 6.3alpha2, threads are also better supported in static library builds
-with Microsoft tools (use NT_STATIC_THREADS_MAKEFILE) and with the GNU
+with Microsoft tools (e.g., NT_MAKEFILE) and with the GNU
 tools.  The collector must be built with GC_THREADS defined (this is the
-default in NT_STATIC_THREADS_MAKEFILE, ./configure and CMakeLists.txt).
+default in NT_MAKEFILE, ./configure and CMakeLists.txt).
 
 For the normal, non-dll-based thread tracking to work properly,
 threads should be created with GC_CreateThread or GC_beginthreadex,
