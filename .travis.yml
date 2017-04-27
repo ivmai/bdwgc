@@ -16,6 +16,10 @@ matrix:
     env:
     - CONF_OPTIONS="--enable-cplusplus"
   - os: linux
+    env:
+    - MAKEFILE_TARGETS="dist"
+    - WORKAROUND_ACLOCAL_MISSING=true
+  - os: linux
     addons:
       apt:
         packages:
@@ -103,6 +107,9 @@ matrix:
     env:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
 
+before_install:
+- if [[ "$MAKEFILE_TARGETS" == "" ]]; then MAKEFILE_TARGETS="check"; fi
+
 install:
 - if [[ "$NO_CLONE_LIBATOMIC_OPS" != true ]]; then
     git clone --depth=50 https://github.com/ivmai/libatomic_ops.git
@@ -114,4 +121,4 @@ install:
 
 script:
 - ./configure $CONF_OPTIONS
-- make -j check
+- make -j $MAKEFILE_TARGETS
