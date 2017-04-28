@@ -183,8 +183,7 @@ case "$THREADS" in
     THREADS=posix
     AC_CHECK_LIB(pthread, pthread_self, THREADDLLIBS="-lpthread",,)
     case "$host" in
-     x86-*-linux* | ia64-*-linux* | i586-*-linux* | i686-*-linux* \
-     | x86_64-*-linux* | alpha-*-linux* | powerpc*-*-linux* | sparc*-*-linux*)
+     *-*-*linux* | *-*-nacl*)
         AC_DEFINE(GC_LINUX_THREADS)
         AC_DEFINE(_REENTRANT)
         if test "${enable_parallel_mark}" != no; then
@@ -193,19 +192,13 @@ case "$THREADS" in
         AC_DEFINE(THREAD_LOCAL_ALLOC)
         AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
         ;;
-     *-*-*linux* | *-*-nacl*)
-        AC_DEFINE(GC_LINUX_THREADS)
-        AC_DEFINE(_REENTRANT)
-        if test "${enable_parallel_mark}" != no; then
-          AC_DEFINE(PARALLEL_MARK)
-        fi
-        ;;
      *-*-aix*)
         AC_DEFINE(GC_AIX_THREADS)
         AC_DEFINE(_REENTRANT)
         if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
         ;;
      *-*-hpux11*)
         AC_MSG_WARN("Only HP/UX 11 POSIX threads are supported.")
@@ -228,11 +221,11 @@ case "$THREADS" in
         if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
         THREADDLLIBS=-pthread
         AM_CFLAGS="$AM_CFLAGS -pthread"
         ;;
      *-*-freebsd*)
-        AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
         AC_DEFINE(GC_FREEBSD_THREADS)
         AM_CFLAGS="$AM_CFLAGS -pthread"
         if test "${enable_parallel_mark}" != no; then
@@ -267,6 +260,7 @@ case "$THREADS" in
         if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
         THREADDLLIBS="-lpthread -lrt"
         ;;
      *-*-solaris*)
@@ -286,6 +280,7 @@ case "$THREADS" in
         if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
         fi
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
         ;;
      *-*-cygwin*)
         AC_DEFINE(GC_WIN32_THREADS)
@@ -322,9 +317,9 @@ case "$THREADS" in
         AC_DEFINE(GC_OSF1_THREADS)
         if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
-          AC_DEFINE(THREAD_LOCAL_ALLOC)
-          AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
         fi
+        AC_DEFINE(THREAD_LOCAL_ALLOC)
+        AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
         AM_CFLAGS="$AM_CFLAGS -pthread"
         THREADDLLIBS="-lpthread -lrt"
         ;;
@@ -384,6 +379,7 @@ case "$THREADS" in
     if test "${enable_parallel_mark}" != no; then
       AC_DEFINE(PARALLEL_MARK)
     fi
+    AC_DEFINE(THREAD_LOCAL_ALLOC)
     ;;
  rtems)
     THREADS=posix
