@@ -11,6 +11,17 @@ matrix:
     - os: osx
       env: [ CONF_OPTIONS="--enable-cplusplus" ]
     - os: linux
+      env: [ COVERITY_SCAN_BRANCH=1 ]
+      addons:
+        coverity_scan:
+          project:
+            name: ivmai/bdwgc
+            version: 7.7.0
+          notification_email: ivmai@mail.ru
+          branch_pattern: master
+          build_command_prepend: ./configure --enable-cplusplus --disable-shared --enable-single-obj-compilation
+          build_command: make -j check CFLAGS_EXTRA=-DLINT2
+    - os: linux
       addons: { apt: { packages: [ gcc-multilib ] } }
       compiler: clang
       env: [ CFLAGS_EXTRA="-m32", CONF_OPTIONS="--enable-gc-assertions" ]
@@ -305,11 +316,13 @@ install:
 
 script:
   - if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == ""
-          && "$MAKEFILE_NAME" != "Makefile.direct" ]]; then
+          && "$MAKEFILE_NAME" != "Makefile.direct"
+          && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
       ./configure $CONF_OPTIONS --enable-werror &&
       cat include/config.h;
     fi
-  - if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == "" ]]; then
+  - if [[ "$CSA_CHECK" != true && "$CPPCHECK_ENABLE" == ""
+          && "$COVERITY_SCAN_BRANCH" != 1 ]]; then
       make -j -f $MAKEFILE_NAME $MAKEFILE_TARGETS
            CFLAGS_EXTRA="$CFLAGS_EXTRA";
     fi
