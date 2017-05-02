@@ -334,8 +334,8 @@ script:
             extra/msvc_dbg.c tests/*.c tests/*.cc tools/*.c;
     fi
   - if [[ "$CPPCHECK_ENABLE" != "" ]]; then
-      ~/cppcheck/cppcheck -f --error-exitcode=2 -U long -D CPPCHECK
-                -I include -I libatomic_ops/src $CPPCHECK_ENABLE
+      ~/cppcheck/cppcheck -q -f --error-exitcode=2 -U GC_API -U long
+                -D CPPCHECK -I include -I libatomic_ops/src $CPPCHECK_ENABLE
                 *.cc cord/*.c cord/tests/*.c extra/*.c extra/*.cpp
                 tests/*.c tests/*.cc tools/*.c;
     fi
