@@ -152,9 +152,7 @@ IF(CMAKE_USE_PTHREADS_INIT)
         IF ( HOST MATCHES .*-.*-cygwin.*)
                 ADD_DEFINITIONS("-DGC_THREADS")
                 ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
-                SET(SRC ${SRC} thread_local_alloc.c)
-#TODO
-#       win32_threads=true
+                SET(SRC ${SRC} thread_local_alloc.c win32_threads.c)
         ENDIF()
         IF ( HOST MATCHES .*-.*-darwin.*)
                 ADD_DEFINITIONS("-DGC_DARWIN_THREADS")
@@ -182,7 +180,6 @@ ENDIF(CMAKE_USE_PTHREADS_INIT)
 
 IF(CMAKE_USE_WIN32_THREADS_INIT)
         ADD_DEFINITIONS("-DGC_THREADS")
-        #win32_threads=true   TODO
         IF(enable_parallel_mark)
                 ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
                 SET(SRC ${SRC} thread_local_alloc.c)
