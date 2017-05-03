@@ -72,7 +72,7 @@
 
 #if defined(GC_AIX_THREADS) || defined(GC_DARWIN_THREADS) \
     || defined(GC_DGUX386_THREADS) || defined(GC_FREEBSD_THREADS) \
-    || defined(GC_GNU_THREADS) || defined(GC_HPUX_THREADS) \
+    || defined(GC_HPUX_THREADS) \
     || defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) \
     || defined(GC_NETBSD_THREADS) || defined(GC_OPENBSD_THREADS) \
     || defined(GC_OSF1_THREADS) || defined(GC_SOLARIS_THREADS) \

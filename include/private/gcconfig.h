@@ -2984,9 +2984,6 @@
 #if defined(GC_AIX_THREADS) && !defined(_AIX)
 # error --> inconsistent configuration
 #endif
-#if defined(GC_GNU_THREADS) && !defined(HURD)
-# error --> inconsistent configuration
-#endif
 #if defined(GC_WIN32_THREADS) && !defined(MSWIN32) && !defined(CYGWIN32) \
     && !defined(MSWINCE)
 # error --> inconsistent configuration

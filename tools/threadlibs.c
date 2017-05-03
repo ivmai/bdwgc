@@ -29,7 +29,7 @@ int main(void)
 #   endif
 #   if (defined(GC_LINUX_THREADS) && !defined(PLATFORM_ANDROID)) \
         || defined(GC_IRIX_THREADS) || defined(GC_DARWIN_THREADS) \
-        || defined(GC_AIX_THREADS) || defined(GC_GNU_THREADS)
+        || defined(GC_AIX_THREADS) || (defined(HURD) && defined(GC_THREADS))
 #       ifdef GC_USE_DLOPEN_WRAP
           printf("-ldl ");
 #       endif

@@ -139,7 +139,6 @@ AH_TEMPLATE([GC_THREADS],           [Define to support platform-specific
 AH_TEMPLATE([GC_AIX_THREADS],       [Define to support IBM AIX threads.])
 AH_TEMPLATE([GC_DARWIN_THREADS],    [Define to support Darwin pthreads.])
 AH_TEMPLATE([GC_FREEBSD_THREADS],   [Define to support FreeBSD pthreads.])
-AH_TEMPLATE([GC_GNU_THREADS],       [Define to support GNU pthreads.])
 AH_TEMPLATE([GC_HPUX_THREADS],      [Define to support HP/UX 11 pthreads.])
 AH_TEMPLATE([GC_IRIX_THREADS],      [Define to support Irix pthreads.])
 AH_TEMPLATE([GC_LINUX_THREADS],     [Define to support pthreads on Linux.])
@@ -245,7 +244,7 @@ case "$THREADS" in
         AC_DEFINE(USE_COMPILER_TLS)
         ;;
      *-*-gnu*)
-        AC_DEFINE(GC_GNU_THREADS)
+        AC_DEFINE(GC_THREADS)
         AC_DEFINE(_REENTRANT)
         if test "${enable_parallel_mark}" != no; then
           AC_DEFINE(PARALLEL_MARK)
