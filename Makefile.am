@@ -64,16 +64,16 @@ libgc_la_SOURCES = \
     dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c \
     mach_dep.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
     obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c \
-    specific.c stubborn.c thread_local_alloc.c typd_mlc.c
+    specific.c stubborn.c typd_mlc.c
 
 # C Library: Architecture Dependent
 # ---------------------------------
 
 if WIN32_THREADS
-libgc_la_SOURCES += win32_threads.c
+libgc_la_SOURCES += thread_local_alloc.c win32_threads.c
 else
 if PTHREADS
-libgc_la_SOURCES += pthread_start.c pthread_support.c
+libgc_la_SOURCES += pthread_start.c pthread_support.c thread_local_alloc.c
 if DARWIN_THREADS
 libgc_la_SOURCES += darwin_stop_world.c
 else
