@@ -201,7 +201,7 @@ IF(CMAKE_USE_PTHREADS_INIT)
                 #TODO
                 #darwin_threads=true
         ENDIF()
-        IF ( HOST MATCHES .*-.*-osf*)
+        IF ( HOST MATCHES .*-.*-osf.*)
                 ADD_DEFINITIONS("-DGC_OSF1_THREADS")
                 IF(enable_parallel_mark)
                         ADD_DEFINITIONS("-DPARALLEL_MARK")
