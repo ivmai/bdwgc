@@ -365,8 +365,6 @@ case "$THREADS" in
     AC_MSG_WARN("Explicit GC_INIT() calls may be required.");
     AC_DEFINE([GC_DGUX386_THREADS], 1,
               [Define to enable support for DB/UX threads on i386.])
-    AC_DEFINE([DGUX_THREADS], 1,
-              [Define to enable support for DB/UX threads.])
     # Enable _POSIX4A_DRAFT10_SOURCE with flag -pthread
     AM_CFLAGS="-pthread $AM_CFLAGS"
     ;;
