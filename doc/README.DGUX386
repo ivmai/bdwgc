@@ -10,7 +10,7 @@
      Finally, we support parallel mark for the SMP DG/UX machines.
      To build the garbage collector do:
 
-      ./configure --enable-parallel-mark
+      ./configure
       make
       make gctest
 
@@ -18,7 +18,7 @@
      correctly so that "gctest" can find the shared library libgc.
      Alternatively you can do a configuration
 
-      ./configure --enable-parallel-mark --disable-shared
+      ./configure --disable-shared
 
      to build only the static version of libgc.
 
@@ -26,8 +26,8 @@
      1) Add the "--enable-gc-debug" flag during configuration.
      2) Pass "CFLAGS=-DDEBUG_THREADS" to "make".
 
-     In a machine with 4 CPUs (my own machine) the option parallel
-     mark (aka --enable-parallel-mark) makes a BIG difference.
+     In a machine with 4 CPUs (my own machine), parallel mark makes
+     a BIG difference.
 
      Takis Psarogiannakopoulos
 

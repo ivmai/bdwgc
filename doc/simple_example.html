@@ -52,16 +52,15 @@ strong preference of the would-be maintainer of those project files.)
 </font>
 <H3><FONT COLOR=green>Threads</font></h3>
 <FONT COLOR=green>
-If you need thread support, configure the collector with
+If you do not need thread support, configure the collector with
 </font>
 <PRE style="color:green">
---enable-threads=posix --enable-parallel-mark
+--disable-threads
 </pre>
 <FONT COLOR=green>
-instead of
-<TT>--disable-threads</tt>
-If your target is a real old-fashioned uniprocessor (no "hyperthreading",
-etc.) you will want to omit <TT>--enable-parallel-mark</tt>.
+Alternatively, if your target is a real old-fashioned uniprocessor (no
+"hyperthreading", etc.), you may just want to turn off parallel marking with
+<TT>--disable-parallel-mark</tt>.
 </font>
 <H3><FONT COLOR=green>C++</font></h3>
 <FONT COLOR=green>

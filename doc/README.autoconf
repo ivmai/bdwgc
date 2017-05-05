@@ -46,14 +46,14 @@ Important options to configure:
   --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
                           [same as prefix]
   --enable-threads=TYPE   choose threading package
-  --enable-parallel-mark  parallelize marking and free list construction
-  --enable-gc-debug (--enable-full-debug before about 7.0)
-                          include full support for pointer back-tracing etc.
+  --disable-parallel-mark do not parallelize marking and free list
+                          construction
+  --enable-gc-debug       include full support for pointer back-tracing, etc.
 
 
 Unless --prefix is set (or --exec-prefix or one of the more obscure options),
 make install will install libgc.a and libgc.so in /usr/local/bin, which
 would typically require the "make install" to be run as root.
 
-Most commonly --enable-threads=posix or will be needed.  --enable-parallel-mark
-is recommended for multiprocessors if it is supported on the platform.
+It is not recommended to turn off parallel marking for multiprocessors unless
+a poor support of the feature on the platform.

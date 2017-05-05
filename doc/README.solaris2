@@ -24,15 +24,14 @@ libgcc_s.so.1.  Alternatively, you can configure with --disable-shared.
 
 SOLARIS THREADS:
 
-Threads support is enabled by configure "--enable-threads=posix" option.
-(In case of GCC compiler, multi-threading support is on by default.)
-This causes the collector to be compiled with -D GC_THREADS (or
--D GC_SOLARIS_THREADS) ensuring thread safety.
+Unless --disable-threads option is given, threads support is on by default in
+configure.  This causes the collector to be compiled with -D GC_THREADS
+(or -D GC_SOLARIS_THREADS) ensuring thread safety.
 This assumes use of the pthread_ interface.  Old style Solaris threads
 are no longer supported.
 Thread-local allocation is now on by default.  Parallel marking is on by
-default starting from GC v7.3 but it could be enabled or disabled manually
-by the corresponding "--enable/disable-parallel-mark" options.
+default starting from GC v7.3 but it could be disabled manually
+by configure --disable-parallel-mark option.
 
 It is also essential that gc.h be included in files that call pthread_create,
 pthread_join, pthread_detach, or dlopen.  gc.h macro defines these to also do

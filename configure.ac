@@ -112,8 +112,8 @@ AC_ARG_ENABLE(threads,
     AC_MSG_RESULT([$THREADS]) ])
 
 AC_ARG_ENABLE(parallel-mark,
-   [AC_HELP_STRING([--enable-parallel-mark],
-        [parallelize marking and free list construction])],
+   [AC_HELP_STRING([--disable-parallel-mark],
+        [do not parallelize marking and free list construction])],
    [case "$THREADS" in
       no | none | single)
         if test "${enable_parallel_mark}" != no; then

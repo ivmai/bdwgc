@@ -159,9 +159,8 @@ for details.
 If you are concerned with multiprocessor performance and scalability,
 you should consider enabling and using thread local allocation.
 <P>
-If your platform
-supports it, you should build the collector with parallel marking support
-(<TT>-DPARALLEL_MARK</tt>, or <TT>--enable-parallel-mark</tt>).
+If your platform supports it, you should build the collector with parallel
+marking support (<TT>-DPARALLEL_MARK</tt>); configure has it on by default.
 <P>
 If the collector is used in an environment in which pointer location
 information for heap objects is easily available, this can be passed on
