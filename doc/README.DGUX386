@@ -1,4 +1,4 @@
-    Garbage Collector (parallel iversion) for ix86 DG/UX Release R4.20MU07
+    Garbage Collector (parallel version) for x86 DG/UX Release R4.20MU07
 
 
      *READ* the file README.QUICK.
@@ -7,7 +7,7 @@
      This compiler has the new "dgux386" threads package implemented.
      It also supports the switch "-pthread" needed to link correctly
      the DG/UX's -lrte -lthread with -lgcc and the system's -lc.
-     Finally we support parralleli-mark for the SMP DG/UX machines.
+     Finally, we support parallel mark for the SMP DG/UX machines.
      To build the garbage collector do:
 
       ./configure --enable-parallel-mark
