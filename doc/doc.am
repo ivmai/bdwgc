@@ -15,7 +15,7 @@
 
 # installed documentation
 #
-dist_pkgdata_DATA = \
+dist_doc_DATA = \
 	doc/barrett_diagram \
 	doc/debugging.html \
 	doc/gc.man \
