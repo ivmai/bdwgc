@@ -12,7 +12,7 @@
 
 # installed documentation
 #
-dist_pkgdata_DATA = \
+dist_doc_DATA = \
         AUTHORS \
         README.md \
         doc/README.DGUX386 \
