@@ -21,7 +21,7 @@ cannot call GC_init() before your libraries' static initializers have
 run and perhaps called GC_malloc(), create an initialization routine
 for each library to call GC_init():
 
-#include <gc/gc.h>
+#include "gc.h"
 extern "C" void my_library_init() { GC_init(); }
 
 Compile this code into a my_library_init.o, and link it into your
