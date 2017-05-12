@@ -111,9 +111,8 @@ SRCS= $(CSRCS) \
   include/gc_version.h include/private/gc_hdrs.h include/private/gc_priv.h \
   include/private/gcconfig.h include/private/gc_pmark.h \
   include/gc_inline.h include/gc_mark.h include/gc_disclaim.h \
-  tools/threadlibs.c \
-  tools/if_mach.c tools/if_not_there.c gc_cpp.cc include/gc_cpp.h \
-  tools/gcname.c include/weakpointer.h include/private/gc_locks.h \
+  tools/threadlibs.c tools/if_mach.c tools/if_not_there.c gc_cpp.cc \
+  include/gc_cpp.h include/weakpointer.h include/private/gc_locks.h \
   include/new_gc_alloc.h include/gc_allocator.h \
   include/javaxfc.h \
   include/gc_backptr.h include/gc_gcj.h include/private/dbg_mlc.h \
@@ -124,42 +123,6 @@ SRCS= $(CSRCS) \
   include/private/darwin_stop_world.h include/private/thread_local_alloc.h \
   ia64_save_regs_in_stack.s sparc_mach_dep.S \
   sparc_netbsd_mach_dep.s sparc_sunos4_mach_dep.s $(CORD_SRCS)
-
-DOC_FILES= doc/README.Mac doc/README.OS2 \
-  doc/README.amiga doc/README.cords doc/debugging.html \
-  doc/finalization.html doc/porting.html doc/overview.html \
-  doc/README.hp doc/README.linux doc/README.rs6000 \
-  doc/README.sgi doc/README.solaris2 doc/README.uts \
-  doc/README.symbian doc/README.win32 README.md AUTHORS doc/gc.man \
-  doc/README.environment doc/tree.html doc/gcdescr.html \
-  doc/README.autoconf doc/README.macros doc/README.ews4800 \
-  doc/README.DGUX386 doc/README.arm.cross doc/leak.html \
-  doc/scale.html doc/gcinterface.html doc/README.darwin \
-  doc/simple_example.html doc/README.win64
-
-TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
-  tests/leak_test.c tests/thread_leak_test.c tests/middle.c \
-  tests/smash_test.c tests/huge_test.c
-
-GNU_BUILD_FILES= configure.ac Makefile.am configure install-sh Makefile.in \
-  aclocal.m4 config.sub config.guess \
-  include/include.am doc/doc.am \
-  ltmain.sh mkinstalldirs depcomp missing \
-  cord/cord.am tests/tests.am autogen.sh \
-  bdw-gc.pc.in compile
-
-OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE gc.mak \
-  BCC_MAKEFILE WCC_MAKEFILE PCR-Makefile SMakefile.amiga \
-  digimars.mak Makefile.direct
-
-OTHER_FILES= README.QUICK tools/setjmp_t.c tools/callprocs.sh \
-  extra/MacOS.c extra/Mac_files/datastart.c extra/Mac_files/dataend.c \
-  extra/Mac_files/MacOS_config.h tools/add_gc_prefix.c gc_cpp.cpp \
-  extra/symbian/global_end.cpp extra/symbian/global_start.cpp \
-  extra/symbian/init_global_static_roots.cpp extra/symbian.cpp \
-  build/s60v3/bld.inf build/s60v3/libgc.mmp \
-  extra/AmigaOS.c extra/msvc_dbg.c include/private/msvc_dbg.h \
-  $(TESTS) $(GNU_BUILD_FILES) $(OTHER_MAKEFILES)
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
   $(srcdir)/include/ec.h $(srcdir)/include/cord_pos.h
@@ -432,28 +395,6 @@ check: cord/cordtest$(EXEEXT) gctest$(EXEEXT) setjmp_test$(EXEEXT)
 
 # A synonym to "check" (for compatibility with older GC versions).
 test: check
-
-add_gc_prefix: $(srcdir)/tools/add_gc_prefix.c $(srcdir)/include/gc_version.h
-	$(CC) -o add_gc_prefix $(srcdir)/tools/add_gc_prefix.c
-
-gcname: $(srcdir)/tools/gcname.c $(srcdir)/include/gc_version.h
-	$(CC) -o gcname $(srcdir)/tools/gcname.c
-
-# We assume this is being done from source directory.
-dist gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
-	rm -f `./gcname`
-	ln -s . `./gcname`
-	./add_gc_prefix $(SRCS) $(DOC_FILES) $(OTHER_FILES) > /tmp/gc.tar-files
-	tar cvfh gc.tar `cat /tmp/gc.tar-files`
-	cp gc.tar `./gcname`.tar
-	gzip `./gcname`.tar
-	rm `./gcname`
-
-gc.tar.Z: gc.tar
-	compress gc.tar
-
-gc.tar.gz: gc.tar
-	gzip gc.tar
 
 # BTL: added to test shared library version of collector.
 # Currently works only under SunOS5.  Requires GC_INIT call from statically

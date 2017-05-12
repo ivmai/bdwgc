@@ -186,9 +186,8 @@ EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
 
 # files used by makefiles other than Makefile.am
 #
-EXTRA_DIST += tools/add_gc_prefix.c tools/gcname.c tools/if_mach.c \
-    tools/if_not_there.c tools/setjmp_t.c tools/threadlibs.c \
-    gc.mak extra/MacOS.c extra/AmigaOS.c \
+EXTRA_DIST += tools/if_mach.c tools/if_not_there.c tools/setjmp_t.c \
+    tools/threadlibs.c gc.mak extra/MacOS.c extra/AmigaOS.c \
     extra/symbian/global_end.cpp extra/symbian/global_start.cpp \
     extra/symbian/init_global_static_roots.cpp extra/symbian.cpp \
     build/s60v3/bld.inf build/s60v3/libgc.mmp \
