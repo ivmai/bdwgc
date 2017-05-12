@@ -283,31 +283,6 @@ at the bottom  of your project so that all data is surrounded. This is not
 needed in Codewarrior because it provides intrinsic variables
 __datastart__, __data_end__ that wraps all globals.
 
-== Source Changes (GC 4.12a2) ==
-
-Very few. Just one tiny in the GC, not strictly needed.
-- test_cpp.cc
-  made the first lines of main() look like this:
-  ------------
-  int main( int argc, char* argv[] ) {
-  #endif
-  #if macintosh                             // MacOS
-    char* argv_[] = {"test_cpp","10"};      //   doesn't
-    argv=argv_;                             //     have a
-    argc = sizeof(argv_)/sizeof(argv_[0]);  //       commandline
-  #endif                                    //
-
-  int i, iters, n;
-  # ifndef __GNUC__
-   alloc dummy_to_fool_the_compiler_into_doing_things_it_currently_cant_handle;
-  ------------
-
-- config.h [now gcconfig.h]
-  __MWERKS__ does not have to mean MACOS. You can use Codewarrior to
-  build a Win32 or BeOS library and soon a Rhapsody library. You may
-  have to change that #if...
-
-
 
    It worked for me, hope it works for you.
 
