@@ -13,7 +13,7 @@ ports.
 
 Pthreads support is provided.  This requires that:
 
-1) You compile the collector with -DGC_IRIX_THREADS specified in the Makefile.
+1) You compile the collector with -DGC_THREADS specified in the Makefile.
 
 2) You have the latest pthreads patches installed.
 
@@ -22,7 +22,7 @@ it relies on signal/threads interactions working just right in ways
 that are not required by the standard.  It is unlikely that this code
 will run on other pthreads platforms.  But please tell me if it does.)
 
-3) Every file that makes thread calls should define IRIX_THREADS and then
+3) Every file that makes thread calls should define GC_THREADS and then
 include gc.h.  Gc.h redefines some of the pthread primitives as macros which
 also provide the collector with information it requires.
 

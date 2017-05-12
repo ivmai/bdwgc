@@ -26,13 +26,12 @@ To use threads, you need to abide by the following requirements:
    pthread implementations (in particular it will *not* work with
    MIT pthreads).
 
-2) You must compile the collector with -DGC_LINUX_THREADS (or
-   just -DGC_THREADS) and -D_REENTRANT specified in the Makefile.
+2) You must compile the collector with "-DGC_THREADS -D_REENTRANT" specified
+   in the Makefile.
 
-3a) Every file that makes thread calls should define GC_LINUX_THREADS and
-   _REENTRANT and then include gc.h.  Gc.h redefines some of the
-   pthread primitives as macros which also provide the collector with
-   information it requires.
+3a) Every file that makes thread calls should define GC_THREADS, and then
+   include gc.h.  Gc.h redefines some of the pthread primitives as macros
+   which also provide the collector with information it requires.
 
 3b) A new alternative to (3a) is to build the collector and compile GC clients
    with -DGC_USE_LD_WRAP, and to link the final program with
@@ -54,7 +53,7 @@ To use threads, you need to abide by the following requirements:
    user startup code may run as part of dlopen().)  Under unusual
    conditions, this may cause unexpected heap growth.
 
-5) The combination of GC_LINUX_THREADS, REDIRECT_MALLOC, and incremental
+5) The combination of GC_THREADS, REDIRECT_MALLOC, and incremental
    collection is probably not fully reliable, though it now seems to work
    in simple cases.
 

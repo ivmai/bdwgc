@@ -51,16 +51,8 @@ CFLAGS= -O -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
 # To build the collector with threads support, add to the above:
 # -DGC_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
 #
-# To build the thread-capable preload library that intercepts
-# malloc, add -DGC_USE_DLOPEN_WRAP -DREDIRECT_MALLOC=GC_malloc -fpic
-#
-# To build the parallel collector in a static library on HP/UX,
-# add to the above:
-# -DGC_HPUX_THREADS -DTHREAD_LOCAL_ALLOC -D_POSIX_C_SOURCE=199506L -mt
-# FIXME: PARALLEL_MARK currently broken on HP/UX.
-#
-# To build the thread-safe collector on Tru64, add to the above:
-# -pthread -DGC_OSF1_THREADS
+# To build the preload library that intercepts malloc, add:
+# -DGC_USE_DLOPEN_WRAP -DREDIRECT_MALLOC=GC_malloc -fpic
 
 # HOSTCC and HOSTCFLAGS are used to build executables that will be run as
 # part of the build process, i.e. on the build machine.  These will usually

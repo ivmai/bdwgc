@@ -32,8 +32,7 @@ Clients should include <TT>gc.h</tt>.
 <P>
 In the case of multi-threaded code,
 <TT>gc.h</tt> should be included after the threads header file, and
-after defining the appropriate <TT>GC_</tt><I>XXXX</i><TT>_THREADS</tt> macro.
-(For 6.2alpha4 and later, simply defining <TT>GC_THREADS</tt> should suffice.)
+after defining <TT>GC_THREADS</tt> macro.
 The header file <TT>gc.h</tt> must be included
 in files that use either GC or threads primitives, since threads primitives
 will be redefined to cooperate with the GC on many platforms.

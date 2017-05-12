@@ -132,7 +132,7 @@ under Linux 2.2.12.
 <P>
 Running with a thread-unsafe collector,  the benchmark ran in 9
 seconds.  With the simple thread-safe collector,
-built with <TT>-DLINUX_THREADS</tt>, the execution time
+built with <TT>-DGC_THREADS</tt>, the execution time
 increased to 10.3 seconds, or 23.5 elapsed seconds with two clients.
 (The times for the <TT>malloc</tt>/i<TT>free</tt> version
 with glibc <TT>malloc</tt>
@@ -143,7 +143,7 @@ garbage collector, since most objects are small.)
 <P>
 The following table gives execution times for the collector built
 with parallel marking and thread-local allocation support
-(<TT>-DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC</tt>).  We tested
+(<TT>-DGC_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC</tt>).  We tested
 the client using either one or two marker threads, and running
 one or two client threads.  Note that the client uses thread local
 allocation exclusively.  With -DTHREAD_LOCAL_ALLOC the collector

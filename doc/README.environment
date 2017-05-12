@@ -98,7 +98,7 @@ GC_PRINT_BACK_HEIGHT - Print max length of chain through unreachable objects
 
 GC_RETRY_SIGNALS, GC_NO_RETRY_SIGNALS - Try to compensate for lost
                      thread suspend signals (Pthreads only).  On by
-                     default for GC_OSF1_THREADS, off otherwise.  Note
+                     default for OSF1, off otherwise.  Note
                      that this does not work around a possible loss of
                      thread restart signals.  This seems to be necessary for
                      some versions of Tru64.  Since we've previously seen
