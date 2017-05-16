@@ -158,7 +158,9 @@ STATIC int GC_register_disappearing_link_inner(
         || dl_hashtbl -> entries > ((word)1 << dl_hashtbl -> log_size)) {
         GC_grow_table((struct hash_chain_entry ***)&dl_hashtbl -> head,
                       &dl_hashtbl -> log_size);
-        GC_ASSERT(dl_hashtbl->log_size >= 0);
+#       ifdef LINT2
+          if (dl_hashtbl->log_size < 0) ABORT("log_size is negative");
+#       endif
         GC_COND_LOG_PRINTF("Grew %s table to %u entries\n", tbl_log_name,
                            1 << (unsigned)dl_hashtbl -> log_size);
     }
@@ -650,7 +652,9 @@ STATIC void GC_register_finalizer_inner(void * obj,
         || GC_fo_entries > ((word)1 << log_fo_table_size)) {
         GC_grow_table((struct hash_chain_entry ***)&GC_fnlz_roots.fo_head,
                       &log_fo_table_size);
-        GC_ASSERT(log_fo_table_size >= 0);
+#       ifdef LINT2
+          if (log_fo_table_size < 0) ABORT("log_size is negative");
+#       endif
         GC_COND_LOG_PRINTF("Grew fo table to %u entries\n",
                            1 << (unsigned)log_fo_table_size);
     }
