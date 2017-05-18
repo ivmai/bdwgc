@@ -772,7 +772,12 @@ GC_INNER void GC_stop_world(void)
           wait_usecs = 0;
         }
 
-#       if defined(CPPCHECK) /* || _POSIX_C_SOURCE >= 199309L */
+#       ifdef LINT2
+          /* Workaround "waiting while holding a lock" warning. */
+#         undef WAIT_UNIT
+#         define WAIT_UNIT 1
+          sched_yield();
+#       elif defined(CPPCHECK) /* || _POSIX_C_SOURCE >= 199309L */
           {
             struct timespec ts;
 
