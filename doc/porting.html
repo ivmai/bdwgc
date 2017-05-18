@@ -196,12 +196,6 @@ word stores of 0 are used instead.
 <DD>
 <TT>HEAP_START</tt> may be defined as the initial address hint for mmap-based
 allocation.
-<DT><TT>ALIGN_DOUBLE</tt>
-<DD>
-Should be defined if the architecture requires double-word alignment
-of <TT>GC_malloc</tt>ed memory, e.g. 8-byte alignment with a
-32-bit ABI.  Most modern machines are likely to require this.
-This is no longer needed for GC7 and later.
 </dl>
 <H2>Additional requirements for a basic port</h2>
 In some cases, you may have to add additional platform-specific code

@@ -2599,7 +2599,6 @@
 #   define CPP_WORDSZ 32
 #   define MACH_TYPE "TILEPro"
 #   define ALIGNMENT 4
-#   define ALIGN_DOUBLE
 #   define PREFETCH(x) __insn_prefetch(x)
 #   define CACHE_LINE_SIZE 64
 #   ifdef LINUX
@@ -2616,8 +2615,6 @@
 #   define MACH_TYPE "TILE-Gx"
 #   define ALIGNMENT __SIZEOF_POINTER__
 #   if CPP_WORDSZ < 64
-#     define ALIGN_DOUBLE /* Guarantee 64-bit alignment for allocations. */
-      /* Take advantage of 64-bit stores. */
 #     define CLEAR_DOUBLE(x) (*(long long *)(x) = 0)
 #   endif
 #   define PREFETCH(x) __insn_prefetch_l1(x)
