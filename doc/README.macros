@@ -548,7 +548,7 @@ GC_FULL_FREQ=<value>    Set alternate default number of partial collections
 NO_CANCEL_SAFE (Posix platforms with threads only)      Don't bother trying
   to make the collector safe for thread cancellation; cancellation is not
   used.  (Note that if cancellation is used anyway, threads may end up
-  getting cancelled in unexpected places.)  Even without this option,
+  getting canceled in unexpected places.)  Even without this option,
   PTHREAD_CANCEL_ASYNCHRONOUS is never safe with the collector.  (We could
   argue about its safety without the collector.)
 
