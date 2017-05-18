@@ -44,7 +44,7 @@ To build the editor, type "make cord/de" in the gc directory.
 This package assumes an ANSI C compiler such as gcc.  It will
 not compile with an old-style K&R compiler.
 
-Note that CORD_printf iand friends use C functions with variable numbers
+Note that CORD_printf and friends use C functions with variable numbers
 of arguments in non-standard-conforming ways.  This code is known to
 break on some platforms, notably PowerPC.  It should be possible to
 build the remainder of the library (everything but cordprnt.c) on

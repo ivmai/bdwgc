@@ -131,7 +131,7 @@ should be defined to the limits of the second main data segment.
 <DD>
 Should be defined if the stack (or thread stacks) grow towards higher
 addresses.  (This appears to be true only on PA-RISC.  If your architecture
-has more than one stack per thread, and is not already supported, you will
+has more than one stack per thread, and is not supported yet, you will
 need to do more work.  Grep for "IA64" in the source for an example.)
 <DT><TT>STACKBOTTOM</tt>
 <DD>
@@ -166,7 +166,7 @@ The cold end of the stack is determined by taking an address inside
 GC_init's frame, incrementing it repeatedly
 in small steps (decrement if <TT>STACK_GROWS_UP</tt>), and reading the value
 at each location.  We remember the value when the first
-Segmentation violation or Bus error is signalled, round that
+Segmentation violation or Bus error is signaled, round that
 to the nearest plausible page boundary, and use that as the
 stack base.
 <DT><TT>DYNAMIC_LOADING</tt>
@@ -214,7 +214,7 @@ tweaking of conditional compilation tests.
 <P>
 For GC7, if your platform supports <TT>getcontext()</tt>, then definining
 the macro <TT>UNIX_LIKE</tt> for your OS in <TT>gcconfig.h</tt>
-(if it isn't defined there already) is likely to solve the problem.
+(if it isn't defined there yet) is likely to solve the problem.
 otherwise, if you are using gcc, <TT>_builtin_unwind_init()</tt>
 will be used, and should work fine.  If that is not applicable either,
 the implementation will try to use <TT>setjmp()</tt>.  This will work if your

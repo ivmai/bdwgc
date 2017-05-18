@@ -202,7 +202,7 @@ int APIENTRY WinMain(
         if (0 == argv[ argc ]) break;}
 #elif defined(MACOS)
   int main() {
-    char* argv_[] = {"test_cpp", "10"}; // MacOS doesn't have a commandline
+    char* argv_[] = {"test_cpp", "10"}; // MacOS doesn't have a command line
     argv = argv_;
     argc = sizeof(argv_)/sizeof(argv_[0]);
 #else
