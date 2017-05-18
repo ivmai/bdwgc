@@ -62,7 +62,7 @@ WHATS NEW:
                          program, and prints out the info when the atexit-handler
                          is called.
 
-   My reccomendation is to set all this flags, except GC_AMIGA_PRINTSTATS and
+   My recommendation is to set all this flags, except GC_AMIGA_PRINTSTATS and
    GC_AMIGA_ONLYFAST.
 
    If your program demands high response-time, you should
@@ -70,7 +70,7 @@ WHATS NEW:
    GC_AMIGA_RETRY does not seem to slow down much.
 
    Also, when compiling up programs, and GC_AMIGA_FASTALLOC was not defined when
-   compilling gc, you can define GC_AMIGA_MAKINGLIB to avoid having these allocation-
+   compiling gc, you can define GC_AMIGA_MAKINGLIB to avoid having these allocation-
    functions wrapped. (see gc.h)
 
    Note that GC_realloc must not be called before any of
@@ -282,7 +282,7 @@ The library as it stands is compatible with the GigaMem commercial
 virtual memory software, and probably similar PD software.
 
 The performance of "gctest" on an Amiga 2630 (68030 @ 25Mhz)
-compares favourably with an HP9000 with similar architecture (a 325
+compares favorably with an HP9000 with similar architecture (a 325
 with a 68030 I think).
 
 -----------------------------------------------------------------------
