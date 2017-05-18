@@ -6,8 +6,7 @@
 <H1>Garbage collector scalability</h1>
 In its default configuration, the Boehm-Demers-Weiser garbage collector
 is not thread-safe.  It can be made thread-safe for a number of environments
-by building the collector with the appropriate
-<TT>-D</tt><I>XXX</i><TT>-THREADS</tt> compilation
+by building the collector with <TT>-DGC_THREADS</tt> compilation
 flag.  This has primarily two effects:
 <OL>
 <LI> It causes the garbage collector to stop all other threads when
