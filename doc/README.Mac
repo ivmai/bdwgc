@@ -126,7 +126,7 @@ o 68K Linker
 
 Prefix Files to configure the GC sources
 ----------------------------------------
-The Codewarrior equivalent of commandline compilers -DNAME=X is to use
+The Codewarrior equivalent of command-line compilers -DNAME=X is to use
 prefix-files. A TEXT file that is automatically #included before the first byte
 of every source file. I used these:
 
