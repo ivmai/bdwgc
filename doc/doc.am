@@ -36,14 +36,14 @@ dist_doc_DATA = \
         doc/README.uts \
         doc/README.win32 \
         doc/README.win64 \
-        doc/debugging.html \
-        doc/finalization.html \
+        doc/debugging.md \
+        doc/finalization.md \
         doc/gc.man \
         doc/gcdescr.html \
         doc/gcinterface.html \
-        doc/leak.html \
+        doc/leak.md \
         doc/overview.html \
-        doc/porting.html \
-        doc/scale.html \
-        doc/simple_example.html \
+        doc/porting.md \
+        doc/scale.md \
+        doc/simple_example.md \
         doc/tree.html

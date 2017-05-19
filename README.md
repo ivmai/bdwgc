@@ -65,7 +65,7 @@ was part of version 8 UNIX (tm), but appears to not have received
 widespread use.
 
 Rudimentary tools for use of the collector as a
-[leak detector](http://www.hboehm.info/gc/leak.html) are included,
+[leak detector](doc/leak.md) are included,
 as is a fairly sophisticated string package "cord" that makes use of the
 collector.  (See doc/README.cords and H.-J. Boehm, R. Atkinson, and M. Plass,
 "Ropes: An Alternative to Strings", Software Practice and Experience 25, 12
@@ -113,7 +113,7 @@ large objects to be disregarded, greatly reducing the probability of
 accidental retention of large objects.  For most purposes it seems
 best to compile with `ALL_INTERIOR_POINTERS` and to use
 `GC_malloc_ignore_off_page` if you get collector warnings from
-allocations of very large objects.  See doc/debugging.html for details.
+allocations of very large objects.  See [here](doc/debugging.md) for details.
 
 _WARNING_: pointers inside memory allocated by the standard `malloc` are not
 seen by the garbage collector.  Thus objects pointed to only from such a
@@ -260,7 +260,7 @@ or 64 bit addresses will require a major effort.  A port to plain MSDOS
 or win16 is hard.
 
 For machines not already mentioned, or for nonstandard compilers,
-some porting suggestions are provided in doc/porting.html.
+some porting suggestions are provided [here](doc/porting.md).
 
 
 ## The C Interface to the Allocator

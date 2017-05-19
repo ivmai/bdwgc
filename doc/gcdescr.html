@@ -275,8 +275,7 @@ of the garbage collection time.
 The fact that it performs only a small amount of work per call also
 allows it to be used as the core routine of the parallel marker.  In that
 case it is normally invoked on thread-private mark stacks instead of the
-global mark stack.  More details can be found in
-<A HREF="scale.html">scale.html</a>
+global mark stack.  More details can be found <A HREF="scale.md">here</a>.
 <P>
 The marker correctly handles mark stack overflows.  Whenever the mark stack
 overflows, the mark state is reset to <TT>MS_INVALID</tt>.
@@ -407,7 +406,7 @@ object itself becomes marked, we have uncovered
 a cycle involving the object.  This usually results in a warning from the
 collector.  Such objects are not finalized, since it may be
 unsafe to do so.  See the more detailed
-<A HREF="finalization.html"> discussion of finalization semantics</a>.
+<A HREF="finalization.md"> discussion of finalization semantics</a>.
 <P>
 Any objects remaining unmarked at the end of this process are added to
 a queue of objects whose finalizers can be run.  Depending on collector
@@ -553,7 +552,7 @@ by using ld's function call wrapping mechanism under Linux.
 <P>
 Recent versions of the collector support several facilities to enhance
 the processor-scalability and thread performance of the collector.
-These are discussed in more detail <A HREF="scale.html">here</a>.
+These are discussed in more detail <A HREF="scale.md">here</a>.
 We briefly outline the data approach to thread-local allocation in the
 next section.
 <H2>Thread-local allocation</h2>
@@ -606,7 +605,7 @@ Note that if the collector is configured for thread-local allocation,
 GC versions before 7 do not invoke the thread-local allocator by default.
 <TT>GC_malloc</tt> only uses thread-local allocation in version 7 and later.
 <P>
-For some more details see <A HREF="scale.html">here</a>, and the
+For some more details see <A HREF="scale.md">here</a>, and the
 technical report entitled
 <A HREF="http://www.hpl.hp.com/techreports/2000/HPL-2000-165.html">
 "Fast Multiprocessor Memory Allocation and Garbage Collection"</a>

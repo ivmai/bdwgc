@@ -6,7 +6,7 @@
   <td><a href="gcinterface.html">Interface Overview</a></td>
   <td><a href="http://www.hboehm.info/gc/04tutorial.pdf">Tutorial Slides</a></td>
   <td><a href="http://www.hboehm.info/gc/faq.html">FAQ</a></td>
-  <td><a href="simple_example.html">Example</a></td>
+  <td><a href="simple_example.md">Example</a></td>
   <td><a href="http://www.hboehm.info/gc/gc_source/">Download</a></td>
   <td><a href="http://www.hboehm.info/gc/license.txt">License</a></td>
   </tr>
@@ -39,7 +39,7 @@ without explicitly deallocating memory that is no longer useful.
 The collector automatically recycles memory when it determines
 that it can no longer be otherwise accessed.
 A simple example of such a use is given
-<a href="simple_example.html">here</a>.
+<a href="simple_example.md">here</a>.
 </p><p>
 The collector is also used by a number of programming language
 implementations that either use C as intermediate code, want
@@ -49,7 +49,7 @@ For a more detailed description of the interface, see
 <a href="gcinterface.html">here</a>.
 </p><p>
 Alternatively, the garbage collector may be used as
-a <a href="leak.html">leak detector</a>
+a <a href="leak.md">leak detector</a>
 for C or C++ programs, though that is not its primary goal.
 </p><p>
 Typically several versions will be available.
@@ -129,14 +129,14 @@ based on this one.  Their collector takes advantage of multiple processors
 during a collection.  Starting with collector version 6.0alpha1
 we also do this, though with more modest processor scalability goals.
 Our approach is discussed briefly in
-<a href="scale.html"><tt>scale.html</tt></a>.
+<a href="scale.md">this document</a>.
 <h2><a name="details">Some Collector Details</a></h2>
 The collector uses a <a href="http://www.hboehm.info/gc/complexity.html">mark-sweep</a> algorithm.
 It provides incremental and generational
 collection under operating systems which provide the right kind of
 virtual memory support.  (Currently this includes SunOS[45], IRIX,
 OSF/1, Linux, and Windows, with varying restrictions.)
-It allows <a href="finalization.html"><i>finalization</i></a> code
+It allows <a href="finalization.md"><i>finalization</i></a> code
 to be invoked when an object is collected.
 It can take advantage of type information to locate pointers if such
 information is provided, but it is usually used without such information.
@@ -340,7 +340,7 @@ system.
 <a href="http://asymptote.sf.net/">Asymptote LaTeX-compatible
 vector graphics language.</a>
 </p><h1><a name="collector">More collector information at this site</a></h1>
-<a href="simple_example.html">A simple illustration of how to build and
+<a href="simple_example.md">A simple illustration of how to build and
 use the collector</a>.
 <p>
 <a href="gcinterface.html">Description of alternate interfaces to the
@@ -350,9 +350,9 @@ garbage collector.</a>
 </p><p>
 <a href="http://www.hboehm.info/gc/faq.html">A FAQ (frequently asked questions) list</a>.
 </p><p>
-<a href="leak.html">How to use the garbage collector as a leak detector.</a>
+<a href="leak.md">How to use the garbage collector as a leak detector.</a>
 </p><p>
-<a href="debugging.html">Some hints on debugging garbage collected
+<a href="debugging.md">Some hints on debugging garbage collected
 applications.</a>
 </p><p>
 <a href="gcdescr.html">An overview of the implementation of the
@@ -360,7 +360,7 @@ garbage collector.</a>
 </p><p>
 <a href="tree.html">The data structure used for fast pointer lookups.</a>
 </p><p>
-<a href="scale.html">Scalability of the collector to multiprocessors.</a>
+<a href="scale.md">Scalability of the collector to multiprocessors.</a>
 </p><p>
 <a href="http://www.hboehm.info/gc/gc_source/">Directory containing garbage collector source</a>.
 </p><h1><a name="background">More background information at this site</a></h1>
