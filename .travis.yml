@@ -2,188 +2,236 @@ language: c++
 
 matrix:
   include:
-    - os: linux
-      compiler: clang
-      env: [ CONF_OPTIONS="--enable-cplusplus" ]
-    - os: linux
-      compiler: gcc
-      env: [ CONF_OPTIONS="--enable-cplusplus" ]
-    - os: osx
-      env: [ CONF_OPTIONS="--enable-cplusplus" ]
-    - os: linux
-      addons: { apt: { packages: [ gcc-multilib ] } }
-      compiler: clang
-      env: [ CFLAGS_EXTRA="-m32", CONF_OPTIONS="--enable-gc-assertions" ]
-    - os: linux
-      addons: { apt: { packages: [ gcc-multilib ] } }
-      compiler: gcc
-      env: [ CFLAGS_EXTRA="-m32", CONF_OPTIONS="--enable-gc-assertions" ]
-    - os: osx
-      env:
-        - CFLAGS_EXTRA="-m32"
-        - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
-    - os: linux
-      compiler: gcc
-      env:
-        - CFLAGS_EXTRA="-D CHECKSUMS"
-        - CONF_OPTIONS="--disable-threads --enable-cplusplus"
-    - os: linux
-      compiler: clang
-      env:
-        - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS"
-        - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
-    - os: osx
-      env:
-        - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS -D LINT2"
-        - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
-    - os: linux
-      compiler: gcc
-      env:
-        - CFLAGS_EXTRA="-D DEBUG_ADD_DEL_ROOTS -D DEBUG_DIRTY_BITS -D DEBUG_THREADS -D GC_LOG_TO_FILE_ALWAYS"
-        - CONF_OPTIONS="--enable-cplusplus"
-    - os: linux
-      compiler: gcc
-      env:
-        - CFLAGS_EXTRA="-D ENABLE_TRACE -D EMPTY_GETENV_RESULTS"
-        - CONF_OPTIONS="--enable-cplusplus"
-    - os: linux
-      addons: { apt: { packages: [ gcc-multilib ] } }
-      compiler: gcc
-      env: [ CFLAGS_EXTRA="-m32 -D MARK_BIT_PER_OBJ" ]
-    - os: linux
-      compiler: gcc
-      env:
-        - CFLAGS_EXTRA="-D POINTER_MASK=~0xf"
-        - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
-    - os: linux
-      compiler: gcc
-      env:
-        - CFLAGS_EXTRA="-D SMALL_CONFIG -D NO_GETENV"
-        - CONF_OPTIONS="--enable-cplusplus"
-    - os: linux
-      compiler: gcc
-      dist: trusty
-      env:
-        - CFLAGS_EXTRA="-std=c11 -D GC_NO_SIGSETJMP"
-        - CONF_OPTIONS="--disable-threads --enable-gc-assertions --enable-cplusplus"
-    - os: linux
-      compiler: gcc
-      env: [ CONF_OPTIONS="--enable-gc-debug --enable-cplusplus" ]
-    - os: linux
-      compiler: gcc
-      env: [ CONF_OPTIONS="--disable-gc-debug --enable-cplusplus" ]
-    - os: linux
-      compiler: clang
-      env: [ CONF_OPTIONS="--enable-large-config --enable-cplusplus" ]
-    - os: osx
-      env: [ CONF_OPTIONS="--enable-large-config --enable-cplusplus" ]
-    - os: linux
-      addons: { apt: { packages: [ gcc-multilib ] } }
-      compiler: gcc
-      env: [ CONF_OPTIONS="--enable-large-config", CFLAGS_EXTRA="-m32" ]
-    - os: linux
-      compiler: gcc
-      env:
-        - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus"
-        - CFLAGS_EXTRA="-D LINT2"
-    - os: linux
-      addons: { apt: { packages: [ gcc-multilib ] } }
-      compiler: clang
-      env:
-        - CONF_OPTIONS="--enable-redirect-malloc --disable-threads"
-        - CFLAGS_EXTRA="-m32"
-    - os: osx
-      env:
-        - CONF_OPTIONS="--enable-redirect-malloc --enable-cplusplus --disable-threads"
-        - CFLAGS_EXTRA="-m32"
-    - os: linux
-      compiler: gcc
-      env:
-        - CONF_OPTIONS="--enable-redirect-malloc --enable-gc-debug --enable-cplusplus --enable-gc-assertions"
-    - os: linux
-      compiler: clang
-      env:
-        - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
-        - CFLAGS_EXTRA="-O3 -march=native"
-    - os: linux
-      compiler: gcc
-      env:
-        - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
-        - CFLAGS_EXTRA="-O3 -march=native"
-    - os: osx
-      env:
-        - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
-        - CFLAGS_EXTRA="-O3 -march=native"
-    - os: linux
-      addons: { apt: { packages: [ musl-tools ] } }
-      compiler: musl-gcc
-      dist: trusty
-      language: c
-      env:
-        - CONF_OPTIONS="--disable-parallel-mark --enable-gc-assertions"
-    - os: linux
-      addons:
-        apt:
-          packages: [ clang-4.0 ]
-          sources: [ llvm-toolchain-trusty-4.0 ]
-      compiler: clang-4.0
-      dist: trusty
-      language: c
-      env:
-        - CXX=clang++-4.0
-        - CFLAGS_EXTRA="-O3 -march=native"
-        - CONF_OPTIONS="--enable-cplusplus --enable-single-obj-compilation"
-    - os: linux
-      addons:
-        apt:
-          packages: [ clang-4.0, gcc-multilib ]
-          sources: [ llvm-toolchain-trusty-4.0 ]
-      compiler: clang-4.0
-      dist: trusty
-      language: c
-      env:
-        - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2"
-        - CONF_OPTIONS="--enable-munmap --enable-gc-assertions"
-    - os: linux
-      addons:
-        apt:
-          packages: [ gcc-5, g++-5 ]
-          sources: [ ubuntu-toolchain-r-test ]
-      compiler: gcc-5
-      dist: trusty
-      language: c
-      env:
-        - CXX=g++-5
-        - CONF_OPTIONS="--enable-munmap --enable-cplusplus --enable-gc-assertions"
-    - os: linux
-      addons:
-        apt:
-          packages: [ gcc-5, gcc-5-multilib, gcc-multilib ]
-          sources: [ ubuntu-toolchain-r-test ]
-      compiler: gcc-5
-      dist: trusty
-      language: c
-      env:
-        - CFLAGS_EXTRA="-m32 -O3"
-        - CONF_OPTIONS="--disable-shared --enable-single-obj-compilation"
-    - os: linux
-      addons:
-        apt:
-          packages: [ gcc-5, gcc-5-multilib, gcc-multilib ]
-          sources: [ ubuntu-toolchain-r-test ]
-      compiler: gcc-5
-      dist: trusty
-      language: c
-      env:
-        - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2"
-        - CONF_OPTIONS="--enable-munmap --enable-large-config --enable-gc-assertions"
+  - os: linux
+    compiler: clang
+    env:
+    - CONF_OPTIONS="--enable-cplusplus"
+  - os: linux
+    compiler: gcc
+    env:
+    - CONF_OPTIONS="--enable-cplusplus"
+  - os: osx
+    env:
+    - CONF_OPTIONS="--enable-cplusplus"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - gcc-multilib
+    compiler: clang
+    env:
+    - CFLAGS_EXTRA="-m32"
+    - CONF_OPTIONS="--enable-gc-assertions"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - gcc-multilib
+    compiler: gcc
+    env:
+    - CFLAGS_EXTRA="-m32"
+    - CONF_OPTIONS="--enable-gc-assertions"
+  - os: osx
+    env:
+    - CFLAGS_EXTRA="-m32"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+  - os: linux
+    compiler: gcc
+    env:
+    - CFLAGS_EXTRA="-D CHECKSUMS"
+    - CONF_OPTIONS="--disable-threads --enable-cplusplus"
+  - os: linux
+    compiler: clang
+    env:
+    - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+  - os: osx
+    env:
+    - CFLAGS_EXTRA="-D DBG_HDRS_ALL -D SHORT_DBG_HDRS -D LINT2"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+  - os: linux
+    compiler: gcc
+    env:
+    - CFLAGS_EXTRA="-D DEBUG_ADD_DEL_ROOTS -D DEBUG_DIRTY_BITS -D DEBUG_THREADS -D GC_LOG_TO_FILE_ALWAYS"
+    - CONF_OPTIONS="--enable-cplusplus"
+  - os: linux
+    compiler: gcc
+    env:
+    - CFLAGS_EXTRA="-D ENABLE_TRACE -D EMPTY_GETENV_RESULTS"
+    - CONF_OPTIONS="--enable-cplusplus"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - gcc-multilib
+    compiler: gcc
+    env:
+    - CFLAGS_EXTRA="-m32 -D MARK_BIT_PER_OBJ"
+  - os: linux
+    compiler: gcc
+    env:
+    - CFLAGS_EXTRA="-D POINTER_MASK=~0xf"
+    - CONF_OPTIONS="--enable-gc-assertions --enable-cplusplus"
+  - os: linux
+    compiler: gcc
+    env:
+    - CFLAGS_EXTRA="-D SMALL_CONFIG -D NO_GETENV"
+    - CONF_OPTIONS="--enable-cplusplus"
+  - os: linux
+    compiler: gcc
+    dist: trusty
+    env:
+    - CFLAGS_EXTRA="-std=c11 -D GC_NO_SIGSETJMP"
+    - CONF_OPTIONS="--disable-threads --enable-gc-assertions --enable-cplusplus"
+  - os: linux
+    compiler: gcc
+    env:
+    - CONF_OPTIONS="--enable-gc-debug --enable-cplusplus"
+  - os: linux
+    compiler: gcc
+    env:
+    - CONF_OPTIONS="--disable-gc-debug --enable-cplusplus"
+  - os: linux
+    compiler: clang
+    env:
+    - CONF_OPTIONS="--enable-large-config --enable-cplusplus"
+  - os: osx
+    env:
+    - CONF_OPTIONS="--enable-large-config --enable-cplusplus"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - gcc-multilib
+    compiler: gcc
+    env:
+    - CONF_OPTIONS="--enable-large-config"
+    - CFLAGS_EXTRA="-m32"
+  - os: linux
+    compiler: gcc
+    env:
+    - CONF_OPTIONS="--enable-large-config --enable-munmap --enable-cplusplus"
+    - CFLAGS_EXTRA="-D LINT2"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - gcc-multilib
+    compiler: clang
+    env:
+    - CONF_OPTIONS="--enable-redirect-malloc --disable-threads"
+    - CFLAGS_EXTRA="-m32"
+  - os: osx
+    env:
+    - CONF_OPTIONS="--enable-redirect-malloc --enable-cplusplus --disable-threads"
+    - CFLAGS_EXTRA="-m32"
+  - os: linux
+    compiler: gcc
+    env:
+    - CONF_OPTIONS="--enable-redirect-malloc --enable-gc-debug --enable-cplusplus --enable-gc-assertions"
+  - os: linux
+    compiler: clang
+    env:
+    - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
+    - CFLAGS_EXTRA="-O3 -march=native"
+  - os: linux
+    compiler: gcc
+    env:
+    - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
+    - CFLAGS_EXTRA="-O3 -march=native"
+  - os: osx
+    env:
+    - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
+    - CFLAGS_EXTRA="-O3 -march=native"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - musl-tools
+    compiler: musl-gcc
+    dist: trusty
+    language: c
+    env:
+    - CONF_OPTIONS="--disable-parallel-mark --enable-gc-assertions"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - clang-4.0
+        sources:
+        - llvm-toolchain-trusty-4.0
+    compiler: clang-4.0
+    dist: trusty
+    language: c
+    env:
+    - CXX=clang++-4.0
+    - CFLAGS_EXTRA="-O3 -march=native"
+    - CONF_OPTIONS="--enable-cplusplus --enable-single-obj-compilation"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - clang-4.0
+        - gcc-multilib
+        sources:
+        - llvm-toolchain-trusty-4.0
+    compiler: clang-4.0
+    dist: trusty
+    language: c
+    env:
+    - CFLAGS_EXTRA="-m32 -D _FORTIFY_SOURCE=2"
+    - CONF_OPTIONS="--enable-munmap --enable-gc-assertions"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - gcc-5
+        - g++-5
+        sources:
+        - ubuntu-toolchain-r-test
+    compiler: gcc-5
+    dist: trusty
+    language: c
+    env:
+    - CXX=g++-5
+    - CONF_OPTIONS="--enable-munmap --enable-cplusplus --enable-gc-assertions"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - gcc-5
+        - gcc-5-multilib
+        - gcc-multilib
+        sources:
+        - ubuntu-toolchain-r-test
+    compiler: gcc-5
+    dist: trusty
+    language: c
+    env:
+    - CFLAGS_EXTRA="-m32 -O3"
+    - CONF_OPTIONS="--disable-shared --enable-single-obj-compilation"
+  - os: linux
+    addons:
+      apt:
+        packages:
+        - gcc-5
+        - gcc-5-multilib
+        - gcc-multilib
+        sources:
+        - ubuntu-toolchain-r-test
+    compiler: gcc-5
+    dist: trusty
+    language: c
+    env:
+    - CFLAGS_EXTRA="-mx32 -march=native -D _FORTIFY_SOURCE=2"
+    - CONF_OPTIONS="--enable-munmap --enable-large-config --enable-gc-assertions"
 
 install:
-  - git clone --depth=50 https://github.com/ivmai/libatomic_ops.git -b release-7_4
-  - ./autogen.sh
+- git clone --depth=50 https://github.com/ivmai/libatomic_ops.git -b release-7_4
+- "./autogen.sh"
 
 script:
-  - ./configure $CONF_OPTIONS
-  - cat include/config.h
-  - make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA"
-  - if [ -f gctest.log ]; then cat gctest.log; fi
+- ./configure $CONF_OPTIONS
+- cat include/config.h
+- make -j check CFLAGS_EXTRA="$CFLAGS_EXTRA"
+- if [ -f gctest.log ]; then cat gctest.log; fi
