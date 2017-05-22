@@ -185,7 +185,7 @@ GC_FirstDLOpenedLinkMap(void)
         dynStructureAddr = &_DYNAMIC;
 #   endif
 
-    if (dynStructureAddr == 0) {
+    if (0 == COVERT_DATAFLOW(dynStructureAddr)) {
         /* _DYNAMIC symbol not resolved. */
         return(0);
     }
@@ -564,7 +564,7 @@ GC_INNER GC_bool GC_register_main_static_data(void)
     /* zero (otherwise a compiler might issue a warning).               */
     return FALSE;
 # else
-    return (dl_iterate_phdr == 0); /* implicit conversion to function ptr */
+    return 0 == COVERT_DATAFLOW(dl_iterate_phdr);
 # endif
 }
 
@@ -694,7 +694,7 @@ GC_FirstDLOpenedLinkMap(void)
 {
     static struct link_map *cachedResult = 0;
 
-    if (0 == (ptr_t)_DYNAMIC) {
+    if (0 == COVERT_DATAFLOW(_DYNAMIC)) {
         /* _DYNAMIC symbol not resolved. */
         return(0);
     }

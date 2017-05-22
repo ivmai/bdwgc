@@ -24,7 +24,7 @@
 
 /* Include gc_priv.h is done after including GC public headers, so      */
 /* that GC_BUILD has no effect on the public prototypes.                */
-#include "private/gc_priv.h" /* for CLOCK_TYPE and GC_random */
+#include "private/gc_priv.h" /* for CLOCK_TYPE, COVERT_DATAFLOW, GC_random */
 
 #ifdef LINT2
 # undef rand
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
         return 1;
     }
     if (argc == 2) {
-        model_min = model_max = atoi(argv[1]);
+        model_min = model_max = (int)COVERT_DATAFLOW(atoi(argv[1]));
         if (model_min < 0 || model_max > 2)
             exit(2);
     }
