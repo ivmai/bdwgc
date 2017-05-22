@@ -439,12 +439,12 @@ GC_INNER char * GC_get_maps(void)
 #         endif
         } else
 #     endif
-      /* else */ if ((ptr_t)__data_start != 0) {
+      /* else */ if (COVERT_DATAFLOW(__data_start) != 0) {
         GC_data_start = (ptr_t)(__data_start);
       } else {
         GC_data_start = (ptr_t)(data_start);
       }
-      if (GC_data_start != NULL) {
+      if (COVERT_DATAFLOW(GC_data_start) != 0) {
         if ((word)GC_data_start > (word)data_end)
           ABORT_ARG2("Wrong __data_start/_end pair",
                      ": %p .. %p", (void *)GC_data_start, (void *)data_end);
