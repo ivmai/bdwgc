@@ -14,6 +14,18 @@ matrix:
     env:
     - CONF_OPTIONS="--enable-cplusplus"
   - os: linux
+    addons:
+      apt:
+        packages:
+        - libatomic-ops-dev
+    dist: trusty
+    env:
+    - MAKEFILE_TARGETS="distcheck"
+    - AUTOMAKE_VER=1.15
+    - M4_VER=1.4.18
+    - LIBTOOL_VER=2.4.6
+    - PKG_CONFIG_VER=0.29.2
+  - os: linux
     env:
     - MAKEFILE_TARGETS="dist"
   - os: linux
@@ -281,6 +293,38 @@ matrix:
     - CFLAGS_EXTRA="-fno-omit-frame-pointer"
 
 before_install:
+- if [[ "$AUTOMAKE_VER" != "" || "$LIBTOOL_VER" != ""
+        || "$M4_VER" != "" || "$PKG_CONFIG_VER" != "" ]]; then
+    GNUTOOLS_ROOT=`pwd`/../gnu-tools;
+    export PATH=$GNUTOOLS_ROOT/bin:$PATH;
+  fi
+- if [[ "$M4_VER" != "" ]]; then
+    M4_XZ_URL=https://ftp.gnu.org/gnu/m4/m4-$M4_VER.tar.xz;
+    wget -O - $M4_XZ_URL | tar xf - --xz --directory ~;
+    (cd ~/m4-$M4_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j check && make install);
+  fi
+- if [[ "$LIBTOOL_VER" != "" ]]; then
+    LIBTOOL_XZ_URL=https://ftp.gnu.org/gnu/libtool/libtool-$LIBTOOL_VER.tar.xz;
+    wget -O - $LIBTOOL_XZ_URL | tar xf - --xz --directory ~;
+    (cd ~/libtool-$LIBTOOL_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
+  fi
+- if [[ "$AUTOMAKE_VER" != "" ]]; then
+    AUTOMAKE_XZ_URL=https://ftp.gnu.org/gnu/automake/automake-$AUTOMAKE_VER.tar.xz;
+    wget -O - $AUTOMAKE_XZ_URL | tar xf - --xz --directory ~;
+    (cd ~/automake-$AUTOMAKE_VER && ./configure --prefix=$GNUTOOLS_ROOT && make -j && make install);
+  fi
+- if [[ "$PKG_CONFIG_VER" != "" ]]; then
+    PKG_CONFIG_GZ_URL=https://pkgconfig.freedesktop.org/releases/pkg-config-$PKG_CONFIG_VER.tar.gz;
+    wget -O - $PKG_CONFIG_GZ_URL | tar xf - --gz --directory ~;
+    (cd ~/pkg-config-$PKG_CONFIG_VER && ./configure --with-internal-glib --prefix=$GNUTOOLS_ROOT && make -j check && make install);
+  fi
+- if [[ "$MAKEFILE_TARGETS" == *"dist"* ]]; then
+    autoconf --version;
+    automake --version;
+    m4 --version;
+    libtool --version || true;
+    pkg-config --version;
+  fi
 - if [[ "$MAKEFILE_TARGETS" == "" ]]; then MAKEFILE_TARGETS="check"; fi
 
 install:
@@ -289,6 +333,7 @@ install:
               -b release-7_4;
   fi
 - "./autogen.sh"
+- if [[ "$GNUTOOLS_ROOT" != "" ]]; then mv $GNUTOOLS_ROOT $GNUTOOLS_ROOT-x; fi
 
 script:
 - ./configure $CONF_OPTIONS
