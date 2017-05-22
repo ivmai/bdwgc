@@ -411,3 +411,15 @@ after_success:
     lcov --list coverage.info;
     coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info;
   fi
+
+deploy:
+  provider: releases
+  api_key:
+    secure: j1HkSD5hyYFo//XzPemojLk6iBT+T9+PwktxtDOwdasR0lOvPyBS2k/RbBZp+amDna/40efTg2WVI8BEfpRMV8+QoYGVoTWCKCaxFCHMfSZdsPLYsHpeqp7PBh3sFX6iuQuZkRGXHNeG8cLHTTw1TatrEBU/vTZXItYKmOJH8WnlwwkiVXKQ3BvU9EJjFB1OJX9PArBXgoHjDcgi6D1kL6ErsraU9nwnaBNRFx5Tpvz/fXZDwjzMnGcxeu02zhVC37mFDd6VbKom8Pm28u4NjYLLhjdICexc0BaVC0kr3+usJytyMtWMRm6LN4kFievOntHZOEAtuU6/E0Bg8wnB8FX8vXaytb+eUVtcfS/n/x6ykgPtKHrCnWEP8nnruW/3qRExxSBASyAwBceJK+yyzVBtQudK4YZnBXUWkFfsc9pPiauUDXkYlUgvVyb3rXvJTvjdiIle194GtRsCQsGKxCZiI6jMB/wRQAA9AgcSb3FpRTqkVPEUT3Gnn0xT+Y0QLJBBm4eAG8qWoEuMMAW8lAVvfHdZh3AnnIvqONvc2dk7kq5EZyhUPTFFDxZGnXWzIwY7Nm9QkUOdvb9t+RsnoTwBL4hSD4/T1CgW/hULQ7cuiwtK/E+8r5C1VES5/I20qkwfTGwKQchdR6lOLO7YM4VlHfNbEUe/wsE3PBh0ekc=
+  file: gc-*.tar.gz
+  file_glob: true
+  skip_cleanup: true
+  on:
+    condition: $MAKEFILE_TARGETS = distcheck
+    repo: ivmai/bdwgc
+    tags: true
