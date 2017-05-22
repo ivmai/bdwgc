@@ -65,45 +65,15 @@ the aid of a debugger.
 
 ## An Example
 
-The following header file `leak_detector.h` is included in the "include"
-subdirectory of the distribution:
-
-
-    #define GC_DEBUG
-    #include "gc.h"
-    #define malloc(n) GC_MALLOC(n)
-    #define calloc(m,n) GC_MALLOC((m)*(n))
-    #define free(p) GC_FREE(p)
-    #define realloc(p,n) GC_REALLOC((p),(n))
-    #define CHECK_LEAKS() GC_gcollect()
-
+The `leak_detector.h` file is included in the "include" subdirectory of the
+distribution.
 
 Assume the collector has been built with `-DFIND_LEAK`. (For newer versions
-of the collector, we could instead add the statement `GC_find_leak = 1` as the
-first statement in `main`.
+of the collector, we could instead add the statement `GC_set_find_leak(1)` as
+the first statement in `main`.
 
-The program to be tested for leaks can then look like:
-
-
-    #include "leak_detector.h"
-
-    main() {
-        int *p[10];
-        int i;
-        /* GC_find_leak = 1; for new collector versions not     */
-        /* compiled with -DFIND_LEAK.                           */
-        for (i = 0; i < 10; ++i) {
-            p[i] = malloc(sizeof(int)+i);
-        }
-        for (i = 1; i < 10; ++i) {
-            free(p[i]);
-        }
-        for (i = 0; i < 9; ++i) {
-            p[i] = malloc(sizeof(int)+i);
-        }
-        CHECK_LEAKS();
-    }
-
+The program to be tested for leaks can then look like "leak_test.c" file
+in the "tests" subdirectory of the distribution.
 
 On an Intel X86 Linux system this produces on the stderr stream:
 
