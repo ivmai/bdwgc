@@ -16,6 +16,15 @@ matrix:
     env:
     - CONF_OPTIONS="--enable-cplusplus"
   - os: linux
+    addons:
+      apt:
+        packages:
+        - libatomic-ops-dev
+    dist: trusty
+    env:
+    - MAKEFILE_TARGETS="distcheck"
+    - GC_REAL_VERSION=7.2h
+  - os: linux
     env:
     - MAKEFILE_TARGETS="dist"
     - WORKAROUND_ACLOCAL_MISSING=true
@@ -108,6 +117,13 @@ matrix:
     - CONF_OPTIONS="--disable-static --disable-threads --enable-cplusplus"
 
 before_install:
+- if [[ "$MAKEFILE_TARGETS" == *"dist"* ]]; then
+    autoconf --version;
+    automake --version;
+    m4 --version;
+    libtool --version || true;
+    pkg-config --version;
+  fi
 - if [[ "$MAKEFILE_TARGETS" == "" ]]; then MAKEFILE_TARGETS="check"; fi
 
 install:
@@ -122,3 +138,11 @@ install:
 script:
 - ./configure $CONF_OPTIONS
 - make -j $MAKEFILE_TARGETS
+- if [[ "$GC_REAL_VERSION" != "" ]]; then
+    tar xf gc-*.tar.gz;
+    rm gc-*.tar.*;
+    (cd gc-*; ln -s ../libatomic_ops);
+    tar cf gc-$GC_REAL_VERSION.tar --dereference
+        --exclude=".*" --exclude="*.yml" gc-*/;
+    gzip --best --verbose gc-*.tar;
+  fi
