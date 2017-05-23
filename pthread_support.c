@@ -728,6 +728,8 @@ STATIC void GC_remove_all_threads_but_me(void)
       for (p = GC_threads[hv]; 0 != p; p = next) {
         next = p -> next;
         if (THREAD_EQUAL(p -> id, self)) {
+          int res;
+
           me = p;
           p -> next = 0;
 #         ifdef GC_DARWIN_THREADS
@@ -744,7 +746,8 @@ STATIC void GC_remove_all_threads_but_me(void)
             /* we re-assign thread-local pointer to 'tlfs' for safety   */
             /* instead of the assertion check (again, it is OK to call  */
             /* GC_destroy_thread_local and GC_free_internal before).    */
-            if (GC_setspecific(GC_thread_key, &me->tlfs) != 0)
+            res = GC_setspecific(GC_thread_key, &me->tlfs);
+            if (COVERT_DATAFLOW(res) != 0)
               ABORT("GC_setspecific failed (in child)");
 #         endif
         } else {
