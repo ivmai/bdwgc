@@ -1143,10 +1143,11 @@ GC_API void GC_CALL GC_init(void)
       }
 #   endif
     maybe_install_looping_handler();
-    /* Adjust normal object descriptor for extra allocation.    */
-    if (ALIGNMENT > GC_DS_TAGS && EXTRA_BYTES != 0) {
-      GC_obj_kinds[NORMAL].ok_descriptor = ((word)(-ALIGNMENT) | GC_DS_LENGTH);
-    }
+#   if ALIGNMENT > GC_DS_TAGS
+      /* Adjust normal object descriptor for extra allocation.  */
+      if (EXTRA_BYTES != 0)
+        GC_obj_kinds[NORMAL].ok_descriptor = (word)(-ALIGNMENT) | GC_DS_LENGTH;
+#   endif
     GC_exclude_static_roots_inner(beginGC_arrays, endGC_arrays);
     GC_exclude_static_roots_inner(beginGC_obj_kinds, endGC_obj_kinds);
 #   ifdef SEPARATE_GLOBALS
