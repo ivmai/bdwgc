@@ -771,7 +771,7 @@ AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
 # found.
 AC_ARG_WITH([libatomic-ops],
     [AS_HELP_STRING([--with-libatomic-ops[=yes|no|check]],
-                    [Use a external libatomic_ops? (default: check)])],
+                    [Use an external libatomic_ops? (default: check)])],
     [], [with_libatomic_ops=check])
 
 # Check for an external libatomic_ops if the answer was yes or check.  If not
@@ -779,7 +779,7 @@ AC_ARG_WITH([libatomic-ops],
 AS_IF([test x"$with_libatomic_ops" != xno],
   [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops], [],
       [ AS_IF([test x"$with_libatomic_ops" != xcheck],
-              [AC_MSG_ERROR([A external libatomic_ops was not found.])])
+              [AC_MSG_ERROR([An external libatomic_ops was not found.])])
         with_libatomic_ops=no ]) ])
 
 # If we have neither an external or an internal version, offer a useful hint
