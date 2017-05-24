@@ -969,7 +969,7 @@ fi
 # found.
 AC_ARG_WITH([libatomic-ops],
     [AS_HELP_STRING([--with-libatomic-ops[=yes|no|check]],
-                    [Use a external libatomic_ops? (default: check)])],
+                    [Use an external libatomic_ops? (default: check)])],
     [], [with_libatomic_ops=check])
 
 # Check for an external libatomic_ops if the answer was yes or check.  If not
