@@ -1049,7 +1049,10 @@ GC_INNER void GC_finalize(void)
        other finalizable objects */
       if (need_unreachable_finalization) {
         curr_fo = GC_fnlz_roots.finalize_now;
-        GC_ASSERT(NULL == curr_fo || log_fo_table_size >= 0);
+#       if defined(GC_ASSERTIONS) || defined(LINT2)
+          if (curr_fo != NULL && log_fo_table_size < 0)
+            ABORT("log_size is negative");
+#       endif
         prev_fo = NULL;
         while (curr_fo != NULL) {
           next_fo = fo_next(curr_fo);
