@@ -4080,7 +4080,7 @@ GC_init_win32) if USE_MUNMAP.
 * os_dep.c (GC_init_win32): Turn off memory unmapping if
 GlobalAlloc() is used.
 * os_dep.c (GC_win32_get_mem): Define and use new
-VIRTUAL_ALLOC_PAD macro; don't waste a extra memory page unless
+VIRTUAL_ALLOC_PAD macro; don't waste an extra memory page unless
 MPROTECT_VDB is in use.
 
 * Makefile: Replace "version.h" with "include/gc_version.h".
