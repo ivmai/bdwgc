@@ -1525,7 +1525,7 @@ Optional Packages:
                           configuring with a cross compiler
   --with-cross-host=HOST  configuring with a cross compiler
   --with-libatomic-ops=yes|no|check
-                          Use a external libatomic_ops? (default: check)
+                          Use an external libatomic_ops? (default: check)
 
 Some influential environment variables:
   CC          C compiler command
@@ -16852,14 +16852,14 @@ fi
 	echo "$ATOMIC_OPS_PKG_ERRORS" >&5
 
 	 if test x"$with_libatomic_ops" != xcheck; then :
-  as_fn_error $? "A external libatomic_ops was not found." "$LINENO" 5
+  as_fn_error $? "An external libatomic_ops was not found." "$LINENO" 5
 fi
         with_libatomic_ops=no
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 	 if test x"$with_libatomic_ops" != xcheck; then :
-  as_fn_error $? "A external libatomic_ops was not found." "$LINENO" 5
+  as_fn_error $? "An external libatomic_ops was not found." "$LINENO" 5
 fi
         with_libatomic_ops=no
 else

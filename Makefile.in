@@ -158,7 +158,7 @@ DIST_COMMON = $(srcdir)/include/include.am $(srcdir)/cord/cord.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
 	$(top_srcdir)/include/private/config.h.in mkinstalldirs \
 	$(srcdir)/bdw-gc.pc.in $(dist_noinst_SCRIPTS) depcomp \
-	$(dist_pkgdata_DATA) $(dist_noinst_HEADERS) \
+	$(dist_doc_DATA) $(dist_noinst_HEADERS) \
 	$(am__include_HEADERS_DIST) $(am__pkginclude_HEADERS_DIST) \
 	test-driver ChangeLog compile config.guess config.sub \
 	install-sh missing ltmain.sh
@@ -213,7 +213,7 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkgdatadir)" \
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(docdir)" \
 	"$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(includedir)" \
 	"$(DESTDIR)$(pkgincludedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
@@ -434,7 +434,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-DATA = $(dist_pkgdata_DATA) $(pkgconfig_DATA)
+DATA = $(dist_doc_DATA) $(pkgconfig_DATA)
 am__include_HEADERS_DIST = include/extra/gc_cpp.h include/extra/gc.h
 am__pkginclude_HEADERS_DIST = include/gc_cpp.h include/gc.h \
 	include/gc_typed.h include/gc_inline.h include/gc_mark.h \
@@ -1014,7 +1014,7 @@ libstaticrootslib_la_DEPENDENCIES = $(top_builddir)/libgc.la
 
 # installed documentation
 #
-dist_pkgdata_DATA = \
+dist_doc_DATA = \
 	doc/barrett_diagram \
 	doc/debugging.html \
 	doc/gc.man \
@@ -1425,27 +1425,27 @@ clean-libtool:
 
 distclean-libtool:
 	-rm -f libtool config.lt
-install-dist_pkgdataDATA: $(dist_pkgdata_DATA)
+install-dist_docDATA: $(dist_doc_DATA)
 	@$(NORMAL_INSTALL)
-	@list='$(dist_pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
+	@list='$(dist_doc_DATA)'; test -n "$(docdir)" || list=; \
 	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(pkgdatadir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(pkgdatadir)" || exit 1; \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(docdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(docdir)" || exit 1; \
 	fi; \
 	for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  echo "$$d$$p"; \
 	done | $(am__base_list) | \
 	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(pkgdatadir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(pkgdatadir)" || exit $$?; \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(docdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(docdir)" || exit $$?; \
 	done
 
-uninstall-dist_pkgdataDATA:
+uninstall-dist_docDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(dist_pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
+	@list='$(dist_doc_DATA)'; test -n "$(docdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(pkgdatadir)'; $(am__uninstall_files_from_dir)
+	dir='$(DESTDIR)$(docdir)'; $(am__uninstall_files_from_dir)
 install-pkgconfigDATA: $(pkgconfig_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(pkgconfig_DATA)'; test -n "$(pkgconfigdir)" || list=; \
@@ -2050,7 +2050,7 @@ check: check-recursive
 all-am: Makefile $(LTLIBRARIES) $(SCRIPTS) $(DATA) $(HEADERS)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(pkgincludedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(pkgincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -2116,7 +2116,7 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-dist_pkgdataDATA install-includeHEADERS \
+install-data-am: install-dist_docDATA install-includeHEADERS \
 	install-pkgconfigDATA install-pkgincludeHEADERS
 
 install-dvi: install-dvi-recursive
@@ -2165,7 +2165,7 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-dist_pkgdataDATA uninstall-includeHEADERS \
+uninstall-am: uninstall-dist_docDATA uninstall-includeHEADERS \
 	uninstall-libLTLIBRARIES uninstall-pkgconfigDATA \
 	uninstall-pkgincludeHEADERS
 
@@ -2181,8 +2181,8 @@ uninstall-am: uninstall-dist_pkgdataDATA uninstall-includeHEADERS \
 	distclean-hdr distclean-libtool distclean-tags distcleancheck \
 	distdir distuninstallcheck dvi dvi-am html html-am info \
 	info-am install install-am install-data install-data-am \
-	install-dist_pkgdataDATA install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
+	install-dist_docDATA install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am \
 	install-includeHEADERS install-info install-info-am \
 	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
 	install-pkgconfigDATA install-pkgincludeHEADERS install-ps \
@@ -2191,7 +2191,7 @@ uninstall-am: uninstall-dist_pkgdataDATA uninstall-includeHEADERS \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	recheck tags tags-am uninstall uninstall-am \
-	uninstall-dist_pkgdataDATA uninstall-includeHEADERS \
+	uninstall-dist_docDATA uninstall-includeHEADERS \
 	uninstall-libLTLIBRARIES uninstall-pkgconfigDATA \
 	uninstall-pkgincludeHEADERS
 

@@ -1,3 +1,91 @@
+2017-05-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* Makefile.in: Regenerate (by autoreconf -vif using autoconf-2.69,
+	automake-1.14.1, m4-1.4.17, libtool-2.4.2, pkg-config 0.26).
+	* configure: Likewise.
+
+2017-05-25  Ivan Maidanski <ivmai@mail.ru>
+
+	* ChangeLog: Fix a typo ("an").
+	* configure.ac (libatomic-ops): Fix a typo ("an") in help message.
+
+2017-05-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.Mac: Fix a typo ("command-line").
+	* doc/README.amiga: Fix typos ("recommendation", "compiling",
+	"favorably").
+	* doc/README.cords: Fix a typo ("and").
+	* doc/README.macros: Fix a typo ("canceled").
+	* doc/README.sgi: Fix a typo ("related").
+	* doc/README.solaris2: Fix a typo ("offset").
+	* doc/leak.html: Fix a typo ("e.g.").
+	* doc/overview.html: Fix a typo ("December").
+	* doc/porting.html: Fix typos ("not supported yet", "signaled",
+	"not defined yet").
+	* doc/scale.html: Fix typos ("free", "busy-waiting").
+	* doc/simple_example.html: Fix a typo ("have not yet").
+	* tests/test_cpp.cc (main): Fix a typo ("command line") in comment.
+
+2017-05-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.Mac: Fix a typo (remove unpaired double-quote).
+
+2017-05-12  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.hp: Fix typo ("recently") in documentation.
+
+2017-05-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.DGUX386: Fix typos ("version", "x86", "parallel") in
+	documentation.
+
+2017-05-09  Andy Li <andy@onthewings.net>
+
+	* doc/doc.am (dist_pkgdata_DATA): Move all items to dist_doc_DATA.
+
+2017-05-05  Ivan Maidanski <ivmai@mail.ru>
+
+	* CMakeLists.txt [CMAKE_USE_PTHREADS_INIT && osf]: Replace ".*-.*-osf*"
+	pattern ".*-.*-osf.*" (a missing "." before "*" is added).
+
+2015-12-21  Andrew Buss <abuss@ucsd.edu>
+
+	* CMakeLists.txt: Use HOST variable without quotes.
+
+2017-05-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* CMakeLists.txt [CMAKE_USE_PTHREADS_INIT && *-*-cygwin*] (SRC): Add
+	win32_threads.c.
+	* CMakeLists.txt (win32_threads): Remove commented out variable
+	definition.
+
+2017-04-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* NT_STATIC_THREADS_MAKEFILE (AO_SCR_DIR): Rename target to
+	$(AO_SRC_DIR).
+	* NT_X64_STATIC_THREADS_MAKEFILE (AO_SCR_DIR): Likewise.
+	* NT_X64_THREADS_MAKEFILE (AO_SCR_DIR): Likewise.
+
+2017-04-18  Ivan Maidanski <ivmai@mail.ru>
+
+	* NT_MAKEFILE (gctest.exe): Fix typo ("application") in comment.
+	* NT_STATIC_THREADS_MAKEFILE (gctest.exe): Likewise.
+	* NT_X64_STATIC_THREADS_MAKEFILE (gctest.exe): Likewise.
+	* NT_X64_THREADS_MAKEFILE (gctest.exe): Likewise.
+
+2017-04-13  Ryan Gonzalez <rymg19@gmail.com>
+
+	* dyn_load.c [SOLARISDL && !USE_PROC_FOR_LIBRARIES]
+	(GC_FirstDLOpenedLinkMap): Do not dereference d_un.d_ptr if it is null.
+	* dyn_load.c [(SCO_ELF || DGUX || HURD || LINUX || FREEBSD || NACL
+	|| NETBSD || OPENBSD) && !USE_PROC_FOR_LIBRARIES]
+	(GC_FirstDLOpenedLinkMap): Likewise.
+
+2017-04-20  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test.c (bm_huge): Add explicit casts of GC_signed_word values
+	to GC_word.
+
 2017-04-11  Ivan Maidanski <ivmai@mail.ru>
 
 	* Makefile.in: Regenerate (by autoreconf -vif using autoconf-2.69,
