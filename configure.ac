@@ -955,7 +955,8 @@ AS_IF([test x$missing_libatomic_ops = xtrue ],
 
 # If we have neither an external or an internal version, offer a useful hint
 # and exit.
-AS_IF([test x"$with_libatomic_ops" = xno -a ! -e "$srcdir/libatomic_ops"],
+AS_IF([test x"$with_libatomic_ops" = xno \
+            -a ! -e "$srcdir/libatomic_ops/src/atomic_ops.h"],
   [ AC_MSG_ERROR([libatomic_ops is required.  You can either install it on
                   your system, or fetch and unpack a recent version into the
                   source directory and link or rename it to libatomic_ops.]) ])
